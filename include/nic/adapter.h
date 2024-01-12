@@ -573,6 +573,10 @@ struct BSS_INFO {
 #endif
 
 	u_int8_t fgEnableH2E;
+
+#if CFG_MSCS_SUPPORT
+	struct FAST_PATH_INFO rFastPathInfo;
+#endif
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -1235,6 +1239,16 @@ struct WIFI_VAR {
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIcmpTxs;
+
+	uint8_t ucUdpTspecUp;
+	uint8_t ucTcpTspecUp;
+	uint32_t u4UdpDelayBound;
+	uint32_t u4TcpDelayBound;
+	uint8_t ucDataRate;
+	uint8_t ucSupportProtocol; /* 0:UDP, 1:TCP, 2:BOTH */
+	uint8_t ucCheckBeacon;
+	uint8_t ucEnableFastPath;
+	uint8_t ucFastPathAllPacket;
 };
 
 /* cnm_timer module */
@@ -2071,6 +2085,10 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_THERMAL_QUERY
 	void *tz;
+#endif
+
+#if CFG_MSCS_SUPPORT
+	struct MSCS_CAP_FAST_PATH rFastPathCap;
 #endif
 };				/* end of _ADAPTER_T */
 
