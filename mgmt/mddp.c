@@ -92,6 +92,32 @@ uint8_t txd_length;
 uint8_t txd[0];
 } __packed;
 
+struct tag_bootmode {
+	u32 size;
+	u32 tag;
+	u32 bootmode;
+	u32 boottype;
+};
+
+enum BOOTMODE {
+	NORMAL_BOOT = 0,
+	META_BOOT = 1,
+	RECOVERY_BOOT = 2,
+	SW_REBOOT = 3,
+	FACTORY_BOOT = 4,
+	ADVMETA_BOOT = 5,
+	ATE_FACTORY_BOOT = 6,
+	ALARM_BOOT = 7,
+	KERNEL_POWER_OFF_CHARGING_BOOT = 8,
+	LOW_POWER_OFF_CHARGING_BOOT = 9,
+	FASTBOOT = 99,
+	DOWNLOAD_BOOT = 100,
+	UNKNOWN_BOOT
+};
+
+enum BOOTMODE g_boot_mode = NORMAL_BOOT;
+u_int8_t g_fgMddpEnabled = TRUE;
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -105,10 +131,19 @@ static int32_t mddpRegisterCb(void)
 {
 	int32_t ret = 0;
 
+	switch (g_boot_mode) {
+	case RECOVERY_BOOT:
+		g_fgMddpEnabled = FALSE;
+		break;
+	default:
+		g_fgMddpEnabled = TRUE;
+		break;
+	}
 	gMddpFunc.wifi_handle = &gMddpWFunc;
 
 	ret = mddp_drv_attach(&gMddpDrvConf, &gMddpFunc);
-	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d\n", ret);
+	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
+			ret, g_fgMddpEnabled);
 
 	return ret;
 }
@@ -714,8 +749,33 @@ void setMddpSupportRegister(IN struct ADAPTER *prAdapter)
 	uint32_t u4Val = 0;
 
 	HAL_MCR_RD(prAdapter, MDDP_SUPPORT_CR, &u4Val);
-	u4Val |= MDDP_SUPPORT_CR_BIT;
+	if (g_fgMddpEnabled)
+		u4Val |= MDDP_SUPPORT_CR_BIT;
+	else
+		u4Val &= ~MDDP_SUPPORT_CR_BIT;
 	HAL_MCR_WR(prAdapter, MDDP_SUPPORT_CR, u4Val);
+}
+
+void mddpInit(void)
+{
+	struct device_node *np_chosen;
+	struct tag_bootmode *tag = NULL;
+
+	np_chosen = of_find_node_by_path("/chosen");
+	if (!np_chosen)
+		np_chosen = of_find_node_by_path("/chosen@0");
+
+	if (!np_chosen)
+		return;
+
+	tag = (struct tag_bootmode *) of_get_property(np_chosen, "atag,boot",
+			NULL);
+
+	if (!tag)
+		return;
+
+	DBGLOG(INIT, INFO, "bootmode: 0x%x\n", tag->bootmode);
+	g_boot_mode = tag->bootmode;
 }
 
 #endif
