@@ -2025,6 +2025,10 @@
 #define CFG_SUPPORT_MDDP_SHM 0
 #endif
 
+#ifndef CFG_SUPPORT_MDDP_DYNAMIC_DISABLE
+#define CFG_SUPPORT_MDDP_DYNAMIC_DISABLE 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Disconnect with disable channel based on REGD update
  *------------------------------------------------------------------------------
