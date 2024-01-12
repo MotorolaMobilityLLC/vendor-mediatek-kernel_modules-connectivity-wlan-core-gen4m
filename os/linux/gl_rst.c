@@ -619,18 +619,30 @@ void WfsysResetHdlr(struct work_struct *work)
 
 	HAL_CANCEL_TX_RX(prAdapter);
 
-	HAL_TOGGLE_WFSYS_RST(prAdapter);
+	if (HAL_TOGGLE_WFSYS_RST(prAdapter) != WLAN_STATUS_SUCCESS)
+		goto FAIL;
 
 	kalSetWfsysResetFlag(prAdapter, FALSE);
 
-	wlanOffAtReset();
+	if (wlanOffAtReset() != WLAN_STATUS_SUCCESS)
+		goto FAIL;
 
 	/* resume TX/RX */
 	nicSerStartTxRx(prAdapter);
 
-	wlanOnAtReset();
+	if (wlanOnAtReset() != WLAN_STATUS_SUCCESS)
+		goto FAIL;
 
 	DBGLOG(INIT, INFO, "WF L0.5 Reset done\n");
+
+	return;
+
+FAIL:
+	DBGLOG(INIT, ERROR, "WF L0.5 Reset fail\n");
+
+	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L0P5_FAIL);
+
+	return;
 }
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 

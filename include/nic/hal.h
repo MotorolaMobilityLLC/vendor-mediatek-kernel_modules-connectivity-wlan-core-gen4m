@@ -662,7 +662,8 @@ do { \
 
 #define HAL_CANCEL_TX_RX(_prAdapter)
 
-#define HAL_TOGGLE_WFSYS_RST(_prAdapter)
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
+	halToggleWfsysRst(_prAdapter)
 
 #endif
 
@@ -1049,7 +1050,8 @@ do { \
 
 #define HAL_CANCEL_TX_RX(_prAdapter)
 
-#define HAL_TOGGLE_WFSYS_RST(_prAdapter)
+#define HAL_TOGGLE_WFSYS_RST(_prAdapter)    \
+	halToggleWfsysRst(_prAdapter)
 
 #endif
 
@@ -1309,7 +1311,7 @@ void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo);
 void halTxCancelAllSending(IN struct ADAPTER *prAdapter);
 void halCancelTxRx(IN struct ADAPTER *prAdapter);
-void halToggleWfsysRst(IN struct ADAPTER *prAdapter);
+uint32_t halToggleWfsysRst(IN struct ADAPTER *prAdapter);
 u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 void halProcessTxInterrupt(IN struct ADAPTER *prAdapter);
