@@ -7755,6 +7755,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->uArpMonitorRxPktNum = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "ArpMonitorRxPktNum", 0);
 #endif /* ARP_MONITER_ENABLE */
+
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	prWifiVar->ucScanNoApRecover = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ScanNoApRecover", FEATURE_ENABLED);
+	prWifiVar->ucScanNoApRecoverTh = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ucScanNoApRecoverTh", 3);
+
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

@@ -4298,6 +4298,11 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter,
 
 	/* try to stop scan in CONNSYS */
 	aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
+
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover))
+		scnDoScanTimeoutRecoveryCheck(prAdapter, ucBssIndex);
+#endif
 }				/* end of aisFsmBGSleepTimeout() */
 
 /*----------------------------------------------------------------------------*/
