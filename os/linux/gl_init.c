@@ -1243,7 +1243,7 @@ static void wlanSetMulticastListWorkQueue(
 		return;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 	       "wlanSetMulticastListWorkQueue prDev->flags:0x%x\n",
 	       prDev->flags);
 
