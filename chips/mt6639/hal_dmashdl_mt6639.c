@@ -303,8 +303,10 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx, u4DefVal;
 	uint32_t u4MaxQuota = 0;
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1) || (CFG_SUPPORT_WED_PROXY == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	uint32_t u4Val = 0, u4Addr = 0;
 #endif
 
@@ -328,6 +330,11 @@ void mt6639DmashdlInit(struct ADAPTER *prAdapter)
 			rMt6639DmashdlCfg.au2MinQuota[idx],
 			u4MaxQuota);
 	}
+
+#if CFG_SUPPORT_WED_PROXY
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableWed))
+		mt6639DmashdlWedQueueMappingUpdate(prAdapter);
+#endif
 
 	for (idx = 0; idx < 32; idx++)
 		asicConnac3xDmashdlSetQueueMapping(
@@ -369,6 +376,26 @@ WF_HIF_DMASHDL_TOP_OPTIONAL_CONTROL_CR_PSEBF_BL_TH2_NOBMIN_RASIGN_ENA_MASK |
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
+
+#if CFG_SUPPORT_WED_PROXY
+void mt6639DmashdlWedQueueMappingUpdate(struct ADAPTER *prAdapter)
+{
+	uint8_t acidx, wmmidx, idx;
+
+	for (wmmidx = 0; wmmidx < prAdapter->ucWmmSetNum; wmmidx++) {
+		for (idx = 0; idx < WMM_AC_INDEX_NUM; idx++) {
+			acidx = idx + (wmmidx * WMM_AC_INDEX_NUM);
+			rMt6639DmashdlCfg.aucQueue2Group[acidx] =
+				wmmidx % 2;
+			DBGLOG(HAL, STATE,
+				"wmmidx,%u acidx,%u Queue2Group,%d\n",
+				wmmidx,
+				acidx,
+				rMt6639DmashdlCfg.aucQueue2Group[acidx]);
+		}
+	}
+}
+#endif
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
 

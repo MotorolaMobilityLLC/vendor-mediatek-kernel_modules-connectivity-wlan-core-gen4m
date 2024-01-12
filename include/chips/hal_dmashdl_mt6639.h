@@ -302,6 +302,10 @@ extern struct DMASHDL_CFG rMt6639DmashdlCfg;
 
 void mt6639DmashdlInit(struct ADAPTER *prAdapter);
 
+#if CFG_SUPPORT_WED_PROXY
+void mt6639DmashdlWedQueueMappingUpdate(struct ADAPTER *prAdapter);
+#endif
+
 #if defined(_HIF_USB)
 uint32_t mt6639UpdateDmashdlQuota(struct ADAPTER *prAdapter,
 			uint8_t ucWmmIndex, uint32_t u4MaxQuota);
