@@ -50,80 +50,84 @@
  *
  *****************************************************************************/
 /*! \file   "qosmap.c"
-*    \brief  This file including the qosmap related function.
-*
-*    This file provided the macros and functions library support for the
-*    protocol layer qosmap related function.
-*
-*/
+ *    \brief  This file including the qosmap related function.
+ *
+ *    This file provided the macros and functions library support for the
+ *    protocol layer qosmap related function.
+ *
+ */
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 #if CFG_SUPPORT_PPR2
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 /*----------------------------------------------------------------------------*/
 /*!
-*
-* \brief This routine is called to process the qos category action frame.
-*
-*
-* \note
-*      Called by: Handle Rx mgmt request
-*/
+ *
+ * \brief This routine is called to process the qos category action frame.
+ *
+ *
+ * \note
+ *      Called by: Handle Rx mgmt request
+ */
 /*----------------------------------------------------------------------------*/
 static struct _QOS_MAP_SET *QosMapSetMalloc(IN uint8_t dscpExcNum)
 {
 	if (dscpExcNum)
-		return (struct _QOS_MAP_SET *)kalMemAlloc((sizeof(struct _QOS_MAP_SET) +
-				((dscpExcNum - 1) * sizeof(struct _DSCP_EXCEPTION))), VIR_MEM_TYPE);
+		return (struct _QOS_MAP_SET *)
+				kalMemAlloc((sizeof(struct _QOS_MAP_SET) +
+					((dscpExcNum - 1) *
+					sizeof(struct _DSCP_EXCEPTION))),
+					VIR_MEM_TYPE);
 	else
-		return (struct _QOS_MAP_SET *)kalMemAlloc(sizeof(struct _QOS_MAP_SET), VIR_MEM_TYPE);
+		return (struct _QOS_MAP_SET *)
+			kalMemAlloc(sizeof(struct _QOS_MAP_SET), VIR_MEM_TYPE);
 
 }
 
@@ -133,9 +137,11 @@ static void QosMapSetFree(IN struct STA_RECORD *prStaRec)
 		if (prStaRec->qosMapSet->dscpExceptionNum) {
 			kalMemFree(prStaRec->qosMapSet, VIR_MEM_TYPE,
 				(sizeof(struct _QOS_MAP_SET) +
-				((prStaRec->qosMapSet->dscpExceptionNum - 1) * sizeof(struct _DSCP_EXCEPTION))));
+				((prStaRec->qosMapSet->dscpExceptionNum - 1) *
+					sizeof(struct _DSCP_EXCEPTION))));
 		} else
-			kalMemFree(prStaRec->qosMapSet, VIR_MEM_TYPE, sizeof(struct _QOS_MAP_SET));
+			kalMemFree(prStaRec->qosMapSet,
+				VIR_MEM_TYPE, sizeof(struct _QOS_MAP_SET));
 	}
 }
 
@@ -157,24 +163,29 @@ void handleQosMapConf(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 	case ACTION_ADDTS_REQ:
 	case ACTION_ADDTS_RSP:
 	case ACTION_SCHEDULE:
-		DBGLOG(INIT, INFO, "qos action frame received, action: %d\n", prRxFrame->ucAction);
+		log_dbg(INIT, INFO, "qos action frame received, action: %d\n",
+			prRxFrame->ucAction);
 		break;
 	case ACTION_QOS_MAP_CONFIGURE:
 		qosHandleQosMapConfigure(prAdapter, prSwRfb);
-		DBGLOG(INIT, INFO, "qos map configure frame received, action: %d\n", prRxFrame->ucAction);
+		log_dbg(INIT, INFO, "qos map configure frame received, action: %d\n",
+			prRxFrame->ucAction);
 		break;
 	default:
-		DBGLOG(INIT, INFO, "qos action frame: %d, try to send to supplicant\n", prRxFrame->ucAction);
+		log_dbg(INIT, INFO, "qos action frame: %d, try to send to supplicant\n",
+			prRxFrame->ucAction);
 		break;
 	}
 }
 
-int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb)
 {
 	struct _ACTION_QOS_MAP_CONFIGURE_FRAME *prRxFrame = NULL;
 	struct STA_RECORD *prStaRec;
 
-	prRxFrame = (struct _ACTION_QOS_MAP_CONFIGURE_FRAME *) prSwRfb->pvHeader;
+	prRxFrame =
+		(struct _ACTION_QOS_MAP_CONFIGURE_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
 		return -1;
 
@@ -182,17 +193,20 @@ int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prS
 	if ((!prStaRec) || (!prStaRec->fgIsInUse))
 		return -1;
 
-	DBGLOG(INIT, INFO, "IEEE 802.11: Received Qos Map Configure Frame from " MACSTR "\n",
+	log_dbg(INIT, INFO,
+	"IEEE 802.11: Received Qos Map Configure Frame from " MACSTR "\n",
 		MAC2STR(prStaRec->aucMacAddr));
 
 	if (prStaRec->qosMapSet)
 		QosMapSetFree(prStaRec);
-	prStaRec->qosMapSet = qosParseQosMapSet(prAdapter, prRxFrame->qosMapSet);
+	prStaRec->qosMapSet =
+		qosParseQosMapSet(prAdapter, prRxFrame->qosMapSet);
 
 	return 0;
 }
 
-struct _QOS_MAP_SET *qosParseQosMapSet(IN struct ADAPTER *prAdapter, IN uint8_t *qosMapSet)
+struct _QOS_MAP_SET *qosParseQosMapSet(IN struct ADAPTER *prAdapter,
+	IN uint8_t *qosMapSet)
 {
 	uint8_t dscpExcNum = 0;
 	struct _QOS_MAP_SET *prQos = NULL;
@@ -200,11 +214,13 @@ struct _QOS_MAP_SET *qosParseQosMapSet(IN struct ADAPTER *prAdapter, IN uint8_t 
 	uint8_t *tempq = qosMapSet + 2;
 
 	if (IE_ID(qosMapSet) != ELEM_ID_QOS_MAP_SET) {
-		DBGLOG(INIT, WARN, "Wrong QosMapSet IE ID: %d\n", IE_ID(qosMapSet));
+		DBGLOG(INIT, WARN,
+			"Wrong QosMapSet IE ID: %d\n", IE_ID(qosMapSet));
 		return NULL;
 	}
 	if ((IE_LEN(qosMapSet) < 16) || (IE_LEN(qosMapSet) > 58)) {
-		DBGLOG(INIT, WARN, "Error in QosMapSet IE len: %d\n", IE_LEN(qosMapSet));
+		DBGLOG(INIT, WARN,
+			"Error in QosMapSet IE len: %d\n", IE_LEN(qosMapSet));
 		return NULL;
 	}
 	dscpExcNum = (IE_LEN(qosMapSet) - 16) / 2;
@@ -228,12 +244,15 @@ struct _QOS_MAP_SET *qosParseQosMapSet(IN struct ADAPTER *prAdapter, IN uint8_t 
 		prQos->dscpRange[j].hDscp = *tempq;
 		tempq++;
 		if (prQos->dscpRange[j].hDscp < prQos->dscpRange[j].lDscp)
-			DBGLOG(INIT, WARN, "CHECK: dscp h val should larger than dscp l val, i: %d\n", j);
+			log_dbg(INIT, WARN, "CHECK: dscp h val should larger than dscp l val, i: %d\n",
+				j);
 		/* TODO: Here skip the overlap check */
 	}
 	/*
-	 *	kalMemCopy(prQos->dscpException, qosMapSet + 2, dscpExcNum * 2);
-	 *	kalMemCopy(prQos->dscpRange, qosMapSet + 2 * dscpExcNum + 2, 16);
+	 *	kalMemCopy(prQos->dscpException,
+	 *    qosMapSet + 2, dscpExcNum * 2);
+	 *	kalMemCopy(prQos->dscpRange,
+	 *    qosMapSet + 2 * dscpExcNum + 2, 16);
 	 */
 
 	DBGLOG(INIT, INFO, "QosMapSet DSCP Exception number: %d\n", dscpExcNum);
@@ -261,7 +280,8 @@ uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo, IN int type, IN int dscp)
 	if (prStaRec && prStaRec->qosMapSet) {
 		for (i = 0; i < prStaRec->qosMapSet->dscpExceptionNum; i++) {
 			if (dscp == prStaRec->qosMapSet->dscpException[i].dscp)
-				return prStaRec->qosMapSet->dscpException[i].userPriority;
+				return prStaRec->qosMapSet->dscpException[i].
+				userPriority;
 		}
 		for (j = 0; j < 8; j++) {
 			if (prStaRec->qosMapSet->dscpRange[j].lDscp == 255 &&

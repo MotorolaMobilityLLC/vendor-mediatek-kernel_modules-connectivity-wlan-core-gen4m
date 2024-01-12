@@ -50,63 +50,64 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/nic/nic_pwr_mgt.c#1
-*/
+ ** Id: //Department/DaVinci/BRANCHES/
+ *      MT6620_WIFI_DRIVER_V2_3/nic/nic_pwr_mgt.c#1
+ */
 
-/*! \file   "nic_pwr_mgt.c"
-*    \brief  In this file we define the STATE and EVENT for Power Management FSM.
-*
-*    The SCAN FSM is responsible for performing SCAN behavior when the Arbiter enter
-*    ARB_STATE_SCAN. The STATE and EVENT for SCAN FSM are defined here with detail
-*    description.
-*/
+/*!   \file   "nic_pwr_mgt.c"
+ *    \brief  In this file we define the STATE and EVENT for Power Management
+ *            FSM.
+ *    The SCAN FSM is responsible for performing SCAN behavior when the Arbiter
+ *    enter ARB_STATE_SCAN. The STATE and EVENT for SCAN FSM are defined here
+ *    with detail description.
+ */
 
-
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
+
+/*******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #include "precomp.h"
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter)
 {
@@ -119,26 +120,27 @@ void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is used to process the POWER ON procedure.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-*
-* \return (none)
-*/
+ * \brief This routine is used to process the POWER ON procedure.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
-void nicpmSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
+void nicpmSetFWOwn(IN struct ADAPTER *prAdapter,
+		   IN u_int8_t fgEnableGlobalInt)
 {
 	halSetFWOwn(prAdapter, fgEnableGlobalInt);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is used to process the POWER OFF procedure.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-*
-* \return (none)
-*/
+ * \brief This routine is used to process the POWER OFF procedure.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter)
 {
@@ -147,12 +149,12 @@ u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief This routine is used to set ACPI power mode to D0.
-*
-* \param[in] pvAdapter Pointer to the Adapter structure.
-*
-* \return (none)
-*/
+ * \brief This routine is used to set ACPI power mode to D0.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ *
+ * \return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 {
@@ -170,7 +172,7 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 #if CFG_ENABLE_FW_DIVIDED_DOWNLOAD
 	struct FIRMWARE_DIVIDED_DOWNLOAD *prFwHead;
 	u_int8_t fgValidHead = TRUE;
-	/* const UINT_32 u4CRCOffset = offsetof(FIRMWARE_DIVIDED_DOWNLOAD_T, u4NumOfEntries); */
+
 #endif
 #endif
 
@@ -203,32 +205,43 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 
 #if CFG_ENABLE_FW_DOWNLOAD
 		prFwMappingHandle =
-		    kalFirmwareImageMapping(prAdapter->prGlueInfo, &pvFwImageMapFile, &u4FwImgLength,
-					    &pvCr4FwImageMapFile, &u4Cr4FwImgLength);
+			kalFirmwareImageMapping(prAdapter->prGlueInfo,
+				&pvFwImageMapFile, &u4FwImgLength,
+				&pvCr4FwImageMapFile, &u4Cr4FwImgLength);
 		if (!prFwMappingHandle) {
-			DBGLOG(INIT, ERROR, "Fail to load FW image from file!\n");
+			DBGLOG(INIT, ERROR,
+				"Fail to load FW image from file!\n");
 			pvFwImageMapFile = NULL;
 		}
 #if defined(MT6630)
 		if (pvFwImageMapFile) {
-			/* 3.1 disable interrupt, download is done by polling mode only */
+			/* 3.1 disable interrupt,
+			 * download is done by polling mode only
+			 */
 			nicDisableInterrupt(prAdapter);
 
 			/* 3.2 Initialize Tx Resource to fw download state */
 			nicTxInitResetResource(prAdapter);
 
 			/* 3.3 FW download here */
-			u4FwLoadAddr = kalGetFwLoadAddress(prAdapter->prGlueInfo);
+			u4FwLoadAddr =
+				kalGetFwLoadAddress(prAdapter->prGlueInfo);
 
 #if CFG_ENABLE_FW_DIVIDED_DOWNLOAD
-			/* 3a. parse file header for decision of divided firmware download or not */
+			/* 3a. parse file header for decision of
+			 * divided firmware download or not
+			 */
 			prFwHead =
-			    (struct FIRMWARE_DIVIDED_DOWNLOAD *) ((uint8_t *) pvFwImageMapFile + u4FwImgLength -
-							     (2 * sizeof(struct FWDL_SECTION_INFO)));
+				(struct FIRMWARE_DIVIDED_DOWNLOAD *)
+				((uint8_t *)
+				pvFwImageMapFile + u4FwImgLength -
+				(2 * sizeof(struct FWDL_SECTION_INFO)));
 #if 0
 			if (prFwHead->u4Signature == MTK_WIFI_SIGNATURE &&
-			    prFwHead->u4CRC == wlanCRC32((uint8_t *) pvFwImageMapFile + u4CRCOffset,
-							 u4FwImgLength - u4CRCOffset)) {
+			    prFwHead->u4CRC == wlanCRC32(
+						(uint8_t *) pvFwImageMapFile +
+						u4CRCOffset,
+						u4FwImgLength - u4CRCOffset)) {
 				fgValidHead = TRUE;
 			} else {
 				fgValidHead = FALSE;
@@ -236,37 +249,48 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 #endif
 			/* 3b. engage divided firmware downloading */
 			if (fgValidHead == TRUE) {
-				wlanFwDvdDwnloadHandler(prAdapter, prFwHead, pvFwImageMapFile, &u4Status);
+				wlanFwDvdDwnloadHandler(prAdapter, prFwHead,
+					pvFwImageMapFile, &u4Status);
 			} else
 #endif
 			{
 				if (wlanImageSectionConfig(prAdapter,
-							   u4FwLoadAddr, u4FwImgLength, TRUE) != WLAN_STATUS_SUCCESS) {
-					DBGLOG(INIT, ERROR, "Firmware download configuration failed!\n");
+						u4FwLoadAddr,
+						u4FwImgLength, TRUE)
+						!= WLAN_STATUS_SUCCESS) {
+					DBGLOG(INIT, ERROR,
+					       "Firmware download configuration failed!\n");
 
 					u4Status = WLAN_STATUS_FAILURE;
 					break;
 				}
-					wlanFwDwnloadHandler(prAdapter, u4FwImgLength, pvFwImageMapFile, &u4Status);
+				wlanFwDwnloadHandler(prAdapter, u4FwImgLength,
+					pvFwImageMapFile, &u4Status);
 			}
 			/* escape to top */
 			if (u4Status != WLAN_STATUS_SUCCESS) {
-				kalFirmwareImageUnmapping(prAdapter->prGlueInfo, prFwMappingHandle, pvFwImageMapFile,
-							  pvCr4FwImageMapFile);
+				kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
+					prFwMappingHandle, pvFwImageMapFile,
+					pvCr4FwImageMapFile);
 				break;
 			}
 #if !CFG_ENABLE_FW_DOWNLOAD_ACK
-			/* Send INIT_CMD_ID_QUERY_PENDING_ERROR command and wait for response */
-			if (wlanImageQueryStatus(prAdapter) != WLAN_STATUS_SUCCESS) {
-				kalFirmwareImageUnmapping(prAdapter->prGlueInfo, prFwMappingHandle, pvFwImageMapFile,
-							  pvCr4FwImageMapFile);
+			/* Send INIT_CMD_ID_QUERY_PENDING_ERROR command
+			 * and wait for response
+			 */
+			if (wlanImageQueryStatus(prAdapter) !=
+			    WLAN_STATUS_SUCCESS) {
+				kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
+					prFwMappingHandle, pvFwImageMapFile,
+					pvCr4FwImageMapFile);
 				u4Status = WLAN_STATUS_FAILURE;
 				break;
 			}
 #endif
 
-			kalFirmwareImageUnmapping(prAdapter->prGlueInfo, prFwMappingHandle, pvFwImageMapFile,
-						  pvCr4FwImageMapFile);
+			kalFirmwareImageUnmapping(prAdapter->prGlueInfo,
+				prFwMappingHandle, pvFwImageMapFile,
+				pvCr4FwImageMapFile);
 		} else {
 			u4Status = WLAN_STATUS_FAILURE;
 			break;
@@ -274,7 +298,8 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 
 		/* 4. send Wi-Fi Start command */
 #if CFG_OVERRIDE_FW_START_ADDRESS
-		wlanConfigWifiFunc(prAdapter, TRUE, kalGetFwStartAddress(prAdapter->prGlueInfo));
+		wlanConfigWifiFunc(prAdapter, TRUE,
+				   kalGetFwStartAddress(prAdapter->prGlueInfo));
 #else
 		wlanConfigWifiFunc(prAdapter, FALSE, 0);
 #endif
@@ -282,7 +307,8 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 #endif
 
 		/* 5. check Wi-Fi FW asserts ready bit */
-		DBGLOG(INIT, TRACE, "wlanAdapterStart(): Waiting for Ready bit..\n");
+		DBGLOG(INIT, TRACE,
+		       "wlanAdapterStart(): Waiting for Ready bit..\n");
 		i = 0;
 		while (1) {
 			HAL_MCR_RD(prAdapter, MCR_WCIR, &u4Value);
@@ -290,23 +316,28 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 			if (u4Value & WCIR_WLAN_READY) {
 				DBGLOG(INIT, TRACE, "Ready bit asserted\n");
 				break;
-			} else if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE || fgIsBusAccessFailed == TRUE) {
+			} else if (
+					kalIsCardRemoved(
+						prAdapter->prGlueInfo) == TRUE
+				   || fgIsBusAccessFailed == TRUE) {
 				u4Status = WLAN_STATUS_FAILURE;
 				break;
 			} else if (i >= CFG_RESPONSE_POLLING_TIMEOUT) {
-				DBGLOG(INIT, ERROR, "Waiting for Ready bit: Timeout\n");
+				DBGLOG(INIT, ERROR,
+					"Waiting for Ready bit: Timeout\n");
 				u4Status = WLAN_STATUS_FAILURE;
 				break;
 			}
-				i++;
-				kalMsleep(10);
+			i++;
+			kalMsleep(10);
 		}
 
 		if (u4Status == WLAN_STATUS_SUCCESS) {
 			/* 6.1 reset interrupt status */
 			HAL_READ_INTR_STATUS(prAdapter, 4, (uint8_t *)&u4WHISR);
 			if (HAL_IS_TX_DONE_INTR(u4WHISR))
-				HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
+				HAL_READ_TX_RELEASED_COUNT(prAdapter,
+					au2TxCount);
 
 			/* 6.2 reset TX Resource for normal operation */
 			nicTxResetResource(prAdapter);
@@ -321,7 +352,8 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 			nicApplyNetworkAddress(prAdapter);
 
 			/* 6.6 indicate disconnection as default status */
-			kalIndicateStatusAndComplete(prAdapter->prGlueInfo, WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
+			kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
+				WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
 		}
 
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
@@ -342,16 +374,16 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This routine is used to set ACPI power mode to D3.
-*
-* @param prAdapter pointer to the Adapter handler
-*
-* @return (none)
-*/
+ * @brief This routine is used to set ACPI power mode to D3.
+ *
+ * @param prAdapter pointer to the Adapter handler
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter)
 {
-/*	UINT_32 i; */
+	/*	UINT_32 i; */
 
 	ASSERT(prAdapter);
 
@@ -367,7 +399,8 @@ u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter)
 
 	/* 4. Clear Interrupt Status */
 	i = 0;
-	while (i < CFG_IST_LOOP_COUNT && nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
+	while (i < CFG_IST_LOOP_COUNT
+	       && nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) {
 		i++;
 	};
 

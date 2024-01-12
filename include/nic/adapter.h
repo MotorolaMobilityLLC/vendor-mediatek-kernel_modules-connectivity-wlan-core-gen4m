@@ -49,42 +49,39 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic/adapter.h#5
-*/
-
 /*! \file   adapter.h
-*    \brief  Definition of internal data structure for driver manipulation.
-*
-*    In this file we define the internal data structure - ADAPTER_T which stands
-*    for MiniPort ADAPTER(From Windows point of view) or stands for Network ADAPTER.
-*/
+ *  \brief  Definition of internal data structure for driver manipulation.
+ *
+ *  In this file we define the internal data structure - ADAPTER_T which stands
+ *  for MiniPort ADAPTER(From Windows point of view) or stands for
+ *  Network ADAPTER.
+ */
 
 #ifndef _ADAPTER_H
 #define _ADAPTER_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 #if CFG_SUPPORT_PASSPOINT
 #include "hs20.h"
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 enum {
 	ENUM_SW_TEST_MODE_NONE = 0,
 	ENUM_SW_TEST_MODE_SIGMA_AC = 0x1,
@@ -219,8 +216,8 @@ struct CONNECTION_SETTINGS {
 	/* Indicates if OKC feature is enabled in wpa_supplicant for this ESS */
 	u_int8_t fgOkcEnabled;
 	/* Indicates that there's a PMKSA associated with this ESS
-	** in supplicant to generate PMKID for each BSS
-	*/
+	 ** in supplicant to generate PMKID for each BSS
+	 */
 	u_int8_t fgOkcPmksaReady;
 
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
@@ -258,13 +255,17 @@ struct BSS_INFO {
 
 	enum ENUM_NETWORK_TYPE eNetworkType;
 
-	uint32_t u4PrivateData;	/* Private data parameter for each NETWORK type usage. */
+	/* Private data parameter for each NETWORK type usage. */
+	uint32_t u4PrivateData;
 	/* P2P network type has 3 network interface to distinguish. */
 
-	enum ENUM_PARAM_MEDIA_STATE eConnectionState;	/* Connected Flag used in AIS_NORMAL_TR */
-	enum ENUM_PARAM_MEDIA_STATE eConnectionStateIndicated;	/* The Media State that report to HOST */
+	/* Connected Flag used in AIS_NORMAL_TR */
+	enum ENUM_PARAM_MEDIA_STATE eConnectionState;
+	/* The Media State that report to HOST */
+	enum ENUM_PARAM_MEDIA_STATE eConnectionStateIndicated;
 
-	enum ENUM_OP_MODE eCurrentOPMode;	/* Current Operation Mode - Infra/IBSS */
+	/* Current Operation Mode - Infra/IBSS */
+	enum ENUM_OP_MODE eCurrentOPMode;
 #if CFG_ENABLE_WIFI_DIRECT
 	enum ENUM_OP_MODE eIntendOPMode;
 #endif
@@ -283,29 +284,38 @@ struct BSS_INFO {
 	uint8_t ucSSIDLen;	/* Length of SSID */
 
 #if CFG_ENABLE_WIFI_DIRECT
-	enum ENUM_HIDDEN_SSID_TYPE eHiddenSsidType;	/* For Hidden SSID usage. */
+	/* For Hidden SSID usage. */
+	enum ENUM_HIDDEN_SSID_TYPE eHiddenSsidType;
 #endif
 
 	uint8_t aucSSID[ELEM_MAX_LEN_SSID];	/* SSID used in this BSS */
 
 	uint8_t aucBSSID[MAC_ADDR_LEN];	/* The BSSID of the associated BSS */
 
-	uint8_t aucOwnMacAddr[MAC_ADDR_LEN];	/* Owned MAC Address used in this BSS */
+	/* Owned MAC Address used in this BSS */
+	uint8_t aucOwnMacAddr[MAC_ADDR_LEN];
 
 	uint8_t ucOwnMacIndex;	/* Owned MAC index used in this BSS */
 
-	struct STA_RECORD *prStaRecOfAP;	/* For Infra Mode, and valid only if
-					 * eConnectionState == MEDIA_STATE_CONNECTED
-					 */
-	struct LINK rStaRecOfClientList;	/* For IBSS/AP Mode, all known STAs in current BSS */
+	/* For Infra Mode, and valid only if
+	 * eConnectionState == MEDIA_STATE_CONNECTED
+	 */
+	struct STA_RECORD *prStaRecOfAP;
+	/* For IBSS/AP Mode, all known STAs in current BSS */
+	struct LINK rStaRecOfClientList;
 
-	uint8_t ucBMCWlanIndex;	/* For open Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
+	/* For open Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
+	uint8_t ucBMCWlanIndex;
 
-	uint8_t ucBMCWlanIndexS[MAX_KEY_NUM];	/* For AP Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
+	/* For AP Mode, BC/MC Tx wlan index, For STA, BC/MC Rx wlan index */
+	uint8_t ucBMCWlanIndexS[MAX_KEY_NUM];
 	uint8_t ucBMCWlanIndexSUsed[MAX_KEY_NUM];
 
 	u_int8_t fgBcDefaultKeyExist;	/* Bc Transmit key exist or not */
-	uint8_t ucBcDefaultKeyIdx;	/* Bc default key idx, for STA, the Rx just set, for AP, the tx key id */
+	/* Bc default key idx, for STA, the Rx just set,
+	 * for AP, the tx key id
+	 */
+	uint8_t ucBcDefaultKeyIdx;
 
 	uint8_t wepkeyUsed[MAX_KEY_NUM];
 	uint8_t wepkeyWlanIdx;	/* wlan index of the wep key */
@@ -316,55 +326,69 @@ struct BSS_INFO {
 
 	uint16_t u2ATIMWindow;	/* For IBSS Mode */
 
-	uint16_t u2AssocId;	/* For Infra Mode, it is the Assoc ID assigned by AP.
-				 */
+	/* For Infra Mode, it is the Assoc ID assigned by AP. */
+	uint16_t u2AssocId;
 
 	uint8_t ucDTIMPeriod;	/* For Infra/AP Mode */
 
-	uint8_t ucDTIMCount;	/* For AP Mode, it is the DTIM value we should carried in
-				 * the Beacon of next TBTT.
-				 */
+	/* For AP Mode, it is the DTIM value we should carried in
+	 * the Beacon of next TBTT.
+	 */
+	uint8_t ucDTIMCount;
 
-	uint8_t ucPhyTypeSet;	/* Available PHY Type Set of this peer
-				 * (This is deduced from received struct BSS_DESC)
-				 */
+	/* Available PHY Type Set of this peer
+	 * (This is deduced from received struct BSS_DESC)
+	 */
+	uint8_t ucPhyTypeSet;
 
-	uint8_t ucNonHTBasicPhyType;	/* The Basic PHY Type Index, used to setup Phy Capability */
+	/* The Basic PHY Type Index, used to setup Phy Capability */
+	uint8_t ucNonHTBasicPhyType;
+	/* The configuration of AdHoc/AP Mode. e.g. 11g or 11b */
+	uint8_t ucConfigAdHocAPMode;
 
-	uint8_t ucConfigAdHocAPMode;	/* The configuration of AdHoc/AP Mode. e.g. 11g or 11b */
+	/* For Infra/AP Mode, it is a threshold of Beacon Lost Count to
+	 *  confirm connection was lost
+	 */
+	uint8_t ucBeaconTimeoutCount;
 
-	uint8_t ucBeaconTimeoutCount;	/* For Infra/AP Mode, it is a threshold of Beacon Lost Count to
-					*  confirm connection was lost
-					*/
-
-	u_int8_t fgHoldSameBssidForIBSS;	/* For IBSS Mode, to keep use same BSSID to extend the life cycle of an IBSS */
-
-	u_int8_t fgIsBeaconActivated;	/* For AP/IBSS Mode, it is used to indicate that Beacon is sending */
+	/* For IBSS Mode, to keep use same BSSID
+	 * to extend the life cycle of an IBSS
+	 */
+	u_int8_t fgHoldSameBssidForIBSS;
+	/* For AP/IBSS Mode, it is used to indicate that Beacon is sending */
+	u_int8_t fgIsBeaconActivated;
 
 	struct MSDU_INFO *prBeacon;	/* For AP/IBSS Mode - Beacon Frame */
 
-	u_int8_t fgIsIBSSMaster;	/* For IBSS Mode - To indicate that we can reply ProbeResp Frame.
-				* In current TBTT interval
-				*/
+	/* For IBSS Mode - To indicate that we can reply ProbeResp Frame.
+	 * In current TBTT interval
+	 */
+	u_int8_t fgIsIBSSMaster;
 
-	u_int8_t fgIsShortPreambleAllowed;	/* From Capability Info. of AssocResp Frame
-						* AND of Beacon/ProbeResp Frame
-						*/
-	u_int8_t fgUseShortPreamble;	/* Short Preamble is enabled in current BSS. */
-	u_int8_t fgUseShortSlotTime;	/* Short Slot Time is enabled in current BSS. */
+	/* From Capability Info. of AssocResp Frame
+	 * AND of Beacon/ProbeResp Frame
+	 */
+	u_int8_t fgIsShortPreambleAllowed;
+	/* Short Preamble is enabled in current BSS. */
+	u_int8_t fgUseShortPreamble;
+	/* Short Slot Time is enabled in current BSS. */
+	u_int8_t fgUseShortSlotTime;
 
-	uint16_t u2OperationalRateSet;	/* Operational Rate Set of current BSS */
+	/* Operational Rate Set of current BSS */
+	uint16_t u2OperationalRateSet;
 	uint16_t u2BSSBasicRateSet;	/* Basic Rate Set of current BSS */
 
-	uint8_t ucAllSupportedRatesLen;	/* Used for composing Beacon Frame in AdHoc or AP Mode */
+	/* Used for composing Beacon Frame in AdHoc or AP Mode */
+	uint8_t ucAllSupportedRatesLen;
 	uint8_t aucAllSupportedRates[RATE_NUM_SW];
-
-	uint8_t ucAssocClientCnt;	/* TODO(Kevin): Number of associated clients */
+	/* TODO(Kevin): Number of associated clients */
+	uint8_t ucAssocClientCnt;
 
 	u_int8_t fgIsProtection;
-	u_int8_t fgIsQBSS;	/* fgIsWmmBSS; *//* For Infra/AP/IBSS Mode, it is used to indicate if we support WMM in
-				* current BSS.
-				*/
+	/* For Infra/AP/IBSS Mode, it is used to indicate if we support WMM in
+	 * current BSS.
+	 */
+	u_int8_t fgIsQBSS;
 	u_int8_t fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
 
 	uint32_t u4RsnSelectedGroupCipher;
@@ -372,13 +396,14 @@ struct BSS_INFO {
 	uint32_t u4RsnSelectedAKMSuite;
 	uint16_t u2RsnSelectedCapInfo;
 
-	/*------------------------------------------------------------------------*/
-	    /* Operation mode change notification			      */
-	/*------------------------------------------------------------------------*/
-
-	u_int8_t fgIsOpChangeChannelWidth; /*Need to change OpMode channel width*/
-	uint8_t ucOpChangeChannelWidth; /* The OpMode channel width that we want to change to*/
-					/* 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz*/
+	/*-------------------------------------------------------------------*/
+	/* Operation mode change notification                                */
+	/*-------------------------------------------------------------------*/
+	/*Need to change OpMode channel width*/
+	u_int8_t fgIsOpChangeChannelWidth;
+	/* The OpMode channel width that we want to change to*/
+	/* 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz*/
+	uint8_t ucOpChangeChannelWidth;
 	u_int8_t fgIsOpChangeNss; /*Need to change OpMode Nss*/
 	uint8_t ucOpChangeNss; /* The OpMode Nss that we want to change to */
 
@@ -389,50 +414,53 @@ struct BSS_INFO {
 	uint8_t aucOpModeChangeRetryCnt[OP_NOTIFY_TYPE_NUM];
 
 
-    /*------------------------------------------------------------------------*/
-	/* Power Management related information                                   */
-    /*------------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* Power Management related information                              */
+	/*-------------------------------------------------------------------*/
 	struct PM_PROFILE_SETUP_INFO rPmProfSetupInfo;
 
-    /*------------------------------------------------------------------------*/
-	/* WMM/QoS related information                                            */
-    /*------------------------------------------------------------------------*/
-	uint8_t ucWmmParamSetCount;	/* Used to detect the change of EDCA parameters. For AP mode,
-					*the value is used in WMM IE
-					*/
+	/*-------------------------------------------------------------------*/
+	/* WMM/QoS related information                                       */
+	/*-------------------------------------------------------------------*/
+	/* Used to detect the change of EDCA parameters. For AP mode,
+	 * the value is used in WMM IE
+	 */
+	uint8_t ucWmmParamSetCount;
 
 	struct AC_QUE_PARMS arACQueParms[WMM_AC_INDEX_NUM];
-
-	uint8_t aucCWminLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWminLog2 */
-	uint8_t aucCWmaxLog2ForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the CWmaxLog2 */
-	struct AC_QUE_PARMS arACQueParmsForBcast[WMM_AC_INDEX_NUM];	/* For AP mode, broadcast the value */
+	/* For AP mode, broadcast the CWminLog2 */
+	uint8_t aucCWminLog2ForBcast[WMM_AC_INDEX_NUM];
+	/* For AP mode, broadcast the CWmaxLog2 */
+	uint8_t aucCWmaxLog2ForBcast[WMM_AC_INDEX_NUM];
+	/* For AP mode, broadcast the value */
+	struct AC_QUE_PARMS arACQueParmsForBcast[WMM_AC_INDEX_NUM];
 	uint8_t ucWmmQueSet;
 
-    /*------------------------------------------------------------------------*/
-	/* 802.11n HT operation IE when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_HT) */
-	/* is true. They have the same definition with fields of                  */
-	/* information element (CM)                                               */
-    /*------------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* 802.11n HT operation IE when (prStaRec->ucPhyTypeSet              */
+	/* & PHY_TYPE_BIT_HT) is true. They have the same definition with    */
+	/* fields of information element (CM)                                */
+	/*-------------------------------------------------------------------*/
 	enum ENUM_BAND eBand;
 	uint8_t ucPrimaryChannel;
 	uint8_t ucHtOpInfo1;
 	uint16_t u2HtOpInfo2;
 	uint16_t u2HtOpInfo3;
 	uint8_t ucNss;	/* Own OP Nss */
-    /*------------------------------------------------------------------------*/
-	/* 802.11ac VHT operation IE when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_VHT) */
-	/* is true. They have the same definition with fields of                  */
-	/* information element (EASON)                                               */
-    /*------------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* 802.11ac VHT operation IE when (prStaRec->ucPhyTypeSet            */
+	/* & PHY_TYPE_BIT_VHT) is true. They have the same definition with   */
+	/* fields of information element (EASON)                             */
+	/*-------------------------------------------------------------------*/
 #if 1				/* CFG_SUPPORT_802_11AC */
 	uint8_t ucVhtChannelWidth;
 	uint8_t ucVhtChannelFrequencyS1;
 	uint8_t ucVhtChannelFrequencyS2;
 	uint16_t u2VhtBasicMcsSet;
 #endif
-    /*------------------------------------------------------------------------*/
-	/* Required protection modes (CM)                                         */
-    /*------------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* Required protection modes (CM)                                    */
+	/*-------------------------------------------------------------------*/
 	u_int8_t fgErpProtectMode;
 	enum ENUM_HT_PROTECT_MODE eHtProtectMode;
 	enum ENUM_GF_MODE eGfOperationMode;
@@ -443,10 +471,10 @@ struct BSS_INFO {
 	enum ENUM_GF_MODE eObssGfOperationMode;	/* GO only */
 	u_int8_t fgObssRifsOperationMode;	/* GO only */
 
-    /*------------------------------------------------------------------------*/
-	/* OBSS to decide if 20/40M bandwidth is permitted.                       */
-	/* The first member indicates the following channel list length.          */
-    /*------------------------------------------------------------------------*/
+	/*-------------------------------------------------------------------*/
+	/* OBSS to decide if 20/40M bandwidth is permitted.                  */
+	/* The first member indicates the following channel list length.     */
+	/*-------------------------------------------------------------------*/
 	u_int8_t fgAssoc40mBwAllowed;
 	u_int8_t fg40mBwAllowed;
 	enum ENUM_CHNL_EXT eBssSCO;	/* Real setting for HW
@@ -469,10 +497,11 @@ struct BSS_INFO {
 	u_int8_t fgObssActionForcedTo20M;	/* GO only */
 	u_int8_t fgObssBeaconForcedTo20M;	/* GO only */
 
-    /*------------------------------------------------------------------------*/
-	/* HW Related Fields (Kevin)                                              */
-    /*------------------------------------------------------------------------*/
-	uint16_t u2HwDefaultFixedRateCode;	/* The default rate code copied to MAC TX Desc */
+	/*--------------------------------------------------------------------*/
+	/* HW Related Fields (Kevin)                                          */
+	/*--------------------------------------------------------------------*/
+	/* The default rate code copied to MAC TX Desc */
+	uint16_t u2HwDefaultFixedRateCode;
 	uint16_t u2HwLPWakeupGuardTimeUsec;
 
 	uint8_t ucBssFreeQuota;	/* The value is updated from FW  */
@@ -491,7 +520,8 @@ struct BSS_INFO {
 	u_int8_t fgIsNetRequestInActive;
 #endif
 
-	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];	/*link layer statistics */
+	/*link layer statistics */
+	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];
 
 	uint32_t u4CoexPhyRateLimit;
 
@@ -515,26 +545,29 @@ struct BSS_INFO {
 };
 
 struct AIS_SPECIFIC_BSS_INFO {
-	uint8_t ucRoamingAuthTypes;	/* This value indicate the roaming type used in AIS_JOIN */
+	/* This value indicate the roaming type used in AIS_JOIN */
+	uint8_t ucRoamingAuthTypes;
 
 	u_int8_t fgIsIBSSActive;
 
-	/*! \brief Global flag to let arbiter stay at standby and not connect to any network */
+	/*! \brief Global flag to let arbiter stay at standby
+	 *  and not connect to any network
+	 */
 	u_int8_t fgCounterMeasure;
-	/* UINT_8                  ucTxWlanIndex; *//* Legacy wep, adhoc wep wpa Transmit key wlan index */
-
-	/* BOOLEAN                 fgKeyMaterialExist[4]; */
-	/* UINT_8                  aucKeyMaterial[32][4]; */
 
 #if 0
 	u_int8_t fgWepWapiBcKeyExist;	/* WEP WAPI BC key exist flag */
 	uint8_t ucWepWapiBcWlanIndex;	/* WEP WAPI BC wlan index */
 
-	u_int8_t fgRsnBcKeyExist[4];	/* RSN BC key exist flag, map to key id 0, 1, 2, 3 */
-	uint8_t ucRsnBcWlanIndex[4];	/* RSN BC wlan index, map to key id 0, 1, 2, 3 */
+	/* RSN BC key exist flag, map to key id 0, 1, 2, 3 */
+	u_int8_t fgRsnBcKeyExist[4];
+	/* RSN BC wlan index, map to key id 0, 1, 2, 3 */
+	uint8_t ucRsnBcWlanIndex[4];
 #endif
 
-	/* While Do CounterMeasure procedure, check the EAPoL Error report have send out */
+	/* While Do CounterMeasure procedure,
+	 * check the EAPoL Error report have send out
+	 */
 	u_int8_t fgCheckEAPoLTxDone;
 
 	uint32_t u4RsnaLastMICFailTime;
@@ -604,7 +637,8 @@ struct WLAN_TABLE {
 };
 
 /* Major member variables for WiFi FW operation.
- *  Variables within this region will be ready for access after WIFI function is enabled.
+ * Variables within this region will be ready for
+ * access after WIFI function is enabled.
  */
 struct WIFI_VAR {
 	u_int8_t fgIsRadioOff;
@@ -662,9 +696,10 @@ struct WIFI_VAR {
 
 	uint8_t ucAvailablePhyTypeSet;
 
-	enum ENUM_PHY_TYPE_INDEX eNonHTBasicPhyType2G4;	/* Basic Phy Type used by SCN according
-							 * to the set of Available PHY Types
-							 */
+	/* Basic Phy Type used by SCN according
+	 * to the set of Available PHY Types
+	 */
+	enum ENUM_PHY_TYPE_INDEX eNonHTBasicPhyType2G4;
 
 	enum ENUM_PARAM_PREAMBLE_TYPE ePreambleType;
 	enum ENUM_REGISTRY_FIXED_RATE eRateSetting;
@@ -755,7 +790,9 @@ struct WIFI_VAR {
 	uint8_t ucP2p5gBandwidth;
 	uint8_t ucP2p2gBandwidth;
 
-	/* If enable, AP channel bandwidth Channel Center Frequency Segment 0/1 */
+	/* If enable, AP channel bandwidth Channel
+	 * Center Frequency Segment 0/1
+	 */
 	/* and secondary channel offset will align wifi.cfg */
 	/* Otherwise align cfg80211 */
 	uint8_t ucApChnlDefFromCfg;
@@ -843,12 +880,14 @@ struct WIFI_VAR {
 	uint32_t u4WakeLockRxTimeout;
 	uint32_t u4WakeLockThreadWakeup;
 	uint32_t u4RegP2pIfAtProbe; /* register p2p interface during probe */
-	uint8_t ucP2pShareMacAddr; /* p2p group interface use the same mac addr as p2p device interface */
+	/* p2p group interface use the same mac addr as p2p device interface */
+	uint8_t ucP2pShareMacAddr;
 	uint8_t ucSmartRTS;
 
 	uint32_t u4UapsdAcBmp;
 	uint32_t u4MaxSpLen;
-	uint32_t fgDisOnlineScan;	/* 0: enable online scan, non-zero: disable online scan */
+	/* 0: enable online scan, non-zero: disable online scan */
+	uint32_t fgDisOnlineScan;
 	uint32_t fgDisBcnLostDetection;
 	uint32_t fgDisRoaming;		/* 0:enable roaming 1:disable */
 	uint32_t fgEnArpFilter;
@@ -920,23 +959,20 @@ struct WIFI_VER_INFO {
 
 #if CFG_ENABLE_WIFI_DIRECT
 /*
-* p2p function pointer structure
-*/
+ * p2p function pointer structure
+ */
 
 struct P2P_FUNCTION_LINKER {
 	P2P_REMOVE prP2pRemove;
-/* NIC_P2P_MEDIA_STATE_CHANGE                  prNicP2pMediaStateChange; */
-/* SCAN_UPDATE_P2P_DEVICE_DESC                 prScanUpdateP2pDeviceDesc; */
-/* P2P_FSM_RUN_EVENT_RX_PROBE_RESPONSE_FRAME   prP2pFsmRunEventRxProbeResponseFrame; */
+
 	P2P_GENERATE_P2P_IE prP2pGenerateWSC_IEForBeacon;
-/* P2P_CALCULATE_WSC_IE_LEN_FOR_PROBE_RSP      prP2pCalculateWSC_IELenForProbeRsp; */
-/* P2P_GENERATE_WSC_IE_FOR_PROBE_RSP           prP2pGenerateWSC_IEForProbeRsp; */
-/* SCAN_REMOVE_P2P_BSS_DESC                    prScanRemoveP2pBssDesc; */
-/* P2P_HANDLE_SEC_CHECK_RSP                    prP2pHandleSecCheckRsp; */
+
 	P2P_NET_REGISTER prP2pNetRegister;
 	P2P_NET_UNREGISTER prP2pNetUnregister;
-	P2P_CALCULATE_P2P_IE_LEN prP2pCalculateP2p_IELenForAssocReq;	/* All IEs generated from supplicant. */
-	P2P_GENERATE_P2P_IE prP2pGenerateP2p_IEForAssocReq;	/* All IEs generated from supplicant. */
+	/* All IEs generated from supplicant. */
+	P2P_CALCULATE_P2P_IE_LEN prP2pCalculateP2p_IELenForAssocReq;
+	/* All IEs generated from supplicant. */
+	P2P_GENERATE_P2P_IE prP2pGenerateP2p_IEForAssocReq;
 };
 
 #endif
@@ -962,7 +998,8 @@ enum _ENUM_NCHO_DFS_SCN_MODE_T {
 };
 
 struct _CFG_NCHO_RE_ASSOC_T {
-	uint32_t u4SsidLen;	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
+	/*!< SSID length in bytes. Zero length is broadcast(any) SSID */
+	uint32_t u4SsidLen;
 	uint8_t aucSsid[ELEM_MAX_LEN_SSID];
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	uint32_t u4CenterFreq;
@@ -1051,7 +1088,8 @@ struct ADAPTER {
 	uint16_t u2NicOpChnlNum;
 
 	u_int8_t fgIsEnableWMM;
-	u_int8_t fgIsWmmAssoc;	/* This flag is used to indicate that WMM is enable in current BSS */
+	/* This flag is used to indicate that WMM is enable in current BSS */
+	u_int8_t fgIsWmmAssoc;
 
 	uint32_t u4OsPacketFilter;	/* packet filter used by OS */
 	u_int8_t fgAllMulicastFilter;	/* mDNS filter used by OS */
@@ -1064,7 +1102,8 @@ struct ADAPTER {
 	uint8_t ucP2PDevBssIdx;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	u_int8_t fgIsSupportCsumOffload; /* Does FW support Checksum Offload feature */
+	/* Does FW support Checksum Offload feature */
+	u_int8_t fgIsSupportCsumOffload;
 	uint32_t u4CSUMFlags;
 #endif				/* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
@@ -1080,7 +1119,8 @@ struct ADAPTER {
 
 	uint8_t aucMacAddress[MAC_ADDR_LEN];
 
-	enum ENUM_PHY_TYPE_INDEX eCurrentPhyType;	/* Current selection basing on the set of Available PHY Types */
+	/* Current selection basing on the set of Available PHY Types */
+	enum ENUM_PHY_TYPE_INDEX eCurrentPhyType;
 
 	uint32_t u4CoalescingBufCachedSize;
 	uint8_t *pucCoalescingBufCached;
@@ -1134,8 +1174,10 @@ struct ADAPTER {
 	u_int8_t fgTxDirectInited;
 
 	#define TX_DIRECT_CHECK_INTERVAL	(1000 * HZ / USEC_PER_SEC)
-	struct timer_list rTxDirectSkbTimer; /* check if an empty MsduInfo is available */
-	struct timer_list rTxDirectHifTimer; /* check if HIF port is ready to accept a new Msdu */
+	/* check if an empty MsduInfo is available */
+	struct timer_list rTxDirectSkbTimer;
+	/* check if HIF port is ready to accept a new Msdu */
+	struct timer_list rTxDirectHifTimer;
 
 	struct sk_buff_head rTxDirectSkbQueue;
 	struct QUE rTxDirectHifQueue[TX_PORT_NUM];
@@ -1360,19 +1402,19 @@ struct ADAPTER {
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #define SUSPEND_FLAG_FOR_WAKEUP_REASON (0)
 #define SUSPEND_FLAG_CLEAR_WHEN_RESUME (1)
@@ -1400,41 +1442,42 @@ struct ADAPTER {
 	{(_prAdapter)->aprBssInfo[(_BssIndex)]->fgIsNetActive = FALSE; }
 
 #define BSS_INFO_INIT(_prAdapter, _prBssInfo) \
-	{   uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR; \
-	    \
-	    (_prBssInfo)->eConnectionState = PARAM_MEDIA_STATE_DISCONNECTED; \
-	    (_prBssInfo)->eConnectionStateIndicated = PARAM_MEDIA_STATE_DISCONNECTED; \
-	    (_prBssInfo)->eCurrentOPMode = OP_MODE_INFRASTRUCTURE; \
-	    (_prBssInfo)->ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED; \
-	    COPY_MAC_ADDR((_prBssInfo)->aucBSSID, _aucZeroMacAddr); \
-	    LINK_INITIALIZE(&((_prBssInfo)->rStaRecOfClientList)); \
-	    (_prBssInfo)->fgIsBeaconActivated = FALSE; \
-	    (_prBssInfo)->u2HwDefaultFixedRateCode = RATE_CCK_1M_LONG; \
-	}
+{   uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR; \
+	\
+	(_prBssInfo)->eConnectionState = PARAM_MEDIA_STATE_DISCONNECTED; \
+	(_prBssInfo)->eConnectionStateIndicated = \
+		PARAM_MEDIA_STATE_DISCONNECTED; \
+	(_prBssInfo)->eCurrentOPMode = OP_MODE_INFRASTRUCTURE; \
+	(_prBssInfo)->ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED; \
+	COPY_MAC_ADDR((_prBssInfo)->aucBSSID, _aucZeroMacAddr); \
+	LINK_INITIALIZE(&((_prBssInfo)->rStaRecOfClientList)); \
+	(_prBssInfo)->fgIsBeaconActivated = FALSE; \
+	(_prBssInfo)->u2HwDefaultFixedRateCode = RATE_CCK_1M_LONG; \
+}
 
 /*----------------------------------------------------------------------------*/
 /* Macros for Power State                                                     */
 /*----------------------------------------------------------------------------*/
 #define SET_NET_PWR_STATE_IDLE(_prAdapter, _BssIndex) \
-		{_prAdapter->rWifiVar.aePwrState[(_BssIndex)] = PWR_STATE_IDLE; }
+	{_prAdapter->rWifiVar.aePwrState[(_BssIndex)] = PWR_STATE_IDLE; }
 
 #define SET_NET_PWR_STATE_ACTIVE(_prAdapter, _BssIndex) \
-		{_prAdapter->rWifiVar.aePwrState[(_BssIndex)] = PWR_STATE_ACTIVE; }
+	{_prAdapter->rWifiVar.aePwrState[(_BssIndex)] = PWR_STATE_ACTIVE; }
 
 #define SET_NET_PWR_STATE_PS(_prAdapter, _BssIndex) \
-		{_prAdapter->rWifiVar.aePwrState[(_BssIndex)] = PWR_STATE_PS; }
+	{_prAdapter->rWifiVar.aePwrState[(_BssIndex)] = PWR_STATE_PS; }
 
 #define IS_NET_PWR_STATE_ACTIVE(_prAdapter, _BssIndex) \
-		(_prAdapter->rWifiVar.aePwrState[(_BssIndex)] == PWR_STATE_ACTIVE)
+	(_prAdapter->rWifiVar.aePwrState[(_BssIndex)] == PWR_STATE_ACTIVE)
 
 #define IS_NET_PWR_STATE_IDLE(_prAdapter, _BssIndex) \
-		(_prAdapter->rWifiVar.aePwrState[(_BssIndex)] == PWR_STATE_IDLE)
+	(_prAdapter->rWifiVar.aePwrState[(_BssIndex)] == PWR_STATE_IDLE)
 
 #define IS_SCN_PWR_STATE_ACTIVE(_prAdapter) \
-		(_prAdapter->rWifiVar.rScanInfo.eScanPwrState == SCAN_PWR_STATE_ACTIVE)
+	(_prAdapter->rWifiVar.rScanInfo.eScanPwrState == SCAN_PWR_STATE_ACTIVE)
 
 #define IS_SCN_PWR_STATE_IDLE(_prAdapter) \
-		(_prAdapter->rWifiVar.rScanInfo.eScanPwrState == SCAN_PWR_STATE_IDLE)
+	(_prAdapter->rWifiVar.rScanInfo.eScanPwrState == SCAN_PWR_STATE_IDLE)
 
 #define IS_WIFI_2G4_WF0_SUPPORT(_prAdapter) \
 	((_prAdapter)->rWifiFemCfg.u2WifiPath & WLAN_FLAG_2G4_WF0)
@@ -1449,27 +1492,33 @@ struct ADAPTER {
 	((_prAdapter)->rWifiFemCfg.u2WifiPath & WLAN_FLAG_5G_WF1)
 
 #define IS_WIFI_2G4_SISO(_prAdapter) \
-	((IS_WIFI_2G4_WF0_SUPPORT(_prAdapter) && !(IS_WIFI_2G4_WF1_SUPPORT(_prAdapter))) || \
-	(IS_WIFI_2G4_WF1_SUPPORT(_prAdapter) && !(IS_WIFI_2G4_WF0_SUPPORT(_prAdapter))))
+	((IS_WIFI_2G4_WF0_SUPPORT(_prAdapter) && \
+	!(IS_WIFI_2G4_WF1_SUPPORT(_prAdapter))) || \
+	(IS_WIFI_2G4_WF1_SUPPORT(_prAdapter) && \
+	!(IS_WIFI_2G4_WF0_SUPPORT(_prAdapter))))
 
 #define IS_WIFI_5G_SISO(_prAdapter) \
-	((IS_WIFI_5G_WF0_SUPPORT(_prAdapter) && !(IS_WIFI_5G_WF1_SUPPORT(_prAdapter))) || \
-	(IS_WIFI_5G_WF1_SUPPORT(_prAdapter) && !(IS_WIFI_5G_WF0_SUPPORT(_prAdapter))))
+	((IS_WIFI_5G_WF0_SUPPORT(_prAdapter) && \
+	!(IS_WIFI_5G_WF1_SUPPORT(_prAdapter))) || \
+	(IS_WIFI_5G_WF1_SUPPORT(_prAdapter) && \
+	!(IS_WIFI_5G_WF0_SUPPORT(_prAdapter))))
 
 #define IS_WIFI_SMART_GEAR_SUPPORT_WF0_SISO(_prAdapter) \
-	((_prAdapter)->ucSmarGearSupportSisoOnly && ((_prAdapter)->ucSmartGearWfPathSupport == BIT(ANTENNA_WF0)))
+	((_prAdapter)->ucSmarGearSupportSisoOnly && \
+	((_prAdapter)->ucSmartGearWfPathSupport == BIT(ANTENNA_WF0)))
 
 #define IS_WIFI_SMART_GEAR_SUPPORT_WF1_SISO(_prAdapter) \
-	((_prAdapter)->ucSmarGearSupportSisoOnly && ((_prAdapter)->ucSmartGearWfPathSupport == BIT(ANTENNA_WF1)))
+	((_prAdapter)->ucSmarGearSupportSisoOnly && \
+	((_prAdapter)->ucSmartGearWfPathSupport == BIT(ANTENNA_WF1)))
 
 /*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif /* _ADAPTER_H */

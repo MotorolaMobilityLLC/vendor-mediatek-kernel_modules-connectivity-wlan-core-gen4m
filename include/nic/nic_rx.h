@@ -49,33 +49,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-/*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/include/nic/nic_rx.h#1
-*/
-
 /*! \file   "nic_rx.h"
-*    \brief  The declaration of the nic rx functions
-*
-*/
+ *    \brief  The declaration of the nic rx functions
+ *
+ */
 
 
 #ifndef _NIC_RX_H
 #define _NIC_RX_H
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define UNIFIED_MAC_RX_FORMAT               1
 
@@ -115,7 +111,7 @@
 /*------------------------------------------------------------------------------
  * Cipher define
  *------------------------------------------------------------------------------
-*/
+ */
 #define CIPHER_SUITE_NONE               0
 #define CIPHER_SUITE_WEP40              1
 #define CIPHER_SUITE_TKIP               2
@@ -131,7 +127,7 @@
 /*------------------------------------------------------------------------------
  * Bit fields for HW_MAC_RX_DESC_T
  *------------------------------------------------------------------------------
-*/
+ */
 
 /*! MAC RX DMA Descriptor */
 /* DW 0*/
@@ -193,8 +189,9 @@
 #define RX_STATUS_AMPDU_SUB_FRAME       BIT(14)
 #define RX_STATUS_AMPDU_FORMAT          BIT(15)
 #define PAYLOAD_FORMAT_IS_MSDU_FRAME    0
-#define RX_STATUS_FLAG_ERROR_MASK      (RX_STATUS_FLAG_FCS_ERROR | RX_STATUS_FLAG_ICV_ERROR | \
-					RX_STATUS_FLAG_CIPHER_LENGTH_MISMATCH)	/* No TKIP MIC error */
+#define RX_STATUS_FLAG_ERROR_MASK \
+	(RX_STATUS_FLAG_FCS_ERROR | RX_STATUS_FLAG_ICV_ERROR | \
+	RX_STATUS_FLAG_CIPHER_LENGTH_MISMATCH)	/* No TKIP MIC error */
 
 /* DW 3 */
 #define RX_STATUS_RXV_SEQ_NO_MASK       BITS(0, 7)
@@ -245,8 +242,10 @@
 /* TBD */
 #define DMA_OWN_TO_HW          BIT(0)
 #define DMA_OWN_TO_FW_PENDING  BIT(1)
-#define STATUS_IS_OWN_TO_FW(flag)   (((flag) & DMA_OWN_TO_HW) ? FALSE : TRUE)
-#define STATUS_IS_FW_PENDING(flag)  (((flag) & DMA_OWN_TO_FW_PENDING) ? TRUE : FALSE)
+#define STATUS_IS_OWN_TO_FW(flag) \
+	(((flag) & DMA_OWN_TO_HW) ? FALSE : TRUE)
+#define STATUS_IS_FW_PENDING(flag) \
+	(((flag) & DMA_OWN_TO_FW_PENDING) ? TRUE : FALSE)
 
 /* DW 2 */
 #define RX_STATUS_PACKET_LENGTH_MASK    BITS(0, 16)
@@ -267,7 +266,7 @@
 /*------------------------------------------------------------------------------
  * Bit fields for HW_RX_VECTOR_DESC_T
  *------------------------------------------------------------------------------
-*/
+ */
 /* DW 2 */
 #define RX_VECTOR_FOR_BA_ACK        BIT(7)
 
@@ -285,7 +284,7 @@
 /*------------------------------------------------------------------------------
  * Bit fields for PHY Vector
  *------------------------------------------------------------------------------
-*/
+ */
 
 /* RX Vector, 1st Cycle */
 #define RX_VT_RX_RATE_AC_MASK      BITS(0, 3)
@@ -308,8 +307,10 @@
 #define RX_VT_NO_SOUNDING          BIT(21)
 #define RX_VT_SOUNDING             BIT(21)
 #if 0
-#define RX_VT_SHORT_GI_NSYM	   BIT(22)  /* VHT_SIG_A2[B1], not defined in MT6632 */
-#define RX_VT_CODING_MASK	   BITS(23, 24) /* VHT_SIG_A2[B2:B3], not defined in MT6632 */
+/* VHT_SIG_A2[B1], not defined in MT6632 */
+#define RX_VT_SHORT_GI_NSYM	   BIT(22)
+/* VHT_SIG_A2[B2:B3], not defined in MT6632 */
+#define RX_VT_CODING_MASK	   BITS(23, 24)
 #define RX_VT_CODING_OFFSET	   23
 #endif
 #define RX_VT_NUM_RX_MASK          BITS(22, 23)
@@ -460,7 +461,7 @@
 /*------------------------------------------------------------------------------
  * Radiotap define
  *------------------------------------------------------------------------------
-*/
+ */
 
 /*Radiotap VHT*/
 #define RADIOTAP_VHT_ALL_KNOWN			BITS(0, 8)
@@ -476,9 +477,9 @@
 
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 enum ENUM_RX_STATISTIC_COUNTER {
 	RX_MPDU_TOTAL_COUNT = 0,
 	RX_SIZE_ERR_DROP_COUNT,
@@ -526,10 +527,14 @@ enum ENUM_RX_STATISTIC_COUNTER {
 };
 
 enum ENUM_RX_PKT_DESTINATION {
-	RX_PKT_DESTINATION_HOST,	/* to OS */
-	RX_PKT_DESTINATION_FORWARD,	/* to TX queue for forward, AP mode */
-	RX_PKT_DESTINATION_HOST_WITH_FORWARD,	/* to both TX and OS, AP mode broadcast packet */
-	RX_PKT_DESTINATION_NULL,	/* packet to be freed */
+	/* to OS */
+	RX_PKT_DESTINATION_HOST,
+	/* to TX queue for forward, AP mode */
+	RX_PKT_DESTINATION_FORWARD,
+	/* to both TX and OS, AP mode broadcast packet */
+	RX_PKT_DESTINATION_HOST_WITH_FORWARD,
+	/* packet to be freed */
+	RX_PKT_DESTINATION_NULL,
 	RX_PKT_DESTINATION_NUM
 };
 
@@ -572,7 +577,9 @@ enum ENUM_RXPI_MODE {
 #define RXM_RXD_PKT_TYPE_SW_EVENT  0xE000
 #define RXM_RXD_PKT_TYPE_SW_FRAME  0xE001
 
-/* AMPDU data frame with no errors including FC/FM/I/T/LM/DAF/EL/LLC-MIS/ UDFVLT and Class 3 error */
+/* AMPDU data frame with no errors including
+ * FC/FM/I/T/LM/DAF/EL/LLC-MIS/ UDFVLT and Class 3 error
+ */
 #define RXS_DW2_AMPDU_nERR_BITMAP  0xFFFB /* ignore CM bit (2) 0xFFFF */
 #define RXS_DW2_AMPDU_nERR_VALUE   0x0000
 /* no error including FC/CLM/I/T/LM/DAF/EL/HTF */
@@ -589,9 +596,9 @@ enum ENUM_RXPI_MODE {
 #define RXS_DW2_RX_FRAG_VALUE      0x0800
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*! A data structure which is identical with MAC RX DMA Descriptor */
 struct HW_MAC_RX_DESC {
@@ -731,7 +738,8 @@ struct SW_RFB {
 
 	enum ENUM_CSUM_RESULT aeCSUM[CSUM_TYPE_NUM];
 	enum ENUM_RX_PKT_DESTINATION eDst;
-	enum ENUM_TRAFFIC_CLASS_INDEX eTC;	/* only valid when eDst == FORWARD */
+	/* only valid when eDst == FORWARD */
+	enum ENUM_TRAFFIC_CLASS_INDEX eTC;
 #if 0
 	/* RX reorder for one MSDU in AMSDU issue */
 	/*QUE_T rAmsduQue;*/
@@ -773,7 +781,8 @@ struct RX_CTRL {
 
 	uint8_t ucNumIndPacket;
 	uint8_t ucNumRetainedPacket;
-	uint64_t au8Statistics[RX_STATISTIC_COUNTER_NUM];	/*!< RX Counters */
+	/*!< RX Counters */
+	uint64_t au8Statistics[RX_STATISTIC_COUNTER_NUM];
 
 #if CFG_HIF_STATISTICS
 	uint32_t u4TotalRxAccessNum;
@@ -800,7 +809,8 @@ struct RX_MAILBOX {
 
 typedef uint32_t(*PROCESS_RX_MGT_FUNCTION) (struct ADAPTER *, struct SW_RFB *);
 
-typedef void(*PROCESS_RX_EVENT_FUNCTION) (struct ADAPTER *, struct WIFI_EVENT *);
+typedef void(*PROCESS_RX_EVENT_FUNCTION) (struct ADAPTER *,
+	struct WIFI_EVENT *);
 
 struct RX_EVENT_HANDLER {
 	enum ENUM_EVENT_ID eEID;
@@ -813,38 +823,41 @@ struct EMU_MAC_RATE_INFO {
 };
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
-#define RATE_INFO(_RateCode, _Bw20, _Bw20SGI, _Bw40, _BW40SGI, _Bw80, _Bw80SGI, _Bw160, _Bw160SGI) \
-	    { \
-		.ucPhyRateCode                                    = (_RateCode), \
-		.u4PhyRate[RX_VT_FR_MODE_20][MAC_GI_NORMAL]       = (_Bw20), \
-		.u4PhyRate[RX_VT_FR_MODE_20][MAC_GI_SHORT]        = (_Bw20SGI), \
-		.u4PhyRate[RX_VT_FR_MODE_40][MAC_GI_NORMAL]       = (_Bw40), \
-		.u4PhyRate[RX_VT_FR_MODE_40][MAC_GI_SHORT]        = (_BW40SGI), \
-		.u4PhyRate[RX_VT_FR_MODE_80][MAC_GI_NORMAL]       = (_Bw80), \
-		.u4PhyRate[RX_VT_FR_MODE_80][MAC_GI_SHORT]        = (_Bw80SGI), \
-		.u4PhyRate[RX_VT_FR_MODE_160][MAC_GI_NORMAL]      = (_Bw160), \
-		.u4PhyRate[RX_VT_FR_MODE_160][MAC_GI_SHORT]       = (_Bw160SGI), \
-	    }
+ *                                 M A C R O S
+ *******************************************************************************
+ */
+#define RATE_INFO(_RateCode, _Bw20, _Bw20SGI, _Bw40, _BW40SGI, \
+	_Bw80, _Bw80SGI, _Bw160, _Bw160SGI) \
+	{ \
+	.ucPhyRateCode                                    = (_RateCode), \
+	.u4PhyRate[RX_VT_FR_MODE_20][MAC_GI_NORMAL]       = (_Bw20), \
+	.u4PhyRate[RX_VT_FR_MODE_20][MAC_GI_SHORT]        = (_Bw20SGI), \
+	.u4PhyRate[RX_VT_FR_MODE_40][MAC_GI_NORMAL]       = (_Bw40), \
+	.u4PhyRate[RX_VT_FR_MODE_40][MAC_GI_SHORT]        = (_BW40SGI), \
+	.u4PhyRate[RX_VT_FR_MODE_80][MAC_GI_NORMAL]       = (_Bw80), \
+	.u4PhyRate[RX_VT_FR_MODE_80][MAC_GI_SHORT]        = (_Bw80SGI), \
+	.u4PhyRate[RX_VT_FR_MODE_160][MAC_GI_NORMAL]      = (_Bw160), \
+	.u4PhyRate[RX_VT_FR_MODE_160][MAC_GI_SHORT]       = (_Bw160SGI), \
+	}
 
 #define RX_INC_CNT(prRxCtrl, eCounter)              \
 	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter]++; }
 
 #define RX_ADD_CNT(prRxCtrl, eCounter, u8Amount)    \
-	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter] += (uint64_t)u8Amount; }
+	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter] += \
+	(uint64_t)u8Amount; }
 
 #define RX_GET_CNT(prRxCtrl, eCounter)              \
 	(((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter])
 
 #define RX_RESET_ALL_CNTS(prRxCtrl)                 \
-	{kalMemZero(&prRxCtrl->au8Statistics[0], sizeof(prRxCtrl->au8Statistics)); }
+	{kalMemZero(&prRxCtrl->au8Statistics[0], \
+	sizeof(prRxCtrl->au8Statistics)); }
 
 #define RX_STATUS_TEST_MORE_FLAG(flag)	\
 	((u_int8_t)((flag & RX_STATUS_FLAG_MORE_PACKET) ? TRUE : FALSE))
@@ -852,80 +865,112 @@ struct EMU_MAC_RATE_INFO {
 /*------------------------------------------------------------------------------
  * MACRO for HW_MAC_RX_DESC_T
  *------------------------------------------------------------------------------
-*/
+ */
 /* DW 0 */
-#define HAL_RX_STATUS_GET_RX_BYTE_CNT(_prHwMacRxDesc) ((_prHwMacRxDesc)->u2RxByteCount)
+#define HAL_RX_STATUS_GET_RX_BYTE_CNT(_prHwMacRxDesc) \
+	((_prHwMacRxDesc)->u2RxByteCount)
 #define HAL_RX_STATUS_GET_ETH_TYPE_OFFSET(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2PktTYpe & RX_STATUS_ETH_TYPE_OFFSET_MASK) >> RX_STATUS_ETH_TYPE_OFFSET)
+	(((_prHwMacRxDesc)->u2PktTYpe & RX_STATUS_ETH_TYPE_OFFSET_MASK) >> \
+	RX_STATUS_ETH_TYPE_OFFSET)
 #define HAL_RX_STATUS_GET_GROUP_VLD(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2PktTYpe & RX_STATUS_GROUP_VLD_MASK) >> RX_STATUS_GROUP_VLD_OFFSET)
+	(((_prHwMacRxDesc)->u2PktTYpe & RX_STATUS_GROUP_VLD_MASK) >> \
+	RX_STATUS_GROUP_VLD_OFFSET)
 #define HAL_RX_STATUS_GET_PKT_TYPE(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2PktTYpe & RX_STATUS_PKT_TYPE_MASK) >> RX_STATUS_PKT_TYPE_OFFSET)
+	(((_prHwMacRxDesc)->u2PktTYpe & RX_STATUS_PKT_TYPE_MASK) \
+	>> RX_STATUS_PKT_TYPE_OFFSET)
 
 /* DW 1 */
-#define HAL_RX_STATUS_IS_HTC_EXIST(_prHwMacRxDesc)        (((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_HTC)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_UC2ME(_prHwMacRxDesc)        (((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_UC2ME)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_MC(_prHwMacRxDesc)        (((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_MC_FRAME)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_BC(_prHwMacRxDesc)        (((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BC_FRAME)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_HTC_EXIST(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_HTC)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_UC2ME(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_UC2ME) \
+	? TRUE : FALSE)
+#define HAL_RX_STATUS_IS_MC(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_MC_FRAME)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_BC(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BC_FRAME)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_BCN_WITH_BMC(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BCN_WITH_BMC)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_BCN_WITH_UC(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BCN_WITH_UC)?TRUE:FALSE)
 #define HAL_RX_STATUS_GET_KEY_ID(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_KEYID_MASK) >> RX_STATUS_KEYID_OFFSET)
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_KEYID_MASK) >> \
+	RX_STATUS_KEYID_OFFSET)
 #define HAL_RX_STATUS_GET_CHAN_FREQ(_prHwMacRxDesc)	\
 	((_prHwMacRxDesc)->ucChanFreq)
-#define HAL_RX_STATUS_GET_HEADER_LEN(_prHwMacRxDesc) ((_prHwMacRxDesc)->ucHeaderLen & RX_STATUS_HEADER_LEN_MASK)
+#define HAL_RX_STATUS_GET_HEADER_LEN(_prHwMacRxDesc) \
+	((_prHwMacRxDesc)->ucHeaderLen & RX_STATUS_HEADER_LEN_MASK)
 #define HAL_RX_STATUS_IS_HEADER_OFFSET(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->ucHeaderLen & RX_STATUS_HEADER_OFFSET)?TRUE:FALSE)
 #define HAL_RX_STATUS_GET_HEADER_OFFSET(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->ucHeaderLen & RX_STATUS_HEADER_OFFSET) ? 2 : 0)
 #define HAL_RX_STATUS_IS_HEADER_TRAN(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->ucHeaderLen & RX_STATUS_HEADER_TRAN)?TRUE:FALSE)
-#define HAL_RX_STATUS_GET_HEADER_TRAN(_prHwMacRxDesc) HAL_RX_STATUS_IS_HEADER_TRAN(_prHwMacRxDesc)
+#define HAL_RX_STATUS_GET_HEADER_TRAN(_prHwMacRxDesc) \
+	HAL_RX_STATUS_IS_HEADER_TRAN(_prHwMacRxDesc)
 #define HAL_RX_STATUS_GET_PAYLOAD_FORMAT(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->ucBssid & RX_STATUS_PAYLOAD_FORMAT_MASK) >> RX_STATUS_PAYLOAD_FORMAT_OFFSET)
+	(((_prHwMacRxDesc)->ucBssid & RX_STATUS_PAYLOAD_FORMAT_MASK) >> \
+	RX_STATUS_PAYLOAD_FORMAT_OFFSET)
 #define HAL_RX_STATUS_GET_BSSID(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->ucBssid & RX_STATUS_BSSID_MASK) >> RX_STATUS_BSSID_OFFSET)
+	(((_prHwMacRxDesc)->ucBssid & RX_STATUS_BSSID_MASK) >> \
+	RX_STATUS_BSSID_OFFSET)
 
 /* DW 2 */
-#define HAL_RX_STATUS_GET_WLAN_IDX(_prHwMacRxDesc) ((_prHwMacRxDesc)->ucWlanIdx)
-#define HAL_RX_STATUS_GET_TID(_prHwMacRxDesc)        (((_prHwMacRxDesc)->ucTidSecMode & RX_STATUS_TID_MASK))
+#define HAL_RX_STATUS_GET_WLAN_IDX(_prHwMacRxDesc) \
+	((_prHwMacRxDesc)->ucWlanIdx)
+#define HAL_RX_STATUS_GET_TID(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->ucTidSecMode & RX_STATUS_TID_MASK))
 #define HAL_RX_STATUS_GET_SEC_MODE(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->ucTidSecMode & RX_STATUS_SEC_MASK) >> RX_STATUS_SEC_OFFSET)
+	(((_prHwMacRxDesc)->ucTidSecMode & RX_STATUS_SEC_MASK) >> \
+	RX_STATUS_SEC_OFFSET)
 #define HAL_RX_STATUS_GET_SW_BIT(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_SW_BIT)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_FCS_ERROR(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_FCS_ERROR)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_CIPHER_MISMATCH(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_CIPHER_MISMATCH)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_CIPHER_MISMATCH) \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_CLM_ERROR(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_CIPHER_LENGTH_MISMATCH)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u2StatusFlag & \
+	RX_STATUS_FLAG_CIPHER_LENGTH_MISMATCH) \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_ICV_ERROR(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_ICV_ERROR)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_TKIP_MIC_ERROR(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_TKIPMIC_ERROR) > 0?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_TKIPMIC_ERROR) > 0 \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_ERROR(_prHwMacRxDesc)		\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_ERROR_MASK)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_ERROR_MASK) \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_LEN_MISMATCH(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_LEN_MISMATCH)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_LEN_MISMATCH) \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_DE_AMSDU_FAIL(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_DE_AMSDU_FAIL)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_DE_AMSDU_FAIL) \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_EXCEED_LEN(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_EXCEED_LEN)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_LLC_MIS(_prHwMacRxDesc) (((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_LLC_MIS)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_UDF_VLT(_prHwMacRxDesc) (((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_UDF_VLT)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_FRAG(_prHwMacRxDesc)        (((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FRAG)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_NULL(_prHwMacRxDesc)        (((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_NULL)?TRUE:FALSE)
-#define HAL_RX_STATUS_IS_DATA(_prHwMacRxDesc)        (((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_DATA)?FALSE:TRUE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FLAG_EXCEED_LEN) \
+	? TRUE : FALSE)
+#define HAL_RX_STATUS_IS_LLC_MIS(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_LLC_MIS)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_UDF_VLT(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_UDF_VLT)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_FRAG(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_FRAG)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_NULL(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_NULL)?TRUE:FALSE)
+#define HAL_RX_STATUS_IS_DATA(_prHwMacRxDesc) \
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_DATA)?FALSE:TRUE)
 #define HAL_RX_STATUS_IS_AMPDU_SUB_FRAME(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_AMPDU_SUB_FRAME)?FALSE:TRUE)
+	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_AMPDU_SUB_FRAME) \
+	? FALSE : TRUE)
 #define HAL_RX_STATUS_IS_AMPDU_FORMAT(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u2StatusFlag & RX_STATUS_AMPDU_FORMAT)?FALSE:TRUE)
 
 /* DW 3 */
 #define HAL_RX_STATUS_IS_RV_VALID(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_RXV_SEQ_NO_MASK)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_RXV_SEQ_NO_MASK) \
+	? TRUE : FALSE)
 #define HAL_RX_STATUS_GET_RXV_SEQ_NO(_prHwMacRxDesc)	\
 	((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_RXV_SEQ_NO_MASK)
 #define HAL_RX_STATUS_GET_TCL(_prHwMacRxDesc)	\
@@ -933,29 +978,39 @@ struct EMU_MAC_RATE_INFO {
 #define HAL_RX_STATUS_IS_CLS(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_CLS)?TRUE:FALSE)
 #define HAL_RX_STATUS_GET_OFLD(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_OFLD_MASK) >> RX_STATUS_OFLD_OFFSET)
+	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_OFLD_MASK) >> \
+	RX_STATUS_OFLD_OFFSET)
 #define HAL_RX_STATUS_IS_MGC(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_MGC)?TRUE:FALSE)
 #define HAL_RX_STATUS_GET_WOL(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_WOL_MASK) >> RX_STATUS_WOL_OFFSET)
+	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_WOL_MASK) >> \
+	RX_STATUS_WOL_OFFSET)
 #define HAL_RX_STATUS_GET_CLS_BITMAP(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_CLS_BITMAP_MASK) >> RX_STATUS_CLS_BITMAP_OFFSET)
+	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_CLS_BITMAP_MASK) \
+	>> RX_STATUS_CLS_BITMAP_OFFSET)
 #define HAL_RX_STATUS_IS_PF_BLACK_LIST(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_PF_MODE_BLACK_LIST)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u4PatternFilterInfo \
+	& RX_STATUS_PF_MODE_BLACK_LIST) ? TRUE : FALSE)
 #define HAL_RX_STATUS_IS_PF_CHECKED(_prHwMacRxDesc)	\
-	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_PF_STS_CHECKED)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->u4PatternFilterInfo & RX_STATUS_PF_STS_CHECKED) \
+	? TRUE : FALSE)
 
 /* DW 4~7 */
-#define HAL_RX_STATUS_GET_FRAME_CTL_FIELD(_prHwMacRxStsGroup4) ((_prHwMacRxStsGroup4)->u2FrameCtl)
+#define HAL_RX_STATUS_GET_FRAME_CTL_FIELD(_prHwMacRxStsGroup4) \
+	((_prHwMacRxStsGroup4)->u2FrameCtl)
 #define HAL_RX_STATUS_GET_TA(_prHwMacRxStsGroup4, pucTA)   \
 {\
 	kalMemCopy(pucTA, &(_prHwMacRxStsGroup4)->aucTA[0], 6); \
 }
-#define HAL_RX_STATUS_GET_SEQ_FRAG_NUM(_prHwMacRxStsGroup4)   ((_prHwMacRxStsGroup4)->u2SeqFrag)
-#define HAL_RX_STATUS_GET_QOS_CTL_FIELD(_prHwMacRxStsGroup4) ((_prHwMacRxStsGroup4)->u2Qos)
+#define HAL_RX_STATUS_GET_SEQ_FRAG_NUM(_prHwMacRxStsGroup4) \
+	((_prHwMacRxStsGroup4)->u2SeqFrag)
+#define HAL_RX_STATUS_GET_QOS_CTL_FIELD(_prHwMacRxStsGroup4) \
+	((_prHwMacRxStsGroup4)->u2Qos)
 
-#define HAL_RX_STATUS_GET_SEQFrag_NUM(_prHwMacRxStsGroup4)   ((_prHwMacRxStsGroup4)->u2SeqFrag)
-#define HAL_RX_STATUS_GET_HTC(_prHwMacRxStsGroup4) ((_prHwMacRxStsGroup4)->u4HTC)
+#define HAL_RX_STATUS_GET_SEQFrag_NUM(_prHwMacRxStsGroup4) \
+	((_prHwMacRxStsGroup4)->u2SeqFrag)
+#define HAL_RX_STATUS_GET_HTC(_prHwMacRxStsGroup4) \
+	((_prHwMacRxStsGroup4)->u4HTC)
 
 /* DW 8~11 */
 #define HAL_RX_STATUS_GET_RSC(_prHwMacRxStsGroup1, pucRSC)   \
@@ -969,19 +1024,25 @@ struct EMU_MAC_RATE_INFO {
 }
 
 /* DW 12~13 */
-#define HAL_RX_STATUS_GET_TIMESTAMP(_prHwMacRxStsGroup2, _ucIdx) ((_prHwMacRxStsGroup2)->u4Timestamp)
-#define HAL_RX_STATUS_GET_FCS32(_prHwMacRxStsGroup2)             ((_prHwMacRxStsGroup2)->u4CRC)
+#define HAL_RX_STATUS_GET_TIMESTAMP(_prHwMacRxStsGroup2, _ucIdx) \
+	((_prHwMacRxStsGroup2)->u4Timestamp)
+#define HAL_RX_STATUS_GET_FCS32(_prHwMacRxStsGroup2) \
+	((_prHwMacRxStsGroup2)->u4CRC)
 
 /* DW 14~19 */
-#define HAL_RX_STATUS_GET_RX_VECTOR(_prHwMacRxStsGroup3, _ucIdx) ((_prHwMacRxStsGroup3)->u4RxVector[_ucIdx])
+#define HAL_RX_STATUS_GET_RX_VECTOR(_prHwMacRxStsGroup3, _ucIdx) \
+	((_prHwMacRxStsGroup3)->u4RxVector[_ucIdx])
 
 #define HAL_RX_STATUS_GET_RX_NUM(_prHwMacRxStsGroup3)	\
-	(((_prHwMacRxStsGroup3)->u4RxVector[0] & RX_VT_NUM_RX_MASK) >> RX_VT_NUM_RX_OFFSET)
+	(((_prHwMacRxStsGroup3)->u4RxVector[0] & RX_VT_NUM_RX_MASK) >> \
+	RX_VT_NUM_RX_OFFSET)
 
 #define HAL_RX_STATUS_GET_RCPI0(_prHwMacRxStsGroup3)	\
-	(((_prHwMacRxStsGroup3)->u4RxVector[3] & RX_VT_RCPI0_MASK) >> RX_VT_RCPI0_OFFSET)
+	(((_prHwMacRxStsGroup3)->u4RxVector[3] & RX_VT_RCPI0_MASK) >> \
+	RX_VT_RCPI0_OFFSET)
 #define HAL_RX_STATUS_GET_RCPI1(_prHwMacRxStsGroup3)	\
-	(((_prHwMacRxStsGroup3)->u4RxVector[3] & RX_VT_RCPI1_MASK) >> RX_VT_RCPI1_OFFSET)
+	(((_prHwMacRxStsGroup3)->u4RxVector[3] & RX_VT_RCPI1_MASK) >> \
+	RX_VT_RCPI1_OFFSET)
 
 /* TBD */
 #define HAL_RX_STATUS_GET_RX_PACKET_LEN(_prHwMacRxDesc)
@@ -1000,26 +1061,30 @@ struct EMU_MAC_RATE_INFO {
 /*------------------------------------------------------------------------------
  * MACRO for HW_RX_VECTOR_DESC_T
  *------------------------------------------------------------------------------
-*/
+ */
 #define HAL_RX_VECTOR_GET_TA(_prHwRxVector, pucTA)   \
 {\
 	kalMemCopy(pucTA, &(_prHwRxVector)->aucTA[0], 6); \
 }
 
-#define HAL_RX_VECTOR_GET_SEQ_NO(_prHwRxVector)       ((_prHwRxVector)->ucRxVtSeqNo & RX_STATUS_RXV_SEQ_NO_MASK)
-#define HAL_RX_VECTOR_IS_FOR_BA_ACK(_prHwRxVector)    (((_prHwRxVector)->ucRxVtSeqNo & RX_VECTOR_FOR_BA_ACK)?TRUE:FALSE)
-#define HAL_RX_VECTOR_GET_RX_VECTOR(_prHwRxVector, _ucIdx) ((_prHwRxVector)->u4RxVector[_ucIdx])
+#define HAL_RX_VECTOR_GET_SEQ_NO(_prHwRxVector) \
+	((_prHwRxVector)->ucRxVtSeqNo & RX_STATUS_RXV_SEQ_NO_MASK)
+#define HAL_RX_VECTOR_IS_FOR_BA_ACK(_prHwRxVector) \
+	(((_prHwRxVector)->ucRxVtSeqNo & RX_VECTOR_FOR_BA_ACK)?TRUE:FALSE)
+#define HAL_RX_VECTOR_GET_RX_VECTOR(_prHwRxVector, _ucIdx) \
+	((_prHwRxVector)->u4RxVector[_ucIdx])
 
 #define RXM_IS_QOS_DATA_FRAME(_u2FrameCtrl) \
-	(((_u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_QOS_DATA) ? TRUE : FALSE)
+	(((_u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_QOS_DATA) \
+	? TRUE : FALSE)
 
 #define RXM_IS_DATA_FRAME(_u2FrameCtrl) \
 	(((_u2FrameCtrl & MASK_FC_TYPE) == MAC_FRAME_TYPE_DATA) ? TRUE : FALSE)
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 void nicRxInitialize(IN struct ADAPTER *prAdapter);
 
@@ -1027,7 +1092,8 @@ void nicRxUninitialize(IN struct ADAPTER *prAdapter);
 
 void nicRxProcessRFBs(IN struct ADAPTER *prAdapter);
 
-void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 
 uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
 
@@ -1035,43 +1101,56 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prRfb);
 
 void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter);
 
-void nicRxProcessPktWithoutReorder(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void nicRxProcessPktWithoutReorder(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
 
-void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
 
-void nicRxProcessGOBroadcastPkt(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+void nicRxProcessGOBroadcastPkt(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
 
-void nicRxFillRFB(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxFillRFB(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 
-struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSWRfb, OUT struct QUE *prReturnedQue);
+struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSWRfb, OUT struct QUE *prReturnedQue);
 
 u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb);
 
 #if CFG_SUPPORT_SNIFFER
-void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 #endif
 
-void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 
-void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 
-void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb);
+void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
+	IN OUT struct SW_RFB *prSwRfb);
 
-void nicRxUpdateCSUMStatistics(IN struct ADAPTER *prAdapter, IN const enum ENUM_CSUM_RESULT aeCSUM[]);
+void nicRxUpdateCSUMStatistics(IN struct ADAPTER *prAdapter,
+	IN const enum ENUM_CSUM_RESULT aeCSUM[]);
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
-void nicRxQueryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
+void nicRxQueryStatus(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
 
 void nicRxClearStatistics(IN struct ADAPTER *prAdapter);
 
-void nicRxQueryStatistics(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
+void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
+	IN uint8_t *pucBuffer, OUT uint32_t *pu4Count);
 
-uint32_t
-nicRxWaitResponse(IN struct ADAPTER *prAdapter,
-		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer, IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length);
+uint32_t nicRxWaitResponse(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
+	IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length);
 
 void nicRxEnablePromiscuousMode(IN struct ADAPTER *prAdapter);
 
@@ -1079,8 +1158,10 @@ void nicRxDisablePromiscuousMode(IN struct ADAPTER *prAdapter);
 
 uint32_t nicRxFlush(IN struct ADAPTER *prAdapter);
 
-uint32_t nicRxProcessActionFrame(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
+uint32_t nicRxProcessActionFrame(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
 
-uint8_t nicRxGetRcpiValueFromRxv(IN uint8_t ucRcpiMode, IN struct SW_RFB *prSwRfb);
+uint8_t nicRxGetRcpiValueFromRxv(IN uint8_t ucRcpiMode,
+	IN struct SW_RFB *prSwRfb);
 
 #endif /* _NIC_RX_H */

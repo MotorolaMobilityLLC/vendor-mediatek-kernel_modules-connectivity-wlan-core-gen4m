@@ -682,7 +682,8 @@ typedef void(*PFN_APPEND_IE_FUNC) (struct ADAPTER *,
 typedef void(*PFN_HANDLE_IE_FUNC) (struct ADAPTER *,
 	struct SW_RFB *, struct IE_HDR *);
 typedef void(*PFN_VERIFY_IE_FUNC) (struct ADAPTER *,
-	struct SW_RFB *, struct IE_HDR *, uint16_t *);
+	struct SW_RFB *, struct IE_HDR *,
+	uint16_t *);
 typedef uint32_t(*PFN_CALCULATE_VAR_IE_LEN_FUNC) (
 	struct ADAPTER *, uint8_t, struct STA_RECORD *);
 
