@@ -447,16 +447,21 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 				       uint16_t *pu2PayloadLen)
 {
 	struct WLAN_ASSOC_REQ_FRAME *prAssocFrame;
+	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsReAssoc;
-
 	uint16_t u2FrameCtrl;
 	uint16_t u2CapInfo;
 	uint16_t u2ListenInterval;
-
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	prAssocFrame = (struct WLAN_ASSOC_REQ_FRAME *)pucBuffer;
 	fgIsReAssoc = prStaRec->fgIsReAssoc;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo) {
+		DBGLOG(SAA, ERROR, "no bssinfo%d\n", prStaRec->ucBssIndex);
+		return;
+	}
 
 	/* 4 <1> Compose the frame header of the (Re)Association
 	 *       Request frame.
@@ -521,7 +526,7 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 			    (struct WLAN_REASSOC_REQ_FRAME *)prAssocFrame;
 
 			COPY_MAC_ADDR(prReAssocFrame->aucCurrentAPAddr,
-				      cnmStaRecAuthAddr(prAdapter, prStaRec));
+			 cnmStaRecAuthAddr(prAdapter, prBssInfo->prStaRecOfAP));
 		} else {
 			ASSERT(0);
 			/* We don't support ReAssociation for other network */
