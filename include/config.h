@@ -1150,7 +1150,8 @@
 #define RUNNING_AP_MODE 1
 #define RUNNING_DUAL_AP_MODE 2
 #define RUNNING_P2P_AP_MODE 3
-#define RUNNING_P2P_MODE_NUM 4
+#define RUNNING_DUAL_P2P_MODE 4
+#define RUNNING_P2P_MODE_NUM 5
 
 /*------------------------------------------------------------------------------
  * Flags of MSP SUPPORT
