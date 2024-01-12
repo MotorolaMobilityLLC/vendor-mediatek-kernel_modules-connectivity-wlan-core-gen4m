@@ -493,17 +493,21 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	if (!(prBssDesc->ucPhyTypeSet &
 		(prAdapter->rWifiVar.ucAvailablePhyTypeSet))) {
 		log_dbg(SCN, WARN,
-			"SEARCH: Ignore unsupported ucPhyTypeSet = %x\n",
+			MACSTR" ignore unsupported ucPhyTypeSet = %x\n",
+			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->ucPhyTypeSet);
 		return FALSE;
 	}
-	if (prBssDesc->fgIsUnknownBssBasicRate)
+	if (prBssDesc->fgIsUnknownBssBasicRate) {
+		log_dbg(SCN, WARN, MACSTR" unknown bss basic rate\n",
+			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
-	if (fgIsFixedChannel &&
-		(eBand != prBssDesc->eBand || ucChannel !=
+	}
+	if (fgIsFixedChannel &&	(eBand != prBssDesc->eBand || ucChannel !=
 		prBssDesc->ucChannelNum)) {
-		log_dbg(SCN, INFO, "Fix channel required band %d, channel %d\n",
-			eBand, ucChannel);
+		log_dbg(SCN, WARN,
+			MACSTR" fix channel required band %d, channel %d\n",
+			MAC2STR(prBssDesc->aucBSSID), eBand, ucChannel);
 		return FALSE;
 	}
 
@@ -512,30 +516,36 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 #endif
 	if (!rlmDomainIsLegalChannel(prAdapter, prBssDesc->eBand,
 		prBssDesc->ucChannelNum)) {
-		log_dbg(SCN, WARN, "Band %d channel %d is not legal\n",
-			prBssDesc->eBand, prBssDesc->ucChannelNum);
+		log_dbg(SCN, WARN, MACSTR" band %d channel %d is not legal\n",
+			MAC2STR(prBssDesc->aucBSSID), prBssDesc->eBand,
+			prBssDesc->ucChannelNum);
 		return FALSE;
 	}
 
 	if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
 		SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) {
-		log_dbg(SCN, WARN, "BSS "
-			MACSTR
-			" description is too old.\n",
+		log_dbg(SCN, WARN, MACSTR " description is too old.\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 
 #if CFG_SUPPORT_WAPI
 	if (prAdapter->rWifiVar.rConnSettings.fgWapiMode) {
-		if (!wapiPerformPolicySelection(prAdapter, prBssDesc))
+		if (!wapiPerformPolicySelection(prAdapter, prBssDesc)) {
+			log_dbg(SCN, WARN, MACSTR " wapi policy select fail.\n",
+				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
+		}
 	} else
 #endif
-	if (!rsnPerformPolicySelection(prAdapter, prBssDesc))
+	if (!rsnPerformPolicySelection(prAdapter, prBssDesc)) {
+		log_dbg(SCN, WARN, MACSTR " rsn policy select fail.\n",
+			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
+	}
 	if (prAdapter->rWifiVar.rAisSpecificBssInfo.fgCounterMeasure) {
-		log_dbg(SCN, WARN, "Skip while at counter measure period!!!\n");
+		log_dbg(SCN, WARN, MACSTR " Skip in counter measure period.\n",
+			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 	return TRUE;
