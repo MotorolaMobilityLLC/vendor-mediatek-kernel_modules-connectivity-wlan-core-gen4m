@@ -10401,7 +10401,7 @@ wlanoidRftestSetTestIcapMode(IN struct ADAPTER *prAdapter,
 			     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			     OUT uint32_t *pu4SetInfoLen) {
 	uint32_t rStatus;
-	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl = {0};
 	struct ICAP_INFO_T *prIcapInfo = NULL;
 
 	DEBUGFUNC("wlanoidRftestSetTestIcapMode");
@@ -10467,7 +10467,7 @@ wlanoidRftestSetAbortTestMode(IN struct ADAPTER *prAdapter,
 			      IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			      OUT uint32_t *pu4SetInfoLen) {
 	uint32_t rStatus;
-	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl = {0};
 
 	DEBUGFUNC("wlanoidRftestSetAbortTestMode");
 

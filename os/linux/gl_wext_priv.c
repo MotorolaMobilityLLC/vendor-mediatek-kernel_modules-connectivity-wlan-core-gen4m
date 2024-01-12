@@ -18641,12 +18641,13 @@ static int priv_driver_run_hqa(
 		return -1;
 
 	datalen = NTOHS(local_hqa.hqa_frame_comm.hqa_frame_eth->length);
+
+	if (datalen > SERV_IOCTLBUFF)
+		datalen = SERV_IOCTLBUFF;
+
 	dataptr = kalMemAlloc(datalen, VIR_MEM_TYPE);
 	if (dataptr == NULL)
 		return -1;
-	/* Backup Original Ptr /Len for mem Free */
-	oridataptr = dataptr;
-	oridatalen = datalen;
 
 	/* Backup Original Ptr /Len for mem Free */
 	oridataptr = dataptr;
