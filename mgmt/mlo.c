@@ -2030,8 +2030,8 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 			prMldBssInfo->ucOmRemapIdx);
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"BSS_BITMAP/OWN_MLD_ADDR:0x%x/" MACSTR "\n{\n",
-			prMldBssInfo->u4BssBitmap,
+			"BSS_BITMAP/OWN_MLD_ADDR:0x%02x/" MACSTR "\n{\n",
+			prMldBssInfo->ucBssBitmap,
 			MAC2STR(prMldBssInfo->aucOwnMldAddr));
 
 		prBssList = &prMldBssInfo->rBssList;
@@ -2235,6 +2235,25 @@ void mldBssUpdateOmacIdx(
 #endif
 }
 
+void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct BSS_INFO *prCurrBssInfo;
+	struct LINK *prBssList = NULL;
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prMldBssInfo)
+		return;
+
+	prBssList = &prMldBssInfo->rBssList;
+	prMldBssInfo->ucHwBandBitmap = 0;
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
+			struct BSS_INFO) {
+		prMldBssInfo->ucHwBandBitmap |= BIT(prCurrBssInfo->eHwBandIdx);
+	}
+}
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBssInfo)
@@ -2254,7 +2273,7 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucGroupMldId);
 
 	prBssInfo->ucGroupMldId = prMldBssInfo->ucGroupMldId;
-	prMldBssInfo->u4BssBitmap |= BIT(prBssInfo->ucBssIndex);
+	prMldBssInfo->ucBssBitmap |= BIT(prBssInfo->ucBssIndex);
 	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
 
 	mldBssUpdateMldAddrByMainBss(prAdapter, prMldBssInfo);
@@ -2278,7 +2297,8 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 	DBGLOG(ML, INFO, "prMldBssInfo: %d, prBss: %d\n",
 		prMldBssInfo->ucGroupMldId, prBss->ucBssIndex);
 
-	prMldBssInfo->u4BssBitmap &= ~BIT(prBss->ucBssIndex);
+	prMldBssInfo->ucBssBitmap &= ~BIT(prBss->ucBssIndex);
+	prMldBssInfo->ucHwBandBitmap &= ~BIT(prBss->eHwBandIdx);
 	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList,
 			rLinkEntryMld,
 			struct BSS_INFO) {
@@ -2310,7 +2330,8 @@ int8_t mldBssAlloc(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucGroupMldId = i;
 		prMldBssInfo->ucOmRemapIdx = OM_REMAP_IDX_NONE;
 		prMldBssInfo->ucOmacIdx = INVALID_OMAC_IDX;
-		prMldBssInfo->u4BssBitmap = 0;
+		prMldBssInfo->ucBssBitmap = 0;
+		prMldBssInfo->ucHwBandBitmap = 0;
 
 		*pprMldBssInfo = prMldBssInfo;
 		break;

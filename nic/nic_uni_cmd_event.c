@@ -7566,10 +7566,13 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 	DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n", ucBssIdx, ucBandIdx);
 
 	if (prBssInfo) {
-		if (prBssInfo->eBandIdx != ucBandIdx &&
-			prBssInfo->eBandIdx != ENUM_BAND_AUTO)
+		if (prBssInfo->eHwBandIdx != ucBandIdx &&
+		    prBssInfo->eHwBandIdx != ENUM_BAND_AUTO)
 			nicUniUpdateStaRecFastAll(ad, prBssInfo);
-		prBssInfo->eBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
+		prBssInfo->eHwBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssUpdateBandIdxBitmap(ad, prBssInfo);
+#endif
 	}
 }
 

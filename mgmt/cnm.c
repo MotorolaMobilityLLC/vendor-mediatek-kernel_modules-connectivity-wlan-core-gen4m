@@ -2275,7 +2275,7 @@ omac_choosed:
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucBssIndex = ucBssIndex;
 			prBssInfo->ucOwnMacIndex = ucOwnMacIdx;
-			prBssInfo->eBandIdx = ENUM_BAND_AUTO;
+			prBssInfo->eHwBandIdx = ENUM_BAND_AUTO;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prBssInfo->ucOwnMldId = ucBssIndex +
 				MAT_OWN_MLD_ID_BASE;
