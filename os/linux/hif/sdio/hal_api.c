@@ -2111,3 +2111,14 @@ BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter)
 {
 	return TRUE;
 }
+
+VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter)
+{
+	UINT_32 u4WHISR = 0;
+	UINT_16 au2TxCount[16];
+
+	HAL_READ_INTR_STATUS(prAdapter, 4, (PUINT_8)&u4WHISR);
+	if (HAL_IS_TX_DONE_INTR(u4WHISR))
+		HAL_READ_TX_RELEASED_COUNT(prAdapter, au2TxCount);
+}
+
