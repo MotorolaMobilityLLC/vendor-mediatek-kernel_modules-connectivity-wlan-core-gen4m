@@ -1161,11 +1161,13 @@ int32_t connac3x_show_stat_info(
 	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
 	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
 	uint8_t ucBssIndex, ucBand;
+	uint8_t uc256QAMState;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed;
 	struct CHIP_DBG_OPS *prChipDbg;
 
 	uint8_t *wtbl_raw_dw = NULL;
 	struct bwtbl_lmac_struct *pWtbl;
+	uint32_t *pau4TxRangeAmpduCnt = NULL;
 
 #if 0
 	uint8_t ucRaLtModeNum = sizeof(LT_MODE_TBLE) / sizeof(char *);
@@ -1201,6 +1203,8 @@ int32_t connac3x_show_stat_info(
 		prHwWlanInfo->u4Index, wtbl_raw_dw);
 	pWtbl = (struct bwtbl_lmac_struct *)wtbl_raw_dw;
 	ucBand = pWtbl->peer_basic_info.wtbl_d0.field.band;
+	pau4TxRangeAmpduCnt = ((ucBand < ENUM_BAND_NUM) ?
+			g_arMibInfo[ucBand].au4TxRangeAmpduCnt : NULL);
 
 	if (ucSkipAr) {
 		u4TotalTxCnt[u2Idx] += prQueryStaStatistics->u4TransmitCount;
@@ -1238,9 +1242,9 @@ int32_t connac3x_show_stat_info(
 
 		u4RxPer[ucDbdcIdx] =
 		    ((au4RxMpduCnt[ucDbdcIdx] + au4FcsError[ucDbdcIdx]) == 0) ?
-			(0) : (1000 * au4FcsError[ucDbdcIdx] /
-				(au4RxMpduCnt[ucDbdcIdx] +
-				au4FcsError[ucDbdcIdx]));
+				(0) : (1000 * au4FcsError[ucDbdcIdx] /
+					(au4RxMpduCnt[ucDbdcIdx] +
+					au4FcsError[ucDbdcIdx]));
 
 		u4TxMpduPer[ucDbdcIdx] =
 		    (au4AmpduTxSfCnt[ucDbdcIdx] == 0) ?
@@ -1285,6 +1289,12 @@ int32_t connac3x_show_stat_info(
 			"%-20s%s%d\n", "\nWlanIdx", "  = ",
 			prHwWlanInfo->u4Index);
 	}
+
+	if (ucBand >= ENUM_BAND_NUM)
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%-20s%s%d%s\n", "BandIdx", "  = ",
+			ucBand, " Mib Count Invalid");
 
 	/* =========== Group 0x0001 =========== */
 	if (u4StatGroup & 0x0001) {
@@ -1352,26 +1362,44 @@ int32_t connac3x_show_stat_info(
 				i4TotalLen - i4BytesWritten,
 				"[DBDC_%d] :\n", ucBand);
 #endif
-		i4BytesWritten += kalScnprintf(
-			pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "RX Success", " = ",
-			au4RxMpduCnt[ucBand]);
+		if (ucBand < ENUM_BAND_NUM) {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX Success", " = ",
+				au4RxMpduCnt[ucBand]);
 
-		i4BytesWritten += kalScnprintf(
-			pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
-			"RX with CRC", " = ", au4FcsError[ucBand],
-			u4RxPer[ucBand]/10, u4RxPer[ucBand]%10,
-			u4InstantRxPer[ucBand]/10,
-			u4InstantRxPer[ucBand]%10);
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"RX with CRC", " = ", au4FcsError[ucBand],
+				u4RxPer[ucBand]/10, u4RxPer[ucBand]%10,
+				u4InstantRxPer[ucBand]/10,
+				u4InstantRxPer[ucBand]%10);
 
-		i4BytesWritten += kalScnprintf(
-			pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten,
-			"%-20s%s%d\n", "RX drop FIFO full", " = ",
-			au4RxFifoCnt[ucBand]);
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX drop FIFO full", " = ",
+				au4RxFifoCnt[ucBand]);
+		} else {
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX Success", " = ", 0);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"RX with CRC", " = ", 0, 0, 0, 0, 0);
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%-20s%s%d\n", "RX drop FIFO full", " = ", 0);
+		}
 
 		if (fgResetCnt) {
 			kalMemZero(au4RxMpduCnt, sizeof(au4RxMpduCnt));
@@ -1482,7 +1510,8 @@ int32_t connac3x_show_stat_info(
 				ucBand);
 #endif
 		prChipDbg = prAdapter->chip_info->prDebugOps;
-		if (prChipDbg && prChipDbg->get_tx_info_from_txv) {
+		if (prChipDbg && prChipDbg->get_tx_info_from_txv
+			&& ucBand < ENUM_BAND_NUM) {
 			i4BytesWritten += (
 				prChipDbg->get_tx_info_from_txv(
 				pcCommand + i4BytesWritten,
@@ -1531,6 +1560,8 @@ int32_t connac3x_show_stat_info(
 			i4TotalLen - i4BytesWritten, "%-20s%s%d\n", "LinkSpeed",
 			" = ", u2LinkSpeed);
 
+		uc256QAMState = (
+			prQueryStaStatistics->ucDynamicGband256QAMState);
 		if (!prQueryStaStatistics->ucSkipAr) {
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1544,17 +1575,16 @@ int32_t connac3x_show_stat_info(
 
 			if (wlanGetStaIdxByWlanIdx(prAdapter,
 				(uint8_t)(prHwWlanInfo->u4Index), &ucStaIdx) ==
-				WLAN_STATUS_SUCCESS){
+				WLAN_STATUS_SUCCESS &&
+				ucStaIdx < CFG_STA_REC_NUM){
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
 					"%-20s%s%d\n", "2G Support 256QAM TX",
 					" = ",
 					((prAdapter->arStaRec[ucStaIdx].u4Flags
-					 & MTK_SYNERGY_CAP_SUPPORT_24G_MCS89) ||
-					(prQueryStaStatistics->
-					 ucDynamicGband256QAMState == 2)) ?
-					1 : 0);
+					& MTK_SYNERGY_CAP_SUPPORT_24G_MCS89)
+					|| (uc256QAMState == 2)) ? 1 : 0);
 			}
 #if 0
 			i4BytesWritten += kalScnprintf(
@@ -1729,7 +1759,6 @@ int32_t connac3x_show_stat_info(
 		i4BytesWritten += connac3xGetTxRateInfo(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			TRUE, pWtbl, prQueryStaStatistics);
-
 	}
 
 	/* =========== Group 0x0040 =========== */
@@ -1789,19 +1818,25 @@ int32_t connac3x_show_stat_info(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"DBDC%d:", ucBand);
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%8u%8u%8u%8u%8u%8u%8u%8u\n",
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[0],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[1],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[2],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[3],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[4],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[5],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[6],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[7]);
-
+			if (pau4TxRangeAmpduCnt)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8u%8u%8u%8u%8u%8u%8u%8u\n",
+					pau4TxRangeAmpduCnt[0],
+					pau4TxRangeAmpduCnt[1],
+					pau4TxRangeAmpduCnt[2],
+					pau4TxRangeAmpduCnt[3],
+					pau4TxRangeAmpduCnt[4],
+					pau4TxRangeAmpduCnt[5],
+					pau4TxRangeAmpduCnt[6],
+					pau4TxRangeAmpduCnt[7]);
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8u%8u%8u%8u%8u%8u%8u%8u\n",
+					0, 0, 0, 0, 0, 0, 0, 0);
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1820,18 +1855,25 @@ int32_t connac3x_show_stat_info(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"DBDC%d:", ucBand);
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"%8u%8u%8u%8u%8u%8u%8u%8u\n",
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[8],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[9],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[10],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[11],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[12],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[13],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[14],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[15]);
+			if (pau4TxRangeAmpduCnt)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8u%8u%8u%8u%8u%8u%8u%8u\n",
+					pau4TxRangeAmpduCnt[8],
+					pau4TxRangeAmpduCnt[9],
+					pau4TxRangeAmpduCnt[10],
+					pau4TxRangeAmpduCnt[11],
+					pau4TxRangeAmpduCnt[12],
+					pau4TxRangeAmpduCnt[13],
+					pau4TxRangeAmpduCnt[14],
+					pau4TxRangeAmpduCnt[15]);
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%8u%8u%8u%8u%8u%8u%8u%8u\n",
+					0, 0, 0, 0, 0, 0, 0, 0);
 		} else {
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1853,19 +1895,26 @@ int32_t connac3x_show_stat_info(
 				au2AggRange[6] + 2, "~",
 				au2AggRange[7] + 1);
 
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
-				ucBand,
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[0],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[1],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[2],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[3],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[4],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[5],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[6],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[7]);
+			if (pau4TxRangeAmpduCnt)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
+					ucBand,
+					pau4TxRangeAmpduCnt[0],
+					pau4TxRangeAmpduCnt[1],
+					pau4TxRangeAmpduCnt[2],
+					pau4TxRangeAmpduCnt[3],
+					pau4TxRangeAmpduCnt[4],
+					pau4TxRangeAmpduCnt[5],
+					pau4TxRangeAmpduCnt[6],
+					pau4TxRangeAmpduCnt[7]);
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
+					ucBand, 0, 0, 0, 0, 0, 0, 0, 0);
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1887,19 +1936,26 @@ int32_t connac3x_show_stat_info(
 				au2AggRange[14] + 1,
 				au2AggRange[14] + 2, "~1024\n");
 
-			i4BytesWritten += kalScnprintf(
-				pcCommand + i4BytesWritten,
-				i4TotalLen - i4BytesWritten,
-				"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
-				ucBand,
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[8],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[9],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[10],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[11],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[12],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[13],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[14],
-				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[15]);
+			if (pau4TxRangeAmpduCnt)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
+					ucBand,
+					pau4TxRangeAmpduCnt[8],
+					pau4TxRangeAmpduCnt[9],
+					pau4TxRangeAmpduCnt[10],
+					pau4TxRangeAmpduCnt[11],
+					pau4TxRangeAmpduCnt[12],
+					pau4TxRangeAmpduCnt[13],
+					pau4TxRangeAmpduCnt[14],
+					pau4TxRangeAmpduCnt[15]);
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
+					ucBand, 0, 0, 0, 0, 0, 0, 0, 0);
 		}
 	}
 
