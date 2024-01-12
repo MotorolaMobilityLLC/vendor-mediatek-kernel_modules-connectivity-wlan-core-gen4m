@@ -4532,7 +4532,6 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 		 * the free-to-use BA entry
 		 */
 		DBGLOG(QM, ERROR, "QM: (Error) qmAddRxBaEntry() failure\n");
-		ASSERT(0);
 	}
 
 }
