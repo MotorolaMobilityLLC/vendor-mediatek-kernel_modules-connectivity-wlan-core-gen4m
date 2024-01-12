@@ -2535,7 +2535,12 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 					STATUS_CODE_ASSOC_TIMEOUT)
 				u2JoinStatus = prConnSettings->u2JoinStatus;
 			else
+#if CFG_SUPPORT_WPA3_LOG
+				u2JoinStatus = wpa3LogJoinFailStatus(prAdapter,
+					prBssInfo);
+#else
 				u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
+#endif
 		}
 
 #if KERNEL_VERSION(4, 18, 0) < CFG80211_VERSION_CODE

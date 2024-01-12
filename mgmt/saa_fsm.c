@@ -525,6 +525,9 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 
 	/* 4 <7> Trigger SAA FSM */
 	if (prStaRec->ucStaState == STA_STATE_1) {
+#if CFG_SUPPORT_WPA3_LOG
+		wpa3LogSaaStart(prAdapter, prStaRec);
+#endif
 		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE)
 			saaFsmSteps(prAdapter, prStaRec,
 				    SAA_STATE_EXTERNAL_AUTH,
@@ -645,6 +648,12 @@ saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
 				    TU_TO_MSEC(
 				    DOT11_AUTHENTICATION_RESPONSE_TIMEOUT_TU));
 			}
+
+#if CFG_SUPPORT_WPA3_LOG
+			wpa3LogSaaTx(prAdapter,
+				prMsduInfo,
+				rTxDoneStatus);
+#endif
 
 			/* if TX was successful, change to next state.
 			 * if TX was failed, do retry if possible.
@@ -803,7 +812,10 @@ void saaFsmRunEventRxRespTimeOut(struct ADAPTER *prAdapter,
 	case SAA_STATE_WAIT_AUTH2:
 		/* Record the Status Code of Authentication Request */
 		prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
-
+#if CFG_SUPPORT_WPA3_LOG
+		wpa3LogAuthTimeout(prAdapter,
+			prStaRec);
+#endif
 		/* Pull back to earlier state to do retry */
 		eNextState = SAA_STATE_SEND_AUTH1;
 		break;
@@ -819,7 +831,10 @@ void saaFsmRunEventRxRespTimeOut(struct ADAPTER *prAdapter,
 	case SAA_STATE_WAIT_ASSOC2:
 		/* Record the Status Code of Authentication Request */
 		prStaRec->u2StatusCode = STATUS_CODE_ASSOC_TIMEOUT;
-
+#if CFG_SUPPORT_WPA3_LOG
+		wpa3LogAssocTimeout(prAdapter,
+			prStaRec);
+#endif
 		/* Pull back to earlier state to do retry */
 		eNextState = SAA_STATE_SEND_ASSOC1;
 		break;
@@ -1852,6 +1867,12 @@ void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
 	status = prSaaFsmMsg->status;
 
 	cnmMemFree(prAdapter, prMsgHdr);
+
+#if CFG_SUPPORT_WPA3_LOG
+	wpa3LogExternalAuth(prAdapter,
+		prStaRec,
+		status);
+#endif
 
 	if (status != WLAN_STATUS_SUCCESS)
 		saaFsmSteps(prAdapter, prStaRec, AA_STATE_IDLE,
