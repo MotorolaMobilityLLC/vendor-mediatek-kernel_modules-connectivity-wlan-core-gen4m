@@ -515,6 +515,7 @@ struct BUS_INFO mt6639_bus_info = {
 	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
 	.asicUdmaRxFlush = asicConnac3xUdmaRxFlush,
+	.updateTxRingMaxQuota = mt6639UpdateDmashdlQuota,
 #endif
 #if defined(_HIF_NONE)
 	/* for compiler need one entry */
@@ -728,6 +729,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.asicUsbInit_ic_specific = NULL,
 	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADDR,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
+	.dmashdlQuotaDecision = mt6639dmashdlQuotaDecision,
 #endif
 #if defined(_HIF_PCIE)
 #if IS_MOBILE_SEGMENT

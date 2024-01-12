@@ -448,6 +448,11 @@ void cnmPowerControlErrorHandling(
 );
 #endif
 
+#if (CFG_SUPPORT_DBDC == 1 && CFG_UPDATE_STATIC_DBDC_QUOTA == 1)
+void cnmUpdateStaticDbdcQuota(
+	struct ADAPTER *prAdapter);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

@@ -256,6 +256,16 @@
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
+enum ENUM_CONCURRENT_TYPE {
+	CONCURRENT_6G_6G_AND_2G = 0,
+	CONCURRENT_2G_6G_AND_2G,
+	CONCURRENT_5G_5G_AND_2G,
+	CONCURRENT_2G_5G_AND_2G,
+	CONCURRENT_6G_6G_AND_5G,
+	CONCURRENT_5G_6G_AND_5G,
+	CONCURRENT_SAME_BAND,
+	CONCURRENT_TYPE_NUM
+};
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -289,4 +299,11 @@ extern struct DMASHDL_CFG rMt6639DmashdlCfg;
 
 void mt6639DmashdlInit(struct ADAPTER *prAdapter);
 
+#if defined(_HIF_USB)
+uint32_t mt6639UpdateDmashdlQuota(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex, uint32_t u4MaxQuota);
+
+uint32_t mt6639dmashdlQuotaDecision(struct ADAPTER *prAdapter,
+			uint8_t ucWmmIndex);
+#endif
 #endif /* _HAL_DMASHDL_MT6639_H */
