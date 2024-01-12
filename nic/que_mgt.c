@@ -3608,7 +3608,8 @@ static void processAPPktDst(struct ADAPTER *prAdapter,
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 
-	if (prStaRec->ucBssIndex == prCurrSwRfb->prStaRec->ucBssIndex)
+	if ((prStaRec != NULL) &&
+	    (prStaRec->ucBssIndex == prCurrSwRfb->prStaRec->ucBssIndex))
 		prCurrSwRfb->eDst = RX_PKT_DESTINATION_FORWARD;
 }
 /*----------------------------------------------------------------------------*/
