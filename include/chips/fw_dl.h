@@ -190,7 +190,7 @@ struct FWDL_OPS_T {
 	unsigned int (*getFwDlInfo)(struct ADAPTER *prAdapter,
 		char *pcBuf, int i4TotalLen);
 	uint32_t (*phyAction)(IN struct ADAPTER *prAdapter);
-	uint32_t (*dlRomCode)(struct ADAPTER *prAdapter);
+	uint32_t (*mcu_init)(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	void (*constructBtPatchName)(struct GLUE_INFO *prGlueInfo,
 		uint8_t **apucName, uint8_t *pucNameIdx);
@@ -451,9 +451,6 @@ uint32_t wlanImageSectionDownload(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4ImgSize);
 
 uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter);
-
-uint32_t wlanConfigWifiFuncStatus(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucCmdSeqNum);
 
 uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnable, IN uint32_t u4StartAddress,

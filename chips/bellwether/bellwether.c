@@ -361,7 +361,7 @@ struct FWDL_OPS_T bellwether_fw_dl_ops = {
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
 #if (CONFIG_ROM_CODE_DOWNLOAD == 1)
-	.dlRomCode = bellwetherDownloadRomCode,
+	.mcu_init = bellwetherDownloadRomCode,
 #endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */

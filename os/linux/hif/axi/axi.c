@@ -279,11 +279,6 @@ static int hifAxiProbe(void)
 #if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
 #else
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI, &prDriverData->u4PwrLevel);
-	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, CONN_PWR_MSG_GET_TEMP,
-			&prDriverData->rTempInfo);
-#endif
 	ret = asicConnac2xPwrOnWmMcu(prChipInfo);
 	if (ret != 0) {
 		asicConnac2xPwrOffWmMcu(prChipInfo);
@@ -339,9 +334,6 @@ int hifAxiRemove(void)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
 #else
 	asicConnac2xPwrOffWmMcu(prChipInfo);
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	conn_pwr_drv_post_off(CONN_PWR_DRV_WIFI);
-#endif /* CFG_SUPPORT_POWER_THROTTLING */
 #endif /* CFG_SUPPORT_CONNINFRA */
 #endif /* CFG_MTK_ANDROID_WMT */
 	g_fgDriverProbed = FALSE;
@@ -835,24 +827,10 @@ exit:
 
 static int mtk_axi_remove(IN struct platform_device *pdev)
 {
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI, NULL);
-#endif
-
 	axiCsrIounmap(pdev);
 
 #if AXI_CFG_PREALLOC_MEMORY_BUFFER
 	axiFreeHifMem(pdev);
-#endif
-
-#if CFG_MTK_ANDROID_WMT
-#if (CFG_SUPPORT_CONNINFRA == 0)
-	mtk_wcn_wmt_wlan_unreg();
-#else
-	mtk_wcn_wlan_unreg();
-#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
-#else
-	hifAxiRemove();
 #endif
 	platform_set_drvdata(pdev, NULL);
 	return 0;
