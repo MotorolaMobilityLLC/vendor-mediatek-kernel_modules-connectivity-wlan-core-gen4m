@@ -1182,6 +1182,9 @@ struct PARAM_GET_STA_STATISTICS {
 	uint8_t ucDynamicGband256QAMState;
 	uint8_t ucVhtNonSpRateState;
 #endif
+#if CFG_SUPPORT_STA_INFO
+	uint32_t u4RxBmcCnt;
+#endif
 	/* Reserved fields */
 	uint8_t au4Reserved[3];
 };

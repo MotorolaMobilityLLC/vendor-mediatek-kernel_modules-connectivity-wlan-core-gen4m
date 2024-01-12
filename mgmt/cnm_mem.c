@@ -972,6 +972,10 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 		return;
 	}
 
+#if CFG_SUPPORT_STA_INFO
+	prStaRec->u4RxRetryCnt = 0;
+#endif
+
 	fgNeedResp = FALSE;
 	if (ucNewState == STA_STATE_3) {
 		/* secFsmEventStart(prAdapter, prStaRec); */
