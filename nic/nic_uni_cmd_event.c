@@ -2211,7 +2211,8 @@ uint32_t nicUniCmdBcnContent(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_BEACON_TEMPLATE_UPDATE *) info->pucInfoBuffer;
-	max_cmd_len += (2 + cmd->u2IELen); /* 2 for u2CapInfo */
+	/* 2 for u2CapInfo */
+	max_cmd_len = ALIGN_4(max_cmd_len + 2 + cmd->u2IELen);
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
 			max_cmd_len, NULL, NULL);
 	if (!entry)
@@ -2221,7 +2222,7 @@ uint32_t nicUniCmdBcnContent(struct ADAPTER *ad,
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
 	tag = (struct UNI_CMD_BSSINFO_BCN_CONTENT *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_BCN_CONTENT;
-	tag->u2Length = sizeof(*tag) + 2 + cmd->u2IELen;
+	tag->u2Length = ALIGN_4(sizeof(*tag) + 2 + cmd->u2IELen);
 	if (cmd->ucUpdateMethod == IE_UPD_METHOD_UPDATE_PROBE_RSP)
 		tag->ucAction = UPDATE_PROBE_RSP;
 	else if (cmd->ucUpdateMethod == IE_UPD_METHOD_DELETE_ALL)
@@ -2258,7 +2259,7 @@ uint32_t nicUniCmdFilsDiscovery(struct ADAPTER *ad,
 			       sizeof(struct UNI_CMD_BSSINFO_FILS_REQ);
 	uint32_t status = WLAN_STATUS_SUCCESS;
 
-	max_cmd_len += ie_len;
+	max_cmd_len = ALIGN_4(max_cmd_len + ie_len);
 	uni_cmd = (struct UNI_CMD_BSSINFO *) cnmMemAlloc(ad,
 				RAM_TYPE_MSG, max_cmd_len);
 	if (!uni_cmd) {
@@ -2270,7 +2271,7 @@ uint32_t nicUniCmdFilsDiscovery(struct ADAPTER *ad,
 	uni_cmd->ucBssInfoIdx = bss_idx;
 	tag = (struct UNI_CMD_BSSINFO_FILS_REQ *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_FILS_DISCOVERY;
-	tag->u2Length = sizeof(*tag) + ie_len;
+	tag->u2Length = ALIGN_4(sizeof(*tag) + ie_len);
 	tag->u4MinInterval = min_interval;
 	tag->u4MaxInterval = max_interval;
 	tag->u2PktLength = ie_len;
