@@ -1092,7 +1092,7 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 		if (chip_info->fw_dl_ops->getFwVerInfo)
 			chip_info->fw_dl_ops->getFwVerInfo(fw_version,
 				&u4Len,
-				sizeof(fw_version));
+				FW_VER_LEN);
 		else
 			DBGLOG(INIT, ERROR, "NULL getFwVerInfo\n");
 	} else {
