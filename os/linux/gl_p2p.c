@@ -1767,7 +1767,7 @@ static int p2pStop(IN struct net_device *prDev)
 
 	/* XXX: The p2pStop may be triggered after the wlanRemove.	*/
 	/*      And prGlueInfo->prP2PDevInfo is freed in p2PFreeInfo.	*/
-	if (!prAdapter->fgIsP2PRegistered)
+	if (!prAdapter || !prAdapter->fgIsP2PRegistered)
 		return -EFAULT;
 
 	prP2pGlueDevInfo = prGlueInfo->prP2PDevInfo;
