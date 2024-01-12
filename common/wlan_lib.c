@@ -7022,8 +7022,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);
+#if CFG_TC1_FEATURE
+	prWifiVar->ucApVht = (uint8_t) wlanCfgGetUint32(prAdapter, "ApVHT",
+					FEATURE_FORCE_ENABLED);
+#else
 	prWifiVar->ucApVht = (uint8_t) wlanCfgGetUint32(prAdapter, "ApVHT",
 					FEATURE_ENABLED);
+#endif
 
 	prWifiVar->ucP2pGoHt = (uint8_t) wlanCfgGetUint32(prAdapter, "P2pGoHT",
 					FEATURE_ENABLED);
