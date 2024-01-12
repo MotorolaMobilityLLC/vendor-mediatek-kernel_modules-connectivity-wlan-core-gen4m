@@ -3942,6 +3942,7 @@ void scanLogCacheFlushBSS(struct LINK *prList, enum ENUM_SCAN_LOG_PREFIX prefix,
 			LINK_REMOVE_HEAD(prList,
 				pBss, struct SCAN_LOG_ELEM_BSS *);
 		}
+		kalMemFree(prlogBuf, VIR_MEM_TYPE, logBufLen);
 		return;
 	}
 	idx += kalSnprintf(prlogBuf, logBufLen, "%u: ", prList->u4NumElem);
