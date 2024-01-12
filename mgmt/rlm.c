@@ -6380,7 +6380,7 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearStopTx)
 	prCSAParams->ucCsaCount = MAX_CSA_COUNT;
 	if (!fgClearStopTx)
 		prCSAParams->fgHasStopTx = fgHasStopTx;
-	DBGLOG(RLM, INFO, "Reset CSA count to %u for BSS%d fgHasStopTx=%d",
+	DBGLOG(RLM, TRACE, "Reset CSA count to %u for BSS%d fgHasStopTx=%d",
 		prCSAParams->ucCsaCount, prBssInfo->ucBssIndex,
 		prCSAParams->fgHasStopTx);
 }

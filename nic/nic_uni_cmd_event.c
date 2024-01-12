@@ -11527,7 +11527,7 @@ void nicUniEventThermalProtect(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			info = (struct EXT_EVENT_THERMAL_PROTECT_DUTY_NOTIFY *)
 					rsp->aucBuffer;
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"Duty update, B[%d] L[%d] D[%d] T[%d] P[%d]\n",
 				info->u1BandIdx, info->u1LevelIdx,
 				info->u1DutyPercent, info->i4Temp,
@@ -11541,7 +11541,7 @@ void nicUniEventThermalProtect(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			info = (struct EXT_EVENT_THERMAL_PROTECT_RADIO_NOTIFY *)
 					rsp->aucBuffer;
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"Radio update, B[%d] L[%d] T[%d] P[%d]\n",
 				info->u1BandIdx, info->u1LevelIdx,
 				info->i4Temp, info->eProtectActType);
@@ -11558,7 +11558,7 @@ void nicUniEventThermalProtect(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			for (i = UNI_THERMAL_PROTECT_TYPE_NTX_CTRL;
 				i < UNI_THERMAL_PROTECT_TYPE_NUM; i++) {
 
-				DBGLOG(NIC, INFO,
+				DBGLOG(NIC, TRACE,
 					"MechInfo[%d/%d/%d/%d/%d/%d/%d]",
 					info->ucProtectionType[i],
 					info->ucTriggerType[i],
@@ -11578,7 +11578,7 @@ void nicUniEventThermalProtect(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			info = (struct UNI_EVENT_THERMAL_PROTECT_DUTY_INFO *)
 					rsp->aucBuffer;
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"Duty Info, Band[%d] Duty[%d/%d/%d/%d]\n",
 				info->ucBandIdx, info->ucDuty0, info->ucDuty1,
 				info->ucDuty2, info->ucDuty3);

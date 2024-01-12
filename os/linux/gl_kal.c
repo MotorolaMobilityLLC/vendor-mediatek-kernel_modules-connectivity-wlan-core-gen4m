@@ -15350,7 +15350,7 @@ static void kalWorkInit(struct GLUE_INFO *pr,
 		DBGLOG(INIT, ERROR, "%s init fail\n",
 			prWork->sWorkQueueName);
 	else
-		DBGLOG(INIT, INFO, "%s init done\n",
+		DBGLOG(INIT, TRACE, "%s init done\n",
 			prWork->sWorkQueueName);
 }
 
@@ -15372,7 +15372,7 @@ static void kalWorkUninit(struct GLUE_INFO *pr,
 		destroy_workqueue(prWq);
 	}
 
-	DBGLOG(INIT, INFO, "%s uninit done\n",
+	DBGLOG(INIT, TRACE, "%s uninit done\n",
 		prWork->sWorkQueueName);
 }
 
