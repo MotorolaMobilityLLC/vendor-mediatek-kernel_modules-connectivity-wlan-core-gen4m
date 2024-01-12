@@ -30,6 +30,7 @@
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
+#include "mt6653_wifi_dbg_sop.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -1234,6 +1235,62 @@ struct PP_TOP_CR rMt6653PpTopCr = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
+	const struct wlan_dump_list *dump_list)
+{
+#define MAX_REG_DUMP_NUM		16
+#define REG_DUMP_ARRAY_SIZE		170
+
+	uint32_t u4ReadSize = dump_list->read_cmd_size;
+	const struct wlan_dbg_command *pCmdList = NULL;
+	char dumpLineBuf[REG_DUMP_ARRAY_SIZE] = {0};
+	uint32_t u4Line = 0, u4ReadCount = 0, u4ReadVal;
+	uint32_t u4Offset = 0, u4TotalLen = REG_DUMP_ARRAY_SIZE;
+	uint32_t i;
+
+	if (!prAdapter)
+		return;
+
+	if (!dump_list)
+		return;
+
+	/* Header */
+	DBGLOG(HAL, INFO, "[%s][H] [%s][Count: %d]\n",
+			dump_list->tag, dump_list->description, u4ReadSize);
+
+	/* Reg Dump */
+	pCmdList = dump_list->cmd_list;
+	for (i = 0; i < dump_list->dump_size; i++) {
+
+		if (pCmdList[i].write) {
+			HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
+				((pCmdList[i].value & pCmdList[i].mask)));
+		}
+		if (pCmdList[i].read) {
+			if (u4ReadCount % MAX_REG_DUMP_NUM == 0) {
+				u4Offset += snprintf(dumpLineBuf + u4Offset,
+					u4TotalLen - u4Offset,
+					"[%s][%d]", dump_list->tag, u4Line);
+				u4Line++;
+			}
+
+			HAL_RMCR_RD(PLAT_DBG, prAdapter, pCmdList[i].r_addr,
+				&u4ReadVal);
+			u4Offset += snprintf(dumpLineBuf + u4Offset,
+					u4TotalLen - u4Offset,
+					" %08X", u4ReadVal);
+			u4ReadCount++;
+
+			if ((u4ReadCount % MAX_REG_DUMP_NUM == 0) ||
+			    (u4ReadCount >= u4ReadSize)) {
+				DBGLOG(HAL, INFO, "%s\n", dumpLineBuf);
+				memset(dumpLineBuf, 0, REG_DUMP_ARRAY_SIZE);
+				u4Offset = 0;
+			}
+		}
+	}
+}
+
 void mt6653_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
@@ -1299,8 +1356,25 @@ void mt6653_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 }
 
 #if defined(_HIF_PCIE)
-void mt6653_dumpCbtopReg(struct ADAPTER *ad)
+void mt6653_dumpCbInfraReg(struct ADAPTER *ad)
 {
+	/* SectionA - cb_infra vlp */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_a);
+
+	/* SectionB - cb_infra vcore on */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_b);
+
+	/* SectionC - cb_infra off, read check ok */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_c);
+
+	/* SectionD - pcie */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_d);
+
+	/* SectionE - cbtop CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_e);
+
+	/* SectionG - dma dbg_ctl */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_g);
 }
 
 void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad)
@@ -1416,7 +1490,7 @@ void mt6653_dumpPcGprLog(struct ADAPTER *ad)
 	connac3x_dump_format_memory32(gpr_dump, GPR_LOG_NUM, "GPR log");
 }
 
-void mt6653_dumpN45CoreReg(struct ADAPTER *ad)
+void mt6653_dumpRV55CoreReg(struct ADAPTER *ad)
 {
 #define GENERAL_LOG_NUM			32
 #define CTRL_LOG_NUM			5
@@ -1447,7 +1521,7 @@ void mt6653_dumpN45CoreReg(struct ADAPTER *ad)
 	}
 	connac3x_dump_format_memory32(general_dump,
 		GENERAL_LOG_NUM,
-		"N45 General Purpose Registers");
+		"RV55 General Purpose Registers");
 
 	kalMemZero(ctl_status_dump, sizeof(ctl_status_dump));
 	for (i = 0, idx = 0; i < ARRAY_SIZE(n45_ctrl_status_dump_list); i++) {
@@ -1466,215 +1540,34 @@ void mt6653_dumpN45CoreReg(struct ADAPTER *ad)
 	}
 	connac3x_dump_format_memory32(ctl_status_dump,
 		CTRL_LOG_NUM,
-		"N45 Control & Status Registers");
-}
-
-static void mt6653_dumpWfTopMiscOn(struct ADAPTER *ad)
-{
-	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
-	uint32_t au4List[] = {
-		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
-		0x00000010, 0x00000012, 0x00000017, 0x00000018, 0x00000019,
-		0x0000001A, 0x0000001B, 0x0000001D
-	};
-
-	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_EN_FR_HIF_ADDR;
-	u4WrVal = 0x00000001;
-	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-	DBGLOG(HAL, INFO,
-	       "\tW 0x%08x=[0x%08x]\n",
-	       u4WrAddr, u4WrVal);
-
-	u4WrAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_SEL_FR_HIF_ADDR;
-	u4RdAddr = CONN_HOST_CSR_TOP_WF_ON_MONFLG_OUT_ADDR;
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
-		u4WrVal = au4List[u4Idx];
-		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
-	}
-}
-
-static void mt6653_dumpWfTopMiscVon(struct ADAPTER *ad)
-{
-	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
-	uint32_t au4List[] = {
-		0x00000000, 0x00000001, 0x00000002, 0x00000003, 0x00000004,
-		0x00000008
-	};
-
-	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_EN_FR_HIF_ADDR;
-	u4WrVal = 0x00000001;
-	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-	DBGLOG(HAL, INFO,
-	       "\tW 0x%08x=[0x%08x]\n",
-	       u4WrAddr, u4WrVal);
-
-	u4WrAddr = CONN_HOST_CSR_TOP_ADDR_WF_VON_MONFLG_SEL_FR_HIF_ADDR;
-	u4RdAddr = CONN_DBG_CTL_WF_VON_DEBUG_OUT_ADDR;
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
-		u4WrVal = au4List[u4Idx];
-		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
-	}
-}
-
-static void mt6653_dumpWfTopCfgon(struct ADAPTER *ad)
-{
-	uint32_t u4RdAddr, u4Val = 0, u4Idx;
-	uint32_t au4List[] = {
-		WF_TOP_CFG_ON_DEBUG_FLAG0_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG1_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG2_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG3_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG4_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG5_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG6_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG7_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG8_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG9_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG10_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG11_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG12_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG13_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG14_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG15_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG16_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG17_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG18_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG19_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG20_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG21_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG22_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG23_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG24_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG25_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG26_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG27_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG28_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG29_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG30_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG31_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG32_ADDR,
-		WF_TOP_CFG_ON_DEBUG_FLAG33_ADDR,
-	};
-
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
-		u4RdAddr = au4List[u4Idx];
-		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tR 0x%08x=[0x%08x]\n",
-		       u4RdAddr, u4Val);
-	}
+		"RV55 Control & Status Registers");
 }
 
 void mt6653_dumpWfTopReg(struct ADAPTER *ad)
 {
-	/* Section A: Dump wf_top_misc_on monflag */
-	mt6653_dumpWfTopMiscOn(ad);
+	/* SectionA - Dump wf_top_misc_on monflg */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_a);
 
-	/* Section B: Dump wf_top_misc_von monflag */
-	mt6653_dumpWfTopMiscVon(ad);
+	/* SectionB - Dump wf_top_misc_von monflg */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_b);
 
-	/* Section C: Dump wf_top_cfg_on debug CR */
-	mt6653_dumpWfTopCfgon(ad);
-}
+	/* SectionC - Dump wf_top_cfg_on debug CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_c);
 
-static void mt6653_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad)
-{
-	uint32_t u4WrVal = 0, u4Val = 0, u4Idx, u4RdAddr, u4WrAddr;
-	uint32_t au4List[] = {
-		0x00010001, 0x00020001, 0x00030001, 0x00040001, 0x00050001,
-		0x00060001, 0x00070001, 0x00080001, 0x00090001, 0x00010002,
-		0x00020002, 0x00030002, 0x00040002, 0x00050002
-	};
-
-	u4RdAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR;
-	u4WrAddr = CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_ADDR;
-	u4WrVal = 0x4;
-	HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-	HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-	DBGLOG(HAL, INFO,
-	       "\tR 0x%08x=[0x%08x], W 0x%08x=[0x%08x]\n",
-	       u4RdAddr, u4Val, u4WrAddr, u4WrVal);
-
-	u4WrAddr = CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_DEBUGSYS_CTRL_ADDR;
-	u4RdAddr = CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR;
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
-		u4WrVal = au4List[u4Idx];
-		HAL_MCR_WR(ad, u4WrAddr, u4WrVal);
-		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tW 0x%08x=[0x%08x], R 0x%08x=[0x%08x]\n",
-		       u4WrAddr, u4WrVal, u4RdAddr, u4Val);
-	}
-}
-
-static void mt6653_dumpWfVdnrTimeoutInfo(struct ADAPTER *ad)
-{
-	uint32_t u4RdAddr, u4Val = 0, u4Idx;
-	uint32_t au4List[] = {
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT2_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT3_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT4_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT5_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT6_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT7_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT8_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT9_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT10_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT11_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT12_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT13_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT14_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_RESULT15_ADDR,
-		WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_ADDR,
-	};
-
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
-		u4RdAddr = au4List[u4Idx];
-		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tR 0x%08x=[0x%08x]\n",
-		       u4RdAddr, u4Val);
-	}
-}
-
-static void mt6653_dumpAhbApbTimeoutInfo(struct ADAPTER *ad)
-{
-	uint32_t u4RdAddr, u4Val = 0, u4Idx;
-	uint32_t au4List[] = {
-		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_ADDR_ADDR,
-		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_INFO_ADDR,
-		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_ID_ADDR,
-		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_LYR_ADDR,
-		CONN_MCU_BUS_CR_AHB_APB_TIMEOUT_CTRL_ADDR
-	};
-
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4List); u4Idx++) {
-		u4RdAddr = au4List[u4Idx];
-		HAL_RMCR_RD(PLAT_DBG, ad, u4RdAddr, &u4Val);
-		DBGLOG(HAL, INFO,
-		       "\tR 0x%08x=[0x%08x]\n",
-		       u4RdAddr, u4Val);
-	}
+	/* SectionD - Dump wf_top_rgu_on debug CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d);
 }
 
 void mt6653_dumpWfBusReg(struct ADAPTER *ad)
 {
-	/* Section A: Dump VDNR timeout host side info */
-	mt6653_dumpHostVdnrTimeoutInfo(ad);
+	/* SectionA - Dump VDNR timeout host side info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_a);
 
-	/* Section B: Dump VDNR timeout wf side info */
-	mt6653_dumpWfVdnrTimeoutInfo(ad);
+	/* SectionB - Dump VDNR timeout wf side info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_b);
 
-	/* Section C: Dump AHB APB timeout info */
-	mt6653_dumpAhbApbTimeoutInfo(ad);
+	/* SectionC - Dump AHB APB timeout info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_c);
 }
 
 static void mt6653_dumpConninfraBus(struct ADAPTER *ad)
@@ -1691,13 +1584,16 @@ void mt6653_DumpBusHangCr(struct ADAPTER *ad)
 		return;
 	}
 
+	DBGLOG(HAL, INFO, "[PSOP9_1] version=%s\n",
+			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
+
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6653_dumpConninfraBus(ad);
 #endif
-	mt6653_dumpCbtopReg(ad);
+	mt6653_dumpCbInfraReg(ad);
 	mt6653_dumpWfsyscpupcr(ad);
 	mt6653_dumpPcGprLog(ad);
-	mt6653_dumpN45CoreReg(ad);
+	mt6653_dumpRV55CoreReg(ad);
 	mt6653_dumpWfTopReg(ad);
 	mt6653_dumpWfBusReg(ad);
 }

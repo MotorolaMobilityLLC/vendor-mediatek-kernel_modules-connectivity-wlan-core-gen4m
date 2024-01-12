@@ -1,11 +1,11 @@
 /* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2021 MediaTek Inc.
+ * Copyright (c) 2023 MediaTek Inc.
  */
 
 /*! \file  mt6653.h
-*    \brief This file contains the info of mt6653
-*/
+ *  \brief This file contains the info of mt6653
+ */
 
 #ifdef MT6653
 
@@ -154,10 +154,10 @@ void mt6653_icapDownVcoreClockRate(void);
 void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad);
 void mt6653_DumpBusHangCr(struct ADAPTER *ad);
 void mt6653_dumpPcGprLog(struct ADAPTER *ad);
-void mt6653_dumpN45CoreReg(struct ADAPTER *ad);
+void mt6653_dumpRV55CoreReg(struct ADAPTER *ad);
 void mt6653_dumpWfTopReg(struct ADAPTER *ad);
 void mt6653_dumpWfBusReg(struct ADAPTER *ad);
-void mt6653_dumpCbtopReg(struct ADAPTER *ad);
+void mt6653_dumpCbInfraReg(struct ADAPTER *ad);
 u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad);
 u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad);
 #endif
