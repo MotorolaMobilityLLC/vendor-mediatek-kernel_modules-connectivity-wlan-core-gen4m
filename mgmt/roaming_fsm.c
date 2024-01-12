@@ -1426,4 +1426,40 @@ uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	       TRUE : FALSE;
 }
 
+u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	DBGLOG(INIT, INFO,
+		"BSSID[%d] C[%d] R[%d] A[%d] IsInPostpone[%d]\n",
+		ucBssIndex,
+		prBssInfo->eConnectionState,
+		prRoamingFsmInfo->eCurrentState,
+		prAisFsmInfo->eCurrentState,
+		aisFsmIsInProcessPostpone(prAdapter, ucBssIndex));
+
+	/* check if processing BTO */
+	if (aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))
+		return TRUE;
+
+	/* check if under roaming state */
+	if ((prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) &&
+		((prRoamingFsmInfo->eCurrentState == ROAMING_STATE_ROAM ||
+		prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY)
+		|| (prAisFsmInfo->eCurrentState == AIS_STATE_JOIN ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_ROAMING ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN)))
+		return TRUE;
+
+	return FALSE;
+}
+
 #endif

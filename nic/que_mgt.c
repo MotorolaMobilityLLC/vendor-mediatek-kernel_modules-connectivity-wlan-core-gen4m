@@ -9915,42 +9915,6 @@ u_int8_t qmArpMonitorIsCritical(uint8_t ucBssIndex)
 			qmArpMonitorGetCriticalThres(ucBssIndex));
 }
 
-u_int8_t qmCheckIfRoaming(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
-{
-#if CFG_SUPPORT_ROAMING
-	struct BSS_INFO *prBssInfo;
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct ROAMING_INFO *prRoamingFsmInfo;
-
-	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
-
-	DBGLOG(INIT, INFO,
-		"BSSID[%d] C[%d] R[%d] A[%d] IsInPostpone[%d]\n",
-		ucBssIndex,
-		prBssInfo->eConnectionState,
-		prRoamingFsmInfo->eCurrentState,
-		prAisFsmInfo->eCurrentState,
-		aisFsmIsInProcessPostpone(prAdapter, ucBssIndex));
-
-	/* check if processing BTO */
-	if (aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))
-		return TRUE;
-
-	/* check if under roaming state */
-	if ((prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) &&
-		((prRoamingFsmInfo->eCurrentState == ROAMING_STATE_ROAM ||
-		prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY)
-		|| (prAisFsmInfo->eCurrentState == AIS_STATE_JOIN ||
-		prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH ||
-		prAisFsmInfo->eCurrentState == AIS_STATE_ROAMING ||
-		prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN)))
-		return TRUE;
-#endif /* CFG_SUPPORT_ROAMING */
-	return FALSE;
-}
-
 void qmResetArpDetect(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	if (!prAdapter)
@@ -9962,7 +9926,7 @@ void qmResetArpDetect(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	qmArpMonitorReset(ucBssIndex);
 
 	/* Don't reset the gatewayip while roaming or processing BTO */
-	if (!(qmCheckIfRoaming(prAdapter, ucBssIndex))) {
+	if (!(roamingFsmCheckIfRoaming(prAdapter, ucBssIndex))) {
 		qmArpMonitorResetGateway(ucBssIndex);
 		DBGLOG(INIT, INFO, "Reset gatewayIp and gatewayMac\n");
 	}
