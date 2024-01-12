@@ -802,6 +802,14 @@ subelem:
 		}
 	}
 
+#if CFG_EXT_SCAN
+	if (prMsg->eScanChannel == SCAN_CHANNEL_SPECIFIED &&
+		prMsg->ucChannelListNum == 0) {
+		DBGLOG(RRM, WARN, "ch num is 0! set to FULL scan\n");
+		prMsg->eScanChannel = SCAN_CHANNEL_FULL;
+	}
+#endif
+
 	DBGLOG(RRM, INFO,
 	       "ScanType %d, SsidNum %d, Dwell %d, MinDwell %d, ChnlNum %d\n",
 	       prParam->ucScanType, prParam->u4SsidNum,
