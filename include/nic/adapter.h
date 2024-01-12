@@ -567,7 +567,9 @@ struct BSS_INFO {
 #endif
 	uint8_t ucLinkIndex;
 
+#if (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1)
 	uint8_t ucVhtChannelWidthBackup;
+#endif /* (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1) */
 
 	uint16_t u2MaxIdlePeriod;
 	uint8_t ucIdleOptions;
