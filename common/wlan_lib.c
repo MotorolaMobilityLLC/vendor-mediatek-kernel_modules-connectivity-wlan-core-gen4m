@@ -809,6 +809,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		DRIVER_OWN_FAIL,
 		INIT_ADAPTER_FAIL,
 		INIT_HIFINFO_FAIL,
+		SET_CHIP_ECO_INFO_FAIL,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
 		FAIL_REASON_MAX
@@ -888,10 +889,12 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		HAL_ENABLE_FWDL(prAdapter, TRUE);
 
 		/* 4 <7> Get ECO Version */
-		u4Status = wlanSetChipEcoInfo(prAdapter);
-
-		if (u4Status != WLAN_STATUS_SUCCESS)
+		if (wlanSetChipEcoInfo(prAdapter) != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "wlanSetChipEcoInfo failed!\n");
+			u4Status = WLAN_STATUS_FAILURE;
+			eFailReason = SET_CHIP_ECO_INFO_FAIL;
 			break;
+		}
 
 		/* recheck Asic capability depends on ECO version */
 		wlanCheckAsicCap(prAdapter);
@@ -1042,6 +1045,7 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			switch (eFailReason) {
 			case WAIT_FIRMWARE_READY_FAIL:
 			case RAM_CODE_DOWNLOAD_FAIL:
+			case SET_CHIP_ECO_INFO_FAIL:
 			case INIT_HIFINFO_FAIL:
 				nicRxUninitialize(prAdapter);
 				nicTxRelease(prAdapter, FALSE);
