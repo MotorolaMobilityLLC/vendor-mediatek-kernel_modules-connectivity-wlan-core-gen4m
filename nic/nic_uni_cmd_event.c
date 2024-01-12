@@ -112,7 +112,8 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_DBDC_PARMS] = nicUniCmdSetMbmc,
 	[CMD_ID_NIC_POWER_CTRL] = nicUniCmdPowerCtrl,
 	[CMD_ID_SET_DOMAIN_INFO] = nicUniCmdSetDomain,
-	[CMD_ID_LOG_UI_INFO] = nicUniCmdWsysConfig,
+	[CMD_ID_LOG_UI_INFO] = nicUniCmdWsysFwLogUI,
+	[CMD_ID_BASIC_CONFIG] = nicUniCmdWsysFwBasicConfig,
 	[CMD_ID_SET_SUSPEND_MODE] = nicUniCmdSetSuspendMode,
 	[CMD_ID_SET_WOWLAN] = nicUniCmdSetWOWLAN,
 	[CMD_ID_POWER_SAVE_MODE] = nicUniCmdPowerSaveMode,
@@ -1088,7 +1089,7 @@ uint32_t nicUniCmdScanCancel(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicUniCmdWsysConfig(struct ADAPTER *ad,
+uint32_t nicUniCmdWsysFwLogUI(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	struct CMD_EVENT_LOG_UI_INFO *cmd;
@@ -1116,6 +1117,41 @@ uint32_t nicUniCmdWsysConfig(struct ADAPTER *ad,
 	tag->u2Length = sizeof(*tag);
 	tag->ucVersion = cmd->ucVersion;
 	tag->ucLogLevel = cmd->ucLogLevel;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdWsysFwBasicConfig(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_BASIC_CONFIG *cmd;
+	struct UNI_CMD_WSYS_CONFIG *uni_cmd;
+	struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_WSYS_CONFIG) +
+	     		     sizeof(struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG);
+
+	if (info->ucCID != CMD_ID_BASIC_CONFIG ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_BASIC_CONFIG *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_WSYS_CONFIG,
+		  max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_WSYS_CONFIG *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_WSYS_CONFIG_FW_BASIC_CONFIG *)
+						uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_WSYS_CONFIG_TAG_FW_BASIC_CONFIG;
+	tag->u2Length = sizeof(*tag);
+	tag->u2RxChecksum = cmd->rCsumOffload.u2RxChecksum;
+	tag->u2TxChecksum = cmd->rCsumOffload.u2TxChecksum;
+	tag->ucCtrlFlagAssertPath = cmd->ucCtrlFlagAssertPath;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
