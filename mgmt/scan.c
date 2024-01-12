@@ -111,6 +111,7 @@ void scnInit(struct ADAPTER *prAdapter)
 
 	/* 4 <1> Reset STATE and Message List */
 	prScanInfo->eCurrentState = SCAN_STATE_IDLE;
+	prScanInfo->fgWifiOnFirstScan = TRUE;
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	prScanInfo->ucScnZeroMdrdyTimes = 0;
@@ -1826,11 +1827,33 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 				return FALSE;
 			}
 		}
+	} else if (prScanParam->eScanChannel == SCAN_CHANNEL_FULL) {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (eRfBand != BAND_6G)
+#endif
+		{
+			log_dbg(SCN, INFO,
+					"[ch:%d][band:%d] already in scan chnl list\n",
+						ucRnrChNum, eRfBand);
+			return FALSE;
+		}
 	}
 
 	return TRUE;
 }
 
+uint8_t scanIsNeedRnrScan(struct ADAPTER *prAdapter,
+	struct SCAN_INFO *prScanInfo)
+{
+	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE
+		|| prScanInfo->eCurrentState != SCAN_STATE_SCANNING
+		|| !prScanInfo->rScanParam.fgOobRnrParseEn
+		|| prScanInfo->fgWifiOnFirstScan) {
+		DBGLOG(SCN, TRACE, "Skip oob scan Rnr parsing\n");
+		return FALSE;
+	}
+	return TRUE;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Allocate new NEIGHBOR_AP_INFO structure
@@ -1860,12 +1883,8 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
 
-	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE
-		|| prScanInfo->eCurrentState != SCAN_STATE_SCANNING
-		|| !prScanInfo->rScanParam.fgOobRnrParseEn) {
-		DBGLOG(SCN, TRACE, "Skip oob scan Rnr parsing\n");
+	if (!scanIsNeedRnrScan(prAdapter, prScanInfo))
 		return;
-	}
 
 #if CFG_SUPPORT_802_11BE_MLO
 	ucNeedMlo = (prAdapter->rWifiVar.ucMldLinkMax > 1);
@@ -2275,7 +2294,6 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 			cnmMemFree(prAdapter, prNeighborAPInfo);
 	}
 }
-
 #endif /* CFG_SUPPORT_WIFI_RNR */
 
 /*----------------------------------------------------------------------------*/

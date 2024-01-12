@@ -1380,6 +1380,7 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 			prScanDone->ucSeqNum,
 			prScanInfo->eCurrentState);
 	}
+	prScanInfo->fgWifiOnFirstScan = FALSE;
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	/* SCAN NO AP RECOVERY is only for AIS and not OOB scan,
 	 * FW report scan done, reset ScnTimeoutTimes and reset count to 0
