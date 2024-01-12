@@ -1455,6 +1455,11 @@ void wlanRegisterInetAddrNotifier(void);
 void wlanUnregisterInetAddrNotifier(void);
 void wlanRegisterNetdevNotifier(void);
 void wlanUnregisterNetdevNotifier(void);
+#if CFG_POWER_OFF_CTRL_SUPPORT
+extern void wlanRegisterRebootNotifier(void);
+extern void wlanUnregisterRebootNotifier(void);
+#endif
+
 #if CFG_MTK_ANDROID_WMT
 typedef int (*set_p2p_mode) (struct net_device *netdev,
 			     struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode);
