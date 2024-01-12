@@ -149,7 +149,7 @@ static ssize_t ics_ring_write(struct ics_ring *iRing, char *buf,
 			goto skip;
 
 		WLAN_RING_WRITE_FOR_EACH(left_to_write, ring_seg, ring) {
-			memcpy(ring_seg.ring_pt, buf, ring_seg.sz);
+			memcpy(ring_seg.ring_pt, buf + written, ring_seg.sz);
 			left_to_write -= ring_seg.sz;
 			written += ring_seg.sz;
 		}
