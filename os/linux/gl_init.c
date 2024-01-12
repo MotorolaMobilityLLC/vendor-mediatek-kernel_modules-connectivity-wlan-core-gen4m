@@ -2006,7 +2006,7 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 				     u4Idx,
 				     (void *)gprWdev[u4Idx]->netdev);
 #if CFG_SUPPORT_PERSIST_NETDEV
-			if (gprNetdev[u4Idx]) {
+			if (gprNetdev[u4Idx]->reg_state == NETREG_REGISTERED) {
 				DBGLOG(INIT, INFO,
 					"PERSIST_NETDEV[%d]: Already registered netdev.\n",
 					u4Idx);
@@ -2022,10 +2022,6 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 					gprWdev[u4Idx]->netdev);
 				i4DevIdx = -1;
 			}
-#if CFG_SUPPORT_PERSIST_NETDEV
-			else
-				gprNetdev[u4Idx] = gprWdev[u4Idx]->netdev;
-#endif
 		}
 
 		if (i4DevIdx != -1)
@@ -2048,7 +2044,6 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 static void wlanNetUnregister(struct wireless_dev *prWdev)
 {
 	struct GLUE_INFO *prGlueInfo;
-	uint32_t u4Idx = 0;
 
 	if (!prWdev) {
 		DBGLOG(INIT, ERROR, "The device context is NULL\n");
@@ -2057,14 +2052,7 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
 
-#if CFG_SUPPORT_PERSIST_NETDEV
-#ifdef CONFIG_WIRELESS_EXT
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
-			gprWdev[u4Idx]->netdev->wireless_handlers = NULL;
-	}
-#endif
-#else
+#if !CFG_SUPPORT_PERSIST_NETDEV
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
 			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
@@ -2636,6 +2624,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 #endif
 				ether_setup,
 				CFG_MAX_TXQ_NUM);
+			gprNetdev[i] = prDevHandler;
 		} else {
 			DBGLOG(INIT, INFO,
 				"PERSIST_NETDEV[%d]: netdev already allocated.\n",
@@ -2835,7 +2824,19 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 	/* Free net_device and private data, which are allocated by
 	 * alloc_netdev().
 	 */
-#if !CFG_SUPPORT_PERSIST_NETDEV
+#if CFG_SUPPORT_PERSIST_NETDEV
+#ifdef CONFIG_WIRELESS_EXT
+	{
+		uint32_t u4Idx = 0;
+
+		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
+				gprWdev[u4Idx]->netdev->wireless_handlers =
+					NULL;
+		}
+	}
+#endif
+#else
 	wlanFreeNetDev();
 #endif
 	/* gPrDev is assigned by prGlueInfo->prDevHandler,
