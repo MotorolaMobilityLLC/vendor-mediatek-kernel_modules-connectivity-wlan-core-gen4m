@@ -1082,6 +1082,21 @@ struct UNI_CMD_STAREC_EHT_BASIC {
 	uint8_t   aucPaddings[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct BFEE_STA_REC {
+	uint8_t   fgFbIdentityMatrix;
+	uint8_t   fgIgnFbk;
+	uint8_t   fgRxsmmEnable;
+};
+
+/* starec link level BFee information (Tag 0x14) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_BFEE {
+	uint16_t  u2Tag;
+	uint16_t  u2Length;
+	struct BFEE_STA_REC  rBfeeStaRec;
+	uint8_t   aucPaddings[1];
+} __KAL_ATTRIB_PACKED__;
+
 /* MLD STAREC teardown (Tag 0x23) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_MLD_TEARDOWN {

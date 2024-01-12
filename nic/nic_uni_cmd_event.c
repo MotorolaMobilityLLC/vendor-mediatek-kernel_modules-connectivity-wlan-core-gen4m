@@ -3497,6 +3497,29 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 }
 #endif
 
+#if CFG_SUPPORT_RXSMM_WHITELIST
+uint32_t nicUniCmdStaRecTagBfee(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
+{
+	struct UNI_CMD_STAREC_BFEE *tag =
+		(struct UNI_CMD_STAREC_BFEE *)buf;
+
+	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
+
+	tag->u2Tag = UNI_CMD_STAREC_TAG_BFEE;
+	tag->u2Length = sizeof(*tag);
+	tag->rBfeeStaRec.fgFbIdentityMatrix = FALSE;
+	tag->rBfeeStaRec.fgIgnFbk = FALSE;
+	tag->rBfeeStaRec.fgRxsmmEnable = prStaRec->fgRxsmmEnable;
+
+	DBGLOG(INIT, INFO, "[BF]fgRxsmmEnable=%d\n",
+		tag->rBfeeStaRec.fgRxsmmEnable);
+
+	return tag->u2Length;
+}
+#endif
+
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t nicUniCmdStaRecTagMldSetup(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
@@ -3697,6 +3720,9 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_BA_OFFLOAD_INFO),
 	 nicUniCmdStaRecTagBAOffload},
 	{sizeof(struct UNI_CMD_STAREC_UAPSD_INFO), nicUniCmdStaRecTagUapsd},
+#if CFG_SUPPORT_RXSMM_WHITELIST
+	{sizeof(struct UNI_CMD_STAREC_BFEE), nicUniCmdStaRecTagBfee},
+#endif
 #if (CFG_SUPPORT_802_11BE == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_BASIC), nicUniCmdStaRecTagEhtInfo},
 #endif
