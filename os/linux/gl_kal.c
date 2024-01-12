@@ -13200,6 +13200,7 @@ static int get_connsys_thermal_temp(void *data, int *temp)
 exit:
 	if (status == WLAN_STATUS_SUCCESS) {
 		*temp = temp_data.u4Temperature;
+		*temp *= 1000;
 	} else {
 		*temp = THERMAL_TEMP_INVALID;
 	}
