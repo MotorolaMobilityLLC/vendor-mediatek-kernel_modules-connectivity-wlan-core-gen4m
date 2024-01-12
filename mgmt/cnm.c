@@ -5532,15 +5532,3 @@ uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter)
 	return ++prAdapter->ucCnmTokenID;
 }
 
-void cnmUpdateMbmcIdx(struct ADAPTER *prAdapter,
-	uint8_t ucBssIdx,
-	uint8_t ucBandIdx)
-{
-	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		ucBssIdx);
-
-	DBGLOG(CNM, INFO, "ucBssIdx=%d, ucBandIdx=%d\n", ucBssIdx, ucBandIdx);
-
-	if (prBssInfo)
-		prBssInfo->eBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
-}
