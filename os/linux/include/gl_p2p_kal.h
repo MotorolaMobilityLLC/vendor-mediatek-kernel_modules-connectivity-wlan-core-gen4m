@@ -364,6 +364,12 @@ void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
 u_int8_t kalP2pIsStoppingAp(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
+void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct RF_CHANNEL_INFO *prRfChnlInfo,
+	uint8_t ucCsaCount,
+	u_int8_t fgQuiet);
+
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 
@@ -406,5 +412,8 @@ void kalSetRilBridgeChannelInfo(
 	uint32_t u4Band,
 	uint32_t u4Channel);
 #endif
+
+void kalP2pStopApInterface(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 
 #endif /* _GL_P2P_KAL_H */

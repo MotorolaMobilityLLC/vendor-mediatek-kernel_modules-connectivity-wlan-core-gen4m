@@ -466,6 +466,10 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 #define kalP2pIsStoppingAp(_prAdapter, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kalP2pIndicateChnlSwitchStarted(_prAdapter, __prBssInfo, \
+	__prRfChnlInfo, __ucCsaCount, __fgQuiet) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define kalP2pIndicateChnlSwitch(_prAdapter, _prBssInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
@@ -473,6 +477,9 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalSetP2pDevMac(_prGlueInfo, _prBssInfo, _ucRoleIdx) \
+		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kalP2pStopApInterface(_prGlueInfo, _prBssInfo) \
 		KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
 void kalP2pUnlinkBss(struct GLUE_INFO *prGlueInfo, uint8_t aucBSSID[]);
@@ -510,7 +517,16 @@ void kalP2pNotifyDisconnComplete(struct ADAPTER *prAdapter,
 void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex);
 
+void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct RF_CHANNEL_INFO *prRfChnlInfo,
+	uint8_t ucCsaCount,
+	u_int8_t fgQuiet);
+
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
+
+void kalP2pStopApInterface(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 #endif
 #endif /* _GL_P2P_KAL_H */

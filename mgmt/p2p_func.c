@@ -8620,6 +8620,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	struct LINK *prClientList;
 	struct STA_RECORD *prCurrStaRec;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	uint32_t u4TimeoutMs;
 
 	DBGLOG(P2P, INFO, "bss index: %d, policy: %d\n", ucBssIdx, ePolicy);
 
@@ -8689,12 +8690,20 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		 * reported once in the beacon.
 		 */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		kalP2pIndicateChnlSwitchStarted(prAdapter,
+			prBssInfo,
+			prNewChannelInfo,
+			prAdapter->rWifiVar.ucChannelSwitchCount,
+			(prAdapter->rWifiVar.ucChannelSwitchMode == 1));
 #if CFG_ENABLE_CSA_BLOCK_SCAN
+		u4TimeoutMs = DEFAULT_P2P_CSA_TIMEOUT_MS;
+		u4TimeoutMs += TU_TO_MSEC(prBssInfo->u2BeaconInterval) *
+			prAdapter->rWifiVar.ucChannelSwitchCount;
 		cnmTimerStopTimer(prAdapter,
 				  &(prP2pRoleFsmInfo->rP2pCsaDoneTimer));
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
-			SEC_TO_MSEC(7));
+			u4TimeoutMs);
 #endif
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);

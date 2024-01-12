@@ -127,11 +127,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			(PFN_MGMT_TIMEOUT_FUNC) p2pRoleFsmRunEventTimeout,
 			(uintptr_t) prP2pRoleFsmInfo);
 
-		cnmTimerInitTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
-			(PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventCsaDoneTimeOut,
-			(uintptr_t)prP2pRoleFsmInfo);
-
 #if CFG_ENABLE_PER_STA_STATISTICS_LOG
 		cnmTimerInitTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
@@ -250,6 +245,11 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 			prP2pBssInfo->fgIsQBSS = TRUE;
 		else
 			prP2pBssInfo->fgIsQBSS = FALSE;
+
+		cnmTimerInitTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
+			(PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventCsaDoneTimeOut,
+			(uintptr_t)prP2pBssInfo);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		p2pFuncRadarInfoInit();
