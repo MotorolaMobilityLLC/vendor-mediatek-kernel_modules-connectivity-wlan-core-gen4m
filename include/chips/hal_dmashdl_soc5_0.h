@@ -143,43 +143,11 @@
 ********************************************************************************
 */
 
-enum ENUM_SOC5_0_DMASHDL_GROUP_IDX {
-	ENUM_SOC5_0_DMASHDL_GROUP_0 = 0,
-	ENUM_SOC5_0_DMASHDL_GROUP_1,
-	ENUM_SOC5_0_DMASHDL_GROUP_2,
-	ENUM_SOC5_0_DMASHDL_GROUP_3,
-	ENUM_SOC5_0_DMASHDL_GROUP_4,
-	ENUM_SOC5_0_DMASHDL_GROUP_5,
-	ENUM_SOC5_0_DMASHDL_GROUP_6,
-	ENUM_SOC5_0_DMASHDL_GROUP_7,
-	ENUM_SOC5_0_DMASHDL_GROUP_8,
-	ENUM_SOC5_0_DMASHDL_GROUP_9,
-	ENUM_SOC5_0_DMASHDL_GROUP_10,
-	ENUM_SOC5_0_DMASHDL_GROUP_11,
-	ENUM_SOC5_0_DMASHDL_GROUP_12,
-	ENUM_SOC5_0_DMASHDL_GROUP_13,
-	ENUM_SOC5_0_DMASHDL_GROUP_14,
-	ENUM_SOC5_0_DMASHDL_GROUP_15,
-	ENUM_SOC5_0_DMASHDL_GROUP_NUM
-};
-
-struct SOC5_0_DMASHDL_CFG {
-	u_int8_t fgSlotArbiterEn;
-	uint16_t u2PktPleMaxPage;
-	uint16_t u2PktPseMaxPage;
-	u_int8_t afgRefillEn[ENUM_SOC5_0_DMASHDL_GROUP_NUM];
-	uint16_t au2MaxQuota[ENUM_SOC5_0_DMASHDL_GROUP_NUM];
-	uint16_t au2MinQuota[ENUM_SOC5_0_DMASHDL_GROUP_NUM];
-	uint8_t aucQueue2Group[32];
-	uint8_t aucPriority2Group[16];
-	uint16_t u2HifAckCntTh;
-	uint16_t u2HifGupActMap;
-};
-
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+extern struct DMASHDL_CFG rSOC5_0_DmashdlCfg;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -200,24 +168,6 @@ struct SOC5_0_DMASHDL_CFG {
 *                              F U N C T I O N S
 ********************************************************************************
 */
-
-void soc5_0HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage);
-
-void soc5_0HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage);
-
-void soc5_0HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
-			       u_int8_t fgEnable);
-
-void soc5_0HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MaxQuota);
-
-void soc5_0HalDmashdlSetMinQuota(struct ADAPTER *prAdatper, uint8_t ucGroup,
-				 uint16_t u2MinQuota);
-
-void soc5_0HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
-				     uint8_t ucGroup);
 
 void soc5_0DmashdlInit(struct ADAPTER *prAdapter);
 

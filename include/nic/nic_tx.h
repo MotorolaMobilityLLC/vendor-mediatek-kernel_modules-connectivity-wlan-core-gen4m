@@ -1744,7 +1744,7 @@ do { \
 	HAL_MCR_WR( \
 		__pAd, \
 		__pAd->chip_info->arb_ac_mode_addr, \
-		0xFFFFFFFF)
+		0xFFFF)
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
 /*******************************************************************************

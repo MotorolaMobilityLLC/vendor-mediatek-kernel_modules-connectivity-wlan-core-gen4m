@@ -2890,7 +2890,7 @@ void connac2x_show_wfdma_ring_info(
 	uint32_t idx;
 	uint32_t group_cnt;
 	uint32_t u4DmaCfgCrAddr;
-	const struct wfdma_group_info *group;
+	struct wfdma_group_info *group;
 	uint32_t u4_hw_desc_base_value = 0;
 	uint32_t u4_hw_cnt_value = 0;
 	uint32_t u4_hw_cidx_value = 0;
@@ -2923,6 +2923,10 @@ void connac2x_show_wfdma_ring_info(
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
+
+		group->cnt = u4_hw_cnt_value;
+		group->cidx = u4_hw_cidx_value;
+		group->didx = u4_hw_didx_value;
 
 		queue_cnt = (u4_hw_cidx_value >= u4_hw_didx_value) ?
 			(u4_hw_cidx_value - u4_hw_didx_value) :
@@ -2960,6 +2964,10 @@ void connac2x_show_wfdma_ring_info(
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
 
+		group->cnt = u4_hw_cnt_value;
+		group->cidx = u4_hw_cidx_value;
+		group->didx = u4_hw_didx_value;
+
 		queue_cnt = (u4_hw_didx_value > u4_hw_cidx_value) ?
 			(u4_hw_didx_value - u4_hw_cidx_value - 1) :
 			(u4_hw_didx_value - u4_hw_cidx_value
@@ -2971,6 +2979,49 @@ void connac2x_show_wfdma_ring_info(
 			u4DmaCfgCrAddr, u4_hw_desc_base_value,
 			u4_hw_cnt_value, u4_hw_cidx_value,
 			u4_hw_didx_value, queue_cnt);
+	}
+}
+
+void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct RTMP_TX_RING *prTxRing;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t i = 0, u4SwIdx;
+
+	/* PDMA Tx/Rx descriptor & packet content */
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	for (i = 0; i < prBusInfo->wfmda_host_tx_group_len; i++) {
+		if (!prBusInfo->wfmda_host_tx_group[i].dump_ring_content)
+			continue;
+		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n", i);
+		prTxRing = &prHifInfo->TxRing[i];
+		u4SwIdx = prBusInfo->wfmda_host_tx_group[i].didx;
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
+			      u4SwIdx, true);
+		u4SwIdx = prBusInfo->wfmda_host_tx_group[i].didx == 0 ?
+			prBusInfo->wfmda_host_tx_group[i].cnt - 1 :
+			prBusInfo->wfmda_host_tx_group[i].didx - 1;
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
+			      u4SwIdx, true);
+	}
+
+	for (i = 0; i < prBusInfo->wfmda_host_rx_group_len; i++) {
+		if (!prBusInfo->wfmda_host_rx_group[i].dump_ring_content)
+			continue;
+		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n", i);
+		prRxRing = &prHifInfo->RxRing[i];
+		u4SwIdx = prBusInfo->wfmda_host_rx_group[i].didx;
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+			      u4SwIdx, true);
+		u4SwIdx = prBusInfo->wfmda_host_rx_group[i].didx == 0 ?
+			prBusInfo->wfmda_host_rx_group[i].cnt - 1 :
+			prBusInfo->wfmda_host_rx_group[i].didx - 1;
+		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+			      u4SwIdx, true);
 	}
 }
 
@@ -3048,7 +3099,154 @@ void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 				WFDMA_TYPE_WM);
 	}
 
+	connac2x_show_wfdma_desc(prAdapter);
+
 	dumpPPDebugCr(prAdapter);
+}
+
+void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct DMASHDL_CFG *prCfg;
+	uint32_t value = 0;
+	uint8_t idx;
+	uint32_t rsv_cnt = 0;
+	uint32_t src_cnt = 0;
+	uint32_t total_src_cnt = 0;
+	uint32_t total_rsv_cnt = 0;
+	uint32_t ffa_cnt = 0;
+	uint32_t free_pg_cnt = 0;
+	uint32_t ple_rpg_hif;
+	uint32_t ple_upg_hif;
+	uint8_t is_mismatch = FALSE;
+
+	DBGLOG(HAL, INFO, "DMASHDL info:\n");
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prCfg = prBusInfo->prDmashdlCfg;
+
+	asicConnac2xDmashdlGetRefill(prAdapter);
+	asicConnac2xDmashdlGetPktMaxPage(prAdapter);
+
+	HAL_MCR_RD(prAdapter, prCfg->rErrorFlagCtrl.u4Addr, &value);
+	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
+	       prCfg->rErrorFlagCtrl.u4Addr, value);
+
+	for (idx = 0; idx < ENUM_DMASHDL_GROUP_2; idx++) {
+		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+		asicConnac2xDmashdlGetGroupControl(prAdapter, idx);
+		rsv_cnt = asicConnac2xDmashdlGetRsvCount(prAdapter, idx);
+		src_cnt = asicConnac2xDmashdlGetSrcCount(prAdapter, idx);
+		asicConnac2xDmashdlGetPKTCount(prAdapter, idx);
+		total_src_cnt += src_cnt;
+		total_rsv_cnt += rsv_cnt;
+	}
+	HAL_MCR_RD(prAdapter, prCfg->rStatusRdFfaCnt.u4Addr, &value);
+	ffa_cnt = (value & prCfg->rStatusRdFfaCnt.u4Mask) >>
+		prCfg->rStatusRdFfaCnt.u4Shift;
+	free_pg_cnt = (value & prCfg->rStatusRdFreePageCnt.u4Mask) >>
+		prCfg->rStatusRdFreePageCnt.u4Shift;
+	DBGLOG(HAL, INFO, "\tDMASHDL Status_RD(0x%08x): 0x%08x\n",
+		prCfg->rStatusRdFreePageCnt.u4Addr, value);
+	DBGLOG(HAL, INFO, "\tfree page cnt = 0x%03x, ffa cnt = 0x%03x\n",
+		free_pg_cnt, ffa_cnt);
+
+	DBGLOG(HAL, INFO, "\nDMASHDL Counter Check:\n");
+	HAL_MCR_RD(prAdapter, prCfg->rHifPgInfoHifRsvCnt.u4Addr, &value);
+	ple_rpg_hif = (value & prCfg->rHifPgInfoHifRsvCnt.u4Mask) >>
+		  prCfg->rHifPgInfoHifRsvCnt.u4Shift;
+	ple_upg_hif = (value & prCfg->rHifPgInfoHifSrcCnt.u4Mask) >>
+		prCfg->rHifPgInfoHifSrcCnt.u4Shift;
+	DBGLOG(HAL, INFO,
+		"\tPLE:The used/reserved pages of PLE HIF group=0x%03x/0x%03x\n",
+		 ple_upg_hif, ple_rpg_hif);
+	DBGLOG(HAL, INFO,
+		"\tDMASHDL:The total used pages of group0~14=0x%03x\n",
+		total_src_cnt);
+
+	if (ple_upg_hif != total_src_cnt) {
+		DBGLOG(HAL, INFO,
+			"\tPLE used pages & total used pages mismatch!\n");
+		is_mismatch = TRUE;
+	}
+
+	DBGLOG(HAL, INFO,
+		"\tThe total reserved pages of group0~14=0x%03x\n",
+		total_rsv_cnt);
+	DBGLOG(HAL, INFO,
+		"\tThe total ffa pages of group0~14=0x%03x\n",
+		ffa_cnt);
+	DBGLOG(HAL, INFO,
+		"\tThe total free pages of group0~14=0x%03x\n",
+		free_pg_cnt);
+
+	if (free_pg_cnt != total_rsv_cnt + ffa_cnt) {
+		DBGLOG(HAL, INFO,
+			"\tmismatch(total_rsv_cnt + ffa_cnt in DMASHDL)\n");
+		is_mismatch = TRUE;
+	}
+
+	if (free_pg_cnt != ple_rpg_hif) {
+		DBGLOG(HAL, INFO, "\tmismatch(reserved pages in PLE)\n");
+		is_mismatch = TRUE;
+	}
+
+
+	if (!is_mismatch)
+		DBGLOG(HAL, INFO, "DMASHDL: no counter mismatch\n");
+}
+
+
+void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
+{
+#define CPUPCR_LOG_NUM	5
+#define CPUPCR_BUF_SZ	50
+
+	uint32_t i = 0;
+	uint32_t var_pc = 0;
+	uint32_t var_lp = 0;
+	uint64_t log_sec = 0;
+	uint64_t log_nsec = 0;
+	char log_buf_pc[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
+	char log_buf_lp[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
+
+	if (prAdapter == NULL)
+		return;
+
+	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
+		log_sec = local_clock();
+		log_nsec = do_div(log_sec, 1000000000)/1000;
+		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &var_pc);
+		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &var_lp);
+
+		kalSnprintf(log_buf_pc[i],
+			    CPUPCR_BUF_SZ,
+			    "%llu.%06llu/0x%08x;",
+			    log_sec,
+			    log_nsec,
+			    var_pc);
+
+		kalSnprintf(log_buf_lp[i],
+			    CPUPCR_BUF_SZ,
+			    "%llu.%06llu/0x%08x;",
+			    log_sec,
+			    log_nsec,
+			    var_lp);
+	}
+
+	DBGLOG(HAL, INFO, "wm pc=%s%s%s%s%s\n",
+	       log_buf_pc[0],
+	       log_buf_pc[1],
+	       log_buf_pc[2],
+	       log_buf_pc[3],
+	       log_buf_pc[4]);
+
+	DBGLOG(HAL, INFO, "wm lp=%s%s%s%s%s\n",
+	       log_buf_lp[0],
+	       log_buf_lp[1],
+	       log_buf_lp[2],
+	       log_buf_lp[3],
+	       log_buf_lp[4]);
 }
 #endif
 
