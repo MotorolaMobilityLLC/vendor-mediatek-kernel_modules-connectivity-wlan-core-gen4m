@@ -563,7 +563,9 @@ struct BUS_INFO mt6639_bus_info = {
 	.tx_ring3_data_idx = 3,
 	.rx_data_ring_num = 2,
 	.rx_evt_ring_num = 2,
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	.rx_data_ring_size = 4095,
+#elif CFG_SUPPORT_RX_PAGE_POOL
 	.rx_data_ring_size = 3072,
 #else
 	.rx_data_ring_size = 1024,
@@ -1931,6 +1933,12 @@ static void mt6639WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Addr, u4Val;
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	/* disable delay interrupt if enable rro */
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+		return;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	/* Enable RX periodic delayed interrupt (unit: 20us) */
 	u4Val = 0xF00000 | prWifiVar->u4PrdcIntTime;

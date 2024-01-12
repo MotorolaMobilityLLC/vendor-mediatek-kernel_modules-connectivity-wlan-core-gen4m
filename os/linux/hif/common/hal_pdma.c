@@ -1437,7 +1437,6 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
-	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Idx;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1445,18 +1444,9 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
-	prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
-		halMawdAllocTxRing(prAdapter->prGlueInfo, TRUE);
-
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		halRroAllocMem(prAdapter->prGlueInfo);
-		halRroAllocRcbList(prAdapter->prGlueInfo);
-		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
-			halMawdAllocRxBlkRing(prAdapter->prGlueInfo, TRUE);
-	}
+	halOffloadAllocMem(prAdapter->prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	if (prBusInfo->DmaShdlInit)
@@ -1572,7 +1562,6 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
-	struct WIFI_VAR *prWifiVar;
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
@@ -1583,7 +1572,6 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
-	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	del_timer_sync(&prHifInfo->rSerTimer);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
@@ -1594,8 +1582,8 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	halWpdmaFreeRing(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
-		halRroUninit(prGlueInfo);
+	halRroUninit(prGlueInfo);
+	halOffloadFreeMem(prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
@@ -2801,14 +2789,12 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
-	struct WIFI_VAR *prWifiVar;
 
 	ASSERT(prGlueInfo);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
-	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	/* Set DMA global configuration except TX_DMA_EN and RX_DMA_EN bits */
 	if (prBusInfo->pdmaSetup)
@@ -2820,14 +2806,7 @@ void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 	halWpdmaInitRxRing(prGlueInfo);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))
-		halMawdInitTxRing(prGlueInfo);
-
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		halRroInit(prGlueInfo);
-		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
-			halMawdInitRxBlkRing(prGlueInfo);
-	}
+	halRroInit(prGlueInfo);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	if (prBusInfo->wfdmaManualPrefetch)
@@ -4126,6 +4105,9 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 				halRroResetRcbList(prGlueInfo);
+				halRroResetMem(prGlueInfo);
+			} else if (IS_FEATURE_ENABLED(
+					   prWifiVar->fgEnableRro2Md)) {
 				halRroResetMem(prGlueInfo);
 			}
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))

@@ -8229,6 +8229,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"DiscoverTimeout", ROAMING_DISCOVER_TIMEOUT_SEC);
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+	INIT_UINT(prWifiVar->fgMddpSupport, "MddpSupport", FEATURE_ENABLED);
+	wlanCfgSetUint32(prAdapter, "MddpSupport", prWifiVar->fgMddpSupport);
+#else
+	wlanCfgSetUint32(prAdapter, "MddpSupport", FEATURE_DISABLED);
+#endif
+
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 	INIT_UINT(prWifiVar->ucDbdcP2pLisEn,
 		"DbdcP2pLisEn", FEATURE_ENABLED);
@@ -8380,6 +8387,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgEnableSdo, "EnableSdo", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgEnableRro, "EnableRro", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgEnableRroDbg, "EnableRroDbg", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnableRro2Md, "EnableRro2Md", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableRroPreFillRxRing,
+		  "EnableRroPreFillRxRing", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnableRroDbg, "EnableRroDbg", FEATURE_DISABLED);
+	INIT_UINT(prWifiVar->fgEnableRroAdvDump,
+		  "EnableRroAdvDump", FEATURE_DISABLED);
 
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
 		prWifiVar->fgEnableMawd = FEATURE_ENABLED;

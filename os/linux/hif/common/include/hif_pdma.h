@@ -253,7 +253,6 @@
 #define RX_BLK_MAGIC_CNT_NUM     4
 #define MAWD_RX_BLK_RING_SIZE    (RX_RING_MAX_SIZE)
 #define MAWD_ENABLE_WAKEUP_SLEEP 1
-#define MAWD_DUMP_DEBUG_INFO     1
 #define MAWD_POWER_UP_RETRY_CNT  10000
 #define MAWD_POWER_UP_WAIT_TIME  10
 #define MAWD_MAX_PATCH_NUM       19
@@ -838,12 +837,6 @@ struct RRO_ADDR_ELEM {
 	struct RRO_ADDR_ELEM_SINGLE elem1;
 };
 
-struct RRO_ADDR_ELEM_RECORD {
-	uint64_t u8Addr;
-	uint32_t u4Sn;
-	struct hlist_node rNode;
-};
-
 struct RRO_IND_CMD {
 	uint32_t session_id:16;
 	uint32_t start_sn:12;
@@ -1080,6 +1073,8 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo);
 void halRroTurnOff(struct GLUE_INFO *prGlueInfo);
 void halRroInit(struct GLUE_INFO *prGlueInfo);
 void halRroUninit(struct GLUE_INFO *prGlueInfo);
+void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo);
+void halOffloadFreeMem(struct GLUE_INFO *prGlueInfo);
 void halRroAllocMem(struct GLUE_INFO *prGlueInfo);
 void halRroResetMem(struct GLUE_INFO *prGlueInfo);
 void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo);
