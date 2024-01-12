@@ -1574,7 +1574,7 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 			prMlInfo->ucCommonInfoLength) {
 		prMlInfo->ucValid = FALSE;
 		DBGLOG(ML, WARN,
-			"invalid ML control len: real %d != expected %d\n",
+			"invalid ML control len: real %ld != expected %d\n",
 			pos - prMlInfoIe->aucCommonInfo,
 			prMlInfo->ucCommonInfoLength);
 		return;
@@ -1791,7 +1791,7 @@ sta:
 
 		if (ucStaInfoLen != pos - prIeSta->aucStaInfo) {
 			DBGLOG(ML, WARN,
-				"invalid STA info len: real %d != expected %d\n",
+				"invalid STA info len: real %ld != expected %d\n",
 				pos - prIeSta->aucStaInfo,
 				ucStaInfoLen);
 			pos = prIeSta->aucStaInfo + ucStaInfoLen;
@@ -1847,7 +1847,7 @@ sta:
 			prStaProfile->u2IEbufLen = tail - pos;
 		} else {
 			DBGLOG(ML, WARN,
-				"sta profile ie len too long %d!!\n",
+				"sta profile ie len too long %ld!!\n",
 				tail - pos);
 			kalMemCopy(prStaProfile->aucIEbuf,
 				pos, sizeof(prStaProfile->aucIEbuf));
