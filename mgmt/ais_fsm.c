@@ -7292,7 +7292,10 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 struct AIS_FSM_INFO *aisFsmGetInstance(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucAisIndex)
 {
-	return &prAdapter->rWifiVar.rAisFsmInfo[ucAisIndex];
+	if (ucAisIndex < KAL_AIS_NUM)
+		return &prAdapter->rWifiVar.rAisFsmInfo[ucAisIndex];
+	else
+		return NULL;
 }
 
 struct AIS_SPECIFIC_BSS_INFO *aisGetAisSpecBssInfo(

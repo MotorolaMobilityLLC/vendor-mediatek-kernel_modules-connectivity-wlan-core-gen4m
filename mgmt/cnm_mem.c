@@ -999,7 +999,8 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 	 *        be invoked after state sync of STA_REC
 	 * Update system operation parameters for AP mode
 	 */
-	if (prAdapter->fgIsP2PRegistered && (IS_STA_IN_P2P(prStaRec))) {
+	if (IS_BSS_INDEX_VALID(prStaRec->ucBssIndex) &&
+		prAdapter->fgIsP2PRegistered && (IS_STA_IN_P2P(prStaRec))) {
 		struct BSS_INFO *prBssInfo;
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,

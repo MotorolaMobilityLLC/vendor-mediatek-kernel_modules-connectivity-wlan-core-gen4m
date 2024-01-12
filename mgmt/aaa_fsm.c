@@ -703,6 +703,8 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				GET_BSS_INFO_BY_INDEX(prAdapter,
 					prStaRec->ucBssIndex);
 
+			if (!prBssInfo)
+				break;
 			if ((prBssInfo->fgIsNetActive)
 				&& (prBssInfo->eCurrentOPMode == OP_MODE_BOW)) {
 
@@ -969,6 +971,9 @@ aaaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
 	DBGLOG(AAA, TRACE, "TxDone ucStaState:%d, eAuthAssocState:%d\n",
 		prStaRec->ucStaState, prStaRec->eAuthAssocState);
 

@@ -1291,16 +1291,17 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "TX Probe Resposne Frame\n");
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				ucBssIndex);
-			prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
-				prBssInfo->u4PrivateData];
-
-			if (!nicTxIsMgmtResourceEnough(prAdapter) ||
-			    isNetAbsent(prAdapter, prBssInfo)) {
+			if (!prBssInfo ||
+				!nicTxIsMgmtResourceEnough(prAdapter) ||
+				isNetAbsent(prAdapter, prBssInfo)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
 				break;
 			}
+
+			prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
+				prBssInfo->u4PrivateData];
 
 			DBGLOG(P2P, TRACE,
 				"Dump probe response content from supplicant.\n");
@@ -2717,6 +2718,7 @@ void p2pFuncParseH2E(IN struct BSS_INFO *prP2pBssInfo)
 		prP2pBssInfo->fgEnableH2E = FALSE;
 
 		for (i = 0;
+			i < RATE_NUM_SW &&
 			i < prP2pBssInfo->ucAllSupportedRatesLen;
 			i++) {
 			DBGLOG(P2P, LOUD,
@@ -4332,7 +4334,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		IN uint8_t *pucIEInfo, IN uint32_t u4IELen)
 {
 	uint8_t *pucIE = (uint8_t *) NULL;
-	uint16_t u2Offset = 0;
+	uint32_t u4Offset = 0;
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
 		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
 	uint8_t i = 0;
@@ -4378,7 +4380,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11BE;
 #endif
 
-		IE_FOR_EACH(pucIE, u4IELen, u2Offset) {
+		IE_FOR_EACH(pucIE, u4IELen, u4Offset) {
 			switch (IE_ID(pucIE)) {
 			case ELEM_ID_SSID:	/* 0 *//* V *//* Done */
 				{
@@ -4442,7 +4444,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				TIM_IE(pucIE)->ucDTIMPeriod =
 					prP2pBssInfo->ucDTIMPeriod;
 				DBGLOG(P2P, TRACE,
-					"TIM IE, Len:%d, DTIM:%d\n",
+					"TIM IE, Len:%u, DTIM:%u\n",
 					IE_LEN(pucIE),
 					TIM_IE(pucIE)->ucDTIMPeriod);
 				break;
@@ -4513,7 +4515,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 						HT_CAP_IE(pucIE)->ucAmpduParam);
 
 					DBGLOG(P2P, TRACE,
-						"HT Extended Cap:%x, TX Beamforming Cap:%x, Ant Selection Cap:%x\n",
+						"HT Extended Cap:%u, TX Beamforming Cap:%u, Ant Selection Cap:%u\n",
 						HT_CAP_IE(pucIE)
 							->u2HtExtendedCap,
 						HT_CAP_IE(pucIE)
@@ -6697,7 +6699,8 @@ uint32_t wfdFuncCalculateWfdIELenForAssocRsp(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	if (prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
+	if (!prBssInfo ||
+		prBssInfo->eNetworkType != NETWORK_TYPE_P2P)
 		return 0;
 
 	if (!IS_STA_P2P_TYPE(prStaRec))
@@ -6777,6 +6780,8 @@ p2pFuncComposeNoaAttribute(IN struct ADAPTER *prAdapter,
 	uint32_t i = 0;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
 	prP2pSpecificBssInfo =
 		prAdapter->rWifiVar
 			.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
@@ -8310,8 +8315,9 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "bss index: %d, policy: %d\n", ucBssIdx, ePolicy);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo)
+		return;
 	prClientList = &prBssInfo->rStaRecOfClientList;
-
 	switch (ePolicy) {
 	case CHNL_SWITCH_POLICY_DEAUTH:
 		if (prClientList && prClientList->u4NumElem > 0) {
