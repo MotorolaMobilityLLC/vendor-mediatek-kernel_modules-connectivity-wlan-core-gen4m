@@ -1289,8 +1289,9 @@ struct WIFI_VAR {
 	uint8_t ucDisallowBand5G;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint8_t ucDisallowBand6G;
+	uint8_t ucDisallowAcs6G;
 #endif
-	uint8_t ucDisallowP2PAcs6G;
+
 	uint32_t u4BtmDelta;
 	uint32_t u4BtmDisTimerThreshold;
 #if ARP_MONITER_ENABLE

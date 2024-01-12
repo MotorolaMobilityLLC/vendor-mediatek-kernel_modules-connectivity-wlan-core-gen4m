@@ -5123,7 +5123,9 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg;
 	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
+	struct BSS_INFO *prAisBssInfo;
 	uint32_t u4MsgSize = 0;
+	uint8_t fgIsAisExist = 0;
 
 	if (!prAdapter || !prMsgHdr)
 		return;
@@ -5137,6 +5139,21 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 
 	prP2pRoleFsmInfo->fgIsChannelSelectByAcs = TRUE;
 	prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
+	prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
+
+	fgIsAisExist =
+		(prAisBssInfo &&
+		prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* for platform not support P2P/SAP 6G
+	 * should not set ACS result to AIS 6G channel
+	 */
+	if (prAisBssInfo &&
+		prAisBssInfo->eBand == BAND_6G)
+		fgIsAisExist = fgIsAisExist & IS_FEATURE_DISABLED(
+			prAdapter->rWifiVar.ucDisallowAcs6G);
+#endif
 
 	p2pRoleFsmAbortCurrentAcsReq(prAdapter, prMsgAcsRequest);
 
@@ -5148,19 +5165,16 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	}
 
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
-		struct BSS_INFO *prAisBssInfo;
-
 		DBGLOG(P2P, INFO, "Report SCC channel\n");
 
-		prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
-		if (prAisBssInfo &&
+		if (fgIsAisExist &&
 			prAisBssInfo->eBand == BAND_2G4 &&
 			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 			prAisBssInfo);
 			goto exit;
-		} else if (prAisBssInfo &&
+		} else if (fgIsAisExist &&
 			prAisBssInfo->eBand == BAND_5G &&
 			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
 			/* Force SCC, indicate channel directly */
@@ -5168,7 +5182,7 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			prAisBssInfo);
 			goto exit;
 #if CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC
-		} else if (prAisBssInfo &&
+		} else if (fgIsAisExist &&
 			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
@@ -5180,11 +5194,7 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
-		struct BSS_INFO *prAisBssInfo;
-		prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
-		if (prAisBssInfo &&
-			prAisBssInfo->eConnectionState ==
-			MEDIA_STATE_CONNECTED &&
+		if (fgIsAisExist &&
 			(!p2pFuncIsDualAPMode(prAdapter) ||
 			(p2pFuncIsDualAPMode(prAdapter) &&
 			prAisBssInfo->eBand > BAND_2G4))) {
@@ -5193,7 +5203,9 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 				prAisBssInfo);
 			goto exit;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prAdapter->fgIsHwSupport6G) {
+		} else if (prAdapter->fgIsHwSupport6G &&
+			IS_FEATURE_DISABLED(prAdapter
+			->rWifiVar.ucDisallowAcs6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
@@ -5210,17 +5222,16 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
 		}
 	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
-		struct BSS_INFO *prAisBssInfo;
-
-		prAisBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
-		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+		if (fgIsAisExist &&
 			prAisBssInfo->eBand > BAND_2G4) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
 				prAisBssInfo);
 			goto exit;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		} else if (prAdapter->fgIsHwSupport6G) {
+		} else if (prAdapter->fgIsHwSupport6G &&
+			IS_FEATURE_DISABLED(prAdapter
+			->rWifiVar.ucDisallowAcs6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
@@ -5229,6 +5240,17 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
 				prAcsReqInfo, BIT(BAND_5G));
+		}
+	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
+		if (fgIsAisExist &&
+			prAisBssInfo->eBand == BAND_2G4) {
+			/* Force SCC, indicate channel directly */
+			indicateAcsResultByAisCh(prAdapter, prAcsReqInfo,
+					prAisBssInfo);
+			goto exit;
+		} else {
+			trimAcsScanList(prAdapter, prMsgAcsRequest,
+				prAcsReqInfo, BIT(BAND_2G4));
 		}
 	}
 

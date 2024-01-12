@@ -7932,7 +7932,7 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			"Prefer 5G/6G in single P2P");
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (prAdapter->fgIsHwSupport6G &&
-		    !prWifiVar->ucDisallowP2PAcs6G)
+		    IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
 			*num_freq_list += p2pFunGetTopPreferFreqByBand(
 				prAdapter,
 				BAND_6G, prWifiVar->ucP2p6gBandwidth,
@@ -7966,7 +7966,7 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		if (prAisBssInfo->eBand == BAND_2G4) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			if (prAdapter->fgIsHwSupport6G &&
-			    !prWifiVar->ucDisallowP2PAcs6G)
+			    IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
 				*num_freq_list += p2pFunGetTopPreferFreqByBand(
 					prAdapter,
 					BAND_6G, prWifiVar->ucP2p6gBandwidth,
@@ -7986,11 +7986,11 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			(*num_freq_list)++;
 		} else {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			if (prWifiVar->ucDisallowP2PAcs6G &&
+			if (IS_FEATURE_ENABLED(prWifiVar->ucDisallowAcs6G) &&
 				prAisBssInfo->eBand == BAND_6G) {
 				/* CE platform does not support P2P 6G now
 				 * if Ais at 6G, apply MCC at 5G
-				 * through DisallowP2PAcs6G in wifi cfg
+				 * through DisallowAcs6G in wifi cfg
 				 */
 				*num_freq_list += p2pFunGetTopPreferFreqByBand(
 					prAdapter,
