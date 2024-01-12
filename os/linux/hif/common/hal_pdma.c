@@ -238,10 +238,25 @@ static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
 				  uint32_t u4Timeout,
 				  uint32_t u4Cnt)
 {
-	uint32_t u4CheckPoint = u4Timeout * 3 / 4;
+	uint8_t ucNeedDump = FALSE;
 
-	if (halIsTimeout(u4StartTime, u4CheckPoint) ||
-	    halIsTimeout(u4StartTime, u4Timeout)) {
+	if (halIsTimeout(u4StartTime, u4Timeout))
+		ucNeedDump = TRUE;
+	else if (!(prAdapter->u4WaitOffTimeoutPeriod &
+		BIT(WLAN_WAIT_TIME_THREE_QUARTER)) &&
+		halIsTimeout(u4StartTime, u4Timeout * 3 / 4)) {
+		ucNeedDump = TRUE;
+		prAdapter->u4WaitOffTimeoutPeriod |=
+			BIT(WLAN_WAIT_TIME_THREE_QUARTER);
+	} else if (!(prAdapter->u4WaitOffTimeoutPeriod &
+		BIT(WLAN_WAIT_TIME_ONE_HALF)) &&
+		halIsTimeout(u4StartTime, u4Timeout * 1 / 2)) {
+		ucNeedDump = TRUE;
+		prAdapter->u4WaitOffTimeoutPeriod |=
+			BIT(WLAN_WAIT_TIME_ONE_HALF);
+	}
+
+	if (ucNeedDump) {
 		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
 		       u4StartTime, u4Timeout, u4Cnt);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;

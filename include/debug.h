@@ -577,6 +577,12 @@ enum WAKE_DATA_TYPE {
 #define DBG_ASSERT_PATH_DEFAULT DBG_ASSERT_PATH_WIFI
 #endif
 #define DBG_ASSERT_CTRL_LEVEL_DEFAULT DBG_ASSERT_CTRL_LEVEL_ERROR
+
+enum WAIT_TO_PERIOD {
+	WLAN_WAIT_TIME_ONE_HALF = 1,
+	WLAN_WAIT_TIME_THREE_QUARTER
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
