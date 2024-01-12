@@ -475,6 +475,7 @@ CHIPS_OBJS += $(CHIPS)soc3_0/soc3_0.o
 endif
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7961/mt7961.o
+CHIPS_OBJS += $(CHIPS)mt7961/dbg_mt7961.o
 endif
 
 # ---------------------------------------------------

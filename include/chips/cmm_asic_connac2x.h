@@ -152,8 +152,13 @@
 /* WPDMA_INT_STA (0x50000000+0x200) */
 #define CONNAC2X_WFDMA_TX_DONE_INT17             BIT(27)
 #define CONNAC2X_WFDMA_TX_DONE_INT16             BIT(26)
+#define CONNAC2X_WFDMA_RX_DONE_INT5              BIT(23)
+#define CONNAC2X_WFDMA_RX_DONE_INT4              BIT(22)
 #define CONNAC2X_TX_COHERENT_INT                 BIT(21)
 #define CONNAC2X_RX_COHERENT_INT                 BIT(20)
+#define CONNAC2X_WFDMA_TX_DONE_INT6              BIT(10)
+#define CONNAC2X_WFDMA_TX_DONE_INT5              BIT(9)
+#define CONNAC2X_WFDMA_TX_DONE_INT4              BIT(8)
 #define CONNAC2X_WFDMA_TX_DONE_INT3              BIT(7)
 #define CONNAC2X_WFDMA_TX_DONE_INT2              BIT(6)
 #define CONNAC2X_WFDMA_TX_DONE_INT1              BIT(5)
@@ -957,11 +962,7 @@ void asicConnac2xWfdmaRxRingExtCtrl(
 	uint32_t index);
 void asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo);
-void asicConnac2xEnableInterrupt(
-	struct ADAPTER *prAdapter);
 void asicConnac2xEnableExtInterrupt(
-	struct ADAPTER *prAdapter);
-void asicConnac2xDisableInterrupt(
 	struct ADAPTER *prAdapter);
 void asicConnac2xDisableExtInterrupt(
 	struct ADAPTER *prAdapter);

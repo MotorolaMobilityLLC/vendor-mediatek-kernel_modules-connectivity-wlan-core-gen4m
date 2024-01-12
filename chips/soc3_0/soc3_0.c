@@ -182,6 +182,44 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 };
+
+static bool soc3_0WfdmaAllocRxRing(
+	struct GLUE_INFO *prGlueInfo,
+	bool fgAllocMem)
+{
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_2,
+			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA0_RX_RING_IDX_3,
+			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_0,
+			RX_RING1_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_1,
+			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	if (!halWpdmaAllocRxRing(prGlueInfo, WFDMA1_RX_RING_IDX_2,
+			RX_RING_SIZE, RXD_SIZE, RX_BUFFER_AGGRESIZE,
+			fgAllocMem)) {
+		DBGLOG(HAL, ERROR, "AllocWfdmaRxRing fail\n");
+		return false;
+	}
+	return true;
+}
+
 #endif /*_HIF_PCIE || _HIF_AXI */
 
 void soc3_0asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
@@ -404,7 +442,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.initPcieInt = NULL,
 	.devReadIntStatus = asicConnac2xReadExtIntStatus,
 	.pcieDmaShdlInit = NULL,
-
+	.wfdmaAllocRxRing = soc3_0WfdmaAllocRxRing,
 #endif			/*_HIF_PCIE || _HIF_AXI */
 };
 
@@ -484,7 +522,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
-	.is_support_wfdma = TRUE,
+	.is_support_wfdma1 = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),

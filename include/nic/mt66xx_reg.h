@@ -623,6 +623,41 @@ union WPDMA_INT_STA_STRUCT {
 		uint32_t wfdma1_tx_done_19:1;
 	} field_conn2x_ext;
 
+	struct {
+		uint32_t wfdma0_rx_done_0:1;
+		uint32_t wfdma0_rx_done_1:1;
+		uint32_t wfdma0_rx_done_2:1;
+		uint32_t wfdma0_rx_done_3:1;
+		uint32_t wfdma0_tx_done_0:1;
+		uint32_t wfdma0_tx_done_1:1;
+		uint32_t wfdma0_tx_done_2:1;
+		uint32_t wfdma0_tx_done_3:1;
+		uint32_t wfdma0_tx_done_4:1;
+		uint32_t wfdma0_tx_done_5:1;
+		uint32_t wfdma0_tx_done_6:1;
+		uint32_t wfdma0_tx_done_7:1;
+		uint32_t wfdma0_tx_done_8:1;
+		uint32_t wfdma0_tx_done_9:1;
+		uint32_t wfdma0_tx_done_10:1;
+		uint32_t wfdma0_tx_done_11:1;
+		uint32_t wfdma0_tx_done_12:1;
+		uint32_t wfdma0_tx_done_13:1;
+		uint32_t wfdma0_tx_done_14:1;
+		uint32_t reserved19:1;
+		uint32_t wfdma0_rx_coherent:1;
+		uint32_t wfdma0_tx_coherent:1;
+		uint32_t wfdma0_rx_done_4:1;
+		uint32_t wfdma0_rx_done_5:1;
+		uint32_t wpdma2host0_err_int_en:1;
+		uint32_t reserved25:1;
+		uint32_t wfdma0_tx_done_16:1;
+		uint32_t wfdma0_tx_done_17:1;
+		uint32_t wfdma0_subsys_int_en:1;
+		uint32_t wfdma0_mcu2host_sw_int_en:1;
+		uint32_t wfdma0_tx_done_18:1;
+		uint32_t reserved31:1;
+	} field_conn2x_single;
+
 	uint32_t word;
 };
 
@@ -718,6 +753,40 @@ union WPDMA_INT_MASK {
 		uint32_t wfdma1_tx_done_19:1;
 	} field_conn2x_ext;
 
+	struct {
+		uint32_t wfdma0_rx_done_0:1;
+		uint32_t wfdma0_rx_done_1:1;
+		uint32_t wfdma0_rx_done_2:1;
+		uint32_t wfdma0_rx_done_3:1;
+		uint32_t wfdma0_tx_done_0:1;
+		uint32_t wfdma0_tx_done_1:1;
+		uint32_t wfdma0_tx_done_2:1;
+		uint32_t wfdma0_tx_done_3:1;
+		uint32_t wfdma0_tx_done_4:1;
+		uint32_t wfdma0_tx_done_5:1;
+		uint32_t wfdma0_tx_done_6:1;
+		uint32_t wfdma0_tx_done_7:1;
+		uint32_t wfdma0_tx_done_8:1;
+		uint32_t wfdma0_tx_done_9:1;
+		uint32_t wfdma0_tx_done_10:1;
+		uint32_t wfdma0_tx_done_11:1;
+		uint32_t wfdma0_tx_done_12:1;
+		uint32_t wfdma0_tx_done_13:1;
+		uint32_t wfdma0_tx_done_14:1;
+		uint32_t reserved19:1;
+		uint32_t wfdma0_rx_coherent:1;
+		uint32_t wfdma0_tx_coherent:1;
+		uint32_t wfdma0_rx_done_4:1;
+		uint32_t wfdma0_rx_done_5:1;
+		uint32_t wpdma2host0_err_int_en:1;
+		uint32_t reserved25:1;
+		uint32_t wfdma0_tx_done_16:1;
+		uint32_t wfdma0_tx_done_17:1;
+		uint32_t wfdma0_subsys_int_en:1;
+		uint32_t wfdma0_mcu2host_sw_int_en:1;
+		uint32_t wfdma0_tx_done_18:1;
+		uint32_t reserved31:1;
+	} field_conn2x_single;
 	uint32_t word;
 };
 
@@ -1261,7 +1330,7 @@ struct mt66xx_chip_info {
 	char *prTxPwrLimitFile;
 	uint8_t ucTxPwrLimitBatchSize;
 	u_int8_t is_support_asic_lp;
-	u_int8_t is_support_wfdma;
+	u_int8_t is_support_wfdma1;
 	u_int8_t is_support_dma_shdl;
 	u_int8_t rx_event_port;
 #if defined(_HIF_USB)
