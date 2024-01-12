@@ -321,7 +321,9 @@ enum ENUM_ATE_CAP_TYPE {
  *	Global Variable
  *****************************************************************************/
 static struct hqa_m_rx_stat test_hqa_rx_stat;
-static boolean get_fw_statistics = FALSE;
+static struct test_rx_stat_band_info backup_band0_info;
+static struct test_rx_stat_band_info backup_band1_info;
+
 
 
 static u_int32 tm_ch_num_to_freq(u_int32 ch_num)
@@ -1242,6 +1244,15 @@ s_int32 mt_op_start_rx(
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	/* Clear rx statistics backup buffer */
+	if (band_idx == 0) {
+		sys_ad_zero_mem(&backup_band0_info,
+			sizeof(struct test_rx_stat_band_info));
+	} else {
+		sys_ad_zero_mem(&backup_band1_info,
+			sizeof(struct test_rx_stat_band_info));
+	}
 
 	if (configs->tx_mode == TEST_MODE_HE_MU) {
 		if (configs->mu_rx_aid)
@@ -2372,7 +2383,6 @@ s_int32 mt_op_get_rx_stat_band(
 {
 
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	boolean dbdc_mode = FALSE;
 	struct param_custom_access_rx_stat rx_stat_test;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 
@@ -2382,29 +2392,24 @@ s_int32 mt_op_get_rx_stat_band(
 	rx_stat_test.seq_num = 0;
 	rx_stat_test.total_num = 72;
 
-	/* check dbdc mode condition */
-	dbdc_mode = IS_TEST_DBDC(winfos);
-
-	/* dbdc mode need to avoid get  repeated data in band1*/
-	if ((!dbdc_mode) || (dbdc_mode && (!get_fw_statistics))) {
-		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
-			 OP_WLAN_OID_QUERY_RX_STATISTICS,
-			 &rx_stat_test,
-			 sizeof(rx_stat_test),
-			 NULL,
-			 &test_hqa_rx_stat);
-	}
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		 OP_WLAN_OID_QUERY_RX_STATISTICS,
+		 &rx_stat_test,
+		 sizeof(rx_stat_test),
+		 NULL,
+		 &test_hqa_rx_stat);
 
 	if (band_idx == M_BAND_0) {
 		rx_st_band->mac_rx_fcs_err_cnt =
-			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt);
+			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_fcs_err_cnt) +
+			SERV_OS_NTOHL(backup_band0_info.mac_rx_fcs_err_cnt);
 		rx_st_band->mac_rx_mdrdy_cnt =
-			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_mdrdy_cnt);
+			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_mdrdy_cnt) +
+			SERV_OS_NTOHL(backup_band0_info.mac_rx_mdrdy_cnt);
 		rx_st_band->mac_rx_len_mismatch =
-			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_len_mismatch);
-		rx_st_band->mac_rx_fcs_ok_cnt = rx_st_band->mac_rx_mdrdy_cnt -
-			(rx_st_band->mac_rx_fcs_err_cnt +
-			rx_st_band->mac_rx_len_mismatch);
+			SERV_OS_NTOHL(test_hqa_rx_stat.mac_rx_len_mismatch) +
+			SERV_OS_NTOHL(backup_band0_info.mac_rx_len_mismatch);
+		rx_st_band->mac_rx_fcs_ok_cnt = 0;
 		rx_st_band->phy_rx_fcs_err_cnt_cck =
 			SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_fcs_err_cnt_cck);
 		rx_st_band->phy_rx_fcs_err_cnt_ofdm =
@@ -2425,16 +2430,36 @@ s_int32 mt_op_get_rx_stat_band(
 			SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_mdrdy_cnt_cck);
 		rx_st_band->phy_rx_mdrdy_cnt_ofdm =
 			SERV_OS_NTOHL(test_hqa_rx_stat.phy_rx_mdrdy_cnt_ofdm);
+
+		/* Backup Band1 info */
+		backup_band1_info.mac_rx_fcs_err_cnt +=
+			test_hqa_rx_stat.mac_rx_fcs_err_cnt_band1;
+
+		backup_band1_info.mac_rx_mdrdy_cnt +=
+			test_hqa_rx_stat.mac_rx_mdrdy_cnt_band1;
+
+		backup_band1_info.mac_rx_len_mismatch +=
+			test_hqa_rx_stat.mac_rx_len_mismatch_band1;
+
+		/* Reset Band0 backup info */
+		sys_ad_zero_mem(&backup_band0_info,
+			sizeof(struct test_rx_stat_band_info));
 	} else {
 		rx_st_band->mac_rx_fcs_err_cnt =
 			SERV_OS_NTOHL(
-			test_hqa_rx_stat.mac_rx_fcs_err_cnt_band1);
+			test_hqa_rx_stat.mac_rx_fcs_err_cnt_band1) +
+			SERV_OS_NTOHL(
+			backup_band1_info.mac_rx_fcs_err_cnt);
 		rx_st_band->mac_rx_mdrdy_cnt =
 			SERV_OS_NTOHL(
-			test_hqa_rx_stat.mac_rx_mdrdy_cnt_band1);
+			test_hqa_rx_stat.mac_rx_mdrdy_cnt_band1) +
+			SERV_OS_NTOHL(
+			backup_band1_info.mac_rx_mdrdy_cnt);
 		rx_st_band->mac_rx_len_mismatch =
 			SERV_OS_NTOHL(
-			test_hqa_rx_stat.mac_rx_len_mismatch_band1);
+			test_hqa_rx_stat.mac_rx_len_mismatch_band1) +
+			SERV_OS_NTOHL(
+			backup_band1_info.mac_rx_len_mismatch);
 		rx_st_band->mac_rx_fcs_ok_cnt = 0;
 		rx_st_band->phy_rx_fcs_err_cnt_cck =
 			SERV_OS_NTOHL(
@@ -2466,15 +2491,22 @@ s_int32 mt_op_get_rx_stat_band(
 		rx_st_band->phy_rx_mdrdy_cnt_ofdm =
 			SERV_OS_NTOHL(
 			test_hqa_rx_stat.phy_rx_mdrdy_cnt_ofdm_band1);
+
+
+		/* Backup Band0 info */
+		backup_band0_info.mac_rx_fcs_err_cnt +=
+			test_hqa_rx_stat.mac_rx_fcs_err_cnt;
+
+		backup_band0_info.mac_rx_mdrdy_cnt +=
+			test_hqa_rx_stat.mac_rx_mdrdy_cnt;
+
+		backup_band0_info.mac_rx_len_mismatch +=
+			test_hqa_rx_stat.mac_rx_len_mismatch;
+
+		/* Reset Band1 backup info */
+		sys_ad_zero_mem(&backup_band1_info,
+			sizeof(struct test_rx_stat_band_info));
 	}
-
-	/* Record already get fw statistics data */
-	if (dbdc_mode && (band_idx == M_BAND_0))
-		get_fw_statistics = TRUE;
-
-	/* Reset flag of get fw statistics data */
-	if (dbdc_mode && (band_idx == M_BAND_1) && get_fw_statistics)
-		get_fw_statistics = FALSE;
 
 	return ret;
 }
