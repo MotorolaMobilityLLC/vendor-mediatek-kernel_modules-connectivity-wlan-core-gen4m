@@ -704,18 +704,22 @@ void cnmStaRecFree(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 	if (!prStaRec)
 		return;
 
-	log_dbg(RSN, INFO, "cnmStaRecFree %d\n", prStaRec->ucIndex);
+	log_dbg(CNM, INFO, "cnmStaRecFree %d\n", prStaRec->ucIndex);
 
 	ucStaRecIndex = prStaRec->ucIndex;
 	ucBssIndex = prStaRec->ucBssIndex;
 
-	nicFreePendingTxMsduInfo(prAdapter, prStaRec->ucWlanIndex,
+	if (prStaRec->fgIsInUse) {
+		nicFreePendingTxMsduInfo(prAdapter, prStaRec->ucWlanIndex,
 				MSDU_REMOVE_BY_WLAN_INDEX);
 
-	cnmStaRoutinesForAbort(prAdapter, prStaRec);
+		cnmStaRoutinesForAbort(prAdapter, prStaRec);
 
-	cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
-		ucStaRecIndex, ucBssIndex);
+		cnmStaSendRemoveCmd(prAdapter, STA_REC_CMD_ACTION_STA,
+			ucStaRecIndex, ucBssIndex);
+	} else {
+		log_dbg(CNM, ERROR, "prStaRec is not in use\n");
+	}
 }
 
 /*----------------------------------------------------------------------------*/
