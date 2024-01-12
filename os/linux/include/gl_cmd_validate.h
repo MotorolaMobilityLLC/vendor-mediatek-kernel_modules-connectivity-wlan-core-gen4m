@@ -329,6 +329,9 @@
 #if CFG_SUPPORT_802_11K
 #define CMD_NEIGHBOR_REQ		"neighbor-request"
 #endif /* CFG_SUPPORT_802_11K */
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+#define CMD_EPCS_SEND			"SEND_EPCS"
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 #define CMD_BTM_QUERY			"bss-transition-query"
 #endif /* CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT */

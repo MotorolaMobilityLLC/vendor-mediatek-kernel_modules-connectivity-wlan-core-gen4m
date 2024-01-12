@@ -881,9 +881,9 @@
  */
 #define STATUS_CODE_DENIED_EXISTING_MLD_ASSOC       130
 /* Denied non-AP MLD or non-AP EHT STA is not authorized to use the service */
-#define STATUS_CODE_NSEP_DENIED_UNAUTHORIZED        131
+#define STATUS_CODE_EPCS_DENIED_UNAUTHORIZED        131
 /* Denied due to reason outside the scope of 11be */
-#define STATUS_CODE_NSEP_DENIED_OTHER_REASON        132
+#define STATUS_CODE_EPCS_DENIED_OTHER_REASON        132
 /* Denied because the requested TID-to-link mapping is unacceptable */
 #define STATUS_CODE_DENIED_TID_TO_LINK_MAPPING      133
 /* Preferred TID-to-link mapping suggested */
@@ -894,6 +894,8 @@
  * Request frame is transmitted is not accepted.
  */
 #define STATUS_CODE_DENIED_LINK_NOT_ACCEPTED        136
+/* Temporarily denied because unable to verify if STA is authorized */
+#define STATUS_CODE_EPCS_DENIED_VERIFICATION_FAILURE 140
 
 /* proprietary definition of reserved field of Status Code */
 /* Join failure */
@@ -1403,8 +1405,20 @@ enum MBO_TRANSITION_REJECT_REASON {
 	MBO_TRANSITION_REJECT_REASON_SERVICES = 6,
 };
 
-#define FILS_INFO_NUM_PUB_KEY_ID	BIT(0, 2)
-#define FILS_INFO_NUM_REALM_ID		BIT(3, 5)
+/* 802.11be, Protested EHT */
+/* D3.0 Table 9-623c Protected EHT Action Field Values */
+enum PROTECTED_EHT_ACTION {
+	TID2LINK_REQUEST,
+	TID2LINK_RESPONSE,
+	TID2LINK_TEARDOWN,
+	EPCS_ENABLE_REQUEST,
+	EPCS_ENABLE_RESPONSE,
+	EPCS_TEARDOWN,
+	PROTECTED_EHT_ACTION_NUM,
+};
+
+#define FILS_INFO_NUM_PUB_KEY_ID	BITS(0, 2)
+#define FILS_INFO_NUM_REALM_ID		BITS(3, 5)
 #define FILS_INFO_IP_ADDR_CONFIG	BIT(6)
 #define FILS_INFO_CACHE_ID_INCLUDED	BIT(7)
 #define FILS_INFO_HESSID_INCLUDED	BIT(8)
@@ -2366,6 +2380,9 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_CTRL_TYPE_PRIORITY_ACCESS			4
 #define ML_CTRL_PRE_BMP_MASK				BITS(4, 15)
 #define ML_CTRL_PRE_BMP_SHIFT				4
+/* Macro to get ML control type */
+#define ML_GET_CTRL_TYPE(_prMlInfoIe) \
+	(_prMlInfoIe->u2Ctrl & ML_CTRL_TYPE_MASK)
 
 /* 9.4.2.312.2 Basic Multi-Link element */
 #define ML_CTRL_LINK_ID_INFO_PRESENT			BIT(0)
@@ -2390,12 +2407,14 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT			10
 #define ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT	BIT(11)
 
+/* BE D3.0 9.4.2.312.2.3 Common info field of the Basic Multi-Link Element */
+/* Figure 9-1002k - MLD Capabilities and Operations subfield format */
 #define MLD_CAP_MAX_SIMULTANEOUS_LINK_MASK		BITS(0, 3)
 #define MLD_CAP_MAX_SIMULTANEOUS_LINK_SHIFT		0
 #define MLD_CAP_SRS_SUPPORT				BIT(4)
-#define MLD_CAP_TID_TO_LINK_NEGO_MASK			BIT(5, 6)
+#define MLD_CAP_TID_TO_LINK_NEGO_MASK			BITS(5, 6)
 #define MLD_CAP_TID_TO_LINK_NEGO_SHIFT			5
-#define MLD_CAP_FREQ_SEPARATION_MASK			BIT(7, 11)
+#define MLD_CAP_FREQ_SEPARATION_MASK			BITS(7, 11)
 #define MLD_CAP_FREQ_SEPARATION_SHIFT			7
 #define MLD_CAP_AAR					BIT(12)
 
@@ -2410,7 +2429,11 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ML_RECFG_STA_CTRL_MAC_ADDR_PRESENT		BIT(5)
 #define ML_RECFG_STA_CTRL_DELETE_TIMER_PRESENT		BIT(6)
 
-
+/* BE D3.0 9.4.312.6 Priority Access Multi-Link element */
+/* BE D3.0 Figure 9-1002af - STA Control field format for the Priority Access
+ * Multi-Link element
+ */
+#define ML_PRIACC_STA_CTRL_LINK_ID_MASK			BITS(0, 3)
 
 #define SUB_IE_MLD_VENDOR_SPECIFIC			221
 #define SUB_IE_MLD_FRAGMENT				254
@@ -3788,6 +3811,47 @@ struct ACTION_MSCS_RSP_FRAME {
 	uint8_t aucMSCSDesc[0]; /* MSCS Descriptor Element */
 } __KAL_ATTRIB_PACKED__;
 
+/* BE D3.0 9.6.35.5 EPCS Priority Access Enable Request frame format
+ * Table 9-623g - EPCS Priority Access Enable Request frame Action field format
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_EPCS_REQ_FRAME {
+	/* Action MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	/* Protected EHT Action Value: [3]: EPCS Request */
+	uint8_t ucAction;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t aucMultiLink[]; /* Priority Access Element */
+} __KAL_ATTRIB_PACKED__;
+
+/* BE D3.0 9.6.35.6 EPCS Priority Access Enable Response frame format
+ * Table 9-623h - EPCS Priority Access Enable Response frame Action field format
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_EPCS_RSP_FRAME {
+	/* Action MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2DurationID;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* Action frame body */
+	uint8_t ucCategory;	/* Category: 37 protected EHT */
+	/* Protected EHT Action Value: [4]: EPCS Response  */
+	uint8_t ucAction;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t ucStatusCode;	/* Status code */
+	uint8_t aucMultiLink[]; /* Priority Access Element */
+} __KAL_ATTRIB_PACKED__;
+
 /* 7.4.2.1 ADDTS Request frame format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct ACTION_ADDTS_REQ_FRAME {
@@ -4727,6 +4791,13 @@ struct IE_MSCS_DESC {
 	uint16_t     u2UserPriorityCtrl; /* bitmap: 4567, limit: 7 */
 	uint32_t     u4StreamTimeout; /* 60s */
 	uint8_t      aucData[0]; /* TCLAS */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_PRIORITY_ACCESS_DESC {
+	uint8_t      ucLength; /* Common Info Length */
+	uint8_t      aucAPAddr[MAC_ADDR_LEN]; /* AP MLD MAC address */
+	uint8_t      aucData[]; /* Link info */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

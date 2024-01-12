@@ -91,12 +91,12 @@ struct EHT_OP_INFO {
 
 /* EHT MAC Capabilities Information field */
 /*
- * Indicates support for NSEP priority access.
+ * Indicates support for EPCS priority access.
  */
-#define EHT_MAC_CAP_NSEP_PRI_ACCESS BIT(0)
+#define EHT_MAC_CAP_EPCS_PRI_ACCESS BIT(0)
 
-#define SET_EHT_MAC_CAP_NSEP_PRI_ACCESS(_aucMacCapInfo) \
-	(_aucMacCapInfo[0] |= EHT_MAC_CAP_NSEP_PRI_ACCESS)
+#define SET_EHT_MAC_CAP_EPCS_PRI_ACCESS(_aucMacCapInfo) \
+	(_aucMacCapInfo[0] |= EHT_MAC_CAP_EPCS_PRI_ACCESS)
 
 /*
  * Indicates support for receiving a frame with an EHT OM Control subfield.

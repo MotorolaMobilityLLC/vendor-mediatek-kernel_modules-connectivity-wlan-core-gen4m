@@ -1015,6 +1015,10 @@ int priv_driver_set_rst_hang(struct net_device *prNetDev,
 int priv_driver_set_twtparams(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_TWT */
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+int priv_driver_epcs_send(struct net_device *prNetDev, char *pcCommand,
+		int u4TotalLen);
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
 #if CFG_SUPPORT_802_11K
 int priv_driver_neighbor_request(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

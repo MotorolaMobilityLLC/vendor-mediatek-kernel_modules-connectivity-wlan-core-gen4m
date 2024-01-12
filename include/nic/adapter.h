@@ -332,8 +332,14 @@ struct BSS_INFO {
 	 * the value is used in WMM IE
 	 */
 	uint8_t ucWmmParamSetCount;
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	uint8_t ucBackupWmmParamSetCount;
+#endif
 
 	struct AC_QUE_PARMS arACQueParms[WMM_AC_INDEX_NUM];
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	struct AC_QUE_PARMS arBackupACQueParms[WMM_AC_INDEX_NUM];
+#endif
 	/* For AP mode, broadcast the CWminLog2 */
 	uint8_t aucCWminLog2ForBcast[WMM_AC_INDEX_NUM];
 	/* For AP mode, broadcast the CWmaxLog2 */
@@ -343,11 +349,17 @@ struct BSS_INFO {
 	uint8_t ucWmmQueSet;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucMUEdcaUpdateCnt;
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	uint8_t ucBackupMUEdcaUpdateCnt;
+#endif
 	/*
 	 *  Store MU EDCA params for each ACs in BSS info
 	 *  Use the same format as the update cmd for memory copy
 	 */
 	struct _CMD_MU_EDCA_PARAMS_T arMUEdcaParams[WMM_AC_INDEX_NUM];
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	struct _CMD_MU_EDCA_PARAMS_T arBackupMUEdcaParams[WMM_AC_INDEX_NUM];
+#endif
 
 	/* Spatial Reuse Parameter Set for the BSS */
 	uint8_t ucSRControl;
@@ -2623,6 +2635,11 @@ struct ADAPTER {
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 	uint8_t ucBssAbsentBitmap;
 	uint32_t u4StaInPSBitmap;
+#endif
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	uint8_t ucEpcsTxDialogToken;
+	uint8_t ucEpcsRxDialogToken;
+	uint8_t ucEpcsRspRetryCnt;
 #endif
 	uint8_t ucCnmTokenID;
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)

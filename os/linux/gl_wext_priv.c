@@ -19407,6 +19407,52 @@ int priv_driver_bss_transition_query(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+int priv_driver_epcs_send(struct net_device *prNetDev, char *pcCommand,
+		int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	uint8_t *pucType = NULL;
+	uint8_t ucBssIndex = 0;
+
+	if (kalStrnLen(pcCommand, i4TotalLen) > kalStrLen(CMD_EPCS_SEND)) {
+		if (strnicmp(pcCommand + kalStrLen(CMD_EPCS_SEND),
+				" type=", 6) == 0) {
+			pucType = pcCommand + kalStrLen(CMD_EPCS_SEND) + 6;
+			DBGLOG(REQ, INFO,
+				"SEND_EPCS, type=%s\r\n", pucType);
+		}
+	} else {
+		DBGLOG(REQ, INFO,
+			"wrong format! expected foramt: EPCS_SEND type=3");
+		return -EFAULT;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSendEpcs,
+			pucType, kalStrLen(pucType), &u4BufLen, ucBssIndex);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "ERR: kalIoctl fail (%d)\r\n", rStatus);
+		return -1;
+	}
+
+	return i4BytesWritten;
+
+}
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
 #if CFG_SUPPORT_802_11K
 int priv_driver_neighbor_request(struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen)

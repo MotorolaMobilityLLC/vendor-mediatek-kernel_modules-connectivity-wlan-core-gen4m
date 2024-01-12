@@ -2186,6 +2186,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = 0
 	},
 #endif
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	{
+		.pcCmdStr  = CMD_EPCS_SEND,
+		.pfHandler = priv_driver_epcs_send,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	{
 		.pcCmdStr  = CMD_BTM_QUERY,

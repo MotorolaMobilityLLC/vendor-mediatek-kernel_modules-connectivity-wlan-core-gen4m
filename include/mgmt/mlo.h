@@ -84,14 +84,22 @@
 	mldParseBasicMlIE(__a, __b, __c, __d, __e, __func__)
 #define MLD_PARSE_RECONFIG_MLIE(__a, __b, __c) \
 	mldParseReconfigMlIE(__a, __b, __c, __func__)
-
+#define MLD_PARSE_ML_CTRL_PRIORITY_ACCESS_MLIE(__a, __b, __c, __d, __e) \
+	mldParsePriorityAccessMlIE(__a, __b, __c, __d, __e, __func__)
+/* BE D3.0 Figure 9-1002f - Multi-Link Control field */
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_MULTI_LINK_CONTROL {
-	u_int8_t  ucId;
-	u_int8_t  ucLength;
-	u_int8_t  ucExtId;
-	u_int16_t u2Ctrl;	/* control field - BITS(0, 2): type, BIT(3): reserved, BITS(4, 15): presence bitmap*/
-	u_int8_t aucCommonInfo[0];	/* common field - varied by presence bitmap of control field*/
+	uint8_t  ucId;
+	uint8_t  ucLength;
+	uint8_t  ucExtId;
+	/* control field -
+	 * BITS(0, 2): type
+	 * BIT(3): reserved
+	 * BITS(4, 15): presence bitmap
+	 */
+	uint16_t u2Ctrl;
+	/* common field - varied by presence bitmap of control field*/
+	uint8_t aucCommonInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -146,12 +154,21 @@ struct SUB_IE_MULTI_LINK_CONTROL {
 #define BE_IS_ML_STA_CTRL_PRESENCE_NSTR(_u2ctrl) \
 	(_u2ctrl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)
 
+/* BE D3.0 Figure 9-1002n - STA Control field format of the Basic Multi-Link
+ * Element
+ */
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_ML_STA_CONTROL {
-	u_int8_t ucSubID;	/* 0: Per-STA Profile */
-	u_int8_t ucLength;
-	u_int16_t u2StaCtrl;	/* control field - BITS(0, 3): link ID, BIT(4): complete profile, BITS(5, 8): presence bitmap, BITS(9): NSTR bitmap size*/
-	u_int8_t aucStaInfo[0];
+	uint8_t ucSubID;	/* 0: Per-STA Profile */
+	uint8_t ucLength;
+	/*  control field
+	 *  BITS(0, 3): link ID
+	 *  BIT(4): complete profile
+	 *  BITS(5, 8): presence bitmap
+	 *  BITS(9): NSTR bitmap size
+	 */
+	uint16_t u2StaCtrl;
+	uint8_t aucStaInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -271,6 +288,15 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 void mldParseReconfigMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *pucIE, const uint8_t *paucBssId,
 	const char *pucDesc);
+
+void mldParsePriorityAccessMlIE(struct ADAPTER *prAdapter,
+		struct MULTI_LINK_INFO *prMlInfo, struct SW_RFB *prSwRfb,
+		const uint8_t *pucIE, uint16_t u2IELength, const char *pucDesc);
+
+void mldParseStaProfilePriorityAccess(struct ADAPTER *prAdapter,
+		struct MULTI_LINK_INFO *prMlInfo, struct SW_RFB *prSwRfb,
+		uint8_t ucLinkId, uint16_t u2StaControl, const uint8_t *pos,
+		uint16_t u2IELength);
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type);
 

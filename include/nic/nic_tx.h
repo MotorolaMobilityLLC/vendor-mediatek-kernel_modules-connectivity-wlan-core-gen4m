@@ -343,7 +343,7 @@
 #define TX_DESC_PN_PART1                        BITS(0, 31)
 
 /* DW 5 */
-#define TX_DESC_PACKET_ID                       BIT(0, 7)
+#define TX_DESC_PACKET_ID                       BITS(0, 7)
 #define TX_DESC_TX_STATUS_FORMAT                BIT(0)
 #define TX_DESC_TX_STATUS_FORMAT_OFFSET         0
 #define TX_DESC_TX_STATUS_TO_MCU                BIT(1)
