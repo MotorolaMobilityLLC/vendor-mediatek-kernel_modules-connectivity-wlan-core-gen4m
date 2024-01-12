@@ -3213,32 +3213,6 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 
 	ucBssIndex = GLUE_GET_PKT_BSS_IDX(pvPacket);
 
-#if 0
-	if ((GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) <=
-	     0)) {
-		uint8_t ucBssIdx;
-		uint16_t u2QIdx;
-
-		DBGLOG(INIT, INFO, "TxPendingFrameNum[%u] CurFrameId[%u]\n",
-		       prGlueInfo->i4TxPendingFrameNum,
-		       GLUE_GET_PKT_ARRIVAL_TIME(pvPacket));
-
-		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
-		     ucBssIdx++) {
-			for (u2QIdx = 0; u2QIdx < CFG_MAX_TXQ_NUM; u2QIdx++) {
-				DBGLOG(INIT, INFO,
-					"BSS[%u] Q[%u] TxPendingFrameNum[%u]\n",
-					ucBssIdx, u2QIdx,
-					prGlueInfo->ai4TxPendingFrameNumPerQueue
-					[ucBssIdx][u2QIdx]);
-			}
-		}
-	}
-
-	ASSERT((GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum) >
-		0));
-#endif
-
 	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_DEC_REF_CNT(
 		prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
@@ -3252,9 +3226,9 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 		       prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
 		       [u2QueueIdx]));
 
-	prDev = prSkb->dev;
-
-	ASSERT(prDev);
+	prDev = wlanGetNetInterfaceByBssIdx(prGlueInfo, ucBssIndex);
+	if (!prDev)
+		goto end;
 
 #if CFG_ENABLE_WIFI_DIRECT
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -3319,6 +3293,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 #endif
 
+end:
 	dev_kfree_skb_any((struct sk_buff *)pvPacket);
 
 	DBGLOG(TX, LOUD, "----- pending frame %d -----\n",
