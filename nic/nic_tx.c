@@ -4116,6 +4116,15 @@ void nicTxUpdateBssDefaultRate(struct BSS_INFO *prBssInfo)
 			break;
 		}
 	}
+
+#if (CFG_SUPPORT_HE_ER == 1)
+	if (prBssInfo->fgIsTxErStarted /* && prBssInfo->eBand == BAND_5G */) {
+		prBssInfo->u2HwDefaultFixedRateCode = RATE_HE_ER_TONE_242;
+		DBGLOG_LIMITED(TX, WARN,
+		"nicTxUpdateBssDefaultRate: set HE_ER RATE\n");
+	}
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4127,7 +4136,7 @@ void nicTxUpdateBssDefaultRate(struct BSS_INFO *prBssInfo)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicTxUpdateStaRecDefaultRate(struct STA_RECORD
+void nicTxUpdateStaRecDefaultRate(struct ADAPTER *prAdapter, struct STA_RECORD
 				  *prStaRec)
 {
 	uint8_t ucLowestBasicRateIndex;
@@ -4153,6 +4162,23 @@ void nicTxUpdateStaRecDefaultRate(struct STA_RECORD
 			 PHY_TYPE_SET_802_11N)
 			prStaRec->u2HwDefaultFixedRateCode = RATE_MM_MCS_0;
 	}
+
+#if (CFG_SUPPORT_HE_ER == 1)
+	{
+		struct BSS_INFO *prBssInfo;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
+		if (prBssInfo->fgIsTxErStarted
+			/* && prBssInfo->eBand == BAND_5G*/) {
+			prStaRec->u2HwDefaultFixedRateCode =
+				RATE_HE_ER_TONE_242;
+			DBGLOG_LIMITED(TX, WARN,
+				"nicTxUpdateStaRecDefaultRate: set HE_ER RATE\n");
+		}
+	}
+#endif
+
 }
 
 void nicTxCancelSendingCmd(IN struct ADAPTER *prAdapter,

@@ -493,7 +493,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 
 	/* 4 <6> Update Tx Rate */
 	/* Update default Tx rate */
-	nicTxUpdateStaRecDefaultRate(prStaRec);
+	nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
 	return prStaRec;
 
@@ -2371,6 +2371,26 @@ int8_t bssGetRxNss(IN struct ADAPTER *prAdapter,
 
 	return ucBssNss;
 }
+
+
+#if (CFG_SUPPORT_HE_ER == 1)
+void bssProcessErTxModeEvent(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent)
+{
+	struct BSS_INFO *prBssInfo;
+	struct EVENT_ER_TX_MODE *prErTxMode;
+
+	prErTxMode = (struct EVENT_ER_TX_MODE *) (prEvent->aucBuffer);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prErTxMode->ucBssInfoIdx);
+
+	prBssInfo->fgIsTxErStarted = prErTxMode->fgIsTxErStarted;
+
+	DBGLOG_LIMITED(BSS, WARN,
+		"Receive ER Tx mode event,BSS[%d],Enable[%d]\n",
+		prErTxMode->ucBssInfoIdx, prErTxMode->fgIsTxErStarted);
+}
+#endif
+
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 /*----------------------------------------------------------------------------*/
 /*!

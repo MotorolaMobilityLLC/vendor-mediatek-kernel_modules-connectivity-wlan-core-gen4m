@@ -1963,7 +1963,8 @@ nicTxDummyTxDone(IN struct ADAPTER *prAdapter,
 
 void nicTxUpdateBssDefaultRate(IN struct BSS_INFO *prBssInfo);
 
-void nicTxUpdateStaRecDefaultRate(IN struct STA_RECORD *prStaRec);
+void nicTxUpdateStaRecDefaultRate(IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec);
 
 void nicTxPrintMetRTP(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN void *prPacket,

@@ -471,6 +471,11 @@ enum ENUM_EVENT_ID {
 #if CFG_SUPPORT_SMART_GEAR
 	EVENT_ID_SG_STATUS = 0x65,
 #endif
+
+#if CFG_SUPPORT_HE_ER
+	EVENT_ID_BSS_ER_TX_MODE = 0x66,  /* 0x66 BSS Extend Rage (ER) mode */
+#endif
+
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */
 	/*query info from cmd.*/
@@ -480,6 +485,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_FRM_IND_FROM_HOST = 0x7D,
 
 	EVENT_ID_TDLS = 0x80,
+
 	EVENT_ID_LOG_UI_INFO  = 0x8D,           /* 0x8D (Set / Query) */
 	EVENT_ID_UPDATE_COEX_PHYRATE = 0x90,    /* 0x90 (Unsolicited) */
 
