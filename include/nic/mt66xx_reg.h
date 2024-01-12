@@ -1423,7 +1423,7 @@ union WPDMA_GLO_CFG_STRUCT {
 	uint32_t word;
 };
 
-#define MIN_TEMP_QUERY_TIME		(1 * 60 * 1000) /* ms */
+#define MIN_TEMP_QUERY_TIME		(5 * 60 * 1000) /* ms */
 #define MAX_TEMP_THRESHOLD		(60 * 1000)
 
 struct thermal_sensor_info {
