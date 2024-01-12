@@ -76,7 +76,7 @@
 #include "gl_vendor.h"
 #include "wlan_oid.h"
 
-#if KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE
+#if KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -953,4 +953,4 @@ nla_put_failure:
 	return -ENOMEM;
 }
 
-#endif /* KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE */
+#endif /* KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE */
