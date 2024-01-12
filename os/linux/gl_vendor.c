@@ -2355,6 +2355,8 @@ int mtk_cfg80211_vendor_packet_keep_alive_stop(
 
 	if (prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
+		kalMemFree(prPkt, VIR_MEM_TYPE,
+		   sizeof(struct PARAM_PACKET_KEEPALIVE_T));
 		return -EFAULT;
 	}
 
