@@ -2454,7 +2454,6 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 #endif
 #if CFG_TX_CMD_SMART_SEQUENCE
 	struct MSDU_INFO *prMsduInfo = prCmdInfo->prMsduInfo;
-	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 
 	KAL_SPIN_LOCK_DECLARATION();
 #endif /* CFG_TX_CMD_SMART_SEQUENCE */
@@ -2500,18 +2499,8 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 	}
 
 #if CFG_TX_CMD_SMART_SEQUENCE
-	if (prMsduInfo && prMsduInfo->pfTxDoneHandler) {
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
-			SPIN_LOCK_TXING_MGMT_LIST);
-		QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
-				prMsduInfo);
-		KAL_RELEASE_SPIN_LOCK(prAdapter,
-			SPIN_LOCK_TXING_MGMT_LIST);
-		DBGLOG(TX, INFO, "Insert msdu WIDX:TXDWID:PID[%u:%u:%u]\n",
-			prMsduInfo->ucWlanIndex,
-			prMsduInfo->ucTxdWlanIdx,
-			prMsduInfo->ucPID);
-	}
+	if (prMsduInfo && prMsduInfo->pfHifTxMsduDoneCb)
+		prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
 #endif /* CFG_TX_CMD_SMART_SEQUENCE */
 }
 
