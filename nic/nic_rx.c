@@ -1545,10 +1545,11 @@ void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	if (prChipInfo->asicRxPerfIndProcessRXV)
 		prChipInfo->asicRxPerfIndProcessRXV(
 			prAdapter, prSwRfb, ucBssIndex);
-	else {
-		DBGLOG(RX, ERROR, "%s: no asicRxPerfIndProcessRXV ??\n",
-			__func__);
-	}
+	/* else { */
+		/* print too much, remove for system perfomance */
+		/* DBGLOG(RX, ERROR, "%s: no asicRxPerfIndProcessRXV ??\n", */
+		/* __func__); */
+	/* } */
 }
 #endif
 
