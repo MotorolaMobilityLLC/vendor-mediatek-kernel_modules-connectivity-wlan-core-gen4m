@@ -873,7 +873,7 @@ void mt6639_dumpWfsyscpupcr(struct ADAPTER *ad)
 		CONN_DBG_CTL_WF_MCU_DBGOUT_SEL_WF_MCU_DBGOUT_SEL_MASK);
 
 	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
-		log_sec = local_clock();
+		log_sec = kalGetTimeTickNs();
 		log_nsec = do_div(log_sec, 1000000000)/1000;
 		HAL_MCR_RD(ad,
 			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,

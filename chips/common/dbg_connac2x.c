@@ -4050,7 +4050,7 @@ void connac2x_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 	char log_buf_lp[CPUPCR_LOG_NUM][CPUPCR_BUF_SZ];
 
 	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
-		log_sec = local_clock();
+		log_sec = kalGetTimeTickNs();
 		log_nsec = do_div(log_sec, 1000000000)/1000;
 		HAL_MCR_RD(prAdapter, WFSYS_CPUPCR_ADDR, &var_pc);
 		HAL_MCR_RD(prAdapter, WFSYS_LP_ADDR, &var_lp);
