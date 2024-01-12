@@ -335,7 +335,9 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 	uint32_t i, u4Channel, eBand, u4Index;
 	/*print channel info for debugging */
 	uint32_t au4ChannelBitMap[SCAN_CHANNEL_BITMAP_ARRAY_LEN];
+#if CFG_SUPPORT_FULL2PARTIAL_SCAN
 	uint8_t fgIsFull2Partial = FALSE;
+#endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
 	struct SCAN_INFO *prScanInfo;
 
 	ASSERT(u4ScanChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
@@ -372,7 +374,6 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 			fgIsFull2Partial = TRUE;
 		}
 	}
-#endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
 
 	if (fgIsFull2Partial && u4ScanChannelNum == 0) {
 		/* We don't have channel info when u4ScanChannelNum is 0.
@@ -405,7 +406,9 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 
 		prScanReqMsg->ucChannelListNum = u4Index;
 		prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
-	} else if (u4ScanChannelNum == 0) {
+	} else
+#endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
+	if (u4ScanChannelNum == 0) {
 		prScanReqMsg->ucChannelListNum = 0;
 	} else {
 		u4Index = 0;
