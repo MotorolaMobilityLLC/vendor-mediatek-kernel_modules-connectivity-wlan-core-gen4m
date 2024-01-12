@@ -1526,6 +1526,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter = (struct ADAPTER *) NULL;
 	struct WIFI_VAR *prWifiVar = (struct WIFI_VAR *) NULL;
 
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
+
 	/* RF_CHANNEL_INFO_T rRfChnlInfo; */
 /* P_IE_SSID_T prSsidIE = (P_IE_SSID_T)NULL; */
 
