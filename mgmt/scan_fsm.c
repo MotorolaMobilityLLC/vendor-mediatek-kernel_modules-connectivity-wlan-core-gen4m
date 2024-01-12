@@ -1251,7 +1251,7 @@ scnFsmGenerateScanDoneMsg(struct ADAPTER *prAdapter,
 		prScanDoneMsg->rMsgHdr.eMsgId = MID_SCN_RLM_SCAN_DONE;
 		break;
 	default:
-		log_dbg(SCN, ERROR, "Unexpected Network Type: %d\n");
+		log_dbg(SCN, ERROR, "Unexpected eMsgId: %d\n", eMsgId);
 		cnmMemFree(prAdapter, prScanDoneMsg);
 		return;
 	}
