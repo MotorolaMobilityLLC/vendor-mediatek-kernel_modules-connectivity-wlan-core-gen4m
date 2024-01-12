@@ -454,6 +454,8 @@ void beGenerateMldSTAInfo(
 
 	/* filling STA info field (varied length) */
 	cp = sta_ctrl->aucStaInfo;
+	cp++; /* reserved for sta info length */
+
 	if (BE_IS_ML_STA_CTRL_PRESENCE_MAC(sta_ctrl->u2StaCtrl)) {
 		COPY_MAC_ADDR(cp, bss->aucOwnMacAddr);
 		cp += MAC_ADDR_LEN;
@@ -474,6 +476,7 @@ void beGenerateMldSTAInfo(
 		*cp++ = 0;
 	}
 
+	*sta_ctrl->aucStaInfo = cp - sta_ctrl->aucStaInfo;
 	sta_ctrl->ucLength = cp - pos - ELEM_HDR_LEN;
 	prMultiLinkControlIE->ucLength += cp - pos;
 	prMsduInfo->u2FrameLength += cp - pos;
@@ -764,7 +767,7 @@ void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 			(struct IE_MULTI_LINK_STA_CONTROL *)pos;
 		const uint8_t *tail = pos + IE_SIZE(pos);
 		struct STA_PROFILE *prStaProfile;
-		uint8_t ucLinkId;
+		uint8_t ucLinkId, ucStaInfoLen;
 		uint16_t u2StaControl;
 
 		if (prIePerStaProfile->ucSubID != SUB_IE_MLD_PER_STA_PROFILE ||
@@ -786,6 +789,8 @@ void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 			prMlInfo->ucLinkNum);
 
 		pos = prIePerStaProfile->aucStaInfo;
+		ucStaInfoLen = *pos++;
+
 		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
  			COPY_MAC_ADDR(prStaProfile->aucLinkAddr, pos);
 			DBGLOG(ML, INFO, "LinkID=%d, LinkAddr="MACSTR"",
@@ -804,6 +809,7 @@ void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 				ucLinkId, prStaProfile->u2DtimInfo);
 			pos += 2;
 		}
+
 		/* If the Complete Profile subfield = 1 and
 		 * NSTR Link Pair Present = 1, then NSTR Indication Bitmap exist
 		 * NSTR Bitmap Size = 1 if the length of the corresponding
@@ -825,20 +831,29 @@ void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 				pos += 2;
 			}
 		}
-		/*(tail - pos) is length of STA Profile
-		 * copy STA profile in Per-STA profile subelement.
-		 * STA profile contains Inheritance and Non-Inheritance element
-		 * todo: handle Inheritance and Non-Inheritance element
-		 */
-		prStaProfile->ucIEbufLen = 0;
-		if (tail - pos < sizeof(prStaProfile->aucIEbuf)) {
-			DBGLOG(ML, INFO, "copy sta profile ie len %d\n",
-				tail - pos);
-			kalMemCopy(prStaProfile->aucIEbuf, pos, tail - pos);
-			prStaProfile->ucIEbufLen = tail - pos;
+
+		if (ucStaInfoLen != pos - prIePerStaProfile->aucStaInfo) {
+			DBGLOG(ML, WARN,
+				"invalid STA info len: real %d != expected %d",
+				pos - prIePerStaProfile->aucStaInfo,
+				ucStaInfoLen);
+			prMlInfo->ucLinkNum--;
 		} else {
-			DBGLOG(ML, WARN, "sta profile ie len too long %d!!\n",
-				tail - pos);
+			/* (tail - pos) is length of STA Profile
+			 * copy STA profile in Per-STA profile subelement.
+			 */
+			prStaProfile->ucIEbufLen = 0;
+			if (tail - pos < sizeof(prStaProfile->aucIEbuf)) {
+				DBGLOG(ML, INFO, "copy sta profile ie len %d\n",
+					tail - pos);
+				kalMemCopy(prStaProfile->aucIEbuf,
+					pos, tail - pos);
+				prStaProfile->ucIEbufLen = tail - pos;
+			} else {
+				DBGLOG(ML, WARN,
+					"sta profile ie len too long %d!!\n",
+					tail - pos);
+			}
 		}
 
 		/* point to next Per-STA profile*/
