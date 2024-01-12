@@ -12753,11 +12753,10 @@ static int priv_driver_run_hqa(
 	uint8_t *dataptr = NULL;
 	int32_t datalen = 0;
 	int32_t ret = WLAN_STATUS_FAILURE;
-#endif
-	int32_t i = 0;
-
 	int16_t i2tmpVal = 0;
 	int32_t i4tmpVal = 0;
+#endif
+	int32_t i = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -12836,11 +12835,11 @@ static int priv_driver_run_hqa(
 			}
 		}
 	}
+	kalMemFree(dataptr, VIR_MEM_TYPE, datalen);
 #else
 	DBGLOG(REQ, ERROR,
 	"wlan_service not support\n");
 #endif
-	kalMemFree(dataptr, VIR_MEM_TYPE, datalen);
 	return i4BytesWritten;
 
 }

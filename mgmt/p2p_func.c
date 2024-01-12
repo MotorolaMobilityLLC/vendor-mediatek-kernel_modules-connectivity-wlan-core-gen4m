@@ -6537,7 +6537,7 @@ void p2pFunGetAcsBestChList(IN struct ADAPTER *prAdapter,
 {
 	struct PARAM_GET_CHN_INFO *prGetChnLoad;
 	uint8_t i, ucInUsedCHNumber = 0, ucBandIdx = BAND_2G4;
-	boolean bIs2Gsupport = FALSE, bIs5Gsupport = FALSE;
+	bool bIs2Gsupport = FALSE, bIs5Gsupport = FALSE;
 	/*
 	*Set 2G/5G support
 	*/
