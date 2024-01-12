@@ -313,15 +313,17 @@ void aisInitializeConnectionRsnInfo(struct ADAPTER *prAdapter,
 
 	/* reset cipher */
 	prMib->dot11RSNAConfigGroupCipher = WPA_CIPHER_SUITE_NONE;
+	prMib->dot11RSNAConfigPairwiseCipher = WPA_CIPHER_SUITE_NONE;
+	prMib->dot11RSNAConfigAkm = 0;
+
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++)
 		prMib->dot11RSNAConfigPairwiseCiphersTable
 		    [i].dot11RSNAConfigPairwiseCipherEnabled = FALSE;
 
 	/* reset akm */
-	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
+	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++)
 		prMib->dot11RSNAConfigAuthenticationSuitesTable
 		    [i].dot11RSNAConfigAuthenticationSuiteEnabled = FALSE;
-	}
 } /* end of aisInitializeConnectionRsnInfo() */
 
 #if CFG_SUPPORT_802_11K
@@ -4447,6 +4449,8 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 				aisCheckMultiStaStatus(prAdapter,
 					MEDIA_STATE_CONNECTED, ucBssIndex);
 #endif
+
+				rsnAllowCrossAkm(prAdapter, ucBssIndex);
 			}
 
 #if CFG_SUPPORT_ROAMING

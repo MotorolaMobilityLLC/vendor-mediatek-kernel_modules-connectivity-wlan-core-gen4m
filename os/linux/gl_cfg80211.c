@@ -1449,51 +1449,14 @@ int wlanParseAkmSuites(uint32_t *au4AkmSuites, uint32_t u4AkmSuitesCount,
 
 			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
 				TRUE;
+
+			prMib->dot11RSNAConfigAkm |=
+				rsnKeyMgmtToBit(u4AkmSuite);
 		}
 
 		if (i == 0) {
 			*prAuthMode = eAuthMode;
 			*pu4AkmSuite = u4AkmSuite;
-		}
-	}
-
-#if (CFG_TC10_FEATURE == 1)
-	if (*prAuthMode == AUTH_MODE_WPA_PSK ||
-	    *prAuthMode == AUTH_MODE_WPA2_PSK) {
-		/* support cross wpa/wpa2 psk */
-		for (j = 0; j < MAX_NUM_SUPPORTED_AKM_SUITES; j++) {
-			prEntry =
-			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[j];
-
-			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
-				WPA_AKM_SUITE_PSK &&
-			    prEntry->dot11RSNAConfigAuthenticationSuite !=
-				RSN_AKM_SUITE_PSK)
-				continue;
-
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-				TRUE;
-		}
-	}
-#endif
-
-	if (*prAuthMode == AUTH_MODE_WPA2_PSK ||
-		*prAuthMode == AUTH_MODE_WPA3_SAE) {
-		/* support cross wpa2/sae/sae-ext */
-		for (j = 0; j < MAX_NUM_SUPPORTED_AKM_SUITES; j++) {
-			prEntry =
-			    &prMib->dot11RSNAConfigAuthenticationSuitesTable[j];
-
-			if (prEntry->dot11RSNAConfigAuthenticationSuite !=
-				RSN_AKM_SUITE_PSK &&
-				prEntry->dot11RSNAConfigAuthenticationSuite !=
-				RSN_AKM_SUITE_SAE &&
-				prEntry->dot11RSNAConfigAuthenticationSuite !=
-				RSN_AKM_SUITE_SAE_EXT_KEY)
-				continue;
-
-			prEntry->dot11RSNAConfigAuthenticationSuiteEnabled =
-				TRUE;
 		}
 	}
 
