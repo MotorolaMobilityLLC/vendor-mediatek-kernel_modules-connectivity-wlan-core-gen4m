@@ -2479,6 +2479,7 @@ nanNdlProcessScheduleRequest(struct ADAPTER *prAdapter,
 	/* 1. create NDL on the fly */
 	prNDL = nanDataUtilSearchNdlByMac(prAdapter, prNaf->aucSrcAddr);
 	if (prNDL != NULL) {
+		COPY_MAC_ADDR(prNDL->aucTxRespAddr, prNaf->aucSrcAddr);
 		prNDL->eNDLRole = NAN_PROTOCOL_RESPONDER;
 
 		nanSchedPeerPrepareNegoState(prAdapter, prNaf->aucSrcAddr);
@@ -5095,6 +5096,7 @@ nanNdlSendScheduleResponse(
 	struct STA_RECORD *prStaRec;
 	uint8_t *pucLocalAddr;
 	uint8_t *pucPeerAddr;
+	uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -5126,11 +5128,13 @@ nanNdlSendScheduleResponse(
 	kalMemZero((uint8_t *)prMsduInfo->prPacket, u2EstimatedFrameLen);
 
 	pucLocalAddr = prAdapter->rDataPathInfo.aucLocalNMIAddr;
-	if (pucDestMacAddr)
+	if (prNDL && !EQUAL_MAC_ADDR(prNDL->aucTxRespAddr, aucZeroMacAddr)) {
+		pucPeerAddr = prNDL->aucTxRespAddr;
+	} else if (pucDestMacAddr) {
 		pucPeerAddr = pucDestMacAddr;
-	else if (prNDL)
+	} else if (prNDL) {
 		pucPeerAddr = prNDL->aucPeerMacAddr;
-	else {
+	} else {
 		DBGLOG(NAN, ERROR, "[%s] aucPeerMacAddr error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
 	}
