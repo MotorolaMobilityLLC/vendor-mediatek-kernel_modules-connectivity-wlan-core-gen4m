@@ -449,7 +449,7 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 		struct BUS_INFO *prBusInfo, uint32_t u4SwRingIdx)
 {
-	uint32_t offset = MT_RINGREG_DIFF;
+	uint32_t offset = 0;
 
 	/*
 	 * RX_RING_EVT_IDX_1           (RX_Ring0) - WM Event
@@ -462,34 +462,31 @@ static uint8_t mt7990SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT_IDX_1:
-		offset *= 0;
+		offset = 0;
 		break;
 	case RX_RING_DATA_IDX_0:
-		offset *= 4;
+		offset = 4;
 		break;
 	case RX_RING_DATA1_IDX_2:
-		offset *= 5;
+		offset = 5;
 		break;
 	case RX_RING_DATA2_IDX_5:
-		offset *= 8;
+		offset = 8;
 		break;
 	case RX_RING_TXDONE0_IDX_3:
-		offset *= 6;
+		offset = 6;
 		break;
 	case RX_RING_TXDONE1_IDX_4:
-		offset *= 7;
+		offset = 7;
 		break;
 	case RX_RING_TXDONE2_IDX_6:
-		offset *= 9;
+		offset = 9;
 		break;
 	default:
 		return FALSE;
 	}
 
-	prRxRing->hw_desc_base = prBusInfo->host_rx_ring_base + offset;
-	prRxRing->hw_cidx_addr = prBusInfo->host_rx_ring_cidx_addr + offset;
-	prRxRing->hw_didx_addr = prBusInfo->host_rx_ring_didx_addr + offset;
-	prRxRing->hw_cnt_addr = prBusInfo->host_rx_ring_cnt_addr + offset;
+	halSetRxRingHwAddr(prRxRing, prBusInfo, offset);
 
 	return TRUE;
 }

@@ -1056,13 +1056,41 @@ void asicConnac3xHifRst(
 	struct GLUE_INFO *prGlueInfo);
 #endif /* _HIF_PCIE */
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+void fillConnac3xNicTxDescAppendWithSdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t *prTxDescBuffer);
+void fillConnac3xTxDescAppendBySdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u4MsduId,
+	phys_addr_t rDmaAddr, IN uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer);
+void fillConnac3xTxDescAppendByMawdSdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint16_t u4MsduId,
+	dma_addr_t rDmaAddr,
+	uint32_t u4Idx,
+	u_int8_t fgIsLast,
+	uint8_t *pucBuffer);
+void fillConnac3xTxDescTxByteCountWithSdo(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	void *prTxDesc);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 void fillConnac3xTxDescTxByteCount(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	void *prTxDesc);
 void asicConnac3xInitTxdHook(
+	struct ADAPTER *prAdapter,
 	struct TX_DESC_OPS_T *prTxDescOps);
 void asicConnac3xInitRxdHook(
+	struct ADAPTER *prAdapter,
 	struct RX_DESC_OPS_T *prRxDescOps);
 #if (CFG_SUPPORT_MSP == 1)
 void asicConnac3xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,

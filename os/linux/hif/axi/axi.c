@@ -219,7 +219,8 @@ static void axiUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
 static void axiFreeDesc(struct GL_HIF_INFO *prHifInfo,
 			struct RTMP_DMABUF *prDescRing);
 static void axiFreeBuf(void *pucSrc, uint32_t u4Len);
-static void axiFreePacket(void *pvPacket);
+static void axiFreePacket(struct GL_HIF_INFO *prHifInfo, void *pvPacket,
+			  uint32_t u4Num);
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
 
 static void axiAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx);
@@ -1605,7 +1606,8 @@ static void axiFreeBuf(void *pucSrc, uint32_t u4Len)
 	kalMemFree(pucSrc, PHY_MEM_TYPE, u4Len);
 }
 
-static void axiFreePacket(void *pvPacket)
+static void axiFreePacket(struct GL_HIF_INFO *prHifInfo, void *pvPacket,
+			  uint32_t u4Num)
 {
 	kalPacketFree(NULL, pvPacket);
 }

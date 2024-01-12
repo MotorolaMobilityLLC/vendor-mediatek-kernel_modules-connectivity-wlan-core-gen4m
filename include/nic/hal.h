@@ -114,6 +114,22 @@ enum ENUM_RX_RING_IDX {
 	RX_RING_WAEVT1_IDX_6,
 };
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+enum ENUM_RRO_IND_REASON {
+	RRO_STEP_ONE = 0,
+	RRO_REPEAT,
+	RRO_OLDPKT,
+	RRO_WITHIN,
+	RRO_SURPASS,
+	RRO_SURPASS_BY_BAR,
+	RRO_SURPASS_BIG_SN,
+	RRO_DISCONNECT,
+	RRO_NOT_RRO_PKT,
+	RRO_TIMEOUT_STEP_ONE,
+	RRO_TIMEOUT_FLUSH_ALL,
+};
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

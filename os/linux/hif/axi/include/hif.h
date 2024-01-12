@@ -149,7 +149,8 @@ struct HIF_MEM_OPS {
 	void (*freeDesc)(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
 	void (*freeBuf)(void *pucSrc, uint32_t u4Len);
-	void (*freePacket)(void *pvPacket);
+	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
+			   void *pvPacket, uint32_t u4Num);
 	void (*dumpTx)(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_TX_RING *prTxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);

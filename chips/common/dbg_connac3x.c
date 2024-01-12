@@ -91,6 +91,8 @@
 #include "coda/mt6639/bn0_wf_mib_top.h"
 #include "coda/mt6639/bn1_wf_mib_top.h"
 #include "coda/mt6639/wf_umib_top.h"
+#include "coda/mt6639/mawd_reg.h"
+#include "coda/mt6639/wf_rro_top.h"
 #endif
 #ifdef MT7990
 #include "coda/mt7990/wf_hif_dmashdl_top.h"
@@ -1950,6 +1952,9 @@ void connac3x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 		u4SwIdx = prGroup->didx == 0 ?
 			prGroup->cnt - 1 : prGroup->didx - 1;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
+		u4SwIdx = prGroup->didx == 0 ?
+			prGroup->cnt - 2 : prGroup->didx - 2;
+		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing, u4SwIdx, true);
 	}
 
 	for (i = 0; i < prBusInfo->wfmda_host_rx_group_len; i++) {
@@ -2082,6 +2087,107 @@ void connac3x_show_wfdma_info_by_type(
 			enum_wfdma_type);
 }
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+void connac3x_show_mawd_info(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct BUS_INFO *prBusInfo;
+	struct RTMP_DMABUF *prErrRpt;
+	uint32_t *pu4ErrRpt, *pu4HifTxd;
+	uint32_t u4Cidx = 0, u4Didx = 0, u4Val = 0, u4Idx, u4Num;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prErrRpt = &prHifInfo->ErrRptRing;
+	pu4ErrRpt = prErrRpt->AllocVa;
+
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
+	DBGLOG(HAL, INFO, "==============================\n");
+
+	HAL_MCR_RD(prAdapter, prBusInfo->mawd_err_rpt_ctrl2, &u4Val);
+	u4Didx = (u4Val & BITS(16, 28)) >> 16;
+	u4Cidx = u4Val & BITS(0, 12);
+	DBGLOG(HAL, INFO, "ERR_RPT_CTRL2:0x%08x!\n", u4Val);
+	while (u4Cidx != u4Didx) {
+		DBGLOG(HAL, INFO, "ErrRpt[%d]:0x%08x!\n",
+		       u4Cidx, pu4ErrRpt[u4Cidx]);
+		INC_RING_INDEX(u4Cidx, RX_RING_SIZE);
+	}
+	HAL_MCR_WR(prAdapter, prBusInfo->mawd_err_rpt_ctrl2, u4Cidx);
+
+	for (u4Idx = MAWD_HIF_TXD_MD_CTRL0;
+	     u4Idx <= MAWD_SETTING3; u4Idx += 4) {
+		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+	}
+
+	for (u4Num = 0; u4Num < MAWD_MD_TX_RING_NUM; u4Num++) {
+		pu4HifTxd = prHifInfo->HifTxDescRing[u4Num].AllocVa;
+		for (u4Idx = 0; u4Idx < 3; u4Idx++) {
+			DBGLOG(HAL, INFO, "HIF TXD %d-%d\n", u4Num, u4Idx);
+			dumpMemory32((uint32_t *)pu4HifTxd, SDO_HIF_TXD_SIZE);
+			pu4HifTxd += 19;
+		}
+	}
+}
+
+void connac3x_show_rro_info(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_DMABUF *prIndCmd;
+	struct RTMP_DMABUF *prAddrArray;
+	struct list_head *prCur;
+	uint32_t u4Val = 0, u4Idx;
+	uint32_t u4Used = 0, u4Free = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prIndCmd = &prHifInfo->IndCmdRing;
+	prAddrArray = &prHifInfo->AddrArray;
+
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
+	DBGLOG(HAL, INFO, "==============================\n");
+
+	for (u4Idx = MAWD_IND_CMD_CTRL0;
+	     u4Idx <= MAWD_MD_RX_BLK_CTRL2; u4Idx += 4) {
+		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+	}
+
+	for (u4Idx = MAWD_IND_CMD_SIGNATURE0;
+	     u4Idx <= MAWD_R2AXI_CTRL3; u4Idx += 4) {
+		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+	}
+
+	for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
+	     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
+		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+	}
+
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, " RRO DEBUG DUMP\n");
+	DBGLOG(HAL, INFO, "==============================\n");
+
+	for (u4Idx = WF_RRO_TOP_GLOBAL_CONFG_ADDR;
+	     u4Idx <= WF_RRO_TOP_DBG_RDAT_DW3_ADDR; u4Idx += 4) {
+		HAL_MCR_RD(prAdapter, u4Idx, &u4Val);
+		DBGLOG(HAL, TRACE, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+	}
+
+	list_for_each(prCur, &prHifInfo->rRcbUsedList)
+		u4Used++;
+	list_for_each(prCur, &prHifInfo->rRcbFreeList)
+		u4Free++;
+
+	dumpMemory32((uint32_t *)prIndCmd->AllocVa, prIndCmd->AllocSize);
+
+	DBGLOG(HAL, TRACE, "BLK Used[%d] Free[%d]", u4Used, u4Free);
+}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
@@ -2112,6 +2218,14 @@ void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter)
 	connac3x_show_wfdma_desc(prAdapter);
 
 	connac3xDumpPPDebugCr(prAdapter);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (prChipInfo->is_support_mawd_tx)
+		connac3x_show_mawd_info(prAdapter);
+
+	if (prChipInfo->is_support_rro)
+		connac3x_show_rro_info(prAdapter);
+#endif
 }
 
 void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
@@ -2142,7 +2256,9 @@ void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "DMASHDL ERR FLAG CTRL(0x%08x): 0x%08x\n",
 	       prCfg->rErrorFlagCtrl.u4Addr, value);
 
-	for (idx = 0; idx < ENUM_DMASHDL_GROUP_2; idx++) {
+	for (idx = 0; idx <= ENUM_DMASHDL_GROUP_14; idx++) {
+		if (prCfg->afgRefillEn[idx] == 0)
+			continue;
 		DBGLOG(HAL, INFO, "Group %d info:\n", idx);
 		asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
 		rsv_cnt = asicConnac3xDmashdlGetRsvCount(prAdapter, idx);
@@ -2151,6 +2267,15 @@ void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter)
 		total_src_cnt += src_cnt;
 		total_rsv_cnt += rsv_cnt;
 	}
+
+	/* Dump Group 15 info */
+	idx = ENUM_DMASHDL_GROUP_15;
+	DBGLOG(HAL, INFO, "Group %d info:\n", idx);
+	asicConnac3xDmashdlGetGroupControl(prAdapter, idx);
+	asicConnac3xDmashdlGetRsvCount(prAdapter, idx);
+	asicConnac3xDmashdlGetSrcCount(prAdapter, idx);
+	asicConnac3xDmashdlGetPKTCount(prAdapter, idx);
+
 	HAL_MCR_RD(prAdapter, prCfg->rStatusRdFfaCnt.u4Addr, &value);
 	ffa_cnt = (value & prCfg->rStatusRdFfaCnt.u4Mask) >>
 		prCfg->rStatusRdFfaCnt.u4Shift;
