@@ -293,6 +293,9 @@
 #define HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT  1
 #endif
 
+#define WFDMA_MEMORY_ALIGNMENT      8
+#define WFDMA_WB_MEMORY_ALIGNMENT   256
+
 #define HIF_INT_TIME_DEBUG              0
 
 #define FW_BIN_FLAVOR_KEY		"flavor-bin"
@@ -499,6 +502,12 @@ struct RXD_STRUCT {
 	uint32_t MagicCnt:4;
 };
 
+struct HIF_MEM {
+	phys_addr_t pa;
+	void *va;
+	uint32_t align_size;
+};
+
 /*
  *	Data buffer for DMA operation, the buffer must be contiguous
  *	physical memory Both DMA to / from CPU use the same structure.
@@ -507,6 +516,7 @@ struct RTMP_DMABUF {
 	unsigned long AllocSize;
 	void *AllocVa;		/* TxBuf virtual address */
 	phys_addr_t AllocPa;		/* TxBuf physical address */
+	struct HIF_MEM rMem;
 	u_int8_t fgIsCopyPath;	/* RxBuf is copy path */
 };
 
@@ -1161,7 +1171,8 @@ void halCopyPathAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
 void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
-			    struct RTMP_DMABUF *prDescRing);
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Align);
 bool halCopyPathAllocTxCmdBuf(struct RTMP_DMABUF *prDmaBuf,
 			      uint32_t u4Num, uint32_t u4Idx);
 void halCopyPathAllocTxDataBuf(struct MSDU_TOKEN_ENTRY *prToken,
@@ -1196,7 +1207,8 @@ void halZeroCopyPathAllocDesc(struct GL_HIF_INFO *prHifInfo,
 			  struct RTMP_DMABUF *prDescRing,
 			  uint32_t u4Num);
 void halZeroCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
-			    struct RTMP_DMABUF *prDescRing);
+				struct RTMP_DMABUF *prDescRing,
+				uint32_t u4Align);
 void *halZeroCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDmaBuf,
 			    uint32_t u4Num, uint32_t u4Idx);

@@ -301,7 +301,8 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 	prCache->AllocSize =
 		RRO_BA_BITMAP_SIZE * RRO_MAX_WINDOW_NUM;
 	if (prMemOps->allocExtBuf)
-		prMemOps->allocExtBuf(prHifInfo, prCache);
+		prMemOps->allocExtBuf(prHifInfo, prCache,
+				      WFDMA_MEMORY_ALIGNMENT);
 
 	if (prCache->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "BaBitmap allocation failed!!\n");
@@ -311,7 +312,8 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 	prIndCmd->AllocSize =
 		RRO_IND_CMD_RING_SIZE * sizeof(struct RRO_IND_CMD);
 	if (prMemOps->allocExtBuf)
-		prMemOps->allocExtBuf(prHifInfo, prIndCmd);
+		prMemOps->allocExtBuf(prHifInfo, prIndCmd,
+				      WFDMA_MEMORY_ALIGNMENT);
 
 	if (prIndCmd->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "IndCmd allocation failed!!\n");
@@ -322,7 +324,8 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 	u4AddrNum = (RRO_TOTAL_ADDR_ELEM_NUM + 1) * RRO_MAX_WINDOW_NUM;
 	prAddrArray->AllocSize = RRO_ADDR_ELEM_SIZE * u4AddrNum;
 	if (prMemOps->allocExtBuf)
-		prMemOps->allocExtBuf(prHifInfo, prAddrArray);
+		prMemOps->allocExtBuf(prHifInfo, prAddrArray,
+				      WFDMA_MEMORY_ALIGNMENT);
 
 	if (prAddrArray->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "AddrArray allocation failed!!\n");
@@ -566,7 +569,8 @@ void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo,
 	/* Don't re-alloc memory when second time call alloc ring */
 	prRxDesc->AllocSize = MAWD_RX_BLK_RING_SIZE * u4DescSize;
 	if (fgAllocMem && prMemOps->allocExtBuf)
-		prMemOps->allocExtBuf(prHifInfo, prRxDesc);
+		prMemOps->allocExtBuf(prHifInfo, prRxDesc,
+				      WFDMA_MEMORY_ALIGNMENT);
 
 	if (prRxDesc->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "RxBlkRing allocation failed!!\n");
@@ -2410,7 +2414,8 @@ u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem)
 
 	prErrRpt->AllocSize = MAWD_RX_BLK_RING_SIZE * 4;
 	if (fgAllocMem && prMemOps->allocExtBuf)
-		prMemOps->allocExtBuf(prHifInfo, prErrRpt);
+		prMemOps->allocExtBuf(prHifInfo, prErrRpt,
+				      WFDMA_MEMORY_ALIGNMENT);
 
 	if (prErrRpt->AllocVa == NULL) {
 		DBGLOG(HAL, ERROR, "ErrRpt allocation failed!!\n");

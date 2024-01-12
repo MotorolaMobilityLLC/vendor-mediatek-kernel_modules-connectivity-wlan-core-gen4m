@@ -198,31 +198,41 @@ int halInitResvMem(struct platform_device *pdev)
 #endif
 }
 
-static bool halAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
+static bool halAllocRsvMemAlign(uint32_t u4Size, struct HIF_MEM *prMem,
+				uint32_t u4Align)
 {
-	/* 256 bytes alignment */
-	if (u4Size & 255)
-		u4Size += 256 - (u4Size & 255);
+	uint32_t u4ExtSize = 0;
+
+	if (u4Align < WFDMA_MEMORY_ALIGNMENT)
+		u4Align = WFDMA_MEMORY_ALIGNMENT;
+
+	if (u4Size & (u4Align - 1))
+		u4ExtSize = u4Align - (u4Size & (u4Align - 1));
+	u4Size += u4ExtSize;
 
 	if ((grMem.u4Offset + u4Size) >= gWifiRsvMemSize) {
 		prMem->pa = 0;
 		prMem->va = NULL;
+		prMem->align_size = 0;
 		return false;
 	}
 
-	prMem->pa = grMem.pucRsvMemBase + grMem.u4Offset;
-	prMem->va = grMem.pucRsvMemVirBase + grMem.u4Offset;
+	prMem->pa = grMem.pucRsvMemBase + grMem.u4Offset + u4ExtSize;
+	prMem->va = grMem.pucRsvMemVirBase + grMem.u4Offset + u4ExtSize;
+	prMem->align_size = u4ExtSize;
 	grMem.u4Offset += u4Size;
 
 	return prMem->va != NULL;
 }
 
+static bool halAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
+{
+	/* default alignment */
+	return halAllocRsvMemAlign(u4Size, prMem, WFDMA_MEMORY_ALIGNMENT);
+}
+
 static bool halFreeRsvMem(uint32_t u4Size)
 {
-	/* 256 bytes alignment */
-	if (u4Size & 255)
-		u4Size += 256 - (u4Size & 255);
-
 	if (u4Size > grMem.u4Offset)
 		return false;
 
@@ -444,19 +454,20 @@ void halCopyPathAllocRxDesc(struct GL_HIF_INFO *prHifInfo,
 }
 
 void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
-			   struct RTMP_DMABUF *prDescRing)
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Align)
 {
-	struct HIF_MEM rMem = {0};
-
-	if (!halAllocRsvMem(prDescRing->AllocSize, &rMem)) {
+	if (!halAllocRsvMemAlign(prDescRing->AllocSize,
+				 &prDescRing->rMem,
+				 u4Align)) {
 		DBGLOG(INIT, ERROR, "Ext Buf alloc failed!\n");
 		prDescRing->AllocPa = 0;
 		prDescRing->AllocVa = NULL;
 		return;
 	}
 
-	prDescRing->AllocVa = rMem.va;
-	prDescRing->AllocPa = rMem.pa;
+	prDescRing->AllocVa = prDescRing->rMem.va;
+	prDescRing->AllocPa = prDescRing->rMem.pa;
 	if (prDescRing->AllocVa)
 		memset(prDescRing->AllocVa, 0, prDescRing->AllocSize);
 }
@@ -576,12 +587,12 @@ bool halCopyPathCopyRxData(struct GL_HIF_INFO *prHifInfo,
 }
 
 void halCopyPathFreeExtBuf(struct GL_HIF_INFO *prHifInfo,
-			  struct RTMP_DMABUF *prDescRing)
+			   struct RTMP_DMABUF *prDescRing)
 {
 	if (prDescRing->AllocVa == NULL)
 		return;
 
-	halFreeRsvMem(prDescRing->AllocSize);
+	halFreeRsvMem(prDescRing->AllocSize + prDescRing->rMem.align_size);
 	memset(prDescRing, 0, sizeof(struct RTMP_DMABUF));
 }
 
@@ -634,8 +645,10 @@ void halZeroCopyPathAllocDesc(struct GL_HIF_INFO *prHifInfo,
 }
 
 void halZeroCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
-			    struct RTMP_DMABUF *prDescRing)
+			    struct RTMP_DMABUF *prDescRing,
+			    uint32_t u4Align)
 {
+	prDescRing->rMem.align_size = 0;
 	halZeroCopyPathAllocDesc(prHifInfo, prDescRing, 0);
 }
 
