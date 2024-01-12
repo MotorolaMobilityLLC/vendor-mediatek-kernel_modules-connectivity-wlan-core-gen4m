@@ -355,6 +355,9 @@ static void heRlmFillHeCapIE(
 #endif
 	uint8_t ucSupportedNss =
 		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
+	struct AIS_FSM_INFO *prAisFsmInfo =
+		aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
+	struct BSS_DESC *prBssDesc;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -411,6 +414,17 @@ static void heRlmFillHeCapIE(
 	}
 
 #if CFG_SUPPORT_BFEE
+#if CFG_SUPPORT_CONDITIONAL_BFEE
+	if ((prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_AX) &&
+		(IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL)) {
+		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+		if (prBssDesc != NULL && (bssGetRxNss(prAdapter, prBssDesc) ==
+			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))) {
+			DBGLOG(SW4, ERROR,
+				"Disable Bfee due to same Nss between STA and AP\n");
+		}
+	} else
+#endif
 	if (IS_FEATURE_ENABLED(prWifiVar->ucStaHeBfee)) {
 		HE_SET_PHY_CAP_SU_BFMEE(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_BFMEE_STS_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 3);
