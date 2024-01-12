@@ -1511,7 +1511,6 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (pRxD->SDLen0 > u4Len || prAdapter->rWifiVar.fgDumpRxEvt) {
-		uint8_t *prBuffer = NULL;
 		uint32_t u4dumpSize = 0;
 
 		if (pRxD->SDLen0 > u4Len) {
@@ -1524,18 +1523,9 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		u4dumpSize = pRxD->SDLen0;
 		if (u4dumpSize > BITS(0, 13))
 			u4dumpSize = BITS(0, 13);
-		prBuffer = kalMemAlloc(u4dumpSize, VIR_MEM_TYPE);
-		if (prBuffer) {
-			if (prMemOps->copyEvent &&
-			    prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
-						prDmaBuf, prBuffer,
-						u4dumpSize)) {
-				DBGLOG(RX, ERROR, "Dump RX Event payload\n");
-				DBGLOG_MEM8(RX, ERROR, prBuffer,
-						u4dumpSize);
-			}
-			kalMemFree(prBuffer, VIR_MEM_TYPE, sizeof(prBuffer));
-		}
+		if (prMemOps->dumpRx)
+			prMemOps->dumpRx(prHifInfo, prRxRing,
+				u4CpuIdx, u4dumpSize);
 		if (pRxD->SDLen0 > u4Len)
 			goto skip;
 	}
