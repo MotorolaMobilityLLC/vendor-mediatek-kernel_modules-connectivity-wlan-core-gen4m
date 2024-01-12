@@ -1784,6 +1784,11 @@ SKIP_START_RDD:
 		if (prP2pChnlReqInfo->eBand == BAND_5G)
 			kalP2PEnableNetDev(prAdapter->prGlueInfo, prBssInfo);
 
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+		if (prP2pConnReqInfo->eConnRequest ==
+			P2P_CONNECTION_TYPE_PURE_AP)
+			kalIdcRegisterRilNotifier();
+#endif
 #if CFG_AP_80211KVR_INTERFACE
 		/* 5. BSS status notification */
 		p2pFunMulAPAgentBssStatusNotification(prAdapter,
@@ -1823,6 +1828,11 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 				REASON_CODE_DEAUTH_LEAVING_BSS,
 				TRUE);
 			prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+			if (p2pFuncIsAPMode(prAdapter->rWifiVar
+			.prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIdx]))
+				kalIdcUnregisterRilNotifier();
+#endif
 		}
 
 		/* Do not Deactivate Network if any Client existed,

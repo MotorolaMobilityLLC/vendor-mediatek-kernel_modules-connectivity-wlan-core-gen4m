@@ -2025,6 +2025,9 @@ enum ENUM_UNI_CMD_IDC_TAG {
 	UNI_CMD_IDC_TAG_ALWAYS_SCAN_PARAM_SETTING = 1,
 	UNI_CMD_IDC_TAG_CCCI_MSG = 2,
 	UNI_CMD_IDC_TAG_3WIRE_GROUP = 3,
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+	UNI_CMD_IDC_TAG_RIL_BRIDGE = 4,
+#endif
 	UNI_CMD_IDC_TAG_NUM
 };
 
@@ -2043,6 +2046,20 @@ struct UNI_CMD_ALWAYS_SCAN_PARAM_SETTING {
 	uint8_t  fgAlwaysScanEnable;
 	uint8_t     aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
+
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+/* IDC Setting (Tag4) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RIL_BRIDGE {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+	uint8_t    ucRat; /* LTE or NR */
+	uint8_t    fgIsChannelSelectByAcs;
+	uint8_t    aucReserved1[3];
+	uint32_t   u4Band;
+	uint32_t   u4Channel;
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SCAN {
@@ -6980,6 +6997,10 @@ uint32_t nicUniCmdOffloadIPV6(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetIdcChnl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if CFG_SUPPORT_IDC_RIL_BRIDGE
+uint32_t nicUniCmdSetIdcRilBridge(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
