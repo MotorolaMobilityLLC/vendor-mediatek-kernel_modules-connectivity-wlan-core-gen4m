@@ -588,6 +588,10 @@ int priv_driver_get_sw_ctrl(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_mcr(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+int priv_driver_set_pwr_met(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 int priv_driver_get_mcr(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_drv_mcr(struct net_device *prNetDev,

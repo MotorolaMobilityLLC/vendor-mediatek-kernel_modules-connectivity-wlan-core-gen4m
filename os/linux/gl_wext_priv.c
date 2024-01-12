@@ -4930,6 +4930,58 @@ int priv_driver_set_mcr(struct net_device *prNetDev, char *pcCommand,
 
 }
 
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+int priv_driver_set_pwr_met(struct net_device *prNetDev, char *pcCommand,
+			int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 3;
+	struct CMD_POWER_METRICS_INFO_T rCmdPowerMetrics;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret =
+			kalkStrtou32(apcArgv[1], 0,
+				&(rCmdPowerMetrics.u4Enable));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse pwr_met error (Enable) u4Ret=%d\n",
+			       u4Ret);
+
+		u4Ret =
+			kalkStrtou32(apcArgv[2], 0,
+				&(rCmdPowerMetrics.u4Value));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse pwr_met error (Value) u4Ret=%d\n", u4Ret);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetPowerMetrics,
+				   &rCmdPowerMetrics, sizeof(rCmdPowerMetrics),
+				   &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+	}
+
+	return i4BytesWritten;
+}
+#endif
+
 int priv_driver_set_mdvt(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen)
 {

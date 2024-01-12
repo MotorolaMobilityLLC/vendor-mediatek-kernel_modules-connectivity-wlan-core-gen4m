@@ -1536,6 +1536,34 @@ struct EVENT_CMD_RESULT {
 	uint8_t aucReserved[2];
 };
 
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+struct CMD_POWER_METRICS_INFO_T {
+	uint32_t u4Enable;
+	uint32_t u4Value;
+};
+
+struct POWER_STATE_INFO {
+	uint32_t u4SleepTime;
+	uint32_t u4RxListenTime;
+	uint32_t u4TxTime;
+	uint32_t u4RxTime;
+};
+
+struct EVENT_POWER_METRICS_INFO_T {
+	uint32_t u4TotalTime;
+	uint32_t u4Band;
+	uint32_t u4Protocol;
+	uint32_t u4Nss[2];
+	struct POWER_STATE_INFO u4BandRatio;
+	uint32_t arStatsPmCckRateStat[4];
+	uint32_t arStatsPmOfdmRateStat[8];
+	uint32_t arStatsPmHtRateStat[32];
+	uint32_t arStatsPmVhtRateStat[30];
+	uint32_t arStatsPmHeRateStat[48];
+	uint32_t arStatsPmEhtRateStat[80];
+};
+#endif
+
 /* CMD_ID_ACCESS_REG & EVENT_ID_ACCESS_REG */
 struct CMD_ACCESS_REG {
 	uint32_t u4Address;
@@ -4619,6 +4647,10 @@ void nicCmdEventListmode(struct ADAPTER
 
 #if (CFG_VOLT_INFO == 1)
 void nicEventGetVnf(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent);
+#endif
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
 		struct WIFI_EVENT *prEvent);
 #endif
 void nicCmdEventGetSlpCntInfo(struct ADAPTER *prAdapter,
