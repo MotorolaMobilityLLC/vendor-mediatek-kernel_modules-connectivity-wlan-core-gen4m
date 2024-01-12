@@ -657,17 +657,6 @@ void nic_rxd_v3_check_wakeup_reason(
 				u2Temp);
 			break;
 		case ETH_P_ARP:
-#if CFG_SUPPORT_PKT_OFLD
-		{
-			int arpOpCode;
-
-			arpOpCode = (pvHeader[ETH_TYPE_LEN_OFFSET + 8] << 8) |
-					(pvHeader[ETH_TYPE_LEN_OFFSET + 8 + 1]);
-			if (arpOpCode == ARP_PRO_REQ)
-				nicAbnormalWakeupHandler(prAdapter);
-		}
-			break;
-#endif
 		case ETH_P_1X:
 		case ETH_P_PRE_1X:
 #if CFG_SUPPORT_WAPI
@@ -685,9 +674,6 @@ void nic_rxd_v3_check_wakeup_reason(
 		default:
 			{
 
-#if CFG_SUPPORT_PKT_OFLD
-			uint8_t fgAbnormal = TRUE;
-#endif
 			if (HAL_MAC_CONNAC3X_RX_STATUS_IS_HEADER_TRAN(
 						prRxStatus)) {
 				if (HAL_MAC_CONNAC3X_RX_STATUS_IS_LLC_MIS(
@@ -712,9 +698,6 @@ void nic_rxd_v3_check_wakeup_reason(
 						prHeader->u2FrameCtrl)) {
 					DBGLOG(RX, INFO,
 						"Wakeup by TDLS packet\n");
-#if CFG_SUPPORT_PKT_OFLD
-					fgAbnormal = FALSE;
-#endif
 				} else {
 					DBGLOG(RX, INFO,
 						"Wakeup by frame type[0x%lx]\n",
@@ -727,10 +710,6 @@ void nic_rxd_v3_check_wakeup_reason(
 				prChipInfo->rxd_size);
 			DBGLOG_MEM8(RX, INFO,
 				pvHeader, u2PktLen > 50 ? 50:u2PktLen);
-#if CFG_SUPPORT_PKT_OFLD
-			if (fgAbnormal)
-				nicAbnormalWakeupHandler(prAdapter);
-#endif
 			}
 			break;
 		}

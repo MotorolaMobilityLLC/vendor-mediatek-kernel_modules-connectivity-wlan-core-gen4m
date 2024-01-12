@@ -8349,13 +8349,6 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4BackoffLevel, "BackoffLevel", 0);
 #endif
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	INIT_UINT(prWifiVar->ucAbnWakeupDetectEn,
-		"AbnWakeupDetectEn", FEATURE_ENABLED);
-	INIT_UINT(prWifiVar->ucAbnWakeupPktThld, "AbnWakeupPktThld", 10);
-	INIT_UINT(prWifiVar->ucAbnWakeupDetectIntv, "AbnWakeupDetectIntv", 50);
-#endif
-
 #if (CFG_SUPPORT_APF == 1)
 	INIT_UINT(prWifiVar->ucApfEnable, "ApfEnable", FEATURE_ENABLED);
 #endif

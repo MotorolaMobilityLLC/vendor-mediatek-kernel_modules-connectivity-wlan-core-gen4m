@@ -3353,8 +3353,9 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 
 		u4SentLen += rInfo.u4BufLen;
 
-		if (u4SentLen == u4ProgLen)
-			rInfo.ucOp = PKT_OFLD_OP_ENABLE;
+		if (u4SentLen == u4ProgLen) {
+			rInfo.ucOp = PKT_OFLD_OP_ENABLE_W_TPUT_DETECT;
+		}
 
 		DBGLOG(REQ, TRACE, "Set APF size(%d, %d) frag(%d, %d).\n",
 				u4ProgLen, u4SentLen,

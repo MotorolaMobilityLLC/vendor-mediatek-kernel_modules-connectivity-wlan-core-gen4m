@@ -1291,12 +1291,6 @@ struct WIFI_VAR {
 	u_int8_t fgLinkStatsDump;
 #endif /* CFG_SUPPORT_LLS */
 
-#if (CFG_SUPPORT_PKT_OFLD == 1)
-	uint8_t ucAbnWakeupDetectEn;
-	uint8_t ucAbnWakeupPktThld;
-	uint8_t ucAbnWakeupDetectIntv;
-#endif
-
 #if (CFG_SUPPORT_APF == 1)
 	uint8_t ucApfEnable;
 #endif
@@ -2434,7 +2428,6 @@ struct ADAPTER {
 #endif
 
 #if CFG_SUPPORT_PKT_OFLD
-	struct ABNORMAL_WAKEUP_STATISTIC rAbnormalWakeupStat;
 	u_int8_t ucRxDataMode;
 #endif
 
