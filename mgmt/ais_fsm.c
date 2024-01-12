@@ -7752,6 +7752,9 @@ struct FT_IES *aisGetFtIe(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
 {
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return NULL;
+
 	return &aisGetConnSettings(prAdapter, ucBssIndex)->rFtIeForTx;
 }
 

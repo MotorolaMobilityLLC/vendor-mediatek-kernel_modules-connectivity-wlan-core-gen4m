@@ -2261,11 +2261,16 @@ void assocGenerateMDIE(IN struct ADAPTER *prAdapter,
 	uint8_t *pucBuffer =
 		(uint8_t *)prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	uint8_t ucBssIndex = prMsduInfo->ucBssIndex;
-	enum ENUM_PARAM_AUTH_MODE eAuthMode =
-	    aisGetAuthMode(prAdapter, ucBssIndex);
-	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
-	struct GL_WPA_INFO *prWpaInfo = aisGetWpaInfo(prAdapter,
-		ucBssIndex);
+	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+	struct FT_IES *prFtIEs;
+	struct GL_WPA_INFO *prWpaInfo;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return;
+
+	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
+	prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
 
 	/* don't include MDIE in assoc request frame if auth mode is not FT
 	 * related

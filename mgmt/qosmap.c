@@ -274,15 +274,15 @@ void qosMapSetInit(IN struct STA_RECORD *prStaRec)
 	kalMemCopy(prStaRec->qosMapSet, dscp2up, 64);
 }
 
-uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo, IN int type, IN int dscp)
+uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo,
+		IN uint8_t ucBssIndex, IN int dscp)
 {
-	struct BSS_INFO *prAisBssInfo;
+	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 
-	prAisBssInfo = aisGetAisBssInfo(
-		prGlueInfo->prAdapter, type);
-	if (prAisBssInfo)
-		prStaRec = prAisBssInfo->prStaRecOfAP;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (prBssInfo)
+		prStaRec = prBssInfo->prStaRecOfAP;
 	else
 		return 0xFF;
 

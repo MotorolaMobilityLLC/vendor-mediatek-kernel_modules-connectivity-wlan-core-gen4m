@@ -15956,6 +15956,11 @@ uint32_t wlanoidUpdateFtIes(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
 	ftie = (struct cfg80211_update_ft_ies_params *)pvSetBuffer;
 	prFtIes = aisGetFtIe(prAdapter, ucBssIndex);
+	if (!prFtIes) {
+		DBGLOG(OID, ERROR, "FT: bss%d is not ais\n", ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	if (ftie->ie_len == 0) {
 		DBGLOG(OID, WARN, "FT: FT Ies length is 0\n");
 		return WLAN_STATUS_SUCCESS;
