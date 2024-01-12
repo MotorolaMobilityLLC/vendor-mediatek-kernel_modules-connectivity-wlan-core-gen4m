@@ -819,7 +819,7 @@ void p2pLinkAcquireChJoin(
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 			(struct MSG_HDR *)prMsgChReq,
-			MSG_SEND_METHOD_BUF);
+			MSG_SEND_METHOD_UNBUF);
 
 	prChnlReq->fgIsChannelRequested = TRUE;
 }
