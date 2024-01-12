@@ -1128,7 +1128,7 @@
  * Support CFG_SISO_SW_DEVELOP
  *------------------------------------------------------------------------------
  */
-#define CFG_SISO_SW_DEVELOP			0
+#define CFG_SISO_SW_DEVELOP			1
 
 /*------------------------------------------------------------------------------
  * Support spatial extension control

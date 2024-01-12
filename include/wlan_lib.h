@@ -1650,7 +1650,7 @@ void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 
 void wlanClearPendingInterrupt(IN struct ADAPTER *prAdapter);
 
-#if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
+#if CFG_WMT_WIFI_PATH_SUPPORT
 extern int32_t mtk_wcn_wmt_wifi_fem_cfg_report(void *pvInfoBuf);
 #endif
 
