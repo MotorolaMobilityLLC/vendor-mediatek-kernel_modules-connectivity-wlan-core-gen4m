@@ -406,9 +406,8 @@ void p2pFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 
 	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
 
-	if (prMgmtTxMsg->fgIsWaitRsp)
-		p2pFuncAddPendingMgmtLinkEntry(prAdapter,
-			prMgmtTxMsg->ucBssIdx, prMgmtTxMsg->u8Cookie);
+	if (prMgmtTxMsg->fgIsWaitRsp || prMgmtTxMsg->fgIsOffChannel)
+		p2pFuncAddPendingMgmtLinkEntry(prAdapter, prMgmtTxMsg);
 
 	fgUseRoleInterface = p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
