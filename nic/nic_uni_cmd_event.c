@@ -1848,8 +1848,18 @@ void nicUniCmdNicCapability(struct ADAPTER *prAdapter)
 
 	uni_cmd = (struct UNI_CMD_CHIP_CONFIG *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(NIC, ERROR, "uni_cmd is NULL\n");
+		return;
+	}
+
 	tag = (struct UNI_CMD_CHIP_CONFIG_NIC_CAPABILITY *)
 			uni_cmd->aucTlvBuffer;
+	if (!tag) {
+		DBGLOG(NIC, ERROR, "tag is NULL\n");
+		return;
+	}
+
 	tag->u2Tag = UNI_CMD_CHIP_CONFIG_TAG_NIC_CAPABILITY;
 	tag->u2Length = sizeof(*tag);
 

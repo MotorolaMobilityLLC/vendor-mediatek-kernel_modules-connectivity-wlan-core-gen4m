@@ -1709,7 +1709,7 @@ void nicTxMsduQueueByPrioTxHifPortQ(struct ADAPTER *prAdapter)
 #else
 		i = 0;
 #endif
-		if (i >= MAX_BSSID_NUM)
+		if (i >= MAX_BSSID_NUM || i < 0)
 			continue;
 
 		for (k = 0; k < MAX_BSSID_NUM; k++) {
