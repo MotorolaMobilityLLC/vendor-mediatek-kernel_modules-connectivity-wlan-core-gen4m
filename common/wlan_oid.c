@@ -2023,6 +2023,50 @@ wlanoidSetAuthMode(IN struct ADAPTER *prAdapter,
 
 } /* wlanoidSetAuthMode */
 
+uint32_t
+wlanoidSetAuthorized(IN struct ADAPTER *prAdapter,
+		   IN void *pvSetBuffer,
+		   IN uint32_t u4SetBufferLen,
+		   OUT uint32_t *pu4SetInfoLen) {
+
+	struct BSS_INFO *prAisBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo = (struct AIS_FSM_INFO *) NULL;
+	uint8_t ucBssIndex = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	if (u4SetBufferLen < MAC_ADDR_LEN)
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	DBGLOG(REQ, LOUD, "ucBssIndex %d\n", ucBssIndex);
+
+	prAisBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (prAisBssInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	if (IS_BSS_AIS(prAisBssInfo) &&
+		prAisBssInfo->prStaRecOfAP && EQUAL_MAC_ADDR(
+		prAisBssInfo->prStaRecOfAP->aucMacAddr, pvSetBuffer)) {
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
+			DBGLOG(QM, ERROR, "No channel occupation\n");
+		} else {
+			DBGLOG(QM, INFO, "Authorized, stop join timer.\n");
+			cnmTimerStopTimer(prAdapter,
+				&prAisFsmInfo->rJoinTimeoutTimer);
+			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
+		}
+	} else {
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #if 0
 /*----------------------------------------------------------------------------*/
 /*!
