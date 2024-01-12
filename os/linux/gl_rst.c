@@ -22,6 +22,7 @@
  *******************************************************************************
  */
 #include <linux/kernel.h>
+#include <linux/suspend.h>
 #include <linux/workqueue.h>
 
 #include "precomp.h"
