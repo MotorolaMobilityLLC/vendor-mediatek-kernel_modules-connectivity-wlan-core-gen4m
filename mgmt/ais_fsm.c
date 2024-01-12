@@ -9868,8 +9868,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 	ucReqChNum = aisGetLinkNum(prAisFsmInfo);
 
-	u4MsgSz = sizeof(struct MSG_CH_REQ) +
-		sizeof(struct MSG_CH_REQ) * ucReqChNum;
+	u4MsgSz = sizeof(struct MSG_CH_REQ) * ucReqChNum;
 	prMsgChReq = (struct MSG_CH_REQ *)cnmMemAlloc(prAdapter,
 		RAM_TYPE_MSG,
 		u4MsgSz);

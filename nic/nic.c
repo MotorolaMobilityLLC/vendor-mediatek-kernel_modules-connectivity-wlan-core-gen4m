@@ -5957,23 +5957,20 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER
 	prAdapter->rWifiVar.aucDeviceAddress[0] ^=
 		MAC_ADDR_LOCAL_ADMIN;
 
+#if CFG_ENABLE_WIFI_DIRECT
 	for (i = 0; i < KAL_P2P_NUM; i++) {
-		COPY_MAC_ADDR(prAdapter->rWifiVar.aucInterfaceAddress[i],
-			      prAdapter->rMyMacAddr);
-		prAdapter->rWifiVar.aucInterfaceAddress[i][0] |= 0x2;
-		prAdapter->rWifiVar.aucInterfaceAddress[i][0] ^=
-			i << MAC_ADDR_LOCAL_ADMIN;
+		uint8_t *aucMacAddr;
 
-		nicApplyLinkAddress(prAdapter,
-			prAdapter->rWifiVar.aucInterfaceAddress[i],
-			prAdapter->rWifiVar.aucInterfaceAddress[i],
-			i);
+		aucMacAddr = prAdapter->rWifiVar.aucInterfaceAddress[i];
+		COPY_MAC_ADDR(aucMacAddr, prAdapter->rMyMacAddr);
+		aucMacAddr[0] &= 0xfe;
+		aucMacAddr[0] |= 0x2;
+		kalRandomGetBytes(&aucMacAddr[3], 3);
 
-		DBGLOG(NIC, INFO, "P2P_INF[%d] mac: " MACSTR "\n",
-			i, MAC2STR(prAdapter->rWifiVar.aucInterfaceAddress[i]));
+		DBGLOG(NIC, INFO, "P2P_INF[%u] mac: " MACSTR "\n",
+			i, MAC2STR(aucMacAddr));
 	}
 
-#if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->fgIsP2PRegistered) {
 		for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 			if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType ==

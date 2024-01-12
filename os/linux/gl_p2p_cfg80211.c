@@ -204,7 +204,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		enum nl80211_iftype type, u32 *flags, struct vif_params *params)
 #endif
 {
-	/* 2 TODO: Fit kernel 3.10 modification */
 	struct ADAPTER *prAdapter;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct net_device *prNewNetDevice = NULL;
@@ -220,6 +219,10 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct MSG_P2P_UPDATE_DEV_BSS *prMsgUpdateBss = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+#endif
+	uint8_t ucGroupMldId = 0;
 	u_int8_t fgDoRegister = FALSE;
 	uint8_t  ucBssIdx = 0;
 
@@ -265,15 +268,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			if (prP2pInfo == NULL)
 				continue;
 
-			if ((prP2pInfo->aprRoleHandler == NULL) &&
-				!prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx]) {
-				mtk_p2p_initsettings(prGlueInfo->prAdapter,
-					type, u4Idx);
-				ucBssIdx =
-					p2pRoleFsmInit(prGlueInfo->prAdapter,
-						u4Idx, TRUE);
+			if (prP2pInfo->aprRoleHandler == NULL &&
+			    !prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx])
 				break;
-			}
 		}
 
 		if (ucBssIdx >= MAX_BSSID_NUM) {
@@ -293,6 +290,24 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			return ERR_PTR(-EINVAL);
 		}
+
+		COPY_MAC_ADDR(rMacAddr,
+			prAdapter->rWifiVar.aucInterfaceAddress[u4Idx]);
+		if (prGlueInfo->prAdapter->rWifiVar.ucP2pShareMacAddr &&
+		    (type == NL80211_IFTYPE_P2P_CLIENT ||
+		     type == NL80211_IFTYPE_P2P_GO)) {
+			rMacAddr[0] = gPrP2pDev[0]->dev_addr[0];
+		}
+
+		mtk_p2p_initsettings(prGlueInfo->prAdapter,
+			type, u4Idx);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prMldBss = p2pMldBssInit(prGlueInfo->prAdapter, rMacAddr,
+			type == NL80211_IFTYPE_AP);
+		ucGroupMldId = prMldBss->ucGroupMldId;
+#endif
+		ucBssIdx = p2pRoleFsmInit(prGlueInfo->prAdapter,
+			u4Idx, ucGroupMldId, rMacAddr);
 
 		oriRoleHandler = prP2pInfo->aprRoleHandler;
 
@@ -439,13 +454,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prP2pInfo->prWdev = prWdev;
 
 		/* 4.2 fill hardware address */
-		COPY_MAC_ADDR(rMacAddr,
-			prAdapter->rWifiVar.aucInterfaceAddress[u4Idx]);
-		if (prGlueInfo->prAdapter->rWifiVar.ucP2pShareMacAddr &&
-			(type == NL80211_IFTYPE_P2P_CLIENT
-			|| type == NL80211_IFTYPE_P2P_GO)) {
-			rMacAddr[0] = gPrP2pDev[0]->dev_addr[0];
-		}
 #if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
 		eth_hw_addr_set(prNewNetDevice, rMacAddr);
 #else
@@ -567,8 +575,11 @@ int mtk_p2p_cfg80211_del_iface_impl(
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
-	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_iface (unreg=%d)\n",
-		fgNeedUnreg);
+	DBGLOG(P2P, INFO,
+		"mtk_p2p_cfg80211_del_iface (unreg=%d) %s\n",
+		fgNeedUnreg,
+		wdev != NULL && wdev->netdev != NULL ?
+			wdev->netdev->name : "NULL");
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 

@@ -6094,8 +6094,9 @@ void mtk_uninit_monitor_role(struct wiphy *wiphy,
 int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 		     struct net_device *ndev)
 {
-	uint8_t u4Idx = 0;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint8_t rMacAddr[PARAM_MAC_ADDR_LEN];
+	uint8_t u4Idx = 0;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -6120,10 +6121,13 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
+	COPY_MAC_ADDR(rMacAddr,
+		prAdapter->rWifiVar.aucInterfaceAddress[u4Idx]);
+
 	/* reference from the glRegisterP2P() */
 	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;
 	if (glSetupP2P(prGlueInfo, gprP2pRoleWdev[u4Idx], ndev,
-		u4Idx, TRUE, TRUE)) {
+		u4Idx, TRUE, TRUE, rMacAddr)) {
 		DBGLOG(INIT, ERROR, "glSetupP2P failed\n");
 		gprP2pRoleWdev[u4Idx] = NULL;
 		return -EFAULT;

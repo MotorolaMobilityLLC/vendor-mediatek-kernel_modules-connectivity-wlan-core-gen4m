@@ -24,21 +24,19 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	struct SW_RFB *prSwRfb,
 	uint16_t *pu2StatusCode);
 
-void p2pMldBssInit(struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	const uint8_t aucMldMacAddr[]);
+struct MLD_BSS_INFO *p2pMldBssInit(struct ADAPTER *prAdapter,
+	const uint8_t aucMldMacAddr[],
+	u_int8_t fgIsApMode);
 
 void p2pMldBssUninit(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldbss);
+
+void p2pLinkInitGCRole(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkNum);
+
+void p2pLinkUninitGCRole(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
-
-#endif
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-void p2pLinkInitGCRole(struct ADAPTER *prAdapter);
-
-void p2pLinkUninitGCRole(struct ADAPTER *prAdapter);
-
-uint8_t p2pGetGCBssNum(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 #endif
 
 void p2pTargetBssDescResetConnecting(
@@ -57,9 +55,11 @@ void p2pFillLinkBssDesc(
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	struct BSS_DESC_SET *prBssDescSet);
 
-struct BSS_INFO *p2pGetLinkBssInfo(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+void p2pSetLinkBssInfo(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t ucLinkIdx,
+	struct BSS_INFO *prBssInfo);
+
+struct BSS_INFO *p2pGetLinkBssInfo(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkIdx);
 
 void p2pGetLinkWmmQueSet(
@@ -88,12 +88,6 @@ struct STA_RECORD *p2pGetLinkStaRec(
 	uint8_t ucLinkIdx);
 
 struct P2P_CHNL_REQ_INFO *p2pGetChnlReqInfo(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	uint8_t ucLinkIdx);
-
-struct P2P_CONNECTION_REQ_INFO *p2pGetConnReqInfo(
-	struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkIdx);
 
@@ -109,10 +103,6 @@ struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
 struct BSS_INFO *p2pGetDefaultLinkBssInfo(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
-
-struct STA_RECORD *p2pGetDefaultLinkStaRec(
-	struct ADAPTER *prAdapter,
-	enum ENUM_IFTYPE eIftype);
 
 uint16_t bssAssignAssocID(struct STA_RECORD *prStaRec);
 

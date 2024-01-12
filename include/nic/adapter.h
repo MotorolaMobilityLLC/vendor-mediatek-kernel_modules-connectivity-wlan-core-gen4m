@@ -595,6 +595,8 @@ struct BSS_INFO {
 #if CFG_SUPPORT_REPLAY_DETECTION
 	struct GL_DETECT_REPLAY_INFO rDetRplyInfo;
 #endif
+
+	struct TIMER rP2pCsaDoneTimer;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

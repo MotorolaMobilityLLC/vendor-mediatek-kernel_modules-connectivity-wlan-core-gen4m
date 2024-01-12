@@ -135,14 +135,14 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 			if (prP2pRoleBssInfo->eIntendOPMode
 				== OP_MODE_ACCESS_POINT) {
 				struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
-					&(prP2pRoleFsmInfo->rChnlReqInfo);
+					&(prP2pRoleFsmInfo->rChnlReqInfo[0]);
 
 				if (IS_NET_PWR_STATE_ACTIVE(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex)) {
 					p2pFuncStartGO(prAdapter,
 						prP2pRoleBssInfo,
 					&(prP2pRoleFsmInfo->rConnReqInfo),
-					&(prP2pRoleFsmInfo->rChnlReqInfo));
+					&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 					fgIsStartGO = TRUE;
 				} else if (prP2pChnlReqInfo->
 						fgIsChannelRequested)
@@ -152,13 +152,13 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 			} else {
 				p2pFuncReleaseCh(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
-					&(prP2pRoleFsmInfo->rChnlReqInfo));
+					&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 			}
 		} else if (eNextState == P2P_ROLE_STATE_SCAN) {
 			/* Abort channel anyway */
 			p2pFuncReleaseCh(prAdapter,
 				prP2pRoleFsmInfo->ucBssIndex,
-				&(prP2pRoleFsmInfo->rChnlReqInfo));
+				&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 		}
 	} while (FALSE);
 
@@ -168,7 +168,7 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		struct GL_P2P_INFO *prP2PInfo =	prAdapter->prGlueInfo
 			->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex];
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
-			&(prP2pRoleFsmInfo->rChnlReqInfo);
+			&(prP2pRoleFsmInfo->rChnlReqInfo[0]);
 
 		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
 		p2pFuncSwitchSapChannel(prAdapter);
@@ -400,7 +400,7 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 	/* Release channel requested. */
 	p2pFuncReleaseCh(prAdapter,
 		prP2pRoleFsmInfo->ucBssIndex,
-		&(prP2pRoleFsmInfo->rChnlReqInfo));
+		&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 
 	prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
 }
@@ -431,7 +431,7 @@ p2pRoleStateAbort_DFS_CAC(struct ADAPTER *prAdapter,
 
 		p2pFuncReleaseCh(prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex,
-			&(prP2pRoleFsmInfo->rChnlReqInfo));
+			&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 
 	} while (FALSE);
 }				/* p2pRoleStateAbort_DFS_CAC */
@@ -463,7 +463,7 @@ p2pRoleStateAbort_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
 	do {
 		p2pFuncReleaseCh(prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex,
-			&(prP2pRoleFsmInfo->rChnlReqInfo));
+			&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 	} while (FALSE);
 }				/* p2pRoleStateAbort_SWITCH_CHANNEL */
 #endif

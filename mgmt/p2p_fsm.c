@@ -174,7 +174,7 @@ void p2pFsmRunEventChGrant(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_CSA_BLOCK_SCAN
 		if (p2pFuncIsCsaBlockScan(prAdapter) == TRUE) {
 			cnmTimerStopTimer(prAdapter,
-				&prP2pRoleFsmInfo->rP2pCsaDoneTimer);
+				&prP2pBssInfo->rP2pCsaDoneTimer);
 		}
 #endif
 		switch (prP2pBssInfo->eCurrentOPMode) {
@@ -435,31 +435,21 @@ void p2pFsmRunEventTxCancelWait(struct ADAPTER *prAdapter,
 
 struct BSS_DESC *p2pGetTargetBssDesc(
 	struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex) {
+	uint8_t ucBssIndex)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct BSS_INFO *prP2pBssInfo;
 
-	uint8_t i = 0;
-
-	for (i = 0 ; i < BSS_P2P_NUM; i++) {
-		if (!prAdapter->rWifiVar.aprP2pRoleFsmInfo[i])
-			continue;
-
-		if (prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]->ucBssIndex
-			== ucBssIndex)
-			break;
-	}
-
-	if (i >= BSS_P2P_NUM)
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
 		return NULL;
 
-	if (p2pGetLinkNum(p2pGetDefaultRoleFsmInfo(prAdapter,
-			IFTYPE_P2P_CLIENT)) > 1)
-		return p2pGetLinkBssDesc(
-			p2pGetDefaultRoleFsmInfo(prAdapter,
-			IFTYPE_P2P_CLIENT),
-			i);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prP2pBssInfo->u4PrivateData);
+	if (!prP2pRoleFsmInfo)
+		return NULL;
 
-	return prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]
-		->rJoinInfo.prTargetBssDesc;
+	return p2pGetLinkBssDesc(prP2pRoleFsmInfo, P2P_MAIN_LINK_INDEX);
 }
 
 void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,

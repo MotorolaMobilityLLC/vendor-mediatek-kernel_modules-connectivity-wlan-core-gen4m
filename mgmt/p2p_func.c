@@ -404,8 +404,7 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec =
 			(struct STA_RECORD *) NULL;
 		struct BSS_INFO *prP2pBssInfo =
-			p2pGetLinkBssInfo(prAdapter,
-			prP2pRoleFsmInfo, i);
+			p2pGetLinkBssInfo(prP2pRoleFsmInfo, i);
 		struct BSS_DESC *prBssDesc =
 			p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
 
@@ -2451,7 +2450,7 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prAdapter->aprBssInfo[ucBssIdx]->u4PrivateData);
 
-	ucReqChnlNum = prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum;
+	ucReqChnlNum = prP2pRoleFsmInfo->rChnlReqInfo[0].ucReqChnlNum;
 
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -4092,12 +4091,6 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucBssIndex,
 			prAuthFrame->aucSrcAddr);
 
-		/* TODO(Kevin): Error handling of allocation of
-		 * struct STA_RECORD for
-		 * exhausted case and do removal of unused struct STA_RECORD.
-		 */
-		/* Sent a message event to clean un-used STA_RECORD_T. */
-		/* ASSERT(prStaRec); */
 		if (!prStaRec) {
 			DBGLOG(P2P, WARN,
 				"StaRec Full. (%d)\n", CFG_STA_REC_NUM);
@@ -5296,7 +5289,8 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (set.ucLinkNum > 1)
-			p2pLinkInitGCRole(prAdapter);
+			p2pLinkInitGCRole(prAdapter, prP2pRoleFsmInfo,
+				set.ucLinkNum);
 #endif
 
 		if (prTargetBss == NULL) {
@@ -5316,13 +5310,11 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 
 			for (i = 0; i < MLD_LINK_MAX; i++) {
 				struct BSS_INFO *prP2pBssInfo =
-					p2pGetLinkBssInfo(prAdapter,
-					prP2pRoleFsmInfo, i);
+					p2pGetLinkBssInfo(prP2pRoleFsmInfo, i);
 				struct BSS_DESC *prBssDesc =
 					p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
 				struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
-					p2pGetChnlReqInfo(prAdapter,
-					prP2pRoleFsmInfo, i);
+					p2pGetChnlReqInfo(prP2pRoleFsmInfo, i);
 
 				if (!prP2pBssInfo || !prBssDesc)
 					continue;
@@ -7391,7 +7383,7 @@ void p2pFuncSwitchGcChannel(
 		return;
 	}
 
-	prChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
+	prChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo[0];
 
 	if (prChnlReqInfo->ucReqChnlNum == prP2pBssInfo->ucPrimaryChannel) {
 		DBGLOG(P2P, WARN, "same channel, no need to switch channel\n");
@@ -8871,30 +8863,23 @@ void p2pFunCalAcsChnScores(struct ADAPTER *prAdapter)
 	wlanCalculateAllChannelDirtiness(prAdapter);
 	wlanSortChannel(prAdapter, CHNL_SORT_POLICY_ALL_CN);
 }
+
 #if CFG_ENABLE_CSA_BLOCK_SCAN
 uint8_t p2pFuncIsCsaBlockScan(struct ADAPTER *prAdapter)
 {
+	struct BSS_INFO *prP2pBssInfo;
 	uint8_t ucBssIndex;
-	struct BSS_INFO *prP2pBssInfo =
-		(struct BSS_INFO *) NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
-		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	ucBssIndex = p2pFuncGetCsaBssIndex();
 
-	prP2pBssInfo =
-		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prP2pBssInfo)
 		return FALSE;
 
-	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
-						prP2pBssInfo->u4PrivateData);
-	if (!prP2pRoleFsmInfo)
-		return FALSE;
-	else
-		return timerPendingTimer(&prP2pRoleFsmInfo->rP2pCsaDoneTimer);
+	return timerPendingTimer(&prP2pBssInfo->rP2pCsaDoneTimer);
 }
 #endif
+
 enum ENUM_CHNL_SWITCH_POLICY
 p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
@@ -9033,10 +9018,10 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		u4TimeoutMs += TU_TO_MSEC(prBssInfo->u2BeaconInterval) *
 			prAdapter->rWifiVar.ucChannelSwitchCount;
 		cnmTimerStopTimer(prAdapter,
-				  &(prP2pRoleFsmInfo->rP2pCsaDoneTimer));
+				  &(prBssInfo->rP2pCsaDoneTimer));
 		cnmTimerStartTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
-			u4TimeoutMs);
+				   &(prBssInfo->rP2pCsaDoneTimer),
+				   u4TimeoutMs);
 #endif
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
