@@ -1070,6 +1070,9 @@ nanDataFreeNdp(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP) {
 		return;
 	}
 
+	cnmTimerStopTimer(prAdapter,
+		&(prNDP->rNDPUserSpaceResponseTimer));
+
 	if (prNDP->u2KdeLen) {
 		prNDP->pucKdeInfo = NULL;
 		prNDP->u2KdeLen = 0;
