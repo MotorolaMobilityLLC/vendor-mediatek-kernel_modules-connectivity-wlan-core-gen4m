@@ -556,7 +556,7 @@ static int p2pInit(struct net_device *prDev)
 	prNetDevPrivate->napi.dev = prDev;
 	netif_napi_add(prNetDevPrivate->napi.dev,
 		&prNetDevPrivate->napi, p2p_napi_poll, 64);
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 		"GRO interface added successfully:%p\n", prDev);
 #endif
 	return 0;		/* success */
@@ -1412,7 +1412,7 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	prWdev->wiphy = prWiphy;
 
 	gprP2pRoleWdev[i] = prWdev;
-	DBGLOG(INIT, INFO, "glP2pCreateWirelessDevice (%p)\n",
+	DBGLOG(INIT, TRACE, "glP2pCreateWirelessDevice (%p)\n",
 			gprP2pRoleWdev[i]->wiphy);
 
 	return TRUE;
