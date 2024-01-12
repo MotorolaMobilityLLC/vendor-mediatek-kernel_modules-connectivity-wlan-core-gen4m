@@ -7754,28 +7754,12 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 		LOGBUF(pucBuf, u4Max, u4Len,
 			"TxDirect : SkbQ[%d] HifQ",
 			kalGetTxDirectQueueLength(prAdapter->prGlueInfo));
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-		for (i = 0; i < MAX_BSSID_NUM; i++) {
-			LOGBUF(pucBuf, u4Max, u4Len, "[%u:%u:%u:%u]",
-				NIC_GET_TX_DIRECT_HIFQ(prAdapter, i, 0
-					)->u4NumElem,
-				NIC_GET_TX_DIRECT_HIFQ(prAdapter, i, 1
-					)->u4NumElem,
-				NIC_GET_TX_DIRECT_HIFQ(prAdapter, i, 2
-					)->u4NumElem,
-				NIC_GET_TX_DIRECT_HIFQ(prAdapter, i, 3
-					)->u4NumElem
-			);
-		}
-		LOGBUF(pucBuf, u4Max, u4Len, "\n");
-#else /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 		LOGBUF(pucBuf, u4Max, u4Len,
 			"[%u:%u:%u:%u]\n",
 			prAdapter->rTxDirectHifQueue[0].u4NumElem,
 			prAdapter->rTxDirectHifQueue[1].u4NumElem,
 			prAdapter->rTxDirectHifQueue[2].u4NumElem,
 			prAdapter->rTxDirectHifQueue[3].u4NumElem);
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 		LOGBUF(pucBuf, u4Max, u4Len,
 			"===\n");
 	}
