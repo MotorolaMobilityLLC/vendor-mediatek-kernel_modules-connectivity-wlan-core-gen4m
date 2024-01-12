@@ -375,8 +375,19 @@
 #define CFG_NATIVE_802_11                       0
 #endif
 
+/*
+ * When CFG_TX_CMD_SMART_SEQUENCE is enabled,
+ * we adjust the sequence of process cmd to prevent cmd being executed
+ * before we enqueue cmd to all related queues.
+ * However, this method may not suitable for all hif since some of them
+ * cannot guarantee the execution time.
+ */
+#ifndef CFG_TX_CMD_SMART_SEQUENCE
+#define CFG_TX_CMD_SMART_SEQUENCE               0
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
+
 #ifndef CFG_SUPPORT_RX_WORK
-#define CFG_SUPPORT_RX_WORK                      0
+#define CFG_SUPPORT_RX_WORK                     0
 #endif /* CFG_SUPPORT_RX_WORK */
 
 /* By using GRO at NAPI level, the driver is doing the aggregation to a large

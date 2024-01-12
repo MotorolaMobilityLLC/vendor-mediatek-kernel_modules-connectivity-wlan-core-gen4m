@@ -2869,7 +2869,9 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl;
 	struct TX_DESC_OPS_T *prTxDescOps;
 
+#if !CFG_TX_CMD_SMART_SEQUENCE
 	KAL_SPIN_LOCK_DECLARATION();
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -2906,7 +2908,11 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		prCmdInfo->u4TxpLen =
 			kalQueryPacketLength(prMsduInfo->prPacket);
 
+#if CFG_TX_CMD_SMART_SEQUENCE
+		HAL_WRITE_TX_CMD_SMART_SEQ(prAdapter, prCmdInfo, ucTC);
+#else /* CFG_TX_CMD_SMART_SEQUENCE */
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
 
 		prMsduInfo->prPacket = NULL;
 
@@ -2918,12 +2924,14 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		       prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
 
 		if (prMsduInfo->pfTxDoneHandler) {
+#if !CFG_TX_CMD_SMART_SEQUENCE
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TXING_MGMT_LIST);
 			QUEUE_INSERT_TAIL(&(prTxCtrl->rTxMgmtTxingQueue),
 					prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_TXING_MGMT_LIST);
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 		} else {
 			/* Only return MSDU_INFO */
 			/* NativePacket will be freed at
@@ -2958,6 +2966,7 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		prCmdInfo->pucTxp = prMsduInfo->prPacket;
 		prCmdInfo->u4TxpLen = prMsduInfo->u2FrameLength;
 
+#if !CFG_TX_CMD_SMART_SEQUENCE
 		if (prMsduInfo->pfTxDoneHandler) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TXING_MGMT_LIST);
@@ -2968,6 +2977,7 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 			DBGLOG(TX, INFO, "Insert msdu WIDX:PID[%u:%u]\n",
 				prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
 		}
+#endif /* !CFG_TX_CMD_SMART_SEQUENCE */
 
 		DBGLOG(INIT, TRACE,
 			"TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
@@ -2976,7 +2986,12 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 			prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
 			prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
 
+#if CFG_TX_CMD_SMART_SEQUENCE
+		HAL_WRITE_TX_CMD_SMART_SEQ(prAdapter, prCmdInfo, ucTC);
+#else /* CFG_TX_CMD_SMART_SEQUENCE */
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
+
 		/* <4> Management Frame Post-Processing */
 		GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
 
@@ -2990,7 +3005,11 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		prCmdInfo->pucTxp = NULL;
 		prCmdInfo->u4TxpLen = 0;
 
+#if CFG_TX_CMD_SMART_SEQUENCE
+		HAL_WRITE_TX_CMD_SMART_SEQ(prAdapter, prCmdInfo, ucTC);
+#else /* CFG_TX_CMD_SMART_SEQUENCE */
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
 	}
 
 	return WLAN_STATUS_SUCCESS;

@@ -3275,6 +3275,12 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	NIC_DUMP_TXD_HEADER(prAdapter, "Dump CMD TXD:\n");
 	NIC_DUMP_TXD(prAdapter, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
+#if CFG_TX_CMD_SMART_SEQUENCE
+	/* do enqueue here before increase ring index */
+	if (prCmdInfo->pfHifTxCmdDoneCb)
+		prCmdInfo->pfHifTxCmdDoneCb(prGlueInfo->prAdapter, prCmdInfo);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
+
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
 
