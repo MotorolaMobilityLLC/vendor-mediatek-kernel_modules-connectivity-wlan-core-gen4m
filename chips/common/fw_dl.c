@@ -344,6 +344,15 @@ uint32_t wlanDownloadSection(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4ImgSecSize, u4Offset;
 	uint8_t *pucSecBuf;
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct BUS_INFO *prBusInfo = NULL;
+#endif
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->enableFwDlMode)
+		prBusInfo->enableFwDlMode(prAdapter);
+#endif
 
 	if (wlanImageSectionConfig(prAdapter, u4Addr, u4Len,
 				   u4DataMode, eDlIdx) != WLAN_STATUS_SUCCESS) {

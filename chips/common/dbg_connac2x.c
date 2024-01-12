@@ -2734,4 +2734,322 @@ int32_t connac2x_show_stat_info(
 	return i4BytesWritten;
 }
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+static void connac2x_show_wfdma_axi_debug_log(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t pdma_base_cr;
+	uint32_t i = 0;
+
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		pdma_base_cr = CONNAC2X_HOST_EXT_CONN_HIF_WRAP;
+	else
+		pdma_base_cr = CONNAC2X_MCU_INT_CONN_HIF_WRAP;
+
+	for (i = 0; i < 13; i++) {
+		uint32_t target_cr = pdma_base_cr + 0x500 + (i * 4);
+		uint32_t u4RegValue = 0;
+
+		HAL_MCR_RD(prAdapter, target_cr, &u4RegValue);
+		DBGLOG(INIT, INFO, "get(0x%08x):0x%08x\n",
+			target_cr,
+			u4RegValue);
+	}
+}
+
+void connac2x_show_wfdma_interrupt_info(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t idx;
+	uint32_t u4hostBaseCrAddr;
+	uint32_t u4DmaCfgCrAddr = 0;
+	uint32_t u4RegValue = 0;
+	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
+
+	/* Dump Interrupt Status info */
+	DBGLOG(HAL, INFO, "Interrupt Status:\n");
+
+	/* Dump Global Status CR */
+	u4hostBaseCrAddr = WFDMA_TYPE_HOST ?
+		CONNAC2X_MCU_INT_CONN_HIF_WRAP :
+		CONNAC2X_HOST_EXT_CONN_HIF_WRAP;
+
+	u4DmaCfgCrAddr = CONNAC2X_WPDMA_EXT_INT_STA(u4hostBaseCrAddr);
+
+	HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
+
+	DBGLOG(INIT, INFO, "\t Global INT STA(0x%08x): 0x%08x\n",
+		u4DmaCfgCrAddr, u4RegValue);
+
+	/* Dump PDMA Status CR */
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+		if (!chip_info->is_support_wfdma1 && idx)
+			break;
+
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_HOST_WPDMA_1_BASE :
+				CONNAC2X_HOST_WPDMA_0_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_MCU_WPDMA_1_BASE :
+				CONNAC2X_MCU_WPDMA_0_BASE;
+
+		u4DmaCfgCrAddr = CONNAC2X_WPDMA_INT_STA(u4hostBaseCrAddr);
+
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
+
+		DBGLOG(HAL, INFO, "\t WFDMA DMA %d INT STA(0x%08x): 0x%08x\n",
+				idx, u4DmaCfgCrAddr, u4RegValue);
+	}
+
+	/* Dump Interrupt Enable Info */
+	DBGLOG(HAL, INFO, "Interrupt Enable:\n");
+
+	/* Dump Global Enable CR */
+	u4hostBaseCrAddr = WFDMA_TYPE_HOST ?
+		CONNAC2X_MCU_INT_CONN_HIF_WRAP :
+		CONNAC2X_HOST_EXT_CONN_HIF_WRAP;
+
+	u4DmaCfgCrAddr = CONNAC2X_WPDMA_EXT_INT_MASK(u4hostBaseCrAddr);
+
+	HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
+
+	DBGLOG(INIT, INFO, "\t Global INT ENA(0x%08x): 0x%08x\n",
+		u4DmaCfgCrAddr, u4RegValue);
+
+	/* Dump PDMA Enable CR */
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+		if (!chip_info->is_support_wfdma1 && idx)
+			break;
+
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_HOST_WPDMA_1_BASE :
+				CONNAC2X_HOST_WPDMA_0_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+				CONNAC2X_MCU_WPDMA_1_BASE :
+				CONNAC2X_MCU_WPDMA_0_BASE;
+
+		u4DmaCfgCrAddr = CONNAC2X_WPDMA_INT_MASK(u4hostBaseCrAddr);
+
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4RegValue);
+
+		DBGLOG(HAL, INFO, "\t WFDMA DMA %d INT ENA(0x%08x): 0x%08x\n",
+			idx, u4DmaCfgCrAddr, u4RegValue);
+	}
+}
+
+void connac2x_show_wfdma_glo_info(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t idx;
+	uint32_t u4hostBaseCrAddr;
+	uint32_t u4DmaCfgCrAddr = 0;
+	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
+	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
+
+	for (idx = 0; idx < CONNAC2X_WFDMA_COUNT; idx++) {
+		if (!chip_info->is_support_wfdma1 && idx)
+			break;
+
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			u4hostBaseCrAddr = idx ?
+			CONNAC2X_HOST_WPDMA_1_BASE :
+			CONNAC2X_HOST_WPDMA_0_BASE;
+		else
+			u4hostBaseCrAddr = idx ?
+			CONNAC2X_MCU_WPDMA_1_BASE :
+			CONNAC2X_MCU_WPDMA_0_BASE;
+
+		u4DmaCfgCrAddr = CONNAC2X_WPDMA_GLO_CFG(u4hostBaseCrAddr);
+
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &GloCfgValue.word);
+
+		DBGLOG(HAL, INFO, "WFDMA DMA (%d) GLO Config Info:\n", idx);
+		DBGLOG(INIT, INFO, "\t GLO Control (0x%08x): 0x%08x\n",
+			u4DmaCfgCrAddr, GloCfgValue.word);
+		DBGLOG(INIT, INFO,
+			"\t GLO Control EN T/R bit=(%d/%d), Busy T/R bit=(%d/%d)\n",
+			GloCfgValue.field_conn2x.tx_dma_en,
+			GloCfgValue.field_conn2x.rx_dma_en,
+			GloCfgValue.field_conn2x.tx_dma_busy,
+			GloCfgValue.field_conn2x.rx_dma_busy
+			);
+	}
+}
+
+void connac2x_show_wfdma_ring_info(
+	IN struct ADAPTER *prAdapter,
+	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+{
+	uint32_t idx;
+	uint32_t group_cnt;
+	uint32_t u4DmaCfgCrAddr;
+	const struct wfdma_group_info *group;
+	uint32_t u4_hw_desc_base_value = 0;
+	uint32_t u4_hw_cnt_value = 0;
+	uint32_t u4_hw_cidx_value = 0;
+	uint32_t u4_hw_didx_value = 0;
+	uint32_t queue_cnt;
+	struct BUS_INFO *prBusInfo;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	/* Dump All Ring Info */
+	DBGLOG(HAL, INFO, "TX Ring Configuration\n");
+	DBGLOG(HAL, INFO, "%4s %20s %8s %10s %6s %6s %6s %6s\n",
+		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
+
+	/* Dump TX Ring */
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		group_cnt = prBusInfo->wfmda_host_tx_group_len;
+	else
+		group_cnt = prBusInfo->wfmda_wm_tx_group_len;
+
+	for (idx = 0; idx < group_cnt; idx++) {
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			group = &prBusInfo->wfmda_host_tx_group[idx];
+		else
+			group = &prBusInfo->wfmda_wm_tx_group[idx];
+
+		u4DmaCfgCrAddr = group->hw_desc_base;
+
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4_hw_desc_base_value);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
+
+		queue_cnt = (u4_hw_cidx_value >= u4_hw_didx_value) ?
+			(u4_hw_cidx_value - u4_hw_didx_value) :
+			(u4_hw_cidx_value - u4_hw_didx_value + u4_hw_cnt_value);
+
+		DBGLOG(HAL, INFO, "%4d %20s %8x %10x %6x %6x %6x %6x\n",
+			idx,
+			group->name,
+			u4DmaCfgCrAddr, u4_hw_desc_base_value,
+			u4_hw_cnt_value, u4_hw_cidx_value,
+			u4_hw_didx_value, queue_cnt);
+
+	}
+
+	DBGLOG(HAL, INFO, "RX Ring Configuration\n");
+	DBGLOG(HAL, INFO, "%4s %20s %8s %10s %6s %6s %6s %6s\n",
+		"Idx", "Attr", "Reg", "Base", "Cnt", "CIDX", "DIDX", "QCnt");
+
+	/* Dump RX Ring */
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		group_cnt = prBusInfo->wfmda_host_rx_group_len;
+	else
+		group_cnt = prBusInfo->wfmda_wm_rx_group_len;
+
+	for (idx = 0; idx < group_cnt; idx++) {
+		if (enum_wfdma_type == WFDMA_TYPE_HOST)
+			group = &prBusInfo->wfmda_host_rx_group[idx];
+		else
+			group = &prBusInfo->wfmda_wm_rx_group[idx];
+
+		u4DmaCfgCrAddr = group->hw_desc_base;
+
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr, &u4_hw_desc_base_value);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x04, &u4_hw_cnt_value);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
+
+		queue_cnt = (u4_hw_didx_value > u4_hw_cidx_value) ?
+			(u4_hw_didx_value - u4_hw_cidx_value - 1) :
+			(u4_hw_didx_value - u4_hw_cidx_value
+			+ u4_hw_cnt_value - 1);
+
+		DBGLOG(HAL, INFO, "%4d %20s %8x %10x %6x %6x %6x %6x\n",
+			idx,
+			group->name,
+			u4DmaCfgCrAddr, u4_hw_desc_base_value,
+			u4_hw_cnt_value, u4_hw_cidx_value,
+			u4_hw_didx_value, queue_cnt);
+	}
+}
+
+static void dumpPPDebugCr(struct ADAPTER *prAdapter)
+{
+	uint32_t ReadRegValue[4];
+	uint32_t u4Value[4] = {0};
+
+	/* 0x820CC0F0 : PP DBG_CTRL */
+	ReadRegValue[0] = 0x820CC0F0;
+	HAL_MCR_RD(prAdapter, ReadRegValue[0], &u4Value[0]);
+
+	/* 0x820CC0F8 : PP DBG_CS0 */
+	ReadRegValue[1] = 0x820CC0F8;
+	HAL_MCR_RD(prAdapter, ReadRegValue[1], &u4Value[1]);
+
+	/* 0x820CC0FC : PP DBG_CS1 */
+	ReadRegValue[2] = 0x820CC0FC;
+	HAL_MCR_RD(prAdapter, ReadRegValue[2], &u4Value[2]);
+
+	/* 0x820CC100 : PP DBG_CS2 */
+	ReadRegValue[3] = 0x820CC100;
+	HAL_MCR_RD(prAdapter, ReadRegValue[3], &u4Value[3]);
+
+	DBGLOG(HAL, INFO,
+	"PP[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,[0x%08x]=0x%08x,",
+		ReadRegValue[0], u4Value[0],
+		ReadRegValue[1], u4Value[1],
+		ReadRegValue[2], u4Value[2],
+		ReadRegValue[3], u4Value[3]);
+}
+
+void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+	struct CHIP_DBG_OPS *prDbgOps;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	if (prSwWfdmaInfo->rOps.dumpDebugLog)
+		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
+
+	/* Dump Host WFMDA info */
+	DBGLOG(HAL, INFO, "==============================\n");
+	DBGLOG(HAL, INFO, "HOST WFMDA Configuration:\n");
+	DBGLOG(HAL, INFO, "==============================\n");
+	connac2x_show_wfdma_interrupt_info(prAdapter, WFDMA_TYPE_HOST);
+	connac2x_show_wfdma_glo_info(prAdapter, WFDMA_TYPE_HOST);
+	connac2x_show_wfdma_ring_info(prAdapter, WFDMA_TYPE_HOST);
+	if (prDbgOps && prDbgOps->show_wfdma_dbg_probe_info)
+		prDbgOps->show_wfdma_dbg_probe_info(prAdapter,
+			WFDMA_TYPE_HOST);
+	connac2x_show_wfdma_axi_debug_log(prAdapter, WFDMA_TYPE_HOST);
+	if (prDbgOps && prDbgOps->show_wfdma_wrapper_info)
+		prDbgOps->show_wfdma_wrapper_info(prAdapter,
+			WFDMA_TYPE_HOST);
+
+	if (prBusInfo->wfmda_wm_tx_group && prBusInfo->wfmda_wm_rx_group) {
+		/* Dump FW WFDMA info */
+		DBGLOG(HAL, INFO, "==============================\n");
+		DBGLOG(HAL, INFO, "WM WFMDA Configuration:\n");
+		DBGLOG(HAL, INFO, "==============================\n");
+		connac2x_show_wfdma_interrupt_info(prAdapter, WFDMA_TYPE_WM);
+		connac2x_show_wfdma_glo_info(prAdapter, WFDMA_TYPE_WM);
+		connac2x_show_wfdma_ring_info(prAdapter, WFDMA_TYPE_WM);
+		if (prDbgOps && prDbgOps->show_wfdma_dbg_probe_info)
+			prDbgOps->show_wfdma_dbg_probe_info(prAdapter,
+				WFDMA_TYPE_WM);
+		connac2x_show_wfdma_axi_debug_log(prAdapter, WFDMA_TYPE_WM);
+		if (prDbgOps && prDbgOps->show_wfdma_wrapper_info)
+			prDbgOps->show_wfdma_wrapper_info(prAdapter,
+				WFDMA_TYPE_WM);
+	}
+
+	dumpPPDebugCr(prAdapter);
+}
+#endif
+
 #endif /* CFG_SUPPORT_CONNAC2X */

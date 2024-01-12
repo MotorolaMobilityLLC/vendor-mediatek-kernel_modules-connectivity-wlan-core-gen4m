@@ -100,6 +100,7 @@
 #define NICSOC3_0_PCIe_DEVICE_ID  0x0789
 #define NIC7961_PCIe_DEVICE_ID	0x7961
 #define NICSOC5_0_PCIe_DEVICE_ID  0x0789
+#define NICSOC7_0_PCIe_DEVICE_ID  0x0789
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -143,6 +144,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NICSOC5_0_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc5_0},
 #endif /* SOC5_0 */
+#ifdef SOC7_0
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NICSOC7_0_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_soc7_0},
+#endif /* SOC7_0 */
 	{ /* end: all zeroes */ },
 };
 
@@ -246,6 +251,7 @@ static void *CSRBaseAddress;
 static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	static DEFINE_RATELIMIT_STATE(_rs, 2 * HZ, 1);
 
 	prGlueInfo = (struct GLUE_INFO *) dev_instance;
 	if (!prGlueInfo) {
@@ -261,6 +267,8 @@ static irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 	}
 
 	kalSetIntEvent(prGlueInfo);
+	if (__ratelimit(&_rs))
+		pr_info("[wlan] In HIF ISR.\n");
 
 	return IRQ_HANDLED;
 }
