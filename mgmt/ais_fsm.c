@@ -2566,9 +2566,9 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 	fgIsCheckConnected = FALSE;
 
 	DBGLOG(AIS, STATE,
-		"[%d] aisFsmStateAbort DiscReason[%d], CurState[%d]\n",
-		ucBssIndex,
-		ucReasonOfDisconnect, prAisFsmInfo->eCurrentState);
+		"[%d] aisFsmStateAbort DiscReason[%d], CurState[%d], delayIndi[%d]\n",
+		ucBssIndex, ucReasonOfDisconnect,
+		prAisFsmInfo->eCurrentState, fgDelayIndication);
 
 	/* 4 <1> Save information of Abort Message and then free memory. */
 	prAisBssInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
@@ -2577,6 +2577,20 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_REASSOCIATION &&
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
+
+
+	if (fgDelayIndication) {
+		uint8_t p2p = cnmP2pIsActive(prAdapter);
+		uint8_t join = timerPendingTimer(
+				&prAisFsmInfo->rJoinTimeoutTimer);
+
+		if (p2p || join) {
+			fgDelayIndication = FALSE;
+			DBGLOG(AIS, INFO,
+				"delay indication not allowed due to p2p=%d, join=%d",
+				p2p, join);
+		}
+	}
 
 	/* 4 <2> Abort current job. */
 	switch (prAisFsmInfo->eCurrentState) {
@@ -3597,14 +3611,6 @@ void aisPostponedEventOfDisconnTimeout(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/* 4 <1> Deactivate previous AP's STA_RECORD_T in Driver if have. */
-	if (prAisBssInfo->prStaRecOfAP) {
-		/* cnmStaRecChangeState(prAdapter,
-		 * prAisBssInfo->prStaRecOfAP, STA_STATE_1);
-		 */
-
-		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
-	}
 	/* 4 <2> Remove all connection request */
 	while (fgFound)
 		fgFound = aisFsmClearRequest(prAdapter,
@@ -4222,19 +4228,9 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 
 		/* 4 <4.1> sync. with firmware */
 		nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
+		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
 	}
 
-	if (!fgDelayIndication) {
-		/* 4 <5> Deactivate previous AP's STA_RECORD_T or all Clients in
-		 * Driver if have.
-		 */
-		if (prAisBssInfo->prStaRecOfAP) {
-			/* cnmStaRecChangeState(prAdapter,
-			 * prAisBssInfo->prStaRecOfAP, STA_STATE_1);
-			 */
-			prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
-		}
-	}
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventAbort(prAdapter, ucBssIndex);
 	aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
@@ -4924,7 +4920,7 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 		DBGLOG(AIS, EVENT, "aisBssBeaconTimeout\n");
 		aisFsmStateAbort(prAdapter,
 			ucDisconnectReason,
-			!fgIsReasonPER && !cnmP2pIsActive(prAdapter),
+			!fgIsReasonPER,
 			ucBssIndex);
 	}
 }				/* end of aisBssBeaconTimeout() */
