@@ -1,0 +1,457 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2023 MediaTek Inc.
+ */
+
+#include "wlan_hw_dbg.h"
+
+#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20231114"
+
+const struct wlan_dbg_command mt6653_cb_infra_a[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x70025000},
+	{FALSE, 0, 0, 0, TRUE, 0x70025004},
+	{FALSE, 0, 0, 0, TRUE, 0x70025008},
+	{FALSE, 0, 0, 0, TRUE, 0x7002500c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025010},
+	{FALSE, 0, 0, 0, TRUE, 0x70025014},
+	{FALSE, 0, 0, 0, TRUE, 0x70025018},
+	{FALSE, 0, 0, 0, TRUE, 0x7002501c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025020},
+	{FALSE, 0, 0, 0, TRUE, 0x70025024},
+	{FALSE, 0, 0, 0, TRUE, 0x70025028},
+	{FALSE, 0, 0, 0, TRUE, 0x7002502c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025030},
+	{FALSE, 0, 0, 0, TRUE, 0x70025034},
+	{FALSE, 0, 0, 0, TRUE, 0x70025038},
+	{FALSE, 0, 0, 0, TRUE, 0x7002503c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025040},
+	{FALSE, 0, 0, 0, TRUE, 0x70025044},
+	{FALSE, 0, 0, 0, TRUE, 0x70025048},
+	{FALSE, 0, 0, 0, TRUE, 0x7002504c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025050},
+	{FALSE, 0, 0, 0, TRUE, 0x70025054},
+	{FALSE, 0, 0, 0, TRUE, 0x70025058},
+	{FALSE, 0, 0, 0, TRUE, 0x7002505c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025060},
+	{FALSE, 0, 0, 0, TRUE, 0x70025064},
+	{FALSE, 0, 0, 0, TRUE, 0x70025068},
+	{FALSE, 0, 0, 0, TRUE, 0x7002506c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025070},
+	{FALSE, 0, 0, 0, TRUE, 0x70025074},
+	{FALSE, 0, 0, 0, TRUE, 0x70025078},
+	{FALSE, 0, 0, 0, TRUE, 0x7002507c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025080},
+	{FALSE, 0, 0, 0, TRUE, 0x70025084},
+	{FALSE, 0, 0, 0, TRUE, 0x700250f0},
+	{FALSE, 0, 0, 0, TRUE, 0x70025100},
+	{FALSE, 0, 0, 0, TRUE, 0x70025104},
+	{FALSE, 0, 0, 0, TRUE, 0x70025108},
+	{FALSE, 0, 0, 0, TRUE, 0x7002510c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025110},
+	{FALSE, 0, 0, 0, TRUE, 0x70025114},
+	{FALSE, 0, 0, 0, TRUE, 0x70025118},
+	{FALSE, 0, 0, 0, TRUE, 0x7002511c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025120},
+	{FALSE, 0, 0, 0, TRUE, 0x70025130},
+	{FALSE, 0, 0, 0, TRUE, 0x70025140},
+	{FALSE, 0, 0, 0, TRUE, 0x70025180},
+	{FALSE, 0, 0, 0, TRUE, 0x70025210},
+	{FALSE, 0, 0, 0, TRUE, 0x70025400},
+	{FALSE, 0, 0, 0, TRUE, 0x70025404},
+	{FALSE, 0, 0, 0, TRUE, 0x70025408},
+	{FALSE, 0, 0, 0, TRUE, 0x7002540c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025410},
+	{FALSE, 0, 0, 0, TRUE, 0x70025414},
+	{TRUE, 0x70025300, 0, 0x10001, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10203, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10405, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10607, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10809, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10a0b, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10c0d, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x10e0f, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11011, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11213, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11415, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11617, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11819, TRUE, 0x70025304},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_a = {
+	"PSOP_9_1_A", "SectionA - cb_infra vlp",
+	67, sizeof(mt6653_cb_infra_a)/sizeof(struct wlan_dbg_command),
+	mt6653_cb_infra_a
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_b[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x7002801c},
+	{FALSE, 0, 0, 0, TRUE, 0x7002802c},
+	{FALSE, 0, 0, 0, TRUE, 0x700283c0},
+	{FALSE, 0, 0, 0, TRUE, 0x70028424},
+	{FALSE, 0, 0, 0, TRUE, 0x70028428},
+	{FALSE, 0, 0, 0, TRUE, 0x7002842c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028430},
+	{FALSE, 0, 0, 0, TRUE, 0x70028434},
+	{FALSE, 0, 0, 0, TRUE, 0x70028438},
+	{FALSE, 0, 0, 0, TRUE, 0x7002843c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028440},
+	{FALSE, 0, 0, 0, TRUE, 0x70028444},
+	{FALSE, 0, 0, 0, TRUE, 0x70028448},
+	{FALSE, 0, 0, 0, TRUE, 0x7002844c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028458},
+	{FALSE, 0, 0, 0, TRUE, 0x7002845c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028460},
+	{FALSE, 0, 0, 0, TRUE, 0x70028464},
+	{FALSE, 0, 0, 0, TRUE, 0x70028520},
+	{FALSE, 0, 0, 0, TRUE, 0x70028524},
+	{FALSE, 0, 0, 0, TRUE, 0x70028528},
+	{FALSE, 0, 0, 0, TRUE, 0x7002852c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028530},
+	{FALSE, 0, 0, 0, TRUE, 0x70028534},
+	{FALSE, 0, 0, 0, TRUE, 0x70028538},
+	{FALSE, 0, 0, 0, TRUE, 0x70028540},
+	{FALSE, 0, 0, 0, TRUE, 0x70028544},
+	{FALSE, 0, 0, 0, TRUE, 0x70028548},
+	{FALSE, 0, 0, 0, TRUE, 0x70028730},
+	{FALSE, 0, 0, 0, TRUE, 0x70028734},
+	{FALSE, 0, 0, 0, TRUE, 0x70028738},
+	{FALSE, 0, 0, 0, TRUE, 0x7002873c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028900},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a60},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a64},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a68},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a70},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a74},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a78},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_b = {
+	"PSOP_9_1_B", "SectionB - cb_infra vcore on",
+	39, sizeof(mt6653_cb_infra_b)/sizeof(struct wlan_dbg_command),
+	mt6653_cb_infra_b
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_c[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x70026000},
+	{FALSE, 0, 0, 0, TRUE, 0x70026004},
+	{FALSE, 0, 0, 0, TRUE, 0x70026008},
+	{FALSE, 0, 0, 0, TRUE, 0x7002600c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026100},
+	{FALSE, 0, 0, 0, TRUE, 0x70026104},
+	{FALSE, 0, 0, 0, TRUE, 0x70026550},
+	{FALSE, 0, 0, 0, TRUE, 0x70026554},
+	{FALSE, 0, 0, 0, TRUE, 0x70026558},
+	{FALSE, 0, 0, 0, TRUE, 0x7002655c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a0c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a10},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a14},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a18},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a50},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a54},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a58},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a5c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a60},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a70},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a64},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a68},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a6c},
+	{FALSE, 0, 0, 0, TRUE, 0x70020004},
+	{FALSE, 0, 0, 0, TRUE, 0x70020008},
+	{FALSE, 0, 0, 0, TRUE, 0x70020080},
+	{FALSE, 0, 0, 0, TRUE, 0x70020110},
+	{FALSE, 0, 0, 0, TRUE, 0x70021060},
+	{FALSE, 0, 0, 0, TRUE, 0x70021064},
+	{FALSE, 0, 0, 0, TRUE, 0x70021068},
+	{FALSE, 0, 0, 0, TRUE, 0x7002106c},
+	{FALSE, 0, 0, 0, TRUE, 0x70021070},
+	{FALSE, 0, 0, 0, TRUE, 0x70021074},
+	{FALSE, 0, 0, 0, TRUE, 0x70021078},
+	{FALSE, 0, 0, 0, TRUE, 0x7002107c},
+	{FALSE, 0, 0, 0, TRUE, 0x70021080},
+	{FALSE, 0, 0, 0, TRUE, 0x70021084},
+	{FALSE, 0, 0, 0, TRUE, 0x70021088},
+	{FALSE, 0, 0, 0, TRUE, 0x7002108c},
+	{FALSE, 0, 0, 0, TRUE, 0x70021090},
+	{FALSE, 0, 0, 0, TRUE, 0x70021094},
+	{FALSE, 0, 0, 0, TRUE, 0x70021098},
+	{FALSE, 0, 0, 0, TRUE, 0x7002109c},
+	{FALSE, 0, 0, 0, TRUE, 0x700210a0},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_c = {
+	"PSOP_9_1_C", "SectionC - cb_infra off, read check ok",
+	44, sizeof(mt6653_cb_infra_c)/sizeof(struct wlan_dbg_command),
+	mt6653_cb_infra_c
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_d[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x74030150},
+	{FALSE, 0, 0, 0, TRUE, 0x74030154},
+	{FALSE, 0, 0, 0, TRUE, 0x74030184},
+	{FALSE, 0, 0, 0, TRUE, 0x74031010},
+	{TRUE, 0x74030168, 0, 0x22cc0100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x81804845, TRUE, 0x7403002c},
+	{FALSE, 0, 0, 0, TRUE, 0x74031204},
+	{FALSE, 0, 0, 0, TRUE, 0x74031210},
+	{FALSE, 0, 0, 0, TRUE, 0x74030184},
+	{FALSE, 0, 0, 0, TRUE, 0x740331c0},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_d = {
+	"PSOP_9_1_D", "SectionD - pcie",
+	9, sizeof(mt6653_cb_infra_d)/sizeof(struct wlan_dbg_command),
+	mt6653_cb_infra_d
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_e[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x70000104},
+	{FALSE, 0, 0, 0, TRUE, 0x70000248},
+	{FALSE, 0, 0, 0, TRUE, 0x7000024c},
+	{FALSE, 0, 0, 0, TRUE, 0x70007400},
+	{FALSE, 0, 0, 0, TRUE, 0x70007404},
+	{FALSE, 0, 0, 0, TRUE, 0x70003000},
+	{FALSE, 0, 0, 0, TRUE, 0x70006414},
+	{FALSE, 0, 0, 0, TRUE, 0x70007414},
+	{FALSE, 0, 0, 0, TRUE, 0x70003014},
+	{FALSE, 0, 0, 0, TRUE, 0x70000258},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_e = {
+	"PSOP_9_1_E", "SectionE - cbtop CR",
+	10, sizeof(mt6653_cb_infra_e)/sizeof(struct wlan_dbg_command),
+	mt6653_cb_infra_e
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_g[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x70070000},
+	{FALSE, 0, 0, 0, TRUE, 0x70070004},
+	{FALSE, 0, 0, 0, TRUE, 0x70070008},
+	{FALSE, 0, 0, 0, TRUE, 0x7007000c},
+	{FALSE, 0, 0, 0, TRUE, 0x70070010},
+	{FALSE, 0, 0, 0, TRUE, 0x70070400},
+	{FALSE, 0, 0, 0, TRUE, 0x70070404},
+	{FALSE, 0, 0, 0, TRUE, 0x70070408},
+	{FALSE, 0, 0, 0, TRUE, 0x7007040c},
+	{FALSE, 0, 0, 0, TRUE, 0x70070410},
+	{FALSE, 0, 0, 0, TRUE, 0x70070414},
+	{FALSE, 0, 0, 0, TRUE, 0x70070418},
+	{FALSE, 0, 0, 0, TRUE, 0x7007041c},
+	{FALSE, 0, 0, 0, TRUE, 0x70070420},
+	{FALSE, 0, 0, 0, TRUE, 0x70070424},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_g = {
+	"PSOP_9_1_G", "SectionG - dma dbg_ctl",
+	15, sizeof(mt6653_cb_infra_g)/sizeof(struct wlan_dbg_command),
+	mt6653_cb_infra_g
+};
+
+const struct wlan_dbg_command mt6653_wf_top_a[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{TRUE, 0x20060b00, 0, 0x1, FALSE, 0},
+	{TRUE, 0x20060b04, 0, 0x0, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x1, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x2, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x3, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x4, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x10, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x12, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x17, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x18, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x19, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x1a, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x1b, TRUE, 0x20060b10},
+	{TRUE, 0x20060b04, 0, 0x1d, TRUE, 0x20060b10},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_top_a = {
+	"PSOP_3_1_A", "SectionA - Dump wf_top_misc_on monflg",
+	13, sizeof(mt6653_wf_top_a)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_top_a
+};
+
+const struct wlan_dbg_command mt6653_wf_top_b[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{TRUE, 0x20060b18, 0, 0x1, FALSE, 0},
+	{TRUE, 0x20060b1c, 0, 0x0, TRUE, 0x20023638},
+	{TRUE, 0x20060b1c, 0, 0x1, TRUE, 0x20023638},
+	{TRUE, 0x20060b1c, 0, 0x2, TRUE, 0x20023638},
+	{TRUE, 0x20060b1c, 0, 0x3, TRUE, 0x20023638},
+	{TRUE, 0x20060b1c, 0, 0x4, TRUE, 0x20023638},
+	{TRUE, 0x20060b1c, 0, 0x8, TRUE, 0x20023638},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_top_b = {
+	"PSOP_3_1_B", "SectionB - Dump wf_top_misc_von monflg",
+	6, sizeof(mt6653_wf_top_b)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_top_b
+};
+
+const struct wlan_dbg_command mt6653_wf_top_c[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x81021b00},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b04},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b08},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b0c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b10},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b14},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b18},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b1c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b20},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b24},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b28},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b2c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b30},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b34},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b38},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b3c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b40},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b50},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b54},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b58},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b5c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b60},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b64},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b68},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b6c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b70},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b74},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b78},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b7c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b80},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b84},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b88},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b8c},
+	{FALSE, 0, 0, 0, TRUE, 0x81021b90},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_top_c = {
+	"PSOP_3_1_C", "SectionC - Dump wf_top_cfg_on debug CR",
+	34, sizeof(mt6653_wf_top_c)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_top_c
+};
+
+const struct wlan_dbg_command mt6653_wf_top_d[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x81020b00},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b04},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b08},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b0c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b10},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b14},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b18},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b1c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b20},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b24},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b28},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b2c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b30},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b34},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b38},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b3c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b40},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b44},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b48},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b4c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b50},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b54},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b58},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b5c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b60},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b64},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b68},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b6c},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b70},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b74},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b78},
+	{FALSE, 0, 0, 0, TRUE, 0x81020b7c},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_top_d = {
+	"PSOP_3_1_D", "SectionD - Dump wf_top_rgu_on debug CR",
+	32, sizeof(mt6653_wf_top_d)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_top_d
+};
+
+const struct wlan_dbg_command mt6653_wf_bus_a[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{TRUE, 0x20023604, 0, 0x4, TRUE, 0x2002362c},
+	{TRUE, 0x20023628, 0, 0x10001, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x20001, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x30001, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x10002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x20002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x30002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x40002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x50002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x60002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x70002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x80002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x90002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0xa0002, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x10003, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x20003, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x30003, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x40003, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x50003, TRUE, 0x20023608},
+	{TRUE, 0x20023628, 0, 0x60003, TRUE, 0x20023608},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_bus_a = {
+	"PSOP_4_1_A", "SectionA - Dump VDNR timeout host side info",
+	20, sizeof(mt6653_wf_bus_a)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_bus_a
+};
+
+const struct wlan_dbg_command mt6653_wf_bus_b[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{TRUE, 0x7c400120, 0, 0x810f0000, FALSE, 0},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0408},
+	{FALSE, 0, 0, 0, TRUE, 0x810f040c},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0410},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0414},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0418},
+	{FALSE, 0, 0, 0, TRUE, 0x810f041c},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0420},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0424},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0428},
+	{FALSE, 0, 0, 0, TRUE, 0x810f042c},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0430},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0434},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0438},
+	{FALSE, 0, 0, 0, TRUE, 0x810f043c},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0440},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0444},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0448},
+	{FALSE, 0, 0, 0, TRUE, 0x810f044c},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0450},
+	{FALSE, 0, 0, 0, TRUE, 0x810f0000},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_bus_b = {
+	"PSOP_4_1_B", "SectionB - Dump VDNR timeout wf side info",
+	20, sizeof(mt6653_wf_bus_b)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_bus_b
+};
+
+const struct wlan_dbg_command mt6653_wf_bus_c[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{TRUE, 0x7c400120, 0, 0x830c0000, FALSE, 0},
+	{FALSE, 0, 0, 0, TRUE, 0x830c1004},
+	{FALSE, 0, 0, 0, TRUE, 0x830c1010},
+	{FALSE, 0, 0, 0, TRUE, 0x830c1008},
+	{FALSE, 0, 0, 0, TRUE, 0x830c100c},
+	{FALSE, 0, 0, 0, TRUE, 0x830c1000},
+};
+
+const struct wlan_dump_list mt6653_dump_list_wf_bus_c = {
+	"PSOP_4_1_C", "SectionC - Dump AHB APB timeout info",
+	5, sizeof(mt6653_wf_bus_c)/sizeof(struct wlan_dbg_command),
+	mt6653_wf_bus_c
+};

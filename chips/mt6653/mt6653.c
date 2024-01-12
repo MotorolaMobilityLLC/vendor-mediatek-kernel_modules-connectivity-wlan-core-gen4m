@@ -3379,22 +3379,21 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 {
 	uint32_t u4Value = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	struct mt66xx_chip_info *prChipInfo = NULL;
-#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
+	struct CHIP_DBG_OPS *prDbgOps = NULL;
+
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
-#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+
 	prChipInfo = ad->chip_info;
 	if (prChipInfo == NULL) {
 		DBGLOG(INIT, ERROR, "NULL prChipInfo.\n");
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
-#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 
 #if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
 	rStatus = mt6653_mcu_reset(ad);
@@ -3422,11 +3421,11 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		WARN_ON_ONCE(TRUE);
-		mt6653_dumpWfsyscpupcr(ad);
-		mt6653_dumpPcGprLog(ad);
-		mt6653_dumpN45CoreReg(ad);
-		mt6653_dumpWfTopReg(ad);
-		mt6653_dumpWfBusReg(ad);
+
+		prChipInfo = ad->chip_info;
+		prDbgOps = prChipInfo->prDebugOps;
+		if (prDbgOps && prDbgOps->dumpBusHangCr)
+			prDbgOps->dumpBusHangCr(ad);
 
 		/* Clock detection for ULPOSC */
 		HAL_MCR_WR(ad,
