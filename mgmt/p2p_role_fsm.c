@@ -106,24 +106,7 @@ static u_int8_t p2pRoleFsmNeedMlo(
 	u_int8_t fgIsApMode = p2pFuncIsAPMode(
 		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]);
 
-	DBGLOG(P2P, TRACE,
-		"link:%d, enable:%d, isApMode:%d\n",
-		prAdapter->rWifiVar.ucMldLinkMax,
-		prAdapter->rWifiVar.ucEnableMlo,
-		fgIsApMode);
-
-	if (prAdapter->rWifiVar.ucMldLinkMax <= 1 ||
-		IS_FEATURE_DISABLED(
-		prAdapter->rWifiVar.ucEnableMlo))
-		return FALSE;
-	else if (fgIsApMode &&
-		IS_FEATURE_FORCE_ENABLED(
-		prAdapter->rWifiVar.ucEnableMlo))
-		return TRUE;
-	else if (!fgIsApMode)
-		return TRUE;
-	else
-		return FALSE;
+	return mldIsMloFeatureEnabled(prAdapter, fgIsApMode);
 }
 #endif
 

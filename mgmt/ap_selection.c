@@ -1279,6 +1279,9 @@ void scanFillSecondaryLink(struct ADAPTER *prAdapter,
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid)
 		return;
 
+	if (!mldIsMloFeatureEnabled(prAdapter, FALSE))
+		return;
+
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	policy = prConnSettings->eConnectionPolicy;
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
