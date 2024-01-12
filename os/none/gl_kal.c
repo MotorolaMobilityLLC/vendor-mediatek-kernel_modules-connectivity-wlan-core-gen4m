@@ -183,6 +183,24 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 #endif
 #endif
 
+void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
+	u_int8_t fgIsSetLen)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+void kalSetMgmtDirectTxEvent2Hif(
+		struct GLUE_INFO *pr)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
 
 const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,

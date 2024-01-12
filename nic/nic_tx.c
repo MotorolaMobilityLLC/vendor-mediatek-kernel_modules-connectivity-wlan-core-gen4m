@@ -2981,11 +2981,7 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 		 */
 		if (prMsduInfo->fgIsPacketSkb &&
 			prMsduInfo->fgMgmtUseDataQ) {
-			struct sk_buff *pkt = NULL;
-
-			pkt = prNativePacket;
-			pkt->head = NULL;
-			kfree_skb(pkt);
+			kalKfreeSkb(prNativePacket, FALSE);
 			prNativePacket = prMsduInfo->prTxP;
 			prMsduInfo->fgIsPacketSkb = FALSE;
 		}
@@ -3959,14 +3955,10 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			 */
 			if (prMsduInfo->fgIsPacketSkb &&
 				prMsduInfo->fgMgmtUseDataQ) {
-				struct sk_buff *pkt = NULL;
-
-				pkt = prMsduInfo->prPacket;
-
 				/* free skb and reset prPacket to prTxP */
-				if (pkt) {
-					pkt->head = NULL;
-					kfree_skb(pkt);
+				if (prMsduInfo->prPacket) {
+					kalKfreeSkb(prMsduInfo->prPacket,
+								FALSE);
 				}
 				prMsduInfo->prPacket = prMsduInfo->prTxP;
 				prMsduInfo->fgIsPacketSkb = FALSE;
@@ -4020,7 +4012,7 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 	struct QUE qDataPort2;
 	struct QUE *prDataPort2;
-	struct sk_buff *pkt;
+	void *pkt;
 	uint32_t u4TxDescAppendSize = 0;
 	uint32_t u4TotLen = 0;
 	uint8_t fgNotifyHif = FALSE;
@@ -4103,8 +4095,8 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 				+ u4TxDescAppendSize
 				+ prMsduInfoHead->u2FrameLength;
 			/* prepare skb to hif */
-			pkt = build_skb(prMsduInfoHead->prHead, u4TotLen);
-
+			pkt = kalBuildSkb(prMsduInfoHead->prHead, u4TotLen,
+						TRUE);
 			if (pkt == NULL) {
 				DBGLOG(NIC, WARN, "Unable to build skb\n");
 				if (prMsduInfoHead->pfTxDoneHandler != NULL) {
@@ -4131,7 +4123,6 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 			/* keep prPacket of mgmt. frame */
 			prMsduInfoHead->prTxP = prMsduInfoHead->prPacket;
 			prMsduInfoHead->prPacket = pkt;
-			pkt->len = u4TotLen;
 
 			spin_lock_irqsave(
 				&prAdapter->rMgmtDirectHifQueueLock, flags);
