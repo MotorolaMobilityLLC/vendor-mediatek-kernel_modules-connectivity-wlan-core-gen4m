@@ -1412,7 +1412,8 @@ void scanEhtParsingMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
 		pos += MAC_ADDR_LEN;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
-		/* todo: handle 1byte LINK_ID_INFO */
+		kalMemCopy(prBssDesc->rMlInfo.ucLinkIndex, pos,
+					sizeof(prBssDesc->rMlInfo.ucLinkIndex));
 		log_dbg(SCN, INFO, "ML common Info LinkID = %d",
 			*pos);
 		pos += 1;
