@@ -11301,6 +11301,12 @@ static int wlan_fb_notifier_callback(struct notifier_block
 		goto end;
 	}
 
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+			WLAN_DRV_READY_CHECK_RESET)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return 0;
+	}
+
 	switch (eEvent) {
 	case WLAN_FB_EVENT_UNBLANK:
 		kalSetPerMonEnable(prGlueInfo);
