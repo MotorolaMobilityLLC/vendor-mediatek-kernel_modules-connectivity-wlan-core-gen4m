@@ -330,7 +330,9 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps;
+#if (CFG_SUPPORT_CONNAC2X == 1)
 	uint32_t ret = 0;
+#endif
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -351,6 +353,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 		}
 	}
 
+#if (CFG_SUPPORT_CONNAC2X == 1)
 	/* need to check Bus readable */
 	if (prAdapter->chip_info->checkbushang) {
 		ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
@@ -361,6 +364,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			return;
 		}
 	}
+#endif
 
 	/* Check Driver own HW CR */
 	{
