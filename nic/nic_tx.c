@@ -2035,7 +2035,7 @@ uint32_t nicTxGenerateDescTemplate(IN struct ADAPTER
 	prMsduInfo->fgIs802_11 = FALSE;
 	prMsduInfo->fgIs802_1x = FALSE;
 	prMsduInfo->fgIs802_1x_NonProtected = FALSE;
-	prMsduInfo->fgIs802_3 = FALSE;
+	prMsduInfo->fgIs802_3 = TRUE;
 	prMsduInfo->fgIsVlanExists = FALSE;
 	prMsduInfo->pfTxDoneHandler = NULL;
 	prMsduInfo->prPacket = NULL;
