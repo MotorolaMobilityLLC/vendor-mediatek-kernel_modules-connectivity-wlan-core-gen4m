@@ -64,6 +64,8 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
+#include <linux/version.h>
+
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -251,6 +253,12 @@
 #define CFG_SUPPORT_LOWLATENCY_MODE	1
 
 #define CFG_SUPPORT_ANT_SWAP		0
+
+#if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
+#define CFG_SUPPORT_DATA_STALL			1
+#else
+#define CFG_SUPPORT_DATA_STALL			0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags of Buffer mode SUPPORT
