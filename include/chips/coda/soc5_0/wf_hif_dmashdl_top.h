@@ -100,13 +100,6 @@ extern "C" {
 	0x0000000F
 #define WF_HIF_DMASHDL_TOP_HIF_SCHEDULER_SETTING0_PRIORITY0_GROUP_SHFT 0
 
-/*
-* ---STATUS_RD_GP0 (0x7C026000 + 0x140)---
-* G0_SRC_CNT[11..0] - (RO) Group0 source count
-* RESERVED12[15..12] - (RO) Reserved bits
-* G0_RSV_CNT[27..16] - (RO) Group0 reservation count
-* RESERVED28[31..28] - (RO) Reserved bits
-*/
 #define WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_ADDR                       \
 	WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_ADDR
 #define WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_RSV_CNT_MASK                       \
@@ -118,13 +111,6 @@ extern "C" {
 	0x00000FFF /* G0_SRC_CNT[11..0] */
 #define WF_HIF_DMASHDL_TOP_STATUS_RD_GP0_G0_SRC_CNT_SHFT 0
 
-/*
-* ---STATUS_RD (0x7C026000 + 0x100)---
-* FFA_CNT[11..0] - (RO) Free for all (FFA) count
-* RESERVED12[15..12] - (RO) Reserved bits
-* FREE_PAGE_CNT[27..16] - (RO) Free page count
-* RESERVED28[31..28] - (RO) Reserved bits
-*/
 #define WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_ADDR                        \
 	WF_HIF_DMASHDL_TOP_STATUS_RD_ADDR
 #define WF_HIF_DMASHDL_TOP_STATUS_RD_FREE_PAGE_CNT_MASK                        \
@@ -137,20 +123,12 @@ extern "C" {
 #define WF_HIF_DMASHDL_TOP_STATUS_RD_FFA_CNT_SHFT 0
 
 
-
 /* PLE */
 #define WF_PLE_TOP_BASE 0x820C0000
 
 #define WF_PLE_TOP_HIF_PG_INFO_ADDR		\
 	(WF_PLE_TOP_BASE + 0x114) /* 0114 */
 
-/*
-* ---HIF_PG_INFO (0x820C0000 + 0x114)---
-* HIF_RSV_CNT[11..0] - (RO) Reserved pages of HIF group
-* RESERVED12[15..12] - (RO) Reserved bits
-* HIF_SRC_CNT[27..16] - (RO) Used pages of HIF group
-* RESERVED28[31..28] - (RO) Reserved bits
-*/
 #define WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_ADDR \
 	WF_PLE_TOP_HIF_PG_INFO_ADDR
 #define WF_PLE_TOP_HIF_PG_INFO_HIF_SRC_CNT_MASK \

@@ -1085,23 +1085,6 @@ void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 			log_buf_lp[4]);
 }
 
-void soc3_0_CrRead(struct ADAPTER *prAdapter, size_t addr, unsigned int *val)
-{
-	if (prAdapter == NULL)
-		wf_ioremap_read(addr, val);
-	else
-		HAL_MCR_RD(prAdapter, (addr|0x64000000), val);
-}
-
-void soc3_0_CrWrite(struct ADAPTER *prAdapter,
-	phys_addr_t addr, unsigned int val)
-{
-	if (prAdapter == NULL)
-		wf_ioremap_write(addr, val);
-	else
-		HAL_MCR_WR(prAdapter, (addr|0x64000000), val);
-}
-
 void soc3_0_DumpWfsysdebugflag(void)
 {
 	uint32_t i = 0, u4Value = 0;
@@ -1232,43 +1215,6 @@ void soc3_0_CheckBusHangUT(void)
 	HAL_MCR_RD(prAdapter, 0x7c060000, &u4Value);
 }
 
-static void soc3_0_DumpMemory32(uint32_t *pu4StartAddr,
-		  uint32_t u4Count, char *info)
-{
-#define ONE_LINE_MAX_COUNT	16
-#define TMP_BUF_SZ			20
-	uint32_t i, endCount;
-	char buf[ONE_LINE_MAX_COUNT*10];
-	char tmp[TMP_BUF_SZ] = {'\0'};
-
-	ASSERT(pu4StartAddr);
-
-	LOG_FUNC("[Host_CSR] %s, Count(%d)\n", info, u4Count);
-
-	while (u4Count > 0) {
-
-		kalSnprintf(buf, TMP_BUF_SZ, "%08x", pu4StartAddr[0]);
-
-		if (u4Count > ONE_LINE_MAX_COUNT)
-			endCount = ONE_LINE_MAX_COUNT;
-		else
-			endCount = u4Count;
-
-		for (i = 1; i < endCount; i++) {
-			kalSnprintf(tmp, TMP_BUF_SZ, " %08x", pu4StartAddr[i]);
-			strncat(buf, tmp, strlen(tmp));
-		}
-
-		LOG_FUNC("%s\n", buf);
-
-		if (u4Count > ONE_LINE_MAX_COUNT) {
-			u4Count -= ONE_LINE_MAX_COUNT;
-			pu4StartAddr += ONE_LINE_MAX_COUNT;
-		} else
-			u4Count = 0;
-	}
-}
-
 static uint32_t soc3_0_DumpHwDebugFlagSub(struct ADAPTER *prAdapter,
 	uint32_t RegValue)
 {
@@ -1276,10 +1222,10 @@ static uint32_t soc3_0_DumpHwDebugFlagSub(struct ADAPTER *prAdapter,
 	uint32_t u4Value = 0;
 
 	u4Cr = 0x1806009C;
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x1806021C;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 	return u4Value;
 }
@@ -1297,7 +1243,7 @@ static void soc3_0_DumpHwDebugFlag(struct ADAPTER *prAdapter)
 
 	u4Cr = 0x18060094;
 	RegValue = 0x00139CE7;
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 	log[0] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x366CD932);
 	log[1] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x36AD5A34);
@@ -1307,7 +1253,7 @@ static void soc3_0_DumpHwDebugFlag(struct ADAPTER *prAdapter)
 	log[5] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x7C387060);
 	log[6] = soc3_0_DumpHwDebugFlagSub(prAdapter, 0x7C78F162);
 
-	soc3_0_DumpMemory32(log, HANG_HW_FLAG_NUM, "HW Debug flag");
+	connac2x_dump_format_memory32(log, HANG_HW_FLAG_NUM, "HW Debug flag");
 }
 
 static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
@@ -1335,12 +1281,12 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 	*/
 
 	u4Cr = 0x18060090;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = (0x20<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x18060204;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	u4Index = (u4Value&BITS(17, 21)) >> 17;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
@@ -1351,32 +1297,32 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 			u4Index = 0;
 
 		u4Cr = 0x18060090;
-		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 		RegValue = (u4Index<<2) | (u4Value&BITS(0, 1)) |
 			(u4Value&BITS(8, 31));
-		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+		connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060204;
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &log[i]);
 	}
 
 	/* restore */
 	u4Cr = 0x18060090;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = (0x3F<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
-	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "PC log");
+	connac2x_dump_format_memory32(log, HANG_PC_LOG_NUM, "PC log");
 
 	/* GPR log */
 
 	u4Cr = 0x18060090;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = (0x20<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 	u4Cr = 0x18060208;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	u4Index = (u4Value&BITS(17, 21)) >> 17;
 
 	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
@@ -1387,22 +1333,22 @@ static void soc3_0_DumpPcLrLog(struct ADAPTER *prAdapter)
 			u4Index = 0;
 
 		u4Cr = 0x18060090;
-		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 		RegValue = (u4Index<<8) | (u4Value&BITS(0, 7)) |
 			(u4Value&BITS(14, 31));
-		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+		connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060208;
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &log[i]);
 	}
 
 	/* restore */
 	u4Cr = 0x18060090;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = (0x3F<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
-	soc3_0_DumpMemory32(log, HANG_PC_LOG_NUM, "GPR log");
+	connac2x_dump_format_memory32(log, HANG_PC_LOG_NUM, "GPR log");
 }
 
 static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
@@ -1424,7 +1370,7 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 *		(set as 0x3F to select the current selected GPR)
 */
 	u4Cr = 0x18060090;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 	u4Value = (0x3F<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
 
@@ -1433,47 +1379,32 @@ static void soc3_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
 		RegValue = (i<<26) | (u4Value&BITS(0, 25));
 
 		u4Cr = 0x18060090;
-		soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+		connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 		u4Cr = 0x18060208;
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &log[i]);
 	}
 
 	/* restore */
 	u4Cr = 0x18060090;
 	RegValue = (30<<26) | (u4Value&BITS(0, 25));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
-	soc3_0_DumpMemory32(log, HANG_N10_CORE_LOG_NUM, "N10 core register");
+	connac2x_dump_format_memory32(
+		log, HANG_N10_CORE_LOG_NUM, "N10 core register");
 }
 
 static void soc3_0_DumpOtherCr(struct ADAPTER *prAdapter)
 {
-#define	HANG_MAIL_BOX_LOG_NUM	2
-#define	HANG_DUMMY_CR_LOG_NUM	4
-#define	HANG_OTHER_LOG_TOTAL	(HANG_MAIL_BOX_LOG_NUM+HANG_DUMMY_CR_LOG_NUM)
+#define	HANG_OTHER_LOG_NUM		2
 
-	uint32_t u4Cr, i;
-	uint32_t log[HANG_OTHER_LOG_TOTAL];
-
-	DBGLOG(HAL, LOUD,
-		"Host_CSR - mailbox and other CRs");
-
-	memset(log, 0, HANG_OTHER_LOG_TOTAL);
-
-	u4Cr = 0x18060260;
-	for (i = 0; i < HANG_MAIL_BOX_LOG_NUM; i++) {
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
-		u4Cr += 0x04;
-	}
-
-	u4Cr = 0x180602f0;
-	for (i = HANG_MAIL_BOX_LOG_NUM; i < HANG_OTHER_LOG_TOTAL; i++) {
-		soc3_0_CrRead(prAdapter, u4Cr, &log[i]);
-		u4Cr += 0x04;
-	}
-
-	soc3_0_DumpMemory32(log, HANG_OTHER_LOG_TOTAL, "mailbox and other CRs");
+	connac2x_DumpCrRange(NULL, 0x18060260, HANG_OTHER_LOG_NUM,
+		"mailbox and other CRs");
+	connac2x_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");
+	connac2x_DumpCrRange(NULL, 0x180602e0, 4, "BT_CSR_DUMMY");
+	connac2x_DumpCrRange(NULL, 0x180602f0, 4, "WF_CSR_DUMMY");
+	connac2x_DumpCrRange(NULL, 0x18052900, 16, "conninfra Sysram BT");
+	connac2x_DumpCrRange(NULL, 0x18053000, 16, "conninfra Sysram WF");
 }
 
 static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
@@ -1493,50 +1424,50 @@ static void soc3_0_DumpSpecifiedWfTop(struct ADAPTER *prAdapter)
 /* 0x1806009C[28]=1	write	enable wf_mcu_misc */
 
 	u4Cr = 0x1806009C;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = u4Value | BIT(28);
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x1806009C[27:0]=0xC387060	write	select {FLAG_4[9:2],FLAG_27[9:2]} */
 
 	u4Cr = 0x1806009C;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = 0xC387060 | (u4Value&BITS(28, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x18060094[20]=1	write	enable wf_monflg_on */
 
 	u4Cr = 0x18060094;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = u4Value | BIT(20);
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x18060094[19:0]=0x39CE7	write	select wf_mcusys_dbg */
 
 	u4Cr = 0x18060094;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = 0x39CE7 | (u4Value&BITS(20, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 /* 0x1806_021c[31:0]	Read	get {FLAG_4[9:2],FLAG_27[9:2]} */
 
 	u4Cr = 0x1806021c;
-	soc3_0_CrRead(prAdapter, u4Cr, &log[0]);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &log[0]);
 
 /* 0x1806009C[27:0]=0xC78F162	write	select {FlAG_23[7:0],FlAG_6[9:2]} */
 
 	u4Cr = 0x1806009C;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 	RegValue = 0xC78F162 | (u4Value&BITS(28, 31));
-	soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 
 /* 0x1806_021c[31:0]	Read	get {FlAG_23[7:0],FlAG_6[9:2]} */
 
 	u4Cr = 0x1806021c;
-	soc3_0_CrRead(prAdapter, u4Cr, &log[1]);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &log[1]);
 
-	soc3_0_DumpMemory32(log, HANG_TOP_LOG_NUM,
+	connac2x_dump_format_memory32(log, HANG_TOP_LOG_NUM,
 		"specified WF TOP monflg on");
 }
 
@@ -1553,8 +1484,8 @@ static int IsWsysBusHang(struct ADAPTER *prAdapter)
 	uint32_t u4WriteDebugValue;
 
 	u4WriteDebugValue = 0x000B0001;
-	soc3_0_CrWrite(prAdapter, 0x18060128, u4WriteDebugValue);
-	soc3_0_CrRead(prAdapter, 0x18060148, &u4Value);
+	connac2x_DbgCrWrite(prAdapter, 0x18060128, u4WriteDebugValue);
+	connac2x_DbgCrRead(prAdapter, 0x18060148, &u4Value);
 
 	u4Value &= BITS(8, 9);
 	return u4Value;
@@ -1635,10 +1566,10 @@ static void DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
 	ReadRegValue = AXI_MASTER_DUMP_CR_START;
 	for (i = 0 ; i < AXI_MASTER_DUMP_CR_NUM; i++) {
 		ReadRegValue += 4;
-		soc3_0_CrRead(prAdapter, ReadRegValue, &u4Value[i]);
+		connac2x_DbgCrRead(prAdapter, ReadRegValue, &u4Value[i]);
 	}
 
-	soc3_0_DumpMemory32(u4Value,
+	connac2x_dump_format_memory32(u4Value,
 		AXI_MASTER_DUMP_CR_NUM,
 		"HW AXI BUS debug CR start[0x1802750C]");
 
@@ -1753,7 +1684,7 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 */
 
 			u4Cr = 0x18060260;
-			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 			if ((u4Value&BIT(31)) != BIT(31)) {
 				DBGLOG(HAL, ERROR,
@@ -1781,19 +1712,19 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 */
 
 			u4Cr = 0x1806009c;
-			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 			RegValue = (u4Value&BITS(7, 31)) | 0x60;
 			RegValue = RegValue | BIT(28);
-			soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+			connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 			u4Cr = 0x18060094;
-			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 			RegValue = (u4Value&BITS(5, 31)) | 0x7;
 			RegValue = RegValue | BIT(20);
-			soc3_0_CrWrite(prAdapter, u4Cr, RegValue);
+			connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
 
 			u4Cr = 0x1806021c;
-			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 			if ((u4Value&BIT(0)) == BIT(0)) {
 				DBGLOG(HAL, ERROR,
@@ -1801,13 +1732,13 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 					u4Cr, u4Value);
 
 				u4Cr = 0x1806009c;
-				soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+				connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 				DBGLOG(HAL, ERROR,
 					"Bus hang check: 0x%08x = 0x%08x\n",
 					u4Cr, u4Value);
 
 				u4Cr = 0x18060094;
-				soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+				connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 				DBGLOG(HAL, ERROR,
 					"Bus hang check: 0x%08x = 0x%08x\n",
 					u4Cr, u4Value);
@@ -1823,7 +1754,7 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 *  - 0x1800_1620[3] (sleep protect enable ready), should be 1'b0
 */
 		u4Cr = 0x18001620;
-		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 		if ((u4Value&BIT(3)) == BIT(3)) {
 			DBGLOG(HAL, ERROR,
@@ -1831,14 +1762,14 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 				u4Cr, u4Value);
 
 			u4Cr = 0x18060010;
-			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 			DBGLOG(HAL, ERROR,
 				"Bus hang check: 0x%08x = 0x%08x\n",
 				u4Cr, u4Value);
 
 			u4Cr = 0x180600f0;
-			soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+			connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 			DBGLOG(HAL, ERROR,
 				"Bus hang check: 0x%08x = 0x%08x\n",
@@ -1851,7 +1782,7 @@ int soc3_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 *  - 0x1806_0000[15] , 1: means bus no clock, 0: ok
 */
 		u4Cr = 0x18060000;
-		soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+		connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 		if ((u4Value&BIT(15)) == BIT(15)) {
 			DBGLOG(HAL, ERROR,
@@ -4365,7 +4296,7 @@ uint32_t soc3_0_wlanSendPhyAction(struct ADAPTER *prAdapter,
 
 	/* Debug FW Own */
 	u4Cr = 0x180600f0;
-	soc3_0_CrRead(prAdapter, u4Cr, &u4Value);
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
 
 	if (u4Status != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, WARN,

@@ -68,6 +68,9 @@ static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
 static void soc5_0_triggerInt(struct GLUE_INFO *prGlueInfo);
 static void soc5_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta);
 
+static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
+static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -428,6 +431,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
+	.checkbushang = soc5_0_CheckBusHang,
+	.dumpBusHangCr = soc5_0_DumpBusHangCr,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 };
 
@@ -592,6 +597,19 @@ static void soc5_0asicConnac2xProcessRxInterrupt(
 		halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0, TRUE);
 }
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+static void soc5_0SetMDRXRingPriorityInterrupt(struct ADAPTER *prAdapter)
+{
+	u_int32_t val = 0;
+
+	HAL_MCR_RD(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, &val);
+	val |= BIT(1) | BITS(6, 9);
+	HAL_MCR_WR(prAdapter,
+		WF_WFDMA_HOST_DMA0_WPDMA_INT_RX_PRI_SEL_ADDR, val);
+}
+#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
+
 static void soc5_0asicConnac2xWfdmaManualPrefetch(
 	struct GLUE_INFO *prGlueInfo)
 {
@@ -635,6 +653,10 @@ static void soc5_0asicConnac2xWfdmaManualPrefetch(
 	     0x03400004);
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_EXT_CTRL_ADDR,
 	     0x03800004);
+
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	soc5_0SetMDRXRingPriorityInterrupt(prAdapter);
+#endif /* CFG_MTK_MCIF_WIFI_SUPPORT */
 
 	/* reset dma idx */
 	HAL_MCR_WR(prAdapter,
@@ -2016,6 +2038,312 @@ static void soc5_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta)
 	HAL_MCR_RD(prGlueInfo->prAdapter,
 		   prSwWfdmaInfo->u4CcifStartAddr,
 		   pu4Sta);
+}
+
+static void soc5_0_DumpPcLrLog(struct ADAPTER *prAdapter)
+{
+#define	HANG_PC_LOG_NUM			32
+	uint32_t u4Cr, u4Index, i;
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+	uint32_t log[HANG_PC_LOG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - dump PC log / LR log");
+
+	memset(log, 0, HANG_PC_LOG_NUM);
+
+	/* PC log
+	* dbg_pc_log_sel	Write	0x1806_0090 [7:2]	6'h20
+	*  choose 33th pc log buffer to read current pc log buffer index
+	* read pc from host CR	Read	0x1806_0204 [21:17]
+	*  read current pc log buffer index
+	* dbg_pc_log_sel	Write	0x1806_0090 [7:2]	index
+	*  set pc log buffer index to read pc log
+	* read pc from host CR	Read	0x1806_0204 [31:0]
+	*  read pc log of the specific index
+	*/
+
+	u4Cr = 0x18060090;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+	RegValue = (0x20<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+	u4Cr = 0x18060204;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+	u4Index = (u4Value&BITS(17, 21)) >> 17;
+
+	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
+
+		u4Index++;
+
+		if (u4Index == HANG_PC_LOG_NUM)
+			u4Index = 0;
+
+		u4Cr = 0x18060090;
+		connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+		RegValue = (u4Index<<2) | (u4Value&BITS(0, 1)) |
+			(u4Value&BITS(8, 31));
+		connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+		u4Cr = 0x18060204;
+		connac2x_DbgCrRead(prAdapter, u4Cr, &log[i]);
+	}
+
+	/* restore */
+	u4Cr = 0x18060090;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+	RegValue = (0x3F<<2) | (u4Value&BITS(0, 1)) | (u4Value&BITS(8, 31));
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+	connac2x_dump_format_memory32(log, HANG_PC_LOG_NUM, "PC log");
+
+	/* GPR log */
+
+	u4Cr = 0x18060090;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+	RegValue = (0x20<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+	u4Cr = 0x18060208;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+	u4Index = (u4Value&BITS(17, 21)) >> 17;
+
+	for (i = 0; i < HANG_PC_LOG_NUM; i++) {
+
+		u4Index++;
+
+		if (u4Index == HANG_PC_LOG_NUM)
+			u4Index = 0;
+
+		u4Cr = 0x18060090;
+		connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+		RegValue = (u4Index<<8) | (u4Value&BITS(0, 7)) |
+			(u4Value&BITS(14, 31));
+		connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+		u4Cr = 0x18060208;
+		connac2x_DbgCrRead(prAdapter, u4Cr, &log[i]);
+	}
+
+	/* restore */
+	u4Cr = 0x18060090;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+	RegValue = (0x3F<<8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+	connac2x_dump_format_memory32(log, HANG_PC_LOG_NUM, "GPR log");
+}
+
+static void soc5_0_DumpN10CoreReg(struct ADAPTER *prAdapter)
+{
+#define	HANG_N10_CORE_LOG_NUM	38
+	uint32_t u4Cr, i;
+	uint32_t u4Value = 0;
+	uint32_t RegValue = 0;
+	uint32_t log[HANG_N10_CORE_LOG_NUM];
+
+	DBGLOG(HAL, LOUD,
+		"Host_CSR - read N10 core register");
+
+	memset(log, 0, HANG_N10_CORE_LOG_NUM);
+
+/*
+*	[31:26]: gpr_index_sel (set different sets of gpr) = 0
+*	[13:8]: gpr buffer index setting
+*		(set as 0x3F to select the current selected GPR)
+*/
+	u4Cr = 0x18060090;
+	connac2x_DbgCrRead(prAdapter, u4Cr, &u4Value);
+
+	u4Value = (0x3F << 8) | (u4Value&BITS(0, 7)) | (u4Value&BITS(14, 31));
+
+	for (i = 0; i < HANG_N10_CORE_LOG_NUM; i++) {
+
+		RegValue = (i << 26) | (u4Value&BITS(0, 25));
+
+		u4Cr = 0x18060090;
+		connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+		u4Cr = 0x18060208;
+		connac2x_DbgCrRead(prAdapter, u4Cr, &log[i]);
+	}
+
+	/* restore */
+	u4Cr = 0x18060090;
+	RegValue = (30 << 26) | (u4Value&BITS(0, 25));
+	connac2x_DbgCrWrite(prAdapter, u4Cr, RegValue);
+
+	connac2x_dump_format_memory32(
+		log, HANG_N10_CORE_LOG_NUM, "N10 core register");
+}
+
+static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
+{
+#define	HANG_OTHER_LOG_NUM		2
+	uint32_t u4WrVal = 0, u4Val = 0, u4Idx;
+
+	DBGLOG(HAL, INFO,
+		"Host_CSR - mailbox and other CRs");
+
+	connac2x_DumpCrRange(NULL, 0x18060260, HANG_OTHER_LOG_NUM,
+		"mailbox and other CRs");
+	connac2x_DumpCrRange(NULL, 0x180602c0, 8, "DBG_DUMMY");
+	connac2x_DumpCrRange(NULL, 0x180602e0, 4, "BT_CSR_DUMMY");
+	connac2x_DumpCrRange(NULL, 0x180602f0, 4, "WF_CSR_DUMMY");
+	connac2x_DumpCrRange(NULL, 0x18052900, 16, "conninfra Sysram BT");
+	connac2x_DumpCrRange(NULL, 0x18053000, 16, "conninfra Sysram WF");
+
+	/* 1. Driver dump CRs of sheet "Debug ctrl setting */
+	connac2x_DbgCrRead(prAdapter, 0x18060164, &u4Val);
+	DBGLOG(HAL, ERROR, "Dump 0x1806_0164\n");
+	u4WrVal = 0x00010001;
+	for (u4Idx = 0; u4Idx < 16; u4Idx++) {
+		connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
+		connac2x_DbgCrRead(prAdapter, 0x18060168, &u4Val);
+		DBGLOG(HAL, ERROR,
+		       "\tW0x18060164=[0x%08x], 0x18060168=[0x%08x]\n",
+		       u4WrVal, u4Val);
+		u4WrVal += 0x0001000;
+	}
+	u4WrVal = 0x00010002;
+	connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x18060168, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "\tW0x18060164=[0x%08x], 0x18060168=[0x%08x]\n",
+	       u4WrVal, u4Val);
+	u4WrVal = 0x00010003;
+	connac2x_DbgCrWrite(prAdapter, 0x18060164, u4WrVal);
+	connac2x_DbgCrRead(prAdapter, 0x18060168, &u4Val);
+	DBGLOG(HAL, ERROR,
+	       "\tW0x18060164=[0x%08x], 0x18060168=[0x%08x]\n",
+	       u4WrVal, u4Val);
+
+	/* 2. Driver dump conn2wf sleep protect */
+	connac2x_DbgCrRead(prAdapter, 0x18001504, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18001504=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18001514, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18001514=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18001524, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18001524=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18001534, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18001534=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18001544, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18001544=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x1800E2A0, &u4Val);
+	DBGLOG(HAL, ERROR, "0x1800E2A0=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x1800E2A4, &u4Val);
+	DBGLOG(HAL, ERROR, "0x1800E2A4=[0x%08x]\n", u4Val);
+
+	/* 3. Driver dump wfsys bus clock state/OSC */
+	connac2x_DbgCrRead(prAdapter, 0x18060000, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18060000=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18060220, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18060220=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x1800130C, &u4Val);
+	DBGLOG(HAL, ERROR, "0x1800130C=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18003000, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18003000=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18003004, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18003004=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18003008, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18003008=[0x%08x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x18003124, &u4Val);
+	DBGLOG(HAL, ERROR, "0x18003124=[0x%08x]\n", u4Val);
+}
+
+static void soc5_0_DumpHostCr(struct ADAPTER *prAdapter)
+{
+	connac2x_DumpWfsyscpupcr(prAdapter);	/* first dump */
+	soc5_0_DumpPcLrLog(prAdapter);
+	soc5_0_DumpN10CoreReg(prAdapter);
+	soc5_0_DumpOtherCr(prAdapter);
+}
+
+static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter)
+{
+	conninfra_is_bus_hang();
+	soc5_0_DumpHostCr(prAdapter);
+}
+
+static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
+{
+	struct ADAPTER *prAdapter = (struct ADAPTER *) adapter;
+	int ret = 1;
+	int conninfra_read_ret = 0;
+	int conninfra_hang_ret = 0;
+	uint8_t conninfra_reset = FALSE;
+	uint32_t u4Value = 0;
+
+	if (prAdapter == NULL)
+		DBGLOG(HAL, INFO, "prAdapter NULL\n");
+	do {
+/*
+ * 1. Check "AP2CONN_INFRA ON step is ok"
+ *   & Check "AP2CONN_INFRA OFF step is ok"
+ */
+		conninfra_read_ret = conninfra_reg_readable();
+		if (!conninfra_read_ret) {
+			DBGLOG(HAL, ERROR,
+				"conninfra_reg_readable fail(%d)\n",
+				conninfra_read_ret);
+
+			conninfra_hang_ret = conninfra_is_bus_hang();
+
+			if (conninfra_hang_ret > 0) {
+				conninfra_reset = TRUE;
+
+				DBGLOG(HAL, ERROR,
+					"conninfra_is_bus_hang, Chip reset\n");
+			} else {
+				/*
+				* not readable, but no_hang or rst_ongoing
+				* => no reset and return fail
+				*/
+				ucWfResetEnable = FALSE;
+			}
+
+			break;
+		}
+
+		if ((prAdapter != NULL) && (prAdapter->fgIsFwDownloaded)) {
+			/* if(0x1806_016C[0]==1, wifi axi bus hang) */
+			connac2x_DbgCrRead(prAdapter, 0x1806016c, &u4Value);
+			if ((u4Value&BIT(0)) == BIT(0))
+				break;
+		} else {
+			DBGLOG(HAL, INFO,
+				"Before fgIsFwDownloaded\n");
+			soc5_0_DumpHostCr(prAdapter);
+		}
+
+		DBGLOG(HAL, TRACE, "Bus hang check: Done\n");
+
+		ret = 0;
+	} while (FALSE);
+
+	if (ret > 0) {
+		if ((conninfra_hang_ret != CONNINFRA_ERR_RST_ONGOING) &&
+			(conninfra_hang_ret != CONNINFRA_INFRA_BUS_HANG) &&
+			(conninfra_hang_ret !=
+				CONNINFRA_AP2CONN_RX_SLP_PROT_ERR) &&
+			(conninfra_hang_ret !=
+				CONNINFRA_AP2CONN_TX_SLP_PROT_ERR) &&
+			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR))
+			soc5_0_DumpHostCr(prAdapter);
+
+		if (conninfra_reset) {
+			g_IsWfsysBusHang = TRUE;
+			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
+				"bus hang");
+		} else if (ucWfResetEnable) {
+			g_IsWfsysBusHang = TRUE;
+			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
+				"wifi bus hang");
+		}
+	}
+
+	return ret;
 }
 
 #endif  /* soc5_0 */
