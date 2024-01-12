@@ -12333,6 +12333,11 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4BytesWritten = 0;
 
+	if (g_u4HaltFlag) {
+		DBGLOG(REQ, WARN, "wlan is halt, skip priv_driver_cmds\n");
+		return -1;
+	}
+
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
