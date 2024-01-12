@@ -1797,10 +1797,10 @@ VOID p2pRoleFsmRunEventDissolve(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 /*----------------------------------------------------------------------------*/
 VOID p2pRoleUpdateACLEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 {
-	BOOLEAN drop = FALSE, Matched = FALSE;
+	BOOLEAN bMatchACL = FALSE;
 	INT_32 i = 0, i4Ret = 0;
 	P_LINK_T prClientList;
-	P_STA_RECORD_T prCurrStaRec;
+	P_STA_RECORD_T prCurrStaRec, prNextStaRec;
 	P_BSS_INFO_T prP2pBssInfo;
 
 	if ((!prAdapter) || (ucBssIdx > HW_BSSID_NUM))
@@ -1809,44 +1809,28 @@ VOID p2pRoleUpdateACLEntry(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIdx)
 	prP2pBssInfo = prAdapter->aprBssInfo[ucBssIdx];
 
 	/* ACL is disabled. Do nothing about the MAC table. */
-	if (prP2pBssInfo->rACL.ePolicy == 0)
+	if (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DISABLE)
 		return;
 
 	prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
-	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList, rLinkEntry, STA_RECORD_T) {
-		if (!prCurrStaRec) {
-			DBGLOG(P2P, WARN, "NULL STA_REC ptr in BSS client list\n");
-			bssDumpClientList(prAdapter, prP2pBssInfo);
-			break;
-		}
-
-		Matched = FALSE;
-		drop = FALSE;
+	LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prNextStaRec, prClientList, rLinkEntry, STA_RECORD_T) {
+		bMatchACL = FALSE;
 		for (i = 0; i < prP2pBssInfo->rACL.u4Num; i++) {
 			if (EQUAL_MAC_ADDR(prCurrStaRec->aucMacAddr, prP2pBssInfo->rACL.rEntry[i].aucAddr)) {
-				Matched = TRUE;
+				bMatchACL = TRUE;
 				break;
 			}
 		}
 
-		if ((Matched == FALSE) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)) {
-			drop = TRUE;
-			DBGLOG(P2P, WARN, "the client is not on accept ACL and kick out it.\n");
-		} else if ((Matched == TRUE) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DENY)) {
-			drop = TRUE;
-			DBGLOG(P2P, WARN, "the client is on deny ACL and kick out it.\n");
-		} else {
-			DBGLOG(P2P, TRACE, "the client is authorized.\n");
-			continue;
-		}
+		if (((!bMatchACL) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)) ||
+			((bMatchACL) && (prP2pBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DENY))) {
 
-		if (drop == TRUE) {
 			DBGLOG(P2P, TRACE, "ucBssIdx=%d, ACL Policy=%d\n", ucBssIdx, prP2pBssInfo->rACL.ePolicy);
 
 			i4Ret = assocSendDisAssocFrame(prAdapter, prCurrStaRec, STATUS_CODE_REQ_DECLINED);
 			if (!i4Ret)
-				DBGLOG(P2P, WARN, "Send DISASSOC to [" MACSTR "], Reason = %d\n",
+				DBGLOG(P2P, TRACE, "Send DISASSOC to [" MACSTR "], Reason = %d\n",
 					MAC2STR(prCurrStaRec->aucMacAddr), STATUS_CODE_REQ_DECLINED);
 			LINK_REMOVE_KNOWN_ENTRY(prClientList, &prCurrStaRec->rLinkEntry);
 		}

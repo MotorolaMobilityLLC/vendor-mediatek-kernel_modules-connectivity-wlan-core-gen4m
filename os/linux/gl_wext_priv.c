@@ -5233,7 +5233,8 @@ static int priv_driver_set_acl_policy(IN struct net_device *prNetDev, IN char *p
 		"ucBssIdx[%hhu] ACL Policy=%d\n", ucBssIdx, prBssInfo->rACL.ePolicy);
 
 	/* check if the change in ACL affects any existent association */
-	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+	if (prBssInfo->rACL.ePolicy != PARAM_CUSTOM_ACL_POLICY_DISABLE)
+		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
@@ -5341,7 +5342,8 @@ static int priv_driver_add_acl_entry(IN struct net_device *prNetDev, IN char *pc
 		"add mac addr [" MACSTR "] to ACL(%d)\n", MAC2STR(prBssInfo->rACL.rEntry[i-1].aucAddr), i);
 
 	/* Check if the change in ACL affects any existent association. */
-	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+	if (prBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_DENY)
+		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
@@ -5425,7 +5427,8 @@ static int priv_driver_del_acl_entry(IN struct net_device *prNetDev, IN char *pc
 	memset(prBssInfo->rACL.rEntry[j-1].aucAddr, 0x00, MAC_ADDR_LEN);
 
 	/* check if the change in ACL affects any existent association */
-	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+	if (prBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)
+		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
 
 	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
 
@@ -5527,7 +5530,8 @@ static int priv_driver_clear_acl_entry(IN struct net_device *prNetDev, IN char *
 		"ACL Policy = %d, Total ACLs = %d\n", prBssInfo->rACL.ePolicy, prBssInfo->rACL.u4Num);
 
 	/* check if the change in ACL affects any existent association */
-	p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
+	if (prBssInfo->rACL.ePolicy == PARAM_CUSTOM_ACL_POLICY_ACCEPT)
+		p2pRoleUpdateACLEntry(prAdapter, ucBssIdx);
 
 	return i4BytesWritten;
 } /* priv_driver_clear_acl_entry */
