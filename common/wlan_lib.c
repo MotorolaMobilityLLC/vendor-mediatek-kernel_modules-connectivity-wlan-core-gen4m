@@ -3497,6 +3497,16 @@ uint32_t wlanSetChipEcoInfo(struct ADAPTER *prAdapter)
 	/* WLAN_STATUS status; */
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
+#if (CFG_DIRECT_READ_CHIP_INFO == 1)
+	HAL_MCR_RD(prAdapter, prChipInfo->top_hvr, &hw_version);
+	HAL_MCR_RD(prAdapter, prChipInfo->top_fvr, &sw_version);
+
+	if ((hw_version == 0) || (sw_version == 0)) {
+		DBGLOG(INIT, ERROR,
+		  "wlanSetChipEcoInfo can't get TOP_HVR(0x%x)/TOP_FVR(0x%x)\n",
+		  hw_version, sw_version);
+		u4Status = WLAN_STATUS_FAILURE;
+#else
 	if (wlanAccessRegister(prAdapter,
 		prChipInfo->top_hvr, &hw_version, 0, 0) !=
 	    WLAN_STATUS_SUCCESS) {
@@ -3509,6 +3519,7 @@ uint32_t wlanSetChipEcoInfo(struct ADAPTER *prAdapter)
 		DBGLOG(INIT, ERROR,
 		       "wlanSetChipEcoInfo >> get TOP_FVR failed.\n");
 		u4Status = WLAN_STATUS_FAILURE;
+#endif
 	} else {
 		/* success */
 		nicSetChipHwVer((uint8_t)(GET_HW_VER(hw_version) & 0xFF));

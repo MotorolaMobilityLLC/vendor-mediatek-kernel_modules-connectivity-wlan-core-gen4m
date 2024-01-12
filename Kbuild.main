@@ -1965,6 +1965,12 @@ else
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=0
 endif
 
+ifeq ($(CONFIG_DIRECT_READ_CHIP_INFO), y)
+    ccflags-y += -DCFG_DIRECT_READ_CHIP_INFO=1
+else
+    ccflags-y += -DCFG_DIRECT_READ_CHIP_INFO=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
