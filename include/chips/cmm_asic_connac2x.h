@@ -936,7 +936,7 @@ void asicConnac2xFillCmdTxd(
 	uint8_t *pucSeqNum,
 	void **pCmdBuf);
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 uint32_t asicConnac2xWfdmaCfgAddrGet(
 	struct GLUE_INFO *prGlueInfo,
 	u_int8_t ucDmaIdx);

@@ -151,6 +151,10 @@ static u_int8_t g_fgDriverProbed = FALSE;
 struct HIF_PREALLOC_MEM grMem;
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+static struct sub_drv_ops_cb g_conninfra_wf_cb;
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -225,15 +229,24 @@ static void axiDumpRx(struct GL_HIF_INFO *prHifInfo,
 static int hifAxiProbe(void)
 {
 	int ret = 0;
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+		mtk_axi_ids[0].driver_data)->chip_info;
 
 	ASSERT(prPlatDev);
 
 	DBGLOG(INIT, TRACE, "driver.name = %s\n", prPlatDev->id_entry->name);
 
-#ifdef CFG_MTK_ANDROID_WMT
+#if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
 #endif
-
+#endif
+	if (prChipInfo->wmmcupwron)
+		ret = prChipInfo->wmmcupwron();
+	if (ret != 0)
+		goto out;
 	if (pfWlanProbe((void *)prPlatDev,
 			(void *)prPlatDev->id_entry->driver_data) !=
 			WLAN_STATUS_SUCCESS) {
@@ -251,13 +264,22 @@ out:
 
 static int hifAxiRemove(void)
 {
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = ((struct mt66xx_hif_driver_data *)
+		mtk_axi_ids[0].driver_data)->chip_info;
+
 	ASSERT(prPlatDev);
 
 	if (g_fgDriverProbed)
 		pfWlanRemove();
 
-#ifdef CFG_MTK_ANDROID_WMT
+	if (prChipInfo->wmmcupwroff)
+		prChipInfo->wmmcupwroff();
+#if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(0);
+#endif
 #endif
 
 	DBGLOG(INIT, TRACE, "pfWlanRemove done\n");
@@ -541,6 +563,31 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 
 	return IRQ_HANDLED;
 }
+#if (CFG_SUPPORT_CONNINFRA == 1)
+void kalSetRstEvent(void)
+{
+	KAL_WAKE_LOCK(NULL, &g_IntrWakeLock);
+
+	set_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag);
+
+	/* when we got interrupt, we wake up servie thread */
+	wake_up_interruptible(&g_waitq_rst);
+
+}
+
+static irqreturn_t mtk_sw_interrupt(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+	prChipInfo = prGlueInfo->prAdapter->chip_info
+	if (prChipInfo->sw_interrupt_handler)
+		prChipInfo->sw_interrupt_handler(prGlueInfo->prAdapter);
+	kalSetRstEvent();
+	return IRQ_HANDLED;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -557,8 +604,15 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	struct mt66xx_chip_info *prChipInfo;
 
 #if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	struct MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
+
 	memset(&rWmtCb, 0, sizeof(struct MTK_WCN_WMT_WLAN_CB_INFO));
+#else
+	struct MTK_WCN_WLAN_CB_INFO rWlanCb;
+
+	memset(&rWlanCb, 0, sizeof(struct MTK_WCN_WLAN_CB_INFO));
+#endif
 #endif
 
 	prChipInfo = ((struct mt66xx_hif_driver_data *)
@@ -573,6 +627,7 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 #endif
 
 #if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	rWmtCb.wlan_probe_cb = hifAxiProbe;
 	rWmtCb.wlan_remove_cb = hifAxiRemove;
 	rWmtCb.wlan_bus_cnt_get_cb = hifAxiGetBusCnt;
@@ -580,6 +635,24 @@ static int mtk_axi_probe(IN struct platform_device *pdev)
 	rWmtCb.wlan_emi_mpu_set_protection_cb = hifAxiSetMpuProtect;
 	rWmtCb.wlan_is_wifi_drv_own_cb = hifAxiIsWifiDrvOwn;
 	mtk_wcn_wmt_wlan_reg(&rWmtCb);
+#else
+
+	rWlanCb.wlan_probe_cb = hifAxiProbe;
+	rWlanCb.wlan_remove_cb = hifAxiRemove;
+	mtk_wcn_wlan_reg(&rWlanCb);
+	g_conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
+					glRstwlanPreWholeChipReset;
+	g_conninfra_wf_cb.rst_cb.post_whole_chip_rst =
+					glRstwlanPostWholeChipReset;
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	/* Register conninfra call back */
+	g_conninfra_wf_cb.pre_cal_cb.pwr_on_cb = hifWmmcuPwrOn;
+	g_conninfra_wf_cb.pre_cal_cb.do_cal_cb = soc3_0_wlanPreCal;
+
+#endif /* (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1) */
+	conninfra_sub_drv_ops_register(CONNDRV_TYPE_WIFI,
+		&g_conninfra_wf_cb);
+#endif
 #else
 	hifAxiProbe();
 #endif
@@ -597,7 +670,11 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 #endif
 
 #if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_wlan_unreg();
+#else
+	mtk_wcn_wlan_unreg();
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 #else
 	hifAxiRemove();
 #endif
@@ -875,20 +952,35 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	prHifInfo->u4IrqId = AXI_WLAN_IRQ_NUMBER;
 #ifdef CONFIG_OF
 	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi");
-	if (node)
+	if (node) {
 		prHifInfo->u4IrqId = irq_of_parse_and_map(node, 0);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+		prHifInfo->u4IrqId_1 = irq_of_parse_and_map(node, 1);
+#endif
+	}
 	else
 		DBGLOG(INIT, ERROR,
 			"WIFI-OF: get wifi device node fail\n");
 #endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d), num(%d)\n",
+	       prHifInfo->u4IrqId, prHifInfo->u4IrqId_1);
+#else
 	DBGLOG(INIT, INFO, "glBusSetIrq: request_irq num(%d)\n",
 	       prHifInfo->u4IrqId);
+#endif /*end of CFG_SUPPORT_CONNINFRA == 1*/
 	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED,
 			  prNetDevice->name, prGlueInfo);
 	if (ret != 0)
 		DBGLOG(INIT, INFO,
 			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
-
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	ret = request_irq(prHifInfo->u4IrqId_1, mtk_sw_interrupt, IRQF_SHARED,
+			  prNetDevice->name, prGlueInfo);
+	if (ret != 0)
+		DBGLOG(INIT, INFO,
+			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
+#endif
 	return ret;
 }
 
@@ -927,6 +1019,10 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 
 	synchronize_irq(prHifInfo->u4IrqId);
 	free_irq(prHifInfo->u4IrqId, prGlueInfo);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	synchronize_irq(prHifInfo->u4IrqId_1);
+	free_irq(prHifInfo->u4IrqId_1, prGlueInfo);
+#endif
 }
 
 u_int8_t glIsReadClearReg(uint32_t u4Address)

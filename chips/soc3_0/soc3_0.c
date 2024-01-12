@@ -73,12 +73,14 @@
 #include "coda/soc3_0/wf_wfdma_host_dma1.h"
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
-#include "conn_infra_cfg.h"
+#include "coda/soc3_0/conn_infra_cfg.h"
 #endif
 
 #include "precomp.h"
 
 #include "soc3_0.h"
+
+#include <linux/platform_device.h>
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -181,8 +183,64 @@ struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x0, 0x0, 0x0} /* End */
 };
-
+#elif defined(_HIF_AXI)
+struct PCIE_CHIP_CR_MAPPING soc3_0_bus2chip_cr_mapping[] = {
+	/* chip addr, bus addr, range */
+	{0x54000000, 0x402000, 0x1000}, /* WFDMA PCIE0 MCU DMA0 */
+	{0x55000000, 0x403000, 0x1000}, /* WFDMA PCIE0 MCU DMA1 */
+	{0x56000000, 0x404000, 0x1000}, /* WFDMA reserved */
+	{0x57000000, 0x405000, 0x1000}, /* WFDMA MCU wrap CR */
+	{0x58000000, 0x406000, 0x1000}, /* WFDMA PCIE1 MCU DMA0 (MEM_DMA) */
+	{0x59000000, 0x407000, 0x1000}, /* WFDMA PCIE1 MCU DMA1 */
+	{0x820c0000, 0x408000, 0x4000}, /* WF_UMAC_TOP (PLE) */
+	{0x820c8000, 0x40c000, 0x2000}, /* WF_UMAC_TOP (PSE) */
+	{0x820cc000, 0x40e000, 0x2000}, /* WF_UMAC_TOP (PP) */
+	{0x820e0000, 0x420000, 0x0400}, /* WF_LMAC_TOP BN0 (WF_CFG) */
+	{0x820e1000, 0x420400, 0x0200}, /* WF_LMAC_TOP BN0 (WF_TRB) */
+	{0x820e2000, 0x420800, 0x0400}, /* WF_LMAC_TOP BN0 (WF_AGG) */
+	{0x820e3000, 0x420c00, 0x0400}, /* WF_LMAC_TOP BN0 (WF_ARB) */
+	{0x820e4000, 0x421000, 0x0400}, /* WF_LMAC_TOP BN0 (WF_TMAC) */
+	{0x820e5000, 0x421400, 0x0800}, /* WF_LMAC_TOP BN0 (WF_RMAC) */
+	{0x820ce000, 0x421c00, 0x0200}, /* WF_LMAC_TOP (WF_SEC) */
+	{0x820e7000, 0x421e00, 0x0200}, /* WF_LMAC_TOP BN0 (WF_DMA) */
+	{0x820cf000, 0x422000, 0x1000}, /* WF_LMAC_TOP (WF_PF) */
+	{0x820e9000, 0x423400, 0x0200}, /* WF_LMAC_TOP BN0 (WF_WTBLOFF) */
+	{0x820ea000, 0x424000, 0x0200}, /* WF_LMAC_TOP BN0 (WF_ETBF) */
+	{0x820eb000, 0x424200, 0x0400}, /* WF_LMAC_TOP BN0 (WF_LPON) */
+	{0x820ec000, 0x424600, 0x0200}, /* WF_LMAC_TOP BN0 (WF_INT) */
+	{0x820ed000, 0x424800, 0x0800}, /* WF_LMAC_TOP BN0 (WF_MIB) */
+	{0x820ca000, 0x426000, 0x2000}, /* WF_LMAC_TOP BN0 (WF_MUCOP) */
+	{0x820d0000, 0x430000, 0x10000}, /* WF_LMAC_TOP (WF_WTBLON) */
+	{0x40000000, 0x470000, 0x10000}, /* WF_UMAC_SYSRAM */
+	{0x00400000, 0x480000, 0x10000}, /* WF_MCU_SYSRAM */
+	{0x00410000, 0x490000, 0x10000}, /* WF_MCU_SYSRAM (config register) */
+	{0x820f0000, 0x4a0000, 0x0400}, /* WF_LMAC_TOP BN1 (WF_CFG) */
+	{0x820f1000, 0x4a0600, 0x0200}, /* WF_LMAC_TOP BN1 (WF_TRB) */
+	{0x820f2000, 0x4a0800, 0x0400}, /* WF_LMAC_TOP BN1 (WF_AGG) */
+	{0x820f3000, 0x4a0c00, 0x0400}, /* WF_LMAC_TOP BN1 (WF_ARB) */
+	{0x820f4000, 0x4a1000, 0x0400}, /* WF_LMAC_TOP BN1 (WF_TMAC) */
+	{0x820f5000, 0x4a1400, 0x0800}, /* WF_LMAC_TOP BN1 (WF_RMAC) */
+	{0x820f7000, 0x4a1e00, 0x0200}, /* WF_LMAC_TOP BN1 (WF_DMA) */
+	{0x820f9000, 0x4a3400, 0x0200}, /* WF_LMAC_TOP BN1 (WF_WTBLOFF) */
+	{0x820fa000, 0x4a4000, 0x0200}, /* WF_LMAC_TOP BN1 (WF_ETBF) */
+	{0x820fb000, 0x4a4200, 0x0400}, /* WF_LMAC_TOP BN1 (WF_LPON) */
+	{0x820fc000, 0x4a4600, 0x0200}, /* WF_LMAC_TOP BN1 (WF_INT) */
+	{0x820fd000, 0x4a4800, 0x0800}, /* WF_LMAC_TOP BN1 (WF_MIB) */
+	{0x820cc000, 0x4a5000, 0x2000}, /* WF_LMAC_TOP BN1 (WF_MUCOP) */
+	{0x820c4000, 0x4a8000, 0x4000}, /* WF_LMAC_TOP (WF_UWTBL)  */
+	{0x820b0000, 0x4ae000, 0x1000}, /* [APB2] WFSYS_ON */
+	{0x80020000, 0x4b0000, 0x10000}, /* WF_TOP_MISC_OFF */
+	{0x81020000, 0x4c0000, 0x10000}, /* WF_TOP_MISC_ON */
+	{0x7c500000, 0x500000, 0x10000}, /* CONN_INFRA, dyn mem map */
+	{0x7c020000, 0x20000, 0x10000}, /* CONN_INFRA, wfdma */
+	{0x7c060000, 0x60000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
+	{0x7c000000, 0x00000, 0x10000}, /* CONN_INFRA, conn_infra_on */
+	{0x0, 0x0, 0x0} /* End */
+};
+#endif
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 static bool soc3_0WfdmaAllocRxRing(
 	struct GLUE_INFO *prGlueInfo,
 	bool fgAllocMem)
@@ -412,7 +470,11 @@ struct BUS_INFO soc3_0_bus_info = {
 			CONNAC2X_HOST_WPDMA_1_BASE),
 
 	.bus2chip = soc3_0_bus2chip_cr_mapping,
+#if defined(_HIF_PCIE)
 	.max_static_map_addr = 0x000f0000,
+#elif defined(_HIF_AXI)
+			.max_static_map_addr = 0x00700000,
+#endif
 
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
 	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
@@ -528,6 +590,13 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
+	.wmmcupwron = hifWmmcuPwrOn,
+	.wmmcupwroff = hifWmmcuPwrOff,
+	.triggerfwassert = soc3_0_Trigger_fw_assert,
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	.trigger_wholechiprst = soc3_0_Trigger_whole_chip_rst,
+	.sw_interrupt_handler = soc3_0_Sw_interrupt_handler
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {
@@ -660,6 +729,461 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+int wf_ioremap_read(size_t addr, unsigned int *val)
+{
+	void *vir_addr = NULL;
 
+	vir_addr = ioremap_nocache(addr, 0x10);
+	if (!vir_addr) {
+		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
+		return -1;
+	}
+
+	*val = readl(vir_addr);
+	iounmap(vir_addr);
+	DBGLOG(INIT, ERROR, "Read CONSYS 0x%08x=0x%08x.\n", addr, *val);
+
+	return 0;
+}
+int wf_ioremap_write(phys_addr_t addr, unsigned int val)
+{
+	void *vir_addr = NULL;
+
+	vir_addr = ioremap_nocache(addr, 0x10);
+	if (!vir_addr) {
+		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
+		return -1;
+	}
+
+	writel(val, vir_addr);
+	iounmap(vir_addr);
+	DBGLOG(INIT, ERROR, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
+
+	return 0;
+}
+int soc3_0_Trigger_fw_assert(void)
+{
+	int ret = 0;
+	int value;
+
+	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+	value &= 0xFFFFFF7F;
+	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	udelay(1000);
+	wf_ioremap_read(WF_TRIGGER_AP2CONN_EINT, &value);
+	value |= 0x80;
+	ret = wf_ioremap_write(WF_TRIGGER_AP2CONN_EINT, value);
+	return ret;
+}
+int wf_pwr_on_consys_mcu(void)
+{
+	int check;
+	int value;
+	int ret = 0;
+	unsigned int polling_count;
+
+	DBGLOG(INIT, ERROR, "wmmcu power-on start.\n");
+	/* Wakeup conn_infra off write 0x180601A4[0] = 1'b1 */
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+
+	/* Check AP2CONN slpprot ready
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1806_0184[5]
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000020) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_INFRA_ON2OFF_SLP_PROT_ACK_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling  AP2CONN slpprot ready fail.\n");
+		return ret;
+	}
+
+	/* Check CONNSYS version ID
+	 * (polling "10 times" and each polling interval is "1ms")
+	 * Address: 0x1800_1000[31:0]
+	 * Data: 0x2001_0000
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_HW_VER_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != CONNSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(CONN_HW_VER_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+		return ret;
+	}
+
+	/* Assert CONNSYS WM CPU SW reset write 0x18000010[0] = 1'b0*/
+	wf_ioremap_read(WFSYS_CPU_SW_RST_B_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(WFSYS_CPU_SW_RST_B_ADDR, value);
+
+	/* Turn on wfsys_top_on
+	 * 0x18000000[31:16] = 0x57460000,
+	 * 0x18000000[7] = 1'b1
+	 */
+	wf_ioremap_read(WFSYS_ON_TOP_PWR_CTL_ADDR, &value);
+	value &= 0x0000FF7F;
+	value |= 0x57460080;
+	wf_ioremap_write(WFSYS_ON_TOP_PWR_CTL_ADDR, value);
+	/* Polling wfsys_rgu_off_hreset_rst_b
+	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * Address: 0x1806_02CC[2] (TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS[2])
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+
+	wf_ioremap_read(TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000004) == 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS_ADDR,
+				&value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling wfsys rgu off fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+	/* Turn off "conn_infra to wfsys"/ wfsys to conn_infra" bus
+	 * sleep protect 0x218001620[0] = 1'b0
+	 */
+	wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_WF_SLP_CTRL_R_ADDR, value);
+	/* Polling WF_SLP_CTRL ready
+	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * Address: 0x1800_1620[3] (CONN_INFRA_WF_SLP_CTRL_R_OFFSET[3])
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000008) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
+		polling_count++;
+		DBGLOG(INIT, ERROR, "WF_SLP_CTRL (0x%x) (%d)\n",
+			value,
+			polling_count);
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling WFSYS TO CONNINFRA SLEEP PROTECT fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+	/* Turn off "wf_dma to conn_infra" bus sleep protect
+	 * 0x18001624[0] = 1'b0
+	 */
+	wf_ioremap_read(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, value);
+	/* Polling wfsys_rgu_off_hreset_rst_b
+	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * Address: 0x1800_1624[3] (CONN_INFRA_WFDMA_SLP_CTRL_R_OFFSET[3])
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000008) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, &value);
+		polling_count++;
+		DBGLOG(INIT, ERROR, "WFDMA_SLP_CTRL (0x%x) (%d)\n",
+			value,
+			polling_count);
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling WFDMA TO CONNINFRA SLEEP PROTECT RDY fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+
+	/*WF_VDNR_EN_ADDR 0x1800_E06C[0] =1'b1*/
+	wf_ioremap_read(WF_VDNR_EN_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(WF_VDNR_EN_ADDR, value);
+
+	/* Check WFSYS version ID (Polling) */
+	wf_ioremap_read(WFSYS_VERSION_ID_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != CONNSYS_VERSION_ID) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(WFSYS_VERSION_ID_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
+		return ret;
+	}
+	/* Setup CONNSYS firmware in EMI */
+#if 0/*(CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)*/
+	soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_EMI);
+#endif
+
+	/* Default value update 2: EMI entry address */
+	wf_ioremap_write(CONN_CFG_AP2WF_REMAP_1_ADDR, CONN_MCU_CONFG_HS_BASE);
+	wf_ioremap_write(WF_DYNAMIC_BASE+MCU_EMI_ENTRY_OFFSET, 0x00000000);
+	wf_ioremap_write(WF_DYNAMIC_BASE+WF_EMI_ENTRY_OFFSET, 0x00000000);
+
+	/* De-assert WFSYS CPU SW reset 0x18000010[0] = 1'b1 */
+	wf_ioremap_read(WFSYS_CPU_SW_RST_B_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(WFSYS_CPU_SW_RST_B_ADDR, value);
+
+	/* Check CONNSYS power-on completion
+	 * Polling "10 times" and each polling interval is "0.5ms"
+	 * Polling 0x81021604[31:0] = 0x00001D1E
+	 */
+	wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while (value != CONNSYS_ROM_DONE_CHECK) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(1000);
+		wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Check CONNSYS power-on completion fail.\n");
+		return ret;
+	}
+	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
+	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
+	value &= 0xFFFFFFFE;
+	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
+	DBGLOG(INIT, ERROR, "wmmcu power-on done.\n");
+	return ret;
+}
+
+int wf_pwr_off_consys_mcu(void)
+{
+	int check;
+	int value;
+	int ret = 0;
+	unsigned int polling_count;
+	/* Turn on "conn_infra to wfsys"/ wfsys to conn_infra" bus sleep protect
+	 * 0x18001620[0] = 1'b1
+	 */
+	wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_WF_SLP_CTRL_R_ADDR, value);
+
+	/* Polling WF_SLP_CTRL ready
+	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * Address: 0x1800_1620[3] (CONN_INFRA_WF_SLP_CTRL_R_OFFSET[3])
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000008) == 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_WF_SLP_CTRL_R_ADDR, &value);
+		polling_count++;
+		DBGLOG(INIT, ERROR, "WF_SLP_CTRL (0x%x) (%d)\n",
+			value,
+			polling_count);
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling WFSYS TO CONNINFRA SLEEP PROTECT fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+	/* Turn off "wf_dma to conn_infra" bus sleep protect
+	 * 0x18001624[0] = 1'b1
+	 */
+	wf_ioremap_read(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, &value);
+	value |= 0x00000001;
+	wf_ioremap_write(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, value);
+
+	/* Polling wfsys_rgu_off_hreset_rst_b
+	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * Address: 0x1800_1624[3] (CONN_INFRA_WFDMA_SLP_CTRL_R_OFFSET[3])
+	 * Data: 1'b1
+	 * Action: polling
+	 */
+	wf_ioremap_read(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000008) == 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(CONN_INFRA_WFDMA_SLP_CTRL_R_ADDR, &value);
+		polling_count++;
+		DBGLOG(INIT, ERROR, "WFDMA_SLP_CTRL (0x%x) (%d)\n",
+			value,
+			polling_count);
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling WFDMA TO CONNINFRA SLEEP PROTECT RDY fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+
+	/* Turn off wfsys_top_on
+	 * 0x18000000[31:16] = 0x57460000,
+	 * 0x18000000[7] = 1'b0
+	 */
+	wf_ioremap_read(WFSYS_ON_TOP_PWR_CTL_ADDR, &value);
+	value &= 0x0000FF7F;
+	value |= 0x57460000;
+	wf_ioremap_write(WFSYS_ON_TOP_PWR_CTL_ADDR, value);
+	/* Polling wfsys_rgu_off_hreset_rst_b
+	 * (polling "10 times" and each polling interval is "0.5ms")
+	 * Address: 0x1806_02CC[2] (TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS[2])
+	 * Data: 1'b0
+	 * Action: polling
+	 */
+
+	wf_ioremap_read(TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS_ADDR, &value);
+	check = 0;
+	polling_count = 0;
+	while ((value & 0x00000004) != 0) {
+		if (polling_count > 10) {
+			check = -1;
+			ret = -1;
+			break;
+		}
+		udelay(500);
+		wf_ioremap_read(TOP_DBG_DUMMY_3_CONNSYS_PWR_STATUS_ADDR,
+				&value);
+		polling_count++;
+	}
+	if (check != 0) {
+		DBGLOG(INIT, ERROR,
+			"Polling wfsys rgu off fail. (0x%x)\n",
+			value);
+		return ret;
+	}
+	return ret;
+}
+
+int hifWmmcuPwrOn(void)
+{
+	int ret = 0;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	/* conninfra power on */
+	ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
+	if (ret != 0)
+		return ret;
+#endif
+	/* wf driver power on */
+	ret = wf_pwr_on_consys_mcu();
+	if (ret != 0)
+		return ret;
+	/* Power on download ROM patch*/
+#if 0/*(CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)*/
+	ret = soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
+#endif
+
+	return ret;
+}
+int hifWmmcuPwrOff(void)
+{
+	int ret = 0;
+	/* wf driver power off */
+	ret = wf_pwr_off_consys_mcu();
+	if (ret != 0)
+		return ret;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	/* conninfra power off */
+	ret = conninfra_pwr_off(CONNDRV_TYPE_WIFI);
+	if (ret != 0)
+		return ret;
+#endif
+	return ret;
+}
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int soc3_0_Trigger_whole_chip_rst(char *reason)
+{
+	return conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, reason);
+}
+void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
+{
+	int value;
+
+	HAL_MCR_WR(prAdapter,
+		   CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR,
+		   CONN_MCU_CONFG_HS_BASE);
+	HAL_MCR_RD(prAdapter,
+		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc0),
+		  &value);
+
+	DBGLOG(HAL, ERROR, "SW INT happended!!!!!(0x%x)\n", value);
+	HAL_MCR_WR(prAdapter,
+		  (CONN_INFRA_CFG_AP2WF_BUS_ADDR + 0xc8),
+		  value);
+}
+#endif
 #endif				/* soc3_0 */
 

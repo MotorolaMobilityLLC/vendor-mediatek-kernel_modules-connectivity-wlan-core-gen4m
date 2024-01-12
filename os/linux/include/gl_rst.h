@@ -89,6 +89,7 @@
 #define RST_FLAG_CHIP_RESET        0
 #define RST_FLAG_DO_CORE_DUMP      BIT(0)
 #define RST_FLAG_PREVENT_POWER_OFF BIT(1)
+#define RST_FLAG_DO_WHOLE_RESET    BIT(2)
 
 #if CFG_CHIP_RESET_HANG
 #define SER_L0_HANG_RST_NONE		0
@@ -98,6 +99,15 @@
 #define SER_L0_HANG_RST_CMD_TRG		9
 
 #define SER_L0_HANG_LOG_TIME_INTERVAL	3000
+#endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+
+#define WIFI_RST_TIMEOUT 6000
+#define GLUE_FLAG_RST_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RST_START)
+#define RST_FLAG_WHOLE_RESET  (RST_FLAG_DO_CORE_DUMP | \
+			       RST_FLAG_PREVENT_POWER_OFF |\
+			       RST_FLAG_DO_WHOLE_RESET)
+#define RST_FLAG_WF_RESET  (RST_FLAG_DO_CORE_DUMP | RST_FLAG_PREVENT_POWER_OFF)
 #endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -153,9 +163,10 @@ enum ENUM_WMTMSG_TYPE {
 };
 
 enum ENUM_WMTRSTMSG_TYPE {
-	WMTRSTMSG_RESET_START = 0x0,
+	WMTRSTMSG_RESET_START = 0x0,  /*whole chip reset (include other radio)*/
 	WMTRSTMSG_RESET_END = 0x1,
 	WMTRSTMSG_RESET_END_FAIL = 0x2,
+	WMTRSTMSG_0P5RESET_START = 0x3, /*wfsys reset ( wifi only )*/
 	WMTRSTMSG_RESET_MAX,
 	WMTRSTMSG_RESET_INVALID = 0xff
 };
@@ -180,14 +191,20 @@ typedef void (*PF_WMT_CB) (enum ENUM_WMTDRV_TYPE, /* Source driver type */
 
 
 #if CFG_WMT_RESET_API_SUPPORT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 extern int mtk_wcn_wmt_assert(enum ENUM_WMTDRV_TYPE type,
 			      uint32_t reason);
 extern int mtk_wcn_wmt_msgcb_reg(enum ENUM_WMTDRV_TYPE
 				 eType, PF_WMT_CB pCb);
 extern int mtk_wcn_wmt_msgcb_unreg(enum ENUM_WMTDRV_TYPE
 				   eType);
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 extern int wifi_reset_start(void);
 extern int wifi_reset_end(enum ENUM_RESET_STATUS);
+#if (CFG_SUPPORT_CONNINFRA == 1)
+extern int hifAxiRemove(void);
+extern void kalSetRstEvent(void);
+#endif
 
 #if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
 extern int mtk_wcn_wmt_assert_keyword(enum ENUM_WMTDRV_TYPE type,
@@ -257,14 +274,15 @@ extern uint64_t u8ResetTime;
 extern u_int8_t fgSimplifyResetFlow;
 
 #if CFG_WMT_RESET_API_SUPPORT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 extern int mtk_wcn_set_connsys_power_off_flag(int value);
 extern int mtk_wcn_wmt_assert_timeout(enum ENUM_WMTDRV_TYPE
 				      type, uint32_t reason, int timeout);
 extern int mtk_wcn_wmt_do_reset(enum ENUM_WMTDRV_TYPE type);
-
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
 /* WMT Core Dump Support */
 extern u_int8_t mtk_wcn_stp_coredump_start_get(void);
-#endif
+#endif /*end of CFG_WMT_RESET_API_SUPPORT*/
 #else
 
 #endif
@@ -291,6 +309,14 @@ u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
 #if CFG_WMT_RESET_API_SUPPORT
 u_int8_t glIsWmtCodeDump(void);
 #endif
+#if (CFG_SUPPORT_CONNINFRA == 1)
+
+int wlan_reset_thread_main(void *data);
+int glRstwlanPreWholeChipReset(void);
+
+int glRstwlanPostWholeChipReset(void);
+#endif /*end of CFG_SUPPORT_CONNINFRA == 0*/
+
 #else
 
 #endif
