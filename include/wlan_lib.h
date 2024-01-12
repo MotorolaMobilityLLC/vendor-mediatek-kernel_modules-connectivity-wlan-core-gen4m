@@ -1523,6 +1523,10 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER *prAdapter,
 				   IN uint8_t ucBssIndex);
 
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+void wlanReturnPacketDelaySetupTasklet(unsigned long data);
+#endif
+
 void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER *prAdapter,
 				       IN unsigned long ulParamPtr);
 

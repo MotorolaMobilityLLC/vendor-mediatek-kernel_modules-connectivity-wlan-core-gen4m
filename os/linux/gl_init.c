@@ -1833,6 +1833,31 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 				 prRegInfo->ucEnable5GBand);
 }
 
+static void glTaskletInit(struct GLUE_INFO *prGlueInfo)
+{
+	tasklet_init(&prGlueInfo->rRxTask, halRxTasklet,
+			(unsigned long)prGlueInfo);
+
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	tasklet_init(&prGlueInfo->rRxRfbRetTask,
+			wlanReturnPacketDelaySetupTasklet,
+			(unsigned long)prGlueInfo);
+#endif
+
+	tasklet_init(&prGlueInfo->rTxCompleteTask,
+			halTxCompleteTasklet,
+			(unsigned long)prGlueInfo);
+}
+
+static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
+{
+	tasklet_kill(&prGlueInfo->rTxCompleteTask);
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	tasklet_kill(&prGlueInfo->rRxRfbRetTask);
+#endif
+	tasklet_kill(&prGlueInfo->rRxTask);
+}
+
 static void wlanFreeNetDev(void)
 {
 	uint32_t u4Idx = 0;
@@ -5447,11 +5472,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 		prRegInfo->fgEnArpFilter = TRUE;
 #endif
 
-	tasklet_init(&prGlueInfo->rRxTask, halRxTasklet,
-			(unsigned long)prGlueInfo);
-	tasklet_init(&prGlueInfo->rTxCompleteTask,
-			halTxCompleteTasklet,
-			(unsigned long)prGlueInfo);
+	glTaskletInit(prGlueInfo);
 
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	if (prAdapter->chip_info->fgIsSupportL0p5Reset)
@@ -6801,8 +6822,7 @@ static void wlanRemove(void)
 	wlanNetDestroy(prDev->ieee80211_ptr);
 	prDev = NULL;
 
-	tasklet_kill(&prGlueInfo->rTxCompleteTask);
-	tasklet_kill(&prGlueInfo->rRxTask);
+	glTaskletUninit(prGlueInfo);
 
 	/* 4 <8> Unregister early suspend callback */
 #if CFG_ENABLE_EARLY_SUSPEND

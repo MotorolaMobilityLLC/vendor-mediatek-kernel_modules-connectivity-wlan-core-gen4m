@@ -259,6 +259,17 @@
 /* Enable Detection for 2021 Frag/AGG Attack from WFA */
 #define CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION 1
 
+/*------------------------------------------------------------------------------
+ * Support Return task.
+ * Linux version only. Force remove for other platform
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_RETURN_TASK		1
+#ifndef LINUX
+#undef CFG_SUPPORT_RETURN_TASK
+#define CFG_SUPPORT_RETURN_TASK		0
+#endif /* LINUX */
+
 /* Enable handling BA Request advance SSN before data in previous window */
 #define CFG_SUPPORT_RX_OOR_BAR	1
 
