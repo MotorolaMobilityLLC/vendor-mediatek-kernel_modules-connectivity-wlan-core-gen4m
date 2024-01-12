@@ -1481,3 +1481,15 @@ VOID cnmDbdcDecision(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr)
 
 #endif /*CFG_SUPPORT_DBDC*/
 
+UINT_8 cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo)
+{
+	if (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
+		return ENUM_CNM_NETWORK_TYPE_AIS;
+	else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
+		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+			return ENUM_CNM_NETWORK_TYPE_P2P_GC;
+		else if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+			return ENUM_CNM_NETWORK_TYPE_P2P_GO;
+	}
+	return ENUM_CNM_NETWORK_TYPE_OTHER;
+}
