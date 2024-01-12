@@ -67,6 +67,12 @@
 */
 VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 VOID asicDevInit(IN P_ADAPTER_T prAdapter);
+VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
+VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
+VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			   IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 
 #endif /* _CMM_ASIC_CONNAC_H */
 

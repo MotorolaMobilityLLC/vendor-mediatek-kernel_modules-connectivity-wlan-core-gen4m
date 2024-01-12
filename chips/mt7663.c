@@ -128,6 +128,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.constructFirmwarePrio = NULL,
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicDevInit = asicDevInit,
+	.fillTxDescAppend = fillTxDescAppendByHostV2,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7663 = {

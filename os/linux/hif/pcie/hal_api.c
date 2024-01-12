@@ -147,7 +147,7 @@ BOOL halVerifyChipID(IN P_ADAPTER_T prAdapter)
 	DBGLOG(INIT, INFO, "WCIR_CHIP_ID = 0x%x, chip_id = 0x%x\n",
 		(u4CIR & WCIR_CHIP_ID), prChipInfo->chip_id);
 
-	if ((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id)
+	if (((u4CIR & WCIR_CHIP_ID) != prChipInfo->chip_id) && (prChipInfo->chip_id != SKIP_CHIP_ID))
 		return FALSE;
 
 	HAL_MCR_RD(prAdapter, prBusInfo->top_cfg_base + TOP_HW_VERSION, &u4CIR);
@@ -724,21 +724,14 @@ VOID halTxUpdateCutThroughDesc(P_GLUE_INFO_T prGlueInfo, P_MSDU_INFO_T prMsduInf
 {
 	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo;
 	struct pci_dev *pdev = prHifInfo->pdev;
-	struct mt66xx_chip_info *prChipInfo = prGlueInfo->prAdapter->chip_info;
+	struct mt66xx_chip_info *prChipInfo;
 	PUINT_8 pucBufferTxD;
-	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
-	dma_addr_t rDmaAddr;
 	UINT_32 u4TxHeadRoomSize;
+	dma_addr_t rDmaAddr;
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	pucBufferTxD = prToken->prPacket;
 	u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
-
-	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBufferTxD + NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	if (prChipInfo->is_support_cr4) {
-		prHwTxDescAppend->CR4_APPEND.u2MsduToken = (UINT_16)prToken->u4Token;
-		prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
-	} else
-		prHwTxDescAppend->CONNAC_APPEND.au2MsduId[0] = ((UINT_16) prToken->u4Token) | TXD_MSDU_ID_VLD;
 
 	rDmaAddr = pci_map_single(pdev, pucBufferTxD + u4TxHeadRoomSize, prMsduInfo->u2FrameLength,
 		PCI_DMA_TODEVICE);
@@ -747,14 +740,8 @@ VOID halTxUpdateCutThroughDesc(P_GLUE_INFO_T prGlueInfo, P_MSDU_INFO_T prMsduInf
 		return;
 	}
 
-	if (prChipInfo->is_support_cr4) {
-		prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
-		prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
-	} else {
-		prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u4Ptr0 = rDmaAddr;
-		prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u2Len0 =
-			prMsduInfo->u2FrameLength | TXD_LEN_AL | TXD_LEN_ML;
-	}
+	prChipInfo->fillTxDescAppend(prGlueInfo->prAdapter, prMsduInfo, prToken->u4Token,
+		rDmaAddr, prToken->prPacket);
 
 	prToken->rPktDmaAddr = rDmaAddr;
 	prToken->u4PktDmaLength = prMsduInfo->u2FrameLength;

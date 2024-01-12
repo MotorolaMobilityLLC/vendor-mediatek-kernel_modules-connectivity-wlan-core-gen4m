@@ -79,7 +79,7 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-#define CONN_CFG_BASE                                          0x80021000
+#define CONN_CFG_BASE                                          0x80020000
 
 #define CONN_CFG_ON_BASE                                       0x81021000
 
