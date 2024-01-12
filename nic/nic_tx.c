@@ -3332,6 +3332,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	char *prBw = "INVALID";
+	char *prTxResult = "UNDEFINED";
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
@@ -3344,6 +3345,9 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	}
 #endif /* fos_change end */
 
+	if (likely(prTxDone->ucStatus < TX_RESULT_NUM))
+		prTxResult = apucTxResultStr[prTxDone->ucStatus];
+
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
 		if (prTxDone->ucStatus != 0)
@@ -3351,7 +3355,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 				"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
 				prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
 				prTxDone->ucStatus,
-				apucTxResultStr[prTxDone->ucStatus],
+				prTxResult,
 				prTxDone->u2SequenceNumber, prTxDone->ucTid,
 				prTxDone->ucTxCount, prTxDone->ucFlushReason);
 		else
@@ -3359,7 +3363,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 				"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
 				prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
 				prTxDone->ucStatus,
-				apucTxResultStr[prTxDone->ucStatus],
+				prTxResult,
 				prTxDone->u2SequenceNumber, prTxDone->ucTid,
 				prTxDone->ucTxCount, prTxDone->ucFlushReason);
 
@@ -3457,7 +3461,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 		       "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u]\n",
 		       prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
 		       prTxDone->ucStatus,
-		       apucTxResultStr[prTxDone->ucStatus],
+		       prTxResult,
 		       prTxDone->u2SequenceNumber);
 	}
 
