@@ -2835,6 +2835,7 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 		if (ulParamPtr == 1)
 			break;
 
+		prAdapter->ucOidTimeoutCount++;
 		if (prAdapter->ucOidTimeoutCount >=
 		    WLAN_OID_NO_ACK_THRESHOLD) {
 			if (!prAdapter->fgIsChipNoAck) {
@@ -2848,16 +2849,7 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 #endif
 			}
 
-			if (prAdapter->ucOidTimeoutCount >=
-			    WLAN_OID_NO_ACK_THRESHOLD) {
-				if (!prAdapter->fgIsChipNoAck) {
-					DBGLOG(INIT, WARN,
-					       "No response from chip for %u times, set NoAck flag!\n",
-					       prAdapter->ucOidTimeoutCount);
-				}
-
-				prAdapter->fgIsChipNoAck = TRUE;
-			}
+			prAdapter->fgIsChipNoAck = TRUE;
 
 			prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);
