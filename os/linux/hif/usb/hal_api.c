@@ -2227,10 +2227,6 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 		if (prDbgOps && prDbgOps->dumpMacInfo)
 			prDbgOps->dumpMacInfo(prAdapter);
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PHY))
-		if (prDbgOps && prDbgOps->dumpPhyInfo)
-			prDbgOps->dumpPhyInfo(prAdapter);
-
 	prAdapter->u4HifDbgFlag = 0;
 }
 
