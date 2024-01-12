@@ -518,6 +518,7 @@ uint32_t wlanCompressedImageSectionDownloadStage(
 	uint8_t *pucStartPtr;
 	uint32_t u4offset = 0, u4ChunkSize;
 	u_int8_t fgIsDynamicMemMap = FALSE;
+
 	/* 3a. parse file header for decision of
 	 * divided firmware download or not
 	 */
@@ -2254,7 +2255,7 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 					(ram_entry == 0) ? FALSE : TRUE,
 					ram_entry, ucPDA);
 #else
-	rCfgStatus = wlanConfigWifiFunc(prAdapter,
+		rCfgStatus = wlanConfigWifiFunc(prAdapter,
 					(ram_entry == 0) ? FALSE : TRUE,
 					ram_entry, ucPDA);
 #endif
@@ -2358,6 +2359,7 @@ uint32_t wlanDownloadPatch(IN struct ADAPTER *prAdapter)
 #else
 	u_int8_t fgIsDynamicMemMap = FALSE;
 #endif
+
 	if (!prAdapter)
 		return WLAN_STATUS_FAILURE;
 

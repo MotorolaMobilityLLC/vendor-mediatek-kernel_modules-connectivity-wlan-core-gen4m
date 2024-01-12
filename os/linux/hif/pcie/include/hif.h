@@ -240,6 +240,9 @@ struct BUS_INFO {
 	const uint32_t host_wfdma1_rx_ring_ext_ctrl_base;
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
+	const uint32_t pcie2ap_remap_2;
+	const uint32_t ap2wf_remap_1;
+
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
