@@ -3483,6 +3483,8 @@ void nicEventBtOverWifi(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
 void nicEventStatistics(IN struct ADAPTER *prAdapter,
 			IN struct WIFI_EVENT *prEvent);
+void nicEventTputFactorHandler(IN struct ADAPTER *prAdapter,
+		  IN struct WIFI_EVENT *prEvent);
 void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 		      IN struct WIFI_EVENT *prEvent);
 void nicEventMibInfo(IN struct ADAPTER *prAdapter,
@@ -3584,6 +3586,9 @@ void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
 void nicEventWowWakeUpReason(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 #endif
+
+void tputEventFactorHandler(IN struct ADAPTER *prAdapter,
+		  IN struct WIFI_EVENT *prEvent);
 
 /*******************************************************************************
  *                              F U N C T I O N S
