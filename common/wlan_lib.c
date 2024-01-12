@@ -10795,6 +10795,9 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 				      prBssDesc) == WLAN_IOT_AP_DBDC_1SS) {
 			DBGLOG(SW4, INFO, "Use 1x1 due to DBDC blacklist\n");
 			ucRetValNss = 1;
+		} else if (prAdapter->rWifiVar.fgSta1NSS) {
+			DBGLOG(SW4, INFO, "Use 1x1 due to FWK cmd\n");
+			ucRetValNss = 1;
 		}
 	}
 #endif
