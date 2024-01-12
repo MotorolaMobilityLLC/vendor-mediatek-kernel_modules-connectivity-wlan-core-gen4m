@@ -459,6 +459,13 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.testmode_cmd = mtk_cfg_testmode_cmd,
 #endif
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+	.start_radar_detection = mtk_cfg_start_radar_detection,
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+	.channel_switch = mtk_cfg_channel_switch,
+#endif
+#endif
+
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
 	.change_bss = mtk_cfg_change_bss,
 	.mgmt_tx_cancel_wait = mtk_cfg_mgmt_tx_cancel_wait,
@@ -1787,7 +1794,8 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	prWiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
-#endif
+	prWiphy->max_num_csa_counters = 2;
+#endif /* CFG_SUPPORT_DFS_MASTER */
 #endif
 
 	cfg80211_regd_set_wiphy(prWiphy);
