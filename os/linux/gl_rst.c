@@ -1458,9 +1458,12 @@ void glResetSubsysRstProcedure(struct GLUE_INFO *prGlueInfo,
 	struct timespec64 *rNowTs,
 	struct timespec64 *rLastTs)
 {
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct ADAPTER *prAdapter = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	bool fgIsTimeout;
+
+	if (prGlueInfo != NULL)
+		prAdapter = prGlueInfo->prAdapter;
 
 	if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 		prWifiVar = &prAdapter->rWifiVar;
