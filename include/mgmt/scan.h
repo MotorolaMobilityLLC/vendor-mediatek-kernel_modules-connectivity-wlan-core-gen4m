@@ -573,6 +573,7 @@ struct MSG_SCN_SCAN_CANCEL {
 	uint8_t ucSeqNum;
 	uint8_t ucBssIndex;
 	u_int8_t fgIsChannelExt;
+	u_int8_t fgIsOidRequest;
 };
 
 /* Outgoing Mailbox Messages */
