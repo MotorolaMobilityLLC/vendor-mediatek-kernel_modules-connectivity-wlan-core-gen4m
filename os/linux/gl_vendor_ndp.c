@@ -494,8 +494,11 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
-		  uint32_t rTxDoneStatus) {
+nanNdpEndRspEvent(struct ADAPTER *prAdapter,
+	enum _ENUM_DP_PROTOCOL_REASON_CODE_T eReason,
+	uint16_t u2TransId,
+	uint32_t rTxDoneStatus)
+{
 	struct sk_buff *skb = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
@@ -551,13 +554,13 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
 	}
 
 	if (unlikely(nla_put_u32(skb, MTK_WLAN_VENDOR_ATTR_NDP_DRV_RETURN_VALUE,
-				 prNDP->eDataPathFailReason) < 0)) {
+				 eReason) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;
 	}
 	if (unlikely(nla_put_u16(skb, MTK_WLAN_VENDOR_ATTR_NDP_TRANSACTION_ID,
-				 prNDP->u2TransId) < 0)) {
+				 u2TransId) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
 		return -EFAULT;

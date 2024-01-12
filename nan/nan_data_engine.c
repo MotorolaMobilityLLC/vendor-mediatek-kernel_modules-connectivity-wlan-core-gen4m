@@ -4016,6 +4016,12 @@ int32_t nanCmdDataEnd(struct ADAPTER *prAdapter,
 					    prNanCmdDataEnd->ucNDPId);
 
 	if (prNDP == NULL) {
+		/* Send rsp event to wifi hal*/
+		nanNdpEndRspEvent(prAdapter,
+			DP_REASON_SUCCESS,
+			prNanCmdDataEnd->u2NdpTransactionId,
+			WLAN_STATUS_SUCCESS);
+
 		/* no matching NDL/NDP - it should have been created when NAF
 		 * - Data Path Request is received
 		 */
@@ -4040,6 +4046,11 @@ int32_t nanCmdDataEnd(struct ADAPTER *prAdapter,
 
 			nanDataPathProtocolFsmStep(prAdapter, NDP_DISCONNECT,
 						   prNDP);
+			/* Send rsp event to wifi hal*/
+			nanNdpEndRspEvent(prAdapter,
+				DP_REASON_SUCCESS,
+				prNanCmdDataEnd->u2NdpTransactionId,
+				WLAN_STATUS_SUCCESS);
 		}
 	}
 
@@ -5851,7 +5862,10 @@ nanDPTerminationTxDone(struct ADAPTER *prAdapter,
 	}
 
 	/* Send rsp event to wifi hal*/
-	nanNdpEndRspEvent(prAdapter, prNDP, rTxDoneStatus);
+	nanNdpEndRspEvent(prAdapter,
+		prNDP->eDataPathFailReason,
+		prNDP->u2TransId,
+		rTxDoneStatus);
 
 	return WLAN_STATUS_SUCCESS;
 }
