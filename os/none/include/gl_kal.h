@@ -603,6 +603,14 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 })
 #endif
 
+#define kalMemZAlloc(u4Size, eMemType) ({    \
+	void *pvAddr; \
+	pvAddr = kalMemAlloc(u4Size, eMemType); \
+	if (pvAddr) \
+		kalMemSet(pvAddr, 0, u4Size); \
+	pvAddr; \
+})
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Free allocated cache memory
@@ -739,6 +747,9 @@ int kal_test_bit(unsigned long bit, unsigned long *p);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kal_ieee80211_channel_to_frequency(_ch, _band) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+#define kal_max_t(_type, _v1, _v2) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kal_min_t(_type, _v1, _v2) \

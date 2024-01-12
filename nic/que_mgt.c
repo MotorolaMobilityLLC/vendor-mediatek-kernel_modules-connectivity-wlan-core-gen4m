@@ -9365,8 +9365,8 @@ void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 	struct MSDU_INFO *prMsduInfo = NULL;
 	uint8_t ucDstStaIndex = 0;
 
-	ASSERT(prSrcStaRec);
-	ASSERT(prDstStaRec);
+	if (!prSrcStaRec || !prDstStaRec)
+		return;
 
 	prSrcQue = &prSrcStaRec->arTxQueue[0];
 	prDstQue = &prDstStaRec->arTxQueue[0];

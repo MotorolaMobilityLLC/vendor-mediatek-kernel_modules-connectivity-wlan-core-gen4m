@@ -6973,13 +6973,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		prWifiVar->ucP2pGcHe = (uint8_t)
 			wlanCfgGetUint32(prAdapter, "P2pGcHE",
 					FEATURE_ENABLED);
-
-		prWifiVar->ucApSelAxWeight = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "ApSelAxWeight", AX_SEL_DEF_WEIGHT);
-
-		prWifiVar->ucApSelAxScoreDiv = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "ApSelAxScoreDiv",
-			AX_SEL_DEF_DIVIDER);
 	}
 #endif
 
@@ -7012,6 +7005,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	wlanCfgGet(prAdapter, "MloP2pPreferFreq",
 		prWifiVar->aucMloP2pPreferFreq,
 		"2462 5180 5975", 0);
+	prWifiVar->ucMlProbeRetryLimit = (uint8_t) wlanCfgGetInt32(
+		prAdapter, "MlProbeRetryLimit", ML_PROBE_RETRY_COUNT);
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	prWifiVar->ucEnableMlo = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"EnableMlo", FEATURE_ENABLED);
@@ -7025,7 +7020,6 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"EnableMloSingleLink", FEATURE_FORCE_ENABLED);
 #endif
 #endif /* CFG_SUPPORT_802_11BE */
-
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);
 #if CFG_TC1_FEATURE
@@ -8113,6 +8107,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			DBDC_P2P_LISTEN_SW_DELAY_TIME);
 #endif
 
+	prWifiVar->ucDisallowBand2G = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "DisallowBand2G", 0);
+	prWifiVar->ucDisallowBand5G = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "DisallowBand5G", 0);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWifiVar->ucDisallowBand6G = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "DisallowBand6G", 0);
+#endif
 	prWifiVar->u4InactiveTimeout = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
 

@@ -50,34 +50,57 @@
  *
  ******************************************************************************/
 
-#ifndef _AP_SELECTION_H
-#define _AP_SELECTION_H
+#ifndef _APS_H
+#define _APS_H
 
-typedef uint8_t(*PFN_SELECTION_POLICY_FUNC) (
-	enum ENUM_BAND eCurrentBand,
-	int8_t cCandidateRssi,
-	int8_t cCurrentRssi
-);
+/*******************************************************************************
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
-struct NETWORK_SELECTION_POLICY_BY_BAND {
-	enum ENUM_BAND eCandidateBand;
-	PFN_SELECTION_POLICY_FUNC pfnNetworkSelection;
+/*******************************************************************************
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
+
+struct AP_COLLECTION {
+	struct LINK_ENTRY rLinkEntry;
+	struct AP_COLLECTION *hnext; /* next entry in hash table list */
+	struct BSS_DESC *aprTarget[MLD_LINK_MAX];
+	struct LINK arLinks[MLD_LINK_MAX]; /* categorize AP by link */
+	uint8_t ucLinkNum;
+	uint8_t ucTotalCount; /* total BssDesc count */
+	uint8_t aucMask[MLD_LINK_MAX];
+	uint8_t fgIsMld;
+	uint8_t fgIsMatchBssid;
+	uint8_t fgIsMatchBssidHint;
+	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
 };
 
-#if (CFG_SUPPORT_AVOID_DESENSE == 1)
-struct WFA_DESENSE_CHANNEL_LIST {
-	int8_t ucChLowerBound;
-	int8_t ucChUpperBound;
-};
+/*******************************************************************************
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
-extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
+/*******************************************************************************
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
-#define IS_CHANNEL_IN_DESENSE_RANGE(_prAdapter, _ch, _band) \
-	(!!(_prAdapter->fgIsNeedAvoidDesenseFreq && \
-	(_band != BAND_2G4) && (_band < BAND_NUM) && \
-	(_ch >= desenseChList[_band].ucChLowerBound) && \
-	(_ch <= desenseChList[_band].ucChUpperBound)))
-#endif
+/*******************************************************************************
+ *                                 M A C R O S
+ *******************************************************************************
+ */
+
+/*******************************************************************************
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+
+/*******************************************************************************
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,

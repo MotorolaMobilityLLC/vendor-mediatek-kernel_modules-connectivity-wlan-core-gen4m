@@ -113,6 +113,8 @@
 #define AIS_BLACKLIST_TIMEOUT               15 /* seconds */
 #define AIS_AUTORN_MIN_INTERVAL		    20
 
+#define AP_HASH_SIZE	256	/* Size of hash tab must be power of 2. */
+
 #define AIS_MAIN_BSS_INDEX(_adapter, _ais_idx) \
 	aisGetMainLinkBssIndex(_adapter, aisFsmGetInstance(_adapter, _ais_idx))
 
@@ -289,6 +291,8 @@ struct AIS_SPECIFIC_BSS_INFO {
 	struct ESS_CHNL_INFO arCurEssChnlInfo[CFG_MAX_NUM_OF_CHNL_INFO];
 	uint8_t ucCurEssChnlInfoNum;
 	struct LINK rCurEssLink;
+	struct AP_COLLECTION *arApHash[AP_HASH_SIZE];
+
 	/* end Support AP Selection */
 
 	struct BSS_TRANSITION_MGT_PARAM rBTMParam;
@@ -447,6 +451,7 @@ struct AIS_FSM_INFO {
 
 	uint8_t ucLinkNum;
 	uint8_t arBssId2LinkMap[MAX_BSSID_NUM + 1];
+	uint32_t u4BssIdxBmap;
 	struct AIS_LINK_INFO aprLinkInfo[MLD_LINK_MAX];
 
 	struct CONNECTION_SETTINGS rConnSettings;
@@ -739,6 +744,9 @@ void aisBssBeaconTimeout_impl(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBcnTimeoutReason, IN uint8_t ucDisconnectReason,
 	IN uint8_t ucBssIndex);
 
+uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 void aisBssLinkDown(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex);
 
@@ -767,7 +775,7 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(
 				   IN uint8_t ucBssIndex);
 
 void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
-				   IN struct AIS_FSM_INFO *prAisFsmInfo,
+				   IN struct BSS_INFO *prAisBssInfo,
 				   IN struct STA_RECORD *prTargetStaRec);
 
 void aisUpdateBssInfoForRoamingAP(IN struct ADAPTER
@@ -946,6 +954,7 @@ void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBssInfo, uint8_t ucLinkIdx);
 struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx);
+uint32_t aisGetBssIndexBmap(IN struct AIS_FSM_INFO *prAisFsmInfo);
 struct BSS_INFO *aisGetMainLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo);
 uint8_t aisGetMainLinkBssIndex(IN struct ADAPTER *prAdapter,
 	IN struct AIS_FSM_INFO *prAisFsmInfo);

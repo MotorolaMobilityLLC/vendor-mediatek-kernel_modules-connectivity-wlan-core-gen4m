@@ -633,6 +633,8 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 	enum ENUM_STA_TYPE eStaType, uint8_t ucBssIndex, uint8_t *pucMacAddr)
 {
 	struct STA_RECORD *prStaRec = NULL;
+	struct BSS_INFO *prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	uint16_t i, k;
 
 	ASSERT(prAdapter);
@@ -647,7 +649,8 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->fgIsInUse = TRUE;
 
 			prStaRec->eStaType = eStaType;
-			prStaRec->ucBssIndex = ucBssIndex;
+			if (prBssInfo)
+				prStaRec->eHwBandIdx = prBssInfo->eHwBandIdx;
 
 			/* Initialize the SN caches for duplicate detection */
 			for (k = 0; k < TID_NUM + 1; k++) {

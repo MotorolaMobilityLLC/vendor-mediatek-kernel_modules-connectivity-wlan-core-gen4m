@@ -6187,11 +6187,6 @@ int mtk_init_sta_role(struct ADAPTER *prAdapter,
 	/* init AIS FSM */
 	aisFsmInit(prAdapter, NULL, AIS_INDEX(prAdapter, ucBssIndex));
 
-#if CFG_SUPPORT_ROAMING
-	/* Roaming Module - intiailization */
-	roamingFsmInit(prAdapter, ucBssIndex);
-#endif /* CFG_SUPPORT_ROAMING */
-
 	ndev->netdev_ops = wlanGetNdevOps();
 	ndev->ieee80211_ptr->iftype = NL80211_IFTYPE_STATION;
 
@@ -6225,11 +6220,6 @@ int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
 	ucBssIndex = wlanGetBssIdx(ndev);
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return -1;
-
-#if CFG_SUPPORT_ROAMING
-	/* Roaming Module - unintiailization */
-	roamingFsmUninit(prAdapter, ucBssIndex);
-#endif /* CFG_SUPPORT_ROAMING */
 
 	/* uninit AIS FSM */
 	aisFsmUninit(prAdapter, ucBssIndex);

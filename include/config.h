@@ -132,7 +132,6 @@
 #endif
 
 /* Support AP Selection */
-#define CFG_SUPPORT_RSN_SCORE		0
 #define CFG_MAX_NUM_OF_CHNL_INFO		50
 #define CFG_SUPPORT_CHNL_CONFLICT_REVISE	0
 
@@ -501,6 +500,7 @@
 #define MLD_GROUP_NONE			0xff
 #define OM_REMAP_IDX_NONE		0xff
 #define MLD_LINK_ID_NONE		0xff
+#define ML_PROBE_RETRY_COUNT		2
 /* Reserve 0~31 for group mld index */
 #define MAT_OWN_MLD_ID_BASE		32
 
@@ -1124,6 +1124,10 @@
 	(CFG_SUPPORT_802_11BE == 0)
 #error \
 "CFG_SUPPORT_802_11BE should be 1 once CFG_SUPPORT_802_11BE_MLO equals to 1"
+#endif
+
+#ifndef CFG_SUPPORT_APS
+#define CFG_SUPPORT_APS				0
 #endif
 
 #define WNM_UNIT_TEST CFG_SUPPORT_802_11V

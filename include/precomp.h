@@ -326,7 +326,11 @@
 #endif
 
 /* Support AP Selection */
+#if (CFG_SUPPORT_APS == 1)
+#include "aps.h"
+#else
 #include "ap_selection.h"
+#endif
 
 #include "thrm.h"
 

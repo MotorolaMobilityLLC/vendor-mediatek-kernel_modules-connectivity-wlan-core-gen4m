@@ -17060,18 +17060,12 @@ uint32_t wlanoidTspecOperation(struct ADAPTER *prAdapter, void *pvBuffer,
 uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			     uint32_t u4BufferLen, uint32_t *pu4InfoLen)
 {
-	struct SW_RFB rSwRfb;
-	static uint8_t aucPacket[500] = {0,};
+
 	char *pucSavedPtr = (int8_t *)pvBuffer;
 	uint8_t ucBssIndex = 0;
-	struct ACTION_BTM_REQ_FRAME *rxframe = NULL;
-	struct BSS_DESC *bssDesc;
-	struct BSS_DESC *target;
 	struct BSS_INFO *ais;
 	struct AIS_SPECIFIC_BSS_INFO *aiss = NULL;
 	struct LINK *ess = NULL;
-	uint8_t *pos = NULL;
-	int32_t i4Ret = 0;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	ais = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -17086,6 +17080,14 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	if (!kalStrniCmp(pucSavedPtr, "RM-IT", 5)) {
 		pucSavedPtr += 5;
 	} else if (!kalStrniCmp(pucSavedPtr, "BTM-IT", 6)) {
+#if (CFG_SUPPORT_CONNAC3X == 0)
+		static uint8_t aucPacket[500] = {0,};
+		struct SW_RFB rSwRfb;
+		struct BSS_DESC *target;
+		uint8_t *pos = NULL;
+		int32_t i4Ret = 0;
+		struct BSS_DESC *bssDesc;
+		struct ACTION_BTM_REQ_FRAME *rxframe = NULL;
 		int32_t i4Argc = 0;
 		int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 		uint32_t rStatus = WLAN_STATUS_FAILURE;
@@ -17237,6 +17239,10 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 
 		wnmWNMAction(prAdapter, &rSwRfb);
 		return WLAN_STATUS_SUCCESS;
+#else
+		DBGLOG(OID, INFO, "connac3 doesn't support!!!\n");
+		return WLAN_STATUS_FAILURE;
+#endif
 	} else if (!kalStrniCmp(pucSavedPtr, "BT-IT", 5)) {
 		DBGLOG(OID, INFO, "Simulate beacon timeout!!!\n");
 		aisBssBeaconTimeout(prAdapter, ucBssIndex);

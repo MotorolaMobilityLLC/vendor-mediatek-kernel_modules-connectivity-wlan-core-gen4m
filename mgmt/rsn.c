@@ -914,12 +914,9 @@ u_int8_t rsnPerformPolicySelection(
 
 	/* Protection is not required in this BSS. */
 	if ((prBss->u2CapInfo & CAP_INFO_PRIVACY) == 0) {
-
-		if (secEnabledInAis(prAdapter,
-			ucBssIndex) == FALSE) {
-			DBGLOG(RSN, INFO, "-- No Protected BSS\n");
+		if (secEnabledInAis(prAdapter, ucBssIndex) == FALSE)
 			return TRUE;
-		}
+
 		DBGLOG(RSN, INFO, "-- Protected BSS but No need\n");
 		return FALSE;
 	}
@@ -969,26 +966,17 @@ u_int8_t rsnPerformPolicySelection(
 		 * ignore this BSS.
 		 */
 		return FALSE;
-	} else if (eEncStatus ==
-		   ENUM_ENCRYPTION1_ENABLED) {
+	} else if (eEncStatus == ENUM_ENCRYPTION1_ENABLED) {
 		/* If the driver is configured to use WEP only, use this BSS. */
-		DBGLOG(RSN, INFO, "-- WEP-only legacy BSS\n");
 		return TRUE;
 	} else {
 		DBGLOG(RSN, INFO, "unknown\n");
 		return FALSE;
 	}
 
-	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex)) {
-#if CFG_SUPPORT_RSN_SCORE
-		prBss->fgIsRSNSuitableBss = FALSE;
-	} else
-		prBss->fgIsRSNSuitableBss = TRUE;
-#else
-
+	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex))
 		return FALSE;
-	}
-#endif
+
 	/* end Support AP Selection */
 
 	if (prBssRsnInfo->u4PairwiseKeyCipherSuiteCount == 1 &&
