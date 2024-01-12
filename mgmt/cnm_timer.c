@@ -253,7 +253,9 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 	}
 #endif
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TIMER);
-	if (timerPendingTimer(prTimer)) {
+
+	if (prTimer->pfMgmtTimeOutFunc == pfFunc
+		&& prTimer->rLinkEntry.prNext) {
 		log_dbg(CNM, WARN, "re-init timer, func %p\n", pfFunc);
 		/* Remove dead timer to prevent infinite loop */
 		LINK_REMOVE_KNOWN_ENTRY(&prAdapter->rRootTimer.rLinkHead,
