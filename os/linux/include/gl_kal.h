@@ -1037,6 +1037,10 @@ do { \
 #define KAL_REPORT_ERROR_EVENT			kalIndicateDriverEvent
 #endif
 
+#if CFG_SUPPORT_BIGDATA_PIP
+#define KAL_REPORT_BIGDATA_PIP			kalBigDataPip
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Macros of systrace operations for using in Driver Layer                    */
 /*----------------------------------------------------------------------------*/
@@ -1224,6 +1228,13 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 				uint8_t ucBssIdx,
 				u_int8_t fgForceReport);
 #endif
+
+#if CFG_SUPPORT_BIGDATA_PIP
+int8_t kalBigDataPip(struct ADAPTER *prAdapter,
+					uint8_t *payload,
+					uint16_t dataLen);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */
 /*----------------------------------------------------------------------------*/

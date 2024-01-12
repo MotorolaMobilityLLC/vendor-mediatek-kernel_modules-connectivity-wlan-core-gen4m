@@ -194,6 +194,8 @@ enum WIFI_VENDOR_EVENT {
 	WIFI_EVENT_DRIVER_ERROR,
 	WIFI_EVENT_ACS,
 	WIFI_EVENT_GENERIC_RESPONSE,
+	WIFI_EVENT_BIGDATA_PIP
+	/* Always add at the end.*/
 };
 
 enum WIFI_ATTRIBUTE {
@@ -333,6 +335,11 @@ enum WIFI_DATA_STALL_ATTRIBUTE {
 };
 #endif
 
+#if CFG_SUPPORT_BIGDATA_PIP
+enum WIFI_BIGDATA_PIP_ATTRIBUTE {
+	WIFI_ATTRIBUTE_PIP_PAYLOAD = 0,
+};
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
