@@ -2516,8 +2516,9 @@ u_int8_t kalIsSupportRro(void);
 #endif
 
 #if CFG_SUPPORT_THERMAL_QUERY
-int register_thermal_cbs(struct ADAPTER *ad);
-void unregister_thermal_cbs(struct ADAPTER *ad);
+int thermal_cbs_register(struct platform_device *pdev);
+void thermal_cbs_unregister(struct platform_device *pdev);
+void thermal_state_reset(struct ADAPTER *ad);
 #endif
 
 #if (CFG_VOLT_INFO == 1)
