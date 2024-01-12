@@ -666,14 +666,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(get_test_result_policy)
 	},
 	{
-		.pcCmdStr  = CMD_GET_STA_STAT2,
-		.pfHandler = priv_driver_get_sta_stat2,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
 		.pcCmdStr  = CMD_GET_STA_STAT,
 		.pfHandler = priv_driver_get_sta_stat,
 		.argPolicy = VERIFY_MIN_ARG_NUM,

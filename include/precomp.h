@@ -117,8 +117,6 @@
 /* Dependency:  hal.h (RRO_COUNTER_NUM) */
 #include "nic_rx.h"
 
-#include "nic_umac.h"
-
 #include "bss.h"
 
 #include "nic_rate.h"

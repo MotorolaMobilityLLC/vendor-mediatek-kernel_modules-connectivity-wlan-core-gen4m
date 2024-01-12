@@ -151,8 +151,6 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935;
 #define PCIE_REMAP2_MASK     (BITS(19, 31))
 #define PCIE_REMAP2_BUS_ADDR (0x80000)
 
-
-
 /* UMAC Register */
 #define UMAC_PLE_CR_CFG_BASE_ADDR       0x82060000
 #define UMAC_PSE_CR_CFG_BASE_ADDR       0x82068000
@@ -163,6 +161,7 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935;
 #define UMAC_PSE_PLE_ADDR_DIFF_MAR(_x) \
 	(_x << UMAC_PSE_CR_BITMAP_OFFSET)
 
+#define UMAC_FID_FAULT 0xFFF
 
 #define UMAC_PLE_BASE_ADDRESS   (0xa << 28)
 
@@ -231,31 +230,6 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935;
 #define UMAC_FREEPG_CNT(_x)             (UMAC_BASE(_x) + 0x00000100)
 
 #define UMAC_FREEPG_HEAD_TAIL(_x)       (UMAC_BASE(_x) + 0x00000104)
-
-
-#define UMAC_PG_HIF0_GROUP(_x)          (UMAC_BASE(_x) + 0x00000110)
-#define UMAC_HIF0_PG_INFO(_x)           (UMAC_BASE(_x) + 0x00000114)
-
-#define UMAC_PG_HIF1_GROUP(_x)          (UMAC_BASE(_x) + 0x00000118)
-#define UMAC_HIF1_PG_INFO(_x)           (UMAC_BASE(_x) + 0x0000011C)
-
-#define UMAC_PG_CPU_GROUP(_x)           (UMAC_BASE(_x) + 0x00000150)
-#define UMAC_CPU_PG_INFO(_x)            (UMAC_BASE(_x) + 0x00000154)
-
-
-#define UMAC_PG_LMAC0_GROUP(_x)         (UMAC_BASE(_x) + 0x00000170)
-#define UMAC_LMAC0_PG_INFO(_x)          (UMAC_BASE(_x) + 0x00000174)
-
-#define UMAC_PG_LMAC1_GROUP(_x)         (UMAC_BASE(_x) + 0x00000178)
-#define UMAC_LMAC1_PG_INFO(_x)          (UMAC_BASE(_x) + 0x0000017C)
-
-
-#define UMAC_PG_LMAC2_GROUP(_x)         (UMAC_BASE(_x) + 0x00000180)
-#define UMAC_LMAC2_PG_INFO(_x)          (UMAC_BASE(_x) + 0x00000184)
-
-#define UMAC_PG_PLE_GROUP(_x)           (UMAC_BASE(_x) + 0x00000190)
-#define UMAC_PLE_PG_INFO(_x)            (UMAC_BASE(_x) + 0x00000194)
-
 
 #define UMAC_RL_BUF_CTRL_0(_x)          (UMAC_BASE(_x) + 0x000001A0)
 #define UMAC_RL_BUF_CTRL_1(_x)          (UMAC_BASE(_x) + 0x000001A4)
