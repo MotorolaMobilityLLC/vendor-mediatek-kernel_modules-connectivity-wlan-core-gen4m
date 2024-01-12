@@ -256,8 +256,10 @@ uint32_t roamingFsmSendFtActionFrame(struct ADAPTER *prAdapter,
 		*pos++ = 7; /* common info length */
 
 		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
-		COPY_MAC_ADDR(pos, mld_bssinfo->aucOwnMldAddr);
-		pos += MAC_ADDR_LEN;
+		if (mld_bssinfo) {
+			COPY_MAC_ADDR(pos, mld_bssinfo->aucOwnMldAddr);
+			pos += MAC_ADDR_LEN;
+		}
 	}
 #endif
 
