@@ -203,6 +203,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_CE_ASSERT_DUMP == 1)
 	[UNI_EVENT_ID_ASSERT_DUMP] = nicUniEventAssertDump,
 #endif
+#if CFG_SUPPORT_MDNS_OFFLOAD
+	[CMD_ID_SET_MDNS_RECORD] = nicUniCmdMdnsRecorde,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -6758,6 +6761,55 @@ uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_MDNS_OFFLOAD
+uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_MDNS_PARAM_T *cmd;
+	struct UNI_CMD_MDNS_RECORDE *uni_cmd;
+	struct UNI_CMD_MDNS_RECORDE_SET *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MDNS_RECORDE) +
+		sizeof(struct UNI_CMD_MDNS_RECORDE_SET);
+
+	if (info->ucCID != CMD_ID_SET_MDNS_RECORD ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_MDNS_PARAM_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_MDNS_RECORD,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_MDNS_RECORDE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MDNS_RECORDE_SET *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MDNS_RECORDE_TAG_SET;
+	tag->u2Length = sizeof(*tag);
+
+	tag->ucCmd = cmd->ucCmd;
+	kalMemCopy(&(tag->mdns_param),
+			&(cmd->mdns_param),
+			sizeof(tag->mdns_param));
+	tag->u4RecordId = cmd->u4RecordId;
+	tag->ucWakeFlag = cmd->ucWakeFlag;
+
+	kalMemCopy(&(tag->aucMdnsMacHdr),
+			&(cmd->aucMdnsMacHdr),
+			sizeof(tag->aucMdnsMacHdr));
+	kalMemCopy(tag->aucMdnsIPHdr,
+			cmd->aucMdnsIPHdr,
+			sizeof(tag->aucMdnsIPHdr));
+	kalMemCopy(tag->aucMdnsUdpHdr,
+			cmd->aucMdnsUdpHdr,
+			sizeof(tag->aucMdnsUdpHdr));
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 /*******************************************************************************
  *                                 Event

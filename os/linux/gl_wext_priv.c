@@ -13236,7 +13236,6 @@ static int priv_driver_get_wow_reason(struct net_device *prNetDev,
 }
 
 #if CFG_SUPPORT_MDNS_OFFLOAD
-
 #if TEST_CODE_FOR_MDNS
 /* test code for mdns offload */
 
@@ -13321,7 +13320,11 @@ static int priv_driver_test_add_mdns_record(struct net_device *prNetDev,
 
 	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucIndex);
 
-	ptr_name[22] = ucIndex;
+	/*ucIndex == 0, ptr_name is _googlecast.tcp.local*/
+	/*ucIndex == 1, ptr_name is _googlecast.tcp.loca1*/
+	/*ucIndex == 2, ptr_name is _googlecast.tcp.loca2*/
+	if (ucIndex > 0)
+		ptr_name[22] = ucIndex + '0';
 
 	/* add record 1 */
 	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_RECORD;
@@ -13330,6 +13333,8 @@ static int priv_driver_test_add_mdns_record(struct net_device *prNetDev,
 	prMdnsUplayerInfo->mdns_param.query_ptr.name_length = 23;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.query_ptr.name,
 		ptr_name, sizeof(ptr_name));
+	prMdnsUplayerInfo->
+		mdns_param.query_ptr.name[strlen(ptr_name) + 1] = '\0';
 	prMdnsUplayerInfo->mdns_param.response_len = 133;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.response,
 		response, 133);

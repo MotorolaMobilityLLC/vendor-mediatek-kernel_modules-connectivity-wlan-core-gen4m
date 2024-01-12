@@ -73,6 +73,7 @@
  */
 #include "gl_vendor.h"
 #include "wsys_cmd_handler_fw.h"
+#include "wlan_lib.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -286,6 +287,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_SEND_VOLT_INFO	= 0x5B, /* VOLT_INFO */
 	UNI_CMD_ID_PKT_OFLD		= 0x60, /* Packet Offload */
 	UNI_CMD_ID_KEEP_ALIVE		= 0x61, /* Keep alive */
+	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4198,6 +4200,42 @@ struct UNI_CMD_KEEP_ALIVE_SET {
 	uint32_t u4PeriodMsec;
 } __KAL_ATTRIB_PACKED__;
 
+
+#if CFG_SUPPORT_MDNS_OFFLOAD
+struct UNI_CMD_MDNS_RECORDE {
+	/* fixed field */
+	uint8_t aucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                        | ID   | structure
+	*   -------------------------  | ---- | -------------
+	*   UNI_CMD_KEEP_ALIVE_SET     | 0x0  | UNI_CMD_KEEP_ALIVE_SET_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+
+enum UNI_CMD_MDNS_RECORDE_TAG {
+	UNI_CMD_MDNS_RECORDE_TAG_SET = 0x0,
+	UNI_CMD_MDNS_RECORDE_TAG_MAX_NUM
+};
+
+
+struct UNI_CMD_MDNS_RECORDE_SET {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* Tag specific part */
+	uint8_t ucCmd;
+	struct MDNS_PARAM_T mdns_param;
+	uint32_t u4RecordId;
+	uint8_t ucWakeFlag;
+	struct WLAN_MAC_HEADER_QoS_T aucMdnsMacHdr;
+	uint8_t aucMdnsIPHdr[IPV4_HEADER_LENGTH];
+	uint8_t aucMdnsUdpHdr[UDP_HEADER_LENGTH];
+
+};
+#endif
+
 #if CFG_MSCS_SUPPORT
 /* Fast Path command (0x54) */
 struct UNI_CMD_FAST_PATH {
@@ -7065,6 +7103,11 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 
 uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+
+#if CFG_SUPPORT_MDNS_OFFLOAD
+uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
