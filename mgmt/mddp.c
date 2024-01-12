@@ -778,8 +778,13 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	}
 
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
-	prNetdev = (struct net_device *) wlanGetNetInterfaceByBssIdx(
-			prAdapter->prGlueInfo, prStaRec->ucBssIndex);
+	prNetdev = wlanGetNetDev(prAdapter->prGlueInfo, prStaRec->ucBssIndex);
+	if (!prNetdev) {
+		DBGLOG(NIC, INFO, "NetDev is null BssIndex[%d]\n",
+		       prStaRec->ucBssIndex);
+		ret = -1;
+		goto exit;
+	}
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			netdev_priv(prNetdev);
 
@@ -1059,12 +1064,12 @@ int32_t mddpNotifyWifiOnEnd(void)
 		return ret;
 
 	if (!is_cal_flow_finished())
-		return;
+		return ret;
 
 #if CFG_MTK_ANDROID_WMT
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
-		return;
+		return ret;
 #endif
 #endif
 
