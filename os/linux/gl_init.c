@@ -983,14 +983,18 @@ static struct ieee80211_rate mtk_rates[] = {
 	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
 }
 
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
 
 #define WLAN_EHT_CAP_ELEM_INFO					\
 {								\
 	.mac_cap_info[0] =					\
 		IEEE80211_EHT_MAC_CAP0_OM_CONTROL,		\
 	.phy_cap_info[0] =					\
-		IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMER		\
+		IEEE80211_EHT_PHY_CAP0_320MHZ_IN_6GHZ		\
+		| IEEE80211_EHT_PHY_CAP0_242_TONE_RU_GT20MHZ	\
+		| IEEE80211_EHT_PHY_CAP0_NDP_4_EHT_LFT_32_GI	\
+		| IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMER		\
 		| IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMEE,		\
 }
 
@@ -1029,7 +1033,8 @@ static struct ieee80211_sband_iftype_data mtk_cap[] = {
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
 		.eht_cap = WLAN_EHT_CAP_INFO,
 #endif
 #endif
@@ -1044,7 +1049,8 @@ static struct ieee80211_sband_iftype_data mtk_cap[] = {
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
-#if (CFG_ADVANCED_80211_MLO == 1)
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
 		.eht_cap = WLAN_EHT_CAP_INFO,
 #endif
 #endif
@@ -1093,6 +1099,12 @@ static struct ieee80211_sband_iftype_data mtk_cap_6g[] = {
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 		.he_6ghz_capa = WLAN_HE_6G_CAP_INFO,
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
+		.eht_cap = WLAN_EHT_CAP_INFO,
+#endif
+#endif
 	},
 	{
 		.types_mask =
@@ -1100,6 +1112,12 @@ static struct ieee80211_sband_iftype_data mtk_cap_6g[] = {
 		.he_cap = WLAN_HE_CAP_INFO,
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 		.he_6ghz_capa = WLAN_HE_6G_CAP_INFO,
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+#if ((CFG_ADVANCED_80211_MLO == 1) || \
+	(KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE))
+		.eht_cap = WLAN_EHT_CAP_INFO,
+#endif
 #endif
 	},
 };
