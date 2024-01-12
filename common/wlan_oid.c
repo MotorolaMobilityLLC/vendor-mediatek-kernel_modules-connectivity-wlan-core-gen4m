@@ -5362,7 +5362,7 @@ wlanoidBssInfoBasicUnify(IN struct ADAPTER *prAdapter,
 	tag->ucOwnMacIdx = prBssInfo->ucOwnMacIdx;
 	tag->ucHwBSSIndex = prBssInfo->ucBssIdx;
 	tag->ucDbdcIdx = prBssInfo->ucBandIdx;
-	tag->u4ConnectionType = OP_MODE_INFRASTRUCTURE;
+	tag->u4ConnectionType = CONNECTION_INFRA_STA;
 	COPY_MAC_ADDR(tag->aucBSSID, prBssInfo->ucBssId);
 	tag->u2BcMcWlanidx = prBssInfo->ucBssIdx;
 	tag->u2BcnInterval = 100;
