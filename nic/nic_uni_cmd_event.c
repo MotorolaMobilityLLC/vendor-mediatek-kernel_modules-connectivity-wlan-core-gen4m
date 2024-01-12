@@ -5738,7 +5738,6 @@ uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	struct UNI_CMD_THERMAL *uni_cmd;
 	struct TAG_HDR *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
@@ -5788,9 +5787,6 @@ uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
-#else
-	return WLAN_STATUS_NOT_SUPPORTED;
-#endif
 }
 
 uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
