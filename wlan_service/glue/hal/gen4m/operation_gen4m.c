@@ -2062,8 +2062,9 @@ s_int32 mt_op_set_icap_start(
 	pr_rbist_info->en_bit_width = winfos->icap_bitwidth;
 	/* 0:Support on-chip, 1:Support on-the fly */
 	pr_rbist_info->arch = winfos->icap_arch;
+#if (CFG_SUPPORT_CONNAC3X == 0) /* qatool will send phy idx to gen4m */
 	pr_rbist_info->phy_idx = winfos->icap_phy_idx;
-
+#endif
 	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
 		("%s: en_bit_width = 0x%08x, arch = 0x%08x, phy_idx = 0x%08x\n",
 		__func__,
