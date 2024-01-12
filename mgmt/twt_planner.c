@@ -790,6 +790,9 @@ uint32_t twtPlannerReset(
 	/* reset driver agreement table */
 	memset(&(prAdapter->rTWTPlanner), 0, sizeof(prAdapter->rTWTPlanner));
 
+	/* Enable scan after TWT agrt reset */
+	prAdapter->fgEnOnlineScan = TRUE;
+
 	return rWlanStatus;
 }
 
@@ -1163,6 +1166,9 @@ void twtPlannerRxNegoResult(
 			prTWTResult, ucTWTFlowId, FALSE,
 			NULL, NULL /* handle TWT cmd timeout? */);
 
+		/* Disable SCAN during TWT activity */
+		prAdapter->fgEnOnlineScan = FALSE;
+
 		break;
 
 	case TWT_SETUP_CMD_ALTERNATE:
@@ -1309,7 +1315,8 @@ void twtPlannerTeardownDone(
 	twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
 		FALSE, NULL, NULL /* handle TWT cmd timeout? */);
 
-
+	/* Enable SCAN after TWT agrt has been tear down */
+	prAdapter->fgEnOnlineScan = TRUE;
 }
 
 void twtPlannerRxInfoFrm(
