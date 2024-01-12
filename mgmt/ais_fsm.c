@@ -5845,6 +5845,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	OS_SYSTIME rCurrentTime;
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 	struct BSS_DESC *prBssDesc;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("aisFsmRunEventJoinTimeout()");
 
@@ -5860,8 +5861,10 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	case AIS_STATE_JOIN:
 		DBGLOG(AIS, WARN, "EVENT- JOIN TIMEOUT\n");
 
+		prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
+		prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
 		eNextState = aisHandleJoinFailure(prAdapter,
-				aisGetTargetStaRec(prAdapter, ucBssIndex),
+				prStaRec,
 				NULL, ucBssIndex);
 
 #if 0
