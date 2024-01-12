@@ -3393,6 +3393,112 @@ int mtk_cfg80211_vendor_trigger_reset(
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is to handle a reset CMD from FWK.
+ *
+ * \param[in] wiphy wiphy
+ * \param[in] wdev wireless_dev
+ * \param[in] data (not used here)
+ * \param[in] data_len (not used here)
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_comb_matrix(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct sk_buff *skb = NULL;
+	struct ANDROID_T_COMB_MATRIX *pr_comb_matrix;
+
+	pr_comb_matrix = (struct ANDROID_T_COMB_MATRIX *)
+		kalMemAlloc(sizeof(struct ANDROID_T_COMB_MATRIX),
+		VIR_MEM_TYPE);
+
+	if (!pr_comb_matrix) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for stats info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(pr_comb_matrix,
+		   sizeof(struct ANDROID_T_COMB_MATRIX));
+	DBGLOG(REQ, WARN, "mtk_cfg80211_vendor_comb_matrix\n");
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "Invalid glue info\n");
+		return -EFAULT;
+	}
+
+	pr_comb_matrix->comb_mtx[0].band_0 = 2;
+	pr_comb_matrix->comb_mtx[0].ant_0 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+	pr_comb_matrix->comb_mtx[1].band_0 = 5;
+	pr_comb_matrix->comb_mtx[1].ant_0 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	pr_comb_matrix->comb_mtx[2].band_0 = 6;
+	pr_comb_matrix->comb_mtx[2].ant_0 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+#endif
+	pr_comb_matrix->comb_mtx[3].band_0 = 2;
+	pr_comb_matrix->comb_mtx[3].band_1 = 5;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	pr_comb_matrix->comb_mtx[4].band_0 = 2;
+	pr_comb_matrix->comb_mtx[4].band_1 = 6;
+	pr_comb_matrix->comb_mtx[5].band_0 = 5;
+	pr_comb_matrix->comb_mtx[5].band_1 = 6;
+#endif
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
+	pr_comb_matrix->comb_mtx[3].ant_0 = 1;
+	pr_comb_matrix->comb_mtx[3].ant_1 = 1;
+	pr_comb_matrix->comb_mtx[4].ant_0 = 1;
+	pr_comb_matrix->comb_mtx[4].ant_1 = 1;
+	pr_comb_matrix->comb_mtx[5].ant_0 = 1;
+	pr_comb_matrix->comb_mtx[5].ant_1 = 1;
+#else
+	pr_comb_matrix->comb_mtx[3].ant_0 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+	pr_comb_matrix->comb_mtx[3].ant_1 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+	pr_comb_matrix->comb_mtx[4].ant_0 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+	pr_comb_matrix->comb_mtx[4].ant_1 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+	pr_comb_matrix->comb_mtx[5].ant_0 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+	pr_comb_matrix->comb_mtx[5].ant_1 =
+		prGlueInfo->prAdapter->rWifiVar.ucNSS;
+#endif
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		sizeof(struct ANDROID_T_COMB_MATRIX));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+	DBGLOG(REQ, ERROR, "sizeof(comb_matrix):%d\n,",
+		sizeof(struct ANDROID_T_COMB_MATRIX));
+
+
+	if (unlikely(nla_put(skb,
+		WIFI_ATTRIBUTE_RADIO_COMBINATIONS_MATRIX_MATRIX,
+		sizeof(struct ANDROID_T_COMB_MATRIX),
+		pr_comb_matrix) < 0)) {
+		kalMemFree(pr_comb_matrix,
+			sizeof(struct ANDROID_T_COMB_MATRIX),
+			VIR_MEM_TYPE);
+		goto nla_put_failure;
+	}
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+nla_put_failure:
+	kfree_skb(skb);
+	return -EINVAL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is to send FWK a event that the reset happened.
  *
  * \param[in] data reset reason, eResetReason.

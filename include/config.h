@@ -1830,6 +1830,16 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Flag used for comb matrix support.
+ * Value 0: Do not enable packet offload.
+ * Value 1: Enable packet offload.
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_COMB_MATRIX
+#define CFG_SUPPORT_COMB_MATRIX 1
+#endif
+
+/*------------------------------------------------------------------------------
  * Flag used for APF support.
  * Value 0: Do not enable APF.
  * Value 1: Enable APF.
