@@ -1243,6 +1243,8 @@ s_int32 mt_op_start_rx(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int32 func_data;
+	u_int8 nullAddr[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -1265,6 +1267,31 @@ s_int32 mt_op_start_rx(
 			ret = tm_rftest_set_auto_test(winfos,
 					RF_AT_FUNCID_SET_RX_MU_AID,
 					0xf800);/* 0xf800 to disable */
+	}
+
+	if (sys_ad_cmp_mem(nullAddr,
+			configs->own_mac,
+			SERV_MAC_ADDR_LEN) != 0) {
+
+		sys_ad_move_mem(&func_data, nullAddr, 4);
+
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_MAC_ADDRESS, func_data);
+
+		func_data = 0;
+		sys_ad_move_mem(&func_data, nullAddr + 4, 2);
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MAC_ADDRESS | BIT(18)),
+			func_data);
+
+		sys_ad_move_mem(&func_data, configs->own_mac, 4);
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TA, func_data);
+
+		func_data = 0;
+		sys_ad_move_mem(&func_data, configs->own_mac + 4, 2);
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_TA | BIT(18)), func_data);
 	}
 
 	ret = tm_rftest_set_auto_test(winfos,
@@ -1375,6 +1402,7 @@ s_int32 mt_op_set_tx_content(
 	u_int32 tx_len = configs->tx_len;
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int8 nullAddr[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
@@ -1398,25 +1426,35 @@ s_int32 mt_op_set_tx_content(
 	tm_rftest_set_auto_test(winfos,
 		RF_AT_FUNCID_PKTLEN, tx_len);
 
-	sys_ad_move_mem(&func_data, configs->addr1[0], 4);
+	if (sys_ad_cmp_mem(nullAddr,
+			configs->addr1[0],
+			SERV_MAC_ADDR_LEN) != 0) {
 
-	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_MAC_ADDRESS, func_data);
+		sys_ad_move_mem(&func_data, configs->addr1[0], 4);
 
-	func_data = 0;
-	sys_ad_move_mem(&func_data, configs->addr1[0] + 4, 2);
-	tm_rftest_set_auto_test(winfos,
-		(RF_AT_FUNCID_SET_MAC_ADDRESS | BIT(18)),
-		func_data);
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_MAC_ADDRESS, func_data);
 
-	sys_ad_move_mem(&func_data, configs->addr2[0], 4);
-	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_SET_TA, func_data);
+		func_data = 0;
+		sys_ad_move_mem(&func_data, configs->addr1[0] + 4, 2);
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_MAC_ADDRESS | BIT(18)),
+			func_data);
+	}
 
-	func_data = 0;
-	sys_ad_move_mem(&func_data, configs->addr2[0] + 4, 2);
-	tm_rftest_set_auto_test(winfos,
-		(RF_AT_FUNCID_SET_TA | BIT(18)), func_data);
+	if (sys_ad_cmp_mem(nullAddr,
+			configs->addr2[0],
+			SERV_MAC_ADDR_LEN) != 0) {
+
+		sys_ad_move_mem(&func_data, configs->addr2[0], 4);
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TA, func_data);
+
+		func_data = 0;
+		sys_ad_move_mem(&func_data, configs->addr2[0] + 4, 2);
+		tm_rftest_set_auto_test(winfos,
+			(RF_AT_FUNCID_SET_TA | BIT(18)), func_data);
+	}
 
 	return ret;
 }
