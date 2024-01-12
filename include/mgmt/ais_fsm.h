@@ -78,6 +78,10 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+
+#define AIS_DEFAULT_INDEX (0)
+#define AIS_SECONDARY_INDEX (1)
+
 #define AIS_BG_SCAN_INTERVAL_MIN_SEC        2	/* 30 // exponential to 960 */
 #define AIS_BG_SCAN_INTERVAL_MAX_SEC        2	/* 960 // 16min */
 
@@ -1055,5 +1059,11 @@ u_int8_t clearAxBlacklist(IN struct ADAPTER *prAdapter,
 
 void aisPreSuspendFlow(
 	IN struct ADAPTER *prAdapter);
+
+#if (CFG_SUPPORT_ANDROID_DUAL_STA == 1)
+void aisMultiStaSetQuoteTime(
+	struct ADAPTER *prAdapter,
+	uint8_t fgSetQuoteTime);
+#endif
 
 #endif /* _AIS_FSM_H */
