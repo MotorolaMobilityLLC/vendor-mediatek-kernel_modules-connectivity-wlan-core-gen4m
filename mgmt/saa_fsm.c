@@ -1349,6 +1349,14 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
 		else if (IS_STA_BOW_TYPE(prStaRec))
 			bowRunEventRxDeAuth(prAdapter, prStaRec, prSwRfb);
 #endif
+#if CFG_SUPPORT_NAN
+		else if (IS_STA_NAN_TYPE(prStaRec)) {
+			DBGLOG(SAA, WARN,
+			       "Received a Deauth: wlanIdx[%d] from NAN network\n",
+			       ucWlanIdx);
+			break;
+		}
+#endif
 		else
 			ASSERT(0);
 

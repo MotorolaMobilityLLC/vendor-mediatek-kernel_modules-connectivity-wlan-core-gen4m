@@ -120,7 +120,9 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
  */
 struct MIB_INFO_STAT g_arMibInfo[ENUM_BAND_NUM];
 uint8_t fgEfuseCtrlAxOn = 1; /* run time control if support AX by efuse */
-
+#if CFG_SUPPORT_NAN
+struct _TXM_CMD_EVENT_TEST_T grCmdInfoQueryTestBuffer;
+#endif
 
 /*******************************************************************************
  *                            F U N C T I O N   D A T A
@@ -4443,3 +4445,480 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_NAN
+uint32_t nicDumpTlv(IN void *prCmdBuffer)
+{
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint16_t u2ElementNum = 1;
+	uint32_t u4BodyByteCnt;
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+
+	DBGLOG(TX, INFO, "u2TotalElementNum:%d\n",
+	       prTlvCommon->u2TotalElementNum);
+
+	for (u2ElementNum = 1; u2ElementNum <= prTlvCommon->u2TotalElementNum;
+	     u2ElementNum++) {
+		prTlvElement =
+			nicGetTargetTlvElement(u2ElementNum, prCmdBuffer);
+		DBGLOG(TX, INFO, "TLV(%d) start address:%p\n", u2ElementNum,
+		       prTlvElement);
+		DBGLOG(TX, INFO, "TLV(%d) tag_type:%d\n", u2ElementNum,
+		       (uint32_t)prTlvElement->tag_type);
+		DBGLOG(TX, INFO, "TLV(%d) body_len:%d\n", u2ElementNum,
+		       (uint32_t)prTlvElement->body_len);
+
+		for (u4BodyByteCnt = 0; u4BodyByteCnt < prTlvElement->body_len;
+		     u4BodyByteCnt++) {
+			DBGLOG(TX, INFO, "TLV(%d) body[%d]:%x\n", u2ElementNum,
+			       u4BodyByteCnt,
+			       prTlvElement->aucbody[u4BodyByteCnt]);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
+		   IN uint16_t u2TargetTlvElement, IN void *prCmdBuffer)
+{
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint16_t u2ElementNum;
+	void *pvCurrPtr;
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+
+	/*Check target element is exist or not*/
+	if (u2TargetTlvElement > prTlvCommon->u2TotalElementNum) {
+		/*New element or element is not exist*/
+		if (u2TargetTlvElement - prTlvCommon->u2TotalElementNum > 1) {
+			/*element is not exist*/
+			DBGLOG(TX, ERROR, "Target element is not exist\n");
+			return NULL;
+		}
+	}
+
+	/*Get target element*/
+	pvCurrPtr = prCmdBuffer;
+
+	for (u2ElementNum = 1; u2ElementNum <= u2TargetTlvElement;
+	     u2ElementNum++) {
+		if (u2ElementNum == 1) {
+			pvCurrPtr = prTlvCommon->aucBuffer;
+		} else {
+			pvCurrPtr = prTlvElement->aucbody;
+			pvCurrPtr = (void *)((uint8_t *)pvCurrPtr +
+					    prTlvElement->body_len);
+		}
+		prTlvElement = (struct _CMD_EVENT_TLV_ELEMENT_T *)pvCurrPtr;
+	}
+
+	return prTlvElement;
+}
+
+uint32_t nicAddNewTlvElement(IN uint32_t u4Tag, IN uint32_t u4BodyLen,
+		    IN uint32_t prCmdBufferLen, IN void *prCmdBuffer)
+{
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4TotalLen;
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+
+	/*Get new element*/
+	prTlvElement = nicGetTargetTlvElement(
+		prTlvCommon->u2TotalElementNum + 1, prCmdBuffer);
+
+	if (prTlvElement == NULL) {
+		DBGLOG(TX, ERROR, "Get new TLV element fail\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/*Check tatol len is overflow or not*/
+	u4TotalLen = ((size_t)prTlvElement->aucbody + u4BodyLen) -
+		     (size_t)prCmdBuffer;
+
+	if (u4TotalLen > prCmdBufferLen) {
+		/*Length overflow*/
+		DBGLOG(TX, ERROR,
+		       "Length overflow: Total len:%d, CMD buffer len:%d\n",
+		       u4TotalLen, prCmdBufferLen);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	/*Update total element count*/
+	prTlvCommon->u2TotalElementNum++;
+
+	/*Fill TLV constant*/
+	prTlvElement->tag_type = u4Tag;
+
+	prTlvElement->body_len = u4BodyLen;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void nicNanEventTestProcess(IN struct ADAPTER *prAdapter,
+		       IN struct WIFI_EVENT *prEvent)
+{
+	struct CMD_INFO *prCmdInfo;
+
+	if (!prAdapter) {
+		DBGLOG(NAN, ERROR, "prAdapter error!\n");
+		return;
+	}
+	if (!prEvent) {
+		DBGLOG(NAN, ERROR, "prEvent error!\n");
+		return;
+	}
+
+	DBGLOG(TX, INFO, "nicNanEventDispatcher\n");
+
+	/*Dump Event content*/
+	nicDumpTlv((void *)prEvent->aucBuffer);
+
+	/*Process CMD done handler*/
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler)
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+						    prEvent->aucBuffer);
+		else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo,
+				       prCmdInfo, 0,
+				       WLAN_STATUS_SUCCESS);
+
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+}
+
+void nicNanEventSTATxCTL(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+{
+	struct EVENT_UPDATE_NAN_TX_STATUS *prUpdateTxStatus;
+
+	prUpdateTxStatus = (struct EVENT_UPDATE_NAN_TX_STATUS *)pcuEvtBuf;
+	qmUpdateFreeNANQouta(prAdapter, prUpdateTxStatus);
+}
+
+void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
+			 IN struct WIFI_EVENT *prEvent)
+{
+	ASSERT(prAdapter);
+	ASSERT(prEvent);
+
+	DBGLOG(NAN, INFO, "[%s] IN, Guiding to Vendor event handler\n",
+	       __func__);
+
+	kalNanHandleVendorEvent(prAdapter, prEvent->aucBuffer);
+}
+
+struct NanMatchInd g_rDiscMatchInd;
+uint8_t g_u2IndPubId;
+
+void nicNanEventDiscoveryResult(IN struct ADAPTER *prAdapter,
+	    IN uint8_t *pcuEvtBuf)
+{
+	struct NAN_DISCOVERY_EVENT *prDiscEvt;
+
+	prDiscEvt = (struct NAN_DISCOVERY_EVENT *)pcuEvtBuf;
+	g_u2IndPubId = prDiscEvt->u2PublishID; /* for sigma test */
+
+	DBGLOG(NAN, INFO, "generate discovey event\n");
+	dumpMemory8((uint8_t *)prDiscEvt->aucNanAddress, MAC_ADDR_LEN);
+
+	kalMemSet(&g_rDiscMatchInd, 0, sizeof(struct NanMatchInd));
+	g_rDiscMatchInd.eventID = ENUM_NAN_SD_RESULT;
+	g_rDiscMatchInd.peer_sdea_params.config_nan_data_path =
+		prDiscEvt->ucDataPathParm;
+	g_rDiscMatchInd.publish_subscribe_id = prDiscEvt->u2SubscribeID;
+	g_rDiscMatchInd.requestor_instance_id = prDiscEvt->u2PublishID;
+	g_rDiscMatchInd.peer_sdea_params.security_cfg = 0;
+	g_rDiscMatchInd.peer_cipher_type = 1;
+	g_rDiscMatchInd.peer_sdea_params.ndp_type = NAN_DATA_PATH_UNICAST_MSG;
+	g_rDiscMatchInd.service_specific_info_len =
+		prDiscEvt->u2Service_info_len;
+	kalMemCopy(g_rDiscMatchInd.service_specific_info,
+		   prDiscEvt->aucSerive_specificy_info,
+		   NAN_MAX_SERVICE_SPECIFIC_INFO_LEN);
+	kalMemCopy(g_rDiscMatchInd.addr, prDiscEvt->aucNanAddress,
+		   MAC_ADDR_LEN);
+
+	kalIndicateNetlink2User(prAdapter->prGlueInfo, &g_rDiscMatchInd,
+				sizeof(struct NanMatchInd));
+}
+
+struct NanFollowupInd rFollowInd;
+void nicNanReceiveEvent(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+{
+	struct NAN_FOLLOW_UP_EVENT *prDiscEvt;
+
+	prDiscEvt = (struct NAN_FOLLOW_UP_EVENT *)pcuEvtBuf;
+	dumpMemory8((uint8_t *)pcuEvtBuf, 32);
+	DBGLOG(NAN, LOUD, "receive followup event\n");
+	kalMemSet(&rFollowInd, 0, sizeof(struct NanFollowupInd));
+	rFollowInd.eventID = ENUM_NAN_RECEIVE;
+	rFollowInd.publish_subscribe_id = prDiscEvt->publish_subscribe_id;
+	rFollowInd.requestor_instance_id = prDiscEvt->requestor_instance_id;
+	kalMemCopy(rFollowInd.addr, prDiscEvt->addr, MAC_ADDR_LEN);
+	rFollowInd.service_specific_info_len =
+		prDiscEvt->service_specific_info_len;
+	kalMemCopy(rFollowInd.service_specific_info,
+		   prDiscEvt->service_specific_info,
+		   prDiscEvt->service_specific_info_len);
+	kalIndicateNetlink2User(prAdapter->prGlueInfo, &rFollowInd,
+				sizeof(struct NanFollowupInd));
+}
+
+void nicNanRepliedEvnt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+{
+	struct NanPublishRepliedInd rRepliedInd;
+	struct NAN_REPLIED_EVENT *prRepliedEvt;
+
+	prRepliedEvt = (struct NAN_REPLIED_EVENT *)pcuEvtBuf;
+	kalMemZero(&rRepliedInd, sizeof(struct NanPublishRepliedInd));
+	rRepliedInd.eventID = ENUM_NAN_REPLIED;
+	rRepliedInd.pubid = prRepliedEvt->u2Pubid;
+	rRepliedInd.subid = prRepliedEvt->u2Subid;
+	COPY_MAC_ADDR(rRepliedInd.addr, prRepliedEvt->auAddr);
+	kalIndicateNetlink2User(prAdapter->prGlueInfo, &rRepliedInd,
+				sizeof(struct NanPublishRepliedInd));
+}
+
+void nicNanPublishTerminateEvt(IN struct ADAPTER *prAdapter,
+		   IN uint8_t *pcuEvtBuf)
+{
+	struct NanPublishTerminatedInd rPubTerminatEvt;
+	struct NAN_PUBLISH_TERMINATE_EVENT *prPubTerEvt;
+
+	prPubTerEvt = (struct NAN_PUBLISH_TERMINATE_EVENT *)pcuEvtBuf;
+	kalMemZero(&rPubTerminatEvt, sizeof(struct NanPublishTerminatedInd));
+	rPubTerminatEvt.eventID = ENUM_NAN_PUB_TERMINATE;
+	rPubTerminatEvt.publish_id = prPubTerEvt->u2Pubid;
+	kalIndicateNetlink2User(prAdapter->prGlueInfo, &rPubTerminatEvt,
+				sizeof(struct NanPublishTerminatedInd));
+}
+
+void nicNanSubscribeTerminateEvt(IN struct ADAPTER *prAdapter,
+			    IN uint8_t *pcuEvtBuf)
+{
+	struct NanSubscribeTerminatedInd rSubTerminatEvt;
+	struct NAN_SUBSCRIBE_TERMINATE_EVENT *pSubTerEvt;
+
+	pSubTerEvt = (struct NAN_SUBSCRIBE_TERMINATE_EVENT *)pcuEvtBuf;
+	kalMemZero(&rSubTerminatEvt, sizeof(struct NanPublishTerminatedInd));
+	rSubTerminatEvt.eventID = ENUM_NAN_SUB_TERMINATE;
+	rSubTerminatEvt.subscribe_id = pSubTerEvt->u2Subid;
+	kalIndicateNetlink2User(prAdapter->prGlueInfo, &rSubTerminatEvt,
+				sizeof(struct NanSubscribeTerminatedInd));
+}
+
+void nicNanNdlFlowCtrlEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf)
+{
+	struct NAN_EVT_NDL_FLOW_CTRL *prFlowCtrlEvt;
+	struct STA_RECORD *prStaRec;
+	uint16_t u2SchId = 0;
+	uint32_t u4Idx;
+	unsigned char fgNeedToSendPkt = FALSE;
+	OS_SYSTIME rCurrentTime;
+	OS_SYSTIME rExpiryTime;
+
+	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL *)pcuEvtBuf;
+	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
+		uint8_t ucSTAIdx;
+		uint16_t u2SlotTime;
+
+		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
+			continue;
+
+		rCurrentTime = kalGetTimeTick();
+		u2SlotTime = prFlowCtrlEvt->au2FlowCtrl[u2SchId];
+		rExpiryTime =
+			rCurrentTime + u2SlotTime * NAN_SEND_PKT_TIME_SLOT;
+
+		DBGLOG(NAN, LOUD,
+		       "[NDL flow control] Sch:%u, Expiry:%u, Slot:%u\n",
+		       u2SchId, rExpiryTime, u2SlotTime);
+
+		if (u2SlotTime == 0)
+			continue;
+
+		rExpiryTime -= NAN_SEND_PKT_TIME_GUARD_TIME;
+		for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_NUM; u4Idx++) {
+			ucSTAIdx = nanSchedQueryStaRecIdx(prAdapter, u2SchId,
+							  u4Idx);
+			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
+				continue;
+
+			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
+			prStaRec->rNanExpiredSendTime = rExpiryTime;
+
+			if (prStaRec->fgNanSendTimeExpired)
+				fgNeedToSendPkt = TRUE;
+		}
+	}
+
+	if (fgNeedToSendPkt == TRUE &&
+	    wlanGetTxPendingFrameCount(prAdapter) > 0) {
+		DBGLOG(NAN, LOUD, "Trigger NAN tx request\n");
+		kalSetEvent(prAdapter->prGlueInfo);
+	}
+}
+
+void nicNanEventDispatcher(IN struct ADAPTER *prAdapter,
+		      IN struct WIFI_EVENT *prEvent)
+{
+	ASSERT(prAdapter);
+	ASSERT(prEvent);
+
+	DBGLOG(INIT, WARN, "nicNanEventDispatcher\n");
+
+	if (prAdapter->fgIsNANfromHAL == FALSE) {
+		DBGLOG(INIT, WARN, "nicNanIOEventHandler\n");
+		/* For IOCTL use */
+		nicNanIOEventHandler(prAdapter, prEvent);
+	} else {
+		DBGLOG(INIT, WARN, "nicNanVendorEventHandler\n");
+		/* For Vendor command use */
+		nicNanVendorEventHandler(prAdapter, prEvent);
+	}
+}
+
+void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent)
+{
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4SubEvent;
+
+	ASSERT(prAdapter);
+	ASSERT(prEvent);
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prEvent->aucBuffer;
+
+	prTlvElement =
+		(struct _CMD_EVENT_TLV_ELEMENT_T *)prTlvCommon->aucBuffer;
+
+	u4SubEvent = prTlvElement->tag_type;
+
+	DBGLOG(NAN, INFO, "nicNanIOEventHandler, subEvent:%d\n", u4SubEvent);
+
+	switch (u4SubEvent) {
+	case NAN_EVENT_TEST:
+		nicNanEventTestProcess(prAdapter, prEvent);
+		break;
+	case NAN_EVENT_DISCOVERY_RESULT:
+		nicNanEventDiscoveryResult(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_FOLLOW_EVENT:
+		nicNanReceiveEvent(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_REPLIED_EVENT:
+		nicNanRepliedEvnt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_PUBLISH_TERMINATE_EVENT:
+		nicNanPublishTerminateEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_SUBSCRIBE_TERMINATE_EVENT:
+		nicNanSubscribeTerminateEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_MASTER_IND_ATTR:
+		nanDevMasterIndEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_CLUSTER_ID_UPDATE:
+		nanDevClusterIdEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_SCHEDULE_CONFIG:
+	case NAN_EVENT_ID_PEER_AVAILABILITY:
+	case NAN_EVENT_ID_PEER_CAPABILITY:
+	case NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN:
+		nanSchedulerEventDispatch(prAdapter, u4SubEvent,
+					  prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_PEER_SEC_CONTEXT_INFO:
+		nanDiscUpdateSecContextInfoAttr(prAdapter,
+						prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_PEER_CIPHER_SUITE_INFO:
+		nanDiscUpdateCipherSuiteInfoAttr(prAdapter,
+						 prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_DATA_NOTIFY:
+		nicNanEventSTATxCTL(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_FTM_DONE:
+		nanRangingFtmDoneEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_RANGING_BY_DISC:
+		nanRangingInvokedByDiscEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+	case NAN_EVENT_NDL_FLOW_CTRL:
+		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#endif
+	case NAN_EVENT_NDL_DISCONNECT:
+		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+	}
+}
+
+void nicNanGetCmdInfoQueryTestBuffer(
+	struct _TXM_CMD_EVENT_TEST_T **prCmdInfoQueryTestBuffer)
+{
+	*prCmdInfoQueryTestBuffer =
+		(struct _TXM_CMD_EVENT_TEST_T *)&grCmdInfoQueryTestBuffer;
+}
+
+void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
+	    IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct _TXM_CMD_EVENT_TEST_T *prEventContent = NULL;
+	struct _TXM_CMD_EVENT_TEST_T *prQueryInfoContent = NULL;
+	uint32_t u4QueryInfoLen;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	DBGLOG(TX, INFO, "nicNanTestQueryInfoDone\n");
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)pucEventBuf;
+		prTlvElement = nicGetTargetTlvElement(1, prTlvCommon);
+		prEventContent =
+			(struct _TXM_CMD_EVENT_TEST_T *)prTlvElement->aucbody;
+		prQueryInfoContent =
+			(struct _TXM_CMD_EVENT_TEST_T *)
+				prCmdInfo->pvInformationBuffer;
+		prQueryInfoContent->u4TestValue0 = prEventContent->u4TestValue0;
+		prQueryInfoContent->u4TestValue1 = prEventContent->u4TestValue1;
+		prQueryInfoContent->ucTestValue2 = prEventContent->ucTestValue2;
+		u4QueryInfoLen = sizeof(struct _TXM_CMD_EVENT_TEST_T);
+
+		nicDumpTlv((void *)pucEventBuf);
+
+		DBGLOG(TX, INFO, "grCmdInfoQueryTestBuffer.u4TestValue0 = %x\n",
+		       grCmdInfoQueryTestBuffer.u4TestValue0);
+		DBGLOG(TX, INFO, "grCmdInfoQueryTestBuffer.u4TestValue1 = %x\n",
+		       grCmdInfoQueryTestBuffer.u4TestValue1);
+		DBGLOG(TX, INFO, "grCmdInfoQueryTestBuffer.ucTestValue2 = %x\n",
+		       grCmdInfoQueryTestBuffer.ucTestValue2);
+
+		if ((grCmdInfoQueryTestBuffer.u4TestValue0 == 0x22222222) &&
+		    (grCmdInfoQueryTestBuffer.u4TestValue1 == 0x22222222) &&
+		    (grCmdInfoQueryTestBuffer.ucTestValue2 == 0x22)) {
+			DBGLOG(TX, INFO, ">>CMD done content check pass\n");
+		} else {
+			DBGLOG(TX, INFO, ">>CMD done content check fail\n");
+		}
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+#endif

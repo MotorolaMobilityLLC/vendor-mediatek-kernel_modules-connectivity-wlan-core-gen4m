@@ -89,6 +89,11 @@
 #include "metlog.h"
 #endif
 
+#if CFG_SUPPORT_NAN
+#include "nan_data_engine.h"
+#include "nan_sec.h"
+#endif
+
 /*
  * #if CFG_SUPPORT_QA_TOOL
  * extern UINT_16 g_u2DumpIndex;
@@ -101,7 +106,11 @@
  */
 #define	NUM_SUPPORTED_OIDS      (sizeof(arWlanOidReqTable) / \
 				sizeof(struct WLAN_REQ_ENTRY))
+#if CFG_SUPPORT_NAN
+#define CMD_OID_BUF_LENGTH 8000
+#else
 #define	CMD_OID_BUF_LENGTH	4096
+#endif
 
 #if (CFG_SUPPORT_TWT == 1)
 #define CMD_TWT_ACTION_TEN_PARAMS        10
@@ -703,6 +712,13 @@ int priv_support_ioctl(IN struct net_device *prNetDev,
 	case SIOCDEVPRIVATE+2:
 		return priv_qa_agent(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				     (char *) &(prIwReq->u));
+#endif
+
+#if CFG_SUPPORT_NAN
+	/* fallthrough */
+	case IOCTL_NAN_STRUCT:
+		return priv_nan_struct(prNetDev, &rIwReqInfo, &(prIwReq->u),
+				       (char *)&(prIwReq->u));
 #endif
 
 	/* This case need to fall through */
@@ -2045,6 +2061,500 @@ priv_get_struct(IN struct net_device *prNetDev,
 	     prIwReqData, pcExtra, __priv_get_struct);
 }
 
+#if CFG_SUPPORT_NAN
+int
+__priv_nan_struct(IN struct net_device *prNetDev,
+		  IN struct iw_request_info *prIwReqInfo,
+		  IN union iwreq_data *prIwReqData, IN char *pcExtra) {
+	uint32_t u4SubCmd = 0;
+	int status = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -EFAULT;
+	}
+	if (!prIwReqData) {
+		DBGLOG(NAN, ERROR, "prIwReqData error!\n");
+		return -EFAULT;
+	}
+
+	kalMemZero(&aucOidBuf[0], sizeof(aucOidBuf));
+
+	if (GLUE_CHK_PR2(prNetDev, prIwReqData) == FALSE)
+		return -EINVAL;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	prGlueInfo->prAdapter->fgIsNANfromHAL = FALSE;
+	DBGLOG(NAN, LOUD, "NAN fgIsNANfromHAL set %u\n",
+	       prGlueInfo->prAdapter->fgIsNANfromHAL);
+
+	u4SubCmd = (uint32_t)prIwReqData->data.flags;
+	DBGLOG(INIT, INFO, "DATA len from user %d\n", prIwReqData->data.length);
+	if (prIwReqData->data.length > 8000)
+		return -EFAULT;
+	if (copy_from_user(&aucOidBuf[0], prIwReqData->data.pointer,
+			   prIwReqData->data.length))
+		status = -EFAULT; /* return -EFAULT; */
+
+	switch (u4SubCmd) {
+	case ENUM_NAN_PUBLISH: {
+		uint16_t pid = 0;
+#if 0
+		UINT_8  *pu1DummyAttrBuf = NULL;
+		UINT_32 u4DummyAttrLen = 0;
+#endif
+		uint8_t ucCipherType;
+
+		struct NanPublishRequest *publishReq =
+			(struct NanPublishRequest *)&aucOidBuf[0];
+
+		DBGLOG(NAN, INFO, "[Publish Request]\n");
+		DBGLOG(NAN, INFO, "Type: %d\n", publishReq->publish_type);
+		DBGLOG(NAN, INFO, "TTL: %d\n", publishReq->ttl);
+		DBGLOG(NAN, INFO, "Service Specific Info: %s\n",
+		       publishReq->service_specific_info);
+		DBGLOG(NAN, INFO, "Period: %d\n", publishReq->period);
+		DBGLOG(NAN, INFO, "Publish Count: %d\n",
+		       publishReq->publish_count);
+		DBGLOG(NAN, INFO, "Match Indicator: %d\n",
+		       publishReq->publish_match_indicator);
+		DBGLOG(NAN, INFO, "Service Name: %s\n",
+		       publishReq->service_name);
+		DBGLOG(NAN, INFO, "Rssi threshold: %d\n",
+		       publishReq->rssi_threshold_flag);
+		DBGLOG(NAN, INFO, "Recv Indication: %d\n",
+		       publishReq->recv_indication_cfg);
+		DBGLOG(NAN, INFO, "Rx Match Filter: %s\n",
+		       publishReq->rx_match_filter);
+		DBGLOG(NAN, INFO, "Rx Match Filter len: %u\n",
+		       publishReq->rx_match_filter_len);
+		DBGLOG(NAN, INFO, "Tx Match Filter: %s\n",
+		       publishReq->tx_match_filter);
+		DBGLOG(NAN, INFO, "Tx Match Filter len: %u\n",
+		       publishReq->tx_match_filter_len);
+		DBGLOG(NAN, INFO, "Config Data Path: %d\n",
+		       publishReq->sdea_params.config_nan_data_path);
+		DBGLOG(NAN, INFO, "NDP Type: %d\n",
+		       publishReq->sdea_params.ndp_type);
+		DBGLOG(NAN, INFO, "Security Flag: %d\n",
+		       publishReq->sdea_params.security_cfg);
+		DBGLOG(NAN, INFO, "Ranging State: %d\n",
+		       publishReq->sdea_params.ranging_state);
+		DBGLOG(NAN, INFO, "Cipher Type: %d\n", publishReq->cipher_type);
+		DBGLOG(NAN, INFO, "Key: %s\n",
+		       publishReq->key_info.body.passphrase_info.passphrase);
+		nanUtilDump(prGlueInfo->prAdapter, "Publish SCID",
+			    publishReq->scid, publishReq->scid_len);
+
+		pid = (uint16_t)nanPublishRequest(prGlueInfo->prAdapter,
+						 publishReq);
+
+		DBGLOG(NAN, INFO, "publish PID: %d\n", pid);
+
+		if (publishReq->sdea_params.security_cfg) {
+			/* Fixme: supply a cipher suite list */
+			ucCipherType = publishReq->cipher_type;
+			nanCmdAddCsid(prGlueInfo->prAdapter, pid, 1,
+				      &ucCipherType);
+
+			if (publishReq->scid_len) {
+				if (publishReq->scid_len > NAN_SCID_DEFAULT_LEN)
+					publishReq->scid_len =
+						NAN_SCID_DEFAULT_LEN;
+
+				nanCmdManageScid(prGlueInfo->prAdapter, TRUE,
+						 pid, publishReq->scid);
+			}
+		}
+
+		if (copy_to_user(prIwReqData->data.pointer, &pid,
+				 sizeof(signed char))) {
+			DBGLOG(REQ, INFO, "copy_to_user oidBuf fail\n");
+			status = -EFAULT;
+		}
+		break;
+	}
+	case ENUM_CANCEL_PUBLISH: {
+		uint32_t rStatus;
+		struct NanPublishCancelRequest *cslPublish =
+			(struct NanPublishCancelRequest *)&aucOidBuf[0];
+
+		DBGLOG(NAN, INFO, "CANCEL Publish Enter\n");
+		DBGLOG(NAN, INFO, "PID %d\n", cslPublish->publish_id);
+		rStatus = nanCancelPublishRequest(prGlueInfo->prAdapter,
+						  cslPublish);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(NAN, INFO, "CANCEL Publish Error %X\n", rStatus);
+		break;
+	}
+	case ENUM_NAN_SUBSCIRBE: {
+		struct NanSubscribeRequest *subReq =
+			(struct NanSubscribeRequest *)&aucOidBuf[0];
+		signed char subid = 25;
+#if 0
+		UINT_8  *pu1DummyAttrBuf = NULL;
+		UINT_32 u4DummyAttrLen = 0;
+#endif
+
+		DBGLOG(NAN, INFO, "subReq->ttl %d\n", subReq->ttl);
+		DBGLOG(NAN, INFO, "subReq->period  %d\n", subReq->period);
+		DBGLOG(NAN, INFO, "subReq->subscribe_type %d\n",
+		       subReq->subscribe_type);
+		DBGLOG(NAN, INFO, "subReq->serviceResponseFilter %d\n",
+		       subReq->serviceResponseFilter);
+		DBGLOG(NAN, INFO, "subReq->serviceResponseInclude %d\n",
+		       subReq->serviceResponseInclude);
+		DBGLOG(NAN, INFO, "subReq->useServiceResponseFilter %d\n",
+		       subReq->useServiceResponseFilter);
+		DBGLOG(NAN, INFO, "subReq->ssiRequiredForMatchIndication %d\n",
+		       subReq->ssiRequiredForMatchIndication);
+		DBGLOG(NAN, INFO, "subReq->subscribe_match_indicator %d\n",
+		       subReq->subscribe_match_indicator);
+		DBGLOG(NAN, INFO, "subReq->subscribe_count %d\n",
+		       subReq->subscribe_count);
+		DBGLOG(NAN, INFO, "subReq->service_name  %s\n",
+		       subReq->service_name);
+		DBGLOG(NAN, INFO, "subReq->service_specific_info %s\n",
+		       subReq->service_specific_info);
+		DBGLOG(NAN, INFO, "subReq->rssi_threshold_flag %d\n",
+		       subReq->rssi_threshold_flag);
+		DBGLOG(NAN, INFO, "subReq->recv_indication_cfg %d\n",
+		       subReq->recv_indication_cfg);
+		DBGLOG(NAN, INFO,
+		       "subReq->sdea_params.config_nan_data_path %d\n",
+		       subReq->sdea_params.config_nan_data_path);
+		DBGLOG(NAN, INFO, "subReq->sdea_params.ndp_type  %d\n",
+		       subReq->sdea_params.ndp_type);
+		DBGLOG(NAN, INFO, "subReq->sdea_params.security_cfg %d\n",
+		       subReq->sdea_params.security_cfg);
+		DBGLOG(NAN, INFO, "subReq->sdea_params.ranging_state %d\n",
+		       subReq->sdea_params.ranging_state);
+		DBGLOG(NAN, INFO, "subReq->cipher_type %d\n",
+		       subReq->cipher_type);
+		DBGLOG(NAN, INFO, "subReq->key_info.key_type %d\n",
+		       subReq->key_info.key_type);
+		DBGLOG(NAN, INFO, "subReq->rx_match_filter %s\n",
+		       subReq->rx_match_filter);
+		DBGLOG(NAN, INFO, "subReq->tx_match_filter %s\n",
+		       subReq->tx_match_filter);
+
+		subid = nanSubscribeRequest(prGlueInfo->prAdapter, subReq);
+
+		if (copy_to_user(prIwReqData->data.pointer, &subid,
+				 sizeof(signed char))) {
+			DBGLOG(REQ, INFO, "copy_to_user oidBuf fail\n");
+			status = -EFAULT;
+		}
+		break;
+	}
+	case EMUM_NAN_CANCEL_SUBSCRIBE: {
+		uint32_t rStatus;
+		struct NanSubscribeCancelRequest *cslsubreq =
+			(struct NanSubscribeCancelRequest *)&aucOidBuf[0];
+
+		DBGLOG(NAN, INFO, "Cancel Subscribe Enter\n");
+		DBGLOG(NAN, INFO, "subid %d\n", cslsubreq->subscribe_id);
+
+		rStatus = nanCancelSubscribeRequest(prGlueInfo->prAdapter,
+						    cslsubreq);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(NAN, INFO, "CANCEL Subscribe Error %X\n",
+			       rStatus);
+		}
+		break;
+	}
+	case ENUM_NAN_TRANSMIT: {
+		struct NanTransmitFollowupRequest *followupreq =
+			(struct NanTransmitFollowupRequest *)&aucOidBuf[0];
+
+		DBGLOG(NAN, INFO, "Transmit Enter\n");
+
+		nanTransmitRequest(prGlueInfo->prAdapter, followupreq);
+		break;
+	}
+	case ENUM_NAN_UPDATE_PUBLISH: {
+		struct NanPublishRequest *publishReq =
+			(struct NanPublishRequest *)&aucOidBuf[0];
+
+		DBGLOG(NAN, INFO, "Update Publish\n");
+		nanUpdatePublishRequest(prGlueInfo->prAdapter, publishReq);
+	} break;
+	case ENUM_NAN_GAS_SCHEDULE_REQ:
+		DBGLOG(NAN, INFO, "ENUM_NAN_GAS_SCHEDULE_REQ Enter\n");
+		break;
+	case ENUM_NAN_DATA_REQ: {
+		struct NanDataPathInitiatorRequest *prDataReq =
+			(struct NanDataPathInitiatorRequest *)&aucOidBuf[0];
+		struct NanDataReqReceive rDataRcv;
+		struct _NAN_CMD_DATA_REQUEST rNanCmdDataRequest;
+		uint32_t rStatus;
+
+		kalMemZero(&rNanCmdDataRequest, sizeof(rNanCmdDataRequest));
+
+		/* Retrieve to NDP */
+		rNanCmdDataRequest.ucType = prDataReq->type;
+
+		DBGLOG(NAN, INFO, "[Data Req] ReqID:%d\n",
+		       prDataReq->requestor_instance_id);
+		rNanCmdDataRequest.ucPublishID =
+			prDataReq->requestor_instance_id;
+		if (rNanCmdDataRequest.ucPublishID == 0)
+			rNanCmdDataRequest.ucPublishID = g_u2IndPubId;
+
+		rNanCmdDataRequest.ucSecurity =
+			prDataReq->cipher_type; /*chiper type*/
+		if (rNanCmdDataRequest.ucSecurity) {
+			if (prDataReq->scid_len != NAN_SCID_DEFAULT_LEN) {
+				DBGLOG(NAN, ERROR,
+					"prDataReq->scid_len != NAN_SCID_DEFAULT_LEN!\n");
+				return -EFAULT;
+			}
+			kalMemCopy(rNanCmdDataRequest.aucScid, prDataReq->scid,
+				   NAN_SCID_DEFAULT_LEN);
+
+			kalMemCopy(rNanCmdDataRequest.aucPMK,
+				   prDataReq->key_info.body.pmk_info.pmk,
+				   prDataReq->key_info.body.pmk_info.pmk_len);
+#if (ENABLE_SEC_UT_LOG == 1)
+			DBGLOG(NAN, INFO, "PMK from APP\n");
+			dumpMemory8(prDataReq->key_info.body.pmk_info.pmk,
+				    prDataReq->key_info.body.pmk_info.pmk_len);
+#endif
+		}
+
+		rNanCmdDataRequest.ucRequireQOS = prDataReq->ndp_cfg.qos_cfg;
+		rNanCmdDataRequest.ucMinTimeSlot = prDataReq->ucMinTimeSlot;
+		rNanCmdDataRequest.u2MaxLatency = prDataReq->u2MaxLatency;
+
+		kalMemCopy(rNanCmdDataRequest.aucResponderDataAddress,
+			   prDataReq->peer_disc_mac_addr, MAC_ADDR_LEN);
+
+		rNanCmdDataRequest.fgCarryIpv6 = prDataReq->fgCarryIpv6;
+		if (rNanCmdDataRequest.fgCarryIpv6 == TRUE)
+			kalMemCopy(rNanCmdDataRequest.aucIPv6Addr,
+				   prDataReq->aucIPv6Addr, IPV6MACLEN);
+
+		rNanCmdDataRequest.u2SpecificInfoLength =
+			prDataReq->app_info.ndp_app_info_len;
+		kalMemCopy(rNanCmdDataRequest.aucSpecificInfo,
+			   prDataReq->app_info.ndp_app_info,
+			   prDataReq->app_info.ndp_app_info_len);
+
+		rStatus = nanCmdDataRequest(
+			prGlueInfo->prAdapter, &rNanCmdDataRequest,
+			&rDataRcv.ndpid, rDataRcv.initiator_data_addr);
+
+		/* Return to APP */
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			if (copy_to_user(prIwReqData->data.pointer, &rDataRcv,
+					 sizeof(struct NanDataReqReceive))) {
+				DBGLOG(NAN, WARN, "copy_to_user oidBuf fail\n");
+				status = -EFAULT;
+			}
+		}
+		break;
+	}
+	case ENUM_NAN_DATA_RESP: {
+		struct NanDataPathIndicationResponse *prDataRes =
+			(struct NanDataPathIndicationResponse *)&aucOidBuf[0];
+		struct _NAN_CMD_DATA_RESPONSE rNanCmdDataResponse;
+		uint32_t rStatus;
+
+		rNanCmdDataResponse.ucType = prDataRes->type;
+		rNanCmdDataResponse.ucDecisionStatus = prDataRes->rsp_code;
+#if (NAN_DATA_ENGINE_SIGMA_WORKAROUND == 1)
+		rNanCmdDataResponse.ucDecisionStatus = NAN_DP_REQUEST_ACCEPT;
+#endif
+		rNanCmdDataResponse.ucNDPId = prDataRes->ndp_instance_id;
+		rNanCmdDataResponse.ucRequireQOS = prDataRes->ndp_cfg.qos_cfg;
+		rNanCmdDataResponse.ucSecurity = prDataRes->cipher_type;
+		rNanCmdDataResponse.u2SpecificInfoLength =
+			prDataRes->app_info.ndp_app_info_len;
+		rNanCmdDataResponse.fgCarryIpv6 = prDataRes->fgCarryIpv6;
+		rNanCmdDataResponse.u2PortNum = prDataRes->u2PortNum;
+		rNanCmdDataResponse.ucServiceProtocolType =
+			prDataRes->ucServiceProtocolType;
+		rNanCmdDataResponse.ucMinTimeSlot = prDataRes->ucMinTimeSlot;
+		rNanCmdDataResponse.u2MaxLatency = prDataRes->u2MaxLatency;
+
+		kalMemCopy(rNanCmdDataResponse.aucInitiatorDataAddress,
+			   prDataRes->initiator_mac_addr, MAC_ADDR_LEN);
+		kalMemCopy(rNanCmdDataResponse.aucPMK,
+			   prDataRes->key_info.body.pmk_info.pmk,
+			   prDataRes->key_info.body.pmk_info.pmk_len);
+
+		kalMemCopy(rNanCmdDataResponse.aucSpecificInfo,
+			   prDataRes->app_info.ndp_app_info,
+			   prDataRes->app_info.ndp_app_info_len);
+		if (rNanCmdDataResponse.fgCarryIpv6 == TRUE)
+			kalMemCopy(rNanCmdDataResponse.aucIPv6Addr,
+				   prDataRes->aucIPv6Addr, IPV6MACLEN);
+#if (ENABLE_SEC_UT_LOG == 1)
+		DBGLOG(NAN, INFO, "PMK from APP\n");
+		dumpMemory8(prDataRes->key_info.body.pmk_info.pmk,
+			    prDataRes->key_info.body.pmk_info.pmk_len);
+#endif
+
+		rStatus = nanCmdDataResponse(prGlueInfo->prAdapter,
+					     &rNanCmdDataResponse);
+		break;
+	}
+	case ENUM_NAN_DATA_END: {
+		struct NanDataPathEndRequest *prDataEnd =
+			(struct NanDataPathEndRequest *)&aucOidBuf[0];
+		struct _NAN_CMD_DATA_END rNanCmdDataEnd;
+		uint32_t rStatus;
+
+		rNanCmdDataEnd.ucType = prDataEnd->type;
+		rNanCmdDataEnd.ucNDPId = prDataEnd->ndp_instance_id;
+		kalMemCopy(rNanCmdDataEnd.aucInitiatorDataAddress,
+			   prDataEnd->initiator_mac_addr, MAC_ADDR_LEN);
+
+		rStatus = nanCmdDataEnd(prGlueInfo->prAdapter, &rNanCmdDataEnd);
+
+		/*DBGLOG(NAN, INFO, "NDPID %d\n", dataend->num_ndp_instances);*/
+		break;
+	}
+	case ENUM_NAN_DATA_UPDTAE: {
+		/* Android struct is not defined */
+		struct NanDataPathInitiatorRequest *prDataUpd =
+			(struct NanDataPathInitiatorRequest *)&aucOidBuf[0];
+		struct _NAN_PARAMETER_NDL_SCH rNanUpdateSchParam;
+		uint32_t rStatus;
+
+		rNanUpdateSchParam.ucType = prDataUpd->type;
+		rNanUpdateSchParam.ucRequireQOS = prDataUpd->ndp_cfg.qos_cfg;
+		rNanUpdateSchParam.ucNDPId = prDataUpd->requestor_instance_id;
+		rNanUpdateSchParam.ucMinTimeSlot = prDataUpd->ucMinTimeSlot;
+		rNanUpdateSchParam.u2MaxLatency = prDataUpd->u2MaxLatency;
+		kalMemCopy(rNanUpdateSchParam.aucPeerDataAddress,
+			   prDataUpd->peer_disc_mac_addr, MAC_ADDR_LEN);
+		rStatus = nanCmdDataUpdtae(prGlueInfo->prAdapter,
+					   &rNanUpdateSchParam);
+
+		break;
+	}
+	case ENUM_NAN_RG_REQ: {
+		struct NanRangeRequest *rgreq =
+			(struct NanRangeRequest *)&aucOidBuf[0];
+		uint16_t rgId = 0;
+		uint32_t rStatus;
+
+		DBGLOG(NAN, INFO, MACSTR
+		       " reso %d intev %d indicat %d ING CM %d ENG CM %d\n",
+		       MAC2STR(rgreq->peer_addr),
+		       rgreq->ranging_cfg.ranging_resolution,
+		       rgreq->ranging_cfg.ranging_interval_msec,
+		       rgreq->ranging_cfg.config_ranging_indications,
+		       rgreq->ranging_cfg.distance_ingress_cm,
+		       rgreq->ranging_cfg.distance_egress_cm);
+
+		rStatus =
+			nanRangingRequest(prGlueInfo->prAdapter, &rgId, rgreq);
+
+		if (rStatus == WLAN_STATUS_SUCCESS) {
+			if (copy_to_user(prIwReqData->data.pointer, &rgId,
+					 sizeof(uint16_t))) {
+				DBGLOG(NAN, WARN, "copy_to_user oidBuf fail\n");
+				status = -EFAULT;
+			}
+		}
+		break;
+	}
+	case ENUM_NAN_RG_CANCEL: {
+		struct NanRangeCancelRequest *rgend =
+			(struct NanRangeCancelRequest *)&aucOidBuf[0];
+		uint32_t rStatus;
+
+		rStatus = nanRangingCancel(prGlueInfo->prAdapter, rgend);
+
+		DBGLOG(NAN, INFO, "ret %d " MACSTR "\n", rStatus,
+		       MAC2STR(rgend->peer_addr));
+		break;
+	}
+	case ENUM_NAN_RG_RESP: {
+		struct NanRangeResponse *rgrsp =
+			(struct NanRangeResponse *)&aucOidBuf[0];
+		uint32_t rStatus;
+
+		DBGLOG(NAN, INFO, "rgId %d alt %d rpt %d rsp %d\n",
+		       rgrsp->range_id,
+		       rgrsp->response_ctl.ranging_auto_response,
+		       rgrsp->response_ctl.range_report,
+		       rgrsp->response_ctl.ranging_response_code);
+
+		DBGLOG(NAN, INFO,
+		       "reso %d intev %d indicat %d ING CM %d ENG CM %d\n",
+		       rgrsp->ranging_cfg.ranging_resolution,
+		       rgrsp->ranging_cfg.ranging_interval_msec,
+		       rgrsp->ranging_cfg.config_ranging_indications,
+		       rgrsp->ranging_cfg.distance_ingress_cm,
+		       rgrsp->ranging_cfg.distance_egress_cm);
+
+		rStatus = nanRangingResponse(prGlueInfo->prAdapter, rgrsp);
+
+		break;
+	}
+	case ENUM_NAN_ENABLE_REQ: {
+		struct NanEnableRequest *prEnableReq =
+			(struct NanEnableRequest *)&aucOidBuf[0];
+		enum NanStatusType nanRetStatus;
+
+		nanRetStatus =
+			nanDevEnableRequest(prGlueInfo->prAdapter, prEnableReq);
+		if (copy_to_user(prIwReqData->data.pointer, &nanRetStatus,
+				 sizeof(enum NanStatusType))) {
+			DBGLOG(REQ, INFO, "copy_to_user oidBuf fail\n");
+			status = -EFAULT;
+		}
+		break;
+	}
+	case ENUM_NAN_DISABLE_REQ: {
+		enum NanStatusType nanRetStatus;
+
+		nanRetStatus = nanDevDisableRequest(prGlueInfo->prAdapter);
+		if (copy_to_user(prIwReqData->data.pointer, &nanRetStatus,
+				 sizeof(enum NanStatusType))) {
+			DBGLOG(REQ, INFO, "copy_to_user oidBuf fail\n");
+			status = -EFAULT;
+		}
+		break;
+	}
+	case ENUM_NAN_CONFIG_MP: {
+		uint8_t *prMasterPref = (uint8_t *)&aucOidBuf[0];
+
+		nanDevSetMasterPreference(prGlueInfo->prAdapter, *prMasterPref);
+		break;
+	}
+	case ENUM_NAN_CONFIG_HC: {
+		break;
+	}
+	case ENUM_NAN_CONFIG_RANFAC: {
+		break;
+	}
+	default:
+		return -EOPNOTSUPP;
+	}
+
+	return status;
+}
+
+int
+priv_nan_struct(IN struct net_device *prNetDev,
+		IN struct iw_request_info *prIwReqInfo,
+		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra) {
+	DBGLOG(REQ, INFO, "cmd=%x, flags=%x\n", prIwReqInfo->cmd,
+	       prIwReqInfo->flags);
+	DBGLOG(REQ, INFO, "mode=%x, flags=%x\n", prIwReqData->mode,
+	       prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo, prIwReqData, pcExtra,
+			   __priv_nan_struct);
+}
+
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief The routine handles a set operation for a single OID.
@@ -3212,6 +3722,15 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SETBAND		"SETBAND"
 #define CMD_GETBAND		"GETBAND"
 #define CMD_AP_START		"AP_START"
+
+#if CFG_SUPPORT_NAN
+#define CMD_NAN_START "NAN_START"
+#define CMD_NAN_GET_MASTER_IND "NAN_GET_MASTER_IND"
+#define CMD_NAN_GET_RANGE "NAN_GET_RANGE"
+#define CMD_FAW_RESET "FAW_RESET"
+#define CMD_FAW_CONFIG "FAW_CONFIG"
+#define CMD_FAW_APPLY "FAW_APPLY"
+#endif
 
 #if CFG_SUPPORT_QA_TOOL
 #define CMD_GET_RX_STATISTICS	"GET_RX_STATISTICS"
@@ -8460,6 +8979,227 @@ int priv_driver_set_ap_start(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	return 0;
 }
+
+#if CFG_SUPPORT_NAN
+int
+priv_driver_set_nan_start(IN struct net_device *prNetDev, IN char *pcCommand,
+			  IN int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 2;
+	uint32_t u4Enable = 0;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(u4Enable));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse ap-start error (u4Enable) u4Ret=%d\n",
+			       u4Ret);
+
+		set_nan_handler(prNetDev, u4Enable);
+	}
+
+	return 0;
+}
+
+int
+priv_driver_get_master_ind(IN struct net_device *prNetDev, IN char *pcCommand,
+			   IN int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t i4BytesWritten = 0;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
+		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+	uint8_t ucMasterPreference = 0;
+	uint8_t ucRandomFactor = 0;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	prAdapter = prGlueInfo->prAdapter;
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+
+	if (prNANSpecInfo == NULL) {
+		i4BytesWritten = -1;
+		return i4BytesWritten;
+	}
+
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+
+	ucMasterPreference = prNANSpecInfo->rMasterIndAttr.ucMasterPreference;
+	ucRandomFactor = prNANSpecInfo->rMasterIndAttr.ucRandomFactor;
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+	       "\nMasterPreference: %d\n", ucMasterPreference);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "RandomFactor: %d\n",
+	       ucRandomFactor);
+
+	return i4BytesWritten;
+}
+
+int
+priv_driver_get_range(IN struct net_device *prNetDev, IN char *pcCommand,
+		      IN int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t i4BytesWritten = 0;
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
+		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
+	struct dl_list *ranging_list;
+	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
+	int32_t range_measurement_cm;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	prAdapter = prGlueInfo->prAdapter;
+	prNANSpecInfo = nanGetSpecificBssInfo(prAdapter, NAN_BSS_INDEX_MAIN);
+
+	if (prNANSpecInfo == NULL) {
+		i4BytesWritten = -1;
+		return i4BytesWritten;
+	}
+
+	ranging_list = &prAdapter->rRangingInfo.ranging_list;
+
+	dl_list_for_each(prRanging, ranging_list,
+			 struct _NAN_RANGING_INSTANCE_T, list) {
+
+		if (prRanging) {
+			range_measurement_cm =
+				prRanging->ranging_ctrl.range_measurement_cm;
+
+			if (range_measurement_cm) {
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				       "\nPeer Addr: " MACSTR
+				       ", Range: %d cm\n",
+				       MAC2STR(prRanging->ranging_ctrl
+						       .aucPeerAddr),
+				       range_measurement_cm);
+			} else {
+				LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				       "\nPeer Addr: " MACSTR
+				       ", No valid range\n",
+				       MAC2STR(prRanging->ranging_ctrl
+						       .aucPeerAddr));
+			}
+		}
+	}
+
+	return i4BytesWritten;
+}
+
+int
+priv_driver_set_faw_config(IN struct net_device *prNetDev, IN char *pcCommand,
+			   IN int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 3;
+	uint8_t ucChnl = 0;
+	uint32_t u4SlotBitmap = 0;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &(ucChnl));
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD,
+			       "parse FAW CONFIG channel error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &(u4SlotBitmap));
+		if (u4Ret) {
+			DBGLOG(REQ, LOUD,
+			       "parse FAW CONFIG slotBitmap error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		nanSchedNegoCustFawConfigCmd(prGlueInfo->prAdapter, ucChnl,
+					     u4SlotBitmap);
+	}
+
+	return 0;
+}
+
+int
+priv_driver_set_faw_reset(IN struct net_device *prNetDev, IN char *pcCommand,
+			  IN int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	nanSchedNegoCustFawResetCmd(prGlueInfo->prAdapter);
+
+	return 0;
+}
+
+int
+priv_driver_set_faw_apply(IN struct net_device *prNetDev, IN char *pcCommand,
+			  IN int i4TotalLen) {
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+
+	nanSchedNegoCustFawApplyCmd(prGlueInfo->prAdapter);
+
+	return 0;
+}
+#endif
 
 int priv_driver_get_linkspeed(IN struct net_device *prNetDev,
 			      IN char *pcCommand, IN int i4TotalLen)
@@ -14069,6 +14809,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_DEL_ACL_ENTRY, priv_driver_del_acl_entry},
 	{CMD_SHOW_ACL_ENTRY, priv_driver_show_acl_entry},
 	{CMD_CLEAR_ACL_ENTRY, priv_driver_clear_acl_entry},
+#if CFG_SUPPORT_NAN
+	{CMD_NAN_START, priv_driver_set_nan_start},
+	{CMD_NAN_GET_MASTER_IND, priv_driver_get_master_ind},
+	{CMD_NAN_GET_RANGE, priv_driver_get_range},
+	{CMD_FAW_RESET, priv_driver_set_faw_reset},
+	{CMD_FAW_CONFIG, priv_driver_set_faw_config},
+	{CMD_FAW_APPLY, priv_driver_set_faw_apply},
+#endif
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{CMD_SET_DFS_CHN_AVAILABLE, priv_driver_set_dfs_channel_available},
 	{CMD_SHOW_DFS_STATE, priv_driver_show_dfs_state},

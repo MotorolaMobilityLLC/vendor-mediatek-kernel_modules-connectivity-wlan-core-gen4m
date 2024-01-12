@@ -738,6 +738,11 @@ struct STA_RECORD {
 	uint32_t u4LastPhyRate;
 	uint8_t ucNoise_avg;
 #endif /* fos_change end*/
+#if CFG_SUPPORT_NAN
+	OS_SYSTIME rNanExpiredSendTime;
+	unsigned char fgNanSendTimeExpired;
+	atomic_t NanRefCount;
+#endif
 };
 
 #if 0

@@ -102,6 +102,10 @@
 #define IOCTL_IWPRIV_ATE                (SIOCIWFIRSTPRIV + 17)
 #endif
 
+#if CFG_SUPPORT_NAN
+#define IOCTL_NAN_STRUCT (SIOCIWFIRSTPRIV + 20)
+#endif
+
 #define IOC_AP_GET_STA_LIST     (SIOCIWFIRSTPRIV+19)
 #define IOC_AP_SET_MAC_FLTR     (SIOCIWFIRSTPRIV+21)
 #define IOC_AP_SET_CFG          (SIOCIWFIRSTPRIV+23)
@@ -328,6 +332,59 @@ struct NDIS_TRANSPORT_STRUCT {
 	uint8_t ndisOidContent[16];
 };
 
+#if CFG_SUPPORT_NAN
+enum _ENUM_NAN_CONTROL_ID {
+	/* SD 0x00 */
+	ENUM_NAN_PUBLISH = 0x00,
+	ENUM_CANCEL_PUBLISH = 0x01,
+	ENUM_NAN_SUBSCIRBE = 0x02,
+	EMUM_NAN_CANCEL_SUBSCRIBE = 0x03,
+	ENUM_NAN_TRANSMIT = 0x04,
+	ENUM_NAN_UPDATE_PUBLISH = 0x05,
+	ENUM_NAN_GAS_SCHEDULE_REQ = 0x06,
+
+	/* DATA 0x10 */
+	ENUM_NAN_DATA_REQ = 0x10,
+	ENUM_NAN_DATA_RESP = 0x11,
+	ENUM_NAN_DATA_END = 0x12,
+	ENUM_NAN_DATA_UPDTAE = 0x13,
+
+	/* RANGING 0x20*/
+	ENUM_NAN_RG_REQ = 0x20,
+	ENUM_NAN_RG_CANCEL = 0x21,
+	ENUM_NAN_RG_RESP = 0x22,
+
+	/* ENABLE/DISABLE NAN function */
+	ENUM_NAN_ENABLE_REQ = 0x30,
+	ENUM_NAN_DISABLE_REQ = 0x31,
+
+	/* CONFIG 0x40*/
+	ENUM_NAN_CONFIG_MP = 0x40,
+	ENUM_NAN_CONFIG_HC = 0x41,
+	ENUM_NAN_CONFIG_RANFAC = 0x42,
+	ENUM_NAN_CONFIG_AWDW = 0x43
+};
+
+enum _ENUM_NAN_STATUS_REPORT {
+	/* SD 0X00 */
+	ENUM_NAN_SD_RESULT = 0x00,
+	ENUM_NAN_REPLIED = 0x01,
+	ENUM_NAN_SUB_TERMINATE = 0x02,
+	ENUM_NAN_PUB_TERMINATE = 0x03,
+	ENUM_NAN_RECEIVE = 0x04,
+	ENUM_NAN_GAS_CONFIRM = 0x05,
+
+	/* DATA 0X00 */
+	ENUM_NAN_DATA_INDICATION = 0x10,
+	ENUM_NAN_DATA_TERMINATE = 0x11,
+	ENUM_NAN_DATA_CONFIRM = 0x12,
+
+	/* RANGING 0X00 */
+	ENUM_NAN_RG_INDICATION = 0x20,
+	ENUM_NAN_RG_RESULT = 0x21
+};
+#endif
+
 enum AGG_RANGE_TYPE_T {
 	ENUM_AGG_RANGE_TYPE_TX = 0,
 	ENUM_AGG_RANGE_TYPE_TRX = 1,
@@ -425,6 +482,11 @@ priv_ate_set(IN struct net_device *prNetDev,
 	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
 #endif
 
+#if CFG_SUPPORT_NAN
+int priv_nan_struct(IN struct net_device *prNetDev,
+		    IN struct iw_request_info *prIwReqInfo,
+		    IN union iwreq_data *prIwReqData, IN char *pcExtra);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

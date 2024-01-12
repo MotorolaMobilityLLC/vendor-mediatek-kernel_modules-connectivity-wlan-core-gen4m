@@ -987,6 +987,10 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	else if (IS_BSS_BOW(prBssInfo))
 		prChResp->rMsgHdr.eMsgId = MID_CNM_BOW_CH_GRANT;
 #endif
+#if CFG_SUPPORT_NAN
+	else if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN)
+		prChResp->rMsgHdr.eMsgId = MID_CNM_NAN_CH_GRANT;
+#endif
 	else {
 		cnmMemFree(prAdapter, prChResp);
 		return;

@@ -253,6 +253,9 @@ enum ENUM_MSG_ID {
 	/* Connsys power adapter notify driver new power temp */
 	MID_CNS_DRV_PWR_TEMP,
 #endif
+#if (CFG_SUPPORT_NAN == 1)
+	MID_CNM_NAN_CH_GRANT,
+#endif
 	MID_TOTAL_NUM
 };
 
