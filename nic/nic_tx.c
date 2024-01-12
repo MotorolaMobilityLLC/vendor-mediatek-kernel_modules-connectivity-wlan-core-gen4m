@@ -1400,6 +1400,11 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 
 	uint32_t u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
 
+	if (halIsHifStateSuspend(prAdapter)) {
+		DBGLOG(TX, WARN, "Suspend TxMsduQueueMthread\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	while (u4TxLoopCount--) {
 		if (prAdapter->rWifiVar.ucTxMsduQueue == 1)
 			nicTxMsduQueueByRR(prAdapter);
@@ -2379,6 +2384,9 @@ void nicProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 
 	prAdapter->prGlueInfo->IsrTxCnt++;
 	halProcessTxInterrupt(prAdapter);
+
+	if (halIsHifStateSuspend(prAdapter))
+		DBGLOG(TX, WARN, "Suspend TX INT\n");
 
 	/* Indicate Service Thread */
 	if (kalGetTxPendingCmdCount(prAdapter->prGlueInfo) > 0

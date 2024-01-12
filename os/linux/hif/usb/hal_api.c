@@ -258,6 +258,12 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 	int ret;
 	struct TX_DESC_OPS_T *prTxDescOps;
 
+	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
+		prHifInfo->state == USB_STATE_PRE_RESUME ||
+		prHifInfo->state == USB_STATE_PRE_SUSPEND_START ||
+		prHifInfo->state == USB_STATE_READY))
+		return WLAN_STATUS_FAILURE;
+
 	prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, &prHifInfo->rTxCmdQLock);
 	if (prUsbReq == NULL)
 		return WLAN_STATUS_RESOURCES;
@@ -441,6 +447,20 @@ uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, 
 
 	memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, LEN_USB_UDMA_TX_TERMINATOR);
 	prBufCtrl->u4WrIdx += LEN_USB_UDMA_TX_TERMINATOR;
+
+	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
+		prHifInfo->state == USB_STATE_READY)) {
+		list_del_init(&prUsbReq->list);
+		list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataCompleteQ);
+
+#if CFG_USB_TX_HANDLE_IN_HIF_THREAD
+		kalSetIntEvent(prGlueInfo);
+#else
+		/*tasklet_hi_schedule(&prGlueInfo->rTxCompleteTask);*/
+		tasklet_schedule(&prGlueInfo->rTxCompleteTask);
+#endif
+		return WLAN_STATUS_FAILURE;
+	}
 
 	list_del_init(&prUsbReq->list);
 
@@ -926,7 +946,10 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 	struct GL_HIF_INFO *prHifInfo = prUsbReq->prHifInfo;
 	struct GLUE_INFO *prGlueInfo = prHifInfo->prGlueInfo;
 
-	if (prHifInfo->state != USB_STATE_LINK_UP) {
+	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
+			prHifInfo->state == USB_STATE_READY ||
+			prHifInfo->state == USB_STATE_PRE_RESUME ||
+			prHifInfo->state == USB_STATE_PRE_SUSPEND_START)) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxEventFreeQ, prUsbReq, &prHifInfo->rRxEventQLock, FALSE);
 		return;
 	}
@@ -1007,7 +1030,8 @@ void halRxUSBReceiveDataComplete(struct urb *urb)
 	struct GL_HIF_INFO *prHifInfo = prUsbReq->prHifInfo;
 	struct GLUE_INFO *prGlueInfo = prHifInfo->prGlueInfo;
 
-	if (prHifInfo->state != USB_STATE_LINK_UP) {
+	if (!(prHifInfo->state == USB_STATE_LINK_UP ||
+			prHifInfo->state == USB_STATE_READY)) {
 		glUsbEnqueueReq(prHifInfo, &prHifInfo->rRxDataFreeQ, prUsbReq, &prHifInfo->rRxDataQLock, FALSE);
 		return;
 	}
@@ -1501,6 +1525,16 @@ u_int8_t halIsPendingRx(IN struct ADAPTER *prAdapter)
 #endif
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Send HIF_CTRL command to inform FW stop send packet/event to host
+*	suspend = 1
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (void)
+*/
+/*----------------------------------------------------------------------------*/
 void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
 {
 	struct CMD_HIF_CTRL rCmdHifCtrl;
@@ -1509,7 +1543,7 @@ void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_USB;
 	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
 	rCmdHifCtrl.ucHifStop = 1;
-
+	rCmdHifCtrl.ucHifSuspend = 1;
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_HIF_CTRL,	/* ucCID */
 				      TRUE,	/* fgSetQuery */
@@ -1526,6 +1560,42 @@ void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter)
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Send HIF_CTRL command to inform FW allow send packet/event to host
+*	suspend = 0
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (void)
+*/
+/*----------------------------------------------------------------------------*/
+void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter)
+{
+	struct CMD_HIF_CTRL rCmdHifCtrl;
+	uint32_t rStatus;
+
+	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_USB;
+	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
+	rCmdHifCtrl.ucHifStop = 0;
+	rCmdHifCtrl.ucHifSuspend = 0;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter, /* prAdapter */
+				CMD_ID_HIF_CTRL,	/* ucCID */
+				TRUE,	/* fgSetQuery */
+				FALSE,	/* fgNeedResp */
+				FALSE,	/* fgIsOid */
+				NULL,	/* nicEventHifCtrl */
+				NULL,	/* pfCmdTimeoutHandler */
+				sizeof(struct CMD_HIF_CTRL),
+				(uint8_t *)&rCmdHifCtrl, /* pucInfoBuffer */
+				NULL,	/* pvSetQueryBuffer */
+				0		/* u4SetQueryBufferLen */
+	    );
+
+	ASSERT(rStatus == WLAN_STATUS_PENDING);
+}
+
 void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
 	unsigned long flags;
@@ -1536,7 +1606,8 @@ void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCm
 
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 
-	if (prHifInfo->state == USB_STATE_LINK_UP)
+	if (prHifInfo->state == USB_STATE_LINK_UP
+		|| prHifInfo->state == USB_STATE_PRE_SUSPEND_START)
 		prHifInfo->state = USB_STATE_PRE_SUSPEND_DONE;
 	else
 		DBGLOG(HAL, ERROR, "Previous USB state (%d)!\n",
@@ -1555,7 +1626,8 @@ void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 
 	spin_lock_irqsave(&prHifInfo->rStateLock, flags);
 
-	if (prHifInfo->state == USB_STATE_LINK_UP)
+	if (prHifInfo->state == USB_STATE_LINK_UP
+		|| prHifInfo->state == USB_STATE_PRE_SUSPEND_START)
 		prHifInfo->state = USB_STATE_PRE_SUSPEND_FAIL;
 	else
 		DBGLOG(HAL, ERROR, "Previous USB state (%d)!\n",
@@ -1673,6 +1745,9 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 	uint32_t u4SerAction;
 	struct mt66xx_chip_info *prChipInfo;
 
+	if (prAdapter->prGlueInfo->rHifInfo.state == USB_STATE_SUSPEND)
+		return;
+
 	prChipInfo = prAdapter->chip_info;
 
 	/* get MCU SER event */
@@ -1771,5 +1846,85 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 
 void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
 {
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is READY for upper layer cfg80211
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: ready, FALSE: not ready)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState)
+{
+	if (!prAdapter)
+		return FALSE;
+
+	if (!prAdapter->prGlueInfo)
+		return FALSE;
+
+	if (prAdapter->prGlueInfo->u4ReadyFlag == 0)
+		return FALSE;
+
+	if (pucState)
+		*pucState = prAdapter->prGlueInfo->rHifInfo.state;
+
+	if (prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_READY)
+		return FALSE;
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is LINK_UP or READY for USB TX/RX
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: ready, FALSE: not ready)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter)
+{
+	if (!prAdapter)
+		return FALSE;
+
+	if (!prAdapter->prGlueInfo)
+		return FALSE;
+
+	if ((prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP) &&
+		(prAdapter->prGlueInfo->rHifInfo.state != USB_STATE_READY))
+		return FALSE;
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is during supend process
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: suspend, reject the caller action. FALSE: not suspend)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
+{
+	enum usb_state state;
+
+	if (!prAdapter)
+		return FALSE;
+
+	if (!prAdapter->prGlueInfo)
+		return FALSE;
+
+	state = prAdapter->prGlueInfo->rHifInfo.state;
+
+	if (state == USB_STATE_SUSPEND)
+		return TRUE;
+
+	return FALSE;
 }
 

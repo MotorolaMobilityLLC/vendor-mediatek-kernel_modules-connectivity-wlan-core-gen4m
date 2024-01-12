@@ -972,6 +972,8 @@ void asicConnac2xEnableUsbFWDL(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgEnable);
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
+	IN struct GLUE_INFO *prGlueInfo);
 #endif /* _HIF_USB */
 
 void fillConnac2xTxDescTxByteCount(

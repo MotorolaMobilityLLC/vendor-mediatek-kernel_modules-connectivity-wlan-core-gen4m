@@ -2203,12 +2203,45 @@ void nicCmdEventBatchScanResult(IN struct ADAPTER
 }
 #endif
 
+void nicEventHifCtrlv2(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent)
+{
+#if defined(_HIF_USB)
+	struct EVENT_HIF_CTRL *prEventHifCtrl;
+	struct GL_HIF_INFO *prHifInfo;
+
+	prEventHifCtrl = (struct EVENT_HIF_CTRL *) (
+				 prEvent->aucBuffer);
+
+	if (prEventHifCtrl->ucHifSuspend) {
+		/* suspend event, change state to PRE_SUSPEND_DONE */
+		if (prEventHifCtrl->ucHifTxTrafficStatus ==
+		    ENUM_HIF_TRAFFIC_IDLE &&
+		    prEventHifCtrl->ucHifRxTrafficStatus ==
+		    ENUM_HIF_TRAFFIC_IDLE) {	/* success */
+			halUSBPreSuspendDone(prAdapter,
+				NULL, prEvent->aucBuffer);
+		} else {
+			/* busy */
+			/* invalid */
+			halUSBPreSuspendTimeout(prAdapter, NULL);
+		}
+	} else {
+		/* if USB get resume event, change to LINK_UP */
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
+	}
+#endif
+}
+
 void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent)
 {
 #if defined(_HIF_USB)
 	struct EVENT_HIF_CTRL *prEventHifCtrl;
+	struct BUS_INFO *prBusInfo;
 
+	prBusInfo = prAdapter->chip_info->bus_info;
 	prEventHifCtrl = (struct EVENT_HIF_CTRL *) (
 				 prEvent->aucBuffer);
 
@@ -2220,21 +2253,21 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 	       prEventHifCtrl->ucHifTxTrafficStatus,
 	       prEventHifCtrl->ucHifRxTrafficStatus);
 
-	if (prEventHifCtrl->ucHifTxTrafficStatus ==
-	    ENUM_HIF_TRAFFIC_IDLE &&
-	    prEventHifCtrl->ucHifRxTrafficStatus ==
-	    ENUM_HIF_TRAFFIC_IDLE) {	/* success */
-		halUSBPreSuspendDone(prAdapter, NULL, prEvent->aucBuffer);
-	} else if (prEventHifCtrl->ucHifTxTrafficStatus ==
-		   ENUM_HIF_TRAFFIC_BUSY ||
-		   prEventHifCtrl->ucHifRxTrafficStatus ==
-		   ENUM_HIF_TRAFFIC_BUSY) {	/* busy */
-		halUSBPreSuspendTimeout(prAdapter, NULL);
-	} else if (prEventHifCtrl->ucHifTxTrafficStatus ==
-		   ENUM_HIF_TRAFFIC_INVALID ||
-		   prEventHifCtrl->ucHifRxTrafficStatus ==
-		   ENUM_HIF_TRAFFIC_INVALID) {	/* invalid */
-		halUSBPreSuspendTimeout(prAdapter, NULL);
+	if (prBusInfo->u4SuspendVer == SUSPEND_V2) {
+		/* Suspend V2, control state of HIF here */
+		nicEventHifCtrlv2(prAdapter, prEvent);
+	} else {
+		if (prEventHifCtrl->ucHifTxTrafficStatus ==
+		    ENUM_HIF_TRAFFIC_IDLE &&
+		    prEventHifCtrl->ucHifRxTrafficStatus ==
+		    ENUM_HIF_TRAFFIC_IDLE) {	/* success */
+			halUSBPreSuspendDone(prAdapter,
+				NULL, prEvent->aucBuffer);
+		} else {
+			/* busy */
+			/* invalid */
+			halUSBPreSuspendTimeout(prAdapter, NULL);
+		}
 	}
 #endif
 }

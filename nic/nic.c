@@ -682,6 +682,9 @@ void nicRestoreSpiDefMode(IN struct ADAPTER *prAdapter)
 void nicProcessAbnormalInterrupt(IN struct ADAPTER
 				 *prAdapter)
 {
+	if (halIsHifStateSuspend(prAdapter))
+		DBGLOG(RX, WARN, "suspend Abnormal\n");
+
 	prAdapter->prGlueInfo->IsrAbnormalCnt++;
 
 	halProcessAbnormalInterrupt(prAdapter);
@@ -717,6 +720,8 @@ void nicProcessSoftwareInterrupt(IN struct ADAPTER
 				 *prAdapter)
 {
 	prAdapter->prGlueInfo->IsrSoftWareCnt++;
+	if (halIsHifStateSuspend(prAdapter))
+		DBGLOG(RX, WARN, "suspend SW INT\n");
 	halProcessSoftwareInterrupt(prAdapter);
 }				/* end of nicProcessSoftwareInterrupt() */
 

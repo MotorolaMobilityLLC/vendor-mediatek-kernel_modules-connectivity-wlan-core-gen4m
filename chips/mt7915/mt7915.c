@@ -369,7 +369,9 @@ struct BUS_INFO mt7915_bus_info = {
 	     CONNAC2X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
 	     CONNAC2X_UDMA_WLCFG_0_TICK_1US_EN(1)),
 	.u4UdmaTxTimeout = CONNAC2X_UDMA_TX_TIMEOUT_LIMIT,
+	.u4SuspendVer = SUSPEND_V2,
 	.asicUsbSuspend = NULL,	/*asicUsbSuspend*/
+	.asicUsbResume = asicConnac2xUsbResume,
 	.asicUsbEventEpDetected = asicUsbEventEpDetected,
 	.asicUsbRxByteCount = wlanHarrierUsbRxByteCount,
 #endif				/* _HIF_USB */
