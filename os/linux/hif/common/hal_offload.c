@@ -2732,7 +2732,7 @@ static u_int8_t __halMawdWakeup(void)
 		HAL_RMCR_RD(OFFLOAD_HOST, NULL, u4Addr, &u4Val);
 	}
 	if (u4Idx == MAWD_POWER_UP_RETRY_CNT) {
-		DBGLOG(HAL, ERROR, "polling ID fail\n");
+		DBGLOG(HAL, ERROR, "polling ID fail[0x%08x]\n", u4Val);
 		fgRet = FALSE;
 		goto exit;
 	}
