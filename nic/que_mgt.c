@@ -1233,7 +1233,7 @@ struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER *prAdapter,
 
 			case STA_REC_INDEX_NOT_FOUND:
 				/* Drop packet if no STA_REC is found */
-				DBGLOG(QM, INFO,
+				DBGLOG(QM, ERROR,
 					"Drop the Packet for no STA_REC\n");
 
 				prTxQue = &rNotEnqueuedQue;
@@ -1379,6 +1379,10 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 {
 	struct STA_RECORD *prTempStaRec;
 	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+	struct MLD_STA_RECORD *prMldSta;
+#endif
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	prTempStaRec = NULL;
@@ -1464,9 +1468,22 @@ void qmDetermineStaRecIndex(struct ADAPTER *prAdapter,
 	/* 4 <3> Not BMCAST, No AP --> Compare DA
 	 * (i.e., to see whether this is a unicast frame to a client)
 	 */
-	prTempStaRec = cnmGetStaRecByAddress(prAdapter,
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	prMldSta = mldStarecGetByMldAddr(prAdapter, prMldBss,
+		prMsduInfo->aucEthDestAddr);
+	if (prMldSta) {
+		prTempStaRec = cnmGetStaRecByIndex(prAdapter,
+			secGetStaIdxByWlanIdx(prAdapter,
+				prMldSta->u2PrimaryMldId));
+	} else
+#endif
+	{
+		prTempStaRec = cnmGetStaRecByAddress(prAdapter,
 			prMsduInfo->ucBssIndex,
 			prMsduInfo->aucEthDestAddr);
+	}
+
 	if (prTempStaRec) {
 		prMsduInfo->ucStaRecIndex = prTempStaRec->ucIndex;
 		DBGLOG(QM, LOUD, "TX with STA[%u]\n",

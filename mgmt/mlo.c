@@ -3604,23 +3604,17 @@ struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	uint8_t aucMacAddr[])
 {
-	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
-	uint8_t i = 0;
+	struct MLD_STA_RECORD *prMldSta;
+	struct LINK *prClientList;
 
 	if (!prMldBssInfo)
 		return NULL;
 
-	if (EQUAL_MAC_ADDR(aucZeroMacAddr, aucMacAddr))
-		return NULL;
-
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
-		struct MLD_STA_RECORD *prMldStarec =
-			&prAdapter->aprMldStarec[i];
-
-		if (prMldStarec->fgIsInUse &&
-		    prMldStarec->ucGroupMldId == prMldBssInfo->ucGroupMldId &&
-		    EQUAL_MAC_ADDR(prMldStarec->aucPeerMldAddr,	aucMacAddr))
-			return prMldStarec;
+	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
+	LINK_FOR_EACH_ENTRY(prMldSta, prClientList, rLinkEntry,
+			    struct MLD_STA_RECORD) {
+		if (EQUAL_MAC_ADDR(prMldSta->aucPeerMldAddr, aucMacAddr))
+			return prMldSta;
 	}
 
 	return NULL;
