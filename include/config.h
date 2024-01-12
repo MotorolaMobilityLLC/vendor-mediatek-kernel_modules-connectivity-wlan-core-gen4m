@@ -1353,20 +1353,16 @@
 #define CFG_WLAN_ASSISTANT_NVRAM		1
 
 /*------------------------------------------------------------------------------
- * Flags of WORKAROUND HWITS00012836 WTBL_SEARCH_FAIL
+ * SW handles WTBL_SEARCH_FAIL
  *------------------------------------------------------------------------------
  */
-#ifndef CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL
-#define CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL 0
-#endif
+#define CFG_WIFI_SW_WTBL_SEARCH_FAIL 1
 
 /*------------------------------------------------------------------------------
- * Flags of WORKAROUND HWITS00010371 PMF_CIPHER_MISMATCH
+ * SW enables CIPHER_MISMATCH
  *------------------------------------------------------------------------------
  */
-#ifndef CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH
-#define CFG_WIFI_WORKAROUND_HWITS00010371_PMF_CIPHER_MISMATCH 0
-#endif
+#define CFG_WIFI_SW_CIPHER_MISMATCH 1
 
 /*------------------------------------------------------------------------------
  * CONNINFRA SUPPORT (Without WMT)
