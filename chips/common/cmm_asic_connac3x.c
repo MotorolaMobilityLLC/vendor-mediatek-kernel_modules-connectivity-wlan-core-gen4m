@@ -2136,6 +2136,9 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO,
 			"Wi-Fi Driver trigger, need do complete.\n");
 		reset_done_trigger_completion();
+	} else if (fgIsDrvTriggerWholeChipReset) {
+		DBGLOG(HAL, INFO,
+			"Ignore fw assert due to whole chip reset ongoing.\n");
 	} else {
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
 		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
@@ -2152,6 +2155,12 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 {
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
+
+	g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+	glResetUpdateFlag(TRUE);
+	g_IsWfsysBusHang = TRUE;
+
+	kalSetRstEvent();
 }
 #endif
 
@@ -2430,6 +2439,11 @@ static void register_connv3_cbs(void)
 	cb.pre_cal_cb.pre_cal_error = wlanPreCalErr;
 #endif
 
+#if CFG_CHIP_RESET_SUPPORT
+	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;
+	cb.rst_cb.post_whole_chip_rst = wlan_post_whole_chip_rst_v3;
+#endif
+
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	cb.cr_cb.priv_data = prGlueInfo;
 	cb.cr_cb.read = wf_reg_read_wrapper;
@@ -2444,6 +2458,12 @@ static void register_connv3_cbs(void)
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	kalMemZero(&conninfra_wf_cb, sizeof(struct sub_drv_ops_cb));
+#if CFG_CHIP_RESET_SUPPORT
+	conninfra_wf_cb.rst_cb.pre_whole_chip_rst =
+		wlan_pre_whole_chip_rst_v2;
+	conninfra_wf_cb.rst_cb.post_whole_chip_rst =
+		wlan_post_whole_chip_rst_v2;
+#endif
 
 	ret = conninfra_sub_drv_ops_register(CONNDRV_TYPE_MAWD,
 		&conninfra_wf_cb);

@@ -7406,11 +7406,6 @@ int wlanFuncOn(void)
 {
 	int ret = 0;
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
-	if (kalIsWholeChipResetting())
-		return wlanFuncOnImpl();
-#endif
-
 	ret = connsys_power_on();
 	if (ret)
 		goto exit;
