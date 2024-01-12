@@ -4484,9 +4484,11 @@ int main_thread(void *data)
 #endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		if (test_and_clear_bit(GLUE_FLAG_SER_TIMEOUT_BIT,
-			&prGlueInfo->ulFlag))
+			&prGlueInfo->ulFlag)) {
+			glSetRstReason(RST_SER_TIMEOUT);
 			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
 				RST_FLAG_DO_CORE_DUMP);
+		}
 
 		ktime_get_real_ts64(&time);
 		if (TIME_BEFORE(

@@ -123,7 +123,6 @@ u_int8_t g_IsWfsysRstDone = TRUE;
 u_int8_t g_fgRstRecover = FALSE;
 #endif
 
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_UNKNOWN"),
 	(uint8_t *) DISP_STRING("RST_PROCESS_ABNORMAL_INT"),
@@ -132,7 +131,20 @@ static uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_BT_TRIGGER"),
 	(uint8_t *) DISP_STRING("RST_OID_TIMEOUT"),
 	(uint8_t *) DISP_STRING("RST_CMD_TRIGGER"),
+	(uint8_t *) DISP_STRING("RST_REQ_CHL_FAIL"),
+	(uint8_t *) DISP_STRING("RST_FW_DL_FAIL"),
+	(uint8_t *) DISP_STRING("RST_SER_TIMEOUT"),
+	(uint8_t *) DISP_STRING("RST_SLP_PROT_TIMEOUT"),
+	(uint8_t *) DISP_STRING("RST_REG_READ_DEADFEED"),
+	(uint8_t *) DISP_STRING("RST_P2P_CHNL_GRANT_INVALID_TYPE"),
+	(uint8_t *) DISP_STRING("RST_P2P_CHNL_GRANT_INVALID_STATE"),
+	(uint8_t *) DISP_STRING("RST_SCAN_RECOVERY"),
+	(uint8_t *) DISP_STRING("RST_ACCESS_REG_FAIL"),
+	(uint8_t *) DISP_STRING("[Wi-Fi On] nicpmSetDriverOwn() failed!"),
+	(uint8_t *) DISP_STRING("[Wi-Fi] [Read WCIR_WLAN_READY fail!]"),
+	(uint8_t *) DISP_STRING("[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED.")
 };
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
 u_int8_t g_IsNeedWaitCoredump = FALSE;
 #endif
 
@@ -478,7 +490,8 @@ static void mtk_wifi_trigger_reset(struct work_struct *work)
 	if (rst->rst_trigger_flag & RST_FLAG_PREVENT_POWER_OFF)
 		mtk_wcn_set_connsys_power_off_flag(FALSE);
 
-	fgResult = mtk_wcn_wmt_assert_timeout(WMTDRV_TYPE_WIFI, 0x40, 0);
+	fgResult = mtk_wcn_wmt_assert_keyword(
+		WMTDRV_TYPE_WIFI, apucRstReason[eResetReason]);
 	DBGLOG(INIT, INFO, "reset result %d, trigger flag 0x%x\n",
 				fgResult, rst->rst_trigger_flag);
 }

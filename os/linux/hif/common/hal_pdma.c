@@ -2766,6 +2766,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 
 #if CFG_CHIP_RESET_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 0)
+	glSetRstReason(RST_SER_TIMEOUT);
 	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #else
 	kalSetSerTimeoutEvent(prGlueInfo);
@@ -3153,6 +3154,7 @@ void halEnableSlpProt(struct GLUE_INFO *prGlueInfo)
 			break;
 		if (u4WaitDelay == 0) {
 			DBGLOG(HAL, ERROR, "wait for sleep protect timeout.\n");
+			glSetRstReason(RST_SLP_PROT_TIMEOUT);
 			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
 				RST_FLAG_CHIP_RESET);
 			break;
