@@ -340,7 +340,7 @@ void wlanCloseIdxLogBin(struct ADAPTER *prAdapter)
 	kalMemFree(prIdxLogBin, VIR_MEM_TYPE, sizeof(struct FW_LOG_IDX_DATA));
 }
 
-inline uint8_t *dbgFwLogFindEntry(struct FW_LOG_IDX_DATA *prFwLogIdx,
+uint8_t *dbgFwLogFindEntry(struct FW_LOG_IDX_DATA *prFwLogIdx,
 			uint32_t u4Offset, struct IDX_LOG_ENTRY *prLogEntry)
 {
 	uint8_t *prLogStr = NULL;
@@ -394,7 +394,7 @@ inline uint8_t *dbgFwLogFindEntry(struct FW_LOG_IDX_DATA *prFwLogIdx,
 	return NULL;
 }
 
-inline int32_t dbgCheckTransText(uint8_t ucText)
+int32_t dbgCheckTransText(uint8_t ucText)
 {
 	/* IDX format won't have '%s' & '%c' case */
 	if ((ucText == 'd') || (ucText == 'u') || (ucText == 'o') ||
@@ -409,8 +409,7 @@ inline int32_t dbgCheckTransText(uint8_t ucText)
 	else
 		return -1;
 }
-
-inline uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
+uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 				 struct IDX_LOG_V2_FORMAT *prIdxV2Header,
 				 uint8_t *pucIdxLog,
 				 uint8_t *aucLogBuf)

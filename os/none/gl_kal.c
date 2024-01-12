@@ -755,4 +755,33 @@ u_int8_t __weak kalIsSupportRro(void)
 {
 	return FALSE;
 }
+
+uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
+			 uint8_t **apucNameTable)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+uint32_t kalFirmwareClose(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+uint32_t kalFirmwareSize(struct GLUE_INFO *prGlueInfo,
+			 uint32_t *pu4Size)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
+			 void *prBuf, uint32_t u4Offset,
+			 uint32_t *pu4Size)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+
 #endif
