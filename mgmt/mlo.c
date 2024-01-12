@@ -4831,8 +4831,14 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 
 	DBGLOG(ML, INFO, "Remain BssIndex: %d, Pause BssIndex: %d\n",
 				ucMLSRRemainBssIndex, ucMLSRPauseBssIndex);
-	prPauseBssInfo = prAdapter->aprBssInfo[ucMLSRPauseBssIndex];
-	prPauseBssInfo->ucMLSRPausedLink = TRUE;
+	prPauseBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucMLSRPauseBssIndex);
+	if (prPauseBssInfo)
+		prPauseBssInfo->ucMLSRPausedLink = TRUE;
+
+	if (!IS_BSS_INDEX_VALID(ucMLSRRemainBssIndex)) {
+		DBGLOG(ML, INFO, "Remain BssIndex invalid\n");
+		return;
+	}
 
 	rStatus = mldSetRemainMLSRBssIndex(prAdapter, ucMLSRRemainBssIndex);
 	if (rStatus == WLAN_STATUS_SUCCESS ||
