@@ -2839,7 +2839,7 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 				DBGLOG(P2P, INFO,
 					"[OWE] Ignore deauth in %d\n",
 					prCurrStaRec->eAuthAssocState);
-				break;
+				goto notify;
 			}
 
 			/* Glue layer indication. */
