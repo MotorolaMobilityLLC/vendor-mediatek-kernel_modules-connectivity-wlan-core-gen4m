@@ -3588,10 +3588,6 @@ int32_t soc3_0_wlanPowerOnInit(
 		prAdapter->u4OwnFailedCount = 0;
 		prAdapter->u4OwnFailedLogCount = 0;
 
-#if 0  /* Sample's gen4m code base doesn't support */
-		prAdapter->fgEnHifDbgInfo = TRUE;
-#endif
-
 		/* Additional with chip reset optimize*/
 		prAdapter->ucCmdSeqNum = 0;
 		prAdapter->u4PwrCtrlBlockCnt = 0;
