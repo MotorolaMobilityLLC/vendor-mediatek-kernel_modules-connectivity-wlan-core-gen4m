@@ -169,6 +169,11 @@ void twtPlannerRxInfoFrm(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
 
+void twtPlannerGetTsfDone(
+	struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo,
+	uint8_t *pucEventBuf);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
