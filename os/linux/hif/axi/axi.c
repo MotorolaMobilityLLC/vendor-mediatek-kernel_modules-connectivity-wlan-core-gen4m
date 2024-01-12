@@ -279,7 +279,7 @@ static int hifAxiProbe(void)
 	mtk_wcn_consys_hw_wifi_paldo_ctrl(1);
 #else
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI, &prDriverData->prPwrLevel);
+	conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI, &prDriverData->u4PwrLevel);
 	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, CONN_PWR_MSG_GET_TEMP,
 			&prDriverData->rTempInfo);
 #endif

@@ -5314,6 +5314,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Idx = 0;
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	struct mt66xx_hif_driver_data *prHifDriverData;
+#endif
 
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiOnStart();
@@ -5394,14 +5397,14 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prWifiVar = &prAdapter->rWifiVar;
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-		prAdapter->u4PwrLevel = ((struct mt66xx_hif_driver_data *)
-						pvDriverData)->prPwrLevel;
-		prAdapter->rTempInfo = ((struct mt66xx_hif_driver_data *)
-						pvDriverData)->rTempInfo;
+		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
+		prAdapter->u4PwrLevel = prHifDriverData->u4PwrLevel;
+		kalMemCopy(&prAdapter->rTempInfo, &prHifDriverData->rTempInfo,
+				sizeof(struct conn_pwr_event_max_temp));
 		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
 						&(prAdapter->u4PwrLevel));
 		connsys_power_event_notification(CONN_PWR_EVENT_MAX_TEMP,
-						prAdapter->rTempInfo);
+						&prAdapter->rTempInfo);
 #endif
 
 		wlanOnPreAdapterStart(prGlueInfo,

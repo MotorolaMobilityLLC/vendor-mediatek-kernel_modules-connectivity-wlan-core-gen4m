@@ -1912,7 +1912,7 @@ struct ADAPTER {
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	struct LINK rPwrLevelHandlerList;
 	uint32_t u4PwrLevel;
-	struct conn_pwr_event_max_temp *rTempInfo;
+	struct conn_pwr_event_max_temp rTempInfo;
 	struct THRM_PROT_CFG_CONTEXT rThrmProtCfg;
 #endif
 
