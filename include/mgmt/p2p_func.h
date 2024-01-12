@@ -482,4 +482,9 @@ uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_P2P_CONNECT_STATE eConnState,
 		IN struct MSDU_INFO *prMgmtTxMsdu);
 
+uint8_t p2pFuncIsTimingCriticalFrames(
+		IN struct ADAPTER *prAdapter,
+		IN enum ENUM_P2P_CONNECT_STATE eConnState,
+		IN struct MSDU_INFO *prMgmtTxMsdu);
+
 #endif
