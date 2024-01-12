@@ -1802,6 +1802,9 @@ wlanGetChannelIndex(IN enum ENUM_BAND band, IN uint8_t channel);
 uint8_t
 wlanGetChannelNumFromIndex(IN uint8_t ucIdx);
 
+enum ENUM_BAND
+wlanGetChannelBandFromIndex(IN uint8_t ucIdx);
+
 void
 wlanSortChannel(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_CHNL_SORT_POLICY ucSortType);

@@ -2467,6 +2467,7 @@ struct LTE_SAFE_CHN_INFO {
 
 struct PARAM_CHN_LOAD_INFO {
 	/* Per-CHN Load */
+	enum ENUM_BAND eBand;
 	uint8_t ucChannel;
 	uint16_t u2APNum;
 	uint32_t u4Dirtiness;
@@ -2474,6 +2475,7 @@ struct PARAM_CHN_LOAD_INFO {
 };
 
 struct PARAM_CHN_RANK_INFO {
+	enum ENUM_BAND eBand;
 	uint8_t ucChannel;
 	uint32_t u4Dirtiness;
 	uint8_t ucReserved;

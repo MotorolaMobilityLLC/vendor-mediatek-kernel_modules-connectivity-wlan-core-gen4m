@@ -2766,7 +2766,8 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 		u2CmdBufLen = OFFSET_OF(struct CMD_BEACON_TEMPLATE_UPDATE,
 					aucIE) + u2IELen;
 		DBGLOG(NIC, INFO,
-		       "update for probe response offload to firmware\n");
+		       "update probe response to firmware, method:%d\n",
+		       eIeUpdMethod);
 #endif
 	} else {
 		DBGLOG(INIT, ERROR, "Unknown IeUpdMethod.\n");
