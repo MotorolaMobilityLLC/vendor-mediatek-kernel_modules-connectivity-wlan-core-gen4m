@@ -416,7 +416,16 @@ mboxSendMsg(IN P_ADAPTER_T prAdapter,
 
 	ASSERT(eMboxId < MBOX_ID_TOTAL_NUM);
 	ASSERT(prMsg);
+	if (!prMsg) {
+		DBGLOG(CNM, ERROR, "prMsg is NULL\n");
+		return;
+	}
+
 	ASSERT(prAdapter);
+	if (!prAdapter) {
+		DBGLOG(CNM, ERROR, "prAdapter is NULL\n");
+		return;
+	}
 
 	prMbox = &(prAdapter->arMbox[eMboxId]);
 
@@ -468,6 +477,10 @@ VOID mboxRcvAllMsg(IN P_ADAPTER_T prAdapter, ENUM_MBOX_ID_T eMboxId)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_MAILBOX);
 
 		ASSERT(prMsg);
+		if (!prMsg) {
+			DBGLOG(CNM, ERROR, "prMsg is NULL\n");
+			continue;
+		}
 		MBOX_HNDL_MSG(prAdapter, prMsg);
 	}
 

@@ -1134,87 +1134,85 @@ VOID p2pRoleFsmRunEventDfsCac(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 	CNM_DBDC_CAP_T rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac\n");
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac\n");
 
-		prP2pDfsCacMsg = (P_MSG_P2P_DFS_CAC_T) prMsgHdr;
+	prP2pDfsCacMsg = (P_MSG_P2P_DFS_CAC_T) prMsgHdr;
 
-		rChannelWidth = prP2pDfsCacMsg->eChannelWidth;
+	rChannelWidth = prP2pDfsCacMsg->eChannelWidth;
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pDfsCacMsg->ucRoleIdx);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pDfsCacMsg->ucRoleIdx);
 
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac with Role(%d)\n", prP2pDfsCacMsg->ucRoleIdx);
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac with Role(%d)\n", prP2pDfsCacMsg->ucRoleIdx);
 
-		if (!prP2pRoleFsmInfo) {
-			DBGLOG(P2P, ERROR,
-			       "p2pRoleFsmRunEventDfsCac: Corresponding P2P Role FSM empty: %d.\n",
-			       prP2pDfsCacMsg->ucRoleIdx);
-			break;
-		}
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+		       "p2pRoleFsmRunEventDfsCac: Corresponding P2P Role FSM empty: %d.\n",
+		       prP2pDfsCacMsg->ucRoleIdx);
+		goto error;
+	}
 
-		if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
-			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac: Stop DFS shut down timer.\n");
-			cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
-		}
+	if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDfsCac: Stop DFS shut down timer.\n");
+		cnmTimerStopTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer));
+	}
 
-		prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
 
-		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pDfsCacMsg->ucRoleIdx]))
-			prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
-		else
-			prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pDfsCacMsg->ucRoleIdx]))
+		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_PURE_AP;
+	else
+		prP2pConnReqInfo->eConnRequest = P2P_CONNECTION_TYPE_GO;
 
 #if CFG_SUPPORT_DBDC
-		cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
-		cnmGetDbdcCapability(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			prP2pConnReqInfo->rChannelInfo.eBand,
-			prP2pConnReqInfo->rChannelInfo.ucChannelNum,
-			prAdapter->rWifiVar.ucNSS,
-			&rDbdcCap);
+	cnmDbdcEnableDecision(prAdapter, prP2pBssInfo->ucBssIndex, prP2pConnReqInfo->rChannelInfo.eBand);
+	cnmGetDbdcCapability(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		prP2pConnReqInfo->rChannelInfo.eBand,
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+		prAdapter->rWifiVar.ucNSS,
+		&rDbdcCap);
 
-		DBGLOG(P2P, INFO,
-			"p2pRoleFsmRunEventDfsCac: Set channel at CH %u.\n",
-			prP2pConnReqInfo->rChannelInfo.ucChannelNum);
+	DBGLOG(P2P, INFO,
+		"p2pRoleFsmRunEventDfsCac: Set channel at CH %u.\n",
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum);
 
-		prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
-		prP2pBssInfo->ucNss = rDbdcCap.ucNss;
-		prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
+	prP2pBssInfo->eDBDCBand = rDbdcCap.ucDbdcBandIndex;
+	prP2pBssInfo->ucNss = rDbdcCap.ucNss;
+	prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 #endif /*CFG_SUPPORT_DBDC*/
 
-		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
-			/* Make sure the state is in IDLE state. */
-			p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
-		}
+	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
+		/* Make sure the state is in IDLE state. */
+		p2pRoleFsmRunEventAbort(prAdapter, prP2pRoleFsmInfo);
+	}
 
-		/* Leave IDLE state. */
-		SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
+	/* Leave IDLE state. */
+	SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
 
-		prP2pBssInfo->eIntendOPMode = OP_MODE_ACCESS_POINT;
-		prP2pBssInfo->fgIsDfsActive = TRUE;
+	prP2pBssInfo->eIntendOPMode = OP_MODE_ACCESS_POINT;
+	prP2pBssInfo->fgIsDfsActive = TRUE;
 
-		if (prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum != 0) {
-			DBGLOG(P2P, INFO, "Role(%d) Set channel at CH(%d)\n",
-				prP2pDfsCacMsg->ucRoleIdx,
-				prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum);
+	if (prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum != 0) {
+		DBGLOG(P2P, INFO, "Role(%d) Set channel at CH(%d)\n",
+			prP2pDfsCacMsg->ucRoleIdx,
+			prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum);
 
-			p2pRoleStatePrepare_To_DFS_CAC_STATE(prAdapter,
-						GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
-						rChannelWidth,
-						&(prP2pRoleFsmInfo->rConnReqInfo),
-						&(prP2pRoleFsmInfo->rChnlReqInfo));
-			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_DFS_CAC);
-		} else
-			ASSERT(FALSE);
+		p2pRoleStatePrepare_To_DFS_CAC_STATE(prAdapter,
+					GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex),
+					rChannelWidth,
+					&(prP2pRoleFsmInfo->rConnReqInfo),
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
+		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_DFS_CAC);
+	} else {
+		DBGLOG(P2P, ERROR,
+			"prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum %d shouldn't be 0\n");
+	}
 
-
-	} while (FALSE);
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventDfsCac*/
 
 VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1223,42 +1221,43 @@ VOID p2pRoleFsmRunEventRadarDet(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	P_MSG_P2P_RADAR_DETECT_T prMsgP2pRddDetMsg;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet\n");
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet\n");
 
-		prMsgP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) prMsgHdr;
+	prMsgP2pRddDetMsg = (P_MSG_P2P_RADAR_DETECT_T) prMsgHdr;
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet with Role(%d)\n", prP2pRoleFsmInfo->ucRoleIndex);
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet with Role(%d)\n", prP2pRoleFsmInfo->ucRoleIndex);
 
-		if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_DFS_CAC &&
-				prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE)
-			ASSERT(FALSE);
+	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_DFS_CAC &&
+			prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE) {
+		DBGLOG(P2P, ERROR, "Wrong prP2pRoleFsmInfo->eCurrentState \"%s\"!",
+			(prP2pRoleFsmInfo->eCurrentState < P2P_ROLE_STATE_NUM ?
+				(const char *) apucDebugP2pRoleState[prP2pRoleFsmInfo->eCurrentState] : ""));
+		goto error;
+	}
 
-		if (p2pFuncGetRadarDetectMode()) {
-			DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
-			if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
-				p2pFuncSetDfsState(DFS_STATE_CHECKING);
-			else
-				p2pFuncSetDfsState(DFS_STATE_ACTIVE);
-		} else {
-			if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
-				p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
+	if (p2pFuncGetRadarDetectMode()) {
+		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
+		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
+			p2pFuncSetDfsState(DFS_STATE_CHECKING);
+		else
+			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+	} else {
+		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
+			p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_IDLE);
 
-			kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
-			cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
-		}
+		kalP2PRddDetectUpdate(prAdapter->prGlueInfo, prP2pRoleFsmInfo->ucRoleIndex);
+		cnmTimerStartTimer(prAdapter, &(prP2pRoleFsmInfo->rDfsShutDownTimer), 5000);
+	}
 
-		p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
+	p2pFuncShowRadarInfo(prAdapter, prMsgP2pRddDetMsg->ucBssIndex);
 
-	} while (FALSE);
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventRadarDet*/
 
 VOID p2pRoleFsmRunEventSetNewChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1267,30 +1266,25 @@ VOID p2pRoleFsmRunEventSetNewChannel(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T pr
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	P_MSG_P2P_SET_NEW_CHANNEL_T prMsgP2pSetNewChannelMsg;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventSetNewChannel\n");
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventSetNewChannel\n");
 
-		prMsgP2pSetNewChannelMsg = (P_MSG_P2P_SET_NEW_CHANNEL_T) prMsgHdr;
+	prMsgP2pSetNewChannelMsg = (P_MSG_P2P_SET_NEW_CHANNEL_T) prMsgHdr;
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pSetNewChannelMsg->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pSetNewChannelMsg->ucBssIndex);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prMsgP2pSetNewChannelMsg->ucRoleIdx);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prMsgP2pSetNewChannelMsg->ucRoleIdx);
 
-		prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
-		prP2pRoleFsmInfo->rChnlReqInfo.eBand = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand;
-		prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth = prMsgP2pSetNewChannelMsg->eChannelWidth;
-		prP2pBssInfo->ucPrimaryChannel = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
+	prP2pRoleFsmInfo->rChnlReqInfo.ucReqChnlNum = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
+	prP2pRoleFsmInfo->rChnlReqInfo.eBand = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.eBand;
+	prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth = prMsgP2pSetNewChannelMsg->eChannelWidth;
+	prP2pBssInfo->ucPrimaryChannel = prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChannelNum;
 
-		prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS1 =
-			nicGetVhtS1(prP2pBssInfo->ucPrimaryChannel, prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth);
-		prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
+	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS1 =
+		nicGetVhtS1(prP2pBssInfo->ucPrimaryChannel, prP2pRoleFsmInfo->rChnlReqInfo.eChannelWidth);
+	prP2pRoleFsmInfo->rChnlReqInfo.ucCenterFreqS2 = 0;
 
-
-	} while (FALSE);
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 
 VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
@@ -1299,23 +1293,18 @@ VOID p2pRoleFsmRunEventCsaDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	P_MSG_P2P_CSA_DONE_T prMsgP2pCsaDoneMsg;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		DBGLOG(P2P, INFO, "p2pRoleFsmRunEventCsaDone\n");
+	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventCsaDone\n");
 
-		prMsgP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) prMsgHdr;
+	prMsgP2pCsaDoneMsg = (P_MSG_P2P_CSA_DONE_T) prMsgHdr;
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pCsaDoneMsg->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsgP2pCsaDoneMsg->ucBssIndex);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prP2pBssInfo->u4PrivateData);
 
-		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SWITCH_CHANNEL);
+	p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_SWITCH_CHANNEL);
 
-
-	} while (FALSE);
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 
 VOID p2pRoleFsmRunEventDfsShutDownTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
@@ -2357,61 +2346,56 @@ VOID p2pRoleFsmRunEventBeaconUpdate(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prM
 	P_MSG_P2P_BEACON_UPDATE_T prBcnUpdateMsg = (P_MSG_P2P_BEACON_UPDATE_T) NULL;
 	P_P2P_BEACON_UPDATE_INFO_T prBcnUpdateInfo = (P_P2P_BEACON_UPDATE_INFO_T) NULL;
 
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prMsgHdr != NULL));
 
-		DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
+	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate\n");
 
-		prBcnUpdateMsg = (P_MSG_P2P_BEACON_UPDATE_T) prMsgHdr;
-		if (prBcnUpdateMsg->ucRoleIndex >= BSS_P2P_NUM)
-			break;
+	prBcnUpdateMsg = (P_MSG_P2P_BEACON_UPDATE_T) prMsgHdr;
+	if (prBcnUpdateMsg->ucRoleIndex >= BSS_P2P_NUM)
+		goto error;
 
-		prRoleP2pFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBcnUpdateMsg->ucRoleIndex);
-		if (!prRoleP2pFsmInfo)
-			break;
+	prRoleP2pFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, prBcnUpdateMsg->ucRoleIndex);
+	if (!prRoleP2pFsmInfo)
+		goto error;
 
-		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
-		prBcnUpdateInfo = &(prRoleP2pFsmInfo->rBeaconUpdateInfo);
+	prBcnUpdateInfo = &(prRoleP2pFsmInfo->rBeaconUpdateInfo);
 
-		p2pFuncBeaconUpdate(prAdapter,
-				    prP2pBssInfo,
-				    prBcnUpdateInfo,
-				    prBcnUpdateMsg->pucBcnHdr,
-				    prBcnUpdateMsg->u4BcnHdrLen,
-				    prBcnUpdateMsg->pucBcnBody, prBcnUpdateMsg->u4BcnBodyLen);
+	p2pFuncBeaconUpdate(prAdapter,
+			    prP2pBssInfo,
+			    prBcnUpdateInfo,
+			    prBcnUpdateMsg->pucBcnHdr,
+			    prBcnUpdateMsg->u4BcnHdrLen,
+			    prBcnUpdateMsg->pucBcnBody, prBcnUpdateMsg->u4BcnBodyLen);
 
-		if (prBcnUpdateMsg->pucAssocRespIE != NULL && prBcnUpdateMsg->u4AssocRespLen > 0) {
-			DBGLOG(P2P, TRACE, "Copy extra IEs for assoc resp (Length= %d)\n",
-								prBcnUpdateMsg->u4AssocRespLen);
-			DBGLOG_MEM8(P2P, INFO, prBcnUpdateMsg->pucAssocRespIE, prBcnUpdateMsg->u4AssocRespLen);
+	if (prBcnUpdateMsg->pucAssocRespIE != NULL && prBcnUpdateMsg->u4AssocRespLen > 0) {
+		DBGLOG(P2P, TRACE, "Copy extra IEs for assoc resp (Length= %d)\n",
+							prBcnUpdateMsg->u4AssocRespLen);
+		DBGLOG_MEM8(P2P, INFO, prBcnUpdateMsg->pucAssocRespIE, prBcnUpdateMsg->u4AssocRespLen);
 
-			if (p2pFuncAssocRespUpdate(prAdapter,
-				prP2pBssInfo,
-				prBcnUpdateMsg->pucAssocRespIE,
-				prBcnUpdateMsg->u4AssocRespLen) == WLAN_STATUS_FAILURE)
-				DBGLOG(P2P, ERROR, "Update extra IEs for asso resp fail!\n");
-
-		}
+		if (p2pFuncAssocRespUpdate(prAdapter,
+			prP2pBssInfo,
+			prBcnUpdateMsg->pucAssocRespIE,
+			prBcnUpdateMsg->u4AssocRespLen) == WLAN_STATUS_FAILURE)
+			DBGLOG(P2P, ERROR, "Update extra IEs for asso resp fail!\n");
+	}
 
 
-		if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
-		    (prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
-			/* AP is created, Beacon Update. */
-			/* nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX); */
+	if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) &&
+	    (prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
+		/* AP is created, Beacon Update. */
+		/* nicPmIndicateBssAbort(prAdapter, NETWORK_TYPE_P2P_INDEX); */
 
-			DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate with Bssidex(%d)\n",
-				prRoleP2pFsmInfo->ucBssIndex);
 
-			bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
+		DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventBeaconUpdate with Bssidex(%d)\n",
+			prRoleP2pFsmInfo->ucBssIndex);
 
-			/* nicPmIndicateBssCreated(prAdapter, NETWORK_TYPE_P2P_INDEX); */
-		}
+		bssUpdateBeaconContent(prAdapter, prRoleP2pFsmInfo->ucBssIndex);
 
-	} while (FALSE);
-
-	if (prMsgHdr)
-		cnmMemFree(prAdapter, prMsgHdr);
+		/* nicPmIndicateBssCreated(prAdapter, NETWORK_TYPE_P2P_INDEX); */
+	}
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
 
 }				/* p2pRoleFsmRunEventBeaconUpdate */
 
