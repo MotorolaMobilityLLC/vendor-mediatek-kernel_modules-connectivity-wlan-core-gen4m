@@ -1765,7 +1765,11 @@
  *          and unregister & free AIS netdev during module exit.
  *------------------------------------------------------------------------------
  */
+#if defined(_HIF_USB)
+#define CFG_SUPPORT_PERSIST_NETDEV 0
+#else
 #define CFG_SUPPORT_PERSIST_NETDEV 1
+#endif
 
 
 /*------------------------------------------------------------------------------
