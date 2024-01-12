@@ -4365,10 +4365,10 @@ void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 	prEvtLowLatencyInfo =
 		(struct EVENT_LOW_LATENCY_INFO *)(prEvent->aucBuffer);
 
-	ktime_get_ts64(&tv);
+	ktime_get_real_ts64(&tv);
 	rtc_time64_to_tm(tv.tv_sec, &tm);
 
-	DBGLOG_LIMITED(NIC, INFO,
+	DBGLOG(NIC, TRACE,
 	       "Low Latency DPP Info: drv cert=[%d], evt cert=[%d], evt dup=[%d] drv det=[%d] %02d-%02d %02d:%02d:%02d.%06u\n",
 	       prAdapter->fgTxDupCertificate,
 	       prEvtLowLatencyInfo->fgTxDupCert,
