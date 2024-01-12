@@ -4386,9 +4386,7 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 			prAdapter->rLinkQuality.cLinkQuality = cLinkQuality;
 			/* indicate to glue layer */
 			kalUpdateRSSI(prAdapter->prGlueInfo,
-				      KAL_NETWORK_TYPE_AIS_INDEX,
-				      prAdapter->rLinkQuality.cRssi,
-				      prAdapter->rLinkQuality.cLinkQuality);
+				      ucBssIndex, cRssi, cLinkQuality);
 		}
 
 		break;
@@ -4401,7 +4399,7 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 		prAdapter->rP2pLinkQuality.cLinkQuality = cLinkQuality;
 
 		kalUpdateRSSI(prAdapter->prGlueInfo,
-			      KAL_NETWORK_TYPE_P2P_INDEX, cRssi, cLinkQuality);
+			      ucBssIndex, cRssi, cLinkQuality);
 		break;
 #endif
 	default:
