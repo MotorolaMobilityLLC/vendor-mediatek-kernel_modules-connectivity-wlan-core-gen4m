@@ -191,17 +191,21 @@ u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
 
 u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER
 				  *prAdapter,
-				  IN uint32_t u4Cipher, OUT uint32_t *pu4Index);
+				  IN uint32_t u4Cipher, OUT uint32_t *pu4Index,
+				  IN uint8_t ucBssIndex);
 
 u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
-			  IN struct RSN_INFO *prBssRsnInfo);
+			  IN struct RSN_INFO *prBssRsnInfo,
+			  IN uint8_t ucBssIndex);
 
 u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
-			   IN uint32_t u4AkmSuite, OUT uint32_t *pu4Index);
+			   IN uint32_t u4AkmSuite, OUT uint32_t *pu4Index,
+			   IN uint8_t ucBssIndex);
 
 u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
 				   *prAdapter,
-				   IN struct BSS_DESC *prBss);
+				   IN struct BSS_DESC *prBss,
+				   IN uint8_t ucBssIndex);
 
 void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
 			  IN struct MSDU_INFO *prMsduInfo);
@@ -229,13 +233,16 @@ void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
 			     IN u_int8_t fgErrorKeyType);
 
 struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucBssid);
+					IN uint8_t *pucBssid,
+					IN uint8_t ucBssIndex);
 
 void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter,
-			IN struct BSS_DESC *prBss);
+			IN struct BSS_DESC *prBss,
+			IN uint8_t ucBssIndex);
 
 void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
-				IN struct PARAM_PMKID_CANDIDATE *prCandi);
+				IN struct PARAM_PMKID_CANDIDATE *prCandi,
+				IN uint8_t ucBssIndex);
 
 uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
 		     IN struct PARAM_PMKID *prPmkid);
@@ -243,7 +250,8 @@ uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
 uint32_t rsnDelPmkid(IN struct ADAPTER *prAdapter,
 		     IN struct PARAM_PMKID *prPmkid);
 
-uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter);
+uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_WPS2
 void rsnGenerateWSCIE(IN struct ADAPTER *prAdapter,
@@ -254,15 +262,17 @@ void rsnGenerateWSCIE(IN struct ADAPTER *prAdapter,
 uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
 				 *prAdapter, IN struct STA_RECORD *prStaRec);
 
-uint8_t rsnCheckSaQueryTimeout(IN struct ADAPTER
-			       *prAdapter);
+uint8_t rsnCheckSaQueryTimeout(
+	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 
 void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 			  IN unsigned long ulParamPtr);
 
-void rsnStartSaQuery(IN struct ADAPTER *prAdapter);
+void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx);
 
-void rsnStopSaQuery(IN struct ADAPTER *prAdapter);
+void rsnStopSaQuery(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx);
 
 void rsnSaQueryRequest(IN struct ADAPTER *prAdapter,
 		       IN struct SW_RFB *prSwRfb);

@@ -1651,8 +1651,8 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		/*AIS station mode*/
-		prBssDesc =
-			prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+		prBssDesc
+			= aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	} else if (IS_BSS_P2P(prBssInfo)) {
 		/* P2P mode */
 
@@ -1819,7 +1819,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		 */
 
 		prBssDesc =
-			prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (prBssDesc)
 			eBand = prBssDesc->eBand;
 		else

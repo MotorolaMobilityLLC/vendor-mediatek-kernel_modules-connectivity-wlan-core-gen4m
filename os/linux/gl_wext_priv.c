@@ -1060,15 +1060,10 @@ __priv_set_int(IN struct net_device *prNetDev,
 
 	case PRIV_CMD_POWER_MODE: {
 		struct PARAM_POWER_MODE_ rPowerMode;
-		struct BSS_INFO *prBssInfo =
-				prGlueInfo->prAdapter->prAisBssInfo;
-
-		if (!prBssInfo)
-			break;
 
 		rPowerMode.ePowerMode = (enum PARAM_POWER_MODE)
 					pu4IntBuf[1];
-		rPowerMode.ucBssIdx = prBssInfo->ucBssIndex;
+		rPowerMode.ucBssIdx = wlanGetBssIdx(prNetDev);
 
 		/* pu4IntBuf[0] is used as input SubCmd */
 		kalIoctl(prGlueInfo, wlanoidSet802dot11PowerSaveProfile,
@@ -1084,7 +1079,7 @@ __priv_set_int(IN struct net_device *prNetDev,
 		rWmmPsTest.ucIsEnterPsAtOnce = (uint8_t) pu4IntBuf[2];
 		rWmmPsTest.ucIsDisableUcTrigger = (uint8_t) pu4IntBuf[3];
 		rWmmPsTest.reserved = 0;
-
+		rWmmPsTest.ucBssIdx = wlanGetBssIdx(prNetDev);
 		kalIoctl(prGlueInfo, wlanoidSetWiFiWmmPsTest,
 			 (void *)&rWmmPsTest,
 			 sizeof(struct PARAM_CUSTOM_WMM_PS_TEST_STRUCT),
@@ -1719,6 +1714,7 @@ __priv_set_struct(IN struct net_device *prNetDev,
 
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	/* ASSERT(prIwReqInfo); */
@@ -1807,6 +1803,10 @@ __priv_set_struct(IN struct net_device *prNetDev,
 
 #if CFG_SUPPORT_WPS2
 	case PRIV_CMD_WSC_PROBE_REQ: {
+		struct CONNECTION_SETTINGS *prConnSettings =
+			aisGetConnSettings(prGlueInfo->prAdapter,
+			ucBssIndex);
+
 		/* retrieve IE for Probe Request */
 		u4CmdLen = prIwReqData->data.length;
 		if (u4CmdLen > GLUE_INFO_WSCIE_LENGTH) {
@@ -1816,15 +1816,15 @@ __priv_set_struct(IN struct net_device *prNetDev,
 		}
 
 		if (prIwReqData->data.length > 0) {
-			if (copy_from_user(prGlueInfo->aucWSCIE,
+			if (copy_from_user(prConnSettings->aucWSCIE,
 					   prIwReqData->data.pointer,
 					   u4CmdLen)) {
 				status = -EFAULT;
 				break;
 			}
-			prGlueInfo->u2WSCIELen = u4CmdLen;
+			prConnSettings->u2WSCIELen = u4CmdLen;
 		} else {
-			prGlueInfo->u2WSCIELen = 0;
+			prConnSettings->u2WSCIELen = 0;
 		}
 	}
 	break;
@@ -3571,17 +3571,20 @@ static int priv_driver_get_sta_statistics(
 			rQueryStaStatistics.ucReadClear = FALSE;
 		}
 	} else {
+		struct BSS_INFO *prAisBssInfo =   aisGetAisBssInfo(
+			prGlueInfo->prAdapter, wlanGetBssIdx(prNetDev));
+
 		/* Get AIS AP address for no argument */
-		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP) {
+		if (prAisBssInfo->prStaRecOfAP) {
 			COPY_MAC_ADDR(rQueryStaStatistics.aucMacAddr,
-				prGlueInfo->prAdapter->prAisBssInfo
+				prAisBssInfo
 				->prStaRecOfAP->aucMacAddr);
 			DBGLOG(RSN, INFO, "use ais ap "MACSTR"\n",
-			       MAC2STR(prGlueInfo->prAdapter->prAisBssInfo
+			       MAC2STR(prAisBssInfo
 			       ->prStaRecOfAP->aucMacAddr));
 		} else {
 			DBGLOG(RSN, INFO, "not connect to ais ap %lx\n",
-			       prGlueInfo->prAdapter->prAisBssInfo
+			       prAisBssInfo
 			       ->prStaRecOfAP);
 			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 				"%s", "\n\nNo STA Stat:\n");
@@ -3653,9 +3656,7 @@ static int priv_driver_get_bss_statistics(
 	uint32_t u4BufLen;
 	int32_t i4Rssi;
 	struct PARAM_GET_BSS_STATISTICS rQueryBssStatistics;
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
-		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
-	uint8_t ucBssIndex;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 	int32_t i4BytesWritten = 0;
 #if 0
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
@@ -3676,7 +3677,8 @@ static int priv_driver_get_bss_statistics(
 #endif
 
 	/* 2. fill RSSI */
-	if (prGlueInfo->eParamMediaStateIndicated !=
+	if (kalGetMediaStateIndicated(prGlueInfo,
+		ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
@@ -3690,12 +3692,6 @@ static int priv_driver_get_bss_statistics(
 
 	/* 3 get per-BSS link statistics */
 	if (rStatus == WLAN_STATUS_SUCCESS) {
-		/* get Bss Index from ndev */
-		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-				  netdev_priv(prNetDev);
-		ASSERT(prNetDevPrivate->prGlueInfo == prGlueInfo);
-		ucBssIndex = prNetDevPrivate->ucBssIdx;
-
 		kalMemZero(&rQueryBssStatistics,
 			   sizeof(rQueryBssStatistics));
 		rQueryBssStatistics.ucBssIndex = ucBssIndex;
@@ -4219,9 +4215,12 @@ static int priv_driver_get_sta_info(IN struct net_device *prNetDev,
 		    &aucMacAddr[0], &ucWlanIndex))
 			return i4BytesWritten;
 	} else {
+		struct BSS_INFO *prAisBssInfo =   aisGetAisBssInfo(
+			prGlueInfo->prAdapter, wlanGetBssIdx(prNetDev));
+
 		/* Get AIS AP address for no argument */
-		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP)
-			ucWlanIndex = prGlueInfo->prAdapter->prAisBssInfo
+		if (prAisBssInfo->prStaRecOfAP)
+			ucWlanIndex = prAisBssInfo
 					->prStaRecOfAP->ucWlanIndex;
 		else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL,
 		    &ucWlanIndex)) /* try get a peer */
@@ -7215,6 +7214,7 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics = NULL;
 	u_int8_t fgResetCnt = FALSE;
 	u_int8_t fgRxCCSel = FALSE;
+	struct BSS_INFO *prAisBssInfo = NULL;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -7222,6 +7222,9 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
+
+	prAisBssInfo = aisGetAisBssInfo(
+		prGlueInfo->prAdapter, wlanGetBssIdx(prNetDev));
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -7239,9 +7242,8 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 			if (u4StatGroup == 0)
 				u4StatGroup = 0xFFFFFFFF;
 
-			if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP) {
-				ucWlanIndex = prGlueInfo->prAdapter
-						->prAisBssInfo->prStaRecOfAP
+			if (prAisBssInfo->prStaRecOfAP) {
+				ucWlanIndex = prAisBssInfo->prStaRecOfAP
 						->ucWlanIndex;
 			} else if (!wlanGetWlanIdxByAddress(
 				prGlueInfo->prAdapter, NULL,
@@ -7275,8 +7277,8 @@ static int priv_driver_get_sta_stat(IN struct net_device *prNetDev,
 		}
 	} else {
 		/* Get AIS AP address for no argument */
-		if (prGlueInfo->prAdapter->prAisBssInfo->prStaRecOfAP) {
-			ucWlanIndex = prGlueInfo->prAdapter->prAisBssInfo->
+		if (prAisBssInfo->prStaRecOfAP) {
+			ucWlanIndex = prAisBssInfo->
 					prStaRecOfAP->ucWlanIndex;
 		} else if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, NULL,
 		    &ucWlanIndex)) { /* try get a peer */
@@ -7751,6 +7753,7 @@ static int priv_driver_get_sta_stat2(IN struct net_device *prNetDev,
 
 
 static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
+					IN struct net_device *prNetDev,
 					IN char *pcCommand, IN int i4TotalLen,
 					IN u_int8_t fgResetCnt)
 {
@@ -7765,6 +7768,12 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	static uint32_t au4FcsError[ENUM_BAND_NUM] = {0};
 	static uint32_t au4OutOfResource[ENUM_BAND_NUM] = {0};
 	static uint32_t au4LengthMismatch[ENUM_BAND_NUM] = {0};
+	struct STA_RECORD *prStaRecOfAP;
+
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+
+	prStaRecOfAP =
+		aisGetStaRecOfAP(prAdapter, ucBssIndex);
 
 	au4MacMdrdy[ENUM_BAND_0] += htonl(g_HqaRxStat.MAC_Mdrdy);
 	au4MacMdrdy[ENUM_BAND_1] += htonl(g_HqaRxStat.MAC_Mdrdy1);
@@ -7785,9 +7794,9 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 		kalMemZero(au4LengthMismatch, sizeof(au4LengthMismatch));
 	}
 
-	if (prAdapter->prAisBssInfo->prStaRecOfAP)
+	if (prStaRecOfAP)
 		ucWlanIndex =
-			prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex;
+			prStaRecOfAP->ucWlanIndex;
 	else if (!wlanGetWlanIdxByAddress(prAdapter, NULL, &ucWlanIndex))
 		fgWlanIdxFound = FALSE;
 
@@ -8259,7 +8268,7 @@ static int priv_driver_show_rx_stat(IN struct net_device *prNetDev,
 		}
 
 		i4BytesWritten = priv_driver_dump_rx_stat_info(prAdapter,
-					pcCommand, i4TotalLen, fgResetCnt);
+			prNetDev, pcCommand, i4TotalLen, fgResetCnt);
 
 		kalMemFree(prRxStatisticsTest, VIR_MEM_TYPE,
 			   sizeof(struct PARAM_CUSTOM_ACCESS_RX_STAT));
@@ -9470,7 +9479,6 @@ int priv_driver_set_band(IN struct net_device *prNetDev, IN char *pcCommand,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	uint32_t ucBand = 0;
-	uint8_t ucBssIndex;
 	enum ENUM_BAND eBand = BAND_NULL;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX];
 	int32_t u4Ret = 0;
@@ -9492,13 +9500,12 @@ int priv_driver_set_band(IN struct net_device *prNetDev, IN char *pcCommand,
 			DBGLOG(REQ, LOUD, "parse ucBand error u4Ret=%d\n",
 			       u4Ret);
 
-		ucBssIndex = wlanGetAisBssIndex(prGlueInfo->prAdapter);
 		eBand = BAND_NULL;
 		if (ucBand == CMD_BAND_TYPE_5G)
 			eBand = BAND_5G;
 		else if (ucBand == CMD_BAND_TYPE_2G)
 			eBand = BAND_2G4;
-		prAdapter->aePreferBand[ucBssIndex] = eBand;
+		prAdapter->aePreferBand[KAL_NETWORK_TYPE_AIS_INDEX] = eBand;
 		/* XXX call wlanSetPreferBandByNetwork directly in different
 		 * thread
 		 */

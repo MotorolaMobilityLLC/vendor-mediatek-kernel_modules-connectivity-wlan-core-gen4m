@@ -148,13 +148,6 @@ static int netdev_event(struct notifier_block *nb,
 		prGlueInfo->fgIsDad = FALSE;
 	}
 #endif /* CFG_SUPPORT_PASSPOINT */
-	if ((prDev != gPrDev) && (prDev != gPrP2pDev[0])
-	    && (prDev != gPrP2pDev[1])) {
-		/* DBGLOG(REQ, INFO, ("netdev_event: device is not mine.\n"));
-		 */
-		return NOTIFY_DONE;
-	}
-
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	if (prGlueInfo == NULL) {

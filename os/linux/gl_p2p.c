@@ -1002,7 +1002,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_ENABLE_UNIFY_WIPHY
 		/* don't unregister the dev that share with the AIS */
-		if (prP2PInfo->prDevHandler == gprWdev->netdev)
+		if (wlanIsAisDev(prP2PInfo->prDevHandler))
 			continue;
 #endif
 
@@ -1361,7 +1361,7 @@ err_alloc_netdev:
 #if CFG_ENABLE_UNIFY_WIPHY
 u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
-	struct wiphy *prWiphy = gprWdev->wiphy;
+	struct wiphy *prWiphy = wlanGetWiphy();
 	struct wireless_dev *prWdev = NULL;
 	uint8_t	i = 0;
 
@@ -1603,7 +1603,7 @@ u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 
 		if (prP2PInfo->prDevHandler) {
 			/* don't free the dev that share with the AIS */
-			if (prP2PInfo->prDevHandler == gprWdev->netdev)
+			if (wlanIsAisDev(prP2PInfo->prDevHandler))
 				gprP2pRoleWdev[ucRoleIdx] = NULL;
 			else {
 				if (prP2PInfo->prDevHandler->reg_state

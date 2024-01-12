@@ -803,36 +803,45 @@ void scanAddToRoamBssDesc(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void scanSearchBssDescOfRoamSsid(IN struct ADAPTER *prAdapter)
 {
+	uint8_t j;
 
 /* If only exist one same ssid AP, avoid unnecessary scan */
 #define SSID_ONLY_EXIST_ONE_AP	1
 
-	struct SCAN_INFO *prScanInfo;
-	struct LINK *prBSSDescList;
-	struct BSS_DESC *prBssDesc;
-	struct BSS_INFO *prAisBssInfo;
-	uint32_t u4SameSSIDCount = 0;
+	for (j = 0; j < KAL_AIS_NUM; j++) {
+		struct SCAN_INFO *prScanInfo;
+		struct LINK *prBSSDescList;
+		struct BSS_DESC *prBssDesc;
+		struct BSS_INFO *prAisBssInfo;
+		uint32_t u4SameSSIDCount = 0;
 
-	prAisBssInfo = prAdapter->prAisBssInfo;
+		prAisBssInfo = aisGetAisBssInfo(prAdapter,
+			j);
 
-	/* XXX: wlan0(AP mode) + p2p0 occurs exception. */
-	if (prAisBssInfo == NULL)
-		return;
+		/* XXX: wlan0(AP mode) + p2p0 occurs exception. */
+		if (prAisBssInfo == NULL)
+			continue;
 
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prBSSDescList = &prScanInfo->rBSSDescList;
+		prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
+		prBSSDescList = &prScanInfo->rBSSDescList;
 
-	if (prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
-		return;
+		if (prAisBssInfo->eConnectionState !=
+			MEDIA_STATE_CONNECTED)
+			continue;
 
-	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
-		rLinkEntry, struct BSS_DESC) {
-		if (EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
-			prAisBssInfo->aucSSID, prAisBssInfo->ucSSIDLen)) {
-			u4SameSSIDCount++;
-			if (u4SameSSIDCount > SSID_ONLY_EXIST_ONE_AP) {
-				scanAddToRoamBssDesc(prAdapter, prBssDesc);
-				break;
+		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
+			rLinkEntry, struct BSS_DESC) {
+			if (EQUAL_SSID(prBssDesc->aucSSID,
+				prBssDesc->ucSSIDLen,
+				prAisBssInfo->aucSSID,
+				prAisBssInfo->ucSSIDLen)) {
+				u4SameSSIDCount++;
+				if (u4SameSSIDCount >
+					SSID_ONLY_EXIST_ONE_AP) {
+					scanAddToRoamBssDesc(prAdapter,
+						prBssDesc);
+					break;
+				}
 			}
 		}
 	}
@@ -969,7 +978,6 @@ scanSearchExistingBssDescWithSsid(IN struct ADAPTER *prAdapter,
 void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				IN uint32_t u4RemovePolicy)
 {
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct SCAN_INFO *prScanInfo;
 	struct LINK *prBSSDescList;
 	struct LINK *prFreeBSSDescList;
@@ -977,7 +985,6 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 	prFreeBSSDescList = &prScanInfo->rFreeBSSDescList;
@@ -1085,6 +1092,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDescWeakestSameSSID
 			= (struct BSS_DESC *) NULL;
 		uint32_t u4SameSSIDCount = 0;
+		uint8_t j;
 
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
@@ -1099,23 +1107,35 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				continue;
 			}
 
-			if ((!prBssDesc->fgIsHiddenSSID) &&
-			    (EQUAL_SSID(prBssDesc->aucSSID,
+			for (j = 0; j < KAL_AIS_NUM; j++) {
+
+				struct CONNECTION_SETTINGS *prConnSettings =
+					aisGetConnSettings(prAdapter, j);
+
+				if (!prConnSettings)
+					continue;
+
+				if ((!prBssDesc->fgIsHiddenSSID) &&
+					(EQUAL_SSID(prBssDesc->aucSSID,
 					prBssDesc->ucSSIDLen,
 					prConnSettings->aucSSID,
 					prConnSettings->ucSSIDLen))) {
 
-				u4SameSSIDCount++;
+					u4SameSSIDCount++;
 
-				if (!prBssDescWeakestSameSSID)
-					prBssDescWeakestSameSSID = prBssDesc;
-				else if (prBssDesc->ucRCPI
+					if (!prBssDescWeakestSameSSID)
+						prBssDescWeakestSameSSID =
+							prBssDesc;
+					else if (prBssDesc->ucRCPI
 					< prBssDescWeakestSameSSID->ucRCPI)
-					prBssDescWeakestSameSSID = prBssDesc;
-				if (u4SameSSIDCount
-					< SCN_BSS_DESC_SAME_SSID_THRESHOLD)
-					continue;
+						prBssDescWeakestSameSSID =
+							prBssDesc;
+				}
 			}
+
+			if (u4SameSSIDCount
+				< SCN_BSS_DESC_SAME_SSID_THRESHOLD)
+				continue;
 
 			if (!prBssDescWeakest) {	/* 1st element */
 				prBssDescWeakest = prBssDesc;
@@ -1788,7 +1808,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
 
-			if (prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc
+			if (aisGetTargetBssDesc(prAdapter, AIS_DEFAULT_INDEX)
 				== prBssDesc) {
 				log_dbg(SCN, TRACE, "Timestamap reset. Reset prTargetBssDesc BSS:"
 					MACSTR " connected:%x connecting:%x",
@@ -2020,10 +2040,17 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		case ELEM_ID_RSN:
 			if (rsnParseRsnIE(prAdapter, RSN_IE(pucIE),
 				&prBssDesc->rRSNInfo)) {
+				uint8_t i;
+
 				prBssDesc->fgIERSN = TRUE;
 				prBssDesc->u2RsnCap
 					= prBssDesc->rRSNInfo.u2RsnCap;
-				rsnCheckPmkidCache(prAdapter, prBssDesc);
+
+				for (i = 0; i < KAL_AIS_NUM; i++) {
+					rsnCheckPmkidCache(prAdapter,
+						prBssDesc,
+						i);
+				}
 			}
 			break;
 
@@ -2784,24 +2811,26 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				       IN struct SW_RFB *prSwRfb)
 {
 	struct SCAN_INFO *prScanInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
 	struct BSS_DESC *prBssDesc = (struct BSS_DESC *) NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	struct BSS_INFO *prAisBssInfo;
 	struct WLAN_BEACON_FRAME *prWlanBeaconFrame
 		= (struct WLAN_BEACON_FRAME *) NULL;
 #if CFG_SLT_SUPPORT
 	struct SLT_INFO *prSltInfo = (struct SLT_INFO *) NULL;
 #endif
+	uint32_t u4Idx = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
 #if CFG_SUPPORT_802_11K
 	/* if beacon request measurement is on-going,  collect Beacon Report */
-	if (rlmBcnRmRunning(prAdapter)) {
-		rlmProcessBeaconAndProbeResp(prAdapter, prSwRfb);
-		return WLAN_STATUS_SUCCESS;
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (rlmBcnRmRunning(prAdapter, u4Idx)) {
+			rlmProcessBeaconAndProbeResp(prAdapter,
+				prSwRfb, u4Idx);
+			return WLAN_STATUS_SUCCESS;
+		}
 	}
 #endif
 
@@ -2829,8 +2858,6 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
-	prAisBssInfo = prAdapter->prAisBssInfo;
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
 
 	/* 4 <1> Parse and add into BSS_DESC_T */
@@ -2846,6 +2873,12 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				prScanInfo->au4ChannelBitMap,
 				sizeof(prScanInfo->au4ChannelBitMap));
 		}
+
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		struct CONNECTION_SETTINGS *prConnSettings =
+			aisGetConnSettings(prAdapter, u4Idx);
+		struct BSS_INFO *prAisBssInfo =
+			aisGetAisBssInfo(prAdapter, u4Idx);
 
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if ((prAisBssInfo != NULL) &&
@@ -2870,10 +2903,10 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			if (rsnCheckSecurityModeChanged(prAdapter,
 				prAisBssInfo, prBssDesc)
 #if CFG_SUPPORT_WAPI
-				|| (prAdapter->rWifiVar.rConnSettings
-				.fgWapiMode == TRUE &&
+				|| (aisGetWapiMode(prAdapter,
+				u4Idx) &&
 				!wapiPerformPolicySelection(prAdapter,
-					prBssDesc))
+					prBssDesc, u4Idx))
 #endif
 				) {
 
@@ -2887,9 +2920,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				if (!prConnSettings
 					->fgSecModeChangeStartTimer) {
 					cnmTimerStartTimer(prAdapter,
-						&prAdapter->rWifiVar
-							.rAisFsmInfo
-							.rSecModeChangeTimer,
+						aisGetSecModeChangeTimer(
+						prAdapter,
+						u4Idx),
 						SEC_TO_MSEC(3));
 					prConnSettings
 						->fgSecModeChangeStartTimer
@@ -2898,9 +2931,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			} else {
 				if (prConnSettings->fgSecModeChangeStartTimer) {
 					cnmTimerStopTimer(prAdapter,
-						&prAdapter->rWifiVar
-						.rAisFsmInfo
-						.rSecModeChangeTimer);
+						aisGetSecModeChangeTimer(
+						prAdapter,
+						u4Idx));
 					prConnSettings
 						->fgSecModeChangeStartTimer
 							= FALSE;
@@ -2912,7 +2945,8 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			 * disconnect immediately
 			 */
 			if (fgNeedDisconnect == TRUE)
-				aisBssBeaconTimeout(prAdapter);
+				aisBssBeaconTimeout(prAdapter,
+					u4Idx);
 #endif
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
@@ -2989,6 +3023,7 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			}
 #endif /* CFG_SUPPORT_ADHOC */
 		}
+	}
 
 		rlmProcessBcn(prAdapter,
 			prSwRfb,
@@ -3088,10 +3123,12 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 
 	ASSERT(prAdapter);
 
-	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
+	prConnSettings =
+		aisGetConnSettings(prAdapter, ucBssIndex);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	prAisSpecBssInfo = &(prAdapter->rWifiVar.rAisSpecificBssInfo);
+	prAisSpecBssInfo =
+		aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
@@ -3309,7 +3346,8 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 
 				/* 4 <4.3.2> Check Peer's capability */
 				if (ibssCheckCapabilityForAdHocMode(prAdapter,
-					prBssDesc) == WLAN_STATUS_FAILURE) {
+					prBssDesc, ucBssIndex)
+					== WLAN_STATUS_FAILURE) {
 
 					log_dbg(SCN, INFO, "SEARCH: Ignore BSS DESC MAC: "
 						MACSTR
@@ -3562,9 +3600,9 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 		/* 4 <7> Check the Encryption Status. */
 		if (prPrimaryBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE) {
 #if CFG_SUPPORT_WAPI
-			if (prAdapter->rWifiVar.rConnSettings.fgWapiMode) {
+			if (aisGetWapiMode(prAdapter, ucBssIndex)) {
 				if (wapiPerformPolicySelection(prAdapter,
-					prPrimaryBssDesc)) {
+					prPrimaryBssDesc, ucBssIndex)) {
 					fgIsFindFirst = TRUE;
 				} else {
 					/* Can't pass the Encryption Status
@@ -3576,7 +3614,7 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 			} else
 #endif
 			if (rsnPerformPolicySelection(prAdapter,
-				prPrimaryBssDesc)) {
+				prPrimaryBssDesc, ucBssIndex)) {
 				if (prAisSpecBssInfo->fgCounterMeasure) {
 					log_dbg(RSN, INFO, "Skip while at counter measure period!!!\n");
 					continue;
@@ -4225,8 +4263,7 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 			       IN struct ADAPTER *prAdapter)
 {
 	if (prAdapter != NULL && prBssDesc != NULL) {
-		struct LINK *prEssList =
-			&prAdapter->rWifiVar.rAisSpecificBssInfo.rCurEssLink;
+		uint8_t j;
 
 		/* Support AP Selection */
 		if (!prBssDesc->prBlack)
@@ -4236,9 +4273,25 @@ void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
 				(uint32_t)kalGetBootTime();
 
 		/* Remove this BSS Desc from the Ess Desc List */
-		if (LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss))
+		for (j = 0; j < KAL_AIS_NUM; j++) {
+			struct AIS_SPECIFIC_BSS_INFO *prSpecBssInfo =
+				aisGetAisSpecBssInfo(
+				prAdapter, j);
+			struct LINK *prEssList;
+
+			if (!prSpecBssInfo)
+				continue;
+			prEssList =
+				&prSpecBssInfo->rCurEssLink;
+			if (!prEssList)
+				continue;
+
+			if (!LINK_ENTRY_IS_VALID(&prBssDesc->rLinkEntryEss[j]))
+				continue;
+
 			LINK_REMOVE_KNOWN_ENTRY(prEssList,
-				&prBssDesc->rLinkEntryEss);
+				&prBssDesc->rLinkEntryEss[j]);
+		}
 		/* end Support AP Selection */
 
 		/* Remove this BSS Desc from the BSS Desc list */

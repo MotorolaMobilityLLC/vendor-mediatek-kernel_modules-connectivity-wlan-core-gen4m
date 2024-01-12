@@ -215,6 +215,8 @@ static uint32_t BssInfoUpdateBasic(
 {
 	struct BSSINFO_BASIC_T rBssInfo = {0};
 	struct BSS_INFO *prBssInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
+	    aisGetAisSpecBssInfo(pAd, ucBssIdx);
 
 	prBssInfo = pAd->aprBssInfo[ucBssIdx];
 	/* Tag assignment */
@@ -226,7 +228,7 @@ static uint32_t BssInfoUpdateBasic(
 	rBssInfo.ucActive = TRUE;
 	rBssInfo.ucWmmIdx = prBssInfo->ucWmmQueSet;
 	rBssInfo.ucCipherSuit =
-		pAd->rWifiVar.rAisSpecificBssInfo.ucKeyAlgorithmId;
+		prAisSpecBssInfo->ucKeyAlgorithmId;
 
 /* WA didn't use */
 /*
@@ -268,16 +270,20 @@ static uint32_t BssInfoUpdateConnectOwnDev(
 
 static uint32_t DevInfoUpdateBasic(
 	struct ADAPTER *pAd,
-	uint8_t *pMsgBuf)
+	uint8_t *pMsgBuf,
+	uint8_t ucBssIdx)
 {
 	struct CMD_DEVINFO_ACTIVE_T rDevInfo = {0};
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = pAd->aprBssInfo[ucBssIdx];
 
 	/* Tag assignment */
 	rDevInfo.u2Tag = DEV_INFO_ACTIVE;
 	rDevInfo.u2Length = sizeof(struct CMD_DEVINFO_ACTIVE_T);
 	/* content */
 	kalMemCopy(rDevInfo.aucOwnMacAddr,
-		pAd->prAisBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
+		prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
 	rDevInfo.ucActive = TRUE;
 	rDevInfo.ucDbdcIdx = 0;
 
@@ -455,7 +461,8 @@ uint32_t CmdExtDevInfoUpdate2WA(
 	prCmdContent->u2TotalElementNum = 1;
 
 	DevInfoUpdateBasic(pAd,
-		(uint8_t *)prCmdContent+sizeof(struct CMD_DEVINFO_UPDATE_T));
+		(uint8_t *)prCmdContent+sizeof(struct CMD_DEVINFO_UPDATE_T),
+		ucBssIndex);
 
 	rWlanStatus = wlanSendSetQueryExtCmd2WA(pAd,
 						CMD_ID_LAYER_0_EXT_MAGIC_NUM,

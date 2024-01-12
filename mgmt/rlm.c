@@ -188,9 +188,10 @@ rlmAllMeasurementIssued(struct RADIO_MEASUREMENT_REQ_PARAMS *prReq);
 static void rlmCalibrateRepetions(struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq);
 
 static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
-				   uint8_t *pucIEBuf, uint16_t u2IELength,
-				   uint8_t *pucBssid,
-				   struct RM_BEACON_REPORT_PARAMS *prRepParams);
+		uint8_t *pucIEBuf, uint16_t u2IELength,
+		uint8_t *pucBssid,
+		struct RM_BEACON_REPORT_PARAMS *prRepParams,
+		uint8_t ucBssIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -208,10 +209,7 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void rlmFsmEventInit(struct ADAPTER *prAdapter)
 {
-	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReqParam =
-		&prAdapter->rWifiVar.rRmReqParams;
-	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRepParam =
-		&prAdapter->rWifiVar.rRmRepParams;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 
@@ -228,12 +226,19 @@ void rlmFsmEventInit(struct ADAPTER *prAdapter)
 
 	g_fgHasChannelSwitchIE = FALSE;
 
-	kalMemZero(prRmRepParam, sizeof(*prRmRepParam));
-	kalMemZero(prRmReqParam, sizeof(*prRmReqParam));
-	prRmReqParam->rBcnRmParam.eState = RM_NO_REQUEST;
-	prRmReqParam->fgRmIsOngoing = FALSE;
-	LINK_INITIALIZE(&prRmRepParam->rFreeReportLink);
-	LINK_INITIALIZE(&prRmRepParam->rReportLink);
+	for (i = 0; i < KAL_AIS_NUM; i++) {
+		struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReqParam =
+			aisGetRmReqParam(prAdapter, i);
+		struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRepParam =
+			aisGetRmReportParam(prAdapter, i);
+
+		kalMemZero(prRmRepParam, sizeof(*prRmRepParam));
+		kalMemZero(prRmReqParam, sizeof(*prRmReqParam));
+		prRmReqParam->rBcnRmParam.eState = RM_NO_REQUEST;
+		prRmReqParam->fgRmIsOngoing = FALSE;
+		LINK_INITIALIZE(&prRmRepParam->rFreeReportLink);
+		LINK_INITIALIZE(&prRmRepParam->rReportLink);
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -259,8 +264,9 @@ void rlmFsmEventUninit(struct ADAPTER *prAdapter)
 		 *       Now only one OBSS scan timer.
 		 */
 		rlmBssReset(prAdapter, prBssInfo);
+		if (i < KAL_AIS_NUM)
+			rlmFreeMeasurementResources(prAdapter, i);
 	}
-	rlmFreeMeasurementResources(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -394,6 +400,9 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
+#if CFG_SUPPORT_PASSPOINT
+	struct HS20_INFO *prHS20Info;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -402,6 +411,13 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
+#if CFG_SUPPORT_PASSPOINT
+	prHS20Info = aisGetHS20Info(prAdapter,
+		prBssInfo->ucBssIndex);
+	if (!prHS20Info)
+		return;
+#endif
+
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet &
@@ -409,7 +425,7 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)))
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #if CFG_SUPPORT_PASSPOINT
-	else if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE)
+	else if (prHS20Info->fgConnectHS20AP == TRUE)
 		hs20FillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #endif /* CFG_SUPPORT_PASSPOINT */
 }
@@ -907,6 +923,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 {
 #if CFG_SUPPORT_PASSPOINT
 	struct IE_HS20_EXT_CAP_T *prHsExtCap;
+	struct HS20_INFO *prHS20Info;
 #else
 	struct IE_EXT_CAP *prExtCap;
 #endif
@@ -919,12 +936,17 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
 
 #if CFG_SUPPORT_PASSPOINT
+	prHS20Info = aisGetHS20Info(prAdapter,
+			prBssInfo->ucBssIndex);
+	if (!prHS20Info)
+		return;
+
 	prHsExtCap =
 		(struct IE_HS20_EXT_CAP_T *)(((uint8_t *)prMsduInfo->prPacket) +
 					     prMsduInfo->u2FrameLength);
 	prHsExtCap->ucId = ELEM_ID_EXTENDED_CAP;
 
-	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE)
+	if (prHS20Info->fgConnectHS20AP == TRUE)
 		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	else
 		prHsExtCap->ucLength = 3 - ELEM_HDR_LEN;
@@ -974,7 +996,7 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE) {
+	if (prHS20Info->fgConnectHS20AP == TRUE) {
 		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			    ELEM_EXT_CAP_INTERWORKING_BIT);
 		SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
@@ -1170,7 +1192,8 @@ void rlmReqGenerateVhtCapIE(struct ADAPTER *prAdapter,
 	if (prAdapter) {
 		prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
 #if CFG_SUPPORT_VHT_IE_IN_2G
-		prBssDesc = prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+			prMsduInfo->ucBssIndex);
 		if (prBssDesc) {
 			fgIsVHTPresent = prBssDesc->fgIsVHTPresent;
 			DBGLOG(RLM, TRACE,
@@ -6210,21 +6233,29 @@ void rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 /* 11K */
 void rlmProcessNeighborReportResonse(struct ADAPTER *prAdapter,
 				     struct WLAN_ACTION_FRAME *prAction,
-				     uint16_t u2PacketLen)
+				     struct SW_RFB *prSwRfb)
 {
 	struct ACTION_NEIGHBOR_REPORT_FRAME *prNeighborResponse =
 		(struct ACTION_NEIGHBOR_REPORT_FRAME *)prAction;
+	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter,
+		prSwRfb);
 
 	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
 	ASSERT(prNeighborResponse);
-	DBGLOG(RLM, INFO, "Neighbor Resp From " MACSTR ", DialogToken %d\n",
-	       MAC2STR(prNeighborResponse->aucSrcAddr),
-	       prNeighborResponse->ucDialogToken);
+
+	DBGLOG(RLM, INFO,
+		"[%d] Neighbor Resp From " MACSTR ", DialogToken %d\n",
+		ucBssIndex,
+		MAC2STR(prNeighborResponse->aucSrcAddr),
+		prNeighborResponse->ucDialogToken);
 	aisCollectNeighborAP(
 		prAdapter, &prNeighborResponse->aucInfoElem[0],
-		u2PacketLen - OFFSET_OF(struct ACTION_NEIGHBOR_REPORT_FRAME,
-					aucInfoElem),
-		0);
+		prSwRfb->u2PacketLen
+			- OFFSET_OF(struct ACTION_NEIGHBOR_REPORT_FRAME,
+			aucInfoElem),
+		0,
+		ucBssIndex);
 }
 
 void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
@@ -6281,12 +6312,13 @@ void rlmTxNeighborReportRequest(struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 }
 
-void rlmComposeEmptyBeaconReport(struct ADAPTER *prAdapter)
+void rlmComposeEmptyBeaconReport(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		&prAdapter->rWifiVar.rRmReqParams;
+		aisGetRmReqParam(prAdapter, ucBssIndex);
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRep =
-		&prAdapter->rWifiVar.rRmRepParams;
+		aisGetRmReportParam(prAdapter, ucBssIndex);
 	uint8_t *pucReportFrame =
 		prRmRep->pucReportFrameBuff + prRmRep->u2ReportFrameLen;
 	struct IE_MEASUREMENT_REPORT *prRepIE =
@@ -6312,18 +6344,21 @@ void rlmComposeEmptyBeaconReport(struct ADAPTER *prAdapter)
 	prRmRep->u2ReportFrameLen += IE_SIZE(&prRepIE);
 }
 
-void rlmFreeMeasurementResources(struct ADAPTER *prAdapter)
+void rlmFreeMeasurementResources(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		&prAdapter->rWifiVar.rRmReqParams;
+		aisGetRmReqParam(prAdapter, ucBssIndex);
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRep =
-		&prAdapter->rWifiVar.rRmRepParams;
+		aisGetRmReportParam(prAdapter, ucBssIndex);
 	struct RM_MEASURE_REPORT_ENTRY *prReportEntry = NULL;
 	struct LINK *prReportLink = &prRmRep->rReportLink;
 	struct LINK *prFreeReportLink = &prRmRep->rFreeReportLink;
 	u_int8_t fgHasBcnReqTimer = timerPendingTimer(&rBeaconReqTimer);
 
-	DBGLOG(RLM, TRACE, "RRM: Free measurement, Beacon Req timer is %d\n",
+	DBGLOG(RLM, TRACE,
+		"[%d] RRM: Free measurement, Beacon Req timer is %d\n",
+		ucBssIndex,
 		fgHasBcnReqTimer);
 	if (fgHasBcnReqTimer)
 		cnmTimerStopTimer(prAdapter, &rBeaconReqTimer);
@@ -6378,12 +6413,13 @@ void rlmComposeIncapableRmRep(struct RADIO_MEASUREMENT_REPORT_PARAMS *prRep,
  ** prAdapter: pointer to the Adapter
  ** fgNewStarted: if it is the first element in measurement request frame
  */
-void rlmStartNextMeasurement(struct ADAPTER *prAdapter, u_int8_t fgNewStarted)
+void rlmStartNextMeasurement(struct ADAPTER *prAdapter, u_int8_t fgNewStarted,
+	uint8_t ucBssIndex)
 {
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		&prAdapter->rWifiVar.rRmReqParams;
+		aisGetRmReqParam(prAdapter, ucBssIndex);
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRep =
-		&prAdapter->rWifiVar.rRmRepParams;
+		aisGetRmReportParam(prAdapter, ucBssIndex);
 	struct IE_MEASUREMENT_REQ *prCurrReq = prRmReq->prCurrMeasElem;
 	uint16_t u2RandomTime = 0;
 
@@ -6397,14 +6433,16 @@ schedule_next:
 		DBGLOG(RLM, WARN,
 		       "RRM: Parallel request, compose incapable report\n");
 		if (prRmRep->u2ReportFrameLen + 5 > RM_REPORT_FRAME_MAX_LENGTH)
-			rlmTxRadioMeasurementReport(prAdapter);
+			rlmTxRadioMeasurementReport(prAdapter, ucBssIndex);
 		rlmComposeIncapableRmRep(prRmRep, prCurrReq->ucToken,
 					 prCurrReq->ucMeasurementType);
 		if (rlmAllMeasurementIssued(prRmReq)) {
 			if (prRmReq->rBcnRmParam.fgExistBcnReq &&
 			    RM_EXIST_REPORT(prRmRep))
-				rlmComposeEmptyBeaconReport(prAdapter);
-			rlmTxRadioMeasurementReport(prAdapter);
+				rlmComposeEmptyBeaconReport(prAdapter,
+					ucBssIndex);
+			rlmTxRadioMeasurementReport(prAdapter,
+				ucBssIndex);
 
 			/* repeat measurement if repetitions is required and not
 			 * only parallel measurements.
@@ -6420,7 +6458,8 @@ schedule_next:
 				prRmReq->u2RemainReqLen =
 					prRmReq->u2ReqIeBufLen;
 			} else {
-				rlmFreeMeasurementResources(prAdapter);
+				rlmFreeMeasurementResources(prAdapter,
+					ucBssIndex);
 				DBGLOG(RLM, INFO,
 				       "RRM: Radio Measurement done\n");
 				return;
@@ -6464,7 +6503,8 @@ schedule_next:
 			 */
 			if (u2IeSize + prRmRep->u2ReportFrameLen >
 			    RM_REPORT_FRAME_MAX_LENGTH) {
-				rlmTxRadioMeasurementReport(prAdapter);
+				rlmTxRadioMeasurementReport(prAdapter,
+					ucBssIndex);
 				pucReportFrame = prRmRep->pucReportFrameBuff +
 						 prRmRep->u2ReportFrameLen;
 			}
@@ -6479,8 +6519,10 @@ schedule_next:
 		if (rlmAllMeasurementIssued(prRmReq)) {
 			if (prRmReq->rBcnRmParam.fgExistBcnReq &&
 			    RM_EXIST_REPORT(prRmRep))
-				rlmComposeEmptyBeaconReport(prAdapter);
-			rlmTxRadioMeasurementReport(prAdapter);
+				rlmComposeEmptyBeaconReport(prAdapter,
+					ucBssIndex);
+			rlmTxRadioMeasurementReport(prAdapter,
+				ucBssIndex);
 
 			/* repeat measurement if repetitions is required */
 			if (prRmReq->u2Repetitions > 0) {
@@ -6496,8 +6538,9 @@ schedule_next:
 				/* don't free radio measurement resource due to
 				 ** TSM is running
 				 */
-				if (!wmmTsmIsOngoing(prAdapter)) {
-					rlmFreeMeasurementResources(prAdapter);
+				if (!wmmTsmIsOngoing(prAdapter, ucBssIndex)) {
+					rlmFreeMeasurementResources(prAdapter,
+						ucBssIndex);
 					DBGLOG(RLM, INFO,
 					       "RRM: Radio Measurement done\n");
 				}
@@ -6528,7 +6571,7 @@ schedule_next:
 			break;
 		}
 		if (prBeaconReq->u2RandomInterval == 0)
-			rlmDoBeaconMeasurement(prAdapter, 0);
+			rlmDoBeaconMeasurement(prAdapter, ucBssIndex);
 		else {
 			get_random_bytes(&u2RandomTime, 2);
 			u2RandomTime =
@@ -6538,11 +6581,11 @@ schedule_next:
 			if (u2RandomTime > 0) {
 				cnmTimerStopTimer(prAdapter, &rBeaconReqTimer);
 				cnmTimerInitTimer(prAdapter, &rBeaconReqTimer,
-						  rlmDoBeaconMeasurement, 0);
+					rlmDoBeaconMeasurement, ucBssIndex);
 				cnmTimerStartTimer(prAdapter, &rBeaconReqTimer,
 						   u2RandomTime);
 			} else
-				rlmDoBeaconMeasurement(prAdapter, 0);
+				rlmDoBeaconMeasurement(prAdapter, ucBssIndex);
 		}
 		break;
 	}
@@ -6619,7 +6662,8 @@ schedule_next:
 #endif
 	default: {
 		if (prRmRep->u2ReportFrameLen + 5 > RM_REPORT_FRAME_MAX_LENGTH)
-			rlmTxRadioMeasurementReport(prAdapter);
+			rlmTxRadioMeasurementReport(prAdapter,
+				ucBssIndex);
 		rlmComposeIncapableRmRep(prRmRep, prCurrReq->ucToken,
 					 prCurrReq->ucMeasurementType);
 		fgNewStarted = FALSE;
@@ -6631,17 +6675,20 @@ schedule_next:
 	}
 }
 
-u_int8_t rlmBcnRmRunning(struct ADAPTER *prAdapter)
+u_int8_t rlmBcnRmRunning(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
-	return prAdapter->rWifiVar.rRmReqParams.rBcnRmParam.eState ==
+	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
+		aisGetRmReqParam(prAdapter, ucBssIndex);
+
+	return prRmReq->rBcnRmParam.eState ==
 	       RM_ON_GOING;
 }
 
 u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 			struct MSG_SCN_SCAN_REQ_V2 *prMsg)
 {
-	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		&prAdapter->rWifiVar.rRmReqParams;
+	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq = NULL;
 	struct IE_MEASUREMENT_REQ *prCurrReq = NULL;
 	struct RM_BCN_REQ *prBeaconReq = NULL;
 	uint16_t u2RemainLen = 0;
@@ -6649,7 +6696,13 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 
 	static struct PARAM_SSID rBcnReqSsid;
 
-	if (prRmReq->rBcnRmParam.eState != RM_ON_GOING || !prMsg)
+	if (!prMsg)
+		return FALSE;
+
+	prRmReq = aisGetRmReqParam(prAdapter,
+		prMsg->ucBssIndex);
+
+	if (prRmReq->rBcnRmParam.eState != RM_ON_GOING)
 		return FALSE;
 
 	prCurrReq = prRmReq->prCurrMeasElem;
@@ -6688,7 +6741,8 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 		prMsg->eScanChannel = SCAN_CHANNEL_FULL;
 	else if (prBeaconReq->ucChannel == 255) { /* latest Ap Channel Report */
 		struct BSS_DESC *prBssDesc =
-			prAdapter->rWifiVar.rAisFsmInfo.prTargetBssDesc;
+			aisGetTargetBssDesc(prAdapter,
+			prMsg->ucBssIndex);
 		uint8_t *pucChnl = NULL;
 		uint8_t ucChnlNum = 0;
 		uint8_t ucIndex = 0;
@@ -6809,10 +6863,11 @@ u_int8_t rlmFillScanMsg(struct ADAPTER *prAdapter,
 
 void rlmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 {
+	uint8_t ucBssIndex = (uint8_t) ulParam;
 	struct CONNECTION_SETTINGS *prConnSettings =
-		&(prAdapter->rWifiVar.rConnSettings);
+		aisGetConnSettings(prAdapter, ucBssIndex);
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		&prAdapter->rWifiVar.rRmReqParams;
+		aisGetRmReqParam(prAdapter, ucBssIndex);
 	struct RM_BCN_REQ *prBcnReq =
 		(struct RM_BCN_REQ *)&prRmReq->prCurrMeasElem
 			->aucRequestFields[0];
@@ -6853,9 +6908,10 @@ void rlmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 			rlmCollectBeaconReport(prAdapter, prBssDesc->aucIEBuf,
 					       prBssDesc->u2IELength,
 					       prBssDesc->aucBSSID,
-					       &rRepParams);
+					       &rRepParams,
+					       ucBssIndex);
 		}
-		rlmStartNextMeasurement(prAdapter, FALSE);
+		rlmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 		return;
 	}
 	if (prConnSettings->fgIsScanReqIssued) {
@@ -6863,7 +6919,8 @@ void rlmDoBeaconMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 	} else {
 		prRmReq->rBcnRmParam.eState = RM_ON_GOING;
 		GET_CURRENT_SYSTIME(&prRmReq->rStartTime);
-		aisFsmScanRequest(prAdapter, NULL, NULL, 0);
+		aisFsmScanRequest(prAdapter, NULL, NULL, 0,
+			ucBssIndex);
 	}
 }
 
@@ -6949,16 +7006,23 @@ void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReqParam = NULL;
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRepParam = NULL;
 	enum RM_REQ_PRIORITY eNewPriority;
+	struct BSS_INFO *prAisBssInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		secGetBssIdxByRfb(prAdapter, prSwRfb));
 	if (prAdapter->prAisBssInfo == NULL) {
 		DBGLOG(RLM, INFO, "Ignored due to AIS isn't created\n");
 		return;
 	}
+
 	prRmReqFrame = (struct ACTION_RM_REQ_FRAME *)prSwRfb->pvHeader;
-	prRmReqParam = &prAdapter->rWifiVar.rRmReqParams;
-	prRmRepParam = &prAdapter->rWifiVar.rRmRepParams;
+	prRmReqParam = aisGetRmReqParam(prAdapter,
+		prAisBssInfo->ucBssIndex);
+	prRmRepParam = aisGetRmReportParam(prAdapter,
+		prAisBssInfo->ucBssIndex);
 
 	if (!rlmRmFrameIsValid(prSwRfb))
 		return;
@@ -6973,9 +7037,12 @@ void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	/* */
 	if (prRmReqParam->fgRmIsOngoing) {
 		DBGLOG(RLM, INFO, "RRM: Old RM is on-going, cancel it first\n");
-		rlmTxRadioMeasurementReport(prAdapter);
-		wmmRemoveAllTsmMeasurement(prAdapter, FALSE);
-		rlmFreeMeasurementResources(prAdapter);
+		rlmTxRadioMeasurementReport(prAdapter,
+			prAisBssInfo->ucBssIndex);
+		wmmRemoveAllTsmMeasurement(prAdapter, FALSE,
+			prAisBssInfo->ucBssIndex);
+		rlmFreeMeasurementResources(prAdapter,
+			prAisBssInfo->ucBssIndex);
 	}
 	prRmReqParam->fgRmIsOngoing = TRUE;
 	/* Step1: Save Measurement Request Params */
@@ -7019,7 +7086,7 @@ void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	prReportFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 	COPY_MAC_ADDR(prReportFrame->aucDestAddr, prRmReqFrame->aucSrcAddr);
 	COPY_MAC_ADDR(prReportFrame->aucSrcAddr,
-		      prAdapter->prAisBssInfo->aucOwnMacAddr);
+		      prAisBssInfo->aucOwnMacAddr);
 	COPY_MAC_ADDR(prReportFrame->aucBSSID, prRmReqFrame->aucBSSID);
 	prReportFrame->ucCategory = CATEGORY_RM_ACTION;
 	prReportFrame->ucAction = RM_ACTION_RM_REPORT;
@@ -7028,15 +7095,17 @@ void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
 	rlmCalibrateRepetions(prRmReqParam);
 	/* Step3: Start to process Measurement Request Element */
-	rlmStartNextMeasurement(prAdapter, TRUE);
+	rlmStartNextMeasurement(prAdapter, TRUE, prAisBssInfo->ucBssIndex);
 }
 
-void rlmTxRadioMeasurementReport(struct ADAPTER *prAdapter)
+void rlmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRepParam =
-		&prAdapter->rWifiVar.rRmRepParams;
+		aisGetRmReportParam(prAdapter, ucBssIndex);
 	struct STA_RECORD *prStaRec = NULL;
+	struct BSS_INFO *prAisBssInfo = NULL;
 
 	if (prRmRepParam->u2ReportFrameLen <=
 	    OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem)) {
@@ -7044,11 +7113,13 @@ void rlmTxRadioMeasurementReport(struct ADAPTER *prAdapter)
 		       prRmRepParam->u2ReportFrameLen);
 		return;
 	}
-	if (!prAdapter->prAisBssInfo) {
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		ucBssIndex);
+	if (!prAisBssInfo) {
 		DBGLOG(RLM, INFO, "RRM: ais bss info is NULL\n");
 		return;
 	}
-	prStaRec = prAdapter->prAisBssInfo->prStaRecOfAP;
+	prStaRec = prAisBssInfo->prStaRecOfAP;
 	if (!prStaRec) {
 		DBGLOG(RLM, INFO, "RRM: StaRec of Ais is NULL\n");
 		return;
@@ -7200,33 +7271,45 @@ static void rlmCalibrateRepetions(struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq)
 void rlmRunEventProcessNextRm(struct ADAPTER *prAdapter,
 			      struct MSG_HDR *prMsgHdr)
 {
+	struct MSG_SCN_SCAN_DONE *prMsg;
+	uint8_t ucBssIndex = 0;
+
+	ASSERT(prMsgHdr);
+
+	prMsg = (struct MSG_SCN_SCAN_DONE *)prMsgHdr;
+	ucBssIndex = prMsg->ucBssIndex;
 	cnmMemFree(prAdapter, prMsgHdr);
-	rlmStartNextMeasurement(prAdapter, FALSE);
+	rlmStartNextMeasurement(prAdapter, FALSE, ucBssIndex);
 }
 
-void rlmScheduleNextRm(struct ADAPTER *prAdapter)
+void rlmScheduleNextRm(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
-	struct MSG_HDR *prMsg = NULL;
+	struct MSG_SCN_SCAN_DONE *prMsg = NULL;
 
-	prMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(*prMsg));
+	prMsg = (struct MSG_SCN_SCAN_DONE *) cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(struct MSG_SCN_SCAN_DONE));
 	if (!prMsg) {
 		DBGLOG(RLM, ERROR, "[RRM] No memory\n");
 		return;
 	}
-	prMsg->eMsgId = MID_RLM_RM_SCHEDULE;
-	mboxSendMsg(prAdapter, MBOX_ID_0, prMsg, MSG_SEND_METHOD_BUF);
+	prMsg->rMsgHdr.eMsgId = MID_RLM_RM_SCHEDULE;
+	prMsg->ucBssIndex = ucBssIndex;
+	mboxSendMsg(prAdapter, MBOX_ID_0,
+		(struct MSG_HDR *)prMsg, MSG_SEND_METHOD_BUF);
 }
 
 static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
-				   uint8_t *pucIEBuf, uint16_t u2IELength,
-				   uint8_t *pucBssid,
-				   struct RM_BEACON_REPORT_PARAMS *prRepParams)
+		uint8_t *pucIEBuf, uint16_t u2IELength,
+		uint8_t *pucBssid,
+		struct RM_BEACON_REPORT_PARAMS *prRepParams,
+		uint8_t ucBssIndex)
 {
 #define BEACON_FIXED_FIELD_LENGTH 12
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq =
-		&prAdapter->rWifiVar.rRmReqParams;
+		aisGetRmReqParam(prAdapter, ucBssIndex);
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRep =
-		&prAdapter->rWifiVar.rRmRepParams;
+		aisGetRmReportParam(prAdapter, ucBssIndex);
 	struct RM_BCN_REQ *prBcnReq =
 		(struct RM_BCN_REQ *)&prRmReq->prCurrMeasElem
 			->aucRequestFields[0];
@@ -7554,7 +7637,7 @@ static uint8_t rlmGetChannel(
 }
 
 void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
-				  IN struct SW_RFB *prSwRfb)
+	IN struct SW_RFB *prSwRfb, uint8_t ucBssIndex)
 {
 	struct RM_BEACON_REPORT_PARAMS rRepParams;
 	struct WLAN_BEACON_FRAME *prWlanBeacon =
@@ -7587,7 +7670,7 @@ void rlmProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	WLAN_GET_FIELD_16(&prWlanBeacon->u2CapInfo,
 		&rRepParams.aucBcnFixedField[10]);
 	rlmCollectBeaconReport(prAdapter, prWlanBeacon->aucInfoElem, u2IELen,
-		prWlanBeacon->aucBSSID, &rRepParams);
+		prWlanBeacon->aucBSSID, &rRepParams, ucBssIndex);
 }
 
 void rlmUpdateBssTimeTsf(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)

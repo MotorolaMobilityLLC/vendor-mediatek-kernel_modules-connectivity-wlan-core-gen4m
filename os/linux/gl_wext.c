@@ -469,7 +469,7 @@ const struct iw_handler_def wext_handler_def = {
  *******************************************************************************
  */
 static void wext_support_ioctl_SIOCSIWGENIE(
-	IN struct GLUE_INFO *prGlueInfo, IN char *prExtraBuf,
+	IN struct net_device  *prDev, IN char *prExtraBuf,
 	IN uint32_t u4ExtraSize);
 
 static void
@@ -1358,11 +1358,12 @@ wext_set_mode(IN struct net_device *prNetDev,
 	      IN struct iw_request_info *prIwReqInfo,
 	      IN unsigned int *pu4Mode, IN char *pcExtra)
 {
-	enum ENUM_PARAM_OP_MODE eOpMode;
-
+	struct PARAM_OP_MODE rOpMode;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	struct GL_WPA_INFO *prWpaInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(pu4Mode);
@@ -1372,15 +1373,15 @@ wext_set_mode(IN struct net_device *prNetDev,
 
 	switch (*pu4Mode) {
 	case IW_MODE_AUTO:
-		eOpMode = NET_TYPE_AUTO_SWITCH;
+		rOpMode.eOpMode = NET_TYPE_AUTO_SWITCH;
 		break;
 
 	case IW_MODE_ADHOC:
-		eOpMode = NET_TYPE_IBSS;
+		rOpMode.eOpMode = NET_TYPE_IBSS;
 		break;
 
 	case IW_MODE_INFRA:
-		eOpMode = NET_TYPE_INFRA;
+		rOpMode.eOpMode = NET_TYPE_INFRA;
 		break;
 
 	default:
@@ -1390,21 +1391,25 @@ wext_set_mode(IN struct net_device *prNetDev,
 	}
 
 	/* printk("%s(): Set Mode = %d\n", __FUNCTION__, *pu4Mode); */
-
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetInfrastructureMode, &eOpMode,
-			   sizeof(eOpMode), FALSE, FALSE, TRUE, &u4BufLen);
+	rOpMode.ucBssIdx = ucBssIndex;
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetInfrastructureMode,
+		(void *)&rOpMode, sizeof(struct PARAM_OP_MODE),
+		FALSE, FALSE, TRUE, &u4BufLen);
 
 	/* after set operation mode, key table are cleared */
 
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
+
 	/* reset wpa info */
-	prGlueInfo->rWpaInfo.u4WpaVersion =
+	prWpaInfo->u4WpaVersion =
 		IW_AUTH_WPA_VERSION_DISABLED;
-	prGlueInfo->rWpaInfo.u4KeyMgmt = 0;
-	prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
-	prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
-	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+	prWpaInfo->u4KeyMgmt = 0;
+	prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_NONE;
+	prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
+	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
-	prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
 #endif
 
 	return 0;
@@ -1664,6 +1669,7 @@ wext_get_ap(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prAddr);
@@ -1675,7 +1681,8 @@ wext_get_ap(IN struct net_device *prNetDev,
 	/* return -ENOTCONN; */
 	/* } */
 
-	if (prGlueInfo->eParamMediaStateIndicated ==
+	if (kalGetMediaStateIndicated(prGlueInfo,
+		ucBssIndex) ==
 	    MEDIA_STATE_DISCONNECTED) {
 		memset(prAddr, 0, sizeof(struct sockaddr));
 		return 0;
@@ -2295,6 +2302,8 @@ wext_set_essid(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	struct GL_WPA_INFO *prWpaInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prEssid);
@@ -2306,10 +2315,13 @@ wext_set_essid(IN struct net_device *prNetDev,
 	if (prEssid->length > IW_ESSID_MAX_SIZE)
 		return -E2BIG;
 
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
+
 	/* set auth mode */
-	if (prGlueInfo->rWpaInfo.u4WpaVersion ==
+	if (prWpaInfo->u4WpaVersion ==
 	    IW_AUTH_WPA_VERSION_DISABLED) {
-		eAuthMode = (prGlueInfo->rWpaInfo.u4AuthAlg ==
+		eAuthMode = (prWpaInfo->u4AuthAlg ==
 			     IW_AUTH_ALG_OPEN_SYSTEM) ?
 			    AUTH_MODE_OPEN : AUTH_MODE_AUTO_SWITCH;
 		/* printk(KERN_INFO
@@ -2318,10 +2330,10 @@ wext_set_essid(IN struct net_device *prNetDev,
 		 */
 	} else {
 		/* set auth mode */
-		switch (prGlueInfo->rWpaInfo.u4KeyMgmt) {
+		switch (prWpaInfo->u4KeyMgmt) {
 		case IW_AUTH_KEY_MGMT_802_1X:
 			eAuthMode =
-				(prGlueInfo->rWpaInfo.u4WpaVersion ==
+				(prWpaInfo->u4WpaVersion ==
 				 IW_AUTH_WPA_VERSION_WPA) ?
 				AUTH_MODE_WPA : AUTH_MODE_WPA2;
 			/* printk("IW_AUTH_KEY_MGMT_802_1X->AUTH_MODE_WPA%s\n",
@@ -2330,7 +2342,7 @@ wext_set_essid(IN struct net_device *prNetDev,
 			break;
 		case IW_AUTH_KEY_MGMT_PSK:
 			eAuthMode =
-				(prGlueInfo->rWpaInfo.u4WpaVersion ==
+				(prWpaInfo->u4WpaVersion ==
 				 IW_AUTH_WPA_VERSION_WPA) ?
 				AUTH_MODE_WPA_PSK : AUTH_MODE_WPA2_PSK;
 			/* printk("IW_AUTH_KEY_MGMT_PSK->AUTH_MODE_WPA%sPSK\n",
@@ -2363,7 +2375,7 @@ wext_set_essid(IN struct net_device *prNetDev,
 		default:
 			/* printk(KERN_INFO DRV_NAME
 			 * "strange IW_AUTH_KEY_MGMT : %d set auto switch\n",
-			 * prGlueInfo->rWpaInfo.u4KeyMgmt);
+			 * prWpaInfo->u4KeyMgmt);
 			 */
 			eAuthMode = AUTH_MODE_AUTO_SWITCH;
 			break;
@@ -2374,8 +2386,8 @@ wext_set_essid(IN struct net_device *prNetDev,
 			   sizeof(eAuthMode), FALSE, FALSE, FALSE, &u4BufLen);
 
 	/* set encryption status */
-	cipher = prGlueInfo->rWpaInfo.u4CipherGroup |
-		 prGlueInfo->rWpaInfo.u4CipherPairwise;
+	cipher = prWpaInfo->u4CipherGroup |
+		 prWpaInfo->u4CipherPairwise;
 	if (cipher & IW_AUTH_CIPHER_CCMP) {
 		/* printk("IW_AUTH_CIPHER_CCMP->ENUM_ENCRYPTION3_ENABLED\n"); */
 		eEncStatus = ENUM_ENCRYPTION3_ENABLED;
@@ -2388,7 +2400,7 @@ wext_set_essid(IN struct net_device *prNetDev,
 		eEncStatus = ENUM_ENCRYPTION1_ENABLED;
 	} else if (cipher & IW_AUTH_CIPHER_NONE) {
 		/* printk("IW_AUTH_CIPHER_NONE->ENUM_ENCRYPTION_DISABLED\n"); */
-		if (prGlueInfo->rWpaInfo.fgPrivacyInvoke)
+		if (prWpaInfo->fgPrivacyInvoke)
 			eEncStatus = ENUM_ENCRYPTION1_ENABLED;
 		else
 			eEncStatus = ENUM_ENCRYPTION_DISABLED;
@@ -2419,7 +2431,6 @@ wext_set_essid(IN struct net_device *prNetDev,
 	 *  rNewSsid.aucSsid[rNewSsid.u4SsidLen] = '\0';
 	 *  printk("set ssid(%u): %s\n", rNewSsid.u4SsidLen, rNewSsid.aucSsid);
 	 */
-
 	if (kalIoctl(prGlueInfo,
 		     wlanoidSetSsid,
 		     (void *)&rNewSsid, sizeof(struct PARAM_SSID), FALSE, FALSE,
@@ -2477,7 +2488,6 @@ wext_get_essid(IN struct net_device *prNetDev,
 
 	if (!prSsid)
 		return -ENOMEM;
-
 	rStatus = kalIoctl(prGlueInfo, wlanoidQuerySsid, prSsid,
 			   sizeof(struct PARAM_SSID),
 			   TRUE, FALSE, FALSE, &u4BufLen);
@@ -2973,6 +2983,8 @@ wext_set_encode(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	struct GL_WPA_INFO *prWpaInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prEnc);
@@ -2981,15 +2993,18 @@ wext_set_encode(IN struct net_device *prNetDev,
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
+
 	/* reset to default mode */
-	prGlueInfo->rWpaInfo.u4WpaVersion =
+	prWpaInfo->u4WpaVersion =
 		IW_AUTH_WPA_VERSION_DISABLED;
-	prGlueInfo->rWpaInfo.u4KeyMgmt = 0;
-	prGlueInfo->rWpaInfo.u4CipherPairwise = IW_AUTH_CIPHER_NONE;
-	prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_NONE;
-	prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
+	prWpaInfo->u4KeyMgmt = 0;
+	prWpaInfo->u4CipherPairwise = IW_AUTH_CIPHER_NONE;
+	prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_NONE;
+	prWpaInfo->u4AuthAlg = IW_AUTH_ALG_OPEN_SYSTEM;
 #if CFG_SUPPORT_802_11W
-	prGlueInfo->rWpaInfo.u4Mfp = IW_AUTH_MFP_DISABLED;
+	prWpaInfo->u4Mfp = IW_AUTH_MFP_DISABLED;
 #endif
 
 	/* iwconfig wlan0 key off */
@@ -3040,7 +3055,7 @@ wext_set_encode(IN struct net_device *prNetDev,
 		}
 
 		/* change to auto switch */
-		prGlueInfo->rWpaInfo.u4AuthAlg = IW_AUTH_ALG_SHARED_KEY |
+		prWpaInfo->u4AuthAlg = IW_AUTH_ALG_SHARED_KEY |
 						 IW_AUTH_ALG_OPEN_SYSTEM;
 		eAuthMode = AUTH_MODE_AUTO_SWITCH;
 
@@ -3055,9 +3070,9 @@ wext_set_encode(IN struct net_device *prNetDev,
 			return -EFAULT;
 		}
 
-		prGlueInfo->rWpaInfo.u4CipherPairwise =
+		prWpaInfo->u4CipherPairwise =
 			IW_AUTH_CIPHER_WEP104 | IW_AUTH_CIPHER_WEP40;
-		prGlueInfo->rWpaInfo.u4CipherGroup = IW_AUTH_CIPHER_WEP104 |
+		prWpaInfo->u4CipherGroup = IW_AUTH_CIPHER_WEP104 |
 						     IW_AUTH_CIPHER_WEP40;
 
 		eEncStatus = ENUM_WEP_ENABLED;
@@ -3118,8 +3133,6 @@ wext_set_power(IN struct net_device *prNetDev,
 	if (!prGlueInfo)
 		return -EFAULT;
 
-	if (!prGlueInfo->prAdapter->prAisBssInfo)
-		return -EFAULT;
 	/* printk(KERN_INFO
 	 *	  "wext_set_power value(%d) disabled(%d) flag(0x%x)\n",
 	 *	  prPower->value, prPower->disabled, prPower->flags);
@@ -3148,8 +3161,7 @@ wext_set_power(IN struct net_device *prNetDev,
 	}
 
 	rPowerMode.ePowerMode = ePowerMode;
-	rPowerMode.ucBssIdx =
-		prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+	rPowerMode.ucBssIdx = wlanGetBssIdx(prNetDev);
 
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSet802dot11PowerSaveProfile,
@@ -3272,6 +3284,9 @@ wext_set_auth(IN struct net_device *prNetDev,
 	      IN struct iw_param *prAuth, IN char *pcExtra)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_WPA_INFO *prWpaInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prAuth);
@@ -3279,37 +3294,43 @@ wext_set_auth(IN struct net_device *prNetDev,
 		return -EINVAL;
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
+	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter,
+		ucBssIndex);
+
 	/* Save information to glue info and process later when ssid is set. */
 	switch (prAuth->flags & IW_AUTH_INDEX) {
 	case IW_AUTH_WPA_VERSION:
 #if CFG_SUPPORT_WAPI
-		if (wlanQueryWapiMode(prGlueInfo->prAdapter)) {
-			prGlueInfo->rWpaInfo.u4WpaVersion =
+		if (aisGetWapiMode(prGlueInfo->prAdapter,
+			ucBssIndex)) {
+			prWpaInfo->u4WpaVersion =
 						IW_AUTH_WPA_VERSION_DISABLED;
-			prGlueInfo->rWpaInfo.u4AuthAlg =
+			prWpaInfo->u4AuthAlg =
 						IW_AUTH_ALG_OPEN_SYSTEM;
 		} else {
-			prGlueInfo->rWpaInfo.u4WpaVersion = prAuth->value;
+			prWpaInfo->u4WpaVersion = prAuth->value;
 		}
 #else
-		prGlueInfo->rWpaInfo.u4WpaVersion = prAuth->value;
+		prWpaInfo->u4WpaVersion = prAuth->value;
 #endif
 		break;
 
 	case IW_AUTH_CIPHER_PAIRWISE:
-		prGlueInfo->rWpaInfo.u4CipherPairwise = prAuth->value;
+		prWpaInfo->u4CipherPairwise = prAuth->value;
 		break;
 
 	case IW_AUTH_CIPHER_GROUP:
-		prGlueInfo->rWpaInfo.u4CipherGroup = prAuth->value;
+		prWpaInfo->u4CipherGroup = prAuth->value;
 		break;
 
 	case IW_AUTH_KEY_MGMT:
-		prGlueInfo->rWpaInfo.u4KeyMgmt = prAuth->value;
+		prWpaInfo->u4KeyMgmt = prAuth->value;
 #if CFG_SUPPORT_WAPI
-		if (prGlueInfo->rWpaInfo.u4KeyMgmt ==
+		if (prWpaInfo->u4KeyMgmt ==
 		    IW_AUTH_KEY_MGMT_WAPI_PSK ||
-		    prGlueInfo->rWpaInfo.u4KeyMgmt ==
+		    prWpaInfo->u4KeyMgmt ==
 		    IW_AUTH_KEY_MGMT_WAPI_CERT) {
 			uint32_t u4BufLen;
 			uint32_t rStatus;
@@ -3321,23 +3342,23 @@ wext_set_auth(IN struct net_device *prNetDev,
 			       prAuth->value);
 		}
 #endif
-		if (prGlueInfo->rWpaInfo.u4KeyMgmt == IW_AUTH_KEY_MGMT_WPS)
-			prGlueInfo->fgWpsActive = TRUE;
+		if (prWpaInfo->u4KeyMgmt == IW_AUTH_KEY_MGMT_WPS)
+			prConnSettings->fgWpsActive = TRUE;
 		else
-			prGlueInfo->fgWpsActive = FALSE;
+			prConnSettings->fgWpsActive = FALSE;
 		break;
 
 	case IW_AUTH_80211_AUTH_ALG:
-		prGlueInfo->rWpaInfo.u4AuthAlg = prAuth->value;
+		prWpaInfo->u4AuthAlg = prAuth->value;
 		break;
 
 	case IW_AUTH_PRIVACY_INVOKED:
-		prGlueInfo->rWpaInfo.fgPrivacyInvoke = prAuth->value;
+		prWpaInfo->fgPrivacyInvoke = prAuth->value;
 		break;
 #if CFG_SUPPORT_802_11W
 	case IW_AUTH_MFP:
 		/* printk("wext_set_auth IW_AUTH_MFP=%d\n", prAuth->value); */
-		prGlueInfo->rWpaInfo.u4Mfp = prAuth->value;
+		prWpaInfo->u4Mfp = prAuth->value;
 		break;
 #endif
 #if CFG_SUPPORT_WAPI
@@ -3413,6 +3434,8 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+	struct GL_WPA_INFO *prWpaInfo;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
 
 	ASSERT(prNetDev);
 	ASSERT(prEnc);
@@ -3425,6 +3448,9 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 	}
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
 
 	memset(keyStructBuf, 0, sizeof(keyStructBuf));
 
@@ -3481,7 +3507,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 
 		memcpy(prWpiKey->aucWPICK, &prIWEncExt->key[16], 16);
 		prWpiKey->u4LenWPICK = 16;
-
+		prWpiKey->ucBssIdx = ucBssIndex;
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetWapiKey, prWpiKey,
 				   sizeof(struct PARAM_WPI_KEY),
 				   FALSE, FALSE, TRUE, &u4BufLen);
@@ -3506,7 +3532,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 			 *	   MACSTR "]\n", prRemoveKey->KeyIndex,
 			 *	   MAC2STR(prRemoveKey->BSSID));
 			 */
-
+			prRemoveKey->ucBssIdx = ucBssIndex;
 			rStatus = kalIoctl(prGlueInfo, wlanoidSetRemoveKey,
 					   prRemoveKey, prRemoveKey->u4Length,
 					   FALSE, FALSE, TRUE, &u4BufLen);
@@ -3564,7 +3590,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 				}
 
 				/* change to auto switch */
-				prGlueInfo->rWpaInfo.u4AuthAlg =
+				prWpaInfo->u4AuthAlg =
 							IW_AUTH_ALG_SHARED_KEY |
 							IW_AUTH_ALG_OPEN_SYSTEM;
 				eAuthMode = AUTH_MODE_AUTO_SWITCH;
@@ -3583,10 +3609,10 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 					return -EFAULT;
 				}
 
-				prGlueInfo->rWpaInfo.u4CipherPairwise =
+				prWpaInfo->u4CipherPairwise =
 							IW_AUTH_CIPHER_WEP104 |
 							IW_AUTH_CIPHER_WEP40;
-				prGlueInfo->rWpaInfo.u4CipherGroup =
+				prWpaInfo->u4CipherGroup =
 							IW_AUTH_CIPHER_WEP104 |
 							IW_AUTH_CIPHER_WEP40;
 
@@ -3683,7 +3709,7 @@ wext_set_encode_ext(IN struct net_device *prNetDev,
 		prKey->u4KeyLength = prIWEncExt->key_len;
 		prKey->u4Length = ((unsigned long) &(((struct PARAM_KEY *)
 				0)->aucKeyMaterial)) + prKey->u4KeyLength;
-
+		prKey->ucBssIdx = ucBssIndex;
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAddKey, prKey,
 				   prKey->u4Length,
 				   FALSE, FALSE, TRUE, &u4BufLen);
@@ -4202,9 +4228,6 @@ int wext_support_ioctl(IN struct net_device *prDev,
 #if WIRELESS_EXT > 17
 	case SIOCSIWGENIE:	/* 0x8B30, set gen ie */
 		if (iwr->u.data.pointer) {
-			struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
-							 netdev_priv(prDev));
-
 			u4ExtraSize = iwr->u.data.length;
 			if (1 /* wlanQueryWapiMode(prGlueInfo->prAdapter) */) {
 				/* Fixed length structure */
@@ -4228,7 +4251,7 @@ int wext_support_ioctl(IN struct net_device *prDev,
 						ret = -EFAULT;
 					else
 						wext_support_ioctl_SIOCSIWGENIE(
-							prGlueInfo, prExtraBuf,
+							prDev, prExtraBuf,
 							u4ExtraSize);
 					kalMemFree(prExtraBuf, VIR_MEM_TYPE,
 						   u4ExtraSize);
@@ -4373,11 +4396,14 @@ int wext_support_ioctl(IN struct net_device *prDev,
 }				/* wext_support_ioctl */
 
 static void wext_support_ioctl_SIOCSIWGENIE(
-	IN struct GLUE_INFO *prGlueInfo, IN char *prExtraBuf,
+	IN struct net_device *prDev, IN char *prExtraBuf,
 	IN uint32_t u4ExtraSize)
 {
+	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
+		netdev_priv(prDev));
 	uint32_t rStatus;
 	uint32_t u4BufLen;
+
 #if CFG_SUPPORT_WAPI
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetWapiAssocInfo, prExtraBuf,
 			   u4ExtraSize, FALSE, FALSE, TRUE, &u4BufLen);
@@ -4416,6 +4442,9 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	struct PARAM_PMKID pmkid;
+	uint8_t ucBssIndex = AIS_DEFAULT_INDEX;
+
+	pmkid.ucBssIdx = ucBssIndex;
 
 	switch (ioMode) {
 	case IW_PMKSA_ADD:
@@ -4461,7 +4490,8 @@ wext_support_ioctl_SIOCSIWPMKSA_Action(IN struct net_device
 void
 wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 			 IN unsigned int u4Cmd, IN unsigned char *pucData,
-			 IN unsigned int u4dataLen)
+			 IN unsigned int u4dataLen,
+			 IN uint8_t ucBssIndex)
 {
 	union iwreq_data wrqu;
 	unsigned char *pucExtraInfo = NULL;
@@ -4472,8 +4502,18 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 #if WIRELESS_EXT < 18
 	int i;
 #endif
+	struct GL_WPA_INFO *prWpaInfo;
+	struct net_device *prDevHandler;
 
 	memset(&wrqu, 0, sizeof(wrqu));
+
+	DBGLOG(REQ, LOUD, "ucBssIndex = %d\n", ucBssIndex);
+
+	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
+		ucBssIndex);
+
+	prDevHandler =
+		wlanGetNetDev(prGlueInfo, ucBssIndex);
 
 	switch (u4Cmd) {
 	case SIOCGIWTXPOW:
@@ -4586,9 +4626,9 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 		break;
 
 	case IWEVPMKIDCAND:
-		if (prGlueInfo->rWpaInfo.u4WpaVersion ==
+		if (prWpaInfo->u4WpaVersion ==
 		    IW_AUTH_WPA_VERSION_WPA2 &&
-		    prGlueInfo->rWpaInfo.u4KeyMgmt == IW_AUTH_KEY_MGMT_802_1X) {
+		    prWpaInfo->u4KeyMgmt == IW_AUTH_KEY_MGMT_802_1X) {
 
 			/* only used in WPA2 */
 #if WIRELESS_EXT >= 18
@@ -4637,7 +4677,7 @@ wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 	}
 
 	/* Send event to user space */
-	wireless_send_event(prGlueInfo->prDevHandler, u4Cmd, &wrqu,
+	wireless_send_event(prDevHandler, u4Cmd, &wrqu,
 			    pucExtraInfo);
 
 skip_indicate_event:
@@ -4967,7 +5007,7 @@ static int std_set_genie(struct net_device *prDev,
 		prGlueInfo = *((struct GLUE_INFO **)
 						 netdev_priv(prDev));
 		wext_support_ioctl_SIOCSIWGENIE(
-			prGlueInfo, pcExtra,
+			prDev, pcExtra,
 			u4ExtraSize);
 	}
 

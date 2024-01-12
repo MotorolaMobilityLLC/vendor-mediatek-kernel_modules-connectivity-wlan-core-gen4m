@@ -154,8 +154,11 @@ static uint8_t gatewayIp[4];
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 #define LINK_QUALITY_COUNT_DUP(prAdapter, prSwRfb) \
 do { \
-	if (prAdapter->prAisBssInfo->prStaRecOfAP) \
-		if (prAdapter->prAisBssInfo->prStaRecOfAP->ucWlanIndex == \
+	struct BSS_INFO *prBssInfo = NULL; \
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, \
+		AIS_DEFAULT_INDEX); \
+	if (prBssInfo && prBssInfo->prStaRecOfAP) \
+		if (prBssInfo->prStaRecOfAP->ucWlanIndex == \
 		    prSwRfb->ucWlanIdx) \
 			prAdapter->rLinkQualityInfo.u4RxDupCount++; \
 } while (0)
@@ -200,8 +203,8 @@ do { \
 				if (prBssInfo->eCurrentOPMode == \
 					OP_MODE_INFRASTRUCTURE) \
 					pucMicKey = \
-					&(prAdapter->rWifiVar.\
-					rAisSpecificBssInfo.aucRxMicKey[0]); \
+					&(aisGetAisSpecBssInfo(prAdapter, \
+					ucBssIndex)->aucRxMicKey[0]); \
 				else { \
 					ASSERT(FALSE); \
 				} \
@@ -1120,7 +1123,6 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 	prCurrentMsduInfo = NULL;
 	QUEUE_INITIALIZE(&rNotEnqueuedQue);
 	prNextMsduInfo = prMsduInfoListHead;
-	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
 
 	do {
 		prCurrentMsduInfo = prNextMsduInfo;
@@ -1187,6 +1189,10 @@ struct MSDU_INFO *qmEnqueueTxPackets(IN struct ADAPTER *prAdapter,
 				break;
 
 			default:
+				ucActivedTspec = wmmHasActiveTspec(
+					aisGetWMMInfo(prAdapter,
+					prCurrentMsduInfo->ucBssIndex));
+
 				prTxQue = qmDetermineStaTxQueue(
 					prAdapter, prCurrentMsduInfo,
 					ucActivedTspec, &ucTC);
@@ -1598,7 +1604,8 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				** packets
 				*/
 				if (QUEUE_IS_EMPTY(prCurrQueue) ||
-				    !wmmAcmCanDequeue(prAdapter, ucAc, 0))
+				    !wmmAcmCanDequeue(prAdapter, ucAc, 0,
+				    prBssInfo->ucBssIndex))
 					goto skip_dequeue;
 				fgAcmFlowCtrl = TRUE;
 			} else
@@ -1653,7 +1660,8 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						prDequeuedPkt->u2FrameLength -
 							ETH_HLEN);
 					if (!wmmAcmCanDequeue(prAdapter, ucAc,
-							      u4PktTxTime))
+						u4PktTxTime,
+						prBssInfo->ucBssIndex))
 						break;
 				}
 #endif
@@ -3128,7 +3136,12 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		} else {
 			uint16_t u2FrameCtrl = 0;
 			struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+			struct BSS_INFO *prAisBssInfo = NULL;
 
+			prAisBssInfo = aisGetAisBssInfo(prAdapter,
+				secGetBssIdxByWlanIdx(
+					prAdapter,
+					prCurrSwRfb->ucWlanIdx));
 			prWlanHeader = (struct WLAN_MAC_HEADER *)
 				prCurrSwRfb->pvHeader;
 			u2FrameCtrl = prWlanHeader->u2FrameCtrl;
@@ -3136,8 +3149,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 				prWlanHeader->u2SeqCtrl;
 			if (prCurrSwRfb->prStaRec == NULL &&
 				RXM_IS_DATA_FRAME(u2FrameCtrl) &&
-				(prAdapter->prAisBssInfo) &&
-				(prAdapter->prAisBssInfo->eConnectionState ==
+				(prAisBssInfo) &&
+				(prAisBssInfo->eConnectionState ==
 				MEDIA_STATE_CONNECTED)) {
 				/* rx header translation */
 				log_dbg(QM, INFO, "RXD Trans: FrameCtrl=0x%02x GVLD=0x%x, StaRecIdx=%d, WlanIdx=%d PktLen=%d\n",
@@ -3152,18 +3165,16 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						u2PacketLen > 64) ? 64 :
 						prCurrSwRfb->
 						u2PacketLen);
-				if (prAdapter->prAisBssInfo
-				    && prAdapter->prAisBssInfo->prStaRecOfAP)
+				if (prAisBssInfo
+				    && prAisBssInfo->prStaRecOfAP)
 				if (EQUAL_MAC_ADDR(
 							prWlanHeader->
 							aucAddr1,
-							prAdapter->
 							prAisBssInfo->
 							aucOwnMacAddr)
 				    && EQUAL_MAC_ADDR(
 							prWlanHeader->
 							aucAddr2,
-							prAdapter->
 							prAisBssInfo->
 							aucBSSID)) {
 					uint16_t u2MACLen = 0;
@@ -3197,7 +3208,6 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 
 					/* record StaRec related info */
 					prCurrSwRfb->prStaRec =
-						prAdapter->
 						prAisBssInfo->
 						prStaRecOfAP;
 					prCurrSwRfb->ucStaRecIdx =
@@ -7683,12 +7693,25 @@ void mqmHandleBaActionFrame(IN struct ADAPTER *prAdapter,
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
+	struct STA_RECORD *prStaRec;
 	struct sk_buff *prSkb = NULL;
 	uint8_t *pucData = NULL;
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
+	struct BSS_INFO *prAisBssInfo = NULL;
 
 	if (!prAdapter)
+		return;
+
+	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(
+		prAdapter, prMsduInfo->ucStaRecIndex);
+	if (!prStaRec || !IS_STA_IN_AIS(prStaRec))
+		return;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		prStaRec->ucBssIndex);
+
+	if (prMsduInfo->eSrc != TX_PACKET_OS)
 		return;
 
 	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
@@ -7720,10 +7743,10 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		if (arpMoniter > 20) {
 			DBGLOG(INIT, WARN,
 				"IOT Critical issue, arp no resp, check AP!\n");
-			if (prAdapter->prAisBssInfo)
-				prAdapter->prAisBssInfo->u2DeauthReason =
+			if (prAisBssInfo)
+				prAisBssInfo->u2DeauthReason =
 					BEACON_TIMEOUT_DUE_2_APR_NO_RESPONSE;
-			aisBssBeaconTimeout(prAdapter);
+			aisBssBeaconTimeout(prAdapter, prStaRec->ucBssIndex);
 			arpMoniter = 0;
 			kalMemZero(apIp, sizeof(apIp));
 		}
@@ -7736,6 +7759,10 @@ void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 	uint8_t *pucData = NULL;
 	uint16_t u2EtherType = 0;
 	int arpOpCode = 0;
+	struct BSS_INFO *prAisBssInfo = NULL;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		secGetBssIdxByRfb(prAdapter, prSwRfb));
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
 		return;
@@ -7753,12 +7780,12 @@ void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
 		(pucData[ETH_TYPE_LEN_OFFSET + 8 + 1]);
 	if (arpOpCode == ARP_PRO_RSP) {
 		arpMoniter = 0;
-		if (prAdapter->prAisBssInfo &&
-			prAdapter->prAisBssInfo->prStaRecOfAP) {
+		if (prAisBssInfo &&
+			prAisBssInfo->prStaRecOfAP) {
 			if (EQUAL_MAC_ADDR(
 				&(pucData[ETH_TYPE_LEN_OFFSET + 10]),
 				/* source hardware address */
-				prAdapter->prAisBssInfo->
+				prAisBssInfo->
 				prStaRecOfAP->aucMacAddr)) {
 				kalMemCopy(apIp,
 					&(pucData[ETH_TYPE_LEN_OFFSET + 16]),
@@ -7858,6 +7885,20 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter,
 					kalMemZero(gatewayIp,
 						sizeof(gatewayIp));
 				return;
+			} else if (prBootp->aucOptions[i + 6] == 0x05) {
+				struct AIS_FSM_INFO *prAisFsmInfo = NULL;
+				uint8_t ucBssIndex =
+					secGetBssIdxByRfb(
+					prAdapter, prSwRfb);
+				prAisFsmInfo =
+					aisGetAisFsmInfo(prAdapter,
+					ucBssIndex);
+				/* Check if join timer is ticking, then release
+				 * channel privilege and stop join timer.
+				 */
+				qmReleaseCHAtFinishedDhcp(prAdapter,
+					&prAisFsmInfo->rJoinTimeoutTimer,
+					ucBssIndex);
 			}
 			dhcpTypeGot = 1;
 			break;
@@ -8018,7 +8059,9 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	ucSecMode = prSwRfb->ucSecMode;
 
 	prGlueInfo = prAdapter->prGlueInfo;
-	prWpaInfo = &prGlueInfo->rWpaInfo;
+
+	prWpaInfo = aisGetWpaInfo(prAdapter,
+		secGetBssIdxByRfb(prAdapter, prSwRfb));
 
 	DBGLOG_LIMITED(QM, TRACE, "ucSecMode = [%u], ChiperGroup = [%u]\n",
 			ucSecMode, prWpaInfo->u4CipherGroup);
@@ -8037,7 +8080,8 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		return TRUE;
 	}
 
-	prDetRplyInfo = &prGlueInfo->prDetRplyInfo;
+	prDetRplyInfo = aisGetDetRplyInfo(prAdapter,
+		secGetBssIdxByRfb(prAdapter, prSwRfb));
 	/* TODO : Need check fw rekey while fw rekey event. */
 	if (ucKeyID != prDetRplyInfo->ucCurKeyId) {
 		DBGLOG(QM, TRACE,
@@ -8159,16 +8203,24 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct AC_QUE_PARMS *prAcQueParam = NULL;
 	uint8_t ucTc = 0;
+	struct BSS_INFO *prAisBssInfo = NULL;
 
-	if (!prStaRec || eAci == ACI_NUM || eAci == ACI_BK || !prAdapter ||
-	    !prAdapter->prAisBssInfo) {
+	if (!prStaRec || eAci == ACI_NUM || eAci == ACI_BK || !prAdapter) {
 		DBGLOG(QM, ERROR, "prSta NULL %d, eAci %d, prAdapter NULL %d\n",
 		       !prStaRec, eAci, !prAdapter);
 		return;
 	}
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		prStaRec->ucBssIndex);
+	if (!prAisBssInfo) {
+		DBGLOG(QM, ERROR, "prAisBssInfo NULL\n");
+		return;
+	}
+
 	prSrcQue = &prStaRec->arTxQueue[aucWmmAC2TcResourceSet1[eAci]];
-	prAcQueParam = &(prAdapter->prAisBssInfo->arACQueParms[0]);
-	ucActivedTspec = wmmHasActiveTspec(&prAdapter->rWifiVar.rWmmInfo);
+	prAcQueParam = &(prAisBssInfo->arACQueParms[0]);
+	ucActivedTspec = wmmHasActiveTspec(
+		aisGetWMMInfo(prAdapter, prAisBssInfo->ucBssIndex));
 
 	while (prAcQueParam[eAci].ucIsACMSet &&
 			!(ucActivedTspec & BIT(eAci)) && eAci != ACI_BK) {
@@ -8196,40 +8248,49 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 }
 
 void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
-			       struct TIMER *prTimer)
+	struct TIMER *prTimer, uint8_t ucBssIndex)
 {
 	if (!timerPendingTimer(prTimer)) {
 		DBGLOG(QM, ERROR, "No channel occupation\n");
 		return;
 	} else if (prAdapter->rWifiVar.ucChannelSwitchMode) {
 		DBGLOG(QM, INFO, "Let the join timer count down.\n");
-		aisFsmReleaseCh(prAdapter);
+		aisFsmReleaseCh(prAdapter, ucBssIndex);
 		return;
 	}
 	DBGLOG(QM, INFO, "Earily release channel\n");
 	/* 1. Rlease channel and stop timer */
-	aisFsmReleaseCh(prAdapter);
+	aisFsmReleaseCh(prAdapter, ucBssIndex);
 	cnmTimerStopTimer(prAdapter, prTimer);
 	/* 2. process if there is pending scan */
-	if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN, TRUE)
+	if (aisFsmIsRequestPending(prAdapter, AIS_REQUEST_SCAN,
+		TRUE, ucBssIndex)
 	    == TRUE) {
-		wlanClearScanningResult(prAdapter);
-		aisFsmSteps(prAdapter, AIS_STATE_ONLINE_SCAN);
+		wlanClearScanningResult(prAdapter, ucBssIndex);
+		aisFsmSteps(prAdapter, AIS_STATE_ONLINE_SCAN,
+			ucBssIndex);
 	}
 	/* 3. Process for pending roaming scan */
 	else if (aisFsmIsRequestPending(prAdapter,
 					AIS_REQUEST_ROAMING_SEARCH,
-					TRUE) == TRUE)
-		aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR);
+					TRUE,
+					ucBssIndex) == TRUE)
+		aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR,
+			ucBssIndex);
 	/* 4. Process for pending roaming connect */
 	else if (aisFsmIsRequestPending(prAdapter,
 					AIS_REQUEST_ROAMING_CONNECT,
-					TRUE) == TRUE)
-		aisFsmSteps(prAdapter, AIS_STATE_SEARCH);
+					TRUE,
+					ucBssIndex) == TRUE)
+		aisFsmSteps(prAdapter, AIS_STATE_SEARCH,
+			ucBssIndex);
+
 	else if (aisFsmIsRequestPending(prAdapter,
 					AIS_REQUEST_REMAIN_ON_CHANNEL,
-					TRUE) == TRUE)
-		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL);
+					TRUE,
+					ucBssIndex) == TRUE)
+		aisFsmSteps(prAdapter, AIS_STATE_REQ_REMAIN_ON_CHANNEL,
+			ucBssIndex);
 	else
 		DBGLOG(QM, INFO, "No pending request\n");
 }

@@ -831,10 +831,10 @@ void scnEventScanDone(IN struct ADAPTER *prAdapter,
 		num = prScanInfo->ucSparseChannelArrayValidNum
 			= prScanDone->ucSparseChannelArrayValidNum;
 		log_dbg(SCN, INFO, "Country Code = %c%c, Detected_Channel_Num = %d\n",
-			((prAdapter->rWifiVar.rConnSettings
-				.u2CountryCode & 0xff00) >> 8),
-			(prAdapter->rWifiVar.rConnSettings
-				.u2CountryCode & 0x00ff), num);
+			((prAdapter->rWifiVar.u2CountryCode
+				& 0xff00) >> 8),
+			(prAdapter->rWifiVar.u2CountryCode
+				& 0x00ff), num);
 
 #define print_info(_Mod, _Clz, _Fmt, var) \
 		do { \
@@ -1040,6 +1040,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	uint32_t i;
 	uint16_t u2IeLen;
 	enum ENUM_BAND ePreferedChnl = BAND_NULL;
+	struct BSS_INFO *prAisBssInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prRequest);
@@ -1047,7 +1048,9 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	ASSERT(prRequest->u4MatchSsidNum <= CFG_SCAN_SSID_MATCH_MAX_NUM);
 	log_dbg(SCN, TRACE, "scnFsmSchedScanRequest\n");
 
-	if (prAdapter->prAisBssInfo == NULL) {
+	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+		prRequest->ucBssIndex);
+	if (prAisBssInfo == NULL) {
 		log_dbg(SCN, WARN, "prAisBssInfo is NULL\n");
 		return FALSE;
 	}
@@ -1080,14 +1083,14 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 
 	/* 1 Set Sched scan param parameters */
 	prSchedScanParam->ucSeqNum++;
-	prSchedScanParam->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
+	prSchedScanParam->ucBssIndex = prAisBssInfo->ucBssIndex;
 	prSchedScanParam->fgStopAfterIndication = FALSE;
 
-	if (!IS_NET_ACTIVE(prAdapter, prAdapter->prAisBssInfo->ucBssIndex)) {
-		SET_NET_ACTIVE(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);
+	if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex)) {
+		SET_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex);
 		/* sync with firmware */
 		nicActivateNetwork(prAdapter,
-			prAdapter->prAisBssInfo->ucBssIndex);
+			prAisBssInfo->ucBssIndex);
 	}
 
 	/* 2.1 Prepare command. Set FW struct SSID_MATCH_SETS */
@@ -1113,7 +1116,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	/* 2.2 Prepare command. Set channel */
 
 	ePreferedChnl
-		= prAdapter->aePreferBand[prAdapter->prAisBssInfo->ucBssIndex];
+		= prAdapter->aePreferBand[NETWORK_TYPE_AIS];
 	if (ePreferedChnl == BAND_2G4) {
 		prSchedScanCmd->ucChannelType =
 			SCHED_SCAN_CHANNEL_TYPE_2G4_ONLY;
@@ -1179,7 +1182,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 
 	if (!prScanInfo->fgSchedScanning)
 		nicDeactivateNetwork(prAdapter,
-			prAdapter->prAisBssInfo->ucBssIndex);
+			prAisBssInfo->ucBssIndex);
 
 	cnmMemFree(prAdapter, (void *) prSchedScanCmd);
 
@@ -1197,11 +1200,20 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 u_int8_t scnFsmSchedScanStopRequest(IN struct ADAPTER *prAdapter)
 {
-	ASSERT(prAdapter);
-	log_dbg(SCN, INFO, "scnFsmSchedScanStopRequest\n");
+	uint8_t ucBssIndex = 0;
 
-	if (prAdapter->prAisBssInfo == NULL) {
-		log_dbg(SCN, WARN, "prAisBssInfo is NULL\n");
+	ASSERT(prAdapter);
+
+	ucBssIndex =
+		prAdapter->rWifiVar.rScanInfo.rSchedScanParam.ucBssIndex;
+
+	log_dbg(SCN, INFO, "ucBssIndex = %d\n", ucBssIndex);
+
+	if (aisGetAisBssInfo(prAdapter,
+		ucBssIndex) == NULL) {
+		log_dbg(SCN, WARN,
+			"prAisBssInfo%d is NULL\n",
+			ucBssIndex);
 		return FALSE;
 	}
 
