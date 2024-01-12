@@ -2499,6 +2499,7 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 		}
 #endif
 
+		kalSetHalted(FALSE);
 		DBGLOG(INIT, INFO, "wlanProbe: probe success\n");
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n", eFailReason);
@@ -2551,6 +2552,8 @@ static VOID wlanRemove(VOID)
 	BOOLEAN fgResult = FALSE;
 
 	DBGLOG(INIT, INFO, "Remove wlan!\n");
+
+	kalSetHalted(TRUE);
 
 	/* 4 <0> Sanity check */
 	ASSERT(u4WlanDevNum <= CFG_MAX_WLAN_DEVICES);
