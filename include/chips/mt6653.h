@@ -89,6 +89,10 @@ extern struct PP_TOP_CR rMt6653PpTopCr;
 #define CONN_AON_WF_NAPPING_ENABLE	0
 #define CONN_AON_WF_NAPPING_DISABLE	1
 
+/* Security Coredump EMI base */
+#define SEC_COREDUMP_EMI_OFFSET		0x18000
+#define SEC_COREDUMP_EMI_BASE		(0x78000000+SEC_COREDUMP_EMI_OFFSET)
+
 /*------------------------------------------------------------------------------
  * MACRO for MT6653 RXVECTOR Parsing
  *------------------------------------------------------------------------------

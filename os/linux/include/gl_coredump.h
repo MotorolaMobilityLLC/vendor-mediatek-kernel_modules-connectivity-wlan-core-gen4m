@@ -22,6 +22,28 @@
 #define COREDUMP_WIFI_INF_NAME			"coredump_wifi"
 #define COREDUMP_WIFI_DEV_NUM			1
 
+
+#if CFG_WIFI_SECURITY_COREDUMP
+/* security coredump */
+#define S2P_CMD_TX_BASE			0x7c02363c
+#define S2P_CMD_RX_BASE			0x7c023640
+
+#define S2P_CMD_WR			0x2 /*2'b10*/
+#define S2P_CMD_RD			0x1 /*2'b01*/
+
+#define S2P_CMD_AES_MAX_LEN		0x00
+#define S2P_CMD_AES_SRC			0x01
+#define S2P_CMD_AES_DST			0x02
+#define S2P_CMD_AES_LEN			0x03 /*in bytes*/
+#define S2P_CMD_AES_DRVOWN_TRIGGER	0x04
+#define S2P_CMD_AES_BUSY		0x05
+
+#define S2P_CMD_SWDEF_AES_DRV_OWN	0x99
+#define S2P_CMD_SWDEF_AES_TRIGGER	0x88
+
+#define S2P_CMD_CLR_WR_BIT		0x00100
+#endif /* #if CFG_WIFI_SECURITY_COREDUMP */
+
 typedef int (*bushang_chk_func_cb)(void *, uint8_t);
 
 enum COREDUMP_SOURCE_TYPE {

@@ -25,6 +25,10 @@
 #include "coda/mt6639/bcrm_on_pwr_wrapper_u_bcrm_on_pwr_bcrm.h"
 #endif
 
+#if CFG_WIFI_SECURITY_COREDUMP
+#include "mt6653.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -243,6 +247,142 @@ static void coredump_del_cdev(struct coredump_ctx *ctx)
 	unregister_chrdev_region(ctx->devno, COREDUMP_WIFI_DEV_NUM);
 }
 
+#if CFG_WIFI_SECURITY_COREDUMP
+static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
+	uint8_t s2p_type, uint32_t data, uint8_t RW)
+{
+	uint32_t bit_7_0, bit_15_8, bit_23_16, bit_31_24;
+
+	bit_7_0 = (0x000000FF & data) >> 0;
+	bit_15_8 = (0x0000FF00 & data) >> 8;
+	bit_23_16 = (0x00FF0000 & data) >> 16;
+	bit_31_24 = (0xFF000000 & data) >> 24;
+
+	switch (s2p_type) {
+	case S2P_CMD_AES_SRC:
+	case S2P_CMD_AES_DST:
+	case S2P_CMD_AES_LEN:
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_WR << 18) | (0x00 << 16) |
+			(s2p_type << 8) | (bit_7_0));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
+		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+			(S2P_CMD_WR << 18) | (0x00 << 16) |
+			(s2p_type << 8) | (bit_7_0));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_RD << 18) | (0x00 << 16) |
+			(s2p_type << 8) | (bit_7_0));
+		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE, &bit_7_0);
+
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_WR << 18) | (0x01 << 16) |
+			(s2p_type << 8) | (bit_15_8));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
+		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+			(S2P_CMD_WR << 18) | (0x01 << 16) |
+			(s2p_type << 8) | (bit_15_8));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_RD << 18) | (0x01 << 16) |
+			(s2p_type << 8) | (bit_15_8));
+		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
+			&bit_15_8);
+
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_WR << 18) | (0x02 << 16) |
+			(s2p_type << 8) | (bit_23_16));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
+		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+			(S2P_CMD_WR << 18) | (0x02 << 16) |
+			(s2p_type << 8) | (bit_23_16));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_RD << 18) | (0x02 << 16) |
+			(s2p_type << 8) | (bit_23_16));
+		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
+			&bit_23_16);
+
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_WR << 18) | (0x03 << 16) |
+			(s2p_type << 8) | (bit_31_24));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
+		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+			(S2P_CMD_WR << 18) | (0x03 << 16) |
+			(s2p_type << 8) | (bit_31_24));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_RD << 18) | (0x03 << 16) |
+			(s2p_type << 8) | (bit_31_24));
+		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
+			&bit_31_24);
+		break;
+	case S2P_CMD_SWDEF_AES_DRV_OWN:
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_WR << 18) | (0x00 << 16) |
+			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
+		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+			(S2P_CMD_WR << 18) | (0x00 << 16) |
+			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
+		break;
+	case S2P_CMD_SWDEF_AES_TRIGGER:
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_WR << 18) | (0x01 << 16) |
+			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
+		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+			(S2P_CMD_WR << 18) | (0x01 << 16) |
+			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
+		break;
+	}
+}
+
+static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
+	uint32_t src, uint32_t dest, uint32_t length)
+{
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t aes_busy = 1;
+	uint8_t ret = TRUE;
+
+	if (!prGlueInfo)
+		return FALSE;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return FALSE;
+
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_AES_MAX_LEN,
+		0x3, S2P_CMD_WR);
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_AES_SRC,
+		src, S2P_CMD_WR);
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_AES_DST,
+		dest, S2P_CMD_WR);
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_AES_LEN,
+		length, S2P_CMD_WR);
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_SWDEF_AES_DRV_OWN,
+		0x1, S2P_CMD_WR);
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_SWDEF_AES_TRIGGER,
+		0x1, S2P_CMD_WR);
+
+	/* clr TRIGGER */
+	/* read out TRIGGER bits */
+	HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+		(S2P_CMD_RD << 18) | (0x1 << 16) |
+		(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | 0x0);
+	coredump_aes_drv_ctl_s2pcmd(prAdapter, S2P_CMD_SWDEF_AES_TRIGGER,
+		0x0, S2P_CMD_WR);
+	udelay(10);
+
+	while (aes_busy == 1) {
+		/* read out busy bits */
+		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
+			(S2P_CMD_RD << 18) | (0x0 << 16) |
+			(S2P_CMD_AES_BUSY << 8) | 0x0);
+		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
+			&aes_busy);
+	}
+	DBGLOG(INIT, INFO, "aes done, aes_busy=%d\n", aes_busy);
+	return ret;
+}
+#endif
+
 int wifi_coredump_init(void *priv)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
@@ -348,8 +488,8 @@ static int __coredump_init_ctrl_blk(struct coredump_ctx *ctx,
 
 	mem->dump_buff_offset = mem->print_buff_offset +
 		COREDUMP_MAX_BLOCK_SZ_PRINT_BUFF;
-	if (ctrl_blk.dump_buff_len > COREDUMP_MAX_BLOCK_SZ_PRINT_BUFF)
-		mem->dump_buff_len = COREDUMP_MAX_BLOCK_SZ_PRINT_BUFF;
+	if (ctrl_blk.dump_buff_len > COREDUMP_MAX_BLOCK_SZ_DUMP_BUFF)
+		mem->dump_buff_len = COREDUMP_MAX_BLOCK_SZ_DUMP_BUFF;
 	else
 		mem->dump_buff_len = ctrl_blk.dump_buff_len;
 	if (mem->dump_buff_len)
@@ -800,12 +940,29 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 	for (idx = 0, region = mem->mem_regions;
 	     idx < mem->mem_region_num;
 	     idx++, region++) {
+
+#if CFG_WIFI_SECURITY_COREDUMP
+		if (coredump_aes_driver_control(glue, region->base,
+			SEC_COREDUMP_EMI_BASE, region->size) == FALSE) {
+			DBGLOG(INIT, ERROR,
+				"[%d] Trigger coredump failed, %s 0x%x 0x%x\n",
+				idx,
+				region->name,
+				region->base,
+				region->size);
+			ret = -ENOMEM;
+			break;
+		}
+
+		read_ret = (emi_mem_read(chip_info, SEC_COREDUMP_EMI_OFFSET,
+				region->buf, region->size)) ? FALSE : TRUE;
+#else
 		HAL_RMCR_RD_RANGE(COREDUMP_DBG,
 				  glue->prAdapter,
 				  region->base,
 				  region->buf,
 				  region->size, read_ret);
-
+#endif
 		if (read_ret == FALSE) {
 			DBGLOG(INIT, ERROR,
 				"[%d] Read mem region failed, %s 0x%x 0x%x\n",
