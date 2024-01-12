@@ -187,6 +187,7 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	uint32_t u4DebugLevel = 0, u4Val = 0;
+	bool MMIORead = FALSE;
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -194,15 +195,18 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 	wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
 
 	/* check fw is dumping log */
-	if (prDbgOps && prDbgOps->getFwDebug)
+	if (prDbgOps && prDbgOps->getFwDebug) {
+		MMIORead = TRUE;
 		u4Val = prDbgOps->getFwDebug(prAdapter);
+	}
 
 	if (u4Val & DBG_PLE_INT_FW_SYNC_MASK) {
 		DBGLOG(HAL, ERROR, "Fw is dumping log. Skip to dump mac log\n");
 		return;
 	}
 
-	if (halIsFwReadyDump(prAdapter)) {
+	/* If no MMIO read, skip read FW status and skip MAC/PHY dump */
+	if (MMIORead && halIsFwReadyDump(prAdapter)) {
 		if (prDbgOps && prDbgOps->setFwDebug) {
 			/* set drv print log sync flag */
 			prDbgOps->setFwDebug(
@@ -222,7 +226,8 @@ static void halDumpTxHangLog(struct ADAPTER *prAdapter, uint32_t u4TokenId)
 				prAdapter, false, DBG_PLE_INT_DRV_SYNC_MASK, 0);
 		}
 	} else {
-		DBGLOG(HAL, ERROR, "Fw not ready to dump log\n");
+		if (MMIORead)
+			DBGLOG(HAL, ERROR, "Fw not ready to dump log\n");
 	}
 
 	halTriggerTxHangFwDebugSop(prAdapter, prToken->ucBssIndex);
