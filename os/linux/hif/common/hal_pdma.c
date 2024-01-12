@@ -683,11 +683,18 @@ u_int8_t halTxIsCmdBufEnough(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
+	struct BUS_INFO *prBusInfo;
+	struct SW_WFDMA_INFO *prSwWfdmaInfo;
 	struct RTMP_TX_RING *prTxRing;
 	uint16_t u2Port = TX_RING_CMD_IDX_3;
 
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+
+	if (prSwWfdmaInfo->fgIsEnSwWfdma)
+		return TRUE;
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	if (prChipInfo->is_support_wacpu)
