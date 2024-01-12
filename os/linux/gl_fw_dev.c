@@ -35,6 +35,7 @@ struct index_ring {
 };
 
 struct index_dev {
+	u_int8_t fgReady;
 	/* device related variable */
 	struct cdev cdev;
 	dev_t devno;
@@ -190,12 +191,18 @@ static ssize_t fw_log_index_read(struct file *filp, char __user *buf,
 {
 	size_t ret = 0;
 
+	if ((gIndexDev == NULL) || (gIndexDev->fgReady == FALSE))
+		return 0;
+
 	ret = index_ring_read(&gIndexDev->iRing, buf, len);
 	return ret;
 }
 
 static unsigned int fw_log_index_poll(struct file *filp, poll_table *wait)
 {
+	if ((gIndexDev == NULL) || (gIndexDev->fgReady == FALSE))
+		return 0;
+
 	poll_wait(filp, &gIndexDev->wq, wait);
 	if (index_ring_get_buf_size(&gIndexDev->iRing) > 0)
 		return POLLIN|POLLRDNORM;
@@ -212,6 +219,9 @@ const struct file_operations fw_log_index_fops = {
 ssize_t wifi_index_fwlog_write(char *buf, size_t count)
 {
 	ssize_t ret = 0;
+
+	if ((gIndexDev == NULL) || (gIndexDev->fgReady == FALSE))
+		return 0;
 
 	ret = index_ring_write(&(gIndexDev->iRing), buf, count);
 	if (ret > 0)
@@ -283,6 +293,7 @@ int FwLogDevInit(void)
 		goto index_ring_deinit;
 	}
 
+	gIndexDev->fgReady = TRUE;
 	goto return_fn;
 
 index_ring_deinit:
@@ -295,12 +306,14 @@ unregister_chrdev_region:
 	unregister_chrdev_region(gIndexDev->devno, 1);
 free_dev:
 	kfree(gIndexDev);
+	gIndexDev = NULL;
 return_fn:
 	return result;
 }
 
 int FwLogDevUninit(void)
 {
+	gIndexDev->fgReady = FALSE;
 	index_ring_deinit(&gIndexDev->iRing);
 	device_destroy(gIndexDev->driver_class, gIndexDev->devno);
 	class_destroy(gIndexDev->driver_class);
@@ -309,6 +322,7 @@ int FwLogDevUninit(void)
 	DBGLOG(ICS, INFO, "unregister_chrdev_region major %d\n",
 		gIndexDev->major);
 	kfree(gIndexDev);
+	gIndexDev = NULL;
 	return 0;
 }
 #endif
