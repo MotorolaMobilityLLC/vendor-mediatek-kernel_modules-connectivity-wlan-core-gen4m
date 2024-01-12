@@ -80,6 +80,10 @@ static bool kalDevKickMsduData(struct GLUE_INFO *prGlueInfo,
 				struct list_head *prHead);
 static bool kalDevKickAmsduData(struct GLUE_INFO *prGlueInfo,
 				struct list_head *prHead);
+static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t *pu4Value);
+static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t u4Value);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 				uint32_t u4Register, uint32_t *pu4Value);
@@ -161,13 +165,13 @@ static void kalDevRegL1Read(struct GLUE_INFO *prGlueInfo,
 	}
 
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
-	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
-	kalDevRegRead(prGlueInfo, pcie2ap->base_addr +
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, tmp_val);
+	kalDevRegReadStatic(prGlueInfo, pcie2ap->base_addr +
 		GET_L1_REMAP_OFFSET(reg), val);
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, backup_val);
 	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
@@ -193,13 +197,13 @@ static void kalDevRegL1Write(struct GLUE_INFO *prGlueInfo,
 	}
 
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
-	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
-	kalDevRegWrite(prGlueInfo, pcie2ap->base_addr +
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, tmp_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->base_addr +
 		GET_L1_REMAP_OFFSET(reg), val);
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, backup_val);
 	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
 
@@ -237,19 +241,19 @@ static void kalDevRegL2Read(struct GLUE_INFO *prGlueInfo,
 
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
-	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift;
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, tmp_val);
 #endif
 
-	kalDevRegWrite(prGlueInfo, ap2wf->reg_base, reg);
-	kalDevRegRead(prGlueInfo, ap2wf->base_addr, val);
+	kalDevRegWriteStatic(prGlueInfo, ap2wf->reg_base, reg);
+	kalDevRegReadStatic(prGlueInfo, ap2wf->base_addr, val);
 
 #if defined(_HIF_PCIE)
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, backup_val);
 #endif
 	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
@@ -288,19 +292,19 @@ static void  kalDevRegL2Write(struct GLUE_INFO *prGlueInfo,
 
 	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
-	kalDevRegRead(prGlueInfo, pcie2ap->reg_base, &backup_val);
+	kalDevRegReadStatic(prGlueInfo, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift;
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, tmp_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, tmp_val);
 #endif
 
-	kalDevRegWrite(prGlueInfo, ap2wf->reg_base, reg);
-	kalDevRegWrite(prGlueInfo, ap2wf->base_addr, val);
+	kalDevRegWriteStatic(prGlueInfo, ap2wf->reg_base, reg);
+	kalDevRegWriteStatic(prGlueInfo, ap2wf->base_addr, val);
 
 #if defined(_HIF_PCIE)
-	kalDevRegWrite(prGlueInfo, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(prGlueInfo, pcie2ap->reg_base, backup_val);
 #endif
 	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_HIF_REMAP, flags);
 }
@@ -330,10 +334,10 @@ u_int8_t kalDevRegL1ReadRange(struct GLUE_INFO *glue,
 	}
 
 	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
-	kalDevRegRead(glue, pcie2ap->reg_base, &backup_val);
+	kalDevRegReadStatic(glue, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
-	kalDevRegWrite(glue, pcie2ap->reg_base, tmp_val);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, tmp_val);
 	while (true) {
 		uint32_t size = 0;
 
@@ -352,7 +356,7 @@ u_int8_t kalDevRegL1ReadRange(struct GLUE_INFO *glue,
 
 		offset += BUS_REMAP_SIZE;
 	}
-	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, backup_val);
 	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 	return TRUE;
 }
@@ -382,10 +386,10 @@ u_int8_t kalDevRegL1WriteRange(struct GLUE_INFO *glue,
 	}
 
 	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
-	kalDevRegRead(glue, pcie2ap->reg_base, &backup_val);
+	kalDevRegReadStatic(glue, pcie2ap->reg_base, &backup_val);
 	tmp_val = (backup_val & ~pcie2ap->reg_mask);
 	tmp_val |= GET_L1_REMAP_BASE(reg) << pcie2ap->reg_shift;
-	kalDevRegWrite(glue, pcie2ap->reg_base, tmp_val);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, tmp_val);
 	while (true) {
 		uint32_t size = 0;
 
@@ -404,7 +408,7 @@ u_int8_t kalDevRegL1WriteRange(struct GLUE_INFO *glue,
 
 		offset += BUS_REMAP_SIZE;
 	}
-	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, backup_val);
 	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 	return TRUE;
 }
@@ -448,14 +452,14 @@ u_int8_t kalDevRegL2ReadRange(struct GLUE_INFO *glue,
 
 	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
-	kalDevRegRead(glue, pcie2ap->reg_base, &value);
+	kalDevRegReadStatic(glue, pcie2ap->reg_base, &value);
 	backup_val = value;
 
 	value &= ~pcie2ap->reg_mask;
 	value |= (GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift);
-	kalDevRegWrite(glue, pcie2ap->reg_base, value);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, value);
 #endif
 
 	if (!halChipToStaticMapBusAddr(chip_info,
@@ -476,7 +480,7 @@ u_int8_t kalDevRegL2ReadRange(struct GLUE_INFO *glue,
 			BUS_REMAP_SIZE :
 			total_size - offset);
 
-		kalDevRegWrite(glue, ap2wf->reg_base,
+		kalDevRegWriteStatic(glue, ap2wf->reg_base,
 			(reg + offset));
 
 		RTMP_IO_READ_RANGE(chip_info,
@@ -489,7 +493,7 @@ u_int8_t kalDevRegL2ReadRange(struct GLUE_INFO *glue,
 
 exit:
 #if defined(_HIF_PCIE)
-	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, backup_val);
 #endif
 	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 
@@ -537,14 +541,14 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 
 	kalAcquireSpinLock(glue, SPIN_LOCK_HIF_REMAP, &flags);
 #if defined(_HIF_PCIE)
-	kalDevRegRead(glue, pcie2ap->reg_base, &value);
+	kalDevRegReadStatic(glue, pcie2ap->reg_base, &value);
 	backup_val = value;
 
 	value &= ~pcie2ap->reg_mask;
 	value |= (GET_L1_REMAP_BASE(ap2wf->base_addr -
 		CONN_INFRA_MCU_TO_PHY_ADDR_OFFSET) <<
 		pcie2ap->reg_shift);
-	kalDevRegWrite(glue, pcie2ap->reg_base, value);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, value);
 #endif
 
 	if (!halChipToStaticMapBusAddr(chip_info,
@@ -565,7 +569,7 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 			BUS_REMAP_SIZE :
 			total_size - offset);
 
-		kalDevRegWrite(glue, ap2wf->reg_base,
+		kalDevRegWriteStatic(glue, ap2wf->reg_base,
 			(reg + offset));
 
 		RTMP_IO_WRITE_RANGE(chip_info,
@@ -578,7 +582,7 @@ u_int8_t kalDevRegL2WriteRange(struct GLUE_INFO *glue,
 
 exit:
 #if defined(_HIF_PCIE)
-	kalDevRegWrite(glue, pcie2ap->reg_base, backup_val);
+	kalDevRegWriteStatic(glue, pcie2ap->reg_base, backup_val);
 #endif
 	kalReleaseSpinLock(glue, SPIN_LOCK_HIF_REMAP, flags);
 
@@ -626,7 +630,10 @@ static u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -745,7 +752,10 @@ static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -853,6 +863,85 @@ static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
 }
 #endif
 
+static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t *pu4Value)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4BusAddr = u4Register;
+
+	if (!pu4Value) {
+		DBGLOG(INIT, ERROR, "pu4Value is NULL.\n");
+		return FALSE;
+	}
+
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
+	}
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
+		return TRUE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		if (fgTriggerDebugSop && kalIsResetting()) {
+			return kalDevRegReadViaBT(prGlueInfo,
+				u4Register, pu4Value);
+		}
+#endif
+		return FALSE;
+	}
+
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	    prBusInfo->isValidRegAccess &&
+	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
+		/* Don't print log when resetting */
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
+			       u4Register, u4BusAddr, *pu4Value);
+		}
+		*pu4Value = HIF_DEADFEED_VALUE;
+		return FALSE;
+	}
+
+	/* Static mapping */
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
+		if (prGlueInfo &&
+		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
+			/* Don't print log when resetting */
+			if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
+				DBGLOG(HAL, ERROR,
+				       "Read register is deadfeed\n");
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+							 RST_REG_READ_DEADFEED);
+			}
+			return FALSE;
+		}
+#endif
+	}
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Read a 32-bit device register
@@ -874,12 +963,18 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
-	ASSERT(pu4Value);
+	if (!pu4Value) {
+		DBGLOG(INIT, ERROR, "pu4Value is NULL.\n");
+		return FALSE;
+	}
 
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -945,19 +1040,7 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Write a 32-bit device register
- *
- * \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
- * \param[in] u4Register Register offset
- * \param[in] u4Value    Value to be written
- *
- * \retval TRUE          operation success
- * \retval FALSE         operation fail
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
+static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t u4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -969,7 +1052,10 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo) {
 		prHifInfo = &prGlueInfo->rHifInfo;
 		prAdapter = prGlueInfo->prAdapter;
-		ASSERT(prAdapter);
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
 	}
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -1008,7 +1094,107 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
-	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000)) {
+	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
+	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||
+	    (u4Register >= 0x18000000 && u4Register < 0x18001000)) {
+		dump_stack();
+		kalSendAeeException("WLAN",
+			"Corrupt conninfra cmdbt:  reg: 0x%08x, val: 0x%08x\n",
+			u4Register, u4Value);
+	}
+#endif
+
+	/* Static mapping */
+#if (CFG_WLAN_ATF_SUPPORT == 1)
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+		kalSendAtfSmcCmd(SMC_WLAN_DEV_REG_WR_CR_OPID,
+			prChipInfo->u4CsrOffset + u4BusAddr,
+			u4Value, 0);
+	} else {
+		DBGLOG(INIT, ERROR, "Write CONSYS ERROR 0x%08x=0x%08x.\n",
+			u4Register, u4Value);
+	}
+#else
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr))
+		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
+#endif
+
+	if (prHifInfo)
+		prHifInfo->u4HifCnt++;
+
+	return TRUE;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Write a 32-bit device register
+ *
+ * \param[in] prGlueInfo Pointer to the GLUE_INFO_T structure.
+ * \param[in] u4Register Register offset
+ * \param[in] u4Value    Value to be written
+ *
+ * \retval TRUE          operation success
+ * \retval FALSE         operation fail
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
+	uint32_t u4Register, uint32_t u4Value)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4BusAddr = u4Register;
+
+	if (prGlueInfo) {
+		prHifInfo = &prGlueInfo->rHifInfo;
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return FALSE;
+		}
+	}
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return FALSE;
+
+	prBusInfo = prChipInfo->bus_info;
+
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
+		return TRUE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+		if (fgTriggerDebugSop && kalIsResetting()) {
+			return kalDevRegWriteViaBT(prGlueInfo,
+				u4Register, u4Value);
+		}
+#endif
+		return FALSE;
+	}
+
+	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
+	    prBusInfo->isValidRegAccess &&
+	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
+		/* Don't print log when resetting */
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR,
+			       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
+			       u4Register, u4BusAddr, u4Value);
+		}
+		return FALSE;
+	}
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
+	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
+	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||
+	    (u4Register >= 0x18000000 && u4Register < 0x18001000)) {
 		dump_stack();
 		kalSendAeeException("WLAN",
 			"Corrupt conninfra cmdbt:  reg: 0x%08x, val: 0x%08x\n",
