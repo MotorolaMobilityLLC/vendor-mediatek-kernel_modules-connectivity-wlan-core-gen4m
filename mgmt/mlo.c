@@ -4615,4 +4615,289 @@ void mldCheckApRemoval(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ML_RECONFIG */
 }
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+uint8_t mldHasMLSRMLOBss(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex = 0xff;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+
+	if (prAdapter == NULL)
+		return FALSE;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+			mld_bssinfo->ucMaxSimuLinks == 0) {
+			DBGLOG(ML, INFO, "has MLSR MLO bss\n");
+			return TRUE;
+		}
+	}
+	DBGLOG(ML, INFO, "has none MLSR MLO bss\n");
+	return FALSE;
+}
+
+/*none MLO Bss or Single link MLO Bss*/
+uint8_t mldHasSingleLinkBss(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex = 0xff;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+
+	if (prAdapter == NULL)
+		return FALSE;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo)) {
+			DBGLOG(ML, INFO, "has legacy bss\n");
+			return TRUE;
+		}
+	}
+	DBGLOG(ML, INFO, "has none legacy bss\n");
+	return FALSE;
+}
+
+/* Check the new connection type(As follow)
+ * LEGACY_TYPE
+ * STR_MLO_TYPE
+.* MLSR_MLO_TYPE
+ */
+enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
+	struct DBDC_DECISION_INFO *prDbdcDecisionInfo)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t ucBssIndex = 0xff;
+	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+	uint8_t i;
+
+	if (!prDbdcDecisionInfo)
+		return MAX_TYPE_NUM;
+
+	if (prDbdcDecisionInfo->ucLinkNum <= 1)
+		return LEGACY_TYPE;
+
+	for (i = 0; i < prDbdcDecisionInfo->ucLinkNum; i++) {
+
+		ucBssIndex = prDbdcDecisionInfo->dbdcElem[i].ucBssIndex;
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		mld_bssinfo = mldBssGetByBss(
+				prAdapter, prBssInfo);
+		if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+			mld_bssinfo->ucMaxSimuLinks == 0)
+			return MLSR_MLO_TYPE;
+		else if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+				mld_bssinfo->ucMaxSimuLinks >= 1)
+			return STR_MLO_TYPE;
+
+	}
+
+	return MAX_TYPE_NUM;
+}
+
+void mldClearMLSRPausedLinkFlag(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex = 0xff;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (prBssInfo->ucMLSRPausedLink)
+			prBssInfo->ucMLSRPausedLink = FALSE;
+	}
+}
+
+/* Decision which link need remain when MLSR & legacy Bss Concurrent
+ * return the Remain MLSR BssIndex
+ */
+void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
+	struct DBDC_DECISION_INFO *prDbdcDecisionInfo)
+{
+	uint32_t rStatus;
+	uint8_t ucMLSRBandCount[BAND_NUM] = {0};
+	uint8_t ucMLSRBssIndex[BAND_NUM] = {-1};
+	uint8_t ucLegacyBssBand = BAND_NULL;
+	uint8_t ucMLSRRemainBssIndex = 0xff;
+	uint8_t ucMLSRPauseBssIndex = 0xff;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct BSS_INFO *prPauseBssInfo = NULL;
+	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t ucBssIndex = 0xff;
+	uint32_t u4Tick;
+
+	prAdapter->ucNeedWaitFWMlsrSWDone = FALSE;
+
+	ucLegacyBssBand = prDbdcDecisionInfo->dbdcElem[0].eRfBand;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
+
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+			mld_bssinfo->ucMaxSimuLinks == 0)
+			break;
+	}
+
+	if (!mld_bssinfo) {
+		DBGLOG(ML, ERROR, "mld_bssinfo not found\n");
+		return;
+	}
+
+	mldClearMLSRPausedLinkFlag(prAdapter);
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
+		if (mld_bssinfo->ucBssBitmap & BIT(ucBssIndex)) {
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+			if (prBssDesc &&
+				prBssDesc->eBand > BAND_NULL &&
+				prBssDesc->eBand < BAND_NUM) {
+				ucMLSRBandCount[prBssDesc->eBand]++;
+				/*map band to BssIndex*/
+				ucMLSRBssIndex[prBssDesc->eBand] = ucBssIndex;
+			}
+		}
+	}
+
+	if (ucMLSRBandCount[BAND_2G4] > 0 &&
+		ucMLSRBandCount[BAND_5G] > 0) {
+		if (ucLegacyBssBand == BAND_6G) {
+		/*EMLSR remain 2G Link*/
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
+		} else {
+		/*if A band Rssi > TH, select A band,otherwise select G band*/
+			prBssDesc = aisGetTargetBssDesc(prAdapter,
+						ucMLSRBssIndex[BAND_5G]);
+			if (prBssDesc &&
+				(RCPI_TO_dBm(prBssDesc->ucRCPI) >
+				MLSR_REMAIN_RSSI_TH)) {
+				ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_5G];
+				ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_2G4];
+				DBGLOG(ML, INFO, "Remain 5G,Pause 2G\n");
+			} else {
+				ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
+				ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
+				DBGLOG(ML, INFO, "Remain 2G,Pause 5G\n");
+			}
+		}
+	} else if (ucMLSRBandCount[BAND_2G4] > 0 &&
+		ucMLSRBandCount[BAND_6G] > 0) {
+	/*if A band Rssi>-50, select A band,otherwise select G band*/
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+						ucMLSRBssIndex[BAND_6G]);
+		if (prBssDesc &&
+			(RCPI_TO_dBm(prBssDesc->ucRCPI) >
+			MLSR_REMAIN_RSSI_TH)) {
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_6G];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_2G4];
+			DBGLOG(ML, INFO, "Remain 6G,Pause 2G\n");
+		} else {
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_6G];
+			DBGLOG(ML, INFO, "Remain 2G,Pause 6G\n");
+		}
+
+	} else if (ucMLSRBandCount[BAND_5G] > 0 &&
+		ucMLSRBandCount[BAND_6G] > 0) {
+		if (ucLegacyBssBand == BAND_2G4) {
+		/*EMLSR Remain 6G Link*/
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_6G];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
+			DBGLOG(ML, INFO, "Remain 6G,Pause 5G\n");
+		} else {
+		/*EMLSR Remain 5G Link*/
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_5G];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_6G];
+			DBGLOG(ML, INFO, "Remain 5G,Pause 6G\n");
+		}
+	}
+
+	DBGLOG(ML, INFO, "Remain BssIndex: %d, Pause BssIndex: %d\n",
+				ucMLSRRemainBssIndex, ucMLSRPauseBssIndex);
+	prPauseBssInfo = prAdapter->aprBssInfo[ucMLSRPauseBssIndex];
+	prPauseBssInfo->ucMLSRPausedLink = TRUE;
+
+	rStatus = mldSetRemainMLSRBssIndex(prAdapter, ucMLSRRemainBssIndex);
+	if (rStatus == WLAN_STATUS_SUCCESS ||
+		rStatus == WLAN_STATUS_PENDING)
+		/*send cmd ok*/
+		prAdapter->ucNeedWaitFWMlsrSWDone = TRUE;
+	else
+		DBGLOG(ML, WARN, "send cmd error:%x\n", rStatus);
+
+	u4Tick = kalGetTimeTick();
+	/* Need wait MLSR ready, but it will block main_thread at this,
+	 * so we need to process RX RFBs, otherwirs the event will not
+	 * process at this time. The wait timeout is 1S.
+	 */
+	while (prAdapter->ucNeedWaitFWMlsrSWDone) {
+		if ((kalGetTimeTick() - u4Tick) > 1000) {
+			DBGLOG(HAL, ERROR,
+				"Wait MLSR Ready timeout\n");
+			break;
+		}
+		nicRxProcessRFBs(prAdapter);
+		usleep_range(1000, 2000);
+	}
+	DBGLOG(ML, STATE, "Wait MLSR Ready\n");
+
+}
+
+uint32_t mldSetRemainMLSRBssIndex(struct ADAPTER *prAdapter,
+	uint8_t ucRemainBssIndex)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_MLO *uni_cmd;
+	struct UNI_CMD_MLD_MLSR_CONCURENT_PRECONNECT *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLO) +
+			sizeof(struct UNI_CMD_MLD_MLSR_CONCURENT_PRECONNECT);
+
+
+	uni_cmd = (struct UNI_CMD_MLO *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_MLO ==> FAILED\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag =
+	(struct UNI_CMD_MLD_MLSR_CONCURENT_PRECONNECT *)uni_cmd->au1TlvBuffer;
+	tag->u2Tag = UNI_CMD_MLO_TAG_MLD_MLSR_CONCURENT_PRECONNECT;
+	tag->u2Length = sizeof(*tag);
+	tag->ucMlsrRemainBssIndex = ucRemainBssIndex;
+
+	status = wlanSendSetQueryUniCmdAdv(prAdapter,
+			     UNI_CMD_ID_MLO,
+			     TRUE,
+			     FALSE,
+			     FALSE,
+			     NULL, /*nicUniEventMLSRSwitchDone*/
+			     NULL,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0,
+			     CMD_SEND_METHOD_REQ_RESOURCE);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	return status;
+}
+
+#endif
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */

@@ -6597,6 +6597,11 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_CH_ABORT *prMsgChAbort;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prBss = NULL;
+#endif
+
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -6621,14 +6626,30 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			return;
 		}
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		prBss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBss);
+#endif
+
 		kalMemZero(prMsgChAbort, sizeof(struct MSG_CH_ABORT));
 		prMsgChAbort->rMsgHdr.eMsgId = MID_MNY_CNM_CH_ABORT;
 		prMsgChAbort->ucBssIndex = ucBssIndex;
 		prMsgChAbort->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
-#if CFG_SUPPORT_DBDC
-		prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
-#endif /*CFG_SUPPORT_DBDC */
 		prMsgChAbort->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
+#if CFG_SUPPORT_DBDC
+		/* STR mode the DBDC band is ENUM_BAND_ALL;
+		 * EMLSR/Hybird mode the DBDC band is ENUM_BAND_AUTO
+		 */
+		if (prMsgChAbort->ucExtraChReqNum >= 1
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+			&& prMldBssInfo &&
+			prMldBssInfo->ucMaxSimuLinks >= 1
+#endif
+		)
+			prMsgChAbort->eDBDCBand = ENUM_BAND_ALL;
+		else
+			prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
+#endif /*CFG_SUPPORT_DBDC */
 
 		DBGLOG(AIS, INFO, "ucBssIndex: %d, ucTokenID: 0x%x, ucExtraChReqNum: %d\n",
 			prMsgChAbort->ucBssIndex,
@@ -9875,6 +9896,13 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	uint8_t ucReqChNum = 0;
 	uint32_t u4MsgSz;
 	uint8_t i = 0;
+	enum ENUM_CH_REQ_TYPE tmpReqCHType = CH_REQ_TYPE_JOIN;
+	enum ENUM_MBMC_BN tmpDBDCBand = ENUM_BAND_ALL;
+	struct BSS_INFO *prBss = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 
 	ucReqChNum = aisGetLinkNum(prAisFsmInfo);
 
@@ -9892,9 +9920,22 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucChReqNum = ucReqChNum;
 	prMsgChReq->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (ucReqChNum >= 2) {
+		prBss = aisGetLinkBssInfo(prAisFsmInfo, 0);
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBss);
+		/*need set BAND AUTO in EMLSR MLO*/
+		if (prMldBssInfo &&
+			prMldBssInfo->ucMaxSimuLinks == 0)
+			tmpDBDCBand = ENUM_BAND_AUTO;
+
+		tmpReqCHType = cnmCheckMLSRReqCHType(prAdapter, prBss);
+	}
+#endif
+
 	for (i = 0; i < ucReqChNum; i++) {
-		struct BSS_INFO *prBss = aisGetLinkBssInfo(prAisFsmInfo, i);
-		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
+		prBss = aisGetLinkBssInfo(prAisFsmInfo, i);
+		prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
 
 		if (!prBss || !prBssDesc)
 			continue;
@@ -9923,13 +9964,13 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->ucBssIndex = prBss->ucBssIndex;
 #if CFG_SUPPORT_DBDC
 		if (ucReqChNum >= 2)
-			prSubReq->eDBDCBand = ENUM_BAND_ALL;
+			prSubReq->eDBDCBand = tmpDBDCBand;
 		else
 			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif
 		prSubReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 		prSubReq->ucTokenID = *ucChTokenId;
-		prSubReq->eReqType = CH_REQ_TYPE_JOIN;
+		prSubReq->eReqType = tmpReqCHType;
 		prSubReq->u4MaxInterval = AIS_JOIN_CH_REQUEST_INTERVAL;
 		prSubReq->ucPrimaryChannel = prBssDesc->ucChannelNum;
 		prSubReq->eRfSco = prBssDesc->eSco;

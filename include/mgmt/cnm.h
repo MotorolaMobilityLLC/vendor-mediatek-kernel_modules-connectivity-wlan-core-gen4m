@@ -474,5 +474,8 @@ uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter);
 
 uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
-
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+enum ENUM_CH_REQ_TYPE cnmCheckMLSRReqCHType(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssinfo);
+#endif
 #endif /* _CNM_H */

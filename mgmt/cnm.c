@@ -2485,6 +2485,230 @@ static u_int8_t cnmDbdcDecideIsAAConcurrent(
 
 #endif
 
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief    Check DBDC A+G / A+A Condition in MLSR (EMLSR/Hybrid) or
+ * MLSR Concueenrt case.
+ * refactor cnmDbdcIsAGConcurrent rename to cnmDbdcIsConcurrent
+ *
+ * @param (none)
+ *
+ * @return TRUE: DBDC A+G or A+A, FALSE: NOT for DBDC
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t cnmMLSRDbdcIsConcurrent(
+	struct ADAPTER *prAdapter,
+	struct DBDC_DECISION_INFO *prDbdcDecisionInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+	uint8_t ucBandCount[BAND_NUM] = {0};
+	u_int8_t fgDBDCConcurrent = FALSE;
+	enum ENUM_BAND eBssBand[MAX_BSSID_NUM + 1] = {BAND_NULL};
+	enum ENUM_BAND eBandBss;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+	uint8_t ucBssPrimaryCH[MAX_BSSID_NUM + 1] = {0};
+	uint8_t ucPrimaryChBss;
+	uint8_t uc5gCH = 0, uc6gCH = 0;
+#endif
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	uint8_t ucBssNum = prAdapter->ucSwBssIdNum + 1;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+			prAdapter->rWifiVar.prP2pDevFsmInfo;
+#else
+	uint8_t ucBssNum = prAdapter->ucSwBssIdNum;
+#endif
+	u_int8_t fgDbdcP2pListening = FALSE;
+	u_int8_t i;
+
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	if (prAdapter->fgPowerForceOneNss) {
+		log_dbg(CNM, INFO, "[DBDC] disable DBDC by power");
+		return FALSE;
+	}
+#endif
+
+	/*EMLSR ONLY case, Driver DBDC disable*/
+	if (prDbdcDecisionInfo &&
+		(mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
+		== MLSR_MLO_TYPE) &&
+		!mldHasSingleLinkBss(prAdapter)) {
+		log_dbg(CNM, INFO, "[DBDC] ONLY MLSR case, DBDC disable\n");
+		return FALSE;
+	} else if (!prDbdcDecisionInfo &&
+			    !mldHasSingleLinkBss(prAdapter) &&
+			    mldHasMLSRMLOBss(prAdapter)) {
+		log_dbg(CNM, INFO, "[DBDC] ONLY MLSR case, DBDC disable\n");
+		return FALSE;
+	}
+
+	if (!prDbdcDecisionInfo)
+		goto next;
+
+	for (i = 0; i < prDbdcDecisionInfo->ucLinkNum; i++) {
+		if (prDbdcDecisionInfo->dbdcElem[i].eRfBand > BAND_NULL
+			&& prDbdcDecisionInfo->dbdcElem[i].eRfBand < BAND_NUM)
+			ucBandCount[prDbdcDecisionInfo->dbdcElem[i].eRfBand]++;
+
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+		if (prDbdcDecisionInfo->dbdcElem[i].eRfBand == BAND_5G
+			&& prDbdcDecisionInfo->dbdcElem[i].ucPrimaryChannel
+				> uc5gCH)
+			uc5gCH =
+			prDbdcDecisionInfo->dbdcElem[i].ucPrimaryChannel;
+
+		if (prDbdcDecisionInfo->dbdcElem[i].eRfBand == BAND_6G
+			&& (prDbdcDecisionInfo->dbdcElem[i].ucPrimaryChannel
+				< uc6gCH || uc6gCH == 0))
+			uc6gCH =
+			prDbdcDecisionInfo->dbdcElem[i].ucPrimaryChannel;
+#endif
+		log_dbg(CNM, INFO, "[DBDC] band %d channel %d",
+			prDbdcDecisionInfo->dbdcElem[i].eRfBand,
+			prDbdcDecisionInfo->dbdcElem[i].ucPrimaryChannel);
+	}
+
+next:
+	for (ucBssIndex = 0;
+			ucBssIndex < ucBssNum; ucBssIndex++) {
+
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+
+		/* dbdc decision use fgIsP2pListening to decide
+		 * if it should check p2p dev BssInfo or not.
+		 */
+
+		if (prP2pDevFsmInfo &&
+			prAdapter->rWifiVar.ucDbdcP2pLisEn)
+			fgDbdcP2pListening =
+				prP2pDevFsmInfo->fgIsP2pListening;
+
+		if ((ucBssIndex != prAdapter->ucP2PDevBssIdx
+			&& IS_BSS_NOT_ALIVE(prAdapter, prBssInfo)) ||
+			(ucBssIndex == prAdapter->ucP2PDevBssIdx
+			&& !fgDbdcP2pListening) ||
+			prBssInfo->ucMLSRPausedLink)
+			continue;
+#else /* CFG_DBDC_SW_FOR_P2P_LISTEN */
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo) ||
+			prBssInfo->ucMLSRPausedLink)
+			continue;
+#endif /* CFG_DBDC_SW_FOR_P2P_LISTEN */
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+
+		if ((ucBssIndex == prAdapter->ucP2PDevBssIdx) &&
+			prP2pDevFsmInfo) {
+			eBandBss = prP2pDevFsmInfo->eReqBand;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+			ucPrimaryChBss = prP2pDevFsmInfo->ucReqChannelNum;
+#endif
+		} else
+#endif
+		{
+			if (IS_BSS_AIS(prBssInfo)) {
+				struct BSS_DESC *prBssDesc =
+				aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+				if (prBssDesc) {
+					eBandBss = prBssDesc->eBand;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+					ucPrimaryChBss =
+						prBssDesc->ucChannelNum;
+#endif
+				} else {
+					eBandBss = BAND_NULL;
+					log_dbg(CNM, WARN,
+						"[DBDC] Bss%d no target bssdesc\n",
+						ucBssIndex);
+				}
+			} else {
+				eBandBss = prBssInfo->eBand;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+				ucPrimaryChBss = prBssInfo->ucPrimaryChannel;
+#endif
+			}
+		}
+
+		if (eBandBss > BAND_NULL && eBandBss < BAND_NUM) {
+			eBssBand[ucBssIndex] = eBandBss;
+			ucBandCount[eBandBss]++;
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+			ucBssPrimaryCH[ucBssIndex] = ucPrimaryChBss;
+			if (eBandBss == BAND_5G &&
+				ucPrimaryChBss > uc5gCH)
+				uc5gCH = ucPrimaryChBss;
+			if (eBandBss == BAND_6G &&
+				(uc6gCH == 0 || ucPrimaryChBss < uc6gCH))
+				uc6gCH = ucPrimaryChBss;
+#endif
+		}
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+	g_rDbdcInfo.fgIsDBDCAAMode = 0;
+#endif
+
+	/* DBDC decision */
+	if (ucBandCount[BAND_2G4] > 0) {
+		/* 2.4G + 5G / 6G => enable DBDC */
+		/* 2.4G + 5G + 6G => enable DBDC */
+		if (ucBandCount[BAND_5G] > 0
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				|| ucBandCount[BAND_6G] > 0
+#endif
+		   )
+			fgDBDCConcurrent = TRUE;
+		else /* 2.4G only */
+			fgDBDCConcurrent = FALSE;
+	} else {
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+		/* Check DBDC A+A when HW support */
+		if (ucBandCount[BAND_5G] > 0 && uc5gCH > 0 &&
+			ucBandCount[BAND_6G] > 0 && uc6gCH > 0 &&
+			cnmDbdcDecideIsAAConcurrent(prAdapter,
+			uc5gCH, uc6gCH)) {
+			fgDBDCConcurrent = TRUE;
+			g_rDbdcInfo.fgIsDBDCAAMode = 1;
+		} else {
+			fgDBDCConcurrent = FALSE;
+		}
+#else
+		/* 5G / 6G => disable DBDC */
+		/* 5G + 6G => Do not supportf A+A, disable DBDC, */
+		fgDBDCConcurrent = FALSE;
+#endif
+	}
+
+	log_dbg(CNM, INFO, "[DBDC] %d BSS (P2P Listen = %u), Band[%u.%u.%u.%u.%u], enable = %u\n",
+			ucBssNum,
+			fgDbdcP2pListening,
+			eBssBand[BSSID_0],
+			eBssBand[BSSID_1],
+			eBssBand[BSSID_2],
+			eBssBand[BSSID_3],
+			eBssBand[MAX_BSSID_NUM],
+			fgDBDCConcurrent);
+
+#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
+	log_dbg(CNM, INFO, "[DBDC] CH[%u.%u.%u.%u.%u], 5G MAX = %u, 6G min = %u, AAMode[%u]\n",
+			ucBssPrimaryCH[BSSID_0],
+			ucBssPrimaryCH[BSSID_1],
+			ucBssPrimaryCH[BSSID_2],
+			ucBssPrimaryCH[BSSID_3],
+			ucBssPrimaryCH[MAX_BSSID_NUM],
+			uc5gCH,
+			uc6gCH,
+			g_rDbdcInfo.fgIsDBDCAAMode);
+#endif
+
+	return fgDBDCConcurrent;
+}
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    Check DBDC A+G / A+A  Condition
@@ -2531,6 +2755,14 @@ static u_int8_t cnmDbdcIsConcurrent(
 	if (prAdapter->fgPowerForceOneNss) {
 		log_dbg(CNM, INFO, "[DBDC] disable DBDC by power");
 		return FALSE;
+	}
+#endif
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (mldHasMLSRMLOBss(prAdapter) ||
+		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
+		== MLSR_MLO_TYPE) {
+		log_dbg(CNM, INFO, "[DBDC] entry MLSR dbdc decision flow\n");
+		return cnmMLSRDbdcIsConcurrent(prAdapter, prDbdcDecisionInfo);
 	}
 #endif
 
@@ -4131,6 +4363,17 @@ void cnmDbdcPreConnectionEnableDecision(
 		return;
 	}
 
+	/*MLSR MLO connected, Legacy Bss will connect now*/
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (mldHasMLSRMLOBss(prAdapter) &&
+		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
+		== LEGACY_TYPE) {
+		log_dbg(CNM, INFO,
+			"[DBDC] MLSR 1st connected,Legacy Bss will connect now\n");
+		mldMLSRDecisionLinkRemain(prAdapter, prDbdcDecisionInfo);
+	}
+#endif
+
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_STATIC &&
 		prAdapter->rWifiVar.fgDbDcModeEn) {
 		if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer) &&
@@ -4238,6 +4481,16 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 	fgIsAgConcurrent = cnmDbdcIsConcurrent(prAdapter, NULL);
 	if (fgIsAgConcurrent ==
 		prAdapter->rWifiVar.fgDbDcModeEn) {
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		if (!mldHasSingleLinkBss(prAdapter) &&
+			mldHasMLSRMLOBss(prAdapter)) {
+			log_dbg(CNM, INFO,
+				"mld Clear MLSR Paused Link Flag");
+			mldClearMLSRPausedLinkFlag(prAdapter);
+		}
+#endif
+
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 		if (fgIsAgConcurrent && prP2pDevFsmInfo) {
 			log_dbg(CNM, INFO,
@@ -4423,6 +4676,17 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER
 		       g_rDbdcInfo.eDbdcFsmCurrState);
 		return;
 	}
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (!mldHasSingleLinkBss(prAdapter) &&
+		mldHasMLSRMLOBss(prAdapter) &&
+		prAdapter->rWifiVar.fgDbDcModeEn &&
+		!fgDbdcEn) {
+		log_dbg(CNM, INFO,
+			"mld Clear MLSR Paused Link Flag");
+		mldClearMLSRPausedLinkFlag(prAdapter);
+	}
+#endif
 
 	/* Change DBDC state */
 	prAdapter->rWifiVar.fgDbDcModeEn = fgDbdcEn;
@@ -5189,6 +5453,14 @@ cnmOpModeSetTRxNss(
 		if (eNewReq == CNM_OPMODE_REQ_SMARTGEAR_1T2R ||
 			eNewReq == CNM_OPMODE_REQ_ANT_CTRL_1T2R)
 			ucSendAct = FALSE;
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		if (prBssInfo->ucMLSRPausedLink) {
+			DBGLOG(CNM, INFO,
+				"MLSR Pause link, no need send action Frame\n");
+			ucSendAct = FALSE;
+		}
+#endif
 
 		eRlmStatus = rlmChangeOperationMode(prAdapter,
 					ucBssIndex,
@@ -6279,4 +6551,48 @@ void cnmPeerGcCsaHandler(struct ADAPTER *prAdapter,
 }
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+/* Req CH Type:
+ * single link/STR MLO: CH_REQ_TYPE_JOIN
+ * EMLSR:CH_REQ_TYPE_MLO_MLSR_AG_JOIN
+ * or CH_REQ_TYPE_MLO_MLSR_AA_JOIN
+ */
+enum ENUM_CH_REQ_TYPE cnmCheckMLSRReqCHType(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssinfo)
+{
+	struct BSS_DESC *prBssDesc = NULL;
+	uint8_t ucBssIndex = 0xff;
+	uint8_t ucHas2GBand = FALSE;
+	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+
+	mld_bssinfo = mldBssGetByBss(prAdapter, prBssinfo);
+
+	if (!mld_bssinfo) {
+		DBGLOG(ML, INFO, "mld_bssinfo is NULL\n");
+		return CH_REQ_TYPE_JOIN;
+	}
+
+	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) ||
+	    (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+	     mld_bssinfo->ucMaxSimuLinks >= 1))
+		return CH_REQ_TYPE_JOIN;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
+		if (mld_bssinfo->ucBssBitmap & BIT(ucBssIndex)) {
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+			if (prBssDesc && prBssDesc->eBand == BAND_2G4)
+				ucHas2GBand = TRUE;
+		}
+	}
+	DBGLOG(ML, INFO, "MLSR case, ucHas2GBand = %d\n", ucHas2GBand);
+
+	if (ucHas2GBand)
+		return CH_REQ_TYPE_MLO_MLSR_AG_JOIN;
+	else
+		return CH_REQ_TYPE_MLO_MLSR_AA_JOIN;
+
+}
+#endif
 
