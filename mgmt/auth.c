@@ -946,8 +946,6 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = prAdapter->ucHwBssIdNum;
 	uint8_t aucBMC[] = BC_MAC_ADDR;
 
-	DBGLOG(RSN, INFO, "authSendDeauthFrame\n");
-
 	/* NOTE(Kevin): The best way to reply the Deauth is according to
 	 * the incoming data frame
 	 */
