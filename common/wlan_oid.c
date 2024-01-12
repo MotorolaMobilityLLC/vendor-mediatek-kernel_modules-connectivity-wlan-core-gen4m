@@ -15791,15 +15791,6 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 		       OUT uint32_t *pu4SetInfoLen) {
 	uint32_t u4CmdId;
 
-	/* check SER is supported or not */
-	if (prAdapter->rWifiVar.fgEnableSer == FALSE)
-		return WLAN_STATUS_NOT_SUPPORTED;
-#if defined(_HIF_USB)
-	if (prAdapter->chip_info->u4SerUsbMcuEventAddr == 0)
-		return WLAN_STATUS_NOT_SUPPORTED;
-
-#endif
-
 	if (u4SetBufferLen)
 		ASSERT(pvSetBuffer);
 
@@ -15873,8 +15864,13 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 		break;
 
 	case SER_USER_CMD_L0_RECOVER:
-		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
-				SER_SET_L0_RECOVER, 0);
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter, RST_CMD_TRIGGER,
+				RST_FLAG_DO_WHOLE_RESET);
+		break;
+
+	case SER_USER_CMD_L0P5_RECOVER:
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter, RST_CMD_TRIGGER,
+				RST_FLAG_DO_ACTIVE_L0P5_RESET);
 		break;
 
 	case SER_USER_CMD_L1_RECOVER:

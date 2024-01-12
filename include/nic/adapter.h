@@ -1027,8 +1027,10 @@ struct WIFI_VAR {
 
 	u_int8_t fgNvramCheckEn; /* nvram checking in scan result*/
 
-	uint8_t fgEnableSer;
 	uint8_t fgRstRecover;
+	u_int8_t fgEnableSerL0;
+	u_int8_t fgEnableSerL0p5;
+	u_int8_t fgEnableSerL1;
 
 #if CFG_SUPPORT_SPE_IDX_CONTROL
 	u_int8_t ucSpeIdxCtrl;	/* 0: WF0, 1: WF1, 2: duplicate */
