@@ -1065,6 +1065,10 @@ struct PACKET_PRIVATE_RX_DATA {
 /* TODO: os-related implementation */
 #define GLUE_INC_REF_CNT(_refCount)     (_refCount++)
 #define GLUE_DEC_REF_CNT(_refCount)     (_refCount--)
+#define GLUE_ADD_REF_CNT(_value, _refCount) \
+	(_refCount += _value)
+#define GLUE_SUB_REF_CNT(_value, _refCount) \
+	(_refCount -= _value)
 #define GLUE_GET_REF_CNT(_refCount)     (_refCount)
 
 #define DbgPrint(...)

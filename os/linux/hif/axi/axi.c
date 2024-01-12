@@ -690,6 +690,7 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 		return IRQ_NONE;
 	}
 
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4HwIsrCount);
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
@@ -721,6 +722,7 @@ static irqreturn_t mtk_sw_interrupt(int irq, void *dev_instance)
 	struct mt66xx_chip_info *prChipInfo;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4SwIsrCount);
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	if (prChipInfo->sw_interrupt_handler)
 		prChipInfo->sw_interrupt_handler(prGlueInfo->prAdapter);

@@ -1326,6 +1326,21 @@ struct PERF_MONITOR {
 	unsigned long ulTotalTxFailCount;
 };
 
+struct HIF_STATS {
+	unsigned long ulUpdatePeriod; /* in ms */
+	uint32_t u4HwIsrCount;
+	uint32_t u4SwIsrCount;
+	uint32_t u4CmdInCount; /* cmd from main_thread to hif_thread */
+	uint32_t u4CmdTxCount; /* cmd from hif_thread to DMA */
+	uint32_t u4CmdTxdoneCount; /* cmd from DMA to consys */
+	uint32_t u4DataInCount; /* data from main_thread to hif_thread */
+	uint32_t u4DataTxCount; /* data from hif_thread to DMA */
+	uint32_t u4DataTxdoneCount; /* data from DMA to consys */
+	uint32_t u4DataMsduRptCount; /* data from consys to air */
+	uint32_t u4EventRxCount; /* event from DMA to hif_thread */
+	uint32_t u4DataRxCount; /* data from DMA to hif_thread */
+};
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1754,6 +1769,7 @@ struct ADAPTER {
 
 	u_int8_t fgEnDbgPowerMode;
 
+	struct HIF_STATS rHifStats;
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
