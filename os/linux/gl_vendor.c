@@ -30,6 +30,7 @@
 #include "gl_cfg80211.h"
 #include "gl_vendor.h"
 #include "wlan_oid.h"
+#include "rlm_domain.h"
 #if CFG_SUPPORT_CSI
 #include "gl_csi.h"
 #endif
@@ -4708,6 +4709,11 @@ int mtk_cfg80211_vendor_get_usable_channel(
 	uint32_t channels_6g[MAX_CHN_NUM];
 	uint16_t u2CountryCode;
 	uint8_t ucNumOfChannel = 0;
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	uint8_t channels_is_vlp[MAX_CHN_NUM];
+
+	kalMemZero(channels_is_vlp, sizeof(channels_is_vlp));
+#endif
 
 	if (NLA_PARSE(tb, WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX, data, data_len,
 			mtk_usable_channel_policy)) {
@@ -4829,6 +4835,14 @@ int mtk_cfg80211_vendor_get_usable_channel(
 			nicChannelNum2Freq(
 				aucChannelList[i].ucChannelNum,
 				aucChannelList[i].eBand) / 1000;
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		rlmDomain6GPwrModeCountrySupportChk(
+			aucChannelList[i].eBand,
+			aucChannelList[i].ucChannelNum,
+			u2CountryCode,
+			PWR_MODE_6G_VLP,
+			&channels_is_vlp[j]);
+#endif
 		if (channels_6g[j] == 0)
 			continue;
 		else {
@@ -4905,11 +4919,20 @@ int mtk_cfg80211_vendor_get_usable_channel(
 		pr_channel_array->channel_array
 			[j+num_channels_2g+num_channels_5g].channel_width
 			= ANDROID_WIFI_CHAN_WIDTH_160;
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (channels_is_vlp[j] == TRUE)
+			pr_channel_array->channel_array
+				[j+num_channels_2g+num_channels_5g]
+				.iface_mode_mask
+				= 0xff;
+#else
 		if (channels_6g[j] < 6435)
 			pr_channel_array->channel_array
 				[j+num_channels_2g+num_channels_5g]
 				.iface_mode_mask
 				= 0xff;
+#endif
+
 		else
 			pr_channel_array->channel_array
 				[j+num_channels_2g+num_channels_5g]
