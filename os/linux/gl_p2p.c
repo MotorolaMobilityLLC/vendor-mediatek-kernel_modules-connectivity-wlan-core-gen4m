@@ -1068,8 +1068,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	prP2pDev->needed_headroom +=
 		NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 	prP2pDev->netdev_ops = &p2p_netdev_ops;
-#if 0
-	prP2PInfo->prDevHandler->wireless_handlers = &mtk_p2p_wext_handler_def;
+#ifdef CONFIG_WIRELESS_EXT
+	prP2pDev->wireless_handlers = &wext_handler_def;
 #endif
 
 #if defined(_HIF_SDIO)
@@ -1862,7 +1862,12 @@ int p2pDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 		return -EINVAL;
 	}
 
-	if (i4Cmd == SIOCDEVPRIVATE + 1) {
+	if (i4Cmd == SIOCGIWPRIV) {
+		ret = wext_support_ioctl(prDev, prIfReq, i4Cmd);
+	} else if ((i4Cmd >= SIOCIWFIRSTPRIV) && (i4Cmd < SIOCIWLASTPRIV)) {
+		/* 0x8BE0 ~ 0x8BFF, private ioctl region */
+		ret = priv_support_ioctl(prDev, prIfReq, i4Cmd);
+	} else if (i4Cmd == SIOCDEVPRIVATE + 1) {
 		ret = priv_support_driver_cmd(prDev, prIfReq, i4Cmd);
 
 	} else {
