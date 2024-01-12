@@ -4934,15 +4934,24 @@ kalIndicateBssInfo(IN struct GLUE_INFO *prGlueInfo,
 	if (prChannel != NULL
 	    && prGlueInfo->fgIsRegistered == TRUE) {
 		struct cfg80211_bss *bss;
-#if CFG_SUPPORT_TSF_USING_BOOTTIME
 		struct ieee80211_mgmt *prMgmtFrame = (struct ieee80211_mgmt
 						      *)pucBeaconProbeResp;
+		char *pucBssSubType =
+			ieee80211_is_beacon(prMgmtFrame->frame_control) ?
+			"beacon" : "probe_resp";
 
+#if CFG_SUPPORT_TSF_USING_BOOTTIME
 		prMgmtFrame->u.beacon.timestamp = kalGetBootTime();
 #endif
 
 		kalScanResultLog(prGlueInfo->prAdapter,
 			(struct ieee80211_mgmt *)pucBeaconProbeResp);
+
+		log_dbg(SCN, TRACE, "cfg80211_inform_bss_frame %s bss=" MACSTR
+			" sn=%u ch=%u rssi=%d len=%u tsf=%llu\n", pucBssSubType,
+			MAC2STR(prMgmtFrame->bssid), prMgmtFrame->seq_ctrl,
+			ucChannelNum, i4SignalStrength, u4FrameLen,
+			prMgmtFrame->u.beacon.timestamp);
 
 		/* indicate to NL80211 subsystem */
 		bss = cfg80211_inform_bss_frame(wiphy, prChannel,
