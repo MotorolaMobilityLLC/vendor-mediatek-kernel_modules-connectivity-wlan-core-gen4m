@@ -1657,7 +1657,7 @@ static void DumpPPDebugCr_without_adapter(void)
 static void DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
 {
 #define AXI_MASTER_DUMP_CR_START 0x1802750C
-#define	AXI_MASTER_DUMP_CR_NUM 9
+#define	AXI_MASTER_DUMP_CR_NUM 10
 
 	uint32_t ReadRegValue = 0;
 	uint32_t u4Value[AXI_MASTER_DUMP_CR_NUM] = {0};
@@ -1665,8 +1665,8 @@ static void DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
 
 	ReadRegValue = AXI_MASTER_DUMP_CR_START;
 	for (i = 0 ; i < AXI_MASTER_DUMP_CR_NUM; i++) {
-		ReadRegValue += 4;
 		connac2x_DbgCrRead(prAdapter, ReadRegValue, &u4Value[i]);
+		ReadRegValue += 4;
 	}
 
 	connac2x_dump_format_memory32(u4Value,
