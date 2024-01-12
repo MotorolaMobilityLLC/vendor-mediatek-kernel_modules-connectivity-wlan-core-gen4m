@@ -372,6 +372,31 @@ void halShowPseInfo(IN struct ADAPTER *prAdapter)
 #undef BUF_SIZE
 }
 
+static int8_t *sta_ctrl_reg[] = {"ENABLE", "*DISABLE", "*PAUSE"};
+static struct EMPTY_QUEUE_INFO Queue_Empty_info[] = {
+	{"CPU Q0",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_0},
+	{"CPU Q1",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_1},
+	{"CPU Q2",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_2},
+	{"CPU Q3",  ENUM_UMAC_CPU_PORT_1,     ENUM_UMAC_CTX_Q_3},
+	{NULL, 0, 0}, {NULL, 0, 0}, {NULL, 0, 0}, {NULL, 0, 0},
+	{"ALTX Q0", ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_ALTX_0},
+	{"BMC Q0",  ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_BMC_0},
+	{"BCN Q0",  ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_BNC_0},
+	{"PSMP Q0", ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_PSMP_0},
+	{"ALTX Q1", ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_ALTX_1},
+	{"BMC Q1",  ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_BMC_1},
+	{"BCN Q1",  ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_BNC_1},
+	{"PSMP Q1", ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_PSMP_1},
+	{"NAF Q",   ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_NAF},
+	{"NBCN Q",  ENUM_UMAC_LMAC_PORT_2,    ENUM_UMAC_LMAC_PLE_TX_Q_NBCN},
+	{NULL, 0, 0}, {NULL, 0, 0}, {NULL, 0, 0},
+	{NULL, 0, 0}, {NULL, 0, 0}, {NULL, 0, 0},
+	{NULL, 0, 0}, {NULL, 0, 0}, {NULL, 0, 0},
+	{NULL, 0, 0}, {NULL, 0, 0}, {NULL, 0, 0},
+	{"RLS Q",   ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1E},
+	{"RLS2 Q",  ENUM_PLE_CTRL_PSE_PORT_3, ENUM_UMAC_PLE_CTRL_P3_Q_0X1F}
+};
+
 void halShowPleInfo(IN struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd)
 {
@@ -547,6 +572,38 @@ void halShowPleInfo(IN struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(HAL, INFO, "\n");
+	}
+
+	DBGLOG(HAL, INFO, "Nonempty Q info:\n");
+
+	for (i = 0; i < 31; i++) {
+		if (((ple_stat[0] & (0x1 << i)) >> i) == 0) {
+			if (Queue_Empty_info[i].QueueName != NULL)
+				DBGLOG(HAL, INFO, "\t%s: ",
+					Queue_Empty_info[i].QueueName);
+			else
+				continue;
+		}
+	}
+
+	for (j = 0; j < 16; j = j + 4) { /* show AC Q info */
+		for (i = 0; i < 32; i++) {
+			if (((ple_stat[j + 1] & (0x1 << i)) >> i) == 0) {
+				uint32_t ac_num = j / 4, ctrl = 0;
+				uint32_t sta_num = i + (j % 4) * 32;
+
+				DBGLOG(HAL, INFO, "\tSTA%d AC%d: ",
+					sta_num, ac_num);
+				if (((sta_pause[j % 4] & 0x1 << i) >> i) == 1)
+					ctrl = 2;
+
+				if (((dis_sta_map[j % 4] & 0x1 << i) >> i) == 1)
+					ctrl = 1;
+
+				DBGLOG(HAL, INFO, " ctrl = %s",
+					sta_ctrl_reg[ctrl]);
+			}
+		}
 	}
 
 	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
