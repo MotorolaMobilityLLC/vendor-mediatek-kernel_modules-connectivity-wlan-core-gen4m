@@ -2962,6 +2962,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_MDTIM		"SET_MDTIM"
 
 #define CMD_SET_DBDC		"SET_DBDC"
+#define CMD_SET_STA1NSS		"SET_STA1NSS"
 
 #define CMD_SET_AMPDU_TX        "SET_AMPDU_TX"
 #define CMD_SET_AMPDU_RX        "SET_AMPDU_RX"
@@ -10913,6 +10914,45 @@ int priv_driver_set_dbdc(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	return i4BytesWritten;
 }
+
+int priv_driver_set_sta1ss(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		prGlueInfo->prAdapter->rWifiVar.fgSta1NSS =
+			(uint8_t) u4Parse;
+
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_STA1NSS <enable>\n");
+		DBGLOG(INIT, ERROR,
+			"<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
 #endif /*CFG_SUPPORT_DBDC*/
 
 #if CFG_SUPPORT_BATCH_SCAN
@@ -13072,6 +13112,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
 	{CMD_RUN_HQA, priv_driver_run_hqa},
 	{CMD_CALIBRATION, priv_driver_calibration},
+	{CMD_SET_STA1NSS, priv_driver_set_sta1ss},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
