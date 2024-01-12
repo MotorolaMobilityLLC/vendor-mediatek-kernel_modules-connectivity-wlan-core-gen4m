@@ -256,7 +256,7 @@ const uint16_t mpduLen[CW_320MHZ + 1] = {
 #define MAC_ADDR_HASH(_addr) \
 	(_addr[0] ^ _addr[1] ^ _addr[2] ^ _addr[3] ^ _addr[4] ^ _addr[5])
 #define AP_HASH(_addr) \
-	(MAC_ADDR_HASH(_addr) & (AP_HASH_SIZE - 1))
+	((uint8_t) (MAC_ADDR_HASH(_addr) & (AP_HASH_SIZE - 1)))
 
 #define CALCULATE_SCORE_BY_PROBE_RSP(prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucProbeRespWeight * \
@@ -298,9 +298,10 @@ struct AP_COLLECTION *apsHashGet(struct ADAPTER *ad,
 	uint8_t *addr, uint8_t bidx, uint8_t is_mld)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
-	struct AP_COLLECTION *a;
+	struct AP_COLLECTION *a = NULL;
 
 	a = s->arApHash[AP_HASH(addr)];
+
 	while (a != NULL &&
 	       (UNEQUAL_MAC_ADDR(a->aucAddr, addr) ||
 	       a->fgIsMld != is_mld))
@@ -319,9 +320,10 @@ void apsHashAdd(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
-	struct AP_COLLECTION *a;
+	struct AP_COLLECTION *a = NULL;
 
 	a = s->arApHash[AP_HASH(ap->aucAddr)];
+
 	if (a == NULL)
 		return;
 
