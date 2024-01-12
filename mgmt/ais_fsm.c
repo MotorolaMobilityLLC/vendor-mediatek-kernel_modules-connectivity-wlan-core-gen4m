@@ -139,18 +139,17 @@ static void aisFunClearAllTxReq(IN struct ADAPTER *prAdapter,
 static void aisResetBssTranstionMgtParam(struct AIS_SPECIFIC_BSS_INFO
 					 *prSpecificBssInfo)
 {
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	struct BSS_TRANSITION_MGT_PARAM_T *prBtmParam =
 	    &prSpecificBssInfo->rBTMParam;
 
-#if !CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	return;
-#endif
 	if (prBtmParam->u2OurNeighborBssLen > 0) {
 		kalMemFree(prBtmParam->pucOurNeighborBss, VIR_MEM_TYPE,
 			   prBtmParam->u2OurNeighborBssLen);
 		prBtmParam->u2OurNeighborBssLen = 0;
 	}
 	kalMemZero(prBtmParam, sizeof(*prBtmParam));
+#endif
 }
 /*----------------------------------------------------------------------------*/
 /*!
