@@ -417,7 +417,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_HDR_T {
 	uint8_t ucAttrId;
 	uint16_t u2Length;
-	uint8_t aucAttrBody[2];
+	uint8_t aucAttrBody[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute definitions */
