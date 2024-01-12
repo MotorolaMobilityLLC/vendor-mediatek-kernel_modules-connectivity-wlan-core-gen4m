@@ -3399,7 +3399,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 	if (prAdapter->rWlanInfo.eRssiTriggerType ==
 	    ENUM_RSSI_TRIGGER_GREATER &&
 	    prAdapter->rWlanInfo.rRssiTriggerValue >= (int32_t) (
-		    prAdapter->rLinkQuality.cRssi)) {
+		    prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
 
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_TRIGGERED;
@@ -3412,7 +3412,7 @@ void nicEventLinkQuality(IN struct ADAPTER *prAdapter,
 	} else if (prAdapter->rWlanInfo.eRssiTriggerType ==
 		   ENUM_RSSI_TRIGGER_LESS &&
 		   prAdapter->rWlanInfo.rRssiTriggerValue <= (int32_t) (
-			   prAdapter->rLinkQuality.cRssi)) {
+			   prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi)) {
 
 		prAdapter->rWlanInfo.eRssiTriggerType =
 			ENUM_RSSI_TRIGGER_TRIGGERED;
