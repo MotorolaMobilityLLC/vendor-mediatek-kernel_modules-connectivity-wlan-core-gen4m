@@ -10921,8 +10921,6 @@ void nicUniEventGetVnf(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint32_t fail_cnt = 0;
 
-	DBGLOG(SW4, INFO, "[Debugging Thread]In %s\n", __func__);
-
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
@@ -10933,9 +10931,11 @@ void nicUniEventGetVnf(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			struct UNI_EVENT_GET_VOLT_INFO_PARAM *volt_info =
 				(struct UNI_EVENT_GET_VOLT_INFO_PARAM *)tag;
 			struct EVENT_GET_VOLT_INFO_T legacy;
+			kalMemZero(&legacy,
+				sizeof(struct EVENT_GET_VOLT_INFO_T));
 
 			legacy.u2Volt = volt_info->u2Volt;
-			DBGLOG(SW4, INFO, "[Debug]%s volt[%d]",
+			DBGLOG(SW4, INFO, "%s volt[%d]",
 				__func__, legacy.u2Volt);
 			RUN_RX_EVENT_HANDLER(EVEN_ID_GET_VOLT_INFO, &legacy);
 		}
