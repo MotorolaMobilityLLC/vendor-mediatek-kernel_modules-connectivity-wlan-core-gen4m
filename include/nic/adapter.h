@@ -2155,6 +2155,10 @@ struct ADAPTER {
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 	struct FW_LOG_IDX_DATA *prFwLogIdx;
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
+#if CFG_SUPPORT_THERMAL_QUERY
+	struct work_struct thermal_work;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

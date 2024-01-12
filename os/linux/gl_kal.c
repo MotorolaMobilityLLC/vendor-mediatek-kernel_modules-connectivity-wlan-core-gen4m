@@ -13378,12 +13378,38 @@ static const struct thermal_zone_of_device_ops wf_thermal_ops = {
 	.get_temp = get_connsys_thermal_temp,
 };
 
-int register_thermal_cbs(struct ADAPTER *ad)
+static void __register_thermal_cbs(struct work_struct *work)
 {
+	struct ADAPTER *ad = container_of(work, struct ADAPTER, thermal_work);
 	struct mt66xx_chip_info *chip_info = ad->chip_info;
 	struct thermal_info *thermal_info = &chip_info->thermal_info;
 	struct thermal_zone_device *tzdev = NULL;
 	uint8_t idx = 0;
+	int err = 0;
+
+	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
+		struct thermal_sensor_info *sensor =
+			&thermal_info->sensor_info[idx];
+
+		sensor->priv = (void *)ad;
+		tzdev = devm_thermal_zone_of_sensor_register(&g_prPlatDev->dev,
+			idx, sensor, &wf_thermal_ops);
+		if (IS_ERR(tzdev)) {
+			sensor->tzd = NULL;
+			err = PTR_ERR(tzdev);
+			DBGLOG(INIT, ERROR,
+				"[%d] Failed to register the thermal cbs: %d\n",
+				idx, err);
+			return;
+		}
+		sensor->tzd = tzdev;
+	}
+}
+
+int register_thermal_cbs(struct ADAPTER *ad)
+{
+	struct mt66xx_chip_info *chip_info = ad->chip_info;
+	struct thermal_info *thermal_info = &chip_info->thermal_info;
 	int err = 0;
 
 	if (thermal_info->sensor_num == 0)
@@ -13396,22 +13422,8 @@ int register_thermal_cbs(struct ADAPTER *ad)
 		goto exit;
 	}
 
-	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
-		struct thermal_sensor_info *sensor =
-			&thermal_info->sensor_info[idx];
-
-		sensor->priv = (void *)ad;
-		tzdev = devm_thermal_zone_of_sensor_register(&g_prPlatDev->dev,
-			idx, sensor, &wf_thermal_ops);
-		if (IS_ERR(tzdev)) {
-			err = PTR_ERR(tzdev);
-			DBGLOG(INIT, ERROR,
-				"[%d] Failed to register the thermal cbs: %d\n",
-				idx, err);
-			goto exit;
-		}
-		sensor->tzd = tzdev;
-	}
+	INIT_WORK(&ad->thermal_work, __register_thermal_cbs);
+	schedule_work(&ad->thermal_work);
 
 exit:
 	return err;
@@ -13429,9 +13441,13 @@ void unregister_thermal_cbs(struct ADAPTER *ad)
 	if (!g_prPlatDev)
 		return;
 
+	cancel_work_sync(&ad->thermal_work);
 	for (idx = 0; idx < thermal_info->sensor_num; idx++) {
 		struct thermal_sensor_info *sensor =
 			&thermal_info->sensor_info[idx];
+
+		if (!sensor->tzd)
+			continue;
 
 		devm_thermal_zone_of_sensor_unregister(&g_prPlatDev->dev,
 			sensor->tzd);
