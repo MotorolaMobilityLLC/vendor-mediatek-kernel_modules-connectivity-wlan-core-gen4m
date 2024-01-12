@@ -1648,7 +1648,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_ML_PROBEREQ,
 		.pfHandler = priv_driver_set_ml_probereq,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
 		.policy    = set_ml_probereq_policy,
 		.u4PolicySize = ARRAY_SIZE(set_ml_probereq_policy)
 	},
