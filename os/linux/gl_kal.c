@@ -15026,6 +15026,70 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags,
 	}
 }
 
+void kalTxFreeMsduTaskSchedule(struct GLUE_INFO *prGlueInfo)
+{
+	tasklet_schedule(&prGlueInfo->rTxMsduRetTask);
+}
+
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+void kalTxFreeMsduWork(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo = container_of(work,
+				struct GLUE_INFO, rTxFreeMsduWork);
+
+	TRACE(halWpdmaFreeMsduWork(prGlueInfo),
+		"TxFreeMsduWork");
+}
+
+void kalTxFreeMsduWorkInit(struct GLUE_INFO *pr)
+{
+	pr->i4TxFreeMsduCpu = -1;
+	INIT_WORK(&pr->rTxFreeMsduWork, kalTxFreeMsduWork);
+	pr->prTxFreeMsduWorkQueue = create_workqueue(
+					"wifi_tx_freemsdu_work");
+	if (!pr->prTxFreeMsduWorkQueue)
+		DBGLOG(INIT, ERROR, "prTxFreeMsduWorkQueue is NULL\n");
+}
+
+void kalTxFreeMsduWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu)
+{
+	pr->i4TxFreeMsduCpu = cpu;
+}
+
+void kalTxFreeMsduWorkUninit(struct GLUE_INFO *pr)
+{
+	struct workqueue_struct *prWq;
+
+	prWq = pr->prTxFreeMsduWorkQueue;
+	pr->prTxFreeMsduWorkQueue = NULL;
+	if (prWq) {
+		flush_workqueue(prWq);
+		destroy_workqueue(prWq);
+	}
+}
+
+void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr)
+{
+	int32_t i4TxFreeMsduCpu;
+
+	if (!pr->prTxFreeMsduWorkQueue) {
+		DBGLOG_LIMITED(INIT, ERROR,
+			"prTxFreeMsduWorkQueue is NULL\n");
+		return;
+	}
+
+	i4TxFreeMsduCpu = pr->i4TxFreeMsduCpu;
+	if (i4TxFreeMsduCpu == -1) {
+		queue_work(pr->prTxFreeMsduWorkQueue,
+			&pr->rTxFreeMsduWork);
+	} else {
+		queue_work_on(i4TxFreeMsduCpu,
+			pr->prTxFreeMsduWorkQueue,
+			&pr->rTxFreeMsduWork);
+	}
+}
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work)
 {
