@@ -255,6 +255,11 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 		prMsduInfo = (struct MSDU_INFO *) pucMemHandle;
 		kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
+		cnmTimerInitTimer(prAdapter,
+			&prMsduInfo->rLifetimeTimer,
+		(PFN_MGMT_TIMEOUT_FUNC) nicTxMsduLifeTimeoutHandler,
+			(unsigned long) prMsduInfo);
+
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				      SPIN_LOCK_TX_MSDU_INFO_LIST);
 		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList,
@@ -2402,6 +2407,13 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 					  (struct QUE_ENTRY *) prMsduInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TXING_MGMT_LIST);
+
+			cnmTimerStopTimer(prAdapter,
+				&prMsduInfo->rLifetimeTimer);
+
+			cnmTimerStartTimer(prAdapter,
+				&prMsduInfo->rLifetimeTimer,
+				NIC_TX_REMAINING_LIFE_TIME);
 		} else
 			wlanTxLifetimeTagPacket(prAdapter, prMsduInfo,
 						TX_PROF_TAG_DRV_TX_DONE);
@@ -2414,6 +2426,26 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 	HAL_KICK_TX_DATA(prAdapter);
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+
+void nicTxMsduLifeTimeoutHandler(IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr)
+{
+	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *)plParamPtr;
+
+	DBGLOG(TX, ERROR, "MSDU Life Timeout Tag[0x%08x] WIDX:PID[%u:%u]\n",
+		prMsduInfo->u4TxDoneTag, prMsduInfo->ucWlanIndex,
+		prMsduInfo->ucPID);
+
+	prMsduInfo = nicGetPendingTxMsduInfo(prAdapter,
+			 prMsduInfo->ucWlanIndex, prMsduInfo->ucPID);
+	if (prMsduInfo) {
+		nicTxFreePacket(prAdapter, prMsduInfo, TRUE);
+		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+	} else {
+		DBGLOG(TX, ERROR, "Not in pending tx queue\n");
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2628,6 +2660,9 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
+
+	cnmTimerStopTimer(prAdapter,
+		&prMsduInfo->rLifetimeTimer);
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 
