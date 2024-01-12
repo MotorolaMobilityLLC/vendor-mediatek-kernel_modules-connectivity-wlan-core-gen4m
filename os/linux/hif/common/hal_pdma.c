@@ -633,6 +633,33 @@ end:
 	return fgStatus;
 }
 
+static uint32_t halGetWfdmaRxCnt(struct ADAPTER *prAdapter)
+{
+	uint32_t u4RxCnt = 0, u4Idx;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		u4RxCnt += halWpdmaGetRxDmaDoneCnt(
+			prAdapter->prGlueInfo, u4Idx);
+	}
+
+	return u4RxCnt;
+}
+
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+void halDataDmaDoneManualUpdate(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Idx;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+		if (!halIsDataRing(TX_RING, u4Idx))
+			continue;
+
+		halWpdmaProcessDataDmaDone(
+				prAdapter->prGlueInfo, u4Idx);
+	}
+}
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is used to process the POWER ON procedure.
@@ -701,6 +728,14 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		/* Write sleep mode magic num to dummy reg */
 		if (prBusInfo->setDummyReg)
 			prBusInfo->setDummyReg(prAdapter->prGlueInfo);
+
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+		/*
+		 * fw may reset data dma done counter when fw own
+		 * so we need manually update it before it
+		 */
+		halDataDmaDoneManualUpdate(prAdapter);
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 #if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
