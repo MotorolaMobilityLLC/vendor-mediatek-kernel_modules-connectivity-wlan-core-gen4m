@@ -1604,7 +1604,7 @@ void soc3_0_icapDownVcoreClockRate(void)
 {
 
 
-	int value;
+	int value = 0;
 
 	/*2 update Clork Rate*/
 	/*0x1000123C[20]=0,156Mhz*/
