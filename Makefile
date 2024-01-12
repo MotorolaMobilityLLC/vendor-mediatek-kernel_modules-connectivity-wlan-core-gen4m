@@ -787,6 +787,12 @@ else
     ccflags-y += -DCFG_SCAN_NO_AP_RECOVERY=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_RADIO_LOST_DISCONNECT), y)
+    ccflags-y += -DCFG_RADIO_LOST_DISCONNECT=1
+else
+    ccflags-y += -DCFG_RADIO_LOST_DISCONNECT=0
+endif
+
 # TODO
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 CONFIG_MTK_HOST_OFFLOAD_SUPPORT=n
