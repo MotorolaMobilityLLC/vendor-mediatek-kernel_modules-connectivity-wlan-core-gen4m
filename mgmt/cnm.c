@@ -2021,12 +2021,6 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 				} else if (prBssInfo->eBand == BAND_5G) {
 					ucMaxBandwidth = prAdapter->rWifiVar
 						.ucAp5gBandwidth;
-					/* Use platform capability */
-					if (prAdapter->rWifiVar.u4SwTestMode ==
-						ENUM_SW_TEST_MODE_SIGMA_AX_AP)
-						ucMaxBandwidth =
-						prAdapter->rWifiVar
-							.ucApBandwidth;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				} else if (prBssInfo->eBand == BAND_6G) {
 					ucMaxBandwidth = prAdapter->rWifiVar
