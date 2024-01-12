@@ -36,7 +36,7 @@
  */
 #define MT7935_DMASHDL_SLOT_ARBITER_EN                 (0)
 #define MT7935_DMASHDL_PKT_PLE_MAX_PAGE                (0x1)
-#define MT7935_DMASHDL_PKT_PSE_MAX_PAGE                (0x18)
+#define MT7935_DMASHDL_PKT_PSE_MAX_PAGE                (0x8)
 #define MT7935_DMASHDL_GROUP_0_REFILL_EN               (1)
 #define MT7935_DMASHDL_GROUP_1_REFILL_EN               (1)
 #define MT7935_DMASHDL_GROUP_2_REFILL_EN               (1)
