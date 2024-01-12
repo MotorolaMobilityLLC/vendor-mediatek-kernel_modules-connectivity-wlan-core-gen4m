@@ -3699,7 +3699,6 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
 
 	uint32_t u4EmiBaseAddr = 0;
-	uint32_t u4EmiDataSize = 0;
 	uint32_t u4PhyIcsTotalCnt = 0;
 	uint32_t u4PhyIcsBufSize = 0;
 	uint32_t *u4PhyIcsEventBuf = NULL;
@@ -3708,6 +3707,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	uint32_t u4TotalCnt = 0;
 	uint16_t u2DataOffset = 0, u2Idxi = 0;
 	uint8_t  ucRawDataIdx = 0;
+	uint32_t u4MemoryPart = 0;
 
 	uint8_t *pucBuf = NULL;
 	uint32_t *pu4Data = NULL;
@@ -3736,11 +3736,6 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (!prChipInfo->u4PhyIcsEmiDataSize) {
-		DBGLOG(RFTEST, ERROR, "u4PhyIcsEmiDataSize is null\n");
-		return;
-	}
-
 	if (!prChipInfo->u4PhyIcsTotalCnt) {
 		DBGLOG(RFTEST, ERROR, "u4PhyIcsTotalCnt is null\n");
 		return;
@@ -3752,9 +3747,9 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 	}
 
 	u4EmiBaseAddr = prChipInfo->u4PhyIcsEmiBaseAddr;
-	u4EmiDataSize = prChipInfo->u4PhyIcsEmiDataSize;
 	u4PhyIcsTotalCnt = prChipInfo->u4PhyIcsTotalCnt;
 	u4PhyIcsBufSize = prChipInfo->u4PhyIcsBufSize;
+	u4MemoryPart = prChipInfo->u4MemoryPart;
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	prPhyIcsEvent = (struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *)
@@ -3768,19 +3763,31 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 		"u4WifiSysTimestamp = [0x%08x]\n",
 		prPhyIcsEvent->u4PhyTimestamp);
 
-	u4PhyIcsEventBuf = kalMemAlloc(u4EmiDataSize, VIR_MEM_TYPE);
+	u4PhyIcsEventBuf = kalMemAlloc(u4PhyIcsBufSize, VIR_MEM_TYPE);
 	if (!u4PhyIcsEventBuf) {
 		DBGLOG(RFTEST, ERROR, "u4PhyIcsEventBuf is null\n");
 		goto exit;
 	}
 
-	kalMemZero(u4PhyIcsEventBuf, u4EmiDataSize);
+	kalMemZero(u4PhyIcsEventBuf, u4PhyIcsBufSize);
+
+#if (CFG_SUPPORT_PHY_ICS_V4 == 1)
+
+	DBGLOG(RFTEST, LOUD, "Memory Part = %d\n",
+		prPhyIcsEvent->u4Reserved[0]);
+
+	if (prPhyIcsEvent->u4Reserved[0] == u4MemoryPart)
+		u4EmiBaseAddr += u4PhyIcsBufSize;
+#endif
 
 	if (emi_mem_read(prChipInfo, u4EmiBaseAddr,
-			u4PhyIcsEventBuf, u4EmiDataSize)) {
+			u4PhyIcsEventBuf, u4PhyIcsBufSize)) {
 		DBGLOG(REQ, ERROR, "emi_mem_read fail.\n");
 		goto exit;
 	}
+
+	/* Print EMI data for debugging purpose */
+	DBGLOG_MEM32(REQ, LOUD, u4PhyIcsEventBuf, u4PhyIcsBufSize);
 
 	/* band0 phyics bus 128bit only have 64bit data
 	 * other 64bit data value is 0, so allocate 8KB
@@ -3805,19 +3812,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 
 	kalMemZero(pucBuf, u4Size);
 
-	/* Print EMI data for debugging purpose */
-	DBGLOG_MEM32(REQ, LOUD, u4PhyIcsEventBuf, u4Size);
-
 	pu4Data = (uint32_t *)(pucBuf + sizeof(struct ICS_BIN_LOG_HDR));
-
-#if (CFG_SUPPORT_PHY_ICS_V4 == 1)
-
-	DBGLOG(RFTEST, LOUD, "Memory Part = %d\n",
-		prPhyIcsEvent->u4Reserved[0]);
-
-	if (prPhyIcsEvent->u4Reserved[0] == WIFI_MCU_MEMORY_PART_2)
-		u4EmiAddr += 2048;
-#endif
 
 	/* MCU sysram data parsing and reorder */
 	for (u2DataOffset = 0; u2DataOffset < (u4TotalCnt - 1);) {
@@ -3901,7 +3896,7 @@ void nicExtEventPhyIcsDumpEmiRawData(struct ADAPTER *prAdapter,
 exit:
 
 	if (u4PhyIcsEventBuf)
-		kalMemFree(u4PhyIcsEventBuf, VIR_MEM_TYPE, u4EmiDataSize);
+		kalMemFree(u4PhyIcsEventBuf, VIR_MEM_TYPE, u4PhyIcsBufSize);
 	if (pucBuf)
 		kalMemFree(pucBuf, VIR_MEM_TYPE, u4Size);
 
