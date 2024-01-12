@@ -65,14 +65,31 @@
 //****************************************************************************
 #define WF_SW_DEF_CR_BASE                0x00401400
 
-#define WF_SW_DEF_CR_WACPU_STAT_ADDR            (WF_SW_DEF_CR_BASE + 0x000) // F200
-#define WF_SW_DEF_CR_WACPU_SLEEP_STAT_ADDR      (WF_SW_DEF_CR_BASE + 0x004) // F204
-#define WF_SW_DEF_CR_WM2WA_ACTION_ADDR          (WF_SW_DEF_CR_BASE + 0x008) // F208
-#define WF_SW_DEF_CR_WA2WM_ACTION_ADDR          (WF_SW_DEF_CR_BASE + 0x00C) // F20C
-#define WF_SW_DEF_CR_LP_DBG0_ADDR               (WF_SW_DEF_CR_BASE + 0x010) // F210
-#define WF_SW_DEF_CR_LP_DBG1_ADDR               (WF_SW_DEF_CR_BASE + 0x014) // F214
-#define WF_SW_DEF_CR_ICAP_SPECTRUM_MODE_ADDR    (WF_SW_DEF_CR_BASE + 0x03C) // F23C
-
+#define WF_SW_DEF_CR_WACPU_STAT_ADDR            (WF_SW_DEF_CR_BASE + 0x000) // 1400
+#define WF_SW_DEF_CR_WACPU_SLEEP_STAT_ADDR      (WF_SW_DEF_CR_BASE + 0x004) // 1404
+#define WF_SW_DEF_CR_WM2WA_ACTION_ADDR          (WF_SW_DEF_CR_BASE + 0x008) // 1408
+#define WF_SW_DEF_CR_WA2WM_ACTION_ADDR          (WF_SW_DEF_CR_BASE + 0x00C) // 140C
+#define WF_SW_DEF_CR_LP_DBG0_ADDR               (WF_SW_DEF_CR_BASE + 0x010) // 1410
+#define WF_SW_DEF_CR_LP_DBG1_ADDR               (WF_SW_DEF_CR_BASE + 0x014) // 1414
+#define WF_SW_DEF_CR_ICAP_SPECTRUM_MODE_ADDR    (WF_SW_DEF_CR_BASE + 0x03C) // 143C
+#define WF_SW_DEF_CR_SER_STATUS_ADDR            (WF_SW_DEF_CR_BASE + 0x040) // 1440
+#define WF_SW_DEF_CR_PLE_STATUS_ADDR            (WF_SW_DEF_CR_BASE + 0x044) // 1444
+#define WF_SW_DEF_CR_PLE1_STATUS_ADDR           (WF_SW_DEF_CR_BASE + 0x048) // 1448
+#define WF_SW_DEF_CR_PLE_AMSDU_STATUS_ADDR      (WF_SW_DEF_CR_BASE + 0x04C) // 144C
+#define WF_SW_DEF_CR_PSE_STATUS_ADDR            (WF_SW_DEF_CR_BASE + 0x050) // 1450
+#define WF_SW_DEF_CR_PSE1_STATUS_ADDR           (WF_SW_DEF_CR_BASE + 0x054) // 1454
+#define WF_SW_DEF_CR_LAMC_WISR6_BN0_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x058) // 1458
+#define WF_SW_DEF_CR_LAMC_WISR6_BN1_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x05C) // 145C
+#define WF_SW_DEF_CR_LAMC_WISR6_BN2_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x060) // 1460
+#define WF_SW_DEF_CR_LAMC_WISR6_LIT_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x064) // 1464
+#define WF_SW_DEF_CR_LAMC_WISR7_BN0_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x068) // 1468
+#define WF_SW_DEF_CR_LAMC_WISR7_BN1_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x06C) // 146C
+#define WF_SW_DEF_CR_LAMC_WISR7_BN2_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x070) // 1470
+#define WF_SW_DEF_CR_LAMC_WISR7_LIT_STATUS_ADDR (WF_SW_DEF_CR_BASE + 0x074) // 1474
+#define WF_SW_DEF_CR_WFDMA_STATUS_ADDR          (WF_SW_DEF_CR_BASE + 0x078) // 1478
+#define WF_SW_DEF_CR_USB_MCU_EVENT_ADD          (WF_SW_DEF_CR_BASE + 0x07C) // 147C
+#define WF_SW_DEF_CR_USB_HOST_ACK_ADDR          (WF_SW_DEF_CR_BASE + 0x080) // 1480
+#define WF_SW_DEF_CR_PM_CHANGE_ADDR             (WF_SW_DEF_CR_BASE + 0x084) // 1484
 /* =====================================================================================
 
   ---WF_SW_DEF_CR_WACPU_SLEEP_STAT_ADDR (0x00411400 + 0x004)---
@@ -88,6 +105,32 @@
 #define WF_SW_DEF_CR_WACPU_SLEEP_STAT_GATING_ADDR   WF_SW_DEF_CR_WACPU_SLEEP_STAT_ADDR
 #define WF_SW_DEF_CR_WACPU_SLEEP_STAT_GATING_MASK   0x00000002
 #define WF_SW_DEF_CR_WACPU_SLEEP_STAT_GATING_SHFT   1
+
+
+
+/* =====================================================================================
+
+  ---WF_SW_DEF_CR_PM_CHANGE_ADDR (0x00411400 + 0x078)---
+
+    WCID[15:0]          - (RW) wcid
+    TID[19:16]          - (RW) tid
+    RESERVED5[20:20]    - (RO) Reserved bits
+    ACK[31]             - (RW) Driver set 1 and FW clear to 0 after processing message
+
+ =====================================================================================*/
+#define WF_SW_DEF_CR_PM_CHANGE_WCID_ADDR           WF_SW_DEF_CR_PM_CHANGE_ADDR
+#define WF_SW_DEF_CR_PM_CHANGE_WCID_MASK           0x000003FF
+#define WF_SW_DEF_CR_PM_CHANGE_WCID_SHIFT          0
+#define WF_SW_DEF_CR_PM_CHANGE_ACK_ADDR            WF_SW_DEF_CR_PM_CHANGE_ADDR
+#define WF_SW_DEF_CR_PM_CHANGE_ACK_MASK            0x00000400
+#define WF_SW_DEF_CR_PM_CHANGE_ACK_SHIFT           10
+#define WF_SW_DEF_CR_PM_CHANGE_TID_ADDR            WF_SW_DEF_CR_PM_CHANGE_ADDR
+#define WF_SW_DEF_CR_PM_CHANGE_TID_MASK            0x0000F000
+#define WF_SW_DEF_CR_PM_CHANGE_TID_SHIFT           12
+#define WF_SW_DEF_CR_PM_CHANGE_FC_ADDR             WF_SW_DEF_CR_PM_CHANGE_ADDR
+#define WF_SW_DEF_CR_PM_CHANGE_FC_MASK             0xFFFF0000
+#define WF_SW_DEF_CR_PM_CHANGE_FC_SHIFT            16
+
 
 
 #endif /* _WF_CR_SW_DEF_H */
