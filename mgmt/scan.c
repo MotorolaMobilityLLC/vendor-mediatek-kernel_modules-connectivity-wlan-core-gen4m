@@ -1008,7 +1008,8 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				struct CONNECTION_SETTINGS *prConnSettings =
 					aisGetConnSettings(prAdapter, ucBssIndex);
 
-				if (!prConnSettings)
+				if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j)
+				    || !prConnSettings)
 					continue;
 
 				if ((!prBssDesc->fgIsHiddenSSID) &&
@@ -2866,10 +2867,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				prBssDesc->u2RsnCap
 					= prBssDesc->rRSNInfo.u2RsnCap;
 
-				for (i = 0; i < KAL_AIS_NUM; i++) {
-					rsnCheckPmkidCache(prAdapter, prBssDesc,
-					      AIS_MAIN_BSS_INDEX(prAdapter, i));
-				}
+				for (i = 0; i < KAL_AIS_NUM; i++)
+					rsnCheckPmkidCache(
+						prAdapter, prBssDesc, i);
 			}
 			break;
 
@@ -3837,11 +3837,13 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 
 	for (u4Idx = 0; u4Idx < prAdapter->ucHwBssIdNum; u4Idx++) {
 		struct BSS_INFO *prAisBssInfo = prAdapter->aprBssInfo[u4Idx];
-		struct CONNECTION_SETTINGS *prConnSettings =
-			aisGetConnSettings(prAdapter, prAisBssInfo->ucBssIndex);
+		struct CONNECTION_SETTINGS *prConnSettings;
 
 		if (!IS_BSS_INDEX_AIS(prAdapter, prAisBssInfo->ucBssIndex))
 			continue;
+
+		prConnSettings =
+			aisGetConnSettings(prAdapter, prAisBssInfo->ucBssIndex);
 
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
 		if ((prAisBssInfo->eConnectionState ==

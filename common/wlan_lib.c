@@ -10112,6 +10112,18 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 		}
 	}
 
+	DBGLOG(REQ, WARN, "bssidx=%d has NULL netdev caller=%pS\n",
+		ucBssIndex, KAL_TRACE);
+
+	return NULL;
+}
+
+struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucAisIndex)
+{
+	if (gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
+		return gprWdev[ucAisIndex]->netdev;
+
 	return NULL;
 }
 
@@ -10142,7 +10154,7 @@ u_int8_t wlanIsAisDev(struct net_device *prDev)
 	uint32_t u4Idx = 0;
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++)
-		if (prDev == gprWdev[u4Idx]->netdev)
+		if (gprWdev[u4Idx] && prDev == gprWdev[u4Idx]->netdev)
 			return TRUE;
 
 	return FALSE;

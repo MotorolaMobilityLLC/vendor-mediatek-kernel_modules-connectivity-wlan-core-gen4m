@@ -3453,6 +3453,9 @@ nicAddScanResult(IN struct ADAPTER *prAdapter,
 		for (j = 0; j < KAL_AIS_NUM; j++) {
 			struct PARAM_BSSID_EX *prCurrBssid;
 
+			if (!wlanGetAisNetDev(prAdapter->prGlueInfo, j))
+				continue;
+
 			prCurrBssid = aisGetCurrBssId(prAdapter,
 				AIS_MAIN_BSS_INDEX(prAdapter, j));
 			if (EQUAL_MAC_ADDR

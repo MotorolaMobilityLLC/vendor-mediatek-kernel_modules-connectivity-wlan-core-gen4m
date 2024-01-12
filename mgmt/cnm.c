@@ -4750,13 +4750,14 @@ void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
 		 * FW's CNM couldn't service any other CH_REQ in GRANT stage.
 		 * As a result, checking the timer in suspend flow.
 		 */
-		if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
+		if (prAisFsmInfo &&
+		    timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 			DBGLOG(CNM, STATE, "[AIS] pending rJoinTimeoutTimer\n");
 			cnmTimerStopTimer(prAdapter,
 				&prAisFsmInfo->rJoinTimeoutTimer);
 			/* Release Channel */
 			aisFsmReleaseCh(prAdapter,
-			       aisGetMainLinkBssIndex(prAisFsmInfo));
+			       aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo));
 		}
 
 
