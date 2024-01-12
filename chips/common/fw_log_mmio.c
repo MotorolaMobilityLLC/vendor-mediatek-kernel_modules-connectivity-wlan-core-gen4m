@@ -229,11 +229,13 @@ int32_t fwLogMmioHandler(void)
 		return 0;
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_FW_LOG);
+	wlanAcquirePowerControl(prAdapter);
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
 		struct FW_LOG_MMIO_SUB_CTRL *prSubCtrl = &prCtrl->sub_ctrls[i];
 
 		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl);
 	}
+	wlanReleasePowerControl(prAdapter);
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_FW_LOG);
 
 	return 0;
