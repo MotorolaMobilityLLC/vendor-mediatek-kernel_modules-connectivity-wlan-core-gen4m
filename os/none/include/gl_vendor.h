@@ -1089,7 +1089,4 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,
 		int data_len);
 #endif
-#define mtk_cfg80211_vendor_event_rssi_beyond_range(_prAdapter, _bss, _rssi) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
 #endif /* _GL_VENDOR_H */

@@ -750,6 +750,11 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_TPENHANCE_MODE
 	struct timer_list PeriodSecTimer;
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+	/* check if an empty MsduInfo is available */
+	kal_timer_list rTxDirectSkbTimer;
+	/* check if HIF port is ready to accept a new Msdu */
+	kal_timer_list rTxDirectHifTimer;
+	struct sk_buff_head rTxDirectSkbQueue;
 
 #if CFG_SUPPORT_EXT_CONFIG
 	uint16_t au2ExtCfg[256];	/* NVRAM data buffer */

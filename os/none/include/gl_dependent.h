@@ -757,43 +757,6 @@ int kal_hex_dump_to_buffer(const void *buf, size_t len, int rowsize,
  */
 bool kal_warn_on(uint8_t condition);
 #define WARN_ON(_condition) kal_warn_on(_condition)
-
-/*
- * needed by: mgmt/wmm.c
- * anything on kalGetTimeTick (?)
- * Timespec interfaces utilizing the ktime based ones
- * ktime_to_timespec(ktime_get_boottime());
- */
-void kal_get_monotonic_boottime(struct timespec *ts);
-#define get_monotonic_boottime(_ts) kal_get_monotonic_boottime(_ts)
-
-/*
- * kal_do_gettimeofday - Returns the time of day in a timeval
- * @tv: pointer to the timeval to be set
- * needed by
- * common/debug.c
- * mgmt/stats.c
- */
-void kal_do_gettimeofday(struct timeval *tv);
-#define do_gettimeofday(_tv) kal_do_gettimeofday(_tv)
-#undef ktime_get_real_ts64
-#define ktime_get_real_ts64 do_gettimeofday
-#define ktime_get_ts64 ktime_get_real_ts64
-
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-#define KAL_GET_USEC(_time) ((uint32_t)NSEC_TO_USEC(_time.tv_nsec))
-#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_nsec
-#else
-#define KAL_GET_USEC(_time) _time.tv_usec
-#define KAL_GET_TIME_OF_USEC_OR_NSEC(_Time) _Time.tv_usec
-#endif
-
-
-#define mod_timer(_timer, _expires) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#define from_timer(_type, _timer, _member) \
-	((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__))
-
 /*
  * kstrto* - convert a string to an *
  * @s: The start of the string. The string must be null-terminated, and may also
@@ -915,27 +878,6 @@ void kal_spin_lock_irqsave(spinlock_t *lock, unsigned long flags);
 void kal_spin_unlock_irqrestore(spinlock_t *lock, unsigned long flags);
 #define spin_unlock_irqrestore(_lock, _flag) \
 		kal_spin_unlock_irqrestore(_lock, _flag)
-/*
- * kal_skb_queue_len - get queue length
- * @list_: list to measure
- * Return the length of an &sk_buff queue.
- *
- * needed by nic_tx.c
- */
-uint32_t kal_skb_queue_len(const struct sk_buff_head *list);
-#define skb_queue_len(_list) kal_skb_queue_len(_list)
-
-/* kal_skb_queue_tail - queue a buffer at the list tail
- * @list: list to use
- * @newsk: buffer to queue
- * Queue a buffer at the end of a list. This function takes no locks
- * and you must therefore hold required locks before calling it.
- * A buffer cannot be placed on two lists at the same time.
- *
- * needed by nic_tx.c, what's wrong with struct QUE?
- */
-void kal_skb_queue_tail(struct sk_buff_head *list, struct sk_buff *newsk);
-#define skb_queue_tail(_list, _newsk)  kal_skb_queue_tail(_list, _newsk)
 
 /*
  * skb_put - add data to a buffer

@@ -1605,11 +1605,7 @@ struct ADAPTER {
 	u_int8_t fgTxDirectInited;
 
 	#define TX_DIRECT_CHECK_INTERVAL	(1000 * HZ / USEC_PER_SEC)
-	/* check if an empty MsduInfo is available */
-	kal_timer_list rTxDirectSkbTimer;
-	/* check if HIF port is ready to accept a new Msdu */
-	kal_timer_list rTxDirectHifTimer;
-	struct sk_buff_head rTxDirectSkbQueue;
+
 	struct QUE rTxDirectHifQueue[TX_PORT_NUM];
 #if CFG_TX_DIRECT_VIA_HIF_THREAD
 	spinlock_t rTxDirectHifQueueLock[TX_PORT_NUM];

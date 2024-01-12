@@ -5567,24 +5567,24 @@ void wlanOnPostAdapterStart(struct ADAPTER *prAdapter,
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (!prAdapter->fgTxDirectInited) {
 			skb_queue_head_init(
-					&prAdapter->rTxDirectSkbQueue);
+					&prGlueInfo->rTxDirectSkbQueue);
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
-			timer_setup(&prAdapter->rTxDirectSkbTimer,
-					nicTxDirectTimerCheckSkbQ, 0);
-			timer_setup(&prAdapter->rTxDirectHifTimer,
-					nicTxDirectTimerCheckHifQ, 0);
+			timer_setup(&prGlueInfo->rTxDirectSkbTimer,
+					kalTxDirectTimerCheckSkbQ, 0);
+			timer_setup(&prGlueInfo->rTxDirectHifTimer,
+					kalTxDirectTimerCheckHifQ, 0);
 #else
-			init_timer(&prAdapter->rTxDirectSkbTimer);
-			prAdapter->rTxDirectSkbTimer.data =
+			init_timer(&prGlueInfo->rTxDirectSkbTimer);
+			prGlueInfo->rTxDirectSkbTimer.data =
 					(unsigned long)prGlueInfo;
-			prAdapter->rTxDirectSkbTimer.function =
-					nicTxDirectTimerCheckSkbQ;
+			prGlueInfo->rTxDirectSkbTimer.function =
+					kalTxDirectTimerCheckSkbQ;
 
-			init_timer(&prAdapter->rTxDirectHifTimer);
-			prAdapter->rTxDirectHifTimer.data =
+			init_timer(&prGlueInfo->rTxDirectHifTimer);
+			prGlueInfo->rTxDirectHifTimer.data =
 					(unsigned long)prGlueInfo;
-			prAdapter->rTxDirectHifTimer.function =
-				nicTxDirectTimerCheckHifQ;
+			prGlueInfo->rTxDirectHifTimer.function =
+				kalTxDirectTimerCheckHifQ;
 #endif
 			prAdapter->fgTxDirectInited = TRUE;
 		}
@@ -5799,7 +5799,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 
 #if CFG_SUPPORT_TPENHANCE_MODE
-		wlanTpeInit(prGlueInfo);
+		kalTpeInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 	}
 
@@ -6058,8 +6058,8 @@ int32_t wlanOffAtReset(void)
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (prAdapter->fgTxDirectInited) {
-			del_timer_sync(&prAdapter->rTxDirectSkbTimer);
-			del_timer_sync(&prAdapter->rTxDirectHifTimer);
+			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
+			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
 		}
 	}
 
@@ -6754,7 +6754,7 @@ static void wlanRemove(void)
 	wlanBackupEmCfgSetting(prAdapter);
 
 #if CFG_SUPPORT_TPENHANCE_MODE
-	wlanTpeUninit(prGlueInfo);
+	kalTpeUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
 	/* Need to get A-DIE ver anytime when device plug in,
@@ -6810,8 +6810,8 @@ static void wlanRemove(void)
 
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (prAdapter->fgTxDirectInited) {
-			del_timer_sync(&prAdapter->rTxDirectSkbTimer);
-			del_timer_sync(&prAdapter->rTxDirectHifTimer);
+			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
+			del_timer_sync(&prGlueInfo->rTxDirectHifTimer);
 		}
 	}
 

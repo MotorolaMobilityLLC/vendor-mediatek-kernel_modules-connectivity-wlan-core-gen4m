@@ -2088,16 +2088,12 @@ void nicTxDirectClearStaPendQ(IN struct ADAPTER *prAdapter,
 void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearAllStaPendQ(IN struct ADAPTER *prAdapter);
 
-#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void nicTxDirectTimerCheckSkbQ(kal_timer_list *timer);
-void nicTxDirectTimerCheckHifQ(kal_timer_list *timer);
-#else
-void nicTxDirectTimerCheckSkbQ(unsigned long data);
-void nicTxDirectTimerCheckHifQ(unsigned long data);
-#endif
-
-uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
-	struct GLUE_INFO *prGlueInfo);
+void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter);
+uint32_t nicTxDirectStartXmitMain(struct sk_buff
+		*prSkb, struct MSDU_INFO *prMsduInfo,
+		struct ADAPTER *prAdapter,
+		uint8_t ucCheckTc, uint8_t ucStaRecIndex,
+		uint8_t ucBssIndex);
 
 /* TX Direct functions : END */
 

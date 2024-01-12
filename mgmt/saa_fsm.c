@@ -332,12 +332,14 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
 				DBGLOG(ML, INFO,  "Start MLO");
-				kalVendorExternalAuthRequest(prAdapter,
+				kalVendorExternalAuthRequest(
+					prAdapter->prGlueInfo,
 					prStaRec, prStaRec->ucBssIndex);
 			} else
 #endif
-				kalExternalAuthRequest(prAdapter,
-						       prStaRec->ucBssIndex);
+				kalExternalAuthRequest(
+					prAdapter->prGlueInfo,
+					prStaRec->ucBssIndex);
 			break;
 #endif
 

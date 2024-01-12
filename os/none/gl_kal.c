@@ -136,6 +136,54 @@ kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 	IN const struct ieee80211_regdomain *pRegdom) { }
 #endif
 
+void kalSetLogTooMuch(uint32_t u4DriverLevel,
+	uint32_t u4FwLevel)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kalGetRealTime(struct REAL_TIME *prRealTime)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kalVendorEventRssiBeyondRange(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIdx, int rssi)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kalTxDirectStartCheckQTimer(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t offset)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint32_t kalGetTxDirectQueueLength(
+				struct GLUE_INFO *prGlueInfo)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#if CFG_SUPPORT_WPA3
+int kalExternalAuthRequest(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t uBssIndex)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
+		struct STA_RECORD *prStaRec, uint8_t ucBssIndex)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
+#endif
+
+
 const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len)

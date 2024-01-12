@@ -95,6 +95,11 @@
 
 #define MSEC_PER_MIN			(60 * MSEC_PER_SEC)
 
+#define SEC_PER_HOUR			(3600)
+#define HOUR_MAX			(24)
+#define SEC_PER_MINUTE			(60)
+#define MINUTE_MAX			(60)
+
 #define MGMT_MAX_TIMEOUT_INTERVAL	((uint32_t)0x7fffffff)
 
 #define WAKE_LOCK_MAX_TIME		5	/* Unit: sec */
@@ -160,6 +165,13 @@ struct TIMER {
 
 #define SYSTIME_TO_SEC(_systime)	((_systime) / KAL_HZ)
 #define SEC_TO_SYSTIME(_sec)		((_sec) * KAL_HZ)
+
+/* The macros to convert second & hours/minutes */
+#define SEC_TO_TIME_HOUR(_sec) \
+	(((uint32_t)(_sec) / SEC_PER_HOUR) % HOUR_MAX)
+#define SEC_TO_TIME_MINUTE(_sec) \
+	(((uint32_t)(_sec) / SEC_PER_MINUTE) % MINUTE_MAX)
+#define SEC_TO_TIME_SECOND(_sec)	((uint32_t)(_sec) % SEC_PER_MINUTE)
 
 /* The macros to convert second & millisecond */
 #define MSEC_TO_SEC(_msec)		((_msec) / MSEC_PER_SEC)

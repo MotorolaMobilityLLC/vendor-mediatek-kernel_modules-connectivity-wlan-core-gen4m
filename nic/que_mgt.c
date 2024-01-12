@@ -7682,7 +7682,7 @@ uint32_t qmDumpQueueStatus(IN struct ADAPTER *prAdapter,
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		LOGBUF(pucBuf, u4Max, u4Len,
 			"TxDirect : SkbQ[%d] HifQ[%d:%d:%d:%d]\n",
-			skb_queue_len(&prAdapter->rTxDirectSkbQueue),
+			kalGetTxDirectQueueLength(prAdapter->prGlueInfo),
 			prAdapter->rTxDirectHifQueue[0].u4NumElem,
 			prAdapter->rTxDirectHifQueue[1].u4NumElem,
 			prAdapter->rTxDirectHifQueue[2].u4NumElem,

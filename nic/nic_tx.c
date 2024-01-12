@@ -5081,24 +5081,7 @@ uint32_t nicTxGetMaxDataPageCntPerFrame(IN struct ADAPTER *prAdapter)
 void nicTxDirectStartCheckQTimer(IN struct ADAPTER
 				 *prAdapter)
 {
-	mod_timer(&prAdapter->rTxDirectHifTimer, jiffies + 1);
-}
-
-void nicTxDirectClearSkbQ(IN struct ADAPTER *prAdapter)
-{
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct sk_buff *prSkb;
-
-	while (TRUE) {
-		spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-		prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
-		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-		if (prSkb == NULL)
-			break;
-
-		kalSendComplete(prGlueInfo, prSkb,
-				WLAN_STATUS_NOT_ACCEPTED);
-	}
+	kalTxDirectStartCheckQTimer(prAdapter->prGlueInfo, 1);
 }
 
 void nicTxDirectClearHifQ(IN struct ADAPTER *prAdapter)
@@ -5910,9 +5893,8 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 			QUEUE_INSERT_HEAD(
 				&prAdapter->rTxDirectHifQueue[ucHifTc],
 				(struct QUE_ENTRY *) prMsduInfo);
-			mod_timer(&prAdapter->rTxDirectHifTimer,
-				  jiffies + TX_DIRECT_CHECK_INTERVAL);
-
+			kalTxDirectStartCheckQTimer(prAdapter->prGlueInfo,
+				TX_DIRECT_CHECK_INTERVAL);
 			break;
 		}
 
@@ -5952,37 +5934,6 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
 
 /*----------------------------------------------------------------------------*/
 /*
- * \brief This function is the timeout function of timer rTxDirectSkbTimer.
- *        The purpose is to check if rTxDirectSkbQueue has any skb to be sent.
- *
- * \param[in] data  Pointer of GlueInfo
- *
- * \retval none
- */
-/*----------------------------------------------------------------------------*/
-#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void nicTxDirectTimerCheckSkbQ(kal_timer_list *timer)
-#else
-void nicTxDirectTimerCheckSkbQ(unsigned long data)
-#endif
-
-{
-#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-	struct ADAPTER *prAdapter =
-		from_timer(prAdapter, timer, rTxDirectSkbTimer);
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-#else
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-#endif
-	if (skb_queue_len(&prAdapter->rTxDirectSkbQueue))
-		nicTxDirectStartXmit(NULL, prGlueInfo);
-	else
-		DBGLOG(TX, INFO, "fgHasNoMsdu FALSE\n");
-}
-
-/*----------------------------------------------------------------------------*/
-/*
  * \brief This function is the timeout function of timer rTxDirectHifTimer.
  *        The purpose is to check if rStaPsQueue, rBssAbsentQueue,
  *        and rTxDirectHifQueue has any MsduInfo to be sent.
@@ -5992,33 +5943,19 @@ void nicTxDirectTimerCheckSkbQ(unsigned long data)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void nicTxDirectTimerCheckHifQ(kal_timer_list *timer)
-#else
-void nicTxDirectTimerCheckHifQ(unsigned long data)
-#endif
+void nicTxDirectTimerCheckHifQ(IN struct ADAPTER *prAdapter)
 {
-#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-	struct ADAPTER *prAdapter =
-		from_timer(prAdapter, timer, rTxDirectHifTimer);
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-#else
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-#endif
-#if !CFG_TX_DIRECT_VIA_HIF_THREAD
-	uint8_t ucHifTc = 0;
-#endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
 	uint32_t u4StaPsBitmap, u4BssAbsentBitmap, u4StaPendBitmap;
 	uint8_t ucStaRecIndex, ucBssIndex;
-
-	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+#if !CFG_TX_DIRECT_VIA_HIF_THREAD
+	uint8_t ucHifTc = 0;
+#endif
 
 	u4StaPsBitmap = prAdapter->u4StaPsBitmap;
 	u4BssAbsentBitmap = prAdapter->u4BssAbsentBitmap;
 	u4StaPendBitmap = prAdapter->u4StaPendBitmap;
 
-	if (u4StaPendBitmap)
+	if (u4StaPendBitmap) {
 		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
 		     ++ucStaRecIndex) {
 			if (u4StaPendBitmap & BIT(ucStaRecIndex)) {
@@ -6028,8 +5965,9 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 					ucStaRecIndex);
 			}
 		}
+	}
 
-	if (u4StaPsBitmap)
+	if (u4StaPsBitmap) {
 		for (ucStaRecIndex = 0; ucStaRecIndex < CFG_STA_REC_NUM;
 		     ++ucStaRecIndex) {
 			if (QUEUE_IS_NOT_EMPTY(
@@ -6043,8 +5981,9 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 			if (u4StaPsBitmap == 0)
 				break;
 		}
+	}
 
-	if (u4BssAbsentBitmap)
+	if (u4BssAbsentBitmap) {
 		for (ucBssIndex = 0; ucBssIndex < MAX_BSSID_NUM + 1;
 		     ++ucBssIndex) {
 			if (QUEUE_IS_NOT_EMPTY(
@@ -6058,98 +5997,16 @@ void nicTxDirectTimerCheckHifQ(unsigned long data)
 			if (u4BssAbsentBitmap == 0)
 				break;
 		}
-
+	}
 
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
-	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++)
+	for (ucHifTc = 0; ucHifTc < TX_PORT_NUM; ucHifTc++) {
 		if (QUEUE_IS_NOT_EMPTY(
 			    &prAdapter->rTxDirectHifQueue[ucHifTc]))
 			nicTxDirectStartXmitMain(NULL, NULL, prAdapter, ucHifTc,
 						 0xff, 0xff);
+	}
 #endif /* !CFG_TX_DIRECT_VIA_HIF_THREAD */
-
-	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-
-#if CFG_TX_DIRECT_VIA_HIF_THREAD
-	kalSetTxDirectEvent2Hif(prGlueInfo);
-#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
-}
-
-/*----------------------------------------------------------------------------*/
-/*
- * \brief This function is have to called by kalHardStartXmit().
- *        The purpose is to let as many as possible TX processing in softirq
- *        instead of in kernel thread to reduce TX CPU usage.
- *        NOTE: Currently only USB interface can use this function.
- *
- * \param[in] prSkb  Pointer of the sk_buff to be sent
- * \param[in] prGlueInfo  Pointer of prGlueInfo
- *
- * \retval WLAN_STATUS
- */
-/*----------------------------------------------------------------------------*/
-uint32_t nicTxDirectStartXmit(struct sk_buff *prSkb,
-			      struct GLUE_INFO *prGlueInfo)
-{
-	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	struct MSDU_INFO *prMsduInfo;
-	uint32_t ret = WLAN_STATUS_SUCCESS;
-
-	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-
-	if (prSkb) {
-		prMsduInfo = cnmPktAlloc(prAdapter, 0);
-
-		if (prMsduInfo == NULL) {
-			DBGLOG(TX, LOUD, "cnmPktAlloc NULL\n");
-			skb_queue_tail(&prAdapter->rTxDirectSkbQueue, prSkb);
-
-			ret = WLAN_STATUS_SUCCESS;
-			goto end;
-		}
-		if (skb_queue_len(&prAdapter->rTxDirectSkbQueue)) {
-			skb_queue_tail(&prAdapter->rTxDirectSkbQueue, prSkb);
-			prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
-		}
-	} else {
-		prMsduInfo = cnmPktAlloc(prAdapter, 0);
-		if (prMsduInfo != NULL) {
-			prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
-			if (prSkb == NULL) {
-				DBGLOG(TX, INFO,
-					"ERROR: no rTxDirectSkbQueue\n");
-				nicTxReturnMsduInfo(prAdapter, prMsduInfo);
-				ret = WLAN_STATUS_FAILURE;
-				goto end;
-			}
-		} else {
-			ret = WLAN_STATUS_FAILURE;
-			goto end;
-		}
-	}
-
-	while (1) {
-		nicTxDirectStartXmitMain(prSkb, prMsduInfo, prAdapter, 0xff,
-					 0xff, 0xff);
-		prSkb = skb_dequeue(&prAdapter->rTxDirectSkbQueue);
-		if (prSkb != NULL) {
-			prMsduInfo = cnmPktAlloc(prAdapter, 0);
-			if (prMsduInfo == NULL) {
-				skb_queue_head(&prAdapter->rTxDirectSkbQueue,
-					prSkb);
-				break;
-			}
-		} else {
-			break;
-		}
-	}
-
-end:
-	if (skb_queue_len(&prAdapter->rTxDirectSkbQueue))
-		mod_timer(&prAdapter->rTxDirectSkbTimer,
-			  jiffies + TX_DIRECT_CHECK_INTERVAL);
-	spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
-	return ret;
 }
 
 #if CFG_TX_DIRECT_VIA_HIF_THREAD

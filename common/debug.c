@@ -721,26 +721,7 @@ void wlanDbgSetLogLevel(IN struct ADAPTER *prAdapter,
 
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, &u4DriverLevel);
 	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
-#if KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE
-#if (CFG_BUILT_IN_DRIVER == 0) && (CFG_MTK_ANDROID_WMT == 1)
-	/*
-	 * The function definition of get_logtoomuch_enable() and
-	 * set_logtoomuch_enable of Android O0 or lower version are different
-	 * from that of Android O1 or higher version. Wlan driver supports .ko
-	 * module from Android O1. Use CFG_BUILT_IN_DRIVER to distinguish
-	 * Android version higher than O1 instead.
-	 */
-	if ((u4DriverLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT ||
-			u4FwLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT) &&
-			get_logtoomuch_enable()) {
-		DBGLOG(OID, TRACE,
-			"Disable print log too much. driver: %d, fw: %d\n",
-			u4DriverLevel,
-			u4FwLevel);
-		set_logtoomuch_enable(0);
-	}
-#endif
-#endif /* KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE */
+	kalSetLogTooMuch(u4DriverLevel, u4FwLevel);
 }
 
 u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level)
@@ -907,11 +888,7 @@ void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 	uint8_t *pucEth = NULL;
 	uint32_t u4Length = 0;
 	uint8_t *pucUdp = NULL;
-#if KERNEL_VERSION(5, 0, 0) <= LINUX_VERSION_CODE
-	struct timespec64 tval;
-#else
-	struct timeval tval;
-#endif
+	OS_SYSTIME rCurrentTime;
 
 	if (!prAdapter || !prAdapter->rDebugInfo.fgVoE5_7Test || !skb)
 		return;
@@ -926,11 +903,9 @@ void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 	pucUdp = &pucEth[ETH_HLEN+28];
 	if (kalStrnCmp(pucUdp, "1345678", 7))
 		return;
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-	ktime_get_ts64(&tval);
-#else
-	do_gettimeofday(&tval);
-#endif
+
+	rCurrentTime = kalGetTimeTick();
+
 	switch (ucPhase) {
 	case PHASE_XMIT_RCV: /* xmit */
 		pucUdp += 20;
@@ -942,11 +917,8 @@ void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		pucUdp += 36;
 		break;
 	}
-	wlanSetBE32(tval.tv_sec, pucUdp);
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-	wlanSetBE32(NSEC_TO_USEC(tval.tv_nsec), pucUdp+4);
-#else
-	wlanSetBE32(tval.tv_usec, pucUdp+4);
-#endif
+
+	wlanSetBE32(SYSTIME_TO_SEC(rCurrentTime), pucUdp);
+	wlanSetBE32(SYSTIME_TO_USEC(rCurrentTime) % USEC_PER_SEC, pucUdp+4);
 }
 /* End: Functions used to breakdown packet jitter, for test case VoE 5.7 */
