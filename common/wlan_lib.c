@@ -1641,8 +1641,18 @@ void wlanIST(IN struct ADAPTER *prAdapter, bool fgEnInt)
 	if (prAdapter->fgIsFwOwn == FALSE) {
 		u4Status = nicProcessIST(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, INFO, "Fail: nicProcessIST! status [%x]\n",
-			       u4Status);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+			DBGLOG_LIMITED(
+				REQ, INFO,
+				"Fail: nicProcessIST! status [%x][0x%08x]\n",
+				u4Status,
+				prAdapter->prGlueInfo->rHifInfo.u4IntStatus);
+#else
+			DBGLOG_LIMITED(
+				REQ, INFO,
+				"Fail: nicProcessIST! status [%x]\n",
+				u4Status);
+#endif
 		}
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 		if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
