@@ -661,7 +661,7 @@ uint32_t mscsRequest(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 	if (u4Status != WLAN_STATUS_SUCCESS)
-		return u4Status;
+		goto err;
 
 	/* 2. Request to send a MSCS action frame */
 	u4Status = mscsSend(prAdapter, eAction, TRUE, MSCS_USER_PRIORITY_BITMAP,
@@ -681,6 +681,7 @@ uint32_t mscsRequest(struct ADAPTER *prAdapter,
 			&rTargetFiveTuple.u4SrcIp);
 	}
 
+err:
 	if (pucTCLAS)
 		kalMemFree(pucTCLAS, VIR_MEM_TYPE, u4TCLASLen);
 
