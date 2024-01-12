@@ -382,116 +382,6 @@ enum ieee80211_channel_flags {
 	(IEEE80211_CHAN_NO_HT40PLUS | IEEE80211_CHAN_NO_HT40MINUS)
 
 /*
- * needed by
- * mgmt/p2p_func.c
- *
- * enum nl80211_dfs_state - DFS states for channels
- *
- * Channel states used by the DFS code.
- *
- * @NL80211_DFS_USABLE: The channel can be used, but channel availability
- *	check (CAC) must be performed before using it for AP or IBSS.
- * @NL80211_DFS_UNAVAILABLE: A radar has been detected on this channel, it
- *	is therefore marked as not available.
- * @NL80211_DFS_AVAILABLE: The channel has been CAC checked and is available.
- */
-enum nl80211_dfs_state {
-	NL80211_DFS_USABLE,
-	NL80211_DFS_UNAVAILABLE,
-	NL80211_DFS_AVAILABLE,
-};
-/*
- * needed by mgmt/rlm_domain.c
- * needed by mgmt/p2p_func.c
- * enum nl80211_band - Frequency band
- * @NL80211_BAND_2GHZ: 2.4 GHz ISM band
- * @NL80211_BAND_5GHZ: around 5 GHz band (4.9 - 5.7 GHz)
- * @NL80211_BAND_60GHZ: around 60 GHz band (58.32 - 69.12 GHz)
- * @NUM_NL80211_BANDS: number of bands, avoid using this in userspace
- * since newer kernel versions may support more bands
- */
-enum nl80211_band {
-	NL80211_BAND_2GHZ,
-	NL80211_BAND_5GHZ,
-	NL80211_BAND_60GHZ,
-	NL80211_BAND_6GHZ,
-
-	NUM_NL80211_BANDS,
-};
-
-/*
- * enum nl80211_initiator - Indicates the initiator of a reg domain request
- * @NL80211_REGDOM_SET_BY_CORE: Core queried CRDA for a dynamic world
- *	regulatory domain.
- * @NL80211_REGDOM_SET_BY_USER: User asked the wireless core to set the
- *	regulatory domain.
- * @NL80211_REGDOM_SET_BY_DRIVER: a wireless drivers has hinted to the
- *	wireless core it thinks its knows the regulatory domain we should be in.
- * @NL80211_REGDOM_SET_BY_COUNTRY_IE: the wireless core has received an
- *	802.11 country information element with regulatory information it
- *	thinks we should consider. cfg80211 only processes the country
- *	code from the IE, and relies on the regulatory domain information
- *	structure passed by userspace (CRDA) from our wireless-regdb.
- *	If a channel is enabled but the country code indicates it should
- *	be disabled we disable the channel and re-enable it upon disassociation.
- */
-enum nl80211_reg_initiator {
-	L80211_REGDOM_SET_BY_CORE,
-	NL80211_REGDOM_SET_BY_USER,
-	NL80211_REGDOM_SET_BY_DRIVER,
-	NL80211_REGDOM_SET_BY_COUNTRY_IE,
-};
-/* needed by
- * mgmt/rlm_domain.c
- * mgmt/cnm.c
- * mgmt/p2p_func.c
- */
-struct ieee80211_channel {
-	enum nl80211_band band;
-	u32 center_freq;
-	u16 hw_value;
-	u32 flags;
-	enum nl80211_dfs_state dfs_state;
-};
-
-/*
- * needed by mgmt/cnm.c
- * enum nl80211_chan_width - channel width definitions
- *
- * These values are used with the %NL80211_ATTR_CHANNEL_WIDTH
- * attribute.
- *
- * @NL80211_CHAN_WIDTH_20_NOHT: 20 MHz, non-HT channel
- * @NL80211_CHAN_WIDTH_20: 20 MHz HT channel
- * @NL80211_CHAN_WIDTH_40: 40 MHz channel, the %NL80211_ATTR_CENTER_FREQ1
- *	attribute must be provided as well
- * @NL80211_CHAN_WIDTH_80: 80 MHz channel, the %NL80211_ATTR_CENTER_FREQ1
- *	attribute must be provided as well
- * @NL80211_CHAN_WIDTH_80P80: 80+80 MHz channel, the %NL80211_ATTR_CENTER_FREQ1
- *	and %NL80211_ATTR_CENTER_FREQ2 attributes must be provided as well
- * @NL80211_CHAN_WIDTH_160: 160 MHz channel, the %NL80211_ATTR_CENTER_FREQ1
- *	attribute must be provided as well
- * @NL80211_CHAN_WIDTH_5: 5 MHz OFDM channel
- * @NL80211_CHAN_WIDTH_10: 10 MHz OFDM channel
- */
-enum nl80211_chan_width {
-	NL80211_CHAN_WIDTH_20_NOHT,
-	NL80211_CHAN_WIDTH_20,
-	NL80211_CHAN_WIDTH_40,
-	NL80211_CHAN_WIDTH_80,
-	NL80211_CHAN_WIDTH_80P80,
-	NL80211_CHAN_WIDTH_160,
-	NL80211_CHAN_WIDTH_5,
-	NL80211_CHAN_WIDTH_10,
-};
-
-/* needed by mgmt/rlm_domain.c */
-struct ieee80211_supported_band {
-	struct ieee80211_channel *channels;
-	int n_channels;
-};
-
-/*
  * too many os dependent in regular domain
  * on/off fail
  */
@@ -556,28 +446,6 @@ struct ieee80211_regdomain {
  * nic/nic_cmd_event.c
  */
 struct wiphy {
-	struct ieee80211_supported_band *bands[NUM_NL80211_BANDS];
-};
-
-/*
- * needed by include/mgmt/rlm_domain.h & mgmt/rlm_domain.c
- * but parameter not used
- */
-struct regulatory_request {
-	enum nl80211_reg_initiator initiator;
-};
-
-/* needed by mgmt/stats.c */
-struct rtc_time {
-	int tm_sec;
-	int tm_min;
-	int tm_hour;
-	int tm_mday;
-	int tm_mon;
-	int tm_year;
-	int tm_wday;
-	int tm_yday;
-	int tm_isdst;
 };
 
 #define NSEC_PER_USEC	1000L
@@ -651,34 +519,6 @@ struct cfg80211_ft_event_params {
 	const u8 *ric_ies;
 	size_t ric_ies_len;
 };
-
-/*
- * needed by
- * mgmt/cnm.c, which access struct GL_P2P_INFO directly
- * mgmt/p2p_func.c, do cnmMemAlloc
- * mgmt/p2p_role_fsm.c
- *
- * struct cfg80211_chan_def - channel definition
- * @chan: the (control) channel
- * @width: channel width
- * @center_freq1: center frequency of first segment
- * @center_freq2: center frequency of second segment
- * (only with 80+80 MHz)
- */
-struct cfg80211_chan_def {
-	struct ieee80211_channel *chan;
-	enum nl80211_chan_width width;
-	u32 center_freq1;
-	u32 center_freq2;
-};
-
-/*
- * needed by
- * mgmt/p2p_scan.c
- */
-struct cfg80211_scan_request {
-};
-
 /* need by include/hal.h, halDeAggRxPktWorker
  * comment: use os-related structure directly outside headers of gl layer
  * while the implementation is in os/linux/hif*
@@ -689,16 +529,6 @@ struct work_struct {
 	/* atomic_long_t data; */
 	/* struct list_head entry; */
 	/* work_func_t func; */
-};
-
-/* needed by include/nic/mt66xx_reg.h
- * struct mt66xx_chip_info
- * comment: use with #if CFG_MTK_ANDROID_WMT
- * implementation: extern void connectivity_export_show_stack
- * which is outside our driver, but defined in chips/connac*
- * should we move to glue layer ? other os can also show StakInfo
- */
-struct task_struct {
 };
 /*
  * TODO: Functions need implementation

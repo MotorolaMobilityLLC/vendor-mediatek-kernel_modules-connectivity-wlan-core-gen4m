@@ -12202,3 +12202,262 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 
 	return (void *)pkt;
 }
+
+uint32_t kalGetChannelFrequency(
+				uint8_t ucChannel,
+				uint8_t ucBand)
+{
+	struct ieee80211_channel *prChannel;
+
+	prChannel = (struct ieee80211_channel *)
+			kal_ieee80211_get_channel(
+				wlanGetWiphy(),
+				kal_ieee80211_channel_to_frequency
+				(ucChannel, ucBand)
+			);
+
+	if (!prChannel) {
+		log_dbg(SCN, ERROR, "Ch=NULL!\n");
+		return 0;
+	}
+
+	return prChannel->center_freq;
+
+}
+
+
+enum ENUM_BAND kalOperatingClassToBand(uint16_t u2OpClass)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	enum nl80211_band band = KAL_BAND_6GHZ;
+#else
+	enum nl80211_band band = KAL_BAND_2GHZ;
+#endif
+	enum ENUM_BAND eBand;
+
+	ieee80211_operating_class_to_band(u2OpClass, &band);
+
+	switch (band) {
+	case KAL_BAND_2GHZ:
+		eBand = BAND_2G4;
+		break;
+	case KAL_BAND_5GHZ:
+		eBand =  BAND_5G;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case KAL_BAND_6GHZ:
+		eBand = BAND_6G;
+		break;
+#endif
+	default:
+		eBand = BAND_2G4;
+		break;
+	}
+
+	return eBand;
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if Channel supported by HW
+ *
+ * \param[in/out] eBand:          BAND_2G4, BAND_5G or BAND_NULL
+ *                                (both 2.4G and 5G)
+ *                ucNumOfChannel: channel number
+ *
+ * \return TRUE/FALSE
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
+			uint8_t ucNumOfChannel,
+			enum ENUM_BAND eBand)
+{
+	struct ieee80211_supported_band *channelList;
+	int i, chSize;
+	struct wiphy *pWiphy;
+
+	pWiphy = wlanGetWiphy();
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G) {
+		channelList = pWiphy->bands[KAL_BAND_6GHZ];
+		chSize = channelList->n_channels;
+	} else
+#endif
+	if (eBand == BAND_5G) {
+		channelList = pWiphy->bands[KAL_BAND_5GHZ];
+		chSize = channelList->n_channels;
+	} else if (eBand == BAND_2G4) {
+		channelList = pWiphy->bands[KAL_BAND_2GHZ];
+		chSize = channelList->n_channels;
+	} else
+		return FALSE;
+
+	for (i = 0; i < chSize; i++) {
+		if ((channelList->channels[i]).hw_value == ucNumOfChannel)
+			return TRUE;
+	}
+	return FALSE;
+}
+
+/**
+ * rlmDomainChannelFlagString - Transform channel flags to readable string
+ *
+ * @ flags: the ieee80211_channel->flags for a channel
+ * @ buf: string buffer to put the transformed string
+ * @ buf_size: size of the buf
+ **/
+void kalChannelFlagString(u32 flags, char *buf, size_t buf_size)
+{
+	int32_t buf_written = 0;
+
+	if (!flags || !buf || !buf_size)
+		return;
+
+	if (flags & IEEE80211_CHAN_DISABLED) {
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "DISABLED ");
+		/* If DISABLED, don't need to check other flags */
+		return;
+	}
+	if (flags & IEEE80211_CHAN_PASSIVE_FLAG)
+		LOGBUF(buf, ((int32_t)buf_size), buf_written,
+		       IEEE80211_CHAN_PASSIVE_STR " ");
+	if (flags & IEEE80211_CHAN_RADAR)
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "RADAR ");
+	if (flags & IEEE80211_CHAN_NO_HT40PLUS)
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_HT40PLUS ");
+	if (flags & IEEE80211_CHAN_NO_HT40MINUS)
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_HT40MINUS ");
+	if (flags & IEEE80211_CHAN_NO_80MHZ)
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_80MHZ ");
+	if (flags & IEEE80211_CHAN_NO_160MHZ)
+		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_160MHZ ");
+}
+
+uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo)
+{
+	uint8_t channel_count = 0;
+	struct wiphy *pWiphy;
+
+	pWiphy = wlanGetWiphy();
+	if (pWiphy->bands[KAL_BAND_2GHZ] != NULL) {
+		channel_count +=
+			pWiphy->bands[KAL_BAND_2GHZ]->n_channels;
+	}
+
+	if (pWiphy->bands[KAL_BAND_5GHZ] != NULL) {
+		channel_count +=
+			pWiphy->bands[KAL_BAND_5GHZ]->n_channels;
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (pWiphy->bands[KAL_BAND_6GHZ] != NULL) {
+		channel_count +=
+			pWiphy->bands[KAL_BAND_6GHZ]->n_channels;
+	}
+#endif
+	if (channel_count == 0)
+		DBGLOG(RLM, ERROR, "invalid channel count.\n");
+
+	return channel_count;
+}
+
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+u_int8_t kalFillChannels(
+	struct GLUE_INFO *prGlueInfo,
+	struct CMD_DOMAIN_CHANNEL *pChBase,
+	uint8_t ucChSize,
+	uint8_t ucOpChannelNum,
+	u_int8_t fgDisconnectUponInvalidOpChannel
+)
+{
+	uint32_t band_idx, ch_idx;
+	struct ieee80211_supported_band *sband;
+	struct ieee80211_channel *chan;
+	uint32_t ch_count;
+	struct wiphy *pWiphy;
+	struct CMD_DOMAIN_CHANNEL *pCh;
+	bool fgRet = false;
+	char chan_flag_string[64] = {0};
+
+	if (!prGlueInfo) {
+		DBGLOG(RLM, ERROR, "prGlueInfo = NULL.\n");
+		return false;
+	}
+
+	pWiphy = wlanGetWiphy();
+	if (!pWiphy) {
+		DBGLOG(RLM, ERROR, "ERROR. pWiphy = NULL.\n");
+		return false;
+	}
+
+	/*
+	 * Ready to parse the channel for bands
+	 */
+	ch_count = 0;
+	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
+		sband = pWiphy->bands[band_idx];
+		if (!sband)
+			continue;
+
+		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
+			chan = &sband->channels[ch_idx];
+			pCh = pChBase + ch_count;
+			/* Parse flags and get readable string */
+			kalMemZero(chan_flag_string, sizeof(chan_flag_string));
+			kalChannelFlagString(chan->flags,
+						   chan_flag_string,
+						   sizeof(chan_flag_string));
+
+			if (chan->flags & IEEE80211_CHAN_DISABLED) {
+				DBGLOG(RLM, INFO,
+				"channels[%d][%d]: ch%d (freq = %d) flags=0x%x [ %s]\n",
+				band_idx, ch_idx, chan->hw_value,
+				chan->center_freq, chan->flags,
+				chan_flag_string);
+
+				/* Disconnect AP in the end of this function*/
+				if (fgDisconnectUponInvalidOpChannel
+						== true) {
+					if (chan->hw_value
+							== ucOpChannelNum)
+						fgRet = true;
+				}
+
+				continue;
+			}
+
+			/* Allowable channel */
+			if (ch_count >= ucChSize) {
+				DBGLOG(RLM, ERROR,
+				       "%s(): no buffer to store channel information.\n",
+				       __func__);
+				break;
+			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			/* 6G only add PSC channel */
+			if (band_idx == KAL_BAND_6GHZ &&
+				((chan->hw_value - 5) % 16) != 0) {
+				continue;
+			}
+#endif
+
+			rlmDomainAddActiveChannel(band_idx);
+
+			DBGLOG(RLM, INFO,
+			       "channels[%d][%d]: ch%d (freq = %d) flgs=0x%x [%s]\n",
+				band_idx, ch_idx, chan->hw_value,
+				chan->center_freq, chan->flags,
+				chan_flag_string);
+
+			pCh->u2ChNum = chan->hw_value;
+			pCh->eFlags = chan->flags;
+
+			ch_count += 1;
+		}
+	}
+
+	return fgRet;
+}
+#endif

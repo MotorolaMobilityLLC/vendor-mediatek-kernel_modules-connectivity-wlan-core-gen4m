@@ -773,7 +773,7 @@ u_int8_t rrmFillScanMsg(struct ADAPTER *prAdapter,
 	}
 
 	for (i = 0; i < prMsg->ucChannelListNum; i++) {
-		if (!rlmIsValidChnl(prAdapter,
+		if (!kalIsValidChnl(prAdapter->prGlueInfo,
 				prMsg->arChnlInfoList[i].ucChannelNum,
 				prMsg->arChnlInfoList[i].eBand)) {
 			DBGLOG(RRM, WARN, "ch%d illegal! set to FULL scan\n",

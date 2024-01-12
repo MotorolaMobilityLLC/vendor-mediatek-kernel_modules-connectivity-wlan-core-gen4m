@@ -2728,10 +2728,11 @@ void wlanUpdateChannelFlagByBand(struct GLUE_INFO *prGlueInfo,
 					mtk_5ghz_channels[j].orig_flags &=
 						~IEEE80211_CHAN_DISABLED;
 					mtk_5ghz_channels[j].dfs_state =
-					    (aucChannelList[i].eDFS
+						((enum nl80211_dfs_state)
+						aucChannelList[i].fgDFS
 						!= NL80211_DFS_USABLE) ?
-					     NL80211_DFS_USABLE :
-					     NL80211_DFS_UNAVAILABLE;
+						 NL80211_DFS_USABLE :
+						 NL80211_DFS_UNAVAILABLE;
 
 					if (mtk_5ghz_channels[j].dfs_state ==
 						NL80211_DFS_USABLE)

@@ -409,4 +409,13 @@ u_int8_t kalP2pIsStoppingAp(IN struct ADAPTER *prAdapter,
 void kalP2pIndicateChnlSwitch(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo);
 
+int32_t kalP2pFuncPreStartRdd(
+	IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucRoleIdx,
+	IN struct cfg80211_chan_def *chandef,
+	IN unsigned int cac_time_ms);
+
+void kalP2pClearCsaChan(
+	struct GL_P2P_INFO *prGlueP2pInfo);
+
 #endif /* _GL_P2P_KAL_H */
