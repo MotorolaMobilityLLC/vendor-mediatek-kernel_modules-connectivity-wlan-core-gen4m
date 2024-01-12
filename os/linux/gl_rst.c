@@ -125,7 +125,7 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting;
 u_int8_t fgIsDrvTriggerWholeChipReset;
-uint8_t g_ucWfRstSource;
+enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 u_int8_t fgIsRstPreventFwOwn;
 #endif
 
@@ -469,11 +469,15 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		} else {
 			int ret = 0;
 
-			g_ucWfRstSource = RST_SOURCE_WIFI_DRIVER;
+			g_Coredump_source = COREDUMP_SOURCE_WF_DRIVER;
 			if (prChipInfo->trigger_fw_assert) {
 				ret = prChipInfo->trigger_fw_assert(prAdapter);
-				if (ret != -EBUSY)
-					kalSetRstEvent();
+				if (ret != -EBUSY) {
+					if (ret == -ETIMEDOUT)
+						kalSetRstEvent(FALSE);
+					else
+						kalSetRstEvent(TRUE);
+				}
 			}
 		}
 	}
@@ -1274,7 +1278,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	triggerHifDumpIfNeed();
 
-	g_WholeChipRstType = type;
+	g_Coredump_source = coredump_conn_type_to_src(type);
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
@@ -1317,7 +1321,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		if (!prGlueInfo->u4ReadyFlag)
 			g_IsNeedWaitCoredump = TRUE;
 
-		kalSetRstEvent();
+		kalSetRstEvent(FALSE);
 	}
 	wait_for_completion(&g_RstOffComp);
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
@@ -1383,7 +1387,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	if (!fgIsBusAccessFailed && drv != CONNV3_DRV_TYPE_WIFI)
 		triggerHifDumpIfNeed();
 
-	g_WholeChipRstType = drv;
+	g_Coredump_source = coredump_connv3_type_to_src(drv);
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
@@ -1405,7 +1409,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
 
-		kalSetRstEvent();
+		kalSetRstEvent(TRUE);
 	}
 
 	wait_for_completion(&g_RstOffComp);
@@ -1450,7 +1454,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 
 	triggerHifDumpIfNeed();
 
-	g_WholeChipRstType = drv;
+	g_Coredump_source = coredump_conn_type_to_src(drv);
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
@@ -1472,7 +1476,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
 
-		kalSetRstEvent();
+		kalSetRstEvent(TRUE);
 	}
 
 	wait_for_completion(&g_RstOffComp);
@@ -1643,8 +1647,9 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 				g_fgRstRecover = FALSE;
 			else
 				wifi_coredump_start(
-					g_ucWfRstSource,
-					apucRstReason[eResetReason]);
+					g_Coredump_source,
+					apucRstReason[eResetReason],
+					rst->force_dump);
 
 			g_IsNeedWaitCoredump = FALSE;
 
@@ -1682,8 +1687,9 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			g_fgRstRecover = FALSE;
 		else
 			wifi_coredump_start(
-				g_ucWfRstSource,
-				apucRstReason[eResetReason]);
+				g_Coredump_source,
+				apucRstReason[eResetReason],
+				rst->force_dump);
 
 		g_IsNeedWaitCoredump = FALSE;
 
@@ -1714,7 +1720,8 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) =
 			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
 	}
-	g_ucWfRstSource = RST_SOURCE_WIFI_NONE;
+	g_Coredump_source = COREDUMP_SOURCE_NUM;
+	rst->force_dump = FALSE;
 }
 
 int wlan_reset_thread_main(void *data)
@@ -1767,8 +1774,10 @@ int wlan_reset_thread_main(void *data)
 				if (eResetReason >= RST_REASON_MAX)
 					eResetReason = 0;
 				wifi_coredump_start(
-					g_WholeChipRstType,
-					g_WholeChipRstReason);
+					g_Coredump_source,
+					g_WholeChipRstReason,
+					rst->force_dump);
+				rst->force_dump = FALSE;
 				g_IsNeedWaitCoredump = FALSE;
 
 				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
@@ -1832,12 +1841,13 @@ int wlan_reset_thread_main(void *data)
 	return 0;
 }
 
-void kalSetRstEvent(void)
+void kalSetRstEvent(u_int8_t force_dump)
 {
 	struct RESET_STRUCT *rst = &wifi_rst;
 
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
+	rst->force_dump = force_dump;
 	set_bit(GLUE_FLAG_RST_START_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
