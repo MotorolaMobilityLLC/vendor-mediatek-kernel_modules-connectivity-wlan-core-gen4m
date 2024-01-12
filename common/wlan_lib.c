@@ -7807,7 +7807,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[6], "PerfMonLv7", 700);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[7], "PerfMonLv8", 1200);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[8], "PerfMonLv9", 2000);
-	INIT_UINT(prWifiVar->u4PerfMonTpTh[9], "PerfMonLv10", 3500);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[9], "PerfMonLv10", 3000);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[10], "PerfMonLv11", 4000);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[11], "PerfMonLv12", 5000);
 
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	INIT_UINT(prWifiVar->u4RfbBoostTpTh[0], "RfbBoostTpTh0", 50);
