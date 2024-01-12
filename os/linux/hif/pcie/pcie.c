@@ -443,6 +443,9 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
 		if (prMsiLayout->irq_num == irq) {
+			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits))
+				return IRQ_NONE;
+
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 			break;
 		}
@@ -494,7 +497,7 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 		    !prMsiLayout->irq_num)
 			continue;
 
-		if (test_and_clear_bit(i, &prMsiInfo->ulEnBits))
+		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits))
 			enable_irq(prMsiLayout->irq_num);
 	}
 }
