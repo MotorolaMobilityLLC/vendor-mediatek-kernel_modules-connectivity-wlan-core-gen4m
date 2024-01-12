@@ -4252,8 +4252,37 @@ u_int8_t kalGetEthDestAddr(struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
-void
-kalOidComplete(struct GLUE_INFO *prGlueInfo,
+/**
+ * isOidWaitingComplete() - Check whether an OID waiting for completion
+ *
+ * !completion_done() represents for two cases:
+ *   1. all wait() are complete()ed, i.e., no pending waiters
+ *   2. there is a pending waiter waiting for complete() before timeout
+ * WTF?
+ *
+ * completion_done() returns true returns true if x->done != 0.
+ * It indicates there is one or more complete() were not consumed by wait().
+ * Otherwise, if it returns false, x->done == 0, stands for there are no
+ * posted completions that were not yet consumed by waiters.
+ * The Linux documents add a comment said it implying that there are waiters,
+ * however, it only points to case 2.
+ *
+ * The driver uses fgOidWaiting, which were set ONE before calling ioctl,
+ * and to be set ZERO after calling complete(), to distinguish the two cases.
+ * The initial state of the flag with value 0 is equivalent to no waiters.
+ *
+ * We check completion_done() again to avoid setting x->done more than 1.
+ *
+ * Return: TRUE: there is an OID waiter
+ *	   FALSE: there is no OID waiter
+ */
+static u_int8_t isOidWaitingComplete(struct GLUE_INFO *prGlueInfo)
+{
+	return prGlueInfo->fgOidWaiting &&
+		!completion_done(&prGlueInfo->rPendComp);
+}
+
+void kalOidComplete(struct GLUE_INFO *prGlueInfo,
 	       struct CMD_INFO *prCmdInfo, uint32_t u4SetQueryInfoLen,
 	       uint32_t rOidStatus)
 {
@@ -4263,29 +4292,29 @@ kalOidComplete(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 
 	prIoReq = &prGlueInfo->OidEntry;
-	DBGLOG(NIC, TRACE, "Glue=%p Cmd=%p InformationBuffer=%p QryInfoLen=%p",
-			prGlueInfo, prCmdInfo,
-			prCmdInfo ? prCmdInfo->pvInformationBuffer : NULL,
-			prIoReq->pu4QryInfoLen);
+	DBGLOG(NIC, TRACE,
+		"Cmd=%p pfnOidHandler=%ps InformationBuffer=%p QryInfoLen=%p",
+		prCmdInfo, prIoReq->pfnOidHandler,
+		prCmdInfo ? prCmdInfo->pvInformationBuffer : NULL,
+		prIoReq->pu4QryInfoLen);
 
 	/* remove timeout check timer */
 	wlanoidClearTimeoutCheck(prGlueInfo->prAdapter);
 
 	/* complete ONLY if there are waiters */
-	if (!completion_done(&prGlueInfo->rPendComp)) {
-
+	if (isOidWaitingComplete(prGlueInfo)) {
 		/* only update when there are waiters */
 		prGlueInfo->rPendStatus = rOidStatus;
 		*prIoReq->pu4QryInfoLen = u4SetQueryInfoLen;
-		prGlueInfo->u4OidCompleteFlag = 1;
 
-		kalUpdateCompHdlrRec(prGlueInfo->prAdapter,
-			NULL, prCmdInfo);
+		kalUpdateCompHdlrRec(prGlueInfo->prAdapter, NULL, prCmdInfo);
 
 		if (prCmdInfo)
 			DBGLOG(TX, TRACE, "rPendComp=%p, cmd=0x%02X, seq=%u",
 				&prGlueInfo->rPendComp,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+
+		prGlueInfo->fgOidWaiting = FALSE;
 		complete(&prGlueInfo->rPendComp);
 	} else {
 		uint32_t wIdx, cIdx;
@@ -4316,8 +4345,7 @@ kalOidComplete(struct GLUE_INFO *prGlueInfo,
 	if (rOidStatus == WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, TRACE, "Complete OID, status:success\n");
 	else
-		DBGLOG(INIT, WARN, "Complete OID, status:0x%08x\n",
-		       rOidStatus);
+		DBGLOG(INIT, WARN, "Complete OID, status:0x%08x\n", rOidStatus);
 
 	/* else let it timeout on kalIoctl entry */
 }
@@ -4526,8 +4554,7 @@ uint32_t
 kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	 PFN_OID_HANDLER_FUNC pfnOidHandler,
 	 void *pvInfoBuf, uint32_t u4InfoBufLen,
-	 uint32_t *pu4QryInfoLen,
-	 uint8_t ucBssIndex)
+	 uint32_t *pu4QryInfoLen, uint8_t ucBssIndex)
 {
 	struct GL_IO_REQ *prIoReq = NULL;
 	struct KAL_THREAD_SCHEDSTATS schedstats;
@@ -4609,7 +4636,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	/* <5> Reset the status of pending OID */
 	prGlueInfo->rPendStatus = WLAN_STATUS_FAILURE;
 	/* prGlueInfo->u4TimeoutFlag = 0; */
-	prGlueInfo->u4OidCompleteFlag = 0;
+	prGlueInfo->fgOidWaiting = TRUE;
 
 	/* <7> schedule the OID bit
 	 * Use memory barrier to ensure OidEntry is written done and then set
@@ -4663,13 +4690,13 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	 */
 	kalThreadSchedMark(prGlueInfo->main_thread, &schedstats);
 
-	DBGLOG(OID, TRACE, "waiting, Glue=%p, rPend=%p, BufLen=%u, QryLen=%p",
-			prGlueInfo, &prGlueInfo->rPendComp,
-			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
+	DBGLOG(OID, TRACE, "waiting, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
+			prIoReq->pfnOidHandler, prIoReq->u4InfoBufLen,
+			prIoReq->pu4QryInfoLen);
 	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
 				MSEC_TO_JIFFIES(30*1000));
-	DBGLOG(OID, TRACE, "wait=%u, Glue=%p, rPend=%p, BufLen=%u, QryLen=%p",
-			waitRet, prGlueInfo, &prGlueInfo->rPendComp,
+	DBGLOG(OID, TRACE, "wait=%u, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
+			waitRet, prIoReq->pfnOidHandler,
 			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
 	kalThreadSchedUnmark(prGlueInfo->main_thread, &schedstats);
 	if (waitRet > 0) {
@@ -4681,11 +4708,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 			ret = prGlueInfo->rPendStatus;
 		else
 			ret = prIoReq->rStatus;
-
-		/* reset u4OidCompleteFlag when wait timeout */
-		prGlueInfo->u4OidCompleteFlag = 0;
 	} else {
-
 #if 0
 		/* Case 2: timeout */
 		/* clear pending OID's cmd in CMD queue */
@@ -5720,15 +5743,17 @@ int main_thread(void *data)
 
 			if (prIoReq->rStatus != WLAN_STATUS_PENDING) {
 				/* complete ONLY if there are waiters */
-				if (!completion_done(
-					&prGlueInfo->rPendComp)) {
+				if (isOidWaitingComplete(prGlueInfo)) {
 					kalUpdateCompHdlrRec(
 						prGlueInfo->prAdapter,
 						prIoReq->pfnOidHandler,
 						NULL);
 
-					DBGLOG(NIC, TRACE, "rPendComp=%p",
-						&prGlueInfo->rPendComp);
+					DBGLOG(NIC, TRACE,
+						"rPendComp=%p pfnOidHandler=%ps",
+						&prGlueInfo->rPendComp,
+						prIoReq->pfnOidHandler);
+					prGlueInfo->fgOidWaiting = FALSE;
 					complete(&prGlueInfo->rPendComp);
 				} else
 					DBGLOG(INIT, WARN,
@@ -5872,9 +5897,7 @@ int main_thread(void *data)
 	/* remove pending oid */
 	wlanReleasePendingOid(prGlueInfo->prAdapter, 1);
 
-	if (kalIsResetting() &&
-	    !completion_done(&prGlueInfo->rPendComp) &&
-	    !prGlueInfo->u4OidCompleteFlag) {
+	if (kalIsResetting() && isOidWaitingComplete(prGlueInfo)) {
 		struct GL_IO_REQ *prIoReq;
 
 		DBGLOG(INIT, INFO,
@@ -5883,8 +5906,7 @@ int main_thread(void *data)
 		prIoReq = &(prGlueInfo->OidEntry);
 		prIoReq->rStatus = WLAN_STATUS_FAILURE;
 
-		prGlueInfo->u4OidCompleteFlag = 1;
-
+		prGlueInfo->fgOidWaiting = FALSE;
 		complete(&prGlueInfo->rPendComp);
 	}
 
@@ -6189,7 +6211,7 @@ void kalOidCmdClearance(struct GLUE_INFO *prGlueInfo)
 			kalOidComplete(prGlueInfo, prCmdInfo, 0,
 				       WLAN_STATUS_NOT_ACCEPTED);
 
-		prGlueInfo->u4OidCompleteFlag = 1;
+		prGlueInfo->fgOidWaiting = FALSE;
 		cmdBufFreeCmdInfo(prGlueInfo->prAdapter, prCmdInfo);
 		GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingCmdNum);
 	}

@@ -887,8 +887,8 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 	prLinkSpeed = (struct PARAM_LINK_SPEED_EX *) (
 				   prCmdInfo->pvInformationBuffer);
 
-	DBGLOG(NIC, TRACE, "Glue=%p, Cmd=%p, pvInformationBuffer=%p",
-		prGlueInfo, prCmdInfo, prCmdInfo->pvInformationBuffer);
+	DBGLOG(NIC, TRACE, "Cmd=%p, pvInformationBuffer=%p",
+		prCmdInfo, prCmdInfo->pvInformationBuffer);
 
 	for (i = 0; i < BSSID_NUM; i++) {
 		struct LINK_SPEED_EX_ *prLq;
@@ -1045,8 +1045,8 @@ void nicCmdEventQueryLinkStats(struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
-	DBGLOG(NIC, TRACE, "Glue=%p, Pend=%p, Cmd=%p, oid=%u, Buf=%p, len=%u",
-			prGlueInfo, &prGlueInfo->rPendComp, prCmdInfo,
+	DBGLOG(NIC, TRACE, "Pend=%p, Cmd=%p, oid=%u, Buf=%p, len=%u",
+			&prGlueInfo->rPendComp, prCmdInfo,
 			prCmdInfo->fgIsOid, prCmdInfo->pvInformationBuffer,
 			len);
 
