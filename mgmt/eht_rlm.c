@@ -475,8 +475,7 @@ static void ehtRlmFillOpIE(
 
 	EHT_SET_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams);
 
-	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo,
-		prBssInfo->eBand);
+	eht_bw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
 
 	/* Basic EHT-MCS And Nss Set */
 	ehtRlmFillBW20MCSMap(
