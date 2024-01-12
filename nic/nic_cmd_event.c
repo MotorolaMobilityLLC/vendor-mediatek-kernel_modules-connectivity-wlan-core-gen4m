@@ -78,45 +78,72 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define NIC_FILL_CAP_V2_REF_TBL(_tag_type, _hdlr)        \
+{                                                        \
+	.tag_type = _tag_type,                           \
+	.hdlr = _hdlr,				         \
+}
+
 const struct NIC_CAPABILITY_V2_REF_TABLE
 	gNicCapabilityV2InfoTable[] = {
 #if defined(_HIF_SDIO)
-	{TAG_CAP_TX_RESOURCE, nicEventQueryTxResourceEntry},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_TX_RESOURCE,
+				nicEventQueryTxResourceEntry),
 #endif
-	{TAG_CAP_TX_EFUSEADDRESS, nicCmdEventQueryNicEfuseAddr},
-	{TAG_CAP_COEX_FEATURE, nicCmdEventQueryNicCoexFeature},
-	{TAG_CAP_SINGLE_SKU, rlmDomainExtractSingleSkuInfoFromFirmware},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_TX_EFUSEADDRESS,
+				nicCmdEventQueryNicEfuseAddr),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_COEX_FEATURE,
+				nicCmdEventQueryNicCoexFeature),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_SINGLE_SKU,
+				rlmDomainExtractSingleSkuInfoFromFirmware),
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
-	{TAG_CAP_CSUM_OFFLOAD, nicCmdEventQueryNicCsumOffload},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_CSUM_OFFLOAD,
+				nicCmdEventQueryNicCsumOffload),
 #endif
-	{TAG_CAP_HW_VERSION, nicCfgChipCapHwVersion},
-	{TAG_CAP_SW_VERSION, nicCfgChipCapSwVersion},
-	{TAG_CAP_MAC_ADDR, nicCfgChipCapMacAddr},
-	{TAG_CAP_PHY_CAP, nicCfgChipCapPhyCap},
-	{TAG_CAP_MAC_CAP, nicCfgChipCapMacCap},
-	{TAG_CAP_FRAME_BUF_CAP, nicCfgChipCapFrameBufCap},
-	{TAG_CAP_BEAMFORM_CAP, nicCfgChipCapBeamformCap},
-	{TAG_CAP_LOCATION_CAP, nicCfgChipCapLocationCap},
-	{TAG_CAP_MUMIMO_CAP, nicCfgChipCapMuMimoCap},
-	{TAG_CAP_HW_ADIE_VERSION, nicCfgChipAdieHwVersion},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_HW_VERSION,
+				nicCfgChipCapHwVersion),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_SW_VERSION,
+				nicCfgChipCapSwVersion),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MAC_ADDR,
+				nicCfgChipCapMacAddr),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PHY_CAP,
+				nicCfgChipCapPhyCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MAC_CAP,
+				nicCfgChipCapMacCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_FRAME_BUF_CAP,
+				nicCfgChipCapFrameBufCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_BEAMFORM_CAP,
+				nicCfgChipCapBeamformCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_LOCATION_CAP,
+				nicCfgChipCapLocationCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MUMIMO_CAP,
+				nicCfgChipCapMuMimoCap),
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_HW_ADIE_VERSION,
+				nicCfgChipAdieHwVersion),
 #if CFG_SUPPORT_ANT_SWAP
-	{TAG_CAP_ANTSWP, nicCfgChipCapAntSwpCap},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_ANTSWP,
+				nicCfgChipCapAntSwpCap),
 #endif
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
-	{TAG_CAP_P2P, nicCfgChipP2PCap},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_P2P,
+				nicCfgChipP2PCap),
 #endif
 #if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
-	{TAG_CAP_PSE_RX_QUOTA, nicCfgChipPseRxQuota},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_PSE_RX_QUOTA,
+				nicCfgChipPseRxQuota),
 #endif
-	{TAG_CAP_HOST_STATUS_EMI_OFFSET, nicCmdEventHostStatusEmiOffset},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_HOST_STATUS_EMI_OFFSET,
+				nicCmdEventHostStatusEmiOffset),
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	{TAG_CAP_6G_CAP, nicCfgChipCap6GCap},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_6G_CAP,
+				nicCfgChipCap6GCap),
 #endif
-
 #if CFG_SUPPORT_LLS
-	{TAG_CAP_LLS_DATA_EMI_OFFSET, nicCmdEventLinkStatsEmiOffset},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_LLS_DATA_EMI_OFFSET,
+				nicCmdEventLinkStatsEmiOffset),
 #endif
-	{TAG_CAP_CASAN_LOAD_TYPE, nicCmdEventCasanLoadType},
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_CASAN_LOAD_TYPE,
+				nicCmdEventCasanLoadType),
 };
 
 /*******************************************************************************

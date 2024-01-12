@@ -2196,9 +2196,6 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize WFDMA\n");
 			DBGLOG(HAL, INFO, "SER(M) Host enable WFDMA\n");
 
-			if (prBusInfo->DmaShdlReInit)
-				prBusInfo->DmaShdlReInit(prAdapter);
-
 			if (prChipInfo->asicUsbInit)
 				prChipInfo->asicUsbInit(prAdapter, prChipInfo);
 
@@ -2216,6 +2213,9 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 		break;
 	case ERR_RECOV_RESET_PDMA0:
 		if (u4SerAction == ERROR_DETECT_RECOVERY_DONE) {
+			if (prBusInfo->DmaShdlReInit)
+				prBusInfo->DmaShdlReInit(prAdapter);
+
 			DBGLOG(HAL, INFO,
 				"SER(Q) Host ACK MCU SER handle done\n");
 			/* Send Host stops TX/RX done response to mcu */
@@ -2230,7 +2230,6 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_WAIT_MCU_NORMAL:
 		if (u4SerAction == ERROR_DETECT_MCU_NORMAL_STATE) {
-
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
