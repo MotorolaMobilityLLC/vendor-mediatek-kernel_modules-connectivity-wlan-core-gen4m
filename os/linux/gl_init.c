@@ -535,7 +535,9 @@ static struct ieee80211_sband_iftype_data mtk_he_cap_6g[] = {
 		.types_mask =
 			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
 		.he_cap = WLAN_HE_CAP_INFO,
+#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 		.he_6ghz_capa = WLAN_HE_6G_CAP_INFO,
+#endif
 	},
 };
 

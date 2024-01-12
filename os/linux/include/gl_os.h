@@ -120,6 +120,8 @@
 /* for non-wfa vendor specific IE buffer */
 #define NON_WFA_VENDOR_IE_MAX_LEN	(128)
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -369,9 +371,6 @@ extern void update_driver_loaded_status(uint8_t loaded);
 
 #define WAKE_LOCK_RX_TIMEOUT                            300	/* ms */
 #define WAKE_LOCK_THREAD_WAKEUP_TIMEOUT                 50	/* ms */
-
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
 
 #define IW_AUTH_CIPHER_GCMP128  0x00000040
 #define IW_AUTH_CIPHER_GCMP256  0x00000080

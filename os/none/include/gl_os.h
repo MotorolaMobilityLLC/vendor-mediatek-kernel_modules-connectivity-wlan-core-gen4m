@@ -187,6 +187,8 @@ extern u_int8_t fgIsBusAccessFailed;
 /* for non-wfa vendor specific IE buffer */
 #define NON_WFA_VENDOR_IE_MAX_LEN	(128)
 
+#define STR_HELPER(x) #x
+#define STR(x) STR_HELPER(x)
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
@@ -251,9 +253,6 @@ extern u_int8_t fgIsBusAccessFailed;
 /* wake lock for suspend/resume */
 #define WAKE_LOCK_RX_TIMEOUT                            300	/* ms */
 #define WAKE_LOCK_THREAD_WAKEUP_TIMEOUT                 50	/* ms */
-
-#define STR_HELPER(x) #x
-#define STR(x) STR_HELPER(x)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

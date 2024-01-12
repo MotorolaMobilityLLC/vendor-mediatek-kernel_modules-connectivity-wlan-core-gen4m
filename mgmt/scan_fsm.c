@@ -664,7 +664,10 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	uint32_t i;
 	uint8_t ch_list[] = {1, 6, 11,
 			  36, 40, 44, 52, 64, 100, 149, 153, 157, 161};
-	uint32_t ch_idx;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t ch_list_6g[] = {37};
+#endif
+
 
 	ASSERT(prAdapter);
 	ASSERT(prScanReqMsg);
@@ -750,12 +753,21 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 
 	// TODO: dvt workaround
 	prScanParam->ucChannelListNum = ARRAY_SIZE(ch_list);
-	for (ch_idx = 0; ch_idx < ARRAY_SIZE(ch_list); ch_idx++) {
-		prScanParam->arChnlInfoList[ch_idx].ucChannelNum
-			= ch_list[ch_idx];
-		prScanParam->arChnlInfoList[ch_idx].eBand = ch_list[ch_idx] <=
+	for (i = 0; i < ARRAY_SIZE(ch_list); i++) {
+		prScanParam->arChnlInfoList[i].ucChannelNum
+			= ch_list[i];
+		prScanParam->arChnlInfoList[i].eBand = ch_list[i] <=
 			HW_CHNL_NUM_MAX_2G4 ? BAND_2G4 : BAND_5G;
 	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prScanParam->ucChannelListNum += ARRAY_SIZE(ch_list_6g);
+	for (i = 0; i < ARRAY_SIZE(ch_list_6g); i++) {
+		prScanParam->arChnlInfoList[i + ARRAY_SIZE(ch_list)].ucChannelNum
+			= ch_list_6g[i];
+		prScanParam->arChnlInfoList[i + ARRAY_SIZE(ch_list)].eBand = BAND_6G;
+	}
+#endif
+
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 }
 

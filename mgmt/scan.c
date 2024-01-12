@@ -2002,6 +2002,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 #endif
 		}
 
+		ucNewLink = FALSE;
 		/* peek tail NeighborAPInfo from list to save information */
 		prNeighborAPInfo = LINK_PEEK_TAIL(
 		    &prScanInfo->rNeighborAPInfoList, struct NEIGHBOR_AP_INFO,
@@ -2070,7 +2071,7 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		if (ucRnrChNum == 0 || IS_6G_PSC_CHANNEL(ucRnrChNum)) {
 			DBGLOG(SCN, INFO, "Not handle RNR channel(%d)!\n",
 					ucRnrChNum);
-			if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
+			if (ucNewLink)
 				cnmMemFree(prAdapter, prNeighborAPInfo);
 			/* Calculate next NeighborAPInfo's index if exists */
 			ucCurrentLength += 4 +
@@ -2240,9 +2241,9 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				    prScanInfo->rNeighborAPInfoList.u4NumElem);
 			ucHasBssid = FALSE;
 		}
+		if (ucNewLink)
+			cnmMemFree(prAdapter, prNeighborAPInfo);
 	}
-	if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
-		cnmMemFree(prAdapter, prNeighborAPInfo);
 }
 
 #endif
