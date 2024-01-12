@@ -5679,13 +5679,13 @@ int priv_driver_set_country(IN struct net_device *prNetDev, IN char *pcCommand, 
 		UINT_8 i, count;
 
 		/* command like "COUNTRY US", "COUNTRY US1" and "COUNTRY US01" */
-		count = (i4Argc <= 4) ? i4Argc : 4;
+		count = kalStrnLen(apcArgv[1], sizeof(aucCountry_code));
 		for (i = 0; i < count; i++)
 			aucCountry_code[i] = apcArgv[1][i];
 
 
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
-							&aucCountry_code[0], i4Argc, FALSE, FALSE, TRUE, &u4BufLen);
+							&aucCountry_code[0], count, FALSE, FALSE, TRUE, &u4BufLen);
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
 

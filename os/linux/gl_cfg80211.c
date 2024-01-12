@@ -3211,15 +3211,56 @@ enum regd_state regd_state_machine(IN struct regulatory_request *pRequest)
 		return rlmDomainStateTransition(REGD_STATE_SET_WW_CORE, pRequest);
 
 	case NL80211_REGDOM_SET_BY_COUNTRY_IE:
+		DBGLOG(RLM, WARN, "============== WARNING ==============\n");
 		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
-		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
-		DBGLOG(RLM, WARN, "regd_state_machine: SET_BY_COUNTRY_IE\n");
+		DBGLOG(RLM, WARN, "Regulatory rule is updated by IE.\n");
+		DBGLOG(RLM, WARN, "============== WARNING ==============\n");
 
 		return rlmDomainStateTransition(REGD_STATE_SET_COUNTRY_IE, pRequest);
 
 	default:
 		return rlmDomainStateTransition(REGD_STATE_INVALID, pRequest);
 	}
+}
+
+
+void
+mtk_apply_custom_regulatory(IN struct wiphy *pWiphy,
+							IN const struct ieee80211_regdomain *pRegdom)
+{
+	u32 band_idx, ch_idx;
+	struct ieee80211_supported_band *sband;
+	struct ieee80211_channel *chan;
+
+	DBGLOG(RLM, INFO, "%s()\n", __func__);
+
+	/* to reset cha->flags*/
+	for (band_idx = 0; band_idx < IEEE80211_NUM_BANDS; band_idx++) {
+		/**
+		 * enum nl80211_band - Frequency band
+		 * @NL80211_BAND_2GHZ: 2.4 GHz ISM band
+		 * @NL80211_BAND_5GHZ: around 5 GHz band (4.9 - 5.7 GHz)
+		 * @NL80211_BAND_60GHZ: around 60 GHz band (58.32 - 64.80 GHz)
+		 * @NUM_NL80211_BANDS: number of bands, avoid using this in userspace
+		 *	 since newer kernel versions may support more bands
+		 */
+
+		/*select band*/
+		sband = pWiphy->bands[band_idx];
+		if (!sband)
+			continue;
+
+		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
+			chan = &sband->channels[ch_idx];
+
+			/*reset chan->flags*/
+			chan->flags = 0;
+		}
+
+	}
+
+	/* update to kernel */
+	wiphy_apply_custom_regulatory(pWiphy, pRegdom);
 }
 
 void
@@ -3292,8 +3333,8 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	regd_state_machine(pRequest);
 
 	if (rlmDomainGetCtrlState() == old_state) {
-		if (old_state == REGD_STATE_SET_COUNTRY_USER &&
-		    !(rlmDomainIsSameCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2))))
+		if (((old_state == REGD_STATE_SET_COUNTRY_USER) || (old_state == REGD_STATE_SET_COUNTRY_DRIVER))
+			&& (!(rlmDomainIsSameCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2)))))
 			DBGLOG(RLM, INFO, "Set by user to NEW country code\n");
 		else
 			/* Change to same state or same country, ignore */
@@ -3311,16 +3352,24 @@ mtk_reg_notify(IN struct wiphy *pWiphy,
 	if (pRequest->initiator != NL80211_REGDOM_SET_BY_DRIVER) {
 		rlmDomainSetCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2));
 	} else {
-		/*SET_BY_DRIVER*/
-		if (rlmDomainIsUsingLocalRegDomainDataBase() &&
-			(!rlmDomainIsEfuseUsed())) {
-			/*iwpriv set country but local data base*/
-			u32 country_code = rlmDomainGetTempCountryCode();
 
-			rlmDomainSetCountryCode((char *)&country_code, sizeof(country_code));
+		/*SET_BY_DRIVER*/
+
+		if (rlmDomainIsEfuseUsed()) {
+			if (!rlmDomainIsUsingLocalRegDomainDataBase())
+				DBGLOG(RLM, WARN, "[WARNING!!!] Local DB must be used if country code from efuse.\n");
 		} else {
-			/*iwpriv set country but query CRDA*/
-			rlmDomainSetCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2));
+			/* iwpriv case */
+			if (rlmDomainIsUsingLocalRegDomainDataBase() &&
+				(!rlmDomainIsEfuseUsed())) {
+				/*iwpriv set country but local data base*/
+				u32 country_code = rlmDomainGetTempCountryCode();
+
+				rlmDomainSetCountryCode((char *)&country_code, sizeof(country_code));
+			} else {
+				/*iwpriv set country but query CRDA*/
+				rlmDomainSetCountryCode(pRequest->alpha2, sizeof(pRequest->alpha2));
+			}
 		}
 	}
 
@@ -3353,10 +3402,8 @@ DOMAIN_SEND_CMD:
 			return;
 		}
 
-		/*notify kernel*/
-		DBGLOG(RLM, INFO, "%s(), wiphy_apply_custom_regulatory().\n", __func__);
 
-		wiphy_apply_custom_regulatory(pWiphy, pRegdom);
+		mtk_apply_custom_regulatory(pWiphy, pRegdom);
 	}
 
 
@@ -3438,6 +3485,9 @@ cfg80211_regd_set_wiphy(IN struct wiphy *prWiphy)
 #else
 	prWiphy->regulatory_flags |= (REGULATORY_CUSTOM_REG);
 #endif
+	/* assigned a defautl one */
+	if (rlmDomainGetLocalDefaultRegd())
+		wiphy_apply_custom_regulatory(prWiphy, rlmDomainGetLocalDefaultRegd());
 #endif
 
 
