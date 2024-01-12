@@ -631,6 +631,15 @@ enum ENUM_MSDU_RATE_MODE {
 	MSDU_RATE_MODE_LOWEST_RATE
 };
 
+#if CFG_SUPPORT_MLR
+enum ENUM_MSDU_FRAG_POS {
+	MSDU_FRAG_POS_NONE = 0,
+	MSDU_FRAG_POS_FIRST,
+	MSDU_FRAG_POS_MIDDLE,
+	MSDU_FRAG_POS_LAST
+};
+#endif
+
 enum ENUM_DATA_RATE_MODE {
 	DATA_RATE_MODE_AUTO = 0,
 	DATA_RATE_MODE_MANUAL,
@@ -919,6 +928,11 @@ struct MSDU_INFO {
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	uint64_t u8Cookie;
 #endif
+
+#if CFG_SUPPORT_MLR
+	/* fragment position */
+	enum ENUM_MSDU_FRAG_POS eFragPos;
+#endif
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
@@ -1102,6 +1116,7 @@ struct TX_DESC_OPS_T {
 		void *prTxDesc,
 		struct MSDU_INFO *prMsduInfo);
 	void (*nic_txd_fill_by_pkt_option)(
+		struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		void *prTxD);
 	void (*nic_txd_compose)(

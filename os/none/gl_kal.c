@@ -409,6 +409,45 @@ void *kalGetPacketDev(void *pvPacket)
 	return NULL;
 }
 
+int kal_skb_checksum_help(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+
+void kalSkbCopyCbData(void *pvDstPacket, void *pvSrcPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void *kal_skb_copy(void *pvPacket)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+void kal_skb_reserve(void *pvPacket, uint8_t ucLength)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+void kal_skb_split(void *pvPacket, void *pvPacket1, const uint32_t u4Length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint8_t *kal_skb_push(void *pvPacket, uint32_t u4Length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
 void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);

@@ -256,7 +256,7 @@ static u_int8_t *sta_ctrl_reg[] = {"ENABLE", "DISABLE", "PAUSE"};
  *******************************************************************************
  */
 
-static void connac3x_dump_tmac_info(
+void connac3x_dump_tmac_info(
 	struct ADAPTER *prAdapter,
 	uint8_t *tmac_info)
 {

@@ -246,6 +246,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if (CFG_VOLT_INFO == 1)
 	{EVEN_ID_GET_VOLT_INFO, nicEventGetVnf},
 #endif
+#if CFG_SUPPORT_MLR
+	{EVENT_ID_MLR_FSM_UPDATE, mlrEventMlrFsmUpdateHandler},
+#endif
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);

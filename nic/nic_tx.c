@@ -2155,6 +2155,21 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		ASSERT(prMsduInfo->prPacket);
 		kalQueryTxChksumOffloadParam(prMsduInfo->prPacket,
 					     &ucChksumFlag);
+
+#if CFG_SUPPORT_MLR
+		MLR_DBGLOG(prAdapter, TX, INFO,
+			"MLR txd - nicTxFillDesc SeqNo=%d, ipid:0x%02x eFragPos=%d, len=%d, ucChksumFlag=0x%02x\n",
+			GLUE_GET_PKT_SEQ_NO(prMsduInfo->prPacket),
+			GLUE_GET_PKT_IP_ID(prMsduInfo->prPacket),
+			prMsduInfo->eFragPos,
+			kalQueryPacketLength(prMsduInfo->prPacket),
+			ucChksumFlag);
+
+		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
+			ucChksumFlag &= ~TX_CS_TCP_UDP_GEN;
+		else
+			ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
+#else
 		/*
 		 * Future:
 		 * Remove this checksum flag twicking and back to
@@ -2172,6 +2187,9 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		 *   For IPv6 in connac3, nic_txd_v3_header_format_op(),
 		 *   let CSO respect the ip_summed flag.
 		 */
+		ucChksumFlag |= TX_CS_IP_GEN | TX_CS_TCP_UDP_GEN;
+#endif
+
 		if (prTxDescOps->nic_txd_chksum_op)
 			prTxDescOps->nic_txd_chksum_op(prTxDesc, ucChksumFlag,
 					prMsduInfo);
@@ -2984,9 +3002,39 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 		rStatus = WLAN_STATUS_FAILURE;
 
 	if (prMsduInfo->eSrc == TX_PACKET_OS) {
-		if (prNativePacket)
+		if (prNativePacket) {
+#if CFG_SUPPORT_MLR
+			if (prMsduInfo->eFragPos <=
+				MSDU_FRAG_POS_FIRST) {
+				if (prMsduInfo->eFragPos ==
+					MSDU_FRAG_POS_FIRST) {
+					MLR_DBGLOG(prAdapter, TX, INFO,
+						"MLR free - kalSendComplete prMsduInfo PID=%d SeqNo=%d prPacket=%p u2FrameLength=%d eFragPos=%d\n",
+						prMsduInfo->ucPID,
+						prMsduInfo->ucTxSeqNum,
+						prMsduInfo->prPacket,
+						prMsduInfo->u2FrameLength,
+						prMsduInfo->eFragPos);
+				}
+				kalSendComplete(prAdapter->prGlueInfo,
+					prNativePacket, rStatus);
+			} else {
+				MLR_DBGLOG(prAdapter, TX, INFO,
+					"MLR free - kalPacketFree PID=%d SeqNo=%d prPacket=%p u2FrameLength=%d eFragPos=%d\n",
+					prMsduInfo->ucPID,
+					prMsduInfo->ucTxSeqNum,
+					prMsduInfo->prPacket,
+					prMsduInfo->u2FrameLength,
+					prMsduInfo->eFragPos);
+
+				kalPacketFree(prAdapter->prGlueInfo,
+					prNativePacket);
+			}
+#else
 			kalSendComplete(prAdapter->prGlueInfo, prNativePacket,
 					rStatus);
+#endif
+		}
 		if (fgDrop)
 			wlanUpdateTxStatistics(prAdapter, prMsduInfo,
 				TRUE); /*get per-AC Tx drop packets */
@@ -4639,7 +4687,10 @@ void nicTxFillDescByPktOption(
 	struct TX_DESC_OPS_T *prTxDescOps = prAdapter->chip_info->prTxDescOps;
 
 	if (prTxDescOps->nic_txd_fill_by_pkt_option)
-		prTxDescOps->nic_txd_fill_by_pkt_option(prMsduInfo, prTxDesc);
+		prTxDescOps->nic_txd_fill_by_pkt_option(
+			prAdapter,
+			prMsduInfo,
+			prTxDesc);
 	else
 		DBGLOG(TX, ERROR, "%s:: no nic_txd_fill_by_pkt_option??\n",
 			__func__);
@@ -4803,6 +4854,10 @@ void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter,
 	if (prStaRec) {
 		u2RateCode = prStaRec->u2HwDefaultFixedRateCode;
 		u2OperationalRateSet = prStaRec->u2OperationalRateSet;
+#if CFG_SUPPORT_MLR
+		mlrDecideIfUseMlrRate(prAdapter, prBssInfo, prStaRec,
+			prMsduInfo, &u2RateCode);
+#endif
 	} else {
 		if (prBssInfo) {
 			u2RateCode = prBssInfo->u2HwDefaultFixedRateCode;
@@ -4837,8 +4892,9 @@ void nicTxSetPktLowestFixedRate(IN struct ADAPTER *prAdapter,
 			}
 		}
 	}
+
 	nicTxSetPktFixedRateOption(prAdapter, prMsduInfo, u2RateCode,
-				   FIX_BW_NO_FIXED, FALSE, FALSE);
+			   FIX_BW_NO_FIXED, FALSE, FALSE);
 }
 
 void nicTxSetPktMoreData(struct MSDU_INFO
@@ -5658,6 +5714,12 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 	u_int8_t fgDropPacket = FALSE;
 	struct QUE rProcessingQue;
 	struct QUE *prProcessingQue = &rProcessingQue;
+#if CFG_SUPPORT_MLR
+	uint8_t fgDoFragSuccess = FALSE;
+	struct QUE rFragmentedQue;
+	struct QUE *prFragmentedQue = &rFragmentedQue;
+	struct MSDU_INFO *prNextMsduInfoFrag = NULL;
+#endif
 	uint8_t ucActivedTspec = 0;
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 	uint8_t ucHifTc = 0;
@@ -5709,96 +5771,136 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 		}
 #endif
 
-		qmDetermineStaRecIndex(prAdapter, prMsduInfo);
+#if CFG_SUPPORT_MLR
+		if (mlrCheckIfDoFrag(prAdapter, prMsduInfo, (void *)pvPacket)) {
+			QUEUE_INITIALIZE(prFragmentedQue);
 
-		wlanUpdateTxStatistics(prAdapter, prMsduInfo,
-				       FALSE);	/*get per-AC Tx packets */
-
-		switch (prMsduInfo->ucStaRecIndex) {
-		case STA_REC_INDEX_BMCAST:
-			ucTC = nicTxWmmTc2ResTc(prAdapter,
-				prMsduInfo->ucBssIndex, NET_TC_BMC_INDEX);
-
-			/* Always set BMC packet retry limit to unlimited */
-			if (!(prMsduInfo->u4Option
-						& MSDU_OPT_MANUAL_RETRY_LIMIT))
-				nicTxSetPktRetryLimit(prMsduInfo,
-					TX_DESC_TX_COUNT_NO_LIMIT);
-
-			QM_DBG_CNT_INC(prQM, QM_DBG_CNT_23);
-			break;
-		case STA_REC_INDEX_NOT_FOUND:
-			/* Drop packet if no STA_REC is found */
-			DBGLOG(QM, TRACE, "Drop the Packet for no STA_REC\n");
-
-			TX_INC_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP);
-			QM_DBG_CNT_INC(prQM, QM_DBG_CNT_24);
-			wlanProcessQueuedMsduInfo(prAdapter, prMsduInfo);
-			return WLAN_STATUS_FAILURE;
-		default:
-			ucActivedTspec = nicGetActiveTspec(prAdapter,
-				prMsduInfo->ucBssIndex);
-
-			prTxQue = qmDetermineStaTxQueue(prAdapter, prMsduInfo,
-							ucActivedTspec, &ucTC);
-			break;	/*default */
-		}	/* switch (prMsduInfo->ucStaRecIndex) */
-
-		prMsduInfo->ucTC = ucTC;
-		prMsduInfo->ucWmmQueSet =
-			prBssInfo->ucWmmQueSet; /* to record WMM Set */
-
-		/* Check the Tx descriptor template is valid */
-		qmSetTxPacketDescTemplate(prAdapter, prMsduInfo);
-
-		/* Set Tx rate */
-		switch (prAdapter->rWifiVar.ucDataTxRateMode) {
-		case DATA_RATE_MODE_BSS_LOWEST:
-			nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
-			break;
-
-		case DATA_RATE_MODE_MANUAL:
-			prMsduInfo->u4FixedRateOption =
-				prAdapter->rWifiVar.u4DataTxRateCode;
-
-			prMsduInfo->ucRateMode = MSDU_RATE_MODE_MANUAL_DESC;
-			break;
-
-		case DATA_RATE_MODE_AUTO:
-		default:
-			if (prMsduInfo->ucRateMode
-				== MSDU_RATE_MODE_LOWEST_RATE)
-				nicTxSetPktLowestFixedRate(
-					prAdapter, prMsduInfo);
-			break;
+			/* Do fragment */
+			fgDoFragSuccess = mlrDoFragPacket(prAdapter, prMsduInfo,
+				prAdapter->rWifiVar.u2TxFragSplitSize,
+				prAdapter->rWifiVar.u2TxFragThr,
+				(void *)pvPacket, prFragmentedQue);
+			if (fgDoFragSuccess)
+				prMsduInfo = (struct MSDU_INFO *)
+					QUEUE_GET_HEAD(prFragmentedQue);
 		}
 
-		/* BMC pkt need limited rate according to coex report*/
-		if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
-			nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
+		while (prMsduInfo) {
+			prNextMsduInfoFrag = (struct MSDU_INFO *)
+				QUEUE_GET_NEXT_ENTRY(
+				(struct QUE_ENTRY *) prMsduInfo);
+			/* Do things for each fragment MsduInfo */
+			/* ==================================== */
+#endif
 
-		nicTxFillDataDesc(prAdapter, prMsduInfo);
+			qmDetermineStaRecIndex(prAdapter, prMsduInfo);
+
+			/*get per-AC Tx packets */
+			wlanUpdateTxStatistics(prAdapter, prMsduInfo,
+				FALSE);
+
+			switch (prMsduInfo->ucStaRecIndex) {
+			case STA_REC_INDEX_BMCAST:
+				ucTC = nicTxWmmTc2ResTc(prAdapter,
+					prMsduInfo->ucBssIndex,
+					NET_TC_BMC_INDEX);
+
+				/* Always set BMC packet retry limit
+				 * to unlimited
+				 */
+				if (!(prMsduInfo->u4Option
+					& MSDU_OPT_MANUAL_RETRY_LIMIT))
+					nicTxSetPktRetryLimit(prMsduInfo,
+						TX_DESC_TX_COUNT_NO_LIMIT);
+
+				QM_DBG_CNT_INC(prQM, QM_DBG_CNT_23);
+				break;
+			case STA_REC_INDEX_NOT_FOUND:
+				/* Drop packet if no STA_REC is found */
+				DBGLOG(QM, TRACE,
+					"Drop the Packet for no STA_REC\n");
+
+				TX_INC_CNT(&prAdapter->rTxCtrl,
+					TX_INACTIVE_STA_DROP);
+				QM_DBG_CNT_INC(prQM, QM_DBG_CNT_24);
+				wlanProcessQueuedMsduInfo(prAdapter,
+					prMsduInfo);
+				return WLAN_STATUS_FAILURE;
+			default:
+				ucActivedTspec = nicGetActiveTspec(prAdapter,
+					prMsduInfo->ucBssIndex);
+
+				prTxQue = qmDetermineStaTxQueue(prAdapter,
+					prMsduInfo,
+					ucActivedTspec, &ucTC);
+				break;	/*default */
+			}	/* switch (prMsduInfo->ucStaRecIndex) */
+
+			prMsduInfo->ucTC = ucTC;
+			prMsduInfo->ucWmmQueSet =
+				prBssInfo->ucWmmQueSet; /* to record WMM Set */
+
+			/* Check the Tx descriptor template is valid */
+			qmSetTxPacketDescTemplate(prAdapter, prMsduInfo);
+
+			/* Set Tx rate */
+			switch (prAdapter->rWifiVar.ucDataTxRateMode) {
+			case DATA_RATE_MODE_BSS_LOWEST:
+				nicTxSetPktLowestFixedRate(prAdapter,
+					prMsduInfo);
+				break;
+
+			case DATA_RATE_MODE_MANUAL:
+				prMsduInfo->u4FixedRateOption =
+					prAdapter->rWifiVar.u4DataTxRateCode;
+
+				prMsduInfo->ucRateMode =
+					MSDU_RATE_MODE_MANUAL_DESC;
+				break;
+
+			case DATA_RATE_MODE_AUTO:
+			default:
+				if (prMsduInfo->ucRateMode
+					== MSDU_RATE_MODE_LOWEST_RATE)
+					nicTxSetPktLowestFixedRate(
+						prAdapter, prMsduInfo);
+				break;
+			}
+
+			/* BMC pkt need limited rate according to coex report*/
+			if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
+				nicTxSetPktLowestFixedRate(prAdapter,
+					prMsduInfo);
+
+			nicTxFillDataDesc(prAdapter, prMsduInfo);
 #if CFG_SUPPORT_DROP_INVALID_MSDUINFO
-		/* Drop invalid MsduInfo */
-		if (unlikely(prMsduInfo->fgDrop)) {
-			nicTxDropInvalidMsduInfo(prAdapter, prMsduInfo);
-			return WLAN_STATUS_FAILURE;
-		}
+			/* Drop invalid MsduInfo */
+			if (unlikely(prMsduInfo->fgDrop)) {
+				nicTxDropInvalidMsduInfo(prAdapter, prMsduInfo);
+				return WLAN_STATUS_FAILURE;
+			}
 #endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 
-		prStaRec = cnmGetStaRecByIndex(prAdapter,
-					       prMsduInfo->ucStaRecIndex);
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				prMsduInfo->ucStaRecIndex);
 
-		QUEUE_INSERT_TAIL(prProcessingQue,
-				  (struct QUE_ENTRY *) prMsduInfo);
+			QUEUE_INSERT_TAIL(prProcessingQue,
+					  (struct QUE_ENTRY *) prMsduInfo);
 
-		/* Power-save & TxAllowed STA handling */
-		nicTxDirectCheckStaPsPendQ(prAdapter, prMsduInfo,
-				prMsduInfo->ucStaRecIndex, prProcessingQue);
+			/* Power-save & TxAllowed STA handling */
+			nicTxDirectCheckStaPsPendQ(prAdapter, prMsduInfo,
+					prMsduInfo->ucStaRecIndex,
+					prProcessingQue);
 
-		/* Absent BSS handling */
-		nicTxDirectCheckBssAbsentQ(prAdapter,
-			prMsduInfo->ucBssIndex, prProcessingQue);
+			/* Absent BSS handling */
+			nicTxDirectCheckBssAbsentQ(prAdapter,
+				prMsduInfo->ucBssIndex, prProcessingQue);
+
+#if CFG_SUPPORT_MLR
+			/* ==================================== */
+			prMsduInfo = prNextMsduInfoFrag;
+		}
+#endif
 
 		if (QUEUE_IS_EMPTY(prProcessingQue))
 			return WLAN_STATUS_SUCCESS;

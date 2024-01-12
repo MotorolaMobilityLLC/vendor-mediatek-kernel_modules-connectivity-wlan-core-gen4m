@@ -835,6 +835,15 @@ struct STA_RECORD {
 	uint32_t au4RxV2[MCS_INFO_SAMPLE_CNT];
 #endif
 
+#if CFG_SUPPORT_MLR
+	/* Peer MLR capability */
+	u_int8_t fgIsMlrSupported;
+	uint8_t ucMlrSupportBitmap;
+	/* Peer MLR status */
+	uint8_t ucMlrMode;
+	uint8_t ucMlrState;
+	u_int8_t fgEnableTxFrag;
+#endif
 	u_int8_t fgIsMscsSupported;
 	struct LINK rMscsMonitorList;
 	struct LINK rMscsTcpMonitorList;

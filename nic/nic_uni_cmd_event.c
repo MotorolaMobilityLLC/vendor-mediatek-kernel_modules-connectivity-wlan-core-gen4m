@@ -3715,6 +3715,41 @@ uint32_t nicUniCmdStaRecTagUapsd(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
+#if CFG_SUPPORT_MLR
+uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
+{
+	struct STA_RECORD *prStaRec = cnmGetStaRecByIndex(ad, cmd->ucStaIndex);
+	struct UNI_CMD_STAREC_MLR_INFO *tag =
+		(struct UNI_CMD_STAREC_MLR_INFO *)buf;
+	struct MLD_STA_RECORD *mld_starec = mldStarecGetByStarec(ad, prStaRec);
+
+	if (mld_starec && mld_starec->rStarecList.u4NumElem > 1) {
+		DBGLOG(REQ, INFO, "MLR unicmd - This is a MLD starec\n");
+		return 0;
+	}
+
+	tag->u2Tag = UNI_CMD_STAREC_TAG_MLR_INFO;
+	tag->u2Length = sizeof(struct UNI_CMD_STAREC_MLR_INFO);
+	tag->ucMlrMode = cmd->ucMlrMode;
+	tag->ucMlrState = cmd->ucMlrState;
+
+	DBGLOG(REQ, INFO,
+		"MLR unicmd - StaRec[%u] WIDX[%u] ucStaState[%u] MLR[%d,0x%04x,%d,0x%02x] ucMlrMode[0x%02x] ucMlrState[%u] RCPI=%d(RSSI=%d)\n",
+		cmd->ucStaIndex,
+		cmd->ucWlanIndex,
+		prStaRec->ucStaState,
+		ad->ucMlrIsSupport, ad->u4MlrSupportBitmap,
+		prStaRec->fgIsMlrSupported, prStaRec->ucMlrSupportBitmap,
+		tag->ucMlrMode,
+		tag->ucMlrState,
+		prStaRec->ucRCPI,
+		RCPI_TO_dBm(prStaRec->ucRCPI));
+
+	return tag->u2Length;
+}
+#endif
+
 struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_BASIC), nicUniCmdStaRecTagBasic},
 	{sizeof(struct UNI_CMD_STAREC_HT_INFO), nicUniCmdStaRecTagHtInfo},
@@ -3738,6 +3773,9 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_MLD), nicUniCmdStaRecTagEhtMld},
 	{sizeof(struct UNI_CMD_STAREC_MLD_SETUP), nicUniCmdStaRecTagMldSetup},
+#endif
+#if (CFG_SUPPORT_MLR == 1)
+	{sizeof(struct UNI_CMD_STAREC_MLR_INFO), nicUniCmdStaRecTagMlrInfo},
 #endif
 };
 
@@ -8759,6 +8797,20 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucErMode = mode->ucErMode;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_BSS_ER_TX_MODE, &legacy);
+#endif
+		}
+			break;
+		case UNI_EVENT_MLR_TAG_FSM_UPDATE: {
+#if (CFG_SUPPORT_MLR == 1)
+			struct UNI_EVENT_MLR_FSM_UPDATE *fsm =
+				(struct UNI_EVENT_MLR_FSM_UPDATE *)tag;
+			struct EVENT_MLR_FSM_UPDATE legacy;
+
+			legacy.u2WlanIdx = fsm->u2WlanIdx;
+			legacy.ucMlrMode = fsm->ucMlrMode;
+			legacy.ucMlrState = fsm->ucMlrState;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_MLR_FSM_UPDATE, &legacy);
 #endif
 		}
 			break;

@@ -182,6 +182,7 @@ void nic_txd_v1_header_format_op(
 }
 
 void nic_txd_v1_fill_by_pkt_option(
+	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	void *prTxD)
 {
@@ -459,7 +460,7 @@ void nic_txd_v1_compose(
 		HAL_MAC_TX_DESC_SET_SHORT_FORMAT(prTxDesc);
 
 		/* Update Packet option */
-		nic_txd_v1_fill_by_pkt_option(prMsduInfo, prTxDesc);
+		nic_txd_v1_fill_by_pkt_option(prAdapter, prMsduInfo, prTxDesc);
 
 		/* Short format, Skip DW 2~6 */
 		return;
@@ -467,7 +468,7 @@ void nic_txd_v1_compose(
 	HAL_MAC_TX_DESC_SET_LONG_FORMAT(prTxDesc);
 
 	/* Update Packet option */
-	nic_txd_v1_fill_by_pkt_option(prMsduInfo, prTxDesc);
+	nic_txd_v1_fill_by_pkt_option(prAdapter, prMsduInfo, prTxDesc);
 
 	nic_txd_v1_fill_by_pkt_ctrl(prMsduInfo, prTxDesc);
 

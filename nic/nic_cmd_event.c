@@ -159,7 +159,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if CFG_MSCS_SUPPORT
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_FAST_PATH, nicCfgChipCapFastPath),
 #endif
-
+#if CFG_SUPPORT_MLR
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MLR_CAP,
+				nicCfgChipCapMlr),
+#endif
 };
 
 /*******************************************************************************
@@ -3107,6 +3110,27 @@ uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+#endif
+
+#if CFG_SUPPORT_MLR
+uint32_t nicCfgChipCapMlr(IN struct ADAPTER *prAdapter,
+			       IN uint8_t *pucEventBuf)
+{
+	struct CAP_MLR_CAP *prMLRCap =
+		(struct CAP_MLR_CAP *)pucEventBuf;
+
+	prAdapter->ucMlrIsSupport =
+		MLR_BIT_SUPPORT(prMLRCap->u4MlrSupportBitmap);
+	prAdapter->ucMlrVersion = prMLRCap->ucVersion;
+	prAdapter->u4MlrSupportBitmap = prMLRCap->u4MlrSupportBitmap;
+
+	DBGLOG(INIT, INFO, "MLR cap - MlrS=%d, Ver=%d, MlrSB=0x%04x\n",
+	       prAdapter->ucMlrIsSupport,
+	       prMLRCap->ucVersion,
+	       prMLRCap->u4MlrSupportBitmap);
+
+	return WLAN_STATUS_SUCCESS;
+}
 #endif
 
 uint32_t nicCmdEventHostSuspendInfo(IN struct ADAPTER *prAdapter,
@@ -6818,3 +6842,4 @@ void nicEventGetVnf(IN struct ADAPTER *prAdapter,
 	kalVnfEventHandler(prAdapter);
 }
 #endif /* CFG_VOLT_INFO */
+

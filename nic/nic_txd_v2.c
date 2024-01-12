@@ -184,6 +184,7 @@ void nic_txd_v2_header_format_op(
 }
 
 void nic_txd_v2_fill_by_pkt_option(
+	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	void *prTxD)
 {
@@ -497,7 +498,7 @@ void nic_txd_v2_compose(
 		HAL_MAC_CONNAC2X_TXD_SET_SHORT_FORMAT(prTxDesc);
 
 		/* Update Packet option */
-		nic_txd_v2_fill_by_pkt_option(prMsduInfo, prTxDesc);
+		nic_txd_v2_fill_by_pkt_option(prAdapter, prMsduInfo, prTxDesc);
 
 		/* Short format, Skip DW 2~6 */
 		return;
@@ -505,7 +506,7 @@ void nic_txd_v2_compose(
 		HAL_MAC_CONNAC2X_TXD_SET_LONG_FORMAT(prTxDesc);
 
 	/* Update Packet option */
-	nic_txd_v2_fill_by_pkt_option(prMsduInfo, prTxDesc);
+	nic_txd_v2_fill_by_pkt_option(prAdapter, prMsduInfo, prTxDesc);
 
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {

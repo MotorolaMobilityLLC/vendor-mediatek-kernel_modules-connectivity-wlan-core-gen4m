@@ -8304,6 +8304,23 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		VOLT_INFO_DELTA);
 #endif /* CFG_VOLT_INFO  */
 
+#if CFG_SUPPORT_MLR
+	prWifiVar->fgEnForceTxFrag = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnForceTxFrag", FEATURE_DISABLED);
+	prWifiVar->u2TxFragThr = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "TxFragSplitThr", 1000);
+	prWifiVar->u2TxFragSplitSize = (uint16_t) wlanCfgGetUint32(
+		prAdapter, "TxFragSplitSize", 0);
+	prWifiVar->ucTxMlrRateRcpiThr = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "TxMlrRateRcpiThr", 40);
+	prWifiVar->fgEnTxFragDebug = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnTxFragDebug", FEATURE_DISABLED);
+	prWifiVar->fgEnTxFragTxDone = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnTxFragTxDone", FEATURE_DISABLED);
+	prWifiVar->ucErrPos = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "ErrPos", 0);
+#endif
+
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	prWifiVar->u4TxDataDelayTimeout = wlanCfgGetUint32(prAdapter,
 			"TxDataDelayTimeout", 2);
@@ -10573,11 +10590,26 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG_LIMITED(TX, INFO,
-		"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
-		apucPktType[prMsduInfo->ucPktType], prMsduInfo->u4TxDoneTag,
-		prMsduInfo->ucWlanIndex, prMsduInfo->ucPID, rTxDoneStatus,
-		prMsduInfo->ucTxSeqNum);
+#if CFG_SUPPORT_MLR
+	if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter))
+		DBGLOG(TX, INFO,
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
+			apucPktType[prMsduInfo->ucPktType],
+			prMsduInfo->u4TxDoneTag,
+			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucPID,
+			rTxDoneStatus,
+			prMsduInfo->ucTxSeqNum);
+	else
+#endif
+		DBGLOG_LIMITED(TX, INFO,
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
+			apucPktType[prMsduInfo->ucPktType],
+			prMsduInfo->u4TxDoneTag,
+			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucPID,
+			rTxDoneStatus,
+			prMsduInfo->ucTxSeqNum);
 
 	if (prMsduInfo->ucPktType == ENUM_PKT_1X)
 		p2pRoleFsmNotifyEapolTxStatus(prAdapter,

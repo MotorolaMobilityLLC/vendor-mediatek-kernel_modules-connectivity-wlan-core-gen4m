@@ -97,6 +97,7 @@
 #define TX_MODE_HT_MM           0x80
 #define TX_MODE_HT_GF           0xC0
 #define TX_MODE_VHT             0x100
+#define TX_MODE_MLR             0x140
 #define TX_MODE_HE_SU           0x200
 #define TX_MODE_HE_ER_SU        0x240
 #define TX_MODE_HE_TB           0X280
@@ -187,6 +188,11 @@
 
 #define RATE_HE_ER_DCM_MCS_0	(TX_MODE_HE_ER_SU | PHY_RATE_DCM)
 #define RATE_HE_ER_TONE_106_MCS_0	(TX_MODE_HE_ER_SU | PHY_RATE_TONE_106)
+
+#define PHY_RATE_1_5M           PHY_RATE_MCS0
+#define PHY_RATE_3M             PHY_RATE_MCS1
+#define RATE_MLR_1_5M           (TX_MODE_MLR | PHY_RATE_1_5M)
+#define RATE_MLR_3M             (TX_MODE_MLR | PHY_RATE_3M)
 
 #define RATE_NSTS_MASK					BITS(9, 10)
 #define RATE_NSTS_OFFSET				9

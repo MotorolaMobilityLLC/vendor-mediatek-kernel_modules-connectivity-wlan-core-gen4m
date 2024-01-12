@@ -547,6 +547,9 @@ enum ENUM_EVENT_ID {
 
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */
+#if CFG_SUPPORT_MLR
+	EVENT_ID_MLR_FSM_UPDATE = 0x77,
+#endif
 	/*query info from cmd.*/
 	EVENT_ID_GC_CSA = 0x77,        /* 0x77 (Unsolicited) */
 	EVENT_ID_DBDC_SWITCH_DONE = 0x78,
@@ -1059,7 +1062,9 @@ struct CMD_UPDATE_STA_RECORD {
 	uint8_t    uciBfDBW;
 	uint8_t    uciBfNcol;
 	uint8_t    uciBfNrow;
-	uint8_t    aucPadding1[3];
+	uint8_t    aucPadding1[1];
+	uint8_t    ucMlrMode;
+	uint8_t    ucMlrState;
 
 	uint8_t ucTxAmsduInAmpdu;
 	uint8_t ucRxAmsduInAmpdu;
