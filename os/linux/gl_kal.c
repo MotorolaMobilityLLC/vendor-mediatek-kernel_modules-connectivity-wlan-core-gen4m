@@ -164,6 +164,7 @@ const struct firmware *fw_entry;
 /* Default */
 static uint8_t *apucFwName[] = {
 	(uint8_t *) CFG_FW_FILENAME "_MT",
+	(uint8_t *) CFG_FW_FILENAME "_",
 	NULL
 };
 
