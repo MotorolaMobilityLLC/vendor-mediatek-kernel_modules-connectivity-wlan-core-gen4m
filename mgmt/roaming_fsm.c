@@ -450,6 +450,7 @@ void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter,
 
 	prRoamingFsmInfo =
 		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -610,6 +611,7 @@ void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
 
 	prRoamingFsmInfo =
 		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -693,6 +695,7 @@ void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
 
 	prRoamingFsmInfo =
 		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
@@ -741,11 +744,11 @@ void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 
 	prRoamingFsmInfo =
 		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
 	/* Check Roaming Conditions */
 	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
 		return;
-
 
 	DBGLOG(ROAMING, EVENT,
 	       "[%d] EVENT-ROAMING ABORT: Current Time = %d\n",
