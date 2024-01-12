@@ -321,7 +321,7 @@ void mldGenerateAssocIE(
 	struct LINK *links;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
-	uint32_t offset, len;
+	uint32_t offset, offset_sta, len;
 	uint8_t count = 0;
 	const uint8_t *eht;
 
@@ -395,6 +395,15 @@ void mldGenerateAssocIE(
 				continue;
 			}
 
+			offset_sta = sortMsduPayloadOffset(prAdapter, msdu_sta);
+			if (offset_sta != offset) {
+				DBGLOG(ML, WARN,
+					"Payload offset = %d, expected = %d\n",
+					offset_sta, offset);
+				cnmMgtPktFree(prAdapter, msdu_sta);
+				continue;
+			}
+
 			cur = mldGenerateBasicCompleteProfile(prAdapter, cur,
 				prMsduInfo, offset, len,
 				msdu_sta, bss->ucBssIndex);
@@ -443,7 +452,7 @@ void mldGenerateProbeRspIE(
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct LINK *links;
 	struct BSS_INFO *bss;
-	uint32_t offset, len;
+	uint32_t offset, offset_sta, len;
 	uint8_t count = 0, *common = NULL, *cur = NULL;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
@@ -490,6 +499,16 @@ void mldGenerateProbeRspIE(
 					"No PKT_INFO_T for sending MLD STA.\n");
 				continue;
 			}
+
+			offset_sta = sortMsduPayloadOffset(prAdapter, msdu_sta);
+			if (offset_sta != offset) {
+				DBGLOG(ML, WARN,
+					"Payload offset = %d, expected = %d\n",
+					offset_sta, offset);
+				cnmMgtPktFree(prAdapter, msdu_sta);
+				continue;
+			}
+
 			cur = mldGenerateBasicCompleteProfile(prAdapter, cur,
 				prMsduInfo, offset, len,
 				msdu_sta, bss->ucBssIndex);
@@ -1243,7 +1262,7 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	pucBuf = (uint8_t *)prMsduInfoSta->prPacket + u4BeginOffset;
 	u2IEsBufLen = prMsduInfoSta->u2FrameLength - u4BeginOffset;
 
-	mldDumpIE((uint8_t *)start, u4PrimaryLength, "Primary");
+	mldDumpIE((uint8_t *)start, u4PrimaryLength - u4BeginOffset, "Primary");
 	mldDumpIE((uint8_t *)pucBuf, u2IEsBufLen, "Secondary");
 
 	DBGLOG(ML, LOUD, "Bss%d compose ML Link%d profile\n", ucBssIndex, link);
