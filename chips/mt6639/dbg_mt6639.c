@@ -2169,9 +2169,9 @@ int mt6639_get_rx_rate_info(const uint32_t *prRxV,
 	prRxRateInfo->u4Bw = frmode;
 	prRxRateInfo->u4Gi = sgi;
 
-	DBGLOG(SW4, TRACE,
-		   "rxvec0=0x%x rxmode=%u, rate=%u, bw=%u, sgi=%u, nss=%u, mu_mimo=%u\n",
-		   prRxV[0], rxmode, rate, frmode, sgi, nss, mu_mimo);
+	DBGLOG_LIMITED(SW4, TRACE,
+		"rxvec0=0x%x rxmode=%u, rate=%u, bw=%u, sgi=%u, nss=%u, mu_mimo=%u\n",
+		prRxV[0], rxmode, rate, frmode, sgi, nss, mu_mimo);
 
 	return 0;
 }

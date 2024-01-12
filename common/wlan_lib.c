@@ -2172,7 +2172,7 @@ uint32_t wlanSendCommand(struct ADAPTER *prAdapter,
 			if (nicTxPollingResource(prAdapter, ucTC) !=
 			    WLAN_STATUS_SUCCESS) {
 				DBGLOG(INIT, ERROR,
-				       "Fail to get TX resource return within timeout\n");
+					"Fail to get TX resource return within timeout\n");
 				rStatus = WLAN_STATUS_FAILURE;
 				prAdapter->fgIsChipNoAck = TRUE;
 				break;
@@ -4527,8 +4527,8 @@ uint32_t wlanQueryNicCapability(struct ADAPTER
 		if (NIC_RX_GET_U2_SW_PKT_TYPE(aucBuffer)
 			!= prChipInfo->u2RxSwPktEvent) {
 			DBGLOG(INIT, WARN,
-			       "%s: skip unexpected Rx pkt type[0x%04x]\n",
-			       __func__, NIC_RX_GET_U2_SW_PKT_TYPE(aucBuffer));
+				"skip unexpected Rx pkt type[0x%04x]\n",
+				NIC_RX_GET_U2_SW_PKT_TYPE(aucBuffer));
 			continue;
 		}
 
@@ -5126,7 +5126,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 				    (uint8_t *) prCmdNvramSettings, NULL, 0);
 
 		kalMemFree(prCmdNvramSettings, VIR_MEM_TYPE,
-				   sizeof(struct CMD_NVRAM_SETTING));
+					sizeof(struct CMD_NVRAM_SETTING));
 	}
 
 
