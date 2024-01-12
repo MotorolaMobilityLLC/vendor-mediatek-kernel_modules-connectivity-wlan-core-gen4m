@@ -110,7 +110,7 @@ struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
 
 struct BSS_INFO *p2pGetDefaultLinkBssInfo(
 	struct ADAPTER *prAdapter,
-	enum ENUM_IFTYPE eIftype);
+	struct BSS_INFO *prBssInfo);
 
 struct STA_RECORD *p2pGetDefaultLinkStaRec(
 	struct ADAPTER *prAdapter,
