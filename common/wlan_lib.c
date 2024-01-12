@@ -8159,10 +8159,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucDisallowBand5G, "DisallowBand5G", 0);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	INIT_UINT(prWifiVar->ucDisallowBand6G, "DisallowBand6G", 0);
+	INIT_UINT(prWifiVar->ucDisallowAcs6G,
+		"DisallowAcs6G", FEATURE_DISABLED);
 #endif
 
-	INIT_UINT(prWifiVar->ucDisallowP2PAcs6G,
-		"DisallowP2PAcs6G", FEATURE_DISABLED);
 #if CFG_SUPPORT_ROAMING
 	INIT_UINT(prWifiVar->u4InactiveTimeout,
 		"InactiveTimeout", ROAMING_INACTIVE_TIMEOUT_SEC);
