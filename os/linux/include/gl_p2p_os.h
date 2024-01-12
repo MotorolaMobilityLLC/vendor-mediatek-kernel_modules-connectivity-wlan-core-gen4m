@@ -194,6 +194,8 @@ struct GL_P2P_INFO {
 	/* indicate caller thread for delete sta complete */
 	struct completion rDelStaComp;
 
+	struct LINK rWaitTxDoneLink;
+
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 	u_int8_t fgChannelSwitchReq;
 };

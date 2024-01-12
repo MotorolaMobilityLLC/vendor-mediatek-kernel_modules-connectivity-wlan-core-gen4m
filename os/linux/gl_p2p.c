@@ -545,7 +545,9 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct GL_P2P_INFO *prGlP2pInfo;
 	struct WIFI_VAR *prWifiVar;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
 
 	ASSERT(prGlueInfo);
 	ASSERT(prAdapter);
@@ -562,6 +564,7 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 	}
 
 	prWifiVar = &prAdapter->rWifiVar;
+	prGlP2pInfo = prGlueInfo->prP2PInfo[ucIdx];
 
 	/* TODO: how can I sure that the specific P2P device can be freed?
 	 * The original check is that prGlueInfo->prAdapter->fgIsP2PRegistered.
@@ -569,7 +572,7 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 	 * (fgIsP2PRegistered == FALSE) condition.
 	 */
 
-	if (prGlueInfo->prP2PInfo[ucIdx] != NULL) {
+	if (prGlP2pInfo != NULL) {
 		p2pFreeMemSafe(prGlueInfo,
 			(void **)&prWifiVar->prP2PConnSettings[ucIdx],
 			sizeof(struct P2P_CONNECTION_SETTINGS));
@@ -583,9 +586,22 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 			(void **)&prWifiVar->prP2pQueryStaStatistics[ucIdx],
 			sizeof(struct PARAM_GET_STA_STATISTICS));
 #endif
+		while (!LINK_IS_EMPTY(&prGlP2pInfo->rWaitTxDoneLink)) {
+			LINK_REMOVE_HEAD(
+				&prGlP2pInfo->rWaitTxDoneLink,
+				prPendingMgmtInfo,
+				struct P2P_PENDING_MGMT_INFO *);
+			DBGLOG(P2P, INFO,
+				"Free pending mgmt link[%u] cookie: 0x%llx\n",
+				ucIdx,
+				prPendingMgmtInfo->u8PendingMgmtCookie);
+			cnmMemFree(prAdapter, prPendingMgmtInfo);
+		}
+
 		p2pFreeMemSafe(prGlueInfo,
-			(void **)&prGlueInfo->prP2PInfo[ucIdx],
+			(void **)&prGlP2pInfo,
 			sizeof(struct GL_P2P_INFO));
+		prGlueInfo->prP2PInfo[ucIdx] = NULL;
 		prAdapter->prP2pInfo->u4DeviceNum--;
 	}
 
@@ -994,6 +1010,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	ucBssIndex = p2pDevFsmInit(prAdapter);
 	if (IS_BSS_INDEX_VALID(ucBssIndex))
 		prNetDevPriv->ucBssIdx = ucBssIndex;
+
+	LINK_INITIALIZE(&prP2PInfo->rWaitTxDoneLink);
 
 	if ((fgSkipRole == SKIP_ROLE_ALL) ||
 		((fgSkipRole == SKIP_ROLE_EXCEPT_MAIN) && u4Idx))

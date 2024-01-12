@@ -397,19 +397,21 @@ void p2pFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
 			(struct MSG_MGMT_TX_REQUEST *) NULL;
 
-	do {
-		if ((prAdapter == NULL) || (prMsgHdr == NULL))
-			break;
+	if ((prAdapter == NULL) || (prMsgHdr == NULL))
+		return;
 
-		prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
+	prMgmtTxMsg = (struct MSG_MGMT_TX_REQUEST *) prMsgHdr;
 
-		if (p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx)) {
-			p2pRoleFsmRunEventMgmtTx(prAdapter, prMsgHdr);
-		} else {
-			prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
-			p2pDevFsmRunEventMgmtTx(prAdapter, prMsgHdr);
-		}
-	} while (FALSE);
+	if (prMgmtTxMsg->fgIsWaitRsp)
+		p2pFuncAddPendingMgmtLinkEntry(prAdapter,
+			prMgmtTxMsg->ucBssIdx, prMgmtTxMsg->u8Cookie);
+
+	if (p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx)) {
+		p2pRoleFsmRunEventMgmtTx(prAdapter, prMsgHdr);
+	} else {
+		prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
+		p2pDevFsmRunEventMgmtTx(prAdapter, prMsgHdr);
+	}
 }				/* p2pFsmRunEventMgmtFrameTx */
 
 void p2pFsmRunEventTxCancelWait(struct ADAPTER *prAdapter,
@@ -418,20 +420,21 @@ void p2pFsmRunEventTxCancelWait(struct ADAPTER *prAdapter,
 	struct MSG_CANCEL_TX_WAIT_REQUEST *prCancelTxWaitMsg =
 			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
 
-	do {
-		if ((prAdapter == NULL) || (prMsgHdr == NULL))
-			break;
+	if ((prAdapter == NULL) || (prMsgHdr == NULL))
+		return;
 
-		prCancelTxWaitMsg =
-				(struct MSG_CANCEL_TX_WAIT_REQUEST *) prMsgHdr;
+	prCancelTxWaitMsg =
+			(struct MSG_CANCEL_TX_WAIT_REQUEST *) prMsgHdr;
 
-		if (p2pFsmUseRoleIf(prAdapter, prCancelTxWaitMsg->ucBssIdx)) {
-			p2pRoleFsmRunEventTxCancelWait(prAdapter, prMsgHdr);
-		} else {
-			prCancelTxWaitMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
-			p2pDevFsmRunEventTxCancelWait(prAdapter, prMsgHdr);
-		}
-	} while (FALSE);
+	p2pFuncRemovePendingMgmtLinkEntry(prAdapter,
+		prCancelTxWaitMsg->ucBssIdx, prCancelTxWaitMsg->u8Cookie);
+
+	if (p2pFsmUseRoleIf(prAdapter, prCancelTxWaitMsg->ucBssIdx)) {
+		p2pRoleFsmRunEventTxCancelWait(prAdapter, prMsgHdr);
+	} else {
+		prCancelTxWaitMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;
+		p2pDevFsmRunEventTxCancelWait(prAdapter, prMsgHdr);
+	}
 
 }				/* p2pFsmRunEventTxCancelWait */
 

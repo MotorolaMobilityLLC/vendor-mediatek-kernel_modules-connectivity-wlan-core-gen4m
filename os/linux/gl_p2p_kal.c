@@ -1361,6 +1361,9 @@ void kalP2PIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
+		p2pFuncRemovePendingMgmtLinkEntry(prGlueInfo->prAdapter,
+			prMsduInfo->ucBssIndex, *pu8GlCookie);
+
 		cfg80211_mgmt_tx_status(
 			/* struct net_device * dev, */
 			prNetdevice->ieee80211_ptr,

@@ -82,6 +82,14 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo,
 		struct SW_RFB *prAssocRspSwRfb);
 
+void
+p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, uint64_t u8Cookie);
+
+void
+p2pFuncRemovePendingMgmtLinkEntry(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, uint64_t u8Cookie);
+
 void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
