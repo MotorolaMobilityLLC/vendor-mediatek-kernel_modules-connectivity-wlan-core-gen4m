@@ -109,6 +109,10 @@ static const struct usb_device_id mtk_usb_ids[] = {
 		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt6632},
 	{	USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7668, 0xff, 0xff, 0xff),
 		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt7668},
+#ifdef MT7663
+	{	USB_DEVICE_AND_INTERFACE_INFO(0x0E8D, 0x7663, 0xff, 0xff, 0xff),
+		.driver_info = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
+#endif /* MT7663 */
 	{ /* end: all zeroes */ },
 };
 

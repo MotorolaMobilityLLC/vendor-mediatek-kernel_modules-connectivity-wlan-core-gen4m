@@ -162,6 +162,10 @@
 
 #include "mt66xx_reg.h"
 
+#ifdef CONNAC_MAC
+#include "connac_reg.h"
+#endif /* CONNAC_MAC */
+
 #include "rlm.h"
 #include "rlm_domain.h"
 #include "rlm_protection.h"
