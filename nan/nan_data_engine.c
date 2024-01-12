@@ -4104,6 +4104,11 @@ nanNdpSendDataIndicationEvent(struct ADAPTER *prAdapter,
 	kalMemSet(rDataReqInd.app_info.ndp_app_info,
 				   0, NAN_DP_MAX_APP_INFO_LEN);
 	rDataReqInd.fgSupportNDPE = 0;
+	kalMemSet(rDataReqInd.aucIPv6Addr,
+				   0, IPV6MACLEN);
+	kalMemSet(rDataReqInd.aucSCID,
+				   0, NAN_SCID_DEFAULT_LEN);
+	rDataReqInd.uCipher = 0;
 
 	rDataReqInd.eventID = ENUM_NAN_DATA_INDICATION;
 	rDataReqInd.service_instance_id = prNDP->ucPublishId;
@@ -4165,6 +4170,13 @@ nanNdpSendDataConfirmEvent(struct ADAPTER *prAdapter,
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 
 	rDataConfirmInd.fgSupportNDPE = 0;
+	kalMemSet(rDataConfirmInd.aucIPv6Addr,
+				   0, IPV6MACLEN);
+	rDataConfirmInd.u2Port = 0;
+	rDataConfirmInd.ucProtocol = 0;
+	rDataConfirmInd.app_info.ndp_app_info_len = 0;
+	kalMemSet(rDataConfirmInd.app_info.ndp_app_info,
+				   0, NAN_DP_MAX_APP_INFO_LEN);
 
 	rDataConfirmInd.eventID = ENUM_NAN_DATA_CONFIRM;
 	rDataConfirmInd.ndp_instance_id = prNDP->ucNDPID;
