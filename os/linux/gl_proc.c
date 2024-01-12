@@ -267,7 +267,6 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	uint32_t u4CopySize = PROC_MAX_BUF_SIZE;
 	struct GLUE_INFO *prGlueInfo = g_prGlueInfo_proc;
 	int32_t i4Ret = 0;
-	uint8_t fgIsNeedRtnlLock = 0;
 
 	if (buffer == NULL || pucProcBuf == NULL || prGlueInfo == NULL) {
 		i4Ret = 0;
@@ -284,22 +283,30 @@ static ssize_t procDriverCmdWrite(struct file *file, const char __user *buffer,
 	pucProcBuf[u4CopySize] = '\0';
 
 	/* This proc driver command will call priv_driver_cmds, which is
-	 * the callback function of iwpriv driver command.
+	 * the same callback function of iwpriv driver command.
 	 * Since "AP_START" command needs know rtnl is locked or not and
 	 * iwpriv command has already hold rtnl_lock in kernel, the proc
-	 * driver "AP_START" command needs hold rtnl_lock here.
+	 * driver "AP_START" command needs to be modified to "PROC_AP_START"
+	 * to distinguish whether the caller holds rtnl_lock.
 	 */
-	if (u4CopySize >= 8 && strnicmp(pucProcBuf, "AP_START", 8) == 0)
-		fgIsNeedRtnlLock = TRUE;
+	if (u4CopySize >= 8 && strnicmp(pucProcBuf, "AP_START", 8) == 0) {
+		uint8_t *pucProcBufTmp = kalMemZAlloc(u4CopySize + 6,
+			VIR_MEM_TYPE);
 
-	if (kalStrLen(pucProcBuf) > 0) {
-		if (fgIsNeedRtnlLock)
-			rtnl_lock();
+		if (pucProcBufTmp == NULL) {
+			i4Ret = 0;
+			goto freeBuf;
+		}
+		kalSnprintf(pucProcBufTmp, u4CopySize + 6, "PROC_%s",
+			pucProcBuf);
+		kalMemFree(pucProcBuf, VIR_MEM_TYPE, PROC_MAX_BUF_SIZE);
+		pucProcBuf = pucProcBufTmp;
+		DBGLOG(P2P, INFO, "Add prefix, command: %s\n", pucProcBuf);
+	}
+
+	if (kalStrLen(pucProcBuf) > 0)
 		priv_driver_cmds(prGlueInfo->prDevHandler, pucProcBuf,
 			kalStrLen(pucProcBuf));
-		if (fgIsNeedRtnlLock)
-			rtnl_unlock();
-	}
 
 	i4Ret = u4CopySize;
 freeBuf:
