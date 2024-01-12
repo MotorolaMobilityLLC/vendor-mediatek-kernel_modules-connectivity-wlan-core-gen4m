@@ -248,11 +248,8 @@ struct MSDU_INFO *nicGetPendingTxMsduInfo(
 	IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex,
 	IN uint8_t ucSeqNum);
 
-void nicFreePendingTxMsduInfoByType(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucIndex, IN enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType);
-
 void nicFreePendingTxMsduInfo(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfoListHead);
+	IN uint8_t ucIndex, IN enum ENUM_REMOVE_BY_MSDU_TPYE ucFreeType);
 
 uint8_t nicIncreaseCmdSeqNum(IN struct ADAPTER *prAdapter);
 
