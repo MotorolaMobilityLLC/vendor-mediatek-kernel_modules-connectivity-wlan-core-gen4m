@@ -3064,6 +3064,18 @@ void kalP2pClearCsaChan(struct GL_P2P_INFO *prGlueP2pInfo)
 		sizeof(struct ieee80211_channel));
 }
 
+void kalSetP2pRoleMac(
+		struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		uint8_t ucRoleIdx)
+{
+	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
+		      prAdapter->rWifiVar.aucInterfaceAddress[ucRoleIdx]);
+
+	DBGLOG(P2P, TRACE, "Set Bss[%d], macAddr: " MACSTR "\n",
+		prP2pBssInfo->ucBssIndex, prP2pBssInfo->aucOwnMacAddr);
+}
+
 void kalSetP2pDevMac(
 		struct GLUE_INFO *prGlueInfo,
 		struct BSS_INFO *prP2pBssInfo,
@@ -3074,6 +3086,9 @@ void kalSetP2pDevMac(
 	prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
 	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 		      prP2PInfo->prDevHandler->dev_addr);
+
+	DBGLOG(P2P, TRACE, "Set Bss[%d], macAddr: " MACSTR "\n",
+		prP2pBssInfo->ucBssIndex, prP2pBssInfo->aucOwnMacAddr);
 }
 
 void *kalGetP2pNetHdl(struct GLUE_INFO *prGlueInfo,
