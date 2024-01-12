@@ -2026,6 +2026,29 @@ static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 }
 
+static void glRxInit(struct GLUE_INFO *prGlueInfo)
+{
+#if CFG_SUPPORT_RX_GRO
+	kalNapiInit(prGlueInfo);
+#if CFG_SUPPORT_RX_NAPI
+	kalNapiRxDirectInit(prGlueInfo);
+	kalNapiEnable(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI */
+#endif /* CFG_SUPPORT_RX_GRO */
+	glTaskletInit(prGlueInfo);
+}
+
+static void glRxUninit(struct GLUE_INFO *prGlueInfo)
+{
+	glTaskletUninit(prGlueInfo);
+#if CFG_SUPPORT_RX_GRO
+#if CFG_SUPPORT_RX_NAPI
+	kalNapiDisable(prGlueInfo);
+	kalNapiRxDirectUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI */
+#endif /* CFG_SUPPORT_RX_GRO */
+}
+
 static void wlanFreeNetDev(void)
 {
 	uint32_t u4Idx = 0;
@@ -2571,7 +2594,7 @@ static int wlanInit(struct net_device *prDev)
 #endif
 
 #if CFG_SUPPORT_RX_GRO
-	kalNapiInit(prDev);
+	kalRxGroInit(prDev);
 #endif /* CFG_SUPPORT_RX_GRO */
 	return 0;		/* success */
 }				/* end of wlanInit() */
@@ -2688,13 +2711,6 @@ static int wlanOpen(struct net_device *prDev)
 	ASSERT(prGlueInfo);
 #endif /* fos_change begin */
 
-#if CFG_SUPPORT_RX_GRO
-#if CFG_SUPPORT_RX_NAPI
-	kalNapiRxDirectInit(prDev);
-	kalNapiEnable(prDev);
-#endif /* CFG_SUPPORT_RX_NAPI */
-#endif /* CFG_SUPPORT_RX_GRO */
-
 	netif_tx_start_all_queues(prDev);
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
@@ -2771,13 +2787,6 @@ static int wlanStop(struct net_device *prDev)
 	}
 
 	netif_tx_stop_all_queues(prDev);
-
-#if CFG_SUPPORT_RX_GRO
-#if CFG_SUPPORT_RX_NAPI
-	kalNapiDisable(prDev);
-	kalNapiRxDirectUninit(prDev);
-#endif /* CFG_SUPPORT_RX_NAPI */
-#endif /* CFG_SUPPORT_RX_GRO */
 
 	return 0;		/* success */
 }				/* end of wlanStop() */
@@ -6177,6 +6186,8 @@ int32_t wlanOffAtReset(void)
 #endif
 	glBusFreeIrq(prDev, prGlueInfo);
 
+	glRxUninit(prGlueInfo);
+
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
 #endif
@@ -6274,6 +6285,12 @@ int32_t wlanOnAtReset(void)
 		QUEUE_INITIALIZE(&prGlueInfo->rTxQueue);
 
 		glResetHifInfo(prGlueInfo);
+
+		/*
+		 * interrupt may come in after setup irq
+		 * we need to make sure that rx is ready before it
+		 */
+		glRxInit(prGlueInfo);
 
 		rStatus = glBusSetIrq(prDev, NULL, prGlueInfo);
 		if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -6509,9 +6526,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		/*
 		 * interrupt may come in after setup irq
-		 * we need to make sure that tasklet is ready before it
+		 * we need to make sure that rx is ready before it
 		 */
-		glTaskletInit(prGlueInfo);
+		glRxInit(prGlueInfo);
 
 		i4Status = glBusSetIrq(prWdev->netdev, NULL, prGlueInfo);
 
@@ -6723,7 +6740,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 						netdev_priv(prWdev->netdev)));
 		/* fallthrough */
 		case BUS_SET_IRQ_FAIL:
-			glTaskletUninit(prGlueInfo);
+			glRxUninit(prGlueInfo);
 			if (prChipInfo && prChipInfo->fw_dl_ops->mcu_deinit)
 				prChipInfo->fw_dl_ops->mcu_deinit(prAdapter);
 		/* fallthrough */
@@ -7046,6 +7063,8 @@ static void wlanRemove(void)
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	glBusFreeIrq(prDev, prGlueInfo);
 
+	glRxUninit(prGlueInfo);
+
 	/* 4 <5> Release the Bus */
 	glBusRelease(prDev);
 
@@ -7066,8 +7085,6 @@ static void wlanRemove(void)
 	/* 4 <7> Destroy the device */
 	wlanNetDestroy(prDev->ieee80211_ptr);
 	prDev = NULL;
-
-	glTaskletUninit(prGlueInfo);
 
 	/* 4 <8> Unregister early suspend callback */
 #if CFG_ENABLE_EARLY_SUSPEND

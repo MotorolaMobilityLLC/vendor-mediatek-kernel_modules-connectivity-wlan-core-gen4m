@@ -540,7 +540,7 @@ static int p2pInit(struct net_device *prDev)
 	if (!prDev)
 		return -ENXIO;
 #if CFG_SUPPORT_RX_GRO
-	kalNapiInit(prDev);
+	kalRxGroInit(prDev);
 #endif
 	return 0;		/* success */
 }				/* end of p2pInit() */
@@ -1744,13 +1744,6 @@ static int p2pOpen(IN struct net_device *prDev)
 		MSG_SEND_METHOD_BUF);
 #endif
 
-#if CFG_SUPPORT_RX_GRO
-#if CFG_SUPPORT_RX_NAPI
-	kalNapiRxDirectInit(prDev);
-	kalNapiEnable(prDev);
-#endif /* CFG_SUPPORT_RX_NAPI */
-#endif /* CFG_SUPPORT_RX_GRO */
-
 	/* 2. carrier on & start TX queue */
 	/*DFS todo 20161220_DFS*/
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -1856,13 +1849,6 @@ static int p2pStop(IN struct net_device *prDev)
 #ifdef CONFIG_WIRELESS_EXT
 	prDev->wireless_handlers = NULL;
 #endif
-
-#if CFG_SUPPORT_RX_GRO
-#if CFG_SUPPORT_RX_NAPI
-	kalNapiDisable(prDev);
-	kalNapiRxDirectUninit(prDev);
-#endif /* CFG_SUPPORT_RX_NAPI */
-#endif /* CFG_SUPPORT_RX_GRO */
 
 	return 0;
 }				/* end of p2pStop() */
