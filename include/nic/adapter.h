@@ -1678,6 +1678,10 @@ struct ADAPTER {
 	bool fgEnOshareMode;
 #endif
 
+#if CFG_MTK_MCIF_WIFI_SUPPORT
+	bool fgMddpActivated;
+#endif
+
 	struct WLAN_DEBUG_INFO rDebugInfo;
 #if CFG_SUPPORT_RX_GRO
 	OS_SYSTIME tmGROFlushTimeout[MAX_BSSID_NUM];

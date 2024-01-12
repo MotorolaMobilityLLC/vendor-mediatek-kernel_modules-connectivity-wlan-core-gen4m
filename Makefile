@@ -333,6 +333,19 @@ ccflags-y += -I$(srctree)/drivers/misc/mediatek/emi/submodule
 ccflags-y += -I$(srctree)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 
+ifeq ($(CONFIG_MTK_MCIF_WIFI_SUPPORT), y)
+ccflags-y += -I$(srctree)/drivers/misc/mediatek/mddp/include/
+ccflags-y += -DCFG_MTK_MCIF_WIFI_SUPPORT=1
+ifeq ($(CONFIG_MTK_MDDP_WH_SUPPORT), y)
+ccflags-y += -DCFG_MTK_MDDP_WH_SUPPORT=1
+else
+ccflags-y += -DCFG_MTK_MDDP_WH_SUPPORT=0
+endif
+else
+ccflags-y += -DCFG_MTK_MCIF_WIFI_SUPPORT=0
+ccflags-y += -DCFG_MTK_MDDP_WH_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(src)/os/$(os)/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
@@ -474,7 +487,8 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)wnm.o \
 		$(MGMT_DIR)qosmap.o \
 		$(MGMT_DIR)ap_selection.o \
-		$(MGMT_DIR)wmm.o
+		$(MGMT_DIR)wmm.o \
+		$(MGMT_DIR)mddp.o \
 
 # ---------------------------------------------------
 # Chips Objects List
