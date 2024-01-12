@@ -6356,7 +6356,8 @@ struct UNI_EVENT_SR {
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_WOW {
 	/*fixed field*/
-	uint8_t ucReserved[4];
+	uint8_t ucBssIndex;
+	uint8_t aucReserved[3];
 	/* tlv */
 	uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
@@ -6364,6 +6365,7 @@ struct UNI_EVENT_WOW {
 /* Wake On WLAN event Tag */
 enum ENUM_UNI_EVENT_WOW_TAG {
 	UNI_EVENT_WOW_TAG_WAKEUP_REASON = 0,
+	UNI_EVENT_WOW_TAG_RX_DEAUTH_REASON,
 	UNI_EVENT_WOW_TAG_NUM
 };
 
@@ -6382,10 +6384,38 @@ struct UNI_EVENT_WOW_WAKEUP_REASON_INFO {
 	 *  12: IPV6_TCP
 	 *  13: BEACON_LOST
 	 *  14: IPV6_ICMP
+	 *  15: IPV4_TCP_SYN
+	 *  16: IPV6_TCP_SYN
+	 *  17: EAPOL_REQUEST
+	 *  19: UC2M
+	 *  20: ROAMING_INTR
+	 *  21: SCHED_SCN_MATCH
+	 *  22: ACTION
+	 *  23: MC_DATA
 	 * 255: UNDEFINED (default init value)
 	 */
+	uint8_t  ucReserved;
 	uint16_t u2WowWakePort;
-	uint8_t aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
+/**
+ * This structure is used for UNI_EVENT_WOW_TAG_RX_DEAUTH_REASON tag(0x01) of
+ * UNI_EVENT_WOW Event (0x5B)
+ * to send wow wakeup reason.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x01
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] u2RxDeauthReason     the deauth reason
+ */
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_WOW_RX_DEAUTH_REASON_INFO {
+	uint16_t   u2Tag;
+	uint16_t   u2Length;
+
+	uint16_t   u2RxDeauthReason;
+	uint8_t    aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_SUPPORT_CSI

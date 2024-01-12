@@ -2513,8 +2513,11 @@ send_msg:
 					    prAisBssInfo,
 					    prAisBssInfo->prStaRecOfAP,
 					    (struct SW_RFB *)NULL,
-					    REASON_CODE_DEAUTH_LEAVING_BSS,
+					    prAisBssInfo->u2DeauthReason,
 					    aisDeauthXmitComplete);
+
+			prAisBssInfo->u2DeauthReason = REASON_CODE_RESERVED;
+
 			/* If it is scanning or BSS absent, HW may go away from
 			 * serving channel, which may cause driver be not able
 			 * to TX mgmt frame. So we need to start a longer timer
@@ -3040,6 +3043,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 {
 	struct MSG_AIS_ABORT *prAisAbortMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prBssInfo;
 	uint8_t ucReasonOfDisconnect;
 	u_int8_t fgDelayIndication;
 	uint16_t u2DeauthReason;
@@ -3059,6 +3063,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
 	cnmMemFree(prAdapter, prMsgHdr);
 
@@ -3111,6 +3116,10 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION)
 		aisFsmInsertRequestToHead(prAdapter,
 			AIS_REQUEST_RECONNECT, ucBssIndex);
+
+	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION ||
+	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_LOCALLY)
+		prBssInfo->u2DeauthReason = REASON_CODE_DEAUTH_LEAVING_BSS;
 
 	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
 		/* 4 <3> invoke abort handler */
@@ -3269,6 +3278,10 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 		if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
 		    (prAisFsmInfo->ucReasonOfDisconnect ==
 		     DISCONNECT_REASON_CODE_NEW_CONNECTION ||
+#if IS_CE_SEGMENT
+		     prAisFsmInfo->ucReasonOfDisconnect ==
+		     DISCONNECT_REASON_CODE_RADIO_LOST ||
+#endif
 		     prAisFsmInfo->ucReasonOfDisconnect ==
 		     DISCONNECT_REASON_CODE_LOCALLY)
 		    && prAisBssInfo->prStaRecOfAP
