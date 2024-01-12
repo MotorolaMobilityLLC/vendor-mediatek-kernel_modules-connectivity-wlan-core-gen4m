@@ -917,6 +917,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_AOSP_MDDP_LINK_LAYER_STATS_SUPPORT=y
     CONFIG_TX_DELAY_STATS_SUPPORT=y
     CONFIG_MSCS_FAST_PATH_SUPPORT=y
+    CONFIG_MCC_BOOST_CPU=y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
@@ -1486,6 +1487,12 @@ endif
 
 ifeq ($(CONFIG_MSCS_FAST_PATH_SUPPORT), y)
 ccflags-y += -DCFG_MSCS_SUPPORT=1
+endif
+
+ifeq ($(CONFIG_MCC_BOOST_CPU), y)
+ccflags-y += -DCFG_SUPPORT_MCC_BOOST_CPU=1
+else
+ccflags-y += -DCFG_SUPPORT_MCC_BOOST_CPU=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_WFDMA_BK_RS), y)
