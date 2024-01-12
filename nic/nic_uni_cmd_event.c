@@ -156,6 +156,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_TDLS_CH_SW] = nicUniCmdTdls,
 	[CMD_ID_SET_NOA_PARAM] = nicUniCmdSetP2pNoa,
 	[CMD_ID_SET_OPPPS_PARAM] = nicUniCmdSetP2pOppps,
+	[CMD_ID_SET_P2P_GC_CSA] = nicUniCmdSetP2pGcCsa,
 	[CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT] = nicUniCmdSetApConstraintPwrLimit,
 	[CMD_ID_SET_RRM_CAPABILITY] = nicUniCmdSetRrmCapability,
 	[CMD_ID_SET_COUNTRY_POWER_LIMIT] = nicUniCmdSetCountryPwrLimit,
@@ -4757,6 +4758,41 @@ uint32_t nicUniCmdSetP2pOppps(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdSetP2pGcCsa(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_GC_CSA_STRUCT *cmd;
+	struct UNI_CMD_P2P *uni_cmd;
+	struct UNI_CMD_SET_GC_CSA_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
+			       sizeof(struct UNI_CMD_SET_GC_CSA_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_P2P_GC_CSA ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_GC_CSA_STRUCT *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_P2P,
+		max_cmd_len, nicUniCmdEventSetCommon,
+		nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_P2P *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_GC_CSA_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_P2P_TAG_SET_GC_CSA_PARAM;
+	tag->u2Length = sizeof(*tag);
+
+	tag->ucBssIdx = cmd->ucBssIdx;
+	tag->ucChannel = cmd->ucChannel;
+	tag->ucband = cmd->ucband;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -8555,6 +8591,19 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_UPDATE_NOA_PARAMS,
 								&legacy);
+		}
+			break;
+		case UNI_EVENT_P2P_TAG_GC_CSA_PARAM: {
+			struct UNI_EVENT_GC_CSA_PARAM *csa =
+				(struct UNI_EVENT_GC_CSA_PARAM *)tag;
+			struct EVENT_GC_CSA_T legacy;
+
+			legacy.ucBssIndex = csa->ucBssIndex;
+			legacy.ucChannel = csa->ucChannel;
+			legacy.ucBand = csa->ucBand;
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_GC_CSA,
+				&legacy);
 		}
 			break;
 		default:

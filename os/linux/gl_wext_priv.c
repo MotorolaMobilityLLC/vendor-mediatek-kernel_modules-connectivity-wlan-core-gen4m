@@ -3752,6 +3752,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_COUNTRY			"COUNTRY"
 #define CMD_CSA				"CSA"
 #define CMD_CSA_EX			"CSA_EX"
+#define CMD_CSA_EX_EVENT		"EVENT_CSA_EX"
 #define CMD_GET_COUNTRY			"GET_COUNTRY"
 #define CMD_GET_CHANNELS		"GET_CHANNELS"
 #define CMD_P2P_SET_NOA			"P2P_SET_NOA"
@@ -11272,7 +11273,7 @@ int priv_driver_set_csa(IN struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t ch_num = 0;
 	uint32_t u4Ret = 0;
-	uint8_t ucRoleIdx = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -11280,16 +11281,34 @@ int priv_driver_set_csa(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
 		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= 2) {
+		struct BSS_INFO *bss =
+			GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			ucBssIdx);
+		enum ENUM_BAND eBand = BAND_NULL;
+
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
-		u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
-			ch_num <= 14 ? BAND_2G4 : BAND_5G,
-			ch_num, ucRoleIdx);
+		eBand = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
+
+		if (IS_BSS_APGO(bss))
+			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
+				eBand, ch_num, ucRoleIdx);
+		else if (IS_BSS_GC(bss))
+			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
+				eBand, ch_num, ucRoleIdx);
+		else
+			DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
+
 		DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
 	} else {
 		DBGLOG(REQ, INFO, "Input insufficent\n");
@@ -11307,7 +11326,7 @@ int priv_driver_set_csa_ex(IN struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t ch_num = 0;
 	uint32_t u4Ret = 0;
-	uint8_t ucRoleIdx = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	enum ENUM_BAND eBand = BAND_NULL;
 
 	ASSERT(prNetDev);
@@ -11316,16 +11335,33 @@ int priv_driver_set_csa_ex(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
 		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
 
 	if (i4Argc >= 3) {
+		struct BSS_INFO *bss =
+			GET_BSS_INFO_BY_INDEX(
+			prGlueInfo->prAdapter,
+			ucBssIdx);
+
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &eBand);
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
-		u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
-			eBand, ch_num, ucRoleIdx);
+
+		if (IS_BSS_APGO(bss))
+			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
+				eBand, ch_num, ucRoleIdx);
+		else if (IS_BSS_GC(bss))
+			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
+				eBand, ch_num, ucRoleIdx);
+		else
+			DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
+
 		DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
 	} else {
 		DBGLOG(REQ, INFO, "Input insufficent\n");
@@ -11334,6 +11370,67 @@ int priv_driver_set_csa_ex(IN struct net_device *prNetDev,
 	return 0;
 }
 
+int priv_driver_set_csa_ex_event(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t ch_num = 0;
+	uint32_t u4Ret = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	enum ENUM_BAND eBand = BAND_NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 3) {
+		struct WIFI_EVENT *pEvent;
+		struct EVENT_GC_CSA_T *prEventBody;
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &eBand);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
+
+		pEvent = (struct WIFI_EVENT *)
+			kalMemAlloc(sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_GC_CSA_T),
+			VIR_MEM_TYPE);
+		if (!pEvent)
+			return -1;
+
+		prEventBody = (struct EVENT_GC_CSA_T *)
+			&(pEvent->aucBuffer[0]);
+		prEventBody->ucBssIndex = ucBssIdx;
+		prEventBody->ucChannel = ch_num;
+		prEventBody->ucBand = eBand;
+
+		cnmPeerGcCsaHandler(prGlueInfo->prAdapter,
+			(struct WIFI_EVENT *) pEvent);
+
+		kalMemFree(pEvent,
+			VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_GC_CSA_T));
+
+		DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+	}
+
+	return 0;
+}
 
 int priv_driver_get_country(IN struct net_device *prNetDev,
 			    IN char *pcCommand, IN int i4TotalLen)
@@ -19616,6 +19713,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GETBAND, NULL /*wl_android_get_band*/},
 	{CMD_COUNTRY, priv_driver_set_country},
 #if CFG_SUPPORT_IDC_CH_SWITCH
+	{CMD_CSA_EX_EVENT, priv_driver_set_csa_ex_event},
 	{CMD_CSA_EX, priv_driver_set_csa_ex},
 	{CMD_CSA, priv_driver_set_csa},
 #endif

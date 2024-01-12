@@ -238,6 +238,8 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_FILTER_COEFFICIENT,      /* 0x29 (Set) */
 
 	CMD_ID_SET_ACL_POLICY       = 0x2A, /* 0x2A (Set) */
+	CMD_ID_SET_P2P_GC_CSA       = 0x2B, /* 0x2B (Set) */
+
 	/* SLT commands */
 	CMD_ID_RANDOM_RX_RESET_EN   = 0x2C, /* 0x2C (Set ) */
 	CMD_ID_RANDOM_RX_RESET_DE   = 0x2D, /* 0x2D (Set ) */
@@ -546,6 +548,7 @@ enum ENUM_EVENT_ID {
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */
 	/*query info from cmd.*/
+	EVENT_ID_GC_CSA = 0x77,        /* 0x77 (Unsolicited) */
 	EVENT_ID_DBDC_SWITCH_DONE = 0x78,
 	EVENT_ID_GET_CNM = 0x79,
 	EVENT_ID_COEX_CTRL = 0x7C,
@@ -1150,6 +1153,13 @@ struct CMD_CUSTOM_OPPPS_PARAM_STRUCT {
 	/* bit0~6 : CTWindow(unit: TU), bit7:OppPS bit (1:enable, 0:disable)*/
 	uint8_t   ucBssIdx;
 	uint8_t   aucReserved[3];
+};
+
+struct CMD_SET_GC_CSA_STRUCT {
+	uint8_t ucBssIdx;
+	uint8_t ucChannel;
+	uint8_t ucband;
+	uint8_t aucReserved[1];
 };
 
 struct CMD_CUSTOM_UAPSD_PARAM_STRUCT {
@@ -2209,6 +2219,13 @@ struct EVENT_RDD_OPMODE_CHANGE {
 	uint8_t  ucChBw;
 	uint8_t  ucAction;
 	uint8_t  aucPadding1[60];
+};
+
+struct EVENT_GC_CSA_T {
+	uint8_t ucBssIndex;
+	uint8_t ucChannel;
+	uint8_t ucBand;
+	uint8_t aucReserved[2];
 };
 
 #define EVENT_GET_CNM_BAND_NUM          2  /* ENUM_BAND_NUM*/
