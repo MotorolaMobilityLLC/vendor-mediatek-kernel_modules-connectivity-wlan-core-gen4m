@@ -164,9 +164,11 @@ struct RESET_STRUCT {
 	struct GLUE_INFO *prGlueInfo;
 	struct work_struct rst_work;
 #if CFG_WMT_RESET_API_SUPPORT
+	unsigned long ulFlag;
 	enum ENUM_RESET_STATUS rst_data;
 	struct work_struct rst_trigger_work;
 	uint32_t rst_trigger_flag;
+	struct completion halt_comp;
 #endif
 };
 
@@ -297,6 +299,14 @@ int wlan_reset_thread_main(void *data);
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
 #endif /* CFG_SUPPORT_CONNINFRA */
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
+	char *reason);
+int wlan_post_whole_chip_rst_v3(void);
+int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
+	char *reason);
+int wlan_post_whole_chip_rst_v2(void);
+#endif
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
 void kalSetRstEvent(void);
