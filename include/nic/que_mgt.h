@@ -380,12 +380,15 @@ enum ENUM_MAC_TX_QUEUE_INDEX {
 	MAC_TX_QUEUE_NUM
 };
 
-#define SEQ_ADD(_SEQ, _INC) ((_SEQ) = ((_SEQ) + (_INC)) & MAX_SEQ_NO)
-#define SEQ_SMALLER(_SEQ1, _SEQ2) (((_SEQ1-_SEQ2) & ((MAX_SEQ_NO_COUNT) >> 1)))
-#define BAR_SSN_IS_VALID   BIT(15)
-#define IS_BAR_SSN_VALID(_prBaSsnEntry)  ((_prBaSsnEntry) & BAR_SSN_IS_VALID)
-#define CLR_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry) &= ~BAR_SSN_IS_VALID)
-#define SET_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry) |= BAR_SSN_IS_VALID)
+#define SEQ_ADD(_SEQ, _INC) (((_SEQ) + (_INC)) & MAX_SEQ_NO)
+#define SEQ_DIFF(_SEQ1, _SEQ2) (((_SEQ2) - (_SEQ1)) & MAX_SEQ_NO)
+#define SEQ_INC(_SEQ) ((_SEQ) = ((_SEQ) + 1) & MAX_SEQ_NO)
+#define SEQ_DEC(_SEQ) ((_SEQ) = ((_SEQ) - 1) & MAX_SEQ_NO)
+#define SEQ_SMALLER(_SN1, _SN2) \
+		(((_SN1) - (_SN2) & (MAX_SEQ_NO)) > HALF_SEQ_NO_COUNT)
+#define IS_BAR_SSN_VALID(_prBaSsnEntry)  ((_prBaSsnEntry)->u2BarSSNIsValid)
+#define CLR_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry)->u2BarSSNIsValid = 0)
+#define SET_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry)->u2BarSSNIsValid = 1)
 
 struct RX_BA_ENTRY {
 	u_int8_t fgIsValid;
@@ -393,7 +396,11 @@ struct RX_BA_ENTRY {
 	uint16_t u2WinStart;
 	uint16_t u2WinEnd;
 	uint16_t u2WinSize;
-	uint16_t u2BarSSN;
+
+	uint16_t u2BarSSN:12;
+	uint16_t u2BarSSNIsValid:1;
+	uint16_t u2BarSSNReserved:3;
+
 	uint16_t u2LastRcvdSN;
 	uint16_t u2LastFallBehindDropSN;
 
@@ -418,7 +425,7 @@ struct RX_BA_ENTRY {
 #if CFG_SUPPORT_RX_AMSDU
 	/* RX reorder for one MSDU in AMSDU issue */
 	/* P_SW_RFB_T prMpduSwRfb; */
-	uint32_t u4SeqNo; /* for statistic */
+	uint16_t u2SeqNo; /* for statistic */
 	u_int8_t fgAmsduNeedLastFrame; /* for statistic */
 	uint8_t u8LastAmsduSubIdx;
 	u_int8_t fgIsAmsduDuplicated;
@@ -1078,7 +1085,7 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue);
 
 void qmHandleRxReorderWinShift(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint32_t u4SSN,
+	IN uint8_t ucStaRecIdx, uint8_t ucTid, uint16_t u2SSN,
 	OUT struct QUE *prReturnedQue);
 
 void qmInsertReorderPkt(IN struct ADAPTER *prAdapter,
@@ -1117,9 +1124,6 @@ void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
 
 void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG
 			      prMailboxRxMsg);
-
-u_int8_t qmCompareSnIsLessThan(IN uint32_t u4SnLess,
-			       IN uint32_t u4SnGreater);
 
 void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 			  IN struct WIFI_EVENT *prEvent);
