@@ -2510,6 +2510,9 @@ void thermal_cbs_unregister(struct platform_device *pdev);
 void thermal_state_reset(struct ADAPTER *ad);
 #endif
 
+void kalTxDirectInit(struct GLUE_INFO *prGlueInfo);
+void kalTxDirectUninit(struct GLUE_INFO *prGlueInfo);
+
 #if (CFG_VOLT_INFO == 1)
 void kalVnfActive(struct ADAPTER *prAdapter);
 void kalVnfUninit(void);
