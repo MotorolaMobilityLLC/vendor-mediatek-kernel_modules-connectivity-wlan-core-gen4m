@@ -314,7 +314,6 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	    unsigned char fgIsRtnlLockAcquired)
 {
 	unsigned char fgDoRegister = FALSE;
-	unsigned char fgRollbackRtnlLock = FALSE;
 	unsigned char ret;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	int32_t i4RetReg = 0;
@@ -349,28 +348,18 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	netif_tx_stop_all_queues(
 		prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 
+	if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-	if (!rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_lock();
-	}
-	i4RetReg = cfg80211_register_netdevice(
+		i4RetReg = cfg80211_register_netdevice(
 		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 #else
-	if (rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_unlock();
-	}
-	i4RetReg = register_netdev(
+		i4RetReg = register_netdevice(
 		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 #endif
-
-	if (fgRollbackRtnlLock)
-#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-		rtnl_unlock();
-#else
-		rtnl_lock();
-#endif
+	} else {
+		i4RetReg = register_netdev(
+		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+	}
 
 	/* register for net device */
 	if (i4RetReg < 0) {
@@ -410,7 +399,6 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	    unsigned char fgIsRtnlLockAcquired)
 {
 	unsigned char fgDoUnregister = FALSE;
-	unsigned char fgRollbackRtnlLock = FALSE;
 	struct ADAPTER *prAdapter = NULL;
 	struct _GL_NAN_INFO_T *prNANInfo = NULL;
 	uint8_t ucIdx = NAN_BSS_INDEX_BAND0;
@@ -463,28 +451,16 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 	netif_tx_stop_all_queues(prNANInfo->prDevHandler);
 
+	if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-	if (!rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_lock();
-	}
-	cfg80211_unregister_netdevice(prNANInfo->prDevHandler);
+		cfg80211_unregister_netdevice(prNANInfo->prDevHandler);
 #else
-	if (rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_unlock();
-	}
-	unregister_netdev(prNANInfo->prDevHandler);
+		unregister_netdevice(prNANInfo->prDevHandler);
 #endif
+	} else
+		unregister_netdev(prNANInfo->prDevHandler);
 
 	DBGLOG(INIT, INFO, "unregister nandev\n");
-
-	if (fgRollbackRtnlLock)
-#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-		rtnl_unlock();
-#else
-		rtnl_lock();
-#endif
 
 	prGlueInfo->prAdapter->rNanNetRegState =
 		ENUM_NET_REG_STATE_UNREGISTERED;
