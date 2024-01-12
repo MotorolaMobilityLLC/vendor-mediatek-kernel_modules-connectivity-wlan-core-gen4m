@@ -8470,6 +8470,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if WLAN_INCLUDE_SYS
 	sysGetExtCfg(prAdapter);
 #endif
+	prWifiVar->fgEnSwAmsduSorting = (uint8_t)wlanCfgGetUint32(
+		prAdapter, "EnSwAmsduSorting", FEATURE_DISABLED);
 
 #if CFG_SUPPORT_THERMAL_QUERY
 	INIT_INT(prWifiVar->i4MaxTempLimit, "ThermalMaxTempThreshold",

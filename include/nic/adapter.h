@@ -1608,6 +1608,7 @@ struct WIFI_VAR {
 	u_int8_t fgSapSuspendOn;
 	u_int8_t fgSapRpsAisCond;
 #endif
+	u_int8_t fgEnSwAmsduSorting;
 
 	/* used to limit query duration for low power */
 	int32_t i4MaxTempLimit;
