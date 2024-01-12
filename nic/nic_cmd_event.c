@@ -3224,6 +3224,8 @@ VOID nicEventDebugMsg(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 	} /* DEBUG_MSG_SIZE_MAX */
 	else
 		DBGLOG(SW4, INFO, "Debug msg size %u is too large.\n", u2MsgSize);
+
+	wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
 }
 
 VOID nicEventTdls(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)

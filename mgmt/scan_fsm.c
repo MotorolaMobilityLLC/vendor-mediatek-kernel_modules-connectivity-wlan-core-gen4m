@@ -688,10 +688,10 @@ VOID scnEventScanDone(IN P_ADAPTER_T prAdapter, IN P_EVENT_SCAN_DONE prScanDone,
 				prScanInfo->aucChannelMDRDYCnt[u4ChCnt] = prScanDone->aucChannelMDRDYCnt[u4ChCnt];
 
 				if (u4PrintfIdx % 10 == 0 && u4PrintfIdx != 0) {
-					DBGLOG(SCN, INFO, "Channel  : %s\n", g_aucScanChannelNum);
-					DBGLOG(SCN, INFO, "IdleTime : %s\n", g_aucScanChannelIdleTime);
-					DBGLOG(SCN, INFO, "MdrdyCnt : %s\n", g_aucScanChannelMDRDY);
-					DBGLOG(SCN, INFO,
+					DBGFWLOG(SCN, INFO, "Channel  : %s\n", g_aucScanChannelNum);
+					DBGFWLOG(SCN, INFO, "IdleTime : %s\n", g_aucScanChannelIdleTime);
+					DBGFWLOG(SCN, INFO, "MdrdyCnt : %s\n", g_aucScanChannelMDRDY);
+					DBGFWLOG(SCN, INFO,
 						"==================================================================================\n");
 					kalMemZero(g_aucScanChannelNum, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
 					kalMemZero(g_aucScanChannelIdleTime, SCN_SCAN_DONE_PRINT_BUFFER_LENGTH);
@@ -707,9 +707,9 @@ VOID scnEventScanDone(IN P_ADAPTER_T prAdapter, IN P_EVENT_SCAN_DONE prScanDone,
 				u4PrintfIdx++;
 			}
 
-			DBGLOG(SCN, INFO, "Channel  : %s\n", g_aucScanChannelNum);
-			DBGLOG(SCN, INFO, "IdleTime : %s\n", g_aucScanChannelIdleTime);
-			DBGLOG(SCN, INFO, "MdrdyCnt : %s\n", g_aucScanChannelMDRDY);
+			DBGFWLOG(SCN, INFO, "Channel  : %s\n", g_aucScanChannelNum);
+			DBGFWLOG(SCN, INFO, "IdleTime : %s\n", g_aucScanChannelIdleTime);
+			DBGFWLOG(SCN, INFO, "MdrdyCnt : %s\n", g_aucScanChannelMDRDY);
 		} else {
 			prScanInfo->fgIsSparseChannelValid = FALSE;
 		}
