@@ -1074,6 +1074,15 @@ s_int32 mt_op_get_rx_statistics_all(
 	return ret;
 }
 
+s_int32 mt_op_get_capability(
+	struct test_wlan_info *winfos,
+	struct test_capability *capability)
+{
+	s_int32 ret = SERV_STATUS_SERV_TEST_NOT_SUPPORTED;
+
+	return ret;
+}
+
 s_int32 mt_op_calibration_test_mode(
 	struct test_wlan_info *winfos,
 	u_char mode)

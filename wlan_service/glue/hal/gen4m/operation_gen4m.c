@@ -1751,6 +1751,26 @@ s_int32 mt_op_get_rx_statistics_all(
 	return ret;
 }
 
+s_int32 mt_op_get_capability(
+	struct test_wlan_info *winfos,
+	struct test_capability *capability)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_GET_CAPABILITY,
+		NULL,
+		0,
+		NULL,
+		capability);
+
+	return ret;
+}
+
 s_int32 mt_op_calibration_test_mode(
 	struct test_wlan_info *winfos,
 	u_char mode)
