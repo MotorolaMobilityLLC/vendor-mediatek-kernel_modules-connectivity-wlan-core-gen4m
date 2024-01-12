@@ -4763,6 +4763,11 @@ void nicEventUpdateNoaParams(struct ADAPTER *prAdapter,
 						prEvent->aucBuffer);
 
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
+				prEventUpdateNoaParam->ucBssIndex) == NULL) {
+			DBGLOG(NIC, ERROR, "prBssInfo is null\n");
+			return;
+		}
+		if (GET_BSS_INFO_BY_INDEX(prAdapter,
 				prEventUpdateNoaParam->ucBssIndex)->eNetworkType
 					== NETWORK_TYPE_P2P) {
 
