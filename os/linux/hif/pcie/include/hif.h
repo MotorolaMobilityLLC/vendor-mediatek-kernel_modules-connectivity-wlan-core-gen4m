@@ -424,6 +424,7 @@ struct BUS_INFO {
 	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
+	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 
@@ -539,6 +540,7 @@ void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
 
+void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
@@ -576,6 +578,7 @@ extern int mtk_msi_unmask_to_other_mcu(
 	struct irq_data *data, u32 group) __attribute__((weak));
 extern int mtk_pcie_hw_control_vote(
 	int port, bool hw_mode_en, u8 who) __attribute__((weak));
+extern u32 mtk_pcie_dump_link_info(int port) __attribute__((weak));
 #endif
 
 /*******************************************************************************

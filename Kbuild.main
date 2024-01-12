@@ -443,6 +443,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
     endif
     CONFIG_WIFI_COREDUMP_SUPPORT=y
+    CONFIG_MTK_WIFI_AER_RESET=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
 endif
@@ -1287,6 +1288,18 @@ ifeq ($(CONFIG_GKI_SUPPORT), y)
     ccflags-y += -DCFG_ENABLE_GKI_SUPPORT=1
 else
     ccflags-y += -DCFG_ENABLE_GKI_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_AER_RESET), y)
+    ccflags-y += -DCFG_MTK_WIFI_AER_RESET=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_AER_RESET=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_AER_L05_RESET), y)
+    ccflags-y += -DCFG_MTK_WIFI_AER_L05_RESET=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_AER_L05_RESET=0
 endif
 
 ifeq ($CONFIG_SUPPORT_CE_COREDUMP), y)

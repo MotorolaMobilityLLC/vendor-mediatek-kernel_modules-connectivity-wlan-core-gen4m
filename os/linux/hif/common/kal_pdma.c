@@ -642,6 +642,16 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	if (!prChipInfo)
 		return FALSE;
 
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
+		return TRUE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+		return FALSE;
+	}
+
 	prBusInfo = prChipInfo->bus_info;
 
 	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
@@ -655,11 +665,6 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 		}
 		*pu4Value = HIF_DEADFEED_VALUE;
 		return FALSE;
-	}
-
-	if (kalIsHostReg(prChipInfo, u4Register)) {
-		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
-		return TRUE;
 	}
 
 	/* Static mapping */
@@ -723,6 +728,16 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 
 	prBusInfo = prChipInfo->bus_info;
 
+	if (kalIsHostReg(prChipInfo, u4Register)) {
+		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
+		return TRUE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+		return FALSE;
+	}
+
 	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
 	    prBusInfo->isValidRegAccess &&
 	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
@@ -733,11 +748,6 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 			       u4Register, u4BusAddr, u4Value);
 		}
 		return FALSE;
-	}
-
-	if (kalIsHostReg(prChipInfo, u4Register)) {
-		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
-		return TRUE;
 	}
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -792,6 +802,11 @@ u_int8_t kalDevRegReadRange(struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
+		return FALSE;
+	}
+
 	if (halChipToStaticMapBusAddr(chip_info, reg, &bus_addr)) {
 		uint32_t offset = 0;
 
@@ -840,6 +855,11 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
+		return FALSE;
+	}
+
+	if (fgIsBusAccessFailed) {
+		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
 		return FALSE;
 	}
 

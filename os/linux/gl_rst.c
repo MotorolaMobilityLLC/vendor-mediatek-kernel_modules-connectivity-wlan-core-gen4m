@@ -103,7 +103,8 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_WDT"),
 	(uint8_t *) DISP_STRING("RST_SMC_CMD_FAIL"),
 	(uint8_t *) DISP_STRING("RST_DEVAPC"),
-	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY")
+	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY"),
+	(uint8_t *) DISP_STRING("Chip reset by AER"),
 };
 
 const uint8_t *apucRstAction[] = {
@@ -1359,13 +1360,11 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	DBGLOG(INIT, INFO,
 		"drv: %d, reason: %s\n",
 		drv, reason);
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	prAdapter = prGlueInfo->prAdapter;
 
 	while (get_wifi_process_status() == 1) {
 		DBGLOG(REQ, WARN,
@@ -1378,11 +1377,19 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		return 0;
 	}
 
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
 	if (drv == CONNV3_DRV_TYPE_CONNV3) {
 		if (prGlueInfo->u4ReadyFlag &&
 		    kalStrnCmp(reason, "PMIC Fault", 10) == 0) {
 			fgIsBusAccessFailed = TRUE;
 			g_IsWfsysBusHang = TRUE;
+#if defined(_HIF_PCIE)
+			if (prBusInfo->disableDevice)
+				prBusInfo->disableDevice(prGlueInfo);
+#endif
 		}
 	}
 
