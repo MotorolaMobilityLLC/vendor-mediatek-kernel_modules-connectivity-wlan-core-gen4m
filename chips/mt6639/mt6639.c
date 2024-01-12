@@ -194,6 +194,10 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 
 static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+static void mt6639ShowDevapcDebugInfo(void);
+#endif
+
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *pu4Status);
 
@@ -824,6 +828,9 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.dumpTxdInfo = connac3x_dump_tmac_info,
 #if defined(_HIF_PCIE)
 	.dumpWfBusSectionA = mt6639_dumpHostVdnrTimeoutInfo,
+#endif
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+	.showDevapcDebugInfo = mt6639ShowDevapcDebugInfo,
 #endif
 };
 
@@ -2602,6 +2609,17 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
 	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
 }
+
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+static void mt6639ShowDevapcDebugInfo(void)
+{
+	uint32_t u4Val = 0;
+
+	kalDevRegRead(NULL, PCIE_MAC_IREG_IMASK_HOST_ADDR, &u4Val);
+	DBGLOG(HAL, INFO, "PCIE_MAC_IREG_IMASK_HOST_ADDR[0x%08x]=[0x%08x]\n",
+		PCIE_MAC_IREG_IMASK_HOST_ADDR, u4Val);
+}
+#endif
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {

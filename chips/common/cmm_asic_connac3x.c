@@ -2809,6 +2809,16 @@ static void register_connv3_cbs(void)
 #if IS_ENABLED(CONFIG_MTK_DEVAPC)
 static void wlan_devapc_debug_dump(void)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct CHIP_DBG_OPS *prDbgOps;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo) {
+		prDbgOps = prChipInfo->prDebugOps;
+		if (prDbgOps->showDevapcDebugInfo)
+			prDbgOps->showDevapcDebugInfo();
+	}
+
 	GL_DEFAULT_RESET_TRIGGER(NULL, RST_DEVAPC);
 }
 
