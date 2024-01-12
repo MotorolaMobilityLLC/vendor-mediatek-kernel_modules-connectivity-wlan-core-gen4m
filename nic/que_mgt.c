@@ -70,6 +70,8 @@
 #include "precomp.h"
 #include "queue.h"
 #include "mddp.h"
+#include "nic_tx.h"
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -1128,6 +1130,12 @@ void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
 			prAdapter->rQM.u4TxAllowedStaCount--;
 	}
 	prStaRec->fgIsTxAllowed = fgIsTxAllowed;
+
+	/* Start tx the pending frame for TX Direct path */
+	if (prStaRec->fgIsTxAllowed &&
+	    HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
+		nicTxDirectStartCheckQTimer(prAdapter);
+	}
 }
 
 /*----------------------------------------------------------------------------*/

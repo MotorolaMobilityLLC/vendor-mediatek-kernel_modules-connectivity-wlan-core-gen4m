@@ -1444,6 +1444,8 @@ struct ADAPTER {
 	uint32_t u4StaPsBitmap;
 	struct QUE rBssAbsentQueue[MAX_BSSID_NUM + 1];
 	uint32_t u4BssAbsentBitmap;
+	struct QUE rStaPendQueue[CFG_STA_REC_NUM];
+	uint32_t u4StaPendBitmap;
 	/* TX Direct related : END */
 
 	struct QUE rPendingCmdQueue;
