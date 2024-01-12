@@ -220,8 +220,7 @@ void p2pFsmRunEventNetDeviceRegister(struct ADAPTER *prAdapter,
 void p2pFsmRunEventUpdateMgmtFrame(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
-	struct MSG_P2P_MGMT_FRAME_UPDATE *prP2pMgmtFrameUpdateMsg =
-		(struct MSG_P2P_MGMT_FRAME_UPDATE *) NULL;
+	struct MSG_P2P_MGMT_FRAME_UPDATE *prP2pMgmtFrameUpdateMsg;
 
 	DBGLOG(P2P, TRACE, "p2pFsmRunEventUpdateMgmtFrame\n");
 

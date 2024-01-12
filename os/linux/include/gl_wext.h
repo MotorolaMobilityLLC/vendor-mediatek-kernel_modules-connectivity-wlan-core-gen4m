@@ -65,7 +65,7 @@ struct PARAM_FIXED_IEs {
 struct PARAM_VARIABLE_IE {
 	uint8_t ucElementID;
 	uint8_t ucLength;
-	uint8_t aucData[1];
+	uint8_t aucData[];
 };
 
 #if WIRELESS_EXT < 18

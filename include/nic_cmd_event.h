@@ -1687,7 +1687,7 @@ struct EVENT_DUMP_MEM {
 	uint32_t eIcapContent;
 #endif				/* CFG_SUPPORT_QA_TOOL */
 	uint8_t ucFragNum;
-	uint8_t aucBuffer[1];
+	uint8_t aucBuffer[];
 };
 
 #define CMD_DEVINFO_UPDATE_HDR_SIZE 8
