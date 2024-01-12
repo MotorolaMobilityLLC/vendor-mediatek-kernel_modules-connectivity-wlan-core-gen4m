@@ -5247,6 +5247,12 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 #endif
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen;
+#if WLAN_INCLUDE_SYS
+	uint8_t *pucIniBuf = NULL;
+	uint32_t u4ConfigReadLen2 = 0;
+	uint8_t *pucMergedBuf = NULL;
+	uint32_t u4ConfigMergedLen;
+#endif
 
 	wlanCfgInit(prAdapter, NULL, 0, 0);
 	u4ConfigReadLen = 0;
@@ -5262,7 +5268,36 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 	}
 
 #if WLAN_INCLUDE_SYS
-	iniFileErrorCheck(prAdapter, &pucConfigBuf, &u4ConfigReadLen);
+	iniFileErrorCheck(prAdapter, &pucIniBuf, &u4ConfigReadLen2);
+
+	u4ConfigMergedLen = u4ConfigReadLen + u4ConfigReadLen2;
+	if (u4ConfigMergedLen > 0) {
+		pucMergedBuf = kalMemZAlloc(u4ConfigMergedLen, VIR_MEM_TYPE);
+		if (pucMergedBuf) {
+			if (pucConfigBuf) {
+				pucConfigBuf[u4ConfigReadLen-1] = '\n';
+				kalMemCopy(pucMergedBuf, pucConfigBuf,
+					u4ConfigReadLen);
+				kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
+					u4ConfigReadLen);
+			}
+			if (pucIniBuf) {
+				kalMemCopy(pucMergedBuf + u4ConfigReadLen,
+					pucIniBuf, u4ConfigReadLen2);
+				kalMemFree(pucIniBuf, VIR_MEM_TYPE,
+					u4ConfigReadLen2);
+			}
+
+			pucConfigBuf = pucMergedBuf;
+			pucMergedBuf = NULL;
+			u4ConfigReadLen = u4ConfigMergedLen;
+		} else {
+			if (pucIniBuf)
+				kalMemFree(pucIniBuf, VIR_MEM_TYPE,
+					u4ConfigReadLen2);
+			DBGLOG(INIT, WARN, "pucMergedBuf allocate fail\n");
+		}
+	}
 #endif
 
 	if (pucConfigBuf) {
