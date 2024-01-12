@@ -10492,6 +10492,12 @@ uint32_t __weak kalGetLittleCpuBoostThreshold(void)
 }
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
+uint32_t __weak kalGetChipID(void)
+{
+	/* SOC7_0_CHIP_ID = 0x70707070 */
+	return 0x70707070;
+}
+
 uint32_t __weak kalGetConnsysVersion(void)
 {
 	/* SOC7_CONNSYS_VERSION_ID = 0x02050100 */

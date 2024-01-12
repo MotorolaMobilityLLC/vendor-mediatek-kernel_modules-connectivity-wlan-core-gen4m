@@ -2204,6 +2204,7 @@ uint32_t kalGetCpuBoostThreshold(void);
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 uint32_t kalGetLittleCpuBoostThreshold(void);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
+uint32_t kalGetChipID(void);
 int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter, uint8_t uBssIndex);
 uint32_t kalGetConnsysVersion(void);
 uint32_t kalGetWfIpVersion(void);
