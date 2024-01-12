@@ -418,10 +418,12 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 			else if (prScanReqMsg->eScanChannel ==
 				SCAN_CHANNEL_5G && eBand != BAND_5G)
 				continue;
+#if CFG_SUPPORT_FULL2PARTIAL_SCAN
 			if (fgIsFull2Partial && !scanIsBitSet(u4Channel,
 				prScanInfo->au4ChannelBitMap,
 				sizeof(prScanInfo->au4ChannelBitMap)))
 				continue;
+#endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
 			kalMemCopy(&prScanReqMsg->arChnlInfoList[u4Index],
 					&arChannel[i],
 					sizeof(struct RF_CHANNEL_INFO));
@@ -2969,7 +2971,7 @@ struct BSS_DESC *scanSearchBssDescByPolicy(
 				eBSSType == BSS_TYPE_INFRASTRUCTURE) {
 				if (UNEQUAL_MAC_ADDR(prConnSettings->aucBSSID,
 					prBssDesc->aucBSSID)) {
-					log_dbg(SCN, INFO, "SEARCH: Ignore due to BSSID was not matched!\n");
+					log_dbg(SCN, TRACE, "SEARCH: Ignore due to BSSID was not matched!\n");
 					continue;
 				}
 			}
