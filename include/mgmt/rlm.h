@@ -177,6 +177,10 @@ extern uint32_t g_au4IQData[256];
 #if (CFG_SUPPORT_802_11AX == 1)
 #define MODE_HE_SU 8
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+#define MODE_EHT_SU 15
+#endif
+
 #endif
 
 #if CFG_SUPPORT_802_11AC
