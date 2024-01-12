@@ -1076,6 +1076,7 @@ struct WIFI_VAR {
 	uint32_t fgDisBcnLostDetection;
 	uint32_t fgDisAgingLostDetection;
 	uint32_t fgDisRoaming;		/* 0:enable roaming 1:disable */
+	uint32_t u4RejectBtmReqReason;
 	uint32_t fgRoamByBTO;
 	uint32_t u4AisRoamingNumber;
 	uint32_t fgEnArpFilter;
