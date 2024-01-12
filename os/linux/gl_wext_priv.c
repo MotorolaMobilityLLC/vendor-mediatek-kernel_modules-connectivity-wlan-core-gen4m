@@ -21856,7 +21856,6 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
 	struct CMD_CSI_CONTROL_T *prCSICtrl = NULL;
 	struct CSI_INFO_T *prCSIInfo = NULL;
-	struct BSS_INFO *prAisBssInfo;
 	enum CSI_OUTPUT_METHOND_COMMAND eOutPut;
 	enum CSI_STA_MAC_MODE_T eStaMode;
 
@@ -21898,17 +21897,7 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 		goto out;
 	}
 	prCSIInfo->ucMode = prCSICtrl->ucMode;
-
-	prAisBssInfo = aisGetAisBssInfo(
-				prGlueInfo->prAdapter, wlanGetBssIdx(prNetDev));
-	if (prAisBssInfo->eBand == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			|| prAisBssInfo->eBand == BAND_6G
-#endif
-		)
-		prCSICtrl->ucBandIdx = ENUM_BAND_1;
-	else
-		prCSICtrl->ucBandIdx = ENUM_BAND_0;
+	prCSICtrl->ucBandIdx = glCsiGetBandIdx();
 
 	if (prCSICtrl->ucMode == CSI_CONTROL_MODE_STOP ||
 		prCSICtrl->ucMode == CSI_CONTROL_MODE_START) {
@@ -22003,6 +21992,21 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 			prCSICtrl->ucValue1);
 		i4BytesWritten = -1;
 		goto out;
+	}
+
+	if (prCSICtrl->ucCfgItem == CSI_CONFIG_BAND) {
+		if (prCSICtrl->ucValue1 < ENUM_BAND_NUM) {
+			DBGLOG(REQ, INFO, "[CSI] set band number: %d\n",
+					prCSICtrl->ucValue1);
+			glCsiSetBandIdx(prCSICtrl->ucValue1);
+			i4BytesWritten = 0;
+			goto out;
+		} else {
+			DBGLOG(REQ, ERROR, "[CSI] Invalid band number: %d\n",
+					prCSICtrl->ucValue1);
+			i4BytesWritten = -1;
+			goto out;
+		}
 	}
 
 	if (prCSICtrl->ucCfgItem == CSI_CONFIG_FILTER_MODE) {
