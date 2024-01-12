@@ -9770,7 +9770,7 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 
 		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
 			((unsigned long) prNetworkAddress +
-			(unsigned long) (prNetworkAddress->u2AddressLength +
+			(unsigned long) (prNetworkAddress->u2AddressLength*2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -9792,6 +9792,8 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 	if (prCmdNetworkAddressList == NULL)
 		return WLAN_STATUS_FAILURE;
 
+	kalMemZero(prCmdNetworkAddressList, u4CmdSize);
+	prCmdNetworkAddressList->ucVersion = 1;
 #if CFG_ENABLE_GTK_FRAME_FILTER
 	u4IpV4AddrListSize =
 			OFFSET_OF(struct IPV4_NETWORK_ADDRESS_LIST, arNetAddr) +
@@ -9831,7 +9833,11 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 					arNetAddress[u4IPv4AddrIdx].aucIpAddr,
 					prNetworkAddress->aucAddress,
 					sizeof(uint32_t));
-
+				kalMemCopy(prCmdNetworkAddressList->
+					arNetAddress[u4IPv4AddrIdx].aucIpMask,
+					prNetworkAddress->
+					aucAddress+sizeof(uint32_t),
+					sizeof(uint32_t));
 #if CFG_ENABLE_GTK_FRAME_FILTER
 				kalMemCopy(prBssInfo->prIpV4NetAddrList->
 					arNetAddr[u4IPv4AddrIdx].aucIpAddr,
@@ -9839,29 +9845,34 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 					sizeof(uint32_t));
 #endif
 
-				DBGLOG(INIT, INFO,
-				       "%s: IPv4 Addr [%u][" IPV4STR "]\n",
-				       __func__, u4IPv4AddrIdx,
-				       IPV4TOSTR(prNetworkAddress->aucAddress));
+				DBGLOG(OID, INFO,
+				"%s:IPv4 Addr[%u]["IPV4STR"]Mask["IPV4STR"]\n",
+				__func__,
+				u4IPv4AddrIdx,
+				IPV4TOSTR(prNetworkAddress->aucAddress),
+				IPV4TOSTR(prNetworkAddress->
+				aucAddress+sizeof(uint32_t)));
 
 				u4IPv4AddrIdx++;
 			}
 
 			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-			    ((unsigned long)prNetworkAddress +
-			    (unsigned long)(prNetworkAddress->u2AddressLength +
-			    OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
-				      aucAddress)));
+				((unsigned long)prNetworkAddress +
+				(unsigned long)(prNetworkAddress->
+				u2AddressLength*2 +
+				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+				aucAddress)));
 		}
 
 	} else {
 		prCmdNetworkAddressList->ucAddressCount = 0;
 	}
 
-	DBGLOG(INIT, INFO,
-	       "%s: Set %u IPv4 address for BSS[%u]\n", __func__,
-	       u4IPv4AddrCount,
-	       prCmdNetworkAddressList->ucBssIndex);
+	DBGLOG(OID, INFO,
+	       "%s: Set %u IPv4 address for BSS[%d] ver[%d]\n", __func__,
+		u4IPv4AddrCount,
+		prCmdNetworkAddressList->ucBssIndex,
+		prCmdNetworkAddressList->ucVersion);
 
 	/* 4 <5> Send command */
 	rStatus = wlanSendSetQueryCmd(prAdapter,

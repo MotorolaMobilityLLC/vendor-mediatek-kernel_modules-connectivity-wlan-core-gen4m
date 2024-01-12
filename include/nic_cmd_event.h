@@ -2206,12 +2206,14 @@ struct CMD_SET_COUNTRY_TX_POWER_LIMIT_PER_RATE {
 /* CMD_SET_IP_ADDRESS */
 struct IPV4_NETWORK_ADDRESS {
 	uint8_t aucIpAddr[4];
+	uint8_t aucIpMask[4];
 };
 
 struct CMD_SET_NETWORK_ADDRESS_LIST {
 	uint8_t ucBssIndex;
 	uint8_t ucAddressCount;
-	uint8_t ucReserved[2];
+	uint8_t ucVersion;
+	uint8_t ucReserved[1];
 	struct IPV4_NETWORK_ADDRESS arNetAddress[1];
 };
 
