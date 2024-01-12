@@ -1070,6 +1070,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			/* This ndev is created in mtk_p2p_cfg80211_add_iface(),
 			 * and unregister_netdev will also free the ndev.
 			 */
+			prP2PInfo->aprRoleHandler = NULL;
 		}
 
 		DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
