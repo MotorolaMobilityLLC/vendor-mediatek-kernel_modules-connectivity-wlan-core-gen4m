@@ -4,6 +4,7 @@ ifeq ($(MTK_WLAN_SUPPORT), yes)
 
 ifeq ($(WLAN_BUILD_COMMON), true)
 	# for layer decoupling 2.0, we have to build all configurations
+
 	WLAN_CHIP_ID := 6893
 	WIFI_CHIP := CONNAC2X2_SOC3_0
 	WIFI_IP_SET := 1

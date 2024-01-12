@@ -183,12 +183,6 @@ const struct of_device_id mtk_axi_of_ids[] = {
 	{.compatible = "mediatek,wifi",},
 	{}
 };
-#if CFG_SUPPORT_RX_PAGE_POOL
-const struct of_device_id mtk_page_pool_of_ids[] = {
-	{.compatible = "mediatek,wifi_page_pool",},
-	{}
-};
-#endif
 #endif
 
 /*******************************************************************************
@@ -220,21 +214,6 @@ static struct platform_driver mtk_axi_driver = {
 	.probe = NULL,
 	.remove = NULL,
 };
-
-#if CFG_SUPPORT_RX_PAGE_POOL
-static struct platform_driver mtk_page_pool_driver = {
-	.driver = {
-		.name = "wlan_page_pool",
-		.owner = THIS_MODULE,
-#ifdef CONFIG_OF
-		.of_match_table = mtk_page_pool_of_ids,
-#endif
-	},
-	.id_table = mtk_axi_ids,
-	.probe = NULL,
-	.remove = NULL,
-};
-#endif
 
 static struct pci_driver mtk_pci_driver = {
 	.name = KBUILD_MODNAME,
@@ -926,6 +905,10 @@ static int mtk_axi_probe(struct platform_device *pdev)
 		goto exit;
 #endif
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+	kalCreateHifSkbList();
+#endif
+
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	ret = wlan_pinctrl_init(prChipInfo);
 	if (ret)
@@ -959,42 +942,12 @@ static int mtk_axi_remove(struct platform_device *pdev)
 #if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
-	platform_set_drvdata(pdev, NULL);
-	return 0;
-}
-
 #if CFG_SUPPORT_RX_PAGE_POOL
-static int mtk_page_pool_probe(struct platform_device *pdev)
-{
-	struct mt66xx_hif_driver_data *prDriverData;
-	struct mt66xx_chip_info *prChipInfo;
-	int ret = 0;
-
-	prDriverData = (struct mt66xx_hif_driver_data *)
-			mtk_axi_ids[0].driver_data;
-	prChipInfo = prDriverData->chip_info;
-
-	ret = axiDmaSetup(pdev, prDriverData);
-	if (ret)
-		goto exit;
-
-	kalCreateRxPagePool(&pdev->dev);
-	kalCreateHifSkbList();
-
-exit:
-	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
-
-	return 0;
-}
-
-static int mtk_page_pool_remove(struct platform_device *pdev)
-{
 	kalReleaseHifSkbList();
-	kalReleaseRxPagePool(&pdev->dev);
+#endif
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1400,14 +1353,6 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	mtk_axi_driver.probe = mtk_axi_probe;
 	mtk_axi_driver.remove = mtk_axi_remove;
 
-#if CFG_SUPPORT_RX_PAGE_POOL
-	mtk_page_pool_driver.probe = mtk_page_pool_probe;
-	mtk_page_pool_driver.remove = mtk_page_pool_remove;
-
-	if (platform_driver_register(&mtk_page_pool_driver))
-		DBGLOG(HAL, ERROR, "page pool platform_driver_register fail\n");
-#endif
-
 	if (platform_driver_register(&mtk_axi_driver))
 		DBGLOG(HAL, ERROR, "platform_driver_register fail\n");
 
@@ -1430,9 +1375,6 @@ void glUnregisterBus(remove_card pfRemove)
 		g_fgDriverProbed = FALSE;
 	}
 	platform_driver_unregister(&mtk_axi_driver);
-#if CFG_SUPPORT_RX_PAGE_POOL
-	platform_driver_unregister(&mtk_page_pool_driver);
-#endif
 }
 
 #if CFG_SUPPORT_RX_PAGE_POOL
