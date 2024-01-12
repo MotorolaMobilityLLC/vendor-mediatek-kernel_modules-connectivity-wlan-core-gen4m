@@ -3327,53 +3327,57 @@ static s_int32 hqa_icap_ctrl(
 		sys_ad_zero_mem(icap_data_cnt, sizeof(s_int32));
 
 		ret = mt_serv_get_icap_max_data_len(serv_test, &max_data_len);
-		if (ret || (max_data_len == 0)) {
-			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-			("%s : mt_serv_get_icap_max_data_len is failed!!\n"
-			, __func__));
-			goto error1;
-		}
+		if (max_data_len > 0) {
+			if (ret) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+				("%s : max_data_len is failed!!\n"
+				, __func__));
+				goto error1;
+			}
 
-		ret = sys_ad_alloc_mem((u_char **)&icap_data, max_data_len);
-		if (ret) {
-			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-			("%s : Not enough memory for dynamic allocating!!\n"
-			, __func__));
-			goto error1;
-		}
-		sys_ad_zero_mem(icap_data, max_data_len);
+			ret = sys_ad_alloc_mem(
+				(u_char **)&icap_data, max_data_len);
+			if (ret) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+				("%s : Not enough memory!!\n"
+				, __func__));
+				goto error1;
+			}
+			sys_ad_zero_mem(icap_data, max_data_len);
 
-		ret = mt_serv_get_icap_data(serv_test,
-				icap_data_cnt, icap_data, wf_num, iq_type);
-		if (ret) {
-			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-			("%s : mt_serv_get_icap_data is not supported!!\n"
-			, __func__));
-			goto error1;
-		}
+			ret = mt_serv_get_icap_data(serv_test,
+					icap_data_cnt, icap_data,
+					wf_num, iq_type);
+			if (ret) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+				("%s : mt_serv_get_icap_data not supported!!\n"
+				, __func__));
+				goto error1;
+			}
 
-		value = SERV_OS_HTONL(control);
-		sys_ad_move_mem(hqa_frame->data + resp_len,
-			&value, sizeof(value));
-		resp_len += sizeof(value);
-		value = SERV_OS_HTONL(wf_num);
-		sys_ad_move_mem(hqa_frame->data + resp_len,
-			&value, sizeof(value));
-		resp_len += sizeof(value);
-		value = SERV_OS_HTONL(iq_type);
-		sys_ad_move_mem(hqa_frame->data + resp_len,
-			&value, sizeof(value));
-		resp_len += sizeof(value);
-		value = SERV_OS_HTONL(*icap_data_cnt);
-		sys_ad_move_mem(hqa_frame->data + resp_len,
-			&value, sizeof(value));
-		resp_len += sizeof(value);
-
-		for (i = 0; i < *icap_data_cnt; i++) {
-			value = SERV_OS_HTONL(icap_data[i]);
+			value = SERV_OS_HTONL(control);
 			sys_ad_move_mem(hqa_frame->data + resp_len,
 				&value, sizeof(value));
 			resp_len += sizeof(value);
+			value = SERV_OS_HTONL(wf_num);
+			sys_ad_move_mem(hqa_frame->data + resp_len,
+				&value, sizeof(value));
+			resp_len += sizeof(value);
+			value = SERV_OS_HTONL(iq_type);
+			sys_ad_move_mem(hqa_frame->data + resp_len,
+				&value, sizeof(value));
+			resp_len += sizeof(value);
+			value = SERV_OS_HTONL(*icap_data_cnt);
+			sys_ad_move_mem(hqa_frame->data + resp_len,
+				&value, sizeof(value));
+			resp_len += sizeof(value);
+
+			for (i = 0; i < *icap_data_cnt; i++) {
+				value = SERV_OS_HTONL(icap_data[i]);
+				sys_ad_move_mem(hqa_frame->data + resp_len,
+					&value, sizeof(value));
+				resp_len += sizeof(value);
+			}
 		}
 		break;
 
