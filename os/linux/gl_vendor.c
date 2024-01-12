@@ -580,11 +580,19 @@ int mtk_cfg80211_vendor_config_roaming(struct wiphy *wiphy,
 
 			prBlackList = aisAddBlacklist(prGlueInfo->prAdapter,
 						      prBssDesc);
-			prBlackList->fgIsInFWKBlacklist = TRUE;
-			DBGLOG(REQ, INFO, "Gets roaming blacklist SSID=%s addr="
-				MACSTR "\n",
-				prBssDesc->aucSSID,
-				MAC2STR(prBssDesc->aucBSSID));
+
+			if (prBlackList) {
+				prBlackList->fgIsInFWKBlacklist = TRUE;
+				DBGLOG(REQ, INFO,
+					"Gets roaming blacklist SSID=%s addr="
+					MACSTR "\n",
+					prBssDesc->aucSSID,
+					MAC2STR(prBssDesc->aucBSSID));
+			} else {
+				DBGLOG(REQ, ERROR,
+					"prBlackList is NULL, return -EINVAL!");
+				return -EINVAL;
+			}
 		}
 	}
 

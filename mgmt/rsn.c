@@ -1663,7 +1663,9 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 						prMsduInfo->ucStaRecIndex);
 
-			if (rsnSearchPmkidEntry(prAdapter,
+			if (!prStaRec) {
+				DBGLOG(RSN, ERROR, "prStaRec is NULL!");
+			} else if (rsnSearchPmkidEntry(prAdapter,
 				prStaRec->aucMacAddr, &u4Entry)) {
 				if (prAdapter->rWifiVar.
 					rAisSpecificBssInfo.
