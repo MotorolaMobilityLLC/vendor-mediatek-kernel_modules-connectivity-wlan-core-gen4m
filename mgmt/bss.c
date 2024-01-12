@@ -246,6 +246,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
+	uint32_t u4Cipher;
 
 	/* 802.11 AX blacklist */
 	if (queryAxBlocklist(prAdapter, prBssDesc->aucBSSID,
@@ -268,7 +269,10 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 
 	/* Decide AIS PHY type set */
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
-		uint32_t u4Cipher = prBssInfo->u4RsnSelectedPairwiseCipher;
+		if (prBssInfo == NULL)
+			goto BYPASS_SEC_CHECK;
+
+		u4Cipher = prBssInfo->u4RsnSelectedPairwiseCipher;
 
 		if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_TKIP ||
 		    GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP40 ||
@@ -285,6 +289,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 #endif
 		}
 
+BYPASS_SEC_CHECK:
 		ucHtOption = prWifiVar->ucStaHt;
 		ucVhtOption = prWifiVar->ucStaVht;
 #if (CFG_SUPPORT_802_11AX == 1)
