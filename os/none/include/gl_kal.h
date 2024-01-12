@@ -1600,6 +1600,9 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #if CFG_SUPPORT_MULTITHREAD
 #ifdef CFG_REMIND_IMPLEMENT
+#define kalSetSerIntEvent(_pr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
+
 #define kalSetTxEvent2Hif(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 
@@ -1614,6 +1617,8 @@ void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 #define kalSetRxProcessEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 #else
+void kalSetSerIntEvent(struct GLUE_INFO *pr);
+
 void kalSetTxEvent2Hif(struct GLUE_INFO *pr);
 
 void kalSetTxEvent2Rx(struct GLUE_INFO *pr);
