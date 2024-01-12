@@ -66,6 +66,7 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+#define TWT_INCORRECT_FLOW_ID   0xFF
 #define TWT_MAX_FLOW_NUM        8
 #define TWT_MAX_WAKE_INTVAL_EXP (TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP >> \
 	TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET)
@@ -310,6 +311,9 @@ uint32_t twtSendInfoFrame(
 
 u_int8_t twtGetTxSetupFlowId(
 	struct MSDU_INFO *prMsduInfo);
+
+uint8_t twtGetRxSetupFlowId(
+	struct _IE_TWT_T *prTWTIE);
 
 u_int8_t twtGetTxTeardownFlowId(
 	struct MSDU_INFO *prMsduInfo);

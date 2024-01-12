@@ -340,7 +340,12 @@ twtPlannerIsDrvAgrtExisting(struct ADAPTER *prAdapter)
 
 void twtPlannerInit(IN struct _TWT_PLANNER_T *pTWTPlanner)
 {
-	ASSERT(pTWTPlanner);
+	if (!pTWTPlanner) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid pTWTPlanner\n");
+
+		return;
+	}
 
 	kalMemSet(&(pTWTPlanner->arTWTAgrtTbl[0]), 0,
 		TWT_AGRT_MAX_NUM * sizeof(struct _TWT_AGRT_T));
@@ -351,11 +356,17 @@ static struct _TWT_FLOW_T *twtPlannerFlowFindById(
 {
 	struct _TWT_FLOW_T *prTWTFlow = NULL;
 
-	ASSERT(prStaRec);
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return NULL;
+	}
 
 	if (ucFlowId >= TWT_MAX_FLOW_NUM) {
 		DBGLOG(TWT_PLANNER, ERROR, "Invalid TWT flow id %u\n",
 			ucFlowId);
+
 		return NULL;
 	}
 
@@ -371,6 +382,20 @@ twtPlannerSendReqStart(
 	uint8_t ucTWTFlowId)
 {
 	struct _MSG_TWT_REQFSM_START_T *prTWTReqFsmStartMsg;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	prTWTReqFsmStartMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(struct _MSG_TWT_REQFSM_START_T));
@@ -396,6 +421,20 @@ twtPlannerSendReqTeardown(struct ADAPTER *prAdapter,
 {
 	struct _MSG_TWT_REQFSM_TEARDOWN_T *prTWTReqFsmTeardownMsg;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	prTWTReqFsmTeardownMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(struct _MSG_TWT_REQFSM_TEARDOWN_T));
 	if (prTWTReqFsmTeardownMsg) {
@@ -419,6 +458,20 @@ twtPlannerSendReqSuspend(struct ADAPTER *prAdapter,
 				uint8_t ucTWTFlowId)
 {
 	struct _MSG_TWT_REQFSM_SUSPEND_T *prTWTReqFsmSuspendMsg;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	prTWTReqFsmSuspendMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(struct _MSG_TWT_REQFSM_SUSPEND_T));
@@ -445,6 +498,20 @@ twtPlannerSendReqResume(struct ADAPTER *prAdapter,
 				uint8_t ucNextTWTSize)
 {
 	struct _MSG_TWT_REQFSM_RESUME_T *prTWTReqFsmResumeMsg;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	prTWTReqFsmResumeMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(struct _MSG_TWT_REQFSM_RESUME_T));
@@ -485,8 +552,22 @@ twtPlannerAddAgrtTbl(
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	if (prBssInfo == NULL) {
 		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to add agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -592,8 +673,22 @@ twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 	struct _TWT_PARAMS_T rTWTParams;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	if (prBssInfo == NULL) {
 		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to resume agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -667,8 +762,22 @@ twtPlannerModifyAgrtTbl(struct ADAPTER *prAdapter,
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 	struct _TWT_PARAMS_T rTWTParams;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	if (prBssInfo == NULL) {
 		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to modify agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -737,8 +846,22 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 	uint8_t ucFlowId_real = ucFlowId;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	if (prBssInfo == NULL) {
 		DBGLOG(TWT_PLANNER, ERROR, "No bssinfo to delete agrt\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -804,6 +927,20 @@ twtPlannerTeardownAgrtTbl(struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	/* Send cmd to teardown this STA in FW */
 	prTWTAgrtUpdate = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 		sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T));
@@ -849,6 +986,27 @@ twtPlannerSuspendAgrtTbl(struct ADAPTER *prAdapter,
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 	struct _TWT_PARAMS_T rTWTParams;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	rWlanStatus = twtPlannerDrvAgrtGet(prAdapter, prBssInfo->ucBssIndex,
 		ucFlowId, &ucAgrtTblIdx, &rTWTParams);
@@ -908,6 +1066,13 @@ uint32_t twtPlannerReset(
 	struct STA_RECORD *prStaRec;
 	struct _EXT_CMD_TWT_ARGT_UPDATE_T *prTWTAgrtUpdate;
 
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	/* If no agrt exits, don't bother resetting */
 	if (twtPlannerIsDrvAgrtExisting(prAdapter) == FALSE)
 		return rWlanStatus;
@@ -921,8 +1086,22 @@ uint32_t twtPlannerReset(
 	}
 
 	/* send cmd to reset FW agreement table */
-	ASSERT(prBssInfo);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+
 	prStaRec = prBssInfo->prStaRecOfAP;
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	prTWTAgrtUpdate->ucAgrtCtrlFlag = TWT_AGRT_CTRL_RESET;
 	prTWTAgrtUpdate->u2PeerIdGrpId = (prStaRec) ?
@@ -976,8 +1155,19 @@ void twtPlannerTearingdown(
 	struct _TWT_FLOW_T *prTWTFlow;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
-	ASSERT(prAdapter);
-	ASSERT(prStaRec);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return;
+	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
@@ -1063,14 +1253,25 @@ void twtPlannerGetTsfDone(
 	uint64_t u8twt_interval = 0;
 	uint64_t u8Mod = 0;
 
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-	ASSERT(pucEventBuf);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	if (!pucEventBuf) {
 		DBGLOG(TWT_PLANNER, ERROR, "pucEventBuf is NULL.\n");
 		return;
 	}
+
 	if (!prCmdInfo->pvInformationBuffer) {
 		DBGLOG(TWT_PLANNER, ERROR,
 			"prCmdInfo->pvInformationBuffer is NULL.\n");
@@ -1081,12 +1282,30 @@ void twtPlannerGetTsfDone(
 	prGetTsfCtxt = (struct _TWT_GET_TSF_CONTEXT_T *)
 		prCmdInfo->pvInformationBuffer;
 
-	ASSERT(prGetTsfCtxt);
+	if (!prGetTsfCtxt) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prGetTsfCtxt\n");
+
+		return;
+	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prGetTsfCtxt->ucBssIdx);
-	ASSERT(prBssInfo);
+
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
+
 	prStaRec = prBssInfo->prStaRecOfAP;
-	ASSERT(prStaRec);
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return;
+	}
 
 	prTsfResult = &(prEventMacInfo->rMacInfoResult.rTsfResult);
 	u8CurTsf = LE32_TO_CPU(prTsfResult->u4TsfBitsLow) |
@@ -1472,8 +1691,19 @@ void twtPlannerSetParams(
 	uint8_t ucBssIdx, ucFlowId;
 	uint8_t ucFlowId_real;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTParamSetMsg = (struct _MSG_TWT_PARAMS_SET_T *) prMsgHdr;
 	kalMemCopy(prTWTCtrl, &prTWTParamSetMsg->rTWTCtrl, sizeof(*prTWTCtrl));
@@ -1494,6 +1724,7 @@ void twtPlannerSetParams(
 
 	/* Get the STA Record */
 	prStaRec = prBssInfo->prStaRecOfAP;
+
 	if (!prStaRec) {
 		DBGLOG(TWT_PLANNER, ERROR, "No AP STA Record\n");
 		return;
@@ -1799,8 +2030,19 @@ void twtPlannerRxNegoResult(
 	struct _TWT_PARAMS_T *prTWTResult, *prTWTParams;
 	struct _TWT_FLOW_T *prTWTFlow;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTFsmResultMsg = (struct _MSG_TWT_REQFSM_IND_RESULT_T *) prMsgHdr;
 	prStaRec = prTWTFsmResultMsg->prStaRec;
@@ -1808,12 +2050,17 @@ void twtPlannerRxNegoResult(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prStaRec\n");
+
 		return;
 	}
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-
 	cnmMemFree(prAdapter, prMsgHdr);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	if (!IS_AP_STA(prStaRec)) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1872,7 +2119,6 @@ void twtPlannerRxNegoResult(
 	default:
 		DBGLOG(TWT_PLANNER, ERROR,
 			"Unknown setup command %u\n", prTWTResult->ucSetupCmd);
-		ASSERT(0);
 		break;
 
 	}
@@ -1886,8 +2132,19 @@ void twtPlannerSuspendDone(
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTFsmResultMsg = (struct _MSG_TWT_REQFSM_IND_RESULT_T *) prMsgHdr;
 	prStaRec = prTWTFsmResultMsg->prStaRec;
@@ -1895,12 +2152,24 @@ void twtPlannerSuspendDone(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prStaRec\n");
+
 		return;
 	}
 
+	cnmMemFree(prAdapter, prMsgHdr);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	cnmMemFree(prAdapter, prMsgHdr);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
 
 	if (!IS_AP_STA(prStaRec)) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1922,8 +2191,19 @@ void twtPlannerResumeDone(
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucTWTFlowId;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTFsmResultMsg = (struct _MSG_TWT_REQFSM_IND_RESULT_T *) prMsgHdr;
 	prStaRec = prTWTFsmResultMsg->prStaRec;
@@ -1931,12 +2211,24 @@ void twtPlannerResumeDone(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prMsgHdr\n");
+
 		return;
 	}
 
+	cnmMemFree(prAdapter, prMsgHdr);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	cnmMemFree(prAdapter, prMsgHdr);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
 
 	if (!IS_AP_STA(prStaRec)) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -1964,16 +2256,28 @@ void twtPlannerFillResumeData(
 	uint8_t ucIdx;
 	uint8_t ucFlowId_real = ucFlowId;
 
-	if (prAdapter == NULL)
-		return;
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
 
-	if (prStaRec == NULL)
 		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prStaRec\n");
+
+		return;
+	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	if (prBssInfo == NULL)
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
 		return;
+	}
 
 	ucIdx = twtPlannerDrvAgrtFind(
 				prAdapter, prBssInfo->ucBssIndex, ucFlowId,
@@ -2004,8 +2308,19 @@ void twtPlannerTeardownDone(
 	uint8_t ucTWTFlowId;
 	struct _TWT_FLOW_T *prTWTFlow;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTFsmResultMsg = (struct _MSG_TWT_REQFSM_IND_RESULT_T *) prMsgHdr;
 	prStaRec = prTWTFsmResultMsg->prStaRec;
@@ -2013,12 +2328,24 @@ void twtPlannerTeardownDone(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prStaRec\n");
+
 		return;
 	}
 
+	cnmMemFree(prAdapter, prMsgHdr);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	cnmMemFree(prAdapter, prMsgHdr);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
 
 	if (!IS_AP_STA(prStaRec)) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -2077,8 +2404,19 @@ void twtPlannerRxInfoFrm(
 	uint8_t ucTWTFlowId;
 	struct _NEXT_TWT_INFO_T rNextTWTInfo;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTFsmInfoFrmMsg = (struct _MSG_TWT_REQFSM_IND_INFOFRM_T *) prMsgHdr;
 	prStaRec = prTWTFsmInfoFrmMsg->prStaRec;
@@ -2086,6 +2424,11 @@ void twtPlannerRxInfoFrm(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prStaRec\n");
+
 		return;
 	}
 
@@ -2095,7 +2438,9 @@ void twtPlannerRxInfoFrm(
 		DBGLOG(TWT_PLANNER, ERROR,
 			"Rx info frame: invalid STA Type %d\n",
 			prStaRec->eStaType);
+
 		cnmMemFree(prAdapter, prMsgHdr);
+
 		return;
 	}
 
@@ -2173,8 +2518,19 @@ void btwtPlannerTeardownDone(
 	struct _TWT_FLOW_T *prTwtFlow;
 	uint8_t ucTWTFlowId, ucIdx;
 
-	ASSERT(prAdapter);
-	ASSERT(prMsgHdr);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prAdapter\n");
+
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prMsgHdr\n");
+
+		return;
+	}
 
 	prTWTFsmResultMsg = (struct _MSG_TWT_REQFSM_IND_RESULT_T *) prMsgHdr;
 	prStaRec = prTWTFsmResultMsg->prStaRec;
@@ -2182,12 +2538,24 @@ void btwtPlannerTeardownDone(
 
 	if ((!prStaRec) || (prStaRec->fgIsInUse == FALSE)) {
 		cnmMemFree(prAdapter, prMsgHdr);
+
+		if (!prStaRec)
+			DBGLOG(TWT_PLANNER, ERROR,
+				"Invalid prStaRec\n");
+
 		return;
 	}
 
+	cnmMemFree(prAdapter, prMsgHdr);
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
-	cnmMemFree(prAdapter, prMsgHdr);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"Invalid prBssInfo\n");
+
+		return;
+	}
 
 	if (!IS_AP_STA(prStaRec)) {
 		DBGLOG(TWT_PLANNER, ERROR,
@@ -2352,14 +2720,29 @@ void mltwtPlannerRxNegoResult(
 	struct _TWT_PARAMS_T *prTWTResult = NULL;
 
 	/* Get MLD_BSS_INFO in MLO connection */
-	ASSERT(prAdapter);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid prAdapter\n");
 
-	ASSERT(prStaRec);
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid prStaRec\n");
+
+		return;
+	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(
 					prAdapter, prStaRec->ucBssIndex);
 
-	ASSERT(prBssInfo);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid prBssInfo\n");
+
+		return;
+	}
 
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 
@@ -2442,14 +2825,29 @@ void mltwtPlannerDelAgrtTbl(
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 	/* Get MLD_BSS_INFO in MLO connection */
-	ASSERT(prAdapter);
+	if (!prAdapter) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid prAdapter\n");
 
-	ASSERT(prStaRec);
+		return;
+	}
+
+	if (!prStaRec) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid prStaRec\n");
+
+		return;
+	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(
 					prAdapter, prStaRec->ucBssIndex);
 
-	ASSERT(prBssInfo);
+	if (!prBssInfo) {
+		DBGLOG(TWT_PLANNER, ERROR,
+			"ML Invalid prBssInfo\n");
+
+		return;
+	}
 
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 
