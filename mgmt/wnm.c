@@ -328,6 +328,8 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex)
 
 #endif /* CFG_SUPPORT_802_11V_TIMING_MEASUREMENT */
 
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
+
 static uint32_t wnmBTMQueryTxDone(struct ADAPTER *prAdapter,
 				  struct MSDU_INFO *prMsduInfo,
 				  enum ENUM_TX_RESULT_CODE rTxDoneStatus)
@@ -341,14 +343,8 @@ static uint32_t wnmBTMResponseTxDone(struct ADAPTER *prAdapter,
 				     struct MSDU_INFO *prMsduInfo,
 				     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	uint8_t ucBssIndex = 0;
-	struct AIS_FSM_INFO *prAisFsmInfo;
-
-	DBGLOG(WNM, INFO, "BTM Resp Tx Done Status %d\n", rTxDoneStatus);
-	ucBssIndex = prMsduInfo->ucBssIndex;
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBtmRespTxDoneTimer);
-	aisFsmBtmRespTxDoneTimeout(prAdapter, ucBssIndex);
+	DBGLOG(WNM, INFO, "Bss%d BTM Resp Tx Done Status %d\n",
+		prMsduInfo->ucBssIndex, rTxDoneStatus);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -363,8 +359,8 @@ static uint32_t wnmBTMResponseTxDone(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
-	struct STA_RECORD *staRec, uint8_t dialogToken,
-	uint8_t status, uint8_t reason, uint8_t delay,
+	struct STA_RECORD *staRec, PFN_TX_DONE_HANDLER pfTxDoneHandler,
+	uint8_t dialogToken, uint8_t status, uint8_t reason, uint8_t delay,
 	const uint8_t *bssid)
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
@@ -451,7 +447,7 @@ void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 		     staRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
 		     OFFSET_OF(struct ACTION_BTM_RSP_FRAME, aucOptInfo) +
 			     u2PayloadLen,
-		     wnmBTMResponseTxDone, MSDU_RATE_MODE_AUTO);
+		     pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	nicTxConfigPktControlFlag(prMsduInfo,
 			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
@@ -621,8 +617,7 @@ fail:
 	DBGLOG(WNM, WARN, "MBO IE parsing failed (id=%u len=%u left=%hu)",
 		   id, elen, len);
 }
-#endif
-
+#endif /* CFG_SUPPORT_MBO */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -669,11 +664,6 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	       "BTM: Req 0x%x, VInt %d, DiscTimer %d, Token %d\n",
 	       prRxFrame->ucRequestMode, prRxFrame->ucValidityInterval,
 	       prRxFrame->u2DisassocTimer, prRxFrame->ucDialogToken);
-
-	if (prBtmParam->fgWaitBtmRespDone) {
-		DBGLOG(WNM, WARN, "BTM: pending btm response is handling\n");
-		return;
-	}
 
 	/* if BTM Request is for broadcast, don't send BTM Response */
 	fgNeedResponse = !!(kalMemCmp(prRxFrame->aucDestAddr,
@@ -734,6 +724,14 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 #if CFG_SUPPORT_802_11K
 	aisResetNeighborApList(prAdapter, ucBssIndex);
 #endif
+
+	/* roaming */
+	if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
+		DBGLOG(WNM, ERROR,
+			"Bss%d recv btm req but not in decision\n", ucBssIndex);
+		ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
+		goto send_response;
+	}
 
 	if (ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED) {
 #if CFG_SUPPORT_802_11K
@@ -804,50 +802,15 @@ send_response:
 	if (prBtmParam->fgPendingResponse) {
 		prBtmParam->fgPendingResponse = false;
 		wnmSendBTMResponseFrame(prAdapter,
-			aisGetStaRecOfAP(prAdapter,  prBtmParam->ucRspBssIndex),
+			aisGetStaRecOfAP(prAdapter, prBtmParam->ucRspBssIndex),
+			wnmBTMResponseTxDone,
 			prBtmParam->ucDialogToken,
 			ucStatus, MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
 			0, NULL);
 	}
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Send btm response with accept code
- *
- * @param[in]
- *
- * @return (none)
- */
-/*----------------------------------------------------------------------------*/
-uint8_t wnmSendBTMResponse(struct ADAPTER *prAdapter,
-	const uint8_t *aucBssid, uint8_t ucStatus,
-	uint8_t ucReason, uint8_t ucBssIndex)
-{
-#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-	struct BSS_INFO *prAisBssInfo;
-	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
-
-	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
-	/* reply btm resp to the link sending btm req but
-	 * keep bssid the same as setup link's bssid
-	 */
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, prBtmParam->ucRspBssIndex);
-	if (prBtmParam->fgPendingResponse) {
-		prBtmParam->fgPendingResponse = FALSE;
-		prBtmParam->fgWaitBtmRespDone = (ucReason == WNM_BSS_TM_ACCEPT);
-		wnmSendBTMResponseFrame(
-			prAdapter,
-			prAisBssInfo->prStaRecOfAP,
-			prBtmParam->ucDialogToken,
-			ucStatus,
-			ucReason,
-			0, aucBssid);
-		return TRUE;
-	}
-#endif
-	return FALSE;
-}
+#endif /* CFG_SUPPORT_802_11V_BTM_OFFLOAD */
 
 #if CFG_AP_80211V_SUPPORT
 static void wnmMulAPAgentBTMRequestDisassocTimerFunc(

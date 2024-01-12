@@ -1553,13 +1553,11 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		       "wlanoidSetInfrastructureMode fail 0x%x\n", rStatus);
 		return -EFAULT;
 	}
-
 	/* after set operation mode, key table are cleared */
 
 #if CFG_SUPPORT_REPLAY_DETECTION
 	/* reset Detect replay information */
-	prDetRplyInfo = aisGetDetRplyInfo(prGlueInfo->prAdapter,
-		ucBssIndex);
+	prDetRplyInfo = aisGetDetRplyInfo(prGlueInfo->prAdapter, ucBssIndex);
 	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
 #endif
 
@@ -7409,6 +7407,7 @@ int mtk_cfg_connect(struct wiphy *wiphy,
 	return mtk_cfg80211_connect(wiphy, ndev, sme);
 }
 
+#if (CFG_SUPPORT_ROAMING == 1)
 int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 		  struct net_device *ndev,
 		  struct cfg80211_connect_params *sme,
@@ -7488,7 +7487,7 @@ int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 
 	return WLAN_STATUS_SUCCESS;
 }
-
+#endif /* CFG_SUPPORT_ROAMING */
 
 int mtk_cfg_disconnect(struct wiphy *wiphy,
 		       struct net_device *ndev,

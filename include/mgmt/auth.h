@@ -57,11 +57,6 @@
 void authAddIEChallengeText(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo);
 
-#if !CFG_SUPPORT_AAA
-uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
-			   struct STA_RECORD *prStaRec,
-			   uint16_t u2TransactionSeqNum);
-#else
 uint32_t
 authSendAuthFrame(struct ADAPTER *prAdapter,
 			  struct STA_RECORD *prStaRec,
@@ -69,7 +64,6 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 			  struct SW_RFB *prFalseAuthSwRfb,
 			  uint16_t u2TransactionSeqNum,
 			  uint16_t u2StatusCode);
-#endif /* CFG_SUPPORT_AAA */
 
 uint32_t authCheckTxAuthFrame(struct ADAPTER *prAdapter,
 			struct MSDU_INFO *prMsduInfo,

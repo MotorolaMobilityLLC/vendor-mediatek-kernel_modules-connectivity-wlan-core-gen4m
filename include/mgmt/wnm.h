@@ -60,8 +60,7 @@ struct BSS_TRANSITION_MGT_PARAM {
 	/* for Respone */
 	uint8_t fgPendingResponse:1;
 	uint8_t fgIsMboPresent:1;
-	uint8_t fgWaitBtmRespDone:1;
-	u_int8_t fgReserved:5;
+	u_int8_t fgReserved:6;
 	uint8_t ucStatusCode;
 };
 
@@ -126,14 +125,17 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIndex);
 #endif
 
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
 void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
 		 struct STA_RECORD *prStaRec, uint8_t ucQueryReason);
 
-uint8_t wnmSendBTMResponse(struct ADAPTER *prAdapter,
-	const uint8_t *aucBssid, uint8_t ucStatus,
-	uint8_t ucReason, uint8_t ucBssIndex);
+void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
+	struct STA_RECORD *staRec, PFN_TX_DONE_HANDLER pfTxDoneHandler,
+	uint8_t dialogToken, uint8_t status, uint8_t reason, uint8_t delay,
+	const uint8_t *bssid);
+#endif /* CFG_SUPPORT_802_11V_BTM_OFFLOAD */
 
 #if CFG_AP_80211V_SUPPORT
 void wnmMulAPAgentSendBTMRequestFrame(

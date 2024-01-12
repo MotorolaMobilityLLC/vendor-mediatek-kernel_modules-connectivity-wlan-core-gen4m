@@ -2275,6 +2275,8 @@ omac_choosed:
 			/* initialize wlan id and status for keys */
 			prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
 			prBssInfo->wepkeyWlanIdx = WTBL_RESERVED_ENTRY;
+			prBssInfo->fgBcDefaultKeyExist = FALSE;
+			prBssInfo->ucBcDefaultKeyIdx = 0xff;
 			prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
 			prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
 			for (i = 0; i < MAX_KEY_NUM; i++) {

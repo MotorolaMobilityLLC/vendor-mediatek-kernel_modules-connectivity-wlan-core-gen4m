@@ -1282,6 +1282,11 @@
 "CFG_SUPPORT_802_11V should be 1 once CFG_SUPPORT_802_11V_TIMING_MEASUREMENT equals to 1"
 #endif
 
+#if (CFG_SUPPORT_ROAMING == 0) && (CFG_SUPPORT_802_11V_BTM_OFFLOAD == 1)
+#error \
+"CFG_SUPPORT_ROAMING should be 1 if CFG_SUPPORT_802_11V_BTM_OFFLOAD is 1"
+#endif
+
 #ifndef CFG_SUPPORT_802_11BE
 #define CFG_SUPPORT_802_11BE                     0
 #endif

@@ -118,11 +118,9 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 				"authAlgNum %d, AuthTranNum %d\n",
 				prStaRec->ucAuthAlgNum,
 				prStaRec->ucAuthTranNum);
-			if (prStaRec->ucAuthAlgNum ==
-				AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
-				prStaRec->ucAuthTranNum ==
-				AUTH_TRANSACTION_SEQ_2 &&
-				prStaRec->ucStaState == STA_STATE_1) {
+			if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FT &&
+			    prStaRec->ucAuthTranNum == AUTH_TRANSACTION_SEQ_2 &&
+			    prStaRec->ucStaState == STA_STATE_1) {
 				struct PARAM_STATUS_INDICATION rStatus = {
 				.eStatusType =
 				ENUM_STATUS_TYPE_FT_AUTH_STATUS};
@@ -198,17 +196,13 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 				cnmStaRecChangeState(prAdapter, prStaRec,
 						     STA_STATE_1);
 
-#if !CFG_SUPPORT_AAA
-				rStatus = authSendAuthFrame(prAdapter, prStaRec,
-						AUTH_TRANSACTION_SEQ_1);
-#else
 				rStatus = authSendAuthFrame(prAdapter,
 						      prStaRec,
 						      prStaRec->ucBssIndex,
 						      NULL,
 						      AUTH_TRANSACTION_SEQ_1,
 						      STATUS_CODE_RESERVED);
-#endif /* CFG_SUPPORT_AAA */
+
 				if (rStatus != WLAN_STATUS_SUCCESS) {
 					cnmTimerInitTimer(prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -245,18 +239,13 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 				prStaRec->ucAuthTranNum =
 					AUTH_TRANSACTION_SEQ_3;
 
-#if !CFG_SUPPORT_AAA
-				rStatus = authSendAuthFrame(prAdapter,
-						      prStaRec,
-						      AUTH_TRANSACTION_SEQ_3);
-#else
 				rStatus = authSendAuthFrame(prAdapter,
 						      prStaRec,
 						      prStaRec->ucBssIndex,
 						      NULL,
 						      AUTH_TRANSACTION_SEQ_3,
 						      STATUS_CODE_RESERVED);
-#endif /* CFG_SUPPORT_AAA */
+
 				if (rStatus != WLAN_STATUS_SUCCESS) {
 					cnmTimerInitTimer(prAdapter,
 					   &prStaRec->rTxReqDoneOrRxRespTimer,
@@ -290,6 +279,7 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 					prStaRec);
 			break;
 #endif /* CFG_SUPPORT_WPA3 */
+
 		case SAA_STATE_SEND_ASSOC1:
 			/* Do tasks in INIT STATE */
 			if (prStaRec->ucTxAuthAssocRetryCount >=
@@ -494,12 +484,6 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 	prStaRec->ucAuthAssocReqSeqNum = prSaaFsmStartMsg->ucSeqNum;
 
 	cnmMemFree(prAdapter, prMsgHdr);
-	if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
-		prStaRec->ucAuthTranNum == AUTH_TRANSACTION_SEQ_2) {
-		DBGLOG(SAA, ERROR,
-		       "FT: current is waiting FT auth, don't reentry\n");
-		return;
-	}
 
 	/* 4 <1> Validation of SAA Start Event */
 	if (!IS_AP_STA(prStaRec)) {
@@ -552,8 +536,14 @@ void saaFsmRunEventStart(struct ADAPTER *prAdapter,
 			saaFsmSteps(prAdapter, prStaRec,
 				    SAA_STATE_EXTERNAL_AUTH,
 				    (struct SW_RFB *) NULL);
-		else
-			saaFsmSteps(prAdapter, prStaRec, SAA_STATE_SEND_AUTH1,
+		else if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FT &&
+			 prStaRec->ucAuthTranNum == AUTH_TRANSACTION_SEQ_2) {
+			saaFsmSteps(prAdapter, prStaRec,
+				    AA_STATE_IDLE,
+				    (struct SW_RFB *) NULL);
+		} else
+			saaFsmSteps(prAdapter, prStaRec,
+				    SAA_STATE_SEND_AUTH1,
 				    (struct SW_RFB *) NULL);
 	} else if (prStaRec->ucStaState == STA_STATE_2 ||
 		 prStaRec->ucStaState == STA_STATE_3)
@@ -930,6 +920,7 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 			!!IS_AP_STA(prStaRec), prStaRec->eAuthAssocState);
 
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
+		prSwRfb->ucWlanIdx = prStaRec->ucWlanIndex;
 #else
 		return;
 #endif
@@ -965,13 +956,10 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 				 * and wait response from supplicant
 				 */
 				if (prStaRec->ucAuthAlgNum ==
-				    AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION)
+				    AUTH_ALGORITHM_NUM_FT) {
 					eNextState = AA_STATE_IDLE;
-				else if (
-					prStaRec->ucAuthAlgNum ==
-					(uint8_t)
-						AUTH_ALGORITHM_NUM_SHARED_KEY) {
-
+				} else if (prStaRec->ucAuthAlgNum ==
+					 AUTH_ALGORITHM_NUM_SHARED_KEY) {
 					eNextState = SAA_STATE_SEND_AUTH3;
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 				} else if (prStaRec->ucAuthAlgNum ==
@@ -1045,8 +1033,8 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 				 * ack frame), should disconnect
 				 */
 				if (prStaRec->ucAuthAlgNum ==
-				AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION &&
-				rStatus != WLAN_STATUS_SUCCESS) {
+					AUTH_ALGORITHM_NUM_FT &&
+				    rStatus != WLAN_STATUS_SUCCESS) {
 					DBGLOG(SAA, INFO,
 					      "Rx Auth4 fail [" MACSTR
 					      "], status %d, maybe MIC error\n",
@@ -1155,6 +1143,7 @@ uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 			return rStatus;
 		}
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
+		prSwRfb->ucWlanIdx = prStaRec->ucWlanIndex;
 #else
 		return rStatus;
 #endif

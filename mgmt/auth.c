@@ -46,7 +46,6 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{0, mldCalculateMlIELen, mldGenerateMlIE}
 #endif
-
 };
 
 struct HANDLE_IE_ENTRY rxAuthIETable[] = {
@@ -215,117 +214,6 @@ void authAddIEChallengeText(struct ADAPTER *prAdapter,
 
 }				/* end of authAddIEChallengeText() */
 
-#if !CFG_SUPPORT_AAA
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will send the Authenticiation frame
- *
- * @param[in] prStaRec               Pointer to the STA_RECORD_T
- * @param[in] u2TransactionSeqNum    Transaction Sequence Number
- *
- * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
- * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
- */
-/*----------------------------------------------------------------------------*/
-uint32_t authSendAuthFrame(struct ADAPTER *prAdapter,
-			   struct STA_RECORD *prStaRec,
-			   uint16_t u2TransactionSeqNum)
-{
-	struct MSDU_INFO *prMsduInfo;
-	struct BSS_INFO *prBssInfo;
-	uint16_t u2EstimatedFrameLen;
-	uint16_t u2EstimatedExtraIELen;
-	uint16_t u2PayloadLen;
-	uint32_t i;
-
-	DBGLOG(SAA, LOUD, "Send Auth Frame\n");
-
-	/* 4 <1> Allocate a PKT_INFO_T for Authentication Frame */
-	/* Init with MGMT Header Length + Length of Fixed Fields */
-	u2EstimatedFrameLen = (MAC_TX_RESERVED_FIELD +
-			       WLAN_MAC_MGMT_HEADER_LEN +
-			       AUTH_ALGORITHM_NUM_FIELD_LEN +
-			       AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN +
-			       STATUS_CODE_FIELD_LEN);
-
-	/* + Extra IE Length */
-	u2EstimatedExtraIELen = 0;
-
-	for (i = 0;
-	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
-		if (txAuthIETable[i].u2EstimatedFixedIELen != 0)
-			u2EstimatedExtraIELen +=
-				txAuthIETable[i].u2EstimatedFixedIELen;
-		else if (txAuthIETable[i].pfnCalculateVariableIELen !=
-			 NULL)
-			u2EstimatedExtraIELen +=
-				(uint16_t)txAuthIETable[i]
-					.pfnCalculateVariableIELen(
-						prAdapter, prStaRec->ucBssIndex,
-						prStaRec);
-	}
-
-	u2EstimatedFrameLen += u2EstimatedExtraIELen;
-
-	/* Allocate a MSDU_INFO_T */
-	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
-	if (prMsduInfo == NULL) {
-		DBGLOG(SAA, WARN, "No PKT_INFO_T for sending Auth Frame.\n");
-		return WLAN_STATUS_RESOURCES;
-	}
-	/* 4 <2> Compose Authentication Request frame header and fixed fields
-	 * in MSDU_INfO_T.
-	 */
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-
-	    /* Compose Header and some Fixed Fields */
-	    authComposeAuthFrameHeaderAndFF((uint8_t *)
-				    ((uintptr_t) (prMsduInfo->prPacket) +
-				     MAC_TX_RESERVED_FIELD),
-				    prStaRec->aucMacAddr,
-				    prBssInfo->aucOwnMacAddr,
-				    prStaRec->ucAuthAlgNum,
-				    u2TransactionSeqNum,
-				    STATUS_CODE_RESERVED);
-
-	u2PayloadLen =
-	    (AUTH_ALGORITHM_NUM_FIELD_LEN +
-	     AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
-
-	/* 4 <3> Update information of MSDU_INFO_T */
-	TX_SET_MMPDU(prAdapter,
-		     prMsduInfo,
-		     prStaRec->ucBssIndex,
-		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN,
-		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen,
-		     saaFsmRunEventTxDone, MSDU_RATE_MODE_AUTO);
-
-	/* 4 <4> Compose IEs in MSDU_INFO_T */
-	for (i = 0;
-	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
-		if (txAuthIETable[i].pfnAppendIE)
-			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
-	}
-
-	/* TODO(Kevin):
-	 * Also release the unused tail room of the composed MMPDU
-	 */
-
-	nicTxConfigPktControlFlag(prMsduInfo,
-		MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE,
-		TRUE);
-
-	/* 4 <6> Inform TXM  to send this Authentication frame. */
-	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
-
-	return WLAN_STATUS_SUCCESS;
-}				/* end of authSendAuthFrame() */
-
-#else
-
 struct MSDU_INFO *authComposeAuthFrame(struct ADAPTER *prAdapter,
 		  struct STA_RECORD *prStaRec,
 		  uint8_t ucBssIndex,
@@ -399,10 +287,12 @@ struct MSDU_INFO *authComposeAuthFrame(struct ADAPTER *prAdapter,
 			pfTxDoneHandler = saaFsmRunEventTxDone;
 			break;
 
+#if CFG_SUPPORT_AAA
 		case AUTH_TRANSACTION_SEQ_2:
 		case AUTH_TRANSACTION_SEQ_4:
 			pfTxDoneHandler = aaaFsmRunEventTxDone;
 			break;
+#endif
 		}
 
 	} else {		/* For Error Status Code */
@@ -504,8 +394,6 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of authSendAuthFrame() */
-
-#endif /* CFG_SUPPORT_AAA */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -872,8 +760,7 @@ uint32_t authProcessRxAuth2_Auth4Frame(struct ADAPTER *prAdapter,
 			}
 		}
 	}
-	if (prAuthFrame->u2AuthAlgNum ==
-	    AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION) {
+	if (prAuthFrame->u2AuthAlgNum == AUTH_ALGORITHM_NUM_FT) {
 		if (prAuthFrame->u2AuthTransSeqNo == AUTH_TRANSACTION_SEQ_4) {
 			/* todo: check MIC, if mic error, return
 			 * WLAN_STATUS_FAILURE
@@ -1483,6 +1370,7 @@ uint32_t authAddRSNIE_impl(struct ADAPTER *prAdapter,
 	ucRSNIeSize = IE_SIZE(prFtIEs->prRsnIE);
 	prMsduInfo->u2FrameLength += ucRSNIeSize;
 	kalMemCopy(pucBuffer, prFtIEs->prRsnIE, ucRSNIeSize);
+	DBGDUMP_MEM8(SAA, INFO, "FT: Generate RSNE\n", pucBuffer, ucRSNIeSize);
 	return TRUE;
 }
 

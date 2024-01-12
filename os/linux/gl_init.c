@@ -1192,7 +1192,9 @@ static struct cfg80211_ops mtk_cfg_ops = {
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
 	.connect = mtk_cfg_connect,
+#if (CFG_SUPPORT_ROAMING == 1)
 	.update_connect_params = mtk_cfg_update_connect_params,
+#endif /* CFG_SUPPORT_ROAMING */
 	.disconnect = mtk_cfg_disconnect,
 	.join_ibss = mtk_cfg_join_ibss,
 	.leave_ibss = mtk_cfg_leave_ibss,

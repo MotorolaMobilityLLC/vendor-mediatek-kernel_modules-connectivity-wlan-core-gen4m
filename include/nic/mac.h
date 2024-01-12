@@ -607,7 +607,7 @@
 
 #define AUTH_ALGORITHM_NUM_OPEN_SYSTEM          0 /* Open System */
 #define AUTH_ALGORITHM_NUM_SHARED_KEY           1 /* Shared Key */
-#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  2 /* Fast BSS Transition */
+#define AUTH_ALGORITHM_NUM_FT			2 /* Fast BSS Transition */
 #define AUTH_ALGORITHM_NUM_SAE                  3 /* WPA3 - SAE */
 #define AUTH_ALGORITHM_NUM_FILS_SK		4 /* FILS - Shared key */
 #define AUTH_ALGORITHM_NUM_FILS_SK_PFS		5 /* FILS - SK with PFS */
@@ -2095,6 +2095,9 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ACTION_WNM_NOTIFICATION_REQUEST			26
 /* 802.11v Wireless Network Management */
 #define ACTION_WNM_TIMING_MEASUREMENT_REQUEST       27
+
+#define ACTION_FT_REQUEST			    1
+#define ACTION_FT_RESPONSE			    2
 
 #define ACTION_UNPROTECTED_WNM_TIM                  0
 #define ACTION_UNPROTECTED_WNM_TIMING_MEASUREMENT   1
@@ -4094,6 +4097,41 @@ struct ACTION_NOTIFY_CHANNEL_WIDTH_FRAME {
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
 	uint8_t ucChannelWidth;	/* Channel Width (see 8.4.1.21) */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_FT_REQ_ACTION_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* FT request frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t aucStaAddr[MAC_ADDR_LEN];
+	uint8_t aucTargetApAddr[MAC_ADDR_LEN];
+	uint8_t aucInfoElem[0];	/* Various IEs, possible no. */
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_FT_RESP_ACTION_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* FT response frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t aucStaAddr[MAC_ADDR_LEN];
+	uint8_t aucTargetApAddr[MAC_ADDR_LEN];
+	uint16_t u2StatusCode;
+	uint8_t aucInfoElem[0];	/* Various IEs, possible no. */
 } __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_TWT == 1)

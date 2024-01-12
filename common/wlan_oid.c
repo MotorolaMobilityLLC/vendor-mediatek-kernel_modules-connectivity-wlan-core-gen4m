@@ -1592,15 +1592,6 @@ wlanoidSetInfrastructureMode(struct ADAPTER *prAdapter,
 
 	prConnSettings->fgWapiMode = FALSE;
 
-#if CFG_SUPPORT_802_11W
-	prAisSpecBssInfo->fgMgmtProtection =
-		FALSE;
-	prAisSpecBssInfo->fgBipKeyInstalled =
-		FALSE;
-	prAisSpecBssInfo->fgBipGmacKeyInstalled =
-		FALSE;
-#endif
-
 #if 0 /* STA record remove at AIS_ABORT nicUpdateBss and DISCONNECT */
 	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = prAdapter->aprBssInfo[i];
@@ -1609,12 +1600,6 @@ wlanoidSetInfrastructureMode(struct ADAPTER *prAdapter,
 						  prBssInfo->ucBssIndex, 0);
 	}
 #endif
-
-	/* Clean up the Tx key flag */
-	if (prAisBssInfo != NULL) {
-		prAisBssInfo->fgBcDefaultKeyExist = FALSE;
-		prAisBssInfo->ucBcDefaultKeyIdx = 0xFF;
-	}
 
 	/* prWlanTable = prAdapter->rWifiVar.arWtbl; */
 	/* prWlanTable[prAisBssInfo->ucBMCWlanIndex].ucKeyId = 0; */
@@ -3041,6 +3026,16 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 0)
 	if (u4KeyIndex >= 4 && u4KeyIndex <= 5) {
+#if CFG_SUPPORT_802_11W
+		if (IS_BSS_AIS(prBssInfo)) {
+			struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
+				aisGetAisSpecBssInfo(prAdapter,
+				prRemovedKey->ucBssIdx);
+
+			prAisSpecBssInfo->fgBipKeyInstalled = FALSE;
+			prAisSpecBssInfo->fgBipGmacKeyInstalled = FALSE;
+		}
+#endif
 		DBGLOG(RSN, INFO, "Remove bip key Index (IGTK) : 0x%08x\n",
 		       u4KeyIndex);
 		return WLAN_STATUS_SUCCESS;
@@ -3054,8 +3049,10 @@ wlanSetRemoveKeyImpl(struct ADAPTER *prAdapter,
 		if (!prStaRec)
 			return WLAN_STATUS_SUCCESS;
 	} else {
-		if (u4KeyIndex == prBssInfo->ucBcDefaultKeyIdx)
+		if (u4KeyIndex == prBssInfo->ucBcDefaultKeyIdx) {
 			prBssInfo->fgBcDefaultKeyExist = FALSE;
+			prBssInfo->ucBcDefaultKeyIdx = 0xff;
+		}
 	}
 
 	/* BIGTK */
@@ -14682,33 +14679,25 @@ wlanoidSetDrvRoamingPolicy(struct ADAPTER *prAdapter,
 	ASSERT(pvSetBuffer);
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 	u4RoamingPoily = *(uint32_t *)pvSetBuffer;
-
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
-
-	prConnSettings = (struct CONNECTION_SETTINGS *)
-		aisGetConnSettings(prAdapter, ucBssIndex);
 	u4CurConPolicy = prConnSettings->eConnectionPolicy;
 
-	if (u4RoamingPoily == 1) {
-		if (((aisGetCurrState(prAdapter, ucBssIndex) ==
-		      AIS_STATE_NORMAL_TR)
-		     || (aisGetCurrState(prAdapter, ucBssIndex) ==
-			 AIS_STATE_ONLINE_SCAN))
-		    && (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_IDLE))
-		prConnSettings->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
-		roamingFsmRunEventStart(prAdapter, ucBssIndex);
-	} else {
-		if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_IDLE)
-			roamingFsmRunEventAbort(prAdapter, ucBssIndex);
+	/* enable/disable fw roaming only when roaming fsm started */
+	if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_IDLE) {
+		if (u4RoamingPoily == 1) {
+			prConnSettings->eConnectionPolicy =
+				CONNECT_BY_SSID_BEST_RSSI;
+			/* roaming fsm already started, enable fw roaming */
+			roamingFsmSendStartCmd(prAdapter, ucBssIndex);
+		} else {
+			roamingFsmSendAbortCmd(prAdapter, ucBssIndex);
+		}
 	}
-#if !CFG_SUPPORT_802_11V_BTM_OFFLOAD
-	prRoamingFsmInfo->fgDrvRoamingAllow = (u_int8_t) u4RoamingPoily;
-#endif
-	DBGLOG(REQ, INFO,
-	       "wlanoidSetDrvRoamingPolicy, RoamingPoily= %d, conn policy= [%d] allow [%d]\n",
+
+	DBGLOG(REQ, INFO, "RoamingPoily=%d, conn policy [%d] -> [%d]\n",
 	       u4RoamingPoily, u4CurConPolicy,
 	       prConnSettings->eConnectionPolicy);
 	return WLAN_STATUS_SUCCESS;
@@ -15024,10 +15013,8 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		return WLAN_STATUS_FAILURE;
 	}
 	prStaRec = prAisBssInfo->prStaRecOfAP;
-	if (!prStaRec || !prStaRec->fgSupportBTM) {
-		DBGLOG(OID, INFO,
-		       "Target BSS(%p) didn't support Bss Transition Management\n",
-		       prStaRec);
+	if (!prStaRec) {
+		DBGLOG(OID, INFO, "No target starec\n");
 		return WLAN_STATUS_FAILURE;
 	}
 	if (pvSetBuffer) {
@@ -15035,8 +15022,10 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		if (u4Ret)
 			DBGLOG(OID, WARN, "parse reason u4Ret=%d\n", u4Ret);
 	}
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 	wnmSendBTMQueryFrame(prAdapter, prStaRec, ucQueryReason);
 	DBGLOG(OID, INFO, "Send BTM Query, Reason %d\n", ucQueryReason);
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 

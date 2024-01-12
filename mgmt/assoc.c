@@ -801,7 +801,8 @@ static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 		/* skip rsnxe if target ap doesn't support rsnxe */
-		if (prTargetBss && !prTargetBss->fgIERSNX)
+		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FT &&
+		    prTargetBss && !prTargetBss->fgIERSNX)
 			return TRUE;
 	}
 
@@ -2290,6 +2291,6 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 
 	prMsduInfo->u2FrameLength += 5; /* IE size for MD IE is fixed, it's 5 */
 	kalMemCopy(pucBuffer, prMDIE, 5);
-	DBGLOG(SAA, INFO, "FT: Generate MDIE\n");
+	DBGDUMP_MEM8(SAA, INFO, "FT: Generate MDIE\n", pucBuffer, 5);
 }
 
