@@ -658,10 +658,12 @@ void nic_txd_v3_compose(
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* altx set TGID and force link */
-	if (ucTarQueue == MAC_TXQ_ALTX_0_INDEX ||
-	    prMsduInfo->ucPktType == ENUM_PKT_1X)
+	if (prMldSta && (ucTarQueue == MAC_TXQ_ALTX_0_INDEX ||
+	    prMsduInfo->ucPktType == ENUM_PKT_1X))
 		HAL_MAC_CONNAC3X_TXD_SET_FORCE_ASSIGN_LINK(prTxDesc);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/** DW6 **/
 	/* Disable MLD to link address translation */
