@@ -97,6 +97,7 @@ struct mddp_txd_t {
 	uint8_t bss_id;
 	uint8_t wmmset;
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
+	uint8_t local_mac[MAC_ADDR_LEN];
 	uint8_t txd_length;
 	uint8_t txd[0];
 } __packed;
@@ -379,7 +380,7 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	prDrvInfo->info_len = (sizeof(struct mddpw_txd_t) +
 			NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prMddpTxd = (struct mddp_txd_t *) &(prDrvInfo->info[0]);
-	prMddpTxd->version = 0;
+	prMddpTxd->version = 1;
 	prMddpTxd->sta_idx = prStaRec->ucIndex;
 	prMddpTxd->wlan_idx = prStaRec->ucWlanIndex;
 	prMddpTxd->sta_mode = prStaRec->eStaType;
@@ -388,6 +389,8 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
 			sizeof(prMddpTxd->nw_if_name));
 	kalMemCopy(prMddpTxd->aucMacAddr, prStaRec->aucMacAddr, MAC_ADDR_LEN);
+	kalMemCopy(prMddpTxd->local_mac,
+		   prBssInfo->aucOwnMacAddr, MAC_ADDR_LEN);
 	if (fgActivate) {
 		prMddpTxd->txd_length = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 		kalMemCopy(prMddpTxd->txd, prStaRec->aprTxDescTemplate[0],
@@ -416,47 +419,6 @@ exit:
 	if (buff)
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 	return ret;
-}
-
-int32_t mddpNotifyDrvMac(IN struct ADAPTER *prAdapter)
-{
-	struct mddpw_drv_notify_info_t *prNotifyInfo;
-	struct mddpw_drv_info_t *prDrvInfo;
-	uint32_t u32BufSize = 0;
-	uint8_t *buff = NULL;
-	struct BSS_INFO *prAisBssInfo = (struct BSS_INFO *) NULL;
-
-	if (gMddpWFunc.notify_drv_info) {
-		int32_t ret;
-
-		u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
-			sizeof(struct mddpw_drv_info_t) + MAC_ADDR_LEN);
-		buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
-
-		if (buff == NULL) {
-			DBGLOG(NIC, ERROR, "Can't allocate TXD buffer.\n");
-			return -1;
-		}
-		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
-		prNotifyInfo->version = 0;
-		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
-				MAC_ADDR_LEN;
-		prNotifyInfo->info_num = 1;
-		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-		prDrvInfo->info_id = MDDPW_DRV_INFO_DEVICE_MAC;
-		prDrvInfo->info_len = MAC_ADDR_LEN;
-    /*SY MCIF TBC 0916*/
-		prAisBssInfo = prAdapter->prAisBssInfo[0];
-		COPY_MAC_ADDR(prDrvInfo->info, prAisBssInfo->aucOwnMacAddr);
-
-		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-		DBGLOG(INIT, INFO, "ret: %d.\n", ret);
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
-	} else {
-		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
-	}
-
-	return 0;
 }
 
 int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
@@ -507,7 +469,6 @@ void mddpNotifyWifiOnStart(void)
 {
 	if (!mddpIsSupportMcifWifi())
 		return;
-
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_START);
 }
 
@@ -526,7 +487,11 @@ int32_t mddpNotifyWifiOnEnd(void)
 	}
 
 	clear_md_wifi_on_bit();
+#if (CFG_SUPPORT_CONNAC2X == 0)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END);
+#else
+	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_WLAN_ON_END_QOS);
+#endif
 	if (ret == 0)
 		ret = wait_for_md_on_complete() ?
 				WLAN_STATUS_SUCCESS :
@@ -622,7 +587,6 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
 			return 0;
 		}
-		mddpNotifyDrvMac(prAdapter);
 
 		/* Notify STA's TXD to MD */
 		for (i = 0; i < KAL_AIS_NUM; i++) {

@@ -5516,3 +5516,9 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 	return i4BytesWritten;
 }
 
+u_int8_t nicTxIsPrioPackets(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo)
+{
+	return prMsduInfo && prMsduInfo->ucTC == TC3_INDEX;
+}
+

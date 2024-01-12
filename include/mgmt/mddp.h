@@ -68,7 +68,6 @@ int32_t mddpGetMdStats(IN struct net_device *prDev);
 void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm,
 			      struct SW_RFB *prSwRfb);
-int32_t mddpNotifyDrvMac(IN struct ADAPTER *prAdapter);
 int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	IN struct STA_RECORD *prStaRec,
 	IN uint8_t fgActivate);

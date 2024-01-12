@@ -2027,6 +2027,9 @@ int32_t nicTxGetVectorInfo(IN char *pcCommand, IN int i4TotalLen,
 void nicHifTxMsduDoneCb(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo);
 
+u_int8_t nicTxIsPrioPackets(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

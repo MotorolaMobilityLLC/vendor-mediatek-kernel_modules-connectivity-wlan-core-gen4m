@@ -159,9 +159,9 @@ void asicConnac2xCapInit(
 	case MT_DEV_INF_AXI:
 
 		prChipInfo->u2TxInitCmdPort =
-			TX_RING_CMD_IDX_2; /* Ring17 for CMD */
+			TX_RING_CMD_IDX_3; /* Ring17 for CMD */
 		prChipInfo->u2TxFwDlPort =
-			TX_RING_FWDL_IDX_3; /* Ring16 for FWDL */
+			TX_RING_FWDL_IDX_4; /* Ring16 for FWDL */
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = CONNAC2X_HIF_DMASHDL_BASE;
 
@@ -588,16 +588,16 @@ void asicConnac2xWfdmaTxRingExtCtrl(
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
-	if (index == TX_RING_CMD_IDX_2)
+	if (index == TX_RING_CMD_IDX_3)
 		ext_offset = prBusInfo->tx_ring_cmd_idx * 4;
-	else if (index == TX_RING_FWDL_IDX_3)
+	else if (index == TX_RING_FWDL_IDX_4)
 		ext_offset = prBusInfo->tx_ring_fwdl_idx * 4;
 	else if (prChipInfo->is_support_wacpu) {
 		if (index == TX_RING_DATA0_IDX_0)
 			ext_offset = prBusInfo->tx_ring0_data_idx * 4;
 		if (index == TX_RING_DATA1_IDX_1)
 			ext_offset = prBusInfo->tx_ring1_data_idx * 4;
-		if (index == TX_RING_WA_CMD_IDX_4)
+		if (index == TX_RING_WA_CMD_IDX_5)
 			ext_offset = prBusInfo->tx_ring_wa_cmd_idx * 4;
 	} else
 		ext_offset = index * 4;
@@ -844,15 +844,15 @@ void asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_16)
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
-			TX_RING_FWDL_IDX_3);
+			TX_RING_FWDL_IDX_4);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_17)
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
-			TX_RING_CMD_IDX_2);
+			TX_RING_CMD_IDX_3);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_20)
 		halWpdmaProcessCmdDmaDone(prAdapter->prGlueInfo,
-			TX_RING_WA_CMD_IDX_4);
+			TX_RING_WA_CMD_IDX_5);
 
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_18) {
 		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
@@ -867,7 +867,6 @@ void asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
-
 }
 
 void asicConnac2xLowPowerOwnRead(

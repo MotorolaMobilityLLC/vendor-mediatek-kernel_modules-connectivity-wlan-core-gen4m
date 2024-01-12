@@ -186,8 +186,8 @@ void asicCapInit(IN struct ADAPTER *prAdapter)
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	case MT_DEV_INF_PCIE:
 	case MT_DEV_INF_AXI:
-		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_3;
-		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_3;
+		prChipInfo->u2TxInitCmdPort = TX_RING_FWDL_IDX_4;
+		prChipInfo->u2TxFwDlPort = TX_RING_FWDL_IDX_4;
 		prChipInfo->ucPacketFormat = TXD_PKT_FORMAT_TXD;
 		prChipInfo->u4HifDmaShdlBaseAddr = PCIE_HIF_DMASHDL_BASE;
 
@@ -483,6 +483,8 @@ void fillTxDescTxByteCountWithCR4(IN struct ADAPTER
 void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4BaseAddr, u4MacVal = 0;
+	uint32_t u4GroupCtrl0 = 0, u4GroupCtrl1 = 0, u4GroupCtrl2 = 0,
+		u4DmashdlQMap0 = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4FreePageCnt = 0;
@@ -520,41 +522,45 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter)
 	/* Always use group 1 if we support 2 Data TxRing */
 	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring1_data_idx) {
 		u4MacVal &=
-	~CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP1_REFILL_DISABLE_MASK;
+		~CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP1_REFILL_DISABLE_MASK;
+	}
+	if (prBusInfo->tx_ring2_data_idx) {
+		u4MacVal &=
+		~CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP2_REFILL_DISABLE_MASK;
 	}
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4MacVal);
 
-	/* Always use group 1 if we support 2 TxRing for data */
+	HAL_MCR_RD(prAdapter,
+		CONN_HIF_DMASHDL_STATUS_RD(u4BaseAddr), &u4FreePageCnt);
+	u4FreePageCnt = (u4FreePageCnt & DMASHDL_FREE_PG_CNT_MASK)
+		>> DMASHDL_FREE_PG_CNT_OFFSET;
+	u4GroupCtrl0 = DMASHDL_MIN_QUOTA_NUM(0x3);
+	u4GroupCtrl0 |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
 	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring1_data_idx) {
 		/* HW has no gruantee to switch Quota at runtime */
 		/* Just separate equally. */
-		HAL_MCR_RD(prAdapter,
-			CONN_HIF_DMASHDL_STATUS_RD(u4BaseAddr), &u4FreePageCnt);
-		u4FreePageCnt = (u4FreePageCnt & DMASHDL_FREE_PG_CNT_MASK)
-			>> DMASHDL_FREE_PG_CNT_OFFSET;
-		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
-		HAL_MCR_WR(prAdapter,
-			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
-		HAL_MCR_WR(prAdapter,
-			CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
+		u4GroupCtrl1 = DMASHDL_MIN_QUOTA_NUM(0x3);
+		u4GroupCtrl1 |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
 		/* Wmm1: group 1, others group 0 */
-		HAL_MCR_WR(prAdapter,
-			CONN_HIF_DMASHDL_Q_MAP0(u4BaseAddr), 0x11110000);
-	} else {
-		u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-		u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
-		HAL_MCR_WR(prAdapter,
-			CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
-		u4MacVal = 0;
-		HAL_MCR_WR(prAdapter,
-			CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
+		u4DmashdlQMap0 |= 0x11110000;
 	}
+	if (prBusInfo->tx_ring2_data_idx) {
+		u4GroupCtrl2 = DMASHDL_MIN_QUOTA_NUM(0x3);
+		u4GroupCtrl2 |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
+		u4DmashdlQMap0 &= 0x0FFF0FFF;
+		u4DmashdlQMap0 |= 0x20002000;
+	}
+	HAL_MCR_WR(prAdapter,
+		CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4GroupCtrl0);
+	HAL_MCR_WR(prAdapter,
+		CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4GroupCtrl1);
+	HAL_MCR_WR(prAdapter,
+		CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4GroupCtrl2);
+	HAL_MCR_WR(prAdapter,
+		CONN_HIF_DMASHDL_Q_MAP0(u4BaseAddr), u4DmashdlQMap0);
 
 	u4MacVal = 0;
-	HAL_MCR_WR(prAdapter,
-		   CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
 	HAL_MCR_WR(prAdapter,
 		   CONN_HIF_DMASHDL_GROUP3_CTRL(u4BaseAddr), u4MacVal);
 	HAL_MCR_WR(prAdapter,
@@ -643,7 +649,8 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 			BIT(prBusInfo->tx_ring_fwdl_idx) |
 			BIT(prBusInfo->tx_ring_cmd_idx) |
 			BIT(prBusInfo->tx_ring0_data_idx) |
-			BIT(prBusInfo->tx_ring1_data_idx);
+			BIT(prBusInfo->tx_ring1_data_idx) |
+			BIT(prBusInfo->tx_ring2_data_idx);
 		IntMask.field_conn.tx_coherent = 0;
 		IntMask.field_conn.rx_coherent = 0;
 		IntMask.field_conn.tx_dly_int = 0;
@@ -750,6 +757,9 @@ uint32_t asicUpdatTxRingMaxQuota(IN struct ADAPTER *prAdapter,
 		break;
 	case TX_RING_DATA1_IDX_1:
 		u4GroupIdx = 1;
+		break;
+	case TX_RING_DATA2_IDX_2:
+		u4GroupIdx = 2;
 		break;
 	default:
 		return WLAN_STATUS_NOT_ACCEPTED;
