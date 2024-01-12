@@ -1267,7 +1267,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				ASSERT(0);	/* Can't trigger SCAN FSM */
 				return;
 			}
-
+			kalMemZero(prScanReqMsg, OFFSET_OF
+				(struct MSG_SCN_SCAN_REQ_V2, aucIE) +
+				u2ScanIELen);
 			prScanReqMsg->rMsgHdr.eMsgId = MID_AIS_SCN_SCAN_REQ_V2;
 			prScanReqMsg->ucSeqNum = ++prAisFsmInfo->ucSeqNumOfScanReq;
 			prScanReqMsg->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
