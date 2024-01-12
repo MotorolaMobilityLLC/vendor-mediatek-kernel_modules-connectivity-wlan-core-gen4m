@@ -1112,10 +1112,10 @@ void sortIE(struct ADAPTER *prAdapter,
 		/* start from next ie to find fragments */
 		pos = pucBuf + IE_SIZE(pucBuf);
 		while (end - pos >= 2 &&
-		       pos[0] == ELEM_ID_FRAGMENT &&
-		       2 + pos[1] <= end - pos) {
-			info[num].size += 2 + pos[1]; /* include hdr */
-			pos += 2 + pos[1];
+		       IE_ID(pos) == ELEM_ID_FRAGMENT &&
+		       IE_SIZE(pos) <= end - pos) {
+			info[num].size += IE_SIZE(pos); /* include hdr */
+			pos += IE_SIZE(pos);
 		}
 
 		num++;
