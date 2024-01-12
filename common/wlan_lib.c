@@ -12145,6 +12145,10 @@ uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo)
 		u8FeatureSet |= WIFI_FEATURE_LINK_LAYER_STATS;
 #endif
 
+#if CFG_SUPPORT_TDLS_OFFCHANNEL
+	u8FeatureSet |= WIFI_FEATURE_TDLS_OFFCHANNEL;
+#endif
+
 	return u8FeatureSet;
 }
 

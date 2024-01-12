@@ -1106,6 +1106,10 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.add_station = mtk_cfg_add_station,
 	.tdls_oper = mtk_cfg_tdls_oper,
 	.tdls_mgmt = mtk_cfg_tdls_mgmt,
+#if CFG_SUPPORT_TDLS_OFFCHANNEL
+	.tdls_channel_switch = mtk_tdls_channel_switch,
+	.tdls_cancel_channel_switch = mtk_tdls_cancel_channel_switch,
+#endif
 #endif
 	.del_station = mtk_cfg_del_station,	/* AP/P2P use this function */
 	.scan = mtk_cfg_scan,

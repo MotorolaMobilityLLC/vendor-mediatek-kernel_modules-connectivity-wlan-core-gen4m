@@ -2351,6 +2351,27 @@
 #endif
 
 
+/*------------------------------------------------------------------------------
+ * Flags of Advanced TDLS Support
+ *------------------------------------------------------------------------------
+ */
+#if (CFG_TC10_FEATURE == 1) && (CFG_SUPPORT_TDLS == 1)
+#define CFG_SUPPORT_TDLS_OFFCHANNEL	1
+#if (CFG_SUPPORT_802_11AX == 1)
+#define CFG_SUPPORT_TDLS_11AX		1
+#endif
+#endif
+
+#ifndef CFG_SUPPORT_TDLS_OFFCHANNEL
+#define CFG_SUPPORT_TDLS_OFFCHANNEL	0
+#endif
+#ifndef CFG_SUPPORT_TDLS_11AX
+#define CFG_SUPPORT_TDLS_11AX	0
+#endif
+#ifndef CFG_SUPPORT_TDLS_11BE
+#define CFG_SUPPORT_TDLS_11BE	0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

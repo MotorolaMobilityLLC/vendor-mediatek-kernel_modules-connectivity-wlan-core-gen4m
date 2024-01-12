@@ -652,6 +652,13 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		else
 			prP2pBssInfo->fgIsShortPreambleAllowed = FALSE;
 
+#if CFG_SUPPORT_TDLS
+		prP2pBssInfo->fgTdlsIsProhibited =
+			prStaRec->fgTdlsIsProhibited;
+		prP2pBssInfo->fgTdlsIsChSwProhibited =
+			prStaRec->fgTdlsIsChSwProhibited;
+#endif /* CFG_SUPPORT_TDLS */
+
 		/* 4 <2.3> Setup PHY Attributes and
 		 * Basic Rate Set/Operational Rate Set
 		 */

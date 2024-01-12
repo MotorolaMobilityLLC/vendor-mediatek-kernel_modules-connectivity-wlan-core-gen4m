@@ -3570,6 +3570,12 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_GET_CNM		"GET_CNM"
 #define CMD_GET_CAPAB_RSDB "GET_CAPAB_RSDB"
 
+#define CMD_GET_TDLS_AVAILABLE "GET_TDLS_AVAILABLE"
+#define CMD_GET_TDLS_WIDER_BW "GET_TDLS_WIDER_BW"
+#define CMD_GET_TDLS_MAX_SESSION "GET_TDLS_MAX_SESSION"
+#define CMD_GET_TDLS_NUM_OF_SESSION "GET_TDLS_NUM_OF_SESSION"
+#define CMD_SET_TDLS_ENABLED "SET_TDLS_ENABLED"
+
 #ifdef UT_TEST_MODE
 #define CMD_RUN_UT		"UT"
 #endif
@@ -19578,6 +19584,198 @@ error:
 	return -1;
 }
 
+#if CFG_SUPPORT_TDLS
+static int priv_driver_get_tdls_available(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *bss = NULL;
+	int32_t i4BytesWritten = 0;
+	uint8_t fgAvailable = TRUE;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (prAdapter->u4TdlsLinkCount == MAXNUM_TDLS_PEER) {
+		fgAvailable = FALSE;
+		goto exit;
+	}
+
+	bss = aisGetConnectedBssInfo(prAdapter);
+	if (!bss) {
+		DBGLOG(REQ, WARN, "bss is not active\n");
+		fgAvailable = FALSE;
+	} else {
+		DBGLOG(REQ, INFO,
+			"STA operating channel: %d, band: %d, conn state: %d",
+			bss->ucPrimaryChannel,
+			bss->eBand,
+			bss->eConnectionState);
+
+		if (rlmDomainIsLegalDfsChannel(prAdapter,
+			bss->eBand, bss->ucPrimaryChannel)) {
+			fgAvailable = FALSE;
+			goto exit;
+		}
+		/* TODO: Check VLP */
+	}
+
+exit:
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d", fgAvailable);
+
+	DBGLOG(REQ, INFO,
+		"command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+static int priv_driver_get_tdls_wider_bw(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+	uint8_t fgEnable = FALSE;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+#if CFG_SUPPORT_TDLS_11AX
+	fgEnable = TRUE;
+#endif
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d", fgEnable);
+
+	DBGLOG(REQ, INFO,
+		"command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+static int priv_driver_get_tdls_max_session(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d", MAXNUM_TDLS_PEER);
+
+	DBGLOG(REQ, INFO,
+		"command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+static int priv_driver_get_tdls_num_of_session(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		goto error;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter)
+		goto error;
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d",
+		prAdapter->u4TdlsLinkCount);
+
+	DBGLOG(REQ, INFO,
+		"command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+
+static int priv_driver_set_tdls_enabled(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	uint8_t ucEnabled;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc >= 1) {
+		u4Ret = kalkStrtou32(apcArgv[i4Argc - 1], 0, &u4Parse);
+		if (u4Ret) {
+			DBGLOG(REQ, WARN, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+			goto error;
+		}
+		ucEnabled = (uint8_t) u4Parse;
+
+		if (ucEnabled)
+			prGlueInfo->prAdapter->rWifiVar.fgTdlsDisable = 0;
+		else
+			prGlueInfo->prAdapter->rWifiVar.fgTdlsDisable = 1;
+
+		DBGLOG(REQ, STATE,
+			"fgTdlsDisable = %d\n",
+			prGlueInfo->prAdapter->rWifiVar.fgTdlsDisable);
+	} else {
+		DBGLOG(INIT, ERROR,
+		  "iwpriv apx SET_TDLS_ENABLED <value>\n");
+	}
+
+	return i4BytesWritten;
+
+error:
+	return -1;
+}
+#endif
+
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 static int priv_driver_bss_transition_query(struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen)
@@ -22499,6 +22697,43 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pfHandler = priv_driver_set_twtparams,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_3,
+		.policy    = NULL
+	},
+#endif
+#if CFG_SUPPORT_TDLS
+	{
+		.pcCmdStr  = CMD_GET_TDLS_AVAILABLE,
+		.pfHandler = priv_driver_get_tdls_available,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_GET_TDLS_WIDER_BW,
+		.pfHandler = priv_driver_get_tdls_wider_bw,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_GET_TDLS_MAX_SESSION,
+		.pfHandler = priv_driver_get_tdls_max_session,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_GET_TDLS_NUM_OF_SESSION,
+		.pfHandler = priv_driver_get_tdls_num_of_session,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_SET_TDLS_ENABLED,
+		.pfHandler = priv_driver_set_tdls_enabled,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
 #endif

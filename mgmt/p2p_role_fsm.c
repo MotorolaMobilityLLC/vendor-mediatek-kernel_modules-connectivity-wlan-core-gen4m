@@ -2729,6 +2729,26 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 		goto error;
 	}
 
+#if CFG_SUPPORT_TDLS
+	prStaRec = cnmGetStaRecByAddress(
+		prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		prDisconnMsg->aucTargetID);
+	/*
+	 * Do nothing as TDLS disable operation will free this STA REC
+	 * when this is TDLS peer.
+	 * This operation will go through when as GO/HP.
+	 */
+	if (prStaRec != NULL &&
+		IS_DLS_STA(prStaRec)) {
+		DBGLOG(P2P, INFO,
+			"[TDLS] Remove [" MACSTR "], do nothing.\n",
+			MAC2STR(prDisconnMsg->aucTargetID));
+		/* cnmStaRecFree(prAdapter, prStaRec); */
+		goto error;
+	}
+#endif
+
 	switch (prP2pBssInfo->eCurrentOPMode) {
 	case OP_MODE_INFRASTRUCTURE:
 		{

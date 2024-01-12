@@ -75,6 +75,98 @@ static u_int8_t fgIsWaitForTxDone = FALSE;
  *******************************************************************************
  */
 
+#if CFG_SUPPORT_TDLS_11AX
+uint16_t _TdlsComposeCapIE(
+	struct ADAPTER *ad,
+	struct BSS_INFO *bss,
+	struct STA_RECORD *sta,
+	uint8_t *buf)
+{
+	struct MSDU_INFO *prMsduInfo;
+	uint16_t u2EstimatedFrameLen;
+	uint16_t u2EstimatedExtraIELen;
+	uint16_t u2FrameLength;
+
+	if (!ad || !bss || !sta || !buf) {
+		DBGLOG(TDLS, ERROR, "ad is NULL!\n");
+		return 0;
+	}
+
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
+	    WLAN_MAC_MGMT_HEADER_LEN +
+	    CAP_INFO_FIELD_LEN +
+	    STATUS_CODE_FIELD_LEN +
+	    AID_FIELD_LEN +
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
+	    (ELEM_HDR_LEN + (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES)) +
+	    sizeof(uint64_t); /* reserved for cookie */
+
+	/* + Extra IE Length */
+	u2EstimatedExtraIELen = 0;
+
+#if CFG_SUPPORT_TDLS_11AX
+	if (RLM_NET_IS_11AX(bss))
+		u2EstimatedExtraIELen +=
+			heRlmCalculateHeCapIELen(
+			ad,
+			bss->ucBssIndex,
+			sta);
+#endif
+#if CFG_SUPPORT_TDLS_11BE
+	if (RLM_NET_IS_11BE(bss))
+		u2EstimatedExtraIELen +=
+			ehtRlmCalculateCapIELen(
+			ad,
+			bss->ucBssIndex,
+			sta);
+#endif
+
+	if (u2EstimatedExtraIELen == 0)
+		return 0;
+
+	u2EstimatedFrameLen += u2EstimatedExtraIELen;
+
+	prMsduInfo = cnmMgtPktAlloc(ad, u2EstimatedFrameLen);
+	if (prMsduInfo == NULL) {
+		DBGLOG(TDLS, WARN, "No PKT_INFO_T.\n");
+		return 0;
+	}
+
+	/* Append IE */
+#if CFG_SUPPORT_TDLS_11AX
+	if (RLM_NET_IS_11AX(bss))
+		heRlmFillHeCapIE(
+			ad,
+			bss,
+			prMsduInfo);
+#endif
+#if CFG_SUPPORT_TDLS_11BE
+	if (RLM_NET_IS_11BE(bss))
+		ehtRlmFillCapIE(
+			ad,
+			bss,
+			prMsduInfo);
+#endif
+
+	DBGLOG(TDLS, TRACE, "Dump cap ie\n");
+
+	if (aucDebugModule[DBG_TDLS_IDX] & DBG_CLASS_TRACE) {
+		dumpMemory8((uint8_t *) prMsduInfo->prPacket,
+			(uint32_t) prMsduInfo->u2FrameLength);
+	}
+
+	kalMemCopy(buf,
+		prMsduInfo->prPacket,
+		prMsduInfo->u2FrameLength);
+
+	u2FrameLength = prMsduInfo->u2FrameLength;
+
+	cnmMgtPktFree(ad, prMsduInfo);
+
+	return u2FrameLength;
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to hadel TDLS link oper from nl80211.
@@ -698,6 +790,12 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
 #endif
+#if (CFG_SUPPORT_TDLS_11AX == 1)
+	u4IeLen = _TdlsComposeCapIE(prAdapter,
+		prBssInfo, prStaRec, pPkt);
+	if (u4IeLen)
+		LR_TDLS_FME_FIELD_FILL(u4IeLen);
+#endif
 
 	/* 3.16 20/40 BSS Coexistence */
 	BSS_20_40_COEXIST_IE(pPkt)->ucId = ELEM_ID_20_40_BSS_COEXISTENCE;
@@ -880,6 +978,12 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 							   pPkt);
 			LR_TDLS_FME_FIELD_FILL(u4IeLen);
 		}
+#endif
+#if (CFG_SUPPORT_TDLS_11AX == 1)
+		u4IeLen = _TdlsComposeCapIE(prAdapter,
+			prBssInfo, prStaRec, pPkt);
+		if (u4IeLen)
+			LR_TDLS_FME_FIELD_FILL(u4IeLen);
 #endif
 
 		/* 3.17 20/40 BSS Coexistence */
@@ -1301,6 +1405,12 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 		u4IeLen = rlmFillVhtCapIEByAdapter(prAdapter, prBssInfo, pPkt);
 		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 	}
+#endif
+#if (CFG_SUPPORT_TDLS_11AX == 1)
+	u4IeLen = _TdlsComposeCapIE(prAdapter,
+		prBssInfo, prStaRec, pPkt);
+	if (u4IeLen)
+		LR_TDLS_FME_FIELD_FILL(u4IeLen);
 #endif
 
 	/* 3.14 20/40 BSS Coexistence */
