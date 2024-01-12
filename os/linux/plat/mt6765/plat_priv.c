@@ -30,9 +30,7 @@
 #endif
 
 #include "precomp.h"
-#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
-#undef CONFIG_MTK_EMI
-#endif
+
 #ifdef CONFIG_MTK_EMI
 #include <mt_emi_api.h>
 #define WIFI_EMI_MEM_OFFSET    0x140000
