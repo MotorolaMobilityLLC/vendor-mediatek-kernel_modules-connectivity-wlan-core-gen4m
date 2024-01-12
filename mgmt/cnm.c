@@ -5146,8 +5146,10 @@ void cnmOpModeGetTRxNss(
 	ucOpRxNss = ucOpTxNss = wlanGetSupportNss(prAdapter, ucBssIndex);
 
 	if (prBssInfo && prBssInfo->ucGrantTxNss && prBssInfo->ucGrantRxNss) {
-		ucOpTxNss = prBssInfo->ucGrantTxNss;
-		ucOpRxNss = prBssInfo->ucGrantRxNss;
+		ucOpTxNss = (ucOpTxNss > prBssInfo->ucGrantTxNss) ?
+			prBssInfo->ucGrantTxNss : ucOpTxNss;
+		ucOpRxNss = (ucOpRxNss > prBssInfo->ucGrantRxNss) ?
+			prBssInfo->ucGrantRxNss : ucOpRxNss;
 		DBGLOG(CNM, TRACE, "Granted TxNss = %d, RxNss = %d\n",
 			ucOpTxNss, ucOpRxNss);
 	}
