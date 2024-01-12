@@ -2661,11 +2661,13 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 					prAisSpecBssInfo->fgBipKeyInstalled =
 						TRUE;
 
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 					DBGLOG(RSN, INFO,
 						"Change BIP BC keyId from %d to 3\n",
 						prCmdKey->ucKeyId);
 					/* Reserve keyid 3 for IGTK */
 					prCmdKey->ucKeyId = 3;
+#endif
 				}
 			}
 #endif
@@ -2691,11 +2693,13 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP)) {
 				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
 				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 				DBGLOG(RSN, INFO,
 					"Change BIP BC keyId from %d to 3\n",
 					prCmdKey->ucKeyId);
 				/* Reserve keyid 3 for IGTK */
 				prCmdKey->ucKeyId = 3;
+#endif
 			}
 #endif
 		}
@@ -2842,6 +2846,7 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						prBssInfo->prStaRecOfAP
 						->aucMacAddr, MAC_ADDR_LEN);
 
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 					prBssInfo->ucBMCWlanIndexS[
 						prCmdKey->ucKeyId] =
 						prCmdKey->ucWlanIndex;
@@ -2851,6 +2856,7 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 					       "BMCWlanIndex kid = %d, index = %d\n",
 					       prCmdKey->ucKeyId,
 					       prCmdKey->ucWlanIndex);
+#endif
 				}
 			}
 
@@ -3180,6 +3186,14 @@ wlanSetRemoveKey(IN struct ADAPTER *prAdapter,
 	ASSERT(u4KeyIndex < MAX_KEY_NUM + 2);
 #else
 	/* ASSERT(prCmdKey->ucKeyId < MAX_KEY_NUM); */
+#endif
+
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 0)
+	if (u4KeyIndex >= 4) {
+		DBGLOG(RSN, INFO, "Remove bip key Index : 0x%08x\n",
+		       u4KeyIndex);
+		return WLAN_STATUS_SUCCESS;
+	}
 #endif
 
 	/* Clean up the Tx key flag */

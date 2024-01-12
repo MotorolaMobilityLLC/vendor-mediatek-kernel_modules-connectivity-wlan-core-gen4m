@@ -2183,6 +2183,12 @@
 #define CFG_RTT_TEST_MODE		(0)
 #define CFG_RTT_MAX_CANDIDATES	10
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define CFG_WIFI_IGTK_GTK_SEPARATE	0
+#else
+#define CFG_WIFI_IGTK_GTK_SEPARATE	1
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -818,8 +818,12 @@ u_int8_t secPrivacySeekForEntry(
 
 	prWtbl = prAdapter->rWifiVar.arWtbl;
 
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 	/* reserve wtbl IDX 0~3 for BIP*/
 	ucStartIDX = 4;
+#else
+	ucStartIDX = 0;
+#endif
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
@@ -1087,13 +1091,20 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	if (prBSSInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		fgCheckKeyId = FALSE;
 
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
 	/* reserve wtbl IDX 0~3 for BIP*/
 	ucStartIDX = 4;
+#else
+	ucStartIDX = 0;
+#endif
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	if (ucAlg == CIPHER_SUITE_BIP) {
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 1)
+	if (ucAlg == CIPHER_SUITE_BIP)
 		ucEntry = ucBssIndex;
-	} else {
+	else
+#endif
+	{
 		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
 
 			if (prWtbl[i].ucUsed && !prWtbl[i].ucPairwise
@@ -1133,6 +1144,12 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	}
 
 	if (ucEntry < prAdapter->ucTxDefaultWlanIndex) {
+#if (CFG_WIFI_IGTK_GTK_SEPARATE == 0)
+		if (ucAlg == CIPHER_SUITE_BIP) {
+			/* BIP no need to dump secCheckWTBLAssign */
+			return ucEntry;
+		}
+#endif
 		prWtbl[ucEntry].ucUsed = TRUE;
 		prWtbl[ucEntry].ucKeyId = ucKeyId;
 		prWtbl[ucEntry].ucBssIndex = ucBssIndex;
