@@ -1264,139 +1264,185 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 	       MAC2STR(prDeauthFrame->aucSrcAddr),
 	       MAC2STR(prDeauthFrame->aucBSSID), prDeauthFrame->u2ReasonCode);
 
-	do {
 #if CFG_ENABLE_WIFI_DIRECT
-		/* We should have the corresponding Sta Record. */
-		if (!prStaRec) {
-			DBGLOG(SAA, WARN,
-			       "Received a Deauth: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
-			       ucWlanIdx, ucStaRecIdx);
-			p2pRxDeauthNoWtbl(prAdapter, prStaRec, prSwRfb);
-			break;
-		}
+	if (!prStaRec) {
+		secHandleNoWtbl(prAdapter, prSwRfb);
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+					       prSwRfb->ucStaRecIdx);
+	}
 #endif
-		if (IS_STA_IN_AIS(prStaRec)) {
-			struct BSS_INFO *prAisBssInfo;
-			struct AIS_FSM_INFO *prAisFsmInfo;
-			struct BSS_DESC *prBssDesc;
-			uint8_t ucBssIndex = 0;
 
-			if (!IS_AP_STA(prStaRec))
-				break;
+	if (!prStaRec) {
+		DBGLOG(SAA, WARN,
+		       "Received a Deauth: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
+		       ucWlanIdx, ucStaRecIdx);
+		goto exit;
+	}
 
-			ucBssIndex = prStaRec->ucBssIndex;
+	if (IS_STA_IN_AIS(prStaRec)) {
+		struct BSS_INFO *prAisBssInfo;
+		struct AIS_FSM_INFO *prAisFsmInfo;
+		struct BSS_DESC *prBssDesc;
+		uint8_t ucBssIndex = 0;
 
-			prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+		if (!IS_AP_STA(prStaRec))
+			goto exit;
 
-			if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-				prDeauthFrame->aucSrcAddr)) {
-				DBGLOG(SAA, WARN,
-					"Received a Deauth[" MACSTR
-					"] unmatch target[" MACSTR "]\n",
-					MAC2STR(prDeauthFrame->aucSrcAddr),
-					MAC2STR(prBssDesc->aucBSSID));
-				break;
-			}
+		ucBssIndex = prStaRec->ucBssIndex;
 
-			/* if state != CONNECTED, don't do disconnect again */
-			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-				ucBssIndex) !=
-				MEDIA_STATE_CONNECTED)
-				break;
+		prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-			if (prStaRec->ucStaState > STA_STATE_1) {
+		if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			prDeauthFrame->aucSrcAddr)) {
+			DBGLOG(SAA, WARN,
+				"Received a Deauth[" MACSTR
+				"] unmatch target[" MACSTR "]\n",
+				MAC2STR(prDeauthFrame->aucSrcAddr),
+				MAC2STR(prBssDesc->aucBSSID));
+			goto exit;
+		}
 
-				/* Check if this is the AP we are associated
-				 * or associating with
-				 */
-				if (authProcessRxDeauthFrame(prSwRfb,
-					    prStaRec->aucMacAddr,
-					    &prStaRec->u2ReasonCode)
-						    == WLAN_STATUS_SUCCESS) {
+		/* if state != CONNECTED, don't do disconnect again */
+		if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			ucBssIndex) !=
+			MEDIA_STATE_CONNECTED)
+			goto exit;
+
+		if (prStaRec->ucStaState > STA_STATE_1) {
+			/* Check if this is the AP we are associated
+			 * or associating with
+			 */
+			if (authProcessRxDeauthFrame(prSwRfb,
+				    prStaRec->aucMacAddr,
+				    &prStaRec->u2ReasonCode)
+					    == WLAN_STATUS_SUCCESS) {
 
 #if CFG_SUPPORT_802_11W
-					struct AIS_SPECIFIC_BSS_INFO
-							*prAisSpecBssInfo;
+				struct AIS_SPECIFIC_BSS_INFO
+						*prAisSpecBssInfo;
 
-					prAisSpecBssInfo =
-						aisGetAisSpecBssInfo(prAdapter,
-						ucBssIndex);
+				prAisSpecBssInfo =
+					aisGetAisSpecBssInfo(prAdapter,
+					ucBssIndex);
 
+				DBGLOG(RSN, INFO,
+				       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d\n",
+				       prAisSpecBssInfo->
+					fgMgmtProtection, (uint8_t)
+					prSwRfb->ucSecMode,
+					prSwRfb->fgIsCipherMS,
+					IS_BMCAST_MAC_ADDR
+					(prDeauthFrame->aucDestAddr),
+					prDeauthFrame->u2FrameCtrl,
+					ucWlanIdx);
+
+				if (prStaRec->fgIsTxAllowed)
 					DBGLOG(RSN, INFO,
-					       "QM RX MGT: Deauth frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d\n",
-					       prAisSpecBssInfo->
-						fgMgmtProtection, (uint8_t)
-						prSwRfb->ucSecMode,
-						prSwRfb->fgIsCipherMS,
-						IS_BMCAST_MAC_ADDR
-						(prDeauthFrame->aucDestAddr),
-						prDeauthFrame->u2FrameCtrl,
-						ucWlanIdx);
+					"ignore no sec deauth\n");
 
-					if (prStaRec->fgIsTxAllowed)
-						DBGLOG(RSN, INFO,
-						"ignore no sec deauth\n");
-
-					if (IS_STA_IN_AIS(prStaRec) &&
-					    prStaRec->fgIsTxAllowed &&
-					    prAisSpecBssInfo->fgMgmtProtection
-					    && IS_INCORRECT_SEC_RX_FRAME(
-						prSwRfb,
-						prDeauthFrame->aucDestAddr,
-						prDeauthFrame->u2FrameCtrl)
-					    /* HAL_RX_STATUS_GET_SEC_MODE
-					     * (prSwRfb->prRxStatus) !=
-					     * CIPHER_SUITE_BIP
-					     */
-					    ) {
-						saaChkDeauthfrmParamHandler(
-							prAdapter, prSwRfb,
-							prStaRec);
-						return WLAN_STATUS_SUCCESS;
-					}
+				if (IS_STA_IN_AIS(prStaRec) &&
+				    prStaRec->fgIsTxAllowed &&
+				    prAisSpecBssInfo->fgMgmtProtection
+				    && IS_INCORRECT_SEC_RX_FRAME(
+					prSwRfb,
+					prDeauthFrame->aucDestAddr,
+					prDeauthFrame->u2FrameCtrl)
+				    /* HAL_RX_STATUS_GET_SEC_MODE
+				     * (prSwRfb->prRxStatus) !=
+				     * CIPHER_SUITE_BIP
+				     */
+				    ) {
+					saaChkDeauthfrmParamHandler(
+						prAdapter, prSwRfb,
+						prStaRec);
+					return WLAN_STATUS_SUCCESS;
+				}
 #endif
 
-					saaSendDisconnectMsgHandler(prAdapter,
-					      prStaRec,
-					      prAisBssInfo,
-					      FRM_DEAUTH);
-				}
+				saaSendDisconnectMsgHandler(prAdapter,
+				      prStaRec,
+				      prAisBssInfo,
+				      FRM_DEAUTH);
 			}
 		}
+	}
 #if CFG_ENABLE_WIFI_DIRECT
-		else if (prAdapter->fgIsP2PRegistered &&
-			 IS_STA_IN_P2P(prStaRec)) {
-			/* TODO(Kevin) */
-#if CFG_AP_80211KVR_INTERFACE
-			aaaMulAPAgentStaEventNotify(prStaRec,
-				prDeauthFrame->aucBSSID, FALSE);
+	else if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		struct MLD_STA_RECORD *mld_starec;
 #endif
+
+#if CFG_AP_80211KVR_INTERFACE
+		aaaMulAPAgentStaEventNotify(prStaRec,
+			prDeauthFrame->aucBSSID, FALSE);
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (mld_starec) {
+			uint8_t mldsta_idx = mld_starec->ucIdx;
+			uint8_t i = 0;
+
+			for (i = 0; i < CFG_STA_REC_NUM; i++) {
+				struct STA_RECORD *sta;
+				struct BSS_INFO *bss;
+
+				sta = cnmGetStaRecByIndex(prAdapter, i);
+				if (!sta ||
+				    sta->ucMldStaIndex != mldsta_idx)
+					continue;
+
+				bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+							    sta->ucBssIndex);
+				if (!bss) {
+					DBGLOG(SAA, INFO,
+						"bss is null (%u)\n",
+						sta->ucBssIndex);
+					continue;
+				}
+
+				prSwRfb->ucStaRecIdx = sta->ucIndex;
+				prSwRfb->ucWlanIdx = sta->ucWlanIndex;
+				prSwRfb->fgDriverGen = sta != prStaRec;
+				COPY_MAC_ADDR(prDeauthFrame->aucDestAddr,
+					      bss->aucOwnMacAddr);
+				COPY_MAC_ADDR(prDeauthFrame->aucSrcAddr,
+					      sta->aucMacAddr);
+				COPY_MAC_ADDR(prDeauthFrame->aucBSSID,
+					      bss->aucBSSID);
+
+				p2pRoleFsmRunEventRxDeauthentication(prAdapter,
+								     sta,
+								     prSwRfb);
+			}
+		} else
+#endif
+		{
 			p2pRoleFsmRunEventRxDeauthentication(prAdapter,
 							     prStaRec,
 							     prSwRfb);
 		}
+	}
 #endif
 #if CFG_ENABLE_BT_OVER_WIFI
-		else if (IS_STA_BOW_TYPE(prStaRec))
-			bowRunEventRxDeAuth(prAdapter, prStaRec, prSwRfb);
+	else if (IS_STA_BOW_TYPE(prStaRec))
+		bowRunEventRxDeAuth(prAdapter, prStaRec, prSwRfb);
 #endif
 #if CFG_SUPPORT_NAN
-		else if (IS_STA_NAN_TYPE(prStaRec)) {
-			DBGLOG(SAA, WARN,
-			       "Received a Deauth: wlanIdx[%d] from NAN network\n",
-			       ucWlanIdx);
-			break;
-		}
+	else if (IS_STA_NAN_TYPE(prStaRec)) {
+		DBGLOG(SAA, WARN,
+		       "Received a Deauth: wlanIdx[%d] from NAN network\n",
+		       ucWlanIdx);
+	}
 #endif
-		else
-			ASSERT(0);
+	else {
+		DBGLOG(SAA, WARN, "No handler.\n");
+		ASSERT(0);
+	}
 
-	} while (FALSE);
-
+exit:
 	return WLAN_STATUS_SUCCESS;
-
 }				/* end of saaFsmRunEventRxDeauth() */
 
 /* for AOSP */
@@ -1520,136 +1566,179 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 	       MAC2STR(prDisassocFrame->aucDestAddr),
 	       prDisassocFrame->u2ReasonCode);
 
-	do {
+	/* We should have the corresponding Sta Record. */
+	if (!prStaRec) {
+		DBGLOG(SAA, WARN,
+		       "Received a DisAssoc: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
+		       ucWlanIdx, ucStaRecIdx);
+		goto exit;
+	}
 
-		/* We should have the corresponding Sta Record. */
-		if (!prStaRec) {
+	if (IS_STA_IN_AIS(prStaRec)) {
+		struct BSS_INFO *prAisBssInfo;
+		struct AIS_FSM_INFO *prAisFsmInfo;
+		struct BSS_DESC *prBssDesc;
+		uint8_t ucBssIndex = 0;
+
+		if (!IS_AP_STA(prStaRec))
+			goto exit;
+
+		ucBssIndex = prStaRec->ucBssIndex;
+
+		prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			prDisassocFrame->aucSrcAddr)) {
 			DBGLOG(SAA, WARN,
-			       "Received a DisAssoc: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
-			       ucWlanIdx, ucStaRecIdx);
-			break;
+				"Received a DisAssoc[" MACSTR
+				"] unmatch target[" MACSTR "]\n",
+				MAC2STR(prDisassocFrame->aucSrcAddr),
+				MAC2STR(prBssDesc->aucBSSID));
+			goto exit;
 		}
 
-		if (IS_STA_IN_AIS(prStaRec)) {
-			struct BSS_INFO *prAisBssInfo;
-			struct AIS_FSM_INFO *prAisFsmInfo;
-			struct BSS_DESC *prBssDesc;
-			uint8_t ucBssIndex = 0;
+		if (prStaRec->ucStaState > STA_STATE_1) {
 
-			if (!IS_AP_STA(prStaRec))
-				break;
-
-			ucBssIndex = prStaRec->ucBssIndex;
-
-			prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-			prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-
-			if (prBssDesc && UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
-				prDisassocFrame->aucSrcAddr)) {
-				DBGLOG(SAA, WARN,
-					"Received a DisAssoc[" MACSTR
-					"] unmatch target[" MACSTR "]\n",
-					MAC2STR(prDisassocFrame->aucSrcAddr),
-					MAC2STR(prBssDesc->aucBSSID));
-				break;
-			}
-
-			if (prStaRec->ucStaState > STA_STATE_1) {
-
-				/* Check if this is the AP we are associated
-				 * or associating with
-				 */
-				if (assocProcessRxDisassocFrame(prAdapter,
-				    prSwRfb, prStaRec->aucMacAddr, &prStaRec->
-				    u2ReasonCode) == WLAN_STATUS_SUCCESS) {
+			/* Check if this is the AP we are associated
+			 * or associating with
+			 */
+			if (assocProcessRxDisassocFrame(prAdapter,
+			    prSwRfb, prStaRec->aucMacAddr, &prStaRec->
+			    u2ReasonCode) == WLAN_STATUS_SUCCESS) {
 
 #if CFG_SUPPORT_802_11W
-					struct AIS_SPECIFIC_BSS_INFO
-							*prAisSpecBssInfo;
+				struct AIS_SPECIFIC_BSS_INFO
+						*prAisSpecBssInfo;
 
-					prAisSpecBssInfo =
-						aisGetAisSpecBssInfo(prAdapter,
-						ucBssIndex);
+				prAisSpecBssInfo =
+					aisGetAisSpecBssInfo(prAdapter,
+					ucBssIndex);
 
+				DBGLOG(RSN, INFO,
+				       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d\n",
+				       prAisSpecBssInfo->
+					fgMgmtProtection, (uint8_t)
+					prSwRfb->ucSecMode,
+					prSwRfb->fgIsCipherMS,
+					IS_BMCAST_MAC_ADDR
+					(prDisassocFrame->aucDestAddr),
+					prDisassocFrame->u2FrameCtrl,
+					ucWlanIdx);
+
+				if (prStaRec->fgIsTxAllowed)
 					DBGLOG(RSN, INFO,
-					       "QM RX MGT: Disassoc frame, P=%d Sec=%d CM=%d BC=%d fc=%02x wlanIdx=%d\n",
-					       prAisSpecBssInfo->
-						fgMgmtProtection, (uint8_t)
-						prSwRfb->ucSecMode,
-						prSwRfb->fgIsCipherMS,
-						IS_BMCAST_MAC_ADDR
-						(prDisassocFrame->aucDestAddr),
-						prDisassocFrame->u2FrameCtrl,
-						ucWlanIdx);
+					"ignore no sec disassoc\n");
 
-					if (prStaRec->fgIsTxAllowed)
-						DBGLOG(RSN, INFO,
-						"ignore no sec disassoc\n");
-
-					if (IS_STA_IN_AIS(prStaRec) &&
-					    prStaRec->fgIsTxAllowed &&
-					    prAisSpecBssInfo->fgMgmtProtection
-					    && IS_INCORRECT_SEC_RX_FRAME(
-						prSwRfb,
-						prDisassocFrame->aucDestAddr,
-						prDisassocFrame->u2FrameCtrl)
-					    /* HAL_RX_STATUS_GET_SEC_MODE(
-					     * prSwRfb->prRxStatus) !=
-					     * CIPHER_SUITE_CCMP
-					     */
-					    ) {
-						/* prDisassocFrame =
-						 * (P_WLAN_DISASSOC_FRAME_T)
-						 * prSwRfb->pvHeader;
-						 */
-						saaChkDisassocfrmParamHandler(
-						      prAdapter,
-						      prDisassocFrame, prStaRec,
-						      prSwRfb);
-						return WLAN_STATUS_SUCCESS;
-					}
-#endif
-					/* fos_change begin */
-#if CFG_SUPPORT_EXCEPTION_STATISTICS
-					prAdapter->total_deauth_rx_count++;
-					if (prStaRec->u2ReasonCode <=
-						REASON_CODE_BEACON_TIMEOUT)
-						prAdapter->deauth_rx_count
-						[prStaRec->u2ReasonCode]++;
-#endif /* fos_change end */
-					saaSendDisconnectMsgHandler(prAdapter,
-					      prStaRec,
-					      prAisBssInfo,
-					      FRM_DISASSOC);
+				if (IS_STA_IN_AIS(prStaRec) &&
+				    prStaRec->fgIsTxAllowed &&
+				    prAisSpecBssInfo->fgMgmtProtection
+				    && IS_INCORRECT_SEC_RX_FRAME(
+					prSwRfb,
+					prDisassocFrame->aucDestAddr,
+					prDisassocFrame->u2FrameCtrl)
+				    /* HAL_RX_STATUS_GET_SEC_MODE(
+				     * prSwRfb->prRxStatus) !=
+				     * CIPHER_SUITE_CCMP
+				     */
+				    ) {
+					/* prDisassocFrame =
+					 * (P_WLAN_DISASSOC_FRAME_T)
+					 * prSwRfb->pvHeader;
+					 */
+					saaChkDisassocfrmParamHandler(
+					      prAdapter,
+					      prDisassocFrame, prStaRec,
+					      prSwRfb);
+					return WLAN_STATUS_SUCCESS;
 				}
+#endif
+				/* fos_change begin */
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+				prAdapter->total_deauth_rx_count++;
+				if (prStaRec->u2ReasonCode <=
+					REASON_CODE_BEACON_TIMEOUT)
+					prAdapter->deauth_rx_count
+					[prStaRec->u2ReasonCode]++;
+#endif /* fos_change end */
+				saaSendDisconnectMsgHandler(prAdapter,
+				      prStaRec,
+				      prAisBssInfo,
+				      FRM_DISASSOC);
 			}
 		}
+	}
 #if CFG_ENABLE_WIFI_DIRECT
-		else if (prAdapter->fgIsP2PRegistered &&
-			 (IS_STA_IN_P2P(prStaRec))) {
-			/* TODO(Kevin) */
-#if CFG_AP_80211KVR_INTERFACE
-			aaaMulAPAgentStaEventNotify(prStaRec,
-				prDisassocFrame->aucBSSID, FALSE);
+	else if (prAdapter->fgIsP2PRegistered && (IS_STA_IN_P2P(prStaRec))) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		struct MLD_STA_RECORD *mld_starec;
 #endif
+
+#if CFG_AP_80211KVR_INTERFACE
+		aaaMulAPAgentStaEventNotify(prStaRec,
+			prDisassocFrame->aucBSSID, FALSE);
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (mld_starec) {
+			uint8_t mldsta_idx = mld_starec->ucIdx;
+			uint8_t i = 0;
+
+			for (i = 0; i < CFG_STA_REC_NUM; i++) {
+				struct STA_RECORD *sta;
+				struct BSS_INFO *bss;
+
+				sta = cnmGetStaRecByIndex(prAdapter, i);
+				if (!sta ||
+				    sta->ucMldStaIndex != mldsta_idx)
+					continue;
+
+				bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+							    sta->ucBssIndex);
+				if (!bss) {
+					DBGLOG(SAA, INFO,
+						"bss is null (%u)\n",
+						sta->ucBssIndex);
+					continue;
+				}
+
+				prSwRfb->ucStaRecIdx = sta->ucIndex;
+				prSwRfb->ucWlanIdx = sta->ucWlanIndex;
+				prSwRfb->fgDriverGen = sta != prStaRec;
+				COPY_MAC_ADDR(prDisassocFrame->aucDestAddr,
+					      bss->aucOwnMacAddr);
+				COPY_MAC_ADDR(prDisassocFrame->aucSrcAddr,
+					      sta->aucMacAddr);
+				COPY_MAC_ADDR(prDisassocFrame->aucBSSID,
+					      bss->aucBSSID);
+
+				p2pRoleFsmRunEventRxDisassociation(prAdapter,
+								   sta,
+								   prSwRfb);
+			}
+		} else
+#endif
+		{
 			p2pRoleFsmRunEventRxDisassociation(prAdapter,
-							   prStaRec, prSwRfb);
+							   prStaRec,
+							   prSwRfb);
 		}
+	}
 #endif
 #if CFG_ENABLE_BT_OVER_WIFI
-		else if (IS_STA_BOW_TYPE(prStaRec)) {
-			/* ToDo:: nothing */
-			/* TODO(Kevin) */
-		}
+	else if (IS_STA_BOW_TYPE(prStaRec)) {
+		/* ToDo:: nothing */
+		/* TODO(Kevin) */
+	}
 #endif
-		else
-			ASSERT(0);
+	else {
+		DBGLOG(SAA, WARN, "No handler.\n");
+		ASSERT(0);
+	}
 
-	} while (FALSE);
-
+exit:
 	return WLAN_STATUS_SUCCESS;
-
 }				/* end of saaFsmRunEventRxDisassoc() */
 
 /* for AOSP */

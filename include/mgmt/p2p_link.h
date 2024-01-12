@@ -119,11 +119,6 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet);
 #endif
 
-void p2pRxDeauthNoWtbl(
-	struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec,
-	struct SW_RFB *prSwRfb);
-
 void p2pLinkStaRecFree(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct BSS_INFO *prP2pBssInfo);

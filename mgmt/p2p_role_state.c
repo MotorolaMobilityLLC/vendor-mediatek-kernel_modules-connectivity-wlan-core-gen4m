@@ -357,31 +357,38 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 		struct P2P_JOIN_INFO *prJoinInfo,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
-	do {
+	if (prJoinInfo->fgIsJoinComplete == FALSE) {
+		uint8_t i;
 
-		if (prJoinInfo->fgIsJoinComplete == FALSE) {
-			/* Reset the flag to clear target BSS state */
-			p2pTargetBssDescResetConnecting(prAdapter,
-				prP2pRoleFsmInfo);
+		/* Reset the flag to clear target BSS state */
+		p2pTargetBssDescResetConnecting(prAdapter,
+			prP2pRoleFsmInfo);
 
-			p2pLinkStaRecFree(prAdapter,
-				prJoinInfo->prTargetStaRec,
-				GET_BSS_INFO_BY_INDEX(prAdapter,
-					prP2pRoleFsmInfo->ucBssIndex));
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			struct BSS_INFO *bss;
+			struct STA_RECORD *sta;
+
+			sta = p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
+			if (!sta)
+				continue;
+
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+						    sta->ucBssIndex);
+			p2pLinkStaRecFree(prAdapter, sta, bss);
+			p2pSetLinkStaRec(prP2pRoleFsmInfo, NULL, i);
 		}
+	}
 
-		/* Stop Join Timer. */
-		cnmTimerStopTimer(prAdapter,
-			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
+	/* Stop Join Timer. */
+	cnmTimerStopTimer(prAdapter,
+		&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
 
-		/* Release channel requested. */
-		p2pFuncReleaseCh(prAdapter,
-			prP2pRoleFsmInfo->ucBssIndex,
-			&(prP2pRoleFsmInfo->rChnlReqInfo));
+	/* Release channel requested. */
+	p2pFuncReleaseCh(prAdapter,
+		prP2pRoleFsmInfo->ucBssIndex,
+		&(prP2pRoleFsmInfo->rChnlReqInfo));
 
-		prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
-
-	} while (FALSE);
+	prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
