@@ -2009,23 +2009,12 @@ struct UNI_CMD_TDLS {
         */
 } __KAL_ATTRIB_PACKED__;
 
-
 /* TDLS set command TLV List */
 enum ENUM_UNI_CMD_TDLS_TAG {
 	UNI_CMD_TDLS_TAG_SET_TDLS_CH_SW = 0,
 	UNI_CMD_TDLS_TAG_NUM
 };
 
-/** @addtogroup UNI_CMD_ID_TDLS
- * @{
- */
-/**
- * This structure is used for UNI_CMD_SET_TDLS_CH_SW(0x00) of UNI_CMD_ID_TDLS command (0x1B)
- *
- * @param[in] u2Tag                   should be 0x00
- * @param[in] u2Length                the length of this TLV, should be 8
- * @param[in] fgIsTDLSChSwProhibit      Flag of TDLS channel switch prohibit
- */
 /* FW Log Basic Setting (Tag0) */
 struct UNI_CMD_SET_TDLS_CH_SW {
 	uint16_t u2Tag;
@@ -2034,6 +2023,52 @@ struct UNI_CMD_SET_TDLS_CH_SW {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_GET_STATISTICS {
+	/*fixed field*/
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+        *
+        *   TAG                              | ID  | structure
+        *   -------------                    | ----| -------------
+        *   UNI_CMD_BASIC_STATISTICS         | 0x0 | UNI_CMD_BASIC_STATISTICS_T
+        *   UNI_CMD_LINK_QUALITY             | 0x1 | UNI_CMD_LINK_QUALITY_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* Get Statistics Tag */
+enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
+	UNI_CMD_GET_STATISTICS_TAG_BASIC = 0,
+	UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY = 1,
+	UNI_CMD_GET_STATISTICS_TAG_STA = 2,
+	UNI_CMD_GET_STATISTICS_TAG_NUM
+};
+
+struct UNI_CMD_BASIC_STATISTICS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_LINK_QUALITY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_STA_STATISTICS
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/** Peer SW station record index */
+	uint8_t  u1Index;
+	/** TRUE: After event, clear TX fail count & lifetimeout count */
+	uint8_t  ucReadClear;
+	/** TRUE: After event, clear all AC statistics for the peer */
+	uint8_t  ucLlsReadClear;
+	/** TRUE: (RA) clear TransmitCount, TransmitFailCount,
+	 * Rate1TxCnt, Rate1FailCnt */
+	uint8_t  ucResetCounter;
+} __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_PKT_DROP {
 	/* fixed field */
@@ -2915,8 +2950,7 @@ struct UNI_EVENT_SCAN_DONE_NLO {
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_ADD_KEY_DONE
-{
+struct UNI_EVENT_ADD_KEY_DONE {
 	/* fixed field */
 	uint8_t ucBssIndex;
 	uint8_t aucPadding[3];
@@ -2926,23 +2960,20 @@ struct UNI_EVENT_ADD_KEY_DONE
 } __KAL_ATTRIB_PACKED__;
 
 /* Add key done event Tag */
-enum ENUM_UNI_EVENT_ADD_KEY_DONE_TAG
-{
+enum ENUM_UNI_EVENT_ADD_KEY_DONE_TAG {
 	UNI_EVENT_ADD_KEY_DONE_TAG_PKEY = 0,
 	UNI_EVENT_ADD_KEY_DONE_TAG_NUM
 };
 
 /* Add PKey down (Tag0) */
-struct UNI_EVENT_ADD_PKEY_DONE
-{
+struct UNI_EVENT_ADD_PKEY_DONE {
 	uint16_t u2Tag;    // Tag = 0x00
 	uint16_t u2Length;
 	uint8_t aucStaAddr[6];
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_IDC
-{
+struct UNI_EVENT_IDC {
 	/* fixed field */
 	uint8_t aucPadding[4];
 
@@ -2956,15 +2987,13 @@ struct UNI_EVENT_IDC
 	*/
 } __KAL_ATTRIB_PACKED__;
 
-enum ENUM_UNI_EVENT_IDC_TAG
-{
+enum ENUM_UNI_EVENT_IDC_TAG {
 	UNI_EVENT_IDC_TAG_MD_SAFE_CHN = 0,
 	UNI_EVENT_IDC_TAG_CCCI_MSG = 1,
 	UNI_EVENT_IDC_TAG_NUM
 };
 
-struct UNI_EVENT_MD_SAFE_CHN
-{
+struct UNI_EVENT_MD_SAFE_CHN {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucVersion;
@@ -2973,8 +3002,7 @@ struct UNI_EVENT_MD_SAFE_CHN
 	uint32_t u4SafeChannelBitmask[UNI_WIFI_CH_MASK_IDX_NUM]; /* WIFI_CH_MASK_IDX_NUM = 4 */
 } __KAL_ATTRIB_PACKED__;
 
-struct UNI_EVENT_MAC_IFNO
-{
+struct UNI_EVENT_MAC_IFNO {
 	/* fixed field */
 	uint8_t aucReserved[4];
 
@@ -2983,15 +3011,13 @@ struct UNI_EVENT_MAC_IFNO
 } __KAL_ATTRIB_PACKED__;
 
 /* Mac info event Tag */
-enum ENUM_UNI_EVENT_MAC_INFO_TAG
-{
+enum ENUM_UNI_EVENT_MAC_INFO_TAG {
 	UNI_EVENT_MAC_INFO_TAG_TSF  = 0,
 	UNI_EVENT_MAC_INFO_TAG_NUM
 };
 
 /* Beacon timeout reason (Tag0) */
-struct UNI_EVENT_MAC_INFO_TSF
-{
+struct UNI_EVENT_MAC_INFO_TSF {
 	uint16_t   u2Tag;    // Tag = 0x00
 	uint16_t   u2Length;
 	uint8_t    ucDbdcIdx;
@@ -3000,6 +3026,67 @@ struct UNI_EVENT_MAC_INFO_TSF
 	uint32_t   u4TsfBit0_31;
 	uint32_t   u4TsfBit63_32;
 } __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_STATISTICS {
+	/* fixed field */
+	uint8_t aucPadding[4];
+	/* tlv */
+
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Statistics event tag */
+enum ENUM_UNI_EVENT_STATISTICS_TAG {
+	UNI_EVENT_STATISTICS_TAG_BASIC = 0,
+	UNI_EVENT_STATISTICS_TAG_LINK_QUALITY = 1,
+	UNI_EVENT_STATISTICS_TAG_STA = 2,
+	UNI_EVENT_STATISTICS_TAG_NUM
+};
+
+/* Basic Scan down notify Parameters (Tag00) */
+struct UNI_EVENT_BASIC_STATISTICS {
+	uint16_t     u2Tag;
+	uint16_t     u2Length;
+	uint64_t     u8TransmittedFragmentCount;
+	uint64_t     u8MulticastTransmittedFrameCount;
+	uint64_t     u8FailedCount;
+	uint64_t     u8RetryCount;
+	uint64_t     u8MultipleRetryCount;
+	uint64_t     u8RTSSuccessCount;
+	uint64_t     u8RTSFailureCount;
+	uint64_t     u8ACKFailureCount;
+	uint64_t     u8FrameDuplicateCount;
+	uint64_t     u8ReceivedFragmentCount;
+	uint64_t     u8MulticastReceivedFrameCount;
+	uint64_t     u8FCSErrorCount;
+	uint64_t     u8MdrdyCnt;
+	uint64_t     u8ChnlIdleCnt;
+	uint32_t     u4HwMacAwakeDuration; /* SlotIdleHwAwake */
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_LINK_QUALITY
+{
+	int8_t       cRssi; /* AIS Network. */
+	int8_t       cLinkQuality;
+	uint16_t     u2LinkSpeed;            /* TX rate1 */
+	uint8_t      ucMediumBusyPercentage; /* Read clear */
+	uint8_t      ucIsLQ0Rdy;                 /* Link Quality BSS0 Ready. */
+	uint8_t      aucReserve[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_LINK_QUALITY
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_LINK_QUALITY rLq[4];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_STA_STATISTICS
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  aucBuffer[0];
+};
 
 struct UNI_EVENT_SAP
 {
@@ -3627,6 +3714,12 @@ uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTdls(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -3667,6 +3760,10 @@ void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 void nicUniCmdEventInstallKey(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryCnmInfo(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventStaStatistics(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventLinkQuality(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************

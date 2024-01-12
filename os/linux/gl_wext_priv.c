@@ -2966,6 +2966,7 @@ priv_get_string(IN struct net_device *prNetDev,
 	int32_t i, pos = 0;
 	char *buf = pcExtra;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint8_t ucBssIndex = wlanGetBssIdx(prNetDev);
 
 	if (!prNetDev || !prIwReqData) {
 		DBGLOG(REQ, INFO,
@@ -3041,6 +3042,7 @@ priv_get_string(IN struct net_device *prNetDev,
 		struct RX_CTRL *prRxCtrl = NULL;
 		struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 		struct PARAM_HW_MIB_INFO *prHwMibInfo;
+		struct PARAM_LINK_SPEED_EX rLinkSpeed;
 
 		pSwDbgCtrl = (struct CMD_SW_DBG_CTRL *)aucBuffer;
 		prRxCtrl = &prGlueInfo->prAdapter->rRxCtrl;
@@ -3160,8 +3162,9 @@ priv_get_string(IN struct net_device *prNetDev,
 				"NoiseLevel-B =\n");
 		}
 
-		kalIoctl(prGlueInfo, wlanoidQueryLinkSpeed, &u4Rate,
-				sizeof(u4Rate), TRUE, TRUE, TRUE, &u4BufLen);
+		kalIoctl(prGlueInfo, wlanoidQueryLinkSpeedEx, &rLinkSpeed,
+			sizeof(rLinkSpeed), TRUE, TRUE, TRUE, &u4BufLen);
+		u4Rate = rLinkSpeed.rLq[ucBssIndex].u2LinkSpeed;
 
 		/* STA stats */
 		if (kalIoctl(prGlueInfo, wlanoidQueryBssid,
