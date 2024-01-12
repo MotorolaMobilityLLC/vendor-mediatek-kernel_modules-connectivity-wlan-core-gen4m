@@ -588,6 +588,7 @@ enum ENUM_MSDU_CONTROL_FLAG {
 	MSDU_CONTROL_FLAG_HIDE_INFO = BIT(2),
 	MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE = BIT(3),
 	MSDU_CONTROL_FLAG_FORCE_LINK = BIT(4),
+	MSDU_CONTROL_FLAG_DIS_MAT = BIT(5),
 };
 
 enum ENUM_MSDU_RATE_MODE {
@@ -909,10 +910,6 @@ struct MSDU_INFO {
 	struct EVENT_TX_DONE *prTxDone; /* logging TX Done info */
 #if (CFG_SUPPORT_CONN_LOG == 1)
 	uint16_t u2HwSeqNum;
-#endif
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* used with flag MSDU_CONTROL_FLAG_FORCE_LINK */
-	uint16_t u2ForceTxWlanId;
 #endif
 };
 

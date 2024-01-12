@@ -2711,7 +2711,6 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct MSG_MGMT_TX_REQUEST *prMsgTxReq =
 		(struct MSG_MGMT_TX_REQUEST *) NULL;
-	const struct ieee80211_mgmt *mgmt = (void *)buf;
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
 	uint32_t u4PacketLen = 0;
@@ -2821,7 +2820,6 @@ int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 			+ (unsigned long) len
 			+ MAC_TX_RESERVED_FIELD);
 
-		COPY_MAC_ADDR(prMsgTxReq->aucDestMac, mgmt->da);
 		kalMemCopy(pucFrameBuf, buf, len);
 
 		*pu8GlCookie = *cookie;

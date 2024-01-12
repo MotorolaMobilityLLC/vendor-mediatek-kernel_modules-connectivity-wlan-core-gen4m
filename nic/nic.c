@@ -6647,14 +6647,12 @@ void nicMgmtMAT_M2L(struct ADAPTER *prAdapter,
 
 	COPY_MAC_ADDR(prWlanHdr->aucAddr1, prStaRec->aucMacAddr);
 	COPY_MAC_ADDR(prWlanHdr->aucAddr2, prBssInfo->aucOwnMacAddr);
-	if (EQUAL_MAC_ADDR(prWlanHdr->aucAddr3, prMldSta->aucPeerMldAddr)) {
-		if (IS_BSS_APGO(prBssInfo))
-			COPY_MAC_ADDR(prWlanHdr->aucAddr3,
-				prBssInfo->aucBSSID);
-		else
-			COPY_MAC_ADDR(prWlanHdr->aucAddr3,
-				prStaRec->aucMacAddr);
-	}
+	if (IS_BSS_APGO(prBssInfo))
+		COPY_MAC_ADDR(prWlanHdr->aucAddr3,
+			prBssInfo->aucBSSID);
+	else
+		COPY_MAC_ADDR(prWlanHdr->aucAddr3,
+			prStaRec->aucMacAddr);
 
 	DBGLOG(NIC, TRACE,
 		"After A1/A2/A3 ["MACSTR"/"MACSTR"/"MACSTR"]\n",

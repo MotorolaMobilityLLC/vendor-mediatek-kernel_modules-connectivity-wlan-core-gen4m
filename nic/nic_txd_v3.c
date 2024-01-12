@@ -648,7 +648,7 @@ void nic_txd_v3_compose(
 	/** DW6 **/
 	/* Disable MLD to link address translation */
 	if (ucControlFlag &
-	    (MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_FORCE_LINK))
+	    (MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_DIS_MAT))
 		HAL_MAC_CONNAC3X_TXD_SET_DIS_MAT(prTxDesc);
 
 	/* Msdu count */
