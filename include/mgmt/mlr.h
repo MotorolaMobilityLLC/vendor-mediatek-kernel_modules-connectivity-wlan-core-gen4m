@@ -82,8 +82,13 @@ enum ENUM_MLR_STATE {
 	((u4MlrBitmap & MLR_MODE_MLR_V2) ? TRUE : FALSE)
 
 #define MLR_BIT_V1_V2_SUPPORT(u4MlrBitmap) \
-	(((u4MlrBitmap & (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) \
-	== (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V1)) ? TRUE : FALSE)
+	((u4MlrBitmap & (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) ? TRUE : FALSE)
+
+#define MLR_BIT_MLRP_SUPPORT(u4MlrBitmap) \
+	((u4MlrBitmap & MLR_MODE_MLR_PLUS) ? TRUE : FALSE)
+
+#define MLR_BIT_ALR_SUPPORT(u4MlrBitmap) \
+	((u4MlrBitmap & MLR_MODE_ALR) ? TRUE : FALSE)
 
 #define MLR_BIT_INTERSECTION(u4MlrBitmapA, ucMlrBitmapB) \
 	(u4MlrBitmapA & ucMlrBitmapB)
@@ -111,10 +116,19 @@ enum ENUM_MLR_STATE {
 #define MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, ucRCPI) \
 	(ucRCPI < prAdapter->rWifiVar.ucTxMlrRateRcpiThr)
 
+#if CFG_SUPPORT_BALANCE_MLR
+#define MLR_CHECK_IF_MGMT_USE_MLR_RATE(u2FrameCtrl) \
+	(u2FrameCtrl == MAC_FRAME_AUTH \
+	|| u2FrameCtrl == MAC_FRAME_ASSOC_REQ \
+	|| u2FrameCtrl == MAC_FRAME_ASSOC_RSP \
+	|| u2FrameCtrl == MAC_FRAME_REASSOC_REQ \
+	|| u2FrameCtrl == MAC_FRAME_REASSOC_RSP)
+#else
 #define MLR_CHECK_IF_MGMT_USE_MLR_RATE(u2FrameCtrl) \
 	(u2FrameCtrl == MAC_FRAME_AUTH \
 	|| u2FrameCtrl == MAC_FRAME_ASSOC_REQ \
 	|| u2FrameCtrl == MAC_FRAME_REASSOC_REQ)
+#endif /* CFG_SUPPORT_BALANCE_MLR */
 
 #define MLR_CHECK_IF_PKT_LEN_DO_FRAG(prAdapter, prNativePacket) \
 	(kalQueryPacketLength(prNativePacket) \
@@ -175,5 +189,8 @@ void mlrGenerateMTKOuiIEforMlr(struct ADAPTER *prAdapter,
 void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		struct WIFI_EVENT *prEvent);
 
+void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t *prTxFragSplitSize, uint16_t *prTxFragThr);
 #endif
 #endif /* _MLR_H */

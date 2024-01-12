@@ -520,6 +520,8 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
 	uint8_t ucErrCode = 0;
 
+	QUEUE_INITIALIZE(prNeedToFreeQue);
+
 	/* KAL_TIME_INTERVAL_DECLARATION(); */
 
 	if (unlikely(!prAdapter)) {
@@ -531,6 +533,7 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 		DBGLOG(TX, WARN, "MLR frag - prMsduInfo is NULL");
 		return FALSE;
 	}
+
 	if (unlikely(!prNativePacket)) {
 		DBGLOG(TX, WARN, "MLR frag - prNativePacket is NULL");
 		return FALSE;
@@ -544,7 +547,15 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 		DBGLOG(TX, WARN, "MLR frag - prBssInfo is NULL");
 		return FALSE;
 	}
-	prStaRec = prBssInfo->prStaRecOfAP;
+
+#if CFG_SUPPORT_BALANCE_MLR
+	if (IS_BSS_APGO(prBssInfo))
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prMsduInfo->ucStaRecIndex);
+	else
+#endif /* CFG_SUPPORT_BALANCE_MLR */
+		prStaRec = prBssInfo->prStaRecOfAP;
+
 	if (unlikely(!prStaRec)) {
 		DBGLOG(TX, WARN, "MLR frag - prStaRec is NULL");
 		return FALSE;
@@ -964,8 +975,9 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 		return fgMlrCapVerCheck;
 	}
 
-	switch (prAdapter->ucMlrVersion) {
-	case 1: /* MLR version 1 is only limited to when Peer is legacy AP */
+	switch (prAdapter->u4MlrSupportBitmap) {
+	case MLR_MODE_MLR_V1:
+		/* MLR version 1 is only limited to when Peer is legacy AP */
 		fgMlrCapVerCheck &= (prStaRec->eStaType ==
 			STA_TYPE_LEGACY_AP) ? TRUE : FALSE;
 		fgMlrCapVerCheck &= (IS_BSS_AIS(prBssInfo)) ? TRUE : FALSE;
@@ -977,7 +989,7 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 			prStaRec->ucMlrSupportBitmap);
 		fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
 		break;
-	case 2:
+	case MLR_MODE_MLR_V2:
 		/* TODO(@phase2): do while MLR version is MLRv2 */
 		fgMlrCapVerCheck = (prStaRec->eStaType == STA_TYPE_LEGACY_AP
 			|| prStaRec->eStaType ==
@@ -985,10 +997,20 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 		fgMlrCapVerCheck &= MLR_BIT_V1_V2_SUPPORT(
 			prStaRec->ucMlrSupportBitmap);
 		break;
+	case MLR_MODE_MLR_PLUS:
+		fgMlrCapVerCheck &= MLR_BIT_MLRP_SUPPORT(
+			prStaRec->ucMlrSupportBitmap);
+		fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
+		break;
+	case MLR_MODE_ALR:
+		fgMlrCapVerCheck &= MLR_BIT_ALR_SUPPORT(
+			prStaRec->ucMlrSupportBitmap);
+		fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
+		break;
 	default:
 		fgMlrCapVerCheck = FALSE;
 		DBGLOG(TX, INFO, "MLR check - MLR ver %d, Ver doesn't support",
-			prAdapter->ucMlrVersion);
+			prAdapter->u4MlrSupportBitmap);
 		break;
 	}
 
@@ -1020,14 +1042,32 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 	}
 
 	if (!IS_BSS_AIS(prBssInfo)
-		|| !(kalGetMediaStateIndicated(
+#if CFG_SUPPORT_BALANCE_MLR
+		&& !IS_BSS_APGO(prBssInfo)
+#endif /* CFG_SUPPORT_BALANCE_MLR */
+		) {
+		return FALSE;
+	} else if (IS_BSS_AIS(prBssInfo)
+		&& !(kalGetMediaStateIndicated(
 		prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) ==
 		MEDIA_STATE_CONNECTED)) {
 		return FALSE;
+#if CFG_SUPPORT_BALANCE_MLR
+	} else if (IS_BSS_APGO(prBssInfo)
+		&& !IS_BSS_ACTIVE(prBssInfo)) {
+		return FALSE;
+#endif /* CFG_SUPPORT_BALANCE_MLR */
 	}
 
-	prStaRec = prBssInfo->prStaRecOfAP;
+#if CFG_SUPPORT_BALANCE_MLR
+	if (IS_BSS_APGO(prBssInfo))
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+				prMsduInfo->ucStaRecIndex);
+	else
+#endif /* CFG_SUPPORT_BALANCE_MLR */
+		prStaRec = prBssInfo->prStaRecOfAP;
+
 	if (unlikely(!prStaRec)) {
 		DBGLOG(TX, INFO, "MLR check - prStaRec is NULL");
 		return FALSE;
@@ -1054,8 +1094,7 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 
 	if (fgMlrCapVerCheck
 		/* check whether the condition of TX fragment is meet */
-		&& !IS_BMCAST_MAC_ADDR(prMsduInfo->aucEthDestAddr)
-		&& MLR_CHECK_IF_PKT_LEN_DO_FRAG(prAdapter, prNativePacket))
+		&& !IS_BMCAST_MAC_ADDR(prMsduInfo->aucEthDestAddr))
 		return TRUE;
 	else
 		return FALSE;
@@ -1077,7 +1116,9 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 		   prStaRec->u2HwDefaultFixedRateCode,
 		   prStaRec->u2OperationalRateSet);
 
-	/* STA MLR capability && Peer-AP MLR capability */
+	/* STA MLR capability && Peer-AP MLR capability
+	 * or SAP MLR capability && Peer-STA MLR capability
+	 */
 	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec)
 		/* MLR_V1-Unbalance */
 		&& prAdapter->ucMlrVersion == 1) {
@@ -1125,6 +1166,100 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 				&& prMsduInfo->ucRateMode ==
 				MSDU_RATE_MODE_MANUAL_DESC) {
 				*pu2RateCode = RATE_MLR_1_5M;
+				fgIsUseMlrRate = TRUE;
+				DBGLOG(NIC, INFO,
+					"MLR rate - TX Data frame to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
+					prStaRec->eStaType, *pu2RateCode);
+			}
+		}
+		/* for MLRP SAP & MLRP STA */
+		else if (MLR_BIT_MLRP_SUPPORT(
+			MLR_BIT_INTERSECTION(
+			prAdapter->u4MlrSupportBitmap,
+			prStaRec->ucMlrSupportBitmap))) {
+
+			/* In case of MGMT frame: Auth and (re)Assoc */
+			/* && RSSI < -93(RCPI:34)~-90(RCPI:40) */
+			if (prMsduInfo->eSrc == TX_PACKET_MGMT
+				&& prMsduInfo->prPacket) {
+				uint16_t u2FrameCtrl =
+					((struct WLAN_MAC_HEADER *)prMsduInfo
+					->prPacket)->u2FrameCtrl;
+
+				u2FrameCtrl &= MASK_FRAME_TYPE;
+				if (MLR_CHECK_IF_MGMT_USE_MLR_RATE(
+					u2FrameCtrl)) {
+					if (MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
+						prStaRec->ucRCPI)) {
+						*pu2RateCode = RATE_MLRP_0_375M;
+						fgIsUseMlrRate = TRUE;
+						DBGLOG(NIC, INFO,
+							"MLR rate - TX MGMT frame(FC=0x%02x) to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
+							u2FrameCtrl,
+							prStaRec->eStaType,
+							*pu2RateCode);
+					} else {
+						DBGLOG(NIC, INFO,
+							"MLR rate - RCPI condition doesn't meet(Peer RCPI:%d > Threshold:%d)\n",
+							prStaRec->ucRCPI,
+							prAdapter->rWifiVar
+							.ucTxMlrRateRcpiThr);
+					}
+				}
+			/* In case of Data frame (ARP, DHCP, EAPOL) */
+			} else if (MLR_CHECK_IF_ENABLE_TX_FRAG(prStaRec)
+				&& prMsduInfo->eSrc == TX_PACKET_OS
+				/* Consider fixed rate (ARP, DHCP, EAPOL) */
+				&& prMsduInfo->ucRateMode ==
+				MSDU_RATE_MODE_MANUAL_DESC) {
+				*pu2RateCode = RATE_MLRP_0_375M;
+				fgIsUseMlrRate = TRUE;
+				DBGLOG(NIC, INFO,
+					"MLR rate - TX Data frame to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
+					prStaRec->eStaType, *pu2RateCode);
+			}
+		}
+		/* for ALR SAP & ALR STA */
+		else if (MLR_BIT_ALR_SUPPORT(
+			MLR_BIT_INTERSECTION(
+			prAdapter->u4MlrSupportBitmap,
+			prStaRec->ucMlrSupportBitmap))) {
+
+			/* In case of MGMT frame: Auth and (re)Assoc */
+			/* && RSSI < -93(RCPI:34)~-90(RCPI:40) */
+			if (prMsduInfo->eSrc == TX_PACKET_MGMT
+				&& prMsduInfo->prPacket) {
+				uint16_t u2FrameCtrl =
+					((struct WLAN_MAC_HEADER *)prMsduInfo
+					->prPacket)->u2FrameCtrl;
+
+				u2FrameCtrl &= MASK_FRAME_TYPE;
+				if (MLR_CHECK_IF_MGMT_USE_MLR_RATE(
+					u2FrameCtrl)) {
+					if (MLR_CHECK_IF_RCPI_IS_LOW(prAdapter,
+						prStaRec->ucRCPI)) {
+						*pu2RateCode = RATE_ALR_0_75M;
+						fgIsUseMlrRate = TRUE;
+						DBGLOG(NIC, INFO,
+							"MLR rate - TX MGMT frame(FC=0x%02x) to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
+							u2FrameCtrl,
+							prStaRec->eStaType,
+							*pu2RateCode);
+					} else {
+						DBGLOG(NIC, INFO,
+							"MLR rate - RCPI condition doesn't meet(Peer RCPI:%d > Threshold:%d)\n",
+							prStaRec->ucRCPI,
+							prAdapter->rWifiVar
+							.ucTxMlrRateRcpiThr);
+					}
+				}
+			/* In case of Data frame (ARP, DHCP, EAPOL) */
+			} else if (MLR_CHECK_IF_ENABLE_TX_FRAG(prStaRec)
+				&& prMsduInfo->eSrc == TX_PACKET_OS
+				/* Consider fixed rate (ARP, DHCP, EAPOL) */
+				&& prMsduInfo->ucRateMode ==
+				MSDU_RATE_MODE_MANUAL_DESC) {
+				*pu2RateCode = RATE_ALR_0_75M;
 				fgIsUseMlrRate = TRUE;
 				DBGLOG(NIC, INFO,
 					"MLR rate - TX Data frame to Peer(eStaType=0x%02x) with MLR RateCode=0x%x\n",
@@ -1280,11 +1415,15 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (IS_BSS_AIS(prBssInfo) &&
+	if ((IS_BSS_AIS(prBssInfo) &&
 		kalGetMediaStateIndicated(
 		prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) ==
-		MEDIA_STATE_CONNECTED) {
+		MEDIA_STATE_CONNECTED)
+#if CFG_SUPPORT_BALANCE_MLR
+		|| IS_BSS_APGO(prBssInfo)
+#endif
+		) {
 
 		prStaRec->ucMlrMode = prEvtMlrFsmUpdate->ucMlrMode;
 		prStaRec->ucMlrState = prEvtMlrFsmUpdate->ucMlrState;
@@ -1311,5 +1450,101 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 	    prEvtMlrFsmUpdate->ucMlrMode,
 	    prEvtMlrFsmUpdate->ucMlrState);
 }
-#endif
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to get Tx Fragment split size/threshold
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t *prTxFragSplitSize, uint16_t *prTxFragThr)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint16_t u2TempSplitThreshold = 0, u2CfgSplitThreshold = 0;
+	uint16_t u2TempSplitSize = 0, u2CfgSplitSize = 0;
+
+	u2CfgSplitThreshold = prAdapter->rWifiVar.u2TxFragThr;
+	u2CfgSplitSize = prAdapter->rWifiVar.u2TxFragSplitSize;
+
+	if (unlikely(!prAdapter)) {
+		DBGLOG(TX, WARN, "MLR frag - prAdapter is NULL");
+		return;
+	}
+
+	if (unlikely(!prMsduInfo)) {
+		DBGLOG(TX, WARN, "MLR frag - prMsduInfo is NULL");
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (unlikely(!prBssInfo)) {
+		DBGLOG(TX, WARN, "MLR frag - prBssInfo is NULL");
+		return;
+	}
+
+#if CFG_SUPPORT_BALANCE_MLR
+	if (IS_BSS_APGO(prBssInfo))
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prMsduInfo->ucStaRecIndex);
+	else
+#endif /* CFG_SUPPORT_BALANCE_MLR */
+		prStaRec = prBssInfo->prStaRecOfAP;
+
+	if (unlikely(!prStaRec)) {
+		DBGLOG(TX, WARN, "MLR frag - prStaRec is NULL");
+		return;
+	}
+	if (unlikely(!prStaRec->fgIsInUse)) {
+		DBGLOG(TX, INFO, "MLR check - prStaRec->fgIsInUse is FALSE");
+		return;
+	}
+
+	if (MLR_BIT_V1_V2_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
+			MLR_BIT_V1_V2_SUPPORT(prStaRec->ucMlrSupportBitmap)) {
+		u2TempSplitThreshold = 1000;
+		u2TempSplitSize = 1000;
+	} else if (MLR_BIT_ALR_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
+			MLR_BIT_ALR_SUPPORT(prStaRec->ucMlrSupportBitmap)) {
+		u2TempSplitThreshold = 400; /* 500 */
+		u2TempSplitSize = 400; /* 500 */
+	} else if (MLR_BIT_MLRP_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
+			MLR_BIT_MLRP_SUPPORT(prStaRec->ucMlrSupportBitmap)) {
+		u2TempSplitThreshold = 150; /* 250 */
+		u2TempSplitSize = 150; /* 250 */
+	}
+
+	if (MLR_BIT_V1_V2_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
+			MLR_BIT_V1_V2_SUPPORT(prStaRec->ucMlrSupportBitmap)) {
+		if (u2CfgSplitSize == 0)
+			*prTxFragSplitSize = 0;
+		else
+			*prTxFragSplitSize =
+				(u2CfgSplitSize < u2TempSplitSize) ?
+				(u2CfgSplitSize) : (u2TempSplitSize);
+
+	} else {
+		*prTxFragSplitSize = ((u2CfgSplitSize != 0) &&
+			(u2CfgSplitSize < u2TempSplitSize)) ?
+			(u2CfgSplitSize) : (u2TempSplitSize);
+	}
+
+	*prTxFragThr = (u2CfgSplitThreshold < u2TempSplitThreshold) ?
+		(u2CfgSplitThreshold) : (u2TempSplitThreshold);
+
+	DBGLOG(TX, INFO,
+		"MLR frag thr[cfg:temp:final]=[%u:%u:%u], size[cfg:temp:final]=[%u:%u:%u]\n",
+		u2CfgSplitThreshold,
+		u2TempSplitThreshold,
+		*prTxFragThr,
+		u2CfgSplitSize,
+		u2TempSplitSize,
+		*prTxFragSplitSize);
+}
+#endif /* CFG_SUPPORT_MLR */
 

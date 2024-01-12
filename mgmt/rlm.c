@@ -617,6 +617,9 @@ uint32_t rlmCalculateMTKOuiIELen(
 	len += mldCalculateMlIELen(prAdapter, ucBssIndex, prStaRec);
 #endif
 #endif
+#if CFG_SUPPORT_BALANCE_MLR
+	len += sizeof(struct IE_MTK_MLR);
+#endif
 	return len;
 }
 
@@ -775,7 +778,39 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 		DBGLOG_MEM8(RLM, TRACE, pucBuffer, IE_SIZE(pucBuffer));
 	}
 #endif
+#if CFG_SUPPORT_BALANCE_MLR
+	if (
+		frame_ctrl == MAC_FRAME_BEACON ||
+		frame_ctrl == MAC_FRAME_PROBE_RSP ||
+		frame_ctrl == MAC_FRAME_ASSOC_RSP ||
+		frame_ctrl == MAC_FRAME_ASSOC_REQ) {
+		struct IE_MTK_MLR *prMLR = NULL;
+		struct STA_RECORD *prStaRec = NULL;
 
+		MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+			MTK_SYNERGY_CAP_SUPPORT_TLV;
+
+		prMLR = (struct IE_MTK_MLR *) (pucBuffer + IE_SIZE(pucBuffer));
+		prMLR->ucId = MTK_OUI_ID_MLR;
+		prMLR->ucLength = 1;
+		if (IS_BSS_APGO(prBssInfo))
+			prStaRec = cnmGetStaRecByIndex(prAdapter,
+				prMsduInfo->ucStaRecIndex);
+		else
+			prStaRec = prBssInfo->prStaRecOfAP;
+
+		if (prStaRec) {
+			prMLR->ucLRBitMap =
+				(uint8_t) (prAdapter->u4MlrSupportBitmap &
+					   prStaRec->ucMlrSupportBitmap);
+		} else {
+			prMLR->ucLRBitMap =
+				(uint8_t) prAdapter->u4MlrSupportBitmap;
+		}
+		prMsduInfo->u2FrameLength += sizeof(struct IE_MTK_MLR);
+		MTK_OUI_IE(pucBuffer)->ucLength += IE_SIZE(prMLR);
+	}
+#endif /* CFG_SUPPORT_BALANCE_MLR */
 
 } /* rlmGenerateMTKOuiIE */
 

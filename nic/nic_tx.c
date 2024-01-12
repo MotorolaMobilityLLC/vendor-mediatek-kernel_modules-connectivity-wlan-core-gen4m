@@ -5823,6 +5823,7 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 	struct QUE rFragmentedQue;
 	struct QUE *prFragmentedQue = &rFragmentedQue;
 	struct MSDU_INFO *prNextMsduInfoFrag = NULL;
+	uint16_t u2TxFragSplitSize = 0, u2TxFragThr = 0;
 #endif
 	uint8_t ucActivedTspec = 0;
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
@@ -5880,10 +5881,13 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 		if (mlrCheckIfDoFrag(prAdapter, prMsduInfo, (void *)pvPacket)) {
 			QUEUE_INITIALIZE(prFragmentedQue);
 
+			/* Get Tx Frag split size and threshold */
+			mlrGetTxFragParameter(prAdapter, prMsduInfo,
+				&u2TxFragSplitSize, &u2TxFragThr);
+
 			/* Do fragment */
 			fgDoFragSuccess = mlrDoFragPacket(prAdapter, prMsduInfo,
-				prAdapter->rWifiVar.u2TxFragSplitSize,
-				prAdapter->rWifiVar.u2TxFragThr,
+				u2TxFragSplitSize, u2TxFragThr,
 				(void *)pvPacket, prFragmentedQue);
 			if (fgDoFragSuccess)
 				prMsduInfo = QUEUE_GET_HEAD(prFragmentedQue);

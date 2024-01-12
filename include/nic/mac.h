@@ -4615,6 +4615,13 @@ struct IE_MTK_OUI {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
+struct IE_MTK_MLR {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucLRBitMap;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
 struct IE_MTK_PRE_WIFI7 {
 	uint8_t ucId;
 	uint8_t ucLength;

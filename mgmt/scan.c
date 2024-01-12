@@ -5263,43 +5263,39 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
 		return;
 
-#if CFG_SUPPORT_MLR
-	if (pucIE[5] == 0x01 && pucIE[9] == 0x01) {
-		/* MLR Type = 0x01 */
-		prBssDesc->ucMlrType = pucIE[9];
-		/* MLR Length = 0x01 */
-		prBssDesc->ucMlrLength = pucIE[10];
-		/* LR bitmap:
-		 * BIT[0]-MLR_V1,
-		 * BIT[1]->MLR_V2,
-		 * BIT[2]MLR+,
-		 * BIT[3]->ALR,
-		 * BIT[4]->DUAL_CTS
-		 */
-		prBssDesc->ucMlrSupportBitmap = (pucIE[11] &
-			(!MLR_CHECK_IF_BAND_IS_SUPPORT(prBssDesc->eBand) ?
-			MLR_MODE_NOT_SUPPORT : ~0));
-
-		prBssDesc->fsIsMlrSupport =
-			MLR_BIT_SUPPORT(prBssDesc
-			->ucMlrSupportBitmap);
-
-		MLR_DBGLOG(prAdapter, SCN, INFO,
-			"MLR beacon - BSSID:" MACSTR
-			" IsMlrS:%d Type|Len|B[%d, %d, 0x%02x]\n",
-			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->fsIsMlrSupport,
-			prBssDesc->ucMlrType,
-			prBssDesc->ucMlrLength,
-			prBssDesc->ucMlrSupportBitmap);
-
-	}
-#endif
-
 	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
 	ie_len = IE_LEN(pucIE) - 7;
 
 	IE_FOR_EACH(ie, ie_len, ie_offset) {
+#if CFG_SUPPORT_MLR
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
+			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
+			/* MLR Type = 0x01 */
+			prBssDesc->ucMlrType = prMLR->ucId;
+			/* MLR Length = 0x01 */
+			prBssDesc->ucMlrLength = prMLR->ucLength;
+			/* LR bitmap:
+			 * BIT[0]-MLR_V1,
+			 * BIT[1]->MLR_V2,
+			 * BIT[2]MLR+,
+			 * BIT[3]->ALR,
+			 * BIT[4]->DUAL_CTS
+			 */
+			prBssDesc->ucMlrSupportBitmap = prMLR->ucLRBitMap;
+			prBssDesc->fsIsMlrSupport =
+				MLR_BIT_SUPPORT(prBssDesc
+				->ucMlrSupportBitmap);
+
+			MLR_DBGLOG(prAdapter, SCN, INFO,
+				"MLR beacon - BSSID:" MACSTR
+				" IsMlrS:%d Type|Len|B[%d, %d, 0x%02x]\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				prBssDesc->fsIsMlrSupport,
+				prBssDesc->ucMlrType,
+				prBssDesc->ucMlrLength,
+				prBssDesc->ucMlrSupportBitmap);
+		}
+#endif
 		if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
 			struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
 				(struct IE_MTK_PRE_WIFI7 *)ie;

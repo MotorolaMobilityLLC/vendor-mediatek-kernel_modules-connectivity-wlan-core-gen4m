@@ -4098,6 +4098,27 @@ uint8_t nicRxGetRcpiValueFromRxv(
  * @retval
  */
 /*----------------------------------------------------------------------------*/
+uint8_t nicRxGetRxModeValueFromRxv(struct ADAPTER *prAdapter,
+				struct SW_RFB *prSwRfb)
+{
+	struct mt66xx_chip_info *prChipInfo;
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo->asicRxGetRxModeValueFromRxv)
+		return prChipInfo->asicRxGetRxModeValueFromRxv(prSwRfb);
+	DBGLOG(RX, ERROR, "no asicRxGetRxModeValueFromRxv ??\n");
+	return 0xFF;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief
+ *
+ * @param
+ *
+ * @retval
+ */
+/*----------------------------------------------------------------------------*/
 int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 				 int i4TotalLen, uint8_t ucWlanIdx)
 {

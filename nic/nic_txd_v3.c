@@ -709,7 +709,37 @@ static uint8_t setMlrFixedRate(struct MSDU_INFO *prMsduInfo)
 	}
 	return ucRateIdx;
 }
-#endif
+
+static uint8_t setMlrpFixedRate(struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t ucRateIdx;
+
+	if (prMsduInfo->eSrc == TX_PACKET_OS) {
+		ucRateIdx = FIXED_RATE_INDEX_MLRP_MCS3_SPE_IDX_FAVOR_WTBL;
+	} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
+		ucRateIdx = FIXED_RATE_INDEX_MLRP_MCS3_SPE_IDX_FAVOR_TXD;
+	} else {
+		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+		DBGLOG(TX, WARN, "MLRP rate - Don't use MLRP rate\n");
+	}
+	return ucRateIdx;
+}
+
+static uint8_t setAlrFixedRate(struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t ucRateIdx;
+
+	if (prMsduInfo->eSrc == TX_PACKET_OS) {
+		ucRateIdx = FIXED_RATE_INDEX_ALR_MCS2_SPE_IDX_FAVOR_WTBL;
+	} else if (prMsduInfo->eSrc == TX_PACKET_MGMT) {
+		ucRateIdx = FIXED_RATE_INDEX_ALR_MCS2_SPE_IDX_FAVOR_TXD;
+	} else {
+		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+		DBGLOG(TX, WARN, "ALR rate - Don't use ALR rate\n");
+	}
+	return ucRateIdx;
+}
+#endif /* CFG_SUPPORT_MLR */
 
 static uint8_t getSpeIdx(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo)
@@ -760,6 +790,15 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 			ucRateIdx = FIXED_RATE_INDEX_MLR_MCS0_SPE_IDX_FAVOR_TXD;
 			break;
 
+		case RATE_MLRP_0_375M: /* 0x0183 */
+			ucRateIdx =
+				FIXED_RATE_INDEX_MLRP_MCS3_SPE_IDX_FAVOR_TXD;
+			break;
+
+		case RATE_ALR_0_75M: /* 0x01C2 */
+			ucRateIdx = FIXED_RATE_INDEX_ALR_MCS2_SPE_IDX_FAVOR_TXD;
+			break;
+
 		default:
 			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M_SPE_IDX_FAVOR_TXD;
 			DBGLOG(TX, WARN,
@@ -793,6 +832,13 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 		case RATE_MLR_1_5M: /* 0x0140 */
 		case RATE_MLR_3M: /* 0x0141 */
 			ucRateIdx = setMlrFixedRate(prMsduInfo);
+			break;
+
+		case RATE_MLRP_0_375M: /* 0x0183 */
+			ucRateIdx = setMlrpFixedRate(prMsduInfo);
+			break;
+		case RATE_ALR_0_75M: /* 0x01C2 */
+			ucRateIdx = setAlrFixedRate(prMsduInfo);
 			break;
 #endif
 

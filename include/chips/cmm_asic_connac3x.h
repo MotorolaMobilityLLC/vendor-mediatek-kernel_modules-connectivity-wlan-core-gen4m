@@ -375,6 +375,9 @@
 	((((_prHwRxVector)->u4Rcpi) & CONNAC3X_RX_VT_RCPI3_MASK) >> \
 	CONNAC3X_RX_VT_RCPI3_OFFSET)
 
+#define CONNAC3X_HAL_RX_VECTOR_GET_RX_MODE(_prHwRxVector) \
+	((((_prHwRxVector)->u2RxInfo) & CONNAC3X_RX_VT_RX_MODE_MASK) >> \
+	CONNAC3X_RX_VT_RX_MODE_OFFSET)
 /*------------------------------------------------------------------------------
  * MACRO for CONNAC3X info from adapter
  *------------------------------------------------------------------------------
@@ -1316,6 +1319,7 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 uint8_t asicConnac3xRxGetRcpiValueFromRxv(
 	uint8_t ucRcpiMode,
 	struct SW_RFB *prSwRfb);
+uint8_t asicConnac3xRxGetRxModeValueFromRxv(struct SW_RFB *prSwRfb);
 #if (CFG_SUPPORT_PERF_IND == 1)
 void asicConnac3xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb,

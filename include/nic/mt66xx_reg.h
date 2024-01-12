@@ -1591,6 +1591,7 @@ struct mt66xx_chip_info {
 	uint8_t (*asicRxGetRcpiValueFromRxv)(
 		uint8_t ucRcpiMode,
 		struct SW_RFB *prSwRfb);
+	uint8_t (*asicRxGetRxModeValueFromRxv)(struct SW_RFB *prSwRfb);
 	void (*asicRxPerfIndProcessRXV)(
 		struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb,

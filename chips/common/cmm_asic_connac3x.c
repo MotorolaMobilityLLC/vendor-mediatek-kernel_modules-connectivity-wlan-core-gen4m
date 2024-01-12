@@ -149,6 +149,8 @@ void asicConnac3xCapInit(
 #endif /* CFG_SUPPORT_MSP == 1 */
 	prChipInfo->asicRxGetRcpiValueFromRxv =
 			asicConnac3xRxGetRcpiValueFromRxv;
+	prChipInfo->asicRxGetRxModeValueFromRxv =
+			asicConnac3xRxGetRxModeValueFromRxv;
 #if (CFG_SUPPORT_PERF_IND == 1)
 	prChipInfo->asicRxPerfIndProcessRXV = asicConnac3xRxPerfIndProcessRXV;
 #endif
@@ -2016,6 +2018,28 @@ uint8_t asicConnac3xRxGetRcpiValueFromRxv(
 	}
 
 	return ucRcpiValue;
+}
+
+uint8_t asicConnac3xRxGetRxModeValueFromRxv(struct SW_RFB *prSwRfb)
+{
+	uint8_t ucRxModeValue = 0;
+	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3 = NULL;
+
+	if (!prSwRfb) {
+		DBGLOG(RX, WARN, "prSwRfb is NULL\n");
+		return 0xFF;
+	}
+
+	if ((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) == 0) {
+		DBGLOG(RX, WARN, "RXD group 3 is not valid\n");
+		return 0xFF;
+	}
+
+	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3_V2 *)
+				prSwRfb->prRxStatusGroup3;
+	ucRxModeValue = CONNAC3X_HAL_RX_VECTOR_GET_RX_MODE(prGroup3);
+
+	return ucRxModeValue;
 }
 
 #if (CFG_SUPPORT_PERF_IND == 1)
