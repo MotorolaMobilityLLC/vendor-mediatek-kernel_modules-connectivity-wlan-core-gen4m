@@ -3315,7 +3315,7 @@ uint32_t nicEnterTPTestMode(struct ADAPTER *prAdapter,
 				prBssInfo =
 					GET_BSS_INFO_BY_INDEX(prAdapter,
 						ucBssIdx);
-				if (prBssInfo->fgIsInUse
+				if (prBssInfo && prBssInfo->fgIsInUse
 				    && (prBssInfo->eCurrentOPMode
 				    == OP_MODE_INFRASTRUCTURE))
 					nicConfigPowerSaveProfile(prAdapter,
@@ -3342,7 +3342,7 @@ uint32_t nicEnterTPTestMode(struct ADAPTER *prAdapter,
 		for (ucBssIdx = 0; ucBssIdx < prAdapter->ucHwBssIdNum;
 		     ucBssIdx++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-			if (prBssInfo->fgIsInUse
+			if (prBssInfo && prBssInfo->fgIsInUse
 			    && (prBssInfo->eCurrentOPMode
 						== OP_MODE_INFRASTRUCTURE))
 				nicConfigPowerSaveProfile(prAdapter, ucBssIdx,
