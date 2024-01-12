@@ -1294,6 +1294,13 @@ void kalHandleAssocInfo(struct GLUE_INFO *prGlueInfo,
 			struct EVENT_ASSOC_INFO *prAssocInfo);
 
 #ifdef CFG_REMIND_IMPLEMENT
+#define kalGetWfIpVersion(void) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
+uint32_t kalGetWfIpVersion(void);
+#endif
+
+#ifdef CFG_REMIND_IMPLEMENT
 #define kalGetFwVerOffset(void) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
