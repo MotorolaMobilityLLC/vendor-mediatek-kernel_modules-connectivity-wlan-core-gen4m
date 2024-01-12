@@ -1285,25 +1285,33 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 		}
 
 #if CFG_CHIP_RESET_SUPPORT
-		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
-			SPIN_LOCK_WFSYS_RESET);
+		if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
 
-		/* During WFSYS_RESET_STATE_REINIT, driver might need to receive
-		 * events like response of EXT_CMD_ID_EFUSE_BUFFER_MODE.
-		 */
-		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE &&
-		    prAdapter->eWfsysResetState != WFSYS_RESET_STATE_REINIT) {
+			KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_WFSYS_RESET);
+
+			/* During WFSYS_RESET_STATE_REINIT,
+			* driver might need to receive
+			* events like response
+			* of EXT_CMD_ID_EFUSE_BUFFER_MODE.
+			 */
+			if (prAdapter->eWfsysResetState
+					!= WFSYS_RESET_STATE_IDLE &&
+			    prAdapter->eWfsysResetState
+					!= WFSYS_RESET_STATE_REINIT) {
+				KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+					SPIN_LOCK_WFSYS_RESET);
+
+				DBGLOG(RX, ERROR,
+				       "skip rx urb process due to L0.5 reset\n");
+
+				goto next_urb;
+			}
+
 			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
 				SPIN_LOCK_WFSYS_RESET);
 
-			DBGLOG(RX, ERROR,
-			       "skip rx urb process due to L0.5 reset\n");
-
-			goto next_urb;
 		}
-
-		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
-			SPIN_LOCK_WFSYS_RESET);
 
 #endif /*CFG_CHIP_RESET_SUPPORT */
 
