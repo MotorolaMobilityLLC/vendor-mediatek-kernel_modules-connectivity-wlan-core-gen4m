@@ -84,8 +84,10 @@ void halSwEmiInit(struct GLUE_INFO *prGlueInfo)
 	if (!prSwEmiRingInfo->fgIsSupport)
 		return;
 
-	if (prMemOps->getRsvEmi)
-		prMem = prMemOps->getRsvEmi(prHifInfo);
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
+			WIFI_MISC_MEM_BLOCK_NON_MMIO);
+	}
 
 	if (!prMem || !prMem->va) {
 		prSwEmiRingInfo->fgIsEnable = FALSE;

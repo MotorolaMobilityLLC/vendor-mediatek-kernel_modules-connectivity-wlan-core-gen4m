@@ -1034,6 +1034,13 @@ uint32_t mt6639_mawd_idx_patch[] = {
 };
 #endif
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+struct EMI_WIFI_MISC_RSV_MEM_INFO mt6639_wifi_misc_rsv_mem_info[] = {
+	{WIFI_MISC_MEM_BLOCK_NON_MMIO, 2048, {0}},
+	{WIFI_MISC_MEM_BLOCK_TX_POWER, 20480, {0}}
+};
+#endif
+
 struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.bus_info = &mt6639_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -1202,6 +1209,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.eDefaultDbdcMode = ENUM_DBDC_MODE_STATIC,
 
 	.fgCheckRxDropThreshold = TRUE,
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	.rsvMemWiFiMisc = mt6639_wifi_misc_rsv_mem_info,
+#endif
 
 #if CFG_SUPPORT_XONVRAM
 	.xo_infra_sysram = {

@@ -218,6 +218,13 @@ const struct of_device_id mtk_axi_of_ids[] = {
 	{.compatible = "mediatek,wifi",},
 	{}
 };
+
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+const struct of_device_id mtk_wifi_misc_of_ids[] = {
+	{.compatible = "mediatek,wifi_misc",},
+	{}
+};
+#endif
 #endif
 
 /*******************************************************************************
@@ -255,6 +262,23 @@ static struct platform_driver mtk_axi_driver = {
 	.probe = NULL,
 	.remove = NULL,
 };
+
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+static struct platform_driver mtk_wifi_misc_driver = {
+	.driver = {
+		.name = "wlan_misc",
+		.owner = THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = mtk_wifi_misc_of_ids,
+#endif
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+	},
+	.id_table = mtk_axi_ids,
+	.probe = NULL,
+	.remove = NULL,
+};
+#endif
+
 
 #if CFG_MTK_WIFI_AER_RESET
 static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
@@ -779,7 +803,7 @@ static int axiDmaSetup(struct platform_device *pdev,
 
 	prChipInfo = prDriverData->chip_info;
 
-	ret = halInitResvMem(pdev);
+	ret = halInitResvMem(pdev, WIFI_RSV_MEM_WFDMA);
 	if (ret)
 		goto exit;
 	ret = of_reserved_mem_device_init(&pdev->dev);
@@ -963,7 +987,7 @@ static int mtk_axi_remove(struct platform_device *pdev)
 #if CFG_SUPPORT_THERMAL_QUERY
 	thermal_cbs_unregister(pdev);
 #endif
-	halFreeHifMem(pdev);
+	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
 #if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
@@ -973,6 +997,81 @@ static int mtk_axi_remove(struct platform_device *pdev)
 	platform_set_drvdata(pdev, NULL);
 	return 0;
 }
+
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+static int wifiMiscDmaSetup(struct platform_device *pdev,
+		struct mt66xx_hif_driver_data *prDriverData)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	u64 dma_mask;
+	int ret = 0;
+
+	prChipInfo = prDriverData->chip_info;
+
+	ret = halInitResvMem(pdev, WIFI_RSV_MEM_WIFI_MISC);
+	if (ret)
+		goto exit;
+	ret = of_reserved_mem_device_init(&pdev->dev);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "of_reserved_mem_device_init failed(%d).\n",
+				ret);
+		goto exit;
+	}
+
+	dma_mask = DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask);
+	ret = dma_set_mask_and_coherent(&pdev->dev, dma_mask);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "dma_set_mask_and_coherent failed(%d)\n",
+			ret);
+		goto exit;
+	}
+
+exit:
+	return ret;
+}
+
+
+static int mtk_wifi_misc_probe(struct platform_device *pdev)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+	struct mt66xx_chip_info *prChipInfo;
+	struct device_node *node = NULL;
+	int ret = 0;
+
+	prDriverData = (struct mt66xx_hif_driver_data *)
+			mtk_axi_ids[0].driver_data;
+	prChipInfo = prDriverData->chip_info;
+
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi_misc");
+	if (!node) {
+		DBGLOG(INIT, ERROR,
+		       "WIFI-OF: get wifi_misc device node fail\n");
+		return false;
+	}
+	of_node_put(node);
+
+	ret = wifiMiscDmaSetup(pdev, prDriverData);
+	if (ret)
+		goto exit;
+
+	ret = halAllocHifMemForWiFiMisc(pdev, prDriverData);
+	if (ret)
+		goto exit;
+
+exit:
+	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+
+	return 0;
+}
+
+static int mtk_wifi_misc_remove(struct platform_device *pdev)
+{
+	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_MISC);
+	platform_set_drvdata(pdev, NULL);
+	return 0;
+}
+#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1396,6 +1495,14 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 	if (platform_driver_register(&mtk_axi_driver))
 		DBGLOG(HAL, ERROR, "platform_driver_register fail\n");
 
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+	mtk_wifi_misc_driver.probe = mtk_wifi_misc_probe;
+	mtk_wifi_misc_driver.remove = mtk_wifi_misc_remove;
+
+	if (platform_driver_register(&mtk_wifi_misc_driver))
+		DBGLOG(HAL, ERROR, "page pool platform_driver_register fail\n");
+#endif
+
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	mtk_pcie_remove_port(0);
 #endif
@@ -1419,6 +1526,9 @@ void glUnregisterBus(remove_card pfRemove)
 		g_fgDriverProbed = FALSE;
 	}
 	platform_driver_unregister(&mtk_axi_driver);
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+	platform_driver_unregister(&mtk_wifi_misc_driver);
+#endif
 }
 
 static void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
@@ -1459,9 +1569,8 @@ static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 	prMemOps->allocRxDataBuf = halZeroCopyPathAllocRxBuf;
 	prMemOps->freePacket = halZeroCopyPathFreePacket;
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
-#if CFG_MTK_WIFI_SW_EMI_RING
-	prMemOps->getRsvEmi = halGetRsvEmi;
-#endif
+
+	prMemOps->getWifiMiscRsvEmi = halGetWiFiMiscRsvEmi;
 #if 0
 	prMemOps->dumpTx = halZeroCopyPathDumpTx;
 	prMemOps->dumpRx = halZeroCopyPathDumpRx;

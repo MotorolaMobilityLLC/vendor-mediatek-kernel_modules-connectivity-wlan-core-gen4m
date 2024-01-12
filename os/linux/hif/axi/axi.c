@@ -195,7 +195,7 @@ static int axiDmaSetup(struct platform_device *pdev,
 
 	prChipInfo = prDriverData->chip_info;
 
-	ret = halInitResvMem(pdev);
+	ret = halInitResvMem(pdev, WIFI_RSV_MEM_WFDMA);
 	if (ret)
 		goto exit;
 	ret = of_reserved_mem_device_init(&pdev->dev);
@@ -450,7 +450,7 @@ static int mtk_axi_remove(struct platform_device *pdev)
 	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
 
 	axiCsrIounmap(pdev, prChipInfo);
-	halFreeHifMem(pdev);
+	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
 	emi_mem_uninit(prChipInfo, pdev);
 	platform_set_drvdata(pdev, NULL);
 	return 0;

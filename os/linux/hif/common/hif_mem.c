@@ -81,10 +81,10 @@ struct HIF_PREALLOC_MEM {
 	/* Tx Data */
 	struct HIF_MEM rMsduBuf[HIF_TX_MSDU_TOKEN_NUM];
 #endif
-	phys_addr_t pucRsvMemBase;
-	void *pucRsvMemVirBase;
-	uint64_t u4RsvMemSize;
-	uint32_t u4Offset;
+	phys_addr_t pucRsvMemBase[WIFI_RSV_MEM_MAX_NUM];
+	void *pucRsvMemVirBase[WIFI_RSV_MEM_MAX_NUM];
+	uint64_t u4RsvMemSize[WIFI_RSV_MEM_MAX_NUM];
+	uint32_t u4Offset[WIFI_RSV_MEM_MAX_NUM];
 };
 
 /*******************************************************************************
@@ -97,9 +97,9 @@ struct HIF_PREALLOC_MEM {
  *******************************************************************************
  */
 static struct HIF_PREALLOC_MEM grMem;
-static unsigned long long gWifiRsvMemSize;
+static unsigned long long gWifiRsvMemSize[WIFI_RSV_MEM_MAX_NUM];
 /* Assume reserved memory size < BIT(32) */
-static struct wifi_rsrv_mem wifi_rsrv_mems[32];
+static struct wifi_rsrv_mem wifi_rsrv_mems[WIFI_RSV_MEM_MAX_NUM][32];
 
 #if CFG_MTK_WIFI_SW_EMI_RING
 struct HIF_MEM g_rRsvEmiMem;
@@ -133,35 +133,8 @@ static struct mutex g_rPageLock;
  *                              F U N C T I O N S
  *******************************************************************************
  */
-static bool halGetRsvMemSizeRsvedByKernel(struct platform_device *pdev)
-{
-#ifdef CONFIG_OF
-	int ret = 0;
-	struct device_node *np;
-
-	np = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
-	if (!np) {
-		DBGLOG(INIT, ERROR, "can NOT find memory-region.\n");
-		return false;
-	}
-
-	ret = of_property_read_u64_array(np, "size", &gWifiRsvMemSize, 1);
-	if (ret != 0)
-		DBGLOG(INIT, ERROR, "get rsrv mem size failed(%d).\n", ret);
-	else
-		DBGLOG(INIT, INFO, "gWifiRsvMemSize:0x%llx\n", gWifiRsvMemSize);
-
-	of_node_put(np);
-	if (ret != 0)
-		return false;
-	else
-		return true;
-#else
-	return false;
-#endif
-}
-
-int halInitResvMem(struct platform_device *pdev)
+int halInitResvMem(struct platform_device *pdev,
+		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
 #ifdef CONFIG_OF
 	int ret = 0;
@@ -175,18 +148,16 @@ int halInitResvMem(struct platform_device *pdev)
 		return false;
 	}
 
-	if (halGetRsvMemSizeRsvedByKernel(pdev) == false) {
-		ret = of_property_read_u32(node, "emi-size", &RsvMemSize);
-		if (ret != 0)
-			DBGLOG(INIT, ERROR,
-				"MPU-in-lk get rsrv mem size failed(%d).\n",
-				ret);
-		else {
-			gWifiRsvMemSize = (unsigned long long) RsvMemSize;
-			DBGLOG(INIT, INFO,
-			       "MPU-in-lk gWifiRsvMemSize: 0x%llx\n",
-			       gWifiRsvMemSize);
-		}
+	ret = of_property_read_u32(node, "emi-size", &RsvMemSize);
+	if (ret != 0)
+		DBGLOG(INIT, ERROR,
+			"MPU-in-lk get rsrv mem size failed(%d).\n",
+			ret);
+	else {
+		gWifiRsvMemSize[u4RsvMemIdx] = (unsigned long long) RsvMemSize;
+		DBGLOG(INIT, INFO,
+		       "MPU-in-lk gWifiRsvMemSize[%u]: 0x%llx\n",
+		       u4RsvMemIdx, gWifiRsvMemSize[u4RsvMemIdx]);
 	}
 
 	of_node_put(node);
@@ -198,85 +169,101 @@ int halInitResvMem(struct platform_device *pdev)
 #endif
 }
 
-static bool halAllocRsvMemAlign(uint32_t u4Size, struct HIF_MEM *prMem,
-				uint32_t u4Align)
+static bool halAllocRsvMemAlign(uint32_t u4Size,
+		struct HIF_MEM *prMem, uint32_t u4Align,
+		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
 	uint32_t u4ExtSize = 0;
 
 	if (u4Align < WFDMA_MEMORY_ALIGNMENT)
 		u4Align = WFDMA_MEMORY_ALIGNMENT;
 
-	if (grMem.u4Offset & (u4Align - 1))
-		u4ExtSize = u4Align - (grMem.u4Offset & (u4Align - 1));
+	if (grMem.u4Offset[u4RsvMemIdx] & (u4Align - 1)) {
+		u4ExtSize = u4Align -
+			(grMem.u4Offset[u4RsvMemIdx] & (u4Align - 1));
+	}
 	u4Size += u4ExtSize;
 
-	if ((grMem.u4Offset + u4Size) >= gWifiRsvMemSize) {
+	if ((grMem.u4Offset[u4RsvMemIdx] + u4Size) >=
+			gWifiRsvMemSize[u4RsvMemIdx]) {
 		prMem->pa = 0;
 		prMem->va = NULL;
 		prMem->align_size = 0;
 		return false;
 	}
 
-	prMem->pa = grMem.pucRsvMemBase + grMem.u4Offset + u4ExtSize;
-	prMem->va = grMem.pucRsvMemVirBase + grMem.u4Offset + u4ExtSize;
+	prMem->pa = grMem.pucRsvMemBase[u4RsvMemIdx] +
+		grMem.u4Offset[u4RsvMemIdx] + u4ExtSize;
+	prMem->va = grMem.pucRsvMemVirBase[u4RsvMemIdx] +
+		grMem.u4Offset[u4RsvMemIdx] + u4ExtSize;
 	prMem->align_size = u4ExtSize;
-	grMem.u4Offset += u4Size;
+	grMem.u4Offset[u4RsvMemIdx] += u4Size;
 
 	return prMem->va != NULL;
 }
 
-static bool halAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
+static bool halAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem,
+		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
 	/* default alignment */
-	return halAllocRsvMemAlign(u4Size, prMem, WFDMA_MEMORY_ALIGNMENT);
+	return halAllocRsvMemAlign(u4Size, prMem,
+		WFDMA_MEMORY_ALIGNMENT, u4RsvMemIdx);
 }
 
-static bool halFreeRsvMem(uint32_t u4Size)
+static bool halFreeRsvMem(uint32_t u4Size,
+		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
-	if (u4Size > grMem.u4Offset)
+	if (u4Size > grMem.u4Offset[u4RsvMemIdx])
 		return false;
 
-	grMem.u4Offset -= u4Size;
+	grMem.u4Offset[u4RsvMemIdx] -= u4Size;
 
 	return true;
 }
 
 static int halInitHifMem(struct platform_device *pdev,
-		  struct mt66xx_chip_info *prChipInfo)
+		  struct mt66xx_chip_info *prChipInfo,
+		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
-	uint32_t i = sizeof(wifi_rsrv_mems) / sizeof(struct wifi_rsrv_mem);
+	uint32_t i = sizeof(wifi_rsrv_mems[u4RsvMemIdx]) /
+		sizeof(struct wifi_rsrv_mem);
 
 	/* Allocation size should be a power of two */
 	while (i > 0) {
 		i--;
-		if (!(gWifiRsvMemSize & BIT(i)))
+		if (!(gWifiRsvMemSize[u4RsvMemIdx] & BIT(i)))
 			continue;
 
-		wifi_rsrv_mems[i].size = BIT(i);
-		wifi_rsrv_mems[i].vir_base =
+		wifi_rsrv_mems[u4RsvMemIdx][i].size = BIT(i);
+		wifi_rsrv_mems[u4RsvMemIdx][i].vir_base =
 			dma_alloc_coherent(&pdev->dev,
-					   wifi_rsrv_mems[i].size,
-					   &wifi_rsrv_mems[i].phy_base,
-					   GFP_DMA);
-		if (!wifi_rsrv_mems[i].vir_base) {
+				wifi_rsrv_mems[u4RsvMemIdx][i].size,
+				&wifi_rsrv_mems[u4RsvMemIdx][i].phy_base,
+				GFP_DMA);
+		if (!wifi_rsrv_mems[u4RsvMemIdx][i].vir_base) {
 			DBGLOG(INIT, ERROR,
-				"[%d] DMA_ALLOC_COHERENT failed, size: 0x%llx\n",
-				i, wifi_rsrv_mems[i].size);
+				"[%u][%d] DMA_ALLOC_COHERENT failed, size: 0x%llx\n",
+				u4RsvMemIdx, i,
+				wifi_rsrv_mems[u4RsvMemIdx][i].size);
 			return -1;
 		}
-		if (!grMem.pucRsvMemBase) {
-			grMem.pucRsvMemBase = wifi_rsrv_mems[i].phy_base;
-			grMem.pucRsvMemVirBase = wifi_rsrv_mems[i].vir_base;
-			grMem.u4RsvMemSize = (uint64_t) gWifiRsvMemSize;
+		if (!grMem.pucRsvMemBase[u4RsvMemIdx]) {
+			grMem.pucRsvMemBase[u4RsvMemIdx] =
+				wifi_rsrv_mems[u4RsvMemIdx][i].phy_base;
+			grMem.pucRsvMemVirBase[u4RsvMemIdx] =
+				wifi_rsrv_mems[u4RsvMemIdx][i].vir_base;
+			grMem.u4RsvMemSize[u4RsvMemIdx] =
+				(uint64_t) gWifiRsvMemSize[u4RsvMemIdx];
 		}
 	}
 
-	if (!grMem.pucRsvMemBase)
+	if (!grMem.pucRsvMemBase[u4RsvMemIdx])
 		return -1;
 
-	DBGLOG(INIT, INFO, "pucRsvMemBase[%pa], pucRsvMemVirBase[%pa]\n",
-	       &grMem.pucRsvMemBase,
-	       &grMem.pucRsvMemVirBase);
+	DBGLOG(INIT, INFO,
+		"pucRsvMemBase[%u][%pa], pucRsvMemVirBase[%u][%pa]\n",
+		u4RsvMemIdx, &grMem.pucRsvMemBase[u4RsvMemIdx],
+		u4RsvMemIdx, &grMem.pucRsvMemVirBase[u4RsvMemIdx]);
 
 	return 0;
 }
@@ -287,16 +274,41 @@ int halAllocHifMem(struct platform_device *pdev,
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Idx, u4Size, u4EvtNum, u4DataNum;
+#if CFG_MTK_WIFI_SW_EMI_RING
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+	struct device_node *node = NULL;
+#endif
+#endif
 
 	prChipInfo = prDriverData->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
-	if (halInitHifMem(pdev, prChipInfo) == -1)
+	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WFDMA) == -1)
 		return -1;
 
 #if CFG_MTK_WIFI_SW_EMI_RING
-	if (!halAllocRsvMem(SW_EMI_MEMORY_SIZE, &g_rRsvEmiMem))
-		DBGLOG(INIT, ERROR, "g_rRsvEmiMem alloc fail\n");
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+	node = of_find_compatible_node(NULL, NULL, "mediatek,wifi_misc");
+	if (!node) {
+		DBGLOG(INIT, ERROR,
+			   "WIFI-OF: get wifi_misc device node fail\n");
+		u4Idx = WIFI_MISC_MEM_BLOCK_NON_MMIO;
+		u4Size = prChipInfo->rsvMemWiFiMisc[u4Idx].size;
+		if (!halAllocRsvMem(u4Size,
+				&prChipInfo->rsvMemWiFiMisc[u4Idx].rRsvEmiMem,
+				WIFI_RSV_MEM_WFDMA))
+			DBGLOG(INIT, ERROR, "RsvEmiMem alloc fail\n");
+	} else
+		; /* reserve non mmio EMI in halAllocHifMemForWiFiMisc */
+	of_node_put(node);
+#else
+	u4Idx = WIFI_MISC_MEM_BLOCK_NON_MMIO;
+	u4Size = prChipInfo->rsvMemWiFiMisc[u4Idx].size;
+	if (!halAllocRsvMem(u4Size,
+			&prChipInfo->rsvMemWiFiMisc[u4Idx].rRsvEmiMem,
+			WIFI_RSV_MEM_WFDMA))
+		DBGLOG(INIT, ERROR, "RsvEmiMem alloc fail\n");
+#endif
 #endif
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
@@ -326,7 +338,8 @@ int halAllocHifMem(struct platform_device *pdev,
 		else
 			u4Size = TX_RING_CMD_SIZE;
 
-		if (!halAllocRsvMem(u4Size * TXD_SIZE, &grMem.rTxDesc[u4Idx]))
+		if (!halAllocRsvMem(u4Size * TXD_SIZE,
+			&grMem.rTxDesc[u4Idx], WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR, "TxDesc[%u] alloc fail\n", u4Idx);
 	}
 
@@ -348,19 +361,20 @@ int halAllocHifMem(struct platform_device *pdev,
 			u4Size = prBusInfo->rx_evt_ring_size;
 			u4EvtNum--;
 		}
-		if (!halAllocRsvMem(u4Size * RXD_SIZE, &grMem.rRxDesc[u4Idx]))
+		if (!halAllocRsvMem(u4Size * RXD_SIZE,
+				&grMem.rRxDesc[u4Idx], WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR, "RxDesc[%u] alloc fail\n", u4Idx);
 	}
 
 	for (u4Idx = 0; u4Idx < TX_RING_CMD_SIZE; u4Idx++) {
 		if (!halAllocRsvMem(HAL_TX_CMD_BUFF_SIZE,
-				    &grMem.rTxCmdBuf[u4Idx]))
+				&grMem.rTxCmdBuf[u4Idx], WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR, "TxCmdBuf[%u] alloc fail\n", u4Idx);
 	}
 
 	for (u4Idx = 0; u4Idx < TX_RING_CMD_SIZE; u4Idx++) {
 		if (!halAllocRsvMem(HAL_TX_CMD_BUFF_SIZE,
-				    &grMem.rTxFwdlBuf[u4Idx]))
+				&grMem.rTxFwdlBuf[u4Idx], WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR,
 				"TxFwdlBuf[%u] alloc fail\n",
 				u4Idx);
@@ -395,7 +409,8 @@ int halAllocHifMem(struct platform_device *pdev,
 		}
 		for (u4Cnt = 0; u4Cnt < u4Size; u4Cnt++) {
 			if (!halAllocRsvMem(u4PktSize,
-					    &grMem.rRxMemBuf[u4Idx][u4Cnt])) {
+					&grMem.rRxMemBuf[u4Idx][u4Cnt],
+					WIFI_RSV_MEM_WFDMA)) {
 				DBGLOG(INIT, ERROR,
 				       "RxMemBuf[%u][%u] alloc fail\n",
 				       u4Idx, u4Cnt);
@@ -406,32 +421,66 @@ int halAllocHifMem(struct platform_device *pdev,
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		if (!halAllocRsvMem(HAL_TX_MAX_SIZE_PER_FRAME +
-				    prChipInfo->txd_append_size,
-				    &grMem.rMsduBuf[u4Idx]))
+				prChipInfo->txd_append_size,
+				&grMem.rMsduBuf[u4Idx],
+				WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);
 	}
 #endif
 
-	DBGLOG(INIT, INFO, "grMem.u4Offset[0x%x]\n", grMem.u4Offset);
+	DBGLOG(INIT, INFO, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
+		grMem.u4Offset[WIFI_RSV_MEM_WFDMA]);
 
 	return 0;
 }
 
-void halFreeHifMem(struct platform_device *pdev)
+void halFreeHifMem(struct platform_device *pdev,
+		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
 	uint32_t i = 0;
-	uint32_t count = sizeof(wifi_rsrv_mems) / sizeof(struct wifi_rsrv_mem);
+	uint32_t count = sizeof(wifi_rsrv_mems[u4RsvMemIdx]) /
+		sizeof(struct wifi_rsrv_mem);
 
 	for (i = 0; i < count; i++) {
-		if (!wifi_rsrv_mems[i].vir_base)
+		if (!wifi_rsrv_mems[u4RsvMemIdx][i].vir_base)
 			continue;
 		dma_free_coherent(
 			&pdev->dev,
-			wifi_rsrv_mems[i].size,
-			wifi_rsrv_mems[i].vir_base,
-			(dma_addr_t) wifi_rsrv_mems[i].phy_base);
+			wifi_rsrv_mems[u4RsvMemIdx][i].size,
+			wifi_rsrv_mems[u4RsvMemIdx][i].vir_base,
+			(dma_addr_t) wifi_rsrv_mems[u4RsvMemIdx][i].phy_base);
 	}
 }
+
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
+		struct mt66xx_hif_driver_data *prDriverData)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4idx = 0;
+
+	prChipInfo = prDriverData->chip_info;
+
+	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WIFI_MISC) == -1)
+		return -1;
+
+	/* alloc all memory blocks in wifi_misc */
+	for (u4idx = 0; u4idx < WIFI_MISC_MEM_BLOCK_MAX_NUM; u4idx++) {
+		if (!halAllocRsvMem(
+				prChipInfo->rsvMemWiFiMisc[u4idx].size,
+				&prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem,
+				WIFI_RSV_MEM_WIFI_MISC))
+			DBGLOG(INIT, ERROR, "RsvEmiMem alloc fail\n");
+	}
+
+	DBGLOG(INIT, INFO,
+		"grMemWiFiMisc.u4Offset[WIFI_RSV_MEM_WIFI_MISC] = [0x%x]\n",
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_MISC]);
+
+	return 0;
+}
+#endif
+
 
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
@@ -463,7 +512,7 @@ void halCopyPathAllocExtBuf(struct GL_HIF_INFO *prHifInfo,
 {
 	if (!halAllocRsvMemAlign(prDescRing->AllocSize,
 				 &prDescRing->rMem,
-				 u4Align)) {
+				 u4Align, WIFI_RSV_MEM_WFDMA)) {
 		DBGLOG(INIT, ERROR, "Ext Buf alloc failed!\n");
 		prDescRing->AllocPa = 0;
 		prDescRing->AllocVa = NULL;
@@ -596,7 +645,8 @@ void halCopyPathFreeExtBuf(struct GL_HIF_INFO *prHifInfo,
 	if (prDescRing->AllocVa == NULL)
 		return;
 
-	halFreeRsvMem(prDescRing->AllocSize + prDescRing->rMem.align_size);
+	halFreeRsvMem(prDescRing->AllocSize + prDescRing->rMem.align_size,
+		WIFI_RSV_MEM_WFDMA);
 	memset(prDescRing, 0, sizeof(struct RTMP_DMABUF));
 }
 
@@ -966,12 +1016,12 @@ void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 		0, prDmaBuf->AllocSize);
 }
 
-#if CFG_MTK_WIFI_SW_EMI_RING
-struct HIF_MEM *halGetRsvEmi(struct GL_HIF_INFO *prHifInfo)
+struct HIF_MEM *halGetWiFiMiscRsvEmi(
+	struct mt66xx_chip_info *prChipInfo,
+	enum WIFI_MISC_MEM_BLOCK_NAME u4idx)
 {
-	return &g_rRsvEmiMem;
+	return &prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem;
 }
-#endif
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,

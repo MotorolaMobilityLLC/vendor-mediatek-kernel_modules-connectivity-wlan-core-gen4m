@@ -255,7 +255,6 @@
 #define SW_WFDMA_MAX_RETRY_COUNT	100
 #define SW_WFDMA_RETRY_TIME		10
 
-#define SW_EMI_MEMORY_SIZE		2048
 #define SW_EMI_RING_SIZE		16
 
 #define MSDU_REPORT_MAX_NUM		336
@@ -463,6 +462,18 @@ enum ENUM_HW_WFDMA0_RX_RING_IDX {
 };
 
 struct GL_HIF_INFO;
+
+enum ENUM_WIFI_RSV_MEM_IDX {
+	WIFI_RSV_MEM_WFDMA = 0,
+	WIFI_RSV_MEM_WIFI_MISC,
+	WIFI_RSV_MEM_MAX_NUM
+};
+
+enum WIFI_MISC_MEM_BLOCK_NAME {
+	WIFI_MISC_MEM_BLOCK_NON_MMIO = 0,
+	WIFI_MISC_MEM_BLOCK_TX_POWER,
+	WIFI_MISC_MEM_BLOCK_MAX_NUM
+};
 
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
@@ -1037,6 +1048,12 @@ struct WFDMA_EMI_RING_CIDX {
 };
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
+struct EMI_WIFI_MISC_RSV_MEM_INFO {
+	const enum WIFI_MISC_MEM_BLOCK_NAME block_name;
+	uint32_t size;
+	struct HIF_MEM rRsvEmiMem;
+};
+
 #if CFG_NEW_HIF_DEV_REG_IF
 struct HIF_DEV_REG_RECORD {
 	enum HIF_DEV_REG_REASON eReason;
@@ -1256,11 +1273,12 @@ static inline int halMawdPwrOn(void) { return 0; }
 static inline void halMawdPwrOff(void) {}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-int halInitResvMem(struct platform_device *pdev);
+int halInitResvMem(struct platform_device *pdev,
+		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
 int halAllocHifMem(struct platform_device *pdev,
 		   struct mt66xx_hif_driver_data *prDriverData);
-void halFreeHifMem(struct platform_device *pdev);
-
+void halFreeHifMem(struct platform_device *pdev,
+		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx);
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
 			    uint32_t u4Num);
@@ -1346,10 +1364,9 @@ void halZeroCopyPathDumpTx(struct GL_HIF_INFO *prHifInfo,
 void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 		       struct RTMP_RX_RING *prRxRing,
 		       uint32_t u4Idx, uint32_t u4DumpLen);
-
-#if CFG_MTK_WIFI_SW_EMI_RING
-struct HIF_MEM *halGetRsvEmi(struct GL_HIF_INFO *prHifInfo);
-#endif
+struct HIF_MEM *halGetWiFiMiscRsvEmi(
+	struct mt66xx_chip_info *prChipInfo,
+	enum WIFI_MISC_MEM_BLOCK_NAME u4idx);
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 void halZeroCopyPathFreePagePoolPacket(struct GL_HIF_INFO *prHifInfo,
@@ -1380,8 +1397,10 @@ extern uint32_t wifi_page_pool_get_max_page_num(void) __attribute__((weak));
 #endif
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
-
-
+#if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
+int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
+		   struct mt66xx_hif_driver_data *prDriverData);
+#endif
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value);
