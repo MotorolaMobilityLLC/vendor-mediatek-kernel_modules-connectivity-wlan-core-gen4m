@@ -4415,6 +4415,8 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
+	if (prAdapter->u4HostStatusEmiOffset)
+		kalSetSuspendFlagToEMI(prAdapter, FALSE);
 	return 0;
 }
 
