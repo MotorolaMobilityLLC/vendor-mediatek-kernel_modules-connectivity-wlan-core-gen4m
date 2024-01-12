@@ -2034,7 +2034,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	if (ucMaxBandwidth > ucChannelBw)
 		ucMaxBandwidth = ucChannelBw;
 #endif
-	DBGLOG_LIMITED(CNM, TRACE, "pCH=%d, BW=%d\n",
+	DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
 		prBssInfo->ucPrimaryChannel, ucMaxBandwidth);
 
 	return ucMaxBandwidth;

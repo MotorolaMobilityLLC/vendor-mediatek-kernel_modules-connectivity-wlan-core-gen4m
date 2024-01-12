@@ -261,6 +261,8 @@ uint32_t heRlmCalculateHeCapIELen(
 	if (ucMaxBw >= MAX_BW_80_80_MHZ)
 		u4OverallLen += 4;
 
+	//TODO: check 320MHZ
+
 #if (CFG_RX_PPE_THRESHOLD == 1)
 	u4OverallLen += sizeof(struct _PPE_THRESHOLD_FIELD);
 #endif
@@ -429,6 +431,11 @@ static uint8_t heRlmFillPPEThreshold(
 		break;
 	case MAX_BW_160MHZ:
 	case MAX_BW_80_80_MHZ:
+		(*pPPEThreshold) |= HE_CAP_PPE_996X2_RU_IDX;
+		ucRUIdxSize = 4;
+		break;
+	case MAX_BW_320MHZ:
+		//TODO: check spec
 		(*pPPEThreshold) |= HE_CAP_PPE_996X2_RU_IDX;
 		ucRUIdxSize = 4;
 		break;

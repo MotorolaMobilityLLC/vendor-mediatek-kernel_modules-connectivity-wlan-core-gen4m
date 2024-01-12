@@ -2880,17 +2880,15 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_STAREC_TAG_EHT_BASIC;
 	tag->u2Length = sizeof(*tag);
 	tag->ucTidBitmap = 0xff;
-	kalMemCopy(tag->u2EhtMacCap, cmd->ucEhtMacCapInfo,
-			sizeof(tag->u2EhtMacCap));
-	kalMemCopy(tag->u8EhtPhyCap, cmd->ucEhtPhyCapInfo,
-			sizeof(tag->u8EhtPhyCap));
+	WLAN_GET_FIELD_16(&cmd->ucEhtMacCapInfo[0], &tag->u2EhtMacCap);
+	WLAN_GET_FIELD_64(&cmd->ucEhtPhyCapInfo[0], &tag->u8EhtPhyCap);
 
-	DBGLOG(INIT, INFO, "[%d] bss=%d,tid=0x%x,mac_cap=0x%x,phy_cap=0x%x\n",
+	DBGLOG(INIT, INFO, "[%d] bss=%d,tid=0x%x,mac_cap=0x%x,phy_cap=0x%lx\n",
 		cmd->ucStaIndex,
 		cmd->ucBssIndex,
 		tag->ucTidBitmap,
-		*tag->u2EhtMacCap,
-		*tag->u8EhtPhyCap);
+		tag->u2EhtMacCap,
+		tag->u8EhtPhyCap);
 
 	return tag->u2Length;
 }

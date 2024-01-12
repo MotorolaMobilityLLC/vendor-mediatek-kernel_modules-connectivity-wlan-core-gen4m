@@ -369,6 +369,7 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 			break;
 		case CW_160MHZ:
 		case CW_80P80MHZ:
+		case CW_320MHZ:
 			u2Score = BSS_FULL_SCORE;
 			break;
 		}

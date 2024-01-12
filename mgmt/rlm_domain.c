@@ -300,6 +300,10 @@ struct mtk_regd_control g_mtk_regd_control = {
 #define BW_6G 80
 #endif
 
+#if CFG_SUPPORT_BW320
+#define BW_6G 320
+#endif
+
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 const struct ieee80211_regdomain default_regdom_ww = {
@@ -1985,6 +1989,9 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 			       ucCenterCh);
 
 		/* Check Central Channel Valid or Not */
+	} else if (eChannelWidth == CW_320MHZ) {
+		//TODO: add checking for 320MHZ
+		DBGLOG(RLM, INFO, "CW320\n", eChannelWidth);
 	} else {
 		DBGLOG(RLM, ERROR, "Wrong BW =%d\n", eChannelWidth);
 		fgValidChannel = FALSE;
@@ -2024,6 +2031,7 @@ rlmDomainIsValidRfSetting(struct ADAPTER *prAdapter,
 				       u4PrimaryOffset, eChannelWidth);
 			}
 		}
+		//TODO: add 320MHZ?
 	}
 
 	if ((fgValidBW == FALSE) || (fgValidChannel == FALSE) ||
@@ -6219,9 +6227,16 @@ bool rlmDomainIsEfuseUsed(void)
 uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 {
 	uint32_t ch_idx = 0, start_idx = 0, end_idx = 0;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t channelBw = MAX_BW_320MHZ;
+#else
 	uint8_t channelBw = MAX_BW_80_80_MHZ;
+#endif
 	struct CMD_DOMAIN_CHANNEL *pCh;
 	enum ENUM_BAND eChBand;
+
+	//TODO: remove this
+	channelBw = MAX_BW_320MHZ;
 
 	end_idx = rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)
 			+ rlmDomainGetActiveChannelCount(KAL_BAND_5GHZ)
