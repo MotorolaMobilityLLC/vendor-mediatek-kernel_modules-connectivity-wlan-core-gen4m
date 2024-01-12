@@ -11362,6 +11362,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			       "SAE auth failed without prTargetBssDesc\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
+		prBssDesc->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_SAE;
 	}
 #endif
 
@@ -11453,6 +11454,7 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			       "SAE auth failed without prTargetBssDesc\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
+		prBssDesc->u4RsnSelectedAKMSuite = RSN_AKM_SUITE_SAE;
 	}
 #endif
 	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO);
