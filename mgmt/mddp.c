@@ -470,6 +470,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	u_int8_t fgHalted = kalIsHalted();
 
 	DBGLOG(INIT, INFO, "MD notify mddpMdNotifyInfo.\n");
 
@@ -489,15 +490,20 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		return 0;
 	}
 
+	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, INFO,
+			"Skip update info. to MD, fgHalted: %d, u4ReadyFlag: %d\n",
+			fgHalted, prGlueInfo->u4ReadyFlag);
+		return 0;
+	}
+
 	if (prMdInfo->info_type == 1) {
 		uint32_t i;
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 
-		if (prGlueInfo->u4ReadyFlag) {
-			mddpNotifyWifiOnStart();
-			mddpNotifyWifiOnEnd();
-			mddpNotifyDrvMac(prAdapter);
-		}
+		mddpNotifyWifiOnStart();
+		mddpNotifyWifiOnEnd();
+		mddpNotifyDrvMac(prAdapter);
 
 		/* Notify STA's TXD to MD */
 		for (i = 0; i < KAL_AIS_NUM; i++) {
