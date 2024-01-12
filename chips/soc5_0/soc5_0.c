@@ -1357,25 +1357,29 @@ int wf_pwr_on_consys_mcu(void)
 
 	/* Check CONNSYS power-on completion
 	 * Polling "1000 times" and each polling interval is "1ms"
-	 * Polling 0x81021604[31:0] = 0x00001D1E
+	 * Polling 0x81021604[31:0] || 0x18060260[31:0] = 0x00001D1E
 	 */
-	wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
 	check = 0;
 	polling_count = 0;
-	while (value != CONNSYS_ROM_DONE_CHECK) {
+	while (TRUE) {
 		if (polling_count > 1000) {
 			check = -1;
 			ret = -1;
 			break;
 		}
-		udelay(1000);
 		wf_ioremap_read(WF_ROM_CODE_INDEX_ADDR, &value);
+		if (value == CONNSYS_ROM_DONE_CHECK)
+			break;
+		/* pooling mailbox as backup */
+		wf_ioremap_read(CONNAC2X_MAILBOX_DBG_ADDR, &value);
+		if (value == CONNSYS_ROM_DONE_CHECK)
+			break;
 		polling_count++;
+		udelay(1000);
 	}
 	if (check != 0) {
 		DBGLOG(INIT, ERROR,
 			"Check CONNSYS power-on completion fail.\n");
-		soc5_0_DumpBusHangCr(NULL);
 		return ret;
 	}
 
@@ -1598,6 +1602,22 @@ int wf_pwr_off_consys_mcu(void)
 	value &= 0xFFFFFFDF;
 	wf_ioremap_write(CONN_INFRA_WFSYS_EMI_REQ_ADDR, value);
 
+	udelay(50);
+	wf_ioremap_read(0x18005120, &value);
+	DBGLOG(INIT, INFO, "0x18005120=[%x]\n", value);
+	wf_ioremap_read(0x18005124, &value);
+	DBGLOG(INIT, INFO, "0x18005124=[%x]\n", value);
+	wf_ioremap_read(0x18005128, &value);
+	DBGLOG(INIT, INFO, "0x18005128=[%x]\n", value);
+	wf_ioremap_read(0x1800512C, &value);
+	DBGLOG(INIT, INFO, "0x1800512C=[%x]\n", value);
+	wf_ioremap_read(0x18005130, &value);
+	DBGLOG(INIT, INFO, "0x18005130=[%x]\n", value);
+	wf_ioremap_read(0x18005134, &value);
+	DBGLOG(INIT, INFO, "0x18005134=[%x]\n", value);
+	wf_ioremap_read(0x180050A8, &value);
+	DBGLOG(INIT, INFO, "0x180050A8=[%x]\n", value);
+
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;
@@ -1628,8 +1648,10 @@ int hifWmmcuPwrOn(void)
 #endif
 	/* wf driver power on */
 	ret = wf_pwr_on_consys_mcu();
-	if (ret != 0)
+	if (ret != 0) {
+		soc5_0_DumpBusHangCr(NULL);
 		return ret;
+	}
 
 	/* set FW own after power on consys mcu to
 	 * keep Driver/FW/HW state sync
@@ -1657,8 +1679,10 @@ int hifWmmcuPwrOff(void)
 	int ret = 0;
 	/* wf driver power off */
 	ret = wf_pwr_off_consys_mcu();
-	if (ret != 0)
+	if (ret != 0) {
+		soc5_0_DumpBusHangCr(NULL);
 		return ret;
+	}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	/*
 	 * conninfra power off sequence
@@ -3594,6 +3618,45 @@ static void soc5_0_DumpOtherCr(struct ADAPTER *prAdapter)
 	/* WF_SYSSTRAP_RD_DBG */
 	connac2x_DbgCrRead(prAdapter, 0x18060200, &u4Val);
 	DBGLOG(HAL, ERROR, "0x18060200=[0x%08x]\n", u4Val);
+
+	/* infra registers */
+	/* Connsys power ctrl error
+	 * a. Read 0x1000_6178[0] should be 1’b1 (connsys_on_domain_pwr_ack)
+	 * b. Read 0x1000_6EF4[1] should be 1’b1 (connsys_on_domain_pwr_ack_s)
+	 * c. Read 0x1000_6E04[1] should be 1’b0 (connsys_iso_en)
+	 *
+	 * host ck
+	 * Read 0x1000_6E04[4] should be 1’b0 (conn_clk_dis)
+	 */
+	connac2x_DbgCrRead(prAdapter, 0x10006178, &u4Val);
+	DBGLOG(INIT, INFO, "0x10006178=[%x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x10006EF4, &u4Val);
+	DBGLOG(INIT, INFO, "0x10006EF4=[%x]\n", u4Val);
+	connac2x_DbgCrRead(prAdapter, 0x10006E04, &u4Val);
+	DBGLOG(INIT, INFO, "0x10006E04=[%x]\n", u4Val);
+
+	/* Connsys reset status
+	 * a. Read 0x1000_7200[9] should be 1’b0
+	 *    Read 0x1000_7200[31:24] should be 8’h88  (ap_sw_rst_b)
+	 * b. Read 0x1000_6E04[0] should be 1’b1 (ap_sw_rst_b)
+	 */
+	connac2x_DbgCrRead(prAdapter, 0x10007200, &u4Val);
+	DBGLOG(INIT, INFO, "0x10007200=[%x]\n", u4Val);
+
+	/* Sleep protect status
+	 * a. Read 0x1000_1228[19] should be 1’b0 (ap2conn_slpprot_rx_rdy)
+	 * b. Read 0x1000_1228[13] should be 1’b0 (ap2conn_slpprot_tx_rdy)
+	 */
+	connac2x_DbgCrRead(prAdapter, 0x10001228, &u4Val);
+	DBGLOG(INIT, INFO, "0x10001228=[%x]\n", u4Val);
+
+	/* Infra bus hang status
+	 * a. Read 0x1002_3000 ([8] should be 1’b0) (infra bus timeout irq)
+	 * b. Read 0x1002_3408 ~ 0x1002_3474
+	 */
+	connac2x_DbgCrRead(prAdapter, 0x10023000, &u4Val);
+	DBGLOG(INIT, INFO, "0x10023000=[%x]\n", u4Val);
+	connac2x_DumpCrRange(NULL, 0x10023408, 27, "Infra bus hang status");
 }
 
 /* need to dump AXI Master related CR 0x1802750C ~ 0x18027530*/
