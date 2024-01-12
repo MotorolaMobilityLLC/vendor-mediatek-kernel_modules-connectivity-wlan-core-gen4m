@@ -16185,17 +16185,38 @@ static int priv_driver_efuse_ops(struct net_device *prNetDev,
 				   &u4BufLen);
 
 		if (rStatus == WLAN_STATUS_SUCCESS) {
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			u4Offset += kalSnprintf(pcCommand + u4Offset,
+			     i4TotalLen - u4Offset,
+			     "Read success 0x%X = 0x%X\n", u4Efuse_addr,
+			     rAccessEfuseInfo.aucData[u4Index]);
+#else
 			u4Offset += kalSnprintf(pcCommand + u4Offset,
 			     i4TotalLen - u4Offset,
 			     "Read success 0x%X = 0x%X\n", u4Efuse_addr,
 			     prGlueInfo->prAdapter->aucEepromVaule[u4Index]);
+#endif
 		}
 	} else if (ucOpMode == EFUSE_WRITE) {
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		/* update write buffer first */
+		rStatus = kalIoctl(prGlueInfo,
+				   wlanoidQueryProcessAccessEfuseRead,
+				   &rAccessEfuseInfo,
+				   sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+				   &u4BufLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			goto efuse_op_invalid;
+
+
+		rAccessEfuseInfo.aucData[u4Index] = ucEfuse_value;
+#else
 		prGlueInfo->prAdapter->aucEepromVaule[u4Index] = ucEfuse_value;
 
 		kalMemCopy(rAccessEfuseInfo.aucData,
 			   prGlueInfo->prAdapter->aucEepromVaule, 16);
+#endif
 
 		rStatus = kalIoctl(prGlueInfo,
 				   wlanoidQueryProcessAccessEfuseWrite,
