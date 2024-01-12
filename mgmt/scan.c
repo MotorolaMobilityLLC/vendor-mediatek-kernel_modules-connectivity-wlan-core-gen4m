@@ -577,6 +577,11 @@ void scanSearchBssDescOfRoamSsid(IN struct ADAPTER *prAdapter)
 	uint32_t	u4SameSSIDCount = 0;
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
+
+	/* XXX: wlan0(AP mode) + p2p0 occurs exception. */
+	if (prAisBssInfo == NULL)
+		return;
+
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
 
@@ -1471,6 +1476,14 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter, IN struct SW_RFB
 						prBssDesc->fgIEWPA = TRUE;
 					}
 				}
+#if CFG_SUPPORT_PASSPOINT
+				/* since OSEN is mutual exclusion with RSN, so we reuse RSN here */
+				if ((pucIE[1] >= 10)
+					&& (kalMemCmp(pucIE+2, "\x50\x6f\x9a\x12", 4) == 0)
+					&& (rsnParseOsenIE(prAdapter, (struct IE_WFA_OSEN *)pucIE,
+						&prBssDesc->rRSNInfo)))
+					prBssDesc->fgIEOsen = TRUE;
+#endif
 #if CFG_ENABLE_WIFI_DIRECT
 				if (prAdapter->fgIsP2PRegistered) {
 					if ((p2pFuncParseCheckForP2PInfoElem(prAdapter, pucIE, &ucOuiType))
@@ -1901,7 +1914,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter, IN struct S
 
 	if (prBssDesc) {
 		/* 4 <1.1> Beacon Change Detection for Connected BSS */
-		if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED &&
+		if ((prAisBssInfo != NULL) &&
+		    (prAisBssInfo->eConnectionState ==
+		     PARAM_MEDIA_STATE_CONNECTED) &&
 		    ((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
 		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))
 		    && EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prAisBssInfo->aucBSSID)
@@ -1942,8 +1957,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter, IN struct S
 				aisBssBeaconTimeout(prAdapter);
 		}
 		/* 4 <1.1> Update AIS_BSS_INFO */
-		if (((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
-		     || (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
+		if ((prAisBssInfo != NULL) &&
+			((prBssDesc->eBSSType == BSS_TYPE_INFRASTRUCTURE && prConnSettings->eOPMode != NET_TYPE_IBSS)
+			|| (prBssDesc->eBSSType == BSS_TYPE_IBSS && prConnSettings->eOPMode != NET_TYPE_INFRA))) {
 			if (prAisBssInfo->eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 
 				/* *not* checking prBssDesc->fgIsConnected anymore,
