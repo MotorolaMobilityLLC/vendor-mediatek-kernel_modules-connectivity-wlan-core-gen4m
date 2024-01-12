@@ -4522,6 +4522,7 @@ static int32_t wlanOnAtReset(void)
 	struct net_device *prDev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prAisBssInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_RESERVED;
@@ -4637,6 +4638,11 @@ static int32_t wlanOnAtReset(void)
 
 		/* Send disconnect */
 		for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+			prAisBssInfo = aisGetAisBssInfo(prAdapter, u4Idx);
+			if (prAisBssInfo->eConnectionState ==
+			    MEDIA_STATE_DISCONNECTED)
+				continue;
+
 			rStatus = kalIoctlByBssIdx(prGlueInfo,
 				wlanoidSetDisassociate,
 				&u4DisconnectReason,
