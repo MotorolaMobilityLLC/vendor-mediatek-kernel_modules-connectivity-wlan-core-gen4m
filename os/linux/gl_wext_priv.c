@@ -3329,6 +3329,7 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_SET_TXPOWER			"SET_TXPOWER"
 #define CMD_COUNTRY			"COUNTRY"
 #define CMD_CSA				"CSA"
+#define CMD_ECSA			"ECSA"
 #define CMD_CSA_EX			"CSA_EX"
 #define CMD_CSA_EX_EVENT		"EVENT_CSA_EX"
 #define CMD_GET_COUNTRY			"GET_COUNTRY"
@@ -3782,6 +3783,13 @@ struct CMD_VALIDATE_POLICY set_cas_ex_policy[PRIV_CMD_SET_ARG_NUM_3] = {
 struct CMD_VALIDATE_POLICY set_cas_policy[PRIV_CMD_SET_ARG_NUM_2] = {
 	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
 };
+
+#if CFG_SUPPORT_P2P_ECSA
+struct CMD_VALIDATE_POLICY set_ecsa_policy[PRIV_CMD_SET_ARG_NUM_3] = {
+	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U8, .min = 0, .max = U32_MAX}
+};
+#endif
 #endif
 
 struct CMD_VALIDATE_POLICY get_chnls_policy[PRIV_CMD_GET_ARG_NUM_2] = {
@@ -11302,6 +11310,113 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 
 	return 0;
 }
+
+#if CFG_SUPPORT_P2P_ECSA
+uint8_t _getBwForInt(uint32_t ch_bw)
+{
+	uint8_t bw = 0;
+
+	switch (ch_bw) {
+	case 20:
+		bw = MAX_BW_20MHZ;
+		break;
+	case 40:
+		bw = MAX_BW_40MHZ;
+		break;
+	case 80:
+		bw = MAX_BW_80MHZ;
+		break;
+	default:
+		bw = MAX_BW_UNKNOWN;
+		break;
+	}
+
+	return bw;
+}
+
+int priv_driver_set_ecsa(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t ch = 0;
+	uint32_t bw = 0;
+	uint32_t u4Ret = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	enum ENUM_BAND eBand = BAND_NULL;
+	struct BSS_INFO *bss = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 3) {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+		return -1;
+	}
+
+	bss =
+		GET_BSS_INFO_BY_INDEX(
+		prGlueInfo->prAdapter,
+		ucBssIdx);
+	if (bss == NULL)
+		return -1;
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &ch);
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD,
+			"parse ch error u4Ret=%d\n",
+			u4Ret);
+		return -1;
+	}
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &bw);
+	if (u4Ret) {
+		DBGLOG(REQ, WARN,
+			"parse ch_bw error u4Ret=%d\n",
+			u4Ret);
+		return -1;
+	} else if (bw != 20 && bw != 40 && bw != 80) {
+		DBGLOG(REQ, WARN, "Incorrect bw\n");
+		return -1;
+	}
+
+	eBand = (ch <= 14) ? BAND_2G4 : BAND_5G;
+
+	bw = _getBwForInt(bw);
+	if (bw != MAX_BW_UNKNOWN) {
+		prGlueInfo->prAdapter
+			->rWifiVar.prP2pSpecificBssInfo[ucRoleIdx]
+			->ucEcsaBw = bw;
+		prGlueInfo->prAdapter
+			->rWifiVar.prP2pSpecificBssInfo[ucRoleIdx]
+			->fgEcsa = TRUE;
+	}
+
+	if (IS_BSS_APGO(bss))
+		u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
+			eBand, ch, ucRoleIdx);
+	else
+		DBGLOG(REQ, WARN, "Incorrect bss opmode\n");
+
+	DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
+
+	return 0;
+}
+#endif
 
 int priv_driver_set_csa_ex(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen)
@@ -21171,6 +21286,15 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_3,
 		.policy    = set_cas_ex_policy
 	},
+#if CFG_SUPPORT_P2P_ECSA
+	{
+		.pcCmdStr  = CMD_ECSA,
+		.pfHandler = priv_driver_set_ecsa,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_3,
+		.policy    = set_ecsa_policy
+	},
+#endif
 	{
 		.pcCmdStr  = CMD_CSA,
 		.pfHandler = priv_driver_set_csa,

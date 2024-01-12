@@ -2530,6 +2530,14 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 
 	/* Down the flag */
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
+#if CFG_SUPPORT_P2P_ECSA
+	prAdapter
+		->rWifiVar.prP2pSpecificBssInfo[role_idx]
+		->fgEcsa = FALSE;
+	prAdapter
+		->rWifiVar.prP2pSpecificBssInfo[role_idx]
+		->ucEcsaBw = 0;
+#endif
 #if CFG_SUPPORT_DBDC
 	/* Check DBDC status */
 	cnmDbdcRuntimeCheckDecision(prAdapter,
