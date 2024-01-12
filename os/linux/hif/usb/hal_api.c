@@ -81,6 +81,7 @@
 
 #include "mt66xx_reg.h"
 #include "hal_wfsys_reset_mt7961.h"
+#include "hif.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -116,6 +117,14 @@ static const uint16_t arTcToUSBEP[USB_TC_NUM] = {
 	USB_DATA_BULK_OUT_EP9,
 	USB_DATA_BULK_OUT_EP9,
 #endif
+};
+
+static const uint8_t arDmashdlGrpToTc[USB_DMASHDL_DATA_GROUP_NUM] = {
+	TC0_INDEX,
+	TC1_INDEX,
+	TC2_INDEX,
+	TC3_INDEX,
+	USB_DBDC1_TC,
 };
 
 /*******************************************************************************
@@ -576,14 +585,42 @@ uint32_t halTxUSBSendAggData(struct GL_HIF_INFO *prHifInfo, uint8_t ucTc,
 }
 #endif
 
-static uint8_t halUsbDetermineTc(struct MSDU_INFO *prMsduInfo)
+static uint8_t halUsbDetermineTc(struct mt66xx_chip_info *prChipInfo,
+				struct MSDU_INFO *prMsduInfo)
 {
+	uint8_t ucTc, ucDmashdlTc;
+	uint8_t *pucBuf;
+	uint8_t ucQueIdx, ucGrpIdx;
+	struct TX_DESC_OPS_T *prTxDescOps;
+	struct DMASHDL_CFG *prCfg = prChipInfo->bus_info->prDmashdlCfg;
+
+	pucBuf = ((struct sk_buff *)prMsduInfo->prPacket)->data;
+	prTxDescOps = prChipInfo->prTxDescOps;
+	ucQueIdx = prTxDescOps->nic_txd_queue_idx_op(
+		pucBuf, 0, FALSE);
+
+	ucTc = (prMsduInfo->ucWmmQueSet) ? USB_DBDC1_TC : prMsduInfo->ucTC;
+
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 	if (prMsduInfo->fgMgmtUseDataQ)
-		return prMsduInfo->ucTC;
+		ucTc = prMsduInfo->ucTC;
 #endif
 
-	return (prMsduInfo->ucWmmQueSet) ? USB_DBDC1_TC : prMsduInfo->ucTC;
+	ucGrpIdx = prCfg->aucQueue2Group[ucQueIdx];
+	if (ucGrpIdx < USB_DMASHDL_DATA_GROUP_NUM) {
+		ucDmashdlTc = arDmashdlGrpToTc[ucGrpIdx];
+		if (ucTc != ucDmashdlTc) {
+			DBGLOG(HAL, INFO, "ucTc mismatch! (%d != %d)\n", ucTc,
+			       ucDmashdlTc);
+
+			return ucDmashdlTc;
+		}
+	} else {
+		DBGLOG(HAL, WARN, "unexpected DMASHDL group number: %d",
+		       ucGrpIdx);
+	}
+
+	return ucTc;
 }
 
 uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
@@ -611,7 +648,7 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 	pucBuf = skb->data;
 	u4Length = skb->len;
 	u4TotalLen = u4Length + prChipInfo->u2HifTxdSize;
-	ucTc = halUsbDetermineTc(prMsduInfo);
+	ucTc = halUsbDetermineTc(prChipInfo, prMsduInfo);
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
 		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prGlueInfo->prAdapter)
@@ -1703,7 +1740,7 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 	skb = (struct sk_buff *)prMsduInfo->prPacket;
 	u4Length = skb->len;
 	u4Length += prChipInfo->u2HifTxdSize;
-	ucTc = halUsbDetermineTc(prMsduInfo);
+	ucTc = halUsbDetermineTc(prChipInfo, prMsduInfo);
 
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
