@@ -2171,7 +2171,7 @@ void connac3x_show_wfdma_glo_info(
 	uint32_t idx;
 	uint32_t u4hostBaseCrAddr;
 	uint32_t u4DmaCfgCrAddr = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfgValue;
+	union WPDMA_GLO_CFG_STRUCT GloCfgValue = {0};
 
 	for (idx = 0; idx < u4DmaNum; idx++) {
 		if (enum_wfdma_type == WFDMA_TYPE_HOST)

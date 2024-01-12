@@ -2441,7 +2441,7 @@ u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
 	int32_t round, int32_t wait_us)
 {
 	int32_t i = 0;
-	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	union WPDMA_GLO_CFG_STRUCT GloCfg = {0};
 
 	do {
 		kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
