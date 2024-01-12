@@ -890,7 +890,7 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 #define KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Port)
 #else /* CFG_TX_DIRECT_VIA_HIF_THREAD */
 #define KAL_HIF_TXDATAQ_LOCK_DECLARATION() \
-	unsigned long __ulHifTxDataQFlags
+	unsigned long __ulHifTxDataQFlags = 0
 
 #define KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port) \
 	kalAcquireHifTxDataQLock(prHifInfo, u4Port, &__ulHifTxDataQFlags)
