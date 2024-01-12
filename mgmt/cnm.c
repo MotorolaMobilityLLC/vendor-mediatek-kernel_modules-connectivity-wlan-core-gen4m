@@ -860,7 +860,10 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
 			/* Find matched request and check
 			 * if it is being served.
 			 */
-			if (prPendingMsg->ucTokenID == prMsgChAbort->ucTokenID) {
+			if ((prPendingMsg->ucTokenID ==
+				prMsgChAbort->ucTokenID) &&
+				(prPendingMsg->ucBssIndex ==
+				prMsgChAbort->ucBssIndex)) {
 				LINK_REMOVE_KNOWN_ENTRY(
 					&g_rDbdcInfo.rPendingMsgList,
 					&prPendingMsg->rMsgHdr.rLinkEntry);

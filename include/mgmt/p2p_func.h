@@ -312,6 +312,8 @@ u_int8_t p2pFuncIsAPMode(IN struct P2P_CONNECTION_SETTINGS *prP2pConnSettings);
 
 u_int8_t p2pFuncIsDualAPMode(IN struct ADAPTER *prAdapter);
 
+u_int8_t p2pFuncIsDualGOMode(IN struct ADAPTER *prAdapter);
+
 void
 p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prP2pBssInfo,

@@ -33,9 +33,11 @@ void p2MldBssUninit(struct ADAPTER *prAdapter);
 
 #endif
 
-void p2pLinkInitRoleFsm(IN struct ADAPTER *prAdapter);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter);
 
-void p2pLinkUninitRoleFsm(IN struct ADAPTER *prAdapter);
+void p2pLinkUninitGCRole(IN struct ADAPTER *prAdapter);
+#endif
 
 void p2pTargetBssDescResetConnecting(
 	IN struct ADAPTER *prAdapter,
@@ -116,5 +118,8 @@ uint16_t bssAssignAssocID(IN struct STA_RECORD *prStaRec);
 void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet);
 #endif
+
+void p2pLinkStaRecFree(IN struct ADAPTER *prAdapter,
+	IN struct STA_RECORD *prStaRec);
 
 #endif /* !_P2P_MLO_H */

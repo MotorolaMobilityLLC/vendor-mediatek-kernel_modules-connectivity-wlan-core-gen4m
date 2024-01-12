@@ -573,6 +573,8 @@ void ehtRlmRecCapInfo(
 		return;
 	}
 
+	DBGLOG(RLM, TRACE, "\n");
+
 	memcpy(prStaRec->ucEhtMacCapInfo, prEhtCap->ucEhtMacCap,
 		EHT_MAC_CAP_BYTE_NUM);
 	memcpy(prStaRec->ucEhtPhyCapInfo, prEhtCap->ucEhtPhyCap,

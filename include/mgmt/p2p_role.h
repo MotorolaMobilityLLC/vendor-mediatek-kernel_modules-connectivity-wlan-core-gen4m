@@ -239,6 +239,7 @@ struct MSG_P2P_CSA_DONE {
 struct MSG_P2P_DEL_IFACE {
 	struct MSG_HDR rMsgHdr;
 	uint8_t ucRoleIdx;
+	enum ENUM_IFTYPE eIftype;
 };
 
 struct P2P_STATION_INFO {

@@ -157,6 +157,7 @@ int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 		    (prGlueInfo->prP2PInfo[u4Idx]->aprRoleHandler == ndev)) {
 			*pucRoleIdx = (uint8_t) u4Idx;
 			i4Ret = 0;
+			break;
 		}
 	}
 #endif
@@ -396,20 +397,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prP2pInfo->prWdev = prWdev;
 
 		/* 4.2 fill hardware address */
-		COPY_MAC_ADDR(rMacAddr, prAdapter->rMyMacAddr);
+		COPY_MAC_ADDR(rMacAddr,
+			prAdapter->rWifiVar.aucInterfaceAddress[u4Idx]);
 		if (prGlueInfo->prAdapter->rWifiVar.ucP2pShareMacAddr &&
 			(type == NL80211_IFTYPE_P2P_CLIENT
 			|| type == NL80211_IFTYPE_P2P_GO)) {
 			rMacAddr[0] = gPrP2pDev[0]->dev_addr[0];
-		} else {
-			/* change to local administrated address */
-			rMacAddr[0] |= 0x2;
-			if (u4Idx > 0)
-				rMacAddr[0] ^= u4Idx << 2;
-			else
-				rMacAddr[0] ^=
-					prGlueInfo->prAdapter
-						->prP2pInfo->u4DeviceNum << 2;
 		}
 		kalMemCopy(prNewNetDevice->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prNewNetDevice->perm_addr, rMacAddr, ETH_ALEN);
@@ -663,6 +656,27 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	} else {
 		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
 		prP2pDelIfaceMsg->ucRoleIdx = u4Idx;
+		switch (wdev->iftype) {
+		case NL80211_IFTYPE_P2P_CLIENT:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			prP2pDelIfaceMsg->eIftype = IFTYPE_P2P_CLIENT;
+			break;
+		case NL80211_IFTYPE_STATION:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
+			prP2pDelIfaceMsg->eIftype = IFTYPE_STATION;
+			break;
+		case NL80211_IFTYPE_AP:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
+			prP2pDelIfaceMsg->eIftype = IFTYPE_AP;
+			break;
+		case NL80211_IFTYPE_P2P_GO:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
+			prP2pDelIfaceMsg->eIftype = IFTYPE_P2P_GO;
+			break;
+		default:
+			prP2pDelIfaceMsg->eIftype = IFTYPE_P2P_DEVICE;
+			break;
+		}
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
@@ -3090,7 +3104,9 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 		kalMemCopy(prConnReqMsg->aucIEBuf, sme->ie, sme->ie_len);
 		prConnReqMsg->u4IELen = sme->ie_len;
 
-		DBGLOG(REQ, INFO, "sme->auth_type=%x", sme->auth_type);
+		DBGLOG(REQ, INFO, "[%d] sme->auth_type=%x",
+			ucRoleIdx,
+			sme->auth_type);
 
 		switch (sme->auth_type) {
 		case NL80211_AUTHTYPE_OPEN_SYSTEM:
