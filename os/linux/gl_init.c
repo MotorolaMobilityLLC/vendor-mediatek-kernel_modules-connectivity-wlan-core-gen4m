@@ -2465,14 +2465,11 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			kalInitDevWakeup(prGlueInfo->prAdapter,
 				wiphy_dev(prWdev->wiphy));
 
-#if CFG_SUPPORT_PERSIST_NETDEV
-		if (prWdev->netdev->reg_state == NETREG_REGISTERED)
-			continue;
-#endif
-		if (register_netdev(prWdev->netdev) < 0) {
+		if (prWdev->netdev->reg_state != NETREG_REGISTERED &&
+		    register_netdev(prWdev->netdev) < 0) {
 			DBGLOG(INIT, ERROR,
-				"Register net_device %d failed\n",
-				0);
+				"Register net_device %d %p failed\n",
+				i4DevIdx, prWdev->netdev);
 			wlanClearDevIdx(prWdev->netdev);
 			break;
 		}
