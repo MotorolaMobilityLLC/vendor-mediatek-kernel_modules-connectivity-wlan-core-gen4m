@@ -4701,6 +4701,15 @@ void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
 				REASON_CODE_DISASSOC_INACTIVITY, TRUE);
 		}
 
+	} else {
+		struct EVENT_STA_AGING_TIMEOUT *prEventStaAgingTimeout;
+
+		prEventStaAgingTimeout = (struct EVENT_STA_AGING_TIMEOUT *)
+					 (prEvent->aucBuffer);
+
+		DBGLOG(NIC, INFO,
+			"Disable EVENT_ID_STA_AGING_TIMEOUT: STA[%u]\n",
+		    prEventStaAgingTimeout->ucStaRecIdx);
 	}
 	/* gDisStaAgingTimeoutDetection */
 }
