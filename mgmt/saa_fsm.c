@@ -1108,6 +1108,7 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetainedSwRfb = (struct SW_RFB *) NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t ucWlanIdx;
+	struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHdr;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	ucWlanIdx = prSwRfb->ucWlanIdx;
@@ -1160,6 +1161,15 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 				       "], Status Code = %d\n",
 				       MAC2STR(prStaRec->aucMacAddr),
 				       u2StatusCode);
+			}
+			/* Assoc Resp's BSSID doesn't match target, ignore */
+			prWlanMgmtHdr = (struct WLAN_MAC_MGMT_HEADER *)
+					(prSwRfb->pvHeader);
+			if (!EQUAL_MAC_ADDR(prWlanMgmtHdr->aucBSSID,
+					    prStaRec->aucMacAddr)) {
+				DBGLOG(SAA, ERROR, "Unknown BSSID\n");
+				rStatus = WLAN_STATUS_FAILURE;
+				prRetainedSwRfb = NULL;
 			}
 
 			/* Reset Send Auth/(Re)Assoc Frame Count */
