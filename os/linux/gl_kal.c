@@ -10660,9 +10660,15 @@ void kalTputFactorUpdate(struct ADAPTER *prAdapter)
 	DBGLOG(SW4, INFO,
 		"freq %s mask:hif %x, rx %x, main %x, ApFS=%d",
 		buf,
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		prAdapter->prGlueInfo->hif_thread->cpus_mask,
 		prAdapter->prGlueInfo->rx_thread->cpus_mask,
 		prAdapter->prGlueInfo->main_thread->cpus_mask,
+#else
+		0x0,
+		0x0,
+		0x0,
+#endif
 		prWifiVar->ucApForceSleep
 		);
 
