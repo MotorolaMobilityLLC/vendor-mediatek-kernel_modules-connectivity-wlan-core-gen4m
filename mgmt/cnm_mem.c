@@ -428,8 +428,9 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 				/* Return the start address of
 				 * allocated memory
 				 */
-				return (void *) (prBufInfo->pucBuf
+				pvMemory = (void *) (prBufInfo->pucBuf
 					+ (i << u4BlkSzInPower));
+				goto exit;
 			}
 
 			rRequiredBitmap <<= 1;
@@ -457,7 +458,6 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 		prMemTrack->pucFileAndLine = fileAndLine;
 		prMemTrack->u2CmdIdAndWhere = 0x0000;
 		pvMemory = (void *)(prMemTrack + 1);
-		kalMemZero(pvMemory, u4Length);
 	}
 #else
 	pvMemory = (void *) kalMemAlloc(u4Length, PHY_MEM_TYPE);
@@ -473,6 +473,9 @@ void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
 		GLUE_INC_REF_CNT(prAdapter->u4MemAllocDynamicCount);
 #endif
 
+exit:
+	if (pvMemory)
+		kalMemZero(pvMemory, u4Length);
 	return pvMemory;
 
 }	/* end of cnmMemAlloc() */
