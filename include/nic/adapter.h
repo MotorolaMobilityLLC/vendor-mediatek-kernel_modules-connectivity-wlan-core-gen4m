@@ -1298,6 +1298,9 @@ struct WIFI_VAR {
 	int32_t i4ThrmRadioOffTemp;
 	uint8_t aucThrmLvTxDuty[6];
 #endif
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	u_int8_t fgFwIdxLogTrans;
+#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 };
 
 /* cnm_timer module */
@@ -2141,6 +2144,10 @@ struct ADAPTER {
 	struct ABNORMAL_WAKEUP_STATISTIC rAbnormalWakeupStat;
 	u_int8_t ucRxDataMode;
 #endif
+
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	struct FW_LOG_IDX_DATA *prFwLogIdx;
+#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

@@ -69,15 +69,16 @@
 #define CR4_FWDL_SECTION_NUM   HIF_CR4_FWDL_SECTION_NUM
 #define IMG_DL_STATUS_PORT_IDX HIF_IMG_DL_STATUS_PORT_IDX
 
-#define DOWNLOAD_CONFIG_ENCRYPTION_MODE     BIT(0)
+#define DOWNLOAD_CONFIG_ENCRYPTION_MODE		BIT(0)
 #define DOWNLOAD_CONFIG_KEY_INDEX_MASK		BITS(1, 2)
 #define DOWNLOAD_CONFIG_KEY_INDEX_SHFT		(1)
-#define DOWNLOAD_CONFIG_RESET_OPTION        BIT(3)
+#define DOWNLOAD_CONFIG_RESET_OPTION		BIT(3)
 #define DOWNLOAD_CONFIG_WORKING_PDA_OPTION	BIT(4)
-#define DOWNLOAD_CONFIG_VALID_RAM_ENTRY	    BIT(5)
-#define DOWNLOAD_CONFIG_ENCRY_MODE_SEL	    BIT(6) /* 0 - AES, 1 - SCRAMBLE */
+#define DOWNLOAD_CONFIG_VALID_RAM_ENTRY		BIT(5)
+#define DOWNLOAD_CONFIG_ENCRY_MODE_SEL		BIT(6) /* 0: AES, 1: SCRAMBLE */
 #define DOWNLOAD_CONFIG_EMI			BIT(7)
-#define DOWNLOAD_CONFIG_ACK_OPTION          BIT(31)
+#define DOWNLOAD_CONFIG_IDX_LOG			BIT(8)
+#define DOWNLOAD_CONFIG_ACK_OPTION		BIT(31)
 
 /*
  * FW feature set
@@ -97,6 +98,14 @@
 #define FW_FEATURE_OVERRIDE_RAM_ADDR	BIT(5)
 #define FW_FEATURE_NOT_DOWNLOAD	BIT(6)
 #define FW_FEATURE_DL_TO_EMI	BIT(7)
+
+/*
+ * FW Type
+ * 0 : None
+ * 1 : Index log data base
+ */
+#define FW_TYPE_NONE		0x0
+#define FW_TYPE_IDX_LOG_DATA	0x1
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 #define COMPRESSION_OPTION_OFFSET   4
@@ -196,6 +205,11 @@ struct FWDL_OPS_T {
 		uint32_t *pu4IdxFileLength,
 		enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	void (*constrcutIdxLogBin)(struct GLUE_INFO *prGlueInfo,
+		uint8_t **apucName);
+#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
 	uint32_t (*downloadPatch)(IN struct ADAPTER *prAdapter);
 	uint32_t (*downloadFirmware)(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_IMG_DL_IDX_T eDlIdx);
@@ -272,7 +286,8 @@ struct TAILER_REGION_FORMAT_T {
 	uint32_t u4Addr;
 	uint32_t u4Len;
 	uint8_t ucFeatureSet;
-	uint8_t aucReserved2[15];
+	uint8_t ucType;
+	uint8_t aucReserved2[14];
 };
 
 struct TAILER_FORMAT_T {

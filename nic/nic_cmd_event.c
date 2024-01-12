@@ -5124,7 +5124,12 @@ void nicEventDebugMsg(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
-	wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
+#if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgFwIdxLogTrans))
+		wlanFwLogIdxToStr(prAdapter, pucMsg, u2MsgSize);
+	else
+#endif
+		wlanPrintFwLog(pucMsg, u2MsgSize, ucMsgType, NULL);
 }
 
 void nicEventTdls(IN struct ADAPTER *prAdapter,

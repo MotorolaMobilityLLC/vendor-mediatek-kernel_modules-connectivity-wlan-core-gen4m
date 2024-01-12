@@ -11147,7 +11147,8 @@ kalSyncTimeToFW(IN struct ADAPTER *prAdapter, IN u_int8_t fgInitCmd)
 	else
 		kalSyncTimeToFwViaCmd(prAdapter, fgInitCmd, u4Sec, u4Usec);
 
-	if (rStatus == WLAN_STATUS_SUCCESS)
+	/* Must sync time in the 1st trigger time in the main thread */
+	if ((rStatus == WLAN_STATUS_SUCCESS) && (fgInitCmd != TRUE))
 		prAdapter->u4FWLastUpdateTime = u4Sec;
 	else
 		DBGLOG(INIT, WARN,
