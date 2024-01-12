@@ -136,8 +136,6 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 			prBssInfo->fg40mBwAllowed = TRUE;
 			prBssInfo->fgAssoc40mBwAllowed = TRUE;
 		}
-	} else {
-		prBssInfo->ucHtOpInfo1 = (uint8_t) CHNL_EXT_SCN;
 	}
 
 	/* Filled the VHT BW/S1/S2 and MCS rate set */
