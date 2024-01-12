@@ -4176,13 +4176,26 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
 }
 
 /**
+ * Lookup wlan index by matching band index.
+ */
+uint8_t getWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
+			 uint8_t ucWlanIdx)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	return mldGetWlanIdxByBand(prAdapter, ucHwBandIdx, ucWlanIdx);
+#else
+	return ucWlanIdx;
+#endif
+}
+
+/**
  * HW RX setting MLD_ID
  * if (is_QoS_frame)
  *     if (TID is even):
  *         MLD_ID = primary_MLD_ID
  *     else:
  *         MLD_ID = secondary_MLD_ID
- * else:
+ * else: (management frame goes here, need to distinguish by band)
  *     MLD_ID = primary_MLD_ID
  */
 uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,

@@ -4029,6 +4029,40 @@ struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	return prMldStarec;
 }
 
+uint8_t mldGetWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
+			    uint8_t ucWlanIdx)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_INFO *prBssInfo = NULL;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucBssIndex;
+	uint8_t ucStaIndex;
+
+	ucBssIndex = secGetBssIdxByWlanIdx(prAdapter, ucWlanIdx);
+	if (ucBssIndex != WTBL_RESERVED_ENTRY)
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (!prBssInfo)
+		return ucWlanIdx;
+
+	if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
+		return ucWlanIdx; /* hit */
+
+	/* check alternative */
+	ucStaIndex = secGetStaIdxByWlanIdx(prAdapter, ucWlanIdx);
+	/* primary */
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIndex);
+
+	/* link associated with the ucHwBandIdx */
+	prStaRec = mldGetStaRecByBandIdx(prAdapter, prStaRec, ucHwBandIdx);
+	if (prStaRec)
+		return prStaRec->ucIndex;
+
+#endif
+
+	return ucWlanIdx;
+}
+
 uint8_t mldGetPrimaryWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -4564,33 +4598,24 @@ struct STA_RECORD *mldGetStaRecByBandIdx(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec;
 	struct STA_RECORD *sta_rec = NULL;
 	struct BSS_INFO *prBssInfo;
-	int i;
 
 	if (!prStaRec)
 		return prStaRec;
 
-	/* TODO: get bss info by station record index */
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
-		return prStaRec;
-
 	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (!prMldStarec)
-		return sta_rec;
+		return prStaRec;
 
-	for (i = 0; i < CFG_STA_REC_NUM; i++) {
-		if ((prMldStarec->u4StaBitmap & BIT(i)) == 0)
-			continue;
-
-		sta_rec = cnmGetStaRecByIndex(prAdapter, i);
-		if (prStaRec) {
-			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-							prStaRec->ucBssIndex);
-			if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
-				break;
-		}
+	LINK_FOR_EACH_ENTRY(sta_rec, &prMldStarec->rStarecList,
+					rLinkEntryMld, struct STA_RECORD) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						  sta_rec->ucBssIndex);
+		if (prBssInfo && prBssInfo->eHwBandIdx == ucHwBandIdx)
+			return sta_rec;
 	}
-	return sta_rec;
+
+	/* not matched */
+	return prStaRec;
 }
 
 void mldCheckApRemoval(struct ADAPTER *prAdapter,
