@@ -1456,8 +1456,6 @@ void kalSetIntEvent(struct GLUE_INFO *pr);
 
 void kalSetDrvIntEvent(struct GLUE_INFO *pr);
 
-void kalSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit);
-
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetMdCrashEvent(struct GLUE_INFO *pr);

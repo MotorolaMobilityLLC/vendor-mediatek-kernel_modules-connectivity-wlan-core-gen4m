@@ -376,7 +376,6 @@ void asicConnac2xWfdmaDummyCrRead(
 		== 0 ? TRUE : FALSE;
 }
 
-
 void asicConnac2xWfdmaDummyCrWrite(
 	struct ADAPTER *prAdapter)
 {
@@ -391,36 +390,34 @@ void asicConnac2xWfdmaDummyCrWrite(
 		CONNAC2X_WFDMA_DUMMY_CR,
 		u4RegValue);
 }
-void asicConnac2xWfdmaReInit(
-	struct ADAPTER *prAdapter)
+
+static void asicConnac2xWfdmaReInitImpl(struct ADAPTER *prAdapter)
 {
-	u_int8_t fgResult;
-	struct BUS_INFO *prBusInfo;
-	struct SW_WFDMA_INFO *prSwWfdmaInfo;
-
-	prBusInfo = prAdapter->chip_info->bus_info;
-	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
-
-	/*WFDMA re-init flow after chip deep sleep*/
-	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
-	if (fgResult) {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-
-#if 0 /* Original Driver re-init Host WFDAM flow */
-	DBGLOG(INIT, INFO, "WFDMA host sw-reinit due to deep sleep\n");
-	halWpdmaInitRing(prAdapter->prGlueInfo, false);
-#else /* Do Driver re-init Host WFDMA flow with FW bk/sr solution */
+#if CFG_MTK_WIFI_WFDMA_BK_RS
 	{
+		struct BUS_INFO *prBusInfo;
+#if CFG_MTK_WIFI_SW_WFDMA
+		struct SW_WFDMA_INFO *prSwWfdmaInfo;
+#endif /* CFG_MTK_WIFI_SW_WFDMA */
 		struct GL_HIF_INFO *prHifInfo;
 		uint32_t u4Idx;
 
-		DBGLOG(INIT, TRACE, "WFDMA reinit after bk/sr(deep sleep)\n");
+		prBusInfo = prAdapter->chip_info->bus_info;
+#if CFG_MTK_WIFI_SW_WFDMA
+		prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+#endif /* CFG_MTK_WIFI_SW_WFDMA */
+
+		DBGLOG(INIT, TRACE,
+			"WFDMA reinit after bk/sr(deep sleep)\n");
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 		for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
+#if CFG_MTK_WIFI_SW_WFDMA
 			/* Swwfdma should not reset txring */
 			if (prSwWfdmaInfo->fgIsEnSwWfdma &&
 			    u4Idx == prSwWfdmaInfo->u4PortIdx)
 				continue;
+#endif /* CFG_MTK_WIFI_SW_WFDMA */
 
 			prHifInfo->TxRing[u4Idx].TxSwUsedIdx = 0;
 			prHifInfo->TxRing[u4Idx].u4UsedCnt = 0;
@@ -428,16 +425,44 @@ void asicConnac2xWfdmaReInit(
 		}
 
 		if (halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
-			RX_RING_EVT_IDX_1)) {
-			prAdapter->u4NoMoreRfb |= BIT(RX_RING_EVT_IDX_1);
+					    RX_RING_EVT_IDX_1)) {
+			prAdapter->u4NoMoreRfb |=
+				BIT(RX_RING_EVT_IDX_1);
+		}
+	}
+#else /* CFG_MTK_WIFI_WFDMA_BK_RS */
+	DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
+	halWpdmaInitRing(prAdapter->prGlueInfo, true);
+#endif /* CFG_MTK_WIFI_WFDMA_BK_RS */
+#elif defined(_HIF_USB)
+	{
+		struct mt66xx_chip_info *prChipInfo = NULL;
+
+		prChipInfo = prAdapter->chip_info;
+		if (prChipInfo->is_support_asic_lp &&
+		    prChipInfo->asicUsbInit)
+			prChipInfo->asicUsbInit(prAdapter, prChipInfo);
+
+		if (prChipInfo->is_support_wacpu) {
+			/* command packet forward to TX ring 17 (WMCPU) or
+			 *	  TX ring 20 (WACPU)
+			 */
+			asicConnac2xEnableUsbCmdTxRing(prAdapter,
+				CONNAC2X_USB_CMDPKT2WA);
 		}
 	}
 #endif
-	/* Write sleep mode magic num to dummy reg */
-	if (prBusInfo->setDummyReg)
-		prBusInfo->setDummyReg(prAdapter->prGlueInfo);
+}
 
-#endif /* _HIF_PCIE */
+void asicConnac2xWfdmaReInit(
+	struct ADAPTER *prAdapter)
+{
+	u_int8_t fgResult;
+
+	/*WFDMA re-init flow after chip deep sleep*/
+	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
+	if (fgResult) {
+		asicConnac2xWfdmaReInitImpl(prAdapter);
 		asicConnac2xWfdmaDummyCrWrite(prAdapter);
 	}
 }
@@ -2392,7 +2417,7 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 			} else {
 				DBGLOG(HAL, TRACE,
 					"FW trigger SwWfdma INT.\n");
-				kalSetHifIntEvent(prAdapter->prGlueInfo,
+				halSetHifIntEvent(prAdapter->prGlueInfo,
 						  HIF_FLAG_SW_WFDMA_INT_BIT);
 			}
 		}

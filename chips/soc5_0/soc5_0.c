@@ -419,6 +419,7 @@ struct BUS_INFO soc5_0_bus_info = {
 	.setRxRingHwAddr = soc5_0SetRxRingHwAddr,
 	.wfdmaAllocRxRing = soc5_0WfdmaAllocRxRing,
 
+#if CFG_MTK_WIFI_SW_WFDMA
 	.rSwWfdmaInfo = {
 		.rOps = {
 			.init = halSwWfdmaInit,
@@ -449,6 +450,7 @@ struct BUS_INFO soc5_0_bus_info = {
 		.u4DmaIdx = 0,
 		.u4MaxCnt = TX_RING_SIZE,
 	},
+#endif
 #endif /*_HIF_PCIE || _HIF_AXI */
 };
 

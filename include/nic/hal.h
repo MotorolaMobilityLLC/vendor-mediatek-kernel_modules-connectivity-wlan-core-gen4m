@@ -93,6 +93,27 @@ enum ERR_RECOVERY_STATE {
 	ERR_RECOV_STATE_NUM
 };
 
+enum ENUM_TX_RING_IDX {
+	TX_RING_DATA0_IDX_0 = 0,
+	TX_RING_DATA1_IDX_1,
+	TX_RING_DATA2_IDX_2,
+	TX_RING_CMD_IDX_3,
+	TX_RING_FWDL_IDX_4,
+	TX_RING_WA_CMD_IDX_5,
+};
+
+enum ENUM_RX_RING_IDX {
+	RX_RING_DATA_IDX_0 = 0,
+	RX_RING_EVT_IDX_1,
+	RX_RING_DATA1_IDX_2,
+	RX_RING_TXDONE0_IDX_3,
+	RX_RING_TXDONE1_IDX_4,
+	RX_RING_DATA2_IDX_5,
+	RX_RING_TXDONE2_IDX_6,
+	RX_RING_WAEVT0_IDX_5,
+	RX_RING_WAEVT1_IDX_6,
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1266,9 +1287,15 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo);
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter);
+#if CFG_MTK_MDDP_SUPPORT
 void halNotifyMdCrash(IN struct ADAPTER *prAdapter);
-bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt);
+#endif
+u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+void halUpdateBssTokenCnt(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+#if defined(_HIF_AXI)
+void halSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit);
+#endif
+void halDumpHifStats(IN struct ADAPTER *prAdapter);
 
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);

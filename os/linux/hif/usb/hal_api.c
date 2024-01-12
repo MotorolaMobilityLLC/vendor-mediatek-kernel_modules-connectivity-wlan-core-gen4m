@@ -1328,6 +1328,11 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO 
 	return TRUE;
 }
 
+u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	return FALSE;
+}
+
 uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo)
 {
@@ -1335,6 +1340,11 @@ uint8_t halTxRingDataSelect(IN struct ADAPTER *prAdapter,
 }
 
 void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
+{
+}
+
+void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
 {
 }
 
@@ -1368,6 +1378,10 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 {
 	return true;
+}
+
+void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
+{
 }
 
 void halRxProcessMsduReport(IN struct ADAPTER *prAdapter, IN OUT struct SW_RFB *prSwRfb)
@@ -1905,5 +1919,9 @@ bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
 		return TRUE;
 
 	return FALSE;
+}
+
+void halDumpHifStats(IN struct ADAPTER *prAdapter)
+{
 }
 

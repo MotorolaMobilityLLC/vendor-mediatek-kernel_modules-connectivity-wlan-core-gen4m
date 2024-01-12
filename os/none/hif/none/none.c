@@ -170,6 +170,11 @@ bool halHifSwInfoInit(IN struct ADAPTER *prAdapter)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
 
+void halHifSwInfoUnInit(IN struct GLUE_INFO *prGlueInfo)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
@@ -267,6 +272,11 @@ u_int8_t halTxIsDataBufEnough(struct ADAPTER *prAdapter,
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
 
+u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
 uint32_t halTxGetPageCount(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4FrameLength, IN u_int8_t fgIncludeDesc)
 {
@@ -330,4 +340,15 @@ bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
 	/* HIF owner should implement this function */
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 	return FALSE;
+}
+
+void halDumpHifStats(IN struct ADAPTER *prAdapter)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
+void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

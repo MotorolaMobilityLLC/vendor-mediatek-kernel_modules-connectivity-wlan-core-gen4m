@@ -526,6 +526,7 @@ struct BUS_INFO mt7961_bus_info = {
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
 	.u4DmaMask = 32,
+	.prDmashdlCfg = &rMT7961DmashdlCfg,
 	.pdmaSetup = asicConnac2xWpdmaConfig,
 	.enableInterrupt = mt7961EnableInterrupt,
 	.disableInterrupt = mt7961DisableInterrupt,

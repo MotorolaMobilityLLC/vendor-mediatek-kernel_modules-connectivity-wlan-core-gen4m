@@ -3313,6 +3313,7 @@ void halDisableSlpProt(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, CONN_HIF_PDMA_CSR_PDMA_SLP_PROT_ADDR, u4Val);
 }
 
+#if CFG_MTK_MDDP_SUPPORT
 void halNotifyMdCrash(IN struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -3336,8 +3337,9 @@ void halNotifyMdCrash(IN struct ADAPTER *prAdapter)
 			       MCU_INT_NOTIFY_MD_CRASH);
 	}
 }
+#endif
 
-bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
@@ -3352,7 +3354,7 @@ bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	if (ucBssIndex >= MAX_BSSID_NUM ||
 	    prTokenInfo->u4TxBssCnt[ucBssIndex] < prTokenInfo->u4MaxBssFreeCnt)
-		return false;
+		return FALSE;
 
 	kalMemZero(aucStrBuf, MAX_BSSID_NUM * 20);
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
@@ -3364,10 +3366,10 @@ bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	DBGLOG(HAL, TRACE, "Bss[%d] tx full, Cnt[%s]\n", ucBssIndex, aucStrBuf);
 
-	return true;
+	return TRUE;
 }
 
-void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt)
+static void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
@@ -3382,4 +3384,106 @@ void halSetTxRingBssTokenCnt(struct ADAPTER *prAdapter, uint32_t u4Cnt)
 
 	DBGLOG(HAL, INFO, "SetTxRingBssTokenCnt=[%u].\n",
 	       prTokenInfo->u4MaxBssFreeCnt);
+}
+
+void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct WIFI_VAR *prWifiVar;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+
+	if (prAdapter->rWifiVar.ucNSS == 1 && cnmIsMccMode(prAdapter))
+		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_MCC_MODE_TOKEN_CNT);
+	else if (prBssInfo->ucPhyTypeSet == PHY_TYPE_SET_802_11B) {
+		halSetTxRingBssTokenCnt(prAdapter, NIC_BSS_LOW_RATE_TOKEN_CNT);
+		prWifiVar->u4NetifStopTh = NIC_BSS_LOW_RATE_TOKEN_CNT;
+		prWifiVar->u4NetifStartTh = prWifiVar->u4NetifStopTh / 2;
+	} else {
+		halSetTxRingBssTokenCnt(prAdapter, HIF_TX_MSDU_TOKEN_NUM);
+		prWifiVar->u4NetifStopTh = prWifiVar->u4NetifStopThBackup;
+		prWifiVar->u4NetifStartTh = prWifiVar->u4NetifStartThBackup;
+	}
+}
+
+void halSetHifIntEvent(struct GLUE_INFO *pr, unsigned long ulBit)
+{
+	set_bit(ulBit, &pr->rHifInfo.ulIntFlag);
+	kalSetDrvIntEvent(pr);
+}
+
+void halDumpHifStats(IN struct ADAPTER *prAdapter)
+{
+	struct HIF_STATS *prHifStats;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_TX_RING *prTxRing;
+	struct RTMP_RX_RING *prRxRing;
+	struct RX_CTRL *prRxCtrl;
+	uint8_t i = 0;
+	uint32_t u4BufferSize = 512, pos = 0;
+	char *buf;
+
+	if (!prAdapter)
+		return;
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (prAdapter->prGlueInfo->fgIsEnableMon)
+		return;
+#endif
+	prHifStats = &prAdapter->rHifStats;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	if (time_before(jiffies, prHifStats->ulUpdatePeriod))
+		return;
+
+	buf = (char *) kalMemAlloc(u4BufferSize, VIR_MEM_TYPE);
+	if (!buf)
+		return;
+	kalMemZero(buf, u4BufferSize);
+
+	prHifStats->ulUpdatePeriod = jiffies +
+			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
+
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			"I[%u %u]",
+			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
+			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" T[%u %u %u / %u %u %u %u]",
+			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
+			GLUE_GET_REF_CNT(prHifStats->u4CmdTxCount),
+			GLUE_GET_REF_CNT(prHifStats->u4CmdTxdoneCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataInCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataTxCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataTxdoneCount),
+			GLUE_GET_REF_CNT(prHifStats->u4DataMsduRptCount));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" R[%u / %u]",
+			GLUE_GET_REF_CNT(prHifStats->u4DataRxCount),
+			GLUE_GET_REF_CNT(prHifStats->u4EventRxCount));
+	for (i = 0; i < NUM_OF_TX_RING; ++i) {
+		prTxRing = &prHifInfo->TxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " T_R[" : "",
+				prTxRing->u4UsedCnt,
+				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
+	}
+	for (i = 0; i < NUM_OF_RX_RING; ++i) {
+		prRxRing = &prHifInfo->RxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " R_R[" : "",
+				prRxRing->u4PendingCnt,
+				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
+	}
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" Tok[%u/%u] Rfb[%u/%u]",
+			prHifInfo->rTokenInfo.u4UsedCnt,
+			HIF_TX_MSDU_TOKEN_NUM,
+			prRxCtrl->rFreeSwRfbList.u4NumElem,
+			CFG_RX_MAX_PKT_NUM);
+	DBGLOG(HAL, INFO, "%s\n", buf);
+	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }

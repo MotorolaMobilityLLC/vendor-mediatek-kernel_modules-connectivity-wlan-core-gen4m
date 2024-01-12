@@ -298,6 +298,7 @@ struct BUS_INFO {
 	void (*halRestoreTxResource)(IN struct ADAPTER *prAdapter);
 	void (*halUpdateTxDonePendingCount)(IN struct ADAPTER *prAdapter,
 					    IN u_int8_t isIncr, IN uint8_t ucTc, IN uint16_t u2Cnt);
+	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
 };
 
 enum HIF_SDIO_INT_STS {

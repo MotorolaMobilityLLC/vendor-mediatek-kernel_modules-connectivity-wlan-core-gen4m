@@ -516,6 +516,7 @@ struct CHIP_DBG_OPS {
 		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 	void (*show_wfdma_wrapper_info)(IN struct ADAPTER *prAdapter,
 		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+#endif
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	int (*get_rx_rate_info)(
 		struct ADAPTER *prAdapter,
@@ -524,7 +525,6 @@ struct CHIP_DBG_OPS {
 		uint32_t *pu4RxMode,
 		uint32_t *pu4FrMode,
 		uint32_t *pu4Sgi);
-#endif
 #endif
 	void (*dumpPhyInfo)(struct ADAPTER *prAdapter);
 	int32_t (*showMibInfo)(struct ADAPTER *prAdapter,
