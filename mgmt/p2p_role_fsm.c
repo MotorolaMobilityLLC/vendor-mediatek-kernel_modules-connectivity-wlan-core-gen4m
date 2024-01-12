@@ -1684,7 +1684,9 @@ void p2pRoleFsmDelIfaceDone(
 
 	prAdapter->fgDelIface[ucRoleIdx] = FALSE;
 
-	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+	if (p2pGetMode() == RUNNING_P2P_DEV_MODE ||
+		(p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&
+		ucRoleIdx == 1)) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		/* don't use u4ConnType to check gc role because
 		 * upper layer might change iface fist

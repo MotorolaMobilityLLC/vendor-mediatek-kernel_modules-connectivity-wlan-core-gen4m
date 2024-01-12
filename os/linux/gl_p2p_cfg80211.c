@@ -208,6 +208,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct net_device *prNewNetDevice = NULL;
+	struct net_device *oriRoleHandler = NULL;
 	uint32_t u4Idx = 0;
 	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct GL_HIF_INFO *prHif = NULL;
@@ -263,9 +264,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			/* Expect that only create the new dev with the p2p0 */
 			if (prP2pInfo == NULL)
 				continue;
-			if (prP2pInfo->aprRoleHandler ==
-					prP2pInfo->prDevHandler)
-				break;
+
 			if ((prP2pInfo->aprRoleHandler == NULL) &&
 				!prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx]) {
 				mtk_p2p_initsettings(prGlueInfo->prAdapter,
@@ -295,7 +294,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			return ERR_PTR(-EINVAL);
 		}
 
-		prP2pInfo = prGlueInfo->prP2PInfo[u4Idx];
+		oriRoleHandler = prP2pInfo->aprRoleHandler;
 
 		/* Alloc all resource here to avoid do unregister_netdev for
 		 * error case (kernel exception).
@@ -515,7 +514,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 	if (prNewNetDevice != NULL) {
 		free_netdev(prNewNetDevice);
-		prP2pInfo->aprRoleHandler = NULL;
+		prP2pInfo->aprRoleHandler = oriRoleHandler;
+		if (oriRoleHandler == NULL)
+			p2pRoleFsmUninit(prGlueInfo->prAdapter, u4Idx);
 	}
 
 	if (prWdev != NULL) {
@@ -648,6 +649,9 @@ int mtk_p2p_cfg80211_del_iface_impl(
 
 	/* Wait for kalSendCompleteAndAwakeQueue() complete */
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
+		prP2pInfo->aprRoleHandler = NULL;
+	else if (p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&
+		u4Idx == 1)
 		prP2pInfo->aprRoleHandler = NULL;
 	else
 		prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
