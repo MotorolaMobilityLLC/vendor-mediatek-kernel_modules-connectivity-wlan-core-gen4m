@@ -4152,7 +4152,12 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 		if (mbo) {
 			int u4lenParam = mbo->ucLength - 4;
 
-			if (u4lenParam > 0)
+			/* The mbo->ucLength is 8 bits value. So that,
+			 * its max value is 255. 255 - 4 = 251.
+			 * Avoid the overflow check for the signed &
+			 * unsigned operation.
+			 */
+			if ((u4lenParam > 0) && (u4lenParam <= 251))
 				reject = kalFindIeMatchMask(
 					OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT,
 					mbo->aucSubElements,
