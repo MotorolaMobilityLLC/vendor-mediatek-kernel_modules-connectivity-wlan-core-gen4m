@@ -1370,6 +1370,7 @@ struct mt66xx_chip_info {
 	void (*conninra_cb_register)(void);
 	void (*dumpwfsyscpupcr)(IN struct ADAPTER *prAdapter);
 	uint8_t* (*getCalResult)(OUT uint32_t *prCalSize);
+	u_int8_t is_support_nvram_fragment;
 };
 
 struct mt66xx_hif_driver_data {

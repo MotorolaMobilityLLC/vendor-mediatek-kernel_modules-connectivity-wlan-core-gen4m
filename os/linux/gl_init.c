@@ -98,7 +98,7 @@ struct semaphore g_halt_sem;
 int g_u4HaltFlag;
 u_int8_t g_fgNvramAvailable;
 
-uint8_t g_aucNvram[CFG_FILE_WIFI_REC_SIZE];
+uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -908,15 +908,17 @@ u16 wlanSelectQueue(struct net_device *dev,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
+static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
+	struct REG_INFO *prRegInfo)
 {
 	struct WIFI_CFG_PARAM_STRUCT *prNvramSettings;
 
 	ASSERT(prRegInfo);
+	ASSERT(prGlueInfo);
 
-	DBGLOG(INIT, INFO, "g_fgNvramAvailable = %u\n", g_fgNvramAvailable);
+	DBGLOG(INIT, INFO, "leo g_fgNvramAvailable = %u\n", g_fgNvramAvailable);
 	if (!g_fgNvramAvailable) {
-		DBGLOG(INIT, WARN, "Nvram not available\n");
+		DBGLOG(INIT, WARN, "leo Nvram not available\n");
 		return;
 	}
 
@@ -928,6 +930,8 @@ static void glLoadNvram(OUT struct REG_INFO *prRegInfo)
 		sizeof(g_aucNvram));
 		return;
 	}
+
+	prGlueInfo->fgNvramAvailable = TRUE;
 
 	prRegInfo->prNvramSettings =
 		(struct WIFI_CFG_PARAM_STRUCT *)&g_aucNvram[0];
@@ -1964,16 +1968,20 @@ const struct net_device_ops *wlanGetNdevOps(void)
 }
 #endif
 
-#if CFG_MTK_ANDROID_WMT
 #if CFG_WLAN_ASSISTANT_NVRAM
 static uint8_t wlanNvramBufHandler(void *ctx,
 			const char *buf,
 			uint16_t length)
 {
-	DBGLOG(INIT, INFO, "buf = %p, length = %u\n", buf, length);
-	if (buf == NULL || length <= 0 || length != sizeof(g_aucNvram))
+	DBGLOG(INIT, ERROR, "buf = %p, length = %u\n", buf, length);
+	if (buf == NULL || length <= 0)
 		return -EFAULT;
 
+	if (length > sizeof(g_aucNvram)) {
+		DBGLOG(INIT, ERROR, "is over nvrm size %d\n",
+			sizeof(g_aucNvram));
+		return -EINVAL;
+	}
 	if (copy_from_user(g_aucNvram, buf, length)) {
 		DBGLOG(INIT, ERROR, "copy nvram fail\n");
 		g_fgNvramAvailable = FALSE;
@@ -1983,7 +1991,6 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 	g_fgNvramAvailable = TRUE;
 	return 0;
 }
-#endif
 #endif
 
 static void wlanCreateWirelessDevice(void)
@@ -2159,11 +2166,9 @@ static void wlanCreateWirelessDevice(void)
 		prWdev[u4Idx]->wiphy = prWiphy;
 		gprWdev[u4Idx] = prWdev[u4Idx];
 	}
-#if CFG_MTK_ANDROID_WMT
 #if CFG_WLAN_ASSISTANT_NVRAM
 	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_NVRAM);
-#endif
 #endif
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
@@ -3546,7 +3551,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	nicpmWakeUpWiFi(prAdapter);
 
 	/* Load NVRAM content to REG_INFO_T */
-	glLoadNvram(*pprRegInfo);
+	glLoadNvram(prGlueInfo, *pprRegInfo);
 
 	/* kalMemCopy(&prGlueInfo->rRegInfo, prRegInfo,
 	 *            sizeof(REG_INFO_T));
