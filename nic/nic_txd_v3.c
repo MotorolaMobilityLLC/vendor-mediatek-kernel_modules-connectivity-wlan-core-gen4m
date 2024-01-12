@@ -254,6 +254,60 @@ void nic_txd_v3_fill_by_pkt_option(
 
 }
 
+static u_int8_t isMgmtFrameByDataQueue(struct MSDU_INFO *prMsduInfo)
+{
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	return (prMsduInfo->fgMgmtUseDataQ &&
+		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX);
+#else
+	return FALSE;
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
+}
+
+static uint8_t nicConnac3TxGetTxDestQueue(struct ADAPTER *prAdapter,
+				  struct MSDU_INFO *prMsduInfo,
+				  struct BSS_INFO *prBssInfo)
+{
+	uint8_t ucTarPort;
+	uint8_t ucTarQueue;
+	uint8_t ucWmmQueSet = 0;
+	uint8_t ucControlFlag = prMsduInfo->ucControlFlag;
+
+	if (likely(prBssInfo))
+		ucWmmQueSet = prBssInfo->ucWmmQueSet;
+	else
+		DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
+
+	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
+
+	if (ucTarPort == PORT_INDEX_MCU) {
+		if (ucControlFlag & MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE)
+			ucTarQueue = MCU_Q0_INDEX;
+		else
+			ucTarQueue = MCU_Q1_INDEX;
+#if (CFG_SUPPORT_FORCE_ALTX == 1)
+		/* All Connac3 projects have enabled this option, makes FW
+		 * accept value 17 (MCU_Q1_INDEX | MAC_TXQ_ALTX_0_INDEX)
+		 * for always TX.
+		 * Connac2 only handle 16 (MAC_TXQ_ALTX_0_INDEX) for always TX.
+		 * Keep this option just in case if some projects need to
+		 * disable always TX in the future.
+		 */
+		if (ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX)
+			ucTarQueue |= (uint8_t)MAC_TXQ_ALTX_0_INDEX;
+#endif /* CFG_SUPPORT_FORCE_ALTX == 1 */
+	} else { /* ucTarPort == PORT_INDEX_LMAC */
+		if (isMgmtFrameByDataQueue(prMsduInfo)) {
+			ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
+		} else {
+			ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+			ucTarQueue += ucWmmQueSet * WMM_AC_INDEX_NUM;
+		}
+	}
+
+	return ucTarQueue;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief In this function, we'll compose the Tx descriptor of the MSDU.
@@ -265,12 +319,9 @@ void nic_txd_v3_fill_by_pkt_option(
 * @retval VOID
 */
 /*----------------------------------------------------------------------------*/
-void nic_txd_v3_compose(
-	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
-	u_int32_t u4TxDescLength,
-	u_int8_t fgIsTemplate,
-	u_int8_t *prTxDescBuffer)
+void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
+			u_int32_t u4TxDescLength, u_int8_t fgIsTemplate,
+			u_int8_t *prTxDescBuffer)
 {
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
@@ -282,10 +333,8 @@ void nic_txd_v3_compose(
 	struct MLD_STA_RECORD *prMldSta;
 #endif
 	u_int32_t u4TxDescAndPaddingLength;
-	u_int8_t ucWmmQueSet = 0, ucTarQueue, ucTarPort;
+	u_int8_t ucTarQueue;
 	uint8_t ucEtherTypeOffsetInWord;
-	uint8_t fgIsALTXQueue = FALSE;
-	uint8_t fgForceSendQ0 = FALSE;
 	uint8_t ucControlFlag;
 
 #if CFG_TX_CUSTOMIZE_LTO
@@ -303,73 +352,12 @@ void nic_txd_v3_compose(
 
 	kalMemZero(prTxDesc, u4TxDescAndPaddingLength);
 
-	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
-
 	nicTxForceAmsduForCert(prAdapter, (uint8_t *)prTxDesc);
-
-	ucControlFlag = prMsduInfo->ucControlFlag;
 
 	/** DW0 **/
 	/* Packet Format */
-	if (prBssInfo) {
-		ucWmmQueSet = prBssInfo->ucWmmQueSet;
-		if (fgIsTemplate != TRUE
-			&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
-			&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
-			DBGLOG(RSN, ERROR,
-				"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
-				prMsduInfo->ucStaRecIndex,
-				ucWmmQueSet, prMsduInfo->ucWmmQueSet);
-		}
-	} else
-		DBGLOG(TX, ERROR, "prBssInfo is NULL\n");
-
-#if (CFG_SUPPORT_FORCE_ALTX == 1)
-	fgIsALTXQueue |= ucTarPort == PORT_INDEX_MCU &&
-		ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX;
-#endif /* CFG_SUPPORT_FORCE_ALTX == 1 */
-
-#if (CFG_TX_MGMT_BY_DATA_Q == 1)
-	fgIsALTXQueue |= prMsduInfo->fgMgmtUseDataQ &&
-		ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX;
-#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
-
-	fgForceSendQ0 = (ucControlFlag &
-		MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE);
-
-	if (fgIsALTXQueue) {
-		/* packet with always tx flag */
-		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
-		/* For CONNAC 3.0 FW, separate inband CMD to q0
-		 * mgmt frame(CMD) to q1.
-		 */
-		if (ucTarPort == PORT_INDEX_MCU &&
-		    prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
-			/* For cmd packet, ALTXQ(16) will send to q0,
-			 * due to hw just see bit 0:1, so if need send to CPU q1
-			 * and forward to ALTXQ, need set with ALTXQ(16) +
-			 * MCUQ1(0x1), FW have correpond change will revise Q
-			 * to ALTXQ(16).
-			 */
-			if (!fgForceSendQ0)
-				ucTarQueue |= 0x1;
-	} else {
-		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
-
-		if (ucTarPort == PORT_INDEX_LMAC)
-			ucTarQueue +=
-				(ucWmmQueSet * WMM_AC_INDEX_NUM);
-		/* For CONNAC 3.0 FW, separate inband CMD to q0
-		 * mgmt frame(CMD) to q1.
-		 */
-		else if (ucTarPort == PORT_INDEX_MCU &&
-		    prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
-			if (fgForceSendQ0)
-				ucTarQueue = 0x0;
-			else
-				ucTarQueue = 0x1;
-	}
-
+	ucTarQueue = nicConnac3TxGetTxDestQueue(prAdapter, prMsduInfo,
+						prBssInfo);
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
 
 	/* Packet Format */
@@ -638,6 +626,8 @@ void nic_txd_v3_compose(
 			prTxDesc, NIC_TX_DESC_PID_RESERVED);
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 	}
+
+	ucControlFlag = prMsduInfo->ucControlFlag;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* altx set TGID and force link */
