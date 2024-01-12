@@ -1588,6 +1588,9 @@ int32_t wlanOffAtReset(void);
 int32_t wlanOnAtReset(void);
 #endif
 
+u_int8_t wlanIsProbing(void);
+u_int8_t wlanIsRemoving(void);
+
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************

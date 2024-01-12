@@ -2322,6 +2322,9 @@ u_int8_t wlanIfCmdDbgEn(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgCmdDbgEn;
 
+	if (!prAdapter)
+		return FALSE;
+
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucCmdDbg))
 		fgCmdDbgEn = TRUE;
 	else

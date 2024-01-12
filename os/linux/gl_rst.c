@@ -133,6 +133,12 @@ u_int8_t fgIsResetOnEnd;
 u_int8_t fgIsDrvTriggerWholeChipReset;
 enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 u_int8_t fgIsRstPreventFwOwn;
+static uint32_t u4ProbeCount;
+#if CFG_CHIP_RESET_KO_SUPPORT
+static uint32_t u4RstCount;
+static uint32_t u4PowerOffCount;
+static u_int8_t fgIsPendingForReady;
+#endif
 #endif
 
 /*******************************************************************************
@@ -171,6 +177,10 @@ static void wait_core_dump_end(void);
 #endif /* CFG_CHIP_RESET_KO_SUPPORT */
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 #endif /* CFG_CHIP_RESET_SUPPORT */
+
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -291,7 +301,12 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 
 	fgIsRstPreventFwOwn = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
-
+	u4ProbeCount = 0;
+#if CFG_CHIP_RESET_KO_SUPPORT
+	u4RstCount = 0;
+	u4PowerOffCount = 0;
+	fgIsPendingForReady = FALSE;
+#endif
 #if CFG_WMT_RESET_API_SUPPORT
 	init_completion(&wifi_rst.halt_comp);
 	KAL_WAKE_LOCK_INIT(NULL, g_IntrWakeLock, "WLAN Reset");
@@ -308,6 +323,42 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 #endif
 #endif
 	wifi_coredump_init(prGlueInfo);
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+	resetCreateSerDbgFs(prGlueInfo);
+#endif
+	wifi_rst.fgIsInitialized = TRUE;
+}
+
+void glReseProbeRemoveDone(struct GLUE_INFO *prGlueInfo, int32_t i4Status,
+			   u_int8_t fgIsProbe)
+{
+	if (!prGlueInfo)
+		return;
+
+	if (fgIsProbe) {
+		u4ProbeCount++;
+		DBGLOG(INIT, WARN,
+			"[SER][L0] %s: probe count %d, status %d\n",
+			__func__, u4ProbeCount, i4Status);
+#if CFG_CHIP_RESET_KO_SUPPORT
+		if (i4Status == WLAN_STATUS_SUCCESS) {
+			send_reset_event(RESET_MODULE_TYPE_WIFI,
+					 RFSM_EVENT_PROBED);
+#if defined(_HIF_SDIO)
+			update_hif_info(HIF_INFO_SDIO_HOST,
+					prGlueInfo->rHifInfo.func);
+#endif
+		}
+	} else {
+		send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_REMOVED);
+	}
+
+	if (fgIsPendingForReady) {
+		fgIsPendingForReady = FALSE;
+		glResetUpdateFlag(TRUE);
+		send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_READY);
+#endif
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -326,6 +377,7 @@ void glResetUninit(void)
 	struct RESET_STRUCT *rst = &wifi_rst;
 #endif
 
+	wifi_rst.fgIsInitialized = FALSE;
 	wifi_coredump_deinit();
 
 #if CFG_WMT_RESET_API_SUPPORT
@@ -873,19 +925,22 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		    const uint8_t *pucFile, uint32_t u4Line)
 {
 	uint16_t i;
-#if (CFG_CHIP_RESET_KO_SUPPORT == 0)
 	struct CHIP_DBG_OPS *prChipDbg;
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
 	u_int8_t fgDrvOwn;
-#endif
 
+	if (wifi_rst.fgIsInitialized != TRUE)
+		return;
 	if (kalIsResetting()
 #if CFG_DC_USB_WOW_CALLBACK
 	|| prAdapter->prGlueInfo->rHifInfo.fgUsbShutdown
 #endif
 	)
 		return;
+	if ((u4RstFlag & RST_FLAG_DO_WHOLE_RESET) ||
+	    (u4RstFlag & RST_FLAG_DO_L0P5_RESET))
+		glResetUpdateFlag(TRUE);
 	dump_stack();
 
 	if (eResetReason >= 0 && eResetReason < RST_REASON_MAX)
@@ -905,13 +960,25 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 
 #if CFG_CHIP_RESET_KO_SUPPORT
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
+		KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
+		if (prAdapter->eWfsysResetState != WFSYS_RESET_STATE_IDLE) {
+			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+				SPIN_LOCK_WFSYS_RESET);
+			DBGLOG(INIT, ERROR, "Ignore L0 during L0.5\n");
+			return;
+		}
+		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
+			SPIN_LOCK_WFSYS_RESET);
+
 		glResetUpdateFlag(TRUE);
+		fgSimplifyResetFlow = FALSE;
 		send_reset_event(RESET_MODULE_TYPE_WIFI,
 				 RFSM_EVENT_TRIGGER_RESET);
 
 		return;
 	}
-#else
+#endif
 
 	if (prAdapter == NULL)
 		prAdapter = wifi_rst.prGlueInfo->prAdapter;
@@ -972,7 +1039,6 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
 					     SER_SET_L1_RECOVER, 0);
 	}
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1117,6 +1183,7 @@ POSTPONE:
 FAIL:
 	DBGLOG(INIT, ERROR, "[SER][L0.5] Reset fail !!!!\n");
 
+	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 	glResetUpdateFlag(FALSE);
 
 	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_L0P5_FAIL);
@@ -1246,10 +1313,31 @@ static void mtk_wifi_reset(struct work_struct *work)
 #if CFG_CHIP_RESET_KO_SUPPORT
 void resetkoNotifyFunc(unsigned int event, void *data)
 {
+	uint32_t u4Tick;
+
 	DBGLOG(INIT, INFO, "%s: %d\n", __func__, event);
-	if (event == MODULE_NOTIFY_PRE_RESET)
-		send_reset_event(RESET_MODULE_TYPE_WIFI,
-				 RFSM_EVENT_L0_RESET_READY);
+	if (wifi_rst.fgIsInitialized == FALSE) {
+		DBGLOG(INIT, WARN, "%s: reset deinited\n", __func__);
+		return;
+	}
+	if (event == MODULE_NOTIFY_PRE_POWER_OFF) {
+		if (wlanIsProbing() || wlanIsRemoving()) {
+			fgIsPendingForReady = TRUE;
+		} else {
+			fgSimplifyResetFlow = FALSE;
+			glResetUpdateFlag(TRUE);
+			send_reset_event(RESET_MODULE_TYPE_WIFI,
+					 RFSM_EVENT_READY);
+		}
+	} else if (event == MODULE_NOTIFY_RESET_DONE) {
+		u4RstCount++;
+		DBGLOG(INIT, INFO, "%s: reset count %d\n",
+			__func__, u4RstCount);
+	} else if (event == MODULE_NOTIFY_POWER_OFF_DONE) {
+		u4PowerOffCount++;
+		DBGLOG(INIT, INFO, "%s: power off count %d\n",
+			__func__, u4PowerOffCount);
+	}
 }
 
 void resetkoReset(void)
@@ -2255,6 +2343,218 @@ int32_t BT_rst_L0_notify_WF_2(int32_t reserved)
 EXPORT_SYMBOL(BT_rst_L0_notify_WF_2);
 #endif
 #endif
+
+#endif
+
+#if (CFG_SUPPORT_SER_DEBUGFS == 1)
+static struct dentry *serDbgFsDir;
+
+static int ser_dbgfs_read_dummy(void *data, uint64_t *val)
+{
+	*val = (kalIsResetting() == FALSE) ? 0 : 1;
+	return 0;
+
+}
+
+static int ser_dbgfs_L0_reset(void *data, uint64_t val)
+{
+	if (wifi_rst.prGlueInfo == NULL)
+		return 0;
+	if (val != 1)
+		return 0;
+
+	kalRemoveProbe(wifi_rst.prGlueInfo);
+
+	return 0;
+}
+DEFINE_SIMPLE_ATTRIBUTE(fops_L0_reset,
+				     ser_dbgfs_read_dummy,
+				     ser_dbgfs_L0_reset,
+				     "%llu\n");
+
+static int ser_dbgfs_power_ctl(void *data, uint64_t val)
+{
+	if (wifi_rst.prGlueInfo == NULL)
+		return 0;
+
+	if (val == 0)
+		send_reset_event(RESET_MODULE_TYPE_WIFI,
+				 RFSM_EVENT_TRIGGER_POWER_OFF);
+	else
+		send_reset_event(RESET_MODULE_TYPE_WIFI,
+				 RFSM_EVENT_TRIGGER_POWER_ON);
+
+	return 0;
+}
+DEFINE_SIMPLE_ATTRIBUTE(fops_power_ctl,
+				     ser_dbgfs_read_dummy,
+				     ser_dbgfs_power_ctl,
+				     "%llu\n");
+
+static int ser_dbgfs_fw_assert(void *data, uint64_t val)
+{
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint32_t u4BufLen = 0;
+
+	if (wifi_rst.prGlueInfo == NULL)
+		return 0;
+	if (val != 1)
+		return 0;
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rChipConfigInfo.u2MsgSize = kalStrnLen("assert", CHIP_CONFIG_RESP_SIZE);
+	kalStrnCpy(rChipConfigInfo.aucCmd,
+		   "assert", CHIP_CONFIG_RESP_SIZE - 1);
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+
+	kalIoctl(wifi_rst.prGlueInfo, wlanoidSetChipConfig,
+		&rChipConfigInfo, sizeof(rChipConfigInfo),
+		&u4BufLen);
+
+	return 0;
+}
+DEFINE_SIMPLE_ATTRIBUTE(fops_fw_assert,
+				     ser_dbgfs_read_dummy,
+				     ser_dbgfs_fw_assert,
+				     "%llu\n");
+
+static int ser_dbgfs_conninfra_hang(void *data, uint64_t val)
+{
+	struct CMD_ACCESS_REG rCmdAccessReg = {0};
+	uint32_t u4BufLen = 0;
+
+	if (wifi_rst.prGlueInfo == NULL)
+		return 0;
+	if (val != 1)
+		return 0;
+
+	rCmdAccessReg.u4Address = 0x70028438;
+	rCmdAccessReg.u4Data = 0;
+
+	kalIoctl(wifi_rst.prGlueInfo, wlanoidSetMcrWrite,
+		 &rCmdAccessReg, sizeof(rCmdAccessReg),
+		 &u4BufLen);
+
+	rCmdAccessReg.u4Address = 0x70070000;
+	rCmdAccessReg.u4Data = 0;
+	kalIoctl(wifi_rst.prGlueInfo, wlanoidQueryMcrRead,
+		 &rCmdAccessReg, sizeof(rCmdAccessReg),
+		 &u4BufLen);
+
+	return 0;
+
+}
+DEFINE_SIMPLE_ATTRIBUTE(fops_conninfra_hang,
+				     ser_dbgfs_read_dummy,
+				     ser_dbgfs_conninfra_hang,
+				     "%llu\n");
+
+
+#if defined(_HIF_USB)
+static int ser_dbgfs_bus_hang(void *data, uint64_t val)
+{
+	struct CMD_ACCESS_REG rCmdAccessReg = {0};
+	uint32_t u4BufLen = 0;
+
+	if (wifi_rst.prGlueInfo == NULL)
+		return 0;
+	if (val != 1)
+		return 0;
+
+	rCmdAccessReg.u4Address = 0x74011804;
+	rCmdAccessReg.u4Data = 0x00000001;
+
+	kalIoctl(wifi_rst.prGlueInfo, wlanoidSetMcrWrite,
+		 &rCmdAccessReg, sizeof(rCmdAccessReg),
+		 &u4BufLen);
+
+	return 0;
+}
+DEFINE_SIMPLE_ATTRIBUTE(fops_bus_hang,
+				     ser_dbgfs_read_dummy,
+				     ser_dbgfs_bus_hang,
+				     "%llu\n");
+
+static int ser_dbgfs_bus_disconnect(void *data, uint64_t val)
+{
+	struct CMD_ACCESS_REG rCmdAccessReg = {0};
+	uint32_t u4BufLen = 0;
+
+	if (wifi_rst.prGlueInfo == NULL)
+		return 0;
+	if (val != 1)
+		return 0;
+
+	rCmdAccessReg.u4Address = 0x74013E00;
+	rCmdAccessReg.u4Data = 0x00000001;
+
+	kalIoctl(wifi_rst.prGlueInfo, wlanoidSetMcrWrite,
+		 &rCmdAccessReg, sizeof(rCmdAccessReg),
+		 &u4BufLen);
+
+	return 0;
+}
+DEFINE_SIMPLE_ATTRIBUTE(fops_bus_disconnect,
+				     ser_dbgfs_read_dummy,
+				     ser_dbgfs_bus_disconnect,
+				     "%llu\n");
+
+#endif
+
+int32_t resetCreateSerDbgFs(struct GLUE_INFO *prGlueInfo)
+{
+	serDbgFsDir = debugfs_create_dir("mtk_ser_dbgfs", NULL);
+	if (!serDbgFsDir) {
+		DBGLOG(INIT, ERROR,
+			"serDbgFsDir is null for mtk_ser_dbgfs\n");
+		return -1;
+	}
+
+	/* /sys/kernel/debug/mtk_ser_dbgfs/L0_reset, mode: wr */
+	if (!debugfs_create_file("L0_reset",
+				 0644, serDbgFsDir, prGlueInfo,
+				 &fops_L0_reset))
+		DBGLOG(INIT, WARN,
+			"create L0_reset dgbfs fail\n");
+
+	/* /sys/kernel/debug/mtk_ser_dbgfs/power_ctl, mode: wr */
+	if (!debugfs_create_file("power_ctl",
+				 0644, serDbgFsDir, prGlueInfo,
+				 &fops_power_ctl))
+		DBGLOG(INIT, WARN,
+			"create power_ctl dgbfs fail\n");
+
+	/* /sys/kernel/debug/mtk_ser_dbgfs/fw_assert, mode: wr */
+	if (!debugfs_create_file("fw_assert",
+				 0644, serDbgFsDir, prGlueInfo,
+				 &fops_fw_assert))
+		DBGLOG(INIT, WARN,
+			"create fw_assert dgbfs fail\n");
+
+	/* /sys/kernel/debug/mtk_ser_dbgfs/conninfra_hang, mode: wr */
+	if (!debugfs_create_file("conninfra_hang",
+				 0644, serDbgFsDir, prGlueInfo,
+				 &fops_conninfra_hang))
+		DBGLOG(INIT, WARN,
+			"create conninfra_hang dgbfs fail\n");
+
+#if defined(_HIF_USB)
+	/* /sys/kernel/debug/mtk_ser_dbgfs/bus_hang, mode: wr */
+	if (!debugfs_create_file("bus_hang",
+				 0644, serDbgFsDir, prGlueInfo,
+				 &fops_bus_hang))
+		DBGLOG(INIT, WARN,
+			"create bus_hang dgbfs fail\n");
+
+	/* /sys/kernel/debug/mtk_ser_dbgfs/bus_disconnect, mode: wr */
+	if (!debugfs_create_file("bus_disconnect",
+				 0644, serDbgFsDir, prGlueInfo,
+				 &fops_bus_disconnect))
+		DBGLOG(INIT, WARN,
+			"create bus_disconnect dgbfs fail\n");
+#endif
+	return 0;
+}
 
 #endif
 
