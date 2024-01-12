@@ -12953,10 +12953,10 @@ int priv_driver_set_ap_axmode(
 		ucMode = (uint8_t) u4Parse;
 
 		ucApHe = ucMode;
-		if (ucApHe > FEATURE_FORCE_ENABLED)
+		if (ucApHe > FEATURE_DISABLED)
 			ucApHe = FEATURE_FORCE_ENABLED;
 		ucApEht = (ucMode >> 1);
-		if (ucApEht > FEATURE_FORCE_ENABLED)
+		if (ucApEht > FEATURE_DISABLED)
 			ucApEht = FEATURE_FORCE_ENABLED;
 
 		DBGLOG(REQ, STATE, "ucApHe:%d, ucApEht: %d\n",
