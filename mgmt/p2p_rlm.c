@@ -130,7 +130,12 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	 */
 	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
 
-		prBssInfo->eBssSCO = rlmGetSco(prAdapter, prBssInfo);
+		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+			prBssInfo->eBssSCO =
+				rlmGetScoForAP(prAdapter, prBssInfo);
+		else
+			prBssInfo->eBssSCO =
+				rlmGetSco(prAdapter, prBssInfo);
 
 		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
 			prBssInfo->fg40mBwAllowed = TRUE;
