@@ -2817,6 +2817,9 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	uint32_t waitRet = 0;
+#if CFG_SUPPORT_802_11W
+	uint8_t fgWpa3Op = FALSE;
+#endif
 	struct BSS_INFO *prBssInfo = NULL;
 	struct P2P_ROLE_FSM_INFO *fsm = NULL;
 
@@ -2865,11 +2868,6 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			GET_BSS_INFO_BY_INDEX(
 			prGlueInfo->prAdapter,
 			ucBssIdx);
-
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prDisconnectMsg,
-			MSG_SEND_METHOD_BUF);
 #if CFG_SUPPORT_802_11W
 		/* if encrypted deauth frame
 			* is in process, pending remove key
@@ -2881,6 +2879,16 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			TRUE) &&
 			(prBssInfo->u4RsnSelectedAKMSuite ==
 			RSN_AKM_SUITE_SAE)) {
+			fgWpa3Op = TRUE;
+			reinit_completion(&fsm->rDeauthComp);
+		}
+#endif
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prDisconnectMsg,
+			MSG_SEND_METHOD_BUF);
+#if CFG_SUPPORT_802_11W
+		if (fgWpa3Op) {
 			waitRet = wait_for_completion_timeout(
 				&fsm->rDeauthComp,
 				MSEC_TO_JIFFIES(1000));
@@ -2891,7 +2899,6 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 				DBGLOG(RSN, TRACE, "complete\n");
 		}
 #endif
-
 		i4Rslt = 0;
 	} while (FALSE);
 
