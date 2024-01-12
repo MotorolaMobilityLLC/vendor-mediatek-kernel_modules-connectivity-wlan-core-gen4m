@@ -2059,5 +2059,8 @@ void kalSetThreadSchPolicyPriority(IN struct GLUE_INFO *prGlueInfo);
 #define kal_fallthrough do {} while (0)  /* fallthrough */
 #endif
 
+#define kalIcsWrite(buf, size) \
+	wifi_ics_fwlog_write(buf, size)
+
 #endif /* _GL_KAL_H */
 
