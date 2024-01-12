@@ -434,6 +434,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.sw_ready_bit_offset = MT6632_SW_SYNC0_RDY_OFFSET,
 	.patch_addr = MT6632_PATCH_START_ADDR,
 	.is_support_cr4 = TRUE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = MT6632_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT6632_RX_DESC_LENGTH,
 	.init_evt_rxd_size = MT6632_RX_DESC_LENGTH,

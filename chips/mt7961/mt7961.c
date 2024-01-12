@@ -1478,6 +1478,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.patch_addr = MT7961_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = MT7961_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT7961_RX_DESC_LENGTH,
 	.init_evt_rxd_size = MT7961_RX_DESC_LENGTH,

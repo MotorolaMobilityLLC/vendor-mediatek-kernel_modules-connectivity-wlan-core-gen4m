@@ -577,6 +577,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.patch_addr = SOC7_0_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = SOC7_0_TX_DESC_APPEND_LENGTH,
 	.rxd_size = SOC7_0_RX_DESC_LENGTH,
 	.init_evt_rxd_size = SOC7_0_RX_DESC_LENGTH,

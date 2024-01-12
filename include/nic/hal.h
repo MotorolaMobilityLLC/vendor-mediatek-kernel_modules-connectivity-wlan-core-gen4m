@@ -606,8 +606,72 @@ do { \
 	     == (_checkItem << prChipInfo->sw_ready_bit_offset)) \
 		*_pfgResult = TRUE; \
 } while (0)
-#endif
+#endif /* CFG_MTK_WIFI_EN_SW_EMI_READ */
 
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+#define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
+do { \
+	struct mt66xx_chip_info *prChipInfo = NULL; \
+	uint32_t u4Value = _checkItem; \
+	int32_t i4Ret = -1; \
+	if (!_prAdapter->chip_info) \
+		ASSERT(0); \
+	*_pfgResult = FALSE; \
+	prChipInfo = _prAdapter->chip_info; \
+					\
+	if (!prChipInfo->sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].isValid) { \
+		DBGLOG(INIT, ERROR, \
+		"WiFi Off EMI is invalid, offset:[0x%08x].\n", \
+		prChipInfo->sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].offset);\
+		break; \
+	} \
+	i4Ret = emi_mem_read(prChipInfo, \
+			prChipInfo->\
+			sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].offset, \
+			&u4Value, \
+			sizeof(u4Value)); \
+	if (i4Ret != 0) {\
+		DBGLOG(INIT, ERROR, \
+		"Read WiFi off EMI offset:[0x%08x] failed.\n", \
+		prChipInfo->\
+		sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].offset); \
+	} else if (u4Value == prChipInfo->wifi_off_magic_num) { \
+		*_pfgResult = TRUE; \
+	} \
+} while (0)
+
+#define HAL_WIFI_FUNC_GET_STATUS(_prAdapter, _u4Result) \
+do { \
+	struct mt66xx_chip_info *prChipInfo = NULL; \
+	struct BUS_INFO *prBusInfo = NULL; \
+	uint32_t u4Value = 0; \
+	int32_t i4Ret = -1; \
+	if (!_prAdapter->chip_info || !_prAdapter->chip_info->bus_info) \
+		ASSERT(0); \
+	prChipInfo = _prAdapter->chip_info; \
+	prBusInfo = prChipInfo->bus_info; \
+	\
+	if (!prChipInfo->sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].isValid) { \
+		HAL_RMCR_RD(ONOFF_READ, _prAdapter, \
+		       prChipInfo->sw_sync0, &_u4Result); \
+	} else { \
+		i4Ret = emi_mem_read(prChipInfo, \
+			prChipInfo->\
+			sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].offset, \
+			&_u4Result, \
+			sizeof(_u4Result)); \
+		if (i4Ret != 0) \
+			DBGLOG(INIT, ERROR, \
+			"Read EMI offset: [0x%08x] failed.\n", \
+			prChipInfo->\
+			sw_sync_emi_info[SW_SYNC_ON_OFF_TAG].offset); \
+	} \
+	if (prBusInfo->getMailboxStatus) {	\
+		prBusInfo->getMailboxStatus(_prAdapter, &u4Value);	\
+		DBGLOG(INIT, INFO, "Mailbox: 0x%x\n", u4Value); \
+	} \
+} while (0)
+#else /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 0 */
 #define HAL_WIFI_FUNC_OFF_CHECK(_prAdapter, _checkItem, _pfgResult) \
 do { \
 	HAL_WIFI_FUNC_READY_CHECK(_prAdapter, _checkItem, _pfgResult); \
@@ -630,6 +694,7 @@ do { \
 		DBGLOG(INIT, INFO, "Mailbox: 0x%x\n", u4Value); \
 	} \
 } while (0)
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 
 #define HAL_INTR_DISABLE(_prAdapter)
 

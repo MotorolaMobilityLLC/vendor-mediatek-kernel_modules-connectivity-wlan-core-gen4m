@@ -871,6 +871,8 @@ enum HIF_DEV_REG_REASON mt7935ValidMmioReadReason[] = {
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+static struct sw_sync_emi_info mt7935_sw_sync_emi_info[SW_SYNC_TAG_NUM];
+
 struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.bus_info = &mt7935_bus_info,
 #if CFG_ENABLE_FW_DOWNLOAD
@@ -892,6 +894,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
 	.is_support_dmashdl_lite = TRUE,
+	.sw_sync_emi_info = mt7935_sw_sync_emi_info,
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	.wifi_off_magic_num = MT7935_WIFI_OFF_MAGIC_NUM,
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 #if defined(_HIF_PCIE)
 	.is_en_wfdma_no_mmio_read = FALSE,
 #endif /* _HIF_PCIE */
@@ -3057,100 +3063,32 @@ static void set_cbinfra_remap(struct ADAPTER *ad)
 
 static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 {
-#if (0)
-#define MCU_IDLE		0x1D1E
-
-	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	struct mt66xx_chip_info *prChipInfo = NULL;
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
-
-#if CFG_MTK_FPGA_PLATFORM != 1
-	set_cbinfra_remap(ad);
-#endif
-
-#if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
-	rStatus = mt7935_mcu_reset(ad);
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		goto dump;
-#endif
-
-	while (TRUE) {
-		if (u4PollingCnt >= 1000) {
-			DBGLOG(INIT, ERROR, "timeout.\n");
-			rStatus = WLAN_STATUS_FAILURE;
-			goto dump;
-		}
-
-		HAL_RMCR_RD(ONOFF_READ, ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
-			&u4Value);
-		if (u4Value == MCU_IDLE)
-			break;
-
-		u4PollingCnt++;
-		kalUdelay(1000);
-	}
-
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-	if (connv3_ext_32k_on()) {
-		DBGLOG(INIT, ERROR, "connv3_ext_32k_on failed.\n");
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	prChipInfo = ad->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "NULL prChipInfo.\n");
 		rStatus = WLAN_STATUS_FAILURE;
-		goto dump;
+		goto exit;
 	}
-#endif
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 
-	if (ad->chip_info->coexpccifon)
-		ad->chip_info->coexpccifon(ad);
 
-dump:
-	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, ERROR, "u4Value: 0x%x\n",
-			u4Value);
-		mt7935_dumpWfsyscpupcr(ad);
-		mt7935_dumpPcGprLog(ad);
-		mt7935_dumpN45CoreReg(ad);
-		mt7935_dumpWfTopReg(ad);
-		mt7935_dumpWfBusReg(ad);
-
-		/* Clock detection for ULPOSC */
-		HAL_MCR_WR(ad,
-			   VLP_UDS_CTRL_CBTOP_ULPOSC_CTRL1_ADDR,
-			   0x06030138);
-		HAL_MCR_WR(ad,
-			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
-			   0x000f0000);
-		HAL_MCR_WR(ad,
-			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
-			   0x001f0000);
-		HAL_MCR_WR(ad,
-			   CB_CKGEN_TOP_CBTOP_ULPOSC_1_ADDR,
-			   0x011f0000);
-		kalUdelay(1);
-		HAL_RMCR_RD(ONOFF_DBG, ad,
-			   CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
-			   &u4Value);
-		DBGLOG(INIT, INFO,
-			"0x%08x=0x%08x\n",
-			CB_CKGEN_TOP_CBTOP_ULPOSC_2_ADDR,
-			u4Value);
-		HAL_RMCR_RD(ONOFF_DBG, ad,
-			   CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
-			   &u4Value);
-		DBGLOG(INIT, INFO,
-			"0x%08x=0x%08x\n",
-			CB_INFRA_SLP_CTRL_CB_INFRA_CRYPTO_TOP_MCU_OWN_ADDR,
-			u4Value);
-	}
-
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	kalMemZero(prChipInfo->sw_sync_emi_info,
+		sizeof(struct sw_sync_emi_info) * SW_SYNC_TAG_NUM);
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 exit:
 	return rStatus;
-#else
-	return 0;
-#endif
 }
 
 static void mt7935_mcu_deinit(struct ADAPTER *ad)

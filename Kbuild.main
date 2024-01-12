@@ -2079,6 +2079,16 @@ else
     ccflags-y += -DCFG_MTK_WIFI_SUPPORT_DSP_FWDL=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI), y)
+    ifeq ($(MTK_ANDROID_WMT), y)
+        ccflags-y += -DCFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI=1
+    else
+        ccflags-y += -DCFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI=0
+    endif
+else
+    ccflags-y += -DCFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_TX_HIF_CREDIT_FEATURE), y)
 ccflags-y += -DCFG_TX_HIF_CREDIT_FEATURE=1
 else

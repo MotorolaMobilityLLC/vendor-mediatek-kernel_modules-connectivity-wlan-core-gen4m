@@ -384,6 +384,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc2_1x1 = {
 	.sw_ready_bit_offset = SOC2_1X1_SW_SYNC0_RDY_OFFSET,
 	.patch_addr = SOC2_1X1_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = SOC2_1X1_TX_DESC_APPEND_LENGTH,
 	.rxd_size = SOC2_1X1_RX_DESC_LENGTH,
 	.init_evt_rxd_size = SOC2_1X1_RX_DESC_LENGTH,

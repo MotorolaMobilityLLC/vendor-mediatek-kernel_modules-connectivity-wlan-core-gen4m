@@ -697,6 +697,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 	.patch_addr = MT7925_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
+	.sw_sync_emi_info = NULL,
 	.txd_append_size = MT7925_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT7925_HIF_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT7925_RX_DESC_LENGTH,

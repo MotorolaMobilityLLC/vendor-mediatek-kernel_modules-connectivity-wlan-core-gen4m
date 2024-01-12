@@ -1124,6 +1124,9 @@ enum NIC_CAPABILITY_V2_TAG {
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
 	TAG_CAP_STATS_REG_MONTR_EMI_OFFSET = 0x23,
 #endif
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	TAG_CAP_SW_SYNC_BY_EMI = 0x25,
+#endif
 	TAG_CAP_TOTAL
 };
 
@@ -4466,6 +4469,12 @@ uint32_t nicCfgChipCapRedlInfo(struct ADAPTER *prAdapter,
 uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 		struct ADAPTER *prAdapter,
 		uint8_t *pucEventBuf);
+#endif
+
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+uint32_t nicCfgGetSwSyncEMIOffset(
+	struct ADAPTER *prAdapter,
+	uint8_t *pucEventBuf);
 #endif
 
 uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,

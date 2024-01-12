@@ -1262,6 +1262,13 @@ struct ENHANCE_MODE_DATA_STRUCT {
  *******************************************************************************
  */
 
+
+
+enum ENUM_SW_SYNC_BY_EMI_TAG {
+	SW_SYNC_ON_OFF_TAG,
+	SW_SYNC_TAG_NUM
+};
+
 enum ENUM_WIFI_FUNC {
 	WIFI_FUNC_INIT_DONE = BIT(0),
 	WIFI_FUNC_N9_DONE = BIT(1),
@@ -1435,6 +1442,12 @@ union WPDMA_GLO_CFG_STRUCT {
 #define MIN_TEMP_QUERY_TIME		(5 * 60 * 1000) /* ms */
 #define MAX_TEMP_THRESHOLD		(60 * 1000)
 
+struct sw_sync_emi_info {
+	uint32_t tag;
+	uint8_t isValid;
+	uint32_t offset;
+};
+
 struct thermal_sensor_info {
 	const char name[16];
 	const enum THERMAL_TEMP_TYPE type;
@@ -1472,6 +1485,14 @@ struct mt66xx_chip_info {
 	const unsigned int sw_sync0;	/* sw_sync0 address */
 	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
+	/* Pointer to array of emi info for host and FW to sync */
+	struct sw_sync_emi_info * const sw_sync_emi_info;
+#if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
+	/* Driver will polling this value when Wi-Fi off
+	 * if sync by EMI is supported.
+	 */
+	const uint32_t wifi_off_magic_num;
+#endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
 #if defined(_HIF_USB)
 	const unsigned int vdr_pwr_on; /* for USB polling pwr on vdr req done */
 	const unsigned int vdr_pwr_on_chk_bit; /* vdr req done check bit */
