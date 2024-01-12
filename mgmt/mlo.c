@@ -4056,8 +4056,7 @@ uint8_t mldGetWlanIdxByBand(struct ADAPTER *prAdapter, uint8_t ucHwBandIdx,
 	/* link associated with the ucHwBandIdx */
 	prStaRec = mldGetStaRecByBandIdx(prAdapter, prStaRec, ucHwBandIdx);
 	if (prStaRec)
-		return prStaRec->ucIndex;
-
+		return prStaRec->ucWlanIndex;
 #endif
 
 	return ucWlanIdx;
@@ -4331,41 +4330,6 @@ struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,
 	}
 
 	return NULL;
-}
-
-uint8_t mldGetBssIndexByHwBand(struct ADAPTER *prAdapter,
-	uint8_t ucHwBandIdx, uint8_t ucBssIndex)
-{
-	struct BSS_INFO *prBssInfo;
-	struct MLD_BSS_INFO *prMldBssInfo;
-	struct BSS_INFO *prCurrBssInfo = NULL;
-	struct LINK *prBssList = NULL;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo || prBssInfo->eHwBandIdx == ucHwBandIdx)
-		return ucBssIndex;
-
-	/* For mlo, swrfb wlanidx is already changed to primary link.
-	 * Using hw band to search correct link for btm response.
-	 */
-	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-	if (!prMldBssInfo)
-		return ucBssIndex;
-
-	prBssList = &prMldBssInfo->rBssList;
-	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
-			struct BSS_INFO) {
-		if (prCurrBssInfo->eHwBandIdx ==
-		    (enum ENUM_MBMC_BN) ucHwBandIdx) {
-			DBGLOG(ML, INFO,
-			       "Change from BssInfo%d(hwband=%d) -> BssInfo%d(hwband=%d)\n",
-			       prBssInfo->ucBssIndex, prBssInfo->eHwBandIdx,
-			       prCurrBssInfo->ucBssIndex, ucHwBandIdx);
-			return prCurrBssInfo->ucBssIndex;
-		}
-	}
-
-	return ucBssIndex;
 }
 
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,

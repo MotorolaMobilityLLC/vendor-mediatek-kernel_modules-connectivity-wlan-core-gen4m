@@ -461,9 +461,6 @@ struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo, uint8_t ucLinkIndex,
 	uint8_t fgPeerSta);
 
-uint8_t mldGetBssIndexByHwBand(struct ADAPTER *prAdapter,
-	uint8_t ucHwBandIdx, uint8_t ucBssIndex);
-
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 

@@ -1021,10 +1021,6 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	}
 
 	prRmRepParam->ucRspBssIndex = prBssInfo->ucBssIndex;
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prRmRepParam->ucRspBssIndex = mldGetBssIndexByHwBand(prAdapter,
-		prSwRfb->ucHwBandIdx, prBssInfo->ucBssIndex);
-#endif
 	prRspBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prRmRepParam->ucRspBssIndex);
 
