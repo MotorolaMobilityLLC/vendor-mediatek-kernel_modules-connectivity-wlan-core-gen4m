@@ -473,6 +473,24 @@ uint32_t wlanDownloadSectionV2(IN struct ADAPTER *prAdapter,
 			continue;
 
 		/* 2. config PDA */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+		if (eDlIdx == IMG_DL_IDX_BT_PATCH) {
+			struct FWDL_OPS_T *prFwDlOps;
+
+			prFwDlOps = prAdapter->chip_info->fw_dl_ops;
+			if (prFwDlOps->configBtImageSection)
+				if (prFwDlOps->configBtImageSection(
+					prAdapter, region) !=
+					WLAN_STATUS_SUCCESS) {
+				DBGLOG(INIT, ERROR,
+					"Firmware download configuration failed!\n");
+				u4Status = WLAN_STATUS_FAILURE;
+				goto out;
+			}
+		} else
+#endif
+#endif
 		if (wlanImageSectionConfig(prAdapter, region->img_dest_addr,
 			region->img_size, u4DataMode, eDlIdx) !=
 			WLAN_STATUS_SUCCESS) {
@@ -1079,11 +1097,11 @@ uint32_t wlanImageSectionConfig(
 	switch (eDlIdx) {
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	case IMG_DL_IDX_BT_PATCH:
-		kal_fallthrough;
+		/* fallthrough */
 #endif
 #if CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	case IMG_DL_IDX_ZB_PATCH:
-		kal_fallthrough;
+		/* fallthrough */
 #endif
 	case IMG_DL_IDX_PATCH:
 		ucCmdId = INIT_CMD_ID_PATCH_START;
@@ -2202,5 +2220,345 @@ uint32_t fwDlSetupReDl(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+void asicConnac3xConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4FlavorVer;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prChipInfo is NULL.\n");
+		return;
+	}
+
+	if (IS_MOBILE_SEGMENT)
+		u4FlavorVer = 0x1;
+	else
+		u4FlavorVer = 0x2;
+
+	kalSnprintf(apucName[(*pucNameIdx)],
+		CFG_FW_NAME_MAX_LEN, "BT_RAM_CODE_MT%x_%x_%x_hdr.bin",
+		prChipInfo->chip_id, u4FlavorVer,
+		asicConnac3xGetFwVer(prAdapter));
+}
+
+uint32_t wlanBtPatchSendSemaControl(struct ADAPTER *prAdapter,
+				    uint8_t *pucPatchStatus)
+{
+	struct INIT_CMD_BT_PATCH_SEMA_CTRL rCmd = {0};
+	struct INIT_EVENT_BT_PATCH_SEMA_CTRL_T rEvent = {0};
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	rCmd.ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
+	rCmd.u4Addr = 0;
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL, &rCmd, sizeof(rCmd),
+		TRUE, TRUE,
+		INIT_EVENT_ID_BT_PATCH_SEMA_CTRL, &rEvent, sizeof(rEvent));
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	*pucPatchStatus = rEvent.ucStatus;
+
+exit:
+	return u4Status;
+}
+
+uint32_t wlanImageSectionGetBtPatchInfo(struct ADAPTER *prAdapter,
+	void *pvFwImageMapFile, uint32_t u4FwImageFileLength,
+	struct patch_dl_target *target)
+{
+	struct PATCH_FORMAT_V2_T *prPatchFormat;
+	struct PATCH_GLO_DESC *glo_desc;
+	struct PATCH_SEC_MAP *sec_map;
+	struct patch_dl_buf *region;
+	uint32_t section_type;
+	uint32_t num_of_region, i, region_index;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	uint8_t *img_ptr;
+	uint8_t aucBuffer[32];
+
+	/* patch header */
+	img_ptr = pvFwImageMapFile;
+	prPatchFormat = (struct PATCH_FORMAT_V2_T *)img_ptr;
+
+	/* Dump image information */
+	kalMemZero(aucBuffer, 32);
+	kalStrnCpy(aucBuffer, prPatchFormat->aucPlatform, 4);
+	DBGLOG(INIT, INFO,
+	       "PATCH INFO: platform[%s] HW/SW ver[0x%04X] ver[0x%04X]\n",
+	       aucBuffer, prPatchFormat->u4SwHwVersion,
+	       prPatchFormat->u4PatchVersion);
+
+	kalStrnCpy(aucBuffer, prPatchFormat->aucBuildDate, 16);
+	DBGLOG(INIT, INFO, "date[%s]\n", aucBuffer);
+
+	if (prPatchFormat->u4PatchVersion != PATCH_VERSION_MAGIC_NUM) {
+		DBGLOG(INIT, ERROR, "BT Patch format isn't V2\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* global descriptor */
+	img_ptr += sizeof(struct PATCH_FORMAT_V2_T);
+	glo_desc = (struct PATCH_GLO_DESC *)img_ptr;
+	num_of_region = le2cpu32(glo_desc->section_num);
+	DBGLOG(INIT, INFO,
+			"\tPatch ver: 0x%x, Section num: 0x%x, subsys: 0x%x\n",
+			glo_desc->patch_ver,
+			num_of_region,
+			le2cpu32(glo_desc->subsys));
+
+	/* section map */
+	img_ptr += sizeof(struct PATCH_GLO_DESC);
+
+	target->num_of_region = num_of_region;
+	target->patch_region = (struct patch_dl_buf *)kalMemAlloc(
+				num_of_region * sizeof(struct patch_dl_buf),
+				VIR_MEM_TYPE);
+
+	if (!target->patch_region) {
+		DBGLOG(INIT, WARN, "No memory to allocate.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	kalMemZero(target->patch_region,
+		   num_of_region * sizeof(struct patch_dl_buf));
+
+	for (i = 0, region_index = 0; i < num_of_region; i++) {
+		region = &target->patch_region[region_index];
+		region->img_ptr = NULL;
+
+		sec_map = (struct PATCH_SEC_MAP *)img_ptr;
+		img_ptr += sizeof(struct PATCH_SEC_MAP);
+
+		section_type = le2cpu32(sec_map->section_type);
+
+		if ((section_type & PATCH_SEC_TYPE_MASK) !=
+		     PATCH_SEC_TYPE_BIN_INFO)
+			continue;
+
+		region->bin_type = le2cpu32(sec_map->bin_info_spec.bin_type);
+		/* only handle BT Patch */
+		if (region->bin_type != FW_SECT_BINARY_TYPE_BT_PATCH &&
+		  region->bin_type != FW_SECT_BINARY_TYPE_BT_CACHEABLE_PATCH &&
+		  region->bin_type != FW_SECT_BINARY_TYPE_BT_RAM_POS)
+			continue;
+
+		region->img_dest_addr =
+			le2cpu32(sec_map->bin_info_spec.dl_addr);
+		/* PDA needs 16-byte aligned length */
+		region->img_size =
+			le2cpu32(sec_map->bin_info_spec.dl_size) +
+			le2cpu32(sec_map->bin_info_spec.align_len);
+		if (!(region->img_size % 16))
+			DBGLOG(INIT, WARN,
+			       "BT Patch is not 16-byte aligned\n");
+		region->img_ptr = pvFwImageMapFile +
+			le2cpu32(sec_map->section_offset);
+		region->sec_info = le2cpu32(sec_map->bin_info_spec.sec_info);
+
+		region->data_mode = wlanGetPatchDataModeV2(prAdapter,
+							   region->sec_info);
+
+		DBGLOG(INIT, INFO,
+		       "BT Patch addr=0x%x: size=%d, ptr=0x%p, mode=0x%x, sec=0x%x, type=0x%x\n",
+			region->img_dest_addr, region->img_size,
+			region->img_ptr, region->data_mode,
+			region->sec_info, region->bin_type);
+
+		region_index++;
+	}
+
+	DBGLOG(INIT, INFO, "BT image region dl_count=0x%x, total=0x%x\n",
+	       region_index, num_of_region);
+
+	if (region_index == 0) {
+		DBGLOG(INIT, ERROR, "Can't find the BT Patch\n");
+		kalMemFree(target->patch_region, PHY_MEM_TYPE,
+			num_of_region * sizeof(struct patch_dl_buf));
+		target->patch_region = NULL;
+
+	} else {
+		u4Status = WLAN_STATUS_SUCCESS;
+	}
+
+	return u4Status;
+}
+
+
+int32_t wlanBtPatchIsDownloaded(struct ADAPTER *prAdapter)
+{
+	uint8_t ucPatchStatus = PATCH_STATUS_NO_SEMA_NEED_PATCH;
+	uint32_t u4Count = 0;
+	uint32_t rStatus;
+
+	while (ucPatchStatus == PATCH_STATUS_NO_SEMA_NEED_PATCH) {
+		if (u4Count)
+			kalMdelay(100);
+
+		rStatus = wlanBtPatchSendSemaControl(prAdapter, &ucPatchStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+		u4Count++;
+
+		if (u4Count > 50) {
+			DBGLOG(INIT, WARN, "Patch status check timeout!!\n");
+			return -2;
+		}
+	}
+
+	if (ucPatchStatus == PATCH_STATUS_NO_NEED_TO_PATCH)
+		return 1;
+	else
+		return 0;
+}
+
+uint32_t asicConnac3xConfigBtImageSection(
+	struct ADAPTER *prAdapter,
+	struct patch_dl_buf *region)
+{
+	struct INIT_CMD_CO_DOWNLOAD_CONFIG rCmd = {0};
+	struct INIT_EVENT_CMD_RESULT rEvent = {0};
+	uint8_t ucCmdId;
+	u_int8_t fgCheckStatus = FALSE;
+	uint32_t u4Status;
+
+	rCmd.u4Address = region->img_dest_addr;
+	rCmd.u4Length = region->img_size;
+	rCmd.u4DataMode = region->data_mode;
+	rCmd.u4SecInfo = region->sec_info;
+	rCmd.u4BinType = region->bin_type;
+
+	ucCmdId = INIT_CMD_ID_CO_PATCH_DOWNLOAD_CONFIG;
+
+#if CFG_ENABLE_FW_DOWNLOAD_ACK
+	fgCheckStatus = TRUE;
+#else
+	fgCheckStatus = FALSE;
+#endif
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		ucCmdId, &rCmd, sizeof(rCmd),
+		fgCheckStatus, TRUE,
+		INIT_EVENT_ID_CMD_RESULT, &rEvent, sizeof(rEvent));
+
+	if (fgCheckStatus && rEvent.ucStatus != 0) {
+		DBGLOG(INIT, ERROR, "Event status: %d\n", rEvent.ucStatus);
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+	return u4Status;
+}
+
+uint32_t asicConnac3xDownloadBtPatch(struct ADAPTER *prAdapter)
+{
+	uint32_t u4FwSize = 0;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	uint32_t u4DataMode = 0;
+	int32_t i4BtPatchCheck;
+	struct patch_dl_target target = {0};
+	void *prFwBuffer = NULL;
+
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	#pragma message("WARN: Download BT Patch doesn't support COMPRESSION")
+#endif
+#if CFG_DOWNLOAD_DYN_MEMORY_MAP
+	#pragma message("WARN: Download BT Patch doesn't support DYN_MEM_MAP")
+#endif
+#if CFG_ROM_PATCH_NO_SEM_CTRL
+	#pragma message("WARN: Download BT Patch doesn't support NO_SEM_CTRL")
+#endif
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(INIT, INFO, "BT Patch download start\n");
+
+	/* Always check BT Patch Download for L0.5 reset case */
+
+	/* refer from wlanImageSectionDownloadStage */
+
+	/* step.1 open the PATCH file */
+	kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer,
+				&u4FwSize, IMG_DL_IDX_BT_PATCH);
+	if (prFwBuffer == NULL) {
+		DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+		       IMG_DL_IDX_BT_PATCH);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* step 2. get Addr info. Refer from : wlanImageSectionDownloadStage */
+	u4Status = wlanImageSectionGetBtPatchInfo(prAdapter,
+			prFwBuffer, u4FwSize, &target);
+
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "Can't find the BT Patch Section\n");
+		goto out;
+	}
+
+	/* step 3. check BT doesn't download PATCH */
+	i4BtPatchCheck = wlanBtPatchIsDownloaded(prAdapter);
+	if (i4BtPatchCheck < 0) {
+		DBGLOG(INIT, INFO, "Get BT Semaphore Fail\n");
+		u4Status =  WLAN_STATUS_FAILURE;
+		goto out;
+	} else if (i4BtPatchCheck == 1) {
+		DBGLOG(INIT, INFO, "No need to download patch\n");
+		u4Status =  WLAN_STATUS_SUCCESS;
+		goto out;
+	}
+
+	/* step 4. download BT patch */
+	u4Status = wlanDownloadSectionV2(prAdapter, u4DataMode,
+					IMG_DL_IDX_BT_PATCH, &target);
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "BT Patch download Fail\n");
+		goto out;
+	}
+
+	/* step 5. send INIT_CMD_PATCH_FINISH */
+	u4Status = wlanPatchSendComplete(prAdapter, PATCH_FNSH_TYPE_BT);
+
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "Send INIT_CMD_PATCH_FINISH Fail\n");
+	else
+		DBGLOG(INIT, INFO, "BT Patch download success\n");
+
+out:
+	if (target.patch_region != NULL) {
+		/* This case is that the BT patch isn't downloaded this time.
+		 * The original free action is in wlanDownloadSectionV2().
+		 */
+		kalMemFree(target.patch_region, PHY_MEM_TYPE,
+			sizeof(struct patch_dl_buf) * target.num_of_region);
+		target.patch_region = NULL;
+		target.num_of_region = 0;
+	}
+
+	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
+#endif /* CFG_SUPPORT_CONNAC3X == 1 */
+
 
 #endif  /* CFG_ENABLE_FW_DOWNLOAD */

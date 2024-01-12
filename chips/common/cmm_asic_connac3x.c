@@ -2204,5 +2204,13 @@ exit:
 	return u4Status;
 }
 
+uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter)
+{
+	uint32_t u4SwVer = 0;
+
+	u4SwVer = nicGetChipSwVer() + 1;
+
+	return u4SwVer;
+}
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

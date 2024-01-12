@@ -144,6 +144,7 @@ enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL = 0x10,
 	INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL = 0x11,
 	INIT_CMD_ID_ZB_PATCH_SEMAPHORE_CONTROL = 0x12,
+	INIT_CMD_ID_CO_PATCH_DOWNLOAD_CONFIG = 0x13,
 	INIT_CMD_ID_HIF_LOOPBACK = 0x20,
 	INIT_CMD_ID_LOG_BUF_CTRL = 0x21,
 	INIT_CMD_ID_QUERY_INFO = 0x22,
@@ -211,6 +212,14 @@ struct INIT_CMD_DOWNLOAD_CONFIG {
 	uint32_t u4DataMode;
 };
 
+struct INIT_CMD_CO_DOWNLOAD_CONFIG {
+	uint32_t u4Address;
+	uint32_t u4Length;
+	uint32_t u4DataMode;
+	uint32_t u4SecInfo;
+	uint32_t u4BinType;
+};
+
 #define START_OVERRIDE_START_ADDRESS    BIT(0)
 #define START_DELAY_CALIBRATION         BIT(1)
 #define START_WORKING_PDA_OPTION        BIT(2)
@@ -271,6 +280,12 @@ struct INIT_CMD_BT_PATCH_SEMA_CTRL {
 	uint8_t aucReserved1[4];
 };
 
+struct INIT_EVENT_BT_PATCH_SEMA_CTRL_T {
+	uint8_t ucStatus; /* refer to enum ENUM_INIT_PATCH_STATUS */
+	uint8_t ucReserved[3];
+	uint32_t u4RemapAddr;
+	uint8_t ucReserved1[4];
+};
 #endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
 
 #if CFG_SUPPORT_WIFI_DL_ZB_PATCH
