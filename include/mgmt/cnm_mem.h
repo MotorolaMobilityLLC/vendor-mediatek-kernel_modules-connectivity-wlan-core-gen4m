@@ -735,11 +735,7 @@ struct STA_RECORD {
 	struct TXBF_PFMU_STA_INFO rTxBfPfmuStaInfo;
 #endif
 #if CFG_SUPPORT_MSP
-	uint32_t u4RxVector0;
-	uint32_t u4RxVector1;
-	uint32_t u4RxVector2;
-	uint32_t u4RxVector3;
-	uint32_t u4RxVector4;
+	uint32_t au4RxV[RXV_NUM];
 #endif
 	uint8_t ucSmDialogToken;	/* Spectrum Mngt Dialog Token */
 	uint8_t ucSmMsmtRequestMode;	/* Measurement Request Mode */

@@ -2052,15 +2052,14 @@ void asicConnac2xInitRxdHook(
 
 
 void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, uint32_t u4RxVector0)
+	IN struct SW_RFB *prRetSwRfb, uint32_t u4RxV0)
 {
 #if CFG_SUPPORT_LLS
 	struct CHIP_DBG_OPS *prChipDbg;
 
 	prChipDbg = prAdapter->chip_info->prDebugOps;
 	if (prChipDbg && prChipDbg->get_rx_link_stats) {
-		prChipDbg->get_rx_link_stats(
-				prAdapter, prRetSwRfb, u4RxVector0);
+		prChipDbg->get_rx_link_stats(prAdapter, prRetSwRfb, u4RxV0);
 	}
 #endif
 }
@@ -2071,6 +2070,7 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	  IN OUT struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+	uint32_t *prRxV = NULL;
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
 		DBGLOG(RX, LOUD,
@@ -2082,26 +2082,18 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	prGroup3 =
 		(struct HW_MAC_RX_STS_GROUP_3_V2 *)prRetSwRfb->prRxStatusGroup3;
 
-	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector0 = 0;
-	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector1 = 0;
-	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector2 = 0;
-	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
-	prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector4 = 0;
+	prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
+	kalMemZero(prRxV, sizeof(uint32_t) * RXV_NUM);
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
 		/* P-RXV0[0:31] in RXD Group3 */
-		prAdapter->arStaRec[
-		prRetSwRfb->ucStaRecIdx].u4RxVector0 =
-		CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
+		prRxV[0] = CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 0);
 
 		/* P-RXV0[32:63] in RXD Group3 */
-		prAdapter->arStaRec[
-		prRetSwRfb->ucStaRecIdx].u4RxVector1 =
-		CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
+		prRxV[1] = CONNAC2X_HAL_RX_VECTOR_GET_RX_VECTOR(prGroup3, 1);
 	}
 
-	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb,
-		prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector0);
+	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV[0]);
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 

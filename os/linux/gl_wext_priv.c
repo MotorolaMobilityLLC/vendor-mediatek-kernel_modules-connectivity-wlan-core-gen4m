@@ -7352,8 +7352,8 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 					IN u_int8_t fgResetCnt)
 {
 	int32_t i4BytesWritten = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector2 = 0, u4RxVector3 = 0,
-		 u4RxVector4 = 0;
+	uint32_t au4RxV[5] = {0};
+	uint32_t *prRxV = NULL;
 	uint8_t ucStaIdx, ucWlanIndex = 0, cbw;
 	u_int8_t fgWlanIdxFound = TRUE, fgSkipRxV = FALSE;
 	uint32_t u4FAGCRssiWBR0, u4FAGCRssiIBR0;
@@ -7397,10 +7397,11 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 	if (fgWlanIdxFound) {
 		if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIndex, &ucStaIdx)
 		    == WLAN_STATUS_SUCCESS) {
-			u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
-			u4RxVector2 = prAdapter->arStaRec[ucStaIdx].u4RxVector2;
-			u4RxVector3 = prAdapter->arStaRec[ucStaIdx].u4RxVector3;
-			u4RxVector4 = prAdapter->arStaRec[ucStaIdx].u4RxVector4;
+			prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+			au4RxV[0] = prRxV[0];
+			au4RxV[2] = prRxV[2];
+			au4RxV[3] = prRxV[3];
+			au4RxV[4] = prRxV[4];
 		} else{
 			fgSkipRxV = TRUE;
 		}
@@ -7565,8 +7566,8 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 			htonl(g_HqaRxStat.OFDM_FCS_Err_Band1));
 
 	if (!fgSkipRxV) {
-		u4FAGCRssiIBR0 = (u4RxVector2 & BITS(16, 23)) >> 16;
-		u4FAGCRssiWBR0 = (u4RxVector2 & BITS(24, 31)) >> 24;
+		u4FAGCRssiIBR0 = (au4RxV[2] & BITS(16, 23)) >> 16;
+		u4FAGCRssiWBR0 = (au4RxV[2] & BITS(24, 31)) >> 24;
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -7623,14 +7624,14 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 			"%-20s%s%d\n", "Driver RX Cnt1", " = ",
 			htonl(g_HqaRxStat.DriverRxCount1));
 #endif
-		u4Value = (u4RxVector0 & BITS(12, 14)) >> 12;
+		u4Value = (au4RxV[0] & BITS(12, 14)) >> 12;
 		if (u4Value == 0) {
-			u4Foe = (((u4RxVector4 & BITS(7, 31)) >> 7) & 0x7ff);
-			u4Foe = (u4Foe * 1000)>>11;
+			u4Foe = ((au4RxV[4] & BITS(7, 31)) >> 7) & 0x7ff;
+			u4Foe = (u4Foe * 1000) >> 11;
 		} else{
-			cbw = ((u4RxVector0 & BITS(15, 16)) >> 15);
+			cbw = (au4RxV[0] & BITS(15, 16)) >> 15;
 			foe_const = ((1 << (cbw + 1)) & 0xf) * 10000;
-			u4Foe = (((u4RxVector4 & BITS(7, 31)) >> 7) & 0xfff);
+			u4Foe = ((au4RxV[4] & BITS(7, 31)) >> 7) & 0xfff;
 			u4Foe = (u4Foe * foe_const) >> 15;
 		}
 
@@ -7641,29 +7642,29 @@ static int32_t priv_driver_dump_rx_stat_info(struct ADAPTER *prAdapter,
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RX SNR (dB)", " = ",
-			(uint32_t)(((u4RxVector4 & BITS(26, 31)) >> 26) - 16));
+			(uint32_t)(((au4RxV[4] & BITS(26, 31)) >> 26) - 16));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX0", " = ",
-			(uint32_t)(u4RxVector3 & BITS(0, 7)));
+			(uint32_t)(au4RxV[3] & BITS(0, 7)));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX1", " = ",
-			(uint32_t)((u4RxVector3 & BITS(8, 15)) >> 8));
+			(uint32_t)((au4RxV[3] & BITS(8, 15)) >> 8));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX2", " = ",
-			((u4RxVector3 & BITS(16, 23)) >> 16) == 0xFF ?
-			(0) : ((uint32_t)(u4RxVector3 & BITS(16, 23)) >> 16));
+			((au4RxV[3] & BITS(16, 23)) >> 16) == 0xFF ?
+			(0) : ((uint32_t)(au4RxV[3] & BITS(16, 23)) >> 16));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX3", " = ",
-			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ?
-			(0) : ((uint32_t)(u4RxVector3 & BITS(24, 31)) >> 24));
+			((au4RxV[3] & BITS(24, 31)) >> 24) == 0xFF ?
+			(0) : ((uint32_t)(au4RxV[3] & BITS(24, 31)) >> 24));
 	} else{
 #if 1
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
@@ -7795,8 +7796,8 @@ static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
 					IN u_int8_t fgResetCnt)
 {
 	int32_t i4BytesWritten = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector2 = 0, u4RxVector3 = 0,
-		 u4RxVector4 = 0;
+	uint32_t au4RxV[5] = {0};
+	uint32_t *prRxV = NULL;
 	uint8_t ucStaIdx, ucWlanIndex = 0, cbw;
 	u_int8_t fgWlanIdxFound = TRUE, fgSkipRxV = FALSE;
 	uint32_t u4FAGCRssiWBR0, u4FAGCRssiIBR0;
@@ -7844,10 +7845,11 @@ static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
 	if (fgWlanIdxFound) {
 		if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIndex, &ucStaIdx)
 		    == WLAN_STATUS_SUCCESS) {
-			u4RxVector0 = prAdapter->arStaRec[ucStaIdx].u4RxVector0;
-			u4RxVector2 = prAdapter->arStaRec[ucStaIdx].u4RxVector2;
-			u4RxVector3 = prAdapter->arStaRec[ucStaIdx].u4RxVector3;
-			u4RxVector4 = prAdapter->arStaRec[ucStaIdx].u4RxVector4;
+			prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+			au4RxV[0] = prRxV[0];
+			au4RxV[2] = prRxV[2];
+			au4RxV[3] = prRxV[3];
+			au4RxV[4] = prRxV[4];
 		} else{
 			fgSkipRxV = TRUE;
 		}
@@ -8013,8 +8015,8 @@ static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
 			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxFcsErrCntOfdm));
 
 	if (!fgSkipRxV) {
-		u4FAGCRssiIBR0 = (u4RxVector2 & BITS(16, 23)) >> 16;
-		u4FAGCRssiWBR0 = (u4RxVector2 & BITS(24, 31)) >> 24;
+		u4FAGCRssiIBR0 = (au4RxV[2] & BITS(16, 23)) >> 16;
+		u4FAGCRssiWBR0 = (au4RxV[2] & BITS(24, 31)) >> 24;
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -8060,14 +8062,14 @@ static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
 			htonl(g_HqaRxStat.rInfoBand[1].u4PhyRxMdrdyCntOfdm));
 
 	if (!fgSkipRxV) {
-		u4Value = (u4RxVector0 & BITS(12, 14)) >> 12;
+		u4Value = (au4RxV[0] & BITS(12, 14)) >> 12;
 		if (u4Value == 0) {
-			u4Foe = (((u4RxVector4 & BITS(7, 31)) >> 7) & 0x7ff);
+			u4Foe = ((au4RxV[4] & BITS(7, 31)) >> 7) & 0x7ff;
 			u4Foe = (u4Foe * 1000)>>11;
 		} else{
-			cbw = ((u4RxVector0 & BITS(15, 16)) >> 15);
+			cbw = (au4RxV[0] & BITS(15, 16)) >> 15;
 			foe_const = ((1 << (cbw + 1)) & 0xf) * 10000;
-			u4Foe = (((u4RxVector4 & BITS(7, 31)) >> 7) & 0xfff);
+			u4Foe = ((au4RxV[4] & BITS(7, 31)) >> 7) & 0xfff;
 			u4Foe = (u4Foe * foe_const) >> 15;
 		}
 
@@ -8078,29 +8080,29 @@ static int32_t priv_driver_dump_rx_stat_info_con3(struct ADAPTER *prAdapter,
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "RX SNR (dB)", " = ",
-			(uint32_t)(((u4RxVector4 & BITS(26, 31)) >> 26) - 16));
+			(uint32_t)(((au4RxV[4] & BITS(26, 31)) >> 26) - 16));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX0", " = ",
-			(uint32_t)(u4RxVector3 & BITS(0, 7)));
+			(uint32_t)(au4RxV[3] & BITS(0, 7)));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX1", " = ",
-			(uint32_t)((u4RxVector3 & BITS(8, 15)) >> 8));
+			(uint32_t)((au4RxV[3] & BITS(8, 15)) >> 8));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX2", " = ",
-			((u4RxVector3 & BITS(16, 23)) >> 16) == 0xFF ?
-			(0) : ((uint32_t)(u4RxVector3 & BITS(16, 23)) >> 16));
+			((au4RxV[3] & BITS(16, 23)) >> 16) == 0xFF ?
+			(0) : ((uint32_t)(au4RxV[3] & BITS(16, 23)) >> 16));
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%-20s%s%d\n", "uint8_t RX3", " = ",
-			((u4RxVector3 & BITS(24, 31)) >> 24) == 0xFF ?
-			(0) : ((uint32_t)(u4RxVector3 & BITS(24, 31)) >> 24));
+			((au4RxV[3] & BITS(24, 31)) >> 24) == 0xFF ?
+			(0) : ((uint32_t)(au4RxV[3] & BITS(24, 31)) >> 24));
 	} else{
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
@@ -19746,7 +19748,7 @@ static int32_t priv_driver_MulAPAgent_sta_report_info(
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int32_t txmode, rate, frmode, sgi, nsts, groupid;
-	u_int32_t u4RxVector0 = 0, u4RxVector1 = 0;
+	u_int32_t au4RxV[2] = {0};
 	u_int16_t u2RateCode = 0;
 	u_int32_t u4BufLen = 0;
 	u_int8_t ucWlanIndex, i;
@@ -19878,6 +19880,7 @@ static int32_t priv_driver_MulAPAgent_sta_report_info(
 	if (i4Ret != 1)
 		DBGLOG(P2P, WARN, "read sap index fail: %d\n", i4Ret);
 
+	prRxV = prStaRec->au4RxV;
 	COPY_MAC_ADDR(sStaAssocMetricsResp->mBssid, prBssInfo->aucBSSID);
 	COPY_MAC_ADDR(sStaAssocMetricsResp->mStaMac, prStaRec->aucMacAddr);
 	sStaAssocMetricsResp->uBytesSent = prStaRec->u8TotalTxBytes;
@@ -19890,7 +19893,7 @@ static int32_t priv_driver_MulAPAgent_sta_report_info(
 	sStaAssocMetricsResp->uPktsRxError = 0;
 	sStaAssocMetricsResp->uRetransCnt = 0;
 	sStaAssocMetricsResp->iRssi =
-		RCPI_TO_dBm((prStaRec->u4RxVector3 & RX_VT_RCPI0_MASK)
+		RCPI_TO_dBm((prRxV[3] & RX_VT_RCPI0_MASK)
 		>> RX_VT_RCPI0_OFFSET);
 
 	/* TxPhyRate */
@@ -19927,15 +19930,15 @@ static int32_t priv_driver_MulAPAgent_sta_report_info(
 	}
 
 	/* RxPhyRate */
-	u4RxVector0 = prStaRec->u4RxVector0;
-	u4RxVector1 = prStaRec->u4RxVector1;
+	au4RxV[0] = prRxV[0];
+	au4RxV[1] = prRxV[1];
 
-	txmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
-	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
-	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
-	sgi = (u4RxVector0 & RX_VT_SHORT_GI) >> 19;
-	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
+	txmode = (au4RxV[0] & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
+	rate = (au4RxV[0] & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
+	frmode = (au4RxV[0] & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
+	nsts = (au4RxV[1] & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET;
+	sgi = (au4RxV[0] & RX_VT_SHORT_GI) >> 19;
+	groupid = (au4RxV[1] & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
 
 	if (!(groupid && groupid != 63))
 		nsts += 1;

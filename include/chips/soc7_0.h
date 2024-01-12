@@ -187,7 +187,7 @@ int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_LLS
 void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, IN uint32_t u4RxVector0);
+	IN struct SW_RFB *prRetSwRfb, IN uint32_t u4RxV0);
 #endif
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
