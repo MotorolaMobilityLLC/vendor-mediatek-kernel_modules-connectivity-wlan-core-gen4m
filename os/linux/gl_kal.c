@@ -12715,6 +12715,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		nanDevClusterIdEvtHandler(prAdapter, prTlvElement->aucbody);
 		break;
 	case UNI_EVENT_NAN_TAG_ID_SCHEDULE_CONFIG:
+		status = mtk_cfg80211_vendor_event_nan_schedule_config(
+			prAdapter, prTlvElement->aucbody);
+		kal_fallthrough;
 	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
 	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
 	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
@@ -12874,6 +12877,9 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		nanDevClusterIdEvtHandler(prAdapter, prTlvElement->aucbody);
 		break;
 	case NAN_EVENT_ID_SCHEDULE_CONFIG:
+		status = mtk_cfg80211_vendor_event_nan_schedule_config(
+			prAdapter, prTlvElement->aucbody);
+		kal_fallthrough;
 	case NAN_EVENT_ID_PEER_AVAILABILITY:
 	case NAN_EVENT_ID_PEER_CAPABILITY:
 	case NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN:

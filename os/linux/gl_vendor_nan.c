@@ -2423,9 +2423,6 @@ mtk_cfg80211_vendor_event_nan_event_indication(struct ADAPTER *prAdapter,
 	cfg80211_vendor_event(skb, GFP_KERNEL);
 	kalMemFree(prNanEventInd, VIR_MEM_TYPE, message_len);
 
-	if (prDeEvt->ucEventType == NAN_EVENT_ID_STARTED_CLUSTER)
-		g_deEvent = TRUE;
-
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -3026,4 +3023,15 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+int
+mtk_cfg80211_vendor_event_nan_schedule_config(
+	struct ADAPTER *prAdapter,
+	uint8_t *pcuEvtBuf)
+{
+	g_deEvent = TRUE;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 
