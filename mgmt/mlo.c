@@ -1392,9 +1392,11 @@ uint32_t mldCalculateRnrIELen(
 	if (!IS_MLD_BSSINFO_VALID(mld_bssinfo))
 		return 0;
 
-	/* 10: Neighbor AP TBTT Offset + BSSID + MLD Para */
+	/* 16: Neighbor AP TBTT Offset + BSSID + short-ssid +
+	 * Bss Param + PSD + MLD Para
+	 */
 	return sizeof(struct IE_RNR) + mld_bssinfo->rBssList.u4NumElem *
-		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 10);
+		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 16);
 }
 
 void mldGenerateRnrIE(struct ADAPTER *prAdapter,
@@ -1407,6 +1409,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	struct NEIGHBOR_AP_INFO_FIELD *info;
 	uint8_t *cp;
 	uint8_t count = 0;
+	uint32_t sssid;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
@@ -1418,7 +1421,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 						prMsduInfo->u2FrameLength);
 	rnr->ucId = ELEM_ID_RNR;
 	rnr->ucLength = mld_bssinfo->rBssList.u4NumElem *
-		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 10);
+		(sizeof(struct NEIGHBOR_AP_INFO_FIELD) + 16);
 	cp = rnr->aucInfoField;
 
 	links = &mld_bssinfo->rBssList;
@@ -1432,9 +1435,10 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 		info = (struct NEIGHBOR_AP_INFO_FIELD *) cp;
 
 		/* count is default 0. no need to set,
-		 * 10: Neighbor AP TBTT Offset + BSSID + MLD Para
+		 * 16: Neighbor AP TBTT Offset + BSSID + short-ssid +
+		 * Bss Param + PSD + MLD Para
 		 */
-		info->u2TbttInfoHdr = 10 << TBTT_INFO_HDR_LENGTH_OFFSET;
+		info->u2TbttInfoHdr = 16 << TBTT_INFO_HDR_LENGTH_OFFSET;
 		info->ucOpClass =
 			rlmGetOpClassForChannel(
 				bss->ucPrimaryChannel,
@@ -1443,14 +1447,26 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 
 		cp = info->aucTbttInfoSet;
 
-		/* Neighbor AP TBTT Offset*/
+		/* Neighbor AP TBTT Offset (1) */
 		*cp++ = 0xff;
 
-		/* BSSID */
+		/* BSSID (6) */
 		COPY_MAC_ADDR(cp, bss->aucOwnMacAddr);
 		cp += MAC_ADDR_LEN;
 
-		/* MLD Para */
+		/* short ssid (4) */
+		sssid = wlanCRC32(bss->aucSSID, bss->ucSSIDLen);
+		WLAN_SET_FIELD_32(cp, sssid);
+		cp += 4;
+
+		/* Bss Parameters (1) */
+		*cp++ = (TBTT_INFO_BSS_PARAM_SAME_SSID |
+			 TBTT_INFO_BSS_PARAM_CO_LOCATED_AP);
+
+		/* 20 Mhz PSD (1) */
+		*cp++ = 0x22; /* 17 dBm/Mhz */
+
+		/* MLD Para (3) */
 		*cp++ = 0; /* MLD ID */
 		*cp++ = bss->ucLinkIndex; /* Link ID */
 		*cp++ = 0; /* BSS para change count */

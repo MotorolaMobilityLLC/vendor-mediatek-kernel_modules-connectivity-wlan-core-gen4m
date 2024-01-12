@@ -2260,6 +2260,8 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define HE_OP_CHANNEL_WIDTH_80P80_160			3
 
 #define TBTT_INFO_BSS_PARAM_SAME_SSID               BIT(1)
+#define TBTT_INFO_BSS_PARAM_CO_LOCATED_AP           BIT(6)
+
 /* 9.4.2.260 Short SSID List element */
 #define ELEM_EXT_ID_SHORT_SSID_LIST                 58
 
