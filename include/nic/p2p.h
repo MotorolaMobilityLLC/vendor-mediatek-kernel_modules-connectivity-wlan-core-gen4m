@@ -169,6 +169,7 @@ struct P2P_INFO {
 	uint8_t *pucCurrIePtr;
 	/* A common pool for IE of all scan results. */
 	uint8_t aucCommIePool[CFG_MAX_COMMON_IE_BUF_LEN];
+	uint8_t ucExtendChanFlag;
 };
 
 enum ENUM_P2P_PEER_TYPE {
