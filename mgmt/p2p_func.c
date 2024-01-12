@@ -4270,6 +4270,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				}
 				break;
 			case ELEM_ID_SUP_RATES:	/* 1 *//* V *//* Done */
+#ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
 				{
 					DBGLOG(P2P, TRACE, "Support Rate IE\n");
 					if ((SUP_RATES_IE(pucIE)->ucLength)
@@ -4286,6 +4287,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					SUP_RATES_IE(pucIE)->aucSupportedRates,
 					SUP_RATES_IE(pucIE)->ucLength);
 				}
+#endif
 				break;
 			case ELEM_ID_DS_PARAM_SET:	/* 3 *//* V *//* Done */
 				{
@@ -4543,6 +4545,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 
 				break;
 			case ELEM_ID_EXTENDED_SUP_RATES:	/* 50 *//* V */
+#ifndef CFG_SUPPORT_P2P_GO_KEEP_RATE_SETTING
 				/* ELEM_ID_SUP_RATES should be placed
 				 * before ELEM_ID_EXTENDED_SUP_RATES.
 				 */
@@ -4563,6 +4566,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 
 				prP2pBssInfo->ucAllSupportedRatesLen +=
 					EXT_SUP_RATES_IE(pucIE)->ucLength;
+#endif
 				break;
 			case ELEM_ID_HT_OP:
 				/* 61 *//* V *//* TODO: */
