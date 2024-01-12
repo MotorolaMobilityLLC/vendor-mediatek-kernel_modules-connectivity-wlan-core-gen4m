@@ -743,7 +743,7 @@ enum ENUM_DBDC_BN {
 	ENUM_BAND_0,
 	ENUM_BAND_1,
 	ENUM_BAND_NUM,
-#ifndef CFG_SUPPORT_UNIFIED_COMMAND
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	ENUM_BAND_ALL,
 	ENUM_BAND_AUTO,	/*Auto select by A/G band, Driver only*/
 #else
