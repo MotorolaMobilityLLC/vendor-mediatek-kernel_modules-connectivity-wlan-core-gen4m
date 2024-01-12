@@ -1653,6 +1653,7 @@ int wlan_reset_thread_main(void *data)
 						complete(&g_RstOffComp);
 					DBGLOG(INIT, INFO,
 						"Don't trigger whole chip reset due to driver is not ready\n");
+					glResetUpdateFlag(FALSE);
 				}
 			} else {
 				/*wfsys reset start*/
