@@ -6885,7 +6885,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					"P2pUapsd", FEATURE_ENABLED);
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"RegP2pIfAtProbe", FEATURE_DISABLED);
+					"RegP2pIfAtProbe", FEATURE_ENABLED);
 #else
 	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"RegP2pIfAtProbe", FEATURE_DISABLED);
