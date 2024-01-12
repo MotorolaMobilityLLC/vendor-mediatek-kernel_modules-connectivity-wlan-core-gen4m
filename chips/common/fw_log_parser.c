@@ -417,7 +417,8 @@ uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 	uint8_t *prLogPtr;
 #define PARAM_SIZE 8
 	uint8_t aucFormat[PARAM_SIZE]; /* expect the "%0.X" < 7 chars */
-	uint32_t i, j, k, l = 0, u4LogLen = 0;
+	uint32_t i, j, l = 0, u4LogLen = 0;
+	int32_t k;
 	uint32_t *prArgu;
 	uint32_t i4Ret;
 	uint32_t u4HeadPos;
