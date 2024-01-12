@@ -47,10 +47,6 @@
 #define NL80211_SCAN_FLAG_LOW_SPAN (1 << 8)
 #endif
 
-#ifndef CONNECT_REQ_MLO_SUPPORT
-#define CONNECT_REQ_MLO_SUPPORT BIT(6)
-#endif
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

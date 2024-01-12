@@ -389,6 +389,12 @@
 #define RA_DCM			1
 #define RA_ER_106		2
 
+/* cfg80211_assoc_req_flags */
+#ifndef CONNECT_REQ_MLO_SUPPORT
+/* Userspace indicates support for handling MLD links */
+#define CONNECT_REQ_MLO_SUPPORT BIT(6)
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

@@ -1838,7 +1838,10 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo = (struct AIS_FSM_INFO *) NULL;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	uint8_t ucBssIndex = 0;
+	uint8_t fgConnReqMloSupport = FALSE;
+	uint8_t fgEqualMacAddr = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -1854,9 +1857,27 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 	if (prAisBssInfo == NULL)
 		return WLAN_STATUS_FAILURE;
 
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	if (prConnSettings == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	fgConnReqMloSupport = !!(prConnSettings->u4ConnFlags &
+				 CONNECT_REQ_MLO_SUPPORT);
+
+	if (fgConnReqMloSupport)
+		/* pvSetBuffer is mld addr */
+		fgEqualMacAddr = EQUAL_MAC_ADDR(
+		    cnmStaRecAuthAddr(prAdapter, prAisBssInfo->prStaRecOfAP),
+		    pvSetBuffer);
+	else
+		/* pvSetBuffer is link addr */
+		fgEqualMacAddr = EQUAL_MAC_ADDR(
+			prAisBssInfo->prStaRecOfAP->aucMacAddr,
+			pvSetBuffer);
+
 	if (IS_BSS_AIS(prAisBssInfo) &&
-		prAisBssInfo->prStaRecOfAP && EQUAL_MAC_ADDR(
-		prAisBssInfo->prStaRecOfAP->aucMacAddr, pvSetBuffer)) {
+		prAisBssInfo->prStaRecOfAP &&
+		fgEqualMacAddr) {
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
