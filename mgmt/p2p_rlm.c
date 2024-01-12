@@ -100,31 +100,21 @@
  *                   F U N C T I O N   D E C L A R A T I O N S
  ******************************************************************************
  */
-
+static enum ENUM_CHNL_EXT rlmGetSco(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo);
 /******************************************************************************
  *                              F U N C T I O N S
  ******************************************************************************
  */
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Init AP Bss
- *
- * \param[in]
- *
- * \return none
- */
-/*----------------------------------------------------------------------------*/
-void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
+void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
 {
 	uint8_t i;
 	uint8_t ucMaxBw = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
-
-	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
-		return;
 
 	/* Operation band, channel shall be ready before invoking this function.
 	 * Bandwidth may be ready if other network is connected
@@ -140,18 +130,14 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	 */
 	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
 
-		prBssInfo->eBssSCO = rlmGetScoForAP(prAdapter, prBssInfo);
+		prBssInfo->eBssSCO = rlmGetSco(prAdapter, prBssInfo);
 
 		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
 			prBssInfo->fg40mBwAllowed = TRUE;
 			prBssInfo->fgAssoc40mBwAllowed = TRUE;
-
-			prBssInfo->ucHtOpInfo1 = (uint8_t)
-				(((uint32_t) prBssInfo->eBssSCO)
-				| HT_OP_INFO1_STA_CHNL_WIDTH);
-
-			rlmUpdateBwByChListForAP(prAdapter, prBssInfo);
 		}
+	} else {
+		prBssInfo->ucHtOpInfo1 = (uint8_t) CHNL_EXT_SCN;
 	}
 
 	/* Filled the VHT BW/S1/S2 and MCS rate set */
@@ -214,6 +200,41 @@ void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 				VHT_OP_CHANNEL_WIDTH_20_40;
 			prBssInfo->ucVhtChannelFrequencyS1 = 0;
 			prBssInfo->ucVhtChannelFrequencyS2 = 0;
+		}
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Init AP Bss
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
+{
+	ASSERT(prAdapter);
+	ASSERT(prBssInfo);
+
+	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
+		return;
+
+	/* Check if AP can set its bw to 40MHz
+	 * But if any of BSS is setup in 40MHz,
+	 * the second BSS would prefer to use 20MHz
+	 * in order to remain in SCC case
+	 */
+	rlmBssUpdateChannelParams(prAdapter, prBssInfo);
+
+	if (cnmBss40mBwPermitted(prAdapter, prBssInfo->ucBssIndex)) {
+		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
+			prBssInfo->ucHtOpInfo1 = (uint8_t)
+				(((uint32_t) prBssInfo->eBssSCO)
+				| HT_OP_INFO1_STA_CHNL_WIDTH);
+
+			rlmUpdateBwByChListForAP(prAdapter, prBssInfo);
 		}
 	}
 
@@ -1278,21 +1299,10 @@ enum ENUM_CHNL_EXT rlmDecideScoForAP(struct ADAPTER *prAdapter,
 	return eSCO;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief: Get AP secondary channel offset from cfg80211 or wifi.cfg
- *
- * \param[in] prAdapter  Pointer of ADAPTER_T, prBssInfo Pointer of BSS_INFO_T,
- *
- * \return ENUM_CHNL_EXT_T AP secondary channel offset
- */
-/*----------------------------------------------------------------------------*/
-enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter,
+static enum ENUM_CHNL_EXT rlmGetSco(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
-	enum ENUM_BAND eBand;
-	uint8_t ucChannel;
-	enum ENUM_CHNL_EXT eSCO;
+	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
 	int32_t i4DeltaBw;
 	uint32_t u4AndOneSCO;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -1303,8 +1313,7 @@ enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter,
 	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
 		prBssInfo->ucBssIndex);
 
-	if (!prAdapter->rWifiVar.ucApChnlDefFromCfg
-		&& prP2pRoleFsmInfo) {
+	if (prP2pRoleFsmInfo) {
 
 		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 		eSCO = CHNL_EXT_SCN;
@@ -1342,6 +1351,35 @@ enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter,
 			if ((i4DeltaBw/CHANNEL_SPAN_20) & 1)
 				eSCO = u4AndOneSCO;
 		}
+	}
+
+	return eSCO;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief: Get AP secondary channel offset from cfg80211 or wifi.cfg
+ *
+ * \param[in] prAdapter  Pointer of ADAPTER_T, prBssInfo Pointer of BSS_INFO_T,
+ *
+ * \return ENUM_CHNL_EXT_T AP secondary channel offset
+ */
+/*----------------------------------------------------------------------------*/
+enum ENUM_CHNL_EXT rlmGetScoForAP(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	enum ENUM_BAND eBand;
+	uint8_t ucChannel;
+	enum ENUM_CHNL_EXT eSCO;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+
+	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
+		prBssInfo->ucBssIndex);
+
+	if (!prAdapter->rWifiVar.ucApChnlDefFromCfg
+		&& prP2pRoleFsmInfo) {
+		eSCO = rlmGetSco(prAdapter, prBssInfo);
 	} else {
 		/* In this case, the first BSS's SCO is 40MHz
 		 * and known, so AP can apply 40MHz bandwidth,

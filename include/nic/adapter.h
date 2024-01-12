@@ -296,6 +296,7 @@ struct BSS_INFO {
 	u_int8_t fgIsDfsActive;
 #endif
 
+	u_int8_t fgIsSwitchingChnl;
 	u_int8_t fgIsInUse;	/* For CNM to assign BSS_INFO */
 	u_int8_t fgIsNetActive;	/* TRUE if this network has been activated */
 

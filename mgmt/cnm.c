@@ -1281,6 +1281,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 			rRfChnlInfo.u2PriChnlFreq,
 			rRfChnlInfo.u4CenterFreq1);
 
+		p2pFuncSetChannel(prAdapter, ucRoleIdx, &rRfChnlInfo);
+
 		cnmSapChannelSwitchReq(prAdapter, &rRfChnlInfo, ucRoleIdx);
 
 		/* Record Last Channel Switch Time */

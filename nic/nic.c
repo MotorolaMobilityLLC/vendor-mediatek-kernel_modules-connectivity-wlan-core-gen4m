@@ -1528,6 +1528,12 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 				   (uint8_t *)&rCmdActivateCtrl, NULL, 0);
 }
 
+uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex)
+{
+	return nicDeactivateNetworkEx(prAdapter, ucBssIndex, TRUE);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to deactivate WIFISYS for specified
@@ -1539,8 +1545,9 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
-			      IN uint8_t ucBssIndex)
+uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
+				IN uint8_t ucBssIndex,
+				IN uint8_t fgClearStaRec)
 {
 	uint32_t u4Status;
 	struct CMD_BSS_ACTIVATE_CTRL rCmdActivateCtrl;
@@ -1591,25 +1598,33 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 				       sizeof(struct CMD_BSS_ACTIVATE_CTRL),
 				       (uint8_t *)&rCmdActivateCtrl, NULL, 0);
 
-	secRemoveBssBcEntry(prAdapter, prBssInfo, FALSE);
+	if (fgClearStaRec) {
+		secRemoveBssBcEntry(prAdapter, prBssInfo, FALSE);
 
-	/* free all correlated station records */
-	cnmStaFreeAllStaByNetwork(prAdapter, ucBssIndex,
+		/* free all correlated station records */
+		cnmStaFreeAllStaByNetwork(prAdapter, ucBssIndex,
 				  STA_REC_EXCLUDE_NONE);
-	if (HAL_IS_TX_DIRECT(prAdapter))
-		nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
-	else
-		qmFreeAllByBssIdx(prAdapter, ucBssIndex);
+		if (HAL_IS_TX_DIRECT(prAdapter))
+			nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
+		else
+			qmFreeAllByBssIdx(prAdapter, ucBssIndex);
 
-	nicFreePendingTxMsduInfo(prAdapter, ucBssIndex,
+		nicFreePendingTxMsduInfo(prAdapter, ucBssIndex,
 			MSDU_REMOVE_BY_BSS_INDEX);
-	kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo, ucBssIndex);
+		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+			ucBssIndex);
 
-	cnmFreeWmmIndex(prAdapter, prBssInfo);
+		cnmFreeWmmIndex(prAdapter, prBssInfo);
+	}
 	return u4Status;
 }
 
 /* BSS-INFO */
+uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIndex)
+{
+	return nicUpdateBssEx(prAdapter, ucBssIndex, TRUE);
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This utility function is used to sync bss info with firmware
@@ -1621,8 +1636,9 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
-		      IN uint8_t ucBssIndex)
+uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
+			IN uint8_t ucBssIndex,
+			IN uint8_t fgClearStaRec)
 {
 	uint32_t u4Status = WLAN_STATUS_NOT_ACCEPTED;
 	struct BSS_INFO *prBssInfo;
@@ -1863,7 +1879,7 @@ uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 	 * free all correlated station records
 	 */
 	if (prBssInfo->eConnectionState ==
-	    MEDIA_STATE_DISCONNECTED) {
+	    MEDIA_STATE_DISCONNECTED && fgClearStaRec) {
 		/* clear client list */
 		bssInitializeClientList(prAdapter, prBssInfo);
 
