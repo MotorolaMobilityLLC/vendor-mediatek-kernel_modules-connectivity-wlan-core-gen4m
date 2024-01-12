@@ -1452,6 +1452,9 @@ struct mt66xx_chip_info {
 	struct ATE_OPS_T *prAteOps;
 #endif
 	struct CHIP_DBG_OPS *prDebugOps;
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 1)
+	struct WLAN_IPC_INFO * const ipc_info;
+#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
 
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int should_verify_chip_id;	/* verify chip id */

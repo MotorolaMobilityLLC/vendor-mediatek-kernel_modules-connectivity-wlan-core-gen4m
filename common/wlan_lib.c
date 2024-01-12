@@ -1414,6 +1414,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* 4 <6> Enable HIF cut-through to N9 mode, not visiting CR4 */
 		HAL_ENABLE_FWDL(prAdapter, TRUE);
 
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 0)
 		/* 4 <7> Get ECO Version */
 		if (wlanSetChipEcoInfo(prAdapter) != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, ERROR, "wlanSetChipEcoInfo failed!\n");
@@ -1421,7 +1422,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			eFailReason = SET_CHIP_ECO_INFO_FAIL;
 			break;
 		}
-
+#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
 		/* recheck Asic capability depends on ECO version */
 		wlanCheckAsicCap(prAdapter);
 
@@ -1470,10 +1471,12 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		}
 #endif
 
+#if (CFG_MTK_WIFI_SUPPORT_IPC == 0)
 		DBGLOG(INIT, INFO, "Waiting for Ready bit..\n");
 
 		/* 4 <9> check Wi-Fi FW asserts ready bit */
 		u4Status = wlanCheckWifiFunc(prAdapter, TRUE);
+#endif /* CFG_MTK_WIFI_SUPPORT_IPC */
 
 		if (u4Status == WLAN_STATUS_SUCCESS) {
 #if defined(_HIF_SDIO)

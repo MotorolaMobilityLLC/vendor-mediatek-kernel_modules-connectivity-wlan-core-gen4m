@@ -617,7 +617,8 @@ void halPcieHwControlVote(
 	uint32_t u4WifiUser);
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
-uint32_t glReadPcieCfgSpace(int offset);
+uint32_t glReadPcieCfgSpace(int offset, uint32_t *value);
+uint32_t glWritePcieCfgSpace(int offset, uint32_t value);
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
