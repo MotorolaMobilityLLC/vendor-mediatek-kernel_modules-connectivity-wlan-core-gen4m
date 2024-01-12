@@ -6976,6 +6976,7 @@ void p2pFuncSwitchGcChannel(
 		(struct GL_P2P_INFO *) NULL;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	uint8_t role_idx = 0;
+	uint8_t ucMaxBw = 0;
 
 #if CFG_SUPPORT_DFS_MASTER
 	fgEnable = TRUE;
@@ -7043,8 +7044,12 @@ void p2pFuncSwitchGcChannel(
 	/* Update channel parameters & channel request info */
 	rRfChnlInfo.ucChannelNum = prP2pBssInfo->ucPrimaryChannel;
 	rRfChnlInfo.eBand = prP2pBssInfo->eBand;
-	rRfChnlInfo.ucChnlBw =
-		rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prP2pBssInfo->ucBssIndex);
+	if (ucMaxBw < rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo))
+		rlmFillVhtOpInfoByBssOpBw(prP2pBssInfo, ucMaxBw);
+	rRfChnlInfo.ucChnlBw = kal_min_t(uint8_t,
+		rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo),
+		ucMaxBw);
 	rRfChnlInfo.u2PriChnlFreq =
 		nicChannelNum2Freq(rRfChnlInfo.ucChannelNum,
 			rRfChnlInfo.eBand) / 1000;

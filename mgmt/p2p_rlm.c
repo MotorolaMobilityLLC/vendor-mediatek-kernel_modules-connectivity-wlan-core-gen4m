@@ -281,21 +281,14 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 #endif
 
 	/*ERROR HANDLE*/
-	if ((prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80)
-		|| (prBssInfo->ucVhtChannelWidth
-			== VHT_OP_CHANNEL_WIDTH_160)
-		|| (prBssInfo->ucVhtChannelWidth
-			== VHT_OP_CHANNEL_WIDTH_80P80)) {
+	if ((prBssInfo->ucVhtChannelWidth >= VHT_OP_CHANNEL_WIDTH_80) &&
+	    (prBssInfo->ucVhtChannelFrequencyS1 == 0)) {
+		DBGLOG(RLM, INFO,
+			"Wrong AP S1 parameter setting, back to BW20!!!\n");
 
-		if (prBssInfo->ucVhtChannelFrequencyS1 == 0) {
-			DBGLOG(RLM, INFO,
-				"Wrong AP S1 parameter setting, back to BW20!!!\n");
-
-			prBssInfo->ucVhtChannelWidth =
-				VHT_OP_CHANNEL_WIDTH_20_40;
-			prBssInfo->ucVhtChannelFrequencyS1 = 0;
-			prBssInfo->ucVhtChannelFrequencyS2 = 0;
-		}
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+		prBssInfo->ucVhtChannelFrequencyS1 = 0;
+		prBssInfo->ucVhtChannelFrequencyS2 = 0;
 	}
 }
 
