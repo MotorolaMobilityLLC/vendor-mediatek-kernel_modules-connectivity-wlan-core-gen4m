@@ -1148,9 +1148,6 @@ struct test_operation {
 	s_int32 (*op_set_antswap)(
 			struct test_wlan_info *winfos,
 			u_int32 ant);
-	s_int32 (*op_get_thermal_value)(
-		struct test_wlan_info *winfos,
-		struct test_configuration *test_configs);
 	s_int32 (*op_set_freq_offset)(
 		struct test_wlan_info *winfos,
 		u_int32 freq_offset, u_char band_idx);

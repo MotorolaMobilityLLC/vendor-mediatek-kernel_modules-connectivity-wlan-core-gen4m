@@ -244,7 +244,6 @@ s_int32 mt_serv_log_on_off(
 	u_int32 log_ctrl, u_int32 log_size);
 s_int32 mt_serv_set_cfg_on_off(struct service_test *serv_test);
 s_int32 mt_serv_set_rx_filter_pkt_len(struct service_test *serv_test);
-s_int32 mt_serv_get_thermal_value(struct service_test *serv_test);
 s_int32 mt_serv_get_wf_path_comb(struct service_test *serv_test,
 	u_int8 band_idx, boolean dbdc_mode_en, u_int8 *path, u_int8 *path_len);
 s_int32 mt_serv_set_low_power(
