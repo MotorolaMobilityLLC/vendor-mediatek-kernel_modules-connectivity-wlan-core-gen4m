@@ -426,7 +426,7 @@ VOID cnmRadarDetectEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 	prP2pRddDetMsg->rMsgHdr.eMsgId = MID_CNM_P2P_RADAR_DETECT;
 
-	for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM; ucBssIndex++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 		if (prBssInfo && prBssInfo->fgIsDfsActive) {
@@ -475,7 +475,7 @@ VOID cnmCsaDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent)
 
 	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
 
-	for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+	for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM; ucBssIndex++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 		if (prBssInfo && prBssInfo->fgIsDfsActive) {

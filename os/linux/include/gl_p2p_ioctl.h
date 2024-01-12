@@ -450,7 +450,9 @@ int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy,
 #endif
 
 
+#if KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
 int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params);
+#endif
 #endif
 
 int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy, struct net_device *dev, struct bss_parameters *params);

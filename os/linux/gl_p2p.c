@@ -160,7 +160,9 @@ static struct cfg80211_ops mtk_p2p_ops = {
 	.set_power_mgmt = mtk_p2p_cfg80211_set_power_mgmt,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	.start_radar_detection = mtk_p2p_cfg80211_start_radar_detection,
+#if KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
 	.channel_switch = mtk_p2p_cfg80211_channel_switch,
+#endif
 #endif
 #ifdef CONFIG_NL80211_TESTMODE
 	.testmode_cmd = mtk_p2p_cfg80211_testmode_cmd,

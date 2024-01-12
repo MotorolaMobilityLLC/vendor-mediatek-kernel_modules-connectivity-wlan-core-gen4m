@@ -1457,6 +1457,7 @@ int mtk_p2p_cfg80211_start_radar_detection(struct wiphy *wiphy, struct net_devic
 }
 #endif
 
+#if KERNEL_VERSION(3, 13, 0) <= LINUX_VERSION_CODE
 int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev, struct cfg80211_csa_settings *params)
 {
 	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
@@ -1554,7 +1555,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 
-		for (ucBssIndex = 0; ucBssIndex < BSS_INFO_NUM; ucBssIndex++) {
+		for (ucBssIndex = 0; ucBssIndex < BSS_DEFAULT_NUM; ucBssIndex++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
 
 			if (prBssInfo && prBssInfo->fgIsDfsActive) {
@@ -1619,6 +1620,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy, struct net_device *dev,
 
 	return i4Rslt;
 }
+#endif
 #endif
 
 #if 0
