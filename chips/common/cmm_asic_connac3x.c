@@ -752,7 +752,11 @@ void asicConnac3xEnablePlatformIRQ(struct ADAPTER *prAdapter)
 	prWifiVar = &prAdapter->rWifiVar;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#if defined(_HIF_PCIE)
+	mtk_pci_enable_irq(prAdapter->prGlueInfo);
+#else
 	enable_irq(prHifInfo->u4IrqId);
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
@@ -772,7 +776,11 @@ void asicConnac3xDisablePlatformIRQ(struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
+#if defined(_HIF_PCIE)
+	mtk_pci_disable_irq(prAdapter->prGlueInfo);
+#else
 	disable_irq_nosync(prHifInfo->u4IrqId);
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* IrqId_1 is MAWD interrupt */
