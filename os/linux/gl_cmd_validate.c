@@ -64,7 +64,7 @@ struct CMD_VALIDATE_POLICY set_flag_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 struct CMD_VALIDATE_POLICY ap_start_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8,
 				 .min = RUNNING_P2P_MODE,
-				 .max = RUNNING_P2P_DEV_MODE}
+				 .max = RUNNING_P2P_MODE_NUM}
 };
 
 struct CMD_VALIDATE_POLICY set_band_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
