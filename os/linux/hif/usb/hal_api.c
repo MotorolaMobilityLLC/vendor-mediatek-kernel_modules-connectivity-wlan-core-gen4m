@@ -270,6 +270,8 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 	if ((TFCB_FRAME_PAD_TO_DW(prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen) + LEN_USB_UDMA_TX_TERMINATOR) >
 	    prBufCtrl->u4BufSize) {
 		DBGLOG(HAL, ERROR, "Command TX buffer underflow!\n");
+		glUsbEnqueueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, prUsbReq,
+				&prHifInfo->rTxCmdQLock, FALSE);
 		return WLAN_STATUS_RESOURCES;
 	}
 
