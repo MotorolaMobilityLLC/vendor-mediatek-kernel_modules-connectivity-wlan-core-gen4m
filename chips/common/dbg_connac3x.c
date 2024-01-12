@@ -2932,6 +2932,11 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	prWifiVar = &prAdapter->rWifiVar;
 
+	if (kalIsHalted()) {
+		DBGLOG(HAL, INFO, "device not ready");
+		return;
+	}
+
 	if (prSwWfdmaInfo->rOps.dumpDebugLog)
 		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
 
@@ -2995,6 +3000,11 @@ void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter)
 
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
+
+	if (kalIsHalted()) {
+		DBGLOG(HAL, INFO, "device not ready");
+		return;
+	}
 
 	asicConnac3xDmashdlGetRefill(prAdapter);
 	asicConnac3xDmashdlGetPktMaxPage(prAdapter);
@@ -3198,6 +3208,11 @@ void connac3x_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd)
 	uint32_t bn0_txd = 0, bn1_txd = 0, bn2_txd = 0;
 	uint32_t i, j;
 
+	if (kalIsHalted()) {
+		DBGLOG(HAL, INFO, "device not ready");
+		return;
+	}
+
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_STS_ADDR, &int_n9_sts);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_ERR_STS_ADDR, &int_n9_err_sts);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_INT_N9_ERR_STS_1_ADDR, &int_n9_err_sts_1);
@@ -3350,6 +3365,11 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 	uint32_t ple_grp = 0, ple_grp_info = 0;
 	uint32_t value = 0;
 	uint32_t i;
+
+	if (kalIsHalted()) {
+		DBGLOG(HAL, INFO, "device not ready");
+		return;
+	}
 
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_INT_N9_STS_ADDR, &int_n9_sts);
 	HAL_MCR_RD(prAdapter, WF_PSE_TOP_INT_N9_ERR_STS_ADDR, &int_n9_err_sts);
