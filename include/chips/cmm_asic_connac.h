@@ -69,6 +69,7 @@
 #define CONNAC_CHIP_IP_CONFIG			(0x1)
 #define CONNAC_CHIP_ADIE_INFO			(0x31)
 #define USB_HIF_TXD_LEN    4
+#define NIC_TX_PSE_HEADER_LENGTH                4
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S

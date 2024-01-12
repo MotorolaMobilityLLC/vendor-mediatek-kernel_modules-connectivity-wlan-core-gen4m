@@ -1569,12 +1569,14 @@ nicTxComposeDesc(IN struct ADAPTER *prAdapter,
 	/* Ether-type offset */
 	if (prMsduInfo->fgIs802_11) {
 		ucEtherTypeOffsetInWord =
-			(NIC_TX_PSE_HEADER_LENGTH +
+			(prAdapter->chip_info->pse_header_length +
 			prMsduInfo->ucMacHeaderLength +
 			 prMsduInfo->ucLlcLength) >> 1;
 	} else {
-		ucEtherTypeOffsetInWord = ((ETHER_HEADER_LEN -
-			ETHER_TYPE_LEN) + NIC_TX_PSE_HEADER_LENGTH) >> 1;
+		ucEtherTypeOffsetInWord =
+			((ETHER_HEADER_LEN -
+			ETHER_TYPE_LEN) +
+			prAdapter->chip_info->pse_header_length) >> 1;
 	}
 	HAL_MAC_TX_DESC_SET_ETHER_TYPE_OFFSET(prTxDesc,
 					      ucEtherTypeOffsetInWord);
@@ -1799,7 +1801,7 @@ nicTxComposeSecurityFrameDesc(IN struct ADAPTER *prAdapter,
 
 	/* Ether-type offset */
 	ucEtherTypeOffsetInWord = ((ETHER_HEADER_LEN -
-		ETHER_TYPE_LEN) + NIC_TX_PSE_HEADER_LENGTH) >> 1;
+		ETHER_TYPE_LEN) + prAdapter->chip_info->pse_header_length) >> 1;
 	HAL_MAC_TX_DESC_SET_ETHER_TYPE_OFFSET(prTxDesc,
 					      ucEtherTypeOffsetInWord);
 
