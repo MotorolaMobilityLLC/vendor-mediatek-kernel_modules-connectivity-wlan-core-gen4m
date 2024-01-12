@@ -786,6 +786,9 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	uint32_t i, u4BufLen;
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	uint32_t num_ssid = 0;
+	uint32_t old_num_ssid = 0;
+	uint32_t u4ValidIdx = 0;
+	uint32_t wildcard_flag = 0;
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
@@ -793,32 +796,48 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	DBGLOG(REQ, INFO, "mtk_cfg80211_scan\n");
 
 	/* check if there is any pending scan/sched_scan not yet finished */
-	if (prGlueInfo->prScanRequest != NULL)
+	if (prGlueInfo->prScanRequest != NULL) {
+		DBGLOG(REQ, ERROR, "prGlueInfo->prScanRequest != NULL\n");
 		return -EBUSY;
+	}
 
 	kalMemZero(&rScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
-	num_ssid = (uint32_t)request->n_ssids;
-	if (request->n_ssids == 0) {
+	if (request->n_ssids <= 0) {
 		rScanRequest.u4SsidNum = 0;
 	} else if (request->n_ssids <= (SCN_SSID_MAX_NUM + 1)) {
-		if ((request->ssids[request->n_ssids - 1].ssid[0] == 0)
-			|| (request->ssids[request->n_ssids - 1].ssid_len == 0))
-			num_ssid--; /* remove the rear NULL SSID if this is a wildcard scan*/
+		num_ssid = (uint32_t)request->n_ssids;
+		old_num_ssid = (uint32_t)request->n_ssids;
+		u4ValidIdx = 0;
+		for (i = 0; i < request->n_ssids; i++) {
+			if ((request->ssids[i].ssid[0] == 0)
+				|| (request->ssids[i].ssid_len == 0)) {
+				num_ssid--; /* remove if this is a wildcard scan */
+				wildcard_flag |= (1 << i);
+				DBGLOG(REQ, INFO, "i=%d, wildcard scan\n", i);
+				continue;
+			}
+			COPY_SSID(rScanRequest.rSsid[u4ValidIdx].aucSsid,
+				rScanRequest.rSsid[u4ValidIdx].u4SsidLen,
+				request->ssids[i].ssid,
+				request->ssids[i].ssid_len);
+			DBGLOG(REQ, INFO, "i=%d, u4ValidIdx=%d, aucSsid=%s, u4SsidLen=%d\n",
+				i, u4ValidIdx, rScanRequest.rSsid[u4ValidIdx].aucSsid,
+				rScanRequest.rSsid[u4ValidIdx].u4SsidLen);
 
-		if (num_ssid == (SCN_SSID_MAX_NUM + 1)) /* remove the rear SSID if this is a specific scan */
-			num_ssid--;
-
-		rScanRequest.u4SsidNum = num_ssid; /* real SSID number to firmware */
-		for (i = 0; i < rScanRequest.u4SsidNum; i++) {
-			COPY_SSID(rScanRequest.rSsid[i].aucSsid, rScanRequest.rSsid[i].u4SsidLen,
-				  request->ssids[i].ssid, request->ssids[i].ssid_len);
+			u4ValidIdx++;
+			if (u4ValidIdx == SCN_SSID_MAX_NUM) {
+				DBGLOG(REQ, INFO, "SCN_SSID_MAX_NUM\n");
+				break;
+			}
 		}
+		rScanRequest.u4SsidNum = u4ValidIdx; /* real SSID number to firmware */
 	} else {
 		DBGLOG(REQ, ERROR, "request->n_ssids:%d\n", request->n_ssids);
 		return -EINVAL;
 	}
-	DBGLOG(REQ, INFO, "mtk_cfg80211_scan(), n_ssids=%d, num_ssid=%d\n", request->n_ssids, num_ssid);
+	DBGLOG(REQ, INFO, "mtk_cfg80211_scan(), n_ssids=%d, num_ssid=(%u->%u), wildcard=0x%X\n"
+		, request->n_ssids, old_num_ssid, num_ssid, wildcard_flag);
 
 	if (request->ie_len > 0) {
 		rScanRequest.u4IELength = request->ie_len;
