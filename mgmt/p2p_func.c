@@ -8067,6 +8067,44 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 	return i;
 }
 
+uint8_t p2pFuncGetAllFreqList(struct ADAPTER *prAdapter,
+			      uint32_t *pau4WhiteFreqList)
+{
+	struct RF_CHANNEL_INFO arChnlList[MAX_PER_BAND_CHN_NUM] = { { 0 } };
+	uint8_t i, ucChnlNum, rAllChnlNum = 0;
+
+	rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE, MAX_2G_BAND_CHN_NUM,
+		&ucChnlNum, arChnlList);
+	for (i = 0; i < ucChnlNum; ++i) {
+		pau4WhiteFreqList[i] = nicChannelNum2Freq(
+			arChnlList[i].ucChannelNum,
+			arChnlList[i].eBand) / 1000;
+	}
+	rAllChnlNum += ucChnlNum;
+
+	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE, MAX_5G_BAND_CHN_NUM,
+		&ucChnlNum, arChnlList);
+	for (i = 0; i < ucChnlNum; ++i) {
+		pau4WhiteFreqList[rAllChnlNum + i] = nicChannelNum2Freq(
+			arChnlList[i].ucChannelNum,
+			arChnlList[i].eBand) / 1000;
+	}
+	rAllChnlNum += ucChnlNum;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE, MAX_6G_BAND_CHN_NUM,
+		&ucChnlNum, arChnlList);
+	for (i = 0; i < ucChnlNum; ++i) {
+		pau4WhiteFreqList[rAllChnlNum + i] = nicChannelNum2Freq(
+			arChnlList[i].ucChannelNum,
+			arChnlList[i].eBand) / 1000;
+	}
+	rAllChnlNum += ucChnlNum;
+#endif
+
+	return rAllChnlNum;
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief Append a list of freq prBssList into pau4FreqList.
@@ -8109,6 +8147,43 @@ uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 
 /*---------------------------------------------------------------------------*/
 /*!
+ * \brief Get the prefer safe freq by intersection of prefer freq and safe freq.
+ *
+ * \param[in] targetFreqList Pointer to prefer freq.
+ * \param[in] targetFreqListNum Number of prefer freq.
+ * \param[in] prSafeChnlList Pointer to safe chnl list.
+ * \param[in] ucSafeChnlNum Number of safe chnl.
+ *
+ * \retval void.
+ */
+/*---------------------------------------------------------------------------*/
+void p2pFuncGetSafeFreq(uint32_t *targetFreqList, uint32_t *targetFreqListNum,
+			uint32_t *pau4FreqWhiteList, uint8_t ucWhiteFreqNum)
+{
+	uint32_t rIntersectionFreq[MAX_CHN_NUM] = { 0 };
+	uint8_t i, j, ucFreqNum = 0;
+
+	/* intersection of targetFreqList and rIntersectionFreq */
+	for (i = 0; i < *targetFreqListNum; ++i) {
+		for (j = 0; j < ucWhiteFreqNum; ++j)
+			if (targetFreqList[i] == pau4FreqWhiteList[j])
+				break;
+		if (j < ucWhiteFreqNum) {
+			rIntersectionFreq[ucFreqNum++] = targetFreqList[i];
+		} else {
+			DBGLOG(P2P, TRACE, "ignore unsafe freq: %u, ch: %u",
+			       targetFreqList[i],
+			       nicFreq2ChannelNum(targetFreqList[i] * 1000));
+		}
+	}
+
+	kalMemCopy(targetFreqList, rIntersectionFreq,
+		   ucFreqNum * sizeof(uint32_t));
+	*targetFreqListNum = ucFreqNum;
+}
+
+/*---------------------------------------------------------------------------*/
+/*!
  * \brief Get the pref freq list with BSS based algo.
  *
  * \param[in] prAdapter Pointer to the Adapter structure.
@@ -8121,7 +8196,8 @@ uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 /*---------------------------------------------------------------------------*/
 uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
-		uint32_t *pu4FreqListNum)
+		uint32_t *pu4FreqListNum, uint32_t *pau4FreqWhiteList,
+		uint8_t ucWhiteFreqNum)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct BSS_INFO *alive2gBss[MAX_BSSID_NUM] = { 0 };
@@ -8174,6 +8250,9 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			MAX_2G_BAND_CHN_NUM,
 			&pau4FreqList[*pu4FreqListNum]);
 	}
+
+	p2pFuncGetSafeFreq(pau4FreqList, pu4FreqListNum,
+			   pau4FreqWhiteList, ucWhiteFreqNum);
 
 	return WLAN_STATUS_SUCCESS;
 }
