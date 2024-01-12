@@ -2043,8 +2043,23 @@ void mldBssUpdateMldAddrByMainBss(
 	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
 					struct BSS_INFO,
 					rLinkEntryMld);
-	mldBssUpdateMldAddr(prAdapter,
-		prMldBssInfo, prBssInfo->aucOwnMacAddr);
+	if (IS_BSS_APGO(prBssInfo) &&
+	    prAdapter->rWifiVar.ucApMldAddrByLink != MLD_LINK_ID_NONE) {
+		prBssInfo = mldGetBssInfoByLinkID(
+				prAdapter,
+				prMldBssInfo,
+				prAdapter->rWifiVar.ucApMldAddrByLink,
+				FALSE);
+	}
+
+	if (prBssInfo)
+		mldBssUpdateMldAddr(prAdapter,
+			prMldBssInfo, prBssInfo->aucOwnMacAddr);
+	else
+		DBGLOG(ML, ERROR,
+			"bssinfo not found with NumElem=%d, LinkId=%d\n",
+			prMldBssInfo->rBssList.u4NumElem,
+			prAdapter->rWifiVar.ucApMldAddrByLink);
 }
 
 void mldBssUpdateOmacIdx(
