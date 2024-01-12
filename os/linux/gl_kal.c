@@ -8677,7 +8677,6 @@ void kal_do_gettimeofday(struct timeval *tv)
 static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 {
 	struct HIF_STATS *prHifStats;
-	struct PERF_MONITOR *prPerfMon;
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
@@ -8690,7 +8689,6 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 		return;
 
 	prHifStats = &prAdapter->rHifStats;
-	prPerfMon = &prAdapter->rPerMonitor;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prRxCtrl = &prAdapter->rRxCtrl;
 
@@ -8703,7 +8701,7 @@ static void kalDumpHifStats(IN struct ADAPTER *prAdapter)
 	kalMemZero(buf, u4BufferSize);
 
 	prHifStats->ulUpdatePeriod = jiffies +
-			prPerfMon->u4UpdatePeriod * HZ / 1000;
+			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			"I[%u %u]",
