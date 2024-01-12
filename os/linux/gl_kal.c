@@ -12786,7 +12786,7 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 	while (skb_queue_len(prLocalSkbQ)) {
 		prMsduInfo = cnmPktAlloc(prAdapter, 0);
 		if (unlikely(prMsduInfo == NULL)) {
-			DBGLOG(TX, INFO, "cnmPktAlloc NULL\n");
+			DBGLOG(TX, LOUD, "cnmPktAlloc NULL\n");
 			break;
 		}
 
