@@ -641,10 +641,6 @@ enum WAKE_DATA_TYPE {
  */
 #define LOG_FUNC                kalPrint
 #define LOG_FUNC_LIMITED	kalPrintLimited
-#if CFG_SUPPORT_SA_LOG
-#define SALOG_FUNC		kalPrintSALog
-#define SALOG_FUNC_LIMITED	kalPrintSALogLimited
-#endif
 
 /* If __FUNCTION__ is already defined by compiler, we just use it. */
 #define DEBUGFUNC(_Func)
@@ -662,82 +658,6 @@ enum WAKE_DATA_TYPE {
 #define DBGLOG_MEM8(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length)
 #define DBGLOG_MEM128(_Module, _Class, _StartAddr, _Length)
-#else
-#if CFG_SUPPORT_SA_LOG
-#define DBGLOG(_Mod, _Clz, _Fmt, ...) \
-	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
-			DBG_CLASS_##_Clz) == 0) \
-			break; \
-		if (get_wifi_standalone_log_mode() == 1) \
-			SALOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-				KAL_GET_CURRENT_THREAD_ID(), \
-				__func__, ##__VA_ARGS__); \
-		else \
-			LOG_FUNC("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-				KAL_GET_CURRENT_THREAD_ID(), \
-				__func__, ##__VA_ARGS__); \
-	} while (0)
-#define DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
-	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
-			DBG_CLASS_##_Clz) == 0) \
-			break; \
-		if (get_wifi_standalone_log_mode() == 1) \
-			SALOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " \
-				_Fmt, KAL_GET_CURRENT_THREAD_ID(), \
-				__func__, ##__VA_ARGS__); \
-		else \
-			LOG_FUNC_LIMITED("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-				KAL_GET_CURRENT_THREAD_ID(), \
-				__func__, ##__VA_ARGS__); \
-	} while (0)
-#define TOOL_PRINTLOG(_Mod, _Clz, _Fmt, ...) \
-	do { \
-		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
-			 DBG_CLASS_##_Clz) == 0) \
-			break; \
-		if (get_wifi_standalone_log_mode() == 1) \
-			SALOG_FUNC(_Fmt, ##__VA_ARGS__); \
-		else \
-			LOG_FUNC(_Fmt, ##__VA_ARGS__); \
-	} while (0)
-#define DBGLOG_HEX(_Mod, _Clz, _Adr, _Len) \
-	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
-			if (get_wifi_standalone_log_mode() == 1) \
-				SALOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", \
-					__func__); \
-			else \
-				LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", \
-					__func__); \
-			dumpHex((uint8_t *)(_Adr), (uint32_t)(_Len)); \
-		} \
-	}
-#define DBGLOG_MEM8(_Mod, _Clz, _Adr, _Len) \
-	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
-			if (get_wifi_standalone_log_mode() == 1) \
-				SALOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", \
-					__func__); \
-			else \
-				LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", \
-					__func__); \
-			dumpMemory8((uint8_t *)(_Adr), (uint32_t)(_Len)); \
-		} \
-	}
-#define DBGLOG_MEM32(_Mod, _Clz, _Adr, _Len) \
-	{ \
-		if (aucDebugModule[DBG_##_Mod##_IDX] & DBG_CLASS_##_Clz) { \
-			if (get_wifi_standalone_log_mode() == 1) \
-				SALOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", \
-					__func__); \
-			else \
-				LOG_FUNC("%s:(" #_Mod " " #_Clz ")\n", \
-					__func__); \
-			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
-		} \
-	}
 #else
 #define DBGLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
@@ -785,7 +705,6 @@ enum WAKE_DATA_TYPE {
 			dumpMemory32((uint32_t *)(_Adr), (uint32_t)(_Len)); \
 		} \
 	}
-#endif	/* CFG_SUPPORT_SA_LOG */
 #define DBGFWLOG(_Mod, _Clz, _Fmt, ...) \
 	do { \
 		if ((aucDebugModule[DBG_##_Mod##_IDX] & \
