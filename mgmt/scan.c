@@ -1093,6 +1093,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 			= (struct BSS_DESC *) NULL;
 		uint32_t u4SameSSIDCount = 0;
 		uint8_t j;
+		uint8_t fgIsSameSSID;
 
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
@@ -1107,6 +1108,7 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 				continue;
 			}
 
+			fgIsSameSSID = FALSE;
 			for (j = 0; j < KAL_AIS_NUM; j++) {
 
 				struct CONNECTION_SETTINGS *prConnSettings =
@@ -1130,10 +1132,13 @@ void scanRemoveBssDescsByPolicy(IN struct ADAPTER *prAdapter,
 					< prBssDescWeakestSameSSID->ucRCPI)
 						prBssDescWeakestSameSSID =
 							prBssDesc;
+
+					fgIsSameSSID = TRUE;
 				}
 			}
 
-			if (u4SameSSIDCount
+			if (fgIsSameSSID &&
+				u4SameSSIDCount
 				< SCN_BSS_DESC_SAME_SSID_THRESHOLD)
 				continue;
 
@@ -1746,7 +1751,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			if (prBssDesc)
 				break;
 			/* 4 <1.2.6> no space, should not happen */
-			log_limited_dbg(SCN, WARN, "alloc new BssDesc for "
+			log_dbg(SCN, WARN, "alloc new BssDesc for "
 				MACSTR " failed\n",
 				MAC2STR((uint8_t *)
 				prWlanBeaconFrame->aucBSSID));
