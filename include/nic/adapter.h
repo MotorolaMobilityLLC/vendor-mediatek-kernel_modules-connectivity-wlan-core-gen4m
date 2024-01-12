@@ -1451,6 +1451,10 @@ struct ADAPTER {
 	u_int8_t fgEnLowLatencyMode;
 	u_int8_t fgEnCfg80211Scan;
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+#if CFG_SUPPORT_OSHARE
+	bool fgEnOshareMode;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
