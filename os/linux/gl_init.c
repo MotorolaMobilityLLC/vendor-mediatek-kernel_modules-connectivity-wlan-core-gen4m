@@ -3021,7 +3021,7 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 {
 
 	struct service_test *prServiceTest;
-
+	struct test_wlan_info *winfos;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, TRACE, "%s enter!\n", __func__);
@@ -3029,26 +3029,60 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 	if (prGlueInfo == NULL)
 		return WLAN_STATUS_FAILURE;
 
-
 	prGlueInfo->rService.serv_id = SERV_HANDLE_TEST;
 	prGlueInfo->rService.serv_handle
 		= kalMemAlloc(sizeof(struct service_test), VIR_MEM_TYPE);
+	if (prGlueInfo->rService.serv_handle == NULL) {
+		DBGLOG(INIT, WARN,
+			"prGlueInfo->rService.serv_handle memory alloc fail!\n");
+			return WLAN_STATUS_FAILURE;
+	}
 
 	prServiceTest = (struct service_test *)prGlueInfo->rService.serv_handle;
 	prServiceTest->test_winfo
 		= kalMemAlloc(sizeof(struct test_wlan_info), VIR_MEM_TYPE);
+	if (prServiceTest->test_winfo == NULL) {
+		DBGLOG(INIT, WARN,
+			"prServiceTest->test_winfo memory alloc fail!\n");
+			goto label_exit;
+	}
+	winfos = prServiceTest->test_winfo;
+
 	prServiceTest->test_winfo->net_dev = gPrDev;
 	prServiceTest->test_winfo->chip_id = 0x00066310;
 	prServiceTest->test_op
 		= kalMemAlloc(sizeof(struct test_operation), VIR_MEM_TYPE);
+	if (prServiceTest->test_op == NULL) {
+		DBGLOG(INIT, WARN,
+			"prServiceTest->test_op memory alloc fail!\n");
+			goto label_exit;
+	}
+
 	prServiceTest->engine_offload = true;
-	prServiceTest->oid_funcptr = (wlan_oid_handler_t) ServiceWlanOid;
+	winfos->oid_funcptr = (wlan_oid_handler_t) ServiceWlanOid;
 
 	rStatus = mt_agent_init_service(&prGlueInfo->rService);
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, WARN, "%s init fail err:%d\n", __func__, rStatus);
 
 	return rStatus;
+
+label_exit:
+
+	/* free memory */
+	if (prGlueInfo->rService.serv_handle != NULL)
+		kalMemFree(prGlueInfo->rService.serv_handle, VIR_MEM_TYPE,
+			sizeof(struct service_test));
+
+	if (prServiceTest->test_winfo != NULL)
+		kalMemFree(prServiceTest->test_winfo, VIR_MEM_TYPE,
+			   sizeof(struct test_wlan_info));
+
+	if (prServiceTest->test_op != NULL)
+		kalMemFree(prServiceTest->test_op, VIR_MEM_TYPE,
+			   sizeof(struct test_operation));
+
+	return WLAN_STATUS_FAILURE;
 }
 uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 {
