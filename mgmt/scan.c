@@ -5255,8 +5255,10 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 		 * BIT[3]->ALR,
 		 * BIT[4]->DUAL_CTS
 		 */
-		prBssDesc->ucMlrSupportBitmap =
-			pucIE[11];
+		prBssDesc->ucMlrSupportBitmap = (pucIE[11] &
+			(!MLR_CHECK_IF_BAND_IS_SUPPORT(prBssDesc->eBand) ?
+			MLR_MODE_NOT_SUPPORT : ~0));
+
 		prBssDesc->fsIsMlrSupport =
 			MLR_BIT_SUPPORT(prBssDesc
 			->ucMlrSupportBitmap);
