@@ -895,6 +895,15 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (aisGetLinkNum(prAisFsmInfo) > 1) {
+		prAisBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+		mldStarecRegister(prAdapter, prStaRec,
+			prBssDesc->rMlInfo.aucMldAddr,
+			prBssDesc->rMlInfo.ucLinkIndex);
+	}
+#endif
+
 	aisSetLinkStaRec(prAisFsmInfo, prStaRec, ucLinkIndex);
 
 	/* 4 <2.1> sync. to firmware domain */
@@ -4441,7 +4450,7 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prSwRfb = beDuplicateAssocSwRfb(prAdapter,
+		prSwRfb = mldDuplicateAssocSwRfb(prAdapter,
 			prAssocRspSwRfb, prStaRec);
 		if (prSwRfb) {
 			aisUpdateBssInfoForJOIN(prAdapter,
@@ -6026,7 +6035,7 @@ void aisUpdateBssInfoForRoamingAllAP(IN struct ADAPTER *prAdapter,
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prSwRfb = beDuplicateAssocSwRfb(prAdapter,
+		prSwRfb = mldDuplicateAssocSwRfb(prAdapter,
 			prAssocRspSwRfb, prStaRec);
 		if (prSwRfb) {
 			aisUpdateBssInfoForRoamingAP(prAdapter,
@@ -7485,6 +7494,19 @@ struct BSS_DESC *aisGetLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo,
 
 	return prAisFsmInfo->aprLinkInfo[ucLinkIdx].prTargetBssDesc;
 }
+
+uint8_t aisGetLinkNum(IN struct AIS_FSM_INFO *prAisFsmInfo)
+{
+	uint8_t i, num = 0;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		if (aisGetLinkBssDesc(prAisFsmInfo, i))
+			num++;
+	}
+
+	return num;
+}
+
 
 struct BSS_DESC *aisGetMainLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo)
 {

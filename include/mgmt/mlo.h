@@ -136,6 +136,7 @@ struct STA_PROFILE {
 	struct RF_CHANNEL_INFO rChnlInfo;
 	uint8_t ucChangeSeq;
 	uint16_t u2CapInfo;
+	uint16_t u2StatusCode;
 	uint8_t ucIEbufLen;
 	uint8_t aucIEbuf[256];
 };
@@ -157,25 +158,26 @@ struct MULTI_LINK_INFO {
 typedef struct MSDU_INFO* (*PFN_COMPOSE_ASSOC_IE_FUNC) (struct ADAPTER *,
 	struct STA_RECORD *);
 
-void beGenerateAssocMldIE(
+void mldGenerateAssocIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	struct MSDU_INFO *prMsduInfo,
 	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE);
 
-uint8_t beGenerateExternalAuthMldIE(
+uint8_t mldGenerateExternalAuthIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t *pucBuf);
 
-struct IE_MULTI_LINK_CONTROL *beGenerateMldBasicInfo(
-	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo);
+struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
+	IN struct ADAPTER *prAdapter,
+	IN struct MSDU_INFO *prMsduInfo,
+	IN uint16_t u2FrameCtrl);
 
-void beGenerateMlProbeReqIE(uint8_t *pucIE,
+void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	uint32_t *u4IELength, uint8_t ucMldId);
 
-void beGenerateMldSTAInfo(
+void mldGenerateBasicCompleteProfile(
 	struct ADAPTER *prAdapter,
 	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE,
 	struct MSDU_INFO *prMsduInfo,
@@ -184,34 +186,34 @@ void beGenerateMldSTAInfo(
 	struct MSDU_INFO *prMsduInfoSta,
 	uint8_t ucBssIndex);
 
-uint32_t beCalculateMldIELen(
+uint32_t mldCalculateMlIELen(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	struct STA_RECORD *prStaRec);
 
-void beGenerateMldIE(struct ADAPTER *prAdapter,
+void mldGenerateMlIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-uint32_t beCalculateRnrIELen(
+uint32_t mldCalculateRnrIELen(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	struct STA_RECORD *prStaRec);
 
-void beGenerateRnrIE(struct ADAPTER *prAdapter,
+void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
-void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
+void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 	IN const uint8_t *pucIE, IN const uint8_t *paucBssId,
-	IN const char* pucDesc);
+	IN uint16_t u2FrameCtrl, IN const char *pucDesc);
 
-void beProcessBeaconAndProbeResp(
+void mldProcessBeaconAndProbeResp(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);
 
-struct SW_RFB * beDuplicateAssocSwRfb(
+struct SW_RFB *mldDuplicateAssocSwRfb(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc,
 	struct STA_RECORD *prStaRec);
 
-uint8_t beSanityCheckMld(struct ADAPTER *prAdapter, uint8_t *pucPacket,
+uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 		uint16_t u2PacketLen, struct STA_RECORD *prStaRec,
 		uint8_t ucBssIndex);
 
@@ -253,7 +255,7 @@ void mldBssUninit(struct ADAPTER *prAdapter);
 void mldStarecDump(struct ADAPTER *prAdapter);
 
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStarec);
+	struct STA_RECORD *prStarec, uint8_t aucMacAddr[], uint8_t ucLinkId);
 
 void mldStarecUnregister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec);

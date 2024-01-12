@@ -104,8 +104,8 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 	, {0, ehtRlmCalculateOpIELen,
 			ehtRlmRspGenerateOpIE}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	, {0, beCalculateRnrIELen, beGenerateRnrIE}
-	, {0, beCalculateMldIELen, beGenerateMldIE}
+	, {0, mldCalculateRnrIELen, mldGenerateRnrIE}
+	, {0, mldCalculateMlIELen, mldGenerateMlIE}
 #endif
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
@@ -469,6 +469,16 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 			DBGLOG(P2P, TRACE, "Create station record fail\n");
 			continue;
 		}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (p2pGetLinkNum(prP2pRoleFsmInfo) > 1) {
+			prP2pBssInfo->ucLinkIndex =
+				prBssDesc->rMlInfo.ucLinkIndex;
+			mldStarecRegister(prAdapter, prStaRec,
+				prBssDesc->rMlInfo.aucMldAddr,
+				prBssDesc->rMlInfo.ucLinkIndex);
+		}
+#endif
 
 		p2pSetLinkStaRec(prP2pRoleFsmInfo, prStaRec, i);
 		/* only setup link needs to do SAA */
