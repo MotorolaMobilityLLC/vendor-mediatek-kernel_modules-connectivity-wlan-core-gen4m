@@ -1971,15 +1971,9 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			   prGlueInfo, ucBssIdx);
 	} else {
 		DBGLOG(RX, WARN, "Error ucBssIdx =%u\n", ucBssIdx);
-		DBGLOG(RX, WARN, "Error pkt info =%u:%u:%u:%u:%u:%u:%u:%lu\n",
-			GLUE_GET_PKT_TID(prSkb),
+		DBGLOG(RX, WARN, "Error pkt info =%u:%u\n",
 			GLUE_IS_PKT_FLAG_SET(prSkb),
-			GLUE_GET_PKT_HEADER_LEN(prSkb),
-			GLUE_GET_PKT_FRAME_LEN(prSkb),
-			GLUE_GET_PKT_ARRIVAL_TIME(prSkb),
-			GLUE_GET_PKT_IP_ID(prSkb),
-			GLUE_GET_PKT_SEQ_NO(prSkb),
-			GLUE_GET_PKT_IS_PROF_MET(prSkb));
+			GLUE_GET_PKT_IP_ID(prSkb));
 	}
 	if (!prNetDev)
 		prNetDev = prGlueInfo->prDevHandler;
@@ -2003,7 +1997,7 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 #endif
 
 #if (CFG_SUPPORT_STATISTICS == 1)
-	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb, (void *)prNetDev);
+	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb);
 #endif
 
 #if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
