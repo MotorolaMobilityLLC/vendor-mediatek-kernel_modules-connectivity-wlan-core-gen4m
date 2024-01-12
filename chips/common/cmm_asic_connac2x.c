@@ -1640,6 +1640,7 @@ void asicConnac2xInitRxdHook(
 	prRxDescOps->nic_rxd_get_rf_band = nic_rxd_v2_get_rf_band;
 	prRxDescOps->nic_rxd_get_tcl = nic_rxd_v2_get_tcl;
 	prRxDescOps->nic_rxd_get_ofld = nic_rxd_v2_get_ofld;
+	prRxDescOps->nic_rxd_get_HdrTrans = nic_rxd_v2_get_HdrTrans;
 	prRxDescOps->nic_rxd_fill_rfb = nic_rxd_v2_fill_rfb;
 	prRxDescOps->nic_rxd_sanity_check = nic_rxd_v2_sanity_check;
 	prRxDescOps->nic_rxd_check_wakeup_reason =
