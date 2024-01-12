@@ -5195,6 +5195,69 @@ nicRlmArUpdateParms(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_TWT_SMART_STA == 1)
+void nicUpdateLinkQualityForTwt(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, int8_t cRssi)
+{
+	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg = NULL;
+	struct _TWT_CTRL_T rTWTCtrl;
+
+	DBGLOG(RLM, INFO, "smarttwtreq=%d, smarttwtact=%d(%d)\n",
+		g_TwtSmartStaCtrl.fgTwtSmartStaReq,
+		g_TwtSmartStaCtrl.fgTwtSmartStaActivated,
+		g_TwtSmartStaCtrl.eState);
+
+	if ((cRssi >= (-35)) &&
+		(g_TwtSmartStaCtrl.u4TwtSwitch == 0) &&
+		((g_TwtSmartStaCtrl.fgTwtSmartStaReq == TRUE) &&
+		 (g_TwtSmartStaCtrl.fgTwtSmartStaActivated == FALSE) &&
+		 (g_TwtSmartStaCtrl.eState == TWT_SMART_STA_STATE_IDLE))
+	) {
+		rTWTCtrl.ucBssIdx = ucBssIndex;
+		rTWTCtrl.ucCtrlAction = 4;
+		rTWTCtrl.ucTWTFlowId = 0;
+		rTWTCtrl.rTWTParams.fgReq = TRUE;
+		rTWTCtrl.rTWTParams.ucSetupCmd = 1;
+		rTWTCtrl.rTWTParams.fgTrigger = 0;
+		rTWTCtrl.rTWTParams.fgUnannounced = 1;
+		rTWTCtrl.rTWTParams.ucWakeIntvalExponent = 10;
+		rTWTCtrl.rTWTParams.fgProtect = 0;
+		rTWTCtrl.rTWTParams.ucMinWakeDur = 255;
+		rTWTCtrl.rTWTParams.u2WakeIntvalMantiss = 512;
+		g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_REQUESTING;
+
+		prTWTParamSetMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(struct _MSG_TWT_REQFSM_RESUME_T));
+	}
+
+	if (((cRssi <= (-40)) ||
+		(g_TwtSmartStaCtrl.fgTwtSmartStaTeardownReq == TRUE))
+		&& (g_TwtSmartStaCtrl.fgTwtSmartStaActivated == TRUE)
+	) {
+		rTWTCtrl.ucBssIdx = ucBssIndex;
+		rTWTCtrl.ucCtrlAction = 5;
+		rTWTCtrl.ucTWTFlowId = g_TwtSmartStaCtrl.ucFlowId;
+
+		DBGLOG(RLM, INFO, "twtswitch=%d, rxrate=%d\n",
+			g_TwtSmartStaCtrl.u4TwtSwitch,
+			g_TwtSmartStaCtrl.u4LastTp);
+
+		prTWTParamSetMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(struct _MSG_TWT_REQFSM_RESUME_T));
+	}
+
+	if (prTWTParamSetMsg) {
+		prTWTParamSetMsg->rMsgHdr.eMsgId = MID_TWT_PARAMS_SET;
+		kalMemCopy(&prTWTParamSetMsg->rTWTCtrl, &rTWTCtrl,
+			sizeof(rTWTCtrl));
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prTWTParamSetMsg,
+			MSG_SEND_METHOD_BUF);
+	}
+}
+#endif /* CFG_TWT_SMART_STA */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to update Link Quality information
@@ -5212,14 +5275,8 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 			  uint8_t ucBssIndex,
 			  struct EVENT_LINK_QUALITY *prEventLinkQuality)
 {
-	int8_t cRssi;
-	uint16_t u2AdjustRssi = 10;
+	struct BSS_INFO *prBssInfo;
 	struct LINK_SPEED_EX_ *prLq;
-
-#if (CFG_TWT_SMART_STA == 1)
-	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg = NULL;
-	struct _TWT_CTRL_T rTWTCtrl;
-#endif
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
@@ -5230,155 +5287,40 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
+
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+	if (prLq->fgIsLinkRateValid != FALSE &&
+		(kalGetTimeTick() - prLq->rLinkRateUpdateTime)
+		<= CFG_LINK_QUALITY_VALID_PERIOD)
+		return;
+
 	DBGLOG(NIC, TRACE, "bss:%u LRValid:%u updateTime:%u\n",
 		ucBssIndex,
 		prLq->fgIsLinkRateValid,
 		prLq->rLinkRateUpdateTime);
-	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
-				      ucBssIndex)->eNetworkType) {
+
+	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:
-		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-					  ucBssIndex)->eConnectionState ==
-		    MEDIA_STATE_CONNECTED) {
-			/* check is to prevent RSSI to be updated by
-			 * incorrect initial RSSI from hardware
-			 */
-			/* buffer statistics for further query */
-			if (prLq->fgIsLinkQualityValid == FALSE ||
-			    (kalGetTimeTick() - prLq->rLinkQualityUpdateTime) >
-			    CFG_LINK_QUALITY_VALID_PERIOD) {
-				/* ranged from (-128 ~ 30) in unit of dBm */
-				cRssi =
-					prEventLinkQuality->rLq[ucBssIndex].
-					cRssi;
-				cRssi =
-					(int8_t) (((int16_t)
-					(cRssi) * u2AdjustRssi) / 10);
-				DBGLOG(RLM, INFO,
-					"Rssi=%d, NewRssi=%d\n",
-					prEventLinkQuality->rLq[ucBssIndex].
-					cRssi,
-					cRssi);
-				nicUpdateRSSI(prAdapter, ucBssIndex, cRssi,
-					prEventLinkQuality->rLq[ucBssIndex].
-					cLinkQuality);
-
 #if (CFG_TWT_SMART_STA == 1)
-
-				DBGLOG(RLM, INFO,
-					"smarttwtreq=%d, smarttwtact=%d(%d)\n",
-					g_TwtSmartStaCtrl.
-					fgTwtSmartStaReq,
-					g_TwtSmartStaCtrl.
-					fgTwtSmartStaActivated,
-					g_TwtSmartStaCtrl.eState);
-
-				if ((cRssi >= (-35)) &&
-					(g_TwtSmartStaCtrl.u4TwtSwitch == 0) &&
-					((g_TwtSmartStaCtrl.
-					fgTwtSmartStaReq == TRUE) &&
-					(g_TwtSmartStaCtrl.
-					fgTwtSmartStaActivated == FALSE)
-					&& (g_TwtSmartStaCtrl.
-					eState ==
-					TWT_SMART_STA_STATE_IDLE))
-					) {
-					rTWTCtrl.ucBssIdx
-						= ucBssIndex;
-					rTWTCtrl.ucCtrlAction
-						= 4;
-					rTWTCtrl.ucTWTFlowId
-						= 0;
-					rTWTCtrl.rTWTParams.
-						fgReq = TRUE;
-					rTWTCtrl.rTWTParams.
-						ucSetupCmd = 1;
-					rTWTCtrl.rTWTParams.
-						fgTrigger = 0;
-					rTWTCtrl.rTWTParams.
-						fgUnannounced
-						= 1;
-					rTWTCtrl.rTWTParams.
-						ucWakeIntvalExponent
-						= 10;
-					rTWTCtrl.rTWTParams.
-						fgProtect = 0;
-					rTWTCtrl.rTWTParams.
-						ucMinWakeDur
-						= 255;
-					rTWTCtrl.rTWTParams.
-						u2WakeIntvalMantiss
-						= 512;
-
-					g_TwtSmartStaCtrl.eState =
-				TWT_SMART_STA_STATE_REQUESTING;
-
-					prTWTParamSetMsg =
-						cnmMemAlloc(prAdapter,
-						RAM_TYPE_MSG,
-						sizeof(struct
-					_MSG_TWT_REQFSM_RESUME_T));
-				}
-
-				if (((cRssi <= (-40)) ||
-					(g_TwtSmartStaCtrl.
-					fgTwtSmartStaTeardownReq
-					== TRUE)) &&
-					(g_TwtSmartStaCtrl.
-					fgTwtSmartStaActivated
-					== true)) {
-					rTWTCtrl.ucBssIdx
-						= ucBssIndex;
-					rTWTCtrl.ucCtrlAction
-						= 5;
-					rTWTCtrl.ucTWTFlowId
-						= g_TwtSmartStaCtrl.
-						ucFlowId;
-
-					DBGLOG(RLM, INFO,
-						"twtswitch=%d, rxrate=%d\n",
-						g_TwtSmartStaCtrl.u4TwtSwitch,
-						g_TwtSmartStaCtrl.u4LastTp);
-
-					prTWTParamSetMsg
-						= cnmMemAlloc(prAdapter,
-						RAM_TYPE_MSG,
-						sizeof(struct
-					_MSG_TWT_REQFSM_RESUME_T));
-					}
-
-				if (prTWTParamSetMsg) {
-					prTWTParamSetMsg->
-						rMsgHdr.eMsgId =
-						MID_TWT_PARAMS_SET;
-					kalMemCopy(
-						&prTWTParamSetMsg->
-						rTWTCtrl,
-						&rTWTCtrl,
-						sizeof(rTWTCtrl));
-
-					mboxSendMsg(prAdapter,
-						MBOX_ID_0,
-						(struct MSG_HDR *)
-						prTWTParamSetMsg,
-						MSG_SEND_METHOD_BUF);
-				}
-
-
+		nicUpdateLinkQualityForTwt(prAdapter, ucBssIndex,
+			prEventLinkQuality->rLq[ucBssIndex].cRssi);
 #endif
-			}
+		/*
+		 * fallthrough
+		 * update RSSI/LinkSpeed for both STA and P2P
+		 */
+	case NETWORK_TYPE_P2P:
+		nicUpdateRSSI(prAdapter, ucBssIndex,
+			prEventLinkQuality->rLq[ucBssIndex].cRssi,
+			prEventLinkQuality->rLq[ucBssIndex].cLinkQuality);
 
-			if (prLq->fgIsLinkRateValid == FALSE ||
-			    (kalGetTimeTick() - prLq->rLinkRateUpdateTime)
-			    > CFG_LINK_QUALITY_VALID_PERIOD) {
-				nicUpdateLinkSpeed(prAdapter, ucBssIndex,
-					prEventLinkQuality->rLq[ucBssIndex].
-					u2LinkSpeed);
-			}
-
-
-		}
+		nicUpdateLinkSpeed(prAdapter, ucBssIndex,
+			prEventLinkQuality->rLq[ucBssIndex].
+			u2LinkSpeed);
 		break;
 
 	default:
@@ -5404,6 +5346,9 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
 		   uint8_t ucBssIndex, int8_t cRssi,
 		   int8_t cLinkQuality)
 {
+	struct BSS_INFO *prBssInfo;
+	struct LINK_SPEED_EX_ *prLq;
+
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
@@ -5412,39 +5357,28 @@ void nicUpdateRSSI(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
-				      ucBssIndex)->eNetworkType) {
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
+
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
+
+	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:
-		if (GET_BSS_INFO_BY_INDEX(prAdapter,
-					  ucBssIndex)->eConnectionState ==
-		    MEDIA_STATE_CONNECTED) {
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				fgIsLinkQualityValid = TRUE;
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				rLinkQualityUpdateTime = kalGetTimeTick();
-
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				cRssi = cRssi;
-			prAdapter->rLinkQuality.rLq[ucBssIndex].
-				cLinkQuality = cLinkQuality;
-			/* indicate to glue layer */
-			kalUpdateRSSI(prAdapter->prGlueInfo,
-				      ucBssIndex, cRssi, cLinkQuality);
-		}
-
-		break;
-#if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_P2P_RSSI_QUERY
 	case NETWORK_TYPE_P2P:
-		prAdapter->fgIsP2pLinkQualityValid = TRUE;
-		prAdapter->rP2pLinkQualityUpdateTime = kalGetTimeTick();
+		prLq->fgIsLinkQualityValid = TRUE;
+		prLq->rLinkQualityUpdateTime = kalGetTimeTick();
 
-		prAdapter->rP2pLinkQuality.cRssi = cRssi;
-		prAdapter->rP2pLinkQuality.cLinkQuality = cLinkQuality;
+		prLq->cRssi = cRssi;
+		prLq->cLinkQuality = cLinkQuality;
 
+		/* indicate to glue layer */
 		kalUpdateRSSI(prAdapter->prGlueInfo,
-			      ucBssIndex, cRssi, cLinkQuality);
+			ucBssIndex, cRssi, cLinkQuality);
 		break;
-#endif
 	default:
 		break;
 
@@ -5484,8 +5418,11 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return;
 
-	if (prBssInfo->eNetworkType != NETWORK_TYPE_AIS ||
-		prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
+
+	if ((prBssInfo->eNetworkType != NETWORK_TYPE_AIS &&
+		prBssInfo->eNetworkType != NETWORK_TYPE_P2P))
 		return;
 
 	/*Fill Rx Rate in unit of 100bps*/
