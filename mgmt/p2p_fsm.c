@@ -394,8 +394,12 @@ void p2pFsmRunEventScanDone(struct ADAPTER *prAdapter,
 void p2pFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
-	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
-			(struct MSG_MGMT_TX_REQUEST *) NULL;
+	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_INFO *prBssInfo;
+	struct MLD_BSS_INFO *prMldBss;
+#endif
+	u_int8_t fgUseRoleInterface;
 
 	if ((prAdapter == NULL) || (prMsgHdr == NULL))
 		return;
@@ -406,7 +410,34 @@ void p2pFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 		p2pFuncAddPendingMgmtLinkEntry(prAdapter,
 			prMgmtTxMsg->ucBssIdx, prMgmtTxMsg->u8Cookie);
 
-	if (p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx)) {
+	fgUseRoleInterface = p2pFsmUseRoleIf(prAdapter, prMgmtTxMsg->ucBssIdx);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMgmtTxMsg->ucBssIdx);
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (prMldBss && fgUseRoleInterface) {
+		LINK_FOR_EACH_ENTRY(prBssInfo, &prMldBss->rBssList,
+				    rLinkEntryMld,
+				    struct BSS_INFO) {
+			struct STA_RECORD *prSta;
+
+			prSta = cnmGetStaRecByAddress(prAdapter,
+						      prBssInfo->ucBssIndex,
+						      prMgmtTxMsg->aucDestMac);
+			if (prSta &&
+			    prBssInfo->ucBssIndex != prMgmtTxMsg->ucBssIdx) {
+				DBGLOG(P2P, TRACE,
+					"Replace bss from %u to %u\n",
+					prMgmtTxMsg->ucBssIdx,
+					prBssInfo->ucBssIndex);
+				prMgmtTxMsg->ucBssIdx = prBssInfo->ucBssIndex;
+				break;
+			}
+		}
+	}
+#endif
+
+	if (fgUseRoleInterface) {
 		p2pRoleFsmRunEventMgmtTx(prAdapter, prMsgHdr);
 	} else {
 		prMgmtTxMsg->ucBssIdx = prAdapter->ucP2PDevBssIdx;

@@ -331,6 +331,7 @@ struct MSG_MGMT_TX_REQUEST {
 	enum ENUM_CHNL_EXT eChnlExt;
 	u_int8_t fgIsWaitRsp;
 	uint32_t u4Duration;
+	uint8_t aucDestMac[MAC_ADDR_LEN];
 };
 
 #if (CFG_SUPPORT_TWT == 1)
