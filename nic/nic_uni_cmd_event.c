@@ -7253,19 +7253,12 @@ uint32_t nicUniCmdNan(struct ADAPTER *ad,
 
 	u2EvtLength = prTlvElement->body_len;
 
-	entry = nicUniCmdNanGenEntry(
-			u2EvtTag,
-			u2EvtLength,
-			&ucEvtBuf,
-			ad);
+	entry = nicUniCmdNanGenEntry(u2EvtTag, u2EvtLength, &ucEvtBuf, ad);
 
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	kalMemCopy(
-		ucEvtBuf,
-		prTlvElement->aucbody,
-		u2EvtLength);
+	kalMemCopy(ucEvtBuf, prTlvElement->aucbody, u2EvtLength);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

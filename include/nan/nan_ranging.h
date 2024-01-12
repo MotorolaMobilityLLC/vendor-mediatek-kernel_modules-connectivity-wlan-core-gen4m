@@ -158,33 +158,33 @@ struct _NAN_RANGING_INFO_T {
 	struct NanRangeResponseCtl response_ctl_def;
 };
 
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_FTM_PARAM_CMD {
 	uint8_t ucRole;
 	uint8_t ucInvoker;
 	uint8_t aucPeerAddr[MAC_ADDR_LEN];
 	struct _NAN_FTM_PARAM_T rNanFtmParam;
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_FTM_DONE_EVENT {
 	uint8_t aucPeerAddr[MAC_ADDR_LEN];
 	struct _NAN_FTM_REPORT_T rNanFtmReport;
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_RANGING_BY_DISC_EVENT {
 	struct NanRangeRequest rReq;
 } __KAL_ATTRIB_PACKED__;
 
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_RANGING_REPORT_CMD {
 	uint32_t ucStatus;
 	uint16_t ranging_id;
 	uint8_t range_req_intf_addr[MAC_ADDR_LEN];
 	uint32_t range_measurement_cm;
 	uint32_t ranging_event_type;
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 /*******************************************************************************
  *                            P U B L I C   D A T A

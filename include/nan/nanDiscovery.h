@@ -94,11 +94,11 @@ struct NAN_MATCH_EXPIRE_EVENT {
 	uint32_t u4RequestorInstanceID;
 };
 
-__KAL_ATTRIB_PACKED_FRONT__
 /* Publish Msg Structure
  * Message is used to request the DE to publish the Service Name
  * using the parameters passed into the Discovery Window
  */
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct NanFWPublishRequest {
 	/* id  0 means new publish, any other id is existing publish */
 	uint16_t publish_id;
@@ -227,13 +227,13 @@ struct NanFWPublishRequest {
 	struct NanSecurityKeyInfo key_info;
 
 	uint8_t service_name_hash[NAN_SERVICE_HASH_LENGTH];
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 /* NAN Subscribe Structure
  * The SubscribeServiceReq message is sent to the Discovery Engine
  * whenever the Upper layers would like to listen for a Service Name
  */
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct NanFWSubscribeRequest {
 	/* id 0 means new subscribe, non zero is existing subscribe */
 	uint16_t subscribe_id;
@@ -391,9 +391,9 @@ struct NanFWSubscribeRequest {
 	uint8_t sdea_service_specific_info[NAN_FW_SDEA_SPECIFIC_INFO_LEN];
 
 	uint8_t service_name_hash[NAN_SERVICE_HASH_LENGTH];
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct NanFWTransmitFollowupRequest {
 	/* Publish or Subscribe Id of an earlier Publish/Subscribe */
 	uint16_t publish_subscribe_id;
@@ -422,7 +422,7 @@ struct NanFWTransmitFollowupRequest {
 	/* Sequence of values indicating the service specific info in SDEA */
 	uint16_t sdea_service_specific_info_len;
 	uint8_t sdea_service_specific_info[NAN_FW_SDEA_SPECIFIC_INFO_LEN];
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 struct service_specificy_info {
 	uint8_t aucOUI[3];
@@ -483,19 +483,19 @@ struct _NAN_SUBSCRIBE_INFO_T {
 		rSubSpecificInfo[NAN_MAX_SUBSCRIBE_NUM];
 };
 
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_DISC_CMD_ADD_CSID_T {
 	uint8_t ucPubID;
 	uint8_t ucNum;
 	uint8_t aucSupportedCSID[NAN_MAX_CIPHER_SUITE_NUM];
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct _NAN_DISC_CMD_MANAGE_SCID_T {
 	unsigned char fgAddDelete;
 	uint8_t ucPubID;
 	uint8_t aucSCID[NAN_SCID_DEFAULT_LEN];
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 uint32_t nanCancelPublishRequest(struct ADAPTER *prAdapter,
 				 struct NanPublishCancelRequest *msg);

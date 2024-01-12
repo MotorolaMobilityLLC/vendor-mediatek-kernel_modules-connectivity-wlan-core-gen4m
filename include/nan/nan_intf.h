@@ -849,7 +849,7 @@ struct NanConfigDW {
  * The NanEnableReq message instructs the Discovery Engine to enter an
  * operational state
  */
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct NanEnableRequest {
 	/* Mandatory parameters below */
 	uint8_t master_pref;
@@ -1021,7 +1021,7 @@ struct NanEnableRequest {
 	 */
 	uint8_t config_subscribe_sid_beacon;
 	uint32_t subscribe_sid_beacon_val;
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 /* Enable Unsync Message Structure
  * The NanEnableUnsync message instructs the Discovery Engine to enter an
