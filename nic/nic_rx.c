@@ -238,6 +238,10 @@ static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {
 	{(uint16_t)
 	 (CATEGORY_WNM_ACTION | ACTION_WNM_TIMING_MEASUREMENT_REQUEST << 8),
 	 sizeof(struct ACTION_WNM_TIMING_MEAS_REQ_FRAME)},
+	{(uint16_t)(CATEGORY_FT_ACTION | ACTION_FT_REQUEST << 8),
+	 sizeof(struct ACTION_FT_REQ_ACTION_FRAME)},
+	{(uint16_t)(CATEGORY_FT_ACTION | ACTION_FT_RESPONSE << 8),
+	 sizeof(struct ACTION_FT_RESP_ACTION_FRAME)},
 	{(uint16_t)(CATEGORY_SPEC_MGT | ACTION_MEASUREMENT_REQ << 8),
 	 sizeof(struct ACTION_SM_REQ_FRAME)},
 	{(uint16_t)(CATEGORY_SPEC_MGT | ACTION_MEASUREMENT_REPORT << 8),
@@ -3938,6 +3942,13 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_NAN
 		if (prAdapter->fgIsNANRegistered)
 			nicRxProcessNanPubActionFrame(prAdapter, prSwRfb);
+#endif
+		break;
+
+	case CATEGORY_FT_ACTION:
+		DBGLOG(RX, INFO, "received ft action frame\n");
+#if CFG_SUPPORT_ROAMING
+		roamingFsmRunEventRxFtAction(prAdapter, prSwRfb);
 #endif
 		break;
 

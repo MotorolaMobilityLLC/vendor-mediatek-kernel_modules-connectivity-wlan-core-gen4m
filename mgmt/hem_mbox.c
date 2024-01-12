@@ -127,7 +127,9 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX_CANCEL_WAIT"),
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 	(uint8_t *) DISP_STRING("MID_WNM_AIS_BSS_TRANSITION"),
+#endif
 #if CFG_SUPPORT_NCHO
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_NCHO_ACTION_FRAME")
 #endif
@@ -272,7 +274,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 		aisFsmRunEventCancelRemainOnChannel},
 	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx},
 	{MID_MNY_AIS_MGMT_TX_CANCEL_WAIT, aisFsmRunEventCancelTxWait},
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 	{MID_WNM_AIS_BSS_TRANSITION, aisFsmRunEventBssTransition},
+#endif
 	{MID_OID_WMM_TSPEC_OPERATE, wmmRunEventTSOperate},
 	{MID_RRM_REQ_SCHEDULE, rrmRunEventProcessNextRm},
 #if CFG_SUPPORT_NCHO

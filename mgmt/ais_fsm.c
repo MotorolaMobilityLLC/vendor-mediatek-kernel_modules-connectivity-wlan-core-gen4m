@@ -83,7 +83,8 @@ static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("DISCONNECTING"),
 	(uint8_t *) DISP_STRING("REQ_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("REMAIN_ON_CHANNEL"),
-	(uint8_t *) DISP_STRING("OFF_CHNL_TX")
+	(uint8_t *) DISP_STRING("OFF_CHNL_TX"),
+	(uint8_t *) DISP_STRING("ROAMING")
 };
 
 /*******************************************************************************
@@ -154,6 +155,7 @@ static void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais);
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
 void aisResetBssTranstionMgtParam(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
@@ -164,7 +166,6 @@ void aisResetBssTranstionMgtParam(struct ADAPTER *prAdapter,
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	kalMemSet(prBtmParam, 0, sizeof(struct BSS_TRANSITION_MGT_PARAM));
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rBtmRespTxDoneTimer);
 #endif
 }
 
@@ -274,25 +275,9 @@ void aisInitializeConnectionSettings(struct ADAPTER *prAdapter,
 
 	secInit(prAdapter, ucBssIndex);
 
-	/* Features */
-	prConnSettings->fgIsEnableRoaming = FALSE;
-
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	prConnSettings->fgSecModeChangeStartTimer = FALSE;
 #endif
-
-#if CFG_SUPPORT_ROAMING
-#if 0
-	if (prRegInfo)
-		prConnSettings->fgIsEnableRoaming =
-		    ((prRegInfo->fgDisRoaming > 0) ? (FALSE) : (TRUE));
-#else
-	if (prAdapter->rWifiVar.fgDisRoaming)
-		prConnSettings->fgIsEnableRoaming = FALSE;
-	else
-		prConnSettings->fgIsEnableRoaming = TRUE;
-#endif
-#endif /* CFG_SUPPORT_ROAMING */
 
 	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 	aisInitializeConnectionRsnInfo(prAdapter, ucBssIndex);
@@ -899,11 +884,6 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 			  (uintptr_t)ucBssIndex);
 #endif
 
-	cnmTimerInitTimer(prAdapter,
-			  &prAisFsmInfo->rBtmRespTxDoneTimer,
-			  (PFN_MGMT_TIMEOUT_FUNC) aisFsmBtmRespTxDoneTimeout,
-			  (uintptr_t)ucBssIndex);
-
 	prMgmtTxReqInfo = &prAisFsmInfo->rMgmtTxInfo;
 	LINK_INITIALIZE(&prMgmtTxReqInfo->rTxReqLink);
 	prMgmtTxReqInfo->prMgmtTxMsdu = NULL;
@@ -920,14 +900,14 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 
 	/* 11K, 11V */
 	LINK_MGMT_INIT(&prAisSpecificBssInfo->rNeighborApList);
-	kalMemZero(&prAisSpecificBssInfo->rBTMParam,
-		   sizeof(prAisSpecificBssInfo->rBTMParam));
 
 	rrmParamInit(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_802_11W
 	kal_init_completion(&prAisFsmInfo->rDeauthComp);
 	prAisFsmInfo->encryptedDeauthIsInProcess = FALSE;
 	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
+	prAisSpecificBssInfo->fgBipKeyInstalled = FALSE;
+	prAisSpecificBssInfo->fgBipGmacKeyInstalled = FALSE;
 #endif
 	/* AX blacklist*/
 	LINK_INITIALIZE(&prAisFsmInfo->rAxBlacklist);
@@ -1017,7 +997,6 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 #endif
 	/* 4 <2> flush pending request */
 	aisFsmFlushRequest(prAdapter, ucBssIndex);
-	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
 
 	aisFunClearAllTxReq(prAdapter, &(prAisFsmInfo->rMgmtTxInfo));
 
@@ -1038,6 +1017,7 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	wmmUnInit(prAdapter, ucBssIndex);
 
 	aisFreeAllBssInfo(prAdapter, prAisFsmInfo, TRUE);
+	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssFree(prAdapter, prAisFsmInfo->prMldBssInfo);
@@ -1210,6 +1190,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
 	struct GL_WPA_INFO *prWpaInfo;
+	struct FT_EVENT_PARAMS *prFtParam;
 #if (CFG_SUPPORT_HE_ER == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
@@ -1229,6 +1210,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	}
 
 	ucBssIndex = prBssInfo->ucBssIndex;
+	prFtParam = aisGetFtEventParam(prAdapter, ucBssIndex);
 
 	/* 4 <1> We are going to connect to this BSS. */
 	prBssDesc->fgIsConnecting |= BIT(ucBssIndex);
@@ -1356,8 +1338,6 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		    prAisFsmInfo->ucAvailableAuthTypes;
 
 		prStaRec->ucTxAuthAssocRetryLimit = TX_AUTH_ASSOCI_RETRY_LIMIT;
-		/* reset BTM Params when do first connection */
-		aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
 
 		/* Update Bss info before join */
 		prBssInfo->eBand = prBssDesc->eBand;
@@ -1391,7 +1371,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 			    IW_AUTH_WPA_VERSION_DISABLED &&
 			    prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FT) {
 				prAisFsmInfo->ucAvailableAuthTypes =
-					(uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+					(uint8_t) AUTH_TYPE_FT;
 				DBGLOG(AIS, INFO, "FT: Non-RSN FT roaming\n");
 			} else {
 				/* make sure wpa3 transition mode using open */
@@ -1402,18 +1382,45 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		case AUTH_MODE_WPA2_FT:
 		case AUTH_MODE_WPA2_FT_PSK:
 			prAisFsmInfo->ucAvailableAuthTypes =
-				(uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION |
+				(uint8_t) AUTH_TYPE_FT |
 					  AUTH_TYPE_OPEN_SYSTEM;
 			DBGLOG(AIS, INFO,
-				"JOIN INIT: eAuthMode == RSN FT roaming | OPEN\n");
+				"FT: eAuthMode == RSN FT roaming | OPEN\n");
+
+			if (prBssDesc->fgIsFtOverDS) {
+				if (prFtParam->eFtDsState ==
+				    FT_DS_STATE_AUTHORIZED) {
+					prStaRec->ucAuthTranNum =
+						AUTH_TRANSACTION_SEQ_2;
+				} else {
+					prAisFsmInfo->ucAvailableAuthTypes &=
+						~AUTH_TYPE_FT;
+					DBGLOG(AIS, INFO,
+						"FT: ft-over-ds not allowed\n");
+				}
+			}
 			break;
 		case AUTH_MODE_WPA3_SAE:
 			if (rsnKeyMgmtFT(prBssInfo->u4RsnSelectedAKMSuite)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
-				       (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION |
+				       (uint8_t) AUTH_TYPE_FT |
 						 AUTH_TYPE_SAE;
 				DBGLOG(AIS, INFO,
 					"FT: eAuthMode == RSN FT roaming | SAE\n");
+
+				if (prBssDesc->fgIsFtOverDS) {
+					if (prFtParam->eFtDsState ==
+					    FT_DS_STATE_AUTHORIZED) {
+						prStaRec->ucAuthTranNum =
+							AUTH_TRANSACTION_SEQ_2;
+					} else {
+						prAisFsmInfo->
+							ucAvailableAuthTypes &=
+							~AUTH_TYPE_FT;
+						DBGLOG(AIS, INFO,
+							"FT: ft-over-ds not allowed\n");
+					}
+				}
 			} else if (!aisSearchPmkidEntry(prAdapter,
 					prStaRec, ucBssIndex)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
@@ -1494,16 +1501,16 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		    (uint8_t) AUTH_ALGORITHM_NUM_FILS_SK;
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
-		   AUTH_TYPE_FAST_BSS_TRANSITION) {
+		   AUTH_TYPE_FT) {
 
 		DBGLOG(AIS, LOUD,
 		       "JOIN INIT: Try to do Authentication with AuthType == FAST_BSS_TRANSITION.\n");
 
 		prAisFsmInfo->ucAvailableAuthTypes &=
-		    ~(uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+		    ~(uint8_t) AUTH_TYPE_FT;
 
 		prStaRec->ucAuthAlgNum =
-		    (uint8_t) AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION;
+		    (uint8_t) AUTH_ALGORITHM_NUM_FT;
 	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
 		   AUTH_TYPE_OPEN_SYSTEM) {
 
@@ -1932,32 +1939,6 @@ aisState_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-void aisFsmBtmRespTxDoneTimeout(
-	struct ADAPTER *prAdapter, uintptr_t ulParam)
-{
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	uint8_t ucBssIndex = (uint8_t) ulParam;
-	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
-
-	if (prBtmParam->fgWaitBtmRespDone) {
-		prBtmParam->fgWaitBtmRespDone = FALSE;
-
-		/* And after timeout, if not AIS_STATE_SEARCH,
-		 * some eventmay occurs, just do nothing
-		 */
-		if (prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH) {
-			enum ENUM_AIS_STATE eNewState =
-				aisSearchHandleReconnect(prAdapter, ucBssIndex);
-
-			if (eNewState != prAisFsmInfo->eCurrentState)
-				aisFsmSteps(prAdapter, eNewState, ucBssIndex);
-		}
-	}
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Remove roaming requests including search and connect
@@ -2174,26 +2155,21 @@ uint8_t aisBssDescAllowed(struct ADAPTER *prAdapter,
 	return match != prBssDescSet->ucLinkNum;
 }
 
+#if CFG_SUPPORT_ROAMING
 enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais;
 	enum ENUM_AIS_STATE state = AIS_STATE_NORMAL_TR;
 	struct BSS_DESC *prBssDesc = prBssDescSet->prMainBssDesc;
-#if CFG_SUPPORT_ROAMING
 	struct BSS_TRANSITION_MGT_PARAM *btm;
-	uint8_t mode = 0;
 	struct ROAMING_INFO *roam;
-#endif
 	struct BSS_INFO *aisBssInfo;
 
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	aisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-#if CFG_SUPPORT_ROAMING
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	btm =  aisGetBTMParam(prAdapter, ucBssIndex);
-	mode = btm->ucRequestMode;
-#endif
 
 	if (prBssDesc) {
 		DBGLOG(ROAMING, INFO,
@@ -2204,34 +2180,19 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 			ucBssIndex);
 	}
 
-#if CFG_SUPPORT_ROAMING
-	if (roam->eReason == ROAMING_REASON_BTM) {
-		wnmSendBTMResponse(prAdapter, NULL,
-			WNM_BSS_TM_REJECT_NO_SUITABLE_CANDIDATES,
-			MBO_TRANSITION_REJECT_REASON_RSSI,
-			ucBssIndex);
-		if (mode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT) {
-			if (btm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_1) {
-				btm->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_2;
-				ais->u4SleepInterval =
-				     btm->u4ReauthDelay -
-				     prAdapter->rWifiVar.u4BtmDisTimerThreshold;
-				ais->fgTargetChnlScanIssued = TRUE;
-				state = AIS_STATE_WAIT_FOR_NEXT_SCAN;
-				DBGLOG(AIS, INFO, "DIS_IMMI_STATE 1 -> 2\n");
-				goto skip_roam_fail;
-			} else if (btm->ucDisImmiState ==
-					AIS_BTM_DIS_IMMI_STATE_2) {
-				btm->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_3;
-				ais->fgTargetChnlScanIssued = FALSE;
-				state = AIS_STATE_LOOKING_FOR;
-				DBGLOG(AIS, INFO, "DIS_IMMI_STATE 2 -> 3\n");
-				goto skip_roam_fail;
-			}
-		}
-	} else
-#endif
-	if (ais->fgTargetChnlScanIssued) {
+	roamingFsmRunEventNewCandidate(prAdapter, NULL, ucBssIndex);
+
+	if (btm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_2) {
+		ais->u4SleepInterval = btm->u4ReauthDelay -
+		     prAdapter->rWifiVar.u4BtmDisTimerThreshold;
+		ais->fgTargetChnlScanIssued = TRUE;
+		state = AIS_STATE_WAIT_FOR_NEXT_SCAN;
+		goto skip_roam_fail;
+	} else if (btm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_3) {
+		ais->fgTargetChnlScanIssued = FALSE;
+		state = AIS_STATE_LOOKING_FOR;
+		goto skip_roam_fail;
+	} else if (ais->fgTargetChnlScanIssued) {
 		/* if target channel scan has issued, and no
 		 * roaming target is found, need to do full scan
 		 */
@@ -2242,15 +2203,14 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 		goto skip_roam_fail;
 	}
 
-#if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventFail(prAdapter,
 		ROAMING_FAIL_REASON_NOCANDIDATE, ucBssIndex);
-#endif /* CFG_SUPPORT_ROAMING */
 
 skip_roam_fail:
 	/* We already associated with it go back to NORMAL_TR */
 	return state;
 }
+#endif /* CFG_SUPPORT_ROAMING */
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
@@ -2327,7 +2287,7 @@ static enum ENUM_AIS_STATE aisSearchHandleReconnect(struct ADAPTER *ad,
 					aisFsmStateAbort(ad,
 						DISCONNECT_REASON_CODE_LOCALLY,
 						FALSE, ucBssIndex);
-					return AIS_STATE_SEARCH;
+					return AIS_STATE_ROAMING;
 				}
 				prAisAbortMsg->rMsgHdr.eMsgId =
 					MID_OID_AIS_FSM_JOIN_REQ;
@@ -2342,8 +2302,8 @@ static enum ENUM_AIS_STATE aisSearchHandleReconnect(struct ADAPTER *ad,
 				DBGLOG(AIS, INFO,
 					"Force reconnect to the same AP\n");
 
-				/* stay SEARCH and wait for msg executed */
-				return AIS_STATE_SEARCH;
+				/* stay ROAMING and wait for msg executed */
+				return AIS_STATE_ROAMING;
 			}
 		}
 	}
@@ -2409,15 +2369,16 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 			return aisFsmStateSearchAction(prAdapter, ucBssIndex);
 		}
 	} else {
+#if CFG_SUPPORT_ROAMING
 		/* 4 <3> We are under Roaming Condition. */
 		if (prAisFsmInfo->ucConnTrialCount >
 		    AIS_ROAMING_CONNECTION_TRIAL_LIMIT) {
-#if CFG_SUPPORT_ROAMING
 			DBGLOG(AIS, STATE, "Roaming retry :%d fail!\n",
 			       prAisFsmInfo->ucConnTrialCount);
+			roamingFsmRunEventNewCandidate(prAdapter,
+				NULL, ucBssIndex);
 			roamingFsmRunEventFail(prAdapter,
 				ROAMING_FAIL_REASON_CONNLIMIT, ucBssIndex);
-#endif /* CFG_SUPPORT_ROAMING */
 
 			/* reset retry count */
 			prAisFsmInfo->ucConnTrialCount = 0;
@@ -2453,28 +2414,10 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 
 		}
 
-		aisFillBssInfoFromBssDesc(prAdapter,
-				prAisFsmInfo, prBssDescSet);
-
-		prAisFsmInfo->ucConnTrialCount++;
-		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
-#if CFG_SUPPORT_ROAMING
-		prAisFsmInfo->ucIsStaRoaming = TRUE;
-#endif
-
-		if (wnmSendBTMResponse(prAdapter,
-		    aisGetMainLinkBssDesc(prAisFsmInfo)->aucBSSID,
-		    WNM_BSS_TM_ACCEPT, MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
-		    ucBssIndex)) {
-			cnmTimerStopTimer(prAdapter,
-				&prAisFsmInfo->rBtmRespTxDoneTimer);
-			cnmTimerStartTimer(prAdapter,
-				&prAisFsmInfo->rBtmRespTxDoneTimer, 1000);
-			/* stay at search state and wait for btm resp done */
-			return AIS_STATE_SEARCH;
-		} else {
-			return aisSearchHandleReconnect(prAdapter, ucBssIndex);
-		}
+		return AIS_STATE_ROAMING;
+#else
+		return AIS_STATE_NORMAL_TR;
+#endif /* CFG_SUPPORT_ROAMING */
 	}
 }
 
@@ -2841,31 +2784,24 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_SEARCH: {
-			struct BSS_DESC_SET set;
+			struct BSS_DESC_SET *set =
+				aisGetSearchResult(prAdapter, ucBssIndex);
 
-			/* 4 <1> Search for a matched candidate and save
+			/* Search for a matched candidate and save
 			 * it to prTargetBssDesc.
-			 * changing the state,
-			 * ATTENTION: anyone can't leave this case without
-			 * except BTM, otherwise, may cause BtmResponseTimer's
-			 * handler run worngly
 			 */
-
-			kalMemZero(&set, sizeof(struct BSS_DESC_SET));
-			/* Support AP Selection */
+			kalMemZero(set, sizeof(struct BSS_DESC_SET));
 			if (prAisFsmInfo->ucJoinFailCntAfterScan >=
-				SCN_BSS_JOIN_FAIL_THRESOLD) {
-				set.ucLinkNum = 0;
+			    SCN_BSS_JOIN_FAIL_THRESOLD)
 				DBGLOG(AIS, STATE,
 				       "Failed to connect %s more than 4 times after last scan, scan again\n",
 				       prConnSettings->aucSSID);
-			} else {
+			else
 				aisSearchBssDescByScore(
-					prAdapter, ucBssIndex, &set);
-			}
+					prAdapter, ucBssIndex, set);
 
 			eNewState = aisSearchHandleBssDesc(
-				prAdapter, &set, ucBssIndex);
+				prAdapter, set, ucBssIndex);
 
 			if (eNewState != eNextState) {
 				eNextState = eNewState;
@@ -2874,6 +2810,7 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 
 			break;
 		}
+
 		case AIS_STATE_WAIT_FOR_NEXT_SCAN:
 
 			DBGLOG(AIS, LOUD,
@@ -2937,6 +2874,15 @@ send_msg:
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 			prAisFsmInfo->fgIsScanning = TRUE;
 			break;
+
+#if CFG_SUPPORT_ROAMING
+		case AIS_STATE_ROAMING:
+			roamingFsmRunEventNewCandidate(prAdapter,
+				aisGetSearchResult(prAdapter, ucBssIndex),
+				ucBssIndex);
+			/* wait until roamingFsm is ready */
+			break;
+#endif
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
 			aisReqJoinChPrivilege(prAdapter,
@@ -3178,21 +3124,23 @@ void aisFsmQueryCandidates(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 	if (prBtmParam->fgPendingResponse) {
 		DBGLOG(WNM, WARN, "BTM: don't query when handling\n");
 		return;
 	}
+#endif
 
 	if (prBssDesc && !prBssDesc->fgQueriedCandidates) {
 		prBssDesc->fgQueriedCandidates = TRUE;
 
 		aisResetNeighborApList(prAdapter, ucBssIndex);
 
-		if (prBssDesc && prBssDesc->aucRrmCap[0] &
+		if (prBssDesc->aucRrmCap[0] &
 		    BIT(RRM_CAP_INFO_NEIGHBOR_REPORT_BIT))
 			aisSendNeighborRequest(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_802_11V_BTM_OFFLOAD
-		else if (prStaRec && prStaRec->fgSupportBTM)
+		else if (prBssDesc->fgSupportBTM)
 			wnmSendBTMQueryFrame(prAdapter,
 				prStaRec, BSS_TRANSITION_BETTER_AP_FOUND);
 #endif
@@ -3690,6 +3638,7 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	switch (prAisFsmInfo->eCurrentState) {
 	case AIS_STATE_IDLE:
 	case AIS_STATE_SEARCH:
+	case AIS_STATE_ROAMING:
 	case AIS_STATE_JOIN_FAILURE:
 		break;
 
@@ -4302,6 +4251,15 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			qmResetArpDetect(prAdapter, prStaRec->ucBssIndex);
 #endif
 
+#if CFG_SUPPORT_ROAMING
+			/* if roaming fsm is monitoring old AP, abort it
+			 * abort before aisFsmRoamingDisconnectPrevAllAP because
+			 * bssinfo is deactivated when roaming 2 -> 1 link
+			 */
+			if (roam->eCurrentState >= ROAMING_STATE_DECISION)
+				roamingFsmRunEventAbort(prAdapter, ucBssIndex);
+#endif /* CFG_SUPPORT_ROAMING */
+
 			/* Completion of roaming */
 			if (prAisBssInfo->eConnectionState ==
 			    MEDIA_STATE_CONNECTED) {
@@ -4388,24 +4346,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			}
 
 #if CFG_SUPPORT_ROAMING
-			/* if roaming fsm is monitoring old AP, abort it*/
-			if (roam->eCurrentState >= ROAMING_STATE_DECISION)
-				roamingFsmRunEventAbort(prAdapter, ucBssIndex);
-
-			/* if user space roaming is enabled, we should
-			 * disable driver/fw roaming
-			 */
-			if (prConnSettings->eConnectionPolicy !=
-			     CONNECT_BY_BSSID && roam->fgDrvRoamingAllow) {
-				prConnSettings->eConnectionPolicy =
-					CONNECT_BY_SSID_BEST_RSSI;
-				roamingFsmRunEventStart(prAdapter, ucBssIndex);
-			}
+			/* always start roaming fsm for user space roaming */
+			roamingFsmRunEventStart(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
-			if (aisFsmIsRequestPending
-			    (prAdapter, AIS_REQUEST_ROAMING_CONNECT,
-			     FALSE, NULL, ucBssIndex) == FALSE)
-				prAisFsmInfo->rJoinReqTime = 0;
+
+			prAisFsmInfo->rJoinReqTime = 0;
 
 			/* remove all deauthing AP from blacklist */
 			aisRemoveDeauthBlocklist(prAdapter);
@@ -4818,6 +4763,9 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	aisFsmNotifyManageChannelList(prAdapter, ucBssIndex);
 #endif
 
+	/* reset BTM Params when disconnect */
+	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
+
 #if CFG_SUPPORT_802_11K
 	/* clear query done flag */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
@@ -5054,6 +5002,7 @@ void aisPostponedEventOfDisconnTimeout(struct ADAPTER *prAdapter,
 	 */
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_JOIN ||
 	    prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH ||
+	    prAisFsmInfo->eCurrentState == AIS_STATE_ROAMING ||
 	    prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN)
 		return;
 
@@ -6588,9 +6537,9 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 
 		prWfdCfgSettings = &(prAdapter->rWifiVar.rWfdConfigureSettings);
 		if ((prWfdCfgSettings->ucWfdEnable != 0)) {
-			DBGLOG(ROAMING, INFO,
-			       "WFD is running. Stop roaming.\n");
-			roamingFsmRunEventRoam(prAdapter, ucBssIndex);
+			DBGLOG(AIS, INFO, "WFD is running. Stop roaming.\n");
+			roamingFsmRunEventNewCandidate(prAdapter,
+				NULL, ucBssIndex);
 			roamingFsmRunEventFail(prAdapter,
 					       ROAMING_FAIL_REASON_NOCANDIDATE,
 					       ucBssIndex);
@@ -6602,7 +6551,6 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 
 	/* results are still new */
 	if (!u4ReqScan) {
-		roamingFsmRunEventRoam(prAdapter, ucBssIndex);
 		eAisRequest = AIS_REQUEST_ROAMING_CONNECT;
 	} else {
 		if (prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN
@@ -6627,6 +6575,36 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 		aisFsmInsertRequest(prAdapter, eAisRequest, ucBssIndex);
 	}
 }				/* end of aisFsmRunEventRoamingDiscovery() */
+
+void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *ais;
+	struct BSS_DESC_SET *set;
+	enum ENUM_AIS_STATE eNewState;
+
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	set = aisGetSearchResult(prAdapter, ucBssIndex);
+
+	if (ais->eCurrentState != AIS_STATE_ROAMING) {
+		DBGLOG(AIS, INFO,
+			"[AIS%d][%d] curr state=%s not allowed roaming\n",
+			ais->ucAisIndex, ucBssIndex,
+			aisGetFsmState(ais->eCurrentState));
+		return;
+	}
+
+	aisFillBssInfoFromBssDesc(prAdapter, ais, set);
+
+	ais->ucConnTrialCount++;
+	ais->fgTargetChnlScanIssued = FALSE;
+	ais->ucIsStaRoaming = TRUE;
+
+	eNewState = aisSearchHandleReconnect(
+		prAdapter, ucBssIndex);
+
+	if (eNewState != ais->eCurrentState)
+		aisFsmSteps(prAdapter, eNewState, ucBssIndex);
+}
 
 uint8_t aisCheckNeedDriverRoaming(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
@@ -6679,7 +6657,7 @@ uint8_t aisCheckNeedDriverRoaming(
 			if (bss->ucRCPI >= RCPI_THRESHOLD_ROAM_TO_5G_6G ||
 			bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM) {
 				DBGLOG(AIS, INFO,
-					"Driver trigger roaming to 5G band.\n");
+					"Driver trigger roaming to A band.\n");
 				return TRUE;
 			}
 		} else {
@@ -6714,34 +6692,33 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(struct ADAPTER *prAdapter,
 	enum ENUM_AIS_STATE eNextState;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prRoamingFsmInfo =
-	    aisGetRoamingInfo(prAdapter, ucBssIndex);
-
-	/* try driver roaming */
-	if (aisCheckNeedDriverRoaming(prAdapter, ucBssIndex)) {
-		struct ROAMING_INFO *roam;
-
-		DBGLOG(ROAMING, INFO, "Request driver roaming");
-		roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
-		roam->eReason = ROAMING_REASON_INACTIVE;
-		aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
-		aisFsmInsertRequest(prAdapter,
-			AIS_REQUEST_ROAMING_CONNECT, ucBssIndex);
-	}
-
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	eNextState = prAisFsmInfo->eCurrentState;
+
 	if (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY) {
 		aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
-		roamingFsmRunEventRoam(prAdapter, ucBssIndex);
 		eNextState = AIS_STATE_SEARCH;
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR) {
 		eNextState = AIS_STATE_SEARCH;
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN) {
 		eNextState = AIS_STATE_NORMAL_TR;
+
+		if (aisCheckNeedDriverRoaming(prAdapter, ucBssIndex)) {
+			struct CMD_ROAMING_TRANSIT rRoamingData = {0};
+			struct BSS_DESC *prBssDesc =
+				aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+			rRoamingData.eReason = ROAMING_REASON_INACTIVE;
+			rRoamingData.u2Data = prBssDesc->ucRCPI;
+			rRoamingData.u2RcpiLowThreshold =
+				prRoamingFsmInfo->ucThreshold;
+			rRoamingData.ucBssidx = ucBssIndex;
+			roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
+		}
 	}
 
 	return eNextState;
-}				/* end of aisFsmRoamingScanResultsUpdate() */
+} /* end of aisFsmRoamingScanResultsUpdate() */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -7928,18 +7905,16 @@ static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter)
 	}
 }
 
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
 void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 				 struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_AIS_BSS_TRANSITION *prMsg =
 	    (struct MSG_AIS_BSS_TRANSITION *)prMsgHdr;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
 	struct BSS_DESC *prBssDesc;
-#if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	struct CMD_ROAMING_TRANSIT rRoamingData;
-#endif
 	uint8_t ucBssIndex = 0;
 	uint8_t ucRequestMode = 0;
 
@@ -7951,21 +7926,17 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 	ucBssIndex = prMsg->ucBssIndex;
 	cnmMemFree(prAdapter, prMsgHdr);
 
-	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	if (!prBssDesc) {
+		DBGLOG(AIS, WARN, "prBssDesc is NULL\n");
+		return;
+	}
+
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	ucRequestMode = prBtmParam->ucRequestMode;
-#if CFG_SUPPORT_ROAMING
+
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	kalMemZero(&rRoamingData, sizeof(struct CMD_ROAMING_TRANSIT));
-
-	/* roaming */
-	if (!prBssDesc ||
-	    !roamingFsmInDecision(prAdapter, ucBssIndex)) {
-		DBGLOG(AIS, ERROR, "btm req roam fail %p\n", prBssDesc);
-		goto send_response;
-	}
-#endif
 
 	/* update cached channel list */
 	aisFsmGetCurrentEssChnlList(prAdapter, ucBssIndex);
@@ -8015,7 +7986,6 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 	} else {
 		prBtmParam->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_0;
 	}
-#if CFG_SUPPORT_ROAMING
 	rRoamingData.eReason = ROAMING_REASON_BTM;
 
 	DBGLOG(AIS, INFO, "BTM req roam start, DIS_IMMI_STATE %d\n",
@@ -8026,15 +7996,8 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 	roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
 
 	return;
-
-send_response:
-#endif
-
-	wnmSendBTMResponse(prAdapter, NULL,
-		WNM_BSS_TM_REJECT_UNSPECIFIED,
-		MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
-		ucBssIndex);
 }
+#endif /* CFG_SUPPORT_802_11V_BTM_OFFLOAD */
 
 #if CFG_SUPPORT_802_11K
 void aisSendNeighborRequest(struct ADAPTER *prAdapter,
@@ -8367,6 +8330,13 @@ struct PARAM_SCAN_REQUEST_ADV *aisGetScanReq(
 	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rScanRequest;
+}
+
+struct BSS_DESC_SET *aisGetSearchResult(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rSearchResult;
 }
 
 struct AIS_FSM_INFO *aisFsmGetInstance(struct ADAPTER *prAdapter,

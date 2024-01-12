@@ -760,8 +760,6 @@ struct STA_RECORD {
 	struct HE_A_CTRL_OM_T arHeACtrlOm;
 #endif
 
-	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
-
 	/*
 	 * Flag used to record the connected status of upper layer.
 	 * Indicate connected status only when disconnected, and only

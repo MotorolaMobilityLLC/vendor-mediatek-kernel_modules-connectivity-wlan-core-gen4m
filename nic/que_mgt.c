@@ -6793,11 +6793,6 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TDLS
 			TdlsBssExtCapParse(prStaRec, pucIE);
 #endif /* CFG_SUPPORT_TDLS */
-#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-			prStaRec->fgSupportBTM =
-				!!((*(uint32_t *)(pucIE + 2)) &
-			BIT(ELEM_EXT_CAP_BSS_TRANSITION_BIT));
-#endif
 			prStaRec->fgIsMscsSupported = wlanCheckExtCapBit(
 				prStaRec, pucIE, ELEM_EXT_CAP_MSCS_BIT);
 			if (IS_FEATURE_DISABLED(
@@ -9655,6 +9650,7 @@ u_int8_t qmArpMonitorIsCritical(uint8_t ucBssIndex)
 
 u_int8_t qmCheckIfRoaming(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
+#if CFG_SUPPORT_ROAMING
 	struct BSS_INFO *prBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct ROAMING_INFO *prRoamingFsmInfo;
@@ -9681,9 +9677,10 @@ u_int8_t qmCheckIfRoaming(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY)
 		|| (prAisFsmInfo->eCurrentState == AIS_STATE_JOIN ||
 		prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_ROAMING ||
 		prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN)))
 		return TRUE;
-
+#endif /* CFG_SUPPORT_ROAMING */
 	return FALSE;
 }
 

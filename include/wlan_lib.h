@@ -873,7 +873,17 @@ struct REAL_TIME {
 	uint32_t u4TvValSec;
 };
 
+enum ENUM_FT_DS_STATE {
+	FT_DS_STATE_IDLE,
+	FT_DS_STATE_ONGOING,
+	FT_DS_STATE_AUTHORIZED,
+	FT_DS_STATE_FAIL,
+};
+
 struct FT_EVENT_PARAMS {
+	enum ENUM_FT_DS_STATE eFtDsState;
+	uint16_t u2FtDsStatusCode; /* Status of FT response */
+
 	const uint8_t *pcIe;
 	uint16_t u2IeLen;
 	struct STA_RECORD *prTargetAp;

@@ -116,17 +116,8 @@ enum ENUM_AIS_STATE {
 	AIS_STATE_REQ_REMAIN_ON_CHANNEL,
 	AIS_STATE_REMAIN_ON_CHANNEL,
 	AIS_STATE_OFF_CHNL_TX,
+	AIS_STATE_ROAMING,
 	AIS_STATE_NUM
-};
-
-/* reconnect level for determining if we should reconnect */
-enum ENUM_RECONNECT_LEVEL_T {
-	RECONNECT_LEVEL_MIN = 0,
-	RECONNECT_LEVEL_ROAMING_FAIL,	/* roaming failed */
-	RECONNECT_LEVEL_BEACON_TIMEOUT,	/* driver beacon timeout */
-	RECONNECT_LEVEL_USER_SET,	/* user set connect	 */
-					/*	 or disassociate */
-	RECONNECT_LEVEL_MAX
 };
 
 struct MSG_AIS_ABORT {
@@ -316,9 +307,6 @@ struct CONNECTION_SETTINGS {
 	/* ATIM windows using for IBSS power saving function */
 	uint16_t u2AtimWindow;
 
-	/* Features */
-	u_int8_t fgIsEnableRoaming;
-
 	u_int8_t fgIsAdHocQoSEnable;
 
 	enum ENUM_PARAM_PHY_CONFIG eDesiredPhyConfig;
@@ -474,7 +462,6 @@ struct AIS_FSM_INFO {
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	struct TIMER rSecModeChangeTimer;
 #endif
-	struct TIMER rBtmRespTxDoneTimer;
 
 	uint8_t ucSeqNumOfReqMsg;
 	uint8_t ucSeqNumOfChReq;
@@ -486,6 +473,7 @@ struct AIS_FSM_INFO {
 	uint8_t ucConnTrialCountLimit;
 
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
+	struct BSS_DESC_SET rSearchResult;
 
 	u_int8_t fgIsScanOidAborted;
 
@@ -772,6 +760,8 @@ void aisFsmRunEventRoamingDiscovery(
 	uint32_t u4ReqScan,
 	uint8_t ucBssIndex);
 
+void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
 enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(
 				   struct ADAPTER *prAdapter,
 				   uint8_t ucBssIndex);
@@ -865,9 +855,6 @@ void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 				struct MSG_HDR *prMsgHdr);
 
-void aisFsmBtmRespTxDoneTimeout(
-	struct ADAPTER *prAdapter, uintptr_t ulParam);
-
 void aisFsmRunEventCancelTxWait(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
@@ -933,12 +920,15 @@ struct PARAM_SCAN_REQUEST_ADV *aisGetScanReq(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+struct BSS_DESC_SET *aisGetSearchResult(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 struct AIS_SPECIFIC_BSS_INFO *aisGetAisSpecBssInfo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
-struct BSS_TRANSITION_MGT_PARAM *
-	aisGetBTMParam(
+struct BSS_TRANSITION_MGT_PARAM *aisGetBTMParam(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 

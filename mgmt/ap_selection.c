@@ -816,7 +816,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-
+#if CFG_SUPPORT_ROAMING
 #if CFG_SUPPORT_802_11K
 	if (eRoamReason == ROAMING_REASON_BTM) {
 		struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
@@ -846,6 +846,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 		}
 	}
+#endif
 #endif
 	return TRUE;
 }
@@ -1071,7 +1072,9 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		prBssDesc->ucChannelNum, slot,
 		prBssDesc->fgExistBssLoadIE, score, rssi, cu, cuRatio,
 		rssiFactor, rssiWeight, cuFactor, cuWeight);
+#if CFG_SUPPORT_ROAMING
 done:
+#endif
 	return score * gasMtkWeightConfig[eRoamType].ucChnlIdleWeight;
 }
 

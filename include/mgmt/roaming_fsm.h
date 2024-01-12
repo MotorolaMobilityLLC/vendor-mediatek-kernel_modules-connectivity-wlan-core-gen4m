@@ -94,6 +94,10 @@ enum ENUM_ROAMING_STATE {
 	ROAMING_STATE_DECISION,
 	ROAMING_STATE_DISCOVERY,
 	ROAMING_STATE_ROAM,
+	ROAMING_STATE_HANDLE_NEW_CANDIDATE,
+	ROAMING_STATE_SEND_WNM_RESP,
+	ROAMING_STATE_SEND_FT_REQUEST,
+	ROAMING_STATE_WAIT_FT_RESPONSE,
 	ROAMING_STATE_NUM
 };
 
@@ -111,22 +115,27 @@ struct ROAMING_EVENT_INFO {
 };
 
 struct ROAMING_INFO {
-	uint8_t fgIsEnableRoaming;
-
 	enum ENUM_ROAMING_STATE eCurrentState;
+
+	/* sync with FW: NUM(init) -> START -> FAIL -> ABORT */
+	enum ENUM_ROAMING_EVENT eCurrentEvent[MAX_BSSID_NUM];
+	uint32_t u4BssIdxBmap;
 
 	OS_SYSTIME rRoamingDiscoveryUpdateTime;
 #if CFG_SUPPORT_DRIVER_ROAMING
 	OS_SYSTIME rRoamingLastDecisionTime;
 #endif
 
-	uint8_t fgDrvRoamingAllow;
 	enum ENUM_ROAMING_REASON eReason;
 	uint8_t ucPER;
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
 	struct ROAMING_EVENT_INFO rEventInfo;
 	uint8_t ucRecoverBitmap;
+
+	struct TIMER rTxReqDoneRxRespTimer;
+	struct BSS_DESC_SET *prRoamTarget;
+	uint8_t ucTxActionRetryCount;
 };
 
 /*******************************************************************************
@@ -158,6 +167,12 @@ void roamingFsmUninit(struct ADAPTER *prAdapter,
 void roamingFsmSendCmd(struct ADAPTER *prAdapter,
 	struct CMD_ROAMING_TRANSIT *prTransit);
 
+void roamingFsmSendStartCmd(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+void roamingFsmSendAbortCmd(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 void roamingFsmScanResultsUpdate(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
@@ -171,14 +186,15 @@ void roamingFsmRunEventStart(struct ADAPTER *prAdapter,
 void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	struct CMD_ROAMING_TRANSIT *prTransit);
 
-void roamingFsmRunEventRoam(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex);
-
 void roamingFsmRunEventFail(struct ADAPTER *prAdapter,
 	uint8_t ucReason,
 	uint8_t ucBssIndex);
 
 void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+void roamingFsmRunEventNewCandidate(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prRoamTarget,
 	uint8_t ucBssIndex);
 
 void roamingFsmNotifyEvent(struct ADAPTER *adapter, uint8_t bssIndex,
@@ -193,5 +209,11 @@ void roamingFsmSetRecoverBitmap(struct ADAPTER *prAdapter,
 void roamingFsmDoRecover(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+void roamingFsmRunEventRxFtAction(struct ADAPTER *prAdapter,
+			  struct SW_RFB *prSwRfb);
+
+void roamingFsmTxReqDoneOrRxRespTimeout(
+	struct ADAPTER *prAdapter, uintptr_t ulParam);
 
 #endif /* _ROAMING_FSM_H */

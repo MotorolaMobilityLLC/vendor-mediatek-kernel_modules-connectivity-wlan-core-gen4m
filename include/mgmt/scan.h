@@ -429,6 +429,8 @@ struct BSS_DESC {
 	 * use FT when supported clients connect
 	 */
 	uint8_t ucIsAdaptive11r;
+	uint8_t fgIsFtOverDS;
+	u_int8_t fgSupportBTM; /* Indicates whether to support BTM */
 
 	uint16_t u2RawLength;		/* The byte count of aucRawBuf[] */
 	uint16_t u2IELength;		/* The byte count of aucIEBuf[] */

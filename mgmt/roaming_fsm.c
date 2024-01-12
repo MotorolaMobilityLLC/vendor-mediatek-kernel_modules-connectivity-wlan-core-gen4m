@@ -37,6 +37,8 @@
  *******************************************************************************
  */
 
+#define TX_ACTION_RETRY_LIMIT                  2
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -45,16 +47,21 @@ static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
 	(uint8_t *) DISP_STRING("IDLE"),
 	(uint8_t *) DISP_STRING("DECISION"),
 	(uint8_t *) DISP_STRING("DISCOVERY"),
-	(uint8_t *) DISP_STRING("ROAM")
+	(uint8_t *) DISP_STRING("ROAM"),
+	(uint8_t *) DISP_STRING("HANDLE_NEW_CANDIDATE"),
+	(uint8_t *) DISP_STRING("SEND_WNM_RESP"),
+	(uint8_t *) DISP_STRING("SEND_FT_REQUEST"),
+	(uint8_t *) DISP_STRING("WAIT_FT_RESPONSE"),
 };
 
-static uint8_t *apucEventStr[ROAMING_EVENT_NUM] = {
+static uint8_t *apucEvent[ROAMING_EVENT_NUM + 1] = {
 	(uint8_t *) DISP_STRING("START"),
 	(uint8_t *) DISP_STRING("DISCOVERY"),
 	(uint8_t *) DISP_STRING("ROAM"),
 	(uint8_t *) DISP_STRING("FAIL"),
 	(uint8_t *) DISP_STRING("ABORT"),
 	(uint8_t *) DISP_STRING("THRESHOLD_UPDATE"),
+	(uint8_t *) DISP_STRING("NUM"),
 };
 
 /*******************************************************************************
@@ -71,6 +78,403 @@ static uint8_t *apucEventStr[ROAMING_EVENT_NUM] = {
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+uint32_t roamingFsmCheckTxFtActionFrame(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo)
+{
+	struct ACTION_FT_REQ_ACTION_FRAME *prTxFrame;
+	struct STA_RECORD *prStaRec;
+	uint16_t u2TxFrameCtrl;
+
+	prTxFrame = (struct ACTION_FT_REQ_ACTION_FRAME *)(prMsduInfo->prPacket);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	if (!prStaRec)
+		return WLAN_STATUS_INVALID_PACKET;
+
+	u2TxFrameCtrl = prTxFrame->u2FrameCtrl;
+	u2TxFrameCtrl &= MASK_FRAME_TYPE;
+	if (u2TxFrameCtrl != MAC_FRAME_ACTION ||
+	    prTxFrame->ucCategory != CATEGORY_FT_ACTION ||
+	    prTxFrame->ucAction != ACTION_FT_REQUEST) {
+		DBGLOG(WNM, INFO,
+			"Check fail ctrl=0x%x category=%d action=%d\n",
+			u2TxFrameCtrl, prTxFrame->ucCategory,
+			prTxFrame->ucAction);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+static uint32_t roamingFtActionTxDone(struct ADAPTER *prAdapter,
+				     struct MSDU_INFO *prMsduInfo,
+				     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct ROAMING_INFO *prRoam;
+	uint8_t ucBssIndex;
+	enum ENUM_ROAMING_STATE eNextState;
+
+	DBGLOG(WNM, INFO, "FT action Tx Done Status %d\n", rTxDoneStatus);
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	eNextState = prRoam->eCurrentState;
+
+	switch (prRoam->eCurrentState) {
+	case ROAMING_STATE_SEND_FT_REQUEST:
+		if (roamingFsmCheckTxFtActionFrame(prAdapter, prMsduInfo) !=
+					 WLAN_STATUS_SUCCESS)
+			break;
+
+		if (rTxDoneStatus == TX_RESULT_SUCCESS) {
+			eNextState = ROAMING_STATE_WAIT_FT_RESPONSE;
+			cnmTimerStopTimer(prAdapter,
+				&prRoam->rTxReqDoneRxRespTimer);
+			cnmTimerStartTimer(prAdapter,
+			    &prRoam->rTxReqDoneRxRespTimer,
+			    TU_TO_MSEC(
+			    DOT11_AUTHENTICATION_RESPONSE_TIMEOUT_TU));
+		}
+
+		/* if TX was successful, change to next state.
+		 * if TX was failed, do retry if possible.
+		 */
+		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
+		break;
+	default:
+		break;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t roamingFsmSendFtActionFrame(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, struct BSS_DESC_SET *prRoamTarget)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct BSS_INFO *prBssInfo;
+	struct ACTION_FT_REQ_ACTION_FRAME *prTxFrame;
+	struct FT_IES *prFtIEs;
+	uint8_t *pos;
+	uint16_t u2RsnLen = 0, u2FTLen = 0, u2MDLen = 0;
+	struct BSS_DESC *prBssDesc = prRoamTarget->prMainBssDesc;
+	const uint8_t *aucTargetApAddr;
+	const uint8_t *aucStaAddr;
+
+	if (!prStaRec) {
+		DBGLOG(ROAMING, INFO, "FT: No station record found\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(ROAMING, INFO,
+			"FT: invalid BSS_INFO %d\n", prStaRec->ucBssIndex);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	aucStaAddr = prBssInfo->aucOwnMacAddr;
+	aucTargetApAddr = prBssDesc->aucBSSID;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* set to FTR addr */
+	if (mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS,
+		prStaRec->ucBssIndex) && prBssDesc->rMlInfo.fgValid)
+		aucTargetApAddr = prBssDesc->rMlInfo.aucMldAddr;
+#endif
+
+	prFtIEs = aisGetFtIe(prAdapter, prStaRec->ucBssIndex, AIS_FT_R0);
+
+	if (!prFtIEs) {
+		DBGLOG(ROAMING, INFO,
+			"FT: Bss%d No FT info\n", prStaRec->ucBssIndex);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	if (prFtIEs->prRsnIE)
+		u2RsnLen = IE_SIZE(prFtIEs->prRsnIE);
+	if (prFtIEs->prMDIE)
+		u2MDLen = IE_SIZE(prFtIEs->prMDIE);
+	if (prFtIEs->prFTIE)
+		u2FTLen = IE_SIZE(prFtIEs->prFTIE);
+
+	/* 1 Allocate MSDU Info, reserved 255 for ML IE */
+	prMsduInfo = (struct MSDU_INFO *)cnmMgtPktAlloc(prAdapter,
+		MAC_TX_RESERVED_FIELD +	u2RsnLen + u2FTLen + u2MDLen + 255);
+	if (!prMsduInfo)
+		return WLAN_STATUS_RESOURCES;
+
+	prTxFrame = (struct ACTION_FT_REQ_ACTION_FRAME *)
+		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+	pos = (uint8_t *)prTxFrame;
+
+	/* 2 Compose The Mac Header. */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	prTxFrame->ucCategory = CATEGORY_FT_ACTION;
+	prTxFrame->ucAction = ACTION_FT_REQUEST;
+
+	COPY_MAC_ADDR(prTxFrame->aucStaAddr, aucStaAddr);
+	COPY_MAC_ADDR(prTxFrame->aucTargetApAddr, aucTargetApAddr);
+
+	pos += sizeof(struct ACTION_FT_REQ_ACTION_FRAME);
+
+	if (prFtIEs->prRsnIE) {
+		kalMemCopy(pos, (uint8_t *)prFtIEs->prRsnIE, u2RsnLen);
+		pos += u2RsnLen;
+	}
+
+	if (prFtIEs->prMDIE) {
+		kalMemCopy(pos, (uint8_t *)prFtIEs->prMDIE, u2MDLen);
+		pos += u2MDLen;
+	}
+
+	if (prFtIEs->prFTIE) {
+		kalMemCopy(pos, (uint8_t *)prFtIEs->prFTIE, u2FTLen);
+		pos += u2FTLen;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS,
+		prStaRec->ucBssIndex) && prBssDesc->rMlInfo.fgValid) {
+		struct IE_MULTI_LINK_CONTROL *common;
+		struct MLD_BSS_INFO *mld_bssinfo;
+
+		common = (struct IE_MULTI_LINK_CONTROL *) pos;
+		common->ucId = ELEM_ID_RESERVED;
+		common->ucLength = 10;
+		common->ucExtId = ELEM_EXT_ID_MLD;
+
+		BE_SET_ML_CTRL_TYPE(common->u2Ctrl, ML_CTRL_TYPE_BASIC);
+
+		/* filling common info field*/
+		pos = common->aucCommonInfo;
+		*pos++ = 7; /* common info length */
+
+		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+		COPY_MAC_ADDR(pos, mld_bssinfo->aucOwnMldAddr);
+		pos += MAC_ADDR_LEN;
+	}
+#endif
+
+	DBGDUMP_MEM8(ROAMING, INFO, "FT request\n",
+		prMsduInfo->prPacket, pos - (uint8_t *)prTxFrame);
+
+	nicTxSetPktLifeTime(prAdapter, prMsduInfo, 100);
+	nicTxSetPktRetryLimit(prMsduInfo, TX_DESC_TX_COUNT_NO_LIMIT);
+	nicTxSetForceRts(prMsduInfo, TRUE);
+
+	/* 4 Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter, prMsduInfo, prStaRec->ucBssIndex,
+		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
+		     pos - (uint8_t *)prTxFrame,
+		     roamingFtActionTxDone, MSDU_RATE_MODE_AUTO);
+
+	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+
+	/* 5 Enqueue the frame to send this action frame. */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t roamingFsmCheckRxFtActionFrameStatus(struct ADAPTER *prAdapter,
+			   struct SW_RFB *prSwRfb, uint16_t *pu2StatusCode)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct ACTION_FT_RESP_ACTION_FRAME *prRxFrame;
+	struct ROAMING_INFO *prRoam;
+	struct BSS_DESC *prBssDesc;
+	const uint8_t *aucTargetApAddr;
+	const uint8_t *aucStaAddr;
+	uint8_t ucBssIndex;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec)
+		return WLAN_STATUS_INVALID_PACKET;
+
+	ucBssIndex = prStaRec->ucBssIndex;
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	if (!prRoam->prRoamTarget || !prRoam->prRoamTarget->prMainBssDesc)
+		return WLAN_STATUS_INVALID_PACKET;
+
+	prBssDesc = prRoam->prRoamTarget->prMainBssDesc;
+	aucStaAddr = prBssInfo->aucOwnMacAddr;
+	aucTargetApAddr = prBssDesc->aucBSSID;
+	prRxFrame = (struct ACTION_FT_RESP_ACTION_FRAME *)prSwRfb->pvHeader;
+
+	if (prRxFrame->ucCategory != CATEGORY_FT_ACTION ||
+	    prRxFrame->ucAction != ACTION_FT_RESPONSE) {
+		DBGLOG(ROAMING, WARN,
+		       "FT: Discard frame(cat=%d, action=%d)\n",
+		       prRxFrame->ucCategory, prRxFrame->ucAction);
+		*pu2StatusCode = STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED;
+		return WLAN_STATUS_SUCCESS;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* set to FTR addr */
+	if (mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) &&
+	    prBssDesc->rMlInfo.fgValid) {
+		struct MULTI_LINK_INFO parse, *info = &parse;
+		const uint8_t *ml;
+
+		aucTargetApAddr = prBssDesc->rMlInfo.aucMldAddr;
+
+		kalMemSet(info, 0, sizeof(*info));
+		/* look for ml ie from frame payload */
+		ml = mldFindMlIE(prRxFrame->aucInfoElem,
+			prSwRfb->u2PacketLen -
+			sizeof(struct ACTION_FT_RESP_ACTION_FRAME),
+			ML_CTRL_TYPE_BASIC);
+		if (ml)
+			MLD_PARSE_BASIC_MLIE(info, ml, IE_SIZE(ml),
+				prBssDesc->aucBSSID, MAC_FRAME_AUTH);
+
+		if (!info->ucValid ||
+		    UNEQUAL_MAC_ADDR(info->aucMldAddr, aucTargetApAddr)) {
+			DBGLOG(ROAMING, WARN,
+				"FT: AP wrong ML ie (addr=" MACSTR
+				", expect=" MACSTR " valid=%d, num=%d)\n",
+				MAC2STR(info->aucMldAddr),
+				MAC2STR(aucTargetApAddr),
+				info->ucValid,
+				info->ucProfNum);
+			*pu2StatusCode = STATUS_CODE_UNSPECIFIED_FAILURE;
+			return WLAN_STATUS_SUCCESS;
+		}
+	}
+#endif
+
+	if (UNEQUAL_MAC_ADDR(prRxFrame->aucStaAddr, aucStaAddr)) {
+		DBGLOG(ROAMING, WARN,
+		       "FT: wrong sta addr " MACSTR " expected " MACSTR "\n",
+		       prRxFrame->aucStaAddr, aucStaAddr);
+		*pu2StatusCode = STATUS_CODE_UNSPECIFIED_FAILURE;
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if (UNEQUAL_MAC_ADDR(prRxFrame->aucTargetApAddr, aucTargetApAddr)) {
+		DBGLOG(ROAMING, WARN,
+		       "FT: wrong ap addr " MACSTR " expected " MACSTR "\n",
+		       prRxFrame->aucTargetApAddr, aucTargetApAddr);
+		*pu2StatusCode = STATUS_CODE_UNSPECIFIED_FAILURE;
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	*pu2StatusCode = prRxFrame->u2StatusCode;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t roamingFsmProcessRxFtResponse(struct ADAPTER *prAdapter,
+				       struct SW_RFB *prSwRfb)
+{
+	struct ACTION_FT_RESP_ACTION_FRAME *prRxFrame;
+	struct FT_EVENT_PARAMS *prFtParam = aisGetFtEventParam(prAdapter,
+		secGetBssIdxByRfb(prAdapter, prSwRfb));
+	uint16_t u2IEsLen;
+
+	prRxFrame = (struct ACTION_FT_RESP_ACTION_FRAME *)prSwRfb->pvHeader;
+	u2IEsLen = (prSwRfb->u2PacketLen -
+		sizeof(struct ACTION_FT_RESP_ACTION_FRAME));
+
+	prFtParam->pcIe = &prRxFrame->aucInfoElem[0];
+	prFtParam->u2IeLen = u2IEsLen;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void roamingFsmTxReqDoneOrRxRespTimeout(
+	struct ADAPTER *prAdapter, uintptr_t ulParam)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	uint8_t ucBssIndex = (uint8_t) ulParam;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	switch (prRoamingFsmInfo->eCurrentState) {
+	case ROAMING_STATE_SEND_WNM_RESP:
+		roamingFsmSteps(prAdapter, ROAMING_STATE_HANDLE_NEW_CANDIDATE,
+			ucBssIndex);
+		break;
+
+	case ROAMING_STATE_SEND_FT_REQUEST:
+	case ROAMING_STATE_WAIT_FT_RESPONSE:
+		roamingFsmSteps(prAdapter, ROAMING_STATE_SEND_FT_REQUEST,
+			ucBssIndex);
+		break;
+	default:
+		break;
+	}
+}
+
+void roamingFsmRunEventRxFtAction(struct ADAPTER *prAdapter,
+			  struct SW_RFB *prSwRfb)
+{
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct ACTION_FT_RESP_ACTION_FRAME *prRxFrame;
+	uint16_t u2StatusCode = 0;
+	uint8_t ucBssIndex;
+	struct FT_EVENT_PARAMS *prFtParam;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	DBGDUMP_MEM8(ROAMING, INFO, "FT response\n",
+		prSwRfb->pvHeader, prSwRfb->u2PacketLen);
+
+	prRxFrame = (struct ACTION_FT_RESP_ACTION_FRAME *)prSwRfb->pvHeader;
+	ucBssIndex =  secGetBssIdxByRfb(prAdapter, prSwRfb);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prFtParam = aisGetFtEventParam(prAdapter, ucBssIndex);
+
+	switch (prRoamingFsmInfo->eCurrentState) {
+	case ROAMING_STATE_SEND_FT_REQUEST:
+	case ROAMING_STATE_WAIT_FT_RESPONSE:
+		/* Check if the incoming frame is what we are waiting for */
+		if (roamingFsmCheckRxFtActionFrameStatus(prAdapter, prSwRfb,
+			&u2StatusCode) != WLAN_STATUS_SUCCESS)
+			break;
+
+		if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
+			prFtParam->eFtDsState = FT_DS_STATE_AUTHORIZED;
+			roamingFsmProcessRxFtResponse(prAdapter, prSwRfb);
+		} else {
+			prFtParam->eFtDsState = FT_DS_STATE_FAIL;
+			DBGLOG(SAA, INFO,
+			       "FT action was rejected by [" MACSTR
+			       "], Status Code = %d\n",
+			       MAC2STR(prRxFrame->aucSrcAddr),
+			       u2StatusCode);
+		}
+
+		cnmTimerStopTimer(prAdapter,
+				&prRoamingFsmInfo->rTxReqDoneRxRespTimer);
+
+		prFtParam->u2FtDsStatusCode = u2StatusCode;
+
+		/* Reset Send Auth/(Re)Assoc Frame Count */
+		prRoamingFsmInfo->ucTxActionRetryCount = 0;
+
+		roamingFsmSteps(prAdapter,
+			ROAMING_STATE_HANDLE_NEW_CANDIDATE,
+			ucBssIndex);
+		break;
+	default:
+		break;
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialize the value in ROAMING_FSM_INFO_T for ROAMING FSM operation
@@ -83,25 +487,28 @@ static uint8_t *apucEventStr[ROAMING_EVENT_NUM] = {
 void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t i;
 
 	DBGLOG(ROAMING, LOUD,
 	       "[%d]->Init: Current Time = %u\n",
 	       ucBssIndex,
 	       kalGetTimeTick());
 
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
-	prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	/* 4 <1> Initiate FSM */
-	prRoamingFsmInfo->fgIsEnableRoaming =
-		prConnSettings->fgIsEnableRoaming;
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
-	prRoamingFsmInfo->fgDrvRoamingAllow = TRUE;
 	prRoamingFsmInfo->ucRecoverBitmap = 0;
+	prRoamingFsmInfo->u4BssIdxBmap = 0;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++)
+		prRoamingFsmInfo->eCurrentEvent[i] = ROAMING_EVENT_NUM;
+
+	cnmTimerInitTimer(prAdapter,
+		  &prRoamingFsmInfo->rTxReqDoneRxRespTimer,
+		  (PFN_MGMT_TIMEOUT_FUNC) roamingFsmTxReqDoneOrRxRespTimeout,
+		  (uintptr_t)ucBssIndex);
 }				/* end of roamingFsmInit() */
 
 /*----------------------------------------------------------------------------*/
@@ -143,11 +550,42 @@ void roamingFsmSendCmd(struct ADAPTER *prAdapter,
 {
 	uint32_t rStatus;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	/* Check Roaming Conditions */
+	if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID ||
+	    prAdapter->rWifiVar.fgDisRoaming) {
+		DBGLOG(ROAMING, INFO,
+			"Ignore [%d]->Send(%s): Policy=%d, DisRoam=%d Current Time = %u\n",
+			ucBssIndex, apucEvent[prTransit->u2Event],
+			prConnSettings->eConnectionPolicy,
+			prAdapter->rWifiVar.fgDisRoaming,
+			kalGetTimeTick());
+		return;
+	}
+
+	if (prRoamingFsmInfo->eCurrentEvent[ucBssIndex] == prTransit->u2Event) {
+		DBGLOG(ROAMING, INFO,
+			"Ignore [%d](%s)->Send(%s): Current Time = %u\n",
+			ucBssIndex,
+			apucEvent[prRoamingFsmInfo->eCurrentEvent[ucBssIndex]],
+			apucEvent[prTransit->u2Event],
+			kalGetTimeTick());
+		return;
+	}
 
 	DBGLOG(ROAMING, INFO,
-		"[%d]->Send(%s): Current Time = %u\n",
-		ucBssIndex, apucEventStr[prTransit->u2Event],
+		"[%d](%s)->Send(%s): Current Time = %u\n",
+		ucBssIndex,
+		apucEvent[prRoamingFsmInfo->eCurrentEvent[ucBssIndex]],
+		apucEvent[prTransit->u2Event],
 		kalGetTimeTick());
+
+	prRoamingFsmInfo->eCurrentEvent[ucBssIndex] = prTransit->u2Event;
 
 	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
 				      CMD_ID_ROAMING_TRANSIT,	/* ucCID */
@@ -165,6 +603,47 @@ void roamingFsmSendCmd(struct ADAPTER *prAdapter,
 
 	/* ASSERT(rStatus == WLAN_STATUS_PENDING); */
 }				/* end of roamingFsmSendCmd() */
+
+void roamingFsmSendStartCmd(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	uint8_t i;
+
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	/* start to monitor all links */
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		struct CMD_ROAMING_TRANSIT rTransit = {0};
+
+		if (prRoamingFsmInfo->u4BssIdxBmap & BIT(i)) {
+			rTransit.u2Event = ROAMING_EVENT_START;
+			rTransit.u2Data = i;
+			rTransit.ucBssidx = i;
+			roamingFsmSendCmd(prAdapter,
+				(struct CMD_ROAMING_TRANSIT *) &rTransit);
+		}
+	}
+}
+
+void roamingFsmSendAbortCmd(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct ROAMING_INFO *prRoamingFsmInfo;
+	uint8_t i;
+
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	/* abort all started links */
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		struct CMD_ROAMING_TRANSIT rTransit = {0};
+
+		if (prRoamingFsmInfo->u4BssIdxBmap & BIT(i)) {
+			rTransit.u2Event = ROAMING_EVENT_ABORT;
+			rTransit.ucBssidx = i;
+			roamingFsmSendCmd(prAdapter,
+				(struct CMD_ROAMING_TRANSIT *) &rTransit);
+		}
+	}
+}
 
 /*----------------------------------------------------------------------------*/
 
@@ -264,6 +743,22 @@ static u_int8_t roamingFsmIsNeedScan(
 	return fgIsNeedScan;
 }
 
+static uint32_t roamingFsmBTMResponseTxDone(struct ADAPTER *prAdapter,
+				     struct MSDU_INFO *prMsduInfo,
+				     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	uint8_t ucBssIndex = 0;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+
+	DBGLOG(ROAMING, INFO, "BTM Resp Tx Done Status %d\n", rTxDoneStatus);
+	ucBssIndex = prMsduInfo->ucBssIndex;
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	cnmTimerStopTimer(prAdapter,
+		&prRoamingFsmInfo->rTxReqDoneRxRespTimer);
+	roamingFsmTxReqDoneOrRxRespTimeout(prAdapter, ucBssIndex);
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief The Core FSM engine of ROAMING for AIS Infra.
@@ -278,16 +773,24 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_STATE eNextState,
 	uint8_t ucBssIndex)
 {
-	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct ROAMING_INFO *prRoam;
 	enum ENUM_ROAMING_STATE ePreviousState;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
 	u_int32_t u4ScnResultsTimeout = prAdapter->rWifiVar.u4DiscoverTimeout;
+	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
+	struct FT_EVENT_PARAMS *prFtParam;
+	struct BSS_INFO *prBssInfo;
+	uint32_t rStatus;
 
-	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+	prFtParam = aisGetFtEventParam(prAdapter, ucBssIndex);
+
 	do {
-		if (prRoamingFsmInfo->eCurrentState < 0 ||
-			prRoamingFsmInfo->eCurrentState >= ROAMING_STATE_NUM ||
-			eNextState < 0 || eNextState >= ROAMING_STATE_NUM) {
+		if (prRoam->eCurrentState < 0 ||
+		    prRoam->eCurrentState >= ROAMING_STATE_NUM ||
+		    eNextState < 0 || eNextState >= ROAMING_STATE_NUM) {
 			DBGLOG(ROAMING, STATE, "Invalid stat eNextState[%d]\n",
 				eNextState);
 			return;
@@ -296,32 +799,33 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 		DBGLOG(ROAMING, STATE,
 		       "[ROAMING%d] TRANSITION: [%s] -> [%s]\n",
 		       ucBssIndex,
-		       apucDebugRoamingState[prRoamingFsmInfo->eCurrentState],
+		       apucDebugRoamingState[prRoam->eCurrentState],
 		       apucDebugRoamingState[eNextState]);
 
 		/* NOTE(Kevin): This is the only place to
 		 *    change the eCurrentState(except initial)
 		 */
-		ePreviousState = prRoamingFsmInfo->eCurrentState;
-		prRoamingFsmInfo->eCurrentState = eNextState;
+		ePreviousState = prRoam->eCurrentState;
+		prRoam->eCurrentState = eNextState;
 
 		fgIsTransition = (u_int8_t) FALSE;
 
 		/* Do tasks of the State that we just entered */
-		switch (prRoamingFsmInfo->eCurrentState) {
-		/* NOTE(Kevin): we don't have to rearrange the sequence of
-		 *   following switch case. Instead I would like to use a common
-		 *   lookup table of array of function pointer
-		 *   to speed up state search.
-		 */
+		switch (prRoam->eCurrentState) {
 		case ROAMING_STATE_IDLE:
+			prRoam->prRoamTarget = NULL;
+			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
+
 			break;
 		case ROAMING_STATE_DECISION:
 #if CFG_SUPPORT_DRIVER_ROAMING
 			GET_CURRENT_SYSTIME(
-				&prRoamingFsmInfo->rRoamingLastDecisionTime);
+				&prRoam->rRoamingLastDecisionTime);
 #endif
-			prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
+			prRoam->eReason = ROAMING_REASON_POOR_RCPI;
+			prRoam->prRoamTarget = NULL;
+			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
+
 			break;
 
 		case ROAMING_STATE_DISCOVERY: {
@@ -335,7 +839,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 
 			GET_CURRENT_SYSTIME(&rCurrentTime);
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
-			      prRoamingFsmInfo->rRoamingDiscoveryUpdateTime,
+			      prRoam->rRoamingDiscoveryUpdateTime,
 			      SEC_TO_SYSTIME(u4ScnResultsTimeout))) {
 				DBGLOG(ROAMING, LOUD,
 					"roamingFsmSteps: DiscoveryUpdateTime Timeout\n");
@@ -347,7 +851,129 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 				prAdapter, fgIsNeedScan, ucBssIndex);
 		}
 		break;
+
 		case ROAMING_STATE_ROAM:
+			aisFsmRunEventRoamingRoam(prAdapter, ucBssIndex);
+			break;
+
+		case ROAMING_STATE_HANDLE_NEW_CANDIDATE: {
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
+			if (prBtmParam->fgPendingResponse) {
+				eNextState = ROAMING_STATE_SEND_WNM_RESP;
+				fgIsTransition = TRUE;
+				break;
+			}
+#endif /* CFG_SUPPORT_802_11V_BTM_OFFLOAD */
+
+			if (prRoam->prRoamTarget &&
+			    prRoam->prRoamTarget->prMainBssDesc->fgIsFtOverDS &&
+			    prFtParam->eFtDsState == FT_DS_STATE_IDLE) {
+				eNextState = ROAMING_STATE_SEND_FT_REQUEST;
+				fgIsTransition = TRUE;
+				break;
+			}
+
+			eNextState = ROAMING_STATE_ROAM;
+			fgIsTransition = TRUE;
+		}
+			break;
+
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
+		case ROAMING_STATE_SEND_WNM_RESP: {
+			struct BSS_INFO *prAisBssInfo =
+				aisGetAisBssInfo(prAdapter,
+				prBtmParam->ucRspBssIndex);
+			struct BSS_DESC_SET *prRoamTarget =
+				prRoam->prRoamTarget;
+
+			/* reply btm resp to the link sending btm req but
+			 * keep bssid the same as setup link's bssid
+			 */
+			prBtmParam->fgPendingResponse = FALSE;
+			if (prRoamTarget) {
+				struct BSS_DESC *prBssDesc =
+					prRoamTarget->prMainBssDesc;
+				const uint8_t *aucTargetApAddr;
+
+				aucTargetApAddr = prBssDesc->aucBSSID;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				/* set to FTR addr */
+				if (mldIsMloFeatureEnabled(prAdapter,
+					NETWORK_TYPE_AIS, ucBssIndex) &&
+				    prBssDesc->rMlInfo.fgValid)
+					aucTargetApAddr =
+						prBssDesc->rMlInfo.aucMldAddr;
+#endif
+
+				wnmSendBTMResponseFrame(
+				      prAdapter,
+				      prAisBssInfo->prStaRecOfAP,
+				      roamingFsmBTMResponseTxDone,
+				      prBtmParam->ucDialogToken,
+				      WNM_BSS_TM_ACCEPT,
+				      MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
+				      0,
+				      aucTargetApAddr);
+				cnmTimerStopTimer(prAdapter,
+					&prRoam->rTxReqDoneRxRespTimer);
+				cnmTimerStartTimer(prAdapter,
+					&prRoam->rTxReqDoneRxRespTimer, 1000);
+
+				DBGLOG(ROAMING, INFO,
+					"Wait for sending btm resp done\n");
+			} else {
+				wnmSendBTMResponseFrame(
+				      prAdapter,
+				      prAisBssInfo->prStaRecOfAP,
+				      NULL,
+				      prBtmParam->ucDialogToken,
+				      WNM_BSS_TM_REJECT_NO_SUITABLE_CANDIDATES,
+				      MBO_TRANSITION_REJECT_REASON_RSSI,
+				      0,
+				      NULL);
+				eNextState = ROAMING_STATE_HANDLE_NEW_CANDIDATE;
+				fgIsTransition = TRUE;
+			}
+		}
+			break;
+#endif /* CFG_SUPPORT_802_11V_BTM_OFFLOAD */
+
+		case ROAMING_STATE_SEND_FT_REQUEST: {
+			prFtParam->eFtDsState = FT_DS_STATE_ONGOING;
+
+			/* Do tasks in INIT STATE */
+			if (prRoam->ucTxActionRetryCount >=
+					TX_ACTION_RETRY_LIMIT) {
+				prFtParam->eFtDsState = FT_DS_STATE_FAIL;
+				eNextState = ROAMING_STATE_HANDLE_NEW_CANDIDATE;
+				fgIsTransition = TRUE;
+			} else {
+				prRoam->ucTxActionRetryCount++;
+
+				rStatus = roamingFsmSendFtActionFrame(
+					prAdapter, prBssInfo->prStaRecOfAP,
+					prRoam->prRoamTarget);
+
+				if (rStatus == WLAN_STATUS_SUCCESS) {
+					cnmTimerStopTimer(prAdapter,
+					   &prRoam->rTxReqDoneRxRespTimer);
+					cnmTimerStartTimer(prAdapter,
+					   &prRoam->rTxReqDoneRxRespTimer,
+					   TU_TO_MSEC(
+					   TX_AUTHENTICATION_RETRY_TIMEOUT_TU));
+				} else {
+					prFtParam->eFtDsState =
+						FT_DS_STATE_FAIL;
+					eNextState =
+					     ROAMING_STATE_HANDLE_NEW_CANDIDATE;
+					fgIsTransition = TRUE;
+				}
+			}
+		}
+			break;
+
+		case ROAMING_STATE_WAIT_FT_RESPONSE: {
+		}
 			break;
 
 		default:
@@ -374,20 +1000,12 @@ void roamingFsmRunEventStart(struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
 	struct BSS_INFO *prAisBssInfo;
-	struct CMD_ROAMING_TRANSIT rTransit;
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	uint8_t i;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
-	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
-
-	/* Check Roaming Conditions */
-	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
-		return;
-
-
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	if (prAisBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE)
 		return;
 
@@ -396,35 +1014,33 @@ void roamingFsmRunEventStart(struct ADAPTER *prAdapter,
 	       ucBssIndex,
 	       kalGetTimeTick());
 
-	/* IDLE, ROAM -> DECISION */
-	/* Errors as DECISION, DISCOVERY -> DECISION */
-	if (!(prRoamingFsmInfo->eCurrentState == ROAMING_STATE_IDLE
-	      || prRoamingFsmInfo->eCurrentState == ROAMING_STATE_ROAM))
+	if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_IDLE)
 		return;
+
+	/* start to monitor all links */
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *bss = aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		if (!bss ||
+		     bss->eConnectionState != MEDIA_STATE_CONNECTED)
+			continue;
+
+		if (prRoamingFsmInfo->u4BssIdxBmap & BIT(bss->ucBssIndex))
+			DBGLOG(ROAMING, WARN,
+				"Bss%d start roaming fsm again\n",
+				bss->ucBssIndex);
+
+		prRoamingFsmInfo->u4BssIdxBmap |= BIT(bss->ucBssIndex);
+	}
 
 	eNextState = ROAMING_STATE_DECISION;
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
-		uint8_t i;
-
-		/* start to monitor all links */
-		for (i = 0; i < MLD_LINK_MAX; i++) {
-			struct BSS_INFO *bss =
-				aisGetLinkBssInfo(prAisFsmInfo, i);
-
-			if (!bss ||
-			     bss->eConnectionState != MEDIA_STATE_CONNECTED)
-				continue;
-
-			rTransit.u2Event = ROAMING_EVENT_START;
-			rTransit.u2Data = bss->ucBssIndex;
-			rTransit.ucBssidx = bss->ucBssIndex;
-			roamingFsmSendCmd(prAdapter,
-				(struct CMD_ROAMING_TRANSIT *) &rTransit);
-		}
+		roamingFsmSendStartCmd(prAdapter, ucBssIndex);
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
 	}
+
 	prRoamingFsmInfo->ucRecoverBitmap = 0;
 }				/* end of roamingFsmRunEventStart() */
 
@@ -444,12 +1060,7 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_STATE eNextState;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
 
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
-
-	/* Check Roaming Conditions */
-	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
-		return;
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	DBGLOG(ROAMING, EVENT,
 	       "[%d] EVENT-ROAMING DISCOVERY: Current Time = %u\n",
@@ -458,29 +1069,10 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 
 	/* DECISION -> DISCOVERY */
 	/* Errors as IDLE, DISCOVERY, ROAM -> DISCOVERY */
-	if (prRoamingFsmInfo->eCurrentState !=
-	    ROAMING_STATE_DECISION) {
-#if (CFG_SUPPORT_CONNAC3X == 1)
-		struct CMD_ROAMING_TRANSIT rTransit = {0};
-
-		/* fail when roaming is ongoing on anther link */
-		if (prRoamingFsmInfo->eCurrentState > ROAMING_STATE_DECISION &&
-			prRoamingFsmInfo->eCurrentState < ROAMING_STATE_NUM)
-			DBGLOG(ROAMING, EVENT,
-				"There's ongoing roaming link - ignore bssidx:%d\n",
-				ucBssIndex);
-
-		rTransit.u2Event = ROAMING_EVENT_ROAM;
-		rTransit.ucBssidx = ucBssIndex;
-		roamingFsmSendCmd(prAdapter,
-			(struct CMD_ROAMING_TRANSIT *) &rTransit);
-
-		rTransit.u2Event = ROAMING_EVENT_FAIL;
-		rTransit.u2Data = ROAMING_FAIL_REASON_NOCANDIDATE;
-		rTransit.ucBssidx = ucBssIndex;
-		roamingFsmSendCmd(prAdapter,
-			(struct CMD_ROAMING_TRANSIT *) &rTransit);
-#endif
+	if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_DECISION) {
+		DBGLOG(ROAMING, INFO,
+			"Current State = %d, Ignore discovery\n",
+			prRoamingFsmInfo->eCurrentState);
 		return;
 	}
 
@@ -557,55 +1149,6 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	}
 }				/* end of roamingFsmRunEventDiscovery() */
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Transit to Roam state after Scan Done
- *
- * @param [IN P_ADAPTER_T] prAdapter
- *
- * @return none
- */
-/*----------------------------------------------------------------------------*/
-void roamingFsmRunEventRoam(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
-{
-	struct ROAMING_INFO *prRoamingFsmInfo;
-	enum ENUM_ROAMING_STATE eNextState;
-	struct CMD_ROAMING_TRANSIT rTransit;
-
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
-	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
-
-	/* Check Roaming Conditions */
-	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
-		return;
-
-
-	DBGLOG(ROAMING, EVENT,
-	       "[%d] EVENT-ROAMING ROAM: Current Time = %u\n",
-	       ucBssIndex,
-	       kalGetTimeTick());
-
-	/* IDLE, ROAM -> DECISION */
-	/* Errors as IDLE, DECISION, ROAM -> ROAM */
-	if (prRoamingFsmInfo->eCurrentState !=
-	    ROAMING_STATE_DISCOVERY)
-		return;
-
-	eNextState = ROAMING_STATE_ROAM;
-	/* DISCOVERY -> ROAM */
-	if (eNextState != prRoamingFsmInfo->eCurrentState) {
-		rTransit.u2Event = ROAMING_EVENT_ROAM;
-		rTransit.ucBssidx = ucBssIndex;
-		roamingFsmSendCmd(prAdapter,
-			(struct CMD_ROAMING_TRANSIT *) &rTransit);
-
-		/* Step to next state */
-		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
-	}
-}				/* end of roamingFsmRunEventRoam() */
-
 void roamingFsmNotifyEvent(
 	struct ADAPTER *adapter, uint8_t bssIndex, uint8_t ucFail,
 	struct BSS_DESC *prBssDesc)
@@ -667,20 +1210,17 @@ void roamingFsmRunEventFail(struct ADAPTER *prAdapter,
 		aisGetRoamingInfo(prAdapter, ucBssIndex);
 	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
 
-	/* Check Roaming Conditions */
-	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
-		return;
-
-
 	DBGLOG(ROAMING, STATE,
 	       "[%d] EVENT-ROAMING FAIL: reason %x Current Time = %u\n",
 	       ucBssIndex,
 	       ucReason, kalGetTimeTick());
 
-	/* IDLE, ROAM -> DECISION */
-	/* Errors as IDLE, DECISION, DISCOVERY -> DECISION */
-	if (prRoamingFsmInfo->eCurrentState != ROAMING_STATE_ROAM)
+	if (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_IDLE) {
+		DBGLOG(ROAMING, INFO,
+			"Current State = %d, Ignore fail\n",
+			prRoamingFsmInfo->eCurrentState);
 		return;
+	}
 
 	eNextState = ROAMING_STATE_DECISION;
 	/* ROAM -> DECISION */
@@ -710,16 +1250,10 @@ void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
-	struct CMD_ROAMING_TRANSIT rTransit;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
-	kalMemZero(&rTransit, sizeof(struct CMD_ROAMING_TRANSIT));
-
-	/* Check Roaming Conditions */
-	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
-		return;
 
 	DBGLOG(ROAMING, EVENT,
 	       "[%d] EVENT-ROAMING ABORT: Current Time = %u\n",
@@ -729,27 +1263,75 @@ void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
 	eNextState = ROAMING_STATE_IDLE;
 	/* IDLE, DECISION, DISCOVERY, ROAM -> IDLE */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
-		uint8_t i;
-
-		/* start to monitor all links */
-		for (i = 0; i < MLD_LINK_MAX; i++) {
-			struct BSS_INFO *bss =
-				aisGetLinkBssInfo(prAisFsmInfo, i);
-
-			if (!bss)
-				continue;
-
-			rTransit.u2Event = ROAMING_EVENT_ABORT;
-			rTransit.ucBssidx = bss->ucBssIndex;
-			roamingFsmSendCmd(prAdapter,
-				(struct CMD_ROAMING_TRANSIT *) &rTransit);
-		}
+		roamingFsmSendAbortCmd(prAdapter, ucBssIndex);
 
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
 	}
+
+	/* abort all started links */
+	prRoamingFsmInfo->u4BssIdxBmap = 0;
 	prRoamingFsmInfo->ucRecoverBitmap = 0;
 }				/* end of roamingFsmRunEventAbort() */
+
+void roamingFsmRunEventNewCandidate(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prRoamTarget,
+	uint8_t ucBssIndex)
+{
+	struct ROAMING_INFO *prRoam;
+	struct FT_EVENT_PARAMS *prFt;
+	struct BSS_TRANSITION_MGT_PARAM *prBtm;
+	uint8_t ucBtmReqMode = 0;
+
+	prRoam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	prFt = aisGetFtEventParam(prAdapter, ucBssIndex);
+	prBtm =  aisGetBTMParam(prAdapter, ucBssIndex);
+	ucBtmReqMode = prBtm->ucRequestMode;
+
+	DBGLOG(ROAMING, EVENT,
+	       "[%d] EVENT-NEW CANDIDATE: Current Time = %u\n",
+	       ucBssIndex,
+	       kalGetTimeTick());
+
+	/* accept new candiate when
+	 * DISCOVERY: new fw/driver roaming event
+	 * DECISION: userspace roaming
+	 * ROAM: roaming retry
+	 */
+	if (prRoam->eCurrentState != ROAMING_STATE_DISCOVERY &&
+	    prRoam->eCurrentState != ROAMING_STATE_DECISION &&
+	    prRoam->eCurrentState != ROAMING_STATE_ROAM) {
+		DBGLOG(ROAMING, INFO,
+			"Current State = %d, Ignore new candidate\n",
+			prRoam->eCurrentState);
+		return;
+	}
+
+	if (prRoamTarget && !prRoamTarget->prMainBssDesc) {
+		DBGLOG(ROAMING, WARN, "Invalid new candidate\n");
+		return;
+	}
+
+	if (prRoam->eReason == ROAMING_REASON_BTM &&
+	    (ucBtmReqMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT)) {
+		uint8_t ucDisImmiState = prBtm->ucDisImmiState;
+
+		if (prBtm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_1)
+			prBtm->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_2;
+		else if (prBtm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_2)
+			prBtm->ucDisImmiState = AIS_BTM_DIS_IMMI_STATE_3;
+
+		DBGLOG(ROAMING, INFO, "DIS_IMMI_STATE %d -> %d\n",
+			ucDisImmiState, prBtm->ucDisImmiState);
+	}
+
+	prRoam->prRoamTarget = prRoamTarget;
+	prFt->eFtDsState = FT_DS_STATE_IDLE;
+	cnmTimerStopTimer(prAdapter, &prRoam->rTxReqDoneRxRespTimer);
+
+	roamingFsmSteps(prAdapter,
+		ROAMING_STATE_HANDLE_NEW_CANDIDATE, ucBssIndex);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -764,6 +1346,7 @@ void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
 uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 	struct CMD_ROAMING_TRANSIT *prTransit)
 {
+	struct ROAMING_INFO *prRoamingFsmInfo;
 	uint8_t ucBssIndex = prTransit->ucBssidx;
 
 	DBGLOG(ROAMING, LOUD,
@@ -771,7 +1354,11 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 	       ucBssIndex,
 	       kalGetTimeTick());
 
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
 	if (prTransit->u2Event == ROAMING_EVENT_DISCOVERY) {
+		struct CMD_ROAMING_TRANSIT rTransit = {0};
+
 		DBGLOG(ROAMING, INFO,
 			"ROAMING_EVENT_DISCOVERY Data[%u] RCPI[%u(%d)] PER[%u] Thr[%u(%d)] Reason[%d] Time[%u]\n",
 			prTransit->u2Data,
@@ -782,6 +1369,28 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 			RCPI_TO_dBm(prTransit->u2RcpiLowThreshold),
 			prTransit->eReason,
 			prTransit->u4RoamingTriggerTime);
+
+		rTransit.u2Event = ROAMING_EVENT_ROAM;
+		rTransit.ucBssidx = ucBssIndex;
+		roamingFsmSendCmd(prAdapter,
+			(struct CMD_ROAMING_TRANSIT *) &rTransit);
+
+		/* fail when roaming is ongoing */
+		if (prRoamingFsmInfo->eCurrentState > ROAMING_STATE_DECISION &&
+		    prRoamingFsmInfo->eCurrentState < ROAMING_STATE_NUM) {
+			DBGLOG(ROAMING, EVENT,
+				"There's ongoing roaming - ignore bssidx:%d\n",
+				ucBssIndex);
+
+			rTransit.u2Event = ROAMING_EVENT_FAIL;
+			rTransit.u2Data = ROAMING_FAIL_REASON_NOCANDIDATE;
+			rTransit.ucBssidx = ucBssIndex;
+			roamingFsmSendCmd(prAdapter,
+				(struct CMD_ROAMING_TRANSIT *) &rTransit);
+
+			return WLAN_STATUS_SUCCESS;
+		}
+
 		roamingFsmRunEventDiscovery(prAdapter, prTransit);
 	} else if (prTransit->u2Event == ROAMING_EVENT_THRESHOLD_UPDATE) {
 		DBGLOG(ROAMING, INFO,
@@ -836,8 +1445,8 @@ uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	policy = setting->eConnectionPolicy;
 
 	return IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
-	       roam->fgIsEnableRoaming &&
 	       roam->eCurrentState == ROAMING_STATE_DECISION &&
+	       !prAdapter->rWifiVar.fgDisRoaming &&
 	       policy != CONNECT_BY_BSSID ?
 	       TRUE : FALSE;
 }
