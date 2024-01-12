@@ -13496,6 +13496,9 @@ int android_private_support_driver_cmd(IN struct net_device *prNetDev,
 
 	if (copy_from_user(&priv_cmd, prReq->ifr_data, sizeof(priv_cmd)))
 		return -EFAULT;
+	/* total_len is controlled by the user. need check length */
+	if (priv_cmd.total_len <= 0)
+		return -EINVAL;
 
 	command = kzalloc(priv_cmd.total_len, GFP_KERNEL);
 	if (!command) {
