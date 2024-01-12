@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BSD-2-Clause
 KO_CODE_PATH := $(if $(filter /%,$(src)),,$(srctree)/)$(src)
 
 _CONNAC_VER := 3_0

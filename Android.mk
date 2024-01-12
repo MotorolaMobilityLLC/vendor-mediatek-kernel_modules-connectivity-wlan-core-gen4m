@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: BSD-2-Clause
 LOCAL_PATH := $(call my-dir)
 
 ifeq ($(MTK_WLAN_SUPPORT), yes)

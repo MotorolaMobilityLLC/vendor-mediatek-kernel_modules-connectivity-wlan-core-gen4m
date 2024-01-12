@@ -1,3 +1,4 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
 #ifndef __WF_DS_LWTBL_REGS_H__
 #define __WF_DS_LWTBL_REGS_H__
 
