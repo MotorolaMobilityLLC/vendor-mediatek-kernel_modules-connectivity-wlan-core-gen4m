@@ -5281,24 +5281,25 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+	if (!ndev) {
+		DBGLOG(REQ, WARN, "ndev is NULL\n");
+		return -EINVAL;
+	}
+
 	prNetdevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
 		       netdev_priv(ndev);
 
 #if (CFG_ENABLE_WIFI_DIRECT_CFG_80211)
-	/* P2P Interfcace */
-	if (prNetdevPriv->ucIsP2p == TRUE) {
+	/* for p2p0(GO/GC) & ap0(SAP): mtk_p2p_cfg80211_change_iface
+	 * for wlan0 (STA/SAP): the following mtk_cfg_change_iface process
+	 */
+	if (ndev != prGlueInfo->prDevHandler) {
 		return mtk_p2p_cfg80211_change_iface(wiphy, ndev, type,
 						     flags, params);
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
 
 	prAdapter = prGlueInfo->prAdapter;
-
-	/* mtk_cfg_change_iface is only for wlan0 to set type as STA or AP. */
-	if (!ndev || (ndev != prGlueInfo->prDevHandler)) {
-		DBGLOG(REQ, WARN, "ndev is not correct\n");
-		return -EINVAL;
-	}
 
 	if (ndev->ieee80211_ptr->iftype == type) {
 		DBGLOG(REQ, INFO, "ndev type is not changed (%d)\n", type);
