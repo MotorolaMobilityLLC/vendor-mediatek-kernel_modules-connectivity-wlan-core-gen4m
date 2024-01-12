@@ -476,6 +476,7 @@ struct BUS_INFO {
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 	void (*showDebugInfo)(struct GLUE_INFO *prGlueInfo);
 	void (*disableDevice)(struct GLUE_INFO *prGlueInfo);
+	void (*clearEvtRingTillCmdRingEmpty)(struct ADAPTER *prAdapter);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 #if CFG_MTK_WIFI_SW_EMI_RING
