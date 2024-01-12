@@ -752,8 +752,6 @@ struct WIFI_VAR {
 	uint8_t ucStaEhtBfee;
 	uint8_t ucLinkIdForKey;
 	uint8_t ucMldLinkMax;
-	uint8_t ucMldAddrOverride;
-	uint8_t aucMldAddrStr[WLAN_CFG_VALUE_LEN_MAX];
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;

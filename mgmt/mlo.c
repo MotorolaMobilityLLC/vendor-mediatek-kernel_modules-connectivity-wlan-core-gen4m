@@ -1699,18 +1699,11 @@ void mldBssUpdateMldAddrByMainBss(
 	    LINK_IS_EMPTY(&prMldBssInfo->rBssList))
 		return;
 
-	if (!prAdapter->rWifiVar.ucMldAddrOverride) {
-		prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
-						struct BSS_INFO,
-						rLinkEntryMld);
-		mldBssUpdateMldAddr(prAdapter,
-			prMldBssInfo, prBssInfo->aucOwnMacAddr);
-	} else {
-		uint8_t aucMldAddr[MAC_ADDR_LEN];
-
-		wlanHwAddrToBin(prAdapter->rWifiVar.aucMldAddrStr, aucMldAddr);
-		mldBssUpdateMldAddr(prAdapter, prMldBssInfo, aucMldAddr);
-	}
+	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
+					struct BSS_INFO,
+					rLinkEntryMld);
+	mldBssUpdateMldAddr(prAdapter,
+		prMldBssInfo, prBssInfo->aucOwnMacAddr);
 }
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
