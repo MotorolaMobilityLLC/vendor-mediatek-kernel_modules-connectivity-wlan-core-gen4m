@@ -6754,6 +6754,9 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 				   struct STA_RECORD *prTargetStaRec)
 {
 	uint8_t ucBssIndex = prAisBssInfo->ucBssIndex;
+	struct BSS_DESC *prNewBssDesc = NULL;
+
+	prNewBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 	if (prAisBssInfo->prStaRecOfAP != prTargetStaRec)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
@@ -6795,6 +6798,8 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 	/* Virtial BSSID */
 	if (prTargetStaRec)
 		prTargetStaRec->ucBssIndex = (prAdapter->ucHwBssIdNum + 1);
+	if (prNewBssDesc)
+		COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prNewBssDesc->aucBSSID);
 	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
 
 	secRemoveBssBcEntry(prAdapter, prAisBssInfo, TRUE);
