@@ -69,7 +69,7 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt6639GetFlavorVer(void);
+static uint32_t mt6639GetFlavorVer(uint8_t *flavor);
 
 static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
@@ -462,6 +462,9 @@ struct BUS_INFO mt6639_bus_info = {
 struct FWDL_OPS_T mt6639_fw_dl_ops = {
 	.constructFirmwarePrio = mt6639_ConstructFirmwarePrio,
 	.constructPatchName = mt6639_ConstructPatchName,
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+	.parseSingleBinaryFile = wlanParseSingleBinaryFile,
+#endif
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.downloadByDynMemMap = NULL,
@@ -799,6 +802,49 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 {
 	int ret = 0;
 	uint8_t ucIdx = 0;
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
+
+	kalMemZero(aucFlavor, sizeof(aucFlavor));
+	mt6639GetFlavorVer(&aucFlavor[0]);
+
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+	/* Type 0. mt6639_wifi.bin */
+	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+			CFG_FW_NAME_MAX_LEN,
+			"mt6639_wifi.bin");
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+
+	/* Type 1. mt6639_wifi_flavor.bin */
+	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+			CFG_FW_NAME_MAX_LEN,
+			"mt6639_wifi_%s.bin",
+			aucFlavor);
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+#endif
+
+	/* Type 2. WIFI_RAM_CODE_MT6639_1_1.bin */
+	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+			CFG_FW_NAME_MAX_LEN,
+			"WIFI_RAM_CODE_MT%x_%s_%u.bin",
+			MT6639_CHIP_ID,
+			aucFlavor,
+			MT6639_ROM_VERSION);
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
 
 	for (ucIdx = 0; apucmt6639FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
@@ -809,21 +855,7 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_MT6639_1_1.bin */
-		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-				CFG_FW_NAME_MAX_LEN,
-				"WIFI_RAM_CODE_MT%x_%x_%u.bin",
-				MT6639_CHIP_ID,
-				mt6639GetFlavorVer(),
-				MT6639_ROM_VERSION);
-		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
-			(*pucNameIdx) += 1;
-		else
-			DBGLOG(INIT, ERROR,
-				"[%u] kalSnprintf failed, ret: %d\n",
-				__LINE__, ret);
-
-		/* Type 2. WIFI_RAM_CODE_6639.bin */
+		/* Type 3. WIFI_RAM_CODE_6639.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s.bin",
 				apucmt6639FwName[ucIdx]);
@@ -840,13 +872,42 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
-	/* Type 1. WIFI_MT6639_PATCH_MCU_1_1_hdr.bin */
+	kalMemZero(aucFlavor, sizeof(aucFlavor));
+	mt6639GetFlavorVer(&aucFlavor[0]);
+
+#if CFG_SUPPORT_SINGLE_FW_BINARY
+	/* Type 0. mt6639_wifi.bin */
+	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+			CFG_FW_NAME_MAX_LEN,
+			"mt6639_wifi.bin");
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+
+	/* Type 1. mt6639_wifi_flavor.bin */
+	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+			CFG_FW_NAME_MAX_LEN,
+			"mt6639_wifi_%s.bin",
+			aucFlavor);
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+#endif
+
+	/* Type 2. WIFI_MT6639_PATCH_MCU_1_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
-			  "WIFI_MT%x_PATCH_MCU_%x_%u_hdr.bin",
+			  "WIFI_MT%x_PATCH_MCU_%s_%u_hdr.bin",
 			  MT6639_CHIP_ID,
-			  mt6639GetFlavorVer(),
+			  aucFlavor,
 			  MT6639_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
@@ -855,7 +916,7 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			"[%u] kalSnprintf failed, ret: %d\n",
 			__LINE__, ret);
 
-	/* Type 2. mt6639_patch_e1_hdr.bin */
+	/* Type 3. mt6639_patch_e1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
 			  "mt6639_patch_e1_hdr.bin");
@@ -1759,12 +1820,14 @@ static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter)
 #endif
 #endif
 
-static uint32_t mt6639GetFlavorVer(void)
+static uint32_t mt6639GetFlavorVer(uint8_t *flavor)
 {
+	int ret;
 	if (IS_MOBILE_SEGMENT)
-		return 0x1;
+		ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "1");
 	else
-		return 0x2;
+		ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "2");
+	return ret;
 }
 
 #endif  /* MT6639 */

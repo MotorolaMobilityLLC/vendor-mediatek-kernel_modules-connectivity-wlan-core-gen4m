@@ -860,6 +860,12 @@ else
     ccflags-y += -DCFG_MTK_ANDROID_EMI=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_SINGLE_FW_BINARY), y)
+    ccflags-y += -DCFG_SUPPORT_SINGLE_FW_BINARY=1
+else
+    ccflags-y += -DCFG_SUPPORT_SINGLE_FW_BINARY=0
+endif
+
 ifneq ($(WIFI_IP_SET),)
     ccflags-y += -DCFG_WIFI_IP_SET=$(WIFI_IP_SET)
 else
