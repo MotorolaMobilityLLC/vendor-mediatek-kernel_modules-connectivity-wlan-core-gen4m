@@ -6516,8 +6516,10 @@ uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if (CFG_SUPPORT_TWT == 1)
 uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 uint32_t nicUniCmdTwtStaGetCnmGranted(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
@@ -6668,8 +6670,10 @@ void nicUniEventBFStaRec(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#if (CFG_SUPPORT_TWT == 1)
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif
 
 #if (CFG_SUPPORT_TWT_STA_CNM == 1)
 void nicUniCmdEventTWTGetCnmGrantedDone(IN struct ADAPTER *prAdapter,

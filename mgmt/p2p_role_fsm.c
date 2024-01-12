@@ -4180,7 +4180,7 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 				prQueryStaStatistics, &u4BufLen);
 
 	}
-
+#if CFG_SUPPORT_WFD
 	/* Make sure WFD is still enabled */
 	if (prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable &&
 		!prAdapter->prGlueInfo->fgIsInSuspendMode) {
@@ -4188,6 +4188,7 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
 			P2P_ROLE_GET_STATISTICS_TIME);
 	}
+#endif
 }
 #endif
 
