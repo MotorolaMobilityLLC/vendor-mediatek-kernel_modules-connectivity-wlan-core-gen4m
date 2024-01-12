@@ -496,6 +496,7 @@ struct CHIP_DBG_OPS soc7_0_DebugOps = {
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacWtblInfo = connac2x_show_umac_wtbl_info,
+	.get_rssi_from_wtbl = connac2x_get_rssi_from_wtbl,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = connac2x_show_dmashdl_info,
 	.getFwDebug = connac2x_get_ple_int,

@@ -485,6 +485,11 @@ struct CHIP_DBG_OPS {
 		char *pcCommand,
 		int32_t i4TotalLen,
 		uint8_t ucStaIdx);
+	void (*get_rssi_from_wtbl)(
+		struct ADAPTER *prAdapter, uint32_t u4Index,
+		int32_t *pi4Rssi0, int32_t *pi4Rssi1,
+		int32_t *pi4Rssi2, int32_t *pi4Rssi3
+	);
 	int32_t (*show_rx_rssi_info)(
 		struct ADAPTER *prAdapter,
 		char *pcCommand,
@@ -947,6 +952,11 @@ int32_t connac2x_show_wtbl_info(
 	uint32_t u4Index,
 	char *pcCommand,
 	int i4TotalLen);
+void connac2x_get_rssi_from_wtbl(
+	struct ADAPTER *prAdapter, uint32_t u4Index,
+	int32_t *pi4Rssi0, int32_t *pi4Rssi1,
+	int32_t *pi4Rssi2, int32_t *pi4Rssi3
+);
 int32_t connac2x_show_umac_wtbl_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,
@@ -1050,6 +1060,11 @@ int32_t connac3x_show_rx_rate_info(
 	char *pcCommand,
 	int32_t i4TotalLen,
 	uint8_t ucStaIdx);
+void connac3x_get_rssi_from_wtbl(
+	struct ADAPTER *prAdapter, uint32_t u4Index,
+	int32_t *pi4Rssi0, int32_t *pi4Rssi1,
+	int32_t *pi4Rssi2, int32_t *pi4Rssi3
+);
 
 int32_t connac3x_show_rx_rssi_info(
 	struct ADAPTER *prAdapter,

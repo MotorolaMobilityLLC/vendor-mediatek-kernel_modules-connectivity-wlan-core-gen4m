@@ -1436,6 +1436,7 @@ struct CHIP_DBG_OPS mt7961DebugOps = {
 	.showTxdInfo = connac2x_show_txd_Info,
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacWtblInfo = connac2x_show_umac_wtbl_info,
+	.get_rssi_from_wtbl = connac2x_get_rssi_from_wtbl,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 	.dumpMacInfo = NULL,

@@ -1681,7 +1681,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_trx_stats
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_trx_stats_policy,
+		.maxattr = WIFI_ATTRIBUTE_STATS_MAX
 #endif
 	},
 #endif

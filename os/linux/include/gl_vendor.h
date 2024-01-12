@@ -229,6 +229,13 @@ enum WIFI_STATS_ATTRIBUTE {
 	WIFI_ATTRIBUTE_STATS_TX  = 0,
 	WIFI_ATTRIBUTE_STATS_RX,
 	WIFI_ATTRIBUTE_STATS_CGS,
+	WIFI_ATTRIBUTE_STATS_TX_NUM,
+	WIFI_ATTRIBUTE_STATS_TX_TAG_LIST,
+	WIFI_ATTRIBUTE_STATS_RX_NUM,
+	WIFI_ATTRIBUTE_STATS_RX_TAG_LIST,
+	WIFI_ATTRIBUTE_STATS_CGS_NUM,
+	WIFI_ATTRIBUTE_STATS_CGS_TAG_LIST,
+	WIFI_ATTRIBUTE_STATS_VERSION,
 	WIFI_ATTRIBUTE_STATS_MAX,
 };
 
@@ -587,6 +594,9 @@ extern const struct nla_policy mtk_tx_lat_montr_param_policy[
 
 extern const struct nla_policy mtk_wfd_tx_br_montr_policy[
 		WIFI_ATTR_WFD_TX_BR_MONTR_MAX + 1];
+
+extern const struct nla_policy nla_trx_stats_policy[
+	WIFI_ATTRIBUTE_STATS_MAX + 1];
 /*******************************************************************************
  *                           MACROS
  *******************************************************************************

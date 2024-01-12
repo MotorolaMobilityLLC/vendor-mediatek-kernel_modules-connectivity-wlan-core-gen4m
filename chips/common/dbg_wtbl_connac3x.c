@@ -776,6 +776,51 @@ void connac3x_get_lwtbl(
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 }
 
+void connac3x_get_rssi_from_wtbl(
+	struct ADAPTER *prAdapter, uint32_t u4Index,
+	int32_t *pi4Rssi0, int32_t *pi4Rssi1,
+	int32_t *pi4Rssi2, int32_t *pi4Rssi3
+)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+
+	struct CMD_ACCESS_REG rCmdAccessReg = {0};
+	uint32_t rStatus;
+	uint32_t u4BufLen = 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	DBGLOG(REQ, INFO, "WTBL : index = %d\n", u4Index);
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	rCmdAccessReg.u4Address = CONNAC3X_LWTBL_IDX2BASE(
+		prChipInfo->u4LmacWtblDUAddr, u4Index, 34);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryMcrRead,
+			   &rCmdAccessReg, sizeof(rCmdAccessReg),
+			   &u4BufLen);
+	if (rStatus == WLAN_STATUS_SUCCESS) {
+		if (pi4Rssi0 != NULL)
+			*pi4Rssi0 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				WTBL_RESP_RCPI0_MASK) >>
+				WTBL_RESP_RCPI0_OFFSET);
+		if (pi4Rssi1 != NULL)
+			*pi4Rssi1 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				WTBL_RESP_RCPI1_MASK) >>
+				WTBL_RESP_RCPI1_OFFSET);
+		if (pi4Rssi2 != NULL)
+			*pi4Rssi2 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				WTBL_RESP_RCPI2_MASK) >>
+				WTBL_RESP_RCPI2_OFFSET);
+		if (pi4Rssi3 != NULL)
+			*pi4Rssi3 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
+				WTBL_RESP_RCPI3_MASK) >>
+				WTBL_RESP_RCPI3_OFFSET);
+	}
+}
+
 static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
 {
 	struct mt66xx_chip_info *prChipInfo;
