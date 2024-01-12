@@ -7580,7 +7580,8 @@ void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 	/* GPIO parameter is necessary in suspend/resume */
 	if (enable == 1) {
 		rCmdWowlanParam.ucCmd = PM_WOWLAN_REQ_START;
-		rCmdWowlanParam.ucDetectType = WOWLAN_DETECT_TYPE_MAGIC;
+		rCmdWowlanParam.ucDetectType =
+			prGlueInfo->prAdapter->rWifiVar.ucWowDetectType;
 		rCmdWowlanParam.u2FilterFlag = WOWLAN_FF_DROP_ALL |
 				       WOWLAN_FF_SEND_MAGIC_TO_HOST |
 				       WOWLAN_FF_ALLOW_1X |
