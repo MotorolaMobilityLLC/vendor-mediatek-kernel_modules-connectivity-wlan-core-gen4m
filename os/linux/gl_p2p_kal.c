@@ -2833,11 +2833,20 @@ void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo)
 {
 	void *pvRet = NULL;
 
-	if (prGlueInfo != NULL &&
-			prGlueInfo->prP2PDevInfo != NULL) {
-		pvRet =
-			(void *)(prGlueInfo->prP2PDevInfo->prScanRequest);
-	}
+	if (prGlueInfo && prGlueInfo->prP2PDevInfo)
+		pvRet = (void *)(prGlueInfo->prP2PDevInfo->prScanRequest);
 
 	return pvRet;
+}
+
+u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
+{
+	u_int8_t fgScanSpecificSSID = FALSE;
+
+	if (prGlueInfo && prGlueInfo->prP2PDevInfo) {
+		fgScanSpecificSSID =
+			prGlueInfo->prP2PDevInfo->fgScanSpecificSSID;
+	}
+
+	return fgScanSpecificSSID;
 }

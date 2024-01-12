@@ -121,6 +121,8 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsBeacon = FALSE;
 	u_int8_t fgIsSkipThisBeacon = FALSE;
 	u_int8_t fgIsP2pNetRegistered = FALSE;
+	u_int8_t fgScanSpecificSSID = FALSE;
+	void *prScanRequest = NULL;
 
 	/* Sanity check for p2p net device state */
 	GLUE_SPIN_LOCK_DECLARATION();
@@ -188,10 +190,23 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 
 	}
 
-	/* Skip report beacon to upper layer if no p2p scan */
-	if (kalGetP2pDevScanReq(prAdapter->prGlueInfo) == NULL &&
-			fgIsBeacon)
+	/* Skip report beacon to upper layer if no p2p scan. Note that a p2p
+	 * device may scan a specific SSID when it tries to join the GO. The
+	 * scan requests may be mixed up with wlan's scan requests. In this
+	 * case, we still need to report beacon to supplicant. Otherwise,
+	 * supplicant may not be able to find WPS IE and result in inviation
+	 * fails.
+	 */
+	prScanRequest = kalGetP2pDevScanReq(prAdapter->prGlueInfo);
+	fgScanSpecificSSID =
+		kalGetP2pDevScanSpecificSSID(prAdapter->prGlueInfo);
+	if (fgIsBeacon && prScanRequest == NULL && !fgScanSpecificSSID) {
+		DBGLOG(P2P, TRACE,
+			"Skip beacon, p2pScanRequest=%d, scanSpecificSSID=%d\n",
+			prScanRequest,
+			fgScanSpecificSSID);
 		fgIsSkipThisBeacon = TRUE;
+	}
 
 	if (fgIsBeacon && fgIsSkipThisBeacon) {
 		/* Only report Probe Response frame
@@ -224,6 +239,9 @@ scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum,
 			prBssDesc->ucRCPI,
 			prBssDesc->rUpdateTime);
+
+		DBGLOG_MEM8(P2P, TRACE, prSwRfb->pvHeader,
+				prSwRfb->u2PacketLen);
 
 		kalP2PIndicateBssInfo(prAdapter->prGlueInfo,
 				(uint8_t *) prSwRfb->pvHeader,

@@ -431,7 +431,7 @@ int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Idx, uint32_t *pu4IfIndex);
 #endif
 
-void *kalGetP2pDevScanReq(
-			struct GLUE_INFO *prGlueInfo);
+void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo);
+u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo);
 
 #endif /* _GL_P2P_KAL_H */
