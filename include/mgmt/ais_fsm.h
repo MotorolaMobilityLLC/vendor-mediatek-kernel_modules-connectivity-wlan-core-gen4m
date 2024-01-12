@@ -594,6 +594,7 @@ struct MSG_AIS_BSS_TRANSITION {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint8_t ucBssIndex;
 };
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1035,9 +1036,11 @@ struct IEEE_802_11_MIB *aisGetMib(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+#if CFG_SUPPORT_ROAMING
 struct ROAMING_INFO *aisGetRoamingInfo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
+#endif
 
 struct PARAM_BSSID_EX *aisGetCurrBssId(
 	struct ADAPTER *prAdapter,

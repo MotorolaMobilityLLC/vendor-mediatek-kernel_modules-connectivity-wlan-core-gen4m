@@ -1308,6 +1308,7 @@ static const struct wiphy_vendor_command
 
 	},
 #endif
+#if CFG_SUPPORT_ROAMING
 	{
 		{
 			.vendor_id = OUI_QCA,
@@ -1322,6 +1323,7 @@ static const struct wiphy_vendor_command
 		.maxattr = QCA_WLAN_VENDOR_ATTR_MAX
 #endif
 	},
+#endif
 	{
 		{
 			.vendor_id = GOOGLE_OUI,

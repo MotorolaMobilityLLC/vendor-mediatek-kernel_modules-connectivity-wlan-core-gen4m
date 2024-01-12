@@ -182,8 +182,8 @@ static uint8_t scanNetworkReplaceHandler6G(enum ENUM_BAND eCurrentBand,
  */
 
 
-struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
-	[ROAM_TYPE_RCPI] = {
+struct WEIGHT_CONFIG gasMtkWeightConfig[CONN_ROAM_TYPE_NUM] = {
+	[CONN_ROAM_TYPE_RCPI] = {
 		.ucChnlUtilWeight = WEIGHT_IDX_CHNL_UTIL,
 		.ucRssiWeight = WEIGHT_IDX_RSSI,
 		.ucScanMissCntWeight = WEIGHT_IDX_SCN_MISS_CNT,
@@ -200,8 +200,9 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL,
 		.ucTputWeight = WEIGHT_IDX_TPUT,
 		.ucPreferenceWeight = WEIGHT_IDX_PREFERENCE
-	},
-	[ROAM_TYPE_PER] = {
+	}
+#if CFG_SUPPORT_ROAMING
+	, [ROAM_TYPE_PER] = {
 		.ucChnlUtilWeight = WEIGHT_IDX_CHNL_UTIL_PER,
 		.ucRssiWeight = WEIGHT_IDX_RSSI_PER,
 		.ucScanMissCntWeight = WEIGHT_IDX_SCN_MISS_CNT_PER,
@@ -219,6 +220,7 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucTputWeight = WEIGHT_IDX_TPUT_PER,
 		.ucPreferenceWeight = WEIGHT_IDX_PREFERENCE_PER
 	}
+#endif
 };
 
 static uint8_t *apucBandStr[BAND_NUM] = {
@@ -248,16 +250,16 @@ const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
 };
 #endif
 
-static enum ROAM_TYPE roamReasonToType(enum ENUM_ROAMING_REASON type)
+static enum CONN_ROAM_TYPE roamReasonToType(enum ENUM_CONN_ROAM_REASON type)
 {
-	enum ROAM_TYPE ret = ROAM_TYPE_RCPI;
+	enum CONN_ROAM_TYPE ret = CONN_ROAM_TYPE_RCPI;
 
-	if (type >= ROAMING_REASON_NUM)
+	if (type >= CONNECTING_ROAMING_REASON_NUM)
 		return ret;
-
+#if CFG_SUPPORT_ROAMING
 	if (type == ROAMING_REASON_TX_ERR)
 		ret = ROAM_TYPE_PER;
-
+#endif
 	return ret;
 }
 /*******************************************************************************
@@ -305,7 +307,7 @@ static enum ROAM_TYPE roamReasonToType(enum ENUM_ROAMING_REASON type)
 
 #if 0
 static uint16_t scanCaculateScoreBySTBC(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+	struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	uint8_t ucSpatial = 0;
@@ -325,7 +327,7 @@ static uint16_t scanCaculateScoreBySTBC(struct ADAPTER *prAdapter,
 /* Channel Utilization: weight index will be */
 static uint16_t scanCalculateScoreByChnlInfo(
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo, uint8_t ucChannel,
-	enum ROAM_TYPE eRoamType)
+	enum CONN_ROAM_TYPE eRoamType)
 {
 	struct ESS_CHNL_INFO *prEssChnlInfo = &prAisSpecificBssInfo->
 		arCurEssChnlInfo[0];
@@ -333,7 +335,7 @@ static uint16_t scanCalculateScoreByChnlInfo(
 	uint16_t u2Score = 0;
 	uint8_t weight = 0;
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -369,7 +371,7 @@ static uint16_t scanCalculateScoreByChnlInfo(
 }
 
 static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+	struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = prBssDesc->eChannelWidth;
@@ -380,7 +382,7 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 	uint8_t ucSta2GBW = prAdapter->rWifiVar.ucSta2gBandwidth;
 	uint8_t ucStaBW = prAdapter->rWifiVar.ucStaBandwidth;
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -439,7 +441,7 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 }
 
 static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
-			enum ROAM_TYPE eRoamType)
+			enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	uint16_t u2StaCnt = 0;
@@ -449,7 +451,7 @@ static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
 	log_dbg(SCN, TRACE, "Exist bss load %d, sta cnt %d\n",
 			prBssDesc->fgExsitBssLoadIE, prBssDesc->u2StaCnt);
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -557,7 +559,7 @@ static uint8_t scanNetworkReplaceHandler6G(enum ENUM_BAND eCurrentBand,
 static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
 	uint16_t u2CandScore, uint16_t u2CurrScore,
-	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex)
+	enum ENUM_CONN_ROAM_REASON eRoamReason, uint8_t ucBssIndex)
 {
 	int8_t cCandRssi = RCPI_TO_dBm(prCandBss->ucRCPI);
 	int8_t cCurrRssi = RCPI_TO_dBm(prCurrBss->ucRCPI);
@@ -566,7 +568,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	uint16_t u2CurrMiss = u4UpdateIdx - prCurrBss->u4UpdateIdx;
 	struct BSS_DESC *prBssDesc = NULL;
 	int8_t ucOpChannelNum = 0;
-	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
+	enum CONN_ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
 
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	if (prBssDesc)
@@ -607,7 +609,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 		return TRUE;
 
 	/* 1.4 prefer to select 5G Bss if Rssi of a 5G band BSS is good */
-	if (eRoamType != ROAM_TYPE_PER &&
+	if (eRoamType == CONN_ROAM_TYPE_RCPI &&
 		prCandBss->eBand != prCurrBss->eBand) {
 		if (prCandBss->eBand >= BAND_2G4 &&
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -627,16 +629,18 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 	 * Otherwise, if difference is greater than 10dbm, select the good RSSI
 	 */
 	 do {
+#if CFG_SUPPORT_ROAMING
 		if ((eRoamType == ROAM_TYPE_PER) &&
 			cCandRssi >= RSSI_SECOND_LEVEL &&
 			cCurrRssi >= RSSI_SECOND_LEVEL)
 			break;
+#endif
 		if (cCandRssi - cCurrRssi >= RSSI_DIFF_BETWEEN_BSS)
 			return FALSE;
 		if (cCurrRssi - cCandRssi >= RSSI_DIFF_BETWEEN_BSS)
 			return TRUE;
 	} while (FALSE);
-
+#if CFG_SUPPORT_ROAMING
 	if (eRoamType == ROAM_TYPE_PER) {
 		if (prCandBss->ucChannelNum == ucOpChannelNum) {
 			log_dbg(SCN, INFO, "CandBss in opchnl,add CurBss Score\n");
@@ -649,6 +653,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 				gasMtkWeightConfig[eRoamType].ucOpchnlWeight;
 		}
 	}
+#endif
 
 	/* 2. Check Score */
 	/* 2.1 Cases that no need to replace candidate */
@@ -666,7 +671,7 @@ static u_int8_t scanNeedReplaceCandidate(struct ADAPTER *prAdapter,
 
 static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ENUM_BAND eBand, uint8_t ucChannel,
-	u_int8_t fgIsFixedChannel, enum ENUM_ROAMING_REASON eRoamReason,
+	u_int8_t fgIsFixedChannel, enum ENUM_CONN_ROAM_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
@@ -758,7 +763,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		if (prBssDesc->ucRCPI < RCPI_FOR_DONT_ROAM
 #if CFG_SUPPORT_NCHO
 		|| (prAdapter->rNchoInfo.fgNCHOEnabled &&
-		    (eRoamReason == ROAMING_REASON_POOR_RCPI ||
+		    (eRoamReason == CONNECTING_ROAMING_REASON_POOR_RCPI ||
 		     eRoamReason == ROAMING_REASON_RETRY) &&
 		    r1 - r2 <= prAdapter->rNchoInfo.i4RoamDelta)
 #endif
@@ -880,7 +885,7 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 #if (CFG_TC10_FEATURE == 1)
 static int32_t scanCalculateScoreByCu(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
+	struct BSS_DESC *prBssDesc, enum ENUM_CONN_ROAM_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
 	struct SCAN_INFO *info;
@@ -966,12 +971,12 @@ static int32_t scanCalculateScoreByCu(struct ADAPTER *prAdapter,
 #endif
 
 static uint16_t scanCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
-	enum ROAM_TYPE eRoamType)
+	enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	int8_t cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -987,12 +992,12 @@ static uint16_t scanCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
 }
 
 static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+	struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -1010,7 +1015,7 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 }
 
 static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
-	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
+	uint8_t ucChannel, enum CONN_ROAM_TYPE eRoamType,
 	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
 	enum ENUM_BAND eBand)
 {
@@ -1037,7 +1042,7 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		rssiFactor = 2 * (90 + rssi);
 	else
 		rssiFactor = 0;
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -1060,11 +1065,13 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 					eBand == info->aeChannelBand[i]) {
 				slot = info->au2ChannelIdleTime[i];
 				idle = (slot * 9 * 100) / (dwell * 1000);
+#if CFG_SUPPORT_ROAMING
 				if (eRoamType == ROAM_TYPE_PER) {
 					score = idle > BSS_FULL_SCORE ?
 						BSS_FULL_SCORE : idle;
 					goto done;
 				}
+#endif
 				cu = 255 - idle * 255 / 100;
 				break;
 			}
@@ -1103,11 +1110,11 @@ done:
 }
 
 uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+	    struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -1124,7 +1131,7 @@ uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
 }
 
 uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+	    struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 
@@ -1136,12 +1143,13 @@ uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
 }
 
 uint16_t scanCalculateScoreByPreference(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason)
+	    struct BSS_DESC *prBssDesc, enum ENUM_CONN_ROAM_REASON eRoamReason)
 {
+#if CFG_SUPPORT_ROAMING
 #if CFG_SUPPORT_802_11K
 	if (eRoamReason == ROAMING_REASON_BTM) {
 		if (prBssDesc->prNeighbor) {
-			enum ROAM_TYPE eRoamType =
+			enum CONN_ROAM_TYPE eRoamType =
 				roamReasonToType(eRoamReason);
 
 			return prBssDesc->prNeighbor->ucPreference *
@@ -1149,11 +1157,12 @@ uint16_t scanCalculateScoreByPreference(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+#endif
 	return 0;
 }
 
 uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
+	struct BSS_DESC *prBssDesc, enum ENUM_CONN_ROAM_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
@@ -1182,12 +1191,12 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	char *extra = "";
 #endif
 	int8_t cRssi = -128;
-	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
+	enum CONN_ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
 
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
 		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
@@ -1254,7 +1263,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t scanSanityCheckSecondary(struct ADAPTER *prAdapter,
 	struct BSS_DESC_SET *prBssDescSet, struct BSS_DESC *prBssDesc,
-	enum ENUM_ROAMING_REASON eRoamReason, uint8_t ucBssIndex)
+	enum ENUM_CONN_ROAM_REASON eRoamReason, uint8_t ucBssIndex)
 {
 	uint8_t i;
 
@@ -1271,7 +1280,8 @@ uint8_t scanSanityCheckSecondary(struct ADAPTER *prAdapter,
 }
 
 void scanFillSecondaryLink(struct ADAPTER *prAdapter,
-	struct BSS_DESC_SET *prBssDescSet, enum ENUM_ROAMING_REASON eRoamReason,
+	struct BSS_DESC_SET *prBssDescSet,
+	enum ENUM_CONN_ROAM_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
@@ -1438,7 +1448,7 @@ void apsUpdateEssApList(struct ADAPTER *prAdapter,
  * 3. STBC and Multi Anttena.
  */
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
-	enum ENUM_ROAMING_REASON eRoamReason,
+	enum ENUM_CONN_ROAM_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
@@ -1454,13 +1464,13 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand = BAND_2G4;
 	uint8_t ucChannel = 0;
 	enum ENUM_PARAM_CONNECTION_POLICY policy;
-	enum ROAM_TYPE eRoamType;
+	enum CONN_ROAM_TYPE eRoamType;
 #if (CFG_TC10_FEATURE == 1)
 	int32_t base, goal;
 #endif
 	uint8_t ucAisIdx;
 
-	if (!prAdapter || eRoamReason >= ROAMING_REASON_NUM) {
+	if (!prAdapter || eRoamReason >= CONNECTING_ROAMING_REASON_NUM) {
 		log_dbg(SCN, ERROR,
 			"prAdapter %p, reason %d!\n", prAdapter, eRoamReason);
 		return NULL;
@@ -1493,7 +1503,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 		aisGetTargetBssDesc(prAdapter, ucBssIndex),
 		eRoamReason, ucBssIndex);
 	switch (eRoamReason) {
-	case ROAMING_REASON_POOR_RCPI:
+	case CONNECTING_ROAMING_REASON_POOR_RCPI:
 	case ROAMING_REASON_RETRY:
 		goal += base * 20 / 100;
 		break;

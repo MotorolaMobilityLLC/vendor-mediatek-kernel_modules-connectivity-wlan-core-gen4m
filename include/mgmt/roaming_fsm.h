@@ -89,12 +89,6 @@
  *******************************************************************************
  */
 
-enum ROAM_TYPE {
-	ROAM_TYPE_RCPI,
-	ROAM_TYPE_PER,
-	ROAM_TYPE_NUM
-};
-
 enum ENUM_ROAMING_FAIL_REASON {
 	ROAMING_FAIL_REASON_CONNLIMIT = 0,
 	ROAMING_FAIL_REASON_NOCANDIDATE,
@@ -112,32 +106,17 @@ enum ENUM_ROAMING_EVENT {
 	ROAMING_EVENT_NUM
 };
 
-enum ENUM_ROAMING_REASON {
-	ROAMING_REASON_POOR_RCPI = 0,
-	ROAMING_REASON_TX_ERR, /*Lowest rate, high PER*/
-	ROAMING_REASON_RETRY,
-	ROAMING_REASON_IDLE,
-	ROAMING_REASON_BEACON_TIMEOUT,
-	ROAMING_REASON_INACTIVE,
-	ROAMING_REASON_SAA_FAIL,
-	ROAMING_REASON_UPPER_LAYER_TRIGGER,
-	ROAMING_REASON_BTM,
-	ROAMING_REASON_REASSOC,
-	ROAMING_REASON_NUM
-};
-
 struct CMD_ROAMING_TRANSIT {
 	uint16_t u2Event;
 	uint16_t u2Data;
 	uint16_t u2RcpiLowThreshold;
 	uint8_t ucIsSupport11B;
 	uint8_t ucBssidx;
-	enum ENUM_ROAMING_REASON eReason;
+	enum ENUM_CONN_ROAM_REASON eReason;
 	uint32_t u4RoamingTriggerTime; /*sec in mcu*/
 	uint16_t u2RcpiHighThreshold;
 	uint8_t aucReserved2[6];
 };
-
 
 struct CMD_ROAMING_CTRL {
 	uint8_t fgEnable;
@@ -188,7 +167,7 @@ struct ROAMING_INFO {
 #endif
 
 	uint8_t fgDrvRoamingAllow;
-	enum ENUM_ROAMING_REASON eReason;
+	enum ENUM_CONN_ROAM_REASON eReason;
 	uint8_t ucPER;
 	uint8_t ucRcpi;
 	uint8_t ucThreshold;
