@@ -2098,7 +2098,7 @@ void heRlmRecBTWTparams(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		DBGLOG(RLM, WARN, "BTWT[%d] Ofset=%d recomd=%d\n",
 			ucBtwtId, u4Offset, ucRecommendation);
 
-		if (ucBtwtId >= TWT_MAX_FLOW_NUM) {
+		if (ucBtwtId >= RTWT_MAX_FLOW_NUM) {
 			DBGLOG(RLM, ERROR,
 				"BTWT[%d] Ofset=%d recomd=%d out of range\n",
 				ucBtwtId, u4Offset, ucRecommendation);
