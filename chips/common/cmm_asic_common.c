@@ -160,7 +160,7 @@ void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
 
 void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx,
+	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx,
 	IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer)
 {
