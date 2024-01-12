@@ -933,14 +933,14 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
 			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
 	} else if (IS_BSS_P2P(prBssInfo)) {
-		/* AP mode */
-		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData])) {
-
-			prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
-			if (!prAdapter->rWifiVar.ucApChnlDefFromCfg && prP2pRoleFsmInfo) {
-				prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
-				ucMaxBandwidth = prP2pConnReqInfo->eChnlBw;
-			} else {
+		prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter, ucBssIndex);
+		if (!prAdapter->rWifiVar.ucApChnlDefFromCfg && prP2pRoleFsmInfo
+			&& prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+			prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+			ucMaxBandwidth = prP2pConnReqInfo->eChnlBw;
+		} else {
+			/* AP mode */
+			if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prBssInfo->u4PrivateData])) {
 				if (prBssInfo->eBand == BAND_2G4)
 					ucMaxBandwidth = prAdapter->rWifiVar.ucAp2gBandwidth;
 				else
@@ -949,14 +949,16 @@ UINT_8 cnmGetBssMaxBw(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex)
 				if (ucMaxBandwidth > prAdapter->rWifiVar.ucApBandwidth)
 					ucMaxBandwidth = prAdapter->rWifiVar.ucApBandwidth;
 			}
+			/* P2P mode */
+			else {
+				if (prBssInfo->eBand == BAND_2G4)
+					ucMaxBandwidth = prAdapter->rWifiVar.ucP2p2gBandwidth;
+				else
+					ucMaxBandwidth = prAdapter->rWifiVar.ucP2p5gBandwidth;
+			}
+
 		}
-		/* P2P mode */
-		else {
-			if (prBssInfo->eBand == BAND_2G4)
-				ucMaxBandwidth = prAdapter->rWifiVar.ucP2p2gBandwidth;
-			else
-				ucMaxBandwidth = prAdapter->rWifiVar.ucP2p5gBandwidth;
-		}
+
 	}
 
 	return ucMaxBandwidth;
