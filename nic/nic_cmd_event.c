@@ -4870,6 +4870,7 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 				prAdapter->fgN9CorDumpFileOpend = TRUE;
 
 			prAdapter->fgN9AssertDumpOngoing = TRUE;
+			wlanCorDumpTimerInit(prAdapter, TRUE);
 		}
 		if (prAdapter->fgN9AssertDumpOngoing) {
 
@@ -4908,6 +4909,7 @@ void nicEventAssertDump(IN struct ADAPTER *prAdapter,
 				prAdapter->fgCr4CorDumpFileOpend = TRUE;
 
 			prAdapter->fgCr4AssertDumpOngoing = TRUE;
+			wlanCorDumpTimerInit(prAdapter, FALSE);
 		}
 		if (prAdapter->fgCr4AssertDumpOngoing) {
 			if (prAdapter->fgKeepPrintCoreDump)

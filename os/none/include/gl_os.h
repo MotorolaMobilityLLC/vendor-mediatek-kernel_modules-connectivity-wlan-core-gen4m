@@ -1067,6 +1067,10 @@ struct PACKET_PRIVATE_RX_DATA {
 
 #define DbgPrint(...)
 
+#define GLUE_LOOKUP_FUN(fun_name) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
+
 #if CFG_MET_TAG_SUPPORT
 #define GL_MET_TAG_START(_id, _name)	met_tag_start(_id, _name)
 #define GL_MET_TAG_END(_id, _name)	met_tag_end(_id, _name)

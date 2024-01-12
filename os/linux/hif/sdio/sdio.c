@@ -1707,3 +1707,23 @@ u_int8_t glWakeupSdio(struct GLUE_INFO *prGlueInfo)
 	return fgSuccess;
 }
 
+#if (CFG_CHIP_RESET_SUPPORT == 1) && (MTK_WCN_HIF_SDIO == 0)
+void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+{
+	struct mmc_host *host;
+
+	ASSERT(prGlueInfo);
+
+	host = prGlueInfo->rHifInfo.func->card->host;
+	host->rescan_entered = 0;
+
+	/* clear trx fifo */
+	DBGLOG(INIT, STATE, "[SER][L0] mmc_remove_host\n");
+	mmc_remove_host(prGlueInfo->rHifInfo.func->card->host);
+
+	DBGLOG(INIT, STATE, "[SER][L0] mmc_add_host\n");
+	mmc_add_host(host);
+
+}
+#endif
+

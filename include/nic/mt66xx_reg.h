@@ -1275,6 +1275,9 @@ struct mt66xx_chip_info {
 	void *pdev;
 	uint32_t group5_size;
 	void (*wlanCheckAsicCap)(IN struct ADAPTER *prAdapter);
+#if (CFG_CHIP_RESET_SUPPORT == 1) && (CFG_WMT_RESET_API_SUPPORT == 0)
+	u_int8_t (*rst_L0_notify_step2)(void);
+#endif
 };
 
 struct mt66xx_hif_driver_data {
