@@ -333,6 +333,8 @@ uint32_t cnmUpdateDbdcSetting(
 	struct ADAPTER *prAdapter,
 	u_int8_t fgDbdcEn);
 
+bool cnmDbdcIsDisabled(struct ADAPTER *prAdapter);
+
 void cnmDbdcPreConnectionEnableDecision(
 	struct ADAPTER *prAdapter,
 	struct DBDC_DECISION_INFO *prDbdcDecisionInfo);

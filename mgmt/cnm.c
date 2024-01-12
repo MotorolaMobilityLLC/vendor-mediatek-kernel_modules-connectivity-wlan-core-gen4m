@@ -3869,6 +3869,29 @@ cnmDbdcFsmExitFunc_WAIT_HW_DISABLE(
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief check whether DBDC is disabled
+ *        to avoid STA disable DBDC during roaming, which may cause DBDC->MCC,
+ *        check DBDC status before cnmDbdcPreConnectionEnableDecision
+ *
+ * @param ADAPTER
+ *
+ * @return boolean
+ */
+/*----------------------------------------------------------------------------*/
+bool cnmDbdcIsDisabled(struct ADAPTER *prAdapter)
+{
+	if (prAdapter->rWifiVar.fgDbDcModeEn == FALSE)
+		return TRUE;
+
+	if (g_rDbdcInfo.fgHasSentCmd == TRUE &&
+		g_rDbdcInfo.fgCmdEn == FALSE)
+		return TRUE;
+
+	return FALSE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief    Run-time check if DBDC Need enable or update guard time.
  *           The WmmQ is set to the correct DBDC band before connetcting.
  *           It could make sure the TxPath is correct after connected.
