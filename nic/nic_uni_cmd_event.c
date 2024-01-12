@@ -4288,6 +4288,10 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		struct MSG_CH_REQ *msg,
 		struct WIFI_UNI_CMD_ENTRY **out_entry)
 {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_INFO *bss;
+	struct MLD_BSS_INFO *mld_bss;
+#endif
 	struct UNI_CMD_CNM *uni_cmd;
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	struct UNI_CMD_CNM_CH_PRIVILEGE_REQ *tag;
@@ -4311,6 +4315,11 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		if (i == 0) {
 			sub_req = (struct MSG_CH_REQ *)msg;
 			tag->u2Tag = UNI_CMD_CNM_TAG_CH_PRIVILEGE_REQ;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			bss = GET_BSS_INFO_BY_INDEX(ad, sub_req->ucBssIndex);
+			mld_bss = mldBssGetByBss(ad, bss);
+#endif
 		} else {
 			sub_req = (struct MSG_CH_REQ *)&msg[i];
 			tag->u2Tag = UNI_CMD_CNM_TAG_CH_PRIVILEGE_MLO_SUB_REQ;
@@ -4351,8 +4360,14 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucRfCenterFreqSeg1FromAP = sub_req->ucRfCenterFreqSeg1;
 		tag->ucRfCenterFreqSeg2FromAP = sub_req->ucRfCenterFreqSeg2;
 		tag->ucDBDCBand = nicUniCmdChReqBandType(sub_req->eDBDCBand);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (IS_MLD_BSSINFO_MULTI(mld_bss))
+			tag->ucExtraInfo |= BIT(
+				CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_MULTI_LINK);
+#endif
 
-		DBGLOG(INIT, INFO, "bss=%d,token=%d,type=%d,interval=%d,ch[%d %d %d %d %d %d],dbdc=%d\n",
+		DBGLOG(INIT, INFO,
+			"bss=%d,token=%d,type=%d,interval=%d,ch[%d %d %d %d %d %d],dbdc=%d,extra=%u\n",
 			tag->ucBssIndex,
 			tag->ucTokenID,
 			tag->ucReqType,
@@ -4363,7 +4378,8 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 			tag->ucRfSco,
 			tag->ucRfCenterFreqSeg1,
 			tag->ucRfCenterFreqSeg2,
-			tag->ucDBDCBand);
+			tag->ucDBDCBand,
+			tag->ucExtraInfo);
 	}
 	*out_entry = entry;
 

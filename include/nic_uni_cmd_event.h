@@ -3153,6 +3153,11 @@ enum ENUM_UNI_CMD_CNM_CH_REQ_BAND {
 	UNI_CMD_CNM_CH_REQ_BAND_AUTO = 0xFF,
 };
 
+enum ENUM_CNM_CH_PRIVILEGE_REQ_EXTRA_INFO {
+	CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_MULTI_LINK = 0,
+	CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_NUM
+};
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CNM_CH_PRIVILEGE_REQ {
 	uint16_t         u2Tag;
@@ -3171,7 +3176,12 @@ struct UNI_CMD_CNM_CH_PRIVILEGE_REQ {
 	uint8_t          ucReqType;          /* ENUM_CH_REQ_TYPE_T */
 	uint32_t         u4MaxInterval;      /* In unit of ms */
 	uint8_t          ucDBDCBand;
-	uint8_t          aucReserved[3];
+	/* CNM Function Mask: Each bit represents whether to turn on
+	 * specific function
+	 */
+	uint8_t          ucCnmFuncMask;
+	uint8_t          ucExtraInfo;
+	uint8_t          aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
