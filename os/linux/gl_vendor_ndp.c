@@ -156,7 +156,7 @@ nanNdiCreateRspEvent(struct ADAPTER *prAdapter,
 	u2CreateRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			 (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2CreateRspLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2CreateRspLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -241,7 +241,7 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter,
 	u2CreateRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			 (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2CreateRspLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2CreateRspLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -331,7 +331,7 @@ nanNdpInitiatorRspEvent(struct ADAPTER *prAdapter,
 	u2InitiatorRspLen = (4 * sizeof(uint32_t)) + (1 * sizeof(uint16_t)) +
 			    (5 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2InitiatorRspLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2InitiatorRspLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -428,7 +428,7 @@ nanNdpResponderRspEvent(struct ADAPTER *prAdapter,
 	u2ResponderRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			    (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2ResponderRspLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2ResponderRspLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -512,7 +512,7 @@ nanNdpEndRspEvent(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP,
 	u2EndRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 		      (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2EndRspLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2EndRspLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -1059,7 +1059,7 @@ nanNdpDataIndEvent(IN struct ADAPTER *prAdapter,
 			 prNDP->u2AppInfoLen + NAN_SCID_DEFAULT_LEN +
 			 (6 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2IndiEventLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2IndiEventLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -1185,7 +1185,7 @@ nanNdpDataConfirmEvent(IN struct ADAPTER *prAdapter,
 	/* WIFI_EVENT_SUBCMD_NDP: Event Idx is 13 for kernel,
 	 *  but for WifiHal is 81
 	 */
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2ConfirmEventLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2ConfirmEventLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
@@ -1284,7 +1284,7 @@ nanNdpDataTerminationEvent(IN struct ADAPTER *prAdapter,
 	u2ConfirmEventLen = sizeof(uint32_t) + NLMSG_HDRLEN + (2 * NLA_HDRLEN) +
 			    1 * sizeof(*pu2NDPInstance);
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, u2ConfirmEventLen,
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev, u2ConfirmEventLen,
 					  WIFI_EVENT_SUBCMD_NDP, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "Allocate skb failed\n");

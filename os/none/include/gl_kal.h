@@ -404,6 +404,28 @@ enum ENUM_CMD_TX_RESULT {
  */
 #define kalCfg80211ScanDone(_request, aborted)
 
+/**
+ * kalCfg80211VendorEventAlloc - abstraction of cfg80211_vendor_event_alloc
+ * cfg80211_vendor_event_alloc - allocate vendor-specific event skb
+ * @wiphy: the wiphy
+ * @event_idx: index of the vendor event in the wiphy's vendor_events
+ * @approxlen: an upper bound of the length of the data that will
+ *	be put into the skb
+ * @gfp: allocation flags
+ *
+ * This function allocates and pre-fills an skb for an event on the
+ * vendor-specific multicast group.
+ *
+ * When done filling the skb, call cfg80211_vendor_event() with the
+ * skb to send the event.
+ *
+ * Return: An allocated and pre-filled skb. %NULL if any errors happen.
+ *
+ * Since linux-4.1.0 the 2nd parameter is added struct wireless_dev
+ */
+#define kalCfg80211VendorEventAlloc(wiphy, wdev, approxlen, event_idx, gfp) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 /* Consider on some Android platform, using request_firmware_direct()
  * may cause system failed to load firmware. So we still use
  * request_firmware().

@@ -2384,15 +2384,11 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		ch_width,
 		eHwMode);
 
-#if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
-	vendor_event = cfg80211_vendor_event_alloc(prGlueP2pInfo->prWdev->wiphy,
-#if KERNEL_VERSION(4, 1, 0) <= LINUX_VERSION_CODE
+	vendor_event = kalCfg80211VendorEventAlloc(prGlueP2pInfo->prWdev->wiphy,
 			prGlueP2pInfo->prWdev,
-#endif
 			4 * sizeof(u8) + 1 * sizeof(u16) + 4 + NLMSG_HDRLEN,
 			WIFI_EVENT_ACS,
 			GFP_KERNEL);
-#endif
 
 	if (!vendor_event) {
 		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
