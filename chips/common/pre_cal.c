@@ -322,6 +322,12 @@ uint32_t wlanRcvPhyActionRsp(struct ADAPTER *prAdapter,
 			prPhyEvent->ucStatus ==
 			HAL_PHY_ACTION_STATUS_RECAL)) {
 
+#if CFG_MTK_ANDROID_EMI
+			/* Get Emi address and send to Conninfra */
+			gEmiGetCalOffset = prPhyEvent->u4EmiAddress &
+				WIFI_EMI_ADDR_MASK;
+#endif
+
 			/* read from EMI, backup in driver */
 			wlanAccessCalibrationEMI(prPhyEvent,
 				TRUE);
