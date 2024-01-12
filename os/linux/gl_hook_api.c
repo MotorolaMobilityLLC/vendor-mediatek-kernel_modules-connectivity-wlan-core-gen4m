@@ -5092,13 +5092,17 @@ uint8_t glIsWifiInTestMode(struct net_device *prNetDev)
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	if (!prGlueInfo)
+	if (!prGlueInfo) {
 		DBGLOG(RFTEST, STATE, "prGlueInfo is NULL\n");
+		return FALSE;
+	}
 
 	prAdapter = prGlueInfo->prAdapter;
 
-	if (!prAdapter)
+	if (!prAdapter) {
 		DBGLOG(RFTEST, STATE, "prAdapter is NULL\n");
+		return FALSE;
+	}
 
 	return wlanQueryTestMode(prAdapter);
 }

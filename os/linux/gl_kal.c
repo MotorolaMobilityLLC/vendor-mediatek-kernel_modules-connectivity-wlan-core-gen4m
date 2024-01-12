@@ -7554,6 +7554,11 @@ kalReadyOnChannel(struct GLUE_INFO *prGlueInfo,
 		struct net_device *prDevHandler =
 			wlanGetNetDev(prGlueInfo, ucBssIndex);
 
+		if (prDevHandler) {
+			DBGLOG(REQ, WARN, "prDevHandler is null\n");
+			return;
+		}
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (eBand == BAND_6G) {
 			prChannel =
