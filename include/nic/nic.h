@@ -81,6 +81,9 @@
 #define NIC_IS_BSS_11B(prBssInfo) \
 	(prBssInfo->ucPhyTypeSet == PHY_TYPE_SET_802_11B)
 
+#define NIC_IS_BSS_11AC(prBssInfo) \
+	((prBssInfo->ucPhyTypeSet >> PHY_TYPE_VHT_INDEX) == 1)
+
 #define NIC_IS_BSS_BELOW_11AC(prBssInfo) \
 	((prBssInfo->ucPhyTypeSet >> PHY_TYPE_VHT_INDEX) == 0)
 
