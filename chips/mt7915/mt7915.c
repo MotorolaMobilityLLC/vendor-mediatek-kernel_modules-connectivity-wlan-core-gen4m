@@ -399,7 +399,7 @@ struct BUS_INFO mt7915_bus_info = {
 	.u4SuspendVer = SUSPEND_V2,
 	.asicUsbSuspend = NULL,	/*asicUsbSuspend*/
 	.asicUsbResume = asicConnac2xUsbResume,
-	.asicUsbEventEpDetected = asicUsbEventEpDetected,
+	.asicUsbEventEpDetected = asicConnac2xUsbEventEpDetected,
 	.asicUsbRxByteCount = wlanHarrierUsbRxByteCount,
 #endif				/* _HIF_USB */
 #if defined(_HIF_SDIO)

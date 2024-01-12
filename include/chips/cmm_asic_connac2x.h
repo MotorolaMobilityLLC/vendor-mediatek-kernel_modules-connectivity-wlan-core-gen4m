@@ -223,9 +223,10 @@
  */
 #define CONNAC2X_WFDMA_HOST_CONFIG_USB_CMDPKT_DST_MASK  (0x1 << 7)
 #define CONNAC2X_WFDMA_HOST_CONFIG_USB_CMDPKT_DST(p)    (((p) & 0x1) << 7)
-
 #define CONNAC2X_USB_CMDPKT2WM	0
 #define CONNAC2X_USB_CMDPKT2WA	1
+
+#define CONNAC2X_WFDMA_HOST_CONFIG_USB_RXEVT_EP4_EN  (0x1 << 6)
 
 #define CONNAC2X_LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
 #endif /* _HIF_USB */
@@ -982,6 +983,8 @@ void asicConnac2xProcessRxInterrupt(
 void asicConnac2xWfdmaInitForUSB(
 	struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo);
+uint8_t asicConnac2xUsbEventEpDetected(
+	struct ADAPTER *prAdapter);
 void asicConnac2xEnableUsbCmdTxRing(
 	struct ADAPTER *prAdapter,
 	u_int8_t ucDstRing);
