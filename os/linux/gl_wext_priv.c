@@ -8901,7 +8901,8 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
 				       u4BufLen);
 				return -1;
 			}
-			kalStrnCpy(pucCurrBuf + offset, apcArgv[2], u4BufLen);
+			kalStrnCpy(pucCurrBuf + offset,
+					apcArgv[2], u4BufLen + 1);
 			offset += u4BufLen;
 		} else {
 			for (i = 2; i < i4Argc; i++) {
@@ -8914,13 +8915,19 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
 					return -1;
 				}
 				kalStrnCpy(pucCurrBuf + offset, apcArgv[i],
-					   u4BufLen);
+					   u4BufLen + 1);
 				offset += u4BufLen;
 			}
 		}
 
 		DBGLOG(INIT, WARN, "Update to driver temp buffer as [%s]\n",
 		       ucTmp);
+		if (kalStrLen(apcArgv[1]) > WLAN_CFG_KEY_LEN_MAX - 1) {
+			DBGLOG(INIT, ERROR,
+				   "apcArgv[1] length [%d] overrun\n",
+				   kalStrLen(apcArgv[1]));
+			return -1;
+		}
 
 		/* wlanCfgSet(prAdapter, apcArgv[1], apcArgv[2], 0); */
 		/* Call by  wlanoid because the set_cfg will trigger callback */
