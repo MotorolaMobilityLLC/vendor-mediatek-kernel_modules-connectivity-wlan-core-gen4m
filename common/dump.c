@@ -299,8 +299,6 @@ void dumpMemory8(IN uint8_t *pucStartAddr,
 			u4Length = 0;
 		}
 	}
-
-	LOG_FUNC("\n");
 }				/* end of dumpMemory8() */
 
 
