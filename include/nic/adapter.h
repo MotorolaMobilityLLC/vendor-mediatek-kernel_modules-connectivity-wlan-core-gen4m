@@ -475,6 +475,12 @@ struct BSS_INFO {
 
 	uint16_t u2DeauthReason;
 
+#if CFG_SUPPORT_ASSURANCE
+	uint32_t u4DeauthIeLength;
+	/* Assurance: Deauth IE from AP */
+	uint8_t aucDeauthIe[CFG_CFG80211_IE_BUF_LEN];
+#endif
+
 #if CFG_SUPPORT_TDLS
 	u_int8_t fgTdlsIsProhibited;
 	u_int8_t fgTdlsIsChSwProhibited;
@@ -1538,10 +1544,27 @@ enum ENUM_NCHO_ITEM_SET_TYPE {
 };
 
 enum ENUM_NCHO_BAND {
-	NCHO_BAND_AUTO = 0,
+	NCHO_BAND_AUTO_2G4_5G = 0,
 	NCHO_BAND_5G,
 	NCHO_BAND_2G4,
-	NCHO_BAND_NUM
+	NCHO_BAND_AUTO_2G4_5G_6G,
+	NCHO_BAND_6G,
+	NCHO_BAND_5G_6G,
+	NCHO_BAND_2G4_6G,
+};
+
+enum ENUM_NCHO_ROAM_BAND {
+	NCHO_ROAM_BAND_AUTO = 0,
+	NCHO_ROAM_BAND_2G4,
+	NCHO_ROAM_BAND_5G,
+	NCHO_ROAM_BAND_2G4_5G,
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	NCHO_ROAM_BAND_6G,
+	NCHO_ROAM_BAND_2G4_6G,
+	NCHO_ROAM_BAND_5G_6G,
+	NCHO_ROAM_BAND_2G4_5g_6G,
+#endif
+	NCHO_ROAM_BAND_MAX,
 };
 
 enum ENUM_NCHO_DFS_SCN_MODE {
@@ -1589,12 +1612,26 @@ struct NCHO_INFO {
 	uint32_t u4ScanHomeawayTime;	/* ms */
 	uint32_t u4ScanNProbes;
 	uint32_t u4WesMode;
-	enum ENUM_NCHO_BAND eBand;
+	uint8_t ucBand;
+	enum ENUM_NCHO_BAND eCongfigBand;
+	uint8_t ucRoamBand;
+	enum ENUM_NCHO_ROAM_BAND eRoamBand;
 	enum ENUM_NCHO_DFS_SCN_MODE eDFSScnMode;
 	uint32_t u4RoamScanControl;
 	struct CFG_NCHO_SCAN_CHNL rRoamScnChnl;
 	struct CFG_NCHO_SCAN_CHNL rAddRoamScnChnl;
 	struct NCHO_ACTION_FRAME_PARAMS rParamActionFrame;
+};
+
+struct WTC_MODE_INFO {
+	uint8_t ucWtcMode;
+	uint8_t ucScanMode;
+	int  cRssiThreshold;
+	int  cRssiThreshold_24G;
+	int  cRssiThreshold_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	int  cRssiThreshold_6G;
+#endif
 };
 #endif
 
@@ -2224,6 +2261,7 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_NCHO			/*  NCHO information */
 	struct NCHO_INFO rNchoInfo;
+	struct WTC_MODE_INFO rWtcModeInfo;
 #endif
 	struct CFG_SCAN_CHNL rAddRoamScnChnl;
 
@@ -2382,6 +2420,15 @@ struct ADAPTER {
 #if !CFG_QM_ARP_MONITOR_MSG
 	uint8_t ucArpNoRespBitmap;
 #endif /* !CFG_QM_ARP_MONITOR_MSG */
+
+#if CFG_SUPPORT_ASSURANCE
+	/* Deauth IE from wpa_supplicant */
+	uint8_t aucDeauthIeFromUpper[NON_WFA_VENDOR_IE_MAX_LEN];
+	uint16_t u4DeauthIeFromUpperLength;
+
+	u_int8_t fgRoamReasonEnabled;
+	u_int8_t fgBrErrReasonEnabled;
+#endif
 
 	u_int8_t fgEnDbgPowerMode;
 

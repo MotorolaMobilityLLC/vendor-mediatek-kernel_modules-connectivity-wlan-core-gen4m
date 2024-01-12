@@ -94,6 +94,10 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 	{(0), ehtRlmCalculateCapIELen, ehtRlmReqGenerateCapIE}
 	,
 #endif
+#if CFG_SUPPORT_ASSURANCE
+	{0, assocCalculateRoamReasonLen, assocGenerateRoamReason}
+	,
+#endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	{0, rlmCalculateMTKOuiIELen, rlmGenerateMTKOuiIE}
 				/* 221 */

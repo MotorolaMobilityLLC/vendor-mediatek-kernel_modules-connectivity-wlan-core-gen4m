@@ -2952,6 +2952,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		if (prGlueInfo->fgIsRegistered == TRUE) {
 			uint16_t u2DeauthReason = 0;
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
+			uint8_t *pDeauthIe = NULL;
+			uint32_t u2DeauthLen = 0;
 
 			u2DeauthReason = prBssInfo->u2DeauthReason;
 
@@ -3039,6 +3041,18 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				FALSE, ucBssIndex);
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
+#if CFG_SUPPORT_ASSURANCE
+			if (eStatus != WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY &&
+				prBssInfo->u4DeauthIeLength != 0) {
+				DBGLOG(INIT, INFO, "Dump: Deauth IE to upper");
+				DBGLOG_MEM8(INIT, INFO, prBssInfo->aucDeauthIe,
+					prBssInfo->u4DeauthIeLength);
+
+				pDeauthIe = prBssInfo->aucDeauthIe;
+				u2DeauthLen = prBssInfo->u4DeauthIeLength;
+			}
+#endif
+
 			/* CFG80211 Indication */
 			DBGLOG(INIT, INFO,
 			    "[wifi]Indicate disconnection: Reason=%d Locally[%d]\n",
@@ -3046,7 +3060,7 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 			    (eStatus ==
 				WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY));
 			cfg80211_disconnected(prDevHandler,
-			    u2DeauthReason, NULL, 0,
+			    u2DeauthReason, pDeauthIe, u2DeauthLen,
 			    eStatus == WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY,
 			    GFP_KERNEL);
 

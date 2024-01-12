@@ -270,6 +270,11 @@ struct AIS_SPECIFIC_BSS_INFO {
 	struct LINK_MGMT  rNeighborApList;
 	OS_SYSTIME rNeiApRcvTime;
 	uint32_t u4NeiApValidInterval;
+
+#if CFG_SUPPORT_ASSURANCE
+	uint8_t fgRoamingReasonEnable;
+	uint8_t fgBcnReptErrReasonEnable;
+#endif
 };
 
 /* Session for CONNECTION SETTINGS */
@@ -655,6 +660,9 @@ void aisFsmStateAbort_IBSS(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void aisFsmSteps(struct ADAPTER *prAdapter,
 		 enum ENUM_AIS_STATE eNextState, uint8_t ucBssIndex);
 
+void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 /*----------------------------------------------------------------------------*/
 /* Mailbox Message Handling                                                   */
 /*----------------------------------------------------------------------------*/
@@ -850,11 +858,6 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 
 void aisFsmRunEventMgmtFrameTx(struct ADAPTER *prAdapter,
 				struct MSG_HDR *prMsgHdr);
-
-#if CFG_SUPPORT_NCHO
-void aisFsmRunEventNchoActionFrameTx(struct ADAPTER *prAdapter,
-				struct MSG_HDR *prMsgHdr);
-#endif
 
 void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 				struct SW_RFB *prSwRfb);

@@ -2121,6 +2121,9 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
 COMMON_OBJS += 	$(EXT_DIR)$(COMMON_DIR)wlan_oid_ext.o
 OS_OBJS +=	$(EXT_DIR)$(OS_DIR)gl_sys.o \
             $(EXT_DIR)$(OS_DIR)gl_wext_priv_ext.o
+MGMT_OBJS +=	$(EXT_DIR)$(MGMT_DIR)log_ext.o \
+            $(EXT_DIR)$(MGMT_DIR)p2p_ext.o \
+            $(EXT_DIR)$(MGMT_DIR)roaming_ext.o
 endif
 
 # ---------------------------------------------------

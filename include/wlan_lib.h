@@ -419,18 +419,6 @@ struct CFG_SETTING {
 	uint8_t TestStr[80];
 };
 
-#if CFG_SUPPORT_NCHO
-#define FW_CFG_KEY_NCHO_ENABLE			"NCHOEnable"
-#define FW_CFG_KEY_NCHO_ROAM_RCPI		"RoamingRCPIValue"
-#define FW_CFG_KEY_NCHO_SCN_CHANNEL_TIME	"NCHOScnChannelTime"
-#define FW_CFG_KEY_NCHO_SCN_HOME_TIME		"NCHOScnHomeTime"
-#define FW_CFG_KEY_NCHO_SCN_HOME_AWAY_TIME	"NCHOScnHomeAwayTime"
-#define FW_CFG_KEY_NCHO_SCN_NPROBES		"NCHOScnNumProbs"
-#define FW_CFG_KEY_NCHO_WES_MODE		"NCHOWesMode"
-#define FW_CFG_KEY_NCHO_SCAN_DFS_MODE		"NCHOScnDfsMode"
-#define FW_CFG_KEY_NCHO_SCAN_PERIOD		"NCHOScnPeriod"
-#endif
-
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2230,15 +2218,6 @@ wlanResoreEmCfgSetting(struct ADAPTER *prAdapter);
 
 void
 wlanCleanAllEmCfgSetting(struct ADAPTER *prAdapter);
-
-#if CFG_SUPPORT_NCHO
-void wlanNchoInit(struct ADAPTER *prAdapter, uint8_t fgFwSync);
-uint32_t wlanNchoSetFWEnable(struct ADAPTER *prAdapter, uint8_t fgEnable);
-uint32_t wlanNchoSetFWRssiTrigger(struct ADAPTER *prAdapter,
-	int32_t i4RoamTriggerRssi);
-uint32_t wlanNchoSetFWScanPeriod(struct ADAPTER *prAdapter,
-	uint32_t u4RoamScanPeriod);
-#endif
 
 u_int8_t wlanWfdEnabled(struct ADAPTER *prAdapter);
 
