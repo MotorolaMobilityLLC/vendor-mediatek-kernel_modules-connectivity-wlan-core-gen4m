@@ -525,9 +525,7 @@ struct GLUE_INFO {
 
 	/* Device Index(index of arWlanDevInfo[]) */
 	int32_t i4DevIdx;
-#if CFG_SUPPORT_RX_GRO
-	struct napi_struct napi[MAX_BSSID_NUM];
-#endif
+
 	/* Device statistics */
 	/* struct net_device_stats rNetDevStats; */
 
@@ -891,6 +889,10 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	uint8_t ucBssIdx;
 #if CFG_ENABLE_UNIFY_WIPHY
 	u_int8_t ucIsP2p;
+#endif
+#if CFG_SUPPORT_RX_GRO
+	struct napi_struct napi;
+	OS_SYSTIME tmGROFlushTimeout;
 #endif
 };
 

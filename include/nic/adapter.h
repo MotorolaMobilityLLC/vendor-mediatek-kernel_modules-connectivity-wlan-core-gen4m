@@ -1689,9 +1689,6 @@ struct ADAPTER {
 #endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;
-#if CFG_SUPPORT_RX_GRO
-	OS_SYSTIME tmGROFlushTimeout[MAX_BSSID_NUM];
-#endif
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	struct WLAN_IOT_AP_RULE_T rIotApRule[CFG_IOT_AP_RULE_MAX_CNT];
 #endif
