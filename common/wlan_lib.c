@@ -1178,6 +1178,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 					struct REG_INFO *prRegInfo,
 					const u_int8_t bAtResetFlow)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 #if CFG_MTK_WIFI_SW_WFDMA
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
@@ -1196,7 +1197,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	prBusInfo = prAdapter->chip_info->bus_info;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 #if CFG_MTK_WIFI_SW_WFDMA
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 #endif
@@ -1362,6 +1364,14 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 #endif
 			/* Set FW download success flag */
 			prAdapter->fgIsFwDownloaded = TRUE;
+
+#if CFG_MTK_WIFI_WFDMA_WB
+			/* enable wfdma write back after fw dl */
+			if (prChipInfo->enableWfdmaWb) {
+				prChipInfo->enableWfdmaWb(
+					prAdapter->prGlueInfo);
+			}
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 			fw_log_start(prAdapter);
 

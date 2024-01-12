@@ -2818,33 +2818,52 @@ void connac3x_dump_format_memory32(
 static void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
-	struct RTMP_DMABUF *prRingIdx0, *prRingIntSta0;
-	struct RTMP_DMABUF *prRingIdx1, *prRingIntSta1;
+	struct RTMP_DMABUF *prRingDidx, *prRingCidx, *prRingIntSta;
+	struct RTMP_DMABUF *prHwDoneFlag, *prSwDoneFlag;
+	struct RTMP_DMABUF *prRingMdDidx, *prRingMdIntSta;
 	uint32_t u4Val;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prRingIdx0 = &prHifInfo->rRingIdx0;
-	prRingIntSta0 = &prHifInfo->rRingIntSta0;
-	prRingIdx1 = &prHifInfo->rRingIdx1;
-	prRingIntSta1 = &prHifInfo->rRingIntSta1;
+	prRingDidx = &prHifInfo->rRingDidx;
+	prRingCidx = &prHifInfo->rRingCidx;
+	prHwDoneFlag = &prHifInfo->rHwDoneFlag;
+	prSwDoneFlag = &prHifInfo->rSwDoneFlag;
+	prRingIntSta = &prHifInfo->rRingIntSta;
+	prRingMdDidx = &prHifInfo->rRingMdDidx;
+	prRingMdIntSta = &prHifInfo->rRingMdIntSta;
 
-	if (prRingIdx0->AllocVa) {
-		DBGLOG(HAL, INFO, "Dump RingIdx0\n");
-		DBGLOG_MEM32(HAL, INFO, prRingIdx0->AllocVa,
-			     prRingIdx0->AllocSize);
+	if (prRingDidx->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump RingDidx\n");
+		DBGLOG_MEM32(HAL, INFO, prRingDidx->AllocVa,
+			     prRingDidx->AllocSize);
 	}
-	if (prRingIntSta0->AllocVa) {
-		u4Val = *((uint32_t *)prRingIntSta0->AllocVa);
-		DBGLOG(HAL, INFO, "EmiIntSta0[0x%08x]\n", u4Val);
+	if (prRingCidx->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump RingCidx\n");
+		DBGLOG_MEM32(HAL, INFO, prRingCidx->AllocVa,
+			     prRingCidx->AllocSize);
+	}
+	if (prRingIntSta->AllocVa) {
+		u4Val = *((uint32_t *)prRingIntSta->AllocVa);
+		DBGLOG(HAL, INFO, "EmiIntSta[0x%08x]\n", u4Val);
+	}
+	if (prHwDoneFlag->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump HwDoneFlag\n");
+		DBGLOG_MEM32(HAL, INFO, prHwDoneFlag->AllocVa,
+			     prHwDoneFlag->AllocSize);
+	}
+	if (prSwDoneFlag->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump SwDoneFlag\n");
+		DBGLOG_MEM32(HAL, INFO, prSwDoneFlag->AllocVa,
+			     prSwDoneFlag->AllocSize);
 	}
 #if CFG_ENABLE_MAWD_MD_RING
-	if (prRingIdx1->AllocVa) {
-		DBGLOG(HAL, INFO, "Dump RingIdx1\n");
-		DBGLOG_MEM32(HAL, INFO, prRingIdx1->AllocVa,
-			     prRingIdx1->AllocSize);
+	if (prRingMdDidx->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump RingMdDidx\n");
+		DBGLOG_MEM32(HAL, INFO, prRingMdDidx->AllocVa,
+			     prRingMdDidx->AllocSize);
 	}
-	if (prRingIntSta1->AllocVa) {
-		u4Val = *((uint32_t *)prRingIntSta1->AllocVa);
+	if (prRingMdIntSta->AllocVa) {
+		u4Val = *((uint32_t *)prRingMdIntSta->AllocVa);
 		DBGLOG(HAL, INFO, "EmiIntSta1[0x%08x]\n", u4Val);
 	}
 #endif

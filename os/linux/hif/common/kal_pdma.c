@@ -1507,7 +1507,7 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Count = 0;
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	if (prRxRing->fgEnEmiIdx)
+	if (prRxRing->fgEnEmiDidx)
 		return true;
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
@@ -1684,7 +1684,7 @@ skip:
 	pRxD->DMADONE = 0;
 
 	prRxRing->RxCpuIdx = u4CpuIdx;
-	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
+	HAL_SET_RING_CIDX(prGlueInfo->prAdapter, prRxRing, prRxRing->RxCpuIdx);
 	prRxRing->fgIsDumpLog = false;
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4EventRxCount);
@@ -1796,7 +1796,7 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 
 	prTxRing->u4UsedCnt++;
 
-	kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr, prTxRing->TxCpuIdx);
+	HAL_SET_RING_CIDX(prGlueInfo->prAdapter, prTxRing, prTxRing->TxCpuIdx);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
 
@@ -2246,8 +2246,8 @@ tx_data:
 			kalDevKickAmsduData(prGlueInfo, &rTempList);
 		else
 			kalDevKickMsduData(prGlueInfo, &rTempList);
-		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
-			       prTxRing->TxCpuIdx);
+		HAL_SET_RING_CIDX(prGlueInfo->prAdapter, prTxRing,
+				  prTxRing->TxCpuIdx);
 
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
 		KAL_HIF_TXRING_UNLOCK(prTxRing);

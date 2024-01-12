@@ -304,6 +304,9 @@
 #define WFDMA_WB_MEMORY_ALIGNMENT   256
 #define WFDMA_WB_MEMORY_SIZE   256
 
+#define WFDMA_TX_RING_MAX_NUM    64
+#define WFDMA_RX_RING_MAX_NUM    16
+
 #define HIF_INT_TIME_DEBUG              0
 
 #define FW_BIN_FLAVOR_KEY		"flavor-bin"
@@ -361,6 +364,44 @@
 	memcpy_toio((void *)((_A)->CSRBaseAddress + (_D)), (void *) _S, _N); \
 }
 
+#if CFG_MTK_WIFI_WFDMA_WB
+#define HAL_GET_RING_DIDX(_RSN, _A, _R, _V)	\
+do { \
+	if (_R->fgEnEmiDidx) { \
+		*_V = *_R->pu2EmiDidx; \
+	} else { \
+		HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
+		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
+	} \
+} while (0)
+
+#define HAL_SET_RING_CIDX(_A, _R, _V) \
+{ \
+	if (_R->fgEnEmiCidx) { \
+		*_R->pu2EmiCidx = _V; \
+		if (_R->triggerCidx) \
+			_R->triggerCidx(_A->prGlueInfo, _R); \
+	} else { \
+		HAL_MCR_WR(_A, _R->hw_cidx_addr, _V << _R->hw_cidx_shift); \
+	} \
+}
+
+#define HAL_GET_RING_CIDX(_RSN, _A, _R, _V)	\
+do { \
+	if (_R->fgEnEmiCidx) { \
+		*_V = *_R->pu2EmiCidx; \
+	} else { \
+		HAL_RMCR_RD(_RSN, _A, _R->hw_cidx_addr, _V); \
+		*_V = (*_V & _R->hw_cidx_mask) >> _R->hw_cidx_shift; \
+	} \
+} while (0)
+#else
+#define HAL_GET_RING_DIDX(_RSN, _A, _R, _V) \
+do { \
+	HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
+	*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
+} while (0)
+
 #define HAL_SET_RING_CIDX(_A, _R, _V) \
 { \
 	HAL_MCR_WR(_A, _R->hw_cidx_addr, _V << _R->hw_cidx_shift);	\
@@ -370,23 +411,6 @@
 do { \
 	HAL_RMCR_RD(_RSN, _A, _R->hw_cidx_addr, _V); \
 	*_V = (*_V & _R->hw_cidx_mask) >> _R->hw_cidx_shift; \
-} while (0)
-
-#if CFG_MTK_WIFI_WFDMA_WB
-#define HAL_GET_RING_DIDX(_RSN, _A, _R, _V)	\
-do { \
-	if (_R->fgEnEmiIdx) { \
-		*_V = *_R->pu2EmiIdx; \
-	} else { \
-		HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
-		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
-	} \
-} while (0)
-#else
-#define HAL_GET_RING_DIDX(_RSN, _A, _R, _V) \
-do { \
-	HAL_RMCR_RD(_RSN, _A, _R->hw_didx_addr, _V); \
-	*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
 } while (0)
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
@@ -583,8 +607,12 @@ struct RTMP_TX_RING {
 	spinlock_t rTxDmaQLock;
 	u_int8_t fgStopRecycleDmad;
 #if CFG_MTK_WIFI_WFDMA_WB
-	u_int8_t fgEnEmiIdx;
-	uint16_t *pu2EmiIdx;
+	u_int8_t fgEnEmiDidx;
+	u_int8_t fgEnEmiCidx;
+	uint16_t *pu2EmiDidx;
+	uint32_t *pu2EmiCidx;
+	void (*triggerCidx)(struct GLUE_INFO *prGlueInfo,
+			    struct RTMP_TX_RING *prTxRing);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 };
 
@@ -614,8 +642,12 @@ struct RTMP_RX_RING {
 	uint32_t u4PacketLen;
 	uint32_t u4MagicCnt;
 #if CFG_MTK_WIFI_WFDMA_WB
-	u_int8_t fgEnEmiIdx;
-	uint16_t *pu2EmiIdx;
+	u_int8_t fgEnEmiDidx;
+	u_int8_t fgEnEmiCidx;
+	uint16_t *pu2EmiDidx;
+	uint32_t *pu2EmiCidx;
+	void (*triggerCidx)(struct GLUE_INFO *prGlueInfo,
+			    struct RTMP_RX_RING *prRxRing);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 };
 
@@ -973,6 +1005,27 @@ struct WFDMA_EMI_RING_IDX_1 {
 	uint16_t u2TxRing[8];
 	uint16_t u2RxRing[5];
 	uint16_t Rsv[3];
+};
+
+struct WFDMA_EMI_DONE_FLAG {
+	uint32_t tx_int0;
+	uint32_t tx_int1;
+	uint32_t rx_int0;
+	uint32_t rx_int1;
+	uint32_t err_int;
+	uint32_t sw_int;
+	uint32_t subsys_int;
+	uint32_t rro;
+};
+
+struct WFDMA_EMI_RING_DIDX {
+	uint16_t tx_ring[WFDMA_TX_RING_MAX_NUM];
+	uint16_t rx_ring[WFDMA_RX_RING_MAX_NUM];
+};
+
+struct WFDMA_EMI_RING_CIDX {
+	uint32_t tx_ring[WFDMA_TX_RING_MAX_NUM];
+	uint32_t rx_ring[WFDMA_RX_RING_MAX_NUM];
 };
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 

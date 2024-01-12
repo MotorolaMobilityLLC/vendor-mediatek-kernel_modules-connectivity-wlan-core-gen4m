@@ -2581,6 +2581,10 @@
 #endif /* CFG_SUPPORT_DISABLE_CMD_DDONE_INTR */
 #define CFG_SUPPORT_DISABLE_DATA_DDONE_INTR   1
 
+#define CFG_SUPPORT_DISABLE_TX_DDONE_INTR \
+	(CFG_SUPPORT_DISABLE_DATA_DDONE_INTR && \
+	 CFG_SUPPORT_DISABLE_CMD_DDONE_INTR)
+
 /*------------------------------------------------------------------------------
  * Flags of ATF (ARM Trusted firmware) Support
  *------------------------------------------------------------------------------

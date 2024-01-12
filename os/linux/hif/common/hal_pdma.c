@@ -2421,7 +2421,7 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
 	}
 
-	kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr, prRxRing->RxCpuIdx);
+	HAL_SET_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
 	nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
 	nicRxConcatRxQue(prAdapter, prReceivedRfbList);
@@ -2749,68 +2749,21 @@ void halHifRst(struct GLUE_INFO *prGlueInfo)
 		halDefaultHifRst(prGlueInfo);
 }
 
-#if CFG_MTK_WIFI_WFDMA_WB
-static void halWpdmaAllocWbBuffer(struct GLUE_INFO *prGlueInfo)
-{
-	struct GL_HIF_INFO *prHifInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct HIF_MEM_OPS *prMemOps;
-	struct RTMP_DMABUF *prRingIdx0, *prRingIntSta0;
-	struct RTMP_DMABUF *prRingIdx1, *prRingIntSta1;
-	struct RTMP_DMABUF *prRingDmyRd, *prRingDmyWr;
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	prMemOps = &prHifInfo->rMemOps;
-
-	if (!prChipInfo->is_support_wfdma_write_back)
-		return;
-
-	if (!prMemOps->allocExtBuf)
-		return;
-
-	prRingIdx0 = &prHifInfo->rRingIdx0;
-	prRingIntSta0 = &prHifInfo->rRingIntSta0;
-	prRingIdx1 = &prHifInfo->rRingIdx1;
-	prRingIntSta1 = &prHifInfo->rRingIntSta1;
-	prRingDmyRd = &prHifInfo->rRingDmyRd;
-	prRingDmyWr = &prHifInfo->rRingDmyWr;
-
-	prRingIdx0->AllocSize = sizeof(struct WFDMA_EMI_RING_IDX_0);
-	prRingIntSta0->AllocSize = sizeof(uint32_t);
-	prRingIdx1->AllocSize = sizeof(struct WFDMA_EMI_RING_IDX_1);
-	prRingIntSta1->AllocSize = sizeof(uint32_t);
-	prRingDmyRd->AllocSize = sizeof(uint32_t);
-	prRingDmyWr->AllocSize = sizeof(uint32_t);
-	prMemOps->allocExtBuf(prHifInfo, prRingIdx0,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-	prMemOps->allocExtBuf(prHifInfo, prRingIntSta0,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-	prMemOps->allocExtBuf(prHifInfo, prRingIdx1,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-	prMemOps->allocExtBuf(prHifInfo, prRingIntSta1,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-	prMemOps->allocExtBuf(prHifInfo, prRingDmyRd,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-	prMemOps->allocExtBuf(prHifInfo, prRingDmyWr,
-			      WFDMA_WB_MEMORY_ALIGNMENT);
-
-}
-#endif /* CFG_MTK_WIFI_WFDMA_WB */
-
 bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo = NULL;
 	int32_t u4Num, u4Index, u4Size;
 
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	if (fgAllocMem)
-		halWpdmaAllocWbBuffer(prGlueInfo);
+	if (fgAllocMem && prChipInfo->allocWfdmaWbBuffer)
+		prChipInfo->allocWfdmaWbBuffer(prGlueInfo);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 	/*
@@ -2877,42 +2830,6 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 
 	return true;
 }
-
-#if CFG_MTK_WIFI_WFDMA_WB
-static void halWpdmaFreeWbBuffer(struct GLUE_INFO *prGlueInfo)
-{
-	struct GL_HIF_INFO *prHifInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct HIF_MEM_OPS *prMemOps;
-	struct RTMP_DMABUF *prRingIdx0, *prRingIntSta0;
-	struct RTMP_DMABUF *prRingIdx1, *prRingIntSta1;
-	struct RTMP_DMABUF *prRingDmyRd, *prRingDmyWr;
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-	prMemOps = &prHifInfo->rMemOps;
-
-	if (!prChipInfo->is_support_wfdma_write_back)
-		return;
-
-	if (!prMemOps->freeExtBuf)
-		return;
-
-	prRingIdx0 = &prHifInfo->rRingIdx0;
-	prRingIntSta0 = &prHifInfo->rRingIntSta0;
-	prRingIdx1 = &prHifInfo->rRingIdx1;
-	prRingIntSta1 = &prHifInfo->rRingIntSta1;
-	prRingDmyRd = &prHifInfo->rRingDmyRd;
-	prRingDmyWr = &prHifInfo->rRingDmyWr;
-
-	prMemOps->freeExtBuf(prHifInfo, prRingIdx0);
-	prMemOps->freeExtBuf(prHifInfo, prRingIntSta0);
-	prMemOps->freeExtBuf(prHifInfo, prRingIdx1);
-	prMemOps->freeExtBuf(prHifInfo, prRingIntSta1);
-	prMemOps->freeExtBuf(prHifInfo, prRingDmyRd);
-	prMemOps->freeExtBuf(prHifInfo, prRingDmyWr);
-}
-#endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 {
@@ -2989,7 +2906,8 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	}
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	halWpdmaFreeWbBuffer(prGlueInfo);
+	if (prChipInfo->freeWfdmaWbBuffer)
+		prChipInfo->freeWfdmaWbBuffer(prGlueInfo);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
 
@@ -3414,7 +3332,7 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	{
 #if CFG_MTK_WIFI_WFDMA_WB
-		if (prTxRing->fgEnEmiIdx)
+		if (prTxRing->fgEnEmiDidx)
 			halWpdmaProcessDataDmaDoneByIdx(
 				prAdapter, prTxRing, u2Port);
 		else
@@ -3652,8 +3570,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 		else
 			DBGLOG(HAL, ERROR, "SwWfdma ops unsupported!");
 	} else
-		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
-			       prTxRing->TxCpuIdx);
+		HAL_SET_RING_CIDX(prAdapter, prTxRing, prTxRing->TxCpuIdx);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4CmdTxCount);
 
