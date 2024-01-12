@@ -930,14 +930,6 @@ int wlan_reset_thread_main(void *data)
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_T *prWlanRstThreadWakeLock;
 
-	prWlanRstThreadWakeLock = kalMemAlloc(sizeof(KAL_WAKE_LOCK_T),
-		VIR_MEM_TYPE);
-	if (!prWlanRstThreadWakeLock) {
-		DBGLOG(INIT, ERROR, "%s MemAlloc Fail\n",
-			KAL_GET_CURRENT_THREAD_NAME());
-		return 0;
-	}
-
 	KAL_WAKE_LOCK_INIT(NULL,
 			   prWlanRstThreadWakeLock, "WLAN rst_thread");
 	KAL_WAKE_LOCK(NULL, prWlanRstThreadWakeLock);
@@ -1024,8 +1016,6 @@ int wlan_reset_thread_main(void *data)
 		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
 	KAL_WAKE_LOCK_DESTROY(NULL,
 			      prWlanRstThreadWakeLock);
-	kalMemFree(prWlanRstThreadWakeLock, VIR_MEM_TYPE,
-		sizeof(KAL_WAKE_LOCK_T));
 #endif
 
 	DBGLOG(INIT, TRACE, "%s:%u stopped!\n",
