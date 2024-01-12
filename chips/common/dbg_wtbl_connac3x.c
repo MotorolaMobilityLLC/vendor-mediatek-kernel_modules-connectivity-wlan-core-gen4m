@@ -56,7 +56,7 @@
 static char *RATE_V3_HW_TX_MODE_STR[] = {
 	"CCK", "OFDM", "MM", "GF", "VHT", "PLR",
 	"N/A", "N/A", "HE_SU", "HE_ER", "HE_TRIG", "HE_MU",
-	"EHT", "EHT_ER", "EHT_TRIG", "EHT_MU"};
+	"N/A", "EHT_ER", "EHT_TRIG", "EHT_MU"};
 
 uint32_t halWtblReadRaw(
 	struct ADAPTER *prAdapter,
@@ -150,7 +150,7 @@ static u_int8_t connac3x_wtbl_get_ldpc_info(
 		return pWtbl->trx_cap.wtbl_d4.field.ldpc_he;
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	case ENUM_TX_MODE_EHT:
+	case ENUM_TX_MODE_EHT_MU:
 		return pWtbl->trx_cap.wtbl_d4.field.ldpc_eht;
 #endif
 	case ENUM_TX_MODE_CCK:
@@ -522,12 +522,6 @@ static int32_t connac3x_dump_helper_wtbl_info(
 	/* DW8 */
 	DBGLOG(REQ, INFO, "====DW8====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tRtsFailCnt AC[0~3]:%d/%d/%d/%d\n",
-		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac0,
-		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac1,
-		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac2,
-		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac3);
-	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
 		"\tCHK_PER/P_AID:%d/%d\n",
 		pWtbl->trx_cap.wtbl_d8.field.chk_per,
 		pWtbl->trx_cap.wtbl_d8.field.partial_aid);
@@ -552,61 +546,60 @@ static int32_t connac3x_dump_helper_wtbl_info(
 	/* DW28 */
 	DBGLOG(REQ, INFO, "====DW28====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tRELATED[IDX0/BN0/IDX1:BN1]:%d/%d/%d/%d\n",
+		"\tRELATED[IDX0/BN0/IDX1/BN1]:%d/%d/%d/%d\n",
 		pWtbl->mlo_info.wtbl_d28.field.related_idx0,
 		pWtbl->mlo_info.wtbl_d28.field.related_band0,
 		pWtbl->mlo_info.wtbl_d28.field.related_idx1,
 		pWtbl->mlo_info.wtbl_d28.field.related_band1);
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tMLD[PRI_BN/SEC_BN/OWN_ID]:%d/%d/%d\n",
+		"\tMLD[PRI_BN/SEC_BN]:%d/%d\n",
 		pWtbl->mlo_info.wtbl_d28.field.pri_mld_band,
-		pWtbl->mlo_info.wtbl_d28.field.sec_mld_band,
-		pWtbl->mlo_info.wtbl_d29.field.own_mld_id);
-	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tMLD[PRI_BN/SEC_BN/OWN_ID]:%d/%d/%d\n",
-		pWtbl->mlo_info.wtbl_d28.field.pri_mld_band,
-		pWtbl->mlo_info.wtbl_d28.field.sec_mld_band,
-		pWtbl->mlo_info.wtbl_d29.field.own_mld_id);
+		pWtbl->mlo_info.wtbl_d28.field.sec_mld_band);
 
-	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-		i4TotalLen - i4BytesWritten,
-		"%s\n",
-		"\t====DW 29~33 was shown in kernel log====");
+	/* DW29 */
+	DBGLOG(REQ, INFO, "====DW29~30====\n");
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tDISP_POL[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy0,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy1,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy2,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy3,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy4,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy5,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy6,
+		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy7);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tEML[SR0/MR0/SR1/MR1/SR2/MR2]:%d/%d/%d/%d/%d/%d\n",
+		pWtbl->mlo_info.wtbl_d29.field.emlsr0,
+		pWtbl->mlo_info.wtbl_d29.field.emlmr0,
+		pWtbl->mlo_info.wtbl_d29.field.emlsr1,
+		pWtbl->mlo_info.wtbl_d29.field.emlmr1,
+		pWtbl->mlo_info.wtbl_d29.field.emlsr2,
+		pWtbl->mlo_info.wtbl_d29.field.emlmr2);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMLD_ID:%d STR_BMAP:0x%x/\n",
+		pWtbl->mlo_info.wtbl_d29.field.own_mld_id,
+		pWtbl->mlo_info.wtbl_d29.field.str_bitmap);
+	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tMGF:%d DISP[ORDER/RATIO]:%d/%d\n",
+		pWtbl->mlo_info.wtbl_d30.field.link_mgf,
+		pWtbl->mlo_info.wtbl_d30.field.dispatch_order,
+		pWtbl->mlo_info.wtbl_d30.field.dispatch_ratio);
 
 	/* DW34 */
 	DBGLOG(REQ, INFO, "====DW34~35====\n");
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tRSSI = %d %d %d %d\n",
+		"\tRSSI= %d %d %d %d\n",
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_0),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_1),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_2),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d34.field.resp_rcpi_3));
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tSNR = %d %d %d %d\n",
+		"\tSNR= %d %d %d %d\n",
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx0),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx1),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx2),
 		RCPI_TO_dBm(pWtbl->rx_stat.wtbl_d35.field.snr_rx3));
-
-	DBGLOG(REQ, INFO, "====DW14~19====\n");
-	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tRate1[TX/FAIL] TXOK[RATE2/RATE3]= %d/%d/%d/%d\n",
-		pWtbl->auto_rate_counters.wtbl_d14.field.rate_1_tx_cnt,
-		pWtbl->auto_rate_counters.wtbl_d14.field.rate_1_fail_cnt,
-		pWtbl->auto_rate_counters.wtbl_d15.field.rate_2_ok_cnt,
-		pWtbl->auto_rate_counters.wtbl_d15.field.rate_3_ok_cnt);
-	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tCUR_BW[TX/FAIL] OTHER_BW[TX/FAIL]= %d/%d/%d/%d\n",
-		pWtbl->auto_rate_counters.wtbl_d16.field.current_bw_tx_cnt,
-		pWtbl->auto_rate_counters.wtbl_d16.field.current_bw_fail_cnt,
-		pWtbl->auto_rate_counters.wtbl_d17.field.other_bw_tx_cnt,
-		pWtbl->auto_rate_counters.wtbl_d17.field.other_bw_fail_cnt);
-	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tRTS[OK/FAIL] RETRY[DATA/MGNT]= %d/%d/%d/%d\n",
-		pWtbl->ppdu_counters.wtbl_d18.field.rts_ok_cnt,
-		pWtbl->ppdu_counters.wtbl_d18.field.rts_fail_cnt,
-		pWtbl->ppdu_counters.wtbl_d19.field.data_retry_cnt,
-		pWtbl->ppdu_counters.wtbl_d19.field.mgnt_retry_cnt);
 
 	i4BytesWritten = connac3x_wtbl_rate_to_string(
 		pcCommand, i4TotalLen, 1, pWtbl, i4BytesWritten);
@@ -620,39 +613,36 @@ static void connac3x_print_wtbl_info(
 	struct bwtbl_lmac_struct *pWtbl)
 {
 	LOG_FUNC(
-	"====DW29====\n"
-	"\tDISPATCH_POLICY[0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n"
-	"\tEML[SR0/MR0/SR1/MR1/SR2/MR2]:%d/%d/%d/%d/%d/%d\n"
-	"\tSTR_BMAP/LINK_MGF/DISPATCH[ORDER/RATIO]:%d/%d/%d/%d\n"
-	"\tCASCAD/ALL_ACK/DROP/BA_MODE/MPDU_SZ/ACK_EN:%d/%d/%d/%d/%d/%d\n",
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy0,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy1,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy2,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy3,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy4,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy5,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy6,
-		pWtbl->mlo_info.wtbl_d29.field.dispatch_policy7,
-		pWtbl->mlo_info.wtbl_d29.field.emlsr0,
-		pWtbl->mlo_info.wtbl_d29.field.emlmr0,
-		pWtbl->mlo_info.wtbl_d29.field.emlsr1,
-		pWtbl->mlo_info.wtbl_d29.field.emlmr1,
-		pWtbl->mlo_info.wtbl_d29.field.emlsr2,
-		pWtbl->mlo_info.wtbl_d29.field.emlmr2,
-		pWtbl->mlo_info.wtbl_d29.field.str_bitmap
+	"====DW8====\n"
+	"\tRtsFailCnt AC[0~3]:%d/%d/%d/%d\n",
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac0,
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac1,
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac2,
+		pWtbl->trx_cap.wtbl_d8.field.rts_fail_cnt_ac3
 	);
 
 	LOG_FUNC(
-	"====DW30====\n"
-	"\tLINK_MGF:%d DISPATCH[ORDER/RATIO]:%d/%d\n",
-		pWtbl->mlo_info.wtbl_d30.field.link_mgf,
-		pWtbl->mlo_info.wtbl_d30.field.dispatch_order,
-		pWtbl->mlo_info.wtbl_d30.field.dispatch_ratio
+	"====DW14~19====\n"
+	"\tRate1[TX/FAIL] TXOK[RATE2/RATE3]= %d/%d/%d/%d\n"
+	"\tCUR_BW[TX/FAIL] OTHER_BW[TX/FAIL]= %d/%d/%d/%d\n"
+	"\tRTS[OK/FAIL] RETRY[DATA/MGNT]= %d/%d/%d/%d\n",
+		pWtbl->auto_rate_counters.wtbl_d14.field.rate_1_tx_cnt,
+		pWtbl->auto_rate_counters.wtbl_d14.field.rate_1_fail_cnt,
+		pWtbl->auto_rate_counters.wtbl_d15.field.rate_2_ok_cnt,
+		pWtbl->auto_rate_counters.wtbl_d15.field.rate_3_ok_cnt,
+		pWtbl->auto_rate_counters.wtbl_d16.field.current_bw_tx_cnt,
+		pWtbl->auto_rate_counters.wtbl_d16.field.current_bw_fail_cnt,
+		pWtbl->auto_rate_counters.wtbl_d17.field.other_bw_tx_cnt,
+		pWtbl->auto_rate_counters.wtbl_d17.field.other_bw_fail_cnt,
+		pWtbl->ppdu_counters.wtbl_d18.field.rts_ok_cnt,
+		pWtbl->ppdu_counters.wtbl_d18.field.rts_fail_cnt,
+		pWtbl->ppdu_counters.wtbl_d19.field.data_retry_cnt,
+		pWtbl->ppdu_counters.wtbl_d19.field.mgnt_retry_cnt
 	);
 
 	LOG_FUNC(
-	"====DW====\n"
-	"\tCASCAD/ALL_ACK/DROP/BA_MODE/MPDU_SZ:%d/%d/%d/%d/%d/%d\n"
+	"====DW31====\n"
+	"\tCASCAD/ALL_ACK/DROP/BA_MODE/MPDU_SZ:%d/%d/%d/%d/%d\n"
 	"\tNEGO_WINSZ [0~7]:%d/%d/%d/%d/%d/%d/%d/%d\n",
 		pWtbl->resp_info.wtbl_d31.field.cascad,
 		pWtbl->resp_info.wtbl_d31.field.all_ack,
@@ -684,7 +674,7 @@ static void connac3x_print_wtbl_info(
 	LOG_FUNC(
 	"====DW33====\n"
 	"\tUSER_RSSI:%d USER_SNR:%d\n"
-	"\tRAPID_REACTION_RATE:%d HT_AMSDU: %d AMSDU_CROSS_LG:%d\n",
+	"\tRAPID_REACTION_RATE:%d HT_AMSDU:%d AMSDU_CROSS_LG:%d\n",
 		pWtbl->rx_stat.wtbl_d33.field.user_rssi,
 		pWtbl->rx_stat.wtbl_d33.field.user_snr,
 		pWtbl->rx_stat.wtbl_d33.field.rapid_reaction_rate,
@@ -747,11 +737,11 @@ int32_t connac3x_show_wtbl_info(
 		pwtbl,
 		u4Index);
 
-	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
-			sizeof(struct bwtbl_lmac_struct));
-
 	/* print more info in log */
 	connac3x_print_wtbl_info(prAdapter, u4Index, pwtbl);
+
+	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
+			sizeof(struct bwtbl_lmac_struct));
 
 	return i4BytesWritten;
 }
