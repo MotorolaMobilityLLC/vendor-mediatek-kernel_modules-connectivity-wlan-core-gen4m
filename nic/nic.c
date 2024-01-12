@@ -4423,9 +4423,6 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 	/* CNM Module - initialization */
 	cnmInit(prAdapter);
 
-	/* RLM Module - initialization */
-	rlmFsmEventInit(prAdapter);
-
 	/* SCN Module - initialization */
 	scnInit(prAdapter);
 
@@ -4437,6 +4434,9 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 		/* AIS Module - intiailization */
 		aisFsmInit(prAdapter, prRegInfo, i);
 	}
+
+	/* RLM Module - initialization */
+	rlmFsmEventInit(prAdapter);
 
 	/* Support AP Selection */
 	LINK_MGMT_INIT(&prAdapter->rWifiVar.rBlockList);
