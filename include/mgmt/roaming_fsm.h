@@ -155,6 +155,9 @@ struct ROAMING_INFO {
 	enum ENUM_ROAMING_STATE eCurrentState;
 
 	OS_SYSTIME rRoamingDiscoveryUpdateTime;
+#if CFG_SUPPORT_DRIVER_ROAMING
+	OS_SYSTIME rRoamingLastDecisionTime;
+#endif
 
 	u_int8_t fgDrvRoamingAllow;
 	struct TIMER rWaitCandidateTimer;

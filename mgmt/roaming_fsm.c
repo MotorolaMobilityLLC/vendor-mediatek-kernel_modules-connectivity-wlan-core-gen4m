@@ -240,26 +240,24 @@ void roamingFsmScanResultsUpdate(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
 {
-	struct ROAMING_INFO *prRoamingFsmInfo;
-
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
-
-	/* Check Roaming Conditions */
-	if (!(prRoamingFsmInfo->fgIsEnableRoaming))
-		return;
-
-
 	DBGLOG(ROAMING, LOUD,
 		"[%d]->roamingFsmScanResultsUpdate(): Current Time = %d\n",
-		ucBssIndex,
-		kalGetTimeTick());
+		ucBssIndex, kalGetTimeTick());
 
-	GET_CURRENT_SYSTIME(
-		&prRoamingFsmInfo->rRoamingDiscoveryUpdateTime);
+	/* try driver roaming */
+	if (scanCheckNeedDriverRoaming(prAdapter, ucBssIndex)) {
+		DBGLOG(ROAMING, INFO, "Request driver roaming");
+
+		aisFsmIsRequestPending(prAdapter,
+			AIS_REQUEST_ROAMING_SEARCH, TRUE, ucBssIndex);
+		aisFsmIsRequestPending(prAdapter,
+			AIS_REQUEST_ROAMING_CONNECT, TRUE, ucBssIndex);
+
+		aisFsmInsertRequest(prAdapter,
+			AIS_REQUEST_ROAMING_CONNECT, ucBssIndex);
+	}
 }				/* end of roamingFsmScanResultsUpdate() */
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
 /*----------------------------------------------------------------------------*/
 /*
  * @brief Check if need to do scan for roaming
@@ -274,110 +272,82 @@ static u_int8_t roamingFsmIsNeedScan(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
 {
-	struct SCAN_INFO *prScanInfo;
-	struct LINK *prRoamBSSDescList;
-	struct ROAM_BSS_DESC *prRoamBssDesc;
-	struct BSS_INFO *prAisBssInfo;
-	struct BSS_DESC *prBssDesc;
-	/*CMD_SW_DBG_CTRL_T rCmdSwCtrl;*/
-	struct CMD_ROAMING_SKIP_ONE_AP rCmdRoamingSkipOneAP;
-	u_int8_t fgIsNeedScan, fgIsRoamingSSID;
+	struct AIS_SPECIFIC_BSS_INFO *asbi = NULL;
+	struct LINK *prEssLink = NULL;
+	u_int8_t fgIsNeedScan = TRUE;
 
-	fgIsNeedScan = FALSE;
-
-	/*Whether there's roaming candidate in RoamBssDescList*/
-	fgIsRoamingSSID = FALSE;
-
-	kalMemZero(&rCmdRoamingSkipOneAP,
-		   sizeof(struct CMD_ROAMING_SKIP_ONE_AP));
-
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
-		ucBssIndex);
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prRoamBSSDescList = &prScanInfo->rRoamBSSDescList;
-	/* <1> Count same BSS Desc from current SCAN result list. */
-	LINK_FOR_EACH_ENTRY(prRoamBssDesc, prRoamBSSDescList,
-			    rLinkEntry, struct ROAM_BSS_DESC) {
-		if (EQUAL_SSID(prRoamBssDesc->aucSSID,
-			       prRoamBssDesc->ucSSIDLen,
-			       prAisBssInfo->aucSSID,
-			       prAisBssInfo->ucSSIDLen)) {
-			fgIsRoamingSSID = TRUE;
-			fgIsNeedScan = TRUE;
-			DBGLOG(ROAMING, INFO,
-				"[%d] roamingFsmSteps: IsRoamingSSID:%d\n",
-				ucBssIndex,
-				fgIsRoamingSSID);
-			break;
-		}
+	asbi = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
+	if (asbi == NULL) {
+		DBGLOG(ROAMING, WARN, "ais specific bss info is NULL\n");
+		return TRUE;
 	}
 
-	/* <2> Start skip roaming scan mechanism
-	 *	if there is no candidate in current SCAN result list
+	prEssLink = &asbi->rCurEssLink;
+
+#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
+	/*
+	 * Start skip roaming scan mechanism if only one ESSID AP
 	 */
-	if (!fgIsRoamingSSID) {
+	if (prEssLink->u4NumElem == 1) {
+		struct BSS_DESC *prBssDesc;
+
 		/* Get current BssDesc */
 		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (prBssDesc) {
-
-			/*rCmdSwCtrl.u4Id = 0xa0280000;*/
-			/*rCmdSwCtrl.u4Data = 0x1;*/
-			rCmdRoamingSkipOneAP.fgIsRoamingSkipOneAP = 1;
-
 			DBGLOG(ROAMING, INFO,
-				"[%d] roamingFsmSteps: RCPI:%d RoamSkipTimes:%d\n",
-				prBssDesc->ucRCPI,
-				prAisBssInfo->ucRoamSkipTimes);
-			if (prBssDesc->ucRCPI >
-			    90) { /* Set parameters related to Good Area */
-				prAisBssInfo->ucRoamSkipTimes = 3;
-				prAisBssInfo->fgGoodRcpiArea = TRUE;
-				prAisBssInfo->fgPoorRcpiArea = FALSE;
+				"roamingFsmSteps: RCPI:%d RoamSkipTimes:%d\n",
+				prBssDesc->ucRCPI, asbi->ucRoamSkipTimes);
+			if (prBssDesc->ucRCPI > 90) {
+				/* Set parameters related to Good Area */
+				asbi->ucRoamSkipTimes = 3;
+				asbi->fgGoodRcpiArea = TRUE;
+				asbi->fgPoorRcpiArea = FALSE;
 			} else {
-				if (prAisBssInfo->fgGoodRcpiArea) {
-					prAisBssInfo->ucRoamSkipTimes--;
+				if (asbi->fgGoodRcpiArea) {
+					asbi->ucRoamSkipTimes--;
 				} else if (prBssDesc->ucRCPI > 67) {
-					if (!prAisBssInfo->fgPoorRcpiArea) {
 					/*Set parameters related to Poor Area*/
-						prAisBssInfo->ucRoamSkipTimes
-							= 2;
-						prAisBssInfo->fgPoorRcpiArea
-							= TRUE;
-						prAisBssInfo->fgGoodRcpiArea
-							= FALSE;
+					if (!asbi->fgPoorRcpiArea) {
+						asbi->ucRoamSkipTimes = 2;
+						asbi->fgPoorRcpiArea = TRUE;
+						asbi->fgGoodRcpiArea = FALSE;
 					} else {
-						prAisBssInfo->ucRoamSkipTimes--;
+						asbi->ucRoamSkipTimes--;
 					}
 				} else {
-					prAisBssInfo->fgPoorRcpiArea = FALSE;
-					prAisBssInfo->fgGoodRcpiArea = FALSE;
-					prAisBssInfo->ucRoamSkipTimes--;
+					asbi->fgPoorRcpiArea = FALSE;
+					asbi->fgGoodRcpiArea = FALSE;
+					asbi->ucRoamSkipTimes--;
 				}
 			}
 
-			if (prAisBssInfo->ucRoamSkipTimes == 0) {
-				prAisBssInfo->ucRoamSkipTimes = 3;
-				prAisBssInfo->fgPoorRcpiArea = FALSE;
-				prAisBssInfo->fgGoodRcpiArea = FALSE;
-				DBGLOG(ROAMING, INFO,
-					"roamingFsmSteps: Need Scan\n");
-				fgIsNeedScan = TRUE;
-			} else
+			if (asbi->ucRoamSkipTimes == 0) {
+				asbi->ucRoamSkipTimes = 3;
+				asbi->fgPoorRcpiArea = FALSE;
+				asbi->fgGoodRcpiArea = FALSE;
+				DBGLOG(ROAMING, INFO, "Need Scan\n");
+			} else {
+				struct CMD_ROAMING_SKIP_ONE_AP cmd = {0};
+
+				cmd.fgIsRoamingSkipOneAP = 1;
+
 				wlanSendSetQueryCmd(prAdapter,
 				    CMD_ID_SET_ROAMING_SKIP,
 				    TRUE,
 				    FALSE,
 				    FALSE, NULL, NULL,
 				    sizeof(struct CMD_ROAMING_SKIP_ONE_AP),
-				    (uint8_t *)&rCmdRoamingSkipOneAP, NULL, 0);
-		} else
-			DBGLOG(ROAMING, WARN,
-			       "Target BssDesc in AisFsmInfo is NULL\n");
-	}
+				    (uint8_t *)&cmd, NULL, 0);
 
+				fgIsNeedScan = FALSE;
+			}
+		} else {
+			DBGLOG(ROAMING, WARN, "Target BssDesc is NULL\n");
+		}
+	}
+#endif
 	return fgIsNeedScan;
 }
-#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -396,7 +366,6 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE ePreviousState;
 	u_int8_t fgIsTransition = (u_int8_t) FALSE;
-	u_int8_t fgIsNeedScan = FALSE;
 #if CFG_SUPPORT_NCHO
 	uint32_t u4ScnResultsTimeout =
 		ROAMING_DISCOVERY_TIMEOUT_SEC;
@@ -432,6 +401,10 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 		 */
 		case ROAMING_STATE_IDLE:
 		case ROAMING_STATE_DECISION:
+#if CFG_SUPPORT_DRIVER_ROAMING
+			GET_CURRENT_SYSTIME(
+				&prRoamingFsmInfo->rRoamingLastDecisionTime);
+#endif
 			break;
 
 		case ROAMING_STATE_DISCOVERY: {
@@ -459,12 +432,7 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 				ucBssIndex);
 #else
 			OS_SYSTIME rCurrentTime;
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-			fgIsNeedScan = roamingFsmIsNeedScan(prAdapter,
-				ucBssIndex);
-#else
-			fgIsNeedScan = TRUE;
-#endif
+			u_int8_t fgIsNeedScan = FALSE;
 
 			cnmTimerStopTimer(
 				prAdapter,
@@ -473,18 +441,16 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 			GET_CURRENT_SYSTIME(&rCurrentTime);
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 			      prRoamingFsmInfo->rRoamingDiscoveryUpdateTime,
-			      SEC_TO_SYSTIME(ROAMING_DISCOVERY_TIMEOUT_SEC))
-				    && fgIsNeedScan) {
+			      SEC_TO_SYSTIME(ROAMING_DISCOVERY_TIMEOUT_SEC))) {
 				DBGLOG(ROAMING, LOUD,
-			     "roamingFsmSteps: DiscoveryUpdateTime Timeout\n");
-				aisFsmRunEventRoamingDiscovery(prAdapter,
-					TRUE, ucBssIndex);
-			} else {
-				DBGLOG(ROAMING, LOUD,
-			     "roamingFsmSteps: DiscoveryUpdateTime Updated\n");
-				aisFsmRunEventRoamingDiscovery(prAdapter,
-					FALSE, ucBssIndex);
+					"roamingFsmSteps: DiscoveryUpdateTime Timeout\n");
+
+				fgIsNeedScan = roamingFsmIsNeedScan(prAdapter,
+								ucBssIndex);
 			}
+			aisFsmRunEventRoamingDiscovery(
+				prAdapter, fgIsNeedScan, ucBssIndex);
+
 #endif /* CFG_SUPPORT_NCHO */
 		}
 		break;

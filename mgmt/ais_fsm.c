@@ -1221,6 +1221,26 @@ aisState_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Remove roaming requests including search and connect
+ *
+ * @param[in]
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void aisFsmRemoveRoamingRequest(
+	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
+{
+	/* clear pending roaming connection request */
+	aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_SEARCH,
+			       TRUE, ucBssIndex);
+	aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_CONNECT,
+			       TRUE, ucBssIndex);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief The Core FSM engine of AIS(Ad-hoc, Infra STA)
@@ -1298,7 +1318,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 						&(prAisFsmInfo->rMgmtTxInfo));
 
 			if (prAisReq)
-				DBGLOG(AIS, TRACE,
+				DBGLOG(AIS, INFO,
 				       "eReqType=%d, fgIsConnReqIssued=%d, DisByNonRequest=%d\n",
 				prAisReq->eReqType,
 				prConnSettings->fgIsConnReqIssued,
@@ -2541,6 +2561,8 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 			break;
 
 		case AIS_STATE_ONLINE_SCAN:
+			scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
+
 #if CFG_SUPPORT_ROAMING
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter,
 				ucBssIndex);
@@ -2551,24 +2573,19 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 			scanReportScanResultToAgps(prAdapter);
 #endif
 /* Support AP Selection */
-#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
-			scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
-#endif
+
 /* end Support AP Selection */
 			break;
 
 		case AIS_STATE_LOOKING_FOR:
+			scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
+
 #if CFG_SUPPORT_ROAMING
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter,
 				ucBssIndex);
 #else
 			eNextState = AIS_STATE_SEARCH;
 #endif /* CFG_SUPPORT_ROAMING */
-/* Support AP Selection */
-#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
-			scanGetCurrentEssChnlList(prAdapter, ucBssIndex);
-#endif
-/* ebd Support AP Selection */
 			break;
 
 		default:
@@ -2689,12 +2706,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 			aisFsmSteps(prAdapter, AIS_STATE_SEARCH,
 				ucBssIndex);
 		} else {
-			aisFsmIsRequestPending(prAdapter,
-					       AIS_REQUEST_ROAMING_SEARCH,
-					       TRUE, ucBssIndex);
-			aisFsmIsRequestPending(prAdapter,
-					       AIS_REQUEST_ROAMING_CONNECT,
-					       TRUE, ucBssIndex);
+			aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
 			aisFsmInsertRequest(prAdapter,
 					    AIS_REQUEST_ROAMING_CONNECT,
 					    ucBssIndex);
@@ -2974,7 +2986,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 {
 	struct MSG_SAA_FSM_COMP *prJoinCompMsg;
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct ROAMING_INFO *prRoamingFsmInfo;
+	struct ROAMING_INFO *roam;
 	enum ENUM_AIS_STATE eNextState;
 	struct STA_RECORD *prStaRec;
 	struct SW_RFB *prAssocRspSwRfb;
@@ -3001,8 +3013,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	eNextState = prAisFsmInfo->eCurrentState;
-	prRoamingFsmInfo =
-		aisGetRoamingInfo(prAdapter, ucBssIndex);
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 
 	do {
 		/* 4 <1> JOIN was successful */
@@ -3100,14 +3111,16 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 			}
 
 #if CFG_SUPPORT_ROAMING
+			/* if roaming fsm is monitoring old AP, abort it*/
+			if (roam->eCurrentState >= ROAMING_STATE_DECISION)
+				roamingFsmRunEventAbort(prAdapter, ucBssIndex);
+
 			/* if user space roaming is enabled, we should
 			 * disable driver/fw roaming
 			 */
-			if ((prConnSettings->eConnectionPolicy !=
-			     CONNECT_BY_BSSID)
-			    && prRoamingFsmInfo->fgDrvRoamingAllow)
-				roamingFsmRunEventStart(prAdapter,
-				ucBssIndex);
+			if (prConnSettings->eConnectionPolicy !=
+			     CONNECT_BY_BSSID && roam->fgDrvRoamingAllow)
+				roamingFsmRunEventStart(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
 			if (aisFsmIsRequestPending
 			    (prAdapter, AIS_REQUEST_ROAMING_CONNECT,
@@ -3894,6 +3907,7 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame;
 	struct BSS_DESC *prBssDesc;
@@ -3911,6 +3925,7 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prAssocRspFrame =
 	    (struct WLAN_ASSOC_RSP_FRAME *)prAssocRspSwRfb->pvHeader;
 
@@ -4019,10 +4034,11 @@ void aisUpdateBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 	prAisBssInfo->u2ATIMWindow = 0;
 
 	prAisBssInfo->ucBeaconTimeoutCount = AIS_BEACON_TIMEOUT_COUNT_INFRA;
+
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	prAisBssInfo->ucRoamSkipTimes = ROAMING_ONE_AP_SKIP_TIMES;
-	prAisBssInfo->fgGoodRcpiArea = FALSE;
-	prAisBssInfo->fgPoorRcpiArea = FALSE;
+	prAisSpecBssInfo->ucRoamSkipTimes = ROAMING_ONE_AP_SKIP_TIMES;
+	prAisSpecBssInfo->fgGoodRcpiArea = FALSE;
+	prAisSpecBssInfo->fgPoorRcpiArea = FALSE;
 #endif
 
 	/* 4 <4.2> Update HT information and set channel */
@@ -4487,12 +4503,7 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	}
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventAbort(prAdapter, ucBssIndex);
-
-	/* clear pending roaming connection request */
-	aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_SEARCH,
-		TRUE, ucBssIndex);
-	aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_CONNECT,
-		TRUE, ucBssIndex);
+	aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
 #endif /* CFG_SUPPORT_ROAMING */
 
 	/* 4 <6> Indicate Disconnected Event to Host */
@@ -5381,11 +5392,7 @@ void aisFsmRunEventRoamingDiscovery(IN struct ADAPTER *prAdapter,
 			aisFsmSteps(prAdapter, AIS_STATE_SEARCH,
 				ucBssIndex);
 	} else {
-		aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_SEARCH,
-			TRUE, ucBssIndex);
-		aisFsmIsRequestPending(prAdapter, AIS_REQUEST_ROAMING_CONNECT,
-			TRUE, ucBssIndex);
-
+		aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
 		aisFsmInsertRequest(prAdapter, eAisRequest, ucBssIndex);
 	}
 }				/* end of aisFsmRunEventRoamingDiscovery() */
@@ -5416,6 +5423,7 @@ enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(IN struct ADAPTER *prAdapter,
 
 	eNextState = prAisFsmInfo->eCurrentState;
 	if (prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY) {
+		aisFsmRemoveRoamingRequest(prAdapter, ucBssIndex);
 		roamingFsmRunEventRoam(prAdapter, ucBssIndex);
 		eNextState = AIS_STATE_SEARCH;
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR) {
@@ -5595,8 +5603,6 @@ u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	/* traverse through pending request list */
@@ -5613,6 +5619,7 @@ u_int8_t aisFsmIsRequestPending(IN struct ADAPTER *prAdapter,
 					&(prPendingReqHdr->rLinkEntry));
 
 				cnmMemFree(prAdapter, prPendingReqHdr);
+				DBGLOG(AIS, INFO, "Remove req=%d\n", eReqType);
 			}
 
 			return TRUE;
@@ -5681,14 +5688,13 @@ u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
 		ASSERT(0);	/* Can't generate new message */
 		return FALSE;
 	}
-	DBGLOG(AIS, INFO, "aisFsmInsertRequest\n");
 
 	prAisReq->eReqType = eReqType;
 
 	/* attach request into pending request list */
 	LINK_INSERT_TAIL(&prAisFsmInfo->rPendingReqList, &prAisReq->rLinkEntry);
 
-	DBGLOG(AIS, TRACE, "eCurrentState=%d, eReqType=%d, u4NumElem=%d\n",
+	DBGLOG(AIS, INFO, "eCurrentState=%d, eReqType=%d, u4NumElem=%d\n",
 	       prAisFsmInfo->eCurrentState, eReqType,
 	       prAisFsmInfo->rPendingReqList.u4NumElem);
 
@@ -5707,10 +5713,14 @@ u_int8_t aisFsmInsertRequest(IN struct ADAPTER *prAdapter,
 void aisFsmFlushRequest(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 {
 	struct AIS_REQ_HDR *prAisReq;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 
 	ASSERT(prAdapter);
 
-	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	DBGLOG(AIS, INFO, "aisFsmFlushRequest %d\n",
+		prAisFsmInfo->rPendingReqList.u4NumElem);
 
 	while ((prAisReq = aisFsmGetNextRequest(prAdapter, ucBssIndex)) != NULL)
 		cnmMemFree(prAdapter, prAisReq);

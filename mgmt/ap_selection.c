@@ -82,6 +82,11 @@
 #define LOW_RSSI_FOR_5G_BAND                    -70 /* dbm */
 #define HIGH_RSSI_FOR_5G_BAND                   -60 /* dbm */
 
+/* Support driver triggers roaming */
+#define STICK_TIMEOUT_SEC			30 /* seconds */
+#define RCPI_DIFF_DRIVER_ROAM			40 /* 20 dbm */
+#define RSSI_BAD_NEED_ROAM			-80 /* dbm */
+
 #define WEIGHT_IDX_CHNL_UTIL                    0
 #define WEIGHT_IDX_RSSI                         2
 #define WEIGHT_IDX_SCN_MISS_CNT                 2
@@ -872,7 +877,9 @@ try_again:
 		if (prAisBssInfo->eConnectionState ==
 			MEDIA_STATE_CONNECTED &&
 			prCandBssDesc->ucRCPI < RCPI_FOR_DONT_ROAM) {
-			log_dbg(SCN, INFO, "Don't roam for Rssi too low\n");
+			log_dbg(SCN, INFO,
+				"Don't roam " MACSTR " because rssi too low\n",
+				MAC2STR(prCandBssDesc->aucBSSID));
 			return NULL;
 		}
 		if (prConnSettings->eConnectionPolicy == CONNECT_BY_BSSID)
@@ -944,8 +951,6 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 	uint8_t ucChnlCount = 0;
 	uint8_t j = 0;
 
-	DBGLOG(SCN, INFO, "ucBssIndex = %d\n", ucBssIndex);
-
 	if (!prConnSettings)  {
 		log_dbg(SCN, INFO, "No prConnSettings\n");
 		return;
@@ -979,9 +984,8 @@ void scanGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 		sizeof(struct ESS_CHNL_INFO));
 
 	while (!LINK_IS_EMPTY(prCurEssLink)) {
-		prBssDesc =
-LINK_PEEK_HEAD(prCurEssLink,
-	struct BSS_DESC, rLinkEntryEss[ucBssIndex]);
+		prBssDesc = LINK_PEEK_HEAD(prCurEssLink,
+			struct BSS_DESC, rLinkEntryEss[ucBssIndex]);
 		LINK_REMOVE_KNOWN_ENTRY(prCurEssLink,
 			&prBssDesc->rLinkEntryEss[ucBssIndex]);
 	}
@@ -1037,5 +1041,49 @@ LINK_PEEK_HEAD(prCurEssLink,
 	log_dbg(SCN, INFO, "Find %s in %d BSSes, result %d\n",
 		prConnSettings->aucSSID, prBSSDescList->u4NumElem,
 		prCurEssLink->u4NumElem);
+}
+
+uint8_t scanCheckNeedDriverRoaming(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct BSS_DESC *target;
+	struct ROAMING_INFO *roam;
+	struct AIS_FSM_INFO *ais;
+	struct CONNECTION_SETTINGS *setting;
+	enum ENUM_PARAM_CONNECTION_POLICY policy;
+
+	target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	setting = aisGetConnSettings(prAdapter, ucBssIndex);
+
+	GET_CURRENT_SYSTIME(&roam->rRoamingDiscoveryUpdateTime);
+	policy = setting->eConnectionPolicy;
+
+#if CFG_SUPPORT_DRIVER_ROAMING
+	/*
+	 * try to select AP only when roaming is enabled and rssi is bad
+	 */
+	if (roam->fgIsEnableRoaming &&
+	    policy != CONNECT_BY_BSSID &&
+	    roam->eCurrentState == ROAMING_STATE_DECISION &&
+	    ais->eCurrentState == AIS_STATE_ONLINE_SCAN &&
+	    prAdapter->rLinkQuality.cRssi < RSSI_BAD_NEED_ROAM &&
+	    CHECK_FOR_TIMEOUT(roam->rRoamingDiscoveryUpdateTime,
+			      roam->rRoamingLastDecisionTime,
+			      SEC_TO_SYSTIME(STICK_TIMEOUT_SEC))) {
+		struct BSS_DESC *bss;
+
+		setting->eConnectionPolicy = CONNECT_BY_SSID_BEST_RSSI;
+		bss = scanSearchBssDescByScoreForAis(prAdapter, ucBssIndex);
+		if (bss && bss->ucRCPI - target->ucRCPI > RCPI_DIFF_DRIVER_ROAM)
+			return TRUE;
+	}
+
+	/* restore policy if no roaming */
+	setting->eConnectionPolicy = policy;
+#endif
+
+	return FALSE;
 }
 

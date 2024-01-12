@@ -104,18 +104,11 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	struct BSS_DESC *prBSSDesc;
 	uint8_t *pucBSSBuff;
 	uint32_t i;
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	struct ROAM_BSS_DESC *prRoamBSSDesc;
-	uint8_t *pucRoamBSSBuff;
-#endif
 
 	ASSERT(prAdapter);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	pucBSSBuff = &prScanInfo->aucScanBuffer[0];
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	pucRoamBSSBuff = &prScanInfo->aucScanRoamBuffer[0];
-#endif
 
 	log_dbg(SCN, TRACE, "->scnInit()\n");
 
@@ -128,16 +121,9 @@ void scnInit(IN struct ADAPTER *prAdapter)
 
 	/* 4 <2> Reset link list of BSS_DESC_T */
 	kalMemZero((void *) pucBSSBuff, SCN_MAX_BUFFER_SIZE);
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	kalMemZero((void *) pucRoamBSSBuff, SCN_ROAM_MAX_BUFFER_SIZE);
-#endif
 
 	LINK_INITIALIZE(&prScanInfo->rFreeBSSDescList);
 	LINK_INITIALIZE(&prScanInfo->rBSSDescList);
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	LINK_INITIALIZE(&prScanInfo->rRoamFreeBSSDescList);
-	LINK_INITIALIZE(&prScanInfo->rRoamBSSDescList);
-#endif
 
 	for (i = 0; i < CFG_MAX_NUM_BSS_LIST; i++) {
 
@@ -156,19 +142,6 @@ void scnInit(IN struct ADAPTER *prAdapter)
 		- (unsigned long)&prScanInfo->aucScanBuffer[0])
 		== SCN_MAX_BUFFER_SIZE);
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	for (i = 0; i < CFG_MAX_NUM_ROAM_BSS_LIST; i++) {
-		prRoamBSSDesc = (struct ROAM_BSS_DESC *) pucRoamBSSBuff;
-
-		LINK_INSERT_TAIL(&prScanInfo->rRoamFreeBSSDescList,
-			&prRoamBSSDesc->rLinkEntry);
-
-		pucRoamBSSBuff += ALIGN_4(sizeof(struct ROAM_BSS_DESC));
-	}
-	ASSERT(((unsigned long) pucRoamBSSBuff
-		- (unsigned long)&prScanInfo->aucScanRoamBuffer[0])
-		== SCN_ROAM_MAX_BUFFER_SIZE);
-#endif
 	/* reset freest channel information */
 	prScanInfo->fgIsSparseChannelValid = FALSE;
 
@@ -241,10 +214,6 @@ void scnUninit(IN struct ADAPTER *prAdapter)
 	/* 4 <2> Reset link list of BSS_DESC_T */
 	LINK_INITIALIZE(&prScanInfo->rFreeBSSDescList);
 	LINK_INITIALIZE(&prScanInfo->rBSSDescList);
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	LINK_INITIALIZE(&prScanInfo->rRoamFreeBSSDescList);
-	LINK_INITIALIZE(&prScanInfo->rRoamBSSDescList);
-#endif
 }				/* end of scnUninit() */
 
 /*----------------------------------------------------------------------------*/
@@ -638,217 +607,6 @@ scanSearchExistingBssDesc(IN struct ADAPTER *prAdapter,
 		aucSrcAddr, FALSE, NULL);
 }
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param
- *
- * @return
- */
-/*----------------------------------------------------------------------------*/
-void scanRemoveRoamBssDescsByTime(IN struct ADAPTER *prAdapter,
-				  IN uint32_t u4RemoveTime)
-{
-	struct SCAN_INFO *prScanInfo;
-	struct LINK *prRoamBSSDescList;
-	struct LINK *prRoamFreeBSSDescList;
-	struct ROAM_BSS_DESC *prRoamBssDesc;
-	struct ROAM_BSS_DESC *prRoamBSSDescNext;
-	OS_SYSTIME rCurrentTime;
-
-	ASSERT(prAdapter);
-
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prRoamBSSDescList = &prScanInfo->rRoamBSSDescList;
-	prRoamFreeBSSDescList = &prScanInfo->rRoamFreeBSSDescList;
-
-	GET_CURRENT_SYSTIME(&rCurrentTime);
-
-	LINK_FOR_EACH_ENTRY_SAFE(prRoamBssDesc, prRoamBSSDescNext,
-		prRoamBSSDescList, rLinkEntry, struct ROAM_BSS_DESC) {
-
-		if (CHECK_FOR_TIMEOUT(rCurrentTime, prRoamBssDesc->rUpdateTime,
-				      SEC_TO_SYSTIME(u4RemoveTime))) {
-
-			LINK_REMOVE_KNOWN_ENTRY(prRoamBSSDescList,
-				prRoamBssDesc);
-			LINK_INSERT_TAIL(prRoamFreeBSSDescList,
-				&prRoamBssDesc->rLinkEntry);
-		}
-	}
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param
- *
- * @return
- */
-/*----------------------------------------------------------------------------*/
-struct ROAM_BSS_DESC *
-scanSearchRoamBssDescBySsid(IN struct ADAPTER *prAdapter,
-			    IN struct BSS_DESC *prBssDesc)
-{
-	struct SCAN_INFO *prScanInfo;
-	struct LINK *prRoamBSSDescList;
-	struct ROAM_BSS_DESC *prRoamBssDesc;
-
-	ASSERT(prAdapter);
-
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-
-	prRoamBSSDescList = &prScanInfo->rRoamBSSDescList;
-
-	/* Search BSS Desc from current SCAN result list. */
-	LINK_FOR_EACH_ENTRY(prRoamBssDesc, prRoamBSSDescList,
-		rLinkEntry, struct ROAM_BSS_DESC) {
-		if (EQUAL_SSID(prRoamBssDesc->aucSSID, prRoamBssDesc->ucSSIDLen,
-			prBssDesc->aucSSID, prBssDesc->ucSSIDLen)) {
-			return prRoamBssDesc;
-		}
-	}
-
-	return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param
- *
- * @return
- */
-/*----------------------------------------------------------------------------*/
-struct ROAM_BSS_DESC *scanAllocateRoamBssDesc(IN struct ADAPTER *prAdapter)
-{
-	struct SCAN_INFO *prScanInfo;
-	struct LINK *prRoamFreeBSSDescList;
-	struct ROAM_BSS_DESC *prRoamBssDesc = NULL;
-
-	ASSERT(prAdapter);
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-
-	prRoamFreeBSSDescList = &prScanInfo->rRoamFreeBSSDescList;
-
-	LINK_REMOVE_HEAD(prRoamFreeBSSDescList, prRoamBssDesc,
-		struct ROAM_BSS_DESC *);
-
-	if (prRoamBssDesc) {
-		struct LINK *prRoamBSSDescList;
-
-		kalMemZero(prRoamBssDesc, sizeof(struct ROAM_BSS_DESC));
-
-		prRoamBSSDescList = &prScanInfo->rRoamBSSDescList;
-
-		LINK_INSERT_HEAD(prRoamBSSDescList, &prRoamBssDesc->rLinkEntry);
-	}
-
-	return prRoamBssDesc;
-}
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param
- *
- * @return
- */
-/*----------------------------------------------------------------------------*/
-void scanAddToRoamBssDesc(IN struct ADAPTER *prAdapter,
-			  IN struct BSS_DESC *prBssDesc)
-{
-	struct ROAM_BSS_DESC *prRoamBssDesc;
-
-	prRoamBssDesc = scanSearchRoamBssDescBySsid(prAdapter, prBssDesc);
-
-	if (prRoamBssDesc == NULL) {
-		uint32_t u4RemoveTime = REMOVE_TIMEOUT_TWO_DAY;
-
-		do {
-			prRoamBssDesc = scanAllocateRoamBssDesc(prAdapter);
-			if (prRoamBssDesc)
-				break;
-			scanRemoveRoamBssDescsByTime(prAdapter, u4RemoveTime);
-			u4RemoveTime = u4RemoveTime / 2;
-		} while (u4RemoveTime > 0);
-
-		if (prRoamBssDesc != NULL) {
-			COPY_SSID(prRoamBssDesc->aucSSID,
-				prRoamBssDesc->ucSSIDLen,
-				prBssDesc->aucSSID,
-				prBssDesc->ucSSIDLen);
-		}
-	}
-
-	if (prRoamBssDesc != NULL)
-		GET_CURRENT_SYSTIME(&prRoamBssDesc->rUpdateTime);
-}
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief
- *
- * @param
- *
- * @return
- */
-/*----------------------------------------------------------------------------*/
-void scanSearchBssDescOfRoamSsid(IN struct ADAPTER *prAdapter)
-{
-	uint8_t j;
-
-/* If only exist one same ssid AP, avoid unnecessary scan */
-#define SSID_ONLY_EXIST_ONE_AP	1
-
-	for (j = 0; j < KAL_AIS_NUM; j++) {
-		struct SCAN_INFO *prScanInfo;
-		struct LINK *prBSSDescList;
-		struct BSS_DESC *prBssDesc;
-		struct BSS_INFO *prAisBssInfo;
-		uint32_t u4SameSSIDCount = 0;
-
-		prAisBssInfo = aisGetAisBssInfo(prAdapter,
-			j);
-
-		/* XXX: wlan0(AP mode) + p2p0 occurs exception. */
-		if (prAisBssInfo == NULL)
-			continue;
-
-		prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-		prBSSDescList = &prScanInfo->rBSSDescList;
-
-		if (prAisBssInfo->eConnectionState !=
-			MEDIA_STATE_CONNECTED)
-			continue;
-
-		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
-			rLinkEntry, struct BSS_DESC) {
-			if (EQUAL_SSID(prBssDesc->aucSSID,
-				prBssDesc->ucSSIDLen,
-				prAisBssInfo->aucSSID,
-				prAisBssInfo->ucSSIDLen)) {
-				u4SameSSIDCount++;
-				if (u4SameSSIDCount >
-					SSID_ONLY_EXIST_ONE_AP) {
-					scanAddToRoamBssDesc(prAdapter,
-						prBssDesc);
-					break;
-				}
-			}
-		}
-	}
-}
-
-#endif /* CFG_SUPPORT_ROAMING_SKIP_ONE_AP */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Find the corresponding BSS Descriptor according to
@@ -889,10 +647,7 @@ scanSearchExistingBssDescWithSsid(IN struct ADAPTER *prAdapter,
 		fgCheckSsid = FALSE;
 		/* fall through */
 	case BSS_TYPE_INFRASTRUCTURE:
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-		scanSearchBssDescOfRoamSsid(prAdapter);
 		/* fall through */
-#endif
 	case BSS_TYPE_BOW_DEVICE:
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 			aucBSSID, fgCheckSsid, prSsid);

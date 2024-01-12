@@ -80,11 +80,6 @@
 #define SCN_MAX_BUFFER_SIZE \
 	(CFG_MAX_NUM_BSS_LIST * ALIGN_4(sizeof(struct BSS_DESC)))
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-#define SCN_ROAM_MAX_BUFFER_SIZE \
-	(CFG_MAX_NUM_ROAM_BSS_LIST * ALIGN_4(sizeof(struct ROAM_BSS_DESC)))
-#endif
-
 /* Remove SCAN result except the connected one. */
 #define SCN_RM_POLICY_EXCLUDE_CONNECTED		BIT(0)
 
@@ -109,10 +104,6 @@
  * struct BSS_DESC with same SSID first in large network.
  */
 #define SCN_BSS_DESC_SAME_SSID_THRESHOLD	20
-
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-#define REMOVE_TIMEOUT_TWO_DAY			(60*60*24*2)
-#endif
 
 #if 1
 #define SCN_BSS_DESC_REMOVE_TIMEOUT_SEC		30
@@ -466,15 +457,6 @@ struct BSS_DESC {
 	uint8_t aucRrmCap[5];
 };
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-struct ROAM_BSS_DESC {
-	struct LINK_ENTRY rLinkEntry;
-	uint8_t ucSSIDLen;
-	uint8_t aucSSID[ELEM_MAX_LEN_SSID];
-	OS_SYSTIME rUpdateTime;
-};
-#endif
-
 struct SCAN_PARAM {	/* Used by SCAN FSM */
 	/* Active or Passive */
 	enum ENUM_SCAN_TYPE eScanType;
@@ -572,11 +554,7 @@ struct SCAN_INFO {
 	struct LINK rFreeBSSDescList;
 
 	struct LINK rPendingMsgList;
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-	uint8_t aucScanRoamBuffer[SCN_ROAM_MAX_BUFFER_SIZE];
-	struct LINK rRoamFreeBSSDescList;
-	struct LINK rRoamBSSDescList;
-#endif
+
 	/* Sparse Channel Detection */
 	u_int8_t fgIsSparseChannelValid;
 	struct RF_CHANNEL_INFO rSparseChannel;
@@ -830,17 +808,6 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			    IN enum ENUM_BSS_TYPE eBSSType,
 			    IN struct BSS_DESC *SpecificprBssDesc);
 
-#if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-struct ROAM_BSS_DESC *scanSearchRoamBssDescBySsid(
-					IN struct ADAPTER *prAdapter,
-					IN struct BSS_DESC *prBssDesc);
-struct ROAM_BSS_DESC *scanAllocateRoamBssDesc(IN struct ADAPTER *prAdapter);
-void scanAddToRoamBssDesc(IN struct ADAPTER *prAdapter,
-			  IN struct BSS_DESC *prBssDesc);
-void scanSearchBssDescOfRoamSsid(IN struct ADAPTER *prAdapter);
-void scanRemoveRoamBssDescsByTime(IN struct ADAPTER *prAdapter,
-				  IN uint32_t u4RemoveTime);
-#endif
 /*----------------------------------------------------------------------------*/
 /* Routines in scan_fsm.c                                                     */
 /*----------------------------------------------------------------------------*/
