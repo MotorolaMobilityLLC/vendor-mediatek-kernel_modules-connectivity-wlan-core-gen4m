@@ -8722,6 +8722,10 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(
 	struct WLAN_CFG_REC *prWlanCfgRec;
 	struct WLAN_CFG *prWlanCfgEm;
 
+	if (!prAdapter) {
+		DBGLOG(INIT, WARN, "prAdapter is NULL\n");
+		return NULL;
+	}
 
 	prWlanCfg = prAdapter->prWlanCfg;
 	prWlanCfgRec = prAdapter->prWlanCfgRec;
