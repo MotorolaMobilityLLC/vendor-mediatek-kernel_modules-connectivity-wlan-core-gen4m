@@ -114,7 +114,7 @@ extern struct platform_device *g_prPlatDev;
 	GLUE_FLAG_HIF_TX_CMD | GLUE_FLAG_HIF_FW_OWN | \
 	GLUE_FLAG_HIF_PRT_HIF_DBG_INFO | \
 	GLUE_FLAG_UPDATE_WMM_QUOTA | \
-	GLUE_FLAG_NOTIFY_MD_CRASH | \
+	GLUE_FLAG_HIF_MDDP | \
 	GLUE_FLAG_DRV_INT | \
 	GLUE_FLAG_MGMT_DIRECT_HIF_TX | \
 	GLUE_FLAG_SER_INT)
@@ -2026,7 +2026,7 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr);
 
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
-void kalSetMdCrashEvent(struct GLUE_INFO *pr);
+void kalSetMddpEvent(struct GLUE_INFO *pr);
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 

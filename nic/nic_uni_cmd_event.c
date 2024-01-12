@@ -32,6 +32,10 @@
 #include "conn_dbg.h"
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -12433,6 +12437,19 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			glSetRstReasonString(aucMddpRsn);
 			glResetWholeChipResetTrigger(aucMddpRsn);
+		}
+			break;
+		case UNI_EVENT_MDDP_FWOWN_RETRY: {
+			struct UNI_EVENT_MDDP_FWOWN_RETRY *retry =
+				(struct UNI_EVENT_MDDP_FWOWN_RETRY *) tag;
+
+			DBGLOG(NIC, INFO,
+			       "mddp retry tag[%u] len[%u] retry[%u]\n",
+			       retry->u2Tag,
+			       retry->u2Length,
+			       retry->u4RetryCnt);
+
+			mddpTriggerMdFwOwnByFw(ad);
 		}
 			break;
 		default:

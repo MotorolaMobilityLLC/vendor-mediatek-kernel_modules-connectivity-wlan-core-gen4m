@@ -34,6 +34,8 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
+#define MDDP_HIF_NOTIFY_MD_CRASH_2_FW	0
+#define MDDP_HIF_MD_FW_OWN		1
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -145,6 +147,8 @@ struct MDDP_SETTINGS g_rSettings;
 enum ENUM_MDDPW_DRV_INFO_STATUS g_eMddpStatus;
 struct mutex rMddpLock;
 u_int32_t g_u4CheckSerCnt;
+u_int8_t g_fgIsMdCrash;
+unsigned long g_ulMddpActionFlag;
 
 struct mddpw_net_stat_ext_t stats;
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
@@ -1310,6 +1314,7 @@ void __mddpNotifyWifiOffStart(void)
 	if (ret == 0)
 		wait_for_md_off_complete();
 
+	/* call fw own directly when wifi off */
 	mddpSetMDFwOwn();
 }
 
@@ -1344,7 +1349,7 @@ void mddpNotifyWifiOffStart(void)
 	}
 
 	/* avoid power off process MD SER */
-	kalSetMdCrashEvent(prGlueInfo);
+	kalSetMddpEvent(prGlueInfo);
 #endif
 }
 
@@ -1498,6 +1503,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
 			return 0;
 		}
+
+		g_fgIsMdCrash = FALSE;
 
 		/* Notify STA's TXD to MD */
 		for (i = 0; i < KAL_AIS_NUM; i++) {
@@ -1874,9 +1881,30 @@ static void notifyMdCrash2FW(void)
 	 * Set MD FW Own before Notify FW MD crash
 	 * Reason: MD cannt set FW own itself when MD crash
 	 */
-	mddpSetMDFwOwn();
+	KAL_SET_BIT(MDDP_HIF_NOTIFY_MD_CRASH_2_FW, g_ulMddpActionFlag);
+	KAL_SET_BIT(MDDP_HIF_MD_FW_OWN, g_ulMddpActionFlag);
+	kalSetMddpEvent(prGlueInfo);
+}
 
-	kalSetMdCrashEvent(prGlueInfo);
+void mddpInHifThread(struct ADAPTER *prAdapter)
+{
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    MDDP_HIF_NOTIFY_MD_CRASH_2_FW,
+		    g_ulMddpActionFlag))
+		halNotifyMdCrash(prAdapter);
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    MDDP_HIF_MD_FW_OWN,
+		    g_ulMddpActionFlag))
+		mddpSetMDFwOwn();
+}
+
+void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter)
+{
+	if (g_fgIsMdCrash) {
+		KAL_SET_BIT(MDDP_HIF_MD_FW_OWN, g_ulMddpActionFlag);
+		kalSetMddpEvent(prAdapter->prGlueInfo);
+	}
 }
 
 #if CFG_MTK_CCCI_SUPPORT
@@ -1888,8 +1916,11 @@ void  mddpMdStateChangedCb(enum MD_STATE old_state,
 
 	switch (new_state) {
 	case GATED: /* MD off */
+		notifyMdCrash2FW();
+		break;
 	case EXCEPTION: /* MD crash */
 		notifyMdCrash2FW();
+		g_fgIsMdCrash = TRUE;
 		break;
 	default:
 		break;

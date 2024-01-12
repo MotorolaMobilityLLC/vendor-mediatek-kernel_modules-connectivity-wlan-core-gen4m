@@ -285,7 +285,7 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_HIF_FW_OWN			BIT(15)
 #define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO		BIT(16)
 #define GLUE_FLAG_UPDATE_WMM_QUOTA		BIT(17)
-#define GLUE_FLAG_NOTIFY_MD_CRASH		BIT(18)
+#define GLUE_FLAG_HIF_MDDP			BIT(18)
 #define GLUE_FLAG_DRV_INT			BIT(19)
 
 #define GLUE_FLAG_TX_CMD_DONE_BIT		(11)
@@ -301,7 +301,7 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_RX_BIT			(10)
 #define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT	(16)
 #define GLUE_FLAG_UPDATE_WMM_QUOTA_BIT		(17)
-#define GLUE_FLAG_NOTIFY_MD_CRASH_BIT		(18)
+#define GLUE_FLAG_HIF_MDDP_BIT			(18)
 #define GLUE_FLAG_DRV_INT_BIT			(19)
 
 #define GLUE_FLAG_RST_START BIT(18)

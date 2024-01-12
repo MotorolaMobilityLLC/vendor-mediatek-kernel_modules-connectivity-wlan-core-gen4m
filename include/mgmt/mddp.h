@@ -33,8 +33,8 @@
 #define MD_ON_OFF_TIMEOUT			1000
 #define MD_ON_OFF_TIMEOUT_CASAN		3000
 #if (CFG_SUPPORT_CONNAC3X == 1)
-#define MD_LPCTL_ADDR 0x7C001614
 #define MD_STATUS_SYNC_CR 0
+#define MD_LPCTL_ADDR 0x7C060050
 #elif (CFG_SUPPORT_CONNAC2X == 1)
 #define MD_STATUS_SYNC_CR 0x180600F4
 #define MD_LPCTL_ADDR 0x7C060050
@@ -125,6 +125,8 @@ struct MDDP_SETTINGS {
  */
 void mddpInit(int bootmode);
 void mddpUninit(void);
+void mddpInHifThread(struct ADAPTER *prAdapter);
+void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter);
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo);
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len);
 int32_t mddpGetMdStats(struct net_device *prDev);

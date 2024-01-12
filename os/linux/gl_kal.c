@@ -79,6 +79,10 @@
 #include "rlm_domain.h"
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp.h"
+#endif
+
 extern void set_logtoomuch_enable(int value) __attribute__((weak));
 extern int get_logtoomuch_enable(void) __attribute__((weak));
 extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
@@ -5507,9 +5511,9 @@ int hif_thread(void *data)
 
 #if CFG_MTK_MDDP_SUPPORT
 		/* Notify MD crash to FW */
-		if (test_and_clear_bit(GLUE_FLAG_NOTIFY_MD_CRASH_BIT,
-					&prGlueInfo->ulFlag))
-			halNotifyMdCrash(prAdapter);
+		if (test_and_clear_bit(GLUE_FLAG_HIF_MDDP_BIT,
+				       &prGlueInfo->ulFlag))
+			mddpInHifThread(prAdapter);
 #endif
 
 		/* Set FW own */
@@ -6885,9 +6889,9 @@ void kalSetWmmUpdateEvent(struct GLUE_INFO *pr)
 #endif
 }
 
-void kalSetMdCrashEvent(struct GLUE_INFO *pr)
+void kalSetMddpEvent(struct GLUE_INFO *pr)
 {
-	set_bit(GLUE_FLAG_NOTIFY_MD_CRASH_BIT, &pr->ulFlag);
+	set_bit(GLUE_FLAG_HIF_MDDP_BIT, &pr->ulFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
