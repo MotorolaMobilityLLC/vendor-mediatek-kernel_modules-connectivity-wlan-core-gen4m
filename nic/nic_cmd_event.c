@@ -926,6 +926,7 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prStatistics->rMdrdyCnt = prEventStatistics->rMdrdyCnt;
 	prStatistics->rChnlIdleCnt = prEventStatistics->rChnlIdleCnt;
+	prStatistics->rHwAwakeDuration = prEventStatistics->rHwMacAwakeDuration;
 
 	prLinkQualityInfo =
 		&(prAdapter->rLinkQualityInfo);
@@ -952,7 +953,8 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 		prStatistics->rMdrdyCnt.QuadPart;
 	prLinkQualityInfo->u8IdleSlotCount =
 		prStatistics->rChnlIdleCnt.QuadPart;
-
+	prLinkQualityInfo->u8HwMacAwakeDuration =
+		prStatistics->rHwAwakeDuration.QuadPart;
 	wlanFinishCollectingLinkQuality(prGlueInfo);
 
 	DBGLOG(SW4, TRACE,
