@@ -185,6 +185,8 @@ void p2pResumeStatisticsTimer(struct GLUE_INFO *prGlueInfo,
 u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = NULL;
+	enum ENUM_P2P_REG_STATE eP2PRegState;
+	enum ENUM_NET_REG_STATE eP2PNetRegState;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -195,10 +197,11 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (prAdapter->rP2PRegState != ENUM_P2P_REG_STATE_UNREGISTERED) {
-		DBGLOG(P2P, INFO, "skip launch, p2p_state=%d, net_state=%d\n",
-			prAdapter->rP2PRegState,
-			prAdapter->rP2PNetRegState);
+		eP2PRegState = prAdapter->rP2PRegState;
+		eP2PNetRegState = prAdapter->rP2PNetRegState;
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		DBGLOG(P2P, INFO, "skip launch, p2p_state=%d, net_state=%d\n",
+			eP2PRegState, eP2PNetRegState);
 		return FALSE;
 	}
 
@@ -215,8 +218,8 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo)
 	prAdapter->fgIsP2PRegistered = TRUE;
 	prAdapter->p2p_scan_report_all_bss = CFG_P2P_SCAN_REPORT_ALL_BSS;
 	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_REGISTERED;
-	DBGLOG(P2P, INFO, "Launch success, fgIsP2PRegistered TRUE\n");
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	DBGLOG(P2P, INFO, "Launch success, fgIsP2PRegistered TRUE\n");
 
 	return TRUE;
 }

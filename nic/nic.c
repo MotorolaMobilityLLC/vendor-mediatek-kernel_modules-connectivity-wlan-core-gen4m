@@ -877,10 +877,17 @@ struct CMD_INFO *nicGetPendingCmdInfo(struct ADAPTER *prAdapter,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 
 	if (prCmdInfo) {
-		DBGLOG(TX, INFO, "Get command: %p, %ps, cmd=0x%02X, seq=%u",
+		if (wlanIfCmdDbgEn(prAdapter)) {
+			DBGLOG(TX, INFO,
+				"Get command: %p, %ps, cmd=0x%02X, seq=%u",
 				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
-
+		} else {
+			DBGLOG(TX, INFO,
+				"Get command: %p, %p, cmd=0x%02X, seq=%u",
+				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+		}
 #if CFG_DBG_MGT_BUF
 		if (prCmdInfo->pucInfoBuffer &&
 		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer))
@@ -909,8 +916,19 @@ void removeDuplicatePendingCmd(struct ADAPTER *prAdapter,
 {
 	struct CMD_INFO *prPendingDupCmdInfo;
 
+#if CFG_TX_CMD_SMART_SEQUENCE
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
+
 	prPendingDupCmdInfo = __nicGetPendingCmdInfo(prAdapter,
 				prCmdInfo->ucCmdSeqNum);
+
+#if CFG_TX_CMD_SMART_SEQUENCE
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
+
 	if (prPendingDupCmdInfo) {
 		DBGLOG(TX, ERROR,
 			"Remove command: %p, %ps, cmd=0x%02X, seq=%u",

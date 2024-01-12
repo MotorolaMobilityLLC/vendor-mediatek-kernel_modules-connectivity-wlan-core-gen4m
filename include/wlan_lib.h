@@ -1679,6 +1679,8 @@ uint32_t wlanSendCommandMthread(struct ADAPTER *prAdapter,
 
 uint32_t wlanTxCmdMthread(struct ADAPTER *prAdapter);
 
+u_int8_t wlanIfCmdDbgEn(struct ADAPTER *prAdapter);
+
 uint32_t wlanTxCmdDoneMthread(struct ADAPTER *prAdapter);
 
 void wlanClearTxCommandQueue(struct ADAPTER *prAdapter);
@@ -1923,6 +1925,8 @@ wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
 #endif
+
+void wlanDumpAllBssStatistics(struct ADAPTER *prAdapter);
 
 uint32_t
 wlanoidQueryStaStatistics(struct ADAPTER *prAdapter,

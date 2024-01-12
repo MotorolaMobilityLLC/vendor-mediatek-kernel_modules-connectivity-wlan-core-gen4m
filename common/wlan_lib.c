@@ -2325,6 +2325,18 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 	return rStatus;
 }				/* end of wlanSendCommandMthread() */
 
+u_int8_t wlanIfCmdDbgEn(struct ADAPTER *prAdapter)
+{
+	u_int8_t fgCmdDbgEn;
+
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucCmdDbg))
+		fgCmdDbgEn = TRUE;
+	else
+		fgCmdDbgEn = FALSE;
+
+	return fgCmdDbgEn;
+}
+
 void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 		     struct CMD_INFO *prCmdInfo)
 {
@@ -2336,17 +2348,25 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 #endif /* CFG_TX_CMD_SMART_SEQUENCE */
 
+	/* prevent print log inside spinlock */
 	if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
+		if (wlanIfCmdDbgEn(prAdapter)) {
+			DBGLOG(TX, INFO,
+				"Add command: %p, %ps, cmd=0x%02X, seq=%u",
+				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+		} else {
+			DBGLOG(TX, INFO,
+				"Add command: %p, %p, cmd=0x%02X, seq=%u",
+				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
+		}
 		removeDuplicatePendingCmd(prAdapter, prCmdInfo);
+	}
 
-		DBGLOG(TX, INFO, "Add command: %p, %ps, cmd=0x%02X, seq=%u",
-			prCmdInfo, prCmdInfo->pfCmdDoneHandler,
-			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
-
+	if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
 #if CFG_DBG_MGT_BUF
 		if (prCmdInfo->pucInfoBuffer &&
 				!IS_FROM_BUF(prAdapter,
@@ -2364,12 +2384,19 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 			prMemTrack->u2CmdIdAndWhere |= 0x5000;
 		}
 #endif
+
+#if CFG_TX_CMD_SMART_SEQUENCE
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
+
 		QUEUE_INSERT_TAIL(&prAdapter->rPendingCmdQueue, prCmdInfo);
+
+#if CFG_TX_CMD_SMART_SEQUENCE
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#endif /* CFG_TX_CMD_SMART_SEQUENCE */
 	}
 
 #if CFG_TX_CMD_SMART_SEQUENCE
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
-
 	if (prMsduInfo && prMsduInfo->pfTxDoneHandler) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 			SPIN_LOCK_TXING_MGMT_LIST);
@@ -5813,7 +5840,7 @@ void wlanDumpBssStatistics(struct ADAPTER *prAdapter,
 	}
 }
 
-void wlanDumpAllBssStatistics(struct ADAPTER *prAdapter)
+void __wlanDumpAllBssStatistics(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
 	/* ENUM_WMM_ACI_T eAci; */
@@ -5831,6 +5858,30 @@ void wlanDumpAllBssStatistics(struct ADAPTER *prAdapter)
 		}
 
 		wlanDumpBssStatistics(prAdapter, ucIdx);
+	}
+}
+
+void wlanDumpAllBssStatistics(struct ADAPTER *prAdapter)
+{
+	struct QUE_MGT *prQM = &prAdapter->rQM;
+	OS_SYSTIME rCurTime;
+
+	/* Trigger FW stats log every 20s */
+	rCurTime = (OS_SYSTIME) kalGetTimeTick();
+
+	DBGLOG(INIT, LOUD, "CUR[%u] LAST[%u] TO[%u]\n", rCurTime,
+	       prQM->rLastTxPktDumpTime,
+	       CHECK_FOR_TIMEOUT(rCurTime, prQM->rLastTxPktDumpTime,
+				 MSEC_TO_SYSTIME(
+				 prAdapter->rWifiVar.u4StatsLogTimeout)));
+
+	if (CHECK_FOR_TIMEOUT(rCurTime, prQM->rLastTxPktDumpTime,
+			      MSEC_TO_SYSTIME(
+			      prAdapter->rWifiVar.u4StatsLogTimeout))) {
+
+		__wlanDumpAllBssStatistics(prAdapter);
+
+		prQM->rLastTxPktDumpTime = rCurTime;
 	}
 }
 
@@ -7510,6 +7561,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	/* Tx Buffer Management */
 	INIT_UINT(prWifiVar->ucExtraTxDone, "ExtraTxDone", 1);
 	INIT_UINT(prWifiVar->ucTxDbg, "TxDbg", 0);
+
+	INIT_UINT(prWifiVar->ucCmdDbg, "CmdDbg", FEATURE_DISABLED);
 
 	if (!pucKey)
 		kalMemZero(prWifiVar->au4TcPageCount,
@@ -10638,8 +10691,6 @@ void wlanUpdateTxStatistics(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_WMM_ACI eAci = WMM_AC_BE_INDEX;
-	struct QUE_MGT *prQM = &prAdapter->rQM;
-	OS_SYSTIME rCurTime;
 	struct WIFI_WMM_AC_STAT *prAcStats;
 
 	eAci = aucTid2ACI[prMsduInfo->ucUserPriority];
@@ -10674,24 +10725,6 @@ void wlanUpdateTxStatistics(struct ADAPTER *prAdapter,
 	if (prStaRec && !fgTxDrop)
 		prStaRec->u8TotalTxBytes += prMsduInfo->u2FrameLength;
 #endif
-
-	/* Trigger FW stats log every 20s */
-	rCurTime = (OS_SYSTIME) kalGetTimeTick();
-
-	DBGLOG(INIT, LOUD, "CUR[%u] LAST[%u] TO[%u]\n", rCurTime,
-	       prQM->rLastTxPktDumpTime,
-	       CHECK_FOR_TIMEOUT(rCurTime, prQM->rLastTxPktDumpTime,
-				 MSEC_TO_SYSTIME(
-				 prAdapter->rWifiVar.u4StatsLogTimeout)));
-
-	if (CHECK_FOR_TIMEOUT(rCurTime, prQM->rLastTxPktDumpTime,
-			      MSEC_TO_SYSTIME(
-			      prAdapter->rWifiVar.u4StatsLogTimeout))) {
-
-		wlanDumpAllBssStatistics(prAdapter);
-
-		prQM->rLastTxPktDumpTime = rCurTime;
-	}
 }
 
 void wlanUpdateRxStatistics(struct ADAPTER *prAdapter,
