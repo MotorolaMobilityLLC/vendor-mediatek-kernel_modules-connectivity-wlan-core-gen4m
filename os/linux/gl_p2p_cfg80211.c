@@ -1225,8 +1225,6 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			break;
 		}
 
-		DBGLOG(P2P, TRACE, "netdev: %p.\n", request->wdev->netdev);
-
 		if (prP2pGlueDevInfo->prScanRequest != NULL) {
 			/* There have been a scan request
 			 * on-going processing.
@@ -1240,7 +1238,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
 			request->n_channels = MAXIMUM_OPERATION_CHANNEL_LIST;
 			fgIsFullChanScan = TRUE;
-			DBGLOG(P2P, TRACE,
+			DBGLOG(P2P, WARN,
 				"Channel list exceed the maximun support.\n");
 		}
 
@@ -1274,19 +1272,24 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			RAM_TYPE_MSG, u4MsgSize);
 
 		if (prMsgScanRequest == NULL) {
+			DBGLOG(P2P, ERROR, "Alloc msg failed, size: %lu\n",
+				u4MsgSize);
 			i4RetRslt = -ENOMEM;
 			break;
 		}
-
-		DBGLOG(P2P, TRACE, "Generating scan request message.\n");
 
 		prMsgScanRequest->rMsgHdr.eMsgId = MID_MNY_P2P_DEVICE_DISCOVERY;
 		prMsgScanRequest->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 		prMsgScanRequest->ucBssIdx = ucBssIdx;
 
 		DBGLOG(P2P, INFO,
-			"[%u] Requesting channel number:%d.\n",
-				ucBssIdx, request->n_channels);
+			"[%u] n_channels: %u, bssid: " MACSTR
+			", n_ssids: %d, ie_len: %zu.\n",
+			ucBssIdx,
+			request->n_channels,
+			MAC2STR(request->bssid),
+			request->n_ssids,
+			request->ie_len);
 
 		for (u4Idx = 0; u4Idx < request->n_channels; u4Idx++) {
 			/* Translate Freq from MHz to channel number. */
@@ -1297,11 +1300,6 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 			prRfChannelInfo->ucChannelNum =
 				nicFreq2ChannelNum(
 					prChannel->center_freq * 1000);
-
-			DBGLOG(P2P, TRACE,
-			       "Scanning Channel:%d,  freq: %d\n",
-			       prRfChannelInfo->ucChannelNum,
-			       prChannel->center_freq);
 
 			switch (prChannel->band) {
 			case KAL_BAND_2GHZ:
@@ -1316,23 +1314,25 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 				break;
 #endif
 			default:
-				DBGLOG(P2P, TRACE,
+				DBGLOG(P2P, WARN,
 					"UNKNOWN Band info from supplicant\n");
 				prRfChannelInfo->eBand = BAND_NULL;
 				break;
 			}
 
+			DBGLOG(P2P, TRACE,
+				"band: %u, channel: %u, freq: %lu\n",
+				prChannel->band,
+				prChannel->hw_value,
+				prChannel->center_freq);
+
 			/* Iteration. */
 			prRfChannelInfo++;
 		}
 		prMsgScanRequest->u4NumChannel = request->n_channels;
-		if (fgIsFullChanScan) {
+		if (fgIsFullChanScan)
 			prMsgScanRequest->u4NumChannel =
 				SCN_P2P_FULL_SCAN_PARAM;
-			DBGLOG(P2P, INFO,
-				"request->n_channels = SCN_P2P_FULL_SCAN_PARAM\n");
-		}
-		DBGLOG(P2P, TRACE, "Finish channel list.\n");
 
 		/* SSID */
 		prSsid = request->ssids;
@@ -1348,8 +1348,11 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		for (u4Idx = 0; u4Idx < request->n_ssids; u4Idx++) {
 			COPY_SSID(prSsidStruct->aucSsid,
 				  prSsidStruct->ucSsidLen,
-				  request->ssids->ssid,
-				  request->ssids->ssid_len);
+				  prSsid->ssid,
+				  prSsid->ssid_len);
+
+			DBGLOG(P2P, TRACE, "[%u] ssid: %s, ssid_len: %u\n",
+				u4Idx, prSsid->ssid, prSsid->ssid_len);
 
 			prSsidStruct++;
 			prSsid++;
@@ -1357,56 +1360,40 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 
 		prMsgScanRequest->i4SsidNum = request->n_ssids;
 
-		DBGLOG(P2P, TRACE, "Finish SSID list:%d.\n", request->n_ssids);
-
 		/* IE BUFFERS */
 		prMsgScanRequest->pucIEBuf = (uint8_t *) prSsidStruct;
 		if (request->ie_len) {
 			kalMemCopy(prMsgScanRequest->pucIEBuf,
 				request->ie, request->ie_len);
 			prMsgScanRequest->u4IELen = request->ie_len;
+			DBGLOG_MEM8(P2P, TRACE,
+				prMsgScanRequest->pucIEBuf,
+				prMsgScanRequest->u4IELen);
 		} else {
 			prMsgScanRequest->u4IELen = 0;
 		}
 
-		DBGLOG(P2P, TRACE, "Finish IE Buffer.\n");
-
 		COPY_MAC_ADDR(prMsgScanRequest->aucBSSID, request->bssid);
-
-		DBGLOG(P2P, TRACE, "Finish BSSID="MACSTR"\n",
-			MAC2STR(request->bssid));
 
 		/* Abort previous scan */
 		rStatus = kalIoctl(prGlueInfo, wlanoidAbortP2pScan,
 			&ucBssIdx, sizeof(ucBssIdx), &u4SetInfoLen);
-
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			DBGLOG(REQ, ERROR,
-				"mtk_p2p_cfg80211_scan abort scan fail 0x%x\n",
+				"wlanoidAbortP2pScan fail 0x%x\n",
 				rStatus);
 
 		prP2pGlueDevInfo->prScanRequest = request;
 		prP2pGlueDevInfo->fgScanSpecificSSID =
 			request->n_ssids == 1 ? TRUE : FALSE;
 
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prMsgScanRequest,
-			MSG_SEND_METHOD_BUF);
+		rStatus = kalIoctl(prGlueInfo, wlanoidRequestP2pScan,
+			prMsgScanRequest, u4MsgSize, &u4SetInfoLen);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, ERROR,
+				"wlanoidRequestP2pScan fail 0x%x\n",
+				rStatus);
 
-		/* Backup scan request structure */
-		/* The purpose of this backup is due
-		 * to the kernel free the scan req
-		 * when the wpa supplicant down the iface before down,
-		 * and it will free the original scan request structure
-		 * In this case, the scan resoure could be locked by kernel,
-		 * and driver needs this work around to clear the state
-		 */
-#if 0
-		kalMemCopy(&(prP2pGlueDevInfo->rBackupScanRequest),
-			prP2pGlueDevInfo->prScanRequest,
-			sizeof(struct cfg80211_scan_request));
-#endif
 		i4RetRslt = 0;
 	} while (FALSE);
 
