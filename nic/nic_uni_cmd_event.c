@@ -220,6 +220,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_NAN] = nicUniEventNan,
 	[UNI_EVENT_ID_BF] = nicUniEventBF,
 	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
+	[UNI_EVENT_ID_WOW] = nicUniEventWow,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -8219,6 +8220,45 @@ void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 			break;
 		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_WOW);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_WOW_TAG_WAKEUP_REASON: {
+			struct UNI_EVENT_WOW_WAKEUP_REASON_INFO
+				*prUniWakeUpReason =
+			    (struct UNI_EVENT_WOW_WAKEUP_REASON_INFO *)tag;
+			struct EVENT_WOW_WAKEUP_REASON_INFO legacy;
+
+			legacy.reason = prUniWakeUpReason->ucReason;
+			legacy.u2WowWakePort = prUniWakeUpReason->u2WowWakePort;
+			RUN_RX_EVENT_HANDLER(
+				EVENT_ID_WOW_WAKEUP_REASON,
+				&legacy
+			);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
 			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
 			break;
 		}
