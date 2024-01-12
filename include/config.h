@@ -562,7 +562,9 @@
  */
 
 /*! Maximum number of SW TX packet queue */
-#if (CFG_SUPPORT_CONNAC2X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define CFG_TX_MAX_PKT_NUM                      4096
+#elif (CFG_SUPPORT_CONNAC2X == 1)
 #define CFG_TX_MAX_PKT_NUM                      2048
 #else
 #define CFG_TX_MAX_PKT_NUM                      1024
