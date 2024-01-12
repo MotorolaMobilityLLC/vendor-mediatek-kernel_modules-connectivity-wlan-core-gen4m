@@ -307,7 +307,7 @@ void mldGenerateAssocIE(
 	struct MSDU_INFO *prMsduInfo,
 	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE)
 {
-	uint8_t *common = NULL, *cur;
+	uint8_t *common = NULL, *cur = NULL;
 	struct BSS_INFO *bss;
 	struct STA_RECORD *starec;
 	struct MSDU_INFO *msdu_sta;
@@ -446,7 +446,7 @@ void mldGenerateProbeRspIE(
 	struct LINK *links;
 	struct BSS_INFO *bss;
 	uint32_t offset, len;
-	uint8_t count = 0, *common = NULL, *cur;
+	uint8_t count = 0, *common = NULL, *cur = NULL;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
 
@@ -978,7 +978,7 @@ uint8_t *mldGenerateBasicCompleteProfile(
 			primary = kalFindVendorIe(
 				oui,
 				WFA_IE(pucBuf)->ucOuiType,
-				prMsduInfo->prPacket + u4BeginOffset,
+				(uint8_t *)prMsduInfo->prPacket + u4BeginOffset,
 				u4PrimaryLength - u4BeginOffset);
 		} else {
 			primary = kalFindIeMatchMask(
