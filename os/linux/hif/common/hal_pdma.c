@@ -3340,6 +3340,34 @@ void halWpdmaProcessDataDmaDoneByDdone(struct ADAPTER *prAdapter,
 	prTxRing->TxSwUsedIdx = u4SwIdx;
 }
 
+uint32_t halWpdmaGetTxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucRingNum)
+{
+	struct ADAPTER *prAdapter;
+	struct RTMP_TX_RING *prTxRing;
+	struct GL_HIF_INFO *prHifInfo;
+	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4Cnt = 0;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prTxRing = &prHifInfo->TxRing[ucRingNum];
+	u4MaxCnt = prTxRing->u4RingSize;
+
+	if (u4MaxCnt == 0)
+		goto exit;
+
+	HAL_GET_RING_DIDX(HIF_RING, prAdapter, prTxRing, &prTxRing->TxDmaIdx);
+	u4CpuIdx = prTxRing->TxCpuIdx;
+	u4DmaIdx = prTxRing->TxDmaIdx;
+
+	if (u4CpuIdx >= u4DmaIdx)
+		u4Cnt = u4CpuIdx - u4DmaIdx;
+	else
+		u4Cnt = u4MaxCnt + u4CpuIdx - u4DmaIdx;
+exit:
+	return u4Cnt;
+}
+
 void halWpdmaProcessDataDmaDoneByIdx(struct ADAPTER *prAdapter,
 				     struct RTMP_TX_RING *prTxRing,
 				     uint16_t u2Port)
@@ -6239,6 +6267,22 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	}
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 #if CFG_MTK_WIFI_WFDMA_WB
+	for (i = 0; i < NUM_OF_TX_RING; ++i) {
+		prTxRing = &prHifInfo->TxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " TQCnt[" : "",
+				prTxRing->fgEnEmiDidx ?
+				halWpdmaGetTxDmaDoneCnt(prGlueInfo, i) : 0,
+				(i == NUM_OF_TX_RING - 1) ? "]" : " ");
+	}
+	for (i = 0; i < NUM_OF_RX_RING; ++i) {
+		prRxRing = &prHifInfo->RxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " RQCnt[" : "",
+				prRxRing->fgEnEmiDidx ?
+				halWpdmaGetRxDmaDoneCnt(prGlueInfo, i) : 0,
+				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
+	}
 	if (prAdapter->chip_info->is_support_wfdma_cidx_fetch) {
 		pos += kalSnprintf(
 			buf + pos, u4BufferSize - pos,

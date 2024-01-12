@@ -1142,6 +1142,8 @@ uint8_t halSetRxRingHwAddr(
 	struct RTMP_RX_RING *prRxRing,
 	struct BUS_INFO *prBusInfo,
 	uint32_t u4SwRingIdx);
+uint32_t halWpdmaGetTxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
+				 uint8_t ucRingNum);
 void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 			       uint16_t u2Port);
 void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
