@@ -7169,8 +7169,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
 
-	if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT)
-	    || (!prAdapter->fgIsP2PRegistered))
+	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
 		return;
 
 	prPerMonitor = &prAdapter->rPerMonitor;
@@ -7228,15 +7227,19 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 				rxDiffBytes[i] = -(rxDiffBytes[i]);
 		}
 
+		/* Divsion first to avoid overflow */
 		if (txDiffBytes[i])
 			prPerMonitor->ulTxTp[i] =
-				(txDiffBytes[i] * MSEC_PER_SEC) /
-				prPerMonitor->u4UpdatePeriod;
+				(txDiffBytes[i] /
+				prPerMonitor->u4UpdatePeriod) *
+				MSEC_PER_SEC;
 
+		/* Divsion first to avoid overflow */
 		if (rxDiffBytes[i])
 			prPerMonitor->ulRxTp[i] =
-				(rxDiffBytes[i] * MSEC_PER_SEC) /
-				prPerMonitor->u4UpdatePeriod;
+				(rxDiffBytes[i] /
+				prPerMonitor->u4UpdatePeriod) *
+				MSEC_PER_SEC;
 
 		prPerMonitor->ulThroughput += txDiffBytes[i] + rxDiffBytes[i];
 
