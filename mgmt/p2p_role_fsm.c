@@ -1809,7 +1809,8 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 	if (prP2PInfo)
 		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
 
-	if (prP2pBssInfo->eBand != prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
+		prP2pBssInfo->eBand != prP2pRoleFsmInfo->rChnlReqInfo.eBand) {
 		nicDeactivateNetwork(prAdapter, prP2pBssInfo->ucBssIndex);
 		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 		nicActivateNetwork(prAdapter, prP2pBssInfo->ucBssIndex);
