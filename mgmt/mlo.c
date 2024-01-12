@@ -761,11 +761,15 @@ void mldGenerateBasicCompleteProfile(
 
 	/* Fill the Status Code field */
 	if (fctrl == MAC_FRAME_ASSOC_RSP || fctrl == MAC_FRAME_REASSOC_RSP) {
-		DBGLOG(ML, INFO, "\tLinkID=%d, Status = 0x%x",
-				link, starec->u2StatusCode);
-		/* Fill the Status Code field. */
-		WLAN_SET_FIELD_16(cp, starec->u2StatusCode);
-		cp += 2;
+		if (starec) {
+			DBGLOG(ML, INFO, "\tLinkID=%d, Status = 0x%x",
+					link, starec->u2StatusCode);
+			/* Fill the Status Code field. */
+			WLAN_SET_FIELD_16(cp, starec->u2StatusCode);
+			cp += 2;
+		} else {
+			DBGLOG(ML, WARN, "Starec is NULL!");
+		}
 	}
 
 	/* primary can skip filling ie info because it inherits all */
@@ -1468,6 +1472,12 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 		pucProf, u2ProfLen);
 	cap = (struct IE_NON_TX_CAP *) kalFindIeExtIE(ELEM_ID_NON_TX_CAP, 0,
 		pucProf, u2ProfLen);
+
+	if (!mbss || !idx) {
+		DBGLOG(ML, ERROR, "mbss=%p, idx=%p",
+				mbss, idx, cap);
+		return -1;
+	}
 
 	/* calculate new BSSID */
 	COPY_MAC_ADDR(new_bssid, &mgmt->aucBSSID[0]);
