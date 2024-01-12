@@ -1831,12 +1831,6 @@ ifeq ($(CONFIG_FIX_INCONSISTENT_RFB_POINTER), y)
 ccflags-y += -DCFG_FIX_INCONSISTENT_RFB_POINTER=1
 endif
 
-ifeq ($(CONFIG_ICS_TIMESYNC), y)
-ccflags-y += -DCFG_SUPPORT_ICS_TIMESYNC=1
-else
-ccflags-y += -DCFG_SUPPORT_ICS_TIMESYNC=0
-endif
-
 ifeq ($(CONFIG_PERF_MON_FAST), y)
     ccflags-y += -DCFG_PERF_MON_FAST=1
 else
