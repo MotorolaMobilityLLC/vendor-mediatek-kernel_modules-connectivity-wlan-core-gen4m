@@ -8040,9 +8040,6 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
 		prWifiVar->fgDumpRxD, prWifiVar->fgDumpRxEvt);
 
-	INIT_UINT(prWifiVar->fgFlushRxReordering,
-		"FlushRxReordering", FEATURE_ENABLED);
-
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	INIT_UINT(prWifiVar->u4BaShortMissTimeoutMs,
 		"BaShortMissTimeoutMs", QM_RX_BA_ENTRY_MISS_TIMEOUT_MS_SHORT);
