@@ -1265,8 +1265,11 @@ int mtk_cfg80211_vendor_event_generic_response(
 		return -EINVAL;
 	}
 
-	skb = cfg80211_vendor_event_alloc(wiphy, wdev, len,
-				  WIFI_EVENT_GENERIC_RESPONSE, GFP_KERNEL);
+	skb = cfg80211_vendor_event_alloc(wiphy,
+#if KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE
+			wdev,
+#endif
+			len, WIFI_EVENT_GENERIC_RESPONSE, GFP_KERNEL);
 	if (!skb) {
 		DBGLOG(REQ, ERROR, "%s allocate skb failed\n", __func__);
 		return -ENOMEM;
