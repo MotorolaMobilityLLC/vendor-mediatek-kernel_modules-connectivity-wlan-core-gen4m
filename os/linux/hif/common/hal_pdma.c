@@ -620,6 +620,15 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
+
+#if CFG_CE_ASSERT_DUMP
+	/* During core dump, can't issue fw own, will result
+	 * driver own fail (MCU can't process it).
+	 */
+	if (prAdapter->fgN9AssertDumpOngoing == TRUE)
+		goto unlock;
+#endif
+
 	if (!(prAdapter->fgWiFiInSleepyState &&
 		(prAdapter->u4PwrCtrlBlockCnt == 0)))
 		goto unlock;

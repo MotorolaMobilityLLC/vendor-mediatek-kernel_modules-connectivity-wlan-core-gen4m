@@ -808,6 +808,13 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	if (bAtResetFlow) {
 		for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++)
 			UNSET_NET_ACTIVE(prAdapter, i);
+
+#if CFG_CE_ASSERT_DUMP
+		/* Core dump maybe not complete,so need set
+		 * back to FALSE or will result can't fw own.
+		 */
+		prAdapter->fgN9AssertDumpOngoing = FALSE;
+#endif
 	}
 
 	QUEUE_INITIALIZE(&(prAdapter->rPendingCmdQueue));
