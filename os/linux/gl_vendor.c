@@ -4391,7 +4391,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	struct sk_buff *skb = NULL;
 
 	uint8_t *prProg = NULL;
-	uint32_t u4ProgLen = 0, u4RecvLen = 0, u4BufLen = 0;
+	uint32_t u4ProgLen = 0, u4RecvLen = 0;
 	uint8_t ucFragNum = 0, ucCurrSeq = 0;
 
 
@@ -4449,26 +4449,27 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 					"Failed to query APF from firmware.\n");
 				 goto query_apf_failure;
 			}
-		} else if (rInfo.ucFragSeq <= ucCurrSeq) {
+		} else if (rInfo.ucFragSeq != ucCurrSeq) {
 			DBGLOG(REQ, ERROR, "Wrong frag seq (%d, %d)\n",
 				ucCurrSeq, rInfo.ucFragSeq);
 			goto query_apf_failure;
-		} else if (u4RecvLen + rInfo.u4BufLen > u4ProgLen) {
+		} else if (rInfo.u4BufLen > PKT_OFLD_BUF_SIZE ||
+				(u4RecvLen + rInfo.u4BufLen) > u4ProgLen) {
 			DBGLOG(REQ, ERROR,
 				"Buffer overflow, got wrong size %d\n",
 				(u4RecvLen + rInfo.u4BufLen));
 			goto query_apf_failure;
 		}
-		ucCurrSeq = rInfo.ucFragSeq;
-		u4BufLen = rInfo.u4BufLen;
+
 		kalMemCopy((prProg + u4RecvLen), &rInfo.aucBuf[0],
 					rInfo.u4BufLen);
 
-		u4RecvLen = u4BufLen;
+		u4RecvLen += rInfo.u4BufLen;
 		DBGLOG(REQ, INFO, "Get APF size(%d, %d) frag(%d, %d).\n",
 					u4ProgLen, u4RecvLen,
-					ucFragNum, ucCurrSeq);
-		rInfo.ucFragSeq++;
+					ucFragNum, rInfo.ucFragSeq);
+		ucCurrSeq++;
+		rInfo.ucFragSeq = ucCurrSeq;
 	} while (rInfo.ucFragSeq < ucFragNum);
 
 	if (unlikely(nla_put(skb, APF_ATTRIBUTE_PROGRAM,
