@@ -5413,7 +5413,7 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 			 (struct UNI_EVENT_CNM_CHANNEL_INFO *)info->aucChnlInfo;
 			uint8_t b = info->ucDBDCBand;
 
-			if (b > ENUM_BAND_NUM)
+			if (b >= ENUM_BAND_NUM)
 				break;
 
 			legacy.ucOpChNum[b] = info->ucOpChNum;
