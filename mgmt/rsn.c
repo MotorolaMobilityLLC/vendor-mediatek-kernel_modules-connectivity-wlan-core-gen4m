@@ -2361,12 +2361,6 @@ void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL,
 		     MSDU_RATE_MODE_AUTO);
 
-	if (rsnCheckBipKeyInstalled(prAdapter,
-				    prBssInfo->prStaRecOfAP)) {
-		DBGLOG(RSN, INFO, "Set MSDU_OPT_PROTECTED_FRAME");
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
-				     TRUE);
-	}
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
@@ -2515,11 +2509,6 @@ void rsnSaQueryRequest(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL,
 		     MSDU_RATE_MODE_AUTO);
 
-	if (rsnCheckBipKeyInstalled(prAdapter, prBssInfo->prStaRecOfAP)) {
-		DBGLOG(RSN, INFO, "Set MSDU_OPT_PROTECTED_FRAME\n");
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
-				     TRUE);
-	}
 #if 0
 	/* 4 Update information of MSDU_INFO_T */
 	/* Management frame */
@@ -2991,11 +2980,6 @@ void rsnApStartSaQueryTimer(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL,
 		     MSDU_RATE_MODE_AUTO);
 
-	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		DBGLOG(RSN, INFO, "SAQ Set MSDU_OPT_PROTECTED_FRAME\n");
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
-				     TRUE);
-	}
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
@@ -3152,12 +3136,6 @@ void rsnApSaQueryRequest(IN struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL,
 		     MSDU_RATE_MODE_AUTO);
-
-	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		DBGLOG(RSN, INFO, "AP SAQ resp set MSDU_OPT_PROTECTED_FRAME\n");
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
-				     TRUE);
-	}
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);

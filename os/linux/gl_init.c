@@ -559,6 +559,17 @@ static const struct wiphy_vendor_command
 			 WIPHY_VENDOR_CMD_NEED_NETDEV,
 		.doit = mtk_cfg80211_vendor_set_band
 	},
+#if CFG_SUPPORT_MBO
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = QCA_NL80211_VENDOR_SUBCMD_ROAM
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+			 WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_roaming_param
+	},
+#endif
 	{
 		{
 			.vendor_id = OUI_QCA,

@@ -615,9 +615,9 @@ u_int8_t secIsProtectedFrame(IN struct ADAPTER *prAdapter,
 			     IN struct STA_RECORD *prStaRec)
 {
 #if CFG_SUPPORT_802_11W
-	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
-		return FALSE;
-
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec) &&
+	    secIsRobustActionFrame(prAdapter, prMsdu->prPacket))
+		return TRUE;
 #else
 	if (prMsdu->ucPacketType == TX_PACKET_TYPE_MGMT)
 		return FALSE;
@@ -652,6 +652,43 @@ u_int8_t secIsProtectedBss(IN struct ADAPTER *prAdapter,
 		return TRUE;
 
 	return FALSE;
+}
+
+u_int8_t secIsRobustActionFrame(IN struct ADAPTER *prAdapter, IN void *prPacket)
+{
+	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
+	struct WLAN_ACTION_FRAME *prActFrame = NULL;
+	uint8_t ucCategory;
+	uint16_t u2TxFrameCtrl;
+
+	if (!prPacket)
+		return FALSE;
+
+	prWlanHeader = (struct WLAN_MAC_HEADER *)
+		((unsigned long) prPacket + MAC_TX_RESERVED_FIELD);
+	u2TxFrameCtrl = prWlanHeader->u2FrameCtrl & MASK_FRAME_TYPE;
+	if (u2TxFrameCtrl != MAC_FRAME_ACTION)
+		return FALSE;
+
+	prActFrame = (struct WLAN_ACTION_FRAME *)prWlanHeader;
+	ucCategory = prActFrame->ucCategory;
+	return ucCategory == CATEGORY_SPEC_MGT ||
+	       ucCategory == CATEGORY_QOS_ACTION ||
+	       ucCategory == CATEGORY_DLS_ACTION ||
+	       ucCategory == CATEGORY_BLOCK_ACK_ACTION ||
+	       ucCategory == CATEGORY_RM_ACTION ||
+	       ucCategory == CATEGORY_FT_ACTION ||
+	       ucCategory == CATEGORY_SA_QUERY_ACTION ||
+	       ucCategory == CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION ||
+	       ucCategory == CATEGORY_WNM_ACTION ||
+	       ucCategory == CATEGORY_TDLS_ACTION ||
+	       ucCategory == CATEGORY_MESH_ACTION ||
+	       ucCategory == CATEGORY_MULTIHOP_ACTION ||
+	       ucCategory == CATEGORY_DMG_ACTION ||
+	       ucCategory == CATEGORY_FST_ACTION ||
+	       ucCategory == CATEGORY_ROBUST_AV_STREAMING_ACTION ||
+	       ucCategory == CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION
+	       ? TRUE : FALSE;
 }
 
 u_int8_t secIsWepBss(IN struct ADAPTER *prAdapter,
