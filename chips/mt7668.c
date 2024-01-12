@@ -198,7 +198,7 @@ VOID mt7668CapInit(IN P_ADAPTER_T prAdapter)
 	}
 }
 
-BUS_INFO bus_info_mt7668 = {
+BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
 	.is_pcie_32dw_read = MT7668_IS_PCIE_32DW_READ, /* Litien */
@@ -213,9 +213,18 @@ BUS_INFO bus_info_mt7668 = {
 #endif /* _HIF_USB */
 };
 
+struct firmware_download_operations mt7668_fw_dl_ops = {
+	.tailer_format = HARVARD_TAILER_FORMAT,
+	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
+	.downloadFirmware = wlanHarvardFormatDownload,
+	.getFwInfo = wlanGetHarvardFwInfo,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
-	.bus_info = &bus_info_mt7668,
+	.bus_info = &mt7668_bus_info,
+	.fw_dl_ops = &mt7668_fw_dl_ops,
+
 	.chip_id = MT7668_CHIP_ID,
 	.sw_sync0 = MT7668_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_READY_BITS,
@@ -225,7 +234,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.txd_append_size = MT7668_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7668_eco_table,
 
-	.constructFirmwarePrio = mt7668ConstructFirmwarePrio,
 	.asicCapInit = mt7668CapInit,
 	.asicEnableFWDownload = NULL,
 	.fillTxDescAppend = fillTxDescAppendByCR4,

@@ -407,8 +407,9 @@ kalFirmwareImageMapping(IN P_GLUE_INFO_T prGlueInfo,
 			for (sub_idx = 0; sub_idx < max_idx; sub_idx++)
 				apucName[sub_idx] = (PUINT_8)(aucNameBody + sub_idx);
 
-			if (prChipInfo->constructFirmwarePrio)
-				prChipInfo->constructFirmwarePrio(prGlueInfo, apucNameTable, apucName, &idx, max_idx);
+			if (prChipInfo->fw_dl_ops->constructFirmwarePrio)
+				prChipInfo->fw_dl_ops->constructFirmwarePrio(prGlueInfo, apucNameTable,
+					apucName, &idx, max_idx);
 			else
 				kalConstructDefaultFirmwarePrio(prGlueInfo, apucNameTable, apucName, &idx, max_idx);
 		}

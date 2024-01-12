@@ -941,8 +941,21 @@ enum enum_mt66xx_chip {
 	MT66XX_CHIP_NUM
 };
 
+struct firmware_download_operations {
+	const unsigned int tailer_format;	/* FW download tailer format */
+
+	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable, PPUINT_8 apucName,
+				      PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx); /* load firmware bin priority */
+	WLAN_STATUS (*downloadFirmware)(IN P_ADAPTER_T prAdapter, IN ENUM_IMG_DL_IDX_T eDlIdx);
+	void (*getFwInfo)(IN P_ADAPTER_T prAdapter, IN UINT_8 u4SecIdx, IN ENUM_IMG_DL_IDX_T eDlIdx,
+			  OUT PUINT_32 pu4Addr, OUT PUINT_32 pu4Len,
+			  OUT PUINT_32 pu4DataMode, OUT PBOOLEAN pfgIsEMIDownload);
+};
+
 struct mt66xx_chip_info {
 	P_BUS_INFO bus_info;
+	struct firmware_download_operations *fw_dl_ops;
+
 	const unsigned int chip_id;	/* chip id */
 	const unsigned int sw_sync0;	/* sw_sync0 address */
 	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
@@ -958,8 +971,6 @@ struct mt66xx_chip_info {
 	UINT_16 u2TxFwDlPort;
 	UINT_16 u2HifTxdSize;
 
-	void (*constructFirmwarePrio)(P_GLUE_INFO_T prGlueInfo, PPUINT_8 apucNameTable,
-	PPUINT_8 apucName, PUINT_8 pucNameIdx, UINT_8 ucMaxNameIdx);/* load firmware bin priority */
 	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
 	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
 	void (*fillTxDescAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,

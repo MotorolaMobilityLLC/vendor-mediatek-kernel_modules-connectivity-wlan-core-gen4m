@@ -837,11 +837,14 @@ typedef struct {
 	UINT_8 aucFwBranchInfo[4];
 	UINT_8 aucFwDateCode[16];
 
+	TAILER_COMMON_FORMAT_T rCommonTailer;
+	TAILER_REGION_FORMAT_T rRegionTailers[MAX_FWDL_SECTION_NUM];
+
 	/* N9 tailer */
-	tailer_format_t rN9tailer;
+	tailer_format_t rN9tailer[N9_FWDL_SECTION_NUM];
 
 	/* CR4 tailer */
-	tailer_format_t rCR4tailer;
+	tailer_format_t rCR4tailer[CR4_FWDL_SECTION_NUM];
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 	/* N9 Compressed tailer */
 	tailer_format_t_2 rN9Compressedtailer;
