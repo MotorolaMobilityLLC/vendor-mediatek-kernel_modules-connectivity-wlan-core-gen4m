@@ -8699,6 +8699,8 @@ int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand,
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -1; /* WLAN_STATUS_ADAPTER_NOT_READY */
 
 	kalMemZero(&rKeyCfgInfo, sizeof(rKeyCfgInfo));
 
