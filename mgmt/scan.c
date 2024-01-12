@@ -4382,7 +4382,7 @@ void scanHandleOceIE(IN struct SCAN_PARAM *prScanParam,
 				 * 2 bytes OCE_ATTR_ID_SUPPRESSION_BSSID.
 				 */
 				if (u2IEsBufLen > (u2Offset + IE_SIZE(pucBuf)))
-					kalMemCopy(pucBufAppend + 2,
+					kalMemMove(pucBufAppend + 2,
 						pucBufAppend,
 						u2IEsBufLen -
 						(u2Offset + IE_SIZE(pucBuf)));
