@@ -624,7 +624,9 @@ struct UNI_CMD_BSSINFO_STA_PM_ENABLE {
 	uint16_t u2Length;
 	uint16_t u2BcnInterval;
 	uint8_t  ucDtimPeriod;
-	uint8_t  aucPadding[1];
+	uint8_t  ucBmpDeliveryAC;
+	uint8_t  ucBmpTriggerAC;
+	uint8_t  aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo IFS time information (Tag 0x17) */

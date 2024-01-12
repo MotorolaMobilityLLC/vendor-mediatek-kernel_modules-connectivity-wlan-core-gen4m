@@ -11719,6 +11719,13 @@ wlanoidSetWiFiWmmPsTest(struct ADAPTER *prAdapter,
 		NIC_PM_WMM_PS_DISABLE_UC_TRIG(prAdapter, FALSE);
 #endif
 
+	DBGLOG(INIT, INFO, "BSS[%d] DeAC=%x TrigAC=%x Once=%d DisUcTrig=%d\n",
+		rSetWmmPsTestParam.ucBssIndex,
+		prPmProfSetupInfo->ucBmpDeliveryAC,
+		prPmProfSetupInfo->ucBmpTriggerAC,
+		rSetWmmPsTestParam.ucIsEnterPsAtOnce,
+		rSetWmmPsTestParam.ucIsDisableUcTrigger);
+
 	rStatus = wlanSendSetQueryCmd(prAdapter,
 				      CMD_ID_SET_WMM_PS_TEST_PARMS,
 				      TRUE, FALSE, TRUE,
