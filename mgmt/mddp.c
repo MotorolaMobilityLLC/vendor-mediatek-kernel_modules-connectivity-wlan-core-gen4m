@@ -971,7 +971,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
 	uint32_t u32BufSize = 0;
-	uint32_t u32DrvOwnTimeoutTime = LP_OWN_BACK_FAILED_LOG_SKIP_MS;
+	uint32_t u32DrvOwnTimeoutTime = LP_OWN_BACK_TOTAL_DELAY_MD_MS;
 	uint8_t *buff = NULL;
 
 	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
@@ -982,8 +982,9 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 		goto exit;
 	}
 
+	/* align AP/MD drv own timeout */
 	if (mddpIsCasanFWload() == TRUE)
-		u32DrvOwnTimeoutTime = LP_OWN_BACK_FAILED_LOG_SKIP_CASAN_MS;
+		u32DrvOwnTimeoutTime = LP_OWN_BACK_TOTAL_DELAY_CASAN_MS;
 	else
 		goto exit;
 
