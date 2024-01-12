@@ -1844,7 +1844,6 @@ ccflags-y += -DCFG_CHIP_RESET_KO_SUPPORT=1
 ccflags-y += -I$(src)/reset/include
 MODULE_NAME_RESET = $(MODULE_NAME)_reset
 RESET_OBJS += reset/reset.o
-RESET_OBJS += reset/reset_ko.o
 RESET_OBJS += reset/reset_fsm.o
 RESET_OBJS += reset/reset_fsm_def.o
 $(MODULE_NAME_RESET)-objs += $(RESET_OBJS)
