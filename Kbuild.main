@@ -694,7 +694,6 @@ CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=n
 CONFIG_MTK_WIFI_TWT_SUPPORT=n
 ccflags-y += -DCFGDBG_DISABLE_ALL_LOG=1
 ccflags-y += -DCFG_SUPPORT_HE_ER=0
-TARGET_BUILD_VARIANT = user
 endif
 # ===== Below will add compile flag based on project setting =====
 

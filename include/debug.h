@@ -17,10 +17,6 @@
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
  */
-#ifndef BUILD_QA_DBG
-#define BUILD_QA_DBG 0
-#endif
-
 #define DBG_DISABLE_ALL_LOG             0
 
 /*******************************************************************************
@@ -634,7 +630,7 @@ enum WAIT_TO_PERIOD {
 #define DIV2DEC(_dividend, _divisor) \
 		((_divisor) ? (((_dividend) * 100) / (_divisor)) % 100 : 0)
 /* for HIDE some information for user load */
-#ifdef BUILD_QA_DBG
+#if BUILD_QA_DBG
 #define HIDE(_str) _str
 #else
 #define HIDE(_str) "***"
