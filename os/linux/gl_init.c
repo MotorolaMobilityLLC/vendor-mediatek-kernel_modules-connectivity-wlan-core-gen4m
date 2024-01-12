@@ -2213,6 +2213,8 @@ static void glTaskletResUninit(struct GLUE_INFO *prGlueInfo)
 				DBGLOG(RX, ERROR, "prMsduInfo null\n");
 				break;
 			}
+			nicTxFreePacket(prGlueInfo->prAdapter, prMsduInfo,
+				FALSE);
 			nicTxReturnMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
 		}
 		kalMemFree(prGlueInfo->prTxMsduRetFifoBuf, PHY_MEM_TYPE,
@@ -6513,6 +6515,8 @@ int32_t wlanOffAtReset(void)
 #endif
 	wlanOffStopWlanThreads(prGlueInfo);
 
+	glRxUninit(prGlueInfo);
+
 	if (HAL_IS_TX_DIRECT(prAdapter)) {
 		if (prAdapter->fgTxDirectInited) {
 			del_timer_sync(&prGlueInfo->rTxDirectSkbTimer);
@@ -6530,8 +6534,6 @@ int32_t wlanOffAtReset(void)
 		prBusInfo->disableSwInterrupt(prAdapter);
 #endif
 	glBusFreeIrq(prDev, prGlueInfo);
-
-	glRxUninit(prGlueInfo);
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 	wlanDebugTC4Uninit();
@@ -7368,6 +7370,8 @@ static void wlanRemove(void)
 
 	wlanOffStopWlanThreads(prGlueInfo);
 
+	glRxUninit(prGlueInfo);
+
 #if (CFG_VOLT_INFO == 1)
 	/* Uninit volt info mechanis */
 	kalVnfUninit();
@@ -7449,8 +7453,6 @@ static void wlanRemove(void)
 
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	glBusFreeIrq(prDev, prGlueInfo);
-
-	glRxUninit(prGlueInfo);
 
 	/* 4 <5> Release the Bus */
 	glBusRelease(prDev);

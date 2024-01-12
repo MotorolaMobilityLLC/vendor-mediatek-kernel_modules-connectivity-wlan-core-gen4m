@@ -7605,9 +7605,11 @@ void qmHandleEventStaChangePsMode(struct ADAPTER *prAdapter,
 			prEventStaChangePsMode->ucUpdateMode,
 			prEventStaChangePsMode->ucFreeQuota);
 
-		DBGLOG(QM, INFO, "PS=%d,%d\n",
+		DBGLOG(QM, INFO, "PS=%d,%d M:%d Q:%d\n",
 			prEventStaChangePsMode->ucStaRecIdx,
-			prStaRec->fgIsInPS);
+			prStaRec->fgIsInPS,
+			prEventStaChangePsMode->ucUpdateMode,
+			prEventStaChangePsMode->ucFreeQuota);
 
 		/* From PS to Awake */
 		if ((fgIsInPSOld) && (!prStaRec->fgIsInPS)) {
