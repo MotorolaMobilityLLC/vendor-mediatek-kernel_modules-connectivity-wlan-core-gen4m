@@ -2713,19 +2713,6 @@ struct EVENT_LTE_SAFE_CHN {
 	struct LTE_SAFE_CHN_INFO rLteSafeChn;
 };
 
-#if CFG_SUPPORT_SNIFFER
-struct CMD_MONITOR_SET_INFO {
-	uint8_t ucEnable;
-	uint8_t ucBand;
-	uint8_t ucPriChannel;
-	uint8_t ucSco;
-	uint8_t ucChannelWidth;
-	uint8_t ucChannelS1;
-	uint8_t ucChannelS2;
-	uint8_t aucResv[9];
-};
-#endif
-
 struct CMD_STATS_LOG {
 	uint32_t u4DurationInMs;
 	uint8_t aucReserved[32];

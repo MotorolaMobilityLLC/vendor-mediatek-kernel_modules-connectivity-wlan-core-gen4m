@@ -404,6 +404,8 @@ struct RTMP_RX_RING {
 	uint32_t hw_cnt_addr;
 	bool fgIsDumpLog;
 	uint32_t u4PendingCnt;
+	void *pvPacket;
+	uint32_t u4PacketLen;
 };
 
 struct PCIE_CHIP_CR_MAPPING {
