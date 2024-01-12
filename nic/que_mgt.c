@@ -6391,8 +6391,7 @@ mqmParseEdcaParameters(IN struct ADAPTER *prAdapter,
 	if (!pucIE)
 		return FALSE;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter,
-		prSwRfb->ucStaRecIdx);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	/* ASSERT(prStaRec); */
 
 	if (prStaRec == NULL)
@@ -6406,8 +6405,10 @@ mqmParseEdcaParameters(IN struct ADAPTER *prAdapter,
 	    || (!prStaRec->fgIsQoS))
 		return FALSE;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		prStaRec->ucBssIndex);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	if (!prBssInfo)
+		return FALSE;
 
 	/* Goal: Obtain the EDCA parameters */
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
