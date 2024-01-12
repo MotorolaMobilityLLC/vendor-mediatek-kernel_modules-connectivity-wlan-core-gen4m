@@ -178,6 +178,24 @@ typedef struct _MSG_P2P_RADAR_DETECT_T {
 	UINT_8 ucBssIndex;
 } MSG_P2P_RADAR_DETECT_T, *P_MSG_P2P_RADAR_DETECT_T;
 
+typedef struct _P2P_RADAR_INFO_T {
+	UINT_8 ucRadarReportMode; /*0: Only report radar detected;   1:  Add parameter reports*/
+	UINT_8 ucRddIdx;
+	UINT_8 ucLongDetected;
+	UINT_8 ucPeriodicDetected;
+	UINT_8 ucLPBNum;
+	UINT_8 ucPPBNum;
+	UINT_8 ucLPBPeriodValid;
+	UINT_8 ucLPBWidthValid;
+	UINT_8 ucPRICountM1;
+	UINT_8 ucPRICountM1TH;
+	UINT_8 ucPRICountM2;
+	UINT_8 ucPRICountM2TH;
+	UINT_32 u4PRI1st;
+	LONG_PULSE_BUFFER_T arLpbContent[32];
+	PERIODIC_PULSE_BUFFER_T arPpbContent[32];
+} P2P_RADAR_INFO_T, *P_P2P_RADAR_INFO_T;
+
 typedef struct _MSG_P2P_SET_NEW_CHANNEL_T {
 	MSG_HDR_T rMsgHdr;
 	ENUM_CHANNEL_WIDTH_T eChannelWidth;
