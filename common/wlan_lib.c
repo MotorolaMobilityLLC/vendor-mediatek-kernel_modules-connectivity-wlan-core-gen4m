@@ -8935,7 +8935,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	 * equivalent to 500ms of data (1sec >> 1).
 	 * The value of u4PacingShift can be set within the range of 1 to 10.
 	 */
-	INIT_INT(prWifiVar->u4PacingShift, "PacingShift", 0);
+	INIT_INT(prWifiVar->u4PacingShift, "PacingShift", 0,
+		 FEATURE_TO_CUSTOMER);
 #endif
 
 #if CFG_SUPPORT_TPUT_FACTOR
@@ -8967,7 +8968,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	}
 #endif
 #if CFG_SUPPORT_WED_PROXY
-	INIT_UINT(prWifiVar->fgEnableWed, "EnableWed", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgEnableWed, "EnableWed", FEATURE_ENABLED,
+		  FEATURE_DEBUG_ONLY);
 #endif
 }
 
