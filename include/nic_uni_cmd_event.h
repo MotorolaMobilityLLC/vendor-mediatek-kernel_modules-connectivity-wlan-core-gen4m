@@ -384,6 +384,14 @@ struct UNI_CMD_BSSINFO_RLM {
 	uint8_t  ucRxStream;
 	uint8_t  ucHtOpInfo1; /* for mobile segment */
 	uint8_t  ucSCO;    /* for mobile segment */
+	uint8_t	ucRfBand;    /**<
+	    *	rf band      | Value
+	    *	----------   | ------
+	    *	CMD_BAND_2G4 | 1
+	    *	CMD_BAND_5G  | 2
+	    *	CMD_BAND_6G  | 3
+	    */
+	uint8_t	ucPaddings[3];
 } __KAL_ATTRIB_PACKED__;
 
 /*the enum elements syncs with the definition of host driver*/
