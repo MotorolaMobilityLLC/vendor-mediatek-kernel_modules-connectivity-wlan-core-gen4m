@@ -380,6 +380,7 @@ enum ENUM_MAC_TX_QUEUE_INDEX {
 	MAC_TX_QUEUE_NUM
 };
 
+#define SEQ_ADD(_SEQ, _INC) ((_SEQ) = ((_SEQ) + (_INC)) & MAX_SEQ_NO)
 #define SEQ_SMALLER(_SEQ1, _SEQ2) (((_SEQ1-_SEQ2) & ((MAX_SEQ_NO_COUNT) >> 1)))
 #define BAR_SSN_IS_VALID   BIT(15)
 #define IS_BAR_SSN_VALID(_prBaSsnEntry)  ((_prBaSsnEntry) & BAR_SSN_IS_VALID)
@@ -428,6 +429,9 @@ struct RX_BA_ENTRY {
 	u_int8_t fgFirstSnToWinStart;
 #endif
 
+#if CFG_SUPPORT_RX_CACHE_INDEX
+	struct SW_RFB *prCacheIndex[MAX_SEQ_NO_COUNT];
+#endif
 };
 
 typedef uint32_t(*PFN_DEQUEUE_FUNCTION) (IN struct ADAPTER *prAdapter,
@@ -1093,6 +1097,7 @@ void qmInsertFallAheadReorderPkt(IN struct ADAPTER
 				 OUT struct QUE *prReturnedQue);
 
 void qmPopOutReorderPkt(IN struct ADAPTER *prAdapter,
+	IN struct RX_BA_ENTRY *prReorderQueParm,
 	IN struct SW_RFB *prSwRfb, OUT struct QUE *prReturnedQue,
 	IN enum ENUM_RX_STATISTIC_COUNTER eRxCounter);
 

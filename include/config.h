@@ -646,6 +646,11 @@
 #define CFG_RX_MAX_BA_TID_NUM                   8
 #define CFG_RX_REORDERING_ENABLED               1
 
+/* Cache RX reordering MSDU pointers by SN to locate search starting point */
+#ifndef CFG_SUPPORT_RX_CACHE_INDEX
+#define CFG_SUPPORT_RX_CACHE_INDEX		1
+#endif
+
 #define CFG_PF_ARP_NS_MAX_NUM                   3
 
 #define CFG_COMPRESSION_DEBUG			0
