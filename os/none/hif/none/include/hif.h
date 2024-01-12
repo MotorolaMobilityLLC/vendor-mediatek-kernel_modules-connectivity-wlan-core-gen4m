@@ -195,6 +195,7 @@ struct GL_HIF_INFO {
 
 struct BUS_INFO {
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
+	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
 	struct DMASHDL_CFG *prDmashdlCfg;
 	const uint32_t host_int_rxdone_bits;
 	const uint32_t host_int_txdone_bits;
