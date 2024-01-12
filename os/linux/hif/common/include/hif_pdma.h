@@ -45,12 +45,17 @@
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 /*
- * 3 data ring (ring0 + ring1[DBDC] + ring2[priority] + ring3[ALTX])
+ * 6 data ring:
+ * 1. ring0 (AC00~AC02)
+ * 2. ring1 (AC10~AC12)
+ * 3. ring2 (AC20~AC22)
+ * 4. ring3 (AC30~AC32)
+ * 5. ring4 (AC03~AC33) (priority)
+ * 6. ring5 ALTX
  * fwdl ring
  * cmd ring
- * wa cmd ring
  */
-#define NUM_OF_TX_RING				(6 + NUM_OF_WFDMA1_TX_RING)
+#define NUM_OF_TX_RING				(8 + NUM_OF_WFDMA1_TX_RING)
 #define NUM_OF_RX_RING				(2 + NUM_OF_WFDMA1_RX_RING)
 
 #define RX_RING_MAX_SIZE			4095

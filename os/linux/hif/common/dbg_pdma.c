@@ -752,7 +752,7 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 	struct wfdma_ring_info wfmda_tx_group[] = {
 		{"AP DATA0", prBus_info->tx_ring0_data_idx, true},
 		{"AP DATA1", prBus_info->tx_ring1_data_idx, true},
-		{"AP DATA2", prBus_info->tx_ring2_data_idx, true},
+		{"AP PRIO", prBus_info->tx_prio_data_idx, true},
 		{"AP CMD", prBus_info->tx_ring_cmd_idx, true},
 		{"FWDL", prBus_info->tx_ring_fwdl_idx, true},
 		{"MD DATA0", 8, false},

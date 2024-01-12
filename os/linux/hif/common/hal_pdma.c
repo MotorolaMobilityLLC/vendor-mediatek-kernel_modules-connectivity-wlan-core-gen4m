@@ -85,6 +85,8 @@ u_int8_t halIsDataRing(enum ENUM_WFDMA_RING_TYPE eType, uint32_t u4Idx)
 	if (eType == TX_RING) {
 		return (eTxIdx == TX_RING_DATA0 ||
 			eTxIdx == TX_RING_DATA1 ||
+			eTxIdx == TX_RING_DATA2 ||
+			eTxIdx == TX_RING_DATA3 ||
 			eTxIdx == TX_RING_DATA_PRIO ||
 			eTxIdx == TX_RING_DATA_ALTX);
 	} else if (eType == RX_RING) {
@@ -106,7 +108,29 @@ uint8_t halRingDataSelectByWmmIndex(
 	uint16_t u2Port = TX_RING_DATA0;
 
 	bus_info = prAdapter->chip_info->bus_info;
-	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
+	if (bus_info->tx_ring0_data_idx != bus_info->tx_ring3_data_idx) {
+		switch (ucWmmIndex) {
+		case 0:
+			u2Port = TX_RING_DATA0;
+			break;
+
+		case 1:
+			u2Port = TX_RING_DATA1;
+			break;
+
+		case 2:
+			u2Port = TX_RING_DATA2;
+			break;
+
+		case 3:
+			u2Port = TX_RING_DATA3;
+			break;
+
+		default:
+			u2Port = TX_RING_DATA0;
+			break;
+		}
+	} else if (bus_info->tx_ring0_data_idx != bus_info->tx_ring1_data_idx) {
 		u2Port = (ucWmmIndex % 2) ?
 			TX_RING_DATA1 : TX_RING_DATA0;
 	}
@@ -137,10 +161,9 @@ uint8_t halTxRingDataSelect(struct ADAPTER *prAdapter,
 	    (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX))
 		return TX_RING_DATA_ALTX;
 
-	if (bus_info->tx_ring2_data_idx &&
+	if (bus_info->tx_prio_data_idx &&
 			nicTxIsPrioPackets(prAdapter, prMsduInfo))
 		return TX_RING_DATA_PRIO;
-
 	return halRingDataSelectByWmmIndex(prAdapter, prMsduInfo->ucWmmQueSet);
 }
 
@@ -983,8 +1006,21 @@ static void halDefaultProcessTxInterrupt(struct ADAPTER *prAdapter)
 		fgIsSetHifTxEvent = true;
 	}
 
-	if (prBusInfo->tx_ring2_data_idx &&
+	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring2_data_idx &&
 		rIntrStatus.field.tx_done & BIT(prBusInfo->tx_ring2_data_idx)) {
+		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
+			TX_RING_DATA2);
+		fgIsSetHifTxEvent = true;
+	}
+	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring3_data_idx &&
+		rIntrStatus.field.tx_done & BIT(prBusInfo->tx_ring3_data_idx)) {
+		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
+			TX_RING_DATA3);
+		fgIsSetHifTxEvent = true;
+	}
+
+	if (prBusInfo->tx_prio_data_idx &&
+		rIntrStatus.field.tx_done & BIT(prBusInfo->tx_prio_data_idx)) {
 		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
 			TX_RING_DATA_PRIO);
 		fgIsSetHifTxEvent = true;
@@ -2645,11 +2681,17 @@ bool halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo, bool fgAllocMem)
 		if (u4Num == TX_RING_DATA1 &&
 				!prBusInfo->tx_ring1_data_idx)
 			continue;
-		else if (u4Num == TX_RING_DATA_PRIO &&
+		else if (u4Num == TX_RING_DATA2 &&
 				!prBusInfo->tx_ring2_data_idx)
 			continue;
-		else if (u4Num == TX_RING_DATA_ALTX &&
+		else if (u4Num == TX_RING_DATA3 &&
 				!prBusInfo->tx_ring3_data_idx)
+			continue;
+		else if (u4Num == TX_RING_DATA_PRIO &&
+				!prBusInfo->tx_prio_data_idx)
+			continue;
+		else if (u4Num == TX_RING_DATA_ALTX &&
+				!prBusInfo->tx_altx_data_idx)
 			continue;
 		u4Size = halIsDataRing(TX_RING, u4Num) ?
 			TX_RING_DATA_SIZE : TX_RING_CMD_SIZE;
@@ -2876,14 +2918,22 @@ void halWpdmaInitTxRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 			if (!prBusInfo->tx_ring1_data_idx)
 				continue;
 			idx = prBusInfo->tx_ring1_data_idx;
-		} else if (i == TX_RING_DATA_PRIO) {
+		} else if (i == TX_RING_DATA2) {
 			if (!prBusInfo->tx_ring2_data_idx)
 				continue;
 			idx = prBusInfo->tx_ring2_data_idx;
-		} else if (i == TX_RING_DATA_ALTX) {
+		} else if (i == TX_RING_DATA3) {
 			if (!prBusInfo->tx_ring3_data_idx)
 				continue;
 			idx = prBusInfo->tx_ring3_data_idx;
+		} else if (i == TX_RING_DATA_PRIO) {
+			if (!prBusInfo->tx_prio_data_idx)
+				continue;
+			idx = prBusInfo->tx_prio_data_idx;
+		} else if (i == TX_RING_DATA_ALTX) {
+			if (!prBusInfo->tx_altx_data_idx)
+				continue;
+			idx = prBusInfo->tx_altx_data_idx;
 		} else if (i == TX_RING_CMD) {
 			if (prSwWfdmaInfo->fgIsEnSwWfdma && !fgResetHif)
 				continue;
@@ -3377,6 +3427,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 			|| u2Port == TX_RING_WA_CMD
 #endif /* CFG_SUPPORT_CONNAC2 == 1 */
 		)
+
 		nicTxReleaseResource_PSE(prGlueInfo->prAdapter,
 			TC4_INDEX,
 			halTxGetCmdPageCount(prGlueInfo->prAdapter,

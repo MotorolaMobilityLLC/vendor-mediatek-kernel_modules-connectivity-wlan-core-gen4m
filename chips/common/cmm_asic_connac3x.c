@@ -704,8 +704,12 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 			ext_offset = prBusInfo->tx_ring0_data_idx * 4;
 		if (index == TX_RING_DATA1)
 			ext_offset = prBusInfo->tx_ring1_data_idx * 4;
-		if (index == TX_RING_DATA_PRIO)
+		if (index == TX_RING_DATA2)
 			ext_offset = prBusInfo->tx_ring2_data_idx * 4;
+		if (index == TX_RING_DATA3)
+			ext_offset = prBusInfo->tx_ring3_data_idx * 4;
+		if (index == TX_RING_DATA_PRIO)
+			ext_offset = prBusInfo->tx_prio_data_idx * 4;
 		if (index == TX_RING_WA_CMD)
 			ext_offset = prBusInfo->tx_ring_wa_cmd_idx * 4;
 	} else {
@@ -713,10 +717,14 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 			ext_offset = prBusInfo->tx_ring0_data_idx * 4;
 		else if (index == TX_RING_DATA1)
 			ext_offset = prBusInfo->tx_ring1_data_idx * 4;
-		else if (index == TX_RING_DATA_PRIO)
+		else if (index == TX_RING_DATA2)
 			ext_offset = prBusInfo->tx_ring2_data_idx * 4;
-		else if (index == TX_RING_DATA_ALTX)
+		else if (index == TX_RING_DATA3)
 			ext_offset = prBusInfo->tx_ring3_data_idx * 4;
+		else if (index == TX_RING_DATA_PRIO)
+			ext_offset = prBusInfo->tx_prio_data_idx * 4;
+		else if (index == TX_RING_DATA_ALTX)
+			ext_offset = prBusInfo->tx_altx_data_idx * 4;
 		else
 			ext_offset = index * 4;
 	}

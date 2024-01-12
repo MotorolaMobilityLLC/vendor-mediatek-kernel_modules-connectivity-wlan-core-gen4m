@@ -374,7 +374,7 @@ void asicPcieDmaShdlInit(struct ADAPTER *prAdapter)
 		u4MacVal &=
 		~CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP1_REFILL_DISABLE_MASK;
 	}
-	if (prBusInfo->tx_ring2_data_idx) {
+	if (prBusInfo->tx_prio_data_idx) {
 		u4MacVal &=
 		~CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP2_REFILL_DISABLE_MASK;
 	}
@@ -395,7 +395,7 @@ void asicPcieDmaShdlInit(struct ADAPTER *prAdapter)
 		/* Wmm1: group 1, others group 0 */
 		u4DmashdlQMap0 |= 0x11110000;
 	}
-	if (prBusInfo->tx_ring2_data_idx) {
+	if (prBusInfo->tx_prio_data_idx) {
 		u4GroupCtrl2 = DMASHDL_MIN_QUOTA_NUM(0x3);
 		u4GroupCtrl2 |= DMASHDL_MAX_QUOTA_NUM(0xFFF);
 		u4DmashdlQMap0 &= 0x0FFF0FFF;
@@ -504,7 +504,7 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 				BIT(prBusInfo->tx_ring_cmd_idx) |
 				BIT(prBusInfo->tx_ring0_data_idx) |
 				BIT(prBusInfo->tx_ring1_data_idx) |
-				BIT(prBusInfo->tx_ring2_data_idx);
+				BIT(prBusInfo->tx_prio_data_idx);
 			IntMask.field_conn.tx_coherent = 0;
 			IntMask.field_conn.rx_coherent = 0;
 			IntMask.field_conn.tx_dly_int = 0;

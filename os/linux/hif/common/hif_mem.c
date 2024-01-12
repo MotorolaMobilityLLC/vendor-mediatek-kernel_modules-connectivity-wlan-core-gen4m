@@ -292,11 +292,17 @@ int halAllocHifMem(struct platform_device *pdev,
 		if (u4Idx == TX_RING_DATA1 &&
 		    !prBusInfo->tx_ring1_data_idx)
 			continue;
-		else if (u4Idx == TX_RING_DATA_PRIO &&
+		else if (u4Idx == TX_RING_DATA2 &&
 			 !prBusInfo->tx_ring2_data_idx)
 			continue;
-		else if (u4Idx == TX_RING_DATA_ALTX &&
+		else if (u4Idx == TX_RING_DATA3 &&
 			 !prBusInfo->tx_ring3_data_idx)
+			continue;
+		else if (u4Idx == TX_RING_DATA_PRIO &&
+			 !prBusInfo->tx_prio_data_idx)
+			continue;
+		else if (u4Idx == TX_RING_DATA_ALTX &&
+			 !prBusInfo->tx_altx_data_idx)
 			continue;
 
 		if (u4Idx == TX_RING_DATA0 ||

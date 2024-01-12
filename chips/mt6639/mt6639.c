@@ -564,8 +564,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.tx_ring_cmd_idx = 15,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 1,
-	.tx_ring2_data_idx = 2,
-	.tx_ring3_data_idx = 3,
+	.tx_prio_data_idx = 2,
+	.tx_altx_data_idx = 3,
 	.rx_data_ring_num = 2,
 	.rx_evt_ring_num = 2,
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -1416,7 +1416,6 @@ static void mt6639ProcessTxInterrupt(
 			prAdapter->prGlueInfo, TX_RING_DATA1);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
-
 	if (u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_2_MASK) {
 		halWpdmaProcessDataDmaDone(
 			prAdapter->prGlueInfo, TX_RING_DATA_PRIO);
@@ -1554,7 +1553,6 @@ static void mt6639WfdmaManualPrefetch(
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += u4TxDataPrefetchBase;
 	}
-
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING2_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING3_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
