@@ -13277,6 +13277,13 @@ int register_thermal_cbs(struct ADAPTER *ad)
 	struct thermal_zone_device *tz;
 	int err = 0;
 
+	if (!g_prPlatDev) {
+		DBGLOG(INIT, ERROR,
+			"NULL platform device.\n");
+		err = -EINVAL;
+		goto exit;
+	}
+
 	tz = thermal_zone_of_sensor_register(&g_prPlatDev->dev,
 		0, ad, &wf_thermal_ops);
 	if (IS_ERR(tz)) {
