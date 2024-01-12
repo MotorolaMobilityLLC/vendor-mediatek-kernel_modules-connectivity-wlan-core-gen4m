@@ -274,6 +274,10 @@
 #include "agent.h"
 #endif
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+#include <conn_power_throttling.h>
+#endif
+
 extern u_int8_t fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
@@ -1440,5 +1444,9 @@ extern const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 
 void wlanNvramSetState(enum ENUM_NVRAM_STATE state);
 enum ENUM_NVRAM_STATE wlanNvramGetState(void);
+
+#if (CFG_SUPPORT_CONNINFRA == 1)
+int connsys_power_event_notification(enum conn_pwr_event_type type, void *data);
+#endif
 
 #endif /* _GL_OS_H */

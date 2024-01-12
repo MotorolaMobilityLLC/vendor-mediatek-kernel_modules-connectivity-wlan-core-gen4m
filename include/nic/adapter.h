@@ -1817,6 +1817,11 @@ struct ADAPTER {
 	u_int8_t fgEnRmacICS;
 #endif /* CFG_SUPPORT_ICS */
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	struct LINK rPwrLevelHandlerList;
+	uint32_t u4PwrLevel;
+#endif
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
