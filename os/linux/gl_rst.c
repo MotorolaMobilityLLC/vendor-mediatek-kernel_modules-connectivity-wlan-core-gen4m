@@ -76,9 +76,6 @@
 #include "precomp.h"
 #include "gl_rst.h"
 
-
-UINT_32 g_IsNeedDoChipReset;
-
 #if CFG_CHIP_RESET_SUPPORT
 
 /*******************************************************************************
@@ -322,3 +319,11 @@ BOOLEAN kalIsResetting(VOID)
 }
 
 #endif
+
+enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
+UINT_64 u8ResetTime;
+VOID glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason)
+{
+	u8ResetTime = sched_clock();
+	eResetReason = eReason;
+}
