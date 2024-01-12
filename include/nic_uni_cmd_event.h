@@ -247,6 +247,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_LOW_LATENCY_MODE     = 0x62, /* Low Latency Mode */
 	UNI_CMD_ID_GAMING_MODE          = 0x63, /* Gaming Mode */
 	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
+	UNI_CMD_ID_SET_SAP_RPS          = 0x70, /* SAP */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x73, /* TX RESET SCRAMBLE */
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
@@ -4689,6 +4690,71 @@ struct UNI_CMD_LP_KEEP_PWR_CTRL {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_SET_SAP_RPS {
+	/* fixed field */
+	uint8_t ucBssIdx;
+	uint8_t aucReserved[3];
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
+	 *	TAG				 | ID  | structure
+	 *	---------------------------------|-----|--------------
+	 *	UNI_CMD_SET_SAP_RPS_TAG_SET	 | 0x01| UNI_CMD_SET_SAP_RPS_T
+	 */
+
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_SET_SAP_SUS {
+	/* fixed field */
+	uint8_t ucBssIdx;
+	uint8_t aucReserved[3];
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
+	 *	TAG				 | ID  | structure
+	 *	---------------------------------|-----|--------------
+	 *	UNI_CMD_SET_SAP_SUS_TAG_SET	 | 0x02| UNI_CMD_SET_SAP_RPS_T
+	 */
+
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_SET_SAP_RPS_TAG {
+	UNI_CMD_SET_SAP_RPS_TAG_INIT = 0x0,
+	UNI_CMD_SET_SAP_RPS_TAG_SET = 0x1,
+	UNI_CMD_SET_SAP_SUS_TAG_SET = 0x2,
+	UNI_CMD_SET_SAP_RPS_TAG_MAX_NUM
+};
+/** @addtogroup UNI_CMD_ID_SET_SAP_RPS
+ *  @{
+ */
+
+/**
+ * This structure is used for UNI_CMD_SET_SAP_RPS (0x00)
+ * of UNI_CMD_ID_SAP command (0x70) to set packet offload parameters.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag		should be valid tag num
+ * @param[in] u2Length		the length of this TLV,
+ * @param[in] fgEnable		0: Enable, 1: Disable
+ * @param[in] ucPhase	The percentage of beacon interval, 1~9 :10% ~ 90%
+ * @param[in] aucPadding	Reserved
+ */
+
+struct UNI_CMD_SET_SAP_RPS_SET_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgEnable;
+	uint8_t ucPhase;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_SET_SAP_SUS_SET_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgEnable;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -7871,6 +7937,11 @@ uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
 #endif
+
+uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 #if CFG_SUPPORT_RTT
 uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,

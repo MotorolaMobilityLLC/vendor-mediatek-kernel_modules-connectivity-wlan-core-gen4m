@@ -8017,8 +8017,14 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 	if (!bss)
 		return FALSE;
 	else if ((ucApForceSleep == 1) &&
-		(bss->eConnectionState == MEDIA_STATE_CONNECTED))
-		return FALSE;
+		(bss->eConnectionState == MEDIA_STATE_CONNECTED)) {
+#if CFG_SAP_RPS_SUPPORT
+		if ((!prAdapter->rWifiVar.fgSapRpsSwitch &&
+			prAdapter->rWifiVar.fgSapRpsEnable) ||
+			!prAdapter->rWifiVar.fgSapRpsEnable)
+#endif
+			return FALSE;
+	}
 #if 0
 	else if ((ucApForceSleep == 2) &&
 		prAdapter->u4StaInPSBitmap)

@@ -2214,6 +2214,12 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 	prBssInfo->tmLastPresent = 0;
 
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);
+#if CFG_SAP_RPS_SUPPORT
+	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
+		p2pFuncRpsAisCheck(prAdapter,
+			prBssInfo,
+			TRUE);
+#endif
 
 	if (fgReset40mBw) {
 		prBssInfo->fg40mBwAllowed = FALSE;
@@ -2295,6 +2301,12 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
+#if CFG_SAP_RPS_SUPPORT
+	if (prAdapter->rWifiVar.fgSapRpsEnable == 1)
+		p2pFuncRpsAisCheck(prAdapter,
+			prBssInfo,
+			FALSE);
+#endif
 
 	/* FW only supports BMCWlan index 0 ~ 31.
 	 * it always checks BMCWlan index validity and triggers
