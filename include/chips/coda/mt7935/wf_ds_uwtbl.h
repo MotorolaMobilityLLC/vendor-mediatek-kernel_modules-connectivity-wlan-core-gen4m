@@ -1,8 +1,6 @@
 #ifndef __WF_DS_UWTBL_REGS_H__
 #define __WF_DS_UWTBL_REGS_H__
 
-#include "common.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -11,7 +9,6 @@ extern "C" {
 // ----------------- WF_DS_UWTBL Bit Field Definitions -------------------
 
 #define PACKING
-typedef unsigned int FIELD;
 
 typedef PACKING union
 {
@@ -21,7 +18,7 @@ typedef PACKING union
         FIELD OWN_MLD_ID                : 6;
         FIELD rsv_22                    : 10;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MLO_INFO_DW00, *PWF_DS_UWTBL_REG_MLO_INFO_DW00;
 
 typedef PACKING union
@@ -30,7 +27,7 @@ typedef PACKING union
     {
         FIELD PEER_MLD_ADDRESS_31_0_    : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MLO_INFO_DW01, *PWF_DS_UWTBL_REG_MLO_INFO_DW01;
 
 typedef PACKING union
@@ -39,7 +36,7 @@ typedef PACKING union
     {
         FIELD PN_31_0_                  : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW02, *PWF_DS_UWTBL_REG_PN_SN_DW02;
 
 typedef PACKING union
@@ -50,7 +47,7 @@ typedef PACKING union
         FIELD COM_SN                    : 12;
         FIELD rsv_28                    : 4;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW03, *PWF_DS_UWTBL_REG_PN_SN_DW03;
 
 typedef PACKING union
@@ -61,7 +58,7 @@ typedef PACKING union
         FIELD TID1_SN                   : 12;
         FIELD TID2_SN_7_0_              : 8;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW04_0, *PWF_DS_UWTBL_REG_PN_SN_DW04_0;
 
 typedef PACKING union
@@ -70,7 +67,7 @@ typedef PACKING union
     {
         FIELD RX_BIPN_31_0_             : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW04_1, *PWF_DS_UWTBL_REG_PN_SN_DW04_1;
 
 typedef PACKING union
@@ -82,7 +79,7 @@ typedef PACKING union
         FIELD TID4_SN                   : 12;
         FIELD TID5_SN_3_0_              : 4;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW05_0, *PWF_DS_UWTBL_REG_PN_SN_DW05_0;
 
 typedef PACKING union
@@ -92,7 +89,7 @@ typedef PACKING union
         FIELD RX_BIPN_47_32_            : 16;
         FIELD rsv_16                    : 16;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW05_1, *PWF_DS_UWTBL_REG_PN_SN_DW05_1;
 
 typedef PACKING union
@@ -103,7 +100,7 @@ typedef PACKING union
         FIELD TID6_SN                   : 12;
         FIELD TID7_SN                   : 12;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW06_0, *PWF_DS_UWTBL_REG_PN_SN_DW06_0;
 
 typedef PACKING union
@@ -113,7 +110,7 @@ typedef PACKING union
         FIELD KEY_LOC2                  : 13;
         FIELD rsv_13                    : 19;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_PN_SN_DW06_1, *PWF_DS_UWTBL_REG_PN_SN_DW06_1;
 
 typedef PACKING union
@@ -125,7 +122,7 @@ typedef PACKING union
         FIELD KEY_LOC1                  : 13;
         FIELD rsv_29                    : 3;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_KEY_INFO_DW07, *PWF_DS_UWTBL_REG_KEY_INFO_DW07;
 
 typedef PACKING union
@@ -145,7 +142,7 @@ typedef PACKING union
         FIELD BYPASS_RRO                : 1;
         FIELD rsv_31                    : 1;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_INFO_DW08, *PWF_DS_UWTBL_REG_MSDU_INFO_DW08;
 
 typedef PACKING union
@@ -159,7 +156,7 @@ typedef PACKING union
         FIELD RELATED_BAND1             : 2;
         FIELD SECONDARY_MLD_BAND        : 2;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MLO_INFO_DW09, *PWF_DS_UWTBL_REG_MLO_INFO_DW09;
 
 typedef PACKING union
@@ -168,7 +165,7 @@ typedef PACKING union
     {
         FIELD MSDU_RX_COUNT             : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_COUNTER_DW10, *PWF_DS_UWTBL_REG_MSDU_COUNTER_DW10;
 
 typedef PACKING union
@@ -177,7 +174,7 @@ typedef PACKING union
     {
         FIELD MSDU_TX_COUNT             : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_COUNTER_DW11, *PWF_DS_UWTBL_REG_MSDU_COUNTER_DW11;
 
 typedef PACKING union
@@ -186,7 +183,7 @@ typedef PACKING union
     {
         FIELD MSDU_TX_RETRY_CONT        : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_COUNTER_DW12, *PWF_DS_UWTBL_REG_MSDU_COUNTER_DW12;
 
 typedef PACKING union
@@ -195,7 +192,7 @@ typedef PACKING union
     {
         FIELD MSDU_TX_DROP_COUNT        : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_COUNTER_DW13, *PWF_DS_UWTBL_REG_MSDU_COUNTER_DW13;
 
 typedef PACKING union
@@ -204,7 +201,7 @@ typedef PACKING union
     {
         FIELD MSDU_TX_HAD_RETRIED_COUNT : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_COUNTER_DW14, *PWF_DS_UWTBL_REG_MSDU_COUNTER_DW14;
 
 typedef PACKING union
@@ -213,7 +210,7 @@ typedef PACKING union
     {
         FIELD MSDU_TX_RETRY_LARGE_THAN_ONE_COUNT : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_MSDU_COUNTER_DW15, *PWF_DS_UWTBL_REG_MSDU_COUNTER_DW15;
 
 typedef PACKING union
@@ -222,7 +219,7 @@ typedef PACKING union
     {
         FIELD VERSION_CODE              : 32;
     } Bits;
-    UINT32 Raw;
+    uint32_t Raw;
 } WF_DS_UWTBL_REG_VERSION_CODE, *PWF_DS_UWTBL_REG_VERSION_CODE;
 
 // ----------------- WF_DS_UWTBL  Grouping Definitions -------------------
@@ -230,42 +227,42 @@ typedef PACKING union
 typedef volatile PACKING struct
 {
     WF_DS_UWTBL_REG_MLO_INFO_DW00   MLO_INFO_DW00;    // 6000
-    UINT32                          rsv_6004[7];      // 6004..601C
+    uint32_t                          rsv_6004[7];      // 6004..601C
     WF_DS_UWTBL_REG_MLO_INFO_DW01   MLO_INFO_DW01;    // 6020
-    UINT32                          rsv_6024[7];      // 6024..603C
+    uint32_t                          rsv_6024[7];      // 6024..603C
     WF_DS_UWTBL_REG_PN_SN_DW02      PN_SN_DW02;       // 6040
-    UINT32                          rsv_6044[7];      // 6044..605C
+    uint32_t                          rsv_6044[7];      // 6044..605C
     WF_DS_UWTBL_REG_PN_SN_DW03      PN_SN_DW03;       // 6060
-    UINT32                          rsv_6064[7];      // 6064..607C
+    uint32_t                          rsv_6064[7];      // 6064..607C
     WF_DS_UWTBL_REG_PN_SN_DW04_0    PN_SN_DW04_0;     // 6080
     WF_DS_UWTBL_REG_PN_SN_DW04_1    PN_SN_DW04_1;     // 6084
-    UINT32                          rsv_6088[6];      // 6088..609C
+    uint32_t                          rsv_6088[6];      // 6088..609C
     WF_DS_UWTBL_REG_PN_SN_DW05_0    PN_SN_DW05_0;     // 60A0
     WF_DS_UWTBL_REG_PN_SN_DW05_1    PN_SN_DW05_1;     // 60A4
-    UINT32                          rsv_60A8[6];      // 60A8..60BC
+    uint32_t                          rsv_60A8[6];      // 60A8..60BC
     WF_DS_UWTBL_REG_PN_SN_DW06_0    PN_SN_DW06_0;     // 60C0
     WF_DS_UWTBL_REG_PN_SN_DW06_1    PN_SN_DW06_1;     // 60C4
-    UINT32                          rsv_60C8[6];      // 60C8..60DC
+    uint32_t                          rsv_60C8[6];      // 60C8..60DC
     WF_DS_UWTBL_REG_KEY_INFO_DW07   KEY_INFO_DW07;    // 60E0
-    UINT32                          rsv_60E4[7];      // 60E4..60FC
+    uint32_t                          rsv_60E4[7];      // 60E4..60FC
     WF_DS_UWTBL_REG_MSDU_INFO_DW08  MSDU_INFO_DW08;   // 6100
-    UINT32                          rsv_6104[7];      // 6104..611C
+    uint32_t                          rsv_6104[7];      // 6104..611C
     WF_DS_UWTBL_REG_MLO_INFO_DW09   MLO_INFO_DW09;    // 6120
-    UINT32                          rsv_6124[7];      // 6124..613C
+    uint32_t                          rsv_6124[7];      // 6124..613C
     WF_DS_UWTBL_REG_MSDU_COUNTER_DW10 MSDU_COUNTER_DW10; // 6140
-    UINT32                          rsv_6144[7];      // 6144..615C
+    uint32_t                          rsv_6144[7];      // 6144..615C
     WF_DS_UWTBL_REG_MSDU_COUNTER_DW11 MSDU_COUNTER_DW11; // 6160
-    UINT32                          rsv_6164[7];      // 6164..617C
+    uint32_t                          rsv_6164[7];      // 6164..617C
     WF_DS_UWTBL_REG_MSDU_COUNTER_DW12 MSDU_COUNTER_DW12; // 6180
-    UINT32                          rsv_6184[7];      // 6184..619C
+    uint32_t                          rsv_6184[7];      // 6184..619C
     WF_DS_UWTBL_REG_MSDU_COUNTER_DW13 MSDU_COUNTER_DW13; // 61A0
-    UINT32                          rsv_61A4[7];      // 61A4..61BC
+    uint32_t                          rsv_61A4[7];      // 61A4..61BC
     WF_DS_UWTBL_REG_MSDU_COUNTER_DW14 MSDU_COUNTER_DW14; // 61C0
-    UINT32                          rsv_61C4[7];      // 61C4..61DC
+    uint32_t                          rsv_61C4[7];      // 61C4..61DC
     WF_DS_UWTBL_REG_MSDU_COUNTER_DW15 MSDU_COUNTER_DW15; // 61E0
-    UINT32                          rsv_61E4[16262];  // 61E4..5FF8
-    UINT8                           rsv_5FFC;         // 5FFC
-    UINT16                          rsv_5FFD;         // 5FFD
+    uint32_t                          rsv_61E4[16262];  // 61E4..5FF8
+    uint8_t                           rsv_5FFC;         // 5FFC
+    uint16_t                          rsv_5FFD;         // 5FFD
     WF_DS_UWTBL_REG_VERSION_CODE    VERSION_CODE;     // 5FFF
 }WF_DS_UWTBL_REGS, *PWF_DS_UWTBL_REGS;
 
