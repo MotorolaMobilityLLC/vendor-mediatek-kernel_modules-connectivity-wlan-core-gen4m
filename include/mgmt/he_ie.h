@@ -958,7 +958,8 @@ union _6G_OPER_INFOR_CONTROL_T {
 	struct {
 		u_int8_t ChannelWidth : 2;
 		u_int8_t DuplicateBeacon : 1;
-		u_int8_t Reserved : 5;
+		u_int8_t RegulatoryInfo:3;/* LPI_AP(0), SP_AP(1) */
+		u_int8_t Reserved : 2;
 	} bits;
 	/* byte endian issue */
 	u_int8_t   ucRaw;

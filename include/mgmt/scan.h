@@ -361,6 +361,7 @@ struct BSS_DESC {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	u_int8_t fgIsHE6GPresent;
 	u_int8_t fgIsCoHostedBssPresent;
+	u_int8_t He6gRegInfo;
 #endif
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)

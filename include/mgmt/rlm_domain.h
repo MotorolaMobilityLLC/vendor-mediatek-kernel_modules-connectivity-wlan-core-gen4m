@@ -156,6 +156,8 @@
 #define COUNTRY_CODE_BZ (((uint16_t) 'B' << 8) | (uint16_t) 'Z')
 /* Canada */
 #define COUNTRY_CODE_CA (((uint16_t) 'C' << 8) | (uint16_t) 'A')
+ /* Cocos Islands */
+#define COUNTRY_CODE_CC (((uint16_t) 'C' << 8) | (uint16_t) 'C')
 /* Democratic Republic of the Congo */
 #define COUNTRY_CODE_CD (((uint16_t) 'C' << 8) | (uint16_t) 'D')
 /* Central African Republic */
@@ -182,6 +184,8 @@
 #define COUNTRY_CODE_CU (((uint16_t) 'C' << 8) | (uint16_t) 'U')
 /* Cape Verde */
 #define COUNTRY_CODE_CV (((uint16_t) 'C' << 8) | (uint16_t) 'V')
+/* "Curacao */
+#define COUNTRY_CODE_CW (((uint16_t) 'C' << 8) | (uint16_t) 'W')
 /* "Christmas Island(Australia) */
 #define COUNTRY_CODE_CX (((uint16_t) 'C' << 8) | (uint16_t) 'X')
 /* Cyprus */
@@ -246,6 +250,8 @@
 #define COUNTRY_CODE_GH (((uint16_t) 'G' << 8) | (uint16_t) 'H')
 /* Gibraltar */
 #define COUNTRY_CODE_GI (((uint16_t) 'G' << 8) | (uint16_t) 'I')
+/* Greenland */
+#define COUNTRY_CODE_GL (((uint16_t) 'G' << 8) | (uint16_t) 'L')
 /* Gambia */
 #define COUNTRY_CODE_GM (((uint16_t) 'G' << 8) | (uint16_t) 'M')
 /* Guinea */
@@ -284,6 +290,8 @@
 #define COUNTRY_CODE_IM (((uint16_t) 'I' << 8) | (uint16_t) 'M')
 /* India */
 #define COUNTRY_CODE_IN (((uint16_t) 'I' << 8) | (uint16_t) 'N')
+/* British Indian Ocean Territory */
+#define COUNTRY_CODE_IO (((uint16_t) 'I' << 8) | (uint16_t) 'O')
 /* Iraq */
 #define COUNTRY_CODE_IQ (((uint16_t) 'I' << 8) | (uint16_t) 'Q')
 /* Iran */
@@ -506,6 +514,8 @@
 #define COUNTRY_CODE_TH (((uint16_t) 'T' << 8) | (uint16_t) 'H')
 /* Tajikistan */
 #define COUNTRY_CODE_TJ (((uint16_t) 'T' << 8) | (uint16_t) 'J')
+/* Tokelau */
+#define COUNTRY_CODE_TK (((uint16_t) 'T' << 8) | (uint16_t) 'K')
 /* East Timor */
 #define COUNTRY_CODE_TL (((uint16_t) 'T' << 8) | (uint16_t) 'L')
 /* Turkmenistan */
@@ -548,6 +558,8 @@
 #define COUNTRY_CODE_VN (((uint16_t) 'V' << 8) | (uint16_t) 'N')
 /* Vanuatu */
 #define COUNTRY_CODE_VU (((uint16_t) 'V' << 8) | (uint16_t) 'U')
+/* Wallis and Futuna */
+#define COUNTRY_CODE_WF (((uint16_t) 'W' << 8) | (uint16_t) 'F')
 /* Samoa */
 #define COUNTRY_CODE_WS (((uint16_t) 'W' << 8) | (uint16_t) 'S')
 /* Yemen */
@@ -1394,6 +1406,8 @@ u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter,
 				uint8_t ucChannel);
 
 void rlmDomainSendCmd(struct ADAPTER *prAdapter, bool fgPwrLmtSend);
+
+void rlmDomainResetActiveChannel(void);
 
 void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter);
 
