@@ -4071,6 +4071,12 @@ skipLabel:
 		else {
 			pcContCur2 = pcContOld;
 			pcContTmp = txPwrGetString(&pcContCur2, "-");
+			if (!pcContTmp) {
+				DBGLOG(RLM, ERROR,
+					"parse channel setting type error, %s\n",
+					pcContOld);
+				goto clearLabel;
+			}
 			if (pcContCur2 == NULL) { /* case: normal channel */
 				if (kalkStrtou8(pcContOld, 0, &value) != 0) {
 					DBGLOG(RLM, ERROR,
@@ -4374,32 +4380,37 @@ void txPwrCtrlShowList(struct ADAPTER *prAdapter, uint8_t filterType,
 			       prCurElement->settingCount);
 			prChlSettingList = &(prCurElement->rChlSettingList[0]);
 			for (j = 0; j < prCurElement->settingCount; j++) {
-				DBGLOG(RLM, TRACE,
-				       "              Setting-%u:[%s:%u,%u],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d]\n",
-				       (j + 1),
-				       g_au1TxPwrChlTypeLabel[
+				/* Coverity check */
+				if (prChlSettingList->eChnlType >= 0) {
+					DBGLOG(RLM, TRACE,
+						"Setting-%u:[%s:%u,%u],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d],[%u,%d]\n",
+						(j + 1),
+						g_au1TxPwrChlTypeLabel[
 						prChlSettingList->eChnlType],
-				       prChlSettingList->channelParam[0],
-				       prChlSettingList->channelParam[1],
-				       prChlSettingList->op[0],
-				       prChlSettingList->i8PwrLimit[0],
-				       prChlSettingList->op[1],
-				       prChlSettingList->i8PwrLimit[1],
-				       prChlSettingList->op[2],
-				       prChlSettingList->i8PwrLimit[2],
-				       prChlSettingList->op[3],
-				       prChlSettingList->i8PwrLimit[3],
-				       prChlSettingList->op[4],
-				       prChlSettingList->i8PwrLimit[4],
-				       prChlSettingList->op[5],
-				       prChlSettingList->i8PwrLimit[5],
-				       prChlSettingList->op[6],
-				       prChlSettingList->i8PwrLimit[6],
-				       prChlSettingList->op[7],
-				       prChlSettingList->i8PwrLimit[7],
-				       prChlSettingList->op[8],
-				       prChlSettingList->i8PwrLimit[8]
-				);
+						prChlSettingList->
+						channelParam[0],
+						prChlSettingList->
+						channelParam[1],
+						prChlSettingList->op[0],
+						prChlSettingList->i8PwrLimit[0],
+						prChlSettingList->op[1],
+						prChlSettingList->i8PwrLimit[1],
+						prChlSettingList->op[2],
+						prChlSettingList->i8PwrLimit[2],
+						prChlSettingList->op[3],
+						prChlSettingList->i8PwrLimit[3],
+						prChlSettingList->op[4],
+						prChlSettingList->i8PwrLimit[4],
+						prChlSettingList->op[5],
+						prChlSettingList->i8PwrLimit[5],
+						prChlSettingList->op[6],
+						prChlSettingList->i8PwrLimit[6],
+						prChlSettingList->op[7],
+						prChlSettingList->i8PwrLimit[7],
+						prChlSettingList->op[8],
+						prChlSettingList->i8PwrLimit[8]
+					);
+				}
 				prChlSettingList++;
 			}
 		}
