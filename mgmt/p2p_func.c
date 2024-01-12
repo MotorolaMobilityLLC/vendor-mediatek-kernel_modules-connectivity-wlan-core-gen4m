@@ -4307,6 +4307,62 @@ u_int8_t p2pFuncParseCheckForTKIPInfoElem(uint8_t *pucBuf)
 		return FALSE;
 }				/* p2pFuncParseCheckForP2PInfoElem */
 
+#if CFG_SUPPORT_BALANCE_MLR
+/*---------------------------------------------------------------------------*/
+/*!
+ * @brief This function is used to check the MTK Oui IE from packets
+ *        transmitted by the peer STA.
+ *
+ * @return none
+ */
+/*----------------------------------------------------------------------------*/
+void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		uint8_t *pucIE)
+{
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	uint8_t *aucCapa;
+	uint8_t *ie;
+	uint16_t ie_len, ie_offset;
+
+	if (pucIE == NULL)
+		return;
+
+	aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
+
+	/* only check tlv */
+	if (IE_LEN(pucIE) < ELEM_MIN_LEN_MTK_OUI ||
+	    kalMemCmp(pucIE + 2, aucMtkOui, sizeof(aucMtkOui)) ||
+	    !(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
+
+	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
+	ie_len = IE_LEN(pucIE) - 7;
+
+	IE_FOR_EACH(ie, ie_len, ie_offset) {
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
+			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
+			/* LR bitmap:
+			 * BIT[0]-MLR_V1,
+			 * BIT[1]->MLR_V2,
+			 * BIT[2]MLR+,
+			 * BIT[3]->ALR,
+			 * BIT[4]->DUAL_CTS
+			 */
+			prStaRec->ucMlrSupportBitmap = prMLR->ucLRBitMap;
+			prStaRec->fgIsMlrSupported =
+				MLR_BIT_SUPPORT(prStaRec
+				->ucMlrSupportBitmap);
+
+			MLR_DBGLOG(prAdapter, P2P, INFO,
+				"MLR assoc req-IsMlrS:%d Type|Len|B[0x%02x]\n",
+				prStaRec->fgIsMlrSupported,
+				prStaRec->ucMlrSupportBitmap);
+		}
+	}
+}				/* p2pFuncParseMTKOuiInfoElem */
+#endif /* CFG_SUPPORT_BALANCE_MLR */
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function is used to check the P2P IE

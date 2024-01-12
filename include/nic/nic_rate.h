@@ -51,6 +51,8 @@ enum ENUM_BAND_WIDTH {
 #define TX_RATE_MODE_HTGF	3
 #define TX_RATE_MODE_VHT	4
 #define TX_RATE_MODE_PLR	5
+#define TX_RATE_MODE_MLRP	6
+#define TX_RATE_MODE_ALR	7
 #define TX_RATE_MODE_HE_SU      8
 #define TX_RATE_MODE_HE_ER      9
 #define TX_RATE_MODE_HE_TRIG    10

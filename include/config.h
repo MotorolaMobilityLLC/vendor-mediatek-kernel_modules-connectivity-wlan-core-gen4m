@@ -1216,6 +1216,17 @@
 #define CFG_SUPPORT_MLR				1
 #endif
 
+#ifndef CFG_SUPPORT_BALANCE_MLR
+#if CFG_SUPPORT_MLR
+/* Currently, this feature does not have requirements for MP.
+ * Therefore, it is disabled by default.
+ */
+#define CFG_SUPPORT_BALANCE_MLR			0
+#else
+#define CFG_SUPPORT_BALANCE_MLR			0
+#endif /* CFG_SUPPORT_MLR */
+#endif
+
 #define CFG_SUPPORT_SWCR			1
 
 #define CFG_SUPPORT_ANTI_PIRACY			1

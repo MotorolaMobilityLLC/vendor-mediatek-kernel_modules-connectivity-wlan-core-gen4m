@@ -317,6 +317,24 @@ bow_proc:
 	} while (FALSE);
 
 	if (prStaRec) {
+#if CFG_SUPPORT_MLR && CFG_SUPPORT_BALANCE_MLR
+		/* update MLR/ALR/MLRP capability */
+		uint8_t ucRxMode;
+
+		ucRxMode = nicRxGetRxModeValueFromRxv(prAdapter, prSwRfb);
+
+		if (ucRxMode == TX_RATE_MODE_PLR) {
+			prStaRec->ucMlrSupportBitmap |=
+				(MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2);
+		} else if (ucRxMode == TX_RATE_MODE_ALR) {
+			prStaRec->ucMlrSupportBitmap |= MLR_MODE_ALR;
+		} else if (ucRxMode == TX_RATE_MODE_MLRP) {
+			prStaRec->ucMlrSupportBitmap |= MLR_MODE_MLR_PLUS;
+		}
+
+		prStaRec->fgIsMlrSupported =
+			MLR_BIT_SUPPORT(prStaRec->ucMlrSupportBitmap);
+#endif
 		/* update RCPI */
 		ASSERT(prSwRfb->prRxStatusGroup3);
 		prStaRec->ucRCPI = nicRxGetRcpiValueFromRxv(
