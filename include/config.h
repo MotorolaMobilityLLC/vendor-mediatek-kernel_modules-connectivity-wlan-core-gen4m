@@ -1495,6 +1495,11 @@
 #define CFG_SUPPORT_LLS 0
 #endif
 
+/* Before (including) Android T, use single interface report structure */
+#ifndef AOSP_LLS_V1_SINGLE_INTERFACE
+#define AOSP_LLS_V1_SINGLE_INTERFACE 0
+#endif
+
 #define CFG_REPORT_TX_RATE_FROM_LLS 0
 /*------------------------------------------------------------------------------
  * Flags for prepare the FW compile flag
