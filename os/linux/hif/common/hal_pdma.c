@@ -3128,10 +3128,28 @@ u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
+	if (prRxRing->u4RingSize == 0)
+		return FALSE;
+
 	u4CpuIdx = prRxRing->RxCpuIdx;
 	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
 
 	return halIsWfdmaRxReady(prRxRing, u4CpuIdx);
+}
+
+static u_int8_t halIsWfdmaRxRingsEmpty(struct GLUE_INFO *prGlueInfo)
+{
+	u_int8_t fgIsReady = FALSE;
+	uint32_t u4Idx;
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		fgIsReady = halIsWfdmaRxRingReady(
+			prGlueInfo, u4Idx);
+		if (fgIsReady)
+			break;
+	}
+
+	return !fgIsReady;
 }
 
 uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
@@ -4229,9 +4247,14 @@ void halRxTasklet(unsigned long data)
 
 void halRxWork(struct GLUE_INFO *prGlueInfo)
 {
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo;
 	bool fgEnInt = FALSE;
 
-	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (!HAL_IS_RX_DIRECT(prAdapter)) {
 		DBGLOG(INIT, ERROR,
 		       "Valid in RX-direct mode only\n");
 		return;
@@ -4244,7 +4267,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter);
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
 	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
@@ -4259,13 +4282,24 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	} else {
 		/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
 		prGlueInfo->TaskIsrCnt++;
-		wlanIST(prGlueInfo->prAdapter, FALSE);
+		wlanIST(prAdapter, FALSE);
+
+		/* Read data again if wfdma rx ring is non-empty and
+		 * wfdma th > 0 (high tput)
+		 */
+		while (!halIsWfdmaRxRingsEmpty(prGlueInfo)) {
+			if (prAdapter->ulNoMoreRfb ||
+			    prBusInfo->u4WfdmaTh == 0)
+				break;
+
+			wlanIST(prAdapter, FALSE);
+		}
 	}
 
 #if CFG_SUPPORT_RX_WORK
-	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_WORK_COUNT);
+	RX_INC_CNT(&prAdapter->rRxCtrl, RX_WORK_COUNT);
 #else /* CFG_SUPPORT_RX_WORK */
-	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_TASKLET_COUNT);
+	RX_INC_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT);
 #endif /* CFG_SUPPORT_RX_WORK */
 
 	if (kalRxTaskWorkDone(prGlueInfo, fgEnInt)) {
@@ -4274,7 +4308,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 			prGlueInfo->ulFlag);
 	}
 
-	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 }
 
 void halTxCompleteTasklet(unsigned long data)
