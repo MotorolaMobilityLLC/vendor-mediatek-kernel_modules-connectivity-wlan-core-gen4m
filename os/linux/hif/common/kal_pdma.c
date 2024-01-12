@@ -2801,7 +2801,11 @@ int32_t wf_reg_via_hif_thread(
 	prDebugOps->bt_dump_str.u4Addr = u4Addr;
 	if (eOp == BT_DUMP_VIA_WF_WRITE)
 		prDebugOps->bt_dump_str.u4Value = *u4Value;
-	kalSetBtDumpViaWFEvent(glue);
+
+	if (current == glue->hif_thread)
+		halHandleBtDumpviaWF(glue->prAdapter);
+	else
+		kalSetBtDumpViaWFEvent(glue);
 
 	for (i = 0; i < 1000; i++) {
 		if (GLUE_GET_REF_CNT(prDebugOps->bt_dump_str.fgHifDone) == 1) {
