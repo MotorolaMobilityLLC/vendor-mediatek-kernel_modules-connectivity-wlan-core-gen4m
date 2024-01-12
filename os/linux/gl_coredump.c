@@ -1109,14 +1109,60 @@ static void __coredump_to_userspace_aee_str(struct coredump_ctx *ctx,
 		break;
 	case CONNV3_ISSUE_FW_EXCEPTION:
 	{
-		written += kalSnprintf(aee_str + written,
-			aee_str_len - written,
-			"<EXCEPTION> WFSYS ");
+		/* dump_buff:
+		 *  <EXCEPTION> WFSYS, id=0x0 WIFI, lr=0xE00F5B3C, swid=0x9B2,
+		 *  e0=0x60, e1=0x63, e2=0x12C2, mcause=0x9, exp_t=77202116
+		 * assert_info:
+		 *  swid=0x9B2, e0=0x60, e1=0x63, e2=0x12C2
+		 * aee_str:
+		 *  <FATAL_ERR> WFSYS swid=0x9B2, e0=0x60, e1=0x63, e2=0x12C2
+		 */
+		uint8_t *puSwid = kalStrStr(mem->dump_buff, "swid=");
 
-		written += kalSnprintf(aee_str + written,
-			aee_str_len - written,
-			"%s",
-			issue_info->assert_info);
+		if (puSwid != NULL) {
+			/* overwrite assert_info */
+			/* swid=0xXXXX */
+			#define SWID_SIZE_MIN 11
+			/* swid=0xXXXX, e0=0xXXXXXXXX, e1=... */
+			#define SWID_SIZE_MAX 56
+			uint32_t u4SwidSize = SWID_SIZE_MIN;
+			uint32_t u4AssertSize = sizeof(issue_info->assert_info);
+			uint8_t *puMcause;
+
+			puMcause = kalStrStr(mem->dump_buff, ", mcause=");
+			if (puMcause != NULL) {
+				u4SwidSize = puMcause - puSwid;
+				if (u4SwidSize < SWID_SIZE_MIN)
+					u4SwidSize = SWID_SIZE_MIN;
+				if (u4SwidSize > SWID_SIZE_MAX)
+					u4SwidSize = SWID_SIZE_MAX;
+				if (u4SwidSize >= u4AssertSize)
+					u4SwidSize = u4AssertSize - 1;
+			}
+
+			kalMemCopy(issue_info->assert_info,
+				puSwid,
+				u4SwidSize);
+			issue_info->assert_info[u4SwidSize] = '\0';
+
+			written += kalSnprintf(aee_str + written,
+				aee_str_len - written,
+				"<FATAL_ERR> WFSYS ");
+
+			written += kalSnprintf(aee_str + written,
+				aee_str_len - written,
+				"%s",
+				issue_info->assert_info);
+		} else {
+			written += kalSnprintf(aee_str + written,
+				aee_str_len - written,
+				"<EXCEPTION> WFSYS ");
+
+			written += kalSnprintf(aee_str + written,
+				aee_str_len - written,
+				"%s",
+				issue_info->assert_info);
+		}
 	}
 		break;
 	default:
