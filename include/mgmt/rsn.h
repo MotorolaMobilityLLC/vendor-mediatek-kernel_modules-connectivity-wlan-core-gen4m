@@ -126,7 +126,7 @@
 #define RSN_AKM_SUITE_FT_FILS_SHA256    0x10AC0F00
 #define RSN_AKM_SUITE_FT_FILS_SHA384    0x11AC0F00
 #define RSN_AKM_SUITE_OWE               0x12AC0F00
-
+#define RSN_AKM_SUITE_DPP               0x029A6F50
 #define WPA_AKM_SUITE_NONE              0x00F25000
 #define WPA_AKM_SUITE_802_1X            0x01F25000
 #define WPA_AKM_SUITE_PSK               0x02F25000
@@ -137,6 +137,8 @@
  */
 #define WLAN_AKM_SUITE_OSEN             0x506f9a01
 #define WLAN_CIPHER_SUITE_NO_GROUP_ADDR 0x000fac07
+
+#define WLAN_AKM_SUITE_DPP              0x506F9A02
 
 /* The RSN IE len for associate request */
 #define ELEM_ID_RSN_LEN_FIXED           20
