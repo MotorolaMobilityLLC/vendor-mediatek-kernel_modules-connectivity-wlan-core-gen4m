@@ -1407,6 +1407,7 @@ static void soc3_0_DumpHostCr(void)
 int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 {
 	int ret = 1;
+	int conninfra_hang_ret = 0;
 	uint8_t conninfra_reset = FALSE;
 	uint32_t u4Cr = 0;
 	uint32_t u4Value = 0;
@@ -1422,14 +1423,16 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 			DBGLOG(HAL, ERROR,
 				"conninfra_reg_readable fail\n");
 
-			if (conninfra_is_bus_hang() > 0) {
+			conninfra_hang_ret = conninfra_is_bus_hang();
+
+			if (conninfra_hang_ret > 0) {
 				conninfra_reset = TRUE;
 
 				DBGLOG(HAL, ERROR,
 					"conninfra_is_bus_hang, Chip reset\n");
 			} else {
 				/*
-				* not readable, but no hang
+				* not readable, but no_hang or rst_ongoing
 				* => no reset and return fail
 				*/
 				ucWfResetEnable = FALSE;
@@ -1537,7 +1540,14 @@ int soc3_0_CheckBusHang(uint8_t ucWfResetEnable)
 
 	if (ret > 0) {
 
-		soc3_0_DumpHostCr();
+		if ((conninfra_hang_ret != CONNINFRA_ERR_RST_ONGOING) &&
+			(conninfra_hang_ret != CONNINFRA_INFRA_BUS_HANG) &&
+			(conninfra_hang_ret !=
+				CONNINFRA_AP2CONN_RX_SLP_PROT_ERR) &&
+			(conninfra_hang_ret !=
+				CONNINFRA_AP2CONN_TX_SLP_PROT_ERR) &&
+			(conninfra_hang_ret != CONNINFRA_AP2CONN_CLK_ERR))
+			soc3_0_DumpHostCr();
 
 		if (conninfra_reset)
 			conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI,
