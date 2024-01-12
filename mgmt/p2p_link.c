@@ -704,24 +704,7 @@ void p2pLinkAcquireChJoin(
 	if (!prAdapter || !prChnlReq)
 		return;
 
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct BSS_INFO *prBss =
-			p2pGetLinkBssInfo(prAdapter,
-			prP2pRoleFsmInfo, i);
-		struct BSS_DESC *prBssDesc =
-			p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
-
-		if (!prBss || !prBssDesc)
-			continue;
-
-		/* for secondary link */
-		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex))
-			/* sync with firmware */
-			nicActivateNetwork(prAdapter,
-				NETWORK_ID(prBss->ucBssIndex, i));
-
-		ucReqChNum++;
-	}
+	ucReqChNum = p2pGetLinkNum(prP2pRoleFsmInfo);
 
 	/* send message to CNM for acquiring channel */
 	u4MsgSz = sizeof(struct MSG_CH_REQ) +
@@ -754,13 +737,17 @@ void p2pLinkAcquireChJoin(
 		if (!prBss || !prBssDesc)
 			continue;
 
+		/* for secondary link */
+		if (!IS_NET_ACTIVE(prAdapter, prBss->ucBssIndex))
+			/* sync with firmware */
+			nicActivateNetwork(prAdapter,
+				NETWORK_ID(prBss->ucBssIndex, i));
+
 		if (i == 0)
 			prSubReq = prMsgChReq;
-#if (MLD_LINK_MAX > 1)
 		else
 			prSubReq = (struct MSG_CH_REQ *)
 				&prMsgChReq->aucBuffer[i];
-#endif
 
 		p2pFuncReleaseCh(prAdapter,
 			prBss->ucBssIndex,
@@ -778,11 +765,9 @@ void p2pLinkAcquireChJoin(
 		prSubReq->ucRfCenterFreqSeg1 = prChnlReqInfo->ucCenterFreqS1;
 		prSubReq->ucRfCenterFreqSeg2 = prChnlReqInfo->ucCenterFreqS2;
 #if CFG_SUPPORT_DBDC
-#if (MLD_LINK_MAX > 1)
 		if (ucReqChNum >= 2)
 			prSubReq->eDBDCBand = ENUM_BAND_ALL;
 		else
-#endif
 			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif /*CFG_SUPPORT_DBDC*/
 	}
