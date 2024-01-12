@@ -1,18 +1,11 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 // generate by structure_parser.py at 2021-03-11 08:58:35
 #ifndef __WF_UWTBL_REGS_H__
 #define __WF_UWTBL_REGS_H__
-/*
- * Copyright (c) 2021, MediaTek Inc. All rights reserved.
- *
- * This software/firmware and related documentation ("MediaTek Software") are
- * protected under relevant copyright laws.
- * The information contained herein is confidential and proprietary to
- * MediaTek Inc. and/or its licensors.
- * Except as otherwise provided in the applicable licensing terms with
- * MediaTek Inc. and/or its licensors, any reproduction, modification, use or
- * disclosure of MediaTek Software, and information contained herein, in whole
- * or in part, shall be strictly prohibited.
-*/
 
 #ifdef __cplusplus
 extern "C" {

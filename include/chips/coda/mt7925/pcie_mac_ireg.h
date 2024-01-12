@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 #ifndef __PCIE_MAC_IREG_REGS_H__
 #define __PCIE_MAC_IREG_REGS_H__
 #ifdef __cplusplus

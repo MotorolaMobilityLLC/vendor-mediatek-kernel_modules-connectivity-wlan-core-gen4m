@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 #ifndef __WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_REGS_H__
 #define __WF_MCUSYS_VDNR_GEN_BUS_U_DEBUG_CTRL_AO_REGS_H__
 #include "hal_common.h"

@@ -1,7 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (c) 2021 MediaTek Inc.
  */
+
 #ifndef __NET_ADAPTION_H__
 #define __NET_ADAPTION_H__
 

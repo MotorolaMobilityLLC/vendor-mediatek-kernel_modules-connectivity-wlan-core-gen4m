@@ -1,10 +1,6 @@
-/*  SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2019 MediaTek Inc.
- */
-/*
- ** Id: //Department/DaVinci/BRANCHES/
- *      MT6620_WIFI_DRIVER_V2_3/include/mgmt/mddp.h#1
+ * Copyright (c) 2021 MediaTek Inc.
  */
 
 /*! \file   "mddp.h"

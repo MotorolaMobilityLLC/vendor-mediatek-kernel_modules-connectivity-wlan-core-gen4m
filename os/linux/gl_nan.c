@@ -1,11 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
 
-/*
- * Copyright (c) 2020 MediaTek Inc.
- */
-/*
- * Id: @(#) gl_nan.c@@
- */
 /*
  *    \brief  Main routines of Linux driver interface for Wi-Fi Aware
  *

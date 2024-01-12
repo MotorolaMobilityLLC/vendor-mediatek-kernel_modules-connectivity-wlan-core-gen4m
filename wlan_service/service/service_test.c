@@ -1,7 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 */
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2019 MediaTek Inc.
+ * Copyright (c) 2021 MediaTek Inc.
  */
+
 #include "service_test.h"
 
 u_char template_frame[32] = { 0x88, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xFF, 0xFF,

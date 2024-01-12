@@ -1,8 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause */
-
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2020 MediaTek Inc.
+ * Copyright (c) 2021 MediaTek Inc.
  */
+
 /*
  * hostapd / IEEE 802.1X-2004 Authenticator
  * Copyright (c) 2002-2012, Jouni Malinen <j@w1.fi>

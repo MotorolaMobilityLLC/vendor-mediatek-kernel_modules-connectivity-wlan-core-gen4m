@@ -1,8 +1,8 @@
-/* SPDX-License-Identifier: GPL-2.0 OR BSD-3-Clause */
-
+/* SPDX-License-Identifier: BSD-2-Clause */
 /*
- * Copyright (c) 2020 MediaTek Inc.
+ * Copyright (c) 2021 MediaTek Inc.
  */
+
 /*
  *  The SHA-256 Secure Hash Standard was published by NIST in 2002.
  *

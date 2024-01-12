@@ -1,3 +1,9 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
+
 #ifndef __BN1_WF_MIB_TOP_REGS_H__
 #define __BN1_WF_MIB_TOP_REGS_H__
 #include "hal_common.h"

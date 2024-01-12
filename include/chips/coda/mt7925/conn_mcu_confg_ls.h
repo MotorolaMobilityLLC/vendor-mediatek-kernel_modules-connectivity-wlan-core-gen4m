@@ -1,3 +1,8 @@
+/* SPDX-License-Identifier: BSD-2-Clause */
+/*
+ * Copyright (c) 2021 MediaTek Inc.
+ */
+
 #ifndef __CONN_MCU_CONFG_LS_REGS_H__
 #define __CONN_MCU_CONFG_LS_REGS_H__
 #include "hal_common.h"
