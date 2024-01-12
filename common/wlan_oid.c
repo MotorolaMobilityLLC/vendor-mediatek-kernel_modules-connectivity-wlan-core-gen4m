@@ -7048,7 +7048,7 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 			rlmChangeOperationMode(
 				prAdapter, ucBssIndex, ucChannelWidth,
 				ucOpRxNss, ucOpTxNss,
-				#ifdef CFG_SUPPORT_SMART_GEAR
+				#if CFG_SUPPORT_SMART_GEAR
 				0x00,
 				#endif
 				rlmDummyChangeOpHandler);
