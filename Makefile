@@ -1,8 +1,13 @@
 ccflags-y :=
+CFG_DIR ?= $(src)/configs
 ifeq ($(CONFIG_MTK_PLATFORM),)
 CONFIG_MTK_PLATFORM := mt$(WLAN_CHIP_ID)
 endif
 MTK_PLATFORM := $(subst $(quote),,$(CONFIG_MTK_PLATFORM))
+
+# WM RAM TYPE
+# WM_RAM - mobile | ce
+WM_RAM ?= mobile
 
 # ---------------------------------------------------
 # Kbuild option
@@ -77,10 +82,28 @@ ifeq ($(MTK_COMBO_CHIP),)
 MTK_COMBO_CHIP = MT6632
 endif
 
+$(info $$WM_RAM is [${WM_RAM}])
 $(info $$MTK_PLATFORM is [${MTK_PLATFORM}])
 $(info $$WLAN_CHIP_ID is [${WLAN_CHIP_ID}])
 $(info $$MTK_COMBO_CHIP is [${MTK_COMBO_CHIP}])
-$(info WLAN_CONNAC3_DEV is [${WLAN_CONNAC3_DEV}])
+$(info $$WLAN_CONNAC3_DEV is [${WLAN_CONNAC3_DEV}])
+
+include $(CFG_DIR)/defconfig
+ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
+    include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
+endif
+
+ifeq ($(WM_RAM),ce)
+    ccflags-y += -DCONFIG_WM_RAM_TYPE=1
+    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig),)
+        include $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig
+    endif
+else
+    ccflags-y += -DCONFIG_WM_RAM_TYPE=0
+    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig),)
+        include $(CFG_DIR)/${MTK_COMBO_CHIP}/mobile/defconfig
+    endif
+endif
 
 ifneq ($(CONFIG_MTK_EMI),)
 ccflags-y += -DCONFIG_WLAN_MTK_EMI=1
@@ -355,41 +378,17 @@ endif
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
-CONFIG_MTK_MDDP_SUPPORT=
-CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH := n
-CONFIG_MTK_WIFI_11AX_SUPPORT=y
-CONFIG_MTK_WIFI_11BE_SUPPORT=y
-CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
-CONFIG_MTK_WIFI_CONNAC3X=y
-CONFIG_NUM_OF_WFDMA_RX_RING=2
-CONFIG_NUM_OF_WFDMA_TX_RING=0
 ifeq ($(MTK_ANDROID_WMT), y)
-ifneq ($(CONFIG_PAGE_POOL),)
-CONFIG_RX_PAGE_POOL=y
+    ifneq ($(CONFIG_PAGE_POOL),)
+        CONFIG_RX_PAGE_POOL=y
+    endif
 endif
-endif
-CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
-CONFIG_MTK_WIFI_TWT_SUPPORT=y
-CONFIG_MTK_WIFI_TWT_STA_DIRECT_TEARDOWN=y
-CONFIG_MTK_WIFI_TWT_SMART_STA=n
-CONFIG_MTK_WIFI_TWT_HOTSPOT_SUPPORT=n
-CONFIG_MTK_WIFI_TWT_HOTSPOT_AC_SUPPORT=n
-CONFIG_MTK_WIFI_BTWT_SUPPORT=y
-CONFIG_MTK_WIFI_11BE_ML_TWT_SUPPORT=y
-CONFIG_MLD_LINK_MAX=2
-CONFIG_DBDC_MODE=1
-CONFIG_MTK_WIFI_6G_SUPPORT=y
-CONFIG_MTK_HOST_OFFLOAD_SUPPORT=y
-CONFIG_SUPPORT_FORCE_ALTX=y
 ifneq ($(TARGET_BUILD_VARIANT),user)
-CONFIG_MTK_WIFI_NAN=n
+    CONFIG_MTK_WIFI_NAN=n
 endif
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
-#CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
-#CONFIG_MTK_WIFI_FW_LOG_CTRL=y
-#CONFIG_MTK_WIFI_PMIC_QUERY=y
 endif
 
 ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
