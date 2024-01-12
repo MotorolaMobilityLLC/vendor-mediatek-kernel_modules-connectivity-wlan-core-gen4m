@@ -774,6 +774,12 @@ else
     ccflags-y += -DCFG_COALESCING_INTERRUPT=0
 endif
 
+ifeq ($(CFG_SUPPORT_HIDDEN_SW_AP), y)
+    ccflags-y += -DCFG_SUPPORT_HIDDEN_SW_AP=1
+else
+    ccflags-y += -DCFG_SUPPORT_HIDDEN_SW_AP=0
+endif
+
 ifeq ($(MODULE_NAME),)
 MODULE_NAME := wlan_$(shell echo $(strip $(WLAN_CHIP_ID)) | tr A-Z a-z)_$(CONFIG_MTK_COMBO_WIFI_HIF)
 endif
