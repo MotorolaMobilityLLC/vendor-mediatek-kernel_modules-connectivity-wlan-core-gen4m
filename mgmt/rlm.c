@@ -9498,12 +9498,12 @@ uint32_t rlmRegTxPwrLimitUpdate(
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_802_11K */
-void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter, int8_t cLimit,
+void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter,
+			int8_t icLimit,
 			 uint8_t ucEnable)
 {
 	struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT rTxPwrLimit;
-	int8_t icPwrLmt = 0;
-	int8_t icMinPwrLmt = 0;
+	int8_t icMinPwrLmt = 0, icMaxPwrLmt = 0;
 
 	if (!prAdapter)
 		return;
@@ -9511,32 +9511,47 @@ void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter, int8_t cLimit,
 	kalMemZero(&rTxPwrLimit, sizeof(rTxPwrLimit));
 	rTxPwrLimit.ucCmdVer =  0x1;
 	rTxPwrLimit.ucPwrSetEnable =  ucEnable;
-	icMinPwrLmt = prAdapter->rWifiVar.icRegPwrLmtMin;
+
+	/* Sanity check min power limit */
+	if (prAdapter->rWifiVar.icRegPwrLmtMin < TX_PWR_MIN)
+		icMinPwrLmt = TX_PWR_MIN;
+	else
+		icMinPwrLmt = prAdapter->rWifiVar.icRegPwrLmtMin;
+
+	/* Sanity check max power limit */
+	if (prAdapter->rWifiVar.icRegPwrLmtMax > TX_PWR_MAX)
+		icMaxPwrLmt = TX_PWR_MAX;
+	else
+		icMaxPwrLmt = prAdapter->rWifiVar.icRegPwrLmtMax;
 
 	if (ucEnable) {
-		icPwrLmt = cLimit * 2; /* Convert to unit 0.5dBm */
-		if (icPwrLmt > MAX_TX_POWER) {
+		if (icLimit > icMaxPwrLmt) {
 			DBGLOG(RLM, INFO,
-				"LM: Target MaxPwr %d too big, use default[%d]\n"
-				, icPwrLmt,
-				MAX_TX_POWER);
-			icPwrLmt = MAX_TX_POWER;
+				"LM: Target MaxPwr [%d] too big, use default[%d]\n"
+				, icLimit,
+				icMaxPwrLmt);
+			icLimit = icMaxPwrLmt;
 		}
-		if (icPwrLmt < icMinPwrLmt) {
+		if (icLimit < icMinPwrLmt) {
 			DBGLOG(RLM, INFO,
-				"LM: Target MinPwr %d too low, use default[%d]\n"
-				, icPwrLmt
+				"LM: Target MinPwr [%d] too low, use default[%d]\n"
+				, icLimit
 				, icMinPwrLmt);
-			icPwrLmt = icMinPwrLmt;
+			icLimit = icMinPwrLmt;
 		}
-		rTxPwrLimit.cMaxTxPwr = icPwrLmt;
-		rTxPwrLimit.cMinTxPwr = MIN_TX_POWER;
+
+		/* Convert to unit 0.5dBm */
+		rTxPwrLimit.cMaxTxPwr = icLimit * 2;
+		rTxPwrLimit.cMinTxPwr = icMinPwrLmt * 2;
+
 		DBGLOG(RLM, INFO,
 			"LM: Set Max Tx Power Limit %d, Min Limit %d\n",
 			rTxPwrLimit.cMaxTxPwr,
 			rTxPwrLimit.cMinTxPwr);
-	} else
+	} else {
 		DBGLOG(RLM, TRACE, "LM: Disable Tx Power Limit\n");
+	}
+
 	wlanSendSetQueryCmd(prAdapter, CMD_ID_SET_AP_CONSTRAINT_PWR_LIMIT, TRUE,
 			    FALSE, FALSE, nicCmdEventSetCommon,
 			    nicOidCmdTimeoutCommon,
