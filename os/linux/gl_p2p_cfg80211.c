@@ -232,14 +232,37 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	struct wireless_dev *prOrigWdev = NULL;
+	u_int8_t fgDoRegister = FALSE;
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (prGlueInfo == NULL)
+		return ERR_PTR(-ENXIO);
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return ERR_PTR(-ENXIO);
+
+	/* Both p2p and p2p net device should be in registered state */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED &&
+		prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED) {
+		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERING;
+		fgDoRegister = TRUE;
+	}
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	if (!fgDoRegister) {
+		DBGLOG(P2P, ERROR,
+			"skip add_iface, p2p_state=%d, net_state=%d\n",
+			prAdapter->rP2PRegState,
+			prAdapter->rP2PNetRegState);
+		return ERR_PTR(-EBUSY);
+	}
 
 	do {
-		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
-
-		if (prGlueInfo == NULL)
-			return ERR_PTR(-EINVAL);
-
-		prAdapter = prGlueInfo->prAdapter;
 		prChipInfo = prAdapter->chip_info;
 
 		for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
@@ -374,8 +397,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 
 		} else {
 			DBGLOG(P2P, TRACE, "register_netdev OK\n");
-			prGlueInfo->prAdapter->rP2PNetRegState =
-				ENUM_NET_REG_STATE_REGISTERED;
 
 			netif_carrier_off(prP2pInfo->aprRoleHandler);
 			netif_tx_stop_all_queues(prP2pInfo->aprRoleHandler);
@@ -428,6 +449,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			"mtk_p2p_cfg80211_add_iface ucBssIdx=%d, " MACSTR "\n",
 			prNetDevPriv->ucBssIdx,
 			MAC2STR(rMacAddr));
+
+		/* Restore p2p net register state */
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 		/* Switch OP MOde. */
 		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
@@ -491,6 +517,11 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			gprP2pRoleWdev[u4Idx] = prOrigWdev;
 		}
 	}
+
+	/* Restore p2p net register state anyway */
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+	prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	if (prSwitchModeMsg != NULL)
 		cnmMemFree(prAdapter, prSwitchModeMsg);
