@@ -3556,10 +3556,16 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 }
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-void nicExtEventPhyIcsRawData(IN struct ADAPTER *prAdapter,
-			   IN uint8_t *pucEventBuf)
+void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
+			   uint8_t *pucEventBuf)
 {
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *prPhyIcsEvent;
+#else
 	struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *prPhyIcsEvent;
+#endif
+
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
 	void *pvPacket = NULL;
 	uint32_t u4Size = 0, Idxi = 0;
@@ -3576,11 +3582,17 @@ void nicExtEventPhyIcsRawData(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	prPhyIcsEvent = (struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *)
+				pucEventBuf;
+#else
 	prPhyIcsEvent = (struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *)
-		      pucEventBuf;
+				pucEventBuf;
+#endif
 
 	DBGLOG(RFTEST, INFO,
-	       "u4PktNum = [%d], u4PhyTimestamp = [0x%08x], u4DataLen = [%d]\n",
+	       "u4FuncIndex = %d, u4PktNum = [%d], u4PhyTimestamp = [0x%08x], u4DataLen = [%d]\n",
+	       prPhyIcsEvent->u4FuncIndex,
 	       prPhyIcsEvent->u4PktNum,
 	       prPhyIcsEvent->u4PhyTimestamp,
 	       prPhyIcsEvent->u4DataLen);
@@ -3624,52 +3636,16 @@ void nicExtEventPhyIcsRawData(IN struct ADAPTER *prAdapter,
 		kalMemCopy(pucRecvBuff + sizeof(struct ICS_BIN_LOG_HDR),
 				prPhyIcsEvent->u4Data,
 				prPhyIcsEvent->u4DataLen * sizeof(uint32_t));
-#if 0
-		if (!prAdapter->fgIcsDumpOngoing) {
-			if (kalOpenFwDumpFile(DUMP_FILE_ICS)
-				!= WLAN_STATUS_SUCCESS)
-				DBGLOG(NIC, ERROR,
-					"open PHY ICS dump file fail\n");
-			else
-				prAdapter->fgIcsDumpFileOpend = TRUE;
-			prAdapter->fgIcsDumpOngoing = TRUE;
-		}
-
-		if (prAdapter->fgIcsDumpOngoing) {
-			if (prAdapter->fgIcsDumpFileOpend) {
-				if (kalWriteFwDumpFile(
-						pucRecvBuff,
-						u4Size) != WLAN_STATUS_SUCCESS)
-					DBGLOG(NIC, ERROR,
-						"write PHY ICS log into file fail\n");
-			}
-		}
-#endif
 
 		/* write to ring, ret: written */
 		ret = kalIcsWrite(pucRecvBuff, u4Size);
 		if (ret != u4Size)
-		DBGLOG_LIMITED(NIC, INFO,
-			"dropped written:%d write PHY ICS log into file fail\n",
-			ret);
+			DBGLOG_LIMITED(NIC, ERROR,
+				"dropped written:%d write PHY ICS log into file fail\n",
+				ret);
 
 		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
-
-
-#if 0 /* CFG_ASSERT_DUMP */
-		if (kalEnqFwDumpLog(
-				prAdapter,
-				pucRecvBuff,
-				u4Size,
-				&prAdapter->prGlueInfo->rFwDumpSkbQueue)
-				!= WLAN_STATUS_SUCCESS) {
-			DBGLOG(NIC, ERROR,
-				"Enqueue PHY ICS log into queue fail\n");
-		}
-#endif
-
 	}
-
 
 }
 #endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */

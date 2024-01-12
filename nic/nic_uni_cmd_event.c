@@ -72,6 +72,7 @@
  */
 #include "precomp.h"
 #include "gl_ate_agent.h"
+#include "ics.h"
 
 #if CFG_SUPPORT_CSI
 #include "gl_csi.h"
@@ -232,6 +233,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_WOW] = nicUniEventWow,
 	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
 	[UNI_EVENT_ID_SR] = nicUniEventSR,
+	[UNI_EVENT_ID_SPECTRUM] = nicUniEventPhyIcsRawData,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -6632,6 +6634,35 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 	}
 
 	nicCmdEventQueryCnmInfo(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniEventPhyIcsRawData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	uint16_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_SPECTRUM);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint16_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_SPECTRUM_TAG_PHY_ICS_DATA:{
+			nicExtEventPhyIcsRawData(ad, tag);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
 }
 
 void nicUniEventRfTestHandler(IN struct ADAPTER
