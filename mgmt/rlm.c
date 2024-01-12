@@ -5275,8 +5275,6 @@ static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
 
 	prStaRec = prBssInfo->prStaRecOfAP;
 
-	ASSERT(prStaRec);
-
 	DBGLOG(RLM, INFO,
 	       "OP notification Tx done: BSS[%d] Type[%d] Status[%d] IsSuccess[%d]\n",
 	       prBssInfo->ucBssIndex, ucOpChangeType,
