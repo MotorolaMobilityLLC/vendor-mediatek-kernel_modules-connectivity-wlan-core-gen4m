@@ -100,6 +100,9 @@ CONFIG_MTK_WIFI_CONNAC2X=y
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
 CONFIG_NUM_OF_WFDMA1_RX_RING=3
+ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
+ccflags-y += -DCFG_DOWNLOAD_DYN_MEMORY_MAP=1
+ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 endif
 
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
@@ -207,24 +210,6 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
 	ccflags-y += -D_HIF_NONE=1
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
-endif
-
-ifeq ($(CONFIG_MTK_WIFI_POWER_ON_DOWNLOAD_EMI_ROM_PATCH), y)
-    ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=1
-else
-    ccflags-y += -DCFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH=0
-endif
-
-ifeq ($(CONFIG_MTK_WIFI_DOWNLOAD_DYN_MEMORY_MAP), y)
-    ccflags-y += -DCFG_DOWNLOAD_DYN_MEMORY_MAP=1
-else
-    ccflags-y += -DCFG_DOWNLOAD_DYN_MEMORY_MAP=0
-endif
-
-ifeq ($(CONFIG_MTK_WIFI_ROM_PATCH_NO_SEM_CTRL), y)
-    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
-else
-    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=0
 endif
 
 ifneq ($(CFG_CFG80211_VERSION),)
