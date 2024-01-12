@@ -204,34 +204,39 @@
 #define SER_SET_L1_RECOVER         1
 #define SER_SET_L2_RECOVER         2
 #define SER_SET_L3_RX_ABORT        3
-#define SER_SET_L3_TX0_ABORT       4
-#define SER_SET_L3_TX1_ABORT       5
-#define SER_SET_L3_TX0_DISABLE     6
-#define SER_SET_L3_TX1_DISABLE     7
-#define SER_SET_L3_BF_RECOVER      8
+#define SER_SET_L3_TX_ABORT        4
+#define SER_SET_L3_TX_DISABLE      5
+#define SER_SET_L3_BF_RECOVER      6
+
 
 /* SER user command */
 #define SER_USER_CMD_DISABLE         0
 #define SER_USER_CMD_ENABLE          1
 
-#define SER_USER_CMD_ENABLE_MASK_TRACKING_ONLY      (201)
-#define SER_USER_CMD_ENABLE_MASK_L1_RECOVER_ONLY    (202)
+#define SER_USER_CMD_ENABLE_MASK_TRACKING_ONLY      (200)
+#define SER_USER_CMD_ENABLE_MASK_L1_RECOVER_ONLY    (201)
+#define SER_USER_CMD_ENABLE_MASK_L2_RECOVER_ONLY    (202)
 #define SER_USER_CMD_ENABLE_MASK_L3_RX_ABORT_ONLY   (203)
 #define SER_USER_CMD_ENABLE_MASK_L3_TX_ABORT_ONLY   (204)
 #define SER_USER_CMD_ENABLE_MASK_L3_TX_DISABLE_ONLY (205)
 #define SER_USER_CMD_ENABLE_MASK_L3_BFRECOVER_ONLY  (206)
 #define SER_USER_CMD_ENABLE_MASK_RECOVER_ALL        (207)
 
+
 /* Use a magic number to prevent human mistake */
 #define SER_USER_CMD_L1_RECOVER          995
 
-#define SER_USER_CMD_L2_RECOVER          (302)
-#define SER_USER_CMD_L3_RX_ABORT         (303)
+#define SER_USER_CMD_L2_BN0_RECOVER      (300)
+#define SER_USER_CMD_L2_BN1_RECOVER      (301)
+#define SER_USER_CMD_L3_RX0_ABORT        (302)
+#define SER_USER_CMD_L3_RX1_ABORT        (303)
 #define SER_USER_CMD_L3_TX0_ABORT        (304)
 #define SER_USER_CMD_L3_TX1_ABORT        (305)
 #define SER_USER_CMD_L3_TX0_DISABLE      (306)
 #define SER_USER_CMD_L3_TX1_DISABLE      (307)
 #define SER_USER_CMD_L3_BF_RECOVER       (308)
+
+
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
 /* 1M, 2M, 5.5M, 11M */
@@ -2460,7 +2465,8 @@ struct CNM_CH_LIST {
 struct EXT_CMD_SER_T {
 	uint8_t ucAction;
 	uint8_t ucSerSet;
-	uint8_t aucReserve[2];
+	uint8_t ucDbdcIdx;
+	uint8_t aucReserve[1];
 };
 
 #if (CFG_SUPPORT_TXPOWER_INFO == 1)
@@ -3727,7 +3733,8 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 
 uint32_t wlanoidSerExtCmd(IN struct ADAPTER *prAdapter,
 			  uint8_t ucAction,
-			  uint8_t ucSerSet);
+			  uint8_t ucSerSet,
+			  uint8_t ucDbdcIdx);
 
 #if CFG_SUPPORT_NCHO
 #define NCHO_CMD_MAX_LENGTH	128
