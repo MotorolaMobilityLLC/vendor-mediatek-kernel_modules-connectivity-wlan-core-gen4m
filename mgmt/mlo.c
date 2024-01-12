@@ -3418,7 +3418,6 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	prMldBssInfo->ucBssBitmap |= BIT(prBssInfo->ucBssIndex);
 	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
 
-	mldBssUpdateMldAddrByMainBss(prAdapter, prMldBssInfo);
 	mldBssUpdateOmacIdx(prAdapter, prMldBssInfo, prBssInfo);
 	mldBssUpdateCap(prAdapter, prMldBssInfo);
 
@@ -3458,7 +3457,8 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 	mldBssUpdateCap(prAdapter, prMldBssInfo);
 }
 
-struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter)
+struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter,
+	const uint8_t aucMldMacAddr[])
 {
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	uint8_t i = 0;
@@ -3481,9 +3481,15 @@ struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter)
 
 		mldBssInitializeClientList(prAdapter, prMldBssInfo);
 
-		DBGLOG(ML, INFO, "ucGroupMldId: %d, ucOmRemapIdx: %d\n",
+		COPY_MAC_ADDR(prMldBssInfo->aucOwnMldAddr, aucMldMacAddr);
+
+		DBGLOG(ML, INFO,
+			"ucGroupMldId: %d, ucOmRemapIdx: %d, MldMacAddr: "
+			MACSTR "\n",
 			prMldBssInfo->ucGroupMldId,
-			prMldBssInfo->ucOmRemapIdx);
+			prMldBssInfo->ucOmRemapIdx,
+			MAC2STR(aucMldMacAddr));
+
 		break;
 	}
 

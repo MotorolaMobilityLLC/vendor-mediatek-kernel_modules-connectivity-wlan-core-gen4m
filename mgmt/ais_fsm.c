@@ -456,9 +456,6 @@ struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
 					prAisFsmInfo->ucAisIndex)
 				);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldBssRegister(prAdapter, prAisFsmInfo->prMldBssInfo, bss);
-#endif
 		DBGLOG(AIS, INFO,
 			"[AIS%d] link%d, bss=%d, omac=%d total=%d\n",
 			prAisFsmInfo->ucAisIndex, ucLinkIdx,
@@ -776,8 +773,11 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
+	struct BSS_INFO *prBssInfo;
+	struct WIFI_VAR *prWifiVar;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	uint8_t aucMldMac[MAC_ADDR_LEN];
 #endif
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -810,18 +810,26 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	if (ucAisIndex == AIS_DEFAULT_INDEX)
 		prAdapter->rWifiVar.prDefaultAisFsmInfo = prAisFsmInfo;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prMldBssInfo = mldBssAlloc(prAdapter);
-	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
-	prAisFsmInfo->ucMlProbeSendCount = 0;
-	prAisFsmInfo->ucMlProbeEnable = FALSE;
-#endif
-
+	prWifiVar = &prAdapter->rWifiVar;
 	prAisFsmInfo->u4BssIdxBmap = 0;
 	prAisFsmInfo->ucLinkNum = 0;
 	for (i = 0; i < MAX_BSSID_NUM + 1; i++)
 		prAisFsmInfo->arBssId2LinkMap[i] = MLD_LINK_ID_NONE;
-	aisAllocBssInfo(prAdapter, prAisFsmInfo, AIS_MAIN_LINK_INDEX);
+	prBssInfo = aisAllocBssInfo(prAdapter, prAisFsmInfo,
+		AIS_MAIN_LINK_INDEX);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	COPY_MAC_ADDR(aucMldMac, prBssInfo->aucOwnMacAddr);
+	if (IS_FEATURE_DISABLED(prWifiVar->fgMldSyncLinkAddr))
+		kalRandomGetBytes((void *)&aucMldMac[3], 3);
+
+	prMldBssInfo = mldBssAlloc(prAdapter, aucMldMac);
+	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
+	prAisFsmInfo->ucMlProbeSendCount = 0;
+	prAisFsmInfo->ucMlProbeEnable = FALSE;
+
+	mldBssRegister(prAdapter, prAisFsmInfo->prMldBssInfo, prBssInfo);
+#endif
 
 	/* after aisInitBssInfo, bssinfo is ready */
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -2205,6 +2213,10 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 				aisSetLinkBssDesc(prAisFsmInfo, NULL, i);
 				continue;
 			}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			mldBssRegister(prAdapter, prAisFsmInfo->prMldBssInfo,
+				       prAisBssInfo);
+#endif
 		}
 
 		prConnSettings->eAuthMode = prBssDesc->eRsnSelectedAuthMode;
@@ -8070,6 +8082,12 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *)NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *)NULL;
 	uint32_t ucStaRecIdx = STA_REC_INDEX_NOT_FOUND;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct BSS_INFO *prBssInfo;
+	struct MLD_STA_RECORD *prMldStarec;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	u_int8_t fgConnReqMloSupport = FALSE;
+#endif
 
 	do {
 		if (prMgmtTxReqInfo->fgIsMgmtTxRequested) {
@@ -8099,6 +8117,38 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 		    (struct WLAN_MAC_HEADER *)((uintptr_t)
 					       prMgmtTxMsdu->prPacket +
 					       MAC_TX_RESERVED_FIELD);
+
+		DBGLOG(AIS, INFO,
+			"TX Mgmt A1["MACSTR"] A2["MACSTR"] A3["MACSTR"]\n",
+			MAC2STR(prWlanHdr->aucAddr1),
+			MAC2STR(prWlanHdr->aucAddr2),
+			MAC2STR(prWlanHdr->aucAddr3));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+		if (prConnSettings)
+			fgConnReqMloSupport = !!(prConnSettings->u4ConnFlags &
+					 CONNECT_REQ_MLO_SUPPORT);
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+		prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
+		prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
+		if (fgConnReqMloSupport && prMldStarec && prBssInfo &&
+		    prStaRec) {
+			DBGLOG(AIS, INFO,
+				"TX Mgmt to DA["MACSTR"] SA["MACSTR"] MLD["
+				MACSTR"]\n",
+				MAC2STR(prStaRec->aucMacAddr),
+				MAC2STR(prBssInfo->aucOwnMacAddr),
+				MAC2STR(prMldStarec->aucPeerMldAddr));
+			COPY_MAC_ADDR(prWlanHdr->aucAddr1,
+				prStaRec->aucMacAddr);
+			COPY_MAC_ADDR(prWlanHdr->aucAddr2,
+				prBssInfo->aucOwnMacAddr);
+			COPY_MAC_ADDR(prWlanHdr->aucAddr3,
+				prStaRec->aucMacAddr);
+		}
+#endif
+
 		prStaRec =
 		    cnmGetStaRecByAddress(prAdapter,
 					  ucBssIndex,
@@ -8172,7 +8222,7 @@ void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 	/* All action frames indicate to wpa_supplicant */
 	/* Leave the action frame to wpa_supplicant. */
 	kalIndicateRxMgmtFrame(prAdapter, prAdapter->prGlueInfo,
-		prSwRfb, ucBssIndex);
+		prSwRfb, ucBssIndex, MLD_LINK_ID_NONE);
 
 	return;
 }				/* aisFuncValidateRxActionFrame */
@@ -10222,5 +10272,40 @@ static void aisScanResetReq(struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
 	kalMemZero(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 	prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+}
+
+u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	uint8_t aucMacAddr[])
+{
+	struct BSS_INFO *prAisBssInfo = NULL;
+	struct WIFI_VAR *prWifiVar;
+
+	if (!prAdapter || !prAisFsmInfo || !aucMacAddr)
+		return FALSE;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
+
+	if (!prWifiVar || !prAisBssInfo)
+		return FALSE;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUpdateMldAddr(prAdapter,
+			    mldBssGetByBss(prAdapter, prAisBssInfo),
+			    aucMacAddr);
+	if (IS_FEATURE_ENABLED(prWifiVar->fgMldSyncLinkAddr))
+		nicApplyLinkAddress(prAdapter,
+				    aucMacAddr,
+				    prAisBssInfo->aucOwnMacAddr,
+				    AIS_MAIN_LINK_INDEX);
+#else
+	nicApplyLinkAddress(prAdapter,
+			    aucMacAddr,
+			    prAisBssInfo->aucOwnMacAddr,
+			    AIS_MAIN_LINK_INDEX);
+#endif
+
+	return TRUE;
 }
 

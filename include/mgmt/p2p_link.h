@@ -24,7 +24,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	struct SW_RFB *prSwRfb);
 
 void p2pMldBssInit(struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	const uint8_t aucMldMacAddr[]);
 
 void p2pMldBssUninit(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);

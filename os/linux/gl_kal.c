@@ -7673,10 +7673,14 @@ void kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 }				/* kalIndicateMgmtTxStatus */
 
 void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
-				struct GLUE_INFO *prGlueInfo,
+			    struct GLUE_INFO *prGlueInfo,
 			    struct SW_RFB *prSwRfb,
-			    uint8_t ucBssIndex)
+			    uint8_t ucBssIndex,
+			    uint32_t u4LinkId)
 {
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)
+	struct cfg80211_rx_info rRxInfo;
+#endif
 	int32_t i4Freq = 0;
 	uint8_t ucChnlNum = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
@@ -7716,7 +7720,25 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 		if (!prDevHandler)
 			return;
 
-#if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)
+		kalMemZero(&rRxInfo, sizeof(rRxInfo));
+		rRxInfo.freq = MHZ_TO_KHZ(i4Freq);
+		rRxInfo.sig_dbm = RCPI_TO_dBm(
+			nicRxGetRcpiValueFromRxv(prAdapter,
+				RCPI_MODE_WF0, prSwRfb));
+		rRxInfo.buf = prSwRfb->pvHeader;
+		rRxInfo.len = prSwRfb->u2PacketLen;
+		rRxInfo.flags = GFP_ATOMIC;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (u4LinkId != MLD_LINK_ID_NONE) {
+			nicMgmtMAT_L2M(prAdapter, prSwRfb);
+			rRxInfo.have_link_id = true;
+			rRxInfo.link_id = u4LinkId;
+		}
+#endif
+
+		cfg80211_rx_mgmt_ext(prDevHandler->ieee80211_ptr, &rRxInfo);
+#elif (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prDevHandler->ieee80211_ptr,
 			i4Freq,	/* in MHz */
 			RCPI_TO_dBm((uint8_t) nicRxGetRcpiValueFromRxv(

@@ -1098,6 +1098,9 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		break;
 
 	case SAA_STATE_EXTERNAL_AUTH:
+	{
+		uint32_t u4LinkId = MLD_LINK_ID_NONE;
+
 		if (authCheckRxAuthFrameStatus(prAdapter,
 					       prSwRfb,
 					       AUTH_TRANSACTION_SEQ_2,
@@ -1113,8 +1116,12 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 				prStaRec->u2StatusCode = u2StatusCode;
 			}
 		}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		u4LinkId = (uint32_t)prStaRec->ucLinkIndex;
+#endif
 		kalIndicateRxMgmtFrame(prAdapter, prAdapter->prGlueInfo,
-				prSwRfb, prStaRec->ucBssIndex);
+				prSwRfb, prStaRec->ucBssIndex, u4LinkId);
+	}
 		break;
 
 	default:

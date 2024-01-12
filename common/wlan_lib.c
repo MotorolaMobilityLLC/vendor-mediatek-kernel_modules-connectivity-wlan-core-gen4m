@@ -7243,6 +7243,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucApMldEMLSupport,
 		"ApMldEML", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->fgEnTuao, "EnableTuao", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgMldSyncLinkAddr,
+		"MldSyncLinkAddr", FEATURE_ENABLED);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateCapAll(prAdapter);

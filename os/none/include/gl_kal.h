@@ -1148,7 +1148,8 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 	_pucFrameBuf, _u4FrameLen, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalIndicateRxMgmtFrame(prAdapter, _prGlueInfo, _prSwRfb, _ucBssIndex) \
+#define kalIndicateRxMgmtFrame(prAdapter, _prGlueInfo, _prSwRfb, _ucBssIndex, \
+	_u4LinkId) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #else
 u_int8_t kalRetrieveNetworkAddress(struct GLUE_INFO *prGlueInfo,
@@ -1182,9 +1183,10 @@ kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucBssIndex);
 
 void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
-				struct GLUE_INFO *prGlueInfo,
+			    struct GLUE_INFO *prGlueInfo,
 			    struct SW_RFB *prSwRfb,
-			    uint8_t ucBssIndex);
+			    uint8_t ucBssIndex,
+			    uint32_t u4LinkId);
 #endif
 /*----------------------------------------------------------------------------*/
 /* Routines in interface - ehpi/sdio.c                                        */

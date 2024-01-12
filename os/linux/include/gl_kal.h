@@ -1731,9 +1731,10 @@ kalIndicateMgmtTxStatus(struct GLUE_INFO *prGlueInfo,
 			uint8_t ucBssIndex);
 
 void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
-				struct GLUE_INFO *prGlueInfo,
+			    struct GLUE_INFO *prGlueInfo,
 			    struct SW_RFB *prSwRfb,
-			    uint8_t ucBssIndex);
+			    uint8_t ucBssIndex,
+			    uint32_t u4LinkId);
 
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,

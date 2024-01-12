@@ -6544,3 +6544,42 @@ uint8_t nicGetActiveTspec(struct ADAPTER *prAdapter,
 
 	return ucActivedTspec;
 }
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void nicMgmtMAT_L2M(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	struct WLAN_MAC_HEADER *prWlanHdr;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct MLD_BSS_INFO *prMldBss;
+	struct MLD_STA_RECORD *prMldSta;
+
+	if (!prAdapter || !prSwRfb)
+		return;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *)prSwRfb->pvHeader;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+
+	if (!prMldBss || !prMldSta)
+		return;
+
+	DBGLOG(NIC, TRACE,
+		"Before A1["MACSTR"] A2["MACSTR"] A3["MACSTR"]\n",
+		MAC2STR(prWlanHdr->aucAddr1),
+		MAC2STR(prWlanHdr->aucAddr2),
+		MAC2STR(prWlanHdr->aucAddr3));
+
+	COPY_MAC_ADDR(prWlanHdr->aucAddr1, prMldBss->aucOwnMldAddr);
+	COPY_MAC_ADDR(prWlanHdr->aucAddr2, prMldSta->aucPeerMldAddr);
+
+	DBGLOG(NIC, TRACE,
+		"After A1["MACSTR"] A2["MACSTR"] A3["MACSTR"]\n",
+		MAC2STR(prWlanHdr->aucAddr1),
+		MAC2STR(prWlanHdr->aucAddr2),
+		MAC2STR(prWlanHdr->aucAddr3));
+}
+#endif
