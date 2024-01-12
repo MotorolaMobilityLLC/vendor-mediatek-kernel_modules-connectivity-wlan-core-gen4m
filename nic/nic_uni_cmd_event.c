@@ -13030,9 +13030,10 @@ void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			       exp->u2Tag,
 			       exp->u2Length,
 			       exp->u4ExceptionIdx);
-
+#if CFG_WMT_RESET_API_SUPPORT
 			glSetRstReasonString(aucMddpRsn);
 			glResetWholeChipResetTrigger(aucMddpRsn);
+#endif /* CFG_WMT_RESET_API_SUPPORT */
 		}
 			break;
 		case UNI_EVENT_MDDP_FWOWN_RETRY: {

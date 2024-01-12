@@ -1088,6 +1088,11 @@ int priv_driver_uapsd(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_show_ahdbg(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+int priv_driver_set_mddp_test(struct net_device *prNetDev,
+		char *pcCommand, int i4TotalLen);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

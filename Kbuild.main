@@ -2861,6 +2861,12 @@ else
 ccflags-y += -DCFG_SUPPORT_WED_PROXY=0
 endif
 
+ifeq ($(CONFIG_MTK_SUPPORT_LIGHT_MDDP), y)
+    ccflags-y += -DCFG_MTK_SUPPORT_LIGHT_MDDP=1
+else
+    ccflags-y += -DCFG_MTK_SUPPORT_LIGHT_MDDP=0
+endif
+
 # ---------------------------------------------------
 # Platform Objects List
 # ---------------------------------------------------

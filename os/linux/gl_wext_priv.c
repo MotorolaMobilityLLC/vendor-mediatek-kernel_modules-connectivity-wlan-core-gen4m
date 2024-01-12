@@ -48,6 +48,9 @@
 #include "gl_csi.h"
 #endif
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+#include "mddp.h"
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 /*
  * #if CFG_SUPPORT_QA_TOOL
  * extern UINT_16 g_u2DumpIndex;
@@ -22524,3 +22527,149 @@ int priv_driver_show_ahdbg(struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+void mddp_test_ch_switch_event(struct ADAPTER *prAd, char *pcCmd, int tLen,
+						  int32_t argc, int8_t *argv[])
+{
+	uint8_t ucIdx = 0;
+	struct WIFI_EVENT *prWifiEvt = NULL;
+	struct EVENT_LTE_SAFE_CHN *prLteSafeChnEvt = NULL;
+
+	uint8_t ucVersion = 2;
+	uint32_t u4Flags = 0x1;
+	uint32_t aucSafeChnl[4] = {0x2, 0xfffffff, 0x1ff, 0x3fff};
+
+	if (argc >= 8) {
+		if (kalkStrtou8(argv[2], 0, &ucVersion))
+			return;
+
+		if (kalkStrtou32(argv[3], 0, &u4Flags))
+			return;
+
+		for (ucIdx = 0; ucIdx < ENUM_SAFE_CH_MASK_MAX_NUM; ucIdx++) {
+			if (kalkStrtou32(argv[ucIdx + 4], 0,
+					&aucSafeChnl[ucIdx]))
+				return;
+		}
+
+		DBGLOG(INIT, INFO,
+			"Ver:%u Flag:%u SafeCh:[0x%x, 0x%x, 0x%x, 0x%x]\n",
+			ucVersion, u4Flags, aucSafeChnl[0],
+			aucSafeChnl[1], aucSafeChnl[2], aucSafeChnl[3]);
+	}
+
+	prWifiEvt = kalMemAlloc(sizeof(struct WIFI_EVENT) +
+		sizeof(struct EVENT_LTE_SAFE_CHN), VIR_MEM_TYPE);
+	if (!prWifiEvt) {
+		DBGLOG(INIT, ERROR, "Alloc prWifiEvt fail\n");
+		return;
+	}
+
+	kalMemZero(prWifiEvt, sizeof(struct WIFI_EVENT) +
+		sizeof(struct EVENT_LTE_SAFE_CHN));
+
+	prLteSafeChnEvt = (struct EVENT_LTE_SAFE_CHN *)
+		&prWifiEvt->aucBuffer[0];
+
+	if (!prLteSafeChnEvt) {
+		kalMemFree(prWifiEvt, VIR_MEM_TYPE, sizeof(struct WIFI_EVENT) +
+			sizeof(struct EVENT_LTE_SAFE_CHN));
+		DBGLOG(INIT, ERROR, "Alloc prLteSafeChnEvt fail\n");
+		return;
+	}
+
+	prLteSafeChnEvt->ucVersion = ucVersion;
+	prLteSafeChnEvt->u4Flags = u4Flags;
+	for (ucIdx = 0; ucIdx < ENUM_SAFE_CH_MASK_MAX_NUM; ucIdx++) {
+		prLteSafeChnEvt->rLteSafeChn.au4SafeChannelBitmask[ucIdx]
+			= aucSafeChnl[ucIdx];
+	}
+
+	cnmIdcDetectHandler(prAd, prWifiEvt);
+
+	kalMemFree(prWifiEvt, VIR_MEM_TYPE, sizeof(struct WIFI_EVENT) +
+		sizeof(struct EVENT_LTE_SAFE_CHN));
+}
+
+void mddp_test_get_acs_best_ch(struct ADAPTER *prAd, char *pcCmd, int tLen)
+{
+	uint8_t ucRet = 0;
+	int32_t i4BytesWritten = 0;
+
+	ucRet = p2pFunGetAcsBestCh(prAd, BAND_2G4, MAX_BW_80MHZ,
+		0x2, 0xfffffff, 0x1ff, 0x3fff);
+
+	i4BytesWritten += kalScnprintf(pcCmd + i4BytesWritten,
+		tLen - i4BytesWritten,
+		"[TestCase 8: %s] Assert Channel (%u == 1)\n",
+		ucRet == 1 ? "PASS" : "FAILED", ucRet);
+}
+
+int priv_driver_set_mddp_test(struct net_device *prNetDev,
+			char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAd = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t u4Ret = 0;
+	uint32_t u4TestCase = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		DBGLOG(INIT, ERROR, "input arg is null.\n");
+		return -1;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAd = prGlueInfo->prAdapter;
+
+	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(INIT, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4TestCase);
+
+	switch (u4TestCase) {
+	case 0: /* mddpInit */
+		mddpInit(NORMAL_BOOT);
+		break;
+	case 1: /* mddpUninit */
+		mddpUninit();
+		break;
+	case 2: /* pccciOn */
+		if (prAd->chip_info->coexpccifon)
+			prAd->chip_info->coexpccifon(prAd);
+		break;
+	case 3: /* pccciOff */
+		if (prAd->chip_info->coexpccifoff)
+			prAd->chip_info->coexpccifoff(prAd);
+		break;
+	case 4:
+		mddpNotifyWifiOnStart();
+		break;
+	case 5:
+		mddpNotifyWifiOnEnd();
+		break;
+	case 6:
+		mddpNotifyWifiOffStart();
+		break;
+	case 7:
+		mddpNotifyWifiOffEnd();
+		break;
+	case 8:
+		mddp_test_get_acs_best_ch(prAd, pcCommand,
+			i4TotalLen);
+		break;
+	case 9:
+		mddp_test_ch_switch_event(prAd, pcCommand,
+			i4TotalLen, i4Argc, apcArgv);
+		break;
+	default:
+		DBGLOG(INIT, ERROR, "unplement testcase(%u)!\n",
+			u4TestCase);
+		break;
+	}
+	return 0;
+}
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */

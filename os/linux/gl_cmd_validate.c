@@ -2352,6 +2352,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(show_ahdbg_policy)
 	},
 #endif /* BUILD_QA_DBG */
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	{
+		.pcCmdStr  = CMD_SET_MDDP_TEST,
+		.pfHandler = priv_driver_set_mddp_test,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 /*
  *	{
  *		.pcCmdStr  = <command string>,

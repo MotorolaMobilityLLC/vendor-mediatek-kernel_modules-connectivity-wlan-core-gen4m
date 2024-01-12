@@ -516,6 +516,10 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 	}
 
 	prAdapter->u4OwnFailedCount++;
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	mddpNotifyDrvOwn(STATUS_FAILURE);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -709,10 +713,13 @@ done:
 	KAL_REC_TIME_END();
 	u4DrvOwnElapsed = KAL_GET_TIME_INTERVAL();
 
-	if (fgResult)
+	if (fgResult) {
 		DBGLOG(INIT, TRACE, DUMP_DRV_OWN_DONE,
 			u4DrvOwnElapsed, u4Send);
-	else
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		mddpNotifyDrvOwn(STATUS_SUCCESS);
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	} else
 		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
 			u4DrvOwnElapsed, u4Send);
 
