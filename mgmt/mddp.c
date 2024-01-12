@@ -864,7 +864,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 	prDrvInfo->info_id = WSVC_DRVINFO_TXD_TEMPLATE;
-	prDrvInfo->info_len = (sizeof(struct mddpw_txd_t) +
+	prDrvInfo->info_len = (sizeof(struct mddp_txd_t) +
 			NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prMddpTxd = (struct mddp_txd_t *) &(prDrvInfo->info[0]);
 	prMddpTxd->version = 1;
