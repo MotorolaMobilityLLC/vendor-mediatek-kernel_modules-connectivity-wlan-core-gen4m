@@ -15062,6 +15062,58 @@ uint32_t wlanoidSetMonitor(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to send EPCS frames (REQ, RSP, TEARDOWN)
+ *        from oid
+ *
+ * \param[in]  prAdapter       A pointer to the Adapter structure.
+ * \param[in]  pvSetBuffer     A pointer to the buffer that holds the
+ *                             OID-specific data to be set.
+ * \param[in]  u4SetBufferLen  The number of bytes the set buffer.
+ * \param[out] pu4SetInfoLen   Points to the number of bytes it read or is
+ *                             needed
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidSendEpcs(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t ucBssIndex = 0;
+	uint8_t ucAction = 0;
+
+	if (!prAdapter)
+		return WLAN_STATUS_INVALID_DATA;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return WLAN_STATUS_INVALID_DATA;
+	if (prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED) {
+		DBGLOG(OID, ERROR, "didn't connected any Access Point\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	ucAction = hexDigitToInt(*(uint8_t *)pvSetBuffer);
+	switch (ucAction) {
+	case EPCS_ENABLE_REQUEST:
+	case EPCS_ENABLE_RESPONSE:
+	case EPCS_TEARDOWN:
+		DBGLOG(OID, INFO, "Send EPCS, action=%u\n", ucAction);
+		epcsSend(prAdapter, ucAction, prBssInfo);
+		break;
+	default:
+		DBGLOG(OID, ERROR, "action invalid %u\n", ucAction);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
+
 uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 				    void *pvSetBuffer, uint32_t u4SetBufferLen,
 				    uint32_t *pu4SetInfoLen)

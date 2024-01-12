@@ -224,8 +224,11 @@ void ehtRlmFillCapIE(
 	/* MAC capabilities */
 	EHT_RESET_MAC_CAP(prEhtCap->ucEhtMacCap);
 
-	/* NSEP: not support for the time being */
-	/* SET_EHT_MAC_CAP_NSEP_PRI_ACCESS(prEhtCap->ucEhtMacCap); */
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	/* EPCS: (previously called NSEP) supported for STA */
+	if (IS_BSS_AIS(prBssInfo))
+		SET_EHT_MAC_CAP_EPCS_PRI_ACCESS(prEhtCap->ucEhtMacCap);
+#endif
 	/* OM_CTRL: default support for both STA and AP; */
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtOMCtrl))
 		SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);

@@ -1581,7 +1581,7 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT) {
 		/* todo: handle 2byte MEDIUM_SYN_DELAY_INFO_PRESENT */
- 		kalMemCopy(&prMlInfo->u2MediumSynDelayInfo, pos, 2);
+		kalMemCopy(&prMlInfo->u2MediumSynDelayInfo, pos, 2);
 		if (show_info)
 			DBGLOG(ML, INFO,
 				"\tML common Info MediumSynDelayInfo = 0x%x\n",
@@ -1765,7 +1765,7 @@ sta:
 		ucStaInfoLen = *pos++;
 
 		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
- 			COPY_MAC_ADDR(prStaProfile->aucLinkAddr, pos);
+			COPY_MAC_ADDR(prStaProfile->aucLinkAddr, pos);
 			if (show_info)
 				DBGLOG(ML, INFO,
 					"\tLinkID=%d, LinkAddr="MACSTR"\n",
@@ -1941,7 +1941,7 @@ void mldParseReconfigMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	/* ML control bits[0,2] is type */
 	ucMlCtrlType = (prMlInfoIe->u2Ctrl & ML_CTRL_TYPE_MASK);
 
-	/* It shall be Basic variant ML element*/
+	/* It shall be Reconfiguration variant ML element*/
 	if (ucMlCtrlType != ML_CTRL_TYPE_RECONFIG) {
 		prMlInfo->ucValid = FALSE;
 		DBGLOG(ML, WARN, "invalid ML control type:%d\n", ucMlCtrlType);
@@ -2045,6 +2045,176 @@ next:
 
 	prMlInfo->ucValid = TRUE;
 }
+
+void mldParsePriorityAccessLinkInfo(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, struct MULTI_LINK_INFO *prMlInfo,
+		const uint8_t *pos, const uint8_t *end, uint16_t u2IELength)
+{
+	struct IE_ML_STA_CONTROL *prIeSta;
+	const uint8_t *next_sta;
+	uint16_t u2StaControl;
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+	uint8_t ucLinkId;
+#endif
+
+	next_sta = pos;
+
+	while (next_sta < end) {
+		pos = next_sta;
+		next_sta = pos + IE_SIZE(pos);
+
+		prIeSta = (struct IE_ML_STA_CONTROL *)pos;
+
+		if (prIeSta->ucSubID != SUB_IE_MLD_PER_STA_PROFILE ||
+			IE_SIZE(prIeSta) < sizeof(struct IE_ML_STA_CONTROL) ||
+			prMlInfo->ucProfNum >= MLD_LINK_MAX)
+			continue;
+
+		u2StaControl = prIeSta->u2StaCtrl;
+		pos = prIeSta->aucStaInfo;
+
+		switch (prMlInfo->ucMlCtrlType) {
+		case ML_CTRL_TYPE_PRIORITY_ACCESS:
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+			ucLinkId = (u2StaControl &
+					ML_PRIACC_STA_CTRL_LINK_ID_MASK);
+			mldParseStaProfilePriorityAccess(prAdapter, prMlInfo,
+					prSwRfb, ucLinkId, u2StaControl, pos,
+					u2IELength);
+#endif
+			break;
+		default:
+			DBGLOG(ML, ERROR, "ucMlCtrlType %u not implmented\n",
+					prMlInfo->ucMlCtrlType);
+			return;
+		}
+
+		if (pos > next_sta) {
+			DBGLOG(ML, WARN, "invalid STA profile len=%td\n",
+					next_sta - pos);
+			continue;
+		}
+
+
+	} /* while (next_sta < end) */
+
+	prMlInfo->ucValid = TRUE;
+
+}
+
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+void mldApplyPriorityAccessAllLinks(struct MLD_BSS_INFO *prMldBssInfo,
+		struct BSS_INFO *prSrcBssInfo)
+{
+	struct BSS_INFO *bss;
+
+	LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList, rLinkEntryMld,
+			struct BSS_INFO) {
+		if (prSrcBssInfo == bss)
+			continue;
+		bss->ucWmmParamSetCount =
+				prSrcBssInfo->ucBackupWmmParamSetCount;
+		kalMemCopy(bss->arACQueParms, prSrcBssInfo->arACQueParms,
+				sizeof(prSrcBssInfo->arACQueParms));
+		bss->ucMUEdcaUpdateCnt = prSrcBssInfo->ucBackupMUEdcaUpdateCnt;
+		kalMemCopy(bss->arMUEdcaParams, prSrcBssInfo->arMUEdcaParams,
+				sizeof(prSrcBssInfo->arMUEdcaParams));
+	}
+}
+
+void mldParseStaProfilePriorityAccess(struct ADAPTER *prAdapter,
+		struct MULTI_LINK_INFO *prMlInfo, struct SW_RFB *prSwRfb,
+		uint8_t ucLinkId, uint16_t u2StaControl, const uint8_t *pos,
+		uint16_t u2IELength)
+{
+	struct STA_PROFILE *prStaProfile;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct MLD_STA_RECORD *prMldStaRec;
+	struct MLD_BSS_INFO *prMldBssInfo;
+
+	if (!prAdapter || !prSwRfb)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	if (!prMldStaRec || !prMldBssInfo) {
+		DBGLOG(RX, ERROR,
+			"prMldStaRec or prMldBssInfo equal to NULL\n");
+		return;
+	}
+
+	if (prMlInfo->u2ValidLinks & BIT(ucLinkId))
+		DBGLOG(ML, WARN, "dup sta profile, LinkID=%d\n", ucLinkId);
+	prMlInfo->u2ValidLinks |= BIT(ucLinkId);
+	prStaProfile = &prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
+	prStaProfile->ucLinkId = ucLinkId;
+	prStaProfile->u2StaCtrl = u2StaControl;
+
+	DBGLOG(ML, TRACE, "\tLinkID=%d Ctrl=0x%x Total=%d\n",
+			prStaProfile->ucLinkId, prStaProfile->u2StaCtrl,
+			prMlInfo->ucProfNum);
+
+	/* Parse (MU)Edca parameters */
+	mqmIsBssEdcaParamsUpdated(prAdapter, prSwRfb, pos, u2IELength, TRUE);
+	mqmParseMUEdcaParams(prAdapter, prSwRfb, pos, u2IELength, TRUE);
+	mldApplyPriorityAccessAllLinks(prMldBssInfo, prBssInfo);
+
+}
+
+
+void mldParsePriorityAccessMlIE(struct ADAPTER *prAdapter,
+		struct MULTI_LINK_INFO *prMlInfo, struct SW_RFB *prSwRfb,
+		const uint8_t *pucIE, uint16_t u2IELength, const char *pucDesc)
+{
+	const uint8_t *pos, *end;
+	uint8_t ucMlCtrlType;
+	struct IE_MULTI_LINK_CONTROL *prMlInfoIe;
+
+	DBGLOG(ML, INFO, "[%s] ML PRIORITY ACCESS IE, IE_LEN = %d\n",
+		pucDesc, IE_LEN(pucIE));
+	DBGLOG_MEM8(ML, INFO, (uint8_t *)pucIE, IE_SIZE(pucIE));
+
+	kalMemSet(prMlInfo, 0, sizeof(struct MULTI_LINK_INFO));
+
+	end = pucIE + IE_SIZE(pucIE);
+	prMlInfoIe = (struct IE_MULTI_LINK_CONTROL *)pucIE;
+	pos = prMlInfoIe->aucCommonInfo;
+
+	ucMlCtrlType = ML_GET_CTRL_TYPE(prMlInfoIe);
+	/* It shall be Priority Access ML element*/
+	if (ucMlCtrlType != ML_CTRL_TYPE_PRIORITY_ACCESS) {
+		prMlInfo->ucValid = FALSE;
+		DBGLOG(ML, WARN, "invalid ML control type:%u\n", ucMlCtrlType);
+		return;
+	}
+
+	prMlInfo->ucMlCtrlType = ucMlCtrlType;
+	prMlInfo->ucCommonInfoLength = *pos++;
+
+	/* AP MLD MAC Address is mandatory in common info field */
+	/* BE D3.0 Figure 9-1002ad Common Info Field of the Priority Access
+	 * Multi-Link element format
+	 */
+	COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
+	pos += MAC_ADDR_LEN;
+	DBGLOG(ML, TRACE, "\tML common Info AP Mld addr = "MACSTR"\n",
+		MAC2STR(prMlInfo->aucMldAddr));
+
+	/* pos point to link info, recursively parse it */
+	mldParsePriorityAccessLinkInfo(prAdapter, prSwRfb, prMlInfo, pos, end,
+			u2IELength);
+}
+#endif
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 {
@@ -2164,7 +2334,7 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 	struct IE_NON_TX_CAP *cap = NULL;
 	struct IE_MBSSID_INDEX *idx = NULL;
 	struct IE_NON_INHERITANCE *ninh = NULL;
-    	uint8_t **prof_ies;
+	uint8_t **prof_ies;
 	uint8_t ie_count = 0, profile_count = 0;
 	int8_t i, need_profile, need_add;
 	uint16_t offset = 0;
@@ -3724,10 +3894,17 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 		prMldStarec->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 
 		/* TODO */
-		prMldStarec->fgNSEP = FALSE;
+		prMldStarec->fgEPCS = FALSE;
 		prMldStarec->u2EmlCap = u2EmlCap;
 		prMldStarec->u2MldCap = u2MldCap;
 		COPY_MAC_ADDR(prMldStarec->aucPeerMldAddr, aucMacAddr);
+
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+		cnmTimerInitTimer(prAdapter,
+				&prMldStarec->rEpcsTimer,
+				(PFN_MGMT_TIMEOUT_FUNC) epcsTimeout,
+				(uintptr_t) prMldStarec);
+#endif
 
 		mldBssAddClient(prAdapter, prMldBssInfo, prMldStarec);
 		DBGLOG(ML, INFO, "ucIdx: %d, aucMacAddr: " MACSTR "\n",

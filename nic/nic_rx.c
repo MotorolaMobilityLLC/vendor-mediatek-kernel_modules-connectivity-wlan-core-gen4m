@@ -4054,6 +4054,19 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		twtProcessS1GAction(prAdapter, prSwRfb);
 		break;
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	case CATEGORY_PROTECTED_EHT_ACTION:
+		switch (prActFrame->ucAction) {
+		case EPCS_ENABLE_REQUEST:
+		case EPCS_ENABLE_RESPONSE:
+		case EPCS_TEARDOWN:
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+			epcsProcessAction(prAdapter, prSwRfb);
+#endif
+			break;
+		}
+		break;
+#endif
 
 #if CFG_SUPPORT_802_11K
 	case CATEGORY_RM_ACTION:

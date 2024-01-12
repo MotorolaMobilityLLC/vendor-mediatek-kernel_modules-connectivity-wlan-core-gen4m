@@ -923,9 +923,15 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     else
         ccflags-y += -DCFG_MLD_INFO_PRESETUP=0
     endif
+    ifeq ($(CONFIG_MTK_WIFI_11BE_EPCS), y)
+        ccflags-y += -DCFG_SUPPORT_802_11BE_EPCS=1
+    else
+        ccflags-y += -DCFG_SUPPORT_802_11BE_EPCS=0
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
     ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0
+    ccflags-y += -DCFG_SUPPORT_802_11BE_EPCS=0
 endif
 
 ifeq ($(CONFIG_SUPPORT_BW320), y)
@@ -2402,6 +2408,10 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
 MGMT_OBJS += $(MGMT_DIR)mlo.o
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_11BE_EPCS), y)
+MGMT_OBJS += $(MGMT_DIR)epcs.o
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)

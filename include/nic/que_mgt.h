@@ -1192,9 +1192,9 @@ void mqmProcessBcn(struct ADAPTER *prAdapter,
 		   uint16_t u2IELength);
 
 #if (CFG_SUPPORT_802_11AX == 1)
-u_int8_t mqmCompareMUEdcaParameters(
-	struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam,
-	struct BSS_INFO *prBssInfo);
+u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		struct _IE_MU_EDCA_PARAM_T *prIeMUEdcaParam);
 
 u_int8_t mqmParseMUEdcaParams(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	const uint8_t *pucIE, uint16_t u2IELength, u_int8_t fgForceOverride);
@@ -1204,16 +1204,20 @@ u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb, const uint8_t *pucIE,
 		uint16_t u2IELength, u_int8_t fgForceOverride);
 
-u_int8_t mqmHandleWMMEdcaParams(struct BSS_INFO *prBssInfo,
-		const uint8_t *pucIE, u_int8_t fgForceOverride);
+u_int8_t mqmHandleWMMEdcaParams(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		const uint8_t *pucIE, u_int8_t fgForceOverwrite);
 
-u_int8_t mqmHandle80211EdcaParamSet(struct BSS_INFO *prBssInfo,
-		const uint8_t *pucIE, u_int8_t fgForceOverride);
+u_int8_t mqmHandle80211EdcaParamSet(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		const uint8_t *pucIE, u_int8_t fgForceOverwrite);
 
-u_int8_t mqmIsEdcaParamsChanged(struct BSS_INFO *prBssInfo, uint8_t ucQosInfo,
-		struct WMM_AC_PARAM *arAcParam);
+u_int8_t mqmIsEdcaParamsChanged(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+		uint8_t ucQosInfo, struct WMM_AC_PARAM *arAcParam);
 
-void mqmUpdateEdcaParams(struct BSS_INFO *prBssInfo, uint8_t ucQosInfo,
+void mqmUpdateEdcaParams(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
+		struct STA_RECORD *prStaRec, uint8_t ucQosInfo,
 		struct WMM_AC_PARAM *arAcParam);
 
 void mqmFillAcQueParam(struct WMM_AC_PARAM *prAcParam,

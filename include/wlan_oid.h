@@ -5255,6 +5255,12 @@ uint32_t wlanoidSetMonitor(struct ADAPTER *prAdapter,
 				uint32_t *pu4SetInfoLen);
 #endif
 
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+uint32_t wlanoidSendEpcs(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_802_11BE_EPCS */
+
 uint32_t wlanoidSendNeighborRequest(struct ADAPTER *prAdapter,
 				    void *pvSetBuffer,
 				    uint32_t u4SetBufferLen,

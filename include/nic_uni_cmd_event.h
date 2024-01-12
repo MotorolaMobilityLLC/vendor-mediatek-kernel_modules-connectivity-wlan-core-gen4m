@@ -1040,7 +1040,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_EHT_MLD {
 	uint16_t u2Tag;		/* Tag = 0x21 */
 	uint16_t u2Length;
-	uint8_t fgNSEP;
+	uint8_t fgEPCS;
 	uint8_t fgMldType;
 	uint8_t ucReserved;
 	/*

@@ -284,6 +284,9 @@
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 #include "mlo.h"
+#if (CFG_SUPPORT_802_11BE_EPCS == 1)
+#include "epcs.h"
+#endif
 #endif
 
 #include "que_mgt.h"
