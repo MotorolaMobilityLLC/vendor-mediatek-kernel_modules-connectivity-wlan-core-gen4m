@@ -172,6 +172,27 @@
 ******************************************************************************
 */
 
+enum ENUM_WIFI_MODE {
+	WMODE_INVALID = 0,
+	WMODE_A = 1 << 0,
+	WMODE_B = 1 << 1,
+	WMODE_G = 1 << 2,
+	WMODE_GN = 1 << 3,
+	WMODE_AN = 1 << 4,
+	WMODE_AC = 1 << 5,
+	WMODE_AX_24G = 1 << 6,
+	WMODE_AX_5G = 1 << 7,
+	WMODE_AX_6G = 1 << 8,
+	WMODE_BE_24G = 1 << 9,
+	WMODE_BE_5G = 1 << 10,
+	WMODE_BE_6G = 1 << 11,
+	/*
+	 * total types of supported wireless mode,
+	 * add this value once yow add new type
+	 */
+	WMODE_COMP = 12,
+};
+
 /* Define CMD ID from Host to firmware (v0.07) */
 enum ENUM_CMD_ID {
 	CMD_ID_DUMMY_RSV            = 0x00, /* 0x00 (Set) */

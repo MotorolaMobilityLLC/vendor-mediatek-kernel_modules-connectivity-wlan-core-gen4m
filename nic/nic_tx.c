@@ -1065,7 +1065,6 @@ uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO
 
 	switch (prCmdInfo->eCmdType) {
 	case COMMAND_TYPE_NETWORK_IOCTL:
-	case COMMAND_TYPE_GENERAL_IOCTL:
 		ucTC = TC4_INDEX;
 		break;
 
@@ -3354,15 +3353,12 @@ u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
 }
 
 void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
-			     IN struct WIFI_EVENT *prEvent)
+			     IN struct EVENT_TX_DONE *prTxDone)
 {
-	struct EVENT_TX_DONE *prTxDone;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	char *prBw = "INVALID";
 	char *prTxResult = "UNDEFINED";
-
-	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
 /* fos_change begin */
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
@@ -3400,9 +3396,9 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 				prAdapter->chip_info->prTxDescOps;
 			uint8_t ucNss, ucStbc;
 			int8_t icTxPwr;
-			uint32_t *pu4RawTxs =
-				(uint32_t *)&prTxDone->aucRawTxS[0];
+			uint32_t *pu4RawTxs;
 
+			pu4RawTxs = (uint32_t *)&prTxDone->aucRawTxS[0];
 			if (prTxDescOps) {
 				ucNss = (prTxDone->u2TxRate &
 					prTxDescOps->u2TxdFrNstsMask) >>
@@ -3481,6 +3477,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 						".5" : "",
 					prTxDone->u4Timestamp,
 					prTxDone->u4TxDelay);
+#ifndef CFG_SUPPORT_UNIFIED_COMMAND
 			if (prTxDone->ucStatus != 0)
 				DBGLOG_LIMITED(NIC, INFO,
 					"TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
@@ -3495,6 +3492,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 					*(pu4RawTxs + 1), *(pu4RawTxs + 2),
 					*(pu4RawTxs + 3), *(pu4RawTxs + 4),
 					*(pu4RawTxs + 5), *(pu4RawTxs + 6));
+#endif
 		}
 	} else {
 		DBGLOG(NIC, TRACE,
@@ -3868,7 +3866,6 @@ uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 
 	switch (prCmdInfo->eCmdType) {
 	case COMMAND_TYPE_NETWORK_IOCTL:
-	case COMMAND_TYPE_GENERAL_IOCTL:
 		u4PageCount = nicTxGetPageCount(prAdapter,
 						prCmdInfo->u2InfoBufLen, TRUE);
 		break;

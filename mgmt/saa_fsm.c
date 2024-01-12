@@ -925,6 +925,39 @@ void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
 			    (struct SW_RFB *) NULL);
 }				/* end of saaFsmRunEventRxRespTimeOut() */
 
+struct STA_RECORD *saaFsmFindStaRec(IN struct ADAPTER *prAdapter,
+		struct WLAN_MAC_MGMT_HEADER *mgmt)
+{
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+	uint8_t ucBssIdx = 0;
+
+	do {
+		for (ucBssIdx = 0;
+			ucBssIdx < prAdapter->ucHwBssIdNum; ucBssIdx++) {
+			if (!IS_NET_ACTIVE(prAdapter, ucBssIdx))
+				continue;
+
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+			if (EQUAL_MAC_ADDR(prBssInfo->aucOwnMacAddr,
+				mgmt->aucDestAddr)
+				&& IS_BSS_AIS(prBssInfo))
+				break;
+
+			prBssInfo = NULL;
+		}
+
+	} while (FALSE);
+
+	if (!prBssInfo)
+		return NULL;
+
+	// TODO: uni cmd
+	return cnmGetStaRecByAddress(prAdapter,
+		prBssInfo->ucBssIndex, mgmt->aucBSSID);
+}				/* p2pFuncBSSIDFindBssInfo */
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will process the Rx Auth Response Frame and then
@@ -948,10 +981,21 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
+		struct WLAN_MAC_MGMT_HEADER *mgmt =
+			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
+
 		DBGLOG(SAA, WARN,
-		       "Received a AuthResp: wlanIdx[%d] w/o corresponding staRec\n",
-		       ucWlanIdx);
-		return;
+			"Received a AuthResp: DA[" MACSTR "] bssid[" MACSTR "] wlanIdx[%d] w/o corresponding staRec\n",
+			MAC2STR(mgmt->aucDestAddr),
+			MAC2STR(mgmt->aucBSSID),
+			ucWlanIdx);
+
+ 		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
+		if (!prStaRec) {
+			DBGLOG(SAA, WARN, "StaRec not found\n");
+			return;
+		}
+		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 	}
 
 	if (!IS_AP_STA(prStaRec))
@@ -1138,11 +1182,21 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
-		/* ASSERT(0); */
+		struct WLAN_MAC_MGMT_HEADER *mgmt =
+			(struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
+
 		DBGLOG(SAA, WARN,
-		       "Received a AssocResp: wlanIdx[%d] w/o corresponding staRec\n",
-		       ucWlanIdx);
-		return rStatus;
+			"Received a AssocResp: DA[" MACSTR "] bssid[" MACSTR "] wlanIdx[%d] w/o corresponding staRec\n",
+			MAC2STR(mgmt->aucDestAddr),
+			MAC2STR(mgmt->aucBSSID),
+			ucWlanIdx);
+
+		prStaRec = saaFsmFindStaRec(prAdapter, mgmt);
+		if (!prStaRec) {
+			DBGLOG(SAA, WARN, "StaRec not found\n");
+			return rStatus;
+		}
+		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 	}
 
 	if (!IS_AP_STA(prStaRec))

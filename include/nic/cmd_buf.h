@@ -84,8 +84,13 @@
  *******************************************************************************
  */
 
+enum EUNM_CMD_SEND_METHOD {
+	CMD_SEND_METHOD_ENQUEUE = 0,
+	CMD_SEND_METHOD_REQ_RESOURCE,
+	CMD_SEND_METHOD_TX
+};
+
 enum COMMAND_TYPE {
-	COMMAND_TYPE_GENERAL_IOCTL,
 	COMMAND_TYPE_NETWORK_IOCTL,
 	COMMAND_TYPE_SECURITY_FRAME,
 	COMMAND_TYPE_MANAGEMENT_FRAME,
@@ -125,13 +130,14 @@ struct CMD_INFO {
 	u_int8_t fgNeedResp;
 	uint8_t ucCmdSeqNum;
 	uint32_t u4SetInfoLen;	/* Indicate how many byte we read for Set OID */
+	uint8_t *pucSetInfoBuffer; /* ptr to cmd content without cmd header */
 
 	/* information indicating by OID/ioctl */
 	void *pvInformationBuffer;
 	uint32_t u4InformationBufferLength;
 
 	/* private data */
-	uint32_t u4PrivateData;
+	//uint32_t u4PrivateData;
 
 	/* TXD/TXP pointer/len for hif tx copy */
 	uint32_t u4TxdLen;
@@ -181,6 +187,7 @@ void cmdBufFreeCmdInfo(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* Routines for CMDs                                                          */
 /*----------------------------------------------------------------------------*/
+
 uint32_t
 wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 		    uint8_t ucCID,
@@ -192,6 +199,20 @@ wlanSendSetQueryCmd(IN struct ADAPTER *prAdapter,
 		    uint32_t u4SetQueryInfoLen,
 		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
 		    IN uint32_t u4SetQueryBufferLen);
+
+uint32_t
+wlanSendSetQueryCmdAdv(IN struct ADAPTER *prAdapter,
+		    uint8_t ucCID,
+		    uint8_t ucExtCID,
+		    u_int8_t fgSetQuery,
+		    u_int8_t fgNeedResp,
+		    u_int8_t fgIsOid,
+		    PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+		    PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
+		    uint32_t u4SetQueryInfoLen,
+		    uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
+		    IN uint32_t u4SetQueryBufferLen,
+		    enum EUNM_CMD_SEND_METHOD eMethod);
 
 #if CFG_SUPPORT_TX_BF
 uint32_t
@@ -224,4 +245,5 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
 #endif /* _CMD_BUF_H */

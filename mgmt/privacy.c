@@ -1236,6 +1236,27 @@ uint8_t secGetStaIdxByWlanIdx(struct ADAPTER *prAdapter, uint8_t ucWlanIdx)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Got the wlan index by STA record index
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure
+ * \param[in] ucStaIndex The sta record index
+ *
+ * \return The wlan index, WTBL_SIZE for invalid sta index
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t secGetWlanIdxByStaIdx(struct ADAPTER *prAdapter, uint8_t ucStaIndex)
+{
+	struct STA_RECORD *prStaRec =
+		cnmGetStaRecByIndex(prAdapter, ucStaIndex);
+
+	if (prStaRec != NULL)
+		return prStaRec->ucWlanIndex;
+
+	return WTBL_SIZE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  At Sw wlan table, got the BSS index by wlan index
  *
  * \param[in] prAdapter Pointer to the Adapter structure

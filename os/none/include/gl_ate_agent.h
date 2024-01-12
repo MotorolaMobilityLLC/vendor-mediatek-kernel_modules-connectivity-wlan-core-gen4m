@@ -204,6 +204,8 @@ int Set_StaRecCmmUpdate(struct net_device *prNetDev,
 			uint8_t *prInBuf);
 int Set_StaRecBfUpdate(struct net_device *prNetDev,
 		       uint8_t *prInBuf);
+int Set_StaRecBfRead(struct net_device *prNetDev,
+		       uint8_t *prInBuf);
 
 int Set_DevInfoUpdate(struct net_device *prNetDev,
 		      uint8_t *prInBuf);

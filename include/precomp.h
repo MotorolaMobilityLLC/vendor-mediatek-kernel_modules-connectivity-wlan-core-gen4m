@@ -127,6 +127,9 @@
 /* Dependency:  mac.h (MAC_ADDR_LEN) */
 #include "nic_cmd_event.h"
 #include "nic_ext_cmd_event.h"
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+#include "nic_uni_cmd_event.h"
+#endif
 
 /* Dependency:  nic_cmd_event.h (P_EVENT_CONNECTION_STATUS) */
 #include "nic.h"

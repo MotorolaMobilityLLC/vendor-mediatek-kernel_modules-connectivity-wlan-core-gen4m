@@ -141,7 +141,7 @@ struct ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"TxBfProfileDataWrite", Set_TxBfProfileDataWrite},
 	{"TxBfProfilePnRead", Set_TxBfProfilePnRead},
 	{"TxBfProfilePnWrite", Set_TxBfProfilePnWrite},
-	{"TxBfSounding", Set_Trigger_Sounding_Proc},
+	{"TriggerSounding", Set_Trigger_Sounding_Proc},
 	{"TxBfSoundingStop", Set_Stop_Sounding_Proc},
 	{"TxBfTxApply", Set_TxBfTxApply},
 	{"TxBfManualAssoc", Set_TxBfManualAssoc},
@@ -149,6 +149,7 @@ struct ATE_PRIV_CMD rAtePrivCmdTable[] = {
 	{"TxBfPfmuMemRelease", Set_TxBfPfmuMemRelease},
 	{"StaRecCmmUpdate", Set_StaRecCmmUpdate},
 	{"StaRecBfUpdate", Set_StaRecBfUpdate},
+	{"StaRecBfRead", Set_StaRecBfRead},
 	{"StaRecBfHeUpdate", Set_StaRecBfHeUpdate},
 	{"DevInfoUpdate", Set_DevInfoUpdate},
 	{"BssInfoUpdate", Set_BssInfoUpdate},
@@ -1736,6 +1737,28 @@ int Set_StaRecBfUpdate(struct net_device *prNetDev,
 	} else
 		return -EINVAL;
 
+	return i4Status;
+}
+
+int Set_StaRecBfRead(struct net_device *prNetDev,
+		       uint8_t *prInBuf)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint16_t u2WlanId;
+	int32_t rv;
+	int32_t i4Status = 0;
+	uint32_t u4BufLen = 0;
+
+	DBGLOG(RFTEST, INFO, "Set_StaRecBfRead\n");
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	rv = sscanf(prInBuf, "%x", &u2WlanId);
+
+	i4Status = kalIoctl(prGlueInfo,
+			    wlanoidStaRecBFRead,
+			    &u2WlanId,
+			    sizeof(u2WlanId),
+			    TRUE, TRUE, TRUE, &u4BufLen);
 	return i4Status;
 }
 

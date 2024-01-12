@@ -4958,10 +4958,9 @@ void qmHandleMailboxRxMessage(IN struct MAILBOX_MSG prMailboxRxMsg)
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_TX_ADDBA *prEventTxAddBa)
 {
 	struct mt66xx_chip_info *prChipInfo;
-	struct EVENT_TX_ADDBA *prEventTxAddBa;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucStaRecIdx;
 	uint8_t ucTid;
@@ -4977,7 +4976,6 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prEventTxAddBa = (struct EVENT_TX_ADDBA *) (prEvent->aucBuffer);
 	ucStaRecIdx = prEventTxAddBa->ucStaRecIdx;
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter, ucStaRecIdx);
 	if (!prStaRec) {
@@ -5024,17 +5022,14 @@ void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_RX_ADDBA *prEventRxAddBa)
 {
-	struct EVENT_RX_ADDBA *prEventRxAddBa;
 	struct STA_RECORD *prStaRec;
 	uint32_t u4Tid;
 	uint32_t u4WinSize;
 
 	DBGLOG(QM, INFO, "QM:Event +RxBa\n");
 
-	prEventRxAddBa = (struct EVENT_RX_ADDBA *) (
-				 prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 			prEventRxAddBa->ucStaRecIdx);
 
@@ -5089,15 +5084,10 @@ void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_RX_DELBA *prEventRxDelBa)
 {
-	struct EVENT_RX_DELBA *prEventRxDelBa;
 	struct STA_RECORD *prStaRec;
 
-	/* DbgPrint("QM:Event -RxBa\n"); */
-
-	prEventRxDelBa = (struct EVENT_RX_DELBA *) (
-		prEvent->aucBuffer);
 	prStaRec = QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
 		prEventRxDelBa->ucStaRecIdx);
 

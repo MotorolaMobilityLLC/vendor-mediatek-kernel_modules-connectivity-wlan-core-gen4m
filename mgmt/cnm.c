@@ -942,18 +942,14 @@ void cnmChMngrAbortPrivilege(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
-			    struct WIFI_EVENT *prEvent)
+			    struct EVENT_CH_PRIVILEGE *prEventBody)
 {
-	struct EVENT_CH_PRIVILEGE *prEventBody;
 	struct MSG_CH_GRANT *prChResp;
 	struct BSS_INFO *prBssInfo;
 	struct CNM_INFO *prCnmInfo;
 
 	ASSERT(prAdapter);
-	ASSERT(prEvent);
 
-	prEventBody = (struct EVENT_CH_PRIVILEGE *)(
-			      prEvent->aucBuffer);
 	prChResp = (struct MSG_CH_GRANT *)
 		   cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 			       sizeof(struct MSG_CH_GRANT));
@@ -1309,10 +1305,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 }
 
 void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+			IN struct EVENT_LTE_SAFE_CHN *prEventBody)
 {
-
-	struct EVENT_LTE_SAFE_CHN *prEventBody;
 	uint8_t ucIdx;
 	struct BSS_INFO *prBssInfo;
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
@@ -1345,9 +1339,6 @@ void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 		return;
 	}
 #endif
-
-	prEventBody = (struct EVENT_LTE_SAFE_CHN *)(
-		prEvent->aucBuffer);
 
 	g_rLteSafeChInfo.ucVersion = prEventBody->ucVersion;
 	g_rLteSafeChInfo.u4Flags = prEventBody->u4Flags;
@@ -3599,9 +3590,7 @@ void cnmDbdcGuardTimerCallback(IN struct ADAPTER
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
-			      *prAdapter,
-			      IN struct WIFI_EVENT *prEvent)
+void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter)
 {
 	u_int8_t fgDbdcEn;
 
@@ -4299,15 +4288,12 @@ void cnmEventSGStatus(
 /*----------------------------------------------------------------------------*/
 void cnmOpmodeEventHandler(
 	IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+	IN struct EVENT_OPMODE_CHANGE *prEvtOpMode)
 {
-	struct EVENT_OPMODE_CHANGE *prEvtOpMode;
 	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
 	uint8_t ucBssIndex;
 
 	ASSERT(prAdapter);
-	prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
-		(prEvent->aucBuffer);
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	/* store reason for ANT_CTRL and SMARTGEAR  */

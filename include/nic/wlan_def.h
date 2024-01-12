@@ -213,14 +213,10 @@
 #define PHY_TYPE_BIT_HT         BIT(PHY_TYPE_HT_INDEX)
 /* HT PHY (clause 22) */
 #define PHY_TYPE_BIT_VHT        BIT(PHY_TYPE_VHT_INDEX)
-
-#if (CFG_SUPPORT_802_11AX == 1)
 /* HE PHY */
 #define PHY_TYPE_BIT_HE         BIT(PHY_TYPE_HE_INDEX)
-#endif
-
 /* EHT PHY */
-#define PHY_TYPE_BIT_EHT         BIT(PHY_TYPE_EHT_INDEX)
+#define PHY_TYPE_BIT_EHT        BIT(PHY_TYPE_EHT_INDEX)
 
 /* PHY TYPE set definitions */
 #define PHY_TYPE_SET_802_11ABGN (PHY_TYPE_BIT_OFDM | \
@@ -265,7 +261,6 @@
 				   PHY_TYPE_BIT_HT | \
 				   PHY_TYPE_BIT_VHT)
 
-#if (CFG_SUPPORT_802_11AX == 1)
 #define PHY_TYPE_SET_802_11AX   (PHY_TYPE_BIT_HE)
 #define PHY_TYPE_SET_802_11ABGNACAX (PHY_TYPE_BIT_OFDM | \
 				   PHY_TYPE_BIT_HR_DSSS | \
@@ -273,7 +268,6 @@
 				   PHY_TYPE_BIT_HT | \
 				   PHY_TYPE_BIT_VHT | \
 				   PHY_TYPE_BIT_HE)
-#endif /* CFG_SUPPORT_802_11AX == 1 */
 
 #define PHY_TYPE_SET_802_11BE   (PHY_TYPE_BIT_EHT)
 #define PHY_TYPE_SET_802_11ABGNACAXBE (PHY_TYPE_BIT_OFDM | \
@@ -749,7 +743,7 @@ enum ENUM_DBDC_BN {
 	ENUM_BAND_1,
 	ENUM_BAND_NUM,
 	ENUM_BAND_ALL,
-	ENUM_BAND_AUTO	/*Auto select by A/G band, Driver only*/
+	ENUM_BAND_AUTO = ENUM_BAND_0,	/*Auto select by A/G band, Driver only*/
 };
 
 /* Provide supported channel list to other components in array format */

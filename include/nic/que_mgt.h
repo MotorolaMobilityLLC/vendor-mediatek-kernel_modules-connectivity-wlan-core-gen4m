@@ -1071,13 +1071,13 @@ u_int8_t qmCompareSnIsLessThan(IN uint32_t u4SnLess,
 			       IN uint32_t u4SnGreater);
 
 void qmHandleEventTxAddBa(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent);
+			  IN struct EVENT_TX_ADDBA *prEventTxAddBa);
 
 void qmHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent);
+			  IN struct EVENT_RX_ADDBA *prEventRxAddBa);
 
 void qmHandleEventRxDelBa(IN struct ADAPTER *prAdapter,
-			  IN struct WIFI_EVENT *prEvent);
+			  IN struct EVENT_RX_DELBA *prEventRxDelBa);
 
 struct RX_BA_ENTRY *qmLookupRxBaEntry(IN struct ADAPTER
 	*prAdapter, IN uint8_t ucStaRecIdx, IN uint8_t ucTid);

@@ -196,7 +196,7 @@ wlanoidSendSetQueryBowCmd(IN struct ADAPTER *prAdapter,
 		&prCmdInfo->ucCmdSeqNum,
 		prCmdInfo->fgSetQuery,
 		&pWifiCmdBufAddr, FALSE, 0, S2D_INDEX_CMD_H2N);
-
+	prCmdInfo->pucSetInfoBuffer = pWifiCmdBufAddr;
 	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
 		kalMemCopy(pWifiCmdBufAddr, pucInfoBuffer, u4SetQueryInfoLen);
 	/* insert into prCmdQueue */
