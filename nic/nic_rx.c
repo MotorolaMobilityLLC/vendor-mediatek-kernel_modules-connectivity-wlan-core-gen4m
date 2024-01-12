@@ -4126,6 +4126,9 @@ static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
 	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		if (!prBssInfo)
+			return;
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (prBssInfo->eHwBandIdx != prSwRfb->ucHwBandIdx) {
 			uint8_t ucHwBandIdx = prSwRfb->ucHwBandIdx;
@@ -4139,10 +4142,12 @@ static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 				    prBssInfo->eHwBandIdx == ucHwBandIdx)
 					break;
 			}
+
+			if (!prBssInfo)
+				return;
 		}
 #endif
-		if (prBssInfo)
-			prBssInfo->u4RxMpduAc[ac]++;
+		prBssInfo->u4RxMpduAc[ac]++;
 	}
 #endif
 }
