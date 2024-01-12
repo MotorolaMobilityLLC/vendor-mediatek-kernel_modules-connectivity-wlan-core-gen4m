@@ -115,6 +115,14 @@ struct STAREC_HANDLE_T {
 		struct ADAPTER *pAd, uint8_t *pMsgBuf, void *args);
 };
 
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+struct EXT_CMD_CR4_DMASHDL_DVT_T {
+	uint8_t ucItemNo;
+	uint8_t ucSubItemNo;
+	uint8_t ucReserve[2];
+};
+#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
+
 struct CMD_BSSINFO_UPDATE_T {
 	uint8_t	ucBssIndex;
 	uint8_t	ucReserve;
@@ -186,6 +194,13 @@ struct CMD_DEVINFO_ACTIVE_T {
 uint32_t CmdExtStaRecUpdate2WA(
 	struct ADAPTER *pAd,
 	struct STA_RECORD *pStaRecCfg);
+
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+uint32_t CmdExtDmaShdlDvt2WA(
+	struct ADAPTER *pAd,
+	uint8_t ucItemNo,
+	uint8_t ucSubItemNo);
+#endif /* CFG_SUPPORT_DMASHDL_SYSDVT */
 
 uint32_t CmdExtBssInfoUpdate2WA(
 	struct ADAPTER *pAd,

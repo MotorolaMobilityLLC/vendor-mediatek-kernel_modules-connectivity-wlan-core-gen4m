@@ -275,6 +275,13 @@
 #include "gl_ate_agent.h"
 #endif
 
+#if CFG_SUPPORT_WIFI_SYSDVT
+#include "dvt_common.h"
+#if (CFG_SUPPORT_DMASHDL_SYSDVT)
+#include "dvt_dmashdl.h"
+#endif
+#endif
+
 #ifdef UT_TEST_MODE
 #include "ut_lib.h"
 #endif
