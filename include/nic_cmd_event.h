@@ -777,6 +777,7 @@ struct CMD_RX_PACKET_FILTER {
 
 #define EXT_EVENT_ID_G_BAND_256QAM_PROBE_RESULT 0x6B
 #define EXT_EVENT_ID_MPDU_TIME_UPDATE 0x6F
+#define EXT_EVENT_ID_SER 0x81
 #define EXT_EVENT_ID_SYSDVT_TEST 0x99
 #if (CFG_SUPPORT_802_11AX == 1)
 #define EXT_EVENT_ID_SR_INFO 0xA8
@@ -3809,6 +3810,86 @@ enum CSI_OUTPUT_FORMAT_T {
 
 #endif
 
+/* Any change to this structure, please sync to struct PARAM_SER_INFO_T, too. */
+struct EXT_EVENT_SER_T {
+/* Represents the current supporting EXT_EVENT_ID_SER version in driver.
+ * Each time we extend this structure in the future, we shall increment
+ * EXT_EVENT_SER_VER.
+ */
+#ifdef EXT_EVENT_SER_VER
+#undef EXT_EVENT_SER_VER
+#endif
+#define EXT_EVENT_SER_VER        0
+
+/* Don't change these constants.
+ * We define these definitions for readability, not for flexibility.
+ * For example, if RAM_BAND_NUM changes from 2 to 3 in future project,
+ * then we shall add new structure members (ex: uint8_t ucSerL2RecoverCntBand2;)
+ * and increment EXT_EVENT_SER_VER for compatibility, but shall not simply
+ * change EXT_EVENT_SER_RAM_BAND_NUM from 2 to 3.
+ */
+#ifdef EXT_EVENT_SER_RAM_BAND_NUM
+#undef EXT_EVENT_SER_RAM_BAND_NUM
+#endif
+#define EXT_EVENT_SER_RAM_BAND_NUM        2    /* RAM_BAND_NUM */
+#ifdef EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER
+#undef EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER
+#endif
+/* MAX_HW_ERROR_INT_NUMBER */
+#define EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER        32
+
+	/* DWORD_0 - Common Part */
+	/* if the structure size is changed, the ucEvtVer shall be increased. */
+	uint8_t  ucEvtVer;
+	uint8_t  aucPadding0[1];
+	/* event size including common part and body. */
+	uint16_t u2EvtLen;
+
+	/* ucEvtVer = 0 definition BEGIN */
+
+	/* DWORD_1 - Body */
+	uint8_t  ucEnableSER;
+	uint8_t  ucSerL1RecoverCnt;
+	uint8_t  ucSerL2RecoverCnt;
+	uint8_t  ucSerL3BfRecoverCnt;
+
+	/* DWORD_2 */
+	uint8_t  ucSerL3RxAbortCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+	uint8_t  ucSerL3TxAbortCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+
+	/* DWORD_3 */
+	uint8_t  ucSerL3TxDisableCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+	uint8_t  ucSerL4RecoverCnt[EXT_EVENT_SER_RAM_BAND_NUM];
+
+	/* DWORD_4 ~ DWORD_35 */
+	uint16_t u2LMACError6Cnt[EXT_EVENT_SER_RAM_BAND_NUM]
+				[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_36 ~ DWORD_67 */
+	uint16_t u2LMACError7Cnt[EXT_EVENT_SER_RAM_BAND_NUM]
+				[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_68 ~ DWORD_83 */
+	uint16_t u2PSEErrorCnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_84 ~ DWORD_99 */
+	uint16_t u2PSEError1Cnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_100 ~ DWORD_115 */
+	uint16_t u2PLEErrorCnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_116 ~ DWORD_131 */
+	uint16_t u2PLEError1Cnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* DWORD_132 ~ DWORD_147 */
+	uint16_t u2PLEErrorAmsduCnt[EXT_EVENT_SER_MAX_HW_ERROR_INT_NUMBER];
+
+	/* ucEvtVer = 0 definition END */
+
+	/* ucEvtVer = 1 definition BEGIN */
+	/* ... */
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4273,6 +4354,10 @@ void nicCmdEventQueryTxMcsInfo(IN struct ADAPTER *prAdapter,
 void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
 		IN struct WIFI_EVENT *prEvent);
 #endif
+
+void nicCmdEventQuerySerInfo(IN struct ADAPTER *prAdapter,
+			     IN struct CMD_INFO *prCmdInfo,
+			     IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
  *                              F U N C T I O N S

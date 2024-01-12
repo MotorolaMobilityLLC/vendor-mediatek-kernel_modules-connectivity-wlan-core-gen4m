@@ -4034,6 +4034,29 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 			/* return prCmdInfo */
 			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
 		}
+	} else if (prEvent->ucExtenEID == EXT_EVENT_ID_SER) {
+		u4QueryInfoLen = sizeof(struct PARAM_SER_INFO_T);
+
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
+						 prEvent->ucSeqNum);
+
+		if (prCmdInfo != NULL) {
+			if (prCmdInfo->pfCmdDoneHandler)
+				prCmdInfo->pfCmdDoneHandler(
+					prAdapter,
+					prCmdInfo,
+					prEvent->aucBuffer
+				);
+			else if ((prCmdInfo->fgIsOid) != 0)
+				kalOidComplete(
+					prAdapter->prGlueInfo,
+					prCmdInfo,
+					u4QueryInfoLen,
+					WLAN_STATUS_SUCCESS);
+
+			/* return prCmdInfo */
+			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		}
 	}
 }
 
@@ -6528,6 +6551,52 @@ void nicEventCoalescingIntDone(IN struct ADAPTER *prAdapter,
 						prEventCf->fgEnable);
 }
 #endif /* CFG_WIFI_TXPWR_TBL_DUMP */
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief    This function is the handler when driver receives EXT_EVENT_ID_SER.
+*
+* \param[in] prAdapter
+* \param[in] prCmdInfo
+* \param[in] pucEventBuf
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+void nicCmdEventQuerySerInfo(IN struct ADAPTER *prAdapter,
+			     IN struct CMD_INFO *prCmdInfo,
+			     IN uint8_t *pucEventBuf)
+{
+	struct PARAM_SER_INFO_T *prQuerySerInfo = NULL;
+	struct EXT_EVENT_SER_T *prEventSer = NULL;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+	ASSERT(prAdapter);
+	ASSERT(prCmdInfo);
+	ASSERT(pucEventBuf);
+
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	if (prCmdInfo->fgIsOid) {
+		prQuerySerInfo = (struct PARAM_SER_INFO_T *)
+				 prCmdInfo->pvInformationBuffer;
+		prEventSer = (struct EXT_EVENT_SER_T *) pucEventBuf;
+
+		if (prEventSer->ucEvtVer >= EXT_EVENT_SER_VER)
+			u4QueryInfoLen = sizeof(struct PARAM_SER_INFO_T);
+		else
+			u4QueryInfoLen = prEventSer->u2EvtLen;
+
+		kalMemCopy(prQuerySerInfo, pucEventBuf, u4QueryInfoLen);
+
+		if (prEventSer->ucEvtVer >= EXT_EVENT_SER_VER)
+			prQuerySerInfo->ucEvtVer = EXT_EVENT_SER_VER;
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
 
 #if (CFG_WIFI_ISO_DETECT == 1)
 void nicCmdEventQueryCoexIso(IN struct ADAPTER *prAdapter,

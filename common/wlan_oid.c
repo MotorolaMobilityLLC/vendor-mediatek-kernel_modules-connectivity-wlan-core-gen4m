@@ -18176,3 +18176,68 @@ uint32_t wlanoidSendBTMRequest(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_AP_80211V_SUPPORT */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to query SER information.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuffer A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_PENDING
+ * \retval WLAN_STATUS_FAILURE
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t wlanoidQuerySerInfo(IN struct ADAPTER *prAdapter,
+			     IN void *pvQueryBuffer,
+			     IN uint32_t u4QueryBufferLen,
+			     OUT uint32_t *pu4QueryInfoLen)
+{
+	struct PARAM_SER_INFO_T *prSerInfo;
+	struct EXT_CMD_SER_T rCmdSer = {0};
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pu4QueryInfoLen) {
+		DBGLOG(REQ, ERROR, "pu4QueryInfoLen is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_SER_INFO_T)) {
+		DBGLOG(REQ, ERROR, "Invalid length %lu\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	if (!pvQueryBuffer) {
+		DBGLOG(REQ, ERROR, "pvQueryBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_SER_INFO_T);
+
+	prSerInfo = (struct PARAM_SER_INFO_T *) pvQueryBuffer;
+
+	rCmdSer.ucAction = SER_ACTION_QUERY;
+
+	return wlanSendSetQueryExtCmd(prAdapter,
+				      CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+				      EXT_CMD_ID_SER,
+				      FALSE,
+				      TRUE,
+				      TRUE,
+				      nicCmdEventQuerySerInfo,
+				      nicOidCmdTimeoutCommon,
+				      sizeof(struct EXT_CMD_SER_T),
+				      (uint8_t *)&rCmdSer,
+				      pvQueryBuffer,
+				      u4QueryBufferLen);
+}

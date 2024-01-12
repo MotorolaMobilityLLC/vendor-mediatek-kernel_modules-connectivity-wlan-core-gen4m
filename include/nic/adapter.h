@@ -1739,6 +1739,8 @@ struct ADAPTER {
 	enum ENUM_WFSYS_RESET_STATE_TYPE_T eWfsysResetState;
 	spinlock_t rWfsysResetLock;
 	u_int8_t fgIsCfgSuspend;
+	/* Records how many times L0.5 reset is triggered. */
+	uint16_t u2WfsysResetCnt;
 #endif
 	u_int8_t fgIsChipNoAck;
 	u_int8_t fgIsChipAssert;
