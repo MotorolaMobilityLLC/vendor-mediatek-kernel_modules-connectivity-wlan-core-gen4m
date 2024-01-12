@@ -1089,7 +1089,11 @@ else
 endif
 
 ifeq ($(CONFIG_SUPPORT_KERNEL_MAPPING_TXQ), y)
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_KERNEL_MAPPING_TXQ=1
+else
+    ccflags-y += -DCFG_KERNEL_MAPPING_TXQ=0
+endif
 else
     ccflags-y += -DCFG_KERNEL_MAPPING_TXQ=0
 endif
