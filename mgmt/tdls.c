@@ -287,7 +287,7 @@ void TdlsStateTimer(
 					bss,
 					sta,
 					"Low RX Throughput");
-				/* fallthrough */
+				return;
 			default:
 				return;
 			}
@@ -342,7 +342,6 @@ uint32_t TdlsAutoSetup(
 	uint8_t bss,
 	struct sta_tdls_info *sta)
 {
-	struct STA_RECORD s;
 	struct BSS_INFO *b;
 
 	if (!ad || !sta)
@@ -360,13 +359,10 @@ uint32_t TdlsAutoSetup(
 		sta->aucAddr,
 		sta->u4Throughput);
 
-	s.ucBssIndex = bss;
-	COPY_MAC_ADDR(s.aucMacAddr,
-		sta->aucAddr);
-
 	kalTdlsOpReq(
 		ad->prGlueInfo,
-		&s,
+		bss,
+		sta->aucAddr,
 		(uint16_t) TDLS_SETUP,
 		0);
 
@@ -426,7 +422,8 @@ uint32_t TdlsAutoTeardown(
 
 		kalTdlsOpReq(
 			ad->prGlueInfo,
-			s,
+			s->ucBssIndex,
+			s->aucMacAddr,
 			(uint16_t) TDLS_TEARDOWN,
 			0);
 	}
@@ -666,7 +663,7 @@ int32_t TdlsAuto(
 				bss,
 				target_sta,
 				"Low Tx Throughput");
-			/* fallthrough */
+			return 4;
 		default:
 			return 4;
 		}
@@ -2310,7 +2307,9 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 	       "TDLS_HOST_EVENT_TD_PTI_TIMEOUT TDLS_REASON_CODE_UNSPECIFIED\n");
 		u2ReasonCode = TDLS_REASON_CODE_UNSPECIFIED;
 
-		kalTdlsOpReq(prGlueInfo, prStaRec,
+		kalTdlsOpReq(prGlueInfo,
+			prStaRec->ucBssIndex,
+			prStaRec->aucMacAddr,
 			(uint16_t)TDLS_TEARDOWN,
 			WLAN_REASON_TDLS_TEARDOWN_UNREACHABLE
 			);
@@ -2321,7 +2320,9 @@ void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo,
 	       "TDLS_HOST_EVENT_TD_AGE_TIMEOUT TDLS_REASON_CODE_UNREACHABLE\n");
 		u2ReasonCode = TDLS_REASON_CODE_UNREACHABLE;
 
-		kalTdlsOpReq(prGlueInfo, prStaRec,
+		kalTdlsOpReq(prGlueInfo,
+			prStaRec->ucBssIndex,
+			prStaRec->aucMacAddr,
 			(uint16_t)TDLS_TEARDOWN,
 			WLAN_REASON_TDLS_TEARDOWN_UNREACHABLE
 			);

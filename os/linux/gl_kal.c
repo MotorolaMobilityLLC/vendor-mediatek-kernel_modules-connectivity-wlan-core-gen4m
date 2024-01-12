@@ -13811,7 +13811,8 @@ uint32_t kalGetNetDevRxPacket(void *prNet)
 
 void kalTdlsOpReq(
 	struct GLUE_INFO *prGlueInfo,
-	struct STA_RECORD *prStaRec,
+	uint8_t ucBssIndex,
+	uint8_t *aucMacAddr,
 	uint16_t eOpMode,
 	uint16_t u2ReasonCode
 	)
@@ -13820,11 +13821,11 @@ void kalTdlsOpReq(
 	struct net_device *prDev = NULL;
 	u_int8_t fgIsOpVaild = FALSE;
 
-	if (!prGlueInfo || !prStaRec) {
-		DBGLOG(TDLS, ERROR, "GlueInfo/StaRec NULL.\n");
+	if (!prGlueInfo) {
+		DBGLOG(TDLS, ERROR, "GlueInfo NULL.\n");
 		return;
 	}
-	prDev = wlanGetNetDev(prGlueInfo, prStaRec->ucBssIndex);
+	prDev = wlanGetNetDev(prGlueInfo, ucBssIndex);
 
 	if (!prDev)
 		return;
@@ -13845,7 +13846,7 @@ void kalTdlsOpReq(
 
 	if (fgIsOpVaild)
 		cfg80211_tdls_oper_request(prDev,
-					prStaRec->aucMacAddr,
+					aucMacAddr,
 					oper,
 					u2ReasonCode,
 					GFP_ATOMIC);
