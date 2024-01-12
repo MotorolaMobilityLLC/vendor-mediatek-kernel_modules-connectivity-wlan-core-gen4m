@@ -1065,6 +1065,11 @@ BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_
 	prSwRfb->pucRecvBuff = ((struct sk_buff *)pRxPacket)->data;
 	prSwRfb->prRxStatus = (P_HW_MAC_RX_DESC_T)prSwRfb->pucRecvBuff;
 
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;
+	DBGLOG(RX, TRACE, "u4TcpUdpIpCksStatus[0x%02x]\n", prSwRfb->u4TcpUdpIpCksStatus);
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+
 	prDmaBuf->AllocVa = ((struct sk_buff *)pRxCell->pPacket)->data;
 	prDmaBuf->AllocPa = pci_map_single(pdev, prDmaBuf->AllocVa, prDmaBuf->AllocSize, PCI_DMA_FROMDEVICE);
 
