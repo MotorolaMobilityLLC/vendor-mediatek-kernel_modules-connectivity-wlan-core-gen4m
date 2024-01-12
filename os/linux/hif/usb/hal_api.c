@@ -680,13 +680,13 @@ uint32_t halTxUSBSendData(struct GLUE_INFO *prGlueInfo,
 	{
 		uint32_t dump_len = 0;
 
-		if (prBufCtrl->u4WrIdx > MAX_DUMP_DATA_LEN)
+		if (u4Length > MAX_DUMP_DATA_LEN)
 			dump_len = MAX_DUMP_DATA_LEN;
 		else
-			dump_len = prBufCtrl->u4WrIdx;
+			dump_len = u4Length;
 		DBGLOG(HAL, INFO, "Dump DATA TXD: (total length: %d)\n",
-		       prBufCtrl->u4WrIdx);
-		dumpMemory8(prBufCtrl->pucBuf, dump_len);
+		       u4Length);
+		dumpMemory8(pucBuf, dump_len);
 	}
 #endif
 
