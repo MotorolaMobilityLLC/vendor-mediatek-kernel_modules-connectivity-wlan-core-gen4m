@@ -1138,6 +1138,11 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 	IN uint8_t ucRcpiMode,
 	IN struct SW_RFB *prSwRfb);
+#if (CFG_SUPPORT_PERF_IND == 1)
+void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb,
+	IN uint8_t ucBssIndex);
+#endif
 void asicConnac2xWfdmaReInit(
 	struct ADAPTER *prAdapter);
 void asicConnac2xWfdmaDummyCrWrite(
