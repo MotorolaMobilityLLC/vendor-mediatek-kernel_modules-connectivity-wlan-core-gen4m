@@ -9,7 +9,6 @@
 
 #ifndef _MLO_H
 #define _MLO_H
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 
 #define BE_SET_ML_CTRL_TYPE(_u2ctrl, _ctrl_type) \
 {\
@@ -173,7 +172,5 @@ int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 int8_t mldStarecInit(struct ADAPTER *prAdapter);
 
 void mldStarecUninit(struct ADAPTER *prAdapter);
-
-#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
 
 #endif /* !_MLO_H */
