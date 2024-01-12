@@ -4152,7 +4152,7 @@ void connac2x_DumpCrRange(
 
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac2x_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,

@@ -522,7 +522,7 @@ struct CHIP_DBG_OPS {
 	void (*show_wfdma_wrapper_info)(IN struct ADAPTER *prAdapter,
 		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 #endif
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	int (*get_rx_rate_info)(
 		struct ADAPTER *prAdapter,
 		uint32_t *pu4Rate,
@@ -875,7 +875,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup);
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac_get_rx_rate_info(struct ADAPTER *prAdapter,
 	uint32_t *pu4Rate,
 	uint32_t *pu4Nss,
@@ -965,7 +965,7 @@ void connac2x_dump_format_memory32(
 void connac2x_DumpCrRange(
 	struct ADAPTER *prAdapter,
 	uint32_t cr_start, uint32_t word_count, char *str);
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac2x_get_rx_rate_info(
 	struct ADAPTER *prAdapter,
 	uint32_t *pu4Rate,
@@ -1049,7 +1049,7 @@ void connac3x_dump_format_memory32(
 void connac3x_DumpCrRange(
 	struct ADAPTER *prAdapter,
 	uint32_t cr_start, uint32_t word_count, char *str);
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac3x_get_rx_rate_info(
 	struct ADAPTER *prAdapter,
 	uint32_t *pu4Rate,

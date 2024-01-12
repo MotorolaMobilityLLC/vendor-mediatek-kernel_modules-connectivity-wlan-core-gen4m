@@ -2862,7 +2862,7 @@ query_apf_failure:
 int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)
 {
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct LINK_QUALITY_INFO_OUTPUT_DATA {
 		uint16_t u2Tag01; /* cur tx rate */
 		uint16_t u2Len01;
@@ -2944,7 +2944,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(wdev->netdev);
 	if (!prNetDevPrivate) {

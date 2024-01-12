@@ -1972,7 +1972,7 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 	return i4BytesWritten;
 }
 
-#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
 int connac_get_rx_rate_info(IN struct ADAPTER *prAdapter,
 		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
 		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
