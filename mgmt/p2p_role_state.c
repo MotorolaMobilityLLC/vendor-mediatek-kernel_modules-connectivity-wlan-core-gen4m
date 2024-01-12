@@ -374,6 +374,9 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 
 			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
 						    sta->ucBssIndex);
+			if (!bss)
+				continue;
+
 			p2pLinkStaRecFree(prAdapter, sta, bss);
 			p2pSetLinkStaRec(prP2pRoleFsmInfo, NULL, i);
 		}
