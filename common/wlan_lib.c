@@ -12479,3 +12479,53 @@ uint32_t wlanSetTxBaSize(IN struct GLUE_INFO *prGlueInfo,
 
 	return rStatus;
 }
+
+void
+wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
+	OUT struct TRX_INFO *prTRxInfo)
+{
+	char arQueryMib[64] = "getMibCount";
+	char arQueryTRx[64] = "getTxRxCount";
+	uint8_t *pucItem = NULL;
+	uint8_t *pucSavedPtr = NULL;
+	uint32_t u4temp = 0;
+	uint32_t index = 0;
+
+	wlanChipConfig(prAdapter, &arQueryMib[0], sizeof(arQueryMib));
+	DBGLOG(REQ, INFO, "Mib:%s\n", arQueryMib);
+	pucItem = (uint8_t *)kalStrtokR(&arQueryMib[0], " ", &pucSavedPtr);
+	while (pucItem) {
+		kalkStrtou32(pucItem, 0, &u4temp);
+		*(((uint32_t *)prTRxInfo) + index) = u4temp;
+		pucItem =
+			(uint8_t *)kalStrtokR(NULL, " ", &pucSavedPtr);
+		index++;
+	}
+	DBGLOG(REQ, INFO, "TxFail:%d %d, RxFail:%d %d, Retry: %d %d\n",
+		prTRxInfo->u4TxFail[0], prTRxInfo->u4TxFail[1],
+		prTRxInfo->u4RxFail[0], prTRxInfo->u4RxFail[1],
+		prTRxInfo->u4TxHwRetry[0], prTRxInfo->u4TxHwRetry[1]);
+
+	pucItem = NULL;
+	pucSavedPtr = NULL;
+	u4temp = 0;
+	index = 0;
+	wlanChipConfig(prAdapter, &arQueryTRx[0], sizeof(arQueryTRx));
+	DBGLOG(REQ, INFO, "TRX:%s\n", arQueryTRx);
+	pucItem = (uint8_t *)kalStrtokR(&arQueryTRx[0], " ", &pucSavedPtr);
+	while (pucItem) {
+		kalkStrtou32(pucItem, 0, &u4temp);
+		if (index % 2 == 0)
+			prTRxInfo->u4TxOk[index / 2] = u4temp;
+		else
+			prTRxInfo->u4RxOk[index / 2] = u4temp;
+		pucItem =
+			(uint8_t *)kalStrtokR(NULL, " ", &pucSavedPtr);
+		index++;
+	}
+	DBGLOG(REQ, INFO, "TxOk:%d %d %d %d, RxOk:%d %d %d %d\n",
+		prTRxInfo->u4TxOk[0], prTRxInfo->u4TxOk[1],
+		prTRxInfo->u4TxOk[2], prTRxInfo->u4TxOk[3],
+		prTRxInfo->u4RxOk[0], prTRxInfo->u4RxOk[1],
+		prTRxInfo->u4RxOk[2], prTRxInfo->u4RxOk[3]);
+}
