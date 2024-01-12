@@ -1317,6 +1317,13 @@ uint8_t GET_IOCTL_BSSIDX(
 void kalHandleAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 			IN struct EVENT_ASSOC_INFO *prAssocInfo);
 
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalGetFwVerOffsetAddr(void) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
+uint32_t kalGetFwVerOffsetAddr(void);
+#endif
+
 #if CFG_ENABLE_FW_DOWNLOAD
 #ifdef CFG_REMIND_IMPLEMENT
 #define kalFirmwareImageMapping(_prGlueInfo, _ppvMapFileBuf, \

@@ -2155,6 +2155,7 @@ uint32_t kalGetCpuBoostThreshold(void);
 uint32_t kalGetLittleCpuBoostThreshold(void);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 int32_t kalCheckVcoreBoost(IN struct ADAPTER *prAdapter, IN uint8_t uBssIndex);
+uint32_t kalGetFwVerOffsetAddr(void);
 uint32_t kalGetEmiMetOffset(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);

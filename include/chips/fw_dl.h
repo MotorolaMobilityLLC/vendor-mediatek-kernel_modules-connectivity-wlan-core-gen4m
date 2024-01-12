@@ -159,6 +159,9 @@
 /* Used for sanity check, if need can modified it. */
 #define FW_MAX_SECTION_NUM 1024
 
+/* MCU init fw version with maximum 0x80 length. */
+#define FW_VERSION_MAX_LEN 128
+
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
@@ -246,7 +249,7 @@ struct FWDL_OPS_T {
 		IN uint32_t u4DataMode,
 		IN uint8_t *pucStartPtr,
 		IN uint32_t u4Len);
-	void (*getFwVerInfo)(OUT uint8_t *pucManifestBuffer,
+	uint32_t (*getFwVerInfo)(OUT uint8_t *pucManifestBuffer,
 		OUT uint32_t *pu4ManifestSize,
 		IN uint32_t u4BufferMaxSize);
 	void (*setup_date_info)(struct ADAPTER *prAdapter,
@@ -550,10 +553,10 @@ void fwDlGetReleaseManifest(struct WIFI_VER_INFO *prVerInfo,
 			    struct HEADER_RELEASE_INFO *prRelInfo,
 			    uint8_t *pucStartPtr);
 
-void wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanReadRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 		uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize);
 
-void wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
+uint32_t wlanParseRamCodeReleaseManifest(uint8_t *pucManifestBuffer,
 	uint32_t *pu4ManifestSize, uint32_t u4BufferMaxSize);
 
 #if IS_ENABLED(CFG_MTK_WIFI_SUPPORT_UDS_FWDL)
