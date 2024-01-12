@@ -124,7 +124,7 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {0, rlmCalculateMTKOuiIELen, rlmGenerateMTKOuiIE}	/* 221 */
 #endif
-	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_CSA), NULL,
+	, {0, rlmCalculateCsaIELen,
 	   rlmGenerateCsaIE}	/* 37 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 	   rsnGenerateRSNXIE}	/* 244 */

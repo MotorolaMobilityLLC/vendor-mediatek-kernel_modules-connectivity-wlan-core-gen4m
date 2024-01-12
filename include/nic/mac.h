@@ -1982,9 +1982,6 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define VENDOR_OUI_RXSMM_OUI_IE_NUM                 3
 #endif
 
-/* 802.11h CSA element */
-#define ELEM_MIN_LEN_CSA                            17
-
 /* 3 Management frame body components (III): 7.4 Action frame format details. */
 /* 7.4.1 Spectrum Measurement Action frame details */
 /* Spectrum measurement request */
@@ -2951,6 +2948,14 @@ struct IE_EX_CHANNEL_SWITCH {
 	uint8_t ucChannelSwitchCount;
 } __KAL_ATTRIB_PACKED__;
 
+/* Channel Switch Wrapper element */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_CHANNEL_SWITCH_WRAPPER {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t aucInfoElem[0];
+} __KAL_ATTRIB_PACKED__;
+
 /* 9.4.2.217 Max Channel Switch Time element*/
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_MAX_CHANNEL_SWITCH_TIME {
@@ -3681,7 +3686,7 @@ struct ACTION_CHANNEL_SWITCH_FRAME {
 	/* ADDTS Request frame body */
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
-	uint8_t aucInfoElem[13]; /* Information elements */
+	uint8_t aucInfoElem[0]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
 /* 802.11-2020 9.6.7.7 Fig. 9-871 Extended Channel Switch Announcement frame */
@@ -3697,7 +3702,11 @@ struct ACTION_EX_CHANNEL_SWITCH_FRAME {
 	/* Frame body */
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
-	uint8_t aucInfoElem[6]; /* Information elements */
+	uint8_t ucChannelSwitchMode;
+	uint8_t ucNewOperatingClass;
+	uint8_t ucNewChannelNum;
+	uint8_t ucChannelSwitchCount;
+	uint8_t aucInfoElem[0]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4770,10 +4779,11 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 
 #define MTK_OUI_IE(fp)          ((struct IE_MTK_OUI *) fp)
 
+#define CSA_IE(fp)		((struct IE_CHANNEL_SWITCH *) fp)
 #define EX_CSA_IE(fp)		((struct IE_EX_CHANNEL_SWITCH *) fp)
-#define CSA_IE(fp)              ((struct IE_CHANNEL_SWITCH *) fp)
 #define SEC_OFFSET_IE(fp)	((struct IE_SECONDARY_OFFSET *) fp)
 #define WIDE_BW_IE(fp)		((struct IE_WIDE_BAND_CHANNEL *) fp)
+#define CSA_WRAPPER_IE(fp)	((struct IE_CHANNEL_SWITCH_WRAPPER *) fp)
 
 #define SUPPORTED_CHANNELS_IE(fp) ((struct IE_SUPPORTED_CHANNELS *)fp)
 #define TIMEOUT_INTERVAL_IE(fp)	((struct IE_TIMEOUT_INTERVAL *)fp)

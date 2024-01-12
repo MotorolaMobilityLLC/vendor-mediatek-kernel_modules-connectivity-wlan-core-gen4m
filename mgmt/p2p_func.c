@@ -8770,8 +8770,7 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		p2pFunAbortOngoingScan(prAdapter);
 
 		/* Send Action Frames */
-		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
-		rlmSendExChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
+		rlmSendChannelSwitchFrame(prAdapter, prBssInfo);
 
 		/* To prevent race condition, we have to set CSA flags
 		 * after all CSA parameters are updated. In this way,
