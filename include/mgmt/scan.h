@@ -162,7 +162,6 @@
 #define SCN_AGPS_AP_LIST_MAX_NUM		32
 #endif
 
-#define SCN_BSS_JOIN_FAIL_THRESOLD		5
 #define SCN_BSS_JOIN_FAIL_CNT_RESET_SEC		15
 #define SCN_BSS_JOIN_FAIL_RESET_STEP		2
 
@@ -177,6 +176,8 @@
 
 #define SCAN_NLO_CHECK_SSID_ONLY		(0x01)
 #define SCAN_NLO_DEFAULT_INTERVAL		(30000)
+/* Support AP Setection */
+#define SCN_BSS_JOIN_FAIL_THRESOLD          4
 
 #define SCN_CTRL_SCAN_CHANNEL_LISTEN_TIME_ENABLE	BIT(1)
 #define SCN_CTRL_IGNORE_AIS_FIX_CHANNEL			BIT(1)
@@ -238,6 +239,8 @@ struct MSG_SCN_FSM {
 /*----------------------------------------------------------------------------*/
 struct BSS_DESC {
 	struct LINK_ENTRY rLinkEntry;
+	/* Support AP Selection*/
+	struct LINK_ENTRY rLinkEntryEss;
 
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 
@@ -374,9 +377,25 @@ struct BSS_DESC {
 
 	uint8_t aucRawBuf[CFG_RAW_BUFFER_SIZE];
 	uint8_t aucIEBuf[CFG_IE_BUFFER_SIZE];
-	uint8_t ucJoinFailureCount;
 	uint16_t u2JoinStatus;
 	OS_SYSTIME rJoinFailTime;
+
+	/* Support AP Selection */
+	struct AIS_BLACKLIST_ITEM *prBlack;
+	uint16_t u2StaCnt;
+	uint16_t u2AvaliableAC; /* Available Admission Capacity */
+	uint8_t ucJoinFailureCount;
+	uint8_t ucChnlUtilization;
+	uint8_t ucSNR;
+	u_int8_t fgSeenProbeResp;
+	u_int8_t fgExsitBssLoadIE;
+	u_int8_t fgMultiAnttenaAndSTBC;
+	u_int8_t fgDeauthLastTime;
+	uint32_t u4UpdateIdx;
+#if CFG_SUPPORT_RSN_SCORE
+	u_int8_t fgIsRSNSuitableBss;
+#endif
+	/* end Support AP Selection */
 };
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
@@ -484,6 +503,9 @@ struct SCAN_INFO {
 	uint8_t		aucChannelMDRDYCnt[64];
 	/* Beacon and Probe Response Count in each Channel */
 	uint8_t		aucChannelBAndPCnt[64];
+
+	/* Support AP Selection */
+	uint32_t u4ScanUpdateIdx;
 };
 
 /* Incoming Mailbox Messages */

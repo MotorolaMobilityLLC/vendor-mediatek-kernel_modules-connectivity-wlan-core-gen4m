@@ -100,6 +100,12 @@ struct LINK {
 	uint32_t u4NumElem;
 };
 
+/* Support AP Selection */
+struct LINK_MGMT {
+	struct LINK rUsingLink;
+	struct LINK rFreeLink;
+};
+/* end Support AP Selection */
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -132,6 +138,38 @@ struct LINK {
 			(struct LINK_ENTRY *)(prLink); \
 		((struct LINK *)(prLink))->u4NumElem = 0; \
 	} while (0)
+/* Support AP Selection */
+#define LINK_MGMT_INIT(prLinkMgmt) \
+	do { \
+		LINK_INITIALIZE(&((struct LINK_MGMT *)prLinkMgmt)->rUsingLink); \
+		LINK_INITIALIZE(&((struct LINK_MGMT *)prLinkMgmt)->rFreeLink); \
+	} while (0)
+
+#define LINK_MGMT_GET_ENTRY(prLinkMgmt, prEntry, EntryType, memType) \
+	do { \
+		LINK_REMOVE_HEAD(&((struct LINK_MGMT *)prLinkMgmt)->rFreeLink, \
+			prEntry, EntryType*); \
+		if (!prEntry) \
+			prEntry = kalMemAlloc(sizeof(EntryType), memType); \
+	} while (0)
+
+#define LINK_MGMT_UNINIT(prLinkMgmt, EntryType, memType) \
+	do { \
+		EntryType *prEntry = NULL; \
+		struct LINK *prFreeList = &((struct LINK_MGMT *)prLinkMgmt)->rFreeLink; \
+		struct LINK *prUsingList = &((struct LINK_MGMT *)prLinkMgmt)->rUsingLink; \
+		LINK_REMOVE_HEAD(prFreeList, prEntry, EntryType *); \
+		while (prEntry) { \
+			kalMemFree(prEntry, memType, sizeof(EntryType)); \
+			LINK_REMOVE_HEAD(prFreeList, prEntry, EntryType *); \
+		} \
+		LINK_REMOVE_HEAD(prUsingList, prEntry, EntryType *); \
+		while (prEntry) { \
+			kalMemFree(prEntry, memType, sizeof(EntryType)); \
+			LINK_REMOVE_HEAD(prUsingList, prEntry, EntryType *); \
+		} \
+	} while (0)
+/* end Support AP Selection */
 
 #define LINK_ENTRY_INITIALIZE(prEntry) \
 	do { \
@@ -151,6 +189,16 @@ struct LINK {
 
 #define LINK_IS_EMPTY(prLink)           \
 	(((struct LINK *)(prLink))->prNext == (struct LINK_ENTRY *)(prLink))
+
+#define LINK_ENTRY_IS_VALID(prEntry) \
+	(((struct LINK_ENTRY *)(prEntry))->prNext != (struct LINK_ENTRY *)NULL && \
+	((struct LINK_ENTRY *)(prEntry))->prNext != \
+		(struct LINK_ENTRY *)INVALID_LINK_POISON1 && \
+	((struct LINK_ENTRY *)(prEntry))->prPrev != (struct LINK_ENTRY *)NULL && \
+	((struct LINK_ENTRY *)(prEntry))->prPrev != \
+	(struct LINK_ENTRY *)INVALID_LINK_POISON2)
+
+
 
 /* NOTE: We should do memory zero before any LINK been initiated,
  *       so we can check if it is valid before parsing the LINK.
