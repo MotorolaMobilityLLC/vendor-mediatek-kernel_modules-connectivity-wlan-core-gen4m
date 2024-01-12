@@ -55,6 +55,10 @@
 		u_int8_t fgRxIcvErrDbg = \
 			IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgRxIcvErrDbg); \
 		if (fgRxIcvErrDbg) { \
+			if (unlikely(!pvPayload)) { \
+				DBGLOG(NIC, WARN, "pvPayload == NULL\n"); \
+				break; \
+			} \
 			DBGLOG(NIC, INFO, "Dump RXP:\n"); \
 			DBGLOG_MEM8(NIC, INFO, pvPayload, u4PayloadLen); \
 		} \
