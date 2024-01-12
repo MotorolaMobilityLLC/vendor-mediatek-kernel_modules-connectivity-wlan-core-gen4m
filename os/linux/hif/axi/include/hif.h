@@ -271,6 +271,14 @@ struct BUS_INFO {
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	const uint32_t ap2wf_remap_1;
+	const struct wfdma_group_info *wfmda_host_tx_group;
+	const uint32_t wfmda_host_tx_group_len;
+	const struct wfdma_group_info *wfmda_host_rx_group;
+	const uint32_t wfmda_host_rx_group_len;
+	const struct wfdma_group_info *wfmda_wm_tx_group;
+	const uint32_t wfmda_wm_tx_group_len;
+	const struct wfdma_group_info *wfmda_wm_rx_group;
+	const uint32_t wfmda_wm_rx_group_len;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
@@ -310,6 +318,7 @@ struct BUS_INFO {
 		struct GLUE_INFO *prGlueInfo,
 		bool fgAllocMem);
 	void (*setPdmaIntMask)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+	void (*enableFwDlMode)(struct ADAPTER *prAdapter);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
 };

@@ -222,6 +222,16 @@ enum ENUM_DBG_ASSERT_PATH {
 	DBG_ASSERT_PATH_WMT
 };
 
+struct wfdma_group_info {
+	char name[20];
+	u_int32_t hw_desc_base;
+};
+
+enum _ENUM_WFDMA_TYPE_T {
+	WFDMA_TYPE_HOST = 0,
+	WFDMA_TYPE_WM
+};
+
 struct CHIP_DBG_OPS {
 	void (*showPdmaInfo)(struct ADAPTER *prAdapter);
 	void (*showPseInfo)(struct ADAPTER *prAdapter);
@@ -262,6 +272,12 @@ struct CHIP_DBG_OPS {
 		struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 		uint8_t fgResetCnt,
 		uint32_t u4StatGroup);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	void (*show_wfdma_dbg_probe_info)(IN struct ADAPTER *prAdapter,
+		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	void (*show_wfdma_wrapper_info)(IN struct ADAPTER *prAdapter,
+		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+#endif
 };
 
 enum PKT_PHASE {
@@ -567,7 +583,6 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup);
 
-
 #if (CFG_SUPPORT_CONNAC2X == 1)
 void connac2x_show_txd_Info(
 	struct ADAPTER *prAdapter,
@@ -604,6 +619,19 @@ int32_t connac2x_show_stat_info(
 	uint8_t fgResetCnt,
 	uint32_t u4StatGroup);
 
+void connac2x_show_wfdma_interrupt_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+
+void connac2x_show_wfdma_glo_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+
+void connac2x_show_wfdma_ring_info(
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+
+void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 #if (CFG_SUPPORT_CONNINFRA == 1)

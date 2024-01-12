@@ -331,13 +331,18 @@ void nic_txd_v2_compose(
 		ucEtherTypeOffsetInWord);
 
 	ucTarPort = nicTxGetTxDestPortIdxByTc(prMsduInfo->ucTC);
+#if defined(SOC3_0)
 	if (ucTarPort == PORT_INDEX_MCU &&
 		prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX) {
 		/* To MCU packet with always tx flag */
 		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
-	} else {
+	} else
+#endif
+	{
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
-		ucTarQueue += (prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
+		if (ucTarPort == PORT_INDEX_LMAC)
+			ucTarQueue +=
+				(prBssInfo->ucWmmQueSet * WMM_AC_INDEX_NUM);
 	}
 
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
