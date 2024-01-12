@@ -383,7 +383,7 @@ struct HQA_CMD_FRAME {
 	uint16_t Id;
 	uint16_t Length;
 	uint16_t Sequence;
-	uint8_t Data[2048];
+	uint8_t Data[4096];
 } __KAL_ATTRIB_PACKED__;
 
 typedef int32_t(*HQA_CMD_HANDLER) (struct net_device

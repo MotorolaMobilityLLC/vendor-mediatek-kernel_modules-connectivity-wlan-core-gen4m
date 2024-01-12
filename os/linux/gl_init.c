@@ -3995,10 +3995,12 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 			"%s chip_id = 0x%x\n", __func__,
 			prServiceTest->test_winfo->chip_id);
 
-	if (prServiceTest->test_winfo->chip_id == 0x37)	/* 6637 */
+	prServiceTest->test_winfo->chip_cap.support_6g = FALSE;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prGlueInfo->prAdapter->fgIsHwSupport6G)
 		prServiceTest->test_winfo->chip_cap.support_6g = TRUE;
-	else
-		prServiceTest->test_winfo->chip_cap.support_6g = FALSE;
+#endif
 
 #if (CFG_MTK_ANDROID_EMI == 1)
 	prServiceTest->test_winfo->emi_phy_base = gConEmiPhyBaseFinal;

@@ -4529,7 +4529,7 @@ uint32_t ServiceWlanOid(void *winfos,
 
 	switch (oidType) {
 	case OP_WLAN_OID_SET_TEST_MODE_START:
-		DBGLOG(RFTEST, INFO, "Test Mode Start!\n");
+		DBGLOG(RFTEST, INFO, "Test Mode Start Bellwether!\n");
 		ServiceRfTestInit(winfos);
 		pfnOidHandler = wlanoidRftestSetTestMode;
 		break;
@@ -4600,7 +4600,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		capability->ph_cap.bandwidth = BITS(0, 1);
 		if (prAdapter->rWifiVar.ucStaVht)
 			capability->ph_cap.bandwidth |= BIT(2);
-		if (prTestWinfo->chip_id == 0x37) /* 6637 */
+		if (prTestWinfo->chip_cap.support_6g)
 			capability->ph_cap.bandwidth |= BITS(3, 4);
 
 		/* ph_cap.channel_band_dbdc */
