@@ -2698,6 +2698,7 @@ int32_t wf_reg_write_wrapper(void *priv,
 	}
 
 	if (!wlanIsDriverReady(glue,
+			       WLAN_DRV_READY_CHECK_WLAN_ON |
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"HIF is not ready\n");
@@ -2747,6 +2748,7 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 	}
 
 	if (!wlanIsDriverReady(glue,
+			       WLAN_DRV_READY_CHECK_WLAN_ON |
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"HIF is not ready\n");
