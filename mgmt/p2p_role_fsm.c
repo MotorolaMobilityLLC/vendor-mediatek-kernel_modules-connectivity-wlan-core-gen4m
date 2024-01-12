@@ -4051,7 +4051,7 @@ p2pRoleFsmRunEventAAASuccessImpl(struct ADAPTER *prAdapter,
 	} while (FALSE);
 
 	return rStatus;
-}				/* p2pRoleFsmRunEventAAASuccess */
+}				/* p2pRoleFsmRunEventAAASuccessImpl */
 
 /*----------------------------------------------------------------------------*/
 /*!

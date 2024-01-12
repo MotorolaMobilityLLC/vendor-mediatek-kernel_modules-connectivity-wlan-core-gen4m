@@ -560,6 +560,9 @@ struct STA_RECORD {
 	uint8_t *pucAssocReqIe;
 	uint16_t u2AssocReqIeLen;
 
+	uint8_t *pucAssocRespIe;
+	uint16_t u2AssocRespIeLen;
+
 	/* link layer satatistics */
 	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];
 

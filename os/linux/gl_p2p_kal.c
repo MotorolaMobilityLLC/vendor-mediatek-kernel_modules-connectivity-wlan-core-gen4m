@@ -1670,6 +1670,12 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	struct BSS_INFO *prBssInfo = NULL;
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *mld_sta;
+#endif
+#endif
 
 	do {
 		if ((prGlueInfo == NULL) || (prCliStaRec == NULL)
@@ -1687,11 +1693,25 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 		COPY_MAC_ADDR(aucBssid,
 			prCliStaRec->aucMacAddr);
 
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			prCliStaRec->ucBssIndex);
+		if (!prBssInfo)
+			break;
+
 		if (fgIsNew) {
 			struct station_info rStationInfo;
 
-			if (prCliStaRec->fgIsConnected == TRUE)
+			if (prCliStaRec->fgIsConnected == TRUE) {
+				DBGLOG(P2P, WARN,
+					"Skip duplicate notify " MACSTR "\n",
+					MAC2STR(prCliStaRec->aucMacAddr));
 				break;
+			}
+
+			DBGLOG(P2P, INFO,
+				"Notify new_sta, mac=" MACSTR "\n",
+				MAC2STR(prCliStaRec->aucMacAddr));
+
 			prCliStaRec->fgIsConnected = TRUE;
 
 			kalMemZero(&rStationInfo, sizeof(rStationInfo));
@@ -1706,6 +1726,33 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 			rStationInfo.assoc_req_ies_len =
 				prCliStaRec->u2AssocReqIeLen;
 
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE) || \
+		(CFG_ADVANCED_80211_MLO == 1)
+			if (prCliStaRec->pucAssocRespIe &&
+			    prCliStaRec->u2AssocRespIeLen) {
+				rStationInfo.assoc_resp_ies =
+					prCliStaRec->pucAssocRespIe;
+				rStationInfo.assoc_resp_ies_len =
+					prCliStaRec->u2AssocRespIeLen;
+			}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			mld_sta = mldStarecGetByStarec(prGlueInfo->prAdapter,
+				prCliStaRec);
+			if (IS_MLD_STAREC_MULTI(mld_sta)) {
+				DBGLOG(P2P, INFO,
+					"link_id=%d, mld_addr=" MACSTR "\n",
+					prBssInfo->ucLinkIndex,
+					MAC2STR(mld_sta->aucPeerMldAddr));
+
+				rStationInfo.mlo_params_valid = true;
+				rStationInfo.assoc_link_id =
+					prBssInfo->ucLinkIndex;
+				COPY_MAC_ADDR(rStationInfo.mld_addr,
+					mld_sta->aucPeerMldAddr);
+			}
+#endif
+#endif
+
 			cfg80211_new_sta(prP2pGlueInfo->aprRoleHandler,
 				/* struct net_device * dev, */
 				aucBssid,
@@ -1719,13 +1766,6 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 			 */
 			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 				== 0) {
-				prBssInfo = GET_BSS_INFO_BY_INDEX(
-					prGlueInfo->prAdapter,
-					prCliStaRec->ucBssIndex);
-
-				if (!prBssInfo)
-					break;
-
 				/* sae hostapd new_sta, when auth fail,
 				 * driver need del_sta
 				 */
