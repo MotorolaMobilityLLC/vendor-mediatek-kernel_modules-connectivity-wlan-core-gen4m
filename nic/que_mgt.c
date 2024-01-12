@@ -112,11 +112,7 @@ const uint8_t aucWmmAC2TcResourceSet2[WMM_AC_INDEX_NUM] = {
  *******************************************************************************
  */
 #if ARP_MONITER_ENABLE
-static uint16_t arpMoniter;
-static uint8_t apIp[4];
-static uint8_t gatewayIp[4];
-static uint32_t last_rx_packets, latest_rx_packets;
-static uint8_t arpIsCriticalThres;
+static struct ARP_MONITOR g_ArpMonitor[MAX_BSSID_NUM];
 #endif
 /*******************************************************************************
  *                                 M A C R O S
@@ -6249,9 +6245,6 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 			/*TODO */
 #endif
 
-#if ARP_MONITER_ENABLE
-			qmResetArpDetect();
-#endif
 		}
 		DBGLOG(QM, TRACE,
 			"MQM: Assoc_Rsp Parsing (QoS Enabled=%d)\n",
@@ -8882,6 +8875,160 @@ void mqmHandleBaActionFrame(struct ADAPTER *prAdapter,
 #endif
 
 #if ARP_MONITER_ENABLE
+static __KAL_INLINE__ uint16_t qmArpMonitorGetTxCnt(uint8_t ucBssIndex)
+{
+	return g_ArpMonitor[ucBssIndex].arpMoniter;
+}
+
+static __KAL_INLINE__ void qmArpMonitorResetTxCnt(uint8_t ucBssIndex)
+{
+	g_ArpMonitor[ucBssIndex].arpMoniter = 0;
+}
+
+static __KAL_INLINE__ void qmArpMonitorIncTxCnt(uint8_t ucBssIndex)
+{
+	g_ArpMonitor[ucBssIndex].arpMoniter++;
+}
+
+static __KAL_INLINE__ uint8_t qmArpMonitorGetCriticalThres(uint8_t ucBssIndex)
+{
+	return g_ArpMonitor[ucBssIndex].arpIsCriticalThres;
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetCriticalThres(
+	uint8_t ucBssIndex, uint8_t ucThreshold)
+{
+	g_ArpMonitor[ucBssIndex].arpIsCriticalThres = ucThreshold;
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorGetLastRxCnt(uint8_t ucBssIndex)
+{
+	return g_ArpMonitor[ucBssIndex].LastRxCnt;
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetLastRxCnt(
+	uint8_t ucBssIndex, uint32_t LastRxCnt)
+{
+	g_ArpMonitor[ucBssIndex].LastRxCnt = LastRxCnt;
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorGetCurrentRxCnt(uint8_t ucBssIndex)
+{
+	return g_ArpMonitor[ucBssIndex].CurrentRxCnt;
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetCurrentRxCnt(
+	uint8_t ucBssIndex, uint32_t CurrentRxCnt)
+{
+	g_ArpMonitor[ucBssIndex].CurrentRxCnt = CurrentRxCnt;
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorGetRxDiff(uint8_t ucBssIndex)
+{
+	return (qmArpMonitorGetCurrentRxCnt(ucBssIndex)
+		- qmArpMonitorGetLastRxCnt(ucBssIndex));
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorGetLastRxUnicastTime(
+	uint8_t ucBssIndex)
+{
+	return g_ArpMonitor[ucBssIndex].LastRxUnicastTime;
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetLastRxUnicastTime(
+	uint8_t ucBssIndex, uint32_t LastRxUnicastTime)
+{
+	g_ArpMonitor[ucBssIndex].LastRxUnicastTime =
+		LastRxUnicastTime;
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorGetCurrentRxUnicastTime(
+	uint8_t ucBssIndex)
+{
+	return g_ArpMonitor[ucBssIndex].CurrentRxUnicastTime;
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetCurrentRxUnicastTime(
+	uint8_t ucBssIndex, uint32_t CurrentRxUnicastTime)
+{
+	g_ArpMonitor[ucBssIndex].CurrentRxUnicastTime =
+		CurrentRxUnicastTime;
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorGetRxUnicastTimeDiff(
+	uint8_t ucBssIndex)
+{
+	return (qmArpMonitorGetCurrentRxUnicastTime(ucBssIndex)
+		- qmArpMonitorGetLastRxUnicastTime(ucBssIndex));
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetApIp(uint8_t ucBssIndex,
+	uint8_t *apIp)
+{
+	COPY_IP_ADDR(g_ArpMonitor[ucBssIndex].apIp, apIp);
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorNotApIpAndGatewayIp(
+	uint8_t ucBssIndex, uint8_t *Ip)
+{
+	return (kalMemCmp(g_ArpMonitor[ucBssIndex].apIp,
+		Ip, sizeof(g_ArpMonitor[ucBssIndex].apIp))
+		&& kalMemCmp(g_ArpMonitor[ucBssIndex].gatewayIp,
+		Ip, sizeof(g_ArpMonitor[ucBssIndex].gatewayIp)));
+}
+
+static __KAL_INLINE__ uint8_t *qmArpMonitorGetApIpPtr(uint8_t ucBssIndex)
+{
+	return &g_ArpMonitor[ucBssIndex].apIp[0];
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetGatewayIp(uint8_t ucBssIndex,
+	uint8_t *gatewayIp)
+{
+	COPY_IP_ADDR(g_ArpMonitor[ucBssIndex].gatewayIp, gatewayIp);
+}
+
+static __KAL_INLINE__ uint8_t *qmArpMonitorGetGatewayIpPtr(uint8_t ucBssIndex)
+{
+	return &g_ArpMonitor[ucBssIndex].gatewayIp[0];
+}
+
+static __KAL_INLINE__ void qmArpMonitorSetGatewayMac(uint8_t ucBssIndex,
+	uint8_t *gatewayMac)
+{
+	COPY_MAC_ADDR(g_ArpMonitor[ucBssIndex].gatewayMac, gatewayMac);
+}
+
+static __KAL_INLINE__ uint32_t qmArpMonitorEqualGatewayMac(uint8_t ucBssIndex,
+	uint8_t *gatewayMac)
+{
+	return EQUAL_MAC_ADDR(g_ArpMonitor[ucBssIndex].gatewayMac, gatewayMac);
+}
+
+static __KAL_INLINE__ uint8_t *qmArpMonitorGetGatewayMacPtr(uint8_t ucBssIndex)
+{
+	return &g_ArpMonitor[ucBssIndex].gatewayMac[0];
+}
+
+static __KAL_INLINE__ void qmArpMonitorReset(uint8_t ucBssIndex)
+{
+	qmArpMonitorResetTxCnt(ucBssIndex);
+	qmArpMonitorSetLastRxCnt(ucBssIndex, 0);
+	qmArpMonitorSetCurrentRxCnt(ucBssIndex, 0);
+	qmArpMonitorSetLastRxUnicastTime(ucBssIndex, 0);
+	qmArpMonitorSetCurrentRxUnicastTime(ucBssIndex, 0);
+	kalMemZero(g_ArpMonitor[ucBssIndex].apIp,
+		sizeof(g_ArpMonitor[ucBssIndex].apIp));
+}
+
+static __KAL_INLINE__ void qmArpMonitorResetGateway(uint8_t ucBssIndex)
+{
+	kalMemZero(g_ArpMonitor[ucBssIndex].gatewayIp,
+		sizeof(g_ArpMonitor[ucBssIndex].gatewayIp));
+	kalMemZero(g_ArpMonitor[ucBssIndex].gatewayMac,
+		sizeof(g_ArpMonitor[ucBssIndex].gatewayMac));
+}
+
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
@@ -8892,8 +9039,6 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
 	struct WIFI_VAR *prWifiVar = NULL;
-	uint32_t uArpMonitorNumber;
-	uint32_t uArpMonitorRxPktNum;
 
 	if (!prAdapter ||
 		!prAdapter->prGlueInfo) {
@@ -8902,11 +9047,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	}
 
 	prWifiVar = &prAdapter->rWifiVar;
-	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
-	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
-	arpIsCriticalThres = prWifiVar->uArpMonitorCriticalThres;
-
-	if (uArpMonitorNumber == 0)
+	if (prWifiVar->uArpMonitorNumber == 0)
 		return;
 
 	/* We need to disable arp monitor in CTIA mode */
@@ -8920,12 +9061,21 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 
 	/* store it in local variable to prevent timing issue */
 	ucBssIndex = prStaRec->ucBssIndex;
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
+		return;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo)
 		return;
 
 	if (!IS_BSS_INFO_IN_AIS(prBssInfo))
 		return;
+
+	/* save CriticalThres */
+	qmArpMonitorSetCriticalThres(ucBssIndex,
+		prWifiVar->uArpMonitorCriticalThres);
 
 	if (prMsduInfo->eSrc != TX_PACKET_OS)
 		return;
@@ -8952,24 +9102,22 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 
 	DBGLOG(QM, LOUD,
 		"apIp:" IPV4STR " gatewayIp:" IPV4STR " TarIp:" IPV4STR "\n",
-		IPV4TOSTR(&apIp[0]),
-		IPV4TOSTR(&gatewayIp[0]),
+		IPV4TOSTR(qmArpMonitorGetApIpPtr(ucBssIndex)),
+		IPV4TOSTR(qmArpMonitorGetGatewayIpPtr(ucBssIndex)),
 		IPV4TOSTR(&pucArpPkt[ARP_TARGET_IP_OFFSET]));
 
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
-	if (kalMemCmp(apIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
-		sizeof(apIp)) &&
-		kalMemCmp(gatewayIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
-		sizeof(gatewayIp)))
+	if (qmArpMonitorNotApIpAndGatewayIp(ucBssIndex,
+		&pucArpPkt[ARP_TARGET_IP_OFFSET]))
 		return;
 
 #if CFG_QM_ARP_MONITOR_MSG
 	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_TX_ARP,
-		prStaRec->ucBssIndex,
+		ucBssIndex,
 		pucData, kalQueryPacketLength(prMsduInfo->prPacket));
 #else /* CFG_QM_ARP_MONITOR_MSG */
 	qmArpMonitorHandlePkt(prAdapter, ARP_MONITOR_TYPE_TX_ARP,
-		prStaRec->ucBssIndex,
+		ucBssIndex,
 		pucData, kalQueryPacketLength(prMsduInfo->prPacket));
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 }
@@ -9032,6 +9180,18 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	qmArpMonitorHandlePkt(prAdapter, ARP_MONITOR_TYPE_RX_DHCP,
 		ucBssIndex, pucData, prSwRfb->u2PacketLen);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
+}
+
+void qmGetSrcMac(uint8_t *pucData, uint16_t u2PacketLen,
+	uint8_t *prMacAddr)
+{
+	uint8_t *pucSaAddr = NULL;
+
+	if (u2PacketLen < ETHER_HEADER_LEN)
+		return;
+
+	pucSaAddr = pucData + MAC_ADDR_LEN;
+	COPY_MAC_ADDR(prMacAddr, pucSaAddr);
 }
 
 uint8_t *qmGetArpPkt(uint8_t *pucData, uint16_t u2PacketLen)
@@ -9148,14 +9308,80 @@ end:
 	return prDhcp;
 }
 
+u_int8_t qmArpMonitorIsIOTIssue(struct ADAPTER *prAdapter,
+	uint32_t ucBssIndex)
+{
+	struct WIFI_VAR *prWifiVar = NULL;
+	uint8_t ucArpMonitorUseRule;
+	uint32_t uArpMonitorRxPktNum;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	ucArpMonitorUseRule = prWifiVar->ucArpMonitorUseRule;
+	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
+
+	if (ucArpMonitorUseRule == 0) {
+		/* use rx packet for IOT checking */
+		/* rx cnt less than N after tx arp */
+		return (qmArpMonitorGetRxDiff(ucBssIndex)
+			<= uArpMonitorRxPktNum);
+	} else {
+		/* use unicast time for IOT checking */
+		/* no unicast rx after tx arp */
+		return (qmArpMonitorGetRxUnicastTimeDiff(
+				ucBssIndex) == 0);
+	}
+}
+
+/* Should call inside main_thread */
+void qmArpMonitorSetBTOEvent(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
+		return;
+	}
+
+#if CFG_SUPPORT_DATA_STALL
+	KAL_REPORT_ERROR_EVENT(prAdapter, EVENT_ARP_NO_RESPONSE,
+		(uint16_t)sizeof(uint32_t), ucBssIndex, FALSE);
+#endif /* CFG_SUPPORT_DATA_STALL */
+
+	aisBssBeaconTimeout(prAdapter, ucBssIndex);
+}
+
+#if !CFG_QM_ARP_MONITOR_MSG
+void qmArpMonitorSetLegacyBTOEvent(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return;
+
+	prAdapter->ucArpNoRespBitmap |= BIT(ucBssIndex);
+}
+
+void qmArpMonitorHandleLegacyBTOEvent(struct ADAPTER *prAdapter)
+{
+	uint8_t i;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (!prAdapter->ucArpNoRespBitmap)
+			break;
+
+		if (prAdapter->ucArpNoRespBitmap & BIT(i)) {
+			qmArpMonitorSetBTOEvent(prAdapter, i);
+			prAdapter->ucArpNoRespBitmap &= ~BIT(i);
+		}
+	}
+}
+#endif /* !CFG_QM_ARP_MONITOR_MSG */
+
 void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	void *pvDevHandler = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
-	uint32_t uArpMonitorNumber;
-	uint32_t uArpMonitorRxPktNum;
+	struct RX_CTRL	*prRxCtrl = NULL;
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
@@ -9164,11 +9390,9 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 	if (!prGlueInfo)
 		return;
 
+	prRxCtrl = &prAdapter->rRxCtrl;
 	prWifiVar = &prAdapter->rWifiVar;
-	uArpMonitorNumber = prWifiVar->uArpMonitorNumber;
-	uArpMonitorRxPktNum = prWifiVar->uArpMonitorRxPktNum;
-
-	if (uArpMonitorNumber == 0)
+	if (prWifiVar->uArpMonitorNumber == 0)
 		return;
 
 	pvDevHandler = kalGetGlueNetDevHdl(prGlueInfo);
@@ -9177,7 +9401,7 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
 		return;
 	}
@@ -9196,41 +9420,76 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 		return;
 
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
-	if (kalMemCmp(apIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
-		sizeof(apIp)) &&
-		kalMemCmp(gatewayIp, &pucArpPkt[ARP_TARGET_IP_OFFSET],
-		sizeof(gatewayIp)))
+	if (qmArpMonitorNotApIpAndGatewayIp(ucBssIndex,
+		&pucArpPkt[ARP_TARGET_IP_OFFSET]))
 		return;
 
-	arpMoniter++;
-	/* Record counts of RX Packets when Tx 1st ARP Req */
-	if (!last_rx_packets) {
-		last_rx_packets =
-			kalGetNetDevRxPacket(pvDevHandler);
-		latest_rx_packets = 0;
+	qmArpMonitorIncTxCnt(ucBssIndex);
+
+	if (prWifiVar->ucArpMonitorUseRule == 0) {
+		/* Legacy Rule */
+		/* Record counts of RX Packets when Tx 1st ARP Req */
+		if (!qmArpMonitorGetLastRxCnt(ucBssIndex)) {
+			qmArpMonitorSetLastRxCnt(ucBssIndex,
+				kalGetNetDevRxPacket(pvDevHandler));
+			qmArpMonitorSetCurrentRxCnt(ucBssIndex, 0);
+		}
+
+		/* Record counts of RX Packets when TX ARP Req recently */
+		qmArpMonitorSetCurrentRxCnt(ucBssIndex,
+			kalGetNetDevRxPacket(pvDevHandler));
+	} else {
+		/* New Rule */
+		/* Record the time that rx unicast when Tx 1st ARP Req */
+		if (!qmArpMonitorGetLastRxUnicastTime(ucBssIndex)) {
+			qmArpMonitorSetLastRxUnicastTime(ucBssIndex,
+				prRxCtrl->u4LastUnicastRxTime[ucBssIndex]);
+			qmArpMonitorSetCurrentRxUnicastTime(ucBssIndex, 0);
+		}
+
+		/* Record the time that rx unicast when TX ARP Req recently */
+		qmArpMonitorSetCurrentRxUnicastTime(ucBssIndex,
+			prRxCtrl->u4LastUnicastRxTime[ucBssIndex]);
 	}
-	/* Record counts of RX Packets when TX ARP Req recently */
-	latest_rx_packets = kalGetNetDevRxPacket(pvDevHandler);
-	if (arpMoniter > uArpMonitorNumber) {
-		if ((latest_rx_packets - last_rx_packets) <=
-			uArpMonitorRxPktNum) {
+
+	if (qmArpMonitorGetTxCnt(ucBssIndex) >
+		prWifiVar->uArpMonitorNumber) {
+		if (qmArpMonitorIsIOTIssue(prAdapter, ucBssIndex)) {
 			DBGLOG(QM, WARN, "IOT issue, arp no resp!\n");
 			if (prAisBssInfo)
 				prAisBssInfo->u2DeauthReason =
 				REASON_CODE_ARP_NO_RESPONSE;
-			prAdapter->cArpNoResponseIdx = ucBssIndex;
+#if CFG_QM_ARP_MONITOR_MSG
+			qmArpMonitorSetBTOEvent(prAdapter, ucBssIndex);
+#else /* CFG_QM_ARP_MONITOR_MSG */
+			qmArpMonitorSetLegacyBTOEvent(prAdapter, ucBssIndex);
+#endif /* CFG_QM_ARP_MONITOR_MSG */
 		} else
 			DBGLOG(QM, WARN, "ARP, still have %d pkts\n",
-				latest_rx_packets - last_rx_packets);
-		arpMoniter = 0;
-		last_rx_packets = 0;
-		latest_rx_packets = 0;
-		kalMemZero(apIp, sizeof(apIp));
+				qmArpMonitorGetRxDiff(ucBssIndex));
+
+		qmArpMonitorReset(ucBssIndex);
 	}
 
-	DBGLOG(QM, LOUD, "arpMoniter:[%u:%u] rx:[%u:%u:%u]\n",
-		arpMoniter, uArpMonitorNumber,
-		latest_rx_packets, last_rx_packets, uArpMonitorRxPktNum);
+	if (prWifiVar->ucArpMonitorUseRule == 0) {
+		DBGLOG(QM, LOUD,
+			"cfg[%u:%u:%u] tx[%u] rx_cnt[%u:%u]\n",
+			prWifiVar->uArpMonitorNumber,
+			prWifiVar->ucArpMonitorUseRule,
+			prWifiVar->uArpMonitorRxPktNum,
+			qmArpMonitorGetTxCnt(ucBssIndex),
+			qmArpMonitorGetCurrentRxCnt(ucBssIndex),
+			qmArpMonitorGetLastRxCnt(ucBssIndex));
+	} else {
+		DBGLOG(QM, LOUD,
+			"cfg[%u:%u:%u] tx[%u] rx_unicast_time[%u:%u]\n",
+			prWifiVar->uArpMonitorNumber,
+			prWifiVar->ucArpMonitorUseRule,
+			prWifiVar->uArpMonitorRxPktNum,
+			qmArpMonitorGetTxCnt(ucBssIndex),
+			qmArpMonitorGetCurrentRxUnicastTime(ucBssIndex),
+			qmArpMonitorGetLastRxUnicastTime(ucBssIndex));
+	}
 }
 
 void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
@@ -9240,7 +9499,7 @@ void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
 
-	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
 		return;
 	}
@@ -9263,20 +9522,19 @@ void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
 		MAC2STR(&pucArpPkt[ARP_SENDER_MAC_OFFSET]),
 		IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]));
 
-	arpMoniter = 0;
 	if (prAisBssInfo &&
 		prAisBssInfo->prStaRecOfAP) {
 		if (EQUAL_MAC_ADDR(
 			&(pucArpPkt[ARP_SENDER_MAC_OFFSET]),
 			/* source hardware address */
-			prAisBssInfo->
-			prStaRecOfAP->aucMacAddr)) {
-			kalMemCopy(apIp,
-				&(pucArpPkt[ARP_SENDER_IP_OFFSET]),
-				sizeof(apIp));
+			prAisBssInfo->prStaRecOfAP->aucMacAddr)) {
+			qmArpMonitorResetTxCnt(ucBssIndex);
+			qmArpMonitorSetApIp(ucBssIndex,
+				&(pucArpPkt[ARP_SENDER_IP_OFFSET]));
 			DBGLOG(INIT, TRACE,
-				"get arp response from AP %d.%d.%d.%d\n",
-				apIp[0], apIp[1], apIp[2], apIp[3]);
+				"get arp response from AP " IPV4STR "\n",
+				IPV4TOSTR(qmArpMonitorGetApIpPtr(
+						ucBssIndex)));
 		}
 	}
 }
@@ -9284,6 +9542,7 @@ void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
 void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
 {
+	uint8_t rSrcMacAddr[MAC_ADDR_LEN];
 	struct DHCP_PROTOCOL *prDhcp;
 	uint16_t dhcpLen = 0;
 	uint8_t dhcpTypeGot = 0;
@@ -9292,7 +9551,7 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	const uint16_t MAX_DHCP_OPT_LEN = ETHER_MAX_PKT_SZ - ETHER_HEADER_LEN -
 		IP_HEADER_LEN - UDP_HDR_LEN - sizeof(struct DHCP_PROTOCOL);
 
-	if (!IS_BSS_INDEX_VALID(ucBssIndex)) {
+	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
 		return;
 	}
@@ -9323,13 +9582,19 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 			 */
 			/* both dhcp ack and offer will update it */
 			if (IS_NONZERO_IP_ADDR(&prDhcp->aucDhcpOption[i + 2])) {
-				COPY_IP_ADDR(gatewayIp,
-						&prDhcp->aucDhcpOption[i + 2]);
+				qmArpMonitorSetGatewayIp(ucBssIndex,
+					&prDhcp->aucDhcpOption[i + 2]);
 
 				DBGLOG(INIT, TRACE, "Gateway ip: " IPV4STR "\n",
-					IPV4TOSTR(&gatewayIp[0]));
+					IPV4TOSTR(qmArpMonitorGetGatewayIpPtr(
+							ucBssIndex)));
 			};
 			dhcpGatewayGot = 1;
+
+			/* Record the MAC address of gateway */
+			qmGetSrcMac(pucData, u2PacketLen,
+				&rSrcMacAddr[0]);
+			qmArpMonitorSetGatewayMac(ucBssIndex, &rSrcMacAddr[0]);
 			break;
 
 		case DHCP_OPTION_MESSAGE_TYPE:
@@ -9342,10 +9607,10 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 			    prDhcp->aucDhcpOption[2 + i] != DHCPACK) {
 				DBGLOG(INIT, WARN,
 					"wrong dhcp message type, type: %d\n",
-				  prDhcp->aucDhcpOption[i + 6]);
+					prDhcp->aucDhcpOption[i + 6]);
 				if (dhcpGatewayGot)
-					kalMemZero(gatewayIp,
-						sizeof(gatewayIp));
+					qmArpMonitorResetGateway(ucBssIndex);
+
 				return;
 			} else if (prDhcp->aucDhcpOption[2 + i] == DHCPACK) {
 				/* Check if join timer is ticking, then release
@@ -9378,20 +9643,128 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 	       "can't find the dhcp option 255?, need to check the net log\n");
 }
 
-u_int8_t qmArpMonitorIsCritical(void)
+u_int8_t qmArpMonitorIsCritical(uint8_t ucBssIndex)
 {
-	DBGLOG(QM, LOUD, "arpMoniter:[Mon, Thres][%u, %u]\n",
-			arpMoniter, arpIsCriticalThres);
-	return arpMoniter >= arpIsCriticalThres;
+	DBGLOG(QM, LOUD, "[%u] arpMoniter:[Mon, Thres][%u, %u]\n",
+			ucBssIndex,
+			qmArpMonitorGetTxCnt(ucBssIndex),
+			qmArpMonitorGetCriticalThres(ucBssIndex));
+	return (qmArpMonitorGetTxCnt(ucBssIndex) >
+			qmArpMonitorGetCriticalThres(ucBssIndex));
 }
 
-void qmResetArpDetect(void)
+u_int8_t qmCheckIfRoaming(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
-	arpMoniter = 0;
-	last_rx_packets = 0;
-	latest_rx_packets = 0;
-	kalMemZero(apIp, sizeof(apIp));
-	kalMemZero(gatewayIp, sizeof(gatewayIp));
+	struct BSS_INFO *prBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct ROAMING_INFO *prRoamingFsmInfo;
+
+	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+
+	DBGLOG(INIT, INFO,
+		"BSSID[%d] C[%d] R[%d] A[%d] IsInPostpone[%d]\n",
+		ucBssIndex,
+		prBssInfo->eConnectionState,
+		prRoamingFsmInfo->eCurrentState,
+		prAisFsmInfo->eCurrentState,
+		aisFsmIsInProcessPostpone(prAdapter, ucBssIndex));
+
+	/* check if processing BTO */
+	if (aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))
+		return TRUE;
+
+	/* check if under roaming state */
+	if ((prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) &&
+		((prRoamingFsmInfo->eCurrentState == ROAMING_STATE_ROAM ||
+		prRoamingFsmInfo->eCurrentState == ROAMING_STATE_DISCOVERY)
+		|| (prAisFsmInfo->eCurrentState == AIS_STATE_JOIN ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_SEARCH ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN)))
+		return TRUE;
+
+	return FALSE;
+}
+
+void qmResetArpDetect(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	if (!prAdapter)
+		return;
+
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return;
+
+	qmArpMonitorReset(ucBssIndex);
+
+	/* Don't reset the gatewayip while roaming or processing BTO */
+	if (!(qmCheckIfRoaming(prAdapter, ucBssIndex))) {
+		qmArpMonitorResetGateway(ucBssIndex);
+		DBGLOG(INIT, INFO, "Reset gatewayIp and gatewayMac\n");
+	}
+}
+
+void qmArpMonitorGetUnicastPktTime(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
+{
+	struct WIFI_VAR *prWifiVar = NULL;
+	struct RX_CTRL *prRxCtrl;
+	uint8_t *pucEthDestAddr;
+	u_int8_t fgIsBMC;
+	uint8_t rSrcMacAddr[MAC_ADDR_LEN];
+	struct STA_RECORD *prStaRec;
+	uint8_t ucBssIndex;
+	uint32_t u4LastUnicastRxTime;
+
+	if (!prAdapter)
+		return;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	/* no need to record unicast pkt time if use old rule */
+	if (prWifiVar->ucArpMonitorUseRule == 0)
+		return;
+
+	if (!prSwRfb->pvHeader || !prSwRfb->pvPacket)
+		return;
+
+	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN + IP_HEADER_LEN)
+		return;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	/* check if bmc */
+	pucEthDestAddr = prSwRfb->pvHeader;
+	fgIsBMC = (prSwRfb->fgIsBC || prSwRfb->fgIsMC ||
+			IS_BMCAST_MAC_ADDR(pucEthDestAddr));
+
+	if (fgIsBMC)
+		return;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prSwRfb->ucStaRecIdx);
+	if (!prStaRec)
+		return;
+
+	/* update last rx unicast time when it is unicast and from gateway */
+	ucBssIndex = prStaRec->ucBssIndex;
+	if (ucBssIndex >= MAX_BSSID_NUM)
+		return;
+
+	qmGetSrcMac(prSwRfb->pvHeader, prSwRfb->u2PacketLen, &rSrcMacAddr[0]);
+	DBGLOG(QM, LOUD, "RX GatewayMac:" MACSTR " SrcMac:" MACSTR "\n",
+		MAC2STR(qmArpMonitorGetGatewayMacPtr(ucBssIndex)),
+		&rSrcMacAddr[0]);
+
+	u4LastUnicastRxTime = prRxCtrl->u4LastUnicastRxTime[ucBssIndex];
+	if (!qmArpMonitorEqualGatewayMac(ucBssIndex, &rSrcMacAddr[0]))
+		return;
+
+	GET_BOOT_SYSTIME(&prRxCtrl->u4LastUnicastRxTime[ucBssIndex]);
+	DBGLOG(QM, LOUD,
+		"RX UNICAST [IPID=0x%04x] update %u/%u\n",
+		GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket),
+		u4LastUnicastRxTime,
+		prRxCtrl->u4LastUnicastRxTime[ucBssIndex]);
 }
 
 #if CFG_QM_ARP_MONITOR_MSG

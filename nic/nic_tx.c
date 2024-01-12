@@ -309,7 +309,9 @@ void nicTxInitialize(struct ADAPTER *prAdapter)
 	/* enable/disable TX resource control */
 	prTxCtrl->fgIsTxResourceCtrl = NIC_TX_RESOURCE_CTRL;
 
-	prAdapter->cArpNoResponseIdx = -1;
+#if !CFG_QM_ARP_MONITOR_MSG
+	prAdapter->ucArpNoRespBitmap = 0;
+#endif /* !CFG_QM_ARP_MONITOR_MSG */
 
 	qmInit(prAdapter, halIsTxResourceControlEn(prAdapter));
 
@@ -4335,18 +4337,11 @@ uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 				QUEUE_GET_HEAD(prDataPort0));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_QM_TX_QUEUE);
 #if ARP_MONITER_ENABLE
-		if (prAdapter->cArpNoResponseIdx >= 0) {
-#if CFG_SUPPORT_DATA_STALL
-			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_ARP_NO_RESPONSE,
-				(uint16_t)sizeof(uint32_t),
-				prAdapter->cArpNoResponseIdx,
-				FALSE);
-#endif /* CFG_SUPPORT_DATA_STALL */
-			aisBssBeaconTimeout(prAdapter,
-				prAdapter->cArpNoResponseIdx);
-			prAdapter->cArpNoResponseIdx = -1;
-		}
+#if !CFG_QM_ARP_MONITOR_MSG
+		/* CFG_QM_ARP_MONITOR_MSG is enabled when trx-direct */
+		if (!HAL_IS_TX_DIRECT(prAdapter))
+			qmArpMonitorHandleLegacyBTOEvent(prAdapter);
+#endif /* !CFG_QM_ARP_MONITOR_MSG */
 #endif /* ARP_MONITER_ENABLE */
 		/* post-process for dropped packets */
 		if (prRetMsduInfo) {	/* unable to enqueue */
