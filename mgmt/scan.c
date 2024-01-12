@@ -2897,6 +2897,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			}
 			prBssDesc->fgIsHTPresent = TRUE;
 
+			prBssDesc->u2MaximumMpdu = (prHtCap->u2HtCapInfo &
+				HT_CAP_INFO_MAX_AMSDU_LEN);
+
 			/* Support AP Selection */
 			if (prBssDesc->fgMultiAnttenaAndSTBC)
 				break;
@@ -2909,9 +2912,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->fgMultiAnttenaAndSTBC =
 				((ucSpatial > 1) &&
 				(prHtCap->u2HtCapInfo & HT_CAP_INFO_TX_STBC));
-
-			prBssDesc->u2MaximumMpdu = (prHtCap->u2HtCapInfo &
-				HT_CAP_INFO_MAX_AMSDU_LEN);
 			/* end Support AP Selection */
 
 			break;
@@ -4624,6 +4624,10 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		>> __LOCAL_VAR__;
 #undef __LOCAL_VAR__
 #endif
+
+	prBssDesc->u2MaximumMpdu = (prVhtCap->u4VhtCapInfo &
+		VHT_CAP_INFO_MAX_MPDU_LEN_MASK);
+
 	/* Support AP Selection*/
 	if (prBssDesc->fgMultiAnttenaAndSTBC)
 		return;
@@ -4635,9 +4639,6 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 	prBssDesc->fgMultiAnttenaAndSTBC =
 		((ucSpatial > 1) && (prVhtCap->u4VhtCapInfo &
 			VHT_CAP_INFO_TX_STBC));
-
-	prBssDesc->u2MaximumMpdu = (prVhtCap->u4VhtCapInfo &
-		VHT_CAP_INFO_MAX_MPDU_LEN_MASK);
 }
 
 void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
