@@ -202,8 +202,10 @@ static int32_t connac3x_wtbl_rate_to_string(
 	for (i = 0; i < AUTO_RATE_NUM; i++) {
 
 		txmode = CONNAC3X_HW_TX_RATE_TO_MODE(arTxRate[i]);
+#if (CFG_SUPPORT_802_11BE == 0)
 		if (txmode >= ENUM_TX_MODE_NUM)
 			txmode = ENUM_TX_MODE_NUM - 1;
+#endif
 		rate = HW_TX_RATE_TO_MCS(arTxRate[i]);
 		nss = CONNAC3X_HW_TX_RATE_TO_NSS(arTxRate[i]) + 1;
 		stbc = CONNAC3X_HW_TX_RATE_TO_STBC(arTxRate[i]);
