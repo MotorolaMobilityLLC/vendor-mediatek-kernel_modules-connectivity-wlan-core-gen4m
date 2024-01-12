@@ -256,6 +256,12 @@ struct CNM_WMM_QUOTA_CONTROL_T {
 	struct TIMER rTimer;
 };
 
+enum ENUM_CNM_MODE {
+	ENUM_CNM_MODE_MCC = 0,
+	ENUM_CNM_MODE_SCC = 1,
+	ENUM_CNM_MODE_MBMC = 2,
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5581,5 +5587,275 @@ void cnmStopPendingJoinTimerForSuspend(IN struct ADAPTER *prAdapter)
 uint8_t cnmIncreaseTokenId(struct ADAPTER *prAdapter)
 {
 	return ++prAdapter->ucCnmTokenID;
+}
+
+enum ENUM_CNM_MODE cnmGetMode(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucPreferBssIdx,
+	IN uint8_t ucPreferChannel,
+	IN enum ENUM_BAND ePreferBand)
+{
+	struct BSS_INFO *prBssInfo;
+	uint32_t u4Idx;
+	uint8_t ucLast2GChNum = 0, ucLast5GChNum = 0;
+	bool fgIs2GMcc = false, fgIs5GMcc = false;
+
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		uint8_t ucChannel;
+		enum ENUM_BAND eBand;
+
+		prBssInfo = prAdapter->aprBssInfo[u4Idx];
+
+		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
+			continue;
+
+		if ((ucPreferBssIdx == u4Idx) &&
+			(!ucPreferChannel) &&
+			(ePreferBand != BAND_NULL)) {
+			eBand = ePreferBand;
+			ucChannel = ucPreferChannel;
+		} else {
+			eBand = prBssInfo->eBand;
+			ucChannel = prBssInfo->ucPrimaryChannel;
+		}
+
+		if (eBand == BAND_2G4) {
+			if (ucLast2GChNum != 0 &&
+			    ucLast2GChNum != ucChannel)
+				fgIs2GMcc = true;
+			ucLast2GChNum = ucChannel;
+		} else if (eBand == BAND_5G) {
+			if (ucLast5GChNum != 0 &&
+			    ucLast5GChNum != ucChannel)
+				fgIs5GMcc = true;
+			ucLast5GChNum = ucChannel;
+		}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G) {
+			/* Use the same handler as 5G channel */
+			if (ucLast5GChNum != 0 &&
+			    ucLast5GChNum != ucChannel)
+				fgIs5GMcc = true;
+			ucLast5GChNum = ucChannel;
+		}
+#endif
+	}
+
+	if (fgIs2GMcc || fgIs5GMcc)
+		return ENUM_CNM_MODE_MCC;
+	else if (ucLast2GChNum && ucLast5GChNum &&
+		!prAdapter->rWifiVar.fgDbDcModeEn)
+		return ENUM_CNM_MODE_MCC;
+	else if (ucLast2GChNum && ucLast5GChNum)
+		return ENUM_CNM_MODE_MBMC;
+	else
+		return ENUM_CNM_MODE_SCC;
+}
+
+void _cnmOwnGcCsaCmd(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx,
+	IN uint8_t ucChannel,
+	IN enum ENUM_BAND eBand)
+{
+	struct CMD_SET_GC_CSA_STRUCT *prCmd;
+
+	if (!prAdapter ||
+		IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgP2pGcCsa))
+		return;
+
+	prCmd = (struct CMD_SET_GC_CSA_STRUCT *)
+		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(*prCmd));
+
+	if (!prCmd) {
+		DBGLOG(P2P, ERROR,
+			"cnmMemAlloc for prCmd failed!\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO,
+		"Bss(%d) c=%d b=%d\n",
+		ucBssIdx,
+		ucChannel,
+		eBand);
+
+	prCmd->ucBssIdx = ucBssIdx;
+	prCmd->ucChannel = ucChannel;
+	prCmd->ucband = (uint8_t) eBand;
+
+	wlanSendSetQueryCmd(prAdapter,
+		CMD_ID_SET_P2P_GC_CSA,
+		TRUE,
+		FALSE,
+		FALSE,
+		NULL,
+		NULL,
+		sizeof(*prCmd),
+		(uint8_t *) prCmd, NULL, 0);
+
+	cnmMemFree(prAdapter, prCmd);
+}
+
+uint8_t cnmOwnGcCsaReq(
+	IN struct ADAPTER *prAdapter,
+	IN enum ENUM_BAND eBand,
+	IN uint8_t ucCh,
+	IN uint8_t ucRoleIdx)
+{
+	struct MSG_P2P_SET_NEW_CHANNEL *prMsg =
+		(struct MSG_P2P_SET_NEW_CHANNEL *) NULL;
+	uint8_t ucBssIdx = 0;
+
+	DBGLOG(P2P, TRACE,
+		"role(%d) c=%d b=%d\n",
+		ucRoleIdx,
+		ucCh,
+		eBand);
+
+	if (!prAdapter) {
+		DBGLOG(P2P, WARN, "ad is not active\n");
+		goto error;
+	} else if (p2pFuncRoleToBssIdx(
+		prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, WARN, "Incorrect role index");
+		goto error;
+	}
+
+	/* Set new channel */
+	prMsg = (struct MSG_P2P_SET_NEW_CHANNEL *)
+		cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG, sizeof(*prMsg));
+	if (prMsg == NULL) {
+		DBGLOG(P2P, WARN,
+			"prP2pSetNewChannelMsg alloc fail\n");
+		goto error;
+	}
+
+	prMsg->rMsgHdr.eMsgId = MID_MNY_P2P_GC_CSA;
+	prMsg->rRfChannelInfo.eBand = eBand;
+	prMsg->rRfChannelInfo.ucChannelNum = ucCh;
+	prMsg->ucRoleIdx = ucRoleIdx;
+	prMsg->ucBssIndex = ucBssIdx;
+
+	mboxSendMsg(prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prMsg,
+		MSG_SEND_METHOD_BUF);
+
+	return 0;
+
+error:
+
+	return -1;
+}
+
+void cnmOwnGcCsaHandler(
+	IN struct ADAPTER *prAdapter,
+	IN struct MSG_HDR *prMsgHdr)
+{
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct MSG_P2P_SET_NEW_CHANNEL *prMsg;
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	struct STA_RECORD *prStaRec;
+	enum ENUM_CNM_MODE eNextState;
+
+	prMsg = (struct MSG_P2P_SET_NEW_CHANNEL *) prMsgHdr;
+	prRfChannelInfo = &prMsg->rRfChannelInfo;
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prMsg->ucBssIndex);
+	if (!prP2pBssInfo ||
+		!IS_BSS_GC(prP2pBssInfo) ||
+		kalP2pIsStoppingAp(prAdapter,
+		prP2pBssInfo)) {
+		DBGLOG(P2P, ERROR,
+			"BSS%d is disabled.\n",
+			prP2pBssInfo->ucBssIndex);
+		goto error;
+	}
+
+	prStaRec = prP2pBssInfo->prStaRecOfAP;
+	if (!prStaRec ||
+		!prStaRec->ucGcCsaSupported) {
+		DBGLOG(P2P, INFO,
+			"BSS%d, peer GcCsa capa is disabled.\n",
+			prP2pBssInfo->ucBssIndex);
+		goto error;
+	}
+	eNextState = cnmGetMode(prAdapter,
+		prMsg->ucBssIndex,
+		prRfChannelInfo->ucChannelNum,
+		prRfChannelInfo->eBand);
+
+	if (eNextState == ENUM_CNM_MODE_MCC) {
+		DBGLOG(CNM, INFO,
+			"[CSA] GC to MCC, reject own GcCsa\n");
+	} else {
+		_cnmOwnGcCsaCmd(prAdapter,
+			prMsg->ucBssIndex,
+			prRfChannelInfo->ucChannelNum,
+			prRfChannelInfo->eBand);
+	}
+
+error:
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
+void cnmPeerGcCsaHandler(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_GC_CSA_T *prCsaEvent;
+	enum ENUM_CNM_MODE eCurrState;
+	enum ENUM_CNM_MODE eNextState;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	DBGLOG(CNM, TRACE, "[CSA] CSA Req from GC\n");
+
+	if (!prAdapter || !prEvent)
+		return;
+
+	/* parse Req channel from GC */
+	prCsaEvent = (struct EVENT_GC_CSA_T *)
+		&prEvent->aucBuffer;
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prCsaEvent->ucBssIndex);
+	if (!prBssInfo ||
+		!IS_BSS_APGO(prBssInfo) ||
+		kalP2pIsStoppingAp(prAdapter,
+		prBssInfo)) {
+		DBGLOG(P2P, ERROR,
+			"BSS%d is disabled.\n",
+			prBssInfo->ucBssIndex);
+		return;
+	}
+
+	eCurrState = cnmGetMode(prAdapter,
+		0, 0, BAND_NULL);
+	eNextState = cnmGetMode(prAdapter,
+		prCsaEvent->ucBssIndex,
+		prCsaEvent->ucChannel,
+		(enum ENUM_BAND) prCsaEvent->ucBand);
+
+	DBGLOG(CNM, INFO,
+		"[CSA] %d->%d, Go: %d, %d, GcCsa: %d, %d\n",
+		eCurrState,
+		eNextState,
+		prCsaEvent->ucBand,
+		prCsaEvent->ucChannel,
+		prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel);
+
+	if (eCurrState != ENUM_CNM_MODE_MCC &&
+		eNextState == ENUM_CNM_MODE_MCC) {
+		DBGLOG(CNM, INFO,
+			"[CSA] GO step to MCC, reject peer GcCsa\n");
+	} else {
+		cnmIdcCsaReq(prAdapter,
+			prCsaEvent->ucBand,
+			prCsaEvent->ucChannel,
+			prBssInfo->u4PrivateData);
+	}
 }
 

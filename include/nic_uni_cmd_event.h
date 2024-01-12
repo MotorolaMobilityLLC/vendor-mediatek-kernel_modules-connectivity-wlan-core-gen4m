@@ -2386,18 +2386,20 @@ struct UNI_CMD_P2P {
 
 	/* tlv */
 	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
-        *
-        *   TAG                        |  ID  | structure
-        *   ---------------------------|------|--------------
-        *   UNI_CMD_SET_NOA_PARAM      | 0x00 | UNI_CMD_SET_NOA_PARAM_T
-        *   UNI_CMD_SET_OPPPS_PARAM    | 0x01 | UNI_CMD_SET_OPPPS_PARAM_T
-        */
+	*
+	*   TAG                        |  ID  | structure
+	*   ---------------------------|------|--------------
+	*   UNI_CMD_SET_NOA_PARAM      | 0x00 | UNI_CMD_SET_NOA_PARAM_T
+	*   UNI_CMD_SET_OPPPS_PARAM    | 0x01 | UNI_CMD_SET_OPPPS_PARAM_T
+	*   UNI_CMD_SET_GC_CSA_PARAM   | 0x02 | UNI_CMD_SET_GC_CSA_PARAM_T
+	*/
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P command TLV List */
 enum ENUM_UNI_CMD_P2P_TAG {
 	UNI_CMD_P2P_TAG_SET_NOA_PARAM = 0,
 	UNI_CMD_P2P_TAG_SET_OPPPS_PARAM = 1,
+	UNI_CMD_P2P_TAG_SET_GC_CSA_PARAM = 2,
 	UNI_CMD_P2P_TAG_NUM
 };
 
@@ -2421,6 +2423,17 @@ struct UNI_CMD_SET_OPPPS_PARAM {
 	uint32_t u4CTwindowMs;
 	uint8_t  ucBssIdx;
 	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* Set GC CSA parameters (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_SET_GC_CSA_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBssIdx;
+	uint8_t ucChannel;
+	uint8_t ucband;
+	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 /* Smart gear command (0x21) */
@@ -5203,16 +5216,18 @@ struct UNI_EVENT_P2P {
 
 	/* tlv */
 	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
-        *
-        *                TAG              | ID  | structure
-        *   ------------------------------| ----| -------------
-        *   UNI_EVENT_UPDATE_NOA_PARAM    | 0x00 | UNI_EVENT_UPDATE_NOA_PARAM_T
-        */
+	*
+	*                TAG              | ID  | structure
+	*   ------------------------------| ----| -------------
+	*   UNI_EVENT_UPDATE_NOA_PARAM    | 0x00| UNI_EVENT_UPDATE_NOA_PARAM_T
+	*   UNI_EVENT_GC_CSA_PARAM        | 0x01| UNI_EVENT_GC_CSA_PARAM_T
+	*/
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P event Tag */
 enum ENUM_UNI_EVENT_P2P_TAG {
 	UNI_EVENT_P2P_TAG_UPDATE_NOA_PARAM = 0,
+	UNI_EVENT_P2P_TAG_GC_CSA_PARAM = 1,
 	UNI_EVENT_P2P_TAG_NUM
 };
 
@@ -5241,6 +5256,16 @@ struct UNI_EVENT_UPDATE_NOA_PARAM {
 	uint8_t  ucNoATimingCount;
 	uint8_t  aucReserved[2];
 	struct UNI_NOA_TIMING  arEventNoaTiming[8/*P2P_MAXIMUM_NOA_COUNT*/];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_GC_CSA_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBssIndex;
+	uint8_t ucChannel;
+	uint8_t ucBand;
+	uint8_t aucReserved[1];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6665,6 +6690,8 @@ uint32_t nicUniCmdSetMdvt(struct ADAPTER *ad,
 uint32_t nicUniCmdSetP2pNoa(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetP2pOppps(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetP2pGcCsa(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);

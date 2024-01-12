@@ -698,6 +698,13 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
+	if (IS_BSS_APGO(prBssInfo) &&
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgP2pGcCsa)) {
+		MTK_OUI_IE(pucBuffer)->aucCapability[1] |=
+			MTK_SYNERGY_CAP_SUPPORT_GC_CSA;
+		DBGLOG(P2P, INFO, "Add gc csa capa\n");
+	}
+
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	pucBuffer += IE_SIZE(pucBuffer);
 } /* rlmGenerateMTKOuiIE */
@@ -2671,6 +2678,40 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 	}
 }
 
+void rlmParseMtkOui(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE)
+{
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	uint8_t *aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
+
+	if (kalMemCmp(MTK_OUI_IE(pucIE)->aucOui,
+		aucMtkOui, sizeof(aucMtkOui)))
+		return;
+	else if (MTK_OUI_IE(pucIE)->ucLength !=
+		ELEM_MIN_LEN_MTK_OUI)
+		return;
+
+#if (CFG_SUPPORT_TWT_HOTSPOT_AC == 1)
+	prStaRec->ucTWTHospotSupport =
+		((aucCapa[0] &
+		MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC) ==
+		MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC);
+#endif
+
+	prStaRec->ucGcCsaSupported =
+		((aucCapa[1] &
+		MTK_SYNERGY_CAP_SUPPORT_GC_CSA) ==
+		MTK_SYNERGY_CAP_SUPPORT_GC_CSA) &&
+		prAdapter->rWifiVar.fgP2pGcCsa;
+
+	DBGLOG(RLM, LOUD,
+		"GcCsa: %d\n",
+		prStaRec->ucGcCsaSupported);
+
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function should be invoked to update parameters of associated AP.
@@ -3503,27 +3544,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_802_11AX */
 
-#if (CFG_SUPPORT_TWT_HOTSPOT_AC == 1)
-		case ELEM_ID_VENDOR:
-			if ((MTK_OUI_IE(pucIE)->aucOui[0] ==
-					aucMtkOui[0]) &&
-				(MTK_OUI_IE(pucIE)->aucOui[1] ==
-					aucMtkOui[1]) &&
-				(MTK_OUI_IE(pucIE)->aucOui[2] ==
-					aucMtkOui[2]) &&
-				(MTK_OUI_IE(pucIE)->ucLength ==
-					ELEM_MIN_LEN_MTK_OUI) &&
-				((MTK_OUI_IE(pucIE)->aucCapability[0] &
-				MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC) ==
-					MTK_SYNERGY_CAP_SUPPORT_TWT_HOTSPOT_AC))
-				prStaRec->ucTWTHospotSupport = TRUE;
-
-			break;
-#endif
-
 		default:
 			break;
 		} /* end of switch */
+
+		if (IE_ID(pucIE) == ELEM_ID_VENDOR)
+			rlmParseMtkOui(prAdapter, prStaRec, pucIE);
+
 	}	 /* end of IE_FOR_EACH */
 
 	if (prStaRec->ucStaState == STA_STATE_3) {
