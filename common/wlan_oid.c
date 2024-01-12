@@ -17316,6 +17316,47 @@ wlanoidSetMdvt(IN struct ADAPTER *prAdapter,
 				   pvSetBuffer, u4SetBufferLen);
 }	/* wlanoidSetMdvt */
 
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+uint32_t
+wlanoidLatchTSF(IN struct ADAPTER *prAdapter,
+		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		    OUT uint32_t *pu4QueryInfoLen)
+{
+	struct CMD_TSF_SYNC *prCmdTSF;
+
+	DEBUGFUNC("wlanoidLatchTSF");
+
+	if (!prAdapter) {
+		DBGLOG(REQ, WARN, "NULL prAdapter!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pvQueryBuffer) {
+		DBGLOG(REQ, WARN, "NULL pvQueryBuffer!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pu4QueryInfoLen) {
+		DBGLOG(REQ, WARN, "NULL pu4QueryInfoLen!\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prCmdTSF = (struct CMD_TSF_SYNC *)pvQueryBuffer;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_BEACON_TSF_SYNC,
+				   FALSE,
+				   TRUE,
+				   TRUE,
+				   nicCmdEventLatchTSF,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_TSF_SYNC),
+				   (uint8_t *) pvQueryBuffer,
+				   pvQueryBuffer,
+				   u4QueryBufferLen);
+}				/* end of wlanoidLatchTSF() */
+#endif
+
 #if (CFG_SUPPORT_PKT_OFLD == 1)
 
 uint32_t
