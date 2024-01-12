@@ -71,11 +71,22 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
+#if (CFG_SUPPORT_BTWT == 1)
+enum _ENUM_BTWT_FLOW_STATE_T {
+	ENUM_BTWT_FLOW_STATE_DEFAULT = 0,
+	ENUM_BTWT_FLOW_STATE_REQUESTING,
+	ENUM_BTWT_FLOW_STATE_ACTIVATED,
+};
+#endif
 
 struct _TWT_FLOW_T {
 	struct _TWT_PARAMS_T rTWTParams;
 	struct _TWT_PARAMS_T rTWTPeerParams;
 	u_int64_t u8NextTWT;
+#if (CFG_SUPPORT_BTWT == 1)
+	uint8_t fgIsBTWT;
+	enum _ENUM_BTWT_FLOW_STATE_T eBtwtState;
+#endif
 };
 
 struct _TWT_AGRT_T {
@@ -120,6 +131,7 @@ enum {
 	TWT_PARAM_ACTION_SUSPEND = 6,
 	TWT_PARAM_ACTION_RESUME = 7,
 	TWT_PARAM_ACTION_TESTBED_CONFIG = 8,
+	TWT_PARAM_ACTION_ADD_BTWT = 9,
 	TWT_PARAM_ACTION_MAX
 };
 
@@ -139,6 +151,8 @@ enum {
 	((ucCtrlAction) == TWT_PARAM_ACTION_RESUME)
 #define IS_TWT_PARAM_ACTION_TESTBED_CONFIG(ucCtrlAction) \
 	((ucCtrlAction) == TWT_PARAM_ACTION_TESTBED_CONFIG)
+#define IS_TWT_PARAM_ACTION_ADD_BTWT(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_ADD_BTWT)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -189,6 +203,39 @@ void twtPlannerGetTsfDone(
 	struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf);
+
+#if (CFG_SUPPORT_BTWT == 1)
+uint32_t btwtPlannerSendReqStart(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+uint32_t btwtPlannerSendReqTeardown(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+void btwtPlannerTeardownDone(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+uint32_t btwtPlannerAddAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	struct _TWT_PARAMS_T *prTWTParams,
+	uint8_t ucFlowId,
+	uint8_t fgIsOid,
+	PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+	PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler);
+
+void btwtPlannerDelAgrtTbl(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId);
+
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S

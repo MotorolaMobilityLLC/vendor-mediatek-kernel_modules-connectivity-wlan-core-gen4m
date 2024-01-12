@@ -68,6 +68,9 @@
  *******************************************************************************
  */
 #include "precomp.h"
+#if (CFG_SUPPORT_BTWT == 1)
+#include "twt_planner.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -2560,6 +2563,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	uint8_t *pucDumpIE;
 	uint8_t fgDomainValid = FALSE;
 	enum ENUM_CHANNEL_WIDTH eChannelWidth = CW_20_40MHZ;
+#if (CFG_SUPPORT_BTWT == 1)
+	uint8_t fgBtwtIeFound = FALSE;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -3056,6 +3062,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 #endif
 
+#if (CFG_SUPPORT_BTWT == 1)
+		case ELEM_ID_TWT:
+			heRlmRecBTWTparams(prAdapter, prStaRec, pucIE);
+			fgBtwtIeFound = TRUE;
+			break;
+#endif
+
 #if (CFG_SUPPORT_802_11AX == 1)
 		case ELEM_ID_RESERVED:
 			if (fgEfuseCtrlAxOn != 1)
@@ -3140,6 +3153,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					prBssInfo, pucIE);
 #endif
 			break;
+
 #endif /* CFG_SUPPORT_802_11AX */
 		default:
 			break;
@@ -3375,6 +3389,18 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prBssInfo->u2ObssScanInterval * MSEC_PER_SEC);
 		}
 	}
+
+#if (CFG_SUPPORT_BTWT == 1)
+	if ((fgBtwtIeFound == FALSE) &&
+		(prStaRec->arTWTFlow[0].eBtwtState ==
+			ENUM_BTWT_FLOW_STATE_ACTIVATED)) {
+		prStaRec->arTWTFlow[0].eBtwtState =
+			ENUM_BTWT_FLOW_STATE_DEFAULT;
+		prStaRec->arTWTFlow[0].fgIsBTWT = FALSE;
+
+		btwtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec, 0);
+	}
+#endif
 
 	return ucPrimaryChannel;
 }
@@ -3920,6 +3946,9 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	u_int8_t fgNewSRParam = FALSE;
 #endif
 	uint8_t i;
+#if (CFG_SUPPORT_BTWT == 1)
+	struct WLAN_BEACON_FRAME *prWlanBeacon = NULL;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -3958,6 +3987,18 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					    ((struct WLAN_MAC_MGMT_HEADER
 						      *)(prSwRfb->pvHeader))
 						    ->aucBSSID)) {
+#if (CFG_SUPPORT_BTWT == 1)
+				prWlanBeacon = (struct WLAN_BEACON_FRAME *)
+								(prSwRfb->pvHeader);
+
+				(prBssInfo->prStaRecOfAP
+					->au4Timestamp[0]) =
+					prWlanBeacon->au4Timestamp[0];
+				(prBssInfo->prStaRecOfAP
+					->au4Timestamp[1]) =
+					prWlanBeacon->au4Timestamp[1];
+#endif
+
 
 					fgNewParameter = rlmRecBcnInfoForClient(
 						prAdapter, prBssInfo, prSwRfb,

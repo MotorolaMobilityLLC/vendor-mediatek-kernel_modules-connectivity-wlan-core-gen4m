@@ -398,6 +398,7 @@ enum AGG_RANGE_TYPE_T {
  */
  /* To indocate if WFA test bed */
 extern uint8_t g_IsWfaTestBed;
+extern uint8_t g_IsTwtLogo;
 
 /*******************************************************************************
  *			P R I V A T E   D A T A

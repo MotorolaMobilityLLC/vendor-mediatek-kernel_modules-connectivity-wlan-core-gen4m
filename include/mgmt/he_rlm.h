@@ -207,5 +207,13 @@ void heRlmReqGenerateHe6gBandCapIE(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 #endif
+
+#if (CFG_SUPPORT_BTWT == 1)
+void heRlmRecBTWTparams(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t *pucIE);
+#endif
+
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #endif /* !_HE_RLM_H */

@@ -399,6 +399,72 @@ static void twtFillTWTElement(
 		CPU_TO_LE16(prTWTParams->u2WakeIntvalMantiss);
 }
 
+#if (CFG_SUPPORT_BTWT == 1)
+static void btwtParseTWTElement(
+	struct _IE_BTWT_T *prBTWTIE,
+	struct _TWT_PARAMS_T *prTWTParams)
+{
+	uint16_t u2ReqType;
+	uint64_t u8TargetWakeTime;
+	uint64_t u8twt_interval = 0;
+	uint64_t u8Mod = 0;
+	uint64_t u8Temp;
+
+	u2ReqType = LE16_TO_CPU(prBTWTIE->u2ReqType);
+	prTWTParams->fgReq = GET_TWT_RT_REQUEST(u2ReqType);
+	prTWTParams->ucSetupCmd = GET_TWT_RT_SETUP_CMD(u2ReqType);
+	prTWTParams->fgTrigger = GET_TWT_RT_TRIGGER(u2ReqType);
+	prTWTParams->fgUnannounced = GET_TWT_RT_FLOW_TYPE(u2ReqType);
+	prTWTParams->ucWakeIntvalExponent =
+		GET_TWT_RT_WAKE_INTVAL_EXP(u2ReqType);
+
+	prTWTParams->ucMinWakeDur = prBTWTIE->ucMinWakeDur;
+	prTWTParams->u2WakeIntvalMantiss =
+		LE16_TO_CPU(prBTWTIE->u2WakeIntvalMantiss);
+
+	DBGLOG(TWT_REQUESTER, WARN,
+		"BTWT cur TSF %x %x\nAP resp TWT %x\n",
+		(prTWTParams->u8TWT & 0x00000000FFFFFFFF),
+		((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32),
+		prBTWTIE->u2TWT);
+
+	u8TargetWakeTime = prTWTParams->u8TWT;
+	u8twt_interval = (((u_int64_t)prTWTParams->u2WakeIntvalMantiss)
+		<< prTWTParams->ucWakeIntvalExponent);
+	u8Temp = u8TargetWakeTime + u8twt_interval;
+	u8Mod = kal_mod64(u8Temp, u8twt_interval);
+	prTWTParams->u8TWT = u8TargetWakeTime + (u8twt_interval - u8Mod);
+
+	DBGLOG(TWT_REQUESTER, WARN,
+		"BTWT twt %x %x\n",
+		(prTWTParams->u8TWT & 0x00000000FFFFFFFF),
+		((prTWTParams->u8TWT & 0xFFFFFFFF00000000) >> 32));
+}
+
+uint8_t btwtGetTxSetupFlowId(
+	struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t ucFlowId;
+	struct _ACTION_BTWT_SETUP_FRAME *prTxFrame;
+
+	ASSERT(prMsduInfo);
+
+	prTxFrame = (struct _ACTION_BTWT_SETUP_FRAME *)(prMsduInfo->prPacket);
+	ucFlowId = GET_BTWT_ID(prTxFrame->rTWT.u2BTWTInfo);
+
+	return ucFlowId;
+}
+
+static void btwtFlagOnOff(
+	struct _TWT_FLOW_T *prBtwtFlow,
+	uint8_t ucBtwtOnOff)
+{
+	ASSERT(prBtwtFlow);
+
+	prBtwtFlow->fgIsBTWT = ucBtwtOnOff;
+}
+#endif
+
 static void twtParseTWTElement(
 	struct _IE_TWT_T *prTWTIE,
 	struct _TWT_PARAMS_T *prTWTParams)
@@ -513,6 +579,7 @@ void twtProcessS1GAction(
 	case ACTION_S1G_TWT_SETUP:
 		prRxSetupFrame =
 			(struct _ACTION_TWT_SETUP_FRAME *) prSwRfb->pvHeader;
+		/*origin
 		if (prStaRec->ucStaState != STA_STATE_3 ||
 			prSwRfb->u2PacketLen <
 				sizeof(struct _ACTION_TWT_SETUP_FRAME)) {
@@ -520,11 +587,55 @@ void twtProcessS1GAction(
 				"Received improper TWT Setup frame\n");
 			return;
 		}
+		*/
+		if (prStaRec->ucStaState != STA_STATE_3 ||
+			prSwRfb->u2PacketLen <
+				sizeof(struct _ACTION_BTWT_SETUP_FRAME)) {
+			DBGLOG(TWT_REQUESTER, WARN,
+				"improper TWT Setupframe %d\n",
+				prStaRec->ucStaState);
+			return;
+		}
 
-		/* Parse TWT element */
-		ucTWTFlowId = twtGetRxSetupFlowId(&(prRxSetupFrame->rTWT));
-		twtParseTWTElement(&(prRxSetupFrame->rTWT),
+#if (CFG_SUPPORT_BTWT == 1)
+		if (GET_BTWT_CTRL_NEGO(
+			((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))->ucCtrl)
+			== 3) {
+			/* BTWT setup resp */
+			ucTWTFlowId = GET_BTWT_ID(
+			((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))
+				->u2BTWTInfo);
+			DBGLOG(RLM, WARN, "BTWT params here\n");
+
+	DBGLOG(RLM, WARN,
+		"Rx BTWT params:\nReqType=%x\nTWT=%x\nMinWakeDur=%x\nWakeIntMantissa=%x\nBTWTInfo=%x\n",
+		((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))->u2ReqType,
+		((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))->u2TWT,
+		((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))->ucMinWakeDur,
+		((struct _IE_BTWT_T *)&
+			(prRxSetupFrame->rTWT))->u2WakeIntvalMantiss,
+		((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT))->u2BTWTInfo);
+
+			btwtParseTWTElement(
+				((struct _IE_BTWT_T *)&(prRxSetupFrame->rTWT)),
 			&(prStaRec->arTWTFlow[ucTWTFlowId].rTWTPeerParams));
+
+			btwtFlagOnOff(&(prStaRec->arTWTFlow[ucTWTFlowId]),
+				TRUE);
+		} else {
+#endif
+			/* Parse TWT element */
+			ucTWTFlowId =
+				twtGetRxSetupFlowId(&(prRxSetupFrame->rTWT));
+			twtParseTWTElement(&(prRxSetupFrame->rTWT),
+				&(prStaRec->arTWTFlow[ucTWTFlowId]
+				.rTWTPeerParams));
+
+#if (CFG_SUPPORT_BTWT == 1)
+			btwtFlagOnOff(&(prStaRec->arTWTFlow[ucTWTFlowId]),
+				FALSE);
+#endif
+		}
 
 		/* Notify TWT Requester FSM upon reception of a TWT response */
 		u2ReqType = prRxSetupFrame->rTWT.u2ReqType;
@@ -613,3 +724,186 @@ void twtProcessS1GAction(
 		break;
 	}
 }
+
+#if (CFG_SUPPORT_BTWT == 1)
+void btwtFillTWTElement(
+	struct _IE_BTWT_T *prTWTBuf,
+	uint8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams)
+{
+	ASSERT(prTWTBuf);
+	ASSERT(prTWTParams);
+
+	/* Add TWT element */
+	prTWTBuf->ucId = ELEM_ID_TWT;
+	prTWTBuf->ucLength = sizeof(struct _IE_BTWT_T) - ELEM_HDR_LEN;
+
+	/* Request Type */
+	prTWTBuf->u2ReqType |= SET_TWT_RT_REQUEST(prTWTParams->fgReq) |
+		SET_TWT_RT_SETUP_CMD(prTWTParams->ucSetupCmd) |
+		SET_TWT_RT_TRIGGER(prTWTParams->fgTrigger) |
+		BTWT_REQ_TYPE_LAST_BCAST_PARAM |
+		SET_TWT_RT_FLOW_TYPE(prTWTParams->fgUnannounced) |
+		SET_BTWT_RECOMMENDATION(0) |
+		SET_TWT_RT_WAKE_INTVAL_EXP(prTWTParams->ucWakeIntvalExponent) |
+		SET_BTWT_RESERVED(0);
+
+	prTWTBuf->ucCtrl |= SET_BTWT_CTRL_NEGO(3);
+	prTWTBuf->u2BTWTInfo |= SET_BTWT_ID(ucTWTFlowId);
+
+	prTWTBuf->u2TWT = CPU_TO_LE16((uint16_t)prTWTParams->u8TWT);
+	prTWTBuf->ucMinWakeDur = prTWTParams->ucMinWakeDur;
+	prTWTBuf->u2WakeIntvalMantiss =
+		CPU_TO_LE16(prTWTParams->u2WakeIntvalMantiss);
+	DBGLOG(TWT_REQUESTER, WARN,
+		"btwtSendSetupFrame frame %x, %x, %x, %x, %x, %x, %x, %x\n",
+		prTWTBuf->ucId,
+		prTWTBuf->ucLength,
+		prTWTBuf->ucCtrl,
+		prTWTBuf->u2ReqType,
+		prTWTBuf->u2TWT,
+		prTWTBuf->ucMinWakeDur,
+		prTWTBuf->u2WakeIntvalMantiss,
+		prTWTBuf->u2BTWTInfo);
+
+}
+
+uint32_t btwtSendSetupFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _TWT_PARAMS_T *prTWTParams,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct _ACTION_BTWT_SETUP_FRAME *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+	struct _IE_BTWT_T *prBTWTBuf;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+	ASSERT(prTWTParams);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+	DBGLOG(TWT_REQUESTER, WARN,
+		"btwtSendSetupFrame end\n");
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD
+		+ sizeof(struct _ACTION_BTWT_SETUP_FRAME);
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *)
+			cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_REQUESTER, WARN,
+			"No MSDU_INFO_T for sending TWT Setup Frame.\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_S1G_ACTION;
+	prTxFrame->ucAction = ACTION_S1G_TWT_SETUP;
+
+	prBTWTBuf = &(prTxFrame->rTWT);
+	btwtFillTWTElement(prBTWTBuf, ucTWTFlowId, prTWTParams);
+	DBGLOG(TWT_REQUESTER, WARN,
+		"btwtSendSetupFrame flowid %d\n", ucTWTFlowId);
+
+	/* Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter,
+			prMsduInfo,
+			prBssInfo->ucBssIndex,
+			prStaRec->ucIndex,
+			WLAN_MAC_MGMT_HEADER_LEN,
+			sizeof(struct _ACTION_BTWT_SETUP_FRAME),
+			pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+
+	/* Enqueue the frame to send this action frame */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+	DBGLOG(TWT_REQUESTER, WARN,
+		"btwtSendSetupFrame end\n");
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t btwtSendTeardownFrame(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	PFN_TX_DONE_HANDLER pfTxDoneHandler)
+{
+	struct MSDU_INFO *prMsduInfo;
+	struct _ACTION_TWT_TEARDOWN_FRAME *prTxFrame;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2EstimatedFrameLen;
+
+	ASSERT(prAdapter);
+	ASSERT(prStaRec);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+
+	ASSERT(prBssInfo);
+
+	/* Calculate MSDU buffer length */
+	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
+		sizeof(struct _ACTION_TWT_TEARDOWN_FRAME);
+
+	/* Alloc MSDU_INFO */
+	prMsduInfo = (struct MSDU_INFO *) cnmMgtPktAlloc(
+		prAdapter, u2EstimatedFrameLen);
+
+	if (!prMsduInfo) {
+		DBGLOG(TWT_REQUESTER, WARN,
+			"No MSDU_INFO_T for sending TWT Teardown Frame.\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	kalMemZero(prMsduInfo->prPacket, u2EstimatedFrameLen);
+
+	prTxFrame = prMsduInfo->prPacket;
+
+	/* Fill frame ctrl */
+	prTxFrame->u2FrameCtrl = MAC_FRAME_ACTION;
+
+	COPY_MAC_ADDR(prTxFrame->aucDestAddr, prStaRec->aucMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucSrcAddr, prBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prTxFrame->aucBSSID, prBssInfo->aucBSSID);
+
+	/* Compose the frame body's frame */
+	prTxFrame->ucCategory = CATEGORY_S1G_ACTION;
+	prTxFrame->ucAction = ACTION_S1G_TWT_TEARDOWN;
+	prTxFrame->ucTWTFlow = ucTWTFlowId;
+	prTxFrame->ucTWTFlow |= SET_TWT_TEARDOWN_NEGO(3);
+
+	/* Update information of MSDU_INFO_T */
+	TX_SET_MMPDU(prAdapter,
+			prMsduInfo,
+			prBssInfo->ucBssIndex,
+			prStaRec->ucIndex,
+			WLAN_MAC_MGMT_HEADER_LEN,
+			sizeof(struct _ACTION_TWT_TEARDOWN_FRAME),
+			pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+
+	/* Enqueue the frame to send this action frame */
+	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
+
+	return WLAN_STATUS_SUCCESS;
+
+}
+#endif
