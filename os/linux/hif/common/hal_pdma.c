@@ -572,6 +572,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 			prBusInfo->checkDummyReg(prAdapter->prGlueInfo);
 	}
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		halMawdWakeup(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 	KAL_REC_TIME_END();
 	DBGLOG(INIT, INFO,
 		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
@@ -589,11 +594,6 @@ end:
 			halDriverOwnTimeout(prAdapter,
 					u4CurrTick, fgTimeout);
 	}
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
-		halMawdWakeup(prAdapter->prGlueInfo);
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	return fgStatus;
 }
@@ -703,6 +703,16 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		goto unlock;
 	}
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
+		if (!halMawdSleep(prAdapter->prGlueInfo)) {
+			DBGLOG(INIT, STATE,
+			       "Skip FW OWN due to Mawd pending INT\n");
+			goto unlock;
+		}
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 	if (fgEnableGlobalInt) {
 		prAdapter->fgIsIntEnableWithLPOwnSet = TRUE;
 	} else {
@@ -727,11 +737,6 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 			ENABLE_ASPM_L1);
 #endif
 #endif
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
-		halMawdSleep(prAdapter->prGlueInfo);
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 		HAL_LP_OWN_SET(prAdapter, &fgResult);
 
@@ -2330,7 +2335,7 @@ void halWpdmaGetRxBuf(
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	/* rro need realloc memory when SER */
-	if ((IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) &&
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro) &&
 	    halIsDataRing(RX_RING, u4Num)) {
 		struct RX_CTRL_BLK *prRcb;
 
@@ -2532,6 +2537,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
+	struct WIFI_VAR *prWifiVar;
 	struct RTMP_TX_RING *pTxRing;
 	struct RTMP_RX_RING *pRxRing;
 	struct TXD_STRUCT *pTxD;
@@ -2542,6 +2548,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	/* Free Tx Ring Packet */
 	for (i = 0; i < NUM_OF_TX_RING; i++) {
@@ -2567,6 +2574,12 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
 		pRxRing = &prHifInfo->RxRing[i];
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro) &&
+		    halIsDataRing(RX_RING, i))
+			continue;
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
 		for (j = 0; j < pRxRing->u4RingSize; j++) {
 			prDmaCb = &pRxRing->Cell[j];
 			if (prMemOps->unmapRxBuf && prDmaCb->DmaBuf.AllocVa) {
