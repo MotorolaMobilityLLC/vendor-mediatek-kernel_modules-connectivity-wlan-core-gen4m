@@ -679,7 +679,7 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
-#if IS_MOBILE_SEGMENT && (CFG_SUPPORT_CONNAC3X == 0)
+#if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
 		if (prGlueInfo &&
 		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
 			/* Don't print log when resetting */
