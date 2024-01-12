@@ -93,6 +93,8 @@
 
 #define RX_RETURN_INDICATED_RFB_TIMEOUT_SEC     3
 
+#define RX_PROCESS_TIMEOUT           1000
+
 #if defined(_HIF_SDIO) && defined(WINDOWS_DDK)
 /*! On XP, maximum Tx+Rx Statue <= 64-4(HISR)*/
 #define SDIO_MAXIMUM_RX_LEN_NUM              0	/*!< 0~15 (0: un-limited) */
