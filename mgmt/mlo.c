@@ -835,7 +835,7 @@ uint8_t *mldHandleRnrMlParam(uint8_t *ie,
 }
 
 uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
-	uint32_t u4IELength)
+	uint32_t u4IELength, uint8_t fgPerSta)
 {
 	uint16_t u2Offset = 0;
 	uint8_t *ie;
@@ -870,20 +870,24 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 	/* reset profile num, will fill it from RNR */
 	info->ucProfNum = 0;
 
-	ie = prBssDesc->pucIeBuf;
-	ie_len = prBssDesc->u2IELength;
-	IE_FOR_EACH(ie, ie_len, u2Offset) {
-		if (IE_ID(ie) != ELEM_ID_RNR)
-			continue;
+	if (fgPerSta) {
+		ie = prBssDesc->pucIeBuf;
+		ie_len = prBssDesc->u2IELength;
+		IE_FOR_EACH(ie, ie_len, u2Offset) {
+			if (IE_ID(ie) != ELEM_ID_RNR)
+				continue;
 
-		rnr = (struct IE_RNR *)ie;
+			rnr = (struct IE_RNR *)ie;
 
-		mldSetMldIdFromRnrMlParam(prBssDesc->aucBSSID, rnr, info);
+			mldSetMldIdFromRnrMlParam(
+				prBssDesc->aucBSSID, rnr, info);
 
-		pos = rnr->aucInfoField;
-		do {
-			pos = mldHandleRnrMlParam(pos, info, TRUE);
-		} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+			pos = rnr->aucInfoField;
+			do {
+				pos = mldHandleRnrMlParam(pos, info, TRUE);
+			} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
+		}
+
 	}
 
 	if (u4IELength < 7 + info->ucProfNum * 4) {
@@ -936,11 +940,11 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 }
 
 uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
-	uint8_t *pucIE, uint32_t u4IELength, uint8_t ucBssIndex)
+	uint8_t *pucIE, uint32_t u4IELength, uint8_t fgPerSta)
 {
 	uint16_t len = 0;
 
-	len += mldGenerateMlProbeReqIE(prBssDesc, pucIE, u4IELength);
+	len += mldGenerateMlProbeReqIE(prBssDesc, pucIE, u4IELength, fgPerSta);
 
 	return len;
 }
