@@ -265,7 +265,8 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 		ucHtOption = prWifiVar->ucStaHt;
 		ucVhtOption = prWifiVar->ucStaVht;
 #if (CFG_SUPPORT_802_11AX == 1)
-		ucHeOption = prWifiVar->ucStaHe;
+		if (fgEfuseCtrlAxOn == 1)
+			ucHeOption = prWifiVar->ucStaHe;
 #endif
 
 	}
@@ -287,10 +288,12 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 
 #if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
 	if (IS_FEATURE_DISABLED(ucHeOption))
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_HE;
 	else if (IS_FEATURE_FORCE_ENABLED(ucHeOption))
 		prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+	}
 #endif
 
 	prStaRec->ucDesiredPhyTypeSet =

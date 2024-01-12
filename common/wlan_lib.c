@@ -6323,8 +6323,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					FEATURE_ENABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	prWifiVar->ucStaHe = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+	if (fgEfuseCtrlAxOn == 1) {
+		prWifiVar->ucStaHe = (uint8_t)
+			wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+	}
 #endif
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
@@ -6402,12 +6404,14 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					FEATURE_DISABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
 	prWifiVar->ucHeAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"HeAmsduInAmpduRx", FEATURE_ENABLED);
 	prWifiVar->ucHeAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"HeAmsduInAmpduTx", FEATURE_ENABLED);
 	prWifiVar->ucTrigMacPadDur = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
+	}
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)
@@ -6436,8 +6440,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					"StaVHTBfer", FEATURE_DISABLED);
 
 #if (CFG_SUPPORT_802_11AX == 1)
-	prWifiVar->ucStaHeBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
-					"StaHEBfee", FEATURE_ENABLED);
+	if (fgEfuseCtrlAxOn == 1) {
+		prWifiVar->ucStaHeBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
+						"StaHEBfee", FEATURE_ENABLED);
+	}
 #endif
 
 	/* 0: disabled
@@ -6602,10 +6608,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucRxVhtBaSize = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "RxVhtBaSize", 64);
 #if (CFG_SUPPORT_802_11AX == 1)
-	prWifiVar->u2RxHeBaSize = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "RxHeBaSize", 256);
-	prWifiVar->u2TxHeBaSize = (uint8_t)
-		wlanCfgGetUint32(prAdapter, "TxHeBaSize", 256);
+	if (fgEfuseCtrlAxOn == 1) {
+		prWifiVar->u2RxHeBaSize = (uint8_t)
+			wlanCfgGetUint32(prAdapter, "RxHeBaSize", 256);
+		prWifiVar->u2TxHeBaSize = (uint8_t)
+			wlanCfgGetUint32(prAdapter, "TxHeBaSize", 256);
+	}
 #endif
 
 	/* Tx Buffer Management */
