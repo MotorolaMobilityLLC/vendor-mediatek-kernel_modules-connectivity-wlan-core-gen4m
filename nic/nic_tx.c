@@ -3098,7 +3098,6 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 #define _TX_DESC struct HW_MAC_CONNAC2X_TX_DESC*
 #endif
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec;
 	_TX_DESC prTxDesc;
 
 	/* Sanity check */
@@ -3119,8 +3118,9 @@ u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  prMsduInfo->ucBssIndex);
-	prStaRec = cnmGetStaRecByIndex(prAdapter,
-				       prMsduInfo->ucStaRecIndex);
+	/* Set StaRecIndex here*/
+	qmDetermineStaRecIndex(prAdapter, prMsduInfo);
+	prMsduInfo->eSrc = TX_PACKET_OS;
 
 	/* MMPDU: force stick to TC4 */
 	prMsduInfo->ucTC = TC4_INDEX;
