@@ -71,6 +71,33 @@
 #define SOC7_0_PCIE2AP_REMAP_BASE_ADDR	0x50000
 #define SOC7_0_REMAP_BASE_ADDR		0x7c500000
 
+/*------------------------------------------------------------------------------
+ * MACRO for SOC7_0 RXVECTOR0(Same as SOC5_0) Parsing
+ *------------------------------------------------------------------------------
+ */
+#define SOC7_0_RX_VT_RX_RATE_MASK         BITS(0, 6)
+#define SOC7_0_RX_VT_RX_RATE_OFFSET       0
+#define SOC7_0_RX_VT_NSTS_MASK            BITS(7, 9)
+#define SOC7_0_RX_VT_NSTS_OFFSET          7
+#define SOC7_0_RX_VT_BF_MASK              BIT(10)
+#define SOC7_0_RX_VT_BF_OFFSET            10
+#define SOC7_0_RX_VT_LDPC_MASK            BIT(11)
+#define SOC7_0_RX_VT_LDPC_OFFSET          11
+#define SOC7_0_RX_VT_FR_MODE_MASK         BITS(12, 14)
+#define SOC7_0_RX_VT_FR_MODE_OFFSET       12
+#define SOC7_0_RX_VT_GI_MASK              BITS(15, 16)
+#define SOC7_0_RX_VT_GI_OFFSET            15
+#define SOC7_0_RX_VT_DCM_MASK             BIT(17)
+#define SOC7_0_RX_VT_DCM_OFFSET           17
+#define SOC7_0_RX_VT_NUMRX_MASK           BITS(28, 30)
+#define SOC7_0_RX_VT_NUMRX_OFFSET         28
+#define SOC7_0_RX_VT_MUMIMO_MASK          BIT(21)
+#define SOC7_0_RX_VT_MUMIMO_OFFSET        21
+#define SOC7_0_RX_VT_STBC_MASK            BITS(22, 23)
+#define SOC7_0_RX_VT_STBC_OFFSET          23
+#define SOC7_0_RX_VT_TXMODE_MASK          BITS(24, 27)
+#define SOC7_0_RX_VT_TXMODE_OFFSET        24
+
 extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
 extern struct PP_TOP_CR rSoc7_0_PpTopCr;
@@ -126,6 +153,12 @@ void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 int soc7_0_Trigger_fw_assert(void);
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int soc7_0_get_rx_rate_info(IN struct ADAPTER *prAdapter,
+		OUT uint32_t *pu4Rate, OUT uint32_t *pu4Nss,
+		OUT uint32_t *pu4RxMode, OUT uint32_t *pu4FrMode,
+		OUT uint32_t *pu4Sgi);
+#endif
 
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
 void *soc7_0_kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
