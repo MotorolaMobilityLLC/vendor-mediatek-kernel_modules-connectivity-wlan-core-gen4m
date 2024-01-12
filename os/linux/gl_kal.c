@@ -9817,6 +9817,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		throughputInPPS += txDiffPkts[i] + rxDiffPkts[i];
 	}
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+	if (throughput == 0 && prAdapter->u4RfbUnUseCntLv != 0)
+		kalRxRfbReturnWorkSchedule(glue);
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
 	perf->fgIdle = (throughput == 0 && glue->i4TxPendingFrameNum == 0);
 	perf->ulThroughput = throughput * MSEC_PER_SEC;
 	do_div(perf->ulThroughput, period);
@@ -9964,11 +9969,18 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define RADIOTAP_LOG_TEMPLATE ""
 #endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
 
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+#define DYNAMIC_RFB_TEMPLATE " RfbLv:%u"
+#else /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+#define DYNAMIC_RFB_TEMPLATE ""
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
 	RADIOTAP_LOG_TEMPLATE \
 	LINK_QUALITY_MONITOR_TEMPLATE \
 	" idle:%u lv:%u th:%u fg:0x%lx" \
+	DYNAMIC_RFB_TEMPLATE \
 	CPU_STAT_CNT_TEMPLATE \
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u" \
@@ -9997,6 +10009,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag,
+#if CFG_DYNAMIC_RFB_ADJUSTMENT
+		prAdapter->u4RfbUnUseCntLv,
+#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 #if CFG_SUPPORT_CPU_STAT
 		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 0),
 		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 1),
@@ -10056,6 +10071,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #undef RX_WORK_CNT_TEMPLATE
 #endif /* CFG_SUPPORT_CPU_STAT */
 #undef CPU_STAT_CNT_TEMPLATE
+#undef DYNAMIC_RFB_TEMPLATE
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #define RRO_LOG_TEMPLATE \
@@ -15699,7 +15715,8 @@ void kalRxRfbReturnWork(struct work_struct *work)
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	struct BUS_INFO *prBusInfo;
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
-	uint32_t u4RfbCnt = 0, u4RfbDelta = 0, u4Idx;
+	uint32_t u4TputMbps, u4Idx;
+	uint32_t u4RfbIdx = 0;
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
@@ -15711,23 +15728,28 @@ void kalRxRfbReturnWork(struct work_struct *work)
 	prBusInfo = prAdapter->chip_info->bus_info;
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 
+	u4TputMbps = kalGetTpMbps(prAdapter, PKT_PATH_ALL);
 	for (u4Idx = 0; u4Idx < PERF_MON_RFB_MAX_THRESHOLD; u4Idx++) {
-		if (kalGetTpMbps(prAdapter, PKT_PATH_ALL) <
+		if (u4TputMbps <
 		    prAdapter->rWifiVar.u4RfbBoostTpTh[u4Idx])
 			break;
 	}
-	if (u4Idx < PERF_MON_RFB_MAX_THRESHOLD)
-		u4RfbCnt = prAdapter->rWifiVar.u4RfbUnUseCnt[u4Idx];
+
+	if (u4Idx > 0)
+		u4RfbIdx = u4Idx - 1;
+
+	if (u4RfbIdx == prAdapter->u4RfbUnUseCntLv)
+		goto skip;
 
 	/* set to target level or max level */
-	if ((u4Idx > prAdapter->u4RfbUnUseCntLv) ||
-	    (u4RfbCnt < nicRxGetUnUseCnt(prAdapter))) {
-		nicRxSetRfbCntByLevel(prAdapter, u4Idx);
-	} else {
-		u4RfbDelta = u4RfbCnt - nicRxGetUnUseCnt(prAdapter);
-		if (RX_GET_FREE_RFB_CNT(&prAdapter->rRxCtrl) > u4RfbDelta)
-			nicRxDecRfbCnt(prAdapter);
-	}
+	if (u4RfbIdx > prAdapter->u4RfbUnUseCntLv)
+		nicRxSetRfbCntByLevel(prAdapter, u4RfbIdx);
+	else
+		nicRxDecRfbCnt(prAdapter);
+
+	DBGLOG(INIT, INFO, "Tput:%uMbps u4Idx:%u u4RfbIdx:%u\n",
+		u4TputMbps, u4Idx, u4RfbIdx);
+skip:
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 	if (prBusInfo->u4WfdmaTh)
 		kalIncPagePoolPageNum();
