@@ -10934,7 +10934,7 @@ u_int8_t __weak kalIsSupportMawd(void)
 
 u_int8_t __weak kalIsSupportSdo(void)
 {
-	return FALSE;
+	return TRUE;
 }
 
 u_int8_t __weak kalIsSupportRro(void)
