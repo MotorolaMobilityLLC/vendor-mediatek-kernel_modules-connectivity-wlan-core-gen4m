@@ -29,7 +29,8 @@
 
 /* Retry limit of sending operation notification frame */
 #define OPERATION_NOTICATION_TX_LIMIT	2
-
+#define ENABLE_OMI BIT(0)
+#define ENABLE_OMN BIT(1)
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -8947,7 +8948,7 @@ rlmChangeOperationMode(
 		if (((RLM_NET_IS_11AC(prBssInfo) &&
 			(prStaRec->ucDesiredPhyTypeSet &
 			PHY_TYPE_SET_802_11AC))
-			|| (prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMN))
+			&& (prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMN))
 			&& (fgIsChangeBw || fgIsChangeRxNss)) {
 			if (prBssInfo->pfOpChangeHandler)
 				prBssInfo->aucOpModeChangeState
