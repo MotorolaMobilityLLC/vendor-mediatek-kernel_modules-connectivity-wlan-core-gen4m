@@ -191,7 +191,7 @@ void connac2x_dump_tmac_info(
 		CONNAC2X_TX_DESC_TX_BYTE_COUNT_OFFSET));
 
 	/* Ether-Type Offset: [22:16] */
-	DBGLOG(HAL, INFO, "\t\tEtherType_offset = %d\n",
+	DBGLOG(HAL, INFO, "\t\tEtherType_offset = %lu\n",
 	((txd->u4DW0 & CONNAC2X_TX_DESC_ETHER_TYPE_OFFSET_MASK) >>
 		CONNAC2X_TX_DESC_ETHER_TYPE_OFFSET_OFFSET));
 
