@@ -12425,15 +12425,33 @@ void nicUniEventPowerMetricsStatGetInfo(struct ADAPTER *ad,
 			struct UNI_EVENT_ID_PWR_MET_ICCM_INFO *pm_info =
 				(struct UNI_EVENT_ID_PWR_MET_ICCM_INFO *)tag;
 
-			for (i = 0; i < 5; i++) {
-				DBGLOG(NIC, INFO,
-					"Totaltime =%d Txtime =%d Rxtime =%d Rxlistentime =%d Sleeptime =%d\n",
-					pm_info->u4TotalTime,
-					pm_info->u4BandRatio[i].u4TxTime,
-					pm_info->u4BandRatio[i].u4RxTime,
-					pm_info->u4BandRatio[i].u4RxListenTime,
-					pm_info->u4BandRatio[i].u4SleepTime);
-			}
+			DBGLOG(NIC, INFO,
+				"PBCM: %d [%d:%d:%d:%d][%d:%d:%d:%d][%d:%d:%d:%d][%d:%d:%d:%d]\n",
+				pm_info->u4TotalTime,
+				pm_info->u4BandRatio[0].u4TxTime,
+				pm_info->u4BandRatio[0].u4RxTime,
+				pm_info->u4BandRatio[0].u4RxListenTime,
+				pm_info->u4BandRatio[0].u4SleepTime,
+				pm_info->u4BandRatio[1].u4TxTime,
+				pm_info->u4BandRatio[1].u4RxTime,
+				pm_info->u4BandRatio[1].u4RxListenTime,
+				pm_info->u4BandRatio[1].u4SleepTime,
+				pm_info->u4BandRatio[2].u4TxTime,
+				pm_info->u4BandRatio[2].u4RxTime,
+				pm_info->u4BandRatio[2].u4RxListenTime,
+				pm_info->u4BandRatio[2].u4SleepTime,
+				pm_info->u4BandRatio[3].u4TxTime,
+				pm_info->u4BandRatio[3].u4RxTime,
+				pm_info->u4BandRatio[3].u4RxListenTime,
+				pm_info->u4BandRatio[3].u4SleepTime);
+
+			DBGLOG(NIC, INFO,
+				"[ICCM] Totaltime =%d Txtime =%d Rxtime =%d Rxlistentime =%d Sleeptime =%d\n",
+				pm_info->u4TotalTime,
+				pm_info->u4BandRatio[4].u4TxTime,
+				pm_info->u4BandRatio[4].u4RxTime,
+				pm_info->u4BandRatio[4].u4RxListenTime,
+				pm_info->u4BandRatio[4].u4SleepTime);
 		}
 			break;
 		default:
