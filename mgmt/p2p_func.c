@@ -426,7 +426,20 @@ void p2pFuncGCJoin(IN struct ADAPTER *prAdapter,
 				"[%d]: NO Target BSS Descriptor\n", i);
 			continue;
 		}
-
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+		if (prAdapter->rWifiVar.ucDbdcP2pLisEn) {
+			/* Prevent wrong p2p conn nss during
+			 * DBDC sw case enable -> disable.
+			 * If conn happened in WAIT_HW_DISABLE state
+			 * Nss could be set to 1, because op mode change
+			 * is done after DBDC disable sw done.
+			 */
+			cnmOpModeGetTRxNss(
+				prAdapter, prP2pBssInfo->ucBssIndex,
+				&prP2pBssInfo->ucOpRxNss,
+				&prP2pBssInfo->ucOpTxNss);
+		}
+#endif
 		if (prBssDesc->ucSSIDLen) {
 			COPY_SSID(prP2pBssInfo->aucSSID,
 				prP2pBssInfo->ucSSIDLen,
@@ -2279,7 +2292,10 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
 #if CFG_SUPPORT_DBDC
 	/* Check DBDC status */
-	cnmDbdcRuntimeCheckDecision(prAdapter, prBssInfo->ucBssIndex);
+	cnmDbdcRuntimeCheckDecision(prAdapter,
+			prBssInfo->ucBssIndex,
+			FALSE);
+
 #endif
 	cnmIdcSwitchSapChannel(prAdapter);
 } /* p2pFuncDfsSwitchCh */

@@ -2141,7 +2141,9 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
 					       ucBssIndex);
 #if CFG_SUPPORT_DBDC
-		cnmDbdcRuntimeCheckDecision(prAdapter, ucBssIndex);
+		cnmDbdcRuntimeCheckDecision(prAdapter,
+						ucBssIndex,
+						FALSE);
 #endif
 	}
 

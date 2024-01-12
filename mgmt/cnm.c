@@ -156,6 +156,8 @@ struct DBDC_INFO_T {
 
 	/* Used to indicated current support DBDCAAMode or not */
 	bool fgIsDBDCAAMode;
+	uint8_t ucBssIdx;
+	u_int8_t fgIsDBDCEnByP2pLis;
 };
 
 enum ENUM_DBDC_FSM_EVENT_T {
@@ -300,11 +302,12 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 	g_rDbdcInfo.eDbdcFsmCurrState \
 		== ENUM_DBDC_FSM_STATE_ENABLE_IDLE)?TRUE:FALSE)
 
-#define DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(_ucCh, _ucWmmQIdx, _eBand) \
+#define DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(_ucCh, _ucWmmQIdx, _eBand, _ucBId) \
 	{ \
 		g_rDbdcInfo.ucPrimaryChannel = (_ucCh);\
 		g_rDbdcInfo.ucWmmQueIdx = (_ucWmmQIdx);\
 		g_rDbdcInfo.eRfBand = (_eBand);\
+		g_rDbdcInfo.ucBssIdx = (_ucBId);\
 	}
 
 
@@ -312,6 +315,7 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
 	{ \
 		g_rDbdcInfo.ucPrimaryChannel = 0; \
 		g_rDbdcInfo.ucWmmQueIdx = 0;\
+		g_rDbdcInfo.ucBssIdx = 0;\
 		g_rDbdcInfo.eRfBand = BAND_NULL;\
 	}
 
@@ -2386,8 +2390,18 @@ static u_int8_t cnmDbdcIsConcurrent(
 	enum ENUM_BAND eBandCompare = eRfBand_Connecting;
 	uint8_t ucCHCompare = ucPrimaryCHConnecting;
 	u_int8_t fgDBDCConcurrent = FALSE;
-	enum ENUM_BAND eBssBand[BSSID_NUM] = {BAND_NULL};
-	uint8_t ucBssPrimaryCH[BSSID_NUM] = {0};
+	enum ENUM_BAND eBssBand[MAX_BSSID_NUM + 1] = {BAND_NULL};
+	uint8_t ucBssPrimaryCH[MAX_BSSID_NUM + 1] = {0};
+	enum ENUM_BAND eBandBss;
+	uint8_t ucPrimaryChBss;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	uint8_t ucBssNum = prAdapter->ucHwBssIdNum + 1;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+			prAdapter->rWifiVar.prP2pDevFsmInfo;
+#else
+	uint8_t ucBssNum = prAdapter->ucHwBssIdNum;
+#endif
+	u_int8_t fgDbdcP2pListening = FALSE;
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
@@ -2397,24 +2411,57 @@ static u_int8_t cnmDbdcIsConcurrent(
 #endif
 
 	for (ucBssIndex = 0;
-		ucBssIndex < prAdapter->ucHwBssIdNum; ucBssIndex++) {
+			ucBssIndex < ucBssNum; ucBssIndex++) {
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+
+		/* dbdc decision use fgIsP2pListening to decide
+		 * if it should check p2p dev BssInfo or not.
+		 */
+
+		if (prP2pDevFsmInfo &&
+			prAdapter->rWifiVar.ucDbdcP2pLisEn)
+			fgDbdcP2pListening =
+				prP2pDevFsmInfo->fgIsP2pListening;
+
+		if ((ucBssIndex != prAdapter->ucP2PDevBssIdx
+			&& IS_BSS_NOT_ALIVE(prAdapter, prBssInfo)) ||
+			(ucBssIndex == prAdapter->ucP2PDevBssIdx
+			&& !fgDbdcP2pListening)
+			)
+			continue;
+#else
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
+#endif
 
-		if (prBssInfo->eBand != BAND_2G4
-		    && prBssInfo->eBand != BAND_5G
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+
+		if ((ucBssIndex == prAdapter->ucP2PDevBssIdx) &&
+			prP2pDevFsmInfo) {
+			eBandBss = prP2pDevFsmInfo->eReqBand;
+			ucPrimaryChBss = prP2pDevFsmInfo->ucReqChannelNum;
+		} else
+#endif
+		{
+			eBandBss = prBssInfo->eBand;
+			ucPrimaryChBss = prBssInfo->ucPrimaryChannel;
+		}
+
+		if (eBandBss != BAND_2G4
+			&& eBandBss != BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-			&& prBssInfo->eBand != BAND_6G
+			&& eBandBss != BAND_6G
 #endif
 		)
 			continue;
 
 		/* Record eRFBand and Primary Channel  */
-		eBssBand[ucBssIndex] = prBssInfo->eBand;
-		ucBssPrimaryCH[ucBssIndex] = prBssInfo->ucPrimaryChannel;
+		eBssBand[ucBssIndex] = eBandBss;
+		ucBssPrimaryCH[ucBssIndex] = ucPrimaryChBss;
+
 
 		log_dbg(CNM, INFO, "Set Bssid[%u] eBand=%u,ePrimaryCH=%u\n",
 	       ucBssIndex, eBssBand[ucBssIndex], ucBssPrimaryCH[ucBssIndex]);
@@ -2425,32 +2472,31 @@ static u_int8_t cnmDbdcIsConcurrent(
 			&& eBandCompare != BAND_6G
 #endif
 		){
-			eBandCompare = prBssInfo->eBand;
-			ucCHCompare = prBssInfo->ucPrimaryChannel;
+			eBandCompare = eBandBss;
+			ucCHCompare = ucPrimaryChBss;
 
-			log_dbg(CNM, INFO, "set Bssid[%u] eBand=%u,ePrimaryCH=%u\n",
+			log_dbg(CNM, INFO, "Set Bssid[%u] eBandCompare=%u,ucCHCompare=%u\n",
 	       ucBssIndex, eBandCompare, ucCHCompare);
 
 		}
 
-		if (eBandCompare != prBssInfo->eBand) {
-
+		if (eBandCompare != eBandBss) {
 			log_dbg(CNM, INFO, "check Compare Band[%u]CH[%u], BSS Band[%u]CH[%u]\n",
 				eBandCompare, ucCHCompare,
-				prBssInfo->eBand,
-				prBssInfo->ucPrimaryChannel);
+				eBandBss,
+				ucPrimaryChBss);
 
 			/* Initial AAMode */
 			g_rDbdcInfo.fgIsDBDCAAMode = 0;
 			/* Check DBDC for A+G */
-			if ((prBssInfo->eBand == BAND_5G
+			if ((eBandBss == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
-				||	prBssInfo->eBand == BAND_6G
+				||	eBandBss == BAND_6G
 #endif
 			)
 				&& eBandCompare == BAND_2G4){
 				fgDBDCConcurrent = TRUE;	/*A+G*/
-			} else if (prBssInfo->eBand == BAND_2G4 &&
+			} else if (eBandBss == BAND_2G4 &&
 				(eBandCompare == BAND_5G
 #if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_WIFI_DBDC6G == 1)
 				|| eBandCompare == BAND_6G
@@ -2469,14 +2515,12 @@ static u_int8_t cnmDbdcIsConcurrent(
 				u_int8_t uc6gCH = 0;
 
 				if (eBandCompare == BAND_5G &&
-					prBssInfo->eBand == BAND_6G){
-
+					eBandBss == BAND_6G){
 					uc5gCH = ucCHCompare;
-					uc6gCH = prBssInfo->ucPrimaryChannel;
-				} else if (prBssInfo->eBand == BAND_5G &&
+					uc6gCH = ucPrimaryChBss;
+				} else if (eBandBss == BAND_5G &&
 					eBandCompare == BAND_6G){
-
-					uc5gCH = prBssInfo->ucPrimaryChannel;
+					uc5gCH = ucPrimaryChBss;
 					uc6gCH = ucCHCompare;
 				}
 
@@ -2486,30 +2530,34 @@ static u_int8_t cnmDbdcIsConcurrent(
 					g_rDbdcInfo.fgIsDBDCAAMode = 1;
 				}
 				log_dbg(CNM, INFO, "Check Band[%d][%d],5G[%d],6G[%d],DBDCCon[%d]\n",
-					eBandCompare, prBssInfo->eBand, uc5gCH,
+					eBandCompare, eBandBss, uc5gCH,
 					uc6gCH, fgDBDCConcurrent);
 			}
 #endif /* CFG_SUPPORT_WIFI_6G && CFG_SUPPORT_WIFI_DBDC6G */
-
 		}
-
 	}
 
-	log_dbg(CNM, INFO, "[DBDC]BSS AG Band[%u.%u.%u.%u][%u]\n",
-	       eBssBand[BSSID_0],
-	       eBssBand[BSSID_1],
-	       eBssBand[BSSID_2],
-	       eBssBand[BSSID_3],
-	       eRfBand_Connecting);
+	log_dbg(CNM, INFO, "[DBDC]MaxBSS %d AG Band[%u.%u.%u.%u.%u][Con %u], p2pLis[%u]\n",
+			ucBssNum,
+			eBssBand[BSSID_0],
+			eBssBand[BSSID_1],
+			eBssBand[BSSID_2],
+			eBssBand[BSSID_3],
+			eBssBand[MAX_BSSID_NUM],
+			eRfBand_Connecting,
+			fgDbdcP2pListening);
 
-	log_dbg(CNM, INFO, "[DBDC]BSS AG CH[%u.%u.%u.%u][%u],fgDBDC[%u],AAMode[%u]\n",
-		   ucBssPrimaryCH[BSSID_0],
-		   ucBssPrimaryCH[BSSID_1],
-		   ucBssPrimaryCH[BSSID_2],
-		   ucBssPrimaryCH[BSSID_3],
-		   ucCHCompare,
-		   fgDBDCConcurrent,
-		   g_rDbdcInfo.fgIsDBDCAAMode);
+	log_dbg(CNM, INFO, "[DBDC]MaxBSS %d AG CH[%u.%u.%u.%u.%u][Comp %u], fgDBDC[%u], AAMode[%u], p2pLis[%u]\n",
+			ucBssNum,
+			ucBssPrimaryCH[BSSID_0],
+			ucBssPrimaryCH[BSSID_1],
+			ucBssPrimaryCH[BSSID_2],
+			ucBssPrimaryCH[BSSID_3],
+			ucBssPrimaryCH[MAX_BSSID_NUM],
+			ucCHCompare,
+			fgDBDCConcurrent,
+			g_rDbdcInfo.fgIsDBDCAAMode,
+			fgDbdcP2pListening);
 
 	return fgDBDCConcurrent;
 }
@@ -2743,6 +2791,11 @@ uint32_t cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 	struct CMD_DBDC_SETTING rDbdcSetting;
 	struct CMD_DBDC_SETTING *prCmdBody;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+				prAdapter->rWifiVar.prP2pDevFsmInfo;
+	u_int8_t fgIsP2pListening = FALSE;
+#endif
 
 	log_dbg(CNM, INFO, "[DBDC] %s\n",
 	       fgDbdcEn ? "Enable" : "Disable");
@@ -2787,6 +2840,39 @@ uint32_t cnmUpdateDbdcSetting(IN struct ADAPTER *prAdapter,
 #else
 	if (fgDbdcEn)
 		prCmdBody->ucWmmBandBitmap |= BIT(DBDC_2G_WMM_INDEX);
+#endif
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	if (fgDbdcEn) {
+		if (prP2pDevFsmInfo
+			&& prP2pDevFsmInfo->fgIsP2pListening) {
+			fgIsP2pListening = prP2pDevFsmInfo->fgIsP2pListening;
+			prP2pDevFsmInfo->fgIsP2pListening = FALSE;
+			/* p2p dev req, just compare all active bss*/
+			if (g_rDbdcInfo.ucBssIdx == prAdapter->ucP2PDevBssIdx) {
+				if (!cnmDbdcIsConcurrent(prAdapter,
+					BAND_NULL,
+					0))
+					g_rDbdcInfo.fgIsDBDCEnByP2pLis = TRUE;
+			} else {
+			/*
+			 * non p2p dev req, use req band/ch compare
+			 * to all active bss
+			 */
+				if (!cnmDbdcIsConcurrent(prAdapter,
+					g_rDbdcInfo.eRfBand,
+					g_rDbdcInfo.ucPrimaryChannel))
+				g_rDbdcInfo.fgIsDBDCEnByP2pLis = TRUE;
+			}
+			prP2pDevFsmInfo->fgIsP2pListening =
+							fgIsP2pListening;
+		}
+	} else {
+		g_rDbdcInfo.fgIsDBDCEnByP2pLis = FALSE;
+	}
+
+	log_dbg(CNM, ERROR, "fgDbdcEn=%d, fgIsDBDCEnByP2pLis=%d\n",
+		fgDbdcEn, g_rDbdcInfo.fgIsDBDCEnByP2pLis);
 #endif
 
 	/* FW uses ucWmmBandBitmap from driver if it does not support ver 1*/
@@ -3664,7 +3750,7 @@ void cnmDbdcPreConnectionEnableDecision(
 		}
 		/* The DBDC is already ON, so renew WMM band information only */
 		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel,
-			ucWmmQueIdx, eRfBand);
+			ucWmmQueIdx, eRfBand, ucChangedBssIndex);
 		cnmUpdateDbdcSetting(prAdapter, TRUE);
 		return;
 	}
@@ -3707,7 +3793,7 @@ void cnmDbdcPreConnectionEnableDecision(
 
 	if (cnmDbdcIsConcurrent(prAdapter, eRfBand, ucPrimaryChannel)) {
 		DBDC_SET_WMMBAND_FW_AUTO_BY_CHNL(ucPrimaryChannel,
-			ucWmmQueIdx, eRfBand);
+			ucWmmQueIdx, eRfBand, ucChangedBssIndex);
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 			DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
 	} else {
@@ -3727,9 +3813,15 @@ void cnmDbdcPreConnectionEnableDecision(
 /*----------------------------------------------------------------------------*/
 void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 			    *prAdapter,
-			    IN uint8_t ucChangedBssIndex)
+			    IN uint8_t ucChangedBssIndex,
+			    IN u_int8_t ucForceLeaveEnGuard)
 {
 	bool fgIsAgConcurrent;
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+				prAdapter->rWifiVar.prP2pDevFsmInfo;
+	u_int8_t fgIsP2pListening = FALSE;
+#endif
 
 	log_dbg(CNM, INFO, "[DBDC Debug] BSS %u",
 	       ucChangedBssIndex);
@@ -3744,8 +3836,48 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 
 	/* AGConcurrent status sync with DBDC satus. Do nothing. */
 	fgIsAgConcurrent = cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0);
-	if (fgIsAgConcurrent == prAdapter->rWifiVar.fgDbDcModeEn)
+	if (fgIsAgConcurrent ==
+		prAdapter->rWifiVar.fgDbDcModeEn) {
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+		if (fgIsAgConcurrent && prP2pDevFsmInfo) {
+			log_dbg(CNM, INFO,
+				"[DBDC Debug] DBDC %u EnByP2pLis %u",
+				prAdapter->rWifiVar.fgDbDcModeEn,
+				g_rDbdcInfo.fgIsDBDCEnByP2pLis);
+
+			if (prP2pDevFsmInfo->fgIsP2pListening) {
+				if (ucChangedBssIndex !=
+					prAdapter->ucP2PDevBssIdx) {
+					fgIsP2pListening =
+					prP2pDevFsmInfo->
+							fgIsP2pListening;
+					prP2pDevFsmInfo->
+						fgIsP2pListening = FALSE;
+
+					if (!cnmDbdcIsConcurrent(prAdapter,
+						BAND_NULL,
+						0)) {
+						g_rDbdcInfo.fgIsDBDCEnByP2pLis =
+								TRUE;
+					}
+
+					prP2pDevFsmInfo->
+					fgIsP2pListening = fgIsP2pListening;
+				}
+			} else {
+				g_rDbdcInfo.fgIsDBDCEnByP2pLis =
+								FALSE;
+			}
+
+			log_dbg(CNM, INFO, "[DBDC] En %u p2plis %u EnP2pLisTo %u",
+					prAdapter->rWifiVar.fgDbDcModeEn,
+					prP2pDevFsmInfo->fgIsP2pListening,
+					g_rDbdcInfo.fgIsDBDCEnByP2pLis
+			);
+		}
+#endif
 		return;
+	}
 
 	/* Only need to extend in DISABLE_GUARD for connection retry.
 	 * If AGConcurrent status changes in ENABLE_GUARD, the FSM
@@ -3767,10 +3899,24 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 			cnmTimerStartTimer(prAdapter,
 					   &g_rDbdcInfo.rDbdcGuardTimer,
 					   DBDC_ENABLE_GUARD_TIME);
-		} else
+		} else if (g_rDbdcInfo.eDbdcFsmCurrState ==
+					ENUM_DBDC_FSM_STATE_ENABLE_GUARD &&
+					ucForceLeaveEnGuard) {
+			log_dbg(CNM, INFO, "[DBDC] Abort EnGuard Time, state %d, type %d\n",
+				g_rDbdcInfo.eDbdcFsmCurrState,
+				g_rDbdcInfo.eDdbcGuardTimerType);
+			/* cancel Guard Time and change DBDC mode */
+			cnmTimerStopTimer(prAdapter,
+				&g_rDbdcInfo.rDbdcGuardTimer);
+			g_rDbdcInfo.eDdbcGuardTimerType =
+				ENUM_DBDC_GUARD_TIMER_NONE;
+			goto dbdc_check;
+		} else {
 			log_dbg(CNM, INFO,
 				"[DBDC] DBDC guard time, state %d\n",
 				g_rDbdcInfo.eDbdcFsmCurrState);
+		}
+
 		return;
 	}
 
@@ -3785,7 +3931,7 @@ void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER
 		       g_rDbdcInfo.eDbdcFsmCurrState);
 		return;
 	}
-
+dbdc_check:
 	if (cnmDbdcIsConcurrent(prAdapter, BAND_NULL, 0)) {
 		DBDC_FSM_EVENT_HANDLER(prAdapter,
 				       DBDC_FSM_EVENT_BSS_CONNECTING_ENTER_AG);
@@ -3885,6 +4031,12 @@ void cnmDbdcEventHwSwitchDone(IN struct ADAPTER
 			       DBDC_FSM_EVENT_DBDC_HW_SWITCH_DONE);
 }
 
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+u_int8_t cnmDbdcIsP2pListenDbdcEn(void)
+{
+	return g_rDbdcInfo.fgIsDBDCEnByP2pLis;
+}
+#endif
 #endif /*CFG_SUPPORT_DBDC*/
 
 

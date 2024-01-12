@@ -91,6 +91,13 @@ static void
 p2pRoleFsmAbortCurrentAcsReq(IN struct ADAPTER *prAdapter,
 		IN struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest);
 
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+static void
+p2pRoleP2pLisStopDbdcDecision(
+		IN struct ADAPTER *prAdapter,
+		IN enum ENUM_P2P_CONNECTION_TYPE eConnRequest);
+#endif
+
 uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIdx)
 {
@@ -1527,6 +1534,10 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 	if (prP2pBssInfo->fgIsWmmInited == FALSE)
 		p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	p2pRoleP2pLisStopDbdcDecision(prAdapter,
+		prP2pConnReqInfo->eConnRequest);
+#endif
 	/* DBDC decsion.may change OpNss */
 	cnmDbdcPreConnectionEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
@@ -1862,6 +1873,10 @@ void p2pRoleFsmRunEventDfsCac(IN struct ADAPTER *prAdapter,
 		p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
 
 #if CFG_SUPPORT_DBDC
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+	p2pRoleP2pLisStopDbdcDecision(prAdapter,
+		prP2pConnReqInfo->eConnRequest);
+#endif
 	/* DBDC decsion.may change OpNss */
 	cnmDbdcPreConnectionEnableDecision(prAdapter,
 		prP2pBssInfo->ucBssIndex,
@@ -2360,6 +2375,11 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 
 			if (!prP2pBssInfo || !prBssDesc)
 				continue;
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+			p2pRoleP2pLisStopDbdcDecision(prAdapter,
+				prConnReqInfo->eConnRequest);
+#endif
 
 			prChnlReqInfo->u8Cookie = 0;
 			prChnlReqInfo->ucReqChnlNum =
@@ -3099,6 +3119,10 @@ p2pRoleFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 							prAdapter,
 							prP2pBssInfo);
 #if CFG_SUPPORT_DBDC
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+					p2pRoleP2pLisStopDbdcDecision(prAdapter,
+						prConnReqInfo->eConnRequest);
+#endif
 					/* DBDC decsion.may change OpNss */
 					cnmDbdcPreConnectionEnableDecision(
 						prAdapter,
@@ -4964,6 +4988,44 @@ void p2pRoleProcessPreSuspendFlow(IN struct ADAPTER *prAdapter)
 		/* Abort device FSM */
 		p2pDevFsmStateTransition(prAdapter, prP2pDevFsmInfo,
 			P2P_DEV_STATE_IDLE);
+	}
+}
+#endif
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+/* This function is used to disable dbdc when the dbdc is enabled for
+ * p2p listen and the p2p related bss is going to be created.
+ * Must disable Dbdc first and enable Dbdc again, otherwise dbdc A+A mode
+ * info will not update to FW.
+ */
+static void
+p2pRoleP2pLisStopDbdcDecision(
+	IN struct ADAPTER *prAdapter,
+	IN enum ENUM_P2P_CONNECTION_TYPE eConnRequest)
+{
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+	(struct P2P_DEV_FSM_INFO *) NULL;
+
+	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+	if (prP2pDevFsmInfo
+		&& prAdapter->rWifiVar.ucDbdcP2pLisEn) {
+
+		DBGLOG(P2P, INFO,
+				"IsP2pListenDbdcEn %u eConnRequest %u\n"
+				, cnmDbdcIsP2pListenDbdcEn(), eConnRequest);
+
+		if (eConnRequest == P2P_CONNECTION_TYPE_GC
+			|| eConnRequest == P2P_CONNECTION_TYPE_GO) {
+
+			cnmTimerStopTimer(prAdapter,
+				&(prP2pDevFsmInfo->rP2pListenDbdcTimer));
+			prP2pDevFsmInfo->fgIsP2pListening = FALSE;
+		}
+
+		if (cnmDbdcIsP2pListenDbdcEn())
+			cnmDbdcRuntimeCheckDecision(prAdapter,
+				prAdapter->ucP2PDevBssIdx, TRUE);
 	}
 }
 #endif

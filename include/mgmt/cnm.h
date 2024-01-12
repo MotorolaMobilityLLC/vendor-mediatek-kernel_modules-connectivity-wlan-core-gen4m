@@ -364,7 +364,13 @@ void cnmDbdcPreConnectionEnableDecision(
 );
 
 void cnmDbdcRuntimeCheckDecision(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucChangedBssIndex);
+	IN uint8_t ucChangedBssIndex,
+	IN u_int8_t ucForceLeaveEnGuard);
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+u_int8_t cnmDbdcIsP2pListenDbdcEn(void);
+#endif
+
 void cnmDbdcGuardTimerCallback(IN struct ADAPTER *prAdapter,
 	IN unsigned long plParamPtr);
 void cnmDbdcEventHwSwitchDone(IN struct ADAPTER *prAdapter,
