@@ -1979,6 +1979,9 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
 	IN uint8_t ucAisIndex);
 
+struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucP2pIndex);
+
 struct wiphy *wlanGetWiphy(void);
 
 u_int8_t wlanIsAisDev(struct net_device *prDev);

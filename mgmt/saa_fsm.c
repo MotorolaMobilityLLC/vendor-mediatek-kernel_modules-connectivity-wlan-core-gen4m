@@ -943,8 +943,7 @@ struct STA_RECORD *saaFsmFindStaRec(IN struct ADAPTER *prAdapter,
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
 			if (EQUAL_MAC_ADDR(prBssInfo->aucOwnMacAddr,
-				mgmt->aucDestAddr)
-				&& IS_BSS_AIS(prBssInfo))
+				mgmt->aucDestAddr))
 				break;
 
 			prBssInfo = NULL;
@@ -955,7 +954,6 @@ struct STA_RECORD *saaFsmFindStaRec(IN struct ADAPTER *prAdapter,
 	if (!prBssInfo)
 		return NULL;
 
-	// TODO: uni cmd
 	return cnmGetStaRecByAddress(prAdapter,
 		prBssInfo->ucBssIndex, mgmt->aucBSSID);
 }				/* p2pFuncBSSIDFindBssInfo */
@@ -998,6 +996,12 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 			DBGLOG(SAA, WARN, "StaRec not found\n");
 			return;
 		}
+
+		DBGLOG(SAA, WARN,
+			"StaRec=%d, widx=%d, IS_AP_STA=%d, State=%d, found\n",
+			prStaRec->ucIndex, prStaRec->ucWlanIndex,
+			IS_AP_STA(prStaRec), prStaRec->eAuthAssocState);
+
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 	}
 

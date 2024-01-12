@@ -2156,7 +2156,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			continue;
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
-			if (IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID) {
+			if (!fgIsValidSsid &&
+				IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID) {
 				ucSSIDChar = '\0';
 
 				/* D-Link DWL-900AP+ */
@@ -2471,7 +2472,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssDesc->fgIsEHTPresent = FALSE;
-	kalMemSet(&prBssDesc->rMlInfo, 0, sizeof(prBssDesc->rMlInfo));
+	if (fgIsProbeResp)
+		kalMemSet(&prBssDesc->rMlInfo, 0, sizeof(prBssDesc->rMlInfo));
 #endif
 	prBssDesc->eSco = CHNL_EXT_SCN;
 	prBssDesc->fgIEWAPI = FALSE;

@@ -890,6 +890,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 
 	/* It shall be Basic variant ML element*/
 	if (ucMlCtrlType != ML_ELEMENT_TYPE_BASIC) {
+		prMlInfo->ucValid = FALSE;
 		DBGLOG(ML, WARN, "invalid ML control type:%d", ucMlCtrlType);
 		return;
 	}

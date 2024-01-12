@@ -1247,6 +1247,11 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	if (!prNetDev)
 		prNetDev = prGlueInfo->prDevHandler;
 
+	DBGLOG(RX, LOUD, "ucBssIdx: %d, netdev name: 0x%p\n",
+		ucBssIdx,
+		prNetDev,
+		prNetDev->name);
+
 	if (prNetDev->dev_addr == NULL) {
 		DBGLOG(RX, WARN, "dev_addr == NULL\n");
 		return WLAN_STATUS_FAILURE;
@@ -2326,9 +2331,36 @@ void kalUpdateReAssocRspInfo(IN struct GLUE_INFO
 	prConnSettings->u4RspIeLength = 0;
 
 	if (u4IELength <= CFG_CFG80211_IE_BUF_LEN) {
-		prConnSettings->u4RspIeLength = u4IELength;
-		kalMemCopy(prConnSettings->aucRspIe, pucFrameBody + u4IEOffset,
-			   u4IELength);
+		struct BSS_INFO *bss =
+			GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+			ucBssIndex);
+
+		if (IS_BSS_AIS(bss)) {
+			prConnSettings->u4RspIeLength = u4IELength;
+			kalMemCopy(prConnSettings->aucRspIe,
+				pucFrameBody + u4IEOffset,
+				u4IELength);
+		} else if (!IS_BSS_APGO(bss)) {
+			struct P2P_ROLE_FSM_INFO *fsm =
+				P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+					prGlueInfo->prAdapter,
+					bss->u4PrivateData);
+			struct P2P_JOIN_INFO *prJoinInfo =
+				(struct P2P_JOIN_INFO *) NULL;
+
+			if (!fsm)
+				return;
+
+			DBGLOG(P2P, LOUD,
+				"[%d] Copy assoc resp info\n",
+				ucBssIndex);
+
+			prJoinInfo = &(fsm->rJoinInfo);
+			prJoinInfo->u4BufLength = u4IELength;
+			kalMemCopy(prJoinInfo->aucIEBuf,
+				pucFrameBody + u4IEOffset,
+				u4IELength);
+		}
 	}
 
 }				/* kalUpdateReAssocRspInfo */

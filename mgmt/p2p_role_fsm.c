@@ -866,7 +866,23 @@ p2pRoleFsmDeauthCompleteImpl(IN struct ADAPTER *prAdapter,
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 		}
 	} else { /* GC : Stop BSS when Deauth done */
-		p2pFuncStopComplete(prAdapter, prP2pBssInfo);
+		uint8_t i;
+
+		for (i = 0; i < MLD_LINK_MAX; i++) {
+			struct BSS_INFO *bss =
+				p2pGetLinkBssInfo(prAdapter,
+				prP2pRoleFsmInfo, i);
+
+			if (!bss)
+				continue;
+
+			p2pChangeMediaState(prAdapter,
+				bss,
+				MEDIA_STATE_DISCONNECTED);
+			p2pFuncStopComplete(prAdapter,
+				bss);
+		}
+
 		p2pRoleFsmStateTransition(prAdapter,
 			prP2pRoleFsmInfo,
 			P2P_ROLE_STATE_IDLE);
@@ -1300,10 +1316,7 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 
 				SET_NET_PWR_STATE_IDLE(prAdapter,
 					prP2pBssInfo->ucBssIndex);
-				/* 20120830 moved into p2pFuncDisconnect() */
-				/* cnmStaRecFree(prAdapter,
-				 * prP2pBssInfo->prStaRecOfAP);
-				 */
+
 				p2pRoleFsmStateTransition(prAdapter,
 					prP2pRoleFsmInfo,
 					P2P_ROLE_STATE_IDLE);
@@ -1740,8 +1753,14 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	}
 
-	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
-		p2pRoleFsmUninit(prAdapter, ucRoleIdx);
+	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prP2pDelIfaceMsg->eIftype == IFTYPE_P2P_CLIENT)
+			p2pLinkUninitGCRole(prAdapter);
+		else
+#endif
+			p2pRoleFsmUninit(prAdapter, ucRoleIdx);
+	}
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -2320,6 +2339,10 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) prMsgHdr;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	p2pLinkInitGCRole(prAdapter);
+#endif
 
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
@@ -3730,9 +3753,6 @@ void p2pRoleFsmRunEventAAATxFailImpl(IN struct ADAPTER *prAdapter,
 		? STATUS_CODE_AUTH_TIMEOUT
 		: STATUS_CODE_ASSOC_TIMEOUT,
 		TRUE);
-
-	/* 20120830 moved into p2puUncDisconnect. */
-	/* cnmStaRecFree(prAdapter, prStaRec); */
 }				/* p2pRoleFsmRunEventAAATxFail */
 
 void p2pRoleFsmRunEventSwitchOPMode(IN struct ADAPTER *prAdapter,

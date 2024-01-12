@@ -231,6 +231,10 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	   ehtRlmRspGenerateCapIE}
 	, {0, ehtRlmCalculateOpIELen,
 	   ehtRlmRspGenerateOpIE}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	, {0, mldCalculateRnrIELen, mldGenerateRnrIE}
+	, {0, mldCalculateMlIELen, mldGenerateMlIE}
+#endif
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,

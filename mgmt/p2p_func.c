@@ -276,6 +276,7 @@ void p2pFuncRequestScan(IN struct ADAPTER *prAdapter,
 
 		prScanReqV2->u2TimeoutValue = 0;
 		prScanReqV2->u2ProbeDelay = 0;
+		prScanReqV2->fgOobRnrParseEn = TRUE;
 
 		switch (prScanReqInfo->eChannelSet) {
 		case SCAN_CHANNEL_SPECIFIED:
@@ -1213,13 +1214,14 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 					(uint32_t) prMgmtTxMsdu->u2FrameLength);
 			}
 
+			prMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter,
+				ucBssIndex, prMgmtTxMsdu);
+
 			/* Modifiy Lie time to 100 mS due
 			 * to the STA only wait 30-50mS
 			 */
 			/* and AP do not need send it after STA left */
 			nicTxSetPktLifeTime(prMgmtTxMsdu, 100);
-			prMgmtTxMsdu = p2pFuncProcessP2pProbeRsp(prAdapter,
-				ucBssIndex, prMgmtTxMsdu);
 
 			/*
 			 * Not check prMsduInfo sanity
@@ -1376,6 +1378,58 @@ void p2pFuncStopComplete(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*---------------------------------------------------------------------------*/
+static void p2pFuncStartGOBcnImpl(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo)
+{
+	/* 4 <3.2> Reset HW TSF Update Mode and Beacon Mode */
+	nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+
+	/* 4 <3.3> Update Beacon again
+	 * for network phy type confirmed.
+	 */
+	bssUpdateBeaconContent(prAdapter,
+		prBssInfo->ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G) {
+		/* Update unsolicited probe response as beacon */
+		bssUpdateBeaconContentEx(prAdapter,
+			prBssInfo->ucBssIndex,
+			IE_UPD_METHOD_UNSOL_PROBE_RSP);
+	}
+#endif
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+	if (p2pFuncProbeRespUpdate(prAdapter,
+		prBssInfo,
+		prBssInfo->prBeacon->prPacket,
+		prBssInfo->prBeacon->u2FrameLength,
+		IE_UPD_METHOD_UPDATE_PROBE_RSP) ==
+			WLAN_STATUS_FAILURE) {
+		DBGLOG(P2P, ERROR,
+			"Update probe resp IEs fail!\n");
+	}
+#endif
+}
+
+static void p2pFuncStartGOBcn(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prBssInfo)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo =
+		mldBssGetByBss(prAdapter, prBssInfo);
+	struct BSS_INFO *bss;
+
+	if (prMldBssInfo) {
+		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
+			rLinkEntryMld, struct BSS_INFO) {
+			p2pFuncStartGOBcnImpl(prAdapter, bss);
+		}
+	} else
+#endif
+	p2pFuncStartGOBcnImpl(prAdapter, prBssInfo);
+}
+
 void
 p2pFuncStartGO(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
@@ -1573,34 +1627,7 @@ SKIP_START_RDD:
 		/* 4 <3.1> Setup channel and bandwidth */
 		rlmBssInitForAPandIbss(prAdapter, prBssInfo);
 
-		/* 4 <3.2> Reset HW TSF Update Mode and Beacon Mode */
-		nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
-
-		/* 4 <3.3> Update Beacon again
-		 * for network phy type confirmed.
-		 */
-		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prBssInfo->eBand == BAND_6G) {
-			/* Update unsolicited probe response as beacon */
-			bssUpdateBeaconContentEx(prAdapter,
-				prBssInfo->ucBssIndex,
-				IE_UPD_METHOD_UNSOL_PROBE_RSP);
-		}
-#endif
-
-#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
-		if (p2pFuncProbeRespUpdate(prAdapter,
-			prBssInfo,
-			prBssInfo->prBeacon->prPacket,
-			prBssInfo->prBeacon->u2FrameLength,
-			IE_UPD_METHOD_UPDATE_PROBE_RSP) ==
-				WLAN_STATUS_FAILURE) {
-			DBGLOG(P2P, ERROR,
-				"Update probe resp IEs fail!\n");
-		}
-#endif
+		p2pFuncStartGOBcn(prAdapter, prBssInfo);
 
 		/* 4 <3.4> Setup BSSID */
 		nicPmIndicateBssCreated(prAdapter, prBssInfo->ucBssIndex);
@@ -3330,13 +3357,7 @@ p2pFuncDisconnect(IN struct ADAPTER *prAdapter,
 			wlanReleasePowerControl(prAdapter);
 #endif
 		} else {
-			/* Change station state. */
-			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-
-			/* Reset Station Record Status. */
-			p2pFuncResetStaRecStatus(prAdapter, prStaRec);
-
-			cnmStaRecFree(prAdapter, prStaRec);
+			p2pLinkStaRecFree(prAdapter, prStaRec);
 
 			if ((prP2pBssInfo->eCurrentOPMode
 				!= OP_MODE_ACCESS_POINT) ||
@@ -4243,6 +4264,15 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 
 	return;
 }				/* p2pFuncValidateRxMgmtFrame */
+
+u_int8_t p2pFuncIsDualGOMode(IN struct ADAPTER *prAdapter)
+{
+	if (prAdapter)
+		return (kalP2PGetRole(prAdapter->prGlueInfo, 0) == 2 &&
+			kalP2PGetRole(prAdapter->prGlueInfo, 1) == 2);
+
+	return FALSE;
+}
 
 u_int8_t p2pFuncIsDualAPMode(IN struct ADAPTER *prAdapter)
 {
@@ -5670,6 +5700,17 @@ p2pFuncProcessP2pProbeRspAction(IN struct ADAPTER *prAdapter,
 	case ELEM_ID_SSID:
 		{
 			if (SSID_IE(pucIEBuf)->ucLength > 7) {
+				if (EQUAL_SSID(
+					(*prP2pBssInfo)->aucSSID,
+					(*prP2pBssInfo)->ucSSIDLen,
+					SSID_IE(pucIEBuf)->aucSSID,
+					SSID_IE(pucIEBuf)->ucLength)) {
+					DBGLOG(P2P, LOUD,
+						"Return directly %d\n",
+						*ucBssIdx);
+					break;
+				}
+
 				for ((*ucBssIdx) = ucP2pStartIdx;
 					(*ucBssIdx) < prAdapter->ucHwBssIdNum;
 					(*ucBssIdx)++) {
