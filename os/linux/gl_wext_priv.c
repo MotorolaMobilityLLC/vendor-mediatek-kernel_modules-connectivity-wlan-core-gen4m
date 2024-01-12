@@ -5229,117 +5229,121 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 	    TXPOWER_EVENT_SHOW_ALL_RATE_TXPOWER_INFO) {
 		uint8_t ucTxPwrIdx = 0, ucTxPwrType = 0, ucIdx = 0,
 			ucIdxOffset = 0;
-		u_int8_t fgIsHt = TRUE;
-		uint8_t *pucTxPwrRate = NULL;
+
+		char *rateStr = NULL;
 		struct FRAME_POWER_CONFIG_INFO_T rRatePowerInfo;
-		uint8_t ucTxPwrCckRate[MODULATION_SYSTEM_CCK_NUM] = {
-						1, 2, 5, 11};
-		uint8_t ucTxPwrOfdmRate[MODULATION_SYSTEM_OFDM_NUM] = {
-						6, 9, 12, 18, 24, 36, 48, 54 };
-		uint8_t ucTxPwrHt20Rate[MODULATION_SYSTEM_HT20_NUM] = {
-						0, 1, 2, 3, 4, 5, 6, 7 };
-		uint8_t ucTxPwrHt40Rate[MODULATION_SYSTEM_HT40_NUM] = {
-						0, 1, 2, 3, 4, 5, 6, 7, 32 };
+		char *cckRateStr[MODULATION_SYSTEM_CCK_NUM] = {
+			"1M", "2M", "5M", "11M"};
+		char *ofdmRateStr[MODULATION_SYSTEM_OFDM_NUM] = {
+			"6M", "9M", "12M", "18M", "24M", "36M", "48M", "54M" };
+		char *ht20RateStr[MODULATION_SYSTEM_HT20_NUM] = {
+			"M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7" };
+		char *ht40RateStr[MODULATION_SYSTEM_HT40_NUM] = {
+			"M0", "M1", "M2", "M3", "M4", "M5", "M6",
+			"M7", "M32" };
+		char *vhtRateStr[MODULATION_SYSTEM_VHT20_NUM] = {
+			"M0", "M1", "M2", "M3", "M4", "M5", "M6",
+			"M7", "M8", "M9" };
+		char *ruRateStr[MODULATION_SYSTEM_HE_26_MCS_NUM] = {
+			"M0", "M1", "M2", "M3", "M4", "M5", "M6", "M7",
+			"M8", "M9", "M10", "M11" };
+
 		uint8_t *pucStr = NULL;
-		uint8_t *POWER_TYPE_STR[] = {"CCK", "*OFDM", "*HT20", "*HT40",
-					     "*VHT20", "*VHT40", "*VHT80",
-					     "*VHT160"};
+		uint8_t *POWER_TYPE_STR[] = {
+			"CCK", "OFDM", "HT20", "HT40",
+			"VHT20", "VHT40", "VHT80",
+			"VHT160", "RU26", "RU52", "RU106",
+			"RU242", "RU484", "RU996"};
 		uint8_t ucPwrIdxLen[] = {
-		    MODULATION_SYSTEM_CCK_NUM, MODULATION_SYSTEM_OFDM_NUM,
-		    MODULATION_SYSTEM_HT20_NUM, MODULATION_SYSTEM_HT40_NUM,
-		    MODULATION_SYSTEM_VHT20_NUM, MODULATION_SYSTEM_VHT40_NUM,
-		    MODULATION_SYSTEM_VHT80_NUM, MODULATION_SYSTEM_VHT160_NUM };
+		    MODULATION_SYSTEM_CCK_NUM,
+			MODULATION_SYSTEM_OFDM_NUM,
+		    MODULATION_SYSTEM_HT20_NUM,
+		    MODULATION_SYSTEM_HT40_NUM,
+		    MODULATION_SYSTEM_VHT20_NUM,
+		    MODULATION_SYSTEM_VHT40_NUM,
+		    MODULATION_SYSTEM_VHT80_NUM,
+		    MODULATION_SYSTEM_VHT160_NUM,
+		    MODULATION_SYSTEM_HE_26_MCS_NUM,
+		    MODULATION_SYSTEM_HE_52_MCS_NUM,
+		    MODULATION_SYSTEM_HE_106_MCS_NUM,
+		    MODULATION_SYSTEM_HE_242_MCS_NUM,
+		    MODULATION_SYSTEM_HE_484_MCS_NUM,
+		    MODULATION_SYSTEM_HE_996_MCS_NUM};
+
+		uint8_t ucBandIdx;
+		uint8_t ucFormat;
 
 		if ((sizeof(POWER_TYPE_STR)/sizeof(uint8_t *)) !=
 		    (sizeof(ucPwrIdxLen)/sizeof(uint8_t)))
 			return i4BytesWritten;
 
+		ucBandIdx = prTxPowerInfo->ucBandIdx;
+		ucFormat = prTxPowerInfo->u1Format;
+
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten, "%s",
 					"\n====== TX POWER INFO ======\n");
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
-					i4TotalLen - i4BytesWritten, "%s",
-					"------\n");
-		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
 					"DBDC Index: %d, Channel Band: %s\n",
-					prTxPowerInfo->ucBandIdx,
+					ucBandIdx,
 					(prTxPowerInfo->ucChBand) ?
 						("5G") : ("2G"));
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%s", "------\n");
+					"%s", "===========================\n");
+
+		rRatePowerInfo =
+			prTxPowerInfo->rRatePowerInfo;
+
 
 		for (ucTxPwrType = 0;
 		     ucTxPwrType < sizeof(POWER_TYPE_STR)/sizeof(uint8_t *);
 		     ucTxPwrType++) {
+
+			pucStr = POWER_TYPE_STR[ucTxPwrType];
+
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"[%6s] > ", pucStr);
+
 			for (ucTxPwrIdx = 0;
 			     ucTxPwrIdx < ucPwrIdxLen[ucTxPwrType];
 			     ucTxPwrIdx++) {
-				pucStr = POWER_TYPE_STR[ucTxPwrType];
-				if (kalStrCmp(pucStr, "CCK") == 0 ||
-					kalStrCmp(pucStr, "OFDM") == 0) {
-					if (kalStrCmp(pucStr, "CCK") == 0)
-						pucTxPwrRate = ucTxPwrCckRate;
-					else
-						pucTxPwrRate = ucTxPwrOfdmRate;
+				/*Legcay format*/
+				if (kalStrCmp(pucStr, "CCK") == 0)
+					rateStr = cckRateStr[ucTxPwrIdx];
+				else if (kalStrCmp(pucStr, "OFDM") == 0)
+					rateStr = ofdmRateStr[ucTxPwrIdx];
+				else if (kalStrCmp(pucStr, "HT20") == 0)
+					rateStr = ht20RateStr[ucTxPwrIdx];
+				else if (kalStrCmp(pucStr, "HT40") == 0)
+					rateStr = ht40RateStr[ucTxPwrIdx];
+				else if (kalStrnCmp(pucStr, "VHT", 3) == 0)
+					rateStr = vhtRateStr[ucTxPwrIdx];
+				/*HE format*/
+				else if ((kalStrnCmp(pucStr, "RU", 2) == 0)
+					&& (ucFormat == TXPOWER_FORMAT_HE))
+					rateStr = ruRateStr[ucTxPwrIdx];
+				else
+					continue;
 
-					ucIdx = ucTxPwrIdx + ucIdxOffset;
-					rRatePowerInfo =
-						prTxPowerInfo->rRatePowerInfo;
+				ucIdx = ucTxPwrIdx + ucIdxOffset;
 
-					i4BytesWritten += kalScnprintf(
-						pcCommand + i4BytesWritten,
-						i4TotalLen - i4BytesWritten,
-						"[%s_%02dM]: 0x%02x (%03d)\n",
-						POWER_TYPE_STR[ucTxPwrType],
-						pucTxPwrRate[ucTxPwrIdx],
-						rRatePowerInfo.
-						aicFramePowerConfig[ucIdx].
-						icFramePowerDbm,
-						rRatePowerInfo.
-						aicFramePowerConfig[ucIdx].
-						icFramePowerDbm);
-				} else {
-					if (kalStrCmp(pucStr, "HT20") == 0) {
-						pucTxPwrRate = ucTxPwrHt20Rate;
-						fgIsHt = TRUE;
-					} else if (
-					    kalStrCmp(pucStr, "HT40") == 0) {
-						pucTxPwrRate = ucTxPwrHt40Rate;
-						fgIsHt = TRUE;
-					} else {
-						fgIsHt = FALSE;
-					}
-
-					rRatePowerInfo =
-						prTxPowerInfo->rRatePowerInfo;
-
-					i4BytesWritten += kalScnprintf(
-						pcCommand + i4BytesWritten,
-						i4TotalLen - i4BytesWritten,
-						"[%s_M%02d]: 0x%02x (%03d)\n",
-						POWER_TYPE_STR[ucTxPwrType],
-						((fgIsHt) ?
-						    (pucTxPwrRate[ucTxPwrIdx]) :
-						    (ucTxPwrIdx)),
-						rRatePowerInfo.
-						aicFramePowerConfig[ucIdx]
-						.icFramePowerDbm,
-						rRatePowerInfo.
-						aicFramePowerConfig[ucIdx]
-						.icFramePowerDbm);
-				}
-			}
-
-			pucStr = POWER_TYPE_STR[ucTxPwrType];
-			if (kalStrCmp(pucStr, "OFDM") == 0 ||
-				kalStrCmp(pucStr, "HT40") == 0 ||
-				kalStrCmp(pucStr, "VHT160") == 0)
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
-					"%s", "------\n");
+					"%3s:%03d, ",
+					rateStr,
+					rRatePowerInfo.
+					aicFramePowerConfig[ucIdx][ucBandIdx].
+					icFramePowerDbm);
+			}
+			 i4BytesWritten += kalScnprintf(
+				 pcCommand + i4BytesWritten,
+				 i4TotalLen - i4BytesWritten,
+				 "\n");
 
 			ucIdxOffset += ucPwrIdxLen[ucTxPwrType];
 		}
@@ -5371,8 +5375,9 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int8_t *this_char = NULL;
-	uint32_t u4Ret = 0;
+	uint32_t u4ParamNum = 0;
 	uint8_t ucParam = 0;
+	uint8_t ucBandIdx = 0;
 	struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T *prTxPowerInfo = NULL;
 
 	ASSERT(prNetDev);
@@ -5381,18 +5386,20 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
 
-	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
-	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+	DBGLOG(REQ, INFO, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
 
 	this_char = kalStrStr(*apcArgv, "=");
 	if (!this_char)
 		return -1;
 	this_char++;
 
-	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
-	u4Ret = kalkStrtou8(this_char, 0, &ucParam);
-	DBGLOG(REQ, LOUD, "u4Ret = %d, ucParam = %d\n", u4Ret, ucParam);
+	DBGLOG(REQ, INFO, "string = %s\n", this_char);
+
+	u4ParamNum = sscanf(this_char, "%d:%d", &ucParam, &ucBandIdx);
+	DBGLOG(REQ, INFO, "ParamNum=%d,Param=%d,Band=%d\n",
+		u4ParamNum, ucParam, ucBandIdx);
 
 	u4Size = sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
 
@@ -5402,15 +5409,10 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 	if (!prTxPowerInfo)
 		return -1;
 
-	if (u4Ret == 0) {
+	if (u4ParamNum == TXPOWER_INPUT_ARG_NUM) {
 		prTxPowerInfo->ucTxPowerCategory = ucParam;
+		prTxPowerInfo->ucBandIdx = ucBandIdx;
 
-		/*
-		 * FIX ME: Mobile driver can't get correct band,
-		 * so assigned Band_0 as temp solution.
-		 * Remember to fix it when needed to use this command on Band_1.
-		 */
-		prTxPowerInfo->ucBandIdx = ENUM_BAND_0;
 		rStatus = kalIoctl(prGlueInfo, wlanoidQueryTxPowerInfo,
 			prTxPowerInfo,
 			sizeof(struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T),
@@ -5426,7 +5428,7 @@ static int32_t priv_driver_get_txpower_info(IN struct net_device *prNetDev,
 					pcCommand, i4TotalLen, prTxPowerInfo);
 	} else {
 		DBGLOG(INIT, ERROR,
-		       "iwpriv wlanXX driver TxPowerInfo=[Param]\n");
+		       "[Error]iwpriv wlanXX driver TxPowerInfo=[Param]:[BandIdx]\n");
 	}
 
 	kalMemFree(prTxPowerInfo, VIR_MEM_TYPE,
