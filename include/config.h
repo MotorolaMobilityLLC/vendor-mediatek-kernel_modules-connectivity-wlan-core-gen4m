@@ -345,8 +345,6 @@
 #define FW_DROP_SSN_MAX                        10
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
 
-#define CFG_SUPPORT_DROP_INVALID_MSDUINFO	0
-
 #define CFG_SUPPORT_SKB_CLONED_COPY		1
 
 /* Support windows Scatter/gather IO (NETIF_F_SG) */
