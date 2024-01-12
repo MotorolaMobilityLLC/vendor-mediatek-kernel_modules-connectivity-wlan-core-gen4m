@@ -4246,94 +4246,11 @@ uint32_t
 wlanoidQueryStatistics(IN struct ADAPTER *prAdapter,
 		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		       OUT uint32_t *pu4QueryInfoLen) {
-	struct PARAM_802_11_STATISTICS_STRUCT  rStatistics;
-
 	DEBUGFUNC("wlanoidQueryStatistics");
 	DBGLOG(REQ, LOUD, "\n");
 
-	ASSERT(prAdapter);
-	if (u4QueryBufferLen)
-		ASSERT(pvQueryBuffer);
-	ASSERT(pu4QueryInfoLen);
-
-	*pu4QueryInfoLen = sizeof(struct
-				  PARAM_802_11_STATISTICS_STRUCT);
-
-	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
-		DBGLOG(REQ, WARN,
-		       "Fail in query receive error! (Adapter not ready). ACPI=D%d, Radio=%d\n",
-		       prAdapter->rAcpiState, prAdapter->fgIsRadioOff);
-		*pu4QueryInfoLen = sizeof(uint32_t);
-		return WLAN_STATUS_ADAPTER_NOT_READY;
-	} else if (u4QueryBufferLen < sizeof(struct
-					     PARAM_802_11_STATISTICS_STRUCT)) {
-		DBGLOG(REQ, WARN, "Too short length %u\n",
-		       u4QueryBufferLen);
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
-#if CFG_ENABLE_STATISTICS_BUFFERING
-	if (IsBufferedStatisticsUsable(prAdapter) == TRUE) {
-		struct PARAM_802_11_STATISTICS_STRUCT *prStatistics;
-
-		*pu4QueryInfoLen = sizeof(struct
-					  PARAM_802_11_STATISTICS_STRUCT);
-		prStatistics = (struct PARAM_802_11_STATISTICS_STRUCT *)
-			       pvQueryBuffer;
-
-		prStatistics->u4Length = sizeof(struct
-						PARAM_802_11_STATISTICS_STRUCT);
-		prStatistics->rTransmittedFragmentCount =
-			prAdapter->rStatStruct.rTransmittedFragmentCount;
-		prStatistics->rMulticastTransmittedFrameCount =
-			prAdapter->rStatStruct.rMulticastTransmittedFrameCount;
-		prStatistics->rFailedCount =
-			prAdapter->rStatStruct.rFailedCount;
-		prStatistics->rRetryCount =
-			prAdapter->rStatStruct.rRetryCount;
-		prStatistics->rMultipleRetryCount =
-			prAdapter->rStatStruct.rMultipleRetryCount;
-		prStatistics->rRTSSuccessCount =
-			prAdapter->rStatStruct.rRTSSuccessCount;
-		prStatistics->rRTSFailureCount =
-			prAdapter->rStatStruct.rRTSFailureCount;
-		prStatistics->rACKFailureCount =
-			prAdapter->rStatStruct.rACKFailureCount;
-		prStatistics->rFrameDuplicateCount =
-			prAdapter->rStatStruct.rFrameDuplicateCount;
-		prStatistics->rReceivedFragmentCount =
-			prAdapter->rStatStruct.rReceivedFragmentCount;
-		prStatistics->rMulticastReceivedFrameCount =
-			prAdapter->rStatStruct.rMulticastReceivedFrameCount;
-		prStatistics->rFCSErrorCount =
-			prAdapter->rStatStruct.rFCSErrorCount;
-		prStatistics->rTKIPLocalMICFailures.QuadPart = 0;
-		prStatistics->rTKIPICVErrors.QuadPart = 0;
-		prStatistics->rTKIPCounterMeasuresInvoked.QuadPart = 0;
-		prStatistics->rTKIPReplays.QuadPart = 0;
-		prStatistics->rCCMPFormatErrors.QuadPart = 0;
-		prStatistics->rCCMPReplays.QuadPart = 0;
-		prStatistics->rCCMPDecryptErrors.QuadPart = 0;
-		prStatistics->rFourWayHandshakeFailures.QuadPart = 0;
-		prStatistics->rWEPUndecryptableCount.QuadPart = 0;
-		prStatistics->rWEPICVErrorCount.QuadPart = 0;
-		prStatistics->rDecryptSuccessCount.QuadPart = 0;
-		prStatistics->rDecryptFailureCount.QuadPart = 0;
-
-		return WLAN_STATUS_SUCCESS;
-	}
-#endif
-
-	return wlanSendSetQueryCmd(prAdapter,
-				CMD_ID_GET_STATISTICS,
-				FALSE,
-				TRUE,
-				TRUE,
-				nicCmdEventQueryStatistics,
-				nicOidCmdTimeoutCommon,
-				sizeof(struct PARAM_802_11_STATISTICS_STRUCT),
-				(uint8_t *)&rStatistics,
-				pvQueryBuffer, u4QueryBufferLen);
-
+	return wlanQueryStatistics(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				pu4QueryInfoLen, TRUE);
 } /* wlanoidQueryStatistics */
 
 uint32_t
@@ -4568,6 +4485,17 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 		      OUT uint32_t *pu4QueryInfoLen) {
 	DEBUGFUNC("wlanoidQueryLinkSpeed");
 
+	return wlanQueryLinkSpeed(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryLinkSpeed(IN struct ADAPTER *prAdapter,
+		   IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+		   OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
+{
+	DEBUGFUNC("wlanQueryLinkSpeed");
+
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
 	if (u4QueryBufferLen)
@@ -4596,7 +4524,7 @@ wlanoidQueryLinkSpeed(IN struct ADAPTER *prAdapter,
 					   CMD_ID_GET_LINK_QUALITY,
 					   FALSE,
 					   TRUE,
-					   TRUE,
+					   fgIsOid,
 					   nicCmdEventQueryLinkSpeed,
 					   nicOidCmdTimeoutCommon, 0, NULL,
 					   pvQueryBuffer, u4QueryBufferLen);
@@ -12749,9 +12677,21 @@ uint32_t
 wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 		     IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		     OUT uint32_t *pu4QueryInfoLen) {
+	DEBUGFUNC("wlanoidQueryWlanInfo");
+
+	return wlanQueryWlanInfo(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				 pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryWlanInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen,
+		 IN uint8_t fgIsOid) {
 	struct PARAM_HW_WLAN_INFO *prHwWlanInfo;
 
-	DEBUGFUNC("wlanoidQueryWlanInfo");
+	DEBUGFUNC("wlanQueryWlanInfo");
 	DBGLOG(REQ, LOUD, "\n");
 
 	ASSERT(prAdapter);
@@ -12784,7 +12724,7 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 				   CMD_ID_WTBL_INFO,
 				   FALSE,
 				   TRUE,
-				   TRUE,
+				   fgIsOid,
 				   nicCmdEventQueryWlanInfo,
 				   nicOidCmdTimeoutCommon,
 				   sizeof(struct PARAM_HW_WLAN_INFO),
@@ -12793,11 +12733,23 @@ wlanoidQueryWlanInfo(IN struct ADAPTER *prAdapter,
 
 }				/* wlanoidQueryWlanInfo */
 
-
 uint32_t
 wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
 		    IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		    OUT uint32_t *pu4QueryInfoLen) {
+	DEBUGFUNC("wlanoidQueryMibInfo");
+
+	return wlanQueryMibInfo(prAdapter, pvQueryBuffer, u4QueryBufferLen,
+				pu4QueryInfoLen, TRUE);
+}
+
+uint32_t
+wlanQueryMibInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen,
+		 IN uint8_t fgIsOid)
+{
 	struct PARAM_HW_MIB_INFO *prHwMibInfo;
 
 	DEBUGFUNC("wlanoidQueryMibInfo");
@@ -12834,7 +12786,7 @@ wlanoidQueryMibInfo(IN struct ADAPTER *prAdapter,
 				   CMD_ID_MIB_INFO,
 				   FALSE,
 				   TRUE,
-				   TRUE,
+				   fgIsOid,
 				   nicCmdEventQueryMibInfo,
 				   nicOidCmdTimeoutCommon,
 				   sizeof(struct PARAM_HW_MIB_INFO),
@@ -15745,4 +15697,24 @@ uint32_t wlanoidGetWifiType(IN struct ADAPTER *prAdapter,
 	       pNameBuf, *pu4SetInfoLen, ucPhyType);
 	return WLAN_STATUS_SUCCESS;
 }
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+uint32_t wlanoidGetLinkQualityInfo(IN struct ADAPTER *prAdapter,
+				   IN void *pvSetBuffer,
+				   IN uint32_t u4SetBufferLen,
+				   OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_GET_LINK_QUALITY_INFO *prParam;
+	struct WIFI_LINK_QUALITY_INFO *prSrcLinkQualityInfo = NULL;
+	struct WIFI_LINK_QUALITY_INFO *prDstLinkQualityInfo = NULL;
+
+	prParam = (struct PARAM_GET_LINK_QUALITY_INFO *)pvSetBuffer;
+	prSrcLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
+	prDstLinkQualityInfo = prParam->prLinkQualityInfo;
+	kalMemCopy(prDstLinkQualityInfo, prSrcLinkQualityInfo,
+		   sizeof(struct WIFI_LINK_QUALITY_INFO));
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 

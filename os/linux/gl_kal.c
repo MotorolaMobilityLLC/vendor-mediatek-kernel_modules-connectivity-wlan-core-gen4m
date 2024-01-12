@@ -1227,7 +1227,12 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	switch (eStatus) {
 	case WLAN_STATUS_ROAM_OUT_FIND_BEST:
 	case WLAN_STATUS_MEDIA_CONNECT:
-
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+		/* clear the count */
+		prGlueInfo->prAdapter->rLinkQualityInfo.u8TxTotalCount = 0;
+		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
+		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxErrCount = 0;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 		prGlueInfo->eParamMediaStateIndicated =
 			MEDIA_STATE_CONNECTED;
 
@@ -1414,6 +1419,12 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 	case WLAN_STATUS_MEDIA_DISCONNECT:
 	case WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY:
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+		/* clear the count */
+		prGlueInfo->prAdapter->rLinkQualityInfo.u8TxTotalCount = 0;
+		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
+		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxErrCount = 0;
+#endif
 		/* indicate disassoc event */
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWAP, NULL, 0);
 		/* For CR 90 and CR99, While supplicant do reassociate, driver
@@ -6952,6 +6963,15 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 	}
 	prPerMonitor->u4CurrPerfLevel =
 		prPerMonitor->u4TarPerfLevel;
+
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	prAdapter->u4LinkQualityCounter++;
+	if ((prAdapter->u4LinkQualityCounter %
+	     CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY) == 0) {
+		prAdapter->u4LinkQualityCounter = 0;
+		wlanLinkQualityMonitor(prGlueInfo, FALSE);
+	}
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 	/* check tx hang */
 	prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;

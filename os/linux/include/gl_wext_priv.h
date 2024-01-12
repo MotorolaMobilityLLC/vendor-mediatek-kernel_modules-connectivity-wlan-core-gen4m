@@ -424,11 +424,6 @@ priv_ate_set(IN struct net_device *prNetDev,
 	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
 #endif
 
-#if defined(CFG_REPORT_MAX_TX_RATE) && (CFG_REPORT_MAX_TX_RATE == 1)
-int kalSaveStaMaxTxRate(struct ADAPTER *prAdapter, void *prBssPtr,
-			struct STA_RECORD *prStaRec);
-#endif /* CFG_REPORT_MAX_TX_RATE */
-
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

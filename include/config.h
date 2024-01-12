@@ -1232,6 +1232,17 @@
 #define CFG_REPORT_MAX_TX_RATE	0
 
 /*------------------------------------------------------------------------------
+ * Link Quality Monitor
+ * Link quality monitor execution period base on performance monitor timer
+ * CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY base on PERF_MON_UPDATE_INTERVAL
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_LINK_QUALITY_MONITOR
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+#define CFG_LINK_QUALITY_MONITOR_UPDATE_FREQUENCY	1
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
+/*------------------------------------------------------------------------------
  * Driver supports SYS DVT automation
  *------------------------------------------------------------------------------
  */

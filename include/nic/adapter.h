@@ -1630,6 +1630,15 @@ struct ADAPTER {
 	uint32_t u4StaMaxTxRate;
 #endif /* CFG_REPORT_MAX_TX_RATE */
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	uint32_t u4LastLinkQuality;
+	uint32_t u4LinkQualityCounter;
+	struct WIFI_LINK_QUALITY_INFO rLinkQualityInfo;
+	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
+	struct PARAM_802_11_STATISTICS_STRUCT rStat;
+	uint32_t u4BufLen;
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
