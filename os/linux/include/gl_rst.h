@@ -204,11 +204,14 @@ extern u_int8_t fgIsResetHangState;
  * action.
  */
 #define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason)		\
-do { \
+({ \
+	uint32_t ret; \
 	glSetRstReason(_eReason);    \
-	glResetTrigger(_prAdapter, glResetSelectAction(_prAdapter),	\
+	ret = glResetTrigger(_prAdapter,    \
+		       glResetSelectAction(_prAdapter),    \
 		       (const uint8_t *)__FILE__, __LINE__);    \
-} while (FALSE)
+	ret; \
+})
 
 /* You can use this macro to trigger user defined reset actions instead of the
  * default ones.
@@ -263,7 +266,7 @@ void glResetWholeChipResetTrigger(char *pcReason);
 
 uint32_t glResetSelectAction(struct ADAPTER *prAdapter);
 
-void glResetTrigger(struct ADAPTER *prAdapter,
+uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		    uint32_t u4RstFlag, const uint8_t *pucFile,
 		    uint32_t u4Line);
 

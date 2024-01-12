@@ -668,12 +668,13 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
  * @retval  none
  */
 /*----------------------------------------------------------------------------*/
-void glResetTrigger(struct ADAPTER *prAdapter,
+uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
 	struct RESET_STRUCT *rst = &wifi_rst;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
+	uint32_t rst_evt_send = WLAN_STATUS_NOT_ACCEPTED;
 #if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	int ret = 0;
 #endif
@@ -785,9 +786,11 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 		kalSetRstEvent(FALSE);
 	else
 		kalSetRstEvent(TRUE);
+	rst_evt_send = WLAN_STATUS_SUCCESS;
 #endif
 exit:
 	fgIsMcuOff = FALSE;
+	return rst_evt_send;
 }
 #else
 /* The following definition is of ce. */
@@ -937,7 +940,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
  * @retval  none
  */
 /*----------------------------------------------------------------------------*/
-void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
+uint32_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		    const uint8_t *pucFile, uint32_t u4Line)
 {
 	uint16_t i;
@@ -945,15 +948,16 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 	uint16_t u2FwOwnVersion;
 	uint16_t u2FwPeerVersion;
 	u_int8_t fgDrvOwn;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	if (wifi_rst.fgIsInitialized != TRUE)
-		return;
+		return rStatus;
 	if (kalIsResetting()
 #if CFG_DC_USB_WOW_CALLBACK
 	|| prAdapter->prGlueInfo->rHifInfo.fgUsbShutdown
 #endif
 	)
-		return;
+		return rStatus;
 	if ((u4RstFlag & RST_FLAG_DO_WHOLE_RESET) ||
 	    (u4RstFlag & RST_FLAG_DO_L0P5_RESET))
 		glResetUpdateFlag(TRUE);
@@ -973,7 +977,7 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 
 	if (!u4RstFlag) {
 		DBGLOG(INIT, ERROR, "no action\n");
-		return;
+		return rStatus;
 	}
 
 #if CFG_CHIP_RESET_KO_SUPPORT
@@ -984,7 +988,7 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 			KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
 				SPIN_LOCK_WFSYS_RESET);
 			DBGLOG(INIT, ERROR, "Ignore L0 during L0.5\n");
-			return;
+			return rStatus;
 		}
 		KAL_RELEASE_SPIN_LOCK_BH(prAdapter,
 			SPIN_LOCK_WFSYS_RESET);
@@ -994,7 +998,7 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		send_reset_event(RESET_MODULE_TYPE_WIFI,
 				 RFSM_EVENT_TRIGGER_RESET);
 
-		return;
+		return rStatus;
 	}
 #endif
 
@@ -1057,6 +1061,7 @@ void glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		wlanoidSerExtCmd(prAdapter, SER_ACTION_RECOVER,
 					     SER_SET_L1_RECOVER, 0);
 	}
+	return rStatus;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1782,8 +1787,9 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			goto exit;
 		}
 
-		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
-					 RST_WHOLE_CHIP_TRIGGER);
+		if (GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+				RST_WHOLE_CHIP_TRIGGER) != WLAN_STATUS_SUCCESS)
+			goto exit;
 	} else {
 		while (kalIsResetOnEnd() &&
 				fgIsDrvTriggerWholeChipReset == FALSE) {
