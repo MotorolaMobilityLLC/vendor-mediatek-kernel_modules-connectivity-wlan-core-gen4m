@@ -75,7 +75,8 @@ nanConvertUccMatchFilter(uint8_t *pucFilterDst, uint8_t *pucFilterSrc,
 	uint32_t u4FilterLen = 0;
 	uint32_t u4TotalLen = 0;
 
-	if (ucFilterSrcLen == 0) {
+	if (ucFilterSrcLen == 0 ||
+		(ucFilterSrcLen > NAN_MAX_MATCH_FILTER_LEN)) {
 		*pucFilterDstLen = 0;
 		return;
 	}
@@ -240,8 +241,10 @@ nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
 		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
 	prPublishReq->service_name_len = msg->service_name_len;
+	if (prPublishReq->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
+		prPublishReq->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
 	kalMemCopy(prPublishReq->service_name, msg->service_name,
-		   msg->service_name_len);
+		   prPublishReq->service_name_len);
 
 	prPublishReq->service_specific_info_len =
 		msg->service_specific_info_len;
@@ -423,8 +426,10 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 		prPubSpecificInfo->ucReportTerminate = TRUE;
 
 	prPublishReq->service_name_len = msg->service_name_len;
+	if (prPublishReq->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
+		prPublishReq->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
 	kalMemCopy(prPublishReq->service_name, msg->service_name,
-		   msg->service_name_len);
+		   prPublishReq->service_name_len);
 	kalMemZero(aucServiceName, sizeof(aucServiceName));
 	kalMemCopy(aucServiceName,
 			msg->service_name,
@@ -792,8 +797,10 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	}
 
 	prSubscribeReq->service_name_len = msg->service_name_len;
+	if (prSubscribeReq->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
+		prSubscribeReq->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
 	kalMemCopy(prSubscribeReq->service_name, msg->service_name,
-		   msg->service_name_len);
+		   prSubscribeReq->service_name_len);
 	kalMemZero(aucServiceName, sizeof(aucServiceName));
 	kalMemCopy(aucServiceName,
 			msg->service_name,
@@ -855,6 +862,10 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	} else {
 		/* fgIsNANfromHAL, then no need to convert match filter */
 		prSubscribeReq->tx_match_filter_len = msg->tx_match_filter_len;
+		if (prSubscribeReq->tx_match_filter_len >
+			NAN_FW_MAX_MATCH_FILTER_LEN)
+			prSubscribeReq->tx_match_filter_len =
+			NAN_FW_MAX_MATCH_FILTER_LEN;
 		kalMemCopy(prSubscribeReq->tx_match_filter,
 			   msg->tx_match_filter,
 			   prSubscribeReq->tx_match_filter_len);
@@ -863,6 +874,10 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 			    prSubscribeReq->tx_match_filter_len);
 
 		prSubscribeReq->rx_match_filter_len = msg->rx_match_filter_len;
+		if (prSubscribeReq->rx_match_filter_len >
+			NAN_FW_MAX_MATCH_FILTER_LEN)
+			prSubscribeReq->rx_match_filter_len =
+			NAN_FW_MAX_MATCH_FILTER_LEN;
 		kalMemCopy(prSubscribeReq->rx_match_filter,
 			   msg->rx_match_filter,
 			   prSubscribeReq->rx_match_filter_len);
@@ -878,8 +893,13 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	if (msg->num_intf_addr_present > NAN_MAX_SUBSCRIBE_MAX_ADDRESS)
 		msg->num_intf_addr_present = NAN_MAX_SUBSCRIBE_MAX_ADDRESS;
 	prSubscribeReq->num_intf_addr_present = msg->num_intf_addr_present;
+
+	if (prSubscribeReq->num_intf_addr_present >
+		NAN_MAX_SUBSCRIBE_MAX_ADDRESS)
+		prSubscribeReq->num_intf_addr_present =
+		NAN_MAX_SUBSCRIBE_MAX_ADDRESS;
 	kalMemCopy(prSubscribeReq->intf_addr, msg->intf_addr,
-		   msg->num_intf_addr_present * MAC_ADDR_LEN);
+		   prSubscribeReq->num_intf_addr_present * MAC_ADDR_LEN);
 	/* send command to fw */
 	wlanSendSetQueryCmd(prAdapter,		  /* prAdapter */
 			    CMD_ID_NAN_EXT_CMD,   /* ucCID */

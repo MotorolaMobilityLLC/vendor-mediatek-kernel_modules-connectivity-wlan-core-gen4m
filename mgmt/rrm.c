@@ -685,6 +685,12 @@ u_int8_t rrmFillScanParam(struct ADAPTER *prAdapter,
 				->aucChnlList;
 			ucOpClass = ((struct IE_AP_CHNL_REPORT *)pucIE)
 				->ucOpClass;
+			if (pucIE[1] < 1) {
+				DBGLOG(RRM, WARN,
+				"IE length(%d) in AP channel report is illegal!\n",
+				pucIE[1]);
+				break;
+			}
 			ucChnlNum = pucIE[1] - 1;
 			DBGLOG(RRM, INFO,
 				"Channel number in latest AP channel report %d\n",
@@ -763,8 +769,13 @@ subelem:
 			uint8_t ucChannelCnt = prApChnl->ucLength - 1;
 			uint8_t ucIndex = 0;
 
-			if (prBeaconReq->ucChannel == 0)
+			if ((prBeaconReq->ucChannel == 0)
+				|| (prApChnl->ucLength < 1)) {
+				DBGLOG(RRM, WARN,
+				"IE len in AP channel report(%d),BeaconReq->ucChannel %d\n",
+				prApChnl->ucLength, prBeaconReq->ucChannel);
 				break;
+			}
 
 			ucOpClass = prApChnl->ucOpClass;
 			DBGLOG(RRM, INFO,
