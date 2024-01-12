@@ -81,5 +81,7 @@ uint8_t ehtRlmGetVhtOpBwByEhtOpBw(
 	uint8_t ucBssOpBw);
 void ehtRlmInit(
 	struct ADAPTER *prAdapter);
+void ehtRlmInitHtcACtrlOM(
+	struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_802_11BE == 1 */
 #endif /* !_EHT_RLM_H */
