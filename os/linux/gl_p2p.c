@@ -1045,10 +1045,22 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBss = p2pMldBssInit(prGlueInfo->prAdapter, aucIntfMac,
 				 fgIsApMode);
+	if (!prMldBss) {
+		DBGLOG(P2P, ERROR, "Null prMldBss, fgIsApMode=%d\n",
+			fgIsApMode);
+		return -1;
+	}
 	ucGroupMldId = prMldBss->ucGroupMldId;
 #endif
 	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, u4Idx,
 		ucGroupMldId, aucIntfMac);
+	if (prNetDevPriv->ucBssIdx == MAX_BSSID_NUM) {
+		DBGLOG(P2P, ERROR, "p2pRoleFsmInit failed.\n");
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		p2pMldBssUninit(prAdapter, prMldBss);
+#endif
+		return -1;
+	}
 	/* Currently wpasupplicant can't support create interface. */
 	/* so initial the corresponding data structure here. */
 	wlanBindBssIdxToNetInterface(prGlueInfo, prNetDevPriv->ucBssIdx,

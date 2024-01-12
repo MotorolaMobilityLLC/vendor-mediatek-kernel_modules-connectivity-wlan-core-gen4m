@@ -232,23 +232,6 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 
 	if (u4Status != WLAN_STATUS_SUCCESS) {
 		if (prP2pRoleFsmInfo) {
-			if (prP2pBssInfo) {
-				p2pSetLinkBssInfo(prP2pRoleFsmInfo,
-						  prP2pBssInfo->ucLinkIndex,
-						  NULL);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-				if (prMldBssInfo)
-					mldBssUnregister(prAdapter,
-							 prMldBssInfo,
-							 prP2pBssInfo);
-#endif
-
-				p2pRoleFsmUninitLink(prAdapter,
-						     prP2pRoleFsmInfo,
-						     prP2pBssInfo);
-			}
-
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, ucRoleIdx) =
 				NULL;
 			kalMemFree(prP2pRoleFsmInfo, VIR_MEM_TYPE,
