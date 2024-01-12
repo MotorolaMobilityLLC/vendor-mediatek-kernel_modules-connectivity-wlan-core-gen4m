@@ -1019,14 +1019,25 @@ int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy,
 }
 
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
-int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
-		const u8 *mac, struct station_info *sinfo)
+int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
+	struct net_device *ndev,
+	const u8 *mac, struct station_info *sinfo)
+#else
+int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
+	struct net_device *ndev,
+	u8 *mac, struct station_info *sinfo)
+#endif
 {
 	int32_t i4RetRslt = -EINVAL;
+	int32_t i4Rssi = 0;
 	uint8_t ucRoleIdx = 0;
+	uint8_t ucBssIdx = 0;
+	uint32_t u4Rate = 0;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
 	struct P2P_STATION_INFO rP2pStaInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PARAM_GET_STA_STATISTICS *prQuery;
 
 	ASSERT(wiphy);
 
@@ -1043,8 +1054,6 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 			return -EINVAL;
 
 		prP2pGlueInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
-
-		sinfo->filled = 0;
 
 		/* Get station information. */
 		/* 1. Inactive time? */
@@ -1060,55 +1069,53 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy, struct net_device *ndev,
 		sinfo->inactive_time = rP2pStaInfo.u4InactiveTime;
 		sinfo->generation = prP2pGlueInfo->i4Generation;
 
-		i4RetRslt = 0;
-	} while (FALSE);
-
-	return i4RetRslt;
-}
-#else
-int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
-		struct net_device *ndev,
-		u8 *mac, struct station_info *sinfo)
-{
-	int32_t i4RetRslt = -EINVAL;
-	uint8_t ucRoleIdx = 0;
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
-	struct P2P_STATION_INFO rP2pStaInfo;
-
-	ASSERT(wiphy);
-
-	do {
-		if ((wiphy == NULL) || (ndev == NULL)
-			|| (sinfo == NULL) || (mac == NULL))
-			break;
-
-		DBGLOG(P2P, TRACE, "mtk_p2p_cfg80211_get_station\n");
-
-		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
-
-		if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, &ucRoleIdx) != 0)
+		/* 2. fill TX rate */
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
 			return -EINVAL;
+		prBssInfo =
+			GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+		if (!prBssInfo) {
+			DBGLOG(P2P, WARN, "bss is not active\n");
+			return -EINVAL;
+		}
+		if (prBssInfo->eConnectionState
+			!= PARAM_MEDIA_STATE_CONNECTED) {
+			/* not connected */
+			DBGLOG(P2P, WARN, "not yet connected\n");
+			return 0;
+		}
 
-		prP2pGlueInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+		prQuery =
+			prGlueInfo->prAdapter->rWifiVar
+			.prP2pQueryStaStatistics[ucRoleIdx];
+		if (prQuery) {
+			u4Rate = prQuery->u2LinkSpeed * 5000;
+			i4Rssi = RCPI_TO_dBm(prQuery->ucRcpi);
+		}
 
-		sinfo->filled = 0;
+		sinfo->txrate.legacy = u4Rate / 1000;
+		sinfo->signal = i4Rssi;
 
-		/* Get station information. */
-		/* 1. Inactive time? */
-		p2pFuncGetStationInfo(prGlueInfo->prAdapter, mac, &rP2pStaInfo);
+		DBGLOG(P2P, INFO,
+			"ucRoleIdx = %d, rate = %u, signal = %d\n",
+			ucRoleIdx,
+			sinfo->txrate.legacy,
+			sinfo->signal);
 
-		/* Inactive time. */
-		sinfo->filled |= STATION_INFO_INACTIVE_TIME;
-		sinfo->inactive_time = rP2pStaInfo.u4InactiveTime;
-		sinfo->generation = prP2pGlueInfo->i4Generation;
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
+		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BITRATE);
+		sinfo->filled |= BIT(NL80211_STA_INFO_SIGNAL);
+#else
+		sinfo->filled |= STATION_INFO_TX_BITRATE;
+		sinfo->filled |= STATION_INFO_SIGNAL;
+#endif
 
 		i4RetRslt = 0;
 	} while (FALSE);
 
 	return i4RetRslt;
 }
-#endif
 
 int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		struct cfg80211_scan_request *request)

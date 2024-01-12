@@ -3241,7 +3241,9 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prQueryStaStatistics = prAdapter->rWifiVar.prP2pQueryStaStatistics;
+	prQueryStaStatistics =
+		prAdapter->rWifiVar.prP2pQueryStaStatistics
+		[prP2pRoleFsmInfo->ucRoleIndex];
 	if (!prQueryStaStatistics) {
 		DBGLOG(P2P, ERROR, "prQueryStaStatistics=NULL\n");
 		return;
