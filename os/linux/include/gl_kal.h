@@ -102,11 +102,7 @@ extern struct delayed_work sched_workq;
 ********************************************************************************
 */
 /* Define how many concurrent operation networks. */
-#ifdef CONNAC
-#define KAL_BSS_NUM             3    /* CONNAC workaround */
-#else
 #define KAL_BSS_NUM             4
-#endif /* CONNAC */
 
 #if CFG_DUAL_P2PLIKE_INTERFACE
 #define KAL_P2P_NUM             2
