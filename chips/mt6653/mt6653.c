@@ -30,6 +30,7 @@
 #include "coda/mt6653/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6653/wf_wfdma_host_dma0.h"
 #include "coda/mt6653/wf_wfdma_mcu_dma0.h"
+#include "coda/mt6653/wf_hif_dmashdl_top.h"
 #include "coda/mt6653/wf_pse_top.h"
 #include "coda/mt6653/pcie_mac_ireg.h"
 #include "coda/mt6653/conn_mcu_bus_cr.h"
@@ -1081,6 +1082,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
 #endif
+	.u4HostWfdmaBaseAddr = WF_WFDMA_HOST_DMA0_BASE,
+	.u4HostWfdmaWrapBaseAddr = WF_WFDMA_EXT_WRAP_CSR_BASE,
+	.u4McuWfdmaBaseAddr = WF_WFDMA_MCU_DMA0_BASE,
+	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if (CFG_SUPPORT_APS == 1)
 	.apsLinkPlanDecision = mt6653_apsLinkPlanDecision,

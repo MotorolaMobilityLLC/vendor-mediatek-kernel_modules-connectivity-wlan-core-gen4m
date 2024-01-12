@@ -17,6 +17,7 @@
 #include "bellwether.h"
 #include "coda/bellwether/wf_wfdma_host_dma0.h"
 #include "coda/bellwether/wf_wfdma_mcu_dma0.h"
+#include "coda/bellwether/wf_hif_dmashdl_top.h"
 #include "coda/bellwether/wf_pse_top.h"
 #include "coda/bellwether/pcie_mac_ireg.h"
 #include "coda/bellwether/conn_infra_rgu_on.h"
@@ -458,6 +459,10 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
 	.isSupportMddpAOR = false,
+	.u4HostWfdmaBaseAddr = WF_WFDMA_HOST_DMA0_BASE,
+	.u4HostWfdmaWrapBaseAddr = 0x7c027000,
+	.u4McuWfdmaBaseAddr = WF_WFDMA_MCU_DMA0_BASE,
+	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC),
 

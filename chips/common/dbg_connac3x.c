@@ -2121,13 +2121,22 @@ static void connac3x_show_wfdma_axi_debug_log(
 	struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t pdma_base_cr;
 	uint32_t i = 0;
 
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return;
+
 	if (enum_wfdma_type == WFDMA_TYPE_HOST)
-		pdma_base_cr = CONNAC3X_HOST_EXT_CONN_HIF_WRAP;
+		pdma_base_cr = prChipInfo->u4HostWfdmaWrapBaseAddr;
 	else
 		pdma_base_cr = CONNAC3X_MCU_INT_CONN_HIF_WRAP;
+	if (pdma_base_cr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaWrapBaseAddr is not set\n");
+		return;
+	}
 
 	for (i = 0; i < 13; i++) {
 		uint32_t target_cr = pdma_base_cr + 0x500 + (i * 4);
@@ -2145,10 +2154,14 @@ void connac3x_show_wfdma_interrupt_info(
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
 	uint32_t u4DmaNum)
 {
-	uint32_t idx;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4hostBaseCrAddr;
 	uint32_t u4DmaCfgCrAddr = 0;
 	uint32_t u4RegValue = 0;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return;
 
 	/* Dump Interrupt Status info */
 	DBGLOG(HAL, INFO, "Interrupt Status:\n");
@@ -2156,7 +2169,11 @@ void connac3x_show_wfdma_interrupt_info(
 	/* Dump Global Status CR */
 	u4hostBaseCrAddr = WFDMA_TYPE_HOST ?
 		CONNAC3X_MCU_INT_CONN_HIF_WRAP :
-		CONNAC3X_HOST_EXT_CONN_HIF_WRAP;
+		prChipInfo->u4HostWfdmaWrapBaseAddr;
+	if (u4hostBaseCrAddr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
+	}
 
 	u4DmaCfgCrAddr = CONNAC3X_WPDMA_EXT_INT_STA(u4hostBaseCrAddr);
 
@@ -2166,24 +2183,22 @@ void connac3x_show_wfdma_interrupt_info(
 		u4DmaCfgCrAddr, u4RegValue);
 
 	/* Dump PDMA Status CR */
-	for (idx = 0; idx < u4DmaNum; idx++) {
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			u4hostBaseCrAddr = idx ?
-				CONNAC3X_HOST_WPDMA_1_BASE :
-				CONNAC3X_HOST_WPDMA_0_BASE;
-		else
-			u4hostBaseCrAddr = idx ?
-				CONNAC3X_MCU_WPDMA_1_BASE :
-				CONNAC3X_MCU_WPDMA_0_BASE;
-
-		u4DmaCfgCrAddr = CONNAC3X_WPDMA_INT_STA(u4hostBaseCrAddr);
-
-		HAL_RMCR_RD(HIF_DBG, prAdapter,
-			       u4DmaCfgCrAddr, &u4RegValue);
-
-		DBGLOG(HAL, INFO, "\t WFDMA DMA %d INT STA(0x%08x): 0x%08x\n",
-				idx, u4DmaCfgCrAddr, u4RegValue);
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		u4hostBaseCrAddr = prChipInfo->u4HostWfdmaBaseAddr;
+	else
+		u4hostBaseCrAddr = prChipInfo->u4McuWfdmaBaseAddr;
+	if (u4hostBaseCrAddr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
 	}
+
+	u4DmaCfgCrAddr = CONNAC3X_WPDMA_INT_STA(u4hostBaseCrAddr);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    u4DmaCfgCrAddr, &u4RegValue);
+
+	DBGLOG(HAL, INFO, "\t WFDMA DMA INT STA(0x%08x): 0x%08x\n",
+	       u4DmaCfgCrAddr, u4RegValue);
 
 	/* Dump Interrupt Enable Info */
 	DBGLOG(HAL, INFO, "Interrupt Enable:\n");
@@ -2191,7 +2206,11 @@ void connac3x_show_wfdma_interrupt_info(
 	/* Dump Global Enable CR */
 	u4hostBaseCrAddr = WFDMA_TYPE_HOST ?
 		CONNAC3X_MCU_INT_CONN_HIF_WRAP :
-		CONNAC3X_HOST_EXT_CONN_HIF_WRAP;
+		prChipInfo->u4HostWfdmaWrapBaseAddr;
+	if (u4hostBaseCrAddr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
+	}
 
 	u4DmaCfgCrAddr = CONNAC3X_WPDMA_EXT_INT_MASK(u4hostBaseCrAddr);
 
@@ -2201,24 +2220,22 @@ void connac3x_show_wfdma_interrupt_info(
 		u4DmaCfgCrAddr, u4RegValue);
 
 	/* Dump PDMA Enable CR */
-	for (idx = 0; idx < u4DmaNum; idx++) {
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			u4hostBaseCrAddr = idx ?
-				CONNAC3X_HOST_WPDMA_1_BASE :
-				CONNAC3X_HOST_WPDMA_0_BASE;
-		else
-			u4hostBaseCrAddr = idx ?
-				CONNAC3X_MCU_WPDMA_1_BASE :
-				CONNAC3X_MCU_WPDMA_0_BASE;
-
-		u4DmaCfgCrAddr = CONNAC3X_WPDMA_INT_MASK(u4hostBaseCrAddr);
-
-		HAL_RMCR_RD(HIF_DBG, prAdapter,
-			       u4DmaCfgCrAddr, &u4RegValue);
-
-		DBGLOG(HAL, INFO, "\t WFDMA DMA %d INT ENA(0x%08x): 0x%08x\n",
-			idx, u4DmaCfgCrAddr, u4RegValue);
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		u4hostBaseCrAddr = prChipInfo->u4HostWfdmaBaseAddr;
+	else
+		u4hostBaseCrAddr = prChipInfo->u4McuWfdmaBaseAddr;
+	if (u4hostBaseCrAddr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
 	}
+
+	u4DmaCfgCrAddr = CONNAC3X_WPDMA_INT_MASK(u4hostBaseCrAddr);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    u4DmaCfgCrAddr, &u4RegValue);
+
+	DBGLOG(HAL, INFO, "\t WFDMA DMA INT ENA(0x%08x): 0x%08x\n",
+	       u4DmaCfgCrAddr, u4RegValue);
 }
 
 void connac3x_show_wfdma_glo_info(
@@ -2226,37 +2243,38 @@ void connac3x_show_wfdma_glo_info(
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
 	uint32_t u4DmaNum)
 {
-	uint32_t idx;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4hostBaseCrAddr;
 	uint32_t u4DmaCfgCrAddr = 0;
 	union WPDMA_GLO_CFG_STRUCT GloCfgValue = {0};
 
-	for (idx = 0; idx < u4DmaNum; idx++) {
-		if (enum_wfdma_type == WFDMA_TYPE_HOST)
-			u4hostBaseCrAddr = idx ?
-			CONNAC3X_HOST_WPDMA_1_BASE :
-			CONNAC3X_HOST_WPDMA_0_BASE;
-		else
-			u4hostBaseCrAddr = idx ?
-			CONNAC3X_MCU_WPDMA_1_BASE :
-			CONNAC3X_MCU_WPDMA_0_BASE;
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return;
 
-		u4DmaCfgCrAddr = CONNAC3X_WPDMA_GLO_CFG(u4hostBaseCrAddr);
-
-		HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCrAddr,
-			   &GloCfgValue.word);
-
-		DBGLOG(HAL, INFO, "WFDMA DMA (%d) GLO Config Info:\n", idx);
-		DBGLOG(INIT, INFO, "\t GLO Control (0x%08x): 0x%08x\n",
-			u4DmaCfgCrAddr, GloCfgValue.word);
-		DBGLOG(INIT, INFO,
-			"\t GLO Control EN T/R bit=(%d/%d), Busy T/R bit=(%d/%d)\n",
-			GloCfgValue.field_conn2x.tx_dma_en,
-			GloCfgValue.field_conn2x.rx_dma_en,
-			GloCfgValue.field_conn2x.tx_dma_busy,
-			GloCfgValue.field_conn2x.rx_dma_busy
-			);
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		u4hostBaseCrAddr = prChipInfo->u4HostWfdmaBaseAddr;
+	else
+		u4hostBaseCrAddr = prChipInfo->u4McuWfdmaBaseAddr;
+	if (u4hostBaseCrAddr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
 	}
+
+	u4DmaCfgCrAddr = CONNAC3X_WPDMA_GLO_CFG(u4hostBaseCrAddr);
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCrAddr,
+		    &GloCfgValue.word);
+
+	DBGLOG(HAL, INFO, "WFDMA DMA GLO Config Info:\n");
+	DBGLOG(INIT, INFO, "\t GLO Control (0x%08x): 0x%08x\n",
+	       u4DmaCfgCrAddr, GloCfgValue.word);
+	DBGLOG(INIT, INFO,
+	       "\t GLO Control EN T/R bit=(%d/%d), Busy T/R bit=(%d/%d)\n",
+	       GloCfgValue.field_conn2x.tx_dma_en,
+	       GloCfgValue.field_conn2x.rx_dma_en,
+	       GloCfgValue.field_conn2x.tx_dma_busy,
+	       GloCfgValue.field_conn2x.rx_dma_busy);
 }
 
 void connac3x_show_wfdma_ring_info(
@@ -2480,22 +2498,24 @@ static void connac3x_dump_wfdma_dbg_value(
 {
 #define BUF_SIZE 1024
 
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t pdma_base_cr;
 	uint32_t set_debug_flag_value;
 	char *buf;
 	uint32_t pos = 0;
 	uint32_t set_debug_cr, get_debug_cr, get_debug_value = 0;
 
-	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
-		if (wfdma_idx == 0)
-			pdma_base_cr = CONNAC3X_HOST_WPDMA_0_BASE;
-		else
-			pdma_base_cr = CONNAC3X_HOST_WPDMA_1_BASE;
-	} else {
-		if (wfdma_idx == 0)
-			pdma_base_cr = CONNAC3X_MCU_WPDMA_0_BASE;
-		else
-			pdma_base_cr = CONNAC3X_MCU_WPDMA_1_BASE;
+	glGetChipInfo((void **)&prChipInfo);
+	if (!prChipInfo)
+		return;
+
+	if (enum_wfdma_type == WFDMA_TYPE_HOST)
+		pdma_base_cr = prChipInfo->u4HostWfdmaBaseAddr;
+	else
+		pdma_base_cr = prChipInfo->u4McuWfdmaBaseAddr;
+	if (pdma_base_cr == 0) {
+		DBGLOG(HAL, ERROR, "WfdmaBaseAddr is not set\n");
+		return;
 	}
 
 	buf = (char *) kalMemAlloc(BUF_SIZE, VIR_MEM_TYPE);
@@ -2918,9 +2938,6 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	if (prSwEmiRingInfo->rOps.debug)
 		prSwEmiRingInfo->rOps.debug(prAdapter->prGlueInfo);
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
-
-	if (prChipInfo->is_support_wfdma1)
-		u4DmaNum++;
 
 	connac3x_show_wfdma_info_by_type(prAdapter, WFDMA_TYPE_HOST, u4DmaNum);
 	connac3x_show_wfdma_dbg_flag_log(prAdapter, WFDMA_TYPE_HOST, u4DmaNum);

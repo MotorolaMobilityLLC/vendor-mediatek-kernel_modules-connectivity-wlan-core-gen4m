@@ -26,6 +26,7 @@
 #include "coda/mt7925/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt7925/wf_wfdma_host_dma0.h"
 #include "coda/mt7925/wf_wfdma_mcu_dma0.h"
+#include "coda/mt7925/wf_hif_dmashdl_top.h"
 #include "coda/mt7925/wf_pse_top.h"
 #include "coda/mt7925/wf_top_cfg_on.h"
 #include "coda/mt7925/wf_top_cfg_on.h"
@@ -735,6 +736,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
+	.u4HostWfdmaBaseAddr = WF_WFDMA_HOST_DMA0_BASE,
+	.u4HostWfdmaWrapBaseAddr = WF_WFDMA_EXT_WRAP_CSR_BASE,
+	.u4McuWfdmaBaseAddr = WF_WFDMA_MCU_DMA0_BASE,
+	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 
 #if (CFG_SUPPORT_APS == 1)

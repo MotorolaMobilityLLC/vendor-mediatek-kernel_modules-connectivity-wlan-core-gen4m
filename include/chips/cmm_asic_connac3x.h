@@ -16,18 +16,6 @@
 #define CONNAC3X_WFDMA_DISP_MAX_CNT_MASK               0x000000FF
 #define CONNAC3X_WFDMA_DISP_BASE_PTR_MASK               0xFFFF0000
 
-#define CONNAC3X_MCU_WPDMA_0_BASE                      0x54000000
-#define CONNAC3X_MCU_WPDMA_1_BASE                      0x55000000
-#ifdef MT6653
-#define CONNAC3X_HOST_WPDMA_0_BASE                     0x20024000
-#define CONNAC3X_HOST_WPDMA_1_BASE                     0x20025000
-#define CONNAC3X_HOST_DMASHDL                          0x20026000
-#else
-#define CONNAC3X_HOST_WPDMA_0_BASE                     0x7c024000
-#define CONNAC3X_HOST_WPDMA_1_BASE                     0x7c025000
-#define CONNAC3X_HOST_DMASHDL                          0x7c026000
-#endif
-
 #define CONNAC3X_WPDMA_GLO_CFG(__BASE)                ((__BASE) + 0x0208)
 #define CONNAC3X_WPDMA_GLO_CFG_EXT0(__BASE)           ((__BASE) + 0x02B0)
 #define CONNAC3X_TX_RING_EXT_CTRL_BASE(__BASE)        ((__BASE) + 0x0600)
@@ -61,6 +49,7 @@
 #define CONNAC3X_NIC_TX_PSE_HEADER_LENGTH			16
 #define CONNAC3X_RX_INIT_EVENT_LENGTH                           8
 
+#define CONNAC3X_MCU_WPDMA_0_BASE                      0x54000000
 #define CONNAC3X_WFDMA_DUMMY_CR		(CONNAC3X_MCU_WPDMA_0_BASE + 0x120)
 #define CONNAC3X_WFDMA_NEED_REINIT_BIT	BIT(1)
 
@@ -68,11 +57,6 @@
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define CONNAC3X_CONN_HIF_ON_ADDR_REMAP23              0x7010
-#ifdef MT6653
-#define CONNAC3X_HOST_EXT_CONN_HIF_WRAP                0x20027000
-#else
-#define CONNAC3X_HOST_EXT_CONN_HIF_WRAP                0x7c027000
-#endif
 #define CONNAC3X_MCU_INT_CONN_HIF_WRAP                 0x57000000
 #define CONNAC3X_MAX_WFDMA_COUNT                       2
 

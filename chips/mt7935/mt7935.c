@@ -30,6 +30,7 @@
 #include "coda/mt7935/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt7935/wf_wfdma_host_dma0.h"
 #include "coda/mt7935/wf_wfdma_mcu_dma0.h"
+#include "coda/mt7935/wf_hif_dmashdl_top.h"
 #include "coda/mt7935/wf_pse_top.h"
 #include "coda/mt7935/pcie_mac_ireg.h"
 #include "coda/mt7935/conn_mcu_bus_cr.h"
@@ -281,11 +282,15 @@ struct PCIE_CHIP_CR_MAPPING mt7935_bus2chip_cr_mapping[] = {
 	{0x80010000, 0xd4000, 0x1000}, /* WF_AXIDMA */
 	{0x83010000, 0xe0000, 0x10000}, /* WF_PHY_MAP4 */
 	{0x88000000, 0xf0000, 0x10000}, /* WF_MCU_CFG_LS */
-	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
-	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
+	{0x20020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
+	{0x20060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
-	{0x7c030000, 0x160000, 0x10000}, /* CONN_INFRA_CCIF */
+	{0x20090000, 0x150000, 0x10000}, /* CONN_INFRA VON (RO) */
+	{0x20030000, 0x160000, 0x10000}, /* CONN_INFRA_CCIF */
+	{0x7c040000, 0x170000, 0x10000}, /* CONN_INFRA (bus, afe) */
+	{0x7c070000, 0x180000, 0x10000}, /* CONN_INFRA Semaphore */
+	{0x7c080000, 0x190000, 0x10000}, /* CONN_INFRA (coex, pta) */
 	{0x7c050000, 0x1a0000, 0x10000}, /* CONN_INFRA PCIE2AP REM */
 #if CFG_MTK_FPGA_PLATFORM != 1
 	{0x70010000, 0x1c0000, 0x10000},
@@ -950,6 +955,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7935 = {
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
 #endif
+	.u4HostWfdmaBaseAddr = WF_WFDMA_HOST_DMA0_BASE,
+	.u4HostWfdmaWrapBaseAddr = WF_WFDMA_EXT_WRAP_CSR_BASE,
+	.u4McuWfdmaBaseAddr = WF_WFDMA_MCU_DMA0_BASE,
+	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,

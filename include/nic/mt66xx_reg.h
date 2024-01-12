@@ -1524,6 +1524,11 @@ struct mt66xx_chip_info {
 	const bool isSupportMddpAOR;
 	const bool isSupportMddpSHM;
 
+	const uint32_t u4HostWfdmaBaseAddr;
+	const uint32_t u4HostWfdmaWrapBaseAddr;
+	const uint32_t u4McuWfdmaBaseAddr;
+	const uint32_t u4DmaShdlBaseAddr;
+
 	const struct ECO_INFO *eco_info;	/* chip version table */
 	uint8_t eco_ver;	/* chip version */
 	uint8_t ucPacketFormat;

@@ -19,6 +19,7 @@
 #include "coda/mt6655/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6655/wf_wfdma_host_dma0.h"
 #include "coda/mt6655/wf_wfdma_mcu_dma0.h"
+#include "coda/mt6655/wf_hif_dmashdl_top.h"
 #include "coda/mt6655/wf_pse_top.h"
 #include "coda/mt6655/pcie_mac_ireg.h"
 #include "coda/mt6655/conn_mcu_bus_cr.h"
@@ -648,6 +649,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6655 = {
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
 	.isSupportMddpAOR = false,
+	.u4HostWfdmaBaseAddr = WF_WFDMA_HOST_DMA0_BASE,
+	.u4HostWfdmaWrapBaseAddr = WF_WFDMA_EXT_WRAP_CSR_BASE,
+	.u4McuWfdmaBaseAddr = WF_WFDMA_MCU_DMA0_BASE,
+	.u4DmaShdlBaseAddr = WF_HIF_DMASHDL_TOP_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if IS_ENABLED(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
