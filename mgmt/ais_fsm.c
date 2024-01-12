@@ -5399,20 +5399,7 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 
 	nicUpdateBss(prAdapter, ucBssIndex);
 
-	if (!IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucQoS)) {
-		if (prStaRec->fgIsWmmSupported)
-			nicQmUpdateWmmParms(prAdapter, prStaRec->ucBssIndex);
-
-#if (CFG_SUPPORT_802_11AX == 1)
-		if (fgEfuseCtrlAxOn == 1) {
-			if (prStaRec->fgIsMuEdcaSupported ||
-				prAdapter->fgMuEdcaOverride) {
-				nicQmUpdateMUEdcaParams(prAdapter,
-					prStaRec->ucBssIndex);
-			}
-		}
-#endif
-	}
+	nicUpdateQos(prAdapter, prStaRec);
 
 	/* 4 <4.4> *DEFER OPERATION* nicPmIndicateBssConnected()
 	 * will be invoked

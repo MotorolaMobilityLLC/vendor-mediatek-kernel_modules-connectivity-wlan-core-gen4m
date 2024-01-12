@@ -459,8 +459,9 @@ void nicUpdateNetifTxThByBssId(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint32_t u4StopTh, uint32_t u4StartTh);
 
 /* BSS-INFO */
-uint32_t nicUpdateBss(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex);
+uint32_t nicUpdateBss(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+void nicUpdateQos(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec);
 
 uint32_t nicUpdateDscb(struct ADAPTER *prAdapter,
 			struct BSS_INFO *prBssInfo,

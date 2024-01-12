@@ -5527,11 +5527,6 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
-		/* MU EDCA params */
-		prBssInfo->ucMUEdcaUpdateCnt = 0;
-		kalMemSet(&prBssInfo->arMUEdcaParams[0], 0,
-		sizeof(struct _CMD_MU_EDCA_PARAMS_T) * WMM_AC_INDEX_NUM);
-
 		/* Spatial Reuse params */
 		prBssInfo->ucSRControl = 0;
 		prBssInfo->ucNonSRGObssPdMaxOffset = 0;
