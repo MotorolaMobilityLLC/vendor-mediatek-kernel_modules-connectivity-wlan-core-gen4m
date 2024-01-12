@@ -1395,6 +1395,9 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	uint8_t ucChannelBw = MAX_BW_80_80_MHZ;
+#endif
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex);
@@ -1462,6 +1465,18 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		}
 
 	}
+
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+	if (IS_BSS_AIS(prBssInfo) && prBssDesc)
+		ucChannelBw = rlmDomainGetChannelBw(prBssDesc->ucChannelNum);
+	else
+		ucChannelBw =
+			rlmDomainGetChannelBw(prBssInfo->ucPrimaryChannel);
+	if (ucMaxBandwidth > ucChannelBw)
+		ucMaxBandwidth = ucChannelBw;
+#endif
+	DBGLOG(CNM, INFO, "pCH=%d, BW=%d\n",
+		prBssInfo->ucPrimaryChannel, ucMaxBandwidth);
 
 	return ucMaxBandwidth;
 }
