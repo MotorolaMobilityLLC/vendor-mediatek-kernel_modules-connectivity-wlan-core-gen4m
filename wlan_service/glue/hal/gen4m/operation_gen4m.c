@@ -291,6 +291,7 @@ enum ENUM_RF_AT_FUNCID {
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	/* 11 be */
 	RF_AT_FUNCID_SET_PUNCTURE = 168,
+	RF_AT_FUNCID_GET_CFG_ON_OFF = 169,
 
 	/* Set FREQ OFFSET C2 */
 	RF_AT_FUNCID_SET_FREQ_OFFSET_C2_SET = 171,
@@ -2807,7 +2808,25 @@ s_int32 mt_op_get_cfg_on_off(
 	u_int32 type,
 	u_int32 *result)
 {
-	return SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct param_mtk_wifi_test_struct rf_at_info;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int32 buf_len = 0;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_CFG_ON_OFF;
+	rf_at_info.func_data = type;
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+	if (ret == SERV_STATUS_SUCCESS)
+		*result = rf_at_info.func_data;
+#endif
+
+	return ret;
 }
 
 s_int32 mt_op_get_tx_tone_pwr(
