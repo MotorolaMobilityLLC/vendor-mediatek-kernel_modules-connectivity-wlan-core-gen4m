@@ -5340,6 +5340,9 @@ void nicSerTimerHandler(IN struct ADAPTER *prAdapter,
 
 void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 {
+	if (prAdapter->chip_info->asicSerInit)
+		prAdapter->chip_info->asicSerInit(prAdapter, bAtResetFlow);
+
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
 		if (!bAtResetFlow) {
