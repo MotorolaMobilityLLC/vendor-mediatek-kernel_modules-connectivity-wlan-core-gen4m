@@ -1164,9 +1164,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	prP2pDev->needed_headroom =
 		NIC_TX_DESC_AND_PADDING_LENGTH + prChipInfo->txd_append_size;
 	prP2pDev->netdev_ops = &p2p_netdev_ops;
-#ifdef CONFIG_WIRELESS_EXT
-	prP2pDev->wireless_handlers = &wext_handler_def;
-#endif
 
 #if defined(_HIF_SDIO)
 #if (MTK_WCN_HIF_SDIO == 0)
@@ -1689,6 +1686,10 @@ static int p2pOpen(IN struct net_device *prDev)
 	netif_tx_start_all_queues(prDev);
 #endif
 
+#ifdef CONFIG_WIRELESS_EXT
+	prDev->wireless_handlers = &wext_handler_def;
+#endif
+
 	return 0;		/* success */
 }				/* end of p2pOpen() */
 
@@ -1769,6 +1770,10 @@ static int p2pStop(IN struct net_device *prDev)
 	netif_tx_stop_all_queues(prDev);
 	if (netif_carrier_ok(prDev))
 		netif_carrier_off(prDev);
+
+#ifdef CONFIG_WIRELESS_EXT
+	prDev->wireless_handlers = NULL;
+#endif
 
 	return 0;
 }				/* end of p2pStop() */
