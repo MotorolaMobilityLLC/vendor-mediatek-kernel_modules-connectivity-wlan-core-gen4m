@@ -1743,9 +1743,6 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 		}
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
-#if (CFG_SUPPORT_STATISTICS == 1)
-		STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
-#endif
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
 			do {
