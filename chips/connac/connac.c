@@ -365,11 +365,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.asicEnableFWDownload = asicEnableFWDownload,
 	.asicGetChipID = asicGetChipID,
 	.downloadBufferBin = NULL,
-#if CFG_MTK_ANDROID_WMT
-	.showTaskStack = connectivity_export_show_stack,
-#else
 	.showTaskStack = NULL,
-#endif
 	.is_support_hw_amsdu = FALSE,
 	.ucMaxSwAmsduNum = 4,
 	.ucMaxSwapAntenna = 2,

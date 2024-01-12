@@ -118,8 +118,6 @@ struct HIF_MEM_OPS {
 			   struct RTMP_DMACB *pRxCell,
 			   struct RTMP_DMABUF *prDmaBuf,
 			   struct SW_RFB *prSwRfb);
-	void (*flushCache)(struct GL_HIF_INFO *prHifInfo,
-			   void *pucSrc, uint32_t u4Len);
 	phys_addr_t (*mapTxBuf)(struct GL_HIF_INFO *prHifInfo,
 			  void *pucBuf, uint32_t u4Offset, uint32_t u4Len);
 	phys_addr_t (*mapRxBuf)(struct GL_HIF_INFO *prHifInfo,
