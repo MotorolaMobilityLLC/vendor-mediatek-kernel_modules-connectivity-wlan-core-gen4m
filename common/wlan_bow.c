@@ -153,50 +153,52 @@ wlanoidSendSetQueryBowCmd(IN struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
-	uint8_t ucCmdSeqNum;
+	u_int8_t *pWifiCmdBufAddr;
+	struct mt66xx_chip_info *prChipInfo;
+	uint16_t cmd_size;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
 	ASSERT(prGlueInfo);
 
 	DBGLOG(REQ, TRACE, "Command ID = 0x%08X\n", ucCID);
 
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, (CMD_HDR_SIZE + u4SetQueryInfoLen));
+	cmd_size = prChipInfo->u2CmdTxHdrSize + u4SetQueryInfoLen;
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-	DBGLOG(REQ, TRACE, "ucCmdSeqNum =%d\n", ucCmdSeqNum);
 
 	/* Setup common CMD Info Packet */
 	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = (uint16_t) (CMD_HDR_SIZE + u4SetQueryInfoLen);
+	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = pfCmdDoneHandler;
 	prCmdInfo->pfCmdTimeoutHandler = pfCmdTimeoutHandler;
 	prCmdInfo->fgIsOid = FALSE;
 	prCmdInfo->ucCID = ucCID;
 	prCmdInfo->fgSetQuery = fgSetQuery;
 	prCmdInfo->fgNeedResp = fgNeedResp;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
 	prCmdInfo->pvInformationBuffer = NULL;
 	prCmdInfo->u4InformationBufferLength = 0;
 	prCmdInfo->u4PrivateData = (uint32_t) ucSeqNumber;
 
-	/* Setup WIFI_CMD_T (no payload) */
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
+	/* Setup WIFI_CMD (no payload) */
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery,
+		&pWifiCmdBufAddr, FALSE, 0, S2D_INDEX_CMD_H2N);
 
 	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
-		kalMemCopy(prWifiCmd->aucBuffer, pucInfoBuffer, u4SetQueryInfoLen);
+		kalMemCopy(pWifiCmdBufAddr, pucInfoBuffer, u4SetQueryInfoLen);
 	/* insert into prCmdQueue */
 	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
 

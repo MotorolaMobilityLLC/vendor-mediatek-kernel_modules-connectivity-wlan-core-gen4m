@@ -1005,6 +1005,11 @@ struct TX_DESC_OPS_T {
 	void (*fillTxByteCount)(IN struct ADAPTER *prAdapter,
 		IN struct MSDU_INFO *prMsduInfo,
 		struct HW_MAC_TX_DESC *prTxDesc);
+
+	/* TXD Handle APIs */
+	uint8_t (*nic_txd_long_format_op)(
+		IN void *prTxDesc,
+		IN uint8_t fgSet);
 };
 
 /*******************************************************************************

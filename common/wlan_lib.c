@@ -478,7 +478,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		if (u4Status != WLAN_STATUS_SUCCESS)
 			break;
 
-
 #if CFG_ENABLE_FW_DOWNLOAD
 		/* 4 <8> FW/patch download */
 
@@ -2432,20 +2431,22 @@ uint32_t wlanSendDummyCmd(IN struct ADAPTER *prAdapter,
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
 
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, CMD_HDR_SIZE);
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
+		prChipInfo->u2CmdTxHdrSize);
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
 	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = (uint16_t) CMD_HDR_SIZE;
+	prCmdInfo->u2InfoBufLen = (uint16_t) prChipInfo->u2CmdTxHdrSize;
 	prCmdInfo->pfCmdDoneHandler = NULL;
 	prCmdInfo->pfCmdTimeoutHandler = NULL;
 	prCmdInfo->fgIsOid = TRUE;
@@ -2455,13 +2456,13 @@ uint32_t wlanSendDummyCmd(IN struct ADAPTER *prAdapter,
 	prCmdInfo->ucCmdSeqNum = 0;
 	prCmdInfo->u4SetInfoLen = 0;
 
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery, NULL, FALSE, 0, S2D_INDEX_CMD_H2N);
 
 	if (fgIsReqTxRsrc) {
 		if (wlanSendCommand(prAdapter,
@@ -2500,16 +2501,20 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER
 	uint32_t status = WLAN_STATUS_SUCCESS;
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
-	uint8_t ucTC, ucCmdSeqNum;
+	uint8_t ucTC;
+	struct CMD_NIC_POWER_CTRL *pNicPwrCtrl;
+	struct mt66xx_chip_info *prChipInfo;
+	uint16_t cmd_size;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
 
 	/* 1. Prepare CMD */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, (CMD_HDR_SIZE +
-					sizeof(struct CMD_NIC_POWER_CTRL)));
+	cmd_size =
+		prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_NIC_POWER_CTRL);
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 #if CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM
@@ -2519,36 +2524,28 @@ uint32_t wlanSendNicPowerCtrlCmd(IN struct ADAPTER
 		return WLAN_STATUS_FAILURE;
 	}
 
-	/* 2.1 increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-	DBGLOG(REQ, TRACE, "ucCmdSeqNum =%d\n", ucCmdSeqNum);
-
 	/* 2.2 Setup common CMD Info Packet */
 	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = (uint16_t) (CMD_HDR_SIZE + sizeof(
-			struct CMD_NIC_POWER_CTRL));
+	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = NULL;
 	prCmdInfo->pfCmdTimeoutHandler = NULL;
 	prCmdInfo->fgIsOid = TRUE;
 	prCmdInfo->ucCID = CMD_ID_NIC_POWER_CTRL;
 	prCmdInfo->fgSetQuery = TRUE;
 	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 	prCmdInfo->u4SetInfoLen = sizeof(struct CMD_NIC_POWER_CTRL);
 
 	/* 2.3 Setup WIFI_CMD_T */
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen, prCmdInfo->ucCID,
+		CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery,
+		&pNicPwrCtrl, FALSE, 0, S2D_INDEX_CMD_H2N);
 
-	kalMemZero(prWifiCmd->aucBuffer,
-		   sizeof(struct CMD_NIC_POWER_CTRL));
-	((struct CMD_NIC_POWER_CTRL *) (
-		 prWifiCmd->aucBuffer))->ucPowerMode = ucPowerMode;
+	kalMemZero(pNicPwrCtrl, sizeof(struct CMD_NIC_POWER_CTRL));
+	pNicPwrCtrl->ucPowerMode = ucPowerMode;
 
 	/* 3. Issue CMD for entering specific power mode */
 	ucTC = TC4_INDEX;
@@ -2686,6 +2683,7 @@ uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter)
 	return u4Status;
 }
 
+#if (CFG_ENABLE_FW_DOWNLOAD == 1)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to read/write a certain N9
@@ -2707,9 +2705,6 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct CMD_INFO *prCmdInfo;
-	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
-	struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES
-			*prInitHifTxHeaderPending;
 	struct INIT_WIFI_EVENT *prInitEvent;
 	struct INIT_CMD_ACCESS_REG *prInitCmdAccessReg;
 	struct INIT_EVENT_ACCESS_REG *prInitEventAccessReg;
@@ -2752,31 +2747,17 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 	ucTC = TC0_INDEX;
 #endif
 
-	/* 3. increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-
-	/* 4. Setup common CMD Info Packet */
-	prInitHifTxHeaderPending =
-		(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES *)
-		(prCmdInfo->pucInfoBuffer);
-	prInitHifTxHeader = (struct INIT_HIF_TX_HEADER *)
-		(prCmdInfo->pucInfoBuffer +
-		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES));
-
-	prInitHifTxHeaderPending->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeaderPending->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeaderPending->ucHeaderFormat = INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeaderPending->ucPktFt = INIT_PKT_FT_CMD;
-
-	prInitHifTxHeader->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prInitHifTxHeader->u2PQ_ID = INIT_CMD_PQ_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucCID = INIT_CMD_ID_ACCESS_REG;
-	prInitHifTxHeader->rInitWifiCmd.ucPktTypeID = INIT_CMD_PACKET_TYPE_ID;
-	prInitHifTxHeader->rInitWifiCmd.ucSeqNum = ucCmdSeqNum;
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+			prCmdInfo->pucInfoBuffer,
+			prCmdInfo->u2InfoBufLen,
+			INIT_CMD_ID_ACCESS_REG,
+			INIT_CMD_PACKET_TYPE_ID,
+			&ucCmdSeqNum,
+			FALSE,
+			(void **)&prInitCmdAccessReg,
+			TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	/* 5. Setup CMD_ACCESS_REG */
-	prInitCmdAccessReg = (struct INIT_CMD_ACCESS_REG *)
-				(prInitHifTxHeader->rInitWifiCmd.aucBuffer);
 	prInitCmdAccessReg->ucSetQuery = ucSetQuery;
 	prInitCmdAccessReg->u4Address = u4Addr;
 	prInitCmdAccessReg->u4Data = u4Data;
@@ -2905,6 +2886,8 @@ uint32_t wlanAccessRegisterStatus(IN struct ADAPTER *prAdapter,
 
 	return u4Status;
 }
+#endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is called to process queued RX packets
@@ -3131,65 +3114,48 @@ uint32_t wlanUpdateNetworkAddress(IN struct ADAPTER
 /*----------------------------------------------------------------------------*/
 uint32_t wlanUpdateBasicConfig(IN struct ADAPTER *prAdapter)
 {
-	uint8_t ucCmdSeqNum;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
 	struct CMD_BASIC_CONFIG *prCmdBasicConfig;
-	struct PSE_CMD_HDR *prPseCmdHdr;
 	uint32_t rResult;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct mt66xx_chip_info *prChipInfo;
+	uint16_t cmd_size;
 
 	DEBUGFUNC("wlanUpdateBasicConfig");
 
 	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-				CMD_HDR_SIZE + sizeof(struct CMD_BASIC_CONFIG));
+	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_BASIC_CONFIG);
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
 
 	/* compose CMD_BUILD_CONNECTION cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = CMD_HDR_SIZE + sizeof(
-					  struct CMD_BASIC_CONFIG);
+	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = NULL;
 	prCmdInfo->pfCmdTimeoutHandler = NULL;
 	prCmdInfo->fgIsOid = FALSE;
 	prCmdInfo->ucCID = CMD_ID_BASIC_CONFIG;
 	prCmdInfo->fgSetQuery = TRUE;
 	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 	prCmdInfo->u4SetInfoLen = sizeof(struct CMD_BASIC_CONFIG);
 
 	/* Setup WIFI_CMD_T */
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
-
-	prPseCmdHdr = (struct PSE_CMD_HDR *) (
-			      prCmdInfo->pucInfoBuffer);
-	prPseCmdHdr->u2Qidx = TXD_Q_IDX_MCU_RQ0;
-	prPseCmdHdr->u2Pidx = TXD_P_IDX_MCU;
-	prPseCmdHdr->u2Hf = TXD_HF_CMD;
-	prPseCmdHdr->u2Ft = TXD_FT_LONG_FORMAT;
-	prPseCmdHdr->u2PktFt = TXD_PKT_FT_CMD;
-
-	prWifiCmd->u2Length = prWifiCmd->u2TxByteCount - sizeof(
-				      struct PSE_CMD_HDR);
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		CMD_PACKET_TYPE_ID,
+		&prCmdInfo->ucCmdSeqNum,
+		prCmdInfo->fgSetQuery,
+		&prCmdBasicConfig, FALSE, 0, S2D_INDEX_CMD_H2N);
 
 	/* configure CMD_BASIC_CONFIG */
-
-	prCmdBasicConfig = (struct CMD_BASIC_CONFIG *) (
-				   prWifiCmd->aucBuffer);
 	kalMemZero(prCmdBasicConfig,
 		   sizeof(struct CMD_BASIC_CONFIG));
 	prCmdBasicConfig->ucNative80211 = 0;
@@ -3742,16 +3708,14 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 {
 	struct mt66xx_chip_info *prChipInfo;
 	uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
-	uint8_t ucCmdSeqNum;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
 	uint32_t u4RxPktLength;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
 	struct HW_MAC_RX_DESC *prRxStatus;
 	struct WIFI_EVENT *prEvent;
 	struct EVENT_NIC_CAPABILITY *prEventNicCapability;
-	struct PSE_CMD_HDR *prPseCmdHdr;
+	uint16_t cmd_size;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -3759,8 +3723,9 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 	DEBUGFUNC("wlanQueryNicCapability");
 
 	/* 1. Allocate CMD Info Packet and its Buffer */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-			CMD_HDR_SIZE + sizeof(struct EVENT_NIC_CAPABILITY));
+	cmd_size = prChipInfo->u2CmdTxHdrSize
+			+ sizeof(struct EVENT_NIC_CAPABILITY);
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
@@ -3770,40 +3735,25 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 		sizeof(struct EVENT_NIC_CAPABILITY);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-
 	/* compose CMD_BUILD_CONNECTION cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = CMD_HDR_SIZE + sizeof(
-					  struct EVENT_NIC_CAPABILITY);
+	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = NULL;
 	prCmdInfo->fgIsOid = FALSE;
 	prCmdInfo->ucCID = CMD_ID_GET_NIC_CAPABILITY;
 	prCmdInfo->fgSetQuery = FALSE;
 	prCmdInfo->fgNeedResp = TRUE;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 	prCmdInfo->u4SetInfoLen = 0;
 
 	/* Setup WIFI_CMD_T */
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
-
-	prPseCmdHdr = (struct PSE_CMD_HDR *) (
-			      prCmdInfo->pucInfoBuffer);
-	prPseCmdHdr->u2Qidx = TXD_Q_IDX_MCU_RQ0;
-	prPseCmdHdr->u2Pidx = TXD_P_IDX_MCU;
-	prPseCmdHdr->u2Hf = TXD_HF_CMD;
-	prPseCmdHdr->u2Ft = TXD_FT_LONG_FORMAT;
-	prPseCmdHdr->u2PktFt = TXD_PKT_FT_CMD;
-
-	prWifiCmd->u2Length = prWifiCmd->u2TxByteCount - sizeof(
-				      struct PSE_CMD_HDR);
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+			prCmdInfo->pucInfoBuffer,
+			prCmdInfo->u2InfoBufLen,
+			prCmdInfo->ucCID,
+			CMD_PACKET_TYPE_ID,
+			&prCmdInfo->ucCmdSeqNum,
+			prCmdInfo->fgSetQuery,
+			NULL, FALSE, 0, S2D_INDEX_CMD_H2N);
 
 	wlanSendCommand(prAdapter, prCmdInfo);
 
@@ -3820,7 +3770,7 @@ uint32_t wlanQueryNicCapability(IN struct ADAPTER
 		}
 		/* header checking .. */
 		prRxStatus = (struct HW_MAC_RX_DESC *) aucBuffer;
-		if (prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT) {
+		if (prRxStatus->u2PktTYpe != prChipInfo->u2RxSwPktEvent) {
 			DBGLOG(INIT, WARN,
 			       "%s: skip unexpected Rx pkt type[0x%04x]\n",
 			       __func__, prRxStatus->u2PktTYpe);
@@ -3940,22 +3890,21 @@ uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 			struct PARAM_MCR_RW_STRUCT *prMcrRdInfo)
 {
 	struct mt66xx_chip_info *prChipInfo;
-	uint8_t ucCmdSeqNum;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
 	uint32_t u4RxPktLength;
 	uint8_t *aucBuffer;
 	uint32_t u4EventSize;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	struct WIFI_EVENT *prEvent;
 	struct CMD_ACCESS_REG *prCmdMcrQuery;
+	uint16_t u2PacketType;
+	uint16_t cmd_size;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
 
 	/* 1. Allocate CMD Info Packet and its Buffer */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
-				CMD_HDR_SIZE + sizeof(struct CMD_ACCESS_REG));
+	cmd_size = prChipInfo->u2CmdTxHdrSize + sizeof(struct CMD_ACCESS_REG);
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 
 	if (!prCmdInfo) {
 		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
@@ -3966,31 +3915,28 @@ uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 		struct CMD_ACCESS_REG;
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 
-	/* increase command sequence number */
-	ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
-
 	/* compose CMD_BUILD_CONNECTION cmd pkt */
 	prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-	prCmdInfo->u2InfoBufLen = (uint16_t) (CMD_HDR_SIZE + sizeof(
-			struct CMD_ACCESS_REG));
+	prCmdInfo->u2InfoBufLen = cmd_size;
 	prCmdInfo->pfCmdDoneHandler = NULL;
 	prCmdInfo->pfCmdTimeoutHandler = nicOidCmdTimeoutCommon;
 	prCmdInfo->fgIsOid = FALSE;
 	prCmdInfo->ucCID = CMD_ID_ACCESS_REG;
 	prCmdInfo->fgSetQuery = FALSE;
 	prCmdInfo->fgNeedResp = TRUE;
-	prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 	prCmdInfo->u4SetInfoLen = sizeof(struct CMD_ACCESS_REG);
 
 	/* Setup WIFI_CMD_T */
-	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-	prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-	prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-	prWifiCmd->ucCID = prCmdInfo->ucCID;
-	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-	prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
-	kalMemCopy(prWifiCmd->aucBuffer, prMcrRdInfo,
+	NIC_FILL_CMD_TX_HDR(
+			prAdapter,
+			prCmdInfo->pucInfoBuffer,
+			prCmdInfo->u2InfoBufLen,
+			prCmdInfo->ucCID,
+			CMD_PACKET_TYPE_ID,
+			&prCmdInfo->ucCmdSeqNum,
+			prCmdInfo->fgSetQuery,
+			&prCmdMcrQuery, FALSE, 0, S2D_INDEX_CMD_H2N);
+	kalMemCopy(prCmdMcrQuery, prMcrRdInfo,
 		   sizeof(struct CMD_ACCESS_REG));
 
 	wlanSendCommand(prAdapter, prCmdInfo);
@@ -4002,8 +3948,8 @@ uint32_t wlanQueryPdMcr(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 	/* header checking .. */
-	prRxStatus = (struct HW_MAC_RX_DESC *) aucBuffer;
-	if (prRxStatus->u2PktTYpe != RXM_RXD_PKT_TYPE_SW_EVENT) {
+	u2PacketType = NIC_RX_GET_PKT_TYPE(aucBuffer);
+	if (u2PacketType != RX_PKT_TYPE_SW_DEFINED) {
 		kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
 		return WLAN_STATUS_FAILURE;
 	}
@@ -5492,9 +5438,7 @@ void wlanQueryNicResourceInformation(IN struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 {
-	uint8_t ucCmdSeqNum;
 	struct CMD_INFO *prCmdInfo;
-	struct WIFI_CMD *prWifiCmd;
 	uint32_t u4RxPktLength;
 	uint8_t *prEventBuff;
 	struct HW_MAC_RX_DESC *prRxStatus;
@@ -5521,37 +5465,34 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 		 */
 
 		/* 1. Allocate CMD Info Packet and its Buffer */
-		prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, CMD_HDR_SIZE);
+		prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
+			prChipInfo->u2CmdTxHdrSize);
 		if (!prCmdInfo) {
 			DBGLOG(INIT, ERROR,
 			       "Allocate CMD_INFO_T ==> FAILED.\n");
 			return WLAN_STATUS_FAILURE;
 		}
-		/* increase command sequence number */
-		ucCmdSeqNum = nicIncreaseCmdSeqNum(prAdapter);
 
 		/* compose CMD_BUILD_CONNECTION cmd pkt */
 		prCmdInfo->eCmdType = COMMAND_TYPE_GENERAL_IOCTL;
-		prCmdInfo->u2InfoBufLen = CMD_HDR_SIZE;
+		prCmdInfo->u2InfoBufLen = prChipInfo->u2CmdTxHdrSize;
 		prCmdInfo->pfCmdDoneHandler = NULL;
 		prCmdInfo->fgIsOid = FALSE;
 		prCmdInfo->ucCID = CMD_ID_GET_NIC_CAPABILITY_V2;
 		prCmdInfo->fgSetQuery = FALSE;
 		prCmdInfo->fgNeedResp = TRUE;
-		prCmdInfo->ucCmdSeqNum = ucCmdSeqNum;
 		prCmdInfo->u4SetInfoLen = 0;
 
 		/* Setup WIFI_CMD_T */
-		prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
-		prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
-		prWifiCmd->u2PQ_ID = CMD_PQ_ID;
-		prWifiCmd->ucPktTypeID = CMD_PACKET_TYPE_ID;
-		prWifiCmd->ucCID = prCmdInfo->ucCID;
-		prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
-		prWifiCmd->ucSeqNum = prCmdInfo->ucCmdSeqNum;
-
-		prWifiCmd->u2Length = prCmdInfo->u2InfoBufLen -
-				(uint16_t) OFFSET_OF(struct WIFI_CMD, u2Length);
+		NIC_FILL_CMD_TX_HDR(
+			prAdapter,
+			prCmdInfo->pucInfoBuffer,
+			prCmdInfo->u2InfoBufLen,
+			prCmdInfo->ucCID,
+			CMD_PACKET_TYPE_ID,
+			&prCmdInfo->ucCmdSeqNum,
+			prCmdInfo->fgSetQuery,
+			NULL, FALSE, 0, S2D_INDEX_CMD_H2N);
 
 		wlanSendCommand(prAdapter, prCmdInfo);
 
@@ -5599,8 +5540,8 @@ uint32_t wlanQueryNicCapabilityV2(IN struct ADAPTER *prAdapter)
 			/* header checking .. */
 			prRxStatus = (struct HW_MAC_RX_DESC *) prEventBuff;
 			if ((prRxStatus->u2PktTYpe &
-			    RXM_RXD_PKT_TYPE_SW_BITMAP) !=
-			    RXM_RXD_PKT_TYPE_SW_EVENT) {
+				prChipInfo->u2RxSwPktBitMap) !=
+				prChipInfo->u2RxSwPktEvent) {
 				DBGLOG(INIT, WARN,
 				       "%s: skip unexpected Rx pkt type[0x%04x]\n",
 				       __func__, prRxStatus->u2PktTYpe);

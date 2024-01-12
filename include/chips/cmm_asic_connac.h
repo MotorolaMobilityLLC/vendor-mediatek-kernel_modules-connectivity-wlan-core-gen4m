@@ -147,13 +147,7 @@ void asicFillCmdTxd(
 	struct WIFI_CMD_INFO *prCmdInfo,
 	u_int8_t *pucSeqNum,
 	void **pCmdBuf);
-void asicParseInitEventRxInfo(
-	struct ADAPTER *prAdapter,
-	u_int8_t *paucInBuffer,
-	struct WIFI_EVENT_INFO *prEventInfo);
-void asicParseEventRxInfo(
-	struct ADAPTER *prAdapter,
-	u_int8_t *paucInBuffer,
-	struct WIFI_EVENT_INFO *prEventInfo);
+void asicInitTxdHook(
+	struct TX_DESC_OPS_T *prTxDescOps);
 #endif /* _CMM_ASIC_CONNAC_H */
 

@@ -135,7 +135,7 @@ else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), axi)
     ccflags-y += -D_HIF_AXI=1
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), ut)
-    # Increase frame size to 2048 because of ‘cfg80211_connect_result’ exceed stack size
+    # Increase frame size to 2048 because of 'cfg80211_connect_result' exceed stack size
     ccflags-y += -D_HIF_UT=1 -Wno-unused-function -Wno-unused-variable -Wframe-larger-than=2048
 else
     $(error Unsuppoted HIF=$(CONFIG_MTK_COMBO_WIFI_HIF)!!)
@@ -277,6 +277,7 @@ COMMON_OBJS := 	$(COMMON_DIR)dump.o \
 
 NIC_OBJS := 	$(NIC_DIR)nic.o \
 		$(NIC_DIR)nic_tx.o \
+		$(NIC_DIR)nic_txd_v1.o \
 		$(NIC_DIR)nic_rx.o \
 		$(NIC_DIR)nic_pwr_mgt.o \
 		$(NIC_DIR)nic_rate.o \

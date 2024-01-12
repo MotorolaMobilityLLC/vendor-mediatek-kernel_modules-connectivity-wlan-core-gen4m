@@ -3949,6 +3949,29 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+	else if ((prEvent->ucExtenEID) == EXT_EVENT_ID_MAC_INFO) {
+		u4QueryInfoLen = sizeof(struct EXT_EVENT_MAC_INFO_T);
+		prCmdInfo =
+			nicGetPendingCmdInfo(prAdapter,
+				prEvent->ucSeqNum);
+
+		if (prCmdInfo != NULL) {
+			if (prCmdInfo->pfCmdDoneHandler) {
+				prCmdInfo->pfCmdDoneHandler(
+					prAdapter,
+					prCmdInfo,
+					prEvent->aucBuffer
+				);
+			} else if ((prCmdInfo->fgIsOid) != 0)
+				kalOidComplete(
+					prAdapter->prGlueInfo,
+					prCmdInfo->fgSetQuery,
+					u4QueryInfoLen,
+					WLAN_STATUS_SUCCESS);
+			/* return prCmdInfo */
+			cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+		}
+	}
 }
 
 void nicEventMicErrorInfo(IN struct ADAPTER *prAdapter,

@@ -1065,6 +1065,11 @@ struct mt66xx_chip_info {
 	uint16_t u2TxInitCmdPort;
 	uint16_t u2TxFwDlPort;
 	uint16_t u2HifTxdSize;
+	uint16_t u2CmdTxHdrSize;
+	uint16_t u2RxSwPktBitMap;
+	uint16_t u2RxSwPktEvent;
+	uint16_t u2RxSwPktFrame;
+
 	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;
@@ -1082,12 +1087,6 @@ struct mt66xx_chip_info {
 	void (*asicFillCmdTxd)(IN struct ADAPTER *prAdapter,
 		IN struct WIFI_CMD_INFO *prCmdInfo,
 		OUT uint8_t *pucSeqNum, OUT void **pCmdBuf);
-	void (*asicParseInitEventRxInfo)(IN struct ADAPTER *prAdapter,
-		IN uint8_t *paucInBuffer,
-		OUT struct WIFI_EVENT_INFO *prEventInfo);
-	void (*asicParseEventRxInfo)(IN struct ADAPTER *prAdapter,
-		IN uint8_t *paucInBuffer,
-		OUT struct WIFI_EVENT_INFO *prEventInfo);
 	uint32_t (*asicGetChipID)(IN struct ADAPTER *prAdapter);
 	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
 	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
