@@ -3660,13 +3660,22 @@ static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prStarec = LINK_PEEK_HEAD(prStarecList,
-		struct STA_RECORD, rLinkEntryMld);
-	prMldStarec->u2PrimaryMldId = prStarec ? prStarec->ucWlanIndex : 0;
-
-	prStarec = LINK_PEEK_TAIL(prStarecList,
-		struct STA_RECORD, rLinkEntryMld);
-	prMldStarec->u2SecondMldId = prStarec ? prStarec->ucWlanIndex : 0;
+	/* get the primary and second link mldid */
+	i = 0;
+	prMldStarec->u2PrimaryMldId = 0;
+	prMldStarec->u2SecondMldId = 0;
+	LINK_FOR_EACH_ENTRY(prStarec, prStarecList,
+			rLinkEntryMld, struct STA_RECORD) {
+		if (i == 0)
+			prMldStarec->u2PrimaryMldId =
+				prStarec ? prStarec->ucWlanIndex : 0;
+		else if (i == 1) {
+			prMldStarec->u2SecondMldId =
+				prStarec ? prStarec->ucWlanIndex : 0;
+			break;
+		}
+		i++;
+	}
 
 	kalMemZero(prMldStarec->aucStrBitmap, UNI_MLD_LINK_MAX);
 	for (i = 0; i < UNI_MLD_LINK_MAX; i++) {

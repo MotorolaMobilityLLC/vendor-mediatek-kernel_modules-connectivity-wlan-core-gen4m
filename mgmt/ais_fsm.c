@@ -9320,10 +9320,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		if (prBss->prStaRecOfAP)
 			prBss->prStaRecOfAP->fgIsTxAllowed = FALSE;
 
-		if (i == 0)
-			prSubReq = prMsgChReq;
-		else
-			prSubReq = (struct MSG_CH_REQ *)&prMsgChReq->aucBuffer[i];
+		prSubReq = (struct MSG_CH_REQ *)&prMsgChReq[i];
 
 		prSubReq->ucBssIndex = prBss->ucBssIndex;
 #if CFG_SUPPORT_DBDC
