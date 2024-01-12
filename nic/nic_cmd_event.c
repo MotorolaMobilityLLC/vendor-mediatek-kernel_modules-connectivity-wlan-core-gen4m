@@ -2576,7 +2576,7 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 	wlanCfgSetUint32(prAdapter, "StbcTx", prAdapter->rWifiVar.ucTxStbc);
 	prAdapter->rWifiVar.ucRxStbc &= prPhyCap->ucRxStbc;
 	wlanCfgSetUint32(prAdapter, "StbcRx", prAdapter->rWifiVar.ucRxStbc);
-
+	prAdapter->rWifiVar.u4PhyMaxBandwidth = prPhyCap->ucMaxBandwidth;
 
 	if ((prPhyCap->ucWifiPath != 0xF) && (prPhyCap->ucWifiPath != 0x3)) {
 		/* May be legal settings in the future */

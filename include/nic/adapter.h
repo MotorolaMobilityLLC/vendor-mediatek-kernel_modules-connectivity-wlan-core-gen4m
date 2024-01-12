@@ -1436,6 +1436,7 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 	int8_t icTxPwrEnvLmtMin;
 #endif
+	uint32_t u4PhyMaxBandwidth;
 };
 
 /* cnm_timer module */
