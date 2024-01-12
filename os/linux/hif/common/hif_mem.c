@@ -71,7 +71,7 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 
 	page = wifi_page_pool_alloc_page();
 	if (!page) {
-		DBGLOG(HAL, ERROR, "allocate page fail\n");
+		DBGLOG_LIMITED(HAL, ERROR, "allocate page fail\n");
 		return NULL;
 	}
 
