@@ -1179,6 +1179,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		/* set FALSE after wifi init flow or reset (not reinit WFDMA) */
 		prAdapter->fgIsFwDownloaded = FALSE;
 
+		nicpmWakeUpWiFi(prAdapter);
+
 		DBGLOG(INIT, INFO,
 		       "wlanAdapterStart(): Acquiring LP-OWN\n");
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
@@ -1393,8 +1395,10 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		/* Enable interrupt */
 		nicEnableInterrupt(prAdapter);
+
 		/* init SER module */
-		nicSerInit(prAdapter);
+		nicSerInit(prAdapter, bAtResetFlow);
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		/* init thermal protection */
 		if (!bAtResetFlow) {

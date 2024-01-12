@@ -80,6 +80,7 @@
 #endif
 
 #include "mt66xx_reg.h"
+#include "hal_wfsys_reset_mt7961.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -439,6 +440,64 @@ void halTxCancelAllSending(IN struct ADAPTER *prAdapter)
 	usb_kill_anchored_urbs(&prHifInfo->rTxDataAnchor);
 #endif
 }
+
+void halCancelTxRx(IN struct ADAPTER *prAdapter)
+{
+	/* stop TX BULK OUT URB */
+	halTxCancelAllSending(prAdapter);
+
+	/* stop RX BULK IN URB */
+	halDisableInterrupt(prAdapter);
+}
+
+#if CFG_CHIP_RESET_SUPPORT
+void halToggleWfsysRst(IN struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+
+	/* fgIsWfsysReset is used to prevent any USB EP0 request on mcu during
+	 * WF subsys reset.
+	 */
+	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+
+	prAdapter->fgIsWfsysReset = TRUE;
+
+	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+
+	/* set USB EP_RST_OPT as reset scope excludes toggle bit,
+	 * sequence number, etc.
+	 */
+	if (prBusInfo->asicUsbEpctlRstOpt)
+		prBusInfo->asicUsbEpctlRstOpt(prAdapter, FALSE);
+
+	/* assert WF L0.5 reset */
+	if (prChipInfo->asicWfsysRst)
+		prChipInfo->asicWfsysRst(prAdapter, TRUE);
+
+	/* wait 1us */
+	kalUdelay(1);
+
+	/* de-assert WF L0.5 reset */
+	if (prChipInfo->asicWfsysRst)
+		prChipInfo->asicWfsysRst(prAdapter, FALSE);
+
+	if (prChipInfo->asicPollWfsysSwInitDone)
+		if (!prChipInfo->asicPollWfsysSwInitDone(prAdapter))
+			DBGLOG(HAL, ERROR, "WF L0.5 Reset FAIL\n");
+
+	mutex_lock(&prGlueInfo->rHifInfo.vendor_req_sem);
+
+	prAdapter->fgIsWfsysReset = FALSE;
+
+	mutex_unlock(&prGlueInfo->rHifInfo.vendor_req_sem);
+}
+#endif /* CFG_CHIP_RESET_SUPPORT */
 
 #if CFG_USB_TX_AGG
 uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, IN struct USB_REQ *prUsbReq)
@@ -978,6 +1037,7 @@ void halRxUSBReceiveEventComplete(struct urb *urb)
 #endif
 }
 
+#if CFG_CHIP_RESET_SUPPORT
 uint32_t halRxUSBReceiveWdt(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
@@ -1050,6 +1110,7 @@ void halRxUSBReceiveWdtComplete(struct urb *urb)
 			halRxUSBReceiveWdt(prGlueInfo->prAdapter);
 	}
 }
+#endif /* CFG_CHIP_RESET_SUPPORT */
 
 uint32_t halRxUSBReceiveData(IN struct ADAPTER *prAdapter)
 {
@@ -1207,6 +1268,7 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 	}
 }
 
+#if CFG_CHIP_RESET_SUPPORT
 void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 				struct list_head *prCompleteQ,
 				struct list_head *prFreeQ, uint32_t u4MinRfbCnt)
@@ -1217,6 +1279,8 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	spinlock_t *prLock = &prHifInfo->rRxWdtQLock;
+	uint8_t *pucBufAddr;
+	uint32_t u4BufLen;
 
 	/* Process complete WDT interrupt */
 	prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
@@ -1238,12 +1302,22 @@ void halRxUSBProcessWdtComplete(IN struct ADAPTER *prAdapter,
 			continue;
 		}
 
-		/* TODO: handle WDT packet */
+		pucBufAddr = prBufCtrl->pucBuf + prBufCtrl->u4ReadSize;
+		u4BufLen = prUrb->actual_length - prBufCtrl->u4ReadSize;
+
+		if (u4BufLen == 1 && pucBufAddr[0] == 0xFF)
+			schedule_work(&prGlueInfo->rWfsysResetWork);
+		else {
+			DBGLOG(RX, ERROR, "receive unexpected WDT packet\n");
+			dumpMemory8(pucBufAddr, u4BufLen);
+			WARN_ON(1);
+		}
 
 		glUsbEnqueueReq(prHifInfo, prFreeQ, prUsbReq, prLock, FALSE);
 		prUsbReq = glUsbDequeueReq(prHifInfo, prCompleteQ, prLock);
 	}
 }
+#endif /* CFG_CHIP_RESET_SUPPORT */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1258,22 +1332,20 @@ void halEnableInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prAdapter);
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prAdapter->chip_info;
-	prBusInfo = prChipInfo->bus_info;
 
 	halRxUSBReceiveData(prAdapter);
 	if (prHifInfo->eEventEpType != EVENT_EP_TYPE_DATA_EP)
 		halRxUSBReceiveEvent(prAdapter, TRUE);
 
-	if (prBusInfo->fgIsSupportWdtEp)
+#if CFG_CHIP_RESET_SUPPORT
+	if (prAdapter->chip_info->bus_info->fgIsSupportWdtEp)
 		halRxUSBReceiveWdt(prAdapter);
+#endif
 
 	glUdmaRxAggEnable(prGlueInfo, TRUE);
 } /* end of halEnableInterrupt() */
@@ -1291,19 +1363,17 @@ void halDisableInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct BUS_INFO *prBusInfo;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prAdapter->chip_info;
-	prBusInfo = prChipInfo->bus_info;
 
 	usb_kill_anchored_urbs(&prHifInfo->rRxDataAnchor);
 	usb_kill_anchored_urbs(&prHifInfo->rRxEventAnchor);
-	if (prBusInfo->fgIsSupportWdtEp)
+#if CFG_CHIP_RESET_SUPPORT
+	if (prAdapter->chip_info->bus_info->fgIsSupportWdtEp)
 		usb_kill_anchored_urbs(&prHifInfo->rRxWdtAnchor);
+#endif
 
 	glUdmaRxAggEnable(prGlueInfo, FALSE);
 	prAdapter->fgIsIntEnable = FALSE;
@@ -1645,11 +1715,6 @@ void halSerHifReset(IN struct ADAPTER *prAdapter)
 void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct BUS_INFO *prBusInfo;
-
-	prChipInfo = prAdapter->chip_info;
-	prBusInfo = prChipInfo->bus_info;
 
 	/* Process complete data */
 	halRxUSBProcessEventDataComplete(prAdapter, &prHifInfo->rRxDataCompleteQ,
@@ -1663,7 +1728,8 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 		halRxUSBReceiveEvent(prAdapter, FALSE);
 	}
 
-	if (prBusInfo->fgIsSupportWdtEp) {
+#if CFG_CHIP_RESET_SUPPORT
+	if (prAdapter->chip_info->bus_info->fgIsSupportWdtEp) {
 		halRxUSBProcessWdtComplete(prAdapter,
 					   &prHifInfo->rRxWdtCompleteQ,
 					   &prHifInfo->rRxWdtFreeQ,
@@ -1671,6 +1737,7 @@ void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 
 		halRxUSBReceiveWdt(prAdapter);
 	}
+#endif
 }
 
 uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN uint32_t u4Max)

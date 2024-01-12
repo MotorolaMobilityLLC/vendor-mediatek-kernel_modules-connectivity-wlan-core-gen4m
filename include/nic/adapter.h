@@ -1576,6 +1576,7 @@ struct ADAPTER {
 	/* Root Timer for cnm_timer module */
 	struct ROOT_TIMER rRootTimer;
 
+	u_int8_t fgIsWfsysReset;    /* WFSYS L0.5 reset flag */
 	u_int8_t fgIsChipNoAck;
 	u_int8_t fgIsChipAssert;
 

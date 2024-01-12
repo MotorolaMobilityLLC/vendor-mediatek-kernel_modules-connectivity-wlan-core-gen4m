@@ -877,6 +877,10 @@ struct GLUE_INFO {
 	uint32_t u4TpeTimeout;
 	struct timer_list rTpeTimer;
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
+
+#if CFG_CHIP_RESET_SUPPORT
+	struct work_struct rWfsysResetWork;    /* work for Wfsys L0.5 reset  */
+#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
@@ -1537,5 +1541,7 @@ uint32_t connsysFwLogControl(struct ADAPTER *prAdapter,
 int32_t sysCreateMonDbgFs(struct GLUE_INFO *prGlueInfo);
 void sysRemoveMonDbgFs(void);
 #endif
+
+extern void WfsysResetHdlr(struct work_struct *work);
 
 #endif /* _GL_OS_H */
