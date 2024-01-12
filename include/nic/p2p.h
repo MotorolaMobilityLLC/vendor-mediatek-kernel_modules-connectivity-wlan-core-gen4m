@@ -60,7 +60,8 @@
 
 /* Device Charactoristic. */
 /* 1000 is too short , the deauth would block in the queue */
-#define P2P_AP_CHNL_HOLD_TIME_MS 5000
+#define P2P_AP_CHNL_HOLD_TIME_MS		5000
+#define P2P_AP_CHNL_HOLD_TIME_CSA_MS		100
 #define P2P_DEFAULT_LISTEN_CHANNEL                   1
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)

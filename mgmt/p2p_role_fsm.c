@@ -2279,6 +2279,8 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 		prChnlReqInfo->ucReqChnlNum,
 		prChnlReqInfo->eChannelWidth);
 	prChnlReqInfo->ucCenterFreqS2 = 0;
+	prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_CSA_MS;
+	prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_GO_START_BSS;
 
 error:
 	cnmMemFree(prAdapter, prMsgHdr);
