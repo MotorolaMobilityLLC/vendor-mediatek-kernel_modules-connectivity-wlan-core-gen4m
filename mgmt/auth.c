@@ -611,7 +611,8 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (!mldSanityCheck(prAdapter, prSwRfb->pvHeader,
+	if (prAuthFrame->u2StatusCode == STATUS_CODE_SUCCESSFUL &&
+	    !mldSanityCheck(prAdapter, prSwRfb->pvHeader,
 		prSwRfb->u2PacketLen, prStaRec, prStaRec->ucBssIndex)) {
 		DBGLOG(SAA, WARN, "Discard Auth frame with wrong ML IE\n");
 		*pu2StatusCode = STATUS_CODE_DENIED_EHT_NOT_SUPPORTED;
@@ -620,10 +621,7 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 #endif
 
 	/* 4 <3> Get the Status code */
-	/* WLAN_GET_FIELD_16(&prAuthFrame->u2StatusCode, &u2RxStatusCode); */
-	/* *pu2StatusCode = u2RxStatusCode; */
 	*pu2StatusCode = prAuthFrame->u2StatusCode;
-	/* NOTE(Kevin): Optimized for ARM */
 
 #if (CFG_SUPPORT_CONN_LOG == 1)
 	connLogAuthResp(prAdapter,
