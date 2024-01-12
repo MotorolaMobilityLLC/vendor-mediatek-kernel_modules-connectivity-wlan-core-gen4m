@@ -1214,8 +1214,8 @@ void kalP2PIndicateScanDone(struct GLUE_INFO *prGlueInfo,
 		}
 
 		DBGLOG(INIT, INFO,
-			"[p2p] scan complete %p\n",
-			prP2pGlueDevInfo->prScanRequest);
+			"[p2p] scan complete %p abort=%d\n",
+			prP2pGlueDevInfo->prScanRequest, fgIsAbort);
 
 		KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_DEL_INF);
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
