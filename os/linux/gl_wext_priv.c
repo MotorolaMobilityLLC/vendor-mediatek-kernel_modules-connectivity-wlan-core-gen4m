@@ -4786,7 +4786,7 @@ int priv_driver_phy_ctrl(struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t u4Ret;
 	struct UNI_CMD_PHY_CTRL_LIST_DUMP *prPhyCtrlList;
-	struct UNI_CMD_PHY_LIST_DUMP_CR rDumpList;
+	struct UNI_CMD_PHY_LIST_DUMP_CR rDumpList = {0};
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
