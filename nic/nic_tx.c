@@ -467,13 +467,6 @@ uint32_t nicTxAcquireResourcePLE(IN struct ADAPTER
 	if (!nicTxResourceIsPleCtrlNeeded(prAdapter, ucTC))
 		return WLAN_STATUS_SUCCESS;
 
-	DBGLOG(INIT, INFO,
-	       "Acquire PLE: TC%d AcquirePageCnt[%u] FreeBufferCnt[%u] FreePageCnt[%u]\n",
-	       ucTC, NIX_TX_PLE_PAGE_CNT_PER_FRAME,
-	       prTc->au4FreeBufferCount_PLE[ucTC],
-	       prTc->au4FreePageCount_PLE[ucTC]);
-
-
 	/* PLE Acquire */
 	if (prTc->au4FreePageCount_PLE[ucTC] >=
 	    NIX_TX_PLE_PAGE_CNT_PER_FRAME) {
@@ -536,6 +529,12 @@ uint32_t nicTxAcquireResource(IN struct ADAPTER *prAdapter,
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 #if 1
 	prQM = &prAdapter->rQM;
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+	if (ucTC == TC4_INDEX) {
+		/* one cmd resource = one WFDMA rx ring buffer */
+		u4PageCount = 1;
+	}
+#endif
 	if (prTc->au4FreePageCount[ucTC] >= u4PageCount) {
 
 		if (nicTxAcquireResourcePLE(prAdapter,
@@ -776,6 +775,7 @@ void nicTxReleaseMsduResource(IN struct ADAPTER *prAdapter,
 uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 {
 	struct TX_CTRL *prTxCtrl;
+	uint32_t u4MaxPageCntPerFrame = 0;
 	uint8_t ucIdx;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -818,7 +818,12 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 
 	/* Assign resource for each TC according to prAdapter->rWifiVar */
 	for (ucIdx = TC0_INDEX; ucIdx < TC_NUM; ucIdx++) {
-
+		u4MaxPageCntPerFrame = prTxCtrl->u4MaxPageCntPerFrame;
+#if (CFG_SUPPORT_CMD_OVER_WFDMA == 1)
+		/* one cmd resource = one WFDMA rx ring buffer */
+		if (ucIdx == TC4_INDEX)
+			u4MaxPageCntPerFrame = 1;
+#endif
 		/*
 		 * PSE
 		 */
@@ -838,11 +843,11 @@ uint32_t nicTxResetResource(IN struct ADAPTER *prAdapter)
 		/* Buffer count */
 		prTxCtrl->rTc.au4MaxNumOfBuffer[ucIdx] =
 			(prTxCtrl->rTc.au4MaxNumOfPage[ucIdx] /
-			 (prTxCtrl->u4MaxPageCntPerFrame));
+			 (u4MaxPageCntPerFrame));
 
 		prTxCtrl->rTc.au4FreeBufferCount[ucIdx] =
 			(prTxCtrl->rTc.au4FreePageCount[ucIdx] /
-			 (prTxCtrl->u4MaxPageCntPerFrame));
+			 (u4MaxPageCntPerFrame));
 
 
 		DBGLOG(TX, TRACE,
@@ -3240,8 +3245,16 @@ uint32_t nicTxInitCmd(IN struct ADAPTER *prAdapter,
 		HIF_TX_HDR_TX_BYTE_COUNT_MASK);
 
 	/* <0> Copy HIF TXD if need */
-	HAL_WRITE_HIF_TXD(prChipInfo, pucOutputBuf,
-			  prCmdInfo->u2InfoBufLen);
+	if (prCmdInfo->ucCID) {
+		HAL_WRITE_HIF_TXD(prChipInfo, pucOutputBuf,
+			prCmdInfo->u2InfoBufLen,
+			TXD_PKT_FORMAT_COMMAND);
+	} else {
+		/* 0 means firmware download */
+		HAL_WRITE_HIF_TXD(prChipInfo, pucOutputBuf,
+			prCmdInfo->u2InfoBufLen,
+			TXD_PKT_FORMAT_FWDL);
+	}
 
 	/* <1> Copy CMD Header to command buffer
 	 * (by using pucCoalescingBufCached)

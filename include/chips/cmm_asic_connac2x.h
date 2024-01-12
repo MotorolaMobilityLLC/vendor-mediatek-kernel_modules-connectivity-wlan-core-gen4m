@@ -251,6 +251,12 @@
 #define CONNAC2X_LEN_USB_RX_PADDING_CSO          (4)	/*HW design spec */
 #endif /* _HIF_USB */
 
+#if defined(_HIF_SDIO)
+#define SDIO_HIF_TXD_LEN		sizeof(struct SDIO_HIF_TX_HEADER)
+#define SDIO_HIF_TXD_PKG_TYPE_SHIFT		(0)
+#define SDIO_HIF_TXD_PKG_TYPE_MASK		(0x3)
+#endif /* _HIF_SDIO */
+
 #define CONN_INFRA_CFG_AP2WF_BUS_ADDR                          0x7C500000
 
 /*------------------------------------------------------------------------*/
@@ -1062,6 +1068,14 @@ struct fwtbl_umac_struct {
 	struct wtbl_keylink_amsdu klink_amsdu;
 	struct wtbl_key_tb key_tb;
 };
+
+#if defined(_HIF_SDIO)
+struct SDIO_HIF_TX_HEADER {
+	uint16_t     InfoBufLen;
+	uint8_t      Type;
+	uint8_t      Reserved;
+};
+#endif /* defined(_HIF_SDIO) */
 
 enum {
 	SW_INT_FW_LOG = 0,

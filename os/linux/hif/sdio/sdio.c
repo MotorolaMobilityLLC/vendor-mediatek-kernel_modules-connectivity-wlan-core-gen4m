@@ -159,6 +159,10 @@ static const struct sdio_device_id mtk_sdio_ids[] = {
 	{	SDIO_DEVICE(0x037a, 0x7603),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
 #endif /* MT7663 */
+#ifdef MT7961
+	{	SDIO_DEVICE(0x037a, 0x7901),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7961},
+#endif /* MT7663 */
 	{ /* end: all zeroes */ },
 };
 
@@ -217,7 +221,21 @@ static struct sdio_driver mtk_sdio_driver = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
+#if CFG_SDIO_CONTEXT_DEBUG
+void print_content(uint32_t cmd_len, uint8_t *buffer)
+{
+	uint32_t i, j;
 
+	printk(dev_info DRV_NAME"Start ===========\n");
+	j = (cmd_len>>2) + 1;
+	for (i = 0; i < j; i++) {
+		printk(dev_info DRV_NAME"%02x %02x %02x %02x\n",
+			*(buffer + i*4 + 3), *(buffer + i*4 + 2),
+			*(buffer + i*4 + 1), *(buffer + i*4 + 0));
+	}
+	printk(dev_info DRV_NAME"End =============\n");
+}
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
 * \brief This function is a SDIO interrupt callback function
@@ -1250,6 +1268,10 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(u4Len <= u4ValidInBufSize);
 
+#if CFG_SDIO_CONTEXT_DEBUG
+	DBGLOG(HAL, STATE, "buf:0x%p, port:0x%x, length:%d\n",
+						pucBuf, u2Port, u4Len);
+#endif
 #if (MTK_WCN_HIF_SDIO == 0)
 	prSdioFunc = prHifInfo->func;
 	ASSERT(prSdioFunc->cur_blksize > 0);
@@ -1341,6 +1363,10 @@ void kalDevReadIntStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatu
 	prSDIOCtrl = prAdapter->prGlueInfo->rHifInfo.prSDIOCtrl;
 	ASSERT(prSDIOCtrl);
 
+#if CFG_SDIO_CONTEXT_DEBUG
+	DBGLOG(INTR, WARN, "buf:0x%p, port:0x%x, length:%d\n",
+							pucBuf, u2Port, u4Len);
+#endif
 	prStatCounter = &prAdapter->prGlueInfo->rHifInfo.rStatCounter;
 
 	/* There are pending interrupt to be handled */
@@ -1438,25 +1464,29 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *p
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct TX_CTRL *prTxCtrl;
 	uint8_t *pucOutputBuf = (uint8_t *) NULL;
 	uint32_t u4PaddingLength;
 	struct sk_buff *skb;
 	uint8_t *pucBuf;
-	uint32_t u4Length;
+	uint32_t u4Length, u4TotalLen;
 	uint8_t ucTC;
 
 	SDIO_TIME_INTERVAL_DEC();
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	skb = (struct sk_buff *)prMsduInfo->prPacket;
 	pucBuf = skb->data;
 	u4Length = skb->len;
+	u4TotalLen = skb->len + prChipInfo->u2HifTxdSize;
 	ucTC = prMsduInfo->ucTC;
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 	pucOutputBuf = prTxCtrl->pucTxCoalescingBufPtr;
 
-	if (prTxCtrl->u4WrIdx + ALIGN_4(u4Length) > prAdapter->u4CoalescingBufCachedSize) {
+	if (prTxCtrl->u4WrIdx + ALIGN_4(u4TotalLen) >
+				prAdapter->u4CoalescingBufCachedSize) {
 		if ((prAdapter->u4CoalescingBufCachedSize - ALIGN_4(prTxCtrl->u4WrIdx)) >= HIF_TX_TERMINATOR_LEN) {
 			/* fill with single dword of zero as TX-aggregation termination */
 			*(uint32_t *) (&((pucOutputBuf)[ALIGN_4(prTxCtrl->u4WrIdx)])) = 0;
@@ -1474,6 +1504,9 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *p
 	}
 
 	SDIO_REC_TIME_START();
+	HAL_WRITE_HIF_TXD(prChipInfo, pucOutputBuf + prTxCtrl->u4WrIdx,
+				skb->len, TXD_PKT_FORMAT_TXD_PAYLOAD);
+	prTxCtrl->u4WrIdx += prChipInfo->u2HifTxdSize;
 	memcpy(pucOutputBuf + prTxCtrl->u4WrIdx, pucBuf, u4Length);
 	SDIO_REC_TIME_END();
 	SDIO_ADD_TIME_INTERVAL(prHifInfo->rStatCounter.u4TxDataCpTime);
@@ -1564,16 +1597,29 @@ enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	struct TX_CTRL *prTxCtrl;
 	uint8_t *pucOutputBuf = (uint8_t *) NULL;
 	uint16_t u2OverallBufferLength = 0;
+	uint32_t u4TotalLen;
+	struct mt66xx_chip_info *prChipInfo;
 /*	WLAN_STATUS u4Status = WLAN_STATUS_SUCCESS; */
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prTxCtrl = &prAdapter->rTxCtrl;
 	pucOutputBuf = prTxCtrl->pucTxCoalescingBufPtr;
+	u4TotalLen = prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen +
+		prChipInfo->u2HifTxdSize;
 
-	if (TFCB_FRAME_PAD_TO_DW(prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen) >
+	if (TFCB_FRAME_PAD_TO_DW(u4TotalLen) >
 		prAdapter->u4CoalescingBufCachedSize) {
 		DBGLOG(HAL, ERROR, "Command TX buffer underflow!\n");
 		return CMD_TX_RESULT_FAILED;
 	}
+
+
+	HAL_WRITE_HIF_TXD(prChipInfo,
+			pucOutputBuf + u2OverallBufferLength,
+			prCmdInfo->u4TxdLen + prCmdInfo->u4TxpLen,
+			TXD_PKT_FORMAT_COMMAND);
+	u2OverallBufferLength += prChipInfo->u2HifTxdSize;
+
 
 	if (prCmdInfo->u4TxdLen) {
 		memcpy((pucOutputBuf + u2OverallBufferLength), prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);

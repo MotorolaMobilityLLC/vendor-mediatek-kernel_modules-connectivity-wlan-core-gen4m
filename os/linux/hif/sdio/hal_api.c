@@ -670,6 +670,7 @@ void halDevInit(IN struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter, MCR_WHIER, WHIER_DEFAULT);
 
 	HAL_CFG_MAX_HIF_RX_LEN_NUM(prAdapter, HIF_RX_MAX_AGG_NUM);
+
 }
 
 void halTxCancelSendingCmd(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
@@ -892,7 +893,8 @@ u_int8_t halTxReleaseResource(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxRl
 	u_int8_t bStatus = FALSE;
 	uint32_t i;
 	struct SDIO_STAT_COUNTER *prStatCnt;
-	uint16_t au2TxDoneCnt[HIF_TX_NUM] = { 0 };
+	uint16_t au2TxDoneCnt[SDIO_TX_RESOURCE_NUM] = { 0 };
+
 
 	ASSERT(prAdapter);
 	prTcqStatus = &prAdapter->rTxCtrl.rTc;
@@ -945,7 +947,7 @@ uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 {
 	struct TX_CTRL *prTxCtrl;
 	uint32_t u4Status = WLAN_STATUS_RESOURCES;
-	uint32_t au4WTSR[8];
+	uint32_t au4WTSR[SDIO_TX_RESOURCE_REG_NUM];
 	struct GL_HIF_INFO *prHifInfo;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -954,7 +956,8 @@ uint32_t halTxPollingResource(IN struct ADAPTER *prAdapter, IN uint8_t ucTC)
 
 	if (prHifInfo->fgIsPendingInt && (prHifInfo->prSDIOCtrl->u4WHISR & WHISR_TX_DONE_INT)) {
 		/* Get Tx done resource from pending interrupt status */
-		kalMemCopy(au4WTSR, &prHifInfo->prSDIOCtrl->rTxInfo, sizeof(uint32_t) * 8);
+		kalMemCopy(au4WTSR, &prHifInfo->prSDIOCtrl->rTxInfo,
+			sizeof(uint32_t) * SDIO_TX_RESOURCE_REG_NUM);
 
 		/* Clear pending Tx done interrupt */
 		prHifInfo->prSDIOCtrl->u4WHISR &= ~WHISR_TX_DONE_INT;
@@ -994,16 +997,15 @@ void halTxInterruptSanityCheck(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxR
 void halProcessEnhanceInterruptStatus(IN struct ADAPTER *prAdapter)
 {
 	struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl = prAdapter->prGlueInfo->rHifInfo.prSDIOCtrl;
+	uint32_t u4WTSRTxDoneFlg = 0;
+	uint8_t	i = 0;
 
 	/* Set Tx done interrupt if there are Tx done count */
-	if ((prSDIOCtrl->u4WHISR & WHISR_TX_DONE_INT) == 0 &&
-		(prSDIOCtrl->rTxInfo.au4WTSR[0] | prSDIOCtrl->rTxInfo.au4WTSR[1] |
-		prSDIOCtrl->rTxInfo.au4WTSR[2] | prSDIOCtrl->rTxInfo.au4WTSR[3] |
-		prSDIOCtrl->rTxInfo.au4WTSR[4] | prSDIOCtrl->rTxInfo.au4WTSR[5] |
-		prSDIOCtrl->rTxInfo.au4WTSR[6] | prSDIOCtrl->rTxInfo.au4WTSR[7])) {
+	for (i = 0; i < SDIO_TX_RESOURCE_REG_NUM; i++)
+		u4WTSRTxDoneFlg |= prSDIOCtrl->rTxInfo.au4WTSR[i];
 
+	if ((prSDIOCtrl->u4WHISR & WHISR_TX_DONE_INT) == 0 && u4WTSRTxDoneFlg)
 		prSDIOCtrl->u4WHISR |= WHISR_TX_DONE_INT;
-	}
 
 	/* Set SW ASSERT INFO interrupt if there are pending mail box */
 	if (((prSDIOCtrl->u4WHISR & WHISR_D2H_SW_ASSERT_INFO_INT) == 0) &&
@@ -1034,16 +1036,15 @@ void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 
 	/* Get the TX STATUS */
 #if CFG_SDIO_INTR_ENHANCE
-
 	prSDIOCtrl = prAdapter->prGlueInfo->rHifInfo.prSDIOCtrl;
 #if DBG
-	/* DBGLOG_MEM8(RX, TRACE, (PUINT_8)prSDIOCtrl, sizeof(SDIO_CTRL_T)); */
+	DBGLOG(TX, TRACE, "%s\n", __func__);
+	DBGLOG_MEM8(TX, TRACE, ((uint8_t *)prSDIOCtrl),
+				sizeof(struct ENHANCE_MODE_DATA_STRUCT));
 #endif
-
 	halTxInterruptSanityCheck(prAdapter, (uint16_t *)&prSDIOCtrl->rTxInfo);
 	halTxReleaseResource(prAdapter, (uint16_t *)&prSDIOCtrl->rTxInfo);
 	kalMemZero(&prSDIOCtrl->rTxInfo, sizeof(prSDIOCtrl->rTxInfo));
-
 #else
 
 	HAL_MCR_RD(prAdapter, MCR_WTSR0, &au4TxCount[0]);
@@ -1553,7 +1554,6 @@ void halRxSDIOAggReceiveRFBs(IN struct ADAPTER *prAdapter)
 		prRxBuf->u4PktTotalLength = u4RxAggLength - sizeof(struct ENHANCE_MODE_DATA_STRUCT);
 
 		prRxBuf->u4IntLogIdx = prHifInfo->u4IntLogIdx;
-
 		SDIO_REC_TIME_START();
 		HAL_READ_RX_PORT(prAdapter, rxNum, u4RxAggLength,
 			prRxBuf->pvRxCoalescingBuf, HIF_RX_COALESCING_BUFFER_SIZE);
@@ -1598,6 +1598,7 @@ void halRxSDIOAggReceiveRFBs(IN struct ADAPTER *prAdapter)
 
 void halProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 {
+
 	if (prAdapter->prGlueInfo->rHifInfo.fgSkipRx)
 		return;
 

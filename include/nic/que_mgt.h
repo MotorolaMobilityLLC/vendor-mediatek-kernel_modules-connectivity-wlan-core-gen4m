@@ -140,7 +140,7 @@ extern const uint8_t *apucACI2Str[4];
 #define QM_ACTIVE_TC_NUM                    TC_NUM
 
 #define QM_MGMT_QUEUED_THRESHOLD            6
-#define QM_CMD_RESERVED_THRESHOLD           4
+
 #define QM_MGMT_QUEUED_TIMEOUT              1000	/* ms */
 
 #define QM_TEST_MODE                        0

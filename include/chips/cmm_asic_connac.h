@@ -138,8 +138,15 @@ u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter,
 uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter);
 void asicUdmaRxFlush(IN struct ADAPTER *prAdapter, IN u_int8_t bEnable);
 void asicPdmaHifReset(IN struct ADAPTER *prAdapter, IN u_int8_t bRelease);
-void fillUsbHifTxDesc(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
+void fillUsbHifTxDesc(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
+	IN uint8_t ucPacketType);
 #endif /* _HIF_USB */
+
+#if defined(_HIF_SDIO)
+void fillSdioHifTxDesc(IN uint8_t **pDest, IN uint16_t *pInfoBufLen,
+	IN uint8_t ucPacketType);
+#endif /* _HIF_SDIO */
+
 void asicFillInitCmdTxd(
 	struct ADAPTER *prAdapter,
 	struct WIFI_CMD_INFO *prCmdInfo,

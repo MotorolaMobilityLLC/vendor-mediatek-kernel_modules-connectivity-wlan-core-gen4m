@@ -875,10 +875,11 @@ uint32_t wlanPatchSendSemaControl(IN struct ADAPTER
 		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
 		sizeof(struct INIT_CMD_PATCH_SEMA_CONTROL);
 
+	prCmdInfo->ucCID = INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_PATCH_SEMAPHORE_CONTROL,
+		prCmdInfo->ucCID,
 		INIT_CMD_PDA_PACKET_TYPE_ID,
 		pucSeqNum, FALSE,
 		(void **)&prPatchSemaControl, TRUE, 0, S2D_INDEX_CMD_H2N);
@@ -998,10 +999,11 @@ uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter
 	ucTC = TC0_INDEX;
 #endif
 
+	prCmdInfo->ucCID = INIT_CMD_ID_PATCH_FINISH;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_PATCH_FINISH,
+		prCmdInfo->ucCID,
 		INIT_CMD_PACKET_TYPE_ID,
 		&ucCmdSeqNum,
 		FALSE,
@@ -1110,10 +1112,11 @@ uint32_t wlanPatchDynMemMapSendComplete(IN struct ADAPTER *prAdapter)
 	ucTC = TC0_INDEX;
 #endif
 
+	prCmdInfo->ucCID = INIT_CMD_ID_DYN_MEM_MAP_PATCH_FINISH;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_DYN_MEM_MAP_PATCH_FINISH,
+		prCmdInfo->ucCID,
 		INIT_CMD_PACKET_TYPE_ID,
 		&ucCmdSeqNum,
 		FALSE,
@@ -1346,10 +1349,12 @@ uint32_t wlanImageSectionDownload(IN struct ADAPTER
 	prCmdInfo->u2InfoBufLen = (uint16_t) u4ImgSecSize;
 
 	/* 2. Setup common CMD Info Packet */
+	prCmdInfo->ucCID = 0;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		0, INIT_CMD_PDA_PACKET_TYPE_ID,
+		prCmdInfo->ucCID,
+		INIT_CMD_PDA_PACKET_TYPE_ID,
 		NULL, FALSE, (void **)&prBuf, TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	/* 3. Setup DOWNLOAD_BUF */
@@ -1429,11 +1434,11 @@ uint32_t wlanImageQueryStatus(IN struct ADAPTER *prAdapter)
 	 */
 	ucTC = TC0_INDEX;
 #endif
-
+	prCmdInfo->ucCID = INIT_CMD_ID_QUERY_PENDING_ERROR;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_QUERY_PENDING_ERROR,
+		prCmdInfo->ucCID,
 		INIT_CMD_PACKET_TYPE_ID,
 		&ucCmdSeqNum, FALSE, NULL, TRUE, 0, S2D_INDEX_CMD_H2N);
 
@@ -1639,11 +1644,11 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	 */
 	ucTC = TC0_INDEX;
 #endif
-
+	prCmdInfo->ucCID = INIT_CMD_ID_WIFI_START;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_WIFI_START,
+		prCmdInfo->ucCID,
 		INIT_CMD_PACKET_TYPE_ID,
 		&ucCmdSeqNum,
 		FALSE,
@@ -1764,11 +1769,11 @@ uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 	 */
 	ucTC = TC0_INDEX;
 #endif
-
+	prCmdInfo->ucCID = INIT_CMD_ID_DYN_MEM_MAP_FW_FINISH;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_DYN_MEM_MAP_FW_FINISH,
+		prCmdInfo->ucCID,
 		INIT_CMD_PACKET_TYPE_ID,
 		&ucCmdSeqNum,
 		FALSE,
@@ -1893,10 +1898,11 @@ wlanCompressedFWConfigWifiFunc(IN struct ADAPTER *prAdapter,
 	/* 2. Always use TC0 */
 	ucTC = TC0_INDEX;
 
+	prCmdInfo->ucCID = INIT_CMD_ID_DECOMPRESSED_WIFI_START;
 	NIC_FILL_CMD_TX_HDR(prAdapter,
 		prCmdInfo->pucInfoBuffer,
 		prCmdInfo->u2InfoBufLen,
-		INIT_CMD_ID_DECOMPRESSED_WIFI_START,
+		prCmdInfo->ucCID,
 		INIT_CMD_PACKET_TYPE_ID,
 		&ucCmdSeqNum,
 		FALSE,

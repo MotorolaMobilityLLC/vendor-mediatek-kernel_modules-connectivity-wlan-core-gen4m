@@ -167,6 +167,11 @@ endif
 ifneq ($(findstring MT7961,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT7961,$(ccflags-y))
 ccflags-y += -DMT7961
+ccflags-y += -DCFG_SDIO_INTR_ENHANCE_FORMAT=2
+ccflags-y += -DCFG_SUPPORT_CMD_OVER_WFDMA=1
+# MT7961's max cmd tx resource = 3
+# so QM_CMD_RESERVED_THRESHOL must be less than 3
+ccflags-y += -DQM_CMD_RESERVED_THRESHOLD=1
 CONFIG_MTK_WIFI_CONNAC2X=y
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_TWT_SUPPORT=y
