@@ -5389,36 +5389,6 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 	prGlueInfo->rx_thread = kthread_run(rx_thread,
 			prGlueInfo->prDevHandler, "rx_thread");
 #endif
-	/* TODO the change schedule API shall be provided by OS glue
-	 * layer
-	 */
-	/* Switch the Wi-Fi task priority to higher priority and change
-	 * the scheduling method
-	 */
-	if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
-#if KERNEL_VERSION(4, 19, 0) >= LINUX_VERSION_CODE
-		struct sched_param param = {
-			.sched_priority = prGlueInfo->prAdapter
-			->rWifiVar.ucThreadPriority
-		};
-		sched_setscheduler(prGlueInfo->main_thread,
-				   prGlueInfo->prAdapter->rWifiVar
-				   .ucThreadScheduling, &param);
-#if CFG_SUPPORT_MULTITHREAD
-		sched_setscheduler(prGlueInfo->hif_thread,
-					prGlueInfo->prAdapter->rWifiVar
-					.ucThreadScheduling, &param);
-		sched_setscheduler(prGlueInfo->rx_thread,
-					prGlueInfo->prAdapter->rWifiVar
-					.ucThreadScheduling, &param);
-#endif
-#endif
-		DBGLOG(INIT, INFO,
-		       "Set pri = %d, sched = %d\n",
-		       prGlueInfo->prAdapter->rWifiVar.ucThreadPriority,
-		       prGlueInfo->prAdapter->rWifiVar
-		       .ucThreadScheduling);
-	}
 
 	if (!bAtResetFlow)
 		g_u4HaltFlag = 0;

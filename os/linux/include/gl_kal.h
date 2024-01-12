@@ -93,7 +93,7 @@
 #include "linux/kallsyms.h"
 #include "linux/sched.h"
 #if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
-#include "linux/sched/types.h"
+#include "uapi/linux/sched/types.h"
 #endif
 
 #if CFG_SUPPORT_SCAN_CACHE_RESULT
@@ -1945,6 +1945,11 @@ void
 kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
 			    IN const struct ieee80211_regdomain *pRegdom);
 #endif
+
+void kal_sched_set(struct task_struct *p, int policy,
+		const struct sched_param *param,
+		int nice);
+void kalSetThreadSchPolicyPriority(IN struct GLUE_INFO *prGlueInfo);
 
 #ifndef __has_attribute
 #define __has_attribute(x) 0

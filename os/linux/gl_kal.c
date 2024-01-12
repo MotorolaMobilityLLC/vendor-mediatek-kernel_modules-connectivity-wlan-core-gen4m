@@ -4349,7 +4349,7 @@ int hif_thread(void *data)
 
 	prGlueInfo->u4HifThreadPid = KAL_GET_CURRENT_THREAD_ID();
 
-	set_user_nice(current, prAdapter->rWifiVar.cThreadNice);
+	kalSetThreadSchPolicyPriority(prGlueInfo);
 
 	while (TRUE) {
 
@@ -4519,8 +4519,7 @@ int rx_thread(void *data)
 
 	prGlueInfo->u4RxThreadPid = KAL_GET_CURRENT_THREAD_ID();
 
-	set_user_nice(current,
-		      prGlueInfo->prAdapter->rWifiVar.cThreadNice);
+	kalSetThreadSchPolicyPriority(prGlueInfo);
 
 	prTempRxQue = &rTempRxQue;
 
@@ -4664,8 +4663,7 @@ int main_thread(void *data)
 	current->flags |= PF_NOFREEZE;
 	ASSERT(prGlueInfo);
 	ASSERT(prGlueInfo->prAdapter);
-	set_user_nice(current,
-		      prGlueInfo->prAdapter->rWifiVar.cThreadNice);
+	kalSetThreadSchPolicyPriority(prGlueInfo);
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
 	KAL_WAKE_LOCK_INIT(prGlueInfo->prAdapter,
@@ -11024,6 +11022,54 @@ int32_t kalCoalescingInt(IN struct ADAPTER *prAdapter,
 	return 0;
 }
 #endif
+
+void kal_sched_set(struct task_struct *p, int policy,
+		const struct sched_param *param,
+		int nice)
+{
+#if KERNEL_VERSION(5, 9, 0) <= LINUX_VERSION_CODE
+	/* apply auto-detection based on function description
+	* TODO:
+	* kernel prefer modify "current" only, add sanity here?
+	*/
+	if (policy == SCHED_NORMAL)
+		sched_set_normal(p, nice);
+	else if (policy == SCHED_FIFO)
+		sched_set_fifo(p);
+	else
+		sched_set_fifo_low(p);
+#else
+	sched_setscheduler(p, policy, param);
+#endif
+}
+
+void kalSetThreadSchPolicyPriority(IN struct GLUE_INFO *prGlueInfo)
+{
+	struct sched_param param = { .sched_priority = 1};
+
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL, Just return!\n");
+		return;
+	}
+	/* Set thread's Schedule policy & priority */
+	if (prGlueInfo->prAdapter->rWifiVar.ucThreadPriority > 0) {
+		param.sched_priority =
+			prGlueInfo->prAdapter->rWifiVar.ucThreadPriority;
+
+		kal_sched_set(current,
+			prGlueInfo->prAdapter->rWifiVar.ucThreadScheduling,
+			&param,
+			prGlueInfo->prAdapter->rWifiVar.cThreadNice);
+
+		DBGLOG(INIT, STATE,
+			"[%s]Set pri = %d, sched = %d\n",
+			KAL_GET_CURRENT_THREAD_NAME(),
+			prGlueInfo->prAdapter->rWifiVar.ucThreadPriority,
+			prGlueInfo->prAdapter->rWifiVar
+			.ucThreadScheduling);
+	}
+	set_user_nice(current, prGlueInfo->prAdapter->rWifiVar.cThreadNice);
+}
 
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
