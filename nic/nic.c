@@ -712,16 +712,14 @@ void nicRestoreSpiDefMode(IN struct ADAPTER *prAdapter)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Process rx interrupt. When the rx
- *        Interrupt is asserted, it means there are frames in queue.
+ * @brief Process Abnormal interrupt w/o callback
  *
  * @param prAdapter      Pointer to the Adapter structure.
  *
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicProcessAbnormalInterrupt(IN struct ADAPTER
-				 *prAdapter)
+static void nicProcessDefaultAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 {
 	if (halIsHifStateSuspend(prAdapter))
 		DBGLOG(RX, WARN, "suspend Abnormal\n");
@@ -737,6 +735,28 @@ void nicProcessAbnormalInterrupt(IN struct ADAPTER
 	halProcessAbnormalInterrupt(prAdapter);
 	glSetRstReason(RST_PROCESS_ABNORMAL_INT);
 	GL_RESET_TRIGGER(prAdapter, RST_FLAG_DO_CORE_DUMP);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Process rx interrupt. When the rx
+ *        Interrupt is asserted, it means there are frames in queue.
+ *
+ * @param prAdapter      Pointer to the Adapter structure.
+ *
+ * @return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void nicProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->processAbnormalInterrupt)
+		prBusInfo->processAbnormalInterrupt(prAdapter);
+	else
+		nicProcessDefaultAbnormalInterrupt(prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/
