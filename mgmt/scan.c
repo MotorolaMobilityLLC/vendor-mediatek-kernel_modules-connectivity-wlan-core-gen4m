@@ -3729,6 +3729,12 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 #endif
 
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
+	/* Ignore MC probe resp which is unexpected.
+	 * MC probe resp with wrong content will result in
+	 * MLO disconnect.
+	 */
+	if (prSwRfb->fgIsMC)
+		return WLAN_STATUS_SUCCESS;
 
 	/* 4 <1> Parse and add into BSS_DESC_T */
 	prBssDesc = scanAddToBssDesc(prAdapter, prSwRfb);
