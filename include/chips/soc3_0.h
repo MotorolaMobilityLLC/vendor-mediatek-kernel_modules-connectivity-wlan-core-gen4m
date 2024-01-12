@@ -305,7 +305,7 @@ uint32_t soc3_0_DownloadByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Addr, IN uint32_t u4Len,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
-void soc3_0_DumpWfsysCpupcr(struct ADAPTER *prAdapter);
+void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter);
 void soc3_0_WfdmaAxiCtrl(struct ADAPTER *prAdapter);
 
 int hifWmmcuPwrOn(void);
