@@ -245,6 +245,10 @@ static const struct iw_priv_args rIwPrivTable[] = {
 	{PRIV_CMD_INT_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
 	"get_int_stat" },
 #endif
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+	{PRIV_CMD_EXCEPTION_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
+	"get_exp_stat" },
+#endif
 	{PRIV_CMD_SHOW_CHANNEL, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 	"show_Channel"},
 };
