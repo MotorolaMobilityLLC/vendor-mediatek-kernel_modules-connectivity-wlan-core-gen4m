@@ -2250,6 +2250,7 @@ omac_choosed:
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 		if (prBssInfo && !prBssInfo->fgIsInUse) {
+			kalMemZero(prBssInfo, sizeof(*prBssInfo));
 			prBssInfo->fgIsInUse = TRUE;
 			prBssInfo->eNetworkType = eNetworkType;
 			prBssInfo->ucBssIndex = ucBssIndex;
