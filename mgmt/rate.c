@@ -153,11 +153,9 @@ rateGetRateSetFromIEs(
 		 */
 		ASSERT(prIeSupportedRate->ucLength <= RATE_NUM_SW);
 
-		if (aucDebugModule[DBG_P2P_IDX] & DBG_CLASS_TRACE) {
-			DBGLOG(RLM, TRACE, "Dump supported rate\n");
-			dumpMemory8((uint8_t *) prIeSupportedRate,
-				(uint32_t) prIeSupportedRate->ucLength);
-		}
+		DBGLOG(RLM, LOUD, "Dump supported rate\n");
+		DBGLOG_MEM8(RLM, LOUD, (uint8_t *) prIeSupportedRate,
+			(uint32_t) prIeSupportedRate->ucLength);
 
 		for (i = 0; i < prIeSupportedRate->ucLength; i++) {
 			ucRate =

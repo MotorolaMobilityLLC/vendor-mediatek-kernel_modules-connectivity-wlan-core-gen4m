@@ -1342,7 +1342,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *nap;
 	struct BSS_DESC *bss;
-	uint8_t num = aisGetLinkNum(ais), found = FALSE;
+	uint8_t num = aisGetLinkNum(ais);
 	uint16_t delta = 0, base = 0, goal = 0, score = 0;
 	int i, j, k;
 
@@ -1372,21 +1372,46 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 	LINK_FOR_EACH_ENTRY_SAFE(ap, nap,
 			ess, rLinkEntry, struct AP_COLLECTION) {
-		for (i = 0; i < ap->ucLinkNum; i++)
+		uint8_t found = FALSE;
+		uint32_t akm = 0;
+		uint16_t best = 0;
+
+		for (i = 0; i < ap->ucLinkNum; i++) {
 			found |= apsIntraUpdateTargetAp(ad, ap,
-					i, goal, reason, bidx);
+				i, goal, reason, bidx);
+			score = ap->au2TargetScore[i];
+			bss = ap->aprTarget[i];
+
+			/* use akm of best ap as target akm */
+			if (bss && (best == 0 || score > best)) {
+				best = score;
+				akm = bss->u4RsnSelectedAKMSuite;
+			}
+		}
 
 		if (!found) {
 			ap->ucLinkNum = 0;
 			continue;
 		}
 
-		/* use lower score to find other links if already found one */
 		for (i = 0; i < ap->ucLinkNum; i++) {
-			if (!ap->aprTarget[i]) {
+			bss = ap->aprTarget[i];
+
+			/* use lower score to find links if already found one */
+			if (!bss) {
 				DBGLOG(APS, INFO, "GOAL SCORE[link=%d]=0\n");
 				apsIntraUpdateTargetAp(ad, ap,
 					i, 0, reason, bidx);
+			}
+
+			/* check common akm */
+			bss = ap->aprTarget[i];
+			if (bss && bss->u4RsnSelectedAKMSuite != akm) {
+				DBGLOG(APS, INFO,
+					"Remove target akm 0x%x!=0x%x\n",
+					bss->u4RsnSelectedAKMSuite, akm);
+				ap->aprTarget[i] = NULL;
+				ap->au2TargetScore[i] = 0;
 			}
 		}
 
@@ -1645,7 +1670,7 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 				MACSTR " link_id=%d max_links=%d\n",
 				MAC2STR(bss->aucBSSID),
 				bss->rMlInfo.ucLinkIndex,
-				bss->rMlInfo.ucMaxSimultaneousLinks);
+				bss->rMlInfo.ucMaxSimuLinks);
 
 			if (bss->rMlInfo.ucLinkIndex ==
 				ad->rWifiVar.ucStaMldMainLinkIdx) {

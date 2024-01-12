@@ -195,10 +195,10 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 
 	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
-		mldParseBasicMlIE(prMlInfo, ml,
+		MLD_PARSE_BASIC_MLIE(prMlInfo, ml,
 			IE_SIZE(ml), /* no need fragment */
 			prAuthFrame->aucBSSID,
-			u2RxFrameCtrl, "RxAuthReq");
+			u2RxFrameCtrl);
 	} else {
 		DBGLOG(AAA, INFO, "no ml ie\n");
 		return WLAN_STATUS_SUCCESS;
@@ -268,8 +268,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 	ml = mldFindMlIE(pucIE, u2IELength, ML_CTRL_TYPE_BASIC);
 	if (ml) {
-		mldParseBasicMlIE(prMlInfo, ml, pucIE + u2IELength - ml,
-			prFrame->aucBSSID, u2RxFrameCtrl, "RxAssocReq");
+		MLD_PARSE_BASIC_MLIE(prMlInfo, ml, pucIE + u2IELength - ml,
+			prFrame->aucBSSID, u2RxFrameCtrl);
 	} else {
 		DBGLOG(AAA, INFO, "no ml ie\n");
 		return WLAN_STATUS_SUCCESS;

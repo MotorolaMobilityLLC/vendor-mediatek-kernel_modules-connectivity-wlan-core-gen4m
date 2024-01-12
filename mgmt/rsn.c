@@ -960,8 +960,10 @@ u_int8_t rsnPerformPolicySelection(
 		return FALSE;
 	}
 
+#if (CFG_SUPPORT_ML_RECONFIG == 0)
 	if (!rsnIsSuitableBSS(prAdapter, prBss, prBssRsnInfo, ucBssIndex))
 		return FALSE;
+#endif
 
 	/* end Support AP Selection */
 

@@ -7097,7 +7097,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucMlProbeRetryLimit,
 		"MlProbeRetryLimit", ML_PROBE_RETRY_COUNT);
 	INIT_UINT(prWifiVar->ucEnableMlo, "EnableMlo", FEATURE_ENABLED);
-	INIT_UINT(prWifiVar->ucMaxSimultaneousLinks,
+	INIT_UINT(prWifiVar->ucMaxSimuLinks,
 		"MaxSimultaneousLinks", 0xff);
 	INIT_UINT(prWifiVar->ucMldRetryCount, "MldRetryCount", MLD_RETRY_COUNT);
 #endif /* CFG_SUPPORT_802_11BE */

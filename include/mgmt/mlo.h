@@ -77,6 +77,11 @@
 
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
+#define MLD_PARSE_BASIC_MLIE(__a, __b, __c, __d, __e) \
+	mldParseBasicMlIE(__a, __b, __c, __d, __e, __func__)
+#define MLD_PARSE_RECONFIG_MLIE(__a, __b, __c) \
+	mldParseReconfigMlIE(__a, __b, __c, __func__)
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct IE_MULTI_LINK_CONTROL {
 	u_int8_t  ucId;
@@ -167,12 +172,14 @@ struct STA_PROFILE {
 	uint8_t ucChangeSeq;
 	uint16_t u2CapInfo;
 	uint16_t u2StatusCode;
+	uint16_t u2DeleteTimer;
 	uint16_t u2IEbufLen;
 	uint8_t aucIEbuf[400];
 };
 
 struct MULTI_LINK_INFO {
 	uint8_t ucValid;
+	uint8_t	ucMlCtrlType;
 	uint8_t	ucMlCtrlPreBmp;
 	uint8_t ucCommonInfoLength;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
@@ -247,6 +254,10 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	const uint8_t *pucIE, uint16_t u2Left,
 	const uint8_t *paucBssId, uint16_t u2FrameCtrl,
+	const char *pucDesc);
+
+void mldParseReconfigMlIE(struct MULTI_LINK_INFO *prMlInfo,
+	const uint8_t *pucIE, const uint8_t *paucBssId,
 	const char *pucDesc);
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type);
