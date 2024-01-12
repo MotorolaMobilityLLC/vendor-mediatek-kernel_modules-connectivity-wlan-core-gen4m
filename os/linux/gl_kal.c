@@ -10851,7 +10851,8 @@ int32_t kalPerMonSetForceEnableFlag(uint8_t uFlag)
 
 #if CFG_MTK_ANDROID_WMT && \
 	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-enum ENUM_WLAN_FB_EVENT kalGetMtkDispEvent(unsigned long event, void *data)
+enum ENUM_WLAN_FB_EVENT kalGetMtkDispEvent(const uint8_t *fn,
+	unsigned long event, void *data)
 {
 	int32_t blank = 0;
 	int32_t *pData = (int32_t *)data;
@@ -10868,13 +10869,14 @@ enum ENUM_WLAN_FB_EVENT kalGetMtkDispEvent(unsigned long event, void *data)
 		eEvent = WLAN_FB_EVENT_POWERDOWN;
 
 	/* use KAL_TRACE to print caller (request by mtk disp owner) */
-	DBGLOG(SW4, INFO, "%pS: event[%lu], blank[%d] eEvent[%u]\n",
-		KAL_TRACE, event, blank, eEvent);
+	DBGLOG(SW4, INFO, "%s: event[%lu], blank[%d] eEvent[%u]\n",
+		fn, event, blank, eEvent);
 end:
 	return eEvent;
 }
 #else /* CFG_MTK_ANDROID_WMT */
-enum ENUM_WLAN_FB_EVENT kalGetFbEvent(unsigned long event, void *data)
+enum ENUM_WLAN_FB_EVENT kalGetFbEvent(const uint8_t *fn,
+	unsigned long event, void *data)
 {
 	int32_t blank = 0;
 	struct fb_event *evdata = data;
@@ -10891,8 +10893,8 @@ enum ENUM_WLAN_FB_EVENT kalGetFbEvent(unsigned long event, void *data)
 		eEvent = WLAN_FB_EVENT_POWERDOWN;
 
 	/* use KAL_TRACE to print caller (request by mtk disp owner) */
-	DBGLOG(SW4, INFO, "%pS: event[%lu] blank[%d] eEvent[%u]\n",
-		KAL_TRACE, event, blank, eEvent);
+	DBGLOG(SW4, INFO, "%s: event[%lu] blank[%d] eEvent[%u]\n",
+		fn, event, blank, eEvent);
 end:
 	return eEvent;
 }
@@ -10910,9 +10912,9 @@ static int wlan_fb_notifier_callback(struct notifier_block
 
 #if CFG_MTK_ANDROID_WMT && \
 	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-	eEvent = kalGetMtkDispEvent(event, data);
+	eEvent = kalGetMtkDispEvent(__func__, event, data);
 #else /* CFG_MTK_ANDROID_WMT */
-	eEvent = kalGetFbEvent(event, data);
+	eEvent = kalGetFbEvent(__func__, event, data);
 #endif /* CFG_MTK_ANDROID_WMT */
 
 	if (eEvent == WLAN_FB_EVENT_IGNORE)
