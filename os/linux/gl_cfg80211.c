@@ -5716,6 +5716,7 @@ int mtk_cfg80211_resume(struct wiphy *wiphy)
 		DBGLOG(REQ, WARN, "ScanResultLog error:%x\n",
 		       rStatus);
 	halSetSuspendFlagToFw(prGlueInfo->prAdapter, FALSE);
+	fw_log_handler();
 end:
 	kalHaltUnlock();
 

@@ -1166,6 +1166,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
         ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=1
     endif
     endif
+    ifeq ($(CONFIG_ARCH_MEDIATEK),y)
+        CONFIG_MTK_AEE_FEATURE=y
+    endif
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
