@@ -817,16 +817,20 @@ uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 					prAdapter, prStaRec,
 					(struct IE_HDR *)ie))
 					continue;
-
+				if (u2RetLen < IE_SIZE(ie)) {
+					DBGLOG(SAA, WARN,
+					"IE[%d] size[%d] > rem buf size[%d]!\n",
+						IE_ID(ie),
+						IE_SIZE(ie),
+						u2RetLen);
+					continue;
+				}
 				u2RetLen -= IE_SIZE(ie);
 			}
 		}
 	}
 
-	if (u2RetLen >= 0)
-		return u2RetLen;
-	else
-		return 0;
+	return u2RetLen;
 }
 
 void assocGenerateConnIE(struct ADAPTER *prAdapter,
@@ -869,6 +873,14 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 					continue;
 
 				ieLen = IE_SIZE(ie);
+				if ((uint32_t)(cp - ie) < ieLen) {
+					DBGLOG(SAA, WARN,
+					"IE[%d] size[%d] > rem buf size[%d]!\n",
+						IE_ID(ie),
+						ieLen,
+						(uint32_t)(cp - ie));
+					continue;
+				}
 
 				len = cp - ie - ieLen;
 				/* copy to the start of IE*/
