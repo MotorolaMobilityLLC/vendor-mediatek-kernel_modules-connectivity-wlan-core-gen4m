@@ -219,17 +219,19 @@ uint8_t *apucCorDumpCr4FileName = "/tmp/FW_DUMP_Cr4";
 /*----------------------------------------------------------------------------*/
 void tracing_mark_write(const char *fmt, ...)
 {
-	const uint32_t BUFFER_SIZE = 1024;
+#define __BUFFER_SIZE 1024
 	va_list ap;
-	char buf[BUFFER_SIZE];
+	char buf[__BUFFER_SIZE];
 
 	if ((aucDebugModule[DBG_TRACE_IDX] & DBG_CLASS_TEMP) == 0)
 		return;
 
 	va_start(ap, fmt);
-	vsnprintf(buf, BUFFER_SIZE, fmt, ap);
-	buf[BUFFER_SIZE - 1] = '\0';
+	vsnprintf(buf, __BUFFER_SIZE, fmt, ap);
+	buf[__BUFFER_SIZE - 1] = '\0';
 	va_end(ap);
+
+#undef __BUFFER_SIZE
 
 	trace_printk("%s", buf);
 }
