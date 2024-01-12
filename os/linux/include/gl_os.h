@@ -1663,11 +1663,6 @@ extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
 extern int mtk_wcn_wlan_reg(
 	struct MTK_WCN_WLAN_CB_INFO *pWlanCbInfo);
 extern int mtk_wcn_wlan_unreg(void);
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-typedef void (*wifi_fwlog_event_func_cb)(int, int);
-extern int  wifi_fwlog_onoff_status(void);
-extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
-#endif /* CFG_MTK_CONNSYS_DEDICATED_LOG_PATH */
 #endif /* CFG_SUPPORT_CONNAC1X */
 #endif /* CFG_MTK_ANDROID_WMT */
 
