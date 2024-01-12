@@ -5949,6 +5949,9 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucRxGf = (uint8_t) wlanCfgGetUint32(prAdapter, "GfRx",
 					FEATURE_ENABLED);
 
+	prWifiVar->ucMCS32 = (uint8_t) wlanCfgGetUint32(prAdapter, "MCS32",
+					FEATURE_DISABLED);
+
 	prWifiVar->ucSigTaRts = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"SigTaRts", FEATURE_DISABLED);
 	prWifiVar->ucDynBwRts = (uint8_t) wlanCfgGetUint32(prAdapter,
