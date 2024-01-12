@@ -8,19 +8,26 @@
  *******************************************************************************
  */
 
+#ifdef MT6639
+#define CONFIG_CONNFEM_VER 1
+#else
+#define CONFIG_CONNFEM_VER 2
+#endif
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
 #include "precomp.h"
 #if (CFG_SUPPORT_CONNFEM == 1)
-#include "connfem_api.h"
+#include "connfem.h"
 #endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
  */
+
+#define PALIGN_4(_value)             (((_value) + 3) & ~3u)
 
 
 /*******************************************************************************
@@ -50,6 +57,167 @@ static u_int8_t g_fgEverCal = FALSE;
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+#if (CFG_SUPPORT_CONNFEM == 1)
+struct COM_FEM_TAG_FORMAT {
+	uint32_t tag_fem_info_id;
+	struct connfem_epaelna_pin_info tag_pin_info;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct connfem_epaelna_flags_common tag_flags_common;
+#endif
+};
+
+struct LAA_TAG_FORMAT {
+	struct connfem_epaelna_laa_pin_info tag_laa_pin_info;
+};
+#endif
+
+#if ((CONFIG_CONNFEM_VER >= 2) && (CFG_SUPPORT_CONNFEM == 1))
+
+#define PHYACT_MAX_FEM_NUM 8
+#define PHYACT_MAX_PIN_NUM 6
+
+#define PHYACT_MAX_STATE_NUM 32
+#define PHYACT_MAX_STATE_CAT_NUM 8
+#define PHYACT_MAX_ST_CAT_NUM 10
+#define PHYACT_MAX_USAGE_NUM 8
+#define HAL_PHY_EPA_CUS_LAYOUT_NUM 32
+
+
+enum PreCal_TagID {
+	PC_TAG_ID_NVRAM = 0,
+	PC_TAG_ID_CONNFEM = 1,
+	PC_TAG_ID_CAL = 2
+};
+
+enum ENUM_INICMD_CONN_FEM_HEADER_T {
+	ENUM_INICMD_CONN_FEM_HEADER_FEM     = 1,
+	ENUM_INICMD_CONN_FEM_HEADER_SPDT    = 2,
+	ENUM_INICMD_CONN_FEM_HEADER_WF      = 3,
+	ENUM_INICMD_CONN_FEM_HEADER_BT      = 4
+};
+
+
+
+struct PHYACT_CUS_PIN_T {
+	uint8_t u1AntSelNo;
+	uint8_t u1FemPin;
+	uint8_t u1Polarity;
+};
+
+
+/*******************************************************
+ ***************** FEM info *****************************
+ ********************************************************/
+
+struct PHYACT_FEM_TT_T {
+	uint8_t u1StateName;
+	uint8_t u1TruthTable;
+};
+
+struct PHYACT_FEM_INFO_T {
+	uint32_t u4FemId;
+	uint32_t u4Flag;
+	uint8_t u1PinNum;
+	uint8_t u1PinName[PHYACT_MAX_PIN_NUM];
+	uint8_t u1StateNum;
+	struct PHYACT_FEM_TT_T rState[PHYACT_MAX_STATE_NUM];
+};
+
+struct PHYACT_FEM_INFOS_T {
+	uint8_t u1FemCount;
+	uint8_t u1Reserve[3];
+	struct PHYACT_FEM_INFO_T rFem[PHYACT_MAX_FEM_NUM];
+};
+
+/*******************************************************
+ ***************** FEM layout usage *********************
+ ********************************************************/
+struct PHYACT_LAYOUT_USAGE_PIN_T {
+	uint8_t u1PinName;
+	uint8_t u1AntSelNo;
+	uint8_t u1Polarity;
+	uint8_t u1Reserve[1];    //4-byte alignment reserve
+};
+
+struct PHYACT_LAYOUT_USAGE_T {
+	uint8_t u1BandPathWf;
+	uint8_t u1BandPathBt;
+	uint8_t u1FemIdx;
+	uint8_t u1PinNum;
+	struct PHYACT_LAYOUT_USAGE_PIN_T rPin[PHYACT_MAX_PIN_NUM];
+};
+
+
+struct PHYACT_LAYOUT_USAGES_T {
+	uint8_t u1LayoutUsageCount;
+	uint8_t u1Reserve[3];
+	uint32_t u4Flag;
+	struct PHYACT_LAYOUT_USAGE_T rLayout[PHYACT_MAX_USAGE_NUM];
+};
+
+/*******************************************************
+ ***************** FEM used state usage *********************
+ ********************************************************/
+struct PHYACT_STATE_USAGE_CAT_T {
+	uint8_t u1Cat;   /* ENUM_INICMD_EFEM_STATE_CAT_T*/
+	uint8_t u1StateUsedNum;
+	uint8_t u1StateUsedName[PHYACT_MAX_ST_CAT_NUM];
+};
+
+struct PHYACT_STATE_USAGE_T {
+	uint8_t u1FemIdx;
+	uint8_t u1StateCatNum;
+	uint8_t u1Reserve[2];
+	struct PHYACT_STATE_USAGE_CAT_T u1StateCat[PHYACT_MAX_STATE_CAT_NUM];
+};
+
+struct PHYACT_STATE_USAGES_T {
+	uint8_t u1FemCount;
+	uint8_t u1Reserve[3];
+	struct PHYACT_STATE_USAGE_T rFem[PHYACT_MAX_FEM_NUM];
+};
+
+/*******************************************************
+ ***************** connfem  *********************
+ ********************************************************/
+
+struct PHYACT_CONN_FEM_HEADER_T {
+	uint8_t  u1Tag;
+	uint8_t  u1Version;
+	uint16_t u2Len;
+};
+
+struct PHYACT_CONN_FEM_FEM_V2_T {
+	struct PHYACT_CONN_FEM_HEADER_T header;
+
+	uint32_t u4LayoutId; /* still no used*/
+	struct PHYACT_FEM_INFOS_T rFemInfo;
+	struct PHYACT_LAYOUT_USAGES_T rLayoutUsage;
+};
+
+struct PHYACT_CONN_FEM_WF_V2_T {
+	struct PHYACT_CONN_FEM_HEADER_T header;
+	struct PHYACT_STATE_USAGES_T rStateUsage;
+
+};
+
+struct PHYACT_CONN_FEM_SPDT_V2_T {
+	struct PHYACT_CONN_FEM_HEADER_T header;
+
+    //V2 start
+	uint8_t u1SpdtInfo;
+	uint8_t u1SpdtInfo2;
+	uint8_t u1SpdtInfo3;
+	uint8_t u1SpdtInfo4;
+	uint8_t u1SpdtInfo5;
+	uint8_t u1PinNum;
+	struct PHYACT_CUS_PIN_T rPin[HAL_PHY_EPA_CUS_LAYOUT_NUM];
+
+};
+
+#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+
 
 uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
@@ -351,19 +519,367 @@ exit:
 	return u4Status;
 }
 
-#if (CFG_SUPPORT_CONNFEM == 1)
-struct COM_FEM_TAG_FORMAT {
-	uint32_t tag_fem_info_id;
-	struct connfem_epaelna_pin_info tag_pin_info;
-#if (CFG_SUPPORT_CONNAC3X == 1)
-	struct connfem_epaelna_flags_common tag_flags_common;
-#endif
-};
+#if ((CONFIG_CONNFEM_VER >= 2) && (CFG_SUPPORT_CONNFEM == 1))
 
-struct LAA_TAG_FORMAT {
-	struct connfem_epaelna_laa_pin_info tag_laa_pin_info;
-};
+uint8_t _AddConnfemSkuTag(struct ADAPTER *prAdapter,
+	uint8_t *au1TagBuf,
+	uint32_t *pu4TagLen)
+{
+	uint32_t u4TagLen = 0, u4TagLenBk;
+	const struct connfem_sku *pSku = NULL;
+	uint8_t cnt1, cnt2, cnt3;
+	uint8_t u1SpdtInfo;
+
+	struct PHYACT_CONN_FEM_HEADER_T *pPlvHeader;
+	struct PHYACT_FEM_INFOS_T *pFemInfos;
+	struct PHYACT_LAYOUT_USAGES_T *pLayoutUsage;
+	struct PHYACT_STATE_USAGES_T *pStateUsage;
+	struct PHYACT_CONN_FEM_SPDT_V2_T *pSpdt;
+	struct PHYACT_STATE_USAGE_CAT_T *pUsageCat;
+
+	if ((pu4TagLen == NULL) || (au1TagBuf == NULL)) {
+		DBGLOG(INIT, ERROR, "_AddConnfemTag fail");
+		return 1;
+	}
+
+	/* init */
+	*pu4TagLen = 0;
+
+	/*get connfem sku data*/
+	connfem_sku_data(&pSku);
+
+	if (pSku == NULL) {
+		DBGLOG(INIT, ERROR, "sku null");
+		return 1;
+	}
+
+	/* header */
+	pPlvHeader = (struct PHYACT_CONN_FEM_HEADER_T *) &au1TagBuf[u4TagLen];
+	pPlvHeader->u1Tag = ENUM_INICMD_CONN_FEM_HEADER_FEM;
+	pPlvHeader->u1Version = 2;
+	//pPlvHeader->u2Len = ;
+	u4TagLen += sizeof(struct PHYACT_CONN_FEM_HEADER_T);
+	u4TagLenBk = u4TagLen;
+
+	/****** FEM INFO **********/
+	/* layout id */
+	au1TagBuf[u4TagLen] = 0;
+	au1TagBuf[u4TagLen] = 0;
+	au1TagBuf[u4TagLen] = 0;
+	au1TagBuf[u4TagLen] = 0;
+	u4TagLen += 4;
+
+	/* fem count */
+	pFemInfos = (struct PHYACT_FEM_INFOS_T *) &au1TagBuf[u4TagLen];
+	pFemInfos->u1FemCount = pSku->fem_count;
+	u4TagLen += sizeof(uint32_t);
+
+	for (cnt1 = 0 ; cnt1 < pFemInfos->u1FemCount ; cnt1++) {
+		/* vid/pid */
+		pFemInfos->rFem[cnt1].u4FemId =
+			(pSku->fem[cnt1].info.vid << 16) |
+			pSku->fem[cnt1].info.pid;
+		pFemInfos->rFem[cnt1].u4Flag = pSku->fem[cnt1].info.flag;
+
+		/* pin */
+		pFemInfos->rFem[cnt1].u1PinNum = pSku->fem[cnt1].ctrl_pin.count;
+		for (cnt2 = 0; cnt2 < pFemInfos->rFem[cnt1].u1PinNum; cnt2++) {
+			pFemInfos->rFem[cnt1].u1PinName[cnt2] =
+				pSku->fem[cnt1].ctrl_pin.id[cnt2];
+		}
+
+		/* state */
+		pFemInfos->rFem[cnt1].u1StateNum =
+			pSku->fem[cnt1].tt.logic_count;
+		for (cnt2 = 0; cnt2 < pFemInfos->rFem[cnt1].u1StateNum;
+			cnt2++) {
+			pFemInfos->rFem[cnt1].rState[cnt2].u1StateName =
+				pSku->fem[cnt1].tt.logic[cnt2].op;
+			pFemInfos->rFem[cnt1].rState[cnt2].u1TruthTable =
+				pSku->fem[cnt1].tt.logic[cnt2].binary;
+		}
+
+	}
+	u4TagLen += sizeof(struct PHYACT_FEM_INFO_T) * pFemInfos->u1FemCount;
+
+	/****** LAYOUT USAGE **********/
+	pLayoutUsage = (struct PHYACT_LAYOUT_USAGES_T *) &au1TagBuf[u4TagLen];
+	pLayoutUsage->u1LayoutUsageCount = pSku->layout_count;
+	pLayoutUsage->u4Flag = pSku->layout_flag;
+	u4TagLen += sizeof(uint32_t) * 2;
+
+	for (cnt1 = 0; cnt1 < pLayoutUsage->u1LayoutUsageCount; cnt1++) {
+		pLayoutUsage->rLayout[cnt1].u1BandPathWf =
+			pSku->layout[cnt1].bandpath[1];
+		pLayoutUsage->rLayout[cnt1].u1BandPathBt =
+			pSku->layout[cnt1].bandpath[2];
+		pLayoutUsage->rLayout[cnt1].u1FemIdx =
+			pSku->layout[cnt1].fem_idx;
+		pLayoutUsage->rLayout[cnt1].u1PinNum =
+			pSku->layout[cnt1].pin_count;
+
+		for (cnt2 = 0; cnt2 < pLayoutUsage->rLayout[cnt1].u1PinNum;
+			cnt2++) {
+			pLayoutUsage->rLayout[cnt1].rPin[cnt2].u1PinName =
+				pSku->layout[cnt1].pinmap[cnt2].pin2;
+			pLayoutUsage->rLayout[cnt1].rPin[cnt2].u1AntSelNo =
+				pSku->layout[cnt1].pinmap[cnt2].pin1;
+			pLayoutUsage->rLayout[cnt1].rPin[cnt2].u1Polarity =
+				pSku->layout[cnt1].pinmap[cnt2].flag;
+		}
+	}
+	u4TagLen += (sizeof(struct PHYACT_LAYOUT_USAGE_T) *
+				pLayoutUsage->u1LayoutUsageCount);
+
+	pPlvHeader->u2Len = u4TagLen - u4TagLenBk;
+
+	/* header */
+	pPlvHeader = (struct PHYACT_CONN_FEM_HEADER_T *) &au1TagBuf[u4TagLen];
+	pPlvHeader->u1Tag = ENUM_INICMD_CONN_FEM_HEADER_WF;
+	pPlvHeader->u1Version = 2;
+	//pPlvHeader->u2Len = ;
+	u4TagLen += sizeof(struct PHYACT_CONN_FEM_HEADER_T);
+	u4TagLenBk = u4TagLen;
+
+	/****** STATE USAGE **********/
+	pStateUsage = (struct PHYACT_STATE_USAGES_T *) &au1TagBuf[u4TagLen];
+	pStateUsage->u1FemCount = pSku->fem_count;
+	u4TagLen += sizeof(uint32_t);
+
+	for (cnt1 = 0 ; cnt1 < pStateUsage->u1FemCount ; cnt1++) {
+		/* vid/pid */
+		pStateUsage->rFem[cnt1].u1FemIdx = cnt1;
+		pStateUsage->rFem[cnt1].u1StateCatNum =
+			pSku->fem[cnt1].tt_usage_wf.cat_count;
+		for (cnt2 = 0; cnt2 < pStateUsage->rFem[cnt1].u1StateCatNum;
+			cnt2++) {
+
+			pUsageCat =
+				&pStateUsage->rFem[cnt1].u1StateCat[cnt2];
+			pUsageCat->u1Cat =
+				pSku->fem[cnt1].tt_usage_wf.cat[cnt2].id;
+			pUsageCat->u1StateUsedNum =
+				pSku->fem[cnt1].tt_usage_wf.cat[cnt2].op_count;
+
+			for (cnt3 = 0;
+			    cnt3 < pUsageCat->u1StateUsedNum;
+				cnt3++) {
+				pUsageCat->u1StateUsedName[cnt3] =
+				pSku->fem[cnt1].tt_usage_wf.cat[cnt2].op[cnt3];
+			}
+		}
+	}
+
+	u4TagLen += sizeof(struct PHYACT_STATE_USAGE_T) *
+		pStateUsage->u1FemCount;
+
+	pPlvHeader->u2Len = u4TagLen - u4TagLenBk;
+
+	/* header */
+	pPlvHeader = (struct PHYACT_CONN_FEM_HEADER_T *) &au1TagBuf[u4TagLen];
+	pPlvHeader->u1Tag = ENUM_INICMD_CONN_FEM_HEADER_SPDT;
+	pPlvHeader->u1Version = 2;
+	//pPlvHeader->u2Len = ;
+	u4TagLenBk = u4TagLen + sizeof(struct PHYACT_CONN_FEM_HEADER_T);
+	pSpdt = (struct PHYACT_CONN_FEM_SPDT_V2_T *) &au1TagBuf[u4TagLen];
+
+	/****** SPDT **********/
+	connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-ant-cnt",
+		&u1SpdtInfo);
+	pSpdt->u1SpdtInfo = u1SpdtInfo;
+
+	connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-conn-dpdt-sp3t",
+		&u1SpdtInfo);
+	pSpdt->u1SpdtInfo2 = u1SpdtInfo;
+
+	connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-conn-spdt",
+		&u1SpdtInfo);
+	pSpdt->u1SpdtInfo3 = u1SpdtInfo;
+
+	connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-bt-wf-usage",
+		&u1SpdtInfo);
+	pSpdt->u1SpdtInfo4 = u1SpdtInfo;
+
+	connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-conn-spdt-2",
+		&u1SpdtInfo);
+	pSpdt->u1SpdtInfo5 = u1SpdtInfo;
+
+	pSpdt->u1PinNum = pSku->spdt.pin_count;
+	for (cnt1 = 0 ; cnt1 < pSku->spdt.pin_count; cnt1++) {
+		pSpdt->rPin[cnt1].u1AntSelNo = pSku->spdt.pinmap[cnt1].pin1;
+		pSpdt->rPin[cnt1].u1FemPin = pSku->spdt.pinmap[cnt1].pin2;
+		pSpdt->rPin[cnt1].u1Polarity = pSku->spdt.pinmap[cnt1].flag;
+	}
+
+	u4TagLen += sizeof(struct PHYACT_CONN_FEM_SPDT_V2_T);
+	pPlvHeader->u2Len = u4TagLen - u4TagLenBk;
+
+	DBGLOG(INIT, INFO, "_AddConnfemTag , Len=%d", u4TagLen);
+	DBGLOG_MEM8(INIT, TRACE, au1TagBuf, u4TagLen);
+
+	*pu4TagLen = u4TagLen;
+	return 0;
+}
+
+
+uint32_t wlanSendPhyActionV2(struct ADAPTER *prAdapter,
+	uint16_t u2Tag,
+	uint8_t ucCalCmd)
+{
+
+#define CMD_MAX_BUF_SIZE 2248
+
+	struct HAL_PHY_ACTION_TLV_HEADER *prCmd = NULL;
+	struct HAL_PHY_ACTION_TLV_HEADER *prEvent = NULL;
+	struct HAL_PHY_ACTION_TLV *prPhyTlv;
+	struct INIT_CMD_PHY_ACTION_CAL *prPhyCal;
+	uint8_t *u1EpaELnaDataPointer = NULL;
+	uint8_t u1EpaElnaDummyArray[10] = {0};
+	uint32_t u4EpaELnaDataSize = 0;
+
+	uint32_t u4CmdSize = 0, u4TagSize = 0;
+	uint32_t u4EvtSize = 0, u4TmpSize;
+	uint8_t  u1TagNum, cnt1;
+	uint8_t *pu1TagBuf = NULL;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	uint8_t  au1TagList[10];
+
+	/* 1. Allocate CMD Info Packet and its Buffer. */
+	prCmd = kalMemAlloc(CMD_MAX_BUF_SIZE, VIR_MEM_TYPE);
+	if (!prCmd) {
+		DBGLOG(INIT, ERROR, "Alloc cmd packet failed");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	/* Allocate Tag Buffer  */
+	pu1TagBuf = kalMemAlloc(CMD_MAX_BUF_SIZE, VIR_MEM_TYPE);
+	if (!pu1TagBuf) {
+		DBGLOG(INIT, ERROR, "Alloc pu1TagBuf failed");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	u4EvtSize = sizeof(struct HAL_PHY_ACTION_TLV_HEADER) +
+			sizeof(struct HAL_PHY_ACTION_TLV) +
+			sizeof(struct INIT_EVENT_PHY_ACTION_RSP);
+	prEvent = kalMemAlloc(u4EvtSize, VIR_MEM_TYPE);
+	if (!prEvent) {
+		DBGLOG(INIT, ERROR, "Alloc event packet failed");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	/* 2. TLV handle */
+	if (u2Tag == HAL_PHY_ACTION_TAG_COM_FEM) {
+		u1TagNum = 1;
+		au1TagList[0] = PC_TAG_ID_CONNFEM;
+	} else if (u2Tag == HAL_PHY_ACTION_TAG_CAL) {
+		u1TagNum = 2;
+		au1TagList[0] = PC_TAG_ID_NVRAM;
+		au1TagList[1] = PC_TAG_ID_CAL;
+	} else {
+		DBGLOG(INIT, INFO, "unknown tag");
+		goto exit;
+	}
+
+	/* Process TLV Header Part1 */
+	prCmd->u4MagicNum = HAL_PHY_ACTION_MAGIC_NUM;
+	prCmd->ucVersion = HAL_PHY_ACTION_VERSION;
+	prCmd->ucTagNums = u1TagNum;
+
+	u4CmdSize = sizeof(struct HAL_PHY_ACTION_TLV_HEADER);
+
+	for (cnt1 = 0; cnt1 < u1TagNum; cnt1++) {
+
+		u4TmpSize = u4CmdSize -
+			sizeof(struct HAL_PHY_ACTION_TLV_HEADER);
+		prPhyTlv = (struct HAL_PHY_ACTION_TLV *)
+			&prCmd->aucBuffer[u4TmpSize];
+
+		switch (au1TagList[cnt1]) {
+		case PC_TAG_ID_CONNFEM:
+			_AddConnfemSkuTag(prAdapter, pu1TagBuf, &u4TagSize);
+
+			//u4TagSize = u4EpaELnaDataSize;
+
+			prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_COM_FEM;
+			prPhyTlv->u2BufLength = PALIGN_4(u4TagSize);
+			kalMemCopy(prPhyTlv->aucBuffer,
+				pu1TagBuf, u4TagSize);
+
+			break;
+		case PC_TAG_ID_NVRAM:
+			wlanGetEpaElnaFromNvram(&u1EpaELnaDataPointer,
+				&u4EpaELnaDataSize);
+			if (u1EpaELnaDataPointer == NULL) {
+				DBGLOG(INIT, WARN, "Get pointer failed");
+
+				u1EpaELnaDataPointer = u1EpaElnaDummyArray;
+				u4EpaELnaDataSize = 0;
+			}
+			u4TagSize = u4EpaELnaDataSize;
+
+			prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_NVRAM;
+			prPhyTlv->u2BufLength = PALIGN_4(u4EpaELnaDataSize);
+			kalMemCopy(prPhyTlv->aucBuffer,
+				u1EpaELnaDataPointer, u4EpaELnaDataSize);
+
+			break;
+		case PC_TAG_ID_CAL:
+
+			prPhyTlv->u2Tag = HAL_PHY_ACTION_TAG_CAL;
+			prPhyTlv->u2BufLength =
+				sizeof(struct INIT_CMD_PHY_ACTION_CAL);
+			prPhyCal =
+			(struct INIT_CMD_PHY_ACTION_CAL *)prPhyTlv->aucBuffer;
+			prPhyCal->ucCmd = ucCalCmd;
+#if CFG_MTK_ANDROID_WMT
+			prPhyCal->ucCalSaveResult = 1;
+#else
+			prPhyCal->ucCalSaveResult = 0;
 #endif
+			prPhyCal->ucSkipCal = g_fgCalDisabled;
+
+			break;
+		default:
+			break;
+		}
+
+		u4CmdSize += sizeof(struct HAL_PHY_ACTION_TLV) + u4TagSize;
+
+		DBGLOG(INIT, INFO, "Tag=%d, Len=%d",
+			au1TagList[cnt1], u4TagSize);
+		DBGLOG_MEM8(INIT, TRACE, (uint8_t *)prPhyTlv, u4TagSize);
+	}
+
+	/* 1. Allocate CMD Info Packet and its Buffer. */
+	/* u2Tag  */
+	u4Status = wlanSendInitSetQueryCmdImpl(prAdapter,
+		INIT_CMD_ID_PHY_ACTION, prCmd, u4CmdSize,
+		TRUE, FALSE,
+		INIT_EVENT_ID_PHY_ACTION, prEvent, u4EvtSize,
+		CFG_PRE_CAL_SLEEP_WAITING_INTERVAL,
+		CFG_PRE_CAL_RX_RESPONSE_TIMEOUT);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	u4Status = wlanRcvPhyActionRsp(prAdapter, prEvent);
+
+exit:
+	if (prCmd)
+		kalMemFree(prCmd, VIR_MEM_TYPE, u4CmdSize);
+
+	if (prEvent)
+		kalMemFree(prEvent, VIR_MEM_TYPE, u4EvtSize);
+
+	if (pu1TagBuf)
+		kalMemFree(pu1TagBuf, VIR_MEM_TYPE, u4EvtSize);
+
+	return u4Status;
+}
+
+#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
 
 uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint16_t u2Tag,
@@ -733,6 +1249,21 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 
 	if (g_fgPreCal == FALSE) {
 		/* Setup calibration data from backup file */
+#if (CFG_SUPPORT_CONNFEM == 1)
+#if (CONFIG_CONNFEM_VER >= 2)
+		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
+			DBGLOG(INIT, INFO, "connfem sku support");
+
+			wlanSendPhyActionV2(prAdapter,
+				HAL_PHY_ACTION_TAG_COM_FEM,
+				0);
+		} else
+			wlanSendPhyAction(prAdapter,
+			HAL_PHY_ACTION_TAG_COM_FEM,
+			0);
+#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+#endif /*#if (CFG_SUPPORT_CONNFEM == 1) */
+
 #if CFG_MTK_ANDROID_WMT
 		if (wlanAccessCalibrationEMI(prAdapter, NULL, FALSE) ==
 			WLAN_STATUS_SUCCESS)
@@ -746,14 +1277,29 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 				HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
 	} else {
 #if (CFG_SUPPORT_CONNFEM == 1)
+
+#if (CONFIG_CONNFEM_VER >= 2)
+		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
+			DBGLOG(INIT, INFO, "connfem sku support");
+
+			wlanSendPhyActionV2(prAdapter,
+				HAL_PHY_ACTION_TAG_COM_FEM,
+				0);
+		} else
+			wlanSendPhyAction(prAdapter,
+			HAL_PHY_ACTION_TAG_COM_FEM,
+			0);
+#else /* #if(CONFIG_CONNFEM_VER >= 2) */
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
 			0);
-#else
+#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+
+#else /* #if (CFG_SUPPORT_CONNFEM == 1) */
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_NVRAM,
 			0);
-#endif
+#endif /* #if (CFG_SUPPORT_CONNFEM == 1) */
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_CAL,
 			HAL_PHY_ACTION_CAL_FORCE_CAL_REQ);
