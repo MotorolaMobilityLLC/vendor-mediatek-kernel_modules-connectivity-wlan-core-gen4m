@@ -2914,7 +2914,6 @@ u_int8_t rsnCheckSecurityModeChanged(
 
 	switch (eAuthMode) {
 	case AUTH_MODE_OPEN: /* original is open system */
-	case AUTH_MODE_NON_RSN_FT:
 		if ((prBssDesc->u2CapInfo & CAP_INFO_PRIVACY) &&
 		    !prAdapter->prGlueInfo->rWpaInfo.fgPrivacyInvoke) {
 			DBGLOG(RSN, INFO, "security change, open->privacy\n");

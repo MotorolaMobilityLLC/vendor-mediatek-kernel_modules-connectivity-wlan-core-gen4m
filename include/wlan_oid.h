@@ -281,7 +281,6 @@
 /*----------------------------------------------------------------------------*/
 /* NDIS_802_11_AUTHENTICATION_MODE */
 enum ENUM_PARAM_AUTH_MODE {
-	AUTH_MODE_NON_RSN_FT,	/* Fast Bss Transition in a Non FT */
 	AUTH_MODE_OPEN,		/*!< Open system */
 	AUTH_MODE_SHARED,	/*!< Shared key */
 	AUTH_MODE_AUTO_SWITCH,	/*!< Either open system or shared key */

@@ -559,10 +559,6 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		prStaRec->fgIsReAssoc = FALSE;
 
 		switch (prConnSettings->eAuthMode) {
-			/* FT initial mobility doamin association always
-			 ** use Open AA
-			 */
-		case AUTH_MODE_NON_RSN_FT:
 		case AUTH_MODE_WPA2_FT:
 		case AUTH_MODE_WPA2_FT_PSK:
 		case AUTH_MODE_OPEN:	/* Note: Omit break here. */
@@ -626,11 +622,25 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 		 * acquire the Roaming Auth Type
 		 */
 		switch (prConnSettings->eAuthMode) {
+		case AUTH_MODE_OPEN:
+			if (prAdapter->prGlueInfo->rWpaInfo.u4WpaVersion ==
+			IW_AUTH_WPA_VERSION_DISABLED
+			&& prAdapter->prGlueInfo->rWpaInfo.u4AuthAlg ==
+			IW_AUTH_ALG_FT) {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+				DBGLOG(AIS, INFO, "FT: Non-RSN FT roaming\n");
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					prAisSpecificBssInfo->
+					ucRoamingAuthTypes;
+			}
+			break;
 		case AUTH_MODE_WPA2_FT:
 		case AUTH_MODE_WPA2_FT_PSK:
-		case AUTH_MODE_NON_RSN_FT:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
+			DBGLOG(AIS, TRACE, "FT: RSN FT roaming\n");
 			break;
 		default:
 			prAisFsmInfo->ucAvailableAuthTypes =

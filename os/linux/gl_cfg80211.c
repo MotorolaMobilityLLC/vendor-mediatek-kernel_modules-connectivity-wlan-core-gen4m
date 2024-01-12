@@ -1322,11 +1322,10 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 
 	if (prGlueInfo->rWpaInfo.u4WpaVersion == IW_AUTH_WPA_VERSION_DISABLED) {
 		switch (prGlueInfo->rWpaInfo.u4AuthAlg) {
+		case IW_AUTH_ALG_FT:
+			DBGLOG(REQ, INFO, "FT: Non-RSN FT connect\n");
 		case IW_AUTH_ALG_OPEN_SYSTEM:
 			eAuthMode = AUTH_MODE_OPEN;
-			break;
-		case IW_AUTH_ALG_FT:
-			eAuthMode = AUTH_MODE_NON_RSN_FT;
 			break;
 		default:
 			eAuthMode = AUTH_MODE_AUTO_SWITCH;
