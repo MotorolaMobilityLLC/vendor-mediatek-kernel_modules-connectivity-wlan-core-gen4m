@@ -414,10 +414,10 @@ struct STA_RECORD {
 	/*--------------------------------------------------------------------*/
 	uint8_t ucEhtMacCapInfo[EHT_MAC_CAP_BYTE_NUM];
 	uint8_t ucEhtPhyCapInfo[EHT_PHY_CAP_BYTE_NUM];
-	uint8_t aucMscMap20MHzSta[4];
-	uint8_t aucMscMap80MHz[3];
-	uint8_t aucMscMap160MHz[3];
-	uint8_t aucMscMap320MHz[3];
+	uint8_t aucMcsMap20MHzSta[4];
+	uint8_t aucMcsMap80MHz[3];
+	uint8_t aucMcsMap160MHz[3];
+	uint8_t aucMcsMap320MHz[3];
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)

@@ -2112,14 +2112,14 @@ static void cnmStaRecCmdEhtContentFill(
 		EHT_MAC_CAP_BYTE_NUM);
 	memcpy(prCmdContent->ucEhtPhyCapInfo, prStaRec->ucEhtPhyCapInfo,
 		EHT_PHY_CAP_BYTE_NUM);
-	memcpy(prCmdContent->aucMscMap20MHzSta, prStaRec->aucMscMap20MHzSta,
-		sizeof(prCmdContent->aucMscMap20MHzSta));
-	memcpy(prCmdContent->aucMscMap80MHz, prStaRec->aucMscMap80MHz,
-		sizeof(prCmdContent->aucMscMap80MHz));
-	memcpy(prCmdContent->aucMscMap160MHz, prStaRec->aucMscMap160MHz,
-		sizeof(prCmdContent->aucMscMap160MHz));
-	memcpy(prCmdContent->aucMscMap320MHz, prStaRec->aucMscMap320MHz,
-		sizeof(prCmdContent->aucMscMap320MHz));
+	memcpy(prCmdContent->aucMcsMap20MHzSta, prStaRec->aucMcsMap20MHzSta,
+		sizeof(prCmdContent->aucMcsMap20MHzSta));
+	memcpy(prCmdContent->aucMcsMap80MHz, prStaRec->aucMcsMap80MHz,
+		sizeof(prCmdContent->aucMcsMap80MHz));
+	memcpy(prCmdContent->aucMcsMap160MHz, prStaRec->aucMcsMap160MHz,
+		sizeof(prCmdContent->aucMcsMap160MHz));
+	memcpy(prCmdContent->aucMcsMap320MHz, prStaRec->aucMcsMap320MHz,
+		sizeof(prCmdContent->aucMcsMap320MHz));
 }
 #endif
 

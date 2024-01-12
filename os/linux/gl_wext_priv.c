@@ -3956,6 +3956,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_TP_TEST_MODE    "SET_TP_TEST_MODE"
 #define CMD_SET_MUEDCA_OVERRIDE "MUEDCA_OVERRIDE"
 #define CMD_SET_TX_MCSMAP       "SET_MCS_MAP"
+#define CMD_SET_TX_EHTMCSMAP    "SET_EHT_MCS_MAP"
 #define CMD_SET_TX_PPDU         "TX_PPDU"
 #define CMD_SET_LDPC            "SET_LDPC"
 #define CMD_FORCE_AMSDU_TX		"FORCE_AMSDU_TX"
@@ -13670,6 +13671,68 @@ int priv_driver_muedca_override(
 	return i4BytesWritten;
 }
 
+int priv_driver_set_ehtmcsmap(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0, u4ParseBW = 0;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 3) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &u4ParseBW);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+#if (CFG_SUPPORT_802_11BE == 1)
+		/* Figure 9-778ex-EHT-MCS Map (20 MHz-Only STA)
+		 * Figure 9-788ey-EHT-MCS Map (BW<=80MHz,Except 20MHz)
+		 * Default value: 20MHz: 0x22222222
+		 *                80MHz: 0x222222
+		 */
+		if (u4Parse == 0) {
+			prAdapter->fgMcsMapBeenSet &=
+				(~(SET_EHT_BW20_MCS_MAP |
+					SET_EHT_BW80_MCS_MAP));
+			DBGLOG(REQ, INFO,
+				"fgMcsMapBeenSet: %d\n",
+				prAdapter->fgMcsMapBeenSet);
+		} else if (u4Parse == 1) {
+			prAdapter->fgMcsMapBeenSet |= SET_EHT_BW20_MCS_MAP;
+			prAdapter->u4EhtMcsMap20MHzSetFromSigma = u4ParseBW;
+			DBGLOG(REQ, INFO, "Set EhtMcsMap BW20 = 0x%X\n",
+				prAdapter->u4EhtMcsMap20MHzSetFromSigma);
+		} else if (u4Parse == 2) {
+			prAdapter->fgMcsMapBeenSet |= SET_EHT_BW80_MCS_MAP;
+			prAdapter->u4EhtMcsMap80MHzSetFromSigma = u4ParseBW;
+			DBGLOG(REQ, INFO, "Set EhtMcsMap BW80 = 0x%X\n",
+				prAdapter->u4EhtMcsMap80MHzSetFromSigma);
+		}
+#endif
+	} else {
+		DBGLOG(REQ, ERROR,
+			"iwpriv wlan0 driver SET_TX_EHTMCSMAP:<BW> <Value>\n");
+		prAdapter->fgMcsMapBeenSet &=
+			(~(SET_EHT_BW20_MCS_MAP | SET_EHT_BW80_MCS_MAP));
+	}
+
+	return i4BytesWritten;
+}
+
 int priv_driver_set_mcsmap(IN struct net_device *prNetDev, IN char *pcCommand,
 			 IN int i4TotalLen)
 {
@@ -13712,9 +13775,11 @@ int priv_driver_set_mcsmap(IN struct net_device *prNetDev, IN char *pcCommand,
 			DBGLOG(REQ, ERROR, "ucMcsMapSetFromSigma = %d\n",
 				prGlueInfo->prAdapter->ucMcsMapSetFromSigma);
 
-			prGlueInfo->prAdapter->fgMcsMapBeenSet = TRUE;
+			prGlueInfo->prAdapter->fgMcsMapBeenSet |=
+				SET_HE_MCS_MAP;
 		} else {
-			prGlueInfo->prAdapter->fgMcsMapBeenSet = FALSE;
+			prGlueInfo->prAdapter->fgMcsMapBeenSet &=
+				(~SET_HE_MCS_MAP);
 		}
 #endif
 	} else {
@@ -20304,6 +20369,10 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			   strlen(CMD_SET_EHT_OM_TX_NSTS_EXT)) == 0) {
 			i4BytesWritten = priv_driver_set_eht_om_tx_nsts_ext(
 				prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_TX_EHTMCSMAP,
+			   strlen(CMD_SET_TX_EHTMCSMAP)) == 0) {
+			i4BytesWritten = priv_driver_set_ehtmcsmap(prNetDev,
+							pcCommand, i4TotalLen);
 #endif
 		} else if (strnicmp(pcCommand, CMD_SET_TX_OM_PACKET,
 			   strlen(CMD_SET_TX_OM_PACKET)) == 0) {

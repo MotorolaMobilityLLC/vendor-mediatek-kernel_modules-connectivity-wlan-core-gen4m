@@ -90,6 +90,10 @@
 #define Max_Stream_Bytes 3000
 #endif
 
+#define SET_HE_MCS_MAP 1
+#define SET_EHT_BW20_MCS_MAP 2
+#define SET_EHT_BW80_MCS_MAP 4
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1924,6 +1928,8 @@ struct ADAPTER {
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t fgEhtHtcOM;
+	uint32_t u4EhtMcsMap20MHzSetFromSigma;
+	uint32_t u4EhtMcsMap80MHzSetFromSigma;
 #endif
 #if (CFG_SUPPORT_TWT == 1)
 	struct _TWT_PLANNER_T rTWTPlanner;
