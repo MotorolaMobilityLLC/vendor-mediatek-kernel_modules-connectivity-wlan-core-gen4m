@@ -72,7 +72,7 @@
  */
 #include "precomp.h"
 #include "gl_ate_agent.h"
-#include "ics.h"
+#include "gl_ics.h"
 
 #if CFG_SUPPORT_CSI
 #include "gl_csi.h"
