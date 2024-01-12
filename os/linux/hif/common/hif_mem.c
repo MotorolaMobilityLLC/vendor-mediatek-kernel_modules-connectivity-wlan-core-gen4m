@@ -1221,10 +1221,8 @@ struct sk_buff *kalAllocRxSkb(uint8_t **ppucData)
 		page = wifi_page_pool_alloc_page();
 	}
 #endif /* CFG_SUPPORT_RETURN_WOR */
-	if (!page) {
-		DBGLOG_LIMITED(HAL, ERROR, "allocate page fail\n");
+	if (!page)
 		return NULL;
-	}
 
 	pkt = build_skb(page_to_virt(page), PAGE_SIZE); /* ptr to sk_buff */
 	if (!pkt) {
