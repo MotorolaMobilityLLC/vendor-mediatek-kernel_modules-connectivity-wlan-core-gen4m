@@ -70,8 +70,8 @@
 #endif
 
 #if ARP_MONITER_ENABLE
-#include "que_mgt.h"
-#endif
+#include "arp_mon.h"
+#endif /* ARP_MONITER_ENABLE */
 
 #if (CFG_SUPPORT_IGMP_OFLD == 1)
 #include <linux/igmp.h>
@@ -2216,6 +2216,32 @@ unsigned int _cfg80211_classify8021d(struct sk_buff *skb)
 }
 #endif
 
+u_int8_t __is_critical_packet(struct net_device *dev)
+{
+	bool is_critical = FALSE;
+#if ARP_MONITER_ENABLE
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct GLUE_INFO *prGlueInfo;
+	uint8_t ucBssIndex;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		kalGetNetDevPriv(dev);
+	if (!prNetDevPrivate)
+		goto end;
+
+	prGlueInfo = prNetDevPrivate->prGlueInfo;
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
+		goto end;
+
+	ucBssIndex = prNetDevPrivate->ucBssIdx;
+	if (arpMonIsCritical(prGlueInfo->prAdapter, ucBssIndex))
+		is_critical = TRUE;
+
+end:
+#endif /* ARP_MONITER_ENABLE */
+	return is_critical;
+}
+
 static bool is_critical_packet(struct net_device *dev,
 	struct sk_buff *skb, u16 orig_queue_index)
 {
@@ -2223,10 +2249,6 @@ static bool is_critical_packet(struct net_device *dev,
 	uint8_t *pucPkt;
 	uint16_t u2EtherType;
 	bool is_critical = FALSE;
-#if ARP_MONITER_ENABLE
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
-	uint8_t ucBssIndex;
-#endif /* ARP_MONITER_ENABLE */
 
 	if (!skb)
 		return FALSE;
@@ -2239,15 +2261,9 @@ static bool is_critical_packet(struct net_device *dev,
 	case ETH_P_ARP:
 		if (__netif_subqueue_stopped(dev, orig_queue_index))
 			is_critical = TRUE;
-#if ARP_MONITER_ENABLE
-		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-			kalGetNetDevPriv(dev);
-		if (prNetDevPrivate) {
-			ucBssIndex = prNetDevPrivate->ucBssIdx;
-			if (qmArpMonitorIsCritical(ucBssIndex))
-				is_critical = true;
-		}
-#endif /* ARP_MONITER_ENABLE */
+
+		if (__is_critical_packet(dev))
+			is_critical = TRUE;
 		break;
 	case ETH_P_1X:
 	case ETH_P_PRE_1X:

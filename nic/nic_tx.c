@@ -304,9 +304,11 @@ void nicTxInitialize(struct ADAPTER *prAdapter)
 	/* enable/disable TX resource control */
 	prTxCtrl->fgIsTxResourceCtrl = NIC_TX_RESOURCE_CTRL;
 
+#if ARP_MONITER_ENABLE
 #if !CFG_QM_ARP_MONITOR_MSG
 	prAdapter->ucArpNoRespBitmap = 0;
 #endif /* !CFG_QM_ARP_MONITOR_MSG */
+#endif /* ARP_MONITER_ENABLE */
 
 	qmInit(prAdapter, halIsTxResourceControlEn(prAdapter));
 
@@ -4134,7 +4136,7 @@ uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 #if !CFG_QM_ARP_MONITOR_MSG
 		/* CFG_QM_ARP_MONITOR_MSG is enabled when trx-direct */
 		if (!HAL_IS_TX_DIRECT(prAdapter))
-			qmArpMonitorHandleLegacyBTOEvent(prAdapter);
+			arpMonHandleLegacyBTOEvent(prAdapter);
 #endif /* !CFG_QM_ARP_MONITOR_MSG */
 #endif /* ARP_MONITER_ENABLE */
 		/* post-process for dropped packets */
@@ -5934,14 +5936,8 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 					prMsduInfo,
 					ucActivedTspec, &ucTC);
 #if ARP_MONITER_ENABLE
-				prStaRec =
-					QM_GET_STA_REC_PTR_FROM_INDEX(prAdapter,
-						prMsduInfo->ucStaRecIndex);
-				if (prStaRec && IS_STA_IN_AIS(prStaRec) &&
-					prMsduInfo->eSrc == TX_PACKET_OS)
-					qmDetectArpNoResponse(prAdapter,
-						prMsduInfo);
-#endif
+				arpMonProcessTxPacket(prAdapter, prMsduInfo);
+#endif /* ARP_MONITER_ENABLE */
 				break;	/*default */
 			}	/* switch (prMsduInfo->ucStaRecIndex) */
 
