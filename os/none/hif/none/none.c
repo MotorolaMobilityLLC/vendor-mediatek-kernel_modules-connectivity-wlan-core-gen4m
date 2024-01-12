@@ -405,6 +405,23 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+}
+
+uint32_t halGetBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+};
+
+u_int8_t halTxIsBssCreditCntFull(uint32_t u4TxCredit)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
+
 u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo,
 	uint8_t *pucState)
 {

@@ -1717,6 +1717,22 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 {
 }
 
+#if (CFG_TX_HIF_CREDIT_FEATURE == 1)
+void halAdjustBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+}
+
+uint32_t halGetBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	return 0;
+}
+
+u_int8_t halTxIsBssCreditCntFull(uint32_t u4TxCredit)
+{
+	return FALSE;
+}
+#endif
+
 void halProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 {
 #if CFG_USB_TX_HANDLE_IN_HIF_THREAD
