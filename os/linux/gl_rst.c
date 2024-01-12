@@ -103,6 +103,7 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("RST_SER_L0P5_FAIL"),
 	(uint8_t *) DISP_STRING("RST_CMD_EVT_FAIL"),
 	(uint8_t *) DISP_STRING("RST_WDT"),
+	(uint8_t *) DISP_STRING("RST_SUBSYS_BUS_HANG"),
 	(uint8_t *) DISP_STRING("RST_SMC_CMD_FAIL"),
 	(uint8_t *) DISP_STRING("RST_DEVAPC"),
 	(uint8_t *) DISP_STRING("RST_PCIE_NOT_READY"),
