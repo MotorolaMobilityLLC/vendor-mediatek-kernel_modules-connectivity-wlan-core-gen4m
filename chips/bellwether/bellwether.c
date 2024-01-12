@@ -102,6 +102,7 @@ struct ECO_INFO bellwether_eco_table[] = {
 };
 
 uint8_t *apucbellwetherFwName[] = {
+	(uint8_t *) CFG_FW_FILENAME "_bellwether_sta",
 	(uint8_t *) CFG_FW_FILENAME "_bellwether",
 	NULL
 };
