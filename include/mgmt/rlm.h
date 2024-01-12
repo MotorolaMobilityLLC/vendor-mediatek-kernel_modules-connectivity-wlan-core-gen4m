@@ -456,10 +456,10 @@ void rlmReqGenerateVhtOpNotificationIE(struct ADAPTER
 
 
 #endif
-
+#if CFG_SUPPORT_802_11D
 void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 			  struct MSDU_INFO *prMsduInfo);
-
+#endif
 #if CFG_SUPPORT_DFS
 void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 			     struct SW_RFB *prSwRfb);

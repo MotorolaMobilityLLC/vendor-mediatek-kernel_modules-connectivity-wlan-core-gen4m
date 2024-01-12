@@ -1062,7 +1062,7 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 			 */
 		}
 	}
-
+#if CFG_SUPPORT_802_11D
 	/* 4 <6> Fill the DS Parameter Set element. */
 	if (prBssInfo->ucCountryIELen != 0) {
 		COUNTRY_IE(pucBuffer)->ucId = ELEM_ID_COUNTRY_INFO;
@@ -1079,6 +1079,7 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
+#endif
 }			/* end of bssBuildBeaconProbeRespFrameCommonIEs() */
 
 /*---------------------------------------------------------------------------*/

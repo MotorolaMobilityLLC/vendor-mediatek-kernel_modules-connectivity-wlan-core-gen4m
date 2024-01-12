@@ -1879,7 +1879,7 @@ rlmGetSupportRxNssInVhtCap(struct IE_VHT_CAP *prVhtCap)
 
 #endif
 
-
+#if CFG_SUPPORT_802_11D
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -1912,7 +1912,7 @@ void rlmGenerateCountryIE(struct ADAPTER *prAdapter,
 
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuf);
 }
-
+#endif
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 uint32_t rlmCalBackup(struct ADAPTER *prAdapter, uint8_t ucReason,
 		      uint8_t ucAction, uint8_t ucRomRam)

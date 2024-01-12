@@ -4290,6 +4290,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					IE_LEN(pucIE),
 					TIM_IE(pucIE)->ucDTIMPeriod);
 				break;
+#if CFG_SUPPORT_802_11D
 			case ELEM_ID_COUNTRY_INFO: /* 7 */
 				if (COUNTRY_IE(pucIE)->ucLength
 					>= ELEM_MIN_LEN_COUNTRY_INFO) {
@@ -4304,6 +4305,7 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 					COUNTRY_IE(pucIE)->ucLength - 3);
 				}
 				break;
+#endif
 			case ELEM_ID_ERP_INFO:	/* 42 *//* V */
 				{
 #if 1
