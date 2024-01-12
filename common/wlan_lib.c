@@ -8184,6 +8184,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4P2pChnlHoldTime = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "P2pChnlHoldTime", P2P_AP_CHNL_HOLD_TIME_MS);
 
+	prWifiVar->u4ProbeRspRetryLimit = (uint32_t) wlanCfgGetUint32(
+		prAdapter, "ProbeRspRetryLimit",
+		DEFAULT_P2P_PROBERESP_RETRY_LIMIT);
+
 	prWifiVar->fgAllowSameBandDualSta = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "AllowSameBandDualSta", FEATURE_ENABLED);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
