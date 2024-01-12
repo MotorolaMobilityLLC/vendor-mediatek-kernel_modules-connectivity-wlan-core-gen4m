@@ -7303,6 +7303,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 	INIT_UINT(prWifiVar->ucBtmCap, "BtmCap", FEATURE_ENABLED);
+
+	/* Init HT MU dynamic SMPS STR Capability*/
+	INIT_UINT(prWifiVar->ucHtSmps2g4, "Sta2gHtSmpsCap",
+		DEFAULT_HT_SMPS_2G4_CAP);
+	INIT_UINT(prWifiVar->ucHtSmps5g, "Sta5gHtSmpsCap",
+		DEFAULT_HT_SMPS_5G_CAP);
+	INIT_UINT(prWifiVar->ucHtSmps6g, "Sta6gHtSmpsCap",
+		DEFAULT_HT_SMPS_6G_CAP);
+
 	/* 0: disabled
 	 * 1: Tx done event to driver
 	 * 2: Tx status to FW only

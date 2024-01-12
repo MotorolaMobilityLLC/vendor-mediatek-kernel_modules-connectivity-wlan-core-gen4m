@@ -879,6 +879,18 @@ static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
 	}
 #endif
 
+	if (prBssInfo->eBand == BAND_6G &&
+	    prAdapter->rWifiVar.ucHtSmps6g == 1) {
+		prHe6gBandCap->u2CapInfo &=
+			(~HE_6G_CAP_INFO_SM_POWER_SAVE);
+		(prHe6gBandCap->u2CapInfo) |=
+			(1 << HE_6G_CAP_INFO_SM_POWER_SAVE_OFFSET);
+	} else if (prBssInfo->eBand == BAND_6G &&
+		   prAdapter->rWifiVar.ucHtSmps6g == 3) {
+		prHe6gBandCap->u2CapInfo |=
+			HE_6G_CAP_INFO_SM_POWER_SAVE;
+	}
+
 	ASSERT(IE_SIZE(prHe6gBandCap) <=
 		(ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP));
 

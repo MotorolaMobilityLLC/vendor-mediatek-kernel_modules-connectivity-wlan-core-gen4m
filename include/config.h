@@ -2292,6 +2292,10 @@
 #define CFG_SUPPORT_TSF_SYNC    0
 #endif
 
+#define DEFAULT_HT_SMPS_2G4_CAP    0xF
+#define DEFAULT_HT_SMPS_5G_CAP      0xF
+#define DEFAULT_HT_SMPS_6G_CAP      0xF
+
 /* 1(default): Run on big core when tput over threshold
  * 0: Disable (Let system scheduler decide)
  */

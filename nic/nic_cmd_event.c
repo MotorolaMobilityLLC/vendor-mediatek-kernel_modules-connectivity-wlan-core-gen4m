@@ -3142,6 +3142,15 @@ uint32_t nicCfgChipCapMacCap(struct ADAPTER *prAdapter,
 
 	prAdapter->ucWmmSetNum = prMacCap->ucWmmSet > 0 ?
 		prMacCap->ucWmmSet : 1;
+
+	/* WIFI7 Plugfest MU dynamic SMPS STR test update capability */
+	wlanCfgSetUint32(prAdapter, "Sta2gHtSmpsCap",
+			prAdapter->rWifiVar.ucHtSmps2g4);
+	wlanCfgSetUint32(prAdapter, "Sta5gHtSmpsCap",
+			prAdapter->rWifiVar.ucHtSmps5g);
+	wlanCfgSetUint32(prAdapter, "Sta6gHtSmpsCap",
+			prAdapter->rWifiVar.ucHtSmps6g);
+
 	DBGLOG(INIT, INFO,
 		"ucHwBssIdNum: %d, ucWtblEntryNum: %d, ucWmmSetNum: %d.\n",
 			prMacCap->ucHwBssIdNum,

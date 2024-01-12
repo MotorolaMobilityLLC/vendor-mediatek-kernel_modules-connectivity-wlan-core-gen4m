@@ -3058,8 +3058,6 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 
 #define CMD_SETMONITOR		"MONITOR"
 
-#define CMD_SET_SMPS_PARAMS	"SET_SMPS_PARAMS"
-
 /* miracast related definition */
 #ifndef MIRACAST_AMPDU_SIZE
 #define MIRACAST_AMPDU_SIZE	8
@@ -17559,7 +17557,7 @@ int priv_driver_set_twtparams(
 #endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
-static int priv_driver_set_smpsparams(
+int priv_driver_set_smpsparams(
 	struct net_device *prNetDev,
 	char *pcCommand,
 	int i4TotalLen)

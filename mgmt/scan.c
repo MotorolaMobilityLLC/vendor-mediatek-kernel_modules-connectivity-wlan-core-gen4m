@@ -3309,6 +3309,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				prWlanBeaconFrame->u2FrameCtrl &
 				MASK_FRAME_TYPE);
 
+			scanParseWMMIE(prAdapter,
+				pucIE, prBssDesc);
 			break;
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -5159,6 +5161,46 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 				prBssDesc->rMlInfo.fgMldType =
 					MLD_TYPE_ICV_METHOD_V2;
 #endif
+		}
+	}
+}
+
+void scanParseWMMIE(struct ADAPTER *prAdapter,
+	uint8_t *pucIE, struct BSS_DESC *prBssDesc)
+{
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
+
+	if ((WMM_IE_OUI_TYPE(pucIE) == VENDOR_OUI_TYPE_WMM) &&
+	    (!kalMemCmp(WMM_IE_OUI(pucIE), aucWfaOui, 3))) {
+		struct IE_WMM_PARAM *prWmmParam =
+			(struct IE_WMM_PARAM *)pucIE;
+
+		switch (WMM_IE_OUI_SUBTYPE(pucIE)) {
+		case VENDOR_OUI_SUBTYPE_WMM_PARAM:
+			/* WMM Param IE with a wrong length */
+			if (IE_LEN(pucIE) != 24)
+				break;
+			prBssDesc->fgIsUapsdSupported =
+				!!(prWmmParam->ucQosInfo &
+				   WMM_QOS_INFO_UAPSD);
+			break;
+
+		case VENDOR_OUI_SUBTYPE_WMM_INFO:
+			/* WMM Info IE with a wrong length */
+			if (IE_LEN(pucIE) != 7)
+				break;
+			prBssDesc->fgIsUapsdSupported =
+				(((((struct IE_WMM_INFO *)
+					pucIE)->ucQosInfo)
+					& WMM_QOS_INFO_UAPSD)
+					? TRUE : FALSE);
+			break;
+
+		default:
+			/* A WMM QoS IE that doesn't matter.
+			 * Ignore it.
+			 */
+			break;
 		}
 	}
 }

@@ -372,8 +372,7 @@ struct BSS_DESC {
 
 	uint8_t ucRCPI;
 
-	/* A flag to indicate this BSS's WMM capability */
-	uint8_t ucWmmFlag;
+	uint8_t fgIsUapsdSupported;
 
 	/*! \brief The srbiter Search State will matched the scan result,
 	 *   and saved the selected cipher and akm, and report the score,
@@ -1156,6 +1155,8 @@ void scanCheckAdaptive11rIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc);
 void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 	uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 	enum ENUM_BAND eHwBand, uint16_t u2FrameCtrl);
+void scanParseWMMIE(struct ADAPTER *prAdapter,
+	uint8_t *pucIE, struct BSS_DESC *prBssDesc);
 
 void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	struct CMD_SCAN_REQ_V2 *prCmdScanReq);
