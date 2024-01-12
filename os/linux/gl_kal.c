@@ -960,8 +960,8 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO *prGlueInfo, IN void *pvPkt)
 	/* DBGLOG(RX, EVENT, ("kalRxIndicatePkts len = %d\n", prSkb->len)); */
 	if (prSkb->tail > prSkb->end) {
 		DBGLOG(RX, ERROR,
-		       "kalRxIndicateOnePkt [prSkb = 0x%p][prSkb->len = %d][prSkb->protocol = 0x%02X] %p,%p\n",
-		       (uint8_t *) prSkb, prSkb->len, prSkb->protocol, prSkb->tail, prSkb->end);
+		       "kalRxIndicateOnePkt [prSkb = 0x%p][prSkb->len = %d][prSkb->protocol = 0x%02x] %d,%d\n",
+		       prSkb, prSkb->len, prSkb->protocol, prSkb->tail, prSkb->end);
 		DBGLOG_MEM32(RX, ERROR, (uint32_t *) prSkb->data, prSkb->len);
 	}
 
@@ -1246,7 +1246,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 			switch (pStatus->eStatusType) {
 			case ENUM_STATUS_TYPE_AUTHENTICATION:
 				/*
-				 *  printk(KERN_NOTICE "ENUM_STATUS_TYPE_AUTHENTICATION: L(%ld) [" MACSTR "] F:%lx\n",
+				 *  printk(KERN_NOTICE "ENUM_STATUS_TYPE_AUTHENTICATION: L(%d) [" MACSTR "] F:%lx\n",
 				 *  pAuth->Request[0].Length,
 				 *  MAC2STR(pAuth->Request[0].Bssid),
 				 *  pAuth->Request[0].Flags);
@@ -1268,7 +1268,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 
 			case ENUM_STATUS_TYPE_CANDIDATE_LIST:
 				/*
-				 *  printk(KERN_NOTICE "Param_StatusType_PMKID_CandidateList: Ver(%ld) Num(%ld)\n",
+				 *  printk(KERN_NOTICE "Param_StatusType_PMKID_CandidateList: Ver(%d) Num(%d)\n",
 				 *  pPmkid->u2Version,
 				 *  pPmkid->u4NumCandidates);
 				 *  if (pPmkid->u4NumCandidates > 0) {
@@ -1288,7 +1288,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo, IN uint32_t eStatu
 									 IWEVPMKIDCAND,
 									 (unsigned char *)&pPmkid->arCandidateList[i],
 									 pPmkid->u4NumCandidates);
-						prPmkidCand += sizeof(struct PARAM_PMKID_CANDIDATE);
+						prPmkidCand++;
 					}
 				}
 				break;
@@ -1385,14 +1385,14 @@ kalUpdateReAssocReqInfo(IN struct GLUE_INFO *prGlueInfo,
 	if (fgReassocRequest) {
 		if (u4FrameBodyLen < 15) {
 			/*
-			 *  printk(KERN_WARNING "frameBodyLen too short:%ld\n", frameBodyLen);
+			 *  printk(KERN_WARNING "frameBodyLen too short:%d\n", frameBodyLen);
 			 */
 			return;
 		}
 	} else {
 		if (u4FrameBodyLen < 9) {
 			/*
-			 *  printk(KERN_WARNING "frameBodyLen too short:%ld\n", frameBodyLen);
+			 *  printk(KERN_WARNING "frameBodyLen too short:%d\n", frameBodyLen);
 			 */
 			return;
 		}
@@ -1592,7 +1592,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 		netif_stop_subqueue(prDev, u2QueueIdx);
 
 		DBGLOG(TX, INFO,
-		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%ld] PER-Q_CNT[%ld]\n",
+		       "Stop subqueue for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 		       ucBssIndex, u2QueueIdx, prSkb->len,
 		       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 		       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
@@ -1604,7 +1604,7 @@ kalHardStartXmit(struct sk_buff *prOrgSkb, IN struct net_device *prDev, struct G
 	prDev->stats.tx_packets++;
 
 	DBGLOG(TX, LOUD,
-	       "Enqueue frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%ld] PER-Q_CNT[%ld]\n",
+	       "Enqueue frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 	       ucBssIndex, u2QueueIdx, prSkb->len,
 	       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 	       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]));
@@ -1695,7 +1695,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO *prGlueInfo, IN void *pvPa
 	GLUE_DEC_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]);
 
 	DBGLOG(TX, LOUD,
-	       "Release frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%ld] PER-Q_CNT[%ld]\n",
+	       "Release frame for BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 	       ucBssIndex, u2QueueIdx, prSkb->len,
 	       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 	       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx]));
@@ -1741,7 +1741,7 @@ void kalSendCompleteAndAwakeQueue(IN struct GLUE_INFO *prGlueInfo, IN void *pvPa
 		    prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex][u2QueueIdx] <= u4StartTh) {
 			netif_wake_subqueue(prDev, u2QueueIdx);
 			DBGLOG(TX, TRACE,
-			       "WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%ld] PER-Q_CNT[%ld]\n",
+			       "WakeUp Queue BSS[%u] QIDX[%u] PKT_LEN[%u] TOT_CNT[%d] PER-Q_CNT[%d]\n",
 			       ucBssIndex, u2QueueIdx, prSkb->len,
 			       GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 			       GLUE_GET_REF_CNT(prGlueInfo->ai4TxPendingFrameNumPerQueue[ucBssIndex]
@@ -2040,7 +2040,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	u4PacketLen = prSkb->len;
 
 	if (u4PacketLen < ETHER_HEADER_LEN) {
-		DBGLOG(INIT, WARN, "Invalid Ether packet length: %lu\n", u4PacketLen);
+		DBGLOG(INIT, WARN, "Invalid Ether packet length: %u\n", u4PacketLen);
 		return FALSE;
 	}
 
@@ -2066,7 +2066,7 @@ kalQoSFrameClassifierAndPacketInfo(IN struct GLUE_INFO *prGlueInfo,
 	case ETH_P_IPV4:
 		/* IPv4 header length check */
 		if (u4PacketLen < (ucEthTypeLenOffset + ETHER_TYPE_LEN + IPV4_HDR_LEN)) {
-			DBGLOG(INIT, WARN, "Invalid IPv4 packet length: %lu\n", u4PacketLen);
+			DBGLOG(INIT, WARN, "Invalid IPv4 packet length: %u\n", u4PacketLen);
 			break;
 		}
 #if DSCP_SUPPORT
@@ -4402,7 +4402,7 @@ kalIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 		    || (pucFrameBuf == NULL)
 		    || (u4FrameLen == 0)) {
 			DBGLOG(AIS, TRACE,
-			       "Unexpected pointer PARAM. 0x%lx, 0x%lx, %ld.", prGlueInfo, pucFrameBuf, u4FrameLen);
+			       "Unexpected pointer PARAM. 0x%lx, 0x%lx, %d.", prGlueInfo, pucFrameBuf, u4FrameLen);
 			ASSERT(FALSE);
 			break;
 		}
@@ -4762,7 +4762,7 @@ u_int8_t kalMetCheckProfilingPacket(IN struct GLUE_INFO *prGlueInfo, IN void *pr
 	u4PacketLen = prSkb->len;
 
 	if (u4PacketLen < ETHER_HEADER_LEN) {
-		DBGLOG(INIT, WARN, "Invalid Ether packet length: %lu\n", u4PacketLen);
+		DBGLOG(INIT, WARN, "Invalid Ether packet length: %u\n", u4PacketLen);
 		return FALSE;
 	}
 
@@ -4790,7 +4790,7 @@ u_int8_t kalMetCheckProfilingPacket(IN struct GLUE_INFO *prGlueInfo, IN void *pr
 
 			/* IPv4 header length check */
 			if (u4PacketLen < (ucEthTypeLenOffset + ETHER_TYPE_LEN + IPV4_HDR_LEN)) {
-				DBGLOG(INIT, WARN, "Invalid IPv4 packet length: %lu\n", u4PacketLen);
+				DBGLOG(INIT, WARN, "Invalid IPv4 packet length: %u\n", u4PacketLen);
 				return FALSE;
 			}
 
@@ -5038,16 +5038,13 @@ int kalMetRemoveProcfs(void)
 #if CFG_SUPPORT_AGPS_ASSIST
 u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter, uint8_t cmd, uint8_t *data, uint16_t dataLen)
 {
+#ifdef CONFIG_NL80211_TESTMODE
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-
 	struct sk_buff *skb = NULL;
 
-#ifdef CONFIG_NL80211_TESTMODE
 	skb = cfg80211_testmode_alloc_event_skb(priv_to_wiphy(prGlueInfo),
 								dataLen, GFP_KERNEL);
-#else
-	goto nla_put_failure;
-#endif
+
 	/* DBGLOG(CCX, INFO, ("WLAN_STATUS_AGPS_NOTIFY, cmd=%d\n", cmd)); */
 	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_CMD, sizeof(cmd), &cmd) < 0))
 		goto nla_put_failure;
@@ -5058,15 +5055,14 @@ u_int8_t kalIndicateAgpsNotify(struct ADAPTER *prAdapter, uint8_t cmd, uint8_t *
 	/* currently, the ifname maybe wlan0, p2p0, so the maximum name length will be 5 bytes */
 	if (unlikely(nla_put(skb, MTK_ATTR_AGPS_IFNAME, 5, prGlueInfo->prDevHandler->name) < 0))
 		goto nla_put_failure;
- #ifdef CONFIG_NL80211_TESTMODE
+
 	cfg80211_testmode_event(skb, GFP_KERNEL);
 	return TRUE;
-#else
-	goto nla_put_failure;
-#endif
-
 nla_put_failure:
 	kfree_skb(skb);
+#else
+	DBGLOG(INIT, WARN, "CONFIG_NL80211_TESTMODE not enabled\n");
+#endif
 	return FALSE;
 }
 #endif
@@ -5352,18 +5348,18 @@ void kalPerMonDump(IN struct GLUE_INFO *prGlueInfo)
 
 	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
 	DBGLOG(SW4, WARN, "ulPerfMonFlag:0x%lx\n", prPerMonitor->ulPerfMonFlag);
-	DBGLOG(SW4, WARN, "ulLastTxBytes:%ld\n", prPerMonitor->ulLastTxBytes);
-	DBGLOG(SW4, WARN, "ulLastRxBytes:%ld\n", prPerMonitor->ulLastRxBytes);
-	DBGLOG(SW4, WARN, "ulP2PLastTxBytes:%ld\n", prPerMonitor->ulP2PLastTxBytes);
-	DBGLOG(SW4, WARN, "ulP2PLastRxBytes:%ld\n", prPerMonitor->ulP2PLastRxBytes);
-	DBGLOG(SW4, WARN, "ulThroughput:%ld\n", prPerMonitor->ulThroughput);
+	DBGLOG(SW4, WARN, "ulLastTxBytes:%d\n", prPerMonitor->ulLastTxBytes);
+	DBGLOG(SW4, WARN, "ulLastRxBytes:%d\n", prPerMonitor->ulLastRxBytes);
+	DBGLOG(SW4, WARN, "ulP2PLastTxBytes:%d\n", prPerMonitor->ulP2PLastTxBytes);
+	DBGLOG(SW4, WARN, "ulP2PLastRxBytes:%d\n", prPerMonitor->ulP2PLastRxBytes);
+	DBGLOG(SW4, WARN, "ulThroughput:%d\n", prPerMonitor->ulThroughput);
 	DBGLOG(SW4, WARN, "u4UpdatePeriod:%d\n", prPerMonitor->u4UpdatePeriod);
 	DBGLOG(SW4, WARN, "u4TarPerfLevel:%d\n", prPerMonitor->u4TarPerfLevel);
 	DBGLOG(SW4, WARN, "u4CurrPerfLevel:%d\n", prPerMonitor->u4CurrPerfLevel);
-	DBGLOG(SW4, WARN, "netStats tx_bytes:%ld\n", prGlueInfo->prDevHandler->stats.tx_bytes);
-	DBGLOG(SW4, WARN, "netStats tx_bytes:%ld\n", prGlueInfo->prDevHandler->stats.rx_bytes);
-	DBGLOG(SW4, WARN, "p2p netStats tx_bytes:%ld\n", prGlueInfo->prP2PInfo->prDevHandler->stats.tx_bytes);
-	DBGLOG(SW4, WARN, "p2p netStats tx_bytes:%ld\n", prGlueInfo->prP2PInfo->prDevHandler->stats.rx_bytes);
+	DBGLOG(SW4, WARN, "netStats tx_bytes:%d\n", prGlueInfo->prDevHandler->stats.tx_bytes);
+	DBGLOG(SW4, WARN, "netStats tx_bytes:%d\n", prGlueInfo->prDevHandler->stats.rx_bytes);
+	DBGLOG(SW4, WARN, "p2p netStats tx_bytes:%d\n", prGlueInfo->prP2PInfo->prDevHandler->stats.tx_bytes);
+	DBGLOG(SW4, WARN, "p2p netStats tx_bytes:%d\n", prGlueInfo->prP2PInfo->prDevHandler->stats.rx_bytes);
 }
 #endif
 
@@ -5608,9 +5604,9 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter, unsigned long ulParam)
 		if ((prPerMonitor->u4TarPerfLevel != prPerMonitor->u4CurrPerfLevel) &&
 			(prAdapter->rWifiVar.u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
 
-			DBGLOG(SW4, INFO, "PerfMon total:%3lu.%03lu mbps lv:%u th:%u fg:0x%x\n",
-				(prPerMonitor->ulThroughput >> 20),
-				((prPerMonitor->ulThroughput >> 10) & BITS(0, 9)),
+			DBGLOG(SW4, INFO, "PerfMon total:%3lu.%03lu mbps lv:%u th:%u fg:0x%lx\n",
+				(unsigned long) (prPerMonitor->ulThroughput >> 20),
+				(unsigned long) ((prPerMonitor->ulThroughput >> 10) & BITS(0, 9)),
 				prPerMonitor->u4TarPerfLevel,
 				prAdapter->rWifiVar.u4BoostCpuTh, prPerMonitor->ulPerfMonFlag);
 
@@ -5651,7 +5647,7 @@ uint32_t kalPerMonGetInfo(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN u
 	LOGBUF(pucBuf, u4Max, u4Len, "Total: %3lu.%03lu mbps\n",
 		(prPerMonitor->ulThroughput >> 20), ((prPerMonitor->ulThroughput >> 10) & BITS(0, 9)));
 
-	LOGBUF(pucBuf, u4Max, u4Len, "Performance level: %u threshold: %u flag: 0x%x\n",
+	LOGBUF(pucBuf, u4Max, u4Len, "Performance level: %u threshold: %u flag: 0x%lx\n",
 		prPerMonitor->u4CurrPerfLevel, prAdapter->rWifiVar.u4BoostCpuTh, prPerMonitor->ulPerfMonFlag);
 
 	return u4Len;
