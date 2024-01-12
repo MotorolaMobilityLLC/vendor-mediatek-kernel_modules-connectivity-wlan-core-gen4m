@@ -7863,7 +7863,7 @@ uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 		(PFN_TX_DONE_HANDLER)rlmDummyOmiOpModeTxDone;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	if (prBssInfo->pfOpChangeHandler) {
+	if (prBssInfo && prBssInfo->pfOpChangeHandler) {
 		prBssInfo->aucOpModeChangeState
 			[OP_NOTIFY_TYPE_OMI_NSS_BW] =
 			OP_NOTIFY_STATE_SENDING;
