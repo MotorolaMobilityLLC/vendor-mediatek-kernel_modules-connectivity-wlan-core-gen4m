@@ -2176,8 +2176,6 @@ p2pFuncDisconnect(IN P_ADAPTER_T prAdapter,
 {
 	ENUM_PARAM_MEDIA_STATE_T eOriMediaStatus;
 
-	DBGLOG(P2P, INFO, "p2pFuncDisconnect()");
-
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prStaRec != NULL) && (prP2pBssInfo != NULL));
 
@@ -2196,6 +2194,10 @@ p2pFuncDisconnect(IN P_ADAPTER_T prAdapter,
 		} else {
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter, prP2pBssInfo->aucBSSID);
 		}
+
+		DBGLOG(P2P, INFO, "p2pFuncDisconnect(): BssMode: %d, reason: %d, SendDeauth %s\n",
+		       prP2pBssInfo->eCurrentOPMode, u2ReasonCode,
+		       fgSendDeauth == TRUE ? "TRUE" : "FALSE");
 
 		if (fgSendDeauth) {
 			/* Send deauth. */
