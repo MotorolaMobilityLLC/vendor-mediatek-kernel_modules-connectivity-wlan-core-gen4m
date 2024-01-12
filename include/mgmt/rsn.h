@@ -170,6 +170,15 @@
 #define RSN_AUTH_MFP_REQUIRED   2	/* MFP required */
 #endif
 
+/* Extended RSN Capabilities */
+/* bits 0-3: Field length (n-1) */
+#define WLAN_RSNX_CAPAB_PROTECTED_TWT 4
+#define WLAN_RSNX_CAPAB_SAE_H2E 5
+#define WLAN_RSNX_CAPAB_SAE_PK 6
+#define WLAN_RSNX_CAPAB_SECURE_LTF 8
+#define WLAN_RSNX_CAPAB_SECURE_RTT 9
+#define WLAN_RSNX_CAPAB_PROT_RANGE_NEG 10
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -196,6 +205,7 @@
  */
 #define RSN_IE(fp)              ((struct RSN_INFO_ELEM *) fp)
 #define WPA_IE(fp)              ((struct WPA_INFO_ELEM *) fp)
+#define RSNX_IE(fp)             ((struct RSNX_INFO_ELEM *) fp)
 
 #define ELEM_MAX_LEN_ASSOC_RSP_WSC_IE          (32 - ELEM_HDR_LEN)
 #define ELEM_MAX_LEN_TIMEOUT_IE          (5)
@@ -340,6 +350,10 @@ void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
 
 u_int8_t rsnIsFtOverTheAir(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucBssIdx, IN uint8_t ucStaRecIdx);
+
+u_int8_t rsnParseRsnxIE(IN struct ADAPTER *prAdapter,
+		       IN struct RSNX_INFO_ELEM *prInfoElem,
+		       OUT struct RSNX_INFO *prRsnxeInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S
