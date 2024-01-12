@@ -129,7 +129,9 @@ static __KAL_INLINE__ void
 authComposeAuthFrameHeaderAndFF(IN uint8_t *pucBuffer,
 				IN uint8_t aucPeerMACAddress[],
 				IN uint8_t aucMACAddress[],
-				IN uint16_t u2AuthAlgNum, IN uint16_t u2TransactionSeqNum, IN uint16_t u2StatusCode)
+				IN uint16_t u2AuthAlgNum,
+				IN uint16_t u2TransactionSeqNum,
+				IN uint16_t u2StatusCode)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	uint16_t u2FrameCtrl;
@@ -138,7 +140,7 @@ authComposeAuthFrameHeaderAndFF(IN uint8_t *pucBuffer,
 	ASSERT(aucPeerMACAddress);
 	ASSERT(aucMACAddress);
 
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) pucBuffer;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)pucBuffer;
 
 	/* 4 <1> Compose the frame header of the Authentication frame. */
 	/* Fill the Frame Control field. */
@@ -147,7 +149,8 @@ authComposeAuthFrameHeaderAndFF(IN uint8_t *pucBuffer,
 	/* If this frame is the third frame in the shared key authentication
 	 * sequence, it shall be encrypted.
 	 */
-	if ((u2AuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY) && (u2TransactionSeqNum == AUTH_TRANSACTION_SEQ_3))
+	if ((u2AuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY)
+	    && (u2TransactionSeqNum == AUTH_TRANSACTION_SEQ_3))
 		u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;	/* HW will also detect this bit for applying encryption */
 	/* WLAN_SET_FIELD_16(&prAuthFrame->u2FrameCtrl, u2FrameCtrl); */
 	prAuthFrame->u2FrameCtrl = u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
@@ -203,7 +206,8 @@ authComposeAuthFrameHeaderAndFF(IN uint8_t *pucBuffer,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-void authAddIEChallengeText(IN struct ADAPTER *prAdapter, IN OUT struct MSDU_INFO *prMsduInfo)
+void authAddIEChallengeText(IN struct ADAPTER *prAdapter,
+			    IN OUT struct MSDU_INFO *prMsduInfo)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	struct STA_RECORD *prStaRec;
@@ -219,15 +223,18 @@ void authAddIEChallengeText(IN struct ADAPTER *prAdapter, IN OUT struct MSDU_INF
 	ASSERT(prStaRec);
 
 	/* For Management, frame header and payload are in a continuous buffer */
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) prMsduInfo->prPacket;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prMsduInfo->prPacket;
 
 	WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo, &u2TransactionSeqNum)
 
 	    /* Only consider SEQ_3 for Challenge Text */
 	    if ((u2TransactionSeqNum == AUTH_TRANSACTION_SEQ_3) &&
-		(prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY) && (prStaRec->prChallengeText != NULL)) {
+		(prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY)
+		&& (prStaRec->prChallengeText != NULL)) {
 
-		COPY_IE(((unsigned long) (prMsduInfo->prPacket) + prMsduInfo->u2FrameLength), (prStaRec->prChallengeText));
+		COPY_IE(((unsigned long)(prMsduInfo->prPacket) +
+			 prMsduInfo->u2FrameLength),
+			(prStaRec->prChallengeText));
 
 		prMsduInfo->u2FrameLength += IE_SIZE(prStaRec->prChallengeText);
 	}
@@ -248,7 +255,9 @@ void authAddIEChallengeText(IN struct ADAPTER *prAdapter, IN OUT struct MSDU_INF
 * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
 */
 /*----------------------------------------------------------------------------*/
-uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN uint16_t u2TransactionSeqNum)
+uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter,
+			   IN struct STA_RECORD *prStaRec,
+			   IN uint16_t u2TransactionSeqNum)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct BSS_INFO *prBssInfo;
@@ -266,12 +275,15 @@ uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *p
 	u2EstimatedFrameLen = (MAC_TX_RESERVED_FIELD +
 			       WLAN_MAC_MGMT_HEADER_LEN +
 			       AUTH_ALGORITHM_NUM_FIELD_LEN +
-			       AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
+			       AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN +
+			       STATUS_CODE_FIELD_LEN);
 
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
 
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++)
+	for (i = 0;
+		i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY);
+		i++)
 		u2EstimatedExtraIELen += txAuthIETable[i].u2EstimatedIELen;
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
@@ -289,11 +301,16 @@ uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *p
 	    /* Compose Header and some Fixed Fields */
 	    authComposeAuthFrameHeaderAndFF((uint8_t *)
 					    ((uint32_t) (prMsduInfo->prPacket) +
-					     MAC_TX_RESERVED_FIELD), prStaRec->aucMacAddr,
-					    prBssInfo->aucOwnMacAddr, prStaRec->ucAuthAlgNum,
-					    u2TransactionSeqNum, STATUS_CODE_RESERVED);
+					     MAC_TX_RESERVED_FIELD),
+					    prStaRec->aucMacAddr,
+					    prBssInfo->aucOwnMacAddr,
+					    prStaRec->ucAuthAlgNum,
+					    u2TransactionSeqNum,
+					    STATUS_CODE_RESERVED);
 
-	u2PayloadLen = (AUTH_ALGORITHM_NUM_FIELD_LEN + AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
+	u2PayloadLen =
+	    (AUTH_ALGORITHM_NUM_FIELD_LEN +
+	     AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
@@ -301,10 +318,12 @@ uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *p
 		     prStaRec->ucBssIndex,
 		     prStaRec->ucIndex,
 		     WLAN_MAC_MGMT_HEADER_LEN,
-		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, saaFsmRunEventTxDone, MSDU_RATE_MODE_AUTO);
+		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen,
+		     saaFsmRunEventTxDone, MSDU_RATE_MODE_AUTO);
 
 	/* 4 <4> Compose IEs in MSDU_INFO_T */
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++) {
+	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY);
+	     i++) {
 		if (txAuthIETable[i].pfnAppendIE)
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 
@@ -337,7 +356,8 @@ uint32_t
 authSendAuthFrame(IN struct ADAPTER *prAdapter,
 		  IN struct STA_RECORD *prStaRec,
 		  IN uint8_t ucBssIndex,
-		  IN struct SW_RFB *prFalseAuthSwRfb, IN uint16_t u2TransactionSeqNum, IN uint16_t u2StatusCode)
+		  IN struct SW_RFB *prFalseAuthSwRfb,
+		  IN uint16_t u2TransactionSeqNum, IN uint16_t u2StatusCode)
 {
 	uint8_t *pucReceiveAddr;
 	uint8_t *pucTransmitAddr;
@@ -357,12 +377,15 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	u2EstimatedFrameLen = (MAC_TX_RESERVED_FIELD +
 			       WLAN_MAC_MGMT_HEADER_LEN +
 			       AUTH_ALGORITHM_NUM_FIELD_LEN +
-			       AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
+			       AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN +
+			       STATUS_CODE_FIELD_LEN);
 
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
 
-	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++)
+	for (i = 0;
+		i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY);
+		i++)
 		u2EstimatedExtraIELen += txAuthIETable[i].u2EstimatedIELen;
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
@@ -376,7 +399,8 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Compose Authentication Request frame header and fixed fields in MSDU_INfO_T. */
 	if (prStaRec) {
 		ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+		prBssInfo =
+		    GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 		pucTransmitAddr = prBssInfo->aucOwnMacAddr;
 
@@ -400,7 +424,8 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 		struct WLAN_AUTH_FRAME *prFalseAuthFrame;
 
 		ASSERT(prFalseAuthSwRfb);
-		prFalseAuthFrame = (struct WLAN_AUTH_FRAME *) prFalseAuthSwRfb->pvHeader;
+		prFalseAuthFrame =
+		    (struct WLAN_AUTH_FRAME *)prFalseAuthSwRfb->pvHeader;
 
 		ASSERT(u2StatusCode != STATUS_CODE_SUCCESSFUL);
 
@@ -415,23 +440,30 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 
 	/* Compose Header and some Fixed Fields */
 	authComposeAuthFrameHeaderAndFF((uint8_t *)
-					((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
-					pucReceiveAddr, pucTransmitAddr, ucAuthAlgNum,
+					((unsigned long)(prMsduInfo->prPacket) +
+					 MAC_TX_RESERVED_FIELD), pucReceiveAddr,
+					pucTransmitAddr, ucAuthAlgNum,
 					u2TransactionSeqNum, u2StatusCode);
 
-	u2PayloadLen = (AUTH_ALGORITHM_NUM_FIELD_LEN + AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
+	u2PayloadLen =
+	    (AUTH_ALGORITHM_NUM_FIELD_LEN +
+	     AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
 
 	/* 4 <3> Update information of MSDU_INFO_T */
 
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
 		     ucBssIndex,
-		     (prStaRec != NULL) ? (prStaRec->ucIndex) : (STA_REC_INDEX_NOT_FOUND),
+		     (prStaRec !=
+		      NULL) ? (prStaRec->ucIndex) : (STA_REC_INDEX_NOT_FOUND),
 		     WLAN_MAC_MGMT_HEADER_LEN,
-		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, pfTxDoneHandler,
+		     MSDU_RATE_MODE_AUTO);
 
-	if ((ucAuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY) && (u2TransactionSeqNum == AUTH_TRANSACTION_SEQ_3))
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
+	if ((ucAuthAlgNum == AUTH_ALGORITHM_NUM_SHARED_KEY)
+	    && (u2TransactionSeqNum == AUTH_TRANSACTION_SEQ_3))
+		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
+				     TRUE);
 	/* 4 <4> Compose IEs in MSDU_INFO_T */
 	for (i = 0; i < sizeof(txAuthIETable) / sizeof(struct APPEND_IE_ENTRY); i++) {
 		if (txAuthIETable[i].pfnAppendIE)
@@ -447,10 +479,8 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	DBGLOG(SAA, INFO,
-			"Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d\n",
-			u2TransactionSeqNum,
-			u2StatusCode,
-			prMsduInfo->ucTxSeqNum);
+	       "Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d\n",
+	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum);
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of authSendAuthFrame() */
@@ -469,7 +499,9 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
 */
 /*----------------------------------------------------------------------------*/
-uint32_t authCheckTxAuthFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u2TransactionSeqNum)
+uint32_t authCheckTxAuthFrame(IN struct ADAPTER *prAdapter,
+			      IN struct MSDU_INFO *prMsduInfo,
+			      IN uint16_t u2TransactionSeqNum)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	struct STA_RECORD *prStaRec;
@@ -479,7 +511,7 @@ uint32_t authCheckTxAuthFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO 
 
 	ASSERT(prMsduInfo);
 
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) (prMsduInfo->prPacket);
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)(prMsduInfo->prPacket);
 	ASSERT(prAuthFrame);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -518,7 +550,8 @@ uint32_t authCheckTxAuthFrame(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO 
 * @retval WLAN_STATUS_SUCCESS   Always not retain authentication frames
 */
 /*----------------------------------------------------------------------------*/
-uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter,
+				      IN struct SW_RFB *prSwRfb)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	uint16_t u2RxTransactionSeqNum;
@@ -530,14 +563,17 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter, IN struct SW
 	ASSERT(prSwRfb);
 
 	/* 4 <1> locate the Authentication Frame. */
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	/* 4 <2> Parse the Header of Authentication Frame. */
 	u2MinPayloadLen = (AUTH_ALGORITHM_NUM_FIELD_LEN +
-			   AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
+			   AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN +
+			   STATUS_CODE_FIELD_LEN);
 	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) < u2MinPayloadLen) {
-		DBGLOG(SAA, WARN, "Rx Auth payload: len[%u] < min expected len[%u]\n",
-		       (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen), u2MinPayloadLen);
+		DBGLOG(SAA, WARN,
+		       "Rx Auth payload: len[%u] < min expected len[%u]\n",
+		       (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen),
+		       u2MinPayloadLen);
 		DBGLOG(SAA, WARN, "=== Dump Rx Auth ===\n");
 		DBGLOG_MEM8(SAA, WARN, prAuthFrame, prSwRfb->u2PacketLen);
 		return WLAN_STATUS_SUCCESS;
@@ -564,20 +600,19 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter, IN struct SW
 		       "Strange Authentication Packet: Auth Trans Seq No = %d, Error Status Code = %d\n",
 		       u2RxTransactionSeqNum, prAuthFrame->u2StatusCode);
 #if CFG_IGNORE_INVALID_AUTH_TSN
-			prStaRec = cnmGetStaRecByIndex(prAdapter,
-					prSwRfb->ucStaRecIdx);
-			if (!prStaRec)
-				return WLAN_STATUS_SUCCESS;
-			switch (prStaRec->eAuthAssocState) {
-			case SAA_STATE_SEND_AUTH1:
-			case SAA_STATE_WAIT_AUTH2:
-			case SAA_STATE_SEND_AUTH3:
-			case SAA_STATE_WAIT_AUTH4:
-				saaFsmRunEventRxAuth(prAdapter, prSwRfb);
-				break;
-			default:
-				break;
-			}
+		prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+		if (!prStaRec)
+			return WLAN_STATUS_SUCCESS;
+		switch (prStaRec->eAuthAssocState) {
+		case SAA_STATE_SEND_AUTH1:
+		case SAA_STATE_WAIT_AUTH2:
+		case SAA_STATE_SEND_AUTH3:
+		case SAA_STATE_WAIT_AUTH4:
+			saaFsmRunEventRxAuth(prAdapter, prSwRfb);
+			break;
+		default:
+			break;
+		}
 #endif
 
 		break;
@@ -602,7 +637,9 @@ uint32_t authCheckRxAuthFrameTransSeq(IN struct ADAPTER *prAdapter, IN struct SW
 /*----------------------------------------------------------------------------*/
 uint32_t
 authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
-			   IN struct SW_RFB *prSwRfb, IN uint16_t u2TransactionSeqNum, OUT uint16_t *pu2StatusCode)
+			   IN struct SW_RFB *prSwRfb,
+			   IN uint16_t u2TransactionSeqNum,
+			   OUT uint16_t *pu2StatusCode)
 {
 	struct STA_RECORD *prStaRec;
 	struct WLAN_AUTH_FRAME *prAuthFrame;
@@ -620,13 +657,14 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_PACKET;
 
 	/* 4 <1> locate the Authentication Frame. */
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	/* 4 <2> Parse the Fixed Fields of Authentication Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthAlgNum, &u2RxAuthAlgNum); */
 	u2RxAuthAlgNum = prAuthFrame->u2AuthAlgNum;	/* NOTE(Kevin): Optimized for ARM */
 	if (u2RxAuthAlgNum != (uint16_t) prStaRec->ucAuthAlgNum) {
-		DBGLOG(SAA, WARN, "Discard Auth frame with auth type = %d, current = %d\n",
+		DBGLOG(SAA, WARN,
+		       "Discard Auth frame with auth type = %d, current = %d\n",
 		       u2RxAuthAlgNum, prStaRec->ucAuthAlgNum);
 		*pu2StatusCode = STATUS_CODE_AUTH_ALGORITHM_NOT_SUPPORTED;
 		return WLAN_STATUS_SUCCESS;
@@ -634,7 +672,9 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo, &u2RxTransactionSeqNum); */
 	u2RxTransactionSeqNum = prAuthFrame->u2AuthTransSeqNo;	/* NOTE(Kevin): Optimized for ARM */
 	if (u2RxTransactionSeqNum != u2TransactionSeqNum) {
-		DBGLOG(SAA, WARN, "Discard Auth frame with Transaction Seq No = %d\n", u2RxTransactionSeqNum);
+		DBGLOG(SAA, WARN,
+		       "Discard Auth frame with Transaction Seq No = %d\n",
+		       u2RxTransactionSeqNum);
 		*pu2StatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
 		return WLAN_STATUS_FAILURE;
 	}
@@ -657,7 +697,8 @@ authCheckRxAuthFrameStatus(IN struct ADAPTER *prAdapter,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-void authHandleIEChallengeText(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr)
+void authHandleIEChallengeText(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	struct STA_RECORD *prStaRec;
@@ -673,7 +714,7 @@ void authHandleIEChallengeText(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb
 		return;
 
 	/* For Management, frame header and payload are in a continuous buffer */
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthTransSeqNo, &u2TransactionSeqNum) */
 	u2TransactionSeqNum = prAuthFrame->u2AuthTransSeqNo;	/* NOTE(Kevin): Optimized for ARM */
@@ -686,9 +727,11 @@ void authHandleIEChallengeText(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb
 		if (prStaRec->prChallengeText) {
 			/* ASSERT(0); */
 			cnmMemFree(prAdapter, prStaRec->prChallengeText);
-			prStaRec->prChallengeText = (struct IE_CHALLENGE_TEXT *) NULL;
+			prStaRec->prChallengeText =
+			    (struct IE_CHALLENGE_TEXT *)NULL;
 		}
-		prStaRec->prChallengeText = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, IE_SIZE(prIEHdr));
+		prStaRec->prChallengeText =
+		    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, IE_SIZE(prIEHdr));
 		if (prStaRec->prChallengeText == NULL)
 			return;
 
@@ -709,7 +752,8 @@ void authHandleIEChallengeText(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb
 * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
 */
 /*----------------------------------------------------------------------------*/
-uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb)
+uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter,
+				       IN struct SW_RFB *prSwRfb)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	uint8_t *pucIEsBuffer;
@@ -720,18 +764,25 @@ uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter, IN struct S
 
 	ASSERT(prSwRfb);
 
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	pucIEsBuffer = &prAuthFrame->aucInfoElem[0];
 	u2IEsLen = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
-	    (AUTH_ALGORITHM_NUM_FIELD_LEN + AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
+	    (AUTH_ALGORITHM_NUM_FIELD_LEN +
+	     AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN + STATUS_CODE_FIELD_LEN);
 
 	IE_FOR_EACH(pucIEsBuffer, u2IEsLen, u2Offset) {
 		ucIEID = IE_ID(pucIEsBuffer);
 
-		for (i = 0; i < (sizeof(rxAuthIETable) / sizeof(struct HANDLE_IE_ENTRY)); i++) {
-			if ((ucIEID == rxAuthIETable[i].ucElemID) && (rxAuthIETable[i].pfnHandleIE != NULL))
-				rxAuthIETable[i].pfnHandleIE(prAdapter, prSwRfb, (struct IE_HDR *) pucIEsBuffer);
+		for (i = 0;
+		     i <
+		     (sizeof(rxAuthIETable) / sizeof(struct HANDLE_IE_ENTRY));
+		     i++) {
+			if ((ucIEID == rxAuthIETable[i].ucElemID)
+			    && (rxAuthIETable[i].pfnHandleIE != NULL))
+				rxAuthIETable[i].pfnHandleIE(prAdapter, prSwRfb,
+							     (struct IE_HDR *)
+							     pucIEsBuffer);
 		}
 	}
 
@@ -754,7 +805,9 @@ uint32_t authProcessRxAuth2_Auth4Frame(IN struct ADAPTER *prAdapter, IN struct S
 static __KAL_INLINE__ void
 authComposeDeauthFrameHeaderAndFF(IN uint8_t *pucBuffer,
 				  IN uint8_t aucPeerMACAddress[],
-				  IN uint8_t aucMACAddress[], IN uint8_t aucBssid[], IN uint16_t u2ReasonCode)
+				  IN uint8_t aucMACAddress[],
+				  IN uint8_t aucBssid[],
+				  IN uint16_t u2ReasonCode)
 {
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 	uint16_t u2FrameCtrl;
@@ -764,7 +817,7 @@ authComposeDeauthFrameHeaderAndFF(IN uint8_t *pucBuffer,
 	ASSERT(aucMACAddress);
 	ASSERT(aucBssid);
 
-	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) pucBuffer;
+	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *)pucBuffer;
 
 	/* 4 <1> Compose the frame header of the Deauthentication frame. */
 	/* Fill the Frame Control field. */
@@ -809,7 +862,8 @@ uint32_t
 authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		    IN struct BSS_INFO *prBssInfo,
 		    IN struct STA_RECORD *prStaRec,
-		    IN struct SW_RFB *prClassErrSwRfb, IN uint16_t u2ReasonCode, IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
+		    IN struct SW_RFB *prClassErrSwRfb, IN uint16_t u2ReasonCode,
+		    IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
 	uint8_t *pucReceiveAddr;
 	uint8_t *pucTransmitAddr;
@@ -835,7 +889,8 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		uint16_t u2RxFrameCtrl;
 		struct WLAN_MAC_HEADER_A4 *prWlanMacHeader = NULL;
 
-		prWlanMacHeader = (struct WLAN_MAC_HEADER_A4 *) prClassErrSwRfb->pvHeader;
+		prWlanMacHeader =
+		    (struct WLAN_MAC_HEADER_A4 *)prClassErrSwRfb->pvHeader;
 
 		/* WLAN_GET_FIELD_16(&prWlanMacHeader->u2FrameCtrl, &u2RxFrameCtrl); */
 		u2RxFrameCtrl = prWlanMacHeader->u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
@@ -858,7 +913,9 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
 			if (IS_NET_ACTIVE(prAdapter, i) &&
-			    (EQUAL_MAC_ADDR(prWlanMacHeader->aucAddr1, prBssInfo->aucOwnMacAddr))) {
+			    (EQUAL_MAC_ADDR
+			     (prWlanMacHeader->aucAddr1,
+			      prBssInfo->aucOwnMacAddr))) {
 
 				fgIsAbleToSendDeauth = TRUE;
 				ucBssIndex = (uint8_t) i;
@@ -871,7 +928,8 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 
 		pucReceiveAddr = prWlanMacHeader->aucAddr2;
 	} else if (prStaRec) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+		prBssInfo =
+		    GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 		ucStaRecIdx = prStaRec->ucIndex;
 		ucBssIndex = prBssInfo->ucBssIndex;
 
@@ -902,10 +960,15 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 			 * MIN_DEAUTH_INTERVAL_MSEC.
 			 */
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
-					      prDeauthInfo->rLastSendTime, MSEC_TO_SYSTIME(MIN_DEAUTH_INTERVAL_MSEC))) {
+					      prDeauthInfo->rLastSendTime,
+					      MSEC_TO_SYSTIME
+					      (MIN_DEAUTH_INTERVAL_MSEC))) {
 
 				i4NewEntryIndex = i;
-			} else if (EQUAL_MAC_ADDR(pucReceiveAddr, prDeauthInfo->aucRxAddr) && (!pfTxDoneHandler)) {
+			} else
+			    if (EQUAL_MAC_ADDR
+				(pucReceiveAddr, prDeauthInfo->aucRxAddr)
+				&& (!pfTxDoneHandler)) {
 
 				return WLAN_STATUS_FAILURE;
 			}
@@ -914,7 +977,9 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		/* 4 <3> Update information. */
 		if (i4NewEntryIndex > 0) {
 
-			prDeauthInfo = &(prAdapter->rWifiVar.arDeauthInfo[i4NewEntryIndex]);
+			prDeauthInfo =
+			    &(prAdapter->
+			      rWifiVar.arDeauthInfo[i4NewEntryIndex]);
 
 			COPY_MAC_ADDR(prDeauthInfo->aucRxAddr, pucReceiveAddr);
 			prDeauthInfo->rLastSendTime = rCurrentTime;
@@ -927,18 +992,22 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	}
 	/* 4 <5> Allocate a PKT_INFO_T for Deauthentication Frame */
 	/* Init with MGMT Header Length + Length of Fixed Fields + IE Length */
-	u2EstimatedFrameLen = (MAC_TX_RESERVED_FIELD + WLAN_MAC_MGMT_HEADER_LEN + REASON_CODE_FIELD_LEN);
+	u2EstimatedFrameLen =
+	    (MAC_TX_RESERVED_FIELD + WLAN_MAC_MGMT_HEADER_LEN +
+	     REASON_CODE_FIELD_LEN);
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
 	if (prMsduInfo == NULL) {
-		DBGLOG(SAA, WARN, "No PKT_INFO_T for sending Deauth Request.\n");
+		DBGLOG(SAA, WARN,
+		       "No PKT_INFO_T for sending Deauth Request.\n");
 		return WLAN_STATUS_RESOURCES;
 	}
 	/* 4 <6> compose Deauthentication frame header and some fixed fields */
 	authComposeDeauthFrameHeaderAndFF((uint8_t *)
-					  ((unsigned long) (prMsduInfo->prPacket) +
-					   MAC_TX_RESERVED_FIELD), pucReceiveAddr, pucTransmitAddr,
+					  ((unsigned long)(prMsduInfo->prPacket)
+					   + MAC_TX_RESERVED_FIELD),
+					  pucReceiveAddr, pucTransmitAddr,
 					  pucBssid, u2ReasonCode);
 
 #if CFG_SUPPORT_802_11W
@@ -946,16 +1015,23 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected deauth reason 6/7 */
 		/* if (AP mode & not for PMF reply case) OR (STA PMF) */
-		if (((GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)->eCurrentOPMode ==
-				OP_MODE_ACCESS_POINT) &&
-			(prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)) ||
-			(GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)->eNetworkType ==
-				(uint8_t) NETWORK_TYPE_AIS)) {
+		if (((GET_BSS_INFO_BY_INDEX
+		      (prAdapter,
+		       prStaRec->ucBssIndex)->eCurrentOPMode ==
+		      OP_MODE_ACCESS_POINT)
+		     && (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE))
+		    ||
+		    (GET_BSS_INFO_BY_INDEX
+		     (prAdapter,
+		      prStaRec->ucBssIndex)->eNetworkType ==
+		     (uint8_t) NETWORK_TYPE_AIS)) {
 
 			struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 
-			prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) (uint8_t *) ((unsigned long) (prMsduInfo->prPacket) +
-				MAC_TX_RESERVED_FIELD);
+			prDeauthFrame =
+			    (struct WLAN_DEAUTH_FRAME *)(uint8_t *)
+				((unsigned long)(prMsduInfo->prPacket)
+					+ MAC_TX_RESERVED_FIELD);
 
 			prDeauthFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
 			DBGLOG(SAA, INFO,
@@ -978,7 +1054,8 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 		     ucBssIndex,
 		     ucStaRecIdx,
 		     WLAN_MAC_MGMT_HEADER_LEN,
-		     WLAN_MAC_MGMT_HEADER_LEN + REASON_CODE_FIELD_LEN, pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
+		     WLAN_MAC_MGMT_HEADER_LEN + REASON_CODE_FIELD_LEN,
+		     pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
@@ -986,16 +1063,17 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
 		/* 4.3.3.1 send unprotected deauth reason 6/7 */
 		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
-			DBGLOG(RSN, INFO, "Deauth Set MSDU_OPT_PROTECTED_FRAME\n");
-			nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
+			DBGLOG(RSN, INFO,
+			       "Deauth Set MSDU_OPT_PROTECTED_FRAME\n");
+			nicTxConfigPktOption(prMsduInfo,
+					     MSDU_OPT_PROTECTED_FRAME, TRUE);
 		}
 
 		prStaRec->rPmfCfg.fgRxDeauthResp = FALSE;
 	}
-
 #endif
 	DBGLOG(SAA, INFO, "ucTxSeqNum=%d ucStaRecIndex=%d u2ReasonCode=%d\n",
-		prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex, u2ReasonCode);
+	       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex, u2ReasonCode);
 
 	/* 4 <8> Inform TXM to send this Deauthentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -1016,7 +1094,9 @@ authSendDeauthFrame(IN struct ADAPTER *prAdapter,
 * @retval WLAN_STATUS_SUCCESS   This is the frame we should handle.
 */
 /*----------------------------------------------------------------------------*/
-uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb, IN uint8_t aucBSSID[], OUT uint16_t *pu2ReasonCode)
+uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb,
+				  IN uint8_t aucBSSID[],
+				  OUT uint16_t *pu2ReasonCode)
 {
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 	uint16_t u2RxReasonCode;
@@ -1026,7 +1106,7 @@ uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb, IN uint8_t aucBSSID
 	ASSERT(pu2ReasonCode);
 
 	/* 4 <1> locate the Deauthentication Frame. */
-	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
+	prDeauthFrame = (struct WLAN_DEAUTH_FRAME *)prSwRfb->pvHeader;
 
 	/* 4 <2> Parse the Header of Deauthentication Frame. */
 #if 0				/* Kevin: Seems redundant */
@@ -1037,14 +1117,16 @@ uint32_t authProcessRxDeauthFrame(IN struct SW_RFB *prSwRfb, IN uint8_t aucBSSID
 
 #endif
 
-	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) < REASON_CODE_FIELD_LEN) {
+	if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
+	    REASON_CODE_FIELD_LEN) {
 		ASSERT(0);
 		return WLAN_STATUS_FAILURE;
 	}
 
 	/* Check if this Deauth Frame is coming from Target BSSID */
 	if (UNEQUAL_MAC_ADDR(prDeauthFrame->aucBSSID, aucBSSID)) {
-		DBGLOG(SAA, LOUD, "Ignore Deauth Frame from other BSS [" MACSTR "]\n",
+		DBGLOG(SAA, LOUD,
+		       "Ignore Deauth Frame from other BSS [" MACSTR "]\n",
 		       MAC2STR(prDeauthFrame->aucSrcAddr));
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1075,7 +1157,8 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 			IN struct SW_RFB *prSwRfb,
 			IN uint8_t aucExpectedBSSID[],
 			IN uint16_t u2ExpectedAuthAlgNum,
-			IN uint16_t u2ExpectedTransSeqNum, OUT uint16_t *pu2ReturnStatusCode)
+			IN uint16_t u2ExpectedTransSeqNum,
+			OUT uint16_t *pu2ReturnStatusCode)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
 	uint16_t u2ReturnStatusCode = STATUS_CODE_SUCCESSFUL;
@@ -1085,7 +1168,7 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 	ASSERT(pu2ReturnStatusCode);
 
 	/* 4 <1> locate the Authentication Frame. */
-	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	/* 4 <2> Check the BSSID */
 	if (UNEQUAL_MAC_ADDR(prAuthFrame->aucBSSID, aucExpectedBSSID))
@@ -1093,7 +1176,9 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 
 	/* 4 <3> Check the SA, which should not be MC/BC */
 	if (prAuthFrame->aucSrcAddr[0] & BIT(0)) {
-		DBGLOG(P2P, WARN, "Invalid STA MAC with MC/BC bit set: " MACSTR "\n", MAC2STR(prAuthFrame->aucSrcAddr));
+		DBGLOG(P2P, WARN,
+		       "Invalid STA MAC with MC/BC bit set: " MACSTR "\n",
+		       MAC2STR(prAuthFrame->aucSrcAddr));
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -1109,3 +1194,4 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* end of authProcessRxAuth1Frame() */
+
