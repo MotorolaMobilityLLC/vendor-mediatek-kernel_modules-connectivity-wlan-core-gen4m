@@ -7123,8 +7123,10 @@ static int wlan_pre_pwr_on(void)
 static int wlan_pwr_on_notify(void)
 {
 	DBGLOG(INIT, INFO, "wlan_power_on_notify\n");
+#if 0
 	wlanFunOn();
 	wlanFunOff();
+#endif
 	return 0;
 }
 
