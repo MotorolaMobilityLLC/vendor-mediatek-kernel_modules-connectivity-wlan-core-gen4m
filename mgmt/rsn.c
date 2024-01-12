@@ -779,6 +779,18 @@ uint8_t rsnKeyMgmtWpa(IN struct ADAPTER *prAdapter,
 	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
 }
 
+uint8_t rsnKeyMgmtWpa3(IN struct ADAPTER *prAdapter,
+	IN enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	IN uint8_t bssidx)
+{
+	uint32_t i;
+
+	return eAuthMode == AUTH_MODE_WPA3_SAE ||
+	       eAuthMode == AUTH_MODE_WPA3_OWE ||
+	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_OWE, &i, bssidx) ||
+	       rsnSearchAKMSuite(prAdapter, RSN_AKM_SUITE_SAE, &i, bssidx);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to perform RSNA or TSN policy
@@ -830,6 +842,15 @@ u_int8_t rsnPerformPolicySelection(
 	    aisGetOPMode(prAdapter, ucBssIndex);
 	eEncStatus =
 	    aisGetEncStatus(prAdapter, ucBssIndex);
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBss->eBand == BAND_6G) {
+		if (!rsnKeyMgmtWpa3(prAdapter, eAuthMode, ucBssIndex)) {
+			DBGLOG(RSN, INFO, "Invalid security mode for 6E\n");
+			return FALSE;
+		}
+	}
+#endif
 
 #if CFG_SUPPORT_WPS
 	fgIsWpsActive = aisGetConnSettings(prAdapter,
