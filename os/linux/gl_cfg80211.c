@@ -1802,13 +1802,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				}
 			}
 		}
-
-		/* Find non-wfa vendor specific ies set from upper layer */
-		if (cfg80211_get_non_wfa_vendor_ie(prGlueInfo, pucIEStart,
-			sme->ie_len, ucBssIndex) > 0) {
-			DBGLOG(RSN, INFO, "Found non-wfa vendor ie (len=%u)\n",
-				   prConnSettings->non_wfa_vendor_ie_len);
-		}
 	}
 
 	/* Fill WPA info - mfp setting */
