@@ -2850,7 +2850,8 @@ p2pFuncDissolve(IN struct ADAPTER *prAdapter,
 				break;
 			LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prStaRecNext,
 				prClientList, rLinkEntry, struct STA_RECORD) {
-				ASSERT(prCurrStaRec);
+				if (!prCurrStaRec)
+					break;
 				p2pFuncDisconnect(prAdapter,
 					prP2pBssInfo, prCurrStaRec,
 					TRUE, u2ReasonCode);

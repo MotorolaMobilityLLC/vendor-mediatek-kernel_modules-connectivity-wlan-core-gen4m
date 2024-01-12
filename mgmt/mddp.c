@@ -585,6 +585,8 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 			prClientList = &prP2pBssInfo->rStaRecOfClientList;
 			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
 					rLinkEntry, struct STA_RECORD) {
+				if (!prCurrStaRec)
+					break;
 				mddpNotifyDrvTxd(prAdapter,
 						prCurrStaRec,
 						TRUE);

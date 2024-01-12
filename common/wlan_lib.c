@@ -9583,6 +9583,8 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 				LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec,
 				    prNextCurrStaRec, prClientList,
 				    rLinkEntry, struct STA_RECORD) {
+					if (!prCurrStaRec)
+						break;
 					kalP2PGOStationUpdate(
 					    prAdapter->prGlueInfo,
 					    (uint8_t) prBssInfo->u4PrivateData,
