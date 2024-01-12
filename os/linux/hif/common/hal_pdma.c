@@ -2708,17 +2708,19 @@ void halWpdmaAllocWbBuffer(struct GLUE_INFO *prGlueInfo)
 	prRingIdx->AllocSize = sizeof(struct WFDMA_EMI_RING_IDX);
 	prRingIntSta->AllocSize = sizeof(uint32_t);
 	prRingDmy->AllocSize = sizeof(uint32_t);
-	prMemOps->allocExtBuf(prHifInfo, prRingIdx);
-	prMemOps->allocExtBuf(prHifInfo, prRingIntSta);
-	prMemOps->allocExtBuf(prHifInfo, prRingDmy);
+	prMemOps->allocExtBuf(prHifInfo, prRingIdx, WFDMA_WB_MEMORY_ALIGNMENT);
+	prMemOps->allocExtBuf(prHifInfo, prRingIntSta, WFDMA_MEMORY_ALIGNMENT);
+	prMemOps->allocExtBuf(prHifInfo, prRingDmy, WFDMA_MEMORY_ALIGNMENT);
 
 #if CFG_ENABLE_MAWD_MD_RING
 	prMdRingIdx = &prHifInfo->rMdRingIdx;
 	prMdRingIntSta = &prHifInfo->rMdRingIntSta;
 	prMdRingIdx->AllocSize = sizeof(struct WFDMA_EMI_MD_RING_IDX);
 	prMdRingIntSta->AllocSize = sizeof(uint32_t);
-	prMemOps->allocExtBuf(prHifInfo, prMdRingIdx);
-	prMemOps->allocExtBuf(prHifInfo, prMdRingIntSta);
+	prMemOps->allocExtBuf(prHifInfo, prMdRingIdx,
+			      WFDMA_WB_MEMORY_ALIGNMENT);
+	prMemOps->allocExtBuf(prHifInfo, prMdRingIntSta,
+			      WFDMA_MEMORY_ALIGNMENT);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 }
 
