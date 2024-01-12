@@ -4328,10 +4328,10 @@ VOID kalIndicateRxMgmtFrame(IN P_GLUE_INFO_T prGlueInfo, IN P_SW_RFB_T prSwRfb)
 
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
-				i4Freq,	/* in MHz */
-				RCPI_TO_dBm((UINT_8) nicRxGetRcpiValueFromRxv(RCPI_MODE_WF0, prSwRfb)),
-				prSwRfb->pvHeader, prSwRfb->u2PacketLen,
-				NL80211_RXMGMT_FLAG_ANSWERED);
+			i4Freq,	/* in MHz */
+			RCPI_TO_dBm((UINT_8) nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb)),
+			prSwRfb->pvHeader, prSwRfb->u2PacketLen,
+			NL80211_RXMGMT_FLAG_ANSWERED);
 
 #elif (KERNEL_VERSION(3, 12, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr, i4Freq,	/* in MHz */
