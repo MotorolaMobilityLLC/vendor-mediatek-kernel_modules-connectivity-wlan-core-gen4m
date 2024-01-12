@@ -146,8 +146,6 @@
 /* dwell time setting for VOE certification */
 #define SCAN_CHANNEL_DWELL_TIME_VOE         (42 + 8)
 
-#define MAX_LEN_OF_MLIE				255
-
 /*----------------------------------------------------------------------------*/
 /* MSG_SCN_SCAN_REQ                                                           */
 /*----------------------------------------------------------------------------*/

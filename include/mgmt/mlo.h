@@ -158,6 +158,9 @@ struct MULTI_LINK_INFO {
 typedef struct MSDU_INFO* (*PFN_COMPOSE_ASSOC_IE_FUNC) (struct ADAPTER *,
 	struct STA_RECORD *);
 
+typedef struct MSDU_INFO* (*PFN_COMPOSE_PROBE_RESP_IE_FUNC) (
+	struct ADAPTER *, uint8_t, struct WLAN_BEACON_FRAME *);
+
 void mldGenerateAssocIE(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
@@ -169,6 +172,11 @@ uint8_t mldGenerateExternalAuthIE(
 	struct STA_RECORD *prStaRec,
 	uint8_t *pucBuf);
 
+void mldGenerateProbeRspIE(
+	struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
+	uint8_t ucBssIdx, uint8_t fgComplete,
+	PFN_COMPOSE_PROBE_RESP_IE_FUNC pfnComposeIE);
+
 struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 	IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
@@ -176,6 +184,8 @@ struct IE_MULTI_LINK_CONTROL *mldGenerateBasicCommonInfo(
 
 void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	uint32_t *u4IELength, uint8_t ucMldId);
+
+uint8_t mldIsMlProbeReq(const uint8_t *pucIE);
 
 void mldGenerateBasicCompleteProfile(
 	struct ADAPTER *prAdapter,
@@ -209,7 +219,7 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 void mldProcessBeaconAndProbeResp(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);
 
-struct SW_RFB *mldDuplicateAssocSwRfb(
+struct SW_RFB *mldDupAssocSwRfb(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc,
 	struct STA_RECORD *prStaRec);
 

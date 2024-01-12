@@ -2489,7 +2489,7 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	struct CMD_802_11_KEY rCmdKey;
 	struct CMD_802_11_KEY *prCmdKey = &rCmdKey;
 	struct BSS_INFO *prBssInfo;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	u_int8_t fgNoHandshakeSec = FALSE;
 #if CFG_SUPPORT_TDLS
@@ -2564,8 +2564,6 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	DBGLOG(RSN, TRACE, "Key RSC:\n");
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
 
-	prAisSpecBssInfo =
-		aisGetAisSpecBssInfo(prAdapter, prNewKey->ucBssIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prNewKey->ucBssIdx);
 	if (!prBssInfo) {
 		DBGLOG_LIMITED(REQ, INFO, "BSS Info not exist !!\n");
@@ -2652,15 +2650,11 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	if (prNewKey->ucCipher) {
 		prCmdKey->ucAlgorithmId = prNewKey->ucCipher;
 		if (IS_BSS_AIS(prBssInfo)) {
+			prAisSpecBssInfo = aisGetAisSpecBssInfo(
+				prAdapter, prNewKey->ucBssIdx);
 #if CFG_SUPPORT_802_11W
 			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
 				if (prCmdKey->ucKeyId >= 4) {
-					struct AIS_SPECIFIC_BSS_INFO
-							*prAisSpecBssInfo;
-
-					prAisSpecBssInfo =
-						aisGetAisSpecBssInfo(prAdapter,
-						prNewKey->ucBssIdx);
 					prAisSpecBssInfo->fgBipKeyInstalled =
 						TRUE;
 
@@ -2982,10 +2976,8 @@ wlanoidSetAddKeyImpl(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
 	}
 #endif
-	prAisSpecBssInfo->ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
-
-
-
+	if (prAisSpecBssInfo)
+		prAisSpecBssInfo->ucKeyAlgorithmId = prCmdKey->ucAlgorithmId;
 
 	return wlanSendSetQueryCmd(prAdapter,
 				  CMD_ID_ADD_REMOVE_KEY,

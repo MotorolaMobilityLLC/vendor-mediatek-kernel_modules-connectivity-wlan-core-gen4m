@@ -521,8 +521,6 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 	uint8_t ucNonHTPhyTypeSet;
 	struct CONNECTION_SETTINGS *prConnSettings;
 
-	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
-
 	/* 4 <1> Get a valid STA_RECORD_T */
 	prStaRec =
 	    cnmGetStaRecByAddress(prAdapter, ucBssIndex, prBssDesc->aucSrcAddr);
@@ -608,9 +606,15 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 	}
 
 	/* Update non HT Desired Rate Set */
-	prStaRec->u2DesiredNonHTRateSet =
-	    (prStaRec->
-	     u2OperationalRateSet & prConnSettings->u2DesiredNonHTRateSet);
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+		prStaRec->u2DesiredNonHTRateSet =
+			(prStaRec->u2OperationalRateSet &
+			prConnSettings->u2DesiredNonHTRateSet);
+	} else {
+		prStaRec->u2DesiredNonHTRateSet =
+			(prStaRec->u2OperationalRateSet & RATE_SET_ALL_ABG);
+	}
 
 	/* 4 <3> Update information from BSS_DESC_T to current P_STA_RECORD_T */
 	if (IS_AP_STA(prStaRec)) {

@@ -353,10 +353,9 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 	    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
 			 (unsigned long)prMsduInfo->u2FrameLength);
 
-	prConnSettings =
-		aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
-
 	if (IS_STA_IN_AIS(prStaRec)) {
+		prConnSettings =
+			aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
 
 		/* Fill the SSID element. */
 		SSID_IE(pucBuffer)->ucId = ELEM_ID_SSID;
@@ -380,24 +379,6 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 		    p2pBuildReAssocReqFrameCommonIEs(prAdapter, prMsduInfo,
 						     pucBuffer);
 
-#endif
-#if CFG_ENABLE_BT_OVER_WIFI
-	else if (IS_STA_BOW_TYPE(prStaRec)) {
-
-		SSID_IE(pucBuffer)->ucId = ELEM_ID_SSID;
-
-		/* NOTE(Kevin): We copy the SSID from CONNECTION_SETTINGS
-		 *   for the case of Passive Scan and
-		 *   the target BSS didn't broadcast SSID on its Beacon Frame.
-		 */
-		COPY_SSID(SSID_IE(pucBuffer)->aucSSID,
-			  SSID_IE(pucBuffer)->ucLength,
-			  prConnSettings->aucSSID,
-			  prConnSettings->ucSSIDLen);
-
-		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-		pucBuffer += IE_SIZE(pucBuffer);
-	}
 #endif
 
 	/* NOTE(Kevin 2008/12/19): 16.3.6.3 MLME-ASSOCIATE.indication -
@@ -1093,7 +1074,8 @@ assocCheckRxReAssocRspFrameStatus(IN struct ADAPTER *prAdapter,
 	 */
 	if (u2RxStatusCode == STATUS_CODE_SUCCESSFUL) {
 #if CFG_SUPPORT_WAPI
-		if (aisGetWapiMode(prAdapter, prStaRec->ucBssIndex)) {
+		if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) &&
+		    aisGetWapiMode(prAdapter, prStaRec->ucBssIndex)) {
 			/* WAPI AP allow the customer use WZC to join mode,
 			 * the privacy bit is 0 even at WAI & WAPI_PSK mode,
 			 * but the assoc respose set the privacy bit set 1
@@ -1495,7 +1477,7 @@ uint32_t assocProcessRxAssocReqFrame(
 						starec,
 						pu2StatusCode);
 			} else {
-				prSwRfb = mldDuplicateAssocSwRfb(prAdapter,
+				prSwRfb = mldDupAssocSwRfb(prAdapter,
 					prAssocReqSwRfb, starec);
 				if (!prSwRfb)
 					return WLAN_STATUS_RESOURCES;

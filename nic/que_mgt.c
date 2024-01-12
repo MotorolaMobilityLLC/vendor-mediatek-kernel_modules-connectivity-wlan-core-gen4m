@@ -3665,7 +3665,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 				}
 			}
 #if CFG_SUPPORT_PASSPOINT
-			else if (hs20IsFrameFilterEnabled(prAdapter,
+			else if (IS_BSS_AIS(prBssInfo) &&
+				hs20IsFrameFilterEnabled(prAdapter,
 				prBssInfo) &&
 				hs20IsUnsecuredFrame(prAdapter,
 				prBssInfo,

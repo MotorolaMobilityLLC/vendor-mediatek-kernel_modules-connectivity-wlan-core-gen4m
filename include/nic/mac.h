@@ -2247,6 +2247,8 @@ enum BEACON_REPORT_DETAIL {
 /* 9.4.2.260 Short SSID List element */
 #define ELEM_EXT_ID_SHORT_SSID_LIST                 58
 
+#define MAX_LEN_OF_MLIE				255
+
 #define MLD_PARAM_MLD_ID_MASK				BITS(0, 7)
 #define MLD_PARAM_LINK_ID_MASK				BITS(8, 11)
 #define MLD_PARAM_LINK_ID_SHIFT				8
@@ -2280,7 +2282,6 @@ enum BEACON_REPORT_DETAIL {
 
 /* Figure 9-1002n - Presence Bitmap field of the Probe Request ML element */
 #define MLD_ID_PRESENT					BIT(0)
-
 
 #if CFG_AP_80211K_SUPPORT
 /* Optional subelement IDs for Beacon request (Table 9-88) */

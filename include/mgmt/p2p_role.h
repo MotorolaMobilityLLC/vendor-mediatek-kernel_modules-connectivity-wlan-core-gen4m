@@ -278,6 +278,7 @@ enum ENUM_P2P_ROLE_STATE {
 	P2P_ROLE_STATE_DFS_CAC,
 	P2P_ROLE_STATE_SWITCH_CHANNEL,
 #endif
+	P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL,
 	P2P_ROLE_STATE_NUM
 };
 
@@ -375,6 +376,8 @@ struct P2P_ROLE_FSM_INFO {
 	u_int8_t encryptedDeauthIsInProcess;
 #endif
 
+	struct TIMER rWaitNextReqChnlTimer;
+
 	/* Packet filter for P2P module. */
 	uint32_t u4P2pPacketFilter;
 
@@ -437,6 +440,9 @@ void p2pRoleFsmRunEventCsaDone(IN struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventDfsShutDownTimeout(IN struct ADAPTER *prAdapter,
 		IN unsigned long ulParamPtr);
 #endif
+
+void p2pRoleFsmRunEventWaitNextReqChnlTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr);
 
 void p2pRoleFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr);

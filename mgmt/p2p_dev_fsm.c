@@ -654,6 +654,10 @@ void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 
 		prScanReqInfo->u4BufLength = prP2pScanReqMsg->u4IELen;
 
+		/* bssid */
+		COPY_MAC_ADDR(prScanReqInfo->aucBSSID,
+			prP2pScanReqMsg->aucBSSID);
+
 		p2pDevFsmStateTransition(prAdapter,
 			prP2pDevFsmInfo,
 			P2P_DEV_STATE_SCAN);
