@@ -2274,6 +2274,7 @@ static void glRxUninit(struct GLUE_INFO *prGlueInfo)
 	kalNapiDisable(prGlueInfo);
 	kalNapiRxDirectUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_NAPI */
+	kalNapiUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_GRO */
 }
 

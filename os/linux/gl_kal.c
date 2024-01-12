@@ -12072,6 +12072,13 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	return 0;
 }
 
+uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
+{
+	netif_napi_del(&prGlueInfo->napi);
+	DBGLOG(INIT, INFO, "Napi Uninit Done\n");
+	return 0;
+}
+
 #if (CFG_SUPPORT_RX_NAPI == 1)
 uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo)
 {

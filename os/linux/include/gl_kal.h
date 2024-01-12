@@ -2278,6 +2278,7 @@ void kal_gro_flush(struct ADAPTER *prAdapter);
 void kal_napi_schedule(struct napi_struct *n);
 int kalNapiPoll(struct napi_struct *napi, int budget);
 uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo);
+uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiRxDirectUninit(struct GLUE_INFO *prGlueInfo);
 uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo);
