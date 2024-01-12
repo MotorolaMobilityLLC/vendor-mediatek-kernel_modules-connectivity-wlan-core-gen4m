@@ -372,6 +372,7 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 	 * 4: BW5
 	 * 5: BW160C
 	 * 6: BW160NC
+	 * 12: BW320
 	 */
 	/* BW Mapping in FW
 	 * 0: BW20
@@ -381,6 +382,7 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 	 * 4: BW160NC
 	 * 5: BW5
 	 * 6: BW10
+	 * 8: BW320
 	 */
 	if (bw == 0)
 		bw_mapping = 0;
@@ -396,6 +398,8 @@ static u_int32 tm_bw_hqa_mapping_at(u_int32 bw)
 		bw_mapping = 3;
 	else if (bw == 6)
 		bw_mapping = 4;
+	else if (bw == 12)
+		bw_mapping = 8;
 
 	return bw_mapping;
 }
