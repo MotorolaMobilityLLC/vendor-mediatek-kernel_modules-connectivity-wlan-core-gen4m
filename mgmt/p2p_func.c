@@ -7540,73 +7540,101 @@ exit:
 	/* return; */
 }
 
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief Get the pref freq list with maximum number assigned.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] eBandPrefer The preferred band.
+ * \param[in] eMaxBW The maximum freq bandwidth.
+ * \param[in] u4TopPreferNum The top N number of preferred freq.
+ * \param[out] pu4Freq The freq list.
+ *
+ * \retval The number of the preferred freq obtained.
+ */
+/*---------------------------------------------------------------------------*/
+static uint8_t
+p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBandPrefer,
+		enum ENUM_MAX_BANDWIDTH_SETTING eMaxBW,
+		uint8_t ucTopPreferNum, uint32_t *pu4Freq)
+{
+	uint8_t ucMaxChnNum = MAX_PER_BAND_CHN_NUM;
+	uint8_t ucNumOfChannel = 0;
+	uint8_t i;
+	struct RF_CHANNEL_INFO *aucChannelList = NULL;
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+#endif
+
+	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
+			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum,
+			VIR_MEM_TYPE);
+	if (!aucChannelList) {
+		DBGLOG(P2P, ERROR,
+			"Allocate buffer for channel list fail\n");
+		return 0;
+	}
+	kalMemZero(aucChannelList,
+			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
+
+#if (CFG_SUPPORT_P2PGO_ACS == 1)
+	if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
+		p2pFunGetAcsBestChList(prAdapter,
+				BIT(eBandPrefer), eMaxBW,
+				BITS(0, 31), BITS(0, 31),
+				BITS(0, 31), BITS(0, 31),
+				&ucNumOfChannel, aucChannelList);
+
+	} else
+#endif
+	{
+		rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
+			ucMaxChnNum, &ucNumOfChannel, aucChannelList);
+	}
+
+	for (i = 0; i < ucNumOfChannel && i < ucTopPreferNum; i++)
+		*(pu4Freq + i) = nicChannelNum2Freq(
+			aucChannelList[i].ucChannelNum,
+			aucChannelList[i].eBand) / 1000;
+
+	kalMemFree(aucChannelList, VIR_MEM_TYPE,
+			sizeof(struct RF_CHANNEL_INFO) * ucMaxChnNum);
+
+	return i;
+}
+
 uint32_t
 p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *freq_list,
 		uint32_t *num_freq_list)
 {
 	struct BSS_INFO *prAisBssInfo;
-	uint8_t ucNumOfChannel;
-	uint32_t i;
-	struct RF_CHANNEL_INFO *aucChannelList;
-	enum ENUM_BAND eBandPrefer;
-	uint8_t eBandSel;
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-#endif
-	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
-
-	aucChannelList = (struct RF_CHANNEL_INFO *) kalMemAlloc(
-			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM,
-			VIR_MEM_TYPE);
-	if (!aucChannelList) {
-		DBGLOG(P2P, ERROR,
-			"Allocate buffer for channel list fail\n");
-		return -ENOMEM;
-	}
-	kalMemZero(aucChannelList,
-			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
-
 
 	DBGLOG(P2P, INFO, "iftype: %d\n", eIftype);
 
+	*num_freq_list = 0;
+	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+
 	if (!prAisBssInfo) {
 		/* Prefer 5G/6G if STA is not connected */
-		eBandPrefer = BAND_5G;
-		eBandSel = BIT(BAND_5G);
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G
-		    && !prWifiVar->ucDisallowP2PAcs6G) {
-			eBandPrefer = BAND_6G;
-			eBandSel |= BIT(BAND_6G);
-		}
-#endif
-
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-		if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
-			p2pFunGetAcsBestChList(prAdapter,
-					eBandSel, MAX_BW_80MHZ,
-					BITS(0, 31), BITS(0, 31),
-					BITS(0, 31), BITS(0, 31),
-					&ucNumOfChannel, aucChannelList);
-
-		} else
-#endif
-		{
-			rlmDomainGetChnlList(prAdapter, eBandPrefer, TRUE,
-				MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
-		}
 		DBGLOG(P2P, INFO,
-			"ucNumOfChannel: %d\n",
-			ucNumOfChannel);
-		for (i = 0; i < ucNumOfChannel; i++) {
-			freq_list[i] = nicChannelNum2Freq(
-				aucChannelList[i].ucChannelNum,
-				aucChannelList[i].eBand) / 1000;
-			(*num_freq_list)++;
-		}
-	} else if (prAdapter->rWifiVar.eDbdcMode ==
+			"Prefer 5G/6G in single P2P");
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prAdapter->fgIsHwSupport6G &&
+		    !prWifiVar->ucDisallowP2PAcs6G)
+			*num_freq_list += p2pFunGetTopPreferFreqByBand(
+				prAdapter,
+				BAND_6G, prWifiVar->ucP2p6gBandwidth,
+				MAX_6G_BAND_CHN_NUM,
+				&freq_list[*num_freq_list]);
+#endif
+		*num_freq_list += p2pFunGetTopPreferFreqByBand(prAdapter,
+			BAND_5G, prWifiVar->ucP2p5gBandwidth,
+			MAX_5G_BAND_CHN_NUM,
+			&freq_list[*num_freq_list]);
+	} else if (prWifiVar->eDbdcMode ==
 		ENUM_DBDC_MODE_DISABLED) {
 		/* DBDC disabled */
 		DBGLOG(P2P, INFO,
@@ -7625,82 +7653,44 @@ p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			prAisBssInfo->eBand,
 			prAisBssInfo->eConnectionState);
 
-		eBandPrefer = BAND_5G;
-		eBandSel = BIT(BAND_5G);
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (prAdapter->fgIsHwSupport6G
-		    && !prWifiVar->ucDisallowP2PAcs6G) {
-			eBandPrefer = BAND_6G;
-			eBandSel |= BIT(BAND_6G);
-		}
-#endif
-
 		/* Prefer 5G/6G if STA is connected at 2.4G */
 		if (prAisBssInfo->eBand == BAND_2G4) {
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-			if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
-				p2pFunGetAcsBestChList(prAdapter,
-					eBandSel, MAX_BW_20MHZ,
-					BITS(0, 31), BITS(0, 31),
-					BITS(0, 31), BITS(0, 31),
-					&ucNumOfChannel, aucChannelList);
-			} else
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			if (prAdapter->fgIsHwSupport6G &&
+			    !prWifiVar->ucDisallowP2PAcs6G)
+				*num_freq_list += p2pFunGetTopPreferFreqByBand(
+					prAdapter,
+					BAND_6G, prWifiVar->ucP2p6gBandwidth,
+					MAX_6G_BAND_CHN_NUM,
+					&freq_list[*num_freq_list]);
 #endif
-			{
-				rlmDomainGetChnlList(prAdapter, eBandPrefer,
-					TRUE, MAX_CHN_NUM,
-					&ucNumOfChannel, aucChannelList);
-			}
-
-			for (i = 0; i < ucNumOfChannel; i++) {
-				freq_list[i] = nicChannelNum2Freq(
-					aucChannelList[i].ucChannelNum,
-					aucChannelList[i].eBand) / 1000;
-				(*num_freq_list)++;
-			}
+			*num_freq_list += p2pFunGetTopPreferFreqByBand(
+				prAdapter,
+				BAND_5G, prWifiVar->ucP2p5gBandwidth,
+				MAX_5G_BAND_CHN_NUM,
+				&freq_list[*num_freq_list]);
 
 			/* Add SCC channel */
-			freq_list[i] = nicChannelNum2Freq(
+			freq_list[*num_freq_list] = nicChannelNum2Freq(
 				prAisBssInfo->ucPrimaryChannel,
 				prAisBssInfo->eBand) / 1000;
-				(*num_freq_list)++;
+			(*num_freq_list)++;
 		} else {
 			/* Prefer SCC/2G if STA is connected at 5G/6G */
 			/* Add SCC channel */
-			freq_list[0] = nicChannelNum2Freq(
+			freq_list[*num_freq_list] = nicChannelNum2Freq(
 				prAisBssInfo->ucPrimaryChannel,
 				prAisBssInfo->eBand) / 1000;
 			(*num_freq_list)++;
 
 			/* Add 2G channels */
-#if (CFG_SUPPORT_P2PGO_ACS == 1)
-			if (prWifiVar->ucP2pGoACS == FEATURE_ENABLED) {
-				p2pFunGetAcsBestChList(prAdapter,
-					BIT(BAND_2G4), MAX_BW_20MHZ,
-					BITS(0, 31), BITS(0, 31),
-					BITS(0, 31), BITS(0, 31),
-					&ucNumOfChannel, aucChannelList);
-			} else
-#endif
-			{
-				rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
-					MAX_CHN_NUM,
-					&ucNumOfChannel,
-					aucChannelList);
-			}
-
-			for (i = 0; i < ucNumOfChannel; i++) {
-				freq_list[i + 1] = nicChannelNum2Freq(
-					aucChannelList[i].ucChannelNum,
-					aucChannelList[i].eBand) / 1000;
-				(*num_freq_list)++;
-			}
+			*num_freq_list += p2pFunGetTopPreferFreqByBand(
+				prAdapter,
+				BAND_2G4, prWifiVar->ucP2p2gBandwidth,
+				MAX_2G_BAND_CHN_NUM,
+				&freq_list[*num_freq_list]);
 		}
 	}
-
-	kalMemFree(aucChannelList, VIR_MEM_TYPE,
-			sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -7989,13 +7979,14 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		if (ucBandIdx == BAND_5G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetVhtS1(prChnRank->ucChannel,
-				VHT_OP_CHANNEL_WIDTH_80) == 0)
+				rlmMaxBwToVhtBw(eChnlBw)) == 0)
 			continue;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
+		/* If eChnlBw == MAX_BW_320MHZ, it will skip 160BW channel */
 		if (ucBandIdx == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetHe6gS1(prChnRank->ucChannel,
-				CW_80MHZ) == 0)
+				rlmMaxBwToVhtBw(eChnlBw)) == 0)
 			continue;
 #endif
 
@@ -8005,6 +7996,18 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		ucInUsedCHNumber++;
 	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* Add 6G 160BW channel after 320BW channel */
+	if (eBandSel & BIT(BAND_6G) && eChnlBw >= MAX_BW_320MHZ) {
+		(paucSortChannelList+ucInUsedCHNumber)->ucChannelNum = 197;
+		(paucSortChannelList+ucInUsedCHNumber)->eBand = BAND_6G;
+		ucInUsedCHNumber++;
+		(paucSortChannelList+ucInUsedCHNumber)->ucChannelNum = 213;
+		(paucSortChannelList+ucInUsedCHNumber)->eBand = BAND_6G;
+		ucInUsedCHNumber++;
+	}
+#endif
 
 	/*
 	 * 4. Dump the Result
