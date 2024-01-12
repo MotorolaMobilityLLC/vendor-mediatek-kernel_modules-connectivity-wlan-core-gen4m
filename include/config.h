@@ -1716,6 +1716,12 @@
 #define CFG_MTK_WIFI_SW_WFDMA			0
 #endif
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#define CFG_SUPPORT_BSS_MAX_IDLE_PERIOD         1
+#else
+#define CFG_SUPPORT_BSS_MAX_IDLE_PERIOD         0
+#endif /* CFG_SUPPORT_802_11AX */
+
 #ifndef CFG_MTK_WIFI_WFDMA_BK_RS
 #define CFG_MTK_WIFI_WFDMA_BK_RS		0
 #endif
