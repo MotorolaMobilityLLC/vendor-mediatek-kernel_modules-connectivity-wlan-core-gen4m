@@ -2736,11 +2736,13 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\n",
+		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\nStaMldEMLCap:%d\nApMldEMLCap:%d\n",
 		prAdapter->rWifiVar.ucMldLinkMax,
 		prAdapter->rWifiVar.ucStaMldLinkMax,
 		prAdapter->rWifiVar.ucP2pMldLinkMax,
-		prAdapter->rWifiVar.ucEnableMlo);
+		prAdapter->rWifiVar.ucEnableMlo,
+		prAdapter->rWifiVar.u2NonApMldEMLCap,
+		prAdapter->rWifiVar.u2ApMldEMLCap);
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,

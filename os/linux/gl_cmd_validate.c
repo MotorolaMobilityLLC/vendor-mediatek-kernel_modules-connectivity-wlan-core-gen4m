@@ -1559,14 +1559,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	},
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{
-		.pcCmdStr  = CMD_DBG_SHOW_MLD,
-		.pfHandler = priv_driver_dump_mld,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = u8_policy,
-		.u4PolicySize = ARRAY_SIZE(u8_policy)
-	},
-	{
 		.pcCmdStr  = CMD_DBG_SHOW_MLD_BSS,
 		.pfHandler = priv_driver_dump_mld_bss,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
@@ -1581,6 +1573,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
 		.policy    = NULL,
 		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_DBG_SHOW_MLD,
+		.pfHandler = priv_driver_dump_mld,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
 	},
 #endif
 	{
