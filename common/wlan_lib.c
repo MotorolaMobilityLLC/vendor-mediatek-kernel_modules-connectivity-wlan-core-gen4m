@@ -239,6 +239,12 @@ struct dataRateMappingTable_t {
 } } } } }
 };
 
+#if CFG_MTK_ANDROID_EMI
+u_int8_t *gEmiCalResult;
+u_int32_t gEmiCalSize;
+u_int32_t gEmiCalOffset;
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
