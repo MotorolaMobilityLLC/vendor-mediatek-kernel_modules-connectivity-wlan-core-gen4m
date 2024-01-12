@@ -428,6 +428,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.u4UdmaTxQsel = CONNAC3X_UDMA_TX_QSEL,
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
+	.u4SuspendVer = SUSPEND_V2,
+	.asicUsbResume = asicConnac3xUsbResume,
 	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
 	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
 #endif
