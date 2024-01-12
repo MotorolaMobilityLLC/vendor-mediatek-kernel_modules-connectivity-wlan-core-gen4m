@@ -238,11 +238,6 @@
 /* Enable handling BA Request advance SSN before data in previous window */
 #define CFG_SUPPORT_RX_OOR_BAR	1
 
-/* Enable flushing reordering when running out of SWRFB */
-#ifndef CFG_SUPPORT_RX_FLUSH_REORDERING
-#define CFG_SUPPORT_RX_FLUSH_REORDERING 0
-#endif
-
 /* Wait for LAST fragment in RX reordering to cope with MSDU interleaving,
  * Currently only enabled in mobile project in T0;
  * long term solution will be setting single queue in MDP.
