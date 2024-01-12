@@ -1404,14 +1404,26 @@ static void mt6653WfdmaManualPrefetch(
 		u4WrVal += u4RxDataPrefetchBase;
 	}
 
-	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
-	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
-	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
-	u4WrVal += u4PrefetchBase;
+	/* Rx Evt/ICS */
+	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_EXT_CTRL_ADDR;
+	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
+		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+		u4WrVal += u4PrefetchBase;
+	}
 
 #if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_EXT_CTRL_ADDR;
+	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_EXT_CTRL_ADDR;
 	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_EXT_CTRL_ADDR;
+	     u4Addr += 0x4) {
+		u4WrVal = (u4WrVal & 0xFFFF0000) | u4RxDataPrefetchCnt;
+		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
+		u4WrVal += u4RxDataPrefetchBase;
+	}
+
+	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING12_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING13_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
