@@ -4050,7 +4050,7 @@ u_int8_t qmDetectRxInvalidEAPOL(IN struct ADAPTER *prAdapter,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	/* return FALSE if OP_MODE is not SAP */
-	if (!IS_BSS_ACTIVE(prBssInfo)
+	if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo)
 		|| prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)
 		return FALSE;
 
