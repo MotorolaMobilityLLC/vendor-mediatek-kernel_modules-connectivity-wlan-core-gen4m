@@ -2894,7 +2894,6 @@ exit:
 int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
 {
 	int ret = 0;
-	uint32_t u4ReMapReg = 0;
 	uint32_t u4Value = 0;
 
 	if (!chip_info)
@@ -2931,17 +2930,14 @@ int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
 	/* set FW own after power on consys mcu to
 	 * keep Driver/FW/HW state sync
 	 */
-	if (halChipToStaticMapBusAddr(chip_info,
-	    CONNAC2X_BN0_LPCTL_ADDR, &u4ReMapReg)) {
-		RTMP_IO_READ32(chip_info, u4ReMapReg, &u4Value);
-		if ((u4Value & PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) !=
-		    PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) {
-			DBGLOG(INIT, INFO, "0x%08x = 0x%08x, Set FW Own\n",
-				u4ReMapReg,
-				u4Value);
-			RTMP_IO_WRITE32(chip_info, u4ReMapReg,
-				PCIE_LPCR_HOST_SET_OWN);
-		}
+	kalDevRegRead(NULL, CONNAC2X_BN0_LPCTL_ADDR, &u4Value);
+	if ((u4Value & PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) !=
+	    PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) {
+		DBGLOG(INIT, INFO, "0x%08x = 0x%08x, Set FW Own\n",
+			CONNAC2X_BN0_LPCTL_ADDR,
+			u4Value);
+		kalDevRegWrite(NULL, CONNAC2X_BN0_LPCTL_ADDR,
+			PCIE_LPCR_HOST_SET_OWN);
 	}
 
 exit:
