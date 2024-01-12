@@ -1344,12 +1344,20 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER *prAdapter,
 				  IN void *prPacket);
 
+uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
+				  *prAdapter, IN void *prPacket);
+
 void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
 			     IN struct CMD_INFO *prCmdInfo,
 			     IN uint8_t *pucEventBuf);
 
-void wlanSecurityFrameTxTimeout(IN struct ADAPTER *prAdapter,
+void wlanSecurityAndCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
 				IN struct CMD_INFO *prCmdInfo);
+
+void wlanCmdDataFrameTxDone(IN struct ADAPTER *prAdapter,
+			     IN struct CMD_INFO *prCmdInfo,
+			     IN uint8_t *pucEventBuf);
+
 
 /*----------------------------------------------------------------------------*/
 /* OID/IOCTL Handling                                                         */
@@ -1701,7 +1709,12 @@ uint8_t wlanGetSupportNss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 uint32_t wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter);
+uint32_t wlanProbeSuccessForLowLatency(IN struct ADAPTER *prAdapter);
 uint32_t wlanConnectedForLowLatency(IN struct ADAPTER *prAdapter);
+uint32_t wlanSetLowLatencyCommand(IN struct ADAPTER *prAdapter,
+				     IN u_int8_t fgEnLowLatencyMode,
+				     IN u_int8_t fgEnTxDupDetect,
+				     IN u_int8_t fgTxDupCertQuery);
 uint32_t wlanSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 				IN uint32_t u4Events);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */

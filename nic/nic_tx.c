@@ -1060,6 +1060,7 @@ uint8_t nicTxGetCmdResourceType(IN struct CMD_INFO
 		break;
 
 	case COMMAND_TYPE_SECURITY_FRAME:
+	case COMMAND_TYPE_DATA_FRAME:
 		ucTC = nicTxGetFrameResourceType(FRAME_TYPE_802_1X, NULL);
 		break;
 
@@ -1464,6 +1465,62 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 	}
 }
 
+#if CFG_SUPPORT_LOWLATENCY_MODE
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief In this function, we'll pick high priority packet to data queue
+ *
+ *
+ * @param prAdapter              Pointer to the Adapter structure.
+ * @param prDataPort             Pointer to data queue
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
+				     struct QUE *prDataPort0,
+				     struct QUE *prDataPort1)
+{
+	struct QUE *prDataPort, *prTxQue;
+	struct MSDU_INFO *prMsduInfo;
+	struct sk_buff *prSkb;
+	int32_t i4TcIdx;
+	uint32_t u4QSize, u4Idx;
+	uint8_t ucPortIdx;
+
+	for (i4TcIdx = TC_NUM; i4TcIdx >= 0; i4TcIdx--) {
+		prTxQue = &(prAdapter->rTxPQueue[i4TcIdx]);
+		u4QSize = prTxQue->u4NumElem;
+		for (u4Idx = 0; u4Idx < u4QSize; u4Idx++) {
+			QUEUE_REMOVE_HEAD(prTxQue, prMsduInfo,
+					  struct MSDU_INFO *);
+			if (!prMsduInfo || !prMsduInfo->prPacket) {
+				QUEUE_INSERT_TAIL(
+					prTxQue,
+					(struct QUE_ENTRY *)prMsduInfo);
+				continue;
+			}
+
+			ucPortIdx = halTxRingDataSelect(prAdapter, prMsduInfo);
+			prDataPort = (ucPortIdx == TX_RING_DATA1_IDX_1) ?
+				prDataPort1 : prDataPort0;
+
+			prSkb = prMsduInfo->prPacket;
+			if (prSkb->mark == NIC_TX_SKB_PRIORITY_MARK1 ||
+			    (prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
+				QUEUE_INSERT_TAIL(
+					prDataPort,
+					(struct QUE_ENTRY *)prMsduInfo);
+			} else {
+				QUEUE_INSERT_TAIL(
+					prTxQue,
+					(struct QUE_ENTRY *)prMsduInfo);
+			}
+		}
+	}
+}
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief In this function, we'll write MSDU into HIF by Round-Robin
@@ -1475,6 +1532,7 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
+	struct WIFI_VAR *prWifiVar;
 	struct QUE qDataPort0, qDataPort1, arTempQue[TX_PORT_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
@@ -1485,6 +1543,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 
 	KAL_SPIN_LOCK_DECLARATION();
 
+	prWifiVar = &prAdapter->rWifiVar;
 	prDataPort0 = &qDataPort0;
 	prDataPort1 = &qDataPort1;
 	QUEUE_INITIALIZE(prDataPort0);
@@ -1497,6 +1556,13 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	/* Dequeue each TCQ to dataQ, high priority packet first */
+	if (prWifiVar->ucLowLatencyPacketPriority & BIT(1))
+		nicTxMsduPickHighPrioPkt(prAdapter, prDataPort0, prDataPort1);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+
 	/* Dequeue each TCQ to dataQ by round-robin  */
 	/* Check each TCQ is empty or not */
 	u4IsNotAllQueneEmpty = BITS(0, TC_NUM);
@@ -2281,8 +2347,14 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 	wlanTraceTxCmd(prCmdInfo);
 #endif
 
-	if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME) {
+	if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
+		prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 		prMsduInfo = prCmdInfo->prMsduInfo;
+
+		/* dump TXD to debug TX issue */
+		if (prAdapter->rWifiVar.ucDataTxDone == 3)
+			halDumpTxdInfo(prAdapter,
+				(uint32_t *)prMsduInfo->aucTxDescBuffer);
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
 		if (prTxDescOps->nic_txd_long_format_op(
@@ -2298,6 +2370,13 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 		HAL_WRITE_TX_CMD(prAdapter, prCmdInfo, ucTC);
 
 		prMsduInfo->prPacket = NULL;
+
+		DBGLOG_LIMITED(INIT, TRACE,
+		       "TX Data Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
+		       prMsduInfo->ucBssIndex, prMsduInfo->ucWlanIndex,
+		       prMsduInfo->ucPID,
+		       prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
+		       prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
 
 		if (prMsduInfo->pfTxDoneHandler) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
@@ -2320,6 +2399,11 @@ uint32_t nicTxCmd(IN struct ADAPTER *prAdapter,
 
 		ASSERT(prMsduInfo->fgIs802_11 == TRUE);
 		ASSERT(prMsduInfo->eSrc == TX_PACKET_MGMT);
+
+		/* dump TXD to debug TX issue */
+		if (prAdapter->rWifiVar.ucDataTxDone == 3)
+			halDumpTxdInfo(prAdapter,
+				(uint32_t *)prMsduInfo->aucTxDescBuffer);
 
 		prCmdInfo->pucTxd = prMsduInfo->aucTxDescBuffer;
 		if (prTxDescOps->nic_txd_long_format_op(
@@ -2979,6 +3063,97 @@ uint32_t nicTxInitResetResource(IN struct ADAPTER
 
 #endif
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Handle data packet that will send to firmware
+ *
+ *
+ * @param prAdapter      Pointer to the Adapter structure.
+ * @param prMsduInfo     Pointer of MSDU_INFO
+ *
+ * @retval TRUE   Process success.
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t nicTxProcessCmdDataPacket(IN struct ADAPTER *prAdapter,
+			       IN struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct HW_MAC_CONNAC2X_TX_DESC *prConnac2xTxDesc;
+
+	/* Sanity check */
+	if (!prMsduInfo->prPacket) {
+		DBGLOG_LIMITED(TX, WARN, "MSDU prPacket is null\n");
+		return FALSE;
+	}
+
+	if (!prMsduInfo->u2FrameLength) {
+		DBGLOG_LIMITED(TX, WARN, "MSDU u2FrameLength is 0\n");
+		return FALSE;
+	}
+
+	if (!prMsduInfo->ucMacHeaderLength) {
+		DBGLOG_LIMITED(TX, WARN, "MSDU ucMacHeaderLength is 0\n");
+		return FALSE;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					  prMsduInfo->ucBssIndex);
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+				       prMsduInfo->ucStaRecIndex);
+
+	/* MMPDU: force stick to TC4 */
+	prMsduInfo->ucTC = TC4_INDEX;
+
+	/* No Tx descriptor template for MMPDU */
+	prMsduInfo->fgIsTXDTemplateValid = FALSE;
+
+	/* Set packet type to data to fill correct TxD */
+	prMsduInfo->ucPacketType = TX_PACKET_TYPE_DATA;
+
+#if CFG_SUPPORT_MULTITHREAD
+	nicTxFillDesc(prAdapter, prMsduInfo,
+		      prMsduInfo->aucTxDescBuffer, NULL);
+	/* DBGLOG_MEM32(HAL, ERROR, prMsduInfo->aucTxDescBuffer, 64); */
+#endif
+
+	/*
+	 * Adjust TxD for command data after fill description
+	 */
+	prConnac2xTxDesc =
+		(struct HW_MAC_CONNAC2X_TX_DESC *) prMsduInfo->aucTxDescBuffer;
+
+	/* (1) Force set packet format to command for command data*/
+#if (UNIFIED_MAC_TX_FORMAT == 1)
+	HAL_MAC_CONNAC2X_TXD_SET_PKT_FORMAT(prConnac2xTxDesc,
+					TXD_PKT_FORMAT_COMMAND);
+#endif
+
+	/* (2) Set remaining TX time to no limit as cut-through data.
+	 * Not use arTcTrafficSettings[TC4_INDEX].u4RemainingTxTime;
+	 */
+	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME))
+		prMsduInfo->u4RemainingLifetime = TX_DESC_TX_TIME_NO_LIMIT;
+
+	HAL_MAC_CONNAC2X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(prConnac2xTxDesc,
+			prMsduInfo->u4RemainingLifetime);
+
+
+	/* (3) If prMsduInfo->pfTxDoneHandler is not set (ie. PID is not set)
+	 * Still set PID for command data packet for firmware usage. Driver
+	 * does not handle EVENT_ID_TX_DONE in this case
+	 */
+	if (prMsduInfo->ucPID < NIC_TX_DESC_DRIVER_PID_MIN) {
+		prMsduInfo->ucPID = nicTxAssignPID(prAdapter,
+					   prMsduInfo->ucWlanIndex);
+
+		HAL_MAC_CONNAC2X_TXD_SET_PID(prConnac2xTxDesc,
+				prMsduInfo->ucPID);
+	}
+
+	return TRUE;
+}
+
 u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
 			       IN struct MSDU_INFO *prMsduInfo)
 {
@@ -3292,7 +3467,9 @@ uint32_t nicTxEnqueueMsdu(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DATA_STALL
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_ARP_NO_RESPONSE,
-				prAdapter->cArpNoResponseIdx);
+				(uint16_t)sizeof(uint32_t),
+				prAdapter->cArpNoResponseIdx,
+				FALSE);
 #endif /* CFG_SUPPORT_DATA_STALL */
 			aisBssBeaconTimeout(prAdapter,
 				prAdapter->cArpNoResponseIdx);
@@ -3531,6 +3708,7 @@ uint32_t nicTxGetCmdPageCount(IN struct ADAPTER *prAdapter,
 
 	case COMMAND_TYPE_SECURITY_FRAME:
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
+	case COMMAND_TYPE_DATA_FRAME:
 		/* No TxD append field for management packet */
 		u4PageCount = nicTxGetPageCount(prAdapter,
 			prCmdInfo->u2InfoBufLen +

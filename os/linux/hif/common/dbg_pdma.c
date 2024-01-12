@@ -133,8 +133,10 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
 			wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
-			if (u4DebugLevel & DBG_CLASS_TRACE)
+			if (u4DebugLevel & DBG_CLASS_TRACE) {
+				DBGLOG(HAL, ERROR, "Set debug flag bit\n");
 				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+			}
 			else {
 				struct CHIP_DBG_OPS *prDbgOps;
 
@@ -148,6 +150,9 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 				if (prDbgOps && prDbgOps->showPdmaInfo)
 					prDbgOps->showPdmaInfo(prAdapter);
+
+				if (prDbgOps && prDbgOps->showDmaschInfo)
+					prDbgOps->showDmaschInfo(prAdapter);
 			}
 		}
 	}
@@ -162,9 +167,8 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4Value = 0;
-	bool fgIsClkEn = false;
 	struct CHIP_DBG_OPS *prDbgOps;
+	uint32_t ret = 0;
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -174,6 +178,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	/* Only dump all hif log once */
 	if (prAdapter->u4HifDbgFlag & DEG_HIF_ALL) {
 		if (!prAdapter->fgEnHifDbgInfo) {
+			DBGLOG(HAL, ERROR, "return due to HifDbg is NULL\n");
 			prAdapter->u4HifDbgFlag = 0;
 			return;
 		}
@@ -183,20 +188,17 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	/* Avoid register checking */
 	prHifInfo->fgIsDumpLog = true;
 
-	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_HOST_CSR))
-		fgIsClkEn = halShowHostCsrInfo(prAdapter);
-	else {
-		HAL_MCR_WR(prAdapter, HOST_CSR_DRIVER_OWN_INFO, 0x00030000);
-		kalUdelay(1);
-		HAL_MCR_RD(prAdapter, HOST_CSR_DRIVER_OWN_INFO, &u4Value);
-
-		/* check clock is enabled */
-		fgIsClkEn = ((u4Value & BIT(17)) != 0) &&
-			((u4Value & BIT(16)) != 0);
+	if (prAdapter->chip_info->checkbushang == NULL) {
+		DBGLOG(HAL, ERROR, "return due to not have checkbus API\n");
+		return;
 	}
 
-	if (!fgIsClkEn)
+	/* need to check Bus readable */
+	ret = prAdapter->chip_info->checkbushang();
+	if (ret != 0) {
+		DBGLOG(HAL, ERROR, "return due to checkbushang fail %d\n", ret);
 		return;
+	}
 
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
