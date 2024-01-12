@@ -956,7 +956,16 @@ void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 	}
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	if (skb_headroom(prSkb) == CFG_RADIOTAP_HEADROOM)
+		goto skip;
+
+	if (skb_headroom(prSkb) != 0) {
+		/* Reset skb */
+		prSkb->data = prSkb->head;
+		skb_reset_tail_pointer(prSkb);
+	}
 	skb_reserve(prSkb, CFG_RADIOTAP_HEADROOM);
+skip:
 #endif
 
 	prDmaBuf->AllocVa = (void *)prSkb->data;
