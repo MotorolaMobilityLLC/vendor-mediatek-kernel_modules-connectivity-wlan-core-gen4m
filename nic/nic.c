@@ -4601,8 +4601,9 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
+			/* prScanResult[i].pucIE will be set later */
 			kalMemZero(&prScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, pucIE));
+				   sizeof(struct PARAM_BSSID_EX));
 
 			/* then fill buffer */
 			prScanResult[i].u4Length =
@@ -4633,7 +4634,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 					       pucIEBuf,
 					       u2IELength);
 
-					prWlanInfo->apucScanResultIEs[i] =
+					prScanResult[i].pucIE =
 					       &prWlanInfo->aucScanIEBuf[
 					       prWlanInfo->u4ScanIEBufferUsage];
 
@@ -4643,10 +4644,10 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 					/* buffer is not enough */
 					prScanResult[i].u4Length -= u2IELength;
 					prScanResult[i].u4IELength = 0;
-					prWlanInfo->apucScanResultIEs[i] = NULL;
+					prScanResult[i].pucIE = NULL;
 				}
 			} else {
-				prWlanInfo->apucScanResultIEs[i] = NULL;
+				prScanResult[i].pucIE = NULL;
 			}
 
 			break;
@@ -4658,8 +4659,9 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 			i = prWlanInfo->u4ScanResultNum;
 
 			/* zero */
+			/* prScanResult[i].pucIE will be set later */
 			kalMemZero(&prScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, pucIE));
+				   sizeof(struct PARAM_BSSID_EX));
 
 			/* then fill buffer */
 			prScanResult[i].u4Length =
@@ -4690,7 +4692,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 					       pucIEBuf,
 					       u2IELength);
 
-					prWlanInfo->apucScanResultIEs[i] =
+					prScanResult[i].pucIE =
 					       &prWlanInfo->aucScanIEBuf[
 					       prWlanInfo->u4ScanIEBufferUsage];
 
@@ -4700,10 +4702,10 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 					/* buffer is not enough */
 					prScanResult[i].u4Length -= u2IELength;
 					prScanResult[i].u4IELength = 0;
-					prWlanInfo->apucScanResultIEs[i] = NULL;
+					prScanResult[i].pucIE = NULL;
 				}
 			} else {
-				prWlanInfo->apucScanResultIEs[i] = NULL;
+				prScanResult[i].pucIE = NULL;
 			}
 
 			prWlanInfo->u4ScanResultNum++;
@@ -4713,8 +4715,9 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 
 			/* free IE buffer then zero */
 			nicFreeScanResultIE(prAdapter, i);
+			/* prScanResult[i].pucIE will be set later */
 			kalMemZero(&prScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, pucIE));
+				   sizeof(struct PARAM_BSSID_EX));
 
 			/* then fill buffer */
 			prScanResult[i].u4Length =
@@ -4745,7 +4748,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 					       pucIEBuf,
 					       u2IELength);
 
-					prWlanInfo->apucScanResultIEs[i] =
+					prScanResult[i].pucIE =
 					       &prWlanInfo->aucScanIEBuf[
 					       prWlanInfo->u4ScanIEBufferUsage];
 
@@ -4755,10 +4758,10 @@ nicAddScanResult(struct ADAPTER *prAdapter,
 					/* buffer is not enough */
 					prScanResult[i].u4Length -= u2IELength;
 					prScanResult[i].u4IELength = 0;
-					prWlanInfo->apucScanResultIEs[i] = NULL;
+					prScanResult[i].pucIE = NULL;
 				}
 			} else {
-				prWlanInfo->apucScanResultIEs[i] = NULL;
+				prScanResult[i].pucIE = NULL;
 			}
 		}
 	}
@@ -4774,8 +4777,7 @@ nicAddScanResult(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicFreeScanResultIE(struct ADAPTER *prAdapter,
-			 uint32_t u4Idx)
+void nicFreeScanResultIE(struct ADAPTER *prAdapter, uint32_t u4Idx)
 {
 	uint32_t i;
 	uint8_t *pucPivot, *pucMovePivot;
@@ -4789,16 +4791,14 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 	prWlanInfo = &prAdapter->rWlanInfo;
 	prScanResult = prWlanInfo->arScanResult;
 
-	if (prScanResult[u4Idx].u4IELength == 0 ||
-	    prWlanInfo->apucScanResultIEs[u4Idx] == NULL) {
+	if (prScanResult[u4Idx].u4IELength == 0 || !prScanResult[u4Idx].pucIE)
 		return;
-	}
 
 	u4FreeSize = ALIGN_4(prScanResult[u4Idx].u4IELength);
 
-	pucPivot = prWlanInfo->apucScanResultIEs[u4Idx];
-	pucMovePivot = (uint8_t *) ((uintptr_t) (
-		prWlanInfo->apucScanResultIEs[u4Idx]) + u4FreeSize);
+	pucPivot = prScanResult[u4Idx].pucIE;
+	pucMovePivot = (uint8_t *)
+		((uintptr_t) (prScanResult[u4Idx].pucIE) + u4FreeSize);
 
 	u4ReserveSize = ((uintptr_t) pucPivot) -
 		(uintptr_t) (&(prWlanInfo->aucScanIEBuf[0]));
@@ -4811,11 +4811,10 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 	/* 1.1 modify pointers */
 	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 		if (i != u4Idx) {
-			if (prWlanInfo->apucScanResultIEs[i] >= pucMovePivot) {
-				prWlanInfo->apucScanResultIEs[i] =
+			if (prScanResult[i].pucIE >= pucMovePivot) {
+				prScanResult[i].pucIE =
 					(uint8_t *) ((uintptr_t) (
-						prWlanInfo->
-						apucScanResultIEs[i])
+						prScanResult[i].pucIE)
 						- u4FreeSize);
 			}
 		}
@@ -4823,7 +4822,7 @@ void nicFreeScanResultIE(struct ADAPTER *prAdapter,
 
 	/* 1.2 reset the freed one */
 	prScanResult[u4Idx].u4IELength = 0;
-	prWlanInfo->apucScanResultIEs[i] = NULL;
+	prScanResult[i].pucIE = NULL; /* TODO: redundant? */
 
 	/* 2. reduce IE buffer usage */
 	prWlanInfo->u4ScanIEBufferUsage -= u4FreeSize;

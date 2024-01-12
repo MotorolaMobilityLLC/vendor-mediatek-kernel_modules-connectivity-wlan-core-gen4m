@@ -560,7 +560,7 @@ struct PARAM_INDICATION_EVENT {
 
 /*! \brief Capabilities, privacy, rssi and IEs of each BSSID */
 struct PARAM_BSSID_EX {
-	uint32_t u4Length;	/*!< Length of structure */
+	uint32_t u4Length; /*!< sizeof(PARAM_BSSID_EX) + u2IELength  */
 	uint8_t arMacAddress[PARAM_MAC_ADDR_LEN];	/*!< BSSID */
 	uint8_t Reserved[2];
 	struct PARAM_SSID rSsid;	/*!< SSID */
