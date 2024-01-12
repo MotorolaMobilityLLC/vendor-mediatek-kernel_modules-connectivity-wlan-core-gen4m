@@ -171,6 +171,7 @@
 #define ERROR_DETECT_RESET_DONE BIT(3)
 #define ERROR_DETECT_RECOVERY_DONE BIT(4)
 #define ERROR_DETECT_MCU_NORMAL_STATE  BIT(5)
+#define ERROR_DETECT_SUBSYS_BUS_TIMEOUT BIT(7)
 /*
  * BIT(6) is 1 means L1 reset is triggered when HIF is suspend.
  *           0 means no L1 reset is triggered when HIF is suspend.
