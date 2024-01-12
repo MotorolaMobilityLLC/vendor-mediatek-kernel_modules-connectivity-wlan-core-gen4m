@@ -92,6 +92,13 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 			(PFN_MGMT_TIMEOUT_FUNC) p2pDevFsmRunEventTimeout,
 			(unsigned long) prP2pDevFsmInfo);
 
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+		prP2pDevFsmInfo->fgIsP2pListening = FALSE;
+		cnmTimerInitTimer(prAdapter,
+			&(prP2pDevFsmInfo->rP2pListenDbdcTimer),
+			(PFN_MGMT_TIMEOUT_FUNC) p2pDevDbdcSwDelayTimeout,
+			(unsigned long) prP2pDevFsmInfo);
+#endif
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P, MLD_GROUP_NONE, TRUE);
 
@@ -284,6 +291,11 @@ void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
 			prP2pDevFsmInfo,
 			P2P_DEV_STATE_IDLE);
 		p2pDevFsmRunEventAbort(prAdapter, prP2pDevFsmInfo);
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+		cnmTimerStopTimer(prAdapter,
+			&(prP2pDevFsmInfo->rP2pListenDbdcTimer));
+#endif
 
 		SET_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -1460,5 +1472,24 @@ exit:
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
 } /* p2pDevFsmRunEventTxCancelWait */
+
+#if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
+void p2pDevDbdcSwDelayTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr)
+{
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
+		(struct P2P_DEV_FSM_INFO *) ulParamPtr;
+
+	if (prP2pDevFsmInfo &&
+			prP2pDevFsmInfo->fgIsP2pListening) {
+
+		prP2pDevFsmInfo->fgIsP2pListening = FALSE;
+		DBGLOG(P2P, INFO,
+				"p2p listen stop and do dbdc decision\n");
+		cnmDbdcRuntimeCheckDecision(prAdapter,
+				prAdapter->ucP2PDevBssIdx, FALSE);
+	}
+}
+#endif
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */
