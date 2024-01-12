@@ -1733,7 +1733,7 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 			return count;
 
 		for (i = 0; i < KAL_AIS_NUM; i++) {
-			if (!wlanGetAisNetDev(prGlueInfo, i))
+			if (!AIS_MAIN_BSS_INFO(prAdapter, i))
 				continue;
 			nicConfigProcSetCamCfgWrite(prAdapter, fgSetCamCfg,
 			      AIS_MAIN_BSS_INDEX(prAdapter, i));

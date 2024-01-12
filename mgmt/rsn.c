@@ -2346,7 +2346,7 @@ void rsnCheckPmkidCache(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBss,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex;
 
-	if (!prBss || !wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex))
+	if (!prBss || !AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex))
 		return;
 
 	ucBssIndex = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);

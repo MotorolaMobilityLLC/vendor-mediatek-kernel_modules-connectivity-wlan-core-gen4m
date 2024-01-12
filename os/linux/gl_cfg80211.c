@@ -6401,18 +6401,22 @@ static void mtk_vif_destructor(struct net_device *dev)
 	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
 	uint32_t u4Idx = 0;
 	if (dev) {
-		DBGLOG(AIS, TRACE, "mtk_vif_destructor\n");
+		DBGLOG(AIS, INFO, "netdev=%p, wdev=%p\n",
+			dev, dev->ieee80211_ptr);
 		prWdev = dev->ieee80211_ptr;
+		if (prWdev)
+			prWdev->netdev = NULL;
 		free_netdev(dev);
 		if (prWdev) {
 			for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 				if (prWdev == gprWdev[u4Idx]) {
-					kfree(prWdev);
 					gprWdev[u4Idx] = NULL;
+					kfree(prWdev);
+					break;
 				}
-
 			}
 		}
+		DBGLOG(AIS, INFO, "done\n");
 	}
 }
 
