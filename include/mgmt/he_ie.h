@@ -98,6 +98,7 @@
 #define HE_MAC_CAP3_OM_CTRL_SHFT                       1
 #define HE_MAC_CAP3_OFDMA_RA_SHFT                      2
 #define HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_SHFT             3
+#define HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK             BITS(3, 4)
 #define HE_MAC_CAP3_AMSDU_FRAGMENT_SHFT                5
 #define HE_MAC_CAP3_FLEXIBLE_TWT_SHDL                  BIT(6)
 #define HE_MAC_CAP3_FLEXIBLE_TWT_SHDL_SHFT             6
@@ -459,6 +460,14 @@ enum ENUM_HEBA_TYPE {
 
 #define HE_SET_MAC_CAP_OM_CTRL(_aucHeMacCapInfo) \
 	(_aucHeMacCapInfo[3] |=  HE_MAC_CAP3_OM_CTRL)
+
+#define HE_SET_MAC_CAP_MAX_AMPDU_LEN_EXP(_aucHeMacCapInfo, _val) \
+{ \
+	_aucHeMacCapInfo[3] &= ~(HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK); \
+	_aucHeMacCapInfo[3] |= \
+		((_val << HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_SHFT) \
+			& HE_MAC_CAP3_MAX_AMPDU_LEN_EXP_MASK); \
+}
 
 /* should use macro to access field of HE PHY CAP*/
 #define HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(_aucHePhyCapInfo) \
