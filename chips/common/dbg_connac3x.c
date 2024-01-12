@@ -2737,6 +2737,26 @@ void connac3x_DbgCrWrite(
 		HAL_MCR_WR(prAdapter, (addr | 0x64000000), val);
 }
 
+void connac3x_DumpCrRange(
+	struct ADAPTER *prAdapter,
+	uint32_t cr_start, uint32_t word_count, char *str)
+{
+#define LOG_MAIX_ITEM 16
+
+	uint32_t u4Cr, i;
+	uint32_t dummy[LOG_MAIX_ITEM] = {0};
+
+	if (word_count > LOG_MAIX_ITEM)
+		word_count = LOG_MAIX_ITEM;
+
+	for (i = 0, u4Cr = cr_start; i < word_count; i++) {
+		connac3x_DbgCrRead(prAdapter, u4Cr, &dummy[i]);
+		u4Cr += 0x04;
+	}
+	connac3x_dump_format_memory32(dummy, word_count, str);
+}
+#endif /* _HIF_PCIE || _HIF_AXI */
+
 void connac3x_dump_format_memory32(
 	uint32_t *pu4StartAddr, uint32_t u4Count, char *aucInfo)
 {
@@ -2773,26 +2793,6 @@ void connac3x_dump_format_memory32(
 			u4Count = 0;
 	}
 }
-
-void connac3x_DumpCrRange(
-	struct ADAPTER *prAdapter,
-	uint32_t cr_start, uint32_t word_count, char *str)
-{
-#define LOG_MAIX_ITEM 16
-
-	uint32_t u4Cr, i;
-	uint32_t dummy[LOG_MAIX_ITEM] = {0};
-
-	if (word_count > LOG_MAIX_ITEM)
-		word_count = LOG_MAIX_ITEM;
-
-	for (i = 0, u4Cr = cr_start; i < word_count; i++) {
-		connac3x_DbgCrRead(prAdapter, u4Cr, &dummy[i]);
-		u4Cr += 0x04;
-	}
-	connac3x_dump_format_memory32(dummy, word_count, str);
-}
-#endif /* _HIF_PCIE || _HIF_AXI */
 
 void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 {
