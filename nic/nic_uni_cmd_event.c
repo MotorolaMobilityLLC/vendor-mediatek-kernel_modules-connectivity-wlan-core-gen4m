@@ -1854,7 +1854,7 @@ void nicUniCmdNicCapability(struct ADAPTER *prAdapter)
 	cnmMemFree(prAdapter, uni_cmd);
 }
 
-void nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
+uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 				     struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -1869,8 +1869,13 @@ void nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		if (TAG_LEN(tag) == 0)
+			return WLAN_STATUS_FAILURE;
+
 		nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
 	}
+
+	return WLAN_STATUS_SUCCESS;
 }
 
 uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
@@ -1881,6 +1886,7 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t chip_id;
 	uint32_t u4Time;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
 	prChipInfo = prAdapter->chip_info;
@@ -1960,7 +1966,13 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 
 		}
 
-		nicUniCmdEventQueryNicCapabilityV2(prAdapter, prEvent);
+		u4Status = nicUniCmdEventQueryNicCapabilityV2(prAdapter,
+				prEvent);
+		if (u4Status != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, ERROR, "handle nic capability fail\n");
+			DBGLOG_MEM8(INIT, ERROR, prEventBuff,
+				CFG_RX_MAX_PKT_SIZE);
+		}
 
 		/*
 		 * free event buffer
@@ -1986,7 +1998,7 @@ uint32_t wlanQueryNicCapabilityV2(struct ADAPTER *prAdapter)
 		prAdapter->fgIsSupportGetTxPower = TRUE;
 	}
 
-	return WLAN_STATUS_SUCCESS;
+	return u4Status;
 }
 
 uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
