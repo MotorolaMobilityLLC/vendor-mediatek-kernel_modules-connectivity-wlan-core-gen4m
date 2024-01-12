@@ -738,6 +738,8 @@ struct GLUE_INFO {
 
 #endif
 	struct tasklet_struct rRxTask;
+	uint8_t fgRxTaskReady;
+	uint32_t u4RxTaskScheduleCnt;
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	struct tasklet_struct rRxRfbRetTask;
 #endif

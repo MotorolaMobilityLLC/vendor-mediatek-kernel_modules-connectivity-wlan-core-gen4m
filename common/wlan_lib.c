@@ -1655,8 +1655,6 @@ void wlanIST(IN struct ADAPTER *prAdapter, bool fgEnInt)
 		nicEnableInterrupt(prAdapter);
 
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-
-
 }
 
 void wlanClearPendingInterrupt(IN struct ADAPTER *prAdapter)
