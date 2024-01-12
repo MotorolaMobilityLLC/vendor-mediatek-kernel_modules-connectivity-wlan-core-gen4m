@@ -240,11 +240,14 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 
 	prConnSettings->fgIsAdHocQoSEnable = FALSE;
 
-#if CFG_SUPPORT_802_11AC
+#if (CFG_SUPPORT_802_11AX == 1)
+	prConnSettings->eDesiredPhyConfig = PHY_CONFIG_802_11ABGNACAX;
+#elif CFG_SUPPORT_802_11AC
 	prConnSettings->eDesiredPhyConfig = PHY_CONFIG_802_11ABGNAC;
 #else
 	prConnSettings->eDesiredPhyConfig = PHY_CONFIG_802_11ABGN;
 #endif
+
 
 	/* Set default bandwidth modes */
 	prConnSettings->uc2G4BandwidthMode = CONFIG_BW_20M;
@@ -557,6 +560,32 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
 	ASSERT(prBssDesc);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	/* check prBssDesc, if HE_AP and TKIP/WEP, don't join */
+	if (prBssDesc->fgIsHEPresent &&
+		!((prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+			ENUM_ENCRYPTION3_ENABLED) ||
+		(prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+			ENUM_ENCRYPTION3_KEY_ABSENT)
+		|| (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+			ENUM_ENCRYPTION_DISABLED)
+		|| (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+			ENUM_ENCRYPTION4_ENABLED)
+		|| (prAdapter->rWifiVar.rConnSettings.eEncStatus ==
+			ENUM_ENCRYPTION4_KEY_ABSENT)
+		|| (prAdapter->prGlueInfo->u2WSCAssocInfoIELen)
+#if CFG_SUPPORT_WAPI
+		|| (prAdapter->prGlueInfo->u2WapiAssocInfoIESz)
+#endif
+		)) {
+
+		/* Don't trigger SAA FSM */
+		DBGLOG(AIS, STATE, "Don't JOIN HE AP with TKIP/WEP\n");
+		return;
+	}
+#endif
+
 
 	/* 4 <1> We are going to connect to this BSS. */
 	prBssDesc->fgIsConnecting = TRUE;
@@ -4213,6 +4242,11 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
+
+#if (CFG_SUPPORT_TWT == 1)
+	twtPlannerReset(prAdapter, prAisBssInfo);
+#endif
+
 	cnmTimerStopTimer(prAdapter,
 			  &prAdapter->rWifiVar.rAisFsmInfo.rSecModeChangeTimer);
 	nicPmIndicateBssAbort(prAdapter, prAdapter->prAisBssInfo->ucBssIndex);

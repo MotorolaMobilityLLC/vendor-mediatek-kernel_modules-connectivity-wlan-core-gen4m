@@ -1610,6 +1610,21 @@ nicTxComposeSecurityFrameDesc(
 			__func__);
 }
 
+void
+nicTxForceAmsduForCert(
+	struct ADAPTER *prAdapter,
+	u_int8_t *prTxDescBuffer)
+{
+#if (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1)
+	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc =
+		(struct HW_MAC_CONNAC2X_TX_DESC *) prTxDescBuffer;
+
+	if (prAdapter->rWifiVar.ucHeAmsduInAmpduTx &&
+		prAdapter->rWifiVar.ucHeCertForceAmsdu)
+		HAL_MAC_CONNAC2X_TXD_SET_HW_AMSDU(prTxDesc);
+#endif /* (CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_CONNAC2X == 1) */
+}
+
 u_int8_t nicTxIsTXDTemplateAllowed(IN struct ADAPTER
 				   *prAdapter, IN struct MSDU_INFO *prMsduInfo,
 				   IN struct STA_RECORD *prStaRec)
@@ -1702,6 +1717,8 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 			nicTxComposeDescAppend(prAdapter, prMsduInfo,
 					       prTxDescBuffer + u4TxDescLength);
 	}
+
+	nicTxForceAmsduForCert(prAdapter, (u_int8_t *)prTxDesc);
 	/*
 	 * --------------------------------------------------------------------
 	 * Fill up remaining parts, per-packet variant fields
@@ -2958,13 +2975,17 @@ u_int8_t nicTxProcessMngPacket(IN struct ADAPTER *prAdapter,
 				       prMsduInfo->ucStaRecIndex);
 
 	/* MMPDU: force stick to TC4 */
-	prMsduInfo->ucTC = TC4_INDEX;
+	if (prMsduInfo->fgMgmtUseDataQ)
+		prMsduInfo->ucTC = TC0_INDEX;
+	else
+		prMsduInfo->ucTC = TC4_INDEX;
 
 	/* No Tx descriptor template for MMPDU */
 	prMsduInfo->fgIsTXDTemplateValid = FALSE;
 
 	/* Fixed Rate */
-	if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_AUTO) {
+	if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_AUTO &&
+		prMsduInfo->fgMgmtUseDataQ != TRUE) {
 #if 0
 		prMsduInfo->ucRateMode = MSDU_RATE_MODE_MANUAL_DESC;
 

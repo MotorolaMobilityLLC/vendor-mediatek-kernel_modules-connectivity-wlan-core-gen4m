@@ -89,6 +89,7 @@ ccflags-y:=$(filter-out -UMT7915,$(ccflags-y))
 ccflags-y += -DMT7915
 CONFIG_MTK_WIFI_CONNAC2X=y
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
+CONFIG_MTK_WIFI_TWT_SUPPORT=y
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
@@ -101,6 +102,12 @@ ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11AX=1
 else
     ccflags-y += -DCFG_SUPPORT_802_11AX=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_TWT=1
+else
+    ccflags-y += -DCFG_SUPPORT_TWT=0
 endif
 
 ifeq ($(WIFI_ENABLE_GCOV), y)
@@ -450,6 +457,23 @@ MGMT_OBJS += $(MGMT_DIR)p2p_dev_fsm.o\
             $(MGMT_DIR)p2p_fsm.o
 
 MGMT_OBJS += $(MGMT_DIR)wapi.o
+
+# ---------------------------------------------------
+# HE Objects List
+# ---------------------------------------------------
+
+COMMON_OBJS += $(COMMON_DIR)wlan_he.o
+
+ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT), y)
+MGMT_OBJS += $(MGMT_DIR)he_ie.o \
+             $(MGMT_DIR)he_rlm.o
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)
+MGMT_OBJS += $(MGMT_DIR)twt_req_fsm.o \
+             $(MGMT_DIR)twt.o \
+             $(MGMT_DIR)twt_planner.o
+endif
 
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 HIF_OBJS :=  $(HIF_DIR)arm.o \

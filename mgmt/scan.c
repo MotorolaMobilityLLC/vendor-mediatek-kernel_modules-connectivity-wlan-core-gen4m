@@ -1864,6 +1864,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	prBssDesc->fgIsERPPresent = FALSE;
 	prBssDesc->fgIsHTPresent = FALSE;
 	prBssDesc->fgIsVHTPresent = FALSE;
+#if (CFG_SUPPORT_802_11AX == 1)
+	prBssDesc->fgIsHEPresent = FALSE;
+#endif
 	prBssDesc->eSco = CHNL_EXT_SCN;
 	prBssDesc->fgIEWAPI = FALSE;
 	prBssDesc->fgIERSN = FALSE;
@@ -2165,6 +2168,15 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 			}
 			break;
+#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_RESERVED:
+			{
+				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
+					prBssDesc->fgIsHEPresent = TRUE;
+			}
+			break;
+#endif
+
 		case ELEM_ID_PWR_CONSTRAINT:
 		{
 			struct IE_POWER_CONSTRAINT *prPwrConstraint =
@@ -2400,6 +2412,10 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 		/* check if support 11n */
 		if (prBssDesc->fgIsHTPresent)
 			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (prBssDesc->fgIsHEPresent)
+			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
 
 		/* if not 11n only */
 		if (!(prBssDesc->u2BSSBasicRateSet & RATE_SET_BIT_HT_PHY)) {
@@ -2419,6 +2435,12 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 			}
 		}
 	} else {	/* (BAND_5G == prBssDesc->eBande) */
+
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (prBssDesc->fgIsHEPresent)
+			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
+
 		/* check if support 11n */
 		if (prBssDesc->fgIsVHTPresent)
 			prBssDesc->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;

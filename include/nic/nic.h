@@ -289,6 +289,13 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter,
 			     IN uint8_t ucBssIndex);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+uint32_t nicQmUpdateMUEdcaParams(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+uint32_t nicRlmUpdateSRParams(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex);
+#endif
+
 uint32_t nicSetAutoTxPower(IN struct ADAPTER *prAdapter,
 			   IN struct CMD_AUTO_POWER_PARAM *prAutoPwrParam);
 

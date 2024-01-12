@@ -137,6 +137,10 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 		rlmReqGenerateVhtOpNotificationIE}
 	,			/*199 */
 #endif
+#if (CFG_SUPPORT_802_11AX == 1)
+	{(0), heRlmReqGetHeCapIELen, heRlmReqGenerateHeCapIE}
+	,			/* 255, EXT 35 */
+#endif
 #if CFG_SUPPORT_MTK_SYNERGY
 	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}
 	,			/* 221 */

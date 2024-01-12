@@ -879,6 +879,10 @@
 /* VHT action */
 #define CATEGORY_VHT_ACTION                         21
 
+#if (CFG_SUPPORT_TWT == 1)
+#define CATEGORY_S1G_ACTION                         22	/* S1G action */
+#endif
+
 #if CFG_SUPPORT_802_11W
 #define CATEGORY_VENDOR_SPECIFIC_ACTION_PROTECTED   126
 #endif
@@ -1015,6 +1019,11 @@
 #define ELEM_ID_EXTENDED_CAP \
 	127	/* Extended capabilities */
 
+#if (CFG_SUPPORT_TWT == 1)
+#define ELEM_ID_TWT \
+	216 /* Target Wake Time (TWT) @11ah/11ax */
+#endif
+
 #define ELEM_ID_VENDOR \
 	221	/* Vendor specific IE */
 #define ELEM_ID_WPA \
@@ -1147,6 +1156,9 @@
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT       62
+#if (CFG_SUPPORT_TWT == 1)
+#define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
+#endif
 
 #if (CFG_SUPPORT_802_11AX == 1)
 #define ELEM_MAX_LEN_EXT_CAP                        (10)
@@ -1614,6 +1626,13 @@
 #define ACTION_GROUP_ID_MANAGEMENT                  1
 #define ACTION_OPERATING_MODE_NOTIFICATION          2
 
+#if (CFG_SUPPORT_TWT == 1)
+/* S1G Action */
+#define ACTION_S1G_TWT_SETUP                        6
+#define ACTION_S1G_TWT_TEARDOWN                     7
+#define ACTION_S1G_TWT_INFORMATION                  11
+#endif
+
 /* 3  --------------- WFA  frame body fields --------------- */
 #define VENDOR_OUI_WFA                              { 0x00, 0x50, 0xF2 }
 #define VENDOR_OUI_WFA_SPECIFIC                     { 0x50, 0x6F, 0x9A }
@@ -1674,6 +1693,62 @@
 #define RM_ACTION_LM_REPORT                         3
 #define RM_ACTION_NEIGHBOR_REQUEST                  4
 #define RM_ACTION_REIGHBOR_RESPONSE                 5
+
+#if (CFG_SUPPORT_TWT == 1)
+/* TWT element */
+#define TWT_CTRL_NDP_PAGING_INDICATOR               BIT(0)
+#define TWT_CTRL_RESPONDER_PM_MODE                  BIT(1)
+#define TWT_CTRL_BROADCAST                          BIT(2)
+#define TWT_CTRL_WAKE_TBTT_NEGOTIATION              BIT(3)
+
+#define TWT_REQ_TYPE_TWT_REQUEST                    BIT(0)
+#define TWT_REQ_TYPE_TWT_SETUP_COMMAND              BITS(1, 3)
+#define TWT_REQ_TYPE_TRIGGER                        BIT(4)
+#define TWT_REQ_TYPE_IMPLICIT_LAST_BCAST_PARAM      BIT(5)
+#define TWT_REQ_TYPE_FLOWTYPE                       BIT(6)
+#define TWT_REQ_TYPE_TWT_FLOW_IDENTIFIER            BITS(7, 9)
+#define TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP            BITS(10, 14)
+#define TWT_REQ_TYPE_TWT_PROTECTION                 BIT(15)
+
+#define TWT_REQ_TYPE_TWT_REQUEST_OFFSET                0
+#define TWT_REQ_TYPE_TWT_SETUP_COMMAND_OFFSET          1
+#define TWT_REQ_TYPE_TRIGGER_OFFSET                    4
+#define TWT_REQ_TYPE_IMPLICIT_LAST_BCAST_PARAM_OFFSET  5
+#define TWT_REQ_TYPE_FLOWTYPE_OFFSET                   6
+#define TWT_REQ_TYPE_TWT_FLOW_IDENTIFIER_OFFSET        7
+#define TWT_REQ_TYPE_TWT_WAKE_INTVAL_EXP_OFFSET        10
+#define TWT_REQ_TYPE_TWT_PROTECTION_OFFSET             15
+
+#define TWT_SETUP_CMD_REQUEST                       0
+#define TWT_SETUP_CMD_SUGGEST                       1
+#define TWT_SETUP_CMD_DEMAND                        2
+#define TWT_SETUP_CMD_GROUPING                      3
+#define TWT_SETUP_CMD_ACCEPT                        4
+#define TWT_SETUP_CMD_ALTERNATE                     5
+#define TWT_SETUP_CMD_DICTATE                       6
+#define TWT_SETUP_CMD_REJECT                        7
+
+/* TWT Flow Field in teardown frame */
+#define TWT_TEARDOWN_FLOW_ID                        BITS(0, 2)
+
+/* TWT Information Field */
+#define TWT_INFO_FLOW_ID                            BITS(0, 2)
+#define TWT_INFO_RESP_REQUESTED                     BIT(3)
+#define TWT_INFO_NEXT_TWT_REQ                       BIT(4)
+#define TWT_INFO_NEXT_TWT_SIZE                      BITS(5, 6)
+#define TWT_INFO_BCAST_RESCHED                      BIT(7)
+
+#define TWT_INFO_FLOW_ID_OFFSET                     0
+#define TWT_INFO_RESP_REQUESTED_OFFSET              3
+#define TWT_INFO_NEXT_TWT_REQ_OFFSET                4
+#define TWT_INFO_NEXT_TWT_SIZE_OFFSET               5
+#define TWT_INFO_BCAST_RESCHED_OFFSET               7
+
+#define NEXT_TWT_SUBFIELD_ZERO_BIT                  0
+#define NEXT_TWT_SUBFIELD_32_BITS                   1
+#define NEXT_TWT_SUBFIELD_48_BITS                   2
+#define NEXT_TWT_SUBFIELD_64_BITS                   3
+#endif
 
 /* 9.4.2.46 Multiple BSSID element */
 /* Nontransmitted BSSID Profile */
@@ -2523,6 +2598,20 @@ struct IE_20_40_COEXIST {
 	uint8_t ucData;
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_TWT == 1)
+/* 11ax TWT element */
+struct _IE_TWT_T {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucCtrl;	/* Control */
+	uint16_t u2ReqType;	/* Request Type */
+	uint64_t u8TWT;	/* Target Wake Time 64 bits */
+	uint8_t ucMinWakeDur;	/* Nominal Minimum TWT Wake Duration */
+	uint16_t u2WakeIntvalMantiss;	/* TWT Wake Interval Mantissa */
+	uint8_t ucReserved;	/* TWT Channel for 11ah. Reserved for 11ax */
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 /* 3 7.4 Action Frame. */
 /* 7.4 Action frame format */
 struct WLAN_ACTION_FRAME {
@@ -2948,6 +3037,54 @@ struct ACTION_NOTIFY_CHANNEL_WIDTH_FRAME {
 	uint8_t ucChannelWidth;	/* Channel Width (see 8.4.1.21) */
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_TWT == 1)
+/* 11ax TWT Setup frame format */
+struct _ACTION_TWT_SETUP_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Setup frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucDialogToken;	/* Dialog Token */
+	struct _IE_TWT_T rTWT;	/* TWT element */
+} __KAL_ATTRIB_PACKED__;
+
+/* 11ax TWT Teardown frame format */
+struct _ACTION_TWT_TEARDOWN_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Teardown frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucTWTFlow;	/* TWT Flow */
+} __KAL_ATTRIB_PACKED__;
+
+/* 11ax TWT Information frame format */
+struct _ACTION_TWT_INFO_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+	/* TWT Information frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucNextTWTCtrl;
+	uint8_t aucNextTWT[0];
+} __KAL_ATTRIB_PACKED__;
+#endif
 
 /* 3 Information Elements from WFA. */
 struct IE_WFA {
@@ -3249,6 +3386,7 @@ struct IE_MBSSID_INDEX {
 /* Convert an unsigned char pointer to an information element pointer */
 #define IE_ID(fp)               (((struct IE_HDR *) fp)->ucId)
 #define IE_LEN(fp)              (((struct IE_HDR *) fp)->ucLength)
+#define IE_ID_EXT(fp)           (((struct IE_HDR *) fp)->aucInfo[0])
 #define IE_SIZE(fp)             (ELEM_HDR_LEN + IE_LEN(fp))
 
 #define SSID_IE(fp)             ((struct IE_SSID *) fp)

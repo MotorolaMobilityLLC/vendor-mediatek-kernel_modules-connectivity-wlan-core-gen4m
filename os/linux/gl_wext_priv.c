@@ -98,6 +98,11 @@
 				sizeof(struct WLAN_REQ_ENTRY))
 #define	CMD_OID_BUF_LENGTH	4096
 
+#if (CFG_SUPPORT_TWT == 1)
+#define CMD_TWT_ACTION_TEN_PARAMS        10
+#define CMD_TWT_ACTION_THREE_PARAMS      3
+#define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TEN_PARAMS
+#endif
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
@@ -3030,6 +3035,11 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_CH_DIRTINESS	"GET_CH_DIRTINESS"
 
 #define CMD_EFUSE		"EFUSE"
+
+#if (CFG_SUPPORT_TWT == 1)
+#define CMD_SET_TWT_PARAMS	"SET_TWT_PARAMS"
+#endif
+
 #define CMD_CCCR		"CCCR"
 
 /* miracast related definition */
@@ -3105,6 +3115,30 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_MDTIM		"SET_MDTIM"
 
 #define CMD_SET_DBDC		"SET_DBDC"
+
+#define CMD_SET_AMPDU_TX        "SET_AMPDU_TX"
+#define CMD_SET_AMPDU_RX        "SET_AMPDU_RX"
+#define CMD_SET_BF              "SET_BF"
+#define CMD_SET_NSS             "SET_NSS"
+#define CMD_SET_AMSDU_TX        "SET_AMSDU_TX"
+#define CMD_SET_AMSDU_RX        "SET_AMSDU_RX"
+#define CMD_SET_QOS             "SET_QOS"
+#if (CFG_SUPPORT_802_11AX == 1)
+#define CMD_SET_BA_SIZE         "SET_BA_SIZE"
+#define CMD_SET_TP_TEST_MODE    "SET_TP_TEST_MODE"
+#define CMD_SET_MUEDCA_OVERRIDE "MUEDCA_OVERRIDE"
+#define CMD_SET_TX_MCSMAP       "SET_MCS_MAP"
+#define CMD_SET_TX_PPDU         "TX_PPDU"
+#define CMD_SET_LDPC            "SET_LDPC"
+#define CMD_FORCE_AMSDU_TX		"FORCE_AMSDU_TX"
+#define CMD_SET_OM_CH_BW        "SET_OM_CHBW"
+#define CMD_SET_OM_RX_NSS       "SET_OM_RXNSS"
+#define CMD_SET_OM_TX_NSS       "SET_OM_TXNSTS"
+#define CMD_SET_OM_MU_DISABLE   "SET_OM_MU_DISABLE"
+#define CMD_SET_TX_OM_PACKET    "TX_OM_PACKET"
+#define CMD_SET_TX_CCK_1M_PWR   "TX_CCK_1M_PWR"
+#define CMD_SET_PAD_DUR	        "SET_PAD_DUR"
+#endif /* CFG_SUPPORT_802_11AX == 1 */
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 #define CMD_SET_CALBACKUP_TEST_DRV_FW		"SET_CALBACKUP_TEST_DRV_FW"
@@ -4692,6 +4726,42 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 			u4Per/10, u4Per%10);
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s", "\tTx Agg\n");
+#if (CFG_SUPPORT_802_11AX == 1)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "\tRange:  1    2~9   10~18    19~27   ");
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "28~36    37~45    46~54    55~78\n");
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\t\t%d \t%d \t%d \t%d \t%d \t%d \t%d \t%d\n",
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange1AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange2AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange3AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange4AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange5AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange6AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange7AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange8AmpduCnt);
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "\tRange: 79~102 103~126 127~150 151~174 ");
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"%s", "174~198 199~222 223~246 247~255\n");
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\t\t%d \t%d \t%d \t%d \t%d \t%d \t%d \t%d\n",
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange9AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange10AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange11AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange12AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange13AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange14AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange15AmpduCnt,
+			prHwMibInfo->rHwTxAmpduMts.u2TxRange16AmpduCnt);
+#else
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%s",
 			"\tRange:  1    2~5   6~15    16~22   23~33    34~49    50~57    58~64\n"
@@ -4707,6 +4777,7 @@ static int priv_driver_get_mib_info(IN struct net_device *prNetDev,
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange6AmpduCnt,
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange7AmpduCnt,
 			prHwMibInfo->rHwTxAmpduMts.u2TxRange8AmpduCnt);
+#endif
 	} else
 		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "%s",
 					     "\nClear All Statistics\n");
@@ -9232,6 +9303,15 @@ int priv_driver_set_chip_config(IN struct net_device *prNetDev,
 			   CHIP_CONFIG_RESP_SIZE - 1);
 		rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
 
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (kalStrnCmp("FrdHeTrig2Host",
+			pcCommand, kalStrLen("FrdHeTrig2Host"))) {
+			uint32_t idx = kalStrLen("set_chip FrdHeTrig2Host ");
+
+			prAdapter->fgEnShowHETrigger = pcCommand[idx] - 0x30;
+		}
+#endif /* CFG_SUPPORT_802_11AX  == 1 */
+
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetChipConfig,
 				   &rChipConfigInfo, sizeof(rChipConfigInfo),
 				   FALSE, FALSE, TRUE, &u4BufLen);
@@ -11624,6 +11704,924 @@ int priv_driver_set_monitor(IN struct net_device *prNetDev, IN char *pcCommand,
 }
 #endif
 
+int priv_driver_set_bf(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucBfEnable;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucBfEnable = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucStaHtBfee = ucBfEnable;
+		prGlueInfo->prAdapter->rWifiVar.ucStaVhtBfee = ucBfEnable;
+#if (CFG_SUPPORT_802_11AX == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucStaHeBfee = ucBfEnable;
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+		prGlueInfo->prAdapter->rWifiVar.ucStaVhtMuBfee = ucBfEnable;
+		DBGLOG(REQ, ERROR, "ucBfEnable = %d\n", ucBfEnable);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_NSS <nss>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_nss(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucNSS;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucNSS = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucNSS = ucNSS;
+		DBGLOG(REQ, LOUD, "ucNSS = %d\n", ucNSS);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_NSS <nss>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+
+int priv_driver_set_amsdu_tx(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucAmsduTx;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucAmsduTx = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucAmsduInAmpduTx = ucAmsduTx;
+		prGlueInfo->prAdapter->rWifiVar.ucHtAmsduInAmpduTx = ucAmsduTx;
+		prGlueInfo->prAdapter->rWifiVar.ucVhtAmsduInAmpduTx = ucAmsduTx;
+#if (CFG_SUPPORT_802_11AX == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucHeAmsduInAmpduTx = ucAmsduTx;
+#endif
+		DBGLOG(REQ, LOUD, "ucAmsduTx = %d\n", ucAmsduTx);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_NSS <nss>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+
+int priv_driver_set_amsdu_rx(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucAmsduRx;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucAmsduRx = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucAmsduInAmpduRx = ucAmsduRx;
+		prGlueInfo->prAdapter->rWifiVar.ucHtAmsduInAmpduRx = ucAmsduRx;
+		prGlueInfo->prAdapter->rWifiVar.ucVhtAmsduInAmpduRx = ucAmsduRx;
+#if (CFG_SUPPORT_802_11AX == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucHeAmsduInAmpduRx = ucAmsduRx;
+#endif
+		DBGLOG(REQ, LOUD, "ucAmsduRx = %d\n", ucAmsduRx);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_NSS <nss>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_ampdu_tx(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucAmpduEnable;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucAmpduEnable = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucAmpduTx = ucAmpduEnable;
+		DBGLOG(REQ, ERROR, "ucAmpduTx = %d\n", ucAmpduEnable);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlan0 driver SET_AMPDU_TX <en>\n");
+		DBGLOG(INIT, ERROR, "<en> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_ampdu_rx(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucAmpduEnable;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucAmpduEnable = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucAmpduRx = ucAmpduEnable;
+		DBGLOG(REQ, ERROR, "ucAmpduRx = %d\n",
+			prGlueInfo->prAdapter->rWifiVar.ucAmpduRx);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlan0 driver SET_AMPDU_RX <en>\n");
+		DBGLOG(INIT, ERROR, "<en> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_qos(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucQoSEnable;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+
+		ucQoSEnable = (uint8_t) u4Parse;
+		prGlueInfo->prAdapter->rWifiVar.ucQoS = ucQoSEnable;
+		DBGLOG(REQ, ERROR, "ucQoS = %d\n",
+			prGlueInfo->prAdapter->rWifiVar.ucQoS);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_QOS <enable>\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+#if (CFG_SUPPORT_802_11AX == 1)
+int priv_driver_muedca_override(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucMuEdcaOverride;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucMuEdcaOverride = (uint8_t) u4Parse;
+#if (CFG_SUPPORT_802_11AX == 1)
+		prGlueInfo->prAdapter->fgMuEdcaOverride = ucMuEdcaOverride;
+#endif
+		DBGLOG(REQ, LOUD, "ucMuEdcaOverride = %d\n", ucMuEdcaOverride);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver MUEDCA_OVERRIDE <val>\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_mcsmap(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucTxMcsMap;
+	struct ADAPTER *prAdapter = NULL;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucTxMcsMap = (uint8_t) u4Parse;
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (ucTxMcsMap >= 0 && ucTxMcsMap <= 2) {
+			prAdapter = prGlueInfo->prAdapter;
+			prAdapter->ucMcsMapSetFromSigma = ucTxMcsMap;
+
+			DBGLOG(REQ, ERROR, "ucMcsMapSetFromSigma = %d\n",
+				prGlueInfo->prAdapter->ucMcsMapSetFromSigma);
+
+			prGlueInfo->prAdapter->fgMcsMapBeenSet = TRUE;
+		} else {
+			prGlueInfo->prAdapter->fgMcsMapBeenSet = FALSE;
+		}
+#endif
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlan0 driver SET_TX_MCSMAP <en>\n");
+		DBGLOG(INIT, ERROR, "<en> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_ba_size(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint16_t u2HeBaSize;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		u2HeBaSize = (uint16_t) u4Parse;
+
+		prGlueInfo->prAdapter->rWifiVar.u2TxHeBaSize = u2HeBaSize;
+		prGlueInfo->prAdapter->rWifiVar.u2RxHeBaSize = u2HeBaSize;
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_BA_SIZE\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+/* This command is for sigma to disable TpTestMode. */
+int priv_driver_set_tp_test_mode(IN struct net_device *prNetDev,
+				 IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t ucTpTestMode;
+	/*UINT_8 ucBssIndex;*/
+	/*P_BSS_INFO_T prBssInfo;*/
+
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		ucTpTestMode = (uint8_t) u4Parse;
+
+		prGlueInfo->prAdapter->rWifiVar.ucTpTestMode = ucTpTestMode;
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_TP_TEST_MODE\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+/* This command is for sigma to disable TxPPDU. */
+int priv_driver_set_tx_ppdu(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+	struct STA_RECORD *prStaRec;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	prStaRec = cnmGetStaRecByIndex(prAdapter, 0);
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		if (u4Parse) {
+			/* HE_SU is allowed. */
+			prAdapter->fgTxPPDU = TRUE;
+			NIC_TX_PPDU_ENABLE(prAdapter);
+		} else {
+			/* HE_SU is not allowed. */
+			prAdapter->fgTxPPDU = FALSE;
+			if (prStaRec && prStaRec->fgIsTxAllowed)
+				NIC_TX_PPDU_DISABLE(prAdapter);
+		}
+
+		DBGLOG(REQ, STATE, "fgTxPPDU is %d\n", prAdapter->fgTxPPDU);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver TX_PPDU\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+/* This command is for sigma to disable LDPC capability. */
+int priv_driver_set_ldpc(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		if (u4Parse) {
+			/* LDPC is enabled. */
+			prAdapter->rWifiVar.ucTxLdpc = TRUE;
+			prAdapter->rWifiVar.ucRxLdpc = TRUE;
+		} else {
+			/* LDPC is disabled. */
+			prAdapter->rWifiVar.ucTxLdpc = FALSE;
+			prAdapter->rWifiVar.ucRxLdpc = FALSE;
+		}
+
+		DBGLOG(REQ, STATE, "prAdapter->rWifiVar.ucTxLdpc is %d\n",
+			prAdapter->rWifiVar.ucTxLdpc);
+		DBGLOG(REQ, STATE, "prAdapter->rWifiVar.ucRxLdpc is %d\n",
+			prAdapter->rWifiVar.ucRxLdpc);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver TX_PPDU\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+/* This command is for sigma to force tx amsdu. */
+int priv_driver_set_tx_force_amsdu(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+		if (u4Parse) {
+			/* forceAmsdu is enabled. */
+			prAdapter->rWifiVar.ucHeCertForceAmsdu = TRUE;
+		} else {
+			/* forceAmsdu is disabled. */
+			prAdapter->rWifiVar.ucHeCertForceAmsdu = FALSE;
+		}
+
+		DBGLOG(REQ, STATE,
+			"prAdapter->rWifiVar.ucHeCertForceAmsdu is %d\n",
+			prAdapter->rWifiVar.ucHeCertForceAmsdu);
+	} else {
+		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver FORCE_AMSDU_TX %d\n");
+		DBGLOG(INIT, ERROR, "<enable> 1: enable. 0: disable.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+
+
+
+/* This command is for sigma to change OM CH BW. */
+int priv_driver_set_om_ch_bw(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_om_ch_bw:: ch bw = %d\n", u4Parse);
+		if (u4Parse <= CH_BW_160)
+			HE_SET_HTC_HE_OM_CH_WIDTH(
+				prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver TX_ACTION <number>\n");
+		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+/* This command is for sigma to change OM RX NSS. */
+int priv_driver_set_om_rx_nss(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_om_rx_nss:: rx nss = %d\n", u4Parse);
+		HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver TX_ACTION <number>\n");
+		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_om_tx_nss(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_om_tx_nss:: tx nss = %d\n", u4Parse);
+		HE_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_OM_TXNSTS <number>\n");
+		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_om_mu_dis(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_om_mu_dis:: disable = %d\n", u4Parse);
+		HE_SET_HTC_HE_OM_UL_MU_DISABLE(prAdapter->u4HeHtcOM, u4Parse);
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_OM_MU_DISABLE <number>\n");
+		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_tx_om_packet(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t index;
+	struct STA_RECORD *prStaRec = NULL;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"tx om packet:: Send %d htc null frame\n",
+			u4Parse);
+		if (u4Parse) {
+			prStaRec = cnmGetStaRecByIndex(prAdapter, 0);
+			if (prStaRec != NULL) {
+				for (index = 0; index < u4Parse; index++)
+					heRlmSendHtcNullFrame(prAdapter,
+						prStaRec, 7, NULL);
+			}
+		}
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver TX_ACTION <number>\n");
+		DBGLOG(INIT, ERROR, "<number> action frame count.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+int priv_driver_set_tx_cck_1m_pwr(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	struct ADAPTER *prAdapter = NULL;
+	uint8_t pwr;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		DBGLOG(REQ, STATE,
+			"priv_driver_set_tx_cck_1m_pwr:: set cck pwr %d\n",
+			u4Parse);
+
+		if (u4Parse) {
+			pwr = u4Parse;
+
+			wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_CCK_1M_PWR,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(uint8_t),
+			(uint8_t *)&pwr, NULL, 0);
+		}
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver TX_CCK_1M_PWR <pwr>\n");
+		DBGLOG(INIT, ERROR, "<pwr> power of CCK 1M.\n");
+	}
+
+	return i4BytesWritten;
+}
+
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+
+
 static int priv_driver_get_sta_index(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
 {
@@ -11946,6 +12944,35 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)),
 			ucOpTxNss,
 			ucOpRxNss);
+#ifdef CONFIG_SUPPORT_OPENWRT
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "BW=BW%u\n",
+			20 * (0x01 << rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
+			);
+
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "NSS=%u\n",
+			ucNss);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	{
+
+		struct STA_RECORD *prStaRec;
+
+		prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
+			ucBssIdx, prBssInfo->aucBSSID);
+
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "Mcs1=%u\n",
+			(prStaRec->u2HeRxMcsMapBW80) & 0x3);
+
+		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "Mcs2=%u\n",
+			((prStaRec->u2HeRxMcsMapBW80) >> 2) & 0x3);
+	}
+#endif /* CFG_SUPPORT_802_11AX */
+#endif
+
 	}
 
 	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));
@@ -12696,6 +13723,188 @@ static int priv_driver_set_maxrfgain(IN struct net_device *prNetDev,
 }
 
 #endif
+
+
+#if (CFG_SUPPORT_TWT == 1)
+static int priv_driver_set_twtparams(
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX_LONG] = { 0 };
+	struct _TWT_CTRL_T rTWTCtrl;
+	struct _TWT_PARAMS_T *prTWTParams;
+	uint16_t i;
+	int32_t u4Ret = 0;
+	uint16_t au2Setting[CMD_TWT_MAX_PARAMS];
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prNetDevPrivate =
+		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(prNetDev);
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	prAdapter = prNetDevPrivate->prGlueInfo->prAdapter;
+
+	/* Check param number and convert TWT params to integer type */
+	if (i4Argc == CMD_TWT_ACTION_TEN_PARAMS ||
+		i4Argc == CMD_TWT_ACTION_THREE_PARAMS) {
+		for (i = 0; i < (i4Argc - 1); i++) {
+
+			u4Ret = kalkStrtou16(apcArgv[i + 1],
+				0, &(au2Setting[i]));
+
+			if (u4Ret)
+				DBGLOG(REQ, INFO, "Argv error ret=%d\n", u4Ret);
+		}
+	} else {
+		DBGLOG(REQ, INFO, "set_twtparams wrong argc : %d\n", i4Argc);
+		return -1;
+	}
+
+	if ((IS_TWT_PARAM_ACTION_DEL(au2Setting[0]) ||
+		IS_TWT_PARAM_ACTION_SUSPEND(au2Setting[0]) ||
+		IS_TWT_PARAM_ACTION_RESUME(au2Setting[0])) &&
+		i4Argc == CMD_TWT_ACTION_THREE_PARAMS) {
+
+		DBGLOG(REQ, INFO, "Action=%d\n", au2Setting[0]);
+		DBGLOG(REQ, INFO, "TWT Flow ID=%d\n", au2Setting[1]);
+
+		if (au2Setting[1] >= TWT_MAX_FLOW_NUM) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			return -1;
+		}
+
+		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+		rTWTCtrl.ucCtrlAction = au2Setting[0];
+		rTWTCtrl.ucTWTFlowId = au2Setting[1];
+
+	} else if (i4Argc == CMD_TWT_ACTION_TEN_PARAMS) {
+		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au2Setting[0]);
+		DBGLOG(REQ, INFO,
+			"TWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
+			au2Setting[1], au2Setting[2], au2Setting[3]);
+		DBGLOG(REQ, INFO,
+			"Unannounced enabled=%d Wake Interval Exponent=%d\n",
+			au2Setting[4], au2Setting[5]);
+		DBGLOG(REQ, INFO, "Protection enabled=%d Duration=%d\n",
+			au2Setting[6], au2Setting[7]);
+		DBGLOG(REQ, INFO, "Wake Interval Mantissa=%d\n", au2Setting[8]);
+		/*
+		 *  au2Setting[0]: Whether bypassing nego or not
+		 *  au2Setting[1]: TWT Flow ID
+		 *  au2Setting[2]: TWT Setup Command
+		 *  au2Setting[3]: Trigger enabled
+		 *  au2Setting[4]: Unannounced enabled
+		 *  au2Setting[5]: TWT Wake Interval Exponent
+		 *  au2Setting[6]: TWT Protection enabled
+		 *  au2Setting[7]: Nominal Minimum TWT Wake Duration
+		 *  au2Setting[8]: TWT Wake Interval Mantissa
+		 */
+		if (au2Setting[1] >= TWT_MAX_FLOW_NUM ||
+			au2Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au2Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			return -1;
+		}
+
+		prTWTParams = &(rTWTCtrl.rTWTParams);
+		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
+		prTWTParams->fgReq = TRUE;
+		prTWTParams->ucSetupCmd = (uint8_t) au2Setting[2];
+		prTWTParams->fgTrigger = (au2Setting[3]) ? TRUE : FALSE;
+		prTWTParams->fgUnannounced = (au2Setting[4]) ? TRUE : FALSE;
+		prTWTParams->ucWakeIntvalExponent = (uint8_t) au2Setting[5];
+		prTWTParams->fgProtect = (au2Setting[6]) ? TRUE : FALSE;
+		prTWTParams->ucMinWakeDur = (uint8_t) au2Setting[7];
+		prTWTParams->u2WakeIntvalMantiss = au2Setting[8];
+
+		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+		rTWTCtrl.ucCtrlAction = au2Setting[0];
+		rTWTCtrl.ucTWTFlowId = au2Setting[1];
+	} else {
+		DBGLOG(REQ, INFO, "wrong argc for update agrt: %d\n", i4Argc);
+		return -1;
+	}
+
+	prTWTParamSetMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct _MSG_TWT_REQFSM_RESUME_T));
+	if (prTWTParamSetMsg) {
+		prTWTParamSetMsg->rMsgHdr.eMsgId =
+			MID_TWT_PARAMS_SET;
+		kalMemCopy(&prTWTParamSetMsg->rTWTCtrl,
+			&rTWTCtrl, sizeof(rTWTCtrl));
+
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prTWTParamSetMsg,
+			MSG_SEND_METHOD_BUF);
+	} else
+		return -1;
+
+	return 0;
+}
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+int priv_driver_set_pad_dur(IN struct net_device *prNetDev, IN char *pcCommand,
+			 IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse;
+	uint8_t u1HePadDur;
+
+	ASSERT(prNetDev);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 2) {
+
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+		if (u4Ret)
+			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+			       u4Ret);
+
+		u1HePadDur = (uint8_t) u4Parse;
+
+		if (u1HePadDur == 0 || u1HePadDur == 8 ||
+			u1HePadDur == 16) {
+			prGlueInfo->prAdapter->rWifiVar.ucTrigMacPadDur
+				= u1HePadDur/8;
+		} else {
+			DBGLOG(INIT, ERROR,
+				"iwpriv wlanXX driver SET_PAD_DUR <0,1,2>\n");
+		}
+	} else {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlanXX driver SET_PAD_DUR <0,1,2>\n");
+	}
+
+	return i4BytesWritten;
+}
+#endif
+
 
 static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
 				     IN char *pcCommand, IN int i4TotalLen)
@@ -13451,6 +14660,98 @@ int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
 			kalIoctl(prGlueInfo, wlanoidDumpUapsdSetting,
 				 (void *)pcCommand, i4TotalLen, FALSE, FALSE,
 				 FALSE, &i4BytesWritten);
+		} else if (strnicmp(pcCommand, CMD_SET_BF,
+			   strlen(CMD_SET_BF)) == 0) {
+			i4BytesWritten = priv_driver_set_bf(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_NSS,
+			   strlen(CMD_SET_NSS)) == 0) {
+			i4BytesWritten = priv_driver_set_nss(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_AMSDU_TX,
+			   strlen(CMD_SET_AMSDU_TX)) == 0) {
+			i4BytesWritten = priv_driver_set_amsdu_tx(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_AMSDU_RX,
+			   strlen(CMD_SET_AMSDU_RX)) == 0) {
+			i4BytesWritten = priv_driver_set_amsdu_rx(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_AMPDU_TX,
+			   strlen(CMD_SET_AMPDU_TX)) == 0) {
+			i4BytesWritten = priv_driver_set_ampdu_tx(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_AMPDU_RX,
+			   strlen(CMD_SET_AMPDU_RX)) == 0) {
+			i4BytesWritten = priv_driver_set_ampdu_rx(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_QOS,
+			   strlen(CMD_SET_QOS)) == 0) {
+			i4BytesWritten = priv_driver_set_qos(prNetDev,
+							pcCommand, i4TotalLen);
+#if (CFG_SUPPORT_802_11AX == 1)
+		} else if (strnicmp(pcCommand, CMD_SET_MUEDCA_OVERRIDE,
+			   strlen(CMD_SET_MUEDCA_OVERRIDE)) == 0) {
+			i4BytesWritten = priv_driver_muedca_override(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_BA_SIZE,
+			   strlen(CMD_SET_BA_SIZE)) == 0) {
+			i4BytesWritten = priv_driver_set_ba_size(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_TP_TEST_MODE,
+			   strlen(CMD_SET_TP_TEST_MODE)) == 0) {
+			i4BytesWritten = priv_driver_set_tp_test_mode(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_TX_MCSMAP,
+			   strlen(CMD_SET_TX_MCSMAP)) == 0) {
+			i4BytesWritten = priv_driver_set_mcsmap(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_TX_PPDU,
+			   strlen(CMD_SET_TX_PPDU)) == 0) {
+			i4BytesWritten = priv_driver_set_tx_ppdu(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_LDPC,
+			   strlen(CMD_SET_LDPC)) == 0) {
+			i4BytesWritten = priv_driver_set_ldpc(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_FORCE_AMSDU_TX,
+			   strlen(CMD_FORCE_AMSDU_TX)) == 0) {
+			i4BytesWritten = priv_driver_set_tx_force_amsdu(
+				prNetDev, pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_OM_CH_BW,
+			   strlen(CMD_SET_OM_CH_BW)) == 0) {
+			i4BytesWritten = priv_driver_set_om_ch_bw(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_OM_RX_NSS,
+			   strlen(CMD_SET_OM_RX_NSS)) == 0) {
+			i4BytesWritten = priv_driver_set_om_rx_nss(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_OM_TX_NSS,
+			   strlen(CMD_SET_OM_TX_NSS)) == 0) {
+			i4BytesWritten = priv_driver_set_om_tx_nss(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_OM_MU_DISABLE,
+			   strlen(CMD_SET_OM_MU_DISABLE)) == 0) {
+			i4BytesWritten = priv_driver_set_om_mu_dis(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_TX_OM_PACKET,
+			   strlen(CMD_SET_TX_OM_PACKET)) == 0) {
+			i4BytesWritten = priv_driver_set_tx_om_packet(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_TX_CCK_1M_PWR,
+			   strlen(CMD_SET_TX_CCK_1M_PWR)) == 0) {
+			i4BytesWritten = priv_driver_set_tx_cck_1m_pwr(prNetDev,
+							pcCommand, i4TotalLen);
+		} else if (strnicmp(pcCommand, CMD_SET_PAD_DUR,
+			strlen(CMD_SET_PAD_DUR)) == 0) {
+			i4BytesWritten = priv_driver_set_pad_dur(prNetDev,
+				pcCommand, i4TotalLen);
+#endif
+#if (CFG_SUPPORT_TWT == 1)
+		} else if (strnicmp(pcCommand, CMD_SET_TWT_PARAMS,
+			   strlen(CMD_SET_TWT_PARAMS)) == 0) {
+			i4BytesWritten = priv_driver_set_twtparams(prNetDev,
+				pcCommand, i4TotalLen);
+#endif
 		} else
 				i4BytesWritten = priv_cmd_not_support
 				(prNetDev, pcCommand, i4TotalLen);

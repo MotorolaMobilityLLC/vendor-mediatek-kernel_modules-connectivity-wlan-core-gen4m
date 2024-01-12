@@ -7,7 +7,7 @@
  *
  * GPLv2 License
  *
- * Copyright(C) 2016 MediaTek Inc.
+ * Copyright(C) 2017 MediaTek Inc.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -20,7 +20,7 @@
  *
  * BSD LICENSE
  *
- * Copyright(C) 2016 MediaTek Inc. All rights reserved.
+ * Copyright(C) 2017 MediaTek Inc. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -49,15 +49,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
-
-/*! \file  mt7915.h
-*    \brief This file contains the info of MT7915
-*/
-
-#ifdef MT7915
-
-#ifndef _MT7915_H
-#define _MT7915_H
+#ifndef _TWT_REQ_FSM_H
+#define _TWT_REQ_FSM_H
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
@@ -73,30 +66,24 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-/*TODO: To use correct ID after FPGA uses correct ID @20170927*/
-
-#define CONNAC2X_TOP_HCR 0x70010200
-#define CONNAC2X_TOP_FVR 0x70010204
-#define CONNAC2X_TOP_HVR 0x70010208
-#define CONNAC2x_CONN_CFG_ON_BASE	0x7C060000
-#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR \
-	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
-#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT         0
-
-#define MT7915_CHIP_ID                 (0x7915)
-#define MT7915_SW_SYNC0                CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR
-#define MT7915_SW_SYNC0_RDY_OFFSET \
-	CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
-#define MT7915_PATCH_START_ADDR        (0x00200000)
-#define MT7915_TOP_CFG_BASE			CONN_CFG_BASE
-#define MT7915_TX_DESC_APPEND_LENGTH        44
-#define MT7915_RX_DESC_LENGTH               24
-#define MT7915_ARB_AC_MODE_ADDR (0x820e3020)
 
 /*******************************************************************************
-*                         D A T A   T Y P E S
+*                             D A T A   T Y P E S
 ********************************************************************************
 */
+
+enum _ENUM_TWT_REQUESTER_STATE_T {
+	TWT_REQ_STATE_IDLE = 0,
+	TWT_REQ_STATE_REQTX,
+	TWT_REQ_STATE_WAIT_RSP,
+	TWT_REQ_STATE_SUSPENDING,
+	TWT_REQ_STATE_SUSPENDED,
+	TWT_REQ_STATE_RESUMING,
+	TWT_REQ_STATE_TEARING_DOWN,
+	TWT_REQ_STATE_RX_TEARDOWN,
+	TWT_REQ_STATE_RX_INFOFRM,
+	TWT_REQ_STATE_NUM
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -118,10 +105,50 @@
 ********************************************************************************
 */
 
+u_int32_t
+twtReqFsmRunEventTxDone(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+void twtReqFsmRunEventRxSetup(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId);
+
+void twtReqFsmRunEventRxTeardown(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId);
+
+void twtReqFsmRunEventRxInfoFrm(
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb,
+	struct STA_RECORD *prStaRec,
+	u_int8_t ucTWTFlowId,
+	struct _NEXT_TWT_INFO_T *prNextTWTInfo);
+
+void twtReqFsmRunEventStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtReqFsmRunEventTeardown(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtReqFsmRunEventSuspend(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void twtReqFsmRunEventResume(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
 
-#endif /* _MT7915_H */
-#endif  /* MT7915 */
+#endif /* _TWT_REQ_FSM_H */
