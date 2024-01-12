@@ -90,7 +90,7 @@
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
 #include <linux/of.h>
-
+#include "soc3_0.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -262,7 +262,7 @@ out:
 	return ret;
 }
 
-static int hifAxiRemove(void)
+int hifAxiRemove(void)
 {
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -288,6 +288,7 @@ static int hifAxiRemove(void)
 }
 
 #if CFG_MTK_ANDROID_WMT
+#if (CFG_SUPPORT_CONNINFRA == 0)
 static int hifAxiGetBusCnt(void)
 {
 	if (!g_prGlueInfo)
@@ -311,7 +312,7 @@ static int hifAxiSetMpuProtect(bool enable)
 #endif
 	return 0;
 }
-#endif /* CFG_MTK_ANDROID_WMT */
+
 
 static int hifAxiIsWifiDrvOwn(void)
 {
@@ -320,6 +321,8 @@ static int hifAxiIsWifiDrvOwn(void)
 
 	return (g_prGlueInfo->prAdapter->fgIsFwOwn == FALSE) ? 1 : 0;
 }
+#endif
+#endif /* CFG_MTK_ANDROID_WMT */
 
 static void axiDmaSetup(struct platform_device *pdev)
 {
@@ -581,7 +584,7 @@ static irqreturn_t mtk_sw_interrupt(int irq, void *dev_instance)
 	struct mt66xx_chip_info *prChipInfo;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
-	prChipInfo = prGlueInfo->prAdapter->chip_info
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	if (prChipInfo->sw_interrupt_handler)
 		prChipInfo->sw_interrupt_handler(prGlueInfo->prAdapter);
 	kalSetRstEvent();
