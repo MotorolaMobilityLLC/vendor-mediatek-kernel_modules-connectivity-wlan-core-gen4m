@@ -957,6 +957,12 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_SPE_IDX_CONTROL
 	u_int8_t ucSpeIdxCtrl;	/* 0: WF0, 1: WF1, 2: duplicate */
 #endif
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	uint8_t ucLowLatencyModeScan;
+	uint8_t ucLowLatencyModeReOrder;
+	uint8_t ucLowLatencyModePower;
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 };
 
 /* cnm_timer module */

@@ -6387,6 +6387,15 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucSpeIdxCtrl = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "SpeIdxCtrl", 2);
 #endif
+
+#if CFG_SUPPORT_LOWLATENCY_MODE
+	prWifiVar->ucLowLatencyModeScan = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "LowLatencyModeScan", FEATURE_ENABLED);
+	prWifiVar->ucLowLatencyModeReOrder = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "LowLatencyModeReOrder", FEATURE_ENABLED);
+	prWifiVar->ucLowLatencyModePower = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "LowLatencyModePower", FEATURE_ENABLED);
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
