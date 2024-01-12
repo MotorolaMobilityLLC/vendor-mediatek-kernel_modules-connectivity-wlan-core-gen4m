@@ -255,20 +255,20 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 
 		prRxStatistics = (struct PARAM_CUSTOM_ACCESS_RX_STAT *)
 				 prCmdInfo->pvInformationBuffer;
-		prRxStatistics->u2SeqNum = prEventAccessRxStat->u2SeqNum;
+		prRxStatistics->u4SeqNum = prEventAccessRxStat->u4SeqNum;
 		prRxStatistics->u4TotalNum =
 			prEventAccessRxStat->u4TotalNum;
 
 		u4QueryInfoLen = sizeof(struct CMD_ACCESS_RX_STAT);
 
-		if (prRxStatistics->u2SeqNum == u2RxStatSeqNum) {
+		if (prRxStatistics->u4SeqNum == u4RxStatSeqNum) {
 			prElement = &g_HqaRxStat.MAC_FCS_Err;
-			for (i = 0; i < prRxStatistics->u4TotalNum; i++) {
+			for (i = 0; i < HQA_RX_STATISTIC_NUM; i++) {
 				u4Temp = ntohl(
 					prEventAccessRxStat->au4Buffer[i]);
 				kalMemCopy(prElement, &u4Temp, 4);
 
-				if (i < (prRxStatistics->u4TotalNum - 1))
+				if (i < (HQA_RX_STATISTIC_NUM - 1))
 					prElement++;
 			}
 
@@ -291,7 +291,7 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 
 		DBGLOG(INIT, ERROR,
 		       "MT6632 : RX Statistics Test SeqNum = %d, TotalNum = %d\n",
-		       (unsigned int)prEventAccessRxStat->u2SeqNum,
+		       (unsigned int)prEventAccessRxStat->u4SeqNum,
 		       (unsigned int)prEventAccessRxStat->u4TotalNum);
 
 		DBGLOG(INIT, ERROR,

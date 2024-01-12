@@ -892,6 +892,12 @@ struct PARAM_CUSTOM_SET_RADAR_DETECT_MODE {
 };
 #endif
 
+#if (CFG_SUPPORT_CONNAC3X == 0)
+struct PARAM_CUSTOM_ACCESS_RX_STAT {
+	uint32_t u4SeqNum;
+	uint32_t u4TotalNum;
+};
+#else
 struct PARAM_CUSTOM_ACCESS_RX_STAT {
 	uint16_t u2SeqNum;
 	uint8_t ucDbdcIdx;
@@ -899,7 +905,7 @@ struct PARAM_CUSTOM_ACCESS_RX_STAT {
 	uint8_t	ucData;
 	uint32_t u4TotalNum;
 };
-
+#endif
 /* Ext DevInfo Tag */
 enum EXT_ENUM_DEVINFO_TAG_HANDLE {
 	DEV_INFO_ACTIVE = 0,

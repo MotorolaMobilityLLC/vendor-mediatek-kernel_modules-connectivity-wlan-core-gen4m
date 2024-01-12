@@ -65,9 +65,11 @@
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
+extern uint32_t u4RxStatSeqNum;
+#else
 extern uint16_t u2RxStatSeqNum;
-
+#endif
 #if CFG_SUPPORT_TX_BF
 extern union PFMU_PROFILE_TAG1 g_rPfmuTag1;
 extern union PFMU_PROFILE_TAG2 g_rPfmuTag2;
