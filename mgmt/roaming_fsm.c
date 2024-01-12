@@ -400,11 +400,13 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 		 *   to speed up state search.
 		 */
 		case ROAMING_STATE_IDLE:
+			break;
 		case ROAMING_STATE_DECISION:
 #if CFG_SUPPORT_DRIVER_ROAMING
 			GET_CURRENT_SYSTIME(
 				&prRoamingFsmInfo->rRoamingLastDecisionTime);
 #endif
+			prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
 			break;
 
 		case ROAMING_STATE_DISCOVERY: {

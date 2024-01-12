@@ -558,7 +558,8 @@ bool aisFsmIsInProcessBeaconTimeout(IN struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *set =
 		aisGetConnSettings(prAdapter, ucBssIndex);
 
-	return bss->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_RADIO_LOST &&
+	return bss->eConnectionState == MEDIA_STATE_DISCONNECTED &&
+	    bss->ucReasonOfDisconnect == DISCONNECT_REASON_CODE_RADIO_LOST &&
 	    fsm->u4PostponeIndStartTime > 0 &&
 	    !CHECK_FOR_TIMEOUT(kalGetTimeTick(), fsm->u4PostponeIndStartTime,
 	    SEC_TO_MSEC(set->ucDelayTimeOfDisconnectEvent));
@@ -1894,7 +1895,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				   /* Partial channels collection
 				    * for beacon timeout
 				   */
-				   || aisIsProcessingBeaconTimeout(
+				   || aisFsmIsInProcessBeaconTimeout(
 				   prAdapter, ucBssIndex)) {
 				struct RF_CHANNEL_INFO *prChnlInfo =
 				    &prScanReqMsg->arChnlInfoList[0];
@@ -2638,8 +2639,7 @@ void aisFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 		struct STA_RECORD *prSta = prAisFsmInfo->prTargetStaRec;
 		struct BSS_DESC *prBss = prAisFsmInfo->prTargetBssDesc;
 
-		if (prSta && prBss && prSta->u2ReasonCode ==
-		    REASON_CODE_DISASSOC_AP_OVERLOAD) {
+		if (prSta && prBss && scanApOverload(0, prSta->u2ReasonCode)) {
 			struct AIS_BLACKLIST_ITEM *prBlackList =
 			    aisAddBlacklist(prAdapter, prBss);
 
@@ -3079,8 +3079,11 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 			 * disable driver/fw roaming
 			 */
 			if (prConnSettings->eConnectionPolicy !=
-			     CONNECT_BY_BSSID && roam->fgDrvRoamingAllow)
+			     CONNECT_BY_BSSID && roam->fgDrvRoamingAllow) {
+				prConnSettings->eConnectionPolicy =
+					CONNECT_BY_SSID_BEST_RSSI;
 				roamingFsmRunEventStart(prAdapter, ucBssIndex);
+			}
 #endif /* CFG_SUPPORT_ROAMING */
 			if (aisFsmIsRequestPending
 			    (prAdapter, AIS_REQUEST_ROAMING_CONNECT,
@@ -3156,7 +3159,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				if (prBssDesc == NULL)
 					break;
 
-				DBGLOG(AIS, TRACE,
+				DBGLOG(AIS, INFO,
 				       "ucJoinFailureCount=%d %d, Status=%d Reason=%d, eConnectionState=%d",
 				       prStaRec->ucJoinFailureCount,
 				       prBssDesc->ucJoinFailureCount,
@@ -3168,7 +3171,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 				    prStaRec->u2StatusCode;
 				prBssDesc->ucJoinFailureCount++;
 				if (prBssDesc->ucJoinFailureCount >=
-				    SCN_BSS_JOIN_FAIL_THRESOLD) {
+				    SCN_BSS_JOIN_FAIL_THRESOLD ||
+				    scanApOverload(prStaRec->u2StatusCode,
+						prStaRec->u2ReasonCode)) {
 					/* Support AP Selection */
 					aisAddBlacklist(prAdapter, prBssDesc);
 
@@ -3178,7 +3183,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					       "Bss " MACSTR
 					       " join fail %d times, temp disable it at time: %u\n",
 					       MAC2STR(prBssDesc->aucBSSID),
-					       SCN_BSS_JOIN_FAIL_THRESOLD,
+					       prBssDesc->ucJoinFailureCount,
 					       prBssDesc->rJoinFailTime);
 				}
 
@@ -4303,10 +4308,14 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgDelayIndication, IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
+	uint16_t u2ReasonCode = REASON_CODE_UNSPECIFIED;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 
 	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_TWT == 1)
 	twtPlannerReset(prAdapter, prAisBssInfo);
@@ -4352,10 +4361,18 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 						  FALSE, PS_CALLER_NO_TIM);
 		}
 
+		if (prAisBssInfo->prStaRecOfAP) {
+			u2ReasonCode =
+				prAisBssInfo->prStaRecOfAP->u2ReasonCode;
+		}
 		if (prAisBssInfo->ucReasonOfDisconnect ==
 		    DISCONNECT_REASON_CODE_RADIO_LOST ||
-		    prAisBssInfo->ucReasonOfDisconnect ==
-				DISCONNECT_REASON_CODE_DISASSOCIATED) {
+		    (prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_DEAUTHENTICATED &&
+			u2ReasonCode == REASON_CODE_DEAUTH_LEAVING_BSS) ||
+		    (prAisBssInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_DISASSOCIATED &&
+			u2ReasonCode == REASON_CODE_DISASSOC_LEAVING_BSS)) {
 			scanRemoveBssDescByBssid(prAdapter,
 						 prAisBssInfo->aucBSSID);
 
@@ -4368,6 +4385,12 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		    DISCONNECT_REASON_CODE_RADIO_LOST) {
 			/* trials for re-association */
 			if (fgDelayIndication) {
+				/*
+				 * There is a chance that roaming failed before
+				 * beacon timeout, so reset trial count here to
+				 * ensure the new reconnection runs correctly.
+				 */
+				prAisFsmInfo->ucConnTrialCount = 0;
 				aisFsmIsRequestPending(prAdapter,
 						       AIS_REQUEST_RECONNECT,
 						       TRUE, ucBssIndex);
@@ -4378,10 +4401,11 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 		} else {
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
 				prAisBssInfo->aucBSSID);
-			aisGetTargetBssDesc(prAdapter, ucBssIndex)
-				->fgIsConnected = FALSE;
-			aisGetTargetBssDesc(prAdapter, ucBssIndex)
-				->fgIsConnecting = FALSE;
+			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+			if (prBssDesc) {
+				prBssDesc->fgIsConnected = FALSE;
+				prBssDesc->fgIsConnecting = FALSE;
+			}
 		}
 
 		if (fgDelayIndication) {
@@ -6427,35 +6451,6 @@ static void aisRemoveDisappearedBlacklist(struct ADAPTER *prAdapter)
 	}
 }
 
-u_int8_t aisApOverload(struct AIS_BLACKLIST_ITEM *prBlack)
-{
-	switch (prBlack->u2AuthStatus) {
-	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
-	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
-		return TRUE;
-	}
-	switch (prBlack->u2DeauthReason) {
-	case REASON_CODE_DISASSOC_LACK_OF_BANDWIDTH:
-	case REASON_CODE_DISASSOC_AP_OVERLOAD:
-		return TRUE;
-	}
-	return FALSE;
-}
-
-uint16_t aisCalculateBlackListScore(struct ADAPTER *prAdapter,
-				    struct BSS_DESC *prBssDesc)
-{
-	if (!prBssDesc->prBlack)
-		prBssDesc->prBlack = aisQueryBlackList(prAdapter, prBssDesc);
-
-	if (!prBssDesc->prBlack)
-		return 100;
-	else if (aisApOverload(prBssDesc->prBlack) ||
-		 prBssDesc->prBlack->ucCount >= 10)
-		return 0;
-	return 100 - prBssDesc->prBlack->ucCount * 10;
-}
-
 void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 				 IN struct MSG_HDR *prMsgHdr)
 {
@@ -6749,59 +6744,6 @@ void aisResetNeighborApList(IN struct ADAPTER *prAdapter,
 	LINK_MERGE_TO_TAIL(&prAPlist->rFreeLink, &prAPlist->rUsingLink);
 }
 #endif
-
-/*----------------------------------------------------------------------------*/
-/*!
-* @brief This function checks if AIS is processing the beacon timeout.
-*
-* \param[in] prAdapter  Pointer of ADAPTER_T
-*
-* @retval FALSE
-* @retval TRUE
-*/
-/*----------------------------------------------------------------------------*/
-u_int8_t aisIsProcessingBeaconTimeout(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
-{
-	struct BSS_INFO *prAisBssInfo;
-	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct CONNECTION_SETTINGS *prConnSettings;
-	bool fgIsPostponeTimeout;
-	bool fgIsBeaconTimeout;
-
-	DBGLOG(AIS, LOUD, "ucBssIndex = %d\n", ucBssIndex);
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prConnSettings =
-		aisGetConnSettings(prAdapter, ucBssIndex);
-
-	fgIsPostponeTimeout = CHECK_FOR_TIMEOUT(
-		kalGetTimeTick(), prAisFsmInfo->u4PostponeIndStartTime,
-		SEC_TO_MSEC(prConnSettings->ucDelayTimeOfDisconnectEvent));
-
-	fgIsBeaconTimeout = prAisBssInfo->ucReasonOfDisconnect ==
-		DISCONNECT_REASON_CODE_RADIO_LOST;
-
-	DBGLOG(AIS, TRACE,
-		"eConnectionState=%d, eCurrentState=%d, u4PostponeIndStartTime=%u, fgIsPostponeTimeout=%d, fgIsBeaconTimeout=%d, ucConnTrialCount=%d\n",
-		prAisBssInfo->eConnectionState,
-		prAisFsmInfo->eCurrentState,
-		prAisFsmInfo->u4PostponeIndStartTime,
-		fgIsPostponeTimeout,
-		fgIsBeaconTimeout,
-		prAisFsmInfo->ucConnTrialCount
-	);
-
-	if (prAisBssInfo->eConnectionState != MEDIA_STATE_DISCONNECTED
-		|| prAisFsmInfo->eCurrentState != AIS_STATE_LOOKING_FOR
-		|| prAisFsmInfo->u4PostponeIndStartTime == 0
-		|| fgIsPostponeTimeout
-		|| (fgIsBeaconTimeout && prAisFsmInfo->ucConnTrialCount > 1))
-		return FALSE;
-
-	return TRUE;
-} /* end of aisIsProcessingBeaconTimeout() */
 
 void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 		IN struct MSG_HDR *prMsgHdr)
