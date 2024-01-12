@@ -281,6 +281,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter)
 	prAisFsmInfo->ucSeqNumOfReqMsg = 0;
 	prAisFsmInfo->ucSeqNumOfChReq = 0;
 	prAisFsmInfo->ucSeqNumOfScanReq = 0;
+	prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
 
 	prAisFsmInfo->fgIsInfraChannelFinished = TRUE;
 #if CFG_SUPPORT_ROAMING
@@ -1272,6 +1273,11 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				u2ScanIELen);
 			prScanReqMsg->rMsgHdr.eMsgId = MID_AIS_SCN_SCAN_REQ_V2;
 			prScanReqMsg->ucSeqNum = ++prAisFsmInfo->ucSeqNumOfScanReq;
+			if (prAisFsmInfo->u2SeqNumOfScanReport ==
+					AIS_SCN_REPORT_SEQ_NOT_SET) {
+				prAisFsmInfo->u2SeqNumOfScanReport =
+					(uint16_t)prScanReqMsg->ucSeqNum;
+			}
 			prScanReqMsg->ucBssIndex = prAdapter->prAisBssInfo->ucBssIndex;
 
 #if CFG_SUPPORT_RDD_TEST_MODE
@@ -1665,12 +1671,12 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 	enum ENUM_AIS_STATE eNextState;
 	uint8_t ucSeqNumOfCompMsg;
 	struct CONNECTION_SETTINGS *prConnSettings;
+	enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
 
 	DEBUGFUNC("aisFsmRunEventScanDone()");
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
-	DBGLOG(AIS, INFO, "ScanDone\n");
 
 	DBGLOG(AIS, LOUD, "EVENT-SCAN DONE: Current Time = %u\n", kalGetTimeTick());
 
@@ -1688,10 +1694,19 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 	ASSERT(prScanDoneMsg->ucBssIndex == prAdapter->prAisBssInfo->ucBssIndex);
 
 	ucSeqNumOfCompMsg = prScanDoneMsg->ucSeqNum;
+	eStatus = prScanDoneMsg->eScanStatus;
 	cnmMemFree(prAdapter, prMsgHdr);
+
+	DBGLOG(AIS, INFO, "ScanDone %u, status(%d)\n",
+		ucSeqNumOfCompMsg, eStatus);
 
 	eNextState = prAisFsmInfo->eCurrentState;
 
+	if ((uint16_t)ucSeqNumOfCompMsg == prAisFsmInfo->u2SeqNumOfScanReport) {
+		kalScanDone(prAdapter->prGlueInfo, KAL_NETWORK_TYPE_AIS_INDEX,
+			WLAN_STATUS_SUCCESS);
+		prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
+	}
 	if (ucSeqNumOfCompMsg != prAisFsmInfo->ucSeqNumOfScanReq) {
 		DBGLOG(AIS, WARN,
 			"SEQ NO of AIS SCN DONE MSG is not matched %u %u\n",
@@ -1705,12 +1720,10 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 			/* reset scan IE buffer */
 			prAisFsmInfo->u4ScanIELength = 0;
 
-			kalScanDone(prAdapter->prGlueInfo, KAL_NETWORK_TYPE_AIS_INDEX, WLAN_STATUS_SUCCESS);
 			eNextState = AIS_STATE_IDLE;
 #if CFG_SUPPORT_AGPS_ASSIST
 			scanReportScanResultToAgps(prAdapter);
 #endif
-
 			break;
 
 		case AIS_STATE_ONLINE_SCAN:
@@ -1719,7 +1732,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 			/* reset scan IE buffer */
 			prAisFsmInfo->u4ScanIELength = 0;
 
-			kalScanDone(prAdapter->prGlueInfo, KAL_NETWORK_TYPE_AIS_INDEX, WLAN_STATUS_SUCCESS);
 #if CFG_SUPPORT_ROAMING
 			eNextState = aisFsmRoamingScanResultsUpdate(prAdapter);
 #else
@@ -1753,7 +1765,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prM
 
 		}
 	}
-
 	if (eNextState != prAisFsmInfo->eCurrentState)
 		aisFsmSteps(prAdapter, eNextState);
 }				/* end of aisFsmRunEventScanDone() */
@@ -3224,7 +3235,6 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter, IN u_int8_t fgDelayIndicatio
 static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter, unsigned long ulParam)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	enum ENUM_AIS_STATE eNextState;
 	struct CONNECTION_SETTINGS *prConnSettings;
 
 	DEBUGFUNC("aisFsmRunEventScanDoneTimeOut()");
@@ -3236,44 +3246,8 @@ static void aisFsmRunEventScanDoneTimeOut(IN struct ADAPTER *prAdapter, unsigned
 
 	DBGLOG(AIS, STATE, "aisFsmRunEventScanDoneTimeOut Current[%d]\n", prAisFsmInfo->eCurrentState);
 
-	/* report all scanned frames to upper layer to avoid scanned frame is timeout */
-	/* must be put before kalScanDone */
-/* scanReportBss2Cfg80211(prAdapter,BSS_TYPE_INFRASTRUCTURE,NULL); */
-
-	prConnSettings->fgIsScanReqIssued = FALSE;
-	kalScanDone(prAdapter->prGlueInfo, KAL_NETWORK_TYPE_AIS_INDEX, WLAN_STATUS_SUCCESS);
-	eNextState = prAisFsmInfo->eCurrentState;
-
-	switch (prAisFsmInfo->eCurrentState) {
-	case AIS_STATE_SCAN:
-		prAisFsmInfo->u4ScanIELength = 0;
-		eNextState = AIS_STATE_IDLE;
-		break;
-	case AIS_STATE_ONLINE_SCAN:
-		/* reset scan IE buffer */
-		prAisFsmInfo->u4ScanIELength = 0;
-#if CFG_SUPPORT_ROAMING
-		eNextState = aisFsmRoamingScanResultsUpdate(prAdapter);
-#else
-		eNextState = AIS_STATE_NORMAL_TR;
-#endif /* CFG_SUPPORT_ROAMING */
-/* Support AP Selection */
-#if CFG_SELECT_BSS_BASE_ON_MULTI_PARAM
-		scanGetCurrentEssChnlList(prAdapter);
-#endif
-/* end Support AP Selection */
-		break;
-	default:
-		break;
-	}
-
 	/* try to stop scan in CONNSYS */
 	aisFsmStateAbort_SCAN(prAdapter);
-
-	/* wlanQueryDebugCode(prAdapter); *//* display current SCAN FSM in FW, debug use */
-
-	if (eNextState != prAisFsmInfo->eCurrentState)
-		aisFsmSteps(prAdapter, eNextState);
 }				/* end of aisFsmBGSleepTimeout() */
 
 /*----------------------------------------------------------------------------*/
