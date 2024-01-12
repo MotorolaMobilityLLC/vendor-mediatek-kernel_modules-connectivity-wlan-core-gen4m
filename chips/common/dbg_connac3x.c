@@ -91,7 +91,15 @@
 #include "coda/mt7925/bn1_wf_mib_top.h"
 #include "coda/mt7925/wf_umib_top.h"
 #endif
-
+#ifdef MT7935
+#include "coda/mt7935/wf_hif_dmashdl_top.h"
+#include "coda/mt7935/wf_ple_top.h"
+#include "coda/mt7935/wf_pse_top.h"
+#include "coda/mt7935/wf_wfdma_host_dma0.h"
+#include "coda/mt7935/bn0_wf_mib_top.h"
+#include "coda/mt7935/bn1_wf_mib_top.h"
+#include "coda/mt7935/wf_umib_top.h"
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************

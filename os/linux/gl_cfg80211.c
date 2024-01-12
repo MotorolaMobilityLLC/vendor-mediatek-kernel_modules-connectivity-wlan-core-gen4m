@@ -7418,6 +7418,7 @@ int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 		}
 	}
 
+#if KERNEL_VERSION(4, 18, 0) <= CFG80211_VERSION_CODE
 	if (changed & UPDATE_AUTH_TYPE) {
 		struct GL_WPA_INFO *prWpaInfo;
 
@@ -7464,6 +7465,7 @@ int mtk_cfg_update_connect_params(struct wiphy *wiphy,
 		}
 	}
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+#endif
 
 	return WLAN_STATUS_SUCCESS;
 }
