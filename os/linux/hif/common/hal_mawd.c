@@ -133,7 +133,7 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct RTMP_RX_RING *prRxRing;
-	uint32_t u4Addr, u4Val;
+	uint32_t u4Addr, u4Val, u4Idx;
 
 	if (!prGlueInfo->prAdapter->fgIsFwDownloaded)
 		return;
@@ -153,17 +153,24 @@ void halMawdSleep(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = MAWD_POWER_UP;
 	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
-	while ((u4Val & BITS(8, 12)) != BITS(8, 12)) {
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		if ((u4Val & BITS(8, 12)) == BITS(8, 12))
+			break;
 		kalUdelay(20);
 	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "1. Mawd Sleep failed\n");
 
 	kalDevRegWrite(prGlueInfo, u4Addr, 3);
-
-	while ((u4Val & BIT(2)) != BIT(2)) {
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		if ((u4Val & BIT(2)) == BIT(2))
+			break;
 		kalUdelay(20);
 	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "2. Mawd Sleep failed\n");
 }
 
 void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
@@ -171,9 +178,7 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
 	struct RTMP_DMABUF *prCache, *prAddrArray, *prIndCmd;
-	struct RRO_ADDR_ELEM *prAddrElem;
-	struct RRO_IND_CMD *prIndCmdElem;
-	uint32_t u4Idx, u4AddrNum;
+	uint32_t u4AddrNum;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMemOps = &prHifInfo->rMemOps;
@@ -191,25 +196,6 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
-	/* session num + particular */
-	u4AddrNum = RRO_TOTAL_ADDR_ELEM_NUM * (RRO_MAX_WINDOW_NUM + 1);
-	prAddrArray->AllocSize = RRO_ADDR_ELEM_SIZE * u4AddrNum;
-	if (prMemOps->allocExtBuf)
-		prMemOps->allocExtBuf(prHifInfo, prAddrArray);
-
-	if (prAddrArray->AllocVa == NULL) {
-		DBGLOG(HAL, ERROR, "AddrArray allocation failed!!\n");
-		return;
-	}
-
-	for (u4Idx = 0; u4Idx < u4AddrNum; u4Idx++) {
-		prAddrElem = (struct RRO_ADDR_ELEM *)
-			(prAddrArray->AllocVa +
-			 u4Idx * sizeof(struct RRO_ADDR_ELEM));
-		prAddrElem->signature_0 = 0x7;
-		prAddrElem->signature_1 = 0x7;
-	}
-
 	prIndCmd->AllocSize =
 		RRO_IND_CMD_RING_SIZE * sizeof(struct RRO_IND_CMD);
 	if (prMemOps->allocExtBuf)
@@ -220,11 +206,51 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
+	/* session num + particular */
+	u4AddrNum = (RRO_TOTAL_ADDR_ELEM_NUM + 1) * RRO_MAX_WINDOW_NUM;
+	prAddrArray->AllocSize = RRO_ADDR_ELEM_SIZE * u4AddrNum;
+	if (prMemOps->allocExtBuf)
+		prMemOps->allocExtBuf(prHifInfo, prAddrArray);
+
+	if (prAddrArray->AllocVa == NULL) {
+		DBGLOG(HAL, ERROR, "AddrArray allocation failed!!\n");
+		return;
+	}
+
+	halRroResetMem(prGlueInfo);
+}
+
+void halRroResetMem(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_DMABUF *prCache, *prAddrArray, *prIndCmd;
+	struct RRO_ADDR_ELEM *prAddrElem;
+	struct RRO_IND_CMD *prIndCmdElem;
+	uint32_t u4Idx, u4AddrNum;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prCache = &prHifInfo->BaBitmapCache;
+	prAddrArray = &prHifInfo->AddrArray;
+	prIndCmd = &prHifInfo->IndCmdRing;
+
+	memset(prCache->AllocVa, 0, prCache->AllocSize);
+
+	memset(prIndCmd->AllocVa, 0, prIndCmd->AllocSize);
 	for (u4Idx = 0; u4Idx < RRO_IND_CMD_RING_SIZE; u4Idx++) {
 		prIndCmdElem = (struct RRO_IND_CMD *)
 			(prIndCmd->AllocVa +
 			 u4Idx * sizeof(struct RRO_IND_CMD));
 		prIndCmdElem->magic_cnt = 4;
+	}
+
+	memset(prAddrArray->AllocVa, 0, prAddrArray->AllocSize);
+	u4AddrNum = (RRO_TOTAL_ADDR_ELEM_NUM + 1) * RRO_MAX_WINDOW_NUM;
+	for (u4Idx = 0; u4Idx < u4AddrNum; u4Idx++) {
+		prAddrElem = (struct RRO_ADDR_ELEM *)
+			(prAddrArray->AllocVa +
+			 u4Idx * sizeof(struct RRO_ADDR_ELEM));
+		prAddrElem->signature_0 = 0x7;
+		prAddrElem->signature_1 = 0x7;
 	}
 }
 
@@ -317,6 +343,10 @@ static void halRroSetupIndicateCmdRing(struct GLUE_INFO *prGlueInfo)
 
 	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL2_ADDR;
 	u4Val = RRO_IND_CMD_RING_SIZE - 1;
+	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
+	u4Val = 0;
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
 	if (prChipInfo->is_support_mawd &&
@@ -519,7 +549,12 @@ static u_int8_t halRroHashAdd(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key,
 	if (halRroHashSearch(prHifInfo, u8Key))
 		return FALSE;
 
-	prNewNode = kalMemAlloc(sizeof(struct RCB_NODE), VIR_MEM_TYPE);
+	if (hlist_empty(&prHifInfo->rRcbHTblFreeList))
+		return FALSE;
+
+	prNewNode = list_entry(prHifInfo->rRcbHTblFreeList.first,
+			       struct RCB_NODE, rNode);
+	hlist_del(prHifInfo->rRcbHTblFreeList.first);
 	prNewNode->u8Key = u8Key;
 	prNewNode->prSkb = prSkb;
 	prNewNode->prRcb = prRcb;
@@ -536,7 +571,7 @@ static u_int8_t halRroHashDel(struct GL_HIF_INFO *prHifInfo, uint64_t u8Key)
 	prRcbNode = halRroHashSearch(prHifInfo, u8Key);
 	if (prRcbNode) {
 		hash_del_rcu(&prRcbNode->rNode);
-		kalMemFree(prRcbNode, VIR_MEM_TYPE, BUF_SIZE);
+		hlist_add_head(&prRcbNode->rNode, &prHifInfo->rRcbHTblFreeList);
 	}
 
 	return prRcbNode != NULL;
@@ -607,6 +642,7 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 	struct HIF_MEM_OPS *prMemOps;
 	struct sk_buff *prSkb = NULL;
 	struct RTMP_DMABUF rDmaBuf;
+	struct RCB_NODE *prNewNode;
 	uint32_t u4Cnt, u4Idx;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -619,6 +655,7 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 	INIT_LIST_HEAD(&prHifInfo->rRcbFreeList);
 	prHifInfo->u4RcbFreeListCnt = 0;
 	hash_init(prHifInfo->arRcbHTbl);
+	INIT_HLIST_HEAD(&prHifInfo->rRcbHTblFreeList);
 
 	rDmaBuf.AllocSize = CFG_RX_MAX_PKT_SIZE;
 	for (u4Cnt = 0; u4Cnt < RRO_PREALLOC_RX_BUF_NUM; u4Cnt++) {
@@ -632,6 +669,9 @@ void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo)
 			break;
 		}
 		halRroAddNewRcbBlk(prHifInfo, prSkb, rDmaBuf.AllocPa);
+
+		prNewNode = kalMemAlloc(sizeof(struct RCB_NODE), VIR_MEM_TYPE);
+		hlist_add_head(&prNewNode->rNode, &prHifInfo->rRcbHTblFreeList);
 	}
 
 	DBGLOG(HAL, TRACE, "Alloc Rcb[%d]", u4Cnt);
@@ -643,7 +683,7 @@ void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo)
 	struct HIF_MEM_OPS *prMemOps;
 	struct RX_CTRL_BLK *prRcb;
 	struct RCB_NODE *prRcbNode;
-	struct hlist_node *prTmpNode;
+	struct hlist_node *prHCur, *prHNext;
 	struct list_head *prCur, *prNext;
 	int i4Bkt = 0;
 
@@ -652,9 +692,14 @@ void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo)
 	prMemOps = &prHifInfo->rMemOps;
 
 	hash_for_each_safe(prHifInfo->arRcbHTbl, i4Bkt,
-			   prTmpNode, prRcbNode, rNode) {
+			   prHCur, prRcbNode, rNode) {
 		hash_del_rcu(&prRcbNode->rNode);
-		kalMemFree(prRcbNode, VIR_MEM_TYPE, BUF_SIZE);
+		kalMemFree(prRcbNode, VIR_MEM_TYPE, sizeof(struct RCB_NODE));
+	}
+
+	hlist_for_each_safe(prHCur, prHNext, &prHifInfo->rRcbHTblFreeList) {
+		prRcbNode = list_entry(prHCur, struct RCB_NODE, rNode);
+		kalMemFree(prRcbNode, VIR_MEM_TYPE, sizeof(struct RCB_N1ODE));
 	}
 
 	/* only release free list, used list release on wfdma free stage */
@@ -673,7 +718,42 @@ void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo)
 	}
 	prHifInfo->u4RcbFreeListCnt = 0;
 
-	DBGLOG(HAL, TRACE, "Release Rcb");
+	DBGLOG(HAL, TRACE, "Release Rcb List");
+}
+
+void halRroResetRcbList(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct RX_CTRL_BLK *prRcb;
+	struct RCB_NODE *prRcbNode;
+	struct hlist_node *prHCur;
+	struct list_head *prCur, *prNext;
+	uint32_t u4Idx = 0;
+	int i4Bkt = 0;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	prMemOps = &prHifInfo->rMemOps;
+
+	hash_for_each_safe(prHifInfo->arRcbHTbl, i4Bkt,
+			   prHCur, prRcbNode, rNode) {
+		hash_del_rcu(&prRcbNode->rNode);
+		hlist_add_head(&prRcbNode->rNode, &prHifInfo->rRcbHTblFreeList);
+	}
+
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		list_for_each_safe(prCur, prNext,
+				   &prHifInfo->rRcbUsedList[u4Idx]) {
+			prRcb = list_entry(prCur, struct RX_CTRL_BLK, rNode);
+			list_del(prCur);
+			list_add_tail(&prRcb->rNode, &prHifInfo->rRcbFreeList);
+			prHifInfo->u4RcbFreeListCnt++;
+		}
+		prHifInfo->u4RcbUsedListCnt[u4Idx] = 0;
+	}
+
+	DBGLOG(HAL, TRACE, "Reset Rcb List");
 }
 
 void halRroTurnOff(struct GLUE_INFO *prGlueInfo)
@@ -1216,7 +1296,7 @@ static void halMawdReadSram(
 	uint32_t *pu4ValH)
 {
 	struct BUS_INFO *prBusInfo;
-	uint32_t u4Val;
+	uint32_t u4Val, u4Idx;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
@@ -1225,9 +1305,11 @@ static void halMawdReadSram(
 	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings2, u4Val);
 
 	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
-	while (u4Val & BIT(8)) {
-		kalUdelay(10);
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
+		if ((u4Val & BIT(8)) == 0)
+			break;
+		kalUdelay(10);
 	}
 	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings5, pu4ValL);
 	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings6, pu4ValH);
@@ -1240,7 +1322,7 @@ static void halMawdUpdateSram(
 	uint32_t u4ValH)
 {
 	struct BUS_INFO *prBusInfo;
-	uint32_t u4Val;
+	uint32_t u4Val, u4Idx;
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
@@ -1251,9 +1333,11 @@ static void halMawdUpdateSram(
 	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings2, u4Val);
 
 	kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
-	while (u4Val & BIT(8)) {
-		kalUdelay(10);
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		kalDevRegRead(prGlueInfo, prBusInfo->mawd_settings4, &u4Val);
+		if ((u4Val & BIT(8)) == 0)
+			break;
+		kalUdelay(10);
 	}
 	kalDevRegWrite(prGlueInfo, prBusInfo->mawd_settings4, BIT(0));
 
@@ -1589,10 +1673,14 @@ void halMawdReset(struct GLUE_INFO *prGlueInfo)
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 
 	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
-	while ((u4Val & BITS(5, 6)) != BITS(5, 6)) {
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
+		if ((u4Val & BITS(5, 6)) == BITS(5, 6))
+			break;
 		kalUdelay(20);
 	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "polling failed\n");
 
 	u4Addr = MAWD_IDX_REG_PATCH;
 	for (u4Idx = 0; u4Idx < MAWD_MAX_PATCH_NUM; u4Idx++) {
@@ -1619,6 +1707,117 @@ void halMawdReset(struct GLUE_INFO *prGlueInfo)
 	kalDevRegRead(prGlueInfo, u4Addr, &u4Val);
 	u4Val &= ~BIT(0);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+}
+
+void halMawdPwrOn(void)
+{
+	uint32_t u4Addr, u4Val, u4Idx;
+
+	/* sequence 1 */
+	u4Addr = 0x180601A4;
+	wf_ioremap_write(u4Addr, 1);
+	kalUdelay(200);
+	u4Addr = 0x18011000;
+	wf_ioremap_read(u4Addr, &u4Val);
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		if (u4Val == 0x02050300)
+			break;
+		kalUdelay(10);
+		wf_ioremap_read(u4Addr, &u4Val);
+	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "polling ID fail\n");
+
+	u4Addr = 0x18001210;
+	wf_ioremap_read(u4Addr, &u4Val);
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		if (u4Val & BIT(16))
+			break;
+		kalUdelay(10);
+		wf_ioremap_read(u4Addr, &u4Val);
+	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "polling conn_infra_cfg_on ready fail\n");
+
+	/* sequence 2 */
+	u4Addr = 0x180120A4;
+	wf_ioremap_write(u4Addr, BIT(0));
+
+	/* sequence 3 */
+	u4Addr = 0x180120B4;
+	wf_ioremap_write(u4Addr, BIT(0));
+	u4Addr = 0x18011030;
+	wf_ioremap_read(u4Addr, &u4Val);
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		if (u4Val)
+			break;
+		kalUdelay(10);
+		wf_ioremap_read(u4Addr, &u4Val);
+	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT)
+		DBGLOG(HAL, ERROR, "polling conn_infra_cfg ready fail\n");
+}
+
+void halMawdPwrOff(void)
+{
+	uint32_t u4Addr;
+
+	/* sequence 3 */
+	u4Addr = 0x180120B8;
+	wf_ioremap_write(u4Addr, BIT(0));
+
+	/* sequence 2 */
+	u4Addr = 0x180120A8;
+	wf_ioremap_write(u4Addr, BIT(0));
+
+	/* sequence 1 */
+	u4Addr = 0x180601A4;
+	wf_ioremap_write(u4Addr, 0);
+}
+
+u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Addr, u4Val = 0, u4Idx, u4PollingCnt = 4;
+
+	u4Addr = 0x1002C004;
+	wf_ioremap_read(u4Addr, &u4Val);
+	if (u4Val & BIT(25)) {
+		DBGLOG(HAL, ERROR, "check failed. CR [0x%08x]=[0x%08x]",
+		       u4Addr, u4Val);
+		return FALSE;
+	}
+	u4Addr = 0x1002C00C;
+	wf_ioremap_read(u4Addr, &u4Val);
+	if (u4Val & BIT(25)) {
+		DBGLOG(HAL, ERROR, "check failed. CR [0x%08x]=[0x%08x]",
+		       u4Addr, u4Val);
+		return FALSE;
+	}
+	u4Addr = 0x18023000;
+	wf_ioremap_write(u4Addr, 1);
+	wf_ioremap_read(u4Addr, &u4Val);
+	for (u4Idx = 0; u4Idx < u4PollingCnt; u4Idx++) {
+		if (u4Val & BITS(1, 2))
+			break;
+		wf_ioremap_read(u4Addr, &u4Val);
+		kalUdelay(1000);
+	}
+	if (u4Idx == u4PollingCnt) {
+		DBGLOG(HAL, ERROR, "check failed. CR [0x%08x]=[0x%08x]",
+		       u4Addr, u4Val);
+		return FALSE;
+	}
+	u4Addr = 0x18011000;
+	wf_ioremap_read(u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+	u4Addr = 0x18023400;
+	wf_ioremap_read(u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+	u4Addr = 0x180120A4;
+	wf_ioremap_read(u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
+
+	return TRUE;
 }
 
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

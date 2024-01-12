@@ -237,6 +237,7 @@ struct GL_HIF_INFO {
 	struct list_head rRcbFreeList;
 	uint32_t u4RcbFreeListCnt;
 	struct hlist_head arRcbHTbl[RRO_PREALLOC_RX_BUF_NUM];
+	struct hlist_head rRcbHTblFreeList;
 	uint32_t u4RroMagicCnt;
 	uint32_t u4IndCmdDmaIdx;
 	uint32_t u4OffloadIntStatus;

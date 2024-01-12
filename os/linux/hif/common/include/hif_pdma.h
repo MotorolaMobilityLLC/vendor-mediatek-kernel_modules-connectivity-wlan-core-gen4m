@@ -261,10 +261,11 @@
 #define LOG_DUMP_FULL_DUMP_TIMES	2
 
 #define WFDMA_MAGIC_CNT_NUM      16
+#define MAWD_POWER_UP_RETRY_CNT  100
 #define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      2
 #define MAWD_CR_BACKUP_OFFSET    89
-#define RRO_PREALLOC_RX_BUF_NUM  4096
+#define RRO_PREALLOC_RX_BUF_NUM  (RX_RING_SIZE * 3)
 #define RRO_BA_BITMAP_SIZE       128
 #if (CFG_MTK_FPGA_PLATFORM == 1)
 #define RRO_MAX_STA_NUM          8
@@ -907,8 +908,10 @@ void halRroTurnOff(struct GLUE_INFO *prGlueInfo);
 void halRroInit(struct GLUE_INFO *prGlueInfo);
 void halRroUninit(struct GLUE_INFO *prGlueInfo);
 void halRroAllocMem(struct GLUE_INFO *prGlueInfo);
+void halRroResetMem(struct GLUE_INFO *prGlueInfo);
 void halRroAllocRcbList(struct GLUE_INFO *prGlueInfo);
 void halRroFreeRcbList(struct GLUE_INFO *prGlueInfo);
+void halRroResetRcbList(struct GLUE_INFO *prGlueInfo);
 void halRroReadRxData(struct ADAPTER *prAdapter);
 void halRroUpdateWfdmaRxBlk(struct GLUE_INFO *prGlueInfo,
 			    uint16_t u2Port, uint32_t u4ResCnt);
@@ -917,6 +920,9 @@ struct RX_CTRL_BLK *halRroGetFreeRcbBlk(
 	struct RTMP_DMABUF *pDmaBuf,
 	uint32_t u4Idx);
 void halRroMawdInit(struct GLUE_INFO *prGlueInfo);
+void halMawdPwrOn(void);
+void halMawdPwrOff(void);
+u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter);
 u_int8_t halMawdAllocTxRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
 void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem);
 void halMawdInitRxBlkRing(struct GLUE_INFO *prGlueInfo);

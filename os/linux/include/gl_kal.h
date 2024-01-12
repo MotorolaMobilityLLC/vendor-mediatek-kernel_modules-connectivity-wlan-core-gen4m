@@ -2354,6 +2354,10 @@ void kalWlanHardStartXmit(void *pvPacket, void *pvDev);
 
 int32_t kalPlatOpsInit(void);
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+u_int8_t kalIsSupportMawd(void);
+#endif
+
 #if CFG_SUPPORT_THERMAL_QUERY
 int register_thermal_cbs(struct ADAPTER *ad);
 void unregister_thermal_cbs(struct ADAPTER *ad);
