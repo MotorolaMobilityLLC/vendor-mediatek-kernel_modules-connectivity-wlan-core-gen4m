@@ -267,7 +267,7 @@ struct iw_p2p_version {
  *                            P U B L I C   D A T A
  ******************************************************************************
  */
-extern const uint32_t mtk_cipher_suites[9];
+extern const uint32_t mtk_cipher_suites[];
 
 
 /******************************************************************************
