@@ -1297,14 +1297,14 @@ struct mtk_regd_control {
 	u8 n_channel_active_5g;
 	u8 n_channel_active_6g;
 	struct CMD_DOMAIN_CHANNEL channels[MAX_SUPPORTED_CH_COUNT];
-	enum nl80211_dfs_regions dfs_region;
+	u8 dfs_region;
 	enum ENUM_MBMC_BN eDBDCBand;
 };
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 struct mtk_regdomain {
 	char country_code[4];
-	const struct ieee80211_regdomain *prRegdRules;
+	const void *prRegdRules;
 };
 #endif
 
@@ -1396,9 +1396,8 @@ void rlmDomainSendPwrLimitCmd(struct ADAPTER *prAdapter);
 u_int8_t rlmDomainIsUsingLocalRegDomainDataBase(void);
 void rlmDomainSetCountryCode(char *alpha2,
 			     u8 size_of_alpha2);
-void rlmDomainSetDfsRegion(enum nl80211_dfs_regions
-			   dfs_region);
-enum nl80211_dfs_regions rlmDomainGetDfsRegion(void);
+void rlmDomainSetDfsRegion(u8 dfs_region);
+u8 rlmDomainGetDfsRegion(void);
 void rlmDomainSetDfsDbdcBand(enum ENUM_MBMC_BN eDBDCBand);
 enum ENUM_MBMC_BN rlmDomainGetDfsDbdcBand(void);
 void rlmDomainResetCtrlInfo(u_int8_t force);
@@ -1413,8 +1412,7 @@ void rlmDomainSetDefaultCountryCode(void);
 enum regd_state rlmDomainGetCtrlState(void);
 bool rlmDomainIsSameCountryCode(char *alpha2,
 				u8 size_of_alpha2);
-const struct ieee80211_regdomain
-*rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2);
+const void *rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2);
 struct GLUE_INFO *rlmDomainGetGlueInfo(void);
 bool rlmDomainIsEfuseUsed(void);
 uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum);
@@ -1425,8 +1423,7 @@ extern const struct mtk_regdomain *g_prRegRuleTable[];
 
 #endif
 
-const struct ieee80211_regdomain
-*rlmDomainGetLocalDefaultRegd(void);
+const void *rlmDomainGetLocalDefaultRegd(void);
 void rlmDomainSendInfoToFirmware(struct ADAPTER
 				 *prAdapter);
 uint32_t rlmDomainExtractSingleSkuInfoFromFirmware(

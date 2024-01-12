@@ -1624,6 +1624,18 @@ struct RTT_RESULT {
 	int32_t i4NegotiatedBustNum;
 };
 
+enum CHAN_FLAGS {
+	CHAN_RADAR,
+	CHAN_NO_HT40,
+	CHAN_NO_OFDM,
+	CHAN_NO_80MHZ,
+	CHAN_NO_160MHZ,
+	CHAN_INDOOR_ONLY,
+	CHAN_IR_CONCURRENT,
+	CHAN_NO_20MHZ,
+	CHAN_NO_10MHZ,
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

@@ -79,6 +79,13 @@
  *                              C O N S T A N T S
  *****************************************************************************
  */
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+#if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+const struct mtk_regdomain *g_prRegRuleTable[] = {
+	NULL
+};
+#endif
+#endif
 
 /*****************************************************************************
  *                             D A T A   T Y P E S
@@ -130,11 +137,33 @@ void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(
-	const struct ieee80211_regdomain *pRegdom) { }
+kalApplyCustomRegulatory(const void *pRegdom) { }
+
+const void *kalGetDefaultRegWW(void)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
 #endif
+uint8_t kalGetRdmVal(uint8_t dfs_region)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+u_int8_t kalIsETSIDfsRegin(void)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+#endif
+
+u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
 
 void kalSetLogTooMuch(uint32_t u4DriverLevel,
 	uint32_t u4FwLevel)

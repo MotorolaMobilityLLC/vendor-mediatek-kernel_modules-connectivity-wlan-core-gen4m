@@ -2060,11 +2060,15 @@ u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_REMIND_IMPLEMENT */
 #endif
 
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-void
-kalApplyCustomRegulatory(
-	const struct ieee80211_regdomain *pRegdom);
+void kalApplyCustomRegulatory(const void *pRegdom);
+const void *kalGetDefaultRegWW(void);
 #endif
+uint8_t kalGetRdmVal(uint8_t dfs_region);
+u_int8_t kalIsETSIDfsRegin(void);
+#endif
+u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 
 #define kalGetCpuBoostThreshold() \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
