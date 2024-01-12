@@ -710,43 +710,39 @@ u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("rsnIsSuitableBSS");
 
-	do {
-		if ((prAdapter->rWifiVar.rConnSettings.
-		     rRsnInfo.u4GroupKeyCipherSuite & 0x000000FF) !=
-		    GET_SELECTOR_TYPE(prBssRsnInfo->u4GroupKeyCipherSuite)) {
-			DBGLOG(RSN, WARN, "Break by GroupKeyCipherSuite\n");
-			break;
+	if ((prAdapter->rWifiVar.rConnSettings.rRsnInfo.u4GroupKeyCipherSuite
+		& 0x000000FF) !=
+		GET_SELECTOR_TYPE(prBssRsnInfo->u4GroupKeyCipherSuite)) {
+		DBGLOG(RSN, WARN, "Break by GroupKeyCipherSuite\n");
+		return FALSE;
+	}
+
+	for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
+		i++) {
+		if (((prAdapter->rWifiVar.rConnSettings.
+			rRsnInfo.au4PairwiseKeyCipherSuite[0]
+			& 0x000000FF) !=
+			GET_SELECTOR_TYPE(
+			prBssRsnInfo->au4PairwiseKeyCipherSuite[i]))
+			&& (i == prBssRsnInfo->u4PairwiseKeyCipherSuiteCount -
+			1)) {
+			DBGLOG(RSN, WARN, "Break by PairwiseKeyCipherSuite\n");
+			return FALSE;
 		}
-		for (i = 0; i < prBssRsnInfo->u4PairwiseKeyCipherSuiteCount;
-		     i++) {
-			if (((prAdapter->rWifiVar.rConnSettings.
-			      rRsnInfo.au4PairwiseKeyCipherSuite[0]
-			      & 0x000000FF) !=
-			     GET_SELECTOR_TYPE
-			     (prBssRsnInfo->au4PairwiseKeyCipherSuite[i]))
-			    && (i ==
-				prBssRsnInfo->u4PairwiseKeyCipherSuiteCount -
-				1)) {
-				DBGLOG(RSN, WARN,
-				       "Break by PairwiseKeyCipherSuite");
-				break;
-			}
+	}
+
+	for (i = 0; i < prBssRsnInfo->u4AuthKeyMgtSuiteCount; i++) {
+		if (((prAdapter->rWifiVar.rConnSettings.
+			rRsnInfo.au4AuthKeyMgtSuite[0]
+			& 0x000000FF) !=
+			GET_SELECTOR_TYPE(prBssRsnInfo->au4AuthKeyMgtSuite[i]))
+			&& (i == prBssRsnInfo->u4AuthKeyMgtSuiteCount - 1)) {
+			DBGLOG(RSN, WARN, "Break by AuthKeyMgtSuite\n");
+			return FALSE;
 		}
-		for (i = 0; i < prBssRsnInfo->u4AuthKeyMgtSuiteCount; i++) {
-			if (((prAdapter->rWifiVar.rConnSettings.
-			      rRsnInfo.au4AuthKeyMgtSuite[0]
-			      & 0x000000FF) !=
-			     GET_SELECTOR_TYPE(prBssRsnInfo->au4AuthKeyMgtSuite
-					       [i]))
-				&& (i == prBssRsnInfo->
-					u4AuthKeyMgtSuiteCount - 1)) {
-				DBGLOG(RSN, WARN, "Break by AuthKeyMgtSuite\n");
-				break;
-			}
-		}
-		return TRUE;
-	} while (FALSE);
-	return FALSE;
+	}
+
+	return TRUE;
 }
 
 /*----------------------------------------------------------------------------*/
