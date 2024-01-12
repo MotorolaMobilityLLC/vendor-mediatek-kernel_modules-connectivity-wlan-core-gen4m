@@ -390,6 +390,8 @@
 #define TX_DESC_FIXED_RATE_MODE                 BIT(15)
 
 /* DW 7 */
+#define TX_DESC_SPE_EXT_IDX_SEL_MASK            BIT(10)
+#define TX_DESC_SPE_EXT_IDX_SEL_OFFSET          10
 #define TX_DESC_SPE_EXT_IDX_MASK                BITS(11, 15)
 #define TX_DESC_SPE_EXT_IDX_OFFSET              11
 #define TX_DESC_PSE_FID_MASK                    BITS(0, 13)
@@ -1692,6 +1694,10 @@ do { \
 	((_prHwMacTxDesc)->u2FixedRate |= TX_DESC_FIXED_RATE_MODE)
 
 /* DW 7 */
+#define HAL_MAC_TX_DESC_SET_SPE_IDX_SEL(_prHwMacTxDesc, _ucSpeIdxSel) \
+	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SwTxTime), \
+	((uint16_t)_ucSpeIdxSel), \
+	TX_DESC_SPE_EXT_IDX_SEL_MASK, TX_DESC_SPE_EXT_IDX_SEL_OFFSET)
 #define HAL_MAC_TX_DESC_SET_SPE_IDX(_prHwMacTxDesc, _ucSpeIdx) \
 	TX_DESC_SET_FIELD(((_prHwMacTxDesc)->u2SwTxTime), \
 	((uint16_t)_ucSpeIdx), \
