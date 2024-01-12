@@ -2603,6 +2603,12 @@ WLAN_STATUS nicCfgChipCapMacCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf
 	}
 	DBGLOG(INIT, INFO, "ucHwBssIdNum: %d.\n", prMacCap->ucHwBssIdNum);
 
+	if (prMacCap->ucWtblEntryNum > 0 && prMacCap->ucWtblEntryNum <= WTBL_SIZE) {
+		prAdapter->ucWtblEntryNum = prMacCap->ucWtblEntryNum;
+		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
+	}
+	DBGLOG(INIT, INFO, "ucWtblEntryNum: %d.\n", prMacCap->ucWtblEntryNum);
+
 	return WLAN_STATUS_SUCCESS;
 }
 

@@ -994,6 +994,8 @@ struct _ADAPTER_T {
 	P_BSS_INFO_T aprBssInfo[MAX_BSSID_NUM + 1];
 	P_BSS_INFO_T prAisBssInfo;
 	UINT_8 ucHwBssIdNum;
+	UINT_8 ucWtblEntryNum;
+	UINT_8 ucTxDefaultWlanIndex;
 	UINT_8 ucP2PDevBssIdx;
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
