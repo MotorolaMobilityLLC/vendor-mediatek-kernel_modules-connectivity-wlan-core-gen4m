@@ -106,6 +106,10 @@
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 /* End of QCA-OUI subcmds */
 
+#define NL80211_VENDOR_SUBCMD_NAN 12
+#define NL80211_VENDOR_SUBCMD_NDP 81
+#define NL80211_VENDOR_SUBCMD_GET_TRX_STATS 48
+
 #define WIFI_VENDOR_ATTR_FEATURE_FLAGS 7
 #define WIFI_VENDOR_DATA_OP_MODE_CHANGE(bssIdx, channelBw, TxNss, RxNss) \
 	(uint32_t)((((bssIdx) << 24) + ((channelBw) << 16) + \
@@ -246,6 +250,20 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID,
 	WIFI_ATTRIBUTE_ROAMING_STATE,
 	WIFI_ATTRIBUTE_TX_POWER_SCENARIO,
+
+	WIFI_ATTRIBUTE_STATS_TX_TLV_NUM,
+	WIFI_ATTRIBUTE_STATS_TX_TLV_SIZE,
+	WIFI_ATTRIBUTE_STATS_TX,
+	WIFI_ATTRIBUTE_STATS_RX_TLV_NUM,
+	WIFI_ATTRIBUTE_STATS_RX_TLV_SIZE,
+	WIFI_ATTRIBUTE_STATS_RX,
+	WIFI_ATTRIBUTE_STATS_CGS_TLV_NUM,
+	WIFI_ATTRIBUTE_STATS_CGS_TLV_SIZE,
+	WIFI_ATTRIBUTE_STATS_CGS,
+	WIFI_ATTRIBUTE_STATS_FLAG_TLV_NUM,
+	WIFI_ATTRIBUTE_STATS_FLAG_TLV_SIZE,
+	WIFI_ATTRIBUTE_STATS_FLAG,
+
 	WIFI_ATTRIBUTE_MAX,
 };
 
@@ -931,4 +949,8 @@ int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len);
 
+int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
+					   struct wireless_dev *wdev,
+					   const void *data,
+					   int data_len);
 #endif /* _GL_VENDOR_H */
