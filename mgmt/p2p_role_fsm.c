@@ -2336,6 +2336,7 @@ void
 p2pRoleFsmScanTargetBss(IN struct ADAPTER *prAdapter,
 		IN struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		IN uint8_t ucChannelNum,
+		IN enum ENUM_BAND eBand,
 		IN struct P2P_SSID_STRUCT *prSsid)
 {
 	/* Update scan parameter... to scan target device. */
@@ -2346,6 +2347,7 @@ p2pRoleFsmScanTargetBss(IN struct ADAPTER *prAdapter,
 	prScanReqInfo->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 	prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
 	prScanReqInfo->arScanChannelList[0].ucChannelNum = ucChannelNum;
+	prScanReqInfo->arScanChannelList[0].eBand = eBand;
 	prScanReqInfo->ucSsidNum = 1;
 	kalMemCopy(&(prScanReqInfo->arSsidStruct[0]), prSsid,
 			sizeof(struct P2P_SSID_STRUCT));
@@ -2476,6 +2478,7 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		p2pRoleFsmScanTargetBss(prAdapter,
 				prP2pRoleFsmInfo,
 				prP2pConnReqMsg->rChannelInfo.ucChannelNum,
+				prP2pConnReqMsg->rChannelInfo.eBand,
 				&(prP2pConnReqMsg->rSsid));
 	} else {
 		for (i = 0; i < MLD_LINK_MAX; i++) {
@@ -3051,6 +3054,7 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				p2pRoleFsmScanTargetBss(prAdapter,
 					prP2pRoleFsmInfo,
 					prBssDesc->ucChannelNum,
+					prBssDesc->eBand,
 					&rSsid);
 			}
 		}
