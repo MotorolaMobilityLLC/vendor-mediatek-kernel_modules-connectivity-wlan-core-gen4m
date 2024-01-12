@@ -909,6 +909,14 @@ void halWpdmaFreeMsduTasklet(unsigned long data);
 #define KAL_HIF_TXRING_UNLOCK(prTxRing) \
 	kalReleaseHifTxRingLock(prTxRing, __ulHifTxRingFlags)
 
+#define KAL_HIF_BH_DISABLE(prGlueInfo) \
+	kalBhDisable(prGlueInfo)
+
+#define KAL_HIF_BH_ENABLE(prGlueInfo) \
+	kalBhEnable(prGlueInfo)
+
+void kalBhDisable(struct GLUE_INFO *prGlueInfo);
+void kalBhEnable(struct GLUE_INFO *prGlueInfo);
 void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
 		IN uint32_t u4Port,
 		OUT unsigned long *plHifTxDataQFlags);

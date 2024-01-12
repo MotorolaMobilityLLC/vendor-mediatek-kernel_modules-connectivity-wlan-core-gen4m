@@ -2870,7 +2870,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
-	local_bh_disable();
+	KAL_HIF_BH_DISABLE(prGlueInfo);
 
 	KAL_HIF_TXRING_LOCK(prTxRing);
 
@@ -2993,7 +2993,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 unlock:
 	KAL_HIF_TXRING_UNLOCK(prTxRing);
 
-	local_bh_enable();
+	KAL_HIF_BH_ENABLE(prGlueInfo);
 
 	return ret;
 }

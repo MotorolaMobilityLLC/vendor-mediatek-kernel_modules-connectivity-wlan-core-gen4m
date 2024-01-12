@@ -1315,6 +1315,24 @@ static uint8_t kalGetSwAmsduNum(struct GLUE_INFO *prGlueInfo,
 	return prStaRec->ucMaxMpduCount;
 }
 
+void kalBhDisable(struct GLUE_INFO *prGlueInfo)
+{
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
+		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return;
+
+	local_bh_disable();
+}
+
+void kalBhEnable(struct GLUE_INFO *prGlueInfo)
+{
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter) &&
+		!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter))
+		return;
+
+	local_bh_enable();
+}
+
 void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
 		IN uint32_t u4Port,
 		OUT unsigned long *plHifTxDataQFlags)
@@ -1450,7 +1468,7 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 	prHifInfo = &prGlueInfo->rHifInfo;
 
 	/* disable softirq to improve processing efficiency */
-	local_bh_disable();
+	KAL_HIF_BH_DISABLE(prGlueInfo);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		if (unlikely(GLUE_INC_REF_CNT(ai4RingLock[u4Idx]) > 1)) {
@@ -1502,7 +1520,7 @@ end:
 		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
 	}
 
-	local_bh_enable();
+	KAL_HIF_BH_ENABLE(prGlueInfo);
 
 	return 0;
 }
