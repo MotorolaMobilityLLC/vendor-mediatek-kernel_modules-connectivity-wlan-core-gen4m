@@ -75,6 +75,614 @@ static u_int8_t fgIsWaitForTxDone = FALSE;
  *******************************************************************************
  */
 
+uint8_t TdlsAllowedChannel(
+	struct ADAPTER *pAd,
+	struct BSS_INFO *bss)
+{
+	uint8_t fgAvailable = TRUE;
+
+		/* Check VLP */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (bss->eBand == BAND_6G &&
+		bss->ucPrimaryChannel >= 97) {
+		DBGLOG(TDLS, TRACE,
+			"VLP channel (%d)\n",
+			bss->ucPrimaryChannel);
+		fgAvailable = FALSE;
+	}
+#endif
+
+	return fgAvailable;
+}
+
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+uint8_t TdlsCheckSetup(
+	struct ADAPTER *ad,
+	struct sta_tdls_info *sta)
+{
+	uint32_t f = 0;
+
+	if (!ad || !sta)
+		return FALSE;
+
+	f = ad->rWifiVar.u4TdlsP2pAuto;
+
+	if (IS_FEATURE_DISABLED(f))
+		return FALSE;
+	else if (IS_FEATURE_FORCE_ENABLED(f))
+		return (sta &&
+			sta->u4Throughput >
+			TDLS_SETUP_LOW_THD);
+	else
+		return (sta &&
+			sta->u4Throughput >
+			TDLS_SETUP_THD);
+}
+
+uint8_t TdlsCheckTeardown(
+	struct ADAPTER *ad,
+	struct sta_tdls_info *sta)
+{
+	uint32_t f = 0;
+
+	if (!ad || !sta)
+		return FALSE;
+
+	f = ad->rWifiVar.u4TdlsP2pAuto;
+
+	if (IS_FEATURE_DISABLED(f))
+		return FALSE;
+	else if (IS_FEATURE_FORCE_ENABLED(f))
+		return (sta &&
+			sta->u4Throughput <
+			TDLS_TEARDOWN_LOW_THD);
+	else
+		return (sta &&
+			sta->u4Throughput <
+			TDLS_TEARDOWN_THD);
+}
+
+void
+TdlsApStaForEach(struct ADAPTER *pAd,
+	uint8_t bss,
+	enum STA_TDLS_OP eOp,
+	void *prArg,
+	void **pprOut)
+{
+	int i;
+	struct sta_tdls_info *p, *r;
+	int i4Max_tp = 0;
+	struct BSS_INFO *b =
+		GET_BSS_INFO_BY_INDEX(
+		pAd, bss);
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
+
+	for (i = 0; i < STA_TDLS_HASH_SIZE; i++) {
+		r = b->prTdlsHash[i];
+		while (r) {
+			p = r;
+			r = r->pNext;
+			switch (eOp) {
+			case STA_TDLS_OP_FREE:
+#if CFG_SUPPORT_TDLS_LOG
+				DBGLOG(TDLS, TRACE,
+					"free sta %pM\n", p->aucAddr);
+#endif
+				kalMemFree(p,
+					VIR_MEM_TYPE,
+					sizeof(struct sta_tdls_info));
+				if (!r)
+					b->prTdlsHash[i] = NULL;
+				break;
+			case STA_TDLS_OP_RESET:
+#if CFG_SUPPORT_TDLS_LOG
+				DBGLOG(TDLS, TRACE,
+					"Reset default\n");
+#endif
+				p->ulTxBytes = 0;
+				p->ulRxBytes = 0;
+				p->u4Throughput = 0;
+				b->ulLastUpdate =
+					kalGetJiffies();
+				break;
+			case STA_TDLS_OP_GET_MAX_TP:
+				p->u4Throughput =
+					(p->ulTxBytes * HZ) /
+					SAMPLING_UT;
+#if CFG_SUPPORT_TDLS_LOG
+				DBGLOG(TDLS, TRACE,
+					"STA: %pM, TP: %d Bytes/s\n",
+					p->aucAddr, p->u4Throughput);
+#endif
+				/*
+				 * exclude:
+				 * BSSID, as we are direct link with BSSID
+				 * broadcast / multicast
+				 */
+				if (p->u4Throughput >= i4Max_tp &&
+				    kalMemCmp(p->aucAddr,
+				    prArg, ETH_ALEN) &&
+				    IS_UCAST_MAC_ADDR(p->aucAddr)) {
+					DBGLOG(TDLS, TRACE,
+						MACSTR", MaxTP: %d Bytes/s\n",
+						p->aucAddr,
+						p->u4Throughput);
+					*pprOut = p;
+					i4Max_tp = p->u4Throughput;
+				}
+				break;
+			case STA_TDLS_OP_UPDATE_TX:
+			default:
+				break;
+			}
+		}
+	}
+
+	KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
+}
+
+uint8_t TdlsAllowedP2p(
+	struct ADAPTER *pAd,
+	uint8_t bss)
+{
+	uint8_t fgAvailable = TRUE;
+
+	if (!TdlsValid(pAd, bss))
+		fgAvailable = FALSE;
+	else {
+		struct BSS_INFO *b =
+			GET_BSS_INFO_BY_INDEX(
+			pAd, bss);
+
+#if CFG_SUPPORT_TDLS_LOG
+		DBGLOG(TDLS, TRACE,
+			"STA ch: %d, band: %d, conn state: %d",
+			b->ucPrimaryChannel,
+			b->eBand,
+			b->eConnectionState);
+#endif
+
+		fgAvailable =
+			IS_BSS_GC(b) &&
+			TdlsAllowedChannel(pAd, b);
+	}
+
+	return fgAvailable;
+}
+
+void TdlsStateTimer(
+	struct ADAPTER *ad,
+	uintptr_t ulParamPtr)
+{
+	uint8_t bss = (uint8_t) ulParamPtr;
+	struct sta_tdls_info *sta;
+	struct BSS_INFO *b;
+
+	if (!ad)
+		return;
+
+	b = GET_BSS_INFO_BY_INDEX(ad, bss);
+	if (!b)
+		return;
+
+	sta = b->prTdlsHash[STA_TDLS_HASH_SIZE];
+	if (!sta) {
+		DBGLOG(TDLS, INFO, "TDLS: No target station, return\n");
+		return;
+	}
+
+	if (sta->eTdlsRole == STA_TDLS_ROLE_RESPONDER) {
+		sta->u4Throughput = (sta->ulRxBytes * HZ) / TDLS_MONITOR_UT;
+
+		if (sta->u4Throughput < TDLS_TEARDOWN_RX_THD) {
+			switch (sta->eTdlsStatus) {
+			case STA_TDLS_LINK_ENABLE:
+				TdlsAutoTeardown(
+					ad,
+					bss,
+					sta,
+					"Low RX Throughput");
+				/* fallthrough */
+			default:
+				return;
+			}
+		}
+		DBGLOG(TDLS, INFO, "TDLS: Rx data stream OK\n");
+		sta->ulRxBytes = 0;
+		goto start_timer;
+	}
+
+	switch (sta->eTdlsStatus) {
+	case STA_TDLS_NOT_SETUP:
+		DBGLOG(TDLS, INFO, "Last TDLS monitor timer\n");
+		return;
+	case STA_TDLS_SETUP_INPROCESS:
+		DBGLOG(TDLS, INFO, "TDLS: setup timeout\n");
+		if (sta->u4SetupFailCount++ > TDLS_SETUP_COUNT)
+			TdlsAutoTeardown(
+				ad,
+				bss,
+				sta,
+				"Setup Failed");
+		break;
+	case STA_TDLS_LINK_ENABLE:
+		/* go through as we need restart timer to monitor tdls link */
+	default:
+		if (TIME_AFTER(
+			kalGetJiffies(),
+			b->ulLastUpdate + 2 * SAMPLING_UT)) {
+			TdlsAutoTeardown(
+				ad,
+				bss,
+				sta,
+				"No Traffic");
+			return;
+		}
+		DBGLOG(TDLS, TRACE, "TDLS: TX data stream OK\n");
+		break;
+	}
+
+start_timer:
+
+	DBGLOG(TDLS, TRACE, "Restart tdls monitor timer\n");
+
+	cnmTimerStartTimer(ad,
+		&(b->rTdlsStateTimer),
+		SEC_TO_MSEC(TDLS_MONITOR_UT));
+
+}
+
+uint32_t TdlsAutoSetup(
+	struct ADAPTER *ad,
+	uint8_t bss,
+	struct sta_tdls_info *sta)
+{
+	struct STA_RECORD s;
+	struct BSS_INFO *b;
+
+	if (!ad || !sta)
+		return TDLS_STATUS_FAIL;
+
+	b = GET_BSS_INFO_BY_INDEX(
+		ad, bss);
+
+	if (!b)
+		return TDLS_STATUS_FAIL;
+
+	DBGLOG(TDLS, INFO,
+		"[%d] Build up "MACSTR", %d\n",
+		bss,
+		sta->aucAddr,
+		sta->u4Throughput);
+
+	s.ucBssIndex = bss;
+	COPY_MAC_ADDR(s.aucMacAddr,
+		sta->aucAddr);
+
+	kalTdlsOpReq(
+		ad->prGlueInfo,
+		&s,
+		(uint16_t) TDLS_SETUP,
+		0);
+
+	sta->eTdlsStatus = STA_TDLS_SETUP_INPROCESS;
+	sta->eTdlsRole = STA_TDLS_ROLE_INITOR;
+
+	b->prTdlsHash[STA_TDLS_HASH_SIZE] = sta;
+
+	cnmTimerInitTimer(ad,
+		&(b->rTdlsStateTimer),
+		(PFN_MGMT_TIMEOUT_FUNC) TdlsStateTimer,
+		(uintptr_t) bss);
+
+	cnmTimerStartTimer(ad,
+		&(b->rTdlsStateTimer),
+		SEC_TO_MSEC(TDLS_SETUP_TIMEOUT));
+
+	return TDLS_STATUS_SUCCESS;
+}
+
+uint32_t TdlsAutoTeardown(
+	struct ADAPTER *ad,
+	uint8_t bss,
+	struct sta_tdls_info *sta,
+	uint8_t *reason)
+{
+	struct STA_RECORD *s;
+	struct BSS_INFO *b;
+
+	if (!ad)
+		return TDLS_STATUS_FAIL;
+
+	b = GET_BSS_INFO_BY_INDEX(
+		ad, bss);
+
+	if (!b)
+		return TDLS_STATUS_FAIL;
+
+	if (sta)
+		DBGLOG(TDLS, INFO,
+			"[%d] Teardown "MACSTR" due to %s, %d\n",
+			bss,
+			sta->aucAddr,
+			reason,
+			sta->u4Throughput);
+	else
+		DBGLOG(TDLS, INFO,
+			"[%d] Teardown due to %s\n",
+			bss,
+			reason);
+
+	if (kalStrCmp(reason, "Disable Link") &&
+		sta) {
+		s = cnmGetStaRecByAddress(ad,
+			bss,
+			sta->aucAddr);
+
+		kalTdlsOpReq(
+			ad->prGlueInfo,
+			s,
+			(uint16_t) TDLS_TEARDOWN,
+			0);
+	}
+
+	b->prTdlsHash[STA_TDLS_HASH_SIZE] = NULL;
+	b->i4TdlsLastRx = -1;
+	TdlsApStaForEach(ad,
+		bss,
+		STA_TDLS_OP_FREE,
+		NULL,
+		NULL);
+	cnmTimerStopTimer(ad, &(b->rTdlsStateTimer));
+
+	return TDLS_STATUS_SUCCESS;
+}
+
+struct sta_tdls_info *
+TdlsGetSta(
+	struct ADAPTER *pAd,
+	uint8_t bss,
+	const u8 *prSta)
+{
+	struct sta_tdls_info *s;
+	struct BSS_INFO *b =
+		GET_BSS_INFO_BY_INDEX(
+		pAd, bss);
+
+	if (!b)
+		return NULL;
+
+	s = b->prTdlsHash[STA_TDLS_HASH(prSta)];
+
+	while (s &&
+		kalMemCmp(s->aucAddr,
+		prSta,
+		TDLS_FME_MAC_ADDR_LEN))
+		s = s->pNext;
+
+	return s;
+}
+
+void
+TdlsHashAdd(
+	struct ADAPTER *pAd,
+	uint8_t bss,
+	struct sta_tdls_info *prSta)
+{
+	struct BSS_INFO *b =
+		GET_BSS_INFO_BY_INDEX(
+		pAd, bss);
+
+	if (!b)
+		return;
+
+	prSta->pNext =
+		b->prTdlsHash[STA_TDLS_HASH(prSta->aucAddr)];
+	b->prTdlsHash[STA_TDLS_HASH(prSta->aucAddr)] =
+		prSta;
+}
+
+struct sta_tdls_info *
+TdlsStaAdd(struct ADAPTER *pAd,
+	uint8_t bss,
+	uint8_t *prAddr)
+{
+	struct sta_tdls_info *prSta;
+
+	prSta = (struct sta_tdls_info *)
+		kalMemZAlloc(
+		sizeof(struct sta_tdls_info),
+		VIR_MEM_TYPE);
+	if (prSta == NULL) {
+		DBGLOG(TDLS, WARN, "Alloc ksta failed\n");
+		return NULL;
+	}
+
+	/* initialize STA info data */
+	COPY_MAC_ADDR(prSta->aucAddr, prAddr);
+	TdlsHashAdd(pAd, bss, prSta);
+
+	return prSta;
+}
+
+void
+TdlsAutoSetupTarget(
+	struct ADAPTER *pAd,
+	uint8_t bss,
+	uint8_t *prAddr,
+	char *prReason)
+{
+	struct sta_tdls_info *prTdlsPeer;
+	struct BSS_INFO *b =
+		GET_BSS_INFO_BY_INDEX(
+		pAd, bss);
+
+	if (!b)
+		return;
+
+	prTdlsPeer = TdlsGetSta(pAd, bss, prAddr);
+
+	if (!prTdlsPeer)
+		prTdlsPeer = TdlsStaAdd(pAd, bss, prAddr);
+	if (!prTdlsPeer)
+		return;
+
+	DBGLOG(TDLS, INFO,
+		"Create TDLS peer["MACSTR"] reason %s\n",
+		prTdlsPeer->aucAddr, prReason);
+
+	b->prTdlsHash[STA_TDLS_HASH_SIZE] = prTdlsPeer;
+	prTdlsPeer->eTdlsStatus = STA_TDLS_LINK_ENABLE;
+}
+
+void
+TdlsUpdateTxRxStat(
+	struct ADAPTER *pAd,
+	uint8_t bss,
+	uint64_t tx_bytes,
+	uint64_t rx_bytes,
+	uint8_t *prAddr)
+{
+	struct sta_tdls_info *sta;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!pAd->rWifiVar.u4TdlsP2pAuto)
+		return;
+
+	KAL_ACQUIRE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
+
+	sta = TdlsGetSta(pAd, bss, prAddr);
+
+	if (!sta)
+		sta = TdlsStaAdd(pAd, bss, prAddr);
+	if (!sta) {
+		KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
+		DBGLOG(TDLS, WARN, "Add sta info failed\n");
+		return;
+	}
+
+	if (tx_bytes)
+		sta->ulTxBytes += tx_bytes;
+	else
+		sta->ulRxBytes += rx_bytes;
+
+	KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
+
+#if CFG_SUPPORT_TDLS_LOG
+	DBGLOG(TDLS, INFO,
+		"sta["MACSTR"] %s bytes: %ld\n",
+		prAddr,
+		tx_bytes ? "Tx" : "Rx",
+		tx_bytes ? tx_bytes : rx_bytes);
+#endif
+}
+
+int32_t TdlsP2pAuto(
+	struct ADAPTER *pAd,
+	uint8_t bss,
+	uint64_t tx_bytes,
+	uint64_t rx_bytes,
+	uint8_t *prAddr)
+{
+	uint32_t u4PacketLen = tx_bytes;
+	uint8_t *pucData = prAddr;
+	struct BSS_INFO *b = NULL;
+	struct sta_tdls_info *target_sta = NULL;
+
+	if (!pAd ||
+		!pAd->rWifiVar.u4TdlsP2pAuto ||
+		!TdlsAllowedP2p(pAd, bss) ||
+		(u4PacketLen < ETH_HLEN))
+		return -1;
+
+	b = GET_BSS_INFO_BY_INDEX(
+		pAd, bss);
+	if (!b)
+		return -1;
+
+	if (TIME_BEFORE(kalGetJiffies(),
+		b->ulLastUpdate + SAMPLING_UT)) {
+		TdlsUpdateTxRxStat(
+			pAd,
+			bss,
+			u4PacketLen,
+			0,
+			pucData);
+		return 0;
+	}
+
+	if (!b->prTdlsHash[STA_TDLS_HASH_SIZE]) {
+		TdlsApStaForEach(pAd, bss,
+			STA_TDLS_OP_GET_MAX_TP,
+			b->aucBSSID,
+			(void **)&target_sta);
+
+		if (TdlsCheckSetup(pAd, target_sta)) {
+			switch (target_sta->eTdlsStatus) {
+			case STA_TDLS_NOT_SETUP:
+				TdlsAutoSetup(pAd, bss, target_sta);
+				return 1;
+			case STA_TDLS_SETUP_INPROCESS:
+#if CFG_SUPPORT_TDLS_LOG
+				DBGLOG(TDLS, INFO,
+					"TDLS setup in Process\n");
+#endif
+				return 2;
+			default:
+#if CFG_SUPPORT_TDLS_LOG
+				DBGLOG(TDLS, INFO,
+					"TDLS setup state %d\n",
+					target_sta->eTdlsStatus);
+#endif
+				return 3;
+			}
+		}
+		/* update one shot to avoid no sta available in sta list */
+		TdlsUpdateTxRxStat(pAd,
+			bss, u4PacketLen, 0, pucData);
+		goto reset;
+	}
+
+	/* already has a tdls link */
+	target_sta = b->prTdlsHash[STA_TDLS_HASH_SIZE];
+
+	if (target_sta->eTdlsRole !=
+		STA_TDLS_ROLE_INITOR)
+		return 6;
+
+	target_sta->u4Throughput =
+		(target_sta->ulTxBytes * HZ) / SAMPLING_UT;
+
+	if (TdlsCheckTeardown(pAd, target_sta)) {
+		switch (target_sta->eTdlsStatus) {
+		case STA_TDLS_LINK_ENABLE:
+			TdlsAutoTeardown(pAd,
+				bss,
+				target_sta,
+				"Low Tx Throughput");
+			/* fallthrough */
+		default:
+			return 4;
+		}
+	}
+
+reset:
+
+	TdlsApStaForEach(
+		pAd,
+		bss,
+		STA_TDLS_OP_RESET,
+		NULL,
+		NULL);
+
+	return 5;
+}
+#endif
+
 uint8_t TdlsEnabled(struct ADAPTER *pAd)
 {
 	uint8_t fgEnabled = TRUE;
@@ -97,16 +705,22 @@ uint8_t TdlsValid(
 		pAd, ucBssIndex);
 
 	if (!pAd || !bss) {
+#if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE, "bss is not active\n");
+#endif
 		fgValid = FALSE;
 	} else if (bss->eCurrentOPMode !=
 		OP_MODE_INFRASTRUCTURE) {
+#if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE, "bss is not client\n");
+#endif
 		fgValid = FALSE;
 	} else if (
 		bss->eConnectionState !=
 		MEDIA_STATE_CONNECTED) {
+#if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE, "bss is not connected\n");
+#endif
 		fgValid = FALSE;
 	}
 
@@ -126,22 +740,16 @@ uint8_t TdlsAllowed(
 			GET_BSS_INFO_BY_INDEX(
 			pAd, ucBssIndex);
 
-		DBGLOG(TDLS, INFO,
+#if CFG_SUPPORT_TDLS_LOG
+		DBGLOG(TDLS, TRACE,
 			"STA ch: %d, band: %d, conn state: %d",
 			bss->ucPrimaryChannel,
 			bss->eBand,
 			bss->eConnectionState);
-
-		/* Check VLP */
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if (bss->eBand == BAND_6G &&
-			bss->ucPrimaryChannel >= 97) {
-			DBGLOG(TDLS, INFO,
-				"VLP channel (%d)\n",
-				bss->ucPrimaryChannel);
-			fgAvailable = FALSE;
-		}
 #endif
+
+		fgAvailable =
+			TdlsAllowedChannel(pAd, bss);
 	}
 
 	return fgAvailable;
@@ -160,11 +768,13 @@ uint8_t TdlsNeedAdjustBw(
 			GET_BSS_INFO_BY_INDEX(
 			pAd, ucBssIndex);
 
+#if CFG_SUPPORT_TDLS_LOG
 		DBGLOG(TDLS, TRACE,
 			"STA ch: %d, band: %d, conn state: %d",
 			bss->ucPrimaryChannel,
 			bss->eBand,
 			bss->eConnectionState);
+#endif
 
 		if (rlmDomainIsLegalDfsChannel(pAd,
 			bss->eBand, bss->ucPrimaryChannel)) {
@@ -497,6 +1107,13 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 					prBssInfo->ucBssIndex,
 					prCmd->aucPeerMac);
 				prStaRec->ucTdlsIndex = i;
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+				TdlsAutoSetupTarget(
+					prAdapter,
+					prBssInfo->ucBssIndex,
+					prCmd->aucPeerMac,
+					"Enable Link");
+#endif
 				break;
 			}
 		}
@@ -511,7 +1128,12 @@ uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter,
 		g_arTdlsLink[prStaRec->ucTdlsIndex] = 0;
 		if (IS_DLS_STA(prStaRec))
 			cnmStaRecFree(prAdapter, prStaRec);
-
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+		TdlsAutoTeardown(prAdapter,
+			prBssInfo->ucBssIndex,
+			NULL,
+			"Disable Link");
+#endif
 		break;
 	default:
 		return 0;

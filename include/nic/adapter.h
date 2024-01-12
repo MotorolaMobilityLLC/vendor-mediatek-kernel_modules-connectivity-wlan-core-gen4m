@@ -474,6 +474,13 @@ struct BSS_INFO {
 	u_int8_t fgTdlsIsProhibited;
 	u_int8_t fgTdlsIsChSwProhibited;
 #endif
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+	struct sta_tdls_info *prTdlsHash[STA_TDLS_HASH_SIZE + 1];
+	uint64_t ulLastUpdate;
+	int32_t i4TdlsLastRx;
+	int32_t i4TdlsLastTx;
+	struct TIMER rTdlsStateTimer;
+#endif
 
 	/*link layer statistics */
 	struct WIFI_WMM_AC_STAT arLinkStatistics[WMM_AC_INDEX_NUM];
@@ -1219,6 +1226,9 @@ struct WIFI_VAR {
 	uint8_t ucDfsRegion;
 	uint32_t u4ByPassCacTime;
 	uint32_t u4CC2Region;
+#if CFG_SUPPORT_TDLS_P2P_AUTO
+	uint32_t u4TdlsP2pAuto;
+#endif
 	uint32_t u4ApChnlHoldTime;
 	uint32_t u4P2pChnlHoldTime;
 	uint32_t u4ProbeRspRetryLimit;

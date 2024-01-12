@@ -1186,6 +1186,7 @@ int8_t atoi(uint8_t ch);
 	do {struct sk_buff *skb = (struct sk_buff *)pvPacket; \
 	    memcpy(pucDestBuffer, skb->data, skb->len); } while (0)
 
+#define kalGetJiffies()                (jiffies)
 #define kalGetTimeTick()                jiffies_to_msecs(jiffies)
 
 #define kalGetTimeTickNs()              sched_clock()
