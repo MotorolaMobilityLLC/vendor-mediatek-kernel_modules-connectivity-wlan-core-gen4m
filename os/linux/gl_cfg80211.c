@@ -5849,9 +5849,11 @@ int testmode_set_ml_probereq(IN struct wiphy *wiphy, IN char *pcCommand,
 			   sizeof(struct PARAM_SCAN_REQUEST_ADV));
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		kalMemZero(aucIe, 100);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		beGenerateMlProbeReqIE(aucIe, &prScanRequest->u4IELength, 0);
+#endif
 		prScanRequest->pucIE = aucIe;
-		DBGLOG(ML, INFO, "222 Dump ML probe IE\n");
+		DBGLOG(ML, INFO, "Dump ML probe IE\n");
 		DBGLOG_MEM8(ML, INFO, prScanRequest->pucIE,
 				prScanRequest->u4IELength);
 		prScanRequest->arChannel[0].ucChannelNum =

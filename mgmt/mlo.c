@@ -451,8 +451,6 @@ void beGenerateMlProbeReqIE(uint8_t *pucIE,
 	*(common->aucCommonInfo + 1) = ucMldId;
 
 	*u4IELength += common->ucLength;
-	DBGLOG(ML, INFO, "111 Dump ML probe IE\n");
-	DBGLOG_MEM8(ML, INFO, common, IE_SIZE(common));
 }
 
 
