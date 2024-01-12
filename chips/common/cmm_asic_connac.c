@@ -603,29 +603,15 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 }
 
-void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
-		bool fgResetHif)
+void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 {
 	struct BUS_INFO *prBusInfo =
 			prGlueInfo->prAdapter->chip_info->bus_info;
-	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	union WPDMA_INT_MASK IntMask;
-	uint32_t u4Val;
 
-	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
 	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
 
 	if (fgEnable == TRUE) {
-		GloCfg.field_conn.tx_dma_en = 1;
-		GloCfg.field_conn.rx_dma_en = 1;
-		GloCfg.field_conn.pdma_bt_size = 3;
-		GloCfg.field_conn.pdma_addr_ext_en =
-			(prBusInfo->u4DmaMask > 32) ? 1 : 0;
-		GloCfg.field_conn.tx_wb_ddone = 1;
-		GloCfg.field_conn.multi_dma_en = 2;
-		GloCfg.field_conn.fifo_little_endian = 1;
-		GloCfg.field_conn.clk_gate_dis = 1;
-
 		IntMask.field.rx_done_0 = 1;
 		IntMask.field.rx_done_1 = 1;
 		IntMask.field.tx_done =
@@ -639,9 +625,6 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 		IntMask.field_conn.rx_dly_int = 0;
 		IntMask.field_conn.mcu2host_sw_int_ena = 1;
 	} else {
-		GloCfg.field_conn.tx_dma_en = 0;
-		GloCfg.field_conn.rx_dma_en = 0;
-
 		IntMask.field_conn.rx_done_0 = 0;
 		IntMask.field_conn.rx_done_1 = 0;
 		IntMask.field_conn.tx_done = 0;
@@ -653,6 +636,34 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 	}
 
 	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
+}
+
+void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
+		bool fgResetHif)
+{
+	struct BUS_INFO *prBusInfo =
+			prGlueInfo->prAdapter->chip_info->bus_info;
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	uint32_t u4Val = 0;
+
+	asicPdmaIntMaskConfig(prGlueInfo, fgEnable);
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+
+	if (fgEnable == TRUE) {
+		GloCfg.field_conn.tx_dma_en = 1;
+		GloCfg.field_conn.rx_dma_en = 1;
+		GloCfg.field_conn.pdma_bt_size = 3;
+		GloCfg.field_conn.pdma_addr_ext_en =
+			(prBusInfo->u4DmaMask > 32) ? 1 : 0;
+		GloCfg.field_conn.tx_wb_ddone = 1;
+		GloCfg.field_conn.multi_dma_en = 2;
+		GloCfg.field_conn.fifo_little_endian = 1;
+		GloCfg.field_conn.clk_gate_dis = 1;
+	} else {
+		GloCfg.field_conn.tx_dma_en = 0;
+		GloCfg.field_conn.rx_dma_en = 0;
+	}
+
 	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
 	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
 	kalDevRegWrite(prGlueInfo, MCU2HOST_SW_INT_ENA,
