@@ -1894,6 +1894,9 @@ void asicConnac3xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	if (status < 0 || u4PhyRate == 0)
 		return;
 
+	if (prSwRfb->prRxStatusGroup3 == NULL)
+		return;
+
 	prPerfIndInfo = &prGlueInfo->PerfIndCache;
 
 	if (rRxRateInfo.u4Nss == 1) {
@@ -1908,7 +1911,7 @@ void asicConnac3xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	u2Rate = u4PhyRate / 5;
 
 	/* RCPI */
-	prGroup3 = (struct HW_MAC_RX_STS_GROUP_3_V2 *)prSwRfb->prRxStatusGroup3;
+	prGroup3 = prSwRfb->prRxStatusGroup3;
 	ucRCPI0 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI0(prGroup3);
 	ucRCPI1 = CONNAC3X_HAL_RX_VECTOR_GET_RCPI1(prGroup3);
 

@@ -2144,7 +2144,7 @@ void asicConnac2xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_PERF_IND_INFO *prPerfIndInfo;
-	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3 = NULL;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
 	uint32_t u4PhyRate;
 	uint16_t u2Rate = 0; /* Unit 500 Kbps */
@@ -2158,6 +2158,9 @@ void asicConnac2xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
 	status = wlanGetRxRateByBssid(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
 				&rRxRateInfo);
 	if (status < 0 || u4PhyRate == 0)
+		return;
+
+	if (prSwRfb->prRxStatusGroup3 == NULL)
 		return;
 
 	prPerfIndInfo = &prGlueInfo->PerfIndCache;
