@@ -1007,8 +1007,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 	if ((extCapIeLen - ELEM_HDR_LEN) > prHsExtCap->ucLength)
 		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	rlmSyncExtCapIEwithSupplicant(prHsExtCap->aucCapabilities,
-		extCapConn, extCapIeLen);
+
+	if (extCapConn)
+		rlmSyncExtCapIEwithSupplicant(prHsExtCap->aucCapabilities,
+			extCapConn, extCapIeLen);
+	else
+		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
 	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
@@ -1084,8 +1088,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 	if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
 		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-	rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
-		extCapConn, extCapIeLen);
+
+	if (extCapConn)
+		rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
+			extCapConn, extCapIeLen);
+	else
+		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
 
