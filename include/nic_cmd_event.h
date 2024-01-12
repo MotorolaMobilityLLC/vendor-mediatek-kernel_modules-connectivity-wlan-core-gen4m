@@ -1963,7 +1963,7 @@ struct CMD_BSS_ACTIVATE_CTRL {
 	uint8_t ucOwnMacAddrIndex;
 	uint8_t aucBssMacAddr[6];
 	uint8_t ucBMCWlanIndex;
-	uint8_t ucMLOLinkIdx;
+	uint8_t ucMldLinkIdx;
 };
 
 enum ENUM_RTS_POLICY {

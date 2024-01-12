@@ -10,259 +10,507 @@
 #include "precomp.h"
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 
-void beReqGenerateMLIE(
+void beGenerateAuthMldIE(
 	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucBssIndex,
+	struct SW_RFB *prRecvAuthSwRfb,
 	struct MSDU_INFO *prMsduInfo,
-	u_int8_t type,
-	struct APPEND_VAR_IE_ENTRY ieArrayTable[],
-	uint16_t txIENums)
+	PFN_COMPOSE_AUTH_IE_FUNC pfnComposeIE)
 {
-	struct IE_MULTI_LINK_CONTROL* mloCommonIe;
+	struct IE_MULTI_LINK_CONTROL *common = NULL;
+	struct WLAN_AUTH_FRAME *auth;
+	struct MSDU_INFO *msdu_sta;
+	struct MLD_STA_RECORD *mld_starec;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct LINK *links;
+	struct STA_RECORD *starec;
+	struct BSS_INFO *bss, *prBssInfo;
+	uint32_t offset, len;
+
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
-	mloCommonIe = beReqGenerateMultiLinkCommonInfo(prAdapter, prMsduInfo);
-	beReqGenerateMultiLinkSTAInfo(prAdapter, prMsduInfo, mloCommonIe, type, ieArrayTable, txIENums);
+	prBssInfo= GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+	offset = sortGetPayloadOffset(prAdapter, prMsduInfo);
+	len = prMsduInfo->u2FrameLength;
+	auth = (struct WLAN_AUTH_FRAME *) prMsduInfo->prPacket;
+
+	if (!mld_starec && !mld_bssinfo)
+		return;
+
+	if (mld_starec && mld_starec->rStarecList.u4NumElem >= 1) {
+		common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+		if (!common)
+			return;
+
+		links =  &mld_starec->rStarecList;
+		LINK_FOR_EACH_ENTRY(starec, links, rLinkEntryMld,
+			struct STA_RECORD) {
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+				starec->ucBssIndex);
+
+			DBGLOG(INIT, INFO,
+				"\tsta: %d, wlan_idx: %d, bss_idx: %d, mac: " MACSTR "\n",
+				starec->ucIndex,
+				starec->ucWlanIndex,
+				starec->ucBssIndex,
+				MAC2STR(bss->aucOwnMacAddr));
+
+			if (starec == prStaRec) {
+				beGenerateMldSTAInfo(prAdapter, common,
+					prMsduInfo, offset, len,
+					prMsduInfo, bss->ucBssIndex);
+			} else {
+				/* compose frame for each starec,
+				 * dont care Header and some Fixed Fields
+				 */
+				msdu_sta = pfnComposeIE(prAdapter, starec,
+					starec->ucBssIndex, prRecvAuthSwRfb,
+					auth->u2AuthTransSeqNo,
+					auth->u2StatusCode);
+				if (msdu_sta == NULL) {
+					DBGLOG(SAA, WARN,
+						"No PKT_INFO_T for sending MLD STA.\n");
+					continue;
+				}
+
+				beGenerateMldSTAInfo(prAdapter, common,
+					prMsduInfo, offset, len,
+					msdu_sta, bss->ucBssIndex);
+				cnmMgtPktFree(prAdapter, msdu_sta);
+			}
+		}
+	} else if (prRecvAuthSwRfb) {
+		/* look for ml ie from recev auth frame */
+		common = (struct IE_MULTI_LINK_CONTROL *)
+		   kalFindIeExtIE(ELEM_ID_RESERVED, ELEM_EXT_ID_MLD,
+		   prRecvAuthSwRfb->pvHeader + prRecvAuthSwRfb->u2HeaderLen,
+		   prRecvAuthSwRfb->u2PacketLen - prRecvAuthSwRfb->u2HeaderLen);
+
+		/* ml not found, skip it */
+		if (!common)
+			return;
+
+		common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+		if (!common)
+			return;
+
+		links = &mld_bssinfo->rBssList;
+		LINK_FOR_EACH_ENTRY(bss, links, rLinkEntryMld,
+			struct BSS_INFO) {
+
+			DBGLOG(INIT, INFO,
+				"\tsta: bss_idx: %d, mac: " MACSTR "\n",
+				bss->ucBssIndex,
+				MAC2STR(bss->aucOwnMacAddr));
+
+			if (bss == prBssInfo) {
+				beGenerateMldSTAInfo(prAdapter, common,
+					prMsduInfo, offset, len,
+					prMsduInfo, bss->ucBssIndex);
+			} else {
+				/* compose frame for each starec,
+				 * dont care Header and some Fixed Fields
+				 */
+				msdu_sta = pfnComposeIE(prAdapter, NULL,
+					bss->ucBssIndex, prRecvAuthSwRfb,
+					auth->u2AuthTransSeqNo,
+					auth->u2StatusCode);
+				if (msdu_sta == NULL) {
+					DBGLOG(SAA, WARN,
+						"No PKT_INFO_T for sending MLD STA.\n");
+					continue;
+				}
+
+				beGenerateMldSTAInfo(prAdapter, common,
+					prMsduInfo, offset, len,
+					msdu_sta, bss->ucBssIndex);
+				cnmMgtPktFree(prAdapter, msdu_sta);
+			}
+		}
+
+	}
+
+	if (common) {
+		DBGLOG(SAA, INFO, "Dump total MLIE\n");
+		DBGLOG_MEM8(SAA, INFO, common, IE_SIZE(common));
+	}
 }
-struct IE_MULTI_LINK_CONTROL *beReqGenerateMultiLinkCommonInfo(
+
+void beGenerateAssocMldIE(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	struct MSDU_INFO *prMsduInfo,
+	PFN_COMPOSE_ASSOC_IE_FUNC pfnComposeIE)
+{
+	struct IE_MULTI_LINK_CONTROL* common;
+	struct STA_RECORD *starec;
+	struct MSDU_INFO *msdu_sta;
+	struct MLD_STA_RECORD *mld_starec;
+	struct LINK *links;
+	uint32_t offset, len;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+	offset = sortGetPayloadOffset(prAdapter, prMsduInfo);
+	len = prMsduInfo->u2FrameLength;
+
+	if (!mld_starec)
+		return;
+
+	common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+	if (!common)
+		return;
+
+	links = &mld_starec->rStarecList;
+	LINK_FOR_EACH_ENTRY(starec, links, rLinkEntryMld,
+		struct STA_RECORD) {
+		struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+				starec->ucBssIndex);
+
+		DBGLOG(INIT, INFO,
+			"\tsta: %d, wlan_idx: %d, bss_idx: %d, mac: " MACSTR "\n",
+			starec->ucIndex,
+			starec->ucWlanIndex,
+			starec->ucBssIndex,
+			MAC2STR(bss->aucOwnMacAddr));
+
+		if (starec == prStaRec) {
+			beGenerateMldSTAInfo(prAdapter, common,
+				prMsduInfo, offset, len,
+				prMsduInfo, bss->ucBssIndex);
+		} else {
+			/* compose frame for each starec */
+			msdu_sta = pfnComposeIE(prAdapter, starec);
+			if (msdu_sta  == NULL) {
+				DBGLOG(SAA, WARN,
+					"No PKT_INFO_T for sending MLD STA.\n");
+				continue;
+			}
+
+			beGenerateMldSTAInfo(prAdapter, common,
+				prMsduInfo, offset, len,
+				msdu_sta, bss->ucBssIndex);
+			cnmMgtPktFree(prAdapter, msdu_sta);
+		}
+	}
+
+	DBGLOG(RLM, INFO, "Dump total MLIE\n");
+	DBGLOG_MEM8(RLM, INFO, common, IE_SIZE(common));
+}
+
+void beGenerateBeaconMldIE(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex,
+	uint8_t ucComplete,
+	struct MSDU_INFO *prMsduInfo,
+	PFN_COMPOSE_BEACON_IE_FUNC pfnComposeIE)
+{
+	struct IE_MULTI_LINK_CONTROL* common;
+	struct MSDU_INFO *msdu_sta;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct LINK *links;
+	struct BSS_INFO *bss;
+	uint32_t offset, len;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+	offset = sortGetPayloadOffset(prAdapter, prMsduInfo);
+	len = prMsduInfo->u2FrameLength;
+
+	if (!mld_bssinfo)
+		return;
+
+	common = beGenerateMldCommonInfo(prAdapter, prMsduInfo);
+	if (!common)
+		return;
+
+	if (!ucComplete)
+		goto DONE;
+
+	links =  &mld_bssinfo->rBssList;
+	LINK_FOR_EACH_ENTRY(bss, links, rLinkEntryMld, struct BSS_INFO) {
+
+		DBGLOG(INIT, INFO,
+			"\tsta: bss_idx: %d, mac: " MACSTR "\n",
+			bss->ucBssIndex,
+			MAC2STR(bss->aucOwnMacAddr));
+
+		/* compose frame for each starec,
+		 * dont care Header and some Fixed Fields
+		 */
+		msdu_sta = pfnComposeIE(prAdapter, bss->ucBssIndex);
+		if (msdu_sta == NULL) {
+			DBGLOG(SAA, WARN,
+				"No PKT_INFO_T for sending MLD STA.\n");
+			continue;
+		}
+
+		beGenerateMldSTAInfo(prAdapter, common,
+			prMsduInfo, offset, len,
+			msdu_sta, bss->ucBssIndex);
+	}
+
+DONE:
+	DBGLOG(SAA, INFO, "Dump total MLIE\n");
+	DBGLOG_MEM8(SAA, INFO, common, IE_SIZE(common));
+}
+
+struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *cp;
-	struct STA_RECORD *prStaRec;
-	struct MLD_STA_RECORD *prMldStarec;
-	struct BSS_INFO *prBssInfo;
-	struct MLD_BSS_INFO *prMldBssInfo;
-	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE;
+	struct STA_RECORD *starec;
+	struct MLD_STA_RECORD *mld_starec;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct BSS_INFO *bss;
+	struct IE_MULTI_LINK_CONTROL *common;
+	struct WLAN_MAC_MGMT_HEADER *mgmt;
+	uint16_t frame_ctrl;
+	uint16_t present;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
-	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	starec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	mld_starec = mldStarecGetByStarec(prAdapter, starec);
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, starec->ucBssIndex);
+	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
+	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
-	if (!prMldStarec || !prMldBssInfo)
+	if (!mld_starec && !mld_bssinfo)
 		return 0;
 
-	prMultiLinkControlIE = (struct IE_MULTI_LINK_CONTROL *)
+	common = (struct IE_MULTI_LINK_CONTROL *)
 		(((uint8_t *)prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
 
-	prMultiLinkControlIE->ucId = ELEM_ID_RESERVED;
-	prMultiLinkControlIE->ucExtId = ELEM_EXT_ID_MLD;
+	common->ucId = ELEM_ID_RESERVED;
+	common->ucExtId = ELEM_EXT_ID_MLD;
 
 	/* filling control field */
-	BE_SET_ML_CTRL_TYPE(prMultiLinkControlIE->u2Ctrl, ML_ELEMENT_TYPE_BASIC);
-	BE_SET_ML_CTRL_PRESENCE_MLD_MAC(prMultiLinkControlIE->u2Ctrl);
-	//BE_SET_ML_CTRL_PRESENCE_MLD_CAP(prMultiLinkControlIE->u2Ctrl);
+	BE_SET_ML_CTRL_TYPE(common->u2Ctrl, ML_ELEMENT_TYPE_BASIC);
+	present = ML_CTRL_MLD_MAC_ADDR_PRESENT |
+		  ML_CTRL_MLD_CAPA_PRESENT;
+
+	if (frame_ctrl == MAC_FRAME_PROBE_RSP ||
+	    frame_ctrl == MAC_FRAME_BEACON) {
+		present |= (ML_CTRL_LINK_ID_INFO_PRESENT |
+			    ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT);
+	}
+
+	BE_SET_ML_CTRL_PRESENCE(common->u2Ctrl, present);
 
 	/* filling common info field*/
-	cp = prMultiLinkControlIE->aucCommonInfo;
+	cp = common->aucCommonInfo;
 
-	if (BE_IS_ML_CTRL_PRESENCE_MLD_MAC(prMultiLinkControlIE->u2Ctrl)) {
-		kalMemCopy(cp, prMldBssInfo->aucOwnMldAddr, MAC_ADDR_LEN);
-		//u4OverallLen += 6;
-		cp += 6;
+	if (BE_IS_ML_CTRL_PRESENCE_MLD_MAC(common->u2Ctrl)) {
+		kalMemCopy(cp, mld_bssinfo->aucOwnMldAddr, MAC_ADDR_LEN);
+		cp += MAC_ADDR_LEN;
 	}
 
-	if (BE_IS_ML_CTRL_PRESENCE_MLD_CAP(prMultiLinkControlIE->u2Ctrl)) {
-		//TODO: fill in MLD cap
-		//WLAN_SET_FIELD_16(cp, MLD_CAP);
-		//u4OverallLen += 2;
-		//cp += 2;
+	if (BE_IS_ML_CTRL_PRESENCE_LINK_ID(common->u2Ctrl))
+		*cp++ = bss->ucLinkIndex;
+
+	if (BE_IS_ML_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(common->u2Ctrl))
+		*cp++ = 0;
+
+	if (BE_IS_ML_CTRL_PRESENCE_MLD_CAP(common->u2Ctrl)) {
+		WLAN_SET_FIELD_16(cp, MLD_LINK_MAX);
+		cp += 2;
 	}
 
-	//DBGLOG(RLM, INFO, "u4OverallLen total: %d\n", u4OverallLen);
-	prMultiLinkControlIE->ucLength =
-		(cp - prMultiLinkControlIE->aucCommonInfo)
-		+ OFFSET_OF(struct IE_MULTI_LINK_CONTROL, aucCommonInfo[0])
-		- ELEM_HDR_LEN;
-
-	prMsduInfo->u2FrameLength += IE_SIZE(prMultiLinkControlIE);
+	common->ucLength = cp - (uint8_t *) common - ELEM_HDR_LEN;
+	prMsduInfo->u2FrameLength += IE_SIZE(common);
 
 	DBGLOG(RLM, INFO, "Dump ML common IE\n");
-	DBGLOG_MEM8(RLM, INFO, prMultiLinkControlIE, IE_SIZE(prMultiLinkControlIE));
+	DBGLOG_MEM8(RLM, INFO, common, IE_SIZE(common));
 
-	return prMultiLinkControlIE;
+	return common;
 }
 
-void beReqGenerateMultiLinkSTAInfo(
-	struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo,
-	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE,
-	u_int8_t type,
-	struct APPEND_VAR_IE_ENTRY ieArrayTable[],
-	uint16_t txIENums)
+uint8_t beMldNoNeedIE(uint8_t *pucBuf)
 {
-	struct IE_MULTI_LINK_INFO_STA_CONTROL *prMultiLinkSTAControlIE;
-	const uint8_t *primary_IE;
-	uint32_t primary_IE_start = 0;
-	uint32_t primary_IE_end;
-	uint32_t i, t;
-	struct MSDU_INFO *prMsduInfoSta;
-	uint16_t u2EstimatedFrameLen;
-	uint8_t primaryIEExist[ELEM_ID_MAX_NUM] = {FALSE};
-	uint8_t noninheritanceIE[ELEM_ID_MAX_NUM] = {FALSE};
-	struct STA_RECORD *prStaRec;
-	struct MLD_STA_RECORD *prMldStarec;
-	struct STA_RECORD *prCurrStarec;
-	struct LINK *prStarecList;
-	uint8_t *cp, *staCP, *pucBuffer;
+	/* assume vendor ie are the same amoung links */
+	if (IE_ID(pucBuf) == ELEM_ID_VENDOR ||
+	    IE_ID(pucBuf) == ELEM_ID_RNR ||
+	    IE_ID(pucBuf) == ELEM_ID_NEIGHBOR_REPORT ||
+	    IE_ID(pucBuf) == ELEM_ID_MBSSID ||
+	    (IE_ID(pucBuf) == ELEM_ID_RESERVED &&
+	     IE_ID_EXT(pucBuf) == ELEM_EXT_ID_MLD))
+		return TRUE;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	prMldStarec = mldStarecGetByStarec(prAdapter, prStaRec);
-	prStarecList = &prMldStarec->rStarecList;
-	primary_IE_end = prMsduInfo->u2FrameLength - IE_SIZE(prMultiLinkControlIE);
+	return FALSE;
+}
 
-	if (!prMultiLinkControlIE || !prMldStarec)
-		return;
+void beGenerateMldSTAInfo(
+	struct ADAPTER *prAdapter,
+	struct IE_MULTI_LINK_CONTROL *prMultiLinkControlIE,
+	struct MSDU_INFO *prMsduInfo,
+	uint32_t u4BeginOffset,
+	uint32_t u4PrimaryLength,
+	struct MSDU_INFO *prMsduInfoSta,
+	uint8_t ucBssIndex)
+{
+	struct IE_MULTI_LINK_INFO_STA_CONTROL *sta_ctrl;
+	struct IE_NON_INHERITANCE *non_inh;
+	uint32_t i;
+	struct STA_RECORD *starec;
+	struct BSS_INFO *bss;
+	struct WLAN_MAC_MGMT_HEADER *mgmt;
+	uint8_t link;
+	uint16_t frame_ctrl, control = 0, u2Offset = 0, u2IEsBufLen;
+	uint8_t *cp, *pucBuf, *pos;
+	const uint8_t *primary, *start, *end;
+	uint8_t neid_arr[ELEM_ID_MAX_NUM], neid = 0;
+	uint8_t nexid_arr[ELEM_ID_MAX_NUM], nexid = 0;
 
-	//handle noninheritance part: first, find all IE list in prmiary link's prMsduInfo
-	if (type == TYPE_ASSOC) {
-		primary_IE_start = OFFSET_OF(struct WLAN_ASSOC_REQ_FRAME, aucInfoElem[0]);
-	} else if (type == TYPE_AUTH) {
-		primary_IE_start = OFFSET_OF(struct WLAN_AUTH_FRAME, aucInfoElem[0]);
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	starec = cnmGetStaRecByIndex(prAdapter, prMsduInfoSta->ucStaRecIndex);
+	pos = (uint8_t *) prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
+	sta_ctrl = (struct IE_MULTI_LINK_INFO_STA_CONTROL *) pos;
+	link = starec ? starec->ucLinkIndex : bss->ucLinkIndex;
+	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
+	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
+
+	sta_ctrl->ucSubID = SUB_IE_MLD_PER_STA_PROFILE;
+	sta_ctrl->ucLength = 0;
+
+	/* filling STA control field (fixed length) */
+  	BE_SET_ML_STA_CTRL_LINK_ID(control, link);
+
+	if (frame_ctrl != MAC_FRAME_PROBE_RSP &&
+	    frame_ctrl != MAC_FRAME_BEACON) {
+		control |= ML_STA_CTRL_COMPLETE_PROFILE;
+
+		if (IS_BSS_APGO(bss))
+			control |= (ML_STA_CTRL_BCN_INTV_PRESENT |
+				    ML_STA_CTRL_DTIM_INFO_PRESENT);
 	}
-	//TODO: check multiple ELEM_ID_RESERVED IEs, which include different EXT ID
-	DBGLOG(RLM, INFO, "find eid in primary IE:\n");
-	for (i = 0; i < ELEM_ID_MAX_NUM; i++) {
-		primaryIEExist[i] = FALSE;
-		noninheritanceIE[i] = FALSE;
-		primary_IE = kalFindIeMatchMask(i,
-					(uint8_t *)prMsduInfo->prPacket + primary_IE_start,
-					(primary_IE_end - primary_IE_start),
-					NULL, 0, 0, NULL);
-		if (primary_IE) {
-			DBGLOG(RLM, INFO, "%d\n", i);
-			primaryIEExist[i] = TRUE;
-			noninheritanceIE[i] = TRUE;
+
+	/*
+	 * meaningful if NSTR Link Pair Present is 1
+	 * Bitmap subfield: 0 = 1 octet, 1 = 2 octets
+	 */
+	control |= (ML_STA_CTRL_MAC_ADDR_PRESENT |
+		    ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT);
+
+	BE_SET_ML_STA_CTRL_FIELD(sta_ctrl->u2StaCtrl, control);
+
+	/* filling STA info field (varied length) */
+	cp = sta_ctrl->aucStaInfo;
+	if (BE_IS_ML_STA_CTRL_PRESENCE_MAC(sta_ctrl->u2StaCtrl)) {
+		kalMemCopy(cp, bss->aucOwnMacAddr, MAC_ADDR_LEN);
+		cp += MAC_ADDR_LEN;
+	}
+
+	if (BE_IS_ML_STA_CTRL_PRESENCE_BCN_INTV(sta_ctrl->u2StaCtrl)) {
+		WLAN_SET_FIELD_16(cp, bss->u2BeaconInterval);
+		cp += 2;
+	}
+
+	if (BE_IS_ML_STA_CTRL_PRESENCE_DTIM(sta_ctrl->u2StaCtrl)) {
+		*cp++ = bss->ucDTIMCount;
+		*cp++ = bss->ucDTIMPeriod;
+	}
+
+	if (BE_IS_ML_STA_CTRL_PRESENCE_NSTR(sta_ctrl->u2StaCtrl)) {
+		/* 1 octet for nstr bmp */
+		*cp++ = 0;
+	}
+
+	sta_ctrl->ucLength = cp - pos - ELEM_HDR_LEN;
+	prMultiLinkControlIE->ucLength += cp - pos;
+	prMsduInfo->u2FrameLength += cp - pos;
+
+	/* primary can skip sta info */
+	if (prMsduInfoSta == prMsduInfo ||
+	    !BE_IS_ML_STA_CTRL_COMPLETE(sta_ctrl->u2StaCtrl))
+		goto DONE;
+
+	/* start to fill STA profile field */
+	pos = cp;
+
+	/* handle inheritance ie */
+	start = (uint8_t *) prMsduInfo->prPacket + u4BeginOffset;
+	end = (uint8_t *) prMsduInfo->prPacket + u4PrimaryLength;
+	pucBuf = (uint8_t *)prMsduInfoSta->prPacket + u4BeginOffset;
+	u2IEsBufLen = prMsduInfoSta->u2FrameLength - u4BeginOffset;
+
+	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
+		if (beMldNoNeedIE(pucBuf))
+			continue;
+
+		primary = kalFindIeExtIE(IE_ID(pucBuf),	IE_ID_EXT(pucBuf),
+			start, end - start);
+		if (!primary) {
+			/* primary not found, copy it */
+			kalMemCopy(cp, pucBuf, IE_SIZE(pucBuf));
+			cp += IE_SIZE(pucBuf);
+		} else if (kalMemCmp(pucBuf, primary, IE_SIZE(primary))) {
+			/* same ie, copy and move to next primary */
+			kalMemCopy(cp, pucBuf, IE_SIZE(pucBuf));
+			cp += IE_SIZE(pucBuf);
+			start = primary + IE_SIZE(primary);
+		} else {
+			/* found same primary, move to next primary */
+			start = primary + IE_SIZE(primary);
 		}
 	}
 
-	LINK_FOR_EACH_ENTRY(prCurrStarec, prStarecList, rLinkEntryMld,
-		struct STA_RECORD) {
-		struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(prAdapter,
-				prCurrStarec->ucBssIndex);
+	/* handle noninheritance ie */
+	non_inh = (struct IE_NON_INHERITANCE *) cp;
+	start = (uint8_t *) prMsduInfoSta->prPacket + u4BeginOffset;
+	end = (uint8_t *) prMsduInfoSta->prPacket +
+				prMsduInfoSta->u2FrameLength;
+	pucBuf = (uint8_t *)prMsduInfo->prPacket + u4BeginOffset;
+	u2IEsBufLen = u4PrimaryLength - u4BeginOffset;
+	neid = 0;
+	nexid = 0;
 
-		DBGLOG(INIT, INFO, "\tsta: %d, wlan_idx: %d, bss_idx: %d, mac: " MACSTR "\n",
-			prCurrStarec->ucIndex,
-			prCurrStarec->ucWlanIndex,
-			prCurrStarec->ucBssIndex,
-			bss->aucOwnMacAddr);
+	IE_FOR_EACH(pucBuf, u2IEsBufLen, u2Offset) {
+		if (beMldNoNeedIE(pucBuf))
+			continue;
 
-		/* Allocate a MSDU_INFO_T */
-		u2EstimatedFrameLen = MAX_LEN_OF_MLIE;
-		prMsduInfoSta = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
-		if (prMsduInfoSta == NULL) {
-			DBGLOG(SAA, WARN,
-				   "No PKT_INFO_T for sending MLD STA.\n");
+		primary = kalFindIeExtIE(IE_ID(pucBuf),	IE_ID_EXT(pucBuf),
+			start, end - start);
+		if (!primary) {
+			/* noninheritance */
+			if (IE_ID(pucBuf) == ELEM_ID_RESERVED)
+				nexid_arr[nexid++] = IE_ID_EXT(pucBuf);
+			else
+				neid_arr[neid++] = IE_ID(pucBuf);
+		} else {
+			start = primary + IE_SIZE(primary);
 		}
-		prMsduInfoSta->ucBssIndex = prCurrStarec->ucBssIndex;
-		prMsduInfoSta->ucStaRecIndex = prCurrStarec->ucIndex;
+	}
 
-		prMultiLinkSTAControlIE = (struct IE_MULTI_LINK_INFO_STA_CONTROL *)
-			(((uint8_t *)prMsduInfoSta->prPacket) + prMsduInfoSta->u2FrameLength);
-		prMultiLinkSTAControlIE->ucSubID = SUB_IE_MLD_PER_STA_PROFILE;
+	if (neid > 0 || nexid > 0) {
+		non_inh->ucId = ELEM_ID_RESERVED;
+		non_inh->ucLength = ELEM_HDR_LEN + 3 + neid + nexid;
+		non_inh->ucExtId = ELEM_EXT_ID_NON_INHERITANCE;
+		cp = non_inh->aucList;
+		*cp++ = neid;
+		for (i = 0; i < neid; i++)
+			*cp++ = neid_arr[i];
+		*cp++ = nexid;
+		for (i = 0; i < nexid; i++)
+			*cp++ = nexid_arr[i];
+	}
 
-		/* filling STA control field (fixed length) */
-		BE_SET_ML_STA_CTRL_LINK_ID(prMultiLinkSTAControlIE->u2StaCtrl, prCurrStarec->ucLinkIndex);
-		BE_SET_ML_STA_CTRL_COMPLETE_PROFILE(prMultiLinkSTAControlIE->u2StaCtrl);
-		BE_SET_ML_STA_CTRL_PRESENCE_MAC(prMultiLinkSTAControlIE->u2StaCtrl);
+	sta_ctrl->ucLength += cp - pos;
+	prMultiLinkControlIE->ucLength += cp - pos;
+	prMsduInfo->u2FrameLength += cp - pos;
 
-		/* filling STA info field (varied length) */
-		cp = prMultiLinkSTAControlIE->aucStaInfo;
-
-		if (BE_IS_ML_STA_CTRL_PRESENCE_MAC(prMultiLinkSTAControlIE->u2StaCtrl)) {
-			kalMemCopy(cp, bss->aucOwnMacAddr, MAC_ADDR_LEN);
-			cp += 6;
-		}
-
-		prMultiLinkSTAControlIE->ucLength =
-			(cp - prMultiLinkSTAControlIE->aucStaInfo)
-			+ OFFSET_OF(struct IE_MULTI_LINK_INFO_STA_CONTROL, aucStaInfo[0])
-			- ELEM_HDR_LEN;
-		prMsduInfoSta->u2FrameLength += IE_SIZE(prMultiLinkSTAControlIE);
-
-		prMultiLinkControlIE->ucLength += IE_SIZE(prMultiLinkSTAControlIE);
-
-		DBGLOG(RLM, INFO, "Dump ML STA%d IE control part\n", prCurrStarec->ucIndex);
-		DBGLOG_MEM8(RLM, INFO, prMultiLinkSTAControlIE, IE_SIZE(prMultiLinkSTAControlIE));
-
-		/* filling STA profile field */
-		staCP = cp;
-
-		//loop each IE of primary link and genrate IE of 2nd link...
-		for (t = 0; t < txIENums; t++) {
-			uint32_t last_frame_index;
-			uint32_t last_frame_len;
-			struct IE_HDR *last_frame_IE;
-			last_frame_index = prMsduInfoSta->u2FrameLength;
-
-			if (ieArrayTable[t].pfnAppendIE)
-				ieArrayTable[t].pfnAppendIE(prAdapter,
-					prMsduInfoSta);
-
-			last_frame_len = prMsduInfoSta->u2FrameLength - last_frame_index;
-			cp += last_frame_len;
-
-			if (last_frame_len == 0) { //non-inheritance case
-				DBGLOG(RLM, INFO, "frame %d no IE\n", t);
-			} else {
-				last_frame_IE = (struct IE_HDR *)(cp - last_frame_len);
-				DBGLOG(RLM, INFO, "frame %d ucID: %d\n", t, last_frame_IE->ucId);
-
-				primary_IE = kalFindIeMatchMask(last_frame_IE->ucId,
-							(uint8_t *)prMsduInfo->prPacket + primary_IE_start,
-							(primary_IE_end - primary_IE_start),
-							NULL, 0, 0, NULL);
-				if (primary_IE) {
-					DBGLOG_MEM8(RLM, INFO, primary_IE, last_frame_IE->ucLength + ELEM_HDR_LEN);
-					DBGLOG_MEM8(RLM, INFO, cp - last_frame_len, last_frame_len);
-				}
-				/*
-				   compare last_frame_cp and primary_IE
-				   if, the same, subtract prMsduInfo->u2FrameLength to remove this IE
-				   else, keep this IE and do nothing
-				*/
-				if (primary_IE && kalMemCmp(cp - last_frame_len, primary_IE, last_frame_len) == 0){
-					prMsduInfoSta->u2FrameLength -= last_frame_len;
-					cp -= last_frame_len;
-					DBGLOG(RLM, INFO, "same IE, frame length of MSDU:  %d\n", prMsduInfoSta->u2FrameLength);
-					if (primaryIEExist[last_frame_IE->ucId])
-						noninheritanceIE[last_frame_IE->ucId] = FALSE;
-				} else {
-					DBGLOG(RLM, INFO, "different IE or STA specific IE, frame length of MSDU: %d\n", prMsduInfoSta->u2FrameLength);
-					//do nothing
-					if (primaryIEExist[last_frame_IE->ucId])
-						noninheritanceIE[last_frame_IE->ucId] = FALSE;
-				}
-			}
-		}
-
-		DBGLOG(RLM, INFO, "noninheritanceIE:\n");
-		for (i=0; i < ELEM_ID_MAX_NUM; i++) {
-			if (noninheritanceIE[i] == TRUE)
-				DBGLOG(RLM, INFO, "%d\n", i);
-		}
-
-		prMultiLinkSTAControlIE->ucLength += (cp - staCP);
-		prMultiLinkControlIE->ucLength += (cp - staCP);
-
-		/* copy each STA's prMsduInfoSta into MLIE's prMsduInfo */
-		pucBuffer = (uint8_t *) ((unsigned long)
-				 prMsduInfo->prPacket + (unsigned long)
-				 prMsduInfo->u2FrameLength);
-		kalMemCopy(pucBuffer, prMultiLinkSTAControlIE, IE_SIZE(prMultiLinkSTAControlIE));
-		prMsduInfo->u2FrameLength += IE_SIZE(prMultiLinkSTAControlIE);
-
-		DBGLOG(RLM, INFO, "Dump ML STA%d IE\n", prCurrStarec->ucIndex);
-		DBGLOG_MEM8(RLM, INFO, prMultiLinkSTAControlIE, IE_SIZE(prMultiLinkSTAControlIE));
-
-		cnmMgtPktFree(prAdapter, prMsduInfoSta);
-
-	} /* end of rLinkEntryMld */
-
-	DBGLOG(RLM, INFO, "Dump total MLIE\n");
-	DBGLOG_MEM8(RLM, INFO, prMultiLinkControlIE, IE_SIZE(prMultiLinkControlIE));
-
+DONE:
+	DBGLOG(RLM, INFO, "Dump ML Link%d IE\n", link);
+	DBGLOG_MEM8(RLM, INFO, sta_ctrl, IE_SIZE(sta_ctrl));
 }
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,

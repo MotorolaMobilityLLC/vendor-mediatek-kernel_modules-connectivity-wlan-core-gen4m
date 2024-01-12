@@ -361,19 +361,7 @@ uint32_t authSendAuthFrame(IN struct ADAPTER *prAdapter,
 
 #else
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function will send the Authenticiation frame
- *
- * @param[in] prStaRec               Pointer to the STA_RECORD_T
- * @param[in] u2TransactionSeqNum    Transaction Sequence Number
- *
- * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
- * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-authSendAuthFrame(IN struct ADAPTER *prAdapter,
+struct MSDU_INFO* authComposeAuthFrame(IN struct ADAPTER *prAdapter,
 		  IN struct STA_RECORD *prStaRec,
 		  IN uint8_t ucBssIndex,
 		  IN struct SW_RFB *prFalseAuthSwRfb,
@@ -417,17 +405,14 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (IS_STA_IN_AIS(prStaRec)
-		&& mldStarecGetByStarec(prAdapter, prStaRec)) {
-		u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
-	}
+	u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
 #endif
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
 	if (prMsduInfo == NULL) {
 		DBGLOG(SAA, WARN, "No PKT_INFO_T for sending Auth Frame.\n");
-		return WLAN_STATUS_RESOURCES;
+		return NULL;
 	}
 	/* 4 <2> Compose Authentication Request frame header and
 	 * fixed fields in MSDU_INfO_T.
@@ -506,28 +491,55 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 	}
 
-	sortMgmtFrameIE(prAdapter, prMsduInfo);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (IS_STA_IN_AIS(prStaRec)) {
-		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_AUTH,
-			txAuthIETable,
-			(sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY)));
-	}
-#endif
-
 	/* TODO(Kevin):
 	 * Also release the unused tail room of the composed MMPDU
 	 */
 
 	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
+	sortMgmtFrameIE(prAdapter, prMsduInfo);
+
+	return prMsduInfo;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function will send the Authenticiation frame
+ *
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ * @param[in] u2TransactionSeqNum    Transaction Sequence Number
+ *
+ * @retval WLAN_STATUS_RESOURCES No available resource for frame composing.
+ * @retval WLAN_STATUS_SUCCESS   Successfully send frame to TX Module
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+authSendAuthFrame(IN struct ADAPTER *prAdapter,
+		  IN struct STA_RECORD *prStaRec,
+		  IN uint8_t ucBssIndex,
+		  IN struct SW_RFB *prFalseAuthSwRfb,
+		  IN uint16_t u2TransactionSeqNum, IN uint16_t u2StatusCode)
+{
+
+	struct MSDU_INFO *prMsduInfo;
+
+	prMsduInfo = authComposeAuthFrame(prAdapter, prStaRec, ucBssIndex,
+		prFalseAuthSwRfb,
+		u2TransactionSeqNum, u2StatusCode);
+	if (!prMsduInfo)
+		return WLAN_STATUS_RESOURCES;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	beGenerateAuthMldIE(prAdapter, prStaRec, ucBssIndex, prFalseAuthSwRfb,
+		prMsduInfo, authComposeAuthFrame);
+#endif
+
 	/* 4 <6> Inform TXM  to send this Authentication frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 	DBGLOG(SAA, INFO,
-	       "Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d, Algo: %d\n",
-	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum, ucAuthAlgNum);
+	       "Send Auth Frame, TranSeq: %d, Status: %d, Seq: %d %d\n",
+	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum);
 
 	return WLAN_STATUS_SUCCESS;
 }				/* end of authSendAuthFrame() */
