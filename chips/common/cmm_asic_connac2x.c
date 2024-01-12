@@ -812,6 +812,7 @@ void asicConnac2xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 	prAdapter->fgIsIntEnable = FALSE;
 }
 
+#if defined(_HIF_AXI)
 void asicConnac2xDisablePlatformSwIRQ(IN struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -821,6 +822,7 @@ void asicConnac2xDisablePlatformSwIRQ(IN struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	disable_irq_nosync(prHifInfo->u4IrqId_1);
 }
+#endif
 
 void asicConnac2xEnableExtInterrupt(
 	struct ADAPTER *prAdapter)
@@ -2302,6 +2304,7 @@ void asicConnac2xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 }
 
+#if defined(_HIF_AXI)
 bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -2411,6 +2414,7 @@ int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
 	if (!chip_info->wmmcupwron)
 		return -EOPNOTSUPP;
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	/* conninfra power on */
 	if (!kalIsWholeChipResetting()) {
 		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
@@ -2425,6 +2429,7 @@ int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
 			goto exit;
 		}
 	}
+#endif /* CFG_SUPPORT_CONNINFRA */
 
 	/* wf driver power on */
 	ret = chip_info->wmmcupwron();
@@ -2474,6 +2479,7 @@ int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info)
 		goto exit;
 	}
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	/*
 	 * conninfra power off sequence
 	 * conninfra will do conninfra power off self during whole chip reset.
@@ -2486,11 +2492,13 @@ int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info)
 			goto exit;
 		}
 	}
+#endif /* CFG_SUPPORT_CONNINFRA */
 
 exit:
 	DBGLOG(INIT, INFO, "ret: %d\n", ret);
 
 	return ret;
 }
+#endif /* _HIF_AXI */
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
