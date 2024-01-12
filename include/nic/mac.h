@@ -1974,6 +1974,12 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 	CHIP_CAP_ICV_V2 = BIT(1),
 };
 
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+#define MTK_OUI_CHIP_CAP			    (CHIP_CAP_ICV_V1)
+#else
+#define MTK_OUI_CHIP_CAP			    (CHIP_CAP_ICV_V2)
+#endif
+
 #if CFG_SUPPORT_RXSMM_WHITELIST
 #define VENDOR_OUI_RXSMM_LIST_NUM                   0
 #define VENDOR_OUI_RXSMM_OUI_IE_NUM                 3
@@ -4063,6 +4069,15 @@ struct IE_MTK_OUI {
 	uint8_t aucOui[3];
 	uint8_t aucCapability[4];
 	uint8_t aucInfoElem[1];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_MTK_PRE_WIFI7 {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucVersion0;
+	uint8_t ucVersion1;
+	uint8_t aucInfoElem[0];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
