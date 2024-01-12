@@ -7962,6 +7962,8 @@ void aisPreSuspendFlow(IN struct ADAPTER *prAdapter)
 				MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL;
 			prMsgChnlAbort->u8Cookie =
 				prAisFsmInfo->rChReqInfo.u8Cookie;
+			prMsgChnlAbort->ucBssIdx =
+				prAisBssInfo->ucBssIndex;
 
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				(struct MSG_HDR *) prMsgChnlAbort,
