@@ -100,7 +100,7 @@ p2pRoleP2pLisStopDbdcDecision(
 		IN enum ENUM_P2P_CONNECTION_TYPE eConnRequest);
 #endif
 
-static u_int8_t p2pRoleFsmNeedMlo(
+u_int8_t p2pRoleFsmNeedMlo(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucRoleIdx)
 {

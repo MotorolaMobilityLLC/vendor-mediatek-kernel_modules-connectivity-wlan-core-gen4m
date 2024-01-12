@@ -524,12 +524,15 @@ void p2pGetLinkWmmQueSet(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 	/* connac3 MLO all bss use the same wmm index as main bss use */
-	prBssInfo->fgIsWmmInited = TRUE;
-	prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
-#else
-	/* connac2 always assign different wmm index to bssinfo */
-	cnmWmmIndexDecision(prAdapter, prBssInfo);
+	if (p2pRoleFsmNeedMlo(prAdapter, prBssInfo->u4PrivateData)) {
+		prBssInfo->fgIsWmmInited = TRUE;
+		prBssInfo->ucWmmQueSet = bss->ucWmmQueSet;
+	} else
 #endif
+	{
+		/* connac2 always assign different wmm index to bssinfo */
+		cnmWmmIndexDecision(prAdapter, prBssInfo);
+	}
 
 	DBGLOG(P2P, TRACE, "bss[%d] = %d\n",
 		prBssInfo->ucBssIndex, prBssInfo->ucWmmQueSet);
