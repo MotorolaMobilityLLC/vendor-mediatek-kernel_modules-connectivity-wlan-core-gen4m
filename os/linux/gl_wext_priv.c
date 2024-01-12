@@ -1618,6 +1618,9 @@ __priv_nan_struct(struct net_device *prNetDev,
 		DBGLOG(NAN, INFO, "Cipher Type: %d\n", publishReq->cipher_type);
 		DBGLOG(NAN, INFO, "Key: %s\n",
 		       publishReq->key_info.body.passphrase_info.passphrase);
+		if (publishReq->scid_len > NAN_SCID_DEFAULT_LEN)
+			publishReq->scid_len = NAN_SCID_DEFAULT_LEN;
+
 		nanUtilDump(prGlueInfo->prAdapter, "Publish SCID",
 			    publishReq->scid, publishReq->scid_len);
 
@@ -1809,6 +1812,11 @@ __priv_nan_struct(struct net_device *prNetDev,
 			kalMemCopy(rNanCmdDataRequest.aucIPv6Addr,
 				   prDataReq->aucIPv6Addr, IPV6MACLEN);
 
+		if (prDataReq->app_info.ndp_app_info_len >
+			NAN_DP_MAX_APP_INFO_LEN) {
+			prDataReq->app_info.ndp_app_info_len =
+				NAN_DP_MAX_APP_INFO_LEN;
+		}
 		rNanCmdDataRequest.u2SpecificInfoLength =
 			prDataReq->app_info.ndp_app_info_len;
 		kalMemCopy(rNanCmdDataRequest.aucSpecificInfo,
@@ -1840,6 +1848,13 @@ __priv_nan_struct(struct net_device *prNetDev,
 		rNanCmdDataResponse.ucNDPId = prDataRes->ndp_instance_id;
 		rNanCmdDataResponse.ucRequireQOS = prDataRes->ndp_cfg.qos_cfg;
 		rNanCmdDataResponse.ucSecurity = prDataRes->cipher_type;
+
+		if (prDataRes->app_info.ndp_app_info_len >
+			NAN_DP_MAX_APP_INFO_LEN) {
+			prDataRes->app_info.ndp_app_info_len =
+				NAN_DP_MAX_APP_INFO_LEN;
+		}
+
 		rNanCmdDataResponse.u2SpecificInfoLength =
 			prDataRes->app_info.ndp_app_info_len;
 		rNanCmdDataResponse.fgCarryIpv6 = prDataRes->fgCarryIpv6;
