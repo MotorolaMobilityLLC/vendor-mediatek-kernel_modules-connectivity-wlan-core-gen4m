@@ -3144,7 +3144,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
-		DBGLOG(NIC, INFO,
+		DBGLOG(NIC, TRACE,
 		       "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
 		       prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
 		       prTxDone->ucStatus,
@@ -3167,7 +3167,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			if (ucStbc)
 				ucNss /= 2;
 
-			DBGLOG(NIC, INFO,
+			DBGLOG(NIC, TRACE,
 				"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
 				prTxDone->u2TxRate,
 				apucBandwidt[prTxDone->ucBandwidth],
