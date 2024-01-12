@@ -2864,6 +2864,9 @@ typedef struct _EVENT_UPDATE_COEX_PHYRATE_T {
 	UINT_8 aucReserved1[3];    /* 4 byte alignment */
 	UINT_32 u4Flags;
 	UINT_32 au4PhyRateLimit[MAX_BSSID_NUM + 1];
+	UINT_8 ucSupportSisoOnly;
+	UINT_8 ucWfPathSupport;
+	UINT_8 aucReserved2[2];    /* 4 byte alignment */
 } EVENT_UPDATE_COEX_PHYRATE_T, *P_EVENT_UPDATE_COEX_PHYRATE_T;
 
 /*#endif*/

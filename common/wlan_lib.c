@@ -9316,16 +9316,28 @@ wlanGetSpeIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 					ucRetValSpeIdx = ANTENNA_WF0;
 				else
 					ucRetValSpeIdx = ANTENNA_WF1;
-			} else
-				ucRetValSpeIdx = 0x18;
+			} else {
+				if (IS_WIFI_SMART_GEAR_SUPPORT_WF0_SISO(prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF0;
+				else if (IS_WIFI_SMART_GEAR_SUPPORT_WF1_SISO(prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF1;
+				else
+					ucRetValSpeIdx = 0x18;
+			}
 		} else if (eBand == BAND_5G) {
 			if (IS_WIFI_5G_SISO(prAdapter)) {
 				if (IS_WIFI_5G_WF0_SUPPORT(prAdapter))
 					ucRetValSpeIdx = ANTENNA_WF0;
 				else
 					ucRetValSpeIdx = ANTENNA_WF1;
-			} else
-				ucRetValSpeIdx = 0x18;
+			} else {
+				if (IS_WIFI_SMART_GEAR_SUPPORT_WF0_SISO(prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF0;
+				else if (IS_WIFI_SMART_GEAR_SUPPORT_WF1_SISO(prAdapter))
+					ucRetValSpeIdx = ANTENNA_WF1;
+				else
+					ucRetValSpeIdx = 0x18;
+			}
 		} else
 			ucRetValSpeIdx = 0x18;
 	}
