@@ -329,6 +329,7 @@ uint32_t scanCountBits(IN uint32_t bitMap[], IN uint32_t bitMapSize)
 void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4ScanChannelNum,
 		IN struct RF_CHANNEL_INFO arChannel[],
+		IN uint32_t u4ScanFlags,
 		IN uint8_t fgIsOnlineScan,
 		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg)
 {
@@ -339,12 +340,14 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 	uint8_t fgIsFull2Partial = FALSE;
 #endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
 	struct SCAN_INFO *prScanInfo;
+	bool fgIsLowSpanScan = FALSE;
 
 	ASSERT(u4ScanChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	i = u4Index = 0;
 	kalMemZero(au4ChannelBitMap, sizeof(au4ChannelBitMap));
+	fgIsLowSpanScan = u4ScanFlags & NL80211_SCAN_FLAG_LOW_SPAN;
 
 #if CFG_SUPPORT_FULL2PARTIAL_SCAN
 	/* fgIsCheckingFull2Partial should be true if it's an online scan.
@@ -357,7 +360,12 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 
 		GET_CURRENT_SYSTIME(&rCurrentTime);
 
-		if (((prScanInfo->u4LastFullScanTime == 0) ||
+		/* Do full scan when
+		 * 1. did not do full scan yet OR
+		 * 2. not APP scan and it's been 60s after last full scan
+		*/
+		if (prScanInfo->u4LastFullScanTime == 0 ||
+			(!fgIsLowSpanScan &&
 			(CHECK_FOR_TIMEOUT(rCurrentTime,
 			prScanInfo->u4LastFullScanTime,
 			SEC_TO_SYSTIME(CFG_SCAN_FULL2PARTIAL_PERIOD))))) {
@@ -367,10 +375,12 @@ void scanSetRequestChannel(IN struct ADAPTER *prAdapter,
 			kalMemZero(prScanInfo->au4ChannelBitMap,
 				sizeof(prScanInfo->au4ChannelBitMap));
 			log_dbg(SCN, INFO,
-				"Full2partial: 1st full scan start\n");
+				"Full2partial: 1st full scan start, low span=%d\n",
+				fgIsLowSpanScan);
 		} else {
 			log_dbg(SCN, INFO,
-				"Full2partial: enable full2partial\n");
+				"Full2partial: enable full2partial, low span=%d\n",
+				fgIsLowSpanScan);
 			fgIsFull2Partial = TRUE;
 		}
 	}
