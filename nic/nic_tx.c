@@ -247,11 +247,6 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 		prMsduInfo = (struct MSDU_INFO *) pucMemHandle;
 		kalMemZero(prMsduInfo, sizeof(struct MSDU_INFO));
 
-		cnmTimerInitTimer(prAdapter,
-			&prMsduInfo->rLifetimeTimer,
-		(PFN_MGMT_TIMEOUT_FUNC) nicTxMsduLifeTimeoutHandler,
-			(unsigned long) prMsduInfo);
-
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter,
 				      SPIN_LOCK_TX_MSDU_INFO_LIST);
 		QUEUE_INSERT_TAIL(&prTxCtrl->rFreeMsduInfoList,
@@ -2276,8 +2271,16 @@ uint32_t nicTxMsduQueue(IN struct ADAPTER *prAdapter,
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 				SPIN_LOCK_TXING_MGMT_LIST);
 
-			cnmTimerStopTimer(prAdapter,
-				&prMsduInfo->rLifetimeTimer);
+			/* MsduInfo might be cleaned up somewhere
+			 * without timer initialization. Initialize timer
+			 * starting itcan make sure the timeout function
+			 * is properly assigned.
+			 */
+			cnmTimerInitTimer(prAdapter,
+				&prMsduInfo->rLifetimeTimer,
+				(PFN_MGMT_TIMEOUT_FUNC)
+				 nicTxMsduLifeTimeoutHandler,
+				(unsigned long) prMsduInfo);
 
 			cnmTimerStartTimer(prAdapter,
 				&prMsduInfo->rLifetimeTimer,
