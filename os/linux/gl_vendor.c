@@ -95,6 +95,20 @@
 uint8_t g_GetResultsBufferedCnt;
 uint8_t g_GetResultsCmdCnt;
 
+const struct nla_policy mtk_scan_param_policy[
+		WIFI_ATTR_SCAN_MAX + 1] = {
+	[WIFI_ATTR_SCAN_IFACE_TYPE] = {.type = NLA_U8},
+	[WIFI_ATTR_SCAN_ASSOC_TYPE] = {.type = NLA_U8},
+	[WIFI_ATTR_SCAN_TYPE] = {.type = NLA_U8},
+	[WIFI_ATTR_SCAN_PROBE_NUM] = {.type = NLA_U8},
+	[WIFI_ATTR_SCAN_ACTIVE_TIME] = {.type = NLA_U32},
+	[WIFI_ATTR_SCAN_PASSIVE_TIME] = {.type = NLA_U32},
+	[WIFI_ATTR_SCAN_HOME_TIME] = {.type = NLA_U32},
+	[WIFI_ATTR_SCAN_ACTIVE_N_CH_BACK] = {.type = NLA_U8},
+	[WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK] = {.type = NLA_U8},
+};
+
+
 const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1] = {
 	[WIFI_ATTRIBUTE_RSSI_MONITOR_MAX_RSSI] = {.type = NLA_U32},
@@ -438,6 +452,115 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 	}
 
 	return 0;
+}
+
+int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct ADAPTER *prAdapter;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	struct nlattr *attr[WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK + 1];
+	char str[64] = {0};
+	uint8_t i, len;
+	uint8_t ucNetworkType = 0, ucAssocState = 0, ucScanType = 0;
+	uint8_t ucProbeCount = 0, ucActiveScnChBack = 0, ucPassiveScnChBack = 0;
+	uint32_t u4ActiveDwellTimeInMs = 0, u4PassiveDwellTimeInMs = 0;
+	uint32_t u4OpChStayTimeInMs = 0, rStatus, u4BufLen;
+
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+
+	if ((!prGlueInfo) || (!prAdapter))
+		return -EFAULT;
+
+	if ((data == NULL) || (data_len == 0))
+		goto fail;
+
+	kalMemZero(attr, sizeof(struct nlattr *) *
+			   (WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK + 1));
+
+	if (NLA_PARSE_NESTED(attr,
+			     WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK,
+			     (struct nlattr *)(data - NLA_HDRLEN),
+			     mtk_scan_param_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
+		       __func__);
+		goto fail;
+	}
+
+	for (i = WIFI_ATTR_SCAN_IFACE_TYPE; i < WIFI_ATTR_SCAN_MAX; i++) {
+		if (attr[i]) {
+			switch (i) {
+			case WIFI_ATTR_SCAN_IFACE_TYPE:
+				ucNetworkType =	nla_get_u8(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_ASSOC_TYPE:
+				ucAssocState = nla_get_u8(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_TYPE:
+				ucScanType = nla_get_u8(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_PROBE_NUM:
+				ucProbeCount = nla_get_u8(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_ACTIVE_TIME:
+				u4ActiveDwellTimeInMs = nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_PASSIVE_TIME:
+				u4PassiveDwellTimeInMs = nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_HOME_TIME:
+				u4OpChStayTimeInMs = nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_ACTIVE_N_CH_BACK:
+				ucActiveScnChBack = nla_get_u8(attr[i]);
+				break;
+			case WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK:
+				ucPassiveScnChBack = nla_get_u8(attr[i]);
+				break;
+			}
+		}
+	}
+
+	len = kalSnprintf(str, sizeof(str),
+			"scnSetParameter %d %d %d %d %d %d %d %d %d",
+			ucNetworkType, ucAssocState, ucScanType,
+			ucProbeCount, u4ActiveDwellTimeInMs,
+			u4PassiveDwellTimeInMs, u4OpChStayTimeInMs,
+			ucActiveScnChBack, ucPassiveScnChBack);
+
+	if (len <= 0) {
+		DBGLOG(REQ, ERROR, "set_scan_param invalid length!\n");
+		goto fail;
+	}
+
+	DBGLOG(REQ, INFO,
+		"vendor_set_scan_param: str=%s, len=%d\n", str, len);
+
+	kalMemZero(&rChipConfigInfo, sizeof(rChipConfigInfo));
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
+	rChipConfigInfo.u2MsgSize = len;
+	kalStrnCpy(rChipConfigInfo.aucCmd, str,
+		   CHIP_CONFIG_RESP_SIZE - 1);
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidSetChipConfig,
+		&rChipConfigInfo, sizeof(rChipConfigInfo),
+		FALSE, FALSE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "%s: kalIoctl ret=%d\n", __func__,
+		       rStatus);
+		return -1;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+fail:
+	return -EINVAL;
 }
 
 /*----------------------------------------------------------------------------*/

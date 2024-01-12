@@ -163,6 +163,7 @@ enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_CONFIG_ROAMING = 0x000a,			/* 0x000a */
 	WIFI_SUBCMD_ENABLE_ROAMING,				/* 0x000b */
 	WIFI_SUBCMD_SELECT_TX_POWER_SCENARIO,			/* 0x000c */
+	WIFI_SUBCMD_SET_SCAN_PARAM,				/* 0x000d */
 };
 
 enum RTT_SUB_COMMAND {
@@ -373,6 +374,19 @@ enum WIFI_BIGDATA_PIP_ATTRIBUTE {
 	WIFI_ATTRIBUTE_PIP_PAYLOAD = 0,
 };
 #endif
+
+enum WIFI_SCAN_PARAMS_ATTRIBUTE {
+	WIFI_ATTR_SCAN_IFACE_TYPE = 0,
+	WIFI_ATTR_SCAN_ASSOC_TYPE,
+	WIFI_ATTR_SCAN_TYPE,
+	WIFI_ATTR_SCAN_PROBE_NUM,
+	WIFI_ATTR_SCAN_ACTIVE_TIME,
+	WIFI_ATTR_SCAN_PASSIVE_TIME,
+	WIFI_ATTR_SCAN_HOME_TIME,
+	WIFI_ATTR_SCAN_ACTIVE_N_CH_BACK,
+	WIFI_ATTR_SCAN_PASSIVE_N_CH_BACK,
+	WIFI_ATTR_SCAN_MAX
+};
 
 #if CFG_SUPPORT_DBDC
 enum WIFI_OP_MODE_CHANGE_ATTRIBUTE {
@@ -845,5 +859,8 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 					   struct wireless_dev *wdev,
 					   const void *data,
 					   int data_len);
+
+int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
 
 #endif /* _GL_VENDOR_H */

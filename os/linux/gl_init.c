@@ -1007,6 +1007,20 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = WIFI_SUBCMD_SET_SCAN_PARAM
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+			| WIPHY_VENDOR_CMD_NEED_NETDEV
+			| WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_set_scan_param
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = VENDOR_CMD_RAW_DATA
+#endif
+	},
 #if CFG_SUPPORT_NAN
 	{
 		{
@@ -1021,7 +1035,7 @@ static const struct wiphy_vendor_command
 		,
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
-		},
+	},
 	{
 		{
 			.vendor_id = OUI_MTK,
