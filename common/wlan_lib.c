@@ -8705,7 +8705,7 @@ void wlanFeatureToFw(IN struct ADAPTER *prAdapter)
 		KAL_REPORT_ERROR_EVENT(prAdapter,
 			eEvent, (uint16_t)sizeof(u_int8_t),
 			0,
-			FALSE);
+			TRUE);
 	}
 	#endif /* CFG_SUPPORT_DATA_STALL */
 #endif

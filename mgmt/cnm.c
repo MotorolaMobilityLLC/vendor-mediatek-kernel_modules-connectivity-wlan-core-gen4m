@@ -3879,7 +3879,10 @@ void cnmEventSGStatus(
 	prSGState = (struct EVENT_SMART_GEAT_STATE *) (prEvent->aucBuffer);
 
 	if (prSGState->fgIsEnable == 0x01) {
-		eEvent = EVENT_SG_ENABLE;
+		if (prSGState->u4StateIdx == 0x00)
+			eEvent = EVENT_SG_1T1R;
+		else
+			eEvent = EVENT_SG_2T2R;
 	} else if (prSGState->fgIsEnable == 0x00) {
 		eEvent = EVENT_SG_DISABLE;
 	} else {
@@ -3893,7 +3896,7 @@ void cnmEventSGStatus(
 	KAL_REPORT_ERROR_EVENT(prAdapter,
 			eEvent, (uint16_t)sizeof(u_int8_t),
 			0,
-			FALSE);
+			TRUE);
 	#endif /* CFG_SUPPORT_DATA_STALL */
 }
 #endif
