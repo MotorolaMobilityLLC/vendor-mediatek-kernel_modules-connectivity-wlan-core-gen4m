@@ -2564,7 +2564,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 {
 	int offset;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
-	uint8_t i, ie_count, *ie = NULL, *ies[MAX_DUP_IE_COUNT], *pos;
+	uint8_t i, ie_count, *ie = NULL, *ies[MAX_DUP_IE_COUNT] = {0}, *pos;
 	uint16_t fctrl, ie_len;
 	uint8_t *addr;
 
