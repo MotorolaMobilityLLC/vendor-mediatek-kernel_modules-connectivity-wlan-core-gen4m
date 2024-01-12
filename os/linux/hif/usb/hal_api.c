@@ -1946,7 +1946,40 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 {
+	struct CHIP_DBG_OPS *prDbgOps;
 
+	if (!prAdapter) {
+		DBGLOG(HAL, ERROR, "prAdapter is NULL\n");
+		return;
+	}
+
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE))
+		if (prDbgOps && prDbgOps->showPleInfo)
+			prDbgOps->showPleInfo(prAdapter, FALSE);
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PSE))
+		if (prDbgOps && prDbgOps->showPseInfo)
+			prDbgOps->showPseInfo(prAdapter);
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PDMA))
+		if (prDbgOps && prDbgOps->showPdmaInfo)
+			prDbgOps->showPdmaInfo(prAdapter);
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_DMASCH))
+		if (prDbgOps && prDbgOps->showDmaschInfo)
+			prDbgOps->showDmaschInfo(prAdapter);
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_MAC))
+		if (prDbgOps && prDbgOps->dumpMacInfo)
+			prDbgOps->dumpMacInfo(prAdapter);
+
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PHY))
+		if (prDbgOps && prDbgOps->dumpPhyInfo)
+			prDbgOps->dumpPhyInfo(prAdapter);
+
+	prAdapter->u4HifDbgFlag = 0;
 }
 
 u_int8_t halIsTxResourceControlEn(IN struct ADAPTER *prAdapter)
