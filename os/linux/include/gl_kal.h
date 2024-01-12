@@ -117,7 +117,8 @@ extern struct platform_device *g_prPlatDev;
 	GLUE_FLAG_HIF_MDDP | \
 	GLUE_FLAG_DRV_INT | \
 	GLUE_FLAG_MGMT_DIRECT_HIF_TX | \
-	GLUE_FLAG_SER_INT)
+	GLUE_FLAG_SER_INT | \
+	GLUE_FLAG_BT_DUMP_VIA_WIFI)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -550,6 +551,7 @@ enum HIF_DEV_REG_REASON {
 	HIF_DEV_REG_HIF_EXTDBG,
 	HIF_DEV_REG_HIF_CONNAC1_2,
 	HIF_DEV_REG_HIF_USB,
+	HIF_DEV_REG_HIF_BT_DBG,
 	HIF_DEV_REG_ONOFF_READ,
 	HIF_DEV_REG_ONOFF_DBG,
 	HIF_DEV_REG_RESET_READ,
@@ -2042,6 +2044,10 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr);
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetMddpEvent(struct GLUE_INFO *pr);
+
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+void kalSetBtDumpViaWFEvent(struct GLUE_INFO *pr);
+#endif
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 

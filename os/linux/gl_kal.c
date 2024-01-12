@@ -5558,6 +5558,12 @@ int hif_thread(void *data)
 			mddpInHifThread(prAdapter);
 #endif
 
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+		if (test_and_clear_bit(GLUE_FLAG_BT_DUMP_VIA_WIFI_BIT,
+					   &prGlueInfo->ulFlag))
+			halHandleBtDumpviaWF(prAdapter);
+#endif
+
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
 				       &prGlueInfo->ulFlag))
@@ -6941,6 +6947,16 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
 }
+
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+void kalSetBtDumpViaWFEvent(struct GLUE_INFO *pr)
+{
+	set_bit(GLUE_FLAG_BT_DUMP_VIA_WIFI_BIT, &pr->ulFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+#endif
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr)
 {

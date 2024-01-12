@@ -969,6 +969,7 @@ struct thermal_sensor_info mt6653_thermal_sensor_info[] = {
 enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_HIF_DBG,
 	HIF_DEV_REG_HIF_EXTDBG,
+	HIF_DEV_REG_HIF_BT_DBG,
 	HIF_DEV_REG_ONOFF_READ,
 	HIF_DEV_REG_ONOFF_DBG,
 	HIF_DEV_REG_RESET_READ,
