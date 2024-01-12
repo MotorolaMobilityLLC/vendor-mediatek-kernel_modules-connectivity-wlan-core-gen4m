@@ -5306,14 +5306,18 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			 * BIT[3]->ALR,
 			 * BIT[4]->DUAL_CTS
 			 */
-			prBssDesc->ucMlrSupportBitmap = prMLR->ucLRBitMap;
+			/* For 2.4G AP foolproof */
+			prBssDesc->ucMlrSupportBitmap = (prMLR->ucLRBitMap &
+				(!MLR_BAND_IS_SUPPORT(prBssDesc->eBand)
+				? MLR_MODE_NOT_SUPPORT : ~0));
+
 			prBssDesc->fsIsMlrSupport =
 				MLR_BIT_SUPPORT(prBssDesc
 				->ucMlrSupportBitmap);
 
 			MLR_DBGLOG(prAdapter, SCN, INFO,
 				"MLR beacon - BSSID:" MACSTR
-				" IsMlrS:%d Type|Len|B[%d, %d, 0x%02x]\n",
+				" IsMlrS:%d Type|Len|B[0x%02x, 0x%02x, 0x%02x]\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				prBssDesc->fsIsMlrSupport,
 				prBssDesc->ucMlrType,

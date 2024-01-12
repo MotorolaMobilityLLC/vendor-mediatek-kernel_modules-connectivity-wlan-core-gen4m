@@ -1342,7 +1342,8 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #endif
 
 #if CFG_SUPPORT_MLR
-	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec)
+	if (MLR_BAND_IS_SUPPORT(MLR_GET_BAND(prAdapter, prStaRec))
+		&& MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec)
 		&& MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, prStaRec->ucRCPI)
 		&& (prStaRec->ucStaState == STA_STATE_3)) {
 		prCmdContent->ucMlrMode = (prStaRec->ucMlrSupportBitmap &

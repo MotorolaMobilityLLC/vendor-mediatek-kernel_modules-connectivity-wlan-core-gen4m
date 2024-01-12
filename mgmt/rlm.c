@@ -631,7 +631,7 @@ uint32_t rlmCalculateMTKOuiIELen(
 	len += mldCalculateMlIELen(prAdapter, ucBssIndex, prStaRec);
 #endif
 #endif
-#if CFG_SUPPORT_BALANCE_MLR
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
 	len += sizeof(struct IE_MTK_MLR);
 #endif
 	return len;
@@ -792,39 +792,43 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 		DBGLOG_MEM8(RLM, TRACE, pucBuffer, IE_SIZE(pucBuffer));
 	}
 #endif
-#if CFG_SUPPORT_BALANCE_MLR
-	if (
-		frame_ctrl == MAC_FRAME_BEACON ||
-		frame_ctrl == MAC_FRAME_PROBE_RSP ||
-		frame_ctrl == MAC_FRAME_ASSOC_RSP ||
-		frame_ctrl == MAC_FRAME_ASSOC_REQ) {
-		struct IE_MTK_MLR *prMLR = NULL;
-		struct STA_RECORD *prStaRec = NULL;
 
-		MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
-			MTK_SYNERGY_CAP_SUPPORT_TLV;
+#if (CFG_SUPPORT_MLR == 1)
+	if (MLR_BAND_IS_SUPPORT(prBssInfo->eBand) &&
+		(FALSE
+#if (CFG_SUPPORT_BALANCE_MLR == 1)
+		|| frame_ctrl == MAC_FRAME_BEACON
+		|| frame_ctrl == MAC_FRAME_PROBE_RSP
+		|| frame_ctrl == MAC_FRAME_ASSOC_RSP
+		|| frame_ctrl == MAC_FRAME_REASSOC_RSP
+#endif
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
+		|| frame_ctrl == MAC_FRAME_REASSOC_REQ
+		|| frame_ctrl == MAC_FRAME_ASSOC_REQ
+#endif
+	)) {
+		u_int8_t fgGenMlrIe = FALSE;
+#if (CFG_SUPPORT_MLR_V2 == 1)
+		if (IS_BSS_AIS(prBssInfo)
+			&& prBssInfo->eCurrentOPMode
+			== OP_MODE_INFRASTRUCTURE)
+			fgGenMlrIe = TRUE;
+#endif
+#if (CFG_SUPPORT_BALANCE_MLR == 1)
+		fgGenMlrIe = TRUE;
+#endif
+		if (fgGenMlrIe) {
+			MTK_OUI_IE(pucBuffer)->aucCapability[0] |=
+				MTK_SYNERGY_CAP_SUPPORT_TLV;
 
-		prMLR = (struct IE_MTK_MLR *) (pucBuffer + IE_SIZE(pucBuffer));
-		prMLR->ucId = MTK_OUI_ID_MLR;
-		prMLR->ucLength = 1;
-		if (IS_BSS_APGO(prBssInfo))
-			prStaRec = cnmGetStaRecByIndex(prAdapter,
-				prMsduInfo->ucStaRecIndex);
-		else
-			prStaRec = prBssInfo->prStaRecOfAP;
-
-		if (prStaRec) {
-			prMLR->ucLRBitMap =
-				(uint8_t) (prAdapter->u4MlrSupportBitmap &
-					   prStaRec->ucMlrSupportBitmap);
-		} else {
-			prMLR->ucLRBitMap =
-				(uint8_t) prAdapter->u4MlrSupportBitmap;
+			len = mlrGenerateMlrIEforMTKOuiIE(prAdapter,
+				prMsduInfo,
+				pucBuffer + IE_SIZE(pucBuffer));
+			MTK_OUI_IE(pucBuffer)->ucLength += len;
+			prMsduInfo->u2FrameLength += len;
 		}
-		prMsduInfo->u2FrameLength += sizeof(struct IE_MTK_MLR);
-		MTK_OUI_IE(pucBuffer)->ucLength += IE_SIZE(prMLR);
 	}
-#endif /* CFG_SUPPORT_BALANCE_MLR */
+#endif
 
 } /* rlmGenerateMTKOuiIE */
 
@@ -2872,6 +2876,77 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #endif
 			}
 		}
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
+			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
+
+			MLR_DBGLOG(prAdapter, RLM, INFO,
+				"MLR beacon or assoc resp - MLR IE[0x%02x, 0x%02x, 0x%02x] StaRec[%d, 0x%02x]",
+					prMLR->ucId,
+					prMLR->ucLength,
+					prMLR->ucLRBitMap,
+					prStaRec->fgIsMlrSupported,
+					prStaRec->ucMlrSupportBitmap
+				);
+		}
+#endif
+	}
+}
+
+void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, struct BSS_INFO *prBssInfo,
+	const uint8_t *pucIE)
+{
+	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	uint8_t *aucCapa = MTK_OUI_IE(pucIE)->aucCapability;
+	const uint8_t *ie;
+	uint16_t ie_len, ie_offset;
+
+	if (kalMemCmp(MTK_OUI_IE(pucIE)->aucOui,
+		aucMtkOui, sizeof(aucMtkOui)))
+		return;
+	else if (MTK_OUI_IE(pucIE)->ucLength <
+		ELEM_MIN_LEN_MTK_OUI)
+		return;
+
+	if (!(aucCapa[0] & MTK_SYNERGY_CAP_SUPPORT_TLV))
+		return;
+
+	ie = MTK_OUI_IE(pucIE)->aucInfoElem;
+	ie_len = IE_LEN(pucIE) - ELEM_MIN_LEN_MTK_OUI;
+
+	IE_FOR_EACH(ie, ie_len, ie_offset) {
+#if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
+		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
+			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
+			uint8_t ucTempLRBitMap;
+
+			MLR_DBGLOG(prAdapter, RLM, INFO,
+				"MLR assoc resp - MLR IE[0x%02x, 0x%02x, 0x%02x]",
+					prMLR->ucId,
+					prMLR->ucLength,
+					prMLR->ucLRBitMap);
+
+			/* For 2.4G AP foolproof */
+			ucTempLRBitMap = prMLR->ucLRBitMap &
+				(!MLR_BAND_IS_SUPPORT(prBssInfo->eBand)
+				? MLR_MODE_NOT_SUPPORT : ~0);
+
+			if (ucTempLRBitMap != prStaRec->ucMlrSupportBitmap) {
+				DBGLOG(RLM, WARN,
+					"MLR assoc resp - MLR IE LRBitmap[0x%02x] ucTempLRBitMap[0x%02x] StaRec[%d, 0x%02x]",
+						prMLR->ucLRBitMap,
+						ucTempLRBitMap,
+						prStaRec->fgIsMlrSupported,
+						prStaRec->ucMlrSupportBitmap);
+
+				prStaRec->ucMlrSupportBitmap = ucTempLRBitMap;
+				prStaRec->fgIsMlrSupported =
+					MLR_BIT_SUPPORT(
+					prStaRec->ucMlrSupportBitmap);
+			}
+		}
+#endif
 	}
 }
 
@@ -4210,6 +4285,10 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 			    (EXT_CAP_IE(pucIE)->aucCapabilities[0] &
 			     ELEM_EXT_CAP_ECSA_CAP))
 				prStaRec->fgEcsaCapable = TRUE;
+			break;
+		case ELEM_ID_VENDOR:
+			rlmParseMtkOuiForAssocResp(prAdapter, prStaRec,
+				prBssInfo, pucIE);
 			break;
 		default:
 			break;

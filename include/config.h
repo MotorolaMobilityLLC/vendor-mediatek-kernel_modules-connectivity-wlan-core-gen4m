@@ -1232,6 +1232,14 @@
 #define CFG_SUPPORT_MLR				1
 #endif
 
+#ifndef CFG_SUPPORT_MLR_V2
+#if (CFG_SUPPORT_MLR == 1)
+#define CFG_SUPPORT_MLR_V2		1
+#else
+#define CFG_SUPPORT_MLR_V2		0
+#endif
+#endif
+
 #ifndef CFG_SUPPORT_BALANCE_MLR
 #if CFG_SUPPORT_MLR
 /* Currently, this feature does not have requirements for MP.

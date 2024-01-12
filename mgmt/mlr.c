@@ -321,7 +321,7 @@ static u_int8_t mlrFillTcpUdpChecksum(void *pvPacket)
 	return TRUE;
 }
 
-static u_int8_t mlrProccessFragMsduInfo(struct ADAPTER *prAdapter,
+static u_int8_t mlrProcessFragMsduInfo(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
 		uint8_t ucMacHeaderLength,
 		uint8_t ucSplitTotal,
@@ -473,7 +473,7 @@ static u_int8_t mlrProccessFragMsduInfo(struct ADAPTER *prAdapter,
 	return TRUE;
 
 err:
-	DBGLOG(TX, INFO, "MLR frag - mlrProccessFragMsduInfo ERR\n");
+	DBGLOG(TX, INFO, "MLR frag - mlrProcessFragMsduInfo ERR\n");
 	return FALSE;
 }
 
@@ -861,7 +861,7 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 		kalPacketFree(prAdapter->prGlueInfo, prSkbCpy);
 
 	/* Step 6: Deal with MsduInfo */
-	if (!mlrProccessFragMsduInfo(prAdapter,
+	if (!mlrProcessFragMsduInfo(prAdapter,
 		prMsduInfo, ucMacHeaderLength,
 		ucSplitTotal, (void *)prSkbDup,
 		&prSplittedSkbList[0], prFragmentedQue))
@@ -963,11 +963,7 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 	}
 
 	/* check band */
-	fgMlrCapVerCheck = MLR_CHECK_IF_BAND_IS_SUPPORT(prBssInfo->eBand);
-
-	/* check capability */
-	fgMlrCapVerCheck &= MLR_IS_SUPPORT(prAdapter) ? TRUE : FALSE;
-	fgMlrCapVerCheck &= MLR_IS_PEER_SUPPORT(prStaRec) ? TRUE : FALSE;
+	fgMlrCapVerCheck = MLR_BAND_IS_SUPPORT(prBssInfo->eBand);
 	if (!fgMlrCapVerCheck) {
 		MLR_DBGLOG(prAdapter, TX, INFO,
 			"MLR check - MLR cap doesn't support(band=%d)",
@@ -975,44 +971,34 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 		return fgMlrCapVerCheck;
 	}
 
-	switch (prAdapter->u4MlrSupportBitmap) {
-	case MLR_MODE_MLR_V1:
-		/* MLR version 1 is only limited to when Peer is legacy AP */
-		fgMlrCapVerCheck &= (prStaRec->eStaType ==
-			STA_TYPE_LEGACY_AP) ? TRUE : FALSE;
-		fgMlrCapVerCheck &= (IS_BSS_AIS(prBssInfo)) ? TRUE : FALSE;
-		fgMlrCapVerCheck &= (prBssInfo->eCurrentOPMode ==
-			OP_MODE_INFRASTRUCTURE) ? TRUE : FALSE;
-		fgMlrCapVerCheck &= (prBssInfo->prStaRecOfAP != NULL)
-			? TRUE : FALSE;
-		fgMlrCapVerCheck &= MLR_BIT_V1_SUPPORT(
-			prStaRec->ucMlrSupportBitmap);
-		fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
-		break;
-	case MLR_MODE_MLR_V2:
-		/* TODO(@phase2): do while MLR version is MLRv2 */
-		fgMlrCapVerCheck = (prStaRec->eStaType == STA_TYPE_LEGACY_AP
-			|| prStaRec->eStaType ==
-			STA_TYPE_LEGACY_CLIENT) ? TRUE : FALSE;
-		fgMlrCapVerCheck &= MLR_BIT_V1_V2_SUPPORT(
-			prStaRec->ucMlrSupportBitmap);
-		break;
-	case MLR_MODE_MLR_PLUS:
-		fgMlrCapVerCheck &= MLR_BIT_MLRP_SUPPORT(
-			prStaRec->ucMlrSupportBitmap);
-		fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
-		break;
-	case MLR_MODE_ALR:
-		fgMlrCapVerCheck &= MLR_BIT_ALR_SUPPORT(
-			prStaRec->ucMlrSupportBitmap);
-		fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
-		break;
-	default:
-		fgMlrCapVerCheck = FALSE;
-		DBGLOG(TX, INFO, "MLR check - MLR ver %d, Ver doesn't support",
-			prAdapter->u4MlrSupportBitmap);
-		break;
+	/* check DUT & Peer MLR capability */
+	fgMlrCapVerCheck &= MLR_IS_SUPPORT(prAdapter) ? TRUE : FALSE;
+	fgMlrCapVerCheck &= MLR_IS_PEER_SUPPORT(prStaRec) ? TRUE : FALSE;
+	fgMlrCapVerCheck &= MLR_IS_BOTH_INTERACTION_V1_OR_ABOVE(prAdapter,
+		prStaRec);
+	if (!fgMlrCapVerCheck) {
+		MLR_DBGLOG(prAdapter, TX, INFO,
+			"MLR check - MLR cap doesn't support MLR cap (DUT:%d Peer:%d D&P:%d)",
+			MLR_IS_SUPPORT(prAdapter),
+			MLR_IS_PEER_SUPPORT(prStaRec),
+			MLR_IS_BOTH_INTERACTION_V1_OR_ABOVE(prAdapter,
+				prStaRec));
+		return fgMlrCapVerCheck;
 	}
+
+	/* check if MLR FSM is in START */
+	fgMlrCapVerCheck &= MLR_STATE_IN_START(prStaRec->ucMlrState);
+	if (!fgMlrCapVerCheck) {
+		MLR_DBGLOG(prAdapter, TX, INFO,
+			"MLR check - MLR cap doesn't meet MLR FSM in START (MlrState:%d)",
+			prStaRec->ucMlrState);
+		return fgMlrCapVerCheck;
+	}
+
+	MLR_DBGLOG(prAdapter, TX, INFO,
+		"MLR check - CHECK %d MlrSB 0x%04x Peer MlrSB 0x%02x MlrVersion %d",
+		fgMlrCapVerCheck, prAdapter->u4MlrSupportBitmap,
+		prStaRec->ucMlrSupportBitmap, prAdapter->ucMlrVersion);
 
 	return fgMlrCapVerCheck;
 }
@@ -1120,16 +1106,10 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 	 * or SAP MLR capability && Peer-STA MLR capability
 	 */
 	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec)
-		/* MLR_V1-Unbalance */
-		&& prAdapter->ucMlrVersion == 1) {
-		if (MLR_CHECK_IF_BAND_IS_SUPPORT(prBssInfo->eBand)
-			&& MLR_BIT_V1_SUPPORT(
-			MLR_BIT_INTERSECTION(
-			prAdapter->u4MlrSupportBitmap,
-			prStaRec->ucMlrSupportBitmap))
-			/* MLRv1 */
-			&& prStaRec->eStaType ==
-			STA_TYPE_LEGACY_AP) {
+		&& MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) {
+		/* At least MLRv1, MLRv2 or MLRv1+MLRv2 */
+		if (MLR_IS_BOTH_INTERACTION_AT_LEAST_V1_V2(prAdapter, prStaRec)
+			&& prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
 
 			/* In case of MGMT frame: Auth and (re)Assoc */
 			/* && RSSI < -93(RCPI:34)~-90(RCPI:40) */
@@ -1290,83 +1270,85 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is used to generate MTK Vendor Specific OUI for MLR
+ * \brief This function is used to generate MLR IE for MTK Vendor Specific OUI
  *
  * \param[in]
  *
- * \return none
+ * \return uint16_t
  */
 /*----------------------------------------------------------------------------*/
-void mlrGenerateMTKOuiIEforMlr(struct ADAPTER *prAdapter,
-			 struct MSDU_INFO *prMsduInfo)
+uint16_t mlrGenerateMlrIEforMTKOuiIE(struct ADAPTER *prAdapter,
+			 struct MSDU_INFO *prMsduInfo, uint8_t *pucBuf)
 {
+	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
-	uint8_t *pucBuffer;
-	uint8_t *pucVsDataBuffer;
-	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	struct IE_MTK_MLR *prMLR;
+	uint16_t len = 0;
 
 	if (unlikely(!prAdapter)) {
-		DBGLOG(TX, WARN, "MLR assoc - prAdapter is NULL");
-		return;
+		DBGLOG(TX, WARN,
+			"MLR ie - Don't append the MLR IE to MTK OUI IE due to prAdapter");
+		return len;
 	}
 
 	if (unlikely(!prMsduInfo)) {
-		DBGLOG(TX, WARN, "MLR assoc - prMsduInfo is NULL");
-		return;
+		DBGLOG(TX, WARN,
+			"MLR ie - Don't append the MLR IE to MTK OUI IE due to prMsduInfo");
+		return len;
 	}
-#if CFG_SUPPORT_MTK_SYNERGY
-	if (prAdapter->rWifiVar.ucMtkOui == FEATURE_DISABLED)
-		return;
-#endif
-	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
-	if (!prBssInfo)
-		return;
 
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
-	if (!prStaRec)
-		return;
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo) {
+		DBGLOG(TX, WARN,
+			"MLR ie - Don't append the MLR IE to MTK OUI IE due to prBssInfo");
+		return len;
+	}
 
 	if (!MLR_IS_SUPPORT(prAdapter)) {
 		MLR_DBGLOG(prAdapter, TX, INFO,
-			"MLR assoc - DUT doesn't support MLR\n");
-		return;
+			"MLR ie - Don't append the MLR IE to MTK OUI IE Because DUT doesn't support MLR\n");
+		return len;
 	}
 
-	if (!MLR_IS_PEER_SUPPORT(prStaRec)) {
-		MLR_DBGLOG(prAdapter, TX, INFO,
-			"MLR assoc - Peer doesn't support MLR\n");
-		return;
+	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
+
+	prMLR = (struct IE_MTK_MLR *) pucBuf;
+	kalMemSet(prMLR, 0, sizeof(struct IE_MTK_MLR));
+	prMLR->ucId = MTK_OUI_ID_MLR; /* MLR type */
+	prMLR->ucLength = sizeof(struct IE_MTK_MLR) - 2; /* MLR length */
+
+	if (IS_BSS_APGO(prBssInfo)) {
+		prStaRec = cnmGetStaRecByIndex(prAdapter,
+			prMsduInfo->ucStaRecIndex);
+		if (prStaRec) {
+			prMLR->ucLRBitMap =
+				(uint8_t) (prAdapter->u4MlrSupportBitmap &
+					   prStaRec->ucMlrSupportBitmap);
+			DBGLOG(TX, INFO,
+				"MLR ie - generate MLR IE IsApGo Ftype=0x%04x (MlrSB:0x%04x & Peer MlrSB:0x%02x => LRbitmap=0x%02x)\n",
+				mgmt->u2FrameCtrl & MASK_FRAME_TYPE,
+				prAdapter->u4MlrSupportBitmap,
+				prStaRec->ucMlrSupportBitmap,
+				prMLR->ucLRBitMap);
+
+		} else {
+			prMLR->ucLRBitMap =
+				(uint8_t) prAdapter->u4MlrSupportBitmap;
+		}
+	} else {
+		prMLR->ucLRBitMap =
+			(uint8_t) prAdapter->u4MlrSupportBitmap;
+		DBGLOG(TX, INFO,
+			"MLR ie - generate MLR IE Non-ApGo Ftype=0x%04x (MlrSB:0x%04x => LRbitmap=0x%02x)\n",
+			mgmt->u2FrameCtrl & MASK_FRAME_TYPE,
+			prAdapter->u4MlrSupportBitmap,
+			prMLR->ucLRBitMap);
 	}
 
-	pucBuffer = (uint8_t *)((unsigned long)prMsduInfo->prPacket +
-				(unsigned long)prMsduInfo->u2FrameLength);
+	len += sizeof(struct IE_MTK_MLR);
 
-	MTK_OUI_IE(pucBuffer)->ucId = ELEM_ID_VENDOR;
-	MTK_OUI_IE(pucBuffer)->ucLength = ELEM_MLR_MTK_OUI_LEN;
-	MTK_OUI_IE(pucBuffer)->aucOui[0] = aucMtkOui[0];
-	MTK_OUI_IE(pucBuffer)->aucOui[1] = aucMtkOui[1];
-	MTK_OUI_IE(pucBuffer)->aucOui[2] = aucMtkOui[2];
-
-	MTK_OUI_IE(pucBuffer)->aucCapability[0] = 0x01; /* indicates MTK TLV */
-	MTK_OUI_IE(pucBuffer)->aucCapability[1] = 0x00;
-	MTK_OUI_IE(pucBuffer)->aucCapability[2] = 0x00;
-	MTK_OUI_IE(pucBuffer)->aucCapability[3] = 0x00;
-
-	pucVsDataBuffer = (uint8_t *) MTK_OUI_IE(pucBuffer)->aucInfoElem;
-	pucVsDataBuffer[0] = 0x01; /* MLR type */
-	pucVsDataBuffer[1] = 0x01; /* MLR length */
-	/* Pay attention to trimming bitmap data if u4MlrSupportBitmap > 255 */
-	pucVsDataBuffer[2] = (uint8_t) (prAdapter->u4MlrSupportBitmap &
-		prStaRec->ucMlrSupportBitmap);
-
-	DBGLOG(TX, INFO,
-		"MLR assoc - MlrB:0x%02x (DUT:0x%04x bitwise-and Peer:0x%02x)\n",
-		pucVsDataBuffer[2], prAdapter->u4MlrSupportBitmap,
-		prStaRec->ucMlrSupportBitmap);
-
-	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-	pucBuffer += IE_SIZE(pucBuffer);
+	return len;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1505,8 +1487,8 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (MLR_BIT_V1_V2_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
-			MLR_BIT_V1_V2_SUPPORT(prStaRec->ucMlrSupportBitmap)) {
+	if (MLR_IS_BOTH_INTERACTION_AT_LEAST_V1_V2(prAdapter,
+			prStaRec)) {
 		u2TempSplitThreshold = 1000;
 		u2TempSplitSize = 1000;
 	} else if (MLR_BIT_ALR_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
@@ -1519,8 +1501,8 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		u2TempSplitSize = 150; /* 250 */
 	}
 
-	if (MLR_BIT_V1_V2_SUPPORT(prAdapter->u4MlrSupportBitmap) &&
-			MLR_BIT_V1_V2_SUPPORT(prStaRec->ucMlrSupportBitmap)) {
+	if (MLR_IS_BOTH_INTERACTION_AT_LEAST_V1_V2(prAdapter,
+			prStaRec)) {
 		if (u2CfgSplitSize == 0)
 			*prTxFragSplitSize = 0;
 		else
