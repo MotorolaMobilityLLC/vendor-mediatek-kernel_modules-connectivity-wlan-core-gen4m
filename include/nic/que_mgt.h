@@ -348,12 +348,20 @@ enum ENUM_MAC_TX_QUEUE_INDEX {
 	MAC_TX_QUEUE_NUM
 };
 
+#define SEQ_SMALLER(_SEQ1, _SEQ2) (((_SEQ1-_SEQ2) & ((MAX_SEQ_NO_COUNT) >> 1)))
+#define BAR_SSN_IS_VALID   BIT(15)
+#define IS_BAR_SSN_VALID(_prBaSsnEntry)  ((_prBaSsnEntry) & BAR_SSN_IS_VALID)
+#define CLR_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry) &= ~BAR_SSN_IS_VALID)
+#define SET_BAR_SSN_VALID(_prBaSsnEntry) ((_prBaSsnEntry) |= BAR_SSN_IS_VALID)
+
 struct RX_BA_ENTRY {
 	u_int8_t fgIsValid;
 	struct QUE rReOrderQue;
 	uint16_t u2WinStart;
 	uint16_t u2WinEnd;
 	uint16_t u2WinSize;
+	uint16_t u2BarSSN;
+	uint16_t u2LastRcvdSN;
 
 	/* For identifying the RX BA agreement */
 	uint8_t ucStaRecIdx;
