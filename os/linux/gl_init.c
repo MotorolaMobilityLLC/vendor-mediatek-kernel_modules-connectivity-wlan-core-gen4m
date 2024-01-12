@@ -1762,6 +1762,20 @@ static const struct wiphy_vendor_command
 #endif
 	},
 #endif /* CFG_SUPPORT_P2P_LISTEN_OFFLOAD */
+	/* Set Tx Latency Monitor Parameter */
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = NL80211_VENDOR_SUBCMD_SET_TX_LAT_MONTR_PARAM
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_tx_lat_montr_param,
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		.policy = mtk_tx_lat_montr_param_policy,
+		.maxattr = WIFI_ATTR_TX_LAT_MONTR_MAX
+#endif
+	},
 	/* Set WFD Tx Bitrate Monitor */
 	{
 		{

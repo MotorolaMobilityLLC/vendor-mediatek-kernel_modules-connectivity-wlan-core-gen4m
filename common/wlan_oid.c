@@ -4785,6 +4785,36 @@ wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is called to set tx latency monitor parameter
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetTxLatMontrParam(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen)
+{
+	struct TX_LAT_MONTR_PARAM_STRUCT *prParam;
+
+	prParam = (struct TX_LAT_MONTR_PARAM_STRUCT *)pvSetBuffer;
+	return wlanSetTxDelayOverLimitReport(prAdapter, prParam->fgEnabled,
+		prParam->fgIsAvg, prParam->u4Intvl, prParam->u4DriverCrit,
+		prParam->u4MacCrit);
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief extend command packet generation utility
 *
 * \param[in] prAdapter Pointer to the Adapter structure.

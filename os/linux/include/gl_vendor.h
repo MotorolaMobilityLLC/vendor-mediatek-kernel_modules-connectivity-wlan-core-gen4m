@@ -582,6 +582,9 @@ extern const struct nla_policy nla_get_csi_policy[
 		WIFI_ATTRIBUTE_CSI_MAX + 1];
 #endif
 
+extern const struct nla_policy mtk_tx_lat_montr_param_policy[
+		WIFI_ATTR_TX_LAT_MONTR_MAX + 1];
+
 extern const struct nla_policy mtk_wfd_tx_br_montr_policy[
 		WIFI_ATTR_WFD_TX_BR_MONTR_MAX + 1];
 /*******************************************************************************
@@ -1249,6 +1252,10 @@ int mtk_cfg80211_vendor_cancel_rtt_config(
 	const void *data, int data_len);
 
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy
+		*wiphy, struct wireless_dev *wdev,
+		const void *data, int data_len);
+
+int mtk_cfg80211_vendor_set_tx_lat_montr_param(struct wiphy
 		*wiphy, struct wireless_dev *wdev,
 		const void *data, int data_len);
 

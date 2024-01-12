@@ -262,6 +262,15 @@ const struct nla_policy nla_get_csi_policy[
 };
 #endif
 
+const struct nla_policy mtk_tx_lat_montr_param_policy[
+		WIFI_ATTR_TX_LAT_MONTR_MAX + 1] = {
+	[WIFI_ATTR_TX_LAT_MONTR_EN] = {.type = NLA_U8},
+	[WIFI_ATTR_TX_LAT_MONTR_INTVL] = {.type = NLA_U32},
+	[WIFI_ATTR_TX_LAT_MONTR_DRIVER_CRIT] = {.type = NLA_U32},
+	[WIFI_ATTR_TX_LAT_MONTR_MAC_CRIT] = {.type = NLA_U32},
+	[WIFI_ATTR_TX_LAT_MONTR_IS_AVG] = {.type = NLA_U8},
+};
+
 const struct nla_policy mtk_wfd_tx_br_montr_policy[
 		WIFI_ATTR_WFD_TX_BR_MONTR_MAX + 1] = {
 	[WIFI_ATTR_WFD_TX_BR_MONTR_EN] = {.type = NLA_U8},
@@ -2070,6 +2079,93 @@ nla_put_failure:
 #else
 	return rStatus;
 #endif
+}
+
+int mtk_cfg80211_vendor_set_tx_lat_montr_param(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+	int32_t rStatus = -EOPNOTSUPP;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter;
+	struct nlattr *attr[WIFI_ATTR_TX_LAT_MONTR_MAX];
+	struct TX_LAT_MONTR_PARAM_STRUCT rParam;
+	uint8_t i, uEnabled = 0, uIsAvg = 0;
+	uint32_t u4Intvl = 0, u4DriverCrit = 0;
+	uint32_t u4MacCrit = 0, u4BufLen = 0;
+
+	DBGLOG(REQ, INFO, "%s data_len=%d\n", __func__, data_len);
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo)
+		return -EFAULT;
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		return -EFAULT;
+
+	if ((data == NULL) || (data_len == 0))
+		return -EINVAL;
+
+	kalMemZero(attr, sizeof(struct nlattr *) *
+			   (WIFI_ATTR_TX_LAT_MONTR_MAX));
+	if (NLA_PARSE_NESTED(attr,
+			     WIFI_ATTR_TX_LAT_MONTR_IS_AVG,
+			     (struct nlattr *)(data - NLA_HDRLEN),
+			     mtk_tx_lat_montr_param_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
+		       __func__);
+		return -EINVAL;
+	}
+
+	for (i = WIFI_ATTR_TX_LAT_MONTR_EN;
+	     i < WIFI_ATTR_TX_LAT_MONTR_MAX; i++) {
+		if (attr[i]) {
+			switch (i) {
+			case WIFI_ATTR_TX_LAT_MONTR_EN:
+				uEnabled = nla_get_u8(attr[i]);
+				break;
+			case WIFI_ATTR_TX_LAT_MONTR_INTVL:
+				u4Intvl = nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTR_TX_LAT_MONTR_DRIVER_CRIT:
+				u4DriverCrit = nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTR_TX_LAT_MONTR_MAC_CRIT:
+				u4MacCrit = nla_get_u32(attr[i]);
+				break;
+			case WIFI_ATTR_TX_LAT_MONTR_IS_AVG:
+				uIsAvg = nla_get_u8(attr[i]);
+				break;
+			}
+		} else {
+			return -EINVAL;
+		}
+	}
+	DBGLOG(REQ, ERROR, "enabled=%u freq=%u driCri=%u macCri=%u isAvg=%u\n",
+			uEnabled, u4Intvl, u4DriverCrit, u4MacCrit, uIsAvg);
+
+	if (uEnabled != 0 && unlikely(uEnabled > 1 || uIsAvg > 1 ||
+			u4Intvl < TX_LAT_MONTR_INTVL_MIN ||
+			u4Intvl > TX_LAT_MONTR_INTVL_MAX ||
+			u4DriverCrit < TX_LAT_MONTR_CRIT_MIN ||
+			u4DriverCrit > TX_LAT_MONTR_CRIT_MAX ||
+			u4MacCrit < TX_LAT_MONTR_CRIT_MIN ||
+			u4MacCrit > TX_LAT_MONTR_CRIT_MAX)) {
+		DBGLOG(REQ, ERROR, "invalid param\n");
+		return -EINVAL;
+	}
+	kalMemZero(&rParam, sizeof(struct TX_LAT_MONTR_PARAM_STRUCT));
+	rParam.fgEnabled = uEnabled ? TRUE : FALSE;
+	rParam.u4Intvl = u4Intvl;
+	rParam.u4DriverCrit = u4DriverCrit;
+	rParam.u4MacCrit = u4MacCrit;
+	rParam.fgIsAvg = uIsAvg ? TRUE : FALSE;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetTxLatMontrParam,
+		&rParam, sizeof(struct TX_LAT_MONTR_PARAM_STRUCT),
+		&u4BufLen);
+	return rStatus;
 }
 
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy,

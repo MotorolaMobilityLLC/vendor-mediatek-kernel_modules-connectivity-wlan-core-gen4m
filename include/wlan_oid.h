@@ -2339,6 +2339,14 @@ struct EVENT_STATS_LLS_TX_BIT_RATE {
 };
 #endif /* CFG_SUPPORT_LLS */
 
+struct TX_LAT_MONTR_PARAM_STRUCT {
+	bool fgEnabled;
+	uint32_t u4Intvl;
+	uint32_t u4DriverCrit;
+	uint32_t u4MacCrit;
+	bool fgIsAvg;
+};
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
@@ -4061,6 +4069,12 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 			  void *pvQueryBuffer,
 			  uint32_t u4QueryBufferLen,
 			  uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidSetTxLatMontrParam(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer,
+		      uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
 
 #if CFG_SUPPORT_BUFFER_MODE
 uint32_t wlanoidSetEfusBufferMode(struct ADAPTER
