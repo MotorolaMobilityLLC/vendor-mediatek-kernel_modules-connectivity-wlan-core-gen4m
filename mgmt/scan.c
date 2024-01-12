@@ -1313,7 +1313,9 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc,
 		return;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
-	mldParseBasicMlIE(prMlInfo, pucIE, prBssDesc->aucBSSID,
+	mldParseBasicMlIE(prMlInfo, pucIE,
+		IE_SIZE(pucIE), /* no need fragment */
+		prBssDesc->aucBSSID,
 		u2FrameCtrl, "RxBcnProbRsp");
 
 	prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
