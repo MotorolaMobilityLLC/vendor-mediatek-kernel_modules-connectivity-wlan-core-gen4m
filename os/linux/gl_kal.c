@@ -12144,8 +12144,13 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	skb_queue_head_init(&prGlueInfo->rRxNapiSkbQ);
 	/* use dummy device to register napi */
 	init_dummy_netdev(&prGlueInfo->dummy_dev);
+#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
 	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
-		kalNapiPoll, NAPI_POLL_WEIGHT);
+			kalNapiPoll);
+#else
+	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
+			kalNapiPoll, NAPI_POLL_WEIGHT);
+#endif
 	DBGLOG(INIT, INFO, "Napi Init Done\n");
 	return 0;
 }
