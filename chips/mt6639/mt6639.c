@@ -2522,6 +2522,7 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Addr, u4Val = 0;
 
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	if (!in_interrupt()) {
 		u4Addr = 0x112F0184;
 		wf_ioremap_read(u4Addr, &u4Val);
@@ -2532,6 +2533,50 @@ static void mt6639ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 			       u4Addr, u4Val);
 		}
 	}
+#endif
+	u4Addr = PCIE_MAC_IREG_PCIE_DEBUG_SEL_1_ADDR;
+	u4Val = 0xcccc0100;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
+	u4Addr = PCIE_MAC_IREG_PCIE_DEBUG_SEL_0_ADDR;
+	u4Val = 0x23220302;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
+	u4Addr = PCIE_MAC_IREG_PCIE_DEBUG_MONITOR_ADDR;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO,
+	       "PCIE W[0x74030164] = [0x23220302], CR[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+
+	u4Addr = PCIE_MAC_IREG_PCIE_DEBUG_SEL_1_ADDR;
+	u4Val = 0xcccc0100;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
+	u4Addr = PCIE_MAC_IREG_PCIE_DEBUG_SEL_0_ADDR;
+	u4Val = 0x21200100;
+	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4Val);
+	u4Addr = PCIE_MAC_IREG_PCIE_DEBUG_MONITOR_ADDR;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO,
+	       "PCIE W[0x74030164] = [0x21200100], CR[0x%08x]=[0x%08x]",
+	       u4Addr, u4Val);
+
+	u4Addr = PCIE_MAC_IREG_IMASK_HOST_ADDR;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
+
+	u4Addr = PCIE_MAC_IREG_ISTATUS_HOST_ADDR;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
+
+	u4Addr = 0x740310E0;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
+
+	u4Addr = 0x740310F0;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
+
+	u4Addr = 0x740310F4;
+	HAL_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
+	DBGLOG(HAL, INFO, "CR[0x%08x]=[0x%08x]", u4Addr, u4Val);
 }
 
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
