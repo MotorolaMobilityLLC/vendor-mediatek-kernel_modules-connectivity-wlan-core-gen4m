@@ -9785,17 +9785,26 @@ void wlanTxProfilingTagPacket(IN struct ADAPTER *prAdapter,
 
 	switch (eTag) {
 	case TX_PROF_TAG_OS_TO_DRV:
-		kalTraceEvent("Xmit id=0x%04x sn=%d",
+		kalTraceEvent("Xmit ipid=0x%04x seq=%d",
+			GLUE_GET_PKT_IP_ID(prPacket),
+			GLUE_GET_PKT_SEQ_NO(prPacket));
+		DBGLOG(TX, TEMP, "Xmit ipid=%d seq=%d\n",
 			GLUE_GET_PKT_IP_ID(prPacket),
 			GLUE_GET_PKT_SEQ_NO(prPacket));
 		break;
 	case TX_PROF_TAG_DRV_ENQUE:
-		kalTraceEvent("Enq id=0x%04x sn=%d",
+		kalTraceEvent("Enq ipid=0x%04x seq=%d",
+			GLUE_GET_PKT_IP_ID(prPacket),
+			GLUE_GET_PKT_SEQ_NO(prPacket));
+		DBGLOG(TX, TEMP, "Enq ipid=%d seq=%d\n",
 			GLUE_GET_PKT_IP_ID(prPacket),
 			GLUE_GET_PKT_SEQ_NO(prPacket));
 		break;
 	case TX_PROF_TAG_DRV_FREE:
-		kalTraceEvent("Cmpl id=0x%04x sn=%d",
+		kalTraceEvent("Cmpl ipid=0x%04x seq=%d",
+			GLUE_GET_PKT_IP_ID(prPacket),
+			GLUE_GET_PKT_SEQ_NO(prPacket));
+		DBGLOG(TX, TEMP, "Cmpl ipid=%d seq=%d\n",
 			GLUE_GET_PKT_IP_ID(prPacket),
 			GLUE_GET_PKT_SEQ_NO(prPacket));
 		break;

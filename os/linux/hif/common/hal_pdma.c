@@ -1244,6 +1244,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	struct RX_DESC_OPS_T *prRxDescOps;
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
+	uint32_t u4MsduReportCnt = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1266,7 +1267,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, u4Port);
 
-	DBGLOG(RX, LOUD, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
+	DBGLOG(RX, TEMP, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
 
 	while (u4RxCnt--) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
@@ -1300,7 +1301,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 			QUEUE_INSERT_TAIL(&prRxCtrl->rFreeSwRfbList,
 				&prSwRfb->rQueEntry);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
+			DBGLOG(RX, TEMP, "fgStatus:%d\n", fgStatus);
 			continue;
 		}
 
@@ -1318,17 +1319,13 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 		if (prSwRfb->ucPacketType == RX_PKT_TYPE_MSDU_REPORT) {
 			nicRxProcessMsduReport(prAdapter, prSwRfb);
-
+			u4MsduReportCnt++;
 			continue;
 		}
 
 		GLUE_RX_SET_PKT_INT_TIME(prSwRfb->pvPacket,
 					 prAdapter->prGlueInfo->u8HifIntTime);
 		GLUE_RX_SET_PKT_RX_TIME(prSwRfb->pvPacket, sched_clock());
-
-		kalTraceEvent("Recv id=0x%04x sn=%d",
-			GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket),
-			GLUE_GET_PKT_SEQ_NO(prSwRfb->pvPacket));
 
 		prSwRfb->ucStaRecIdx =
 			secGetStaIdxByWlanIdx(
@@ -1339,10 +1336,16 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 		QUEUE_INSERT_TAIL(&prRxCtrl->rReceivedRfbList,
 			&prSwRfb->rQueEntry);
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
+		DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
+			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
+		kalTraceEvent("Recv p=%p total:%lu",
+			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 	}
 	prRxRing->u4PendingCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo,
 			u4Port);
+	if (u4MsduReportCnt > 0)
+		DBGLOG(RX, TEMP, "Recv %d msdu reports\n", u4MsduReportCnt);
 }
 
 static void halDefaultProcessRxInterrupt(IN struct ADAPTER *prAdapter)

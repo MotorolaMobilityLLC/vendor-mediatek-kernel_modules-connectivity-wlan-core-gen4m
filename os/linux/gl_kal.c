@@ -1108,6 +1108,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 	prSkb = pvPkt;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSkb);
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT);
 #if DBG && 0
 	do {
 		uint8_t *pu4Head = (uint8_t *) &prSkb->cb[0];
@@ -1190,7 +1191,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 #endif
 
 #if (CFG_SUPPORT_STATISTICS == 1)
-	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb);
+	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb, prNetDev);
 #endif
 
 #if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
@@ -1260,9 +1261,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		kal_skb_reset_mac_len(prSkb);
 	}
 
-	kalTraceEvent("Rx id=0x%04x sn=%d",
-		GLUE_GET_PKT_IP_ID(prSkb),
-		GLUE_GET_PKT_SEQ_NO(prSkb));
+	kalTraceEvent("Rx ipid=0x%04x", GLUE_GET_PKT_IP_ID(prSkb));
 
 #if CFG_SUPPORT_RX_GRO
 	if (ucBssIdx < MAX_BSSID_NUM &&
@@ -7697,7 +7696,7 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s Used:" \
-	"%u/%d/%d %s LQ[%llu:%llu:%llu] Ndev%s lv:%u th:%u fg:0x%lx\n"
+	"%u/%d/%d %s LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx\n"
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
 		(unsigned long long) (perf->ulThroughput >> 20),
@@ -7709,14 +7708,42 @@ static uint32_t kalPerMonUpdate(IN struct ADAPTER *prAdapter)
 		(unsigned long long) lq->u8TxTotalCount,
 		(unsigned long long) lq->u8RxTotalCount,
 		(unsigned long long) lq->u8DiffIdleSlotCount,
-		head4, perf->u4CurrPerfLevel,
+		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag);
+#undef TEMP_LOG_TEMPLATE
+#define TEMP_LOG_TEMPLATE \
+	"ndevdrp:%s drv[RM,RI,RT,RM,RW,RA,RB,DT,NS,IB,HS,LS,DD,ME,BD,NI," \
+	"DR,TE,CE,DN]:%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"%lu,%lu,%lu,%lu,%lu,%lu,%lu\n"
+	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
+		head4,
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_TOTAL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_MISS_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_WITHIN_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_AHEAD_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_BEHIND_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NO_STA_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INACTIVE_BSS_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_HS20_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_LESS_SW_RFB_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DUPICATE_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MIC_ERROR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_BAR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NO_INTEREST_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_REORDER_BEHIND_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TYPE_ERR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_CLASS_ERR_DROP_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DST_NULL_DROP_COUNT));
 #undef TEMP_LOG_TEMPLATE
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),
 		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)));
+
 	kalMemFree(buf, VIR_MEM_TYPE, slen);
 	return WLAN_STATUS_SUCCESS;
 fail:
