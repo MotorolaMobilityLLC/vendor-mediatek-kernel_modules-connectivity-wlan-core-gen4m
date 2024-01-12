@@ -713,7 +713,8 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 			switch (eventType) {
 			case EVENT_RX:
 			case EVENT_TX:
-				if ((u2KeyInfo & 0xfff0) == 0x0080)
+				if ((u2KeyInfo & 0x1100) == 0x0000 ||
+					(u2KeyInfo & 0x0008) == 0x0000)
 					m = 1;
 				else if ((u2KeyInfo & 0xfff0) == 0x0100)
 					m = 2;
