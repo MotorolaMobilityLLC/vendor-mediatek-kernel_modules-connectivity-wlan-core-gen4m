@@ -1422,6 +1422,27 @@ __priv_get_int(IN struct net_device *prNetDev,
 		else
 			return status;
 	}
+	case PRIV_CMD_GET_FW_VERSION: {
+			uint16_t u2Len = 0;
+			struct ADAPTER *prAdapter;
+
+			prAdapter = prGlueInfo->prAdapter;
+			if (prAdapter) {
+				u2Len = kalStrLen(
+					prAdapter->rVerInfo.aucReleaseManifest);
+				DBGLOG(REQ, INFO,
+					"Get FW manifest version: %d\n", u2Len);
+				prIwReqData->data.length = u2Len;
+				if (copy_to_user(prIwReqData->data.pointer,
+					prAdapter->rVerInfo.aucReleaseManifest,
+					u2Len * sizeof(uint8_t)))
+					return -EFAULT;
+				else
+					return status;
+			}
+			DBGLOG(REQ, WARN, "Fail to get FW manifest version\n");
+			return status;
+		}
 	default:
 		return -EOPNOTSUPP;
 	}
