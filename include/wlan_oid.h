@@ -2312,6 +2312,26 @@ struct PARAM_TXPOWER_ALL_RATE_POWER_INFO_T {
 };
 #endif
 
+#if CFG_SUPPORT_OSHARE
+/* OSHARE Mode */
+#define MAX_OSHARE_MODE_LENGTH		64
+#define OSHARE_MODE_MAGIC_CODE		0x18
+#define OSHARE_MODE_CMD_V1		0x1
+
+struct OSHARE_MODE_T {
+	uint8_t   cmdVersion; /* CMD version = OSHARE_MODE_CMD_V1 */
+	uint8_t   cmdType; /* 1-set  0-query */
+	uint8_t   magicCode; /* It's like CRC, OSHARE_MODE_MAGIC_CODE */
+	uint8_t   cmdBufferLen; /* buffer length <= 64 */
+	uint8_t   buffer[MAX_OSHARE_MODE_LENGTH];
+};
+
+struct OSHARE_MODE_SETTING_V1_T {
+	uint8_t   osharemode; /* 0: disable, 1:Enable */
+	uint8_t   reserved[7];
+};
+#endif
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -3238,5 +3258,14 @@ wlanoidQueryTxPowerInfo(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer, IN u
 
 uint32_t wlanoidSetDrvRoamingPolicy(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen, OUT uint32_t *pu4SetInfoLen);
+
+#if CFG_SUPPORT_OSHARE
+uint32_t
+wlanoidSetOshareMode(IN struct ADAPTER *prAdapter,
+		IN void *pvSetBuffer,
+		IN uint32_t u4SetBufferLen,
+		OUT uint32_t *pu4SetInfoLen);
+#endif
+
 
 #endif /* _WLAN_OID_H */

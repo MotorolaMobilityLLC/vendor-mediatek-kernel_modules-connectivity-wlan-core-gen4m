@@ -530,6 +530,10 @@ enum ENUM_CMD_ID {
 	CMD_ID_GET_BUG_REPORT = 0x89,	/* 0x89 (Query) */
 	CMD_ID_GET_NIC_CAPABILITY_V2 = 0x8A,/* 0x8A (Query) */
 
+#if CFG_SUPPORT_OSHARE
+	CMD_ID_SET_OSHARE_MODE = 0x8C,
+#endif
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	CMD_ID_RDD_ON_OFF_CTRL = 0x8F, /* 0x8F(Set) */
 #endif
