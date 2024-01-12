@@ -389,7 +389,7 @@ static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 		0x0, S2P_CMD_WR);
 	udelay(10);
 
-	while (aes_busy == 1) {
+	while (aes_busy != 0) {
 		/* read out busy bits */
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
 			(S2P_CMD_RD << 18) | (0x0 << 16) |
