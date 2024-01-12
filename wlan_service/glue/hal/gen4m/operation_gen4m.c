@@ -1857,7 +1857,10 @@ s_int32 mt_op_set_channel(
 		SetFreq = 1000 * 5032;
 	} else if ((central_ch0 >= 1 && central_ch0 <= 233) && ch_band == 2) {
 		/*ch_band: 2: 6G */
-		SetFreq = 1000 * (5950 + central_ch0 * 5);
+	if (central_ch0 == 2)
+		SetFreq = 5935000;
+	else
+		    SetFreq = 1000 * (5950 + central_ch0 * 5);
 	} else {
 		SetFreq = tm_ch_num_to_freq((u_int32)central_ch0);
 	}
