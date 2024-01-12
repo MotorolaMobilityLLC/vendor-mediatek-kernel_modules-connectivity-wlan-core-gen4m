@@ -234,6 +234,7 @@ static struct platform_driver mtk_axi_driver = {
 #ifdef CONFIG_OF
 		.of_match_table = mtk_axi_of_ids,
 #endif
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
 	},
 	.id_table = mtk_axi_ids,
 	.probe = NULL,
