@@ -278,7 +278,8 @@ void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 	ASSERT(prMsduInfo);
 
 	pucBuffer =
-		(uint8_t *)(prMsduInfo->prPacket + prMsduInfo->u2FrameLength);
+		(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+			prMsduInfo->u2FrameLength);
 
 	POWER_CAP_IE(pucBuffer)->ucId = ELEM_ID_PWR_CAP;
 	POWER_CAP_IE(pucBuffer)->ucLength = ELEM_MAX_LEN_POWER_CAP;
@@ -323,7 +324,8 @@ void rlmReqGenerateSupportedChIE(struct ADAPTER *prAdapter,
 		return;
 
 	pucBuffer =
-		(uint8_t *)(prMsduInfo->prPacket + prMsduInfo->u2FrameLength);
+		(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+			prMsduInfo->u2FrameLength);
 
 	rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE, MAX_2G_BAND_CHN_NUM,
 			     &ucNumOf2gChannel, auc2gChannelList);

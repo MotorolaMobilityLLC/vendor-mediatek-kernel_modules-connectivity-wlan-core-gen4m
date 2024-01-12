@@ -1212,14 +1212,13 @@ struct MSDU_INFO* bssComposeBeaconContent(IN struct ADAPTER *prAdapter,
 
 	/* 4 <2> Compose header */
 	bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
-						  ((unsigned
-						    long)(prMsduInfo->prPacket)
-						   + MAC_TX_RESERVED_FIELD),
-						  NULL,
-						  prBssInfo->aucOwnMacAddr,
-						  prBssInfo->aucBSSID,
-						  prBssInfo->u2BeaconInterval,
-						  prBssInfo->u2CapInfo);
+		((uintptr_t)(prMsduInfo->prPacket)
+			+ MAC_TX_RESERVED_FIELD),
+			NULL,
+			prBssInfo->aucOwnMacAddr,
+			prBssInfo->aucBSSID,
+			prBssInfo->u2BeaconInterval,
+			prBssInfo->u2CapInfo);
 
 	prMsduInfo->u2FrameLength = (WLAN_MAC_MGMT_HEADER_LEN +
 				     (TIMESTAMP_FIELD_LEN +

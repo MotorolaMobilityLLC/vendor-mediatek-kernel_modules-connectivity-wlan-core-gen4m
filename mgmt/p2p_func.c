@@ -1315,7 +1315,8 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 
 			/* backup header before free packet from supplicant */
 			kalMemCopy(&rProbeRspFrame,
-				prMgmtTxMsdu->prPacket + MAC_TX_RESERVED_FIELD,
+				(uint8_t *)((uintptr_t)prMgmtTxMsdu->prPacket +
+				MAC_TX_RESERVED_FIELD),
 				sizeof(rProbeRspFrame));
 
 			/* compose p2p probe rsp frame */
@@ -6786,7 +6787,8 @@ void wfdFuncGenerateWfdIEForAssocRsp(IN struct ADAPTER *prAdapter,
 	u2EstimatedExtraIELen = prP2PInfo->u2WFDIELen;
 	if (u2EstimatedExtraIELen > 0 &&
 		u2EstimatedExtraIELen < VENDOR_SPECIFIC_IE_LENGTH) {
-		kalMemCopy(prMsduInfo->prPacket + prMsduInfo->u2FrameLength,
+		kalMemCopy((uint8_t *)((uintptr_t)prMsduInfo->prPacket +
+			prMsduInfo->u2FrameLength),
 			prP2PInfo->aucWFDIE, u2EstimatedExtraIELen);
 		prMsduInfo->u2FrameLength += u2EstimatedExtraIELen;
 	}

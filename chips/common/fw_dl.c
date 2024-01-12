@@ -407,8 +407,9 @@ uint32_t wlanGetPatchInfoAndDownloadV2(IN struct ADAPTER
 				be2cpu32(sec_map->bin_info_spec.dl_addr);
 			region->img_size =
 				be2cpu32(sec_map->bin_info_spec.dl_size);
-			region->img_ptr = pvFwImageMapFile +
-				be2cpu32(sec_map->section_offset);
+			region->img_ptr = (uint8_t *)(
+				(uintptr_t)pvFwImageMapFile +
+				be2cpu32(sec_map->section_offset));
 			sec_info = be2cpu32(sec_map->bin_info_spec.sec_info);
 
 			DBGLOG(INIT, INFO,
@@ -869,19 +870,21 @@ uint32_t wlanImageSectionDownloadStage(
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 			u4Status = prFwDlOps->downloadByDynMemMap(
 						prAdapter, u4Addr, u4Len,
-						pvFwImageMapFile
-							+ u4Offset,
-							eDlIdx);
+						(uint8_t *)(
+						(uintptr_t)pvFwImageMapFile
+						+ u4Offset),
+						eDlIdx);
 			*pfgIsDynamicMemMap = TRUE;
 #else
 			u4Status = wlanDownloadSection(
-							prAdapter,
-							u4Addr,
-							u4Len,
-							u4DataMode,
-							pvFwImageMapFile
-								+ u4Offset,
-						       eDlIdx);
+						prAdapter,
+						u4Addr,
+						u4Len,
+						u4DataMode,
+						(uint8_t *)(
+						(uintptr_t)pvFwImageMapFile
+						+ u4Offset),
+						eDlIdx);
 #endif
 			if (prFwDlOps->setup_date_info)
 				prFwDlOps->setup_date_info(prAdapter,
@@ -905,7 +908,8 @@ uint32_t wlanImageSectionDownloadStage(
 		u4Status = prFwDlOps->downloadEMI(prAdapter,
 				u4Addr,
 				0,
-				pvFwImageMapFile + u4Offset,
+				(uint8_t *)(
+				(uintptr_t)pvFwImageMapFile + u4Offset),
 				u4Len);
 		if (prFwDlOps->setup_date_info)
 			prFwDlOps->setup_date_info(prAdapter,
@@ -929,7 +933,8 @@ uint32_t wlanImageSectionDownloadStage(
 				u4Status = prFwDlOps->downloadEMI(prAdapter,
 					u4Addr,
 					u4DataMode,
-					pvFwImageMapFile + u4Offset,
+					(uint8_t *)(
+					(uintptr_t)pvFwImageMapFile + u4Offset),
 					u4Len);
 /* For dynamic memory map:: Begin */
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
@@ -952,7 +957,10 @@ uint32_t wlanImageSectionDownloadStage(
 				u4Status = wlanDownloadSection(prAdapter,
 					u4Addr, u4Len,
 					u4DataMode,
-					pvFwImageMapFile + u4Offset, eDlIdx);
+					(uint8_t *)(
+					(uintptr_t)pvFwImageMapFile
+					+ u4Offset),
+					eDlIdx);
 
 			/* escape from loop if any pending error occurs */
 			if (u4Status == WLAN_STATUS_FAILURE)
@@ -1563,8 +1571,8 @@ uint32_t wlanGetHarvardTailerInfo(IN struct ADAPTER
 	uint8_t *pucStartPtr;
 	uint32_t u4SecIdx;
 
-	pucStartPtr = prFwBuffer + u4FwSize - sizeof(
-			      struct TAILER_FORMAT_T) * ucTotSecNum;
+	pucStartPtr = (uint8_t *)((uintptr_t)prFwBuffer + u4FwSize -
+		sizeof(struct TAILER_FORMAT_T) * ucTotSecNum);
 	if (eDlIdx == IMG_DL_IDX_N9_FW) {
 		kalMemCopy(&prAdapter->rVerInfo.rN9tailer, pucStartPtr,
 			   sizeof(struct TAILER_FORMAT_T) * ucTotSecNum);
@@ -1605,8 +1613,8 @@ uint32_t wlanGetConnacTailerInfo(IN struct WIFI_VER_INFO *prVerInfo,
 	uint32_t u4SecIdx;
 
 	pucImgPtr = prFwBuffer;
-	pucStartPtr = prFwBuffer + u4FwSize -
-		sizeof(struct TAILER_COMMON_FORMAT_T);
+	pucStartPtr = (uint8_t *)((uintptr_t)prFwBuffer + u4FwSize -
+		sizeof(struct TAILER_COMMON_FORMAT_T));
 	prComTailer = (struct TAILER_COMMON_FORMAT_T *) pucStartPtr;
 	kalMemCopy(&prVerInfo->rCommonTailer, prComTailer,
 		   sizeof(struct TAILER_COMMON_FORMAT_T));
