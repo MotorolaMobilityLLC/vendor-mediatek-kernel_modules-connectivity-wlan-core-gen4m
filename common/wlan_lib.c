@@ -7229,6 +7229,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucApChannel = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "ApChannel", 0);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	prWifiVar->fgDisable6GBand = (uint8_t) wlanCfgGetUint32(
+					prAdapter, "Disable6GBand", 0);
+#endif
+
 	/*
 	 * 0: SCN
 	 * 1: SCA
@@ -7270,7 +7275,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucAp5gBandwidth = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "Ap5gBw", MAX_BW_80MHZ);
 	prWifiVar->ucAp6gBandwidth = (uint8_t) wlanCfgGetUint32(
-				prAdapter, "Ap6gBw", MAX_BW_80MHZ);
+				prAdapter, "Ap6gBw", MAX_BW_20MHZ);
 	prWifiVar->ucApChnlDefFromCfg = (uint8_t) wlanCfgGetUint32(
 				prAdapter, "ApChnlDefFromCfg", FEATURE_ENABLED);
 	prWifiVar->ucApAllowHtVhtTkip = (uint8_t) wlanCfgGetUint32(
@@ -10397,7 +10402,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 				   uint8_t ucCoveredRange)
 {
 	uint8_t ucIdx, ucStart, ucEnd;
-	u_int8_t bIs5GChl = ucCentralChannel > 14;
+	u_int8_t bIsABand = FALSE;
 	uint8_t ucLeftNeighborChannel, ucRightNeighborChannel,
 		ucLeftNeighborChannel2 = 0, ucRightNeighborChannel2 = 0,
 		ucLeftestCoveredChannel, ucRightestCoveredChannel;
@@ -10411,8 +10416,16 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	ucLeftNeighborChannel = ucLeftestCoveredChannel ?
 				ucLeftestCoveredChannel - 1 : 0;
 
+	if (prBssDesc->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		|| prBssDesc->eBand == BAND_6G
+#endif
+	) {
+		bIsABand = TRUE;
+	}
+
 	/* align leftest covered ch and left neighbor ch to valid 5g ch */
-	if (bIs5GChl) {
+	if (bIsABand) {
 		ucLeftestCoveredChannel += 2;
 		ucLeftNeighborChannel -= 1;
 	} else {
@@ -10424,25 +10437,40 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	}
 
 	/* handle corner cases of 5g ch*/
-	if (ucLeftestCoveredChannel > 14
-	    && ucLeftestCoveredChannel <= 36) {
+	if (prBssDesc->eBand == BAND_5G &&
+			ucLeftestCoveredChannel > 14 &&
+			ucLeftestCoveredChannel <= 36) {
 		ucLeftestCoveredChannel = 36;
 		ucLeftNeighborChannel = 0;
-	} else if (ucLeftestCoveredChannel > 64
-		   && ucLeftestCoveredChannel <= 100) {
+	} else if (prBssDesc->eBand == BAND_5G &&
+			ucLeftestCoveredChannel > 64 &&
+			ucLeftestCoveredChannel <= 100) {
 		ucLeftestCoveredChannel = 100;
 		ucLeftNeighborChannel = 0;
-	} else if (ucLeftestCoveredChannel > 144 &&
-		ucLeftestCoveredChannel <= 149) {
+	} else if (prBssDesc->eBand == BAND_5G &&
+			ucLeftestCoveredChannel > 144 &&
+			ucLeftestCoveredChannel <= 149) {
 		ucLeftestCoveredChannel = 149;
 		ucLeftNeighborChannel = 0;
 	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssDesc->eBand == BAND_6G &&
+			ucLeftestCoveredChannel < 5) {
+		ucLeftestCoveredChannel = 5;
+		ucLeftNeighborChannel = 0;
+	} else if (prBssDesc->eBand == BAND_6G &&
+			ucLeftestCoveredChannel > 229) {
+		ucLeftestCoveredChannel = 229;
+		ucLeftNeighborChannel = 0;
+	}
+#endif
 
 	/*
 	 * because ch 14 is 12MHz away to ch13, we must shift the leftest
 	 * covered ch and left neighbor ch when central ch is ch 14
 	 */
-	if (ucCentralChannel == 14) {
+	if (prBssDesc->eBand == BAND_2G4 &&
+		ucCentralChannel == 14) {
 		ucLeftestCoveredChannel = 13;
 		ucLeftNeighborChannel = 12;
 		ucLeftNeighborChannel2 = 11;
@@ -10453,7 +10481,7 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	ucRightNeighborChannel = ucRightestCoveredChannel + 1;
 
 	/* align rightest covered ch and right neighbor ch to valid 5g ch */
-	if (bIs5GChl) {
+	if (bIsABand) {
 		ucRightestCoveredChannel -= 2;
 		ucRightNeighborChannel += 1;
 	} else {
@@ -10465,8 +10493,9 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	}
 
 	/* handle corner cases */
-	if (ucRightestCoveredChannel >= 14
-	    && ucRightestCoveredChannel < 36) {
+	if (prBssDesc->eBand == BAND_5G &&
+			ucRightestCoveredChannel >= 14 &&
+			ucRightestCoveredChannel < 36) {
 		if (ucRightestCoveredChannel == 14) {
 			ucRightestCoveredChannel = 13;
 			ucRightNeighborChannel = 14;
@@ -10476,23 +10505,39 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		}
 
 		ucRightNeighborChannel2 = 0;
-	} else if (ucRightestCoveredChannel >= 64
-		   && ucRightestCoveredChannel < 100) {
+	} else if (prBssDesc->eBand == BAND_5G &&
+			ucRightestCoveredChannel >= 64 &&
+			ucRightestCoveredChannel < 100) {
 		ucRightestCoveredChannel = 64;
 		ucRightNeighborChannel = 0;
-	} else if (ucRightestCoveredChannel >= 144 &&
-		ucRightestCoveredChannel < 149) {
+	} else if (prBssDesc->eBand == BAND_5G &&
+			ucRightestCoveredChannel >= 144 &&
+			ucRightestCoveredChannel < 149) {
 		ucRightestCoveredChannel = 144;
 		ucRightNeighborChannel = 0;
-	} else if (ucRightestCoveredChannel >= 165) {
+	} else if (prBssDesc->eBand == BAND_5G &&
+			ucRightestCoveredChannel >= 165) {
 		ucRightestCoveredChannel = 165;
 		ucRightNeighborChannel = 0;
 	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssDesc->eBand == BAND_6G &&
+			ucRightestCoveredChannel < 5) {
+		ucRightestCoveredChannel = 5;
+		ucRightNeighborChannel = 0;
+	} else if (prBssDesc->eBand == BAND_6G &&
+			ucRightestCoveredChannel > 229) {
+		ucRightestCoveredChannel = 229;
+		ucRightNeighborChannel = 0;
+	}
+#endif
 
 	log_dbg(SCN, TEMP, "central ch %u\n", ucCentralChannel);
 
-	ucStart = wlanGetChannelIndex(ucLeftestCoveredChannel);
-	ucEnd = wlanGetChannelIndex(ucRightestCoveredChannel);
+	ucStart = wlanGetChannelIndex(prBssDesc->eBand,
+				ucLeftestCoveredChannel);
+	ucEnd = wlanGetChannelIndex(prBssDesc->eBand,
+				ucRightestCoveredChannel);
 	if (ucStart >= MAX_CHN_NUM || ucEnd >= MAX_CHN_NUM) {
 		DBGLOG(SCN, ERROR, "Invalid ch idx of start %u, or end %u\n",
 			ucStart, ucEnd);
@@ -10508,7 +10553,8 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	}
 
 	if (ucLeftNeighborChannel != 0) {
-		ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel);
+		ucIdx = wlanGetChannelIndex(prBssDesc->eBand,
+					ucLeftNeighborChannel);
 
 		if (ucIdx < MAX_CHN_NUM) {
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
@@ -10521,7 +10567,8 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	}
 
 	if (ucRightNeighborChannel != 0) {
-		ucIdx = wlanGetChannelIndex(ucRightNeighborChannel);
+		ucIdx = wlanGetChannelIndex(prBssDesc->eBand,
+					ucRightNeighborChannel);
 		if (ucIdx < MAX_CHN_NUM) {
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
@@ -10532,12 +10579,13 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 		}
 	}
 
-	if (bIs5GChl)
+	if (bIsABand)
 		return;
 
 	/* Only necesaary for 2.5G */
 	if (ucLeftNeighborChannel2 != 0) {
-		ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel2);
+		ucIdx = wlanGetChannelIndex(prBssDesc->eBand,
+					ucLeftNeighborChannel2);
 		if (ucIdx < MAX_CHN_NUM) {
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
@@ -10549,7 +10597,8 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 	}
 
 	if (ucRightNeighborChannel2 != 0) {
-		ucIdx = wlanGetChannelIndex(ucRightNeighborChannel2);
+		ucIdx = wlanGetChannelIndex(prBssDesc->eBand,
+					ucRightNeighborChannel2);
 		if (ucIdx < MAX_CHN_NUM) {
 			prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness +=
 				(u4Dirtiness >> 1);
@@ -10689,18 +10738,22 @@ wlanCalculateAllChannelDirtiness(IN struct ADAPTER
 }
 
 uint8_t
-wlanGetChannelIndex(IN uint8_t channel)
+wlanGetChannelIndex(IN enum ENUM_BAND eBand, IN uint8_t channel)
 {
 	uint8_t ucIdx = MAX_CHN_NUM - 1;
 
-	if (channel <= 14)
+	if (eBand == BAND_2G4)
 		ucIdx = channel - 1;
-	else if (channel >= 36 && channel <= 64)
+	else if (eBand == BAND_5G && channel >= 36 && channel <= 64)
 		ucIdx = 14 + (channel - 36) / 4;
-	else if (channel >= 100 && channel <= 144)
+	else if (eBand == BAND_5G && channel >= 100 && channel <= 144)
 		ucIdx = 14 + 8 + (channel - 100) / 4;
-	else if (channel >= 149 && channel <= 165)
+	else if (eBand == BAND_5G && channel >= 149 && channel <= 165)
 		ucIdx = 14 + 8 + 12 + (channel - 149) / 4;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eBand == BAND_6G && channel >= 1 && channel <= 233)
+		ucIdx = 14 + 8 + 12 + 5 + (channel - 1) / 4;
+#endif
 
 	return ucIdx;
 }
@@ -10720,6 +10773,11 @@ wlanGetChannelNumFromIndex(IN uint8_t ucIdx)
 {
 	uint8_t ucChannel = 0;
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (ucIdx >= 39)
+		ucChannel = ((ucIdx - 39) << 2) + 1;
+	else
+#endif
 	if (ucIdx >= 34)
 		ucChannel = ((ucIdx - 34) << 2) + 149;
 	else if (ucIdx >= 22)
@@ -10747,7 +10805,7 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 	/* prepare unsorted ch rank list */
 #if (CFG_SUPPORT_P2PGO_ACS == 1)
 	if (ucSortType == CHNL_SORT_POLICY_BY_CH_DOMAIN) {
-		for (ucBandIdx = BAND_2G4; ucBandIdx <= BAND_5G; ucBandIdx++) {
+		for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
 			rlmDomainGetChnlList(prAdapter,
 								ucBandIdx,
 								TRUE,
@@ -10759,8 +10817,8 @@ IN enum ENUM_CHNL_SORT_POLICY ucSortType)
 			       ucNumOfChannel);
 		for (i = 0; i < ucNumOfChannel; i++) {
 			ucIdx =
-			wlanGetChannelIndex(
-			aucChannelList[i].ucChannelNum);
+			wlanGetChannelIndex(ucBandIdx,
+				aucChannelList[i].ucChannelNum);
 			prChnLoadInfo->
 				rChnRankList[uc2gChNum+i].ucChannel =
 			prChnLoadInfo->

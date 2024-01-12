@@ -1423,7 +1423,7 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
 	uint32_t ucFreq1Channel;
-	uint8_t ucPrimaryChannel = prBssInfo->ucPrimaryChannel;
+
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
@@ -1440,10 +1440,12 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 		ucFreq1Channel =
 			nicFreq2ChannelNum(
 				prP2pConnReqInfo->u4CenterFreq1 * 1000);
-	} else
-		ucFreq1Channel =
-			nicGetVhtS1(ucPrimaryChannel,
-				prBssInfo->ucVhtChannelWidth);
+	} else {
+		ucFreq1Channel = nicGetS1(
+			prBssInfo->eBand,
+			prBssInfo->ucPrimaryChannel,
+			prBssInfo->ucVhtChannelWidth);
+	}
 
 	return ucFreq1Channel;
 }

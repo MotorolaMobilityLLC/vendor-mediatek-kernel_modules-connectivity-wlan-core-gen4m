@@ -1242,9 +1242,12 @@ uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand)
 	uint32_t u4ChannelInMHz;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eBand == BAND_6G)
-		u4ChannelInMHz = 5950 + u4ChannelNum * 5;
-	else
+	if (eBand == BAND_6G) {
+		if (u4ChannelNum >= 1 && u4ChannelNum <= 233)
+			u4ChannelInMHz = 5950 + u4ChannelNum * 5;
+		else
+			u4ChannelInMHz = 0;
+	} else
 #endif
 	if (u4ChannelNum >= 1 && u4ChannelNum <= 13)
 		u4ChannelInMHz = 2412 + (u4ChannelNum - 1) * 5;
@@ -1443,6 +1446,17 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 		DBGLOG(BSS, INFO, "Return Invalid Channelnum = 0.\n");
 		return 0;
 	}
+}
+
+uint8_t nicGetS1(IN enum ENUM_BAND eBand,
+	IN uint8_t ucPrimaryChannel,
+	IN uint8_t ucBandwidth)
+{
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G)
+		return nicGetHe6gS1(ucPrimaryChannel, ucBandwidth);
+#endif
+	return nicGetVhtS1(ucPrimaryChannel, ucBandwidth);
 }
 
 uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,

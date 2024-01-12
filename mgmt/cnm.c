@@ -1153,7 +1153,7 @@ uint8_t cnmDecideSapNewChannel(
 {
 	uint8_t ucSwitchMode;
 	uint32_t u4LteSafeChnBitMask_2G  = 0, u4LteSafeChnBitMask_5G_1 = 0,
-		u4LteSafeChnBitMask_5G_2 = 0;
+		u4LteSafeChnBitMask_5G_2 = 0, u4LteSafeChnBitMask_6G = 0;
 	uint8_t ucCurrentChannel = 0;
 
 	if (!prGlueInfo || !prBssInfo) {
@@ -1165,12 +1165,17 @@ uint8_t cnmDecideSapNewChannel(
 
 	ASSERT(ucCurrentChannel);
 
-	if (ucCurrentChannel <= 14)
+	if (prBssInfo->eBand == BAND_2G4)
 		ucSwitchMode = CH_SWITCH_2G;
-	else {
+	else if (prBssInfo->eBand == BAND_5G)
 		ucSwitchMode = CH_SWITCH_5G;
-		DBGLOG(P2P, WARN,
-			"Switch to 5G channel instead\n");
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssInfo->eBand == BAND_6G)
+		ucSwitchMode = CH_SWITCH_6G;
+#endif
+	else {
+		DBGLOG(P2P, WARN, "Bss has invalid band\n");
+		return -EFAULT;
 	}
 	/*
 	*  Get LTE safe channels
@@ -1182,6 +1187,8 @@ uint8_t cnmDecideSapNewChannel(
 			.rLteSafeChn.au4SafeChannelBitmask[1];
 		u4LteSafeChnBitMask_5G_2 = g_rLteSafeChInfo
 			.rLteSafeChn.au4SafeChannelBitmask[2];
+		u4LteSafeChnBitMask_6G = g_rLteSafeChInfo
+			.rLteSafeChn.au4SafeChannelBitmask[3];
 	}
 
 	if (ucSwitchMode == CH_SWITCH_2G) {
@@ -1201,6 +1208,13 @@ uint8_t cnmDecideSapNewChannel(
 			return 0;
 		}
 #endif
+		}
+	} else if (ucSwitchMode == CH_SWITCH_6G) {
+		if (!(u4LteSafeChnBitMask_6G & BITS(0, 13))) {
+			DBGLOG(P2P, WARN,
+				"FW report 6G all channels unsafe!?\n");
+			/* not to switch channel*/
+			return 0;
 		}
 	} else { /*ucSwitchMode == CH_SWITCH_5G*/
 		if ((!(u4LteSafeChnBitMask_5G_1 & BITS(0, 27))) &&
@@ -1224,11 +1238,12 @@ uint8_t cnmDecideSapNewChannel(
 	}
 
 	return p2pFunGetAcsBestCh(prGlueInfo->prAdapter,
-			ucSwitchMode == CH_SWITCH_2G ? BAND_2G4 : BAND_5G,
+			prBssInfo->eBand,
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
 			u4LteSafeChnBitMask_2G,
 			u4LteSafeChnBitMask_5G_1,
-			u4LteSafeChnBitMask_5G_2);
+			u4LteSafeChnBitMask_5G_2,
+			u4LteSafeChnBitMask_6G);
 }
 
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
@@ -1254,9 +1269,8 @@ uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 
 	if (prBssInfo->ucPrimaryChannel != ch_num) {
 		rRfChnlInfo.ucChannelNum = ch_num;
-		rRfChnlInfo.eBand =
-			(rRfChnlInfo.ucChannelNum <= 14)
-			? BAND_2G4 : BAND_5G;
+		/* TODO: Cross band */
+		rRfChnlInfo.eBand = prBssInfo->eBand;
 		rRfChnlInfo.ucChnlBw =
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 		rRfChnlInfo.u2PriChnlFreq =
@@ -1933,11 +1947,13 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (IS_BSS_AIS(prBssInfo) && prBssDesc)
-		ucChannelBw = rlmDomainGetChannelBw(prBssDesc->ucChannelNum);
-	else
-		ucChannelBw =
-			rlmDomainGetChannelBw(prBssInfo->ucPrimaryChannel);
+	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
+		ucChannelBw = rlmDomainGetChannelBw(prBssDesc->eBand,
+			prBssDesc->ucChannelNum);
+	} else {
+		ucChannelBw = rlmDomainGetChannelBw(prBssInfo->eBand,
+			prBssInfo->ucPrimaryChannel);
+	}
 	if (ucMaxBandwidth > ucChannelBw)
 		ucMaxBandwidth = ucChannelBw;
 #endif

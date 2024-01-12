@@ -93,6 +93,7 @@
 enum ENUM_CH_SWITCH_TYPE {
 	CH_SWITCH_2G, /* Default */
 	CH_SWITCH_5G,
+	CH_SWITCH_6G,
 	CH_SWITCH_NUM
 };
 #endif
