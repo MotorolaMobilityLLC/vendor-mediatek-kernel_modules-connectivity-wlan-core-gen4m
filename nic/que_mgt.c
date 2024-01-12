@@ -4130,13 +4130,17 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 	IN unsigned long ulParamPtr)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct RX_BA_ENTRY *prReorderQueParm =
 		(struct RX_BA_ENTRY *) ulParamPtr;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
-	struct WIFI_EVENT *prEvent = NULL;
+	struct WIFI_EVENT *prEvent;
 	struct EVENT_CHECK_REORDER_BUBBLE *prCheckReorderEvent;
 
 	KAL_SPIN_LOCK_DECLARATION();
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	if (!prReorderQueParm->fgIsValid) {
 		DBGLOG(QM, TRACE,
@@ -4164,10 +4168,12 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	if (prSwRfb) {
-		prEvent = (struct WIFI_EVENT *) (prSwRfb->pucRecvBuff);
+		prEvent = (struct WIFI_EVENT *)
+			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 		prEvent->ucEID = EVENT_ID_CHECK_REORDER_BUBBLE;
 		prEvent->ucSeqNum = 0;
-		prEvent->u2PacketLength = sizeof(struct WIFI_EVENT) +
+		prEvent->u2PacketLength =
+			prChipInfo->rxd_size + prChipInfo->event_hdr_size +
 			sizeof(struct EVENT_CHECK_REORDER_BUBBLE);
 
 		prCheckReorderEvent = (struct EVENT_CHECK_REORDER_BUBBLE *)

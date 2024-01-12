@@ -81,6 +81,9 @@
 #define MT7668_PATCH_START_ADDR			(0x000C8000)
 #define MT7668_TOP_CFG_BASE			(0x0000)
 #define MT7668_TX_DESC_APPEND_LENGTH            44
+#define MT7668_RX_DESC_LENGTH                   16
+#define MT7668_RX_INIT_EVENT_LENGTH             8
+#define MT7668_RX_EVENT_HDR_LENGTH              12
 
 /*******************************************************************************
  *                         D A T A   T Y P E S

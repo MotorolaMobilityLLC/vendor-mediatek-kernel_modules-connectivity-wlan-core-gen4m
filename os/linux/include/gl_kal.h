@@ -557,7 +557,7 @@ static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
 	wakeup_source_init(_prWakeLock, _pcName)
 
 #define KAL_WAKE_LOCK_DESTROY(_prAdapter, _prWakeLock) \
-	wakeup_source_destroy(_prWakeLock)
+	wakeup_source_trash(_prWakeLock)
 
 #define KAL_WAKE_LOCK(_prAdapter, _prWakeLock) \
 	__pm_stay_awake(_prWakeLock)

@@ -89,6 +89,9 @@ extern void connectivity_export_show_stack(struct task_struct *tsk,
 #define CONNAC2X2_PATCH_START_ADDR                 (0x0001C000)
 #define CONNAC2X2_TOP_CFG_BASE			CONN_CFG_BASE
 #define CONNAC2X2_TX_DESC_APPEND_LENGTH            32
+#define CONNAC2X2_RX_DESC_LENGTH                   20
+#define CONNAC2X2_RX_INIT_EVENT_LENGTH             8
+#define CONNAC2X2_RX_EVENT_HDR_LENGTH              12
 
 /*******************************************************************************
  *                         D A T A   T Y P E S

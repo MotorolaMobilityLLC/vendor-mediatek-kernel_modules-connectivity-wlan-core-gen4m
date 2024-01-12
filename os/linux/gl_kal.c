@@ -1132,12 +1132,9 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 {
 
 	uint32_t bufLen;
-	struct PARAM_STATUS_INDICATION *pStatus =
-		(struct PARAM_STATUS_INDICATION *) pvBuf;
-	struct PARAM_AUTH_EVENT *pAuth = (struct PARAM_AUTH_EVENT *)
-					 pStatus;
-	struct PARAM_PMKID_CANDIDATE_LIST *pPmkid =
-		(struct PARAM_PMKID_CANDIDATE_LIST *) (pStatus + 1);
+	struct PARAM_STATUS_INDICATION *pStatus;
+	struct PARAM_AUTH_EVENT *pAuth;
+	struct PARAM_PMKID_CANDIDATE_LIST *pPmkid;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	struct PARAM_SSID ssid;
 	struct ieee80211_channel *prChannel = NULL;
@@ -1151,6 +1148,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 
 	ASSERT(prGlueInfo);
+
+	pStatus = (struct PARAM_STATUS_INDICATION *)pvBuf;
+	pAuth = (struct PARAM_AUTH_EVENT *)pStatus;
+	pPmkid = (struct PARAM_PMKID_CANDIDATE_LIST *)(pStatus + 1);
 
 	switch (eStatus) {
 	case WLAN_STATUS_ROAM_OUT_FIND_BEST:

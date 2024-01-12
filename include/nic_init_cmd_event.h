@@ -84,10 +84,6 @@
 #define INIT_CMD_STATUS_REJECTED_DECRYPT_FAIL   3
 #define INIT_CMD_STATUS_UNKNOWN                 4
 
-#define EVENT_HDR_WITHOUT_RXD_SIZE  \
-	(OFFSET_OF(struct WIFI_EVENT, aucBuffer[0]) - \
-	OFFSET_OF(struct WIFI_EVENT, u2PacketLength))
-
 #define INIT_PKT_FT_CMD				0x2
 #define INIT_PKT_FT_PDA_FWDL		0x3
 
@@ -256,15 +252,11 @@ struct INIT_CMD_ACCESS_REG {
 
 /* Events */
 struct INIT_WIFI_EVENT {
-#if 1
-	uint32_t au4HwMacRxDesc[4];
-#endif
 	uint16_t u2RxByteCount;
 	uint16_t u2PacketType;	/* Must be filled with 0xE000 (EVENT Packet) */
 	uint8_t ucEID;
 	uint8_t ucSeqNum;
 	uint8_t aucReserved[2];
-
 	uint8_t aucBuffer[0];
 };
 

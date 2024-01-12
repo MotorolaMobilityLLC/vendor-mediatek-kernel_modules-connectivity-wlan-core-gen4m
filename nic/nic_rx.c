@@ -342,6 +342,7 @@ void nicRxUninitialize(IN struct ADAPTER *prAdapter)
 void nicRxFillRFB(IN struct ADAPTER *prAdapter,
 		  IN OUT struct SW_RFB *prSwRfb)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct HW_MAC_RX_DESC *prRxStatus;
 
 	uint32_t u4PktLen = 0;
@@ -354,6 +355,7 @@ void nicRxFillRFB(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
+	prChipInfo = prAdapter->chip_info;
 	prRxStatus = prSwRfb->prRxStatus;
 	ASSERT(prRxStatus);
 
@@ -362,7 +364,7 @@ void nicRxFillRFB(IN struct ADAPTER *prAdapter,
 	u4HeaderOffset = (uint32_t) (
 				 HAL_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
 
-	u2RxStatusOffset = sizeof(struct HW_MAC_RX_DESC);
+	u2RxStatusOffset = prChipInfo->rxd_size;
 	prSwRfb->ucGroupVLD = (uint8_t) HAL_RX_STATUS_GET_GROUP_VLD(
 		prRxStatus);
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4)) {
@@ -1814,15 +1816,17 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			     IN OUT struct SW_RFB *prSwRfb)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct CMD_INFO *prCmdInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Idx, u4Size;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+	prChipInfo = prAdapter->chip_info;
 
-	prEvent = (struct WIFI_EVENT *) prSwRfb->pucRecvBuff;
-
+	prEvent = (struct WIFI_EVENT *)
+			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 	if (prEvent->ucEID != EVENT_ID_DEBUG_MSG
 	    && prEvent->ucEID != EVENT_ID_ASSERT_DUMP) {
 		DBGLOG(NIC, TRACE,
@@ -2794,7 +2798,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 			struct WLAN_MAC_HEADER *prWlanMacHeader;
 
 			prWlanMacHeader = (struct WLAN_MAC_HEADER *)
-					  &prEvent->aucBuffer[0];
+				prEvent->aucBuffer;
 			DBGLOG(RX, INFO, "nicRx: aucAddr1: " MACSTR "\n",
 			       MAC2STR(prWlanMacHeader->aucAddr1));
 			DBGLOG(RX, INFO, "nicRx: aucAddr2: " MACSTR "\n",
@@ -2803,7 +2807,7 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
 #endif
 			/* receive packets without StaRec */
 		prSwRfb->pvHeader = (struct WLAN_MAC_HEADER *)
-				    &prEvent->aucBuffer[0];
+			prEvent->aucBuffer;
 		if (authSendDeauthFrame(prAdapter,
 			NULL,
 			NULL,
@@ -3272,18 +3276,26 @@ void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
-static void nicRxCheckWakeupReason(struct SW_RFB *prSwRfb)
+static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
+				   struct SW_RFB *prSwRfb)
 {
+	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_EVENT *prEvent;
 	uint8_t *pvHeader = NULL;
 	struct HW_MAC_RX_DESC *prRxStatus;
 	uint16_t u2PktLen = 0;
 	uint32_t u4HeaderOffset;
 
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+
 	if (!prSwRfb)
 		return;
+
 	prRxStatus = prSwRfb->prRxStatus;
 	if (!prRxStatus)
 		return;
+
 	prSwRfb->ucGroupVLD = (uint8_t) HAL_RX_STATUS_GET_GROUP_VLD(prRxStatus);
 
 	switch (prSwRfb->ucPacketType) {
@@ -3294,7 +3306,7 @@ static void nicRxCheckWakeupReason(struct SW_RFB *prSwRfb)
 		u2PktLen = HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus);
 		u4HeaderOffset = (uint32_t)
 			(HAL_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
-		u2Temp = sizeof(struct HW_MAC_RX_DESC);
+		u2Temp = prChipInfo->rxd_size;
 		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4))
 			u2Temp += sizeof(struct HW_MAC_RX_STS_GROUP_4);
 		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_1))
@@ -3367,8 +3379,9 @@ static void nicRxCheckWakeupReason(struct SW_RFB *prSwRfb)
 		if ((prSwRfb->prRxStatus->u2PktTYpe &
 			RXM_RXD_PKT_TYPE_SW_BITMAP) ==
 			RXM_RXD_PKT_TYPE_SW_EVENT) {
-			struct WIFI_EVENT *prEvent =
-				(struct WIFI_EVENT *) prSwRfb->pucRecvBuff;
+
+			prEvent = (struct WIFI_EVENT *)
+				(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 
 			DBGLOG(RX, INFO, "Event 0x%02x wakeup host\n",
 				prEvent->ucEID);
@@ -3381,7 +3394,7 @@ static void nicRxCheckWakeupReason(struct SW_RFB *prSwRfb)
 			RXM_RXD_PKT_TYPE_SW_FRAME) {
 			uint8_t ucSubtype;
 			struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHeader;
-			uint16_t u2Temp = sizeof(struct HW_MAC_RX_DESC);
+			uint16_t u2Temp = prChipInfo->rxd_size;
 
 			u4HeaderOffset = (uint32_t)
 				(HAL_RX_STATUS_GET_HEADER_OFFSET(prRxStatus));
@@ -3470,7 +3483,8 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
 					break;
 #if CFG_SUPPORT_WAKEUP_REASON_DEBUG
 				if (kalIsWakeupByWlan(prAdapter))
-					nicRxCheckWakeupReason(prSwRfb);
+					nicRxCheckWakeupReason(prAdapter,
+							       prSwRfb);
 #endif
 
 				switch (prSwRfb->ucPacketType) {
@@ -3905,8 +3919,12 @@ uint32_t
 nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
 		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {
+	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
 
 	u4Status = halRxWaitResponse(prAdapter, ucPortIdx,
 				     pucRspBuffer,
@@ -3916,7 +3934,9 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
 		       "Dump Response buffer, length = %u\n", *pu4Length);
 		DBGLOG_MEM8(RX, TRACE, pucRspBuffer, *pu4Length);
 
-		prEvent = (struct WIFI_EVENT *) pucRspBuffer;
+		prEvent = (struct WIFI_EVENT *)
+			(pucRspBuffer + prChipInfo->rxd_size);
+
 		DBGLOG(INIT, TRACE,
 		       "RX EVENT: ID[0x%02X] SEQ[%u] LEN[%u]\n",
 		       prEvent->ucEID, prEvent->ucSeqNum,
