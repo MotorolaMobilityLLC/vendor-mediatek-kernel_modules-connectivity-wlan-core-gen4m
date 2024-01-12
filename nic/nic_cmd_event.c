@@ -2035,14 +2035,14 @@ void nicEventQueryMemDump(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(pucEventBuf);
 
-	sprintf(aucPath, "/dump_%05hu.hex",
+	kalSprintf(aucPath, "/dump_%05hu.hex",
 		prAdapter->rIcapInfo.u2DumpIndex);
 
 	prEventDumpMem = (struct EVENT_DUMP_MEM *) (pucEventBuf);
 
 	if (kalCheckPath(aucPath) == -1) {
 		kalMemSet(aucPath, 0x00, 256);
-		sprintf(aucPath, "/data/dump_%05hu.hex",
+		kalSprintf(aucPath, "/data/dump_%05hu.hex",
 			prAdapter->rIcapInfo.u2DumpIndex);
 	}
 
@@ -2057,11 +2057,11 @@ void nicEventQueryMemDump(IN struct ADAPTER *prAdapter,
 		/* if blbist mkdir undre /data/blbist,
 		 * the dump files wouls put on it
 		 */
-		sprintf(aucPath, "/dump_%05hu.hex",
+		kalSprintf(aucPath, "/dump_%05hu.hex",
 			prAdapter->rIcapInfo.u2DumpIndex);
 		if (kalCheckPath(aucPath) == -1) {
 			kalMemSet(aucPath, 0x00, 256);
-			sprintf(aucPath, "/data/dump_%05hu.hex",
+			kalSprintf(aucPath, "/data/dump_%05hu.hex",
 				prAdapter->rIcapInfo.u2DumpIndex);
 		}
 #else

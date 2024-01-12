@@ -378,7 +378,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
 			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
-			g_aucProcBuf[u4StrLen-1] = '\n';
+			g_aucProcBuf[u4StrLen-1] = 0;
 			goto procCfgReadLabel;
 		}
 
@@ -411,7 +411,7 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
 			kalMemSet(g_aucProcBuf, ' ', u4StrLen);
 			kalStrnCpy(g_aucProcBuf, str2, kalStrLen(str2) + 1);
-			g_aucProcBuf[u4StrLen-1] = '\n';
+			g_aucProcBuf[u4StrLen-1] = 0;
 			goto procCfgReadLabel;
 		}
 
@@ -878,13 +878,11 @@ static ssize_t procPktDelayDbgCfgRead(struct file *filp, char __user *buf,
 		SNPRINTF(temp, g_aucProcBuf,
 			("txLog %x %d %d\n", ucTxIpProto, u2TxUdpPort,
 			u4TxDelayThreshold));
-		temp += kalStrLen(temp);
 	}
 	if (ucTxRxFlag & BIT(1)) {
 		SNPRINTF(temp, g_aucProcBuf,
 			("rxLog %x %d %d\n", ucRxIpProto, u2RxUdpPort,
 			u4RxDelayThreshold));
-		temp += kalStrLen(temp);
 	}
 	if (ucTxRxFlag == 0)
 		SNPRINTF(temp, g_aucProcBuf,
