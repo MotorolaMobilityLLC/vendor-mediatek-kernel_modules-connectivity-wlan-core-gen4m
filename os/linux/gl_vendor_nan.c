@@ -2643,6 +2643,7 @@ mtk_cfg80211_vendor_event_nan_match_indication(struct ADAPTER *prAdapter,
 			     prNanMatchInd) < 0)) {
 		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
 		kfree_skb(skb);
+		kfree(prNanMatchInd);
 		return -EFAULT;
 	}
 	cfg80211_vendor_event(skb, GFP_KERNEL);
