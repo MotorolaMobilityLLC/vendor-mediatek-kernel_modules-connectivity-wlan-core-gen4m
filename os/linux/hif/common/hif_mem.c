@@ -64,9 +64,11 @@
 static struct device *g_prDev;
 static struct page_pool *g_prPagePool;
 
-#if !CFG_CMA_ALLOC
+#if CFG_CMA_ALLOC
+struct page *g_prCmaPage;
+#else
 static struct kmem_cache *g_prCache;
-#endif
+#endif /* CFG_CMA_ALLOC */
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -97,8 +99,7 @@ static void kalPutPagePool(struct page_pool *pool, struct page *page)
 static bool kalAllocPagePoolMem(struct device *dev, struct page_pool *pool)
 {
 	uint32_t u4Idx;
-	struct page *cma_page, *page;
-	uint32_t phys_size = RX_PAGE_POOL_SIZE << PAGE_SHIFT;
+	struct page *page;
 	void *kaddr;
 	bool ret = true;
 
@@ -106,14 +107,14 @@ static bool kalAllocPagePoolMem(struct device *dev, struct page_pool *pool)
 		DBGLOG(HAL, ERROR, "no cma_area\n");
 		return false;
 	}
-	cma_page = cma_alloc(dev->cma_area, phys_size >> PAGE_SHIFT,
+	g_prCmaPage = cma_alloc(dev->cma_area, RX_PAGE_POOL_SIZE,
 			     get_order(SZ_4K), GFP_KERNEL);
-	if (!cma_page) {
+	if (!g_prCmaPage) {
 		DBGLOG(HAL, ERROR, "cma_page alloc fail\n");
 		return false;
 	}
 
-	kaddr = page_address(cma_page);
+	kaddr = page_address(g_prCmaPage);
 	for (u4Idx = 0; u4Idx < RX_PAGE_POOL_SIZE; u4Idx++) {
 		page = virt_to_page(kaddr);
 		if (!page) {
@@ -128,7 +129,7 @@ static bool kalAllocPagePoolMem(struct device *dev, struct page_pool *pool)
 	return ret;
 }
 #else
-static bool kalAllocPagePoolMem(struct page_pool *pool)
+static bool kalAllocPagePoolMem(struct device *dev, struct page_pool *pool)
 {
 	uint32_t u4Idx;
 	void *rVirAddr;
@@ -165,6 +166,11 @@ static bool kalAllocPagePoolMem(struct page_pool *pool)
 }
 #endif
 
+static bool kalIsRxPagePoolEmpty(struct page_pool *pool)
+{
+	return !pool->alloc.count && __ptr_ring_empty(&pool->ring);
+}
+
 int kalCreateRxPagePool(struct device *dev)
 {
 	struct page_pool_params pp = { 0 };
@@ -172,12 +178,11 @@ int kalCreateRxPagePool(struct device *dev)
 	g_prDev = dev;
 
 	pp.max_len = PAGE_SIZE;
-	/* pp.flags = PP_FLAG_DMA_MAP | PP_FLAG_DMA_SYNC_DEV; */
 	pp.flags = 0;
 	pp.pool_size = RX_PAGE_POOL_SIZE;
 	pp.nid = dev_to_node(dev);
 	pp.dev = dev;
-	pp.dma_dir = DMA_BIDIRECTIONAL;
+	pp.dma_dir = DMA_FROM_DEVICE;
 
 	g_prPagePool = page_pool_create(&pp);
 	if (IS_ERR(g_prPagePool)) {
@@ -191,25 +196,37 @@ int kalCreateRxPagePool(struct device *dev)
 	return 0;
 }
 
-static void page_pool_dma_sync_for_device(struct page_pool *pool,
-					  struct page *page,
-					  unsigned int dma_sync_size)
+void kalReleaseRxPagePool(struct device *dev)
 {
-	dma_addr_t dma_addr = page_pool_get_dma_addr(page);
+	struct page *page;
 
-	dma_sync_size = min(dma_sync_size, pool->p.max_len);
-	dma_sync_single_range_for_device(pool->p.dev, dma_addr,
-					 pool->p.offset, dma_sync_size,
-					 pool->p.dma_dir);
-}
-
-void kalDmaSyncForDevice(void *rAddr)
-{
 	if (!g_prPagePool)
 		return;
 
-	page_pool_dma_sync_for_device(
-		g_prPagePool, virt_to_page(rAddr), PAGE_SIZE);
+#if CFG_CMA_ALLOC
+	if (!g_prCmaPage || !dev->cma_area)
+		return;
+
+	while (!kalIsRxPagePoolEmpty(g_prPagePool))
+		page = page_pool_alloc_pages(g_prPagePool, GFP_KERNEL);
+
+	cma_release(dev->cma_area, g_prCmaPage, RX_PAGE_POOL_SIZE);
+	g_prCmaPage = NULL;
+#else
+	if (!g_prCache)
+		return;
+
+	while (!kalIsRxPagePoolEmpty(g_prPagePool)) {
+		page = page_pool_alloc_pages(g_prPagePool, GFP_KERNEL);
+		kmem_cache_free(g_prCache, page_to_virt(page));
+	}
+
+	kmem_cache_destroy(g_prCache);
+	g_prCache = NULL;
+#endif
+
+	page_pool_destroy(g_prPagePool);
+	g_prPagePool = NULL;
 }
 
 static struct page *kalAllocRxPage(struct device *dev)
@@ -217,6 +234,9 @@ static struct page *kalAllocRxPage(struct device *dev)
 	struct page *page;
 
 	if (!g_prPagePool)
+		return NULL;
+
+	if (kalIsRxPagePoolEmpty(g_prPagePool))
 		return NULL;
 
 	page = page_pool_alloc_pages(g_prPagePool, GFP_KERNEL);

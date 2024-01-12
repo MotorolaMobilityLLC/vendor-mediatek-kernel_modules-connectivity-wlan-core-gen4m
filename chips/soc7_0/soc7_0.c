@@ -818,6 +818,7 @@ static void soc7_0asicConnac2xProcessTxInterrupt(
 		halWpdmaProcessCmdDmaDone(
 			prAdapter->prGlueInfo, TX_RING_CMD);
 
+#if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 	if (rIntrStatus.field_conn2x_single.wfdma0_tx_done_0) {
 		halWpdmaProcessDataDmaDone(
 			prAdapter->prGlueInfo, TX_RING_DATA0);
@@ -835,6 +836,7 @@ static void soc7_0asicConnac2xProcessTxInterrupt(
 			prAdapter->prGlueInfo, TX_RING_DATA_PRIO);
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
 	}
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0 */
 }
 
 static void soc7_0asicConnac2xProcessRxInterrupt(
@@ -1009,11 +1011,7 @@ static void soc7_0ReadIntStatus(struct ADAPTER *prAdapter,
 		u4WrValue |= (u4RegValue & CONNAC_MCU_SW_INT);
 	}
 
-#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
-	prHifInfo->u4IntStatus = u4WrValue;
-#else
 	prHifInfo->u4IntStatus = u4RegValue;
-#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 	/* clear interrupt */
 	HAL_MCR_WR(prAdapter,
