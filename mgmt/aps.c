@@ -1851,7 +1851,8 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 
 		for (i = 0, j = 0, k = 0; i < ap->ucLinkNum; i++) {
 			struct BSS_DESC *cand = ap->aprTarget[i];
-			uint8_t *mld_addr = NULL;
+			uint8_t addr[MAC_ADDR_LEN] = {0};
+			uint8_t *mld_addr = addr;
 
 			ap->u4TotalTput += cand->u4Tput;
 			ap->u4TotalScore += cand->u2Score;
