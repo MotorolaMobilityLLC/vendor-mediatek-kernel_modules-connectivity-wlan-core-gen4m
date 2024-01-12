@@ -4407,7 +4407,7 @@ uint32_t ServiceIcapDeInit(struct ADAPTER *prAdapter)
 	return u4Status;
 }
 uint32_t ServiceWlanOid(void *winfos,
-	 enum op_wlan_oid oidType,
+	 uint32_t oidType,
 	 void *param,
 	 uint32_t paramLen,
 	 uint32_t *u4BufLen,
