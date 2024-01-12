@@ -430,19 +430,19 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 				return;
 
 #if CFG_SUPPORT_DBDC
-			if (cnmDBDCIsReqPeivilegeLock() &&
-				((eNextState == P2P_ROLE_STATE_REQING_CHANNEL &&
+			if ((cnmDBDCIsReqPeivilegeLock() &&
+				(eNextState == P2P_ROLE_STATE_REQING_CHANNEL &&
 					(prChnlReqInfo->eChnlReqType ==
 						CH_REQ_TYPE_GO_START_BSS ||
 					prChnlReqInfo->eChnlReqType ==
-						CH_REQ_TYPE_JOIN))
+						CH_REQ_TYPE_JOIN)))
 				|| (eNextState == P2P_ROLE_STATE_IDLE &&
 					prP2pRoleFsmInfo->eCurrentState ==
 						P2P_ROLE_STATE_IDLE)
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 				|| eNextState == P2P_ROLE_STATE_SWITCH_CHANNEL
 #endif
-			)) {
+			) {
 				/* Do not activate network ruring DBDC HW
 				 * switch. Otherwise, BSS may use incorrect
 				 * CR and result in TRx problems.
