@@ -1331,8 +1331,8 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct sk_buff *skb;
-	struct nlattr *tb[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST];
-	uint32_t freq_list[MAX_CHN_NUM];
+	struct nlattr *tb[WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_LAST] = {};
+	uint32_t freq_list[MAX_CHN_NUM] = {};
 	uint32_t num_freq_list = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	enum CONN_MODE_IFACE_TYPE type;
@@ -1425,7 +1425,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
 	struct GLUE_INFO *prGlueInfo;
-	struct nlattr *tb[WIFI_VENDOR_ATTR_ACS_MAX + 1];
+	struct nlattr *tb[WIFI_VENDOR_ATTR_ACS_MAX + 1] = {};
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	bool ht_enabled, ht40_enabled, vht_enabled;
 	uint8_t ch_width = 0;
