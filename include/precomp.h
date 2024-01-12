@@ -131,6 +131,8 @@
 #include "nic_tx.h"
 #include "nic_txd_v1.h"
 #include "nic_txd_v2.h"
+#include "nic_rxd_v1.h"
+#include "nic_rxd_v2.h"
 
 #include "nic_connac2x_rx.h"
 /* Dependency:  hif_rx.h (P_HIF_RX_HEADER_T) */

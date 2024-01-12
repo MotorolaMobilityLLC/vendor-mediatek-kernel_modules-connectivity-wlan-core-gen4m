@@ -220,6 +220,9 @@ struct BUS_INFO connac_bus_info = {
 		UDMA_WLCFG_0_1US_TIMER_EN(1)),
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
+	.asicUsbSuspend = NULL,
+	.asicUsbEventEpDetected = NULL,
+	.asicUsbRxByteCount = NULL,
 #endif /* _HIF_USB */
 };
 
@@ -238,6 +241,9 @@ struct TX_DESC_OPS_T connacTxDescOps = {
 	.fillNicAppend = fillNicTxDescAppend,
 	.fillHifAppend = fillTxDescAppendByHostV2,
 	.fillTxByteCount = fillTxDescTxByteCount,
+};
+
+struct RX_DESC_OPS_T connacRxDescOps = {
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -270,6 +276,7 @@ struct mt66xx_chip_info mt66xx_chip_info_connac = {
 	.bus_info = &connac_bus_info,
 	.fw_dl_ops = &connac_fw_dl_ops,
 	.prTxDescOps = &connacTxDescOps,
+	.prRxDescOps = &connacRxDescOps,
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &connacAteOps,
 #endif

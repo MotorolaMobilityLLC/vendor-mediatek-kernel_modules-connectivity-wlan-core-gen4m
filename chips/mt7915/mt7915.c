@@ -194,10 +194,9 @@ uint16_t wlanHarrierUsbRxByteCount(
 	(u2RxByteCount & BITS(0, 6)) < 121) &&
 	(prCompleteQ == &prHifInfo->rRxDataCompleteQ))
 		u2RxByteCount = ALIGN_8(u2RxByteCount)
-			+ prBusInfo->u4RxPaddingRxInfo;
+			+ LEN_USB_RX_PADDING_CSO;
 	else
-		u2RxByteCount = ALIGN_4(u2RxByteCount)
-			+ prBusInfo->u4RxPaddingCSO;
+		u2RxByteCount = ALIGN_4(u2RxByteCount);
 	return u2RxByteCount;
 }
 #endif /* defined(_HIF_USB) */
@@ -313,8 +312,6 @@ struct BUS_INFO mt7915_bus_info = {
 	     CONNAC2X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
 	     CONNAC2X_UDMA_WLCFG_0_TICK_1US_EN(1)),
 	.u4UdmaTxTimeout = CONNAC2X_UDMA_TX_TIMEOUT_LIMIT,
-	.u4RxPaddingCSO = CONNAC2X_LEN_USB_RX_PADDING_CSO,
-	.u4RxPaddingRxInfo = CONNAC2X_LEN_USB_RX_PADDING_RX_INFO,
 	.asicUsbSuspend = NULL,	/*asicUsbSuspend*/
 	.asicUsbEventEpDetected = asicUsbEventEpDetected,
 	.asicUsbRxByteCount = wlanHarrierUsbRxByteCount,
@@ -330,7 +327,7 @@ struct BUS_INFO mt7915_bus_info = {
 #if CFG_ENABLE_FW_DOWNLOAD
 struct FWDL_OPS_T mt7915_fw_dl_ops = {
 	.constructFirmwarePrio = NULL,
-	.downloadPatch = NULL, /*wlanDownloadPatch,*/
+	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
@@ -341,6 +338,9 @@ struct TX_DESC_OPS_T mt7915TxDescOps = {
 	.fillNicAppend = fillConnac2xTxDescAppendWithWaCpu,
 	.fillHifAppend = fillConnac2xTxDescAppendByWaCpu,
 	.fillTxByteCount = fillTxDescTxByteCountWithWaCpu,
+};
+
+struct RX_DESC_OPS_T mt7915RxDescOps = {
 };
 
 #if 0 /* merge next time 20181210 */
@@ -363,6 +363,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.fw_dl_ops = &mt7915_fw_dl_ops,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
 	.prTxDescOps = &mt7915TxDescOps,
+	.prRxDescOps = &mt7915RxDescOps,
 #if 0 /* merge next time 20181210 */
 	.prChipDbgOps = &mt7915DbgOps,
 #endif /* if 0 */

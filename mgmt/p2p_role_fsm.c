@@ -883,10 +883,8 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 				/* AP PMF */
 				if (rsnCheckBipKeyInstalled(prAdapter,
 					prStaRec)) {
-					if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
-						prSwRfb->prRxStatus) ||
-						HAL_RX_STATUS_IS_CLM_ERROR(
-						prSwRfb->prRxStatus)) {
+					if (prSwRfb->fgIsCipherMS ||
+						prSwRfb->fgIsCipherLenMS) {
 						/* if cipher mismatch,
 						 * or incorrect encrypt,
 						 * just drop
@@ -1036,10 +1034,8 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 			/* AP PMF */
 			if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-				if (HAL_RX_STATUS_IS_CIPHER_MISMATCH(
-					prSwRfb->prRxStatus) ||
-					HAL_RX_STATUS_IS_CLM_ERROR(
-					prSwRfb->prRxStatus)) {
+				if (prSwRfb->fgIsCipherMS ||
+					prSwRfb->fgIsCipherLenMS) {
 					/* if cipher mismatch,
 					 * or incorrect encrypt, just drop
 					 */

@@ -1509,11 +1509,13 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsProbeResp = FALSE;
 	u_int8_t ucPowerConstraint = 0;
 	struct IE_COUNTRY *prCountryIE = NULL;
+	struct RX_DESC_OPS_T *prRxDescOps;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
-	eHwBand = HAL_RX_STATUS_GET_RF_BAND(prSwRfb->prRxStatus);
+	RX_STATUS_GET(prRxDescOps, eHwBand, get_rf_band, prSwRfb->prRxStatus);
 	prWlanBeaconFrame = (struct WLAN_BEACON_FRAME *) prSwRfb->pvHeader;
 	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
 			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
@@ -1658,7 +1660,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	log_dbg(SCN, TRACE, "Receive type %u in chnl %u %u %u (" MACSTR
 		") valid(%u) found(%u)\n",
 		ucSubtype, ucIeDsChannelNum, ucIeHtChannelNum,
-		HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus),
+		prSwRfb->ucChnlNum,
 		MAC2STR((uint8_t *)prWlanBeaconFrame->aucBSSID), fgIsValidSsid,
 		(prBssDesc != NULL) ? 1 : 0);
 
@@ -1731,17 +1733,19 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 		if (prBssDesc->eBSSType != eBSSType) {
 			prBssDesc->eBSSType = eBSSType;
-		} else if (HAL_RX_STATUS_GET_CHNL_NUM(prSwRfb->prRxStatus) !=
+		} else if (prSwRfb->ucChnlNum !=
 			prBssDesc->ucChannelNum
 			&& prBssDesc->ucRCPI
-			> nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb)) {
+			> nicRxGetRcpiValueFromRxv(
+				prAdapter, RCPI_MODE_MAX, prSwRfb)) {
 			uint8_t ucRcpi = 0;
 
 			/* for signal strength is too much weaker and
 			 * previous beacon is not stale
 			 */
 			ASSERT(prSwRfb->prRxStatusGroup3);
-			ucRcpi = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX,
+			ucRcpi = nicRxGetRcpiValueFromRxv(prAdapter,
+				RCPI_MODE_MAX,
 				prSwRfb);
 			if ((prBssDesc->ucRCPI - ucRcpi)
 			    >= REPLICATED_BEACON_STRENGTH_THRESHOLD
@@ -2216,23 +2220,32 @@ VHT_CAP_INFO_NUMBER_OF_SOUNDING_DIMENSIONS_OFFSET
 
 	/* 4 <4> Update information from HIF RX Header */
 	{
-		struct HW_MAC_RX_DESC *prRxStatus;
+		void *prRxStatus;
 		uint8_t ucRxRCPI;
 
 		prRxStatus = prSwRfb->prRxStatus;
 		ASSERT(prRxStatus);
 
 		/* 4 <4.1> Get TSF comparison result */
-		prBssDesc->fgIsLargerTSF = HAL_RX_STATUS_GET_TCL(prRxStatus);
+		RX_STATUS_GET(
+			prRxDescOps,
+			prBssDesc->fgIsLargerTSF,
+			get_tcl,
+			prRxStatus);
 
 		/* 4 <4.2> Get Band information */
 		prBssDesc->eBand = eHwBand;
 
 		/* 4 <4.2> Get channel and RCPI information */
-		ucHwChannelNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
+		RX_STATUS_GET(
+			prRxDescOps,
+			ucHwChannelNum,
+			get_ch_num,
+			prRxStatus);
 
 		ASSERT(prSwRfb->prRxStatusGroup3);
-		ucRxRCPI = nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX, prSwRfb);
+		ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter,
+			RCPI_MODE_MAX, prSwRfb);
 		if (prBssDesc->eBand == BAND_2G4) {
 
 			/* Update RCPI if in right channel */
@@ -2911,7 +2924,9 @@ uint32_t scanProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
 				ibssProcessMatchedBeacon(prAdapter,
 					prAisBssInfo,
 					prBssDesc,
-					nicRxGetRcpiValueFromRxv(RCPI_MODE_MAX,
+					nicRxGetRcpiValueFromRxv(
+						prAdapter,
+						RCPI_MODE_MAX,
 						prSwRfb));
 			}
 #endif /* CFG_SUPPORT_ADHOC */

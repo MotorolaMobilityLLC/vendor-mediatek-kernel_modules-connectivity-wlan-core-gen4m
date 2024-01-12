@@ -173,7 +173,7 @@ do { \
 	} \
 	if (prCurrSwRfb) { \
 		fgMicErr = FALSE; \
-		if (HAL_RX_STATUS_GET_SEC_MODE(prRxStatus) == \
+		if (prCurrSwRfb->ucSecMode == \
 			CIPHER_SUITE_TKIP_WO_MIC) { \
 			if (prCurrSwRfb->prStaRec) { \
 				uint8_t ucBssIndex; \
@@ -2899,7 +2899,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 #if CFG_RX_REORDERING_ENABLED
 	struct SW_RFB *prCurrSwRfb;
 	struct SW_RFB *prNextSwRfb;
-	struct HW_MAC_RX_DESC *prRxStatus;
+	void *prRxStatus;
 	struct QUE rReturnedQue;
 	struct QUE *prReturnedQue;
 	uint8_t *pucEthDestAddr;
@@ -2924,13 +2924,13 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		prNextSwRfb = QM_RX_GET_NEXT_SW_RFB(prCurrSwRfb);
 
 		prRxStatus = prCurrSwRfb->prRxStatus;
-		if (prRxStatus->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {
+		if (prCurrSwRfb->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 			QUEUE_INSERT_TAIL(prReturnedQue,
 				(struct QUE_ENTRY *) prCurrSwRfb);
 			DBGLOG(QM, ERROR,
 				"Drop packet when packet length is larger than CFG_RX_MAX_PKT_SIZE. Packet length=%d\n",
-				prRxStatus->u2RxByteCount);
+				prCurrSwRfb->u2RxByteCount);
 			continue;
 		}
 		/* TODO: (Tehuang) Check if relaying */
@@ -2940,9 +2940,13 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 #if CFG_RX_PKTS_DUMP
 		if (prAdapter->rRxCtrl.u4RxPktsDumpTypeMask & BIT(
 			    HIF_RX_PKT_TYPE_DATA)) {
-			log_dbg(SW4, INFO, "QM RX DATA: net _u sta idx %u wlan idx %u ssn _u tid %u ptype %u 11 %u\n",
-				prCurrSwRfb->ucStaRecIdx, prRxStatus->ucWlanIdx,
-				HAL_RX_STATUS_GET_TID(prRxStatus),
+			log_dbg(SW4, INFO,
+				"QM RX DATA: net _u sta idx %u wlan idx %u",
+				prCurrSwRfb->ucStaRecIdx,
+				prCurrSwRfb->ucWlanIdx);
+			log_dbg(SW4, INFO,
+				" ssn _u tid %u ptype %u 11 %u\n",
+				prCurrSwRfb->ucTid,
 				prCurrSwRfb->ucPacketType,
 				prCurrSwRfb->fgReorderBuffer);
 
@@ -2952,10 +2956,9 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 		}
 #endif
 
-		fgIsBMC = HAL_RX_STATUS_IS_BC(prRxStatus) |
-			HAL_RX_STATUS_IS_MC(prRxStatus);
+		fgIsBMC = (prCurrSwRfb->fgIsBC | prCurrSwRfb->fgIsMC);
 		fgIsHTran = FALSE;
-		if (HAL_RX_STATUS_GET_HEADER_TRAN(prRxStatus) == TRUE) {
+		if (prCurrSwRfb->fgHdrTran) {
 			/* (!HIF_RX_HDR_GET_80211_FLAG(prHifRxHdr)){ */
 
 			uint8_t ucBssIndex;
@@ -2968,8 +2971,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 				DBGLOG(QM, ERROR,
 					"H/W did Header Trans but prRxStatusGroup4 is NULL !!!\n");
 				DBGLOG_MEM8(QM, ERROR, prCurrSwRfb->pucRecvBuff,
-					HAL_RX_STATUS_GET_RX_BYTE_CNT(
-					prRxStatus));
+					prCurrSwRfb->u2RxByteCount);
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue,
 					(struct QUE_ENTRY *)
@@ -3012,14 +3014,14 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						__STR_FMT__,
 						prCurrSwRfb->ucStaRecIdx,
 						MAC2STR(aucTaAddr),
-						prRxStatus->u2RxByteCount);
+						prCurrSwRfb->u2RxByteCount);
 #undef __STR_FMT__
 				}
 
 				if (prCurrSwRfb->prStaRec == NULL) {
 					DBGLOG(QM, TRACE,
 						"Mark NULL the Packet for no STA_REC, wlanIdx=%d\n",
-						prRxStatus->ucWlanIdx);
+						prCurrSwRfb->ucWlanIdx);
 					RX_INC_CNT(&prAdapter->rRxCtrl,
 						RX_NO_STA_DROP_COUNT);
 					prCurrSwRfb->eDst =
@@ -3217,8 +3219,8 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 			 * WPI(0x88b4) packet that is encrypted, drop here.
 			 */
 			if (u2Etype == ETH_WPI_1X &&
-			    HAL_RX_STATUS_GET_SEC_MODE(prRxStatus) != 0 &&
-			    HAL_RX_STATUS_IS_CIPHER_MISMATCH(prRxStatus) == 0) {
+			    prCurrSwRfb->ucSecMode != 0 &&
+			    prCurrSwRfb->fgIsCipherMS == 0) {
 				DBGLOG(QM, INFO,
 					"drop wpi packet with sec mode\n");
 				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
@@ -3270,8 +3272,7 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 					prCurrSwRfb->ucTid);
 				DBGLOG_MEM8(QM, ERROR,
 					prCurrSwRfb->pucRecvBuff,
-					HAL_RX_STATUS_GET_RX_BYTE_CNT(
-					prRxStatus));
+					prCurrSwRfb->u2RxByteCount);
 				QUEUE_INSERT_TAIL(prReturnedQue,
 					(struct QUE_ENTRY *) prCurrSwRfb);
 			} else
@@ -3378,7 +3379,6 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 {
 
 	struct STA_RECORD *prStaRec;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	struct RX_BA_ENTRY *prReorderQueParm;
 
 #if CFG_SUPPORT_RX_AMSDU
@@ -3389,20 +3389,17 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prSwRfb);
 	ASSERT(prReturnedQue);
-	ASSERT(prSwRfb->prRxStatus);
 
 	/* We should have STA_REC here */
 	prStaRec = prSwRfb->prStaRec;
 	ASSERT(prStaRec);
 	ASSERT(prSwRfb->ucTid < CFG_RX_MAX_BA_TID_NUM);
 
-	prRxStatus = prSwRfb->prRxStatus;
-
 	if (prSwRfb->ucTid >= CFG_RX_MAX_BA_TID_NUM) {
 		DBGLOG(QM, WARN, "TID from RXD = %d, out of range!!\n",
 			prSwRfb->ucTid);
 		DBGLOG_MEM8(QM, ERROR, prSwRfb->pucRecvBuff,
-			HAL_RX_STATUS_GET_RX_BYTE_CNT(prRxStatus));
+			prSwRfb->u2RxByteCount);
 		prSwRfb->eDst = RX_PKT_DESTINATION_NULL;
 		QUEUE_INSERT_TAIL(prReturnedQue,
 			(struct QUE_ENTRY *) prSwRfb);
@@ -3431,7 +3428,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 	/* RX reorder for one MSDU in AMSDU issue */
 	/* QUEUE_INITIALIZE(&prSwRfb->rAmsduQue); */
 
-	u8AmsduSubframeIdx = HAL_RX_STATUS_GET_PAYLOAD_FORMAT(prRxStatus);
+	u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 
 	/* prMpduSwRfb = prReorderQueParm->prMpduSwRfb; */
 	u4SeqNo = (uint32_t)prSwRfb->u2SSN;
@@ -3497,7 +3494,6 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 {
 
 	struct STA_RECORD *prStaRec;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	struct RX_BA_ENTRY *prReorderQueParm;
 	struct CTRL_BAR_FRAME *prBarCtrlFrame;
 
@@ -3507,10 +3503,7 @@ void qmProcessBarFrame(IN struct ADAPTER *prAdapter,
 
 	ASSERT(prSwRfb);
 	ASSERT(prReturnedQue);
-	ASSERT(prSwRfb->prRxStatus);
 	ASSERT(prSwRfb->pvHeader);
-
-	prRxStatus = prSwRfb->prRxStatus;
 
 	prBarCtrlFrame = (struct CTRL_BAR_FRAME *) prSwRfb->pvHeader;
 
@@ -3741,7 +3734,6 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 {
 	struct SW_RFB *prExaminedQueuedSwRfb;
 	struct QUE *prReorderQue;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	uint8_t u8AmsduSubframeIdx; /* RX reorder for one MSDU in AMSDU issue */
 
 	ASSERT(prSwRfb);
@@ -3752,9 +3744,7 @@ void qmInsertFallWithinReorderPkt(IN struct ADAPTER *prAdapter,
 	prExaminedQueuedSwRfb = (struct SW_RFB *) QUEUE_GET_HEAD(
 		prReorderQue);
 
-	prRxStatus = prSwRfb->prRxStatus;
-	u8AmsduSubframeIdx = HAL_RX_STATUS_GET_PAYLOAD_FORMAT(
-		prRxStatus);
+	u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 
 	/* There are no packets queued in the Reorder Queue */
 	if (prExaminedQueuedSwRfb == NULL) {
@@ -3934,7 +3924,6 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 	struct QUE *prReorderQue;
 	u_int8_t fgDequeuHead, fgMissing;
 	OS_SYSTIME rCurrentTime, *prMissTimeout;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	/* RX reorder for one MSDU in AMSDU issue */
 	uint8_t fgIsAmsduSubframe;
 
@@ -3961,9 +3950,7 @@ void qmPopOutDueToFallWithin(IN struct ADAPTER *prAdapter,
 		fgDequeuHead = FALSE;
 
 		/* RX reorder for one MSDU in AMSDU issue */
-		prRxStatus = prReorderedSwRfb->prRxStatus;
-		fgIsAmsduSubframe = HAL_RX_STATUS_GET_PAYLOAD_FORMAT(
-			prRxStatus);
+		fgIsAmsduSubframe = prReorderedSwRfb->ucPayloadFormat;
 #if CFG_SUPPORT_RX_AMSDU
 		/* If SN + 1 come and last frame is first or middle,
 		 * update winstart
@@ -4095,7 +4082,6 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 	struct SW_RFB *prReorderedSwRfb;
 	struct QUE *prReorderQue;
 	u_int8_t fgDequeuHead;
-	struct HW_MAC_RX_DESC *prRxStatus;
 	uint8_t fgIsAmsduSubframe;/* RX reorder for one MSDU in AMSDU issue */
 
 	prReorderQue = &(prReorderQueParm->rReOrderQue);
@@ -4111,9 +4097,7 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 		fgDequeuHead = FALSE;
 
 		/* RX reorder for one MSDU in AMSDU issue */
-		prRxStatus = prReorderedSwRfb->prRxStatus;
-		fgIsAmsduSubframe =
-			HAL_RX_STATUS_GET_PAYLOAD_FORMAT(prRxStatus);
+		fgIsAmsduSubframe = prReorderedSwRfb->ucPayloadFormat;
 #if CFG_SUPPORT_RX_AMSDU
 		/* If SN + 1 come and last frame is first or middle,
 		 * update winstart
@@ -7769,7 +7753,6 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_WPA_INFO *prWpaInfo = NULL;
 	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
-	struct HW_MAC_RX_DESC *prRxStatus = NULL;
 
 	if (!prAdapter)
 		return TRUE;
@@ -7782,8 +7765,7 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 	}
 
 	/* BMC only need check CCMP and TKIP Cipher suite */
-	prRxStatus = prSwRfb->prRxStatus;
-	ucSecMode = HAL_RX_STATUS_GET_SEC_MODE(prRxStatus);
+	ucSecMode = prSwRfb->ucSecMode;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prWpaInfo = &prGlueInfo->rWpaInfo;
@@ -7799,7 +7781,7 @@ u_int8_t qmHandleRxReplay(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	ucKeyID = HAL_RX_STATUS_GET_KEY_ID(prRxStatus);
+	ucKeyID = prSwRfb->ucKeyID;
 	if (ucKeyID >= MAX_KEY_NUM) {
 		DBGLOG(QM, ERROR, "KeyID: %d error\n", ucKeyID);
 		return TRUE;
