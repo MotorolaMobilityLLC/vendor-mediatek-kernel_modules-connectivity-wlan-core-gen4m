@@ -10337,8 +10337,15 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define RX_PENDING_TEMPLATE ""
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
+#if CFG_SUPPORT_RX_GRO
+#define NAPI_TEMPLATE "NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] "
+#else
+#define NAPI_TEMPLATE "NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
+#endif
+
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
+	"ndevdrp:%s " \
+	NAPI_TEMPLATE \
 	RRO_LOG_TEMPLATE \
 	"RxReorder[%s] " \
 	RX_PENDING_TEMPLATE \
@@ -10363,6 +10370,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT),
+#if CFG_SUPPORT_RX_GRO
+		skb_queue_len(&glue->rRxNapiSkbQ),
+#endif
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		prAdapter->rWifiVar.fgEnableRro,
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_STEP_ONE),
@@ -10409,11 +10419,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_TOTAL_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_MISS_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_WITHIN_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_TOTAL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_MISS_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_WITHIN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_AHEAD_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl,	RX_DATA_REORDER_BEHIND_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_REORDER_BEHIND_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DROP_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NO_STA_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INACTIVE_BSS_DROP_COUNT),
@@ -13188,6 +13198,29 @@ uint8_t kalRxGroInit(struct net_device *prDev)
 	return 0;
 }
 
+#if CFG_SUPPORT_RX_NAPI_THREADED
+void kalNapiThreadedInit(struct GLUE_INFO *prGlueInfo)
+{
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	if (dev_set_threaded(&prGlueInfo->dummy_dev, TRUE) != 0) {
+		prGlueInfo->napi_thread = NULL;
+		DBGLOG(INIT, ERROR, "Napi Threaded Init Fail\n");
+	} else {
+		prGlueInfo->napi_thread = prGlueInfo->napi.thread;
+		prGlueInfo->u4RxNapiThreadPid =
+			task_pid_nr(prGlueInfo->napi_thread);
+		DBGLOG(INIT, TRACE, "Napi Threaded Init Done\n");
+	}
+#endif
+}
+
+void kalNapiThreadedUninit(struct GLUE_INFO *prGlueInfo)
+{
+	prGlueInfo->napi_thread = NULL;
+	DBGLOG(INIT, TRACE, "Napi Threaded Uninit Done\n");
+}
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+
 uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 {
 	spin_lock_init(&prGlueInfo->napi_spinlock);
@@ -13201,6 +13234,9 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
 			kalNapiPoll, NAPI_POLL_WEIGHT);
 #endif
+#if CFG_SUPPORT_RX_NAPI_THREADED
+	kalNapiThreadedInit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 	DBGLOG(INIT, TRACE, "Napi Init Done\n");
 	return 0;
 }
@@ -13208,6 +13244,9 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 {
 	netif_napi_del(&prGlueInfo->napi);
+#if CFG_SUPPORT_RX_NAPI_THREADED
+	kalNapiThreadedUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 	DBGLOG(INIT, TRACE, "Napi Uninit Done\n");
 	return 0;
 }
