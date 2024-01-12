@@ -568,6 +568,7 @@ int priv_support_ioctl(struct net_device *prNetDev,
 				       (char *)&(prIwReq->u));
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 	/* This case need to fall through */
 	case IOC_AP_GET_STA_LIST:
 	/* This case need to fall through */
@@ -582,7 +583,7 @@ int priv_support_ioctl(struct net_device *prNetDev,
 	case IOC_AP_SET_BW:
 		return priv_set_ap(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				     (char *) &(prIwReq->u));
-
+#endif
 	case IOCTL_GET_STR:
 
 	default:
@@ -5927,6 +5928,8 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 enum ENUM_BAND getBandByFreq(uint32_t ucPreferFreq)
 {
 	enum ENUM_BAND ePreferBand = BAND_NULL;
@@ -6102,6 +6105,7 @@ int priv_driver_get_ml_prefer_freqlist(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 #endif
 
 #if CFG_SUPPORT_QA_TOOL
@@ -8455,6 +8459,8 @@ static int priv_driver_show_rx_stat(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif
+
+#if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
 /*
  * @ The function will set policy of ACL.
@@ -8869,6 +8875,8 @@ static int priv_driver_clear_acl_entry(struct net_device *prNetDev,
 
 	return i4BytesWritten;
 } /* priv_driver_clear_acl_entry */
+
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 static int priv_driver_get_drv_mcr(struct net_device *prNetDev,
 				   char *pcCommand, int i4TotalLen)
@@ -10805,7 +10813,7 @@ int priv_driver_get_chip_config(struct net_device *prNetDev,
 }				/* priv_driver_get_chip_config  */
 
 
-
+#if CFG_ENABLE_WIFI_DIRECT
 int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 			     int i4TotalLen)
 {
@@ -10840,6 +10848,7 @@ int priv_driver_set_ap_start(struct net_device *prNetDev, char *pcCommand,
 
 	return 0;
 }
+#endif
 
 #if CFG_SUPPORT_NAN
 int
@@ -11190,6 +11199,7 @@ int priv_driver_set_country(struct net_device *prNetDev,
 	return 0;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 int priv_driver_set_csa(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen)
 {
@@ -11365,6 +11375,7 @@ int priv_driver_set_csa_ex_event(
 
 	return 0;
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 int priv_driver_get_country(struct net_device *prNetDev,
 			    char *pcCommand, int i4TotalLen)
@@ -12144,6 +12155,7 @@ int parseValueInString(
 	return -1;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 int priv_driver_set_ap_set_mac_acl(struct net_device *prNetDev,
 		char *pcCommand, int i4TotalLen)
 {
@@ -12777,6 +12789,7 @@ priv_set_ap(struct net_device *prNetDev,
 		prIwReqData, pcExtra);
 #endif
 }
+#endif
 
 #if CFG_WOW_SUPPORT
 static int priv_driver_set_wow(struct net_device *prNetDev,
@@ -13634,7 +13647,9 @@ int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 		prGlueInfo->fgIsInSuspendMode = fgEnable;
 
 		wlanSetSuspendMode(prGlueInfo, fgEnable);
+#if CFG_ENABLE_WIFI_DIRECT
 		p2pSetSuspendMode(prGlueInfo, fgEnable);
+#endif
 	}
 
 	return 0;
@@ -20680,6 +20695,7 @@ struct PRIV_CMD_HANDLER {
 };
 
 struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
+#if CFG_ENABLE_WIFI_DIRECT
 	{
 		.pcCmdStr  = CMD_AP_START,
 		.pfHandler = priv_driver_set_ap_start,
@@ -20687,6 +20703,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_2,
 		.policy    = ap_start_policy
 	},
+#endif
 	{
 		.pcCmdStr  = CMD_LINKSPEED,
 		.pfHandler = priv_driver_get_linkspeed,
@@ -20984,6 +21001,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL
 	},
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	{
 		.pcCmdStr  = CMD_SET_ACL_POLICY,
 		.pfHandler = priv_driver_set_acl_policy,
@@ -21019,7 +21037,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM,
 		.policy    = NULL
 	},
-
+#endif
 #if CFG_SUPPORT_NAN
 	{
 		.pcCmdStr  = CMD_NAN_START,
@@ -21815,6 +21833,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_2,
 		.policy    = set_flag_policy
 	},
+#if CFG_ENABLE_WIFI_DIRECT
 	{
 		.pcCmdStr  = CMD_GET_ML_PREFER_FREQ_LIST,
 		.pfHandler = priv_driver_get_ml_prefer_freqlist,
@@ -21829,6 +21848,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = PRIV_CMD_GET_ARG_NUM_3,
 		.policy    = u32_policy
 	},
+#endif
+
 #endif
 
 #if (CFG_WIFI_GET_DPD_CACHE == 1)

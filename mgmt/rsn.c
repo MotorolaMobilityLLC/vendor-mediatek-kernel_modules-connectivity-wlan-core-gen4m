@@ -1428,6 +1428,7 @@ void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
 
 }				/* rsnGenerateWpaNoneIE */
 
+#if CFG_ENABLE_WIFI_DIRECT
 uint32_t _addWPAIE_impl(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
@@ -1531,6 +1532,8 @@ uint32_t _addRSNIE_impl(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+#endif
+
 static uint8_t rsnIsOsenAuthModeWithRSN(struct ADAPTER *prAdapter,
 					uint8_t ucBssIndex)
 {
@@ -1562,7 +1565,9 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 	uint8_t *pucBuffer;
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+#endif
 
 	DEBUGFUNC("rsnGenerateWPAIE");
 
@@ -1571,6 +1576,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 				 prMsduInfo->u2FrameLength);
 	ucBssIndex = prMsduInfo->ucBssIndex;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+#if CFG_ENABLE_WIFI_DIRECT
 	prP2pSpecificBssInfo =
 		prAdapter->rWifiVar.
 			prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
@@ -1579,6 +1585,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 	/* return; */
 	if (_addWPAIE_impl(prAdapter, prMsduInfo))
 		return;
+#endif
 
 	if ((IS_BSS_AIS(prBssInfo) &&
 	    (aisGetAuthMode(prAdapter, ucBssIndex) == AUTH_MODE_WPA ||
@@ -1589,6 +1596,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 				 (uint8_t) prBssInfo->u4PrivateData))
 #endif
 	) {
+#if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered && prP2pSpecificBssInfo
 		    && (prP2pSpecificBssInfo->u2WpaIeLen != 0)) {
 			kalMemCopy(pucBuffer,
@@ -1598,6 +1606,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 			    prP2pSpecificBssInfo->u2WpaIeLen;
 			return;
 		}
+#endif
 		/* Construct a WPA IE for association request frame. */
 		WPA_IE(pucBuffer)->ucElemId = ELEM_ID_WPA;
 		WPA_IE(pucBuffer)->ucLength = ELEM_ID_WPA_LEN_FIXED;
@@ -1697,11 +1706,12 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 		return;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (_addRSNIE_impl(prAdapter, prMsduInfo)) {
 		DBGLOG(RSN, TRACE, "RSN IE: _addRSNIE return\n");
 		return;
 	}
-
+#endif
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	if (
@@ -1739,6 +1749,7 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 		if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
 			(prBssInfo->u4RsnSelectedAKMSuite ==
 			RSN_AKM_SUITE_SAE)) {
+#if CFG_ENABLE_WIFI_DIRECT
 			struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo =
 				prAdapter->rWifiVar.prP2pSpecificBssInfo
 				[prBssInfo->u4PrivateData];
@@ -1762,6 +1773,7 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 
 			RSN_IE(pucBuffer)->ucLength +=
 				(prP2pSpecBssInfo->u4KeyMgtSuiteCount - 1) * 4;
+#endif
 		} else {
 			WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
 			cp += 2;
@@ -1878,6 +1890,7 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 
 }				/* rsnGenerateRSNIE */
 
+#if CFG_SUPPORT_AAA
 void rsnGenerateRSNXIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
@@ -1955,7 +1968,7 @@ void rsnGenerateOWEIE(struct ADAPTER *prAdapter,
 			"[OWE] Keep supplicant OWEIE content w/o update\n");
 	}
 }
-
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Parse the given IE buffer and check if it is WFA IE and return Type
@@ -3239,6 +3252,7 @@ void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
 	}
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
 /*!
  *
@@ -3634,6 +3648,7 @@ void rsnApSaQueryAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 }
 
 #endif /* CFG_SUPPORT_802_11W */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if CFG_SUPPORT_PASSPOINT
 u_int8_t rsnParseOsenIE(struct ADAPTER *prAdapter,

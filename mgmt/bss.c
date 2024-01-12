@@ -129,11 +129,11 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	   rsnGenerateWpaNoneIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_PARAM), NULL,
 	   mqmGenerateWmmParamIE}	/* 221 */
-#if CFG_ENABLE_WIFI_DIRECT
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateWPAIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 	   rsnGenerateRSNIE}	/* 48 */
+#if CFG_ENABLE_WIFI_DIRECT
 	, {0, p2pFuncCalculateP2p_IELenForBeacon,
 	   p2pFuncGenerateP2p_IEForBeacon}	/* 221 */
 	, {0, p2pFuncCalculateWSC_IELenForBeacon,
@@ -198,11 +198,11 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	   rlmRspGenerateHtOpIE}	/* 61 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_TPE), NULL,
 	   rlmGenerateHtTPEIE}		/* 34 */
-#if CFG_ENABLE_WIFI_DIRECT
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
 	   rsnGenerateWPAIE}	/* 221 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
 	   rsnGenerateRSNIE}	/* 48 */
+#if CFG_ENABLE_WIFI_DIRECT
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
 	   rlmRspGenerateObssScanIE}	/* 74 */
 #endif
@@ -356,6 +356,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 		ucEhtOption = prWifiVar->ucStaEht;
 #endif
 	}
+#if CFG_ENABLE_WIFI_DIRECT
 	/* Decide P2P GC PHY type set */
 	else if (prStaRec->eStaType == STA_TYPE_P2P_GO) {
 		ucHtOption = prWifiVar->ucP2pGcHt;
@@ -367,7 +368,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 		ucEhtOption = prWifiVar->ucP2pGcEht;
 #endif
 	}
-
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	/* Set HT/VHT capability from Feature Option */
 	if (IS_FEATURE_DISABLED(ucHtOption))
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_HT;
@@ -893,7 +894,7 @@ bssSendQoSNullFrame(struct ADAPTER *prAdapter,
 
 }				/* end of bssSendQoSNullFrame() */
 
-#if (CFG_SUPPORT_ADHOC) || (CFG_SUPPORT_AAA)
+#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 /*---------------------------------------------------------------------------*/
 /* Routines for both IBSS(AdHoc) and BSS(AP)                                 */
 /*---------------------------------------------------------------------------*/
@@ -2573,7 +2574,9 @@ void bssDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		       MAC2STR(prCurrStaRec->aucMacAddr));
 	}
 #else
+#if CFG_ENABLE_WIFI_DIRECT
 	bssDumpClientList(prAdapter, prBssInfo);
+#endif
 #endif
 
 	DBGLOG(SW4, INFO, "============== Dump Done ==============\n");

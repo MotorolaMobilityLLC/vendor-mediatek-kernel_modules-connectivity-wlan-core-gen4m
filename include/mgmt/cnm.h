@@ -302,6 +302,7 @@ void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 
@@ -319,6 +320,7 @@ void cnmOwnGcCsaHandler(struct ADAPTER *prAdapter,
 uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO *prRfChannelInfo,
 	uint8_t ucRoleIdx);
+#endif
 
 u_int8_t cnmPreferredChannel(struct ADAPTER *prAdapter, enum ENUM_BAND *prBand,
 	uint8_t *pucPrimaryChannel, enum ENUM_CHNL_EXT *prBssSCO);
@@ -397,6 +399,8 @@ u_int8_t cnmDBDCIsReqPeivilegeLock(void);
 
 enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(struct BSS_INFO *prBssInfo);
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 u_int8_t cnmSapIsActive(struct ADAPTER *prAdapter);
 
 u_int8_t cnmSapIsConcurrent(struct ADAPTER *prAdapter);
@@ -407,6 +411,7 @@ struct BSS_INFO *
 cnmGetOtherSapBssInfo(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prSapBssInfo);
+#endif
 
 void cnmOpModeGetTRxNss(
 	struct ADAPTER *prAdapter,
@@ -433,9 +438,11 @@ void cnmRddOpmodeEventHandler(
 );
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 u_int8_t cnmP2pIsActive(struct ADAPTER *prAdapter);
 
 struct BSS_INFO *cnmGetP2pBssInfo(struct ADAPTER *prAdapter);
+#endif
 
 bool cnmIsMccMode(struct ADAPTER *prAdapter);
 

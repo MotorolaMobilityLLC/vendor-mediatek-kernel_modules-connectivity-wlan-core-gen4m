@@ -49,6 +49,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
+#if CFG_ENABLE_WIFI_DIRECT
+
 #ifndef _P2P_DEV_STATE_H
 #define _P2P_DEV_STATE_H
 
@@ -104,4 +106,5 @@ p2pDevStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
 		enum ENUM_P2P_DEV_STATE eNextState);
 
+#endif
 #endif

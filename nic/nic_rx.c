@@ -167,12 +167,16 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #endif
 	{EVENT_ID_CH_PRIVILEGE, cnmChMngrHandleChEvent},
 	{EVENT_ID_BSS_ABSENCE_PRESENCE, qmHandleEventBssAbsencePresence},
+#if CFG_ENABLE_WIFI_DIRECT
 	{EVENT_ID_STA_CHANGE_PS_MODE, qmHandleEventStaChangePsMode},
 	{EVENT_ID_STA_UPDATE_FREE_QUOTA, qmHandleEventStaUpdateFreeQuota},
+#endif
 	{EVENT_ID_BSS_BEACON_TIMEOUT, nicEventBeaconTimeout},
+#if CFG_ENABLE_WIFI_DIRECT
 	{EVENT_ID_UPDATE_NOA_PARAMS, nicEventUpdateNoaParams},
 	{EVENT_ID_STA_AGING_TIMEOUT, nicEventStaAgingTimeout},
 	{EVENT_ID_AP_OBSS_STATUS, nicEventApObssStatus},
+#endif
 	{EVENT_ID_ROAMING_STATUS, nicEventRoamingStatus},
 	{EVENT_ID_SEND_DEAUTH, nicEventSendDeauth},
 	{EVENT_ID_UPDATE_RDD_STATUS, nicEventUpdateRddStatus},
@@ -206,8 +210,10 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
 	{EVENT_ID_GC_CSA, cnmPeerGcCsaHandler},
+#endif
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
 	{EVENT_ID_TX_ADDBA, qmHandleEventTxAddBa},
@@ -3460,6 +3466,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 			    fgMgmtProtection /* Use MFP */) {
 				/* MFP test plan 5.3.3.4 */
 				rsnSaQueryAction(prAdapter, prSwRfb);
+#if CFG_ENABLE_WIFI_DIRECT
 			} else if ((prBssInfo->eNetworkType ==
 					NETWORK_TYPE_P2P) &&
 				  (prBssInfo->eCurrentOPMode ==
@@ -3472,6 +3479,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 					/* MFP test plan 4.3.3.4 */
 					rsnApSaQueryAction(prAdapter, prSwRfb);
 				}
+#endif
 			}
 		}
 	}

@@ -291,34 +291,6 @@
 #define AGG_RANGE_SEL_NUM		7
 #endif
 
-#if CFG_SUPPORT_EASY_DEBUG
-
-#define MAX_CMD_ITEM_MAX		4	/* Max item per cmd. */
-#define MAX_CMD_NAME_MAX_LENGTH		32	/* Max name string length */
-#define MAX_CMD_VALUE_MAX_LENGTH	32	/* Max value string length */
-#define MAX_CMD_TYPE_LENGTH		1
-#define MAX_CMD_STRING_LENGTH		1
-#define MAX_CMD_VALUE_LENGTH		1
-#define MAX_CMD_RESERVE_LENGTH		1
-
-#define CMD_FORMAT_V1_LENGTH	\
-	(MAX_CMD_NAME_MAX_LENGTH + MAX_CMD_VALUE_MAX_LENGTH + \
-	MAX_CMD_TYPE_LENGTH + MAX_CMD_STRING_LENGTH + MAX_CMD_VALUE_LENGTH + \
-	MAX_CMD_RESERVE_LENGTH)
-
-#define MAX_CMD_BUFFER_LENGTH	(CMD_FORMAT_V1_LENGTH * MAX_CMD_ITEM_MAX)
-
-#if 1
-#define ED_STRING_SITE		0
-#define ED_VALUE_SITE		1
-
-
-#else
-#define ED_ITEMTYPE_SITE	0
-#define ED_STRING_SITE		1
-#define ED_VALUE_SITE		2
-#endif
-
 #define ACS_AP_RSSI_LEVEL_HIGH		-50
 #define ACS_AP_RSSI_LEVEL_LOW		-80
 #define ACS_DIRTINESS_LEVEL_HIGH	52
@@ -356,6 +328,32 @@ struct TPENHANCE_PKT_MAP {
 #define WLAN_DRV_READY_CHECK_WLAN_ON       BIT(0)
 #define WLAN_DRV_READY_CHECK_HIF_SUSPEND   BIT(1)
 #define WLAN_DRV_READY_CHECK_RESET         BIT(2)
+
+#define MAX_CMD_ITEM_MAX		4	/* Max item per cmd. */
+#define MAX_CMD_NAME_MAX_LENGTH		32	/* Max name string length */
+#define MAX_CMD_VALUE_MAX_LENGTH	32	/* Max value string length */
+#define MAX_CMD_TYPE_LENGTH		1
+#define MAX_CMD_STRING_LENGTH		1
+#define MAX_CMD_VALUE_LENGTH		1
+#define MAX_CMD_RESERVE_LENGTH		1
+
+#define CMD_FORMAT_V1_LENGTH	\
+	(MAX_CMD_NAME_MAX_LENGTH + MAX_CMD_VALUE_MAX_LENGTH + \
+	MAX_CMD_TYPE_LENGTH + MAX_CMD_STRING_LENGTH + MAX_CMD_VALUE_LENGTH + \
+	MAX_CMD_RESERVE_LENGTH)
+
+#define MAX_CMD_BUFFER_LENGTH	(CMD_FORMAT_V1_LENGTH * MAX_CMD_ITEM_MAX)
+
+#if 1
+#define ED_STRING_SITE		0
+#define ED_VALUE_SITE		1
+
+
+#else
+#define ED_ITEMTYPE_SITE	0
+#define ED_STRING_SITE		1
+#define ED_VALUE_SITE		2
+#endif
 
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
@@ -475,8 +473,6 @@ struct CFG_SETTING {
 	uint8_t ScnStopScan;
 	uint8_t TestStr[80];
 };
-
-#endif
 
 #if CFG_SUPPORT_NCHO
 #define FW_CFG_KEY_NCHO_ENABLE			"NCHOEnable"
@@ -2168,10 +2164,11 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
 
 uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo);
 
+#if CFG_ENABLE_WIFI_DIRECT
 uint32_t
 wlanQueryLteSafeChannel(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex);
-
+#endif
 uint32_t
 wlanCalculateAllChannelDirtiness(struct ADAPTER *prAdapter);
 

@@ -4217,9 +4217,11 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 void nicCmdEventQueryBugReport(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
+#if CFG_ENABLE_WIFI_DIRECT
 void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf);
+#endif
 
 #if CFG_SUPPORT_BATCH_SCAN
 void nicCmdEventBatchScanResult(struct ADAPTER
@@ -4366,12 +4368,14 @@ void nicEventMibInfo(struct ADAPTER *prAdapter,
 		     struct WIFI_EVENT *prEvent);
 void nicEventBeaconTimeout(struct ADAPTER *prAdapter,
 			   struct WIFI_EVENT *prEvent);
+#if CFG_ENABLE_WIFI_DIRECT
 void nicEventUpdateNoaParams(struct ADAPTER *prAdapter,
 			     struct WIFI_EVENT *prEvent);
 void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
 			     struct WIFI_EVENT *prEvent);
 void nicEventApObssStatus(struct ADAPTER *prAdapter,
 			  struct WIFI_EVENT *prEvent);
+#endif
 void nicEventRoamingStatus(struct ADAPTER *prAdapter,
 			   struct WIFI_EVENT *prEvent);
 void nicEventSendDeauth(struct ADAPTER *prAdapter,

@@ -92,6 +92,8 @@
  *                              C O N S T A N T S
  ******************************************************************************
  */
+
+#if CFG_ENABLE_WIFI_DIRECT
 #define ARGV_MAX_NUM        (4)
 
 /*For CFG80211 - wiphy parameters*/
@@ -2324,4 +2326,5 @@ skip_role:
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 

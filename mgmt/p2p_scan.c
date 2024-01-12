@@ -76,6 +76,7 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -393,3 +394,4 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 
 	return prCandidateBssDesc;
 }				/* scanP2pSearchDesc */
+#endif /* CFG_ENABLE_WIFI_DIRECT */

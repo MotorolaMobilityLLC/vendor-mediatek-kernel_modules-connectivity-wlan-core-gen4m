@@ -178,6 +178,9 @@ int8_t bssGetRxNss(struct ADAPTER *prAdapter,
 uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 #endif
+
+#if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
+
 /*----------------------------------------------------------------------------*/
 /* Routines for both IBSS(AdHoc) and BSS(AP)                                  */
 /*----------------------------------------------------------------------------*/
@@ -236,7 +239,7 @@ void bssDumpClientList(struct ADAPTER *prAdapter,
 
 void bssCheckClientList(struct ADAPTER *prAdapter,
 				struct BSS_INFO *prBssInfo);
-
+#endif /* CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT */
 /*----------------------------------------------------------------------------*/
 /* Routines for IBSS(AdHoc) only                                              */
 /*----------------------------------------------------------------------------*/
@@ -253,19 +256,19 @@ uint32_t ibssCheckCapabilityForAdHocMode(
 void ibssInitForAdHoc(struct ADAPTER *prAdapter,
 		      struct BSS_INFO *prBssInfo);
 
+#if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
 uint32_t bssUpdateBeaconContent(struct ADAPTER
 				*prAdapter, uint8_t uBssIndex);
 
 uint32_t bssUpdateBeaconContentEx(struct ADAPTER
 				*prAdapter, uint8_t uBssIndex,
 				enum ENUM_IE_UPD_METHOD eMethod);
-
 /*----------------------------------------------------------------------------*/
 /* Routines for BSS(AP) only                                                  */
 /*----------------------------------------------------------------------------*/
 void bssInitForAP(struct ADAPTER *prAdapter,
 		  struct BSS_INFO *prBssInfo, u_int8_t fgIsRateUpdate);
-
+#endif
 void bssUpdateDTIMCount(struct ADAPTER *prAdapter,
 			uint8_t uBssIndex);
 

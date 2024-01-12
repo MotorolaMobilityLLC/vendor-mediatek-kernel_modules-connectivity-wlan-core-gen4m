@@ -73,6 +73,7 @@
 
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -410,4 +411,4 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 
 	return TRUE;
 }
-
+#endif /* CFG_ENABLE_WIFI_DIRECT */

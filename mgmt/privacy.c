@@ -867,6 +867,7 @@ u_int8_t secPrivacySeekForEntry(
 
 		prSta->ucWlanIndex = ucEntry;
 
+#if CFG_ENABLE_WIFI_DIRECT
 		{
 			struct BSS_INFO *prBssInfo =
 			    GET_BSS_INFO_BY_INDEX(prAdapter, prSta->ucBssIndex);
@@ -891,7 +892,7 @@ u_int8_t secPrivacySeekForEntry(
 				}
 			}
 		}
-
+#endif
 		DBGLOG(RSN, INFO,
 		       "[Wlan index] BSS#%d keyid#%d P=%d use WlanIndex#%d STAIdx=%d "
 		       MACSTR

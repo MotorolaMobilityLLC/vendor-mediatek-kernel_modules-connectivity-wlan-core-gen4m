@@ -2429,10 +2429,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 						bss);
 #endif
 			}
-
+#if CFG_ENABLE_WIFI_DIRECT
 			/* Check SAP channel */
 			p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
-
+#endif
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableSR))
@@ -2630,9 +2630,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			MEDIA_STATE_DISCONNECTED,
 			ucBssIndex);
 
+#if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
-
+#endif
 		break;
 
 	case WLAN_STATUS_SCAN_COMPLETE:
@@ -2898,9 +2899,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			MEDIA_STATE_DISCONNECTED,
 			ucBssIndex);
 
+#if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
 		p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
-
+#endif
 		break;
 	}
 	default:
@@ -3031,7 +3033,9 @@ void kalUpdateReAssocRspInfo(struct GLUE_INFO
 		kalMemCopy(prConnSettings->aucRspIe,
 			pucFrameBody + u4IEOffset,
 			u4IELength);
-	} else if (!IS_BSS_APGO(bss)) {
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (!IS_BSS_APGO(bss)) {
 		struct P2P_ROLE_FSM_INFO *fsm =
 			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
 				prGlueInfo->prAdapter,
@@ -3048,6 +3052,7 @@ void kalUpdateReAssocRspInfo(struct GLUE_INFO
 			pucFrameBody + u4IEOffset,
 			u4IELength);
 	}
+#endif
 }				/* kalUpdateReAssocRspInfo */
 
 void kalResetPacket(struct GLUE_INFO *prGlueInfo,
@@ -3382,9 +3387,11 @@ void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 	uint8_t ucBssIndex = 0;
 	u_int8_t fgIsValidDevice = TRUE;
 	struct ADAPTER *prAdapter = NULL;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct BSS_INFO *prBssInfo = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
 
 	prAdapter = prGlueInfo->prAdapter;
 	ASSERT(pvPacket);
@@ -7567,7 +7574,9 @@ void kalSetNetAddressFromInterface(struct GLUE_INFO
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 
+#if CFG_ENABLE_WIFI_DIRECT
 	GLUE_SPIN_LOCK_DECLARATION();
+#endif
 
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			  netdev_priv(prDev);
@@ -7589,6 +7598,7 @@ void kalSetNetAddressFromInterface(struct GLUE_INFO
 		return;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT
 	if (IS_BSS_P2P(prBssInfo)) { /* P2P */
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prGlueInfo->prAdapter->rP2PNetRegState !=
@@ -7601,7 +7611,7 @@ void kalSetNetAddressFromInterface(struct GLUE_INFO
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	}
-
+#endif
 	if (prNetDevPrivate->prGlueInfo != prGlueInfo)
 		DBGLOG(REQ, WARN, "%s: unexpected prGlueInfo(0x%p)!\n",
 		       __func__, prNetDevPrivate->prGlueInfo);
@@ -9539,9 +9549,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		if (IS_BSS_ALIVE(prAdapter, bss) && ndev) {
 			if (!IS_BSS_P2P(bss)) /* non-p2p */
 				fgIsValidNetDevice = TRUE;
+#if CFG_ENABLE_WIFI_DIRECT
 			else if (prAdapter->rP2PNetRegState ==
 					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
 				fgIsValidNetDevice = TRUE;
+#endif
 		}
 
 		if (fgIsValidNetDevice) {
@@ -9641,9 +9653,11 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		if (ndev) {
 			if (!IS_BSS_P2P(bss)) /* non-p2p */
 				fgIsValidNetDevice = TRUE;
+#if CFG_ENABLE_WIFI_DIRECT
 			else if (prAdapter->rP2PNetRegState ==
 					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
 				fgIsValidNetDevice = TRUE;
+#endif
 		}
 
 		if (fgIsValidNetDevice) {
@@ -10901,7 +10915,9 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	struct BSS_DESC *prBssDesc = NULL;
 	struct net_device *ndev = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+#endif
 	struct ADAPTER *prAdapter = NULL;
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -10924,7 +10940,9 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			       "SAE auth failed without prTargetBssDesc\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
-	} else if (IS_BSS_P2P(prBssInfo)) {
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(prBssInfo)) {
 		prP2pRoleFsmInfo =
 			p2pFuncGetRoleByBssIdx(prAdapter,
 				uBssIndex);
@@ -10941,6 +10959,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			return WLAN_STATUS_INVALID_DATA;
 		}
 	}
+#endif
 
 	ndev = wlanGetNetDev(prGlueInfo, uBssIndex);
 	params.action = NL80211_EXTERNAL_AUTH_START;
@@ -10968,7 +10987,9 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	struct AIS_FSM_INFO *prAisFsmInfo = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
+#if CFG_ENABLE_WIFI_DIRECT
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+#endif
 	struct ADAPTER *prAdapter = NULL;
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 
@@ -11000,7 +11021,9 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			       "SAE auth failed without prTargetBssDesc\n");
 			return WLAN_STATUS_INVALID_DATA;
 		}
-	} else if (IS_BSS_P2P(prBssInfo)) {
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(prBssInfo)) {
 		prP2pRoleFsmInfo =
 			p2pFuncGetRoleByBssIdx(prAdapter,
 				ucBssIndex);
@@ -11017,7 +11040,7 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 			return WLAN_STATUS_INVALID_DATA;
 		}
 	}
-
+#endif
 	size = sizeof(struct PARAM_EXTERNAL_AUTH_INFO);
 	info = kalMemAlloc(size, VIR_MEM_TYPE);
 	if (!info) {

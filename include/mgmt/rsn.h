@@ -287,11 +287,13 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 
+#if CFG_SUPPORT_AAA
 void rsnGenerateRSNXIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
 
 void rsnGenerateOWEIE(struct ADAPTER *prAdapter,
 		      struct MSDU_INFO *prMsduInfo);
+#endif
 
 u_int8_t
 rsnParseCheckForWFAInfoElem(struct ADAPTER *prAdapter,
@@ -354,16 +356,18 @@ uint16_t rsnPmfCapableValidation(struct ADAPTER
 
 void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
 			     struct MSDU_INFO *prMsduInfo);
+#endif /* CFG_SUPPORT_802_11W */
 
+#if CFG_SUPPORT_AAA
+#if CFG_SUPPORT_802_11W
 void rsnApStartSaQuery(struct ADAPTER *prAdapter,
 		       struct STA_RECORD *prStaRec);
 
 void rsnApSaQueryAction(struct ADAPTER *prAdapter,
 			struct SW_RFB *prSwRfb);
+#endif
 
-#endif /* CFG_SUPPORT_802_11W */
 
-#if CFG_SUPPORT_AAA
 void rsnGenerateWSCIEForAssocRsp(struct ADAPTER *prAdapter,
 				 struct MSDU_INFO *prMsduInfo);
 #endif

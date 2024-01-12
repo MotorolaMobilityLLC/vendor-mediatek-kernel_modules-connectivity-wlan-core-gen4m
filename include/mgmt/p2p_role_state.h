@@ -49,6 +49,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  *****************************************************************************/
+#if CFG_ENABLE_WIFI_DIRECT
+
 #ifndef _P2P_ROLE_STATE_H
 #define _P2P_ROLE_STATE_H
 
@@ -159,3 +161,5 @@ p2pRoleStateAbort_OFF_CHNL_TX(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_ROLE_STATE eNextState);
 
 #endif
+
+#endif /* CFG_ENABLE_WIFI_DIRECT */

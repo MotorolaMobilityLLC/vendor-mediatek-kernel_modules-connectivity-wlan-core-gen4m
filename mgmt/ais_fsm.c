@@ -3256,7 +3256,7 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	    ucReasonOfDisconnect != DISCONNECT_REASON_CODE_ROAMING)
 		wmmNotifyDisconnected(prAdapter, ucBssIndex);
 
-
+#if CFG_ENABLE_WIFI_DIRECT
 	if (fgDelayIndication) {
 		uint8_t p2p = cnmP2pIsActive(prAdapter);
 		uint8_t join = timerPendingTimer(
@@ -3269,6 +3269,7 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 				p2p, join);
 		}
 	}
+#endif
 
 	/* 4 <2> Abort current job. */
 	switch (prAisFsmInfo->eCurrentState) {

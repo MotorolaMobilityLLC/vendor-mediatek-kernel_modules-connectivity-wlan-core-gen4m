@@ -2245,6 +2245,7 @@ uint32_t assocSendReAssocRespFrame(struct ADAPTER *prAdapter,
 			prStaRec->u2StatusCode);
 	return WLAN_STATUS_SUCCESS;
 } /* end of assocSendReAssocRespFrame() */
+#endif /* CFG_SUPPORT_AAA */
 
 /*-----------------------------------------------------------------------*/
 /*!
@@ -2364,4 +2365,3 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	DBGLOG(SAA, TRACE, "FT: Generate MD IE\n");
 }
 
-#endif /* CFG_SUPPORT_AAA */

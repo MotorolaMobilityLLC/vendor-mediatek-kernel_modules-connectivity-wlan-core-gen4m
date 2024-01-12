@@ -150,13 +150,6 @@
 
 /* DFS (802.11h) */
 #define CFG_SUPPORT_DFS		1
-#ifndef CFG_SUPPORT_DFS_MASTER
-#define CFG_SUPPORT_DFS_MASTER		1
-/* SoftAp Cross Band Channel Switch */
-#ifndef CFG_SUPPORT_IDC_CH_SWITCH
-#define CFG_SUPPORT_IDC_CH_SWITCH	1
-#endif
-#endif
 
 #if (CFG_SUPPORT_DFS == 1)	/* Add by Enlai */
 /* Quiet (802.11h) */
@@ -888,35 +881,12 @@
  *------------------------------------------------------------------------------
  */
 
-#ifdef LINUX
-#ifdef CONFIG_X86
-#ifndef CFG_ENABLE_WIFI_DIRECT
-#define CFG_ENABLE_WIFI_DIRECT          1
-#endif
-#define CFG_SUPPORT_802_11W             1
-#ifndef CONFIG_SUPPORT_GTK_REKEY
-#define CONFIG_SUPPORT_GTK_REKEY        1
-#endif
-#else
-#ifndef CFG_ENABLE_WIFI_DIRECT
-#define CFG_ENABLE_WIFI_DIRECT          1
-#endif
-
-/*!< 0(default): Disable 802.11W */
 #define CFG_SUPPORT_802_11W             1
 
 #ifndef CONFIG_SUPPORT_GTK_REKEY
 #define CONFIG_SUPPORT_GTK_REKEY        1
 #endif
 
-#endif
-#else /* !LINUX */
-#ifndef CFG_ENABLE_WIFI_DIRECT
-#define CFG_ENABLE_WIFI_DIRECT          1
-#endif
-
-#define CFG_SUPPORT_802_11W              1	/* Not support at WinXP */
-#endif /* LINUX */
 
 #define CFG_SUPPORT_PERSISTENT_GROUP            0
 
@@ -930,20 +900,10 @@
 #define CONFIG_WLAN_DRV_BUILD_IN		0
 #endif
 
-/*
- * Enable cfg80211 option after Android 2.2(Froyo) is suggested,
- * cfg80211 on linux 2.6.29 is not mature yet
- */
-#ifndef CFG_ENABLE_WIFI_DIRECT_CFG_80211
-#define CFG_ENABLE_WIFI_DIRECT_CFG_80211        1
-#endif
-
 #define CFG_SUPPORT_HOTSPOT_OPTIMIZATION        0
 #define CFG_HOTSPOT_OPTIMIZATION_BEACON_INTERVAL 300
 #define CFG_HOTSPOT_OPTIMIZATION_DTIM           1
-#define CFG_AUTO_CHANNEL_SEL_SUPPORT            1
 
-#define CFG_SUPPORT_SOFTAP_WPA3	1
 
 #define CFG_HOTSPOT_SUPPORT_ADJUST_SCC          1
 
@@ -987,6 +947,61 @@
 #ifndef CFG_SUPPORT_AAA
 #define CFG_SUPPORT_AAA                         1
 #endif
+
+#if CFG_SUPPORT_AAA
+#ifndef CFG_AUTO_CHANNEL_SEL_SUPPORT
+#define CFG_AUTO_CHANNEL_SEL_SUPPORT            1
+#endif
+#ifndef CFG_SUPPORT_DFS_MASTER
+#define CFG_SUPPORT_DFS_MASTER                  1
+#endif
+/* SoftAp Cross Band Channel Switch */
+#ifndef CFG_SUPPORT_IDC_CH_SWITCH
+#define CFG_SUPPORT_IDC_CH_SWITCH               1
+#endif
+#ifndef CFG_SUPPORT_SAP_DFS_CHANNEL
+#define CFG_SUPPORT_SAP_DFS_CHANNEL             1
+#endif
+#define CFG_ENABLE_WIFI_DIRECT                  1
+
+/*------------------------------------------------------------------------------
+ * Driver supports preferred frequency list for p2p operating channel
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST     1
+/*
+ * Enable cfg80211 option after Android 2.2(Froyo) is suggested,
+ * cfg80211 on linux 2.6.29 is not mature yet
+ * MUST enable for SAP
+ */
+#define CFG_ENABLE_WIFI_DIRECT_CFG_80211        1
+#define CFG_SUPPORT_SOFTAP_WPA3                 1
+/*------------------------------------------------------------------------------
+ * Flag used for P2P GO to find the best channel list
+ * Value 0: Disable
+ * Value 1: Enable
+ * Note: Must Enable CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST in advance
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_P2PGO_ACS                   1
+
+#ifndef CFG_SUPPORT_WFD
+#define CFG_SUPPORT_WFD                         1
+#endif
+
+#else /* CFG_SUPPORT_AAA */
+#define CFG_AUTO_CHANNEL_SEL_SUPPORT            0
+#define CFG_SUPPORT_DFS_MASTER                  0
+#define CFG_SUPPORT_SAP_DFS_CHANNEL             0
+#define CFG_SUPPORT_IDC_CH_SWITCH               0
+#define CFG_SUPPORT_SOFTAP_WPA3                 0
+#define CFG_ENABLE_WIFI_DIRECT                  0
+#define CFG_ENABLE_WIFI_DIRECT_CFG_80211        0
+#define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST     0
+#define CFG_SUPPORT_P2PGO_ACS                   0
+#define CFG_SUPPORT_WFD                         0
+
+#endif /* CFG_SUPPORT_AAA */
 
 #define CFG_SUPPORT_BCM                         0
 #define CFG_SUPPORT_BCM_BWCS                    0
@@ -1215,10 +1230,6 @@
 #define CFG_DRIVER_COMPOSE_ASSOC_REQ		1
 #define CFG_SUPPORT_802_11AC			1
 #define CFG_STRICT_CHECK_CAPINFO_PRIVACY	0
-
-#ifndef CFG_SUPPORT_WFD
-#define CFG_SUPPORT_WFD				1
-#endif
 
 #ifndef CFG_SUPPORT_WFD_COMPOSE_IE
 #define CFG_SUPPORT_WFD_COMPOSE_IE		1
@@ -1518,10 +1529,6 @@
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
 #endif
 
-#ifndef CFG_SUPPORT_SAP_DFS_CHANNEL
-#define CFG_SUPPORT_SAP_DFS_CHANNEL 1
-#endif
-
 #if (CFG_SUPPORT_DBDC == 1)
 #ifndef CFG_DBDC_SW_FOR_P2P_LISTEN
 #define CFG_DBDC_SW_FOR_P2P_LISTEN	0
@@ -1675,21 +1682,6 @@
  *------------------------------------------------------------------------------
  */
 #define CFG_ENABLE_KEYWORD_EXCEPTION_MECHANISM  0
-
-/*------------------------------------------------------------------------------
- * Driver supports preferred frequency list for p2p operating channel
- *------------------------------------------------------------------------------
- */
-#define CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST  1
-
-/*------------------------------------------------------------------------------
- * Flag used for P2P GO to find the best channel list
- * Value 0: Disable
- * Value 1: Enable
- * Note: Must Enable CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST in advance
- *------------------------------------------------------------------------------
- */
-#define CFG_SUPPORT_P2PGO_ACS 1
 
 /*------------------------------------------------------------------------------
  * Driver supports rx buffer size query

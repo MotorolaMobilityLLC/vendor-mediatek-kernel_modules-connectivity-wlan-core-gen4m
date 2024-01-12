@@ -71,6 +71,7 @@
 #include "precomp.h"
 #include "rlm.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
 /******************************************************************************
  *                              C O N S T A N T S
  ******************************************************************************
@@ -1740,3 +1741,5 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	else
 		prRfChnlInfo->fgDFS = FALSE;
 }
+
+#endif /* CFG_ENABLE_WIFI_DIRECT */

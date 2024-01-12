@@ -97,7 +97,9 @@ enum ENUM_MSG_ID {
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	MID_CNM_P2P_RADAR_DETECT,
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	MID_CNM_P2P_CSA_DONE,
+#endif
 	/*--------------------------------------------------*/
 	/* SCN Module Mailbox Messages                      */
 	/*--------------------------------------------------*/
@@ -231,7 +233,9 @@ enum ENUM_MSG_ID {
 #if CFG_SUPPORT_NCHO
 	MID_MNY_AIS_NCHO_ACTION_FRAME,
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	MID_MNY_P2P_ACS,
+#endif
 #if (CFG_SUPPORT_TWT == 1)
 	/*--------------------------------------------------*/
 	/* TWT Requester Support                            */
@@ -268,7 +272,9 @@ enum ENUM_MSG_ID {
 #if (CFG_SUPPORT_NAN == 1)
 	MID_CNM_NAN_CH_GRANT,
 #endif
+#if CFG_ENABLE_WIFI_DIRECT
 	MID_MNY_P2P_GC_CSA,
+#endif
 	MID_TOTAL_NUM
 };
 

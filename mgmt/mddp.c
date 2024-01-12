@@ -1195,6 +1195,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 						prAisBssInfo->prStaRecOfAP,
 						TRUE);
 		}
+#if CFG_ENABLE_WIFI_DIRECT
 		/* Notify SAP clients' TXD to MD */
 		prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
 		if (prP2pBssInfo) {
@@ -1227,6 +1228,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 						TRUE);
 			}
 		}
+#endif
 	} else if (prMdInfo->info_type == MDDPW_MD_INFO_DRV_EXCEPTION) {
 		struct wsvc_md_event_exception_t *event;
 

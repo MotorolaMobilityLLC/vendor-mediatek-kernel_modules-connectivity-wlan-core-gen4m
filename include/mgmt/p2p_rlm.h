@@ -104,6 +104,7 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 void rlmBssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
@@ -111,7 +112,7 @@ u_int8_t rlmUpdateBwByChListForAP(struct ADAPTER *prAdapter,
 
 u_int8_t rlmUpdateParamsForAP(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo, u_int8_t fgUpdateBeacon);
-
+#endif
 void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
 

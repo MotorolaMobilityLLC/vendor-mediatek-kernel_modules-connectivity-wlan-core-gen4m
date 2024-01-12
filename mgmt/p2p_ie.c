@@ -51,6 +51,8 @@
  *****************************************************************************/
 #include "precomp.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 uint32_t p2pCalculate_IEForAssocReq(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex,
 		struct STA_RECORD *prStaRec)
@@ -263,4 +265,4 @@ wfdFuncAppendAttriDevInfo(struct ADAPTER *prAdapter,
 
 /* wfdFuncAppendAttriDevInfo */
 #endif
-
+#endif /* CFG_ENABLE_WIFI_DIRECT */

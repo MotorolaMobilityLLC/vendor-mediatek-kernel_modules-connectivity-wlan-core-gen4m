@@ -6244,6 +6244,7 @@ int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Initialize the AP (P2P) related FSM and data.
@@ -6385,6 +6386,7 @@ int mtk_uninit_ap_role(struct GLUE_INFO *prGlueInfo,
 
 	return 0;
 }
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 #if KERNEL_VERSION(3, 15, 0) <= CFG80211_VERSION_CODE
@@ -6816,6 +6818,7 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 			 struct vif_params *params)
 #endif
 {
+#if CFG_ENABLE_WIFI_DIRECT
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetdevPriv = NULL;
@@ -6946,7 +6949,7 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 		/* continue the mtk_cfg80211_change_iface() process */
 		mtk_cfg80211_change_iface(wiphy, ndev, type, flags, params);
 	}
-
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	return 0;
 }
 

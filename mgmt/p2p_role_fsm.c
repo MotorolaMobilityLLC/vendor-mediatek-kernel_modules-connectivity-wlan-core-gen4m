@@ -53,6 +53,8 @@
 #include "p2p_role_state.h"
 #include "gl_p2p_os.h"
 
+#if CFG_ENABLE_WIFI_DIRECT
+
 #if 1
 /*lint -save -e64 Type mismatch */
 static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
@@ -5237,3 +5239,4 @@ p2pRoleP2pLisStopDbdcDecision(
 	}
 }
 #endif
+#endif /* CFG_ENABLE_WIFI_DIRECT */

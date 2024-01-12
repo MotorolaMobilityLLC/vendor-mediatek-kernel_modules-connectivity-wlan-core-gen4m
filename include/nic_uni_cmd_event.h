@@ -7183,10 +7183,12 @@ void nicUniEventIdc(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventBssIsAbsence(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_ENABLE_WIFI_DIRECT
 void nicUniEventPsSync(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventSap(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventOBSS(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #if CFG_SUPPORT_ROAMING
@@ -7199,6 +7201,7 @@ void nicUniEventPpCb(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventFwLog2Host(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_ENABLE_WIFI_DIRECT
 void nicUniEventP2p(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -7207,6 +7210,7 @@ void nicUniEventRDD(struct ADAPTER *ad,
 #endif
 void nicUniEventCountdown(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventStaRec(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #if CFG_SUPPORT_TDLS

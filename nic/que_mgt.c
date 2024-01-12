@@ -7480,6 +7480,7 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 	}
 }
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle STA change PS mode Event from the FW
@@ -7689,7 +7690,7 @@ qmUpdateFreeQuota(struct ADAPTER *prAdapter,
 		prStaRec->ucFreeQuotaForNonDelivery);
 
 }
-
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the reorder queued RX packets
@@ -9559,10 +9560,13 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 				&prAisFsmInfo->rJoinTimeoutTimer);
 			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
 		}
-	} else if (IS_BSS_P2P(prBssInfo)) { /* GC */
+	}
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(prBssInfo)) { /* GC */
 		DBGLOG(QM, INFO, "Dhcp done, stop GC join timer\n");
 		p2pRoleFsmNotifyDhcpDone(prAdapter, ucBssIndex);
 	}
+#endif
 }
 
 void qmHandleRxReorderWinShift(struct ADAPTER *prAdapter,

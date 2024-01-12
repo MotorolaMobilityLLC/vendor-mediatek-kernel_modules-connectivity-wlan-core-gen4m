@@ -3912,10 +3912,11 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 	case ERR_RECOV_WAIT_MCU_NORMAL:
 		if (u4Status & ERROR_DETECT_MCU_NORMAL_STATE) {
 			del_timer_sync(&prHifInfo->rSerTimer);
-
+#if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
 			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
+#endif
 
 			kalDevKickCmd(prAdapter->prGlueInfo);
 			kalDevKickData(prAdapter->prGlueInfo);
