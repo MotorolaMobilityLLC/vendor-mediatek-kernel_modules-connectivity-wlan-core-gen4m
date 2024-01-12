@@ -2478,9 +2478,9 @@ static void register_connv3_cbs(void)
 #if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
 	cb.pre_cal_cb.pre_on_cb = wlan_pre_pwr_on;
 	cb.pre_cal_cb.efuse_on_cb = wlan_efuse_on;
-	cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
-	cb.pre_cal_cb.do_cal_cb = wlanPreCal;
-	cb.pre_cal_cb.pre_cal_error = wlanPreCalErr;
+	cb.pre_cal_cb.pwr_on_cb = wlan_precal_pwron_v2;
+	cb.pre_cal_cb.do_cal_cb = wlan_precal_docal_v2;
+	cb.pre_cal_cb.pre_cal_error = wlan_precal_err;
 #endif
 
 #if CFG_CHIP_RESET_SUPPORT
