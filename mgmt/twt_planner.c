@@ -1343,7 +1343,8 @@ void twtPlannerGetTsfDone(
 
 		if ((prTWTFlow == NULL) || (u8twt_interval == 0)) {
 			DBGLOG(TWT_PLANNER, ERROR,
-				"prTWTFlow %x\nu8twt_interval 0x%x\n",
+				"prTWTFlow NULL(%s)\nu8twt_interval 0x%x\n",
+				(prTWTFlow == NULL) ? "Y" : "N",
 				CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF));
 
 			kalMemFree(prGetTsfCtxt,
