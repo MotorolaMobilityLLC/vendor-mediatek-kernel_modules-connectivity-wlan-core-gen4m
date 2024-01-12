@@ -1242,7 +1242,8 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 	struct RTMP_RX_RING *rx_ring,
 	uint32_t index);
 #if CFG_MTK_WIFI_WFDMA_WB
-void asicConnac3xAllocWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo);
+void asicConnac3xAllocWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo,
+				    bool fgAllocMem);
 void asicConnac3xFreeWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo);
 #endif
 void asicConnac3xEnablePlatformIRQ(

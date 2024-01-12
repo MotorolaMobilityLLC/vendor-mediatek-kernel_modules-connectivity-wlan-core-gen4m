@@ -1495,7 +1495,8 @@ struct mt66xx_chip_info {
 	const uint32_t wb_md_didx_size;
 	u_int8_t is_enable_wfdma_write_back;
 
-	void (*allocWfdmaWbBuffer)(struct GLUE_INFO *prGlueInfo);
+	void (*allocWfdmaWbBuffer)(struct GLUE_INFO *prGlueInfo,
+				   bool fgAllocMem);
 	void (*freeWfdmaWbBuffer)(struct GLUE_INFO *prGlueInfo);
 	void (*enableWfdmaWb)(struct GLUE_INFO *prGlueInfo);
 	void (*runWfdmaCidxFetch)(struct GLUE_INFO *prGlueInfo);

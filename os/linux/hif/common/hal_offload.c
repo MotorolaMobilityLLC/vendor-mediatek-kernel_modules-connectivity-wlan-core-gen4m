@@ -353,7 +353,7 @@ exit:
 #endif /* MAWD_ENABLE_WAKEUP_SLEEP */
 }
 
-void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
+void halRroAllocMem(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct HIF_MEM_OPS *prMemOps;
@@ -365,6 +365,9 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 	prCache = &prHifInfo->BaBitmapCache;
 	prAddrArray = &prHifInfo->AddrArray;
 	prIndCmd = &prHifInfo->IndCmdRing;
+
+	if (!fgAllocMem)
+		goto reset;
 
 	prCache->AllocSize =
 		RRO_BA_BITMAP_SIZE * RRO_MAX_WINDOW_NUM;
@@ -400,6 +403,7 @@ void halRroAllocMem(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
+reset:
 	halRroResetMem(prGlueInfo);
 }
 
@@ -1146,7 +1150,7 @@ void halRroUninit(struct GLUE_INFO *prGlueInfo)
 {
 }
 
-void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo)
+void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo, u_int8_t fgAllocMem)
 {
 	struct WIFI_VAR *prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
@@ -1154,7 +1158,9 @@ void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo)
 		halMawdAllocTxRing(prGlueInfo, TRUE);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
-		halRroAllocMem(prGlueInfo);
+		halRroAllocMem(prGlueInfo, fgAllocMem);
+		if (!fgAllocMem)
+			halRroFreeRcbList(prGlueInfo);
 		halRroAllocRcbList(prGlueInfo);
 		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
 			halMawdAllocRxBlkRing(prGlueInfo, TRUE, 0);
@@ -1163,7 +1169,7 @@ void halOffloadAllocMem(struct GLUE_INFO *prGlueInfo)
 #endif
 		}
 	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
-		halRroAllocMem(prGlueInfo);
+		halRroAllocMem(prGlueInfo, fgAllocMem);
 	}
 }
 
