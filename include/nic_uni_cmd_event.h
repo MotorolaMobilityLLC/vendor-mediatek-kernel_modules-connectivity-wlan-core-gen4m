@@ -1357,6 +1357,56 @@ struct UNI_CMD_BAND_CONFIG_EDCCA_THRESHOLD_CTRL {
 	uint8_t fginit;
 } __KAL_ATTRIB_PACKED__;
 
+/* MUAR set command (0x0A) */
+struct UNI_CMD_MUAR {
+	/* fixed field */
+	uint8_t ucBand;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Muar command Tag */
+enum UNI_CMD_MUAR_TAG {
+	UNI_CMD_MUAR_TAG_CLEAN = 0,
+	UNI_CMD_MUAR_TAG_MC_FILTER = 1,
+	UNI_CMD_MUAR_TAG_ENTRY = 2,
+	UNI_CMD_MUAR_TAG_NUM
+};
+
+/* MUAR Config Parameters (Tag0) */
+struct UNI_CMD_MUAR_CLEAN_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucHwBssIndex;
+	uint8_t  aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* MC Config Parameters (Tag1) */
+struct UNI_CMD_MC_FILTER_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucBssIndex;
+	uint8_t  ucByPassMcTblCheck;
+	uint8_t  ucNormalMode;
+	uint8_t  ucScreenOffMode;
+	uint8_t  ucDeviceSuspendMode;
+	uint8_t  aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* MC Config Parameters (Tag2) */
+struct UNI_CMD_MUAR_ENTRY_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgSmesh;
+	uint8_t ucHwBssIndex;
+	uint8_t ucMuarIdx;
+	uint8_t ucEntryAdd;
+	uint8_t aucMacAddr[6];
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 /* WSYS Config set command (0x0B) */
 struct UNI_CMD_WSYS_CONFIG {
 	/* fixed field */
@@ -2045,6 +2095,44 @@ struct UNI_CMD_SET_TDLS_CH_SW {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+/* BA offload set command (0x1F) */
+struct UNI_CMD_BA_OFFLOAD {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                              | ID  | structure
+	*   ---------------------------------|-----|--------------
+	*   UNI_CMD_TX_AMPDU                 | 0x0 | UNI_CMD_TX_AMPDU_T
+	*   UNI_CMD_RX_AMPDU                 | 0x1 | UNI_CMD_RX_AMPDU_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* Get BA offload command TLV List */
+enum UNI_CMD_BA_OFFLOAD_TAG {
+	UNI_CMD_BA_OFFLOAD_TAG_TX_AMPDU = 0,
+	UNI_CMD_BA_OFFLOAD_TAG_RX_AMPDU = 1,
+	UNI_CMD_BA_OFFLOAD_TAG_NUM
+};
+
+/* TX AMPDU (Tag0) */
+struct UNI_CMD_TX_AMPDU_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  fgEnable;
+	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* RX AMPDU (Tag1) */
+struct UNI_CMD_RX_AMPDU_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  fgEnable;
+	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
 /* P2P command (0x20) */
 struct UNI_CMD_P2P {
 	/* fixed field */
@@ -2138,6 +2226,7 @@ enum ENUM_UNI_CMD_GET_STATISTICS_TAG {
 	UNI_CMD_GET_STATISTICS_TAG_BASIC = 0,
 	UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY = 1,
 	UNI_CMD_GET_STATISTICS_TAG_STA = 2,
+	UNI_CMD_GET_STATISTICS_TAG_BUG_REPORT = 3,
 	UNI_CMD_GET_STATISTICS_TAG_NUM
 };
 
@@ -2147,6 +2236,11 @@ struct UNI_CMD_BASIC_STATISTICS {
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_LINK_QUALITY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_BUG_REPORT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
@@ -2653,6 +2747,33 @@ struct UNI_CMD_BF_STAREC_READ {
 	uint16_t u2Length;
 	uint16_t u2WlanIdx;
 	uint8_t  au1Reserved[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_RSSI_MONITOR {
+	/*fixed field*/
+	uint8_t aucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                        | ID   | structure
+	*   -------------------------  | ---- | -------------
+	*   UNI_CMD_RSSI_MONITOR_SET   | 0x0  | UNI_CMD_RSSI_MONITOR_SET_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_RSSI_MONITOR_TAG {
+	UNI_CMD_RSSI_MONITOR_TAG_SET = 0x0,
+	UNI_CMD_RSSI_MONITOR_TAG_NUM
+};
+
+struct UNI_CMD_RSSI_MONITOR_SET {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* Tag specific part */
+	uint8_t fgEnable;
+	int8_t  cMaxRssi;
+	int8_t  cMinRssi;
+	uint8_t ucReserved;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_MQM_UPDATE_MU_EDCA {
@@ -3448,6 +3569,80 @@ struct UNI_EVENT_BASIC_STATISTICS {
 	uint32_t     u4HwMacAwakeDuration; /* SlotIdleHwAwake */
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_BUG_REPORT {
+	uint16_t     u2Tag;
+	uint16_t     u2Length;
+	/* BugReportVersion */
+	uint32_t     u4BugReportVersion;
+
+	/* FW Module State */
+	uint32_t     u4FWState; //LP, roaming
+	uint32_t     u4FWScanState;
+	uint32_t     u4FWCnmState;
+
+	/* Scan Counter */
+	uint32_t     u4ReceivedBeaconCount;
+	uint32_t     u4ReceivedProbeResponseCount;
+	uint32_t     u4SentProbeRequestCount;
+	uint32_t     u4SentProbeRequestFailCount;
+
+	/* Roaming Counter */
+	uint32_t     u4RoamingDebugFlag;
+	uint32_t     u4RoamingThreshold;
+	uint32_t     u4RoamingCurrentRcpi;
+
+	/* RF Counter */
+	uint32_t     u4RFPriChannel;
+	uint32_t     u4RFChannelS1;
+	uint32_t     u4RFChannelS2;
+	uint32_t     u4RFChannelWidth;
+	uint32_t     u4RFSco;
+
+	/* Coex Counter */
+	uint32_t     u4BTProfile;
+	uint32_t     u4BTOn;
+	uint32_t     u4LTEOn;
+
+	/* Low Power Counter */
+	uint32_t     u4LPTxUcPktNum;
+	uint32_t     u4LPRxUcPktNum;
+	uint32_t     u4LPPSProfile;
+
+	/* Base Band Counter */
+	uint32_t     u4OfdmPdCnt;
+	uint32_t     u4CckPdCnt;
+	uint32_t     u4CckSigErrorCnt;
+	uint32_t     u4CckSfdErrorCnt;
+	uint32_t     u4OfdmSigErrorCnt;
+	uint32_t     u4OfdmTaqErrorCnt;
+	uint32_t     u4OfdmFcsErrorCnt;
+	uint32_t     u4CckFcsErrorCnt;
+	uint32_t     u4OfdmMdrdyCnt;
+	uint32_t     u4CckMdrdyCnt;
+	uint32_t     u4PhyCcaStatus;
+	uint32_t     u4WifiFastSpiStatus;
+
+	/* Mac RX Counter */
+	uint32_t     u4RxMdrdyCount;
+	uint32_t     u4RxFcsErrorCount;
+	uint32_t     u4RxbFifoFullCount;
+	uint32_t     u4RxMpduCount;
+	uint32_t     u4RxLengthMismatchCount;
+	uint32_t     u4RxCcaPrimCount;
+	uint32_t     u4RxEdCount;
+
+	uint32_t     u4LmacFreeRunTimer;
+	uint32_t     u4WtblReadPointer;
+	uint32_t     u4RmacWritePointer;
+	uint32_t     u4SecWritePointer;
+	uint32_t     u4SecReadPointer;
+	uint32_t     u4DmaReadPointer;
+
+	/* Mac TX Counter */
+	uint32_t     u4TxChannelIdleCount;
+	uint32_t     u4TxCcaNavTxTime;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_LINK_QUALITY
 {
 	int8_t       cRssi; /* AIS Network. */
@@ -3466,6 +3661,12 @@ struct UNI_EVENT_LINK_QUALITY
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_STA_STATISTICS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_GET_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucBuffer[0];
@@ -4275,6 +4476,8 @@ uint32_t nicUniCmdGetStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetLinkQuality(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdGetBugReport(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 		struct STA_RECORD *prStaRec);
 uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
@@ -4290,6 +4493,14 @@ uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetTxAmpdu(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetRxAmpdu(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
@@ -4334,11 +4545,15 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventStaStatistics(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventStatistics(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventLinkQuality(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryRxStatAll(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventBugReport(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
