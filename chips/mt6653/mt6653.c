@@ -261,7 +261,8 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
-	{0x7c030000, 0x1b0000, 0x10000}, /* CONN_INFRA_CCIF */
+	{0x7c030000, 0x160000, 0x10000}, /* CONN_INFRA_CCIF */
+	{0x7c050000, 0x1a0000, 0x10000}, /* CONN_INFRA PCIE2AP REM */
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 	{0x70010000, 0x1c0000, 0x10000},
 	{0x70000000, 0x1e0000, 0x9000},
@@ -1946,11 +1947,9 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
 		   ((uint32_t)base >> 16));
 
-#if (CFG_MTK_FPGA_PLATFORM == 0)
 	HAL_MCR_WR(prAdapter,
 		   MT6653_EMI_SIZE_ADDR,
 		   size);
-#endif
 }
 
 static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
