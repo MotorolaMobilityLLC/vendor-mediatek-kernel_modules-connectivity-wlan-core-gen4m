@@ -1268,6 +1268,20 @@ struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT
 	}
 };
 
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_HE
+	g_rRlmPowerLimitConfigurationHE[] = {
+	/*Default*/
+	{	{0, 0}
+		, 36,
+			{64, 64, 64, /* RU26 L,H,U */
+			64, 64, 64,  /* RU52 L,H,U*/
+			64, 64, 64,  /* RU106 L,H,U*/
+			64, 64, 64,  /* RU242 L,H,U*/
+			64, 64, 64,  /* RU484 L,H,U*/
+			64, 64, 64}  /* RU996 L,H,U*/
+	}
+};
+
 struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 	g_rRlmPowerLimitConfiguration[] = {
 
