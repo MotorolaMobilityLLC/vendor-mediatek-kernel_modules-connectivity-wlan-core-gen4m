@@ -1209,11 +1209,21 @@ struct CAP_MAC_ADDR {
 	uint8_t aucReserved[2];
 };
 
+enum ENUM_CAP_PHY_MAX_BW {
+	CAP_PHY_MAX_BW20, /* support 20 MHZ */
+	CAP_PHY_MAX_BW40, /* support 20/40 MHZ */
+	CAP_PHY_MAX_BW80, /* support 20/40/80 MHZ */
+	CAP_PHY_MAX_BW160, /* support 20/40/80/160 MHZ */
+	CAP_PHY_MAX_BW8080, /* support 20/40/80/160/8080 MHZ */
+	CAP_PHY_MAX_BW320, /* support 20/40/80/160/8080/320 MHZ */
+	CAP_PHY_MAX_BW_NUM,
+};
+
 struct CAP_PHY_CAP {
 	uint8_t ucHt; /* 1:support, 0:not*/
 	uint8_t ucVht; /* 1:support, 0:not*/
 	uint8_t uc5gBand; /* 1:support, 0:not*/
-	/* 0: BW20, 1:BW40, 2:BW80, 3:BW160, 4:BW80+80 */
+	/* 0: BW20, 1:BW40, 2:BW80, 3:BW160, 4:BW80+80, 5:BW320 */
 	uint8_t ucMaxBandwidth;
 	uint8_t ucNss; /* 1:1x1, 2:2x2, ... */
 	uint8_t ucDbdc; /* 1:support, 0:not*/

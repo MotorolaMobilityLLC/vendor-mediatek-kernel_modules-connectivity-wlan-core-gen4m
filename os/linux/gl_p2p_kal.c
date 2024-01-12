@@ -2373,7 +2373,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 	case MAX_BW_160MHZ:
 		ch_width = 160;
 		break;
-	case MAX_BW_320MHZ:
+	case MAX_BW_320_1MHZ:
+	case MAX_BW_320_2MHZ:
 		ch_width = 320;
 		break;
 	default:

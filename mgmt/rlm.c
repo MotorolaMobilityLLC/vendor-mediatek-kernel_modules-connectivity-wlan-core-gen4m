@@ -136,34 +136,6 @@ static void rlmRecOpModeBwForClient(uint8_t ucVhtOpModeChannelWidth,
  *******************************************************************************
  */
 
-uint8_t rlmMaxBwToVhtBw(uint8_t ucMaxBw)
-{
-	uint8_t ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
-
-	switch (ucMaxBw) {
-	case MAX_BW_20MHZ:
-	case MAX_BW_40MHZ:
-		ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;
-		break;
-	case MAX_BW_80MHZ:
-		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80;
-		break;
-	case MAX_BW_160MHZ:
-		ucVhtBw = VHT_OP_CHANNEL_WIDTH_160;
-		break;
-	case MAX_BW_80_80_MHZ:
-		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
-		break;
-	case MAX_BW_320MHZ:
-		ucVhtBw = VHT_OP_CHANNEL_WIDTH_320;
-		break;
-	default:
-		break;
-	}
-
-	return ucVhtBw;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -2455,7 +2427,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 				 */
 				if ((ucCurrentBandwidth == MAX_BW_160MHZ &&
 					ucMaxBandwidth == MAX_BW_80MHZ) ||
-					(ucCurrentBandwidth == MAX_BW_320MHZ &&
+				    ((ucCurrentBandwidth == MAX_BW_320_1MHZ ||
+				      ucCurrentBandwidth == MAX_BW_320_2MHZ) &&
 					ucMaxBandwidth == MAX_BW_160MHZ)) {
 					*pucS1 = nicGetS1(prBssInfo->eBand,
 						*pucPrimaryCh,
@@ -2523,38 +2496,18 @@ enum ENUM_CHNL_EXT rlmReviseSco(
 /*----------------------------------------------------------------------------*/
 void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 {
-	ASSERT(prBssInfo);
-
-	if (ucBssOpBw < MAX_BW_80MHZ || prBssInfo->eBand == BAND_2G4) {
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
-		prBssInfo->ucVhtChannelFrequencyS1 = 0;
-		prBssInfo->ucVhtChannelFrequencyS2 = 0;
-	} else if (ucBssOpBw == MAX_BW_80MHZ) {
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
-			prBssInfo->eBand,
-			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_80);
-		prBssInfo->ucVhtChannelFrequencyS2 = 0;
-	} else if (ucBssOpBw == MAX_BW_160MHZ) {
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_160;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
-			prBssInfo->eBand,
-			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_160);
-		prBssInfo->ucVhtChannelFrequencyS2 = 0;
-	} else if (ucBssOpBw == MAX_BW_320MHZ) {
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_320;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
-			prBssInfo->eBand,
-			prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_320);
-		prBssInfo->ucVhtChannelFrequencyS2 = 0;
-	} else {
-		/* 4 TODO: / BW80+80 support */
-		DBGLOG(RLM, INFO, "Unsupport BW setting, back to VHT20_40\n");
-
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
-		prBssInfo->ucVhtChannelFrequencyS1 = 0;
-		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	if (!prBssInfo) {
+		DBGLOG(RLM, WARN, "no bssinfo\n");
+		return;
 	}
+
+	prBssInfo->ucVhtChannelWidth =
+		rlmGetVhtOpBwByBssOpBw(ucBssOpBw);
+	prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
+		prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->ucVhtChannelWidth);
+	prBssInfo->ucVhtChannelFrequencyS2 = 0;
 }
 
 void rlmParseMtkOui(
@@ -7162,8 +7115,11 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 	ASSERT(prBssInfo);
 
 	switch (ucChannelWidth) {
-	case VHT_OP_CHANNEL_WIDTH_320:
-		ucBssOpBw = MAX_BW_320MHZ;
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+		ucBssOpBw = MAX_BW_320_1MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_320_2:
+		ucBssOpBw = MAX_BW_320_2MHZ;
 		break;
 
 	case VHT_OP_CHANNEL_WIDTH_80P80:
@@ -7218,8 +7174,11 @@ uint8_t rlmGetBssOpBwByOwnAndPeerCapability(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11AC
 	if (RLM_NET_IS_11AC(prBssInfo)) { /* VHT */
 		switch (prStaRec->ucVhtOpChannelWidth) {
-		case VHT_OP_CHANNEL_WIDTH_320:
-			ucBssOpBw = MAX_BW_320MHZ;
+		case VHT_OP_CHANNEL_WIDTH_320_1:
+			ucBssOpBw = MAX_BW_320_1MHZ;
+			break;
+		case VHT_OP_CHANNEL_WIDTH_320_2:
+			ucBssOpBw = MAX_BW_320_2MHZ;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_80P80:
 			ucBssOpBw = MAX_BW_80_80_MHZ;
@@ -7316,8 +7275,12 @@ uint8_t rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw)
 		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_80P80;
 		break;
 
-	case MAX_BW_320MHZ:
-		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_320;
+	case MAX_BW_320_1MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_320_1;
+		break;
+
+	case MAX_BW_320_2MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_320_2;
 		break;
 
 	default:
@@ -7327,6 +7290,22 @@ uint8_t rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw)
 	}
 
 	return ucVhtOpBw;
+}
+
+uint8_t rlmGetVhtOpBw320ByS1(uint8_t ucS1)
+{
+	uint8_t ucBw320Pos = VHT_OP_CHANNEL_WIDTH_320_1; /* default */
+
+	/* BW320-1 */
+	if (ucS1 == 31 || ucS1 == 95 || ucS1 == 159)
+		ucBw320Pos = VHT_OP_CHANNEL_WIDTH_320_1;
+	/* BW320-2 */
+	else if (ucS1 == 63 || ucS1 == 127 || ucS1 == 191)
+		ucBw320Pos = VHT_OP_CHANNEL_WIDTH_320_2;
+	else
+		DBGLOG(NIC, WARN, "unexpected s1: %d\n", ucS1);
+
+	return ucBw320Pos;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -7355,10 +7334,9 @@ static uint8_t rlmGetOpModeBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 		break;
 	case VHT_OP_CHANNEL_WIDTH_160:
 	case VHT_OP_CHANNEL_WIDTH_80P80:
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+	case VHT_OP_CHANNEL_WIDTH_320_2:
 		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
-		break;
-	case VHT_OP_CHANNEL_WIDTH_320:
-		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_320;
 		break;
 	default:
 		DBGLOG(RLM, WARN, "%s: unexpected VHT channel width: %d\n",
@@ -8700,32 +8678,31 @@ void rlmBfStaRecPfmuUpdate(struct ADAPTER *prAdapter,
 				PHY_RATE_24M;
 
 			switch (prBssInfo->ucVhtChannelWidth) {
-			case VHT_OP_CHANNEL_WIDTH_320:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW =
-					VHT_OP_CHANNEL_WIDTH_320;
+			case VHT_OP_CHANNEL_WIDTH_320_1:
+			case VHT_OP_CHANNEL_WIDTH_320_2:
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW320;
 				ucBFeeMaxNr =
 					GET_DOT11BE_PHY_CAP_BFEE_320M(
 						u4EhtPhyCap1);
 				break;
 			case VHT_OP_CHANNEL_WIDTH_160:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW =
-					MAX_BW_160MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW160;
 				ucBFeeMaxNr =
 					GET_DOT11BE_PHY_CAP_BFEE_160M(
 						u4EhtPhyCap1);
 				break;
 			case VHT_OP_CHANNEL_WIDTH_80:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW80;
 				ucBFeeMaxNr =
 					GET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(
 						u4EhtPhyCap1);
 				break;
 			case VHT_OP_CHANNEL_WIDTH_20_40:
 			default:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW20;
 				if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
 					prStaRec->rTxBfPfmuStaInfo.ucCBW =
-								MAX_BW_40MHZ;
+								BF_CBW40;
 				ucBFeeMaxNr =
 					GET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(
 						u4EhtPhyCap1);
@@ -8774,18 +8751,17 @@ case MODE_HE_SU:
 
 		switch (prBssInfo->ucVhtChannelWidth) {
 		case VHT_OP_CHANNEL_WIDTH_160:
-			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_160MHZ;
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW160;
 			break;
 		case VHT_OP_CHANNEL_WIDTH_80:
-			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW80;
 			break;
 
 		case VHT_OP_CHANNEL_WIDTH_20_40:
 		default:
-			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW20;
 			if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
-				prStaRec->rTxBfPfmuStaInfo.ucCBW =
-							MAX_BW_40MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW40;
 			break;
 		}
 
@@ -8837,19 +8813,18 @@ case MODE_HE_SU:
 
 			switch (prBssInfo->ucVhtChannelWidth) {
 			case VHT_OP_CHANNEL_WIDTH_160:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW =
-					MAX_BW_160MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW160;
 				break;
 			case VHT_OP_CHANNEL_WIDTH_80:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_80MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW80;
 				break;
 
 			case VHT_OP_CHANNEL_WIDTH_20_40:
 			default:
-				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW20;
 				if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
 					prStaRec->rTxBfPfmuStaInfo.ucCBW =
-								MAX_BW_40MHZ;
+								BF_CBW40;
 				break;
 			}
 
@@ -8878,9 +8853,9 @@ case MODE_HE_SU:
 			/* 0: HT MCS0 */
 			prStaRec->rTxBfPfmuStaInfo.ucNdpaRate = PHY_RATE_MCS0;
 
-			prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_20MHZ;
+			prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW20;
 			if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
-				prStaRec->rTxBfPfmuStaInfo.ucCBW = MAX_BW_40MHZ;
+				prStaRec->rTxBfPfmuStaInfo.ucCBW = BF_CBW40;
 
 			ucBFerMaxNr = 1;
 			ucBFeeMaxNr =

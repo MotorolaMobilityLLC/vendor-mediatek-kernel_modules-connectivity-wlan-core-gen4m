@@ -193,12 +193,13 @@ uint8_t roamReasonToType[CONNECTING_ROAMING_REASON_NUM] = {
 #endif
 };
 
-const uint16_t mpduLen[CW_320MHZ + 1] = {
+const uint16_t mpduLen[CW_320_2MHZ + 1] = {
 	[CW_20_40MHZ]  = 40,
 	[CW_80MHZ] = 80,
 	[CW_160MHZ] = 160,
 	[CW_80P80MHZ] = 160,
-	[CW_320MHZ]  = 320
+	[CW_320_1MHZ]  = 320,
+	[CW_320_2MHZ]  = 320
 };
 
 #if (CFG_MLO_LINK_PLAN_MODE == 0)
@@ -576,7 +577,8 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 			break;
 		case CW_160MHZ:
 		case CW_80P80MHZ:
-		case CW_320MHZ:
+		case CW_320_1MHZ:
+		case CW_320_2MHZ:
 			u2Score = BSS_FULL_SCORE;
 			break;
 		}

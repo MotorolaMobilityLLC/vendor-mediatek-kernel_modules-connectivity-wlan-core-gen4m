@@ -8059,14 +8059,14 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		if (ucBandIdx == BAND_5G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetVhtS1(prChnRank->ucChannel,
-				rlmMaxBwToVhtBw(eChnlBw)) == 0)
+				rlmGetVhtOpBwByBssOpBw(eChnlBw)) == 0)
 			continue;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		/* If eChnlBw == MAX_BW_320MHZ, it will skip 160BW channel */
 		if (ucBandIdx == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetHe6gS1(prChnRank->ucChannel,
-				rlmMaxBwToVhtBw(eChnlBw)) == 0)
+				rlmGetVhtOpBwByBssOpBw(eChnlBw)) == 0)
 			continue;
 #endif
 
@@ -8079,7 +8079,7 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* Add 6G 160BW channel after 320BW channel */
-	if (eBandSel & BIT(BAND_6G) && eChnlBw >= MAX_BW_320MHZ) {
+	if (eBandSel & BIT(BAND_6G) && eChnlBw >= MAX_BW_320_1MHZ) {
 		(paucSortChannelList+ucInUsedCHNumber)->ucChannelNum = 197;
 		(paucSortChannelList+ucInUsedCHNumber)->eBand = BAND_6G;
 		ucInUsedCHNumber++;
@@ -8393,8 +8393,11 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 	case MAX_BW_80_80_MHZ:
 		ucVhtBw = VHT_OP_CHANNEL_WIDTH_80P80;
 		break;
-	case MAX_BW_320MHZ:
-		ucVhtBw = VHT_OP_CHANNEL_WIDTH_320;
+	case MAX_BW_320_1MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_320_1;
+		break;
+	case MAX_BW_320_2MHZ:
+		ucVhtBw = VHT_OP_CHANNEL_WIDTH_320_2;
 		break;
 	default:
 		ucVhtBw = VHT_OP_CHANNEL_WIDTH_20_40;

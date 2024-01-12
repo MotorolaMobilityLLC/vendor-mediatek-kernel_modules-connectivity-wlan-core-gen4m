@@ -2201,7 +2201,8 @@ uint32_t nicUniCmdSetBssRlmImpl(struct ADAPTER *ad,
 	rlm_tag->ucRfBand = cmd->ucRfBand;
 	rlm_tag->ucBandwidth = BW_20;
 	switch (cmd->ucVhtChannelWidth) {
-	case VHT_OP_CHANNEL_WIDTH_320:
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+	case VHT_OP_CHANNEL_WIDTH_320_2:
 		rlm_tag->ucBandwidth = BW_320;
 		break;
 	case VHT_OP_CHANNEL_WIDTH_80P80:
@@ -3963,7 +3964,8 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		case CW_80P80MHZ:
 			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_80P80MHZ;
 			break;
-		case CW_320MHZ:
+		case CW_320_1MHZ:
+		case CW_320_2MHZ:
 			eWidth = UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ;
 			break;
 		default:
@@ -8294,7 +8296,8 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 				legacy.ucRfChannelWidth = CW_80P80MHZ;
 				break;
 			case UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ:
-				legacy.ucRfChannelWidth = CW_320MHZ;
+				legacy.ucRfChannelWidth = rlmGetVhtOpBw320ByS1(
+					grant->ucRfCenterFreqSeg1);
 				break;
 			default:
 				legacy.ucRfChannelWidth = CW_20_40MHZ;

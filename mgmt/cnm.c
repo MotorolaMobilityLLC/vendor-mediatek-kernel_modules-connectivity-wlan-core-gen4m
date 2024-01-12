@@ -939,12 +939,15 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	}
 
 	log_dbg(CNM, INFO,
-	       "ChGrant net=%d band=%d token=%d ch=%d sco=%d u4GrantInterval=%d\n",
+	       "ChGrant net=%d band=%d token=%d ch=%d bw=%d sco=%d s1=%d s2=%d, u4GrantInterval=%d\n",
 	       prEventBody->ucBssIndex,
 	       prEventBody->ucDBDCBand,
 	       prEventBody->ucTokenID,
 	       prEventBody->ucPrimaryChannel,
+	       prEventBody->ucRfChannelWidth,
 	       prEventBody->ucRfSco,
+	       prEventBody->ucRfCenterFreqSeg1,
+	       prEventBody->ucRfCenterFreqSeg2,
 	       prEventBody->u4GrantInterval);
 
 	ASSERT(prEventBody->ucBssIndex <=
@@ -4749,15 +4752,17 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			/* Verify if there is valid S1 */
 			ucS1 = nicGetS1(prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
-				rlmMaxBwToVhtBw(ucOpMaxBw));
+				rlmGetVhtOpBwByBssOpBw(ucOpMaxBw));
 
 			/* Try if there is valid S1 for BW160 if we failed to
 			 * get S1 for BW320.
 			 */
-			if (ucS1 == 0 && ucOpMaxBw == MAX_BW_320MHZ) {
+			if (ucS1 == 0 &&
+			   (ucOpMaxBw == MAX_BW_320_1MHZ ||
+			    ucOpMaxBw == MAX_BW_320_2MHZ)) {
 				ucS1 = nicGetS1(prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
-					rlmMaxBwToVhtBw(MAX_BW_160MHZ));
+					rlmGetVhtOpBwByBssOpBw(MAX_BW_160MHZ));
 
 				if (ucS1) /* Fallback to BW80 */
 					ucOpMaxBw = MAX_BW_160MHZ;
@@ -4769,7 +4774,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			if (ucS1 == 0 && ucOpMaxBw == MAX_BW_160MHZ) {
 				ucS1 = nicGetS1(prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
-					rlmMaxBwToVhtBw(MAX_BW_80MHZ));
+					rlmGetVhtOpBwByBssOpBw(MAX_BW_80MHZ));
 
 				if (ucS1) /* Fallback to BW80 */
 					ucOpMaxBw = MAX_BW_80MHZ;

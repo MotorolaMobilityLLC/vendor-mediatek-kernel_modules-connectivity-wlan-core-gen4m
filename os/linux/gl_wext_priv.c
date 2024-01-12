@@ -16045,7 +16045,8 @@ static uint8_t *_getStrFromBssOpBw(struct BSS_INFO *prBssInfo)
 		(uint8_t *) DISP_STRING("80"),
 		(uint8_t *) DISP_STRING("160"),
 		(uint8_t *) DISP_STRING("80+80"),
-		(uint8_t *) DISP_STRING("320"),
+		(uint8_t *) DISP_STRING("320-1"),
+		(uint8_t *) DISP_STRING("320-2"),
 		(uint8_t *) DISP_STRING("UNKNOWN"),
 	};
 	uint8_t ucBssOpBw =
