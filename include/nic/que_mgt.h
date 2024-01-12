@@ -503,7 +503,7 @@ struct QUE_MGT {	/* Queue Management Control Info */
 	u_int8_t fgIsTxResrouceControlEn;
 };
 
-struct _EVENT_TX_ADDBA_T {
+struct EVENT_TX_ADDBA {
 	uint8_t      ucStaRecIdx;
 	uint8_t      ucTid;
 	uint8_t      ucWinSize;

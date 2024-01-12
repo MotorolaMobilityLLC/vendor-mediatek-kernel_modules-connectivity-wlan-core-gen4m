@@ -679,7 +679,12 @@ struct STA_RECORD {
 	uint8_t ucSmDialogToken;	/* Spectrum Mngt Dialog Token */
 	uint8_t ucSmMsmtRequestMode;	/* Measurement Request Mode */
 	uint8_t ucSmMsmtToken;		/* Measurement Request Token */
+
+	/* Element for AMSDU */
 	uint8_t ucAmsduEnBitmap;	/* Tid bit mask of AMSDU enable */
+	uint8_t ucMaxMpduCount;
+	uint32_t u4MaxMpduLen;
+	uint32_t u4MinMpduLen;
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct STA_PMF_CFG rPmfCfg;

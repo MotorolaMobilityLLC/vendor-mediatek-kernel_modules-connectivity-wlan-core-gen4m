@@ -65,6 +65,9 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#define CONNAC_CHIP_IP_VERSION			(0x10020300)
+#define CONNAC_CHIP_IP_CONFIG			(0x1)
+#define CONNAC_CHIP_ADIE_INFO			(0x31)
 #define USB_HIF_TXD_LEN    4
 
 /*******************************************************************************
@@ -76,6 +79,7 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 	char *pcBuf, int i4TotalLen);
 void asicEnableFWDownload(IN struct ADAPTER *prAdapter,
 	IN u_int8_t fgEnable);
+uint32_t asicGetChipID(struct ADAPTER *prAdapter);
 void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
 	OUT uint8_t *prTxDescBuffer);
@@ -84,15 +88,15 @@ void fillNicTxDescAppendWithCR4(IN struct ADAPTER *prAdapter,
 	OUT uint8_t *prTxDescBuffer);
 void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
 void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
 void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+	IN phys_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
 	OUT uint8_t *pucBuffer);
 void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter,
 	IN struct MSDU_INFO *prMsduInfo,
@@ -107,11 +111,16 @@ void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter);
 void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 void asicEnableInterrupt(IN struct ADAPTER *prAdapter);
+void asicDisableInterrupt(IN struct ADAPTER *prAdapter);
 void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
 void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	OUT u_int8_t *pfgResult);
+void asicWakeUpWiFi(IN struct ADAPTER *prAdapter);
+bool asicIsValidRegAccess(IN struct ADAPTER *prAdapter, IN uint32_t u4Register);
 void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
+void asicSetDummyReg(struct GLUE_INFO *prGlueInfo);
+void asicCheckDummyReg(struct GLUE_INFO *prGlueInfo);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)

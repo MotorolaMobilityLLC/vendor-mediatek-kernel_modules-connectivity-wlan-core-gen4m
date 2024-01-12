@@ -163,10 +163,15 @@ struct BUS_INFO mt7663_bus_info = {
 
 	.pdmaSetup = asicPdmaConfig,
 	.enableInterrupt = asicEnableInterrupt,
+	.disableInterrupt = asicDisableInterrupt,
 	.lowPowerOwnRead = asicLowPowerOwnRead,
 	.lowPowerOwnSet = asicLowPowerOwnSet,
 	.lowPowerOwnClear = asicLowPowerOwnClear,
+	.wakeUpWiFi = asicWakeUpWiFi,
+	.isValidRegAccess = NULL,
 	.getMailboxStatus = asicGetMailboxStatus,
+	.setDummyReg = asicSetDummyReg,
+	.checkDummyReg = asicCheckDummyReg,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
@@ -211,6 +216,22 @@ struct ATE_OPS_T mt7663AteOps = {
 };
 #endif
 
+struct CHIP_DBG_OPS mt7663_debug_ops = {
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	.showPdmaInfo = halShowPdmaInfo,
+	.showPseInfo = halShowPseInfo,
+	.showPleInfo = halShowPleInfo,
+	.showCsrInfo = halShowHostCsrInfo,
+	.showDmaschInfo = halShowDmaschInfo,
+#else
+	.showPdmaInfo = NULL,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showCsrInfo = NULL,
+	.showDmaschInfo = NULL,
+#endif
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.bus_info = &mt7663_bus_info,
@@ -219,6 +240,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt7663AteOps,
 #endif
+	.prDebugOps = &mt7663_debug_ops,
 
 	.chip_id = MT7663_CHIP_ID,
 	.should_verify_chip_id = FALSE,
@@ -230,12 +252,15 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7663_eco_table,
 	.isNicCapV1 = FALSE,
+	.is_support_efuse = TRUE,
 
 	.asicCapInit = asicCapInit,
 	.asicEnableFWDownload = asicEnableFWDownload,
+	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanConnacDownloadBufferBin,
 	.showTaskStack = NULL,
 	.is_support_hw_amsdu = TRUE,
+	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
 };
 

@@ -3653,6 +3653,12 @@ static int initWlan(void)
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
 #endif
+
+#if CFG_MTK_ANDROID_EMI
+	/* Set WIFI EMI protection to consys permitted on system boot up */
+	kalSetEmiMpuProtection(gConEmiPhyBase, WIFI_EMI_MEM_OFFSET,
+			       WIFI_EMI_MEM_SIZE, true);
+#endif
 	return ret;
 }				/* end of initWlan() */
 

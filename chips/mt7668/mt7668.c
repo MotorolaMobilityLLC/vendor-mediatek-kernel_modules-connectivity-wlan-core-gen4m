@@ -346,6 +346,69 @@ void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
 	*pfgResult = (u4RegValue == 0);
 }
+void mt7668EnableInterrupt(IN struct ADAPTER *prAdapter)
+{
+	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
+	union WPDMA_INT_MASK IntMask;
+
+	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+
+	IntMask.field.rx_done_0 = 1;
+	IntMask.field.rx_done_1 = 1;
+	IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+		BIT(prBusInfo->tx_ring_cmd_idx) |
+		BIT(prBusInfo->tx_ring_data_idx);
+	IntMask.field.tx_coherent = 0;
+	IntMask.field.rx_coherent = 0;
+	IntMask.field.tx_dly_int = 0;
+	IntMask.field.rx_dly_int = 0;
+	IntMask.field.fw_clr_own = 1;
+
+	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
+
+	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
+}
+
+void mt7668DisableInterrupt(IN struct ADAPTER *prAdapter)
+{
+	union WPDMA_INT_MASK IntMask;
+
+	ASSERT(prAdapter);
+
+	IntMask.word = 0;
+
+	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
+	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+
+	DBGLOG(HAL, TRACE, "%s\n", __func__);
+}
+
+void mt7668WakeUpWiFi(IN struct ADAPTER *prAdapter)
+{
+	u_int8_t fgResult;
+
+#if CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH
+	uint32_t u4Value = 0;
+	/*E1 PMIC clock workaround*/
+	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
+
+	if ((TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK & u4Value) == 0)
+		HAL_MCR_WR(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL,
+			(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK|u4Value));
+	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
+	DBGLOG(INIT, INFO, "PMIC SPI clock switch = %s\n",
+		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value)?"SUCCESS":"FAIL");
+#endif
+
+	ASSERT(prAdapter);
+
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+
+	if (fgResult)
+		prAdapter->fgIsFwOwn = FALSE;
+	else
+		HAL_LP_OWN_CLR(prAdapter, &fgResult);
+}
 #endif /* _HIF_PCIE */
 
 struct BUS_INFO mt7668_bus_info = {
@@ -360,10 +423,16 @@ struct BUS_INFO mt7668_bus_info = {
 	.u4DmaMask = 32,
 
 	.pdmaSetup = mt7668PdmaConfig,
+	.enableInterrupt = mt7668EnableInterrupt,
+	.disableInterrupt = mt7668DisableInterrupt,
 	.lowPowerOwnRead = mt7668LowPowerOwnRead,
 	.lowPowerOwnSet = mt7668LowPowerOwnSet,
 	.lowPowerOwnClear = mt7668LowPowerOwnClear,
+	.wakeUpWiFi = mt7668WakeUpWiFi,
+	.isValidRegAccess = NULL,
 	.getMailboxStatus = NULL,
+	.setDummyReg = NULL,
+	.checkDummyReg = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
@@ -405,6 +474,14 @@ struct ATE_OPS_T mt7668AteOps = {
 };
 #endif
 
+struct CHIP_DBG_OPS mt7668_debug_ops = {
+	.showPdmaInfo = NULL,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showCsrInfo = NULL,
+	.showDmaschInfo = NULL,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.bus_info = &mt7668_bus_info,
@@ -413,6 +490,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 #if CFG_SUPPORT_QA_TOOL
 	.prAteOps = &mt7668AteOps,
 #endif
+	.prDebugOps = &mt7668_debug_ops,
 
 	.chip_id = MT7668_CHIP_ID,
 	.should_verify_chip_id = TRUE,
@@ -424,13 +502,16 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.txd_append_size = MT7668_TX_DESC_APPEND_LENGTH,
 	.eco_info = mt7668_eco_table,
 	.isNicCapV1 = TRUE,
+	.is_support_efuse = TRUE,
 
 	.asicCapInit = mt7668CapInit,
 	.asicEnableFWDownload = NULL,
+	.asicGetChipID = NULL,
 	.downloadBufferBin = wlanDownloadBufferBin,
 	.showTaskStack = NULL,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
+	.ucMaxSwAmsduNum = 0,
 	.workAround = 0,
 };
 
