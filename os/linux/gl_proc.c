@@ -1118,17 +1118,19 @@ static ssize_t procCountryRead(struct file *filp, char __user *buf,
 {
 	uint32_t u4CopySize;
 	uint32_t country = 0;
+	char acCountryStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 
 	/* if *f_pos > 0, it means has read successed last time */
 	if (*f_pos > 0)
 		return 0;
 
 	country = rlmDomainGetCountryCode();
+	rlmDomainU32ToAlpha(country, acCountryStr);
 
 	kalMemZero(g_aucProcBuf, sizeof(g_aucProcBuf));
 	if (country)
 		kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
-			"Current Country Code: %d\n", country);
+			"Current Country Code: %s\n", acCountryStr);
 	else
 		kalSnprintf(g_aucProcBuf, sizeof(g_aucProcBuf),
 			"Current Country Code: NULL\n");
