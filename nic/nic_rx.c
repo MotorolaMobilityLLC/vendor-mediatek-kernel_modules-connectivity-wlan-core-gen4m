@@ -1638,7 +1638,6 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
-			GET_CURRENT_SYSTIME(&prRxCtrl->u4LastRxTime);
 			do {
 #if (CFG_SUPPORT_MSP == 1)
 				/* collect RXV information */
@@ -1686,6 +1685,12 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 					}
 #endif
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
+					if (prStaRec &&
+					prStaRec->ucBssIndex < MAX_BSSID_NUM) {
+						GET_CURRENT_SYSTIME(
+							&prRxCtrl->u4LastRxTime
+							[prStaRec->ucBssIndex]);
+					}
 					nicRxProcessPktWithoutReorder(
 						prAdapter, prRetSwRfb);
 					break;
