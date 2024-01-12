@@ -7250,30 +7250,14 @@ u_int8_t kalIsAPmode(struct GLUE_INFO *prGlueInfo)
 uint32_t kalGetMfpSetting(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucBssIndex)
 {
-	uint32_t u4RsnMfp = RSN_AUTH_MFP_DISABLED;
 	struct GL_WPA_INFO *prWpaInfo;
+
+	ASSERT(prGlueInfo);
 
 	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
 		ucBssIndex);
 
-	ASSERT(prGlueInfo);
-
-	switch (prWpaInfo->u4Mfp) {
-	case IW_AUTH_MFP_DISABLED:
-		u4RsnMfp = RSN_AUTH_MFP_DISABLED;
-		break;
-	case IW_AUTH_MFP_OPTIONAL:
-		u4RsnMfp = RSN_AUTH_MFP_OPTIONAL;
-		break;
-	case IW_AUTH_MFP_REQUIRED:
-		u4RsnMfp = RSN_AUTH_MFP_REQUIRED;
-		break;
-	default:
-		u4RsnMfp = RSN_AUTH_MFP_DISABLED;
-		break;
-	}
-
-	return u4RsnMfp;
+	return prWpaInfo->u4Mfp;
 }
 
 /*----------------------------------------------------------------------------*/
