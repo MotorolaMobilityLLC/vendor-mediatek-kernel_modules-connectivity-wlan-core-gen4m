@@ -5930,9 +5930,11 @@ enum ENUM_UNI_EVENT_MBMC_TAG {
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MBMC_SWITCH_DONE {
-	uint16_t u2Tag;
-	uint16_t u2Length;
-	uint8_t  aucReserved[4];
+	uint16_t  u2Tag;
+	uint16_t  u2Length;
+	uint8_t   ucMBMCCmdSuccess;
+	uint8_t   ucBssIndexValidBitmap;
+	uint16_t  u2UsedBssBandIndexBitmap;
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
