@@ -1603,6 +1603,7 @@ struct mt66xx_chip_info {
 	uint8_t uc5GHeCapMaxAmpduLenExp;    /* parameter for both 5G and 6G */
 
 	u_int8_t fgIsSupportL0p5Reset;
+	uint32_t (*queryPmicInfo)(struct ADAPTER *prAdapter);
 };
 
 struct mt66xx_hif_driver_data {

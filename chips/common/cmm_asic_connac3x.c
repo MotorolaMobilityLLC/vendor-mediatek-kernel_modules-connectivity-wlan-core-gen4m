@@ -1739,4 +1739,61 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	return TRUE;
 }
 
+uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter)
+{
+	struct INIT_CMD_QUERY_INFO rCmd = {0};
+	struct INIT_EVENT_QUERY_INFO *prEvent;
+	struct INIT_EVENT_TLV_GENERAL *prTlv;
+	struct INIT_EVENT_QUERY_INFO_PMIC *prPmicEvent;
+	uint32_t u4EventSize;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	rCmd.u4QueryBitmap = BIT(INIT_CMD_QUERY_TYPE_PMIC_INFO);
+
+	u4EventSize = RX_BUFFER_AGGRESIZE;
+	prEvent = kalMemAlloc(u4EventSize, VIR_MEM_TYPE);
+	if (!prEvent) {
+		DBGLOG(INIT, ERROR, "Allocate event packet FAILED.\n");
+		goto exit;
+	}
+	kalMemZero(prEvent, u4EventSize);
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_QUERY_INFO, &rCmd, sizeof(rCmd),
+		TRUE, FALSE,
+		INIT_EVENT_ID_QUERY_INFO_RESULT, prEvent, u4EventSize);
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	if (prEvent->u2TotalElementNum != 1) {
+		DBGLOG(INIT, ERROR, "Unexpected element num: %d.\n",
+			prEvent->u2TotalElementNum);
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	prTlv = (struct INIT_EVENT_TLV_GENERAL *)&prEvent->aucTlvBuffer[0];
+	if (prTlv->u2Tag != INIT_CMD_QUERY_TYPE_PMIC_INFO) {
+		DBGLOG(INIT, ERROR, "Unexpected tag id: %d.\n",
+			prTlv->u2Tag);
+		u4Status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	prPmicEvent = (struct INIT_EVENT_QUERY_INFO_PMIC *)
+		&prTlv->aucBuffer[0];
+	DBGLOG(INIT, INFO, "PMIC ID: 0x%x.\n", prPmicEvent->u4PmicId);
+	DBGLOG_MEM32(INIT, INFO, &prPmicEvent->aucPMICCoreDumpbuf[0],
+		prPmicEvent->u4Length);
+	/* TODO: integrate with conninfra driver for AEE */
+	u4Status = WLAN_STATUS_SUCCESS;
+
+exit:
+	if (prEvent)
+		kalMemFree(prEvent, VIR_MEM_TYPE, u4EventSize);
+
+	return u4Status;
+}
+
+
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
