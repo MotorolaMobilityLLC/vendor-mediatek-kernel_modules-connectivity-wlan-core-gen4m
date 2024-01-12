@@ -1665,7 +1665,9 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
 	prRetSwRfb = prSwRfbListHead;
 
 	while (prRetSwRfb) {
+#if (CFG_SUPPORT_STATISTICS == 1)
 		STATS_RX_PKT_INFO_DISPLAY(prRetSwRfb);
+#endif
 
 		/**
 		 * Collect RXV information,

@@ -6007,7 +6007,9 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM;
 	struct CMD_GET_STA_STATISTICS rQueryCmdStaStatistics = {0};
 	uint8_t ucIdx;
+#if CFG_ENABLE_PER_STA_STATISTICS
 	enum ENUM_WMM_ACI eAci;
+#endif
 
 	DEBUGFUNC("wlanoidQueryStaStatistics");
 
@@ -10364,8 +10366,11 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TX_LATENCY_STATS
 			prPktProfile->u8XmitArrival =
 				GLUE_GET_PKT_XTIME(prMsduInfo->prPacket);
+#if (CFG_SUPPORT_STATISTICS == 1)
 			prPktProfile->u8EnqTime = StatsEnvTimeGet();
 #endif
+#endif
+
 		}
 		break;
 
@@ -10373,7 +10378,7 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 		if (prPktProfile->fgIsValid) {
 			prPktProfile->rDequeueTimestamp = (OS_SYSTIME)
 							  kalGetTimeTick();
-#if CFG_SUPPORT_TX_LATENCY_STATS
+#if (CFG_SUPPORT_STATISTICS == 1) && CFG_SUPPORT_TX_LATENCY_STATS
 			prPktProfile->u8DeqTime = StatsEnvTimeGet();
 #endif
 		}
@@ -10384,7 +10389,9 @@ void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			prPktProfile->rHifTxDoneTimestamp = (OS_SYSTIME)
 							    kalGetTimeTick();
 #if CFG_SUPPORT_TX_LATENCY_STATS
+#if (CFG_SUPPORT_STATISTICS == 1)
 			prPktProfile->u8HifTxTime = StatsEnvTimeGet();
+#endif
 			if (prWifiVar->fgPacketLatencyLog)
 				DBGLOG(TX, INFO,
 					"Latency(us) HIF_D:%lu, DEQ_D:%lu, ENQ_D:%lu A:%llu BSSIDX:WIDX:PID[%u:%u:%u] IPID:0x%04x SeqNo:%d\n",
