@@ -70,7 +70,7 @@
  */
 uint8_t g_InitiatorMacAddr[6];
 
-static const struct nla_policy
+const struct nla_policy
 	mtk_wlan_vendor_ndp_policy[MTK_WLAN_VENDOR_ATTR_NDP_PARAMS_MAX + 1] = {
 			[MTK_WLAN_VENDOR_ATTR_NDP_SUBCMD] = {
 				.type = NLA_U32 },
