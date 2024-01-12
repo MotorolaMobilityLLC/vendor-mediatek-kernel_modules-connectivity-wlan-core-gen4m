@@ -4324,21 +4324,18 @@ void halProcessSoftwareInterrupt(struct ADAPTER *prAdapter)
 static void halSerRecovery(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
-	struct BUS_INFO *prBusInfo = NULL;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prBusInfo = prAdapter->chip_info->bus_info;
 
 	DBGLOG(HAL, TRACE, "do SER recovery\n");
 
 #if CFG_SUPPORT_MULTITHREAD
 	kalSetSerIntEvent(prAdapter->prGlueInfo);
+#if CFG_MTK_MDDP_SUPPORT
+	mddpTriggerMdSerRecovery(prAdapter);
+#endif
 #else
 	nicProcessSoftwareInterrupt(prAdapter);
-#endif
-#if CFG_MTK_MDDP_SUPPORT
-	if (prBusInfo->getMdSwIntSta)
-		mddpNotifyCheckSer(prBusInfo->getMdSwIntSta(prAdapter));
 #endif
 }
 
