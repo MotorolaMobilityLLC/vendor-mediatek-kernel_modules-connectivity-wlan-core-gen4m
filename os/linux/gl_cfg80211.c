@@ -5640,6 +5640,74 @@ label_exit:
 	return rStatus;
 }
 
+int testmode_reassoc(IN struct wiphy *wiphy, IN char *pcCommand,
+	IN int i4TotalLen, IN uint8_t ucBssIndex)
+{
+	uint32_t u4FreqInfo = 0;
+	uint32_t u4SetInfoLen = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Ret = -1;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_CONNECT rNewSsid;
+	struct CONNECTION_SETTINGS *prConnSettings = NULL;
+	uint8_t bssid[MAC_ADDR_LEN];
+	uint8_t ucSSIDLen;
+	uint8_t aucSSID[ELEM_MAX_LEN_SSID] = {0};
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	prConnSettings = aisGetConnSettings(prGlueInfo->prAdapter, ucBssIndex);
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 3) {
+		DBGLOG(REQ, TRACE, "argc is %i, cmd is %s, %s\n", i4Argc,
+		       apcArgv[1], apcArgv[2]);
+		i4Ret = kalkStrtou32(apcArgv[2], 0, &u4FreqInfo);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n", i4Ret);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+		/* copy ssd to local instead of assigning
+		 * prConnSettings->aucSSID to rNewSsid.pucSsid because
+		 * wlanoidSetConnect will copy ssid from rNewSsid again
+		 */
+		COPY_SSID(aucSSID, ucSSIDLen,
+			prConnSettings->aucSSID, prConnSettings->ucSSIDLen);
+
+		wlanHwAddrToBin(apcArgv[1], bssid);
+		kalMemZero(&rNewSsid, sizeof(rNewSsid));
+		rNewSsid.u4CenterFreq = u4FreqInfo;
+		rNewSsid.pucBssid = NULL;
+		rNewSsid.pucBssidHint = bssid;
+		rNewSsid.pucSsid = aucSSID;
+		rNewSsid.u4SsidLen = ucSSIDLen;
+		rNewSsid.ucBssIdx = ucBssIndex;
+
+		DBGLOG(INIT, INFO,
+		       "Reassoc ssid=%s(%d) bssid=" MACSTR " freq=%d\n",
+		       rNewSsid.pucSsid, rNewSsid.u4SsidLen,
+		       MAC2STR(bssid), u4FreqInfo);
+
+		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetConnect,
+			   (void *)&rNewSsid, sizeof(struct PARAM_CONNECT),
+			   &u4SetInfoLen, ucBssIndex);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR,
+			       "reassoc fail 0x%x\n", rStatus);
+		else
+			DBGLOG(INIT, TRACE,
+			       "reassoc successed\n");
+	} else {
+		DBGLOG(REQ, ERROR, "reassoc failed\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+
+	return rStatus;
+}
+
 #define CMD_SET_AX_BLACKLIST                    "SET_AX_BLACKLIST"
 
 int testmode_set_ax_blacklist(IN struct wiphy *wiphy, IN char *pcCommand,
@@ -5881,6 +5949,8 @@ int32_t mtk_cfg80211_process_str_cmd(IN struct wiphy *wiphy,
 
 		return mtk_cfg80211_process_str_cmd_reply(
 			wiphy, tmp, sizeof(tmp));
+	} else if (strnicmp(cmd, "REASSOC", 7) == 0) {
+		rStatus = testmode_reassoc(wiphy, cmd, len, ucBssIndex);
 	} else if (strnicmp(cmd, "ADDROAMSCANCHANNELS_LEGACY", 26) == 0) {
 		rStatus = testmode_add_roam_scn_chnl(wiphy, cmd, len);
 #if CFG_SUPPORT_NCHO
