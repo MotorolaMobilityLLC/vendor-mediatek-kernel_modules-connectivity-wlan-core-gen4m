@@ -14,6 +14,10 @@
 
 #include "precomp.h"
 #include "mt6639.h"
+#include "coda/mt6639/cb_infra_rgu.h"
+#include "coda/mt6639/cbtop_gpio_sw_def.h"
+#include "coda/mt6639/conn_cfg.h"
+#include "coda/mt6639/conn_host_csr_top.h"
 #include "coda/mt6639/wf_cr_sw_def.h"
 #include "coda/mt6639/wf_wfdma_ext_wrap_csr.h"
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
@@ -1489,12 +1493,141 @@ static uint32_t mt6639_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 }
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static u_int8_t mt6639_check_recovery_needed(struct ADAPTER *ad)
+{
+	uint32_t u4Value = 0;
+	u_int8_t fgResult = FALSE;
+
+	/*
+	 * if (0x81021604[31:16]==0xdead &&
+	 *     (0x70005350[30:28]!=0x0 || 0x70005360[6:4]!=0x0)) == 0x1
+	 * do recovery flow
+	 */
+
+	HAL_MCR_RD(ad, WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR,
+		&u4Value);
+	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+		WF_TOP_CFG_ON_ROMCODE_INDEX_ADDR, u4Value);
+	if ((u4Value & 0xFFFF0000) != 0xDEAD0000) {
+		fgResult = FALSE;
+		goto exit;
+	}
+
+	HAL_MCR_RD(ad, CBTOP_GPIO_MODE5_ADDR,
+		&u4Value);
+	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+		CBTOP_GPIO_MODE5_ADDR, u4Value);
+	if (((u4Value & CBTOP_GPIO_MODE5_GPIO47_MASK) >>
+	    CBTOP_GPIO_MODE5_GPIO47_SHFT) != 0x0) {
+		fgResult = TRUE;
+		goto exit;
+	}
+
+	HAL_MCR_RD(ad, CBTOP_GPIO_MODE6_ADDR,
+		&u4Value);
+	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+		CBTOP_GPIO_MODE6_ADDR, u4Value);
+	if (((u4Value & CBTOP_GPIO_MODE6_GPIO49_MASK) >>
+	    CBTOP_GPIO_MODE6_GPIO49_SHFT) != 0x0) {
+		fgResult = TRUE;
+		goto exit;
+	}
+
+exit:
+	return fgResult;
+}
+
+static uint32_t mt6639_mcu_reinit(struct ADAPTER *ad)
+{
+#define CONNINFRA_ID_MAX_POLLING_COUNT		10
+
+	uint32_t u4Value = 0, u4PollingCnt = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	/* Check recovery needed */
+	if (mt6639_check_recovery_needed(ad) == FALSE)
+		goto exit;
+
+	DBGLOG(INIT, INFO, "mt6639_mcu_reinit.\n");
+
+	/* Force on conninfra */
+	HAL_MCR_WR(ad,
+		CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
+		0x1);
+
+	/* Wait conninfra wakeup */
+	while (TRUE) {
+		HAL_MCR_RD(ad, CONN_CFG_IP_VERSION_IP_VERSION_ADDR,
+			&u4Value);
+
+		if (u4Value == MT6639_CONNINFRA_VERSION_ID)
+			break;
+
+		u4PollingCnt++;
+		if (u4PollingCnt >= CONNINFRA_ID_MAX_POLLING_COUNT) {
+			rStatus = WLAN_STATUS_FAILURE;
+			DBGLOG(INIT, ERROR,
+				"Conninfra ID polling failed, value=0x%x\n",
+				u4Value);
+			goto exit;
+		}
+
+		kalUdelay(1000);
+	}
+
+	/* Switch to GPIO mode */
+	HAL_MCR_WR(ad,
+		CBTOP_GPIO_MODE5_MOD_ADDR,
+		0x80000000);
+	HAL_MCR_WR(ad,
+		CBTOP_GPIO_MODE6_MOD_ADDR,
+		0x80);
+	kalUdelay(100);
+
+	/* Reset */
+	HAL_MCR_WR(ad,
+		CB_INFRA_RGU_BT_SUBSYS_RST_ADDR,
+		0x10351);
+	HAL_MCR_WR(ad,
+		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
+		0x10351);
+	kalMdelay(10);
+	HAL_MCR_WR(ad,
+		CB_INFRA_RGU_BT_SUBSYS_RST_ADDR,
+		0x10340);
+	HAL_MCR_WR(ad,
+		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
+		0x10340);
+
+	kalMdelay(50);
+
+	HAL_MCR_RD(ad, CBTOP_GPIO_MODE5_ADDR, &u4Value);
+	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+		CBTOP_GPIO_MODE5_ADDR, u4Value);
+
+	HAL_MCR_RD(ad, CBTOP_GPIO_MODE6_ADDR, &u4Value);
+	DBGLOG(INIT, INFO, "0x%08x=0x%08x\n",
+		CBTOP_GPIO_MODE6_ADDR, u4Value);
+
+	/* Clean force on conninfra */
+	HAL_MCR_WR(ad,
+		CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_TOP_ADDR,
+		0x0);
+
+exit:
+	return rStatus;
+}
+
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
 
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	rStatus = mt6639_mcu_reinit(ad);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto exit;
 
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
