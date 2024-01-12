@@ -527,6 +527,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+	{
+		.pcCmdStr  = CMD_POWER_METRICS,
+		.pfHandler = priv_driver_set_pwr_met,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	{
 		.pcCmdStr  = CMD_SET_SNIFFER,

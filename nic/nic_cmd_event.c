@@ -6821,6 +6821,187 @@ void nicEventGetVnf(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+void nicEventPowerMetricsStatGetInfo(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_POWER_METRICS_INFO_T *prEventVnf;
+
+	prEventVnf = (struct EVENT_POWER_METRICS_INFO_T *)(prEvent->aucBuffer);
+
+	DBGLOG(NIC, INFO, "NSS: 1T =%d 2T =%d\n",
+				prEventVnf->u4Nss[0],
+				prEventVnf->u4Nss[1]);
+
+	DBGLOG(NIC, INFO,
+		"Total =%d Band =%d Protocol =%d TX =%d RX =%d Listen =%d Sleep =%d\n",
+		prEventVnf->u4TotalTime,
+		prEventVnf->u4Band,
+		prEventVnf->u4Protocol,
+		prEventVnf->u4BandRatio.u4TxTime,
+		prEventVnf->u4BandRatio.u4RxTime,
+		prEventVnf->u4BandRatio.u4RxListenTime,
+		prEventVnf->u4BandRatio.u4SleepTime);
+
+	DBGLOG(NIC, INFO, "CCK: 1M =%d 2M =%d 5.5M =%d 11M =%d\n",
+		prEventVnf->arStatsPmCckRateStat[0],
+		prEventVnf->arStatsPmCckRateStat[1],
+		prEventVnf->arStatsPmCckRateStat[2],
+		prEventVnf->arStatsPmCckRateStat[3]);
+
+	DBGLOG(NIC, INFO, "OFDM: 6M =%d 9M =%d 12M =%d 18M =%d\n",
+		prEventVnf->arStatsPmOfdmRateStat[0],
+		prEventVnf->arStatsPmOfdmRateStat[1],
+		prEventVnf->arStatsPmOfdmRateStat[2],
+		prEventVnf->arStatsPmOfdmRateStat[3]);
+
+	DBGLOG(NIC, INFO, "OFDM: 24M =%d 36M =%d 48M =%d 54M =%d\n",
+		prEventVnf->arStatsPmOfdmRateStat[4],
+		prEventVnf->arStatsPmOfdmRateStat[5],
+		prEventVnf->arStatsPmOfdmRateStat[6],
+		prEventVnf->arStatsPmOfdmRateStat[7]);
+
+	DBGLOG(NIC, INFO, "HT BW20: MCS0~7 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHtRateStat[0],
+		prEventVnf->arStatsPmHtRateStat[1],
+		prEventVnf->arStatsPmHtRateStat[2],
+		prEventVnf->arStatsPmHtRateStat[3],
+		prEventVnf->arStatsPmHtRateStat[4],
+		prEventVnf->arStatsPmHtRateStat[5],
+		prEventVnf->arStatsPmHtRateStat[6],
+		prEventVnf->arStatsPmHtRateStat[7]);
+
+	DBGLOG(NIC, INFO, "HT BW20: MCS8~15 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHtRateStat[8],
+		prEventVnf->arStatsPmHtRateStat[9],
+		prEventVnf->arStatsPmHtRateStat[10],
+		prEventVnf->arStatsPmHtRateStat[11],
+		prEventVnf->arStatsPmHtRateStat[12],
+		prEventVnf->arStatsPmHtRateStat[13],
+		prEventVnf->arStatsPmHtRateStat[14],
+		prEventVnf->arStatsPmHtRateStat[15]);
+
+	DBGLOG(NIC, INFO, "HT BW40: MCS0~7 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHtRateStat[16],
+		prEventVnf->arStatsPmHtRateStat[17],
+		prEventVnf->arStatsPmHtRateStat[18],
+		prEventVnf->arStatsPmHtRateStat[19],
+		prEventVnf->arStatsPmHtRateStat[20],
+		prEventVnf->arStatsPmHtRateStat[21],
+		prEventVnf->arStatsPmHtRateStat[22],
+		prEventVnf->arStatsPmHtRateStat[23]);
+
+	DBGLOG(NIC, INFO, "HT BW40: MCS8~15 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHtRateStat[24],
+		prEventVnf->arStatsPmHtRateStat[25],
+		prEventVnf->arStatsPmHtRateStat[26],
+		prEventVnf->arStatsPmHtRateStat[27],
+		prEventVnf->arStatsPmHtRateStat[28],
+		prEventVnf->arStatsPmHtRateStat[29],
+		prEventVnf->arStatsPmHtRateStat[30],
+		prEventVnf->arStatsPmHtRateStat[31]);
+
+	DBGLOG(NIC, INFO,
+		"VHT BW20: MCS0~9 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmVhtRateStat[0],
+		prEventVnf->arStatsPmVhtRateStat[1],
+		prEventVnf->arStatsPmVhtRateStat[2],
+		prEventVnf->arStatsPmVhtRateStat[3],
+		prEventVnf->arStatsPmVhtRateStat[4],
+		prEventVnf->arStatsPmVhtRateStat[5],
+		prEventVnf->arStatsPmVhtRateStat[6],
+		prEventVnf->arStatsPmVhtRateStat[7],
+		prEventVnf->arStatsPmVhtRateStat[8],
+		prEventVnf->arStatsPmVhtRateStat[9]);
+
+	DBGLOG(NIC, INFO,
+		"VHT BW40: MCS0~9 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmVhtRateStat[10],
+		prEventVnf->arStatsPmVhtRateStat[11],
+		prEventVnf->arStatsPmVhtRateStat[12],
+		prEventVnf->arStatsPmVhtRateStat[13],
+		prEventVnf->arStatsPmVhtRateStat[14],
+		prEventVnf->arStatsPmVhtRateStat[15],
+		prEventVnf->arStatsPmVhtRateStat[16],
+		prEventVnf->arStatsPmVhtRateStat[17],
+		prEventVnf->arStatsPmVhtRateStat[18],
+		prEventVnf->arStatsPmVhtRateStat[19]);
+
+	DBGLOG(NIC, INFO,
+		"VHT BW80: MCS0~9 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmVhtRateStat[20],
+		prEventVnf->arStatsPmVhtRateStat[21],
+		prEventVnf->arStatsPmVhtRateStat[22],
+		prEventVnf->arStatsPmVhtRateStat[23],
+		prEventVnf->arStatsPmVhtRateStat[24],
+		prEventVnf->arStatsPmVhtRateStat[25],
+		prEventVnf->arStatsPmVhtRateStat[26],
+		prEventVnf->arStatsPmVhtRateStat[27],
+		prEventVnf->arStatsPmVhtRateStat[28],
+		prEventVnf->arStatsPmVhtRateStat[29]);
+
+	DBGLOG(NIC, INFO,
+		"HE BW20: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHeRateStat[0],
+		prEventVnf->arStatsPmHeRateStat[1],
+		prEventVnf->arStatsPmHeRateStat[2],
+		prEventVnf->arStatsPmHeRateStat[3],
+		prEventVnf->arStatsPmHeRateStat[4],
+		prEventVnf->arStatsPmHeRateStat[5],
+		prEventVnf->arStatsPmHeRateStat[6],
+		prEventVnf->arStatsPmHeRateStat[7],
+		prEventVnf->arStatsPmHeRateStat[8],
+		prEventVnf->arStatsPmHeRateStat[9],
+		prEventVnf->arStatsPmHeRateStat[10],
+		prEventVnf->arStatsPmHeRateStat[11]);
+
+	DBGLOG(NIC, INFO,
+		"HE BW40: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHeRateStat[12],
+		prEventVnf->arStatsPmHeRateStat[13],
+		prEventVnf->arStatsPmHeRateStat[14],
+		prEventVnf->arStatsPmHeRateStat[15],
+		prEventVnf->arStatsPmHeRateStat[16],
+		prEventVnf->arStatsPmHeRateStat[17],
+		prEventVnf->arStatsPmHeRateStat[18],
+		prEventVnf->arStatsPmHeRateStat[19],
+		prEventVnf->arStatsPmHeRateStat[20],
+		prEventVnf->arStatsPmHeRateStat[21],
+		prEventVnf->arStatsPmHeRateStat[22],
+		prEventVnf->arStatsPmHeRateStat[23]);
+
+	DBGLOG(NIC, INFO,
+		"HE BW80: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHeRateStat[24],
+		prEventVnf->arStatsPmHeRateStat[25],
+		prEventVnf->arStatsPmHeRateStat[26],
+		prEventVnf->arStatsPmHeRateStat[27],
+		prEventVnf->arStatsPmHeRateStat[28],
+		prEventVnf->arStatsPmHeRateStat[29],
+		prEventVnf->arStatsPmHeRateStat[30],
+		prEventVnf->arStatsPmHeRateStat[31],
+		prEventVnf->arStatsPmHeRateStat[32],
+		prEventVnf->arStatsPmHeRateStat[33],
+		prEventVnf->arStatsPmHeRateStat[34],
+		prEventVnf->arStatsPmHeRateStat[35]);
+
+	DBGLOG(NIC, INFO,
+		"HE BW160: MCS0~11 :%d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d/ %d\n",
+		prEventVnf->arStatsPmHeRateStat[36],
+		prEventVnf->arStatsPmHeRateStat[37],
+		prEventVnf->arStatsPmHeRateStat[38],
+		prEventVnf->arStatsPmHeRateStat[39],
+		prEventVnf->arStatsPmHeRateStat[40],
+		prEventVnf->arStatsPmHeRateStat[41],
+		prEventVnf->arStatsPmHeRateStat[42],
+		prEventVnf->arStatsPmHeRateStat[43],
+		prEventVnf->arStatsPmHeRateStat[44],
+		prEventVnf->arStatsPmHeRateStat[45],
+		prEventVnf->arStatsPmHeRateStat[46],
+		prEventVnf->arStatsPmHeRateStat[47]);
+}
+#endif
+
 void nicCmdEventGetSlpCntInfo(struct ADAPTER *prAdapter,
 		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {

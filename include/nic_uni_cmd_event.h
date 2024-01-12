@@ -217,6 +217,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_PP			= 0x38, /* PP */
 	UNI_CMD_ID_TPC			= 0x39, /* TPC */
 	UNI_CMD_ID_MEC			= 0x3A, /* MEC */
+	UNI_CMD_ID_POWER_METRICS	= 0x3F, /* Power Metrics */
 	UNI_CMD_ID_FR_TABLE		= 0x40, /* Set Fixed Rate TBL */
 	UNI_CMD_ID_RSSI_MONITOR 	= 0x41, /* Set monitoring RSSI range */
 	UNI_CMD_ID_TEST_TR_PARAM	= 0x42, /* Set/Get testmode parameter */
@@ -2559,6 +2560,38 @@ struct UNI_CMD_SMART_GEAR_PARAM {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+/* Power metrics command (0x3F) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_POWER_METRICS {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*   TAG                        | ID  | structure
+	*   ---------------------------|-----|--------------
+	*   UNI_CMD_POWER_METRICS_PARAM| 0x00| UNI_CMD_POWER_METRICS_PARAM_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* Power metrics command TLV List */
+enum ENUM_UNI_CMD_POWER_METRICS_TAG {
+	UNI_CMD_POWER_METRICS_TAG_PARAM = 0,
+	UNI_CMD_POWER_METRICS_TAG_NUM
+};
+
+/* Set power metrics parameters (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_POWER_METRICS_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t u4Enable;
+	uint8_t u4Value;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+#endif
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_MIB_INFO {
 	/*fixed field*/
@@ -4675,6 +4708,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_VOW	     = 0x37,
 	UNI_EVENT_ID_TPC	     = 0x38,
 	UNI_EVENT_ID_MEC	     = 0x3A,
+	UNI_EVENT_ID_POWER_METRICS   = 0x3F,
 	UNI_EVENT_ID_RSSI_MONITOR    = 0x41,
 	UNI_EVENT_ID_TEST_TR_PARAM   = 0x42,
 	UNI_EVENT_ID_CHIP_CAPABILITY = 0x43,
@@ -5443,6 +5477,46 @@ struct UNI_EVENT_MAC_INFO_TWT_STA_CNM {
 	uint8_t ucBssIndex;
 	uint8_t fgCnmGranted;
 } __KAL_ATTRIB_PACKED__;
+
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+struct UNI_EVENT_ID_POWER_METRICS {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+};
+
+/* Power Metrics event tag */
+enum UNI_EVENT_ID_POWER_METRICS_TAG {
+	UNI_EVENT_POWER_METRICS_INFO_TAG = 0,
+	UNI_EVENT_POWER_METRICS_TAG_NUM
+};
+
+struct UNI_POWER_STATE_INFO {
+	uint32_t u4SleepTime;
+	uint32_t u4RxListenTime;
+	uint32_t u4TxTime;
+	uint32_t u4RxTime;
+};
+
+struct UNI_EVENT_ID_POWER_METRICS_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	uint32_t u4TotalTime;
+	uint32_t u4Band;
+	uint32_t u4Protocol;
+	uint32_t u4Nss[2];
+	struct UNI_POWER_STATE_INFO u4BandRatio;
+	uint32_t arStatsPmCckRateStat[4];
+	uint32_t arStatsPmOfdmRateStat[8];
+	uint32_t arStatsPmHtRateStat[32];
+	uint32_t arStatsPmVhtRateStat[30];
+	uint32_t arStatsPmHeRateStat[48];
+	uint32_t arStatsPmEhtRateStat[80];
+};
+#endif
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_MIB_INFO {
@@ -7591,6 +7665,10 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+uint32_t nicUniCmdPowerMetricsStatSetParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
@@ -7810,6 +7888,10 @@ void nicUniUnsolicitStatsEvt(struct ADAPTER *ad,
 #if (CFG_VOLT_INFO == 1)
 void nicUniEventGetVnf(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+void nicUniEventPowerMetricsStatGetInfo(struct ADAPTER *ad,
+		struct WIFI_UNI_EVENT *evt);
 #endif
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 void nicUniEventDelayBar(struct ADAPTER *ad,

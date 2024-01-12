@@ -6473,6 +6473,46 @@ wlanoidSetMcrWrite(struct ADAPTER *prAdapter,
 		}
 }				/* wlanoidSetMcrWrite */
 
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+uint32_t
+wlanoidSetPowerMetrics(struct ADAPTER *prAdapter,
+		   void *pvSetBuffer, uint32_t u4SetBufferLen,
+		   uint32_t *pu4SetInfoLen) {
+	struct PARAM_CUSTOM_POWER_METRICS_STRUCT *prPwrMetInfo;
+	struct CMD_POWER_METRICS_INFO_T rCmdPowerMetrics;
+
+	DBGLOG(INIT, LOUD, "\n");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_CUSTOM_POWER_METRICS_STRUCT);
+
+	if (u4SetBufferLen < sizeof(struct
+				    PARAM_CUSTOM_POWER_METRICS_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prPwrMetInfo = (struct PARAM_CUSTOM_POWER_METRICS_STRUCT *)
+		      pvSetBuffer;
+
+	rCmdPowerMetrics.u4Enable = prPwrMetInfo->u4Enable;
+	rCmdPowerMetrics.u4Value = prPwrMetInfo->u4Value;
+
+	return wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_POWER_METRICS,
+					TRUE,
+					FALSE,
+					FALSE,
+					NULL,
+					NULL,
+					sizeof(struct CMD_POWER_METRICS_INFO_T),
+					(uint8_t *) &rCmdPowerMetrics,
+					pvSetBuffer, u4SetBufferLen);
+}	/* wlanoidSetPowerMetrics */
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query driver MCR value.

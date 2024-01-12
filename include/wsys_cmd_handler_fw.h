@@ -306,6 +306,9 @@ enum ENUM_CMD_ID {
 	/* 0x6D (Set) used to setting roaming skip*/
 	CMD_ID_SET_DROP_PACKET_CFG = 0x6E,
 	/* 0x6E (Set/Query) used to setting drop packet */
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+	CMD_ID_POWER_METRICS	= 0x6F, /* 0x6F (Set) */
+#endif
 
 	/*CFG_SUPPORT_EASY_DEBUG*/
 	CMD_ID_GET_SET_CUSTOMER_CFG = 0x70, /* 0x70 (Set/Query) */
@@ -549,6 +552,9 @@ enum ENUM_EVENT_ID {
 
 	EVENT_ID_REPORT_U_EVENT = 0x68,
 	EVENT_ID_STATS_LLS      = 0x69,
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+	EVENT_ID_POWER_METRICS	= 0x6F,
+#endif
 
 	EVENT_ID_GET_CMD_INFO = 0x70,
 	/* 0x70 (Query - EVENT_ID_GET_CMD_INFO) */

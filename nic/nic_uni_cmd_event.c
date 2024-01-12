@@ -165,6 +165,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_SET_MDNS_RECORD] = nicUniCmdMdnsRecorde,
 #endif
 	[CMD_ID_LP_DBG_CTRL] = nicUniCmdLpDbgCtrl,
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+	[CMD_ID_POWER_METRICS] = nicUniCmdPowerMetricsStatSetParam,
+#endif
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -255,6 +258,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #endif
 #if (CFG_HW_ERR_REPORT == 1)
 	[UNI_EVENT_ID_HW_ERROR_REPORT] = nicUniEventHwErrReport,
+#endif
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+	[UNI_EVENT_ID_POWER_METRICS] = nicUniEventPowerMetricsStatGetInfo,
 #endif
 };
 
@@ -4917,6 +4923,40 @@ uint32_t nicUniCmdSetSGParam(struct ADAPTER *ad,
 	return WLAN_STATUS_NOT_SUPPORTED;
 #endif
 }
+
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+uint32_t nicUniCmdPowerMetricsStatSetParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_POWER_METRICS_INFO_T *cmd;
+	struct UNI_CMD_POWER_METRICS *uni_cmd;
+	struct UNI_CMD_POWER_METRICS_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_POWER_METRICS) +
+			sizeof(struct UNI_CMD_POWER_METRICS_PARAM);
+
+	if (info->ucCID != CMD_ID_POWER_METRICS ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_POWER_METRICS_INFO_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_POWER_METRICS,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_POWER_METRICS *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_POWER_METRICS_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_POWER_METRICS_TAG_PARAM;
+	tag->u2Length = sizeof(*tag);
+	tag->u4Enable = cmd->u4Enable;
+	tag->u4Value = cmd->u4Value;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 
 uint32_t nicUniCmdSetMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -11217,6 +11257,103 @@ void nicUniEventGetVnf(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 }
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+void nicUniEventPowerMetricsStatGetInfo(struct ADAPTER *ad,
+					struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_ID_POWER_METRICS);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+	uint32_t i = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_POWER_METRICS_INFO_TAG: {
+			struct UNI_EVENT_ID_POWER_METRICS_INFO *pm_info =
+				(struct UNI_EVENT_ID_POWER_METRICS_INFO *)tag;
+			struct EVENT_POWER_METRICS_INFO_T legacy;
+
+			kalMemZero(&legacy,
+				sizeof(struct EVENT_POWER_METRICS_INFO_T));
+
+			legacy.u4TotalTime = pm_info->u4TotalTime;
+			legacy.u4Band = pm_info->u4Band;
+			legacy.u4Protocol = pm_info->u4Protocol;
+			legacy.u4BandRatio.u4SleepTime =
+				pm_info->u4BandRatio.u4SleepTime;
+			legacy.u4BandRatio.u4RxListenTime =
+				pm_info->u4BandRatio.u4RxListenTime;
+			legacy.u4BandRatio.u4TxTime =
+				pm_info->u4BandRatio.u4TxTime;
+			legacy.u4BandRatio.u4RxTime =
+				pm_info->u4BandRatio.u4RxTime;
+
+			for (i = 0; i < ARRAY_SIZE(pm_info->u4Nss); i++)
+				legacy.u4Nss[i] = pm_info->u4Nss[i];
+
+			for (i = 0;
+				i < ARRAY_SIZE(pm_info->arStatsPmCckRateStat);
+				i++) {
+				legacy.arStatsPmCckRateStat[i] =
+					pm_info->arStatsPmCckRateStat[i];
+			}
+
+			for (i = 0;
+				i < ARRAY_SIZE(pm_info->arStatsPmOfdmRateStat);
+				i++) {
+				legacy.arStatsPmOfdmRateStat[i] =
+					pm_info->arStatsPmOfdmRateStat[i];
+			}
+
+			for (i = 0;
+				i < ARRAY_SIZE(pm_info->arStatsPmHtRateStat);
+				i++) {
+				legacy.arStatsPmHtRateStat[i] =
+					pm_info->arStatsPmHtRateStat[i];
+			}
+
+			for (i = 0;
+				i < ARRAY_SIZE(pm_info->arStatsPmVhtRateStat);
+				i++) {
+				legacy.arStatsPmVhtRateStat[i] =
+					pm_info->arStatsPmVhtRateStat[i];
+			}
+
+			for (i = 0;
+				i < ARRAY_SIZE(pm_info->arStatsPmHeRateStat);
+				i++) {
+				legacy.arStatsPmHeRateStat[i] =
+					pm_info->arStatsPmHeRateStat[i];
+			}
+
+			for (i = 0;
+				i < ARRAY_SIZE(pm_info->arStatsPmEhtRateStat);
+				i++) {
+				legacy.arStatsPmEhtRateStat[i] =
+					pm_info->arStatsPmEhtRateStat[i];
+			}
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_POWER_METRICS, &legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 void nicUniEventDelayBar(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)

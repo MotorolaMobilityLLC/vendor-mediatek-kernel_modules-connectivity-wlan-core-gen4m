@@ -209,6 +209,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_MLR
 	{EVENT_ID_MLR_FSM_UPDATE, mlrEventMlrFsmUpdateHandler},
 #endif
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+	{EVENT_ID_POWER_METRICS, nicEventPowerMetricsStatGetInfo},
+#endif
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);

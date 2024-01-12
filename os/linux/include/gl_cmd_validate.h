@@ -127,6 +127,9 @@
 #define CMD_THERMAL_PROTECT_STATE_ACT	"thermal_protect_state_act"
 #define CMD_SET_USE_CASE		"SET_USE_CASE"
 #define CMD_SET_BOOSTCPU		"BOOSTCPU"
+#if CFG_SUPPORT_WIFI_POWER_METRICS
+#define CMD_POWER_METRICS		"SET_PWR_MET"
+#endif
 /* neptune doens't support "show" entry, use "driver" to handle
  * MU GET request, and MURX_PKTCNT comes from RX_STATS,
  * so this command will reuse RX_STAT's flow
