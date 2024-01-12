@@ -458,6 +458,7 @@ void statsParseIPV4Info(struct sk_buff *skb,
 		u2IcmpSeq = *(uint16_t *) &pucIcmp[6];
 		switch (eventType) {
 		case EVENT_RX:
+			GLUE_SET_INDEPENDENT_PKT(skb, TRUE);
 			DBGLOG_LIMITED(RX, INFO,
 				"<RX> ICMP: Type %d, Id BE 0x%04x, Seq BE 0x%04x\n",
 				ucIcmpType, u2IcmpId, u2IcmpSeq);
