@@ -2290,7 +2290,7 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 		rCfgStatus = wlanConfigWifiFunc(prAdapter,
 					(ram_entry == 0) ? FALSE : TRUE,
 					ram_entry, ucPDA);
-#ifdef BELLWETHER
+#if defined(BELLWETHER) || defined(MT7990)
 		rCfgStatus = wlanConfigWifiFunc(prAdapter,
 					FALSE,
 					0,

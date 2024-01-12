@@ -109,6 +109,7 @@
 #define NICBELLWETHER_PCIe_DEVICE_ID2 0x7902 /* used for asic & FPGA */
 #define NIC6639_PCIe_DEVICE_ID1 0x3107
 #define NIC6639_PCIe_DEVICE_ID2 0x6639
+#define NIC7990_PCIe_DEVICE_ID 0x7990
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -168,6 +169,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6639_PCIe_DEVICE_ID2),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6639},
 #endif /* MT6639 */
+#ifdef MT7990
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7990_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7990},
+#endif /* MT7990 */
 	{ /* end: all zeroes */ },
 };
 
@@ -248,7 +253,8 @@ struct wifi_rsrv_mem {
 
 /* Assume reserved memory size < BIT(32) */
 static struct wifi_rsrv_mem wifi_rsrv_mems[32];
-#endif
+#endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
