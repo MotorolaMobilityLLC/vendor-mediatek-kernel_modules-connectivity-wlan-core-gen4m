@@ -980,7 +980,8 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 		break;
 	default:
 		fgMlrCapVerCheck = FALSE;
-		DBGLOG(TX, INFO, "MLR check - MLR ver %d, Ver doesn't support");
+		DBGLOG(TX, INFO, "MLR check - MLR ver %d, Ver doesn't support",
+			prAdapter->ucMlrVersion);
 		break;
 	}
 
