@@ -1403,6 +1403,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	}
 	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		/* Error handling for disorder IE that IE length is 0 */
+		if (IE_ID(pucIE) != ELEM_ID_SSID && IE_LEN(pucIE) == 0)
+			continue;
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
 			if (IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID) {
@@ -1739,7 +1742,9 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	/* pucDumpIE = pucIE; */
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
-
+		/* Error handling for disorder IE that IE length is 0*/
+		if (IE_ID(pucIE) != ELEM_ID_SSID && IE_LEN(pucIE) == 0)
+			continue;
 		switch (IE_ID(pucIE)) {
 		case ELEM_ID_SSID:
 			if ((!prIeSsid) && /* NOTE(Kevin): for Atheros IOT #1 */
