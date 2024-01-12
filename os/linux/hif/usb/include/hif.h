@@ -281,7 +281,8 @@ typedef struct _USB_REQ_T {
 } USB_REQ_T, *P_USB_REQ_T;
 
 typedef struct _BUS_INFO {
-
+	const UINT_32 u4UdmaWlCfg_0_Addr;
+	const UINT_32 u4UdmaWlCfg_1_Addr;
 } BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************

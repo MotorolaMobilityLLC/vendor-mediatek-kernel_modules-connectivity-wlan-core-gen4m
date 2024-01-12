@@ -2232,27 +2232,33 @@ WLAN_STATUS nicTxFlush(IN P_ADAPTER_T prAdapter)
 * @retval WLAN_STATUS_FAILURE   Bus access fail.
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
+WLAN_STATUS nicTxInitCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN UINT_16 u2Port)
 {
 	UINT_16 u2OverallBufferLength;
 	PUINT_8 pucOutputBuf = (PUINT_8) NULL;	/* Pointer to Transmit Data Structure Frame */
 	P_TX_CTRL_T prTxCtrl;
+	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
+	prChipInfo = prAdapter->chip_info;
 	prTxCtrl = &prAdapter->rTxCtrl;
 	pucOutputBuf = prTxCtrl->pucTxCoalescingBufPtr;
-	u2OverallBufferLength = TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen) & (UINT_16)
+	u2OverallBufferLength = TFCB_FRAME_PAD_TO_DW((prCmdInfo->u2InfoBufLen+prChipInfo->u2HifTxdSize) & (UINT_16)
 						     HIF_TX_HDR_TX_BYTE_COUNT_MASK);
 
+	/* <0> Copy HIF TXD if need */
+	HAL_WRITE_HIF_TXD(prChipInfo, pucOutputBuf, prCmdInfo->u2InfoBufLen);
+
 	/* <1> Copy CMD Header to command buffer (by using pucCoalescingBufCached) */
-	kalMemCopy((PVOID)&pucOutputBuf[0], (PVOID) prCmdInfo->pucInfoBuffer, prCmdInfo->u2InfoBufLen);
+	kalMemCopy((PVOID)&pucOutputBuf[prChipInfo->u2HifTxdSize],
+		(PVOID) prCmdInfo->pucInfoBuffer, prCmdInfo->u2InfoBufLen);
 
 	ASSERT(u2OverallBufferLength <= prAdapter->u4CoalescingBufCachedSize);
 
 	/* <2> Write frame to data port */
-	HAL_WRITE_TX_PORT(prAdapter, NIC_TX_INIT_CMD_PORT,
+	HAL_WRITE_TX_PORT(prAdapter, u2Port/*NIC_TX_INIT_CMD_PORT*/,
 			  (UINT_32) u2OverallBufferLength,
 			  (PUINT_8) pucOutputBuf, (UINT_32) prAdapter->u4CoalescingBufCachedSize);
 
