@@ -4858,7 +4858,7 @@ int priv_driver_get_tsf_value(
 	status = kalkStrtou8(apcArgv[1], 0, &ucBssIdx);
 	if (status) {
 		DBGLOG(REQ, ERROR, "parse ucBssIdx error u4Ret=%d\n", status);
-		ucBssIdx = 0;
+		return -1;
 	}
 
 	if (ucBssIdx >= MAX_BSSID_NUM) {
