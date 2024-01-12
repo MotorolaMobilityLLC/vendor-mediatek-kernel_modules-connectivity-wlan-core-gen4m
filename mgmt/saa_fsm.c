@@ -129,8 +129,7 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 				struct FT_EVENT_PARAMS *prFtParam =
 				aisGetFtEventParam(prAdapter,
 				prStaRec->ucBssIndex);
-
-				prFtParam->pcTargetAp = prStaRec->aucMacAddr;
+				prFtParam->prTargetAp = prStaRec;
 				/* now, we don't support RIC first */
 				prFtParam->pcRicIes = NULL;
 				prFtParam->u2RicIesLen = 0;

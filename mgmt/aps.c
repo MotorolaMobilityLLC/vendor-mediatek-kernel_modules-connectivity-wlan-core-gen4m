@@ -1497,7 +1497,7 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
 	est = airTime * tput / 100;
 
 	DBGLOG(APS, INFO, "BSS["MACSTR
-		"] EST: %d ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] est[%d] airTime[%d] slot[%d]\n",
+		"] EST: %d ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d]\n",
 		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
 		slope, rcpi, tput, airTime, slot);
 
