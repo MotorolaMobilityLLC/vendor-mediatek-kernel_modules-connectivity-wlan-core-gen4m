@@ -359,9 +359,9 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			       "Dump configuration error: temp offset=%d, buf length=%u, key[%d]=[%u], val[%d]=[%u]\n",
 			       (int)(temp - g_aucProcBuf),
 			       (uint32_t)kalStrLen(g_aucProcBuf),
-			       WLAN_CFG_VALUE_LEN_MAX,
+			       WLAN_CFG_KEY_LEN_MAX,
 			       (uint32_t)prWlanCfgEntry->aucKey[
-				WLAN_CFG_VALUE_LEN_MAX - 1],
+				WLAN_CFG_KEY_LEN_MAX - 1],
 			       WLAN_CFG_VALUE_LEN_MAX,
 			       (uint32_t)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);
@@ -392,9 +392,9 @@ static ssize_t procCfgRead(struct file *filp, char __user *buf, size_t count,
 			       "D:Dump configuration error: temp offset=%d, buf length=%u, key[%d]=[%u], val[%d]=[%u]\n",
 			       (int)(temp - g_aucProcBuf),
 			       (uint32_t)kalStrLen(g_aucProcBuf),
-			       WLAN_CFG_VALUE_LEN_MAX,
+			       WLAN_CFG_KEY_LEN_MAX,
 			       (uint32_t)prWlanCfgEntry->aucKey[
-				WLAN_CFG_VALUE_LEN_MAX - 1],
+				WLAN_CFG_KEY_LEN_MAX - 1],
 			       WLAN_CFG_VALUE_LEN_MAX,
 			       (uint32_t)prWlanCfgEntry->aucValue[
 				WLAN_CFG_VALUE_LEN_MAX - 1]);

@@ -1528,6 +1528,8 @@ void kalScanReqLog(struct cfg80211_scan_request *request);
 void kalScanResultLog(struct ADAPTER *prAdapter, struct ieee80211_mgmt *mgmt);
 void kalScanLogCacheFlushBSS(struct ADAPTER *prAdapter,
 	const uint16_t logBufLen);
+int kalMaskMemCmp(const void *cs, const void *ct,
+	const void *mask, size_t count);
 
 u_int8_t
 kalChannelScoSwitch(IN enum nl80211_channel_type channel_type,

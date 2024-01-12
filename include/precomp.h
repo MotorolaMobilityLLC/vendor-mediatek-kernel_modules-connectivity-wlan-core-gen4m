@@ -80,6 +80,7 @@
  */
 #include "hif_cmm.h"
 #include "gl_os.h"		/* Include "config.h" */
+#include "gl_cfg80211.h"
 
 #if CFG_ENABLE_WIFI_DIRECT
 #include "gl_p2p_os.h"

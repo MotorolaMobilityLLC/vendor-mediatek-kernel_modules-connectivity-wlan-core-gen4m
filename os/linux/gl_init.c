@@ -3499,6 +3499,11 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 	 */
 	wlanFeatureToFw(prGlueInfo->prAdapter);
 #endif
+
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	wlanCfgLoadIotApRule(prAdapter);
+	wlanCfgDumpIotApRule(prAdapter);
+#endif
 	wlanCfgSetSwCtrl(prGlueInfo->prAdapter);
 	wlanCfgSetChip(prGlueInfo->prAdapter);
 	wlanCfgSetCountryCode(prGlueInfo->prAdapter);
