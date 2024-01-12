@@ -9390,6 +9390,9 @@ int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 	} else {
 		kfree(map);
 		map = NULL;
+		DBGLOG(RX, WARN, "Empty RPS bits, rps=0x%02x; cpu=0x%02x\n",
+			rps_value, cpu_online_mask->bits[0]);
+		return -EINVAL;
 	}
 
 	mutex_lock(&rps_map_mutex);
