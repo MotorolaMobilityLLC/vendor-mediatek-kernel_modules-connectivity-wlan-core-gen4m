@@ -1176,13 +1176,13 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 	 *
 	 */
 
-#if defined(LINUX)
-	fgIsRetained = FALSE;
-#else
+#if (CONFIG_SUPPORT_OS_IND_RETAINED == 1)
 	fgIsRetained = (((u4CurrentRxBufferCount +
 			  qmGetRxReorderQueuedBufferCount(prAdapter) +
 			  prTxCtrl->i4PendingFwdFrameCount) <
 			 CFG_RX_RETAINED_PKT_THRESHOLD) ? TRUE : FALSE);
+#else
+	fgIsRetained = FALSE;
 #endif
 
 	/* DBGLOG(RX, INFO, ("fgIsRetained = %d\n", fgIsRetained)); */
@@ -1252,7 +1252,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 	prRxCtrl->ucNumIndPacket++;
 #endif
 
-#ifndef LINUX
+#if (CONFIG_SUPPORT_OS_IND_RETAINED == 1)
 	if (fgIsRetained) {
 		prRxCtrl->apvRetainedPacket[prRxCtrl->ucNumRetainedPacket] =
 			prSwRfb->pvPacket;
