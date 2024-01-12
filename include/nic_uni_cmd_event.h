@@ -4993,6 +4993,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_PHY_STATE_INFO  = 0x52,
 	UNI_EVENT_ID_BSS_ER	     = 0x53,
 	UNI_EVENT_ID_FAST_PATH	     = 0x54,
+	UNI_EVENT_ID_MDDP	     = 0x55,
 	UNI_EVENT_ID_NAN	     = 0x56,
 	UNI_EVENT_ID_MLO	     = 0x59,
 	UNI_EVENT_ID_PP		     = 0x5A,
@@ -7178,6 +7179,89 @@ struct UNI_CMD_EVENT_TLV_ELEMENT_T {
 	uint8_t aucbody[0];
 } __KAL_ATTRIB_PACKED__;
 
+#if CFG_MTK_MDDP_SUPPORT
+/** @addtogroup UNI_EVENT_ID_MDDP
+ *  @{
+ */
+
+/** This structure is used for UNI_EVENT_ID_MDDP event (0x55)
+ * to response MDDP operation.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] ucBand           operation band
+ * @param[in] aucTlvBuffer     TLVs
+ */
+struct UNI_EVENT_MDDP {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**< the TLVs included in this field:
+	 *   TAG                          | ID  | structure
+	 *   -------------                | ----| -------------
+	 *   UNI_EVENT_MDDP_FILTER_RULE   | 0x0 | UNI_EVENT_MDDP_FILTER_RULE_T
+	 *   UNI_EVENT_MDDP_EXCEPTION     | 0x1 | UNI_EVENT_MDDP_EXCEPTION_T
+	 *
+	 */
+};
+/** @} */
+
+/* MDDP event tag */
+enum UNI_EVENT_MDDP_TAG {
+	UNI_EVENT_MDDP_FILTER_RULE,
+	UNI_EVENT_MDDP_EXCEPTION,
+	UNI_EVENT_MDDP_MAX_NUM
+};
+
+/** @addtogroup UNI_EVENT_ID_MDDP
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_MDDP_FILTER_RULE
+ * tag(0x0) of UNI_EVENT_ID_MDDP event (0x55)
+ * to report MDDP packet filter bitmap.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x00
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] ucPfType             the type of packet filter
+ * @param[in] ucPfNum              the number of packet filter
+ * @param[in] aucPfStatusBitmap    the status bitmap of packet filter
+ */
+/* CSI data (Tag0) */
+struct UNI_EVENT_MDDP_FILTER_RULE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucPfType;
+	uint8_t  ucPfNum;
+	uint8_t  aucPadding1[2];
+	uint8_t  aucPfStatusBitmap[256];
+};
+/** @} */
+
+/** @addtogroup UNI_EVENT_ID_MDDP
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_MDDP_EXCEPTION
+ * tag(0x1) of UNI_EVENT_ID_MDDP event (0x55)
+ * to report MDDP exception.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x01
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] u4ExceptionIdx       the index of MDDP exception
+ */
+/* CSI data (Tag0) */
+struct UNI_EVENT_MDDP_EXCEPTION {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4ExceptionIdx;
+};
+/** @} */
+#endif /* CFG_MTK_MDDP_SUPPORT */
+
 enum ENUM_UNI_EVENT_NAN_TAG {
 	UNI_EVENT_NAN_TAG_DISCOVERY_RESULT = 0,
 	UNI_EVENT_NAN_TAG_FOLLOW_EVENT = 1,
@@ -8358,6 +8442,9 @@ void nicUniEventUpdateLp(struct ADAPTER *ad,
 
 uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
 	struct UNI_CMD_RX_HDR_TRAN_PARM *param);
+#if CFG_MTK_MDDP_SUPPORT
+void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
+	#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

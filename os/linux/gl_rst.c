@@ -96,6 +96,7 @@ uint8_t *apucRstReason[RST_REASON_MAX] = {
 	(uint8_t *) DISP_STRING("[Wi-Fi Off] Allocate CMD_INFO_T ==> FAILED."),
 	(uint8_t *) DISP_STRING("RST_SDIO_RX_ERROR"),
 	(uint8_t *) DISP_STRING("RST_WHOLE_CHIP_TRIGGER"),
+	(uint8_t *) DISP_STRING("RST_MDDP_EXCEPTION"),
 	(uint8_t *) DISP_STRING("RST_MDDP_MD_TRIGGER_EXCEPTION"),
 	(uint8_t *) DISP_STRING("RST_FWK_TRIGGER"),
 	(uint8_t *) DISP_STRING("RST_SER_L1_FAIL"),
