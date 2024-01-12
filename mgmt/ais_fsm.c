@@ -5848,8 +5848,19 @@ void aisFsmRoamingDisconnectPrevAP(IN struct ADAPTER *prAdapter,
 	 * send Deauth if needed.
 	 */
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
-		aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
-		aisTargetBssResetConnected(prAdapter, prAisFsmInfo);
+		struct PARAM_SSID rSsid;
+		struct BSS_DESC *prBssDesc = NULL;
+
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen, prAisBssInfo->aucSSID,
+			  prAisBssInfo->ucSSIDLen);
+		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+						    prAisBssInfo->aucBSSID,
+						    TRUE, &rSsid);
+		if (prBssDesc) {
+			prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
+			prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
+		}
 	}
 
 	/* 4 <4> Change Media State immediately. */
