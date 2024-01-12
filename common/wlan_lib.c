@@ -6498,28 +6498,37 @@ void updateLinkStatsApRec(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 {
 #if CFG_SUPPORT_LLS
 	struct STATS_LLS_PEER_AP_REC *prPeerApRec;
-	int32_t i = 0;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_DESC *prBss;
+	int32_t i;
+	int32_t j;
 
 	if (!prBssDesc->fgIsConnected)
 		return;
 
 	for (i = 0; i < KAL_AIS_NUM; i++) {
-		if ((prBssDesc->fgIsConnected >> i) & 0x1)
-			break;
+		prAisFsmInfo = aisFsmGetInstance(prAdapter, i);
+		for (j = 0; j < MLD_LINK_MAX; j++) {
+			prBss = aisGetLinkBssDesc(prAisFsmInfo, j);
+			if (prBss == prBssDesc)
+				break;
+		}
 	}
-	if (i == KAL_AIS_NUM) {
-		DBGLOG(REQ, WARN, "AP connected flag set %u over limit", i);
+
+	if (i == KAL_AIS_NUM || j == MLD_LINK_MAX) {
+		DBGLOG(REQ, WARN, "AP connected flag set (%u,%u) over limit",
+		       i, j);
 		return;
 	}
 
-	prPeerApRec = &prAdapter->rPeerApRec[i];
+	prPeerApRec = &prAdapter->rPeerApRec[i][j];
 	COPY_MAC_ADDR(prPeerApRec->mac_addr, prBssDesc->aucBSSID);
 	prPeerApRec->sta_count = prBssDesc->u2StaCnt;
 	prPeerApRec->chan_util = prBssDesc->ucChnlUtilization;
 
 	if (prAdapter->rWifiVar.fgLinkStatsDump)
-		DBGLOG(REQ, INFO, "Update record %u: " MACSTR " %u %u",
-				i, MAC2STR(prBssDesc->aucBSSID),
+		DBGLOG(REQ, INFO, "Update record (%u,%u): " MACSTR " %u %u",
+				i, j, MAC2STR(prBssDesc->aucBSSID),
 				prBssDesc->u2StaCnt,
 				prBssDesc->ucChnlUtilization);
 #endif

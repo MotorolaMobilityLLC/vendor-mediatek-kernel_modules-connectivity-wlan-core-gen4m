@@ -2346,7 +2346,7 @@ struct ADAPTER {
 	/* Store in LLS order */
 	uint32_t *pu4TxTimePerLevels;
 	uint32_t u4TxTimePerLevelsSize; /* 256 * 4bytes (uint32_t) * 2 bands */
-	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM];
+	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM][MLD_LINK_MAX];
 #endif
 #if CFG_SUPPORT_REG_STAT_FROM_EMI
 	uint32_t u4RegStatLastSyncFwMs;
