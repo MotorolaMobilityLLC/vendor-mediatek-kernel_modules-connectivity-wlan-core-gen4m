@@ -555,6 +555,9 @@ struct CHIP_DBG_OPS {
 		uint32_t *pu4FrMode,
 		uint32_t *pu4Sgi);
 #endif
+	int32_t (*get_tx_info_from_txv)(
+		IN char *pcCommand, IN int i4TotalLen,
+		IN struct TX_VECTOR_BBP_LATCH *prTxV);
 	void (*dumpPhyInfo)(struct ADAPTER *prAdapter);
 	int32_t (*showMibInfo)(struct ADAPTER *prAdapter,
 		uint32_t u4Index,
@@ -1018,6 +1021,11 @@ int connac2x_get_rx_rate_info(
 void connac3x_show_txd_Info(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
+void connac3x_get_lwtbl(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	uint8_t *wtbl_raw_dw
+);
 int32_t connac3x_show_wtbl_info(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,
@@ -1110,6 +1118,9 @@ int connac3x_get_rx_rate_info(
 	uint32_t *pu4FrMode,
 	uint32_t *pu4Sgi);
 #endif
+int32_t connac3x_get_tx_info_from_txv(
+	IN char *pcCommand, IN int i4TotalLen,
+	IN struct TX_VECTOR_BBP_LATCH *prTxV);
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 

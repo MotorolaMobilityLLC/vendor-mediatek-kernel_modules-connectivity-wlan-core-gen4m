@@ -391,6 +391,7 @@ struct CHIP_DBG_OPS bellwether_DebugOps = {
 	.show_rx_rate_info = connac3x_show_rx_rate_info,
 	.show_rx_rssi_info = connac3x_show_rx_rssi_info,
 	.show_stat_info = connac3x_show_stat_info,
+	.get_tx_info_from_txv = connac3x_get_tx_info_from_txv,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	.show_mld_info = connac3x_show_mld_info,
 #endif

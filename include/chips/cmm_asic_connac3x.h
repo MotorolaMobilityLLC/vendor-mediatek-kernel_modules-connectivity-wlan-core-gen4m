@@ -366,6 +366,10 @@
 #define CONNAC3X_HW_TX_RATE_TO_MODE(_x)        (((_x) & BITS(6, 9)) >> 6)
 #define CONNAC3X_HW_TX_RATE_TO_NSS(_x)         (((_x) & BITS(10, 13)) >> 10)
 #define CONNAC3X_HW_TX_RATE_TO_STBC(_x)        (((_x) & BIT(14)) >> 14)
+#define CONNAC3X_HW_TX_RATE_TO_DCM(_x)         (((_x) & BIT(4)) >> 4)
+#define CONNAC3X_HW_TX_RATE_TO_106T(_x)        (((_x) & BIT(5)) >> 5)
+#define CONNAC3X_HW_TX_RATE_UNMASK_DCM(_x)     ((uint8_t)(_x) & 0xef)
+#define CONNAC3X_HW_TX_RATE_UNMASK_106T(_x)    ((uint8_t)(_x) & 0xdf)
 
 /*------------------------------------------------------------------------------
  * MACRO for CONNAC3X TXV
@@ -379,7 +383,10 @@
 #define CONNAC3X_TXV_GET_TX_NSTS(_x)	(((_x)->u4TxV[2] & (0x7 << 8)) >> 8)
 #define CONNAC3X_TXV_GET_TX_PWR(_x)	(((_x)->u4TxV[0] & (0xff << 16)) >> 16)
 #define CONNAC3X_TXV_GET_TX_SGI(_x)	(((_x)->u4TxV[1] & (0x3 << 26)) >> 26)
-
+#define CONNAC3X_TXV_GET_TX_DCM(_x)	(((_x)->u4TxV[2] & BIT(4)) >> 4)
+#define CONNAC3X_TXV_GET_TX_106T(_x)	(((_x)->u4TxV[2] & BIT(5)) >> 5)
+#define CONNAC3X_TXV_GET_TX_RATE_UNMASK_DCM(_r)		((uint8_t)(_r) & 0xef)
+#define CONNAC3X_TXV_GET_TX_RATE_UNMASK_106T(_r)	((uint8_t)(_r) & 0xdf)
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -432,7 +439,7 @@ struct CONNAC3X_WIFI_UNI_CMD {
 
 union WTBL_LMAC_DW0 {
 	struct {
-		uint32_t peer_addr:15;
+		uint32_t peer_addr:16;
 		uint32_t muar_idx:6;
 		uint32_t rc_a1:1;
 		uint32_t kid:2;
