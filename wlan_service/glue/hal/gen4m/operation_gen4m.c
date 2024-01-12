@@ -2505,7 +2505,7 @@ s_int32 mt_op_set_band_mode(
 	struct test_band_state *band_state)
 {
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	return SERV_STATUS_ENGINE_NOT_SUPPORTED;
+	return SERV_STATUS_SUCCESS;
 
 #else
 	s_int32 ret = SERV_STATUS_SUCCESS;
