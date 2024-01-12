@@ -325,6 +325,8 @@ u_int8_t cnmBss80mBwPermitted(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
+uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo, enum ENUM_BAND eBand);
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,

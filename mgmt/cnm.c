@@ -2077,6 +2077,68 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	return ucMaxBandwidth;
 }
 
+uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	enum ENUM_BAND eBand)
+{
+	uint8_t ucMaxBandwidth = MAX_BW_20MHZ;
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		if (eBand == BAND_2G4)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta2gBandwidth;
+		else if (eBand == BAND_5G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if (eBand == BAND_6G)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucSta6gBandwidth;
+#endif
+		if (ucMaxBandwidth > prAdapter->rWifiVar.ucStaBandwidth)
+			ucMaxBandwidth = prAdapter->rWifiVar.ucStaBandwidth;
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		/* AP mode */
+		if (p2pFuncIsAPMode(
+				prAdapter->rWifiVar.prP2PConnSettings[
+					prBssInfo->u4PrivateData])) {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucAp2gBandwidth;
+			else if (prBssInfo->eBand == BAND_5G) {
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucAp5gBandwidth;
+				/* Use platform capability */
+				if (prAdapter->rWifiVar.u4SwTestMode ==
+					ENUM_SW_TEST_MODE_SIGMA_AX_AP)
+					ucMaxBandwidth = prAdapter->rWifiVar
+						.ucApBandwidth;
+			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucAp6gBandwidth;
+#endif
+			if (ucMaxBandwidth
+				> prAdapter->rWifiVar.ucApBandwidth)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucApBandwidth;
+		}
+		/* P2P mode */
+		else {
+			if (prBssInfo->eBand == BAND_2G4)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucP2p2gBandwidth;
+			else if (prBssInfo->eBand == BAND_5G)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucP2p5gBandwidth;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (prBssInfo->eBand == BAND_6G)
+				ucMaxBandwidth = prAdapter->rWifiVar
+					.ucP2p6gBandwidth;
+#endif
+		}
+	}
+
+	return ucMaxBandwidth;
+}
 
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
 			       *prAdapter,
