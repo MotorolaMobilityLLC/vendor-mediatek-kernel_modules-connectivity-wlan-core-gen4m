@@ -6900,6 +6900,9 @@ void kalSetNetAddressFromInterface(IN struct GLUE_INFO
 	uint8_t pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM];
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+
+	GLUE_SPIN_LOCK_DECLARATION();
 
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			  netdev_priv(prDev);
@@ -6909,6 +6912,29 @@ void kalSetNetAddressFromInterface(IN struct GLUE_INFO
 			"invalid arguments, prDev=0x%p, prNetDev=0x%p\n",
 			prDev, prNetDevPrivate);
 		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
+		prNetDevPrivate->ucBssIdx);
+
+	if (!prBssInfo) {
+		DBGLOG(REQ, WARN,
+			"invalid BssInfo, prDev=0x%p, BssIdx=%d\n",
+			prDev, prNetDevPrivate->ucBssIdx);
+		return;
+	}
+
+	if (IS_BSS_P2P(prBssInfo)) { /* P2P */
+		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+		if (prGlueInfo->prAdapter->rP2PNetRegState !=
+			ENUM_NET_REG_STATE_REGISTERED) {
+			DBGLOG(REQ, WARN,
+				"invalid p2p net register state=%d\n",
+				prGlueInfo->prAdapter->rP2PNetRegState);
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			return;
+		}
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	}
 
 	if (prNetDevPrivate->prGlueInfo != prGlueInfo)
