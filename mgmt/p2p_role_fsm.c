@@ -4623,6 +4623,7 @@ static void initAcsParams(struct ADAPTER *prAdapter,
 	prAcsReqInfo->fgIsHtEnable = prMsgAcsRequest->fgIsHtEnable;
 	prAcsReqInfo->fgIsHt40Enable = prMsgAcsRequest->fgIsHt40Enable;
 	prAcsReqInfo->fgIsVhtEnable = prMsgAcsRequest->fgIsVhtEnable;
+	prAcsReqInfo->fgIsEhtEnable = prMsgAcsRequest->fgIsEhtEnable;
 	prAcsReqInfo->eChnlBw = prMsgAcsRequest->eChnlBw;
 	prAcsReqInfo->eHwMode = prMsgAcsRequest->eHwMode;
 
@@ -4644,14 +4645,16 @@ static void initAcsParams(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(P2P, INFO, "idx=%d, ht=%d, ht40=%d, vht=%d, bw=%d, m=%d, c=%d",
-			prMsgAcsRequest->ucRoleIdx,
-			prMsgAcsRequest->fgIsHtEnable,
-			prMsgAcsRequest->fgIsHt40Enable,
-			prMsgAcsRequest->fgIsVhtEnable,
-			prMsgAcsRequest->eChnlBw,
-			prMsgAcsRequest->eHwMode,
-			prMsgAcsRequest->u4NumChannel);
+	DBGLOG(P2P, INFO,
+		"idx=%d, ht=%d, ht40=%d, vht=%d, eht=%d, bw=%d, m=%d, c=%d\n",
+		prMsgAcsRequest->ucRoleIdx,
+		prMsgAcsRequest->fgIsHtEnable,
+		prMsgAcsRequest->fgIsHt40Enable,
+		prMsgAcsRequest->fgIsVhtEnable,
+		prMsgAcsRequest->fgIsEhtEnable,
+		prMsgAcsRequest->eChnlBw,
+		prMsgAcsRequest->eHwMode,
+		prMsgAcsRequest->u4NumChannel);
 	if (prMsgAcsRequest->u4NumChannel) {
 		for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
 			prRfChannelInfo =
