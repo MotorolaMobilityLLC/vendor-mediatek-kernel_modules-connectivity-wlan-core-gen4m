@@ -2057,6 +2057,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 					    WLAN_STATUS_JOIN_FAILURE);
 
 			prAisFsmInfo->prTargetBssDesc = NULL;
+			prAisFsmInfo->ucConnTrialCountLimit = 0;
 			eNextState = AIS_STATE_IDLE;
 			fgIsTransition = TRUE;
 
