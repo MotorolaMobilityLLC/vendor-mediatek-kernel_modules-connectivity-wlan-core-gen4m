@@ -2359,15 +2359,23 @@ nan_sec_hostapd_notif_assoc(struct hostapd_data *hapd, const u8 *addr,
  */
 void
 nan_sec_wpa_supplicant_start(void) {
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 
-	/* Get prAdapter */
-	prNetDevPrivate =
-		(struct NETDEV_PRIVATE_GLUE_INFO *)netdev_priv(gPrDev);
-	if (prNetDevPrivate != NULL)
-		g_prAdapter = prNetDevPrivate->prGlueInfo->prAdapter;
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	g_prAdapter = prAdapter;
 
 	/* CTX */
 	kalMemZero(&g_rNanSecCtx, sizeof(struct _NAN_SEC_CTX));

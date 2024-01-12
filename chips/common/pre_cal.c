@@ -808,9 +808,6 @@ int wlanPreCalPwrOn(void)
 		/* Set the ioaddr to HIF Info */
 		WIPHY_PRIV(grWdev->wiphy, prGlueInfo);
 
-		/* Should we need this??? to be conti... */
-		gPrDev = prGlueInfo->prDevHandler;
-
 		/* Setup IRQ */
 		if (glBusSetIrq(grWdev->netdev, NULL, prGlueInfo)
 			!= WLAN_STATUS_SUCCESS) {
