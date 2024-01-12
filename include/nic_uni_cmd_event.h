@@ -224,8 +224,8 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_SER			= 0x13, /* SER */
 	UNI_CMD_ID_TWT			= 0x14, /* 80211AX TWT*/
 	UNI_CMD_ID_SET_DOMAIN_INFO	= 0x15, /* Set Domain info */
-	UNI_CMD_ID_IDC			= 0x17, /* IDC */
 	UNI_CMD_ID_SCAN_REQ		= 0x16, /* Scan Request */
+	UNI_CMD_ID_IDC			= 0x17, /* IDC */
 	UNI_CMD_ID_ECC_OPER		= 0x18, /* ECC Operation */
 	UNI_CMD_ID_RDD_ON_OFF_CTRL	= 0x19, /* RDD On/Off Control */
 	UNI_CMD_ID_GET_MAC_INFO 	= 0x1A, /* Get MAC info */
@@ -246,23 +246,39 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_GPIO 		= 0x2A, /* GPIO setting*/
 	UNI_CMD_ID_TXPOWER		= 0x2B, /* RLM Tx Power */
 	UNI_CMD_ID_POWER_LIMIT		= 0x2C, /* Tx Power Limit*/
-	UNI_CMD_SET_NVRAM_SETTINGS      = 0x2E, /* Nvram settings */
+	UNI_CMD_ID_EFUSE_CONTROL	= 0x2D, /* EFUSE Control */
+	UNI_CMD_ID_NVRAM_SETTINGS	= 0x2E, /* Set NVRAM setting */
 	UNI_CMD_ID_RA			= 0x2F, /* RA */
+	UNI_CMD_ID_SPECTRUM		= 0x30, /* Spectrum */
 	UNI_CMD_ID_MURU 		= 0x31, /* MURU */
 	UNI_CMD_ID_TESTMODE_RX_STAT	= 0x32, /* testmode Rx statistic */
 	UNI_CMD_ID_BF			= 0x33, /* BF */
+	UNI_CMD_ID_CHAN_SWITCH		= 0x34, /* Channel Switch */
+	UNI_CMD_ID_THERMAL		= 0x35, /* Thermal control */
+	UNI_CMD_ID_NOISE_FLOOR		= 0x36, /* Noise Floor */
 	UNI_CMD_ID_VOW			= 0x37, /* VOW */
 	UNI_CMD_ID_PP			= 0x38, /* PP */
 	UNI_CMD_ID_TPC			= 0x39, /* TPC */
 	UNI_CMD_ID_MEC			= 0x3A, /* MEC */
 	UNI_CMD_ID_FR_TABLE		= 0x40, /* Set Fixed Rate TBL */
 	UNI_CMD_ID_RSSI_MONITOR 	= 0x41, /* Set monitoring RSSI range */
-	UNI_CMD_ID_TEST_TR_PARAM 	= 0x42, /* Set/Get testmode t4x param */
+	UNI_CMD_ID_TEST_TR_PARAM	= 0x42, /* Set/Get testmode parameter */
 	UNI_CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0x43, /* MU */
-	UNI_CMD_ID_PERF_IND		= 0x44, /* Performance indicate*/
-	UNI_CMD_ID_FRM_IND_FROM_HOST 	= 0x45, /* Host connect indicate*/
-	UNI_CMD_ID_TESTMODE_CTRL	= 0x46, /* testmode RF  */
+	UNI_CMD_ID_PERF_IND = 0x44, /* Support performance indicate*/
+	UNI_CMD_ID_FRM_IND_FROM_HOST = 0x45, /* Support Host connect indicate*/
+	UNI_CMD_ID_TESTMODE_CTRL	= 0x46, /* testmode RF	*/
+	UNI_CMD_ID_HANDLE_PRECAL_RESULT = 0x47, /* Handle Pre Cal Result*/
 	UNI_CMD_ID_ICS			= 0x49, /* ICS */
+	UNI_CMD_ID_CSI			= 0x4A, /* TM CSI control*/
+	UNI_CMD_ID_VLAN_CFG		= 0x4B, /* VLAN */
+	UNI_CMD_ID_CAL			= 0x4C, /* CAL */
+	UNI_CMD_ID_HWCFG_CTRL		= 0x4E, /* Hwcfg */
+	UNI_CMD_ID_SWACI_CTRL		= 0x4F, /* SWACI */
+	UNI_CMD_ID_DYN_WMM_CTRL 	= 0x50, /* DYN_WMM */
+	UNI_CMD_ID_EAP_CTRL		= 0x51, /* EAP */
+	UNI_CMD_ID_PHY_STATE_INFO	= 0x52, /* PHY_STATE */
+	UNI_CMD_ID_LED			= 0x53, /* LED */
+	UNI_CMD_ID_FAST_PATH		= 0x54	/* Fast Path */
 };
 
 struct UNI_CMD_DEVINFO {
@@ -2560,6 +2576,15 @@ struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM {
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE config;
 } __KAL_ATTRIB_PACKED__;
 
+/*UNI_CMD_ID_TXPOWER */
+struct UNI_CMD_TXPOWER_CONFIG {
+    /*fixed field*/
+    uint8_t aucPadding[4];
+
+    /* tlv */
+    uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_NVRAM_SETTINGS {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -2749,6 +2774,30 @@ struct UNI_CMD_BF_STAREC_READ {
 	uint16_t u2WlanIdx;
 	uint8_t  au1Reserved[2];
 } __KAL_ATTRIB_PACKED__;
+
+struct UNI_CMD_THERMAL {
+	/* fix field */
+	uint8_t au1Reserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_THERMAL_TAG {
+	UNI_CMD_THERMAL_TAG_FEATURE_TEMPERATURE_QUERY = 0x0,
+	UNI_CMD_THERMAL_TAG_FEATURE_MANUAL_CTRL = 0x1,
+	UNI_CMD_THERMAL_TAG_FEATURE_BASIC_INFO_QUERY = 0x2,
+	UNI_CMD_THERMAL_TAG_FEATURE_TASK_MANUAL_CTRL = 0x3,
+	UNI_CMD_THERMAL_TAG_PROTECT_PARAMETER_CTRL = 0x4,
+	UNI_CMD_THERMAL_TAG_PROTECT_BASIC_INFO = 0x5,
+	UNI_CMD_THERMAL_TAG_PROTECT_ENABLE = 0x6,
+	UNI_CMD_THERMAL_TAG_PROTECT_DISABLE = 0x7,
+	UNI_CMD_THERMAL_TAG_PROTECT_DUTY_CONFIG = 0x8,
+	UNI_CMD_THERMAL_TAG_PROTECT_MECH_INFO = 0x9,
+	UNI_CMD_THERMAL_TAG_PROTECT_DUTY_INFO = 0xA,
+	UNI_CMD_THERMAL_TAG_PROTECT_STATE_ACT = 0xB,
+	UNI_CMD_THERMAL_TAG_NUM
+};
 
 struct UNI_CMD_RSSI_MONITOR {
 	/*fixed field*/
@@ -3050,7 +3099,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_BMC_RPY_DT      = 0x02,
 	UNI_EVENT_ID_HIF_CTRL	     = 0x03,
 	UNI_EVENT_ID_FW_LOG_2_HOST   = 0x04,
-	UNI_EVENT_ID_ROAMING	      = 0x05,
+	UNI_EVENT_ID_ROAMING	     = 0x05,
 	UNI_EVENT_ID_ACCESS_REG      = 0x06,
 	UNI_EVENT_ID_CHIP_CONFIG     = 0x07,
 	UNI_EVENT_ID_SMESH_INFO      = 0x08,
@@ -3060,6 +3109,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_BEACON_TIMEOUT  = 0x0C,
 	UNI_EVENT_ID_PS_SYNC	     = 0x0D,
 	UNI_EVENT_ID_SCAN_DONE	     = 0x0E,
+	UNI_EVENT_ID_STAREC	     = 0x0F,
 	UNI_EVENT_ID_ECC_CAL	     = 0x10,
 	UNI_EVENT_ID_RDD	     = 0x11,
 	UNI_EVENT_ID_ADD_KEY_DONE    = 0x12,
@@ -3071,7 +3121,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_SAP	     = 0x1C,
 	UNI_EVENT_ID_TXCMD_CTRL      = 0x1D,
 	UNI_EVENT_ID_P2P	     = 0x1F,
-	UNI_EVENT_ID_EDCCA	     = 0x21,
+	UNI_EVENT_ID_BAND_CONFIG     = 0x21,
 	UNI_EVENT_ID_MIB	     = 0x22,
 	UNI_EVENT_ID_STATISTICS      = 0x23,
 	UNI_EVENT_ID_SR 	     = 0x25,
@@ -3084,9 +3134,12 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_BA_OFFLOAD      = 0x2C,
 	UNI_EVENT_ID_STATUS_TO_HOST  = 0x2D,
 	UNI_EVENT_ID_RA 	     = 0x2F,
+	UNI_EVENT_ID_SPECTRUM	     = 0x30,
 	UNI_EVENT_ID_TESTMODE_RX_STAT_INFO  = 0x32,
 	UNI_EVENT_ID_BF 	     = 0X33,
 	UNI_EVENT_ID_SDVT_STAT	     = 0x34,
+	UNI_EVENT_ID_THERMAL	     = 0x35,
+	UNI_EVENT_ID_NOISE_FLOOR     = 0x36,
 	UNI_EVENT_ID_VOW	     = 0x37,
 	UNI_EVENT_ID_TPC	     = 0x38,
 	UNI_EVENT_ID_MEC	     = 0x3A,
@@ -3094,7 +3147,18 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_TEST_TR_PARAM   = 0x42,
 	UNI_EVENT_ID_CHIP_CAPABILITY = 0x43,
 	UNI_EVENT_ID_UPDATE_COEX_PHYRATE = 0x44,
-
+	UNI_EVENT_ID_TESTMODE_CTRL   = 0x46,
+	UNI_EVENT_ID_TWT_SYNC	     = 0x47,
+	UNI_EVENT_ID_EFUSE_CONTROL   = 0x48,
+	UNI_EVENT_ID_CSI	     = 0x4A,
+	UNI_EVENT_ID_VLAN_CFG	     = 0x4B,
+	UNI_EVENT_ID_CAL	     = 0x4C,
+	UNI_EVENT_ID_RXFE_CTRL	     = 0x4D,
+	UNI_EVENT_ID_HWCFG_CTRL      = 0x4E,
+	UNI_EVENT_ID_EAP_CTRL	     = 0x51,
+	UNI_EVENT_ID_PHY_STATE_INFO  = 0x52,
+	UNI_EVENT_ID_BSS_ER	     = 0x53,
+	UNI_EVENT_ID_FAST_PATH	     = 0x54,
 	UNI_EVENT_ID_NUM
 };
 
@@ -3395,6 +3459,37 @@ struct UNI_EVENT_SCAN_DONE_NLO {
 	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_STAREC {
+	/* fixed field */
+	uint16_t u2WlanIdx;
+	uint8_t aucPadding[2];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* starec event Tag */
+enum UNI_EVENT_STAREC_TAG {
+	UNI_EVENT_STAREC_TAG_UPDATE_MAX_AMSDU_LEN,
+	UNI_EVENT_STAREC_TAG_PN_INFO      = 0x26,
+	UNI_EVENT_STAREC_TAG_NUM
+};
+
+struct UNI_EVENT_STAREC_PN_INFO {
+	uint16_t u2Tag;               /* Tag = 0x26 */
+	uint16_t u2Length;
+	uint8_t  aucPn[6];
+	uint8_t  ucTscType;
+	uint8_t  aucReserved;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_STAREC_UPDATE_MAX_AMSDU_LEN {
+	uint16_t u2Tag;               /* Tag = 0x00 */
+	uint16_t u2Length;
+	uint16_t u2AmsduLen;
+	uint8_t  aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_RDD
 {
 	/* fixed field */
@@ -3511,6 +3606,27 @@ struct UNI_EVENT_OBSS_STATUS {
 	uint8_t  ucObssRifsOperationMode;
 	uint8_t  ucObssBeaconForcedTo20M;
 	uint8_t  aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_TDLS {
+	/* fixed field */
+	uint8_t aucPadding[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* TDLS event Tag */
+enum UNI_EVENT_TDLS_TAG {
+	UNI_EVENT_TDLS_TAG_TEAR_DOWN = 0,
+	UNI_EVENT_TDLS_TAG_NUM
+};
+
+/* TDLS tear down reason (Tag0) */
+struct UNI_EVENT_TDLS_TEAR_DOWN {
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint32_t u4Subid;
+	uint32_t u4StaIdx;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_IDC {
@@ -3737,6 +3853,32 @@ struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint8_t  ucFreeQuota;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_ID_RSSI_MONITOR {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*   TAG                         | ID  | structure
+	*   --------------------------  | --- | -------------
+	*   UNI_EVENT_RSSI_MONITOR_INFO | 0x0 | UNI_EVENT_RSSI_MONITOR_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* RSSI monitor event Tag */
+enum ENUM_UNI_EVENT_RSSI_MONITOR_TAG {
+	UNI_EVENT_RSSI_MONITOR_TAG_INFO = 0,
+	UNI_EVENT_RSSI_MONITOR_TAG_NUM
+};
+
+/* Rssi monitor info (Tag0) */
+struct UNI_EVENT_RSSI_MONITOR_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	int32_t   cRssi;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_P2P {
 	/*fixed field*/
 	uint8_t ucReserved[4];
@@ -3937,6 +4079,21 @@ struct UNI_EVENT_STATUS_TO_HOST {
 	uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_TXPOWER {
+    /* fixed field */
+    uint8_t aucPadding[4];
+
+    /* tlv */
+    uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_TXPOWER_RSP {
+    uint16_t u2Tag;
+    uint16_t u2Length;
+
+    uint8_t aucBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_BA_OFFLOAD {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4077,6 +4234,14 @@ struct UNI_EVENT_BF_STA_REC {
 	uint16_t u2Length;
 
 	struct TXBF_PFMU_STA_INFO rTxBfPfmuInfo;
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_THERMAL {
+    /* fixed field */
+    uint8_t aucPadding[4];
+
+    /* tlv */
+    uint8_t aucTlvBuffer[0];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_CHIP_CAPABILITY
@@ -4267,6 +4432,30 @@ struct UNI_EVENT_TESTMODE_STAT_ALL {
 	uint16_t u2Length;
 	uint32_t u4Buffer[UNI_EVENT_TESTMODE_RX_STAT_ALL_ITEM];
 } __KAL_ATTRIB_PACKED__;
+
+/* BSS ER event */
+struct UNI_EVENT_BSS_ER {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* BSS ER event tags */
+enum ENUM_UNI_EVENT_BSS_ER_TAG {
+	UNI_EVENT_BSS_ER_TAG_TX_MODE = 0,
+	UNI_EVENT_BSS_ER_TAG_NUM
+};
+
+struct UNI_EVENT_BSS_ER_TX_MODE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBssInfoIdx;
+	uint8_t ucErMode; //ENUM_EVENT_ER_TX_MODE_ER_MODE_T
+	uint8_t aucPadding1[2];
+	uint8_t aucPadding2[16];
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -4541,6 +4730,10 @@ uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
  *                   Event
@@ -4594,6 +4787,10 @@ void nicUniEventQueryRxStatAll(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventBugReport(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventRfTestHandler(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventTxPowerInfo(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
  *                   Unsolicited Event
@@ -4637,6 +4834,14 @@ void nicUniEventP2p(struct ADAPTER *ad,
 void nicUniEventRDD(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventCountdown(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventStaRec(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventTdls(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventBssER(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventRssiMonitor(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
