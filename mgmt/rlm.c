@@ -4942,6 +4942,36 @@ void rlmProcessHtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
+void rlmUpdateVhtOpCapInfo(struct ADAPTER *prAdapter,
+	uint8_t ucVhtOpModeChannelWidth,
+	struct STA_RECORD *prStaRec)
+{
+	if (ucVhtOpModeChannelWidth ==
+		VHT_OP_MODE_CHANNEL_WIDTH_80) {
+		prStaRec->ucVhtOpMode &=
+			~VHT_OP_MODE_CHANNEL_WIDTH_20;
+		prStaRec->ucVhtOpMode |=
+			VHT_OP_MODE_CHANNEL_WIDTH_80;
+		prStaRec->u4VhtCapInfo |=
+			VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
+		prStaRec->u4VhtCapInfo |=
+			VHT_CAP_INFO_SHORT_GI_80;
+		prStaRec->u4VhtCapInfo |=
+			VHT_CAP_INFO_SHORT_GI_160_80P80;
+	} else if (ucVhtOpModeChannelWidth ==
+		VHT_OP_MODE_CHANNEL_WIDTH_20) {
+		prStaRec->ucVhtOpMode &=
+			~VHT_OP_MODE_CHANNEL_WIDTH_80;
+		prStaRec->ucVhtOpMode |=
+			VHT_OP_MODE_CHANNEL_WIDTH_20;
+		prStaRec->u4VhtCapInfo &=
+			~VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
+		prStaRec->u4VhtCapInfo &=
+			~VHT_CAP_INFO_SHORT_GI_80;
+		prStaRec->u4VhtCapInfo &=
+			~VHT_CAP_INFO_SHORT_GI_160_80P80;
+	}
+}
 void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct ACTION_OP_MODE_NOTIFICATION_FRAME *prRxFrame;
@@ -5003,6 +5033,11 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				else /* for other 3 VHT cases: 40/80/160 */
 					prStaRec->u2HtCapInfo |=
 						HT_CAP_INFO_SUP_CHNL_WIDTH;
+
+				rlmUpdateVhtOpCapInfo(prAdapter,
+					ucVhtOpModeChannelWidth,
+					prStaRec);
+
 			} else if (prBssInfo->eCurrentOPMode ==
 				   OP_MODE_INFRASTRUCTURE)
 				rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth,
@@ -5115,7 +5150,7 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 
 			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
-
+			cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
 			/* 4. Update BW parameters in BssInfo for STA mode only
 			 */
 			if (prBssInfo->eCurrentOPMode ==

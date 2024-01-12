@@ -8921,7 +8921,18 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient))
 		return ePolicy;
+#if defined(CFG_SAP_CROSS_BAND_CSA)
+	DBGLOG(P2P, INFO, "cross band csa enable\n");
 
+	if (prNewChannelInfo->eBand == BAND_6G &&
+		(prBssInfo->eBand == BAND_2G4 ||
+		prBssInfo->eBand == BAND_5G))
+		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+	else if (prBssInfo->eBand == BAND_6G &&
+		(prNewChannelInfo->eBand == BAND_2G4 ||
+		prNewChannelInfo->eBand == BAND_5G))
+		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+#else
 #if CFG_SEND_DEAUTH_DURING_CHNL_SWITCH
 	/* Send deauth frame to clients:
 	 * 1. Cross band
@@ -8933,6 +8944,7 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 #endif
 		(prBssInfo && prBssInfo->eBand != prNewChannelInfo->eBand))
 		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+#endif
 #endif /* CFG_SEND_DEAUTH_DURING_CHNL_SWITCH */
 
 	return ePolicy;

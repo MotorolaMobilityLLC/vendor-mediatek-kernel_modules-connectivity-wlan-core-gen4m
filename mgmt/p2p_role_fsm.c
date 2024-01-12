@@ -73,6 +73,38 @@ u_int8_t p2pRoleFsmNeedMlo(
 #endif
 }
 
+void
+p2pRoleFsmStaCsaUpdt(struct ADAPTER *prAdapter,
+		struct LINK *prClientList,
+		enum ENUM_BAND eBand)
+{
+	struct STA_RECORD *prCurrStaRec;
+
+	if (prClientList && prClientList->u4NumElem > 0) {
+		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+				rLinkEntry, struct STA_RECORD) {
+			if (HAL_IS_TX_DIRECT(prAdapter)) {
+				nicTxDirectClearStaAcmQ(prAdapter,
+					prCurrStaRec->ucIndex);
+				nicTxDirectClearStaPendQ(prAdapter,
+					prCurrStaRec->ucIndex);
+				nicTxDirectClearStaPsQ(prAdapter,
+					prCurrStaRec->ucIndex);
+			} else {
+				struct MSDU_INFO *prFlushedTxPacketList = NULL;
+
+				prFlushedTxPacketList =
+					qmFlushStaTxQueues(prAdapter,
+					prCurrStaRec->ucIndex);
+				if (prFlushedTxPacketList)
+					wlanProcessQueuedMsduInfo(prAdapter,
+						prFlushedTxPacketList);
+			}
+			qmSetStaRecTxAllowed(prAdapter, prCurrStaRec, TRUE);
+		}
+	}
+}
+
 uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 	uint8_t ucRoleIdx, uint8_t fgUseInterfaceAddr)
 {
@@ -2422,6 +2454,39 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventSetNewChannel*/
 
+void p2pCsaControlFlow(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prP2pBssInfo,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+{
+#if CFG_SUPPORT_DBDC
+		struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+#endif
+
+	/* Indicate PM abort to sync BSS state with FW */
+	nicPmIndicateBssAbort(prAdapter,
+		prP2pBssInfo->ucBssIndex);
+
+	nicDeactivateNetworkEx(prAdapter,
+		NETWORK_ID(prP2pBssInfo->ucBssIndex,
+			prP2pBssInfo->ucLinkIndex),
+		FALSE);
+	p2pChangeMediaState(prAdapter, prP2pBssInfo,
+		MEDIA_STATE_DISCONNECTED);
+
+	nicUpdateBssEx(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		FALSE);
+#if CFG_SUPPORT_DBDC
+	CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
+		prP2pBssInfo->ucBssIndex,
+		prChnlReqInfo->eBand,
+		prChnlReqInfo->ucReqChnlNum,
+		prP2pBssInfo->ucWmmQueSet);
+
+	cnmDbdcPreConnectionEnableDecision(prAdapter,
+		&rDbdcDecisionInfo);
+#endif /*CFG_SUPPORT_DBDC*/
+}
 void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -2433,9 +2498,8 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	struct GL_P2P_INFO *prP2PInfo = (struct GL_P2P_INFO *) NULL;
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
-#if CFG_SUPPORT_DBDC
-	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
-#endif
+	struct STA_RECORD *prCurrStaRec;
+	struct LINK *prClientList;
 
 	DBGLOG(P2P, TRACE, "p2pRoleFsmRunEventCsaDone\n");
 
@@ -2451,102 +2515,33 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
 			prP2pRoleFsmInfo->ucRoleIndex];
 	prChnlReqInfo = &prP2pRoleFsmInfo->rChnlReqInfo;
+	prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
 	if (prP2PInfo)
 		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
 
-	/* SAP */
-	if (p2pFuncIsAPMode(prAdapter->rWifiVar
-		.prP2PConnSettings[prP2pBssInfo->u4PrivateData])) {
-		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-			prP2pBssInfo->eBand != prChnlReqInfo->eBand) {
-			/* Indicate PM abort to sync BSS state with FW */
-			nicPmIndicateBssAbort(prAdapter,
-				prP2pBssInfo->ucBssIndex);
-
-			nicDeactivateNetwork(prAdapter,
-				NETWORK_ID(prP2pBssInfo->ucBssIndex,
-					   prP2pBssInfo->ucLinkIndex));
-			nicUpdateBss(prAdapter,
-				prP2pBssInfo->ucBssIndex);
-			p2pChangeMediaState(prAdapter, prP2pBssInfo,
-				MEDIA_STATE_DISCONNECTED);
-			nicUpdateBssEx(prAdapter,
-				prP2pBssInfo->ucBssIndex,
-				FALSE);
-#if CFG_SUPPORT_DBDC
-			CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
-				prP2pBssInfo->ucBssIndex,
-				prChnlReqInfo->eBand,
-				prChnlReqInfo->ucReqChnlNum,
-				prP2pBssInfo->ucWmmQueSet);
-
-			cnmDbdcPreConnectionEnableDecision(prAdapter,
-				&rDbdcDecisionInfo);
-#endif /*CFG_SUPPORT_DBDC*/
-
-			p2pRoleFsmStateTransition(prAdapter,
-				prP2pRoleFsmInfo,
-				P2P_ROLE_STATE_SWITCH_CHANNEL);
-		} else {
-			/* SAP: Skip channel request/abort for
-			 * STA+SAP/MCC concurrent cases.
-			 */
-#if !CFG_P2P_FORCE_ROC_CSA
-			if (prAisBssInfo &&
-				(prAisBssInfo->ucPrimaryChannel !=
-				prP2pBssInfo->ucPrimaryChannel) &&
-				(prAisBssInfo->eConnectionState ==
-				MEDIA_STATE_CONNECTED)) {
-				p2pFuncDfsSwitchCh(prAdapter,
-					prP2pBssInfo,
-					prChnlReqInfo);
-			} else
-#endif
-				p2pRoleFsmStateTransition(prAdapter,
-					prP2pRoleFsmInfo,
-					P2P_ROLE_STATE_SWITCH_CHANNEL);
+	DBGLOG(P2P, INFO, "CSA from band: %d to %d\n",
+		prP2pBssInfo->eBand,
+		prChnlReqInfo->eBand);
+	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
+		cnmGet80211Band(prP2pBssInfo->eBand) !=
+			cnmGet80211Band(prChnlReqInfo->eBand)) {
+		if (prClientList && prClientList->u4NumElem > 0) {
+			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+					rLinkEntry, struct STA_RECORD) {
+				qmSetStaRecTxAllowed(prAdapter,
+					prCurrStaRec, FALSE);
+			}
 		}
-	} else { /* GO */
-		DBGLOG(P2P, INFO, "GO CSA done: %s band\n",
-			prP2pBssInfo->eBand == prChnlReqInfo->eBand ?
-				"same" : "cross");
-
-		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-			cnmGet80211Band(prP2pBssInfo->eBand) !=
-				cnmGet80211Band(prChnlReqInfo->eBand)) {
-
-			/* Indicate PM abort to sync BSS state with FW */
-			nicPmIndicateBssAbort(prAdapter,
-				prP2pBssInfo->ucBssIndex);
-
-			/* Update BSS with temp. disconnect state to FW */
-			nicDeactivateNetworkEx(prAdapter,
-				NETWORK_ID(prP2pBssInfo->ucBssIndex,
-					   prP2pBssInfo->ucLinkIndex),
-				FALSE);
-			p2pChangeMediaState(prAdapter, prP2pBssInfo,
-				MEDIA_STATE_DISCONNECTED);
-			nicUpdateBssEx(prAdapter,
-				prP2pBssInfo->ucBssIndex,
-				FALSE);
-
-#if CFG_SUPPORT_DBDC
-			CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
-				prP2pBssInfo->ucBssIndex,
-				prChnlReqInfo->eBand,
-				prChnlReqInfo->ucReqChnlNum,
-				prP2pBssInfo->ucWmmQueSet);
-
-			cnmDbdcPreConnectionEnableDecision(prAdapter,
-				&rDbdcDecisionInfo);
-#endif /*CFG_SUPPORT_DBDC*/
-		}
-
-		p2pRoleFsmStateTransition(prAdapter,
-			prP2pRoleFsmInfo,
-			P2P_ROLE_STATE_SWITCH_CHANNEL);
+		p2pCsaControlFlow(prAdapter,
+				prP2pBssInfo,
+				prChnlReqInfo);
 	}
+
+	p2pRoleFsmStateTransition(prAdapter,
+		prP2pRoleFsmInfo,
+		P2P_ROLE_STATE_SWITCH_CHANNEL);
+
 	cnmTimerStopTimer(prAdapter, &prP2pRoleFsmInfo->rP2pCsaDoneTimer);
 
 	cnmMemFree(prAdapter, prMsgHdr);
@@ -3612,7 +3607,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 	uint8_t ucVhtChannelWidthAfterCsa = VHT_OP_CHANNEL_WIDTH_20_40;
 #endif
 	uint8_t ucTokenID = 0;
-
+	struct LINK *prClientList;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!\n");
@@ -3693,12 +3688,8 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 		case P2P_ROLE_STATE_SWITCH_CHANNEL:
 			prBssInfo->fgIsSwitchingChnl = FALSE;
 
-			/* Restore connection state only for P2P CSA */
-			if (!p2pFuncIsAPMode(prAdapter->rWifiVar.
-				prP2PConnSettings[prBssInfo->u4PrivateData])) {
-				p2pChangeMediaState(prAdapter, prBssInfo,
-					MEDIA_STATE_CONNECTED);
-			}
+			p2pChangeMediaState(prAdapter, prBssInfo,
+				MEDIA_STATE_CONNECTED);
 
 			/* GC */
 			if (prBssInfo->eIftype == IFTYPE_P2P_CLIENT) {
@@ -3746,6 +3737,12 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 					prBssInfo,
 					&prP2pRoleFsmInfo->rChnlReqInfo);
 			}
+
+			prClientList = &prBssInfo->rStaRecOfClientList;
+
+			p2pRoleFsmStaCsaUpdt(prAdapter,
+				prClientList,
+				prBssInfo->eBand);
 
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo,
