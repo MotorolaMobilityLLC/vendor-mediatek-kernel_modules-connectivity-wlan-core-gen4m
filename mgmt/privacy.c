@@ -209,26 +209,34 @@ u_int8_t secCheckClassError(struct ADAPTER *prAdapter,
 {
 	void *prRxStatus;
 	struct RX_DESC_OPS_T *prRxDescOps;
-	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+	uint8_t ucClassErr, ucAisDisconnect;
 
 	if (!prStaRec)
 		return FALSE;
 
-	prRxDescOps = prAdapter->chip_info->prRxDescOps;
-	prRxStatus = prSwRfb->prRxStatus;
 	ucBssIndex = prStaRec->ucBssIndex;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
 	if (!prBssInfo) {
 		DBGLOG(RX, ERROR, "Invalid bssidx:%d\n", ucBssIndex);
 		return FALSE;
 	}
 
-	if (prRxDescOps->nic_rxd_get_sw_class_error_bit(prRxStatus)
-		|| (prBssInfo->eNetworkType == NETWORK_TYPE_AIS
-		&& aisGetAisBssInfo(prAdapter, ucBssIndex)->eConnectionState
-			== MEDIA_STATE_DISCONNECTED)) {
+	prRxDescOps = prAdapter->chip_info->prRxDescOps;
+	prRxStatus = prSwRfb->prRxStatus;
+	ucClassErr = prRxDescOps->nic_rxd_get_sw_class_error_bit(prRxStatus);
+	ucAisDisconnect = !!(IS_BSS_INFO_IN_AIS(prBssInfo)
+			&& kalGetMediaStateIndicated(prAdapter->prGlueInfo,
+			ucBssIndex) == MEDIA_STATE_DISCONNECTED);
+
+	if (ucClassErr || ucAisDisconnect) {
+		if (EAPOL_KEY_NOT_KEY !=
+			secGetEapolKeyType((uint8_t *) prSwRfb->pvHeader)) {
+			DBGLOG(RSN, WARN,
+			       "EAPOL key found, return TRUE back");
+			return TRUE;
+		}
 
 		DBGLOG_LIMITED(RSN, WARN,
 			"RX_CLASSERR: prStaRec=%p PktTYpe=0x%x, WlanIdx=%d,",
@@ -239,12 +247,14 @@ u_int8_t secCheckClassError(struct ADAPTER *prAdapter,
 			prSwRfb->ucStaRecIdx,
 			prSwRfb->eDst, prStaRec->eStaType);
 
-		DBGLOG_MEM8(RX, ERROR, prSwRfb->pucRecvBuff,
-			    (prSwRfb->u2RxByteCount > 64) ? 64 :
-			    prSwRfb->u2RxByteCount);
+		if (!ucAisDisconnect) {
+			DBGLOG_MEM8(RX, ERROR, prSwRfb->pucRecvBuff,
+				    (prSwRfb->u2RxByteCount > 64) ? 64 :
+				    prSwRfb->u2RxByteCount);
+		}
 
 		if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4)) {
-			DBGLOG(RX, ERROR,
+			DBGLOG_LIMITED(RX, ERROR,
 				"secchk:%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x:%04x\n",
 				prSwRfb->prRxStatusGroup4->u2FrameCtl,
 				prSwRfb->prRxStatusGroup4->aucTA[0],
@@ -256,14 +266,6 @@ u_int8_t secCheckClassError(struct ADAPTER *prAdapter,
 				prSwRfb->prRxStatusGroup4->u2SeqFrag,
 				prSwRfb->prRxStatusGroup4->u2Qos,
 				prSwRfb->prRxStatusGroup4->u4HTC);
-		}
-
-		if (EAPOL_KEY_NOT_KEY !=
-			secGetEapolKeyType((uint8_t *) prSwRfb->pvHeader)) {
-			DBGLOG(RSN, WARN,
-			       "EAPOL key found, return TRUE back");
-
-			return TRUE;
 		}
 
 		/* if (IS_NET_ACTIVE(prAdapter, ucBssIndex)) { */
