@@ -612,6 +612,10 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 	if (kalIsResetting())
 		goto exit;
 
+#if WLAN_INCLUDE_SYS
+	sysResetTrigger();
+#endif
+
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
 #endif
@@ -1368,6 +1372,9 @@ static void glResetCallback(enum _ENUM_WMTDRV_TYPE_T eSrcType,
 				wifi_rst.rst_data = RESET_SUCCESS;
 				glResetUpdateFlag(FALSE);
 				mtk_wifi_reset_main(&wifi_rst, TRUE);
+#if WLAN_INCLUDE_SYS
+				sysHangRecoveryReport();
+#endif
 				break;
 
 			case WMTRSTMSG_RESET_END_FAIL:
@@ -1422,6 +1429,9 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		wifi_rst.rst_data = RESET_SUCCESS;
 		mtk_wifi_reset_main(&wifi_rst, TRUE);
 		glResetOnEndUpdateFlag(FALSE);
+#if WLAN_INCLUDE_SYS
+		sysHangRecoveryReport();
+#endif
 		break;
 
 	case ENUM_RST_MSG_L04_START:
@@ -1450,6 +1460,9 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		wifi_rst.rst_data = RESET_SUCCESS;
 		mtk_wifi_reset_main(&wifi_rst, FALSE);
 		glResetOnEndUpdateFlag(FALSE);
+#if WLAN_INCLUDE_SYS
+		sysHangRecoveryReport();
+#endif
 		break;
 
 	default:
