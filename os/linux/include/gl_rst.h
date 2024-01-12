@@ -218,6 +218,7 @@ extern int wifi_reset_end(enum ENUM_RESET_STATUS);
 extern int hifAxiRemove(void);
 extern void kalSetRstEvent(void);
 extern void update_driver_reset_status(uint8_t fgIsResetting);
+extern int32_t get_wifi_process_status(void);
 extern int32_t get_wifi_powered_status(void);
 
 #endif

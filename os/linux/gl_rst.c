@@ -639,7 +639,12 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 	DBGLOG(INIT, INFO,
-		"Enter glRstwlanPreWholeChipReset.\n");
+			"Enter glRstwlanPreWholeChipReset.\n");
+	while (get_wifi_process_status() == 1) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return bRet;
@@ -650,7 +655,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	if (glRstCheckRstCriteria()) {
 		while (kalIsResetting()) {
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
-			msleep(20);
+			msleep(100);
 		}
 		while ((!prGlueInfo) ||
 			(prGlueInfo->u4ReadyFlag == 0) ||
@@ -664,7 +669,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 				g_IsWholeChipRst = TRUE;
 				return bRet;
 			}
-			msleep(20);
+			msleep(100);
 		}
 		g_IsWholeChipRst = TRUE;
 		DBGLOG(INIT, INFO,
@@ -688,6 +693,11 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 int glRstwlanPostWholeChipReset(void)
 {
+	while (get_wifi_process_status() == 1) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi on/off process is ongoing, wait here.\n");
+		msleep(100);
+	}
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		return 0;
