@@ -408,8 +408,7 @@ void nic_txd_v3_compose(
 	} else
 #endif
 	{
-		HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(
-			prTxDesc,
+		HAL_MAC_CONNAC3X_TXD_SET_MLD_ID(prTxDesc,
 			prMsduInfo->ucWlanIndex);
 	}
 
@@ -606,10 +605,14 @@ void nic_txd_v3_compose(
 		HAL_MAC_CONNAC3X_TXD_SET_TXS_TO_MCU(prTxDesc);
 		/* TXS is MPDU based, AMSDU will cause TX skb leak in driver */
 		HAL_MAC_CONNAC3X_TXD_UNSET_HW_AMSDU(prTxDesc);
+		/* Save for matching TXS */
+		prMsduInfo->ucTxdWlanIdx =
+			HAL_MAC_CONNAC3X_TXD_GET_MLD_ID(prTxDesc);
 
 		DBGLOG(TX, TEMP,
-			"TXS MSDU: w/p/t/up=%u/%u/%u/%u\n",
+			"TXS MSDU: w/w'/p/t/up=%u/%u/%u/%u/%u\n",
 			prMsduInfo->ucWlanIndex,
+			prMsduInfo->ucTxdWlanIdx,
 			prMsduInfo->ucPID,
 			prMsduInfo->ucTC,
 			prMsduInfo->ucUserPriority);
