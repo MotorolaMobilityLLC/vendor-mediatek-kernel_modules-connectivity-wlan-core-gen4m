@@ -872,9 +872,16 @@ static int procEfuseDump_show(struct seq_file *s, void *v)
 	}
 
 	for (idx_value = 0; idx_value < EFUSE_BLOCK_SIZE; idx_value++)
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		seq_printf(s, "0x%03X=0x%02X\n",
+			rAccessEfuseInfo.u4Address + idx_value,
+			rAccessEfuseInfo.aucData[idx_value]);
+#else
 		seq_printf(s, "0x%03X=0x%02X\n",
 			rAccessEfuseInfo.u4Address + idx_value,
 			prGlueInfo->prAdapter->aucEepromVaule[idx_value]);
+#endif
+
 	return 0;
 #else
 	seq_puts(s, "efuse ops is invalid\n");
