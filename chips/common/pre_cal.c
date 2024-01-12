@@ -723,8 +723,7 @@ int wlan_precal_pwron_v1(void)
 {
 	DBGLOG(INIT, INFO, "\n");
 
-	if (!wfsys_is_locked())
-		wfsys_lock();
+	wfsys_lock();
 
 	return 0;
 }
@@ -734,9 +733,6 @@ int wlan_precal_docal_v1(void)
 	int32_t ret = 0;
 
 	DBGLOG(INIT, INFO, "\n");
-
-	if (!wfsys_is_locked())
-		wfsys_lock();
 
 	update_pre_cal_status(1);
 	g_fgPreCal = TRUE;
@@ -756,8 +752,7 @@ exit:
 	if (!g_fgEverCal)
 		g_fgEverCal = TRUE;
 
-	if (wfsys_is_locked())
-		wfsys_unlock();
+	wfsys_unlock();
 
 	return ret;
 }
