@@ -349,6 +349,7 @@ struct _NAN_NDL_INSTANCE_T {
 #endif
 
 	struct LINK rPendingReqList;
+	uint8_t aucTxRespAddr[MAC_ADDR_LEN]; /* Schedule Response peer addr */
 };
 
 struct _NAN_DATA_PATH_INFO_T {
