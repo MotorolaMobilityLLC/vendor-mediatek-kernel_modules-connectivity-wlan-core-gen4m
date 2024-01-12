@@ -71,6 +71,17 @@ ifeq ($(WLAN_BUILD_COMMON), true)
 	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
 	include $(LOCAL_PATH)/build_wlan_drv.mk
 
+	WLAN_CHIP_ID := 6835
+	WIFI_CHIP := SOC2_1X1
+	WIFI_IP_SET := 1
+	CONNAC_VER := 1_0
+	WIFI_HIF := axi
+	WIFI_WMT := y
+	WIFI_EMI := y
+	WIFI_NAME := wlan_drv_gen4m_6835
+	WIFI_CHRDEV_MODULE := wmt_chrdev_wifi.ko
+	include $(LOCAL_PATH)/build_wlan_drv.mk
+
 	WLAN_CHIP_ID := bellwether
 	WIFI_CHIP := BELLWETHER
 	CONNAC_VER := 3_0
