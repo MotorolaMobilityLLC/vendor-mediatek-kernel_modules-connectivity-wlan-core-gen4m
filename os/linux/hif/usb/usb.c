@@ -319,7 +319,7 @@ static int mtk_usb_resume(struct usb_interface *intf)
 static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)usb_get_intfdata(intf);
-	uint8_t count = 0;
+	uint32_t count = 0;
 	struct BUS_INFO *prBusInfo = NULL;
 	int ret = 0;
 
@@ -362,12 +362,12 @@ static int mtk_usb_suspend(struct usb_interface *intf, pm_message_t message)
 	halUSBPreSuspendCmd(prGlueInfo->prAdapter);
 
 	while (prGlueInfo->rHifInfo.state != USB_STATE_SUSPEND) {
-		if (count > 25) {
+		if (count > 250) {
 			DBGLOG(HAL, ERROR, "pre_suspend timeout\n");
 			ret = -EFAULT;
 			break;
 		}
-		msleep(20);
+		mdelay(2);
 		count++;
 	}
 
