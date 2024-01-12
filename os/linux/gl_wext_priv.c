@@ -3897,7 +3897,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #define CMD_SET_USE_CASE	"SET_USE_CASE"
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #define CMD_SET_SNIFFER         "SNIFFER"
 #endif /* CFG_SUPPORT_ICS */
 
@@ -9059,7 +9059,7 @@ int priv_driver_set_sw_ctrl(IN struct net_device *prNetDev, IN char *pcCommand,
 
 }				/* priv_driver_set_sw_ctrl */
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 static int priv_driver_sniffer(IN struct net_device *prNetDev,
 				  IN char *pcCommand, IN int i4TotalLen)
 {
@@ -9092,7 +9092,7 @@ static int priv_driver_sniffer(IN struct net_device *prNetDev,
 	kalMemZero(&rSniffer,
 		sizeof(struct PARAM_CUSTOM_ICS_SNIFFER_INFO_STRUCT));
 	i4Recv = sscanf(this_char,
-		"%hhu-%hhu-%hhu-%hhu-%hx-%hd-%hd-%hd-%hd-%hd",
+		"%hhu-%hhu-%hhu-%hhu-%hx-%hd-%hd-%hx-%x-%x-%hd",
 		&(rSniffer.ucModule),
 		&(rSniffer.ucAction),
 		&(rSniffer.ucFilter),
@@ -9102,9 +9102,11 @@ static int priv_driver_sniffer(IN struct net_device *prNetDev,
 		&(rSniffer.ucCondition[2]),
 		&(rSniffer.ucCondition[3]),
 		&(rSniffer.ucCondition[4]),
-		&(rSniffer.ucCondition[5]));
+		&(rSniffer.ucCondition[5]),
+		&(rSniffer.ucCondition[6]));
+
 	if (i4Recv == 10) {
-		if (rSniffer.ucModule == 2) {
+		if (rSniffer.ucModule == MAC_ICS_MODE) {
 			DBGLOG(REQ, INFO, "An ICS cmd");
 			rStatus = kalIoctl(prGlueInfo, wlanoidSetIcsSniffer,
 				&rSniffer, sizeof(rSniffer), &u4BufLen);
@@ -9114,13 +9116,31 @@ static int priv_driver_sniffer(IN struct net_device *prNetDev,
 			/* reserve for PSS sniffer and system overall setting*/
 			DBGLOG(REQ, ERROR, "Not an ICS cmd");
 		}
+	} else if (i4Recv == 11) {
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+		if (rSniffer.ucModule == PHY_ICS_MODE) {
+			DBGLOG(REQ, INFO, "An PHY ICS cmd");
+			if (rSniffer.ucCondition[3] < 256) {
+				prAdapter->fgEnPhyICS = TRUE;
+				rStatus = kalIoctl(prGlueInfo,
+					wlanoidSetIcsSniffer,
+					&rSniffer, sizeof(rSniffer),
+					&u4BufLen);
+				if (rStatus != WLAN_STATUS_SUCCESS)
+					return -1;
+			} else {
+				DBGLOG(REQ, ERROR,
+				"PHY ICS partition must less than 0xff");
+			}
+		}
+#endif /* #if CFG_SUPPORT_PHY_ICS */
 	} else {
 		DBGLOG(REQ, ERROR,
 			"SNIFFER CMD: Number of PARAMETERS is WRONG\n");
 	}
 	return i4BytesWritten;
 }
-#endif /* CFG_SUPPORT_ICS */
+#endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
 int priv_driver_set_monitor(IN struct net_device *prNetDev,
@@ -19196,11 +19216,13 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #else
 	{CMD_SET_FIXED_RATE, priv_driver_set_fixed_rate},
 #endif
+
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	{CMD_SET_PP_CAP_CTRL, priv_driver_set_pp_cap_ctrl},
 	{CMD_SET_PP_ALG_CTRL, priv_driver_set_pp_alg_ctrl},
 #endif
-#if (CFG_SUPPORT_ICS == 1)
+
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	{CMD_SET_SNIFFER, priv_driver_sniffer},
 #endif /* CFG_SUPPORT_ICS */
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP

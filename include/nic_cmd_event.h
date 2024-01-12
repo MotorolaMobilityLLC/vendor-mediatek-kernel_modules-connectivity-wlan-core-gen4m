@@ -3181,7 +3181,7 @@ struct EVENT_WIFI_RDD_TEST {
 	uint8_t aucBuffer[0];
 };
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 struct CMD_ICS_SNIFFER_INFO {
 	/* DWORD_0 - Common Part*/
 	/*Include system all and PSSniffer */
@@ -3193,8 +3193,8 @@ struct CMD_ICS_SNIFFER_INFO {
 	uint8_t ucFilter;
 	uint8_t ucOperation;
 	uint8_t aucPadding0;
-	uint16_t ucCondition[6];
-	uint8_t aucPadding1[64];
+	uint16_t ucCondition[7];
+	uint8_t aucPadding1[62];
 };
 #endif /* CFG_SUPPORT_ICS */
 
@@ -3281,6 +3281,17 @@ struct EXT_EVENT_RBIST_DUMP_DATA_T {
 	uint32_t u4Reserved[6];
 	uint32_t u4Data[256];
 };
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+struct EXT_EVENT_PHY_ICS_DUMP_DATA_T {
+	uint32_t u4FuncIndex; /* 0x14 = 20 */
+	uint32_t u4PktNum;
+	uint32_t u4PhyTimestamp;
+	uint32_t u4DataLen;
+	uint32_t u4Reserved[5];
+	uint32_t u4Data[256];
+};
+#endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */
 
 struct EXT_EVENT_RBIST_CAP_STATUS_T {
 	uint32_t u4FuncIndex;

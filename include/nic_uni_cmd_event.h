@@ -3405,7 +3405,7 @@ struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL {
 }__KAL_ATTRIB_PACKED__;
 /** @} */
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 struct UNI_CMD_ICS {
 	/*fixed field*/
 	uint8_t aucReserved[4];

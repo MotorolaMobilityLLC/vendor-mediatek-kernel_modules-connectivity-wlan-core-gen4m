@@ -1832,7 +1832,7 @@ void kalSchedScanStopped(IN struct GLUE_INFO *prGlueInfo,
 			 u_int8_t fgDriverTriggerd);
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr);
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 uint32_t kalOpenIcsDumpFile(void);
 uint32_t kalWriteIcsDumpFile(uint8_t *pucBuffer, uint16_t u2Size);
 #endif /* CFG_SUPPORT_ICS */

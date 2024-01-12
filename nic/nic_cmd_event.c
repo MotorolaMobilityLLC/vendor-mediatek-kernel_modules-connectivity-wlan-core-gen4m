@@ -74,6 +74,12 @@
 #include "precomp.h"
 #include "gl_ate_agent.h"
 
+
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+#include "ics.h"
+#endif
+
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3500,6 +3506,124 @@ void nicExtEventReCalData(IN struct ADAPTER *prAdapter, IN uint8_t *pucEventBuf)
 	}
 }
 
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+void nicExtEventPhyIcsRawData(IN struct ADAPTER *prAdapter,
+			   IN uint8_t *pucEventBuf)
+{
+	struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *prPhyIcsEvent;
+	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
+	void *pvPacket = NULL;
+	uint32_t u4Size = 0, Idxi = 0;
+	uint8_t *pucRecvBuff;
+	ssize_t ret;
+
+	if (!prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prAdapter is null\n");
+		return;
+	}
+
+	if (pucEventBuf == NULL) {
+		DBGLOG(RFTEST, ERROR, "pucEventBuf is null\n");
+		return;
+	}
+
+	prPhyIcsEvent = (struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *)
+		      pucEventBuf;
+
+	DBGLOG(RFTEST, INFO,
+	       "u4PktNum = [%d], u4PhyTimestamp = [0x%08x], u4DataLen = [%d]\n",
+	       prPhyIcsEvent->u4PktNum,
+	       prPhyIcsEvent->u4PhyTimestamp,
+	       prPhyIcsEvent->u4DataLen);
+
+	/* 1KB phy ics packet + fw parser header */
+	u4Size = prPhyIcsEvent->u4DataLen * sizeof(uint32_t) +
+			sizeof(struct ICS_BIN_LOG_HDR);
+	pvPacket = kalPacketAlloc(prAdapter->prGlueInfo, u4Size,
+			FALSE, &pucRecvBuff);
+
+#if 0
+	/* Print ICap data to console for debugging purpose */
+	for (Idxi = 0; Idxi < 256; Idxi++)
+		DBGLOG(RFTEST, ERROR, "Data[%d] : %08x\n", Idxi,
+			prPhyIcsEvent->u4Data[Idxi]);
+#endif
+
+    /* endian swap */
+	for (Idxi = 0; Idxi < 256; Idxi++) {
+		prPhyIcsEvent->u4Data[Idxi] =
+			((prPhyIcsEvent->u4Data[Idxi] & 0x000000FF) << 24)
+			| ((prPhyIcsEvent->u4Data[Idxi] & 0x0000FF00) << 8)
+			| ((prPhyIcsEvent->u4Data[Idxi] & 0x00FF0000) >> 8)
+			| ((prPhyIcsEvent->u4Data[Idxi] & 0xFF000000) >> 24);
+	}
+
+
+	if (pvPacket) {
+		/* prepare ICS header */
+		prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucRecvBuff;
+		prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+		prIcsBinLogHeader->u4Timestamp = prPhyIcsEvent->u4PhyTimestamp;
+		prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_PHY_ICS;
+		prIcsBinLogHeader->u2Length =
+			prPhyIcsEvent->u4DataLen * sizeof(uint32_t);
+
+		/* prepare ICS frame
+		 * pucRecvBuff = ICS Header + AGG Header + AGG payload length
+		 * skip ICS header of pucRecvBuff, start to next address copy
+		 */
+		kalMemCopy(pucRecvBuff + sizeof(struct ICS_BIN_LOG_HDR),
+				prPhyIcsEvent->u4Data,
+				prPhyIcsEvent->u4DataLen * sizeof(uint32_t));
+#if 0
+		if (!prAdapter->fgIcsDumpOngoing) {
+			if (kalOpenFwDumpFile(DUMP_FILE_ICS)
+				!= WLAN_STATUS_SUCCESS)
+				DBGLOG(NIC, ERROR,
+					"open PHY ICS dump file fail\n");
+			else
+				prAdapter->fgIcsDumpFileOpend = TRUE;
+			prAdapter->fgIcsDumpOngoing = TRUE;
+		}
+
+		if (prAdapter->fgIcsDumpOngoing) {
+			if (prAdapter->fgIcsDumpFileOpend) {
+				if (kalWriteFwDumpFile(
+						pucRecvBuff,
+						u4Size) != WLAN_STATUS_SUCCESS)
+					DBGLOG(NIC, ERROR,
+						"write PHY ICS log into file fail\n");
+			}
+		}
+#endif
+
+		/* write to ring, ret: written */
+		ret = kalIcsWrite(pucRecvBuff, u4Size);
+		if (ret != u4Size)
+		DBGLOG_LIMITED(NIC, INFO,
+			"dropped written:%d write PHY ICS log into file fail\n",
+			ret);
+
+		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
+
+
+#if 0 /* CFG_ASSERT_DUMP */
+		if (kalEnqFwDumpLog(
+				prAdapter,
+				pucRecvBuff,
+				u4Size,
+				&prAdapter->prGlueInfo->rFwDumpSkbQueue)
+				!= WLAN_STATUS_SUCCESS) {
+			DBGLOG(NIC, ERROR,
+				"Enqueue PHY ICS log into queue fail\n");
+		}
+#endif
+
+	}
+
+
+}
+#endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf)
@@ -3730,6 +3854,12 @@ uint32_t nicRfTestEventHandler(IN struct ADAPTER *prAdapter,
 				0 /*prCapStatus->u4TotalBufferSize*/);
 		}
 		break;
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	case GET_PHY_ICS_RAW_DATA:
+		nicExtEventPhyIcsRawData(prAdapter, prEvent->aucBuffer);
+		break;
+#endif
 
 	case RE_CALIBRATION:
 		nicExtEventReCalData(prAdapter, prEvent->aucBuffer);

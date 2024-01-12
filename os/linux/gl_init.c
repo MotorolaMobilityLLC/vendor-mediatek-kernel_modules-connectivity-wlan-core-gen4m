@@ -92,7 +92,7 @@
 #if CFG_SUPPORT_NAN
 #include "gl_vendor_ndp.h"
 #endif
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #include "ics.h"
 #endif
 
@@ -5084,7 +5084,7 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #define ICS_LOG_CMD_ON_OFF        0
 #define ICS_LOG_CMD_SET_LEVEL     1
 
@@ -5803,7 +5803,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	ics_log_event_notification((int)ICS_LOG_CMD_ON_OFF,
 		u4IcsLogOnOffCache);
 #endif
@@ -7398,7 +7398,7 @@ static int initWlan(void)
 	mddpInit();
 #endif
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	ret = IcsInit();
 	if (ret < 0) {
 		DBGLOG(INIT, INFO, "ics log node init failed!");
@@ -7565,7 +7565,7 @@ static void exitWlan(void)
 	procUninitProcFs();
 #endif
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	IcsDeInit();
 #endif /* CFG_SUPPORT_ICS */
 
@@ -7662,7 +7662,7 @@ static int wf_pdwnc_notify(struct notifier_block *nb,
 		procUninitProcFs();
 #endif
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 		IcsDeInit();
 #endif /* CFG_SUPPORT_ICS */
 

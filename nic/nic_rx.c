@@ -77,7 +77,7 @@
 #include "nan_data_engine.h"
 #endif
 #include "radiotap.h"
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #include "ics.h"
 #endif
 
@@ -3548,7 +3548,7 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 	IN struct SW_RFB *prSwRfb)
 {
@@ -3595,7 +3595,7 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
 	}
 }
-#endif /* CFG_SUPPORT_ICS */
+#endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
 
 void nicRxProcessPacketType(
 	struct ADAPTER *prAdapter,
@@ -3706,7 +3706,7 @@ void nicRxProcessPacketType(
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
 
-#if (CFG_SUPPORT_ICS == 1)
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	case RX_PKT_TYPE_ICS:
 		if ((prAdapter->fgEnTmacICS
 			|| prAdapter->fgEnRmacICS) == TRUE)
@@ -3714,7 +3714,19 @@ void nicRxProcessPacketType(
 		RX_INC_CNT(prRxCtrl, RX_ICS_LOG_COUNT);
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
+
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	case RX_PKT_TYPE_PHY_ICS:
+		if (prAdapter->fgEnPhyICS == TRUE) {
+			nicRxProcessIcsLog(prAdapter, prSwRfb);
+			/* DBGLOG(RX, ERROR, "ucPacketType = %d\n", */
+				/* prSwRfb->ucPacketType); */
+		}
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		break;
+#endif /* #if CFG_SUPPORT_PHY_ICS */
 #endif /* CFG_SUPPORT_ICS */
+
 
 	/* case HIF_RX_PKT_TYPE_TX_LOOPBACK: */
 	/* case HIF_RX_PKT_TYPE_MANAGEMENT: */
