@@ -496,26 +496,31 @@ WLAN_STATUS halTxUSBSendData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsd
 	spin_lock_irqsave(&prHifInfo->rTxDataFreeQLock, flags);
 
 	if (list_empty(&prHifInfo->rTxDataFreeQ[ucTc])) {
-		spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
-		DBGLOG(HAL, ERROR, "run out of rTxDataFreeQ #1!!\n");
-		wlanProcessQueuedMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
-		return WLAN_STATUS_RESOURCES;
+		if (glUsbBorrowFfaReq(prHifInfo, ucTc) == FALSE) {
+			spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
+			DBGLOG(HAL, ERROR, "run out of rTxDataFreeQ #1!!\n");
+			wlanProcessQueuedMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
+			return WLAN_STATUS_RESOURCES;
+		}
 	}
 	prUsbReq = list_entry(prHifInfo->rTxDataFreeQ[ucTc].next, struct _USB_REQ_T, list);
 	prBufCtrl = prUsbReq->prBufCtrl;
 
-	if (prHifInfo->u4AggRsvSize < ALIGN_4(u4TotalLen))
-		DBGLOG(HAL, ERROR, "u4AggRsvSize count FAIL (%u, %u)\n", prHifInfo->u4AggRsvSize, u4TotalLen);
-	prHifInfo->u4AggRsvSize -= ALIGN_4(u4TotalLen);
+	if (prHifInfo->u4AggRsvSize[ucTc] < ALIGN_4(u4TotalLen))
+		DBGLOG(HAL, ERROR, "u4AggRsvSize[%hhu] count FAIL (%u, %u)\n",
+		       ucTc, prHifInfo->u4AggRsvSize[ucTc], u4TotalLen);
+	prHifInfo->u4AggRsvSize[ucTc] -= ALIGN_4(u4TotalLen);
 
 	if (prBufCtrl->u4WrIdx + ALIGN_4(u4TotalLen) + LEN_USB_UDMA_TX_TERMINATOR > prBufCtrl->u4BufSize) {
 		halTxUSBSendAggData(prHifInfo, ucTc, prUsbReq);
 
 		if (list_empty(&prHifInfo->rTxDataFreeQ[ucTc])) {
-			spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
-			DBGLOG(HAL, ERROR, "run out of rTxDataFreeQ #2!!\n");
-			wlanProcessQueuedMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
-			return WLAN_STATUS_FAILURE;
+			if (glUsbBorrowFfaReq(prHifInfo, ucTc) == FALSE) {
+				spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
+				DBGLOG(HAL, ERROR, "run out of rTxDataFreeQ #2!!\n");
+				wlanProcessQueuedMsduInfo(prGlueInfo->prAdapter, prMsduInfo);
+				return WLAN_STATUS_FAILURE;
+			}
 		}
 
 		prUsbReq = list_entry(prHifInfo->rTxDataFreeQ[ucTc].next, struct _USB_REQ_T, list);
@@ -653,7 +658,7 @@ VOID halTxUSBProcessMsduDone(IN P_GLUE_INFO_T prGlueInfo, P_USB_REQ_T prUsbReq)
 	struct urb *urb = prUsbReq->prUrb;
 	UINT_32 u4SentDataSize;
 
-	ucTc = *((PUINT_8)&prUsbReq->prPriv);
+	ucTc = *((PUINT_8)&prUsbReq->prPriv) & TC_MASK;
 
 	prFreeQueue = &rFreeQueue;
 	QUEUE_INITIALIZE(prFreeQueue);
@@ -669,6 +674,7 @@ VOID halTxUSBProcessMsduDone(IN P_GLUE_INFO_T prGlueInfo, P_USB_REQ_T prUsbReq)
 VOID halTxUSBProcessDataComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq)
 {
 	UINT_8 ucTc;
+	BOOLEAN fgFfa;
 	struct urb *urb = prUsbReq->prUrb;
 	P_GL_HIF_INFO_T prHifInfo = prUsbReq->prHifInfo;
 #if CFG_USB_TX_AGG
@@ -676,7 +682,8 @@ VOID halTxUSBProcessDataComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq)
 #endif
 	unsigned long flags;
 
-	ucTc = *((PUINT_8)&prUsbReq->prPriv);
+	ucTc = *((PUINT_8)&prUsbReq->prPriv) & TC_MASK;
+	fgFfa =  *((PUINT_8)&prUsbReq->prPriv) & FFA_MASK;
 
 	if (urb->status != 0) {
 		DBGLOG(TX, ERROR, "[%s] send DATA fail (status = %d)\n", __func__, urb->status);
@@ -689,7 +696,10 @@ VOID halTxUSBProcessDataComplete(IN P_ADAPTER_T prAdapter, P_USB_REQ_T prUsbReq)
 #if CFG_USB_TX_AGG
 	prBufCtrl->u4WrIdx = 0;
 
-	list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFreeQ[ucTc]);
+	if ((fgFfa == FALSE) || list_empty(&prHifInfo->rTxDataFreeQ[ucTc]))
+		list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFreeQ[ucTc]);
+	else
+		list_add_tail(&prUsbReq->list, &prHifInfo->rTxDataFfaQ);
 
 	if (usb_anchor_empty(&prHifInfo->rTxDataAnchor[ucTc])) {
 		prUsbReq = list_entry(prHifInfo->rTxDataFreeQ[ucTc].next, struct _USB_REQ_T, list);
@@ -792,7 +802,6 @@ WLAN_STATUS halRxUSBReceiveEvent(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgFillUrb)
 
 		usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rRxEventAnchor);
 
-		prUsbReq->prPriv = NULL;
 		prUsbReq->prBufCtrl->u4ReadSize = 0;
 		if (prHifInfo->eEventEpType == EVENT_EP_TYPE_INTR && fgFillUrb) {
 			usb_fill_int_urb(prUsbReq->prUrb,
@@ -884,7 +893,6 @@ WLAN_STATUS halRxUSBReceiveData(IN P_ADAPTER_T prAdapter)
 
 		usb_anchor_urb(prUsbReq->prUrb, &prHifInfo->rRxDataAnchor);
 
-		prUsbReq->prPriv = NULL;
 		prUsbReq->prBufCtrl->u4ReadSize = 0;
 		usb_fill_bulk_urb(prUsbReq->prUrb,
 				  prHifInfo->udev,
@@ -1179,9 +1187,10 @@ BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 
 #if CFG_USB_TX_AGG
 	if (list_empty(&prHifInfo->rTxDataFreeQ[ucTc])) {
-		spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
-
-		return FALSE;
+		if (glUsbBorrowFfaReq(prHifInfo, ucTc) == FALSE) {
+			spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
+			return FALSE;
+		}
 	}
 
 	prUsbReq = list_entry(prHifInfo->rTxDataFreeQ[ucTc].next, struct _USB_REQ_T, list);
@@ -1190,13 +1199,15 @@ BOOLEAN halTxIsDataBufEnough(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduIn
 	if (prHifInfo->rTxDataFreeQ[ucTc].next->next == &prHifInfo->rTxDataFreeQ[ucTc]) {
 		/* length of rTxDataFreeQ equals 1 */
 		if (prBufCtrl->u4WrIdx + ALIGN_4(u4Length) >
-		    prBufCtrl->u4BufSize - prHifInfo->u4AggRsvSize - LEN_USB_UDMA_TX_TERMINATOR) {
+		    prBufCtrl->u4BufSize - prHifInfo->u4AggRsvSize[ucTc] - LEN_USB_UDMA_TX_TERMINATOR) {
 			/* Buffer is not enough */
-			spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
-			return FALSE;
+			if (glUsbBorrowFfaReq(prHifInfo, ucTc) == FALSE) {
+				spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);
+				return FALSE;
+			}
 		}
 	}
-	prHifInfo->u4AggRsvSize += ALIGN_4(u4Length);
+	prHifInfo->u4AggRsvSize[ucTc] += ALIGN_4(u4Length);
 #else
 	if (list_empty(&prHifInfo->rTxDataFreeQ)) {
 		spin_unlock_irqrestore(&prHifInfo->rTxDataFreeQLock, flags);

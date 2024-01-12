@@ -124,6 +124,8 @@ typedef enum _ENUM_USB_END_POINT_T {
 
 #define HIF_TX_INIT_CMD_PORT             USB_CMD_EP_OUT
 
+#define USB_REQ_TX_DATA_FFA_CNT         (10)
+
 #ifdef CFG_USB_REQ_TX_DATA_CNT
 #define USB_REQ_TX_DATA_CNT             (CFG_USB_REQ_TX_DATA_CNT)	/* platform specific USB_REQ_TX_DATA_CNT */
 #else
@@ -236,6 +238,7 @@ typedef struct _GL_HIF_INFO_T {
 	spinlock_t rRxDataQLock;
 
 	PVOID prTxCmdReqHead;
+	PVOID arTxDataFfaReqHead;
 	PVOID arTxDataReqHead[USB_TC_NUM];
 	PVOID prRxEventReqHead;
 	PVOID prRxDataReqHead;
@@ -243,8 +246,9 @@ typedef struct _GL_HIF_INFO_T {
 	spinlock_t rTxCmdFreeQLock;
 	struct list_head rTxCmdSendingQ;
 	spinlock_t rTxCmdSendingQLock;
+	struct list_head rTxDataFfaQ;
 #if CFG_USB_TX_AGG
-	UINT_32 u4AggRsvSize;
+	UINT_32 u4AggRsvSize[USB_TC_NUM];
 	struct list_head rTxDataFreeQ[USB_TC_NUM];
 	struct usb_anchor rTxDataAnchor[USB_TC_NUM];
 #else
@@ -266,6 +270,7 @@ typedef struct _GL_HIF_INFO_T {
 	struct list_head rTxDataCompleteQ;
 
 	BUF_CTRL_T rTxCmdBufCtrl[USB_REQ_TX_CMD_CNT];
+	BUF_CTRL_T rTxDataFfaBufCtrl[USB_REQ_TX_DATA_FFA_CNT];
 #if CFG_USB_TX_AGG
 	BUF_CTRL_T rTxDataBufCtrl[USB_TC_NUM][USB_REQ_TX_DATA_CNT];
 #else
@@ -296,6 +301,10 @@ typedef struct _BUS_INFO {
 	UINT_32 u4UdmaWlCfg_0;
 	UINT_32 u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
 } BUS_INFO, *P_BUS_INFO;
+
+/* USB_REQ_T prPriv field for TxData */
+#define FFA_MASK                        BIT(7)           /* Indicate if this UsbReq is from FFA queue. */
+#define TC_MASK                         BITS(0, 6)       /* Indicate which TC this UsbReq belongs to */
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -348,6 +357,7 @@ BOOL mtk_usb_vendor_request(IN P_GLUE_INFO_T prGlueInfo, IN UCHAR uEndpointAddre
 VOID glUsbEnqueueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, P_USB_REQ_T prUsbReq,
 		     spinlock_t *prLock, BOOLEAN fgHead);
 P_USB_REQ_T glUsbDequeueReq(P_GL_HIF_INFO_T prHifInfo, struct list_head *prHead, spinlock_t *prLock);
+BOOLEAN glUsbBorrowFfaReq(P_GL_HIF_INFO_T prHifInfo, UINT_8 ucTc);
 
 WLAN_STATUS halTxUSBSendCmd(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucTc, IN P_CMD_INFO_T prCmdInfo);
 VOID halTxUSBSendCmdComplete(struct urb *urb);
