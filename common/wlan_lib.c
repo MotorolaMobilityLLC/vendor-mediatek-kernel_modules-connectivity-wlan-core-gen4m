@@ -8334,7 +8334,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if (CFG_VOLT_INFO == 1)
-	INIT_UINT(prWifiVar->fgVnfEn, "VoltInfoEnable", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgVnfEn, "VoltInfoEnable", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->u4VnfDebTimes,
 		"VoltInfoDebTimes", VOLT_INFO_DEBOUNCE_TIMES);
 	INIT_UINT(prWifiVar->u4VnfDebInterval,
