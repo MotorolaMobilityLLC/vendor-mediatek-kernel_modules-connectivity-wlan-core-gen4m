@@ -250,8 +250,8 @@ extern uint32_t arEventTableSize;
 /* This is for the usage of assign a 2 byte Wcid to WcidL and WcidH */
 #define WCID_SET_H_L(_HnVer, _L, _u2Value) \
 	do { \
-		_HnVer = (uint8_t)(((_u2Value) >> 8) & 0xff); \
-		_L = (uint8_t)((_u2Value) & 0xff); \
+		_HnVer = (uint8_t)((((uint16_t)(_u2Value)) >> 8) & 0xff); \
+		_L = (uint8_t)(((uint16_t)(_u2Value)) & 0xff); \
 	} while (0)
 
 #define UNI_CMD_STAREC_INVALID_WTBL_IDX 0x7ff
@@ -819,6 +819,11 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(ad, bss);
 #endif
 
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", ucBssIndex);
+		return 0;
+	}
+
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
 	tag->u2Length = sizeof(*tag);
 
@@ -868,6 +873,11 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	cmd = (struct CMD_BSS_ACTIVATE_CTRL *) info->pucInfoBuffer;
 	bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", cmd->ucBssIndex);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	if (info->ucCID != CMD_ID_BSS_ACTIVATE_CTRL ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -883,7 +893,7 @@ uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 	dev_cmd->ucOwnMacIdx = cmd->ucOwnMacAddrIndex;
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	dev_cmd->ucDbdcIdx = bss->ucBssIndex == ad->ucP2PDevBssIdx ?
-		ENUM_BAND_AUTO : ENUM_BAND_AUTO;
+		ENUM_BAND_ALL : ENUM_BAND_AUTO;
 #else
 	dev_cmd->ucDbdcIdx = ENUM_BAND_AUTO;
 #endif
@@ -1783,11 +1793,11 @@ void nicUniCmdNicCapability(struct ADAPTER *prAdapter)
 void nicUniCmdEventQueryNicCapabilityV2(IN struct ADAPTER *ad,
 				     IN struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_CHIP_CAPABILITY);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_CHIP_CAPABILITY);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 
 	/* copy tag to legacy event */
@@ -2085,6 +2095,11 @@ uint32_t nicUniCmdBssInfoTagBasic(struct ADAPTER *ad,
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 	uint32_t phy_mode;
 
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", cmd->ucBssIndex);
+		return 0;
+	}
+
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_BASIC;
 	tag->u2Length = sizeof(*tag);
 	tag->ucActive = IS_BSS_ACTIVE(bss);
@@ -2259,6 +2274,11 @@ uint32_t nicUniCmdBssInfoTagHe(struct ADAPTER *ad,
 	struct UNI_CMD_BSSINFO_HE *tag = (struct UNI_CMD_BSSINFO_HE *)buf;
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", cmd->ucBssIndex);
+		return 0;
+	}
+
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_HE;
 	tag->u2Length = sizeof(*tag);
 	tag->u2TxopDurationRtsThreshold =
@@ -2287,6 +2307,11 @@ uint32_t nicUniCmdBssInfoTagBssColor(struct ADAPTER *ad,
 		(struct UNI_CMD_BSSINFO_BSS_COLOR *)buf;
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", cmd->ucBssIndex);
+		return 0;
+	}
+
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_BSS_COLOR;
 	tag->u2Length = sizeof(*tag);
 	tag->fgEnable =	(bss->ucBssColorInfo & HE_OP_BSSCOLOR_BSS_COLOR_DISABLE)
@@ -2307,6 +2332,11 @@ uint32_t nicUniCmdBssInfoTagEht(struct ADAPTER *ad,
 {
 	struct UNI_CMD_BSSINFO_EHT *tag = (struct UNI_CMD_BSSINFO_EHT *)buf;
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
+
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", cmd->ucBssIndex);
+		return 0;
+	}
 
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_EHT;
 	tag->u2Length = sizeof(*tag);
@@ -2361,6 +2391,11 @@ uint32_t nicUniCmdBssInfoTagMaxIdlePeriod(struct ADAPTER *ad,
 	struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD *tag =
 		(struct UNI_CMD_BSSINFO_MAX_IDLE_PERIOD *)buf;
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
+
+	if (!bss) {
+		DBGLOG(INIT, WARN, "Bss=%d not found", cmd->ucBssIndex);
+		return 0;
+	}
 
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MAX_IDLE_PERIOD;
 	tag->u2Length = sizeof(*tag);
@@ -3447,7 +3482,7 @@ uint32_t nicUniCmdStaRecTagMldSetup(struct ADAPTER *ad,
 	struct LINK *prStaList = &prMldStaRec->rStarecList;
 	struct STA_RECORD *prCurStaRec;
 
-	if (prStaRec->ucStaState != STA_STATE_3)
+	if (!prStaRec || prStaRec->ucStaState != STA_STATE_3)
 		return 0;
 
 	if (!prMldStaRec)
@@ -3537,7 +3572,7 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 	struct UNI_CMD_STAREC_EHT_MLD *tag = (struct UNI_CMD_STAREC_EHT_MLD *)buf;
 	struct MLD_STA_RECORD *prMldStarec = mldStarecGetByStarec(ad, prStaRec);
 
-	if (prStaRec->ucStaState != STA_STATE_3)
+	if (!prStaRec || prStaRec->ucStaState != STA_STATE_3)
 		return 0;
 
 	if (!prMldStarec)
@@ -3651,7 +3686,6 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 	struct CMD_UPDATE_STA_RECORD *cmd;
 	struct UNI_CMD_STAREC *uni_cmd;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	struct BSS_INFO *bss;
 	uint8_t *pos;
 	uint32_t max_cmd_len = 0;
 	int i;
@@ -3661,7 +3695,6 @@ uint32_t nicUniCmdUpdateStaRec(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_UPDATE_STA_RECORD *) info->pucInfoBuffer;
-	bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
 	max_cmd_len += sizeof(struct UNI_CMD_STAREC);
 	for (i = 0; i < ARRAY_SIZE(arUpdateStaRecTable); i++)
 		max_cmd_len += arUpdateStaRecTable[i].u4Size;
@@ -6083,6 +6116,11 @@ void nicUniEventHelper(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt,
 	uint8_t i;
 
 	legacy = (struct WIFI_EVENT *) kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!legacy) {
+		DBGLOG(NIC, WARN, "eid=%d ext_id=%d OOM\n", eid, ext_id);
+		return;
+	}
+
 	legacy->u2PacketLength = size;
 	legacy->u2PacketType = evt->u2PacketType;
 	legacy->ucEID = eid;
@@ -6215,7 +6253,7 @@ void nicUniCmdEventQueryCfgRead(IN struct ADAPTER *prAdapter,
 		(struct UNI_EVENT_CHIP_CONFIG *)uni_evt->aucBuffer;
 	struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG *tag =
 		(struct UNI_CMD_CHIP_CONFIG_CUSTOMER_CFG *) evt->aucTlvBuffer;
-	struct CMD_HEADER legacy;
+	struct CMD_HEADER legacy = {0};
 
 	legacy.itemNum = tag->itemNum;
 	legacy.cmdBufferLen = tag->cmdBufferLen;
@@ -6234,7 +6272,7 @@ void nicUniEventQueryChipConfig(IN struct ADAPTER *prAdapter,
 		(struct UNI_CMD_CHIP_CONFIG_CHIP_CFG *) evt->aucTlvBuffer;
 	struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP *resp =
 		(struct UNI_CMD_CHIP_CONFIG_CHIP_CFG_RESP *) tag->aucbuffer;
-	struct CMD_CHIP_CONFIG legacy;
+	struct CMD_CHIP_CONFIG legacy = {0};
 
 	legacy.u2Id = resp->u2Id;
 	legacy.ucType = resp->ucType;
@@ -6253,7 +6291,7 @@ void nicUniEventQuerySwDbgCtrl(IN struct ADAPTER *prAdapter,
 		(struct UNI_EVENT_CHIP_CONFIG *)uni_evt->aucBuffer;
 	struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL *tag =
 		(struct UNI_CMD_CHIP_CONFIG_SW_DBG_CTRL *) evt->aucTlvBuffer;
-	struct CMD_SW_DBG_CTRL legacy;
+	struct CMD_SW_DBG_CTRL legacy = {0};
 
 	legacy.u4Id = tag->u4Id;
 	legacy.u4Data = tag->u4Data;
@@ -6290,7 +6328,7 @@ void nicUniEventQueryIdcChnl(IN struct ADAPTER *prAdapter,
 	struct UNI_EVENT_IDC *evt = (struct UNI_EVENT_IDC *)uni_evt->aucBuffer;
 	struct UNI_EVENT_MD_SAFE_CHN *tag =
 		(struct UNI_EVENT_MD_SAFE_CHN *) evt->aucTlvBuffer;
-	struct EVENT_LTE_SAFE_CHN legacy;
+	struct EVENT_LTE_SAFE_CHN legacy = {0};
 
 	legacy.ucVersion = tag->ucVersion;
 	legacy.u4Flags = tag->u4Flags;
@@ -6404,7 +6442,7 @@ void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
 	struct UNI_EVENT_ACCESS_REG *evt =
 		(struct UNI_EVENT_ACCESS_REG *)uni_evt->aucBuffer;
-	struct CMD_ACCESS_REG legacy;
+	struct CMD_ACCESS_REG legacy = {0};
 
 
 	if (TAG_ID(uni_cmd->aucTlvBuffer) == UNI_CMD_ACCESS_REG_TAG_BASIC) {
@@ -6434,7 +6472,7 @@ void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 		(struct UNI_EVENT_MAC_IFNO *)uni_evt->aucBuffer;
 	struct UNI_EVENT_MAC_INFO_TSF *tag =
 		(struct UNI_EVENT_MAC_INFO_TSF *) evt->aucTlvBuffer;
-	struct EXT_EVENT_MAC_INFO_T legacy;
+	struct EXT_EVENT_MAC_INFO_T legacy = {0};
 
 	legacy.rMacInfoResult.rTsfResult.u4TsfBitsLow = tag->u4TsfBit0_31;
 	legacy.rMacInfoResult.rTsfResult.u4TsfBitsHigh = tag->u4TsfBit63_32;
@@ -6519,13 +6557,13 @@ void nicUniCmdEventInstallKey(IN struct ADAPTER
 void nicUniEventQueryCnmInfo(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_CNM);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_CNM);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
 	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct PARAM_GET_CNM_T legacy = {0};
 	uint8_t i, j;
 
@@ -6576,7 +6614,7 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 				legacy.ucChSco[b][i] = chnl->ucChSco;
 				legacy.ucChNetNum[b][i] = chnl->ucChBssNum;
 
-				for (j = 0; j < 16; j++) {
+				for (j = 0; j < BSSID_NUM; j++) {
 					if (chnl->u2ChBssBitmapList & BIT(j))
 						legacy.ucChBssList[b][i][j] = 1;
 				}
@@ -6599,13 +6637,13 @@ void nicUniEventQueryCnmInfo(IN struct ADAPTER
 void nicUniEventRfTestHandler(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_TESTMODE_CTRL);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_TESTMODE_CTRL);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
 	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct ATE_OPS_T *prAteOps = NULL;
 	struct ICAP_INFO_T *prIcapInfo;
@@ -6718,7 +6756,7 @@ void nicUniEventStatistics(IN struct ADAPTER
 		(struct UNI_EVENT_GET_STATISTICS *) evt->aucTlvBuffer;
 	struct UNI_EVENT_BASIC_STATISTICS *basic =
 		(struct UNI_EVENT_BASIC_STATISTICS *)tag->aucBuffer;
-	struct EVENT_STATISTICS legacy;
+	struct EVENT_STATISTICS legacy = {0};
 
 	kalMemSet(&legacy, 0, sizeof(legacy));
 	legacy.rTransmittedFragmentCount.QuadPart =
@@ -6751,7 +6789,7 @@ void nicUniEventLinkQuality(IN struct ADAPTER
 		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
 	struct UNI_EVENT_LINK_QUALITY *tag =
 		(struct UNI_EVENT_LINK_QUALITY *) evt->aucTlvBuffer;
-	struct EVENT_LINK_QUALITY legacy;
+	struct EVENT_LINK_QUALITY legacy = {0};
 	uint8_t i;
 
 	for (i = 0; i < 4; i++) {
@@ -7056,16 +7094,16 @@ void nicUniEventThermalTemperature(IN struct ADAPTER *ad,
 
 void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_SCAN_DONE);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_SCAN_DONE);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	int i;
 	struct UNI_EVENT_SCAN_DONE *scan_done;
-	struct EVENT_SCAN_DONE legacy;
+	struct EVENT_SCAN_DONE legacy = {0};
 
 	scan_done = (struct UNI_EVENT_SCAN_DONE *) data;
 	legacy.ucSeqNum = scan_done->ucSeqNum;
@@ -7289,13 +7327,13 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_CNM);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_CNM);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	DBGLOG_MEM8(CNM, TRACE, data, data_len);
 
@@ -7316,7 +7354,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 		case UNI_EVENT_CNM_TAG_CH_PRIVILEGE_GRANT: {
 			struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *grant =
 				(struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *)tag;
-			struct EVENT_CH_PRIVILEGE legacy;
+			struct EVENT_CH_PRIVILEGE legacy = {0};
 
 			nicUniUpdateMbmcIdx(ad, grant->ucBssIndex,
 				grant->ucDBDCBand);
@@ -7359,7 +7397,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 		case UNI_EVENT_CNM_TAG_OPMODE_CHANGE: {
 			struct UNI_EVENT_CNM_OPMODE_CHANGE *opmode =
 				(struct UNI_EVENT_CNM_OPMODE_CHANGE *)tag;
-			struct EVENT_OPMODE_CHANGE legacy;
+			struct EVENT_OPMODE_CHANGE legacy = {0};
 
 			legacy.ucBssBitmap = (uint8_t) opmode->u2BssBitmap;
 			legacy.ucEnable = opmode->ucEnable;
@@ -7373,7 +7411,7 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 		case UNI_EVENT_CNM_TAG_OPMODE_CHANGE_RDD: {
 			struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE *opmode =
 				(struct UNI_EVENT_CNM_RDD_OPMODE_CHANGE *)tag;
-			struct EVENT_RDD_OPMODE_CHANGE legacy;
+			struct EVENT_RDD_OPMODE_CHANGE legacy = {0};
 
 			legacy.ucBssBitmap = (uint8_t) opmode->u2BssBitmap;
 			legacy.ucEnable = opmode->ucEnable;
@@ -7398,13 +7436,13 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 
 void nicUniEventMbmcHandleEvent(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_MBMC);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_MBMC);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7427,13 +7465,13 @@ void nicUniEventMbmcHandleEvent(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventStatusToHost(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_STATUS_TO_HOST);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_STATUS_TO_HOST);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7444,7 +7482,7 @@ void nicUniEventStatusToHost(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_STATUS_TO_HOST_TAG_TX_DONE:{
 			struct UNI_EVENT_TX_DONE *tx =
 				(struct UNI_EVENT_TX_DONE *) tag;
-			struct EVENT_TX_DONE legacy;
+			struct EVENT_TX_DONE legacy = {0};
 
 			legacy.ucPacketSeq = tx->ucPacketSeq;
 			legacy.ucStatus = tx->ucStatus;
@@ -7517,13 +7555,13 @@ static void nicUniHandleEventRxAddBa(IN struct ADAPTER *prAdapter,
 
 void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_BA_OFFLOAD);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_BA_OFFLOAD);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7540,7 +7578,7 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_BA_OFFLOAD_TAG_RX_DELBA:{
 			struct UNI_EVENT_RX_DELBA *ba =
 				(struct UNI_EVENT_RX_DELBA *) tag;
-			struct EVENT_RX_DELBA legacy;
+			struct EVENT_RX_DELBA legacy = {0};
 
 			legacy.ucStaRecIdx =
 				secGetStaIdxByWlanIdx(ad, ba->u2WlanIdx);
@@ -7552,7 +7590,7 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_BA_OFFLOAD_TAG_TX_ADDBA:{
 			struct UNI_EVENT_TX_ADDBA *ba =
 				(struct UNI_EVENT_TX_ADDBA *) tag;
-			struct EVENT_TX_ADDBA legacy;
+			struct EVENT_TX_ADDBA legacy = {0};
 
 			legacy.ucStaRecIdx =
 				secGetStaIdxByWlanIdx(ad, ba->u2WlanIdx);
@@ -7581,13 +7619,13 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventSleepNotify(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_SLEEP_NOTIFY);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_SLEEP_NOTIFY);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7598,7 +7636,7 @@ void nicUniEventSleepNotify(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SLEEP_NOTYFY_TAG_SLEEP_INFO:{
 			struct UNI_EVENT_SLEEP_INFO *info =
 				(struct UNI_EVENT_SLEEP_INFO *) tag;
-			struct EVENT_SLEEPY_INFO legacy;
+			struct EVENT_SLEEPY_INFO legacy = {0};
 
 			legacy.ucSleepyState = info->ucSleepyState;
 
@@ -7616,15 +7654,15 @@ void nicUniEventSleepNotify(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventBeaconTimeout(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_BEACON_TIMEOUT);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_BEACON_TIMEOUT);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_BEACON_TIMEOUT *timeout;
-	struct EVENT_BSS_BEACON_TIMEOUT legacy;
+	struct EVENT_BSS_BEACON_TIMEOUT legacy = {0};
 
 	timeout = (struct UNI_EVENT_BEACON_TIMEOUT *) data;
 	legacy.ucBssIndex = timeout->ucBssIndex;
@@ -7656,13 +7694,13 @@ void nicUniEventBeaconTimeout(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventUpdateCoex(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_UPDATE_COEX);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_UPDATE_COEX);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	uint8_t i;
 
 	tags_len = data_len - fixed_len;
@@ -7674,7 +7712,7 @@ void nicUniEventUpdateCoex(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_UPDATE_COEX_TAG_PHYRATE:{
 			struct UNI_EVENT_UPDATE_COEX_PHYRATE *phyrate =
 				(struct UNI_EVENT_UPDATE_COEX_PHYRATE *) tag;
-			struct EVENT_UPDATE_COEX_PHYRATE legacy;
+			struct EVENT_UPDATE_COEX_PHYRATE legacy = {0};
 
 			for (i = 0; i < MAX_BSSID_NUM + 1; i++) {
 				legacy.au4PhyRateLimit[i] =
@@ -7696,13 +7734,13 @@ void nicUniEventUpdateCoex(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventIdc(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_IDC);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_IDC);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7713,7 +7751,7 @@ void nicUniEventIdc(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_IDC_TAG_MD_SAFE_CHN:{
 			struct UNI_EVENT_MD_SAFE_CHN *chn =
 				(struct UNI_EVENT_MD_SAFE_CHN *) tag;
-			struct EVENT_LTE_SAFE_CHN legacy;
+			struct EVENT_LTE_SAFE_CHN legacy = {0};
 
 			legacy.ucVersion = chn->ucVersion;
 			legacy.u4Flags = chn->u4Flags;
@@ -7739,13 +7777,13 @@ void nicUniEventIdc(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_BSS_IS_ABSENCE);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_BSS_IS_ABSENCE);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_BSS_IS_ABSENCE *absence;
 
 	absence = (struct UNI_EVENT_BSS_IS_ABSENCE *) data;
@@ -7759,7 +7797,7 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_BSS_IS_ABSENCE_TAG_INFO: {
 			struct UNI_EVENT_BSS_IS_ABSENCE_INFO *info=
 				(struct UNI_EVENT_BSS_IS_ABSENCE_INFO *) tag;
-			struct EVENT_BSS_ABSENCE_PRESENCE legacy;
+			struct EVENT_BSS_ABSENCE_PRESENCE legacy = {0};
 
 			legacy.ucBssIndex = absence->ucBssIndex;
 			legacy.ucIsAbsent = info->ucIsAbsent;
@@ -7780,13 +7818,13 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_PS_SYNC);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_PS_SYNC);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7797,7 +7835,7 @@ void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_PS_SYNC_TAG_CLIENT_PS_INFO: {
 			struct UNI_EVENT_CLIENT_PS_INFO *ps =
 				(struct UNI_EVENT_CLIENT_PS_INFO *) tag;
-			struct EVENT_STA_CHANGE_PS_MODE legacy;
+			struct EVENT_STA_CHANGE_PS_MODE legacy = {0};
 
 			legacy.ucStaRecIdx = ps->ucWtblIndex;
 			legacy.ucIsInPs = ps->ucPsBit;
@@ -7818,13 +7856,13 @@ void nicUniEventPsSync(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_SAP);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_SAP);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -7835,7 +7873,7 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SAP_TAG_AGING_TIMEOUT: {
 			struct UNI_EVENT_SAP_AGING_TIMEOUT *aging =
 				(struct UNI_EVENT_SAP_AGING_TIMEOUT *) tag;
-			struct EVENT_STA_AGING_TIMEOUT legacy;
+			struct EVENT_STA_AGING_TIMEOUT legacy = {0};
 
 			legacy.ucStaRecIdx = aging->u2StaRecIdx;
 
@@ -7846,7 +7884,7 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA: {
 			struct UNI_EVENT_UPDATE_STA_FREE_QUOTA *quota =
 				(struct UNI_EVENT_UPDATE_STA_FREE_QUOTA *) tag;
-			struct EVENT_STA_UPDATE_FREE_QUOTA legacy;
+			struct EVENT_STA_UPDATE_FREE_QUOTA legacy = {0};
 
 			legacy.ucStaRecIdx = quota->u2StaRecIdx;
 			legacy.ucUpdateMode = quota->ucUpdateMode;
@@ -7882,15 +7920,15 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventOBSS(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_OBSS_UPDATE);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_OBSS_UPDATE);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_OBSS_UPDATE *obss;
-	struct EVENT_AP_OBSS_STATUS legacy;
+	struct EVENT_AP_OBSS_STATUS legacy = {0};
 
 	obss = (struct UNI_EVENT_OBSS_UPDATE *) data;
 	legacy.ucBssIndex = obss->ucBssIndex;
@@ -7931,15 +7969,15 @@ void nicUniEventOBSS(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_ROAMING);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_ROAMING);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_ROAMING *roam;
-	struct CMD_ROAMING_TRANSIT legacy;
+	struct CMD_ROAMING_TRANSIT legacy = {0};
 
 	roam = (struct UNI_EVENT_ROAMING *) data;
 	legacy.ucBssidx = roam->ucBssIndex;
@@ -7978,15 +8016,15 @@ void nicUniEventRoaming(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_ADD_KEY_DONE);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_ADD_KEY_DONE);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_ADD_KEY_DONE *done;
-	struct EVENT_ADD_KEY_DONE_INFO legacy;
+	struct EVENT_ADD_KEY_DONE_INFO legacy = {0};
 
 	done = (struct UNI_EVENT_ADD_KEY_DONE *) data;
 	legacy.ucBSSIndex = done->ucBssIndex;
@@ -8108,13 +8146,13 @@ void nicUniEventPpCb(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_FW_LOG2HOST);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_FW_LOG2HOST);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8131,6 +8169,11 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			legacy = (struct EVENT_DEBUG_MSG *) kalMemAlloc(
 				size, VIR_MEM_TYPE);
+			if (!legacy) {
+				DBGLOG(NIC, WARN, "tag=%d OOM\n", TAG_ID(tag));
+				break;
+			}
+
 			kalMemZero(legacy, sizeof(*legacy));
 
 			legacy->ucMsgType = log->ucMsgFmt;
@@ -8154,13 +8197,13 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_P2P);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_P2P);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8171,7 +8214,7 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_P2P_TAG_UPDATE_NOA_PARAM: {
 			struct UNI_EVENT_UPDATE_NOA_PARAM *noa =
 				(struct UNI_EVENT_UPDATE_NOA_PARAM *) tag;
-			struct EVENT_UPDATE_NOA_PARAMS legacy;
+			struct EVENT_UPDATE_NOA_PARAMS legacy = {0};
 			uint8_t i;
 
 			legacy.ucBssIndex = noa->ucBssIndex;
@@ -8208,13 +8251,13 @@ void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventCountdown(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_IE_COUNTDOWNT);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_IE_COUNTDOWNT);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8246,13 +8289,13 @@ void nicUniEventCountdown(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_STAREC);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_STAREC);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 	struct UNI_EVENT_STAREC *common;
 
 	common = (struct UNI_EVENT_STAREC *) data;
@@ -8265,7 +8308,7 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_STAREC_TAG_UPDATE_MAX_AMSDU_LEN: {
 			struct UNI_EVENT_STAREC_UPDATE_MAX_AMSDU_LEN *len =
 			    (struct UNI_EVENT_STAREC_UPDATE_MAX_AMSDU_LEN *)tag;
-			struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE legacy;
+			struct EXT_EVENT_MAX_AMSDU_LENGTH_UPDATE legacy = {0};
 
 			legacy.ucWlanIdx = common->u2WlanIdx;
 			legacy.ucAmsduLen = len->u2AmsduLen;
@@ -8288,13 +8331,13 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventTdls(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_TDLS);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_TDLS);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8305,7 +8348,7 @@ void nicUniEventTdls(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_TDLS_TAG_TEAR_DOWN: {
 			struct UNI_EVENT_TDLS_TEAR_DOWN *down =
 			    (struct UNI_EVENT_TDLS_TEAR_DOWN *)tag;
-			struct TDLS_EVENT legacy;
+			struct TDLS_EVENT legacy = {0};
 
 			legacy.u4HostId = TDLS_HOST_EVENT_TEAR_DOWN;
 			legacy.u4SubId = down->u4Subid;
@@ -8325,13 +8368,13 @@ void nicUniEventTdls(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_BSS_ER);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_BSS_ER);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8344,7 +8387,7 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #if (CFG_SUPPORT_HE_ER == 1)
 			struct UNI_EVENT_BSS_ER_TX_MODE *mode =
 			    (struct UNI_EVENT_BSS_ER_TX_MODE *)tag;
-			struct EVENT_ER_TX_MODE legacy;
+			struct EVENT_ER_TX_MODE legacy = {0};
 
 			legacy.ucBssInfoIdx = mode->ucBssInfoIdx;
 			legacy.ucErMode = mode->ucErMode;
@@ -8364,13 +8407,13 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventRssiMonitor(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_RSSI_MONITOR);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_RSSI_MONITOR);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8397,13 +8440,13 @@ void nicUniEventRssiMonitor(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventHifCtrl(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_HIF_CTRL);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_HIF_CTRL);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8414,7 +8457,7 @@ void nicUniEventHifCtrl(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_HIF_CTRL_TAG_BASIC: {
 			struct UNI_EVENT_HIF_CTRL_BASIC *basic =
 			    (struct UNI_EVENT_HIF_CTRL_BASIC *)tag;
-			struct EVENT_HIF_CTRL legacy;
+			struct EVENT_HIF_CTRL legacy = {0};
 
 			legacy.ucHifType = basic->ucHifType;
 			legacy.ucHifTxTrafficStatus =
@@ -8438,11 +8481,11 @@ void nicUniEventHifCtrl(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 void nicUniEventNan(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 #if CFG_SUPPORT_NAN
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_NAN);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_NAN);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t *legacy;
 
@@ -8452,6 +8495,10 @@ void nicUniEventNan(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
 		legacy = (uint8_t *)kalMemAlloc(TAG_LEN(tag), VIR_MEM_TYPE);
+		if (!legacy) {
+			DBGLOG(NIC, WARN, "tag=%d OOM\n", TAG_ID(tag));
+			break;
+		}
 
 		kalMemCopy(legacy, tag, TAG_LEN(tag));
 
@@ -8496,11 +8543,11 @@ void nicUniCmdEventQueryMldRec(IN struct ADAPTER *prAdapter,
 
 void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_BF);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_BF);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 
 	tags_len = data_len - fixed_len;
@@ -8675,13 +8722,13 @@ void nicUniEventBF(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_WOW);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_WOW);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8693,7 +8740,7 @@ void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			struct UNI_EVENT_WOW_WAKEUP_REASON_INFO
 				*prUniWakeUpReason =
 			    (struct UNI_EVENT_WOW_WAKEUP_REASON_INFO *)tag;
-			struct EVENT_WOW_WAKEUP_REASON_INFO legacy;
+			struct EVENT_WOW_WAKEUP_REASON_INFO legacy = {0};
 
 			legacy.reason = prUniWakeUpReason->ucReason;
 			legacy.u2WowWakePort = prUniWakeUpReason->u2WowWakePort;
@@ -8715,14 +8762,14 @@ void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 #if CFG_SUPPORT_CSI
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_CSI);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_CSI);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t *legacy;
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -8745,6 +8792,11 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			tag_buffer = tag + tag_header_len;
 			legacy = (uint8_t *) kalMemAlloc(legacy_len,
 							VIR_MEM_TYPE);
+			if (!legacy) {
+				DBGLOG(NIC, WARN, "tag=%d OOM\n", TAG_ID(tag));
+				break;
+			}
+
 #if CFG_CSI_DEBUG
 			DBGLOG_MEM8(NIC, INFO,
 				(uint8_t *) tag_buffer, legacy_len);
@@ -8767,13 +8819,13 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-	int32_t tags_len;
+	uint16_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_SR);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_SR);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
+	uint8_t fail_cnt = 0;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
