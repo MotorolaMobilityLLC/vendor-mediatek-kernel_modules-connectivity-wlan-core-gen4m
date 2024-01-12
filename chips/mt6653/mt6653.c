@@ -1120,7 +1120,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 		.ops = &mt6653_fw_log_mmio_ops,
 #endif
 #if CFG_MTK_WIFI_FW_LOG_EMI
-		.base = 0x538000,
+		.base = 0x1A8000,
 		.ops = &mt6653_fw_log_emi_ops,
 #endif
 		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
