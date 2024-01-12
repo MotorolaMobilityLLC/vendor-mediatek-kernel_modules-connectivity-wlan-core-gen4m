@@ -9721,6 +9721,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		throughput += txDiffBytes[i] + rxDiffBytes[i];
 	}
 
+	perf->fgIdle = (throughput == 0 && glue->i4TxPendingFrameNum == 0);
 	perf->ulThroughput = throughput * MSEC_PER_SEC;
 	do_div(perf->ulThroughput, period);
 	perf->ulThroughput <<= 3;
@@ -9804,19 +9805,18 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	}
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
-#define TEMP_LOG_TEMPLATE \
-	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
-	"LQ[%llu:%llu:%llu] lv:%u th:%u fg:0x%lx" \
-	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
-	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
-#else
-#define TEMP_LOG_TEMPLATE \
-	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
-	" lv:%u th:%u fg:0x%lx" \
-	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
-	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
+#define LINK_QUALITY_MONITOR_TEMPLATE \
+	"LQ[%llu:%llu:%llu]"
+#else /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+#define LINK_QUALITY_MONITOR_TEMPLATE ""
+#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
-#endif
+#define TEMP_LOG_TEMPLATE \
+	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
+	LINK_QUALITY_MONITOR_TEMPLATE \
+	" idle:%u lv:%u th:%u fg:0x%lx" \
+	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
+	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		period,	(unsigned long long) perf->ulThroughput,
@@ -9829,6 +9829,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		(unsigned long long) lq->u8RxTotalCount,
 		(unsigned long long) lq->u8DiffIdleSlotCount,
 #endif
+		perf->fgIdle,
 		perf->u4CurrPerfLevel,
 		prAdapter->rWifiVar.u4BoostCpuTh,
 		perf->ulPerfMonFlag,
@@ -9844,6 +9845,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT)
 		);
 #undef TEMP_LOG_TEMPLATE
+#undef LINK_QUALITY_MONITOR_TEMPLATE
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #define RRO_LOG_TEMPLATE \
@@ -9952,13 +9954,6 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	prPerMonitor = &prAdapter->rPerMonitor;
 	DBGLOG(SW4, TRACE, "enter kalPerMonHandler\n");
 
-#if (CFG_SUPPORT_PERF_IND == 1)
-	if (prWifiVar->fgPerfIndicatorEn &&
-		!prGlueInfo->fgIsInSuspendMode)
-		kalSetPerfReport(prAdapter);
-
-	kalPerfIndReset(prAdapter);
-#endif
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		struct BSS_INFO *prBssInfo;
 
@@ -10002,12 +9997,6 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 		}
 	}
 
-#if CFG_SUPPORT_DATA_STALL
-		/* test mode event */
-		if (prWifiVar->u4ReportEventInterval == 0)
-			KAL_REPORT_ERROR_EVENT(prAdapter,
-				EVENT_TEST_MODE, 0, 0,  FALSE);
-#endif
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
 	for (u4Idx = 0; u4Idx < PERF_MON_TP_MAX_THRESHOLD; u4Idx++) {
 		if ((prPerMonitor->ulThroughput >> 20) <
@@ -10097,6 +10086,24 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	prPerMonitor->u4CurrPerfLevel =
 		prPerMonitor->u4TarPerfLevel;
 
+	if (prPerMonitor->fgIdle)
+		goto end;
+
+#if (CFG_SUPPORT_PERF_IND == 1)
+	if (prWifiVar->fgPerfIndicatorEn &&
+		!prGlueInfo->fgIsInSuspendMode)
+		kalSetPerfReport(prAdapter);
+
+	kalPerfIndReset(prAdapter);
+#endif
+
+#if CFG_SUPPORT_DATA_STALL
+	/* test mode event */
+	if (prWifiVar->u4ReportEventInterval == 0)
+		KAL_REPORT_ERROR_EVENT(prAdapter,
+			EVENT_TEST_MODE, 0, 0,  FALSE);
+#endif
+
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prAdapter->u4LinkQualityCounter++;
 	if ((prAdapter->u4LinkQualityCounter %
@@ -10114,6 +10121,7 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
 	kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
+end:
 	DBGLOG(SW4, TRACE, "exit kalPerMonHandler\n");
 }
 

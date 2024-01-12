@@ -1537,6 +1537,7 @@ struct PERF_MONITOR {
 	uint32_t u4UsedCnt;
 	unsigned long ulTotalTxSuccessCount;
 	unsigned long ulTotalTxFailCount;
+	u_int8_t fgIdle; /* set as true when no tx/rx on last sec */
 };
 
 struct HIF_STATS {
