@@ -9034,8 +9034,10 @@ struct BSS_INFO *aisGetDefaultLinkBssInfo(struct ADAPTER *prAdapter)
 uint8_t aisGetDefaultLinkBssIndex(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo = aisGetDefaultLinkBssInfo(prAdapter);
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
-	return	prBssInfo ? prBssInfo->ucBssIndex : AIS_DEFAULT_BSS_INDEX;
+	return	prBssInfo ? prBssInfo->ucBssIndex :
+		prWifiVar->ucBssIdStartValue;
 }
 
 struct STA_RECORD *aisGetDefaultStaRecOfAP(struct ADAPTER *prAdapter)

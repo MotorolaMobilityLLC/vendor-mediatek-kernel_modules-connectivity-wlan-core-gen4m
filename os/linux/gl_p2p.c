@@ -1008,8 +1008,12 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 
 	/* XXX: All the P2P/AP devices do p2pDevFsmInit in the original code */
 	ucBssIndex = p2pDevFsmInit(prAdapter);
-	if (IS_BSS_INDEX_VALID(ucBssIndex))
+	if (IS_BSS_INDEX_VALID(ucBssIndex)) {
 		prNetDevPriv->ucBssIdx = ucBssIndex;
+	} else {
+		DBGLOG(INIT, WARN, "p2pDev bssindex=%d invalid\n", ucBssIndex);
+		return -1;
+	}
 
 	LINK_INITIALIZE(&prP2PInfo->rWaitTxDoneLink);
 

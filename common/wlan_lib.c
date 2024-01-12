@@ -837,11 +837,9 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 		 *            and arBssInfoPool[].rP2pDevInfo
 		 *            is indexed to final one.
 		 */
-		for (i = 0; i < MAX_BSSID_NUM; i++)
+		for (i = 0; i < MAX_BSSID_NUM + 1; i++)
 			prAdapter->aprBssInfo[i] =
 				&prAdapter->rWifiVar.arBssInfoPool[i];
-		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
-			&prAdapter->rWifiVar.rP2pDevInfo;
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 		LINK_INITIALIZE(&prAdapter->rPwrLevelHandlerList);
@@ -4453,8 +4451,6 @@ uint32_t wlanQueryNicCapability(struct ADAPTER
 		 */
 		prAdapter->ucWmmSetNum =
 			prEventNicCapability->ucHwBssIdNum;
-		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
-			&prAdapter->rWifiVar.rP2pDevInfo;
 	}
 
 #if CFG_ENABLE_CAL_LOG
@@ -7513,6 +7509,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	/* Max Tx dequeue limit: 0 => auto */
 	INIT_UINT(prWifiVar->u4MaxTxDeQLimit, "MaxTxDeQLimit", 0x0);
 	INIT_UINT(prWifiVar->ucAlwaysResetUsedRes, "AlwaysResetUsedRes", 0x0);
+
+	/* debug usage, skip specefic bssindex */
+	INIT_UINT(prWifiVar->ucBssIdStartValue, "BssIdStartValue", 0);
 
 #if CFG_SUPPORT_MTK_SYNERGY
 	INIT_UINT(prWifiVar->ucMtkOui, "MtkOui", FEATURE_ENABLED);
