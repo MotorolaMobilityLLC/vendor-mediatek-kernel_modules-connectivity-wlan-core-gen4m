@@ -13045,10 +13045,10 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	struct PARAM_802_11_STATISTICS_STRUCT *prStat;
-	uint32_t u4BufLen = 0;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
@@ -13057,8 +13057,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	}
 
 	ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
-	if (kalGetMediaStateIndicated(prGlueInfo,
-		ucBssIndex) !=
+	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(SW4, ERROR, "not yet connected\n");
@@ -13071,9 +13070,10 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 			prAdapter->u4LastLinkQuality);
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
-	SET_IOCTL_BSSIDX(prGlueInfo->prAdapter, ucBssIndex);
-	wlanQueryInformation(prAdapter, wlanoidQueryBssid,
-			     &arBssid[0], sizeof(arBssid), &u4BufLen);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return u4Status;
+	COPY_MAC_ADDR(arBssid, prBssInfo->aucBSSID);
 
 	/* send cmd to firmware */
 	prQueryStaStatistics = &(prAdapter->rQueryStaStatistics);
