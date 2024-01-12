@@ -109,12 +109,13 @@ void p2pLinkUninitGCRole(struct ADAPTER *prAdapter,
 }
 
 static uint8_t *p2pLinkGetAuthSaeCommitIes(struct WLAN_AUTH_FRAME *prAuthFrame,
-	uint16_t u2IELength)
+	uint16_t u2IELength, u_int8_t fgIsApMode)
 {
 	uint8_t *pucIE = prAuthFrame->aucInfoElem;
 	uint16_t u2Group, u2Offset = 0;
 
-	if (prAuthFrame->u2StatusCode != WLAN_STATUS_SAE_HASH_TO_ELEMENT)
+	if (fgIsApMode &&
+	    prAuthFrame->u2StatusCode != WLAN_STATUS_SAE_HASH_TO_ELEMENT)
 		return NULL;
 
 	if (u2IELength < 2)
@@ -166,6 +167,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 	uint16_t u2RxFrameCtrl;
 	u_int8_t fgMldType;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	u_int8_t fgIsApMode;
 
 	if (IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo))
 		goto exit;
@@ -203,6 +205,8 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		goto exit;
 	}
 
+	fgIsApMode = p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+		prBssInfo->u4PrivateData]);
 	u2IELength = prSwRfb->u2PacketLen -
 		(uint16_t) OFFSET_OF(struct WLAN_AUTH_FRAME,
 		aucInfoElem[0]);
@@ -213,7 +217,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 				prSwRfb->u2PacketLen);
 			if (prAuthFrame->u2AuthTransSeqNo == 1)
 				pucIE = p2pLinkGetAuthSaeCommitIes(prAuthFrame,
-					u2IELength);
+					u2IELength, fgIsApMode);
 			else
 				goto exit;
 		}
