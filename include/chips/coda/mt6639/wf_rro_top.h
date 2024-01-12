@@ -84,6 +84,8 @@ extern "C" {
 #define WF_RRO_TOP_MCU_INT_ENA_ADDR                            (WF_RRO_TOP_BASE + 0x214) // 2214
 #define WF_RRO_TOP_RRO_BUSY_STATUS_ADDR                        (WF_RRO_TOP_BASE + 0x220) // 2220
 #define WF_RRO_TOP_RRO_BUSY_ENA_ADDR                           (WF_RRO_TOP_BASE + 0x224) // 2224
+#define WF_RRO_TOP_DBG_FLAG_CTRL_ADDR                  (WF_RRO_TOP_BASE + 0x124)
+#define WF_RRO_TOP_DBG_FLAG_OUTPUT_ADDR                (WF_RRO_TOP_BASE + 0x128)
 
 
 

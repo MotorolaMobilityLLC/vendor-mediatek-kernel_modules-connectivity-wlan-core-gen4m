@@ -3565,8 +3565,8 @@ static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
 	prIcsAggHeader = (struct ICS_AGG_HEADER *)prSwRfb->prRxStatus;
 	u4Size = prIcsAggHeader->rxByteCount + sizeof(
 			struct ICS_BIN_LOG_HDR);
-	pvPacket = kalPacketAlloc(prAdapter->prGlueInfo, u4Size,
-			&pucRecvBuff);
+	pvPacket = kalPacketAlloc(prAdapter->prGlueInfo, u4Size, FALSE,
+				  &pucRecvBuff);
 
 	if (pvPacket) {
 		/* prepare ICS header */
@@ -3722,13 +3722,15 @@ void nicRxProcessPacketType(
 	case RX_PKT_TYPE_RX_VECTOR:
 	case RX_PKT_TYPE_TM_REPORT:
 	default:
+		DBGLOG(RX, ERROR, "ucPacketType = %d\n",
+		       prSwRfb->ucPacketType);
+		DBGLOG_MEM32(RX, ERROR, prSwRfb->prRxStatus,
+			     prChipInfo->rxd_size);
 		nicRxReturnRFB(prAdapter, prSwRfb);
 		RX_INC_CNT(prRxCtrl,
 			RX_TYPE_ERR_DROP_COUNT);
 		RX_INC_CNT(prRxCtrl,
 			RX_DROP_TOTAL_COUNT);
-		DBGLOG(RX, ERROR, "ucPacketType = %d\n",
-		       prSwRfb->ucPacketType);
 		break;
 	}
 }
@@ -3853,8 +3855,9 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
 		pvPacket = (void *)prSkb;
 		pucRecvBuff = (uint8_t *)prSkb->data;
 #else
-		pvPacket = kalPacketAlloc(prAdapter->prGlueInfo,
-					  CFG_RX_MAX_MPDU_SIZE, &pucRecvBuff);
+		pvPacket = kalPacketAlloc(
+			prAdapter->prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
+			FALSE, &pucRecvBuff);
 #endif
 		if (pvPacket == NULL)
 			return WLAN_STATUS_RESOURCES;

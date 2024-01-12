@@ -382,6 +382,7 @@ CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC3X=y
 CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=0
+CONFIG_RX_ZERO_COPY=y
 ifeq ($(MTK_ANDROID_WMT), y)
 ifneq ($(CONFIG_PAGE_POOL),)
 CONFIG_RX_PAGE_POOL=y
@@ -661,10 +662,15 @@ else
     ccflags-y += -DCFG_CONTROL_ASPM_BY_FW=0
 endif
 
-ifeq ($(CONFIG_RX_PAGE_POOL), y)
-    ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=1
+ifeq ($(CONFIG_RX_ZERO_COPY), y)
+    ccflags-y += -DCFG_SUPPORT_RX_ZERO_COPY=1
+    ifeq ($(CONFIG_RX_PAGE_POOL), y)
+        ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=1
+    else
+        ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=0
+    endif
 else
-    ccflags-y += -DCFG_SUPPORT_RX_PAGE_POOL=0
+    ccflags-y += -DCFG_SUPPORT_RX_ZERO_COPY=0
 endif
 
 ifeq ($(WIFI_ENABLE_GCOV), y)

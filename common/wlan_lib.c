@@ -8039,6 +8039,16 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4FpgaSpeedFactor = wlanCfgGetUint32(prAdapter,
 			"FpgaSpeedFactor", 0);
 #endif
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	prWifiVar->fgEnableMawd = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableMawd", FEATURE_DISABLED);
+	prWifiVar->fgEnableMawdTx = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableMawdTx", FEATURE_DISABLED);
+	prWifiVar->fgEnableSdo = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableSdo", FEATURE_DISABLED);
+	prWifiVar->fgEnableRro = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "EnableRro", FEATURE_DISABLED);
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)

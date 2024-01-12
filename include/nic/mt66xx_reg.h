@@ -1472,10 +1472,10 @@ struct mt66xx_chip_info {
 	const unsigned int is_support_cr4;	/* support CR4 */
 	const unsigned int is_support_wacpu;	/* support WA-CPU */
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	const unsigned int is_support_mawd_tx;	/* support MAWD Tx */
-	const unsigned int is_support_sdo;	/* support SDO */
-	const unsigned int is_support_rro;	/* support RRO */
-	const unsigned int is_en_rro_int;	/* Enable RRO Interrupt to AP */
+	const u_int8_t is_support_mawd;		/* support MAWD */
+	const u_int8_t is_support_mawd_tx;	/* support MAWD Tx */
+	const u_int8_t is_support_sdo;		/* support SDO */
+	const u_int8_t is_support_rro;		/* support RRO */
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int hif_txd_append_size; /* hif txd append size */
@@ -1518,6 +1518,9 @@ struct mt66xx_chip_info {
 	uint16_t u2ADieChipVersion;
 	void *CSRBaseAddress;
 	uint32_t u4CsrOffset;
+	void *HostCSRBaseAddress;
+	uint32_t u4HostCsrOffset;
+	uint32_t u4HostCsrSize;
 
 	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
 	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter,

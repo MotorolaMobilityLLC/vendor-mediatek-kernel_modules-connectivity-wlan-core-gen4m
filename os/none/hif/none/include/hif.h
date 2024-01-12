@@ -78,8 +78,6 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define SDO_HIF_TXD_SIZE         76
-#define SDO_PARTIAL_PAYLOAD_SIZE 72
 #define NUM_OF_WFDMA1_TX_RING			0
 
 #if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
@@ -188,12 +186,10 @@ struct RTMP_TX_RING {
  */
 struct GL_HIF_INFO {
 	uint32_t u4MawdL2TblCnt;
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-	/* MAWD */
-	struct RTMP_TX_RING MawdTxRing[NUM_OF_TX_RING];
-#endif
 	uint32_t u4IntStatus;
-	uint32_t u4MawdIntStatus;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	uint32_t u4OffloadIntStatus;
+#endif
 };
 
 struct BUS_INFO {
@@ -203,21 +199,6 @@ struct BUS_INFO {
 	const uint32_t host_int_txdone_bits;
 	const uint32_t host_rx_ring_ext_ctrl_base;
 };
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-union mawd_l2tbl {
-	struct {
-		uint8_t key_ip[16];
-		uint8_t d_mac[MAC_ADDR_LEN];
-		uint8_t s_mac[MAC_ADDR_LEN];
-		uint32_t wlan_id:12;
-		uint32_t bss_id:8;
-		uint32_t reserved:12;
-	} sram;
-
-	uint32_t data[8];
-};
-#endif
 
 struct RTMP_RX_RING {
 	struct RTMP_DMACB Cell[RX_RING_SIZE];

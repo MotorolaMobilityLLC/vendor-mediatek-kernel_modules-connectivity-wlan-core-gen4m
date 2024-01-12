@@ -1292,6 +1292,7 @@ void kalPacketFree(IN struct GLUE_INFO *prGlueInfo,
 
 void *kalPacketAlloc(IN struct GLUE_INFO *prGlueInfo,
 		     IN uint32_t u4Size,
+		     IN u_int8_t fgIsTx,
 		     OUT uint8_t **ppucData);
 
 void *kalPacketAllocWithHeadroom(IN struct GLUE_INFO
