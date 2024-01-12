@@ -132,6 +132,66 @@
 #define WFSYS_CPUPCR_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0204)
 #define WFSYS_LP_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0208)
 
+union soc3_0_WPDMA_INT_MASK {
+
+	struct {
+		uint32_t wfdma1_rx_done_0:1;
+		uint32_t wfdma1_rx_done_1:1;
+		uint32_t wfdma1_rx_done_2:1;
+		uint32_t wfdma1_rx_done_3:1;
+		uint32_t wfdma1_tx_done_0:1;
+		uint32_t wfdma1_tx_done_1:1;
+		uint32_t wfdma1_tx_done_2:1;
+		uint32_t wfdma1_tx_done_3:1;
+		uint32_t wfdma1_tx_done_4:1;
+		uint32_t wfdma1_tx_done_5:1;
+		uint32_t wfdma1_tx_done_6:1;
+		uint32_t wfdma1_tx_done_7:1;
+		uint32_t wfdma1_tx_done_8:1;
+		uint32_t wfdma1_tx_done_9:1;
+		uint32_t wfdma1_tx_done_10:1;
+		uint32_t wfdma1_tx_done_11:1;
+		uint32_t wfdma1_tx_done_12:1;
+		uint32_t wfdma1_tx_done_13:1;
+		uint32_t wfdma1_tx_done_14:1;
+		uint32_t reserved19:1;
+		uint32_t wfdma1_rx_coherent:1;
+		uint32_t wfdma1_tx_coherent:1;
+		uint32_t reserved:2;
+		uint32_t wpdma2host_err_int_en:1;
+		uint32_t reserved25:1;
+		uint32_t wfdma1_tx_done_16:1;
+		uint32_t wfdma1_tx_done_17:1;
+		uint32_t wfdma1_subsys_int_en:1;
+		uint32_t wfdma1_mcu2host_sw_int_en:1;
+		uint32_t wfdma1_tx_done_18:1;
+		uint32_t reserved31:1;
+	} field_wfdma1_ena;
+
+	struct {
+		uint32_t wfdma0_rx_done_0:1;
+		uint32_t wfdma0_rx_done_1:1;
+		uint32_t wfdma0_rx_done_2:1;
+		uint32_t wfdma0_rx_done_3:1;
+		uint32_t wfdma0_tx_done_0:1;
+		uint32_t wfdma0_tx_done_1:1;
+		uint32_t wfdma0_tx_done_2:1;
+		uint32_t wfdma0_tx_done_3:1;
+		uint32_t reserved8:11;
+		uint32_t wfdma0_rx_done_6:1;
+		uint32_t wfdma0_rx_coherent:1;
+		uint32_t wfdma0_tx_coherent:1;
+		uint32_t wfdma0_rx_done_4:1;
+		uint32_t wfdma0_rx_done_5:1;
+		uint32_t wpdma2host_err_int_en:1;
+		uint32_t wfdma0_rx_done_7:1;
+		uint32_t reserved26:2;
+		uint32_t wfdma0_subsys_int_en:1;
+		uint32_t wfdma0_mcu2host_sw_int_en:1;
+		uint32_t reserved30:2;
+	} field_wfdma0_ena;
+	uint32_t word;
+};
 /*******************************************************************************
 *                         D A T A   T Y P E S
 ********************************************************************************
@@ -187,6 +247,11 @@ void soc3_0_show_wfdma_info(
 
 void soc3_0_show_dmashdl_info(
 	IN struct ADAPTER *prAdapter);
+void soc3_0EnableInterrupt(
+	struct ADAPTER *prAdapter);
+
+void soc3_0EnableInterrupt(
+	struct ADAPTER *prAdapter);
 extern void kalConstructDefaultFirmwarePrio(
 				struct GLUE_INFO	*prGlueInfo,
 				uint8_t **apucNameTable,
