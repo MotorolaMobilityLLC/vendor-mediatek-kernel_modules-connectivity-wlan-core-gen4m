@@ -238,6 +238,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_PKT_OFLD		= 0x60, /* Packet Offload */
 	UNI_CMD_ID_KEEP_ALIVE		= 0x61, /* Keep alive */
 	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
+	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4273,6 +4274,39 @@ struct UNI_CMD_FAST_PATH_PROCESS_T {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+/* Low Power debug control command (0x71) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_LP_DBG_CTRL {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_LP_DBG_CTRL_TAG {
+	UNI_CMD_LP_DBG_CTRL_TAG_GET_SLP_CNT_INFO = 0x0,
+	UNI_CMD_LP_DBG_CTRL_TAG_KEEP_PWR_CTRL,
+	UNI_CMD_LP_DBG_CTRL_TAG_MAX_NUM
+};
+
+/* Get sleep count info (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_LP_GET_SLP_CNT_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+/* Keep power control (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_LP_KEEP_PWR_CTRL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBandIdx;
+	uint8_t ucKeepPwr;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -4377,6 +4411,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_GET_VOLT_INFO   = 0x5C,
 	UNI_EVENT_ID_PKT_OFLD	     = 0x60,
 	UNI_EVENT_ID_DELAY_BAR       = 0x61,
+	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_NUM
 };
 
@@ -6776,6 +6811,42 @@ struct UNI_CMD_RX_HDR_TRAN_BLACKLIST {
 	u_int8_t fgEnable;
 	uint16_t u2EtherType;
 } __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_LP_DBG_CTRL {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_EVENT_LP_DBG_CTRL_TAG {
+	UNI_EVENT_LP_DBG_CTRL_TAG_GET_SLP_CNT_INFO = 0x0,
+	UNI_EVENT_LP_DBG_CTRL_TAG_KEEP_PWR_CTRL,
+	UNI_EVENT_LP_DBG_CTRL_TAG_MAX_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_LP_GET_SLP_CNT_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t au4LmacSlpCnt[2];
+	uint32_t u4WfsysSlpCnt;
+	uint32_t u4CbinfraSlpCnt;
+	uint32_t u4ChipSlpCnt;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_LP_KEEP_PWR_CTRL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucKeepPwr;
+	uint8_t ucStatus;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -7133,6 +7204,9 @@ uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
 uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
+uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -7223,6 +7297,8 @@ void nicUniEventThermalDdieTemp(struct ADAPTER *ad,
 void nicUniEventQueryOfldInfo(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
+void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
 
 /*******************************************************************************

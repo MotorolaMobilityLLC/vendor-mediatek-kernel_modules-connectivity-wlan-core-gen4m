@@ -344,6 +344,13 @@
 #define MAC_ICS_MODE		2
 #define PHY_ICS_MODE		3
 #endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
+
+#define LP_CMD_QUERY	0
+#define LP_CMD_SET		1
+
+#define LP_TAG_GET_SLP_CNT_INFO		0
+#define LP_TAG_SET_KEEP_PWR_CTRL	1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -3671,6 +3678,13 @@ struct PARAM_LOWLATENCY_DATA {
 };
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+struct PARAM_SLEEP_CNT_INFO {
+	uint32_t au4LmacSlpCnt[2];
+	uint32_t u4WfsysSlpCnt;
+	uint32_t u4CbinfraSlpCnt;
+	uint32_t u4ChipSlpCnt;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5462,4 +5476,15 @@ wlanoidListMode(struct ADAPTER *prAdapter,
 			 uint32_t u4QueryBufferLen,
 			 uint32_t *pu4QueryInfoLen);
 #endif
+
+uint32_t wlanoidGetSleepCntInfo(struct ADAPTER *prAdapter,
+			void *pvGetBuffer,
+			uint32_t u4GetBufferLen,
+			uint32_t *pu4GetInfoLen);
+
+uint32_t wlanoidSetLpKeepPwrCtrl(struct ADAPTER *prAdapter,
+			void *pvSetBuffer,
+			uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
+
 #endif /* _WLAN_OID_H */

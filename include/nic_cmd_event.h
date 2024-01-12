@@ -4086,6 +4086,22 @@ struct EXT_EVENT_SER_T {
 	/* ... */
 };
 
+enum ENUM_KEEP_PWR_PARA {
+	ENUM_KEEP_PWR_PHY_LMAC,
+	ENUM_KEEP_PWR_PHY,
+	ENUM_KEEP_PWR_LMAC,
+	ENUM_KEEP_PWR_RFDIG
+};
+
+struct CMD_LP_DBG_CTRL {
+	uint8_t ucSubCmdId;
+	uint8_t ucTag;
+	uint8_t ucBandIdx;
+	uint8_t ucKeepPwr;	/* 0: PHY+LMAC, 1:PHY, 2:LMAC, 3:RFDIG */
+	uint8_t ucRfdigStatus;
+	uint8_t aucReserved[3];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -4571,6 +4587,11 @@ void nicCmdEventListmode(struct ADAPTER
 void nicEventGetVnf(struct ADAPTER *prAdapter,
 		struct WIFI_EVENT *prEvent);
 #endif
+void nicCmdEventGetSlpCntInfo(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicCmdEventLpKeepPwrCtrl(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

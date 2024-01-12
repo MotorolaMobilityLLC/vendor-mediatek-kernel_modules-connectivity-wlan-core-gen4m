@@ -161,6 +161,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if CFG_SUPPORT_MDNS_OFFLOAD
 	[CMD_ID_SET_MDNS_RECORD] = nicUniCmdMdnsRecorde,
 #endif
+	[CMD_ID_LP_DBG_CTRL] = nicUniCmdLpDbgCtrl,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -6956,6 +6957,76 @@ uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
 }
 #endif
 
+uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_LP_DBG_CTRL *cmd;
+	struct UNI_CMD_LP_DBG_CTRL *uni_cmd;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_LP_DBG_CTRL);
+
+	if (info->ucCID != CMD_ID_LP_DBG_CTRL ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_LP_DBG_CTRL *) info->pucInfoBuffer;
+
+	switch (cmd->ucSubCmdId) {
+	case LP_CMD_QUERY:
+		if (cmd->ucTag == LP_TAG_GET_SLP_CNT_INFO)
+			max_cmd_len +=
+			sizeof(struct UNI_CMD_LP_GET_SLP_CNT_INFO);
+		break;
+	case LP_CMD_SET:
+		if (cmd->ucTag == LP_TAG_SET_KEEP_PWR_CTRL)
+			max_cmd_len += sizeof(struct UNI_CMD_LP_KEEP_PWR_CTRL);
+		break;
+	default:
+		DBGLOG(NIC, ERROR, "unknown subCmd %d\n", cmd->ucSubCmdId);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_LP_DBG_CTRL, max_cmd_len,
+			nicUniCmdEventLpDbgCtrl, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_LP_DBG_CTRL *) entry->pucInfoBuffer;
+	switch (cmd->ucSubCmdId) {
+	case LP_CMD_QUERY: {
+		if (cmd->ucTag == LP_TAG_GET_SLP_CNT_INFO) {
+			struct UNI_CMD_LP_GET_SLP_CNT_INFO *tag =
+				(struct UNI_CMD_LP_GET_SLP_CNT_INFO *)
+				uni_cmd->aucTlvBuffer;
+
+			tag->u2Tag = UNI_CMD_LP_DBG_CTRL_TAG_GET_SLP_CNT_INFO;
+			tag->u2Length = sizeof(*tag);
+		}
+	}
+		break;
+	case LP_CMD_SET: {
+		if (cmd->ucTag == LP_TAG_SET_KEEP_PWR_CTRL) {
+			struct UNI_CMD_LP_KEEP_PWR_CTRL *tag =
+				(struct UNI_CMD_LP_KEEP_PWR_CTRL *)
+				uni_cmd->aucTlvBuffer;
+
+			tag->u2Tag = UNI_CMD_LP_DBG_CTRL_TAG_KEEP_PWR_CTRL;
+			tag->u2Length = sizeof(*tag);
+			tag->ucBandIdx = cmd->ucBandIdx;
+			tag->ucKeepPwr = cmd->ucKeepPwr;
+		}
+	}
+		break;
+	default:
+		break;
+	}
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -10433,4 +10504,44 @@ uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
 	cnmMemFree(ad, uni_cmd);
 
 	return status;
+}
+
+void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_CMD_LP_DBG_CTRL *uni_cmd =
+		(struct UNI_CMD_LP_DBG_CTRL *) GET_UNI_CMD_DATA(prCmdInfo);
+	struct UNI_EVENT_LP_DBG_CTRL *evt =
+		(struct UNI_EVENT_LP_DBG_CTRL *) uni_evt->aucBuffer;
+
+	if (TAG_ID(uni_cmd->aucTlvBuffer) ==
+		UNI_CMD_LP_DBG_CTRL_TAG_GET_SLP_CNT_INFO) {
+		struct UNI_EVENT_LP_GET_SLP_CNT_INFO *tag =
+			(struct UNI_EVENT_LP_GET_SLP_CNT_INFO *)
+			evt->aucTlvBuffer;
+		struct PARAM_SLEEP_CNT_INFO legacy = {0};
+
+		legacy.au4LmacSlpCnt[ENUM_BAND_0] =
+			tag->au4LmacSlpCnt[ENUM_BAND_0];
+		legacy.au4LmacSlpCnt[ENUM_BAND_1] =
+			tag->au4LmacSlpCnt[ENUM_BAND_1];
+		legacy.u4WfsysSlpCnt = tag->u4WfsysSlpCnt;
+		legacy.u4CbinfraSlpCnt = tag->u4CbinfraSlpCnt;
+		legacy.u4ChipSlpCnt = tag->u4ChipSlpCnt;
+
+		nicCmdEventGetSlpCntInfo(prAdapter, prCmdInfo,
+			(uint8_t *)&legacy);
+	} else if (TAG_ID(uni_cmd->aucTlvBuffer) ==
+		UNI_CMD_LP_DBG_CTRL_TAG_KEEP_PWR_CTRL) {
+		struct UNI_EVENT_LP_KEEP_PWR_CTRL *tag =
+			(struct UNI_EVENT_LP_KEEP_PWR_CTRL *) evt->aucTlvBuffer;
+		struct CMD_LP_DBG_CTRL legacy = {0};
+
+		legacy.ucKeepPwr = tag->ucKeepPwr;
+		legacy.ucRfdigStatus = tag->ucStatus;
+
+		nicCmdEventLpKeepPwrCtrl(prAdapter, prCmdInfo,
+			(uint8_t *)&legacy);
+	}
 }

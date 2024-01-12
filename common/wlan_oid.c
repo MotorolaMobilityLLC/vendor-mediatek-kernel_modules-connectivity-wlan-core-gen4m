@@ -18136,3 +18136,101 @@ uint32_t wlanoidListMode(struct ADAPTER *prAdapter,
 }
 #endif
 #endif
+
+uint32_t wlanoidGetSleepCntInfo(
+	struct ADAPTER *prAdapter,
+	void *pvGetBuffer,
+	uint32_t u4GetBufferLen,
+	uint32_t *pu4GetInfoLen)
+{
+	struct PARAM_SLEEP_CNT_INFO *prLpInfo;
+	struct CMD_LP_DBG_CTRL rCmdLp = {0};
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pvGetBuffer) {
+		DBGLOG(REQ, ERROR, "pvGetBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (u4GetBufferLen < sizeof(struct PARAM_SLEEP_CNT_INFO)) {
+		DBGLOG(REQ, ERROR, "Invalid length %lu\n", u4GetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	if (!pu4GetInfoLen) {
+		DBGLOG(REQ, ERROR, "pu4GetInfoLen is NULL\n");
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	*pu4GetInfoLen = sizeof(struct PARAM_SLEEP_CNT_INFO);
+
+	prLpInfo = (struct PARAM_SLEEP_CNT_INFO *)pvGetBuffer;
+
+	rCmdLp.ucSubCmdId = LP_CMD_QUERY;
+	rCmdLp.ucTag = LP_TAG_GET_SLP_CNT_INFO;
+
+	return wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_LP_DBG_CTRL,
+			FALSE,
+			TRUE,
+			TRUE,
+			nicCmdEventGetSlpCntInfo,
+			nicOidCmdTimeoutCommon,
+			sizeof(struct CMD_LP_DBG_CTRL),
+			(uint8_t *)&rCmdLp,
+			pvGetBuffer,
+			u4GetBufferLen);
+
+}
+
+uint32_t wlanoidSetLpKeepPwrCtrl(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	struct CMD_LP_DBG_CTRL *prCmdLp;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pvSetBuffer) {
+		DBGLOG(REQ, ERROR, "pvGetBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (u4SetBufferLen < sizeof(struct CMD_LP_DBG_CTRL)) {
+		DBGLOG(REQ, ERROR, "Invalid length %lu\n", u4SetBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	if (!pu4SetInfoLen) {
+		DBGLOG(REQ, ERROR, "pu4SetInfoLen is NULL\n");
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	*pu4SetInfoLen = sizeof(struct CMD_LP_DBG_CTRL);
+
+	prCmdLp = (struct CMD_LP_DBG_CTRL *)pvSetBuffer;
+
+	prCmdLp->ucSubCmdId = LP_CMD_SET;
+	prCmdLp->ucTag = LP_TAG_SET_KEEP_PWR_CTRL;
+
+	return wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_LP_DBG_CTRL,
+			TRUE,
+			TRUE,
+			TRUE,
+			nicCmdEventLpKeepPwrCtrl,
+			nicOidCmdTimeoutCommon,
+			sizeof(struct CMD_LP_DBG_CTRL),
+			(uint8_t *)prCmdLp,
+			pvSetBuffer,
+			u4SetBufferLen);
+}
