@@ -1803,9 +1803,26 @@ void asicConnac2xInitRxdHook(
 #endif
 }
 
+
+void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb, uint32_t u4RxVector0)
+{
+#if CFG_SUPPORT_LLS
+	struct CHIP_DBG_OPS *prChipDbg;
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+	if (prChipDbg && prChipDbg->get_rx_link_stats) {
+		prChipDbg->get_rx_link_stats(
+				prAdapter, prRetSwRfb, u4RxVector0);
+	}
+#endif
+}
+
+
 #if (CFG_SUPPORT_MSP == 1)
 void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
-	  IN OUT struct SW_RFB *prRetSwRfb) {
+	  IN OUT struct SW_RFB *prRetSwRfb)
+{
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
@@ -1864,6 +1881,8 @@ void asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		prAdapter->arStaRec[
 			prRetSwRfb->ucStaRecIdx].u4RxVector3 = 0;
 	}
+	nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb,
+		prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].u4RxVector0);
 }
 #endif /* CFG_SUPPORT_MSP == 1 */
 
