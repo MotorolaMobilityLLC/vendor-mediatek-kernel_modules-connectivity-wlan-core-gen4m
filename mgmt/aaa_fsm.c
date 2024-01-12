@@ -314,8 +314,8 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 						&u2StatusCode);
 
 #if CFG_SUPPORT_802_11W
-					if (prBssInfo->u4RsnSelectedAKMSuite ==
-						RSN_AKM_SUITE_SAE)
+					if (rsnKeyMgmtSae(
+					      prBssInfo->u4RsnSelectedAKMSuite))
 						break;
 					if (prBssInfo->u4RsnSelectedAKMSuite ==
 						RSN_AKM_SUITE_OWE)
@@ -470,8 +470,7 @@ bow_proc:
 			ASSERT(!(u2StatusCode == STATUS_CODE_SUCCESSFUL));
 		}
 
-		if (prBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_SAE) {
+		if (rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
 			kalP2PIndicateRxMgmtFrame(prAdapter,
 				prAdapter->prGlueInfo,
 				prSwRfb,

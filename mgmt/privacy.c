@@ -170,16 +170,19 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	    [10].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_OWE;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [11].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_DPP;
-#if CFG_SUPPORT_802_11W
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [12].dot11RSNAConfigAuthenticationSuite =
-	    RSN_AKM_SUITE_802_1X_SHA256;
+		RSN_AKM_SUITE_8021X_SUITE_B_192;
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
-	    [13].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
-#endif
+	    [13].dot11RSNAConfigAuthenticationSuite =
+		RSN_AKM_SUITE_SAE_EXT_KEY;
+#if CFG_SUPPORT_802_11W
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [14].dot11RSNAConfigAuthenticationSuite =
-		RSN_AKM_SUITE_8021X_SUITE_B_192;
+	    RSN_AKM_SUITE_802_1X_SHA256;
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [15].dot11RSNAConfigAuthenticationSuite = RSN_AKM_SUITE_PSK_SHA256;
+#endif
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
 		prMib->dot11RSNAConfigAuthenticationSuitesTable

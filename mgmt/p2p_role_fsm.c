@@ -2874,9 +2874,8 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 					&(prCurrStaRec->rDeauthTxDoneTimer),
 					P2P_DEAUTH_TIMEOUT_TIME_MS);
 #if CFG_SUPPORT_802_11W
-			} else if (prP2pBssInfo
-				->u4RsnSelectedAKMSuite ==
-				RSN_AKM_SUITE_SAE) {
+			} else if (rsnKeyMgmtSae(
+					prP2pBssInfo->u4RsnSelectedAKMSuite)) {
 				if (!kal_completion_done(
 					&prP2pRoleFsmInfo->rDeauthComp)) {
 					DBGLOG(P2P, TRACE,

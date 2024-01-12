@@ -811,12 +811,14 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 		case WLAN_CIPHER_SUITE_CCMP:
 			rKey.ucCipher = CIPHER_SUITE_CCMP;
 			break;
-#if 0
-		case WLAN_CIPHER_SUITE_GCMP:
-			rKey.ucCipher = CIPHER_SUITE_GCMP;
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
+		case WLAN_CIPHER_SUITE_GCMP_256:
+			rKey.ucCipher = CIPHER_SUITE_GCMP_256;
 			break;
-		case WLAN_CIPHER_SUITE_CCMP_256:
-			rKey.ucCipher = CIPHER_SUITE_CCMP256;
+		case WLAN_CIPHER_SUITE_BIP_GMAC_256:
+			DBGLOG(RSN, INFO,
+				"[BIP-GMAC-256] save IGTK and handle integrity check ...\n");
+			rKey.ucCipher = CIPHER_SUITE_BIP_GMAC_256;
 			break;
 #endif
 		case WLAN_CIPHER_SUITE_SMS4:
@@ -2923,8 +2925,7 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 			IS_BSS_APGO(prBssInfo) &&
 			(fsm->encryptedDeauthIsInProcess ==
 			TRUE) &&
-			(prBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_SAE)) {
+			(rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite))) {
 			fgWpa3Op = TRUE;
 			reinit_completion(&fsm->rDeauthComp);
 		}
