@@ -124,6 +124,11 @@ static netdev_tx_t nanHardStartXmit(IN struct sk_buff *prSkb,
 static int nanDoIOCTL(struct net_device *prDev, struct ifreq *prIFReq,
 		      int i4Cmd);
 
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+static int nanDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
+		void __user *prData, int i4Cmd);
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief A function for prDev->init
@@ -159,6 +164,9 @@ const struct net_device_ops nan_netdev_ops = {
 	.ndo_set_rx_mode = nanSetMulticastList,
 	.ndo_get_stats = nanGetStats,
 	.ndo_do_ioctl = nanDoIOCTL,
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	.ndo_siocdevprivate = nanDoPrivIOCTL,
+#endif
 	.ndo_start_xmit = nanHardStartXmit,
 	.ndo_select_queue = wlanSelectQueue,
 	.ndo_init = nanInit,
@@ -1372,6 +1380,15 @@ nanDoIOCTL(struct net_device *prDev, struct ifreq *prIfReq, int i4Cmd)
 
 	return ret;
 } /* end of p2pDoIOCTL() */
+
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+int nanDoPrivIOCTL(struct net_device *prDev, struct ifreq *prIfReq,
+		void __user *prData, int i4Cmd)
+{
+	return nanDoIOCTL(prDev, prIfReq, i4Cmd);
+}
+#endif
+
 
 /*----------------------------------------------------------------------------*/
 /*!
