@@ -401,7 +401,7 @@ else
         ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
         ccflags-y += -DCFG_WLAN_ATF_SUPPORT=1
     endif
-    ifneq ($(filter 6897, $(WLAN_CHIP_ID)),)
+    ifneq ($(filter 6897 6878, $(WLAN_CHIP_ID)),)
         ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
         ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
     endif
