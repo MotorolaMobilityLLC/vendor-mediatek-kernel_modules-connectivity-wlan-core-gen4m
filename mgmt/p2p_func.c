@@ -1341,10 +1341,6 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 			/* and AP do not need send it after STA left */
 			nicTxSetPktLifeTime(prAdapter, prMgmtTxMsdu, 100);
 
-#if (CFG_TX_MGMT_BY_DATA_Q == 1)
-			nicTxSetMgmtByDataQ(prAdapter, prMgmtTxMsdu);
-#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
-
 			/*
 			 * Not check prMsduInfo sanity
 			 * as p2pFuncProcessP2pProbeRsp will always
