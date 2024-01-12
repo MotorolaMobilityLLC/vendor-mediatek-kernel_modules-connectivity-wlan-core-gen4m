@@ -920,6 +920,15 @@ struct tx_resource_info {
 	VOID(*txResourceInit)(IN P_ADAPTER_T prAdapter);
 };
 
+struct TX_DESC_OPS_T {
+	void (*fillNicAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+				       OUT PUINT_8 prTxDescBuffer);
+	void (*fillHifAppend)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
+			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
+	void (*fillTxByteCount)(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+				P_HW_MAC_TX_DESC_T prTxDesc);
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************

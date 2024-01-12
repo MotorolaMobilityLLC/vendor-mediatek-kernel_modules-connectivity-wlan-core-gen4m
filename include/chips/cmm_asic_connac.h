@@ -72,12 +72,21 @@
 */
 VOID asicCapInit(IN P_ADAPTER_T prAdapter);
 VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
+VOID fillNicTxDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+			 OUT PUINT_8 prTxDescBuffer);
+VOID fillNicTxDescAppendWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+				OUT PUINT_8 prTxDescBuffer);
 VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
 VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
 			   IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer);
+VOID fillTxDescTxByteCount(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+			   P_HW_MAC_TX_DESC_T prTxDesc);
+VOID fillTxDescTxByteCountWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
+				  P_HW_MAC_TX_DESC_T prTxDesc);
+
 #if defined(_HIF_PCIE)
 /* DMS Scheduler Init */
 VOID asicPcieDmaShdlInit(IN P_ADAPTER_T prAdapter);

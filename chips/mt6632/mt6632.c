@@ -229,10 +229,17 @@ struct FWDL_OPS_T mt6632_fw_dl_ops = {
 	.getFwInfo = wlanGetHarvardFwInfo,
 };
 
+struct TX_DESC_OPS_T mt6632TxDescOps = {
+	.fillNicAppend = fillNicTxDescAppendWithCR4,
+	.fillHifAppend = fillTxDescAppendByCR4,
+	.fillTxByteCount = fillTxDescTxByteCountWithCR4,
+};
+
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 	.bus_info = &mt6632_bus_info,
 	.fw_dl_ops = &mt6632_fw_dl_ops,
+	.prTxDescOps = &mt6632TxDescOps,
 
 	.chip_id = MT6632_CHIP_ID,
 	.should_verify_chip_id = TRUE,
@@ -246,7 +253,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6632 = {
 
 	.asicCapInit = mt6632CapInit,
 	.asicEnableFWDownload = NULL,
-	.fillTxDescAppend = fillTxDescAppendByCR4,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
 };

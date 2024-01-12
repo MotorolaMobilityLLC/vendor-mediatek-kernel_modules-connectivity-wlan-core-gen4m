@@ -747,8 +747,9 @@ VOID halTxUpdateCutThroughDesc(P_GLUE_INFO_T prGlueInfo, P_MSDU_INFO_T prMsduInf
 		return;
 	}
 
-	prChipInfo->fillTxDescAppend(prGlueInfo->prAdapter, prMsduInfo, prToken->u4Token,
-		rDmaAddr, prToken->prPacket);
+	if (prChipInfo->prTxDescOps->fillHifAppend)
+		prChipInfo->prTxDescOps->fillHifAppend(prGlueInfo->prAdapter, prMsduInfo, prToken->u4Token,
+			rDmaAddr, prToken->prPacket);
 
 	prToken->rPktDmaAddr = rDmaAddr;
 	prToken->u4PktDmaLength = prMsduInfo->u2FrameLength;
