@@ -5487,6 +5487,11 @@ static int32_t priv_driver_txpower_man_set(IN struct net_device *prNetDev,
 	u4ParamNum = sscanf(this_char, "%d:%d:%d:%d", &ucPhyMode, &ucTxRate,
 		&ucBw, &iTargetPwr);
 
+	if (u4ParamNum < 0) {
+		DBGLOG(REQ, WARN, "sscanf input fail\n");
+		return -1;
+	}
+
 	DBGLOG(REQ, INFO, "ParamNum=%d,PhyMod=%d,Rate=%d,Bw=%d,Pwr=%d\n",
 		u4ParamNum, ucPhyMode, ucTxRate, ucBw, iTargetPwr);
 
