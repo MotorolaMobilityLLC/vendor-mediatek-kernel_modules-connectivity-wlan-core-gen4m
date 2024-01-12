@@ -339,11 +339,6 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 	if (!fgDoRegister)
 		return TRUE;
 
-	if (fgIsRtnlLockAcquired && rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_unlock();
-	}
-
 	ret = TRUE;
 	/* net device initialize */
 	netif_carrier_off(
@@ -352,11 +347,26 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 		prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	if (!rtnl_is_locked()) {
+		fgRollbackRtnlLock = TRUE;
+		rtnl_lock();
+	}
 	i4RetReg = cfg80211_register_netdevice(
 		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 #else
+	if (rtnl_is_locked()) {
+		fgRollbackRtnlLock = TRUE;
+		rtnl_unlock();
+	}
 	i4RetReg = register_netdev(
 		    prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
+#endif
+
+	if (fgRollbackRtnlLock)
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		rtnl_unlock();
+#else
+		rtnl_lock();
 #endif
 
 	/* register for net device */
@@ -384,14 +394,10 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 #endif
 				);
 		rtnl_unlock();
-
 		netif_carrier_on(
 			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 #endif
 	}
-
-	if (fgRollbackRtnlLock)
-		rtnl_lock();
 
 	return ret;
 }
@@ -453,20 +459,28 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 	netif_tx_stop_all_queues(prNANInfo->prDevHandler);
 
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	if (!rtnl_is_locked()) {
+		fgRollbackRtnlLock = TRUE;
+		rtnl_lock();
+	}
+	cfg80211_unregister_netdevice(prNANInfo->prDevHandler);
+#else
 	if (rtnl_is_locked()) {
 		fgRollbackRtnlLock = TRUE;
 		rtnl_unlock();
 	}
-
-#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-	cfg80211_unregister_netdevice(prNANInfo->prDevHandler);
-#else
 	unregister_netdev(prNANInfo->prDevHandler);
 #endif
 
 	DBGLOG(INIT, INFO, "unregister nandev\n");
+
 	if (fgRollbackRtnlLock)
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		rtnl_unlock();
+#else
 		rtnl_lock();
+#endif
 
 	prGlueInfo->prAdapter->rNanNetRegState =
 		ENUM_NET_REG_STATE_UNREGISTERED;
