@@ -5628,6 +5628,10 @@ int priv_driver_set_mdvt(IN struct net_device *prNetDev, IN char *pcCommand,
 	uint32_t u4Ret;
 	int32_t i4ArgNum = 3;
 	struct CMD_MDVT_CFG rCmdMdvtCfg;
+#if (CFG_SUPPORT_WIFI_SYSDVT == 1)
+	uint16_t u2ModuleNum;
+	uint16_t u2ShowCmdIdList = 0xFF;  /* 0xFF=255 */
+#endif
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -5652,15 +5656,25 @@ int priv_driver_set_mdvt(IN struct net_device *prNetDev, IN char *pcCommand,
 #if (CFG_SUPPORT_WIFI_SYSDVT == 1)
 		if (rCmdMdvtCfg.u4ModuleId == MDVT_MODULE_PH_TPUT)
 			dvtSetupPhTput(prNetDev, rCmdMdvtCfg.u4CaseId);
-#endif
 
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetMdvt,
+		if (rCmdMdvtCfg.u4ModuleId == u2ShowCmdIdList) {
+			for (u2ModuleNum = 0;
+				u2ModuleNum < u4MdvtTableSize;
+				u2ModuleNum++) {
+				DBGLOG(REQ, INFO, "Module Name %s = %d\n",
+				arMdvtModuleTable[u2ModuleNum].pucParserStr,
+				arMdvtModuleTable[u2ModuleNum].eModuleId);
+			}
+		} else
+#endif
+		{
+			rStatus = kalIoctl(prGlueInfo, wlanoidSetMdvt,
 				   &rCmdMdvtCfg, sizeof(rCmdMdvtCfg),
 				   FALSE, FALSE, TRUE, &u4BufLen);
 
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			return -1;
-
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				return -1;
+		}
 	}
 
 	return i4BytesWritten;
