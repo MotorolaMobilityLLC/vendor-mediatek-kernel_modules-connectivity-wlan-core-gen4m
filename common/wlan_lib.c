@@ -7617,6 +7617,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		(uint8_t) wlanCfgGetUint32(prAdapter, "WowTriigerLevel", 3);
 	prAdapter->rWowCtrl.astWakeHif[0].u4GpioInterval =
 		wlanCfgGetUint32(prAdapter, "GpioInterval", 0);
+	prWifiVar->ucWowDetectType = (uint8_t) wlanCfgGetUint32(
+		prAdapter, "WowDetectType", WOWLAN_DETECT_TYPE_MAGIC);
 #endif
 	prWifiVar->u4TxHangFullDumpMode = wlanCfgGetUint32(
 			prAdapter, "TxHangFullDumpMode", 0);
