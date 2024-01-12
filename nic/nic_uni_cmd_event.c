@@ -230,6 +230,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
 	[UNI_EVENT_ID_WOW] = nicUniEventWow,
 	[UNI_EVENT_ID_CSI] = nicUniEventCsiData,
+	[UNI_EVENT_ID_SR] = nicUniEventSR,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -5349,7 +5350,7 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 
 		max_cmd_len += sizeof(struct UNI_CMD_SR_IND);
 		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SR,
-			max_cmd_len, nicUniCmdEventQuerySRInfo,
+			max_cmd_len, nicUniCmdEventSetCommon,
 			nicUniCmdTimeoutCommon);
 		if (!entry)
 			return WLAN_STATUS_RESOURCES;
@@ -5367,7 +5368,7 @@ uint32_t nicUniCmdSR(struct ADAPTER *ad,
 
 		max_cmd_len += sizeof(struct UNI_CMD_SR_CAP);
 		entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SR,
-			max_cmd_len, nicUniCmdEventQuerySRInfo,
+			max_cmd_len, nicUniCmdEventSetCommon,
 			nicUniCmdTimeoutCommon);
 		if (!entry)
 			return WLAN_STATUS_RESOURCES;
@@ -6382,81 +6383,6 @@ void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	DBGLOG(RFTEST, INFO, "CMD:0x%x read addr=0x%x, value=0x%x\n",
 		TAG_ID(uni_cmd->aucTlvBuffer), legacy.u4Address, legacy.u4Data);
 	nicCmdEventQueryMcrRead(prAdapter, prCmdInfo, (uint8_t *)&legacy);
-}
-
-void nicUniCmdEventQuerySRInfo(struct ADAPTER *prAdapter,
-	IN struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
-{
-	int32_t tags_len;
-	uint8_t *tag;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_SR);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
-	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
-
-	tags_len = data_len - fixed_len;
-	tag = data + fixed_len;
-	switch (TAG_ID(tag)) {
-	case UNI_EVENT_SR_TAG_HW_IND: {
-		struct UNI_EVENT_SR_HW_IND *sr =
-			(struct UNI_EVENT_SR_HW_IND *) tag;
-		DBGLOG(NIC, INFO,
-			"DW_1: [%d:%d:%d]\n",
-			sr->rSrInd.u1NonSrgInterPpduRcpi,
-			sr->rSrInd.u1SrgInterPpduRcpi,
-			sr->rSrInd.u2NonSrgVldCnt);
-		DBGLOG(NIC, INFO,
-			"DW_2_3: [%d:%d:%d:%d]\n",
-			sr->rSrInd.u2SrgVldCnt,
-			sr->rSrInd.u2IntraBssPpduCnt,
-			sr->rSrInd.u2InterBssPpduCnt,
-			sr->rSrInd.u2NonSrgPpduVldCnt);
-		DBGLOG(NIC, INFO,
-			"DW_4_5_6: [%d:%d:%d]\n",
-			sr->rSrInd.u2SrgPpduVldCnt,
-			sr->rSrInd.u4SrAmpduMpduCnt,
-			sr->rSrInd.u4SrAmpduMpduAckedCnt);
-	}
-		break;
-	case UNI_EVENT_SR_TAG_HW_CAP: {
-		struct UNI_EVENT_SR_HW_CAP *sr =
-			(struct UNI_EVENT_SR_HW_CAP *) tag;
-		DBGLOG(NIC, INFO,
-			"DW_1: [%d:%d:%d:%d]\n",
-			sr->rSrCap.fgSrEn,
-			sr->rSrCap.fgSrgEn,
-			sr->rSrCap.fgNonSrgEn,
-			sr->rSrCap.fgSingleMdpuRtsctsEn);
-		DBGLOG(NIC, INFO,
-			"DW_2: [%d:%d:%d:%d]\n",
-			sr->rSrCap.fgHdrDurEn,
-			sr->rSrCap.fgTxopDurEn,
-			sr->rSrCap.fgNonSrgInterPpduPresv,
-			sr->rSrCap.fgSrgInterPpduPresv);
-		DBGLOG(NIC, INFO,
-			"DW_3: [%d:%d:%d:%d]\n",
-			sr->rSrCap.fgSMpduNoTrigEn,
-			sr->rSrCap.fgSrgBssidOrder,
-			sr->rSrCap.fgCtsAfterRts,
-			sr->rSrCap.fgSrpOldRxvEn);
-		DBGLOG(NIC, INFO,
-			"DW_4: [%d:%d:%d:%d]\n",
-			sr->rSrCap.fgSrpNewRxvEn,
-			sr->rSrCap.fgSrpDataOnlyEn,
-			sr->rSrCap.fgFixedRateSrREn,
-			sr->rSrCap.fgWtblSrREn);
-		DBGLOG(NIC, INFO,
-			"DW_5: [%d:%d:%d:%d]\n",
-			sr->rSrCap.fgSrRemTimeEn,
-			sr->rSrCap.fgProtInSrWinDis,
-			sr->rSrCap.fgTxCmdDlRateSelEn,
-			sr->rSrCap.fgAmpduTxCntEn);
-	}
-		break;
-	default:
-		DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
-		break;
-	}
-	nicCmdEventSetCommon(prAdapter, prCmdInfo, pucEventBuf);
 }
 
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
@@ -8656,4 +8582,84 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 #endif
+}
+
+void nicUniEventSR(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_SR);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, INFO, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_SR_TAG_HW_CAP: {
+			struct UNI_EVENT_SR_HW_IND *sr =
+				(struct UNI_EVENT_SR_HW_IND *) tag;
+			DBGLOG(NIC, INFO,
+				"DW_1: [%d:%d:%d]\n",
+				sr->rSrInd.u1NonSrgInterPpduRcpi,
+				sr->rSrInd.u1SrgInterPpduRcpi,
+				sr->rSrInd.u2NonSrgVldCnt);
+			DBGLOG(NIC, INFO,
+				"DW_2_3: [%d:%d:%d:%d]\n",
+				sr->rSrInd.u2SrgVldCnt,
+				sr->rSrInd.u2IntraBssPpduCnt,
+				sr->rSrInd.u2InterBssPpduCnt,
+				sr->rSrInd.u2NonSrgPpduVldCnt);
+			DBGLOG(NIC, INFO,
+				"DW_4_5_6: [%d:%d:%d]\n",
+				sr->rSrInd.u2SrgPpduVldCnt,
+				sr->rSrInd.u4SrAmpduMpduCnt,
+				sr->rSrInd.u4SrAmpduMpduAckedCnt);
+		}
+			break;
+		case UNI_EVENT_SR_TAG_HW_IND: {
+			struct UNI_EVENT_SR_HW_CAP *sr =
+				(struct UNI_EVENT_SR_HW_CAP *) tag;
+			DBGLOG(NIC, INFO,
+				"DW_1: [%d:%d:%d:%d]\n",
+				sr->rSrCap.fgSrEn,
+				sr->rSrCap.fgSrgEn,
+				sr->rSrCap.fgNonSrgEn,
+				sr->rSrCap.fgSingleMdpuRtsctsEn);
+			DBGLOG(NIC, INFO,
+				"DW_2: [%d:%d:%d:%d]\n",
+				sr->rSrCap.fgHdrDurEn,
+				sr->rSrCap.fgTxopDurEn,
+				sr->rSrCap.fgNonSrgInterPpduPresv,
+				sr->rSrCap.fgSrgInterPpduPresv);
+			DBGLOG(NIC, INFO,
+				"DW_3: [%d:%d:%d:%d]\n",
+				sr->rSrCap.fgSMpduNoTrigEn,
+				sr->rSrCap.fgSrgBssidOrder,
+				sr->rSrCap.fgCtsAfterRts,
+				sr->rSrCap.fgSrpOldRxvEn);
+			DBGLOG(NIC, INFO,
+				"DW_4: [%d:%d:%d:%d]\n",
+				sr->rSrCap.fgSrpNewRxvEn,
+				sr->rSrCap.fgSrpDataOnlyEn,
+				sr->rSrCap.fgFixedRateSrREn,
+				sr->rSrCap.fgWtblSrREn);
+			DBGLOG(NIC, INFO,
+				"DW_5: [%d:%d:%d:%d]\n",
+				sr->rSrCap.fgSrRemTimeEn,
+				sr->rSrCap.fgProtInSrWinDis,
+				sr->rSrCap.fgTxCmdDlRateSelEn,
+				sr->rSrCap.fgAmpduTxCntEn);
+		}
+			break;
+		default:
+			fail_cnt++;
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
 }
