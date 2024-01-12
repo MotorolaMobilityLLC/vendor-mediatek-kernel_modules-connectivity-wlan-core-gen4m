@@ -1538,6 +1538,24 @@ else
     ccflags-y += -DCFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE=0
 endif
 
+# Background:
+# In legacy Sigma tool, it sets VO with ToS = 0xD0, though
+# the available ToS for VO ranges from 0xC0 to 0xFF.
+#
+# QoS R2 w/ CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT only allows
+# VO w/ ToS = 0xB0 and 0xB8.
+#
+# By disabling QoS R2 w/ CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT,
+# two additional ToS 0xC0 and 0xE0 are allowed to map to UP 6, 7.
+# Along with the change in sigma tool by setting VO to ToS=0xCo,
+# this makes the intersection values available for QoS R2 and
+# sigma tool for legacy programs.
+ifeq ($(CONFIG_WIFI_AT_THE_EDGE_QOS_SUPPORT), y)
+    ccflags-y += -DCFG_WIFI_AT_THE_EDGE_QOS=1
+else
+    ccflags-y += -DCFG_WIFI_AT_THE_EDGE_QOS=0
+endif
+
 ifeq ($(CONFIG_TX_RSRC_WMM_ENHANCE), y)
     ccflags-y += -DCFG_TX_RSRC_WMM_ENHANCE=1
 else

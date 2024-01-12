@@ -87,18 +87,34 @@ static const uint8_t dscp2up[64] = {
 	[40] = WMM_UP_VI_INDEX,
 	[44] = WMM_UP_VO_INDEX,
 	[46] = WMM_UP_VO_INDEX,
+#if !CFG_WIFI_AT_THE_EDGE_QOS
+	[48] = WMM_UP_VO_INDEX,
+	[56] = WMM_UP_VO_INDEX,
+#endif
 };
 #endif
 
 /* a structure for cfg80211_classify8021d */
 static const struct QOS_MAP defaultQosMap = {
-	15, {
+#if CFG_WIFI_AT_THE_EDGE_QOS
+	15,
+#else
+	17,
+#endif
+	{
 		{8, 1},
 		{18, 3}, {20, 3}, {22, 3}, {24, 4}, {26, 4}, {28, 4},
 		{30, 4}, {32, 4},
 		{34, 4}, {36, 4}, {38, 4},
 		{40, 5},
 		{44, 6}, {46, 6},
+#if !CFG_WIFI_AT_THE_EDGE_QOS
+		/* Extend for backward compatibility traffic generation.
+		 * Allow to set 48, 56 to UP 6, 7, intended to now following
+		 * RECOMMENDATION in RFC 8325 Sec 8.2.
+		 */
+		{48, 6}, {56, 7},
+#endif
 	}, {
 		{0, 63},
 	}
