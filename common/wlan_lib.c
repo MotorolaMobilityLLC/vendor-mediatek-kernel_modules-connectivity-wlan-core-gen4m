@@ -1504,7 +1504,7 @@ void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter)
 {
 	DBGLOG(INIT, INFO, "wlanOffClearAllQueues(): start.\n");
 
-	/* Release all CMD/MGMT/SEC frame in command queue */
+	/* Release all CMD/MGMT/CmdData frame in command queue */
 	kalClearCommandQueue(prAdapter->prGlueInfo);
 
 	/* Release all CMD in pending command queue */
@@ -1837,7 +1837,6 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 			eFrameAction = FRAME_ACTION_TX_PKT;
 			break;
 
-		case COMMAND_TYPE_SECURITY_FRAME:
 		case COMMAND_TYPE_DATA_FRAME:
 			/* inquire with QM */
 			prMsduInfo = prCmdInfo->prMsduInfo;
@@ -1931,12 +1930,10 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 				 * specially, only break checking the left tx
 				 * request if no resource for true CMD.
 				 */
-				if ((prCmdInfo->eCmdType !=
-				     COMMAND_TYPE_SECURITY_FRAME) &&
-				    (prCmdInfo->eCmdType !=
-				     COMMAND_TYPE_MANAGEMENT_FRAME) &&
-				    (prCmdInfo->eCmdType !=
-					COMMAND_TYPE_DATA_FRAME))
+				if (prCmdInfo->eCmdType !=
+					COMMAND_TYPE_MANAGEMENT_FRAME &&
+				    prCmdInfo->eCmdType !=
+					COMMAND_TYPE_DATA_FRAME)
 					break;
 			} else if (rStatus == WLAN_STATUS_PENDING) {
 				/* Do nothing */
@@ -2237,12 +2234,9 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 		/* <1.4> Set Pending in response to Query Command/Need Response
 		 */
 		if (rStatus == WLAN_STATUS_SUCCESS) {
-			if ((!prCmdInfo->fgSetQuery) ||
-			    (prCmdInfo->fgNeedResp) ||
-			    (prCmdInfo->eCmdType ==
-			    COMMAND_TYPE_SECURITY_FRAME ||
-			     prCmdInfo->eCmdType ==
-				COMMAND_TYPE_DATA_FRAME)) {
+			if (!prCmdInfo->fgSetQuery ||
+			    prCmdInfo->fgNeedResp ||
+			    prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 				rStatus = WLAN_STATUS_PENDING;
 			}
 		}
@@ -2842,14 +2836,12 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 		}
 		break;
 
-	case COMMAND_TYPE_SECURITY_FRAME:
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
 	case COMMAND_TYPE_DATA_FRAME:
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
-			prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
-			kalSecurityFrameSendComplete(prAdapter->prGlueInfo,
+		if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
+			kalCmdDataFrameSendComplete(prAdapter->prGlueInfo,
 						     prCmdInfo->prPacket,
 						     WLAN_STATUS_FAILURE);
 			/* Avoid skb multiple free */
@@ -2858,8 +2850,8 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(INIT, INFO,
 			"Free %s Frame: B[%u]W:P[%u:%u]TS[%u]STA[%u]RSP[%u]CS[%u]\n",
-			prCmdInfo->eCmdType ==
-			COMMAND_TYPE_MANAGEMENT_FRAME ?	"MGMT" : "DATA/SEC",
+		    prCmdInfo->eCmdType == COMMAND_TYPE_MANAGEMENT_FRAME ?
+				"MGMT" : "DATA",
 		    prMsduInfo->ucBssIndex,
 		    prMsduInfo->ucWlanIndex,
 		    prMsduInfo->ucPID,
@@ -3958,13 +3950,6 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 						rTxPacketInfo.aucEthDestAddr);
 
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_1X);
-				/*
-				 * if (secIsProtected1xFrame(prAdapter,
-				 *     prStaRec) &&
-				 *     !kalIs24Of4Packet(prPacket))
-				 *	GLUE_SET_PKT_FLAG(prPacket,
-				 *			ENUM_PKT_PROTECTED_1X);
-				 */
 			}
 
 			if (rTxPacketInfo.u2Flag &
@@ -4018,98 +4003,6 @@ u_int8_t wlanProcessTxFrame(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief This function is called to identify 802.1x and Bluetooth-over-Wi-Fi
- *        security frames, and queued into command queue for strict ordering
- *        due to 802.1x frames before add-key OIDs are not to be encrypted
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- * @param prPacket       Pointer of native packet
- *
- * @return TRUE
- *         FALSE
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER
-				  *prAdapter, IN void *prPacket)
-{
-	struct CMD_INFO *prCmdInfo;
-	struct STA_RECORD *prStaRec;
-	uint8_t ucBssIndex;
-	uint32_t u4PacketLen;
-	uint8_t aucEthDestAddr[PARAM_MAC_ADDR_LEN];
-	struct MSDU_INFO *prMsduInfo;
-	uint8_t ucStaRecIndex;
-
-	ASSERT(prAdapter);
-	ASSERT(prPacket);
-
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, 0);
-
-	/* Get MSDU_INFO for TxDone */
-	prMsduInfo = cnmPktAlloc(prAdapter, 0);
-
-	u4PacketLen = (uint32_t) GLUE_GET_PKT_FRAME_LEN(prPacket);
-
-	if (prCmdInfo && prMsduInfo) {
-		ucBssIndex = GLUE_GET_PKT_BSS_IDX(prPacket);
-
-		kalGetEthDestAddr(prAdapter->prGlueInfo, prPacket,
-				  aucEthDestAddr);
-
-		prStaRec = cnmGetStaRecByAddress(prAdapter, ucBssIndex,
-						 aucEthDestAddr);
-
-		prCmdInfo->eCmdType = COMMAND_TYPE_SECURITY_FRAME;
-		prCmdInfo->u2InfoBufLen = (uint16_t) u4PacketLen;
-		prCmdInfo->prPacket = prPacket;
-		prCmdInfo->prMsduInfo = prMsduInfo;
-		prCmdInfo->pfCmdDoneHandler = wlanSecurityFrameTxDone;
-		prCmdInfo->pfCmdTimeoutHandler =
-				wlanSecurityAndCmdDataFrameTxTimeout;
-		prCmdInfo->fgIsOid = FALSE;
-		prCmdInfo->fgSetQuery = TRUE;
-		prCmdInfo->fgNeedResp = FALSE;
-
-		if (prStaRec)
-			ucStaRecIndex = prStaRec->ucIndex;
-		else
-			ucStaRecIndex = STA_REC_INDEX_NOT_FOUND;
-
-		/* Fill-up MSDU_INFO */
-		nicTxSetDataPacket(prAdapter, prMsduInfo, ucBssIndex,
-				   ucStaRecIndex, 0, u4PacketLen,
-				   nicTxDummyTxDone, MSDU_RATE_MODE_AUTO,
-				   TX_PACKET_OS, 0, FALSE, TRUE);
-
-		prMsduInfo->prPacket = prPacket;
-		/* No Tx descriptor template for MMPDU */
-		prMsduInfo->fgIsTXDTemplateValid = FALSE;
-
-		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_PROTECTED_1X))
-			nicTxConfigPktOption(prMsduInfo,
-					MSDU_OPT_PROTECTED_FRAME, TRUE);
-
-		nicTxComposeSecurityFrameDesc(prAdapter, prCmdInfo,
-					prMsduInfo->aucTxDescBuffer, NULL);
-
-		kalEnqueueCommand(prAdapter->prGlueInfo,
-				  (struct QUE_ENTRY *) prCmdInfo);
-
-		GLUE_SET_EVENT(prAdapter->prGlueInfo);
-
-		return TRUE;
-	}
-	DBGLOG(RSN, INFO,
-	       "Failed to alloc CMD/MGMT INFO for 1X frame!!\n");
-	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-	cnmPktFree(prAdapter, prMsduInfo);
-
-
-	return FALSE;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * @brief This function is called to send data frame via firmware and queued
  *        into command queue
  *
@@ -4120,8 +4013,8 @@ u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER
  *         FALSE
  */
 /*----------------------------------------------------------------------------*/
-uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
-				  *prAdapter, IN void *prPacket)
+uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER *prAdapter,
+				 IN void *prPacket)
 {
 	struct CMD_INFO *prCmdInfo;
 	struct MSDU_INFO *prMsduInfo;
@@ -4167,7 +4060,7 @@ uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
 	prCmdInfo->prPacket = prMsduInfo->prPacket;
 	prCmdInfo->prMsduInfo = prMsduInfo;
 	prCmdInfo->pfCmdDoneHandler = wlanCmdDataFrameTxDone;
-	prCmdInfo->pfCmdTimeoutHandler = wlanSecurityAndCmdDataFrameTxTimeout;
+	prCmdInfo->pfCmdTimeoutHandler = wlanCmdDataFrameTxTimeout;
 	prCmdInfo->fgIsOid = FALSE;
 	prCmdInfo->fgSetQuery = TRUE;
 	prCmdInfo->fgNeedResp = FALSE;
@@ -4187,62 +4080,6 @@ uint32_t wlanProcessCmdDataFrame(IN struct ADAPTER
 	GLUE_SET_EVENT(prAdapter->prGlueInfo);
 
 	return WLAN_STATUS_SUCCESS;
-}
-
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called when 802.1x or Bluetooth-over-Wi-Fi
- *        security frames has been sent to firmware
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- * @param prCmdInfo      Pointer of CMD_INFO_T
- * @param pucEventBuf    meaningless, only for API compatibility
- *
- * @return none
- */
-/*----------------------------------------------------------------------------*/
-void wlanSecurityFrameTxDone(IN struct ADAPTER *prAdapter,
-			     IN struct CMD_INFO *prCmdInfo,
-			     IN uint8_t *pucEventBuf)
-{
-	struct MSDU_INFO *prMsduInfo = prCmdInfo->prMsduInfo;
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	if (prMsduInfo->ucBssIndex < MAX_BSSID_NUM
-		&& GET_BSS_INFO_BY_INDEX(prAdapter,
-				  prMsduInfo->ucBssIndex)->eNetworkType ==
-	    NETWORK_TYPE_AIS
-	    &&
-	    aisGetAisSpecBssInfo(prAdapter,
-	    prMsduInfo->ucBssIndex)->fgCounterMeasure) {
-		struct STA_RECORD *prSta = cnmGetStaRecByIndex(prAdapter,
-					   prMsduInfo->ucBssIndex);
-
-		if (prSta) {
-			kalMsleep(10);
-			if (authSendDeauthFrame(prAdapter,
-				GET_BSS_INFO_BY_INDEX(prAdapter,
-					prMsduInfo->ucBssIndex), prSta,
-					(struct SW_RFB *) NULL,
-					REASON_CODE_MIC_FAILURE,
-					(PFN_TX_DONE_HANDLER) NULL
-					/* secFsmEventDeauthTxDone left upper
-					 * layer handle the 60 timer
-					 */
-					) != WLAN_STATUS_SUCCESS) {
-				ASSERT(FALSE);
-			}
-			/* secFsmEventEapolTxDone(prAdapter, prSta,
-			 *			  TX_RESULT_SUCCESS);
-			 */
-		}
-	}
-
-	kalSecurityFrameSendComplete(prAdapter->prGlueInfo,
-				     prCmdInfo->prPacket, WLAN_STATUS_SUCCESS);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4265,14 +4102,13 @@ void wlanCmdDataFrameTxDone(IN struct ADAPTER *prAdapter,
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	kalSecurityFrameSendComplete(prAdapter->prGlueInfo,
+	kalCmdDataFrameSendComplete(prAdapter->prGlueInfo,
 				     prCmdInfo->prPacket, WLAN_STATUS_SUCCESS);
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief This function is called when 802.1x or Bluetooth-over-Wi-Fi
- *        security frames has failed sending to firmware
+ * @brief This function is called when Command Data frame TX timeout
  *
  * @param prAdapter      Pointer of Adapter Data Structure
  * @param prCmdInfo      Pointer of CMD_INFO_T
@@ -4280,13 +4116,13 @@ void wlanCmdDataFrameTxDone(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void wlanSecurityAndCmdDataFrameTxTimeout(IN struct ADAPTER
-				*prAdapter, IN struct CMD_INFO *prCmdInfo)
+void wlanCmdDataFrameTxTimeout(IN struct ADAPTER *prAdapter,
+		IN struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	kalSecurityFrameSendComplete(prAdapter->prGlueInfo,
+	kalCmdDataFrameSendComplete(prAdapter->prGlueInfo,
 				     prCmdInfo->prPacket, WLAN_STATUS_FAILURE);
 }
 
@@ -10418,7 +10254,6 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		(uint8_t *) DISP_STRING("INVALID"),
 		(uint8_t *) DISP_STRING("802_3"),
 		(uint8_t *) DISP_STRING("1X"),
-		(uint8_t *) DISP_STRING("PROTECTED_1X"),
 		(uint8_t *) DISP_STRING("NON_PROTECTED_1X"),
 		(uint8_t *) DISP_STRING("VLAN_EXIST"),
 		(uint8_t *) DISP_STRING("DHCP"),
@@ -10426,8 +10261,11 @@ wlanPktTxDone(IN struct ADAPTER *prAdapter,
 		(uint8_t *) DISP_STRING("ICMP"),
 		(uint8_t *) DISP_STRING("TDLS"),
 		(uint8_t *) DISP_STRING("DNS"),
+#if CFG_SUPPORT_TPENHANCE_MODE
+		(uint8_t *) DISP_STRING("TCP_ACK"),
+#endif /* CFG_SUPPORT_TPENHANCE_MODE */
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
-		(uint8_t *) DISP_STRING("802_11_MGMT")
+		(uint8_t *) DISP_STRING("802_11_MGMT"),
 #endif
 	};
 	if (prMsduInfo->ucPktType >= ENUM_PKT_FLAG_NUM)
@@ -13962,7 +13800,7 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 	/* 1: Clear Pending OID */
 	wlanReleasePendingOid(prAdapter, 1);
 
-	/* Release all CMD/MGMT/SEC frame in command queue */
+	/* Release all CMD/MGMT/CmdData frame in command queue */
 	kalClearCommandQueue(prAdapter->prGlueInfo);
 
 	/* Release all CMD in pending command queue */

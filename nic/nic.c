@@ -1860,7 +1860,7 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 		nicFreePendingTxMsduInfo(prAdapter, ucBssIndex,
 			MSDU_REMOVE_BY_BSS_INDEX);
 #endif
-		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+		kalClearCmdDataFramesByBssIdx(prAdapter->prGlueInfo,
 			ucBssIndex);
 
 		cnmFreeWmmIndex(prAdapter, prBssInfo);
@@ -2166,7 +2166,7 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 			nicTxDirectClearBssAbsentQ(prAdapter, ucBssIndex);
 		else
 			qmFreeAllByBssIdx(prAdapter, ucBssIndex);
-		kalClearSecurityFramesByBssIdx(prAdapter->prGlueInfo,
+		kalClearCmdDataFramesByBssIdx(prAdapter->prGlueInfo,
 					       ucBssIndex);
 #if CFG_SUPPORT_DBDC
 		cnmDbdcRuntimeCheckDecision(prAdapter,

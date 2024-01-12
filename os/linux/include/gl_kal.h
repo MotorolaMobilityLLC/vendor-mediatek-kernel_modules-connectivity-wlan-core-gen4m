@@ -1584,17 +1584,14 @@ u_int8_t kalUninitBowDevice(IN struct GLUE_INFO
 #endif /* CFG_ENABLE_BT_OVER_WIFI */
 
 /*----------------------------------------------------------------------------*/
-/* Security Frame Clearance                                                   */
+/* Command Data Frame Clearance                                               */
 /*----------------------------------------------------------------------------*/
-void kalClearSecurityFrames(IN struct GLUE_INFO
-			    *prGlueInfo);
+void kalClearCmdDataFrames(IN struct GLUE_INFO *prGlueInfo);
 
-void kalClearSecurityFramesByBssIdx(IN struct GLUE_INFO
-				    *prGlueInfo,
+void kalClearCmdDataFramesByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 				    IN uint8_t ucBssIndex);
 
-void kalSecurityFrameSendComplete(IN struct GLUE_INFO
-				  *prGlueInfo,
+void kalCmdDataFrameSendComplete(IN struct GLUE_INFO *prGlueInfo,
 				  IN void *pvPacket, IN uint32_t rStatus);
 
 /*----------------------------------------------------------------------------*/

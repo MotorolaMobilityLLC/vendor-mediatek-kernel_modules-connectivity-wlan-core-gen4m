@@ -45,7 +45,7 @@ struct COMMAND {
 	uint8_t ucCmdSeqNum;
 };
 
-struct SECURITY_FRAME {
+struct DATA_FRAME {
 	uint16_t u2EthType;
 	uint16_t u2Reserved;
 };
@@ -67,7 +67,7 @@ struct CMD_TRACE_ENTRY {
 	enum COMMAND_TYPE eCmdType;
 	union {
 		struct COMMAND rCmd;
-		struct SECURITY_FRAME rSecFrame;
+		struct DATA_FRAME rDataFrame;
 		struct MGMT_FRAME rMgmtFrame;
 	} u;
 };
@@ -121,12 +121,11 @@ void wlanTraceTxCmd(struct CMD_INFO *prCmd)
 
 		prCurCmd->u.rMgmtFrame.u2FrameCtl = prMgmt->u2FrameCtrl;
 		prCurCmd->u.rMgmtFrame.u2DurationID = prMgmt->u2Duration;
-	} else if (prCmd->eCmdType == COMMAND_TYPE_SECURITY_FRAME ||
-			prCmd->eCmdType == COMMAND_TYPE_DATA_FRAME) {
+	} else if (prCmd->eCmdType == COMMAND_TYPE_DATA_FRAME) {
 		uint8_t *pucPkt = (uint8_t *)((struct sk_buff *)
 					      prCmd->prPacket)->data;
 
-		prCurCmd->u.rSecFrame.u2EthType =
+		prCurCmd->u.rDataFrame.u2EthType =
 			(pucPkt[ETH_TYPE_LEN_OFFSET] << 8) |
 			(pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
 	} else {

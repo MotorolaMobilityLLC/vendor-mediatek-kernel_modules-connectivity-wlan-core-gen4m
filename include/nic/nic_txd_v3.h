@@ -107,11 +107,6 @@ void nic_txd_v3_compose(
 	u_int32_t u4TxDescLength,
 	u_int8_t fgIsTemplate,
 	u_int8_t *prTxDescBuffer);
-void nic_txd_v3_compose_security_frame(
-	struct ADAPTER *prAdapter,
-	struct CMD_INFO *prCmdInfo,
-	uint8_t *prTxDescBuffer,
-	uint8_t *pucTxDescLength);
 void nic_txd_v3_set_pkt_fixed_rate_option_full(
 	struct MSDU_INFO *prMsduInfo,
 	uint16_t u2RateCode,
