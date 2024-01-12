@@ -3581,8 +3581,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSwRxReordering);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	DEBUGFUNC("qmHandleRxPackets");
-
 	ASSERT(prSwRfbListHead);
 
 	prReturnedQue = &rReturnedQue;
@@ -4017,8 +4015,6 @@ u_int8_t qmDetectRxInvalidEAPOL(struct ADAPTER *prAdapter,
 	uint16_t u2SeqCtrl, u2FrameCtrl;
 	uint8_t ucFragNo;
 
-	DEBUGFUNC("qmDetectRxInvalidEAPOL");
-
 	ASSERT(prSwRfb);
 	ASSERT(prSwRfb->prStaRec);
 
@@ -4096,8 +4092,6 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 	uint8_t ucTid;
 	uint8_t *pucPaylod = NULL;
-
-	DEBUGFUNC("qmAmsduAttackDetection");
 
 	ASSERT(prSwRfb);
 
@@ -4250,8 +4244,6 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	uint8_t ucAmsduSubframeIdx;
 	uint32_t u2SeqNo;
 #endif
-	DEBUGFUNC("qmProcessPktWithReordering");
-
 	ASSERT(prSwRfb);
 	ASSERT(prReturnedQue);
 
@@ -5949,8 +5941,6 @@ void mqmProcessAssocReq(struct ADAPTER *prAdapter,
 	uint16_t u2Offset;
 	uint8_t *pucIEStart;
 
-	DEBUGFUNC("mqmProcessAssocReq");
-
 	ASSERT(prSwRfb);
 	ASSERT(pucIE);
 
@@ -6072,8 +6062,6 @@ void mqmProcessAssocRsp(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RXSMM_WHITELIST
 	uint8_t  fgRxsmmEnable = FALSE;
 #endif
-
-	DEBUGFUNC("mqmProcessAssocRsp");
 
 	ASSERT(prSwRfb);
 	ASSERT(pucIE);
@@ -6429,8 +6417,6 @@ mqmParseMUEdcaParams(
 	struct BSS_INFO *prBssInfo;
 	uint8_t fgNewParameter = FALSE;
 
-	DEBUGFUNC("mqmParseMUEdcaParams");
-
 	if (!prSwRfb)
 		return FALSE;
 
@@ -6495,8 +6481,6 @@ mqmParseEdcaParameters(struct ADAPTER *prAdapter,
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgNewParameter = FALSE;
-
-	DEBUGFUNC("mqmParseEdcaParameters");
 
 	if (!prSwRfb)
 		return FALSE;
@@ -6664,8 +6648,6 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 	uint16_t u2Offset;
 	uint8_t aucWfaOui[] = VENDOR_OUI_WFA;
 	u_int8_t fgIsHtVht;
-
-	DEBUGFUNC("mqmProcessScanResult");
 
 	ASSERT(prScanResult);
 	ASSERT(prStaRec);
@@ -6947,8 +6929,6 @@ void mqmGenerateWmmInfoIE(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint32_t u4Length;
 
-	DEBUGFUNC("mqmGenerateWmmInfoIE");
-
 	ASSERT(prMsduInfo);
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter,
@@ -6998,7 +6978,6 @@ void mqmGenerateWmmParamIE(struct ADAPTER *prAdapter,
 	enum ENUM_WMM_ACI eAci;
 	struct WMM_AC_PARAM *prAcParam;
 
-	DEBUGFUNC("mqmGenerateWmmParamIE");
 	DBGLOG(QM, LOUD, "\n");
 
 	ASSERT(prMsduInfo);
@@ -7115,7 +7094,6 @@ uint32_t mqmGenerateWmmParamIEByParam(struct ADAPTER *prAdapter,
 	enum ENUM_WMM_ACI eAci;
 	struct WMM_AC_PARAM *prAcParam;
 
-	DEBUGFUNC("mqmGenerateWmmParamIE");
 	DBGLOG(QM, LOUD, "\n");
 
 	ASSERT(pOutBuf);
@@ -7241,8 +7219,6 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(struct ADAPTER *prAdapter,
 	uint16_t u2FreeResource = nicTxGetResource(prAdapter, ucTC);
 	uint8_t ucReqResource;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-
-	DEBUGFUNC("qmGetFrameAction");
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	prStaRec = cnmGetStaRecByIndexWithoutInUseCheck(prAdapter,
@@ -7704,8 +7680,6 @@ uint32_t qmDumpQueueStatus(struct ADAPTER *prAdapter,
 	uint32_t i, u4TotalBufferCount, u4TotalPageCount;
 	uint32_t u4CurBufferCount, u4CurPageCount;
 	uint32_t u4Len = 0;
-
-	DEBUGFUNC(("%s", __func__));
 
 	ASSERT(prAdapter);
 

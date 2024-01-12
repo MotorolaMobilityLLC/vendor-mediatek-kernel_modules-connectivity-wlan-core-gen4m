@@ -643,15 +643,6 @@ enum WAKE_DATA_TYPE {
 #define LOG_FUNC                kalPrint
 #define LOG_FUNC_LIMITED	kalPrintLimited
 
-/* If __FUNCTION__ is already defined by compiler, we just use it. */
-#define DEBUGFUNC(_Func)
-/* Disabled due to AOSP
- * #if defined(__FUNCTION__)
- *    #define DEBUGFUNC(_Func)
- * #else
- *    #define DEBUGFUNC(_Func) static const char __FUNCTION__[] = _Func;
- * #endif
- */
 #if DBG_DISABLE_ALL_LOG
 #define DBGLOG(_Module, _Class, _Fmt, ...)
 #define DBGLOG_LIMITED(_Module, _Class, _Fmt, ...)

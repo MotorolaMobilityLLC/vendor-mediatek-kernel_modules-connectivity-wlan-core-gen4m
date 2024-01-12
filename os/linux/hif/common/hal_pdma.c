@@ -264,8 +264,6 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 	struct BUS_INFO *prBusInfo;
 #endif
 
-	DEBUGFUNC("nicRxWaitResponse");
-
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
@@ -2190,8 +2188,6 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 			GLUE_GET_REF_CNT(ai4PortLock[u4Port]));
 		goto end;
 	}
-
-	DEBUGFUNC("nicRxPCIeReceiveRFBs");
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;

@@ -3075,8 +3075,6 @@ reqExtQueryConfiguration(struct GLUE_INFO *prGlueInfo,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4QueryInfoLen = 0;
 
-	DEBUGFUNC("wlanoidQueryConfiguration");
-
 	ASSERT(prGlueInfo);
 	ASSERT(pu4QueryInfoLen);
 
@@ -3169,8 +3167,6 @@ reqExtSetConfiguration(struct GLUE_INFO *prGlueInfo,
 	struct PARAM_802_11_CONFIG *prNewConfig =
 		(struct PARAM_802_11_CONFIG *) pvSetBuffer;
 	uint32_t u4SetInfoLen = 0;
-
-	DEBUGFUNC("wlanoidSetConfiguration");
 
 	ASSERT(prGlueInfo);
 	ASSERT(pu4SetInfoLen);

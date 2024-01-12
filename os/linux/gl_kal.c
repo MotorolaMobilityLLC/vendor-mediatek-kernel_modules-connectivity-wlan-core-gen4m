@@ -499,8 +499,6 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 	void *prFwBuffer = NULL;
 	uint32_t u4FwSize = 0;
 
-	DEBUGFUNC("kalFirmwareImageMapping");
-
 	ASSERT(prGlueInfo);
 	ASSERT(ppvMapFileBuf);
 	ASSERT(pu4FileLength);
@@ -688,8 +686,6 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 void kalFirmwareImageUnmapping(struct GLUE_INFO
 		       *prGlueInfo, void *prFwHandle, void *pvMapFileBuf)
 {
-	DEBUGFUNC("kalFirmwareImageUnmapping");
-
 	ASSERT(prGlueInfo);
 
 	/* pvMapFileBuf might be NULL when file doesn't exist */
@@ -3722,34 +3718,6 @@ end:
 	       prGlueInfo->i4TxPendingFrameNum);
 
 }
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Copy Mac Address setting from registry. It's All Zeros in Linux.
- *
- * \param[in] prAdapter Pointer to the Adapter structure
- *
- * \param[out] paucMacAddr Pointer to the Mac Address buffer
- *
- * \retval WLAN_STATUS_SUCCESS
- *
- * \note
- */
-/*----------------------------------------------------------------------------*/
-void kalQueryRegistryMacAddr(struct GLUE_INFO
-			     *prGlueInfo, uint8_t *paucMacAddr)
-{
-	uint8_t aucZeroMac[MAC_ADDR_LEN] = { 0, 0, 0, 0, 0, 0 }
-
-	DEBUGFUNC("kalQueryRegistryMacAddr");
-
-	ASSERT(prGlueInfo);
-	ASSERT(paucMacAddr);
-
-	kalMemCopy((void *) paucMacAddr, (void *) aucZeroMac,
-		   MAC_ADDR_LEN);
-
-}				/* end of kalQueryRegistryMacAddr() */
 
 #if CFG_SUPPORT_EXT_CONFIG
 /*----------------------------------------------------------------------------*/
@@ -9340,8 +9308,6 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 	uint8_t i;
 	uint32_t u4CurrentTp = 0;
 
-	DEBUGFUNC("kalSetPerfReport()");
-
 	prCmdPerfReport = (struct CMD_PERF_IND *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 		sizeof(struct CMD_PERF_IND));
@@ -11771,8 +11737,6 @@ kalSyncTimeToFWByIoctl(void)
 	struct GLUE_INFO *prGlueInfo;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-
-	DEBUGFUNC("kalSyncTimeToFWByIoctl");
 
 	if (prGlueInfo && prGlueInfo->u4ReadyFlag == 1) {
 		uint32_t u4BufLen = 0;

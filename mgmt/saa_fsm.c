@@ -1865,8 +1865,6 @@ uint32_t joinFsmRunEventJoinTimeOut(struct ADAPTER *prAdapter)
 	P_JOIN_INFO_T prJoinInfo;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("joinFsmRunEventJoinTimeOut");
-
 	ASSERT(prAdapter);
 	prJoinInfo = &prAdapter->rJoinInfo;
 
@@ -1917,8 +1915,6 @@ void joinAdoptParametersFromPeerBss(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct BSS_DESC *prBssDesc;
-
-	DEBUGFUNC("joinAdoptParametersFromPeerBss");
 
 	ASSERT(prAdapter);
 	prJoinInfo = &prAdapter->rJoinInfo;
@@ -1990,8 +1986,6 @@ void joinComplete(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_802_11D
 	struct IE_COUNTRY *prIECountry;
 #endif
-
-	DEBUGFUNC("joinComplete");
 
 	ASSERT(prAdapter);
 	prJoinInfo = &prAdapter->rJoinInfo;

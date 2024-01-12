@@ -1236,8 +1236,6 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc;
 	uint8_t ucBssIndex;
 
-	DEBUGFUNC("aisFsmStateInit_JOIN()");
-
 	prAisSpecificBssInfo = &prAisFsmInfo->rAisSpecificBssInfo;
 	prConnSettings = &prAisFsmInfo->rConnSettings;
 	prWpaInfo = &prAisFsmInfo->rWpaInfo;
@@ -1526,8 +1524,6 @@ u_int8_t aisFsmStateInit_RetryJOIN(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_SAA_FSM_START *prJoinReqMsg;
 	struct CONNECTION_SETTINGS *prConnSettings;
-
-	DEBUGFUNC("aisFsmStateInit_RetryJOIN()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
@@ -2625,8 +2621,6 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 	uint8_t i;
 	enum ENUM_AIS_STATE eNewState;
 
-	DEBUGFUNC("aisFsmSteps()");
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
@@ -3347,8 +3341,6 @@ void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 	struct BCN_RM_PARAMS *prBcnRmParam;
 	uint8_t ucBssIndex = 0;
 
-	DEBUGFUNC("aisFsmRunEventScanDone()");
-
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *)prMsgHdr;
 	ucBssIndex = prScanDoneMsg->ucBssIndex;
 
@@ -3532,8 +3524,6 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	uint16_t u2DeauthReason;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
-
-	DEBUGFUNC("aisFsmRunEventAbort()");
 
 	/* 4 <1> Extract information of Abort Message and then free memory. */
 	prAisAbortMsg = (struct MSG_AIS_ABORT *)prMsgHdr;
@@ -3813,8 +3803,6 @@ void aisFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 	struct SW_RFB *prAssocRspSwRfb;
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIndex = 0;
-
-	DEBUGFUNC("aisFsmRunEventJoinComplete()");
 
 	prJoinCompMsg = (struct MSG_SAA_FSM_COMP *)prMsgHdr;
 	prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
@@ -4222,8 +4210,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
-
-	DEBUGFUNC("aisFsmJoinCompleteAction()");
 
 	prJoinCompMsg = (struct MSG_SAA_FSM_COMP *)prMsgHdr;
 	prStaRec = prJoinCompMsg->prStaRec;
@@ -4824,8 +4810,6 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("aisIndicationOfMediaStateToHost()");
-
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5051,8 +5035,6 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	uint8_t *pucIE;
 	uint8_t ucBssIndex = 0;
 	uint16_t u2RxAssocId;
-
-	DEBUGFUNC("aisUpdateBssInfoForJOIN()");
 
 	ucBssIndex = prStaRec->ucBssIndex;
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -5763,8 +5745,6 @@ static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = (uint8_t) ulParam;
 	struct SCAN_INFO *prScanInfo;
 
-	DEBUGFUNC("aisFsmRunEventScanDoneTimeOut()");
-
 	ASSERT(prAdapter);
 
 /* fos_change begin */
@@ -5812,8 +5792,6 @@ void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 #endif
-
-	DEBUGFUNC("aisFsmRunEventBGSleepTimeOut()");
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -5868,8 +5846,6 @@ void aisFsmRunEventIbssAloneTimeOut(struct ADAPTER *prAdapter,
 	enum ENUM_AIS_STATE eNextState;
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 
-	DEBUGFUNC("aisFsmRunEventIbssAloneTimeOut()");
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	eNextState = prAisFsmInfo->eCurrentState;
 
@@ -5921,8 +5897,6 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 	struct BSS_DESC *prBssDesc;
 	struct STA_RECORD *prStaRec;
-
-	DEBUGFUNC("aisFsmRunEventJoinTimeout()");
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -6069,8 +6043,6 @@ void aisFsmScanRequest(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 
-	DEBUGFUNC("aisFsmScanRequest()");
-
 	ASSERT(u4IeLength <= MAX_IE_LENGTH);
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -6164,8 +6136,6 @@ aisFsmScanRequestAdv(struct ADAPTER *prAdapter,
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq;
 	uint8_t ucBssIndex = 0;
-
-	DEBUGFUNC("aisFsmScanRequestAdv()");
 
 	if (!prRequestIn) {
 		log_dbg(SCN, WARN, "Scan request is NULL\n");
@@ -7243,8 +7213,6 @@ void aisFsmRunEventRemainOnChannel(struct ADAPTER *prAdapter,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
 
-	DEBUGFUNC("aisFsmRunEventRemainOnChannel()");
-
 	prRemainOnChannel = (struct MSG_REMAIN_ON_CHANNEL *)prMsgHdr;
 
 	ucBssIndex = prRemainOnChannel->ucBssIdx;
@@ -7605,8 +7573,6 @@ void aisFsmRunEventChannelTimeout(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 
-	DEBUGFUNC("aisFsmRunEventRemainOnChannel()");
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
@@ -7799,8 +7765,6 @@ void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo = (struct AIS_FSM_INFO *)NULL;
 	uint8_t ucBssIndex = 0;
-
-	DEBUGFUNC("aisFuncValidateRxActionFrame");
 
 	if (prSwRfb->prStaRec)
 		ucBssIndex = prSwRfb->prStaRec->ucBssIndex;

@@ -75,8 +75,6 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
 	struct IEEE_802_11_MIB *prMib;
 
-	DEBUGFUNC("secInit");
-
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(RSN, ERROR, "prBssInfo is null\n");
@@ -574,8 +572,6 @@ u_int8_t secEnabledInAis(struct ADAPTER *prAdapter,
 	enum ENUM_WEP_STATUS eEncStatus;
 
 	eEncStatus = aisGetEncStatus(prAdapter, ucBssIndex);
-
-	DEBUGFUNC("secEnabledInAis");
 
 	switch (eEncStatus) {
 	case ENUM_ENCRYPTION_DISABLED:

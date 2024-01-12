@@ -1933,8 +1933,6 @@ void bowResponderCancelScan(struct ADAPTER *prAdapter,
 	struct MSG_SCN_SCAN_CANCEL *prScanCancel = (struct MSG_SCN_SCAN_CANCEL *) NULL;
 	struct BOW_FSM_INFO *prBowFsmInfo = (struct BOW_FSM_INFO *) NULL;
 
-	DEBUGFUNC("bowResponderCancelScan()");
-
 	do {
 		ASSERT(prAdapter);
 

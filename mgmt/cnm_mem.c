@@ -1653,8 +1653,6 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 
-	DEBUGFUNC("cnmDumpStaRec");
-
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
 
 	if (!prStaRec) {

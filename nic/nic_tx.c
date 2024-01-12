@@ -234,8 +234,6 @@ void nicTxInitialize(struct ADAPTER *prAdapter)
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	DEBUGFUNC("nicTxInitialize");
-
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
 
@@ -850,8 +848,6 @@ uint32_t nicTxResetResource(struct ADAPTER *prAdapter)
 	uint8_t ucIdx;
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	DEBUGFUNC("nicTxResetResource");
 
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;
@@ -3821,8 +3817,6 @@ uint32_t nicTxInitResetResource(struct ADAPTER
 		prAdapter->rTxCtrl.u4MaxDataPageCntPerFrame;
 	uint32_t u4MaxCmdPageCntPerFrame =
 		prAdapter->rTxCtrl.u4MaxCmdPageCntPerFrame;
-
-	DEBUGFUNC("nicTxInitResetResource");
 
 	ASSERT(prAdapter);
 	prTxCtrl = &prAdapter->rTxCtrl;

@@ -125,8 +125,6 @@ u_int8_t nicpmSetAcpiPowerD0(struct ADAPTER *prAdapter)
 #endif
 #endif
 
-	DEBUGFUNC("nicpmSetAcpiPowerD0");
-
 	ASSERT(prAdapter);
 
 	do {

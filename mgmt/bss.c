@@ -1120,7 +1120,6 @@ bssComposeBeaconProbeRespFrameHeaderAndFF(uint8_t *pucBuffer,
 	uint8_t aucBCAddr[] = BC_MAC_ADDR;
 	uint16_t u2FrameCtrl;
 
-	DEBUGFUNC("bssComposeBeaconProbeRespFrameHeaderAndFF");
 	/* DBGLOG(INIT, LOUD, ("\n")); */
 
 	prBcnProbRspFrame = (struct WLAN_BEACON_FRAME *)pucBuffer;
@@ -1184,7 +1183,6 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t i;
 
-	DEBUGFUNC("bssUpdateBeaconContent");
 	DBGLOG(INIT, LOUD, "\n");
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -2329,8 +2327,6 @@ void bssInitForAP(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	uint8_t auAifs[WMM_AC_INDEX_NUM] = { 3, 7, 1, 1 };
 	/* If the AP is OFDM */
 	uint8_t auTxop[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };
-
-	DEBUGFUNC("bssInitForAP");
 
 #if 0
 	prAdapter->rWifiVar.rConnSettings.fgRxShortGIDisabled = TRUE;

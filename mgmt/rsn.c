@@ -123,8 +123,6 @@ u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
 	uint32_t u4GroupMgmtSuite = RSN_CIPHER_SUITE_BIP_CMAC_128;
 	uint8_t *cp;
 
-	DEBUGFUNC("rsnParseRsnIE");
-
 	/* Verify the length of the RSN IE. */
 	if (prInfoElem->ucLength < 2) {
 		DBGLOG(RSN, TRACE, "RSN IE length too short (length=%d)\n",
@@ -403,8 +401,6 @@ u_int8_t rsnParseWpaIE(struct ADAPTER *prAdapter,
 	uint8_t *cp;
 	u_int8_t fgCapPresent = FALSE;
 
-	DEBUGFUNC("rsnParseWpaIE");
-
 	/* Verify the length of the WPA IE. */
 	if (prInfoElem->ucLength < 6) {
 		DBGLOG(RSN, TRACE, "WPA IE length too short (length=%d)\n",
@@ -639,8 +635,6 @@ u_int8_t rsnSearchSupportedCipher(struct ADAPTER *prAdapter,
 	struct DOT11_RSNA_CONFIG_PAIRWISE_CIPHERS_ENTRY *prEntry;
 	struct IEEE_802_11_MIB *prMib;
 
-	DEBUGFUNC("rsnSearchSupportedCipher");
-
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_CIPHER_SUITES; i++) {
@@ -671,8 +665,6 @@ u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
 {
 	uint32_t i, c, s, k;
 	struct CONNECTION_SETTINGS *prConnSettings;
-
-	DEBUGFUNC("rsnIsSuitableBSS");
 
 	prConnSettings =
 		aisGetConnSettings(prAdapter, ucBssIndex);
@@ -751,8 +743,6 @@ u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
 	struct DOT11_RSNA_CONFIG_AUTHENTICATION_SUITES_ENTRY
 	*prEntry;
 	struct IEEE_802_11_MIB *prMib;
-
-	DEBUGFUNC("rsnSearchAKMSuite");
 
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
@@ -854,8 +844,6 @@ u_int8_t rsnPerformPolicySelection(
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	enum ENUM_PARAM_OP_MODE eOPMode;
 	enum ENUM_WEP_STATUS eEncStatus;
-
-	DEBUGFUNC("rsnPerformPolicySelection");
 
 	prBss->u4RsnSelectedPairwiseCipher = 0;
 	prBss->u4RsnSelectedGroupCipher = 0;
@@ -1297,8 +1285,6 @@ void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
 	uint8_t *pucBuffer;
 	uint8_t ucBssIndex;
 
-	DEBUGFUNC("rsnGenerateWpaNoneIE");
-
 	ucBssIndex = prMsduInfo->ucBssIndex;
 
 	if (GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -1543,8 +1529,6 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
 #endif
 
-	DEBUGFUNC("rsnGenerateWPAIE");
-
 	pucBuffer = (uint8_t *) ((uintptr_t)
 				 prMsduInfo->prPacket + (uintptr_t)
 				 prMsduInfo->u2FrameLength);
@@ -1665,8 +1649,6 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
-
-	DEBUGFUNC("rsnGenerateRSNIE");
 
 	pucBuffer = (uint8_t *) ((uintptr_t)
 				 prMsduInfo->prPacket + (uintptr_t)
@@ -2175,8 +2157,6 @@ void rsnGenMicErrorEvent(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	uint8_t ucBssIndex = 0;
 
-	DEBUGFUNC("rsnGenMicErrorEvent");
-
 	ucBssIndex = prSta->ucBssIndex;
 
 	prAisBssInfo =
@@ -2219,8 +2199,6 @@ void rsnTkipHandleMICFailure(struct ADAPTER *prAdapter,
 {
 	/* UINT_32               u4RsnaCurrentMICFailTime; */
 	/* P_AIS_SPECIFIC_BSS_INFO_T prAisSpecBssInfo; */
-
-	DEBUGFUNC("rsnTkipHandleMICFailure");
 
 #if 1
 	rsnGenMicErrorEvent(prAdapter, prSta, fgErrorKeyType);
@@ -2458,8 +2436,6 @@ void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
 				uint8_t ucBssIndex)
 {
 	struct PARAM_INDICATION_EVENT pmkidEvent;
-
-	DEBUGFUNC("rsnGeneratePmkidIndication");
 
 	/* Status type: PMKID Candidatelist Event */
 	pmkidEvent.rStatus.eStatusType = ENUM_STATUS_TYPE_CANDIDATE_LIST;

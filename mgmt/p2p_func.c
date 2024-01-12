@@ -178,8 +178,6 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 	struct P2P_FSM_INFO *prP2pFsmInfo = (struct P2P_FSM_INFO *) NULL;
 #endif
 
-	DEBUGFUNC("p2pFuncRequestScan()");
-
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prScanReqInfo != NULL));
 
@@ -623,8 +621,6 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 		(struct WLAN_ASSOC_RSP_FRAME *) NULL;
 	uint16_t u2IELength;
 	uint8_t *pucIE;
-
-	DEBUGFUNC("p2pUpdateBssInfoForJOIN()");
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -2153,8 +2149,6 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 {
 	struct MSG_CH_ABORT *prMsgChRelease = (struct MSG_CH_ABORT *) NULL;
 
-	DEBUGFUNC("p2pFuncReleaseCh()");
-
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
 
@@ -2280,8 +2274,6 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t ucReqChnlNum;
 
-	DEBUGFUNC("p2pFuncStartRdd()");
-
 
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prAdapter->aprBssInfo[ucBssIdx]->u4PrivateData);
@@ -2346,8 +2338,6 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
-
-	DEBUGFUNC("p2pFuncStopRdd()");
 
 	prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
 		cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -2436,8 +2426,6 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	uint8_t role_idx = 0;
 	u_int8_t fgIsCrossBand = FALSE;
 	u_int8_t fgIsPureAp = TRUE;
-
-	DEBUGFUNC("p2pFuncDfsSwitchCh()");
 
 	if (!prBssInfo) {
 		DBGLOG(P2P, ERROR, "prBssInfo shouldn't be NULL!\n");
@@ -3383,8 +3371,6 @@ p2pFuncDissolve(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prCurrStaRec, *prStaRecNext;
 	struct LINK *prClientList;
 
-	DEBUGFUNC("p2pFuncDissolve()");
-
 	do {
 
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
@@ -4192,8 +4178,6 @@ p2pFuncValidateProbeReq(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 
-	DEBUGFUNC("p2pFuncValidateProbeReq");
-
 	do {
 
 		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
@@ -4315,8 +4299,6 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 	u_int8_t ucOuiType;
 	u_int8_t fgBufferFrame = FALSE;
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
-
-	DEBUGFUNC("p2pFuncValidateRxActionFrame");
 
 	if (prAdapter == NULL || prSwRfb == NULL) {
 		DBGLOG(P2P, ERROR, "Invalid parameter.\n");
@@ -5256,8 +5238,6 @@ p2pFuncMgmtFrameRegister(struct ADAPTER *prAdapter,
 {
 	uint32_t u4NewPacketFilter = 0;
 	struct CMD_RX_PACKET_FILTER rSetRxPacketFilter;
-
-	DEBUGFUNC("p2pFuncMgmtFrameRegister");
 
 	do {
 		ASSERT_BREAK(prAdapter != NULL);

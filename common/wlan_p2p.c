@@ -85,7 +85,6 @@ wlanoidSetAddP2PKey(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
-	DEBUGFUNC("wlanoidSetAddP2PKey");
 	DBGLOG(REQ, INFO, "\n");
 
 	ASSERT(prAdapter);
@@ -298,7 +297,6 @@ wlanoidSetRemoveP2PKey(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
-	DEBUGFUNC("wlanoidSetRemoveP2PKey");
 	ASSERT(prAdapter);
 
 	if (u4SetBufferLen < sizeof(struct PARAM_REMOVE_KEY))
@@ -421,7 +419,6 @@ wlanoidSetP2pNetworkAddress(struct ADAPTER *prAdapter,
 	struct PARAM_NETWORK_ADDRESS_IP *prNetAddrIp;
 	uint32_t u4IpAddressCount, u4CmdSize;
 
-	DEBUGFUNC("wlanoidSetP2pNetworkAddress");
 	DBGLOG(INIT, TRACE, "\n");
 
 	ASSERT(prAdapter);
@@ -524,8 +521,6 @@ wlanoidQueryP2pPowerSaveProfile(struct ADAPTER *prAdapter,
 		uint32_t u4QueryBufferLen,
 		uint32_t *pu4QueryInfoLen)
 {
-	DEBUGFUNC("wlanoidQueryP2pPowerSaveProfile");
-
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
 
@@ -567,8 +562,6 @@ wlanoidSetP2pPowerSaveProfile(struct ADAPTER *prAdapter,
 {
 	uint32_t status;
 	enum PARAM_POWER_MODE ePowerMode;
-
-	DEBUGFUNC("wlanoidSetP2pPowerSaveProfile");
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -644,7 +637,6 @@ wlanoidSetP2pSetNetworkAddress(struct ADAPTER *prAdapter,
 	uint32_t u4IpAddressCount, u4CmdSize;
 	uint8_t *pucBuf = NULL;
 
-	DEBUGFUNC("wlanoidSetP2pSetNetworkAddress");
 	DBGLOG(INIT, TRACE, "\n");
 	DBGLOG(INIT, INFO, "wlanoidSetP2pSetNetworkAddress (%d)\n",
 		(int16_t) u4SetBufferLen);
@@ -1200,7 +1192,6 @@ wlanoidSetNoaParam(struct ADAPTER *prAdapter,
 	struct PARAM_CUSTOM_NOA_PARAM_STRUCT *prNoaParam;
 	struct CMD_CUSTOM_NOA_PARAM_STRUCT rCmdNoaParam;
 
-	DEBUGFUNC("wlanoidSetNoaParam");
 	DBGLOG(INIT, TRACE, "\n");
 
 	ASSERT(prAdapter);
@@ -1259,7 +1250,6 @@ wlanoidSetOppPsParam(struct ADAPTER *prAdapter,
 	struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT *prOppPsParam;
 	struct CMD_CUSTOM_OPPPS_PARAM_STRUCT rCmdOppPsParam;
 
-	DEBUGFUNC("wlanoidSetOppPsParam");
 	DBGLOG(INIT, TRACE, "\n");
 
 	ASSERT(prAdapter);
@@ -1320,7 +1310,6 @@ wlanoidSetUApsdParam(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	u_int8_t fgIsOid = TRUE;
 
-	DEBUGFUNC("wlanoidSetUApsdParam");
 	DBGLOG(INIT, TRACE, "\n");
 
 	ASSERT(prAdapter);
@@ -1456,7 +1445,6 @@ wlanoidSetP2pWPSmode(struct ADAPTER *prAdapter,
 	uint32_t u4IsWPSmode = 0;
 	int i = 0;
 
-	DEBUGFUNC("wlanoidSetP2pWPSmode");
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
 

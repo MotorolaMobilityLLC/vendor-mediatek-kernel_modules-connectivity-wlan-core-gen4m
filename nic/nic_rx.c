@@ -306,8 +306,6 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
 	uint32_t i;
 
-	DEBUGFUNC("nicRxInitialize");
-
 	ASSERT(prAdapter);
 	prRxCtrl = &prAdapter->rRxCtrl;
 
@@ -677,8 +675,6 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 	uint64_t u8PN;
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
-	DEBUGFUNC("nicRx: rxmDefragMPDU\n");
-
 	ASSERT(prSWRfb);
 
 	prRxCtrl = &prAdapter->rRxCtrl;
@@ -1011,8 +1007,6 @@ u_int8_t nicRxIsDuplicateFrame(struct SW_RFB
 	void *prRxStatus = NULL;
 	struct HW_MAC_RX_STS_GROUP_4 *prRxStatusGroup4 = NULL;
 
-	DEBUGFUNC("nicRx: Enter rxmIsDuplicateFrame()\n");
-
 	ASSERT(prSwRfb);
 
 	/* Situations in which the STC_REC is missing include:
@@ -1181,7 +1175,6 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 	uint32_t u4CurrentRxBufferCount;
 	/* P_STA_RECORD_T prStaRec = (P_STA_RECORD_T)NULL; */
 
-	DEBUGFUNC("nicRxProcessPktWithoutReorder");
 	/* DBGLOG(RX, TRACE, ("\n")); */
 
 	ASSERT(prAdapter);
@@ -1372,8 +1365,6 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	DEBUGFUNC("nicRxProcessForwardPkt");
-
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
@@ -1487,8 +1478,6 @@ void nicRxProcessGOBroadcastPkt(struct ADAPTER
 			"CFG_NUM_OF_QM_RX_PKT_NUM too small");
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	DEBUGFUNC("nicRxProcessGOBroadcastPkt");
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -1878,7 +1867,6 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo;
 	struct RX_DESC_OPS_T *prRxDescOps;
 
-	DEBUGFUNC("nicRxProcessDataPacket");
 	/* DBGLOG(INIT, TRACE, ("\n")); */
 
 	ASSERT(prAdapter);
@@ -2645,8 +2633,6 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 	uint32_t u4RxLoopCount, u4Tick;
 
 	KAL_SPIN_LOCK_DECLARATION();
-
-	DEBUGFUNC("nicRxProcessRFBs");
 
 	ASSERT(prAdapter);
 

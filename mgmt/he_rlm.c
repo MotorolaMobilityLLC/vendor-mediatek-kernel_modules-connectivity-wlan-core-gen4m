@@ -1599,8 +1599,6 @@ heRlmRecHeSRParams(
 	uint16_t u2Offset;
 	uint8_t fgNewParameter = FALSE;
 
-	DEBUGFUNC("rlmParseHeSRParams");
-
 	if (!pucIE)
 		return FALSE;
 

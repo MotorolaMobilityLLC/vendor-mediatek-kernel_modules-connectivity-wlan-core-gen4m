@@ -288,7 +288,6 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
 
-		DEBUGFUNC("p2pRoleFsmUninit()");
 		DBGLOG(P2P, INFO, "->p2pRoleFsmUninit(%d)\n", ucRoleIdx);
 
 		prP2pRoleFsmInfo =
@@ -391,7 +390,6 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 	do {
 		ASSERT_BREAK(prAdapter != NULL);
 
-		DEBUGFUNC("p2pFsmUninit()");
 		DBGLOG(P2P, INFO, "->p2pFsmUninit()\n");
 
 		prP2pFsmInfo = prAdapter->rWifiVar.prP2pFsmInfo;

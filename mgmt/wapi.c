@@ -84,8 +84,6 @@ u_int8_t wapiParseWapiIE(struct WAPI_INFO_ELEM *prInfoElem,
 	uint8_t *pucAuthSuite = NULL;
 	uint8_t *cp;
 
-	DEBUGFUNC("wapiParseWapiIE");
-
 	/* Verify the length of the WAPI IE. */
 	if (prInfoElem->ucLength < 6) {
 		DBGLOG(SEC, TRACE, "WAPI IE length too short (length=%d)\n",
@@ -346,8 +344,6 @@ u_int8_t wapiPerformPolicySelection(struct ADAPTER *prAdapter,
 	struct WAPI_INFO *prBssWapiInfo;
 	struct WLAN_INFO *prWlanInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
-
-	DEBUGFUNC("wapiPerformPolicySelection");
 
 	/* Notice!!!! WAPI AP not set the privacy bit for WAI
 	 * and WAI-PSK at WZC configuration mode
