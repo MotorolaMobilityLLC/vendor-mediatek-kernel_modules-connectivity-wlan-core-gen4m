@@ -87,6 +87,11 @@
 #define NL80211_DRIVER_TESTMODE_VERSION 2
 #endif
 
+#if KERNEL_VERSION(4, 19, 0) > CFG80211_VERSION_CODE
+#define NL80211_EXT_FEATURE_LOW_SPAN_SCAN 22
+#define NL80211_SCAN_FLAG_LOW_SPAN (1 << 8)
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
