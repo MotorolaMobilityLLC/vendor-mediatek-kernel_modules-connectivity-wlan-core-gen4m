@@ -4136,6 +4136,67 @@ struct UNI_EVENT_SLEEP_INFO {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_SPECTRUM {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	*
+	*   TAG                           | ID  | structure
+	*   ------------------------------|-----|-----------------------------
+	*   UNI_EVENT_SPECTRUM_TAG_STATUS | 0x0 | UNI_EVENT_SPECTRUM_STATUS
+	*   UNI_EVENT_SPECTRUM_TAG_DATA   | 0x1 | UNI_EVENT_SPECTRUM_DATA
+	*   UNI_EVENT_SPECTRUM_TAG_PHY_ICS_DATA | 0x2 | UNI_EVENT_PHY_ICS_DATA
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* Spectrum Tag */
+enum UNI_EVENT_SPECTRUM_TAG {
+	UNI_EVENT_SPECTRUM_TAG_STATUS = 0,
+	UNI_EVENT_SPECTRUM_TAG_DATA,
+	UNI_EVENT_SPECTRUM_TAG_PHY_ICS_DATA,
+	UNI_EVENT_SPECTRUM_TAG_NUM
+};
+
+/* SPECTRUM_STATUS (Tag0) */
+struct UNI_EVENT_SPECTRUM_STATUS {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4FuncIndex;
+	uint32_t u4CapDone;
+	uint32_t u4Reserved[15];
+} __KAL_ATTRIB_PACKED__;
+
+/* SPECTRUM_DATA (Tag1) */
+struct UNI_EVENT_SPECTRUM_DATA {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4FuncIndex;
+	uint32_t u4PktNum;
+	uint32_t u4Bank;
+	uint32_t u4DataLen;
+	uint32_t u4WFCnt;
+	uint32_t u4SmplCnt;
+	uint32_t u4Reserved[6];
+	int32_t i4Data[256];
+} __KAL_ATTRIB_PACKED__;
+
+/* PHY_ICS_DATA (Tag2) */
+struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4FuncIndex;
+	uint32_t u4PktNum;
+	uint32_t u4PhyTimestamp;
+	uint32_t u4DataLen;
+	uint32_t u4Reserved[5];
+	uint32_t u4Data[256];
+} __KAL_ATTRIB_PACKED__;
+
 enum ENUM_UNI_BCN_TIMEOUT_REASON {
 	UNI_ENUM_BCN_LOSS_STA = 0x00,
 	UNI_ENUM_BCN_LOSS_ADHOC = 0x01,
@@ -6155,6 +6216,8 @@ void nicUniEventStatusToHost(struct ADAPTER *ad,
 void nicUniEventBaOffload(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventSleepNotify(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventPhyIcsRawData(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventBeaconTimeout(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
