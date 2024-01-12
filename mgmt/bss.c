@@ -50,41 +50,42 @@
  *
  *****************************************************************************/
 /*
-** Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/bss.c#7
-*/
+ * Id: //Department/DaVinci/BRANCHES/MT6620_WIFI_DRIVER_V2_3/mgmt/bss.c#7
+ */
 
 /*! \file   "bss.c"
-*    \brief  This file contains the functions for creating BSS(AP)/IBSS(AdHoc).
-*
-*   This file contains the functions for BSS(AP)/IBSS(AdHoc). We may create a BSS/IBSS
-*   network, or merge with exist IBSS network and sending Beacon Frame or reply
-*    the Probe Response Frame for received Probe Request Frame.
-*/
+ *    \brief  This file contains the functions for creating BSS(AP)/IBSS(AdHoc)
+ *
+ *   This file contains the functions for BSS(AP)/IBSS(AdHoc).
+ *   We may create a BSS/IBSS network, or merge with exist IBSS network
+ *   and sending Beacon Frame or reply the Probe Response Frame
+ *   for received Probe Request Frame.
+ */
 
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+/******************************************************************************
+ *                         C O M P I L E R   F L A G S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+ ******************************************************************************
+ */
 #include "precomp.h"
 
-/*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              C O N S T A N T S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                             D A T A   T Y P E S
+ ******************************************************************************
+ */
+/******************************************************************************
+ *                            P U B L I C   D A T A
+ ******************************************************************************
+ */
 
 const uint8_t *apucNetworkType[NETWORK_TYPE_NUM] = {
 	(uint8_t *) "AIS",
@@ -103,101 +104,128 @@ const uint8_t *apucNetworkOpMode[] = {
 
 #if (CFG_SUPPORT_ADHOC) || (CFG_SUPPORT_AAA)
 struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
-	{(ELEM_HDR_LEN + (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES)), NULL, bssGenerateExtSuppRate_IE}	/* 50 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL, rlmRspGenerateErpIE}	/* 42 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmRspGenerateHtCapIE}	/* 45 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL, rlmRspGenerateHtOpIE}	/* 61 */
+	{(ELEM_HDR_LEN + (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES)), NULL,
+	 bssGenerateExtSuppRate_IE}	/* 50 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL,
+	   rlmRspGenerateErpIE}	/* 42 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL,
+	   rlmRspGenerateHtCapIE}	/* 45 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
+	   rlmRspGenerateHtOpIE}	/* 61 */
 #if CFG_ENABLE_WIFI_DIRECT
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL, rlmRspGenerateObssScanIE}	/* 74 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
+	   rlmRspGenerateObssScanIE}	/* 74 */
 #endif
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmRspGenerateExtCapIE}	/* 127 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWpaNoneIE}	/* 221 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_PARAM), NULL, mqmGenerateWmmParamIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL,
+	   rlmRspGenerateExtCapIE}	/* 127 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+	   rsnGenerateWpaNoneIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_PARAM), NULL,
+	   mqmGenerateWmmParamIE}	/* 221 */
 #if CFG_ENABLE_WIFI_DIRECT
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWPAIE}	/* 221 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNIE}	/* 48 */
-#if 0				/* LINUX_VERSION_CODE >= KERNEL_VERSION(3, 2, 0) */
-	, {0, p2pFuncCalculateExtra_IELenForBeacon, p2pFuncGenerateExtra_IEForBeacon}	/* 221 */
-#else
-	, {0, p2pFuncCalculateP2p_IELenForBeacon, p2pFuncGenerateP2p_IEForBeacon}	/* 221 */
-	, {0, p2pFuncCalculateWSC_IELenForBeacon, p2pFuncGenerateWSC_IEForBeacon}	/* 221 */
-#endif
-	, {0, p2pFuncCalculateP2P_IE_NoA, p2pFuncGenerateP2P_IE_NoA}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+	   rsnGenerateWPAIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
+	   rsnGenerateRSNIE}	/* 48 */
+	, {0, p2pFuncCalculateP2p_IELenForBeacon,
+	   p2pFuncGenerateP2p_IEForBeacon}	/* 221 */
+	, {0, p2pFuncCalculateWSC_IELenForBeacon,
+	   p2pFuncGenerateWSC_IEForBeacon}	/* 221 */
+	, {0, p2pFuncCalculateP2P_IE_NoA,
+	   p2pFuncGenerateP2P_IE_NoA}	/* 221 */
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 #if CFG_SUPPORT_802_11AC
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmRspGenerateVhtCapIE}	/*191 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL, rlmRspGenerateVhtOpIE}	/*192 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL, rlmRspGenerateVhtOpNotificationIE}	/*199 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL,
+	   rlmRspGenerateVhtCapIE}	/*191 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
+	   rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
+	   rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
-	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
+	   rlmGenerateMTKOuiIE}	/* 221 */
 #endif
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_CSA), NULL, rlmGenerateCsaIE}	/* 37 */
+	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_CSA), NULL,
+	   rlmGenerateCsaIE}	/* 37 */
 #endif
 
 };
 
 struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
-	{(ELEM_HDR_LEN + (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES)), NULL, bssGenerateExtSuppRate_IE}	/* 50 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL, rlmRspGenerateErpIE}	/* 42 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL, rlmRspGenerateHtCapIE}	/* 45 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL, rlmRspGenerateHtOpIE}	/* 61 */
+	{(ELEM_HDR_LEN + (RATE_NUM_SW - ELEM_MAX_LEN_SUP_RATES)), NULL,
+	 bssGenerateExtSuppRate_IE}	/* 50 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL,
+	   rlmRspGenerateErpIE}	/* 42 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL,
+	   rlmRspGenerateHtCapIE}	/* 45 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
+	   rlmRspGenerateHtOpIE}	/* 61 */
 #if CFG_ENABLE_WIFI_DIRECT
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNIE}	/* 48 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL, rlmRspGenerateObssScanIE}	/* 74 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL,
+	   rsnGenerateRSNIE}	/* 48 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_OBSS_SCAN), NULL,
+	   rlmRspGenerateObssScanIE}	/* 74 */
 #endif
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL, rlmRspGenerateExtCapIE}	/* 127 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL, rsnGenerateWpaNoneIE}	/* 221 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_PARAM), NULL, mqmGenerateWmmParamIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP), NULL,
+	   rlmRspGenerateExtCapIE}	/* 127 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WPA), NULL,
+	   rsnGenerateWpaNoneIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_WMM_PARAM), NULL,
+	   mqmGenerateWmmParamIE}	/* 221 */
 #if CFG_SUPPORT_802_11AC
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL, rlmRspGenerateVhtCapIE}	/*191 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL, rlmRspGenerateVhtOpIE}	/*192 */
-	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL, rlmRspGenerateVhtOpNotificationIE}	/*199 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP), NULL,
+	   rlmRspGenerateVhtCapIE}	/*191 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP), NULL,
+	   rlmRspGenerateVhtOpIE}	/*192 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION), NULL,
+	   rlmRspGenerateVhtOpNotificationIE}	/*199 */
 #endif
 #if CFG_SUPPORT_MTK_SYNERGY
-	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}	/* 221 */
+	, {(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL,
+	   rlmGenerateMTKOuiIE}	/* 221 */
 #endif
 
 };
 
 #endif /* CFG_SUPPORT_ADHOC || CFG_SUPPORT_AAA */
 
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                           P R I V A T E   D A T A
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+/******************************************************************************
+ *                                 M A C R O S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
-/*----------------------------------------------------------------------------*/
-/* Routines for all Operation Modes                                           */
-/*----------------------------------------------------------------------------*/
+/******************************************************************************
+ *                              F U N C T I O N S
+ ******************************************************************************
+ */
+/*---------------------------------------------------------------------------*/
+/* Routines for all Operation Modes                                          */
+/*---------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function will decide PHY type set of STA_RECORD_T by given BSS_DESC_T for
-*        Infrastructure or AdHoc Mode.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prBssDesc              Received Beacon/ProbeResp from this STA
-* @param[out] prStaRec              StaRec to be decided PHY type set
-*
-* @retval   VOID
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function will decide PHY type set of STA_RECORD_T by given
+ *        BSS_DESC_T for Infrastructure or AdHoc Mode.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prBssDesc              Received Beacon/ProbeResp from this STA
+ * @param[out] prStaRec              StaRec to be decided PHY type set
+ *
+ * @retval   VOID
+ */
+/*---------------------------------------------------------------------------*/
 void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 				  IN struct BSS_DESC *prBssDesc,
 				  OUT struct STA_RECORD *prStaRec)
@@ -259,15 +287,15 @@ void bssDetermineStaRecPhyTypeSet(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will decide PHY type set of BSS_INFO for
-*        AP Mode.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] fgIsApMode             Legacy AP mode or P2P GO
-* @param[out] prBssInfo             BssInfo to be decided PHY type set
-*
-* @retval   VOID
-*/
+ * @brief This function will decide PHY type set of BSS_INFO for
+ *        AP Mode.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] fgIsApMode             Legacy AP mode or P2P GO
+ * @param[out] prBssInfo             BssInfo to be decided PHY type set
+ *
+ * @retval   VOID
+ */
 /*----------------------------------------------------------------------------*/
 void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 				     IN u_int8_t fgIsPureAp,
@@ -308,19 +336,20 @@ void bssDetermineApBssInfoPhyTypeSet(IN struct ADAPTER *prAdapter,
 
 }
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function will create or reset a STA_RECORD_T by given BSS_DESC_T for
-*        Infrastructure or AdHoc Mode.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] eStaType               Assign STA Type for this STA_RECORD_T
-* @param[in] eNetTypeIndex          Assign Net Type Index for this STA_RECORD_T
-* @param[in] prBssDesc              Received Beacon/ProbeResp from this STA
-*
-* @retval   Pointer to STA_RECORD_T
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function will create or reset a STA_RECORD_T by given BSS_DESC_T
+ *        for Infrastructure or AdHoc Mode.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] eStaType               Assign STA Type for this STA_RECORD_T
+ * @param[in] eNetTypeIndex          Assign Net Type Index for this
+ *                                   STA_RECORD_T
+ * @param[in] prBssDesc              Received Beacon/ProbeResp from this STA
+ *
+ * @retval   Pointer to STA_RECORD_T
+ */
+/*---------------------------------------------------------------------------*/
 struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 					      IN enum ENUM_STA_TYPE eStaType,
 					      IN uint8_t ucBssIndex,
@@ -352,7 +381,9 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 
 		prStaRec->ucStaState = STA_STATE_1;
 		prStaRec->ucJoinFailureCount = 0;
-		/* TODO(Kevin): If this is an old entry, we may also reset the ucJoinFailureCount to 0. */
+		/* TODO(Kevin): If this is an old entry,
+		 * we may also reset the ucJoinFailureCount to 0.
+		 */
 	}
 	/* 4 <2> Update information from BSS_DESC_T to current P_STA_RECORD_T */
 	prStaRec->u2CapInfo = prBssDesc->u2CapInfo;
@@ -398,7 +429,7 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 			prStaRec->ucNonHTBasicPhyType = PHY_TYPE_ERP_INDEX;
 		} else if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_OFDM) {
 			prStaRec->ucNonHTBasicPhyType = PHY_TYPE_OFDM_INDEX;
-		} else {	/* if (ucNonHTPhyTypeSet & PHY_TYPE_HR_DSSS_INDEX) */
+		} else {/* if (ucNonHTPhyTypeSet & PHY_TYPE_HR_DSSS_INDEX) */
 
 			prStaRec->ucNonHTBasicPhyType = PHY_TYPE_HR_DSSS_INDEX;
 		}
@@ -409,7 +440,9 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 		ASSERT(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N);
 
 		{
-			/* TODO(Kevin): which value should we set for 11n ? ERP ? */
+			/* TODO(Kevin): which value should we set
+			 *    for 11n ? ERP ?
+			 */
 			prStaRec->ucNonHTBasicPhyType = PHY_TYPE_HR_DSSS_INDEX;
 		}
 
@@ -429,7 +462,8 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 		if (prBssDesc->ucDTIMPeriod)
 			prStaRec->ucDTIMPeriod = prBssDesc->ucDTIMPeriod;
 		else
-			prStaRec->ucDTIMPeriod = 0;	/* Means that TIM was not parsed. */
+			prStaRec->ucDTIMPeriod = 0;
+		/* Means that TIM was not parsed. */
 
 	}
 	/* 4 <4> Update default value */
@@ -447,17 +481,17 @@ struct STA_RECORD *bssCreateStaRecFromBssDesc(IN struct ADAPTER *prAdapter,
 
 }				/* end of bssCreateStaRecFromBssDesc() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the Null Data frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] pucBuffer              Pointer to the frame buffer.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function will compose the Null Data frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] pucBuffer              Pointer to the frame buffer.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ *
+ * @return (none)
+ */
+/*---------------------------------------------------------------------------*/
 void bssComposeNullFrame(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer,
 			 IN struct STA_RECORD *prStaRec)
 {
@@ -500,7 +534,8 @@ void bssComposeNullFrame(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer,
 	/* 4 <2> Compose the Null frame */
 	/* Fill the Frame Control field. */
 	/* WLAN_SET_FIELD_16(&prNullFrame->u2FrameCtrl, u2FrameCtrl); */
-	prNullFrame->u2FrameCtrl = u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	prNullFrame->u2FrameCtrl = u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	/* Fill the Address 1 field with Target Peer Address. */
 	COPY_MAC_ADDR(prNullFrame->aucAddr1, prStaRec->aucMacAddr);
@@ -511,26 +546,28 @@ void bssComposeNullFrame(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuffer,
 	/* Fill the Address 3 field with Target BSSID. */
 	COPY_MAC_ADDR(prNullFrame->aucAddr3, prBssInfo->aucBSSID);
 
-	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO, so we need to clear it). */
+	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
+	 * so we need to clear it).
+	 */
 	prNullFrame->u2SeqCtrl = 0;
 
 	return;
 
 }				/* end of bssComposeNullFrameHeader() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the QoS Null Data frame.
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] pucBuffer              Pointer to the frame buffer.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T.
-* @param[in] ucUP                   User Priority.
-* @param[in] fgSetEOSP              Set the EOSP bit.
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function will compose the QoS Null Data frame.
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] pucBuffer              Pointer to the frame buffer.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T.
+ * @param[in] ucUP                   User Priority.
+ * @param[in] fgSetEOSP              Set the EOSP bit.
+ *
+ * @return (none)
+ */
+/*---------------------------------------------------------------------------*/
 void
 bssComposeQoSNullFrame(IN struct ADAPTER *prAdapter,
 		       IN uint8_t *pucBuffer, IN struct STA_RECORD *prStaRec,
@@ -576,7 +613,8 @@ bssComposeQoSNullFrame(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Compose the QoS Null frame */
 	/* Fill the Frame Control field. */
 	/* WLAN_SET_FIELD_16(&prQoSNullFrame->u2FrameCtrl, u2FrameCtrl); */
-	prQoSNullFrame->u2FrameCtrl = u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	prQoSNullFrame->u2FrameCtrl = u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	/* Fill the Address 1 field with Target Peer Address. */
 	COPY_MAC_ADDR(prQoSNullFrame->aucAddr1, prStaRec->aucMacAddr);
@@ -587,7 +625,9 @@ bssComposeQoSNullFrame(IN struct ADAPTER *prAdapter,
 	/* Fill the Address 3 field with Target BSSID. */
 	COPY_MAC_ADDR(prQoSNullFrame->aucAddr3, prBssInfo->aucBSSID);
 
-	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO, so we need to clear it). */
+	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
+	 * so we need to clear it).
+	 */
 	prQoSNullFrame->u2SeqCtrl = 0;
 
 	u2QosControl = (uint16_t) (ucUP & WMM_QC_UP_MASK);
@@ -596,24 +636,25 @@ bssComposeQoSNullFrame(IN struct ADAPTER *prAdapter,
 		u2QosControl |= WMM_QC_EOSP;
 
 	/* WLAN_SET_FIELD_16(&prQoSNullFrame->u2QosCtrl, u2QosControl); */
-	prQoSNullFrame->u2QosCtrl = u2QosControl;	/* NOTE(Kevin): Optimized for ARM */
+	prQoSNullFrame->u2QosCtrl = u2QosControl;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	return;
 
 }				/* end of bssComposeQoSNullFrameHeader() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief Send the Null Frame
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-* @param[in] pfTxDoneHandler    TX Done call back function
-*
-* @retval WLAN_STATUS_RESOURCE  No available resources to send frame.
-* @retval WLAN_STATUS_SUCCESS   Succe]ss.
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief Send the Null Frame
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ * @param[in] pfTxDoneHandler    TX Done call back function
+ *
+ * @retval WLAN_STATUS_RESOURCE  No available resources to send frame.
+ * @retval WLAN_STATUS_SUCCESS   Succe]ss.
+ */
+/*---------------------------------------------------------------------------*/
 uint32_t
 bssSendNullFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec,
 		 IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
@@ -635,54 +676,6 @@ bssSendNullFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec,
 	bssComposeNullFrame(prAdapter,
 			    (uint8_t *) ((unsigned long)prMsduInfo->prPacket +
 					 MAC_TX_RESERVED_FIELD), prStaRec);
-#if 0
-	/* 4 <3> Update information of MSDU_INFO_T */
-	TXM_SET_DATA_PACKET(
-				   /* STA_REC ptr */ prStaRec,
-				   /* MSDU_INFO ptr */ prMsduInfo,
-				   /* MAC HDR ptr */
-				   (prMsduInfo->pucBuffer +
-				    MAC_TX_RESERVED_FIELD),
-				   /* MAC HDR length */ WLAN_MAC_HEADER_LEN,
-				   /* PAYLOAD ptr */
-				   (prMsduInfo->pucBuffer +
-				    MAC_TX_RESERVED_FIELD +
-				    WLAN_MAC_HEADER_LEN),
-				   /* PAYLOAD length */ 0,
-				   /* Network Type Index */
-				   (uint8_t) prStaRec->ucNetTypeIndex,
-				   /* TID */ 0 /* BE: AC1 */,
-				   /* Flag 802.11 */ TRUE,
-				   /* Pkt arrival time */
-				   0 /* TODO: Obtain the system time */,
-				   /* Resource TC */ 0 /* Irrelevant */,
-				   /* Flag 802.1x */ FALSE,
-				   /* TX-done callback */ pfTxDoneHandler,
-				   /* PS forwarding type */
-				   PS_FORWARDING_TYPE_NON_PS,
-				   /* PS Session ID */ 0 /* Irrelevant */,
-				   /* Flag fixed rate */ TRUE,
-				   /* Fixed tx rate */
-				   g_aprBssInfo[prStaRec->
-					ucNetTypeIndex]->
-					ucHwDefaultFixedRateCode,
-				   /* Fixed-rate retry */
-				   BSS_DEFAULT_CONN_TEST_NULL_FRAME_RETRY_LIMIT,
-				   /* PAL LLH */ 0 /* Irrelevant */,
-				   /* ACL SN */ 0 /* Irrelevant */,
-				   /* Flag No Ack */ FALSE
-	    );
-
-	/* Terminate with a NULL pointer */
-	NIC_HIF_TX_SET_NEXT_MSDU_INFO(prMsduInfo, NULL);
-
-	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
-
-	/* Indicate the packet to TXM */
-	/* 4 <4> Inform TXM to send this Null frame. */
-	txmSendFwDataPackets(prMsduInfo);
-#endif
-
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
 		     prStaRec->ucBssIndex,
@@ -696,18 +689,18 @@ bssSendNullFrame(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec,
 
 }				/* end of bssSendNullFrame() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief Send the QoS Null Frame
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prStaRec           Pointer to the STA_RECORD_T
-* @param[in] pfTxDoneHandler    TX Done call back function
-*
-* @retval WLAN_STATUS_RESOURCE  No available resources to send frame.
-* @retval WLAN_STATUS_SUCCESS   Success.
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief Send the QoS Null Frame
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prStaRec           Pointer to the STA_RECORD_T
+ * @param[in] pfTxDoneHandler    TX Done call back function
+ *
+ * @retval WLAN_STATUS_RESOURCE  No available resources to send frame.
+ * @retval WLAN_STATUS_SUCCESS   Success.
+ */
+/*---------------------------------------------------------------------------*/
 uint32_t
 bssSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 		    IN struct STA_RECORD *prStaRec, IN uint8_t ucUP,
@@ -732,53 +725,6 @@ bssSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 				*) ((unsigned long)(prMsduInfo->prPacket) +
 				    MAC_TX_RESERVED_FIELD), prStaRec, ucUP,
 			       FALSE);
-#if 0
-	/* 4 <3> Update information of MSDU_INFO_T */
-	TXM_SET_DATA_PACKET(
-				   /* STA_REC ptr */ prStaRec,
-				   /* MSDU_INFO ptr */ prMsduInfo,
-				   /* MAC HDR ptr */
-				   (prMsduInfo->pucBuffer +
-				    MAC_TX_RESERVED_FIELD),
-				   /* MAC HDR length */ WLAN_MAC_HEADER_QOS_LEN,
-				   /* PAYLOAD ptr */
-				   (prMsduInfo->pucBuffer +
-				    MAC_TX_RESERVED_FIELD +
-				    WLAN_MAC_HEADER_QOS_LEN),
-				   /* PAYLOAD length */ 0,
-				   /* Network Type Index */
-				   (uint8_t) prStaRec->ucNetTypeIndex,
-				   /* TID */ 0 /* BE: AC1 */,
-				   /* Flag 802.11 */ TRUE,
-				   /* Pkt arrival time */
-				   0 /* TODO: Obtain the system time */,
-				   /* Resource TC */ 0 /* Irrelevant */,
-				   /* Flag 802.1x */ FALSE,
-				   /* TX-done callback */ pfTxDoneHandler,
-				   /* PS forwarding type */
-				   PS_FORWARDING_TYPE_NON_PS,
-				   /* PS Session ID */ 0 /* Irrelevant */,
-				   /* Flag fixed rate */ TRUE,
-				   /* Fixed tx rate */
-				   g_aprBssInfo[prStaRec->
-						ucNetTypeIndex]->
-						ucHwDefaultFixedRateCode,
-				   /* Fixed-rate retry */
-				   TXM_DEFAULT_DATA_FRAME_RETRY_LIMIT,
-				   /* PAL LLH */ 0 /* Irrelevant */,
-				   /* ACL SN */ 0 /* Irrelevant */,
-				   /* Flag No Ack */ FALSE
-	    );
-
-	/* Terminate with a NULL pointer */
-	NIC_HIF_TX_SET_NEXT_MSDU_INFO(prMsduInfo, NULL);
-
-	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
-
-	/* Indicate the packet to TXM */
-	/* 4 <4> Inform TXM to send this Null frame. */
-	txmSendFwDataPackets(prMsduInfo);
-#endif
 
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
@@ -795,20 +741,20 @@ bssSendQoSNullFrame(IN struct ADAPTER *prAdapter,
 }				/* end of bssSendQoSNullFrame() */
 
 #if (CFG_SUPPORT_ADHOC) || (CFG_SUPPORT_AAA)
-/*----------------------------------------------------------------------------*/
-/* Routines for both IBSS(AdHoc) and BSS(AP)                                  */
-/*----------------------------------------------------------------------------*/
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
+/* Routines for both IBSS(AdHoc) and BSS(AP)                                 */
+/*---------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to generate Information Elements of Extended
-*        Support Rate
-*
-* @param[in] prAdapter      Pointer to the Adapter structure.
-* @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function is used to generate Information Elements of Extended
+ *        Support Rate
+ *
+ * @param[in] prAdapter      Pointer to the Adapter structure.
+ * @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
+ *
+ * @return (none)
+ */
+/*---------------------------------------------------------------------------*/
 void bssGenerateExtSuppRate_IE(IN struct ADAPTER *prAdapter,
 			       IN struct MSDU_INFO *prMsduInfo)
 {
@@ -847,18 +793,19 @@ void bssGenerateExtSuppRate_IE(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of bssGenerateExtSuppRate_IE() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to compose Common Information Elements for Beacon
-*        or Probe Response Frame.
-*
-* @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
-* @param[in] prBssInfo      Pointer to the BSS_INFO_T.
-* @param[in] pucDestAddr    Pointer to the Destination Address, if NULL, means Beacon.
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function is used to compose Common Information Elements for
+ *        Beacon or Probe Response Frame.
+ *
+ * @param[in] prMsduInfo     Pointer to the composed MSDU_INFO_T.
+ * @param[in] prBssInfo      Pointer to the BSS_INFO_T.
+ * @param[in] pucDestAddr    Pointer to the Destination Address,
+ *                           if NULL, means Beacon.
+ *
+ * @return (none)
+ */
+/*---------------------------------------------------------------------------*/
 void
 bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 				      IN struct BSS_INFO *prBssInfo,
@@ -881,8 +828,11 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 	if ((!pucDestAddr)
 	    && (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
 		/* For Beacon */
-		if (prBssInfo->eHiddenSsidType == ENUM_HIDDEN_SSID_ZERO_CONTENT) {
-			/* clear the data, but keep the correct length of the SSID */
+		if (prBssInfo->eHiddenSsidType ==
+			ENUM_HIDDEN_SSID_ZERO_CONTENT) {
+			/* clear the data, but keep the correct
+			 * length of the SSID
+			 */
 			SSID_IE(pucBuffer)->ucLength = prBssInfo->ucSSIDLen;
 			kalMemZero(SSID_IE(pucBuffer)->aucSSID,
 				   prBssInfo->ucSSIDLen);
@@ -951,72 +901,14 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 	/* 4 <5> TIM element, ID: 5 */
 	if ((!pucDestAddr) &&	/* For Beacon only. */
 	    (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
-
 #if CFG_ENABLE_WIFI_DIRECT
 		/*no fgIsP2PRegistered protect */
 		if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
-#if 0
-			struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
-			uint8_t ucBitmapControl = 0;
-			uint32_t u4N1, u4N2;
-
-			prP2pSpecificBssInfo =
-			    &(prAdapter->rWifiVar.rP2pSpecificBssInfo);
-
-			/* Clear existing value. */
-			prP2pSpecificBssInfo->ucBitmapCtrl = 0;
-			kalMemZero
-			    (prP2pSpecificBssInfo->aucPartialVirtualBitmap,
-			     sizeof
-			     (prP2pSpecificBssInfo->aucPartialVirtualBitmap));
-
 			/* IEEE 802.11 2007 - 7.3.2.6 */
 			TIM_IE(pucBuffer)->ucId = ELEM_ID_TIM;
-			TIM_IE(pucBuffer)->ucDTIMCount = prBssInfo->ucDTIMCount;
-			TIM_IE(pucBuffer)->ucDTIMPeriod =
-			    prBssInfo->ucDTIMPeriod;
-
-			/* Setup DTIM Count for next TBTT. */
-			if (prBssInfo->ucDTIMCount == 0)
-				/* 3 *** pmQueryBufferedBCAST(); */
-
-				/* 3 *** pmQueryBufferedPSNode(); */
-				/* TODO(Kevin): Call PM Module here to loop all STA_RECORD_Ts and it
-				 * will call bssSetTIMBitmap to toggle the Bitmap.
-				 */
-
-				/* Set Virtual Bitmap for UCAST */
-				/* Find the smallest number. */
-				/* Find the largest even number. */
-				u4N1 =
-				    (prP2pSpecificBssInfo->u2SmallestAID >> 4)
-				    << 1;
-			u4N2 = prP2pSpecificBssInfo->u2LargestAID >> 3;
-
-			ASSERT(u4N2 >= u4N1);
-
-			kalMemCopy(TIM_IE(pucBuffer)->aucPartialVirtualMap,
-				   &prP2pSpecificBssInfo->
-				   aucPartialVirtualBitmap[u4N1],
-				   ((u4N2 - u4N1) + 1));
-
-			/* Set Virtual Bitmap for BMCAST */
-			/* BMC bit only indicated when DTIM count == 0. */
-			if (prBssInfo->ucDTIMCount == 0)
-				ucBitmapControl =
-				    prP2pSpecificBssInfo->ucBitmapCtrl;
-
-			TIM_IE(pucBuffer)->ucBitmapControl =
-			    ucBitmapControl | (uint8_t) u4N1;
-
-			TIM_IE(pucBuffer)->ucLength = ((u4N2 - u4N1) + 4);
-
-			prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
-#else
-
-			/* IEEE 802.11 2007 - 7.3.2.6 */
-			TIM_IE(pucBuffer)->ucId = ELEM_ID_TIM;
-			/* NOTE: fixed PVB length (AID is allocated from 8 ~ 15 only) */
+			/* NOTE: fixed PVB length
+			 * (AID is allocated from 8 ~ 15 only)
+			 */
 			TIM_IE(pucBuffer)->ucLength =
 			    (3 +
 			     MAX_LEN_TIM_PARTIAL_BMP) /*((u4N2 - u4N1) + 4) */;
@@ -1031,9 +923,6 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 
 			prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 			pucBuffer += IE_SIZE(pucBuffer);
-
-#endif
-
 		} else
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 		{
@@ -1041,8 +930,8 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 			 *              2. BOW - Didn't Support BCAST and PS.
 			 */
 		}
-
 	}
+
 	/* 4 <6> Fill the DS Parameter Set element. */
 	if (prBssInfo->ucCountryIELen != 0) {
 		COUNTRY_IE(pucBuffer)->ucId = ELEM_ID_COUNTRY_INFO;
@@ -1059,23 +948,24 @@ bssBuildBeaconProbeRespFrameCommonIEs(IN struct MSDU_INFO *prMsduInfo,
 
 		prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 	}
-}				/* end of bssBuildBeaconProbeRespFrameCommonIEs() */
+}			/* end of bssBuildBeaconProbeRespFrameCommonIEs() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief This function will compose the Beacon/Probe Response frame header and
-*        its fixed fields.
-*
-* @param[in] pucBuffer              Pointer to the frame buffer.
-* @param[in] pucDestAddr            Pointer to the Destination Address, if NULL, means Beacon.
-* @param[in] pucOwnMACAddress       Given Our MAC Address.
-* @param[in] pucBSSID               Given BSSID of the BSS.
-* @param[in] u2BeaconInterval       Given Beacon Interval.
-* @param[in] u2CapInfo              Given Capability Info.
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief This function will compose the Beacon/Probe Response frame header
+ *        and its fixed fields.
+ *
+ * @param[in] pucBuffer              Pointer to the frame buffer.
+ * @param[in] pucDestAddr            Pointer to the Destination Address,
+ *                                   if NULL, means Beacon.
+ * @param[in] pucOwnMACAddress       Given Our MAC Address.
+ * @param[in] pucBSSID               Given BSSID of the BSS.
+ * @param[in] u2BeaconInterval       Given Beacon Interval.
+ * @param[in] u2CapInfo              Given Capability Info.
+ *
+ * @return (none)
+ */
+/*---------------------------------------------------------------------------*/
 void
 bssComposeBeaconProbeRespFrameHeaderAndFF(IN uint8_t *pucBuffer,
 					  IN uint8_t *pucDestAddr,
@@ -1106,7 +996,8 @@ bssComposeBeaconProbeRespFrameHeaderAndFF(IN uint8_t *pucBuffer,
 		pucDestAddr = aucBCAddr;
 	}
 	/* WLAN_SET_FIELD_16(&prBcnProbRspFrame->u2FrameCtrl, u2FrameCtrl); */
-	prBcnProbRspFrame->u2FrameCtrl = u2FrameCtrl;	/* NOTE(Kevin): Optimized for ARM */
+	prBcnProbRspFrame->u2FrameCtrl = u2FrameCtrl;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	/* Fill the DA field with BCAST MAC ADDR or TA of ProbeReq. */
 	COPY_MAC_ADDR(prBcnProbRspFrame->aucDestAddr, pucDestAddr);
@@ -1117,31 +1008,39 @@ bssComposeBeaconProbeRespFrameHeaderAndFF(IN uint8_t *pucBuffer,
 	/* Fill the BSSID field with current BSSID. */
 	COPY_MAC_ADDR(prBcnProbRspFrame->aucBSSID, pucBSSID);
 
-	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO, so we need to clear it). */
+	/* Clear the SEQ/FRAG_NO field(HW won't overide the FRAG_NO,
+	 * so we need to clear it).
+	 */
 	prBcnProbRspFrame->u2SeqCtrl = 0;
 
-	/* 4 <2> Compose the frame body's common fixed field part of the Beacon /ProbeResp frame. */
+	/* 4 <2> Compose the frame body's common fixed field part of the Beacon
+	 *       / ProbeResp frame.
+	 */
 	/* MAC will update TimeStamp field */
 
 	/* Fill the Beacon Interval field. */
-	/* WLAN_SET_FIELD_16(&prBcnProbRspFrame->u2BeaconInterval, u2BeaconInterval); */
-	prBcnProbRspFrame->u2BeaconInterval = u2BeaconInterval;	/* NOTE(Kevin): Optimized for ARM */
+	/* WLAN_SET_FIELD_16(&prBcnProbRspFrame->u2BeaconInterval,
+	 *      u2BeaconInterval);
+	 */
+	prBcnProbRspFrame->u2BeaconInterval = u2BeaconInterval;
+	/* NOTE(Kevin): Optimized for ARM */
 
 	/* Fill the Capability Information field. */
 	/* WLAN_SET_FIELD_16(&prBcnProbRspFrame->u2CapInfo, u2CapInfo); */
-	prBcnProbRspFrame->u2CapInfo = u2CapInfo;	/* NOTE(Kevin): Optimized for ARM */
-}				/* end of bssComposeBeaconProbeRespFrameHeaderAndFF() */
+	prBcnProbRspFrame->u2CapInfo = u2CapInfo;
+	/* NOTE(Kevin): Optimized for ARM */
+}		/* end of bssComposeBeaconProbeRespFrameHeaderAndFF() */
 
-/*----------------------------------------------------------------------------*/
+/*---------------------------------------------------------------------------*/
 /*!
-* @brief Update the Beacon Frame Template to FW for AIS AdHoc and P2P GO.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] ucBssIndex         Specify which network reply the Probe Response.
-*
-* @retval WLAN_STATUS_SUCCESS   Success.
-*/
-/*----------------------------------------------------------------------------*/
+ * @brief Update the Beacon Frame Template to FW for AIS AdHoc and P2P GO.
+ *
+ * @param[in] prAdapter         Pointer to the Adapter structure.
+ * @param[in] ucBssIndex        Specify which network reply the Probe Response.
+ *
+ * @retval WLAN_STATUS_SUCCESS   Success.
+ */
+/*---------------------------------------------------------------------------*/
 uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucBssIndex)
 {
@@ -1162,7 +1061,9 @@ uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter,
 	/* For Beacon */
 	prMsduInfo = prBssInfo->prBeacon;
 
-	/* beacon prMsduInfo will be NULLify once BSS deactivated, so skip if it is */
+	/* beacon prMsduInfo will be NULLify once BSS deactivated,
+	 * so skip if it is
+	 */
 	if (prMsduInfo == NULL)
 		return WLAN_STATUS_SUCCESS;
 
@@ -1213,17 +1114,18 @@ uint32_t bssUpdateBeaconContent(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief Send the Beacon Frame(for BOW) or Probe Response Frame according to the given
-*        Destination Address.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] ucBssIndex         Specify which network reply the Probe Response.
-* @param[in] pucDestAddr        Pointer to the Destination Address to reply
-* @param[in] u4ControlFlags     Control flags for information on Probe Response.
-*
-* @retval WLAN_STATUS_RESOURCE  No available resources to send frame.
-* @retval WLAN_STATUS_SUCCESS   Success.
-*/
+ * @brief Send the Beacon Frame(for BOW) or Probe Response Frame according to
+ *        the given Destination Address.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] ucBssIndex         Specify which network reply the Probe Response.
+ * @param[in] pucDestAddr        Pointer to the Destination Address to reply
+ * @param[in] u4ControlFlags     Control flags for information on
+ *                               Probe Response.
+ *
+ * @retval WLAN_STATUS_RESOURCE  No available resources to send frame.
+ * @retval WLAN_STATUS_SUCCESS   Success.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t
 bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
@@ -1257,7 +1159,9 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 	/* 4 <1> Allocate a PKT_INFO_T for Beacon /Probe Response Frame */
 	/* Allocate a MSDU_INFO_T */
 
-	/* Init with MGMT Header Length + Length of Fixed Fields + Common IE Fields */
+	/* Init with MGMT Header Length + Length of Fixed Fields
+	 *     + Common IE Fields
+	 */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD +
 	    WLAN_MAC_MGMT_HEADER_LEN +
 	    TIMESTAMP_FIELD_LEN +
@@ -1266,8 +1170,8 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SSID) +
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_SUP_RATES) +
 	    (ELEM_HDR_LEN + ELEM_MAX_LEN_DS_PARAMETER_SET) +
-	    (ELEM_HDR_LEN + ELEM_MAX_LEN_IBSS_PARAMETER_SET) + (ELEM_HDR_LEN +
-					(3 + MAX_LEN_TIM_PARTIAL_BMP));
+	    (ELEM_HDR_LEN + ELEM_MAX_LEN_IBSS_PARAMETER_SET) +
+	    (ELEM_HDR_LEN + (3 + MAX_LEN_TIM_PARTIAL_BMP));
 
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
@@ -1302,29 +1206,25 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 #if CFG_ENABLE_WIFI_DIRECT
 	if (u4ControlFlags & BSS_PROBE_RESP_USE_P2P_DEV_ADDR) {
 		if (prAdapter->fgIsP2PRegistered) {
-			bssComposeBeaconProbeRespFrameHeaderAndFF(
-				(uint8_t *)((unsigned long)
-				(prMsduInfo->prPacket) +
-					MAC_TX_RESERVED_FIELD),
+			bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
+				((unsigned long)
+				(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
 				pucDestAddr,
 				prAdapter->rWifiVar.aucDeviceAddress,
 				prAdapter->rWifiVar.aucDeviceAddress,
 				DOT11_BEACON_PERIOD_DEFAULT,
-				(prBssInfo->u2CapInfo &
-					~(CAP_INFO_ESS | CAP_INFO_IBSS)));
+				(prBssInfo->u2CapInfo & ~(CAP_INFO_ESS
+							   | CAP_INFO_IBSS)));
 		}
 	} else
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 	{
-		bssComposeBeaconProbeRespFrameHeaderAndFF(
-			(uint8_t *)((unsigned long)
-			(prMsduInfo->prPacket) +
-				MAC_TX_RESERVED_FIELD),
-			pucDestAddr,
-			prBssInfo->aucOwnMacAddr,
-			prBssInfo->aucBSSID,
-			prBssInfo->u2BeaconInterval,
-			prBssInfo->u2CapInfo);
+		bssComposeBeaconProbeRespFrameHeaderAndFF((uint8_t *)
+			  ((unsigned long)
+			   (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
+			   pucDestAddr, prBssInfo->aucOwnMacAddr,
+			   prBssInfo->aucBSSID,
+			   prBssInfo->u2BeaconInterval, prBssInfo->u2CapInfo);
 	}
 
 	/* 4 <3> Update information of MSDU_INFO_T */
@@ -1338,7 +1238,9 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 		      BEACON_INTERVAL_FIELD_LEN + CAP_INFO_FIELD_LEN), NULL,
 		     MSDU_RATE_MODE_AUTO);
 
-	/* 4 <4> Compose the frame body's Common IEs of the Beacon/ProbeResp  frame. */
+	/* 4 <4> Compose the frame body's Common IEs of
+	 *       the Beacon/ProbeResp frame.
+	 */
 	bssBuildBeaconProbeRespFrameCommonIEs(prMsduInfo, prBssInfo,
 					      pucDestAddr);
 
@@ -1355,7 +1257,9 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 	nicTxSetPktLifeTime(prMsduInfo, 100);
 	nicTxSetPktRetryLimit(prMsduInfo, 2);
 
-	/* TODO(Kevin): Also release the unused tail room of the composed MMPDU */
+	/* TODO(Kevin):
+	 *    Also release the unused tail room of the composed MMPDU
+	 */
 
 	/* 4 <6> Inform TXM  to send this Beacon /Probe Response frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
@@ -1366,15 +1270,15 @@ bssSendBeaconProbeResponse(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will process the Rx Probe Request Frame and then send
-*        back the corresponding Probe Response Frame if the specified conditions
-*        were matched.
-*
-* @param[in] prAdapter          Pointer to the Adapter structure.
-* @param[in] prSwRfb            Pointer to SW RFB data structure.
-*
-* @retval WLAN_STATUS_SUCCESS   Always return success
-*/
+ * @brief This function will process the Rx Probe Request Frame and then send
+ *        back the corresponding Probe Response Frame if the specified
+ *        conditions were matched.
+ *
+ * @param[in] prAdapter          Pointer to the Adapter structure.
+ * @param[in] prSwRfb            Pointer to SW RFB data structure.
+ *
+ * @retval WLAN_STATUS_SUCCESS   Always return success
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 				IN struct SW_RFB *prSwRfb)
@@ -1399,7 +1303,9 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 	else
 		fgIsBcBssid = FALSE;
 
-	/* 4 <2> Check network conditions before reply Probe Response Frame (Consider Concurrent) */
+	/* 4 <2> Check network conditions before reply Probe Response Frame
+	 *         (Consider Concurrent)
+	 */
 	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucP2PDevBssIdx;
 	     ucBssIndex++) {
 
@@ -1469,263 +1375,16 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 
 }				/* end of bssProcessProbeRequest() */
 
-#if 0				/* NOTE(Kevin): condition check should move to P2P_FSM.c */
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will process the Rx Probe Request Frame and then send
-*        back the corresponding Probe Response Frame if the specified conditions
-*        were matched.
-*
-* @param[in] prSwRfb            Pointer to SW RFB data structure.
-*
-* @retval WLAN_STATUS_SUCCESS   Always return success
-*/
-/*----------------------------------------------------------------------------*/
-uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
-				IN struct SW_RFB *prSwRfb)
-{
-	struct WLAN_MAC_MGMT_HEADER *prMgtHdr;
-	struct BSS_INFO *prBssInfo;
-	struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
-	struct IE_SUPPORTED_RATE *prIeSupportedRate =
-	    (struct IE_SUPPORTED_RATE *)NULL;
-	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate =
-	    (struct IE_EXT_SUPPORTED_RATE *)NULL;
-	uint8_t *pucIE;
-	uint16_t u2IELength;
-	uint16_t u2Offset = 0;
-	uint8_t aucBCBSSID[] = BC_BSSID;
-	ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex;
-	u_int8_t fgReplyProbeResp;
-#if CFG_ENABLE_WIFI_DIRECT
-	u_int8_t fgP2PTargetDeviceFound;
-	uint8_t aucP2PWildcardSSID[] = P2P_WILDCARD_SSID;
-#endif
-
-	ASSERT(prSwRfb);
-
-	/* 4 <1> Parse Probe Req and Get SSID IE ptr */
-	prMgtHdr = (struct WLAN_MAC_MGMT_HEADER *)prSwRfb->pvHeader;
-
-	u2IELength = prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen;
-	pucIE =
-	    (uint8_t *) ((uint32_t) prSwRfb->pvHeader + prSwRfb->u2HeaderLen);
-
-	prIeSsid = (struct IE_SSID *)NULL;
-
-	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
-		switch (IE_ID(pucIE)) {
-		case ELEM_ID_SSID:
-			if ((!prIeSsid) && (IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID))
-				prIeSsid = (struct IE_SSID *)pucIE;
-
-			break;
-
-		case ELEM_ID_SUP_RATES:
-			/* NOTE(Kevin): Buffalo WHR-G54S's supported rate set IE exceed 8.
-			 * IE_LEN(pucIE) == 12, "1(B), 2(B), 5.5(B), 6(B), 9(B), 11(B),
-			 * 12(B), 18(B), 24(B), 36(B), 48(B), 54(B)"
-			 */
-			/* if (IE_LEN(pucIE) <= ELEM_MAX_LEN_SUP_RATES) { */
-			if (IE_LEN(pucIE) <= RATE_NUM_SW)
-				prIeSupportedRate = SUP_RATES_IE(pucIE);
-
-			break;
-
-		case ELEM_ID_EXTENDED_SUP_RATES:
-			prIeExtSupportedRate = EXT_SUP_RATES_IE(pucIE);
-			break;
-
-#if CFG_ENABLE_WIFI_DIRECT
-			/* TODO: P2P IE & WCS IE parsing for P2P. */
-		case ELEM_ID_P2P:
-
-			break;
-#endif
-
-			/* no default */
-		}
-	}			/* end of IE_FOR_EACH */
-
-	/* 4 <2> Check network conditions before reply Probe Response Frame (Consider Concurrent) */
-	for (eNetTypeIndex = NETWORK_TYPE_AIS_INDEX;
-	     eNetTypeIndex < NETWORK_TYPE_INDEX_NUM; eNetTypeIndex++) {
-
-		if (!IS_NET_ACTIVE(prAdapter, eNetTypeIndex))
-			continue;
-
-		prBssInfo = &(prAdapter->rWifiVar.arBssInfo[eNetTypeIndex]);
-
-		if (UNEQUAL_MAC_ADDR(aucBCBSSID, prMgtHdr->aucBSSID) &&
-		    UNEQUAL_MAC_ADDR(prBssInfo->aucBSSID, prMgtHdr->aucBSSID)) {
-			/* BSSID not Wildcard BSSID. */
-			continue;
-		}
-
-		fgReplyProbeResp = FALSE;
-
-		if (eNetTypeIndex == NETWORK_TYPE_AIS_INDEX) {
-
-			if (prBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
-
-				/* TODO(Kevin): Check if we are IBSS Master. */
-
-				if (prIeSsid) {
-					if ((prIeSsid->ucLength == BC_SSID_LEN) ||	/* WILDCARD SSID */
-					    EQUAL_SSID(prBssInfo->aucSSID,
-						       prBssInfo->ucSSIDLen,
-						       prIeSsid->aucSSID,
-						       prIeSsid->ucLength))
-						fgReplyProbeResp = TRUE;
-
-				}
-
-			}
-		}
-#if CFG_ENABLE_WIFI_DIRECT
-		else if (eNetTypeIndex == NETWORK_TYPE_P2P_INDEX) {
-
-			/* TODO(Kevin): Move following lines to p2p_fsm.c */
-
-			if ((prIeSsid) &&
-			    ((prIeSsid->ucLength == BC_SSID_LEN) ||
-			     (EQUAL_SSID(aucP2PWildcardSSID,
-					 P2P_WILDCARD_SSID_LEN,
-					 prIeSsid->aucSSID,
-					 prIeSsid->ucLength)))) {
-				if (p2pFsmRunEventRxProbeRequestFrame
-				    (prAdapter, prSwRfb)) {
-					/* Extand channel request time & cancel scan request. */
-					struct P2P_FSM_INFO *prP2pFsmInfo =
-					    (struct P2P_FSM_INFO *)NULL;
-
-					/* TODO: RX probe request may not caused by LISTEN state. */
-					/* TODO: It can be GO. */
-					/* Generally speaking, cancel a non-exist scan request is fine.
-					 * We can check P2P FSM here for only LISTEN state.
-					 */
-
-					struct MSG_SCN_SCAN_CANCEL
-					*prScanCancelMsg;
-
-					prP2pFsmInfo =
-					    prAdapter->rWifiVar.prP2pFsmInfo;
-
-					/* Abort JOIN process. */
-					prScanCancelMsg =
-					    (struct MSG_SCN_SCAN_CANCEL *)
-					    cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-							sizeof(struct
-						       MSG_SCN_SCAN_CANCEL));
-					if (!prScanCancelMsg) {
-						ASSERT(0);	/* Can't abort SCN FSM */
-						continue;
-					}
-
-					prScanCancelMsg->rMsgHdr.eMsgId =
-					    MID_P2P_SCN_SCAN_CANCEL;
-					prScanCancelMsg->ucSeqNum =
-					    prP2pFsmInfo->ucSeqNumOfScnMsg;
-					prScanCancelMsg->ucNetTypeIndex =
-					    (uint8_t) NETWORK_TYPE_P2P_INDEX;
-					prScanCancelMsg->fgIsChannelExt = TRUE;
-
-					mboxSendMsg(prAdapter,
-						    MBOX_ID_0,
-						    (struct MSG_HDR *)
-						    prScanCancelMsg,
-						    MSG_SEND_METHOD_BUF);
-				}
-			} else {
-				/* 1. Probe Request without SSID.
-				 * 2. Probe Request with SSID not Wildcard SSID & not P2P Wildcard SSID.
-				 */
-				continue;
-			}
-
-#if 0				/* Frog */
-			if (prAdapter->rWifiVar.prP2pFsmInfo->eCurrentState ==
-			    P2P_STATE_LISTEN) {
-
-				if (prIeSupportedRate || prIeExtSupportedRate) {
-					uint16_t u2OperationalRateSet,
-					    u2BSSBasicRateSet;
-					u_int8_t fgIsUnknownBssBasicRate;
-					/* Ignore any Basic Bit */
-					rateGetRateSetFromIEs(prIeSupportedRate,
-					      prIeExtSupportedRate,
-					      &u2OperationalRateSet,
-					      &u2BSSBasicRateSet,
-					      &fgIsUnknownBssBasicRate);
-
-					if (u2OperationalRateSet &
-					    ~RATE_SET_HR_DSSS)
-						continue;
-
-				}
-			}
-			/* TODO: Check channel time before first check point to: */
-			/* If Target device is selected:
-			 *     1. Send XXXX request frame.
-			 * else
-			 *     1. Send Probe Response frame.
-			 */
-
-			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-				/* TODO(Kevin): During PROVISION state, can we reply Probe Response ? */
-
-				/* TODO(Kevin):
-				 * If we are GO, accept legacy client --> accept Wildcard SSID
-				 * If we are in Listen State, accept only P2P Device --> check P2P IE and WPS IE
-				 */
-
-				if (prIeSsid) {
-					uint8_t aucSSID[] = P2P_WILDCARD_SSID;
-
-					if ((prIeSsid->ucLength == BC_SSID_LEN) ||	/* WILDCARD SSID */
-					    EQUAL_SSID(prBssInfo->aucSSID,
-						       prBssInfo->ucSSIDLen,
-						       prIeSsid->aucSSID,
-						       prIeSsid->ucLength)
-					    || EQUAL_SSID(aucSSID,
-							  P2P_WILDCARD_SSID_LEN,
-							  prIeSsid->aucSSID,
-							  prIeSsid->ucLength)) {
-						fgReplyProbeResp = TRUE;
-					}
-				}
-
-/* else if (FALSE) { */
-/* } */
-
-				/* TODO(Kevin): Check P2P IE and WPS IE */
-			}
-#endif
-		}
-#endif
-		else
-			ASSERT(eNetTypeIndex < NETWORK_TYPE_INDEX_NUM);
-
-		if (fgReplyProbeResp)
-			bssSendBeaconProbeResponse(prAdapter, eNetTypeIndex,
-						   prMgtHdr->aucSrcAddr);
-
-	}
-
-	return WLAN_STATUS_SUCCESS;
-
-}				/* end of bssProcessProbeRequest() */
-#endif
-
-/*----------------------------------------------------------------------------*/
-/*!
-* @brief This function is used to initialize the client list for AdHoc or AP Mode
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prBssInfo              Given related BSS_INFO_T.
-*
-* @return (none)
-*/
+ * @brief This function is used to initialize the client list for
+ *        AdHoc or AP Mode
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prBssInfo              Given related BSS_INFO_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void bssInitializeClientList(IN struct ADAPTER *prAdapter,
 			     IN struct BSS_INFO *prBssInfo)
@@ -1746,14 +1405,15 @@ void bssInitializeClientList(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to Add a STA_RECORD_T to the client list for AdHoc or AP Mode
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prBssInfo              Given related BSS_INFO_T.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T
-*
-* @return (none)
-*/
+ * @brief This function is used to Add a STA_RECORD_T to the client list
+ *        for AdHoc or AP Mode
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prBssInfo              Given related BSS_INFO_T.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void bssAddClient(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 		  IN struct STA_RECORD *prStaRec)
@@ -1783,13 +1443,14 @@ void bssAddClient(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to Remove a STA_RECORD_T from the client list for AdHoc or AP Mode
-*
-* @param[in] prAdapter              Pointer to the Adapter structure.
-* @param[in] prStaRec               Pointer to the STA_RECORD_T
-*
-* @return (none)
-*/
+ * @brief This function is used to Remove a STA_RECORD_T from the client list
+ *        for AdHoc or AP Mode
+ *
+ * @param[in] prAdapter              Pointer to the Adapter structure.
+ * @param[in] prStaRec               Pointer to the STA_RECORD_T
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 u_int8_t bssRemoveClient(IN struct ADAPTER *prAdapter,
 			 IN struct BSS_INFO *prBssInfo,
@@ -2007,16 +1668,17 @@ void bssCheckClientList(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function is used to process Beacons from current Ad-Hoc network peers.
-*        We also process Beacons from other Ad-Hoc network during SCAN. If it has
-*        the same SSID and we'll decide to merge into it if it has a larger TSF.
-*
-* @param[in] prAdapter  Pointer to the Adapter structure.
-* @param[in] prBssInfo  Pointer to the BSS_INFO_T.
-* @param[in] prBSSDesc  Pointer to the BSS Descriptor.
-*
-* @return (none)
-*/
+ * @brief This function is used to process Beacons from current Ad-Hoc network
+ *        peers. We also process Beacons from other Ad-Hoc network during SCAN.
+ *        If it has the same SSID and we'll decide to merge into it
+ *        if it has a larger TSF.
+ *
+ * @param[in] prAdapter  Pointer to the Adapter structure.
+ * @param[in] prBssInfo  Pointer to the BSS_INFO_T.
+ * @param[in] prBSSDesc  Pointer to the BSS Descriptor.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void
 ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
@@ -2033,7 +1695,9 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 	ASSERT(prBssInfo);
 	ASSERT(prBssDesc);
 
-	/* 4 <1> Process IBSS Beacon only after we create or merge with other IBSS. */
+	/* 4 <1> Process IBSS Beacon only after we create or merge
+	 *         with other IBSS.
+	 */
 	if (!prBssInfo->fgIsBeaconActivated)
 		return;
 
@@ -2051,17 +1715,25 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 	if (fgIsSameBSSID) {
 
 		/* Same BSSID:
-		 * Case I.  This is a new TA and it has decide to merged with us.
-		 *      a)  If fgIsMerging == FALSE - we will send msg to notify AIS.
-		 *      b)  If fgIsMerging == TRUE - already notify AIS.
-		 * Case II. This is an old TA and we've already merged together.
+		 * Case I.
+		 *      This is a new TA and it has decide to merged with us.
+		 *      a) If fgIsMerging == FALSE
+		 *            - we will send msg to notify AIS.
+		 *      b) If fgIsMerging == TRUE
+		 *            - already notify AIS.
+		 * Case II.
+		 *      This is an old TA and we've already merged together.
 		 */
 		if (!prStaRec) {
-
-			/* For Case I - Check this IBSS's capability first before adding this Sta Record. */
+			/* For Case I -
+			 *     Check this IBSS's capability first before
+			 *     adding this Sta Record.
+			 */
 			fgIsCheckCapability = TRUE;
 
-			/* If check is passed, then we perform merging with this new IBSS */
+			/* If check is passed, then we perform merging
+			 *    with this new IBSS
+			 */
 			fgIsGoingMerging = TRUE;
 
 		} else {
@@ -2074,20 +1746,27 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 
 				if (!prStaRec->fgIsMerging) {
 
-					/* For Case I - */
-					/* Check this IBSS's capability first before */
-					/* adding this Sta Record. */
+					/* For Case I -
+					 * Check this IBSS's capability first
+					 *  before adding this Sta Record.
+					 */
 					fgIsCheckCapability = TRUE;
 
-					/* If check is passed, then we perform merging with this new IBSS */
+					/* If check is passed, then we perform
+					 * merging with this new IBSS
+					 */
 					fgIsGoingMerging = TRUE;
 				} else {
-					/* For Case II - Update rExpirationTime of Sta Record */
+					/* For Case II - Update rExpirationTime
+					 * of Sta Record
+					 */
 					GET_CURRENT_SYSTIME
 					    (&prStaRec->rUpdateTime);
 				}
 			} else {
-				/* For Case II - Update rExpirationTime of Sta Record */
+				/* For Case II
+				 * - Update rExpirationTime of Sta Record
+				 */
 				GET_CURRENT_SYSTIME(&prStaRec->rUpdateTime);
 			}
 
@@ -2095,22 +1774,29 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 	} else {
 
 		/* Unequal BSSID:
-		 * Case III. This is a new TA and we need to compare the TSF and get the winner.
-		 * Case IV.  This is an old TA and it merge into a new IBSS before we do the same thing.
-		 *           We need to compare the TSF to get the winner.
-		 * Case V.   This is an old TA and it restart a new IBSS. We also need to
-		 *           compare the TSF to get the winner.
+		 * Case III. This is a new TA and we need to compare
+		 *               the TSF and get the winner.
+		 * Case IV.  This is an old TA and it merge into
+		 *               a new IBSS before we do the same thing.
+		 *               We need to compare the TSF to get the winner.
+		 * Case V.   This is an old TA and it restart a new IBSS.
+		 *               We also need to compare the TSF to
+		 *               get the winner.
 		 */
 
-		/* For Case III, IV & V - We'll always check this new IBSS's capability first
-		 * before merging into new IBSS.
+		/* For Case III, IV & V - We'll always check this new IBSS's
+		 *     capability first before merging into new IBSS.
 		 */
 		fgIsCheckCapability = TRUE;
 
-		/* If check is passed, we need to perform TSF check to decide the major BSSID */
+		/* If check is passed, we need to perform TSF check to
+		 *    decide the major BSSID
+		 */
 		fgIsCheckTSF = TRUE;
 
-		/* For Case IV & V - We won't update rExpirationTime of Sta Record */
+		/* For Case IV & V - We won't update rExpirationTime
+		 *    of Sta Record
+		 */
 	}
 
 	/* 4 <7> Check this BSS_DESC_T's capability. */
@@ -2154,8 +1840,11 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 		if (!fgIsCapabilityMatched) {
 
 			if (prStaRec) {
-				/* For Case II - We merge this STA_RECORD in RX Path.
-				 *     Case IV & V - They change their BSSID after we merge with them.
+				/* Case II -
+				 *  We merge this STA_RECORD in RX Path.
+				 * Case IV & V -
+				 *  They change their BSSID after
+				 *  we merge with them.
 				 */
 
 				DBGLOG(BSS, LOUD,
@@ -2209,7 +1898,9 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 		/* update RCPI */
 		prStaRec->ucRCPI = ucRCPI;
 
-		/* 4 <3> Send Merge Msg to CNM to obtain the channel privilege. */
+		/* 4 <3> Send Merge Msg to CNM to obtain
+		 *          the channel privilege.
+		 */
 		prAisIbssPeerFoundMsg = (struct MSG_AIS_IBSS_PEER_FOUND *)
 		    cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
 				sizeof(struct MSG_AIS_IBSS_PEER_FOUND));
@@ -2226,8 +1917,10 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 		prAisIbssPeerFoundMsg->prStaRec = prStaRec;
 
 		/* Inform AIS to do STATE TRANSITION
-		 * For Case I - If AIS in IBSS_ALONE, let it jump to NORMAL_TR after we know the new member.
-		 * For Case III, IV - Now this new BSSID wins the TSF, follow it.
+		 * For Case I - If AIS in IBSS_ALONE, let it jump to
+		 *     NORMAL_TR after we know the new member.
+		 * For Case III, IV - Now this new BSSID wins the TSF,
+		 *     follow it.
 		 */
 		if (fgIsSameBSSID) {
 			prAisIbssPeerFoundMsg->fgIsMergeIn = TRUE;
@@ -2249,14 +1942,14 @@ ibssProcessMatchedBeacon(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will check the Capability for Ad-Hoc to decide if we are
-*        able to merge with(same capability).
-*
-* @param[in] prBSSDesc  Pointer to the BSS Descriptor.
-*
-* @retval WLAN_STATUS_FAILURE   Can't pass the check of Capability.
-* @retval WLAN_STATUS_SUCCESS   Pass the check of Capability.
-*/
+ * @brief This function will check the Capability for Ad-Hoc to decide
+ *        if we are able to merge with(same capability).
+ *
+ * @param[in] prBSSDesc  Pointer to the BSS Descriptor.
+ *
+ * @retval WLAN_STATUS_FAILURE   Can't pass the check of Capability.
+ * @retval WLAN_STATUS_SUCCESS   Pass the check of Capability.
+ */
 /*----------------------------------------------------------------------------*/
 uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER *prAdapter,
 					 IN struct BSS_DESC *prBssDesc)
@@ -2277,7 +1970,8 @@ uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER *prAdapter,
 			break;
 		}
 		/* 4 <2> Check the Short Slot Time. */
-#if 0				/* Do not check ShortSlotTime until Wi-Fi define such policy */
+#if 0
+/* Do not check ShortSlotTime until Wi-Fi define such policy */
 		if (prConnSettings->eAdHocMode == AD_HOC_MODE_11G) {
 			if (((prConnSettings->fgIsShortSlotTimeOptionEnable) &&
 			     !(prBssDesc->u2CapInfo & CAP_INFO_SHORT_SLOT_TIME))
@@ -2309,12 +2003,12 @@ uint32_t ibssCheckCapabilityForAdHocMode(IN struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will initial the BSS_INFO_T for IBSS Mode.
-*
-* @param[in] prBssInfo      Pointer to the BSS_INFO_T.
-*
-* @return (none)
-*/
+ * @brief This function will initial the BSS_INFO_T for IBSS Mode.
+ *
+ * @param[in] prBssInfo      Pointer to the BSS_INFO_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void ibssInitForAdHoc(IN struct ADAPTER *prAdapter,
 		      IN struct BSS_INFO *prBssInfo)
@@ -2349,8 +2043,14 @@ void ibssInitForAdHoc(IN struct ADAPTER *prAdapter,
 		for (i = 0; i < sizeof(aucBSSID) / sizeof(uint16_t); i++)
 			pu2BSSID[i] = (uint16_t) (kalRandomNumber() & 0xFFFF);
 
-		aucBSSID[0] &= ~0x01;	/* 7.1.3.3.3 - The individual/group bit of the address is set to 0. */
-		aucBSSID[0] |= 0x02;	/* 7.1.3.3.3 - The universal/local bit of the address is set to 1. */
+		/* 7.1.3.3.3 -
+		 * The individual/group bit of the address is set to 0.
+		 */
+		aucBSSID[0] &= ~0x01;
+		/* 7.1.3.3.3 -
+		 * The universal/local bit of the address is set to 1.
+		 */
+		aucBSSID[0] |= 0x02;
 
 		COPY_MAC_ADDR(prBssInfo->aucBSSID, aucBSSID);
 	}
@@ -2399,12 +2099,12 @@ void ibssInitForAdHoc(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 /*!
-* @brief This function will initial the BSS_INFO_T for AP Mode.
-*
-* @param[in] prBssInfo              Given related BSS_INFO_T.
-*
-* @return (none)
-*/
+ * @brief This function will initial the BSS_INFO_T for AP Mode.
+ *
+ * @param[in] prBssInfo              Given related BSS_INFO_T.
+ *
+ * @return (none)
+ */
 /*----------------------------------------------------------------------------*/
 void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 		  IN u_int8_t fgIsRateUpdate)
@@ -2416,12 +2116,14 @@ void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 	uint8_t auCWminLog2ForBcast[WMM_AC_INDEX_NUM] = { 4, 4, 3, 2 };
 	uint8_t auCWmaxLog2ForBcast[WMM_AC_INDEX_NUM] = { 10, 10, 4, 3 };
 	uint8_t auAifsForBcast[WMM_AC_INDEX_NUM] = { 3, 7, 2, 2 };
-	uint8_t auTxopForBcast[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };	/* If the AP is OFDM */
+	/* If the AP is OFDM */
+	uint8_t auTxopForBcast[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };
 
 	uint8_t auCWminLog2[WMM_AC_INDEX_NUM] = { 4, 4, 3, 2 };
 	uint8_t auCWmaxLog2[WMM_AC_INDEX_NUM] = { 6, 10, 4, 3 };
 	uint8_t auAifs[WMM_AC_INDEX_NUM] = { 3, 7, 1, 1 };
-	uint8_t auTxop[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };	/* If the AP is OFDM */
+	/* If the AP is OFDM */
+	uint8_t auTxop[WMM_AC_INDEX_NUM] = { 0, 0, 94, 47 };
 
 	DEBUGFUNC("bssInitForAP");
 
@@ -2443,7 +2145,9 @@ void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 	    rNonHTApModeAttributes[prBssInfo->
 				   ucConfigAdHocAPMode].u2BSSBasicRateSet;
 
-	prBssInfo->u2OperationalRateSet = rNonHTPhyAttributes[prBssInfo->ucNonHTBasicPhyType].u2SupportedRateSet;
+	prBssInfo->u2OperationalRateSet =
+	    rNonHTPhyAttributes[prBssInfo->
+				ucNonHTBasicPhyType].u2SupportedRateSet;
 
 	if (fgIsRateUpdate) {
 		rateGetDataRatesFromRateSet(prBssInfo->u2OperationalRateSet,
@@ -2499,7 +2203,9 @@ void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 		prACQueParms[eAci].u2CWmax = BIT(auCWmaxLog2ForBcast[eAci]) - 1;
 		prACQueParms[eAci].u2TxopLimit = auTxopForBcast[eAci];
 
-		prBssInfo->aucCWminLog2ForBcast[eAci] = auCWminLog2ForBcast[eAci];	/* used to send WMM IE */
+		/* used to send WMM IE */
+		prBssInfo->aucCWminLog2ForBcast[eAci] =
+		    auCWminLog2ForBcast[eAci];
 		prBssInfo->aucCWmaxLog2ForBcast[eAci] =
 		    auCWmaxLog2ForBcast[eAci];
 	}
@@ -2541,100 +2247,15 @@ void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 	       prACQueParms[0].u2TxopLimit, prACQueParms[1].u2TxopLimit,
 	       prACQueParms[2].u2TxopLimit, prACQueParms[3].u2TxopLimit);
 
-	/* Note: Caller should update the EDCA setting to HW by nicQmUpdateWmmParms() it there is no AIS network */
-	/* Note: In E2, only 4 HW queues. The the Edca parameters should be folow by AIS network */
-	/* Note: In E3, 8 HW queues.  the Wmm parameters should be updated to right queues  according to BSS */
+	/* Note: Caller should update the EDCA setting to HW by
+	 *         nicQmUpdateWmmParms() it there is no AIS network
+	 * Note: In E2, only 4 HW queues.
+	 *         The the Edca parameters should be folow by AIS network
+	 * Note: In E3, 8 HW queues.
+	 *         the Wmm parameters should be updated to right queues
+	 *         according to BSS
+	 */
 }				/* end of bssInitForAP() */
-
-#if 0
-/*----------------------------------------------------------------------------*/
-/*!
-* @brief Update DTIM Count
-*
-* @param[in] eNetTypeIndex      Specify which network to update
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
-void bssUpdateDTIMCount(IN struct ADAPTER *prAdapter,
-			IN ENUM_NETWORK_TYPE_INDEX_T eNetTypeIndex)
-{
-	struct BSS_INFO *prBssInfo;
-
-	ASSERT(eNetTypeIndex < NETWORK_TYPE_INDEX_NUM);
-
-	prBssInfo = &(prAdapter->rWifiVar.arBssInfo[eNetTypeIndex]);
-
-	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-
-		/* Setup DTIM Count for next TBTT. */
-		if (prBssInfo->ucDTIMCount > 0) {
-			prBssInfo->ucDTIMCount--;
-		} else {
-
-			ASSERT(prBssInfo->ucDTIMPeriod > 0);
-
-			prBssInfo->ucDTIMCount = prBssInfo->ucDTIMPeriod - 1;
-		}
-	}
-}				/* end of bssUpdateDTIMIE() */
-
-/*----------------------------------------------------------------------------*/
-/*!
-* @brief This function is used to set the Virtual Bitmap in TIM Information Elements
-*
-* @param[in] prBssInfo      Pointer to the BSS_INFO_T.
-* @param[in] u2AssocId      The association id to set in Virtual Bitmap.
-*
-* @return (none)
-*/
-/*----------------------------------------------------------------------------*/
-void bssSetTIMBitmap(IN struct ADAPTER *prAdapter,
-		     IN struct BSS_INFO *prBssInfo, IN uint16_t u2AssocId)
-{
-
-	ASSERT(prBssInfo);
-
-	if (prBssInfo->ucNetTypeIndex == NETWORK_TYPE_P2P_INDEX) {
-		struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
-
-		prP2pSpecificBssInfo =
-		    &(prAdapter->rWifiVar.rP2pSpecificBssInfo);
-
-		/* Use Association ID == 0 for BMCAST indication */
-		if (u2AssocId == 0) {
-
-			prP2pSpecificBssInfo->ucBitmapCtrl |= (uint8_t) BIT(0);
-		} else {
-			uint8_t *pucPartialVirtualBitmap;
-			uint8_t ucBitmapToSet;
-
-			pucPartialVirtualBitmap =
-			    &prP2pSpecificBssInfo->
-				    aucPartialVirtualBitmap[(u2AssocId >> 3)];
-			ucBitmapToSet = (uint8_t) BIT((u2AssocId % 8));
-
-			if (*pucPartialVirtualBitmap & ucBitmapToSet) {
-				/* The virtual bitmap has been set */
-				return;
-			}
-
-			*pucPartialVirtualBitmap |= ucBitmapToSet;
-
-			/* Update u2SmallestAID and u2LargestAID */
-			if ((u2AssocId < prP2pSpecificBssInfo->u2SmallestAID) ||
-			    (prP2pSpecificBssInfo->u2SmallestAID == 0)) {
-				prP2pSpecificBssInfo->u2SmallestAID = u2AssocId;
-			}
-
-			if ((u2AssocId > prP2pSpecificBssInfo->u2LargestAID) ||
-			    (prP2pSpecificBssInfo->u2LargestAID == 0)) {
-				prP2pSpecificBssInfo->u2LargestAID = u2AssocId;
-			}
-		}
-	}
-}				/* end of bssSetTIMBitmap() */
-#endif
 
 #endif /* CFG_SUPPORT_AAA */
 

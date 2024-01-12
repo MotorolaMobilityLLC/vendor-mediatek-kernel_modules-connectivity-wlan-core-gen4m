@@ -1354,8 +1354,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 				&u4BufLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(SEC, WARN,
-				"[wapi] set wapi assoc info error:%x\n",
+			DBGLOG(REQ, TRACE,
+				"[wapi] wapi not support due to set wapi assoc info error:%x\n",
 				rStatus);
 #endif
 #if CFG_SUPPORT_WPS2
@@ -1969,14 +1969,14 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 	DBGLOG(RSN, INFO, "cfg80211_set_rekey_data size(%d)\n",
 	       (uint32_t) sizeof(struct cfg80211_gtk_rekey_data));
 
-	DBGLOG(RSN, INFO, "kek\n");
-	DBGLOG_MEM8(PF, ERROR, (uint8_t *)data->kek,
+	DBGLOG(RSN, TRACE, "kek\n");
+	DBGLOG_MEM8(RSN, TRACE, (uint8_t *)data->kek,
 		    NL80211_KEK_LEN);
-	DBGLOG(RSN, INFO, "kck\n");
-	DBGLOG_MEM8(PF, ERROR, (uint8_t *)data->kck,
+	DBGLOG(RSN, TRACE, "kck\n");
+	DBGLOG_MEM8(RSN, TRACE, (uint8_t *)data->kck,
 		    NL80211_KCK_LEN);
-	DBGLOG(RSN, INFO, "replay count\n");
-	DBGLOG_MEM8(PF, ERROR, (uint8_t *)data->replay_ctr,
+	DBGLOG(RSN, TRACE, "replay count\n");
+	DBGLOG_MEM8(RSN, TRACE, (uint8_t *)data->replay_ctr,
 		    NL80211_REPLAY_CTR_LEN);
 
 
