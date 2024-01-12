@@ -52,6 +52,8 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter);
+
 static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx);
@@ -647,7 +649,21 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_6639.bin */
+		/* Type 1. WIFI_RAM_CODE_MT6639_1_1.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN,
+				"WIFI_RAM_CODE_MT%x_%x_%u.bin",
+				MT6639_CHIP_ID,
+				mt6639GetFlavorVer(prGlueInfo->prAdapter),
+				MT6639_ROM_VERSION);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+				"[%u] kalSnprintf failed, ret: %d\n",
+				__LINE__, ret);
+
+		/* Type 2. WIFI_RAM_CODE_6639.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s.bin",
 				apucmt6639FwName[ucIdx]);
@@ -655,8 +671,8 @@ static void mt6639_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			(*pucNameIdx) += 1;
 		else
 			DBGLOG(INIT, ERROR,
-					"[%u] kalSnprintf failed, ret: %d\n",
-					__LINE__, ret);
+				"[%u] kalSnprintf failed, ret: %d\n",
+				__LINE__, ret);
 	}
 }
 
@@ -664,16 +680,29 @@ static void mt6639_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
 	int ret = 0;
-	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
-
+	/* Type 1. WIFI_MT6639_PATCH_MCU_1_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
-			  64,
-			  "mt6639_patch_e1_hdr.bin");
+			  CFG_FW_NAME_MAX_LEN,
+			  "WIFI_MT%x_PATCH_MCU_%x_%u_hdr.bin",
+			  MT6639_CHIP_ID,
+			  mt6639GetFlavorVer(prGlueInfo->prAdapter),
+			  MT6639_ROM_VERSION);
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
 
+	/* Type 2. mt6639_patch_e1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "mt6639_patch_e1_hdr.bin");
 	if (ret < 0 || ret >= CFG_FW_NAME_MAX_LEN)
-		DBGLOG(INIT, ERROR, "kalSnprintf failed, ret: %d\n", ret);
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1161,5 +1190,13 @@ static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 		   ((uint32_t)prHifInfo->rMcuEmiMem.pa >> 16));
 }
 #endif /*_HIF_PCIE || _HIF_AXI */
+
+static uint32_t mt6639GetFlavorVer(struct ADAPTER *prAdapter)
+{
+	if (IS_MOBILE_SEGMENT)
+		return 0x1;
+	else
+		return 0x2;
+}
 
 #endif  /* MT6639 */

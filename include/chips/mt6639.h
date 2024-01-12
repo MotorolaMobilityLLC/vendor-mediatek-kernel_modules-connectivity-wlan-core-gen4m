@@ -56,6 +56,8 @@
 #define MT6639_PCIE2AP_REMAP_BASE_ADDR		0x60000
 #define MT6639_REMAP_BASE_ADDR			0x7c500000
 
+#define MT6639_ROM_VERSION			1
+
 extern struct PLE_TOP_CR rMt6639PleTopCr;
 extern struct PSE_TOP_CR rMt6639PseTopCr;
 extern struct PP_TOP_CR rMt6639PpTopCr;
