@@ -125,15 +125,6 @@ extern unsigned long long gConEmiSizeFinal;
 #define MAX_EEPROM_BUFFER_SIZE	6144 //6K
 #endif
 
-#ifdef BUFFER_BIN_PAGE_SIZE
-#undef BUFFER_BIN_PAGE_SIZE
-#endif
-#if defined MT7915 || defined MT7961
-#define BUFFER_BIN_PAGE_SIZE	0x400
-#else
-#define BUFFER_BIN_PAGE_SIZE	(MAX_EEPROM_BUFFER_SIZE)
-#endif
-
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
