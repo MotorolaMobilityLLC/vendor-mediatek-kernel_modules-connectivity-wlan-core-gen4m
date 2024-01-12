@@ -1488,9 +1488,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	struct PARAM_OP_MODE rOpMode;
 	uint32_t u4AkmSuite = 0;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
-#if CFG_SUPPORT_REPLAY_DETECTION
-	struct GL_DETECT_REPLAY_INFO *prDetRplyInfo = NULL;
-#endif
+
 	struct GL_WPA_INFO *prWpaInfo;
 	struct IEEE_802_11_MIB *prMib;
 #if CFG_SUPPORT_PASSPOINT
@@ -1527,12 +1525,6 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 	/* after set operation mode, key table are cleared */
-
-#if CFG_SUPPORT_REPLAY_DETECTION
-	/* reset Detect replay information */
-	prDetRplyInfo = aisGetDetRplyInfo(prGlueInfo->prAdapter, ucBssIndex);
-	kalMemZero(prDetRplyInfo, sizeof(struct GL_DETECT_REPLAY_INFO));
-#endif
 
 	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
 		ucBssIndex);
