@@ -86,6 +86,7 @@
 #define AUTO_RATE_NUM 8
 #define AR_RATE_TABLE_ENTRY_MAX 25
 #define AR_RATE_ENTRY_INDEX_NULL 0x80
+#define MAX_TX_QUALITY_INDEX 4
 
 #define TX_CS_TCP_UDP_GEN        BIT(1)
 #define TX_CS_IP_GEN             BIT(0)
@@ -804,8 +805,22 @@ typedef struct _PARAM_GET_STA_STATISTICS {
 	BOOLEAN fgIsForceTxStream;
 	BOOLEAN fgIsForceSeOff;
 
+	UINT_16 u2RaRunningCnt;
+	UINT_8 ucRaStatus;
+	UINT_8 ucMaxAmpduFactor;
+	UINT_8 aucTxQuality[MAX_TX_QUALITY_INDEX];
+	UINT_8 ucTxRateUpPenalty;
+	UINT_8 ucLowTrafficMode;
+	UINT_8 ucLowTrafficCount;
+	UINT_8 ucLowTrafficDashBoard;
+	UINT_8 ucDynamicSGIState;
+	UINT_8 ucDynamicSGIScore;
+	UINT_8 ucDynamicBWState;
+	UINT_8 ucDynamicGband256QAMState;
+	UINT_8 ucVhtNonSpRateState;
+
 	/* Reserved fields */
-	UINT_8 au4Reserved[20];
+	UINT_8 au4Reserved[3];
 } PARAM_GET_STA_STA_STATISTICS, *P_PARAM_GET_STA_STATISTICS;
 
 typedef struct _PARAM_GET_BSS_STATISTICS {
