@@ -1321,6 +1321,10 @@ struct mt66xx_chip_info {
 	uint8_t (*asicRxGetRcpiValueFromRxv)(
 		IN uint8_t ucRcpiMode,
 		IN struct SW_RFB *prSwRfb);
+	void (*asicRxPerfIndProcessRXV)(
+		IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb,
+		IN uint8_t ucBssIndex);
 
 	const uint32_t features;	/* feature bits */
 	u_int8_t is_support_hw_amsdu;
