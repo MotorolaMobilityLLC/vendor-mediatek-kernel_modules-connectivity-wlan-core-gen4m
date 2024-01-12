@@ -3065,76 +3065,59 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 						prCurrSwRfb->ucWlanIdx));
 			}
 
-			if (prAdapter->rRxCtrl.rFreeSwRfbList.u4NumElem >
-				(CFG_RX_MAX_PKT_NUM -
-					CFG_NUM_OF_QM_RX_PKT_NUM) || TRUE) {
+			ucBssIndex = prCurrSwRfb->prStaRec->ucBssIndex;
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+				ucBssIndex);
 
-				ucBssIndex = prCurrSwRfb->prStaRec->ucBssIndex;
-				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			if (!IS_BSS_ACTIVE(prBssInfo)) {
+				log_dbg(QM, TRACE, "Mark NULL the Packet for inactive Bss %u\n",
 					ucBssIndex);
-
-				if (!IS_BSS_ACTIVE(prBssInfo)) {
-					log_dbg(QM, TRACE, "Mark NULL the Packet for inactive Bss %u\n",
-						ucBssIndex);
-					RX_INC_CNT(&prAdapter->rRxCtrl,
-						RX_INACTIVE_BSS_DROP_COUNT);
-					prCurrSwRfb->eDst =
-						RX_PKT_DESTINATION_NULL;
-					QUEUE_INSERT_TAIL(prReturnedQue,
-						(struct QUE_ENTRY *)
-						prCurrSwRfb);
-					continue;
-				}
-
-				if (prBssInfo->eCurrentOPMode ==
-					OP_MODE_ACCESS_POINT) {
-					if (IS_BMCAST_MAC_ADDR(
-						pucEthDestAddr)) {
-					prCurrSwRfb->eDst =
-					RX_PKT_DESTINATION_HOST_WITH_FORWARD;
-					} else if (
-						secLookupStaRecIndexFromTA(
-						prAdapter,
-						pucEthDestAddr)
-						!=
-						STA_REC_INDEX_NOT_FOUND) {
-
-						prCurrSwRfb->eDst =
-						RX_PKT_DESTINATION_FORWARD;
-					}
-				}
-#if CFG_SUPPORT_PASSPOINT
-				else if (hs20IsFrameFilterEnabled(prAdapter,
-					prBssInfo) &&
-					hs20IsUnsecuredFrame(prAdapter,
-					prBssInfo,
-					prCurrSwRfb)) {
-					DBGLOG(QM, WARN,
-						"Mark NULL the Packet for Dropped Packet %u\n",
-						ucBssIndex);
-					RX_INC_CNT(&prAdapter->rRxCtrl,
-						RX_HS20_DROP_COUNT);
-					prCurrSwRfb->eDst =
-						RX_PKT_DESTINATION_NULL;
-					QUEUE_INSERT_TAIL(prReturnedQue,
-						(struct QUE_ENTRY *)
-						prCurrSwRfb);
-					continue;
-				}
-#endif /* CFG_SUPPORT_PASSPOINT */
-
-			} else {
-				/* Dont not occupy other SW RFB */
-				DBGLOG(QM, TRACE,
-					"Mark NULL the Packet for less Free Sw Rfb\n");
 				RX_INC_CNT(&prAdapter->rRxCtrl,
-					RX_LESS_SW_RFB_DROP_COUNT);
-				prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
+					RX_INACTIVE_BSS_DROP_COUNT);
+				prCurrSwRfb->eDst =
+					RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *) prCurrSwRfb);
+					(struct QUE_ENTRY *)
+					prCurrSwRfb);
 				continue;
 			}
 
+			if (prBssInfo->eCurrentOPMode ==
+				OP_MODE_ACCESS_POINT) {
+				if (IS_BMCAST_MAC_ADDR(
+					pucEthDestAddr)) {
+					prCurrSwRfb->eDst =
+				RX_PKT_DESTINATION_HOST_WITH_FORWARD;
+				} else if (
+					secLookupStaRecIndexFromTA(
+					prAdapter,
+					pucEthDestAddr)
+					!=
+					STA_REC_INDEX_NOT_FOUND) {
+
+					prCurrSwRfb->eDst =
+					RX_PKT_DESTINATION_FORWARD;
+				}
+			}
+#if CFG_SUPPORT_PASSPOINT
+			else if (hs20IsFrameFilterEnabled(prAdapter,
+				prBssInfo) &&
+				hs20IsUnsecuredFrame(prAdapter,
+				prBssInfo,
+				prCurrSwRfb)) {
+				DBGLOG(QM, WARN,
+					"Mark NULL the Packet for Dropped Packet %u\n",
+					ucBssIndex);
+				RX_INC_CNT(&prAdapter->rRxCtrl,
+					RX_HS20_DROP_COUNT);
+				prCurrSwRfb->eDst =
+					RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue,
+					(struct QUE_ENTRY *)
+					prCurrSwRfb);
+				continue;
+			}
+#endif /* CFG_SUPPORT_PASSPOINT */
 		} else {
 			uint16_t u2FrameCtrl = 0;
 			struct WLAN_MAC_HEADER *prWlanHeader = NULL;
@@ -5095,6 +5078,8 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 			case ELEM_ID_QOS_MAP_SET:
 				DBGLOG(QM, WARN,
 					"QM: received assoc resp qosmapset ie\n");
+				if (prStaRec->qosMapSet)
+					QosMapSetRelease(prStaRec);
 				prStaRec->qosMapSet =
 					qosParseQosMapSet(prAdapter, pucIE);
 				hasnoQosMapSetIE = FALSE;

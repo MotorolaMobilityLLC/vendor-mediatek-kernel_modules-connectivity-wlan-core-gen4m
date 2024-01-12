@@ -1020,7 +1020,8 @@ void testPsCmdCategory0(struct ADAPTER *prAdapter,
 			/* txmForwardQueuedBmcPkts (ucOpt0); */
 			break;
 		case TEST_PS_SEND_NULL: {
-
+			if (prStaRec == NULL)
+				break;
 			testPsSendQoSNullFrame(prAdapter, prStaRec,
 				/* UP */
 				(uint8_t) (g_au4SwCr[1] & 0xFF),
