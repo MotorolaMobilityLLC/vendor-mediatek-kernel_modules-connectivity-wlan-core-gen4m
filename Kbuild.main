@@ -2169,7 +2169,11 @@ ccflags-y += -DCFG_SUPPORT_TX_LATENCY_STATS=1
 endif
 
 ifeq ($(CONFIG_WFD_SCC_BALANCE_DEF_ENABLE), y)
-ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
+	ifneq ($(CONFIG_MTK_WIFI_MT6653_DEV), y)
+		ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=0
+	else
+		ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=1
+	endif
 else
 ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=0
 endif
