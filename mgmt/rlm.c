@@ -3021,21 +3021,28 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			 * transmit no further frames on current channel
 			 * until the scheduled channel switch.
 			 */
-			if (prCSAIE->ucChannelSwitchMode != 1)
-				continue;
-
-			DBGLOG(RLM, INFO, "[CSA] Count = %d\n",
-			       prCSAIE->ucChannelSwitchCount);
+			DBGLOG(RLM, INFO, "[CSA] Count = %d Mode = %d\n",
+			       prCSAIE->ucChannelSwitchCount,
+			       prCSAIE->ucChannelSwitchMode);
 			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prCSAIE->ucChannelSwitchCount;
 
-			/* Stop tx */
-			if (!prCSAParams->fgHasStopTx) {
-				prCSAParams->fgHasStopTx = TRUE;
-				/* AP */
-				qmSetStaRecTxAllowed(prAdapter,
-					prStaRec, FALSE);
-				DBGLOG(RLM, EVENT, "[CSA] TxAllowed = FALSE\n");
+			if (prCSAIE->ucChannelSwitchMode == 1) {
+				/* Mode 1: Need to stop data
+				 * transmission immediately
+				 */
+				if (!prCSAParams->fgHasStopTx) {
+					prCSAParams->fgHasStopTx = TRUE;
+					/* AP */
+					qmSetStaRecTxAllowed(prAdapter,
+						prStaRec,
+						FALSE);
+					DBGLOG(RLM, EVENT,
+						"[CSA] TxAllowed = FALSE\n");
+				}
+			} else {
+				DBGLOG(RLM, INFO,
+					"[CSA] ucChannelSwitchMode = 0\n");
 			}
 
 #ifdef CFG_DFS_CHSW_FORCE_BW20
@@ -6230,24 +6237,24 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 						DBGLOG(RLM, EVENT,
 							"[CSA Mgt] TxAllowed = FALSE\n");
 					}
-
-					DBGLOG(RLM, INFO,
-						"[CSA Mgt] switch channel [%d]->[%d]\n",
-						prBssInfo->ucPrimaryChannel,
-						prChannelSwitchAnnounceIE
-						    ->ucNewChannelNum);
-
-					prCSAParams->ucCsaNewCh =
-						prChannelSwitchAnnounceIE->
-							ucNewChannelNum;
-					ucCurrentCsaCount =
-						prChannelSwitchAnnounceIE->
-							ucChannelSwitchCount;
-
 				} else {
 					DBGLOG(RLM, INFO,
 					       "[CSA Mgt] ucChannelSwitchMode = 0\n");
 				}
+
+				DBGLOG(RLM, INFO,
+					"[CSA Mgt] switch channel [%d]->[%d]\n",
+					prBssInfo->ucPrimaryChannel,
+					prChannelSwitchAnnounceIE
+						->ucNewChannelNum);
+
+				prCSAParams->ucCsaNewCh =
+					prChannelSwitchAnnounceIE->
+						ucNewChannelNum;
+				ucCurrentCsaCount =
+					prChannelSwitchAnnounceIE->
+						ucChannelSwitchCount;
+
 				break;
 
 			case ELEM_ID_SCO:
