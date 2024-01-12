@@ -728,12 +728,14 @@ struct STATS_LLS_WMM_AC_STAT {
 #define STATS_LLS_HT_NUM         16  /* MCS0~15 */
 #define STATS_LLS_VHT_NUM        10  /* MCS0~9 */
 #define STATS_LLS_HE_NUM         12  /* MCS0~11 */
+#define STATS_LLS_EHT_NUM        16  /* MCS0~15 */
 
 #define STATS_LLS_MAX_CCK_BW_NUM  1  /* BW20 */
 #define STATS_LLS_MAX_OFDM_BW_NUM 1  /* BW20 */
 #define STATS_LLS_MAX_HT_BW_NUM   2  /* BW20/40 */
 #define STATS_LLS_MAX_VHT_BW_NUM  3  /* BW20/40/80 */
 #define STATS_LLS_MAX_HE_BW_NUM   4  /* BW20/40/80/160 */
+#define STATS_LLS_MAX_EHT_BW_NUM  5  /* BW20/40/80/160/320 */
 
 #define STATS_LLS_MAX_CCK_NUM  (STATS_LLS_CCK_NUM)
 #define STATS_LLS_MAX_OFDM_NUM (STATS_LLS_OFDM_NUM)
@@ -743,7 +745,14 @@ struct STATS_LLS_WMM_AC_STAT {
 	(STATS_LLS_VHT_NUM * STATS_LLS_MAX_VHT_BW_NUM * STATS_LLS_MAX_NSS_NUM)
 #define STATS_LLS_MAX_HE_NUM   \
 	(STATS_LLS_HE_NUM * STATS_LLS_MAX_HE_BW_NUM * STATS_LLS_MAX_NSS_NUM)
+#if (CFG_SUPPORT_802_11BE == 1)
+#define STATS_LLS_MAX_EHT_NUM   \
+	(STATS_LLS_EHT_NUM * STATS_LLS_MAX_EHT_BW_NUM * STATS_LLS_MAX_NSS_NUM)
+#else
+#define STATS_LLS_MAX_EHT_NUM   0
+#endif
 
+#define TX_POWER_LEVELS 256
 
 #define STATS_LLS_CH_NUM_2G4 14
 #define STATS_LLS_CH_NUM_5G 32
@@ -761,7 +770,8 @@ struct STATS_LLS_WMM_AC_STAT {
 			    STATS_LLS_MAX_OFDM_NUM +	\
 			    STATS_LLS_MAX_HT_NUM +	\
 			    STATS_LLS_MAX_VHT_NUM +	\
-			    STATS_LLS_MAX_HE_NUM)
+			    STATS_LLS_MAX_HE_NUM +	\
+			    STATS_LLS_MAX_EHT_NUM)
 
 /**
  * channel operating width
@@ -834,7 +844,7 @@ struct STATS_LLS_WIFI_RADIO_STAT {
 	int32_t radio;
 	uint32_t on_time;
 	uint32_t tx_time;
-	uint32_t num_tx_levels; /* 0 */
+	uint32_t num_tx_levels; /* TX_POWER_LEVELS */
 	uint32_t *tx_time_per_levels; /* NULL */
 	uint32_t rx_time;
 	uint32_t on_time_scan;
@@ -908,10 +918,26 @@ struct WIFI_RADIO_CHANNEL_STAT {
 	struct STATS_LLS_CHANNEL_STAT channel[STATS_LLS_CH_NUM];
 };
 
+/* IFACE_NUM as BSSID_NUM to retrived statistics by interface; or sum up else */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define IFACE_NUM BSSID_NUM
+#else
+#define IFACE_NUM 1
+#endif
+
+/* Structure of FW reported data,  */
+struct HAL_LLS_FW_REPORT {
+	struct STATS_LLS_WIFI_IFACE_STAT iface[IFACE_NUM];
+	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
+	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
+};
+
+/* Buffer to hold collected data from FW reported EMI address */
 struct HAL_LLS_FULL_REPORT {
 	struct STATS_LLS_WIFI_IFACE_STAT iface;
 	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
 	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
+	uint32_t tx_levels[ENUM_BAND_NUM][LLS_RADIO_STAT_MAX_TX_LEVELS];
 };
 
 struct STATS_LLS_PEER_AP_REC {

@@ -3027,7 +3027,6 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 #if CFG_MTK_ANDROID_EMI
 	struct CAP_LLS_DATA_EMI_OFFSET *prOffset =
 		(struct CAP_LLS_DATA_EMI_OFFSET *)pucEventBuf;
-	uint32_t size = sizeof(struct HAL_LLS_FW_REPORT);
 	uint32_t offset = prOffset->u4DataEmiOffset;
 	uint32_t size2 = prOffset->u4NumTxPowerLevels * ENUM_BAND_NUM *
 			sizeof(uint32_t);
@@ -3047,6 +3046,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, tx_time_per_levels);
 	uint32_t u4HostOffsetRxTime =
 		OFFSET_OF(struct STATS_LLS_WIFI_RADIO_STAT, rx_time);
+	uint8_t ucLinkStatsBssNum;
 
 	DBGLOG(INIT, INFO, "Offset(Host): %u/%u/%u/%u/%u/%u/%u power=%u,%u",
 			u4HostOffsetInfo, u4HostOffsetAc,
@@ -3064,6 +3064,17 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		DBGLOG(INIT, TRACE, "NULL offset: offset=%p, offset2=%p",
 				offset, offset2);
 	}
+
+	if (prOffset->u4OffsetPeerInfo %
+			sizeof(struct STATS_LLS_WIFI_IFACE_STAT)) {
+		DBGLOG(INIT, WARN, "u4OffsetPeerInfo not match(FW): %u/%zu",
+			prOffset->u4OffsetPeerInfo,
+			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
+		return WLAN_STATUS_FAILURE;
+	}
+
+	ucLinkStatsBssNum = prOffset->u4OffsetPeerInfo /
+			sizeof(struct STATS_LLS_WIFI_IFACE_STAT);
 
 	if (prOffset->u4OffsetInfo != u4HostOffsetInfo ||
 	    prOffset->u4OffsetAc != u4HostOffsetAc ||
@@ -3088,6 +3099,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+	prAdapter->ucLinkStatsBssNum = ucLinkStatsBssNum;
 	if (prAdapter->pucLinkStatsSrcBufferAddr) {
 		DBGLOG(INIT, WARN, "LLS EMI stats set, update it.");
 		prAdapter->pucLinkStatsSrcBufferAddr = NULL;
@@ -3098,7 +3110,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		prAdapter->pu4TxTimePerLevels = NULL;
 	}
 
-	/* How if set already? Set without size? */
+	/* Update offset */
 	prAdapter->pucLinkStatsSrcBufferAddr =
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
@@ -3107,8 +3119,8 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 		emi_mem_offset_convert(offset2);
 	prAdapter->u4TxTimePerLevelsSize = size2;
 
-	DBGLOG(INIT, INFO, "EMI offset=%x (%zu), offset2=%x (%u)",
-			offset, size, offset2, size2);
+	DBGLOG(INIT, INFO, "EMI offset=%x, offset2=%x (%u)",
+			offset, offset2, size2);
 #endif
 	return WLAN_STATUS_SUCCESS;
 }

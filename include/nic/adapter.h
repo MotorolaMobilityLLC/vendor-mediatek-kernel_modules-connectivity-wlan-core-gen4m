@@ -584,6 +584,11 @@ struct BSS_INFO {
 #if CFG_MSCS_SUPPORT
 	struct FAST_PATH_INFO rFastPathInfo;
 #endif
+
+
+#if CFG_SUPPORT_LLS
+	uint32_t u4RxMpduAc[STATS_LLS_WIFI_AC_MAX];
+#endif
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -1751,11 +1756,12 @@ struct ADAPTER {
 	u_int8_t fgIsStatValid;
 
 #if CFG_SUPPORT_LLS
+	uint8_t ucLinkStatsBssNum;
 	struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer;
 	struct HAL_LLS_FW_REPORT *pucLinkStatsSrcBufferAddr;
-	uint32_t u4RxMpduAc[STATS_LLS_WIFI_AC_MAX]; /* Store in LLS order */
+	/* Store in LLS order */
 	uint32_t *pu4TxTimePerLevels;
-	uint32_t u4TxTimePerLevelsSize;
+	uint32_t u4TxTimePerLevelsSize; /* 256 * 4bytes (uint32_t) * 2 bands */
 	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM];
 #endif
 
