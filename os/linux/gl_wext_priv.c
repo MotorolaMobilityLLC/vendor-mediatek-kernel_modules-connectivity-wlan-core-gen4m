@@ -2384,7 +2384,7 @@ priv_get_ndis(IN struct net_device *prNetDev,
  */
 /*----------------------------------------------------------------------------*/
 int
-priv_ate_set(IN struct net_device *prNetDev,
+__priv_ate_set(IN struct net_device *prNetDev,
 	     IN struct iw_request_info *prIwReqInfo,
 	     IN union iwreq_data *prIwReqData,
 	     IN char *pcExtra)
@@ -2412,8 +2412,8 @@ priv_ate_set(IN struct net_device *prNetDev,
 		return -EINVAL;
 
 	u4SubCmd = (uint32_t) prIwReqData->data.flags;
-	DBGLOG(REQ, INFO, "MT6632: %s, u4SubCmd=%d\n", __func__,
-	       u4SubCmd);
+	DBGLOG(REQ, INFO, "MT6632: %s, u4SubCmd=%d mode=%d\n", __func__,
+	       u4SubCmd, (uint32_t) prIwReqData->mode);
 
 	switch (u4SubCmd) {
 	case PRIV_QACMD_SET:
@@ -2434,6 +2434,20 @@ priv_ate_set(IN struct net_device *prNetDev,
 		return -EOPNOTSUPP;
 	}
 	return 0;
+}
+
+int
+priv_ate_set(IN struct net_device *prNetDev,
+	     IN struct iw_request_info *prIwReqInfo,
+	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra)
+{
+	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
+	     prIwReqInfo->cmd, prIwReqInfo->flags);
+	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
+	     prIwReqData->mode, prIwReqData->data.flags);
+
+	return compat_priv(prNetDev, prIwReqInfo,
+	     prIwReqData, pcExtra, __priv_ate_set);
 }
 #endif
 
