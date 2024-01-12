@@ -5342,7 +5342,7 @@ uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_TESTMODE_TAG_RF_CTRL;
 	tag->u2Length = sizeof(*tag);
 	tag->ucAction = cmd->ucAction;
-	kalMemCopy(&tag->u, &cmd->u, sizeof(tag->u));
+	kalMemCopy(&tag->u, &cmd->u, sizeof(cmd->u));
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
