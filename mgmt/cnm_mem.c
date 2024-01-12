@@ -813,7 +813,7 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint16_t i;
 	enum ENUM_STA_REC_CMD_ACTION eAction;
 
-	if (ucBssIndex > prAdapter->ucHwBssIdNum)
+	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
 		return;
 
 	if (ucStaRecIndexExcluded < CFG_STA_REC_NUM)
