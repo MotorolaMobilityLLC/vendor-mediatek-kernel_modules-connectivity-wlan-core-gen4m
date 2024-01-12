@@ -1486,6 +1486,25 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		/* Reset RLM related field of BSSINFO. */
 		rlmBssAborted(prAdapter, prP2pBssInfo);
 
+		if (prP2pBssInfo->ucBMCWlanIndex != WTBL_RESERVED_ENTRY) {
+			struct PARAM_REMOVE_KEY  pvSetBuffer;
+			uint32_t pu4SetInfoLen;
+
+			kalMemZero(&pvSetBuffer,
+				   sizeof(struct PARAM_REMOVE_KEY));
+
+			pvSetBuffer.u4KeyIndex =
+				prP2pBssInfo->ucBcDefaultKeyIdx;
+			pvSetBuffer.ucBssIdx = prP2pBssInfo->ucBssIndex;
+			kalMemCopy(pvSetBuffer.arBSSID,
+				   prP2pBssInfo->aucBSSID, MAC_ADDR_LEN);
+
+			wlanSetRemoveKey(prAdapter,
+					&pvSetBuffer,
+					sizeof(struct PARAM_REMOVE_KEY),
+					&pu4SetInfoLen, FALSE);
+		}
+
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pBssInfo->ucBssIndex,
 			prP2pBssInfo->u4PrivateData));
