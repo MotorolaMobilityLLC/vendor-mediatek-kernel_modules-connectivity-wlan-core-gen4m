@@ -2468,7 +2468,7 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	struct IE_MBSSID_INDEX *idx = NULL;
 	struct IE_MBSSID *mbss = NULL;
 	struct IE_NON_TX_CAP *cap = NULL;
-	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT], *pos, *end;
+	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT] = {0}, *pos, *end;
 	size_t len;
 
 	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
