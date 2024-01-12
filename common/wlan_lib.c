@@ -3271,8 +3271,11 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 	}
 
 	if (status != WLAN_STATUS_SUCCESS) {
-		DBGLOG(RX, WARN, "Restart ReturnIndicatedRfb Timer (%ums)\n",
-		       RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
+		DBGLOG(RX, WARN,
+			"Restart ReturnIndicatedRfb Timer (%ums) I,F:%u,%u\n",
+			RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC,
+			prRxCtrl->rIndicatedRfbList.u4NumElem,
+			prRxCtrl->rFreeSwRfbList.u4NumElem);
 		/* restart timer */
 		cnmTimerStartTimer(prAdapter,
 			&prAdapter->rPacketDelaySetupTimer,
@@ -3293,7 +3296,7 @@ void wlanReturnPacketDelaySetupTimeout(struct ADAPTER
 				       *prAdapter, uintptr_t ulParamPtr)
 {
 #if (CFG_SUPPORT_RETURN_TASK == 1)
-	kal_tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
+	kal_tasklet_hi_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
 #else
 	wlanReturnPacketDelaySetup(prAdapter);
 #endif /* CFG_SUPPORT_RETURN_TASK */
@@ -3351,8 +3354,10 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 		if (!timerPendingTimer(
 		    &prAdapter->rPacketDelaySetupTimer)) {
 			DBGLOG(RX, WARN,
-			       "Start ReturnIndicatedRfb Timer (%ums)\n",
-			       RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
+			       "Start ReturnIndicatedRfb Timer (%ums) I,F:%u,%u\n",
+			       RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC,
+			       prRxCtrl->rIndicatedRfbList.u4NumElem,
+			       prRxCtrl->rFreeSwRfbList.u4NumElem);
 			cnmTimerStartTimer(prAdapter,
 			    &prAdapter->rPacketDelaySetupTimer,
 			    RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
@@ -8038,6 +8043,7 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 	 */
 	prWifiVar->fgSwRxReordering = wlanCfgGetUint32(prAdapter,
 					"SwRxReordering", FEATURE_ENABLED);
+
 	/**
 	 * A debugging switch enables RXD, RXP dumping when driver drops packets
 	 * for ICV error.
@@ -8057,6 +8063,9 @@ void wlanInitFeatureOption(struct ADAPTER *prAdapter)
 		prWifiVar->fgDumpTxD,
 		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
 		prWifiVar->fgDumpRxD);
+
+	prWifiVar->fgFlushRxReordering = wlanCfgGetUint32(prAdapter,
+					"FlushRxReordering", FEATURE_ENABLED);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	prWifiVar->u4BaShortMissTimeoutMs = wlanCfgGetUint32(prAdapter,

@@ -1133,6 +1133,7 @@ struct WIFI_VAR {
 			uint32_t fgDumpRxDsegment: 1; /* 0x40 */
 		};
 	};
+	u_int8_t fgFlushRxReordering;
 	uint32_t u4BaShortMissTimeoutMs;
 	uint32_t u4BaMissTimeoutMs;
 
