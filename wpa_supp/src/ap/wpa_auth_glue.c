@@ -738,6 +738,7 @@ hostapd_wpa_auth_get_msk(void *ctx, const u8 *addr, u8 *msk, size_t *len) {
 static int
 hostapd_wpa_auth_set_key(void *ctx, int vlan_id, enum wpa_alg alg,
 			 const u8 *addr, int idx, u8 *key, size_t key_len) {
+	int ret = 0;
 #ifndef CFG_SUPPORT_NAN
 	CMD_802_11_KEY rCmdkey;
 	P_CMD_802_11_KEY prCmdkey = &rCmdkey;
@@ -809,16 +810,26 @@ hostapd_wpa_auth_set_key(void *ctx, int vlan_id, enum wpa_alg alg,
 		*/
 	}
 
-	if (key != NULL) {
-		if ((key_len == 32) &&
-		    (rCmdkey.ucAlgorithmId == CIPHER_SUITE_TKIP) &&
-		    (rCmdkey.ucIsAuthenticator == FALSE)) {
-			/* Do this like driver do : mtk_cfg80211_add_key */
-			kalMemCopy(&rCmdkey.aucKeyMaterial, key, 16);
-			kalMemCopy(&rCmdkey.aucKeyMaterial[24], key + 16, 8);
-			kalMemCopy(&rCmdkey.aucKeyMaterial[16], key + 24, 8);
-		} else {
-			kalMemCopy(&rCmdkey.aucKeyMaterial, key, key_len);
+	if (sizeof(rCmdkey.aucKeyMaterial) < key_len) {
+		DBGLOG(RSN, ERROR,
+			   ("Copy overflow is detected. No key is copied.\n"));
+		ret = -1;
+	} else {
+		if (key != NULL) {
+			if ((key_len == 32) &&
+			    (rCmdkey.ucAlgorithmId == CIPHER_SUITE_TKIP) &&
+			    (rCmdkey.ucIsAuthenticator == FALSE)) {
+				/* Do this like driver do :  */
+				/* mtk_cfg80211_add_key      */
+				kalMemCopy(&rCmdkey.aucKeyMaterial, key, 16);
+				kalMemCopy(&rCmdkey.aucKeyMaterial[24],
+							key + 16, 8);
+				kalMemCopy(&rCmdkey.aucKeyMaterial[16],
+							key + 24, 8);
+			} else {
+				kalMemCopy(&rCmdkey.aucKeyMaterial, key,
+							key_len);
+			}
 		}
 	}
 
@@ -843,7 +854,7 @@ hostapd_wpa_auth_set_key(void *ctx, int vlan_id, enum wpa_alg alg,
 		wpas_evt_cfg80211_add_key(prCmdkey);
 	}
 #endif
-	return 0;
+	return ret;
 }
 
 int
