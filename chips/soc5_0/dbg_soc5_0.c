@@ -842,7 +842,7 @@ void soc5_0_dump_mac_info(IN struct ADAPTER *prAdapter)
 			/* #define BN1_WF_TMAC_TOP_DBGR0_ADDR */
 			0x820F4360,
 			/* #define BN1_WF_TMAC_TOP_DBGR1_ADDR */
-			0x820F4364,
+			0x820F4368,
 			/* #define BN1_WF_AGG_TOP_SMCR0_ADDR */
 			0x820F22F0,
 			/* #define BN1_WF_AGG_TOP_SMCR1_ADDR */
