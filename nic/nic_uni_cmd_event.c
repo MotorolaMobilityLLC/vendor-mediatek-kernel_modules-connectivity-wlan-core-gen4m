@@ -5794,6 +5794,49 @@ exit:
 	return status;
 }
 
+uint32_t nicUniCmdQueryThermalTemperature(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen)
+{
+	struct THERMAL_DATA *data = pvQueryBuffer;
+	struct UNI_CMD_THERMAL *uni_cmd;
+	struct UNI_CMD_THERMAL_SENSOR_INFO *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_THERMAL) +
+		sizeof(struct UNI_CMD_THERMAL_SENSOR_INFO);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_THERMAL *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_THERMAL_SENSOR_INFO *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_THERMAL_TAG_FEATURE_TEMPERATURE_QUERY;
+	tag->u2Length = sizeof(*tag);
+	tag->ucThermalCtrlFormatId = 0;
+	tag->ucActionIdx = THERMAL_SENSOR_INFO_TEMPERATURE;
+	tag->ucBandIdx = data->ucBandIdx;
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_THERMAL,
+					FALSE,
+					TRUE,
+					TRUE,
+					nicUniEventThermalTemperature,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					pvQueryBuffer,
+					u4QueryBufferLen);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -6781,6 +6824,39 @@ void nicUniEventFwLogQueryBase(IN struct ADAPTER *ad,
 
 	if (addr)
 		*addr = tag->u4Address;
+}
+
+void nicUniEventThermalTemperature(IN struct ADAPTER *ad,
+	IN struct CMD_INFO *cmd, IN uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_THERMAL *evt;
+	struct UNI_EVENT_THERMAL_RSP *tag;
+	struct UNI_EVENT_THERMAL_SENSOR_INFO *info;
+	struct THERMAL_DATA *data;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_THERMAL)
+		return;
+
+	evt = (struct UNI_EVENT_THERMAL *)uni_evt->aucBuffer;
+
+	tag = (struct UNI_EVENT_THERMAL_RSP *)evt->aucTlvBuffer;
+	if (tag->u2Tag != UNI_THERMAL_EVENT_TEMPERATURE_INFO)
+		return;
+
+	info = (struct UNI_EVENT_THERMAL_SENSOR_INFO *)tag->aucBuffer;
+	if (info->ucCategory != UNI_THERMAL_EVENT_TEMPERATURE_INFO)
+		return;
+
+	if (cmd->pvInformationBuffer) {
+		data = cmd->pvInformationBuffer;
+
+		data->u4Temperature = info->u4SensorResult;
+	}
+
+	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
+		WLAN_STATUS_SUCCESS);
 }
 
 /*******************************************************************************

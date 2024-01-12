@@ -2138,6 +2138,10 @@ struct ADAPTER {
 #if CFG_SUPPORT_TDLS
 	uint32_t u4TdlsLinkCount;
 #endif /* CFG_SUPPORT_TDLS */
+
+#if CFG_SUPPORT_THERMAL_QUERY
+	void *tz;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

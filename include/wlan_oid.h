@@ -5467,4 +5467,11 @@ uint32_t wlanoidQuerySerInfo(IN struct ADAPTER *prAdapter,
 			     IN void *pvQueryBuffer,
 			     IN uint32_t u4QueryBufferLen,
 			     OUT uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidQueryThermalTemperature(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen);
+
 #endif /* _WLAN_OID_H */

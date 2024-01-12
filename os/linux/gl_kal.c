@@ -100,6 +100,10 @@
 #include <linux/skbuff.h>
 #include <linux/module.h>
 #include <linux/debugfs.h>
+#if CFG_SUPPORT_THERMAL_QUERY
+#include <linux/platform_device.h>
+#include <linux/thermal.h>
+#endif
 
 /* for uevent */
 #include <linux/miscdevice.h>   /* for misc_register, and SYNTH_MINOR */
@@ -12670,3 +12674,80 @@ void kalReleaseTxDirectHifQLock(IN struct GLUE_INFO *prGlueInfo,
 		ulHifQFlags);
 }
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
+#if CFG_SUPPORT_THERMAL_QUERY
+static int get_connsys_thermal_temp(void *data, int *temp)
+{
+	struct ADAPTER *ad = data;
+	struct THERMAL_DATA *thermal;
+	uint32_t temperature = 0;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t size = 0;
+	uint8_t band;
+
+	size = sizeof(struct THERMAL_DATA) * ENUM_BAND_NUM;
+	thermal = kalMemAlloc(size, VIR_MEM_TYPE);
+	if (!thermal)
+		goto exit;
+	kalMemZero(thermal, size);
+
+	status = wlanQueryThermalTemp(ad->prGlueInfo, thermal);
+	if (status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	for (band = 0; band < ENUM_BAND_NUM; band++, data++)
+		temperature += thermal->u4Temperature;
+
+exit:
+	if (status == WLAN_STATUS_SUCCESS) {
+		temperature *= 1000;
+		temperature /= ENUM_BAND_NUM;
+		*temp = temperature;
+	} else {
+		*temp = THERMAL_TEMP_INVALID;
+	}
+
+	if (thermal)
+		kalMemFree(thermal, VIR_MEM_TYPE, size);
+
+	DBGLOG(REQ, INFO, "temp: %d\n", *temp);
+
+	return 0;
+}
+
+static const struct thermal_zone_of_device_ops wf_thermal_ops = {
+	.get_temp = get_connsys_thermal_temp,
+};
+
+int register_thermal_cbs(struct ADAPTER *ad)
+{
+	struct thermal_zone_device *tz;
+	int err = 0;
+
+	tz = thermal_zone_of_sensor_register(&g_prPlatDev->dev,
+		0, ad, &wf_thermal_ops);
+	if (IS_ERR(tz)) {
+		err = PTR_ERR(tz);
+		DBGLOG(INIT, ERROR,
+			"Failed to register the thermal cbs: %d\n",
+			err);
+		goto exit;
+	}
+
+	ad->tz = tz;
+
+exit:
+	return err;
+}
+
+void unregister_thermal_cbs(struct ADAPTER *ad)
+{
+	if (!ad->tz)
+		return;
+
+	thermal_zone_of_sensor_unregister(ad->prGlueInfo->prDev,
+		ad->tz);
+	ad->tz = NULL;
+}
+#endif
+

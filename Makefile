@@ -808,6 +808,12 @@ else
     endif
 endif
 
+ifeq ($(CONFIG_SUPPORT_THERMAL_QUERY), y)
+    ccflags-y += -DCFG_SUPPORT_THERMAL_QUERY=1
+else
+    ccflags-y += -DCFG_SUPPORT_THERMAL_QUERY=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_POWER_THROTTLING), y)
 ccflags-y += -DCFG_SUPPORT_POWER_THROTTLING=1
 else
