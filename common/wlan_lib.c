@@ -9187,6 +9187,141 @@ textresume:
 	return STATE_EOF;
 }
 
+/**
+ * wlanCfgFindNextTokenWithEqual() - cfg and ini file parsing
+ *
+ * This function is called from wlanCfgParse()
+ */
+int32_t wlanCfgFindNextTokenWithEqual(struct WLAN_CFG_PARSE_STATE_S
+			     *state)
+{
+	int8_t *x = state->ptr;
+	int8_t *s;
+
+	if (state->nexttoken) {
+		int32_t t = state->nexttoken;
+
+		state->nexttoken = 0;
+		return t;
+	}
+
+	for (;;) {
+		switch (*x) {
+		case 0:
+			state->ptr = x;
+			return STATE_EOF;
+		case '\n':
+			x++;
+			state->ptr = x;
+			return STATE_NEWLINE;
+		case ' ':
+		case ',':
+		/*case ':':  should not including : , mac addr would be fail*/
+		case '\t':
+		case '\r':
+		case '=':
+			x++;
+			continue;
+		case '#':
+			while (*x && (*x != '\n'))
+				x++;
+			if (*x == '\n') {
+				state->ptr = x + 1;
+				return STATE_NEWLINE;
+			}
+			state->ptr = x;
+			return STATE_EOF;
+
+		default:
+			goto text;
+		}
+	}
+
+textdone:
+	state->ptr = x;
+	*s = 0;
+	return STATE_TEXT;
+text:
+	state->text = s = x;
+textresume:
+	for (;;) {
+		switch (*x) {
+		case 0:
+			goto textdone;
+		case ' ':
+		case ',':
+		/* case ':': */
+		case '\t':
+		case '\r':
+		case '=':
+			x++;
+			goto textdone;
+		case '\n':
+			state->nexttoken = STATE_NEWLINE;
+			x++;
+			goto textdone;
+		case '"':
+			x++;
+			for (;;) {
+				switch (*x) {
+				case 0:
+					/* unterminated quoted thing */
+					state->ptr = x;
+					return STATE_EOF;
+				case '"':
+					x++;
+					goto textresume;
+				default:
+					*s++ = *x++;
+				}
+			}
+			break;
+		case '\\':
+			x++;
+			switch (*x) {
+			case 0:
+				goto textdone;
+			case 'n':
+				*s++ = '\n';
+				break;
+			case 'r':
+				*s++ = '\r';
+				break;
+			case 't':
+				*s++ = '\t';
+				break;
+			case '\\':
+				*s++ = '\\';
+				break;
+			case '\r':
+				/* \ <cr> <lf> -> line continuation */
+				if (x[1] != '\n') {
+					x++;
+					continue;
+				}
+				kal_fallthrough;
+			case '\n':
+				/* \ <lf> -> line continuation */
+				x++;
+				/* eat any extra whitespace */
+				while ((*x == ' ') || (*x == '\t'))
+					x++;
+				continue;
+			default:
+				/* unknown escape -- just copy */
+				*s++ = *x++;
+			}
+			continue;
+		default:
+			*s++ = *x++;
+#if CFG_SUPPORT_EASY_DEBUG
+			state->textsize++;
+#endif
+		}
+	}
+	return STATE_EOF;
+}
+
 uint32_t wlanCfgParseArgument(int8_t *cmdLine,
 			      int32_t *argc, int8_t *argv[])
 {
@@ -9644,7 +9779,7 @@ uint32_t wlanCfgParse(struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO, "wlanCfgParse()\n");
 
 	for (;;) {
-		switch (wlanCfgFindNextToken(&state)) {
+		switch (wlanCfgFindNextTokenWithEqual(&state)) {
 		case STATE_EOF:
 			if (i4Nargs < 2)
 				goto exit;
@@ -9926,7 +10061,7 @@ uint32_t wlanCfgParse(struct ADAPTER *prAdapter,
 	state.maxSize = u4ConfigBufLen;
 
 	for (;;) {
-		switch (wlanCfgFindNextToken(&state)) {
+		switch (wlanCfgFindNextTokenWithEqual(&state)) {
 		case STATE_EOF:
 			if (nargs > 1)
 				wlanCfgParseAddEntry(prAdapter, args[0], NULL,
