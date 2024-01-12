@@ -39,13 +39,13 @@ struct PARAM_P2P_SEND_SD_RESPONSE {
 	uint8_t fgNeedTxDoneIndication;
 	uint8_t ucChannelNum;
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct PARAM_P2P_GET_SD_REQUEST {
 	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct PARAM_P2P_GET_SD_REQUEST_EX {
@@ -54,7 +54,7 @@ struct PARAM_P2P_GET_SD_REQUEST_EX {
 	/* Channel Number Where SD Request is received. */
 	uint8_t ucChannelNum;
 	uint8_t ucSeqNum;	/* Get SD Request by sequence number. */
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct PARAM_P2P_SEND_SD_REQUEST {
@@ -63,14 +63,14 @@ struct PARAM_P2P_SEND_SD_REQUEST {
 	/* Indicate the Service Discovery Supplicant Version. */
 	uint8_t ucVersionNum;
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 /* Service Discovery 1.0. */
 struct PARAM_P2P_GET_SD_RESPONSE {
 	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
 	uint16_t u2PacketLength;
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 /* Service Discovery 2.0. */
@@ -78,7 +78,7 @@ struct PARAM_P2P_GET_SD_RESPONSE_EX {
 	uint8_t rTransmitterAddr[PARAM_MAC_ADDR_LEN];
 	uint16_t u2PacketLength;
 	uint8_t ucSeqNum;	/* Get SD Response by sequence number. */
-	uint8_t aucPacketContent[0];	/*native 802.11 */
+	uint8_t aucPacketContent[];	/*native 802.11 */
 };
 
 struct PARAM_P2P_TERMINATE_SD_PHASE {

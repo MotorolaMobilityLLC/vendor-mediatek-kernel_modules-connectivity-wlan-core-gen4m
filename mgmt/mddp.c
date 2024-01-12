@@ -141,7 +141,7 @@ struct mddp_txd_t {
 	uint8_t aucMacAddr[MAC_ADDR_LEN];
 	uint8_t local_mac[MAC_ADDR_LEN];
 	uint8_t txd_length;
-	uint8_t txd[0];
+	uint8_t txd[];
 } __packed;
 
 struct mddp_pcie_bar_info {

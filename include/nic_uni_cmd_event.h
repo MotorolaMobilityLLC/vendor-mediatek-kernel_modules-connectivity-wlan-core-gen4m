@@ -139,7 +139,7 @@ struct WIFI_UNI_CMD {
 	uint8_t ucOption;	/* CID option */
 
 	uint8_t aucReserved2[4];
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 struct WIFI_UNI_SETQUERY_INFO {
@@ -275,7 +275,7 @@ struct UNI_CMD_DEVINFO {
 	uint8_t aucPadding[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* DevInfo command Tag */
@@ -301,7 +301,7 @@ struct UNI_CMD_BSSINFO {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* BssInfo command Tag */
@@ -472,7 +472,7 @@ struct UNI_CMD_BSSINFO_BCN_CONTENT {
 	uint8_t  ucAction;
 	uint8_t  aucPktContentType;
 	uint16_t u2PktLength;
-	uint8_t  aucPktContent[0];
+	uint8_t  aucPktContent[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -483,7 +483,7 @@ struct UNI_CMD_BSSINFO_FILS_REQ {
 	uint32_t u4MaxInterval;
 	uint16_t u2PktLength;
 	uint8_t aucReserved[2];
-	uint8_t  aucPktContent[0];
+	uint8_t  aucPktContent[];
 } __KAL_ATTRIB_PACKED__;
 
 enum BCN_CONTENT_ACTION {
@@ -707,7 +707,7 @@ struct UNI_CMD_BSSINFO_OFFLOAD_PKT {
 	uint8_t  fgEnable;
 	uint16_t u2Wcid;
 	uint16_t u2OffloadPktLength;
-	uint8_t  aucPktContent[0];
+	uint8_t  aucPktContent[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNSOLICIT_TX {
@@ -810,7 +810,7 @@ struct UNI_CMD_STAREC {
 	uint8_t aucPadding2[1];
 
 	/* TLV */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /*  STA record TLV tag */
@@ -1046,7 +1046,7 @@ struct UNI_CMD_STAREC_MLD_SETUP {
 	uint16_t  u2SetupWlanId;
 	uint8_t   ucLinkNumber;
 	uint8_t   audPaddings[3];
-	uint8_t   aucLinkInfo[0];
+	uint8_t   aucLinkInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -1184,7 +1184,7 @@ struct UNI_CMD_STAREC_T2LM {
 	uint16_t  u2Length;
 	uint8_t   ucLinkNumber;
 	uint8_t   audPaddings[3];
-	uint8_t   aucLinkInfo[0];
+	uint8_t   aucLinkInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command (0x04) */
@@ -1195,7 +1195,7 @@ struct UNI_CMD_EDCA {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* EDCA set command Tag */
@@ -1233,7 +1233,7 @@ struct UNI_CMD_SUSPEND {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                             | ID  | structure
 	*   -------------                   | ----| -------------
@@ -1321,7 +1321,7 @@ struct UNI_CMD_OFFLOAD {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
         *
         *   TAG                             | ID  | structure
         *   -------------                   | ----| -------------
@@ -1359,7 +1359,7 @@ struct UNI_CMD_OFFLOAD_ARPNS_IPV4 {
 	uint8_t ucVersion;
 	uint8_t aucPadding[1];
 
-	struct IPV4_ADDRESS arIpv4NetAddress[0];
+	struct IPV4_ADDRESS arIpv4NetAddress[];
 } __KAL_ATTRIB_PACKED__;
 
 struct IPV6_ADDRESS {
@@ -1375,7 +1375,7 @@ struct UNI_CMD_OFFLOAD_ARPNS_IPV6 {
 	uint8_t ucIpv6AddressCount;
 	uint8_t aucPadding[2];
 
-	struct IPV6_ADDRESS arIpv6NetAddress[0];
+	struct IPV6_ADDRESS arIpv6NetAddress[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -1422,7 +1422,7 @@ struct UNI_CMD_HIF_CTRL {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                             | ID  | structure
 	*   -------------                   | ----| -------------
@@ -1454,7 +1454,7 @@ struct UNI_CMD_BAND_CONFIG {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
         *
         *   TAG                              | ID  | structure
         *   -------------                    | ----| -------------
@@ -1549,7 +1549,7 @@ struct UNI_CMD_MUAR {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Muar command Tag */
@@ -1602,7 +1602,7 @@ struct UNI_CMD_WSYS_CONFIG {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                              | ID  | structure
 	*   ---------------------------------|-----|--------------
@@ -1687,7 +1687,7 @@ struct UNI_CMD_ROAMING {
 	uint8_t aucReserved[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
+	uint8_t aucTlvBuffer[]; /**<the TLVs includer in this field:
         *
         *  TAG                                | ID   | structure
         *  -------------                      | -----| -------------
@@ -1721,7 +1721,7 @@ struct UNI_CMD_ACCESS_REG {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                              | ID  | structure
         *   ---------------------------------|-----|--------------
@@ -1762,7 +1762,7 @@ struct UNI_CMD_CHIP_CONFIG {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                                    | ID  | structure
         *   ---------------------------------------|-----|--------------
@@ -1807,7 +1807,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_CHIP_CONFIG_CHIP_CFG {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t aucbuffer[0];
+	uint8_t aucbuffer[];
 }__KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -1833,7 +1833,7 @@ struct UNI_CMD_POWER_CTRL {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                      | ID  | structure
 	*   -------------------------|-----|--------------
@@ -1862,7 +1862,7 @@ struct UNI_CMD_RRM_11K {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
+	uint8_t aucTlvBuffer[]; /**<the TLVs includer in this field:
 	*
 	*  TAG					| ID   | structure
 	*  ------------------------------------ | -----| -------------
@@ -1910,7 +1910,7 @@ struct UNI_CMD_SER {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
+	uint8_t aucTlvBuffer[]; /**<the TLVs includer in this field:
         *
         *  TAG                    | ID   | structure
         *  -------------          | -----| -------------
@@ -1979,7 +1979,7 @@ struct UNI_CMD_TWT {
 	uint8_t ucBssInfoIdx;
 	uint8_t aucPadding[3];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*  TAG                         | ID   | structure
 	*  -------------               | -----| -------------
@@ -2035,7 +2035,7 @@ struct UNI_CMD_DOMAIN_SET_INFO {
 	uint8_t  uc6GBandwidth;
 	uint8_t  aucReserved[1];
 	/* tlv */
-	uint8_t  aucTlvBuffer[0];
+	uint8_t  aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	*
 	*   TAG                          | ID   | structure
@@ -2058,7 +2058,7 @@ struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_SUBBAND {
 	uint16_t u2IsSetPassiveScan;
 	uint8_t  aucReserved[1];
 	uint8_t  ucSubBandNum;
-	uint8_t  aucSubBandInfoBuffer[0]; // UNI_CMD_DOMAIN_SUBBAND_INFO
+	uint8_t  aucSubBandInfoBuffer[]; // UNI_CMD_DOMAIN_SUBBAND_INFO
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2080,7 +2080,7 @@ struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST {
 	uint8_t  u1ActiveChNum5g;
 	uint8_t  u1ActiveChNum6g;
 	uint8_t  aucReserved[1];
-	uint8_t  aucActChnlListBuffer[0]; // DOMAIN_CHANNEL_T
+	uint8_t  aucActChnlListBuffer[]; // DOMAIN_CHANNEL_T
 } __KAL_ATTRIB_PACKED__;
 
 /* IDC command (0x17) */
@@ -2089,7 +2089,7 @@ struct UNI_CMD_IDC {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *   TAG                        | ID  | structure
         *   ---------------------------|-----|--------------
         *    UNI_CMD_ID_GET_IDC_CHN                              | 0x00 | UNI_CMD_GET_IDC_CHN_T
@@ -2147,7 +2147,7 @@ struct UNI_CMD_RIL_BRIDGE {
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_UWB_COEX {
 	uint8_t ucReserved[4];
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* UWB COEX config Tag */
@@ -2184,7 +2184,7 @@ struct UNI_CMD_SCAN {
 	uint8_t aucPadding[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 typedef uint32_t(*PFN_UNI_CMD_SCAN_TAG_HANDLER) (struct ADAPTER
@@ -2254,7 +2254,7 @@ struct UNI_CMD_SCAN_SSID {
 	uint8_t ucSSIDNum;
 	uint8_t ucIsShortSSID;
 	uint8_t ucReserved;
-	uint8_t aucSsidBuffer[0]; // PARAM_SSID_T
+	uint8_t aucSsidBuffer[]; // PARAM_SSID_T
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2278,7 +2278,7 @@ struct UNI_CMD_SCAN_CHANNEL_INFO {
 	uint8_t ucChannelType;
 	uint8_t ucChannelListNum;
 	uint8_t aucPadding[2];
-	uint8_t aucChnlInfoBuffer[0];
+	uint8_t aucChnlInfoBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2289,7 +2289,7 @@ struct UNI_CMD_SCAN_IE {
 	uint16_t u2IELen;
 	uint8_t  ucBand;
 	uint8_t  ucPadding;
-	uint8_t  aucIEBuffer[0];  //depends on u2IELen
+	uint8_t  aucIEBuffer[];  //depends on u2IELen
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -2333,7 +2333,7 @@ struct UNI_CMD_SCAN_SSID_MATCH_SETS {
 
 	uint8_t  ucMatchSsidNum;
 	uint8_t  aucReserved[3];
-	uint8_t  aucMatchSsidBuffer[0]; // SCAN_SCHED_SSID_MATCH_SETS_T
+	uint8_t  aucMatchSsidBuffer[]; // SCAN_SCHED_SSID_MATCH_SETS_T
 } __KAL_ATTRIB_PACKED__;
 
 /* RDD set command (0x19) */
@@ -2342,7 +2342,7 @@ struct UNI_CMD_RDD {
 	/*fixed field*/
 	uint8_t aucPadding[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*  TAG                          | ID   | structure
 	*  -------------                | -----| -------------
@@ -2375,7 +2375,7 @@ struct UNI_CMD_GET_MAC_INFO {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                      | ID  | structure
         *   -------------------------|-----|--------------
@@ -2419,7 +2419,7 @@ struct UNI_CMD_TDLS {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                              | ID  | structure
         *   ---------------------------------|-----|--------------
@@ -2449,7 +2449,7 @@ struct UNI_CMD_BA_OFFLOAD {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                              | ID  | structure
 	*   ---------------------------------|-----|--------------
@@ -2490,7 +2490,7 @@ struct UNI_CMD_P2P {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                        |  ID  | structure
 	*   ---------------------------|------|--------------
@@ -2547,7 +2547,7 @@ struct UNI_CMD_SET_P2P_LO_START_PARAM {
 	uint16_t u2Count;
 	uint32_t u4IELen;
 	uint8_t aucReserved2[8];
-	uint8_t aucIE[0];
+	uint8_t aucIE[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Set listen offload stop parameters (Tag3) */
@@ -2577,7 +2577,7 @@ struct UNI_CMD_SMART_GEAR {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *   TAG                        | ID  | structure
         *   ---------------------------|-----|--------------
         *   UNI_CMD_SMART_GEAR_PARAM   | 0x00| UNI_CMD_SMART_GEAR_PARAM_T
@@ -2612,7 +2612,7 @@ struct UNI_CMD_POWER_METRICS {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*   TAG                        | ID  | structure
 	*   ---------------------------|-----|--------------
 	*   UNI_CMD_POWER_METRICS_PARAM| 0x00| UNI_CMD_POWER_METRICS_PARAM_T
@@ -2656,7 +2656,7 @@ struct UNI_CMD_MIB_INFO {
 	uint8_t ucReserved[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *
 	 *   TAG                              | ID  | structure
@@ -2820,7 +2820,7 @@ struct UNI_CMD_GET_STATISTICS {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
         *
         *   TAG                              | ID  | structure
         *   -------------                    | ----| -------------
@@ -2918,7 +2918,7 @@ struct UNI_CMD_PKT_DROP {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	*
 	*   TAG                                                                               | ID   | structure
@@ -2948,7 +2948,7 @@ struct UNI_CMD_SNIFFER_MODE {
 	uint8_t ucReserved[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Sniffer mode command TLV List */
@@ -2988,7 +2988,7 @@ struct UNI_CMD_SR {
 	uint8_t u1BandIdx;
 	uint8_t au1Padding[3];
 	/*TLV*/
-	uint8_t au1TlvBuffer[0];
+	uint8_t au1TlvBuffer[];
 };
 
 /* SR Command Tag ID */
@@ -3141,7 +3141,7 @@ struct UNI_CMD_CNM {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                              | ID  | structure
 	*   ---------------------------------|-----|--------------
@@ -3232,7 +3232,7 @@ struct UNI_CMD_MBMC {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	*
 	*   TAG                              | ID  | structure
@@ -3279,7 +3279,7 @@ enum ENUM_UNI_CMD_DVT_TAG {
 struct UNI_CMD_DVT {
 	uint8_t ucTestType;
 	uint8_t aucPadding[3];
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 };
 
 struct UNI_CMD_MDVT_PARA {
@@ -3297,7 +3297,7 @@ struct UNI_CMD_POWER_LIMIT {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /** Power Limit command TLV List */
@@ -3348,9 +3348,8 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TXPOWER_CONFIG {
     /*fixed field*/
     uint8_t aucPadding[4];
-
     /* tlv */
-    uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3359,7 +3358,7 @@ struct UNI_CMD_NVRAM_SETTINGS {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /** Nvram command TLV List */
@@ -3396,7 +3395,7 @@ struct UNI_CMD_RA {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                                        | ID   |
 	*   -------------------------  | --   |
@@ -3458,7 +3457,7 @@ struct UNI_CMD_RA_SET_FIXED_RATE {
 	/* tag specific part */
 
 	uint16_t u2Version;
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3496,7 +3495,7 @@ struct UNI_CMD_MLO {
 	uint8_t au1Reserved[3];
 
 	/* tlv */
-	uint8_t au1TlvBuffer[0];
+	uint8_t au1TlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3506,7 +3505,7 @@ struct UNI_EVENT_MLO {
 	uint8_t au1Reserved[3];
 
 	/* tlv */
-	uint8_t au1TlvBuffer[0];
+	uint8_t au1TlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* MLO Tag */
@@ -3561,7 +3560,7 @@ struct UNI_CMD_PP {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                                        | ID   |
 	*   -------------------------      | --   |
@@ -3666,9 +3665,8 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BF {
     /* fixed field */
     uint8_t aucReserved[4];
-
     /* tlv */
-    uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 typedef void (*PFN_UNI_CMD_BF_HANDLER) (union CMD_TXBF_ACTION *cmd,
@@ -3845,7 +3843,7 @@ struct UNI_CMD_THERMAL {
 	uint8_t au1Reserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum UNI_CMD_THERMAL_TAG {
@@ -3907,7 +3905,7 @@ struct UNI_CMD_RSSI_MONITOR {
 	/*fixed field*/
 	uint8_t aucReserved[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                        | ID   | structure
 	*   -------------------------  | ---- | -------------
@@ -3937,7 +3935,7 @@ struct UNI_CMD_MQM_UPDATE_MU_EDCA {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                                 | ID  | structure
 	*   ----------------------------------- | ----| -------------
@@ -3979,7 +3977,7 @@ struct UNI_CMD_PERF_IND {
 	/*fixed field*/
 	uint8_t aucPadding[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*  TAG                             | ID   | structure
 	*  -------------                   | -----| -------------
@@ -4032,7 +4030,7 @@ struct UNI_CMD_ID_FRM_IND_FROM_HOST {
 	/*fixed field*/
 	uint8_t aucPadding[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
         *
         *  TAG                          | ID   | structure
         *  -------------                | -----| -------------
@@ -4071,7 +4069,7 @@ struct UNI_CMD_TESTMODE {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                            | ID  | structure
 	*   -------------------------------|-----|--------------
@@ -4181,7 +4179,7 @@ struct UNI_CMD_TESTMODE_RX_STAT {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*TAG                                 |ID |structure
 	*------------------------------------|---|--------------
@@ -4229,7 +4227,7 @@ struct UNI_CMD_ICS {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                               | ID   | structure
 	*   -------------------    | ----| -------------
@@ -4317,7 +4315,7 @@ struct UNI_CMD_ACS_POLICY {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                            | ID  | structure
 	*   -------------------------------| ----| --------------------------
@@ -4355,7 +4353,7 @@ struct UNI_CMD_EFUSE {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *
 	 *TAG                               |ID  |structure
@@ -4477,7 +4475,7 @@ struct UNI_CMD_RTT {
 	/* fixed field */
 	uint8_t ucReserved[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                          |  ID  | structure
 	*   -----------------------------|------|--------------
@@ -4518,7 +4516,7 @@ struct UNI_CMD_NAN {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                      | ID  | structure
 	*   -------------------------|-----|--------------
@@ -4604,7 +4602,7 @@ struct UNI_CMD_CSI {
 	uint8_t ucReserved[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*   TAG                           | ID   | structure
 	*   ---------------------------   |----- |--------------
 	*    UNI_CMD_CSI_STOP             | 0x00 | UNI_CMD_CSI_STOP
@@ -4674,7 +4672,7 @@ struct UNI_CMD_SEND_VOLT_INFO {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SEND_VOLT_INFO_PARAM {
@@ -4696,7 +4694,7 @@ struct UNI_CMD_PKT_OFLD {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                                  | ID  | structure
 	*   --------------------------------|---|--------------
@@ -4734,7 +4732,7 @@ struct UNI_CMD_KEEP_ALIVE {
 	/* fixed field */
 	uint8_t aucReserved[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                        | ID   | structure
 	*   -------------------------  | ---- | -------------
@@ -4785,7 +4783,7 @@ struct UNI_CMD_MDNS_RECORDE {
 	/* fixed field */
 	uint8_t aucReserved[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                        | ID   | structure
 	*   -------------------------  | ---- | -------------
@@ -4821,7 +4819,7 @@ struct UNI_CMD_RESET_TX_SCRAMBLE {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**
 	 * the TLVs included in this field:
 	 * TAG                           | ID  | structure
@@ -4841,7 +4839,7 @@ struct UNI_CMD_GAMING_MODE {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	* TAG                              |ID |structure
 	* ---------------------------------|---|-------------
@@ -4904,7 +4902,7 @@ struct UNI_CMD_FAST_PATH {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                              | ID  | structure
 	*   ---------------------------------|-----|--------------
@@ -4946,7 +4944,7 @@ struct UNI_CMD_LP_DBG_CTRL {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum UNI_CMD_LP_DBG_CTRL_TAG {
@@ -4977,7 +4975,7 @@ struct UNI_CMD_SET_SAP_RPS {
 	uint8_t ucBssIdx;
 	uint8_t aucReserved[3];
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *	TAG				 | ID  | structure
 	 *	---------------------------------|-----|--------------
@@ -4991,7 +4989,7 @@ struct UNI_CMD_SET_SAP_SUS {
 	uint8_t ucBssIdx;
 	uint8_t aucReserved[3];
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *	TAG				 | ID  | structure
 	 *	---------------------------------|-----|--------------
@@ -5055,7 +5053,7 @@ struct WIFI_UNI_EVENT {
 	uint8_t aucReserved2[2];
 	uint8_t ucS2DIndex;
 
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 /*
@@ -5165,7 +5163,7 @@ struct UNI_EVENT_HIF_CTRL {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* HIF_CTRL event Tag */
@@ -5195,7 +5193,7 @@ struct UNI_EVENT_FW_LOG2HOST {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                              | ID  | structure
         *   ---------------------------------|-----|--------------
@@ -5215,7 +5213,7 @@ struct UNI_EVENT_FW_LOG_FORMAT {
 	uint16_t u2Length;
 	uint8_t ucMsgFmt;
 	uint8_t ucReserved[3];
-	uint8_t acMsg[0];
+	uint8_t acMsg[];
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -5224,7 +5222,7 @@ struct UNI_EVENT_PP {
 	uint8_t au1Reserved[4];
 
 	/* tlv */
-	uint8_t au1TlvBuffer[0];
+	uint8_t au1TlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_PP_TAG {
@@ -5269,7 +5267,7 @@ struct UNI_EVENT_ROAMING {
 	uint8_t aucPadding[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_ROAMING_TAG {
@@ -5308,7 +5306,7 @@ struct UNI_EVENT_ACCESS_REG {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                              | ID  | structure
         *   ---------------------------------|-----|---------------------------------
@@ -5352,7 +5350,7 @@ struct UNI_EVENT_CHIP_CONFIG {
 	uint8_t aucPadding[2];
 	/* tlv */
 
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_CHIP_CONFIG_TAG {
@@ -5369,7 +5367,7 @@ struct UNI_EVENT_IE_COUNTDOWNT {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* IE countdown event Tag */
@@ -5408,7 +5406,7 @@ struct UNI_EVENT_SLEEP_NOTIFY {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                             | ID  | structure
 	*   -------------                   | ----| -------------
@@ -5437,7 +5435,7 @@ struct UNI_EVENT_SPECTRUM {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	*   TAG                           | ID  | structure
 	*   ------------------------------|-----|-----------------------------
@@ -5519,7 +5517,7 @@ struct UNI_EVENT_BEACON_TIMEOUT {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Beacon Timeout event Tag */
@@ -5543,7 +5541,7 @@ struct UNI_EVENT_PS_SYNC {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*   TAG                             | ID  | structure
 	*   -------------                   | ----| -------------
@@ -5576,7 +5574,7 @@ struct UNI_EVENT_SCAN_DONE {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_SCAN_DONE_TAG {
@@ -5617,7 +5615,7 @@ struct UNI_EVENT_SCAN_DONE_CHNLINFO {
 
 	uint8_t ucNumOfChnl;
 	uint8_t aucReserved[3];
-	uint8_t aucChnlInfoBuffer[0];
+	uint8_t aucChnlInfoBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -5646,7 +5644,7 @@ struct UNI_EVENT_STAREC {
 	uint8_t aucPadding[2];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* starec event Tag */
@@ -5680,7 +5678,7 @@ struct UNI_EVENT_RDD
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
         *
         *   TAG                          | ID  | structure
         *   -------------                | ----| -------------
@@ -5725,7 +5723,7 @@ struct UNI_EVENT_RDD_SEND_PULSE {
 	/* Staggered PRF radar: min PRI Difference between 1st and 2nd	*/
 	uint32_t u4OutPRIStgDmin;
 	/* event body  */
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Per band SER counter (Tag1) */
@@ -5739,7 +5737,7 @@ struct UNI_EVENT_RDD_REPORT {
 	uint32_t u4Count;
 	uint8_t ucRddIdx;
 	uint8_t aucReserve[3];
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -5749,7 +5747,7 @@ struct UNI_EVENT_ADD_KEY_DONE {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Add key done event Tag */
@@ -5775,7 +5773,7 @@ struct UNI_EVENT_OBSS_UPDATE
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* OBSS update event Tag */
@@ -5803,7 +5801,7 @@ struct UNI_EVENT_TDLS {
 	/* fixed field */
 	uint8_t aucPadding[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* TDLS event Tag */
@@ -5828,7 +5826,7 @@ struct UNI_EVENT_IDC {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*   TAG                             | ID  | structure
 	*   -------------                   | ----| -------------
 	*   UNI_EVENT_MD_SAFE_CHN   | 0x0 | UNI_EVENT_MD_SAFE_CHN_T
@@ -5859,7 +5857,7 @@ struct UNI_EVENT_MAC_IFNO {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Mac info event Tag */
@@ -5898,7 +5896,7 @@ struct UNI_EVENT_ID_POWER_METRICS {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 };
 
 /* Power Metrics event tag */
@@ -5948,7 +5946,7 @@ struct UNI_EVENT_MIB_INFO {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* MIB command Tag */
@@ -5971,7 +5969,7 @@ struct UNI_EVENT_STATISTICS {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Statistics event tag */
@@ -6110,14 +6108,14 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_STA_STATISTICS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_LINK_STATS {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6140,14 +6138,14 @@ struct UNI_EVENT_EML_INFO {
 	uint8_t ucEmlNegotiated;
 	uint8_t ucMaxMldLinkNum;
 	/* protocol link index to band index */
-	uint8_t auMldLinkIdx[0];
+	uint8_t auMldLinkIdx[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_UEVENT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6156,7 +6154,7 @@ struct UNI_EVENT_SAP {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* SAP event Tag */
@@ -6199,7 +6197,7 @@ struct UNI_EVENT_RSSI_MONITOR {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*   TAG                         | ID  | structure
 	*   --------------------------  | --- | -------------
 	*   UNI_EVENT_RSSI_MONITOR_INFO | 0x0 | UNI_EVENT_RSSI_MONITOR_T
@@ -6227,7 +6225,7 @@ struct UNI_EVENT_P2P {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*                TAG              | ID  | structure
 	*   ------------------------------| ----| -------------
@@ -6300,7 +6298,7 @@ struct UNI_EVENT_CNM {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                                      | ID  | structure
 	*   -----------------------------------------|-----|--------------
@@ -6365,7 +6363,7 @@ struct UNI_EVENT_CNM_GET_CHANNEL_INFO {
 	uint8_t      ucOpChNum;
 	uint8_t      fgIsDBDCEnabled;
 
-	uint8_t      aucChnlInfo[0];
+	uint8_t      aucChnlInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6375,7 +6373,7 @@ struct UNI_EVENT_CNM_GET_BSS_INFO {
 	uint8_t      ucBssNum;
 	uint8_t      aucReserved[3];
 
-	uint8_t      aucBssInfo[0];
+	uint8_t      aucBssInfo[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6436,7 +6434,7 @@ struct UNI_EVENT_MBMC {
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 
 	/**< the TLVs included in this field:
 	*
@@ -6469,7 +6467,7 @@ struct UNI_EVENT_BSS_IS_ABSENCE {
 	uint8_t aucPadding[3];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* BSS Absence or Presence Event Tag */
@@ -6494,16 +6492,15 @@ struct UNI_EVENT_STATUS_TO_HOST {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TXPOWER {
     /* fixed field */
     uint8_t aucPadding[4];
-
     /* tlv */
-    uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_TXPOWER_INFO_TAG {
@@ -6523,8 +6520,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TXPOWER_RSP {
     uint16_t u2Tag;
     uint16_t u2Length;
-
-    uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6533,7 +6529,7 @@ struct UNI_EVENT_WSYS_CONFIG {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_WSYS_CONFIG_TAG {
@@ -6558,7 +6554,7 @@ struct UNI_EVENT_BA_OFFLOAD {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_BA_OFFLOAD_TAG {
@@ -6674,7 +6670,7 @@ struct UNI_EVENT_BF {
 	uint8_t au1Reserved[4];
 
 	/* tlv */
-	uint8_t au1TlvBuffer[0];
+	uint8_t au1TlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* BF event tags */
@@ -6721,9 +6717,8 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_THERMAL {
     /* fixed field */
     uint8_t aucPadding[4];
-
-    /* tlv */
-    uint8_t aucTlvBuffer[0];
+	/* tlv */
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6731,7 +6726,7 @@ struct UNI_EVENT_THERMAL_RSP {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -6807,7 +6802,7 @@ struct UNI_EVENT_CHIP_CAPABILITY
 	uint8_t aucPadding[2];
 	/* tlv */
 
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* CHIP CAPABILITY Tag */
@@ -6850,7 +6845,7 @@ struct UNI_EVENT_UPDATE_COEX
 	uint8_t ucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                              | ID  | structure
 	*   ---------------------------------|-----|--------------
@@ -6896,7 +6891,7 @@ struct UNI_EVENT_TESTMODE_CTRL {
 	uint8_t au1Reserved[4];
 
 	/*tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	*   TAG                           | ID  | structure
 	*   ------------------------------|-----|--------------
@@ -6931,16 +6926,14 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_RESULT_TLV {
     uint16_t u2Tag;
     uint16_t u2Length;
-
-    uint8_t  aucBuffer[0];
-
+	uint8_t  aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_RESULT {
 	uint32_t u4FuncIndex;
 	uint32_t u4PayloadLength;
-	uint8_t  aucEvent[0];
+	uint8_t  aucEvent[];
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
@@ -7002,7 +6995,7 @@ struct UNI_EVENT_TESTMODE_RX_STAT {
 	uint8_t au1Reserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
 	* TAG                                   |ID |structure
 	* --------------------------------------|---|-------------
@@ -7179,7 +7172,7 @@ struct UNI_EVENT_BSS_ER {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* BSS ER event tags */
@@ -7229,7 +7222,7 @@ struct UNI_EVENT_EFUSE_CONTROL {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*TAG                             | ID  |structure
 	*-------------                   | --- |-------------
 	*UNI_EVENT_EFUSE_BUFFER_MODE_READ| 0x0 |UNI_EVENT_EFUSE_BUFFER_MODE_READ_T
@@ -7330,7 +7323,7 @@ struct UNI_EVENT_RTT {
 	/*fixed field*/
 	uint8_t ucReserved[4];
 	/* tlv */
-	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[]; /**< the TLVs included in this field:
 	*
 	*                TAG               | ID   | structure
 	*   -------------------------------| -----| -------------
@@ -7382,7 +7375,7 @@ struct UNI_EVENT_RTT_RESULT_T {
 	uint16_t u2IELen;
 	uint8_t aucReserved[2];
 	/* Keep it last */
-	uint8_t aucIE[0];
+	uint8_t aucIE[];
 } __KAL_ATTRIB_PACKED__;
 /* RTT done (Tag2) */
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7397,7 +7390,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EVENT_TLV_ELEMENT_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t aucbody[0];
+	uint8_t aucbody[];
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -7417,7 +7410,7 @@ struct UNI_EVENT_MDDP {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 	/**< the TLVs included in this field:
 	 *   TAG                          | ID  | structure
 	 *   -------------                | ----| -------------
@@ -7574,7 +7567,7 @@ struct UNI_EVENT_SR {
 	uint8_t u1DbdcIdx;
 	uint8_t au1Padding[3];
 	/*TLV*/
-	uint8_t au1TlvBuffer[0];/*  the TLVs included in this field: */
+	uint8_t au1TlvBuffer[];/*  the TLVs included in this field: */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7583,7 +7576,7 @@ struct UNI_EVENT_WOW {
 	uint8_t ucBssIndex;
 	uint8_t aucReserved[3];
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Wake On WLAN event Tag */
@@ -7649,7 +7642,7 @@ struct UNI_EVENT_CSI {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];/**< the TLVs included in this field:
+	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*   TAG                  | ID  | structure
 	*   -------------        | ----| -------------
 	*   UNI_EVENT_CSI_DATA   | 0x0 | UNI_EVENT_CSI_DATA_T
@@ -7677,7 +7670,7 @@ struct UNI_EVENT_CSI_DATA {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 
-	uint8_t  aucBuffer[0];
+	uint8_t  aucBuffer[];
 } __KAL_ATTRIB_PACKED__;
 #endif
 
@@ -7687,7 +7680,7 @@ struct UNI_EVENT_GET_VOLT_INFO {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_GET_VOLT_INFO_PARAM {
@@ -7710,7 +7703,7 @@ struct UNI_EVENT_HW_DETECT_REPORT {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_HW_DETECT_REPORT_PARAM {
@@ -7731,7 +7724,7 @@ struct UNI_EVENT_PKT_OFLD {
 	/*Fixed Fields*/
 	uint8_t aucPadding[4];
 	/*TLV*/
-	uint8_t aucTlvBuffer[0];/*  the TLVs included in this field: */
+	uint8_t aucTlvBuffer[];/*  the TLVs included in this field: */
 } __KAL_ATTRIB_PACKED__;
 
 #endif
@@ -7742,7 +7735,7 @@ struct UNI_EVENT_DELAY_BAR {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 };
 
 /* Delay Bar event tag */
@@ -7785,7 +7778,7 @@ struct UNI_EVENT_ID_FAST_PATH {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Fast Path event tags */
@@ -7819,13 +7812,13 @@ struct UNI_EVENT_FAST_PATH_PROCESS_T {
 struct UNI_EVENT_ASSERT_DUMP {
 	uint8_t ucBssIndex;
 	uint8_t aucPadding[3];
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_ASSERT_CONTENT {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	uint8_t aucBuf[0];
+	uint8_t aucBuf[];
 } __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_ASSERT_DUMP_TAG {
@@ -7866,7 +7859,7 @@ struct UNI_CMD_RX_HDR_TRAN {
 	uint8_t aucReserved[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum UNI_CMD_RX_HDR_TRAN_TAG {
@@ -7911,7 +7904,7 @@ struct UNI_EVENT_LP_DBG_CTRL {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 enum UNI_EVENT_LP_DBG_CTRL_TAG {
@@ -7973,7 +7966,7 @@ struct UNI_EVENT_FW_DROP_SSN {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 };
 
 /* Delay Bar event tag */
@@ -8007,7 +8000,7 @@ struct UNI_EVENT_UPDATE_LP {
 	uint8_t aucPadding[4];
 
 	/* tlv */
-	uint8_t aucTlvBuffer[0];
+	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
 
 /* Update LP event tags */

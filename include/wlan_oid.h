@@ -1798,7 +1798,7 @@ struct BSSINFO_ARGUMENT {
 	uint8_t Active;
 	uint8_t WmmIdx;
 	uint32_t u4BssInfoFeature;
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 struct PARAM_CUSTOM_PFMU_TAG_READ_STRUCT {

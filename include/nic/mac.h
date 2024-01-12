@@ -3165,7 +3165,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct IE_SUPPORTED_CHANNELS {
 	uint8_t ucId;
 	uint8_t ucLength;
-	uint8_t ucChannelNum[0];
+	uint8_t ucChannelNum[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.20 Channel Switch Announcement element*/
@@ -3194,7 +3194,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct IE_CHANNEL_SWITCH_WRAPPER {
 	uint8_t ucId;
 	uint8_t ucLength;
-	uint8_t aucInfoElem[0];
+	uint8_t aucInfoElem[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.217 Max Channel Switch Time element*/
@@ -3236,7 +3236,7 @@ struct IE_MEASUREMENT_REQ {
 	uint8_t ucToken;
 	uint8_t ucRequestMode;
 	uint8_t ucMeasurementType;
-	uint8_t aucRequestFields[0];
+	uint8_t aucRequestFields[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.60 20/40 BSS Coexistence element */
@@ -3268,7 +3268,7 @@ struct IE_NEIGHBOR_REPORT {
 	uint8_t ucOperClass; /* Hotspot Configuration */
 	uint8_t ucChnlNumber;
 	uint8_t ucPhyType;
-	uint8_t aucSubElem[0];
+	uint8_t aucSubElem[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3389,7 +3389,7 @@ struct IE_MEASUREMENT_REPORT {
 	uint8_t ucToken;
 	uint8_t ucReportMode;
 	uint8_t ucMeasurementType;
-	uint8_t aucReportFields[0];
+	uint8_t aucReportFields[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3448,7 +3448,7 @@ struct RM_BCN_REPORT {
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	uint8_t ucAntennaID;
 	uint8_t aucParentTSF[4];
-	uint8_t aucOptElem[0];
+	uint8_t aucOptElem[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3467,7 +3467,7 @@ struct RM_TSM_REPORT {
 	uint32_t u4AvgDelay;
 	uint8_t ucBin0Range;
 	uint32_t u4Bin[6];
-	uint8_t aucOptSubElems[0];
+	uint8_t aucOptSubElems[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.23 Quiet element */
@@ -3631,7 +3631,7 @@ struct RSN_INFO_ELEM {
 	 * There are many variables of variable length
 	 * follow up, such as RSNCap, AKMSuite...
 	 */
-	uint8_t aucPairwiseKeyCipherSuite1[0];
+	uint8_t aucPairwiseKeyCipherSuite1[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 7.3.2.26 WPA Information element format */
@@ -3716,7 +3716,7 @@ struct IE_FILS_WRAPPED_DATA {
 	uint8_t ucId;
 	uint8_t ucLength;
 	uint8_t ucExtId;
-	uint8_t aucData[0];
+	uint8_t aucData[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3724,7 +3724,7 @@ struct IE_FILS_KEY_CONFIRMATION {
 	uint8_t ucId;
 	uint8_t ucLength;
 	uint8_t ucExtId;
-	uint8_t aucKeyAuth[0];
+	uint8_t aucKeyAuth[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3733,7 +3733,7 @@ struct IE_KEY_DELIVERY {
 	uint8_t ucLength;
 	uint8_t ucExtId;
 	uint8_t aucKeyRSC[8];
-	uint8_t aucKDEList[0];
+	uint8_t aucKDEList[];
 } __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_TWT == 1)
@@ -3857,7 +3857,7 @@ struct WLAN_ACTION_FRAME {
 	/* Action frame body */
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
-	uint8_t ucActionDetails[1];	/* Action details */
+	uint8_t ucActionDetails[];	/* Action details */
 } __KAL_ATTRIB_PACKED__;
 
 /* public Action frame format */
@@ -3953,7 +3953,7 @@ struct ACTION_CHANNEL_SWITCH_FRAME {
 	/* ADDTS Request frame body */
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
-	uint8_t aucInfoElem[0]; /* Information elements */
+	uint8_t aucInfoElem[]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
 /* 802.11-2020 9.6.7.7 Fig. 9-871 Extended Channel Switch Announcement frame */
@@ -3973,7 +3973,7 @@ struct ACTION_EX_CHANNEL_SWITCH_FRAME {
 	uint8_t ucNewOperatingClass;
 	uint8_t ucNewChannelNum;
 	uint8_t ucChannelSwitchCount;
-	uint8_t aucInfoElem[0]; /* Information elements */
+	uint8_t aucInfoElem[]; /* Information elements */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -3990,7 +3990,7 @@ struct ACTION_MSCS_REQ_FRAME {
 	/* Robust Action Value: [4]: MSCS Request [5]: MSCS Response */
 	uint8_t ucAction;
 	uint8_t ucDialogToken;	/* Dialog Token */
-	uint8_t aucMSCSDesc[0]; /* MSCS Descriptor Element */
+	uint8_t aucMSCSDesc[]; /* MSCS Descriptor Element */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4008,7 +4008,7 @@ struct ACTION_MSCS_RSP_FRAME {
 	uint8_t ucAction;
 	uint8_t ucDialogToken;	/* Dialog Token */
 	uint16_t u2StatusCode;	/* Status code */
-	uint8_t aucMSCSDesc[0]; /* MSCS Descriptor Element */
+	uint8_t aucMSCSDesc[]; /* MSCS Descriptor Element */
 } __KAL_ATTRIB_PACKED__;
 
 /* BE D3.0 9.6.35.5 EPCS Priority Access Enable Request frame format
@@ -4203,7 +4203,7 @@ struct _ACTION_VENDOR_SPEC_FRAME_T {
 	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
 	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
 	uint16_t u2SeqCtrl;	/* Sequence Control */
-	uint8_t aucElemInfo[0];	/* Pointer to frame data */
+	uint8_t aucElemInfo[];	/* Pointer to frame data */
 };
 #endif
 
@@ -4416,7 +4416,7 @@ struct ACTION_FT_REQ_ACTION_FRAME {
 	uint8_t ucAction;	/* Action Value */
 	uint8_t aucStaAddr[MAC_ADDR_LEN];
 	uint8_t aucTargetApAddr[MAC_ADDR_LEN];
-	uint8_t aucInfoElem[0];	/* Various IEs, possible no. */
+	uint8_t aucInfoElem[];	/* Various IEs, possible no. */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4434,7 +4434,7 @@ struct ACTION_FT_RESP_ACTION_FRAME {
 	uint8_t aucStaAddr[MAC_ADDR_LEN];
 	uint8_t aucTargetApAddr[MAC_ADDR_LEN];
 	uint16_t u2StatusCode;
-	uint8_t aucInfoElem[0];	/* Various IEs, possible no. */
+	uint8_t aucInfoElem[];	/* Various IEs, possible no. */
 } __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_TWT == 1)
@@ -4489,7 +4489,7 @@ struct _ACTION_TWT_INFO_FRAME {
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
 	uint8_t ucNextTWTCtrl;
-	uint8_t aucNextTWT[0];
+	uint8_t aucNextTWT[];
 } __KAL_ATTRIB_PACKED__;
 #endif
 
@@ -4562,7 +4562,7 @@ struct _ACTION_ML_TWT_SETUP_FRAME_PER_LINK_DISTINCT {
 	uint8_t ucCategory;	/* Category */
 	uint8_t ucAction;	/* Action Value */
 	uint8_t ucDialogToken;	/* Dialog Token */
-	uint8_t rTWT[0];	/* TWT element */
+	uint8_t rTWT[];	/* TWT element */
 } __KAL_ATTRIB_PACKED__;
 #endif
 
@@ -4620,7 +4620,7 @@ struct IE_MTK_PRE_WIFI7 {
 	uint8_t ucLength;
 	uint8_t ucVersion0;
 	uint8_t ucVersion1;
-	uint8_t aucInfoElem[0];
+	uint8_t aucInfoElem[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4686,7 +4686,7 @@ struct ACTION_BTM_REQ_FRAME {
 	uint8_t ucRequestMode;
 	uint16_t u2DisassocTimer;
 	uint8_t ucValidityInterval;
-	uint8_t aucOptInfo[0];
+	uint8_t aucOptInfo[];
 	/* Optional: Bss Termination Duration(0~12 bytes),
 	** Session Information URL, Bss Transition Candidate List
 	*/
@@ -4708,7 +4708,7 @@ struct ACTION_BTM_RSP_FRAME {
 	uint8_t ucDialogToken;
 	uint8_t ucStatusCode;
 	uint8_t ucBssTermDelay;
-	uint8_t aucOptInfo[0];
+	uint8_t aucOptInfo[];
 	/* Optional Target BSSID and Transition Candidate Entry list */
 } __KAL_ATTRIB_PACKED__;
 
@@ -4734,7 +4734,7 @@ struct IE_FAST_TRANSITION {
 	uint8_t aucMic[16]; /*  */
 	uint8_t aucANonce[32]; /* Nonce of R1KH */
 	uint8_t aucSNonce[32]; /* Nonce of S1KH */
-	uint8_t aucOptParam[0];
+	uint8_t aucOptParam[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4811,7 +4811,7 @@ struct ACTION_T2LM_REQ_FRAME {
 	/* Protected EHT Action Value: [0]: T2LM Request */
 	uint8_t ucAction;
 	uint8_t ucDialogToken;	/* Dialog Token */
-	uint8_t aucT2LM[0];	/* TID-TO-LINK Mapping Element */
+	uint8_t aucT2LM[];	/* TID-TO-LINK Mapping Element */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4829,7 +4829,7 @@ struct ACTION_T2LM_RSP_FRAME {
 	uint8_t ucAction;
 	uint8_t ucDialogToken;	/* Dialog Token */
 	uint8_t ucStatusCode;	/* Status Code*/
-	uint8_t aucT2LM[0];	/* TID-TO-LINK Mapping Element */
+	uint8_t aucT2LM[];	/* TID-TO-LINK Mapping Element */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4852,7 +4852,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct IE_REQUEST {
 	uint8_t ucId; /* ELEM_ID_REQUEST */
 	uint8_t ucLength; /* 0 to 237 */
-	uint8_t aucReqIds[0];
+	uint8_t aucReqIds[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4860,7 +4860,7 @@ struct IE_AP_CHNL_REPORT {
 	uint8_t ucId; /* ELEM_ID_AP_CHANNEL_REPORT */
 	uint8_t ucLength; /* 1 to 237 */
 	uint8_t ucOpClass;
-	uint8_t aucChnlList[0];
+	uint8_t aucChnlList[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4918,7 +4918,7 @@ struct IE_MBSSID {
 	uint8_t      ucId;
 	uint8_t      ucLength;
 	uint8_t      ucMaxBSSIDIndicator;
-	uint8_t      ucSubelements[0];
+	uint8_t      ucSubelements[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.74 Multiple BSSID-Index element */
@@ -4963,7 +4963,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct IE_RNR {
 	uint8_t      ucId;
 	uint8_t      ucLength;
-	uint8_t      aucInfoField[0];
+	uint8_t      aucInfoField[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4971,7 +4971,7 @@ struct NEIGHBOR_AP_INFO_FIELD {
 	uint16_t     u2TbttInfoHdr;
 	uint8_t      ucOpClass;
 	uint8_t      ucChannelNum;
-	uint8_t      aucTbttInfoSet[0];
+	uint8_t      aucTbttInfoSet[];
 } __KAL_ATTRIB_PACKED__;
 
 /* 9.4.2.260 Short SSID List element */
@@ -4980,7 +4980,7 @@ struct IE_SHORT_SSID_LIST {
 	uint8_t      ucId;
 	uint8_t      ucLength;
 	uint8_t      ucIdExt;
-	uint8_t      aucShortSsidList[0];
+	uint8_t      aucShortSsidList[];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -4994,7 +4994,7 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct RSNX_INFO_ELEM {
 	uint8_t ucElemId;
 	uint8_t ucLength;
-	uint8_t aucCap[0];
+	uint8_t aucCap[];
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_AP_80211K_SUPPORT
@@ -5035,7 +5035,7 @@ struct IE_TCLAS_MASK {
 	uint8_t      ucId;
 	uint8_t      ucLength;
 	uint8_t      ucIdExt;
-	uint8_t      aucFrameClassifier[0];  /* Frame Classifier Field */
+	uint8_t      aucFrameClassifier[];  /* Frame Classifier Field */
 } __KAL_ATTRIB_PACKED__;
 
 /* Frame Classifier Field */
@@ -5061,7 +5061,7 @@ struct IE_MSCS_DESC {
 	uint8_t      ucReqType;
 	uint16_t     u2UserPriorityCtrl; /* bitmap: 4567, limit: 7 */
 	uint32_t     u4StreamTimeout; /* 60s */
-	uint8_t      aucData[0]; /* TCLAS */
+	uint8_t      aucData[]; /* TCLAS */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__

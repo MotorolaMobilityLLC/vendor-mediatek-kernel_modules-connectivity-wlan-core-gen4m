@@ -62,7 +62,7 @@ struct MSG_CH_REQ {
 	uint32_t u4MaxInterval;	/* In unit of ms */
 	enum ENUM_MBMC_BN eDBDCBand;
 	uint8_t ucExtraChReqNum;
-	uint8_t aucBuffer[0];
+	uint8_t aucBuffer[];
 };
 
 struct MSG_CH_ABORT {
