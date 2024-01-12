@@ -3496,9 +3496,12 @@ p2pRoleFsmGetStaStatistics(IN struct ADAPTER *prAdapter,
 
 	}
 
-	cnmTimerStartTimer(prAdapter,
-		&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
-		P2P_ROLE_GET_STATISTICS_TIME);
+	/* Make sure WFD is still enabled */
+	if (prAdapter->rWifiVar.rWfdConfigureSettings.ucWfdEnable) {
+		cnmTimerStartTimer(prAdapter,
+			&(prP2pRoleFsmInfo->rP2pRoleFsmGetStatisticsTimer),
+			P2P_ROLE_GET_STATISTICS_TIME);
+	}
 }
 #endif
 
