@@ -133,6 +133,8 @@ void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 	if (!prAdapter->fgIsFwOwn) {
 		halCheckHifState(prAdapter);
 		halDumpHifDebugLog(prAdapter);
+	} else {
+		DBGLOG(HAL, ERROR, "Skip due to FW own.\n");
 	}
 	if (prAdapter->chip_info->dumpwfsyscpupcr)
 		prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
