@@ -728,7 +728,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	}
 
 	log_dbg(CNM, INFO,
-	       "ChReq net=%d token=%d b=%d c=%d s=%d w=%d s1=%d s2=%d d=%d t=%d\n",
+	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
 	       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID,
 	       prMsgChReq->eRfBand, prMsgChReq->ucPrimaryChannel,
 	       prMsgChReq->eRfSco, prMsgChReq->eRfChannelWidth,
@@ -2054,8 +2054,13 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	if (ucMaxBandwidth > ucChannelBw)
 		ucMaxBandwidth = ucChannelBw;
 #endif
-	DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
-		prBssInfo->ucPrimaryChannel, ucMaxBandwidth);
+	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
+		DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
+			prBssDesc->ucChannelNum, ucMaxBandwidth);
+	} else {
+		DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
+			prBssInfo->ucPrimaryChannel, ucMaxBandwidth);
+	}
 
 	return ucMaxBandwidth;
 }
