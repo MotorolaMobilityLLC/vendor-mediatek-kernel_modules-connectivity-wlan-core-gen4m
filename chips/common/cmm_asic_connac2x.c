@@ -2180,26 +2180,29 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 			       IN struct SW_RFB *prSwRfb,
 			       IN uint8_t ucBssIndex)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
+	uint32_t u4PhyRate;
+	uint16_t u2Rate = 0; /* Unit 500 Kbps */
+	struct RxRateInfo rRxRateInfo = {0};
+	int status;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 	/* REMOVE DATA RATE Parsing Logic:Workaround only for 6885*/
 	/* Since MT6885 can not get Rx Data Rate dur to RXV HW Bug*/
 
-	if (ucBssIndex >= BSSID_NUM)
+	prGlueInfo = prAdapter->prGlueInfo;
+	status = wlanGetRxRate(prGlueInfo, ucBssIndex, &u4PhyRate, NULL,
+				&rRxRateInfo);
+	/* ucRate(500kbs) = u4PhyRate(100kbps) */
+	if (status < 0 || u4PhyRate == 0)
 		return;
-
-	/* can't parse radiotap info if no rx vector */
-	if (((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_2)) == 0)
-		|| ((prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) == 0)) {
-		return;
-	}
-
-	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
+	u2Rate = u4PhyRate / 5;
 
 	/* RCPI */
+	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
 	ucRCPI0 = HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3);
 	ucRCPI1 = HAL_RX_STATUS_GET_RCPI1(prRxStatusGroup3);
 
