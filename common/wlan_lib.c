@@ -1132,10 +1132,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 
-	/* disable sw wfdma for init cmd */
-	if (prSwWfdmaInfo->fgIsSupportSwWfdma)
-		prSwWfdmaInfo->fgIsEnSwWfdma = FALSE;
-
 	eFailReason = FAIL_REASON_MAX;
 
 	wlanOnPreAllocAdapterMem(prAdapter, bAtResetFlow);
@@ -1200,6 +1196,12 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		wlanOnPostNicInitAdapter(prAdapter, prRegInfo, bAtResetFlow);
 
+		if (prSwWfdmaInfo->fgIsEnAfterFwdl) {
+			if (prSwWfdmaInfo->rOps.enable)
+				prSwWfdmaInfo->rOps.enable(
+					prAdapter->prGlueInfo, false);
+		}
+
 		/* 4 <5> HIF SW info initialize */
 		if (!halHifSwInfoInit(prAdapter)) {
 			DBGLOG(INIT, ERROR, "halHifSwInfoInit failed!\n");
@@ -1243,9 +1245,11 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		}
 #endif
 
-		/* enable sw wfdma after fw dl */
-		if (prSwWfdmaInfo->fgIsSupportSwWfdma)
-			prSwWfdmaInfo->fgIsEnSwWfdma = TRUE;
+		if (prSwWfdmaInfo->fgIsEnAfterFwdl) {
+			if (prSwWfdmaInfo->rOps.enable)
+				prSwWfdmaInfo->rOps.enable(
+					prAdapter->prGlueInfo, true);
+		}
 
 		DBGLOG(INIT, INFO, "Waiting for Ready bit..\n");
 
