@@ -3943,6 +3943,18 @@ uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	rCmdUpdateWmmParms.fgIsQBSS = prBssInfo->fgIsQBSS;
 	rCmdUpdateWmmParms.ucWmmSet = (uint8_t) prBssInfo->ucWmmQueSet;
 
+	DBGLOG_LIMITED(QM, INFO, "WMM[%d], AC0.Aifsn[%u], AC0.CWmin[%u]\n",
+		rCmdUpdateWmmParms.ucWmmSet,
+		rCmdUpdateWmmParms.arACQueParms[AC0].u2Aifsn,
+		rCmdUpdateWmmParms.arACQueParms[AC0].u2CWmin);
+
+	DBGLOG_LIMITED(QM, INFO,
+		"AC1.Aifsn[%u], AC2.Aifsn[%u] AC1.CWmin[%u], AC2.CWmin[%u]\n",
+		rCmdUpdateWmmParms.arACQueParms[AC1].u2Aifsn,
+		rCmdUpdateWmmParms.arACQueParms[AC2].u2Aifsn,
+		rCmdUpdateWmmParms.arACQueParms[AC1].u2CWmin,
+		rCmdUpdateWmmParms.arACQueParms[AC2].u2CWmin);
+
 	/* If VI use worse parameter than BE, need to use round-robbin queue
 	 *   to enqueue data from HIF to HW.
 	 *  (Should revise if HIF can have separate queue for each AC)

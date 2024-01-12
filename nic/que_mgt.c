@@ -6704,16 +6704,17 @@ u_int8_t mqmIsBssEdcaParamsUpdated(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+
 	if (pucIEWmm) {
 		fgNewParameter = mqmHandleWMMEdcaParams(prAdapter,
-				prBssInfo, prStaRec, pucIE,
+				prBssInfo, prStaRec, pucIEWmm,
 				fgForceOverwrite);
 		DBGLOG(QM, TRACE, "Wmm, %d", fgNewParameter);
 		return fgNewParameter;
 	}
 	if (pucIEEdca) {
 		fgNewParameter = mqmHandle80211EdcaParamSet(prAdapter,
-				prBssInfo, prStaRec, pucIE,
+				prBssInfo, prStaRec, pucIEEdca,
 				fgForceOverwrite);
 		DBGLOG(QM, TRACE, "Ieee, %d", fgNewParameter);
 		return fgNewParameter;
