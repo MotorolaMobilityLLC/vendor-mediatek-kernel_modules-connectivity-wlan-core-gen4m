@@ -8283,7 +8283,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if CFG_SUPPORT_TDLS_AUTO
 	INIT_UINT(prWifiVar->u4TdlsAuto,
 		"TdlsAuto",
-		(CFG_TC10_FEATURE) ? TDLS_AUTO_P2P : TDLS_AUTO_NONE);
+		(CFG_TC10_FEATURE) ? TDLS_AUTO_ALL : TDLS_AUTO_NONE);
 #endif
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT

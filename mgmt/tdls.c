@@ -109,7 +109,7 @@ uint8_t TdlsCheckSetup(
 
 	if (!f)
 		return FALSE;
-	else if (f == TDLS_AUTO_TESTMODE)
+	else if (f >= TDLS_AUTO_TESTMODE)
 		return (sta &&
 			sta->u4Throughput >
 			TDLS_SETUP_LOW_THD);
@@ -136,10 +136,12 @@ uint8_t TdlsCheckTeardown(
 		return (sta &&
 			sta->u4Throughput <
 			TDLS_TEARDOWN_LOW_THD);
-	else
+	else if (f > TDLS_AUTO_TESTMODE)
 		return (sta &&
 			sta->u4Throughput <
 			TDLS_TEARDOWN_THD);
+	else
+		return FALSE;
 }
 
 void
