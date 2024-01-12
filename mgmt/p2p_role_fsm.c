@@ -2424,7 +2424,8 @@ void p2pRoleFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 				}
 
 				ASSERT(prBssDesc->fgIsConnecting);
-				prBssDesc->fgIsConnecting = FALSE;
+				prBssDesc->fgIsConnecting &=
+					~BIT(prP2pBssInfo->ucBssIndex);
 
 				/* Increase Failure Count */
 				prStaRec->ucJoinFailureCount++;

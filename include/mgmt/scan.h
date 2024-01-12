@@ -280,11 +280,13 @@ struct BSS_DESC {
 
 	/* If we are going to connect to this BSS (JOIN or ROAMING to another
 	 * BSS), don't remove this record from BSS List.
+	 * Is a Bitmap, Bit0: BSS0, Bit1: Bss1
 	 */
 	u_int8_t fgIsConnecting;
 
 	/* If we have connected to this BSS (NORMAL_TR), don't removed
 	 * this record from BSS list.
+	 * Is a Bitmap, Bit0: BSS0, Bit1: Bss1
 	 */
 	u_int8_t fgIsConnected;
 
@@ -779,7 +781,8 @@ void scanRemoveBssDescByBandAndNetwork(
 
 /* BSS-DESC State Change */
 void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
-					IN uint8_t aucBSSID[]);
+					IN uint8_t aucBSSID[],
+					IN uint8_t ucBssIndex);
 
 /* BSS-DESC Insertion - ALTERNATIVE */
 struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
