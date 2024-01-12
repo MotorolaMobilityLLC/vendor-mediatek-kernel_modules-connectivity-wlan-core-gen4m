@@ -8885,12 +8885,19 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 	uint32_t u4EntryIndex;
 	uint32_t i;
 	uint8_t ucExist;
-
+#if CFG_TC10_FEATURE
+	int32_t i4ReadValue = 0;
+	int32_t i4Ret = 0;
+#endif
 
 	ASSERT(pucKey);
 
+#if CFG_TC10_FEATURE
+	i4Ret = kalkStrtos32(pucValue, 0, &i4ReadValue);
+	DBGLOG(INIT, INFO, "[%s]:[%d] OP:%d\n", pucKey, i4ReadValue, u4Flags);
+#else
 	DBGLOG(INIT, LOUD, "[%s]:[%s] OP:%d\n", pucKey, pucValue, u4Flags);
-
+#endif
 	/* Find the exist */
 	ucExist = 0;
 	if (u4Flags == WLAN_CFG_REC) {
