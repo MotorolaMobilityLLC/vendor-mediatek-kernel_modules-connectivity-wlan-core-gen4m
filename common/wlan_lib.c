@@ -8255,8 +8255,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgNanUnrollInstallTk, "NanUnrollInstallTk", 0);
 #endif
 
-#ifdef CFG_EXT_FEATURE
-	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", (CFG_EXT_FEATURE));
+#ifdef CFG_REUSE_RSN_IE
+	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", (CFG_REUSE_RSN_IE));
 #else
 	INIT_UINT(prWifiVar->fgReuseRSNIE, "ReuseRSNIE", (FEATURE_DISABLED));
 #endif
