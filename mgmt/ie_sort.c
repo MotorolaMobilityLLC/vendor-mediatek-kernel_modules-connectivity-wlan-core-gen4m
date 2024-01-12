@@ -1124,7 +1124,11 @@ void sortIE(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	ASSERT(pucBuf - pucDst == u2IEsBufLen);
+	if ((pucBuf - pucDst) != u2IEsBufLen) {
+		DBGLOG(TX, ERROR, "Wrong length=%d, expect=%d\n",
+				pucBuf - pucDst, u2IEsBufLen);
+		goto done;
+	}
 
 #if DBG
 	DBGLOG(TX, INFO, "Sorted %s IE, length = %d\n", pucIeDesc, u2IEsBufLen);
