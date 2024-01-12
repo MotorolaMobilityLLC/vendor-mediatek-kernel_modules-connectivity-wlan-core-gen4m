@@ -5462,7 +5462,7 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 {
 	struct IE_HT_CAP *prHtCap;
 	struct SUP_MCS_SET_FIELD *prSupMcsSet;
-	unsigned char fg40mAllowed = FALSE;
+	unsigned char fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
 	uint8_t ucIdx;
 
 	if (!prAdapter) {
@@ -5473,9 +5473,6 @@ uint32_t rlmFillNANHTCapIE(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, ERROR, "prBssInfo error!\n");
 		return 0;
 	}
-
-	if (prAdapter->rWifiVar.ucNanBandwidth >= MAX_BW_40MHZ)
-		fg40mAllowed = TRUE;
 
 	prHtCap = (struct IE_HT_CAP *)pOutBuf;
 
@@ -5607,8 +5604,7 @@ uint32_t rlmFillNANVHTCapIE(struct ADAPTER *prAdapter,
 
 	prVhtCap->u4VhtCapInfo = VHT_CAP_INFO_DEFAULT_VAL;
 
-	/* ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex); */
-	ucMaxBw = prAdapter->rWifiVar.ucNanBandwidth;
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 	prVhtCap->u4VhtCapInfo |= (prAdapter->rWifiVar.ucRxMaxMpduLen &
 				   VHT_CAP_INFO_MAX_MPDU_LEN_MASK);

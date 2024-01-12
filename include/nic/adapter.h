@@ -1205,7 +1205,6 @@ struct WIFI_VAR {
 	unsigned char fgEnableNDPE;
 	uint8_t ucDftNdlQosQuotaVal;    /* Unit: NAN slot */
 	uint16_t u2DftNdlQosLatencyVal; /* Unit: NAN slot */
-	uint8_t ucNanBandwidth;
 	uint8_t fgEnNanVHT;
 	uint8_t ucNanFtmBw;
 	uint8_t ucNanDiscBcnInterval;

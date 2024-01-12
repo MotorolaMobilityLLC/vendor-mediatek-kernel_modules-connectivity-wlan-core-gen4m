@@ -4077,7 +4077,10 @@ nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter, uint8_t ucChannel) {
 	enum _NAN_CHNL_BW_MAP eBwMap;
 	uint32_t u4SupportedBw;
 
-	eBwMap = prAdapter->rWifiVar.ucNanBandwidth;
+	eBwMap = (ucChannel < 36) ?
+		prAdapter->rWifiVar.ucNan2gBandwidth :
+		prAdapter->rWifiVar.ucNan5gBandwidth;
+	/* NAN 2G BW check */
 	if (((ucChannel < 36) || (!prAdapter->rWifiVar.fgEnNanVHT)) &&
 	    (eBwMap > NAN_CHNL_BW_40))
 		eBwMap = NAN_CHNL_BW_40;
@@ -4141,7 +4144,8 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	struct _NAN_SCHEDULER_T *prNanScheduler;
 	/* whsu */
 	/* UINT_8 ucDiscChnlBw = BW_20; */
-	uint8_t ucDiscChnlBw = MAX_BW_20MHZ;
+	uint8_t ucDisc2GChnlBw = MAX_BW_20MHZ;
+	uint8_t ucDisc5GChnlBw = MAX_BW_20MHZ;
 
 	prNanScheduler = nanGetScheduler(prAdapter);
 
@@ -4152,15 +4156,17 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	DBGLOG(NAN, INFO, "Allowed Band: %d, %d, %d\n", fgEn2g, fgEn5gH,
 	       fgEn5gL);
 
-	ucDiscChnlBw = prAdapter->rWifiVar.ucNanBandwidth;
+	ucDisc2GChnlBw = prAdapter->rWifiVar.ucNan2gBandwidth;
+	ucDisc5GChnlBw = prAdapter->rWifiVar.ucNan5gBandwidth;
+	/* NAN 2G BW check */
 	if ((!prAdapter->rWifiVar.fgEnNanVHT) &&
-	    (ucDiscChnlBw > NAN_CHNL_BW_40))
-		ucDiscChnlBw = NAN_CHNL_BW_40;
+	    (ucDisc2GChnlBw > NAN_CHNL_BW_40))
+		ucDisc2GChnlBw = NAN_CHNL_BW_40;
 
 	g_r2gDwChnl.rChannel.u4Type = NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL;
 	g_r2gDwChnl.rChannel.u4AuxCenterChnl = 0;
 	g_r2gDwChnl.rChannel.u4PrimaryChnl = NAN_2P4G_DISC_CHANNEL;
-	if (ucDiscChnlBw == NAN_CHNL_BW_20)
+	if (ucDisc2GChnlBw == NAN_CHNL_BW_20)
 		g_r2gDwChnl.rChannel.u4OperatingClass =
 			NAN_2P4G_DISC_CH_OP_CLASS;
 	else
@@ -4172,10 +4178,10 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	if (fgEn5gH) {
 		g_r5gDwChnl.rChannel.u4PrimaryChnl = NAN_5G_HIGH_DISC_CHANNEL;
 
-		if (ucDiscChnlBw == NAN_CHNL_BW_20)
+		if (ucDisc5GChnlBw == NAN_CHNL_BW_20)
 			g_r5gDwChnl.rChannel.u4OperatingClass =
 				NAN_5G_HIGH_DISC_CH_OP_CLASS;
-		else if (ucDiscChnlBw == NAN_CHNL_BW_40)
+		else if (ucDisc5GChnlBw == NAN_CHNL_BW_40)
 			g_r5gDwChnl.rChannel.u4OperatingClass =
 				NAN_5G_HIGH_BW40_DISC_CH_OP_CLASS;
 		else
@@ -4184,10 +4190,10 @@ nanSchedConfigAllowedBand(struct ADAPTER *prAdapter, unsigned char fgEn2g,
 	} else if (fgEn5gL) {
 		g_r5gDwChnl.rChannel.u4PrimaryChnl = NAN_5G_LOW_DISC_CHANNEL;
 
-		if (ucDiscChnlBw == NAN_CHNL_BW_20)
+		if (ucDisc5GChnlBw == NAN_CHNL_BW_20)
 			g_r5gDwChnl.rChannel.u4OperatingClass =
 				NAN_5G_LOW_DISC_CH_OP_CLASS;
-		else if (ucDiscChnlBw == NAN_CHNL_BW_40)
+		else if (ucDisc5GChnlBw == NAN_CHNL_BW_40)
 			g_r5gDwChnl.rChannel.u4OperatingClass =
 				NAN_5G_LOW_BW40_DISC_CH_OP_CLASS;
 		else
@@ -8071,9 +8077,14 @@ nanSchedCmdUpdatePotentialChnlList(struct ADAPTER *prAdapter) {
 	u4Num = 0;
 	prPotentialChnlList = prCmdUpdatePontentialChnlList->arChnlList;
 
-	for (prPotentialChnlMap = g_arPotentialChnlMap;
-	     prPotentialChnlMap->ucPrimaryChnl != 0; prPotentialChnlMap++) {
-		eBwMap = prAdapter->rWifiVar.ucNanBandwidth;
+	for (prPotentialChnlMap =
+		g_arPotentialChnlMap;
+		prPotentialChnlMap->ucPrimaryChnl != 0;
+		prPotentialChnlMap++) {
+		eBwMap = (prPotentialChnlMap->ucPrimaryChnl < 36) ?
+			prAdapter->rWifiVar.ucNan2gBandwidth :
+			prAdapter->rWifiVar.ucNan5gBandwidth;
+		/* NAN 2G BW check*/
 		if (((prPotentialChnlMap->ucPrimaryChnl < 36) ||
 		     (!prAdapter->rWifiVar.fgEnNanVHT)) &&
 		    (eBwMap > NAN_CHNL_BW_40))

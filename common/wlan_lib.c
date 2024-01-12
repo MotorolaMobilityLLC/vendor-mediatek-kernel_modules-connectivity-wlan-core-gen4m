@@ -7893,14 +7893,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgEnableNDPE, "NanEnableNDPE", 1);
 	INIT_UINT(prWifiVar->u2DftNdlQosLatencyVal, "NanDftNdlQosLatency", 0);
 	INIT_UINT(prWifiVar->ucDftNdlQosQuotaVal, "NanDftNdlQosQuota", 0);
-	INIT_UINT(prWifiVar->ucNanBandwidth, "NanBw", MAX_BW_20MHZ);
 	INIT_UINT(prWifiVar->fgEnNanVHT, "NanVHT", 1);
 	INIT_UINT(prWifiVar->ucNanFtmBw,
 		"NanFtmBw", FTM_FORMAT_BW_HT_MIXED_BW20);
 	INIT_UINT(prWifiVar->ucNanDiscBcnInterval, "NanDiscBcnInterval", 100);
 	INIT_UINT(prWifiVar->ucNanCommittedDw, "NanDftCommittedDw", 1);
 	INIT_UINT(prWifiVar->fgNoPmf, "NanForceNoPmf", 0);
-
 
 	INIT_UINT(prWifiVar->ucNan2gBandwidth, "Nan2gBw", MAX_BW_20MHZ);
 	INIT_UINT(prWifiVar->ucNan5gBandwidth, "Nan5gBw", MAX_BW_80MHZ);
