@@ -957,6 +957,9 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 #endif
 	uint8_t ucBssIndex = 0;
 
+	if (kalIsResetting())
+		return -EBUSY;
+
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "prGlueInfo is NULL");
@@ -976,6 +979,9 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 #endif
+
+	if (wlanIsChipAssert(prGlueInfo->prAdapter))
+		return -EBUSY;
 
 #if CFG_SUPPORT_QA_TOOL
 	if (prAdapter->fgTestMode) {
