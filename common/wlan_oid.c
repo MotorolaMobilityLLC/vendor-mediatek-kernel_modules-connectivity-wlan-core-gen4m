@@ -4076,7 +4076,8 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 	ASSERT(pu4QueryInfoLen);
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
-	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) ||
+	    ucBssIndex == P2P_DEV_BSS_INDEX)
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	if (u4QueryBufferLen)
@@ -4094,8 +4095,7 @@ wlanoidQueryRssi(IN struct ADAPTER *prAdapter,
 		return WLAN_STATUS_BUFFER_TOO_SHORT;
 	}
 
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-		ucBssIndex) ==
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
 	    MEDIA_STATE_DISCONNECTED) {
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	} else if (prLq->fgIsLinkQualityValid == TRUE &&
