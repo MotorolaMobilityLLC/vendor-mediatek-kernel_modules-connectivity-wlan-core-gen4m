@@ -4259,10 +4259,12 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	if (prLinkParams->he_capa != NULL) {
 		kalMemCopy(rCmdUpdate.rHeCap.ucHeMacCapInfo,
 			prLinkParams->he_capa->mac_cap_info,
-			HE_MAC_CAP_BYTE_NUM);
+			kal_min_t(uint32_t, HE_MAC_CAP_BYTE_NUM,
+			sizeof(prLinkParams->he_capa->mac_cap_info)));
 		kalMemCopy(rCmdUpdate.rHeCap.ucHePhyCapInfo,
 			prLinkParams->he_capa->phy_cap_info,
-			HE_PHY_CAP_BYTE_NUM);
+			kal_min_t(uint32_t, HE_PHY_CAP_BYTE_NUM,
+			sizeof(prLinkParams->he_capa->phy_cap_info)));
 		rCmdUpdate.fgIsSupHe = TRUE;
 	}
 #endif
