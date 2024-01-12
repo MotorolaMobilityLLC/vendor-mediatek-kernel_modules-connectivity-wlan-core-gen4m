@@ -108,10 +108,11 @@ ECO_INFO_T mt7663_eco_table[] = {
 BUS_INFO mt7663_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7663_TOP_CFG_BASE,
-	.is_pcie_32dw_read = MT7663_IS_PCIE_32DW_READ, /* Litien */
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 2,
 	.tx_ring_data_idx = 0,
+
+	.pdmaSetup = halConnacWpdmaConfig,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
@@ -132,6 +133,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.fw_dl_ops = &mt7663_fw_dl_ops,
 
 	.chip_id = MT7663_CHIP_ID,
+	.should_verify_chip_id = FALSE,
 	.sw_sync0 = MT7663_SW_SYNC0,
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset = MT7663_SW_SYNC0_RDY_OFFSET,

@@ -76,12 +76,11 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-#define CONNAC_CHIP_ID                          SKIP_CHIP_ID
+#define CONNAC_CHIP_ID                          (0x0001)
 #define CONNAC_SW_SYNC0                         CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define CONNAC_SW_SYNC0_RDY_OFFSET              CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
 #define CONNAC_PATCH_START_ADDR                 (0x000C8000) /* TODO: assign correct setting for CONNAC */
 #define CONNAC_TOP_CFG_BASE			CONN_CFG_BASE
-#define CONNAC_IS_PCIE_32DW_READ                (0)
 #define CONNAC_TX_DESC_APPEND_LENGTH            32
 
 /*******************************************************************************

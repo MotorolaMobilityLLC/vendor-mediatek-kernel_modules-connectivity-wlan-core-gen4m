@@ -601,7 +601,7 @@ typedef union _WPDMA_GLO_CFG_STRUCT {
 		UINT_32 pfet_arb_mi_depth:3;
 		UINT_32 reserved22:3;
 		UINT_32 force_tx_eof:1;
-		UINT_32 rx_token_wb_option:1;
+		UINT_32 reserved26:1;
 		UINT_32 omit_rx_info:1;
 		UINT_32 omit_tx_info:1;
 		UINT_32 byte_swap:1;
@@ -848,8 +848,6 @@ typedef struct _ENHANCE_MODE_DATA_STRUCT_T {
 #define WCIR_REVISION_ID                BITS(16, 19)
 #define WCIR_CHIP_ID                    BITS(0, 15)
 
-#define SKIP_CHIP_ID                    0x0001
-
 #define MTK_CHIP_REV                    0x00006632
 #define MTK_CHIP_MP_REVERSION_ID        0x0
 
@@ -957,6 +955,7 @@ struct mt66xx_chip_info {
 	struct firmware_download_operations *fw_dl_ops;
 
 	const unsigned int chip_id;	/* chip id */
+	const unsigned int should_verify_chip_id;	/* verify chip id */
 	const unsigned int sw_sync0;	/* sw_sync0 address */
 	const unsigned int sw_ready_bits;	/* sw_sync0 ready bits */
 	const unsigned int sw_ready_bit_offset;	/* sw_sync0 ready bit offset */
