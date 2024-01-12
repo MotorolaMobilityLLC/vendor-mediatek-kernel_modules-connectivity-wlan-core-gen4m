@@ -414,18 +414,49 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 {
 	u_int8_t fgIsTransitionOut = (u_int8_t) FALSE;
 	struct BSS_INFO *prP2pRoleBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
+		(struct P2P_CHNL_REQ_INFO *) NULL;
 
 	prP2pRoleBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
+	prChnlReqInfo = &(prP2pRoleFsmInfo->rChnlReqInfo);
 
 	do {
 		if (!IS_BSS_ACTIVE(prP2pRoleBssInfo)) {
 			if (!cnmP2PIsPermitted(prAdapter))
 				return;
 
-			SET_NET_ACTIVE(prAdapter, prP2pRoleBssInfo->ucBssIndex);
-			nicActivateNetwork(prAdapter,
-				prP2pRoleBssInfo->ucBssIndex);
+#if CFG_SUPPORT_DBDC
+			if (cnmDBDCIsReqPeivilegeLock() &&
+				((eNextState == P2P_ROLE_STATE_REQING_CHANNEL &&
+					(prChnlReqInfo->eChnlReqType ==
+						CH_REQ_TYPE_GO_START_BSS ||
+					prChnlReqInfo->eChnlReqType ==
+						CH_REQ_TYPE_JOIN))
+				|| (eNextState == P2P_ROLE_STATE_IDLE &&
+					prP2pRoleFsmInfo->eCurrentState ==
+						P2P_ROLE_STATE_IDLE)
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+				|| eNextState == P2P_ROLE_STATE_SWITCH_CHANNEL
+#endif
+			)) {
+				/* Do not activate network ruring DBDC HW
+				 * switch. Otherwise, BSS may use incorrect
+				 * CR and result in TRx problems.
+				 */
+				DBGLOG(P2P, STATE,
+					"[P2P_ROLE][%d](Bss%d): Skip activate network [%s]\n",
+					prP2pRoleFsmInfo->ucRoleIndex,
+					prP2pRoleFsmInfo->ucBssIndex,
+					p2pRoleFsmGetFsmState(eNextState));
+			} else
+#endif
+			{
+				SET_NET_ACTIVE(prAdapter,
+					prP2pRoleBssInfo->ucBssIndex);
+				nicActivateNetwork(prAdapter,
+					prP2pRoleBssInfo->ucBssIndex);
+			}
 		}
 
 		fgIsTransitionOut = fgIsTransitionOut ? FALSE : TRUE;
@@ -580,7 +611,9 @@ void p2pRoleFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 			}
 
 			if (IS_NET_PWR_STATE_IDLE(prAdapter,
-				prP2pRoleFsmInfo->ucBssIndex)) {
+				prP2pRoleFsmInfo->ucBssIndex) &&
+				IS_NET_ACTIVE(prAdapter,
+					prP2pRoleFsmInfo->ucBssIndex)) {
 				DBGLOG(P2P, TRACE,
 					"Role BSS IDLE, deactive network.\n");
 				UNSET_NET_ACTIVE(prAdapter,
