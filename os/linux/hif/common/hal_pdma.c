@@ -1511,29 +1511,44 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 }
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if CFG_SUPPORT_HRTIMER
+enum hrtimer_restart halTxDelayTimeout(struct hrtimer *timer)
+#else /* CFG_SUPPORT_HRTIMER == 0 */
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
 void halTxDelayTimeout(struct timer_list *timer)
 #else
 void halTxDelayTimeout(unsigned long arg)
 #endif
+#endif /* CFG_SUPPORT_HRTIMER */
 {
-#if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
-	struct GL_HIF_INFO *prHif = from_timer(prHif, timer, rTxDelayTimer);
+	struct ADAPTER *prAdapter = NULL;
+#if CFG_SUPPORT_HRTIMER
+	struct GL_HIF_INFO *prHifInfo =
+		container_of(timer, struct GL_HIF_INFO, rTxDelayTimer);
 	struct GLUE_INFO *prGlueInfo =
-		(struct GLUE_INFO *)prHif->rTxDelayTimerData;
+		(struct GLUE_INFO *)prHifInfo->rTxDelayTimerData;
+#else /* CFG_SUPPORT_HRTIMER == 0 */
+#if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
+	struct GL_HIF_INFO *prHifInfo =
+		from_timer(prHifInfo, timer, rTxDelayTimer);
+	struct GLUE_INFO *prGlueInfo =
+		(struct GLUE_INFO *)prHifInfo->rTxDelayTimerData;
 #else
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 #endif
-	struct ADAPTER *prAdapter = NULL;
-	struct GL_HIF_INFO *prHifInfo;
+#endif /* CFG_SUPPORT_HRTIMER */
 
 	if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)) {
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip tx delay timeout\n");
+#if CFG_SUPPORT_HRTIMER
+		return HRTIMER_NORESTART;
+#else /* CFG_SUPPORT_HRTIMER == 0 */
 		return;
+#endif /* CFG_SUPPORT_HRTIMER */
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
-	prHifInfo = &prGlueInfo->rHifInfo;
 
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnTxDataDelayDbg))
 		DBGLOG(HAL, TRACE, "Tx Delay timeout\n");
@@ -1544,6 +1559,10 @@ void halTxDelayTimeout(unsigned long arg)
 		    prHifInfo->ulTxDataTimeout);
 
 	kalSetTxEvent2Hif(prGlueInfo);
+
+#if CFG_SUPPORT_HRTIMER
+	return HRTIMER_NORESTART;
+#endif /* CFG_SUPPORT_HRTIMER */
 }
 
 void halStartTxDelayTimer(struct ADAPTER *prAdapter)
@@ -1551,6 +1570,9 @@ void halStartTxDelayTimer(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	uint32_t u4Timeout = prAdapter->rWifiVar.u4TxDataDelayTimeout;
+#if CFG_SUPPORT_HRTIMER
+	ktime_t delay;
+#endif /* CFG_SUPPORT_HRTIMER */
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -1559,8 +1581,14 @@ void halStartTxDelayTimer(struct ADAPTER *prAdapter)
 			 prHifInfo->ulTxDataTimeout))
 		return;
 
+#if CFG_SUPPORT_HRTIMER
+	delay = ktime_set(0, u4Timeout * 1E6L);
+	hrtimer_start(&prHifInfo->rTxDelayTimer, delay,
+		HRTIMER_MODE_REL);
+#else
 	mod_timer(&prHifInfo->rTxDelayTimer,
 		  jiffies + u4Timeout * HZ / MSEC_PER_SEC);
+#endif /* CFG_SUPPORT_HRTIMER */
 	KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT,
 		    prHifInfo->ulTxDataTimeout);
 
@@ -1638,6 +1666,11 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if CFG_SUPPORT_HRTIMER
+	hrtimer_init(&prHifInfo->rTxDelayTimer, CLOCK_MONOTONIC,
+		HRTIMER_MODE_REL);
+	prHifInfo->rTxDelayTimerData = (unsigned long)prAdapter->prGlueInfo;
+#else /* CFG_SUPPORT_HRTIMER == 0 */
 #if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
 	timer_setup(&prHifInfo->rTxDelayTimer, halTxDelayTimeout, 0);
 	prHifInfo->rTxDelayTimerData = (unsigned long)prAdapter->prGlueInfo;
@@ -1650,6 +1683,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 		jiffies + prAdapter->rWifiVar.u4TxDataDelayTimeout *
 		HZ / MSEC_PER_SEC;
 	prHifInfo->ulTxDataTimeout = 0;
+#endif /* CFG_SUPPORT_HRTIMER */
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 	INIT_LIST_HEAD(&prHifInfo->rTxCmdQ);
@@ -1721,7 +1755,11 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 
 	del_timer_sync(&prHifInfo->rSerTimer);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if CFG_SUPPORT_HRTIMER
+	hrtimer_cancel(&prHifInfo->rTxDelayTimer);
+#else
 	del_timer_sync(&prHifInfo->rTxDelayTimer);
+#endif /* CFG_SUPPORT_HRTIMER */
 #endif
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
