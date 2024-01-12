@@ -130,6 +130,18 @@
  *	 HIF_TXC_IDX_7, ==>AC2 PLE
  *	 HIF_TXC_IDX_8, ==>AC3 PLE
  *
+ *	/==== HIF_TX_RSRC_WMM_ENHANCE WMM ====/
+ *
+ *	 HIF_TXC_IDX_9  ==> AC10 PLE (TC5_INDEX)
+ *	 HIF_TXC_IDX_10 ==> AC11 PLE (TC6_INDEX)
+ *	 HIF_TXC_IDX_11 ==> AC12 PLE (TC7_INDEX)
+ *	 HIF_TXC_IDX_12 ==> AC13 PLE (TC8_INDEX)
+ *	 HIF_TXC_IDX_13 ==> AC20 PLE (TC9_INDEX)
+ *	 HIF_TXC_IDX_14 ==> AC21 PLE (TC10_INDEX)
+ *	 HIF_TXC_IDX_15 ==> AC22 PLE (TC11_INDEX)
+ *	 HIF_TXC_IDX_16 ==> AC23 PLE (TC12_INDEX)
+ *	 HIF_TXC_IDX_17 ==> AC3x PLE (TC13_INDEX)
+ *
  *	/==== Second WMM ====/
  *
  *	 HIF_TXC_IDX_9, ==>AC10, AC11 PSE
@@ -141,11 +153,20 @@
  *	 HIF_TXC_IDX_15, ==>AC13 PLE
  * };
 */
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define HIF_TXC_IDX_2_TC_IDX_PSE(hif_idx) (hif_idx)
+#define HIF_TXC_IDX_2_TC_IDX_PLE(hif_idx) ((hif_idx >= HIF_TXC_IDX_9) ?\
+		(hif_idx - HIF_TXC_IDX_9 + TC5_INDEX) :\
+		(hif_idx - HIF_TXC_IDX_5))
+#define TC_IDX_PSE_2_HIF_TXC_IDX(ucTc) (ucTc)
+#define TC_IDX_PLE_2_HIF_TXC_IDX(ucTc) ((ucTc >= TC5_INDEX) ?\
+		(ucTc - TC5_INDEX + HIF_TXC_IDX_9):(ucTc + HIF_TXC_IDX_5))
+#else
 #define HIF_TXC_IDX_2_TC_IDX_PSE(hif_idx) (hif_idx)
 #define HIF_TXC_IDX_2_TC_IDX_PLE(hif_idx) (hif_idx - HIF_TXC_IDX_5)
 #define TC_IDX_PSE_2_HIF_TXC_IDX(ucTc) (ucTc)
 #define TC_IDX_PLE_2_HIF_TXC_IDX(ucTc) (ucTc + HIF_TXC_IDX_5)
-
+#endif
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -923,11 +944,29 @@ u_int8_t halTxReleaseResource(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxRl
 		}
 	}
 
-	if (!nicTxSanityCheckResource(prAdapter))
+	if (!nicTxSanityCheckResource(prAdapter)) {
 		DBGLOG(TX, ERROR, "Tx Done INT result, FFA[%u] AC[%u:%u:%u:%u] CPU[%u]\n",
 			au2TxRlsCnt[HIF_TX_FFA_INDEX], au2TxRlsCnt[HIF_TX_AC0_INDEX],
 			au2TxRlsCnt[HIF_TX_AC1_INDEX], au2TxRlsCnt[HIF_TX_AC2_INDEX],
 			au2TxRlsCnt[HIF_TX_AC3_INDEX], au2TxRlsCnt[HIF_TX_CPU_INDEX]);
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+		DBGLOG(TX, ERROR, "Tx Done INT result BSS1, AC[%d:%d:%d:%d]\n",
+			au2TxRlsCnt[HIF_TX_AC10_INDEX],
+			au2TxRlsCnt[HIF_TX_AC11_INDEX],
+			au2TxRlsCnt[HIF_TX_AC12_INDEX],
+			au2TxRlsCnt[HIF_TX_AC13_INDEX]);
+
+		DBGLOG(TX, ERROR, "Tx Done INT result BSS23, AC[%d:%d:%d:%d]\n",
+			au2TxRlsCnt[HIF_TX_AC20_INDEX],
+			au2TxRlsCnt[HIF_TX_AC21_INDEX],
+			au2TxRlsCnt[HIF_TX_AC22_INDEX],
+			au2TxRlsCnt[HIF_TX_AC23_INDEX]);
+
+		DBGLOG(TX, ERROR, "Tx Done INT result BSS3, AC[%d]\n",
+			au2TxRlsCnt[HIF_TX_AC3X_INDEX]);
+#endif
+	}
 
 	DBGLOG(TX, LOUD, "TCQ Status Free Page <<PSE>>:Buf[%u:%u, %u:%u, %u:%u, %u:%u, %u:%u]\n",
 		prTcqStatus->au4FreePageCount[TC0_INDEX], prTcqStatus->au4FreeBufferCount[TC0_INDEX],
@@ -1732,6 +1771,14 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf, IN u
 		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_13],
 		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_14],
 		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_15]);
+
+	LOGBUF(pucBuf, u4Max, u4Len,
+		"Tx done pending cnt HIF_TXC16~20[%d, %d, %d, %d, %d]\n",
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_16],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_17],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_18],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_19],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_20]);
 
 
 	LOGBUF(pucBuf, u4Max, u4Len, "Tx done counter/int:\n");
@@ -2918,6 +2965,8 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter, IN uint16_t *au2Tx
 {
 	uint8_t i;
 	uint16_t u2ReturnCnt;
+	struct GL_HIF_INFO *prHifInfo =
+		&prAdapter->prGlueInfo->rHifInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2937,10 +2986,35 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter, IN uint16_t *au2Tx
 			nicTxReleaseResource_PLE(prAdapter, ucTc, u2ReturnCnt, FALSE);
 		}
 
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] -= u2ReturnCnt;
+		if (u2ReturnCnt)
+			DBGLOG(NIC, TRACE, "TC%d TXQ%d -%d\n",
+				ucTc, i, u2ReturnCnt);
+
+		prHifInfo->au4PendingTxDoneCount[i] -= u2ReturnCnt;
 	}
 
 	/* WMM 2,3 */
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	/* WMM 2/3/4 - PLE
+	* WMM2 - TXC09 ~ TXC12
+	* WMM3 - TXC13 ~ TXC16
+	* WMM4 - TXC17 ~ TXC17
+	*/
+	for (i = HIF_TXC_IDX_9; i < HIF_TXC_IDX_NUM; i++) {
+		uint8_t ucTc;
+
+		u2ReturnCnt = au2TxDoneCnt[i];
+
+		ucTc = HIF_TXC_IDX_2_TC_IDX_PLE(i);
+		nicTxReleaseResource_PLE(prAdapter, ucTc, u2ReturnCnt, FALSE);
+
+		if (u2ReturnCnt)
+			DBGLOG(NIC, TRACE, "TC%d TXQ%d -%d\n",
+				ucTc, i, u2ReturnCnt);
+
+		prHifInfo->au4PendingTxDoneCount[i] -= u2ReturnCnt;
+	}
+#endif
 	/*TBD*/
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
@@ -2990,6 +3064,8 @@ void halRestoreTxResource(IN struct ADAPTER *prAdapter)
 void halRestoreTxResource_v1(IN struct ADAPTER *prAdapter)
 {
 	uint8_t i;
+	struct GL_HIF_INFO *prHifInfo =
+		&prAdapter->prGlueInfo->rHifInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -2999,23 +3075,35 @@ void halRestoreTxResource_v1(IN struct ADAPTER *prAdapter)
 	/* PSE pages: HIF_TXC_IDX_0- */
 	for (i = HIF_TXC_IDX_0; i <= HIF_TXC_IDX_4; i++) {
 		nicTxReleaseResource_PSE(prAdapter, HIF_TXC_IDX_2_TC_IDX_PSE(i),
-					prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i],
+					prHifInfo->au4PendingTxDoneCount[i],
 					FALSE);
 
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] = 0;
+		prHifInfo->au4PendingTxDoneCount[i] = 0;
 	}
 
 	/* PLE pages */
 	for (i = HIF_TXC_IDX_5; i <= HIF_TXC_IDX_8; i++) {
 		nicTxReleaseResource_PLE(prAdapter, HIF_TXC_IDX_2_TC_IDX_PLE(i),
-					prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i],
+					prHifInfo->au4PendingTxDoneCount[i],
 					FALSE);
 
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] = 0;
+		prHifInfo->au4PendingTxDoneCount[i] = 0;
 	}
 
-	/* WMM 2,3 */
-	/*TBD*/
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	/* WMM 2/3/4 - PLE
+	* WMM2 - TXC09 ~ TXC12
+	* WMM3 - TXC13 ~ TXC16
+	* WMM4 - TXC17 ~ TXC17
+	*/
+	for (i = HIF_TXC_IDX_9; i <= HIF_TXC_IDX_17; i++) {
+		nicTxReleaseResource_PLE(prAdapter, HIF_TXC_IDX_2_TC_IDX_PLE(i),
+					prHifInfo->au4PendingTxDoneCount[i],
+					FALSE);
+
+		prHifInfo->au4PendingTxDoneCount[i] = 0;
+	}
+#endif
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
 }
@@ -3046,17 +3134,26 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter, IN u_int8_t isInc
 void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t isIncr, IN uint8_t ucTc, IN uint16_t u2Cnt)
 {
 	uint8_t idx;
+	struct GL_HIF_INFO *prHifInfo;
 
-	/* Update PSE part */
-	idx = TC_IDX_PSE_2_HIF_TXC_IDX(ucTc);
+	ASSERT(prAdapter);
 
-	if (idx >= HIF_TXC_IDX_NUM)
-		ASSERT(0);
+	prHifInfo =
+		&prAdapter->prGlueInfo->rHifInfo;
+	ASSERT(prHifInfo);
 
-	if (isIncr)
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] += u2Cnt;
-	else
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] -= u2Cnt;
+	if (nicTxResourceIsPseCtrlNeeded(prAdapter, ucTc)) {
+		/* Update PSE part */
+		idx = TC_IDX_PSE_2_HIF_TXC_IDX(ucTc);
+
+		if (idx >= HIF_TXC_IDX_NUM)
+			ASSERT(0);
+
+		if (isIncr)
+			prHifInfo->au4PendingTxDoneCount[idx] += u2Cnt;
+		else
+			prHifInfo->au4PendingTxDoneCount[idx] -= u2Cnt;
+	}
 
 	/* Update PLE part */
 	if (!nicTxResourceIsPleCtrlNeeded(prAdapter, ucTc))
@@ -3068,9 +3165,11 @@ void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t is
 		ASSERT(0);
 
 	if (isIncr)
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] += NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+		prHifInfo->au4PendingTxDoneCount[idx] +=
+			NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 	else
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] -= NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+		prHifInfo->au4PendingTxDoneCount[idx] -=
+			NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 }
 
 

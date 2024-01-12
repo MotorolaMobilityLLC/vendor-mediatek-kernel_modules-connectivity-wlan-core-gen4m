@@ -7498,6 +7498,36 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->au4TcPageCount[TC4_INDEX] = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "Tc4Page",
 					NIC_TX_PAGE_COUNT_TC4);
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+	prWifiVar->au4TcPageCount[TC5_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc5Page",
+					NIC_TX_PAGE_COUNT_TC0);
+	prWifiVar->au4TcPageCount[TC6_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc6Page",
+					NIC_TX_PAGE_COUNT_TC1);
+	prWifiVar->au4TcPageCount[TC7_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc7Page",
+					NIC_TX_PAGE_COUNT_TC2);
+	prWifiVar->au4TcPageCount[TC8_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc8Page",
+					NIC_TX_PAGE_COUNT_TC3);
+	prWifiVar->au4TcPageCount[TC9_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc9Page",
+					NIC_TX_PAGE_COUNT_TC0);
+	prWifiVar->au4TcPageCount[TC10_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc10Page",
+					NIC_TX_PAGE_COUNT_TC1);
+	prWifiVar->au4TcPageCount[TC11_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc11Page",
+					NIC_TX_PAGE_COUNT_TC2);
+	prWifiVar->au4TcPageCount[TC12_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc12Page",
+					NIC_TX_PAGE_COUNT_TC3);
+	prWifiVar->au4TcPageCount[TC13_INDEX] = (uint32_t) wlanCfgGetUint32(
+					prAdapter, "Tc13Page",
+					NIC_TX_PAGE_COUNT_TC1);
+#endif
+
 	prWifiVar->ucTxMsduQueue = (uint32_t) wlanCfgGetUint32(
 		prAdapter, "NicTxMsduQueue", 0);
 
@@ -7532,6 +7562,26 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					prAdapter, "Tc4MinRsv",
 					QM_MIN_RESERVED_TC4_RESOURCE);
 
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define __STR_MIN_RESERVED(_idx_) STR_HELPER(Tc##_idx_##MinRsv)
+#define CONF_QM_TC_MIN_RESERVED_TEMPLATE(_idx_)\
+	(prQM->au4MinReservedTcResource[TC##_idx_##_INDEX] =\
+		(uint32_t) wlanCfgGetUint32(prAdapter,\
+		__STR_MIN_RESERVED(_idx_),\
+		QM_MIN_RESERVED_TC##_idx_##_RESOURCE))
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(5);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(6);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(7);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(8);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(9);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(10);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(11);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(12);
+	CONF_QM_TC_MIN_RESERVED_TEMPLATE(13);
+#undef CONF_QM_TC_MIN_RESERVED_TEMPLATE
+#undef __STR_MIN_RESERVED
+#endif
+
 	prQM->au4GuaranteedTcResource[TC0_INDEX] = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "Tc0Grt",
 					QM_GUARANTEED_TC0_RESOURCE);
@@ -7547,6 +7597,27 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prQM->au4GuaranteedTcResource[TC4_INDEX] = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "Tc4Grt",
 					QM_GUARANTEED_TC4_RESOURCE);
+
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
+#define __STR_GUARANTEED(_idx_) STR_HELPER(Tc##_idx_##Grt)
+#define CONF_QM_TC_GUARANTEED_TEMPLATE(_idx_)\
+	(prQM->au4GuaranteedTcResource[TC##_idx_##_INDEX] =\
+		(uint32_t) wlanCfgGetUint32(prAdapter,\
+		__STR_GUARANTEED(_idx_),\
+		QM_GUARANTEED_TC##_idx_##_RESOURCE))
+
+	CONF_QM_TC_GUARANTEED_TEMPLATE(5);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(6);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(7);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(8);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(9);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(10);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(11);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(12);
+	CONF_QM_TC_GUARANTEED_TEMPLATE(13);
+#undef CONF_QM_TC_GUARANTEED_TEMPLATE
+#undef __STR_MIN_RESERVED
+#endif
 
 	prQM->u4TimeToAdjustTcResource = (uint32_t) wlanCfgGetUint32(
 					prAdapter, "TcAdjustTime",

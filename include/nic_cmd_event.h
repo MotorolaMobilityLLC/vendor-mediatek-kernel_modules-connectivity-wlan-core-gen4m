@@ -1312,6 +1312,8 @@ struct CAP_CASAN_LOAD_TYPE_T {
 #define NIC_TX_RESOURCE_REPORT_VERSION_PREFIX (0x80000000)
 #define NIC_TX_RESOURCE_REPORT_VERSION_1 \
 	(NIC_TX_RESOURCE_REPORT_VERSION_PREFIX | 0x1)
+#define NIC_TX_RESOURCE_REPORT_VERSION_2 \
+	(NIC_TX_RESOURCE_REPORT_VERSION_PREFIX | 0x2)
 
 struct nicTxRsrcEvtHdlr {
 	uint32_t u4Version;
@@ -3883,6 +3885,8 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 void nicEventUpdateCoexStatus(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent);
 uint32_t nicEventQueryTxResource_v1(IN struct ADAPTER
+				    *prAdapter, IN uint8_t *pucEventBuf);
+uint32_t nicEventQueryTxResource_v2(IN struct ADAPTER
 				    *prAdapter, IN uint8_t *pucEventBuf);
 uint32_t nicEventQueryTxResourceEntry(IN struct ADAPTER
 				      *prAdapter, IN uint8_t *pucEventBuf);
