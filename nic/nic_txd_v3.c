@@ -547,45 +547,20 @@ void nic_txd_v3_compose(
 	HAL_MAC_CONNAC3X_TXD_SET_TXD_LENGTH(prTxDesc, TXD_LEN_1_PAGE);
 
 	/* Fix rate */
-	DBGLOG(TX, INFO, "Rate mode[%d]\n", prMsduInfo->ucRateMode);
-	// TODO: Revise rate configuration for low rate
 	switch (prMsduInfo->ucRateMode) {
 	case MSDU_RATE_MODE_MANUAL_DESC:
+		DBGLOG(TX, INFO, "Rate mode[%d], RateIdx=%u\n",
+			prMsduInfo->ucRateMode, prMsduInfo->u4FixedRateOption);
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
 		HAL_MAC_CONNAC3X_TXD_SET_FIXED_RATE_IDX(prTxDesc,
-				prBssInfo->eBand == BAND_2G4 ?
-					FIXED_RATE_INDEX_CCK_1M :
-					FIXED_RATE_INDEX_OFDM_6M);
+						prMsduInfo->u4FixedRateOption);
 		HAL_MAC_CONNAC3X_TXD_SET_FR_BW(prTxDesc, 0x8);
+		break;
 	case MSDU_RATE_MODE_MANUAL_CR:
 	case MSDU_RATE_MODE_AUTO:
 	default:
 		break;
 	}
-}
-
-void nic_txd_v3_set_pkt_fixed_rate_option_full(struct MSDU_INFO
-	*prMsduInfo,
-	uint16_t u2RateCode,
-	uint8_t ucBandwidth,
-	u_int8_t fgShortGI,
-	u_int8_t fgLDPC,
-	u_int8_t fgDynamicBwRts, u_int8_t fgBeamforming,
-	uint8_t ucAntennaIndex)
-{
-#define UNUSED(x) ((void)(x))
-
-	UNUSED(prMsduInfo);
-	UNUSED(u2RateCode);
-	UNUSED(ucBandwidth);
-	UNUSED(fgShortGI);
-	UNUSED(fgLDPC);
-	UNUSED(fgDynamicBwRts);
-	UNUSED(fgBeamforming);
-	UNUSED(ucAntennaIndex);
-
-	/* Fixed Rate */
-	prMsduInfo->ucRateMode = MSDU_RATE_MODE_MANUAL_DESC;
 }
 
 void nic_txd_v3_set_pkt_fixed_rate_option(
@@ -595,15 +570,46 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 	u_int8_t fgShortGI,
 	u_int8_t fgDynamicBwRts)
 {
-#define UNUSED(x) ((void)(x))
+	uint8_t ucRateIdx;
 
-	UNUSED(prMsduInfo);
-	UNUSED(u2RateCode);
-	UNUSED(ucBandwidth);
-	UNUSED(fgShortGI);
-	UNUSED(fgDynamicBwRts);
+	/* Convert rate code to pre-defined rate index */
+	switch (u2RateCode) {
+	case RATE_CCK_1M_LONG:
+		ucRateIdx = FIXED_RATE_INDEX_CCK_1M;
+		break;
 
-	/* Fixed Rate */
+	case RATE_OFDM_6M:
+		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+		break;
+
+	case RATE_OFDM_24M:
+		ucRateIdx = FIXED_RATE_INDEX_OFDM_24M;
+		break;
+
+	case RATE_MM_MCS_0:
+		ucRateIdx = FIXED_RATE_INDEX_HT_MCS0;
+		break;
+
+	case RATE_VHT_MCS_0:
+		ucRateIdx = FIXED_RATE_INDEX_VHT_MCS0;
+		break;
+
+	/**
+	 * TODO: other rates?
+	 * RATE_CCK_*M_LONG
+	 * RATE_OFDM_*M
+	 * RATE_HE_ER_DCM_MCS_0
+	 * RATE_HE_ER_TONE_106_MCS_0
+	 */
+
+	default:
+		ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
+		DBGLOG(TX, WARN, "No mapped rate %02x\n", u2RateCode);
+		break;
+	}
+	DBGLOG(TX, TRACE, "0x%02x -> %u\n", u2RateCode, ucRateIdx);
+
+	prMsduInfo->u4FixedRateOption = ucRateIdx;
 	prMsduInfo->ucRateMode = MSDU_RATE_MODE_MANUAL_DESC;
 }
 
