@@ -9124,6 +9124,8 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 	if (i4Recv == 19) {
 		/* Disable BoostCpu by PerMon */
 		prAdapter->rWifiVar.fgBoostCpuEn = FEATURE_DISABLED;
+		prAdapter->rWifiVar.fgBoostCpuPolicyEn
+			= FEATURE_DISABLED;
 
 		/* Manually BoostCpu */
 		if (rBoostInfo.rCpuInfo.i4LittleCpuFreq != 0)
