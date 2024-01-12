@@ -125,6 +125,8 @@
 #else
 #define NIC6639_PCIe_DEVICE_ID2 0x6639
 #endif
+#define NIC6655_PCIe_DEVICE_ID1 0x3107
+#define NIC6655_PCIe_DEVICE_ID2 0x6655
 #define NIC7990_PCIe_DEVICE_ID 0x7990
 
 static const struct pci_device_id mtk_pci_ids[] = {
@@ -185,6 +187,12 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6639_PCIe_DEVICE_ID2),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6639},
 #endif /* MT6639 */
+#ifdef MT6655
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6655_PCIe_DEVICE_ID1),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6655},
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC6655_PCIe_DEVICE_ID2),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6655},
+#endif /* MT6655 */
 #ifdef MT7990
 	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7990_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7990},
@@ -198,6 +206,8 @@ static const struct platform_device_id mtk_axi_ids[] = {
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_bellwether
 #elif defined(MT6639)
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6639
+#elif defined(MT6655)
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6655
 #endif
 	},
 

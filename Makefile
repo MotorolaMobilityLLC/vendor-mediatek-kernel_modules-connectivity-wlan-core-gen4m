@@ -88,7 +88,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT7990
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6655 -UMT7990
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -440,6 +440,30 @@ CONFIG_MTK_WIFI_TRX_DIRECT=y
 ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
 ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
+ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
+endif
+
+ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT6655,$(ccflags-y))
+ccflags-y += -DMT6655
+ifeq ($(MTK_ANDROID_WMT), y)
+    CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+    ifneq ($(CONFIG_PAGE_POOL),)
+        CONFIG_RX_PAGE_POOL=y
+    endif
+endif
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+    CONFIG_MTK_WIFI_NAN=y
+else
+    CONFIG_MTK_WIFI_NAN=n
+endif
+ifeq ($(MTK_ANDROID_WMT), y)
+    #CONFIG_MTK_PCIE_PROBE_SUPPORT=y
+    #CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
+endif
+ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
+ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
+ccflags-y += -DCONFIG_MTK_WIFI_HE160
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
 endif
 
@@ -1322,6 +1346,12 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt6639/mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/dbg_mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/hal_dmashdl_mt6639.o
+endif
+
+ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt6655/mt6655.o
+CHIPS_OBJS += $(CHIPS)mt6655/dbg_mt6655.o
+CHIPS_OBJS += $(CHIPS)mt6655/hal_dmashdl_mt6655.o
 endif
 
 ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)

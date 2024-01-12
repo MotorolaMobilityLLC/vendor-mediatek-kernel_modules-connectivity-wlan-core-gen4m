@@ -95,6 +95,17 @@
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
 #endif
+#ifdef MT6655
+#include "coda/mt6655/wf_hif_dmashdl_top.h"
+#include "coda/mt6655/wf_ple_top.h"
+#include "coda/mt6655/wf_pse_top.h"
+#include "coda/mt6655/wf_wfdma_host_dma0.h"
+#include "coda/mt6655/bn0_wf_mib_top.h"
+#include "coda/mt6655/bn1_wf_mib_top.h"
+#include "coda/mt6655/wf_umib_top.h"
+#include "coda/mt6655/mawd_reg.h"
+#include "coda/mt6655/wf_rro_top.h"
+#endif
 #ifdef MT7990
 #include "coda/mt7990/wf_hif_dmashdl_top.h"
 #include "coda/mt7990/wf_ple_top.h"
