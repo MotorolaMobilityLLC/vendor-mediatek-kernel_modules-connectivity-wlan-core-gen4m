@@ -6181,17 +6181,17 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 					set_param_and_shift_buf(FALSE, parasize,
 					(u_char *)&tmp_mac, &data);
 				} else if (parasize == 4) {
-					kstrtou32(apc_argv[j], 0,
+					(void)kstrtou32(apc_argv[j], 0,
 					&tmp_value);
 					set_param_and_shift_buf(TRUE, parasize,
 					(u_char *)&tmp_value, &data);
 				} else if (parasize == 2) {
-					kstrtou16(apc_argv[j], 0,
+					(void)kstrtou16(apc_argv[j], 0,
 					&tmp_value2);
 					set_param_and_shift_buf(TRUE, parasize,
 					(u_char *)&tmp_value2, &data);
 				} else {
-					kstrtou8(apc_argv[j], 0,
+					(void)kstrtou8(apc_argv[j], 0,
 					(u_int8 *)&tmp_value);
 					set_param_and_shift_buf(TRUE, parasize,
 					(u_char *)&tmp_value, &data);
