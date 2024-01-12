@@ -12578,6 +12578,13 @@ static int priv_driver_trigger_whole_chip_reset(
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
+	if ((!prGlueInfo) ||
+	    (prGlueInfo->u4ReadyFlag == 0) ||
+	    kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
+
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
@@ -12605,6 +12612,13 @@ static int priv_driver_trigger_wfsys_reset(
 		return -1;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if ((!prGlueInfo) ||
+	    (prGlueInfo->u4ReadyFlag == 0) ||
+	    kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
