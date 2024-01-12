@@ -2153,7 +2153,8 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
 	if (pcie_vir_addr) {
 		writel(0x08021000, (pcie_vir_addr + 0x74));
-		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%x\n", pcie_vir_addr);
+		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%llx\n",
+		       (uint64_t)pcie_vir_addr);
 	} else {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
 	}

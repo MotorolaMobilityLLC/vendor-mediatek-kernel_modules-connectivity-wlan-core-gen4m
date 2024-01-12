@@ -148,7 +148,7 @@ static bool halGetRsvMemSizeRsvedByKernel(struct platform_device *pdev)
 	if (ret != 0)
 		DBGLOG(INIT, ERROR, "get rsrv mem size failed(%d).\n", ret);
 	else
-		DBGLOG(INIT, INFO, "gWifiRsvMemSize: 0x%x\n", gWifiRsvMemSize);
+		DBGLOG(INIT, INFO, "gWifiRsvMemSize:0x%llx\n", gWifiRsvMemSize);
 
 	of_node_put(np);
 	if (ret != 0)
@@ -182,8 +182,9 @@ int halInitResvMem(struct platform_device *pdev)
 				ret);
 		else {
 			gWifiRsvMemSize = (unsigned long long) RsvMemSize;
-			DBGLOG(INIT, INFO, "MPU-in-lk gWifiRsvMemSize: 0x%x\n",
-				gWifiRsvMemSize);
+			DBGLOG(INIT, INFO,
+			       "MPU-in-lk gWifiRsvMemSize: 0x%llx\n",
+			       gWifiRsvMemSize);
 		}
 	}
 
@@ -248,7 +249,7 @@ static int halInitHifMem(struct platform_device *pdev,
 					   GFP_DMA);
 		if (!wifi_rsrv_mems[i].vir_base) {
 			DBGLOG(INIT, ERROR,
-				"[%d] DMA_ALLOC_COHERENT failed, size: 0x%x\n",
+				"[%d] DMA_ALLOC_COHERENT failed, size: 0x%llx\n",
 				i, wifi_rsrv_mems[i].size);
 			return -1;
 		}
@@ -658,13 +659,13 @@ static u_int8_t halDmaMapSingleRetry(struct GL_HIF_INFO *prHifInfo,
 #if KERNEL_VERSION(5, 5, 0) <= LINUX_VERSION_CODE
 			DBGLOG(INIT, WARN,
 			       "va: 0x%llx, mask: 0x%llx, limit: 0x%llx\n",
-			       AllocVa,
+			       (uint64_t)AllocVa,
 			       *prHifInfo->pdev->dev.dma_mask,
 			       prHifInfo->pdev->dev.bus_dma_limit);
 #else
 			DBGLOG(INIT, WARN,
 			       "va: 0x%llx, mask: 0x%llx\n",
-			       AllocVa,
+			       (uint64_t)AllocVa,
 			       *prHifInfo->pdev->dev.dma_mask);
 #endif
 		}
@@ -673,8 +674,8 @@ static u_int8_t halDmaMapSingleRetry(struct GL_HIF_INFO *prHifInfo,
 	}
 	if (u4Cnt == DMA_MAP_RETRY_COUNT) {
 		DBGLOG(HAL, ERROR,
-		       "dma mapping error![0x%llx][0x%llx][%u][%d]\n",
-		       (uint64_t)rAddr, AllocVa, AllocSize, i4Res);
+		       "dma mapping error![0x%llx][0x%llx][%lu][%d]\n",
+		       (uint64_t)rAddr, (uint64_t)AllocVa, AllocSize, i4Res);
 		fgRet = FALSE;
 	}
 
@@ -958,7 +959,7 @@ void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 
 	prSkb = kalAllocHifSkb();
 	if (!prSkb) {
-		DBGLOG(HAL, ERROR, "can't allocate rx %u size packet\n",
+		DBGLOG(HAL, ERROR, "can't allocate rx %lu size packet\n",
 		       prDmaBuf->AllocSize);
 		prDmaBuf->AllocPa = 0;
 		prDmaBuf->AllocVa = NULL;

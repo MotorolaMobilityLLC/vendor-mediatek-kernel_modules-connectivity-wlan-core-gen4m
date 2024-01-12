@@ -5752,7 +5752,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prHifStats->u4MsiIsrCount[i]));
 	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"/ %u %u %u %u 0x%x 0x%x %u]",
+			"/ %u %u %u %u 0x%lx 0x%lx %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4IsrNotIndCount),
@@ -5812,7 +5812,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" txdelay[0x%x]",
+			" txdelay[0x%lx]",
 			prHifInfo->ulTxDataTimeout);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 	DBGLOG(HAL, INFO, "%s\n", buf);

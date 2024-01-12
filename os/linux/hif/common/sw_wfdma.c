@@ -396,12 +396,12 @@ void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo)
 	prSwWfDmad = prSwWfdmaInfo->prDmad;
 
 	DBGLOG(HAL, INFO,
-	       "EN[%u], CIDX[%u] DIDX[%u] MCNT[%u] ADDR[0x%lX] OFFSET[0x%X]\n",
+	       "EN[%u], CIDX[%u] DIDX[%u] MCNT[%u] ADDR[0x%llX] OFFSET[0x%X]\n",
 	       prSwWfdmaInfo->fgIsEnSwWfdma,
 	       prSwWfdmaInfo->u4CpuIdx,
 	       prSwWfdmaInfo->u4DmaIdx,
 	       prSwWfdmaInfo->u4MaxCnt,
-	       prSwWfdmaInfo->pucIoremapAddr,
+	       (uint64_t)prSwWfdmaInfo->pucIoremapAddr,
 	       prSwWfdmaInfo->u4EmiOffset);
 
 	if (!prSwWfDmad)
