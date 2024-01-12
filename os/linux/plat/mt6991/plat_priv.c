@@ -1117,3 +1117,15 @@ uint32_t kalGetTxBigCpuMask(void)
 {
 	return TX_CPU_BIG_CORE;
 }
+
+#if (CFG_VOLT_INFO == 1)
+uint8_t kalVnfGetEnInitStatus(void)
+{
+	return FEATURE_ENABLED;
+}
+
+uint32_t kalVnfGetVoltLowBnd(void)
+{
+	return VOLT_INFO_LOW_BOUND;
+}
+#endif /* #if (CFG_VOLT_INFO == 1) */

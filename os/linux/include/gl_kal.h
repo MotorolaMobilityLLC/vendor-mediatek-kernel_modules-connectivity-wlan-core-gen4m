@@ -219,6 +219,8 @@ extern struct platform_device *g_prPlatDev;
 #define VOLT_INFO_MAX_VOLT_THRESH 5400 /* mV */
 /* align pmic_lbat_service.c THD_VOLT_MIN */
 #define VOLT_INFO_MIN_VOLT_THRESH 2650 /* mV */
+#define VOLT_INFO_LOW_BOUND_UNLMT 0
+#define VOLT_INFO_LOW_BOUND 3850 /* mV */
 #endif
 
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
@@ -2673,6 +2675,8 @@ void kalVnfActive(struct ADAPTER *prAdapter);
 void kalVnfUninit(void);
 void kalVnfInit(struct ADAPTER *prAdapter);
 void kalVnfEventHandler(struct ADAPTER *prAdapter);
+uint8_t kalVnfGetEnInitStatus(void);
+uint32_t kalVnfGetVoltLowBnd(void);
 #endif /* CFG_VOLT_INFO */
 
 #if CFG_SUPPORT_RETURN_WORK
