@@ -1294,6 +1294,9 @@ wlanoidSetConnect(IN struct ADAPTER *prAdapter,
 					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
 			prAisAbortMsg->ucReasonOfDisconnect =
 					DISCONNECT_REASON_CODE_NEW_CONNECTION;
+			cnmMemFree(prAdapter, prAisAbortMsg);
+			/* reject this connect to avoid to install key fail */
+			return WLAN_STATUS_FAILURE;
 		}
 	} else
 		prAisAbortMsg->ucReasonOfDisconnect =
