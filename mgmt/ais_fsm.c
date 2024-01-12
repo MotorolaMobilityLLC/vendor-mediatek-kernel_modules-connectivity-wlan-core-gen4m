@@ -2252,7 +2252,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DBDC
 	/* DBDC decsion.may change OpNss */
-	if (prAdapter->rWifiVar.fgDbDcModeEn == FALSE)
+	if (cnmDbdcIsDisabled(prAdapter))
 		cnmDbdcPreConnectionEnableDecision(
 				prAdapter,
 				&rDbdcDecisionInfo);
