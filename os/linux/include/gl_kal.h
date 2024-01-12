@@ -1620,7 +1620,8 @@ kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
 void
 kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,
-			uint8_t ucChannelNum, enum ENUM_BAND eBand);
+			uint8_t ucChannelNum, enum ENUM_BAND eBand,
+			uint8_t ucBssIndex);
 #endif
 
 void

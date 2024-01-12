@@ -1117,7 +1117,8 @@ KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo, _prMacAddr)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
 #if CFG_SUPPORT_DFS
-#define	kalIndicateChannelSwitch(_prGlueInfo, _eSco, _ucChannelNum, _eBand) \
+#define	kalIndicateChannelSwitch(_prGlueInfo, _eSco, _ucChannelNum, \
+	_eBand, _ucBssIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 #endif
 
@@ -1149,7 +1150,8 @@ kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
 void
 kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,
-			uint8_t ucChannelNum, enum ENUM_BAND eBand);
+			uint8_t ucChannelNum, enum ENUM_BAND eBand,
+			uint8_t ucBssIndex);
 #endif
 
 void

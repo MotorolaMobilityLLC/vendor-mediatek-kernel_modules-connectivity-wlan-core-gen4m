@@ -10436,10 +10436,12 @@ void kalFbNotifierUnReg(void)
 void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 				enum ENUM_CHNL_EXT eSco,
 				uint8_t ucChannelNum,
-				enum ENUM_BAND eBand)
+				enum ENUM_BAND eBand,
+				uint8_t ucBssIndex)
 {
 	struct cfg80211_chan_def chandef;
 	struct ieee80211_channel *prChannel = NULL;
+	struct net_device *prDevHandler;
 	enum nl80211_channel_type rChannelType;
 	uint8_t band = 0;
 #if (CFG_ADVANCED_80211_MLO == 1)
@@ -10458,6 +10460,13 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	if (!prChannel) {
 		DBGLOG(REQ, ERROR, "ieee80211_get_channel fail!\n");
+		return;
+	}
+
+	prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+	if (!prDevHandler) {
+		DBGLOG(REQ, ERROR,
+			"NetDev is null BssIndex[%d]!\n", ucBssIndex);
 		return;
 	}
 
@@ -10484,9 +10493,9 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
 #if (CFG_ADVANCED_80211_MLO == 1)
-	cfg80211_ch_switch_notify(prGlueInfo->prDevHandler, &chandef, linkIdx);
+	cfg80211_ch_switch_notify(prDevHandler, &chandef, linkIdx);
 #else
-	cfg80211_ch_switch_notify(prGlueInfo->prDevHandler, &chandef);
+	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
 }
 #endif
