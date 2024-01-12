@@ -884,7 +884,9 @@ union WPDMA_GLO_CFG_STRUCT {
 		uint32_t csr_disp_base_ptr_chain_en:1;
 		uint32_t csr_lbk_rx_q_sel:4;
 		uint32_t csr_lbk_rx_q_sel_en:1;
-		uint32_t reserved21:3;
+		/* define after Buzzard (rsv before) */
+		uint32_t omit_rx_info_pfet2:1;
+		uint32_t reserved22:2;
 		uint32_t csr_sw_rst:1;
 		uint32_t force_tx_eof:1;
 		uint32_t pdma_addr_ext_en:1;
