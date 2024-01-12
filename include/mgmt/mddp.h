@@ -75,7 +75,7 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	IN uint8_t fgActivate);
 int32_t mddpNotifyStaTxd(IN struct ADAPTER *prAdapter);
 void mddpNotifyWifiOnStart(void);
-void mddpNotifyWifiOnEnd(void);
+int32_t mddpNotifyWifiOnEnd(void);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
