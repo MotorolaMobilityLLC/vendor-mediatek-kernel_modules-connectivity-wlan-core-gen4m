@@ -203,20 +203,25 @@ kalP2PUpdateAssocInfo(IN struct GLUE_INFO *prGlueInfo,
 		fsm->rConnReqInfo.u4BufLength = u4FrameBodyLen;
 		kalMemCopy(fsm->rConnReqInfo.aucIEBuf, cp, u4FrameBodyLen);
 	}
-
+#if CFG_SUPPORT_WPS
 	/* do supplicant a favor, parse to the start of WPA/RSN IE */
 	if (wextSrchDesiredWPSIE(cp, u4FrameBodyLen, 0xDD, &pucDesiredIE)) {
 		/* WPS IE found */
-	} else if (wextSrchDesiredWPAIE(cp,
-			u4FrameBodyLen, 0x30, &pucDesiredIE)) {
-		/* RSN IE found */
-	} else if (wextSrchDesiredWPAIE(cp,
-			u4FrameBodyLen, 0xDD, &pucDesiredIE)) {
-		/* WPA IE found */
 	} else {
-		/* no WPA/RSN IE found, skip this event */
-		return;
+#endif
+		if (wextSrchDesiredWPAIE(cp,
+				u4FrameBodyLen, 0x30, &pucDesiredIE)) {
+			/* RSN IE found */
+		} else if (wextSrchDesiredWPAIE(cp,
+				u4FrameBodyLen, 0xDD, &pucDesiredIE)) {
+			/* WPA IE found */
+		} else {
+			/* no WPA/RSN IE found, skip this event */
+			return;
+		}
+#if CFG_SUPPORT_WPS
 	}
+#endif
 
 	/* IWEVASSOCREQIE, indicate binary string */
 	pucExtraInfo = pucDesiredIE;

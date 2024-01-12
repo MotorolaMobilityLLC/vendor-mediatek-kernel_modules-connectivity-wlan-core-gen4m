@@ -215,15 +215,13 @@ struct APPEND_VAR_IE_ENTRY txAssocRespIETable[] = {
 	,			/* 221 */
 #if CFG_SUPPORT_MTK_SYNERGY
 	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}
-	/* 221 */
+	,			/* 221 */
 #endif
-	,
 #if CFG_SUPPORT_802_11W
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_TIMEOUT_IE), NULL,
 	rsnPmfGenerateTimeoutIE}
-	/* 56 */
+	,			/* 56 */
 #endif
-	,
 	{(ELEM_HDR_LEN + ELEM_MAX_LEN_RSN), NULL, rsnGenerateRSNXIE}
 	/* 244 */
 };
@@ -1547,7 +1545,9 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 	 struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame;
 	 struct BSS_INFO *prBssInfo;
 	 struct IE_SSID *prIeSsid = (struct IE_SSID *)NULL;
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
 	 struct RSN_INFO_ELEM *prIeRsn = (struct RSN_INFO_ELEM *)NULL;
+#endif
 	 struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate =
 		 (struct IE_SUPPORTED_RATE_IOT *)NULL;
 	 struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate =

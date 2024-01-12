@@ -4211,12 +4211,12 @@ static void wext_support_ioctl_SIOCSIWGENIE(
 	IN struct net_device *prDev, IN char *prExtraBuf,
 	IN uint32_t u4ExtraSize)
 {
+#if CFG_SUPPORT_WAPI
 	struct GLUE_INFO *prGlueInfo = *((struct GLUE_INFO **)
 		netdev_priv(prDev));
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 
-#if CFG_SUPPORT_WAPI
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetWapiAssocInfo, prExtraBuf,
 			   u4ExtraSize, &u4BufLen);
 #endif

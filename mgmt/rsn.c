@@ -864,7 +864,9 @@ u_int8_t rsnPerformPolicySelection(
 	uint32_t u4GroupCipher = 0;
 	uint32_t u4AkmSuite = 0;
 	struct RSN_INFO *prBssRsnInfo;
+#if CFG_SUPPORT_WPS
 	u_int8_t fgIsWpsActive = (u_int8_t) FALSE;
+#endif
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	enum ENUM_PARAM_OP_MODE eOPMode;
 	enum ENUM_WEP_STATUS eEncStatus;
