@@ -832,10 +832,6 @@ int testmode_set_ncho_mode(struct wiphy *wiphy,
 int testmode_get_ncho_mode(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #endif
-#if CFG_SUPPORT_MANIPULATE_TID
-int testmode_manipulate_tid(struct wiphy *wiphy,
-	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
-#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
