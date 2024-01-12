@@ -320,6 +320,9 @@ uint8_t kalP2PGetRole(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRoleIdx)
 {
 	ASSERT(prGlueInfo);
 
+	if (!prGlueInfo->prP2PInfo[ucRoleIdx])
+		return 0;
+
 	return prGlueInfo->prP2PInfo[ucRoleIdx]->ucRole;
 }				/* end of kalP2PGetRole() */
 
