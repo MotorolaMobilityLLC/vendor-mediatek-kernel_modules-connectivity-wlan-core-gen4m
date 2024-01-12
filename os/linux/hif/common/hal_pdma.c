@@ -598,7 +598,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 			HAL_LP_OWN_RD(prAdapter, &fgResult);
 
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 		if (test_bit(SUSPEND_FLAG_CLEAR_WHEN_RESUME,
 			&prAdapter->prGlueInfo->fgIsInSuspend)) {
 			DBGLOG(INIT, LOUD, "Bypass timeout in suspend\n");
@@ -609,7 +609,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 			HAL_LP_OWN_CLR(prAdapter, &fgResult);
 			fgResult = FALSE;
 		} else
-#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 		{
 			u4chkTick = kalGetTimeTick();
 			if (prAdapter->u4CasanLoadType == 1)
@@ -623,10 +623,11 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		}
 
 		if (fgResult) {
-#if IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+done:
 			clear_bit(GLUE_FLAG_DRV_OWN_INT_BIT,
 				&prAdapter->prGlueInfo->ulFlag);
-#endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
+#endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 
 			/* Check WPDMA FW own interrupt status and clear */
 			if (prBusInfo->fgCheckDriverOwnInt)
@@ -649,6 +650,18 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		} else if ((i > LP_OWN_BACK_FAILED_RETRY_CNT) &&
 			   (kalIsCardRemoved(prAdapter->prGlueInfo) ||
 			    fgIsBusAccessFailed || fgTimeout)) {
+#if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
+			uint32_t WFDrvOwnStat = 0xFFFFFFFF;
+
+			HAL_MCR_RD(prAdapter,
+				CONNAC3X_BN0_LPCTL_ADDR, &WFDrvOwnStat);
+			if (WFDrvOwnStat == 0) {
+				DBGLOG(INIT, INFO,
+					"host pending recover.\n");
+				fgResult = TRUE;
+				goto done;
+			}
+#endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 			fgIsDriverOwnTimeout = TRUE;
 			fgStatus = FALSE;
 			break;
@@ -831,7 +844,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		&& (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE)
 #endif
 		) {
-		DBGLOG(INIT, TRACE, "not in fgWiFiInSleepyState\n");
+		DBGLOG(INIT, LOUD, "not in fgWiFiInSleepyState\n");
 		goto unlock;
 	}
 
