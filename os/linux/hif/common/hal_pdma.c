@@ -2854,7 +2854,7 @@ void halWpdmaInitRxRing(struct GLUE_INFO *prGlueInfo)
 			rv = halSetRxRingHwAddr(prRxRing, prBusInfo, i);
 
 		if (!rv)
-			break;
+			continue;
 		phy_addr = ((uint64_t)prRxRing->Cell[0].AllocPa &
 			DMA_LOWER_32BITS_MASK);
 		prRxRing->RxCpuIdx = prRxRing->u4RingSize - 1;
@@ -4987,8 +4987,8 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 	} else if (prAdapter->ucAdjustCtrlBitmap) {
 		halSetAdjustCtrl(prAdapter, true);
 		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
-	} else if (halIsDualBandSccMode(prAdapter)) {
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
+	} else if (halIsDualBandSccMode(prAdapter)) {
 		if (prAdapter->rWifiVar.u4WfdSccBalanceEnable == 1) {
 			halSetAdjustCtrl(prAdapter, true);
 			halSetAdjustCtrlMode(prAdapter, WFD_SCC_BALANCE_MODE);
@@ -4996,9 +4996,6 @@ void halUpdateBssTokenCnt(struct ADAPTER *prAdapter,
 			halSetAdjustCtrl(prAdapter, false);
 			halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
 		}
-#else
-		halSetAdjustCtrl(prAdapter, false);
-		halSetAdjustCtrlMode(prAdapter, WFD_DEFAULT_MODE);
 #endif
 	} else {
 		halSetAdjustCtrl(prAdapter, false);

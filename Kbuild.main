@@ -100,7 +100,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6655 -UMT7990 -UMT7925
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6653 -UMT6655 -UMT7990 -UMT7925
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -427,6 +427,50 @@ endif
 ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
+ifeq ($(MTK_ANDROID_WMT), y)
+    CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
+    CONFIG_MTK_WIFI_POWER_THROTTLING=y
+    CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+    CONFIG_MTK_WIFI_APF_SUPPORT=y
+    ifneq ($(CONFIG_PAGE_POOL),)
+        CONFIG_RX_PAGE_POOL=y
+    endif
+    CONFIG_MTK_WIFI_PCIE_SUPPORT=y
+    CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
+    CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
+    CONFIG_MTK_WIFI_FW_LOG_EMI=y
+    ifeq ($(call kver_ge,5,15),1)
+        CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+    endif
+    CONFIG_WIFI_COREDUMP_SUPPORT=y
+    CONFIG_MTK_WIFI_AER_RESET=y
+    ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
+    ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+endif
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+    CONFIG_MTK_WIFI_NAN=y
+else
+    CONFIG_MTK_WIFI_NAN=n
+endif
+CONFIG_MTK_WIFI_TRX_DIRECT=y
+CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
+ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
+ccflags-y += -DCFG_AAD_NONCE_NO_REPLACE
+ccflags-y += -DCONFIG_MTK_WIFI_BW320
+ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
+ccflags-y += -DCFG_WIFI_TX_FIXED_RATE_NO_VTA=1
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
+    ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=2048
+    ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
+    ccflags-y += -DCFG_SUPPORT_RX_NAPI=0
+    ccflags-y += -DCFG_SUPPORT_RX_GRO=0
+endif
+endif
+
+ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT6653,$(ccflags-y))
+ccflags-y += -DMT6653
 ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
     CONFIG_MTK_WIFI_POWER_THROTTLING=y
@@ -1749,6 +1793,12 @@ CHIPS_OBJS += $(CHIPS)mt6639/mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/dbg_mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/hal_dmashdl_mt6639.o
 CHIPS_OBJS += $(CHIPS)mt6639/hal_wfsys_reset_mt6639.o
+endif
+
+ifneq ($(filter MT6653,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt6653/mt6653.o
+CHIPS_OBJS += $(CHIPS)mt6653/dbg_mt6653.o
+CHIPS_OBJS += $(CHIPS)mt6653/hal_dmashdl_mt6653.o
 endif
 
 ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)

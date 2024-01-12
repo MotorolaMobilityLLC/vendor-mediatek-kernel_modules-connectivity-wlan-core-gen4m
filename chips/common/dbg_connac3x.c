@@ -49,6 +49,17 @@
 #include "coda/mt6639/mawd_reg.h"
 #include "coda/mt6639/wf_rro_top.h"
 #endif
+#ifdef MT6653
+#include "coda/mt6653/wf_hif_dmashdl_top.h"
+#include "coda/mt6653/wf_ple_top.h"
+#include "coda/mt6653/wf_pse_top.h"
+#include "coda/mt6653/wf_wfdma_host_dma0.h"
+#include "coda/mt6653/bn0_wf_mib_top.h"
+#include "coda/mt6653/bn1_wf_mib_top.h"
+#include "coda/mt6653/wf_umib_top.h"
+#include "coda/mt6653/mawd_reg.h"
+#include "coda/mt6653/wf_rro_top.h"
+#endif
 #ifdef MT6655
 #include "coda/mt6655/wf_hif_dmashdl_top.h"
 #include "coda/mt6655/wf_ple_top.h"
@@ -2932,10 +2943,14 @@ static void chip_get_ple_acq_stat(struct ADAPTER *prAdapter, uint32_t *ple_stat)
 
 static void chip_get_dis_sta_map(struct ADAPTER *prAdapter, uint32_t *dis_sta_map)
 {
+#ifdef MT6653
+	/* TODO: no this CR in 6653 */
+#else
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP0_ADDR, &dis_sta_map[0]);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP1_ADDR, &dis_sta_map[1]);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP2_ADDR, &dis_sta_map[2]);
 	HAL_MCR_RD(prAdapter, WF_PLE_TOP_DIS_STA_MAP3_ADDR, &dis_sta_map[3]);
+#endif
 }
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
