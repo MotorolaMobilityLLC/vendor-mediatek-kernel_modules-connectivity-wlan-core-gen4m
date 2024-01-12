@@ -824,8 +824,6 @@ do { \
 
 #define PRINTF_ARG(...)      __VA_ARGS__
 #define SPRINTF(buf, arg)    {buf += sprintf((char *)(buf), PRINTF_ARG arg); }
-#define SNPRINTF(buf, arg)   {buf += \
-	snprintf((char *)(buf), strlen((char *)(buf)), PRINTF_ARG arg); }
 
 #define USEC_TO_SYSTIME(_usec)      ((_usec) / USEC_PER_MSEC)
 #define MSEC_TO_SYSTIME(_msec)      (_msec)
