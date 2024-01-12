@@ -1079,7 +1079,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
+#if (CFG_SUPPORT_802_11AX == 1)
 	.arb_ac_mode_addr = SOC3_0_ARB_AC_MODE_ADDR,
+#endif
 	.custom_oid_interface_version = MTK_CUSTOM_OID_INTERFACE_VERSION,
 	.em_interface_version = MTK_EM_INTERFACE_VERSION,
 	.asicCapInit = asicConnac2xCapInit,
