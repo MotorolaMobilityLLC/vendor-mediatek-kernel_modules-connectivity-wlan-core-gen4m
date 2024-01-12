@@ -501,7 +501,7 @@ void asicConnac2xWpdmaConfig(
 	bool fgResetHif)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
-	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT];
+	union WPDMA_GLO_CFG_STRUCT GloCfg[CONNAC2X_WFDMA_COUNT] = {0};
 	uint32_t u4DmaCfgCr;
 	uint32_t idx;
 	struct mt66xx_chip_info *chip_info = prAdapter->chip_info;
