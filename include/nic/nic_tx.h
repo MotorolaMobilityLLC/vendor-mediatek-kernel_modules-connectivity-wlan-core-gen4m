@@ -229,7 +229,7 @@
 #define NIC_TX_PRIORITY_DATA_TID                6
 
 /*Customization: sk_buff mark for special packet that need raise priority */
-#define NIC_TX_SKB_PRIORITY_MARK1	0x5a /* customer special value*/
+/*#define NIC_TX_SKB_PRIORITY_MARK1	0x5a*/ /* customer special value*/
 #define NIC_TX_SKB_PRIORITY_MARK_BIT	31 /*Mediatek define, 0x80000000*/
 #define NIC_TX_SKB_DUP_DETECT_MARK_BIT	30 /*Mediatek define, 0x40000000*/
 

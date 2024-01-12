@@ -390,31 +390,34 @@ uint8_t mscsIsTcpNeedMonitor(IN struct ADAPTER *prAdapter, IN uint8_t *pucPkt)
 
 uint8_t mscsIsNeedRequest(IN struct ADAPTER *prAdapter, IN void *prPacket)
 {
-	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
 	struct STA_RECORD *prStaRec = NULL;
 	struct MSCS_FIVE_TUPLE_T rTargetFiveTuple;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint16_t u2EtherType;
 	uint8_t *pPkt, *pucEthBody, *pucUdpBody;
 	uint8_t ucMonitorProto = prWifiVar->ucSupportProtocol;
+	uint32_t u4Mark;
 
 	/* check feature enable */
 	if (prWifiVar->ucEnableFastPath != FEATURE_ENABLED)
 		return FALSE;
 
-	/* 0. check port auth status */
-	if (!fpIsPortAuthorized(prAdapter))
-		return FALSE;
-
-	/* 1. Check if packets come from monitor applications */
+	/* 0. Check if packets come from monitor applications */
 	if (prWifiVar->ucFastPathAllPacket != FEATURE_ENABLED) {
-		if (prSkb->mark != NIC_TX_SKB_PRIORITY_MARK1 &&
-		    !(prSkb->mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT)))
+		u4Mark = kalGetPacketMark(prPacket);
+		if (!(u4Mark & BIT(NIC_TX_SKB_PRIORITY_MARK_BIT)))
 			return FALSE;
 	}
 
+	/* 1. check port auth status */
+	if (!fpIsPortAuthorized(prAdapter))
+		return FALSE;
+
 	/* 2. Check packets protocol */
-	pPkt = prSkb->data;
+	kalGetPacketBuf(prPacket, &pPkt);
+	if (pPkt == NULL)
+		return FALSE;
+
 	u2EtherType = (pPkt[ETH_TYPE_LEN_OFFSET] << 8)
 		| (pPkt[ETH_TYPE_LEN_OFFSET + 1]);
 	pucEthBody = &pPkt[ETH_HLEN];
@@ -598,15 +601,18 @@ uint32_t mscsGenerateTCLASType4(IN struct ADAPTER *prAdapter,
 {
 	struct IE_TCLAS_MASK *prTclas;
 	struct IE_TCLAS_CLASS_TYPE_4 *prContent;
-	struct sk_buff *prSkb = (struct sk_buff *)prPacket;
-	uint8_t *pucEthBody, *pucUdpBody;
+	uint8_t *pPkt, *pucEthBody, *pucUdpBody;
 
 	/* Fill content */
 	prTclas = (struct IE_TCLAS_MASK *) pucContent;
 	prContent = (struct IE_TCLAS_CLASS_TYPE_4 *)
 		&prTclas->aucFrameClassifier[0];
 
-	pucEthBody = &prSkb->data[ETH_HLEN];
+	kalGetPacketBuf(prPacket, &pPkt);
+	if (pPkt == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	pucEthBody = &pPkt[ETH_HLEN];
 	pucUdpBody = &pucEthBody[IP_HEADER_LEN];
 
 	prTclas->ucId = ELEM_ID_RESERVED;
