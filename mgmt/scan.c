@@ -1845,10 +1845,16 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 uint8_t scanIsNeedRnrScan(struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo)
 {
-	if (prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_OCE
-		|| prScanInfo->eCurrentState != SCAN_STATE_SCANNING
-		|| !prScanInfo->rScanParam.fgOobRnrParseEn
-		|| prScanInfo->fgWifiOnFirstScan) {
+	/* To speed up wifi on first scan, not to handle RNR.
+	 * except WIFI 7 certification.
+	 */
+	if (prAdapter->rWifiVar.u4SwTestMode != ENUM_SW_TEST_MODE_SIGMA_BE
+		&& prScanInfo->fgWifiOnFirstScan) {
+		return FALSE;
+	} else if (!prScanInfo->rScanParam.fgOobRnrParseEn
+		|| prAdapter->rWifiVar.u4SwTestMode
+		   == ENUM_SW_TEST_MODE_SIGMA_OCE
+		|| prScanInfo->eCurrentState != SCAN_STATE_SCANNING) {
 		DBGLOG(SCN, TRACE, "Skip oob scan Rnr parsing\n");
 		return FALSE;
 	}
