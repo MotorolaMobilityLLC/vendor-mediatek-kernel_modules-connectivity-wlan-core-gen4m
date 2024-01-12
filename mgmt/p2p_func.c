@@ -4034,6 +4034,67 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 	prStaRec = cnmGetStaRecByAddress(prAdapter,
 		prP2pBssInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
 
+	if (prStaRec) {
+#if CFG_SUPPORT_802_11W
+		/* AP PMF. if PMF connection, do not reset state & FSM */
+		fgPmfConn = rsnCheckBipKeyInstalled(prAdapter, prStaRec);
+		if (prAdapter->rWifiVar.fgSapAuthPolicy ==
+			P2P_AUTH_POLICY_RESET)
+			DBGLOG(P2P, INFO, "Fall through PMF check\n");
+		else if (fgPmfConn &&
+			(prP2pBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_OWE))
+			DBGLOG(P2P, INFO, "[OWE] Fall through PMF check\n");
+		else if (fgPmfConn &&
+			(!rsnKeyMgmtSae(prP2pBssInfo->u4RsnSelectedAKMSuite) ||
+			(prAdapter->rWifiVar.fgSapAuthPolicy ==
+			P2P_AUTH_POLICY_IGNORE))) {
+			DBGLOG(P2P, WARN, "PMF Connction, return false\n");
+			return FALSE;
+		}
+#endif
+
+		if (prStaRec->ucStaState > STA_STATE_1 &&
+		    IS_STA_IN_P2P(prStaRec)) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			struct MLD_STA_RECORD *prMldSta;
+			struct STA_RECORD *sta, *temp;
+			struct BSS_INFO *bss;
+
+			prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+			if (prMldSta) {
+				struct LINK *prStarecList =
+					&prMldSta->rStarecList;
+
+				LINK_FOR_EACH_ENTRY_SAFE(sta, temp,
+							 prStarecList,
+							 rLinkEntryMld,
+							 struct STA_RECORD) {
+					bss = GET_BSS_INFO_BY_INDEX(prAdapter,
+						sta->ucBssIndex);
+					if (!bss)
+						continue;
+
+					bssRemoveClient(prAdapter, bss, sta);
+					p2pFuncDisconnect(prAdapter, bss, sta,
+						FALSE,
+						REASON_CODE_DISASSOC_INACTIVITY,
+						TRUE);
+				}
+			} else
+#endif
+			{
+				bssRemoveClient(prAdapter, prP2pBssInfo,
+						prStaRec);
+				p2pFuncDisconnect(prAdapter, prP2pBssInfo,
+					prStaRec, FALSE,
+					REASON_CODE_DISASSOC_INACTIVITY,
+					TRUE);
+			}
+			prStaRec = NULL;
+		}
+	}
+
 	if (!prStaRec) {
 		prStaRec = cnmStaRecAlloc(prAdapter, STA_TYPE_P2P_GC,
 			prP2pBssInfo->ucBssIndex,
@@ -4065,49 +4126,6 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 
 		/* NOTE(Kevin): Better to change state here, not at TX Done */
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-	} else {
-#if CFG_SUPPORT_802_11W
-		/* AP PMF. if PMF connection, do not reset state & FSM */
-		fgPmfConn = rsnCheckBipKeyInstalled(prAdapter, prStaRec);
-		if (prAdapter->rWifiVar.fgSapAuthPolicy ==
-			P2P_AUTH_POLICY_RESET)
-			DBGLOG(P2P, INFO, "Fall through PMF check\n");
-		else if (fgPmfConn &&
-			(prP2pBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_OWE))
-			DBGLOG(P2P, INFO, "[OWE] Fall through PMF check\n");
-		else if (fgPmfConn &&
-			(!rsnKeyMgmtSae(prP2pBssInfo->u4RsnSelectedAKMSuite) ||
-			(prAdapter->rWifiVar.fgSapAuthPolicy ==
-			P2P_AUTH_POLICY_IGNORE))) {
-			DBGLOG(P2P, WARN, "PMF Connction, return false\n");
-			return FALSE;
-		}
-#endif
-
-		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
-
-		if ((prStaRec->ucStaState > STA_STATE_1)
-			&& (IS_STA_IN_P2P(prStaRec))) {
-
-			cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
-
-			p2pFuncResetStaRecStatus(prAdapter, prStaRec);
-
-			bssRemoveClient(prAdapter, prP2pBssInfo, prStaRec);
-
-#if CFG_SUPPORT_802_11W
-			if (timerPendingTimer(&(prStaRec
-				->rPmfCfg.rSAQueryTimer)))
-				cnmTimerStopTimer(prAdapter,
-				&(prStaRec->rPmfCfg.rSAQueryTimer));
-#endif
-			p2pFuncDisconnect(prAdapter,
-				prP2pBssInfo, prStaRec, FALSE,
-				REASON_CODE_DISASSOC_INACTIVITY,
-				TRUE);
-		}
-
 	}
 
 	/* prStaRec->eStaType = STA_TYPE_INFRA_CLIENT; */
