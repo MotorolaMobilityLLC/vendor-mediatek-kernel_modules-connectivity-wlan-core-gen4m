@@ -816,6 +816,17 @@ static const struct wiphy_vendor_command
 #endif
 	},
 #endif
+#if CFG_SUPPORT_DFS_MASTER
+	{
+		{
+			.vendor_id = OUI_QCA,
+			.subcmd = NL80211_VENDOR_SUBCMD_DFS_CAPABILITY
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
+				| WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_dfs_capability
+	},
+#endif
 	{
 		{
 			.vendor_id = OUI_QCA,
