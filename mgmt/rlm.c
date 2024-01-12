@@ -2468,6 +2468,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prStaRec->u2VhtRxMcsMap =
 				prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap;
+			prStaRec->u2VhtRxMcsMapAssoc =
+				prStaRec->u2VhtRxMcsMap;
 
 			prStaRec->u2VhtRxHighestSupportedDataRate =
 				prVhtCap->rVhtSupportedMcsSet
@@ -3835,6 +3837,37 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 							prBssInfo);
 
 			/* 3. Update StaRec to FW */
+
+			if (((prRxFrame->ucOperatingMode & VHT_OP_MODE_RX_NSS)
+				>> VHT_OP_MODE_RX_NSS_OFFSET) ==
+				SUPPORT_NSS_2) {
+				prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
+					(~(VHT_CAP_INFO_MCS_1SS_MASK |
+					VHT_CAP_INFO_MCS_2SS_MASK));
+
+				prStaRec->u2VhtRxMcsMap |=
+					(prStaRec->u2VhtRxMcsMapAssoc &
+					(VHT_CAP_INFO_MCS_1SS_MASK |
+					VHT_CAP_INFO_MCS_2SS_MASK));
+
+				DBGLOG(RLM, INFO, "support nss=2\n");
+			} else {
+				/* NSS = 1 or others */
+				prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
+					(~VHT_CAP_INFO_MCS_1SS_MASK);
+
+				prStaRec->u2VhtRxMcsMap |=
+					(prStaRec->u2VhtRxMcsMapAssoc &
+					VHT_CAP_INFO_MCS_1SS_MASK);
+
+				DBGLOG(RLM, INFO, "support nss!=2\n");
+			}
+
+			DBGLOG(RLM, INFO,
+				   "u2VhtRxMcsMap:0x%x, u2VhtRxMcsMapAssoc:0x%x\n",
+				   prStaRec->u2VhtRxMcsMap,
+				   prStaRec->u2VhtRxMcsMapAssoc);
+
 			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
 
 			/* 4. Update BW parameters in BssInfo for STA mode only
@@ -4168,6 +4201,9 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 
 			prStaRec->u2VhtRxMcsMap =
 				prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap;
+
+			prStaRec->u2VhtRxMcsMapAssoc =
+				prStaRec->u2VhtRxMcsMap;
 
 			prStaRec->u2VhtRxHighestSupportedDataRate =
 				prVhtCap->rVhtSupportedMcsSet
