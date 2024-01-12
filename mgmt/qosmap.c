@@ -273,7 +273,7 @@ uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo, IN int type, IN int dscp)
 	else
 		return 0xFF;
 
-	if (prStaRec && dscp < 64)
+	if (prStaRec && dscp >= 0 && dscp < 64)
 		return prStaRec->qosMapSet[dscp];
 
 	return 0xFF;
