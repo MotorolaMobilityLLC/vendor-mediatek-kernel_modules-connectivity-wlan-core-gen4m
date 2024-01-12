@@ -2137,12 +2137,58 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 
 		/* Set CSA IE parameters */
-		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchMode =
+			params->block_tx;
+		ieee80211_chandef_to_operating_class(&params->chandef,
+			&prGlueInfo->prAdapter->rWifiVar.ucNewOperatingClass);
 		prGlueInfo->prAdapter->rWifiVar.ucNewChannelNumber =
-			nicFreq2ChannelNum(
-				params->chandef.chan->center_freq * 1000);
+			nicFreq2ChannelNum(params->chandef.chan->center_freq *
+				1000);
 		prGlueInfo->prAdapter->rWifiVar.ucChannelSwitchCount =
 			params->count;
+		switch (cfg80211_get_chandef_type(&params->chandef)) {
+		case NL80211_CHAN_HT40PLUS:
+			prGlueInfo->prAdapter->rWifiVar.ucSecondaryOffset =
+				CHNL_EXT_SCA;
+			break;
+		case NL80211_CHAN_HT40MINUS:
+			prGlueInfo->prAdapter->rWifiVar.ucSecondaryOffset =
+				CHNL_EXT_SCB;
+			break;
+		default:
+			prGlueInfo->prAdapter->rWifiVar.ucSecondaryOffset =
+				CHNL_EXT_SCN;
+			break;
+		}
+		switch (params->chandef.width) {
+#if KERNEL_VERSION(5, 18, 0) <= CFG80211_VERSION_CODE
+		case NL80211_CHAN_WIDTH_320:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_320_1;
+			break;
+#endif
+		case NL80211_CHAN_WIDTH_160:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_160;
+			break;
+		case NL80211_CHAN_WIDTH_80P80:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_80P80;
+			break;
+		case NL80211_CHAN_WIDTH_80:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_80;
+			break;
+		case NL80211_CHAN_WIDTH_40:
+		default:
+			prGlueInfo->prAdapter->rWifiVar.ucNewChannelWidth =
+				VHT_OP_CHANNEL_WIDTH_20_40;
+			break;
+		}
+		prGlueInfo->prAdapter->rWifiVar.ucNewChannelS1 =
+			params->chandef.center_freq1;
+		prGlueInfo->prAdapter->rWifiVar.ucNewChannelS2 =
+			params->chandef.center_freq2;
 
 		/* To prevent race condition, we have to set CSA flags
 		 * after all CSA parameters are updated. In this way,
