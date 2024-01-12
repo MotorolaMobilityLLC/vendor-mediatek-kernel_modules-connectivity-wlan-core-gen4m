@@ -1648,12 +1648,40 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 
 		cp = pucBuffer + sizeof(struct RSN_INFO_ELEM);
 
-		WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
-		cp += 2;
-		/* AKM suite */
-		WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
-				    ucBssIndex)->u4RsnSelectedAKMSuite);
-		cp += 4;
+		if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
+			(prBssInfo->u4RsnSelectedAKMSuite ==
+			RSN_AKM_SUITE_SAE)) {
+			struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo =
+				prAdapter->rWifiVar.prP2pSpecificBssInfo
+				[prBssInfo->u4PrivateData];
+			uint8_t i = 0;
+
+			/* AKM suite count */
+			WLAN_SET_FIELD_16(cp,
+				prP2pSpecBssInfo->u4KeyMgtSuiteCount);
+			cp += 2;
+
+			/* AKM suite */
+			for (i = 0;
+				i < prP2pSpecBssInfo->u4KeyMgtSuiteCount;
+				i++) {
+				DBGLOG(RSN, TRACE, "KeyMgtSuite 0x%04x\n",
+					prP2pSpecBssInfo->au4KeyMgtSuite[i]);
+				WLAN_SET_FIELD_32(cp,
+					prP2pSpecBssInfo->au4KeyMgtSuite[i]);
+				cp += 4;
+			}
+
+			RSN_IE(pucBuffer)->ucLength +=
+				(prP2pSpecBssInfo->u4KeyMgtSuiteCount - 1) * 4;
+		} else {
+			WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
+			cp += 2;
+			/* AKM suite */
+			WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
+			    ucBssIndex)->u4RsnSelectedAKMSuite);
+			cp += 4;
+		}
 
 		/* Capabilities */
 		WLAN_SET_FIELD_16(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -1845,7 +1873,12 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 		}
 
 		if ((rRsnIe.u4AuthKeyMgtSuiteCount != 1)
-		    || (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)) {
+			|| ((rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_PSK)
+#if CFG_SUPPORT_SOFTAP_WPA3
+			&& (rRsnIe.au4AuthKeyMgtSuite[0] != RSN_AKM_SUITE_SAE)
+#endif
+			)) {
+			DBGLOG(RSN, WARN, "RSN with invalid AKMP\n");
 			*pu2StatusCode = STATUS_CODE_INVALID_AKMP;
 			return;
 		}

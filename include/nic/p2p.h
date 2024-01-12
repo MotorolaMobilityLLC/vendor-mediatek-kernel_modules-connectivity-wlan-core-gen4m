@@ -99,6 +99,8 @@
 /* Device Capability Definition. */
 #define P2P_MAXIMUM_NOA_COUNT                       8
 
+#define P2P_MAX_AKM_SUITES 2
+
 #define P2P_MAX_SUPPORTED_CHANNEL_LIST_SIZE 51	/* Contains 6 sub-band. */
 
 /* Memory Size Definition. */
@@ -365,6 +367,9 @@ struct P2P_SPECIFIC_BSS_INFO {
 
 	struct PARAM_CUSTOM_NOA_PARAM_STRUCT rNoaParam;
 	struct PARAM_CUSTOM_OPPPS_PARAM_STRUCT rOppPsParam;
+
+	uint32_t u4KeyMgtSuiteCount;
+	uint32_t au4KeyMgtSuite[P2P_MAX_AKM_SUITES];
 
 	uint16_t u2WpaIeLen;
 	uint8_t aucWpaIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_WPA];

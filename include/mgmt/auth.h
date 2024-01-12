@@ -158,6 +158,11 @@ authProcessRxAuth1Frame(IN struct ADAPTER *prAdapter,
 			IN uint16_t u2ExpectedAuthAlgNum,
 			IN uint16_t u2ExpectedTransSeqNum,
 			OUT uint16_t *pu2ReturnStatusCode);
+uint32_t
+authProcessRxAuthFrame(IN struct ADAPTER *prAdapter,
+			IN struct SW_RFB *prSwRfb,
+			IN struct BSS_INFO *prBssInfo,
+			OUT uint16_t *pu2ReturnStatusCode);
 
 void authAddMDIE(IN struct ADAPTER *prAdapter,
 		 IN OUT struct MSDU_INFO *prMsduInfo);
