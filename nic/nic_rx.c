@@ -1706,6 +1706,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 
 		prRetSwRfb = qmHandleRxPackets(prAdapter, prSwRfb);
 		if (prRetSwRfb != NULL) {
+			GET_CURRENT_SYSTIME(&prRxCtrl->u4LastRxTime);
 			do {
 #if CFG_SUPPORT_MSP
 				if (prRetSwRfb->ucGroupVLD

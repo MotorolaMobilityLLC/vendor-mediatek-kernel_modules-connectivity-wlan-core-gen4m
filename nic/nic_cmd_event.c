@@ -4426,6 +4426,62 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief    This function is to decide if the beacon time out is reasonable
+*                by the TRX and some known factors
+*
+* \param[in] prAdapter  Pointer of ADAPTER_T
+*
+* \return true	if the beacon timeout event is valid after policy checking
+*         false	if the beacon timeout event needs to be ignored
+*/
+/*----------------------------------------------------------------------------*/
+bool nicBeaconTimeoutFilterPolicy(IN struct ADAPTER *prAdapter)
+{
+	struct RX_CTRL	*prRxCtrl;
+	struct TX_CTRL	*prTxCtrl;
+	OS_SYSTIME	u4CurrentTime;
+	bool		bValid = true;
+	uint32_t	u4MonitorWindow;
+
+	ASSERT(prAdapter);
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	ASSERT(prRxCtrl);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	ASSERT(prTxCtrl);
+
+	u4MonitorWindow = prAdapter->rWifiVar.u4BeaconTimoutFilterDurationMs;
+
+	GET_CURRENT_SYSTIME(&u4CurrentTime);
+
+	DBGLOG(NIC, INFO,
+			"u4MonitorWindow: %d, u4CurrentTime: %d, u4LastRxTime: %d, u4LastTxTime: %d",
+			u4MonitorWindow, u4CurrentTime,
+			prRxCtrl->u4LastRxTime, prTxCtrl->u4LastTxTime);
+
+	/* Policy 1, if RX in the past duration (in ms)
+	 * Policy 2, if TX done successfully in the past duration (in ms)
+	 *    if hit, then the beacon timeout event will be ignored
+	 */
+	if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prRxCtrl->u4LastRxTime,
+			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
+		DBGLOG(NIC, INFO, "Policy 1 hit, RX in the past duration");
+		bValid = false;
+	} else if (!CHECK_FOR_TIMEOUT(u4CurrentTime, prTxCtrl->u4LastTxTime,
+			      SEC_TO_SYSTIME(MSEC_TO_SEC(u4MonitorWindow)))) {
+		DBGLOG(NIC, INFO,
+			"Policy 2 hit, TX done successfully in the past duration");
+		bValid = false;
+	}
+
+	DBGLOG(NIC, INFO, "valid beacon time out event?: %d", bValid);
+
+	return bValid;
+}
+
 void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			   IN struct WIFI_EVENT *prEvent)
 {
@@ -4451,7 +4507,8 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 		if ((prAdapter->prAisBssInfo != NULL) &&
 		    (prEventBssBeaconTimeout->ucBssIndex ==
 		     prAdapter->prAisBssInfo->ucBssIndex)) {
-			aisBssBeaconTimeout(prAdapter);
+			if (nicBeaconTimeoutFilterPolicy(prAdapter))
+				aisBssBeaconTimeout(prAdapter);
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P)
