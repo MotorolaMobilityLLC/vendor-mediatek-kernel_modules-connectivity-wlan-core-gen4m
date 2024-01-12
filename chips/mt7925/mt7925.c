@@ -229,14 +229,10 @@ struct wfdma_group_info mt7925_wfmda_host_tx_group[] = {
 };
 
 struct wfdma_group_info mt7925_wfmda_host_rx_group[] = {
-	{"P0R4:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R6:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
-	{"P0R5:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
-	{"P0R7:AP TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
-	{"P0R8:MD DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING8_CTRL0_ADDR},
-	{"P0R9:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_CTRL0_ADDR},
-	{"P0R10:MD EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING10_CTRL0_ADDR},
-	{"P0R11:MD TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING11_CTRL0_ADDR},
+	{"P0R2:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
+	{"P0R0:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R3:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
+	{"P0R1:AP TDONE", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
 };
 
 struct wfdma_group_info mt7925_wfmda_wm_tx_group[] = {
@@ -331,10 +327,10 @@ struct BUS_INFO mt7925_bus_info = {
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_tx_done_int_sts_16_MASK |
 	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_mcu2host_sw_int_sts_MASK),
 	.host_int_rxdone_bits =
-	(WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK |
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK |
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK |
-	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK),
+	(WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_0_MASK |
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_1_MASK |
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_2_MASK |
+	 WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_3_MASK),
 
 	.host_tx_ring_base = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR,
 	.host_tx_ring_ext_ctrl_base =
@@ -890,16 +886,16 @@ static uint8_t mt7925SetRxRingHwAddr(struct RTMP_RX_RING *prRxRing,
 	*/
 	switch (u4SwRingIdx) {
 	case RX_RING_EVT:
-		offset = 6;
+		offset = 0;
 		break;
 	case RX_RING_DATA0:
-		offset = 4;
+		offset = 2;
 		break;
 	case RX_RING_DATA1:
-		offset = 5;
+		offset = 3;
 		break;
 	case RX_RING_TXDONE0:
-		offset = 7;
+		offset = 1;
 		break;
 	default:
 		return FALSE;
@@ -977,12 +973,12 @@ static void mt7925ProcessRxDataInterrupt(struct ADAPTER *prAdapter)
 	uint32_t u4Sta = prHifInfo->u4IntStatus;
 
 	if ((u4Sta &
-	     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_4_MASK) ||
+	     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_2_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
 
 	if ((u4Sta &
-	     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_5_MASK) ||
+	     WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_3_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
 }
@@ -995,11 +991,11 @@ static void mt7925ProcessRxInterrupt(struct ADAPTER *prAdapter)
 
 	mt7925ProcessRxDataInterrupt(prAdapter);
 
-	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_6_MASK) ||
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_0_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 
-	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_7_MASK) ||
+	if ((u4Sta & WF_WFDMA_HOST_DMA0_HOST_INT_STA_rx_done_int_sts_1_MASK) ||
 	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, FALSE);
 }
@@ -1027,8 +1023,8 @@ static void mt7925WfdmaManualPrefetch(
 	HAL_MCR_WR(prAdapter, WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR, val);
 
 	/* Rx ring */
-	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING7_EXT_CTRL_ADDR;
+	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
@@ -1118,8 +1114,8 @@ static void mt7925ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	u4Addr = enable ? WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR :
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR;
 	u4WrVal =
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA6_MASK |
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA7_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA0_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA1_MASK |
 #if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA0_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_TX_DONE_INT_ENA1_MASK |
@@ -1131,8 +1127,8 @@ static void mt7925ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_mcu2host_sw_int_ena_MASK;
 
 	u4WrVal |=
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA4_MASK |
-		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA5_MASK;
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA2_MASK |
+		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA3_MASK;
 
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
 
@@ -1265,16 +1261,16 @@ static void mt7925WfdmaRxRingExtCtrl(
 
 	switch (index) {
 	case RX_RING_EVT:
-		ext_offset = 6 * 4;
+		ext_offset = 0 * 4;
 		break;
 	case RX_RING_DATA0:
-		ext_offset = 4 * 4;
+		ext_offset = 2 * 4;
 		break;
 	case RX_RING_DATA1:
-		ext_offset = 5 * 4;
+		ext_offset = 3 * 4;
 		break;
 	case RX_RING_TXDONE0:
-		ext_offset = 7 * 4;
+		ext_offset = 1 * 4;
 		break;
 	default:
 		DBGLOG(RX, ERROR, "Error index=%d\n", index);
