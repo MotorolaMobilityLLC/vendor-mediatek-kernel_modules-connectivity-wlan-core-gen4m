@@ -3224,6 +3224,7 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 
 	struct service_test *prServiceTest;
 	struct test_wlan_info *winfos;
+	struct mt66xx_chip_info *prChipInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, TRACE, "%s enter!\n", __func__);
@@ -3231,6 +3232,7 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 	if (prGlueInfo == NULL)
 		return WLAN_STATUS_FAILURE;
 
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prGlueInfo->rService.serv_id = SERV_HANDLE_TEST;
 	prGlueInfo->rService.serv_handle
 		= kalMemAlloc(sizeof(struct service_test), VIR_MEM_TYPE);
@@ -3251,7 +3253,17 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 	winfos = prServiceTest->test_winfo;
 
 	prServiceTest->test_winfo->net_dev = gPrDev;
-	prServiceTest->test_winfo->chip_id = 0x00066310;
+
+	if (prChipInfo->asicGetChipID)
+		prServiceTest->test_winfo->chip_id =
+			prChipInfo->asicGetChipID(prGlueInfo->prAdapter);
+	else
+		prServiceTest->test_winfo->chip_id = prChipInfo->chip_id;
+
+	DBGLOG(INIT, WARN,
+			"%s chip_id = 0x%x\n", __func__,
+			prServiceTest->test_winfo->chip_id);
+
 	prServiceTest->test_op
 		= kalMemAlloc(sizeof(struct test_operation), VIR_MEM_TYPE);
 	if (prServiceTest->test_op == NULL) {
