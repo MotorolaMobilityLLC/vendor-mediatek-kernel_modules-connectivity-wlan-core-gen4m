@@ -1683,19 +1683,10 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->ucConnTrialCount++;
 		prAisFsmInfo->fgTargetChnlScanIssued = FALSE;
 
-#if CFG_SUPPORT_DBDC
-		/* DBDC decsion.may change OpNss */
-		cnmDbdcPreConnectionEnableDecision(
-			prAdapter,
-			prAisBssInfo->ucBssIndex,
-			prBssDesc->eBand,
-			prBssDesc->ucChannelNum,
-			prAisBssInfo->ucWmmQueSet);
-#endif /*CFG_SUPPORT_DBDC*/
-
 		if (wnmSendBTMResponse(prAdapter,
-			prBssDesc->aucBSSID, WNM_BSS_TM_ACCEPT,
-			MBO_TRANSITION_REJECT_REASON_UNSPECIFIED, ucBssIndex)) {
+		    aisGetMainLinkBssDesc(prAisFsmInfo)->aucBSSID,
+		    WNM_BSS_TM_ACCEPT, MBO_TRANSITION_REJECT_REASON_UNSPECIFIED,
+		    ucBssIndex)) {
 			cnmTimerStopTimer(prAdapter,
 				&prAisFsmInfo->rBtmRespTxDoneTimer);
 			cnmTimerStartTimer(prAdapter,
