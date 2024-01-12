@@ -358,6 +358,7 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 	ENUM_BAND_T eBandBackup;
 	UINT_8 ucChannelBackup;
 	ENUM_CHNL_EXT_T eSCOBackup;
+	UINT_8 ucRfBw;
 
 	do {
 		/* P2P BSS info is for temporarily use
@@ -389,22 +390,18 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(IN P_ADAPTER_T prAdapter,
 		prChnlReqInfo->u4MaxInterval = P2P_AP_CHNL_HOLD_TIME_MS;
 		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_GO_START_BSS;
 
+		if (prBssInfo->eBand == BAND_5G) {
+			/* Decide RF BW by own OP BW */
+			ucRfBw = cnmGetDbdcBwCapability(prAdapter, prBssInfo->ucBssIndex);
+			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw); /* Revise to VHT OP BW */
+			prChnlReqInfo->eChannelWidth = ucRfBw;
+		} else
+			prChnlReqInfo->eChannelWidth = CW_20_40MHZ;
 
-		/*rlmBssInitForAP would decide the real AP bandwidth*/
-		prBssInfo->ucVhtChannelWidth =
-			cnmGetBssMaxBwToChnlBW(prAdapter, prBssInfo->ucBssIndex);
-		prChnlReqInfo->eChannelWidth = prBssInfo->ucVhtChannelWidth;
-		if (prChnlReqInfo->eChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80) {
-			/* TODO: BW80+80 support */
-			DBGLOG(RLM, WARN, "BW80+80 not support. Fallback  to VHT_OP_CHANNEL_WIDTH_20_40\n");
-			prChnlReqInfo->eChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
-			prChnlReqInfo->ucCenterFreqS1 = 0;
-			prChnlReqInfo->ucCenterFreqS2 = 0;
-		} else {
-			prChnlReqInfo->ucCenterFreqS1 =
-			rlmGetVhtS1ForAP(prAdapter, prBssInfo);
-			prChnlReqInfo->ucCenterFreqS2 = 0;
-		}
+		/* TODO: BW80+80 support */
+		prChnlReqInfo->ucCenterFreqS1 =
+			nicGetVhtS1(prBssInfo->ucPrimaryChannel, prChnlReqInfo->eChannelWidth);
+		prChnlReqInfo->ucCenterFreqS2 = 0;
 
 		/* If the S1 is invalid, force to change bandwidth */
 		if ((prBssInfo->eBand == BAND_5G) &&

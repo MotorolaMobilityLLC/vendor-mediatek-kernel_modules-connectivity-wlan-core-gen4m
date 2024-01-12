@@ -75,10 +75,19 @@
 ********************************************************************************
 */
 
+#define OPERATION_NOTICATION_TX_LIMIT		2 /* Retry limit of sending operation notification frame */
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
+enum ENUM_OP_NOTIFY_STATE_T {
+	OP_NOTIFY_STATE_KEEP = 0, /* Won't change OP mode */
+	OP_NOTIFY_STATE_SENDING, /* Sending OP notification frame */
+	OP_NOTIFY_STATE_SUCCESS, /* OP notification Tx success */
+	OP_NOTIFY_STATE_FAIL,/* OP notification Tx fail(over retry limit)*/
+	OP_NOTIFY_STATE_NUM
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -108,6 +117,7 @@ RLM_CAL_RESULT_ALL_V2_T			g_rBackupCalDataAllV2;
 ********************************************************************************
 */
 
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -136,6 +146,27 @@ static VOID rlmFillVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBss
 		P_MSDU_INFO_T prMsduInfo, BOOLEAN fgIsMaxCap);
 
 #endif
+
+/* Operating BW/Nss change and notification */
+static VOID rlmOpModeTxDoneHandler(
+	P_ADAPTER_T prAdapter,
+	P_MSDU_INFO_T prMsduInfo,
+	UINT_8 ucOpChangeType,
+	BOOLEAN fgIsSuccess
+);
+static VOID rlmChangeOwnOpInfo(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+static VOID rlmCompleteOpModeChange(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN fgIsSuccess);
+static VOID rlmRollbackOpChangeParam(P_BSS_INFO_T prBssInfo, BOOLEAN fgIsRollbackBw, BOOLEAN fgIsRollbackNss);
+static UINT_8 rlmGetOpModeBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo);
+static BOOLEAN
+rlmCheckOpChangeParamValid(
+	P_ADAPTER_T prAdapter,
+	P_BSS_INFO_T prBssInfo,
+	UINT_8 ucChannelWidth,
+	UINT_8 ucNss
+);
+static VOID rlmRecOpModeBwForClient(UINT_8 ucVhtOpModeChannelWidth, P_BSS_INFO_T prBssInfo);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -647,7 +678,7 @@ static VOID rlmFillHtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU
 		prHtCap->u2HtExtendedCap &= ~(HT_EXT_CAP_PCO | HT_EXT_CAP_PCO_TRANS_TIME_NONE);
 
 	prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_DEFAULT_VAL;
-	if ((prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ||
+	if ((prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) ||
 		(prBssInfo->eBand == BAND_5G)) {
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfee))
 			prHtCap->u4TxBeamformingCap = TX_BEAMFORMING_CAP_BFEE;
@@ -956,8 +987,12 @@ VOID rlmReqGenerateVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMs
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 
 	if ((prAdapter->rWifiVar.ucAvailablePhyTypeSet & PHY_TYPE_SET_802_11AC) &&
-	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)))
+	    (!prStaRec || (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC))) {
+		/* Fill own capability in channel width field in OP mode element
+		* since we haven't filled in channel width info in BssInfo at current state
+		*/
 		rlmFillVhtOpNotificationIE(prAdapter, prBssInfo, prMsduInfo, TRUE);
+	}
 }
 
 
@@ -1011,10 +1046,10 @@ VOID rlmRspGenerateVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMs
 */
 /*----------------------------------------------------------------------------*/
 static VOID rlmFillVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo,
-		P_MSDU_INFO_T prMsduInfo, BOOLEAN fgIsMaxCap)
+		P_MSDU_INFO_T prMsduInfo, BOOLEAN fgIsOwnCap)
 {
 	P_IE_VHT_OP_MODE_NOTIFICATION_T prVhtOpMode;
-	UINT_8 ucMaxBw;
+	UINT_8 ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_20;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -1028,54 +1063,25 @@ static VOID rlmFillVhtOpNotificationIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBss
 	prVhtOpMode->ucId = ELEM_ID_OP_MODE;
 	prVhtOpMode->ucLength = sizeof(IE_VHT_OP_MODE_NOTIFICATION_T) - ELEM_HDR_LEN;
 
-	DBGLOG(RLM, INFO, "rlmFillVhtOpNotificationIE(%d) %u %u\n",
-		prBssInfo->ucBssIndex, fgIsMaxCap, prBssInfo->ucNss);
+	DBGLOG(RLM, TRACE, "rlmFillVhtOpNotificationIE(%d) %u %u\n",
+		prBssInfo->ucBssIndex, fgIsOwnCap, prBssInfo->ucNss);
 
-	if (fgIsMaxCap) {
-
-		ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+	if (fgIsOwnCap) {
+		ucOpModeBw = cnmGetDbdcBwCapability(prAdapter, prBssInfo->ucBssIndex);
 
 		/*handle 80P80 case*/
-		if (ucMaxBw >= MAX_BW_160MHZ)
-			ucMaxBw = MAX_BW_160MHZ;
+		if (ucOpModeBw >= MAX_BW_160MHZ)
+			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
 
-		prVhtOpMode->ucOperatingMode |= ucMaxBw;
-
+		prVhtOpMode->ucOperatingMode |= ucOpModeBw;
 		prVhtOpMode->ucOperatingMode |=
 			(((prBssInfo->ucNss-1) << VHT_OP_MODE_RX_NSS_OFFSET) & VHT_OP_MODE_RX_NSS);
 
 	} else {
 
-		switch (prBssInfo->ucVhtChannelWidth) {
-		case VHT_OP_CHANNEL_WIDTH_80P80:
-			ucMaxBw = MAX_BW_160MHZ;
-			break;
+		ucOpModeBw = rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
 
-		case VHT_OP_CHANNEL_WIDTH_160:
-			ucMaxBw = MAX_BW_160MHZ;
-			break;
-
-		case VHT_OP_CHANNEL_WIDTH_80:
-			ucMaxBw = MAX_BW_80MHZ;
-			break;
-
-		case VHT_OP_CHANNEL_WIDTH_20_40:
-			{
-				ucMaxBw = MAX_BW_20MHZ;
-
-				if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
-					ucMaxBw = MAX_BW_40MHZ;
-			}
-			break;
-
-		default:
-			/*VHT default IE should support BW 80*/
-			ucMaxBw = MAX_BW_80MHZ;
-			break;
-		}
-
-		prVhtOpMode->ucOperatingMode |= ucMaxBw;
-
+		prVhtOpMode->ucOperatingMode |= ucOpModeBw;
 		prVhtOpMode->ucOperatingMode |= (((prBssInfo->ucNss-1)
 			<< VHT_OP_MODE_RX_NSS_OFFSET) & VHT_OP_MODE_RX_NSS);
 	}
@@ -1527,8 +1533,6 @@ VOID rlmModifyVhtBwPara(
 
 			UINT_8		ucBW160Inteval = 8;
 
-			DBGLOG(RLM, WARN, "S1=%d, S2=%d\n", *pucVhtChannelFrequencyS1, *pucVhtChannelFrequencyS2);
-
 			if (((*pucVhtChannelFrequencyS2 - *pucVhtChannelFrequencyS1) == ucBW160Inteval) ||
 				((*pucVhtChannelFrequencyS1 - *pucVhtChannelFrequencyS2) == ucBW160Inteval)) {
 				/*C160 case*/
@@ -1557,7 +1561,6 @@ VOID rlmModifyVhtBwPara(
 				*pucVhtChannelFrequencyS1 =  ucTempS;
 				*pucVhtChannelFrequencyS2 =  0;
 				*pucVhtChannelWidth = CW_160MHZ;
-				DBGLOG(RLM, WARN, "[BW160][new spec] S1 change to %d\n", *pucVhtChannelFrequencyS1);
 			} else {
 				/*real 80P80 case*/
 			}
@@ -1609,6 +1612,15 @@ static VOID rlmRevisePreferBandwidthNss(
 	}
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Revise operating BW by own maximum bandwidth capability
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
 VOID rlmReviseMaxBw(
 	P_ADAPTER_T prAdapter,
 	UINT_8 ucBssIndex,
@@ -1621,7 +1633,7 @@ VOID rlmReviseMaxBw(
 	UINT_8 ucCurrentBandwidth = MAX_BW_20MHZ;
 	UINT_8 ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
 
-	ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
 
 	if (*peChannelWidth > CW_20_40MHZ) {
 		/*case BW > 80 , 160 80P80 */
@@ -1679,48 +1691,39 @@ VOID rlmReviseMaxBw(
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Change VHT OP Channel Width, S1, S2
+* \brief Fill VHT Operation Information(VHT BW, S1, S2) by BSS operating channel width
 *
 * \param[in]
 *
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID rlmChangeVhtOpBwPara(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 ucChannelWidth)
+VOID rlmFillVhtOpInfoByBssOpBw(P_BSS_INFO_T prBssInfo, UINT_8 ucBssOpBw)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 ucVhtLowerChannelFrequency, ucVhtUpperChannelFrequency = 0;
+	ASSERT(prBssInfo);
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-
-	if (!prBssInfo)
-		return;
-
-	if (ucChannelWidth == MAX_BW_80_80_MHZ)
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80P80;
-	else if (ucChannelWidth == MAX_BW_160MHZ)
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_160;
-	else if (ucChannelWidth == MAX_BW_80MHZ) {
-		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80;
-		if (prBssInfo->ucVhtPeerChannelWidth == VHT_OP_CHANNEL_WIDTH_160)
-			prBssInfo->ucVhtChannelFrequencyS1 =
-			(prBssInfo->ucVhtPeerChannelFrequencyS1 > prBssInfo->ucPrimaryChannel) ?
-			(prBssInfo->ucVhtPeerChannelFrequencyS1 - 8) : (prBssInfo->ucVhtPeerChannelFrequencyS1 + 8);
-		else if (prBssInfo->ucVhtPeerChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80) {
-			if (prBssInfo->ucVhtChannelFrequencyS1 < prBssInfo->ucVhtChannelFrequencyS2) {
-				ucVhtLowerChannelFrequency = prBssInfo->ucVhtChannelFrequencyS1;
-				ucVhtUpperChannelFrequency = prBssInfo->ucVhtChannelFrequencyS2;
-			} else {
-				ucVhtLowerChannelFrequency = prBssInfo->ucVhtChannelFrequencyS2;
-				ucVhtUpperChannelFrequency = prBssInfo->ucVhtChannelFrequencyS1;
-			}
-			prBssInfo->ucVhtChannelFrequencyS1 = prBssInfo->ucPrimaryChannel <
-					((ucVhtLowerChannelFrequency + ucVhtUpperChannelFrequency)/2) ?
-					ucVhtLowerChannelFrequency : ucVhtUpperChannelFrequency;
-			prBssInfo->ucVhtChannelFrequencyS2 = 0;
-		}
-	} else if ((ucChannelWidth == MAX_BW_40MHZ) || (ucChannelWidth == MAX_BW_20MHZ))
+	if (ucBssOpBw < MAX_BW_80MHZ || prBssInfo->eBand == BAND_2G4) {
 		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+		prBssInfo->ucVhtChannelFrequencyS1 = 0;
+		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	} else if (ucBssOpBw == MAX_BW_80MHZ) {
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80;
+		prBssInfo->ucVhtChannelFrequencyS1 =
+			nicGetVhtS1(prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_80);
+		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	} else if (ucBssOpBw == MAX_BW_160MHZ) {
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_160;
+		prBssInfo->ucVhtChannelFrequencyS1 =
+			nicGetVhtS1(prBssInfo->ucPrimaryChannel, VHT_OP_CHANNEL_WIDTH_160);
+		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	} else {
+		/* 4 TODO: / BW80+80 support */
+		DBGLOG(RLM, INFO, "Unsupport BW setting, back to VHT20_40\n");
+
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+		prBssInfo->ucVhtChannelFrequencyS1 = 0;
+		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1754,7 +1757,6 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 	BOOLEAN fgHasOPModeIE = FALSE;
 	UINT_8 ucVhtOpModeChannelWidth = 0;
 	UINT_8 ucVhtOpModeRxNss = 0;
-	UINT_8 ucVhtCapMcsOwnNotSupportOffset;
 	UINT_8 ucMaxBwAllowed;
 	UINT_8 ucInitVhtOpMode = 0;
 #endif
@@ -1861,7 +1863,7 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 			prBssInfo->u2HtOpInfo3 = prHtOp->u2Info3;
 
 			/*Backup peer HT OP Info*/
-			prBssInfo->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
+			prStaRec->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
 
 			if (!prBssInfo->fg40mBwAllowed)
 				prBssInfo->ucHtOpInfo1 &= ~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
@@ -1869,7 +1871,9 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 			if ((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_SCO) != CHNL_EXT_RES)
 				prBssInfo->eBssSCO = (ENUM_CHNL_EXT_T) (prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_SCO);
 
-			if (prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ && prBssInfo->fgIsOpChangeChannelWidth) {
+			/* Revise by own OP BW */
+			if (prBssInfo->fgIsOpChangeChannelWidth &&
+				prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
 				prBssInfo->ucHtOpInfo1 &= ~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
 				prBssInfo->eBssSCO = CHNL_EXT_SCN;
 			}
@@ -1926,16 +1930,7 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 				prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_SHORT_GI_160_80P80;
 			}
 
-			/*Set Vht Rx Mcs Map upon peer's capability and our capability */
 			prStaRec->u2VhtRxMcsMap = prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap;
-			if (wlanGetSupportNss(prAdapter, prStaRec->ucBssIndex) < 8) {
-				ucVhtCapMcsOwnNotSupportOffset = wlanGetSupportNss(prAdapter, prStaRec->ucBssIndex) * 2;
-				/*Mark Rx Mcs Map which we don't support*/
-				prStaRec->u2VhtRxMcsMap |= BITS(ucVhtCapMcsOwnNotSupportOffset, 15);
-			}
-			if (prStaRec->u2VhtRxMcsMap != prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap)
-				DBGLOG(RLM, INFO, "Change VhtRxMcsMap from 0x%x to 0x%x due to our Nss setting\n",
-						prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap, prStaRec->u2VhtRxMcsMap);
 
 			prStaRec->u2VhtRxHighestSupportedDataRate =
 			    prVhtCap->rVhtSupportedMcsSet.u2RxHighestSupportedDataRate;
@@ -1952,13 +1947,13 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 			prVhtOp = (P_IE_VHT_OP_T) pucIE;
 
 			/*Backup peer VHT OpInfo*/
-			prBssInfo->ucVhtPeerChannelWidth = prVhtOp->ucVhtOperation[0];
-			prBssInfo->ucVhtPeerChannelFrequencyS1 = prVhtOp->ucVhtOperation[1];
-			prBssInfo->ucVhtPeerChannelFrequencyS2 = prVhtOp->ucVhtOperation[2];
+			prStaRec->ucVhtOpChannelWidth = prVhtOp->ucVhtOperation[0];
+			prStaRec->ucVhtOpChannelFrequencyS1 = prVhtOp->ucVhtOperation[1];
+			prStaRec->ucVhtOpChannelFrequencyS2 = prVhtOp->ucVhtOperation[2];
 
-			rlmModifyVhtBwPara(&prBssInfo->ucVhtPeerChannelFrequencyS1,
-				&prBssInfo->ucVhtPeerChannelFrequencyS2,
-				&prBssInfo->ucVhtPeerChannelWidth);
+			rlmModifyVhtBwPara(&prStaRec->ucVhtOpChannelFrequencyS1,
+				&prStaRec->ucVhtOpChannelFrequencyS2,
+				&prStaRec->ucVhtOpChannelWidth);
 
 			prBssInfo->ucVhtChannelWidth = prVhtOp->ucVhtOperation[0];
 			prBssInfo->ucVhtChannelFrequencyS1 = prVhtOp->ucVhtOperation[1];
@@ -1969,28 +1964,19 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 				&prBssInfo->ucVhtChannelFrequencyS2,
 				&prBssInfo->ucVhtChannelWidth);
 
-			if (prBssInfo->fgIsOpChangeChannelWidth)
-				rlmChangeVhtOpBwPara(prAdapter, prBssInfo->ucBssIndex,
-							prBssInfo->ucOpChangeChannelWidth);
 
 			/* Set initial value of VHT OP mode */
 			ucInitVhtOpMode = 0;
-			switch (prBssInfo->ucVhtChannelWidth) {
-			case VHT_OP_CHANNEL_WIDTH_20_40:
-				ucInitVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_40;
-				break;
-			case VHT_OP_CHANNEL_WIDTH_80:
-				ucInitVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_80;
-				break;
-			case VHT_OP_CHANNEL_WIDTH_160:
-			case VHT_OP_CHANNEL_WIDTH_80P80:
-				ucInitVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
-				break;
-			default:
-				ucInitVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_80;
-				break;
-			}
+			ucInitVhtOpMode |= rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
 			ucInitVhtOpMode |= ((prBssInfo->ucNss-1) << VHT_OP_MODE_RX_NSS_OFFSET) & VHT_OP_MODE_RX_NSS;
+
+			/* Revise by own OP BW if needed */
+			if ((prBssInfo->fgIsOpChangeChannelWidth) &&
+				(rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
+				prBssInfo->ucVhtChannelWidth)) {
+				rlmFillVhtOpInfoByBssOpBw(prBssInfo, prBssInfo->ucOpChangeChannelWidth);
+			}
+
 			break;
 		case ELEM_ID_OP_MODE:
 			if (!RLM_NET_IS_11AC(prBssInfo) || IE_LEN(pucIE) != (sizeof(IE_OP_MODE_NOTIFICATION_T) - 2))
@@ -2136,66 +2122,36 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 		ucPrimaryChannel = 0;
 #if CFG_SUPPORT_802_11AC
 	/* Check whether the Operation Mode IE is exist or not.
-	 *  If exists, then the channel bandwidth of VHT operation field  is changed
-	 *  with the channel bandwidth setting of Operation Mode field.
-	 *  The channel bandwidth of OP Mode IE  is  0, represent as 20MHz.
-	 *  The channel bandwidth of OP Mode IE  is  1, represent as 40MHz.
-	 *  The channel bandwidth of OP Mode IE  is  2, represent as 80MHz.
-	 *  The channel bandwidth of OP Mode IE  is  3, represent as 160/80+80MHz.
-	 */
+	*  If exists, then the channel bandwidth of VHT operation field  is changed
+	*  with the channel bandwidth setting of Operation Mode field.
+	*  The channel bandwidth of OP Mode IE  is  0, represent as 20MHz.
+	*  The channel bandwidth of OP Mode IE  is  1, represent as 40MHz.
+	*  The channel bandwidth of OP Mode IE  is  2, represent as 80MHz.
+	*  The channel bandwidth of OP Mode IE  is  3, represent as 160/80+80MHz.
+	*/
 	if (fgHasOPModeIE == TRUE) {
-		/* 1.Channel width change */
-
-		if (ucVhtOpModeChannelWidth == VHT_OP_MODE_CHANNEL_WIDTH_20) {
-			prBssInfo->ucVhtChannelWidth = CW_20_40MHZ;
-			prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
-			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
-
-#if CFG_WORKAROUND_OPMODE_CONFLICT_OPINFO
-			if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
-				DBGLOG(RLM, WARN, "HT_OP_Info != OPmode_Notifify, follow OPmode_Notify to BW20.\n");
-				prBssInfo->eBssSCO = CHNL_EXT_SCN;
-			}
-#endif
-		}
-
-		else if (ucVhtOpModeChannelWidth == VHT_OP_MODE_CHANNEL_WIDTH_40) {
-			prBssInfo->ucVhtChannelWidth = CW_20_40MHZ;
-			prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
-			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
-
-#if CFG_WORKAROUND_OPMODE_CONFLICT_OPINFO
-			if (prBssInfo->eBssSCO == CHNL_EXT_SCN) {
-				prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
-				prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
-				DBGLOG(RLM, WARN, "HT_OP_Info != OPmode_Notifify, follow HT_OP_Info to BW20.\n");
-			}
-#endif
-		}
-
-		else if (ucVhtOpModeChannelWidth == VHT_OP_MODE_CHANNEL_WIDTH_80) {
-			prBssInfo->ucVhtChannelWidth = CW_80MHZ;
-			prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
-			prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_MASK;
-			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
-		}
-
-		else if (ucVhtOpModeChannelWidth == VHT_OP_MODE_CHANNEL_WIDTH_160_80P80) {
-			prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
-			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
-
-			/* Use VHT OP Info to determine it's BW160 or BW80+BW80  */
-			prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_MASK;
-			if (prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_160)
-				prStaRec->u4VhtCapInfo |= VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160;
-			else if (prBssInfo->ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_80P80)
-				prStaRec->u4VhtCapInfo |= VHT_CAP_INFO_MAX_SUP_CHANNEL_WIDTH_SET_160_80P80;
-		}
-
 		if (prStaRec->ucStaState == STA_STATE_3) {
-			DBGLOG(RLM, INFO, "Update OpMode to 0x%x", prStaRec->ucVhtOpMode);
-			DBGLOG(RLM, INFO, "to FW due to OpMode Notificaition\n");
+			/* 1. Modify channel width parameters */
+			rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth, prBssInfo);
+
+			/* 2. Update StaRec to FW (BssInfo will be updated after return from this function) */
+			DBGLOG(RLM, INFO, "Update OpMode to 0x%x, to FW due to OpMode Notificaition",
+				prStaRec->ucVhtOpMode);
 			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+
+			/* 3. Revise by own OP BW if needed */
+			if ((prBssInfo->fgIsOpChangeChannelWidth)) {
+				/* VHT */
+				if (rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
+					prBssInfo->ucVhtChannelWidth)
+					rlmFillVhtOpInfoByBssOpBw(prBssInfo, prBssInfo->ucOpChangeChannelWidth);
+				/* HT */
+				if (prBssInfo->fgIsOpChangeChannelWidth &&
+					prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
+					prBssInfo->ucHtOpInfo1 &= ~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
+					prBssInfo->eBssSCO = CHNL_EXT_SCN;
+				}
+			}
 		}
 	} else {/* Set Default if the VHT OP mode field is not present */
 		if ((prStaRec->ucVhtOpMode != ucInitVhtOpMode) && (prStaRec->ucStaState == STA_STATE_3)) {
@@ -2218,6 +2174,7 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 		P_BSS_DESC_T prBssDesc;
 
 		prBssInfo->ucPrimaryChannel = ucChannelAnnouncePri;
+		/* Change to BW20 for certification issue due to signal sidelope leakage */
 		prBssInfo->ucVhtChannelWidth = 0;
 		prBssInfo->ucVhtChannelFrequencyS1 = 0;
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
@@ -2237,6 +2194,19 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 			prBssInfo->ucVhtChannelWidth = ucChannelAnnounceVhtBw;
 			prBssInfo->ucVhtChannelFrequencyS1 = ucChannelAnnounceChannelS1;
 			prBssInfo->ucVhtChannelFrequencyS2 = ucChannelAnnounceChannelS2;
+
+			/* Revise by own OP BW if needed */
+			if ((prBssInfo->fgIsOpChangeChannelWidth) &&
+				(rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
+				prBssInfo->ucVhtChannelWidth)) {
+
+				DBGLOG(RLM, LOUD,
+					"Change to w:%d s1:%d s2:%d since own changed BW < peer's WideBand BW",
+					prBssInfo->ucVhtChannelWidth,
+					prBssInfo->ucVhtChannelFrequencyS1,
+					prBssInfo->ucVhtChannelFrequencyS2);
+				rlmFillVhtOpInfoByBssOpBw(prBssInfo, prBssInfo->ucOpChangeChannelWidth);
+			}
 		}
 		if (fgHasSCOIE != FALSE)
 			prBssInfo->eBssSCO = eChannelAnnounceSco;
@@ -2260,6 +2230,7 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 		&prBssInfo->ucVhtChannelFrequencyS1, &prBssInfo->ucPrimaryChannel);
 
 	rlmRevisePreferBandwidthNss(prAdapter, prBssInfo->ucBssIndex, prStaRec);
+
 
 	/*printk("Modify ChannelWidth (%d) and Extend (%d)\n",prBssInfo->eBssSCO,prBssInfo->ucVhtChannelWidth);*/
 
@@ -2306,6 +2277,96 @@ static UINT_8 rlmRecIeInfoForClient(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInf
 	}
 
 	return ucPrimaryChannel;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Update parameters from channel width field in OP Mode IE/action frame
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+static VOID
+rlmRecOpModeBwForClient(UINT_8 ucVhtOpModeChannelWidth, P_BSS_INFO_T prBssInfo) {
+
+	P_STA_RECORD_T prStaRec = NULL;
+
+	if (!prBssInfo)
+		return;
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec)
+		return;
+
+
+
+	switch (ucVhtOpModeChannelWidth) {
+	case VHT_OP_MODE_CHANNEL_WIDTH_20:
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+		prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
+		prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
+
+#if CFG_OPMODE_CONFLICT_OPINFO
+		if (prBssInfo->eBssSCO != CHNL_EXT_SCN) {
+			DBGLOG(RLM, WARN, "HT_OP_Info != OPmode_Notifify, follow OPmode_Notify to BW20.\n");
+			prBssInfo->eBssSCO = CHNL_EXT_SCN;
+		}
+#endif
+		break;
+	case VHT_OP_MODE_CHANNEL_WIDTH_40:
+		prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_20_40;
+		prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
+		prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
+
+#if CFG_OPMODE_CONFLICT_OPINFO
+		if (prBssInfo->eBssSCO == CHNL_EXT_SCN) {
+			prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
+			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
+			DBGLOG(RLM, WARN, "HT_OP_Info != OPmode_Notifify, follow HT_OP_Info to BW20.\n");
+		}
+#endif
+		break;
+	case VHT_OP_MODE_CHANNEL_WIDTH_80:
+#if CFG_OPMODE_CONFLICT_OPINFO
+		if (prBssInfo->ucVhtChannelWidth != VHT_OP_MODE_CHANNEL_WIDTH_80) {
+			DBGLOG(RLM, WARN,
+				"VHT_OP != OPmode:%d, follow VHT_OP to VHT_OP:%d HT_OP:%d\n",
+				ucVhtOpModeChannelWidth,
+				prBssInfo->ucVhtChannelWidth,
+				(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) >>
+				HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET);
+		} else
+#endif
+		{
+			prBssInfo->ucVhtChannelWidth = VHT_OP_CHANNEL_WIDTH_80;
+			prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
+			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
+		}
+		break;
+	case VHT_OP_MODE_CHANNEL_WIDTH_160_80P80:
+		/* Determine BW160 or BW80+BW80 by VHT OP Info */
+#if CFG_OPMODE_CONFLICT_OPINFO
+		if ((prBssInfo->ucVhtChannelWidth != VHT_OP_CHANNEL_WIDTH_160) &&
+			(prBssInfo->ucVhtChannelWidth != VHT_OP_CHANNEL_WIDTH_80P80)) {
+			DBGLOG(RLM, WARN,
+				"VHT_OP != OPmode:%d, follow VHT_OP to VHT_OP:%d HT_OP:%d\n",
+				ucVhtOpModeChannelWidth,
+				prBssInfo->ucVhtChannelWidth,
+				(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) >>
+				HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET);
+		} else
+#endif
+		{
+			prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
+			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
+		}
+		break;
+	default:
+		break;
+	}
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2743,9 +2804,9 @@ VOID rlmProcessHtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 		 *       not current setting to 40MHz BW here
 		 */
 		 /* 1. Update StaRec for AP/STA mode */
-		if (prRxFrame->ucChannelWidth == 0)
+		if (prRxFrame->ucChannelWidth == HT_NOTIFY_CHANNEL_WIDTH_20)
 			prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
-		else if (prRxFrame->ucChannelWidth == 1)
+		else if (prRxFrame->ucChannelWidth == HT_NOTIFY_CHANNEL_WIDTH_ANY_SUPPORT_CAHNNAEL_WIDTH)
 			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
 
 		cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
@@ -2753,12 +2814,22 @@ VOID rlmProcessHtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 		/* 2. Update BssInfo for STA mode */
 		prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
-			if (prRxFrame->ucChannelWidth == 0)
+			if (prRxFrame->ucChannelWidth == HT_NOTIFY_CHANNEL_WIDTH_20) {
 				prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
-			if (prRxFrame->ucChannelWidth == 1)
+				prBssInfo->eBssSCO = CHNL_EXT_SCN;
+			} else if (prRxFrame->ucChannelWidth ==
+				HT_NOTIFY_CHANNEL_WIDTH_ANY_SUPPORT_CAHNNAEL_WIDTH)
 				prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
 
-			nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
+			/* Revise by own OP BW if needed */
+			if (prBssInfo->fgIsOpChangeChannelWidth &&
+				prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
+				prBssInfo->ucHtOpInfo1 &= ~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
+				prBssInfo->eBssSCO = CHNL_EXT_SCN;
+			}
+
+			/* 3. Update OP BW to FW */
+			rlmSyncOperationParams(prAdapter, prBssInfo);
 		}
 	break;
 	/* Support SM power save */ /* TH3_Huang */
@@ -2805,6 +2876,7 @@ VOID rlmProcessVhtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 	P_ACTION_OP_MODE_NOTIFICATION_FRAME prRxFrame;
 	P_STA_RECORD_T prStaRec;
 	P_BSS_INFO_T prBssInfo;
+	UINT_8 ucVhtOpModeChannelWidth = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -2831,10 +2903,70 @@ VOID rlmProcessVhtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 		if (((prRxFrame->ucOperatingMode & VHT_OP_MODE_RX_NSS_TYPE)
 			!= VHT_OP_MODE_RX_NSS_TYPE) &&
 			(prStaRec->ucVhtOpMode != prRxFrame->ucOperatingMode)) {
+			/* 1. Fill OP mode notification info */
 			prStaRec->ucVhtOpMode = prRxFrame->ucOperatingMode;
 			DBGLOG(RLM, INFO,
 				"rlmProcessVhtAction -- Update ucVhtOpMode to 0x%x\n", prStaRec->ucVhtOpMode);
+
+			/* 2. Modify channel width parameters */
+			ucVhtOpModeChannelWidth = prRxFrame->ucOperatingMode & VHT_OP_MODE_CHANNEL_WIDTH;
+			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+				switch (ucVhtOpModeChannelWidth) {
+				case VHT_OP_MODE_CHANNEL_WIDTH_20:
+					prStaRec->u2HtCapInfo &= ~HT_CAP_INFO_SUP_CHNL_WIDTH;
+					break;
+				case VHT_OP_MODE_CHANNEL_WIDTH_40:
+				case VHT_OP_MODE_CHANNEL_WIDTH_80:
+				case VHT_OP_MODE_CHANNEL_WIDTH_160_80P80:
+					prStaRec->u2HtCapInfo |= HT_CAP_INFO_SUP_CHNL_WIDTH;
+					break;
+				default:
+					break;
+				}
+			} else if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE)
+				rlmRecOpModeBwForClient(ucVhtOpModeChannelWidth, prBssInfo);
+
+
+			/* 3. Update StaRec to FW */
 			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+
+			/* 4. Update BW parameters in BssInfo for STA mode only */
+			if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+				/* 4.1 Revise by own OP BW if needed for STA mode only */
+				if (prBssInfo->fgIsOpChangeChannelWidth) {
+					/* VHT */
+					if (rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
+						prBssInfo->ucVhtChannelWidth)
+						rlmFillVhtOpInfoByBssOpBw(prBssInfo, prBssInfo->ucOpChangeChannelWidth);
+					/* HT */
+					if (prBssInfo->fgIsOpChangeChannelWidth &&
+						prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
+						prBssInfo->ucHtOpInfo1 &=
+							~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
+						prBssInfo->eBssSCO = CHNL_EXT_SCN;
+					}
+				}
+
+				/* 4.2 Check if OP BW parameter valid */
+				if (!rlmDomainIsValidRfSetting(prAdapter, prBssInfo->eBand,
+					       prBssInfo->ucPrimaryChannel, prBssInfo->eBssSCO,
+					       prBssInfo->ucVhtChannelWidth, prBssInfo->ucVhtChannelFrequencyS1,
+					       prBssInfo->ucVhtChannelFrequencyS2)) {
+
+					DBGLOG(RLM, WARN, "rlmProcessVhtAction invalid RF settings\n");
+
+					/*Error Handling for Non-predicted IE - Fixed to set 20MHz */
+					prBssInfo->ucVhtChannelWidth = CW_20_40MHZ;
+					prBssInfo->ucVhtChannelFrequencyS1 = 0;
+					prBssInfo->ucVhtChannelFrequencyS2 = 0;
+					prBssInfo->eBssSCO = CHNL_EXT_SCN;
+					prBssInfo->ucHtOpInfo1 &=
+						~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
+				}
+
+				/* 4.3 Update BSS OP BW to FW for STA mode only */
+				rlmSyncOperationParams(prAdapter, prBssInfo);
+			}
 		}
 	break;
 	default:
@@ -2961,9 +3093,8 @@ VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE
 	P_IE_HT_CAP_T prHtCap;
 #if CFG_SUPPORT_802_11AC
 	P_IE_VHT_CAP_T prVhtCap;
-	UINT_8 ucVhtCapMcsOwnNotSupportOffset;
-	/* UINT_8 ucVhtCapMcsPeerNotSupportOffset; */
 	P_IE_OP_MODE_NOTIFICATION_T prOPModeNotification;	/* Operation Mode Notification */
+	BOOLEAN fgHasOPModeIE = FALSE;
 #endif
 
 	ASSERT(prAdapter);
@@ -3059,18 +3190,7 @@ VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE
 				prStaRec->u4VhtCapInfo &= ~VHT_CAP_INFO_SHORT_GI_160_80P80;
 			}
 
-			/*Set Vht Rx Mcs Map upon peer's capability and our capability */
 			prStaRec->u2VhtRxMcsMap = prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap;
-			if (wlanGetSupportNss(prAdapter, prStaRec->ucBssIndex) < 8) {
-				ucVhtCapMcsOwnNotSupportOffset =
-					wlanGetSupportNss(prAdapter, prStaRec->ucBssIndex) * 2;
-				prStaRec->u2VhtRxMcsMap |= BITS(ucVhtCapMcsOwnNotSupportOffset, 15);
-				/*Mark Rx Mcs Map which we don't support*/
-			}
-			if (prStaRec->u2VhtRxMcsMap != prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap)
-				DBGLOG(RLM, INFO, "Change VhtRxMcsMap from 0x%x to 0x%x due to our Nss setting\n",
-								prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap,
-								prStaRec->u2VhtRxMcsMap);
 
 			prStaRec->u2VhtRxHighestSupportedDataRate =
 			    prVhtCap->rVhtSupportedMcsSet.u2RxHighestSupportedDataRate;
@@ -3080,21 +3200,7 @@ VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE
 
 			/* Set initial value of VHT OP mode */
 			prStaRec->ucVhtOpMode = 0;
-			switch (prBssInfo->ucVhtChannelWidth) {
-			case VHT_OP_CHANNEL_WIDTH_20_40:
-				prStaRec->ucVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_40;
-				break;
-			case VHT_OP_CHANNEL_WIDTH_80:
-				prStaRec->ucVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_80;
-				break;
-			case VHT_OP_CHANNEL_WIDTH_160:
-			case VHT_OP_CHANNEL_WIDTH_80P80:
-				prStaRec->ucVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
-				break;
-			default:
-				prStaRec->ucVhtOpMode |= VHT_OP_MODE_CHANNEL_WIDTH_80;
-				break;
-			}
+			prStaRec->ucVhtOpMode |= rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
 			prStaRec->ucVhtOpMode |= ((prBssInfo->ucNss-1) <<
 				VHT_OP_MODE_RX_NSS_OFFSET) & VHT_OP_MODE_RX_NSS;
 
@@ -3106,7 +3212,7 @@ VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE
 
 			if ((prOPModeNotification->ucOpMode & VHT_OP_MODE_RX_NSS_TYPE)
 			    != VHT_OP_MODE_RX_NSS_TYPE) {
-				prStaRec->ucVhtOpMode = prOPModeNotification->ucOpMode;
+				fgHasOPModeIE = TRUE;
 			}
 
 			break;
@@ -3117,6 +3223,11 @@ VOID rlmProcessAssocReq(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb, PUINT_8 pucIE
 			break;
 		}		/* end of switch */
 	}			/* end of IE_FOR_EACH */
+#if CFG_SUPPORT_802_11AC
+	/*Fill by OP Mode IE after completing parsing all IE to make sure it won't be overwrite */
+	if (fgHasOPModeIE == TRUE)
+		prStaRec->ucVhtOpMode = prOPModeNotification->ucOpMode;
+#endif
 }
 #endif /* CFG_SUPPORT_AAA */
 
@@ -3216,6 +3327,10 @@ static VOID rlmBssReset(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 	prBssInfo->fgObssRifsOperationMode = 0;	/* GO only */
 	prBssInfo->fgObssActionForcedTo20M = 0;	/* GO only */
 	prBssInfo->fgObssBeaconForcedTo20M = 0;	/* GO only */
+
+	/* OP mode change control parameters */
+	prBssInfo->fgIsOpChangeChannelWidth = FALSE;
+	prBssInfo->fgIsOpChangeNss = FALSE;
 }
 
 #if CFG_SUPPORT_TDLS
@@ -3666,6 +3781,20 @@ VOID rlmProcessSpecMgtAction(P_ADAPTER_T prAdapter, P_SW_RFB_T prSwRfb)
 				prBssInfo->ucVhtChannelWidth = prWideBandChannelIE->ucNewChannelWidth;
 				prBssInfo->ucVhtChannelFrequencyS1 = prWideBandChannelIE->ucChannelS1;
 				prBssInfo->ucVhtChannelFrequencyS2 = prWideBandChannelIE->ucChannelS2;
+
+				/* Revise by own OP BW if needed */
+				if ((prBssInfo->fgIsOpChangeChannelWidth) &&
+					(rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
+					prBssInfo->ucVhtChannelWidth)) {
+
+					DBGLOG(RLM, LOUD,
+						"Change to w:%d s1:%d s2:%d since own changed BW < peer's WideBand BW",
+						prBssInfo->ucVhtChannelWidth,
+						prBssInfo->ucVhtChannelFrequencyS1,
+						prBssInfo->ucVhtChannelFrequencyS2);
+					rlmFillVhtOpInfoByBssOpBw(prBssInfo, prBssInfo->ucOpChangeChannelWidth);
+				}
+
 				fgHasWideBandIE = TRUE;
 				break;
 
@@ -3739,7 +3868,7 @@ VOID rlmSendOpModeNotificationFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaR
 	P_ACTION_OP_MODE_NOTIFICATION_FRAME prTxFrame;
 	P_BSS_INFO_T prBssInfo;
 	UINT_16 u2EstimatedFrameLen;
-	/* PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER) NULL; */
+	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER) NULL;
 
 	/* Sanity Check */
 	if (!prStaRec)
@@ -3780,17 +3909,22 @@ VOID rlmSendOpModeNotificationFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaR
 	prTxFrame->ucOperatingMode |= (((ucNss - 1) << 4) & VHT_OP_MODE_RX_NSS);
 	prTxFrame->ucOperatingMode &= ~VHT_OP_MODE_RX_NSS_TYPE;
 
+	if (prBssInfo->pfOpChangeHandler)
+		pfTxDoneHandler = rlmNotifyVhtOpModeTxDone;
+
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
 		     prBssInfo->ucBssIndex,
 		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN, sizeof(ACTION_OP_MODE_NOTIFICATION_FRAME), NULL, MSDU_RATE_MODE_AUTO);
+		     WLAN_MAC_MGMT_HEADER_LEN,
+		     sizeof(ACTION_OP_MODE_NOTIFICATION_FRAME), pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3807,7 +3941,7 @@ VOID rlmSendSmPowerSaveFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UIN
 	P_ACTION_SM_POWER_SAVE_FRAME prTxFrame;
 	P_BSS_INFO_T prBssInfo;
 	UINT_16 u2EstimatedFrameLen;
-	/* PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER) NULL; */
+	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER) NULL;
 
 	/* Sanity Check */
 	if (!prStaRec)
@@ -3852,17 +3986,22 @@ VOID rlmSendSmPowerSaveFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UIN
 
 	prTxFrame->ucSmPowerCtrl &= (~HT_SM_POWER_SAVE_CONTROL_SM_MODE); /* Static SM power save mode */
 
+	if (prBssInfo->pfOpChangeHandler)
+		pfTxDoneHandler = rlmSmPowerSaveTxDone;
+
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
 		     prBssInfo->ucBssIndex,
 		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN, sizeof(ACTION_SM_POWER_SAVE_FRAME), NULL, MSDU_RATE_MODE_AUTO);
+		     WLAN_MAC_MGMT_HEADER_LEN,
+		     sizeof(ACTION_SM_POWER_SAVE_FRAME), pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
 }
+
 
 
 /*----------------------------------------------------------------------------*/
@@ -3880,7 +4019,7 @@ VOID rlmSendNotifyChannelWidthFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaR
 	P_ACTION_NOTIFY_CHANNEL_WIDTH_FRAME prTxFrame;
 	P_BSS_INFO_T prBssInfo;
 	UINT_16 u2EstimatedFrameLen;
-	/* PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER) NULL; */
+	PFN_TX_DONE_HANDLER pfTxDoneHandler = (PFN_TX_DONE_HANDLER) NULL;
 
 	/* Sanity Check */
 	if (!prStaRec)
@@ -3916,16 +4055,349 @@ VOID rlmSendNotifyChannelWidthFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaR
 
 	prTxFrame->ucChannelWidth = ucChannelWidth;
 
+	if (prBssInfo->pfOpChangeHandler)
+		pfTxDoneHandler = rlmNotifyChannelWidthtTxDone;
+
 	/* 4 Update information of MSDU_INFO_T */
 	TX_SET_MMPDU(prAdapter,
 		     prMsduInfo,
 		     prBssInfo->ucBssIndex,
 		     prStaRec->ucIndex,
-		     WLAN_MAC_MGMT_HEADER_LEN, sizeof(ACTION_NOTIFY_CHANNEL_WIDTH_FRAME), NULL, MSDU_RATE_MODE_AUTO);
+		     WLAN_MAC_MGMT_HEADER_LEN,
+		     sizeof(ACTION_NOTIFY_CHANNEL_WIDTH_FRAME), pfTxDoneHandler, MSDU_RATE_MODE_AUTO);
 
 	/* 4 Enqueue the frame to send this action frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+rlmNotifyVhtOpModeTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+{
+	BOOLEAN fgIsSuccess = FALSE;
+
+	do {
+		ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
+
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			fgIsSuccess = TRUE;
+
+	} while (FALSE);
+
+	rlmOpModeTxDoneHandler(prAdapter, prMsduInfo, OP_NOTIFY_TYPE_VHT_NSS_BW, fgIsSuccess);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+rlmSmPowerSaveTxDone(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+{
+	BOOLEAN fgIsSuccess = FALSE;
+
+	do {
+		ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
+
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			fgIsSuccess = TRUE;
+
+	} while (FALSE);
+
+	rlmOpModeTxDoneHandler(prAdapter, prMsduInfo, OP_NOTIFY_TYPE_HT_NSS, fgIsSuccess);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS
+rlmNotifyChannelWidthtTxDone(
+	IN P_ADAPTER_T prAdapter,
+	IN P_MSDU_INFO_T prMsduInfo,
+	IN ENUM_TX_RESULT_CODE_T rTxDoneStatus
+	)
+{
+	BOOLEAN fgIsSuccess = FALSE;
+
+	do {
+		ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
+
+		if (rTxDoneStatus == TX_RESULT_SUCCESS)
+			fgIsSuccess = TRUE;
+
+	} while (FALSE);
+
+	rlmOpModeTxDoneHandler(prAdapter, prMsduInfo, OP_NOTIFY_TYPE_HT_BW, fgIsSuccess);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Handle TX done for OP mode noritfication frame
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+static VOID
+rlmOpModeTxDoneHandler(
+	IN P_ADAPTER_T prAdapter,
+	IN P_MSDU_INFO_T prMsduInfo,
+	IN UINT_8 ucOpChangeType,
+	IN BOOLEAN fgIsSuccess
+	)
+{
+	P_BSS_INFO_T prBssInfo = NULL;
+	P_STA_RECORD_T prStaRec = NULL;
+	BOOLEAN fgIsOpModeChangeSuccess = FALSE; /* OP change result */
+	UINT_8 ucRelatedFrameType = OP_NOTIFY_TYPE_NUM; /* Used for HT notification frame */
+	PUINT_8 pucCurrOpState = NULL, pucRelatedOpState = NULL; /* Used for HT notification frame */
+
+
+	/* Sanity check */
+	ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+
+	ASSERT(prBssInfo);
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+
+	ASSERT(prStaRec);
+
+
+	DBGLOG(RLM, INFO, "OP notification Tx done: BSS[%d] Type[%d] Status[%d] IsSuccess[%d]\n",
+		prBssInfo->ucBssIndex, ucOpChangeType, prBssInfo->aucOpModeChangeState[ucOpChangeType], fgIsSuccess);
+
+	do {
+		/* <1>handle abnormal case */
+		if ((prBssInfo->aucOpModeChangeState[ucOpChangeType] != OP_NOTIFY_STATE_KEEP) &&
+			(prBssInfo->aucOpModeChangeState[ucOpChangeType] != OP_NOTIFY_STATE_SENDING)) {
+			DBGLOG(RLM, WARN, "Unexpected BSS[%d] OpModeChangeState[%d]\n",
+				prBssInfo->ucBssIndex, prBssInfo->aucOpModeChangeState[ucOpChangeType]);
+			rlmRollbackOpChangeParam(prBssInfo, TRUE, TRUE);
+			fgIsOpModeChangeSuccess = FALSE;
+			break;
+		}
+
+		if (ucOpChangeType >= OP_NOTIFY_TYPE_NUM) {
+			DBGLOG(RLM, WARN, "Uxexpected Bss[%d] OpChangeType[%d]\n",
+				prMsduInfo->ucBssIndex, ucOpChangeType);
+			rlmRollbackOpChangeParam(prBssInfo, TRUE, TRUE);
+			fgIsOpModeChangeSuccess = FALSE;
+			break;
+		}
+
+
+		/* <2>Assign Op notification Type/State for HT notification frame */
+		if ((ucOpChangeType == OP_NOTIFY_TYPE_HT_BW) ||
+				(ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)) {
+
+			ucRelatedFrameType = (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW) ?
+						OP_NOTIFY_TYPE_HT_NSS : OP_NOTIFY_TYPE_HT_BW;
+
+			pucCurrOpState = &prBssInfo->aucOpModeChangeState[ucOpChangeType];
+			pucRelatedOpState = &prBssInfo->aucOpModeChangeState[ucRelatedFrameType];
+		}
+
+
+		/* <3.1>handle TX done - SUCCESS */
+		if (fgIsSuccess == TRUE) {
+
+			/* Clear retry count */
+			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
+
+			if (ucOpChangeType == OP_NOTIFY_TYPE_VHT_NSS_BW) {
+				/* VHT notification frame sent */
+				fgIsOpModeChangeSuccess = TRUE;
+				break;
+			}
+
+			/* HT notification frame sent */
+			if (*pucCurrOpState == OP_NOTIFY_STATE_SENDING) { /* Change OpMode */
+
+				*pucCurrOpState = OP_NOTIFY_STATE_SUCCESS;
+
+				/* Case1: Wait for both HT BW/Nss notification frame TX done */
+				if (*pucRelatedOpState == OP_NOTIFY_STATE_SENDING)
+					return;
+
+				/* Case2: Both BW and Nss notification TX done
+				* or only change either BW or Nss
+				*/
+				if ((*pucRelatedOpState == OP_NOTIFY_STATE_KEEP) ||
+					(*pucRelatedOpState == OP_NOTIFY_STATE_SUCCESS)) {
+					fgIsOpModeChangeSuccess = TRUE;
+
+				/* Case3: One of the notification TX failed,
+				* re-send a notification frame to rollback the successful one
+				*/
+				} else if (*pucRelatedOpState == OP_NOTIFY_STATE_FAIL) {
+					/*Rollback to keep the original BW/Nss */
+					*pucCurrOpState = OP_NOTIFY_STATE_KEEP;
+					if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
+						rlmSendNotifyChannelWidthFrame(prAdapter, prStaRec,
+								rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
+					else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)
+						rlmSendSmPowerSaveFrame(prAdapter, prStaRec, prBssInfo->ucNss);
+
+					DBGLOG(RLM, INFO,
+						"Bss[%d] OpType[%d] Tx Failed, send OpType[%d] for roll back to BW[%d] Nss[%d]\n",
+						prMsduInfo->ucBssIndex,
+						ucRelatedFrameType,
+						ucOpChangeType,
+						rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+						prBssInfo->ucNss);
+
+					return;
+				}
+			} else if (*pucCurrOpState == OP_NOTIFY_STATE_KEEP) { /* Rollback OpMode */
+
+				/* Case4: Rollback success, keep original OP BW/Nss */
+				if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
+					rlmRollbackOpChangeParam(prBssInfo, TRUE, FALSE);
+				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)
+					rlmRollbackOpChangeParam(prBssInfo, FALSE, TRUE);
+
+				fgIsOpModeChangeSuccess = FALSE;
+			}
+		} /* End of processing TX success */
+		/* <3.2>handle TX done - FAIL */
+		else {
+			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType]++;
+
+			 /* Re-send notification frame */
+			if (prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] <= OPERATION_NOTICATION_TX_LIMIT) {
+				if (ucOpChangeType == OP_NOTIFY_TYPE_VHT_NSS_BW)
+					rlmSendOpModeNotificationFrame(prAdapter, prStaRec,
+						prBssInfo->ucOpChangeChannelWidth, prBssInfo->ucOpChangeNss);
+				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)
+					rlmSendSmPowerSaveFrame(prAdapter, prStaRec, prBssInfo->ucOpChangeNss);
+				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
+					rlmSendNotifyChannelWidthFrame(prAdapter, prStaRec,
+						prBssInfo->ucOpChangeChannelWidth);
+				return;
+			}
+
+
+			/* Clear retry count when retry count > TX limit */
+			prBssInfo->aucOpModeChangeRetryCnt[ucOpChangeType] = 0;
+
+			if (ucOpChangeType == OP_NOTIFY_TYPE_VHT_NSS_BW) { /* VHT notification frame sent */
+				/* Change failed, keep original OP BW/Nss */
+				rlmRollbackOpChangeParam(prBssInfo, TRUE, TRUE);
+				fgIsOpModeChangeSuccess = FALSE;
+				break;
+			}
+
+			/* HT notification frame sent */
+			if (*pucCurrOpState == OP_NOTIFY_STATE_SENDING) { /* Change OpMode */
+				*pucCurrOpState = OP_NOTIFY_STATE_FAIL;
+
+				/* Change failed, keep original OP BW/Nss */
+				if (ucOpChangeType == OP_NOTIFY_TYPE_HT_BW)
+					rlmRollbackOpChangeParam(prBssInfo, TRUE, FALSE);
+				else if (ucOpChangeType == OP_NOTIFY_TYPE_HT_NSS)
+					rlmRollbackOpChangeParam(prBssInfo, FALSE, TRUE);
+
+				/* Case1: Wait for both HT BW/Nss notification frame TX done */
+				if (*pucRelatedOpState == OP_NOTIFY_STATE_SENDING) {
+					return;
+
+				/* Case2: Both BW and Nss notification TX done
+				* or only change either BW or Nss
+				*/
+				} else if ((*pucRelatedOpState == OP_NOTIFY_STATE_KEEP) ||
+					(*pucRelatedOpState == OP_NOTIFY_STATE_FAIL)) {
+					fgIsOpModeChangeSuccess = FALSE;
+
+				/* Case3: One of the notification TX failed,
+				* re-send a notification frame to rollback the successful one
+				*/
+				} else if (*pucRelatedOpState == OP_NOTIFY_STATE_SUCCESS) {
+					/*Rollback to keep the original BW/Nss */
+					*pucRelatedOpState = OP_NOTIFY_STATE_KEEP;
+
+					if (ucRelatedFrameType == OP_NOTIFY_TYPE_HT_BW) {
+						rlmSendNotifyChannelWidthFrame(prAdapter, prStaRec,
+							rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo));
+					} else if (ucRelatedFrameType == OP_NOTIFY_TYPE_HT_NSS)
+						rlmSendSmPowerSaveFrame(prAdapter, prStaRec, prBssInfo->ucNss);
+
+					DBGLOG(RLM, INFO,
+						"Bss[%d] OpType[%d] Tx Failed, send a OpType[%d] for roll back to BW[%d] Nss[%d]\n",
+						prMsduInfo->ucBssIndex,
+						ucOpChangeType,
+						ucRelatedFrameType,
+						rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+						prBssInfo->ucNss);
+
+					return;
+				}
+			} else if (*pucCurrOpState == OP_NOTIFY_STATE_KEEP) /* Rollback OpMode */
+				/* Case4: Rollback failed, keep changing OP BW/Nss */
+				fgIsOpModeChangeSuccess = FALSE;
+		} /* End of processing TX failed */
+
+	} while (FALSE);
+
+	/* <4>Change own OP info */
+	rlmCompleteOpModeChange(prAdapter, prBssInfo, fgIsOpModeChangeSuccess);
+
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+static VOID
+rlmRollbackOpChangeParam(P_BSS_INFO_T prBssInfo, BOOLEAN fgIsRollbackBw, BOOLEAN fgIsRollbackNss)
+{
+
+	ASSERT(prBssInfo);
+
+	if (fgIsRollbackBw == TRUE) {
+		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
+		prBssInfo->ucOpChangeChannelWidth = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+	}
+
+	if (fgIsRollbackNss == TRUE) {
+		prBssInfo->fgIsOpChangeNss = FALSE;
+		prBssInfo->ucOpChangeNss = prBssInfo->ucNss;
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3944,7 +4416,6 @@ rlmGetBssOpBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo) {
 	UINT_8 ucBssOpBw = MAX_BW_20MHZ;
 
 	ASSERT(prBssInfo);
-
 
 	switch (prBssInfo->ucVhtChannelWidth) {
 	case VHT_OP_CHANNEL_WIDTH_80P80:
@@ -3977,205 +4448,522 @@ rlmGetBssOpBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo) {
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Change OpMode Nss/Channel Width
+* \brief
 *
-* \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
+* \param[in]
+*
+* \return ucVhtOpBw 0:20M/40Hz, 1:80MHz, 2:160MHz, 3:80+80MHz
+*
+*/
+/*----------------------------------------------------------------------------*/
+UINT_8
+rlmGetVhtOpBwByBssOpBw(UINT_8 ucBssOpBw)
+{
+	UINT_8 ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_80;  /*VHT default should support BW 80*/
+
+	switch (ucBssOpBw) {
+	case MAX_BW_20MHZ:
+	case MAX_BW_40MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_20_40;
+		break;
+
+	case MAX_BW_80MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_80;
+		break;
+
+	case MAX_BW_160MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_160;
+		break;
+
+	case MAX_BW_80_80_MHZ:
+		ucVhtOpBw = VHT_OP_CHANNEL_WIDTH_80P80;
+		break;
+	default:
+		DBGLOG(RLM, WARN, "%s: unexpected Bss OP BW: %d\n", __func__, ucBssOpBw);
+		break;
+	}
+
+	return ucVhtOpBw;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Get operating notification channel width by VHT and HT operating Info
+*
+* \param[in]
+*
+* \return ucOpModeBw 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz/80+80MHz
+*
+*/
+/*----------------------------------------------------------------------------*/
+static UINT_8
+rlmGetOpModeBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo)
+{
+	UINT_8 ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_20;
+
+	ASSERT(prBssInfo);
+
+
+	switch (prBssInfo->ucVhtChannelWidth) {
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		if (prBssInfo->eBssSCO != CHNL_EXT_SCN)
+			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_40;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_160:
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_160_80P80;
+		break;
+	default:
+		DBGLOG(RLM, WARN, "%s: unexpected VHT channel width: %d\n", __func__, prBssInfo->ucVhtChannelWidth);
+		ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80; /*VHT default IE should support BW 80*/
+		break;
+	}
+
+	return ucOpModeBw;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
 *
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN rlmChangeOperationMode(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 ucChannelWidth, UINT_8 ucNss)
+static VOID
+rlmChangeOwnOpInfo(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+{
+	P_STA_RECORD_T prStaRec;
+
+	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
+
+	/* Update own operating channel Width */
+	if (prBssInfo->fgIsOpChangeChannelWidth) {
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT) {
+#if CFG_SUPPORT_802_11AC
+			/* Update VHT OP Info*/
+			if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT) {
+				rlmFillVhtOpInfoByBssOpBw(prBssInfo, prBssInfo->ucOpChangeChannelWidth);
+
+				DBGLOG(RLM, INFO, "Update BSS[%d] VHT Channel Width Info to w=%d s1=%d s2=%d\n",
+						prBssInfo->ucBssIndex,
+						prBssInfo->ucVhtChannelWidth,
+						prBssInfo->ucVhtChannelFrequencyS1,
+						prBssInfo->ucVhtChannelFrequencyS2);
+			}
+#endif
+
+			/* Update HT OP Info*/
+			if (prBssInfo->ucOpChangeChannelWidth == MAX_BW_20MHZ) {
+				prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
+				prBssInfo->eBssSCO = CHNL_EXT_SCN;
+			} else {
+				prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
+
+				if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+					prStaRec = prBssInfo->prStaRecOfAP;
+					if (!prStaRec)
+						return;
+
+					if ((prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_SCO) != CHNL_EXT_RES)
+						prBssInfo->eBssSCO =
+						(ENUM_CHNL_EXT_T) (prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_SCO);
+				} else if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+					prBssInfo->eBssSCO = rlmDecideScoForAP(prAdapter, prBssInfo);
+				}
+			}
+
+			DBGLOG(RLM, INFO, "Update BSS[%d] HT Channel Width Info to bw=%d sco=%d\n",
+				prBssInfo->ucBssIndex,
+				((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH)
+					>> HT_OP_INFO1_STA_CHNL_WIDTH_OFFSET),
+				prBssInfo->eBssSCO);
+		}
+	}
+
+
+	/* Update own operating Nss */
+	if (prBssInfo->fgIsOpChangeNss) {
+		prBssInfo->ucNss = prBssInfo->ucOpChangeNss;
+		DBGLOG(RLM, INFO, "Update OP Nss = %d\n", prBssInfo->ucNss);
+	}
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief
+*
+* \param[in]
+*
+* \return none
+*/
+/*----------------------------------------------------------------------------*/
+static VOID
+rlmCompleteOpModeChange(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN fgIsSuccess)
+{
+
+	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
+
+
+	if ((prBssInfo->fgIsOpChangeChannelWidth) || (prBssInfo->fgIsOpChangeNss)) {
+
+		/* <1> Update own OP BW/Nss */
+		rlmChangeOwnOpInfo(prAdapter, prBssInfo);
+
+		/* <2> Update OP BW/Nss to FW */
+		rlmSyncOperationParams(prAdapter, prBssInfo);
+
+		/* <3> Update BCN/Probe Resp IE to notify peers our OP info is changed (AP mode) */
+		if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+			bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+	}
+
+	DBGLOG(RLM, INFO, "Complete BSS[%d] OP Mode change to BW[%d] Nss[%d]\n",
+		prBssInfo->ucBssIndex,
+		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+		prBssInfo->ucNss);
+
+	/* <4> Tell OpMode change caller the change result */
+	if (prBssInfo->pfOpChangeHandler) {
+		prBssInfo->pfOpChangeHandler(prAdapter, prBssInfo->ucBssIndex, fgIsSuccess);
+		prBssInfo->pfOpChangeHandler = NULL; /* Clear to NULL when handling OP Mode change request done */
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Change OpMode Nss/Channel Width
+*
+* \param[in] ucChannelWidth 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz
+*
+* \return fgIsChangeOpMode
+*	TRUE: Can change/Don't need to change operation mode
+*	FALSE: Can't change operation mode
+*/
+/*----------------------------------------------------------------------------*/
+enum ENUM_OP_CHANGE_STATUS_T
+rlmChangeOperationMode(
+	P_ADAPTER_T prAdapter,
+	UINT_8 ucBssIndex,
+	UINT_8 ucChannelWidth,
+	UINT_8 ucNss,
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
+	)
 {
 	P_BSS_INFO_T prBssInfo;
 	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
-	/*BOOLEAN fgIsSuccess = FALSE;*/
-	BOOLEAN fgIsChangeVhtBw = TRUE, fgIsChangeHtBw = TRUE;
+	BOOLEAN fgIsChangeBw = TRUE, fgIsChangeNss = TRUE; /* Indicate if need to change */
+	UINT_8 i;
 
-	ASSERT(prAdapter);
+	/* Sanity check */
+	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
+		return OP_CHANGE_STATUS_INVALID;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-	/* No need to change BSS 4 rlm parameter */
-	if (ucBssIndex >= prAdapter->ucHwBssIdNum)
-		return FALSE;
-
 	if (!prBssInfo)
-		return FALSE;
+		return OP_CHANGE_STATUS_INVALID;
+
+	/* <1>Check if OP change parameter is valid */
+	if (rlmCheckOpChangeParamValid(prAdapter, prBssInfo, ucChannelWidth, ucNss) == FALSE)
+		return OP_CHANGE_STATUS_INVALID;
+
+	/* <2>Check if OpMode notification is ongoing, if not, register the call back function */
+	if (prBssInfo->pfOpChangeHandler) {
+		DBGLOG(RLM, INFO, "BSS[%d] OpMode change notification is ongoing\n", ucBssIndex);
+		return OP_CHANGE_STATUS_INVALID;
+	}
+
+	prBssInfo->pfOpChangeHandler = pfOpChangeHandler;
+
+	/* <3>Check if the current operating BW/Nss is the same as the target one */
+	if (ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo))
+		fgIsChangeBw = FALSE;
+
+	if (ucNss == prBssInfo->ucNss)
+		fgIsChangeNss = FALSE;
+
+	if ((!fgIsChangeBw) && (!fgIsChangeNss)) {
+		if (prBssInfo->pfOpChangeHandler) {
+			/* (1) Don't need to call callback at no need to change OP mode case */
+			/* (2) Clear callback to NULL when handling OP Mode change request done */
+			prBssInfo->pfOpChangeHandler = NULL;
+		}
+
+		DBGLOG(RLM, INFO, "BSS[%d] target OpMode BW[%d] Nss[%d] is the same as cuurent\n",
+			ucBssIndex, ucChannelWidth, ucNss);
+		return OP_CHANGE_STATUS_VALID_NO_CHANGE;
+	}
 
 	DBGLOG(RLM, INFO, "Intend to change BSS[%d] OP Mode to BW[%d] Nss[%d]\n", ucBssIndex, ucChannelWidth, ucNss);
 
+	/* <4> Fill OP Change Info into BssInfo*/
+	if (fgIsChangeBw) {
+		prBssInfo->ucOpChangeChannelWidth = ucChannelWidth;
+		prBssInfo->fgIsOpChangeChannelWidth = TRUE;
+		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to BW[%d]\n", ucBssIndex, ucChannelWidth);
+	}
+	if (fgIsChangeNss) {
+		prBssInfo->ucOpChangeNss = ucNss;
+		prBssInfo->fgIsOpChangeNss = TRUE;
+		DBGLOG(RLM, INFO, "Intend to change BSS[%d] to Nss[%d]\n", ucBssIndex, ucNss);
+	}
+
+
+	/* <5>Handling OP Info change for STA/GC */
+	if ((prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) && (prBssInfo->prStaRecOfAP)) {
+		prStaRec = prBssInfo->prStaRecOfAP;
+
+		/* <5.1>Initialize OP mode change parameters related to notification Tx done handler (STA mode) */
+		if (prBssInfo->pfOpChangeHandler) {
+			for (i = 0; i < OP_NOTIFY_TYPE_NUM; i++) {
+				prBssInfo->aucOpModeChangeState[i] = OP_NOTIFY_STATE_KEEP;
+				prBssInfo->aucOpModeChangeRetryCnt[i] = 0;
+			}
+		}
+
+
+		/* <5.2> Send operating mode notification frame (STA mode) */
 #if CFG_SUPPORT_802_11AC
-	/* Check peer VHT/HT OP Channel Width */
-	if (ucChannelWidth == prBssInfo->ucOpChangeChannelWidth)
-		fgIsChangeVhtBw = FALSE;
-	else if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+		if (RLM_NET_IS_11AC(prBssInfo)) {
+			if (prBssInfo->pfOpChangeHandler)
+				prBssInfo->aucOpModeChangeState[OP_NOTIFY_TYPE_VHT_NSS_BW] =
+										OP_NOTIFY_STATE_SENDING;
+
+			DBGLOG(RLM, INFO, "Send VHT OP notification frame: BSS[%d] BW[%d] Nss[%d]\n",
+				ucBssIndex, ucChannelWidth, ucNss);
+
+			rlmSendOpModeNotificationFrame(prAdapter, prStaRec, ucChannelWidth, ucNss);
+		} else
+#endif
+		{
+			if (RLM_NET_IS_11N(prBssInfo)) {
+				if (prBssInfo->pfOpChangeHandler) {
+					if (fgIsChangeNss)
+						prBssInfo->aucOpModeChangeState[OP_NOTIFY_TYPE_HT_NSS] =
+											OP_NOTIFY_STATE_SENDING;
+					if (fgIsChangeBw)
+						prBssInfo->aucOpModeChangeState[OP_NOTIFY_TYPE_HT_BW] =
+											OP_NOTIFY_STATE_SENDING;
+				}
+
+				if (fgIsChangeNss) {
+					rlmSendSmPowerSaveFrame(prAdapter, prStaRec, ucNss);
+					DBGLOG(RLM, INFO, "Send HT SM Power Save frame: BSS[%d] Nss[%d]\n",
+						ucBssIndex, ucNss);
+				}
+
+				if (fgIsChangeBw) {
+					rlmSendNotifyChannelWidthFrame(prAdapter, prStaRec, ucChannelWidth);
+					DBGLOG(RLM, INFO, "Send HT Notify Channel Width frame: BSS[%d] BW[%d]\n",
+						ucBssIndex, ucChannelWidth);
+				}
+			}
+		}
+
+		/* <5.3> Change OP Info w/o waiting for notification Tx done */
+		if (prBssInfo->pfOpChangeHandler == NULL) {
+			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
+			return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE; /* No callback */
+		}
+	}
+	/* <6>Handling OP Info change for AP/GO */
+	else if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
+		/* Complete OP Info change after notifying client by beacon */
+		rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
+		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+	}
+
+	return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT;
+
+}
+
+static BOOLEAN
+rlmCheckOpChangeParamForClient(P_BSS_INFO_T prBssInfo, UINT_8 ucChannelWidth, UINT_8 ucNss)
+{
+	P_STA_RECORD_T prStaRec;
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+
+	if (!prStaRec)
+		return FALSE;
+
+
+#if CFG_SUPPORT_802_11AC
+	if (RLM_NET_IS_11AC(prBssInfo)) { /* VHT */
+		/* Check peer OP Channel Width */
 		switch (ucChannelWidth) {
 		case MAX_BW_80_80_MHZ:
-			if (prBssInfo->ucVhtPeerChannelWidth != VHT_OP_CHANNEL_WIDTH_80P80) {
+			if (prStaRec->ucVhtOpChannelWidth != VHT_OP_CHANNEL_WIDTH_80P80) {
 				DBGLOG(RLM, INFO,
-				"Can't change to BW80_80 due to peer VHT OP BW is BW[%d]\n"
-				, prBssInfo->ucVhtPeerChannelWidth);
-				fgIsChangeVhtBw = FALSE;
+					"Can't change BSS[%d] OP BW to:%d for peer VHT OP BW is:%d\n",
+					prBssInfo->ucBssIndex,
+					ucChannelWidth,
+					prStaRec->ucVhtOpChannelWidth);
+				return FALSE;
 			}
 			break;
 		case MAX_BW_160MHZ:
-			if (prBssInfo->ucVhtPeerChannelWidth != VHT_OP_CHANNEL_WIDTH_160) {
+			if (prStaRec->ucVhtOpChannelWidth != VHT_OP_CHANNEL_WIDTH_160) {
 				DBGLOG(RLM, INFO,
-					"Can't change to BW160 due to peer VHT OP BW is BW[%d]\n",
-					prBssInfo->ucVhtPeerChannelWidth);
-				fgIsChangeVhtBw = FALSE;
+					"Can't change BSS[%d] OP BW to:%d for peer VHT OP BW is:%d\n",
+					prBssInfo->ucBssIndex,
+					ucChannelWidth,
+					prStaRec->ucVhtOpChannelWidth);
+				return FALSE;
 			}
 			break;
 		case MAX_BW_80MHZ:
-			if (prBssInfo->ucVhtPeerChannelWidth < VHT_OP_CHANNEL_WIDTH_80) {
+			if (prStaRec->ucVhtOpChannelWidth < VHT_OP_CHANNEL_WIDTH_80) {
 				DBGLOG(RLM, INFO,
-					"Can't change to BW80 due to peer VHT OP BW is BW[%d]\n",
-					prBssInfo->ucVhtPeerChannelWidth);
-				fgIsChangeVhtBw = FALSE;
+					"Can't change BSS[%d] OP BW to:%d for peer VHT OP BW is:%d\n",
+					prBssInfo->ucBssIndex,
+					ucChannelWidth,
+					prStaRec->ucVhtOpChannelWidth);
+				return FALSE;
 			}
 			break;
 		case MAX_BW_40MHZ:
-			if (!(prBssInfo->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) ||
+			if (!(prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) ||
 				(!prBssInfo->fg40mBwAllowed)) {
 				DBGLOG(RLM, INFO,
-				"Can't change to BW40: PeerOpBw[%d] fg40mBwAllowed[%d]\n",
-				(prBssInfo->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
-				prBssInfo->fg40mBwAllowed);
-				fgIsChangeVhtBw = FALSE;
+				"Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
+					prBssInfo->ucBssIndex,
+					ucChannelWidth,
+					(prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
+					prBssInfo->fg40mBwAllowed);
+				return FALSE;
 			}
 			break;
 		case MAX_BW_20MHZ:
 			break;
 		default:
-			DBGLOG(RLM, WARN, "BW[%d] is invalid for OpMode change\n", ucChannelWidth);
-			fgIsChangeVhtBw = FALSE;
+			DBGLOG(RLM, WARN, "BSS[%d] target OP BW:%d is invalid for VHT OpMode change\n",
+				prBssInfo->ucBssIndex, ucChannelWidth);
+			return FALSE;
 		}
-	}
-#endif
 
-	/* Check HT OP Channel Width */
-	if (ucChannelWidth == prBssInfo->ucOpChangeChannelWidth)
-		fgIsChangeHtBw = FALSE;
-	else if (ucChannelWidth >= MAX_BW_80MHZ) {
-		DBGLOG(RLM, WARN, "BW[%d] is invalid for HT OpMode change\n", ucChannelWidth);
-		fgIsChangeHtBw = FALSE;
-	} else if (ucChannelWidth == MAX_BW_40MHZ) {
-		if (!(prBssInfo->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) ||
-			(!prBssInfo->fg40mBwAllowed)) {
-			DBGLOG(RLM, INFO,
-				"Can't change to BW40: PeerOpBw[%d] fg40mBwAllowed[%d]\n",
-				(prBssInfo->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
-				prBssInfo->fg40mBwAllowed);
-			fgIsChangeHtBw = FALSE;
+		/* Check peer Rx Nss Cap */
+		if (ucNss == 2 &&
+			((prStaRec->u2VhtRxMcsMap & VHT_CAP_INFO_MCS_2SS_MASK)
+			>> VHT_CAP_INFO_MCS_2SS_OFFSET) == VHT_CAP_INFO_MCS_NOT_SUPPORTED) {
+			DBGLOG(RLM, INFO, "Don't change Nss since VHT peer doesn't support 2ss\n");
+			return FALSE;
 		}
-	}
 
-	if (fgIsChangeHtBw) {
-		/* <4>Update HT Channel Width */
-		if (ucChannelWidth == MAX_BW_20MHZ) {
-			prBssInfo->ucHtOpInfo1 &= ~HT_OP_INFO1_STA_CHNL_WIDTH;
-			prBssInfo->eBssSCO = CHNL_EXT_SCN;
-		} else if (ucChannelWidth == MAX_BW_40MHZ) {
-			prBssInfo->ucHtOpInfo1 |= HT_OP_INFO1_STA_CHNL_WIDTH;
-			if ((prBssInfo->ucHtPeerOpInfo1 & HT_OP_INFO1_SCO) != CHNL_EXT_RES)
-				prBssInfo->eBssSCO =
-				(ENUM_CHNL_EXT_T) (prBssInfo->ucHtPeerOpInfo1 & HT_OP_INFO1_SCO);
-		} else
-			fgIsChangeHtBw = FALSE;
-	}
-
-#if CFG_SUPPORT_802_11AC
-	if (fgIsChangeVhtBw) {
-		prBssInfo->ucOpChangeChannelWidth = ucChannelWidth;
-		prBssInfo->fgIsOpChangeChannelWidth = TRUE;
-		/* <3>Update VHT Channel Width*/
-		rlmChangeVhtOpBwPara(prAdapter, ucBssIndex, prBssInfo->ucOpChangeChannelWidth);
-
-		DBGLOG(RLM, INFO, "Update VHT Channel Width Info to w=%d s1=%d s2=%d\n",
-				prBssInfo->ucVhtChannelWidth,
-				prBssInfo->ucVhtChannelFrequencyS1,
-				prBssInfo->ucVhtChannelFrequencyS2);
-	}
+	} else
 #endif
-	if (fgIsChangeHtBw) {
-		prBssInfo->ucOpChangeChannelWidth = ucChannelWidth;
-		prBssInfo->fgIsOpChangeChannelWidth = TRUE;
-
-		DBGLOG(RLM, INFO, "Update HT Channel Width Info to bw=%d s=%d\n",
-			(prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) >> 2, prBssInfo->eBssSCO);
-	}
-
-	if ((prBssInfo->ucNss != ucNss) || fgIsChangeVhtBw || fgIsChangeHtBw) {
-		/* 1. Update BSS Info */
-		prBssInfo->ucNss = ucNss;
-		rlmSyncOperationParams(prAdapter, prBssInfo);
-
-		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) { /* For infrastructure, GC */
-			if (prBssInfo->prStaRecOfAP) {
-				prStaRec = prBssInfo->prStaRecOfAP;
-#if CFG_SUPPORT_802_11AC
-				/* 2. Check if we can change OpMode and Send OPmode notification frame */
-				if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_VHT) { /*Send VHT notification frame*/
-					/* <1> Notify VHT Nss and Channel Width change*/
-					rlmSendOpModeNotificationFrame(prAdapter, prStaRec, ucChannelWidth,
-						prBssInfo->ucNss);
-					DBGLOG(RLM, INFO, "Send VHT OPmode notification frame, BW=%d, Nss=%d\n"
-						, ucChannelWidth, prBssInfo->ucNss);
-				} else
-#endif
-				if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HT) { /*Send HT notification frame*/
-					/* <1> Notify HT Nss change */
-					rlmSendSmPowerSaveFrame(prAdapter, prStaRec, prBssInfo->ucNss);
-					DBGLOG(RLM, INFO, "Send HT SM Power Save frame, Nss=%d\n",
-						prBssInfo->ucNss);
-				}
-
-				if (fgIsChangeHtBw) {
-					/* <3> Notify HT Channel Width change */
-					rlmSendNotifyChannelWidthFrame(prAdapter, prStaRec, ucChannelWidth);
-					DBGLOG(RLM, INFO, "Send HT Notify Channel Width frame, BW=%d\n",
-						ucChannelWidth);
-				}
-			} else
-				DBGLOG(RLM, WARN, "Can't change OpMode at legacy mode\n");
-		} else if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-			P_LINK_T prClientList;
-
-			/* 4. Update BCN/Probe Resp IE to notify peers the OP is be changed */
-			DBGLOG(RLM, INFO, "Beacon content update with Bssidex(%d)\n",
-				prBssInfo->ucBssIndex);
-
-			prClientList = &prBssInfo->rStaRecOfClientList;
-
-			LINK_FOR_EACH_ENTRY(prStaRec, prClientList, rLinkEntry, STA_RECORD_T) {
-#if CFG_SUPPORT_802_11AC
-				/* 2. Check if we can change OpMode and Send OPmode notification frame */
-				if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_VHT) { /*Send VHT notification frame*/
-					/* <1> Notify VHT Nss and Channel Width change*/
-					rlmSendOpModeNotificationFrame(prAdapter, prStaRec, ucChannelWidth,
-						prBssInfo->ucNss);
-					DBGLOG(RLM, INFO, "Send VHT OPmode notification frame, BW=%d, Nss=%d\n"
-						, ucChannelWidth, prBssInfo->ucNss);
-				} else
-#endif
-				if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_HT) { /*Send HT notification frame*/
-					/* <1> Notify HT Nss change */
-					rlmSendSmPowerSaveFrame(prAdapter, prStaRec, prBssInfo->ucNss);
-					DBGLOG(RLM, INFO, "Send HT SM Power Save frame, Nss=%d\n",
-						prBssInfo->ucNss);
-				}
-
-				if (fgIsChangeHtBw) {
-					/* <3> Notify HT Channel Width change */
-					rlmSendNotifyChannelWidthFrame(prAdapter, prStaRec, ucChannelWidth);
-					DBGLOG(RLM, INFO, "Send HT Notify Channel Width frame, BW=%d\n",
-						ucChannelWidth);
+	{
+		if (RLM_NET_IS_11N(prBssInfo)) { /* HT */
+			/* Check peer Channel Width */
+			if (ucChannelWidth >= MAX_BW_80MHZ) {
+				DBGLOG(RLM, WARN, "BSS[%d] target OP BW:%d is invalid for HT OpMode change\n",
+					prBssInfo->ucBssIndex, ucChannelWidth);
+				return FALSE;
+			} else if (ucChannelWidth == MAX_BW_40MHZ) {
+				if (!(prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH) ||
+					(!prBssInfo->fg40mBwAllowed)) {
+					DBGLOG(RLM, INFO,
+						"Can't change BSS[%d] OP BW to:%d for PeerOpBw:%d fg40mBwAllowed:%d\n",
+						prBssInfo->ucBssIndex,
+						ucChannelWidth,
+						(prStaRec->ucHtPeerOpInfo1 & HT_OP_INFO1_STA_CHNL_WIDTH),
+						prBssInfo->fg40mBwAllowed);
+					return FALSE;
 				}
 			}
 
-			bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
-		} else
-			return FALSE;
+			/* Check peer Rx Nss Cap */
+			if (ucNss == 2 &&
+				(prStaRec->aucRxMcsBitmask[1] == 0)) {
+				DBGLOG(RLM, INFO, "Don't change Nss since HT peer doesn't support 2ss\n");
+				return FALSE;
+			}
+		}
 	}
 	return TRUE;
+}
+
+static BOOLEAN
+rlmCheckOpChangeParamValid(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, UINT_8 ucChannelWidth, UINT_8 ucNss)
+{
+
+	ASSERT(prBssInfo);
+
+	/* <1>Check if BSS PHY type is legacy mode */
+	if (!RLM_NET_IS_11N(prBssInfo)) {
+		DBGLOG(RLM, WARN, "Can't change BSS[%d] OP info for legacy BSS\n", prBssInfo->ucBssIndex);
+		return FALSE;
+	}
+
+
+	/* <2>Check network type */
+	if ((prBssInfo->eCurrentOPMode != OP_MODE_INFRASTRUCTURE) &&
+		(prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT)) {
+		DBGLOG(RLM, WARN, "Can't change BSS[%d] OP info for OpMode:%d\n",
+			 prBssInfo->ucBssIndex, prBssInfo->eCurrentOPMode);
+		return FALSE;
+	}
+
+
+	/* <3>Check if target OP BW/Nss <= Own Cap BW/Nss */
+	if (ucNss > wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex)) {
+		DBGLOG(RLM, WARN, "Can't change BSS[%d] OP Nss to:%d since own Cap Nss is:%d\n",
+			prBssInfo->ucBssIndex, ucNss, wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex));
+		return FALSE;
+	}
+
+	if (ucChannelWidth > cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex)) {
+		DBGLOG(RLM, WARN, "Can't change BSS[%d] OP BW to:%d since own Cap BW is:%d\n",
+			prBssInfo->ucBssIndex, ucChannelWidth, cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex));
+		return FALSE;
+	}
+
+
+	/* <4>Check if target OP BW is valid for band and primary channel of current BSS */
+	if (prBssInfo->eBand == BAND_2G4) {
+		if ((ucChannelWidth != MAX_BW_20MHZ) && (ucChannelWidth != MAX_BW_40MHZ)) {
+			DBGLOG(RLM, WARN, "Can't change BSS[%d] OP BW to:%d for 2.4G\n",
+				prBssInfo->ucBssIndex, ucChannelWidth);
+			return FALSE;
+		}
+	} else {
+		if (prBssInfo->ucPrimaryChannel == 165) { /*It can only use BW20 for CH165*/
+			DBGLOG(RLM, WARN, "Can't change BSS[%d] OP BW for CH165\n", prBssInfo->ucBssIndex);
+			return FALSE;
+		}
+
+		if ((ucChannelWidth == MAX_BW_160MHZ) &&
+			((prBssInfo->ucPrimaryChannel < 36) ||
+			((prBssInfo->ucPrimaryChannel > 64) && (prBssInfo->ucPrimaryChannel < 100)) ||
+			(prBssInfo->ucPrimaryChannel > 128))
+			) {
+			DBGLOG(RLM, WARN, "Can't change BSS[%d] to OP BW160 for primary CH%d\n",
+				prBssInfo->ucBssIndex, prBssInfo->ucPrimaryChannel);
+			return FALSE;
+		}
+	}
+
+
+	/* <5>Check if target OP BW/Nss <= peer's BW/Nss (STA mode) */
+	if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+		if (rlmCheckOpChangeParamForClient(prBssInfo, ucChannelWidth, ucNss) == FALSE)
+			return FALSE;
+	}
+
+	return TRUE;
+
+}
+
+VOID
+rlmDummyChangeOpHandler(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, BOOLEAN fgIsChangeSuccess)
+{
+	DBGLOG(RLM, INFO,
+		"OP change done for BSS[%d] IsSuccess[%d]\n", ucBssIndex, fgIsChangeSuccess);
 }

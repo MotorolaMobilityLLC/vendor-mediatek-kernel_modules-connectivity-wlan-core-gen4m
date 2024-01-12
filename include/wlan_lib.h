@@ -164,6 +164,8 @@
 #define WLAN_FLAG_5G_COANT_SUPPORT			BIT(6)	/*1: support, 0: NOT support */
 #define WLAN_FLAG_5G_COANT_PATH				BIT(7)	/*1: WF1, 0:WF0 */
 
+#define MAX_OP_CHNL_NUM                   3    /* Define concurrent network channel number, using by CNM/CMD */
+
 #if CFG_SUPPORT_EASY_DEBUG
 
 #define MAX_CMD_ITEM_MAX			4	/* Max item per cmd. */
@@ -898,15 +900,19 @@ typedef enum _ENUM_TX_PROFILING_TAG_T {
 	TX_PROF_TAG_MAC_TX_DONE
 } ENUM_TX_PROFILING_TAG_T, *P_ENUM_TX_PROFILING_TAG_T;
 
-struct _PARAM_GET_CNM_T {
+struct PARAM_GET_CNM_T {
 	UINT_8	fgIsDbdcEnable;
 
 	UINT_8	ucOpChNum[ENUM_BAND_NUM];
-	UINT_8	ucChList[ENUM_BAND_NUM][BSSID_NUM];
+	UINT_8	ucChList[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
+	UINT_8	ucChBw[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
+	UINT_8	ucChSco[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
+	UINT_8	ucChNetNum[ENUM_BAND_NUM][MAX_OP_CHNL_NUM];
+	UINT_8	ucChBssList[ENUM_BAND_NUM][MAX_OP_CHNL_NUM][BSSID_NUM];
 
-	UINT_8	ucInuse[BSSID_NUM+1];
-	UINT_8	ucActive[BSSID_NUM+1];
-	UINT_8	ucConnectState[BSSID_NUM+1];
+	UINT_8	ucBssInuse[BSSID_NUM+1];
+	UINT_8	ucBssActive[BSSID_NUM+1];
+	UINT_8	ucBssConnectState[BSSID_NUM+1];
 
 	UINT_8	ucBssCh[BSSID_NUM+1];
 	UINT_8	ucBssDBDCBand[BSSID_NUM+1];
@@ -916,9 +922,8 @@ struct _PARAM_GET_CNM_T {
 	UINT_8	ucBssOMACDBDCBand[BSSID_NUM+1];
 
 	/* Reserved fields */
-	UINT_8	au4Reserved[12];
+	UINT_8	au4Reserved[65]; /*Total 160 byte*/
 };
-
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

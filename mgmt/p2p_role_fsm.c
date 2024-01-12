@@ -177,8 +177,8 @@ UINT_8 p2pRoleFsmInit(IN P_ADAPTER_T prAdapter, IN UINT_8 ucRoleIdx)
 		prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;
 		prP2pBssInfo->ucNss = wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex);
 		prP2pBssInfo->eDBDCBand = ENUM_BAND_0;
-		prP2pBssInfo->ucWmmQueSet =
-			(prAdapter->rWifiVar.ucDbdcMode == DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
+		prP2pBssInfo->ucWmmQueSet = (prAdapter->rWifiVar.eDbdcMode ==
+			ENUM_DBDC_MODE_DISABLED) ? DBDC_5G_WMM_INDEX : DBDC_2G_WMM_INDEX;
 
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucQoS))
 			prP2pBssInfo->fgIsQBSS = TRUE;
@@ -1378,6 +1378,7 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 #if CFG_SUPPORT_DBDC
 	CNM_DBDC_CAP_T rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
+	UINT_8 ucRfBw;
 
 	prP2pConnReqMsg = (P_MSG_P2P_CONNECTION_REQUEST_T) prMsgHdr;
 
@@ -1459,10 +1460,6 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 		prChnlReqInfo->u4MaxInterval = AIS_JOIN_CH_REQUEST_INTERVAL;
 		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_JOIN;
 
-		prChnlReqInfo->eChannelWidth = prJoinInfo->prTargetBssDesc->eChannelWidth;
-		prChnlReqInfo->ucCenterFreqS1 = prJoinInfo->prTargetBssDesc->ucCenterFreqS1;
-		prChnlReqInfo->ucCenterFreqS2 = prJoinInfo->prTargetBssDesc->ucCenterFreqS2;
-
 		rlmReviseMaxBw(prAdapter, prP2pBssInfo->ucBssIndex, &prChnlReqInfo->eChnlSco,
 				(P_ENUM_CHANNEL_WIDTH_P)&prChnlReqInfo->eChannelWidth,
 			&prChnlReqInfo->ucCenterFreqS1, &prChnlReqInfo->ucReqChnlNum);
@@ -1485,6 +1482,19 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 		prP2pBssInfo->ucNss = rDbdcCap.ucNss;
 		prP2pBssInfo->ucWmmQueSet = rDbdcCap.ucWmmSetIndex;
 #endif
+
+		/* Decide RF BW by own OP and Peer OP BW */
+		ucRfBw = cnmGetDbdcBwCapability(prAdapter, prP2pBssInfo->ucBssIndex);
+		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw); /* Revise to VHT OP BW */
+		if (ucRfBw > prJoinInfo->prTargetBssDesc->eChannelWidth)
+			ucRfBw = prJoinInfo->prTargetBssDesc->eChannelWidth;
+
+		prChnlReqInfo->eChannelWidth = ucRfBw;
+		/* TODO: BW80+80 support */
+		prChnlReqInfo->ucCenterFreqS1 =
+			nicGetVhtS1(prChnlReqInfo->ucReqChnlNum, prChnlReqInfo->eChannelWidth);
+		prChnlReqInfo->ucCenterFreqS2 = 0;
+
 		p2pRoleFsmStateTransition(prAdapter, prP2pRoleFsmInfo, P2P_ROLE_STATE_REQING_CHANNEL);
 	}
 

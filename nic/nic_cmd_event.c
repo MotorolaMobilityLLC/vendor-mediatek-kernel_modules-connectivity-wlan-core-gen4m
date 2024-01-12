@@ -2569,7 +2569,7 @@ WLAN_STATUS nicCfgChipCapPhyCap(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucEventBuf
 	prAdapter->rWifiVar.ucNSS = prPhyCap->ucNss;
 #if CFG_SUPPORT_DBDC
 	if (!prPhyCap->ucDbdc)
-		prAdapter->rWifiVar.ucDbdcMode = DBDC_MODE_DISABLED;
+		prAdapter->rWifiVar.eDbdcMode = ENUM_DBDC_MODE_DISABLED;
 #endif
 
 	return WLAN_STATUS_SUCCESS;
@@ -3427,8 +3427,8 @@ VOID nicEventUpdateCoexPhyrate(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEve
 
 VOID nicCmdEventQueryCnmInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
 {
-	struct _PARAM_GET_CNM_T *prCnmInfoQuery = NULL;
-	struct _PARAM_GET_CNM_T *prCnmInfoEvent = NULL;
+	struct PARAM_GET_CNM_T *prCnmInfoQuery = NULL;
+	struct PARAM_GET_CNM_T *prCnmInfoEvent = NULL;
 	P_GLUE_INFO_T prGlueInfo;
 	UINT_32 u4QueryInfoLen;
 
@@ -3437,12 +3437,12 @@ VOID nicCmdEventQueryCnmInfo(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 	ASSERT(pucEventBuf);
 
 	if (prCmdInfo->fgIsOid) {
-		prCnmInfoQuery = (struct _PARAM_GET_CNM_T *)prCmdInfo->pvInformationBuffer;
-		prCnmInfoEvent = (struct _PARAM_GET_CNM_T *)pucEventBuf;
-		kalMemCopy(prCnmInfoQuery, prCnmInfoEvent, sizeof(struct _PARAM_GET_CNM_T));
+		prCnmInfoQuery = (struct PARAM_GET_CNM_T *)prCmdInfo->pvInformationBuffer;
+		prCnmInfoEvent = (struct PARAM_GET_CNM_T *)pucEventBuf;
+		kalMemCopy(prCnmInfoQuery, prCnmInfoEvent, sizeof(struct PARAM_GET_CNM_T));
 
 		prGlueInfo = prAdapter->prGlueInfo;
-		u4QueryInfoLen = sizeof(struct _PARAM_GET_CNM_T);
+		u4QueryInfoLen = sizeof(struct PARAM_GET_CNM_T);
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery, u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }

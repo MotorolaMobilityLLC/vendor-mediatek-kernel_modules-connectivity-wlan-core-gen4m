@@ -218,6 +218,23 @@ typedef struct _RLM_CAL_RESULT_ALL_V2_T {
 extern RLM_CAL_RESULT_ALL_V2_T g_rBackupCalDataAllV2;
 #endif
 
+typedef VOID (*PFN_OPMODE_NOTIFY_DONE_FUNC)(P_ADAPTER_T, UINT_8, BOOLEAN);
+
+enum ENUM_OP_NOTIFY_TYPE_T {
+	OP_NOTIFY_TYPE_VHT_NSS_BW = 0,
+	OP_NOTIFY_TYPE_HT_NSS,
+	OP_NOTIFY_TYPE_HT_BW,
+	OP_NOTIFY_TYPE_NUM
+};
+
+enum ENUM_OP_CHANGE_STATUS_T {
+	OP_CHANGE_STATUS_INVALID = 0, /* input invalid */
+	OP_CHANGE_STATUS_VALID_NO_CHANGE, /* input valid, but no need to change */
+	OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE, /* process callback done before function return */
+	OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT, /* wait next INT to call callback */
+	OP_CHANGE_STATUS_NUM
+};
+
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
@@ -351,14 +368,36 @@ rlmSendOpModeNotificationFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, U
 VOID
 rlmSendSmPowerSaveFrame(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec, UINT_8 ucNss);
 
+WLAN_STATUS
+rlmNotifyVhtOpModeTxDone(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo, ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+
+WLAN_STATUS
+rlmSmPowerSaveTxDone(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo, ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+
+WLAN_STATUS
+rlmNotifyChannelWidthtTxDone(P_ADAPTER_T prAdapter, P_MSDU_INFO_T prMsduInfo, ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+
 UINT_8
 rlmGetBssOpBwByVhtAndHtOpInfo(P_BSS_INFO_T prBssInfo);
 
-VOID
-rlmChangeVhtOpBwPara(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 ucChannelWidth);
+UINT_8
+rlmGetVhtOpBwByBssOpBw(UINT_8 ucBssOpBw);
 
-BOOLEAN
-rlmChangeOperationMode(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, UINT_8 ucChannelWidth, UINT_8 ucNss);
+VOID
+rlmFillVhtOpInfoByBssOpBw(P_BSS_INFO_T prBssInfo, UINT_8 ucChannelWidth);
+
+enum ENUM_OP_CHANGE_STATUS_T
+rlmChangeOperationMode(
+	P_ADAPTER_T prAdapter,
+	UINT_8 ucBssIndex,
+	UINT_8 ucChannelWidth,
+	UINT_8 ucNss,
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
+	);
+
+VOID
+rlmDummyChangeOpHandler(P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, BOOLEAN fgIsChangeSuccess);
+
 
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 WLAN_STATUS rlmCalBackup(

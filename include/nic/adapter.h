@@ -360,9 +360,22 @@ struct _BSS_INFO_T {
 	UINT_32 u4RsnSelectedAKMSuite;
 	UINT_16 u2RsnSelectedCapInfo;
 
+	/*------------------------------------------------------------------------*/
+	    /* Operation mode change notification			      */
+	/*------------------------------------------------------------------------*/
+
+	BOOLEAN fgIsOpChangeChannelWidth; /*Need to change OpMode channel width*/
 	UINT_8 ucOpChangeChannelWidth; /* The OpMode channel width that we want to change to*/
-					/* 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz */
-	BOOLEAN fgIsOpChangeChannelWidth;
+					/* 0:20MHz, 1:40MHz, 2:80MHz, 3:160MHz 4:80+80MHz*/
+	BOOLEAN fgIsOpChangeNss; /*Need to change OpMode Nss*/
+	UINT_8 ucOpChangeNss; /* The OpMode Nss that we want to change to */
+
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler;
+
+	UINT_8 aucOpModeChangeState[OP_NOTIFY_TYPE_NUM];
+
+	UINT_8 aucOpModeChangeRetryCnt[OP_NOTIFY_TYPE_NUM];
+
 
     /*------------------------------------------------------------------------*/
 	/* Power Management related information                                   */
@@ -391,10 +404,9 @@ struct _BSS_INFO_T {
 	ENUM_BAND_T eBand;
 	UINT_8 ucPrimaryChannel;
 	UINT_8 ucHtOpInfo1;
-	UINT_8 ucHtPeerOpInfo1; /*Backup peer HT OP Info*/
 	UINT_16 u2HtOpInfo2;
 	UINT_16 u2HtOpInfo3;
-	UINT_8 ucNss;
+	UINT_8 ucNss;	/* Own OP Nss */
     /*------------------------------------------------------------------------*/
 	/* 802.11ac VHT operation IE when (prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_VHT) */
 	/* is true. They have the same definition with fields of                  */
@@ -405,11 +417,6 @@ struct _BSS_INFO_T {
 	UINT_8 ucVhtChannelFrequencyS1;
 	UINT_8 ucVhtChannelFrequencyS2;
 	UINT_16 u2VhtBasicMcsSet;
-
-	/* Backup peer VHT OpInfo */
-	UINT_8 ucVhtPeerChannelWidth;
-	UINT_8 ucVhtPeerChannelFrequencyS1;
-	UINT_8 ucVhtPeerChannelFrequencyS2;
 #endif
     /*------------------------------------------------------------------------*/
 	/* Required protection modes (CM)                                         */
@@ -805,10 +812,8 @@ typedef struct _WIFI_VAR_T {
 	UINT_8 ucTpTestMode;
 	UINT_8 ucSigmaTestMode;
 #if CFG_SUPPORT_DBDC
-	UINT_8 ucDbdcMode;
+	ENUM_CNM_DBDC_MODE_T eDbdcMode;
 	BOOLEAN fgDbDcModeEn;
-	TIMER_T rDBDCDisableCountdownTimer;	/* Prevent continuously trigger by reconnection  */
-	TIMER_T rDBDCSwitchGuardTimer;		/* Prevent switch too quick*/
 #endif
 	UINT_8 u4ScanCtrl;
 	UINT_8 ucScanChannelListenTime;

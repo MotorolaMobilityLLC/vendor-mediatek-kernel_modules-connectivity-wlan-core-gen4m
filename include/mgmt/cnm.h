@@ -169,20 +169,20 @@ typedef struct _CNM_DBDC_CAP_T {
 } CNM_DBDC_CAP_T, *P_CNM_DBDC_CAP_T;
 
 typedef enum _ENUM_CNM_DBDC_MODE_T {
-	DBDC_MODE_DISABLED,	/* A/G traffic separate by WMM, but both WMM TRX on band 0, CANNOT enable DBDC */
-	DBDC_MODE_STATIC,		/* A/G traffic separate by WMM, WMM0/1 TRX on band 0/1, CANNOT disable DBDC */
-	DBDC_MODE_DYNAMIC,		/* Automatically enable/disable DBDC, setting just like static/disable mode */
-	DBDC_MODE_NUM
+	ENUM_DBDC_MODE_DISABLED,	/* A/G traffic separate by WMM, but both TRX on band 0, CANNOT enable DBDC */
+	ENUM_DBDC_MODE_STATIC,		/* A/G traffic separate by WMM, WMM0/1 TRX on band 0/1, CANNOT disable DBDC */
+	ENUM_DBDC_MODE_DYNAMIC,		/* Automatically enable/disable DBDC, setting just like static/disable mode */
+	ENUM_DBDC_MODE_NUM
 } ENUM_CNM_DBDC_MODE_T, *P_ENUM_CNM_DBDC_MODE_T;
 
 typedef enum _ENUM_CNM_DBDC_SWITCH_MECHANISM_T { /* When DBDC available in dynamic DBDC */
-	DBDC_SWITCH_MECHANISM_LATENCY_MODE,		/* Switch to DBDC when available (less latency) */
-	DBDC_SWITCH_MECHANISM_THROUGHPUT_MODE,	/* Switch to DBDC when DBDC T-put > MCC T-put */
-	DBDC_SWITCH_MECHANISM_NUM
+	ENUM_DBDC_SWITCH_MECHANISM_LATENCY_MODE,		/* Switch to DBDC when available (less latency) */
+	ENUM_DBDC_SWITCH_MECHANISM_THROUGHPUT_MODE,	/* Switch to DBDC when DBDC T-put > MCC T-put */
+	ENUM_DBDC_SWITCH_MECHANISM_NUM
 } ENUM_CNM_DBDC_SWITCH_MECHANISM_T, *P_ENUM_CNM_DBDC_SWITCH_MECHANISM_T;
 #endif /*CFG_SUPPORT_DBDC*/
 
-enum _ENUM_CNM_NETWORK_TYPE_T {
+enum ENUM_CNM_NETWORK_TYPE_T {
 	ENUM_CNM_NETWORK_TYPE_OTHER,
 	ENUM_CNM_NETWORK_TYPE_AIS,
 	ENUM_CNM_NETWORK_TYPE_P2P_GC,
@@ -265,6 +265,11 @@ BOOLEAN cnmAisDetectP2PChannel(P_ADAPTER_T prAdapter, P_ENUM_BAND_T prBand, PUIN
 #if CFG_SUPPORT_DBDC
 VOID cnmInitDbdcSetting(IN P_ADAPTER_T prAdapter);
 
+VOID cnmDbdcOpModeChangeDoneCallback(
+	IN P_ADAPTER_T	prAdapter,
+	IN UINT_8		ucBssIndex,
+	IN BOOLEAN		fgSuccess);
+
 VOID cnmUpdateDbdcSetting(IN P_ADAPTER_T	prAdapter, IN BOOLEAN fgDbdcEn);
 
 VOID cnmGetDbdcCapability(
@@ -276,6 +281,11 @@ VOID cnmGetDbdcCapability(
 	OUT P_CNM_DBDC_CAP_T	prDbdcCap
 );
 
+UINT_8 cnmGetDbdcBwCapability(
+	P_ADAPTER_T	prAdapter,
+	UINT_8		ucBssIndex
+);
+
 VOID cnmDbdcEnableDecision(
 	IN P_ADAPTER_T	prAdapter,
 	IN UINT_8		ucChangedBssIndex,
@@ -283,10 +293,11 @@ VOID cnmDbdcEnableDecision(
 );
 
 VOID cnmDbdcDisableDecision(IN P_ADAPTER_T prAdapter,	IN UINT_8 ucChangedBssIndex);
-VOID cnmDbdcDecision(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr);
+VOID cnmDbdcGuardTimerCallback(IN P_ADAPTER_T prAdapter, IN ULONG plParamPtr);
+VOID cnmDbdcEventHwSwitchDone(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent);
 #endif /*CFG_SUPPORT_DBDC*/
 
-UINT_8 cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo);
+enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(P_BSS_INFO_T prBssInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S
