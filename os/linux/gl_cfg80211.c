@@ -6388,6 +6388,7 @@ int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 				  struct cfg80211_chan_def *chandef,
 				  unsigned int cac_time_ms)
 {
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -6407,13 +6408,16 @@ int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 						      dev,
 						      chandef,
 						      cac_time_ms);
-
+#else
+	return 0;
+#endif
 }
 #else
 int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 				  struct net_device *dev,
 				  struct cfg80211_chan_def *chandef)
 {
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -6430,7 +6434,9 @@ int mtk_cfg_start_radar_detection(struct wiphy *wiphy,
 	}
 
 	return mtk_p2p_cfg80211_start_radar_detection(wiphy, dev, chandef);
-
+#else
+	return 0;
+#endif
 }
 
 #endif
@@ -6441,6 +6447,7 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 			   struct net_device *dev,
 			   struct cfg80211_csa_settings *params)
 {
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -6457,7 +6464,9 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 	}
 
 	return mtk_p2p_cfg80211_channel_switch(wiphy, dev, params);
-
+#else
+	return 0;
+#endif
 }
 #endif
 #endif
@@ -6781,10 +6790,11 @@ int mtk_cfg_del_iface(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
 		return mtk_p2p_cfg80211_del_iface(wiphy, wdev);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_del_iface(wiphy, wdev);
 }
@@ -6950,10 +6960,12 @@ int mtk_cfg_add_key(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_add_key(wiphy, ndev, key_index,
 						pairwise, mac_addr, params);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_add_key(wiphy, ndev, key_index,
 				    pairwise,
@@ -6975,10 +6987,12 @@ int mtk_cfg_get_key(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_get_key(wiphy, ndev, key_index,
 					pairwise, mac_addr, cookie, callback);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_get_key(wiphy, ndev, key_index,
 				    pairwise, mac_addr, cookie, callback);
@@ -6998,10 +7012,12 @@ int mtk_cfg_del_key(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_del_key(wiphy, ndev, key_index,
 						pairwise, mac_addr);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_del_key(wiphy, ndev, key_index,
 				    pairwise, mac_addr);
@@ -7021,10 +7037,12 @@ int mtk_cfg_set_default_key(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_set_default_key(wiphy, ndev,
 						key_index, unicast, multicast);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_set_default_key(wiphy, ndev,
 					    key_index, unicast, multicast);
@@ -7043,8 +7061,10 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
 		return mtk_p2p_cfg80211_set_mgmt_key(wiphy, ndev, key_index);
+#endif
 	/* STA Mode */
 	DBGLOG(REQ, WARN, "STA don't support this function\n");
 	return -EFAULT;
@@ -7070,9 +7090,11 @@ int mtk_cfg_get_station(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
 		return mtk_p2p_cfg80211_get_station(wiphy, ndev, mac,
 						    sinfo);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_get_station(wiphy, ndev, mac, sinfo);
 }
@@ -7098,10 +7120,12 @@ int mtk_cfg_change_station(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_change_station(
 			wiphy, ndev, mac, params);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_change_station(wiphy, ndev, mac,
 					   params);
@@ -7127,9 +7151,11 @@ int mtk_cfg_add_station(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_add_station(wiphy, ndev, mac);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_add_station(wiphy, ndev, mac, params);
 }
@@ -7153,11 +7179,12 @@ int mtk_cfg_tdls_oper(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_tdls_oper(wiphy, ndev, peer, oper);
 }
@@ -7191,11 +7218,12 @@ int mtk_cfg_tdls_mgmt(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
+#endif
 
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	return mtk_cfg80211_tdls_mgmt(wiphy, dev, peer, action_code,
@@ -7235,7 +7263,7 @@ int mtk_cfg_del_station(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
 		return mtk_p2p_cfg80211_del_station(wiphy, ndev, params);
@@ -7243,6 +7271,7 @@ int mtk_cfg_del_station(struct wiphy *wiphy,
 		return mtk_p2p_cfg80211_del_station(wiphy, ndev, mac);
 #endif
 	}
+#endif
 	/* STA Mode */
 #if CFG_SUPPORT_TDLS
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
@@ -7268,10 +7297,11 @@ int mtk_cfg_scan(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo,
 			       request->wdev->netdev) > 0)
 		return mtk_p2p_cfg80211_scan(wiphy, request);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_scan(wiphy, request);
 }
@@ -7289,10 +7319,11 @@ void mtk_cfg_abort_scan(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0)
 		mtk_p2p_cfg80211_abort_scan(wiphy, wdev);
 	else	/* STA Mode */
+#endif
 		mtk_cfg80211_abort_scan(wiphy, wdev);
 }
 #endif
@@ -7311,11 +7342,12 @@ int mtk_cfg_sched_scan_start(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
+#endif
 
 	return mtk_cfg80211_sched_scan_start(wiphy, ndev, request);
 
@@ -7360,9 +7392,10 @@ int mtk_cfg_connect(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
 		return mtk_p2p_cfg80211_connect(wiphy, ndev, sme);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_connect(wiphy, ndev, sme);
 }
@@ -7380,10 +7413,11 @@ int mtk_cfg_disconnect(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
 		return mtk_p2p_cfg80211_disconnect(wiphy, ndev,
 						   reason_code);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_disconnect(wiphy, ndev, reason_code);
 }
@@ -7401,9 +7435,10 @@ int mtk_cfg_join_ibss(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
 		return mtk_p2p_cfg80211_join_ibss(wiphy, ndev, params);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_join_ibss(wiphy, ndev, params);
 }
@@ -7420,9 +7455,10 @@ int mtk_cfg_leave_ibss(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
 		return mtk_p2p_cfg80211_leave_ibss(wiphy, ndev);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_leave_ibss(wiphy, ndev);
 }
@@ -7441,10 +7477,12 @@ int mtk_cfg_set_power_mgmt(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		return mtk_p2p_cfg80211_set_power_mgmt(wiphy, ndev,
 						       enabled, timeout);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_set_power_mgmt(wiphy, ndev, enabled,
 					   timeout);
@@ -7463,12 +7501,12 @@ int mtk_cfg_set_pmksa(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_cfg80211_set_pmksa(wiphy, ndev, pmksa);
 }
 
@@ -7485,12 +7523,12 @@ int mtk_cfg_del_pmksa(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_cfg80211_del_pmksa(wiphy, ndev, pmksa);
 }
 
@@ -7506,12 +7544,12 @@ int mtk_cfg_flush_pmksa(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, TRACE, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_cfg80211_flush_pmksa(wiphy, ndev);
 }
 
@@ -7529,12 +7567,12 @@ int mtk_cfg_set_rekey_data(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_cfg80211_set_rekey_data(wiphy, dev, data);
 }
 #endif /* CONFIG_SUPPORT_GTK_REKEY */
@@ -7630,11 +7668,12 @@ int mtk_cfg_assoc(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0) {
 		DBGLOG(REQ, WARN, "P2P/AP don't support this function\n");
 		return -EFAULT;
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_assoc(wiphy, ndev, req);
 }
@@ -7653,11 +7692,12 @@ int mtk_cfg_remain_on_channel(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
 		return mtk_p2p_cfg80211_remain_on_channel(wiphy, wdev, chan,
 				duration, cookie);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_remain_on_channel(wiphy, wdev, chan,
 					      duration, cookie);
@@ -7675,12 +7715,13 @@ int mtk_cfg_cancel_remain_on_channel(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
 		return mtk_p2p_cfg80211_cancel_remain_on_channel(wiphy,
 				wdev,
 				cookie);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_cancel_remain_on_channel(wiphy, wdev,
 			cookie);
@@ -7708,16 +7749,20 @@ int mtk_cfg_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
 	}
 
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0)
 		return mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, params,
 						cookie);
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_mgmt_tx(wiphy, wdev, params, cookie);
 #else /* KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE */
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
 		return mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, channel, offchan,
 			wait, buf, len, no_cck, dont_wait_for_ack, cookie);
 	}
+#endif
 	/* STA Mode */
 	return mtk_cfg80211_mgmt_tx(wiphy, wdev, channel, offchan, wait, buf,
 			len, no_cck, dont_wait_for_ack, cookie);
@@ -7737,7 +7782,7 @@ void mtk_cfg_mgmt_frame_register(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
 		mtk_p2p_cfg80211_mgmt_frame_register(wiphy, wdev,
 						     frame_type,
@@ -7746,6 +7791,12 @@ void mtk_cfg_mgmt_frame_register(struct wiphy *wiphy,
 		mtk_cfg80211_mgmt_frame_register(wiphy, wdev, frame_type,
 						 reg);
 	}
+#else
+		mtk_cfg80211_mgmt_frame_register(wiphy, wdev, frame_type,
+						 reg);
+
+#endif
+
 }
 
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
@@ -7768,8 +7819,9 @@ void mtk_cfg_mgmt_frame_update(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return;
 	}
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	fgIsP2pNetDevice = mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev);
-
+#endif
 	DBGLOG(INIT, TRACE,
 		"netdev(0x%p) update management frame filter: 0x%08x\n",
 		wdev->netdev, upd->interface_stypes);
@@ -7862,12 +7914,12 @@ int mtk_cfg_testmode_cmd(struct wiphy *wiphy, void *data,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
 		return mtk_p2p_cfg80211_testmode_cmd(wiphy, wdev, data,
 						     len);
 	}
-
+#endif
 	return mtk_cfg80211_testmode_cmd(wiphy, wdev, data, len);
 #else
 	/* XXX: no information can to check the mtk_IsP2PNetDevice */
@@ -7891,12 +7943,12 @@ int mtk_cfg_change_bss(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_change_bss(wiphy, dev, params);
 }
 
@@ -7913,11 +7965,11 @@ int mtk_cfg_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
 		return mtk_cfg80211_mgmt_tx_cancel_wait(wiphy, wdev, cookie);
 	}
-
+#endif
 	return mtk_p2p_cfg80211_mgmt_tx_cancel_wait(wiphy, wdev,
 			cookie);
 }
@@ -7935,12 +7987,12 @@ int mtk_cfg_deauth(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_deauth(wiphy, dev, req);
 }
 
@@ -7957,12 +8009,12 @@ int mtk_cfg_disassoc(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_disassoc(wiphy, dev, req);
 }
 
@@ -7979,12 +8031,12 @@ int mtk_cfg_start_ap(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_start_ap(wiphy, dev, settings);
 }
 
@@ -8001,12 +8053,12 @@ int mtk_cfg_change_beacon(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_change_beacon(wiphy, dev, info);
 }
 
@@ -8026,12 +8078,12 @@ int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_stop_ap(wiphy, dev);
 }
 
@@ -8074,12 +8126,12 @@ int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, dev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_set_bitrate_mask(wiphy, dev, peer,
 			mask);
 }
@@ -8097,12 +8149,12 @@ int mtk_cfg_set_txpower(struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
 		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_set_txpower(wiphy, wdev, type, mbm);
 }
 
@@ -8119,13 +8171,13 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 		DBGLOG_LIMITED(REQ, TRACE, "driver is not ready\n");
 		return -EFAULT;
 	}
-
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
 		DBGLOG_LIMITED(REQ, TRACE,
 			"STA doesn't support this function\n");
 		return -EFAULT;
 	}
-
+#endif
 	return mtk_p2p_cfg80211_get_txpower(wiphy, wdev, dbm);
 }
 #endif /* (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0) */

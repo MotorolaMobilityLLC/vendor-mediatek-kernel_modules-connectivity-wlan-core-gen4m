@@ -5275,9 +5275,11 @@ int main_thread(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_BIT,
 				       &prGlueInfo->ulFlag)
 			&& prGlueInfo->prP2PDevInfo) {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 			/* P2p info will be null after p2p removed. */
 			p2pFuncUpdateMgmtFrameRegister(prGlueInfo->prAdapter,
 			       prGlueInfo->prP2PDevInfo->u4OsMgmtFrameFilter);
+#endif
 		}
 #endif
 

@@ -1218,6 +1218,7 @@ kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
 void kalP2PIndicateScanDone(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex, u_int8_t fgIsAbort)
 {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GL_P2P_DEV_INFO *prP2pGlueDevInfo =
 		(struct GL_P2P_DEV_INFO *) NULL;
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
@@ -1269,7 +1270,7 @@ void kalP2PIndicateScanDone(struct GLUE_INFO *prGlueInfo,
 		KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_DEL_INF);
 
 	} while (FALSE);
-
+#endif
 }				/* kalP2PIndicateScanDone */
 
 void
@@ -1279,6 +1280,7 @@ kalP2PIndicateBssInfo(struct GLUE_INFO *prGlueInfo,
 		struct RF_CHANNEL_INFO *prChannelInfo,
 		int32_t i4SignalStrength)
 {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct ieee80211_channel *prChannelEntry =
 		(struct ieee80211_channel *)NULL;
@@ -1340,7 +1342,7 @@ kalP2PIndicateBssInfo(struct GLUE_INFO *prGlueInfo,
 				i4SignalStrength, u4BufLen);
 
 	} while (FALSE);
-
+#endif
 	return;
 
 }				/* kalP2PIndicateBssInfo */
@@ -1656,8 +1658,9 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 #if KERNEL_VERSION(4, 0, 0) > CFG80211_VERSION_CODE
 			rStationInfo.filled = STATION_INFO_ASSOC_REQ_IES;
 #endif
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 			rStationInfo.generation = ++prP2pGlueInfo->i4Generation;
-
+#endif
 			rStationInfo.assoc_req_ies = prCliStaRec->pucAssocReqIe;
 			rStationInfo.assoc_req_ies_len =
 				prCliStaRec->u2AssocReqIeLen;
@@ -1667,8 +1670,9 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 				aucBssid,
 				&rStationInfo, GFP_KERNEL);
 		} else {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 			++prP2pGlueInfo->i4Generation;
-
+#endif
 			/* FIXME: The exception occurs at wlanRemove, and
 			 *    check GLUE_FLAG_HALT is the temporarily solution.
 			 */
@@ -1713,7 +1717,7 @@ void kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 
 #ifdef CFG_REPORT_TO_OS
-
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 		/* cac start disable for next cac slot
 		 * if enable in dfs channel
 		 */
@@ -1726,6 +1730,7 @@ void kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
 			GFP_KERNEL);
 		DBGLOG(INIT, INFO,
 			"kalP2PRddDetectUpdate: Update to OS Done\n");
+#endif
 #endif
 
 		if (prGlueP2pInfo->chandefCsa.chan)
@@ -2272,6 +2277,7 @@ void kalP2pPreStartRdd(
 	uint32_t ucPrimaryCh,
 	enum ENUM_BAND eBand)
 {
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211 && CFG_SUPPORT_DFS_MASTER
 	uint32_t freq =
 		nicChannelNum2Freq(ucPrimaryCh, eBand) / 1000;
 	struct cfg80211_chan_def chandef;
@@ -2296,8 +2302,61 @@ void kalP2pPreStartRdd(
 		ucRoleIdx,
 		&chandef,
 		P2P_AP_CAC_MIN_CAC_TIME_MS);
-
+#endif
 }
+
+
+void kalP2pIndicateRadarEvent(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucRoleIndex,
+	uint32_t event,
+	uint32_t freq)
+{
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211 && CFG_SUPPORT_DFS_MASTER
+	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
+	struct sk_buff *vendor_event = NULL;
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+
+	if (!prGlueP2pInfo) {
+		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
+		return;
+	}
+
+	DBGLOG(P2P, INFO,
+		"r=%d, event=%d, f=%d\n",
+		ucRoleIndex,
+		event,
+		freq);
+
+	vendor_event = cfg80211_vendor_event_alloc(
+		prGlueP2pInfo->prWdev->wiphy,
+		prGlueP2pInfo->prWdev,
+		sizeof(uint32_t) + NLMSG_HDRLEN,
+		event,
+		GFP_KERNEL);
+
+	if (!vendor_event) {
+		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u32(vendor_event,
+			NL80211_ATTR_WIPHY_FREQ,
+			freq) < 0)) {
+		DBGLOG(P2P, ERROR, "put freq fail.\n");
+		goto nla_put_failure;
+	}
+
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+
+	return;
+
+nla_put_failure:
+	if (vendor_event)
+		kfree_skb(vendor_event);
+#endif
+}
+
 
 void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRoleIndex,
@@ -2375,12 +2434,13 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		ch_width,
 		eHwMode);
 
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	vendor_event = kalCfg80211VendorEventAlloc(prGlueP2pInfo->prWdev->wiphy,
 			prGlueP2pInfo->prWdev,
 			4 * sizeof(u8) + 1 * sizeof(u16) + 4 + NLMSG_HDRLEN,
 			WIFI_EVENT_ACS,
 			GFP_KERNEL);
-
+#endif
 	if (!vendor_event) {
 		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
 		goto nla_put_failure;
@@ -2430,55 +2490,6 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 #if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
 #endif
-	return;
-
-nla_put_failure:
-	if (vendor_event)
-		kfree_skb(vendor_event);
-}
-
-void kalP2pIndicateRadarEvent(struct GLUE_INFO *prGlueInfo,
-	uint8_t ucRoleIndex,
-	uint32_t event,
-	uint32_t freq)
-{
-	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
-	struct sk_buff *vendor_event = NULL;
-
-	prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
-
-	if (!prGlueP2pInfo) {
-		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
-		return;
-	}
-
-	DBGLOG(P2P, INFO,
-		"r=%d, event=%d, f=%d\n",
-		ucRoleIndex,
-		event,
-		freq);
-
-	vendor_event = cfg80211_vendor_event_alloc(
-		prGlueP2pInfo->prWdev->wiphy,
-		prGlueP2pInfo->prWdev,
-		sizeof(uint32_t) + NLMSG_HDRLEN,
-		event,
-		GFP_KERNEL);
-
-	if (!vendor_event) {
-		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
-		goto nla_put_failure;
-	}
-
-	if (unlikely(nla_put_u32(vendor_event,
-			NL80211_ATTR_WIPHY_FREQ,
-			freq) < 0)) {
-		DBGLOG(P2P, ERROR, "put freq fail.\n");
-		goto nla_put_failure;
-	}
-
-	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
-
 	return;
 
 nla_put_failure:
@@ -2545,7 +2556,7 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 
 	/* Compose ch info. */
 	if (prP2PInfo->fgChannelSwitchReq) {
-		struct ieee80211_channel *chan;
+		struct ieee80211_channel *chan = NULL;
 
 		prP2PInfo->fgChannelSwitchReq = false;
 		kalMemZero(
@@ -2558,12 +2569,13 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		kalMemZero(
 			prP2PInfo->chandefCsa.chan,
 			sizeof(struct ieee80211_channel));
-
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 		chan = ieee80211_get_channel(
 				prP2PInfo->prWdev->wiphy,
 				nicChannelNum2Freq(
 					prBssInfo->ucPrimaryChannel,
 					prBssInfo->eBand) / 1000);
+#endif
 		if (!chan) {
 			DBGLOG(P2P, WARN,
 				"get channel fail\n");
@@ -2845,12 +2857,15 @@ int32_t kalGetMulAPIfIdx(struct GLUE_INFO *prGlueInfo,
 }
 #endif
 
+
 void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo)
 {
 	void *pvRet = NULL;
 
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (prGlueInfo && prGlueInfo->prP2PDevInfo)
 		pvRet = (void *)(prGlueInfo->prP2PDevInfo->prScanRequest);
+#endif
 
 	return pvRet;
 }
@@ -2858,11 +2873,11 @@ void *kalGetP2pDevScanReq(struct GLUE_INFO *prGlueInfo)
 u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
 {
 	u_int8_t fgScanSpecificSSID = FALSE;
-
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	if (prGlueInfo && prGlueInfo->prP2PDevInfo) {
 		fgScanSpecificSSID =
 			prGlueInfo->prP2PDevInfo->fgScanSpecificSSID;
 	}
-
+#endif
 	return fgScanSpecificSSID;
 }
