@@ -7257,11 +7257,12 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	if (prBssDesc) {
 		DBGLOG(RLM, INFO,
 		       "DFS: BSS: " MACSTR
-		       " Desc found, channel from %u to %u (band:%u) with sco:%u\n ",
+		       " Desc found, channel from %u to %u (band from %u to %u) with sco:%u\n ",
 		       MAC2STR(prBssInfo->aucBSSID),
 		       prBssDesc->ucChannelNum, prCSAParams->ucCsaNewCh,
-		       prBssInfo->eBand, prBssInfo->eBssSCO);
+		       prBssDesc->eBand, prBssInfo->eBand, prBssInfo->eBssSCO);
 
+		prBssDesc->eBand = prBssInfo->eBand;
 		prBssDesc->ucChannelNum = prBssInfo->ucPrimaryChannel;
 		prBssDesc->eChannelWidth = prBssInfo->ucVhtChannelWidth;
 		prBssDesc->ucCenterFreqS1 = prBssInfo->ucVhtChannelFrequencyS1;

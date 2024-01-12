@@ -7481,35 +7481,30 @@ void p2pFuncSwitchGcChannel(
 	}
 #endif
 
-	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-		cnmGet80211Band(prP2pBssInfo->eBand) !=
-			cnmGet80211Band(prChnlReqInfo->eBand)) {
+	/* Indicate PM abort to sync BSS state with FW */
+	nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+	prP2pBssInfo->ucDTIMPeriod = 0;
 
-		/* Indicate PM abort to sync BSS state with FW */
-		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
-		prP2pBssInfo->ucDTIMPeriod = 0;
-
-		/* Update BSS with temp. disconnect state to FW */
-		p2pDeactivateAllLink(prAdapter,
-			prP2pRoleFsmInfo,
-			FALSE);
-		p2pChangeMediaState(prAdapter, prP2pBssInfo,
-			MEDIA_STATE_DISCONNECTED);
-		nicUpdateBssEx(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			FALSE);
+	/* Update BSS with temp. disconnect state to FW */
+	p2pDeactivateAllLink(prAdapter,
+		prP2pRoleFsmInfo,
+		FALSE);
+	p2pChangeMediaState(prAdapter, prP2pBssInfo,
+		MEDIA_STATE_DISCONNECTED);
+	nicUpdateBssEx(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		FALSE);
 
 #if CFG_SUPPORT_DBDC
-		CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
-			prP2pBssInfo->ucBssIndex,
-			prP2pBssInfo->eBand,
-			prP2pBssInfo->ucPrimaryChannel,
-			prP2pBssInfo->ucWmmQueSet);
+	CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
+		prP2pBssInfo->ucBssIndex,
+		prP2pBssInfo->eBand,
+		prP2pBssInfo->ucPrimaryChannel,
+		prP2pBssInfo->ucWmmQueSet);
 
-		cnmDbdcPreConnectionEnableDecision(prAdapter,
-			&rDbdcDecisionInfo);
+	cnmDbdcPreConnectionEnableDecision(prAdapter,
+		&rDbdcDecisionInfo);
 #endif
-	}
 
 	/* Update channel parameters & channel request info */
 	rRfChnlInfo.ucChannelNum = prP2pBssInfo->ucPrimaryChannel;
