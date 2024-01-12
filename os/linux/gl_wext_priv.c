@@ -3765,6 +3765,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_DFS_RDDREPORT		"RDDReport"
 #define CMD_SET_DFS_RADARMODE		"RadarDetectMode"
 #define CMD_SET_DFS_RADAREVENT		"RadarEvent"
+#define CMD_SET_DFS_RDDOPCHNG		"RDDOpChng"
 #endif
 #if CFG_SUPPORT_IDC_CH_SWITCH
 #define CMD_SET_IDC_BMP		"SetIdcBmp"
@@ -10332,6 +10333,80 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+int priv_driver_set_rdd_op_mode(IN struct net_device *prNetDev,
+				IN char *pcCommand, IN int i4TotalLen)
+{
+	struct WIFI_EVENT *pEvent;
+	struct EVENT_RDD_OPMODE_CHANGE *prEventBody;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		goto error;
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		goto error;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		goto error;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	pEvent = (struct WIFI_EVENT *) kalMemAlloc(sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_RDD_OPMODE_CHANGE), VIR_MEM_TYPE);
+	if (!pEvent)
+		goto error;
+
+	prEventBody = (struct EVENT_RDD_OPMODE_CHANGE *)
+		&(pEvent->aucBuffer[0]);
+	prEventBody->u2Tag = 2;
+	prEventBody->u2EvtLen = 0;
+	prEventBody->ucBssBitmap = BIT(3);
+	prEventBody->ucEnable = 1;
+	prEventBody->ucOpTxNss = 1;
+	prEventBody->ucOpRxNss = 1;
+	prEventBody->ucAction = 0;
+
+	prEventBody->ucReason = 0;
+	prEventBody->ucPriChannel = 36;
+	prEventBody->ucChBw = 2;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+	if (i4Argc >= 6) {
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &prEventBody->ucPriChannel);
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &prEventBody->ucChBw);
+		u4Ret = kalkStrtou8(apcArgv[3], 0, &prEventBody->ucOpTxNss);
+		u4Ret = kalkStrtou8(apcArgv[4], 0, &prEventBody->ucOpRxNss);
+		u4Ret = kalkStrtou8(apcArgv[5], 0, &prEventBody->ucAction);
+	} else {
+		DBGLOG(REQ, INFO, "Input insufficent\n");
+		goto error;
+	}
+	DBGLOG(P2P, INFO,
+		"prEventBody.ucVersion = %d\n",
+		prEventBody->u2Tag);
+
+	cnmRddOpmodeEventHandler(prGlueInfo->prAdapter,
+		(struct WIFI_EVENT *) pEvent);
+	kalMemFree(pEvent,
+		VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_RDD_OPMODE_CHANGE));
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n rdd op change event 1");
+
+	return i4BytesWritten;
+error:
+
+	return -1;
+}
+
 int priv_driver_set_dfs_channel_available(
 				IN struct net_device *prNetDev,
 				IN char *pcCommand, IN int i4TotalLen)
@@ -17688,6 +17763,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_DFS_RDDREPORT, priv_driver_rddreport},
 	{CMD_SET_DFS_RADARMODE, priv_driver_radarmode},
 	{CMD_SET_DFS_RADAREVENT, priv_driver_radarevent},
+	{CMD_SET_DFS_RDDOPCHNG, priv_driver_set_rdd_op_mode},
 #endif
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	{CMD_SET_IDC_BMP, priv_driver_set_idc_bmp},

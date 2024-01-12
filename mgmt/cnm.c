@@ -87,6 +87,11 @@
 #define IDC_CSA_GUARD_TIME			(60)	/* 60 Sec */
 #endif
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+#define RDD_OP_CHG_NO_ACT           (0)
+#define RDD_OP_CHG_STOP_CAC         (1)
+#endif
+
 #define CNM_WMM_QUOTA_RETRIGGER_TIME_MS (200)	/* ms */
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -4415,6 +4420,9 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_USER_CONFIG:
 		eReqIdx = CNM_OPMODE_REQ_USER_CONFIG;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_RDD:
+		eReqIdx = CNM_OPMODE_REQ_RDD_OPCHNG;
+		break;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
@@ -4744,6 +4752,12 @@ cnmOpModeSetTRxNss(
 			}
 		}
 
+		if (eNewReq == CNM_OPMODE_REQ_RDD_OPCHNG &&
+			IS_BSS_APGO(prBssInfo))
+			ucOpBwFinal = prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[prBssInfo->u4PrivateData]
+				->ucRddBw;
+
 		/* Step 4. Execute OpMode change function for alive BSS */
 		if (eNewReq == CNM_OPMODE_REQ_SMARTGEAR_1T2R ||
 			eNewReq == CNM_OPMODE_REQ_ANT_CTRL_1T2R)
@@ -5000,6 +5014,145 @@ void cnmOpmodeEventHandler(
 				prEvtOpMode->ucOpTxNss, prEvtOpMode->ucOpRxNss);
 	}
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Event handler for EVENT_ID_OPMODE_CHANGE
+ *
+ * @param prAdapter
+ * @param prEvent
+ *
+ * @return
+ */
+/*----------------------------------------------------------------------------*/
+void cnmRddOpmodeEventHandler(
+	IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent)
+{
+	struct EVENT_RDD_OPMODE_CHANGE *prRddEvtOpMode;
+
+	IN struct WIFI_EVENT *pEventOpMode = NULL;
+	struct EVENT_OPMODE_CHANGE *prEventBody;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex;
+	uint8_t ucRoleIndex;
+
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR,
+					"[RDD]NULL prAdapter\n");
+		return;
+	}
+
+	prRddEvtOpMode = (struct EVENT_RDD_OPMODE_CHANGE *)
+		(prEvent->aucBuffer);
+
+	for (ucBssIndex = 0;
+		 ucBssIndex < prAdapter->ucHwBssIdNum;
+		 ucBssIndex++) {
+		if (prRddEvtOpMode->ucBssBitmap & BIT(ucBssIndex))
+			break;
+	}
+
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	if (prBssInfo) {
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prBssInfo->u4PrivateData);
+		ucRoleIndex = prBssInfo->u4PrivateData;
+	}
+	if (prP2pRoleFsmInfo)
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+
+	if (prP2pConnReqInfo) {
+		DBGLOG(P2P, TRACE,
+			"[RDD]Current CH=%d,Band=%d,BW=%d\n",
+			prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+			prP2pConnReqInfo->rChannelInfo.eBand,
+			prP2pConnReqInfo->rChannelInfo.ucChnlBw);
+	} else
+		return;
+
+	if (prRddEvtOpMode->ucChBw !=
+		prP2pConnReqInfo->rChannelInfo.ucChnlBw ||
+		prRddEvtOpMode->ucOpRxNss !=
+		prBssInfo->ucOpRxNss ||
+		prRddEvtOpMode->ucOpTxNss !=
+		prBssInfo->ucOpTxNss ||
+		prRddEvtOpMode->ucAction ==
+		RDD_OP_CHG_STOP_CAC) {
+		pEventOpMode =
+			(struct WIFI_EVENT *)
+			kalMemAlloc(sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_OPMODE_CHANGE), VIR_MEM_TYPE);
+		prEventBody =
+			(struct EVENT_OPMODE_CHANGE *)
+			&(pEventOpMode->aucBuffer[0]);
+		prEventBody->ucEvtVer = 0;
+		prEventBody->u2EvtLen = prRddEvtOpMode->u2EvtLen;
+		prEventBody->ucBssBitmap = prRddEvtOpMode->ucBssBitmap;
+		prEventBody->ucEnable = prRddEvtOpMode->ucEnable;
+		prEventBody->ucOpTxNss = prRddEvtOpMode->ucOpTxNss;
+		prEventBody->ucOpRxNss = prRddEvtOpMode->ucOpRxNss;
+		prEventBody->ucReason = EVENT_OPMODE_CHANGE_REASON_RDD;
+		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
+			->ucRddBw = prRddEvtOpMode->ucChBw;
+	}
+
+	if (p2pFuncGetDfsState() == DFS_STATE_CHECKING &&
+		prRddEvtOpMode->ucAction == RDD_OP_CHG_STOP_CAC) {
+		struct MSG_P2P_RADAR_DETECT *prP2pRddDetMsg;
+
+		prP2pRddDetMsg = (struct MSG_P2P_RADAR_DETECT *)
+			cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, sizeof(*prP2pRddDetMsg));
+		prP2pRddDetMsg->rMsgHdr.eMsgId =
+		MID_CNM_P2P_RADAR_DETECT;
+		prP2pRddDetMsg->ucBssIndex = ucBssIndex;
+		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
+			->fgIsRddOpchng = TRUE;
+		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
+			->ucRddCh = prRddEvtOpMode->ucPriChannel;
+		if (pEventOpMode)
+			prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->prRddPostOpchng = pEventOpMode;
+		else
+			prAdapter->rWifiVar
+				.prP2pSpecificBssInfo[ucRoleIndex]
+				->prRddPostOpchng = NULL;
+		p2pRoleFsmRunEventRadarDet(prAdapter,
+		(struct MSG_HDR *) prP2pRddDetMsg);
+	} else if (p2pFuncGetDfsState() != DFS_STATE_CHECKING &&
+		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex] &&
+		prRddEvtOpMode->ucPriChannel !=
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum) {
+		struct RF_CHANNEL_INFO rfChannelInfo;
+
+		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
+			->fgIsRddOpchng = TRUE;
+		rfChannelInfo = prP2pConnReqInfo->rChannelInfo;
+		rfChannelInfo.ucChannelNum = prRddEvtOpMode->ucPriChannel;
+		if (prRddEvtOpMode->ucPriChannel < 14)
+			rfChannelInfo.eBand = BAND_2G4;
+		else
+			rfChannelInfo.eBand = BAND_5G;
+		cnmSapChannelSwitchReq(prAdapter,
+		&rfChannelInfo,
+		ucRoleIndex);
+		prAdapter->rWifiVar.prP2pSpecificBssInfo[ucRoleIndex]
+			->prRddPostOpchng = pEventOpMode;
+	} else if (pEventOpMode) {
+		if (p2pFuncGetDfsState() != DFS_STATE_CHECKING)
+			cnmOpmodeEventHandler(prAdapter, pEventOpMode);
+		kalMemFree(pEventOpMode,
+			VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_OPMODE_CHANGE));
+	}
 }
 
 enum ENUM_CNM_WMM_QUOTA_REQ_T

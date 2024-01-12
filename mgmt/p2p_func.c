@@ -2351,6 +2351,22 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 #endif
 	cnmIdcSwitchSapChannel(prAdapter);
+	if (prAdapter->rWifiVar
+		.prP2pSpecificBssInfo[role_idx]
+		->fgIsRddOpchng == TRUE) {
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[role_idx]
+			->fgIsRddOpchng = FALSE;
+		cnmOpmodeEventHandler(prAdapter,
+			prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[role_idx]
+			->prRddPostOpchng);
+		kalMemFree(prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[role_idx]
+			->prRddPostOpchng,
+			VIR_MEM_TYPE, sizeof(struct WIFI_EVENT)+
+			sizeof(struct EVENT_OPMODE_CHANGE));
+	}
 } /* p2pFuncDfsSwitchCh */
 
 u_int8_t p2pFuncCheckWeatherRadarBand(
