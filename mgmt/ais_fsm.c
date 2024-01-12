@@ -3693,6 +3693,12 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 
 	aisRestoreAllLink(prAdapter, prAisFsmInfo);
 
+	/* If AP reject STA temporarily when roaming, clear all link.
+	 * Thus, ap selection can choose same AP to retry.
+	 */
+	if (fgTempReject)
+		aisClearAllLink(prAisFsmInfo);
+
 	/* aisRestoreAllLink clears target bssdesc and starec if no connection,
 	 * DO NOT use prStaRec or aisGetTargetBssDesc after this point
 	 */
@@ -8635,6 +8641,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		else
 			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif
+		prSubReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 		prSubReq->ucTokenID = *ucChTokenId;
 		prSubReq->eReqType = CH_REQ_TYPE_JOIN;
 		prSubReq->u4MaxInterval = AIS_JOIN_CH_REQUEST_INTERVAL;
