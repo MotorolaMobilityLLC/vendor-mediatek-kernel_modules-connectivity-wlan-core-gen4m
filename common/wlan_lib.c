@@ -6906,6 +6906,10 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"RegP2pIfAtProbe", FEATURE_DISABLED);
 #endif
+
+	prWifiVar->ucRegP2pMode = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"RegP2pMode", DEFAULT_RUNNING_P2P_MODE);
+
 	prWifiVar->ucP2pShareMacAddr = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"P2pShareMacAddr", FEATURE_DISABLED);
 

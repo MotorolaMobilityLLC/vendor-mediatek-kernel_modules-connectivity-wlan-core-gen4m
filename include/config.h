@@ -1190,6 +1190,12 @@
 #define RUNNING_P2P_DEV_MODE 5
 #define RUNNING_P2P_MODE_NUM 6
 
+#ifdef CFG_DRIVER_INITIAL_RUNNING_MODE
+#define DEFAULT_RUNNING_P2P_MODE (CFG_DRIVER_INITIAL_RUNNING_MODE)
+#else
+#define DEFAULT_RUNNING_P2P_MODE (RUNNING_P2P_MODE)
+#endif /* CFG_DRIVER_RUNNING_MODE */
+
 /*------------------------------------------------------------------------------
  * Flags of MSP SUPPORT
  *------------------------------------------------------------------------------
