@@ -432,7 +432,12 @@ struct pcie_msi_layout mt6639_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#if CFG_MTK_CCCI_SUPPORT
+	{"drv_own_md_timeout_irq", mtk_md_dummy_pci_interrupt,
+	 NULL, MDDP_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO || CFG_MTK_WIFI_FW_LOG_EMI
 	{"fw_log_irq", pcie_fw_log_top_handler,
 	 pcie_fw_log_thread_handler, AP_MISC_INT, 0},
