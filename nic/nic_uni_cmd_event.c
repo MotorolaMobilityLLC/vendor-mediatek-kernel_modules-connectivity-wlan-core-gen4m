@@ -133,6 +133,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_ADD_REMOVE_KEY] = nicUniCmdInstallKey,
 	[CMD_ID_DEFAULT_KEY_ID] = nicUniCmdInstallDefaultKey,
 	[CMD_ID_SET_GTK_REKEY_DATA] = nicUniCmdOffloadKey,
+	[CMD_ID_HIF_CTRL] = nicUniCmdHifCtrl,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -3214,6 +3215,38 @@ uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
 	tag->u4GroupCipher = cmd->u4GroupCipher;
 	tag->u4KeyMgmt = cmd->u4KeyMgmt;
 	tag->u4MgmtGroupCipher = cmd->u4MgmtGroupCipher;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdHifCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_HIF_CTRL *cmd;
+	struct UNI_CMD_HIF_CTRL *uni_cmd;
+	struct UNI_CMD_HIF_CTRL_BASIC *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_HIF_CTRL) +
+	     		       sizeof(struct UNI_CMD_HIF_CTRL_BASIC);
+
+	if (info->ucCID != CMD_ID_HIF_CTRL ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_HIF_CTRL *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_HIF_CTRL,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_HIF_CTRL *) entry->pucInfoBuffer;
+	uni_cmd->ucHifType = cmd->ucHifType;
+	tag = (struct UNI_CMD_HIF_CTRL_BASIC *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_HIF_CTRL_TAG_BASIC;
+	tag->u2Length = sizeof(*tag);
+	tag->ucHifSuspend = cmd->ucHifSuspend;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
