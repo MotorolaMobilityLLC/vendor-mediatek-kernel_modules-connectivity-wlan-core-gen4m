@@ -168,14 +168,29 @@ int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 static void mtk_vif_destructor(struct net_device *dev)
 {
 	struct wireless_dev *prWdev = ERR_PTR(-ENOMEM);
-
-	DBGLOG(P2P, INFO, "mtk_vif_destructor\n");
+	uint32_t u4Idx = 0;
 	if (dev) {
+		DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
 		prWdev = dev->ieee80211_ptr;
 		free_netdev(dev);
 		/* Expect that the gprP2pWdev isn't freed here */
-		if (prWdev)
+		if (prWdev) {
+			/* Role[i] and Dev share the same wdev by default */
+			for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
+				if (prWdev == gprP2pWdev[u4Idx])
+					continue;
+				if (prWdev != gprP2pRoleWdev[u4Idx])
+					continue;
+				/* In the initWlan gprP2pRoleWdev[0] is equal to
+				 * gprP2pWdev. And other gprP2pRoleWdev[] should
+				 * be NULL, if the 2nd P2P dev isn't created.
+				 */
+				DBGLOG(P2P, INFO, "Restore role %d\n", u4Idx);
+				gprP2pRoleWdev[u4Idx] = gprP2pWdev[u4Idx];
+				break;
+			}
 			kfree(prWdev);
+		}
 	}
 }
 
@@ -301,7 +316,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-		kalMemCopy(prWdev, gprP2pWdev, sizeof(struct wireless_dev));
+		kalMemCopy(prWdev,
+			gprP2pWdev[u4Idx],
+			sizeof(struct wireless_dev));
 		prWdev->netdev = prNewNetDevice;
 		prWdev->iftype = type;
 		prNewNetDevice->ieee80211_ptr = prWdev;
@@ -376,7 +393,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 
 		/* Backup */
-		prP2pInfo->prOrigWdev = prP2pInfo->prWdev;
 		prP2pInfo->prWdev = prWdev;
 
 		/* 4.2 fill hardware address */
@@ -398,7 +414,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		kalMemCopy(prNewNetDevice->dev_addr, rMacAddr, ETH_ALEN);
 		kalMemCopy(prNewNetDevice->perm_addr, rMacAddr, ETH_ALEN);
 
-		DBGLOG(P2P, TRACE,
+		DBGLOG(P2P, INFO,
 			"mtk_p2p_cfg80211_add_iface ucBssIdx=%d\n",
 			prNetDevPriv->ucBssIdx);
 
@@ -460,7 +476,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		kfree(prWdev);
 
 		if ((gprP2pRoleWdev[u4Idx] != NULL) &&
-		    (gprP2pRoleWdev[u4Idx] != gprP2pWdev)) {
+		    (gprP2pRoleWdev[u4Idx] != gprP2pWdev[u4Idx])) {
 			gprP2pRoleWdev[u4Idx] = prOrigWdev;
 		}
 	}
@@ -588,8 +604,7 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;
 	/* Restore */
-	prP2pInfo->prWdev = prP2pInfo->prOrigWdev;
-	gprP2pRoleWdev[u4Idx] = prP2pInfo->prOrigWdev;
+	prP2pInfo->prWdev = gprP2pWdev[u4Idx];
 #if 1
 	prScanRequest = prP2pGlueDevInfo->prScanRequest;
 	if ((prScanRequest != NULL) &&
@@ -1509,6 +1524,35 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 
+		if ((prGlueInfo->prAdapter->rWifiVar.
+			fgSapConcurrencyPolicy ==
+			P2P_CONCURRENCY_POLICY_REMOVE) &&
+			(ucRoleIdx == 0) &&
+			aisGetConnectedBssInfo(
+			prGlueInfo->prAdapter) &&
+			p2pFuncIsDualAPMode(
+			prGlueInfo->prAdapter)) {
+			DBGLOG(P2P, WARN,
+				"Remove sap (role%d)\n",
+				ucRoleIdx);
+			i4Rslt = 0;
+			break;
+		}
+
+		if (dev->ieee80211_ptr &&
+			(dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP) &&
+			!p2pFuncIsAPMode(
+				prGlueInfo->prAdapter->rWifiVar.
+				prP2PConnSettings[ucRoleIdx])) {
+			DBGLOG(P2P, ERROR,
+				"Set fgIsApMode (role%d)\n",
+				ucRoleIdx);
+			p2pFuncInitConnectionSettings(prGlueInfo->prAdapter,
+				prGlueInfo->prAdapter->rWifiVar.
+				prP2PConnSettings[ucRoleIdx],
+				TRUE);
+		}
+
 		if (chandef) {
 			kalChannelFormatSwitch(chandef, chandef->chan,
 					&rRfChnlInfo);
@@ -1585,7 +1629,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 		pucBuffer = prP2pBcnUpdateMsg->aucBuffer;
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
+		if ((rRfChnlInfo.eBand == BAND_5G) &&
+			(p2pFuncGetDfsState() == DFS_STATE_DETECTED))
 			p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 #endif
 		if (settings->beacon.head_len != 0) {
@@ -1743,10 +1788,7 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
-		(struct MSG_P2P_DFS_CAC *) NULL;
 	uint8_t ucRoleIdx = 0;
-	struct RF_CHANNEL_INFO rRfChnlInfo;
 
 	do {
 		if ((wiphy == NULL) || (chandef == NULL))
@@ -1759,94 +1801,11 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy,
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;
 
-		if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef =
-				(struct cfg80211_chan_def *)
-					cnmMemAlloc(prGlueInfo->prAdapter,
-					RAM_TYPE_BUF,
-					sizeof(struct cfg80211_chan_def));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef == NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan =
-				(struct ieee80211_channel *)
-					cnmMemAlloc(prGlueInfo->prAdapter,
-					RAM_TYPE_BUF,
-					sizeof(struct ieee80211_channel));
-			if (prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan
-				== NULL) {
-				i4Rslt = -ENOMEM;
-				break;
-			}
-		}
-
-		/* Copy chan def to local buffer*/
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq1 = chandef->center_freq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->center_freq2 = chandef->center_freq2;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandef->width = chandef->width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandef->chan,
-			chandef->chan, sizeof(struct ieee80211_channel));
-		prGlueInfo->prP2PInfo[ucRoleIdx]->cac_time_ms = cac_time_ms;
-
-		if (chandef) {
-			kalChannelFormatSwitch(chandef, chandef->chan,
-					&rRfChnlInfo);
-
-			p2pFuncSetChannel(prGlueInfo->prAdapter,
-				ucRoleIdx, &rRfChnlInfo);
-		}
-
-		DBGLOG(P2P, INFO,
-			"mtk_p2p_cfg80211_start_radar_detection.(role %d)\n",
-			ucRoleIdx);
-
-		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
-
-		prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *)
-			cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_MSG, sizeof(*prP2pDfsCacMsg));
-
-		if (prP2pDfsCacMsg == NULL) {
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prP2pDfsCacMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DFS_CAC;
-
-		switch (chandef->width) {
-		case NL80211_CHAN_WIDTH_20_NOHT:
-		case NL80211_CHAN_WIDTH_20:
-		case NL80211_CHAN_WIDTH_40:
-			prP2pDfsCacMsg->eChannelWidth = CW_20_40MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_80:
-			prP2pDfsCacMsg->eChannelWidth = CW_80MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_80P80:
-			prP2pDfsCacMsg->eChannelWidth = CW_80P80MHZ;
-			break;
-
-		default:
-			DBGLOG(P2P, ERROR,
-				"mtk_p2p_cfg80211_start_radar_detection. !!!Bandwidth do not support!!!\n");
-			ASSERT(FALSE);
-			break;
-		}
-
-		prP2pDfsCacMsg->ucRoleIdx = ucRoleIdx;
-
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prP2pDfsCacMsg,
-			MSG_SEND_METHOD_BUF);
-
-		i4Rslt = 0;
+		i4Rslt = p2pFuncPreStartRdd(
+			prGlueInfo->prAdapter,
+			ucRoleIdx,
+			chandef,
+			cac_time_ms);
 
 	} while (FALSE);
 
@@ -3187,7 +3146,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 		case NL80211_IFTYPE_P2P_CLIENT:
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
 			prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
-			/* fallthrough */
+			/* This case need to fall through */
 		case NL80211_IFTYPE_STATION:
 			if (type == NL80211_IFTYPE_STATION) {
 				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
@@ -3200,7 +3159,7 @@ mtk_p2p_cfg80211_change_iface(IN struct wiphy *wiphy,
 			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 			prSwitchModeMsg->eIftype = IFTYPE_AP;
-			/* fallthrough */
+			/* This case need to fall through */
 		case NL80211_IFTYPE_P2P_GO:
 			if (type == NL80211_IFTYPE_P2P_GO) {
 				DBGLOG(P2P, TRACE,

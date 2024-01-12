@@ -453,6 +453,17 @@ static struct ieee80211_rate mtk_rates[] = {
 		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G,    \
 }
 
+#define WLAN_HE_CAP_160_ELEM_INFO					\
+{								\
+	.mac_cap_info[0] =					\
+		IEEE80211_HE_MAC_CAP0_HTC_HE,			\
+	.mac_cap_info[3] =					\
+		IEEE80211_HE_MAC_CAP3_OMI_CONTROL,		\
+	.phy_cap_info[0] =					\
+		IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_40MHZ_80MHZ_IN_5G    \
+		| IEEE80211_HE_PHY_CAP0_CHANNEL_WIDTH_SET_160MHZ_IN_5G,    \
+}
+
 #define WLAN_HE_MCS_NSS_SUPP_INFO				\
 {								\
 	.rx_mcs_80 = cpu_to_le16(0xFFFA),			\
@@ -466,11 +477,22 @@ static struct ieee80211_rate mtk_rates[] = {
 	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
 }
 
+#define WLAN_HE_CAP_160_INFO					\
+{								\
+	.has_he = true,						\
+	.he_cap_elem = WLAN_HE_CAP_160_ELEM_INFO,			\
+	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
+}
+
 static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
 	{
 		.types_mask =
 			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		.he_cap = WLAN_HE_CAP_160_INFO,
+#else
 		.he_cap = WLAN_HE_CAP_INFO,
+#endif
 	},
 };
 
@@ -1168,6 +1190,31 @@ static const struct nl80211_vendor_cmd_info
 		.subcmd = WIFI_EVENT_OP_MODE_CHANGE
 	},
 #endif
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_STARTED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_FINISHED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_ABORTED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_CAC_NOP_FINISHED
+	},
+
+	{
+		.vendor_id = OUI_QCA,
+		.subcmd = NL80211_VENDOR_SUBCMD_DFS_OFFLOAD_RADAR_DETECTED
+	},
 };
 #endif
 
@@ -2293,6 +2340,12 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 	case VHT_OP_CHANNEL_WIDTH_80:
 		u4BandWidth = 80;
 		break;
+	case VHT_OP_CHANNEL_WIDTH_160:
+		u4BandWidth = 160;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_320:
+		u4BandWidth = 320;
+		break;
 	default:
 		DBGLOG(INIT, WARN, "unsupported bandwidth: %d", ucBandWidth);
 		return FALSE;
@@ -2651,6 +2704,7 @@ static void wlanCreateWirelessDevice(void)
 
 	/* Allocate GLUE_INFO and set priv as pointer to glue structure */
 	prGlueInfo = kalMemAlloc(sizeof(struct GLUE_INFO), VIR_MEM_TYPE);
+	kalMemSet(prGlueInfo, 0, sizeof(struct GLUE_INFO));
 	if (!prGlueInfo) {
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to GLUE_INFO failed\n");
@@ -2875,8 +2929,8 @@ static void wlanDestroyAllWdev(void)
 		 * unregister_netdev/mtk_vif_destructor. And gprP2pRoleWdev[i]
 		 * is reset as gprP2pWdev in mtk_vif_destructor.
 		 */
-		if (gprP2pRoleWdev[i] == gprP2pWdev)
-			gprP2pWdev = NULL;
+		if (gprP2pRoleWdev[i] == gprP2pWdev[i])
+			gprP2pWdev[i] = NULL;
 
 #if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprP2pRoleWdev[i]->wiphy;
@@ -2890,21 +2944,23 @@ static void wlanDestroyAllWdev(void)
 		gprP2pRoleWdev[i] = NULL;
 	}
 
-	if (gprP2pWdev != NULL) {
-		/* This case is that gprP2pWdev isn't equal to gprP2pRoleWdev[0]
-		 * . The gprP2pRoleWdev[0] is created in the p2p cfg80211 add
-		 * iface ops. The two wdev use the same wiphy. Don't double
-		 * free the same wiphy.
-		 * This part isn't expect occur. Because p2pNetUnregister should
-		 * unregister_netdev the new created wdev, and gprP2pRoleWdev[0]
-		 * is reset as gprP2pWdev.
-		 */
+	/* This case is that gprP2pWdev isn't equal to gprP2pRoleWdev[0]
+	 * . The gprP2pRoleWdev[0] is created in the p2p cfg80211 add
+	 * iface ops. The two wdev use the same wiphy. Don't double
+	 * free the same wiphy.
+	 * This part isn't expect occur. Because p2pNetUnregister should
+	 * unregister_netdev the new created wdev, and gprP2pRoleWdev[0]
+	 * is reset as gprP2pWdev.
+	 */
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		if (gprP2pWdev[i] != NULL) {
 #if CFG_ENABLE_UNIFY_WIPHY
-		wiphy = gprP2pWdev->wiphy;
+			wiphy = gprP2pWdev[i]->wiphy;
 #endif
 
-		kfree(gprP2pWdev);
-		gprP2pWdev = NULL;
+			kfree(gprP2pWdev[i]);
+			gprP2pWdev[i] = NULL;
+		}
 	}
 #endif	/* CFG_ENABLE_WIFI_DIRECT */
 
@@ -5962,11 +6018,9 @@ static int initWlan(void)
 		return -ENOMEM;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	if (gprWdev[0]) {
-		/* P2PDev and P2PRole[0] share the same Wdev */
-		if (glP2pCreateWirelessDevice(prGlueInfo) == TRUE)
-			gprP2pWdev = gprP2pRoleWdev[0];
-	}
+	if (gprWdev[0])
+		glP2pCreateWirelessDevice(prGlueInfo);
+
 	gPrDev = NULL;
 
 #if CFG_MTK_ANDROID_WMT && (CFG_SUPPORT_CONNINFRA == 0)

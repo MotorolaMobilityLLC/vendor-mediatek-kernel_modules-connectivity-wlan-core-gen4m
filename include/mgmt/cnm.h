@@ -295,6 +295,8 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 uint8_t cnmIdcCsaReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ch_num, IN uint8_t ucRoleIdx);
 
+void cnmIdcSwitchSapChannel(IN struct ADAPTER *prAdapter);
+
 void cnmIdcDetectHandler(IN struct ADAPTER *prAdapter,
 	IN struct WIFI_EVENT *prEvent);
 #endif
@@ -380,6 +382,11 @@ u_int8_t cnmSapIsActive(IN struct ADAPTER *prAdapter);
 u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter);
 
 struct BSS_INFO *cnmGetSapBssInfo(IN struct ADAPTER *prAdapter);
+
+struct BSS_INFO *
+cnmGetOtherSapBssInfo(
+	IN struct ADAPTER *prAdapter,
+	IN struct BSS_INFO *prSapBssInfo);
 
 void cnmOpModeGetTRxNss(
 	IN struct ADAPTER *prAdapter,

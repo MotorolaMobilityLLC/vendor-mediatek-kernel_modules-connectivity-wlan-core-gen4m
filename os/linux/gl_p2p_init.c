@@ -240,13 +240,20 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 {
 	u_int8_t idx = 0;
 
+	GLUE_SPIN_LOCK_DECLARATION();
+	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	g_P2pPrDev = NULL;
+
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered == FALSE) {
 		DBGLOG(P2P, INFO, "p2p is not registered\n");
+		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		return FALSE;
 	}
 
 	prGlueInfo->prAdapter->fgIsP2PRegistered = FALSE;
 	prGlueInfo->prAdapter->p2p_scan_report_all_bss = FALSE;
+	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	glUnregisterP2P(prGlueInfo, 0xff);
 
@@ -265,7 +272,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 		}
 #endif
 		/* free gprP2pWdev in wlanDestroyAllWdev */
-		if (gprP2pRoleWdev[idx] == gprP2pWdev)
+		if (gprP2pRoleWdev[idx] == gprP2pWdev[idx])
 			continue;
 
 		DBGLOG(INIT, INFO, "Unregister gprP2pRoleWdev[%d]\n", idx);
@@ -286,7 +293,7 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
 	 * system operation (poweroff, suspend) might reference it.
 	 * set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
 	 */
-	if (gprP2pWdev != NULL)
+	if (gprP2pWdev[0] != NULL)
 		set_wiphy_dev(gprP2pWdev->wiphy, NULL);
 #endif
 

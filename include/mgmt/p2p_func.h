@@ -226,6 +226,12 @@ void p2pFuncSetChannel(IN struct ADAPTER *prAdapter,
 		IN uint8_t ucRoleIdx,
 		IN struct RF_CHANNEL_INFO *prRfChannelInfo);
 
+int p2pFuncPreStartRdd(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx,
+	IN struct cfg80211_chan_def *chandef,
+	IN unsigned int cac_time_ms);
+
 u_int8_t p2pFuncRetryJOIN(IN struct ADAPTER *prAdapter,
 		IN struct STA_RECORD *prStaRec,
 		IN struct P2P_JOIN_INFO *prJoinInfo);
@@ -290,6 +296,8 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 		IN u_int8_t fgIsDevInterface, IN uint8_t ucRoleIdx);
 
 u_int8_t p2pFuncIsAPMode(IN struct P2P_CONNECTION_SETTINGS *prP2pConnSettings);
+
+u_int8_t p2pFuncIsDualAPMode(IN struct ADAPTER *prAdapter);
 
 void
 p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
@@ -489,5 +497,11 @@ p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter);
 uint8_t p2pFuncIsBufferableMMPDU(IN struct ADAPTER *prAdapter,
 		IN enum ENUM_P2P_CONNECT_STATE eConnState,
 		IN struct MSDU_INFO *prMgmtTxMsdu);
+
+void p2pFuncSetAclPolicy(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIdx,
+	IN enum ENUM_PARAM_CUSTOM_ACL_POLICY ePolicy,
+	IN uint8_t aucAddr[]);
 
 #endif

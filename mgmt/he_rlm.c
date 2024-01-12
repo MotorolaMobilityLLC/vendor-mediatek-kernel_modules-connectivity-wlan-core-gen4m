@@ -157,6 +157,31 @@ static void heRlmFillHe6gBandCapIE(struct ADAPTER *prAdapter,
 *                              F U N C T I O N S
 ********************************************************************************
 */
+uint8_t heRlmMaxBwToHeBw(uint8_t ucMaxBw)
+{
+	uint8_t ucHeBw = HE_OP_CHANNEL_WIDTH_20;
+
+	switch (ucMaxBw) {
+	case MAX_BW_20MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_20;
+		break;
+	case MAX_BW_40MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_40;
+		break;
+	case MAX_BW_80MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_80;
+		break;
+	case MAX_BW_160MHZ:
+	case MAX_BW_80_80_MHZ:
+		ucHeBw = HE_OP_CHANNEL_WIDTH_80P80_160;
+		break;
+	default:
+		break;
+	}
+
+	return ucHeBw;
+}
+
 uint8_t heGetBssBandBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	enum ENUM_BAND eBand)
@@ -438,6 +463,8 @@ static void heRlmFillHeCapIE(
 #endif
 	uint8_t ucSupportedNss =
 		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
+	u_int8_t fgTxStbcEn = TRUE;
+
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
 	struct BSS_DESC *prBssDesc = NULL;
@@ -518,7 +545,10 @@ static void heRlmFillHeCapIE(
 		IS_FEATURE_ENABLED(prWifiVar->ucTxLdpc))
 		HE_SET_PHY_CAP_LDPC_CODING_IN_PAYLOAD(prHeCap->ucHePhyCap);
 
-	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc)) {
+	if (prBssInfo->ucOpTxNss < 2)
+		fgTxStbcEn = FALSE;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->ucTxStbc) && fgTxStbcEn) {
 		HE_SET_PHY_CAP_STBC_TX_LT_OR_EQ_80M(prHeCap->ucHePhyCap);
 		if (IS_BSS_AIS(prBssInfo))
 			HE_SET_PHY_CAP_STBC_TX_GT_80M(prHeCap->ucHePhyCap);
