@@ -3056,7 +3056,12 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, ERROR, "get glue structure fail.\n");
-		return -EFAULT;
+		goto nla_put_failure;
+	}
+
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL.\n");
+		goto nla_put_failure;
 	}
 
 	if (prGlueInfo->prAdapter->rWifiVar.ucApfEnable == 0)
