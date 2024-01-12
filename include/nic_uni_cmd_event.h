@@ -3762,7 +3762,8 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_FAST_PATH	     = 0x54,
 	UNI_EVENT_ID_NAN	     = 0x56,
 	UNI_EVENT_ID_MLO	     = 0x59,
-	UNI_EVENT_ID_PP          = 0x5A,
+	UNI_EVENT_ID_PP		     = 0x5A,
+	UNI_EVENT_ID_WOW	     = 0x5B,
 	UNI_EVENT_ID_NUM
 };
 
@@ -5510,6 +5511,39 @@ struct UNI_EVENT_SR {
 	uint8_t au1TlvBuffer[0];/*  the TLVs included in this field: */
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_WOW {
+	/*fixed field*/
+	uint8_t ucReserved[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Wake On WLAN event Tag */
+enum ENUM_UNI_EVENT_WOW_TAG {
+	UNI_EVENT_WOW_TAG_WAKEUP_REASON = 0,
+	UNI_EVENT_WOW_TAG_NUM
+};
+
+struct UNI_EVENT_WOW_WAKEUP_REASON_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucReason;
+	/*   0: MAGIC
+	 *   1: BITMAP
+	 *   3: GTK_REKEY_FAIL
+	 *   8: DISCONNECT
+	 *   9: IPV4_UDP
+	 *  10: IPV4_TCP
+	 *  11: IPV6_UDP
+	 *  12: IPV6_TCP
+	 *  13: BEACON_LOST
+	 *  14: IPV6_ICMP
+	 * 255: UNDEFINED (default init value)
+	 */
+	uint16_t u2WowWakePort;
+	uint8_t aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5938,6 +5972,8 @@ void nicUniEventHifCtrl(struct ADAPTER *ad,
 void nicUniEventNan(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventBF(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventWow(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************

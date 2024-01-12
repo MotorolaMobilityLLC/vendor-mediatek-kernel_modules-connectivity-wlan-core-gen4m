@@ -2242,8 +2242,8 @@ struct EVENT_WOW_WAKEUP_REASON_INFO {
 	 * 13: BEACON LOST
 	 * 14: IPV6_ICMP PACKET
 	 */
-
-	uint8_t aucReserved[3];
+	uint16_t u2WowWakePort;
+	uint8_t aucReserved[1];
 };
 #endif
 
