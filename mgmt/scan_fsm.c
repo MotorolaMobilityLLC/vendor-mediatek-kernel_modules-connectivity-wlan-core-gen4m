@@ -1129,11 +1129,25 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	prScanInfo->ucScnTimeoutTimes = 0;
 	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover)
-		&& IS_BSS_INDEX_AIS(prAdapter, prScanParam->ucBssIndex)) {
+#if CFG_EXT_SCAN
+	if (IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucScanNoApRecover) &&
+		IS_BSS_INDEX_AIS(prAdapter, prScanParam->ucBssIndex) &&
+		prScanInfo->fgIsSparseChannelValid &&
+		(prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ ||
+		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2)) {
+		scnDoZeroChRecoveryCheck(prAdapter, prScanInfo);
+		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
+			prScanInfo, prScanParam->ucBssIndex);
+	}
+#else
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover) &&
+		IS_BSS_INDEX_AIS(prAdapter, prScanParam->ucBssIndex)) {
 		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
 				prScanInfo, prScanParam->ucBssIndex);
 	}
+#endif /* CFG_EXT_SCAN */
+
 #endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && defined(CFG_AAD_NONCE_NO_REPLACE)
@@ -1171,6 +1185,17 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 		= prScanDone->rSparseChannel.ucChannelNum;
 	ucScanChNum = prScanInfo->ucSparseChannelArrayValidNum
 		= prScanDone->ucSparseChannelArrayValidNum;
+
+#if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
+#if CFG_EXT_SCAN
+	if (ucScanChNum == 0)
+		prScanInfo->ucScnZeroChannelCnt++;
+	else {
+		prScanInfo->ucScnZeroChannelCnt = 0;
+		prScanInfo->ucScnZeroChSubsysResetCnt = 0;
+	}
+#endif
+#endif
 
 	if (prAdapter->rWifiVar.u2CountryCode) {
 		log_dbg(SCN, INFO,
@@ -1604,15 +1629,17 @@ scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
 			prRequest->aucRandomMac, MAC_ADDR_LEN);
 	}
 
-	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
+	scnSetSchedScanPlan(prAdapter, prSchedScanCmd,
+				prRequest->u2ScanInterval);
 
-	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)Func(0x%X)\n",
+	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u),Intv(%d),Func(0x%X)\n",
 		prSchedScanCmd->ucVersion,
 		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
 		prSchedScanCmd->ucChannelType, prSchedScanCmd->ucChnlNum,
 		prSchedScanCmd->ucSsidNum, prSchedScanCmd->ucMatchSsidNum,
 		prRequest->u4IELength, prSchedScanCmd->u2IELen,
 		prSchedScanCmd->ucMspEntryNum,
+		prRequest->u2ScanInterval,
 		prSchedScanCmd->ucScnFuncMask);
 
 	/* 3. send command packet to FW */
@@ -1779,16 +1806,28 @@ scnFsmSchedScanSetCmd(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void
 scnSetSchedScanPlan(struct ADAPTER *prAdapter,
-		struct CMD_SCHED_SCAN_REQ *prSchedScanCmd)
+		struct CMD_SCHED_SCAN_REQ *prSchedScanCmd,
+		uint16_t u2ScanInterval)
 {
 	/* Set Multiple Scan Plan here */
 	log_dbg(SCN, TRACE, "--> %s()\n", __func__);
 
 	ASSERT(prAdapter);
 
-	prSchedScanCmd->ucMspEntryNum = 0;
-	kalMemZero(prSchedScanCmd->au2MspList,
-			sizeof(prSchedScanCmd->au2MspList));
+#if CFG_EXT_SCAN
+	if (u2ScanInterval != 0) {
+		uint8_t i;
+
+		prSchedScanCmd->ucMspEntryNum = 10;
+		for (i = 0; i < 10; i++)
+			prSchedScanCmd->au2MspList[i] = u2ScanInterval;
+	} else
+#endif
+	{
+		prSchedScanCmd->ucMspEntryNum = 0;
+		kalMemZero(prSchedScanCmd->au2MspList,
+				sizeof(prSchedScanCmd->au2MspList));
+	}
 }
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
@@ -1923,6 +1962,25 @@ scnDoScanTimeoutRecoveryCheck(struct ADAPTER *prAdapter,
 	}
 }
 
+#if CFG_EXT_SCAN
+void
+scnDoZeroChRecoveryCheck(struct ADAPTER *prAdapter,
+		struct SCAN_INFO *prScanInfo)
+{
+	log_dbg(SCN, WARN,
+		"ScanRecover: ScnZeroChCount(%d), ResetCount(%d)",
+		prScanInfo->ucScnZeroChannelCnt,
+		prScanInfo->ucScnZeroChSubsysResetCnt);
+
+	/* If scanDoneTimeout count > 3, do subsys reset */
+	if (prScanInfo->ucScnZeroChannelCnt > 3 &&
+		prScanInfo->ucScnZeroChSubsysResetCnt < 1) {
+		prScanInfo->ucScnZeroChSubsysResetCnt++;
+		GL_DEFAULT_RESET_TRIGGER(prAdapter,
+			RST_FLAG_CHIP_RESET);
+	}
+}
+#endif
 #endif
 
 enum ENUM_SCN_DONE_REASON {

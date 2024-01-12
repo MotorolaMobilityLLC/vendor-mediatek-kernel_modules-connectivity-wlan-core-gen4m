@@ -4826,6 +4826,21 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 		kalMemZero(&prConnSettings->rErpKey,
 			   sizeof(prConnSettings->rErpKey));
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
+#if CFG_EXT_SCAN
+	if (prAisFsmInfo->ucReasonOfDisconnect ==
+		DISCONNECT_REASON_CODE_RADIO_LOST ||
+		prAisFsmInfo->ucReasonOfDisconnect ==
+		DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
+		scanRemoveBssDescByBssid(prAdapter,
+			prAisBssInfo->aucBSSID);
+
+		/* remove from scanning results as well */
+		wlanClearBssInScanningResult(prAdapter,
+			prAisBssInfo->aucBSSID);
+	}
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5619,6 +5634,43 @@ void aisFsmRemoveAllBssDesc(struct ADAPTER *prAdapter,
 		if (!prAisBssInfo)
 			continue;
 
+#if CFG_EXT_SCAN
+
+		scanRemoveConnFlagOfBssDescByBssid(
+			prAdapter,
+			prAisBssInfo->aucBSSID,
+			prAisBssInfo->ucBssIndex);
+
+		if (prAisFsmInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST ||
+			prAisFsmInfo->ucReasonOfDisconnect ==
+			DISCONNECT_REASON_CODE_RADIO_LOST_TX_ERR) {
+			struct SCAN_INFO *prScanInfo;
+			struct LINK *prBSSDescList;
+			struct BSS_DESC *prBssDesc;
+
+			prScanInfo =
+				&(prAdapter->rWifiVar.rScanInfo);
+			prBSSDescList =
+				&prScanInfo->rBSSDescList;
+			LINK_FOR_EACH_ENTRY(prBssDesc,
+				prBSSDescList,
+				rLinkEntry, struct BSS_DESC) {
+
+				if (EQUAL_MAC_ADDR(
+					prBssDesc->aucBSSID,
+					prAisBssInfo->aucBSSID)) {
+					DBGLOG(AIS, INFO,
+						""MACSTR" set BTO flag",
+						prBssDesc->aucBSSID);
+					prBssDesc->fgIsInBTO = TRUE;
+					break;
+				}
+			}
+		}
+
+#else
+
 		if (prAisFsmInfo->ucReasonOfDisconnect ==
 			DISCONNECT_REASON_CODE_RADIO_LOST ||
 		    prAisFsmInfo->ucReasonOfDisconnect ==
@@ -5633,6 +5685,8 @@ void aisFsmRemoveAllBssDesc(struct ADAPTER *prAdapter,
 			scanRemoveConnFlagOfBssDescByBssid(prAdapter,
 			      prAisBssInfo->aucBSSID, prAisBssInfo->ucBssIndex);
 		}
+
+#endif
 	}
 }
 
@@ -9564,6 +9618,23 @@ static void aisScanProcessReqExtra(struct ADAPTER *prAdapter,
 		DBGLOG(AIS, INFO,
 				"[VoE] Adjust dwell time(50ms) for certification\n");
 	}
+#if CFG_EXT_SCAN
+	/* VOE Cert. test set dwell time to 50ms */
+	if (prAdapter->rWifiVar.u4SwTestMode ==
+		ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT &&
+		(aisFsmIsInProcessPostpone(prAdapter,
+		prScanReqMsg->ucBssIndex) ||
+		kalGetMediaStateIndicated(
+		prAdapter->prGlueInfo,
+		prScanReqMsg->ucBssIndex) ==
+		MEDIA_STATE_CONNECTED)) {
+		prScanReqMsg->u2ChannelDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_VOE;
+		prScanReqMsg->u2ChannelMinDwellTime =
+				SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+	}
+#endif
+
 }
 
 static void aisScanResetReq(struct PARAM_SCAN_REQUEST_ADV *prScanRequest)

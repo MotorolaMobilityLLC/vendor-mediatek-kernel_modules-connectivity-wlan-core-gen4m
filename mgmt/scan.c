@@ -118,6 +118,10 @@ void scnInit(struct ADAPTER *prAdapter)
 	prScanInfo->ucScnZeroMdrdySubsysResetCnt = 0;
 	prScanInfo->ucScnTimeoutTimes = 0;
 	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
+#if CFG_EXT_SCAN
+	prScanInfo->ucScnZeroChannelCnt = 0;
+	prScanInfo->ucScnZeroChSubsysResetCnt = 0;
+#endif
 #endif
 
 	prScanInfo->rLastScanCompletedTime = (OS_SYSTIME) 0;
@@ -227,6 +231,10 @@ void scnUninit(struct ADAPTER *prAdapter)
 	prScanInfo->ucScnZeroMdrdySubsysResetCnt = 0;
 	prScanInfo->ucScnTimeoutTimes = 0;
 	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
+#if CFG_EXT_SCAN
+	prScanInfo->ucScnZeroChannelCnt = 0;
+	prScanInfo->ucScnZeroChSubsysResetCnt = 0;
+#endif
 #endif
 
 	prScanInfo->rLastScanCompletedTime = (OS_SYSTIME) 0;
@@ -447,6 +455,31 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 	}
 
 	if (u4ScanChannelNum == 0) {
+#if CFG_EXT_SCAN
+		/* We don't have channel info when u4ScanChannelNum is 0.
+		 * directly do full scan
+		 */
+		uint8_t ucPreferBandExist = FALSE;
+		uint32_t start = 1;
+		uint32_t end = HW_CHNL_NUM_MAX_4G_5G;
+
+		if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_2G4) {
+			end = HW_CHNL_NUM_MAX_2G4;
+			ucPreferBandExist = TRUE;
+		} else if (prScanReqMsg->eScanChannel == SCAN_CHANNEL_5G) {
+			start = HW_CHNL_NUM_MAX_2G4 + 1;
+			ucPreferBandExist = TRUE;
+		}
+
+		u4Index = 0;
+
+		prScanReqMsg->ucChannelListNum = u4Index;
+		/* No need to change eScanChannel if PreferBand exist */
+		if (!ucPreferBandExist) {
+			log_dbg(SCN, INFO, "No channel to scan, set to full scan\n");
+			prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
+		}
+#else
 		/* We don't have channel info when u4ScanChannelNum is 0.
 		 * check full2partial bitmap and set scan channels
 		 */
@@ -505,6 +538,7 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 			prScanReqMsg->eScanChannel = SCAN_CHANNEL_FULL;
 		} else
 			prScanReqMsg->eScanChannel = SCAN_CHANNEL_SPECIFIED;
+#endif /* CFG_EXT_SCAN */
 	} else
 #endif /* CFG_SUPPORT_FULL2PARTIAL_SCAN */
 	{
@@ -929,6 +963,9 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
+#if CFG_EXT_SCAN
+			uint8_t i, fgSameSsid;
+#endif
 
 			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
 				&& (prBssDesc->fgIsConnected
@@ -938,6 +975,35 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 				 */
 				continue;
 			}
+
+#if CFG_EXT_SCAN
+			fgSameSsid = FALSE;
+
+			/* Not remove BssDesc that has
+			 * same SSID with current
+			 * connected AP, for roaming.
+			 */
+			for (i = 0; i < KAL_AIS_NUM; i++) {
+				struct BSS_INFO *prAisBssInfo =
+					aisGetAisBssInfo(prAdapter, i);
+
+				if (kalGetMediaStateIndicated(
+					prAdapter->prGlueInfo, i) !=
+					MEDIA_STATE_CONNECTED)
+					continue;
+
+				if ((!prBssDesc->fgIsHiddenSSID) &&
+					(EQUAL_SSID(prBssDesc->aucSSID,
+					prBssDesc->ucSSIDLen,
+					prAisBssInfo->aucSSID,
+					prAisBssInfo->ucSSIDLen))) {
+					fgSameSsid = TRUE;
+					break;
+				}
+			}
+			if (fgSameSsid)
+				continue;
+#endif
 
 			if (CHECK_FOR_TIMEOUT(rCurrentTime,
 				prBssDesc->rUpdateTime,
@@ -2214,7 +2280,7 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	}
 	/* 5G Band */
 	else if (prBssDesc->eBand == BAND_5G) {
-		if (ucIeHtChannelNum >= 1 && ucIeHtChannelNum < 200) {
+		if (ucIeHtChannelNum >= 36 && ucIeHtChannelNum < 200) {
 			/* Receive Beacon/ProbeResp frame
 			 * from adjacent channel.
 			 */
@@ -2617,6 +2683,9 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 		ASSERT(prSwRfb->prRxStatusGroup3);
 
+#if CFG_EXT_SCAN
+		prBssDesc->fgIsInBTO = FALSE;
+#endif
 		if (prBssDesc->eBSSType != eBSSType) {
 			prBssDesc->eBSSType = eBSSType;
 		} else if (ucChnlNum !=
@@ -3043,7 +3112,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			if (IE_LEN(prBssLoad) !=
 				(sizeof(struct IE_BSS_LOAD) - 2)) {
 				DBGLOG(SCN, WARN,
-					"HE_CAP IE_LEN err(%lu)->(%d)!\n",
+					"BSS_LOAD IE_LEN err(%d)->(%d)!\n",
 					(sizeof(struct IE_BSS_LOAD) - 2),
 					IE_LEN(prBssLoad));
 				break;

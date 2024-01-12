@@ -285,6 +285,14 @@ struct BSS_DESC {
 	 */
 	u_int8_t fgIsConnected;
 
+#if CFG_EXT_SCAN
+	/* If we are in beacon timeout procedure, don't removed
+	 * this record from BSS list to keep its channel. And we should not
+	 * take the BSS as connection candidate for AP selection.
+	 */
+	u_int8_t fgIsInBTO;
+#endif
+
 	/* When this flag is TRUE, means the SSID of this
 	 * BSS is not known yet.
 	 */
@@ -663,6 +671,10 @@ struct SCAN_INFO {
 	uint8_t		ucScnZeroMdrdySubsysResetCnt;
 	uint8_t		ucScnTimeoutTimes;
 	uint8_t		ucScnTimeoutSubsysResetCnt;
+#if CFG_EXT_SCAN
+	uint8_t		ucScnZeroChannelCnt;
+	uint8_t		ucScnZeroChSubsysResetCnt;
+#endif
 #endif
 	/*Skip DFS channel scan or not */
 	u_int8_t	fgSkipDFS;
@@ -1074,7 +1086,8 @@ u_int8_t scnFsmSchedScanSetCmd(struct ADAPTER *prAdapter,
 			struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
 
 void scnSetSchedScanPlan(struct ADAPTER *prAdapter,
-			struct CMD_SCHED_SCAN_REQ *prSchedScanCmd);
+			struct CMD_SCHED_SCAN_REQ *prSchedScanCmd,
+			uint16_t u2ScanInterval);
 
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 
@@ -1084,7 +1097,10 @@ void scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
 			struct SCAN_INFO *prScanInfo, uint8_t ucBssIndex);
 void scnDoScanTimeoutRecoveryCheck(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex);
-
+#if CFG_EXT_SCAN
+void scnDoZeroChRecoveryCheck(struct ADAPTER *prAdapter,
+			struct SCAN_INFO *prScanInfo);
+#endif
 #endif
 
 void scnFsmNotifyEvent(struct ADAPTER *prAdapter,
