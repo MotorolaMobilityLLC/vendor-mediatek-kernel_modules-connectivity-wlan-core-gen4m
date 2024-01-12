@@ -314,7 +314,14 @@ static uint16_t scanCalculateScoreByChnlInfo(
 		arCurEssChnlInfo[0];
 	uint8_t i = 0;
 	uint16_t u2Score = 0;
-	uint8_t weight = gasMtkWeightConfig[eRoamType].ucApNumWeight;
+	uint8_t weight = 0;
+
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
+
+	weight = gasMtkWeightConfig[eRoamType].ucApNumWeight;
 
 	for (; i < prAisSpecificBssInfo->ucCurEssChnlInfoNum; i++) {
 		if (ucChannel == prEssChnlInfo[i].ucChannel) {
@@ -355,6 +362,11 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 	uint8_t ucSta5GBW = prAdapter->rWifiVar.ucSta5gBandwidth;
 	uint8_t ucSta2GBW = prAdapter->rWifiVar.ucSta2gBandwidth;
 	uint8_t ucStaBW = prAdapter->rWifiVar.ucStaBandwidth;
+
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 
 	if (prBssDesc->fgIsVHTPresent && prAdapter->fgEnable5GBand) {
 		if (ucSta5GBW > ucStaBW)
@@ -419,6 +431,11 @@ static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
 
 	log_dbg(SCN, TRACE, "Exist bss load %d, sta cnt %d\n",
 			prBssDesc->fgExsitBssLoadIE, prBssDesc->u2StaCnt);
+
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 
 	if (!prBssDesc->fgExsitBssLoadIE) {
 		u2Score = BSS_STA_CNT_NORMAL_SCORE;
@@ -917,6 +934,10 @@ static uint16_t scanCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
 	uint16_t u2Score = 0;
 	int8_t cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 	if (cRssi >= BEST_RSSI)
 		u2Score = 100;
 	else if (cRssi <= -98)
@@ -933,6 +954,11 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 {
 	uint16_t u2Score = 0;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 
 	prStaRec = cnmGetStaRecByAddress(prAdapter, NETWORK_TYPE_AIS,
 		prBssDesc->aucSrcAddr);
@@ -974,7 +1000,10 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		rssiFactor = 2 * (90 + rssi);
 	else
 		rssiFactor = 0;
-
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 	if (prBssDesc->fgExsitBssLoadIE) {
 		cu = prBssDesc->ucChnlUtilization;
 	} else {
@@ -1059,6 +1088,10 @@ uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
 {
 	uint16_t u2Score = 0;
 
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 	if (!prBssDesc->prBlack)
 		u2Score = 100;
 	else if (scanApOverload(prBssDesc->prBlack->u2AuthStatus,
@@ -1137,6 +1170,10 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
+	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
 	u2ScoreBandwidth =
 		scanCalculateScoreByBandwidth(prAdapter, prBssDesc, eRoamType);
 	u2ScoreStaCnt = scanCalculateScoreByClientCnt(prBssDesc, eRoamType);

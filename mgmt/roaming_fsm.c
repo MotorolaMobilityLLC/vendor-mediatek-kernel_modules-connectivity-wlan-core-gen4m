@@ -357,7 +357,13 @@ void roamingFsmSteps(IN struct ADAPTER *prAdapter,
 
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	do {
-
+		if (prRoamingFsmInfo->eCurrentState < 0 ||
+			prRoamingFsmInfo->eCurrentState >= ROAMING_STATE_NUM ||
+			eNextState < 0 || eNextState >= ROAMING_STATE_NUM) {
+			DBGLOG(ROAMING, STATE, "Invalid stat eNextState[%d]\n",
+				eNextState);
+			return;
+		}
 		/* Do entering Next State */
 		DBGLOG(ROAMING, STATE,
 		       "[ROAMING%d] TRANSITION: [%s] -> [%s]\n",

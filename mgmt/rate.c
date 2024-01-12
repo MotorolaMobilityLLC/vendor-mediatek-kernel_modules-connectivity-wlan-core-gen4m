@@ -189,7 +189,8 @@ rateGetRateSetFromIEs(
 	uint16_t u2BSSBasicRateSet = 0;
 	u_int8_t fgIsUnknownBSSBasicRate = FALSE;
 	uint8_t ucRate;
-	uint32_t i, j;
+	uint8_t i;
+	uint32_t j;
 
 	if (prIeSupportedRate) {
 		/* NOTE(Kevin): Buffalo WHR-G54S's supported rate set
@@ -239,7 +240,9 @@ rateGetRateSetFromIEs(
 		/* ASSERT(prIeExtSupportedRate->ucLength
 		 *  <= ELEM_MAX_LEN_EXTENDED_SUP_RATES);
 		 */
-
+		if (prIeExtSupportedRate->ucLength >
+			ELEM_MAX_LEN_EXTENDED_SUP_RATES - 1)
+			return;
 		for (i = 0; i < prIeExtSupportedRate->ucLength; i++) {
 			ucRate =
 			    prIeExtSupportedRate->aucExtSupportedRates[i] &

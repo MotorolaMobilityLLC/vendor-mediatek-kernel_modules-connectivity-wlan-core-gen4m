@@ -979,7 +979,8 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	enum ENUM_WMM_ACI eAci = WMM_AC_BE_INDEX;
 	u_int8_t fgCheckACMAgain;
-	uint8_t ucTC, ucQueIdx = TX_QUEUE_INDEX_AC0;
+	uint8_t ucTC = TC0_INDEX;
+	uint8_t ucQueIdx = TX_QUEUE_INDEX_AC0;
 	struct BSS_INFO *prBssInfo;
 	/* BEtoBK, na, VItoBE, VOtoVI */
 	uint8_t aucNextUP[WMM_AC_INDEX_NUM] = {1, 1, 0, 4};
@@ -1006,10 +1007,11 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 		if (prStaRec->fgIsQoS) {
 			if (prMsduInfo->ucUserPriority < TX_DESC_TID_NUM) {
 				eAci = aucTid2ACI[prMsduInfo->ucUserPriority];
-				ucQueIdx = aucACI2TxQIdx[eAci];
-				ucTC =
-					arNetwork2TcResource[
+				if (eAci >= 0 && eAci < WMM_AC_INDEX_NUM) {
+					ucQueIdx = aucACI2TxQIdx[eAci];
+					ucTC = arNetwork2TcResource[
 					prMsduInfo->ucBssIndex][eAci];
+				}
 			} else {
 				ucQueIdx = TX_QUEUE_INDEX_AC1;
 				ucTC = TC1_INDEX;
@@ -1018,7 +1020,8 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 					"Packet TID is not in [0~7]\n");
 				ASSERT(0);
 			}
-			if ((prBssInfo->arACQueParms[eAci].ucIsACMSet) &&
+			if (eAci >= 0 && eAci < WMM_AC_INDEX_NUM &&
+				(prBssInfo->arACQueParms[eAci].ucIsACMSet) &&
 			    !(ucActiveTs & BIT(eAci)) &&
 			    (eAci != WMM_AC_BK_INDEX)) {
 				DBGLOG(WMM, TRACE,
@@ -8822,6 +8825,9 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	uint8_t ucTc = 0;
 	struct BSS_INFO *prAisBssInfo = NULL;
 
+	if (eAci < 0 || eAci >= ACI_NUM)
+		return;
+
 	if (!prStaRec || eAci == ACI_NUM || eAci == ACI_BK || !prAdapter) {
 		DBGLOG(QM, ERROR, "prSta NULL %d, eAci %d, prAdapter NULL %d\n",
 		       !prStaRec, eAci, !prAdapter);
@@ -8840,10 +8846,14 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		aisGetWMMInfo(prAdapter, prAisBssInfo->ucBssIndex));
 
 	while (prAcQueParam[eAci].ucIsACMSet &&
-			!(ucActivedTspec & BIT(eAci)) && eAci != ACI_BK) {
+			!(ucActivedTspec & BIT(eAci)) && eAci != ACI_BK
+			&& eAci >= 0 && eAci < ACI_NUM) {
 		eAci = aeNextAci[eAci];
-		ucNewUp = aucNextUP[eAci];
+		if (eAci >= 0 && eAci < ACI_NUM)
+			ucNewUp = aucNextUP[eAci];
 	}
+	if (eAci < 0 || eAci >= ACI_NUM)
+		return;
 	DBGLOG(QM, INFO, "new ACI %d, ACM %d, HasTs %d\n", eAci,
 	       prAcQueParam[eAci].ucIsACMSet, !!(ucActivedTspec & BIT(eAci)));
 	ucTc = aucWmmAC2TcResourceSet1[eAci];

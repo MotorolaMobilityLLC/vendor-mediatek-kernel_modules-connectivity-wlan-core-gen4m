@@ -563,8 +563,15 @@ static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
  *******************************************************************************
  */
 #define DBDC_FSM_EVENT_HANDLER(_prAdapter, _event) { \
-		arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmCurrState] \
-		.pfEventHandlerFunc(_prAdapter, _event); \
+	if (g_rDbdcInfo.eDbdcFsmCurrState < 0 || \
+		g_rDbdcInfo.eDbdcFsmCurrState >= ENUM_DBDC_FSM_STATE_NUM) { \
+		log_dbg(CNM, WARN, \
+		"[DBDC] eDbdcFsmCurrState %d is invalid!\n", \
+		g_rDbdcInfo.eDbdcFsmCurrState); \
+		return; \
+	} \
+	arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmCurrState] \
+	.pfEventHandlerFunc(_prAdapter, _event); \
 	}
 
 /*******************************************************************************
@@ -3004,6 +3011,13 @@ cnmDbdcFsmSteps(
 	       g_rDbdcInfo.eDbdcFsmPrevState,
 	       g_rDbdcInfo.eDbdcFsmCurrState);
 
+	if (g_rDbdcInfo.eDbdcFsmPrevState < 0 ||
+		g_rDbdcInfo.eDbdcFsmPrevState >=
+		sizeof(arDdbcFsmActionTable) / sizeof(struct DBDC_FSM_T)) {
+		log_dbg(CNM, INFO, "Invalid state[%d]\n",
+			g_rDbdcInfo.eDbdcFsmPrevState);
+		return;
+	}
 	if (g_rDbdcInfo.eDbdcFsmPrevState != g_rDbdcInfo.eDbdcFsmCurrState) {
 		/* state change, call exit function of previous state */
 		if (arDdbcFsmActionTable[g_rDbdcInfo.eDbdcFsmPrevState]
@@ -4428,6 +4442,16 @@ void cnmOpModeCallbackDispatcher(
 
 	/* Step 1. Run callback function */
 	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
+	if (prBssOpCtrl->rRunning.eReqIdx < 0
+		|| prBssOpCtrl->rRunning.eRunReq < 0
+		|| prBssOpCtrl->rRunning.eReqIdx > CNM_OPMODE_REQ_MAX_CAP
+		|| prBssOpCtrl->rRunning.eRunReq > CNM_OPMODE_REQ_MAX_CAP) {
+		DBGLOG(CNM, WARN,
+			"CbOpMode, invalid,ReqIdx[%d] eRunReq [%d]\n",
+			prBssOpCtrl->rRunning.eReqIdx,
+			prBssOpCtrl->rRunning.eRunReq);
+		return;
+	}
 	if (!prBssOpCtrl->rRunning.fgIsRunning) {
 #if CFG_SUPPORT_DBDC
 		/* GO/AP run cb immediately. */
@@ -4501,7 +4525,13 @@ cnmOpModeReqDispatcher(
 	enum ENUM_CNM_OPMODE_REQ_T eReqFinal = CNM_OPMODE_REQ_MAX_CAP;
 
 	if (prBssOpCtrl->rRunning.fgIsRunning) {
-		DBGLOG(CNM, INFO,
+		if (prBssOpCtrl->rRunning.eReqIdx >= 0 &&
+				prBssOpCtrl->rRunning.eReqIdx <=
+				CNM_OPMODE_REQ_MAX_CAP &&
+				prBssOpCtrl->rRunning.eRunReq >= 0 &&
+				prBssOpCtrl->rRunning.eRunReq <=
+				CNM_OPMODE_REQ_MAX_CAP)
+			DBGLOG(CNM, INFO,
 			"OpMode %s (Tx:%d,Rx:%d) is running %s, defer new request\n",
 			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
 			prBssOpCtrl->rRunning.ucOpTxNss,
@@ -4740,7 +4770,9 @@ cnmOpModeSetTRxNss(
 	}
 
 	/* Step 5. Dump result */
-	DBGLOG(CNM, INFO,
+	if (eRunReq >= 0 && eRunReq <= CNM_OPMODE_REQ_MAX_CAP
+		&& eNewReq >= 0 && eNewReq <= CNM_OPMODE_REQ_MAX_CAP)
+		DBGLOG(CNM, INFO,
 		"SetOpMode Bss[%d] alive[%d] NewReq:%s %s RunReq:%s,%s\n",
 		ucBssIndex, IS_BSS_ALIVE(prAdapter, prBssInfo),
 		apucCnmOpModeReq[eNewReq],
@@ -4797,7 +4829,11 @@ void cnmOpModeGetTRxNss(
 		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
 		*pucOpTxNss = prBssOpCtrl->rRunning.ucOpTxNss;
 		*pucOpRxNss = prBssOpCtrl->rRunning.ucOpRxNss;
-		DBGLOG(CNM, INFO,
+		if (eCurrMaxIdx >= 0 && eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP
+			&& prBssOpCtrl->rRunning.eReqIdx >= 0
+			&& prBssOpCtrl->rRunning.eReqIdx
+				<= CNM_OPMODE_REQ_MAX_CAP)
+			DBGLOG(CNM, INFO,
 			"GetOpMode,use running %s from %s\n",
 			apucCnmOpModeReq[eCurrMaxIdx],
 			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx]);
@@ -4816,11 +4852,11 @@ void cnmOpModeGetTRxNss(
 			}
 		}
 	}
-
-	DBGLOG(CNM, INFO,
-		"GetOpMode BSS[%u](%s) T:%d R:%u\n",
-		ucBssIndex, apucCnmOpModeReq[eCurrMaxIdx],
-		*pucOpTxNss, *pucOpRxNss);
+	if (eCurrMaxIdx >= 0 && eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP)
+		DBGLOG(CNM, INFO,
+			"GetOpMode BSS[%u](%s) T:%d R:%u\n",
+			ucBssIndex, apucCnmOpModeReq[eCurrMaxIdx],
+			*pucOpTxNss, *pucOpRxNss);
 }
 
 #if CFG_SUPPORT_SMART_GEAR
@@ -4958,7 +4994,13 @@ cnmWmmQuotaReqDispatcher(
 	enum ENUM_CNM_WMM_QUOTA_REQ_T eReqFinal = CNM_WMM_REQ_DEFAULT;
 
 	if (prWmmQuotaCtrl->rRunning.fgIsRunning) {
-		DBGLOG(CNM, WARN,
+		if (prWmmQuotaCtrl->rRunning.eReqIdx >= 0 &&
+			prWmmQuotaCtrl->rRunning.eReqIdx
+				<= CNM_WMM_REQ_DEFAULT &&
+			prWmmQuotaCtrl->rRunning.eRunReq >= 0 &&
+			prWmmQuotaCtrl->rRunning.eRunReq
+				<= CNM_WMM_REQ_DEFAULT)
+			DBGLOG(CNM, WARN,
 			"WmmQuota,PreReq,%s,RunningReq,%s\n",
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eRunReq]);
@@ -5000,7 +5042,13 @@ cnmWmmQuotaCallback(
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);
 
 	if (fgRun) {
-		DBGLOG(CNM, INFO,
+		if (prWmmQuotaCtrl->rRunning.eReqIdx >= 0 &&
+			prWmmQuotaCtrl->rRunning.eReqIdx <=
+			CNM_WMM_REQ_DEFAULT &&
+			prWmmQuotaCtrl->rRunning.eRunReq >= 0 &&
+			prWmmQuotaCtrl->rRunning.eRunReq <=
+			CNM_WMM_REQ_DEFAULT)
+			DBGLOG(CNM, INFO,
 			"WmmQuotaCb,%d,Req,%s,Run,%s,Quota,%u,WakeUpHIF\n",
 			ucWmmIndex,
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
@@ -5015,7 +5063,13 @@ cnmWmmQuotaCallback(
 		}
 	} else {
 		prWmmQuotaCtrl->rRunning.fgIsRunning = false;
-		DBGLOG(CNM, INFO,
+		if (prWmmQuotaCtrl->rRunning.eReqIdx >= 0 &&
+			prWmmQuotaCtrl->rRunning.eReqIdx <=
+			CNM_WMM_REQ_DEFAULT &&
+			prWmmQuotaCtrl->rRunning.eRunReq >= 0 &&
+			prWmmQuotaCtrl->rRunning.eRunReq <=
+			CNM_WMM_REQ_DEFAULT)
+			DBGLOG(CNM, INFO,
 			"WmmQuotaCb,%u,%s,Run,%s,Quota,%u,Finish\n",
 			ucWmmIndex,
 			apucCnmWmmQuotaReq[prWmmQuotaCtrl->rRunning.eReqIdx],
@@ -5035,22 +5089,33 @@ void cnmWmmQuotaSetMaxQuota(
 {
 	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
 	enum ENUM_CNM_WMM_QUOTA_REQ_T eRunReq;
-	uint32_t u4QuotaFinal;
+	uint32_t u4QuotaFinal = 0;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 
 	prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
+
+	if (eNewReq < 0 || eNewReq >= CNM_WMM_REQ_NUM) {
+		DBGLOG(CNM, WARN, "Invalid eNewReq Idx %d!\n", eNewReq);
+		return;
+	}
 	prWmmQuotaCtrl->arReqPool[eNewReq].fgEnable = fgEnable;
 	prWmmQuotaCtrl->arReqPool[eNewReq].u4ReqQuota = u4ReqQuota;
 
 	eRunReq = cnmWmmQuotaReqDispatcher(prWmmQuotaCtrl);
-	if (eRunReq == CNM_WMM_REQ_DEFAULT) {
+	if (eRunReq < 0 || eRunReq > CNM_WMM_REQ_DEFAULT
+		|| eNewReq < 0 || eNewReq > CNM_WMM_REQ_DEFAULT) {
+		DBGLOG(CNM, WARN, "Invalid req Idx %d!\n", eRunReq);
+		return;
+	} else if (eRunReq == CNM_WMM_REQ_DEFAULT) {
 		/* unlimit */
 		u4QuotaFinal = -1;
 	} else {
-		u4QuotaFinal = prWmmQuotaCtrl->arReqPool[eRunReq].u4ReqQuota;
+		if (eRunReq < CNM_WMM_REQ_NUM)
+			u4QuotaFinal = prWmmQuotaCtrl->
+				arReqPool[eRunReq].u4ReqQuota;
 	}
 
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_UPDATE_WMM_QUOTA);

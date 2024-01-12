@@ -184,6 +184,13 @@ twtReqFsmSteps(
 	}
 
 	do {
+		if (prStaRec->aeTWTReqState < 0 ||
+			prStaRec->aeTWTReqState >= TWT_REQ_STATE_NUM ||
+			eNextState < 0 || eNextState >= TWT_REQ_STATE_NUM) {
+			DBGLOG(TWT_RESPONDER, ERROR,
+				"Invalid stat eNextState[%d]\n", eNextState);
+			return;
+		}
 
 		DBGLOG(TWT_REQUESTER, STATE,
 		"[TWT_REQ]BSS %d Flow %d TRANSITION: [%s] -> [%s]\n",
@@ -1117,6 +1124,15 @@ twtHotspotRespFsmSteps(
 	ASSERT(prStaRec);
 
 	do {
+		if (prBssInfo->aeTWTRespState < 0 ||
+			prBssInfo->aeTWTRespState >=
+			TWT_HOTSPOT_RESP_STATE_NUM ||
+			eNextState < 0 || eNextState >=
+			TWT_HOTSPOT_RESP_STATE_NUM) {
+			DBGLOG(TWT_RESPONDER, ERROR,
+				"Invalid stat eNextState[%d]\n", eNextState);
+			return;
+		}
 		DBGLOG(TWT_RESPONDER, ERROR,
 		"[TWT_RESP] Flow %d TRANSITION: [%s] -> [%s]\n",
 		ucTWTFlowId,
