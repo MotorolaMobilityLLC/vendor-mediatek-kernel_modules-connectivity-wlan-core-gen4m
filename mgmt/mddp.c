@@ -347,8 +347,9 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 	}
 	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
 	prNotifyInfo->version = 0;
-	/* (3 = version+buf_len+info_num) */
-	prNotifyInfo->buf_len = (u32BufSize - 3);
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+			sizeof(struct mddp_txd_t) +
+			NIC_TX_DESC_LONG_FORMAT_LENGTH;
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 	prDrvInfo->info_id = 3; /* MDDPW_DRV_INFO_TXD; */
@@ -415,8 +416,8 @@ int32_t mddpNotifyDrvMac(IN struct ADAPTER *prAdapter)
 		}
 		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
 		prNotifyInfo->version = 0;
-		/* (3= version+buf_len+info_num) */
-		prNotifyInfo->buf_len = (u32BufSize - 3);
+		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+				MAC_ADDR_LEN;
 		prNotifyInfo->info_num = 1;
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 		prDrvInfo->info_id = MDDPW_DRV_INFO_DEVICE_MAC;
@@ -456,7 +457,8 @@ int32_t mddpNotifyWifiStatus(IN enum mddp_drv_onoff_status wifiOnOffStatus)
 		}
 		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
 		prNotifyInfo->version = 0;
-		prNotifyInfo->buf_len = u32BufSize;
+		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+				sizeof(bool);
 		prNotifyInfo->info_num = 1;
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 		prDrvInfo->info_id = MDDPW_DRV_INFO_NOTIFY_WIFI_ONOFF;
