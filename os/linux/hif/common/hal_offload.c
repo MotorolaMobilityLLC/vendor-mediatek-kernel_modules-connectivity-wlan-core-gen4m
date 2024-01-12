@@ -2037,8 +2037,7 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 		u4TotalCnt += au4RingCnt[u4Idx];
 
 #if CFG_SUPPORT_RX_NAPI
-	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+	kalNapiSchedule(prAdapter);
 #endif /* CFG_SUPPORT_RX_NAPI */
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		uint32_t u4Res = au4RingCnt[u4Idx];

@@ -9978,7 +9978,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif /* CFG_RFB_TRACK */
 
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
+	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
 	RRO_LOG_TEMPLATE \
 	"RxReorder[%s] " \
 	RRB_TRACK_TEMPLATE \
@@ -9995,6 +9995,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		head3,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INTR_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_WORK_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_SCHEDULE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_IN_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
@@ -10651,7 +10652,7 @@ u_int8_t __weak kalIsSupportRro(void)
 }
 #endif
 
-uint32_t __weak kalGetBigCpuMask(void)
+uint32_t __weak kalGetTxBigCpuMask(void)
 {
 	return 0xFF;
 }
@@ -12568,6 +12569,30 @@ uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 }
 
 #if (CFG_SUPPORT_RX_NAPI == 1)
+void __kalNapiSchedule(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct RX_CTRL *prRxCtrl;
+
+	if (!prAdapter || !prAdapter->prGlueInfo)
+		return;
+
+	prRxCtrl = &prAdapter->rRxCtrl;
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
+	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+}
+
+void kalNapiSchedule(struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_RX_NAPI_WORK
+	kalRxNapiWorkSchedule(prAdapter->prGlueInfo);
+#else /* CFG_SUPPORT_RX_NAPI_WORK */
+	__kalNapiSchedule(prAdapter);
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
+}
+
 uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo)
 {
 	if (!prGlueInfo
@@ -15140,6 +15165,75 @@ void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr)
 }
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
+#if CFG_SUPPORT_RX_NAPI_WORK
+void kalRxNapiWork(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo = container_of(work,
+					struct GLUE_INFO, rRxNapiWork);
+	struct ADAPTER *prAdapter;
+	struct RX_CTRL *prRxCtrl;
+
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
+		return;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prRxCtrl = &prAdapter->rRxCtrl;
+
+	RX_INC_CNT(prRxCtrl, RX_NAPI_WORK_COUNT);
+	__kalNapiSchedule(prAdapter);
+}
+
+void kalRxNapiWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
+{
+	if ((i4CpuIdx != -1) &&
+		i4CpuIdx > num_possible_cpus()) {
+		DBGLOG(INIT, INFO, "Invalid CpuIdx:%d\n", i4CpuIdx);
+		return;
+	}
+
+	pr->i4RxNapiWorkCpu = i4CpuIdx;
+}
+
+void kalRxNapiWorkInit(struct GLUE_INFO *pr)
+{
+	/* init cpu idx as free run */
+	pr->i4RxNapiWorkCpu = -1;
+	INIT_WORK(&pr->rRxNapiWork, kalRxNapiWork);
+	pr->prRxNapiWorkQueue = create_workqueue("wifi_rx_napi_work");
+	if (!pr->prRxNapiWorkQueue)
+		DBGLOG(INIT, ERROR, "prRxNapiWorkQueue is NULL\n");
+}
+
+void kalRxNapiWorkUninit(struct GLUE_INFO *pr)
+{
+	struct workqueue_struct *prWq;
+
+	prWq = pr->prRxNapiWorkQueue;
+	pr->prRxNapiWorkQueue = NULL;
+	if (prWq) {
+		flush_workqueue(prWq);
+		destroy_workqueue(prWq);
+	}
+}
+
+void kalRxNapiWorkSchedule(struct GLUE_INFO *pr)
+{
+	int32_t i4RxNapiWorkCpu;
+
+	if (!pr->prRxNapiWorkQueue) {
+		DBGLOG_LIMITED(INIT, INFO, "prRxNapiWorkQueue is NULL\n");
+		return;
+	}
+
+	i4RxNapiWorkCpu = pr->i4RxNapiWorkCpu;
+	if (i4RxNapiWorkCpu == -1) {
+		queue_work(pr->prRxNapiWorkQueue, &pr->rRxNapiWork);
+		return;
+	}
+	queue_work_on(i4RxNapiWorkCpu, pr->prRxNapiWorkQueue, &pr->rRxNapiWork);
+}
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
+
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work)
 {
@@ -15266,7 +15360,7 @@ uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 	i4Cpu = get_cpu();
 	put_cpu();
 
-	if ((0x1 << i4Cpu) & kalGetBigCpuMask()) {
+	if ((0x1 << i4Cpu) & kalGetTxBigCpuMask()) {
 		/* The running cpu is BigCpu */
 		return kalTxDirectStartXmit(prSkb, pr);
 	}

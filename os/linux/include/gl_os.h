@@ -716,6 +716,11 @@ struct GLUE_INFO {
 	struct workqueue_struct *prRxWorkQueue;
 	struct work_struct rRxWork;
 #endif /* CFG_SUPPORT_RX_WORK */
+#if CFG_SUPPORT_RX_NAPI_WORK
+	int32_t i4RxNapiWorkCpu; /* controlled by CPU Boost */
+	struct workqueue_struct *prRxNapiWorkQueue;
+	struct work_struct rRxNapiWork;
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
 	struct tasklet_struct rRxTask;
 	uint8_t fgRxTaskReady;
 	uint32_t u4RxTaskScheduleCnt;

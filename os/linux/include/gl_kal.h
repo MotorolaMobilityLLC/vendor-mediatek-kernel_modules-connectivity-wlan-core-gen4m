@@ -246,6 +246,7 @@ struct BOOST_INFO {
 	int32_t i4RxRfbRetWorkCpu;
 	int32_t i4TxWorkCpu;
 	int32_t i4RxWorkCpu;
+	int32_t i4RxNapiWorkCpu;
 	int32_t i4TxFreeMsduWorkCpu;
 	u_int8_t fgDramBoost;
 	u_int8_t fgKeepPcieWakeup;
@@ -2601,6 +2602,16 @@ void kalTxWorkInit(struct GLUE_INFO *pr);
 void kalTxWorkUninit(struct GLUE_INFO *pr);
 uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_TX_WORK */
+#if CFG_SUPPORT_RX_NAPI
+void kalNapiSchedule(struct ADAPTER *prAdapter);
+#if CFG_SUPPORT_RX_NAPI_WORK
+void kalRxNapiWork(struct work_struct *work);
+void kalRxNapiWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
+void kalRxNapiWorkInit(struct GLUE_INFO *pr);
+void kalRxNapiWorkUninit(struct GLUE_INFO *pr);
+void kalRxNapiWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
+#endif /* CFG_SUPPORT_RX_NAPI */
 #if CFG_SUPPORT_RX_WORK
 void kalRxWork(struct work_struct *work);
 void kalRxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
