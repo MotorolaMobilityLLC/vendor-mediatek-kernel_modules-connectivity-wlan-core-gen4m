@@ -75,8 +75,6 @@ void p2pLinkInitGCRole(struct ADAPTER *prAdapter)
 		if (!fsm || !IS_BSS_INDEX_P2P(prAdapter, fsm->ucBssIndex))
 			continue;
 
-		kal_init_completion(&prP2pInfo->rStopApComp);
-
 		wlanBindBssIdxToNetInterface(
 			prGlueInfo,
 			fsm->ucBssIndex,

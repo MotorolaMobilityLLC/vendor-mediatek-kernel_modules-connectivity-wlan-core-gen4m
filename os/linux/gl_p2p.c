@@ -447,6 +447,8 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 			kalMemZero(prWifiVar->prP2pQueryStaStatistics[ucIdex],
 				sizeof(struct PARAM_GET_STA_STATISTICS));
 #endif
+		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rStopApComp);
+		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rDisconnComp);
 	} while (FALSE);
 
 	if (!prGlueInfo->prP2PDevInfo)
@@ -1007,7 +1009,6 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 		prAdapter->rWifiVar.prP2PConnSettings[u4Idx], fgIsApMode);
 
 	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, (uint8_t) u4Idx);
-	init_completion(&prP2PInfo->rStopApComp);
 	/* Currently wpasupplicant can't support create interface. */
 	/* so initial the corresponding data structure here. */
 	wlanBindBssIdxToNetInterface(prGlueInfo, prNetDevPriv->ucBssIdx,
