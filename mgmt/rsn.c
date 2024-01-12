@@ -1612,11 +1612,15 @@ void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
 	eAuthMode = aisGetAuthMode(prAdapter, ucBssIndex);
 
 	/* For FT, we reuse the RSN Element composed in userspace */
-	if (authAddRSNIE_impl(prAdapter, prMsduInfo))
+	if (authAddRSNIE_impl(prAdapter, prMsduInfo)) {
+		DBGLOG(RSN, TRACE, "RSN IE: authAddRSNIE return\n");
 		return;
+	}
 
-	if (_addRSNIE_impl(prAdapter, prMsduInfo))
+	if (_addRSNIE_impl(prAdapter, prMsduInfo)) {
+		DBGLOG(RSN, TRACE, "RSN IE: _addRSNIE return\n");
 		return;
+	}
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
