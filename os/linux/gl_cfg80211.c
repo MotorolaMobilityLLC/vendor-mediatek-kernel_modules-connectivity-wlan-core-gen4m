@@ -606,7 +606,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
 	uint32_t rStatus;
-	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
 	uint32_t u4BufLen = 0, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
 
@@ -621,6 +620,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint32_t u4FcsError;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
+	struct PARAM_LINK_BSS_INFO rLinkBss = {0};
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	uint32_t u4TxBw = 0;
 #endif
@@ -634,11 +634,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	    !IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)))
 		return -EINVAL;
 
-	kalMemZero(arBssid, MAC_ADDR_LEN);
-	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryBssid,
-			arBssid, sizeof(arBssid), &u4BufLen, ucBssIndex);
-	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != MAC_ADDR_LEN)
-		return -EINVAL;
+	rLinkBss.ucBssIndex = ucBssIndex;
+	COPY_MAC_ADDR(rLinkBss.aucMacAddr, mac);
+
+	/* get the link bssIdx if mac is one of the AIS MLO link */
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkBssInfo,
+			&rLinkBss, sizeof(rLinkBss), &u4BufLen, ucBssIndex);
+	if (rStatus != WLAN_STATUS_SUCCESS || u4BufLen != sizeof(rLinkBss))
+		return -ENOENT;
+
+	ucBssIndex = rLinkBss.ucBssIndex;
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	prGetStaStatistics = &prAdapter->rQueryStaStatistics[ucBssIndex];
@@ -648,30 +653,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #else
 	prGetStaStatistics = &(
 		prAdapter->rQueryStaStatistics);
-	COPY_MAC_ADDR(prGetStaStatistics->aucMacAddr, arBssid);
+	COPY_MAC_ADDR(prGetStaStatistics->aucMacAddr, mac);
 #endif
 	prGetStaStatistics->ucReadClear = TRUE;
-
-	/* 1. check input MAC address */
-	/* On Android O, this might be wlan0 address */
-	if (UNEQUAL_MAC_ADDR(arBssid, mac)
-	    && UNEQUAL_MAC_ADDR(
-		    prAdapter->rWifiVar.aucMacAddress, mac)) {
-		/* wrong MAC address */
-		DBGLOG(REQ, WARN,
-		       "incorrect BSSID: [" MACSTR
-		       "] currently connected BSSID["
-		       MACSTR "]\n",
-		       MAC2STR(mac), MAC2STR(arBssid));
-		return -ENOENT;
-	}
 
 	/* 2. fill TX/RX rate */
 	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) !=
 	    MEDIA_STATE_CONNECTED) {
 		/* not connected */
 		DBGLOG(REQ, WARN, "not yet connected\n");
-		return 0;
+		return -EINVAL;
 	}
 
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
@@ -837,14 +828,15 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 			prGlueInfo->u4FcsErrorCache += u4FcsError;
 			prDevStats->tx_errors += u4TotalError;
 #define TEMP_LOG_TEMPLATE \
-	"link speed=%u/%u, bw=%u/%u, rssi=%d, BSSID:[" MACSTR "]," \
+	"link speed=%u/%u, bw=%u/%u, rssi=%d, BSSID:[" MACSTR "], idx=%u," \
 	"TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n"
 			DBGLOG(REQ, INFO,
 				TEMP_LOG_TEMPLATE,
 				sinfo->txrate.legacy, sinfo->rxrate.legacy,
 				sinfo->txrate.bw, sinfo->rxrate.bw,
 				sinfo->signal,
-				MAC2STR(arBssid),
+				MAC2STR(mac),
+				ucBssIndex,
 				prGetStaStatistics->u4TxFailCount,
 				prGetStaStatistics->u4TxLifeTimeoutCount,
 				sinfo->tx_packets, sinfo->rx_packets,

@@ -571,6 +571,11 @@ struct PARAM_BSSID_LIST_EX {
 	struct PARAM_BSSID_EX arBssid[1];
 };
 
+struct PARAM_LINK_BSS_INFO {
+	uint8_t ucBssIndex;
+	uint8_t aucMacAddr[PARAM_MAC_ADDR_LEN];
+};
+
 struct PARAM_WEP {
 	uint32_t u4Length;	/*!< Length of structure */
 	uint32_t u4KeyIndex;	/*!< 0: pairwise key, others group keys */
@@ -3774,6 +3779,11 @@ uint32_t
 wlanoidQueryBssid(struct ADAPTER *prAdapter,
 		  void *pvQueryBuffer,
 		  uint32_t u4QueryBufferLen,
+		  uint32_t *pu4QueryInfoLen);
+
+uint32_t
+wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
+		  void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 		  uint32_t *pu4QueryInfoLen);
 
 uint32_t
