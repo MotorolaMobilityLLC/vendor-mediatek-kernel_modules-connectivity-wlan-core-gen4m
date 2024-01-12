@@ -2098,15 +2098,19 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
-		ucChannelBw = rlmDomainGetChannelBw(prBssDesc->eBand,
-			prBssDesc->ucChannelNum);
-	} else {
-		ucChannelBw = rlmDomainGetChannelBw(prBssInfo->eBand,
-			prBssInfo->ucPrimaryChannel);
+	if (regd_is_single_sku_en()) {
+		if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
+			ucChannelBw = rlmDomainGetChannelBw(
+				prBssDesc->eBand,
+				prBssDesc->ucChannelNum);
+		} else {
+			ucChannelBw = rlmDomainGetChannelBw(
+				prBssInfo->eBand,
+				prBssInfo->ucPrimaryChannel);
+		}
+		if (ucMaxBandwidth > ucChannelBw)
+			ucMaxBandwidth = ucChannelBw;
 	}
-	if (ucMaxBandwidth > ucChannelBw)
-		ucMaxBandwidth = ucChannelBw;
 #endif
 	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
 		DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
