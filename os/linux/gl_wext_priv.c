@@ -7063,6 +7063,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 						0, 1, 2, 3, 4, 5, 6, 7 };
 		uint8_t ucTxPwrHt40Rate[MODULATION_SYSTEM_HT40_NUM] = {
 						0, 1, 2, 3, 4, 5, 6, 7, 32 };
+		uint8_t *pucStr = NULL;
 		uint8_t *POWER_TYPE_STR[] = {"CCK", "*OFDM", "*HT20", "*HT40",
 					     "*VHT20", "*VHT40", "*VHT80",
 					     "*VHT160"};
@@ -7098,15 +7099,13 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 			for (ucTxPwrIdx = 0;
 			     ucTxPwrIdx < ucPwrIdxLen[ucTxPwrType];
 			     ucTxPwrIdx++) {
-				if ((POWER_TYPE_STR[ucTxPwrType] ==
-				    (uint8_t *)"CCK") ||
-				    (POWER_TYPE_STR[ucTxPwrType] ==
-				    (uint8_t *)"OFDM")) {
-					pucTxPwrRate =
-						(POWER_TYPE_STR[ucTxPwrType] ==
-							(uint8_t *)"CCK") ?
-							(ucTxPwrCckRate) :
-							(ucTxPwrOfdmRate);
+				pucStr = POWER_TYPE_STR[ucTxPwrType];
+				if (kalStrCmp(pucStr, "CCK") == 0 ||
+					kalStrCmp(pucStr, "OFDM") == 0) {
+					if (kalStrCmp(pucStr, "CCK") == 0)
+						pucTxPwrRate = ucTxPwrCckRate;
+					else
+						pucTxPwrRate = ucTxPwrOfdmRate;
 
 					ucIdx = ucTxPwrIdx + ucIdxOffset;
 					rRatePowerInfo =
@@ -7125,12 +7124,11 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 						aicFramePowerConfig[ucIdx].
 						icFramePowerDbm);
 				} else {
-					if (POWER_TYPE_STR[ucTxPwrType] ==
-					    (uint8_t *)"HT20") {
+					if (kalStrCmp(pucStr, "HT20") == 0) {
 						pucTxPwrRate = ucTxPwrHt20Rate;
 						fgIsHt = TRUE;
-					} else if (POWER_TYPE_STR[ucTxPwrType]
-					    == (uint8_t *)"HT40") {
+					} else if (
+					    kalStrCmp(pucStr, "HT40") == 0) {
 						pucTxPwrRate = ucTxPwrHt40Rate;
 						fgIsHt = TRUE;
 					} else {
@@ -7157,12 +7155,10 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 				}
 			}
 
-			if ((POWER_TYPE_STR[ucTxPwrType] ==
-			    (uint8_t *)"OFDM") ||
-			    (POWER_TYPE_STR[ucTxPwrType] ==
-			    (uint8_t *)"HT40") ||
-			    (POWER_TYPE_STR[ucTxPwrType] ==
-			    (uint8_t *)"VHT160"))
+			pucStr = POWER_TYPE_STR[ucTxPwrType];
+			if (kalStrCmp(pucStr, "OFDM") == 0 ||
+				kalStrCmp(pucStr, "HT40") == 0 ||
+				kalStrCmp(pucStr, "VHT160") == 0)
 				i4BytesWritten += kalScnprintf(
 					pcCommand + i4BytesWritten,
 					i4TotalLen - i4BytesWritten,
@@ -10005,6 +10001,8 @@ int priv_driver_show_dfs_radar_param(IN struct net_device *prNetDev,
 
 	prP2pRadarInfo = (struct P2P_RADAR_INFO *) cnmMemAlloc(
 		prGlueInfo->prAdapter, RAM_TYPE_MSG, sizeof(*prP2pRadarInfo));
+	if (prP2pRadarInfo == NULL)
+		return -1;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
