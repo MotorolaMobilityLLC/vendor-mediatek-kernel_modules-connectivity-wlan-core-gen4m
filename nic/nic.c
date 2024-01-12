@@ -833,40 +833,35 @@ void nicSetSwIntr(IN struct ADAPTER *prAdapter,
 	HAL_MCR_WR(prAdapter, MCR_WSICR, u4SwIntrBitmap);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This procedure is used to dequeue from prAdapter->rPendingCmdQueue
- *        with specified sequential number
+/**
+ * __nicGetPendingCmdInfo() - a non-thread-safe function to dequeue a command
+ * from prAdapter->rPendingCmdQueue with given sequence number.
  *
- * @param    prAdapter   Pointer of ADAPTER_T
+ * This function is used internally to avoid deadlock; in most cases, callers
+ * shall call nicGetPendingCmdInfo, the thread-safe version.
+ *
+ * @param    prAdapter   Pointer to struct ADAPTER
  *           ucSeqNum    Sequential Number
  *
- * @retval - P_CMD_INFO_T
+ * @retval - Pointer to struct CMD_INFO with matched sequence number, or NULL.
+ *
+ * NOTE  This function is declared as static to avoid unintended misuse.
  */
-/*----------------------------------------------------------------------------*/
-struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
-				      *prAdapter, IN uint8_t ucSeqNum)
+static struct CMD_INFO *__nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter,
+					IN uint8_t ucSeqNum)
 {
 	struct QUE *prCmdQue;
 	struct QUE rTempCmdQue;
 	struct QUE *prTempCmdQue = &rTempCmdQue;
-	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
-#if CFG_DBG_MGT_BUF
-	struct MEM_TRACK *prMemTrack = NULL;
-#endif
-
-	KAL_SPIN_LOCK_DECLARATION();
+	struct QUE_ENTRY *prQueueEntry = NULL;
+	struct CMD_INFO *prCmdInfo = NULL;
 
 	ASSERT(prAdapter);
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 
 	prCmdQue = &prAdapter->rPendingCmdQueue;
 	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
 
-	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-			  struct QUE_ENTRY *);
+	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, struct QUE_ENTRY *);
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
@@ -882,6 +877,35 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
 	}
 	QUEUE_CONCATENATE_QUEUES(prCmdQue, prTempCmdQue);
 
+	return prCmdInfo;
+}
+
+/**
+ * nicGetPendingCmdInfo() - a thread-safe version of nicGetPendingCmdInfo
+ * used to dequeue from prAdapter->rPendingCmdQueue with given sequence number
+ *
+ * @param    prAdapter   Pointer to struct ADAPTER
+ *           ucSeqNum    Sequential Number
+ *
+ * @retval - Pointer to struct CMD_INFO with matched sequence number, or NULL.
+ */
+struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter,
+					IN uint8_t ucSeqNum)
+{
+	struct CMD_INFO *prCmdInfo = NULL;
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (!prAdapter)
+		return NULL;
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+
+	prCmdInfo = __nicGetPendingCmdInfo(prAdapter, ucSeqNum);
+
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 
 	if (prCmdInfo) {
@@ -891,10 +915,8 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
 
 #if CFG_DBG_MGT_BUF
 		if (prCmdInfo->pucInfoBuffer &&
-				!IS_FROM_BUF(prAdapter,
-					prCmdInfo->pucInfoBuffer))
-			prMemTrack =
-				(struct MEM_TRACK *)
+		    !IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer))
+			prMemTrack = (struct MEM_TRACK *)
 					((uint8_t *)prCmdInfo->pucInfoBuffer -
 						sizeof(struct MEM_TRACK));
 
@@ -907,7 +929,30 @@ struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER
 		}
 #endif
 	}
+
 	return prCmdInfo;
+}
+
+/**
+ * removeDuplicatePendingCmd() - Remove pending command with duplicate sequence
+ */
+void removeDuplicatePendingCmd(IN struct ADAPTER *prAdapter,
+				IN struct CMD_INFO *prCmdInfo)
+{
+	struct CMD_INFO *prPendingDupCmdInfo;
+
+	prPendingDupCmdInfo = __nicGetPendingCmdInfo(prAdapter,
+				prCmdInfo->ucCmdSeqNum);
+	if (prPendingDupCmdInfo) {
+		DBGLOG(TX, ERROR,
+			"Remove command: %p, %ps, cmd=0x%02X, seq=%u",
+			prPendingDupCmdInfo,
+			prPendingDupCmdInfo->pfCmdDoneHandler,
+			prPendingDupCmdInfo->ucCID,
+			prPendingDupCmdInfo->ucCmdSeqNum);
+
+		cmdBufFreeCmdInfo(prAdapter, prPendingDupCmdInfo);
+	}
 }
 
 /*----------------------------------------------------------------------------*/

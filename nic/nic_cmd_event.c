@@ -3906,6 +3906,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 {
 	uint32_t u4QueryInfoLen = 0;
 	struct CMD_INFO *prCmdInfo = NULL;
+	uint8_t ucSeqNum = prEvent->ucSeqNum;
 
 	log_dbg(NIC, TRACE, "prEvent->ucExtenEID = %x\n", prEvent->ucExtenEID);
 
@@ -3913,8 +3914,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	case EXT_EVENT_ID_CMD_RESULT:
 		u4QueryInfoLen = sizeof(struct
 					PARAM_CUSTOM_EFUSE_BUFFER_MODE);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		break;
 
 	case EXT_EVENT_ID_EFUSE_ACCESS:
@@ -3922,8 +3922,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		struct EVENT_ACCESS_EFUSE *prEventEfuseAccess;
 
 		u4QueryInfoLen = sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		prEventEfuseAccess = (struct EVENT_ACCESS_EFUSE *) (
 					     prEvent->aucBuffer);
 
@@ -3935,8 +3934,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 
 	case EXT_EVENT_ID_RF_TEST:
 		u4QueryInfoLen = nicRfTestEventHandler(prAdapter, prEvent);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		break;
 
 	case EXT_EVENT_ID_GET_TX_POWER:
@@ -3944,8 +3942,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		struct EXT_EVENT_GET_TX_POWER *prEventGetTXPower;
 
 		u4QueryInfoLen = sizeof(struct PARAM_CUSTOM_GET_TX_POWER);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		prEventGetTXPower = (struct EXT_EVENT_GET_TX_POWER *) (
 					    prEvent->aucBuffer);
 
@@ -3961,8 +3958,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 
 		u4QueryInfoLen = sizeof(struct
 					PARAM_CUSTOM_EFUSE_FREE_BLOCK);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		prEventGetFreeBlock = (struct EXT_EVENT_EFUSE_FREE_BLOCK *)
 				      (prEvent->aucBuffer);
 
@@ -3982,7 +3978,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_TX_BF
 	case EXT_EVENT_ID_BF_STATUS_READ:
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		if (prCmdInfo != NULL && prCmdInfo->pfCmdDoneHandler) {
 			struct EXT_EVENT_BF_STATUS_T *prExtBfStatus =
 			(struct EXT_EVENT_BF_STATUS_T *)prEvent->aucBuffer;
@@ -4032,8 +4028,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	case EXT_EVENT_ID_SYSDVT_TEST:
 	{
 		u4QueryInfoLen = sizeof(struct SYSDVT_CTRL_EXT_T);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-			prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 		break;
 	}
 #endif	/* CFG_SUPPORT_WIFI_SYSDVT */
@@ -4043,10 +4038,8 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	{
 		struct _SR_EVENT_T *prEventSr;
 
-		prEventSr = (struct _SR_EVENT_T *) (
-						prEvent->aucBuffer);
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prEventSr = (struct _SR_EVENT_T *) (prEvent->aucBuffer);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 
 		switch (prEventSr->u1EventSubId) {
 		case SR_EVENT_GET_SR_CAP_ALL_INFO:
@@ -4153,8 +4146,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		u4QueryInfoLen = sizeof(struct
 					PARAM_TXPOWER_ALL_RATE_POWER_INFO_T);
 		/* command response handling */
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 
 		if (prCmdInfo != NULL) {
 			if (prCmdInfo->pfCmdDoneHandler)
@@ -4172,9 +4164,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 #endif
 	else if ((prEvent->ucExtenEID) == EXT_EVENT_ID_MAC_INFO) {
 		u4QueryInfoLen = sizeof(struct EXT_EVENT_MAC_INFO_T);
-		prCmdInfo =
-			nicGetPendingCmdInfo(prAdapter,
-				prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 
 		if (prCmdInfo != NULL) {
 			if (prCmdInfo->pfCmdDoneHandler) {
@@ -4194,9 +4184,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		}
 	} else if (prEvent->ucExtenEID == EXT_EVENT_ID_DUMP_MEM) {
 		u4QueryInfoLen = sizeof(struct EXT_CMD_EVENT_DUMP_MEM_T);
-		prCmdInfo = nicGetPendingCmdInfo(
-			prAdapter,
-			prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 
 		if (prCmdInfo != NULL) {
 			if (prCmdInfo->pfCmdDoneHandler) {
@@ -4217,8 +4205,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 	} else if (prEvent->ucExtenEID == EXT_EVENT_ID_SER) {
 		u4QueryInfoLen = sizeof(struct PARAM_SER_INFO_T);
 
-		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+		prCmdInfo = nicGetPendingCmdInfo(prAdapter, ucSeqNum);
 
 		if (prCmdInfo != NULL) {
 			if (prCmdInfo->pfCmdDoneHandler)
@@ -4389,8 +4376,7 @@ void nicEventStatistics(IN struct ADAPTER *prAdapter,
 		   sizeof(struct EVENT_STATISTICS));
 
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		if (prCmdInfo->pfCmdDoneHandler)
@@ -4558,8 +4544,7 @@ void nicEventWlanInfo(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO, "EVENT_ID_WTBL_INFO");
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		if (prCmdInfo->pfCmdDoneHandler)
@@ -4586,8 +4571,7 @@ void nicEventMibInfo(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO, "EVENT_ID_MIB_INFO");
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		if (prCmdInfo->pfCmdDoneHandler)
@@ -5116,8 +5100,7 @@ void nicEventDumpMem(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(SW4, INFO, "%s: EVENT_ID_DUMP_MEM\n", __func__);
 
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		DBGLOG(NIC, INFO, ": ==> 1\n");
@@ -5427,8 +5410,7 @@ void nicEventCoexCtrl(IN struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo;
 
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		if (prCmdInfo->pfCmdDoneHandler)
@@ -5450,8 +5432,7 @@ void nicEventCnmInfo(IN struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo;
 
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		if (prCmdInfo->pfCmdDoneHandler)
@@ -6693,8 +6674,7 @@ void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(RSN, INFO, "EVENT_ID_TX_MCS_INFO");
 	/* command response handling */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-					 prEvent->ucSeqNum);
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 
 	if (prCmdInfo != NULL) {
 		if (prCmdInfo->pfCmdDoneHandler)

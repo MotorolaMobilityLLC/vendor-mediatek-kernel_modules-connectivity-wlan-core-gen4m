@@ -6329,7 +6329,7 @@ void nicRxProcessUniEventPacket(IN struct ADAPTER *prAdapter,
 				prAdapter, prEvent);
 	} else {
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter,
-						 prEvent->ucSeqNum);
+						prEvent->ucSeqNum);
 
 		if (prCmdInfo != NULL) {
 			/* input prEvent instead of prEvent->aucBuffer because
