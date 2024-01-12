@@ -182,6 +182,9 @@ static int netdev_event(struct notifier_block *nb,
 	}
 
 	if ((strncmp(prDev->name, "p2p", 3) != 0)
+#ifdef CFG_COMBO_SLT_GOLDEN
+	    && (strncmp(prDev->name, "ra", 2) != 0)
+#endif
 	    && (strncmp(prDev->name, "wlan", 4) != 0)) {
 		/* DBGLOG(REQ, INFO, ("netdev_event: xxx\n")); */
 		return NOTIFY_DONE;
@@ -227,6 +230,9 @@ static int net6dev_event(struct notifier_block *nb,
 	}
 
 	if ((strncmp(prDev->name, "p2p", 3) != 0)
+#ifdef CFG_COMBO_SLT_GOLDEN
+	    && (strncmp(prDev->name, "ra", 2) != 0)
+#endif
 	    && (strncmp(prDev->name, "wlan", 4) != 0)) {
 		DBGLOG(REQ, INFO, "net6dev_event: xxx\n");
 		return NOTIFY_DONE;
@@ -497,6 +503,9 @@ static int wlan_netdev_notifier_call(struct notifier_block *nb,
 		return NOTIFY_DONE;
 
 	if ((strncmp(dev->name, "wlan", 4) != 0) &&
+#ifdef CFG_COMBO_SLT_GOLDEN
+			(strncmp(dev->name, "ra", 2) != 0) &&
+#endif
 			(strncmp(dev->name, "p2p", 3) != 0) &&
 			(strncmp(dev->name, "ap", 2) != 0)) {
 		return NOTIFY_DONE;

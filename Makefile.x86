@@ -201,11 +201,16 @@ ifeq ($(CONFIG_MTK_COMBO_PLATFORM), x86)
 PLATFORM_FLAGS += -DCFG_BUILD_X86_PLATFORM
 endif
 
+ifeq ($(CONFIG_MTK_COMBO_SLT), golden)
+PLATFORM_FLAGS += -DCFG_COMBO_SLT_GOLDEN
+slt_postfix = _mc
+endif
+
 all: driver
 
 driver:
 	+cd $(DRIVER_DIR) && make -C $(LINUX_SRC) M=$(DRIVER_DIR) PLATFORM_FLAGS="$(PLATFORM_FLAGS)" modules
-	@cd $(DRIVER_DIR) && cp $(MODULES_NAME)_$(hif).ko $(MODULES_NAME).ko
+	@cd $(DRIVER_DIR) && cp $(MODULES_NAME)_$(hif)$(slt_postfix).ko $(MODULES_NAME).ko
 
 clean: driver_clean
 

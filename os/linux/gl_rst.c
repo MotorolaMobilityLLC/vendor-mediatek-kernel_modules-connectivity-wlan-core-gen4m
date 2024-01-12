@@ -1210,7 +1210,9 @@ int32_t BT_rst_L0_notify_WF_step1(int32_t reserved)
 
 	return 0;
 }
+#ifndef CFG_COMBO_SLT_GOLDEN
 EXPORT_SYMBOL(BT_rst_L0_notify_WF_step1);
+#endif
 
 int32_t BT_rst_L0_notify_WF_2(int32_t reserved)
 {
@@ -1218,7 +1220,9 @@ int32_t BT_rst_L0_notify_WF_2(int32_t reserved)
 
 	return 0;
 }
+#ifndef CFG_COMBO_SLT_GOLDEN
 EXPORT_SYMBOL(BT_rst_L0_notify_WF_2);
+#endif
 
 #endif
 #endif
