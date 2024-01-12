@@ -2888,6 +2888,7 @@ int32_t connac3x_show_mib_info(
 #endif
 	uint32_t ampdu_cnt[3];
 	uint64_t per;
+	uint32_t per_rem;
 
 	switch (band_idx) {
 	case 0:
@@ -2972,7 +2973,8 @@ int32_t connac3x_show_mib_info(
 	DBGLOG(HAL, INFO, "\tAMPDU MPDU Ack Cnt=0x%x\n", ampdu_cnt[2]);
 	per = (ampdu_cnt[2] == 0 ?
 		0 : 1000 * (ampdu_cnt[1] - ampdu_cnt[2]) / ampdu_cnt[1]);
-	DBGLOG(HAL, INFO, "\tAMPDU MPDU PER=%ld.%1ld%%\n", per / 10, per % 10);
+	per_rem = do_div(per, 10);
+	DBGLOG(HAL, INFO, "\tAMPDU MPDU PER=%ld.%1ld%%\n", per, per_rem);
 
 #ifdef BELLWETHER
 	DBGLOG(HAL, INFO, "===MU Related Counters===\n");
