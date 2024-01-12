@@ -481,7 +481,7 @@ void mldGenerateMlProbeReqIE(uint8_t *pucIE,
 	/* Assign MLD ID*/
 	*(common->aucCommonInfo + 1) = ucMldId;
 
-	*u4IELength += common->ucLength;
+	*u4IELength += IE_SIZE(common);
 }
 
 uint8_t mldDupSkipIE(uint8_t *pucBuf)
