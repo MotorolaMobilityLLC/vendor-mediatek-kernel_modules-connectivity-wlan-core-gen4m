@@ -459,7 +459,7 @@ struct UNI_CMD_BSSINFO_BCN_CONTENT {
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_BSSINFO_FILS_REQ {
-	uint16_t u2Tag;       /* Tag = 0x1F */
+	uint16_t u2Tag;       /* Tag = 0x22 */
 	uint16_t u2Length;
 	uint32_t u4MinInterval;
 	uint32_t u4MaxInterval;

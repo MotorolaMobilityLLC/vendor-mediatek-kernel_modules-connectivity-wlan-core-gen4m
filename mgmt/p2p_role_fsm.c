@@ -4095,10 +4095,10 @@ void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 		struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 		struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
 		struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
-		uint8_t ucBssIdx = prP2pBssInfo->ucBssIndex;
 
 		prWifiVar = &prAdapter->rWifiVar;
-		prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[ucBssIdx];
+		prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
+			prBcnUpdateMsg->ucRoleIndex];
 		prFilsInfo = &prP2pSpecBssInfo->rFilsInfo;
 		prUnsolProbeInfo = &prP2pSpecBssInfo->rUnsolProbeInfo;
 
