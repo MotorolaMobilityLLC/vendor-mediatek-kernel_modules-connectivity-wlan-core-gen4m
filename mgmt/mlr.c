@@ -533,13 +533,17 @@ u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
 		return FALSE;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	if (unlikely(!prBssInfo)) {
 		DBGLOG(TX, WARN, "MLR frag - prBssInfo is NULL");
 		return FALSE;
 	}
+	prStaRec = prBssInfo->prStaRecOfAP;
 	if (unlikely(!prStaRec)) {
 		DBGLOG(TX, WARN, "MLR frag - prStaRec is NULL");
+		return FALSE;
+	}
+	if (unlikely(!prStaRec->fgIsInUse)) {
+		DBGLOG(TX, INFO, "MLR check - prStaRec->fgIsInUse is FALSE");
 		return FALSE;
 	}
 
@@ -1002,15 +1006,29 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 	if (unlikely(!prBssInfo)) {
 		DBGLOG(TX, INFO, "MLR check - prBssInfo is NULL");
 		return FALSE;
 	}
+
+	if (!IS_BSS_AIS(prBssInfo)
+		|| !kalGetMediaStateIndicated(
+		prAdapter->prGlueInfo,
+		prBssInfo->ucBssIndex) ==
+		MEDIA_STATE_CONNECTED) {
+		return FALSE;
+	}
+
+	prStaRec = prBssInfo->prStaRecOfAP;
 	if (unlikely(!prStaRec)) {
 		DBGLOG(TX, INFO, "MLR check - prStaRec is NULL");
 		return FALSE;
 	}
+	if (unlikely(!prStaRec->fgIsInUse)) {
+		DBGLOG(TX, INFO, "MLR check - prStaRec->fgIsInUse is FALSE");
+		return FALSE;
+	}
+
 	if (unlikely(!prNativePacket)) {
 		DBGLOG(TX, INFO, "MLR check - prNativePacket is NULL");
 		return FALSE;
@@ -1029,8 +1047,6 @@ u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
 	if (fgMlrCapVerCheck
 		/* check whether the condition of TX fragment is meet */
 		&& !IS_BMCAST_MAC_ADDR(prMsduInfo->aucEthDestAddr)
-		&& (prBssInfo->eConnectionState
-			== MEDIA_STATE_CONNECTED)
 		&& MLR_CHECK_IF_PKT_LEN_DO_FRAG(prAdapter, prNativePacket))
 		return TRUE;
 	else
