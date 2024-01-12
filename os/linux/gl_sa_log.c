@@ -35,6 +35,16 @@ extern int mrdump_mini_add_extra_file(
 	const char *name);
 #endif
 
+#define SA_DBGLOG(_Mod, _Clz, _Fmt, ...) \
+	pr_info("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+		KAL_GET_CURRENT_THREAD_ID(), \
+		__func__, ##__VA_ARGS__)
+
+#define SA_DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
+	pr_info("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+		KAL_GET_CURRENT_THREAD_ID(), \
+		__func__, ##__VA_ARGS__)
+
 #define SA_LOG_SIZE (128*1024)
 #define SA_WAIT_READY_MAX_CNT 2000
 #define SA_WAIT_READY_SLEEP_TIME 100
@@ -78,7 +88,7 @@ static int sa_ring_init(struct sa_ring *iRing, size_t size)
 	void *pBuffer = NULL;
 
 	if (unlikely(iRing->ring_base)) {
-		DBGLOG(SA, ERROR, "sa_ring has init?\n");
+		SA_DBGLOG(SA, ERROR, "sa_ring has init?\n");
 		ret = -EPERM;
 	} else {
 		pBuffer = kmalloc(size, GFP_KERNEL);
@@ -126,7 +136,7 @@ static ssize_t sa_ring_read(
 		if (WLAN_RING_EMPTY(ring) ||
 			!WLAN_RING_READ_PREPARE(left_to_read,
 				&ring_seg, ring)) {
-			DBGLOG(SA, TEMP,
+			SA_DBGLOG(SA, TEMP,
 				"no data/taken by other reader?\n");
 			goto return_fn;
 		}
@@ -140,12 +150,12 @@ static ssize_t sa_ring_read(
 			read += ring_seg.sz;
 		}
 	} else {
-		DBGLOG(SA, ERROR, "sa_ring not init yet\n");
+		SA_DBGLOG(SA, ERROR, "sa_ring not init yet\n");
 		read = -EPERM;
 	}
 
 return_fn:
-	DBGLOG(SA, TEMP, "[Done] read:%d left:%d\n", read,
+	SA_DBGLOG(SA, TEMP, "[Done] read:%ld left:%ld\n", read,
 		left_to_read);
 	return read;
 }
@@ -170,12 +180,12 @@ static ssize_t sa_ring_write(struct sa_ring *iRing, char *buf,
 		}
 
 	} else {
-		DBGLOG(SA, ERROR, "sa_ring not init yet\n");
+		SA_DBGLOG(SA, ERROR, "sa_ring not init yet\n");
 		written = -EPERM;
 	}
 
 skip:
-	DBGLOG(SA, TEMP, "[Done] written:%d left:%d\n", written,
+	SA_DBGLOG(SA, TEMP, "[Done] written:%ld left:%ld\n", written,
 		left_to_write);
 	return written;
 }
@@ -185,7 +195,7 @@ static ssize_t sa_ring_get_buf_size(struct sa_ring *iRing)
 	struct wlan_ring *ring = &iRing->ring_cache;
 
 	if (unlikely(iRing->ring_base == NULL)) {
-		DBGLOG(SA, ERROR, "sa_ring not init yet\n");
+		SA_DBGLOG(SA, ERROR, "sa_ring not init yet\n");
 		return -EPERM;
 	}
 
@@ -202,14 +212,14 @@ static void sa_ring_deinit(struct sa_ring *iRing)
 
 static int sa_open(struct inode *inode, struct file *file)
 {
-	DBGLOG(SA, TEMP, "major %d minor %d (pid %d)\n",
+	SA_DBGLOG(SA, TEMP, "major %d minor %d (pid %d)\n",
 		imajor(inode), iminor(inode), current->pid);
 	return 0;
 }
 
 static int sa_release(struct inode *inode, struct file *file)
 {
-	DBGLOG(SA, TEMP, "major %d minor %d (pid %d)\n",
+	SA_DBGLOG(SA, TEMP, "major %d minor %d (pid %d)\n",
 		imajor(inode), iminor(inode), current->pid);
 	return 0;
 }
@@ -242,44 +252,44 @@ static long sa_unlocked_ioctl(struct file *filp, unsigned int cmd,
 	case SA_IOCTL_SET_LEVEL:{
 		unsigned int level = (unsigned int) arg;
 
-		DBGLOG(SA, INFO, "SA_IOCTL_SET_LEVEL start\n");
+		SA_DBGLOG(SA, INFO, "SA_IOCTL_SET_LEVEL start\n");
 
 		if (gSaDev->pfEventFuncCB) {
-			DBGLOG(SA, INFO,
+			SA_DBGLOG(SA, INFO,
 				"SA_IOCTL_SET_LEVEL invoke:%d\n",
 				(int)level);
 			gSaDev->pfEventFuncCB(SA_LOG_CMD_SET_LEVEL,
 				level);
 		} else {
-			DBGLOG(SA, ERROR,
+			SA_DBGLOG(SA, ERROR,
 				"SA_IOCTL_SET_LEVEL invoke failed\n");
 		}
 
-		DBGLOG(SA, INFO, "SA_IOCTL_SET_LEVEL end\n");
+		SA_DBGLOG(SA, INFO, "SA_IOCTL_SET_LEVEL end\n");
 		break;
 	}
 	case SA_IOCTL_ON_OFF:{
 		unsigned int log_on_off = (unsigned int) arg;
 
-		DBGLOG(SA, INFO, "SA_IOCTL_ON_OFF start\n");
+		SA_DBGLOG(SA, INFO, "SA_IOCTL_ON_OFF start\n");
 
 		if (gSaDev->pfEventFuncCB) {
-			DBGLOG(SA, INFO,
+			SA_DBGLOG(SA, INFO,
 				"SA_IOCTL_ON_OFF invoke:%d\n",
 				(int)log_on_off);
 			gSaDev->pfEventFuncCB(SA_LOG_CMD_ON_OFF, log_on_off);
 		} else {
-			DBGLOG(SA, ERROR,
+			SA_DBGLOG(SA, ERROR,
 				"SA_IOCTL_ON_OFF invoke failed\n");
 		}
 
-		DBGLOG(SA, INFO, "SA_IOCTL_ON_OFF end\n");
+		SA_DBGLOG(SA, INFO, "SA_IOCTL_ON_OFF end\n");
 		break;
 	}
 	default:
 		ret = -EPERM;
 	}
-	DBGLOG(SA, INFO, "cmd --> %d, ret=%d\n", cmd, ret);
+	SA_DBGLOG(SA, INFO, "cmd --> %d, ret=%d\n", cmd, ret);
 	up(&gSaDev->ioctl_mtx);
 	return ret;
 }
@@ -291,7 +301,7 @@ static long sa_compat_ioctl(struct file *filp, unsigned int cmd,
 	long ret = 0;
 	int32_t wait_cnt = 0;
 
-	DBGLOG(SA, INFO, "COMPAT cmd --> %d\n", cmd);
+	SA_DBGLOG(SA, INFO, "COMPAT cmd --> %d\n", cmd);
 
 	if (!filp->f_op || !filp->f_op->unlocked_ioctl)
 		return -ENOTTY;
@@ -299,7 +309,7 @@ static long sa_compat_ioctl(struct file *filp, unsigned int cmd,
 	while (wait_cnt < SA_WAIT_READY_MAX_CNT) {
 		if (gSaDev->pfEventFuncCB)
 			break;
-		DBGLOG_LIMITED(SA, ERROR,
+		SA_DBGLOG_LIMITED(SA, ERROR,
 			"Wi-Fi driver is not ready for 2s\n");
 		msleep(SA_WAIT_READY_SLEEP_TIME);
 		wait_cnt++;
@@ -323,7 +333,7 @@ const struct file_operations sa_fops = {
 
 void wifi_salog_event_func_register(salog_event_func_cb func)
 {
-	DBGLOG(SA, INFO,
+	SA_DBGLOG(SA, INFO,
 		"wifi_salog_event_func_register %p\n", func);
 	gSaDev->pfEventFuncCB = func;
 }
@@ -354,7 +364,7 @@ int SalogInit(void)
 	result = alloc_chrdev_region(&gSaDev->devno, 0, 1,
 			SA_DRIVER_NAME);
 	gSaDev->major = MAJOR(gSaDev->devno);
-	DBGLOG(SA, INFO,
+	SA_DBGLOG(SA, INFO,
 		"alloc_chrdev_region result %d, major %d\n",
 		result, gSaDev->major);
 
@@ -366,7 +376,7 @@ int SalogInit(void)
 
 	if (KAL_IS_ERR(gSaDev->driver_class)) {
 		result = -ENOMEM;
-		DBGLOG(SA, ERROR, "class_create failed %d.\n",
+		SA_DBGLOG(SA, ERROR, "class_create failed %d.\n",
 			result);
 		goto unregister_chrdev_region;
 	}
@@ -376,7 +386,7 @@ int SalogInit(void)
 
 	if (!gSaDev->class_dev) {
 		result = -ENOMEM;
-		DBGLOG(SA, ERROR, "class_device_create failed %d.\n",
+		SA_DBGLOG(SA, ERROR, "class_device_create failed %d.\n",
 			result);
 		goto class_destroy;
 	}
@@ -384,7 +394,7 @@ int SalogInit(void)
 	err = sa_ring_init(&gSaDev->iRing, SA_LOG_SIZE);
 	if (err) {
 		result = -ENOMEM;
-		DBGLOG(SA, ERROR,
+		SA_DBGLOG(SA, ERROR,
 			"Error %d sa_ring_init.\n", err);
 		goto device_destroy;
 	}
@@ -401,7 +411,7 @@ int SalogInit(void)
 	err = cdev_add(&gSaDev->cdev, gSaDev->devno, 1);
 	if (err) {
 		result = -ENOMEM;
-		DBGLOG(SA, ERROR,
+		SA_DBGLOG(SA, ERROR,
 			"Error %d adding sa dev.\n", err);
 		goto sa_ring_deinit;
 	}
@@ -429,7 +439,7 @@ int SalogDeInit(void)
 	class_destroy(gSaDev->driver_class);
 	cdev_del(&gSaDev->cdev);
 	unregister_chrdev_region(MKDEV(gSaDev->major, 0), 1);
-	DBGLOG(SA, INFO, "unregister_chrdev_region major %d\n",
+	SA_DBGLOG(SA, INFO, "unregister_chrdev_region major %d\n",
 		gSaDev->major);
 	kfree(gSaDev);
 	return 0;
