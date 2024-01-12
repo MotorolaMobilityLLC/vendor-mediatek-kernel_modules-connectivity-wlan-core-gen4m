@@ -2007,9 +2007,11 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 			 struct cfg80211_external_auth_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_EXTERNAL_AUTH auth;
+	uint8_t rBuf[256] = {0};
 	uint32_t rStatus;
 	uint32_t u4BufLen;
-	struct PARAM_EXTERNAL_AUTH auth;
+	int32_t i4Written = 0;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo) {
@@ -2017,6 +2019,38 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 		       "SAE-confirm failed with invalid prGlueInfo\n");
 		return -EFAULT;
 	}
+
+	i4Written += kalSnprintf(rBuf + i4Written,
+				 sizeof(rBuf) - i4Written,
+				 "%s: action=%d bssid="MACSTR
+				 " ssid=[%u %s] key_mgmt=0x%x status=%u",
+				 ndev->name,
+				 params->action,
+				 MAC2STR(params->bssid),
+				 params->ssid.ssid_len,
+				 params->ssid.ssid,
+				 params->key_mgmt_suite,
+				 params->status);
+#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+	i4Written += kalSnprintf(rBuf + i4Written,
+				 sizeof(rBuf) - i4Written,
+				 " mld_addr="MACSTR,
+				 MAC2STR(params->mld_addr));
+#endif
+
+	DBGLOG(REQ, INFO, "%s\n", rBuf);
+#if (KERNEL_VERSION(5, 1, 0) <= CFG80211_VERSION_CODE)
+	if (params->pmkid)
+		DBGLOG(REQ, LOUD, "PMKID="PMKSTR"\n",
+			params->pmkid[0], params->pmkid[1],
+			params->pmkid[2], params->pmkid[3],
+			params->pmkid[4], params->pmkid[5],
+			params->pmkid[6], params->pmkid[7],
+			params->pmkid[8], params->pmkid[9],
+			params->pmkid[10], params->pmkid[11],
+			params->pmkid[12] + params->pmkid[13],
+			params->pmkid[14], params->pmkid[15]);
+#endif
 
 	COPY_MAC_ADDR(auth.bssid, params->bssid);
 	auth.status = params->status;
@@ -6894,6 +6928,57 @@ int mtk_cfg_change_iface(struct wiphy *wiphy,
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 	return 0;
 }
+
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+int mtk_cfg_add_intf_link(struct wiphy *wiphy,
+	struct wireless_dev *wdev, unsigned int link_id)
+{
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return -EFAULT;
+	}
+
+	return mtk_p2p_cfg80211_add_intf_link(wiphy, wdev, link_id);
+#else
+	return 0;
+#endif
+}
+
+void mtk_cfg_del_intf_link(struct wiphy *wiphy,
+	struct wireless_dev *wdev, unsigned int link_id)
+{
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
+		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		return;
+	}
+
+	mtk_p2p_cfg80211_del_intf_link(wiphy, wdev, link_id);
+#endif
+}
+#endif
 
 #if (CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)

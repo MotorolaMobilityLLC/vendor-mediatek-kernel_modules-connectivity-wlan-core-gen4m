@@ -203,6 +203,8 @@ struct GL_P2P_INFO {
 
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 	u_int8_t fgChannelSwitchReq;
+
+	uint32_t u4LinkId;
 };
 
 struct GL_P2P_DEV_INFO {

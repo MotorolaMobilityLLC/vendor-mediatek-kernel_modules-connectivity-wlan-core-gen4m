@@ -3796,6 +3796,17 @@ struct PARAM_SLEEP_CNT_INFO {
 	uint32_t u4ChipSlpCnt;
 };
 
+struct MSG_ADD_DEL_MLD_LINK {
+	uint8_t ucAction; /* 0: del, 1: add */
+	uint8_t ucMldBssIdx;
+	uint8_t ucRoleIdx;
+	uint32_t u4LinkId;
+	enum ENUM_IFTYPE eIftype;
+	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t aucLinkAddr[MAC_ADDR_LEN];
+	void *prNetDevice;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -5559,6 +5570,13 @@ wlanoidWedRecoveryStatus(struct ADAPTER *prAdapter,
 		     void *pvSetBuffer,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen);
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t
+wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
+		void *pvSetBuffer, uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 #endif
 
 #endif /* _WLAN_OID_H */

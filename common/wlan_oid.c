@@ -16573,6 +16573,9 @@ wlanoidExternalAuthDone(struct ADAPTER *prAdapter,
 			uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen)
 {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+#endif
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIndex = 0;
 	struct PARAM_EXTERNAL_AUTH *params;
@@ -16604,6 +16607,26 @@ wlanoidExternalAuthDone(struct ADAPTER *prAdapter,
 		MAC2STR(params->bssid), params->status);
 
 	prStaRec = cnmGetStaRecByAddress(prAdapter, ucBssIndex, params->bssid);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prAdapter,
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex));
+	if (!prStaRec && IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+		struct STA_RECORD *prTempStaRec;
+
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			prTempStaRec = cnmGetStaRecByAddress(prAdapter,
+				prTempBss->ucBssIndex, params->bssid);
+			if (prTempStaRec) {
+				prStaRec = prTempStaRec;
+				break;
+			}
+		}
+	}
+#endif
 	if (!prStaRec) {
 		DBGLOG(REQ, WARN, "SAE-confirm failed with bssid:" MACSTR "\n",
 		       MAC2STR(params->bssid));
@@ -18118,5 +18141,167 @@ wlanoidWedRecoveryStatus(struct ADAPTER *prAdapter,
 	wedHwRecoveryFromError(prAdapter, ser_status);
 
 	return rStatus;
+}
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t
+wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
+		void *pvSetBuffer, uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
+{
+	struct MSG_ADD_DEL_MLD_LINK *prMsg =
+		(struct MSG_ADD_DEL_MLD_LINK *)pvSetBuffer;
+	struct WIFI_VAR *prWifiVar;
+	struct GL_P2P_INFO *prP2pInfo;
+	struct MLD_BSS_INFO *prMldBss;
+	uint8_t ucRoleIdx, ucBssIdx;
+	uint32_t r4Status = WLAN_STATUS_SUCCESS;
+
+	if (!prMsg) {
+		DBGLOG(OID, ERROR, "Null msg.\n");
+		r4Status = WLAN_STATUS_INVALID_DATA;
+		goto exit;
+	}
+
+	ucRoleIdx = prMsg->ucRoleIdx;
+	prWifiVar = &prAdapter->rWifiVar;
+	prP2pInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
+	if (!prP2pInfo) {
+		DBGLOG(OID, ERROR, "Null prP2pInfo by role %u.\n", ucRoleIdx);
+		r4Status = WLAN_STATUS_INVALID_DATA;
+		goto exit;
+	}
+
+	DBGLOG(OID, INFO,
+		"action=%u mld_idx=%u role=%u link=%u type=%d mld_addr="MACSTR
+		" link_addr="MACSTR" netdev=0x%p\n",
+		prMsg->ucAction,
+		prMsg->ucMldBssIdx,
+		prMsg->ucRoleIdx,
+		prMsg->u4LinkId,
+		prMsg->eIftype,
+		MAC2STR(prMsg->aucMldAddr),
+		MAC2STR(prMsg->aucLinkAddr),
+		prMsg->prNetDevice);
+
+	if (prMsg->ucAction == 1) {
+		struct MSG_P2P_ADD_MLD_LINK *prMsgMldLinkAdd;
+
+		if (prMsg->u4LinkId > 0 &&
+		    prWifiVar->aprP2pRoleFsmInfo[ucRoleIdx] == NULL) {
+			struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg;
+
+			p2pFuncInitConnectionSettings(prAdapter,
+				prWifiVar->prP2PConnSettings[ucRoleIdx],
+				prMsg->eIftype == IFTYPE_AP);
+
+			prMldBss = mldBssGetByIdx(prAdapter,
+						  prMsg->ucMldBssIdx);
+			if (!prMldBss) {
+				DBGLOG(OID, ERROR,
+					"Null prMldBss by idx(%u)\n",
+					prMsg->ucMldBssIdx);
+				r4Status = WLAN_STATUS_INVALID_DATA;
+				goto exit;
+			}
+
+			ucBssIdx = p2pRoleFsmInit(prAdapter, ucRoleIdx,
+						  prMldBss->ucGroupMldId,
+						  prMldBss->aucOwnMldAddr);
+			if (ucBssIdx == MAX_BSSID_NUM) {
+				DBGLOG(OID, ERROR,
+					"p2pRoleFsmInit failed, role=%u, group=%u\n",
+					ucRoleIdx,
+					prMldBss->ucGroupMldId);
+				r4Status = WLAN_STATUS_RESOURCES;
+				goto exit;
+			}
+
+			prP2pInfo->aprRoleHandler = prMsg->prNetDevice;
+			prP2pInfo->u4LinkId = prMsg->u4LinkId;
+
+			/* Switch OP MOde. */
+			prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *)
+				cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_SWITCH_OP_MODE));
+			if (!prSwitchModeMsg) {
+				DBGLOG(OID, ERROR,
+					"Alloc msg prSwitchModeMsg failed\n");
+				r4Status = WLAN_STATUS_RESOURCES;
+				goto exit;
+			}
+			kalMemZero(prSwitchModeMsg, sizeof(*prSwitchModeMsg));
+			prSwitchModeMsg->rMsgHdr.eMsgId =
+				MID_MNY_P2P_FUN_SWITCH;
+			prSwitchModeMsg->ucRoleIdx = ucRoleIdx;
+			switch (prMsg->eIftype) {
+			case IFTYPE_AP:
+				prSwitchModeMsg->eIftype = IFTYPE_AP;
+				prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+				kalP2PSetRole(prAdapter->prGlueInfo, 2,
+					      ucRoleIdx);
+				break;
+			case IFTYPE_P2P_GO:
+				prSwitchModeMsg->eIftype = IFTYPE_P2P_GO;
+				prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+				kalP2PSetRole(prAdapter->prGlueInfo, 2,
+					      ucRoleIdx);
+				break;
+			default:
+				DBGLOG(OID, ERROR, "Unsupported type: %d.\n",
+					prMsg->eIftype);
+				r4Status = WLAN_STATUS_INVALID_DATA;
+				goto exit;
+			}
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				    (struct MSG_HDR *)prSwitchModeMsg,
+				    MSG_SEND_METHOD_UNBUF);
+		}
+
+		prMsgMldLinkAdd = (struct MSG_P2P_ADD_MLD_LINK *) cnmMemAlloc(
+			prAdapter, RAM_TYPE_MSG,
+			sizeof(*prMsgMldLinkAdd));
+		if (!prMsgMldLinkAdd) {
+			DBGLOG(OID, ERROR,
+					"Alloc msg prMsgMldLinkAdd failed\n");
+			r4Status = WLAN_STATUS_RESOURCES;
+			goto exit;
+		}
+		kalMemZero(prMsgMldLinkAdd, sizeof(*prMsgMldLinkAdd));
+		prMsgMldLinkAdd->rMsgHdr.eMsgId = MID_MNY_P2P_ADD_MLD_LINK;
+		prMsgMldLinkAdd->ucRoleIdx = ucRoleIdx;
+		prMsgMldLinkAdd->ucLinkIdx = prMsg->u4LinkId;
+		COPY_MAC_ADDR(prMsgMldLinkAdd->aucMldAddr, prMsg->aucMldAddr);
+		COPY_MAC_ADDR(prMsgMldLinkAdd->aucLinkAddr, prMsg->aucLinkAddr);
+		mboxSendMsg(prAdapter, MBOX_ID_0,
+			    (struct MSG_HDR *)prMsgMldLinkAdd,
+			    MSG_SEND_METHOD_UNBUF);
+	} else {
+		struct MSG_P2P_DEL_MLD_LINK *prMsgMldLinkDel;
+
+		prMsgMldLinkDel = (struct MSG_P2P_DEL_MLD_LINK *) cnmMemAlloc(
+			prAdapter, RAM_TYPE_MSG,
+			sizeof(*prMsgMldLinkDel));
+		if (prMsgMldLinkDel) {
+			kalMemZero(prMsgMldLinkDel, sizeof(*prMsgMldLinkDel));
+			prMsgMldLinkDel->rMsgHdr.eMsgId =
+				MID_MNY_P2P_DEL_MLD_LINK;
+			prMsgMldLinkDel->ucRoleIdx = ucRoleIdx;
+			prMsgMldLinkDel->ucLinkIdx = prMsg->u4LinkId;
+			mboxSendMsg(prAdapter, MBOX_ID_0,
+				    (struct MSG_HDR *)prMsgMldLinkDel,
+				    MSG_SEND_METHOD_UNBUF);
+		}
+
+		if (prMsg->u4LinkId > 0) {
+			p2pRoleFsmUninit(prAdapter, ucRoleIdx);
+
+			prP2pInfo->aprRoleHandler = NULL;
+		}
+	}
+
+exit:
+	return r4Status;
 }
 #endif

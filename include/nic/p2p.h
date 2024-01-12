@@ -399,6 +399,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	uint8_t ucDHIELen;
 
 	u_int8_t fgAddPwrConstrIe;
+
+	u_int8_t fgMlIeExist;
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

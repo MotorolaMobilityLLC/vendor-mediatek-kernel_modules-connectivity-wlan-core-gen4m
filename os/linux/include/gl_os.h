@@ -1135,6 +1135,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 #if CFG_SUPPORT_NAN
 	unsigned char ucIsNan;
 #endif
+	uint8_t ucMldBssIdx;
 };
 
 struct PACKET_PRIVATE_COMMON_DATA {  /* total: 8byte */

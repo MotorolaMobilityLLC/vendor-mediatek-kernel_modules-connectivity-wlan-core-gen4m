@@ -1168,7 +1168,7 @@ struct STA_RECORD *cnmGetStaRecByIndexWithoutInUseCheck(
 	uint8_t ucIndex);
 
 struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint8_t aucPeerMACAddress[]);
+	uint8_t ucBssIndex, const uint8_t aucPeerMACAddress[]);
 
 void cnmStaRecChangeState(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucNewState);

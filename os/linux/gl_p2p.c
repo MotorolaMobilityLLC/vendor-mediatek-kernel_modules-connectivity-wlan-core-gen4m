@@ -913,7 +913,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBss;
 #endif
-	uint8_t ucGroupMldId = 0;
+	uint8_t ucGroupMldId = MLD_GROUP_NONE;
 	enum nl80211_iftype type;
 	uint8_t ucBssIndex;
 
@@ -1764,6 +1764,138 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 
 }				/* end of p2pSetMulticastList() */
 
+static netdev_tx_t __p2pHardStartXmit(struct GLUE_INFO *prGlueInfo,
+	struct sk_buff *prSkb,
+	struct net_device *prDev,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prP2pBssInfo;
+
+	kalResetPacket(prGlueInfo, (void *) prSkb);
+
+	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
+
+	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
+	if (!prP2pBssInfo)
+		return NETDEV_TX_BUSY;
+
+	if (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	    prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0)
+		kalPerMonStart(prGlueInfo);
+
+	return NETDEV_TX_OK;
+}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
+	struct sk_buff *prSkb,
+	struct net_device *prDev)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct MLD_BSS_INFO *prMldBss = NULL;
+	struct MLD_STA_RECORD *prMldSta = NULL;
+	struct ETH_FRAME *prEthFrame;
+	netdev_tx_t status = NETDEV_TX_BUSY;
+
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
+	prEthFrame = (struct ETH_FRAME *)prSkb->data;
+	prMldBss = mldBssGetByIdx(prGlueInfo->prAdapter,
+				  prNetDevPrivate->ucMldBssIdx);
+	prMldSta = mldStarecGetByMldAddr(prGlueInfo->prAdapter,
+					 prMldBss,
+					 prEthFrame->aucDestAddr);
+
+	if (!prMldBss) {
+		DBGLOG(P2P, ERROR, "Null prMldBss %u\n",
+			prNetDevPrivate->ucMldBssIdx);
+		return NETDEV_TX_BUSY;
+	}
+
+	if (is_multicast_ether_addr(prEthFrame->aucDestAddr)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+		struct sk_buff *prDupSkb = NULL;
+
+		prBssList = &prMldBss->rBssList;
+		if (IS_MLD_BSSINFO_MULTI(prMldBss) == FALSE) {
+			status = __p2pHardStartXmit(prGlueInfo,
+						    prSkb,
+						    prDev,
+						    prNetDevPrivate->ucBssIdx);
+			goto exit;
+		}
+
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			prDupSkb = skb_copy(prSkb, GFP_ATOMIC);
+			if (!prDupSkb) {
+				DBGLOG(P2P, ERROR,
+					"duplicate skb failed.\n");
+				status = NETDEV_TX_BUSY;
+				break;
+			}
+			status = __p2pHardStartXmit(prGlueInfo,
+						    prDupSkb,
+						    prDev,
+						    prTempBss->ucBssIndex);
+			if (status != NETDEV_TX_OK) {
+				kfree_skb(prDupSkb);
+				break;
+			}
+		}
+		kfree_skb(prSkb);
+	} else if (prMldSta) {
+		struct STA_RECORD *prStarec;
+
+		prStarec = cnmGetStaRecByIndex(prGlueInfo->prAdapter,
+			secGetStaIdxByWlanIdx(prGlueInfo->prAdapter,
+				prMldSta->u2SetupWlanId));
+		if (!prStarec) {
+			DBGLOG(P2P, ERROR,
+				"get sta failed by wlan idx(%u).\n",
+				prMldSta->u2SetupWlanId);
+			status = NETDEV_TX_BUSY;
+			goto exit;
+		}
+
+		status = __p2pHardStartXmit(prGlueInfo, prSkb, prDev,
+					    prStarec->ucBssIndex);
+	} else {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
+		u_int8_t fgMatched = FALSE;
+
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			struct STA_RECORD *prStaRec;
+
+			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
+				prTempBss->ucBssIndex,
+				prEthFrame->aucDestAddr);
+			if (!prStaRec)
+				continue;
+
+			status = __p2pHardStartXmit(prGlueInfo,
+						    prSkb,
+						    prDev,
+						    prTempBss->ucBssIndex);
+			fgMatched = TRUE;
+			break;
+		}
+
+		if (!fgMatched)
+			DBGLOG_LIMITED(P2P, WARN,
+				"No mached starec for addr"MACSTR"\n",
+				MAC2STR(prEthFrame->aucDestAddr));
+	}
+
+exit:
+	return status;
+}
+#endif
+
 /*---------------------------------------------------------------------------*/
 /*!
  *  \brief This function is TX entry point of NET DEVICE.
@@ -1776,13 +1908,12 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
  */
 /*---------------------------------------------------------------------------*/
 netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
-		struct net_device *prDev)
+	struct net_device *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t ucBssIndex;
-	struct BSS_INFO *prP2pBssInfo = NULL;
 
 	ASSERT(prSkb);
 	ASSERT(prDev);
@@ -1791,18 +1922,14 @@ netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
 		netdev_priv(prDev);
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && \
+	(KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)
+	if (prDev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP &&
+	    prDev->ieee80211_ptr->valid_links)
+		return __p2pMloHardStartXmit(prGlueInfo, prSkb, prDev);
+#endif
 
-	kalResetPacket(prGlueInfo, (void *) prSkb);
-
-	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
-	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
-	if (!prP2pBssInfo)
-		return NETDEV_TX_BUSY;
-	if ((prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) ||
-		(prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0))
-		kalPerMonStart(prGlueInfo);
-
-	return NETDEV_TX_OK;
+	return __p2pHardStartXmit(prGlueInfo, prSkb, prDev, ucBssIndex);
 }				/* end of p2pHardStartXmit() */
 
 /*----------------------------------------------------------------------------*/

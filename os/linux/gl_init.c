@@ -1219,6 +1219,11 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.add_virtual_intf = mtk_cfg_add_iface,
 	.del_virtual_intf = mtk_cfg_del_iface,
 	.change_virtual_intf = mtk_cfg_change_iface,
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+	.add_intf_link = mtk_cfg_add_intf_link,
+	.del_intf_link = mtk_cfg_del_intf_link,
+#endif
 	.add_key = mtk_cfg_add_key,
 	.get_key = mtk_cfg_get_key,
 	.del_key = mtk_cfg_del_key,

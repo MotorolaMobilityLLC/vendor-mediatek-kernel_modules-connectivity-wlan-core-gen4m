@@ -630,6 +630,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	uint8_t ucBssIdx;
 	u_int8_t ucIsP2p;
 	u_int8_t ucMddpSupport;
+	uint8_t ucMldBssIdx;
 };
 
 struct PACKET_PRIVATE_DATA {

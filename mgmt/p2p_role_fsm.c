@@ -5529,4 +5529,92 @@ static void p2pRoleFsmHandleBssUnlink(struct ADAPTER *prAdapter,
 	}
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void p2pRoleFsmRunEventAddMldLink(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_ADD_MLD_LINK *prMsg =
+		(struct MSG_P2P_ADD_MLD_LINK *)prMsgHdr;
+	struct GL_P2P_INFO *prP2pInfo;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct BSS_INFO *prBssInfo;
+
+	DBGLOG(P2P, INFO,
+		"role=%d, link=%d, mld_addr="MACSTR", link_addr="MACSTR"\n",
+		prMsg->ucRoleIdx,
+		prMsg->ucLinkIdx,
+		prMsg->aucMldAddr,
+		prMsg->aucLinkAddr);
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prMsg->ucRoleIdx);
+	prP2pInfo = prAdapter->prGlueInfo->prP2PInfo[prMsg->ucRoleIdx];
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prP2pRoleFsmInfo->ucBssIndex);
+
+	prMldBssInfo = prP2pRoleFsmInfo->prP2pMldBssInfo;
+	if (!prMldBssInfo || !prBssInfo) {
+		DBGLOG(P2P, ERROR,
+			"null pointer, mld bss: 0x%p, bss: 0x%p\n",
+			prMldBssInfo, prBssInfo);
+		goto exit;
+	}
+
+	mldBssUpdateMldAddr(prAdapter, prMldBssInfo, prMsg->aucMldAddr);
+	prBssInfo->ucLinkIndex = prMsg->ucLinkIdx;
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, prMsg->aucLinkAddr);
+
+	wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
+				     prBssInfo->ucBssIndex,
+				     wlanGetNetDev(prAdapter->prGlueInfo,
+						   prBssInfo->ucBssIndex));
+
+exit:
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
+void p2pRoleFsmRunEventDelMldLink(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_P2P_DEL_MLD_LINK *prMsg =
+		(struct MSG_P2P_DEL_MLD_LINK *)prMsgHdr;
+	struct GL_P2P_INFO *prP2pInfo;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct BSS_INFO *prBssInfo;
+
+	DBGLOG(P2P, INFO, "role=%d, link=%d\n",
+		prMsg->ucRoleIdx,
+		prMsg->ucLinkIdx);
+
+	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+		prMsg->ucRoleIdx);
+	prP2pInfo = prAdapter->prGlueInfo->prP2PInfo[prMsg->ucRoleIdx];
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prP2pRoleFsmInfo->ucBssIndex);
+	prMldBssInfo = prP2pRoleFsmInfo->prP2pMldBssInfo;
+	if (!prMldBssInfo || !prBssInfo) {
+		DBGLOG(P2P, ERROR,
+			"null pointer, mld bss: 0x%p, bss: 0x%p\n",
+			prMldBssInfo, prBssInfo);
+		goto exit;
+	}
+
+	if (prBssInfo->ucLinkIndex != prMsg->ucLinkIdx) {
+		DBGLOG(P2P, ERROR, "link idx mismatch %u %u\n",
+			prBssInfo->ucLinkIndex,
+			prMsg->ucLinkIdx);
+		goto exit;
+	}
+
+	wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
+				     prBssInfo->ucBssIndex,
+				     NULL);
+
+exit:
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+#endif
+
 #endif /* CFG_ENABLE_WIFI_DIRECT */
