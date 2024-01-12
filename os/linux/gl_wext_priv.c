@@ -4101,6 +4101,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_PRESET_LINKID	"PRESET_LINKID"
 #define CMD_SET_ML_PROBEREQ	"SET_ML_PROBEREQ"
 #define CMD_GET_ML_CAPA		"GET_ML_CAPA"
+#define CMD_GET_ML_PREFER_FREQ_LIST	"GET_ML_PREFER_FREQ_LIST"
+#define CMD_GET_ML_2ND_FREQ		"GET_ML_2ND_FREQ"
 #endif
 
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
@@ -6001,6 +6003,182 @@ int priv_driver_get_ml_capa(IN struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
+
+enum ENUM_BAND getBandByFreq(uint32_t ucPreferFreq)
+{
+	enum ENUM_BAND ePreferBand = BAND_NULL;
+
+	if (ucPreferFreq >= 2412 && ucPreferFreq <= 2484)
+		ePreferBand = BAND_2G4;
+	else if (ucPreferFreq >= 4900 && ucPreferFreq < 5900)
+		ePreferBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (ucPreferFreq >= 5935 && ucPreferFreq <= 7115)
+		ePreferBand = BAND_6G;
+#endif
+
+	return ePreferBand;
+}
+
+uint32_t getPreferFreq(IN struct ADAPTER *prAd,
+	IN uint8_t fgIsGBand)
+{
+	const int8_t acDelim[] = " ";
+	uint8_t *pcDupValue;
+	uint8_t *pcPtr = NULL;
+	uint32_t ucPreferFreq = 0;
+	int32_t u4Ret = 0;
+	enum ENUM_BAND eBand = BAND_NULL;
+
+	pcDupValue = prAd->rWifiVar.aucMloP2pPreferFreq;
+
+	while ((pcPtr = kalStrSep
+		((char **)(&pcDupValue),
+		acDelim)) != NULL) {
+
+		if (!kalStrCmp(pcPtr, ""))
+			continue;
+
+		u4Ret = kalkStrtou32(pcPtr, 0,
+			&(ucPreferFreq));
+
+		if (u4Ret || !ucPreferFreq) {
+			DBGLOG(INIT, LOUD,
+				"parse au4Values error u4Ret=%d\n",
+				u4Ret);
+			continue;
+		}
+
+		DBGLOG(INIT, INFO,
+			"Prefer freq=%u\n", ucPreferFreq);
+
+		eBand = getBandByFreq(ucPreferFreq);
+		if ((fgIsGBand && (eBand == BAND_2G4)) ||
+			(!fgIsGBand && (eBand >= BAND_5G)))
+			return ucPreferFreq;
+	}
+
+	if (fgIsGBand)
+		return AP_DEFAULT_CHANNEL_2G;
+	else
+		return AP_DEFAULT_CHANNEL_5G;
+}
+
+int priv_driver_get_ml_2nd_freq(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAd = NULL;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = 0;
+	uint32_t ucPreferFreq = 0;
+	uint32_t ucNegoFreq = 0;
+	uint32_t ucPeerFreq = 0;
+	struct BSS_INFO *bss = NULL;
+	enum ENUM_BAND ePreferBand = BAND_NULL;
+	enum ENUM_BAND eNegoBand = BAND_NULL;
+
+	DBGLOG(REQ, TRACE, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAd = prGlueInfo->prAdapter;
+	if (!prAd)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc < 2) {
+		DBGLOG(REQ, LOUD, "Incorrect argc %i\n", i4Argc);
+		return -1;
+	}
+
+	/*
+	 * apcArgv[0]: GO negotiation freq
+	 * apcArgv[1]: GC AIS freq
+	 */
+	if (kalkStrtou32(apcArgv[1], 0, &ucNegoFreq) ||
+		kalkStrtou32(apcArgv[2], 0, &ucPeerFreq)) {
+		DBGLOG(REQ, ERROR, "Integer format error\n");
+		return -1;
+	}
+
+	eNegoBand = getBandByFreq(ucNegoFreq);
+	if (eNegoBand == BAND_NULL) {
+		DBGLOG(REQ, ERROR, "Incorrect input freq %u\n", ucNegoFreq);
+		return -1;
+	}
+
+	bss = aisGetConnectedBssInfo(prAd);
+	if (bss) {
+		ucPreferFreq = nicChannelNum2Freq(
+			bss->ucPrimaryChannel,
+			bss->eBand) / 1000;
+		ePreferBand = bss->eBand;
+	}
+
+	if (eNegoBand == BAND_2G4) {
+		if (ePreferBand <= BAND_2G4) {
+			ucPreferFreq = ucPeerFreq;
+			ePreferBand = getBandByFreq(ucPreferFreq);
+		}
+		if (ePreferBand <= BAND_2G4)
+			ucPreferFreq = getPreferFreq(prAd, FALSE);
+	} else if (eNegoBand >= BAND_5G &&
+			    eNegoBand < BAND_NUM) {
+		if (ePreferBand != BAND_2G4) {
+			ucPreferFreq = ucPeerFreq;
+			ePreferBand = getBandByFreq(ucPreferFreq);
+		}
+		if (ePreferBand != BAND_2G4)
+			ucPreferFreq = getPreferFreq(prAd, TRUE);
+	}
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d", ucPreferFreq);
+
+	DBGLOG(REQ, INFO, "command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+}
+
+int priv_driver_get_ml_prefer_freqlist(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAd = NULL;
+	struct BSS_INFO *bss = NULL;
+	int32_t i4BytesWritten = 0;
+
+	DBGLOG(REQ, TRACE, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAd = prGlueInfo->prAdapter;
+	if (!prAd)
+		return -1;
+
+	bss = aisGetConnectedBssInfo(prGlueInfo->prAdapter);
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d",
+		(bss) ? nicChannelNum2Freq(
+			bss->ucPrimaryChannel,
+			bss->eBand) / 1000 : 0);
+
+	DBGLOG(REQ, INFO, "command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
+}
+
 #endif
 
 static int priv_driver_set_test_mode(IN struct net_device *prNetDev,
@@ -19508,6 +19686,8 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_PRESET_LINKID, priv_driver_preset_linkid},
 	{CMD_SET_ML_PROBEREQ, priv_driver_set_ml_probereq},
 	{CMD_GET_ML_CAPA, priv_driver_get_ml_capa},
+	{CMD_GET_ML_PREFER_FREQ_LIST, priv_driver_get_ml_prefer_freqlist},
+	{CMD_GET_ML_2ND_FREQ, priv_driver_get_ml_2nd_freq},
 #endif
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 	{CMD_GET_DPD_CACHE, priv_driver_get_dpd_cache},
