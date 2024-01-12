@@ -2333,6 +2333,40 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 #endif
 }
 
+void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
+{
+	struct IE_EXT_CAP *prExtCap = NULL;
+
+	prExtCap = (struct IE_EXT_CAP *) pucIE;
+
+	if (!prExtCap)
+		return;
+
+	DBGLOG(SCN, TRACE,
+		"Extented capabilities IE present,BSSID[" MACSTR "] SSID:%s\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		prBssDesc->aucSSID);
+
+	DBGLOG_MEM8(SCN, TRACE, prExtCap, IE_SIZE(prExtCap));
+
+#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
+	GET_EXT_CAP(prExtCap->aucCapabilities, prExtCap->ucLength,
+		ELEM_EXT_CAP_BSS_TRANSITION_BIT, prBssDesc->fgSupportBTM);
+#endif
+
+#if (CFG_SUPPORT_TX_PWR_ENV == 1)
+	/* Get extended spectrum management capable */
+	GET_EXT_CAP(prExtCap->aucCapabilities, prExtCap->ucLength,
+		ELEM_EXT_CAP_EXT_SPEC_MGMT_CAPABLE_BIT,
+		prBssDesc->fgExtSpecMgmtCap);
+
+	DBGLOG(SCN, TRACE,
+		"BSSID[" MACSTR "] SSID:%s: Ext Spec Mgmt Cap[%d]\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		prBssDesc->aucSSID,
+		prBssDesc->fgExtSpecMgmtCap);
+#endif
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This API parses Beacon/ProbeResp frame and insert extracted
@@ -3162,11 +3196,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			break;
 
 		case ELEM_ID_EXTENDED_CAP:
-#if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
-			prBssDesc->fgSupportBTM =
-				!!((*(uint32_t *)(pucIE + 2)) &
-				BIT(ELEM_EXT_CAP_BSS_TRANSITION_BIT));
-#endif
+			scanParseExtCapIE(pucIE, prBssDesc);
 			break;
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)

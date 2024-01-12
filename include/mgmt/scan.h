@@ -497,6 +497,7 @@ struct BSS_DESC {
 	uint8_t fgIsTxPwrEnvPresent;
 	uint8_t ucTxPwrEnvPwrLmtNum;
 	int8_t aicTxPwrEnvMaxTxPwr[TX_PWR_ENV_MAX_TXPWR_BW_NUM];
+	uint8_t fgExtSpecMgmtCap;
 #endif
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode;
