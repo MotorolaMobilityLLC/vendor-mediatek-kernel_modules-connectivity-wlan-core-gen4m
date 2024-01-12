@@ -118,6 +118,10 @@ struct GNU_PACKED hqa_tx {
 	u_int32 tx_path;
 	u_int32 nss;
 	u_int32 hw_tx_enable;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	u_int32 puncture;
+#endif
 };
 
 struct GNU_PACKED hqa_frame {
