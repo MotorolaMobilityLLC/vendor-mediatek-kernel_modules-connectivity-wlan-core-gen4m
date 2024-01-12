@@ -6,10 +6,14 @@
 #ifndef __WF_TX_FREE_DONE_EVENT_REGS_H__
 #define __WF_TX_FREE_DONE_EVENT_REGS_H__
 
+static __KAL_INLINE__ uint32_t _READ_FIELD(uint32_t reg,
+	uint32_t mask, uint32_t shift)
+{
+	return (reg & mask) >> shift;
+}
+
 #define READ_FIELD(_reg, _field)	\
-	({	\
-		(((_reg) & (_field##_MASK)) >> (_field##_SHIFT));	\
-	})
+	_READ_FIELD(_reg, _field##_MASK, _field##_SHIFT)
 
 // DW0
 #define WF_TX_FREE_DONE_EVENT_RX_BYTE_COUNT_DW                                   0

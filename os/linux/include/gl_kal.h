@@ -1069,6 +1069,16 @@ char *strtok_r(char *s, const char *delim, char **last);
 int8_t atoi(uint8_t ch);
 #define kalAtoi(_ch) atoi(_ch)
 
+#define SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten, fmt, args...) (\
+	{\
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,\
+				i4TotalLen - i4BytesWritten,\
+				fmt,\
+				args);\
+		DBGLOG(HAL, INFO, fmt, args);\
+		i4BytesWritten;\
+	} \
+)
 /* defined for wince sdio driver only */
 #if defined(_HIF_SDIO)
 #define kalDevSetPowerState(prGlueInfo, ePowerMode) \

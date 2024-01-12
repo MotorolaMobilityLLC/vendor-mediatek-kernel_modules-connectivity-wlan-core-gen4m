@@ -721,6 +721,17 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 int8_t kal_atoi(uint8_t ch);
 #define kalAtoi(_ch) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten, fmt, args...) (\
+	{\
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,\
+				i4TotalLen - i4BytesWritten,\
+				fmt,\
+				args);\
+		DBGLOG(HAL, INFO, fmt, args);\
+		i4BytesWritten;\
+	} \
+)
+
 void kal_clear_bit(unsigned long bit, unsigned long *p);
 int kal_test_and_clear_bit(unsigned long bit, unsigned long *p);
 void kal_set_bit(unsigned long bit, unsigned long *p);
