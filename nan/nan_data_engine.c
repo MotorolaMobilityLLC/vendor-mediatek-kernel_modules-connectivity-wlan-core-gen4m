@@ -1001,17 +1001,14 @@ nanDataFreeNdp(struct ADAPTER *prAdapter, struct _NAN_NDP_INSTANCE_T *prNDP) {
 	}
 
 
-	if (prNDP->u2AttrListLength) {
-		/* TODO_CJ: free crash*/
-		/* if(prNDP->pucAttrList != NULL)
-		 *	cnmMemFree(prAdapter, prNDP->pucAttrList);
-		 * else
-		 */
-		DBGLOG(NAN, INFO,
-		       "[%s] pucAttrList: 0x%p, u2AttrListLength:%d\n",
-		       __func__, prNDP->pucAttrList, prNDP->u2AttrListLength);
-		prNDP->u2AttrListLength = 0;
-		prNDP->pucAttrList = NULL;
+	if (prNDP->pucAttrList != NULL) {
+		if (prNDP->u2AttrListLength) {
+			/* TODO_CJ: free crash*/
+			cnmMemFree(prAdapter, prNDP->pucAttrList);
+
+			prNDP->u2AttrListLength = 0;
+			prNDP->pucAttrList = NULL;
+		}
 	}
 
 	prNDP->fgNDPValid = FALSE;
