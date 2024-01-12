@@ -2827,3 +2827,29 @@ void halUpdateTxMaxQuota(IN struct ADAPTER *prAdapter)
 	}
 }
 
+bool halCancelOngoingSer(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
+
+	if (!prAdapter || prAdapter->rWifiVar.fgEnableSer == FALSE)
+		return false;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
+
+	if (prErrRecoveryCtrl->eErrRecovState == ERR_RECOV_STOP_IDLE &&
+			prErrRecoveryCtrl->u4Status == 0)
+		return false;
+
+	DBGLOG(HAL, INFO, "eErrRecovState: %d, u4Status: %d\n",
+			prErrRecoveryCtrl->eErrRecovState,
+			prErrRecoveryCtrl->u4Status);
+
+	prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
+	prErrRecoveryCtrl->u4Status = 0;
+	nicSerStartTxRx(prAdapter);
+
+	return true;
+}
+
