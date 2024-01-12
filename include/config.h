@@ -1787,7 +1787,12 @@
 #define CFG_SUPPORT_CMD_OVER_WFDMA	0
 #endif
 
-
+#define CFG_SUPPORT_CUSTOM_NETLINK          0
+#if CFG_SUPPORT_CUSTOM_NETLINK
+#define CFG_SUPPORT_TX_BEACON_STA_MODE      0
+#else
+#define CFG_SUPPORT_TX_BEACON_STA_MODE      0
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

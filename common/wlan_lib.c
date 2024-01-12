@@ -1437,6 +1437,9 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			}
 		}
 	}
+#if CFG_SUPPORT_CUSTOM_NETLINK
+	glCustomGenlInit();
+#endif
 
 	if (prAdapter->chip_info->checkbushang)
 		prAdapter->chip_info->checkbushang((void *) prAdapter, TRUE);
@@ -1526,6 +1529,10 @@ uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter,
 
 	halHifSwInfoUnInit(prAdapter->prGlueInfo);
 	wlanOffUninitNicModule(prAdapter, bAtResetFlow);
+
+#if CFG_SUPPORT_CUSTOM_NETLINK
+	glCustomGenlDeinit();
+#endif
 
 	return u4Status;
 }				/* wlanAdapterStop */
