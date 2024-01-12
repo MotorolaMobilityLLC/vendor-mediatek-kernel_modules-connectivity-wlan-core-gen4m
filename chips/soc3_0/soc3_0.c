@@ -1261,6 +1261,54 @@ int soc3_0_CheckBusHang(void)
 
 	return ret;
 }
+void soc3_0_DumpBusHangdebuglog(void)
+{
+	uint32_t u4Value = 0;
+	uint32_t RegValue;
+
+	RegValue = 0x00020002;
+	wf_ioremap_write(0x18060128, RegValue);
+	wf_ioremap_read(0x18060148, &u4Value);
+	DBGLOG(HAL, INFO,
+			"dump: 0x18060148 = 0x%08x after 0x%08x\n",
+			u4Value, RegValue);
+	wf_ioremap_read(0x18001a00, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x18001a00 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x1800c00c, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x1800c00c = 0x%08x\n", u4Value);
+
+}
+void soc3_0_DumpPwrStatedebuglog(void)
+{
+	uint32_t u4Value = 0;
+
+	wf_ioremap_read(0x18070400, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x18070400 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x18071400, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x18071400 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x18072400, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x18072400 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x18073400, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x18073400 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x180602cc, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x180602cc = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x18000110, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x18000110 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x184c0880, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x184c0880 = 0x%08x\n", u4Value);
+	wf_ioremap_read(0x184c08d0, &u4Value);
+	DBGLOG(HAL, INFO,
+		"dump: 0x184c08d0 = 0x%08x\n", u4Value);
+}
 
 int wf_pwr_on_consys_mcu(void)
 {
@@ -1322,6 +1370,7 @@ int wf_pwr_on_consys_mcu(void)
 		DBGLOG(INIT, ERROR, "Polling CONNSYS version ID fail.\n");
 		return ret;
 	}
+	soc3_0_DumpBusHangdebuglog();
 
 	/* Assert CONNSYS WM CPU SW reset write 0x18000010[0] = 1'b0*/
 	wf_ioremap_read(WFSYS_CPU_SW_RST_B_ADDR, &value);
@@ -1494,6 +1543,9 @@ int wf_pwr_on_consys_mcu(void)
 		polling_count++;
 	}
 	if (check != 0) {
+		soc3_0_DumpWfsysInfo();
+		soc3_0_DumpPwrStatedebuglog();
+		soc3_0_DumpWfsysdebugflag();
 		DBGLOG(INIT, ERROR,
 			"Check CONNSYS power-on completion fail.\n");
 		return ret;
@@ -1677,6 +1729,7 @@ int wf_pwr_off_consys_mcu(void)
 	/*Disable A-die top_ck_en (use common API)(clear driver & FW resource)*/
 	conninfra_adie_top_ck_en_off(CONNSYS_ADIE_CTL_FW_WIFI);
 
+	soc3_0_DumpBusHangdebuglog();
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_INFRA_WAKEUP_WF_ADDR, &value);
 	value &= 0xFFFFFFFE;
