@@ -5982,7 +5982,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 
 	prWifiVar->ucApWpsMode = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "ApWpsMode", 0);
-	DBGLOG(INIT, INFO, "ucApWpsMode = %u\n", prWifiVar->ucApWpsMode);
+	DBGLOG(INIT, TRACE, "ucApWpsMode = %u\n", prWifiVar->ucApWpsMode);
 
 	prWifiVar->ucThreadScheduling = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "ThreadSched", 0);

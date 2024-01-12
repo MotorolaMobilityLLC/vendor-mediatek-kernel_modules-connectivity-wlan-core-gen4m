@@ -133,20 +133,18 @@ struct ECO_INFO g_eco_info = {0xFF};
  * and also enhance the readability.
  */
 #define LOCAL_NIC_ALLOCATE_MEMORY(pucMem, u4Size, eMemType, pucComment) \
-	{ \
-		DBGLOG(INIT, INFO, "Allocating %u bytes for %s.\n", \
+{ \
+	pucMem = (uint8_t *)kalMemAlloc(u4Size, eMemType); \
+	if (pucMem == (uint8_t *)NULL) { \
+		DBGLOG(INIT, ERROR, \
+			"Could not allocate %u bytes for %s.\n", \
 			u4Size, (char *) pucComment); \
-		pucMem = (uint8_t *)kalMemAlloc(u4Size, eMemType); \
-		if (pucMem == (uint8_t *)NULL) { \
-			DBGLOG(INIT, ERROR, \
-				"Could not allocate %u bytes for %s.\n", \
-				u4Size, (char *) pucComment); \
-			break; \
-		} \
-		ASSERT(((unsigned long)pucMem % 4) == 0); \
-		DBGLOG(INIT, INFO, "Virtual Address = 0x%p for %s.\n", \
-			(void *) pucMem, (char *) pucComment); \
-	}
+		break; \
+	} \
+	ASSERT(((unsigned long)pucMem % 4) == 0); \
+	DBGLOG(INIT, INFO, "Alloc %u bytes, addr = 0x%p for %s.\n", \
+		u4Size, (void *) pucMem, (char *) pucComment); \
+}
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -1405,11 +1403,10 @@ uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 		   sizeof(rCmdActivateCtrl.ucReserved));
 
 #if 1				/* DBG */
-	DBGLOG(RSN, INFO, "[wlan index][Network]=%d activate=%d\n",
-	       ucBssIndex, 1);
 	DBGLOG(RSN, INFO,
-	       "[wlan index][Network] OwnMac=" MACSTR " BSSID=" MACSTR
+	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
 	       " BMCIndex = %d NetType=%d\n",
+	       ucBssIndex,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucBSSID),
 	       prBssInfo->ucBMCWlanIndex, prBssInfo->eNetworkType);
@@ -1455,11 +1452,9 @@ uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 	rCmdActivateCtrl.ucActive = 0;
 
 #if 1				/* DBG */
-	DBGLOG(RSN, INFO, "[wlan index][Network]=%d activate=%d\n",
-	       ucBssIndex, 0);
 	DBGLOG(RSN, INFO,
-	       "[wlan index][Network] OwnMac=" MACSTR " BSSID=" MACSTR
-	       " BMCIndex = %d\n",
+	       "[wlan index]=%d OwnMac=" MACSTR " BSSID=" MACSTR
+	       " BMCIndex = %d\n", ucBssIndex,
 	       MAC2STR(prBssInfo->aucOwnMacAddr),
 	       MAC2STR(prBssInfo->aucBSSID), prBssInfo->ucBMCWlanIndex);
 #endif
@@ -1910,9 +1905,6 @@ nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
 		ASSERT(0);
 
 	u4Flag = prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex];
-	DBGLOG(NIC, INFO,
-		"nicPowerSaveInfoMap u4Flag=0x%04x, ucCaller=%d\n",
-		u4Flag, ucCaller);
 
 	/* set send command flag */
 	if (ePowerMode != Param_PowerModeCAM) {
@@ -1925,10 +1917,12 @@ nicPowerSaveInfoMap(IN struct ADAPTER *prAdapter,
 		u4Flag |= BIT(ucCaller);
 	}
 
-	prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex] = u4Flag;
 	DBGLOG(NIC, INFO,
-		"nicPowerSaveInfoMap u4PowerSaveFlag[%d]=0x%04x\n",
-		ucBssIndex, prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
+		"Flag=0x%04x, Caller=%d, PM=%d, PSFlag[%d]=0x%04x\n",
+		u4Flag, ucCaller, ePowerMode, ucBssIndex,
+		prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex]);
+
+	prAdapter->rWlanInfo.u4PowerSaveFlag[ucBssIndex] = u4Flag;
 }
 
 /*----------------------------------------------------------------------------*/
