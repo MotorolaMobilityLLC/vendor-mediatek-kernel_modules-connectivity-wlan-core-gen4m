@@ -1175,7 +1175,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.fgIsSupportL0p5Reset = FALSE,
 #endif
 	.u4MinTxLen = 2,
-	.wifiNappingCtrl = mt6653WiFiNappingCtrl,
 #if CFG_NEW_HIF_DEV_REG_IF
 	.fgIsWarnInvalidMmioRead = TRUE,
 	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
