@@ -608,7 +608,7 @@ uint32_t rlmCalculateMTKOuiIELen(
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	len += sizeof(struct IE_MTK_CHIP_CAP);
-#ifdef CFG_AAD_NONCE_NO_REPLACE
+#if defined(CFG_SUPPORT_PRE_WIFI7)
 	len += sizeof(struct IE_MTK_PRE_WIFI7);
 	len += ehtRlmCalculateCapIELen(prAdapter, ucBssIndex, prStaRec);
 	len += ehtRlmCalculateOpIELen(prAdapter, ucBssIndex, prStaRec);

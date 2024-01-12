@@ -3447,16 +3447,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		}
 	}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* reset mldtype if no ml ie */
-	if (!prBssDesc->rMlInfo.fgValid)
-		prBssDesc->rMlInfo.fgMldType = MLD_TYPE_INVALID;
-
-	if (prBssDesc->rMlInfo.fgValid &&
-	    prBssDesc->rMlInfo.fgMldType == MLD_TYPE_INVALID)
-		prBssDesc->rMlInfo.fgMldType = MLD_TYPE_EXTERNAL;
-#endif
-
 	/* 4 <3.2> Save information from IEs - SSID */
 	/* Update Flag of Hidden SSID for used in SEARCH STATE. */
 
@@ -5120,10 +5110,13 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 			DBGLOG(SCN, LOUD, "MTK_OUI_CHIP_CAP");
 			DBGLOG_MEM8(SCN, LOUD, prCapIe, IE_SIZE(prCapIe));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (prCapIe->u8ChipCap & MLD_TYPE_ICV_METHOD_V1)
+			if (prCapIe->u8ChipCap & CHIP_CAP_ICV_V1)
 				prBssDesc->rMlInfo.fgMldType =
 					MLD_TYPE_ICV_METHOD_V1;
-			if (prCapIe->u8ChipCap & MLD_TYPE_ICV_METHOD_V2)
+			if (prCapIe->u8ChipCap & CHIP_CAP_ICV_V1_1)
+				prBssDesc->rMlInfo.fgMldType =
+					MLD_TYPE_ICV_METHOD_V1_1;
+			if (prCapIe->u8ChipCap & CHIP_CAP_ICV_V2)
 				prBssDesc->rMlInfo.fgMldType =
 					MLD_TYPE_ICV_METHOD_V2;
 #endif

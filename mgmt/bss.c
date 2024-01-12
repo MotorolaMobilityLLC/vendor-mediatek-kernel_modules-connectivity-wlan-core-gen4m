@@ -345,17 +345,6 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 	}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	/* eht and ml are together */
-	if (!prBssDesc->rMlInfo.fgValid &&
-	     prBssDesc->rMlInfo.fgMldType == MLD_TYPE_EXTERNAL) {
-		DBGLOG(BSS, INFO,
-		    "BSSID " MACSTR " invalid mld with eht not allowed\n",
-		    MAC2STR(prBssDesc->aucBSSID));
-		ucEhtOption = FEATURE_DISABLED;
-	}
-#endif
-
 	if (IS_FEATURE_DISABLED(ucEhtOption))
 		prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_EHT;
 	else if (IS_FEATURE_FORCE_ENABLED(ucEhtOption))
@@ -1228,7 +1217,7 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 
 	/* 4 <4> Compose IEs in MSDU_INFO_T */
 
-#if defined(CFG_AAD_NONCE_NO_REPLACE)
+#if defined(CFG_SUPPORT_PRE_WIFI7)
 	nicTxConfigPktControlFlag(prMsduInfo,
 				  MSDU_CONTROL_FLAG_HIDE_INFO, TRUE);
 #endif
@@ -1427,7 +1416,7 @@ bssSendBeaconProbeResponse(struct ADAPTER *prAdapter,
 	bssBuildBeaconProbeRespFrameCommonIEs(prMsduInfo, prBssInfo,
 					      pucDestAddr);
 
-#if defined(CFG_AAD_NONCE_NO_REPLACE)
+#if defined(CFG_SUPPORT_PRE_WIFI7)
 	nicTxConfigPktControlFlag(prMsduInfo,
 				  MSDU_CONTROL_FLAG_HIDE_INFO, TRUE);
 #endif

@@ -1283,7 +1283,7 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			struct WLAN_BEACON_FRAME rProbeRspFrame;
 			struct GL_P2P_INFO *prP2PInfo;
 			struct MSDU_INFO *prNewMgmtTxMsdu;
-#ifdef CFG_AAD_NONCE_NO_REPLACE
+#if defined(CFG_SUPPORT_PRE_WIFI7)
 			uint8_t fgHide = TRUE;
 #else
 			uint8_t fgHide = FALSE;

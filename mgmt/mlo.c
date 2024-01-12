@@ -3512,22 +3512,6 @@ uint8_t mldStarecNum(struct ADAPTER *prAdapter)
 	return num;
 }
 
-uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter)
-{
-	uint8_t i;
-	struct MLD_STA_RECORD *prMldStarec;
-
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
-		prMldStarec = &prAdapter->aprMldStarec[i];
-
-		if (prMldStarec->fgIsInUse &&
-		    prMldStarec->fgMldType == MLD_TYPE_EXTERNAL)
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
 void mldBssTeardownAllClients(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo)
 {
@@ -3551,98 +3535,6 @@ void mldBssTeardownAllClients(struct ADAPTER *prAdapter,
 				struct STA_RECORD, rLinkEntryMld));
 	}
 }
-
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-
-void mldBssEnableAllClients(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo)
-{
-	struct LINK *prClientList;
-	struct MLD_STA_RECORD *prCurrMldStaRec;
-
-	if (!prMldBssInfo)
-		return;
-
-	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
-	LINK_FOR_EACH_ENTRY(prCurrMldStaRec, prClientList, rLinkEntry,
-			    struct MLD_STA_RECORD) {
-		prCurrMldStaRec->fgIsEnabled = TRUE;
-	}
-}
-
-void mldBssDisableAllClients(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo)
-{
-	struct LINK *prClientList;
-	struct MLD_STA_RECORD *prCurrMldStaRec;
-
-	if (!prMldBssInfo)
-		return;
-
-	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
-	LINK_FOR_EACH_ENTRY(prCurrMldStaRec, prClientList, rLinkEntry,
-			    struct MLD_STA_RECORD) {
-		prCurrMldStaRec->fgIsEnabled = FALSE;
-	}
-}
-
-
-uint8_t mldInternalMld(uint8_t fgMldType)
-{
-	return fgMldType == MLD_TYPE_ICV_METHOD_V1 ||
-	       fgMldType == MLD_TYPE_ICV_METHOD_V2;
-}
-
-void mldEnableConcurrentMld(struct ADAPTER *prAdapter)
-{
-	struct SCAN_INFO *prScanInfo;
-	struct LINK *prBSSDescList;
-	struct BSS_DESC *prBssDesc;
-	uint8_t i;
-	uint8_t fgMldType = MLD_TYPE_INVALID;
-
-
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prBSSDescList = &prScanInfo->rBSSDescList;
-
-	/* find global mld type */
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldStarec); i++) {
-		struct MLD_STA_RECORD *prMldStarec =
-			&prAdapter->aprMldStarec[i];
-
-		/* ignore old mld starec when roaming to new mld starec */
-		if (prMldStarec->fgIsInUse && prMldStarec->fgIsEnabled) {
-			fgMldType = prMldStarec->fgMldType;
-			break;
-		}
-	}
-
-	/* Search BSS Desc from current SCAN result list. */
-	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
-		rLinkEntry, struct BSS_DESC) {
-		uint8_t ori = prBssDesc->rMlInfo.fgValid;
-
-		/* no mld info */
-		if (prBssDesc->rMlInfo.fgMldType == MLD_TYPE_INVALID)
-			continue;
-
-		/* in-use mld found */
-		if (fgMldType != MLD_TYPE_INVALID &&
-		    mldInternalMld(fgMldType) !=
-		    mldInternalMld(prBssDesc->rMlInfo.fgMldType))
-			prBssDesc->rMlInfo.fgValid = FALSE;
-		else
-			prBssDesc->rMlInfo.fgValid = TRUE;
-
-		if (ori != prBssDesc->rMlInfo.fgValid)
-			DBGLOG(ML, TRACE, "Change AP " MACSTR
-				" mldType=%d valid: %d -> %d\n",
-				MAC2STR(prBssDesc->aucBSSID),
-				prBssDesc->rMlInfo.fgMldType,
-				ori, prBssDesc->rMlInfo.fgValid);
-	}
-}
-#endif
 
 static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec)
@@ -3695,11 +3587,6 @@ struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
 		DBGLOG(ML, ERROR, "no prMldBssInfo\n");
 		return NULL;
 	}
-
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	/* disable old clients before alloc new mld starec */
-	mldBssDisableAllClients(prAdapter, prMldBssInfo);
-#endif
 
 	if (prMainStarec == prStarec)
 		prMldStaRec = mldStarecAlloc(prAdapter, prMldBssInfo,
@@ -3848,12 +3735,6 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 		break;
 	}
 
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	if (prMldStarec) {
-		prMldStarec->fgIsEnabled = TRUE;
-		mldEnableConcurrentMld(prAdapter);
-	}
-#endif
 	return prMldStarec;
 }
 
@@ -3891,10 +3772,6 @@ void mldStarecFree(struct ADAPTER *prAdapter,
 
 	mldBssRemoveClient(prAdapter, prMldBssInfo, prMldStarec);
 	kalMemZero(prMldStarec, sizeof(struct MLD_STA_RECORD));
-
-#ifdef CFG_AAD_NONCE_NO_REPLACE
-	mldEnableConcurrentMld(prAdapter);
-#endif
 }
 
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
@@ -4308,8 +4185,12 @@ uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
 		if (rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V1))
 			return MLD_TYPE_ICV_METHOD_V1;
 
+		if (rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V1_1))
+			return MLD_TYPE_ICV_METHOD_V1_1;
+
 		if (rlmCheckMtkOuiChipCap(pucIe, CHIP_CAP_ICV_V2))
 			return MLD_TYPE_ICV_METHOD_V2;
+
 	}
 
 	if (mld)
