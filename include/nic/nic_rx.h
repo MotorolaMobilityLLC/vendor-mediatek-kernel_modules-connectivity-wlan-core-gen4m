@@ -938,9 +938,9 @@ struct SW_RFB {
 	u_int8_t fgIsFrag;
 	u_int8_t fgIsFCS;
 	u_int8_t fgIsAmpdu;
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	u_int8_t fgIsFirstSubAMSDULLCMS;
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 	/* duplicate detection */
 	uint16_t u2FrameCtrl;
 	uint16_t u2SequenceControl;

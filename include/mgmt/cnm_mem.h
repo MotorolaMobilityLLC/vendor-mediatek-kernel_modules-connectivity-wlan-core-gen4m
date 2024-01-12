@@ -167,10 +167,10 @@ struct SEC_INFO {
 struct FRAG_INFO {
 	uint16_t u2SeqNo;
 	uint8_t ucNextFragNo;
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	uint8_t ucSecMode;
 	uint64_t u8NextPN;
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 	uint8_t *pucNextFragStart;
 	struct SW_RFB *pr1stFrag;
 
@@ -520,10 +520,10 @@ struct STA_RECORD {
 
 	u_int8_t afgIsIgnoreAmsduDuplicate[TID_NUM + 1];
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	uint16_t au2AmsduInvalidSN[TID_NUM + 1];
 	u_int8_t afgIsAmsduInvalid[TID_NUM + 1];
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 #if 0
 	/* RXM */

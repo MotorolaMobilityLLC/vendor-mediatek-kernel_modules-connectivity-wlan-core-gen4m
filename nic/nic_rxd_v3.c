@@ -324,9 +324,9 @@ u_int8_t nic_rxd_v3_sanity_check(
 	if (!HAL_MAC_CONNAC3X_RX_STATUS_IS_FCS_ERROR(prRxStatus)
 	    && !HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus)
 	    && !HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	    && !HAL_MAC_CONNAC3X_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus)
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 	) {
 		if (!HAL_MAC_CONNAC3X_RX_STATUS_IS_NAMP(prRxStatus))
 			prSwRfb->fgReorderBuffer = TRUE;
@@ -385,7 +385,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 			    && *pu2EtherType == NTOHS(ETH_P_VLAN))
 				fgDrop = FALSE;
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 			/*
 			 * let qmAmsduAttackDetection check this subframe
 			 * before drop it
@@ -395,7 +395,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 				fgDrop = FALSE;
 				prSwRfb->fgIsFirstSubAMSDULLCMS = TRUE;
 			}
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 		}
 
 		DBGLOG(RSN, TEMP, "Sanity check to drop:%d\n", fgDrop);
@@ -435,7 +435,7 @@ u_int8_t nic_rxd_v3_sanity_check(
 		}
 	}
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 	/* Drop fragmented broadcast and multicast frame */
 	if ((prSwRfb->fgIsBC | prSwRfb->fgIsMC)
 		&& (prSwRfb->fgFragFrame == TRUE)) {
@@ -459,16 +459,16 @@ end:
 		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus))
 			RX_INC_CNT(prRxCtrl, RX_ICV_ERR_DROP_COUNT);
 
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_TKIP_MIC_ERROR(prRxStatus))
 			RX_INC_CNT(prRxCtrl, RX_TKIP_MIC_ERROR_DROP_COUNT);
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 		if (HAL_MAC_CONNAC3X_RX_STATUS_IS_ICV_ERROR(prRxStatus)
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 			|| HAL_MAC_CONNAC3X_RX_STATUS_IS_TKIP_MIC_ERROR(
 				prRxStatus)
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 			) {
 			rsnReqDumpWTBL(prAdapter, FW_DUMP_WTBL, ucBssIndex);
 			NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
@@ -487,7 +487,7 @@ end:
 
 	if (HAL_MAC_CONNAC3X_RX_STATUS_IS_DAF(prRxStatus))
 		DBGLOG(RSN, TEMP, "De-amsdu fail, drop:%d\n", fgDrop);
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 
 	return fgDrop;
 }

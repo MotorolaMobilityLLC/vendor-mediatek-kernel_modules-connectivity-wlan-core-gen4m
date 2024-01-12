@@ -2404,10 +2404,10 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				"[wlan] Not set the peer key while disconnect\n");
 			return WLAN_STATUS_SUCCESS;
 		}
-#if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
+#if CFG_SUPPORT_FRAG_AGG_VALIDATION
 		/* clear fragment cache when rekey */
 		nicRxClearFrag(prAdapter, prStaRec);
-#endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
+#endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 	}
 
 	kalMemZero(prCmdKey, sizeof(struct CMD_802_11_KEY));
