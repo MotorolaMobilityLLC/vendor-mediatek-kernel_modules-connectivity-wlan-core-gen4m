@@ -1248,4 +1248,159 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 }
 #endif
 
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+int mt6639_get_rx_rate_info(IN const uint32_t *prRxV,
+		OUT struct RxRateInfo *prRxRateInfo)
+{
+	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
+	uint32_t stbc = 0, nss = 0;
+
+	if (!prRxRateInfo || !prRxV)
+		return -1;
+
+	if (prRxV[0] == 0) {
+		DBGLOG(SW4, WARN, "u4RxV0 is 0\n");
+		return -1;
+	}
+
+	rate = RXV_GET_RX_RATE(prRxV[0]);
+	nsts = RXV_GET_RX_NSTS(prRxV[2]);
+	rxmode = RXV_GET_TXMODE(prRxV[2]);
+	frmode = RXV_GET_FR_MODE(prRxV[2]);
+	sgi = RXV_GET_GI(prRxV[2]);
+	stbc = RXV_GET_STBC(prRxV[2]);
+
+	nsts += 1;
+	if (nsts == 1)
+		nss = nsts;
+	else
+		nss = stbc ? (nsts >> 1) : nsts;
+
+	if (frmode >= 4) {
+		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
+		return -1;
+	}
+
+	prRxRateInfo->u4Rate = rate;
+	prRxRateInfo->u4Nss = nss;
+	prRxRateInfo->u4Mode = rxmode;
+	prRxRateInfo->u4Bw = frmode;
+	prRxRateInfo->u4Gi = sgi;
+
+	DBGLOG(SW4, TRACE,
+		   "rxvec0=[0x%x] rxmode=[%u], rate=[%u], bw=[%u], sgi=[%u], nss=[%u]\n",
+		   prRxV[0], rxmode, rate, frmode, sgi, nss
+	);
+
+	return 0;
+}
+#endif
+
+void mt6639_get_rx_link_stats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb, IN uint32_t *pu4RxV)
+{
+#if CFG_SUPPORT_LLS
+	static const uint8_t TX_MODE_2_LLS_MODE[] = {
+		LLS_MODE_CCK,
+		LLS_MODE_OFDM,	/* LG OFDM */
+		LLS_MODE_HT,	/* MM */
+		LLS_MODE_HT,	/* GF */
+		LLS_MODE_VHT,
+		LLS_MODE_RESERVED,
+		LLS_MODE_RESERVED,
+		LLS_MODE_RESERVED,
+		LLS_MODE_HE,	/* HE-SU */
+		LLS_MODE_HE,	/* HE-ER */
+		LLS_MODE_HE,	/* HE-TB */
+		LLS_MODE_HE,	/* HE-MU */
+		LLS_MODE_RESERVED,
+		LLS_MODE_EHT,	/* EHT_EXT */
+		LLS_MODE_EHT,	/* EHT_TRIG */
+		LLS_MODE_EHT,	/* EHT_MU */
+	};
+	static const uint8_t OFDM_RATE[STATS_LLS_OFDM_NUM] = {
+						6, 4, 2, 0, 7, 5, 3, 1};
+		/* report &= 7:  3  7  2   6   1   5   0    4 */
+		/* Mbps       : 6M 9M 12M 18M 24M 36M 48M 54M */
+		/* in 0.5 Mbps: 12 18 24  36  48  72  96  108 */
+		/* Save format:  0  1  2   3   4   5   6    7 */
+	struct STATS_LLS_WIFI_RATE rate = {0};
+	struct STA_RECORD *prStaRec;
+
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		DBGLOG(RX, INFO, "RXV: pmbl=%u nsts=%u stbc=%u bw=%u mcs=%u",
+			RXV_GET_TXMODE(pu4RxV[2]),
+			RXV_GET_RX_NSTS(pu4RxV[0]),
+			RXV_GET_STBC(pu4RxV[2]),
+			RXV_GET_FR_MODE(pu4RxV[2]),
+			RXV_GET_RX_RATE(pu4RxV[0]));
+
+	if (!(prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
+		prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
+		return;
+
+	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(pu4RxV[2])];
+
+	if (rate.preamble == LLS_MODE_RESERVED)
+		return;
+
+	rate.bw = RXV_GET_FR_MODE(pu4RxV[2]);
+	rate.nss = RXV_GET_RX_NSTS(pu4RxV[0]);
+	if (rate.preamble >= LLS_MODE_VHT) {
+		if (RXV_GET_STBC(pu4RxV[2]))
+			rate.nss /= 2;
+	}
+
+	rate.rateMcsIdx = RXV_GET_RX_RATE(pu4RxV[0]);
+
+	if (rate.preamble == LLS_MODE_CCK)
+		rate.rateMcsIdx &= 0x3; /* 0: 1M; 1: 2M; 2: 5.5M; 3: 11M  */
+	else if (rate.preamble == LLS_MODE_OFDM)
+		rate.rateMcsIdx = OFDM_RATE[rate.rateMcsIdx & 0x7];
+
+	if (rate.nss >= STATS_LLS_MAX_NSS_NUM)
+		goto wrong_rate;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec) {
+		DBGLOG(RX, WARN, "StaRec %u not found", prSwRfb->ucStaRecIdx);
+		goto wrong_rate;
+	}
+
+	if (rate.preamble == LLS_MODE_OFDM) {
+		if (rate.rateMcsIdx >= STATS_LLS_OFDM_NUM)
+			goto wrong_rate;
+		prStaRec->u4RxMpduOFDM[0][0][rate.rateMcsIdx]++;
+	} else if (rate.preamble == LLS_MODE_CCK) {
+		if (rate.rateMcsIdx >= STATS_LLS_CCK_NUM)
+			goto wrong_rate;
+		prStaRec->u4RxMpduCCK[0][0][rate.rateMcsIdx]++;
+	} else if (rate.preamble == LLS_MODE_HT) {
+		if (rate.bw >= STATS_LLS_MAX_HT_BW_NUM ||
+				rate.rateMcsIdx >= STATS_LLS_HT_NUM)
+			goto wrong_rate;
+		prStaRec->u4RxMpduHT[0][rate.bw][rate.rateMcsIdx]++;
+	} else if (rate.preamble == LLS_MODE_VHT) {
+		if (rate.bw >= STATS_LLS_MAX_VHT_BW_NUM ||
+				rate.rateMcsIdx >= STATS_LLS_VHT_NUM)
+			goto wrong_rate;
+		prStaRec->u4RxMpduVHT[rate.nss][rate.bw][rate.rateMcsIdx]++;
+	} else if (rate.preamble == LLS_MODE_HE) {
+		if (rate.bw >= STATS_LLS_MAX_HE_BW_NUM ||
+				rate.rateMcsIdx >= STATS_LLS_HE_NUM)
+			goto wrong_rate;
+		prStaRec->u4RxMpduHE[rate.nss][rate.bw][rate.rateMcsIdx]++;
+	}
+
+	if (prAdapter->rWifiVar.fgLinkStatsDump)
+		DBGLOG(RX, INFO, "rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+			rate.preamble, rate.nss, rate.bw, rate.rateMcsIdx);
+	return;
+
+wrong_rate:
+	DBGLOG(RX, WARN, "Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+			rate.preamble, rate.nss, rate.bw, rate.rateMcsIdx);
+#endif
+}
+
 #endif /* MT6639 */

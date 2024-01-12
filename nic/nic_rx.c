@@ -4915,3 +4915,38 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 	return i4BytesWritten;
 }
 
+void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV)
+{
+#if CFG_SUPPORT_LLS
+	struct CHIP_DBG_OPS *prChipDbg;
+
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+	if (prChipDbg && prChipDbg->get_rx_link_stats)
+		prChipDbg->get_rx_link_stats(prAdapter, prRetSwRfb, pu4RxV);
+#endif
+}
+
+void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_LLS
+	static const uint8_t Tid2LinkStatsAc[] = {
+		STATS_LLS_WIFI_AC_BE,
+		STATS_LLS_WIFI_AC_BK,
+		STATS_LLS_WIFI_AC_BK,
+		STATS_LLS_WIFI_AC_BE,
+		STATS_LLS_WIFI_AC_VI,
+		STATS_LLS_WIFI_AC_VI,
+		STATS_LLS_WIFI_AC_VO,
+		STATS_LLS_WIFI_AC_VO,
+	};
+	uint8_t ac;
+
+	ac = Tid2LinkStatsAc[(uint8_t)(prSwRfb->ucTid & 0x7U)];
+	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
+	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU)
+		prAdapter->u4RxMpduAc[ac]++;
+#endif
+}
+

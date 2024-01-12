@@ -1577,4 +1577,11 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 
 void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
 		IN struct SW_RFB *prSwRfb);
+
+void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
+
+void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+
 #endif /* _NIC_RX_H */
