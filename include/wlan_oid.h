@@ -2186,6 +2186,12 @@ struct PARAM_CUSTOM_P2P_SET_STRUCT {
 	uint32_t u4Mode;
 };
 
+struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT {
+	uint32_t u4Enable;
+	uint32_t u4Mode;
+	uint8_t fgIsRtnlLockAcquired;
+};
+
 #define MAX_NUMBER_OF_ACL 20
 
 enum ENUM_PARAM_CUSTOM_ACL_POLICY {

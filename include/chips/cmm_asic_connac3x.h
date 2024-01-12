@@ -1170,6 +1170,9 @@ struct bwtbl_umac_struct {
 
 extern u_int8_t fgIsDrvTriggerWholeChipReset;
 extern u_int8_t g_IsWfsysBusHang;
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+extern u_int8_t g_fgWlanOnOffHoldRtnlLock;
+#endif
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S

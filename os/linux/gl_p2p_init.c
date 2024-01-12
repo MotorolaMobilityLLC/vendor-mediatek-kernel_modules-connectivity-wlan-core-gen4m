@@ -291,7 +291,7 @@ void p2pSetMode(uint8_t ucAPMode)
  * \retval 1     Success
  */
 /*---------------------------------------------------------------------------*/
-u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo)
+u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo, uint8_t fgIsRtnlLockAcquired)
 {
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t idx = 0;
@@ -324,7 +324,7 @@ retry:
 		if (prAdapter->rP2PRegState == ENUM_P2P_REG_STATE_REGISTERED &&
 			prAdapter->rP2PNetRegState ==
 				ENUM_NET_REG_STATE_REGISTERED) {
-			p2pNetUnregister(prGlueInfo, FALSE);
+			p2pNetUnregister(prGlueInfo, fgIsRtnlLockAcquired);
 			break;
 		}
 
@@ -358,7 +358,7 @@ retry:
 
 	prAdapter->p2p_scan_report_all_bss = FALSE;
 
-	glUnregisterP2P(prGlueInfo, 0xff);
+	glUnregisterP2P(prGlueInfo, 0xff, fgIsRtnlLockAcquired);
 
 	/* Release ap0 wdev.
 	 * ap0 wdev is created in wlanProbe. So we need to release it in
