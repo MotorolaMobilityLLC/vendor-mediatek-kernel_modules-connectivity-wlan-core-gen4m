@@ -17,7 +17,18 @@
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
  */
+#ifndef DBG_DISABLE_ALL_LOG
 #define DBG_DISABLE_ALL_LOG             0
+#endif
+
+/*------------------------------------------------------------------------------
+ * Disable chip debug info
+ * Default 0, if need, define 1 in makefile
+ *------------------------------------------------------------------------------
+ */
+#ifndef DBG_DISABLE_ALL_INFO
+#define DBG_DISABLE_ALL_INFO	0
+#endif
 
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S

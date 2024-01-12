@@ -2583,10 +2583,12 @@
  * Flags of CSI (Channel State Information) Support
  *------------------------------------------------------------------------------
  */
+#ifndef CFG_SUPPORT_CSI
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_SUPPORT_CSI 1
 #else
 #define CFG_SUPPORT_CSI 0
+#endif
 #endif
 
 #if (CFG_SUPPORT_CSI == 1)
@@ -2613,10 +2615,12 @@
 #define CFG_FAST_PATH_SUPPORT 0
 #endif
 
+#ifndef CFG_SUPPORT_RTT
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_SUPPORT_RTT 1
 #else
 #define CFG_SUPPORT_RTT 0
+#endif
 #endif
 
 #define CFG_RTT_TEST_MODE 0

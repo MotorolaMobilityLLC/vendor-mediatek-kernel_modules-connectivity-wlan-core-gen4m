@@ -332,9 +332,11 @@ struct BUS_INFO bellwether_bus_info = {
 	.wfmda_wm_rx_group = bellwether_wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(bellwether_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rBellwetherDmashdlCfg,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prPleTopCr = &rBellwetherPleTopCr,
 	.prPseTopCr = &rBellwetherPseTopCr,
 	.prPpTopCr = &rBellwetherPpTopCr,
+#endif
 	.prPseGroup = bellwether_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(bellwether_pse_group),
 	.pdmaSetup = bellwetherWpdmaConfig,
@@ -386,6 +388,7 @@ struct TX_DESC_OPS_T bellwether_TxDescOps = {
 
 struct RX_DESC_OPS_T bellwether_RxDescOps = {};
 
+#if (DBG_DISABLE_ALL_INFO == 0)
 struct CHIP_DBG_OPS bellwether_DebugOps = {
 	.showPdmaInfo = connac3x_show_wfdma_info,
 	.showPseInfo = connac3x_show_pse_info,
@@ -408,6 +411,7 @@ struct CHIP_DBG_OPS bellwether_DebugOps = {
 	.show_wfdma_dbg_probe_info = bellwether_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = bellwether_show_wfdma_wrapper_info,
 };
+#endif /* DBG_DISABLE_ALL_INFO */
 
 struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 	.bus_info = &bellwether_bus_info,
@@ -416,7 +420,9 @@ struct mt66xx_chip_info mt66xx_chip_info_bellwether = {
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 	.prTxDescOps = &bellwether_TxDescOps,
 	.prRxDescOps = &bellwether_RxDescOps,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prDebugOps = &bellwether_DebugOps,
+#endif
 	.chip_id = BELLWETHER_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = Connac3x_CONN_CFG_ON_CONN_ON_MISC_ADDR,

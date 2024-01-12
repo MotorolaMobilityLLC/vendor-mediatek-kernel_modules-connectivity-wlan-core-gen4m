@@ -2460,9 +2460,11 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (fgRet == FALSE || u4Status == 0)
 		goto exit;
 
+#if (DBG_DISABLE_ALL_INFO == 0)
 	if (!(prGlueInfo->ulFlag & GLUE_FLAG_HALT) &&
 	    (u4Status & BIT(SW_INT_FW_LOG)))
 		fw_log_handler();
+#endif
 
 #if CFG_WMT_RESET_API_SUPPORT
 	if (u4Status & BIT(SW_INT_SUBSYS_RESET))

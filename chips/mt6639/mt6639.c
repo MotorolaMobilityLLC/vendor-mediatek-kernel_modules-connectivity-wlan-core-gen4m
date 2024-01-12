@@ -607,9 +607,11 @@ struct BUS_INFO mt6639_bus_info = {
 	.wfmda_wm_rx_group = mt6639_wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt6639_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMt6639DmashdlCfg,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prPleTopCr = &rMt6639PleTopCr,
 	.prPseTopCr = &rMt6639PseTopCr,
 	.prPpTopCr = &rMt6639PpTopCr,
+#endif
 	.prPseGroup = mt6639_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt6639_pse_group),
 	.pdmaSetup = mt6639WpdmaConfig,
@@ -771,6 +773,7 @@ struct RX_DESC_OPS_T mt6639_RxDescOps = {
 	.getRxModeRcs = mt6639_get_rx_mode_mcs,
 };
 
+#if (DBG_DISABLE_ALL_INFO == 0)
 struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = connac3x_show_wfdma_info,
@@ -833,6 +836,7 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 	.showDevapcDebugInfo = mt6639ShowDevapcDebugInfo,
 #endif
 };
+#endif /* DBG_DISABLE_ALL_INFO */
 
 #if CFG_SUPPORT_QA_TOOL
 struct ATE_OPS_T mt6639_AteOps = {
@@ -933,7 +937,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif /* CFG_SUPPORT_QA_TOOL */
 	.prTxDescOps = &mt6639_TxDescOps,
 	.prRxDescOps = &mt6639_RxDescOps,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prDebugOps = &mt6639_DebugOps,
+#endif
 	.chip_id = MT6639_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = Connac3x_CONN_CFG_ON_CONN_ON_MISC_ADDR,

@@ -582,9 +582,11 @@ struct BUS_INFO mt6653_bus_info = {
 	.wfmda_wm_rx_group = mt6653_wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(mt6653_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rMt6653DmashdlCfg,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prPleTopCr = &rMt6653PleTopCr,
 	.prPseTopCr = &rMt6653PseTopCr,
 	.prPpTopCr = &rMt6653PpTopCr,
+#endif
 	.prPseGroup = mt6653_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt6653_pse_group),
 	.pdmaSetup = mt6653WpdmaConfig,
@@ -708,6 +710,7 @@ struct TX_DESC_OPS_T mt6653_TxDescOps = {
 
 struct RX_DESC_OPS_T mt6653_RxDescOps = {0};
 
+#if (DBG_DISABLE_ALL_INFO == 0)
 struct CHIP_DBG_OPS mt6653_DebugOps = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showPdmaInfo = connac3x_show_wfdma_info,
@@ -748,6 +751,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 #endif
 	.dumpTxdInfo = connac3x_dump_tmac_info,
 };
+#endif /* DBG_DISABLE_ALL_INFO */
 
 #if CFG_SUPPORT_QA_TOOL
 struct ATE_OPS_T mt6653_AteOps = {
@@ -849,7 +853,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif /* CFG_SUPPORT_QA_TOOL */
 	.prTxDescOps = &mt6653_TxDescOps,
 	.prRxDescOps = &mt6653_RxDescOps,
+#if (DBG_DISABLE_ALL_INFO == 0)
 	.prDebugOps = &mt6653_DebugOps,
+#endif
 	.chip_id = MT6653_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = Connac3x_CONN_CFG_ON_CONN_ON_MISC_ADDR,

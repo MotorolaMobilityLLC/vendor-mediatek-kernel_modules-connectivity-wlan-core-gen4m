@@ -13,10 +13,10 @@
  *[Copyright]
  *    Copyright (C) 2015 MediaTek Incorporation. All Rights Reserved.
  ******************************************************************************/
-
 #ifdef MT7925
 
 #include "precomp.h"
+#if (DBG_DISABLE_ALL_INFO == 0)
 #include "mt7925.h"
 #include "dbg_mt7925.h"
 #if defined(_HIF_PCIE)
@@ -4278,4 +4278,5 @@ u_int8_t mt7925_show_debug_sop_info(struct ADAPTER *ad,
 
 	return TRUE;
 }
+#endif /* DBG_DISABLE_ALL_INFO */
 #endif /* MT7925 */
