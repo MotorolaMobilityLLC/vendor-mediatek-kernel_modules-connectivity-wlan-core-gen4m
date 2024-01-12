@@ -3462,6 +3462,10 @@ void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 	prAdapter->prGlueInfo->IsrRxCnt++;
 
+	if (halIsHifStateSuspend(prAdapter)) {
+		DBGLOG(RX, WARN, "suspend RX INT\n");
+	}
+
 	/* SER break point */
 	if (nicSerIsRxStop(prAdapter)) {
 		/* Skip following Rx handling */

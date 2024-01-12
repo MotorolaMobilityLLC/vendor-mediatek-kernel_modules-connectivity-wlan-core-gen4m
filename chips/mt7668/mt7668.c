@@ -447,6 +447,7 @@ struct BUS_INFO mt7668_bus_info = {
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT,
 	.asicUsbSuspend = NULL,
+	.asicUsbResume = NULL,
 	.asicUsbEventEpDetected = NULL,
 	.asicUsbRxByteCount = NULL,
 #endif /* _HIF_USB */

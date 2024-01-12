@@ -1502,6 +1502,11 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
+	if (halIsHifStateSuspend(prAdapter)) {
+		DBGLOG(TX, WARN, "Suspend TxCmdMthread\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	prTempCmdQue = &rTempCmdQue;
 	QUEUE_INITIALIZE(prTempCmdQue);
 
@@ -1568,6 +1573,11 @@ uint32_t wlanTxCmdDoneMthread(IN struct ADAPTER *prAdapter)
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
+
+	if (halIsHifStateSuspend(prAdapter)) {
+		DBGLOG(TX, WARN, "Suspend TxCmdDoneMthread\n");
+		return WLAN_STATUS_SUCCESS;
+	}
 
 	prTempCmdQue = &rTempCmdQue;
 	QUEUE_INITIALIZE(prTempCmdQue);
@@ -9762,3 +9772,52 @@ uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
 	return u4FeatureSet;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is a wrapper to send power-saving mode command
+*        when AIS enter wow, and send WOW command
+*        Also let GC/GO/AP enter deactivate state to enter TOP sleep
+*
+* @param prGlueInfo                     Pointer of prGlueInfo Data Structure
+*
+* @return VOID
+*/
+/*----------------------------------------------------------------------------*/
+void wlanSuspendPmHandle(struct GLUE_INFO *prGlueInfo)
+{
+#if CFG_WOW_SUPPORT
+	/* 1) wifi cfg "Wow" is true              */
+    /* 2) wow is enable                       */
+    /* 3) WIfI connected => execute WOW flow  */
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
+		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+		if (kalGetMediaStateIndicated(prGlueInfo) ==
+			MEDIA_STATE_CONNECTED) {
+			DBGLOG(HAL, EVENT, "enter WOW flow\n");
+			kalWowProcess(prGlueInfo, TRUE);
+		}
+
+		/* else: do nothing, and FW enter LMAC sleep */
+	}
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief This function is to restore power-saving mode command when leave wow
+*        But ignore GC/GO/AP role
+*
+* @param prGlueInfo                     Pointer of prGlueInfo Data Structure
+*
+* @return VOID
+*/
+/*----------------------------------------------------------------------------*/
+void wlanResumePmHandle(struct GLUE_INFO *prGlueInfo)
+{
+#if CFG_WOW_SUPPORT
+	if (prGlueInfo->prAdapter->rWifiVar.ucWow) {
+		DBGLOG(HAL, EVENT, "leave WOW flow\n");
+		kalWowProcess(prGlueInfo, FALSE);
+	}
+#endif
+}

@@ -216,13 +216,15 @@ enum ENUM_USB_END_POINT {
  */
 
 enum usb_state {
+	USB_STATE_WIFI_OFF, /* Hif power off wifi */
 	USB_STATE_LINK_DOWN,
-	USB_STATE_LINK_UP,
+	USB_STATE_PRE_SUSPEND_START,
 	USB_STATE_PRE_SUSPEND_DONE,
 	USB_STATE_PRE_SUSPEND_FAIL,
 	USB_STATE_SUSPEND,
 	USB_STATE_PRE_RESUME,
-	USB_STATE_WIFI_OFF /* Hif power off wifi */
+	USB_STATE_LINK_UP,
+	USB_STATE_READY
 };
 
 enum usb_submit_type {
@@ -237,6 +239,11 @@ enum EVENT_EP_TYPE {
 	EVENT_EP_TYPE_BULK,
 	EVENT_EP_TYPE_INTR,
 	EVENT_EP_TYPE_DATA_EP
+};
+
+enum ENUM_SUSPEND_VERSION {
+	SUSPEND_V1 = 1,
+	SUSPEND_V2
 };
 
 struct BUF_CTRL {
@@ -326,7 +333,13 @@ struct BUS_INFO {
 	const uint32_t u4usb_tx_cmd_queue_mask;
 	uint32_t u4UdmaWlCfg_0;
 	uint32_t u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
-	u_int8_t (*asicUsbSuspend)(IN struct ADAPTER *prAdapter, IN struct GLUE_INFO *prGlueInfo);
+	uint32_t u4SuspendVer;
+	u_int8_t (*asicUsbSuspend)(
+		IN struct ADAPTER *prAdapter,
+		IN struct GLUE_INFO *prGlueInfo);
+	u_int8_t (*asicUsbResume)(
+		IN struct ADAPTER *prAdapter,
+		IN struct GLUE_INFO *prGlueInfo);
 	uint8_t (*asicUsbEventEpDetected)(IN struct ADAPTER *prAdapter);
 	uint16_t (*asicUsbRxByteCount)(IN struct ADAPTER *prAdapter,
 		IN struct BUS_INFO *prBusInfo,
@@ -421,6 +434,7 @@ void halRxUSBProcessEventDataComplete(IN struct ADAPTER *prAdapter,
 	struct list_head *prCompleteQ, struct list_head *prFreeQ, uint32_t u4MinRfbCnt);
 
 void halUSBPreSuspendCmd(IN struct ADAPTER *prAdapter);
+void halUSBPreResumeCmd(IN struct ADAPTER *prAdapter);
 void halUSBPreSuspendDone(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
 

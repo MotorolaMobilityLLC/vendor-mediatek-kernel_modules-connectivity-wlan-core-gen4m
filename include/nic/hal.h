@@ -1197,4 +1197,8 @@ void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
 #endif
+bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState);
+bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter);
+bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter);
+
 #endif /* _HAL_H */

@@ -479,6 +479,50 @@ void asicConnac2xEnableUsbFWDL(
 	HAL_MCR_WR(prAdapter, prBusInfo->u4UdmaTxQsel, u4Value);
 }
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+u_int8_t asicConnac2xUsbResume(IN struct ADAPTER *prAdapter,
+			IN struct GLUE_INFO *prGlueInfo)
+{
+	uint8_t count = 0;
+
+#if 0 /* enable it if need to do bug fixing by vender request */
+	/* NOTE: USB bus may not really do suspend and resume*/
+	ret = usb_control_msg(prGlueInfo->rHifInfo.udev,
+			  usb_sndctrlpipe(prGlueInfo->rHifInfo.udev, 0),
+			  VND_REQ_FEATURE_SET,
+			  prBusInfo->u4device_vender_request_out,
+			  FEATURE_SET_WVALUE_RESUME, 0, NULL, 0,
+			  VENDOR_TIMEOUT_MS);
+	if (ret)
+		DBGLOG(HAL, ERROR,
+		"VendorRequest FeatureSetResume ERROR: %x\n",
+		(unsigned int)ret);
+#endif
+
+	glUsbSetState(&prGlueInfo->rHifInfo, USB_STATE_PRE_RESUME);
+
+	/* To trigger CR4 path */
+	wlanSendDummyCmd(prGlueInfo->prAdapter, FALSE);
+	halEnableInterrupt(prGlueInfo->prAdapter);
+
+	/* using inband cmd to inform FW instead of vendor request */
+	/* All Resume operations move to FW */
+	halUSBPreResumeCmd(prGlueInfo->prAdapter);
+
+	while (prGlueInfo->rHifInfo.state != USB_STATE_LINK_UP) {
+		if (count > 50) {
+			DBGLOG(HAL, ERROR, "pre_resume timeout\n");
+			break;
+		}
+		msleep(20);
+		count++;
+	}
+
+	DBGLOG(HAL, STATE, "pre_resume event check(count %d)\n", count);
+
+	wlanResumePmHandle(prGlueInfo);
+
+	return TRUE;
+}
 
 #endif /* _HIF_USB */
 
@@ -764,5 +808,4 @@ uint8_t asicConnac2xRxGetRcpiValueFromRxv(
 	return 0;
 #endif
 }
-
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
