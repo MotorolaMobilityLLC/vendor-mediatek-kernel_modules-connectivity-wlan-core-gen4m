@@ -210,6 +210,21 @@ enum ENUM_CNM_NETWORK_TYPE_T {
 	ENUM_CNM_NETWORK_TYPE_NUM
 };
 
+/* Priority Order !!!! */
+enum ENUM_CNM_OPMODE_REQ_T {
+	CNM_OPMODE_REQ_START      = 0,
+	CNM_OPMODE_REQ_ANT_CTRL   = 0,
+	CNM_OPMODE_REQ_DBDC       = 1,
+	CNM_OPMODE_REQ_DBDC_SCAN  = 2,
+	CNM_OPMODE_REQ_COEX       = 3,
+	CNM_OPMODE_REQ_SMARTGEAR  = 4,
+	CNM_OPMODE_REQ_SMARTGEAR_1T2R  = 5,
+	CNM_OPMODE_REQ_COANT      = 6,
+	CNM_OPMODE_REQ_NUM        = 7,
+	CNM_OPMODE_REQ_MAX_CAP    = 8 /* just for coding */
+};
+
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -371,6 +386,14 @@ struct BSS_INFO *cnmGetP2pBssInfo(IN struct ADAPTER *prAdapter);
 
 bool cnmIsMccMode(IN struct ADAPTER *prAdapter);
 
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+int cnmPowerControl(struct ADAPTER *prAdapter, uint8_t level);
+
+void cnmPowerControlErrorHandling(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo
+);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
