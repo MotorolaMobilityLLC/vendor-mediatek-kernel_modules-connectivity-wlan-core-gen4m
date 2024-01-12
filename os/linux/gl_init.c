@@ -6890,7 +6890,7 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 
 #if CFG_SUPPORT_WED_PROXY
-	wedInitial(prAdapter);
+	wedInitAdapterInfo(prAdapter);
 #endif
 }
 
@@ -8664,6 +8664,10 @@ static int initWlan(void)
 				resetkoNotifyFunc);
 #endif  /* CFG_CHIP_RESET_KO_SUPPORT */
 #endif  /* CFG_CHIP_RESET_SUPPORT */
+
+#if CFG_SUPPORT_WED_PROXY
+	wedInitial();
+#endif
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 	if (kalStrLen(gprifnamesta) > CUSTOM_IFNAMESIZ ||

@@ -5544,6 +5544,21 @@ wlanoidWedDetachWarp(struct ADAPTER *prAdapter,
 		     void *pvSetBuffer,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidWedSuspend(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidWedResume(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+uint32_t
+wlanoidWedRecoveryStatus(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
 #endif
 
 #endif /* _WLAN_OID_H */
