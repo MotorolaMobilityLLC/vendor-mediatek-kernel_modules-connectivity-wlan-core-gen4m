@@ -204,32 +204,33 @@ struct PCIE_CHIP_CR_MAPPING soc5_0_bus2chip_cr_mapping[] = {
 #endif
 
 struct wfdma_group_info wfmda_host_tx_group[] = {
-	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR},
-	{"P0T16:FWDL", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_CTRL0_ADDR},
-	{"P0T17:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_CTRL0_ADDR},
+	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
+	{"P0T1:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING1_CTRL0_ADDR, true},
+	{"P0T16:FWDL", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_CTRL0_ADDR, true},
+	{"P0T17:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING17_CTRL0_ADDR, true},
 };
 
 struct wfdma_group_info wfmda_host_rx_group[] = {
-	{"P0R0:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R2:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR},
-	{"P0R3:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
-	{"P0R4:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R5:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
+	{"P0R0:AP EVENT", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING0_CTRL0_ADDR, true},
+	{"P0R2:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING2_CTRL0_ADDR, true},
+	{"P0R3:AP DATA1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING3_CTRL0_ADDR, true},
+	{"P0R4:AP TDONE0", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING4_CTRL0_ADDR, false},
+	{"P0R5:AP TDONE1", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING5_CTRL0_ADDR, false},
 };
 
 struct wfdma_group_info wfmda_wm_tx_group[] = {
-	{"P0T0:AP EVENT", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
-	{"P0T2:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING2_CTRL0_ADDR},
-	{"P0T3:SW TX Command", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING3_CTRL0_ADDR},
+	{"P0T0:AP EVENT", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, false},
+	{"P0T2:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING2_CTRL0_ADDR, false},
+	{"P0T3:SW TX Command", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING3_CTRL0_ADDR,
+	 false},
 };
 
 struct wfdma_group_info wfmda_wm_rx_group[] = {
-	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
-	{"P0R1:AP CMD", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
-	{"P0R3:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING3_CTRL0_ADDR},
-	{"P0R4:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING4_CTRL0_ADDR},
-	{"P0R5:RPT", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
+	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR, false},
+	{"P0R1:AP CMD", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR, false},
+	{"P0R3:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING3_CTRL0_ADDR, false},
+	{"P0R4:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING4_CTRL0_ADDR, false},
+	{"P0R5:RPT", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING5_CTRL0_ADDR, false},
 };
 
 struct BUS_INFO soc5_0_bus_info = {
@@ -288,6 +289,7 @@ struct BUS_INFO soc5_0_bus_info = {
 	.wfmda_wm_tx_group_len = ARRAY_SIZE(wfmda_wm_tx_group),
 	.wfmda_wm_rx_group = wfmda_wm_rx_group,
 	.wfmda_wm_rx_group_len = ARRAY_SIZE(wfmda_wm_rx_group),
+	.prDmashdlCfg = &rSOC5_0_DmashdlCfg,
 	.pdmaSetup = soc5_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
@@ -376,7 +378,7 @@ struct CHIP_DBG_OPS soc5_0_DebugOps = {
 	.showWtblInfo = connac2x_show_wtbl_info,
 	.showUmacFwtblInfo = connac2x_show_umac_wtbl_info,
 	.showCsrInfo = soc5_0_show_host_csr_info,
-	.showDmaschInfo = NULL,
+	.showDmaschInfo = connac2x_show_dmashdl_info,
 	.showHifInfo = NULL,
 	.printHifDbgInfo = NULL,
 	.show_rx_rate_info = connac2x_show_rx_rate_info,
@@ -412,7 +414,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
-	.arb_ac_mode_addr = 0x820E315C, /* ben todo */
+	.arb_ac_mode_addr = SOC5_0_ARB_AC_MODE_ADDR,
 	.asicCapInit = asicConnac2xCapInit,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
@@ -425,7 +427,8 @@ struct mt66xx_chip_info mt66xx_chip_info_soc5_0 = {
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
-	.u4UmacWtblDUAddr = CONNAC2X_WIFI_LWTBL_BASE,
+	.u4UmacWtblDUAddr = CONNAC2X_WIFI_UWTBL_BASE,
+	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc5_0 = {

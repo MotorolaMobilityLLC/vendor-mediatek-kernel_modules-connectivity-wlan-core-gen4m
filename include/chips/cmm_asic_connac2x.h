@@ -104,6 +104,14 @@
 #define CONNAC2X_WFDMA_DUMMY_CR		(CONNAC2X_MCU_WPDMA_0_BASE + 0x120)
 #define CONNAC2X_WFDMA_NEED_REINIT_BIT	BIT(1)
 
+#define CONNAC2x_CONN_CFG_ON_BASE	0x7C060000
+#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_ADDR \
+	(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
+#define CONNAC2x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT         0
+
+#define WFSYS_CPUPCR_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0204)
+#define WFSYS_LP_ADDR (CONNAC2x_CONN_CFG_ON_BASE + 0x0208)
+
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 #define CONNAC2X_CONN_HIF_ON_ADDR_REMAP23              0x7010
 #define CONNAC2X_HOST_EXT_CONN_HIF_WRAP                0x7c027000
@@ -1219,6 +1227,53 @@ uint32_t downloadImgByDynMemMap(IN struct ADAPTER *prAdapter,
 	IN uint8_t *pucStartPtr, IN enum ENUM_IMG_DL_IDX_T eDlIdx);
 #endif
 
+void asicConnac2xDmashdlSetPlePktMaxPage(
+	struct ADAPTER *prAdapter,
+	uint16_t u2MaxPage);
+void asicConnac2xDmashdlSetPsePktMaxPage(
+	struct ADAPTER *prAdapter,
+	uint16_t u2MaxPage);
+void asicConnac2xDmashdlSetRefill(
+	struct ADAPTER *prAdapter,
+	uint8_t ucGroup,
+	u_int8_t fgEnable);
+void asicConnac2xDmashdlSetMaxQuota(
+	struct ADAPTER *prAdapter,
+	uint8_t ucGroup,
+	uint16_t u2MaxQuota);
+void asicConnac2xDmashdlSetMinQuota(
+	struct ADAPTER *prAdatper,
+	uint8_t ucGroup,
+	uint16_t u2MinQuota);
+void asicConnac2xDmashdlSetQueueMapping(
+	struct ADAPTER *prAdapter,
+	uint8_t ucQueue,
+	uint8_t ucGroup);
+void asicConnac2xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter);
+void asicConnac2xDmashdlGetRefill(struct ADAPTER *prAdapter);
+void asicConnac2xDmashdlGetGroupControl(
+	struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+void asicConnac2xDmashdlSetSlotArbiter(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgEnable);
+void asicConnac2xDmashdlSetUserDefinedPriority(
+	struct ADAPTER *prAdapter,
+	uint8_t ucPriority,
+	uint8_t ucGroup);
+uint32_t asicConnac2xDmashdlGetRsvCount(
+	struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+uint32_t asicConnac2xDmashdlGetSrcCount(
+	struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+void asicConnac2xDmashdlGetPKTCount(
+	struct ADAPTER *prAdapter,
+	uint8_t ucGroup);
+void asicConnac2xDmashdlSetOptionalControl(
+	struct ADAPTER *prAdapter,
+	uint16_t u2HifAckCntTh,
+	uint16_t u2HifGupActMap);
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 #endif /* _CMM_ASIC_CONNAC2X_H */
 

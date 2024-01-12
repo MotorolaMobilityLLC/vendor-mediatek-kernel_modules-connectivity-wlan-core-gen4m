@@ -143,43 +143,11 @@
 ********************************************************************************
 */
 
-enum ENUM_MT6885_DMASHDL_GROUP_IDX {
-	ENUM_MT6885_DMASHDL_GROUP_0 = 0,
-	ENUM_MT6885_DMASHDL_GROUP_1,
-	ENUM_MT6885_DMASHDL_GROUP_2,
-	ENUM_MT6885_DMASHDL_GROUP_3,
-	ENUM_MT6885_DMASHDL_GROUP_4,
-	ENUM_MT6885_DMASHDL_GROUP_5,
-	ENUM_MT6885_DMASHDL_GROUP_6,
-	ENUM_MT6885_DMASHDL_GROUP_7,
-	ENUM_MT6885_DMASHDL_GROUP_8,
-	ENUM_MT6885_DMASHDL_GROUP_9,
-	ENUM_MT6885_DMASHDL_GROUP_10,
-	ENUM_MT6885_DMASHDL_GROUP_11,
-	ENUM_MT6885_DMASHDL_GROUP_12,
-	ENUM_MT6885_DMASHDL_GROUP_13,
-	ENUM_MT6885_DMASHDL_GROUP_14,
-	ENUM_MT6885_DMASHDL_GROUP_15,
-	ENUM_MT6885_DMASHDL_GROUP_NUM
-};
-
-struct MT6885_DMASHDL_CFG {
-	u_int8_t fgSlotArbiterEn;
-	uint16_t u2PktPleMaxPage;
-	uint16_t u2PktPseMaxPage;
-	u_int8_t afgRefillEn[ENUM_MT6885_DMASHDL_GROUP_NUM];
-	uint16_t au2MaxQuota[ENUM_MT6885_DMASHDL_GROUP_NUM];
-	uint16_t au2MinQuota[ENUM_MT6885_DMASHDL_GROUP_NUM];
-	uint8_t aucQueue2Group[32];
-	uint8_t aucPriority2Group[16];
-	uint16_t u2HifAckCntTh;
-	uint16_t u2HifGupActMap;
-};
-
 /*******************************************************************************
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
+extern struct DMASHDL_CFG rMT6885DmashdlCfg;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -201,39 +169,5 @@ struct MT6885_DMASHDL_CFG {
 ********************************************************************************
 */
 
-void mt6885HalDmashdlSetPlePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage);
-
-void mt6885HalDmashdlSetPsePktMaxPage(struct ADAPTER *prAdapter,
-				      uint16_t u2MaxPage);
-
-void mt6885HalDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
-			       u_int8_t fgEnable);
-
-void mt6885HalDmashdlSetMaxQuota(struct ADAPTER *prAdapter, uint8_t ucGroup,
-				 uint16_t u2MaxQuota);
-
-void mt6885HalDmashdlSetMinQuota(struct ADAPTER *prAdatper, uint8_t ucGroup,
-				 uint16_t u2MinQuota);
-
-void mt6885HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
-				     uint8_t ucGroup);
-
 void mt6885DmashdlInit(struct ADAPTER *prAdapter);
-
-void mt6885HalDmashdlGetPktMaxPage(struct ADAPTER *prAdapter);
-
-void mt6885HalDmashdlGetRefill(struct ADAPTER *prAdapter);
-
-void mt6885HalDmashdlGetGroupControl(struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
-
-uint32_t mt6885HalDmashdlGetRsvCount(struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
-
-uint32_t mt6885HalDmashdlGetSrcCount(struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
-
-void mt6885HalDmashdlGetPKTCount(struct ADAPTER *prAdapter,
-	uint8_t ucGroup);
 #endif /* _HAL_DMASHDL_MT6885_H */
