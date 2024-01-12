@@ -2208,8 +2208,11 @@ uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 		DBGLOG(INIT, WARN, "Get tailer info error!\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	if (prAdapter->chip_info->checkbushang)
-		prAdapter->chip_info->checkbushang(prAdapter, FALSE);
+
+	if (prAdapter->chip_info->checkbushang) {
+		if (prAdapter->chip_info->checkbushang(prAdapter, TRUE) != 0)
+			return WLAN_STATUS_FAILURE;
+	}
 
 	ucRegionNum = prAdapter->rVerInfo.rCommonTailer.ucRegionNum;
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
