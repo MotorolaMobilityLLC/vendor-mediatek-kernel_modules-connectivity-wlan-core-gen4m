@@ -64,6 +64,8 @@ static const char delayTypeChar[] = {'D', 'C', 'M', 'A', 'F'};
  *                                 M A C R O S
  *******************************************************************************
  */
+#define DUMP_DRV_OWN_DONE "DRIVER OWN Done[%u us]\n"
+#define DUMP_DRV_OWN_FAIL "DRIVER OWN Failed[%u us]\n"
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -486,7 +488,7 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	u_int8_t fgStatus = TRUE;
-	uint32_t i, u4CurrTick, u4chkTick;
+	uint32_t i, u4CurrTick = 0, u4chkTick = 0, u4DrvOwnElapsed = 0;
 	u_int8_t fgTimeout;
 	u_int8_t fgResult;
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
@@ -650,8 +652,12 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	KAL_REC_TIME_END();
-	DBGLOG(INIT, INFO,
-		"DRIVER OWN Done[%lu us]\n", KAL_GET_TIME_INTERVAL());
+	u4DrvOwnElapsed = KAL_GET_TIME_INTERVAL();
+
+	if (fgResult)
+		DBGLOG(INIT, INFO, DUMP_DRV_OWN_DONE, u4DrvOwnElapsed);
+	else
+		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL, u4DrvOwnElapsed);
 
 end:
 	KAL_HIF_OWN_UNLOCK(prAdapter);
