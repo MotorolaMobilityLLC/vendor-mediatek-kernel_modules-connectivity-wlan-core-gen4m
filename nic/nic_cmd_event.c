@@ -765,36 +765,37 @@ void nicCmdEventQueryLinkQuality(IN struct ADAPTER
 				 *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				 IN uint8_t *pucEventBuf)
 {
-	int32_t rRssi, *prRssi;
-	struct LINK_QUALITY *prLinkQuality;
+	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
+	uint32_t i;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 
-	prLinkQuality = (struct LINK_QUALITY *) pucEventBuf;
+	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
+	prLinkSpeed = (struct PARAM_LINK_SPEED_EX *)
+		prCmdInfo->pvInformationBuffer;
 
-	/* ranged from (-128 ~ 30) in unit of dBm */
-	rRssi = (int32_t)	prLinkQuality->cRssi;
+	for (i = 0; i < BSSID_NUM; i++) {
+		prLinkSpeed->rLq[i].u2LinkSpeed
+			= prLinkQuality->rLq[i].u2LinkSpeed * 5000;
 
-	if (aisGetAisBssInfo(prAdapter, AIS_DEFAULT_INDEX)
-		->eConnectionState == MEDIA_STATE_CONNECTED) {
-		if (rRssi > PARAM_WHQL_RSSI_MAX_DBM)
-			rRssi = PARAM_WHQL_RSSI_MAX_DBM;
-		else if (rRssi < PARAM_WHQL_RSSI_MIN_DBM)
-			rRssi = PARAM_WHQL_RSSI_MIN_DBM;
-	} else {
-		rRssi = PARAM_WHQL_RSSI_MIN_DBM;
+		/* ranged from (-128 ~ 30) in unit of dBm */
+		prLinkSpeed->rLq[i].cRssi
+			= prLinkQuality->rLq[i].cRssi;
+
+		DBGLOG(REQ, TRACE,
+			"ucBssIdx = %d, rate = %u, signal = %d\n",
+			i, prLinkSpeed->rLq[i].u2LinkSpeed,
+			prLinkSpeed->rLq[i].cRssi);
 	}
+	u4QueryInfoLen = sizeof(struct PARAM_LINK_SPEED_EX);
+
 
 	if (prCmdInfo->fgIsOid) {
 		prGlueInfo = prAdapter->prGlueInfo;
-		prRssi = (int32_t *) prCmdInfo->pvInformationBuffer;
-
-		kalMemCopy(prRssi, &rRssi, sizeof(int32_t));
-		u4QueryInfoLen = sizeof(int32_t);
-
 		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
