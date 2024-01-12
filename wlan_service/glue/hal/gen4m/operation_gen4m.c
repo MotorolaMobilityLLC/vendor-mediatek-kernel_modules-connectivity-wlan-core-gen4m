@@ -305,7 +305,15 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_TX_HE_TB_TTRCR8 = 193,
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
-	RF_AT_FUNCID_END = 0xff
+	/* GAIN CAL */
+	RF_AT_FUNCID_SET_EFEM_MODE = 196,
+	RF_AT_FUNCID_SET_TX_GAIN = 197,
+	RF_AT_FUNCID_SET_ETSSI_GAIN = 198,
+	RF_AT_FUNCID_GET_TSSI_MEAS_DBV = 199,
+	RF_AT_FUNCID_SET_GAIN_ENABLE = 200,
+	RF_AT_FUNCID_SET_GAIN_VALUE = 201,
+
+	RF_AT_FUNCID_NULL = 0xFF
 };
 
 /* Command */
@@ -3552,6 +3560,142 @@ s_int32 mt_op_listmode_cmd(
 		(u_int32)para_len,
 		rsp_len,
 		rsp_data);
+
+	return ret;
+}
+
+s_int32 mt_op_set_efem_mode(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 mode,
+	u_int32 level)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_DBDC_BAND_IDX,
+			band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_BAND,
+			ch_band);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_PATH,
+			wf_path);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_GAIN_ENABLE,
+			enable);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_GAIN_VALUE,
+			level);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_EFEM_MODE,
+			mode);
+
+	return ret;
+}
+
+s_int32 mt_op_set_tx_gain(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_type,
+	u_int32 value)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_DBDC_BAND_IDX,
+			band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_PATH,
+			wf_path);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_GAIN_ENABLE,
+			enable);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_GAIN_VALUE,
+			value);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_GAIN,
+			gain_type);
+
+	return ret;
+}
+
+s_int32 mt_op_set_etssi_gain(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_value)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_DBDC_BAND_IDX,
+			band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_PATH,
+			wf_path);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_GAIN_ENABLE,
+			enable);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_GAIN_VALUE,
+			gain_value);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_ETSSI_GAIN,
+			gain_value);
+
+	return ret;
+}
+
+s_int32 mt_op_get_tssi_meas_dbv(
+	struct test_wlan_info *winfos,
+	u_int32 band_idx,
+	u_int32 wf_path,
+	u_int32 *dbv_value)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 buf_len = 0;
+	struct param_mtk_wifi_test_struct rf_at_info;
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_DBDC_BAND_IDX,
+			band_idx);
+
+	ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TX_PATH,
+			wf_path);
+
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_TSSI_MEAS_DBV;
+	rf_at_info.func_data = 0;
+	ret = tm_rftest_query_auto_test(winfos,
+			&rf_at_info, &buf_len);
+
+	if (ret == SERV_STATUS_SUCCESS)
+		*dbv_value = rf_at_info.func_data;
+	else
+		*dbv_value = 0;
 
 	return ret;
 }

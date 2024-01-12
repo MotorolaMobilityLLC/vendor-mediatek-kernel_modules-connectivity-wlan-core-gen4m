@@ -120,6 +120,10 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_write_bulk_rf_reg = mt_op_write_bulk_rf_reg;
 	ops->op_read_bulk_eeprom = mt_op_read_bulk_eeprom;
 	ops->op_listmode_cmd = mt_op_listmode_cmd;
+	ops->op_set_efem_mode = mt_op_set_efem_mode;
+	ops->op_set_tx_gain = mt_op_set_tx_gain;
+	ops->op_set_etssi_gain = mt_op_set_etssi_gain;
+	ops->op_get_tssi_meas_dbv = mt_op_get_tssi_meas_dbv;
 
 	return SERV_STATUS_SUCCESS;
 }
@@ -2597,4 +2601,113 @@ s_int32 mt_serv_listmode_cmd(struct service_test *serv_test,
 
 	return ret;
 }
+
+s_int32 mt_serv_set_efem_mode(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 mode,
+	u_int32 level)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *ops;
+
+	ops = serv_test->test_op;
+	ret = ops->op_set_efem_mode(
+		serv_test->test_winfo,
+		band_idx,
+		ch_band,
+		wf_path,
+		enable,
+		mode,
+		level);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_set_tx_gain(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_type,
+	u_int32 value)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *ops;
+
+	ops = serv_test->test_op;
+	ret = ops->op_set_tx_gain(
+		serv_test->test_winfo,
+		band_idx,
+		ch_band,
+		wf_path,
+		enable,
+		gain_type,
+		value);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_set_etssi_gain(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 ch_band,
+	u_int32 wf_path,
+	u_int32 enable,
+	u_int32 gain_value)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *ops;
+
+	ops = serv_test->test_op;
+	ret = ops->op_set_etssi_gain(
+		serv_test->test_winfo,
+		band_idx,
+		ch_band,
+		wf_path,
+		enable,
+		gain_value);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
+s_int32 mt_serv_get_tssi_meas_dbv(
+	struct service_test *serv_test,
+	u_int32 band_idx,
+	u_int32 wf_path,
+	u_int32 *dbv_value)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_operation *ops;
+
+	ops = serv_test->test_op;
+	ret = ops->op_get_tssi_meas_dbv(
+		serv_test->test_winfo,
+		band_idx,
+		wf_path,
+		dbv_value);
+
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%08x\n", __func__, ret));
+
+	return ret;
+}
+
 

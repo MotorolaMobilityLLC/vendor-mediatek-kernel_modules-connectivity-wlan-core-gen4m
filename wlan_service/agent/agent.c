@@ -4386,6 +4386,146 @@ static s_int32 hqa_set_ru_info_v2(
 }
 #endif
 
+static s_int32 hqa_set_efem_mode(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 band_idx = 0;
+	u_int32 ch_band = 0;
+	u_int32 wf_path = 0;
+	u_int32 enable = 0;
+	u_int32 mode = 0;
+	u_int32 level = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+	get_param_and_shift_buf(TRUE, sizeof(ch_band),
+				&data, (u_char *)&ch_band);
+	get_param_and_shift_buf(TRUE, sizeof(wf_path),
+				&data, (u_char *)&wf_path);
+	get_param_and_shift_buf(TRUE, sizeof(enable),
+				&data, (u_char *)&enable);
+	get_param_and_shift_buf(TRUE, sizeof(mode),
+				&data, (u_char *)&mode);
+	get_param_and_shift_buf(TRUE, sizeof(level),
+				&data, (u_char *)&level);
+
+	ret = mt_serv_set_efem_mode(serv_test, band_idx,
+		ch_band, wf_path, enable, mode, level);
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2, ret);
+
+	return ret;
+}
+
+static s_int32 hqa_set_tx_gain(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 band_idx = 0;
+	u_int32 ch_band = 0;
+	u_int32 wf_path = 0;
+	u_int32 enable = 0;
+	u_int32 gain_type = 0;
+	u_int32 value = 0;
+	u_int32 count = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+	get_param_and_shift_buf(TRUE, sizeof(ch_band),
+				&data, (u_char *)&ch_band);
+	get_param_and_shift_buf(TRUE, sizeof(wf_path),
+				&data, (u_char *)&wf_path);
+	get_param_and_shift_buf(TRUE, sizeof(enable),
+				&data, (u_char *)&enable);
+	get_param_and_shift_buf(TRUE, sizeof(gain_type),
+				&data, (u_char *)&gain_type);
+
+	for (count = 0; count < 32; count++) {
+		get_param_and_shift_buf(TRUE, sizeof(value),
+					&data, (u_char *)&value);
+
+		if (gain_type & BIT(count))
+			ret = mt_serv_set_tx_gain(serv_test, band_idx,
+				ch_band, wf_path, enable, BIT(count), value);
+	}
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2, ret);
+
+	return ret;
+}
+
+static s_int32 hqa_set_etssi_gain(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 band_idx = 0;
+	u_int32 ch_band = 0;
+	u_int32 wf_path = 0;
+	u_int32 enable = 0;
+	u_int32 gain_value = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+	get_param_and_shift_buf(TRUE, sizeof(ch_band),
+				&data, (u_char *)&ch_band);
+	get_param_and_shift_buf(TRUE, sizeof(wf_path),
+				&data, (u_char *)&wf_path);
+	get_param_and_shift_buf(TRUE, sizeof(enable),
+				&data, (u_char *)&enable);
+	get_param_and_shift_buf(TRUE, sizeof(gain_value),
+				&data, (u_char *)&gain_value);
+
+	ret = mt_serv_set_etssi_gain(serv_test, band_idx,
+		ch_band, wf_path, enable, gain_value);
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2, ret);
+
+	return ret;
+}
+
+static s_int32 hqa_get_tssi_meas_dbv(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 band_idx = 0;
+	u_int32 wf_path = 0;
+	u_int32 dbv_value = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	get_param_and_shift_buf(TRUE, sizeof(band_idx),
+				&data, (u_char *)&band_idx);
+	get_param_and_shift_buf(TRUE, sizeof(wf_path),
+				&data, (u_char *)&wf_path);
+
+	ret = mt_serv_get_tssi_meas_dbv(serv_test, band_idx,
+		wf_path, &dbv_value);
+
+	dbv_value = SERV_OS_HTONL(dbv_value);
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	sys_ad_move_mem(hqa_frame->data + 2, &dbv_value, sizeof(dbv_value));
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2 + sizeof(dbv_value), ret);
+
+	return ret;
+}
+
 static struct hqa_cmd_entry CMD_SET5[] = {
 	/* cmd id start from 0x1500 */
 	{0x0,	hqa_get_fw_info},
@@ -4442,8 +4582,12 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	{0x1e,	hqa_get_rf_type_capability},
 	{0x90,  hqa_set_max_pac_ext},
-	{0x96,	hqa_set_ru_info_v2}
+	{0x96,	hqa_set_ru_info_v2},
 #endif
+	{0x9a,	hqa_set_efem_mode},
+	{0x9b,	hqa_set_tx_gain},
+	{0x9c,	hqa_set_etssi_gain},
+	{0x9d,	hqa_get_tssi_meas_dbv}
 };
 
 static s_int32 hqa_set_channel_ext(
