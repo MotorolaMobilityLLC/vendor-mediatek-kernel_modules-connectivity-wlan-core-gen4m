@@ -2480,7 +2480,8 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy,
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_change_beacon */
 
-int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
+int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev,
+	unsigned int link_id)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;

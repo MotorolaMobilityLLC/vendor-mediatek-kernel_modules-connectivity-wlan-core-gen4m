@@ -345,8 +345,7 @@ int IcsInit(void)
 	if (result < 0)
 		goto free_dev;
 
-	gIcsDev->driver_class = class_create(THIS_MODULE,
-		FW_LOG_ICS_DRIVER_NAME);
+	gIcsDev->driver_class = KAL_CLASS_CREATE(FW_LOG_ICS_DRIVER_NAME);
 
 	if (KAL_IS_ERR(gIcsDev->driver_class)) {
 		result = -ENOMEM;
