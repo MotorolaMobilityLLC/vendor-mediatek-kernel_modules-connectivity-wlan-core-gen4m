@@ -6153,6 +6153,12 @@ s_int32 mt_agent_hqa_cmd_handler(
 	u_int32 magic_no = 0;
 	struct hqa_frame *hqa_frame = NULL;
 
+	if (hqa_frame_ctrl == NULL)
+		return SERV_STATUS_AGENT_INVALID_NULL_POINTER;
+
+	if (serv == NULL)
+		return SERV_STATUS_AGENT_INVALID_NULL_POINTER;
+
 	if (hqa_frame_ctrl->type == 1) {
 		g_hqa_frame_ctrl = hqa_frame_ctrl->type;
 		ret = mt_agent_hqa_cmd_string_parser(
@@ -6168,6 +6174,9 @@ s_int32 mt_agent_hqa_cmd_handler(
 
 	magic_no = SERV_OS_NTOHL(hqa_frame->magic_no);
 	serv_test = (struct service_test *)serv->serv_handle;
+
+	if (serv_test == NULL)
+		return SERV_STATUS_AGENT_INVALID_NULL_POINTER;
 
 	if (magic_no != TEST_CMD_MAGIC_NO)
 		return SERV_STATUS_AGENT_INVALID_PARAM;
