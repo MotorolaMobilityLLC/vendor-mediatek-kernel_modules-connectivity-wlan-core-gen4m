@@ -5775,9 +5775,10 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	struct STA_RECORD *prStaRec;
 	uint16_t u2SchId = 0;
 	uint32_t u4Idx;
-	unsigned char fgNeedToSendPkt = FALSE;
 	OS_SYSTIME rCurrentTime;
 	OS_SYSTIME rExpiryTime;
+
+	KAL_SPIN_LOCK_DECLARATION();
 
 	prFlowCtrlEvt = (struct NAN_EVT_NDL_FLOW_CTRL_V2 *)pcuEvtBuf;
 	for (u2SchId = 0; u2SchId < NAN_MAX_CONN_CFG; u2SchId++) {
@@ -5806,21 +5807,23 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			if (ucSTAIdx == STA_REC_INDEX_NOT_FOUND)
 				continue;
 
+			KAL_ACQUIRE_SPIN_LOCK(prAdapter,
+				SPIN_LOCK_NAN_NDL_FLOW_CTRL);
+
 			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
 			prStaRec->rNanExpiredSendTime = rExpiryTime;
 
 			if (prStaRec->fgNanSendTimeExpired) {
 				prStaRec->fgNanSendTimeExpired = FALSE;
-				fgNeedToSendPkt = TRUE;
-			}
-		}
-	}
 
-	if (fgNeedToSendPkt == TRUE) {
-		DBGLOG(NAN, INFO, "Trigger NAN tx request\n");
-		/* NAN StaRec Start Tx */
-		qmSetStaRecTxAllowed(prAdapter,
-			prStaRec, TRUE);
+				DBGLOG(NAN, INFO, "Trigger NAN tx request\n");
+				/* NAN StaRec Start Tx */
+				qmSetStaRecTxAllowed(prAdapter,
+					prStaRec, TRUE);
+			}
+			KAL_RELEASE_SPIN_LOCK(prAdapter,
+					SPIN_LOCK_NAN_NDL_FLOW_CTRL);
+		}
 	}
 }
 
