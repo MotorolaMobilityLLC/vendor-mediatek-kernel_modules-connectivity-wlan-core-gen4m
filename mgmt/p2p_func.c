@@ -333,12 +333,9 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 				CFG_SCAN_OOB_MAX_NUM,
 				sizeof(prScanReqV2->ucBssidMatchSsidInd));
 			prScanReqV2->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
-
-			prScanReqV2->fgOobRnrParseEn = FALSE;
-		} else {
-			prScanReqV2->fgOobRnrParseEn = TRUE;
 		}
 #endif
+		prScanReqV2->fgOobRnrParseEn = FALSE;
 
 		mboxSendMsg(prAdapter,
 			MBOX_ID_0,
