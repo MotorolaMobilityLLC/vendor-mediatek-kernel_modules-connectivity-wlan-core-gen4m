@@ -7096,6 +7096,7 @@ static int initWlan(void)
 	kalInitIOBuffer(FALSE);
 #endif
 
+	wlanRegisterNetdevNotifier();
 
 #if WLAN_INCLUDE_PROC
 	procInitFs();
@@ -7165,7 +7166,6 @@ static int initWlan(void)
 	glResetInit(prGlueInfo);
 #endif
 	kalFbNotifierReg(prGlueInfo);
-	wlanRegisterNetdevNotifier();
 
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	kalBatNotifierReg(prGlueInfo);
@@ -7222,20 +7222,21 @@ static void exitWlan(void)
 #if defined(_HIF_USB) || CFG_SUPPORT_PERSIST_NETDEV
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif
-#if CFG_AP_80211KVR_INTERFACE
-	if (nl_sk != NULL)
-		netlink_kernel_release(nl_sk);
-#endif /* CFG_AP_80211KVR_INTERFACE */
-
 #if CFG_SUPPORT_PERSIST_NETDEV
 	uint32_t u4Idx = 0;
 	struct wiphy *wiphy = NULL;
 #endif
 
+	DBGLOG(INIT, INFO, "exitWlan::Start\n");
+
+#if CFG_AP_80211KVR_INTERFACE
+	if (nl_sk != NULL)
+		netlink_kernel_release(nl_sk);
+#endif /* CFG_AP_80211KVR_INTERFACE */
+
 #if CFG_MTK_MDDP_SUPPORT
 	mddpUninit();
 #endif
-	wlanUnregisterNetdevNotifier();
 
 	kalFbNotifierUnReg();
 
@@ -7275,7 +7276,8 @@ static void exitWlan(void)
 
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev &&
+		    gprWdev[u4Idx]->netdev->reg_state == NETREG_REGISTERED) {
 			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
 			DBGLOG(INIT, INFO, "Unregister wlan%d netdev start.\n",
 					u4Idx);
@@ -7324,6 +7326,8 @@ static void exitWlan(void)
 		} while (0);
 #endif
 
+	wlanUnregisterNetdevNotifier();
+
 	/* free pre-allocated memory */
 	kalUninitIOBuffer();
 
@@ -7353,8 +7357,7 @@ static void exitWlan(void)
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanUnregisterRebootNotifier();
 #endif
-	DBGLOG(INIT, INFO, "exitWlan\n");
-
+	DBGLOG(INIT, INFO, "exitWlan::End\n");
 }				/* end of exitWlan() */
 
 #if CFG_POWER_OFF_CTRL_SUPPORT
