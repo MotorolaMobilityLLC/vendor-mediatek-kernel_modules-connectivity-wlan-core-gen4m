@@ -478,4 +478,6 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 void
 p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter);
 
+uint8_t p2pFuncIsBufferableMMPDU(IN struct MSDU_INFO *prMgmtTxMsdu);
+
 #endif
