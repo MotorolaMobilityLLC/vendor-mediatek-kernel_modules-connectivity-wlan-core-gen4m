@@ -8012,7 +8012,18 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgBoostCpuByPPSEn,  "BoostCpuByPPSEn",
 		FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->fgBoostCpuPolicyEn,  "BoostCpuPolicyEn",
-		FEATURE_DISABLED);
+		FEATURE_ENABLED);
+
+	/* Boost Cpu Policy Options  */
+	INIT_UINT(prWifiVar->ucBCPPerTh,  "BCPPerTh", 30);
+	INIT_UINT(prWifiVar->u4BCPBigCPUIncrementHz,
+		"BCPBigIncrementHz", 200000);
+	INIT_UINT(prWifiVar->u4BCPBigCPUDecrementHz,
+		"BCPBigDecrementHz", 200000);
+	INIT_UINT(prWifiVar->u4BCPLitCPUIncrementHz,
+		"BCPLitIncrementHz", 200000);
+	INIT_UINT(prWifiVar->u4BCPLitCPUDecrementHz,
+		"BCPLitDecrementHz", 200000);
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
 	INIT_UINT(prWifiVar->u4BoostCpuTh,
 		"BoostCpuTh", u4PlatformBoostCpuTh);
