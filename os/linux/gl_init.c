@@ -4983,8 +4983,11 @@ static void wlanRemove(void)
 	/* 4 <9> Unregister notifier callback */
 	wlanUnregisterInetAddrNotifier();
 
-#if CFG_CHIP_RESET_SUPPORT & !CFG_WMT_RESET_API_SUPPORT
+#if CFG_CHIP_RESET_SUPPORT
 	fgIsResetting = FALSE;
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	update_driver_reset_status(fgIsResetting);
+#endif
 #endif
 
 #if CFG_MTK_MCIF_WIFI_SUPPORT
