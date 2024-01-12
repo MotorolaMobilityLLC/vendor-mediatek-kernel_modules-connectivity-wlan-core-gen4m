@@ -898,6 +898,8 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct GL_HIF_INFO *prHif = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg;
+	enum nl80211_iftype type;
 	uint8_t ucBssIndex;
 
 	GLUE_SPIN_LOCK_DECLARATION();
@@ -1043,10 +1045,54 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 				(void *)prGlueInfo->prP2PInfo->prDevHandler);
 #endif
 
-	mtk_p2p_cfg80211_change_iface_impl(prAdapter, u4Idx,
-					   prP2pWdev->iftype);
+	prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *) cnmMemAlloc(
+				prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_SWITCH_OP_MODE));
+	if (prSwitchModeMsg) {
+		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
+		prSwitchModeMsg->ucRoleIdx = u4Idx;
+		type = prP2pWdev->iftype;
+		switch (type) {
+		case NL80211_IFTYPE_P2P_CLIENT:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, u4Idx);
+			break;
+		case NL80211_IFTYPE_STATION:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_STATION;
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, u4Idx);
+			break;
+		case NL80211_IFTYPE_AP:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_AP;
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, u4Idx);
+			break;
+		case NL80211_IFTYPE_P2P_GO:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_GO;
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, u4Idx);
+			break;
+		default:
+			DBGLOG(P2P, TRACE, "Other type :%d .\n", type);
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_DEVICE;
+			prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
+			kalP2PSetRole(prGlueInfo, 0, u4Idx);
+			break;
+		}
+		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prSwitchModeMsg,
+			MSG_SEND_METHOD_BUF);
+	} else {
+		DBGLOG(P2P, ERROR, "Alloc prSwitchModeMsg msg failed.\n");
+	}
 
 exit:
+
 	return 0;
 }
 

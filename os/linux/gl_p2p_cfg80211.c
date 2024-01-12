@@ -193,67 +193,6 @@ static void mtk_p2p_need_remove_iface(
 #endif
 }
 
-int mtk_p2p_cfg80211_change_iface_impl(struct ADAPTER *prAdapter,
-	uint8_t ucRoleIdx,
-	enum nl80211_iftype type)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg;
-
-	if (!prAdapter)
-		return -EINVAL;
-	else if (ucRoleIdx >= KAL_P2P_NUM)
-		return -EINVAL;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-
-	prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *) cnmMemAlloc(
-		prAdapter, RAM_TYPE_MSG,
-		sizeof(struct MSG_P2P_SWITCH_OP_MODE));
-	if (prSwitchModeMsg == NULL) {
-		DBGLOG(P2P, ERROR, "can't alloc prSwitchModeMsg\n");
-		return -ENOMEM;
-	}
-
-	DBGLOG(P2P, INFO, "role=%u type=%d\n",
-		ucRoleIdx, type);
-
-	prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
-	prSwitchModeMsg->ucRoleIdx = ucRoleIdx;
-	switch (type) {
-	case NL80211_IFTYPE_P2P_CLIENT:
-		prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
-		prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
-		kalP2PSetRole(prGlueInfo, 1, ucRoleIdx);
-		break;
-	case NL80211_IFTYPE_STATION:
-		prSwitchModeMsg->eIftype = IFTYPE_STATION;
-		prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
-		kalP2PSetRole(prGlueInfo, 1, ucRoleIdx);
-		break;
-	case NL80211_IFTYPE_AP:
-		prSwitchModeMsg->eIftype = IFTYPE_AP;
-		prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
-		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
-		break;
-	case NL80211_IFTYPE_P2P_GO:
-		prSwitchModeMsg->eIftype = IFTYPE_P2P_GO;
-		prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
-		kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
-		break;
-	default:
-		prSwitchModeMsg->eIftype = IFTYPE_P2P_DEVICE;
-		prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
-		kalP2PSetRole(prGlueInfo, 0, ucRoleIdx);
-		break;
-	}
-
-	mboxSendMsg(prAdapter, MBOX_ID_0,
-		(struct MSG_HDR *) prSwitchModeMsg,
-		MSG_SEND_METHOD_BUF);
-
-	return 0;
-}
 
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
@@ -273,6 +212,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	uint32_t u4Idx = 0;
 	struct GL_P2P_INFO *prP2pInfo = NULL;
 	struct GL_HIF_INFO *prHif = NULL;
+	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg = NULL;
 	struct wireless_dev *prWdev = NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
@@ -377,6 +317,14 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
 		if (prWdev == NULL) {
 			DBGLOG(P2P, ERROR, "can't alloc prWdev\n");
+			break;
+		}
+
+		prSwitchModeMsg = (struct MSG_P2P_SWITCH_OP_MODE *) cnmMemAlloc(
+					prGlueInfo->prAdapter, RAM_TYPE_MSG,
+					sizeof(struct MSG_P2P_SWITCH_OP_MODE));
+		if (prSwitchModeMsg == NULL) {
+			DBGLOG(P2P, ERROR, "can't alloc prSwitchModeMsg\n");
 			break;
 		}
 
@@ -515,8 +463,49 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		mtk_p2p_cfg80211_change_iface_impl(prAdapter, u4Idx, type);
+		/* Switch OP MOde. */
+		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
+		prSwitchModeMsg->ucRoleIdx = u4Idx;
+		switch (type) {
+		case NL80211_IFTYPE_P2P_CLIENT:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, u4Idx);
+			break;
+		case NL80211_IFTYPE_STATION:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_STATION;
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, u4Idx);
+			break;
+		case NL80211_IFTYPE_AP:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_AP;
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, u4Idx);
+			break;
+		case NL80211_IFTYPE_P2P_GO:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_GO;
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, u4Idx);
+			break;
+		default:
+			DBGLOG(P2P, TRACE, "Other type :%d .\n", type);
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_DEVICE;
+			prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
+			kalP2PSetRole(prGlueInfo, 0, u4Idx);
+			break;
+		}
+		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prSwitchModeMsg,
+			MSG_SEND_METHOD_BUF);
 
+		/* Send Msg to DevFsm and active P2P dev BSS */
+		prMsgUpdateBss->rMsgHdr.eMsgId = MID_MNY_P2P_UPDATE_DEV_BSS;
+		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
+			(struct MSG_HDR *) prMsgUpdateBss, MSG_SEND_METHOD_BUF);
 		/* Success */
 		return prWdev;
 	} while (FALSE);
@@ -543,6 +532,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+
+	if (prSwitchModeMsg != NULL)
+		cnmMemFree(prAdapter, prSwitchModeMsg);
 
 	if (prMsgUpdateBss != NULL)
 		cnmMemFree(prAdapter, prMsgUpdateBss);
@@ -3558,6 +3550,8 @@ mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
+	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg =
+		(struct MSG_P2P_SWITCH_OP_MODE *) NULL;
 	uint8_t ucRoleIdx = 0;
 
 	do {
@@ -3579,10 +3573,62 @@ mtk_p2p_cfg80211_change_iface(struct wiphy *wiphy,
 				"Device Interface no need to change interface type.\n");
 			return 0;
 		}
+		/* Switch OP MOde. */
+		prSwitchModeMsg =
+		    (struct MSG_P2P_SWITCH_OP_MODE *)
+		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
+				sizeof(struct MSG_P2P_SWITCH_OP_MODE));
 
-		if (!mtk_p2p_cfg80211_change_iface_impl(prGlueInfo->prAdapter,
-							ucRoleIdx, type))
-			i4Rslt = 0;
+		if (prSwitchModeMsg == NULL) {
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		prSwitchModeMsg->rMsgHdr.eMsgId = MID_MNY_P2P_FUN_SWITCH;
+		prSwitchModeMsg->ucRoleIdx = ucRoleIdx;
+
+		switch (type) {
+		case NL80211_IFTYPE_P2P_CLIENT:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_CLIENT;
+			kal_fallthrough;
+		case NL80211_IFTYPE_STATION:
+			if (type == NL80211_IFTYPE_STATION) {
+				DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
+				prSwitchModeMsg->eIftype = IFTYPE_STATION;
+			}
+			prSwitchModeMsg->eOpMode = OP_MODE_INFRASTRUCTURE;
+			kalP2PSetRole(prGlueInfo, 1, ucRoleIdx);
+			break;
+		case NL80211_IFTYPE_AP:
+			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
+			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+			prSwitchModeMsg->eIftype = IFTYPE_AP;
+			kal_fallthrough;
+		case NL80211_IFTYPE_P2P_GO:
+			if (type == NL80211_IFTYPE_P2P_GO) {
+				DBGLOG(P2P, TRACE,
+					"NL80211_IFTYPE_P2P_GO not AP.\n");
+				prSwitchModeMsg->eIftype = IFTYPE_P2P_GO;
+			}
+			prSwitchModeMsg->eOpMode = OP_MODE_ACCESS_POINT;
+			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
+			break;
+		default:
+			DBGLOG(P2P, TRACE, "Other type :%d .\n", type);
+			prSwitchModeMsg->eOpMode = OP_MODE_P2P_DEVICE;
+			kalP2PSetRole(prGlueInfo, 0, ucRoleIdx);
+			prSwitchModeMsg->eIftype = IFTYPE_P2P_DEVICE;
+			break;
+		}
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prSwitchModeMsg,
+			MSG_SEND_METHOD_BUF);
+
+		i4Rslt = 0;
+
 	} while (FALSE);
 
 	return i4Rslt;

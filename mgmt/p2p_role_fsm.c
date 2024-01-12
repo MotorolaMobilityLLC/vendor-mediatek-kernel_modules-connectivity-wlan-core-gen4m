@@ -916,7 +916,7 @@ void p2pRoleFsmDeauthTimeout(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 
 	p2pRoleFsmDeauthComplete(prAdapter, prStaRec);
-}				/* p2pRoleFsmRunEventTimeout */
+}				/* p2pRoleFsmDeauthTimeout */
 
 void p2pRoleFsmRunEventAbort(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
@@ -1657,6 +1657,9 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 		cnmTimerStopTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer));
 	}
+
+	p2pFuncSwitchOPMode(prAdapter, prP2pBssInfo, OP_MODE_ACCESS_POINT,
+			    FALSE);
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	if (timerPendingTimer(&(prP2pRoleFsmInfo->rDfsShutDownTimer))) {
@@ -2854,7 +2857,8 @@ void p2pRoleFsmRunEventConnectionAbort(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_TDLS_P2P */
 
 	DBGLOG(P2P, TRACE,
-		"p2pFsmRunEventConnectionAbort: Connection Abort.\n");
+		"p2pFsmRunEventConnectionAbort: Connection Abort, eCurrentOPMode=%d\n",
+		prP2pBssInfo->eCurrentOPMode);
 
 	switch (prP2pBssInfo->eCurrentOPMode) {
 	case OP_MODE_INFRASTRUCTURE:
