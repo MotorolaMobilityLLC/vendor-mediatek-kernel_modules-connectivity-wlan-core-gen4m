@@ -1972,7 +1972,9 @@ endif
 ifeq ($(CONFIG_MTK_PREALLOC_MEMORY), y)
 ccflags-y += -DCFG_PREALLOC_MEMORY
 ccflags-y += -I$(KO_CODE_PATH)/prealloc/include
+ifeq ($(MODULE_NAME_PREALLOC),)
 MODULE_NAME_PREALLOC = $(MODULE_NAME)_prealloc
+endif
 PREALLOC_OBJS := prealloc/prealloc.o
 $(MODULE_NAME_PREALLOC)-objs += $(PREALLOC_OBJS)
 obj-m += $(MODULE_NAME_PREALLOC).o
@@ -1984,7 +1986,9 @@ endif
 ifeq ($(CONFIG_CHIP_RESET_KO_SUPPORT), y)
 ccflags-y += -DCFG_CHIP_RESET_KO_SUPPORT=1
 ccflags-y += -I$(KO_CODE_PATH)/reset/include
+ifeq ($(MODULE_NAME_PREALLOC),)
 MODULE_NAME_RESET = $(MODULE_NAME)_reset
+endif
 RESET_OBJS += reset/reset.o
 RESET_OBJS += reset/reset_fsm.o
 RESET_OBJS += reset/reset_fsm_def.o
