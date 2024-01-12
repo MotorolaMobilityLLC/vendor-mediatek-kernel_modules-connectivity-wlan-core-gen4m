@@ -8459,7 +8459,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucCheckBeacon,
 		"MscsCheckBeacon", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->ucEnableFastPath,
-		"EnableFastPath", FEATURE_ENABLED);
+		"EnableFastPath", FEATURE_DISABLED);
 	INIT_UINT(prWifiVar->ucFastPathAllPacket,
 		"FastPathAllPacket", FEATURE_DISABLED);
 #if (CFG_TX_HIF_PORT_QUEUE == 1)
