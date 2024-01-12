@@ -82,6 +82,7 @@ void mddpNotifyWifiOffEnd(void);
 void setMddpSupportRegister(IN struct ADAPTER *prAdapter);
 void mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state);
+void mddpSetMDFwOwn(void);
 
 #endif
 #endif /* _MDDP_H */

@@ -65,8 +65,10 @@ struct mddp_drv_handle_t gMddpFunc = {
 #define MD_ON_OFF_TIMEOUT 1000
 #if (CFG_SUPPORT_CONNAC2X == 1)
 #define MD_STATUS_SYNC_CR 0x180600F4
+#define MD_LPCTL_ADDR 0x18060050
 #else
 #define MD_STATUS_SYNC_CR 0x1800701C
+#define MD_LPCTL_ADDR 0x18007030
 #endif
 #define MD_SUPPORT_MDDP_STATUS_SYNC_CR_BIT BIT(0)
 #define MD_STATUS_OFF_SYNC_BIT BIT(1)
@@ -77,6 +79,8 @@ struct mddp_drv_handle_t gMddpFunc = {
 #define MDDP_SUPPORT_CR 0x820600d0
 #define MDDP_SUPPORT_CR_BIT BIT(23)
 #endif
+
+#define MDDP_LPCR_MD_SET_FW_OWN BIT(0)
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -556,6 +560,8 @@ void mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
 
+	mddpSetMDFwOwn();
+
 #if (CFG_SUPPORT_CONNAC2X == 0)
 	mtk_ccci_register_md_state_cb(NULL);
 #endif
@@ -868,6 +874,12 @@ static void save_mddp_stats(void)
 		curr->rx_dropped += element->rx_dropped;
 		curr->tx_dropped += element->tx_dropped;
 	}
+}
+
+void mddpSetMDFwOwn(void)
+{
+	wf_ioremap_write(MD_LPCTL_ADDR, MDDP_LPCR_MD_SET_FW_OWN);
+	DBGLOG(INIT, INFO, "Set MD Fw Own.\n");
 }
 
 #endif
