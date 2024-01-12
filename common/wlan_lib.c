@@ -5146,6 +5146,12 @@ uint32_t wlanLoadManufactureData(IN struct ADAPTER
 	} else
 		prAdapter->fgEnable5GBand = FALSE;
 
+	DBGLOG(INIT, INFO, "Enable5GBand = %d, Detail = [%d,%d,%d]",
+		prAdapter->fgEnable5GBand,
+		prRegInfo->ucEnable5GBand,
+		prRegInfo->ucSupport5GBand,
+		prAdapter->fgIsHw5GBandDisabled);
+
 	/* 5. Get 16-bits Country Code and Bandwidth */
 	prAdapter->rWifiVar.u2CountryCode =
 		(((uint16_t) prRegInfo->au2CountryCode[0]) << 8) | (((

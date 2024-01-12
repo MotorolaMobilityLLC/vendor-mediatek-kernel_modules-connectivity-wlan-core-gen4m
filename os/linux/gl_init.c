@@ -1325,9 +1325,11 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 			MAX_SUBBAND_NUM*sizeof(uint8_t));
 	}
 
-	log_dbg(INIT, INFO, "u2Part1OwnVersion = %08x, u2Part1PeerVersion = %08x\n",
+	log_dbg(INIT, INFO, "NVRAM Version = [%08x,%08x], 5G = [%d,%d]\n",
 				 prNvramSettings->u2Part1OwnVersion,
-				 prNvramSettings->u2Part1PeerVersion);
+				 prNvramSettings->u2Part1PeerVersion,
+				 prRegInfo->ucSupport5GBand,
+				 prRegInfo->ucEnable5GBand);
 }
 
 static void wlanFreeNetDev(void)
