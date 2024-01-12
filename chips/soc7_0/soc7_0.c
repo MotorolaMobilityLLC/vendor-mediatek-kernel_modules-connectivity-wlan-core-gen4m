@@ -37,6 +37,8 @@
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
 #include <linux/pm_qos.h>
+
+#include <linux/platform_device.h>
 #include <linux/regulator/consumer.h>
 #endif /*#ifndef CFG_SUPPORT_VCODE_VDFS*/
 
@@ -543,7 +545,9 @@ void soc7_0_icapRiseVcoreClockRate(void)
 		->chip_info;
 	pdev = (void *)prChipInfo->pdev;
 
-	dvfsrc_vcore_power = regulator_get(&pdev->dev, "dvfsrc-vcore");
+	dvfsrc_vcore_power = regulator_get(
+		&((struct platform_device *)pdev)->dev, "dvfsrc-vcore");
+
 	/* Enable VCore to 0.725 */
 	regulator_set_voltage(dvfsrc_vcore_power, 725000, INT_MAX);
 #else
@@ -594,7 +598,9 @@ void soc7_0_icapDownVcoreClockRate(void)
 		->chip_info;
 	pdev = (void *)prChipInfo->pdev;
 
-	dvfsrc_vcore_power = regulator_get(&pdev->dev, "dvfsrc-vcore");
+	dvfsrc_vcore_power = regulator_get(
+		&((struct platform_device *)pdev)->dev, "dvfsrc-vcore");
+
 	/* resume to default Vcore value */
 	regulator_set_voltage(dvfsrc_vcore_power, 575000, INT_MAX);
 #else
