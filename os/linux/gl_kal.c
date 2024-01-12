@@ -9713,6 +9713,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	char *head3;
 	char *head4;
 	char *head5;
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	char *head6;
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 	char *pos;
 	char *end;
 	uint32_t slen;
@@ -9840,12 +9843,16 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	 *    [0, 18446744073709551615]
 	 * 4. [%lu:%lu:%lu:%lu] rx reordering que cnt
 	 * 5. [%u:...:%u] tx mgmt packets categorized by 16 typesubtype
+	 * 6. [%lu:%lu:%lu:%lu] rx pending que cnt
 	 */
 	slen = (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
 	       (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
 	       (20 + 1) * MAX_BSSID_NUM + 1 +
 	       (20 * MAX_NUM_OF_FC_SUBTYPES + MAX_NUM_OF_FC_SUBTYPES - 1) + 1;
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	slen += (20 + 1) * MAX_BSSID_NUM + 1;
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 	pos = buf = kalMemZAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -9930,6 +9937,15 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		pos += kalSnprintf(pos, end - pos,
 				i == MAX_NUM_OF_FC_SUBTYPES-1 ? "%u":"%u:",
 				prAdapter->au4MgmtSubtypeTxCnt[i]);
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	pos++;
+	head6 = pos;
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		pos += kalSnprintf(pos, end - pos,
+			(i == MAX_BSSID_NUM - 1) ? "%u" : "%u:",
+			RX_PENDING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
+	}
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 #if CFG_SUPPORT_CPU_STAT
 #define FORMAT_INT_8 \
@@ -10088,10 +10104,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define RRB_TRACK_TEMPLATE ""
 #endif /* CFG_RFB_TRACK */
 
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+#define RX_PENDING_TEMPLATE "RxPending[%s] "
+#else /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+#define RX_PENDING_TEMPLATE ""
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
 	RRO_LOG_TEMPLATE \
 	"RxReorder[%s] " \
+	RX_PENDING_TEMPLATE \
 	RRB_TRACK_TEMPLATE \
 	"drv[RM,IL,RI,RT,RM,RW,RA,RB,DT,NS," \
 	"IB,HS,LS,DD,ME,BD,NI,DR,TE,PE," \
@@ -10131,6 +10154,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_COUNTER_NUM),
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 		head4,
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+		head6,
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 #if CFG_RFB_TRACK
 		prAdapter->rWifiVar.fgRfbTrackEn,
 		prAdapter->rWifiVar.u4RfbTrackInterval,
@@ -10188,6 +10214,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #undef TEMP_LOG_TEMPLATE
 #undef RRO_LOG_TEMPLATE
 #undef RADIOTAP_LOG_TEMPLATE
+#undef RX_PENDING_TEMPLATE
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),
@@ -12955,6 +12982,11 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	/* follow timeout rule in net_rx_action() */
 	const unsigned long ulTimeLimit = jiffies + 2;
 #endif
+
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	if (HAL_IS_RX_DIRECT(prAdapter))
+		nicRxDequeuePendingQueue(prAdapter);
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 	/* Added in qmHandleReorderBubbleTimeout */
 	while (prReorderQueParm =

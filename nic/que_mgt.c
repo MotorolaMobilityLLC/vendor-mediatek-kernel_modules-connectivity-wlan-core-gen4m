@@ -546,6 +546,9 @@ void qmActivateStaRec(struct ADAPTER *prAdapter,
 
 	/* Init the STA_REC */
 	prStaRec->fgIsValid = TRUE;
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	qmSetStaRecRxAllowed(prAdapter, prStaRec, TRUE);
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 	qmSetStaPS(prAdapter, prStaRec, FALSE);
 
 	/* Default setting of TX/RX AMPDU */
@@ -621,6 +624,9 @@ void qmDeactivateStaRec(struct ADAPTER *prAdapter,
 
 	/* 4 <3> Deactivate the STA_REC */
 	prStaRec->fgIsValid = FALSE;
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	qmSetStaRecRxAllowed(prAdapter, prStaRec, FALSE);
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 	qmSetStaPS(prAdapter, prStaRec, FALSE);
 	prStaRec->fgIsTxKeyReady = FALSE;
 	prStaRec->fgIsMscsSupported = FALSE;
@@ -1039,6 +1045,25 @@ void qmSetTxPacketDescTemplate(struct ADAPTER *prAdapter,
 		prMsduInfo->fgIsTXDTemplateValid = FALSE;
 	}
 }
+
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+void qmSetStaRecRxAllowed(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, u_int8_t fgIsRxAllowed)
+{
+	prStaRec->fgIsRxAllowed = fgIsRxAllowed;
+
+	/*
+	 * If AP does not reply assoc resp,
+	 * AIS will disconnect and indirectly call this function,
+	 * so we also need dequeue when fgIsRxAllowed is FALSE to finish
+	 * the SwRfb cleanup.
+	 */
+	if (kalScheduleNapiTask(prAdapter) == WLAN_STATUS_NOT_ACCEPTED) {
+		/* Handle Non Rx-direct call path */
+		nicRxDequeuePendingQueue(prAdapter);
+	}
+}
+#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
 /*----------------------------------------------------------------------------*/
 /*!
