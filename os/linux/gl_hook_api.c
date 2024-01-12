@@ -4505,6 +4505,7 @@ uint32_t ServiceWlanOid(void *winfos,
 		capability = (struct test_capability *)rsp_data;
 		kalMemSet(capability, 0, sizeof(struct test_capability));
 
+		/* ph_cap.protocol */
 		capability->ph_cap.protocol = BIT(0);
 		if (prAdapter->rWifiVar.ucStaHt)
 			capability->ph_cap.protocol |= BIT(1);
@@ -4515,11 +4516,14 @@ uint32_t ServiceWlanOid(void *winfos,
 			capability->ph_cap.protocol |= BIT(3);
 #endif /* (CFG_SUPPORT_802_11AX == 1) */
 
+		/* ph_cap.ant_num */
 		capability->ph_cap.ant_num = prAdapter->rWifiVar.ucNSS;
 
+		/* ph_cap.dbdc */
 		if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED)
 			capability->ph_cap.dbdc |= BIT(0);
 
+		/* ph_cap.coding */
 		if (prAdapter->rWifiVar.ucTxLdpc)
 			capability->ph_cap.coding |= BIT(0);
 		if (prAdapter->rWifiVar.ucRxLdpc)
@@ -4529,18 +4533,34 @@ uint32_t ServiceWlanOid(void *winfos,
 		if (prAdapter->rWifiVar.ucRxStbc)
 			capability->ph_cap.coding |= BIT(3);
 
+		/* ph_cap.channel_band */
 		capability->ph_cap.channel_band = BIT(0);
 		if (!prAdapter->fgIsHw5GBandDisabled)
 			capability->ph_cap.channel_band |= BIT(1);
 
+		/* ph_cap.bandwidth */
 		capability->ph_cap.bandwidth = BITS(0, 1);
 		if (prAdapter->rWifiVar.ucStaVht)
 			capability->ph_cap.bandwidth |= BIT(2);
 
+		/* ph_cap.channel_band_dbdc */
+		if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED)
+			/* band0 (2.4G + 5G) */
+			capability->ph_cap.channel_band_dbdc = 0x00000003;
+		else
+			/* 6635: band0 (2.4G);  band1 (5G) */
+			capability->ph_cap.channel_band_dbdc = 0x00020001;
+
+		/* ext_cap.feature1: BIT0: AntSwap */
 #if CFG_SUPPORT_ANT_SWAP
 		if (prAdapter->fgIsSupportAntSwp)
 			capability->ext_cap.feature1 |= BIT(0);
 #endif /* CFG_SUPPORT_ANT_SWAP */
+
+		/* ext_cap.feature1: BIT1: HW TX support */
+		/* currently, only AX support */
+		if (capability->ph_cap.protocol & BIT(3))
+			capability->ext_cap.feature1 |= BIT(1);
 
 		return WLAN_STATUS_SUCCESS;
 	/* ICAP Operation Function -- Start*/
