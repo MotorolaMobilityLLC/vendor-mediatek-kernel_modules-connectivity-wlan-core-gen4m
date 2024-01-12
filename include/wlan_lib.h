@@ -1512,6 +1512,10 @@ void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter);
 
 void wlanCfgSetChip(IN struct ADAPTER *prAdapter);
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+void wlanCfgSetChipSyncTime(IN struct ADAPTER *prAdapter);
+#endif
+
 void wlanCfgSetDebugLevel(IN struct ADAPTER *prAdapter);
 
 void wlanCfgSetCountryCode(IN struct ADAPTER *prAdapter);
