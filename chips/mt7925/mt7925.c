@@ -124,6 +124,13 @@ static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 #endif
 #endif
 
+#if (CFG_SUPPORT_APS == 1)
+static uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssIndex);
+#endif
+
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -729,6 +736,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
+
+#if (CFG_SUPPORT_APS == 1)
+	.apsLinkPlanDecision = mt7925_apsLinkPlanDecision,
+#endif
+
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
 	.asicUsbInit_ic_specific = NULL,
@@ -1564,4 +1576,108 @@ static uint32_t mt7925GetFlavorVer(uint8_t *flavor)
 	ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "1");
 	return ret;
 }
+
+#if (CFG_SUPPORT_APS == 1)
+uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssIndex)
+{
+	uint16_t i;
+	uint8_t ucCanSupportDBDCAA = 0;
+	uint8_t ucArraySize = 0;
+	uint8_t ucTmpBssIndex;
+	uint8_t ucHasActiveBss = FALSE;
+	struct BSS_INFO *prBssInfo;
+#if CFG_SUPPORT_ROAMING
+	uint8_t ucIsRoamingDiscovery = FALSE;
+	struct ROAMING_INFO *roam = NULL;
+#endif
+
+	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX];
+	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_6G, BAND_NULL},
+#endif
+	};
+
+	enum ENUM_BAND aeLinkPlanAwithA[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_5G, BAND_6G},
+#endif
+	};
+
+	enum ENUM_BAND aeLinkPlanNoneMLD[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_NULL, BAND_NULL},
+		{BAND_5G, BAND_NULL, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_6G, BAND_NULL, BAND_NULL},
+#endif
+	};
+
+	DBGLOG(HAL, INFO, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
+		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
+		prAdapter->rWifiVar.ucMaxSimuLinks);
+
+	for (ucTmpBssIndex = 0;
+		ucTmpBssIndex < prAdapter->ucSwBssIdNum; ucTmpBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucTmpBssIndex];
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo))
+			ucHasActiveBss = TRUE;
+#if CFG_SUPPORT_ROAMING
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
+			IS_BSS_AIS(prBssInfo)) {
+			roam = aisGetRoamingInfo(prAdapter, ucTmpBssIndex);
+			ucIsRoamingDiscovery =
+				(roam->eCurrentState ==
+				ROAMING_STATE_DISCOVERY) ? TRUE:FALSE;
+		}
+#endif
+	}
+
+	if (prAdapter->rWifiFemCfg.u2WifiDBDCAwithA == TRUE)
+		ucCanSupportDBDCAA = 1;
+	else {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/*if HW not support A+A
+		 *STR mode can not support DBDC A+A
+		 *EMLSR/Hybird mode can support DBDC A+A always
+		 */
+		if (prAdapter->rWifiVar.ucEnableMlo >= 1 &&
+			prAdapter->rWifiVar.ucMaxSimuLinks >= 1)
+			ucCanSupportDBDCAA = 0;
+		else
+			ucCanSupportDBDCAA = 1;
+#else
+		ucCanSupportDBDCAA = 0;
+#endif
+	}
+
+	if (ucHasActiveBss &&
+		!ucIsRoamingDiscovery &&
+		prAdapter->rWifiVar.ucMaxSimuLinks == 0) {
+	/*has active Bss, block EMLSR connection */
+		tmpLinkPlan = aeLinkPlanNoneMLD;
+		ucArraySize = 3;
+	} else if (ucCanSupportDBDCAA) {
+		tmpLinkPlan = aeLinkPlanAwithA;
+		ucArraySize = 2;
+	} else {
+		tmpLinkPlan = aeLinkPlan;
+		ucArraySize = 2;
+	}
+
+	/* select best link plan */
+	for (i = 0; i < ucArraySize; ++i) {
+		enum ENUM_BAND *link_plan = tmpLinkPlan[i];
+
+		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+#endif /* CFG_SUPPORT_APS */
+
 #endif  /* MT7925 */
