@@ -2067,9 +2067,11 @@ void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
 			    IN struct MSDU_INFO *prMsduInfo,
 			    IN enum ENUM_TX_PROFILING_TAG eTag);
 
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
 void wlanTxLifetimeTagPacket(IN struct ADAPTER *prAdapter,
 			     IN struct MSDU_INFO *prMsduInfoListHead,
 			     IN enum ENUM_TX_PROFILING_TAG eTag);
+#endif
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter);
