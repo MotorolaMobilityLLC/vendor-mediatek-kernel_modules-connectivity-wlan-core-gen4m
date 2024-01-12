@@ -6651,7 +6651,6 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	uint8_t ucBssIndex = 0;
 	uint8_t ucAisIndex = 0;
 	uint32_t u4SetInfoLen;
-	unsigned char fgRollbackRtnlLock = FALSE;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
@@ -6691,19 +6690,11 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	netif_tx_stop_all_queues(prDevHandler);
 
-	if (rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_unlock();
-	}
-
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 	cfg80211_unregister_netdevice(prDevHandler);
 #else
 	unregister_netdevice(prDevHandler);
 #endif
-
-	if (fgRollbackRtnlLock)
-		rtnl_lock();
 
 	DBGLOG(REQ, INFO, "ucBssIndex = %d done\n", ucBssIndex);
 	/* netdev and wdev will be freed at mtk_vif_destructor */

@@ -928,15 +928,18 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
+		fgRollbackRtnlLock = FALSE;
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		if (!rtnl_is_locked()) {
+			fgRollbackRtnlLock = TRUE;
+			rtnl_lock();
+		}
+		i4RetReg = cfg80211_register_netdevice(prDevHandler);
+#else
 		if (rtnl_is_locked()) {
 			fgRollbackRtnlLock = TRUE;
 			rtnl_unlock();
-		} else
-			fgRollbackRtnlLock = FALSE;
-
-#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-		i4RetReg = cfg80211_register_netdevice(prDevHandler);
-#else
+		}
 		i4RetReg = register_netdev(prDevHandler);
 #endif
 
@@ -955,7 +958,11 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 
 		if (fgRollbackRtnlLock)
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+			rtnl_unlock();
+#else
 			rtnl_lock();
+#endif
 
 		DBGLOG(P2P, INFO, "P2P interface %d work %d\n",
 			i, prDevHandler->ifindex);
@@ -1061,19 +1068,22 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 		netif_tx_stop_all_queues(prP2PInfo->prDevHandler);
 
-		if (rtnl_is_locked()) {
-			fgRollbackRtnlLock = TRUE;
-			rtnl_unlock();
-		} else
-			fgRollbackRtnlLock = FALSE;
-
+		fgRollbackRtnlLock = FALSE;
 		/* Here are the functions which need rtnl_lock */
 		if ((prRoleDev) && (prP2PInfo->prDevHandler != prRoleDev)) {
 			DBGLOG(INIT, INFO, "unregister p2p[%d]\n", ucRoleIdx);
 			if (prRoleDev->reg_state == NETREG_REGISTERED) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+				if (!rtnl_is_locked()) {
+					fgRollbackRtnlLock = TRUE;
+					rtnl_lock();
+				}
 				cfg80211_unregister_netdevice(prRoleDev);
 #else
+				if (rtnl_is_locked()) {
+					fgRollbackRtnlLock = TRUE;
+					rtnl_unlock();
+				}
 				unregister_netdev(prRoleDev);
 #endif
 			}
@@ -1085,13 +1095,26 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
 		if (prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+			if (!rtnl_is_locked()) {
+				fgRollbackRtnlLock = TRUE;
+				rtnl_lock();
+			}
 			cfg80211_unregister_netdevice(prP2PInfo->prDevHandler);
 #else
+			if (rtnl_is_locked()) {
+				fgRollbackRtnlLock = TRUE;
+				rtnl_unlock();
+			}
 			unregister_netdev(prP2PInfo->prDevHandler);
 #endif
 		}
+
 		if (fgRollbackRtnlLock)
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+			rtnl_unlock();
+#else
 			rtnl_lock();
+#endif
 	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);

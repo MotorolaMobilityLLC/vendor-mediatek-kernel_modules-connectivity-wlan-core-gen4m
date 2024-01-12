@@ -403,6 +403,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			netif_carrier_off(prP2pInfo->aprRoleHandler);
 			netif_tx_stop_all_queues(prP2pInfo->aprRoleHandler);
 		}
+
 		prP2pRoleFsmInfo = prAdapter->rWifiVar.aprP2pRoleFsmInfo[u4Idx];
 
 		/* 13. bind netdev pointer to netdev index */
@@ -588,7 +589,6 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	unsigned char ucBssIdx = 0;
 	struct BSS_INFO *prP2pBssInfo = NULL;
 	uint32_t u4Idx = 0;
-	unsigned char fgRollbackRtnlLock = FALSE;
 #if 1
 	struct cfg80211_scan_request *prScanRequest = NULL;
 #endif
@@ -691,20 +691,12 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	netif_tx_stop_all_queues(UnregRoleHander);
 
-	if (rtnl_is_locked()) {
-		fgRollbackRtnlLock = TRUE;
-		rtnl_unlock();
-	}
-
 	/* Here are functions which need rtnl_lock */
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 	cfg80211_unregister_netdevice(UnregRoleHander);
 #else
 	unregister_netdevice(UnregRoleHander);
 #endif
-
-	if (fgRollbackRtnlLock)
-		rtnl_lock();
 
 	/* free is called at destructor */
 	/* free_netdev(UnregRoleHander); */
