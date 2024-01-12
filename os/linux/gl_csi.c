@@ -209,8 +209,6 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 	if (!prAdapter)
 		return;
 
-	DBGLOG(NIC, INFO, "[CSI] nicEventCSIData\n");
-
 	i4EventLen = prEvent->u2PacketLength -
 			sizeof(struct WIFI_EVENT);
 	if (i4EventLen > CSI_EVENT_MAX_SIZE) {
@@ -232,14 +230,13 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 	prBuf = (int8_t *) (prEvent->aucBuffer);
 
 #if CFG_CSI_DEBUG
-	DBGLOG(NIC, ERROR, "[CSI] debug: i4EventLen=%d\n", i4EventLen);
 	DBGLOG_MEM8(NIC, INFO, (uint8_t *) prBuf, i4EventLen);
 #endif
 	while ((i4EventLen >= u2Offset) && (ucLastTagFlg == false)) {
 		prCSITlvData = (struct CSI_TLV_ELEMENT *) prBuf;
 
 #if CFG_CSI_DEBUG
-		DBGLOG(NIC, INFO, "[CSI] tag_type=%d, body_len=%d\n",
+		DBGLOG(NIC, TRACE, "[CSI] tag_type=%d, body_len=%d\n",
 			prCSITlvData->tag_type, prCSITlvData->body_len);
 #endif
 		if (prCSITlvData->tag_type == (CSI_EVENT_TLV_TAG_NUM - 1))
@@ -538,6 +535,17 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			}
 
 			prCSIData->ucRemainLast = (uint8_t) le32_to_cpup(
+					(uint32_t *) prCSITlvData->aucbody);
+			break;
+		case CSI_EVENT_RSVD6:
+			if (prCSITlvData->body_len != sizeof(uint32_t)) {
+				DBGLOG(NIC, WARN,
+					"[CSI] Invalid RSVD6 len %u",
+					prCSITlvData->body_len);
+				goto out;
+			}
+
+			prCSIData->u4Rsvd6 = le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		default:
@@ -902,6 +910,13 @@ ssize_t wlanCSIDataPrepare(
 	put_unaligned(sizeof(uint32_t), (int16_t *) (tmpBuf + i4Pos));
 	i4Pos += 2;
 	put_unaligned(prCSIData->u4Rsvd5, (uint32_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint32_t);
+
+	put_unaligned(CSI_DATA_RSVD6, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos++;
+	put_unaligned(sizeof(uint32_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += 2;
+	put_unaligned(prCSIData->u4Rsvd6, (uint32_t *) (tmpBuf + i4Pos));
 	i4Pos += sizeof(uint32_t);
 
 	/*
