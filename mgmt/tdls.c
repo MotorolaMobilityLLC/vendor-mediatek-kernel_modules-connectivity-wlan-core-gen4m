@@ -91,7 +91,7 @@
 ********************************************************************************
 */
 
-static BOOLEAN fgIsPtiTimeoutSkip = FALSE;
+static u_int8_t fgIsPtiTimeoutSkip = FALSE;
 
 /*******************************************************************************
 *						P R I V A T E  F U N C T I O N S
@@ -109,7 +109,7 @@ static BOOLEAN fgIsPtiTimeoutSkip = FALSE;
 #define WLAN_REASON_TDLS_TEARDOWN_UNREACHABLE 25
 #define WLAN_REASON_TDLS_TEARDOWN_UNSPECIFIED 26
 
-UINT_8 g_arTdlsLink[MAXNUM_TDLS_PEER] = {
+uint8_t g_arTdlsLink[MAXNUM_TDLS_PEER] = {
 	0,
 	0,
 	0,
@@ -129,15 +129,15 @@ UINT_8 g_arTdlsLink[MAXNUM_TDLS_PEER] = {
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, PUINT_32 pu4SetInfoLen)
+uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	/* from supplicant -- wpa_supplicant_tdls_peer_addset() */
 
-	STA_RECORD_T *prStaRec;
-	P_BSS_INFO_T prBssInfo;
-	TDLS_CMD_LINK_MGT_T *prCmd;
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	struct TDLS_CMD_LINK_MGT *prCmd;
 
-	prCmd = (TDLS_CMD_LINK_MGT_T *) pvSetBuffer;
+	prCmd = (struct TDLS_CMD_LINK_MGT *) pvSetBuffer;
 	prBssInfo = prAdapter->prAisBssInfo;
 
 	/* printk("\n\n\n  TdlsexLinkMgt\n\n\n"); */
@@ -167,7 +167,7 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 						    prCmd->ucActionCode,
 						    prCmd->ucDialogToken,
 						    prCmd->u2StatusCode,
-						    (UINT_8 *) (prCmd->aucSecBuf),
+						    (uint8_t *) (prCmd->aucSecBuf),
 						    prCmd->u4SecBufLen) != TDLS_STATUS_SUCCESS) {
 			return -1;
 		}
@@ -186,7 +186,7 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 						prCmd->ucActionCode,
 						prCmd->ucDialogToken,
 						prCmd->u2StatusCode,
-						(UINT_8 *) (prCmd->aucSecBuf),
+						(uint8_t *) (prCmd->aucSecBuf),
 						prCmd->u4SecBufLen) != TDLS_STATUS_SUCCESS) {
 			return -1;
 		}
@@ -209,7 +209,7 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 						prCmd->ucActionCode,
 						prCmd->ucDialogToken,
 						prCmd->u2StatusCode,
-						(UINT_8 *) (prCmd->aucSecBuf),
+						(uint8_t *) (prCmd->aucSecBuf),
 						prCmd->u4SecBufLen) != TDLS_STATUS_SUCCESS) {
 			return -1;
 		}
@@ -224,7 +224,7 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 						    prCmd->ucActionCode,
 						    prCmd->ucDialogToken,
 						    prCmd->u2StatusCode,
-						    (UINT_8 *) (prCmd->aucSecBuf),
+						    (uint8_t *) (prCmd->aucSecBuf),
 						    prCmd->u4SecBufLen) != TDLS_STATUS_SUCCESS) {
 			return -1;
 		}
@@ -239,7 +239,7 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 					      prCmd->ucActionCode,
 					      prCmd->ucDialogToken,
 					      prCmd->u2StatusCode,
-					      (UINT_8 *) (prCmd->aucSecBuf),
+					      (uint8_t *) (prCmd->aucSecBuf),
 					      prCmd->u4SecBufLen) != TDLS_STATUS_SUCCESS) {
 			return -1;
 		}
@@ -259,7 +259,7 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 					       prCmd->ucActionCode,
 					       prCmd->ucDialogToken,
 					       prCmd->u2StatusCode,
-					       (UINT_8 *) (prCmd->aucSecBuf),
+					       (uint8_t *) (prCmd->aucSecBuf),
 					       prCmd->u4SecBufLen) != TDLS_STATUS_SUCCESS) {
 			/* printk("\n teardown frrame  send failure\n"); */
 			return -1;
@@ -288,17 +288,17 @@ UINT_32 TdlsexLinkMgt(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBuf
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 TdlsexLinkOper(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, PUINT_32 pu4SetInfoLen)
+uint32_t TdlsexLinkOper(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 	/* printk("TdlsexLinkOper\n"); */
 
 	/* from supplicant -- wpa_supplicant_tdls_peer_addset() */
-	UINT_16 i;
-	STA_RECORD_T *prStaRec;
+	uint16_t i;
+	struct STA_RECORD *prStaRec;
 
-	TDLS_CMD_LINK_OPER_T *prCmd;
+	struct TDLS_CMD_LINK_OPER *prCmd;
 
-	prCmd = (TDLS_CMD_LINK_OPER_T *) pvSetBuffer;
+	prCmd = (struct TDLS_CMD_LINK_OPER *) pvSetBuffer;
 
 	switch (prCmd->oper) {
 
@@ -344,21 +344,21 @@ UINT_32 TdlsexLinkOper(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBu
 * \retval append length
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 TdlsFrameGeneralIeAppend(ADAPTER_T *prAdapter, STA_RECORD_T *prStaRec, UINT_8 *pPkt)
+uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec, uint8_t *pPkt)
 {
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
-	UINT_32 u4NonHTPhyType;
-	UINT_16 u2SupportedRateSet;
-	UINT_8 aucAllSupportedRates[RATE_NUM_SW] = { 0 };	/* 6628 RATE_NUM -> 6630 RATE_NUM_SW */
-	UINT_8 ucAllSupportedRatesLen;
-	UINT_8 ucSupRatesLen;
-	UINT_8 ucExtSupRatesLen;
-	UINT_32 u4PktLen, u4IeLen;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
+	uint32_t u4NonHTPhyType;
+	uint16_t u2SupportedRateSet;
+	uint8_t aucAllSupportedRates[RATE_NUM_SW] = { 0 };	/* 6628 RATE_NUM -> 6630 RATE_NUM_SW */
+	uint8_t ucAllSupportedRatesLen;
+	uint8_t ucSupRatesLen;
+	uint8_t ucExtSupRatesLen;
+	uint32_t u4PktLen, u4IeLen;
 
 	/* init */
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 	prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
@@ -441,24 +441,24 @@ UINT_32 TdlsFrameGeneralIeAppend(ADAPTER_T *prAdapter, STA_RECORD_T *prStaRec, U
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS
-TdlsDataFrameSend_TearDown(ADAPTER_T *prAdapter,
-			   STA_RECORD_T *prStaRec,
-			   UINT_8 *pPeerMac,
-			   UINT_8 ucActionCode,
-			   UINT_8 ucDialogToken, UINT_16 u2StatusCode, UINT_8 *pAppendIe, UINT_32 AppendIeLen)
+uint32_t
+TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
+			   struct STA_RECORD *prStaRec,
+			   uint8_t *pPeerMac,
+			   uint8_t ucActionCode,
+			   uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen)
 {
 
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct sk_buff *prMsduInfo;
-	UINT_8 *pPkt;
-	UINT_32 u4PktLen, u4IeLen;
-	UINT_16 ReasonCode;
+	uint8_t *pPkt;
+	uint32_t u4PktLen, u4IeLen;
+	uint16_t ReasonCode;
 
 	/* allocate/init packet */
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 	prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
@@ -480,7 +480,7 @@ TdlsDataFrameSend_TearDown(ADAPTER_T *prAdapter,
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
 	kalMemCopy(pPkt, prAdapter->rMyMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
-	*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 	pPkt += 2;
 	u4PktLen += TDLS_FME_MAC_ADDR_LEN * 2 + 2;
 
@@ -563,25 +563,25 @@ TdlsDataFrameSend_TearDown(ADAPTER_T *prAdapter,
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS			/* TDLS_STATUS */
-TdlsDataFrameSend_SETUP_REQ(ADAPTER_T *prAdapter,
-			    STA_RECORD_T *prStaRec,
-			    UINT_8 *pPeerMac,
-			    UINT_8 ucActionCode,
-			    UINT_8 ucDialogToken, UINT_16 u2StatusCode, UINT_8 *pAppendIe, UINT_32 AppendIeLen)
+uint32_t			/* TDLS_STATUS */
+TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
+			    struct STA_RECORD *prStaRec,
+			    uint8_t *pPeerMac,
+			    uint8_t ucActionCode,
+			    uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen)
 {
 
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct sk_buff *prMsduInfo;
-	UINT_8 *pPkt;
-	UINT_32 u4PktLen, u4IeLen;
-	BOOLEAN fg40mAllowed;
-	UINT_16 u2CapInfo;
+	uint8_t *pPkt;
+	uint32_t u4PktLen, u4IeLen;
+	u_int8_t fg40mAllowed;
+	uint16_t u2CapInfo;
 
 	/* allocate/init packet */
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 	prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
@@ -603,7 +603,7 @@ TdlsDataFrameSend_SETUP_REQ(ADAPTER_T *prAdapter,
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
 	kalMemCopy(pPkt, prAdapter->rMyMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
-	*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 	pPkt += 2;
 	u4PktLen += TDLS_FME_MAC_ADDR_LEN * 2 + 2;
 
@@ -775,26 +775,26 @@ TdlsDataFrameSend_SETUP_REQ(ADAPTER_T *prAdapter,
 	return TDLS_STATUS_SUCCESS;
 }
 
-WLAN_STATUS
-TdlsDataFrameSend_SETUP_RSP(ADAPTER_T *prAdapter,
-			    STA_RECORD_T *prStaRec,
-			    UINT_8 *pPeerMac,
-			    UINT_8 ucActionCode,
-			    UINT_8 ucDialogToken, UINT_16 u2StatusCode, UINT_8 *pAppendIe, UINT_32 AppendIeLen)
+uint32_t
+TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
+			    struct STA_RECORD *prStaRec,
+			    uint8_t *pPeerMac,
+			    uint8_t ucActionCode,
+			    uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen)
 {
 
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct sk_buff *prMsduInfo;
-	UINT_8 *pPkt;
-	UINT_32 u4PktLen, u4IeLen;
-	UINT_16 u2CapInfo;
-	UINT_16 StatusCode;
-	BOOLEAN fg40mAllowed;
+	uint8_t *pPkt;
+	uint32_t u4PktLen, u4IeLen;
+	uint16_t u2CapInfo;
+	uint16_t StatusCode;
+	u_int8_t fg40mAllowed;
 
 	/* allocate/init packet */
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 	prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
 	u4PktLen = 0;
@@ -815,7 +815,7 @@ TdlsDataFrameSend_SETUP_RSP(ADAPTER_T *prAdapter,
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
 	kalMemCopy(pPkt, prAdapter->rMyMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
-	*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 	pPkt += 2;
 	u4PktLen += TDLS_FME_MAC_ADDR_LEN * 2 + 2;
 
@@ -986,24 +986,24 @@ TdlsDataFrameSend_SETUP_RSP(ADAPTER_T *prAdapter,
 	return TDLS_STATUS_SUCCESS;
 }
 
-WLAN_STATUS
-TdlsDataFrameSend_CONFIRM(ADAPTER_T *prAdapter,
-			  STA_RECORD_T *prStaRec,
-			  UINT_8 *pPeerMac,
-			  UINT_8 ucActionCode,
-			  UINT_8 ucDialogToken, UINT_16 u2StatusCode, UINT_8 *pAppendIe, UINT_32 AppendIeLen)
+uint32_t
+TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
+			  struct STA_RECORD *prStaRec,
+			  uint8_t *pPeerMac,
+			  uint8_t ucActionCode,
+			  uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen)
 {
 
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct sk_buff *prMsduInfo;
-	UINT_8 *pPkt;
-	UINT_32 u4PktLen, u4IeLen;
-	UINT_16 StatusCode;
+	uint8_t *pPkt;
+	uint32_t u4PktLen, u4IeLen;
+	uint16_t StatusCode;
 
 	/* allocate/init packet */
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 	prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
 
 	prPmProfSetupInfo = &prBssInfo->rPmProfSetupInfo;
@@ -1025,7 +1025,7 @@ TdlsDataFrameSend_CONFIRM(ADAPTER_T *prAdapter,
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
 	kalMemCopy(pPkt, prAdapter->rMyMacAddr, TDLS_FME_MAC_ADDR_LEN);
 	pPkt += TDLS_FME_MAC_ADDR_LEN;
-	*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 	pPkt += 2;
 	u4PktLen += TDLS_FME_MAC_ADDR_LEN * 2 + 2;
 
@@ -1153,23 +1153,23 @@ TdlsDataFrameSend_CONFIRM(ADAPTER_T *prAdapter,
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS			/* TDLS_STATUS */
-TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
-				STA_RECORD_T *prStaRec,
-				UINT_8 *pPeerMac,
-				UINT_8 ucActionCode,
-				UINT_8 ucDialogToken, UINT_16 u2StatusCode, UINT_8 *pAppendIe, UINT_32 AppendIeLen)
+uint32_t			/* TDLS_STATUS */
+TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				uint8_t *pPeerMac,
+				uint8_t ucActionCode,
+				uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen)
 {
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct sk_buff *prMsduInfo;
-	MSDU_INFO_T *prMsduInfoMgmt;
-	UINT_8 *pPkt, *pucInitiator, *pucResponder;
-	UINT_32 u4PktLen, u4IeLen;
-	UINT_16 u2CapInfo;
+	struct MSDU_INFO *prMsduInfoMgmt;
+	uint8_t *pPkt, *pucInitiator, *pucResponder;
+	uint32_t u4PktLen, u4IeLen;
+	uint16_t u2CapInfo;
 
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 
 	if (prStaRec != NULL)
 		prBssInfo = prAdapter->prAisBssInfo;	/* AIS only */
@@ -1201,7 +1201,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 		LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 		kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 		LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-		*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+		*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 		LR_TDLS_FME_FIELD_FILL(2);
 
 		/* 2. payload type */
@@ -1212,15 +1212,15 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 		*pPkt = TDLS_FRM_CATEGORY;
 		LR_TDLS_FME_FIELD_FILL(1);
 	} else {
-		WLAN_MAC_HEADER_T *prHdr;
+		struct WLAN_MAC_HEADER *prHdr;
 
-		prMsduInfoMgmt = (MSDU_INFO_T *)
+		prMsduInfoMgmt = (struct MSDU_INFO *)
 		    cnmMgtPktAlloc(prAdapter, PUBLIC_ACTION_MAX_LEN);
 		if (prMsduInfoMgmt == NULL)
 			return TDLS_STATUS_RESOURCES;
 
-		pPkt = (UINT_8 *) prMsduInfoMgmt->prPacket;
-		prHdr = (WLAN_MAC_HEADER_T *) pPkt;
+		pPkt = (uint8_t *) prMsduInfoMgmt->prPacket;
+		prHdr = (struct WLAN_MAC_HEADER *) pPkt;
 
 		/* 1. 802.11 header */
 		prHdr->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -1229,7 +1229,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 		kalMemCopy(prHdr->aucAddr2, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 		kalMemCopy(prHdr->aucAddr3, prBssInfo->aucBSSID, TDLS_FME_MAC_ADDR_LEN);
 		prHdr->u2SeqCtrl = 0;
-		LR_TDLS_FME_FIELD_FILL(sizeof(WLAN_MAC_HEADER_T));
+		LR_TDLS_FME_FIELD_FILL(sizeof(struct WLAN_MAC_HEADER));
 
 		/* Frame Formation - (1) Category */
 		*pPkt = CATEGORY_PUBLIC_ACTION;
@@ -1430,23 +1430,23 @@ TdlsDataFrameSend_DISCOVERY_REQ(ADAPTER_T *prAdapter,
 	return TDLS_STATUS_SUCCESS;
 }
 
-WLAN_STATUS
-TdlsDataFrameSend_DISCOVERY_RSP(ADAPTER_T *prAdapter,
-				STA_RECORD_T *prStaRec,
-				UINT_8 *pPeerMac,
-				UINT_8 ucActionCode,
-				UINT_8 ucDialogToken, UINT_16 u2StatusCode, UINT_8 *pAppendIe, UINT_32 AppendIeLen)
+uint32_t
+TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
+				struct STA_RECORD *prStaRec,
+				uint8_t *pPeerMac,
+				uint8_t ucActionCode,
+				uint8_t ucDialogToken, uint16_t u2StatusCode, uint8_t *pAppendIe, uint32_t AppendIeLen)
 {
-	GLUE_INFO_T *prGlueInfo;
-	BSS_INFO_T *prBssInfo;
-	PM_PROFILE_SETUP_INFO_T *prPmProfSetupInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BSS_INFO *prBssInfo;
+	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	struct sk_buff *prMsduInfo;
-	MSDU_INFO_T *prMsduInfoMgmt;
-	UINT_8 *pPkt, *pucInitiator, *pucResponder;
-	UINT_32 u4PktLen, u4IeLen;
-	UINT_16 u2CapInfo;
+	struct MSDU_INFO *prMsduInfoMgmt;
+	uint8_t *pPkt, *pucInitiator, *pucResponder;
+	uint32_t u4PktLen, u4IeLen;
+	uint16_t u2CapInfo;
 
-	prGlueInfo = (GLUE_INFO_T *) prAdapter->prGlueInfo;
+	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;
 
 	/* sanity check */
 	if (prStaRec != NULL)
@@ -1479,7 +1479,7 @@ TdlsDataFrameSend_DISCOVERY_RSP(ADAPTER_T *prAdapter,
 		LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 		kalMemCopy(pPkt, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 		LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-		*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+		*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 		LR_TDLS_FME_FIELD_FILL(2);
 
 		/* 2. payload type */
@@ -1490,15 +1490,15 @@ TdlsDataFrameSend_DISCOVERY_RSP(ADAPTER_T *prAdapter,
 		*pPkt = TDLS_FRM_CATEGORY;
 		LR_TDLS_FME_FIELD_FILL(1);
 	} else {
-		WLAN_MAC_HEADER_T *prHdr;
+		struct WLAN_MAC_HEADER *prHdr;
 
-		prMsduInfoMgmt = (MSDU_INFO_T *)
+		prMsduInfoMgmt = (struct MSDU_INFO *)
 		    cnmMgtPktAlloc(prAdapter, PUBLIC_ACTION_MAX_LEN);
 		if (prMsduInfoMgmt == NULL)
 			return TDLS_STATUS_RESOURCES;
 
-		pPkt = (UINT_8 *) prMsduInfoMgmt->prPacket;
-		prHdr = (WLAN_MAC_HEADER_T *) pPkt;
+		pPkt = (uint8_t *) prMsduInfoMgmt->prPacket;
+		prHdr = (struct WLAN_MAC_HEADER *) pPkt;
 
 		/* 1. 802.11 header */
 		prHdr->u2FrameCtrl = MAC_FRAME_ACTION;
@@ -1507,7 +1507,7 @@ TdlsDataFrameSend_DISCOVERY_RSP(ADAPTER_T *prAdapter,
 		kalMemCopy(prHdr->aucAddr2, prBssInfo->aucOwnMacAddr, TDLS_FME_MAC_ADDR_LEN);
 		kalMemCopy(prHdr->aucAddr3, prBssInfo->aucBSSID, TDLS_FME_MAC_ADDR_LEN);
 		prHdr->u2SeqCtrl = 0;
-		LR_TDLS_FME_FIELD_FILL(sizeof(WLAN_MAC_HEADER_T));
+		LR_TDLS_FME_FIELD_FILL(sizeof(struct WLAN_MAC_HEADER));
 
 		/* Frame Formation - (1) Category */
 		*pPkt = CATEGORY_PUBLIC_ACTION;
@@ -1782,9 +1782,9 @@ TdlsDataFrameSend_DISCOVERY_RSP(ADAPTER_T *prAdapter,
 * \retval None
 */
 /*----------------------------------------------------------------------------*/
-VOID TdlsexEventHandle(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBufLen)
+void TdlsexEventHandle(struct GLUE_INFO *prGlueInfo, uint8_t *prInBuf, uint32_t u4InBufLen)
 {
-	UINT_32 u4EventId;
+	uint32_t u4EventId;
 
 	DBGLOG(TDLS, INFO, "TdlsexEventHandle\n");
 
@@ -1793,7 +1793,7 @@ VOID TdlsexEventHandle(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBuf
 		return;		/* shall not be here */
 
 	/* handle */
-	u4EventId = *(UINT_32 *) prInBuf;
+	u4EventId = *(uint32_t *) prInBuf;
 	u4InBufLen -= 4;
 
 	switch (u4EventId) {
@@ -1820,15 +1820,15 @@ VOID TdlsexEventHandle(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBuf
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID TdlsEventTearDown(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBufLen)
+void TdlsEventTearDown(struct GLUE_INFO *prGlueInfo, uint8_t *prInBuf, uint32_t u4InBufLen)
 {
-	STA_RECORD_T *prStaRec;
-	UINT_16 u2ReasonCode;
-	UINT_32 u4TearDownSubId;
-	UINT_8 *pMac, aucZeroMac[6];
+	struct STA_RECORD *prStaRec;
+	uint16_t u2ReasonCode;
+	uint32_t u4TearDownSubId;
+	uint8_t *pMac, aucZeroMac[6];
 
 	/* init */
-	u4TearDownSubId = *(UINT_32 *) prInBuf;
+	u4TearDownSubId = *(uint32_t *) prInBuf;
 	kalMemZero(aucZeroMac, sizeof(aucZeroMac));
 	pMac = aucZeroMac;
 
@@ -1892,20 +1892,20 @@ VOID TdlsEventTearDown(GLUE_INFO_T *prGlueInfo, UINT_8 *prInBuf, UINT_32 u4InBuf
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID tdls_oper_request(struct net_device *dev, const u8 *peer, u16 oper, u16 reason_code, gfp_t gfp)
+void tdls_oper_request(struct net_device *dev, const u8 *peer, u16 oper, u16 reason_code, gfp_t gfp)
 {
-	GLUE_INFO_T *prGlueInfo;
-	ADAPTER_T *prAdapter;
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
 	struct sk_buff *prMsduInfo;
-	UINT_8 *pPkt;
-	UINT_32 u4PktLen;
+	uint8_t *pPkt;
+	uint32_t u4PktLen;
 
 	/* sanity check */
 	if ((dev == NULL) || (peer == NULL))
 		return;		/* shall not be here */
 
 	/* init */
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(dev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(dev));
 	prAdapter = prGlueInfo->prAdapter;
 	u4PktLen = 0;
 
@@ -1921,7 +1921,7 @@ VOID tdls_oper_request(struct net_device *dev, const u8 *peer, u16 oper, u16 rea
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
 	kalMemCopy(pPkt, peer, TDLS_FME_MAC_ADDR_LEN);
 	LR_TDLS_FME_FIELD_FILL(TDLS_FME_MAC_ADDR_LEN);
-	*(UINT_16 *) pPkt = htons(TDLS_FRM_PROT_TYPE);
+	*(uint16_t *) pPkt = htons(TDLS_FRM_PROT_TYPE);
 	LR_TDLS_FME_FIELD_FILL(2);
 
 	/* 2. payload type */
@@ -1967,7 +1967,7 @@ VOID tdls_oper_request(struct net_device *dev, const u8 *peer, u16 oper, u16 rea
 *
 */
 /*----------------------------------------------------------------------------*/
-VOID TdlsCmdTestRxIndicatePkts(GLUE_INFO_T *prGlueInfo, struct sk_buff *prSkb)
+void TdlsCmdTestRxIndicatePkts(struct GLUE_INFO *prGlueInfo, struct sk_buff *prSkb)
 {
 	struct net_device *prNetDev;
 
@@ -1988,9 +1988,9 @@ VOID TdlsCmdTestRxIndicatePkts(GLUE_INFO_T *prGlueInfo, struct sk_buff *prSkb)
 }
 #endif
 
-VOID TdlsBssExtCapParse(P_STA_RECORD_T prStaRec, P_UINT_8 pucIE)
+void TdlsBssExtCapParse(struct STA_RECORD *prStaRec, uint8_t *pucIE)
 {
-	UINT_8 *pucIeExtCap;
+	uint8_t *pucIeExtCap;
 
 	/* sanity check */
 	if ((prStaRec == NULL) || (pucIE == NULL))
@@ -2033,23 +2033,23 @@ VOID TdlsBssExtCapParse(P_STA_RECORD_T prStaRec, P_UINT_8 pucIE)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS
-TdlsSendChSwControlCmd(P_ADAPTER_T prAdapter, PVOID pvSetBuffer, UINT_32 u4SetBufferLen, PUINT_32 pu4SetInfoLen)
+uint32_t
+TdlsSendChSwControlCmd(struct ADAPTER *prAdapter, void *pvSetBuffer, uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
 {
 
-	CMD_TDLS_CH_SW_T rCmdTdlsChSwCtrl;
+	struct CMD_TDLS_CH_SW rCmdTdlsChSwCtrl;
 
 	ASSERT(prAdapter);
 
 	/* send command packet for scan */
-	kalMemZero(&rCmdTdlsChSwCtrl, sizeof(CMD_TDLS_CH_SW_T));
+	kalMemZero(&rCmdTdlsChSwCtrl, sizeof(struct CMD_TDLS_CH_SW));
 
 	rCmdTdlsChSwCtrl.fgIsTDLSChSwProhibit = prAdapter->prAisBssInfo->fgTdlsIsChSwProhibited;
 
 	wlanSendSetQueryCmd(prAdapter,
 			    CMD_ID_SET_TDLS_CH_SW,
 			    TRUE,
-			    FALSE, FALSE, NULL, NULL, sizeof(CMD_TDLS_CH_SW_T), (PUINT_8)&rCmdTdlsChSwCtrl, NULL, 0);
+			    FALSE, FALSE, NULL, NULL, sizeof(struct CMD_TDLS_CH_SW), (uint8_t *)&rCmdTdlsChSwCtrl, NULL, 0);
 	return TDLS_STATUS_SUCCESS;
 }
 

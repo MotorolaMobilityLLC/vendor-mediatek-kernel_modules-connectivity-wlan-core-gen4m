@@ -82,16 +82,16 @@
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-UINT_32 g_au4SwCr[SWCR_CR_NUM];	/*: 0: command other: data */
+uint32_t g_au4SwCr[SWCR_CR_NUM];	/*: 0: command other: data */
 
 /* JB mDNS Filter*/
-UINT_32 g_u4RXFilter;		/* [31] 0: stop 1: start, [3] IPv6 [2] IPv4 */
+uint32_t g_u4RXFilter;		/* [31] 0: stop 1: start, [3] IPv6 [2] IPv4 */
 
-static TIMER_T g_rSwcrDebugTimer;
-static BOOLEAN g_fgSwcrDebugTimer = FALSE;
-static UINT_32 g_u4SwcrDebugCheckTimeout;
-static ENUM_SWCR_DBG_TYPE_T g_ucSwcrDebugCheckType;
-static UINT_32 g_u4SwcrDebugFrameDumpType;
+static struct TIMER g_rSwcrDebugTimer;
+static u_int8_t g_fgSwcrDebugTimer = FALSE;
+static uint32_t g_u4SwcrDebugCheckTimeout;
+static enum ENUM_SWCR_DBG_TYPE g_ucSwcrDebugCheckType;
+static uint32_t g_u4SwcrDebugFrameDumpType;
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -157,13 +157,13 @@ enum {
 #define RX_FILTER_START (1<<31)
 #define RX_FILTER_IPV4  (1<<2)
 #define RX_FILTER_IPV6  (1<<3)
-typedef enum _ENUM_SWCR_RX_FILTER_CMD_T {
+enum ENUM_SWCR_RX_FILTER_CMD {
 	SWCR_RX_FILTER_CMD_STOP = 0,
 	SWCR_RX_FILTER_CMD_START,
 	SWCR_RX_FILTER_CMD_ADD,
 	SWCR_RX_FILTER_CMD_REMOVE,
 	SWCR_RX_FILTER_NUM
-} ENUM_SWCR_RX_FILTER_CMD_T;
+};
 
 #if TEST_PS
 enum {
@@ -208,14 +208,14 @@ enum {
 ********************************************************************************
 */
 
-void dumpQueue(P_ADAPTER_T prAdapter)
+void dumpQueue(struct ADAPTER *prAdapter)
 {
 
-	P_TX_CTRL_T prTxCtrl;
-	P_QUE_MGT_T prQM;
-	P_GLUE_INFO_T prGlueInfo;
-	UINT_32 i;
-	UINT_32 j;
+	struct TX_CTRL *prTxCtrl;
+	struct QUE_MGT *prQM;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t i;
+	uint32_t j;
 
 	DEBUGFUNC("dumpQueue");
 
@@ -264,11 +264,11 @@ void dumpQueue(P_ADAPTER_T prAdapter)
 
 }
 
-void dumpSTA(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec)
+void dumpSTA(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
 {
-	UINT_8 ucWTEntry;
-	UINT_32 i;
-	P_BSS_INFO_T prBssInfo;
+	uint8_t ucWTEntry;
+	uint32_t i;
+	struct BSS_INFO *prBssInfo;
 
 	DEBUGFUNC("dumpSTA");
 
@@ -327,7 +327,7 @@ void dumpSTA(P_ADAPTER_T prAdapter, P_STA_RECORD_T prStaRec)
 
 }
 
-VOID dumpBss(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
+void dumpBss(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
 
 	DBGLOG(SW4, INFO, "SSID %s\n", prBssInfo->aucSSID);
@@ -371,11 +371,11 @@ VOID dumpBss(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo)
 
 }
 
-VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, UINT_8 ucOpt0, UINT_8 ucOpt1)
+void swCtrlCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
 {
-	UINT_8 ucIndex, ucRead;
-	UINT_32 i;
-	CMD_RX_PACKET_FILTER rSetRxPacketFilter;
+	uint8_t ucIndex, ucRead;
+	uint32_t i;
+	struct CMD_RX_PACKET_FILTER rSetRxPacketFilter;
 
 	DEBUGFUNC("swCtrlCmdCategory0");
 
@@ -411,9 +411,9 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 #endif
 		case SWCTRL_RX_FILTER:
 			{
-				UINT_32 u4rxfilter;
-				BOOLEAN fgUpdate = FALSE;
-				WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+				uint32_t u4rxfilter;
+				u_int8_t fgUpdate = FALSE;
+				uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 				if (ucOpt0 == SWCR_RX_FILTER_CMD_STOP) {
 					g_u4RXFilter &= ~(RX_FILTER_START);
@@ -459,26 +459,26 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 #if CFG_INIT_ENABLE_PATTERN_FILTER_ARP
 		case SWCTRL_RX_ARP_OFFLOAD:
 			{
-				WLAN_STATUS rStatus = WLAN_STATUS_FAILURE;
-				UINT_32 u4SetInfoLen = 0;
-				UINT_32 u4Len = OFFSET_OF(PARAM_NETWORK_ADDRESS_LIST, arAddress);
-				UINT_32 u4NumIPv4 = 0, u4NumIPv6 = 0;
-				UINT_32 i = 0;
-				PUINT_8 pucBufIpAddr = NULL;
-				P_PARAM_NETWORK_ADDRESS_LIST prParamNetAddrList = NULL;
-				P_PARAM_NETWORK_ADDRESS_IP prParamIpAddr = NULL;
-				PUINT_8 pucIp = NULL;
+				uint32_t rStatus = WLAN_STATUS_FAILURE;
+				uint32_t u4SetInfoLen = 0;
+				uint32_t u4Len = OFFSET_OF(struct PARAM_NETWORK_ADDRESS_LIST, arAddress);
+				uint32_t u4NumIPv4 = 0, u4NumIPv6 = 0;
+				uint32_t i = 0;
+				uint8_t *pucBufIpAddr = NULL;
+				struct PARAM_NETWORK_ADDRESS_LIST *prParamNetAddrList = NULL;
+				struct PARAM_NETWORK_ADDRESS_IP *prParamIpAddr = NULL;
+				uint8_t *pucIp = NULL;
 				/* PUINT_8                         pucIpv6 = NULL; */
-				UINT_32 bufSize =
-				    u4Len + (OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) +
-					     sizeof(PARAM_NETWORK_ADDRESS_IP)) * 3;
-				P_PARAM_NETWORK_ADDRESS prParamNetAddr = NULL;
+				uint32_t bufSize =
+				    u4Len + (OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) +
+					     sizeof(struct PARAM_NETWORK_ADDRESS_IP)) * 3;
+				struct PARAM_NETWORK_ADDRESS *prParamNetAddr = NULL;
 
 				/* <1> allocate IP address buffer */
 				pucBufIpAddr = kalMemAlloc(bufSize, VIR_MEM_TYPE);
 				pucIp = kalMemAlloc(3 * 4, VIR_MEM_TYPE);	/* TODO: replace 3 to macro */
 
-				prParamNetAddrList = (P_PARAM_NETWORK_ADDRESS_LIST) pucBufIpAddr;
+				prParamNetAddrList = (struct PARAM_NETWORK_ADDRESS_LIST *) pucBufIpAddr;
 				prParamNetAddr = prParamNetAddrList->arAddress;
 				/* <2> clear IP address buffer */
 				kalMemZero(pucBufIpAddr, bufSize);
@@ -498,18 +498,18 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 				prParamNetAddrList->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
 
 				for (i = 0; i < u4NumIPv4; i++) {
-					prParamNetAddr->u2AddressLength = sizeof(PARAM_NETWORK_ADDRESS_IP);
+					prParamNetAddr->u2AddressLength = sizeof(struct PARAM_NETWORK_ADDRESS_IP);
 					prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
-					prParamIpAddr = (P_PARAM_NETWORK_ADDRESS_IP) prParamNetAddr->aucAddress;
+					prParamIpAddr = (struct PARAM_NETWORK_ADDRESS_IP *) prParamNetAddr->aucAddress;
 					kalMemCopy(&prParamIpAddr->in_addr, pucIp + (i * 4), 4);
 					prParamNetAddr =
-					    (P_PARAM_NETWORK_ADDRESS) ((UINT_32) prParamNetAddr +
+					    (struct PARAM_NETWORK_ADDRESS *) ((uint32_t) prParamNetAddr +
 								       OFFSET_OF
-								       (PARAM_NETWORK_ADDRESS,
-									aucAddress) + sizeof(PARAM_NETWORK_ADDRESS_IP));
+								       (struct PARAM_NETWORK_ADDRESS,
+									aucAddress) + sizeof(struct PARAM_NETWORK_ADDRESS_IP));
 					u4Len +=
-					    OFFSET_OF(PARAM_NETWORK_ADDRESS,
-						      aucAddress) + sizeof(PARAM_NETWORK_ADDRESS_IP);
+					    OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
+						      aucAddress) + sizeof(struct PARAM_NETWORK_ADDRESS_IP);
 				}
 
 #if 0
@@ -526,8 +526,8 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 					prParamNetAddr->u2AddressType = PARAM_PROTOCOL_ID_TCP_IP;
 					kalMemCopy(prParamNetAddr->aucAddress, pucIpv6 + (i * 16), 16);
 					prParamNetAddr =
-					    (P_PARAM_NETWORK_ADDRESS) ((UINT_32) prParamNetAddr + sizeof(ip6));
-					u4Len += OFFSET_OF(PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(ip6);
+					    (struct PARAM_NETWORK_ADDRESS *) ((uint32_t) prParamNetAddr + sizeof(ip6));
+					u4Len += OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress) + sizeof(ip6);
 				}
 #endif
 #endif
@@ -535,7 +535,7 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 				ASSERT(u4Len <= bufSize);
 
 				rStatus = wlanoidSetNetworkAddress(prAdapter,
-								   (PVOID) prParamNetAddrList, u4Len, &u4SetInfoLen);
+								   (void *) prParamNetAddrList, u4Len, &u4SetInfoLen);
 
 				if (rStatus != WLAN_STATUS_SUCCESS)
 					DBGLOG(INIT, INFO, "set HW packet filter fail 0x%1x\n", rStatus);
@@ -564,7 +564,7 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 			break;
 		case SWCTRL_QM_INFO:
 			{
-				P_QUE_MGT_T prQM = &prAdapter->rQM;
+				struct QUE_MGT *prQM = &prAdapter->rQM;
 
 				switch (ucOpt0) {
 				case 0:
@@ -592,7 +592,7 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 			break;
 		case SWCTRL_TX_CTRL_INFO:
 			{
-				P_TX_CTRL_T prTxCtrl;
+				struct TX_CTRL *prTxCtrl;
 
 				prTxCtrl = &prAdapter->rTxCtrl;
 				switch (ucOpt0) {
@@ -631,11 +631,11 @@ VOID swCtrlCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 	}
 }
 
-VOID swCtrlCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, UINT_8 ucOpt0, UINT_8 ucOpt1)
+void swCtrlCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
 {
-	UINT_8 ucIndex, ucRead;
-	UINT_8 ucWTEntry;
-	P_STA_RECORD_T prStaRec;
+	uint8_t ucIndex, ucRead;
+	uint8_t ucWTEntry;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("swCtrlCmdCategory1");
 
@@ -682,17 +682,17 @@ VOID swCtrlCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 
 #if TEST_PS
 
-VOID
-testPsSendQoSNullFrame(IN P_ADAPTER_T prAdapter,
-		       IN P_STA_RECORD_T prStaRec,
-		       IN UINT_8 ucUP,
-		       IN UINT_8 ucBssIndex,
-		       IN BOOLEAN fgBMC,
-		       IN BOOLEAN fgIsBurstEnd, IN BOOLEAN ucPacketType, IN BOOLEAN ucPsSessionID, IN BOOLEAN fgSetEOSP)
+void
+testPsSendQoSNullFrame(IN struct ADAPTER *prAdapter,
+		       IN struct STA_RECORD *prStaRec,
+		       IN uint8_t ucUP,
+		       IN uint8_t ucBssIndex,
+		       IN u_int8_t fgBMC,
+		       IN u_int8_t fgIsBurstEnd, IN u_int8_t ucPacketType, IN u_int8_t ucPsSessionID, IN u_int8_t fgSetEOSP)
 {
-	P_MSDU_INFO_T prMsduInfo;
-	UINT_16 u2EstimatedFrameLen;
-	P_WLAN_MAC_HEADER_QOS_T prQoSNullFrame;
+	struct MSDU_INFO *prMsduInfo;
+	uint16_t u2EstimatedFrameLen;
+	struct WLAN_MAC_HEADER_QOS *prQoSNullFrame;
 
 	DEBUGFUNC("testPsSendQoSNullFrame");
 	DBGLOG(SW4, LOUD, "\n");
@@ -711,7 +711,7 @@ testPsSendQoSNullFrame(IN P_ADAPTER_T prAdapter,
 	}
 	/* 4 <2> Compose Null frame in MSDU_INfO_T. */
 	bssComposeQoSNullFrame(prAdapter,
-			       (PUINT_8) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
+			       (uint8_t *) ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD),
 			       prStaRec, ucUP, fgSetEOSP);
 
 	TX_SET_MMPDU(prAdapter,
@@ -722,8 +722,8 @@ testPsSendQoSNullFrame(IN P_ADAPTER_T prAdapter,
 	prMsduInfo->ucUserPriority = ucUP;
 	prMsduInfo->ucPacketType = ucPacketType;
 
-	prQoSNullFrame = (P_WLAN_MAC_HEADER_QOS_T) ((PUINT_8)
-						    ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD));
+	prQoSNullFrame = (struct WLAN_MAC_HEADER_QOS *) ((uint8_t *)
+						    ((unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD));
 
 	if (fgBMC)
 		prQoSNullFrame->aucAddr1[0] = 0xfd;
@@ -735,10 +735,10 @@ testPsSendQoSNullFrame(IN P_ADAPTER_T prAdapter,
 
 }
 
-VOID testPsSetupBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
+void testPsSetupBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 {
-	P_BSS_INFO_T prBssInfo;
-	UINT_8 _aucZeroMacAddr[] = NULL_MAC_ADDR;
+	struct BSS_INFO *prBssInfo;
+	uint8_t _aucZeroMacAddr[] = NULL_MAC_ADDR;
 
 	DEBUGFUNC("testPsSetupBss()");
 	DBGLOG(SW4, INFO, "index %d\n", ucBssIndex);
@@ -785,14 +785,14 @@ VOID testPsSetupBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	/* TODO */
 	prBssInfo->eBand = BAND_2G4;
 	prBssInfo->ucPrimaryChannel = 1;
-	prBssInfo->prStaRecOfAP = (P_STA_RECORD_T) NULL;
+	prBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
 
 	/* prBssInfo->fgErpProtectMode =  eErpProectMode; */
 	/* prBssInfo->eHtProtectMode = eHtProtectMode; */
 	/* prBssInfo->eGfOperationMode = eGfOperationMode; */
 
 	/* 4 <4> Allocate MSDU_INFO_T for Beacon */
-	prBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter, OFFSET_OF(WLAN_BEACON_FRAME_T, aucInfoElem[0]) + MAX_IE_LENGTH);
+	prBssInfo->prBeacon = cnmMgtPktAlloc(prAdapter, OFFSET_OF(struct WLAN_BEACON_FRAME, aucInfoElem[0]) + MAX_IE_LENGTH);
 
 	if (prBssInfo->prBeacon) {
 		prBssInfo->prBeacon->eSrc = TX_PACKET_MGMT;
@@ -806,16 +806,16 @@ VOID testPsSetupBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC = PM_UAPSD_ALL;
 	prBssInfo->rPmProfSetupInfo.ucUapsdSp = WMM_MAX_SP_LENGTH_2;
 #else
-	prBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC = (UINT_8) prAdapter->u4UapsdAcBmp;
-	prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC = (UINT_8) prAdapter->u4UapsdAcBmp;
-	prBssInfo->rPmProfSetupInfo.ucUapsdSp = (UINT_8) prAdapter->u4MaxSpLen;
+	prBssInfo->rPmProfSetupInfo.ucBmpDeliveryAC = (uint8_t) prAdapter->u4UapsdAcBmp;
+	prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC = (uint8_t) prAdapter->u4UapsdAcBmp;
+	prBssInfo->rPmProfSetupInfo.ucUapsdSp = (uint8_t) prAdapter->u4MaxSpLen;
 #endif
 
 #if 0
 	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
 
 		prBssInfo->arACQueParms[eAci].ucIsACMSet = FALSE;
-		prBssInfo->arACQueParms[eAci].u2Aifsn = (UINT_16) eAci;
+		prBssInfo->arACQueParms[eAci].u2Aifsn = (uint16_t) eAci;
 		prBssInfo->arACQueParms[eAci].u2CWmin = 7;
 		prBssInfo->arACQueParms[eAci].u2CWmax = 31;
 		prBssInfo->arACQueParms[eAci].u2TxopLimit = eAci + 1;
@@ -834,10 +834,10 @@ VOID testPsSetupBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 	       prBssInfo->rPmProfSetupInfo.ucBmpTriggerAC, prBssInfo->rPmProfSetupInfo.ucUapsdSp);
 }
 
-VOID testPsCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, UINT_8 ucOpt0, UINT_8 ucOpt1)
+void testPsCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
 {
-	UINT_8 ucIndex, ucRead;
-	P_STA_RECORD_T prStaRec;
+	uint8_t ucIndex, ucRead;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("testPsCmdCategory0");
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
@@ -864,11 +864,11 @@ VOID testPsCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 		case TEST_PS_SEND_NULL:
 			{
 
-				testPsSendQoSNullFrame(prAdapter, prStaRec, (UINT_8) (g_au4SwCr[1] & 0xFF),	/* UP */
-						       ucOpt0, (BOOLEAN) ((g_au4SwCr[1] >> 8) & 0xFF),	/* BMC */
-						       (BOOLEAN) ((g_au4SwCr[1] >> 16) & 0xFF),	/* BurstEnd */
-						       (BOOLEAN) ((g_au4SwCr[1] >> 24) & 0xFF),	/* Packet type */
-						       (UINT_8) ((g_au4SwCr[2]) & 0xFF), /* PS sesson ID 7: NOACK */
+				testPsSendQoSNullFrame(prAdapter, prStaRec, (uint8_t) (g_au4SwCr[1] & 0xFF),	/* UP */
+						       ucOpt0, (u_int8_t) ((g_au4SwCr[1] >> 8) & 0xFF),	/* BMC */
+						       (u_int8_t) ((g_au4SwCr[1] >> 16) & 0xFF),	/* BurstEnd */
+						       (u_int8_t) ((g_au4SwCr[1] >> 24) & 0xFF),	/* Packet type */
+						       (uint8_t) ((g_au4SwCr[2]) & 0xFF), /* PS sesson ID 7: NOACK */
 						       FALSE	/* EOSP */
 				    );
 			}
@@ -898,11 +898,11 @@ VOID testPsCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 
 #if TEST_PS
 
-VOID testPsCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, UINT_8 ucOpt0, UINT_8 ucOpt1)
+void testPsCmdCategory1(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
 {
-	UINT_8 ucIndex, ucRead;
-	UINT_8 ucWTEntry;
-	P_STA_RECORD_T prStaRec;
+	uint8_t ucIndex, ucRead;
+	uint8_t ucWTEntry;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("testPsCmdCategory1");
 
@@ -923,10 +923,10 @@ VOID testPsCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 
 		switch (ucIndex) {
 		case TEST_PS_STA_PS:
-			prStaRec->fgIsInPS = (BOOLEAN) (g_au4SwCr[1] & 0x1);
-			prStaRec->fgIsQoS = (BOOLEAN) (g_au4SwCr[1] >> 8 & 0xFF);
-			prStaRec->fgIsUapsdSupported = (BOOLEAN) (g_au4SwCr[1] >> 16 & 0xFF);
-			prStaRec->ucBmpDeliveryAC = (BOOLEAN) (g_au4SwCr[1] >> 24 & 0xFF);
+			prStaRec->fgIsInPS = (u_int8_t) (g_au4SwCr[1] & 0x1);
+			prStaRec->fgIsQoS = (u_int8_t) (g_au4SwCr[1] >> 8 & 0xFF);
+			prStaRec->fgIsUapsdSupported = (u_int8_t) (g_au4SwCr[1] >> 16 & 0xFF);
+			prStaRec->ucBmpDeliveryAC = (u_int8_t) (g_au4SwCr[1] >> 24 & 0xFF);
 			break;
 
 		}
@@ -945,10 +945,10 @@ VOID testPsCmdCategory1(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, U
 
 #if CFG_SUPPORT_802_11V
 #if (CFG_SUPPORT_802_11V_TIMING_MEASUREMENT == 1) && (WNM_UNIT_TEST == 1)
-VOID testWNMCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, UINT_8 ucOpt0, UINT_8 ucOpt1)
+void testWNMCmdCategory0(struct ADAPTER *prAdapter, uint8_t ucCate, uint8_t ucAction, uint8_t ucOpt0, uint8_t ucOpt1)
 {
-	UINT_8 ucIndex, ucRead;
-	P_STA_RECORD_T prStaRec;
+	uint8_t ucIndex, ucRead;
+	struct STA_RECORD *prStaRec;
 
 	DEBUGFUNC("testWNMCmdCategory0");
 	SWCR_GET_RW_INDEX(ucAction, ucRead, ucIndex);
@@ -972,10 +972,10 @@ VOID testWNMCmdCategory0(P_ADAPTER_T prAdapter, UINT_8 ucCate, UINT_8 ucAction, 
 #endif /* TEST_WNM */
 #endif /* CFG_SUPPORT_802_11V */
 
-VOID swCtrlSwCr(P_ADAPTER_T prAdapter, UINT_8 ucRead, UINT_16 u2Addr, UINT_32 *pu4Data)
+void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data)
 {
 	/* According other register STAIDX */
-	UINT_8 ucOffset;
+	uint8_t ucOffset;
 
 	ucOffset = (u2Addr >> 2) & 0x3F;
 
@@ -990,16 +990,16 @@ VOID swCtrlSwCr(P_ADAPTER_T prAdapter, UINT_8 ucRead, UINT_16 u2Addr, UINT_32 *p
 			/* Commmand   [22:16]: Index */
 			/* Commmand   [15:08]: Option0  */
 			/* Commmand   [07:00]: Option1   */
-			UINT_8 ucCate;
-			UINT_32 u4Cmd;
+			uint8_t ucCate;
+			uint32_t u4Cmd;
 
 			u4Cmd = g_au4SwCr[0];
-			ucCate = (UINT_8) (u4Cmd >> 24);
+			ucCate = (uint8_t) (u4Cmd >> 24);
 			if (ucCate < ARRAY_SIZE(g_arSwCtrlCmd)) {
 				if (g_arSwCtrlCmd[ucCate] != NULL) {
 					g_arSwCtrlCmd[ucCate] (prAdapter, ucCate,
-							       (UINT_8) (u4Cmd >> 16 & 0xFF),
-							       (UINT_8) ((u4Cmd >> 8) & 0xFF), (UINT_8) (u4Cmd & 0xFF));
+							       (uint8_t) (u4Cmd >> 16 & 0xFF),
+							       (uint8_t) ((u4Cmd >> 8) & 0xFF), (uint8_t) (u4Cmd & 0xFF));
 				}
 			}
 		}
@@ -1008,9 +1008,9 @@ VOID swCtrlSwCr(P_ADAPTER_T prAdapter, UINT_8 ucRead, UINT_16 u2Addr, UINT_32 *p
 	}
 }
 
-VOID swCrReadWriteCmd(P_ADAPTER_T prAdapter, UINT_8 ucRead, UINT_16 u2Addr, UINT_32 *pu4Data)
+void swCrReadWriteCmd(struct ADAPTER *prAdapter, uint8_t ucRead, uint16_t u2Addr, uint32_t *pu4Data)
 {
-	UINT_8 ucMod;
+	uint8_t ucMod;
 
 	ucMod = u2Addr >> 8;
 	/* Address [15:8] MOD ID */
@@ -1027,7 +1027,7 @@ VOID swCrReadWriteCmd(P_ADAPTER_T prAdapter, UINT_8 ucRead, UINT_16 u2Addr, UINT
 }
 
 /* Debug Support */
-VOID swCrFrameCheckEnable(P_ADAPTER_T prAdapter, UINT_32 u4DumpType)
+void swCrFrameCheckEnable(struct ADAPTER *prAdapter, uint32_t u4DumpType)
 {
 	g_u4SwcrDebugFrameDumpType = u4DumpType;
 #if CFG_RX_PKTS_DUMP
@@ -1035,7 +1035,7 @@ VOID swCrFrameCheckEnable(P_ADAPTER_T prAdapter, UINT_32 u4DumpType)
 #endif
 }
 
-VOID swCrDebugInit(P_ADAPTER_T prAdapter)
+void swCrDebugInit(struct ADAPTER *prAdapter)
 {
 	/* frame dump */
 	if (g_u4SwcrDebugFrameDumpType)
@@ -1043,20 +1043,20 @@ VOID swCrDebugInit(P_ADAPTER_T prAdapter)
 	/* debug counter */
 	g_fgSwcrDebugTimer = FALSE;
 
-	cnmTimerInitTimer(prAdapter, &g_rSwcrDebugTimer, (PFN_MGMT_TIMEOUT_FUNC) swCrDebugCheckTimeout, (ULONG) NULL);
+	cnmTimerInitTimer(prAdapter, &g_rSwcrDebugTimer, (PFN_MGMT_TIMEOUT_FUNC) swCrDebugCheckTimeout, (unsigned long) NULL);
 
 	if (g_u4SwcrDebugCheckTimeout)
 		swCrDebugCheckEnable(prAdapter, TRUE, g_ucSwcrDebugCheckType, g_u4SwcrDebugCheckTimeout);
 }
 
-VOID swCrDebugUninit(P_ADAPTER_T prAdapter)
+void swCrDebugUninit(struct ADAPTER *prAdapter)
 {
 	cnmTimerStopTimer(prAdapter, &g_rSwcrDebugTimer);
 
 	g_fgSwcrDebugTimer = FALSE;
 }
 
-VOID swCrDebugCheckEnable(P_ADAPTER_T prAdapter, BOOLEAN fgIsEnable, UINT_8 ucType, UINT_32 u4Timeout)
+void swCrDebugCheckEnable(struct ADAPTER *prAdapter, u_int8_t fgIsEnable, uint8_t ucType, uint32_t u4Timeout)
 {
 	if (fgIsEnable) {
 		g_ucSwcrDebugCheckType = ucType;
@@ -1071,10 +1071,10 @@ VOID swCrDebugCheckEnable(P_ADAPTER_T prAdapter, BOOLEAN fgIsEnable, UINT_8 ucTy
 	g_fgSwcrDebugTimer = fgIsEnable;
 }
 
-VOID swCrDebugCheck(P_ADAPTER_T prAdapter, P_CMD_SW_DBG_CTRL_T prCmdSwCtrl)
+void swCrDebugCheck(struct ADAPTER *prAdapter, struct CMD_SW_DBG_CTRL *prCmdSwCtrl)
 {
-	P_RX_CTRL_T prRxCtrl;
-	P_TX_CTRL_T prTxCtrl;
+	struct RX_CTRL *prRxCtrl;
+	struct TX_CTRL *prTxCtrl;
 
 	ASSERT(prAdapter);
 
@@ -1101,10 +1101,10 @@ VOID swCrDebugCheck(P_ADAPTER_T prAdapter, P_CMD_SW_DBG_CTRL_T prCmdSwCtrl)
 			/* TX Counter from drv */
 			DBGLOG(SW4, INFO, "TX1\n"
 			       "%08x %08x %08x %08x\n",
-			       (UINT_32) TX_GET_CNT(prTxCtrl, TX_INACTIVE_BSS_DROP),
-			       (UINT_32) TX_GET_CNT(prTxCtrl, TX_INACTIVE_STA_DROP),
-			       (UINT_32) TX_GET_CNT(prTxCtrl, TX_FORWARD_OVERFLOW_DROP),
-			       (UINT_32) TX_GET_CNT(prTxCtrl, TX_AP_BORADCAST_DROP));
+			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_INACTIVE_BSS_DROP),
+			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_INACTIVE_STA_DROP),
+			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_FORWARD_OVERFLOW_DROP),
+			       (uint32_t) TX_GET_CNT(prTxCtrl, TX_AP_BORADCAST_DROP));
 #endif
 
 			/* RX Counter */
@@ -1133,14 +1133,14 @@ VOID swCrDebugCheck(P_ADAPTER_T prAdapter, P_CMD_SW_DBG_CTRL_T prCmdSwCtrl)
 			DBGLOG(SW4, INFO, "RX1\n"
 			       "%08x %08x %08x %08x\n"
 			       "%08x %08x %08x %08x\n",
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_DATA_RETURNED_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT),
-			       (UINT_32) RX_GET_CNT(prRxCtrl, RX_DST_NULL_DROP_COUNT));
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DATA_INDICATION_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DATA_RETURNED_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DATA_RETAINED_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DROP_TOTAL_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_TYPE_ERR_DROP_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_CLASS_ERR_DROP_COUNT),
+			       (uint32_t) RX_GET_CNT(prRxCtrl, RX_DST_NULL_DROP_COUNT));
 
 			DBGLOG(SW4, INFO, "PWR\n"
 			       "%08x %08x %08x %08x\n"
@@ -1183,10 +1183,10 @@ VOID swCrDebugCheck(P_ADAPTER_T prAdapter, P_CMD_SW_DBG_CTRL_T prCmdSwCtrl)
 		cnmTimerStartTimer(prAdapter, &g_rSwcrDebugTimer, g_u4SwcrDebugCheckTimeout * MSEC_PER_SEC);
 }
 
-VOID swCrDebugCheckTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
+void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter, unsigned long ulParamPtr)
 {
-	CMD_SW_DBG_CTRL_T rCmdSwCtrl;
-	WLAN_STATUS rStatus;
+	struct CMD_SW_DBG_CTRL rCmdSwCtrl;
+	uint32_t rStatus;
 
 	rCmdSwCtrl.u4Id = (0xb000 << 16) + g_ucSwcrDebugCheckType;
 	rCmdSwCtrl.u4Data = 0;
@@ -1197,8 +1197,8 @@ VOID swCrDebugCheckTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 				      FALSE,	/* fgIsOid */
 				      swCrDebugQuery,	/* pfCmdDoneHandler */
 				      swCrDebugQueryTimeout,	/* pfCmdTimeoutHandler */
-				      sizeof(CMD_SW_DBG_CTRL_T),	/* u4SetQueryInfoLen */
-				      (PUINT_8) &rCmdSwCtrl,	/* pucInfoBuffer */
+				      sizeof(struct CMD_SW_DBG_CTRL),	/* u4SetQueryInfoLen */
+				      (uint8_t *) &rCmdSwCtrl,	/* pucInfoBuffer */
 				      NULL,	/* pvSetQueryBuffer */
 				      0	/* u4SetQueryBufferLen */
 	    );
@@ -1206,14 +1206,14 @@ VOID swCrDebugCheckTimeout(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr)
 	ASSERT(rStatus == WLAN_STATUS_PENDING);
 }
 
-VOID swCrDebugQuery(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void swCrDebugQuery(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
 	ASSERT(prAdapter);
 
-	swCrDebugCheck(prAdapter, (P_CMD_SW_DBG_CTRL_T) (pucEventBuf));
+	swCrDebugCheck(prAdapter, (struct CMD_SW_DBG_CTRL *) (pucEventBuf));
 }
 
-VOID swCrDebugQueryTimeout(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
+void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
 {
 	ASSERT(prAdapter);
 

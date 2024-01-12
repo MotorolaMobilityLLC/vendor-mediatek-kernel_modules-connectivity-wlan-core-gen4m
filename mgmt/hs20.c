@@ -120,7 +120,7 @@
 * \return VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID hs20GenerateInterworkingIE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo)
+void hs20GenerateInterworkingIE(IN struct ADAPTER *prAdapter, OUT struct MSDU_INFO *prMsduInfo)
 {
 }
 
@@ -134,7 +134,7 @@ VOID hs20GenerateInterworkingIE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMs
 * \return VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID hs20GenerateRoamingConsortiumIE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo)
+void hs20GenerateRoamingConsortiumIE(IN struct ADAPTER *prAdapter, OUT struct MSDU_INFO *prMsduInfo)
 {
 }
 
@@ -148,9 +148,9 @@ VOID hs20GenerateRoamingConsortiumIE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T
 * \return VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID hs20GenerateHS20IE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo)
+void hs20GenerateHS20IE(IN struct ADAPTER *prAdapter, OUT struct MSDU_INFO *prMsduInfo)
 {
-	PUINT_8 pucBuffer;
+	uint8_t *pucBuffer;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -161,7 +161,7 @@ VOID hs20GenerateHS20IE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo)
 		return;
 	}
 
-	pucBuffer = (PUINT_8) ((ULONG) prMsduInfo->prPacket + (ULONG) prMsduInfo->u2FrameLength);
+	pucBuffer = (uint8_t *) ((unsigned long) prMsduInfo->prPacket + (unsigned long) prMsduInfo->u2FrameLength);
 
 	/* ASSOC INFO IE ID: 221 :0xDD */
 	if (prAdapter->prGlueInfo->u2HS20AssocInfoIELen) {
@@ -172,16 +172,16 @@ VOID hs20GenerateHS20IE(IN P_ADAPTER_T prAdapter, OUT P_MSDU_INFO_T prMsduInfo)
 
 }
 
-VOID hs20FillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU_INFO_T prMsduInfo)
+void hs20FillExtCapIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo)
 {
-	P_EXT_CAP_T prExtCap;
+	struct IE_EXT_CAP *prExtCap;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
 
 	/* Add Extended Capabilities IE */
-	prExtCap = (P_EXT_CAP_T)
-	    (((PUINT_8) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
+	prExtCap = (struct IE_EXT_CAP *)
+	    (((uint8_t *) prMsduInfo->prPacket) + prMsduInfo->u2FrameLength);
 
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
 	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE)
@@ -222,14 +222,14 @@ VOID hs20FillExtCapIE(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, P_MSDU_INFO
 * \return VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID hs20FillProreqExtCapIE(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucIE)
+void hs20FillProreqExtCapIE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE)
 {
-	P_EXT_CAP_T prExtCap;
+	struct IE_EXT_CAP *prExtCap;
 
 	ASSERT(prAdapter);
 
 	/* Add Extended Capabilities IE */
-	prExtCap = (P_EXT_CAP_T) pucIE;
+	prExtCap = (struct IE_EXT_CAP *) pucIE;
 
 	prExtCap->ucId = ELEM_ID_EXTENDED_CAP;
 	if (prAdapter->prGlueInfo->fgConnectHS20AP == TRUE)
@@ -262,18 +262,18 @@ VOID hs20FillProreqExtCapIE(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucIE)
 * \return VOID
 */
 /*----------------------------------------------------------------------------*/
-VOID hs20FillHS20IE(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucIE)
+void hs20FillHS20IE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE)
 {
-	P_IE_HS20_INDICATION_T prHS20IndicationIe;
+	struct IE_HS20_INDICATION *prHS20IndicationIe;
 	/* P_HS20_INFO_T prHS20Info; */
-	UINT_8 aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
+	uint8_t aucWfaOui[] = VENDOR_OUI_WFA_SPECIFIC;
 
 	/* prHS20Info = &(prAdapter->rWifiVar.rHS20Info); */
 
-	prHS20IndicationIe = (P_IE_HS20_INDICATION_T) pucIE;
+	prHS20IndicationIe = (struct IE_HS20_INDICATION *) pucIE;
 
 	prHS20IndicationIe->ucId = ELEM_ID_VENDOR;
-	prHS20IndicationIe->ucLength = sizeof(IE_HS20_INDICATION_T) - ELEM_HDR_LEN;
+	prHS20IndicationIe->ucLength = sizeof(struct IE_HS20_INDICATION) - ELEM_HDR_LEN;
 	prHS20IndicationIe->aucOui[0] = aucWfaOui[0];
 	prHS20IndicationIe->aucOui[1] = aucWfaOui[1];
 	prHS20IndicationIe->aucOui[2] = aucWfaOui[2];
@@ -294,14 +294,14 @@ VOID hs20FillHS20IE(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucIE)
 * \return the length of composed HS20 IE
 */
 /*----------------------------------------------------------------------------*/
-UINT_32 hs20CalculateHS20RelatedIEForProbeReq(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucTargetBSSID)
+uint32_t hs20CalculateHS20RelatedIEForProbeReq(IN struct ADAPTER *prAdapter, IN uint8_t *pucTargetBSSID)
 {
-	UINT_32 u4IeLength;
+	uint32_t u4IeLength;
 
 	if (0)			/* Todo:: Not HS20 STA */
 		return 0;
 
-	u4IeLength = sizeof(IE_HS20_INDICATION_T) + /* sizeof(IE_INTERWORKING_T) */ + (ELEM_HDR_LEN +
+	u4IeLength = sizeof(struct IE_HS20_INDICATION) + /* sizeof(IE_INTERWORKING_T) */ + (ELEM_HDR_LEN +
 										      ELEM_MAX_LEN_EXT_CAP);
 
 	if (!pucTargetBSSID) {
@@ -323,12 +323,12 @@ UINT_32 hs20CalculateHS20RelatedIEForProbeReq(IN P_ADAPTER_T prAdapter, IN PUINT
 * \return the wlan status
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS hs20GenerateHS20RelatedIEForProbeReq(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucTargetBSSID, OUT PUINT_8 prIE)
+uint32_t hs20GenerateHS20RelatedIEForProbeReq(IN struct ADAPTER *prAdapter, IN uint8_t *pucTargetBSSID, OUT uint8_t *prIE)
 {
 	if (0)			/* Todo:: Not HS20 STA */
 		return 0;
 #if 0
-	P_HS20_INFO_T prHS20Info;
+	struct HS20_INFO *prHS20Info;
 
 	prHS20Info = &(prAdapter->rWifiVar.rHS20Info);
 
@@ -355,19 +355,19 @@ WLAN_STATUS hs20GenerateHS20RelatedIEForProbeReq(IN P_ADAPTER_T prAdapter, IN PU
 	return WLAN_STATUS_SUCCESS;
 }
 
-BOOLEAN hs20IsGratuitousArp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prCurrSwRfb)
+u_int8_t hs20IsGratuitousArp(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prCurrSwRfb)
 {
-	PUINT_8 pucSenderIP = prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_SENDER_IP_OFFSET;
-	PUINT_8 pucTargetIP = prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_TARGET_IP_OFFSET;
-	PUINT_8 pucSenderMac = ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_SNEDER_MAC_OFFSET);
+	uint8_t *pucSenderIP = prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_SENDER_IP_OFFSET;
+	uint8_t *pucTargetIP = prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_TARGET_IP_OFFSET;
+	uint8_t *pucSenderMac = ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_SNEDER_MAC_OFFSET);
 #if CFG_HS20_DEBUG && 0
 /* UINT_8  aucIpAllZero[4] = {0,0,0,0}; */
 /* UINT_8  aucMACAllZero[MAC_ADDR_LEN] = {0,0,0,0,0,0}; */
-	PUINT_8 pucTargetMac = ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_TARGET_MAC_OFFSET);
+	uint8_t *pucTargetMac = ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_TARGET_MAC_OFFSET);
 #endif
 
 #if CFG_HS20_DEBUG && 0
-	PUINT_16 pu2ArpOper = (PUINT_16) ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_OPERATION_OFFSET);
+	uint16_t *pu2ArpOper = (uint16_t *) ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + ARP_OPERATION_OFFSET);
 
 	kalPrint("Recv ARP 0x%04X\n", htons(*pu2ArpOper));
 	kalPrint("SENDER[" MACSTR "] [%d:%d:%d:%d]\n", MAC2STR(pucSenderMac), *pucSenderIP,
@@ -386,26 +386,26 @@ BOOLEAN hs20IsGratuitousArp(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prCurrSwRfb)
 	return FALSE;
 }
 
-BOOLEAN hs20IsUnsolicitedNeighborAdv(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prCurrSwRfb)
+u_int8_t hs20IsUnsolicitedNeighborAdv(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prCurrSwRfb)
 {
-	PUINT_8 pucIpv6Protocol = ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_IP_PROTOCOL_OFFSET);
+	uint8_t *pucIpv6Protocol = ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_IP_PROTOCOL_OFFSET);
 
 	/* kalPrint("pucIpv6Protocol [%02X:%02X]\n", *pucIpv6Protocol, IPV6_PROTOCOL_ICMPV6); */
 	if (*pucIpv6Protocol == IPV6_PROTOCOL_ICMPV6) {
-		PUINT_8 pucICMPv6Type =
-		    ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_LEN + ICMPV6_TYPE_OFFSET);
+		uint8_t *pucICMPv6Type =
+		    ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_LEN + ICMPV6_TYPE_OFFSET);
 		/* kalPrint("pucICMPv6Type [%02X:%02X]\n", *pucICMPv6Type, ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT); */
 		if (*pucICMPv6Type == ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
-			PUINT_8 pucICMPv6Flag =
-			    ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_LEN + ICMPV6_FLAG_OFFSET);
-			PUINT_8 pucSrcMAC = ((PUINT_8) prCurrSwRfb->pvHeader + MAC_ADDR_LEN);
+			uint8_t *pucICMPv6Flag =
+			    ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_LEN + ICMPV6_FLAG_OFFSET);
+			uint8_t *pucSrcMAC = ((uint8_t *) prCurrSwRfb->pvHeader + MAC_ADDR_LEN);
 
 #if CFG_HS20_DEBUG
 			kalPrint("NAdv Flag [%02X] [R(%d)\\S(%d)\\O(%d)]\n",
 				 *pucICMPv6Flag,
-				 (UINT_8) (*pucICMPv6Flag & ICMPV6_FLAG_ROUTER_BIT) >> 7,
-				 (UINT_8) (*pucICMPv6Flag & ICMPV6_FLAG_SOLICITED_BIT) >> 6,
-				 (UINT_8) (*pucICMPv6Flag & ICMPV6_FLAG_OVERWRITE_BIT) >> 5);
+				 (uint8_t) (*pucICMPv6Flag & ICMPV6_FLAG_ROUTER_BIT) >> 7,
+				 (uint8_t) (*pucICMPv6Flag & ICMPV6_FLAG_SOLICITED_BIT) >> 6,
+				 (uint8_t) (*pucICMPv6Flag & ICMPV6_FLAG_OVERWRITE_BIT) >> 5);
 #endif
 			if (!(*pucICMPv6Flag & ICMPV6_FLAG_SOLICITED_BIT)) {
 				kalPrint("Drop Unsolicited Neighbor Advertisement from [" MACSTR
@@ -419,28 +419,28 @@ BOOLEAN hs20IsUnsolicitedNeighborAdv(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prC
 }
 
 #if CFG_ENABLE_GTK_FRAME_FILTER
-BOOLEAN hs20IsForgedGTKFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P_SW_RFB_T prCurrSwRfb)
+u_int8_t hs20IsForgedGTKFrame(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prCurrSwRfb)
 {
-	P_CONNECTION_SETTINGS_T prConnSettings = &prAdapter->rWifiVar.rConnSettings;
-	PUINT_8 pucEthDestAddr = prCurrSwRfb->pvHeader;
+	struct CONNECTION_SETTINGS *prConnSettings = &prAdapter->rWifiVar.rConnSettings;
+	uint8_t *pucEthDestAddr = prCurrSwRfb->pvHeader;
 
 	/* 3 TODO: Need to verify this function before enable it */
 	return FALSE;
 
 	if ((prConnSettings->eEncStatus != ENUM_ENCRYPTION_DISABLED)
 	    && IS_BMCAST_MAC_ADDR(pucEthDestAddr)) {
-		UINT_8 ucIdx = 0;
-		PUINT_32 prIpAddr, prPacketDA;
-		PUINT_16 pu2PktIpVer =
-		    (PUINT_16) ((PUINT_8) prCurrSwRfb->pvHeader + (ETHER_HEADER_LEN - ETHER_TYPE_LEN));
+		uint8_t ucIdx = 0;
+		uint32_t *prIpAddr, *prPacketDA;
+		uint16_t *pu2PktIpVer =
+		    (uint16_t *) ((uint8_t *) prCurrSwRfb->pvHeader + (ETHER_HEADER_LEN - ETHER_TYPE_LEN));
 
 		if (*pu2PktIpVer == htons(ETH_P_IPV4)) {
 			if (!prBssInfo->prIpV4NetAddrList)
 				return FALSE;
 			for (ucIdx = 0; ucIdx < prBssInfo->prIpV4NetAddrList->ucAddrCount; ucIdx++) {
-				prIpAddr = (PUINT_32) &prBssInfo->prIpV4NetAddrList->arNetAddr[ucIdx].aucIpAddr[0];
+				prIpAddr = (uint32_t *) &prBssInfo->prIpV4NetAddrList->arNetAddr[ucIdx].aucIpAddr[0];
 				prPacketDA =
-				    (PUINT_32) ((PUINT_8) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN +
+				    (uint32_t *) ((uint8_t *) prCurrSwRfb->pvHeader + ETHER_HEADER_LEN +
 						IPV4_HDR_IP_DST_ADDR_OFFSET);
 
 				if (kalMemCmp(prIpAddr, prPacketDA, 4) == 0) {
@@ -451,8 +451,8 @@ BOOLEAN hs20IsForgedGTKFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo
 		}
 #ifdef CONFIG_IPV6
 		else if (*pu2PktIpVer == htons(ETH_P_IPV6)) {
-			UINT_8 aucIPv6Mac[MAC_ADDR_LEN];
-			PUINT_8 pucIdx =
+			uint8_t aucIPv6Mac[MAC_ADDR_LEN];
+			uint8_t *pucIdx =
 			    prCurrSwRfb->pvHeader + ETHER_HEADER_LEN + IPV6_HDR_IP_DST_ADDR_MAC_HIGH_OFFSET;
 
 			kalMemCopy(&aucIPv6Mac[0], pucIdx, 3);
@@ -471,19 +471,19 @@ BOOLEAN hs20IsForgedGTKFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo
 }
 #endif
 
-BOOLEAN hs20IsUnsecuredFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo, IN P_SW_RFB_T prCurrSwRfb)
+u_int8_t hs20IsUnsecuredFrame(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prCurrSwRfb)
 {
-	PUINT_16 pu2PktIpVer = (PUINT_16) ((PUINT_8) prCurrSwRfb->pvHeader + (ETHER_HEADER_LEN - ETHER_TYPE_LEN));
+	uint16_t *pu2PktIpVer = (uint16_t *) ((uint8_t *) prCurrSwRfb->pvHeader + (ETHER_HEADER_LEN - ETHER_TYPE_LEN));
 
 	/* kalPrint("IPVER 0x%4X\n", htons(*pu2PktIpVer)); */
 #if CFG_HS20_DEBUG & 0
-	UINT_8 i = 0;
+	uint8_t i = 0;
 
 	kalPrint("===============================================");
 	for (i = 0; i < 96; i++) {
 		if (!(i % 16))
 			kalPrint("\n");
-		kalPrint("%02X ", *((PUINT_8) prCurrSwRfb->pvHeader + i));
+		kalPrint("%02X ", *((uint8_t *) prCurrSwRfb->pvHeader + i));
 	}
 	kalPrint("\n");
 #endif
@@ -500,14 +500,14 @@ BOOLEAN hs20IsUnsecuredFrame(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo
 	return FALSE;
 }
 
-BOOLEAN hs20IsFrameFilterEnabled(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBssInfo)
+u_int8_t hs20IsFrameFilterEnabled(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo)
 {
 #if 1
 	if (prAdapter->prGlueInfo->fgConnectHS20AP)
 		return TRUE;
 #else
-	PARAM_SSID_T rParamSsid;
-	P_BSS_DESC_T prBssDesc;
+	struct PARAM_SSID rParamSsid;
+	struct BSS_DESC *prBssDesc;
 
 	rParamSsid.u4SsidLen = prBssInfo->ucSSIDLen;
 	COPY_SSID(rParamSsid.aucSsid, rParamSsid.u4SsidLen, prBssInfo->aucSSID, prBssInfo->ucSSIDLen);
@@ -528,11 +528,11 @@ BOOLEAN hs20IsFrameFilterEnabled(IN P_ADAPTER_T prAdapter, IN P_BSS_INFO_T prBss
 	return TRUE;
 }
 
-WLAN_STATUS hs20SetBssidPool(IN P_ADAPTER_T prAdapter, IN PVOID pvBuffer, IN ENUM_KAL_NETWORK_TYPE_INDEX_T eNetTypeIdx)
+uint32_t hs20SetBssidPool(IN struct ADAPTER *prAdapter, IN void *pvBuffer, IN enum ENUM_KAL_NETWORK_TYPE_INDEX eNetTypeIdx)
 {
-	P_PARAM_HS20_SET_BSSID_POOL prParamBssidPool = (P_PARAM_HS20_SET_BSSID_POOL) pvBuffer;
-	P_HS20_INFO_T prHS20Info;
-	UINT_8 ucIdx;
+	struct PARAM_HS20_SET_BSSID_POOL *prParamBssidPool = (struct PARAM_HS20_SET_BSSID_POOL *) pvBuffer;
+	struct HS20_INFO *prHS20Info;
+	uint8_t ucIdx;
 
 	prHS20Info = &(prAdapter->rWifiVar.rHS20Info);
 

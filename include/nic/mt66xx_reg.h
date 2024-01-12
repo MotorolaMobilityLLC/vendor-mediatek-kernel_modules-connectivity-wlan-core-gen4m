@@ -496,179 +496,179 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_connac;
 #define MT_PCIE_IRQ_ENABLE              (PCIE_NEW_HIF_BASE + 0x0188)
 
 /* WPDMA_INT_STA */
-typedef union _WPDMA_INT_STA_STRUCT {
+union WPDMA_INT_STA_STRUCT {
 	struct {
-		UINT_32 rx_done_0:1;
-		UINT_32 rx_done_1:1;
-		UINT_32 err_det_int_0:1;
-		UINT_32 err_det_int_1:1;
-		UINT_32 tx_done:16;
-		UINT_32 rx_coherent:1;
-		UINT_32 tx_coherent:1;
-		UINT_32 rx_dly_int:1;
-		UINT_32 tx_dly_int:1;
-		UINT_32 wf_mac_int_0:1;
-		UINT_32 wf_mac_int_1:1;
-		UINT_32 wf_mac_int_2:1;
-		UINT_32 wf_mac_int_3:1;
-		UINT_32 wf_mac_int_4:1;
-		UINT_32 wf_mac_int_5:1;
-		UINT_32 mcu_cmd_int:1;
-		UINT_32 fw_clr_own:1;
+		uint32_t rx_done_0:1;
+		uint32_t rx_done_1:1;
+		uint32_t err_det_int_0:1;
+		uint32_t err_det_int_1:1;
+		uint32_t tx_done:16;
+		uint32_t rx_coherent:1;
+		uint32_t tx_coherent:1;
+		uint32_t rx_dly_int:1;
+		uint32_t tx_dly_int:1;
+		uint32_t wf_mac_int_0:1;
+		uint32_t wf_mac_int_1:1;
+		uint32_t wf_mac_int_2:1;
+		uint32_t wf_mac_int_3:1;
+		uint32_t wf_mac_int_4:1;
+		uint32_t wf_mac_int_5:1;
+		uint32_t mcu_cmd_int:1;
+		uint32_t fw_clr_own:1;
 	} field;
 
-	UINT_32 word;
-} WPDMA_INT_STA_STRUCT;
+	uint32_t word;
+};
 
 /* WPDMA_INT_MSK */
-typedef union _WPDMA_INT_MASK {
+union WPDMA_INT_MASK {
 	struct {
-		UINT_32 rx_done_0:1;
-		UINT_32 rx_done_1:1;
-		UINT_32 err_det_int_0:1;
-		UINT_32 err_det_int_1:1;
-		UINT_32 tx_done:16;
-		UINT_32 rx_coherent:1;
-		UINT_32 tx_coherent:1;
-		UINT_32 rx_dly_int:1;
-		UINT_32 tx_dly_int:1;
-		UINT_32 wf_mac_int_0:1;
-		UINT_32 wf_mac_int_1:1;
-		UINT_32 wf_mac_int_2:1;
-		UINT_32 wf_mac_int_3:1;
-		UINT_32 wf_mac_int_4:1;
-		UINT_32 wf_mac_int_5:1;
-		UINT_32 mcu_cmd_int:1;
-		UINT_32 fw_clr_own:1;
+		uint32_t rx_done_0:1;
+		uint32_t rx_done_1:1;
+		uint32_t err_det_int_0:1;
+		uint32_t err_det_int_1:1;
+		uint32_t tx_done:16;
+		uint32_t rx_coherent:1;
+		uint32_t tx_coherent:1;
+		uint32_t rx_dly_int:1;
+		uint32_t tx_dly_int:1;
+		uint32_t wf_mac_int_0:1;
+		uint32_t wf_mac_int_1:1;
+		uint32_t wf_mac_int_2:1;
+		uint32_t wf_mac_int_3:1;
+		uint32_t wf_mac_int_4:1;
+		uint32_t wf_mac_int_5:1;
+		uint32_t mcu_cmd_int:1;
+		uint32_t fw_clr_own:1;
 	} field;
 
 	struct {
-		UINT_32 rx_done_0:1;
-		UINT_32 rx_done_1:1;
-		UINT_32 err_det_int_0:1;
-		UINT_32 err_det_int_1:1;
-		UINT_32 tx_done:16;
-		UINT_32 rx_coherent:1;
-		UINT_32 tx_coherent:1;
-		UINT_32 rx_dly_int:1;
-		UINT_32 tx_dly_int:1;
-		UINT_32 wpdma2host_err_int_ena:1;
-		UINT_32 rsv_25_27:3;
-		UINT_32 subsys_int_ena:1;
-		UINT_32 mcu2host_sw_int_ena:1;
-		UINT_32 rsv_30_31:2;
+		uint32_t rx_done_0:1;
+		uint32_t rx_done_1:1;
+		uint32_t err_det_int_0:1;
+		uint32_t err_det_int_1:1;
+		uint32_t tx_done:16;
+		uint32_t rx_coherent:1;
+		uint32_t tx_coherent:1;
+		uint32_t rx_dly_int:1;
+		uint32_t tx_dly_int:1;
+		uint32_t wpdma2host_err_int_ena:1;
+		uint32_t rsv_25_27:3;
+		uint32_t subsys_int_ena:1;
+		uint32_t mcu2host_sw_int_ena:1;
+		uint32_t rsv_30_31:2;
 	} field_conn;
 
-	UINT_32 word;
-} WPMDA_INT_MASK;
+	uint32_t word;
+};
 
 /* WPDMA_GLO_CFG */
-typedef union _WPDMA_GLO_CFG_STRUCT {
+union WPDMA_GLO_CFG_STRUCT {
 	struct {
-		UINT_32 EnableTxDMA:1;
-		UINT_32 TxDMABusy:1;
-		UINT_32 EnableRxDMA:1;
-		UINT_32 RxDMABusy:1;
-		UINT_32 WPDMABurstSIZE:2;
-		UINT_32 EnTXWriteBackDDONE:1;
-		UINT_32 BigEndian:1;
-		UINT_32 Desc32BEn:1;
-		UINT_32 share_fifo_en:1;
-		UINT_32 multi_dma_en:2;
-		UINT_32 fifo_little_endian:1;
-		UINT_32 mi_depth:3;
-		UINT_32 err_det_th:8;
-		UINT_32 sw_rst:1;
-		UINT_32 force_tx_eof:1;
-		UINT_32 rsv_26:1;
-		UINT_32 omit_rx_info:1;
-		UINT_32 omit_tx_info:1;
-		UINT_32 byte_swap:1;
-		UINT_32 clk_gate_dis:1;
-		UINT_32 rx_2b_offset:1;
+		uint32_t EnableTxDMA:1;
+		uint32_t TxDMABusy:1;
+		uint32_t EnableRxDMA:1;
+		uint32_t RxDMABusy:1;
+		uint32_t WPDMABurstSIZE:2;
+		uint32_t EnTXWriteBackDDONE:1;
+		uint32_t BigEndian:1;
+		uint32_t Desc32BEn:1;
+		uint32_t share_fifo_en:1;
+		uint32_t multi_dma_en:2;
+		uint32_t fifo_little_endian:1;
+		uint32_t mi_depth:3;
+		uint32_t err_det_th:8;
+		uint32_t sw_rst:1;
+		uint32_t force_tx_eof:1;
+		uint32_t rsv_26:1;
+		uint32_t omit_rx_info:1;
+		uint32_t omit_tx_info:1;
+		uint32_t byte_swap:1;
+		uint32_t clk_gate_dis:1;
+		uint32_t rx_2b_offset:1;
 	} field;
 
 	struct {
-		UINT_32 EnableTxDMA:1;
-		UINT_32 TxDMABusy:1;
-		UINT_32 EnableRxDMA:1;
-		UINT_32 RxDMABusy:1;
-		UINT_32 WPDMABurstSIZE:2;
-		UINT_32 EnTXWriteBackDDONE:1;
-		UINT_32 BigEndian:1;
-		UINT_32 dis_bt_size_align:1;
-		UINT_32 tx_bt_size:1;
-		UINT_32 multi_dma_en:2;
-		UINT_32 fifo_little_endian:1;
-		UINT_32 mi_depth:3;
-		UINT_32 mi_depth_rd_3_5:3;
-		UINT_32 mi_depth_rd_8_6:3;
-		UINT_32 tx_bt_size_bit21:2;
-		UINT_32 sw_rst:1;
-		UINT_32 force_tx_eof:1;
-		UINT_32 first_token:1;
-		UINT_32 omit_rx_info:1;
-		UINT_32 omit_tx_info:1;
-		UINT_32 byte_swap:1;
-		UINT_32 reserve_30:1;
-		UINT_32 rx_2b_offset:1;
+		uint32_t EnableTxDMA:1;
+		uint32_t TxDMABusy:1;
+		uint32_t EnableRxDMA:1;
+		uint32_t RxDMABusy:1;
+		uint32_t WPDMABurstSIZE:2;
+		uint32_t EnTXWriteBackDDONE:1;
+		uint32_t BigEndian:1;
+		uint32_t dis_bt_size_align:1;
+		uint32_t tx_bt_size:1;
+		uint32_t multi_dma_en:2;
+		uint32_t fifo_little_endian:1;
+		uint32_t mi_depth:3;
+		uint32_t mi_depth_rd_3_5:3;
+		uint32_t mi_depth_rd_8_6:3;
+		uint32_t tx_bt_size_bit21:2;
+		uint32_t sw_rst:1;
+		uint32_t force_tx_eof:1;
+		uint32_t first_token:1;
+		uint32_t omit_rx_info:1;
+		uint32_t omit_tx_info:1;
+		uint32_t byte_swap:1;
+		uint32_t reserve_30:1;
+		uint32_t rx_2b_offset:1;
 	} field_1;
 
 	struct {
-		UINT_32 tx_dma_en:1;
-		UINT_32 tx_dma_busy:1;
-		UINT_32 rx_dma_en:1;
-		UINT_32 rx_dma_busy:1;
-		UINT_32 pdma_bt_size:2;
-		UINT_32 tx_wb_ddone:1;
-		UINT_32 big_endian:1;
-		UINT_32 dmad_32b_en:1;
-		UINT_32 bypass_dmashdl_txring3:1;
-		UINT_32 multi_dma_en:2;
-		UINT_32 fifo_little_endian:1;
-		UINT_32 mi_depth:3;
-		UINT_32 dfet_arb_mi_depth:3;
-		UINT_32 pfet_arb_mi_depth:3;
-		UINT_32 reserved22:3;
-		UINT_32 force_tx_eof:1;
-		UINT_32 pdma_addr_ext_en:1;
-		UINT_32 omit_rx_info:1;
-		UINT_32 omit_tx_info:1;
-		UINT_32 byte_swap:1;
-		UINT_32 clk_gate_dis:1;
-		UINT_32 rx_2b_offset:1;
+		uint32_t tx_dma_en:1;
+		uint32_t tx_dma_busy:1;
+		uint32_t rx_dma_en:1;
+		uint32_t rx_dma_busy:1;
+		uint32_t pdma_bt_size:2;
+		uint32_t tx_wb_ddone:1;
+		uint32_t big_endian:1;
+		uint32_t dmad_32b_en:1;
+		uint32_t bypass_dmashdl_txring3:1;
+		uint32_t multi_dma_en:2;
+		uint32_t fifo_little_endian:1;
+		uint32_t mi_depth:3;
+		uint32_t dfet_arb_mi_depth:3;
+		uint32_t pfet_arb_mi_depth:3;
+		uint32_t reserved22:3;
+		uint32_t force_tx_eof:1;
+		uint32_t pdma_addr_ext_en:1;
+		uint32_t omit_rx_info:1;
+		uint32_t omit_tx_info:1;
+		uint32_t byte_swap:1;
+		uint32_t clk_gate_dis:1;
+		uint32_t rx_2b_offset:1;
 	} field_conn;
 
-	UINT_32 word;
-} WPDMA_GLO_CFG_STRUCT;
+	uint32_t word;
+};
 
 /* WPDMA_RST_PTR */
-typedef union _WPDMA_RST_IDX_STRUCT {
+union WPDMA_RST_IDX_STRUCT {
 	struct {
-		UINT_32 RST_DTX_IDX0:1;
-		UINT_32 RST_DTX_IDX1:1;
-		UINT_32 rsv_2_15:14;
-		UINT_32 RST_DRX_IDX0:1;
-		UINT_32 RST_DRX_IDX1:1;
-		UINT_32 rsv_18_31:14;
+		uint32_t RST_DTX_IDX0:1;
+		uint32_t RST_DTX_IDX1:1;
+		uint32_t rsv_2_15:14;
+		uint32_t RST_DRX_IDX0:1;
+		uint32_t RST_DRX_IDX1:1;
+		uint32_t rsv_18_31:14;
 	} field;
 
-	UINT_32 word;
-} WPDMA_RST_IDX_STRUCT;
+	uint32_t word;
+};
 
 /* WPDMA_DELAY_INT_CFG */
-typedef union _DELAY_INT_CFG_STRUCT {
+union DELAY_INT_CFG_STRUCT {
 	struct {
-		UINT_32 RXMAX_PTIME:8;
-		UINT_32 RXMAX_PINT:7;
-		UINT_32 RXDLY_INT_EN:1;
-		UINT_32 TXMAX_PTIME:8;
-		UINT_32 TXMAX_PINT:7;
-		UINT_32 TXDLY_INT_EN:1;
+		uint32_t RXMAX_PTIME:8;
+		uint32_t RXMAX_PINT:7;
+		uint32_t RXDLY_INT_EN:1;
+		uint32_t TXMAX_PTIME:8;
+		uint32_t TXMAX_PINT:7;
+		uint32_t TXDLY_INT_EN:1;
 	} field;
 
-	UINT_32 word;
-} DELAY_INT_CFG_STRUCT;
+	uint32_t word;
+};
 
 /* RTC_TOP_MISC2 */
 #define TOP_MISC2_CR4_INIT_DONE			BIT(18)
@@ -834,41 +834,41 @@ typedef union _DELAY_INT_CFG_STRUCT {
 #define MCR_SWPCDBGR				0x0154
 
 /* #if CFG_SDIO_INTR_ENHANCE */
-typedef struct _ENHANCE_MODE_DATA_STRUCT_T {
-	UINT_32 u4WHISR;
+struct ENHANCE_MODE_DATA_STRUCT {
+	uint32_t u4WHISR;
 	union {
 		struct {
-			UINT_16 u2TQ0Cnt;
-			UINT_16 u2TQ1Cnt;
-			UINT_16 u2TQ2Cnt;
-			UINT_16 u2TQ3Cnt;
-			UINT_16 u2TQ4Cnt;
-			UINT_16 u2TQ5Cnt;
-			UINT_16 u2TQ6Cnt;
-			UINT_16 u2TQ7Cnt;
-			UINT_16 u2TQ8Cnt;
-			UINT_16 u2TQ9Cnt;
-			UINT_16 u2TQ10Cnt;
-			UINT_16 u2TQ11Cnt;
-			UINT_16 u2TQ12Cnt;
-			UINT_16 u2TQ13Cnt;
-			UINT_16 u2TQ14Cnt;
-			UINT_16 u2TQ15Cnt;
+			uint16_t u2TQ0Cnt;
+			uint16_t u2TQ1Cnt;
+			uint16_t u2TQ2Cnt;
+			uint16_t u2TQ3Cnt;
+			uint16_t u2TQ4Cnt;
+			uint16_t u2TQ5Cnt;
+			uint16_t u2TQ6Cnt;
+			uint16_t u2TQ7Cnt;
+			uint16_t u2TQ8Cnt;
+			uint16_t u2TQ9Cnt;
+			uint16_t u2TQ10Cnt;
+			uint16_t u2TQ11Cnt;
+			uint16_t u2TQ12Cnt;
+			uint16_t u2TQ13Cnt;
+			uint16_t u2TQ14Cnt;
+			uint16_t u2TQ15Cnt;
 		} u;
-		UINT_32 au4WTSR[8];
+		uint32_t au4WTSR[8];
 	} rTxInfo;
 	union {
 		struct {
-			UINT_16 u2NumValidRx0Len;
-			UINT_16 u2NumValidRx1Len;
-			UINT_16 au2Rx0Len[16];
-			UINT_16 au2Rx1Len[16];
+			uint16_t u2NumValidRx0Len;
+			uint16_t u2NumValidRx1Len;
+			uint16_t au2Rx0Len[16];
+			uint16_t au2Rx1Len[16];
 		} u;
-		UINT_32 au4RxStatusRaw[17];
+		uint32_t au4RxStatusRaw[17];
 	} rRxInfo;
-	UINT_32 u4RcvMailbox0;
-	UINT_32 u4RcvMailbox1;
-} ENHANCE_MODE_DATA_STRUCT_T, *P_ENHANCE_MODE_DATA_STRUCT_T;
+	uint32_t u4RcvMailbox0;
+	uint32_t u4RcvMailbox1;
+};
 /* #endif *//* ENHANCE_MODE_DATA_STRUCT_T */
 
 /* 2 Definition in each register */
@@ -966,14 +966,14 @@ typedef struct _ENHANCE_MODE_DATA_STRUCT_T {
 ********************************************************************************
 */
 
-typedef enum _ENUM_WIFI_FUNC_T {
+enum ENUM_WIFI_FUNC {
 	WIFI_FUNC_INIT_DONE = BIT(0),
 	WIFI_FUNC_N9_DONE = BIT(1),
 	WIFI_FUNC_NO_CR4_READY_BITS = BITS(0, 1),
 	WIFI_FUNC_CR4_READY = BIT(2),
 	WIFI_FUNC_READY_BITS = BITS(0, 2),
 	WIFI_FUNC_DUMMY_REQ = BIT(3)
-} ENUM_WIFI_FUNC_T;
+};
 
 enum enum_mt66xx_chip {
 	MT66XX_CHIP_6632 = 0,
@@ -988,7 +988,7 @@ enum enum_workAround {
 };
 
 struct mt66xx_chip_info {
-	P_BUS_INFO bus_info;
+	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
 	struct TX_DESC_OPS_T *prTxDescOps;
 
@@ -1002,24 +1002,24 @@ struct mt66xx_chip_info {
 	const unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int isNicCapV1;
 
-	const P_ECO_INFO_T eco_info;	/* chip version table */
-	UINT_8 eco_ver;	/* chip version */
-	UINT_8 ucPacketFormat;
+	const struct ECO_INFO *eco_info;	/* chip version table */
+	uint8_t eco_ver;	/* chip version */
+	uint8_t ucPacketFormat;
 
-	UINT_16 u2TxInitCmdPort;
-	UINT_16 u2TxFwDlPort;
-	UINT_16 u2HifTxdSize;
-	UINT_32 u4ExtraTxByteCount;  /* Extra TXD Size for TX Byte Count field (in unit of Byte) */
-	UINT_32 u4HifDmaShdlBaseAddr;
+	uint16_t u2TxInitCmdPort;
+	uint16_t u2TxFwDlPort;
+	uint16_t u2HifTxdSize;
+	uint32_t u4ExtraTxByteCount;  /* Extra TXD Size for TX Byte Count field (in unit of Byte) */
+	uint32_t u4HifDmaShdlBaseAddr;
 
-	void (*asicCapInit)(IN P_ADAPTER_T prAdapter);
-	void (*asicEnableFWDownload)(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
-	void (*fillHifTxDesc)(IN PUINT_8 *pDest, IN PUINT_16 pInfoBufLen);
-	WLAN_STATUS (*downloadBufferBin)(IN P_ADAPTER_T prAdapter);
+	void (*asicCapInit)(IN struct ADAPTER *prAdapter);
+	void (*asicEnableFWDownload)(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable);
+	void (*fillHifTxDesc)(IN uint8_t **pDest, IN uint16_t *pInfoBufLen);
+	uint32_t (*downloadBufferBin)(IN struct ADAPTER *prAdapter);
 
-	const UINT_32 features;	/* feature bits */
-	BOOLEAN is_support_hw_amsdu;
-	UINT_32 workAround;
+	const uint32_t features;	/* feature bits */
+	u_int8_t is_support_hw_amsdu;
+	uint32_t workAround;
 };
 
 struct mt66xx_hif_driver_data {

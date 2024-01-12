@@ -88,7 +88,7 @@
 
 #if CFG_SUPPORT_PWR_LIMIT_COUNTRY
 /*Set to MAX_TX_PWR = 63dBm if larger than it*/
-COUNTRY_POWER_LIMIT_TABLE_DEFAULT g_rRlmPowerLimitDefault[] = {
+struct COUNTRY_POWER_LIMIT_TABLE_DEFAULT g_rRlmPowerLimitDefault[] = {
 
 	{{'A', 'R'}
 	 , {60, 34, 48, 48, 60}
@@ -1035,7 +1035,7 @@ COUNTRY_POWER_LIMIT_TABLE_DEFAULT g_rRlmPowerLimitDefault[] = {
 	 , 0}
 };
 
-COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION g_rRlmPowerLimitConfiguration[] = {
+struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION g_rRlmPowerLimitConfiguration[] = {
 
 	{{'A', 'I'}
 	 , 144, {48, 48, 48, 48, 48, 48, 48, 48, 48}

@@ -84,9 +84,9 @@
 #include <net/netlink.h>
 
 #if CFG_SUPPORT_WAPI
-extern UINT_8 keyStructBuf[1024];	/* add/remove key shared buffer */
+extern uint8_t keyStructBuf[1024];	/* add/remove key shared buffer */
 #else
-extern UINT_8 keyStructBuf[100];	/* add/remove key shared buffer */
+extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 /* workaround for some ANR CRs. if suppliant is blocked longer than 10s, wifi hal will tell wifiMonitor
 * to teminate. for the case which can block supplicant 10s is to del key more than 5 times. the root cause
@@ -105,7 +105,7 @@ extern UINT_8 keyStructBuf[100];	/* add/remove key shared buffer */
 
 #define QCA_NL80211_VENDOR_SUBCMD_SETBAND 105
 
-typedef enum {
+enum ANDROID_VENDOR_SUB_COMMAND {
 	/* Don't use 0 as a valid subcommand */
 	ANDROID_NL80211_SUBCMD_UNSPECIFIED,
 
@@ -134,9 +134,9 @@ typedef enum {
 
 	/* This is reserved for future usage */
 
-} ANDROID_VENDOR_SUB_COMMAND;
+};
 
-typedef enum {
+enum WIFI_SUB_COMMAND {
 	WIFI_SUBCMD_GET_CHANNEL_LIST = ANDROID_NL80211_SUBCMD_WIFI_RANGE_START,
 
 	WIFI_SUBCMD_GET_FEATURE_SET,                     /* 0x0002 */
@@ -148,9 +148,9 @@ typedef enum {
 	WIFI_SUBCMD_SET_ROAMING = 0x0009,		 /* 0x0009 */
 	/* Add more sub commands here */
 
-} WIFI_SUB_COMMAND;
+};
 
-typedef enum {
+enum GSCAN_SUB_COMMAND {
 	GSCAN_SUBCMD_GET_CAPABILITIES = ANDROID_NL80211_SUBCMD_GSCAN_RANGE_START,
 
 	GSCAN_SUBCMD_SET_CONFIG,						  /* 0x1001 */
@@ -165,13 +165,13 @@ typedef enum {
 	GSCAN_SUBCMD_ENABLE_FULL_SCAN_RESULTS,			  /* 0x1008 */
 	/* Add more sub commands here */
 
-} GSCAN_SUB_COMMAND;
+};
 
-typedef enum {
+enum LSTATS_SUB_COMMAND {
 	LSTATS_SUBCMD_GET_INFO = ANDROID_NL80211_SUBCMD_LSTATS_RANGE_START,
-} LSTATS_SUB_COMMAND;
+};
 
-typedef enum {
+enum WIFI_VENDOR_EVENT {
 	GSCAN_EVENT_SIGNIFICANT_CHANGE_RESULTS,
 	GSCAN_EVENT_HOTLIST_RESULTS_FOUND,
 	GSCAN_EVENT_SCAN_RESULTS_AVAILABLE,
@@ -179,9 +179,9 @@ typedef enum {
 	RTT_EVENT_COMPLETE,
 	GSCAN_EVENT_COMPLETE_SCAN,
 	GSCAN_EVENT_HOTLIST_RESULTS_LOST
-} WIFI_VENDOR_EVENT;
+};
 
-typedef enum {
+enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_BAND,
 	WIFI_ATTRIBUTE_NUM_CHANNELS,
 	WIFI_ATTRIBUTE_CHANNEL_LIST,
@@ -192,9 +192,9 @@ typedef enum {
 	WIFI_ATTRIBUTE_NODFS_VALUE,
 	WIFI_ATTRIBUTE_COUNTRY_CODE
 
-} WIFI_ATTRIBUTE;
+};
 
-typedef enum {
+enum GSCAN_ATTRIBUTE {
 	GSCAN_ATTRIBUTE_CAPABILITIES = 1,
 
 	GSCAN_ATTRIBUTE_NUM_BUCKETS = 10,
@@ -242,13 +242,13 @@ typedef enum {
 	GSCAN_ATTRIBUTE_SIGNIFICANT_CHANGE_BSSIDS,
 	GSCAN_ATTRIBUTE_SIGNIFICANT_CHANGE_FLUSH
 
-} GSCAN_ATTRIBUTE;
+};
 
-typedef enum {
+enum LSTATS_ATTRIBUTE {
 	LSTATS_ATTRIBUTE_STATS = 2,
-} LSTATS_ATTRIBUTE;
+};
 
-typedef enum {
+enum WIFI_BAND {
 	WIFI_BAND_UNSPECIFIED,
 	WIFI_BAND_BG = 1,		/* 2.4 GHz */
 	WIFI_BAND_A = 2,		/* 5 GHz without DFS */
@@ -256,12 +256,12 @@ typedef enum {
 	WIFI_BAND_A_WITH_DFS = 6,	/* 5 GHz with DFS */
 	WIFI_BAND_ABG = 3,		/* 2.4 GHz + 5 GHz; no DFS */
 	WIFI_BAND_ABG_WITH_DFS = 7, /* 2.4 GHz + 5 GHz with DFS */
-} WIFI_BAND;
+};
 
-typedef enum {
+enum WIFI_SCAN_EVENT {
 	WIFI_SCAN_BUFFER_FULL,
 	WIFI_SCAN_COMPLETE,
-} WIFI_SCAN_EVENT;
+};
 
 /* QCA Vender CMD */
 enum QCA_SET_BAND {
@@ -303,12 +303,7 @@ enum QCA_SET_BAND {
 *                            P U B L I C   D A T A
 ********************************************************************************
 */
-typedef UINT_64 wifi_timestamp;	/* In microseconds (us) */
-typedef UINT_64 wifi_timespan;	/* In nanoseconds  (ns) */
 
-typedef UINT_8 mac_addr[6];
-typedef UINT_32 wifi_channel;	/* indicates channel frequency in MHz */
-typedef INT_32 wifi_rssi;
 
 /*******************************************************************************
 *                           MACROS
@@ -352,38 +347,38 @@ typedef INT_32 wifi_rssi;
 *
 ********************************************************************************/
 
-typedef struct _PARAM_WIFI_GSCAN_GET_RESULT_PARAMS {
-	UINT_32 get_num;
-	UINT_8 flush;
-} PARAM_WIFI_GSCAN_GET_RESULT_PARAMS, *P_PARAM_WIFI_GSCAN_GET_RESULT_PARAMS;
+struct PARAM_WIFI_GSCAN_GET_RESULT_PARAMS {
+	uint32_t get_num;
+	uint8_t flush;
+};
 
-typedef struct _PARAM_WIFI_GSCAN_ACTION_CMD_PARAMS {
-	UINT_8 ucPscanAct;
-	UINT_8 aucReserved[3];
-} PARAM_WIFI_GSCAN_ACTION_CMD_PARAMS, *P_PARAM_WIFI_GSCAN_ACTION_CMD_PARAMS;
+struct PARAM_WIFI_GSCAN_ACTION_CMD_PARAMS {
+	uint8_t ucPscanAct;
+	uint8_t aucReserved[3];
+};
 
-typedef struct _PARAM_WIFI_GSCAN_CAPABILITIES_STRUCT_T {
-	UINT_32 max_scan_cache_size;	/*total space allocated for scan (in bytes) */
-	UINT_32 max_scan_buckets;	/*maximum number of channel buckets */
-	UINT_32 max_ap_cache_per_scan;	/*maximum number of APs that can be stored per scan */
-	UINT_32 max_rssi_sample_size;	/*number of RSSI samples used for averaging RSSI */
-	UINT_32 max_scan_reporting_threshold;	/*max possible report_threshold as described in wifi_scan_cmd_params */
-	UINT_32 max_hotlist_aps;	/*maximum number of entries for hotlist APs */
-	UINT_32 max_significant_wifi_change_aps;	/*maximum number of entries for significant wifi change APs */
-	UINT_32 max_bssid_history_entries;	/*number of BSSID/RSSI entries that device can hold */
-} PARAM_WIFI_GSCAN_CAPABILITIES_STRUCT_T, *P_PARAM_WIFI_GSCAN_CAPABILITIES_STRUCT_T;
+struct PARAM_WIFI_GSCAN_CAPABILITIES_STRUCT {
+	uint32_t max_scan_cache_size;	/*total space allocated for scan (in bytes) */
+	uint32_t max_scan_buckets;	/*maximum number of channel buckets */
+	uint32_t max_ap_cache_per_scan;	/*maximum number of APs that can be stored per scan */
+	uint32_t max_rssi_sample_size;	/*number of RSSI samples used for averaging RSSI */
+	uint32_t max_scan_reporting_threshold;	/*max possible report_threshold as described in wifi_scan_cmd_params */
+	uint32_t max_hotlist_aps;	/*maximum number of entries for hotlist APs */
+	uint32_t max_significant_wifi_change_aps;	/*maximum number of entries for significant wifi change APs */
+	uint32_t max_bssid_history_entries;	/*number of BSSID/RSSI entries that device can hold */
+};
 
-typedef struct _PARAM_WIFI_GSCAN_CHANNEL_SPEC {
-	UINT_32 channel;
-	UINT_32 dwellTimeMs;
-	UINT_32 passive;
+struct PARAM_WIFI_GSCAN_CHANNEL_SPEC {
+	uint32_t channel;
+	uint32_t dwellTimeMs;
+	uint32_t passive;
 	/* Add channel class */
-} PARAM_WIFI_GSCAN_CHANNEL_SPEC, *P_PARAM_WIFI_GSCAN_CHANNEL_SPEC;
+};
 
-typedef struct _PARAM_WIFI_GSCAN_BUCKET_SPEC {
-	UINT_32 bucket;		/* bucket index, 0 based */
-	WIFI_BAND band;		/*when UNSPECIFIED, use channel lis */
-	UINT_32 period;	/* desired period, in millisecond; if this is too  low, the firmware should choose to generate
+struct PARAM_WIFI_GSCAN_BUCKET_SPEC {
+	uint32_t bucket;		/* bucket index, 0 based */
+	enum WIFI_BAND band;		/*when UNSPECIFIED, use channel lis */
+	uint32_t period;	/* desired period, in millisecond; if this is too  low, the firmware should choose to generate
 			 *  results as fast as it can instead of failing the command
 			 */
 	/* report_events semantics -
@@ -393,83 +388,74 @@ typedef struct _PARAM_WIFI_GSCAN_BUCKET_SPEC {
 	 *  3 => same as 2 + forward scan results (beacons/probe responses + IEs) in real time to
 	 *  supplicant as well (optional) .
 	 */
-	UINT_8 report_events;
+	uint8_t report_events;
 
-	UINT_32 num_channels;
-	PARAM_WIFI_GSCAN_CHANNEL_SPEC channels[GSCAN_MAX_CHANNELS];
+	uint32_t num_channels;
+	struct PARAM_WIFI_GSCAN_CHANNEL_SPEC channels[GSCAN_MAX_CHANNELS];
 	/* channels to scan; these may include DFS channels */
-} PARAM_WIFI_GSCAN_BUCKET_SPEC, *P_PARAM_WIFI_GSCAN_BUCKET_SPEC;
+};
 
-typedef struct _PARAM_WIFI_GSCAN_CMD_PARAMS {
-	UINT_32 base_period;	/* base timer period in ms */
-	UINT_32 max_ap_per_scan;
+struct PARAM_WIFI_GSCAN_CMD_PARAMS {
+	uint32_t base_period;	/* base timer period in ms */
+	uint32_t max_ap_per_scan;
 	/* number of APs to store in each scan in the
 	* BSSID/RSSI history buffer (keep the highest RSSI APs)
 	*/
-	UINT_32 report_threshold;	/* in %, when scan buffer is this much full, wake up AP */
-	UINT_32 num_scans;
-	UINT_32 num_buckets;
-	PARAM_WIFI_GSCAN_BUCKET_SPEC buckets[GSCAN_MAX_BUCKETS];
-} PARAM_WIFI_GSCAN_CMD_PARAMS, *P_PARAM_WIFI_GSCAN_CMD_PARAMS;
+	uint32_t report_threshold;	/* in %, when scan buffer is this much full, wake up AP */
+	uint32_t num_scans;
+	uint32_t num_buckets;
+	struct PARAM_WIFI_GSCAN_BUCKET_SPEC buckets[GSCAN_MAX_BUCKETS];
+};
 
-typedef struct _PARAM_WIFI_GSCAN_RESULT {
-	wifi_timestamp ts;	/* time since boot (in microsecond) when the result was */
+struct PARAM_WIFI_GSCAN_RESULT {
+	uint64_t ts;	/* time since boot (in microsecond) when the result was */
 	/* retrieved */
-	UINT_8 ssid[32 + 1];	/* null terminated */
-	mac_addr bssid;
-	wifi_channel channel;	/* channel frequency in MHz */
-	wifi_rssi rssi;		/* in db */
-	wifi_timespan rtt;	/* in nanoseconds */
-	wifi_timespan rtt_sd;	/* standard deviation in rtt */
-	UINT_16 beacon_period;	/* period advertised in the beacon */
-	UINT_16 capability;	/* capabilities advertised in the beacon */
-	UINT_32 ie_length;	/* size of the ie_data blob */
-	UINT_8 ie_data[1];	/* blob of all the information elements found in the */
+	uint8_t ssid[32 + 1];	/* null terminated */
+	uint8_t bssid[6];
+	uint32_t channel;	/* channel frequency in MHz */
+	int32_t rssi;		/* in db */
+	uint64_t rtt;	/* in nanoseconds */
+	uint64_t rtt_sd;	/* standard deviation in rtt */
+	uint16_t beacon_period;	/* period advertised in the beacon */
+	uint16_t capability;	/* capabilities advertised in the beacon */
+	uint32_t ie_length;	/* size of the ie_data blob */
+	uint8_t ie_data[1];	/* blob of all the information elements found in the */
 	/* beacon; this data should be a packed list of */
 	/* wifi_information_element objects, one after the other. */
 	/* other fields */
-} PARAM_WIFI_GSCAN_RESULT, *P_PARAM_WIFI_GSCAN_RESULT;
+};
 
-	   /* Significant wifi change */
-#if 0
-	typedef struct _PARAM_WIFI_CHANGE_RESULT {
-		mac_addr bssid;	/* BSSID */
-		wifi_channel channel;	/* channel frequency in MHz */
-		UINT_32 num_rssi;	/* number of rssi samples */
-		wifi_rssi rssi[8];	/* RSSI history in db */
-	} PARAM_WIFI_CHANGE_RESULT, *P_PARAM_WIFI_CHANGE_RESULT;
-#endif
 
-typedef struct _PARAM_WIFI_CHANGE_RESULT {
-	UINT_16 flags;
-	UINT_16 channel;
-	mac_addr bssid;	/* BSSID */
-	INT_8 rssi[8];	/* RSSI history in db */
-} PARAM_WIFI_CHANGE_RESULT, *P_PARAM_WIFI_CHANGE_RESULT;
+struct PARAM_WIFI_CHANGE_RESULT {
+	uint16_t flags;
+	uint16_t channel;
+	uint8_t bssid[6];	/* BSSID */
+	int8_t rssi[8];	/* RSSI history in db */
+};
 
-typedef struct _PARAM_AP_THRESHOLD {
-	mac_addr bssid;	/* AP BSSID */
-	wifi_rssi low;	/* low threshold */
-	wifi_rssi high;	/* high threshold */
-	wifi_channel channel;	/* channel hint */
-} PARAM_AP_THRESHOLD, *P_PARAM_AP_THRESHOLD;
+struct PARAM_AP_THRESHOLD {
+	uint8_t bssid[6];	/* AP BSSID */
+	int32_t low;	/* low threshold */
+	int32_t high;	/* high threshold */
+	uint32_t channel;	/* channel hint */
+};
 
-typedef struct _PARAM_WIFI_BSSID_HOTLIST {
-	UINT_32 lost_ap_sample_size;
-	UINT_32 num_ap;	/* number of hotlist APs */
-	PARAM_AP_THRESHOLD ap[MAX_HOTLIST_APS];	/* hotlist APs */
-} PARAM_WIFI_BSSID_HOTLIST, *P_PARAM_WIFI_BSSID_HOTLIST;
+struct PARAM_WIFI_BSSID_HOTLIST {
+	uint32_t lost_ap_sample_size;
+	uint32_t num_ap;	/* number of hotlist APs */
+	struct PARAM_AP_THRESHOLD ap[MAX_HOTLIST_APS];	/* hotlist APs */
+};
 
-typedef struct _PARAM_WIFI_SIGNIFICANT_CHANGE {
-	UINT_16 rssi_sample_size;	/* number of samples for averaging RSSI */
-	UINT_16 lost_ap_sample_size;	/* number of samples to confirm AP loss */
-	UINT_16 min_breaching;	/* number of APs breaching threshold */
-	UINT_16 num_ap;	/* max 64 */
-	PARAM_AP_THRESHOLD ap[MAX_SIGNIFICANT_CHANGE_APS];
-} PARAM_WIFI_SIGNIFICANT_CHANGE, *P_PARAM_WIFI_SIGNIFICANT_CHANGE;
+struct PARAM_WIFI_SIGNIFICANT_CHANGE {
+	uint16_t rssi_sample_size;	/* number of samples for averaging RSSI */
+	uint16_t lost_ap_sample_size;	/* number of samples to confirm AP loss */
+	uint16_t min_breaching;	/* number of APs breaching threshold */
+	uint16_t num_ap;	/* max 64 */
+	struct PARAM_AP_THRESHOLD ap[MAX_SIGNIFICANT_CHANGE_APS];
+};
 
 /* channel operating width */
-typedef enum {
+enum WIFI_CHANNEL_WIDTH {
 	WIFI_CHAN_WIDTH_20 = 0,
 	WIFI_CHAN_WIDTH_40 = 1,
 	WIFI_CHAN_WIDTH_80 = 2,
@@ -478,77 +464,77 @@ typedef enum {
 	WIFI_CHAN_WIDTH_5 = 5,
 	WIFI_CHAN_WIDTH_10 = 6,
 	WIFI_CHAN_WIDTH_INVALID = -1
-} WIFI_CHANNEL_WIDTH;
+};
 
 /* channel information */
-typedef struct {
-	WIFI_CHANNEL_WIDTH width;
-	UINT_32 center_freq;
-	UINT_32 center_freq0;
-	UINT_32 center_freq1;
-} WIFI_CHANNEL_INFO;
+struct WIFI_CHANNEL_INFO {
+	enum WIFI_CHANNEL_WIDTH width;
+	uint32_t center_freq;
+	uint32_t center_freq0;
+	uint32_t center_freq1;
+};
 
 /* channel statistics */
-typedef struct {
-	WIFI_CHANNEL_INFO channel;
-	UINT_32 on_time;
-	UINT_32 cca_busy_time;
-} WIFI_CHANNEL_STAT;
+struct WIFI_CHANNEL_STAT {
+	struct WIFI_CHANNEL_INFO channel;
+	uint32_t on_time;
+	uint32_t cca_busy_time;
+};
 
 /* radio statistics */
-typedef struct {
-	UINT_32 radio;
-	UINT_32 on_time;
-	UINT_32 tx_time;
-	UINT_32 rx_time;
-	UINT_32 on_time_scan;
-	UINT_32 on_time_nbd;
-	UINT_32 on_time_gscan;
-	UINT_32 on_time_roam_scan;
-	UINT_32 on_time_pno_scan;
-	UINT_32 on_time_hs20;
-	UINT_32 num_channels;
-	WIFI_CHANNEL_STAT channels[];
-} WIFI_RADIO_STAT;
+struct WIFI_RADIO_STAT {
+	uint32_t radio;
+	uint32_t on_time;
+	uint32_t tx_time;
+	uint32_t rx_time;
+	uint32_t on_time_scan;
+	uint32_t on_time_nbd;
+	uint32_t on_time_gscan;
+	uint32_t on_time_roam_scan;
+	uint32_t on_time_pno_scan;
+	uint32_t on_time_hs20;
+	uint32_t num_channels;
+	struct WIFI_CHANNEL_STAT channels[];
+};
 
 /* wifi rate */
-typedef struct {
-	UINT_32 preamble:3;
-	UINT_32 nss:2;
-	UINT_32 bw:3;
-	UINT_32 rateMcsIdx:8;
+struct WIFI_RATE {
+	uint32_t preamble:3;
+	uint32_t nss:2;
+	uint32_t bw:3;
+	uint32_t rateMcsIdx:8;
 
-	UINT_32 reserved:16;
-	UINT_32 bitrate;
-} WIFI_RATE;
+	uint32_t reserved:16;
+	uint32_t bitrate;
+};
 
 /* per rate statistics */
-typedef struct {
-	WIFI_RATE rate;
-	UINT_32 tx_mpdu;
-	UINT_32 rx_mpdu;
-	UINT_32 mpdu_lost;
-	UINT_32 retries;
-	UINT_32 retries_short;
-	UINT_32 retries_long;
-} WIFI_RATE_STAT;
+struct WIFI_RATE_STAT {
+	struct WIFI_RATE rate;
+	uint32_t tx_mpdu;
+	uint32_t rx_mpdu;
+	uint32_t mpdu_lost;
+	uint32_t retries;
+	uint32_t retries_short;
+	uint32_t retries_long;
+};
 
 /*wifi_interface_link_layer_info*/
-typedef enum {
+enum WIFI_CONNECTION_STATE {
 	WIFI_DISCONNECTED = 0,
 	WIFI_AUTHENTICATING = 1,
 	WIFI_ASSOCIATING = 2,
 	WIFI_ASSOCIATED = 3,
 	WIFI_EAPOL_STARTED = 4,
 	WIFI_EAPOL_COMPLETED = 5,
-} WIFI_CONNECTION_STATE;
+};
 
-typedef enum {
+enum WIFI_ROAM_STATE {
 	WIFI_ROAMING_IDLE = 0,
 	WIFI_ROAMING_ACTIVE = 1,
-} WIFI_ROAM_STATE;
+};
 
-typedef enum {
+enum WIFI_INTERFACE_MODE {
 	WIFI_INTERFACE_STA = 0,
 	WIFI_INTERFACE_SOFTAP = 1,
 	WIFI_INTERFACE_IBSS = 2,
@@ -557,31 +543,31 @@ typedef enum {
 	WIFI_INTERFACE_NAN = 5,
 	WIFI_INTERFACE_MESH = 6,
 	WIFI_INTERFACE_UNKNOWN = -1
-} WIFI_INTERFACE_MODE;
+};
 
-typedef struct {
-	WIFI_INTERFACE_MODE mode;
+struct WIFI_INTERFACE_LINK_LAYER_INFO {
+	enum WIFI_INTERFACE_MODE mode;
 	u8 mac_addr[6];
-	WIFI_CONNECTION_STATE state;
-	WIFI_ROAM_STATE roaming;
+	enum WIFI_CONNECTION_STATE state;
+	enum WIFI_ROAM_STATE roaming;
 	u32 capabilities;
 	u8 ssid[33];
 	u8 bssid[6];
 	u8 ap_country_str[3];
 	u8 country_str[3];
-} WIFI_INTERFACE_LINK_LAYER_INFO;
+};
 
 /* access categories */
-typedef enum {
+enum WIFI_TRAFFIC_AC {
 	WIFI_AC_VO = 0,
 	WIFI_AC_VI = 1,
 	WIFI_AC_BE = 2,
 	WIFI_AC_BK = 3,
 	WIFI_AC_MAX = 4,
-} WIFI_TRAFFIC_AC;
+};
 
 /* wifi peer type */
-typedef enum {
+enum WIFI_PEER_TYPE {
 	WIFI_PEER_STA,
 	WIFI_PEER_AP,
 	WIFI_PEER_P2P_GO,
@@ -589,59 +575,59 @@ typedef enum {
 	WIFI_PEER_NAN,
 	WIFI_PEER_TDLS,
 	WIFI_PEER_INVALID,
-} WIFI_PEER_TYPE;
+};
 
 /* per peer statistics */
-typedef struct {
-	WIFI_PEER_TYPE type;
-	UINT_8 peer_mac_address[6];
-	UINT_32 capabilities;
-	UINT_32 num_rate;
-	WIFI_RATE_STAT rate_stats[];
-} WIFI_PEER_INFO;
+struct WIFI_PEER_INFO {
+	enum WIFI_PEER_TYPE type;
+	uint8_t peer_mac_address[6];
+	uint32_t capabilities;
+	uint32_t num_rate;
+	struct WIFI_RATE_STAT rate_stats[];
+};
 
 /* per access category statistics */
-typedef struct {
-	WIFI_TRAFFIC_AC ac;
-	UINT_32 tx_mpdu;
-	UINT_32 rx_mpdu;
-	UINT_32 tx_mcast;
+struct WIFI_WMM_AC_STAT_ {
+	enum WIFI_TRAFFIC_AC ac;
+	uint32_t tx_mpdu;
+	uint32_t rx_mpdu;
+	uint32_t tx_mcast;
 
-	UINT_32 rx_mcast;
-	UINT_32 rx_ampdu;
-	UINT_32 tx_ampdu;
-	UINT_32 mpdu_lost;
-	UINT_32 retries;
-	UINT_32 retries_short;
-	UINT_32 retries_long;
-	UINT_32 contention_time_min;
-	UINT_32 contention_time_max;
-	UINT_32 contention_time_avg;
-	UINT_32 contention_num_samples;
-} WIFI_WMM_AC_STAT;
+	uint32_t rx_mcast;
+	uint32_t rx_ampdu;
+	uint32_t tx_ampdu;
+	uint32_t mpdu_lost;
+	uint32_t retries;
+	uint32_t retries_short;
+	uint32_t retries_long;
+	uint32_t contention_time_min;
+	uint32_t contention_time_max;
+	uint32_t contention_time_avg;
+	uint32_t contention_num_samples;
+};
 
 /* interface statistics */
-typedef struct {
-	WIFI_INTERFACE_LINK_LAYER_INFO info;
-	UINT_32 beacon_rx;
-	UINT_32 mgmt_rx;
-	UINT_32 mgmt_action_rx;
-	UINT_32 mgmt_action_tx;
-	wifi_rssi rssi_mgmt;
-	wifi_rssi rssi_data;
-	wifi_rssi rssi_ack;
-	WIFI_WMM_AC_STAT ac[WIFI_AC_MAX];
-	UINT_32 num_peers;
-	WIFI_PEER_INFO peer_info[];
-} WIFI_IFACE_STAT;
+struct WIFI_IFACE_STAT {
+	struct WIFI_INTERFACE_LINK_LAYER_INFO info;
+	uint32_t beacon_rx;
+	uint32_t mgmt_rx;
+	uint32_t mgmt_action_rx;
+	uint32_t mgmt_action_tx;
+	int32_t rssi_mgmt;
+	int32_t rssi_data;
+	int32_t rssi_ack;
+	struct WIFI_WMM_AC_STAT_ ac[WIFI_AC_MAX];
+	uint32_t num_peers;
+	struct WIFI_PEER_INFO peer_info[];
+};
 
 
-typedef enum _ENUM_NLA_PUT_DATE_TYPE {
+enum ENUM_NLA_PUT_DATE_TYPE {
 	NLA_PUT_DATE_U8 = 0,
 	NLA_PUT_DATE_U16,
 	NLA_PUT_DATE_U32,
 	NLA_PUT_DATE_U64,
-} ENUM_NLA_PUT_DATE_TYPE;
+};
 
 
 /*******************************************************************************
@@ -657,7 +643,7 @@ typedef enum _ENUM_NLA_PUT_DATE_TYPE {
 */
 int mtk_cfg80211_NLA_PUT(struct sk_buff *skb, int attrtype, int attrlen, const void *data);
 
-int mtk_cfg80211_nla_put_type(struct sk_buff *skb, ENUM_NLA_PUT_DATE_TYPE type, int attrtype, const void *value);
+int mtk_cfg80211_nla_put_type(struct sk_buff *skb, enum ENUM_NLA_PUT_DATE_TYPE type, int attrtype, const void *value);
 
 int mtk_cfg80211_vendor_get_capabilities(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);
@@ -694,22 +680,22 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy, struct wireless_de
 					const void *data, int data_len);
 
 int mtk_cfg80211_vendor_event_complete_scan(struct wiphy *wiphy, struct wireless_dev *wdev,
-					WIFI_SCAN_EVENT complete);
+					enum WIFI_SCAN_EVENT complete);
 
 int mtk_cfg80211_vendor_event_scan_results_available(struct wiphy *wiphy, struct wireless_dev *wdev,
-					UINT_32 num);
+					uint32_t num);
 
 int mtk_cfg80211_vendor_event_full_scan_results(struct wiphy *wiphy, struct wireless_dev *wdev,
-					P_PARAM_WIFI_GSCAN_RESULT pdata, UINT_32 data_len);
+					struct PARAM_WIFI_GSCAN_RESULT *pdata, uint32_t data_len);
 
 int mtk_cfg80211_vendor_event_significant_change_results(struct wiphy *wiphy, struct wireless_dev *wdev,
-					P_PARAM_WIFI_CHANGE_RESULT pdata, UINT_32 data_len);
+					struct PARAM_WIFI_CHANGE_RESULT *pdata, uint32_t data_len);
 
 int mtk_cfg80211_vendor_event_hotlist_ap_found(struct wiphy *wiphy, struct wireless_dev *wdev,
-					P_PARAM_WIFI_GSCAN_RESULT pdata, UINT_32 data_len);
+					struct PARAM_WIFI_GSCAN_RESULT *pdata, uint32_t data_len);
 
 int mtk_cfg80211_vendor_event_hotlist_ap_lost(struct wiphy *wiphy, struct wireless_dev *wdev,
-					P_PARAM_WIFI_GSCAN_RESULT pdata, UINT_32 data_len);
+					struct PARAM_WIFI_GSCAN_RESULT *pdata, uint32_t data_len);
 
 int mtk_cfg80211_vendor_set_band(struct wiphy *wiphy, struct wireless_dev *wdev,
 					const void *data, int data_len);

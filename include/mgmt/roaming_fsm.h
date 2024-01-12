@@ -88,75 +88,75 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef enum _ENUM_ROAMING_FAIL_REASON_T {
+enum ENUM_ROAMING_FAIL_REASON {
 	ROAMING_FAIL_REASON_CONNLIMIT = 0,
 	ROAMING_FAIL_REASON_NOCANDIDATE,
 	ROAMING_FAIL_REASON_NUM
-} ENUM_ROAMING_FAIL_REASON_T;
+};
 
 /* events of roaming between driver and firmware */
-typedef enum _ENUM_ROAMING_EVENT_T {
+enum ENUM_ROAMING_EVENT {
 	ROAMING_EVENT_START = 0,
 	ROAMING_EVENT_DISCOVERY,
 	ROAMING_EVENT_ROAM,
 	ROAMING_EVENT_FAIL,
 	ROAMING_EVENT_ABORT,
 	ROAMING_EVENT_NUM
-} ENUM_ROAMING_EVENT_T;
+};
 
-typedef enum _ENUM_ROAMING_REASON_T {
+enum ENUM_ROAMING_REASON {
 	ROAMING_REASON_POOR_RCPI = 0,
 	ROAMING_REASON_TX_ERR, /*Lowest rate, high PER*/
 	ROAMING_REASON_RETRY,
 	ROAMING_REASON_NUM
-} ENUM_ROAMING_REASON_T;
+};
 
-typedef struct _CMD_ROAMING_TRANSIT_T {
-	UINT_16	u2Event;
-	UINT_16	u2Data;
-	UINT_16	u2RcpiLowThreshold;
-	UINT_8	ucIsSupport11B;
-	UINT_8	aucReserved[1];
-	ENUM_ROAMING_REASON_T	eReason;
-	UINT_32	u4RoamingTriggerTime; /*sec in mcu*/
-	UINT_8 aucReserved2[8];
-} CMD_ROAMING_TRANSIT_T, *P_CMD_ROAMING_TRANSIT_T;
+struct CMD_ROAMING_TRANSIT {
+	uint16_t	u2Event;
+	uint16_t	u2Data;
+	uint16_t	u2RcpiLowThreshold;
+	uint8_t	ucIsSupport11B;
+	uint8_t	aucReserved[1];
+	enum ENUM_ROAMING_REASON	eReason;
+	uint32_t	u4RoamingTriggerTime; /*sec in mcu*/
+	uint8_t aucReserved2[8];
+};
 
 
-typedef struct _CMD_ROAMING_CTRL_T {
-	UINT_8 fgEnable;
-	UINT_8 ucRcpiAdjustStep;
-	UINT_16 u2RcpiLowThr;
-	UINT_8 ucRoamingRetryLimit;
-	UINT_8 ucRoamingStableTimeout;
-	UINT_8 aucReserved[2];
-} CMD_ROAMING_CTRL_T, *P_CMD_ROAMING_CTRL_T;
+struct CMD_ROAMING_CTRL {
+	uint8_t fgEnable;
+	uint8_t ucRcpiAdjustStep;
+	uint16_t u2RcpiLowThr;
+	uint8_t ucRoamingRetryLimit;
+	uint8_t ucRoamingStableTimeout;
+	uint8_t aucReserved[2];
+};
 
 #if CFG_SUPPORT_ROAMING_SKIP_ONE_AP
-typedef struct _CMD_ROAMING_SKIP_ONE_AP_T {
-	  UINT_8	  fgIsRoamingSkipOneAP;
-	  UINT_8	  aucReserved[3];
-	  UINT_8	  aucReserved2[8];
-} CMD_ROAMING_SKIP_ONE_AP_T, *P_CMD_ROAMING_SKIP_ONE_AP_T;
+struct CMD_ROAMING_SKIP_ONE_AP {
+	  uint8_t	  fgIsRoamingSkipOneAP;
+	  uint8_t	  aucReserved[3];
+	  uint8_t	  aucReserved2[8];
+};
 #endif
 
- /**/ typedef enum _ENUM_ROAMING_STATE_T {
+enum ENUM_ROAMING_STATE {
 	ROAMING_STATE_IDLE = 0,
 	ROAMING_STATE_DECISION,
 	ROAMING_STATE_DISCOVERY,
 	ROAMING_STATE_ROAM,
 	ROAMING_STATE_NUM
-} ENUM_ROAMING_STATE_T;
+};
 
-typedef struct _ROAMING_INFO_T {
-	BOOLEAN fgIsEnableRoaming;
+struct ROAMING_INFO {
+	u_int8_t fgIsEnableRoaming;
 
-	ENUM_ROAMING_STATE_T eCurrentState;
+	enum ENUM_ROAMING_STATE eCurrentState;
 
 	OS_SYSTIME rRoamingDiscoveryUpdateTime;
 
-	BOOLEAN fgDrvRoamingAllow;
-} ROAMING_INFO_T, *P_ROAMING_INFO_T;
+	u_int8_t fgDrvRoamingAllow;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -184,27 +184,27 @@ typedef struct _ROAMING_INFO_T {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID roamingFsmInit(IN P_ADAPTER_T prAdapter);
+void roamingFsmInit(IN struct ADAPTER *prAdapter);
 
-VOID roamingFsmUninit(IN P_ADAPTER_T prAdapter);
+void roamingFsmUninit(IN struct ADAPTER *prAdapter);
 
-VOID roamingFsmSendCmd(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTransit);
+void roamingFsmSendCmd(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit);
 
-VOID roamingFsmScanResultsUpdate(IN P_ADAPTER_T prAdapter);
+void roamingFsmScanResultsUpdate(IN struct ADAPTER *prAdapter);
 
-VOID roamingFsmSteps(IN P_ADAPTER_T prAdapter, IN ENUM_ROAMING_STATE_T eNextState);
+void roamingFsmSteps(IN struct ADAPTER *prAdapter, IN enum ENUM_ROAMING_STATE eNextState);
 
-VOID roamingFsmRunEventStart(IN P_ADAPTER_T prAdapter);
+void roamingFsmRunEventStart(IN struct ADAPTER *prAdapter);
 
-VOID roamingFsmRunEventDiscovery(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTransit);
+void roamingFsmRunEventDiscovery(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit);
 
-VOID roamingFsmRunEventRoam(IN P_ADAPTER_T prAdapter);
+void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter);
 
-VOID roamingFsmRunEventFail(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Reason);
+void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter, IN uint32_t u4Reason);
 
-VOID roamingFsmRunEventAbort(IN P_ADAPTER_T prAdapter);
+void roamingFsmRunEventAbort(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS roamingFsmProcessEvent(IN P_ADAPTER_T prAdapter, IN P_CMD_ROAMING_TRANSIT_T prTransit);
+uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter, IN struct CMD_ROAMING_TRANSIT *prTransit);
 
 /*******************************************************************************
 *                              F U N C T I O N S

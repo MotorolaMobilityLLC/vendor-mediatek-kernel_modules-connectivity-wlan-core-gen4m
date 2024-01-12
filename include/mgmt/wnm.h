@@ -82,14 +82,14 @@
 ********************************************************************************
 */
 
-typedef struct _TIMINGMSMT_PARAM_T {
-	BOOLEAN fgInitiator;
-	UINT_8 ucTrigger;
-	UINT_8 ucDialogToken;	/* Dialog Token */
-	UINT_8 ucFollowUpDialogToken;	/* Follow Up Dialog Token */
-	UINT_32 u4ToD;		/* Timestamp of Departure [10ns] */
-	UINT_32 u4ToA;		/* Timestamp of Arrival [10ns] */
-} TIMINGMSMT_PARAM_T, *P_TIMINGMSMT_PARAM_T;
+struct TIMINGMSMT_PARAM {
+	u_int8_t fgInitiator;
+	uint8_t ucTrigger;
+	uint8_t ucDialogToken;	/* Dialog Token */
+	uint8_t ucFollowUpDialogToken;	/* Follow Up Dialog Token */
+	uint32_t u4ToD;		/* Timestamp of Departure [10ns] */
+	uint32_t u4ToA;		/* Timestamp of Arrival [10ns] */
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -111,12 +111,12 @@ typedef struct _TIMINGMSMT_PARAM_T {
 ********************************************************************************
 */
 
-VOID wnmWNMAction(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb);
+void wnmWNMAction(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb);
 
-VOID wnmReportTimingMeas(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIndex, IN UINT_32 u4ToD, IN UINT_32 u4ToA);
+void wnmReportTimingMeas(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIndex, IN uint32_t u4ToD, IN uint32_t u4ToA);
 
 #if WNM_UNIT_TEST
-VOID wnmTimingMeasUnitTest1(P_ADAPTER_T prAdapter, UINT_8 ucStaRecIndex);
+void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter, uint8_t ucStaRecIndex);
 #endif
 
 /*******************************************************************************

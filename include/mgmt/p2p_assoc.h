@@ -98,6 +98,6 @@
  ********************************************************************************
  */
 
-PUINT_8 p2pBuildReAssocReqFrameCommonIEs(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN PUINT_8 pucBuffer);
+uint8_t *p2pBuildReAssocReqFrameCommonIEs(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint8_t *pucBuffer);
 
 #endif

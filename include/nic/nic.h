@@ -78,28 +78,28 @@
 ********************************************************************************
 */
 
-struct _REG_ENTRY_T {
-	UINT_32 u4Offset;
-	UINT_32 u4Value;
+struct REG_ENTRY {
+	uint32_t u4Offset;
+	uint32_t u4Value;
 };
 
 struct _TABLE_ENTRY_T {
-	P_REG_ENTRY_T pu4TablePtr;
-	UINT_16 u2Size;
+	struct REG_ENTRY *pu4TablePtr;
+	uint16_t u2Size;
 };
 
 /*! INT status to event map */
-typedef struct _INT_EVENT_MAP_T {
-	UINT_32 u4Int;
-	UINT_32 u4Event;
-} INT_EVENT_MAP_T, *P_INT_EVENT_MAP_T;
+struct INT_EVENT_MAP {
+	uint32_t u4Int;
+	uint32_t u4Event;
+};
 
-typedef struct _ECO_INFO_T {
-	UINT_8 ucHwVer;
-	UINT_8 ucRomVer;
-	UINT_8 ucFactoryVer;
-	UINT_8 ucEcoVer;
-} ECO_INFO_T, *P_ECO_INFO_T;
+struct ECO_INFO {
+	uint8_t ucHwVer;
+	uint8_t ucRomVer;
+	uint8_t ucFactoryVer;
+	uint8_t ucEcoVer;
+};
 
 enum ENUM_INT_EVENT_T {
 	INT_EVENT_ABNORMAL,
@@ -109,20 +109,20 @@ enum ENUM_INT_EVENT_T {
 	INT_EVENT_NUM
 };
 
-typedef enum _ENUM_IE_UPD_METHOD_T {
+enum ENUM_IE_UPD_METHOD {
 	IE_UPD_METHOD_UPDATE_RANDOM,
 	IE_UPD_METHOD_UPDATE_ALL,
 	IE_UPD_METHOD_DELETE_ALL,
-} ENUM_IE_UPD_METHOD_T, *P_ENUM_IE_UPD_METHOD_T;
+};
 
-typedef enum _ENUM_SER_STATE_T {
+enum ENUM_SER_STATE {
 	SER_IDLE_DONE,       /* SER is idle or done */
 	SER_STOP_HOST_TX,    /* Host HIF Tx is stopped */
 	SER_STOP_HOST_TX_RX, /* Host HIF Tx/Rx is stopped */
 	SER_REINIT_HIF,      /* Host HIF is reinit */
 
 	SER_STATE_NUM
-} ENUM_SER_STATE_T, *P_ENUM_SER_STATE_T;
+};
 
 /* Test mode bitmask of disable flag */
 #define TEST_MODE_DISABLE_ONLINE_SCAN  BIT(0)
@@ -162,221 +162,221 @@ typedef enum _ENUM_SER_STATE_T {
 /*----------------------------------------------------------------------------*/
 /* Routines in nic.c                                                          */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicAllocateAdapterMemory(IN P_ADAPTER_T prAdapter);
+uint32_t nicAllocateAdapterMemory(IN struct ADAPTER *prAdapter);
 
-VOID nicReleaseAdapterMemory(IN P_ADAPTER_T prAdapter);
+void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter);
 
-VOID nicDisableInterrupt(IN P_ADAPTER_T prAdapter);
+void nicDisableInterrupt(IN struct ADAPTER *prAdapter);
 
-VOID nicEnableInterrupt(IN P_ADAPTER_T prAdapter);
+void nicEnableInterrupt(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS nicProcessIST(IN P_ADAPTER_T prAdapter);
+uint32_t nicProcessIST(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS nicProcessIST_impl(IN P_ADAPTER_T prAdapter, IN UINT_32 u4IntStatus);
+uint32_t nicProcessIST_impl(IN struct ADAPTER *prAdapter, IN uint32_t u4IntStatus);
 
-WLAN_STATUS nicInitializeAdapter(IN P_ADAPTER_T prAdapter);
+uint32_t nicInitializeAdapter(IN struct ADAPTER *prAdapter);
 
-VOID nicMCRInit(IN P_ADAPTER_T prAdapter);
+void nicMCRInit(IN struct ADAPTER *prAdapter);
 
-BOOL nicVerifyChipID(IN P_ADAPTER_T prAdapter);
+u_int8_t nicVerifyChipID(IN struct ADAPTER *prAdapter);
 
-VOID nicpmWakeUpWiFi(IN P_ADAPTER_T prAdapter);
+void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter);
 
-BOOLEAN nicpmSetDriverOwn(IN P_ADAPTER_T prAdapter);
+u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter);
 
-VOID nicpmSetFWOwn(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgEnableGlobalInt);
+void nicpmSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt);
 
-BOOLEAN nicpmSetAcpiPowerD0(IN P_ADAPTER_T prAdapter);
+u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter);
 
-BOOLEAN nicpmSetAcpiPowerD3(IN P_ADAPTER_T prAdapter);
+u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter);
 
 #if defined(_HIF_SPI)
-void nicRestoreSpiDefMode(IN P_ADAPTER_T prAdapter);
+void nicRestoreSpiDefMode(IN struct ADAPTER *prAdapter);
 #endif
 
-VOID nicProcessSoftwareInterrupt(IN P_ADAPTER_T prAdapter);
+void nicProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter);
 
-VOID nicProcessAbnormalInterrupt(IN P_ADAPTER_T prAdapter);
+void nicProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter);
 
-VOID nicSetSwIntr(IN P_ADAPTER_T prAdapter, IN UINT_32 u4SwIntrBitmap);
+void nicSetSwIntr(IN struct ADAPTER *prAdapter, IN uint32_t u4SwIntrBitmap);
 
-P_CMD_INFO_T nicGetPendingCmdInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucSeqNum);
+struct CMD_INFO *nicGetPendingCmdInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucSeqNum);
 
-P_MSDU_INFO_T nicGetPendingTxMsduInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucWlanIndex, IN UINT_8 ucSeqNum);
+struct MSDU_INFO *nicGetPendingTxMsduInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucWlanIndex, IN uint8_t ucSeqNum);
 
-VOID nicFreePendingTxMsduInfoByBssIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+void nicFreePendingTxMsduInfoByBssIdx(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-UINT_8 nicIncreaseCmdSeqNum(IN P_ADAPTER_T prAdapter);
+uint8_t nicIncreaseCmdSeqNum(IN struct ADAPTER *prAdapter);
 
-UINT_8 nicIncreaseTxSeqNum(IN P_ADAPTER_T prAdapter);
+uint8_t nicIncreaseTxSeqNum(IN struct ADAPTER *prAdapter);
 
 /* Media State Change */
-WLAN_STATUS
-nicMediaStateChange(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_EVENT_CONNECTION_STATUS prConnectionStatus);
+uint32_t
+nicMediaStateChange(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct EVENT_CONNECTION_STATUS *prConnectionStatus);
 
-WLAN_STATUS nicMediaJoinFailure(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN WLAN_STATUS rStatus);
+uint32_t nicMediaJoinFailure(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN uint32_t rStatus);
 
 /* Utility function for channel number conversion */
-UINT_32 nicChannelNum2Freq(IN UINT_32 u4ChannelNum);
+uint32_t nicChannelNum2Freq(IN uint32_t u4ChannelNum);
 
-UINT_32 nicFreq2ChannelNum(IN UINT_32 u4FreqInKHz);
+uint32_t nicFreq2ChannelNum(IN uint32_t u4FreqInKHz);
 
-UINT_8 nicGetVhtS1(IN UINT_8 ucPrimaryChannel, IN UINT_8 ucBandwidth);
+uint8_t nicGetVhtS1(IN uint8_t ucPrimaryChannel, IN uint8_t ucBandwidth);
 
 /* firmware command wrapper */
     /* NETWORK (WIFISYS) */
-WLAN_STATUS nicActivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-WLAN_STATUS nicDeactivateNetwork(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
     /* BSS-INFO */
-WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
     /* BSS-INFO Indication (PM) */
-WLAN_STATUS nicPmIndicateBssCreated(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicPmIndicateBssCreated(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-WLAN_STATUS nicPmIndicateBssConnected(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicPmIndicateBssConnected(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-WLAN_STATUS nicPmIndicateBssAbort(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicPmIndicateBssAbort(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
     /* Beacon Template Update */
-WLAN_STATUS
-nicUpdateBeaconIETemplate(IN P_ADAPTER_T prAdapter,
-			  IN ENUM_IE_UPD_METHOD_T eIeUpdMethod,
-			  IN UINT_8 ucBssIndex, IN UINT_16 u2Capability, IN PUINT_8 aucIe, IN UINT_16 u2IELen);
+uint32_t
+nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
+			  IN enum ENUM_IE_UPD_METHOD eIeUpdMethod,
+			  IN uint8_t ucBssIndex, IN uint16_t u2Capability, IN uint8_t *aucIe, IN uint16_t u2IELen);
 
-WLAN_STATUS nicQmUpdateWmmParms(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex);
+uint32_t nicQmUpdateWmmParms(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex);
 
-WLAN_STATUS nicSetAutoTxPower(IN P_ADAPTER_T prAdapter, IN P_CMD_AUTO_POWER_PARAM_T prAutoPwrParam);
+uint32_t nicSetAutoTxPower(IN struct ADAPTER *prAdapter, IN struct CMD_AUTO_POWER_PARAM *prAutoPwrParam);
 
 /*----------------------------------------------------------------------------*/
 /* Calibration Control                                                        */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicUpdateTxPower(IN P_ADAPTER_T prAdapter, IN P_CMD_TX_PWR_T prTxPwrParam);
+uint32_t nicUpdateTxPower(IN struct ADAPTER *prAdapter, IN struct CMD_TX_PWR *prTxPwrParam);
 
-WLAN_STATUS nicUpdate5GOffset(IN P_ADAPTER_T prAdapter, IN P_CMD_5G_PWR_OFFSET_T pr5GPwrOffset);
+uint32_t nicUpdate5GOffset(IN struct ADAPTER *prAdapter, IN struct CMD_5G_PWR_OFFSET *pr5GPwrOffset);
 
-WLAN_STATUS nicUpdateDPD(IN P_ADAPTER_T prAdapter, IN P_CMD_PWR_PARAM_T prDpdCalResult);
+uint32_t nicUpdateDPD(IN struct ADAPTER *prAdapter, IN struct CMD_PWR_PARAM *prDpdCalResult);
 
 /*----------------------------------------------------------------------------*/
 /* PHY configuration                                                          */
 /*----------------------------------------------------------------------------*/
-VOID nicSetAvailablePhyTypeSet(IN P_ADAPTER_T prAdapter);
+void nicSetAvailablePhyTypeSet(IN struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* MGMT and System Service Control                                            */
 /*----------------------------------------------------------------------------*/
-VOID nicInitSystemService(IN P_ADAPTER_T prAdapter);
+void nicInitSystemService(IN struct ADAPTER *prAdapter);
 
-VOID nicResetSystemService(IN P_ADAPTER_T prAdapter);
+void nicResetSystemService(IN struct ADAPTER *prAdapter);
 
-VOID nicUninitSystemService(IN P_ADAPTER_T prAdapter);
+void nicUninitSystemService(IN struct ADAPTER *prAdapter);
 
-VOID nicInitMGMT(IN P_ADAPTER_T prAdapter, IN P_REG_INFO_T prRegInfo);
+void nicInitMGMT(IN struct ADAPTER *prAdapter, IN struct REG_INFO *prRegInfo);
 
-VOID nicUninitMGMT(IN P_ADAPTER_T prAdapter);
+void nicUninitMGMT(IN struct ADAPTER *prAdapter);
 
-WLAN_STATUS
-nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter, UINT_8 ucBssIndex, PARAM_POWER_MODE ePwrMode, BOOLEAN fgEnCmdEvent);
+uint32_t
+nicConfigPowerSaveProfile(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex, enum PARAM_POWER_MODE ePwrMode, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS
-nicConfigProcSetCamCfgWrite(IN P_ADAPTER_T prAdapter, IN BOOLEAN enabled);
+uint32_t
+nicConfigProcSetCamCfgWrite(IN struct ADAPTER *prAdapter, IN u_int8_t enabled);
 
-WLAN_STATUS nicEnterCtiaMode(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS nicEnterTPTestMode(IN P_ADAPTER_T prAdapter, IN UINT_8 ucFuncMask);
+uint32_t nicEnterTPTestMode(IN struct ADAPTER *prAdapter, IN uint8_t ucFuncMask);
 
-WLAN_STATUS nicEnterCtiaModeOfScan(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfScan(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS nicEnterCtiaModeOfRoaming(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfRoaming(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS nicEnterCtiaModeOfCAM(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfCAM(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS nicEnterCtiaModeOfBCNTimeout(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfBCNTimeout(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS nicEnterCtiaModeOfAutoTxPower(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfAutoTxPower(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 
-WLAN_STATUS nicEnterCtiaModeOfFIFOFullNoAck(IN P_ADAPTER_T prAdapter, BOOLEAN fgEnterCtia, BOOLEAN fgEnCmdEvent);
+uint32_t nicEnterCtiaModeOfFIFOFullNoAck(IN struct ADAPTER *prAdapter, u_int8_t fgEnterCtia, u_int8_t fgEnCmdEvent);
 /*----------------------------------------------------------------------------*/
 /* Scan Result Processing                                                     */
 /*----------------------------------------------------------------------------*/
-VOID
-nicAddScanResult(IN P_ADAPTER_T prAdapter,
-		 IN PARAM_MAC_ADDRESS rMacAddr,
-		 IN P_PARAM_SSID_T prSsid,
-		 IN UINT_32 u4Privacy,
-		 IN PARAM_RSSI rRssi,
-		 IN ENUM_PARAM_NETWORK_TYPE_T eNetworkType,
-		 IN P_PARAM_802_11_CONFIG_T prConfiguration,
-		 IN ENUM_PARAM_OP_MODE_T eOpMode,
-		 IN PARAM_RATES_EX rSupportedRates, IN UINT_16 u2IELength, IN PUINT_8 pucIEBuf);
+void
+nicAddScanResult(IN struct ADAPTER *prAdapter,
+		 IN uint8_t rMacAddr[PARAM_MAC_ADDR_LEN],
+		 IN struct PARAM_SSID *prSsid,
+		 IN uint32_t u4Privacy,
+		 IN int32_t rRssi,
+		 IN enum ENUM_PARAM_NETWORK_TYPE eNetworkType,
+		 IN struct PARAM_802_11_CONFIG *prConfiguration,
+		 IN enum ENUM_PARAM_OP_MODE eOpMode,
+		 IN uint8_t rSupportedRates[PARAM_MAX_LEN_RATES_EX], IN uint16_t u2IELength, IN uint8_t *pucIEBuf);
 
-VOID nicFreeScanResultIE(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Idx);
+void nicFreeScanResultIE(IN struct ADAPTER *prAdapter, IN uint32_t u4Idx);
 
 /*----------------------------------------------------------------------------*/
 /* Fixed Rate Hacking                                                         */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS
-nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
-		    IN ENUM_REGISTRY_FIXED_RATE_T eRateSetting,
-		    IN PUINT_8 pucDesiredPhyTypeSet,
-		    IN PUINT_16 pu2DesiredNonHTRateSet,
-		    IN PUINT_16 pu2BSSBasicRateSet,
-		    IN PUINT_8 pucMcsSet, IN PUINT_8 pucSupMcs32, IN PUINT_16 u2HtCapInfo);
+uint32_t
+nicUpdateRateParams(IN struct ADAPTER *prAdapter,
+		    IN enum ENUM_REGISTRY_FIXED_RATE eRateSetting,
+		    IN uint8_t *pucDesiredPhyTypeSet,
+		    IN uint16_t *pu2DesiredNonHTRateSet,
+		    IN uint16_t *pu2BSSBasicRateSet,
+		    IN uint8_t *pucMcsSet, IN uint8_t *pucSupMcs32, IN uint16_t *u2HtCapInfo);
 
 /*----------------------------------------------------------------------------*/
 /* Write registers                                                            */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicWriteMcr(IN P_ADAPTER_T prAdapter, IN UINT_32 u4Address, IN UINT_32 u4Value);
+uint32_t nicWriteMcr(IN struct ADAPTER *prAdapter, IN uint32_t u4Address, IN uint32_t u4Value);
 
 /*----------------------------------------------------------------------------*/
 /* Update auto rate                                                           */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS
-nicRlmArUpdateParms(IN P_ADAPTER_T prAdapter,
-		    IN UINT_32 u4ArSysParam0,
-		    IN UINT_32 u4ArSysParam1, IN UINT_32 u4ArSysParam2, IN UINT_32 u4ArSysParam3);
+uint32_t
+nicRlmArUpdateParms(IN struct ADAPTER *prAdapter,
+		    IN uint32_t u4ArSysParam0,
+		    IN uint32_t u4ArSysParam1, IN uint32_t u4ArSysParam2, IN uint32_t u4ArSysParam3);
 
 /*----------------------------------------------------------------------------*/
 /* Enable/Disable Roaming                                                     */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicRoamingUpdateParams(IN P_ADAPTER_T prAdapter, IN UINT_32 u4EnableRoaming);
+uint32_t nicRoamingUpdateParams(IN struct ADAPTER *prAdapter, IN uint32_t u4EnableRoaming);
 
 /*----------------------------------------------------------------------------*/
 /* Link Quality Updating                                                      */
 /*----------------------------------------------------------------------------*/
-VOID
-nicUpdateLinkQuality(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_EVENT_LINK_QUALITY_V2 prEventLinkQuality);
+void
+nicUpdateLinkQuality(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct EVENT_LINK_QUALITY_V2 *prEventLinkQuality);
 
-VOID nicUpdateRSSI(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN INT_8 cRssi, IN INT_8 cLinkQuality);
+void nicUpdateRSSI(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN int8_t cRssi, IN int8_t cLinkQuality);
 
-VOID nicUpdateLinkSpeed(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN UINT_16 u2LinkSpeed);
+void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN uint16_t u2LinkSpeed);
 
 #if CFG_SUPPORT_RDD_TEST_MODE
-WLAN_STATUS nicUpdateRddTestMode(IN P_ADAPTER_T prAdapter, IN P_CMD_RDD_CH_T prRddChParam);
+uint32_t nicUpdateRddTestMode(IN struct ADAPTER *prAdapter, IN struct CMD_RDD_CH *prRddChParam);
 #endif
 
 /*----------------------------------------------------------------------------*/
 /* Address Setting Apply                                                      */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS nicApplyNetworkAddress(IN P_ADAPTER_T prAdapter);
+uint32_t nicApplyNetworkAddress(IN struct ADAPTER *prAdapter);
 
 /*----------------------------------------------------------------------------*/
 /* ECO Version                                                                */
 /*----------------------------------------------------------------------------*/
-UINT_8 nicGetChipEcoVer(IN P_ADAPTER_T prAdapter);
-BOOLEAN nicIsEcoVerEqualTo(IN P_ADAPTER_T prAdapter, UINT_8 ucEcoVer);
-BOOLEAN nicIsEcoVerEqualOrLaterTo(IN P_ADAPTER_T prAdapter, UINT_8 ucEcoVer);
-UINT_8 nicSetChipHwVer(UINT_8 value);
-UINT_8 nicSetChipSwVer(UINT_8 value);
-UINT_8 nicSetChipFactoryVer(UINT_8 value);
+uint8_t nicGetChipEcoVer(IN struct ADAPTER *prAdapter);
+u_int8_t nicIsEcoVerEqualTo(IN struct ADAPTER *prAdapter, uint8_t ucEcoVer);
+u_int8_t nicIsEcoVerEqualOrLaterTo(IN struct ADAPTER *prAdapter, uint8_t ucEcoVer);
+uint8_t nicSetChipHwVer(uint8_t value);
+uint8_t nicSetChipSwVer(uint8_t value);
+uint8_t nicSetChipFactoryVer(uint8_t value);
 
-VOID nicSerStopTxRx(IN P_ADAPTER_T prAdapter);
-VOID nicSerStopTx(IN P_ADAPTER_T prAdapter);
-VOID nicSerStartTxRx(IN P_ADAPTER_T prAdapter);
-BOOLEAN nicSerIsWaitingReset(IN P_ADAPTER_T prAdapter);
-BOOLEAN nicSerIsTxStop(IN P_ADAPTER_T prAdapter);
-BOOLEAN nicSerIsRxStop(IN P_ADAPTER_T prAdapter);
-VOID nicSerReInitBeaconFrame(IN P_ADAPTER_T prAdapter);
+void nicSerStopTxRx(IN struct ADAPTER *prAdapter);
+void nicSerStopTx(IN struct ADAPTER *prAdapter);
+void nicSerStartTxRx(IN struct ADAPTER *prAdapter);
+u_int8_t nicSerIsWaitingReset(IN struct ADAPTER *prAdapter);
+u_int8_t nicSerIsTxStop(IN struct ADAPTER *prAdapter);
+u_int8_t nicSerIsRxStop(IN struct ADAPTER *prAdapter);
+void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter);
 
 #endif /* _NIC_H */

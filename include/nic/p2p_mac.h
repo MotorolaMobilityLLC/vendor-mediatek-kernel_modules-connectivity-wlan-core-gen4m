@@ -231,7 +231,7 @@
 #define WLAN_TDLS_DISCOVERY_RESPONSE 14
 
 /* P2P public action frames */
-typedef enum p2p_action_frame_type {
+enum p2p_action_frame_type {
 	P2P_GO_NEG_REQ = 0,
 	P2P_GO_NEG_RESP = 1,
 	P2P_GO_NEG_CONF = 2,
@@ -241,194 +241,194 @@ typedef enum p2p_action_frame_type {
 	P2P_DEV_DISC_RESP = 6,
 	P2P_PROV_DISC_REQ = 7,
 	P2P_PROV_DISC_RESP = 8
-} ENUM_P2P_ACTION_TYPE;
+};
 
 /* --------------- WFA P2P IE and Attributes --------------- */
 
 /* P2P 4.1.1 - P2P Information Element */
-typedef struct _IE_P2P_T {
-	UINT_8 ucId;		/* Element ID */
-	UINT_8 ucLength;	/* Length */
-	UINT_8 aucOui[3];	/* OUI */
-	UINT_8 ucOuiType;	/* OUI Type */
-	UINT_8 aucP2PAttributes[1];	/* P2P Attributes */
-} __KAL_ATTRIB_PACKED__ IE_P2P_T, *P_IE_P2P_T;
+struct IE_P2P {
+	uint8_t ucId;		/* Element ID */
+	uint8_t ucLength;	/* Length */
+	uint8_t aucOui[3];	/* OUI */
+	uint8_t ucOuiType;	/* OUI Type */
+	uint8_t aucP2PAttributes[1];	/* P2P Attributes */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.1 - General WSC Attribute */
-typedef struct _WSC_ATTRIBUTE_T {
-	UINT_16 u2Id;		/* Attribute ID */
-	UINT_16 u2Length;	/* Length */
-	UINT_8 aucBody[1];	/* Body field */
-} __KAL_ATTRIB_PACKED__ WSC_ATTRIBUTE_T, *P_WSC_ATTRIBUTE_T;
+struct WSC_ATTRIBUTE {
+	uint16_t u2Id;		/* Attribute ID */
+	uint16_t u2Length;	/* Length */
+	uint8_t aucBody[1];	/* Body field */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.2 - P2P Status Attribute */
-typedef struct _P2P_ATTRI_STATUS_T {
-	UINT_8 ucId;		/* Attribute ID */
-	UINT_16 u2Length;	/* Length */
-	UINT_8 ucStatusCode;	/* Status Code */
-} __KAL_ATTRIB_PACKED__ P2P_ATTRI_STATUS_T, *P_P2P_ATTRI_STATUS_T;
+struct P2P_ATTRI_STATUS {
+	uint8_t ucId;		/* Attribute ID */
+	uint16_t u2Length;	/* Length */
+	uint8_t ucStatusCode;	/* Status Code */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.10 - Extended Listen Timing Attribute */
-typedef struct _P2P_ATTRI_EXT_LISTEN_TIMING_T {
-	UINT_8 ucId;		/* Attribute ID */
-	UINT_16 u2Length;	/* Length */
-	UINT_16 u2AvailPeriod;	/* Availability Period */
-	UINT_16 u2AvailInterval;	/* Availability Interval */
-} __KAL_ATTRIB_PACKED__ P2P_ATTRI_EXT_LISTEN_TIMING_T, *P_P2P_ATTRI_EXT_LISTEN_TIMING_T;
+struct P2P_ATTRI_EXT_LISTEN_TIMING {
+	uint8_t ucId;		/* Attribute ID */
+	uint16_t u2Length;	/* Length */
+	uint16_t u2AvailPeriod;	/* Availability Period */
+	uint16_t u2AvailInterval;	/* Availability Interval */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.2.8.2 P2P Public Action Frame Format */
-typedef struct _P2P_PUBLIC_ACTION_FRAME_T {
+struct P2P_PUBLIC_ACTION_FRAME {
 	/* MAC header */
-	UINT_16 u2FrameCtrl;	/* Frame Control */
-	UINT_16 u2Duration;	/* Duration */
-	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
-	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Public Action Frame Body */
-	UINT_8 ucCategory;	/* Category, 0x04 */
-	UINT_8 ucAction;	/* Action Value, 0x09 */
-	UINT_8 aucOui[3];	/* 0x50, 0x6F, 0x9A */
-	UINT_8 ucOuiType;	/* 0x09 */
-	UINT_8 ucOuiSubtype;	/* GO Nego Req/Rsp/Cfm, P2P Invittion Req/Rsp, Device Discoverability Req/Rsp */
-	UINT_8 ucDialogToken;	/* Dialog Token. */
-	UINT_8 aucInfoElem[1];	/* P2P IE, WSC IE. */
-} __KAL_ATTRIB_PACKED__ P2P_PUBLIC_ACTION_FRAME_T, *P_P2P_PUBLIC_ACTION_FRAME_T;
+	uint8_t ucCategory;	/* Category, 0x04 */
+	uint8_t ucAction;	/* Action Value, 0x09 */
+	uint8_t aucOui[3];	/* 0x50, 0x6F, 0x9A */
+	uint8_t ucOuiType;	/* 0x09 */
+	uint8_t ucOuiSubtype;	/* GO Nego Req/Rsp/Cfm, P2P Invittion Req/Rsp, Device Discoverability Req/Rsp */
+	uint8_t ucDialogToken;	/* Dialog Token. */
+	uint8_t aucInfoElem[1];	/* P2P IE, WSC IE. */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.2.9.1 -  General Action Frame Format. */
-typedef struct _P2P_ACTION_FRAME_T {
+struct P2P_ACTION_FRAME {
 	/* MAC header */
-	UINT_16 u2FrameCtrl;	/* Frame Control */
-	UINT_16 u2Duration;	/* Duration */
-	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
-	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Action Frame Body */
-	UINT_8 ucCategory;	/* 0x7F */
-	UINT_8 aucOui[3];	/* 0x50, 0x6F, 0x9A */
-	UINT_8 ucOuiType;	/* 0x09 */
-	UINT_8 ucOuiSubtype;	/*  */
-	UINT_8 ucDialogToken;
-	UINT_8 aucInfoElem[1];
-} __KAL_ATTRIB_PACKED__ P2P_ACTION_FRAME_T, *P_P2P_ACTION_FRAME_T;
+	uint8_t ucCategory;	/* 0x7F */
+	uint8_t aucOui[3];	/* 0x50, 0x6F, 0x9A */
+	uint8_t ucOuiType;	/* 0x09 */
+	uint8_t ucOuiSubtype;	/*  */
+	uint8_t ucDialogToken;
+	uint8_t aucInfoElem[1];
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P C.1 GAS Public Action Initial Request Frame Format */
-typedef struct _GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME_T {
+struct GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME {
 	/* MAC header */
-	UINT_16 u2FrameCtrl;	/* Frame Control */
-	UINT_16 u2Duration;	/* Duration */
-	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
-	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Public Action Frame Body */
-	UINT_8 ucCategory;	/* Category, 0x04 */
-	UINT_8 ucAction;	/* Action Value, 0x09 */
-	UINT_8 ucDialogToken;	/* Dialog Token. */
-	UINT_8 aucInfoElem[1];	/* Advertisement IE. */
-} __KAL_ATTRIB_PACKED__ GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME_T, *P_GAS_PUBLIC_ACTION_INITIAL_REQUEST_FRAME_T;
+	uint8_t ucCategory;	/* Category, 0x04 */
+	uint8_t ucAction;	/* Action Value, 0x09 */
+	uint8_t ucDialogToken;	/* Dialog Token. */
+	uint8_t aucInfoElem[1];	/* Advertisement IE. */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P C.2 GAS Public Action Initial Response Frame Format */
-typedef struct _GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME_T {
+struct GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME {
 	/* MAC header */
-	UINT_16 u2FrameCtrl;	/* Frame Control */
-	UINT_16 u2Duration;	/* Duration */
-	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
-	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Public Action Frame Body */
-	UINT_8 ucCategory;	/* Category, 0x04 */
-	UINT_8 ucAction;	/* Action Value, 0x09 */
-	UINT_8 ucDialogToken;	/* Dialog Token. */
-	UINT_16 u2StatusCode;	/* Initial Response. */
-	UINT_16 u2ComebackDelay;	/* Initial Response. *//* In unit of TU. */
-	UINT_8 aucInfoElem[1];	/* Advertisement IE. */
-} __KAL_ATTRIB_PACKED__ GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME_T, *P_GAS_PUBLIC_ACTION_INITIAL_RESPONSE_FRAME_T;
+	uint8_t ucCategory;	/* Category, 0x04 */
+	uint8_t ucAction;	/* Action Value, 0x09 */
+	uint8_t ucDialogToken;	/* Dialog Token. */
+	uint16_t u2StatusCode;	/* Initial Response. */
+	uint16_t u2ComebackDelay;	/* Initial Response. *//* In unit of TU. */
+	uint8_t aucInfoElem[1];	/* Advertisement IE. */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P C.3-1 GAS Public Action Comeback Request Frame Format */
-typedef struct _GAS_PUBLIC_ACTION_COMEBACK_REQUEST_FRAME_T {
+struct GAS_PUBLIC_ACTION_COMEBACK_REQUEST_FRAME {
 	/* MAC header */
-	UINT_16 u2FrameCtrl;	/* Frame Control */
-	UINT_16 u2Duration;	/* Duration */
-	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
-	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Public Action Frame Body */
-	UINT_8 ucCategory;	/* Category, 0x04 */
-	UINT_8 ucAction;	/* Action Value, 0x09 */
-	UINT_8 ucDialogToken;	/* Dialog Token. */
-} __KAL_ATTRIB_PACKED__ GAS_PUBLIC_ACTION_COMEBACK_REQUEST_FRAME_T, *P_GAS_PUBLIC_ACTION_COMEBACK_REQUEST_FRAME_T;
+	uint8_t ucCategory;	/* Category, 0x04 */
+	uint8_t ucAction;	/* Action Value, 0x09 */
+	uint8_t ucDialogToken;	/* Dialog Token. */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P C.3-2 GAS Public Action Comeback Response Frame Format */
-typedef struct _GAS_PUBLIC_ACTION_COMEBACK_RESPONSE_FRAME_T {
+struct GAS_PUBLIC_ACTION_COMEBACK_RESPONSE_FRAME {
 	/* MAC header */
-	UINT_16 u2FrameCtrl;	/* Frame Control */
-	UINT_16 u2Duration;	/* Duration */
-	UINT_8 aucDestAddr[MAC_ADDR_LEN];	/* DA */
-	UINT_8 aucSrcAddr[MAC_ADDR_LEN];	/* SA */
-	UINT_8 aucBSSID[MAC_ADDR_LEN];	/* BSSID */
-	UINT_16 u2SeqCtrl;	/* Sequence Control */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* P2P Public Action Frame Body */
-	UINT_8 ucCategory;	/* Category, 0x04 */
-	UINT_8 ucAction;	/* Action Value, 0x09 */
-	UINT_8 ucDialogToken;	/* Dialog Token. */
-	UINT_16 u2StatusCode;	/* Comeback Response. */
-	UINT_8 ucFragmentID;	/*Comeback Response. */
-	UINT_16 u2ComebackDelay;	/* Comeback Response. */
-	UINT_8 aucInfoElem[1];	/* Advertisement IE. */
-} __KAL_ATTRIB_PACKED__ GAS_PUBLIC_ACTION_COMEBACK_RESPONSE_FRAME_T, *P_GAS_PUBLIC_ACTION_COMEBACK_RESPONSE_FRAME_T;
+	uint8_t ucCategory;	/* Category, 0x04 */
+	uint8_t ucAction;	/* Action Value, 0x09 */
+	uint8_t ucDialogToken;	/* Dialog Token. */
+	uint16_t u2StatusCode;	/* Comeback Response. */
+	uint8_t ucFragmentID;	/*Comeback Response. */
+	uint16_t u2ComebackDelay;	/* Comeback Response. */
+	uint8_t aucInfoElem[1];	/* Advertisement IE. */
+} __KAL_ATTRIB_PACKED__;
 
-typedef struct _P2P_SD_VENDER_SPECIFIC_CONTENT_T {
+struct P2P_SD_VENDER_SPECIFIC_CONTENT {
 	/* Service Discovery Vendor-specific Content. */
-	UINT_8 ucOuiSubtype;	/* 0x09 */
-	UINT_16 u2ServiceUpdateIndicator;
-	UINT_8 aucServiceTLV[1];
-} __KAL_ATTRIB_PACKED__ P2P_SD_VENDER_SPECIFIC_CONTENT_T, *P_P2P_SD_VENDER_SPECIFIC_CONTENT_T;
+	uint8_t ucOuiSubtype;	/* 0x09 */
+	uint16_t u2ServiceUpdateIndicator;
+	uint8_t aucServiceTLV[1];
+} __KAL_ATTRIB_PACKED__;
 
-typedef struct _P2P_SERVICE_REQUEST_TLV_T {
-	UINT_16 u2Length;
-	UINT_8 ucServiceProtocolType;
-	UINT_8 ucServiceTransID;
-	UINT_8 aucQueryData[1];
-} __KAL_ATTRIB_PACKED__ P2P_SERVICE_REQUEST_TLV_T, *P_P2P_SERVICE_REQUEST_TLV_T;
+struct P2P_SERVICE_REQUEST_TLV {
+	uint16_t u2Length;
+	uint8_t ucServiceProtocolType;
+	uint8_t ucServiceTransID;
+	uint8_t aucQueryData[1];
+} __KAL_ATTRIB_PACKED__;
 
-typedef struct _P2P_SERVICE_RESPONSE_TLV_T {
-	UINT_16 u2Length;
-	UINT_8 ucServiceProtocolType;
-	UINT_8 ucServiceTransID;
-	UINT_8 ucStatusCode;
-	UINT_8 aucResponseData[1];
-} __KAL_ATTRIB_PACKED__ P2P_SERVICE_RESPONSE_TLV_T, *P_P2P_SERVICE_RESPONSE_TLV_T;
+struct P2P_SERVICE_RESPONSE_TLV {
+	uint16_t u2Length;
+	uint8_t ucServiceProtocolType;
+	uint8_t ucServiceTransID;
+	uint8_t ucStatusCode;
+	uint8_t aucResponseData[1];
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.1 - General P2P Attribute */
-typedef struct _P2P_ATTRIBUTE_T {
-	UINT_8 ucId;		/* Attribute ID */
-	UINT_16 u2Length;	/* Length */
-	UINT_8 aucBody[1];	/* Body field */
-} __KAL_ATTRIB_PACKED__ P2P_ATTRIBUTE_T, ATTRIBUTE_HDR_T, *P_P2P_ATTRIBUTE_T, *P_ATTRIBUTE_HDR_T;
+struct P2P_ATTRIBUTE {
+	uint8_t ucId;		/* Attribute ID */
+	uint16_t u2Length;	/* Length */
+	uint8_t aucBody[1];	/* Body field */
+} __KAL_ATTRIB_PACKED__;
 
 /* P2P 4.1.14 - Notice of Absence Attribute */
-typedef struct _P2P_ATTRI_NOA_T {
-	UINT_8 ucId;		/* Attribute ID */
-	UINT_16 u2Length;	/* Length */
-	UINT_8 ucIndex;		/* Index */
-	UINT_8 ucCTWOppPSParam;	/* CTWindow and OppPS Parameters */
-	UINT_8 aucNoADesc[1];	/* NoA Descriptor */
-} __KAL_ATTRIB_PACKED__ P2P_ATTRI_NOA_T, *P_P2P_ATTRI_NOA_T;
+struct P2P_ATTRI_NOA {
+	uint8_t ucId;		/* Attribute ID */
+	uint16_t u2Length;	/* Length */
+	uint8_t ucIndex;		/* Index */
+	uint8_t ucCTWOppPSParam;	/* CTWindow and OppPS Parameters */
+	uint8_t aucNoADesc[1];	/* NoA Descriptor */
+} __KAL_ATTRIB_PACKED__;
 
-typedef struct _NOA_DESCRIPTOR_T {
-	UINT_8 ucCountType;	/* Count/Type */
-	UINT_32 u4Duration;	/* Duration */
-	UINT_32 u4Interval;	/* Interval */
-	UINT_32 u4StartTime;	/* Start Time */
-} __KAL_ATTRIB_PACKED__ NOA_DESCRIPTOR_T, *P_NOA_DESCRIPTOR_T;
-typedef struct _CHANNEL_ENTRY_FIELD_T {
-	UINT_8 ucRegulatoryClass;	/* Regulatory Class */
-	UINT_8 ucNumberOfChannels;	/* Number Of Channels */
-	UINT_8 aucChannelList[1];	/* Channel List */
-} __KAL_ATTRIB_PACKED__ CHANNEL_ENTRY_FIELD_T, *P_CHANNEL_ENTRY_FIELD_T;
+struct NOA_DESCRIPTOR {
+	uint8_t ucCountType;	/* Count/Type */
+	uint32_t u4Duration;	/* Duration */
+	uint32_t u4Interval;	/* Interval */
+	uint32_t u4StartTime;	/* Start Time */
+} __KAL_ATTRIB_PACKED__;
+struct CHANNEL_ENTRY_FIELD {
+	uint8_t ucRegulatoryClass;	/* Regulatory Class */
+	uint8_t ucNumberOfChannels;	/* Number Of Channels */
+	uint8_t aucChannelList[1];	/* Channel List */
+} __KAL_ATTRIB_PACKED__;
 
 #endif

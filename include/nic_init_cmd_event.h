@@ -83,7 +83,7 @@
 #define INIT_CMD_STATUS_REJECTED_DECRYPT_FAIL   3
 #define INIT_CMD_STATUS_UNKNOWN                 4
 
-#define EVENT_HDR_WITHOUT_RXD_SIZE     (OFFSET_OF(WIFI_EVENT_T, aucBuffer[0]) - OFFSET_OF(WIFI_EVENT_T, u2PacketLength))
+#define EVENT_HDR_WITHOUT_RXD_SIZE     (OFFSET_OF(struct WIFI_EVENT, aucBuffer[0]) - OFFSET_OF(struct WIFI_EVENT, u2PacketLength))
 
 #define INIT_PKT_FT_CMD				0x2
 #define INIT_PKT_FT_PDA_FWDL		0x3
@@ -129,7 +129,7 @@
 #define TXD_PKT_FT_PDA_FW           0X3
 #endif
 
-typedef enum _ENUM_INIT_CMD_ID {
+enum ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_DOWNLOAD_CONFIG = 1,
 	INIT_CMD_ID_WIFI_START,
 	INIT_CMD_ID_ACCESS_REG,
@@ -143,67 +143,66 @@ typedef enum _ENUM_INIT_CMD_ID {
 	INIT_CMD_ID_DECOMPRESSED_WIFI_START = 0xFF,
 #endif
 	INIT_CMD_ID_NUM
-} ENUM_INIT_CMD_ID, *P_ENUM_INIT_CMD_ID;
+};
 
-typedef enum _ENUM_INIT_EVENT_ID {
+enum ENUM_INIT_EVENT_ID {
 	INIT_EVENT_ID_CMD_RESULT = 1,
 	INIT_EVENT_ID_ACCESS_REG,
 	INIT_EVENT_ID_PENDING_ERROR,
 	INIT_EVENT_ID_PATCH_SEMA_CTRL
-} ENUM_INIT_EVENT_ID, *P_ENUM_INIT_EVENT_ID;
+};
 
-typedef enum _ENUM_INIT_PATCH_STATUS {
+enum ENUM_INIT_PATCH_STATUS {
 	PATCH_STATUS_NO_SEMA_NEED_PATCH = 0,	/* no SEMA, need patch */
 	PATCH_STATUS_NO_NEED_TO_PATCH,	/* patch is DL & ready */
 	PATCH_STATUS_GET_SEMA_NEED_PATCH,	/* get SEMA, need patch */
 	PATCH_STATUS_RELEASE_SEMA	/* release SEMA */
-} ENUM_INIT_PATCH_STATUS, *P_ENUM_INIT_PATCH_STATUS;
+};
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef UINT_8 CMD_STATUS;
 
 /* commands */
-typedef struct _INIT_WIFI_CMD_T {
-	UINT_8 ucCID;
-	UINT_8 ucPktTypeID;	/* Must be 0xA0 (CMD Packet) */
-	UINT_8 ucReserved;
-	UINT_8 ucSeqNum;
+struct INIT_WIFI_CMD {
+	uint8_t ucCID;
+	uint8_t ucPktTypeID;	/* Must be 0xA0 (CMD Packet) */
+	uint8_t ucReserved;
+	uint8_t ucSeqNum;
 #if 1
-	UINT_8 ucD2B0Rev;	/* padding fields, hw may auto modify this field */
-	UINT_8 ucExtenCID;	/* Extend CID */
-	UINT_8 ucS2DIndex;	/* Index for Src to Dst in CMD usage */
-	UINT_8 ucExtCmdOption;	/* Extend CID option */
+	uint8_t ucD2B0Rev;	/* padding fields, hw may auto modify this field */
+	uint8_t ucExtenCID;	/* Extend CID */
+	uint8_t ucS2DIndex;	/* Index for Src to Dst in CMD usage */
+	uint8_t ucExtCmdOption;	/* Extend CID option */
 
-	UINT_32 au4D3toD7Rev[5];	/* padding fields */
+	uint32_t au4D3toD7Rev[5];	/* padding fields */
 #endif
-	UINT_8 aucBuffer[0];
-} INIT_WIFI_CMD_T, *P_INIT_WIFI_CMD_T;
+	uint8_t aucBuffer[0];
+};
 
-typedef struct _INIT_HIF_TX_HEADER_T {
-	UINT_16 u2TxByteCount;	/* Max value is over 2048 */
-	UINT_16 u2PQ_ID;	/* Must be 0x8000 (Port1, Queue 0) */
+struct INIT_HIF_TX_HEADER {
+	uint16_t u2TxByteCount;	/* Max value is over 2048 */
+	uint16_t u2PQ_ID;	/* Must be 0x8000 (Port1, Queue 0) */
 #if 1
-	UINT_8 ucWlanIdx;
-	UINT_8 ucHeaderFormat;
-	UINT_8 ucHeaderPadding;
-	UINT_8 ucPktFt:2;
-	UINT_8 ucOwnMAC:6;
-	UINT_32 au4D2toD7Rev[6];
+	uint8_t ucWlanIdx;
+	uint8_t ucHeaderFormat;
+	uint8_t ucHeaderPadding;
+	uint8_t ucPktFt:2;
+	uint8_t ucOwnMAC:6;
+	uint32_t au4D2toD7Rev[6];
 
-	UINT_16 u2Length;
-	UINT_16 u2PqId;
+	uint16_t u2Length;
+	uint16_t u2PqId;
 #endif
-	INIT_WIFI_CMD_T rInitWifiCmd;
-} INIT_HIF_TX_HEADER_T, *P_INIT_HIF_TX_HEADER_T;
+	struct INIT_WIFI_CMD rInitWifiCmd;
+};
 
-typedef struct _INIT_CMD_DOWNLOAD_CONFIG {
-	UINT_32 u4Address;
-	UINT_32 u4Length;
-	UINT_32 u4DataMode;
-} INIT_CMD_DOWNLOAD_CONFIG, *P_INIT_CMD_DOWNLOAD_CONFIG;
+struct INIT_CMD_DOWNLOAD_CONFIG {
+	uint32_t u4Address;
+	uint32_t u4Length;
+	uint32_t u4DataMode;
+};
 
 #define START_OVERRIDE_START_ADDRESS    BIT(0)
 #define START_DELAY_CALIBRATION         BIT(1)
@@ -213,76 +212,76 @@ typedef struct _INIT_CMD_DOWNLOAD_CONFIG {
 
 #if CFG_SUPPORT_COMPRESSION_FW_OPTION
 #define WIFI_FW_DECOMPRESSION_FAILED        0xFF
-typedef struct _INIT_CMD_WIFI_DECOMPRESSION_START {
-	UINT_32 u4Override;
-	UINT_32 u4Address;
-	UINT_32 u4Region1length;
-	UINT_32 u4Region2length;
-	UINT_32	u4Region1Address;
-	UINT_32	u4Region2Address;
-	UINT_32	u4BlockSize;
-	UINT_32 u4Region1CRC;
-	UINT_32 u4Region2CRC;
-	UINT_32	u4DecompressTmpAddress;
-} INIT_CMD_WIFI_DECOMPRESSION_START, *P_INIT_CMD_WIFI_DECOMPRESSION_START;
+struct INIT_CMD_WIFI_DECOMPRESSION_START {
+	uint32_t u4Override;
+	uint32_t u4Address;
+	uint32_t u4Region1length;
+	uint32_t u4Region2length;
+	uint32_t	u4Region1Address;
+	uint32_t	u4Region2Address;
+	uint32_t	u4BlockSize;
+	uint32_t u4Region1CRC;
+	uint32_t u4Region2CRC;
+	uint32_t	u4DecompressTmpAddress;
+};
 #endif
 
-typedef struct _INIT_CMD_WIFI_START {
-	UINT_32 u4Override;
-	UINT_32 u4Address;
-} INIT_CMD_WIFI_START, *P_INIT_CMD_WIFI_START;
+struct INIT_CMD_WIFI_START {
+	uint32_t u4Override;
+	uint32_t u4Address;
+};
 
 #define PATCH_GET_SEMA_CONTROL		1
 #define PATCH_RELEASE_SEMA_CONTROL	0
-typedef struct _INIT_CMD_PATCH_SEMA_CONTROL {
-	UINT_8 ucGetSemaphore;
-	UINT_8 aucReserved[3];
-} INIT_CMD_PATCH_SEMA_CONTROL, *P_INIT_CMD_PATCH_SEMA_CONTROL;
-
-struct INIT_CMD_PATCH_FINISH {
-	UINT_8 ucCheckCrc;
-	UINT_8 aucReserved[3];
+struct INIT_CMD_PATCH_SEMA_CONTROL {
+	uint8_t ucGetSemaphore;
+	uint8_t aucReserved[3];
 };
 
-typedef struct _INIT_CMD_ACCESS_REG {
-	UINT_8 ucSetQuery;
-	UINT_8 aucReserved[3];
-	UINT_32 u4Address;
-	UINT_32 u4Data;
-} INIT_CMD_ACCESS_REG, *P_INIT_CMD_ACCESS_REG;
+struct INIT_CMD_PATCH_FINISH {
+	uint8_t ucCheckCrc;
+	uint8_t aucReserved[3];
+};
+
+struct INIT_CMD_ACCESS_REG {
+	uint8_t ucSetQuery;
+	uint8_t aucReserved[3];
+	uint32_t u4Address;
+	uint32_t u4Data;
+};
 
 /* Events */
-typedef struct _INIT_WIFI_EVENT_T {
+struct INIT_WIFI_EVENT {
 #if 1
-	UINT_32 au4HwMacRxDesc[4];
+	uint32_t au4HwMacRxDesc[4];
 #endif
-	UINT_16 u2RxByteCount;
-	UINT_16 u2PacketType;	/* Must be filled with 0xE000 (EVENT Packet) */
-	UINT_8 ucEID;
-	UINT_8 ucSeqNum;
-	UINT_8 aucReserved[2];
+	uint16_t u2RxByteCount;
+	uint16_t u2PacketType;	/* Must be filled with 0xE000 (EVENT Packet) */
+	uint8_t ucEID;
+	uint8_t ucSeqNum;
+	uint8_t aucReserved[2];
 
-	UINT_8 aucBuffer[0];
-} INIT_WIFI_EVENT_T, *P_INIT_WIFI_EVENT_T;
+	uint8_t aucBuffer[0];
+};
 
-typedef struct _INIT_HIF_RX_HEADER_T {
-	INIT_WIFI_EVENT_T rInitWifiEvent;
-} INIT_HIF_RX_HEADER_T, *P_INIT_HIF_RX_HEADER_T;
+struct INIT_HIF_RX_HEADER {
+	struct INIT_WIFI_EVENT rInitWifiEvent;
+};
 
-typedef struct _INIT_EVENT_CMD_RESULT {
-	UINT_8 ucStatus;	/* 0: success */
+struct INIT_EVENT_CMD_RESULT {
+	uint8_t ucStatus;	/* 0: success */
 	/* 1: rejected by invalid param */
 	/* 2: rejected by incorrect CRC */
 	/* 3: rejected by decryption failure */
 	/* 4: unknown CMD */
 	/* 5: timeout */
-	UINT_8 aucReserved[3];
-} INIT_EVENT_CMD_RESULT, *P_INIT_EVENT_CMD_RESULT, INIT_EVENT_PENDING_ERROR, *P_INIT_EVENT_PENDING_ERROR;
+	uint8_t aucReserved[3];
+};
 
-typedef struct _INIT_EVENT_ACCESS_REG {
-	UINT_32 u4Address;
-	UINT_32 u4Data;
-} INIT_EVENT_ACCESS_REG, *P_INIT_EVENT_ACCESS_REG;
+struct INIT_EVENT_ACCESS_REG {
+	uint32_t u4Address;
+	uint32_t u4Data;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

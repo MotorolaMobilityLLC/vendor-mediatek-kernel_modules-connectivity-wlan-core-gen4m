@@ -116,13 +116,13 @@ static void __iomem *mt5931_mcr_base;
 *              F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static VOID collibri_ehpi_reg_init(VOID);
+static void collibri_ehpi_reg_init(void);
 
-static VOID collibri_ehpi_reg_uninit(VOID);
+static void collibri_ehpi_reg_uninit(void);
 
-static VOID mt5931_ehpi_reg_init(VOID);
+static void mt5931_ehpi_reg_init(void);
 
-static VOID mt5931_ehpi_reg_uninit(VOID);
+static void mt5931_ehpi_reg_uninit(void);
 
 static void busSetIrq(void);
 
@@ -149,7 +149,7 @@ static void initTrig(void);
 * \return The result of registering sdio bus
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 {
 
 	ASSERT(pfProbe);
@@ -175,7 +175,7 @@ WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glUnregisterBus(remove_card pfRemove)
+void glUnregisterBus(remove_card pfRemove)
 {
 	ASSERT(pfRemove);
 	pfRemove();
@@ -193,9 +193,9 @@ VOID glUnregisterBus(remove_card pfRemove)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 {
-	P_GL_HIF_INFO_T prHif = NULL;
+	struct GL_HIF_INFO *prHif = NULL;
 
 	ASSERT(prGlueInfo);
 
@@ -217,9 +217,9 @@ VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 {
-	P_GL_HIF_INFO_T prHif = NULL;
+	struct GL_HIF_INFO *prHif = NULL;
 
 	ASSERT(prGlueInfo);
 
@@ -241,7 +241,7 @@ VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-BOOL glBusInit(PVOID pvData)
+u_int8_t glBusInit(void *pvData)
 {
 #if DBG
 	initTrig();
@@ -265,7 +265,7 @@ BOOL glBusInit(PVOID pvData)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusRelease(PVOID pvData)
+void glBusRelease(void *pvData)
 {
 	/* 1. memory unmapping for MT5931 */
 	mt5931_ehpi_reg_uninit();
@@ -286,7 +286,7 @@ VOID glBusRelease(PVOID pvData)
 *         NEGATIVE_VALUE   if fail
 */
 /*----------------------------------------------------------------------------*/
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 {
 	struct net_device *pDev = (struct net_device *)pvData;
 	int i4Status = 0;
@@ -321,7 +321,7 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
+void glBusFreeIrq(void *pvData, void *pvCookie)
 {
 	struct net_device *prDev = (struct net_device *)pvData;
 
@@ -349,7 +349,7 @@ VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode)
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 {
 }
 
@@ -428,9 +428,9 @@ void busFreeIrq(void)
 * \return N/A
 */
 /*----------------------------------------------------------------------------*/
-static VOID collibri_ehpi_reg_init(VOID)
+static void collibri_ehpi_reg_init(void)
 {
-	UINT_32 u4RegValue;
+	uint32_t u4RegValue;
 
 	/* 1. enable nCS as memory controller */
 	pxa_gpio_mode(GPIO80_nCS_4_MD);
@@ -451,9 +451,9 @@ static VOID collibri_ehpi_reg_init(VOID)
 * \return N/A
 */
 /*----------------------------------------------------------------------------*/
-static VOID collibri_ehpi_reg_uninit(VOID)
+static void collibri_ehpi_reg_uninit(void)
 {
-	UINT_32 u4RegValue;
+	uint32_t u4RegValue;
 
 	/* 1. restore nCS<4> configuration */
 	u4RegValue = MSC2;
@@ -468,7 +468,7 @@ static VOID collibri_ehpi_reg_uninit(VOID)
 * \return N/A
 */
 /*----------------------------------------------------------------------------*/
-static VOID mt5931_ehpi_reg_init(VOID)
+static void mt5931_ehpi_reg_init(void)
 {
 	struct resource *reso = NULL;
 
@@ -495,7 +495,7 @@ static VOID mt5931_ehpi_reg_init(VOID)
 * \return N/A
 */
 /*----------------------------------------------------------------------------*/
-static VOID mt5931_ehpi_reg_uninit(VOID)
+static void mt5931_ehpi_reg_uninit(void)
 {
 	iounmap(mt5931_mcr_base);
 	mt5931_mcr_base = NULL;
@@ -512,7 +512,7 @@ static VOID mt5931_ehpi_reg_uninit(VOID)
 /*----------------------------------------------------------------------------*/
 static irqreturn_t glEhpiInterruptHandler(int irq, void *dev_id)
 {
-	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) dev_id;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) dev_id;
 
 	ASSERT(prGlueInfo);
 

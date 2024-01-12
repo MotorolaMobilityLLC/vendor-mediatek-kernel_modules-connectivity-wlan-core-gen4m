@@ -51,13 +51,13 @@
  *****************************************************************************/
 #include "precomp.h"
 
-BOOLEAN
-p2pDevStateInit_IDLE(IN P_ADAPTER_T prAdapter,
-		     IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo, OUT P_ENUM_P2P_DEV_STATE_T peNextState)
+u_int8_t
+p2pDevStateInit_IDLE(IN struct ADAPTER *prAdapter,
+		     IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo, OUT enum ENUM_P2P_DEV_STATE *peNextState)
 {
-	BOOLEAN fgIsTransition = FALSE, fgIsShareInterface = TRUE;
-	UINT_32 u4Idx = 0;
-	P_GLUE_INFO_T prGlueInfo = (P_GLUE_INFO_T) NULL;
+	u_int8_t fgIsTransition = FALSE, fgIsShareInterface = TRUE;
+	uint32_t u4Idx = 0;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo) && (peNextState != NULL));
@@ -94,21 +94,21 @@ p2pDevStateInit_IDLE(IN P_ADAPTER_T prAdapter,
 	return fgIsTransition;
 }				/* p2pDevStateInit_IDLE */
 
-VOID p2pDevStateAbort_IDLE(IN P_ADAPTER_T prAdapter)
+void p2pDevStateAbort_IDLE(IN struct ADAPTER *prAdapter)
 {
 	/* Currently Aobrt IDLE do nothing. */
 }				/* p2pDevStateAbort_IDLE */
 
-BOOLEAN
-p2pDevStateInit_REQING_CHANNEL(IN P_ADAPTER_T prAdapter,
-			       IN UINT_8 ucBssIdx,
-			       IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo, OUT P_ENUM_P2P_DEV_STATE_T peNextState)
+u_int8_t
+p2pDevStateInit_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
+			       IN uint8_t ucBssIdx,
+			       IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo, OUT enum ENUM_P2P_DEV_STATE *peNextState)
 {
-	BOOLEAN fgIsTransition = FALSE;
-	P_MSG_P2P_CHNL_REQUEST_T prP2pMsgChnlReq = (P_MSG_P2P_CHNL_REQUEST_T) NULL;
-	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+	u_int8_t fgIsTransition = FALSE;
+	struct MSG_P2P_CHNL_REQUEST *prP2pMsgChnlReq = (struct MSG_P2P_CHNL_REQUEST *) NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 #if CFG_SUPPORT_DBDC
-	CNM_DBDC_CAP_T rDbdcCap;
+	struct CNM_DBDC_CAP rDbdcCap;
 #endif /*CFG_SUPPORT_DBDC*/
 
 	do {
@@ -124,7 +124,7 @@ p2pDevStateInit_REQING_CHANNEL(IN P_ADAPTER_T prAdapter,
 			break;
 		}
 
-		LINK_REMOVE_HEAD(&(prChnlReqInfo->rP2pChnlReqLink), prP2pMsgChnlReq, P_MSG_P2P_CHNL_REQUEST_T);
+		LINK_REMOVE_HEAD(&(prChnlReqInfo->rP2pChnlReqLink), prP2pMsgChnlReq, struct MSG_P2P_CHNL_REQUEST *);
 
 		ASSERT(prP2pMsgChnlReq);
 
@@ -158,9 +158,9 @@ p2pDevStateInit_REQING_CHANNEL(IN P_ADAPTER_T prAdapter,
 	return fgIsTransition;
 }				/* p2pDevStateInit_REQING_CHANNEL */
 
-VOID
-p2pDevStateAbort_REQING_CHANNEL(IN P_ADAPTER_T prAdapter,
-				IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo, IN ENUM_P2P_DEV_STATE_T eNextState)
+void
+p2pDevStateAbort_REQING_CHANNEL(IN struct ADAPTER *prAdapter,
+				IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo, IN enum ENUM_P2P_DEV_STATE eNextState)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL) && (eNextState < P2P_DEV_STATE_NUM));
@@ -182,10 +182,10 @@ p2pDevStateAbort_REQING_CHANNEL(IN P_ADAPTER_T prAdapter,
 	} while (FALSE);
 }				/* p2pDevStateAbort_REQING_CHANNEL */
 
-VOID
-p2pDevStateInit_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
-			     IN P_BSS_INFO_T prP2pBssInfo,
-			     IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo)
+void
+p2pDevStateInit_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
+			     IN struct BSS_INFO *prP2pBssInfo,
+			     IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo, IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pDevFsmInfo != NULL) && (prChnlReqInfo != NULL));
@@ -209,11 +209,11 @@ p2pDevStateInit_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
 	} while (FALSE);
 }				/* p2pDevStateInit_CHNL_ON_HAND */
 
-VOID
-p2pDevStateAbort_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
-			      IN P_BSS_INFO_T prP2pBssInfo,
-			      IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo, IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo,
-			      IN ENUM_P2P_DEV_STATE_T eNextState)
+void
+p2pDevStateAbort_CHNL_ON_HAND(IN struct ADAPTER *prAdapter,
+			      IN struct BSS_INFO *prP2pBssInfo,
+			      IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo, IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
+			      IN enum ENUM_P2P_DEV_STATE eNextState)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) || (prChnlReqInfo != NULL));
@@ -235,7 +235,7 @@ p2pDevStateAbort_CHNL_ON_HAND(IN P_ADAPTER_T prAdapter,
 	} while (FALSE);
 }				/* p2pDevStateAbort_CHNL_ON_HAND */
 
-VOID p2pDevStateInit_SCAN(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_P2P_SCAN_REQ_INFO_T prScanReqInfo)
+void p2pDevStateInit_SCAN(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct P2P_SCAN_REQ_INFO *prScanReqInfo)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prScanReqInfo != NULL));
@@ -246,9 +246,9 @@ VOID p2pDevStateInit_SCAN(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_P
 	} while (FALSE);
 }				/* p2pDevStateInit_CHNL_ON_HAND */
 
-VOID p2pDevStateAbort_SCAN(IN P_ADAPTER_T prAdapter, IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo)
+void p2pDevStateAbort_SCAN(IN struct ADAPTER *prAdapter, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
-	P_P2P_SCAN_REQ_INFO_T prScanInfo = (P_P2P_SCAN_REQ_INFO_T) NULL;
+	struct P2P_SCAN_REQ_INFO *prScanInfo = (struct P2P_SCAN_REQ_INFO *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pDevFsmInfo != NULL));
@@ -261,14 +261,14 @@ VOID p2pDevStateAbort_SCAN(IN P_ADAPTER_T prAdapter, IN P_P2P_DEV_FSM_INFO_T prP
 	} while (FALSE);
 }				/* p2pDevStateAbort_CHNL_ON_HAND */
 
-BOOLEAN
-p2pDevStateInit_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
-			    IN P_P2P_DEV_FSM_INFO_T prP2pDevFsmInfo,
-			    IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo,
-			    IN P_P2P_MGMT_TX_REQ_INFO_T prP2pMgmtTxInfo, OUT P_ENUM_P2P_DEV_STATE_T peNextState)
+u_int8_t
+p2pDevStateInit_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
+			    IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+			    IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo,
+			    IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo, OUT enum ENUM_P2P_DEV_STATE *peNextState)
 {
-	P_P2P_OFF_CHNL_TX_REQ_INFO_T prP2pOffChnlTxPkt = (P_P2P_OFF_CHNL_TX_REQ_INFO_T) NULL;
-	BOOLEAN fgIsTransition = FALSE;
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prP2pOffChnlTxPkt = (struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
+	u_int8_t fgIsTransition = FALSE;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prP2pMgmtTxInfo != NULL)
@@ -276,7 +276,7 @@ p2pDevStateInit_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
 
 		if (!LINK_IS_EMPTY(&(prP2pMgmtTxInfo->rP2pTxReqLink))) {
 			prP2pOffChnlTxPkt =
-			    LINK_PEEK_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink), P2P_OFF_CHNL_TX_REQ_INFO_T, rLinkEntry);
+			    LINK_PEEK_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink), struct P2P_OFF_CHNL_TX_REQ_INFO, rLinkEntry);
 
 			if (prP2pOffChnlTxPkt == NULL) {
 				DBGLOG(P2P, ERROR, "Fetal Error, Link not empty but get NULL pointer.\n");
@@ -297,7 +297,7 @@ p2pDevStateInit_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
 				p2pFuncAcquireCh(prAdapter, prP2pDevFsmInfo->ucBssIndex, prChnlReqInfo);
 			} else {
 				LINK_REMOVE_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink),
-						 prP2pOffChnlTxPkt, P_P2P_OFF_CHNL_TX_REQ_INFO_T);
+						 prP2pOffChnlTxPkt, struct P2P_OFF_CHNL_TX_REQ_INFO *);
 
 				p2pFuncTxMgmtFrame(prAdapter,
 						   prP2pDevFsmInfo->ucBssIndex,
@@ -316,17 +316,17 @@ p2pDevStateInit_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
 	return fgIsTransition;
 }				/* p2pDevSateInit_OFF_CHNL_TX */
 
-VOID
-p2pDevStateAbort_OFF_CHNL_TX(IN P_ADAPTER_T prAdapter,
-			     IN P_P2P_MGMT_TX_REQ_INFO_T prP2pMgmtTxInfo,
-			     IN P_P2P_CHNL_REQ_INFO_T prChnlReqInfo, IN ENUM_P2P_DEV_STATE_T eNextState)
+void
+p2pDevStateAbort_OFF_CHNL_TX(IN struct ADAPTER *prAdapter,
+			     IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo,
+			     IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo, IN enum ENUM_P2P_DEV_STATE eNextState)
 {
-	P_P2P_OFF_CHNL_TX_REQ_INFO_T prP2pOffChnlTxPkt = (P_P2P_OFF_CHNL_TX_REQ_INFO_T) NULL;
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prP2pOffChnlTxPkt = (struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
 
 	if (eNextState != P2P_DEV_STATE_OFF_CHNL_TX) {
 		while (!LINK_IS_EMPTY(&(prP2pMgmtTxInfo->rP2pTxReqLink))) {
 			LINK_REMOVE_HEAD(&(prP2pMgmtTxInfo->rP2pTxReqLink),
-					 prP2pOffChnlTxPkt, P_P2P_OFF_CHNL_TX_REQ_INFO_T);
+					 prP2pOffChnlTxPkt, struct P2P_OFF_CHNL_TX_REQ_INFO *);
 
 			if (prP2pOffChnlTxPkt)
 				kalP2PIndicateMgmtTxStatus(prAdapter->prGlueInfo,

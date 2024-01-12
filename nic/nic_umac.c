@@ -90,17 +90,17 @@
 ********************************************************************************
 */
 
-typedef struct _UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T {
-	UINT_8 ucGroupID;
-	UINT_32 u4PgReservePageCntRegOffset;
-	UINT_32 u4PgInfoRegOffset;
-} UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T, *P_UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T;
+struct UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP {
+	uint8_t ucGroupID;
+	uint32_t u4PgReservePageCntRegOffset;
+	uint32_t u4PgInfoRegOffset;
+};
 
-typedef struct _UMAC_PG_MAX_MIN_QUOTA_SET_T {
-	UINT_8 ucPageGroupID;
-	UINT_16 u2MaxPageQuota;
-	UINT_16 u2MinPageQuota;
-} UMAC_PG_MAX_MIN_QUOTA_SET_T, *P_UMAC_PG_MAX_MIN_QUOTA_SET_T;
+struct UMAC_PG_MAX_MIN_QUOTA_SET {
+	uint8_t ucPageGroupID;
+	uint16_t u2MaxPageQuota;
+	uint16_t u2MinPageQuota;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -112,7 +112,7 @@ typedef struct _UMAC_PG_MAX_MIN_QUOTA_SET_T {
 ********************************************************************************
 */
 
-const UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T  g_arPlePgInfoAndReserveCrOffsetMap[] = {
+const struct UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP  g_arPlePgInfoAndReserveCrOffsetMap[] = {
 	{ UMAC_PG_HIF0_GROUP_0,
 		UMAC_PG_HIF0_GROUP(UMAC_PLE_CFG_POOL_INDEX),
 		UMAC_HIF0_PG_INFO(UMAC_PLE_CFG_POOL_INDEX) },
@@ -124,7 +124,7 @@ const UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T  g_arPlePgInfoAndReserveCrOff
 		UMAC_CPU_PG_INFO(UMAC_PLE_CFG_POOL_INDEX) },
 };
 
-const UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T  g_arPsePgInfoAndReserveCrOffsetMap[] = {
+const struct UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP  g_arPsePgInfoAndReserveCrOffsetMap[] = {
 	{ UMAC_PG_HIF0_GROUP_0,
 		UMAC_PG_HIF0_GROUP(UMAC_PSE_CFG_POOL_INDEX),
 		UMAC_HIF0_PG_INFO(UMAC_PSE_CFG_POOL_INDEX) },
@@ -173,7 +173,7 @@ const UMAC_PG_INFO_AND_RESERVE_CNT_CR_OFFSET_MAP_T  g_arPsePgInfoAndReserveCrOff
 */
 /*----------------------------------------------------------------------------*/
 
-OUT BOOLEAN halUmacWrapSourcePortSanityCheck(IN BOOLEAN fgPsePleFlag, IN UINT_8 ucPageGroupID)
+OUT u_int8_t halUmacWrapSourcePortSanityCheck(IN u_int8_t fgPsePleFlag, IN uint8_t ucPageGroupID)
 {
 
 	if (fgPsePleFlag == UMAC_PSE_CFG_POOL_INDEX) {
@@ -199,10 +199,10 @@ OUT BOOLEAN halUmacWrapSourcePortSanityCheck(IN BOOLEAN fgPsePleFlag, IN UINT_8 
 */
 /*----------------------------------------------------------------------------*/
 
-OUT UINT_16 halUmacWrapRsvPgCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFlag, IN UINT_8 ucPageGroupID)
+OUT uint16_t halUmacWrapRsvPgCnt(IN struct ADAPTER *prAdapter, IN u_int8_t fgPsePleFlag, IN uint8_t ucPageGroupID)
 {
-	UINT_32 u4RegAddr = 0;
-	UINT_32 u4Value = 0;
+	uint32_t u4RegAddr = 0;
+	uint32_t u4Value = 0;
 
 	if (halUmacWrapSourcePortSanityCheck(fgPsePleFlag, ucPageGroupID) == FALSE)
 		return UMAC_FID_FAULT;
@@ -214,7 +214,7 @@ OUT UINT_16 halUmacWrapRsvPgCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFla
 
 	HAL_MCR_RD(prAdapter, u4RegAddr, &u4Value);
 
-	return (UINT_16) (u4Value & BITS(0, 11));
+	return (uint16_t) (u4Value & BITS(0, 11));
 }
 
 
@@ -229,10 +229,10 @@ OUT UINT_16 halUmacWrapRsvPgCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFla
 */
 /*----------------------------------------------------------------------------*/
 
-OUT UINT_16 halUmacWrapSrcPgCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFlag, IN UINT_8 ucPageGroupID)
+OUT uint16_t halUmacWrapSrcPgCnt(IN struct ADAPTER *prAdapter, IN u_int8_t fgPsePleFlag, IN uint8_t ucPageGroupID)
 {
-	UINT_32 u4RegAddr = 0;
-	UINT_32 u4Value = 0;
+	uint32_t u4RegAddr = 0;
+	uint32_t u4Value = 0;
 
 	if (halUmacWrapSourcePortSanityCheck(fgPsePleFlag, ucPageGroupID) == FALSE)
 		return UMAC_FID_FAULT;
@@ -244,7 +244,7 @@ OUT UINT_16 halUmacWrapSrcPgCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFla
 
 	HAL_MCR_RD(prAdapter, u4RegAddr, &u4Value);
 
-	return (UINT_16) ((u4Value & BITS(16, 27)) >> 16);
+	return (uint16_t) ((u4Value & BITS(16, 27)) >> 16);
 }
 
 
@@ -258,13 +258,13 @@ OUT UINT_16 halUmacWrapSrcPgCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFla
 */
 /*----------------------------------------------------------------------------*/
 
-OUT UINT_16 halUmacPbufCtrlTotalPageNum(IN P_ADAPTER_T prAdapter, IN UINT_16 fgPsePleFlag)
+OUT uint16_t halUmacPbufCtrlTotalPageNum(IN struct ADAPTER *prAdapter, IN uint16_t fgPsePleFlag)
 {
-	UINT_32 u4Value = 0;
+	uint32_t u4Value = 0;
 
 	HAL_MCR_RD(prAdapter, UMAC_PBUF_CTRL(fgPsePleFlag), &u4Value);
 
-	return (UINT_16) (u4Value & UMAC_PBUF_CTRL_TOTAL_PAGE_NUM_MASK);
+	return (uint16_t) (u4Value & UMAC_PBUF_CTRL_TOTAL_PAGE_NUM_MASK);
 }
 
 
@@ -278,9 +278,9 @@ OUT UINT_16 halUmacPbufCtrlTotalPageNum(IN P_ADAPTER_T prAdapter, IN UINT_16 fgP
 */
 /*----------------------------------------------------------------------------*/
 
-OUT UINT_16 halUmacWrapFrePageCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFlag)
+OUT uint16_t halUmacWrapFrePageCnt(IN struct ADAPTER *prAdapter, IN u_int8_t fgPsePleFlag)
 {
-	UINT_32 u4Value = 0;
+	uint32_t u4Value = 0;
 
 	HAL_MCR_RD(prAdapter, UMAC_FREEPG_CNT(fgPsePleFlag), &u4Value);
 	return ((u4Value & UMAC_FREEPG_CNT_FREEPAGE_CNT_MASK) >> UMAC_FREEPG_CNT_FREEPAGE_CNT_OFFSET);
@@ -297,9 +297,9 @@ OUT UINT_16 halUmacWrapFrePageCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleF
 */
 /*----------------------------------------------------------------------------*/
 
-OUT UINT_16 halUmacWrapFfaCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFlag)
+OUT uint16_t halUmacWrapFfaCnt(IN struct ADAPTER *prAdapter, IN u_int8_t fgPsePleFlag)
 {
-	UINT_32 u4Value = 0;
+	uint32_t u4Value = 0;
 
 	HAL_MCR_RD(prAdapter, UMAC_FREEPG_CNT(fgPsePleFlag), &u4Value);
 	return ((u4Value & UMAC_FREEPG_CNT_FFA_CNT_MASK) >> UMAC_FREEPG_CNT_FFA_CNT_OFFSET);
@@ -317,7 +317,7 @@ OUT UINT_16 halUmacWrapFfaCnt(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgPsePleFlag)
 /*----------------------------------------------------------------------------*/
 
 
-OUT BOOLEAN halUmacInfoGetMiscStatus(IN P_ADAPTER_T prAdapter, IN P_UMAC_STAT2_GET_T pUmacStat2Get)
+OUT u_int8_t halUmacInfoGetMiscStatus(IN struct ADAPTER *prAdapter, IN struct UMAC_STAT2_GET *pUmacStat2Get)
 {
 	pUmacStat2Get->u2PleRevPgHif0Group0 =
 		halUmacWrapRsvPgCnt(prAdapter, UMAC_PLE_CFG_POOL_INDEX, UMAC_PG_HIF0_GROUP_0);

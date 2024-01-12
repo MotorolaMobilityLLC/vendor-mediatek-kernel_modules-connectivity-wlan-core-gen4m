@@ -83,18 +83,18 @@
 #define WFD_ATTRI_MAX_LEN_SESSION_INFO                      0		/* 9 */	/* 24 * #Clients */
 #define WFD_ATTRI_MAX_LEN_ALTER_MAC_ADDRESS            6	/* 10 */
 
-typedef struct _WFD_DEVICE_INFORMATION_IE_T {
-	UINT_8 ucElemID;
-	UINT_16 u2Length;
-	UINT_16 u2WfdDevInfo;
-	UINT_16 u2SessionMgmtCtrlPort;
-	UINT_16 u2WfdDevMaxSpeed;
-} __KAL_ATTRIB_PACKED__ WFD_DEVICE_INFORMATION_IE_T, *P_WFD_DEVICE_INFORMATION_IE_T;
+struct WFD_DEVICE_INFORMATION_IE {
+	uint8_t ucElemID;
+	uint16_t u2Length;
+	uint16_t u2WfdDevInfo;
+	uint16_t u2SessionMgmtCtrlPort;
+	uint16_t u2WfdDevMaxSpeed;
+} __KAL_ATTRIB_PACKED__;
 
 #endif
 
-UINT_32 p2pCalculate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_STA_RECORD_T prStaRec);
+uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
 
-VOID p2pGenerate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo);
+void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
 
 #endif

@@ -59,34 +59,31 @@
 
 /* typedef void VOID, *PVOID; */
 
-typedef int MTK_WCN_BOOL;
 #ifndef MTK_WCN_BOOL_TRUE
-#define MTK_WCN_BOOL_FALSE               ((MTK_WCN_BOOL) 0)
-#define MTK_WCN_BOOL_TRUE                ((MTK_WCN_BOOL) 1)
+#define MTK_WCN_BOOL_FALSE               ((int) 0)
+#define MTK_WCN_BOOL_TRUE                ((int) 1)
 #endif
 
-typedef int MTK_WCN_MUTEX;
 
-typedef int MTK_WCN_TIMER;
 
 /* system APIs */
 /* mutex */
-typedef MTK_WCN_MUTEX(*MUTEX_CREATE) (const char *const name);
-typedef INT_32(*MUTEX_DESTROY) (MTK_WCN_MUTEX mtx);
-typedef INT_32(*MUTEX_LOCK) (MTK_WCN_MUTEX mtx);
-typedef INT_32(*MUTEX_UNLOCK) (MTK_WCN_MUTEX mtx, unsigned long flags);
+typedef int(*MUTEX_CREATE) (const char *const name);
+typedef int32_t(*MUTEX_DESTROY) (int mtx);
+typedef int32_t(*MUTEX_LOCK) (int mtx);
+typedef int32_t(*MUTEX_UNLOCK) (int mtx, unsigned long flags);
 /* debug */
-typedef INT_32(*DBG_PRINT) (const char *str, ...);
-typedef INT_32(*DBG_ASSERT) (INT_32 expr, const char *file, INT_32 line);
+typedef int32_t(*DBG_PRINT) (const char *str, ...);
+typedef int32_t(*DBG_ASSERT) (int32_t expr, const char *file, int32_t line);
 /* timer */
 typedef void (*MTK_WCN_TIMER_CB) (void);
-typedef MTK_WCN_TIMER(*TIMER_CREATE) (const char *const name);
-typedef INT_32(*TIMER_DESTROY) (MTK_WCN_TIMER tmr);
-typedef INT_32(*TIMER_START) (MTK_WCN_TIMER tmr, UINT_32 timeout, MTK_WCN_TIMER_CB tmr_cb, void *param);
-typedef INT_32(*TIMER_STOP) (MTK_WCN_TIMER tmr);
+typedef int(*TIMER_CREATE) (const char *const name);
+typedef int32_t(*TIMER_DESTROY) (int tmr);
+typedef int32_t(*TIMER_START) (int tmr, uint32_t timeout, MTK_WCN_TIMER_CB tmr_cb, void *param);
+typedef int32_t(*TIMER_STOP) (int tmr);
 /* kernel lib */
-typedef void *(*SYS_MEMCPY) (void *dest, const void *src, UINT_32 n);
-typedef void *(*SYS_MEMSET) (void *s, INT_32 c, UINT_32 n);
-typedef INT_32(*SYS_SPRINTF) (char *str, const char *format, ...);
+typedef void *(*SYS_MEMCPY) (void *dest, const void *src, uint32_t n);
+typedef void *(*SYS_MEMSET) (void *s, int32_t c, uint32_t n);
+typedef int32_t(*SYS_SPRINTF) (char *str, const char *format, ...);
 
 #endif /* _MTK_PORTING_H_ */

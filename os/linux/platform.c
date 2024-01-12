@@ -126,7 +126,7 @@ static int netdev_event(struct notifier_block *nb, unsigned long notification, v
 {
 	struct in_ifaddr *ifa = (struct in_ifaddr *)ptr;
 	struct net_device *prDev = ifa->ifa_dev->dev;
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (prDev == NULL) {
 		/* DBGLOG(REQ, INFO, ("netdev_event: device is empty.\n")); */
@@ -149,7 +149,7 @@ static int netdev_event(struct notifier_block *nb, unsigned long notification, v
 	}
 
 
-	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	if (prGlueInfo == NULL) {
 		DBGLOG(REQ, INFO, "netdev_event: prGlueInfo is empty.\n");
 		return NOTIFY_DONE;
@@ -174,7 +174,7 @@ static int net6dev_event(struct notifier_block *nb, unsigned long notification, 
 {
 	struct inet6_ifaddr *ifa = (struct inet6_ifaddr *)ptr;
 	struct net_device *prDev = ifa->idev->dev;
-	P_GLUE_INFO_T prGlueInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (prDev == NULL) {
 		DBGLOG(REQ, INFO, "net6dev_event: device is empty.\n");
@@ -189,9 +189,9 @@ static int net6dev_event(struct notifier_block *nb, unsigned long notification, 
 	if (strncmp(prDev->name, "p2p", 3) == 0) {
 		/* because we store the address of prGlueInfo in p2p's private date of net device */
 		/* *((P_GLUE_INFO_T *) netdev_priv(prGlueInfo->prP2PInfo[0]->prDevHandler)) = prGlueInfo; */
-		prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prDev));
+		prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	} else {		/* wlan0 */
-		prGlueInfo = (P_GLUE_INFO_T) netdev_priv(prDev);
+		prGlueInfo = (struct GLUE_INFO *) netdev_priv(prDev);
 	}
 
 	if (prGlueInfo == NULL) {
@@ -466,7 +466,7 @@ static int nvram_write(char *filename, char *buf, ssize_t len, int offset)
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN kalCfgDataRead16(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Offset, OUT PUINT_16 pu2Data)
+u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Offset, OUT uint16_t *pu2Data)
 {
 	if (pu2Data == NULL)
 		return FALSE;
@@ -492,7 +492,7 @@ BOOLEAN kalCfgDataRead16(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4Offset, OUT P
 *           FALSE
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN kalCfgDataWrite16(IN P_GLUE_INFO_T prGlueInfo, UINT_32 u4Offset, UINT_16 u2Data)
+u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Offset, uint16_t u2Data)
 {
 	if (nvram_write(WIFI_NVRAM_FILE_NAME,
 			(char *)&u2Data, sizeof(unsigned short), u4Offset) != sizeof(unsigned short)) {

@@ -123,17 +123,17 @@
 #define MT_TX_RING_BASE_EXT WPDMA_TX_RING0_BASE_PTR_EXT
 #define MT_RX_RING_BASE_EXT WPDMA_RX_RING0_BASE_PTR_EXT
 
-typedef enum _ENUM_TX_RING_IDX_T {
+enum ENUM_TX_RING_IDX {
 	TX_RING_DATA0_IDX_0 = 0,
 	TX_RING_DATA1_IDX_1,
 	TX_RING_CMD_IDX_2,
 	TX_RING_FWDL_IDX_3,
-} ENUM_TX_RING_IDX__T;
+};
 
-typedef enum _ENUM_RX_RING_IDX_T {
+enum ENUM_RX_RING_IDX {
 	RX_RING_DATA_IDX_0 = 0,
 	RX_RING_EVT_IDX_1
-} ENUM_RX_RING_IDX_T;
+};
 
 /* ============================================================================
 *   PCI/RBUS TX / RX Frame Descriptors format
@@ -159,57 +159,57 @@ typedef enum _ENUM_RX_RING_IDX_T {
 /*
  *  TX descriptor format for Tx Data/Mgmt Rings
  */
-typedef struct _TXD_STRUCT {
+struct TXD_STRUCT {
 	/* Word 0 */
-	UINT_32 SDPtr0;
+	uint32_t SDPtr0;
 
 	/* Word 1 */
-	UINT_32 SDLen1:14;
-	UINT_32 LastSec1:1;
-	UINT_32 Burst:1;
-	UINT_32 SDLen0:14;
-	UINT_32 LastSec0:1;
-	UINT_32 DMADONE:1;
+	uint32_t SDLen1:14;
+	uint32_t LastSec1:1;
+	uint32_t Burst:1;
+	uint32_t SDLen0:14;
+	uint32_t LastSec0:1;
+	uint32_t DMADONE:1;
 
 	/*Word2 */
-	UINT_32 SDPtr1;
+	uint32_t SDPtr1;
 
 	/*Word3 */
-	UINT_16 SDPtr0Ext;
-	UINT_16 SDPtr1Ext;
-} TXD_STRUCT;
+	uint16_t SDPtr0Ext;
+	uint16_t SDPtr1Ext;
+};
 
 /*
  *  Rx descriptor format for Rx Rings
  */
-typedef struct _RXD_STRUCT {
+struct RXD_STRUCT {
 	/* Word 0 */
-	UINT_32 SDPtr0;
+	uint32_t SDPtr0;
 
 	/* Word 1 */
-	UINT_32 SDLen1:14;
-	UINT_32 LastSec1:1;
-	UINT_32 Burst:1;
-	UINT_32 SDLen0:14;
-	UINT_32 LastSec0:1;
-	UINT_32 DMADONE:1;
+	uint32_t SDLen1:14;
+	uint32_t LastSec1:1;
+	uint32_t Burst:1;
+	uint32_t SDLen0:14;
+	uint32_t LastSec0:1;
+	uint32_t DMADONE:1;
 
 	/* Word 2 */
-	UINT_32 SDPtr1;
+	uint32_t SDPtr1;
 
 	/* Word 3 */
-	UINT_32 RXINFO;
-} RXD_STRUCT;
+	uint32_t RXINFO;
+};
 
 /*
 *	Data buffer for DMA operation, the buffer must be contiguous physical memory
 *	Both DMA to / from CPU use the same structure.
 */
-typedef struct _RTMP_DMABUF {
-	ULONG AllocSize;
-	PVOID AllocVa;		/* TxBuf virtual address */
+struct RTMP_DMABUF {
+	unsigned long AllocSize;
+	void *AllocVa;		/* TxBuf virtual address */
 	dma_addr_t AllocPa;	/* TxBuf physical address */
-} RTMP_DMABUF, *PRTMP_DMABUF;
+};
 
 /*
 *	Control block (Descriptor) for all ring descriptor DMA operation, buffer must be
@@ -219,49 +219,49 @@ typedef struct _RTMP_DMABUF {
 *	to describe the packet buffer. For Tx, NDIS_PACKET stored the tx packet descriptor
 *	which driver should ACK upper layer when the tx is physically done or failed.
 */
-typedef struct _RTMP_DMACB {
-	ULONG AllocSize;	/* Control block size */
-	PVOID AllocVa;		/* Control block virtual address */
+struct RTMP_DMACB {
+	unsigned long AllocSize;	/* Control block size */
+	void *AllocVa;		/* Control block virtual address */
 	dma_addr_t AllocPa;	/* Control block physical address */
-	PVOID pPacket;
-	PVOID pBuffer;
+	void *pPacket;
+	void *pBuffer;
 	dma_addr_t PacketPa;
-	RTMP_DMABUF DmaBuf;	/* Associated DMA buffer structure */
-} RTMP_DMACB, *PRTMP_DMACB;
+	struct RTMP_DMABUF DmaBuf;	/* Associated DMA buffer structure */
+};
 
-typedef struct _RTMP_TX_RING {
-	RTMP_DMACB Cell[TX_RING_SIZE];
-	UINT_32 TxCpuIdx;
-	UINT_32 TxDmaIdx;
-	UINT_32 TxSwUsedIdx;
-	UINT_32 u4UsedCnt;
-	UINT_32 hw_desc_base;
-	UINT_32	hw_desc_base_ext;
-	UINT_32 hw_cidx_addr;
-	UINT_32 hw_didx_addr;
-	UINT_32 hw_cnt_addr;
-} RTMP_TX_RING, *P_RTMP_TX_RING;
+struct RTMP_TX_RING {
+	struct RTMP_DMACB Cell[TX_RING_SIZE];
+	uint32_t TxCpuIdx;
+	uint32_t TxDmaIdx;
+	uint32_t TxSwUsedIdx;
+	uint32_t u4UsedCnt;
+	uint32_t hw_desc_base;
+	uint32_t	hw_desc_base_ext;
+	uint32_t hw_cidx_addr;
+	uint32_t hw_didx_addr;
+	uint32_t hw_cnt_addr;
+};
 
-typedef struct _RTMP_RX_RING {
-	RTMP_DMACB Cell[RX_RING_SIZE];
-	UINT_32 RxCpuIdx;
-	UINT_32 RxDmaIdx;
-	INT_32 RxSwReadIdx;	/* software next read index */
-	UINT_32 u4BufSize;
-	UINT_32 u4RingSize;
-	BOOLEAN fgRxSegPkt;
+struct RTMP_RX_RING {
+	struct RTMP_DMACB Cell[RX_RING_SIZE];
+	uint32_t RxCpuIdx;
+	uint32_t RxDmaIdx;
+	int32_t RxSwReadIdx;	/* software next read index */
+	uint32_t u4BufSize;
+	uint32_t u4RingSize;
+	u_int8_t fgRxSegPkt;
 
-	UINT_32 hw_desc_base;
-	UINT_32	hw_desc_base_ext;
-	UINT_32 hw_cidx_addr;
-	UINT_32 hw_didx_addr;
-	UINT_32 hw_cnt_addr;
-} RTMP_RX_RING, *P_RTMP_RX_RING;
+	uint32_t hw_desc_base;
+	uint32_t	hw_desc_base_ext;
+	uint32_t hw_cidx_addr;
+	uint32_t hw_didx_addr;
+	uint32_t hw_cnt_addr;
+};
 
-typedef struct _PCIE_CHIP_CR_MAPPING {
-	UINT_32 u4ChipAddr;
-	UINT_32 u4BusAddr;
-	UINT_32 u4Range;
-} PCIE_CHIP_CR_MAPPING, *P_PCIE_CHIP_CR_MAPPING;
+struct PCIE_CHIP_CR_MAPPING {
+	uint32_t u4ChipAddr;
+	uint32_t u4BusAddr;
+	uint32_t u4Range;
+};
 
 #endif /* HIF_PCI_H__ */

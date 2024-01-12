@@ -106,11 +106,11 @@
 */
 
 /* Control MAC PCO function */
-typedef enum _ENUM_SYS_PCO_PHASE_T {
+enum ENUM_SYS_PCO_PHASE {
 	SYS_PCO_PHASE_DISABLED = 0,
 	SYS_PCO_PHASE_20M,
 	SYS_PCO_PHASE_40M
-} ENUM_SYS_PCO_PHASE_T, *P_ENUM_SYS_PCO_PHASE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -131,11 +131,11 @@ typedef enum _ENUM_SYS_PCO_PHASE_T {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID rlmObssInit(P_ADAPTER_T prAdapter);
+void rlmObssInit(struct ADAPTER *prAdapter);
 
-VOID rlmObssScanDone(P_ADAPTER_T prAdapter, P_MSG_HDR_T prMsgHdr);
+void rlmObssScanDone(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
 
-VOID rlmObssTriggerScan(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo);
+void rlmObssTriggerScan(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S

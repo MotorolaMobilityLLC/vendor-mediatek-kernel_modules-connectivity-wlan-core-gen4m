@@ -115,12 +115,12 @@
 *
 */
 /*----------------------------------------------------------------------------*/
-static BOOLEAN cnmTimerSetTimer(IN P_ADAPTER_T prAdapter,
+static u_int8_t cnmTimerSetTimer(IN struct ADAPTER *prAdapter,
 				IN OS_SYSTIME rTimeout,
 				IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType)
 {
-	P_ROOT_TIMER prRootTimer;
-	BOOLEAN fgNeedWakeLock;
+	struct ROOT_TIMER *prRootTimer;
+	u_int8_t fgNeedWakeLock;
 
 	ASSERT(prAdapter);
 
@@ -151,9 +151,9 @@ static BOOLEAN cnmTimerSetTimer(IN P_ADAPTER_T prAdapter,
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmTimerInitialize(IN P_ADAPTER_T prAdapter)
+void cnmTimerInitialize(IN struct ADAPTER *prAdapter)
 {
-	P_ROOT_TIMER prRootTimer;
+	struct ROOT_TIMER *prRootTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -181,9 +181,9 @@ VOID cnmTimerInitialize(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmTimerDestroy(IN P_ADAPTER_T prAdapter)
+void cnmTimerDestroy(IN struct ADAPTER *prAdapter)
 {
-	P_ROOT_TIMER prRootTimer;
+	struct ROOT_TIMER *prRootTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -215,11 +215,11 @@ VOID cnmTimerDestroy(IN P_ADAPTER_T prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID
-cnmTimerInitTimerOption(IN P_ADAPTER_T prAdapter,
-			IN P_TIMER_T prTimer,
+void
+cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
+			IN struct TIMER *prTimer,
 			IN PFN_MGMT_TIMEOUT_FUNC pfFunc,
-			IN ULONG ulDataPtr,
+			IN unsigned long ulDataPtr,
 			IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType)
 {
 	ASSERT(prAdapter);
@@ -235,14 +235,14 @@ cnmTimerInitTimerOption(IN P_ADAPTER_T prAdapter,
 
 	ASSERT(prAdapter->rRootTimer.rLinkHead.prNext);
 	{
-		P_LINK_T prTimerList;
-		P_LINK_ENTRY_T prLinkEntry;
-		P_TIMER_T prPendingTimer;
+		struct LINK *prTimerList;
+		struct LINK_ENTRY *prLinkEntry;
+		struct TIMER *prPendingTimer;
 
 		prTimerList = &(prAdapter->rRootTimer.rLinkHead);
 
 		LINK_FOR_EACH(prLinkEntry, prTimerList) {
-			prPendingTimer = LINK_ENTRY(prLinkEntry, TIMER_T, rLinkEntry);
+			prPendingTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
 			ASSERT(prPendingTimer);
 			ASSERT(prPendingTimer != prTimer);
 		}
@@ -269,9 +269,9 @@ cnmTimerInitTimerOption(IN P_ADAPTER_T prAdapter,
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-static VOID cnmTimerStopTimer_impl(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer, IN BOOLEAN fgAcquireSpinlock)
+static void cnmTimerStopTimer_impl(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer, IN u_int8_t fgAcquireSpinlock)
 {
-	P_ROOT_TIMER prRootTimer;
+	struct ROOT_TIMER *prRootTimer;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -313,7 +313,7 @@ static VOID cnmTimerStopTimer_impl(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTime
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmTimerStopTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer)
+void cnmTimerStopTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer)
 {
 	ASSERT(prAdapter);
 	ASSERT(prTimer);
@@ -332,10 +332,10 @@ VOID cnmTimerStopTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmTimerStartTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer, IN UINT_32 u4TimeoutMs)
+void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer, IN uint32_t u4TimeoutMs)
 {
-	P_ROOT_TIMER prRootTimer;
-	P_LINK_T prTimerList;
+	struct ROOT_TIMER *prRootTimer;
+	struct LINK *prTimerList;
 	OS_SYSTIME rExpiredSysTime, rTimeoutSystime;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -352,9 +352,9 @@ VOID cnmTimerStartTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer, IN UINT_
 	 * to the timeout value first, then per minutue.
 	 */
 	if (u4TimeoutMs > MSEC_PER_MIN) {
-		ASSERT(u4TimeoutMs <= ((UINT_32) 0xFFFF * MSEC_PER_MIN));
+		ASSERT(u4TimeoutMs <= ((uint32_t) 0xFFFF * MSEC_PER_MIN));
 
-		prTimer->u2Minutes = (UINT_16) (u4TimeoutMs / MSEC_PER_MIN);
+		prTimer->u2Minutes = (uint16_t) (u4TimeoutMs / MSEC_PER_MIN);
 		u4TimeoutMs -= (prTimer->u2Minutes * MSEC_PER_MIN);
 		if (u4TimeoutMs == 0) {
 			u4TimeoutMs = MSEC_PER_MIN;
@@ -365,7 +365,7 @@ VOID cnmTimerStartTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer, IN UINT_
 	}
 
 	/* The assertion check if MSEC_TO_SYSTIME() may be overflow. */
-	ASSERT(u4TimeoutMs < (((UINT_32) 0x80000000 - MSEC_PER_SEC) / KAL_HZ));
+	ASSERT(u4TimeoutMs < (((uint32_t) 0x80000000 - MSEC_PER_SEC) / KAL_HZ));
 	rTimeoutSystime = MSEC_TO_SYSTIME(u4TimeoutMs);
 	if (rTimeoutSystime == 0)
 		rTimeoutSystime = 1;
@@ -396,16 +396,16 @@ VOID cnmTimerStartTimer(IN P_ADAPTER_T prAdapter, IN P_TIMER_T prTimer, IN UINT_
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID cnmTimerDoTimeOutCheck(IN P_ADAPTER_T prAdapter)
+void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 {
-	P_ROOT_TIMER prRootTimer;
-	P_LINK_T prTimerList;
-	P_LINK_ENTRY_T prLinkEntry;
-	P_TIMER_T prTimer;
+	struct ROOT_TIMER *prRootTimer;
+	struct LINK *prTimerList;
+	struct LINK_ENTRY *prLinkEntry;
+	struct TIMER *prTimer;
 	OS_SYSTIME rCurSysTime;
 	PFN_MGMT_TIMEOUT_FUNC pfMgmtTimeOutFunc;
-	ULONG ulTimeoutDataPtr;
-	BOOLEAN fgNeedWakeLock;
+	unsigned long ulTimeoutDataPtr;
+	u_int8_t fgNeedWakeLock;
 	enum ENUM_TIMER_WAKELOCK_TYPE_T eType = TIMER_WAKELOCK_NONE;
 
 	KAL_SPIN_LOCK_DECLARATION();
@@ -424,7 +424,7 @@ VOID cnmTimerDoTimeOutCheck(IN P_ADAPTER_T prAdapter)
 	prRootTimer->rNextExpiredSysTime = rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
-		prTimer = LINK_ENTRY(prLinkEntry, TIMER_T, rLinkEntry);
+		prTimer = LINK_ENTRY(prLinkEntry, struct TIMER, rLinkEntry);
 		ASSERT(prTimer);
 		if (prLinkEntry->prNext == NULL)
 			DBGLOG(CNM, WARN, "timer was re-inited, func %p\n", prTimer->pfMgmtTimeOutFunc);
@@ -449,7 +449,7 @@ VOID cnmTimerDoTimeOutCheck(IN P_ADAPTER_T prAdapter)
 			/* Search entire list again because of nest del and add timers
 			 * and current MGMT_TIMER could be volatile after stopped
 			 */
-			prLinkEntry = (P_LINK_ENTRY_T) prTimerList;
+			prLinkEntry = (struct LINK_ENTRY *) prTimerList;
 
 			prRootTimer->rNextExpiredSysTime = rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 		} else if (TIME_BEFORE(prTimer->rExpiredSysTime, prRootTimer->rNextExpiredSysTime)) {
@@ -470,7 +470,7 @@ VOID cnmTimerDoTimeOutCheck(IN P_ADAPTER_T prAdapter)
 		ASSERT(TIME_AFTER(prRootTimer->rNextExpiredSysTime, rCurSysTime));
 
 		fgNeedWakeLock = cnmTimerSetTimer(prAdapter, (OS_SYSTIME)
-						  ((INT_32) prRootTimer->rNextExpiredSysTime - (INT_32) rCurSysTime),
+						  ((int32_t) prRootTimer->rNextExpiredSysTime - (int32_t) rCurSysTime),
 						  eType);
 	}
 

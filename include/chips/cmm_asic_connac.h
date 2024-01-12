@@ -70,48 +70,48 @@
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID asicCapInit(IN P_ADAPTER_T prAdapter);
-UINT_32 asicGetFwDlInfo(P_ADAPTER_T prAdapter, char *pcBuf, int i4TotalLen);
-VOID asicEnableFWDownload(IN P_ADAPTER_T prAdapter, IN BOOL fgEnable);
-VOID fillNicTxDescAppend(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-			 OUT PUINT_8 prTxDescBuffer);
-VOID fillNicTxDescAppendWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-				OUT PUINT_8 prTxDescBuffer);
-VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-			    IN dma_addr_t rDmaAddr, IN UINT_32 u4Idx, IN BOOLEAN fgIsLast,
-			    OUT PUINT_8 pucBuffer);
-VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-			      IN dma_addr_t rDmaAddr, IN UINT_32 u4Idx, IN BOOLEAN fgIsLast,
-			      OUT PUINT_8 pucBuffer);
-VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-			   IN dma_addr_t rDmaAddr, IN UINT_32 u4Idx, IN BOOLEAN fgIsLast,
-			   OUT PUINT_8 pucBuffer);
-VOID fillTxDescTxByteCount(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-			   P_HW_MAC_TX_DESC_T prTxDesc);
-VOID fillTxDescTxByteCountWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
-				  P_HW_MAC_TX_DESC_T prTxDesc);
+void asicCapInit(IN struct ADAPTER *prAdapter);
+uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter, char *pcBuf, int i4TotalLen);
+void asicEnableFWDownload(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnable);
+void fillNicTxDescAppend(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+			 OUT uint8_t *prTxDescBuffer);
+void fillNicTxDescAppendWithCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+				OUT uint8_t *prTxDescBuffer);
+void fillTxDescAppendByHost(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+			    IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+			    OUT uint8_t *pucBuffer);
+void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+			      IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+			      OUT uint8_t *pucBuffer);
+void fillTxDescAppendByCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
+			   IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
+			   OUT uint8_t *pucBuffer);
+void fillTxDescTxByteCount(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+			   struct HW_MAC_TX_DESC *prTxDesc);
+void fillTxDescTxByteCountWithCR4(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo,
+				  struct HW_MAC_TX_DESC *prTxDesc);
 
 #if defined(_HIF_PCIE)
 /* DMS Scheduler Init */
-VOID asicPcieDmaShdlInit(IN P_ADAPTER_T prAdapter);
-VOID asicPdmaLoopBackConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable);
-VOID asicPdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable);
-VOID asicEnableInterrupt(IN P_ADAPTER_T prAdapter);
-VOID asicLowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
-VOID asicLowPowerOwnSet(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
-VOID asicLowPowerOwnClear(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult);
-VOID asicGetMailboxStatus(IN P_ADAPTER_T prAdapter, OUT PUINT_32 pu4Val);
+void asicPcieDmaShdlInit(IN struct ADAPTER *prAdapter);
+void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
+void asicEnableInterrupt(IN struct ADAPTER *prAdapter);
+void asicLowPowerOwnRead(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
+void asicLowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
+void asicLowPowerOwnClear(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult);
+void asicGetMailboxStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4Val);
 #endif /* _HIF_PCIE */
 
 #if defined(_HIF_USB)
 /* DMS Scheduler Init */
-VOID asicUsbDmaShdlInit(IN P_ADAPTER_T prAdapter);
-VOID asicUdmaTxTimeoutEnable(IN P_ADAPTER_T prAdapter);
-BOOLEAN asicUsbSuspend(IN P_ADAPTER_T prAdapter, IN P_GLUE_INFO_T prGlueInfo);
-UINT_8 asicUsbEventEpDetected(IN P_ADAPTER_T prAdapter);
-VOID asicUdmaRxFlush(IN P_ADAPTER_T prAdapter, IN BOOLEAN bEnable);
-VOID asicPdmaHifReset(IN P_ADAPTER_T prAdapter, IN BOOLEAN bRelease);
-VOID fillUsbHifTxDesc(IN PUINT_8 * pDest, IN PUINT_16 pInfoBufLen);
+void asicUsbDmaShdlInit(IN struct ADAPTER *prAdapter);
+void asicUdmaTxTimeoutEnable(IN struct ADAPTER *prAdapter);
+u_int8_t asicUsbSuspend(IN struct ADAPTER *prAdapter, IN struct GLUE_INFO *prGlueInfo);
+uint8_t asicUsbEventEpDetected(IN struct ADAPTER *prAdapter);
+void asicUdmaRxFlush(IN struct ADAPTER *prAdapter, IN u_int8_t bEnable);
+void asicPdmaHifReset(IN struct ADAPTER *prAdapter, IN u_int8_t bRelease);
+void fillUsbHifTxDesc(IN uint8_t ** pDest, IN uint16_t *pInfoBufLen);
 #endif /* _HIF_USB */
 #endif /* _CMM_ASIC_CONNAC_H */
 

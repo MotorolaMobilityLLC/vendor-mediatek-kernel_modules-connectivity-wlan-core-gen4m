@@ -107,14 +107,14 @@
 /*--------------------------------------------------------------*/
 /* Firmware Command Packer                                      */
 /*--------------------------------------------------------------*/
-WLAN_STATUS
-wlanoidSendSetQueryP2PCmd(IN P_ADAPTER_T prAdapter, IN UINT_8 ucCID,
-			  IN UINT_8 ucBssIdx, IN BOOLEAN fgSetQuery,
-			  IN BOOLEAN fgNeedResp, IN BOOLEAN fgIsOid,
+uint32_t
+wlanoidSendSetQueryP2PCmd(IN struct ADAPTER *prAdapter, IN uint8_t ucCID,
+			  IN uint8_t ucBssIdx, IN u_int8_t fgSetQuery,
+			  IN u_int8_t fgNeedResp, IN u_int8_t fgIsOid,
 			  IN PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 			  IN PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
-			  IN UINT_32 u4SetQueryInfoLen,
-			  IN PUINT_8 pucInfoBuffer, OUT PVOID pvSetQueryBuffer,
-			  IN UINT_32 u4SetQueryBufferLen);
+			  IN uint32_t u4SetQueryInfoLen,
+			  IN uint8_t *pucInfoBuffer, OUT void *pvSetQueryBuffer,
+			  IN uint32_t u4SetQueryBufferLen);
 
 #endif /* _P2P_CMD_BUF_H */

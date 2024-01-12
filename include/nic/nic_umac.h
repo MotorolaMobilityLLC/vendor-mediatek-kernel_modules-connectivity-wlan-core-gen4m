@@ -132,7 +132,7 @@
 ********************************************************************************
 */
 
-OUT BOOLEAN
-halUmacInfoGetMiscStatus(IN P_ADAPTER_T prAdapter, IN P_UMAC_STAT2_GET_T pUmacStat2Get);
+OUT u_int8_t
+halUmacInfoGetMiscStatus(IN struct ADAPTER *prAdapter, IN struct UMAC_STAT2_GET *pUmacStat2Get);
 
 #endif /* _NIC_UMAC_H */

@@ -104,7 +104,7 @@
 ********************************************************************************
 */
 
-typedef enum _ENUM_BOW_STATE_T {
+enum ENUM_BOW_STATE {
 	BOW_STATE_IDLE = 0,
 	BOW_STATE_SEARCH,
 	BOW_STATE_SCAN,
@@ -119,43 +119,43 @@ typedef enum _ENUM_BOW_STATE_T {
 	BOW_STATE_IBSS_MERGE,
 	BOW_STATE_NORMAL_TR,
 	BOW_STATE_NUM
-} ENUM_BOW_STATE_T;
+};
 
-typedef struct _BOW_FSM_INFO_T {
+struct BOW_FSM_INFO {
 	/* Channel Privilege */
-	BOOLEAN fgIsChannelRequested;
-	BOOLEAN fgIsChannelGranted;
-	UINT_32 u4ChGrantedInterval;
+	u_int8_t fgIsChannelRequested;
+	u_int8_t fgIsChannelGranted;
+	uint32_t u4ChGrantedInterval;
 
-	UINT_8 ucPrimaryChannel;
-	ENUM_BAND_T eBand;
-	UINT_16 u2BeaconInterval;
+	uint8_t ucPrimaryChannel;
+	enum ENUM_BAND eBand;
+	uint16_t u2BeaconInterval;
 
-	P_STA_RECORD_T prTargetStaRec;
-	P_BSS_DESC_T prTargetBssDesc;	/* For destination */
+	struct STA_RECORD *prTargetStaRec;
+	struct BSS_DESC *prTargetBssDesc;	/* For destination */
 
-	UINT_8 aucPeerAddress[6];
-	UINT_8 ucBssIndex;	/* Assume there is only 1 BSS for BOW */
-	UINT_8 ucRole;		/* Initiator or responder */
-	UINT_8 ucAvailableAuthTypes;	/* Used for AUTH_MODE_AUTO_SWITCH */
+	uint8_t aucPeerAddress[6];
+	uint8_t ucBssIndex;	/* Assume there is only 1 BSS for BOW */
+	uint8_t ucRole;		/* Initiator or responder */
+	uint8_t ucAvailableAuthTypes;	/* Used for AUTH_MODE_AUTO_SWITCH */
 
-	BOOLEAN fgSupportQoS;
+	u_int8_t fgSupportQoS;
 
 	/* Sequence number of requested message. */
-	UINT_8 ucSeqNumOfChReq;
-	UINT_8 ucSeqNumOfReqMsg;
-	UINT_8 ucSeqNumOfScnMsg;
-	UINT_8 ucSeqNumOfScanReq;
-	UINT_8 ucSeqNumOfCancelMsg;
+	uint8_t ucSeqNumOfChReq;
+	uint8_t ucSeqNumOfReqMsg;
+	uint8_t ucSeqNumOfScnMsg;
+	uint8_t ucSeqNumOfScanReq;
+	uint8_t ucSeqNumOfCancelMsg;
 
 	/* Timer */
-	TIMER_T rStartingBeaconTimer;	/* For device discovery time of each discovery request from user. */
-	TIMER_T rChGrantedTimer;
+	struct TIMER rStartingBeaconTimer;	/* For device discovery time of each discovery request from user. */
+	struct TIMER rChGrantedTimer;
 
 	/* can be deleted? */
-	TIMER_T rIndicationOfDisconnectTimer;
+	struct TIMER rIndicationOfDisconnectTimer;
 
-} BOW_FSM_INFO_T, *P_BOW_FSM_INFO_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

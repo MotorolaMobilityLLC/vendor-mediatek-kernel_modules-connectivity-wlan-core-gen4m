@@ -77,7 +77,7 @@
 
 #if CFG_ENABLE_BT_OVER_WIFI
 
-extern UINT_32 g_arBowRevPalPacketTime[32];
+extern uint32_t g_arBowRevPalPacketTime[32];
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -106,28 +106,28 @@ extern UINT_32 g_arBowRevPalPacketTime[32];
 ********************************************************************************
 */
 
-typedef struct _BOW_TABLE_T {
-	UINT_8 ucAcquireID;
-	BOOLEAN fgIsValid;
-	ENUM_BOW_DEVICE_STATE eState;
-	UINT_8 aucPeerAddress[6];
+struct BOW_TABLE {
+	uint8_t ucAcquireID;
+	u_int8_t fgIsValid;
+	enum ENUM_BOW_DEVICE_STATE eState;
+	uint8_t aucPeerAddress[6];
 	/* UINT_8                      ucRole; */
 	/* UINT_8                      ucChannelNum; */
-	UINT_16 u2Reserved;
-} BOW_TABLE_T, *P_BOW_TABLE_T;
+	uint16_t u2Reserved;
+};
 
-typedef WLAN_STATUS(*PFN_BOW_CMD_HANDLE) (P_ADAPTER_T, P_AMPC_COMMAND);
+typedef uint32_t(*PFN_BOW_CMD_HANDLE) (struct ADAPTER *, struct BT_OVER_WIFI_COMMAND *);
 
-typedef struct _BOW_CMD_T {
-	UINT_8 uCmdID;
+struct BOW_CMD {
+	uint8_t uCmdID;
 	PFN_BOW_CMD_HANDLE pfCmdHandle;
-} BOW_CMD_T, *P_BOW_CMD_T;
+};
 
-typedef struct _BOW_EVENT_ACTIVITY_REPORT_T {
-	UINT_8 ucReason;
-	UINT_8 aucReserved;
-	UINT_8 aucPeerAddress[6];
-} BOW_EVENT_ACTIVITY_REPORT_T, *P_BOW_EVENT_ACTIVITY_REPORT_T;
+struct BOW_EVENT_ACTIVITY_REPORT {
+	uint8_t ucReason;
+	uint8_t aucReserved;
+	uint8_t aucPeerAddress[6];
+};
 
 /*
 *ucReason:	0: success
@@ -136,25 +136,25 @@ typedef struct _BOW_EVENT_ACTIVITY_REPORT_T {
 *	Others: reserved.
 */
 
-typedef struct _BOW_EVENT_SYNC_TSF_T {
-	UINT_64 u4TsfTime;
-	UINT_32 u4TsfSysTime;
-	UINT_32 u4ScoTime;
-	UINT_32 u4ScoSysTime;
-} BOW_EVENT_SYNC_TSF_T, *P_BOW_EVENT_SYNC_TSF_T;
+struct BOW_EVENT_SYNC_TSF {
+	uint64_t u4TsfTime;
+	uint32_t u4TsfSysTime;
+	uint32_t u4ScoTime;
+	uint32_t u4ScoSysTime;
+};
 
-typedef struct _BOW_ACTIVITY_REPORT_BODY_T {
-	UINT_32 u4StartTime;
-	UINT_32 u4Duration;
-	UINT_32 u4Periodicity;
-} BOW_ACTIVITY_REPORT_BODY_T, *P_BOW_ACTIVITY_REPORT_BODY_T;
+struct BOW_ACTIVITY_REPORT_BODY {
+	uint32_t u4StartTime;
+	uint32_t u4Duration;
+	uint32_t u4Periodicity;
+};
 
-typedef struct _BOW_ACTIVITY_REPORT_T {
-	UINT_8 aucPeerAddress[6];
-	UINT_8 ucScheduleKnown;
-	UINT_8 ucNumReports;
-	BOW_ACTIVITY_REPORT_BODY_T arBowActivityReportBody[MAX_ACTIVITY_REPORT];
-} BOW_ACTIVITY_REPORT_T, *P_BOW_ACTIVITY_REPORT_T;
+struct BOW_ACTIVITY_REPORT {
+	uint8_t aucPeerAddress[6];
+	uint8_t ucScheduleKnown;
+	uint8_t ucNumReports;
+	struct BOW_ACTIVITY_REPORT_BODY arBowActivityReportBody[MAX_ACTIVITY_REPORT];
+};
 
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -173,125 +173,125 @@ typedef struct _BOW_ACTIVITY_REPORT_T {
 /*--------------------------------------------------------------*/
 /* Firmware Command Packer                                      */
 /*--------------------------------------------------------------*/
-WLAN_STATUS
-wlanoidSendSetQueryBowCmd(IN P_ADAPTER_T prAdapter,
-			  UINT_8 ucCID,
-			  IN UINT_8 ucBssIdx,
-			  BOOLEAN fgSetQuery,
-			  BOOLEAN fgNeedResp,
+uint32_t
+wlanoidSendSetQueryBowCmd(IN struct ADAPTER *prAdapter,
+			  uint8_t ucCID,
+			  IN uint8_t ucBssIdx,
+			  u_int8_t fgSetQuery,
+			  u_int8_t fgNeedResp,
 			  PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 			  PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
-			  UINT_32 u4SetQueryInfoLen, PUINT_8 pucInfoBuffer, IN UINT_8 ucSeqNumber);
+			  uint32_t u4SetQueryInfoLen, uint8_t *pucInfoBuffer, IN uint8_t ucSeqNumber);
 
 /*--------------------------------------------------------------*/
 /* Command Dispatcher                                           */
 /*--------------------------------------------------------------*/
-WLAN_STATUS wlanbowHandleCommand(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t wlanbowHandleCommand(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
 /*--------------------------------------------------------------*/
 /* Routines to handle command                                   */
 /*--------------------------------------------------------------*/
-WLAN_STATUS bowCmdGetMacStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdGetMacStatus(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdSetupConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdSetupConnection(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdDestroyConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdDestroyConnection(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdSetPTK(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdSetPTK(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdReadRSSI(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdReadRSSI(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdReadLinkQuality(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdShortRangeMode(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdShortRangeMode(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-WLAN_STATUS bowCmdGetChannelList(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd);
+uint32_t bowCmdGetChannelList(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd);
 
-VOID wlanbowCmdEventSetStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd, IN UINT_8 ucEventBuf);
+void wlanbowCmdEventSetStatus(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd, IN uint8_t ucEventBuf);
 
 /*--------------------------------------------------------------*/
 /* Callbacks for event indication                               */
 /*--------------------------------------------------------------*/
-VOID wlanbowCmdEventSetCommon(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+void wlanbowCmdEventSetCommon(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-VOID wlanbowCmdEventLinkConnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+void wlanbowCmdEventLinkConnected(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+void wlanbowCmdEventLinkDisconnected(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-VOID wlanbowCmdEventSetSetupConnection(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+void wlanbowCmdEventSetSetupConnection(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-VOID wlanbowCmdEventReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+void wlanbowCmdEventReadLinkQuality(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-VOID wlanbowCmdEventReadRssi(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf);
+void wlanbowCmdEventReadRssi(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
-UINT_8 bowInit(IN P_ADAPTER_T prAdapter);
+uint8_t bowInit(IN struct ADAPTER *prAdapter);
 
-VOID bowUninit(IN P_ADAPTER_T prAdapter);
+void bowUninit(IN struct ADAPTER *prAdapter);
 
-VOID wlanbowCmdTimeoutHandler(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo);
+void wlanbowCmdTimeoutHandler(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo);
 
-VOID bowStopping(IN P_ADAPTER_T prAdapter);
+void bowStopping(IN struct ADAPTER *prAdapter);
 
-VOID bowStarting(IN P_ADAPTER_T prAdapter);
+void bowStarting(IN struct ADAPTER *prAdapter);
 
-VOID bowAssignSsid(IN PUINT_8 pucSsid, IN PUINT_8 pucSsidLen);
+void bowAssignSsid(IN uint8_t *pucSsid, IN uint8_t *pucSsidLen);
 
-BOOLEAN bowValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT PUINT_32 pu4ControlFlags);
+u_int8_t bowValidateProbeReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint32_t *pu4ControlFlags);
 
-VOID bowSendBeacon(IN P_ADAPTER_T prAdapter, ULONG ulParamPtr);
+void bowSendBeacon(IN struct ADAPTER *prAdapter, unsigned long ulParamPtr);
 
-VOID bowResponderScan(IN P_ADAPTER_T prAdapter);
+void bowResponderScan(IN struct ADAPTER *prAdapter);
 
-VOID bowResponderScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void bowResponderScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID bowResponderCancelScan(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsChannelExtention);
+void bowResponderCancelScan(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsChannelExtention);
 
-VOID bowResponderJoin(IN P_ADAPTER_T prAdapter, P_BSS_DESC_T prBssDesc);
+void bowResponderJoin(IN struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
 
-VOID bowFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void bowFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID
-bowIndicationOfMediaStateToHost(IN P_ADAPTER_T prAdapter,
-				ENUM_PARAM_MEDIA_STATE_T eConnectionState, BOOLEAN fgDelayIndication);
+void
+bowIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
+				enum ENUM_PARAM_MEDIA_STATE eConnectionState, u_int8_t fgDelayIndication);
 
-VOID bowRunEventAAATxFail(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+void bowRunEventAAATxFail(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-WLAN_STATUS bowRunEventAAAComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec);
+uint32_t bowRunEventAAAComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec);
 
-WLAN_STATUS bowRunEventRxDeAuth(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN P_SW_RFB_T prSwRfb);
+uint32_t bowRunEventRxDeAuth(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct SW_RFB *prSwRfb);
 
-VOID bowDisconnectLink(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus);
+void bowDisconnectLink(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-BOOLEAN bowValidateAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT PUINT_16 pu2StatusCode);
+u_int8_t bowValidateAssocReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint16_t *pu2StatusCode);
 
-BOOLEAN
-bowValidateAuth(IN P_ADAPTER_T prAdapter,
-		IN P_SW_RFB_T prSwRfb, IN PP_STA_RECORD_T pprStaRec, OUT PUINT_16 pu2StatusCode);
+u_int8_t
+bowValidateAuth(IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb, IN struct STA_RECORD **pprStaRec, OUT uint16_t *pu2StatusCode);
 
-VOID bowRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr);
+void bowRunEventChGrant(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
 
-VOID bowRequestCh(IN P_ADAPTER_T prAdapter);
+void bowRequestCh(IN struct ADAPTER *prAdapter);
 
-VOID bowReleaseCh(IN P_ADAPTER_T prAdapter);
+void bowReleaseCh(IN struct ADAPTER *prAdapter);
 
-VOID bowChGrantedTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr);
+void bowChGrantedTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
 
-BOOLEAN bowNotifyAllLinkDisconnected(IN P_ADAPTER_T prAdapter);
+u_int8_t bowNotifyAllLinkDisconnected(IN struct ADAPTER *prAdapter);
 
-BOOLEAN bowCheckBowTableIfVaild(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6]);
+u_int8_t bowCheckBowTableIfVaild(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6]);
 
-BOOLEAN bowGetBowTableContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBowTableIdx, OUT P_BOW_TABLE_T prBowTable);
+u_int8_t bowGetBowTableContent(IN struct ADAPTER *prAdapter, IN uint8_t ucBowTableIdx, OUT struct BOW_TABLE *prBowTable);
 
-BOOLEAN
-bowGetBowTableEntryByPeerAddress(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6], OUT PUINT_8 pucBowTableIdx);
+u_int8_t
+bowGetBowTableEntryByPeerAddress(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6], OUT uint8_t *pucBowTableIdx);
 
-BOOLEAN bowGetBowTableFreeEntry(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucBowTableIdx);
+u_int8_t bowGetBowTableFreeEntry(IN struct ADAPTER *prAdapter, OUT uint8_t *pucBowTableIdx);
 
-ENUM_BOW_DEVICE_STATE bowGetBowTableState(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6]);
+enum ENUM_BOW_DEVICE_STATE bowGetBowTableState(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6]);
 
-BOOLEAN bowSetBowTableState(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6], IN ENUM_BOW_DEVICE_STATE eState);
+u_int8_t bowSetBowTableState(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6], IN enum ENUM_BOW_DEVICE_STATE eState);
 
-BOOLEAN bowSetBowTableContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBowTableIdx, IN P_BOW_TABLE_T prBowTable);
+u_int8_t bowSetBowTableContent(IN struct ADAPTER *prAdapter, IN uint8_t ucBowTableIdx, IN struct BOW_TABLE *prBowTable);
 
 /*******************************************************************************
 *                              F U N C T I O N S

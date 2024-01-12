@@ -121,24 +121,24 @@
 ********************************************************************************
 */
 
-typedef struct _MSDU_TOKEN_ENTRY_T {
-	UINT_32 u4Token;
-	BOOLEAN fgInUsed;
-	P_MSDU_INFO_T prMsduInfo;
-	P_NATIVE_PACKET prPacket;
+struct MSDU_TOKEN_ENTRY {
+	uint32_t u4Token;
+	u_int8_t fgInUsed;
+	struct MSDU_INFO *prMsduInfo;
+	void *prPacket;
 	dma_addr_t rDmaAddr;
-	UINT_32 u4DmaLength;
+	uint32_t u4DmaLength;
 	dma_addr_t rPktDmaAddr;
-	UINT_32 u4PktDmaLength;
-}	MSDU_TOKEN_ENTRY_T, *P_MSDU_TOKEN_ENTRY_T;
+	uint32_t u4PktDmaLength;
+};
 
-typedef struct _MSDU_TOKEN_INFO_T {
-	INT_32 i4UsedCnt;
-	P_MSDU_TOKEN_ENTRY_T aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
+struct MSDU_TOKEN_INFO {
+	int32_t i4UsedCnt;
+	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
 	spinlock_t rTokenLock;
 
-	MSDU_TOKEN_ENTRY_T arToken[HIF_TX_MSDU_TOKEN_NUM];
-} MSDU_TOKEN_INFO_T, *P_MSDU_TOKEN_INFO_T;
+	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
+};
 
 enum ERR_RECOVERY_STATE {
 	ERR_RECOV_STOP_IDLE = 0,
@@ -152,75 +152,75 @@ enum ERR_RECOVERY_STATE {
 
 struct ERR_RECOVERY_CTRL_T {
 	enum ERR_RECOVERY_STATE eErrRecovState;
-	UINT_32 u4Status;
+	uint32_t u4Status;
 };
 
 /* host interface's private data structure, which is attached to os glue
 ** layer info structure.
  */
-typedef struct _GL_HIF_INFO_T {
+struct GL_HIF_INFO {
 	struct pci_dev *pdev;
 
-	PUCHAR CSRBaseAddress;	/* PCI MMIO Base Address, all access will use */
+	uint8_t *CSRBaseAddress;	/* PCI MMIO Base Address, all access will use */
 
 	/* Shared memory of all 1st pre-allocated
 	 * TxBuf associated with each TXD
 	 */
-	RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];	/* Shared memory for Tx descriptors */
-	RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
+	struct RTMP_DMABUF TxDescRing[NUM_OF_TX_RING];	/* Shared memory for Tx descriptors */
+	struct RTMP_TX_RING TxRing[NUM_OF_TX_RING];	/* AC0~3 + HCCA */
 	spinlock_t TxRingLock[NUM_OF_TX_RING];	/* Rx Ring spinlock */
 
-	RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];	/* Shared memory for RX descriptors */
-	RTMP_RX_RING RxRing[NUM_OF_RX_RING];
+	struct RTMP_DMABUF RxDescRing[NUM_OF_RX_RING];	/* Shared memory for RX descriptors */
+	struct RTMP_RX_RING RxRing[NUM_OF_RX_RING];
 	spinlock_t RxRingLock[NUM_OF_RX_RING];	/* Rx Ring spinlock */
 
-	BOOLEAN fgIntReadClear;
-	BOOLEAN fgMbxReadClear;
+	u_int8_t fgIntReadClear;
+	u_int8_t fgMbxReadClear;
 
-	UINT_32 u4IntStatus;
+	uint32_t u4IntStatus;
 
-	MSDU_TOKEN_INFO_T rTokenInfo;
+	struct MSDU_TOKEN_INFO rTokenInfo;
 
 	spinlock_t rDynMapRegLock;
 
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
-	BOOLEAN fgIsErrRecovery;
+	u_int8_t fgIsErrRecovery;
 	spinlock_t rSerLock;
 	struct timer_list rSerTimer;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
 	spinlock_t rTxCmdQLock;
 	spinlock_t rTxDataQLock;
-} GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
+};
 
 struct TX_CMD_REQ_T {
-	P_CMD_INFO_T prCmdInfo;
-	UINT_8 ucTC;
+	struct CMD_INFO *prCmdInfo;
+	uint8_t ucTC;
 	struct list_head list;
 };
 
 struct TX_DATA_REQ_T {
-	P_MSDU_INFO_T prMsduInfo;
+	struct MSDU_INFO *prMsduInfo;
 	struct list_head list;
 };
 
-typedef struct _BUS_INFO {
+struct BUS_INFO {
 	const unsigned int top_cfg_base;	/* TOP_CFG_BASE address */
-	const PCIE_CHIP_CR_MAPPING *bus2chip;
+	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
 	const unsigned int tx_ring_cmd_idx;
 	const unsigned int tx_ring_fwdl_idx;
 	const unsigned int tx_ring_data_idx;
-	const BOOLEAN fgCheckDriverOwnInt;
-	const BOOLEAN fgInitPCIeInt;
-	const UINT_32 u4DmaMask;
+	const u_int8_t fgCheckDriverOwnInt;
+	const u_int8_t fgInitPCIeInt;
+	const uint32_t u4DmaMask;
 
-	VOID (*pdmaSetup)(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
-	VOID (*enableInterrupt)(P_ADAPTER_T prAdapter);
-	VOID (*lowPowerOwnRead)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
-	VOID (*lowPowerOwnSet)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
-	VOID (*lowPowerOwnClear)(P_ADAPTER_T prAdapter, PBOOLEAN pfgResult);
-	VOID (*getMailboxStatus)(P_ADAPTER_T prAdapter, PUINT_32 pu4Val);
-} BUS_INFO, *P_BUS_INFO;
+	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+	void (*enableInterrupt)(struct ADAPTER *prAdapter);
+	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
+	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
+	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
+	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
+};
 
 
 /*******************************************************************************
@@ -243,62 +243,62 @@ typedef struct _BUS_INFO {
 ********************************************************************************
 */
 
-WLAN_STATUS glRegisterBus(probe_card pfProbe, remove_card pfRemove);
+uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 
-VOID glUnregisterBus(remove_card pfRemove);
+void glUnregisterBus(remove_card pfRemove);
 
-VOID glSetHifInfo(P_GLUE_INFO_T prGlueInfo, ULONG ulCookie);
+void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie);
 
-VOID glClearHifInfo(P_GLUE_INFO_T prGlueInfo);
+void glClearHifInfo(struct GLUE_INFO *prGlueInfo);
 
-BOOL glBusInit(PVOID pvData);
+u_int8_t glBusInit(void *pvData);
 
-VOID glBusRelease(PVOID pData);
+void glBusRelease(void *pData);
 
-INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie);
+int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie);
 
-VOID glBusFreeIrq(PVOID pvData, PVOID pvCookie);
+void glBusFreeIrq(void *pvData, void *pvCookie);
 
-VOID glSetPowerState(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 ePowerMode);
+void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode);
 
-void glGetDev(PVOID ctx, struct device **dev);
+void glGetDev(void *ctx, struct device **dev);
 
-void glGetHifDev(P_GL_HIF_INFO_T prHif, struct device **dev);
-VOID halHifRst(P_GLUE_INFO_T prGlueInfo);
-VOID halWpdmaAllocRing(P_GLUE_INFO_T prGlueInfo);
-VOID halWpdmaFreeRing(P_GLUE_INFO_T prGlueInfo);
-VOID halWpdmaInitRing(P_GLUE_INFO_T prGlueInfo);
-VOID halWpdmaInitTxRing(IN P_GLUE_INFO_T prGlueInfo);
-VOID halWpdmaInitRxRing(IN P_GLUE_INFO_T prGlueInfo);
-VOID halWpdmaProcessCmdDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
-VOID halWpdmaProcessDataDmaDone(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
-UINT_32 halWpdmaGetRxDmaDoneCnt(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucRingNum);
-VOID kalPciUnmapToDev(IN P_GLUE_INFO_T prGlueInfo, IN dma_addr_t rDmaAddr, IN UINT_32 u4Length);
+void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
+void halHifRst(struct GLUE_INFO *prGlueInfo);
+void halWpdmaAllocRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitRing(struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitTxRing(IN struct GLUE_INFO *prGlueInfo);
+void halWpdmaInitRxRing(IN struct GLUE_INFO *prGlueInfo);
+void halWpdmaProcessCmdDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
+void halWpdmaProcessDataDmaDone(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
+uint32_t halWpdmaGetRxDmaDoneCnt(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucRingNum);
+void kalPciUnmapToDev(IN struct GLUE_INFO *prGlueInfo, IN dma_addr_t rDmaAddr, IN uint32_t u4Length);
 
-VOID halInitMsduTokenInfo(IN P_ADAPTER_T prAdapter);
-VOID halUninitMsduTokenInfo(IN P_ADAPTER_T prAdapter);
-UINT_32 halGetMsduTokenFreeCnt(IN P_ADAPTER_T prAdapter);
-P_MSDU_TOKEN_ENTRY_T halGetMsduTokenEntry(IN P_ADAPTER_T prAdapter, UINT_32 u4TokenNum);
-P_MSDU_TOKEN_ENTRY_T halAcquireMsduToken(IN P_ADAPTER_T prAdapter);
-VOID halReturnMsduToken(IN P_ADAPTER_T prAdapter, UINT_32 u4TokenNum);
+void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter);
+void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter);
+uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter);
+struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
+void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
 
-VOID halTxUpdateCutThroughDesc(P_GLUE_INFO_T prGlueInfo, P_MSDU_INFO_T prMsduInfo,
-	P_MSDU_TOKEN_ENTRY_T prToken);
-BOOLEAN halIsStaticMapBusAddr(IN UINT_32 u4Addr);
-BOOLEAN halChipToStaticMapBusAddr(IN P_BUS_INFO prBusInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4BusAddr);
-BOOLEAN halGetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, OUT PUINT_32 pu4Value);
-BOOLEAN halSetDynamicMapReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_32 u4ChipAddr, IN UINT_32 u4Value);
-VOID halConnacWpdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN enable);
-VOID halConnacEnableInterrupt(IN P_ADAPTER_T prAdapter);
+void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo, struct MSDU_INFO *prMsduInfo,
+	struct MSDU_TOKEN_ENTRY *prToken);
+u_int8_t halIsStaticMapBusAddr(IN uint32_t u4Addr);
+u_int8_t halChipToStaticMapBusAddr(IN struct BUS_INFO *prBusInfo, IN uint32_t u4ChipAddr, OUT uint32_t *pu4BusAddr);
+u_int8_t halGetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4ChipAddr, OUT uint32_t *pu4Value);
+u_int8_t halSetDynamicMapReg(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4ChipAddr, IN uint32_t u4Value);
+void halConnacWpdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
+void halConnacEnableInterrupt(IN struct ADAPTER *prAdapter);
 
-BOOL halWpdmaWriteCmd(IN P_GLUE_INFO_T prGlueInfo, IN P_CMD_INFO_T prCmdInfo, IN UINT_8 ucTC);
-BOOL halWpdmaWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo);
-VOID halHwRecoveryFromError(IN P_ADAPTER_T prAdapter);
+u_int8_t halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo, IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC);
+u_int8_t halWpdmaWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo);
+void halHwRecoveryFromError(IN struct ADAPTER *prAdapter);
 
-VOID kalCheckAndResetTXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
-VOID kalCheckAndResetRXReg(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port);
-BOOL kalDevReadData(IN P_GLUE_INFO_T prGlueInfo, IN UINT_16 u2Port, IN OUT P_SW_RFB_T prSwRfb);
-BOOL kalDevKickCmd(IN P_GLUE_INFO_T prGlueInfo);
+void kalCheckAndResetTXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
+void kalCheckAndResetRXReg(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port);
+u_int8_t kalDevReadData(IN struct GLUE_INFO *prGlueInfo, IN uint16_t u2Port, IN OUT struct SW_RFB *prSwRfb);
+u_int8_t kalDevKickCmd(IN struct GLUE_INFO *prGlueInfo);
 
 /*******************************************************************************
 *                              F U N C T I O N S

@@ -2,32 +2,32 @@
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 struct COMMAND {
-	UINT_8 ucCID;
-	BOOLEAN fgSetQuery;
-	BOOLEAN fgNeedResp;
-	UINT_8 ucCmdSeqNum;
+	uint8_t ucCID;
+	u_int8_t fgSetQuery;
+	u_int8_t fgNeedResp;
+	uint8_t ucCmdSeqNum;
 };
 
 struct SECURITY_FRAME {
-	UINT_16 u2EthType;
-	UINT_16 u2Reserved;
+	uint16_t u2EthType;
+	uint16_t u2Reserved;
 };
 
 struct MGMT_FRAME {
-	UINT_16 u2FrameCtl;
-	UINT_16 u2DurationID;
+	uint16_t u2FrameCtl;
+	uint16_t u2DurationID;
 };
 
 struct TC_RES_RELEASE_ENTRY {
-	UINT_64 u8RelaseTime;
-	UINT_32 u4RelCID;
-	UINT_32 u4Tc4RelCnt;
-	UINT_32 u4AvailableTc4;
+	uint64_t u8RelaseTime;
+	uint32_t u4RelCID;
+	uint32_t u4Tc4RelCnt;
+	uint32_t u4AvailableTc4;
 };
 
 struct CMD_TRACE_ENTRY {
-	UINT_64 u8TxTime;
-	COMMAND_TYPE eCmdType;
+	uint64_t u8TxTime;
+	enum COMMAND_TYPE eCmdType;
 	union {
 		struct COMMAND rCmd;
 		struct SECURITY_FRAME rSecFrame;
@@ -40,7 +40,7 @@ struct CMD_TRACE_ENTRY {
 
 static struct TC_RES_RELEASE_ENTRY *gprTcReleaseTraceBuffer;
 static struct CMD_TRACE_ENTRY *gprCmdTraceEntry;
-VOID wlanDebugTC4Init(VOID)
+void wlanDebugTC4Init(void)
 {
 	/* debug for command/tc4 resource begin */
 	gprTcReleaseTraceBuffer =
@@ -51,7 +51,7 @@ VOID wlanDebugTC4Init(VOID)
 	/* debug for command/tc4 resource end */
 }
 
-VOID wlanDebugTC4Uninit(VOID)
+void wlanDebugTC4Uninit(void)
 {
 	/* debug for command/tc4 resource begin */
 	kalMemFree(gprTcReleaseTraceBuffer, PHY_MEM_TYPE,
@@ -60,20 +60,20 @@ VOID wlanDebugTC4Uninit(VOID)
 	/* debug for command/tc4 resource end */
 }
 
-VOID wlanTraceTxCmd(P_CMD_INFO_T prCmd)
+void wlanTraceTxCmd(struct CMD_INFO *prCmd)
 {
-	static UINT_16 u2CurEntry;
+	static uint16_t u2CurEntry;
 	struct CMD_TRACE_ENTRY *prCurCmd = &gprCmdTraceEntry[u2CurEntry];
 
 	prCurCmd->u8TxTime = sched_clock();
 	prCurCmd->eCmdType = prCmd->eCmdType;
 	if (prCmd->eCmdType == COMMAND_TYPE_MANAGEMENT_FRAME) {
-		P_WLAN_MAC_MGMT_HEADER_T prMgmt = (P_WLAN_MAC_MGMT_HEADER_T)prCmd->prMsduInfo->prPacket;
+		struct WLAN_MAC_MGMT_HEADER *prMgmt = (struct WLAN_MAC_MGMT_HEADER *)prCmd->prMsduInfo->prPacket;
 
 		prCurCmd->u.rMgmtFrame.u2FrameCtl = prMgmt->u2FrameCtrl;
 		prCurCmd->u.rMgmtFrame.u2DurationID = prMgmt->u2Duration;
 	} else if (prCmd->eCmdType == COMMAND_TYPE_SECURITY_FRAME) {
-		PUINT_8 pucPkt = (PUINT_8)((struct sk_buff *)prCmd->prPacket)->data;
+		uint8_t *pucPkt = (uint8_t *)((struct sk_buff *)prCmd->prPacket)->data;
 
 		prCurCmd->u.rSecFrame.u2EthType =
 				(pucPkt[ETH_TYPE_LEN_OFFSET] << 8) | (pucPkt[ETH_TYPE_LEN_OFFSET + 1]);
@@ -88,9 +88,9 @@ VOID wlanTraceTxCmd(P_CMD_INFO_T prCmd)
 		u2CurEntry = 0;
 }
 
-VOID wlanTraceReleaseTcRes(P_ADAPTER_T prAdapter, UINT_32 u4TxRlsCnt, UINT_32 u4Available)
+void wlanTraceReleaseTcRes(struct ADAPTER *prAdapter, uint32_t u4TxRlsCnt, uint32_t u4Available)
 {
-	static UINT_16 u2CurEntry;
+	static uint16_t u2CurEntry;
 	struct TC_RES_RELEASE_ENTRY *prCurBuf = &gprTcReleaseTraceBuffer[u2CurEntry];
 
 	prCurBuf->u8RelaseTime = sched_clock();
@@ -101,9 +101,9 @@ VOID wlanTraceReleaseTcRes(P_ADAPTER_T prAdapter, UINT_32 u4TxRlsCnt, UINT_32 u4
 		u2CurEntry = 0;
 }
 
-VOID wlanDumpTcResAndTxedCmd(PUINT_8 pucBuf, UINT_32 maxLen)
+void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf, uint32_t maxLen)
 {
-	UINT_16 i = 0;
+	uint16_t i = 0;
 	struct TC_RES_RELEASE_ENTRY *prTcRel = gprTcReleaseTraceBuffer;
 	struct CMD_TRACE_ENTRY *prCmd = gprCmdTraceEntry;
 
@@ -113,9 +113,9 @@ VOID wlanDumpTcResAndTxedCmd(PUINT_8 pucBuf, UINT_32 maxLen)
 		for (; i < TXED_CMD_TRACE_BUF_MAX_NUM/2; i++) {
 			bufLen = snprintf(pucBuf, maxLen,
 				"%d: Time %llu, Type %d, Content %08x; %d: Time %llu, Type %d, Content %08x\n",
-				i*2, prCmd[i*2].u8TxTime, prCmd[i*2].eCmdType, *(PUINT_32)(&prCmd[i*2].u.rCmd.ucCID),
+				i*2, prCmd[i*2].u8TxTime, prCmd[i*2].eCmdType, *(uint32_t *)(&prCmd[i*2].u.rCmd.ucCID),
 				i*2+1, prCmd[i*2+1].u8TxTime, prCmd[i*2+1].eCmdType,
-				*(PUINT_32)(&prCmd[i*2+1].u.rCmd.ucCID));
+				*(uint32_t *)(&prCmd[i*2+1].u.rCmd.ucCID));
 			if (bufLen <= 0)
 				break;
 			pucBuf += bufLen;
@@ -137,14 +137,14 @@ VOID wlanDumpTcResAndTxedCmd(PUINT_8 pucBuf, UINT_32 maxLen)
 		for (; i < TXED_CMD_TRACE_BUF_MAX_NUM/4; i++) {
 			LOG_FUNC("%d: Time %llu, Type %d, Content %08x; %d: Time %llu, Type %d, Content %08x; ",
 				i*4, prCmd[i*4].u8TxTime, prCmd[i*4].eCmdType,
-				*(PUINT_32)(&prCmd[i*4].u.rCmd.ucCID),
+				*(uint32_t *)(&prCmd[i*4].u.rCmd.ucCID),
 				i*4+1, prCmd[i*4+1].u8TxTime, prCmd[i*4+1].eCmdType,
-				*(PUINT_32)(&prCmd[i*4+1].u.rCmd.ucCID));
+				*(uint32_t *)(&prCmd[i*4+1].u.rCmd.ucCID));
 			LOG_FUNC("%d: Time %llu, Type %d, Content %08x; %d: Time %llu, Type %d, Content %08x\n",
 				i*4+2, prCmd[i*4+2].u8TxTime, prCmd[i*4+2].eCmdType,
-				*(PUINT_32)(&prCmd[i*4+2].u.rCmd.ucCID),
+				*(uint32_t *)(&prCmd[i*4+2].u.rCmd.ucCID),
 				i*4+3, prCmd[i*4+3].u8TxTime, prCmd[i*4+3].eCmdType,
-				*(PUINT_32)(&prCmd[i*4+3].u.rCmd.ucCID));
+				*(uint32_t *)(&prCmd[i*4+3].u.rCmd.ucCID));
 		}
 		for (i = 0; i < TC_RELEASE_TRACE_BUF_MAX_NUM/4; i++) {
 			LOG_FUNC(
@@ -164,18 +164,18 @@ VOID wlanDumpTcResAndTxedCmd(PUINT_8 pucBuf, UINT_32 maxLen)
 }
 #endif
 
-static VOID
-firmwareHexDump(const PUCHAR pucPreFix, INT_32 i4PreFixType,
-		    INT_32 i4RowSize, INT_32 i4GroupSize,
-		    const PVOID pvBuf, size_t len, BOOL fgAscii)
+static void
+firmwareHexDump(const uint8_t *pucPreFix, int32_t i4PreFixType,
+		    int32_t i4RowSize, int32_t i4GroupSize,
+		    const void *pvBuf, size_t len, u_int8_t fgAscii)
 {
 #define OLD_KBUILD_MODNAME KBUILD_MODNAME
 #undef KBUILD_MODNAME
 #define KBUILD_MODNAME "wlan_mt6632_fw"
 
-	const PUINT_8 pucPtr = pvBuf;
-	INT_32 i, i4LineLen, i4Remaining = len;
-	UCHAR ucLineBuf[32 * 3 + 2 + 32 + 1];
+	const uint8_t *pucPtr = pvBuf;
+	int32_t i, i4LineLen, i4Remaining = len;
+	uint8_t ucLineBuf[32 * 3 + 2 + 32 + 1];
 
 	if (i4RowSize != 16 && i4RowSize != 32)
 		i4RowSize = 16;
@@ -205,8 +205,8 @@ firmwareHexDump(const PUCHAR pucPreFix, INT_32 i4PreFixType,
 #define KBUILD_MODNAME OLD_KBUILD_MODNAME
 }
 
-VOID wlanPrintFwLog(PUINT_8 pucLogContent, UINT_16 u2MsgSize, UINT_8 ucMsgType,
-	const PUCHAR pucFmt, ...)
+void wlanPrintFwLog(uint8_t *pucLogContent, uint16_t u2MsgSize, uint8_t ucMsgType,
+	const uint8_t *pucFmt, ...)
 {
 #define OLD_KBUILD_MODNAME KBUILD_MODNAME
 #define OLD_LOG_FUNC LOG_FUNC
@@ -216,7 +216,7 @@ VOID wlanPrintFwLog(PUINT_8 pucLogContent, UINT_16 u2MsgSize, UINT_8 ucMsgType,
 #define LOG_FUNC pr_info
 #define DBG_LOG_BUF_SIZE 128
 
-	CHAR aucLogBuffer[DBG_LOG_BUF_SIZE];
+	int8_t aucLogBuffer[DBG_LOG_BUF_SIZE];
 	va_list args;
 
 	if (u2MsgSize > DEBUG_MSG_SIZE_MAX - 1) {
@@ -226,7 +226,7 @@ VOID wlanPrintFwLog(PUINT_8 pucLogContent, UINT_16 u2MsgSize, UINT_8 ucMsgType,
 	switch (ucMsgType) {
 	case DEBUG_MSG_TYPE_ASCII:
 		{
-			PUINT_8 pucChr;
+			uint8_t *pucChr;
 
 			pucLogContent[u2MsgSize] = '\0';
 

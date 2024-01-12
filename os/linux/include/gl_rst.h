@@ -92,20 +92,20 @@
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef enum _ENUM_RESET_STATUS_T {
+enum ENUM_RESET_STATUS {
 	RESET_FAIL,
 	RESET_SUCCESS
-} ENUM_RESET_STATUS_T;
+};
 
-typedef struct _RESET_STRUCT_T {
-	ENUM_RESET_STATUS_T rst_data;
+struct RESET_STRUCT {
+	enum ENUM_RESET_STATUS rst_data;
 	struct work_struct rst_work;
 	struct work_struct rst_trigger_work;
-	UINT_32 rst_trigger_flag;
-} RESET_STRUCT_T;
+	uint32_t rst_trigger_flag;
+};
 
 /* duplicated from wmt_exp.h for better driver isolation */
-typedef enum _ENUM_WMTDRV_TYPE_T {
+enum ENUM_WMTDRV_TYPE {
 	WMTDRV_TYPE_BT = 0,
 	WMTDRV_TYPE_FM = 1,
 	WMTDRV_TYPE_GPS = 2,
@@ -116,24 +116,24 @@ typedef enum _ENUM_WMTDRV_TYPE_T {
 	WMTDRV_TYPE_SDIO2 = 7,
 	WMTDRV_TYPE_LPBK = 8,
 	WMTDRV_TYPE_MAX
-} ENUM_WMTDRV_TYPE_T, *P_ENUM_WMTDRV_TYPE_T;
+};
 
-typedef enum _ENUM_WMTMSG_TYPE_T {
+enum ENUM_WMTMSG_TYPE {
 	WMTMSG_TYPE_POWER_ON = 0,
 	WMTMSG_TYPE_POWER_OFF = 1,
 	WMTMSG_TYPE_RESET = 2,
 	WMTMSG_TYPE_STP_RDY = 3,
 	WMTMSG_TYPE_HW_FUNC_ON = 4,
 	WMTMSG_TYPE_MAX
-} ENUM_WMTMSG_TYPE_T, *P_ENUM_WMTMSG_TYPE_T;
+};
 
-typedef enum _ENUM_WMTRSTMSG_TYPE_T {
+enum ENUM_WMTRSTMSG_TYPE {
 	WMTRSTMSG_RESET_START = 0x0,
 	WMTRSTMSG_RESET_END = 0x1,
 	WMTRSTMSG_RESET_END_FAIL = 0x2,
 	WMTRSTMSG_RESET_MAX,
 	WMTRSTMSG_RESET_INVALID = 0xff
-} ENUM_WMTRSTMSG_TYPE_T, *P_ENUM_WMTRSTMSG_TYPE_T;
+};
 
 enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_PROCESS_ABNORMAL_INT = 1,
@@ -144,17 +144,15 @@ enum _ENUM_CHIP_RESET_REASON_TYPE_T {
 	RST_REASON_MAX
 };
 
-typedef void (*PF_WMT_CB) (ENUM_WMTDRV_TYPE_T,	/* Source driver type */
-			   ENUM_WMTDRV_TYPE_T,	/* Destination driver type */
-			   ENUM_WMTMSG_TYPE_T,	/* Message type */
+typedef void (*PF_WMT_CB) (enum ENUM_WMTDRV_TYPE,	/* Source driver type */
+			   enum ENUM_WMTDRV_TYPE,	/* Destination driver type */
+			   enum ENUM_WMTMSG_TYPE,	/* Message type */
 			   void *,
 			   /* READ-ONLY buffer. Buffer is allocated and freed by WMT_drv. Client
 			    * can't touch this buffer after this function return.
 			    */
 			   unsigned int);	/* Buffer size in unit of byte */
 
-typedef int MTK_WCN_BOOL;
-typedef unsigned int UINT32, *PUINT32;
 
 /*******************************************************************************
 *                    E X T E R N A L   F U N C T I O N S
@@ -163,11 +161,11 @@ typedef unsigned int UINT32, *PUINT32;
 
 #if CFG_CHIP_RESET_SUPPORT
 
-extern MTK_WCN_BOOL mtk_wcn_wmt_assert(ENUM_WMTDRV_TYPE_T type, UINT32 reason);
-extern int mtk_wcn_wmt_msgcb_reg(ENUM_WMTDRV_TYPE_T eType, PF_WMT_CB pCb);
-extern int mtk_wcn_wmt_msgcb_unreg(ENUM_WMTDRV_TYPE_T eType);
+extern int mtk_wcn_wmt_assert(enum ENUM_WMTDRV_TYPE type, uint32_t reason);
+extern int mtk_wcn_wmt_msgcb_reg(enum ENUM_WMTDRV_TYPE eType, PF_WMT_CB pCb);
+extern int mtk_wcn_wmt_msgcb_unreg(enum ENUM_WMTDRV_TYPE eType);
 extern int wifi_reset_start(void);
-extern int wifi_reset_end(ENUM_RESET_STATUS_T);
+extern int wifi_reset_end(enum ENUM_RESET_STATUS);
 #endif
 
 /*******************************************************************************
@@ -186,45 +184,45 @@ extern int wifi_reset_end(ENUM_RESET_STATUS_T);
 */
 #if CFG_CHIP_RESET_SUPPORT
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
-	glResetTrigger(_prAdapter, (_u4Flags), (const PUINT_8)__FILE__, __LINE__)
+	glResetTrigger(_prAdapter, (_u4Flags), (const uint8_t *)__FILE__, __LINE__)
 #else
 #define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
 	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
 #endif
 
-extern UINT_64 u8ResetTime;
+extern uint64_t u8ResetTime;
 extern enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
 #if CFG_WMT_RESET_API_SUPPORT
-extern MTK_WCN_BOOL mtk_wcn_set_connsys_power_off_flag(MTK_WCN_BOOL value);
-extern MTK_WCN_BOOL mtk_wcn_wmt_assert_timeout(ENUM_WMTDRV_TYPE_T type, UINT32 reason, int timeout);
-extern MTK_WCN_BOOL mtk_wcn_wmt_do_reset(ENUM_WMTDRV_TYPE_T type);
+extern int mtk_wcn_set_connsys_power_off_flag(int value);
+extern int mtk_wcn_wmt_assert_timeout(enum ENUM_WMTDRV_TYPE type, uint32_t reason, int timeout);
+extern int mtk_wcn_wmt_do_reset(enum ENUM_WMTDRV_TYPE type);
 #endif
 
 /*----------------------------------------------------------------------------*/
 /* WMT Core Dump Support                                                                */
 /*----------------------------------------------------------------------------*/
-extern BOOLEAN mtk_wcn_stp_coredump_start_get(VOID);
+extern u_int8_t mtk_wcn_stp_coredump_start_get(void);
 
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
-VOID glResetInit(VOID);
+void glResetInit(void);
 
-VOID glResetUninit(VOID);
+void glResetUninit(void);
 
-VOID glSendResetRequest(VOID);
+void glSendResetRequest(void);
 
-BOOLEAN kalIsResetting(VOID);
+u_int8_t kalIsResetting(void);
 
-BOOLEAN glIsWmtCodeDump(VOID);
+u_int8_t glIsWmtCodeDump(void);
 
-BOOLEAN glResetTrigger(P_ADAPTER_T prAdapter, UINT_32 u4RstFlag, const PUINT_8 pucFile, UINT_32 u4Line);
+u_int8_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line);
 
-VOID glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason);
+void glGetRstReason(enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason);
 
 #endif /* _GL_RST_H */

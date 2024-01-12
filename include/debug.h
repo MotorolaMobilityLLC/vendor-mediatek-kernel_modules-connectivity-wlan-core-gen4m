@@ -79,7 +79,7 @@
 */
 #include "gl_typedef.h"
 
-extern UINT_8 aucDebugModule[];
+extern uint8_t aucDebugModule[];
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -109,7 +109,7 @@ extern UINT_8 aucDebugModule[];
 ********************************************************************************
 */
 /* Define debug module index */
-typedef enum _ENUM_DBG_MODULE_T {
+enum ENUM_DBG_MODULE {
 	DBG_INIT_IDX = 0,	/* 0x00 *//* For driver initial */
 	DBG_HAL_IDX,		/* 0x01 *//* For HAL(HW) Layer */
 	DBG_INTR_IDX,		/* 0x02 *//* For Interrupt */
@@ -143,16 +143,16 @@ typedef enum _ENUM_DBG_MODULE_T {
 	DBG_OID_IDX,
 	DBG_NIC_IDX,
 	DBG_MODULE_NUM		/* Notice the XLOG check */
-} ENUM_DBG_MODULE_T;
-typedef enum _ENUM_DBG_ASSERT_CTRL_LEVEL_T {
+};
+enum ENUM_DBG_ASSERT_CTRL_LEVEL {
 	DBG_ASSERT_CTRL_LEVEL_ERROR,
 	DBG_ASSERT_CTRL_LEVEL_WARN,
 	DBG_ASSERT_CTRL_LEVEL_LITE
-} ENUM_DBG_ASSERT_LEVEL_CTRL_T, *P_ENUM_DBG_ASSERT_LEVEL_CTRL_T;
-typedef enum _ENUM_DBG_ASSERT_PATH_T {
+};
+enum ENUM_DBG_ASSERT_PATH {
 	DBG_ASSERT_PATH_WIFI,
 	DBG_ASSERT_PATH_WMT
-} ENUM_DBG_ASSERT_PATH_T, *P_ENUM_DBG_ASSERT_PATH_T;
+};
 #if MTK_WCN_HIF_SDIO
 #define DBG_ASSERT_PATH_DEFAULT DBG_ASSERT_PATH_WMT
 #else
@@ -252,14 +252,14 @@ typedef enum _ENUM_DBG_ASSERT_PATH_T {
 	{ \
 		if (aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) { \
 			LOG_FUNC("%s:(" #_Module " " #_Class ")\n", __func__); \
-			dumpMemory8((PUINT_8)(_StartAddr), (UINT_32)(_Length)); \
+			dumpMemory8((uint8_t *)(_StartAddr), (uint32_t)(_Length)); \
 		} \
 	}
 #define DBGLOG_MEM32(_Module, _Class, _StartAddr, _Length) \
 	{ \
 		if (aucDebugModule[DBG_##_Module##_IDX] & DBG_CLASS_##_Class) { \
 			LOG_FUNC("%s:(" #_Module " " #_Class ")\n", __func__); \
-			dumpMemory32((PUINT_32)(_StartAddr), (UINT_32)(_Length)); \
+			dumpMemory32((uint32_t *)(_StartAddr), (uint32_t)(_Length)); \
 		} \
 	}
 #endif
@@ -359,10 +359,10 @@ typedef enum _ENUM_DBG_ASSERT_PATH_T {
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-VOID dumpMemory8(IN PUINT_8 pucStartAddr, IN UINT_32 u4Length);
-VOID dumpMemory32(IN PUINT_32 pu4StartAddr, IN UINT_32 u4Length);
-VOID wlanPrintFwLog(PUINT_8 pucLogContent, UINT_16 u2MsgSize, UINT_8 ucMsgType,
-	const PUCHAR pucFmt, ...);
+void dumpMemory8(IN uint8_t *pucStartAddr, IN uint32_t u4Length);
+void dumpMemory32(IN uint32_t *pu4StartAddr, IN uint32_t u4Length);
+void wlanPrintFwLog(uint8_t *pucLogContent, uint16_t u2MsgSize, uint8_t ucMsgType,
+	const uint8_t *pucFmt, ...);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

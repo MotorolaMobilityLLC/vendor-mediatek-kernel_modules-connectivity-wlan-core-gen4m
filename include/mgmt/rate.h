@@ -104,18 +104,18 @@
 /*----------------------------------------------------------------------------*/
 /* Routines in rate.c                                                         */
 /*----------------------------------------------------------------------------*/
-VOID
-rateGetRateSetFromIEs(IN P_IE_SUPPORTED_RATE_T prIeSupportedRate, IN P_IE_EXT_SUPPORTED_RATE_T prIeExtSupportedRate, OUT
-		      PUINT_16 pu2OperationalRateSet, OUT PUINT_16 pu2BSSBasicRateSet,
-		      OUT PBOOLEAN pfgIsUnknownBSSBasicRate);
+void
+rateGetRateSetFromIEs(IN struct IE_SUPPORTED_RATE *prIeSupportedRate, IN struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate, OUT
+		      uint16_t *pu2OperationalRateSet, OUT uint16_t *pu2BSSBasicRateSet,
+		      OUT u_int8_t *pfgIsUnknownBSSBasicRate);
 
-VOID
-rateGetDataRatesFromRateSet(IN UINT_16 u2OperationalRateSet, IN UINT_16 u2BSSBasicRateSet, OUT PUINT_8 pucDataRates, OUT
-			    PUINT_8 pucDataRatesLen);
+void
+rateGetDataRatesFromRateSet(IN uint16_t u2OperationalRateSet, IN uint16_t u2BSSBasicRateSet, OUT uint8_t *pucDataRates, OUT
+			    uint8_t *pucDataRatesLen);
 
-BOOLEAN rateGetHighestRateIndexFromRateSet(IN UINT_16 u2RateSet, OUT PUINT_8 pucHighestRateIndex);
+u_int8_t rateGetHighestRateIndexFromRateSet(IN uint16_t u2RateSet, OUT uint8_t *pucHighestRateIndex);
 
-BOOLEAN rateGetLowestRateIndexFromRateSet(IN UINT_16 u2RateSet, OUT PUINT_8 pucLowestRateIndex);
+u_int8_t rateGetLowestRateIndexFromRateSet(IN uint16_t u2RateSet, OUT uint8_t *pucLowestRateIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S

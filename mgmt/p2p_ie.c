@@ -51,19 +51,19 @@
  *****************************************************************************/
 #include "precomp.h"
 
-UINT_32 p2pCalculate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex, IN P_STA_RECORD_T prStaRec)
+uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec)
 {
-	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
-	P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
-	UINT_32 u4RetValue = 0;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
+	uint32_t u4RetValue = 0;
 
 	do {
 		ASSERT_BREAK((prStaRec != NULL) && (prAdapter != NULL));
 
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, (UINT_8) prP2pBssInfo->u4PrivateData);
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, (uint8_t) prP2pBssInfo->u4PrivateData);
 
 		prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
@@ -103,23 +103,23 @@ UINT_32 p2pCalculate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssInde
 * @return none
 */
 /*----------------------------------------------------------------------------*/
-VOID p2pGenerate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo)
+void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo)
 {
-	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
-	P_P2P_ROLE_FSM_INFO_T prP2pRoleFsmInfo = (P_P2P_ROLE_FSM_INFO_T) NULL;
-	P_P2P_CONNECTION_REQ_INFO_T prConnReqInfo = (P_P2P_CONNECTION_REQ_INFO_T) NULL;
-	PUINT_8 pucIEBuf = (PUINT_8) NULL;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = (struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prConnReqInfo = (struct P2P_CONNECTION_REQ_INFO *) NULL;
+	uint8_t *pucIEBuf = (uint8_t *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 
-		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, (UINT_8) prBssInfo->u4PrivateData);
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, (uint8_t) prBssInfo->u4PrivateData);
 
 		prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-		pucIEBuf = (PUINT_8) ((ULONG) prMsduInfo->prPacket + (ULONG) prMsduInfo->u2FrameLength);
+		pucIEBuf = (uint8_t *) ((unsigned long) prMsduInfo->prPacket + (unsigned long) prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucIEBuf, prConnReqInfo->aucIEBuf, prConnReqInfo->u4BufLength);
 
@@ -145,14 +145,14 @@ VOID p2pGenerate_IEForAssocReq(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsdu
 
 }				/* p2pGenerate_IEForAssocReq */
 
-UINT_32
-wfdFuncAppendAttriDevInfo(IN P_ADAPTER_T prAdapter,
-			  IN BOOLEAN fgIsAssocFrame, IN PUINT_16 pu2Offset, IN PUINT_8 pucBuf, IN UINT_16 u2BufSize)
+uint32_t
+wfdFuncAppendAttriDevInfo(IN struct ADAPTER *prAdapter,
+			  IN u_int8_t fgIsAssocFrame, IN uint16_t *pu2Offset, IN uint8_t *pucBuf, IN uint16_t u2BufSize)
 {
-	UINT_32 u4AttriLen = 0;
-	PUINT_8 pucBuffer = NULL;
-	P_WFD_DEVICE_INFORMATION_IE_T prWfdDevInfo = (P_WFD_DEVICE_INFORMATION_IE_T) NULL;
-	P_WFD_CFG_SETTINGS_T prWfdCfgSettings = (P_WFD_CFG_SETTINGS_T) NULL;
+	uint32_t u4AttriLen = 0;
+	uint8_t *pucBuffer = NULL;
+	struct WFD_DEVICE_INFORMATION_IE *prWfdDevInfo = (struct WFD_DEVICE_INFORMATION_IE *) NULL;
+	struct WFD_CFG_SETTINGS *prWfdCfgSettings = (struct WFD_CFG_SETTINGS *) NULL;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (pucBuf != NULL) && (pu2Offset != NULL));
@@ -166,11 +166,11 @@ wfdFuncAppendAttriDevInfo(IN P_ADAPTER_T prAdapter,
 			break;
 		}
 
-		pucBuffer = (PUINT_8) ((ULONG) pucBuf + (ULONG) (*pu2Offset));
+		pucBuffer = (uint8_t *) ((unsigned long) pucBuf + (unsigned long) (*pu2Offset));
 
 		ASSERT_BREAK(pucBuffer != NULL);
 
-		prWfdDevInfo = (P_WFD_DEVICE_INFORMATION_IE_T) pucBuffer;
+		prWfdDevInfo = (struct WFD_DEVICE_INFORMATION_IE *) pucBuffer;
 
 		prWfdDevInfo->ucElemID = WFD_ATTRI_ID_DEV_INFO;
 
@@ -186,7 +186,7 @@ wfdFuncAppendAttriDevInfo(IN P_ADAPTER_T prAdapter,
 
 	} while (FALSE);
 
-	(*pu2Offset) += (UINT_16) u4AttriLen;
+	(*pu2Offset) += (uint16_t) u4AttriLen;
 
 	return u4AttriLen;
 }

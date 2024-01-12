@@ -84,17 +84,17 @@
 ********************************************************************************
 */
 /* Singly Queue Structures - Entry Part */
-typedef struct _QUE_ENTRY_T {
-	struct _QUE_ENTRY_T *prNext;
-	struct _QUE_ENTRY_T *prPrev;	/* For Rx buffer reordering used only */
-} QUE_ENTRY_T, *P_QUE_ENTRY_T;
+struct QUE_ENTRY {
+	struct QUE_ENTRY *prNext;
+	struct QUE_ENTRY *prPrev;	/* For Rx buffer reordering used only */
+};
 
 /* Singly Queue Structures - Queue Part */
-typedef struct _QUE_T {
-	P_QUE_ENTRY_T prHead;
-	P_QUE_ENTRY_T prTail;
-	UINT_32 u4NumElem;
-} QUE_T, *P_QUE_T;
+struct QUE {
+	struct QUE_ENTRY *prHead;
+	struct QUE_ENTRY *prTail;
+	uint32_t u4NumElem;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -114,12 +114,12 @@ typedef struct _QUE_T {
 
 #define QUEUE_INITIALIZE(prQueue) \
 	{ \
-	    (prQueue)->prHead = (P_QUE_ENTRY_T)NULL; \
-	    (prQueue)->prTail = (P_QUE_ENTRY_T)NULL; \
+	    (prQueue)->prHead = (struct QUE_ENTRY *)NULL; \
+	    (prQueue)->prTail = (struct QUE_ENTRY *)NULL; \
 	    (prQueue)->u4NumElem = 0; \
 	}
 
-#define QUEUE_IS_EMPTY(prQueue)             (((P_QUE_T)(prQueue))->prHead == (P_QUE_ENTRY_T)NULL)
+#define QUEUE_IS_EMPTY(prQueue)             (((struct QUE *)(prQueue))->prHead == (struct QUE_ENTRY *)NULL)
 
 #define QUEUE_IS_NOT_EMPTY(prQueue)         ((prQueue)->u4NumElem > 0)
 
@@ -135,7 +135,7 @@ typedef struct _QUE_T {
 	    ASSERT(prQueueEntry); \
 	    (prQueueEntry)->prNext = (prQueue)->prHead; \
 	    (prQueue)->prHead = (prQueueEntry); \
-	    if ((prQueue)->prTail == (P_QUE_ENTRY_T)NULL) { \
+	    if ((prQueue)->prTail == (struct QUE_ENTRY *)NULL) { \
 		(prQueue)->prTail = (prQueueEntry); \
 	    } \
 	    ((prQueue)->u4NumElem)++; \
@@ -145,7 +145,7 @@ typedef struct _QUE_T {
 	{ \
 	    ASSERT(prQueue); \
 	    ASSERT(prQueueEntry); \
-	    (prQueueEntry)->prNext = (P_QUE_ENTRY_T)NULL; \
+	    (prQueueEntry)->prNext = (struct QUE_ENTRY *)NULL; \
 	    if ((prQueue)->prTail) { \
 		((prQueue)->prTail)->prNext = (prQueueEntry); \
 	    } else { \
@@ -164,11 +164,11 @@ typedef struct _QUE_T {
 		ASSERT(prQueue); \
 		prQueueEntry = (_P_TYPE)((prQueue)->prHead); \
 		if (prQueueEntry) { \
-			(prQueue)->prHead = ((P_QUE_ENTRY_T)(prQueueEntry))->prNext; \
-			if ((prQueue)->prHead == (P_QUE_ENTRY_T)NULL) { \
-				(prQueue)->prTail = (P_QUE_ENTRY_T)NULL; \
+			(prQueue)->prHead = ((struct QUE_ENTRY *)(prQueueEntry))->prNext; \
+			if ((prQueue)->prHead == (struct QUE_ENTRY *)NULL) { \
+				(prQueue)->prTail = (struct QUE_ENTRY *)NULL; \
 			} \
-			((P_QUE_ENTRY_T)(prQueueEntry))->prNext = (P_QUE_ENTRY_T)NULL; \
+			((struct QUE_ENTRY *)(prQueueEntry))->prNext = (struct QUE_ENTRY *)NULL; \
 			((prQueue)->u4NumElem)--; \
 		} \
 	}
@@ -177,7 +177,7 @@ typedef struct _QUE_T {
 	{ \
 		ASSERT(prDestQueue); \
 		ASSERT(prSrcQueue); \
-	    *(P_QUE_T)prDestQueue = *(P_QUE_T)prSrcQueue; \
+	    *(struct QUE *)prDestQueue = *(struct QUE *)prSrcQueue; \
 	    QUEUE_INITIALIZE(prSrcQueue); \
 	}
 
@@ -216,7 +216,7 @@ typedef struct _QUE_T {
 *                            E X T E R N A L  D A T A
 ********************************************************************************
 */
-extern UINT_8 g_arTdlsLink[MAXNUM_TDLS_PEER];
+extern uint8_t g_arTdlsLink[MAXNUM_TDLS_PEER];
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S

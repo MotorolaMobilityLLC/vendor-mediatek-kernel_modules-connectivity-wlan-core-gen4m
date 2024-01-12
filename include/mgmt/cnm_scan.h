@@ -99,21 +99,21 @@
 ********************************************************************************
 */
 /* The type of Scan Source */
-typedef enum _ENUM_SCN_REQ_SOURCE_T {
+enum ENUM_SCN_REQ_SOURCE {
 	SCN_REQ_SOURCE_HEM = 0,
 	SCN_REQ_SOURCE_NET_FSM,
 	SCN_REQ_SOURCE_ROAMING,	/* ROAMING Module is independent of AIS FSM */
 	SCN_REQ_SOURCE_OBSS,	/* 2.4G OBSS scan */
 	SCN_REQ_SOURCE_NUM
-} ENUM_SCN_REQ_SOURCE_T, *P_ENUM_SCN_REQ_SOURCE_T;
+};
 
-typedef enum _ENUM_SCAN_PROFILE_T {
+enum ENUM_SCAN_PROFILE {
 	SCAN_PROFILE_FULL = 0,
 	SCAN_PROFILE_PARTIAL,
 	SCAN_PROFILE_VOIP,
 	SCAN_PROFILE_FULL_2G4,
 	SCAN_PROFILE_NUM
-} ENUM_SCAN_PROFILE_T, *P_ENUM_SCAN_PROFILE_T;
+};
 
 /*******************************************************************************
 *                            P U B L I C   D A T A
@@ -140,25 +140,25 @@ typedef enum _ENUM_SCAN_PROFILE_T {
 ********************************************************************************
 */
 #if 0
-VOID cnmScanInit(VOID);
+void cnmScanInit(void);
 
-VOID cnmScanRunEventScanRequest(IN P_MSG_HDR_T prMsgHdr);
+void cnmScanRunEventScanRequest(IN struct MSG_HDR *prMsgHdr);
 
-BOOLEAN cnmScanRunEventScanAbort(IN P_MSG_HDR_T prMsgHdr);
+u_int8_t cnmScanRunEventScanAbort(IN struct MSG_HDR *prMsgHdr);
 
-VOID cnmScanProfileSelection(VOID);
+void cnmScanProfileSelection(void);
 
-VOID cnmScanProcessStart(VOID);
+void cnmScanProcessStart(void);
 
-VOID cnmScanProcessStop(VOID);
+void cnmScanProcessStop(void);
 
-VOID cnmScanRunEventReqAISAbsDone(IN P_MSG_HDR_T prMsgHdr);
+void cnmScanRunEventReqAISAbsDone(IN struct MSG_HDR *prMsgHdr);
 
-VOID cnmScanRunEventCancelAISAbsDone(IN P_MSG_HDR_T prMsgHdr);
+void cnmScanRunEventCancelAISAbsDone(IN struct MSG_HDR *prMsgHdr);
 
-VOID cnmScanPartialScanTimeout(UINT_32 u4Param);
+void cnmScanPartialScanTimeout(uint32_t u4Param);
 
-VOID cnmScanRunEventScnFsmComplete(IN P_MSG_HDR_T prMsgHdr);
+void cnmScanRunEventScnFsmComplete(IN struct MSG_HDR *prMsgHdr);
 #endif
 
 #endif /* _CNM_SCAN_H */

@@ -83,36 +83,36 @@
 #undef WLAN_STATUS_SUCCESS
 #endif
 
-#define WLAN_STATUS_SUCCESS                     ((WLAN_STATUS) 0x00000000L)
-#define WLAN_STATUS_PENDING                     ((WLAN_STATUS) 0x00000103L)
-#define WLAN_STATUS_NOT_ACCEPTED                ((WLAN_STATUS) 0x00010003L)
+#define WLAN_STATUS_SUCCESS                     ((uint32_t) 0x00000000L)
+#define WLAN_STATUS_PENDING                     ((uint32_t) 0x00000103L)
+#define WLAN_STATUS_NOT_ACCEPTED                ((uint32_t) 0x00010003L)
 
-#define WLAN_STATUS_MEDIA_CONNECT               ((WLAN_STATUS) 0x4001000BL)
-#define WLAN_STATUS_MEDIA_DISCONNECT            ((WLAN_STATUS) 0x4001000CL)
-#define WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY	((WLAN_STATUS) 0x4001000DL)
-#define WLAN_STATUS_MEDIA_SPECIFIC_INDICATION   ((WLAN_STATUS) 0x40010012L)
+#define WLAN_STATUS_MEDIA_CONNECT               ((uint32_t) 0x4001000BL)
+#define WLAN_STATUS_MEDIA_DISCONNECT            ((uint32_t) 0x4001000CL)
+#define WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY	((uint32_t) 0x4001000DL)
+#define WLAN_STATUS_MEDIA_SPECIFIC_INDICATION   ((uint32_t) 0x40010012L)
 
-#define WLAN_STATUS_SCAN_COMPLETE               ((WLAN_STATUS) 0x60010001L)
-#define WLAN_STATUS_MSDU_OK                     ((WLAN_STATUS) 0x60010002L)
+#define WLAN_STATUS_SCAN_COMPLETE               ((uint32_t) 0x60010001L)
+#define WLAN_STATUS_MSDU_OK                     ((uint32_t) 0x60010002L)
 
 /* TODO(Kevin): double check if 0x60010001 & 0x60010002 is proprietary */
-#define WLAN_STATUS_ROAM_OUT_FIND_BEST          ((WLAN_STATUS) 0x60010101L)
-#define WLAN_STATUS_ROAM_DISCOVERY              ((WLAN_STATUS) 0x60010102L)
+#define WLAN_STATUS_ROAM_OUT_FIND_BEST          ((uint32_t) 0x60010101L)
+#define WLAN_STATUS_ROAM_DISCOVERY              ((uint32_t) 0x60010102L)
 
-#define WLAN_STATUS_FAILURE                     ((WLAN_STATUS) 0xC0000001L)
-#define WLAN_STATUS_RESOURCES                   ((WLAN_STATUS) 0xC000009AL)
-#define WLAN_STATUS_NOT_SUPPORTED               ((WLAN_STATUS) 0xC00000BBL)
+#define WLAN_STATUS_FAILURE                     ((uint32_t) 0xC0000001L)
+#define WLAN_STATUS_RESOURCES                   ((uint32_t) 0xC000009AL)
+#define WLAN_STATUS_NOT_SUPPORTED               ((uint32_t) 0xC00000BBL)
 
-#define WLAN_STATUS_MULTICAST_FULL              ((WLAN_STATUS) 0xC0010009L)
-#define WLAN_STATUS_INVALID_PACKET              ((WLAN_STATUS) 0xC001000FL)
-#define WLAN_STATUS_ADAPTER_NOT_READY           ((WLAN_STATUS) 0xC0010011L)
-#define WLAN_STATUS_NOT_INDICATING              ((WLAN_STATUS) 0xC0010013L)
-#define WLAN_STATUS_INVALID_LENGTH              ((WLAN_STATUS) 0xC0010014L)
-#define WLAN_STATUS_INVALID_DATA                ((WLAN_STATUS) 0xC0010015L)
-#define WLAN_STATUS_BUFFER_TOO_SHORT            ((WLAN_STATUS) 0xC0010016L)
-#define WLAN_STATUS_BWCS_UPDATE                 ((WLAN_STATUS) 0xC0010017L)
+#define WLAN_STATUS_MULTICAST_FULL              ((uint32_t) 0xC0010009L)
+#define WLAN_STATUS_INVALID_PACKET              ((uint32_t) 0xC001000FL)
+#define WLAN_STATUS_ADAPTER_NOT_READY           ((uint32_t) 0xC0010011L)
+#define WLAN_STATUS_NOT_INDICATING              ((uint32_t) 0xC0010013L)
+#define WLAN_STATUS_INVALID_LENGTH              ((uint32_t) 0xC0010014L)
+#define WLAN_STATUS_INVALID_DATA                ((uint32_t) 0xC0010015L)
+#define WLAN_STATUS_BUFFER_TOO_SHORT            ((uint32_t) 0xC0010016L)
+#define WLAN_STATUS_BWCS_UPDATE                 ((uint32_t) 0xC0010017L)
 
-#define WLAN_STATUS_JOIN_FAILURE                ((WLAN_STATUS) 0xc0010018L)
+#define WLAN_STATUS_JOIN_FAILURE                ((uint32_t) 0xc0010018L)
 
 /* NIC status flags */
 #define ADAPTER_FLAG_HW_ERR                     0x00400000
@@ -122,57 +122,55 @@
 ********************************************************************************
 */
 /* Type definition for GLUE_INFO structure */
-typedef struct _GLUE_INFO_T GLUE_INFO_T, *P_GLUE_INFO_T;
+struct GLUE_INFO;	/* declare GLUE_INFO_T */
 
 /* Type definition for WLAN STATUS */
-typedef UINT_32 WLAN_STATUS, *P_WLAN_STATUS;
 
 /* Type definition for ADAPTER structure */
-typedef struct _ADAPTER_T ADAPTER_T, *P_ADAPTER_T;
+struct ADAPTER;	/* declare ADAPTER_T */
 
 /* Type definition for MESSAGE HEADER structure */
-typedef struct _MSG_HDR_T MSG_HDR_T, *P_MSG_HDR_T;
+struct MSG_HDR;	/* declare MSG_HDR_T */
 
 /* Type definition for Pointer to OS Native Packet */
-typedef void *P_NATIVE_PACKET;
 
 /* Type definition for WLAN configuration */
-typedef struct _WLAN_CFG_T WLAN_CFG_T, *P_WLAN_CFG_T;
+struct WLAN_CFG;	/* declare WLAN_CFG_T */
 
-typedef struct _WLAN_CFG_REC_T WLAN_CFG_REC_T, *P_WLAN_CFG_REC_T;
+struct WLAN_CFG_REC;	/* declare WLAN_CFG_REC_T */
 
 
 /* Type definition for WLAN configuration entry */
-typedef struct _WLAN_CFG_ENTRY_T WLAN_CFG_ENTRY_T, *P_WLAN_CFG_ENTRY_T;
+struct WLAN_CFG_ENTRY;	/* declare WLAN_CFG_ENTRY_T */
 
 /* Type definition for WLAN configuration callback */
-typedef WLAN_STATUS(*WLAN_CFG_SET_CB) (P_ADAPTER_T prAdapter,
-				       PUINT_8 pucKey, PUINT_8 pucValue, PVOID pPrivate, UINT_32 u4Flags);
+typedef uint32_t(*WLAN_CFG_SET_CB) (struct ADAPTER *prAdapter,
+				       uint8_t *pucKey, uint8_t *pucValue, void *pPrivate, uint32_t u4Flags);
 
 /* Type definition for STA_RECORD_T structure to handle the connectivity and packet reception
  * for a particular STA.
  */
-typedef struct _STA_RECORD_T STA_RECORD_T, *P_STA_RECORD_T, **PP_STA_RECORD_T;
+struct STA_RECORD;	/* declare STA_RECORD_T */
 
 /* CMD_INFO_T is used by Glue Layer to send a cluster of Command(OID) information to
  * the TX Path to reduce the parameters of a function call.
  */
-typedef struct _CMD_INFO_T CMD_INFO_T, *P_CMD_INFO_T;
+struct CMD_INFO;	/* declare CMD_INFO_T */
 
 /* Following typedef should be removed later, because Glue Layer should not
  * be aware of following data type.
  */
-typedef struct _SW_RFB_T SW_RFB_T, *P_SW_RFB_T, **PP_SW_RFB_T;
+struct SW_RFB;	/* declare SW_RFB_T */
 
-typedef struct _MSDU_INFO_T MSDU_INFO_T, *P_MSDU_INFO_T;
+struct MSDU_INFO;	/* declare MSDU_INFO_T */
 
-typedef struct _REG_ENTRY_T REG_ENTRY_T, *P_REG_ENTRY_T;
+struct REG_ENTRY;	/* declare REG_ENTRY_T */
 
 /* IST handler definition */
-typedef VOID(*IST_EVENT_FUNCTION) (P_ADAPTER_T);
+typedef void(*IST_EVENT_FUNCTION) (struct ADAPTER *);
 
 /* Type definition for function pointer of timer handler */
-typedef VOID(*PFN_TIMER_CALLBACK) (IN P_GLUE_INFO_T);
+typedef void(*PFN_TIMER_CALLBACK) (IN struct GLUE_INFO *);
 
 /*******************************************************************************
 *                            P U B L I C   D A T A

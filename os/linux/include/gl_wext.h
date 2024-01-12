@@ -71,23 +71,23 @@
 *                    E X T E R N A L   R E F E R E N C E S
 ********************************************************************************
 */
-extern VOID wlanUpdateChannelTable(P_GLUE_INFO_T prGlueInfo);
+extern void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_WAPI
-extern UINT_8 keyStructBuf[1024];	/* add/remove key shared buffer */
+extern uint8_t keyStructBuf[1024];	/* add/remove key shared buffer */
 #else
-extern UINT_8 keyStructBuf[100];	/* add/remove key shared buffer */
+extern uint8_t keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 
 /* for IE Searching */
-extern BOOLEAN
-wextSrchDesiredWPAIE(IN PUINT_8 pucIEStart,
-		     IN INT_32 i4TotalIeLen, IN UINT_8 ucDesiredElemId, OUT PUINT_8 *ppucDesiredIE);
+extern u_int8_t
+wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
 
 #if CFG_SUPPORT_WPS
-extern BOOLEAN
-wextSrchDesiredWPSIE(IN PUINT_8 pucIEStart,
-		     IN INT_32 i4TotalIeLen, IN UINT_8 ucDesiredElemId, OUT PUINT_8 *ppucDesiredIE);
+extern u_int8_t
+wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
 #endif
 
 /*******************************************************************************
@@ -101,17 +101,17 @@ wextSrchDesiredWPSIE(IN PUINT_8 pucIEStart,
 *                             D A T A   T Y P E S
 ********************************************************************************
 */
-typedef struct _PARAM_FIXED_IEs {
-	UINT_8 aucTimestamp[8];
-	UINT_16 u2BeaconInterval;
-	UINT_16 u2Capabilities;
-} PARAM_FIXED_IEs;
+struct PARAM_FIXED_IEs {
+	uint8_t aucTimestamp[8];
+	uint16_t u2BeaconInterval;
+	uint16_t u2Capabilities;
+};
 
-typedef struct _PARAM_VARIABLE_IE_T {
-	UINT_8 ucElementID;
-	UINT_8 ucLength;
-	UINT_8 aucData[1];
-} PARAM_VARIABLE_IE_T, *P_PARAM_VARIABLE_IE_T;
+struct PARAM_VARIABLE_IE {
+	uint8_t ucElementID;
+	uint8_t ucLength;
+	uint8_t aucData[1];
+};
 
 #if WIRELESS_EXT < 18
 
@@ -328,36 +328,36 @@ wext_set_rate(IN struct net_device *prNetDev,
 	      IN struct iw_request_info *prIwReqInfo, IN struct iw_param *prRate, IN char *pcExtra);
 
 void
-wext_indicate_wext_event(IN P_GLUE_INFO_T prGlueInfo,
+wext_indicate_wext_event(IN struct GLUE_INFO *prGlueInfo,
 			 IN unsigned int u4Cmd, IN unsigned char *pucData, IN unsigned int u4DataLen);
 
 struct iw_statistics *wext_get_wireless_stats(struct net_device *prDev);
 
 
-BOOLEAN
-wextSrchDesiredWPAIE(IN PUINT_8 pucIEStart,
-		     IN INT_32 i4TotalIeLen, IN UINT_8 ucDesiredElemId, OUT PUINT_8 *ppucDesiredIE);
+u_int8_t
+wextSrchDesiredWPAIE(IN uint8_t *pucIEStart,
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
 
 #if CFG_SUPPORT_WPS
-BOOLEAN
-wextSrchDesiredWPSIE(IN PUINT_8 pucIEStart,
-		     IN INT_32 i4TotalIeLen, IN UINT_8 ucDesiredElemId, OUT PUINT_8 *ppucDesiredIE);
+u_int8_t
+wextSrchDesiredWPSIE(IN uint8_t *pucIEStart,
+		     IN int32_t i4TotalIeLen, IN uint8_t ucDesiredElemId, OUT uint8_t **ppucDesiredIE);
 #endif
 
 #if CFG_SUPPORT_PASSPOINT
-BOOLEAN wextSrchDesiredHS20IE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
+u_int8_t wextSrchDesiredHS20IE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
 
-BOOLEAN wextSrchDesiredInterworkingIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
+u_int8_t wextSrchDesiredInterworkingIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
 
-BOOLEAN wextSrchDesiredAdvProtocolIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
+u_int8_t wextSrchDesiredAdvProtocolIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
 
-BOOLEAN wextSrchDesiredRoamingConsortiumIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
-BOOLEAN wextSrchDesiredOsenIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucDesiredIE);
+u_int8_t wextSrchDesiredRoamingConsortiumIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
+u_int8_t wextSrchDesiredOsenIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
 #endif /* CFG_SUPPORT_PASSPOINT */
 
-BOOLEAN wextSrchDesiredWAPIIE(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PUINT_8 *ppucDesiredIE);
+u_int8_t wextSrchDesiredWAPIIE(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucDesiredIE);
 
-BOOLEAN wextSrchOkcAndPMKID(IN PUINT_8 pucIEStart, IN INT_32 i4TotalIeLen, OUT PPUINT_8 ppucPMKID, OUT PUINT_8 okc);
+u_int8_t wextSrchOkcAndPMKID(IN uint8_t *pucIEStart, IN int32_t i4TotalIeLen, OUT uint8_t **ppucPMKID, OUT uint8_t *okc);
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

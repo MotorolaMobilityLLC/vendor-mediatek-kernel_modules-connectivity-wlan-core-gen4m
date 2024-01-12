@@ -87,9 +87,9 @@
 */
 
 #if 1				/* Marked for MT6630 */
-static UINT_32 g_u4LinkCount;
-static UINT_32 g_u4Beaconing;
-static BOW_TABLE_T arBowTable[CFG_BOW_PHYSICAL_LINK_NUM];
+static uint32_t g_u4LinkCount;
+static uint32_t g_u4Beaconing;
+static struct BOW_TABLE arBowTable[CFG_BOW_PHYSICAL_LINK_NUM];
 #endif
 
 /******************************************************************************
@@ -97,7 +97,7 @@ static BOW_TABLE_T arBowTable[CFG_BOW_PHYSICAL_LINK_NUM];
 *******************************************************************************
 */
 
-const BOW_CMD_T arBowCmdTable[] = {
+const struct BOW_CMD arBowCmdTable[] = {
 	{BOW_CMD_ID_GET_MAC_STATUS, bowCmdGetMacStatus},
 	{BOW_CMD_ID_SETUP_CONNECTION, bowCmdSetupConnection},
 	{BOW_CMD_ID_DESTROY_CONNECTION, bowCmdDestroyConnection},
@@ -141,20 +141,20 @@ const BOW_CMD_T arBowCmdTable[] = {
 * \retval WLAN_STATUS_FAILURE
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS
-wlanoidSendSetQueryBowCmd(IN P_ADAPTER_T prAdapter,
-			  IN UINT_8 ucCID,
-			  IN UINT_8 ucBssIdx,
-			  IN BOOLEAN fgSetQuery,
-			  IN BOOLEAN fgNeedResp,
+uint32_t
+wlanoidSendSetQueryBowCmd(IN struct ADAPTER *prAdapter,
+			  IN uint8_t ucCID,
+			  IN uint8_t ucBssIdx,
+			  IN u_int8_t fgSetQuery,
+			  IN u_int8_t fgNeedResp,
 			  IN PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
 			  IN PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler,
-			  IN UINT_32 u4SetQueryInfoLen, IN PUINT_8 pucInfoBuffer, IN UINT_8 ucSeqNumber)
+			  IN uint32_t u4SetQueryInfoLen, IN uint8_t *pucInfoBuffer, IN uint8_t ucSeqNumber)
 {
-	P_GLUE_INFO_T prGlueInfo;
-	P_CMD_INFO_T prCmdInfo;
-	P_WIFI_CMD_T prWifiCmd;
-	UINT_8 ucCmdSeqNum;
+	struct GLUE_INFO *prGlueInfo;
+	struct CMD_INFO *prCmdInfo;
+	struct WIFI_CMD *prWifiCmd;
+	uint8_t ucCmdSeqNum;
 
 	ASSERT(prAdapter);
 
@@ -175,7 +175,7 @@ wlanoidSendSetQueryBowCmd(IN P_ADAPTER_T prAdapter,
 
 	/* Setup common CMD Info Packet */
 	prCmdInfo->eCmdType = COMMAND_TYPE_NETWORK_IOCTL;
-	prCmdInfo->u2InfoBufLen = (UINT_16) (CMD_HDR_SIZE + u4SetQueryInfoLen);
+	prCmdInfo->u2InfoBufLen = (uint16_t) (CMD_HDR_SIZE + u4SetQueryInfoLen);
 	prCmdInfo->pfCmdDoneHandler = pfCmdDoneHandler;
 	prCmdInfo->pfCmdTimeoutHandler = pfCmdTimeoutHandler;
 	prCmdInfo->fgIsOid = FALSE;
@@ -186,10 +186,10 @@ wlanoidSendSetQueryBowCmd(IN P_ADAPTER_T prAdapter,
 	prCmdInfo->u4SetInfoLen = u4SetQueryInfoLen;
 	prCmdInfo->pvInformationBuffer = NULL;
 	prCmdInfo->u4InformationBufferLength = 0;
-	prCmdInfo->u4PrivateData = (UINT_32) ucSeqNumber;
+	prCmdInfo->u4PrivateData = (uint32_t) ucSeqNumber;
 
 	/* Setup WIFI_CMD_T (no payload) */
-	prWifiCmd = (P_WIFI_CMD_T) (prCmdInfo->pucInfoBuffer);
+	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
 	prWifiCmd->u2TxByteCount = prCmdInfo->u2InfoBufLen;
 	prWifiCmd->ucCID = prCmdInfo->ucCID;
 	prWifiCmd->ucSetQuery = prCmdInfo->fgSetQuery;
@@ -198,7 +198,7 @@ wlanoidSendSetQueryBowCmd(IN P_ADAPTER_T prAdapter,
 	if (u4SetQueryInfoLen > 0 && pucInfoBuffer != NULL)
 		kalMemCopy(prWifiCmd->aucBuffer, pucInfoBuffer, u4SetQueryInfoLen);
 	/* insert into prCmdQueue */
-	kalEnqueueCommand(prGlueInfo, (P_QUE_ENTRY_T) prCmdInfo);
+	kalEnqueueCommand(prGlueInfo, (struct QUE_ENTRY *) prCmdInfo);
 
 	/* wakeup txServiceThread later */
 	GLUE_SET_EVENT(prGlueInfo);
@@ -218,15 +218,15 @@ wlanoidSendSetQueryBowCmd(IN P_ADAPTER_T prAdapter,
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS wlanbowHandleCommand(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t wlanbowHandleCommand(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	WLAN_STATUS retval = WLAN_STATUS_FAILURE;
-	UINT_16 i;
+	uint32_t retval = WLAN_STATUS_FAILURE;
+	uint16_t i;
 
 	ASSERT(prAdapter);
 
-	for (i = 0; i < sizeof(arBowCmdTable) / sizeof(BOW_CMD_T); i++) {
+	for (i = 0; i < sizeof(arBowCmdTable) / sizeof(struct BOW_CMD); i++) {
 		if ((arBowCmdTable[i].uCmdID == prCmd->rHeader.ucCommandId) && arBowCmdTable[i].pfCmdHandle) {
 			retval = arBowCmdTable[i].pfCmdHandle(prAdapter, prCmd);
 			break;
@@ -252,18 +252,18 @@ WLAN_STATUS wlanbowHandleCommand(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prC
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdGetMacStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdGetMacStatus(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_AMPC_EVENT prEvent;
-	P_BOW_MAC_STATUS prMacStatus;
-	UINT_8 idx = 0;
-	UINT_8 ucPrimaryChannel;
-	ENUM_BAND_T eBand;
-	ENUM_CHNL_EXT_T eBssSCO;
-	UINT_8 ucNumOfChannel = 0;	/* MAX_BOW_NUMBER_OF_CHANNEL; */
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_MAC_STATUS *prMacStatus;
+	uint8_t idx = 0;
+	uint8_t ucPrimaryChannel;
+	enum ENUM_BAND eBand;
+	enum ENUM_CHNL_EXT eBssSCO;
+	uint8_t ucNumOfChannel = 0;	/* MAX_BOW_NUMBER_OF_CHANNEL; */
 
-	RF_CHANNEL_INFO_T aucChannelList[MAX_BOW_NUMBER_OF_CHANNEL];
+	struct RF_CHANNEL_INFO aucChannelList[MAX_BOW_NUMBER_OF_CHANNEL];
 
 	ASSERT(prAdapter);
 
@@ -273,15 +273,15 @@ WLAN_STATUS bowCmdGetMacStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd
 	eBssSCO = CHNL_EXT_SCN;
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_MAC_STATUS)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_MAC_STATUS)), VIR_MEM_TYPE);
 
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_MAC_STATUS;
 	prEvent->rHeader.ucSeqNumber = prCmd->rHeader.ucSeqNumber;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_MAC_STATUS);
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_MAC_STATUS);
 
 	/* fill event body */
-	prMacStatus = (P_BOW_MAC_STATUS) (prEvent->aucPayload);
-	kalMemZero(prMacStatus, sizeof(BOW_MAC_STATUS));
+	prMacStatus = (struct BOW_MAC_STATUS *) (prEvent->aucPayload);
+	kalMemZero(prMacStatus, sizeof(struct BOW_MAC_STATUS));
 
 	/* 3 <2> Call CNM to decide if BOW available. */
 	if (cnmBowIsPermitted(prAdapter))
@@ -380,7 +380,7 @@ WLAN_STATUS bowCmdGetMacStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd
 
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
 
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_MAC_STATUS)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_MAC_STATUS)));
 
 	return WLAN_STATUS_SUCCESS;
 
@@ -401,23 +401,23 @@ WLAN_STATUS bowCmdGetMacStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdSetupConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdSetupConnection(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_BOW_SETUP_CONNECTION prBowSetupConnection;
-	CMD_BT_OVER_WIFI rCmdBtOverWifi;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	BOW_TABLE_T rBowTable;
+	struct BOW_SETUP_CONNECTION *prBowSetupConnection;
+	struct CMD_BT_OVER_WIFI rCmdBtOverWifi;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BOW_TABLE rBowTable;
 
-	UINT_8 ucBowTableIdx = 0;
+	uint8_t ucBowTableIdx = 0;
 
 	ASSERT(prAdapter);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
-	prBowSetupConnection = (P_BOW_SETUP_CONNECTION) &(prCmd->aucPayload[0]);
+	prBowSetupConnection = (struct BOW_SETUP_CONNECTION *) &(prCmd->aucPayload[0]);
 
 	/* parameter size check */
-	if (prCmd->rHeader.u2PayloadLength != sizeof(BOW_SETUP_CONNECTION)) {
+	if (prCmd->rHeader.u2PayloadLength != sizeof(struct BOW_SETUP_CONNECTION)) {
 		wlanbowCmdEventSetStatus(prAdapter, prCmd, BOWCMD_STATUS_INVALID);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
@@ -520,11 +520,11 @@ WLAN_STATUS bowCmdSetupConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND pr
 
 		cnmTimerInitTimer(prAdapter,
 				  &prBowFsmInfo->rStartingBeaconTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) bowSendBeacon, (ULONG) NULL);
+				  (PFN_MGMT_TIMEOUT_FUNC) bowSendBeacon, (unsigned long) NULL);
 
 		cnmTimerInitTimer(prAdapter,
 				  &prBowFsmInfo->rChGrantedTimer,
-				  (PFN_MGMT_TIMEOUT_FUNC) bowChGrantedTimeout, (ULONG) NULL);
+				  (PFN_MGMT_TIMEOUT_FUNC) bowChGrantedTimeout, (unsigned long) NULL);
 
 		/* Reset Global Variable */
 		g_u4Beaconing = 0;
@@ -573,14 +573,14 @@ WLAN_STATUS bowCmdSetupConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND pr
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdDestroyConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdDestroyConnection(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_BOW_DESTROY_CONNECTION prBowDestroyConnection;
-	CMD_BT_OVER_WIFI rCmdBtOverWifi;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BOW_DESTROY_CONNECTION *prBowDestroyConnection;
+	struct CMD_BT_OVER_WIFI rCmdBtOverWifi;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
-	UINT_8 ucIdx;
+	uint8_t ucIdx;
 
 	ASSERT(prAdapter);
 
@@ -592,12 +592,12 @@ WLAN_STATUS bowCmdDestroyConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND 
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 	/* parameter size check */
-	if (prCmd->rHeader.u2PayloadLength != sizeof(BOW_DESTROY_CONNECTION)) {
+	if (prCmd->rHeader.u2PayloadLength != sizeof(struct BOW_DESTROY_CONNECTION)) {
 		wlanbowCmdEventSetStatus(prAdapter, prCmd, BOWCMD_STATUS_UNACCEPTED);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 	/* 3 <2> Lookup BOW table, check if is not exist (Valid and Peer MAC address) -> Fail */
-	prBowDestroyConnection = (P_BOW_DESTROY_CONNECTION) &(prCmd->aucPayload[0]);
+	prBowDestroyConnection = (struct BOW_DESTROY_CONNECTION *) &(prCmd->aucPayload[0]);
 
 	if (!bowCheckBowTableIfVaild(prAdapter, prBowDestroyConnection->aucPeerAddress)) {
 		DBGLOG(BOW, EVENT, "bowCmdDestroyConnection, bowCheckIfVaild, not accepted.\n");
@@ -638,8 +638,8 @@ WLAN_STATUS bowCmdDestroyConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND 
 					 FALSE,
 					 wlanbowCmdEventLinkDisconnected,
 					 wlanbowCmdTimeoutHandler,
-					 sizeof(CMD_BT_OVER_WIFI),
-					 (PUINT_8)&rCmdBtOverWifi, prCmd->rHeader.ucSeqNumber);
+					 sizeof(struct CMD_BT_OVER_WIFI),
+					 (uint8_t *)&rCmdBtOverWifi, prCmd->rHeader.ucSeqNumber);
 
 #else
 	return 0;
@@ -658,23 +658,23 @@ WLAN_STATUS bowCmdDestroyConnection(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND 
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdSetPTK(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdSetPTK(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_BOW_SET_PTK prBowSetPTK;
-	CMD_802_11_KEY rCmdKey;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_STA_RECORD_T prStaRec = NULL;
+	struct BOW_SET_PTK *prBowSetPTK;
+	struct CMD_802_11_KEY rCmdKey;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct STA_RECORD *prStaRec = NULL;
 
 	ASSERT(prAdapter);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 
 	/* parameter size check */
-	if (prCmd->rHeader.u2PayloadLength != sizeof(BOW_SET_PTK))
+	if (prCmd->rHeader.u2PayloadLength != sizeof(struct BOW_SET_PTK))
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	prBowSetPTK = (P_BOW_SET_PTK) &(prCmd->aucPayload[0]);
+	prBowSetPTK = (struct BOW_SET_PTK *) &(prCmd->aucPayload[0]);
 
 	DBGLOG(BOW, EVENT, "prBowSetPTK->aucPeerAddress, %x:%x:%x:%x:%x:%x.\n",
 	       prBowSetPTK->aucPeerAddress[0],
@@ -739,7 +739,7 @@ WLAN_STATUS bowCmdSetPTK(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
 					 FALSE,
 					 wlanbowCmdEventSetCommon,
 					 wlanbowCmdTimeoutHandler,
-					 sizeof(CMD_802_11_KEY), (PUINT_8)&rCmdKey, prCmd->rHeader.ucSeqNumber);
+					 sizeof(struct CMD_802_11_KEY), (uint8_t *)&rCmdKey, prCmd->rHeader.ucSeqNumber);
 #else
 	return 0;
 #endif
@@ -757,11 +757,11 @@ WLAN_STATUS bowCmdSetPTK(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdReadRSSI(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdReadRSSI(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_BOW_READ_RSSI prBowReadRSSI;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BOW_READ_RSSI *prBowReadRSSI;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prAdapter);
 
@@ -771,10 +771,10 @@ WLAN_STATUS bowCmdReadRSSI(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 
 	/* parameter size check */
-	if (prCmd->rHeader.u2PayloadLength != sizeof(BOW_READ_RSSI))
+	if (prCmd->rHeader.u2PayloadLength != sizeof(struct BOW_READ_RSSI))
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	prBowReadRSSI = (P_BOW_READ_RSSI) &(prCmd->aucPayload[0]);
+	prBowReadRSSI = (struct BOW_READ_RSSI *) &(prCmd->aucPayload[0]);
 
 	return wlanoidSendSetQueryBowCmd(prAdapter,
 					 CMD_ID_GET_LINK_QUALITY,
@@ -801,11 +801,11 @@ WLAN_STATUS bowCmdReadRSSI(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdReadLinkQuality(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_BOW_READ_LINK_QUALITY prBowReadLinkQuality;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BOW_READ_LINK_QUALITY *prBowReadLinkQuality;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prAdapter);
 
@@ -815,10 +815,10 @@ WLAN_STATUS bowCmdReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND pr
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 
 	/* parameter size check */
-	if (prCmd->rHeader.u2PayloadLength != sizeof(P_BOW_READ_LINK_QUALITY))
+	if (prCmd->rHeader.u2PayloadLength != sizeof(struct BOW_READ_LINK_QUALITY *))
 		return WLAN_STATUS_INVALID_LENGTH;
 
-	prBowReadLinkQuality = (P_BOW_READ_LINK_QUALITY) &(prCmd->aucPayload[0]);
+	prBowReadLinkQuality = (struct BOW_READ_LINK_QUALITY *) &(prCmd->aucPayload[0]);
 
 	return wlanoidSendSetQueryBowCmd(prAdapter,
 					 CMD_ID_GET_LINK_QUALITY,
@@ -845,20 +845,20 @@ WLAN_STATUS bowCmdReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND pr
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdShortRangeMode(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdShortRangeMode(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 #if 1				/* Marked for MT6630 */
-	P_BOW_SHORT_RANGE_MODE prBowShortRangeMode;
-	CMD_TX_PWR_T rTxPwrParam;
+	struct BOW_SHORT_RANGE_MODE *prBowShortRangeMode;
+	struct CMD_TX_PWR rTxPwrParam;
 
 	ASSERT(prAdapter);
 
 	DBGLOG(BOW, EVENT, "bowCmdShortRangeMode.\n");
 
-	prBowShortRangeMode = (P_BOW_SHORT_RANGE_MODE) &(prCmd->aucPayload[0]);
+	prBowShortRangeMode = (struct BOW_SHORT_RANGE_MODE *) &(prCmd->aucPayload[0]);
 
 	/* parameter size check */
-	if (prCmd->rHeader.u2PayloadLength != sizeof(BOW_SHORT_RANGE_MODE)) {
+	if (prCmd->rHeader.u2PayloadLength != sizeof(struct BOW_SHORT_RANGE_MODE)) {
 		wlanbowCmdEventSetStatus(prAdapter, prCmd, BOWCMD_STATUS_UNACCEPTED);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
@@ -947,7 +947,7 @@ WLAN_STATUS bowCmdShortRangeMode(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prC
 * \retval WLAN_STATUS_INVALID_LENGTH
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowCmdGetChannelList(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd)
+uint32_t bowCmdGetChannelList(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd)
 {
 	ASSERT(prAdapter);
 
@@ -968,28 +968,28 @@ WLAN_STATUS bowCmdGetChannelList(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prC
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventSetStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd, IN UINT_8 ucEventBuf)
+void wlanbowCmdEventSetStatus(IN struct ADAPTER *prAdapter, IN struct BT_OVER_WIFI_COMMAND *prCmd, IN uint8_t ucEventBuf)
 {
-	P_AMPC_EVENT prEvent;
-	P_BOW_COMMAND_STATUS prBowCmdStatus;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_COMMAND_STATUS *prBowCmdStatus;
 
 	ASSERT(prAdapter);
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
 	prEvent->rHeader.ucSeqNumber = prCmd->rHeader.ucSeqNumber;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_COMMAND_STATUS);
 
 	/* fill event body */
-	prBowCmdStatus = (P_BOW_COMMAND_STATUS) (prEvent->aucPayload);
-	kalMemZero(prBowCmdStatus, sizeof(BOW_COMMAND_STATUS));
+	prBowCmdStatus = (struct BOW_COMMAND_STATUS *) (prEvent->aucPayload);
+	kalMemZero(prBowCmdStatus, sizeof(struct BOW_COMMAND_STATUS));
 
 	prBowCmdStatus->ucStatus = ucEventBuf;
 
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
 
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1003,28 +1003,28 @@ VOID wlanbowCmdEventSetStatus(IN P_ADAPTER_T prAdapter, IN P_AMPC_COMMAND prCmd,
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventSetCommon(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void wlanbowCmdEventSetCommon(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	P_AMPC_EVENT prEvent;
-	P_BOW_COMMAND_STATUS prBowCmdStatus;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_COMMAND_STATUS *prBowCmdStatus;
 
 	ASSERT(prAdapter);
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
-	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);
+	prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_COMMAND_STATUS);
 
 	/* fill event body */
-	prBowCmdStatus = (P_BOW_COMMAND_STATUS) (prEvent->aucPayload);
-	kalMemZero(prBowCmdStatus, sizeof(BOW_COMMAND_STATUS));
+	prBowCmdStatus = (struct BOW_COMMAND_STATUS *) (prEvent->aucPayload);
+	kalMemZero(prBowCmdStatus, sizeof(struct BOW_COMMAND_STATUS));
 
 	prBowCmdStatus->ucStatus = BOWCMD_STATUS_SUCCESS;
 
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
 
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1038,12 +1038,12 @@ VOID wlanbowCmdEventSetCommon(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInf
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventLinkConnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void wlanbowCmdEventLinkConnected(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	P_AMPC_EVENT prEvent;
-	P_BOW_LINK_CONNECTED prBowLinkConnected;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_BSS_INFO_T prBssInfo;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_LINK_CONNECTED *prBowLinkConnected;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 
@@ -1051,14 +1051,14 @@ VOID wlanbowCmdEventLinkConnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCm
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_CONNECTED)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_CONNECTED)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_CONNECTED;
-	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_LINK_CONNECTED);
+	prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_LINK_CONNECTED);
 
 	/* fill event body */
-	prBowLinkConnected = (P_BOW_LINK_CONNECTED) (prEvent->aucPayload);
-	kalMemZero(prBowLinkConnected, sizeof(BOW_LINK_CONNECTED));
+	prBowLinkConnected = (struct BOW_LINK_CONNECTED *) (prEvent->aucPayload);
+	kalMemZero(prBowLinkConnected, sizeof(struct BOW_LINK_CONNECTED));
 	prBowLinkConnected->rChannel.ucChannelNum = prBssInfo->ucPrimaryChannel;
 	prBowLinkConnected->rChannel.ucChannelBand = prBssInfo->eBand;
 	COPY_MAC_ADDR(prBowLinkConnected->aucPeerAddress, prBowFsmInfo->aucPeerAddress);
@@ -1084,7 +1084,7 @@ VOID wlanbowCmdEventLinkConnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCm
 
 	/*Indicate Event to PAL */
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_LINK_CONNECTED)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_CONNECTED)));
 
 	/*Release channel if granted */
 	if (prBowFsmInfo->fgIsChannelGranted) {
@@ -1111,15 +1111,15 @@ VOID wlanbowCmdEventLinkConnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCm
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void wlanbowCmdEventLinkDisconnected(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	P_AMPC_EVENT prEvent;
-	P_BOW_LINK_DISCONNECTED prBowLinkDisconnected;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	BOW_TABLE_T rBowTable;
-	UINT_8 ucBowTableIdx;
-	ENUM_BOW_DEVICE_STATE eFsmState;
-	BOOL fgSendDeauth = FALSE;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_LINK_DISCONNECTED *prBowLinkDisconnected;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BOW_TABLE rBowTable;
+	uint8_t ucBowTableIdx;
+	enum ENUM_BOW_DEVICE_STATE eFsmState;
+	u_int8_t fgSendDeauth = FALSE;
 
 	ASSERT(prAdapter);
 
@@ -1137,18 +1137,18 @@ VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T p
 		return;
 	}
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_DISCONNECTED)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_DISCONNECTED)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_DISCONNECTED;
 	if ((prCmdInfo->u4PrivateData))
-		prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
+		prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
 	else
 		prEvent->rHeader.ucSeqNumber = 0;
 
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_LINK_DISCONNECTED);
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_LINK_DISCONNECTED);
 
 	/* fill event body */
-	prBowLinkDisconnected = (P_BOW_LINK_DISCONNECTED) (prEvent->aucPayload);
-	kalMemZero(prBowLinkDisconnected, sizeof(BOW_LINK_DISCONNECTED));
+	prBowLinkDisconnected = (struct BOW_LINK_DISCONNECTED *) (prEvent->aucPayload);
+	kalMemZero(prBowLinkDisconnected, sizeof(struct BOW_LINK_DISCONNECTED));
 	prBowLinkDisconnected->ucReason = 0x0;
 	COPY_MAC_ADDR(prBowLinkDisconnected->aucPeerAddress, prBowFsmInfo->aucPeerAddress);
 
@@ -1173,7 +1173,7 @@ VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T p
 	/*Indicate BoW event to PAL */
 #if 0
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_LINK_DISCONNECTED)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_DISCONNECTED)));
 #endif
 
 	/* set to disconnected status */
@@ -1197,7 +1197,7 @@ VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T p
 		       "wlanbowCmdEventLinkDisconnected, bowGetBowTableState, %x.\n",
 		       bowGetBowTableState(prAdapter, prBowLinkDisconnected->aucPeerAddress));
 		authSendDeauthFrame(prAdapter, NULL, prBowFsmInfo->prTargetStaRec,
-				    (P_SW_RFB_T) NULL, REASON_CODE_DEAUTH_LEAVING_BSS,
+				    (struct SW_RFB *) NULL, REASON_CODE_DEAUTH_LEAVING_BSS,
 				    (PFN_TX_DONE_HANDLER) bowDisconnectLink);
 	}
 #endif
@@ -1223,7 +1223,7 @@ VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T p
 
 	/*Indicate BoW event to PAL */
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_LINK_DISCONNECTED)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_DISCONNECTED)));
 
 	/*Decrease link count */
 	GLUE_DEC_REF_CNT(g_u4LinkCount);
@@ -1245,36 +1245,36 @@ VOID wlanbowCmdEventLinkDisconnected(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T p
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventSetSetupConnection(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void wlanbowCmdEventSetSetupConnection(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	P_AMPC_EVENT prEvent;
-	P_BOW_COMMAND_STATUS prBowCmdStatus;
-	P_WIFI_CMD_T prWifiCmd;
-	P_CMD_BT_OVER_WIFI prCmdBtOverWifi;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_COMMAND_STATUS *prBowCmdStatus;
+	struct WIFI_CMD *prWifiCmd;
+	struct CMD_BT_OVER_WIFI *prCmdBtOverWifi;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prAdapter);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 
 	/* restore original command for rPeerAddr */
-	prWifiCmd = (P_WIFI_CMD_T) (prCmdInfo->pucInfoBuffer);
-	prCmdBtOverWifi = (P_CMD_BT_OVER_WIFI) (prWifiCmd->aucBuffer);
+	prWifiCmd = (struct WIFI_CMD *) (prCmdInfo->pucInfoBuffer);
+	prCmdBtOverWifi = (struct CMD_BT_OVER_WIFI *) (prWifiCmd->aucBuffer);
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
-	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);
+	prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_COMMAND_STATUS);
 
 	/* fill event body */
-	prBowCmdStatus = (P_BOW_COMMAND_STATUS) (prEvent->aucPayload);
-	kalMemZero(prBowCmdStatus, sizeof(BOW_COMMAND_STATUS));
+	prBowCmdStatus = (struct BOW_COMMAND_STATUS *) (prEvent->aucPayload);
+	kalMemZero(prBowCmdStatus, sizeof(struct BOW_COMMAND_STATUS));
 	prBowCmdStatus->ucStatus = BOWCMD_STATUS_SUCCESS;
 
 	/*Indicate BoW event to PAL */
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)));
 
 	/* set to starting status */
 	kalSetBowState(prAdapter->prGlueInfo, BOW_DEVICE_STATE_STARTING, prCmdBtOverWifi->rPeerAddr);
@@ -1291,30 +1291,30 @@ VOID wlanbowCmdEventSetSetupConnection(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void wlanbowCmdEventReadLinkQuality(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	P_EVENT_LINK_QUALITY prLinkQuality;
-	P_AMPC_EVENT prEvent;
-	P_BOW_LINK_QUALITY prBowLinkQuality;
+	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_LINK_QUALITY *prBowLinkQuality;
 
 	ASSERT(prAdapter);
 
-	prLinkQuality = (P_EVENT_LINK_QUALITY) pucEventBuf;
+	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_QUALITY)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_LINK_QUALITY;
-	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_LINK_QUALITY);
+	prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_LINK_QUALITY);
 
 	/* fill event body */
-	prBowLinkQuality = (P_BOW_LINK_QUALITY) (prEvent->aucPayload);
-	kalMemZero(prBowLinkQuality, sizeof(BOW_LINK_QUALITY));
-	prBowLinkQuality->ucLinkQuality = (UINT_8) prLinkQuality->cLinkQuality;
+	prBowLinkQuality = (struct BOW_LINK_QUALITY *) (prEvent->aucPayload);
+	kalMemZero(prBowLinkQuality, sizeof(struct BOW_LINK_QUALITY));
+	prBowLinkQuality->ucLinkQuality = (uint8_t) prLinkQuality->cLinkQuality;
 
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
 
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_QUALITY)));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1328,30 +1328,30 @@ VOID wlanbowCmdEventReadLinkQuality(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T pr
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdEventReadRssi(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo, IN PUINT_8 pucEventBuf)
+void wlanbowCmdEventReadRssi(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
 {
-	P_EVENT_LINK_QUALITY prLinkQuality;
-	P_AMPC_EVENT prEvent;
-	P_BOW_RSSI prBowRssi;
+	struct EVENT_LINK_QUALITY *prLinkQuality;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_RSSI *prBowRssi;
 
 	ASSERT(prAdapter);
 
-	prLinkQuality = (P_EVENT_LINK_QUALITY) pucEventBuf;
+	prLinkQuality = (struct EVENT_LINK_QUALITY *) pucEventBuf;
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_QUALITY)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_RSSI;
-	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_RSSI);
+	prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_RSSI);
 
 	/* fill event body */
-	prBowRssi = (P_BOW_RSSI) (prEvent->aucPayload);
-	kalMemZero(prBowRssi, sizeof(BOW_RSSI));
-	prBowRssi->cRssi = (INT_8) prLinkQuality->cRssi;
+	prBowRssi = (struct BOW_RSSI *) (prEvent->aucPayload);
+	kalMemZero(prBowRssi, sizeof(struct BOW_RSSI));
+	prBowRssi->cRssi = (int8_t) prLinkQuality->cRssi;
 
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
 
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_LINK_QUALITY)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_LINK_QUALITY)));
 
 }
 
@@ -1365,36 +1365,36 @@ VOID wlanbowCmdEventReadRssi(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo
 * \retval none
 */
 /*----------------------------------------------------------------------------*/
-VOID wlanbowCmdTimeoutHandler(IN P_ADAPTER_T prAdapter, IN P_CMD_INFO_T prCmdInfo)
+void wlanbowCmdTimeoutHandler(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo)
 {
-	P_AMPC_EVENT prEvent;
-	P_BOW_COMMAND_STATUS prBowCmdStatus;
+	struct BT_OVER_WIFI_EVENT *prEvent;
+	struct BOW_COMMAND_STATUS *prBowCmdStatus;
 
 	ASSERT(prAdapter);
 
 	/* fill event header */
-	prEvent = (P_AMPC_EVENT) kalMemAlloc((sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
+	prEvent = (struct BT_OVER_WIFI_EVENT *) kalMemAlloc((sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)), VIR_MEM_TYPE);
 	prEvent->rHeader.ucEventId = BOW_EVENT_ID_COMMAND_STATUS;
-	prEvent->rHeader.ucSeqNumber = (UINT_8) prCmdInfo->u4PrivateData;
-	prEvent->rHeader.u2PayloadLength = sizeof(BOW_COMMAND_STATUS);
+	prEvent->rHeader.ucSeqNumber = (uint8_t) prCmdInfo->u4PrivateData;
+	prEvent->rHeader.u2PayloadLength = sizeof(struct BOW_COMMAND_STATUS);
 
 	/* fill event body */
-	prBowCmdStatus = (P_BOW_COMMAND_STATUS) (prEvent->aucPayload);
-	kalMemZero(prBowCmdStatus, sizeof(BOW_COMMAND_STATUS));
+	prBowCmdStatus = (struct BOW_COMMAND_STATUS *) (prEvent->aucPayload);
+	kalMemZero(prBowCmdStatus, sizeof(struct BOW_COMMAND_STATUS));
 
 	prBowCmdStatus->ucStatus = BOWCMD_STATUS_TIMEOUT;	/* timeout */
 
 	kalIndicateBOWEvent(prAdapter->prGlueInfo, prEvent);
 
-	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(AMPC_EVENT) + sizeof(BOW_COMMAND_STATUS)));
+	kalMemFree(prEvent, VIR_MEM_TYPE, (sizeof(struct BT_OVER_WIFI_EVENT) + sizeof(struct BOW_COMMAND_STATUS)));
 
 }
 
 /* Bruce, 20140224 */
-UINT_8 bowInit(IN P_ADAPTER_T prAdapter)
+uint8_t bowInit(IN struct ADAPTER *prAdapter)
 {
-	P_BSS_INFO_T prBowBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BSS_INFO *prBowBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prAdapter);
 
@@ -1416,10 +1416,10 @@ UINT_8 bowInit(IN P_ADAPTER_T prAdapter)
 }
 
 /* Bruce, 20140224 */
-VOID bowUninit(IN P_ADAPTER_T prAdapter)
+void bowUninit(IN struct ADAPTER *prAdapter)
 {
-	P_BSS_INFO_T prBowBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BSS_INFO *prBowBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBowBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
@@ -1427,10 +1427,10 @@ VOID bowUninit(IN P_ADAPTER_T prAdapter)
 	cnmFreeBssInfo(prAdapter, prBowBssInfo);
 }
 
-VOID bowStopping(IN P_ADAPTER_T prAdapter)
+void bowStopping(IN struct ADAPTER *prAdapter)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_BSS_INFO_T prBowBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BSS_INFO *prBowBssInfo;
 
 	ASSERT(prAdapter);
 
@@ -1481,10 +1481,10 @@ VOID bowStopping(IN P_ADAPTER_T prAdapter)
 
 }
 
-VOID bowStarting(IN P_ADAPTER_T prAdapter)
+void bowStarting(IN struct ADAPTER *prAdapter)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_BSS_INFO_T prBssInfo = (P_BSS_INFO_T) NULL;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 
 	ASSERT(prAdapter);
 
@@ -1522,7 +1522,7 @@ VOID bowStarting(IN P_ADAPTER_T prAdapter)
 		       prAdapter->rWifiVar.aucDeviceAddress[4], prAdapter->rWifiVar.aucDeviceAddress[5]);
 
 		/* 4 <1.3> Clear current AP's STA_RECORD_T and current AID */
-		prBssInfo->prStaRecOfAP = (P_STA_RECORD_T) NULL;
+		prBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
 		prBssInfo->u2AssocId = 0;
 
 		/* 4 <1.4> Setup Channel, Band and Phy Attributes */
@@ -1538,7 +1538,7 @@ VOID bowStarting(IN P_ADAPTER_T prAdapter)
 		/* Depend on eCurrentOPMode and ucPhyTypeSet */
 		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
 
-		prBssInfo->ucNonHTBasicPhyType = (UINT_8)
+		prBssInfo->ucNonHTBasicPhyType = (uint8_t)
 		    rNonHTApModeAttributes[prBssInfo->ucConfigAdHocAPMode].ePhyTypeIndex;
 		prBssInfo->u2BSSBasicRateSet = rNonHTApModeAttributes[prBssInfo->ucConfigAdHocAPMode].u2BSSBasicRateSet;
 
@@ -1627,7 +1627,7 @@ VOID bowStarting(IN P_ADAPTER_T prAdapter)
 
 #if 0
 		{
-			UINT_32 u4RxFilter;
+			uint32_t u4RxFilter;
 
 			if (halMacRxGetRxFilters(&u4RxFilter) == HAL_STATUS_SUCCESS) {
 
@@ -1669,10 +1669,10 @@ VOID bowStarting(IN P_ADAPTER_T prAdapter)
 
 }
 
-VOID bowAssignSsid(IN PUINT_8 pucSsid, IN PUINT_8 puOwnMacAddr)
+void bowAssignSsid(IN uint8_t *pucSsid, IN uint8_t *puOwnMacAddr)
 {
-	UINT_8 i;
-	UINT_8 aucSSID[] = BOW_WILDCARD_SSID;
+	uint8_t i;
+	uint8_t aucSSID[] = BOW_WILDCARD_SSID;
 
 	kalMemCopy(pucSsid, aucSSID, BOW_WILDCARD_SSID_LEN);
 
@@ -1707,18 +1707,18 @@ VOID bowAssignSsid(IN PUINT_8 pucSsid, IN PUINT_8 puOwnMacAddr)
 * @retval FALSE     Don't reply the Probe Response
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN bowValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT PUINT_32 pu4ControlFlags)
+u_int8_t bowValidateProbeReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint32_t *pu4ControlFlags)
 {
 #if 1				/* Marked for MT6630 */
 
-	P_WLAN_MAC_MGMT_HEADER_T prMgtHdr;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_BSS_INFO_T prBssInfo;
-	P_IE_SSID_T prIeSsid = (P_IE_SSID_T) NULL;
-	PUINT_8 pucIE;
-	UINT_16 u2IELength;
-	UINT_16 u2Offset = 0;
-	BOOLEAN fgReplyProbeResp = FALSE;
+	struct WLAN_MAC_MGMT_HEADER *prMgtHdr;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BSS_INFO *prBssInfo;
+	struct IE_SSID *prIeSsid = (struct IE_SSID *) NULL;
+	uint8_t *pucIE;
+	uint16_t u2IELength;
+	uint16_t u2Offset = 0;
+	u_int8_t fgReplyProbeResp = FALSE;
 
 	ASSERT(prSwRfb);
 	ASSERT(pu4ControlFlags);
@@ -1731,15 +1731,15 @@ BOOLEAN bowValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 #endif
 
 	/* 4 <1> Parse Probe Req IE and Get IE ptr (SSID, Supported Rate IE, ...) */
-	prMgtHdr = (P_WLAN_MAC_MGMT_HEADER_T) prSwRfb->pvHeader;
+	prMgtHdr = (struct WLAN_MAC_MGMT_HEADER *) prSwRfb->pvHeader;
 
 	u2IELength = prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen;
-	pucIE = (PUINT_8) (((ULONG) prSwRfb->pvHeader) + prSwRfb->u2HeaderLen);
+	pucIE = (uint8_t *) (((unsigned long) prSwRfb->pvHeader) + prSwRfb->u2HeaderLen);
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		if (IE_ID(pucIE) == ELEM_ID_SSID) {
 			if ((!prIeSsid) && (IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID))
-				prIeSsid = (P_IE_SSID_T) pucIE;
+				prIeSsid = (struct IE_SSID *) pucIE;
 			break;
 		}
 	}			/* end of IE_FOR_EACH */
@@ -1747,7 +1747,7 @@ BOOLEAN bowValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		if (IE_ID(pucIE) == ELEM_ID_SSID) {
 			if ((!prIeSsid) && (IE_LEN(pucIE) <= ELEM_MAX_LEN_SSID))
-				prIeSsid = (P_IE_SSID_T) pucIE;
+				prIeSsid = (struct IE_SSID *) pucIE;
 			break;
 		}
 	}			/* end of IE_FOR_EACH */
@@ -1784,9 +1784,9 @@ BOOLEAN bowValidateProbeReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowSendBeacon(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
+void bowSendBeacon(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 
@@ -1809,11 +1809,11 @@ VOID bowSendBeacon(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowResponderScan(IN P_ADAPTER_T prAdapter)
+void bowResponderScan(IN struct ADAPTER *prAdapter)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_MSG_SCN_SCAN_REQ prScanReqMsg;
-	P_BSS_INFO_T prBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct MSG_SCN_SCAN_REQ *prScanReqMsg;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prAdapter);
 
@@ -1823,7 +1823,7 @@ VOID bowResponderScan(IN P_ADAPTER_T prAdapter)
 	DBGLOG(BOW, EVENT, "bowResponderScan.\n");
 	DBGLOG(BOW, EVENT, "BOW SCAN [REQ:%d]\n", prBowFsmInfo->ucSeqNumOfScanReq + 1);
 
-	prScanReqMsg = (P_MSG_SCN_SCAN_REQ) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_SCN_SCAN_REQ));
+	prScanReqMsg = (struct MSG_SCN_SCAN_REQ *) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_SCN_SCAN_REQ));
 
 	if (!prScanReqMsg) {
 		ASSERT(0);	/* Can't trigger SCAN FSM */
@@ -1852,7 +1852,7 @@ VOID bowResponderScan(IN P_ADAPTER_T prAdapter)
 	prScanReqMsg->u2IELen = 0;
 
 	/*Send scan message */
-	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prScanReqMsg, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanReqMsg, MSG_SEND_METHOD_BUF);
 
 	/*Change state to SCANNING */
 	bowSetBowTableState(prAdapter, prBowFsmInfo->aucPeerAddress, BOW_DEVICE_STATE_SCANNING);
@@ -1872,23 +1872,23 @@ VOID bowResponderScan(IN P_ADAPTER_T prAdapter)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID bowResponderScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void bowResponderScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
 #if 1				/* Marked for MT6630 */
-	P_MSG_SCN_SCAN_DONE prScanDoneMsg;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_BSS_DESC_T prBssDesc;
-	UINT_8 ucSeqNumOfCompMsg;
-	P_CONNECTION_SETTINGS_T prConnSettings;
-	ENUM_BOW_DEVICE_STATE eFsmState;
-	ENUM_SCAN_STATUS eScanStatus;
+	struct MSG_SCN_SCAN_DONE *prScanDoneMsg;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BSS_DESC *prBssDesc;
+	uint8_t ucSeqNumOfCompMsg;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	enum ENUM_BOW_DEVICE_STATE eFsmState;
+	enum ENUM_SCAN_STATUS eScanStatus;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
-	prScanDoneMsg = (P_MSG_SCN_SCAN_DONE) prMsgHdr;
+	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *) prMsgHdr;
 	eFsmState = bowGetBowTableState(prAdapter, prBowFsmInfo->aucPeerAddress);
 
 	ucSeqNumOfCompMsg = prScanDoneMsg->ucSeqNum;
@@ -1965,11 +1965,11 @@ VOID bowResponderScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowResponderCancelScan(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsChannelExtention)
+void bowResponderCancelScan(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsChannelExtention)
 {
 
-	P_MSG_SCN_SCAN_CANCEL prScanCancel = (P_MSG_SCN_SCAN_CANCEL) NULL;
-	P_BOW_FSM_INFO_T prBowFsmInfo = (P_BOW_FSM_INFO_T) NULL;
+	struct MSG_SCN_SCAN_CANCEL *prScanCancel = (struct MSG_SCN_SCAN_CANCEL *) NULL;
+	struct BOW_FSM_INFO *prBowFsmInfo = (struct BOW_FSM_INFO *) NULL;
 
 	DEBUGFUNC("bowResponderCancelScan()");
 
@@ -1986,7 +1986,7 @@ VOID bowResponderCancelScan(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsChannelExte
 			DBGLOG(BOW, TRACE, "BOW Cancel Scan\n");
 
 			prScanCancel =
-			    (P_MSG_SCN_SCAN_CANCEL) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_SCN_SCAN_CANCEL));
+			    (struct MSG_SCN_SCAN_CANCEL *) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_SCN_SCAN_CANCEL));
 			if (!prScanCancel) {
 				/* Buffer not enough, can not cancel scan request. */
 				DBGLOG(BOW, TRACE, "Buffer not enough, can not cancel scan.\n");
@@ -2000,7 +2000,7 @@ VOID bowResponderCancelScan(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsChannelExte
 #if CFG_ENABLE_WIFI_DIRECT
 			prScanCancel->fgIsChannelExt = fgIsChannelExtention;
 #endif
-			mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prScanCancel, MSG_SEND_METHOD_BUF);
+			mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prScanCancel, MSG_SEND_METHOD_BUF);
 
 		}
 
@@ -2017,13 +2017,13 @@ VOID bowResponderCancelScan(IN P_ADAPTER_T prAdapter, IN BOOLEAN fgIsChannelExte
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowResponderJoin(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
+void bowResponderJoin(IN struct ADAPTER *prAdapter, IN struct BSS_DESC *prBssDesc)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_BSS_INFO_T prBssInfo;
-	P_CONNECTION_SETTINGS_T prConnSettings;
-	P_STA_RECORD_T prStaRec;
-	P_MSG_JOIN_REQ_T prJoinReqMsg;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct BSS_INFO *prBssInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	struct STA_RECORD *prStaRec;
+	struct MSG_SAA_FSM_START *prJoinReqMsg;
 
 	ASSERT(prBssDesc);
 	ASSERT(prAdapter);
@@ -2046,16 +2046,16 @@ VOID bowResponderJoin(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
 
 	/* 4 <3> Update ucAvailableAuthTypes which we can choice during SAA */
 	prStaRec->fgIsReAssoc = FALSE;
-	prBowFsmInfo->ucAvailableAuthTypes = (UINT_8) AUTH_TYPE_OPEN_SYSTEM;
+	prBowFsmInfo->ucAvailableAuthTypes = (uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 	prStaRec->ucTxAuthAssocRetryLimit = TX_AUTH_ASSOCI_RETRY_LIMIT;
 
 	/* 4 <4> Use an appropriate Authentication Algorithm Number among the ucAvailableAuthTypes */
-	if (prBowFsmInfo->ucAvailableAuthTypes & (UINT_8) AUTH_TYPE_OPEN_SYSTEM) {
+	if (prBowFsmInfo->ucAvailableAuthTypes & (uint8_t) AUTH_TYPE_OPEN_SYSTEM) {
 
 		DBGLOG(BOW, LOUD, "JOIN INIT: Try to do Authentication with AuthType == OPEN_SYSTEM.\n");
-		prBowFsmInfo->ucAvailableAuthTypes &= ~(UINT_8) AUTH_TYPE_OPEN_SYSTEM;
+		prBowFsmInfo->ucAvailableAuthTypes &= ~(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
 
-		prStaRec->ucAuthAlgNum = (UINT_8) AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
+		prStaRec->ucAuthAlgNum = (uint8_t) AUTH_ALGORITHM_NUM_OPEN_SYSTEM;
 	} else {
 		ASSERT(0);
 	}
@@ -2070,7 +2070,7 @@ VOID bowResponderJoin(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
 		DBGLOG(BOW, EVENT, "bowResponderJoin, SSID %s.\n", prConnSettings->aucSSID);
 	}
 	/* 4 <6> Send a Msg to trigger SAA to start JOIN process. */
-	prJoinReqMsg = (P_MSG_JOIN_REQ_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_JOIN_REQ_T));
+	prJoinReqMsg = (struct MSG_SAA_FSM_START *) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_SAA_FSM_START));
 	if (!prJoinReqMsg) {
 
 		ASSERT(0);	/* Can't trigger SAA FSM */
@@ -2086,7 +2086,7 @@ VOID bowResponderJoin(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
 	DBGLOG(BOW, EVENT, "prStaRec->eStaType, %x.\n", prStaRec->eStaType);
 	DBGLOG(BOW, EVENT, "BoW trigger SAA [" MACSTR "]\n", MAC2STR(prStaRec->aucMacAddr));
 
-	mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prJoinReqMsg, MSG_SEND_METHOD_BUF);
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prJoinReqMsg, MSG_SEND_METHOD_BUF);
 
 }
 
@@ -2101,25 +2101,25 @@ VOID bowResponderJoin(IN P_ADAPTER_T prAdapter, IN P_BSS_DESC_T prBssDesc)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void bowFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
 #if 1				/* Marked for MT6630 */
 
-	P_MSG_JOIN_COMP_T prJoinCompMsg;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_STA_RECORD_T prStaRec;
-	P_SW_RFB_T prAssocRspSwRfb;
-	P_WLAN_ASSOC_RSP_FRAME_T prAssocRspFrame = (P_WLAN_ASSOC_RSP_FRAME_T) NULL;
-	UINT_16 u2IELength;
-	PUINT_8 pucIE;
-	P_BSS_INFO_T prBowBssInfo;
+	struct MSG_SAA_FSM_COMP *prJoinCompMsg;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct STA_RECORD *prStaRec;
+	struct SW_RFB *prAssocRspSwRfb;
+	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *) NULL;
+	uint16_t u2IELength;
+	uint8_t *pucIE;
+	struct BSS_INFO *prBowBssInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBowBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
-	prJoinCompMsg = (P_MSG_JOIN_COMP_T) prMsgHdr;
+	prJoinCompMsg = (struct MSG_SAA_FSM_COMP *) prMsgHdr;
 	prStaRec = prJoinCompMsg->prStaRec;
 
 	DBGLOG(BOW, EVENT, "Start bowfsmRunEventJoinComplete.\n");
@@ -2139,12 +2139,12 @@ VOID bowFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 		/* 4 <1> JOIN was successful */
 		if (prJoinCompMsg->rJoinStatus == WLAN_STATUS_SUCCESS) {
 			prAssocRspSwRfb = prJoinCompMsg->prSwRfb;
-			prAssocRspFrame = (P_WLAN_ASSOC_RSP_FRAME_T) prAssocRspSwRfb->pvHeader;
+			prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *) prAssocRspSwRfb->pvHeader;
 
 			u2IELength =
-			    (UINT_16) ((prAssocRspSwRfb->u2PacketLen -
+			    (uint16_t) ((prAssocRspSwRfb->u2PacketLen -
 					prAssocRspSwRfb->u2HeaderLen) -
-				       (OFFSET_OF(WLAN_ASSOC_RSP_FRAME_T, aucInfoElem[0]) - WLAN_MAC_MGMT_HEADER_LEN));
+				       (OFFSET_OF(struct WLAN_ASSOC_RSP_FRAME, aucInfoElem[0]) - WLAN_MAC_MGMT_HEADER_LEN));
 			pucIE = prAssocRspFrame->aucInfoElem;
 
 			prStaRec->eStaType = STA_TYPE_BOW_AP;
@@ -2156,7 +2156,7 @@ VOID bowFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 			prStaRec->u2DesiredNonHTRateSet &= (RATE_SET_BIT_24M | RATE_SET_BIT_48M | RATE_SET_BIT_54M);
 			/*If peer cannot support the above rate set, fix on the available highest rate */
 			if (prStaRec->u2DesiredNonHTRateSet == 0) {
-				UINT_8 ucHighestRateIndex;
+				uint8_t ucHighestRateIndex;
 
 				if (rateGetHighestRateIndexFromRateSet
 				    (prBowBssInfo->u2OperationalRateSet, &ucHighestRateIndex)) {
@@ -2229,14 +2229,14 @@ VOID bowFsmRunEventJoinComplete(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHd
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID
-bowIndicationOfMediaStateToHost(IN P_ADAPTER_T prAdapter,
-				IN ENUM_PARAM_MEDIA_STATE_T eConnectionState, IN BOOLEAN fgDelayIndication)
+void
+bowIndicationOfMediaStateToHost(IN struct ADAPTER *prAdapter,
+				IN enum ENUM_PARAM_MEDIA_STATE eConnectionState, IN u_int8_t fgDelayIndication)
 {
-	EVENT_CONNECTION_STATUS rEventConnStatus;
-	P_CONNECTION_SETTINGS_T prConnSettings;
-	P_BSS_INFO_T prBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct EVENT_CONNECTION_STATUS rEventConnStatus;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	struct BSS_INFO *prBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
@@ -2259,17 +2259,17 @@ bowIndicationOfMediaStateToHost(IN P_ADAPTER_T prAdapter,
 		cnmTimerStopTimer(prAdapter, &prBowFsmInfo->rIndicationOfDisconnectTimer);
 
 		/* 4 <1> Fill EVENT_CONNECTION_STATUS */
-		rEventConnStatus.ucMediaStatus = (UINT_8) eConnectionState;
+		rEventConnStatus.ucMediaStatus = (uint8_t) eConnectionState;
 
 		if (eConnectionState == PARAM_MEDIA_STATE_CONNECTED) {
 			rEventConnStatus.ucReasonOfDisconnect = DISCONNECT_REASON_CODE_RESERVED;
 
 			if (prBssInfo->eCurrentOPMode == OP_MODE_BOW) {
-				rEventConnStatus.ucInfraMode = (UINT_8) NET_TYPE_INFRA;
+				rEventConnStatus.ucInfraMode = (uint8_t) NET_TYPE_INFRA;
 				rEventConnStatus.u2AID = prBssInfo->u2AssocId;
 				rEventConnStatus.u2ATIMWindow = 0;
 			} else if (prBssInfo->eCurrentOPMode == OP_MODE_IBSS) {
-				rEventConnStatus.ucInfraMode = (UINT_8) NET_TYPE_IBSS;
+				rEventConnStatus.ucInfraMode = (uint8_t) NET_TYPE_IBSS;
 				rEventConnStatus.u2AID = 0;
 				rEventConnStatus.u2ATIMWindow = prBssInfo->u2ATIMWindow;
 			} else {
@@ -2286,20 +2286,20 @@ bowIndicationOfMediaStateToHost(IN P_ADAPTER_T prAdapter,
 
 			switch (prBssInfo->ucNonHTBasicPhyType) {
 			case PHY_TYPE_HR_DSSS_INDEX:
-				rEventConnStatus.ucNetworkType = (UINT_8) PARAM_NETWORK_TYPE_DS;
+				rEventConnStatus.ucNetworkType = (uint8_t) PARAM_NETWORK_TYPE_DS;
 				break;
 
 			case PHY_TYPE_ERP_INDEX:
-				rEventConnStatus.ucNetworkType = (UINT_8) PARAM_NETWORK_TYPE_OFDM24;
+				rEventConnStatus.ucNetworkType = (uint8_t) PARAM_NETWORK_TYPE_OFDM24;
 				break;
 
 			case PHY_TYPE_OFDM_INDEX:
-				rEventConnStatus.ucNetworkType = (UINT_8) PARAM_NETWORK_TYPE_OFDM5;
+				rEventConnStatus.ucNetworkType = (uint8_t) PARAM_NETWORK_TYPE_OFDM5;
 				break;
 
 			default:
 				ASSERT(0);
-				rEventConnStatus.ucNetworkType = (UINT_8) PARAM_NETWORK_TYPE_DS;
+				rEventConnStatus.ucNetworkType = (uint8_t) PARAM_NETWORK_TYPE_DS;
 				break;
 			}
 		} else {
@@ -2337,11 +2337,11 @@ bowIndicationOfMediaStateToHost(IN P_ADAPTER_T prAdapter,
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowRunEventAAATxFail(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+void bowRunEventAAATxFail(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec)
 {
 #if 1				/* Marked for MT6630 */
-	P_BSS_INFO_T prBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BSS_INFO *prBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
@@ -2367,11 +2367,11 @@ VOID bowRunEventAAATxFail(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-WLAN_STATUS bowRunEventAAAComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec)
+uint32_t bowRunEventAAAComplete(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec)
 {
 #if 1				/* Marked for MT6630 */
-	P_BSS_INFO_T prBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	struct BSS_INFO *prBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prStaRec);
 
@@ -2412,12 +2412,12 @@ WLAN_STATUS bowRunEventAAAComplete(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T p
 */
 /*----------------------------------------------------------------------------*/
 
-WLAN_STATUS bowRunEventRxDeAuth(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prStaRec, IN P_SW_RFB_T prSwRfb)
+uint32_t bowRunEventRxDeAuth(IN struct ADAPTER *prAdapter, IN struct STA_RECORD *prStaRec, IN struct SW_RFB *prSwRfb)
 {
 #if 1				/* Marked for MT6630 */
-	P_BSS_INFO_T prBowBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	ENUM_BOW_DEVICE_STATE eFsmState;
+	struct BSS_INFO *prBowBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	enum ENUM_BOW_DEVICE_STATE eFsmState;
 
 	ASSERT(prAdapter);
 
@@ -2478,10 +2478,10 @@ WLAN_STATUS bowRunEventRxDeAuth(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T prSt
 * \note after receive deauth frame, callback function call this
 */
 /*----------------------------------------------------------------------------*/
-VOID bowDisconnectLink(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN ENUM_TX_RESULT_CODE_T rTxDoneStatus)
+void bowDisconnectLink(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_STA_RECORD_T prStaRec;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct STA_RECORD *prStaRec;
 
 	ASSERT(prAdapter);
 
@@ -2534,15 +2534,15 @@ VOID bowDisconnectLink(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN
 * @retval FALSE     Don't reply the Assoc Resp
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN bowValidateAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT PUINT_16 pu2StatusCode)
+u_int8_t bowValidateAssocReq(IN struct ADAPTER *prAdapter, IN struct SW_RFB *prSwRfb, OUT uint16_t *pu2StatusCode)
 {
 #if 1				/* Marked for MT6630 */
 
-	BOOLEAN fgReplyAssocResp = FALSE;
-	P_BSS_INFO_T prBowBssInfo;
-	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_WLAN_ASSOC_REQ_FRAME_T prAssocReqFrame = (P_WLAN_ASSOC_REQ_FRAME_T) NULL;
+	u_int8_t fgReplyAssocResp = FALSE;
+	struct BSS_INFO *prBowBssInfo;
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *) NULL;
 	OS_SYSTIME rCurrentTime;
 	static OS_SYSTIME rLastRejectAssocTime;
 
@@ -2551,7 +2551,7 @@ BOOLEAN bowValidateAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBowBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
 
-	prAssocReqFrame = (P_WLAN_ASSOC_REQ_FRAME_T) prSwRfb->pvHeader;
+	prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *) prSwRfb->pvHeader;
 	*pu2StatusCode = STATUS_CODE_REQ_DECLINED;
 
 	DBGLOG(BOW, EVENT,
@@ -2580,7 +2580,7 @@ BOOLEAN bowValidateAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 		prStaRec->u2DesiredNonHTRateSet &= (RATE_SET_BIT_24M | RATE_SET_BIT_48M | RATE_SET_BIT_54M);
 		/*If peer cannot support the above rate set, fix on the available highest rate */
 		if (prStaRec->u2DesiredNonHTRateSet == 0) {
-			UINT_8 ucHighestRateIndex;
+			uint8_t ucHighestRateIndex;
 
 			if (rateGetHighestRateIndexFromRateSet(prBowBssInfo->u2OperationalRateSet, &ucHighestRateIndex))
 				prStaRec->u2DesiredNonHTRateSet = BIT(ucHighestRateIndex);
@@ -2635,16 +2635,16 @@ BOOLEAN bowValidateAssocReq(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSwRfb, OUT
 * @retval FALSE     Don't reply the Auth
 */
 /*----------------------------------------------------------------------------*/
-BOOLEAN
-bowValidateAuth(IN P_ADAPTER_T prAdapter,
-		IN P_SW_RFB_T prSwRfb, IN PP_STA_RECORD_T pprStaRec, OUT PUINT_16 pu2StatusCode)
+u_int8_t
+bowValidateAuth(IN struct ADAPTER *prAdapter,
+		IN struct SW_RFB *prSwRfb, IN struct STA_RECORD **pprStaRec, OUT uint16_t *pu2StatusCode)
 {
 #if 1				/* Marked for MT6630 */
-	BOOLEAN fgReplyAuth = FALSE;
-	P_BSS_INFO_T prBowBssInfo;
-	P_STA_RECORD_T prStaRec = (P_STA_RECORD_T) NULL;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_WLAN_AUTH_FRAME_T prAuthFrame = (P_WLAN_AUTH_FRAME_T) NULL;
+	u_int8_t fgReplyAuth = FALSE;
+	struct BSS_INFO *prBowBssInfo;
+	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
 	OS_SYSTIME rCurrentTime;
 	static OS_SYSTIME rLastRejectAuthTime;
 
@@ -2657,7 +2657,7 @@ bowValidateAuth(IN P_ADAPTER_T prAdapter,
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBowBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
 
-	prAuthFrame = (P_WLAN_AUTH_FRAME_T) prSwRfb->pvHeader;
+	prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
 
 	DBGLOG(BOW, EVENT, "bowValidateAuth, prBowFsmInfo->aucPeerAddress, %x:%x:%x:%x:%x:%x.\n",
 	       prBowFsmInfo->aucPeerAddress[0],
@@ -2676,8 +2676,8 @@ bowValidateAuth(IN P_ADAPTER_T prAdapter,
 		prStaRec = cnmStaRecAlloc(prAdapter,
 					  STA_TYPE_BOW_CLIENT, prBowFsmInfo->ucBssIndex, prAuthFrame->aucSrcAddr);
 
-		/* TODO(Kevin): Error handling of allocation of STA_RECORD_T for
-		 * exhausted case and do removal of unused STA_RECORD_T.
+		/* TODO(Kevin): Error handling of allocation of struct STA_RECORD for
+		 * exhausted case and do removal of unused struct STA_RECORD.
 		 */
 		ASSERT(prStaRec);
 		COPY_MAC_ADDR(prStaRec->aucMacAddr, prAuthFrame->aucSrcAddr);
@@ -2733,22 +2733,22 @@ bowValidateAuth(IN P_ADAPTER_T prAdapter,
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID bowRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
+void bowRunEventChGrant(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 {
 #if 1				/* Marked for MT6630 */
-	P_BSS_INFO_T prBowBssInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_MSG_CH_GRANT_T prMsgChGrant;
-	UINT_8 ucTokenID;
-	UINT_32 u4GrantInterval;
-	ENUM_BOW_DEVICE_STATE eFsmState;
+	struct BSS_INFO *prBowBssInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct MSG_CH_GRANT *prMsgChGrant;
+	uint8_t ucTokenID;
+	uint32_t u4GrantInterval;
+	enum ENUM_BOW_DEVICE_STATE eFsmState;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsgHdr);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 	prBowBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prBowFsmInfo->ucBssIndex);
-	prMsgChGrant = (P_MSG_CH_GRANT_T) prMsgHdr;
+	prMsgChGrant = (struct MSG_CH_GRANT *) prMsgHdr;
 	ucTokenID = prMsgChGrant->ucTokenID;
 	u4GrantInterval = prMsgChGrant->u4GrantInterval;
 
@@ -2814,10 +2814,10 @@ VOID bowRunEventChGrant(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID bowRequestCh(IN P_ADAPTER_T prAdapter)
+void bowRequestCh(IN struct ADAPTER *prAdapter)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_MSG_CH_REQ_T prMsgChReq;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct MSG_CH_REQ *prMsgChReq;
 
 	ASSERT(prAdapter);
 
@@ -2828,7 +2828,7 @@ VOID bowRequestCh(IN P_ADAPTER_T prAdapter)
 		DBGLOG(BOW, EVENT, "BoW channel [REQUEST:%d], %d, %d.\n",
 		       prBowFsmInfo->ucSeqNumOfChReq + 1, prBowFsmInfo->ucPrimaryChannel, prBowFsmInfo->eBand);
 
-		prMsgChReq = (P_MSG_CH_REQ_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_CH_REQ_T));
+		prMsgChReq = (struct MSG_CH_REQ *) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_CH_REQ));
 
 		if (!prMsgChReq) {
 			ASSERT(0);	/* Can't indicate CNM for channel acquiring */
@@ -2862,7 +2862,7 @@ VOID bowRequestCh(IN P_ADAPTER_T prAdapter)
 
 		prBowFsmInfo->fgIsChannelRequested = TRUE;
 
-		mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChReq, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgChReq, MSG_SEND_METHOD_BUF);
 	}
 }
 
@@ -2876,10 +2876,10 @@ VOID bowRequestCh(IN P_ADAPTER_T prAdapter)
 * \return none
 */
 /*----------------------------------------------------------------------------*/
-VOID bowReleaseCh(IN P_ADAPTER_T prAdapter)
+void bowReleaseCh(IN struct ADAPTER *prAdapter)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	P_MSG_CH_ABORT_T prMsgChAbort;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	struct MSG_CH_ABORT *prMsgChAbort;
 
 	ASSERT(prAdapter);
 
@@ -2894,7 +2894,7 @@ VOID bowReleaseCh(IN P_ADAPTER_T prAdapter)
 		prBowFsmInfo->fgIsChannelGranted = FALSE;
 
 		/* 1. return channel privilege to CNM immediately */
-		prMsgChAbort = (P_MSG_CH_ABORT_T) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(MSG_CH_ABORT_T));
+		prMsgChAbort = (struct MSG_CH_ABORT *) cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(struct MSG_CH_ABORT));
 		if (!prMsgChAbort) {
 			ASSERT(0);	/* Can't release Channel to CNM */
 			return;
@@ -2908,7 +2908,7 @@ VOID bowReleaseCh(IN P_ADAPTER_T prAdapter)
 		/*prMsgChAbort->eDBDCBand = (prAdapter->aprBssInfo[prMsgChAbort->ucBssIndex])->eDBDCBand;*/
 		prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
 
-		mboxSendMsg(prAdapter, MBOX_ID_0, (P_MSG_HDR_T) prMsgChAbort, MSG_SEND_METHOD_BUF);
+		mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prMsgChAbort, MSG_SEND_METHOD_BUF);
 	}
 
 }				/* end of aisFsmReleaseCh() */
@@ -2922,10 +2922,10 @@ VOID bowReleaseCh(IN P_ADAPTER_T prAdapter)
 * @return (none)
 */
 /*----------------------------------------------------------------------------*/
-VOID bowChGrantedTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
+void bowChGrantedTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr)
 {
-	P_BOW_FSM_INFO_T prBowFsmInfo;
-	ENUM_BOW_DEVICE_STATE eFsmState;
+	struct BOW_FSM_INFO *prBowFsmInfo;
+	enum ENUM_BOW_DEVICE_STATE eFsmState;
 
 	ASSERT(prAdapter);
 
@@ -2945,19 +2945,19 @@ VOID bowChGrantedTimeout(IN P_ADAPTER_T prAdapter, IN ULONG ulParamPtr)
 
 #endif /* Marked for MT6630 */
 
-BOOLEAN bowNotifyAllLinkDisconnected(IN P_ADAPTER_T prAdapter)
+u_int8_t bowNotifyAllLinkDisconnected(IN struct ADAPTER *prAdapter)
 {
 #if 1				/* Marked for MT6630 */
 
-	UINT_8 ucBowTableIdx = 0;
-	CMD_INFO_T rCmdInfo;
-	P_BOW_FSM_INFO_T prBowFsmInfo;
+	uint8_t ucBowTableIdx = 0;
+	struct CMD_INFO rCmdInfo;
+	struct BOW_FSM_INFO *prBowFsmInfo;
 
 	ASSERT(prAdapter);
 
 	prBowFsmInfo = &(prAdapter->rWifiVar.rBowFsmInfo);
 
-	kalMemZero(&rCmdInfo, sizeof(CMD_INFO_T));
+	kalMemZero(&rCmdInfo, sizeof(struct CMD_INFO));
 
 	while (ucBowTableIdx < CFG_BOW_PHYSICAL_LINK_NUM) {
 		if (arBowTable[ucBowTableIdx].fgIsValid) {
@@ -3011,9 +3011,9 @@ BOOLEAN bowNotifyAllLinkDisconnected(IN P_ADAPTER_T prAdapter)
 */
 /*----------------------------------------------------------------------------*/
 
-BOOLEAN bowCheckBowTableIfVaild(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6])
+u_int8_t bowCheckBowTableIfVaild(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6])
 {
-	UINT_8 idx;
+	uint8_t idx;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BOW_TABLE);
@@ -3047,7 +3047,7 @@ BOOLEAN bowCheckBowTableIfVaild(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddre
 	return FALSE;
 }
 
-BOOLEAN bowGetBowTableContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBowTableIdx, OUT P_BOW_TABLE_T prBowTable)
+u_int8_t bowGetBowTableContent(IN struct ADAPTER *prAdapter, IN uint8_t ucBowTableIdx, OUT struct BOW_TABLE *prBowTable)
 {
 	KAL_SPIN_LOCK_DECLARATION();
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BOW_TABLE);
@@ -3069,7 +3069,7 @@ BOOLEAN bowGetBowTableContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBowTableIdx,
 	return FALSE;
 }
 
-BOOLEAN bowSetBowTableContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBowTableIdx, IN P_BOW_TABLE_T prBowTable)
+u_int8_t bowSetBowTableContent(IN struct ADAPTER *prAdapter, IN uint8_t ucBowTableIdx, IN struct BOW_TABLE *prBowTable)
 {
 	KAL_SPIN_LOCK_DECLARATION();
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BOW_TABLE);
@@ -3093,10 +3093,10 @@ BOOLEAN bowSetBowTableContent(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBowTableIdx,
 
 }
 
-BOOLEAN
-bowGetBowTableEntryByPeerAddress(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6], OUT PUINT_8 pucBowTableIdx)
+u_int8_t
+bowGetBowTableEntryByPeerAddress(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6], OUT uint8_t *pucBowTableIdx)
 {
-	UINT_8 idx;
+	uint8_t idx;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BOW_TABLE);
@@ -3131,9 +3131,9 @@ bowGetBowTableEntryByPeerAddress(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddr
 	return FALSE;
 }
 
-BOOLEAN bowGetBowTableFreeEntry(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucBowTableIdx)
+u_int8_t bowGetBowTableFreeEntry(IN struct ADAPTER *prAdapter, OUT uint8_t *pucBowTableIdx)
 {
-	UINT_8 idx;
+	uint8_t idx;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BOW_TABLE);
@@ -3157,9 +3157,9 @@ BOOLEAN bowGetBowTableFreeEntry(IN P_ADAPTER_T prAdapter, OUT PUINT_8 pucBowTabl
 	return FALSE;
 }
 
-ENUM_BOW_DEVICE_STATE bowGetBowTableState(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6])
+enum ENUM_BOW_DEVICE_STATE bowGetBowTableState(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6])
 {
-	UINT_8 idx;
+	uint8_t idx;
 
 	KAL_SPIN_LOCK_DECLARATION();
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_BOW_TABLE);
@@ -3194,9 +3194,9 @@ ENUM_BOW_DEVICE_STATE bowGetBowTableState(IN P_ADAPTER_T prAdapter, IN UINT_8 au
 	return BOW_DEVICE_STATE_DISCONNECTED;
 }
 
-BOOLEAN bowSetBowTableState(IN P_ADAPTER_T prAdapter, IN UINT_8 aucPeerAddress[6], IN ENUM_BOW_DEVICE_STATE eState)
+u_int8_t bowSetBowTableState(IN struct ADAPTER *prAdapter, IN uint8_t aucPeerAddress[6], IN enum ENUM_BOW_DEVICE_STATE eState)
 {
-	UINT_8 ucBowTableIdx;
+	uint8_t ucBowTableIdx;
 
 	if (bowGetBowTableEntryByPeerAddress(prAdapter, aucPeerAddress, &ucBowTableIdx)) {
 		KAL_SPIN_LOCK_DECLARATION();

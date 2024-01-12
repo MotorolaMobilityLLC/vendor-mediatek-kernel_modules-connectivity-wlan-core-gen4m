@@ -270,38 +270,38 @@
 ********************************************************************************
 */
 /* NIC BBCR configuration entry structure */
-typedef struct _PRIV_CONFIG_ENTRY {
-	UINT_8 ucOffset;
-	UINT_8 ucValue;
-} PRIV_CONFIG_ENTRY, *PPRIV_CONFIG_ENTRY;
+struct PRIV_CONFIG_ENTRY {
+	uint8_t ucOffset;
+	uint8_t ucValue;
+};
 
-typedef WLAN_STATUS(*PFN_OID_HANDLER_FUNC_REQ) (IN PVOID prAdapter,
-						IN OUT PVOID pvBuf, IN UINT_32 u4BufLen, OUT PUINT_32 pu4OutInfoLen);
+typedef uint32_t(*PFN_OID_HANDLER_FUNC_REQ) (IN void *prAdapter,
+						IN OUT void *pvBuf, IN uint32_t u4BufLen, OUT uint32_t *pu4OutInfoLen);
 
-typedef enum _ENUM_OID_METHOD_T {
+enum ENUM_OID_METHOD {
 	ENUM_OID_GLUE_ONLY,
 	ENUM_OID_GLUE_EXTENSION,
 	ENUM_OID_DRIVER_CORE
-} ENUM_OID_METHOD_T, *P_ENUM_OID_METHOD_T;
+};
 
 /* OID set/query processing entry */
-typedef struct _WLAN_REQ_ENTRY {
-	UINT_32 rOid;		/* OID */
-	PUINT_8 pucOidName;	/* OID name text */
-	BOOLEAN fgQryBufLenChecking;
-	BOOLEAN fgSetBufLenChecking;
-	ENUM_OID_METHOD_T eOidMethod;
-	UINT_32 u4InfoBufLen;
+struct WLAN_REQ_ENTRY {
+	uint32_t rOid;		/* OID */
+	uint8_t *pucOidName;	/* OID name text */
+	u_int8_t fgQryBufLenChecking;
+	u_int8_t fgSetBufLenChecking;
+	enum ENUM_OID_METHOD eOidMethod;
+	uint32_t u4InfoBufLen;
 	PFN_OID_HANDLER_FUNC_REQ pfOidQueryHandler;	/*  PFN_OID_HANDLER_FUNC */
 	PFN_OID_HANDLER_FUNC_REQ pfOidSetHandler;	/* PFN_OID_HANDLER_FUNC */
-} WLAN_REQ_ENTRY, *P_WLAN_REQ_ENTRY;
+};
 
-typedef struct _NDIS_TRANSPORT_STRUCT {
-	UINT_32 ndisOidCmd;
-	UINT_32 inNdisOidlength;
-	UINT_32 outNdisOidLength;
-	UINT_8 ndisOidContent[16];
-} NDIS_TRANSPORT_STRUCT, *P_NDIS_TRANSPORT_STRUCT;
+struct NDIS_TRANSPORT_STRUCT {
+	uint32_t ndisOidCmd;
+	uint32_t inNdisOidlength;
+	uint32_t outNdisOidLength;
+	uint8_t ndisOidContent[16];
+};
 
 enum AGG_RANGE_TYPE_T {
 	ENUM_AGG_RANGE_TYPE_TX = 0,
@@ -354,7 +354,7 @@ priv_get_struct(IN struct net_device *prNetDev,
 		IN struct iw_request_info *prIwReqInfo, IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
 
 #if CFG_SUPPORT_NCHO
-UINT_8 CmdString2HexParse(IN UINT_8 *InStr, OUT UINT_8 **OutStr, OUT UINT_8 *OutLen);
+uint8_t CmdString2HexParse(IN uint8_t *InStr, OUT uint8_t **OutStr, OUT uint8_t *OutLen);
 #endif
 
 int
@@ -365,7 +365,7 @@ int priv_support_ioctl(IN struct net_device *prDev, IN OUT struct ifreq *prReq, 
 
 int priv_support_driver_cmd(IN struct net_device *prDev, IN OUT struct ifreq *prReq, IN int i4Cmd);
 
-INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN INT_32 i4TotalLen);
+int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand, IN int32_t i4TotalLen);
 
 int priv_driver_set_cfg(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
 
