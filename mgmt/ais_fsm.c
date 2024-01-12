@@ -295,7 +295,10 @@ void aisInitializeConnectionSettings(IN struct ADAPTER *prAdapter,
 #endif
 
 	/* Set default bandwidth modes */
-	prAdapter->rWifiVar.uc2G4BandwidthMode = CONFIG_BW_20M;
+	prAdapter->rWifiVar.uc2G4BandwidthMode =
+		(prAdapter->rWifiVar.ucSta2gBandwidth == MAX_BW_40MHZ)
+		? CONFIG_BW_20_40M
+		: CONFIG_BW_20M;
 	prAdapter->rWifiVar.uc5GBandwidthMode = CONFIG_BW_20_40M;
 
 	prConnSettings->rRsnInfo.ucElemId = 0x30;
