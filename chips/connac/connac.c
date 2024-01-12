@@ -262,6 +262,7 @@ struct BUS_INFO connac_bus_info = {
 	.initPcieInt = NULL,
 #endif
 	.DmaShdlInit = asicPcieDmaShdlInit,
+	.DmaShdlReInit = NULL,
 	.setDmaIntMask = asicPdmaIntMaskConfig,
 #endif /* _HIF_PCIE || _HIF_AXI */
 #if defined(_HIF_USB)
@@ -279,6 +280,11 @@ struct BUS_INFO connac_bus_info = {
 	.asicUsbEventEpDetected = NULL,
 	.asicUsbRxByteCount = NULL,
 	.DmaShdlInit = asicUsbDmaShdlInit,
+	.DmaShdlReInit = NULL,
+	.asicUdmaRxFlush = NULL,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = NULL,
+#endif
 #endif /* _HIF_USB */
 };
 

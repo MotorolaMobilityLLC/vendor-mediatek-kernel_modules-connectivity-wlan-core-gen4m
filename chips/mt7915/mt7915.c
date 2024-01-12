@@ -481,6 +481,7 @@ struct BUS_INFO mt7915_bus_info = {
 	.initPcieInt = wlanHarrierInitPcieInt,
 	.devReadIntStatus = asicConnac2xReadExtIntStatus,
 	.DmaShdlInit = NULL,
+	.DmaShdlReInit = NULL,
 	.wfdmaAllocRxRing = mt7915WfdmaAllocRxRing,
 #endif				/* _HIF_PCIE */
 #if defined(_HIF_USB)
@@ -502,6 +503,11 @@ struct BUS_INFO mt7915_bus_info = {
 	.asicUsbEventEpDetected = asicConnac2xUsbEventEpDetected,
 	.asicUsbRxByteCount = wlanHarrierUsbRxByteCount,
 	.DmaShdlInit = NULL,
+	.DmaShdlReInit = NULL,
+	.asicUdmaRxFlush = asicConnac2xUdmaRxFlush,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = NULL,
+#endif
 #endif				/* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = halTxGetFreeResource_v1,

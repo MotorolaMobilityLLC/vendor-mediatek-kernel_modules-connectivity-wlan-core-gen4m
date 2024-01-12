@@ -317,6 +317,16 @@ struct DMASHDL_CFG rMT7961DmashdlCfg = {
 	},
 };
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Do DMASDHL init when WIFISYS is initialized at probe, L0.5 reset, etc.
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ *
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
 void mt7961DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
@@ -337,6 +347,47 @@ void mt7961DmashdlInit(struct ADAPTER *prAdapter)
 		asicConnac2xDmashdlSetMinQuota(prAdapter, idx,
 					    rMT7961DmashdlCfg.au2MinQuota[idx]);
 	}
+
+	for (idx = 0; idx < 32; idx++)
+		asicConnac2xDmashdlSetQueueMapping(prAdapter, idx,
+					 rMT7961DmashdlCfg.aucQueue2Group[idx]);
+
+	for (idx = 0; idx < 16; idx++)
+		asicConnac2xDmashdlSetUserDefinedPriority(prAdapter, idx,
+				      rMT7961DmashdlCfg.aucPriority2Group[idx]);
+
+	asicConnac2xDmashdlSetSlotArbiter(prAdapter,
+				       rMT7961DmashdlCfg.fgSlotArbiterEn);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Although DMASHDL was init, we need to reinit it again due to falcon
+ *        L1 reset, etc. The difference between mt7961DmashdlInit and
+ *        mt7961DmashdlReInit is that we don't init CRs such as refill,
+ *        min_quota, max_quota in mt7961DmashdlReInit, which are backup and
+ *        restored in fw. The reason why some DMASHDL CRs are reinit by driver
+ *        and some by fw is
+ *        1. Some DMASHDL CRs shall be inited before fw releases UMAC reset
+ *           in L1 procedure. Then, these CRs are backup and restored by fw.
+ *        2. However, the backup and restore of each DMASHDL CR in fw needs
+ *           wm DLM space. So, we save DLM space by reinit the remaining
+ *           DMASHDL CRs in driver.
+ *
+ * \param prAdapter      Pointer of Adapter Data Structure
+ *
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+void mt7961DmashdlReInit(struct ADAPTER *prAdapter)
+{
+	uint32_t idx;
+
+	asicConnac2xDmashdlSetPlePktMaxPage(prAdapter,
+					 rMT7961DmashdlCfg.u2PktPleMaxPage);
+
+	asicConnac2xDmashdlSetPsePktMaxPage(prAdapter,
+					 rMT7961DmashdlCfg.u2PktPseMaxPage);
 
 	for (idx = 0; idx < 32; idx++)
 		asicConnac2xDmashdlSetQueueMapping(prAdapter, idx,

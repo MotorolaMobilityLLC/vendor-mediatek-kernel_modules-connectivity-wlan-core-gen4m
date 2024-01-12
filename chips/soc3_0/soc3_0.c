@@ -988,6 +988,7 @@ struct BUS_INFO soc3_0_bus_info = {
 	.devReadIntStatus = soc3_0ReadExtIntStatus,
 	.DmaShdlInit = mt6885DmashdlInit,
 	.setRxRingHwAddr = soc3_0SetRxRingHwAddr,
+	.DmaShdlReInit = NULL,
 	.wfdmaAllocRxRing = soc3_0WfdmaAllocRxRing,
 
 #if CFG_MTK_WIFI_SW_WFDMA

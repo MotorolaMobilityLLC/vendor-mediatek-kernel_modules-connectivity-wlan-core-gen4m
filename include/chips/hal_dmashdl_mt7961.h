@@ -396,6 +396,9 @@ void mt7961HalDmashdlSetQueueMapping(struct ADAPTER *prAdapter, uint8_t ucQueue,
 				     uint8_t ucGroup);
 
 void mt7961DmashdlInit(struct ADAPTER *prAdapter);
+
+void mt7961DmashdlReInit(struct ADAPTER *prAdapter);
+
 #if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
 uint32_t mt7961UpdateDmashdlQuota(struct ADAPTER *prAdapter,
 			uint8_t ucWmmIndex, uint32_t u4MaxQuota);

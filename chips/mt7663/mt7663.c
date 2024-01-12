@@ -200,6 +200,7 @@ struct BUS_INFO mt7663_bus_info = {
 	.hifRst = NULL,
 	.initPcieInt = mt7663InitPcieInt,
 	.DmaShdlInit = asicPcieDmaShdlInit,
+	.DmaShdlReInit = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC_UDMA_WLCFG_0,
@@ -217,6 +218,11 @@ struct BUS_INFO mt7663_bus_info = {
 	.asicUsbEventEpDetected = asicUsbEventEpDetected,
 	.asicUsbRxByteCount = NULL,
 	.DmaShdlInit = asicUsbDmaShdlInit,
+	.DmaShdlReInit = NULL,
+	.asicUdmaRxFlush = NULL,
+#if CFG_CHIP_RESET_SUPPORT
+	.asicUsbEpctlRstOpt = NULL,
+#endif
 #endif /* _HIF_USB */
 #if defined(_HIF_SDIO)
 	.halTxGetFreeResource = halTxGetFreeResource_v1,

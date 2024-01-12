@@ -2129,11 +2129,13 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 	static u_int8_t ucSerState = ERR_RECOV_STOP_IDLE;
 	uint32_t u4SerAction;
 	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
 
 	if (prAdapter->prGlueInfo->rHifInfo.state == USB_STATE_SUSPEND)
 		return;
 
 	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 
 	/* get MCU SER event */
 	if (!kalDevRegRead(prAdapter->prGlueInfo,
@@ -2162,6 +2164,13 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop HIF tx/rx operation\n");
 
+			/* set USB EP_RST_OPT as reset scope excludes toggle
+			 * bit,sequence number, etc.
+			 */
+			if (prBusInfo->asicUsbEpctlRstOpt)
+				prBusInfo->asicUsbEpctlRstOpt(prAdapter,
+							      FALSE);
+
 			/* change SER FSM to SER_STOP_HOST_TX_RX */
 			nicSerStopTxRx(prAdapter);
 			/* stop TX BULK OUT URB */
@@ -2186,6 +2195,10 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 		if (u4SerAction == ERROR_DETECT_RESET_DONE) {
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize WFDMA\n");
 			DBGLOG(HAL, INFO, "SER(M) Host enable WFDMA\n");
+
+			if (prBusInfo->DmaShdlReInit)
+				prBusInfo->DmaShdlReInit(prAdapter);
+
 			if (prChipInfo->asicUsbInit)
 				prChipInfo->asicUsbInit(prAdapter, prChipInfo);
 
@@ -2225,11 +2238,23 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO,
 				"SER(U) Host reset TX/RX endpoint\n");
 
-			halSerHifReset(prAdapter);
-			halEnableInterrupt(prAdapter);
+			/* It's surprising that the toggle bit or sequence
+			 * number of USB endpoints in some USB hosts cannot be
+			 * reset by kernel API usb_reset_endpoint(). In order to
+			 * prevent this IOT, we tend to do not reset toggle bit
+			 * and sequence number on both device and host in some
+			 * project like MT7961. In MT7961, we can choose that
+			 * endpoints reset excludes toggle bit and sequence
+			 * number through asicUsbEpctlRstOpt().
+			 */
+			if (!prBusInfo->asicUsbEpctlRstOpt)
+				halSerHifReset(prAdapter);
 
 			/* resume TX/RX */
 			nicSerStartTxRx(prAdapter);
+
+			halEnableInterrupt(prAdapter);
+
 			ucSerState = ERR_RECOV_STOP_IDLE;
 		} else {
 			/* do nothing */
