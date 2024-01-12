@@ -987,7 +987,7 @@ void asicConnac3xLowPowerOwnClear(
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 		mtk_pcie_dump_link_info(0);
 #endif
-		DBGLOG(HAL, INFO, "setCrypto\n");
+		DBGLOG(HAL, TRACE, "setCrypto\n");
 		if (prChipInfo->setCrypto)
 			prChipInfo->setCrypto(prAdapter);
 

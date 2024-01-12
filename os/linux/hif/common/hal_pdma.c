@@ -801,24 +801,33 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	/* During core dump, can't issue fw own, will result
 	 * driver own fail (MCU can't process it).
 	 */
-	if (prAdapter->fgN9AssertDumpOngoing == TRUE)
+	if (prAdapter->fgN9AssertDumpOngoing == TRUE) {
+		DBGLOG(INIT, TRACE, "fgN9AssertDumpOngoing\n");
 		goto unlock;
+	}
 #endif
 
 	if (p2pFuncNeedForceSleep(prAdapter))
-		DBGLOG(INIT, LOUD, "SAP: Skip fgWiFiInSleepyState check\n");
+		DBGLOG(INIT, TRACE, "SAP: Skip fgWiFiInSleepyState check\n");
 	else if (!(prAdapter->fgWiFiInSleepyState)
 #if CFG_CHIP_RESET_SUPPORT
 		&& (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_IDLE)
 #endif
-		)
+		) {
+		DBGLOG(INIT, TRACE, "not in fgWiFiInSleepyState\n");
 		goto unlock;
+	}
 
-	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0)
+	if (GLUE_GET_REF_CNT(prAdapter->u4PwrCtrlBlockCnt) != 0) {
+		DBGLOG(INIT, TRACE, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
+			prAdapter->u4PwrCtrlBlockCnt);
 		goto unlock;
+	}
 
-	if (prAdapter->fgIsFwOwn == TRUE)
+	if (prAdapter->fgIsFwOwn == TRUE) {
+		DBGLOG(INIT, LOUD, "alreaddy FW OWN\n");
 		goto unlock;
+	}
 
 	if (!prHifInfo->fgIsPowerOff && halGetWfdmaRxCnt(prAdapter)) {
 		DBGLOG(INIT, STATE, "Skip FW OWN due to pending INT\n");
@@ -832,8 +841,10 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	 */
 	halManualUpdateWfdmaDmaDone(prAdapter);
 #if CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS
-	if (!halIsWfdmaTxRingEmpty(prAdapter))
+	if (!halIsWfdmaTxRingEmpty(prAdapter)) {
+		DBGLOG(INIT, INFO, "halIsWfdmaTxRing not Empty\n");
 		goto unlock;
+	}
 #endif  /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)

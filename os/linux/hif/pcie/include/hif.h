@@ -606,6 +606,7 @@ extern int mtk_msi_unmask_to_other_mcu(
 extern int mtk_pcie_hw_control_vote(
 	int port, bool hw_mode_en, u8 who) __attribute__((weak));
 extern u32 mtk_pcie_dump_link_info(int port) __attribute__((weak));
+extern u32 mtk_pcie_disable_data_trans(int port) __attribute__((weak));
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 int mtk_pcie_speed(struct pci_dev *dev, int speed);
 int mtk_pcie_retrain(struct pci_dev *dev);
