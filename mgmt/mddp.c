@@ -148,6 +148,7 @@ int32_t mddpSetTxDescTemplate(IN struct ADAPTER *prAdapter,
 	}
 	return 0;
 }
+
 static bool mddpIsSsnSent(struct ADAPTER *prAdapter,
 			  uint8_t *prReorderBuf, uint16_t u2SSN)
 {
@@ -241,7 +242,6 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 
 		if (buff == NULL) {
 			DBGLOG(NIC, ERROR, "MDDP Can't allocate ");
-			DBGLOG(NIC, ERROR, "NotifyDrv TXD buffer.\n");
 			return -1;
 		}
 		prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
@@ -265,17 +265,20 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 			prNetIfInfo = prAdapter->prGlueInfo
 				->arNetInterfaceInfo[prStaRec->ucBssIndex];
 			prMddpTxd->wmmset = prBssInfo->ucWmmQueSet;
-			memcpy(prMddpTxd->nw_if_name,
+			kalMemCopy(prMddpTxd->nw_if_name,
 				prNetIfInfo.pvNetInterface, 6);
 		}
 
-		DBGLOG(NIC, ERROR, "MDDP NotifyDrv TXD ");
-		DBGLOG(NIC, ERROR, "sta_mode:%d, bss_id:%d, wmmset:%d.\n",
-				prMddpTxd->sta_mode, prMddpTxd->bss_id,
-				prMddpTxd->wmmset);
-
-		DBGLOG(NIC, ERROR, "MDDP NotifyDrv TXD ");
-		DBGLOG(NIC, ERROR, "nw_if_name:[%c%c%c%c%c%c%c%c]\n",
+		DBGLOG(NIC, INFO,
+			"ver:%d,idx:%d,w_idx:%d,mod:%d,bss:%d,wmm:%d,act:%d\n",
+				prMddpTxd->version,
+				prMddpTxd->sta_idx,
+				prMddpTxd->wlan_idx,
+				prMddpTxd->sta_mode,
+				prMddpTxd->bss_id,
+				prMddpTxd->wmmset,
+				fgActivate);
+		DBGLOG(NIC, INFO, "nw_if_name:[%c%c%c%c%c%c%c%c]\n",
 				prMddpTxd->nw_if_name[0],
 				prMddpTxd->nw_if_name[1],
 				prMddpTxd->nw_if_name[2],
@@ -285,14 +288,14 @@ int32_t mddpNotifyDrvTxd(IN struct ADAPTER *prAdapter,
 				prMddpTxd->nw_if_name[6],
 				prMddpTxd->nw_if_name[7]);
 
-		memcpy(prMddpTxd->aucMacAddr,
+		kalMemCopy(prMddpTxd->aucMacAddr,
 			prStaRec->aucMacAddr, MAC_ADDR_LEN);
 		if (fgActivate)
 			prMddpTxd->txd_length = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 		else
 			prMddpTxd->txd_length = 0;
 
-		memcpy(prMddpTxd->txd,
+		kalMemCopy(prMddpTxd->txd,
 			prStaRec->aprTxDescTemplate[0], prMddpTxd->txd_length);
 
 		gMddpWFunc.notify_drv_info(prNotifyInfo);
@@ -334,31 +337,6 @@ int32_t mddpNotifyDrvMac(IN struct ADAPTER *prAdapter)
 		gMddpWFunc.notify_drv_info(prNotifyInfo);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
 	}
-	return 0;
-}
-
-int32_t mddpNotifyStaTxd(IN struct ADAPTER *prAdapter)
-{
-	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
-	struct LINK *prStaRecOfClientList;
-	struct STA_RECORD *prCurrStaRec;
-
-	prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
-	if (!prP2pBssInfo) {
-		DBGLOG(P2P, WARN, "SAP is not active\n");
-		 /*SY MCIF TBC 0916*/
-		prCurrStaRec = prAdapter->prAisBssInfo[0]->prStaRecOfAP;
-		mddpSetTxDescTemplate(prAdapter, prCurrStaRec,
-			prAdapter->fgMddpActivated);
-	} else {
-		prStaRecOfClientList = &prP2pBssInfo->rStaRecOfClientList;
-		LINK_FOR_EACH_ENTRY(prCurrStaRec, prStaRecOfClientList,
-			rLinkEntry, struct STA_RECORD) {
-				mddpSetTxDescTemplate(prAdapter, prCurrStaRec,
-				prAdapter->fgMddpActivated);
-		}
-	}
-
 	return 0;
 }
 
@@ -442,15 +420,40 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	}
 
 	if (prMdInfo->info_type == 1) {
+		uint32_t i;
+		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+
 		DBGLOG(INIT, ERROR, "MD notify power on.\n");
 		if (prGlueInfo->u4ReadyFlag) {
 			mddpNotifyWifiOnStart();
 			mddpNotifyWifiOnEnd();
 			mddpNotifyDrvMac(prAdapter);
 		}
-		if (prAdapter->prAisBssInfo[0]->eConnectionState ==
-			MEDIA_STATE_CONNECTED) {
-			mddpNotifyStaTxd(prAdapter);
+		/* Notify STA's TXD to MD */
+		for (i = 0; i < KAL_AIS_NUM; i++) {
+			struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(
+					prAdapter,
+					i);
+
+			if (prAisBssInfo && prAisBssInfo->eConnectionState ==
+					MEDIA_STATE_CONNECTED)
+				mddpNotifyDrvTxd(prAdapter,
+						prAisBssInfo->prStaRecOfAP,
+						TRUE);
+		}
+		/* Notify SAP clients' TXD to MD */
+		prP2pBssInfo = cnmGetSapBssInfo(prAdapter);
+		if (prP2pBssInfo) {
+			struct LINK *prClientList;
+			struct STA_RECORD *prCurrStaRec;
+
+			prClientList = &prP2pBssInfo->rStaRecOfClientList;
+			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+					rLinkEntry, struct STA_RECORD) {
+				mddpNotifyDrvTxd(prAdapter,
+						prCurrStaRec,
+						TRUE);
+			}
 		}
 	}
 	return 0;
