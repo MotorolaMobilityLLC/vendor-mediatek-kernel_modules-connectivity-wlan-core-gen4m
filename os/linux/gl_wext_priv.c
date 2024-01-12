@@ -9632,12 +9632,12 @@ int priv_driver_set_csa(IN struct net_device *prNetDev,
 int priv_driver_get_country(IN struct net_device *prNetDev,
 			    IN char *pcCommand, IN int i4TotalLen)
 {
-
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint32_t i4BytesWritten = 0;
 	uint32_t country = 0;
+	char acCountryStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -9654,9 +9654,10 @@ int priv_driver_get_country(IN struct net_device *prNetDev,
 	}
 
 	country = rlmDomainGetCountryCode();
+	rlmDomainU32ToAlpha(country, acCountryStr);
 
-	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\nCountry Code: (0x%x)",
-	       country);
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\nCountry Code: %s (0x%x)", acCountryStr, country);
 
 	return	i4BytesWritten;
 }
@@ -9730,6 +9731,7 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 		for (ch_idx = start_idx; ch_idx < end_idx; ch_idx++) {
 
 			pCh = (rlmDomainGetActiveChannels() + ch_idx);
+			maxbw = 160;
 
 			if (ch_num && (ch_num != pCh->u2ChNum))
 				continue; /*show specific channel information*/
@@ -9759,7 +9761,11 @@ int priv_driver_get_channels(IN struct net_device *prNetDev,
 				maxbw = 20;
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			       " BW_%dMHz", maxbw);
+
 			/* Channel flags */
+			if (pCh->eFlags & IEEE80211_CHAN_RADAR)
+				LOGBUF(pcCommand, i4TotalLen,
+					i4BytesWritten, ", DFS");
 			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 			       "  (flags=0x%x)\n", pCh->eFlags);
 		}

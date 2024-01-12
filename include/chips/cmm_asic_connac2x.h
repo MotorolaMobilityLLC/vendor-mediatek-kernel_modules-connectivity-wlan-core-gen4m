@@ -1186,6 +1186,9 @@ void asicConnac2xProcessRxInterrupt(
 void asicConnac2xWfdmaInitForUSB(
 	struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo);
+void asicConnac2xUsbRxEvtEP4Setting(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgEnable);
 uint8_t asicConnac2xUsbEventEpDetected(
 	struct ADAPTER *prAdapter);
 void asicConnac2xEnableUsbCmdTxRing(

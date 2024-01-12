@@ -6141,7 +6141,7 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 		       IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		       OUT uint32_t *pu4QueryInfoLen, IN uint8_t fgIsOid)
 {
-	struct PARAM_802_11_STATISTICS_STRUCT  rStatistics;
+	struct CMD_QUERY_STATISTICS rQueryCmdStatistics;
 
 	DEBUGFUNC("wlanQueryStatistics");
 
@@ -6216,6 +6216,10 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 	}
 #endif
 
+	kalMemZero(&rQueryCmdStatistics,
+		   sizeof(struct CMD_QUERY_STATISTICS));
+	rQueryCmdStatistics.ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
+
 	return wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_GET_STATISTICS,
 				FALSE,
@@ -6223,8 +6227,8 @@ wlanQueryStatistics(IN struct ADAPTER *prAdapter,
 				fgIsOid,
 				nicCmdEventQueryStatistics,
 				nicOidCmdTimeoutCommon,
-				sizeof(struct PARAM_802_11_STATISTICS_STRUCT),
-				(uint8_t *)&rStatistics,
+				sizeof(struct CMD_QUERY_STATISTICS),
+				(uint8_t *)&rQueryCmdStatistics,
 				pvQueryBuffer, u4QueryBufferLen);
 
 } /* wlanQueryStatistics */

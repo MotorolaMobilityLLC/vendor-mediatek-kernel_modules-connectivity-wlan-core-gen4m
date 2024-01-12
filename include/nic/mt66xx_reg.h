@@ -1534,6 +1534,7 @@ struct mt66xx_chip_info {
 	int (*checkbushang)(void *prAdapter,
 		uint8_t ucWfResetEnable);
 	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
+	uint32_t u4ADieVer;
 };
 
 struct mt66xx_hif_driver_data {

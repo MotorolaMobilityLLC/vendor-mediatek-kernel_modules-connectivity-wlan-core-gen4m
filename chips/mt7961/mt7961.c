@@ -111,8 +111,9 @@
 */
 
 struct ECO_INFO mt7961_eco_table[] = {
-	/* HW version,  ROM version,    Factory version */
+	/* HW version,  ROM version, Factory version, EcoVer */
 	{0x00, 0x00, 0xA, 0x1},	/* E1 */
+	{0x10, 0x01, 0xA, 0x2},	/* E2 */
 	{0x00, 0x00, 0x0, 0x0}	/* End of table */
 };
 
@@ -128,6 +129,7 @@ struct PCIE_CHIP_CR_MAPPING mt7961_bus2chip_cr_mapping[] = {
 	{0x820c0000, 0x08000, 0x4000},  /* WF_UMAC_TOP (PLE) */
 	{0x820c8000, 0x0c000, 0x2000},  /* WF_UMAC_TOP (PSE) */
 	{0x820cc000, 0x0e000, 0x2000},  /* WF_UMAC_TOP (PP) */
+	{0x74030000, 0x10000, 0x10000}, /* PCIE_MAC_IREG */
 	{0x820e0000, 0x20000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
 	{0x820e1000, 0x20400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
 	{0x820e2000, 0x20800, 0x0400},  /* WF_LMAC_TOP BN0 (WF_AGG) */
@@ -144,7 +146,6 @@ struct PCIE_CHIP_CR_MAPPING mt7961_bus2chip_cr_mapping[] = {
 	{0x820ed000, 0x24800, 0x0800},  /* WF_LMAC_TOP BN0 (WF_MIB) */
 	{0x820ca000, 0x26000, 0x2000},  /* WF_LMAC_TOP BN0 (WF_MUCOP) */
 	{0x820d0000, 0x30000, 0x10000}, /* WF_LMAC_TOP (WF_WTBLON) */
-	{0x40000000, 0x70000, 0x10000}, /* WF_UMAC_SYSRAM */
 	{0x00400000, 0x80000, 0x10000}, /* WF_MCU_SYSRAM */
 	{0x00410000, 0x90000, 0x10000}, /* WF_MCU_SYSRAM (configure register) */
 	{0x820f0000, 0xa0000, 0x0400},  /* WF_LMAC_TOP BN1 (WF_CFG) */
@@ -159,7 +160,6 @@ struct PCIE_CHIP_CR_MAPPING mt7961_bus2chip_cr_mapping[] = {
 	{0x820fb000, 0xa4200, 0x0400},  /* WF_LMAC_TOP BN1 (WF_LPON) */
 	{0x820fc000, 0xa4600, 0x0200},  /* WF_LMAC_TOP BN1 (WF_INT) */
 	{0x820fd000, 0xa4800, 0x0800},  /* WF_LMAC_TOP BN1 (WF_MIB) */
-	{0x820cc000, 0xa5000, 0x2000},  /* WF_LMAC_TOP BN1 (WF_MUCOP) */
 	{0x820c4000, 0xa8000, 0x4000},  /* WF_LMAC_TOP BN1 (WF_MUCOP) */
 	{0x820b0000, 0xae000, 0x1000},  /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
@@ -410,19 +410,18 @@ static void mt7961ReadIntStatus(
 		WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR, u4RegValue);
 }
 
-#endif /*_HIF_PCIE || _HIF_AXI */
-
-#if defined(_HIF_USB)
-void mt7961Connac2xWfdmaInitForUSB(
-	struct ADAPTER *prAdapter,
-	struct mt66xx_chip_info *prChipInfo)
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+uint8_t mt7961CheckPortForRxEventFromPse(IN struct ADAPTER *prAdapter,
+				IN uint8_t u2Port)
 {
-	HAL_MCR_WR(prAdapter, 0x74000004, 0);
-	HAL_MCR_WR(prAdapter, 0x74000014, 0);
-	HAL_MCR_WR(prAdapter, 0x74000300, 0);
+	if (u2Port == RX_RING_EVT_IDX_1 &&
+			prAdapter->fgIsFwDownloaded == TRUE)
+		return RX_RING_TXDONE0_IDX_3;
+	else
+		return u2Port;
 }
-
 #endif
+#endif /*_HIF_PCIE || _HIF_AXI */
 
 void mt7961DumpSerDummyCR(
 	struct ADAPTER *prAdapter)
@@ -481,7 +480,716 @@ void mt7961DumpSerDummyCR(
 
 }
 
+uint32_t mt7961GetFlavorVer(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+	uint32_t flavor_ver = MT7961_A_DIE_7921_FLAVOR;
 
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter == NULL\n");
+		return flavor_ver;
+	}
+
+	if (prAdapter->chip_info->u4ADieVer != 0xFFFFFFFF)
+		return prAdapter->chip_info->u4ADieVer;
+
+	if (prAdapter->fgIsFwDownloaded) {
+		HAL_MCR_RD(prAdapter, MT7961_A_DIE_VER_ADDR, &u4Val);
+	} else if (wlanAccessRegister(prAdapter, MT7961_A_DIE_VER_ADDR,
+			&u4Val, 0, 0) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "get Bounding Info failed. set as 7921\n");
+		u4Val = MT7961_A_DIE_7921;
+	}
+
+	if ((u4Val & MT7961_A_DIE_VER_BIT) == MT7961_A_DIE_7920)
+		flavor_ver = MT7961_A_DIE_7920_FLAVOR;
+	else
+		flavor_ver = MT7961_A_DIE_7921_FLAVOR;
+
+	prAdapter->chip_info->u4ADieVer = flavor_ver;
+
+	return flavor_ver;
+}
+
+uint32_t mt7961GetFwVer(struct ADAPTER *prAdapter)
+{
+	uint32_t u4SwVer = 0;
+
+	u4SwVer = nicGetChipSwVer() + 1;
+
+	return u4SwVer;
+}
+
+void mt7961ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucNameTable, uint8_t **apucName,
+	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
+{
+	uint8_t sub_idx = 0;
+	uint8_t flavor_ver = 0;
+	uint32_t chip_id = 0;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+
+	if ((pucNameIdx == NULL) || (apucName == NULL)) {
+		DBGLOG(INIT, ERROR, "pucNameIdx or apucName are NULL.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prChipInfo is NULL.\n");
+		return;
+	}
+
+	chip_id = prChipInfo->chip_id;
+	flavor_ver = mt7961GetFlavorVer(prAdapter);
+
+	for (sub_idx = 0; apucNameTable[sub_idx]; sub_idx++) {
+		if (((*pucNameIdx) + 3) < ucMaxNameIdx) {
+			/* Type 1. WIFI_RAM_CODE_MTxxxx_x.bin */
+			if (snprintf(*(apucName + (*pucNameIdx)),
+			    CFG_FW_NAME_MAX_LEN, "%s%x_%x.bin",
+			    apucNameTable[sub_idx], chip_id, flavor_ver) < 0) {
+				DBGLOG(INIT, ERROR, "gen type 1 fail\n");
+				return;
+			}
+			(*pucNameIdx) += 1;
+
+			/* Type 2. WIFI_RAM_CODE_MTxxxx_x */
+			if (snprintf(*(apucName + (*pucNameIdx)),
+			    CFG_FW_NAME_MAX_LEN, "%s%x_%x",
+			    apucNameTable[sub_idx], chip_id, flavor_ver) < 0) {
+				DBGLOG(INIT, ERROR, "gen type 2 fail\n");
+				return;
+			}
+			(*pucNameIdx) += 1;
+
+			/* Type 3. WIFI_RAM_CODE_MTxxxx.bin */
+			if (snprintf(*(apucName + (*pucNameIdx)),
+					CFG_FW_NAME_MAX_LEN, "%s%x.bin",
+					apucNameTable[sub_idx], chip_id) < 0) {
+				DBGLOG(INIT, ERROR, "gen type 3 fail\n");
+				return;
+			}
+			(*pucNameIdx) += 1;
+
+			/* Type 4. WIFI_RAM_CODE_MTxxxx */
+			if (snprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN, "%s%x",
+					apucNameTable[sub_idx], chip_id) < 0) {
+				DBGLOG(INIT, ERROR, "gen type 4 fail\n");
+				return;
+			}
+			(*pucNameIdx) += 1;
+		} else {
+			/* the table is not large enough */
+			DBGLOG(INIT, ERROR,
+				"kalFirmwareImageMapping >> file name array is not enough.\n");
+			ASSERT(0);
+		}
+	}
+}
+
+void mt7961ConstructPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	uint32_t u4FlavorVer;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+
+	if ((pucNameIdx == NULL) || (apucName == NULL)) {
+		DBGLOG(INIT, ERROR, "pucNameIdx or apucName are NULL.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prChipInfo is NULL.\n");
+		return;
+	}
+
+	u4FlavorVer = mt7961GetFlavorVer(prAdapter);
+
+	if (snprintf(apucName[(*pucNameIdx)],
+		CFG_FW_NAME_MAX_LEN, "WIFI_MT%x_patch_mcu_%x_%x_hdr.bin",
+		prChipInfo->chip_id, u4FlavorVer,
+		mt7961GetFwVer(prAdapter)) < 0)
+		DBGLOG(INIT, ERROR, "gen Patch File Name fail\n");
+}
+
+#if defined(_HIF_USB)
+void mt7961Connac2xWfdmaInitForUSB(
+	struct ADAPTER *prAdapter,
+	struct mt66xx_chip_info *prChipInfo)
+{
+	/* Prevent USB first inband cmd read timeout due
+	*  to endpoint not match.
+	*/
+	if (!prAdapter->fgIsFwDownloaded)
+		asicConnac2xUsbRxEvtEP4Setting(prAdapter, TRUE);
+}
+
+uint8_t mt7961Connac2xUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	ASSERT(FALSE == 0);
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (prHifInfo->fgEventEpDetected == FALSE) {
+		uint32_t u4Value = 0;
+		uint8_t ucCurEp; /* current event packet from which endpoint */
+
+		/* MT7961 use EP4IN for event packets */
+		prHifInfo->fgEventEpDetected = TRUE;
+		prHifInfo->eEventEpType = EVENT_EP_TYPE_DATA_EP;
+
+		HAL_MCR_RD(prAdapter, CONNAC2X_WFDMA_HOST_CONFIG_ADDR,
+			&u4Value);
+
+		if (u4Value & CONNAC2X_WFDMA_HOST_CONFIG_USB_RXEVT_EP4_EN) {
+			ucCurEp = USB_DATA_EP_IN;
+		} else {
+			ucCurEp = USB_EVENT_EP_IN;
+			asicConnac2xUsbRxEvtEP4Setting(prAdapter, TRUE);
+		}
+
+		return ucCurEp;
+	}
+
+	if (prHifInfo->eEventEpType == EVENT_EP_TYPE_DATA_EP)
+		return USB_DATA_EP_IN;
+	else
+		return USB_EVENT_EP_IN;
+}
+
+uint16_t mt7961Connac2xUsbRxByteCount(
+	struct ADAPTER *prAdapter,
+	struct BUS_INFO *prBusInfo,
+	uint8_t *pRXD)
+{
+
+	uint16_t u2RxByteCount;
+	uint8_t ucPacketType;
+
+	ucPacketType = HAL_MAC_CONNAC2X_RX_STATUS_GET_PKT_TYPE(
+		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
+	u2RxByteCount = HAL_MAC_CONNAC2X_RX_STATUS_GET_RX_BYTE_CNT(
+		(struct HW_MAC_CONNAC2X_RX_DESC *)pRXD);
+
+	/* According to Barry's rule, it can be summarized as below formula:
+	 * 1. packets from WFDMA
+	   -> RX padding for 4B alignment
+	 * 2. packets from UMAC
+	 * -> RX padding for 8B alignment first,
+				then extra 4B padding
+	 * 3. MT7961 Rx data packets and event packets should are all from UMAC
+	 *    because of HW limitation
+	 */
+#if CFG_SUPPORT_HOST_RX_WM_EVENT_FROM_PSE
+	u2RxByteCount = ALIGN_8(u2RxByteCount) + LEN_USB_RX_PADDING_CSO;
+#else
+	if ((ucPacketType == RX_PKT_TYPE_RX_DATA) ||
+		(ucPacketType == RX_PKT_TYPE_RX_REPORT))
+		u2RxByteCount = ALIGN_8(u2RxByteCount)
+			+ LEN_USB_RX_PADDING_CSO;
+	else
+		u2RxByteCount = ALIGN_4(u2RxByteCount);
+#endif
+
+	return u2RxByteCount;
+}
+#endif /*_HIF_USB */
+
+#if 0 /* TODO: #if CFG_SUPPORT_WIFI_DL_BT_PATCH */
+void mt7961ConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
+	uint8_t **apucName, uint8_t *pucNameIdx)
+{
+	uint32_t flavor_ver;
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+
+	if ((pucNameIdx == NULL) || (apucName == NULL)) {
+		DBGLOG(INIT, ERROR, "pucNameIdx or apucName are NULL.\n");
+		return;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prChipInfo is NULL.\n");
+		return;
+	}
+	flavor_ver = mt7961GetFlavorVer(prAdapter);
+	if (snprintf(apucName[(*pucNameIdx)],
+		CFG_FW_NAME_MAX_LEN, "BT_RAM_CODE_MT%x_%x_%x_hdr.bin",
+		prChipInfo->chip_id, flavor_ver,
+		mt7961GetFwVer(prAdapter)) < 0)
+		DBGLOG(INIT, ERROR, "gen BT Patch File Name fail\n");
+}
+
+uint32_t wlanBtPatchSendSemaControl(IN struct ADAPTER *prAdapter,
+				    IN uint32_t u4Addr,
+				    OUT uint8_t *pucSeqNum)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct CMD_INFO *prCmdInfo;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	struct INIT_CMD_BT_PATCH_SEMA_CTRL *prBtPatchSemaCtrl;
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prChipInfo is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* 1. Allocate CMD Info Packet and its Buffer. */
+	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter,
+		sizeof(struct INIT_HIF_TX_HEADER) +
+		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
+		sizeof(struct INIT_CMD_BT_PATCH_SEMA_CTRL));
+
+	if (!prCmdInfo) {
+		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prCmdInfo->u2InfoBufLen = sizeof(struct INIT_HIF_TX_HEADER) +
+		sizeof(struct INIT_HIF_TX_HEADER_PENDING_FOR_HW_32BYTES) +
+		sizeof(struct INIT_CMD_BT_PATCH_SEMA_CTRL);
+
+	prCmdInfo->ucCID = INIT_CMD_ID_BT_PATCH_SEMAPHORE_CONTROL;
+	NIC_FILL_CMD_TX_HDR(prAdapter,
+		prCmdInfo->pucInfoBuffer,
+		prCmdInfo->u2InfoBufLen,
+		prCmdInfo->ucCID,
+		INIT_CMD_PDA_PACKET_TYPE_ID,
+		pucSeqNum, FALSE,
+		(void **)&prBtPatchSemaCtrl, TRUE, 0, S2D_INDEX_CMD_H2N,
+		FALSE);
+
+	/* Setup DOWNLOAD_BUF */
+	kalMemZero(prBtPatchSemaCtrl,
+		   sizeof(struct INIT_CMD_BT_PATCH_SEMA_CTRL));
+	prBtPatchSemaCtrl->ucGetSemaphore = PATCH_GET_SEMA_CONTROL;
+	prBtPatchSemaCtrl->u4Addr = u4Addr;
+
+	/* 4. Send FW_Download command */
+	if (nicTxInitCmd(prAdapter, prCmdInfo,
+			 prChipInfo->u2TxInitCmdPort) != WLAN_STATUS_SUCCESS) {
+		u4Status = WLAN_STATUS_FAILURE;
+		DBGLOG(INIT, ERROR, "send Get BT Patch Sema fail\n");
+	} else
+		DBGLOG(INIT, INFO, "send Get BT Patch Sema success\n");
+
+	/* 5. Free CMD Info Packet. */
+	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+
+	return u4Status;
+}
+
+uint32_t wlanBtPatchRecvSemaResp(IN struct ADAPTER *prAdapter,
+				 IN uint8_t ucCmdSeqNum,
+				 OUT uint8_t *pucPatchStatus,
+				 OUT uint32_t *u4RemapAddr)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint8_t *aucBuffer;
+	uint32_t u4EventSize;
+	struct INIT_WIFI_EVENT *prInitEvent;
+	struct INIT_EVENT_BT_PATCH_SEMA_CTRL *prEventCmdResult;
+	uint32_t u4RxPktLength;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	ASSERT(prAdapter);
+	prChipInfo = prAdapter->chip_info;
+
+	if (kalIsCardRemoved(prAdapter->prGlueInfo) == TRUE
+	    || fgIsBusAccessFailed == TRUE)
+		return WLAN_STATUS_FAILURE;
+
+	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
+		sizeof(struct INIT_EVENT_BT_PATCH_SEMA_CTRL);
+	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
+	if (aucBuffer == NULL) {
+		DBGLOG(INIT, ERROR, "Alloc CMD buffer failed\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (nicRxWaitResponse(prAdapter, 0, aucBuffer, u4EventSize,
+			      &u4RxPktLength) != WLAN_STATUS_SUCCESS) {
+
+		DBGLOG(INIT, WARN, "Wait patch semaphore response fail\n");
+		goto out;
+	}
+
+	prInitEvent = (struct INIT_WIFI_EVENT *)
+		(aucBuffer + prChipInfo->rxd_size);
+
+	if (prInitEvent->ucEID != INIT_EVENT_ID_BT_PATCH_SEMA_CTRL) {
+		DBGLOG(INIT, WARN, "Unexpected EVENT ID, get 0x%0x\n",
+		       prInitEvent->ucEID);
+		goto out;
+	}
+
+	/* BT always response prInitEvent->ucSeqNum=0 */
+
+	prEventCmdResult = (struct INIT_EVENT_BT_PATCH_SEMA_CTRL *)
+		prInitEvent->aucBuffer;
+
+	*pucPatchStatus = prEventCmdResult->ucStatus;
+	*u4RemapAddr = prEventCmdResult->u4RemapAddr;
+
+	u4Status = WLAN_STATUS_SUCCESS;
+out:
+	kalMemFree(aucBuffer, PHY_MEM_TYPE, u4EventSize);
+
+	return u4Status;
+}
+
+uint32_t wlanImageSectionGetBtPatchInfo(IN struct ADAPTER *prAdapter,
+	IN void *pvFwImageMapFile, IN uint32_t u4FwImageFileLength,
+	OUT uint32_t *pu4DataMode, OUT struct patch_dl_target *target)
+{
+	struct PATCH_FORMAT_V2_T *prPatchFormat;
+	struct PATCH_GLO_DESC *glo_desc;
+	struct PATCH_SEC_MAP *sec_map;
+	struct patch_dl_buf *region;
+	uint32_t section_type;
+	uint32_t num_of_region, i;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	uint8_t *img_ptr;
+	uint8_t aucBuffer[32];
+	uint32_t sec_info = 0;
+
+	/* patch header */
+	img_ptr = pvFwImageMapFile;
+	prPatchFormat = (struct PATCH_FORMAT_V2_T *)img_ptr;
+
+	/* Dump image information */
+	kalMemZero(aucBuffer, 32);
+	kalStrnCpy(aucBuffer, prPatchFormat->aucPlatform, 4);
+	DBGLOG(INIT, INFO,
+	       "PATCH INFO: platform[%s] HW/SW ver[0x%04X] ver[0x%04X]\n",
+	       aucBuffer, prPatchFormat->u4SwHwVersion,
+	       prPatchFormat->u4PatchVersion);
+
+	kalStrnCpy(aucBuffer, prPatchFormat->aucBuildDate, 16);
+	DBGLOG(INIT, INFO, "date[%s]\n", aucBuffer);
+
+	if (prPatchFormat->u4PatchVersion != PATCH_VERSION_MAGIC_NUM) {
+		DBGLOG(INIT, ERROR, "BT Patch format isn't V2\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* global descriptor */
+	img_ptr += sizeof(struct PATCH_FORMAT_V2_T);
+	glo_desc = (struct PATCH_GLO_DESC *)img_ptr;
+	num_of_region = le2cpu32(glo_desc->section_num);
+	DBGLOG(INIT, INFO,
+			"\tPatch ver: 0x%x, Section num: 0x%x, subsys: 0x%x\n",
+			glo_desc->patch_ver,
+			num_of_region,
+			le2cpu32(glo_desc->subsys));
+
+	/* section map */
+	img_ptr += sizeof(struct PATCH_GLO_DESC);
+
+	/* XXX: Expect that PATCH only occupy one section */
+	target->num_of_region = 1;
+	target->patch_region = (struct patch_dl_buf *)kalMemAlloc(
+				sizeof(struct patch_dl_buf), PHY_MEM_TYPE);
+
+	if (!target->patch_region) {
+		DBGLOG(INIT, WARN, "No memory to allocate.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	region = &target->patch_region[0];
+	region->img_ptr = NULL;
+	for (i = 0; i < num_of_region; i++) {
+		sec_map = (struct PATCH_SEC_MAP *)img_ptr;
+		img_ptr += sizeof(struct PATCH_SEC_MAP);
+
+		section_type = le2cpu32(sec_map->section_type);
+
+		if ((section_type & PATCH_SEC_TYPE_MASK) !=
+		     PATCH_SEC_TYPE_BIN_INFO)
+			continue;
+
+		region->bin_type = le2cpu32(sec_map->bin_info_spec.bin_type);
+		/* only handle BT Patch */
+		if (region->bin_type != FW_SECT_BINARY_TYPE_BT_PATCH)
+			continue;
+
+		region->img_dest_addr =
+			le2cpu32(sec_map->bin_info_spec.dl_addr);
+		/* PDA needs 16-byte aligned length */
+		region->img_size =
+			le2cpu32(sec_map->bin_info_spec.dl_size) +
+			le2cpu32(sec_map->bin_info_spec.align_len);
+		if (!(region->img_size % 16))
+			DBGLOG(INIT, WARN,
+			       "BT Patch is not 16-byte aligned\n");
+		region->img_ptr = pvFwImageMapFile +
+			le2cpu32(sec_map->section_offset);
+		sec_info = le2cpu32(sec_map->bin_info_spec.sec_info);
+
+		DBGLOG(INIT, INFO, "BT Patch addr=0x%x: size=%d, ptr=0x%p\n",
+			region->img_dest_addr, region->img_size,
+			region->img_ptr);
+
+		u4Status = WLAN_STATUS_SUCCESS;
+	}
+
+	*pu4DataMode = wlanGetPatchDataModeV2(prAdapter, sec_info);
+
+	if (region->img_ptr == NULL) {
+		DBGLOG(INIT, ERROR, "Can't find the BT Patch\n");
+		kalMemFree(target->patch_region, PHY_MEM_TYPE,
+			sizeof(struct patch_dl_buf));
+	}
+
+	return u4Status;
+}
+
+
+int32_t wlanBtPatchIsDownloaded(IN struct ADAPTER *prAdapter,
+				 IN uint32_t u4DestAddr, OUT uint32_t *u4BtAddr)
+{
+	uint8_t ucSeqNum, ucPatchStatus;
+	uint32_t rStatus;
+	uint32_t u4Count;
+	uint32_t u4RemapAddr;
+	int32_t s4RetStatus = -1;
+
+	ucPatchStatus = PATCH_STATUS_NO_SEMA_NEED_PATCH;
+	u4Count = 0;
+
+	while (ucPatchStatus == PATCH_STATUS_NO_SEMA_NEED_PATCH) {
+		if (u4Count)
+			kalMdelay(100);
+
+		rStatus = wlanBtPatchSendSemaControl(prAdapter, u4DestAddr,
+							&ucSeqNum);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, WARN,
+			       "Send patch SEMA control CMD failed!!\n");
+			goto out;
+		}
+
+		rStatus = wlanBtPatchRecvSemaResp(prAdapter, ucSeqNum,
+						&ucPatchStatus, &u4RemapAddr);
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(INIT, WARN,
+			       "Recv patch SEMA control EVT failed!!\n");
+			goto out;
+		}
+
+		u4Count++;
+
+		if (u4Count > 50) {
+			DBGLOG(INIT, WARN, "Patch status check timeout!!\n");
+			break;
+		}
+	}
+
+	if (ucPatchStatus != PATCH_STATUS_NO_NEED_TO_PATCH)
+		*u4BtAddr = u4RemapAddr;
+
+	s4RetStatus = (ucPatchStatus == PATCH_STATUS_NO_NEED_TO_PATCH);
+
+out:
+	return s4RetStatus;
+}
+
+uint32_t mt7961DownloadBtPatch(IN struct ADAPTER *prAdapter)
+{
+	uint32_t u4FwSize = 0;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	uint32_t u4DataMode;
+	uint32_t u4RemapAddr;
+	int32_t s4BtPatchCheck;
+	struct patch_dl_target target;
+	struct patch_dl_buf *region = NULL;
+	void *prFwBuffer = NULL;
+
+#if CFG_SUPPORT_COMPRESSION_FW_OPTION
+	#pragma message("WARN: Download BT Patch doesn't support COMPRESSION")
+#endif
+#if CFG_DOWNLOAD_DYN_MEMORY_MAP
+	#pragma message("WARN: Download BT Patch doesn't support DYN_MEM_MAP")
+#endif
+#if CFG_ROM_PATCH_NO_SEM_CTRL
+	#pragma message("WARN: Download BT Patch doesn't support NO_SEM_CTRL")
+#endif
+
+	if (!prAdapter)
+		return WLAN_STATUS_FAILURE;
+
+	DBGLOG(INIT, INFO, "BT Patch download start\n");
+
+	/* Always check BT Patch Download for L0.5 reset case */
+
+	/* refer from wlanImageSectionDownloadStage */
+
+	/* step.1 open the PATCH file */
+	kalFirmwareImageMapping(prAdapter->prGlueInfo, &prFwBuffer,
+				&u4FwSize, IMG_DL_IDX_BT_PATCH);
+	if (prFwBuffer == NULL) {
+		DBGLOG(INIT, WARN, "FW[%u] load error!\n",
+		       IMG_DL_IDX_BT_PATCH);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* step 2. get Addr info. Refer from : wlanImageSectionDownloadStage */
+	u4Status = wlanImageSectionGetBtPatchInfo(prAdapter,
+			prFwBuffer, u4FwSize, &u4DataMode, &target);
+
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "Can't find the BT Patch Section\n");
+		goto out;
+	}
+
+	/* step 3. check BT doesn't download PATCH */
+	region = &target.patch_region[0];
+	s4BtPatchCheck = wlanBtPatchIsDownloaded(prAdapter,
+				region->img_dest_addr, &u4RemapAddr);
+	if (s4BtPatchCheck < 0) {
+		DBGLOG(INIT, INFO, "Get BT Semaphore Fail\n");
+		u4Status =  WLAN_STATUS_FAILURE;
+		goto out;
+	} else if (s4BtPatchCheck == 1) {
+		DBGLOG(INIT, INFO, "No need to download patch\n");
+		u4Status =  WLAN_STATUS_SUCCESS;
+		goto out;
+	}
+
+	region->img_dest_addr = u4RemapAddr;
+
+	/* step 4. download BT patch */
+	u4Status = wlanDownloadSectionV2(prAdapter, u4DataMode,
+					IMG_DL_IDX_BT_PATCH, &target);
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "BT Patch download Fail\n");
+		goto out;
+	}
+
+	/* step 5. send INIT_CMD_PATCH_FINISH */
+	u4Status = wlanPatchSendComplete(prAdapter, PATCH_FNSH_TYPE_BT);
+
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "Send INIT_CMD_PATCH_FINISH Fail\n");
+	else
+		DBGLOG(INIT, INFO, "BT Patch download success\n");
+
+out:
+	if (target.patch_region != NULL) {
+		/* This case is that the BT patch isn't downloaded this time.
+		 * The original free action is in wlanDownloadSectionV2().
+		 */
+		kalMemFree(target.patch_region, PHY_MEM_TYPE,
+			sizeof(struct patch_dl_buf) * target.num_of_region);
+		target.patch_region = NULL;
+		target.num_of_region = 0;
+	}
+
+	kalFirmwareImageUnmapping(prAdapter->prGlueInfo, NULL, prFwBuffer);
+
+	return u4Status;
+}
+#endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
+
+uint32_t mt7961ConstructBufferBinFileName(struct ADAPTER *prAdapter,
+					  uint8_t *aucEeprom)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint8_t flavor_ver = 0;
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter == NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (aucEeprom == NULL) {
+		DBGLOG(INIT, ERROR, "aucEeprom == NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prChipInfo == NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	flavor_ver = mt7961GetFlavorVer(prAdapter);
+
+	if (snprintf(aucEeprom, 32, "EEPROM_MT%x_%x.bin",
+		 prChipInfo->chip_id, flavor_ver) < 0) {
+		DBGLOG(INIT, ERROR, "gen buffer bin file name fail\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+u_int8_t mt7961GetRxvSrc(struct ADAPTER *prAdapter)
+{
+	if (nicIsEcoVerEqualOrLaterTo(prAdapter, ECO_VER_2))
+		return FALSE;	/* From RXD */
+	else
+		return TRUE;	/* From RX_RPT */
+}
+
+u_int8_t mt7961GetRxDbgInfoSrc(struct ADAPTER *prAdapter)
+{
+	if (nicIsEcoVerEqualOrLaterTo(prAdapter, ECO_VER_2))
+		return TRUE;	/* From group3 */
+	else
+		return FALSE;	/* From group5 */
+}
+
+#ifdef MT7961
 struct BUS_INFO mt7961_bus_info = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.top_cfg_base = MT7961_TOP_CFG_BASE,
@@ -563,21 +1271,26 @@ struct BUS_INFO mt7961_bus_info = {
 	.u4UdmaTxQsel = CONNAC2X_UDMA_TX_QSEL,
 	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
 	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
-	.asicUsbEventEpDetected = asicConnac2xUsbEventEpDetected,
-	.asicUsbRxByteCount = asicConnac2xUsbRxByteCount,
+	.asicUsbEventEpDetected = mt7961Connac2xUsbEventEpDetected,
+	.asicUsbRxByteCount = mt7961Connac2xUsbRxByteCount,
 	.DmaShdlInit = mt7961DmashdlInit,
+	.prDmashdlCfg = &rMT7961DmashdlCfg,
+	.asicUdmaRxFlush = asicConnac2xUdmaRxFlush,
 #endif
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD
 struct FWDL_OPS_T mt7961_fw_dl_ops = {
-	.constructFirmwarePrio = NULL,
-	.constructPatchName = NULL,
+	.constructFirmwarePrio = mt7961ConstructFirmwarePrio,
+	.constructPatchName = mt7961ConstructPatchName,
 	.downloadPatch = wlanDownloadPatch,
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
-	.phyAction = NULL,
+#if 0 /* TODO: #if CFG_SUPPORT_WIFI_DL_BT_PATCH */
+	.constructBtPatchName = mt7961ConstructBtPatchName,
+	.downloadBtPatch = mt7961DownloadBtPatch,
+#endif
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
@@ -659,10 +1372,16 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.u4LmacWtblDUAddr = MT7961_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = MT7961_WIFI_UWTBL_BASE,
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
+	.u4ADieVer = 0xFFFFFFFF,
+
+	.prTxPwrLimitFile = "TxPwrLimit_MT79x1.dat",
+	.ucTxPwrLimitBatchSize = 8,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {
 	.chip_info = &mt66xx_chip_info_mt7961,
 };
+
+#endif /* MT7961 */
 
 #endif /* MT7961 */

@@ -348,6 +348,7 @@ struct BUS_INFO {
 		IN uint8_t *pRXD);
 	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
 	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
+	void (*asicUdmaRxFlush)(IN struct ADAPTER *prAdapter, uint8_t bEnable);
 };
 
 /* USB_REQ_T prPriv field for TxData */

@@ -59,7 +59,7 @@
 *
 ******************************************************************************
 */
-#define WF_SW_DEF_CR_BASE                0x00400E00
+#define WF_SW_DEF_CR_BASE                0x00401A00
 
 #define WF_SW_DEF_CR_SER_STATUS_ADDR \
 	(WF_SW_DEF_CR_BASE + 0x000) /* E00 */

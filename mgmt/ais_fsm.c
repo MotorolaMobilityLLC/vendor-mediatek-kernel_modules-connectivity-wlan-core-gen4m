@@ -7587,6 +7587,10 @@ struct WMM_INFO *aisGetWMMInfo(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
 {
+	if (ucBssIndex == 255)
+		DBGLOG(AIS, WARN,
+			"######## invalid index=%d caller=%pS\n",
+			ucBssIndex, KAL_TRACE);
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rWmmInfo;
 }
 

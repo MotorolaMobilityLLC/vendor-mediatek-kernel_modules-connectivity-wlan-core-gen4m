@@ -195,15 +195,10 @@ void asicConnac3xCapInit(
 		prChipInfo->u4ExtraTxByteCount =
 				EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT;
 		prChipInfo->u4HifDmaShdlBaseAddr = USB_HIF_DMASHDL_BASE;
-		if (prBusInfo->DmaShdlInit)
-			prBusInfo->DmaShdlInit(prAdapter);
 
 #if (CFG_ENABLE_FW_DOWNLOAD == 1)
 		prChipInfo->asicEnableFWDownload = asicConnac3xEnableUsbFWDL;
 #endif /* CFG_ENABLE_FW_DOWNLOAD == 1 */
-		if (prChipInfo->asicUsbInit)
-			prChipInfo->asicUsbInit(prAdapter, prChipInfo);
-		asicConnac3xUdmaRxFlush(prAdapter, FALSE);
 		break;
 #endif /* _HIF_USB */
 	default:
