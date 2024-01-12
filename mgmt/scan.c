@@ -2520,7 +2520,7 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 	} else {
 
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		/* Clear old ACS data (APNum, Dirtyness, ...) and initialize the ch number */
+		/* Clear old ACS data (APNum, Dirtiness, ...) and initialize the ch number */
 		kalMemZero(&(prAdapter->rWifiVar.rChnLoadInfo),
 			sizeof(prAdapter->rWifiVar.rChnLoadInfo));
 		wlanInitChnLoadInfoChannelList(prAdapter);
@@ -2595,7 +2595,7 @@ VOID scanReportBss2Cfg80211(IN P_ADAPTER_T prAdapter, IN ENUM_BSS_TYPE_T eBSSTyp
 
 		}
 #if CFG_AUTO_CHANNEL_SEL_SUPPORT
-		wlanCalculateAllChannelDirtyness(prAdapter);
+		wlanCalculateAllChannelDirtiness(prAdapter);
 		wlanSortChannel(prAdapter);
 
 		prAdapter->rWifiVar.rChnLoadInfo.fgDataReadyBit = TRUE;

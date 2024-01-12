@@ -8851,19 +8851,19 @@ wlanoidQueryLteSafeChannel(IN P_ADAPTER_T prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief Add dirtyness to neighbor channels of a BSS to estimate channel quality.
+* \brief Add dirtiness to neighbor channels of a BSS to estimate channel quality.
 *
 * \param[in]  prAdapter        Pointer to the Adapter structure.
 * \param[in]  prBssDesc        Pointer to the BSS description.
-* \param[in]  u4Dirtyness      Expected dirtyness value.
+* \param[in]  u4Dirtiness      Expected dirtiness value.
 * \param[in]  ucCentralChannel Central channel of the given BSS.
 * \param[in]  ucCoveredRange   With ucCoveredRange and ucCentralChannel,
 *                              all the affected channels can be enumerated.
 */
 /*----------------------------------------------------------------------------*/
 static VOID
-wlanAddDirtynessToAffectedChannels(P_ADAPTER_T prAdapter,
-	P_BSS_DESC_T prBssDesc, UINT_32 u4Dirtyness, UINT_8 ucCentralChannel,
+wlanAddDirtinessToAffectedChannels(P_ADAPTER_T prAdapter,
+	P_BSS_DESC_T prBssDesc, UINT_32 u4Dirtiness, UINT_8 ucCentralChannel,
 	UINT_8 ucCoveredRange)
 {
 	UINT_8 ucIdx, ucStart, ucEnd;
@@ -8947,49 +8947,49 @@ wlanAddDirtynessToAffectedChannels(P_ADAPTER_T prAdapter,
 	ucEnd = wlanGetChannelIndex(ucRightestCoveredChannel);
 
 	for (ucIdx = ucStart; ucIdx <= ucEnd; ucIdx++) {
-		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtyness += u4Dirtyness;
-		DBGLOG(SCN, TRACE, "Add dirtyness %d, to covered ch %d\n",
-			u4Dirtyness, prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness += u4Dirtiness;
+		DBGLOG(SCN, TRACE, "Add dirtiness %d, to covered ch %d\n",
+			u4Dirtiness, prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 	}
 
 	if (ucLeftNeighborChannel != 0) {
 		ucIdx = wlanGetChannelIndex(ucLeftNeighborChannel);
-		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtyness += (u4Dirtyness >> 1);
-		DBGLOG(SCN, TRACE, "Add dirtyness %d, to neighbor ch %d\n",
-			u4Dirtyness >> 1, prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness += (u4Dirtiness >> 1);
+		DBGLOG(SCN, TRACE, "Add dirtiness %d, to neighbor ch %d\n",
+			u4Dirtiness >> 1, prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 	}
 
 	if (ucRightNeighborChannel != 0) {
 		ucIdx = wlanGetChannelIndex(ucRightNeighborChannel);
-		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtyness += (u4Dirtyness >> 1);
-		DBGLOG(SCN, TRACE, "Add dirtyness %d, to neighbor ch %d\n",
-			u4Dirtyness >> 1, prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
+		prGetChnLoad->rEachChnLoad[ucIdx].u4Dirtiness += (u4Dirtiness >> 1);
+		DBGLOG(SCN, TRACE, "Add dirtiness %d, to neighbor ch %d\n",
+			u4Dirtiness >> 1, prGetChnLoad->rEachChnLoad[ucIdx].ucChannel);
 	}
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
-* \brief For a scanned BSS, add dirtyness to the channels 1)around its primary
+* \brief For a scanned BSS, add dirtiness to the channels 1)around its primary
 *        channels and 2) in its working BW to represent the quality degrade.
 *
 * \param[in]  prAdapter        Pointer to the Adapter structure.
 * \param[in]  prBssDesc        Pointer to the BSS description.
-* \param[in]  u4Dirtyness      Expected dirtyness value.
+* \param[in]  u4Dirtiness      Expected dirtiness value.
 * \param[in]  bIsIndexOne      True means index 1, False means index 2.
 */
 /*----------------------------------------------------------------------------*/
 static VOID
-wlanCalculateChannelDirtyness(IN P_ADAPTER_T prAdapter,
-	P_BSS_DESC_T prBssDesc, UINT_32 u4Dirtyness, BOOL bIsIndexOne)
+wlanCalculateChannelDirtiness(IN P_ADAPTER_T prAdapter,
+	P_BSS_DESC_T prBssDesc, UINT_32 u4Dirtiness, BOOL bIsIndexOne)
 {
 	UINT_8 ucCoveredRange = 0, ucCentralChannel = 0, ucCentralChannel2 = 0;
 
 	if (bIsIndexOne) {
-		DBGLOG(SCN, TRACE, "Process dirtyness index 1\n");
+		DBGLOG(SCN, TRACE, "Process dirtiness index 1\n");
 		ucCentralChannel = prBssDesc->ucChannelNum;
 		ucCoveredRange = 2;
 	} else {
-		DBGLOG(SCN, TRACE, "Process dirtyness index 2, ");
+		DBGLOG(SCN, TRACE, "Process dirtiness index 2, ");
 		switch (prBssDesc->eChannelWidth) {
 		case CW_20_40MHZ:
 			if (prBssDesc->eSco == CHNL_EXT_SCA) {
@@ -9029,14 +9029,14 @@ wlanCalculateChannelDirtyness(IN P_ADAPTER_T prAdapter,
 		};
 	}
 
-	wlanAddDirtynessToAffectedChannels(prAdapter, prBssDesc, u4Dirtyness,
+	wlanAddDirtinessToAffectedChannels(prAdapter, prBssDesc, u4Dirtiness,
 		ucCentralChannel, ucCoveredRange);
 
 	/* 80 + 80 secondary 80 case */
 	if (bIsIndexOne || ucCentralChannel2 == 0)
 		return;
 
-	wlanAddDirtynessToAffectedChannels(prAdapter, prBssDesc, u4Dirtyness,
+	wlanAddDirtinessToAffectedChannels(prAdapter, prBssDesc, u4Dirtiness,
 		ucCentralChannel2, ucCoveredRange);
 }
 
@@ -9052,13 +9052,13 @@ wlanInitChnLoadInfoChannelList(IN P_ADAPTER_T prAdapter)
 }
 
 WLAN_STATUS
-wlanCalculateAllChannelDirtyness(IN P_ADAPTER_T prAdapter)
+wlanCalculateAllChannelDirtiness(IN P_ADAPTER_T prAdapter)
 {
 	WLAN_STATUS rResult = WLAN_STATUS_SUCCESS;
 	PARAM_RSSI i4Rssi = 0;
 	P_BSS_DESC_T prBssDesc = NULL;
 	UINT_8 ucIdx = 0;
-	UINT_32 u4Dirtyness = 0;
+	UINT_32 u4Dirtiness = 0;
 	P_LINK_T prBSSDescList = &(prAdapter->rWifiVar.rScanInfo.rBSSDescList);
 
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry, BSS_DESC_T) {
@@ -9066,21 +9066,21 @@ wlanCalculateAllChannelDirtyness(IN P_ADAPTER_T prAdapter)
 		ucIdx = wlanGetChannelIndex(prBssDesc->ucChannelNum);
 
 		if (i4Rssi >= ACS_AP_RSSI_LEVEL_HIGH)
-			u4Dirtyness = ACS_DIRTYNESS_LEVEL_HIGH;
+			u4Dirtiness = ACS_DIRTINESS_LEVEL_HIGH;
 		else if (i4Rssi >= ACS_AP_RSSI_LEVEL_LOW)
-			u4Dirtyness = ACS_DIRTYNESS_LEVEL_MID;
+			u4Dirtiness = ACS_DIRTINESS_LEVEL_MID;
 		else
-			u4Dirtyness = ACS_DIRTYNESS_LEVEL_LOW;
+			u4Dirtiness = ACS_DIRTINESS_LEVEL_LOW;
 
 		DBGLOG(SCN, TRACE, "Found an AP(%s), primary ch %d\n",
 			prBssDesc->aucSSID, prBssDesc->ucChannelNum);
 
-		/* dirtyness index1 */
-		wlanCalculateChannelDirtyness(prAdapter, prBssDesc, u4Dirtyness, TRUE);
+		/* dirtiness index1 */
+		wlanCalculateChannelDirtiness(prAdapter, prBssDesc, u4Dirtiness, TRUE);
 
-		/* dirtyness index2 */
-		wlanCalculateChannelDirtyness(prAdapter, prBssDesc,
-			u4Dirtyness >> 1, FALSE);
+		/* dirtiness index2 */
+		wlanCalculateChannelDirtiness(prAdapter, prBssDesc,
+			u4Dirtiness >> 1, FALSE);
 	}
 
 	return rResult;
@@ -9141,8 +9141,8 @@ wlanSortChannel(IN P_ADAPTER_T prAdapter)
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx) {
 		prChnLoadInfo->rChnRankList[ucIdx].ucChannel =
 			prChnLoadInfo->rEachChnLoad[ucIdx].ucChannel;
-		prChnLoadInfo->rChnRankList[ucIdx].u4Dirtyness =
-			prChnLoadInfo->rEachChnLoad[ucIdx].u4Dirtyness;
+		prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness =
+			prChnLoadInfo->rEachChnLoad[ucIdx].u4Dirtiness;
 	}
 
 	/* heapify ch rank list */
@@ -9152,12 +9152,12 @@ wlanSortChannel(IN P_ADAPTER_T prAdapter)
 
 			ucChild = ucRoot * 2 + 1;
 			if (ucChild < MAX_CHN_NUM - 1 &&
-				prChnLoadInfo->rChnRankList[ucChild + 1].u4Dirtyness >
-				prChnLoadInfo->rChnRankList[ucChild].u4Dirtyness)
+				prChnLoadInfo->rChnRankList[ucChild + 1].u4Dirtiness >
+				prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness)
 				ucChild += 1;
 
-			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtyness <=
-				prChnLoadInfo->rChnRankList[ucRoot].u4Dirtyness)
+			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
+				prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
 
 			rChnRankInfo = prChnLoadInfo->rChnRankList[ucChild];
@@ -9175,12 +9175,12 @@ wlanSortChannel(IN P_ADAPTER_T prAdapter)
 		for (ucRoot = 0; ucRoot * 2 + 1 < ucIdx; ucRoot = ucChild) {
 			ucChild = ucRoot * 2 + 1;
 			if (ucChild < ucIdx - 1 &&
-				prChnLoadInfo->rChnRankList[ucChild + 1].u4Dirtyness >
-				prChnLoadInfo->rChnRankList[ucChild].u4Dirtyness)
+				prChnLoadInfo->rChnRankList[ucChild + 1].u4Dirtiness >
+				prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness)
 				ucChild += 1;
 
-			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtyness <=
-				prChnLoadInfo->rChnRankList[ucRoot].u4Dirtyness)
+			if (prChnLoadInfo->rChnRankList[ucChild].u4Dirtiness <=
+				prChnLoadInfo->rChnRankList[ucRoot].u4Dirtiness)
 				break;
 
 			rChnRankInfo = prChnLoadInfo->rChnRankList[ucChild];
@@ -9190,9 +9190,9 @@ wlanSortChannel(IN P_ADAPTER_T prAdapter)
 	}
 
 	for (ucIdx = 0; ucIdx < MAX_CHN_NUM; ++ucIdx)
-		DBGLOG(SCN, INFO, "[ACS]channel=%d, dirtyness=%d\n",
+		DBGLOG(SCN, INFO, "[ACS]channel=%d, dirtiness=%d\n",
 			prChnLoadInfo->rChnRankList[ucIdx].ucChannel,
-			prChnLoadInfo->rChnRankList[ucIdx].u4Dirtyness);
+			prChnLoadInfo->rChnRankList[ucIdx].u4Dirtiness);
 
 }
 #endif
