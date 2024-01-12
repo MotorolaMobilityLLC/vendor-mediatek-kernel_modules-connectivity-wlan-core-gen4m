@@ -4685,7 +4685,6 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 	if (prAdapter->fgDisBcnLostDetection == FALSE) {
 		struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 		struct EVENT_BSS_BEACON_TIMEOUT *prEventBssBeaconTimeout;
-		uint16_t DeauthReasonCode;
 
 		prEventBssBeaconTimeout = (struct EVENT_BSS_BEACON_TIMEOUT
 					   *) (prEvent->aucBuffer);
@@ -4696,10 +4695,6 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 
 		DBGLOG(NIC, INFO, "Reason code: %d\n",
 		       prEventBssBeaconTimeout->ucReasonCode);
-		DBGLOG(NIC, INFO, "Deauth Reason code: %d\n",
-		       prEventBssBeaconTimeout->u2RxDeauthReason);
-		DeauthReasonCode =
-			prEventBssBeaconTimeout->u2RxDeauthReason;
 /* fos_change begin */
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
 		prAdapter->total_beacon_timeout_count++;
@@ -4727,13 +4722,11 @@ void nicEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			if (nicBeaconTimeoutFilterPolicy(prAdapter,
 				prEventBssBeaconTimeout->ucReasonCode,
 				&ucDisconnectReason,
-				prBssInfo->ucBssIndex)) {
-				prBssInfo->u2DeauthReason = DeauthReasonCode;
+				prBssInfo->ucBssIndex))
 				aisBssBeaconTimeout_impl(prAdapter,
 					prEventBssBeaconTimeout->ucReasonCode,
 					ucDisconnectReason,
 					prBssInfo->ucBssIndex);
-			}
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (prBssInfo->eNetworkType == NETWORK_TYPE_P2P) {
