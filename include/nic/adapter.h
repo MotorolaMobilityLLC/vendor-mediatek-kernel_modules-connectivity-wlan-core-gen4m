@@ -867,6 +867,7 @@ struct WIFI_VAR {
 	uint8_t ucPresetLinkId;
 	uint8_t ucMldLinkMax;
 	uint8_t ucStaMldLinkMax;
+	uint8_t ucApMldLinkMax;
 	uint8_t ucP2pMldLinkMax;
 	uint8_t ucApMldMainLinkIdx;
 	uint8_t ucStaMldMainLinkIdx;

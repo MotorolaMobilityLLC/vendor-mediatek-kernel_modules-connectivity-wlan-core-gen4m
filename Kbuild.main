@@ -1060,6 +1060,9 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     ifneq ($(CONFIG_MLD_LINK_MAX),)
         ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
     endif
+    ifneq ($(CONFIG_MLD_AP_LINK_MAX),)
+        ccflags-y += -DCFG_MLD_AP_LINK_MAX=$(CONFIG_MLD_AP_LINK_MAX)
+    endif
     ifeq ($(CONFIG_MTK_WIFI_11BE_ML_RECONFIG), y)
         ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=1
     else

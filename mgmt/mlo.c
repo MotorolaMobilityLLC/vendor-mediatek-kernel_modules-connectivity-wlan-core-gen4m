@@ -2958,9 +2958,10 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\nStaMldEMLCap:%d\nApMldEMLCap:%d\n",
+		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nApMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\nStaMldEMLCap:%d\nApMldEMLCap:%d\n",
 		prAdapter->rWifiVar.ucMldLinkMax,
 		prAdapter->rWifiVar.ucStaMldLinkMax,
+		prAdapter->rWifiVar.ucApMldLinkMax,
 		prAdapter->rWifiVar.ucP2pMldLinkMax,
 		prAdapter->rWifiVar.ucEnableMlo,
 		prAdapter->rWifiVar.u2NonApMldEMLCap,
@@ -4354,14 +4355,13 @@ uint8_t mldIsMultiLinkEnabled(
 		   p2pGetMode() == RUNNING_P2P_DEV_MODE) {
 		fgIsApMode = ucParam;
 		if (fgIsApMode) {
-			linkMax = prWifiVar->ucMldLinkMax;
-		} else if (IS_FEATURE_DISABLED(prWifiVar->ucP2pGoEht) &&
-			IS_FEATURE_DISABLED(prWifiVar->ucP2pGcEht)) {
-			linkMax = 1;
+			linkMax = kal_min_t(uint8_t,
+					    prWifiVar->ucMldLinkMax,
+					    prWifiVar->ucApMldLinkMax);
 		} else {
 			linkMax = kal_min_t(uint8_t,
-					prWifiVar->ucMldLinkMax,
-					prWifiVar->ucP2pMldLinkMax);
+					    prWifiVar->ucMldLinkMax,
+					    prWifiVar->ucP2pMldLinkMax);
 		}
 	}
 
@@ -4370,7 +4370,6 @@ uint8_t mldIsMultiLinkEnabled(
 	 * 1. eht disabled
 	 * 2. max link num < 2
 	 * 3. EnableMlo 0 (disabled)
-	 * 4. SAP but EnableMlo is not 2 (force enabled)
 	 */
 	if (!mldIsSingleLinkEnabled(prAdapter, eNetworkType, ucParam) ||
 	    linkMax < 2)
@@ -4397,16 +4396,22 @@ uint8_t mldIsSingleLinkEnabled(
 			ucEhtOption = prWifiVar->ucStaEht;
 		else
 			ucEhtOption = FEATURE_DISABLED;
-	} else if (eNetworkType == NETWORK_TYPE_P2P &&
-		   p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+	} else if (eNetworkType == NETWORK_TYPE_P2P) {
 		fgIsApMode = ucParam;
+		if (fgIsApMode) {
+			ucEhtOption = prWifiVar->ucApEht;
+		} else {
+			if (IS_FEATURE_DISABLED(prWifiVar->ucP2pGoEht) &&
+			    IS_FEATURE_DISABLED(prWifiVar->ucP2pGcEht))
+				ucEhtOption = FEATURE_DISABLED;
+			else
+				ucEhtOption = FEATURE_ENABLED;
+		}
 	}
-
 
 	/* mlo is disable when one of these is true
 	 * 1. eht disabled
 	 * 2. EnableMlo 0 (disabled)
-	 * 3. SAP but EnableMlo is not 2 (force enabled)
 	 */
 	if (IS_FEATURE_DISABLED(ucEhtOption) ||
 	    IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo) ||
@@ -4415,9 +4420,10 @@ uint8_t mldIsSingleLinkEnabled(
 		ret = FALSE;
 
 		DBGLOG(ML, TRACE,
-			"ucMldLinkMax:%d,(sta=%d,p2p=%d) ucEnableMlo:%d, EhtOption:%d, eNetworkType:%d, p2pMode:%d Param:%d => mlo feature disabled\n",
+			"ucMldLinkMax:%d,(sta=%d,ap=%d,p2p=%d) ucEnableMlo:%d, EhtOption:%d, eNetworkType:%d, p2pMode:%d Param:%d => mlo feature disabled\n",
 			prWifiVar->ucMldLinkMax,
 			prWifiVar->ucStaMldLinkMax,
+			prWifiVar->ucApMldLinkMax,
 			prWifiVar->ucP2pMldLinkMax,
 			prWifiVar->ucEnableMlo,
 			ucEhtOption,
