@@ -1111,7 +1111,7 @@ kalP2PIndicateChannelReady(IN struct GLUE_INFO *prGlueInfo,
 
 		cfg80211_ready_on_channel(
 			/* struct wireless_dev, */
-			prGlueInfo->prP2PInfo[0]->prWdev,
+			prGlueInfo->prP2PInfo[0]->prDevHandler->ieee80211_ptr,
 			/* u64 cookie, */
 			u8SeqNum,
 			/* struct ieee80211_channel * chan, */
@@ -1168,7 +1168,8 @@ kalP2PIndicateChannelExpired(IN struct GLUE_INFO *prGlueInfo,
 		}
 
 		/* struct wireless_dev, */
-		cfg80211_remain_on_channel_expired(prGlueP2pInfo->prWdev,
+		cfg80211_remain_on_channel_expired(
+			prGlueP2pInfo->prDevHandler->ieee80211_ptr,
 			u8SeqNum, prIEEE80211ChnlStruct, GFP_KERNEL);
 	} while (FALSE);
 
