@@ -466,6 +466,9 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 #define kalP2pNotifyDisconnComplete(_prAdapter, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
+#define kalP2pNotifyDelStaComplete(_prAdapter, _ucRoleIndex) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+
 #define kalP2pIsStoppingAp(_prAdapter, _ucRoleIndex) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
@@ -508,6 +511,9 @@ void kalP2pNotifyStopApComplete(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex);
 
 void kalP2pNotifyDisconnComplete(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIndex);
+
+void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex);
 
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,

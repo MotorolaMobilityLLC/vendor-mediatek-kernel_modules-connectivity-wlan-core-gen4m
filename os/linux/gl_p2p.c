@@ -449,6 +449,7 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 #endif
 		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rStopApComp);
 		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rDisconnComp);
+		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rDelStaComp);
 	} while (FALSE);
 
 	if (!prGlueInfo->prP2PDevInfo)

@@ -2914,97 +2914,86 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 {
 	const u8 *mac = params->mac ? params->mac : bcast_addr;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	int32_t i4Rslt = -EINVAL;
+	int32_t i4Rslt = 0;
 	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
 		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
-	uint8_t aucBcMac[] = BC_MAC_ADDR;
 	uint8_t ucRoleIdx = 0;
 	uint8_t ucBssIdx = 0;
 	uint32_t waitRet = 0;
-#if CFG_SUPPORT_802_11W
-	uint8_t fgWpa3Op = FALSE;
-#endif
 	struct BSS_INFO *prBssInfo = NULL;
-	struct P2P_ROLE_FSM_INFO *fsm = NULL;
+	struct GL_P2P_INFO *prP2PInfo;
+	u_int8_t wait = FALSE;
 
-	do {
-		if ((wiphy == NULL) || (dev == NULL))
-			break;
+	if ((wiphy == NULL) || (dev == NULL)) {
+		DBGLOG(P2P, ERROR, "wiphy: 0x%p, dev: 0x%p\n",
+			wiphy, dev);
+		i4Rslt = -EINVAL;
+		goto exit;
+	}
 
-		if (mac == NULL)
-			mac = aucBcMac;
+	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-		DBGLOG(P2P, INFO,
-			"mtk_p2p_cfg80211_del_station " MACSTR ". reason: %d\n",
-			MAC2STR(mac), params->reason_code);
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
+		DBGLOG(P2P, ERROR, "can NOT find role idx.\n");
+		i4Rslt = -EINVAL;
+		goto exit;
+	}
 
-		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+				ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, ERROR, "can NOT find bss idx.\n");
+		i4Rslt = -EINVAL;
+		goto exit;
+	}
 
-		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
-			break;
-		/* prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
-		 * kalMemAlloc(sizeof(struct MSG_P2P_CONNECTION_ABORT),
-		 * VIR_MEM_TYPE);
-		 */
-		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
-			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS)
-			break;
+	prDisconnectMsg = cnmMemAlloc(prGlueInfo->prAdapter,
+				      RAM_TYPE_MSG,
+				      sizeof(struct MSG_P2P_CONNECTION_ABORT));
 
-		prDisconnectMsg = (struct MSG_P2P_CONNECTION_ABORT *)
-		    cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-				sizeof(struct MSG_P2P_CONNECTION_ABORT));
+	if (prDisconnectMsg == NULL) {
+		DBGLOG(P2P, ERROR, "Alloc msg failed.\n");
+		i4Rslt = -ENOMEM;
+		goto exit;
+	}
 
-		if (prDisconnectMsg == NULL) {
-			i4Rslt = -ENOMEM;
-			break;
-		}
+	prDisconnectMsg->rMsgHdr.eMsgId = MID_MNY_P2P_CONNECTION_ABORT;
+	prDisconnectMsg->ucRoleIdx = ucRoleIdx;
+	COPY_MAC_ADDR(prDisconnectMsg->aucTargetID, mac);
+	prDisconnectMsg->u2ReasonCode = params->reason_code;
+	prDisconnectMsg->fgSendDeauth = TRUE;
+	wait = UNEQUAL_MAC_ADDR(mac, bcast_addr) ? TRUE : FALSE;
 
-		prDisconnectMsg->rMsgHdr.eMsgId = MID_MNY_P2P_CONNECTION_ABORT;
-		prDisconnectMsg->ucRoleIdx = ucRoleIdx;
-		COPY_MAC_ADDR(prDisconnectMsg->aucTargetID, mac);
-		prDisconnectMsg->u2ReasonCode = params->reason_code;
-		prDisconnectMsg->fgSendDeauth = TRUE;
-		fsm = (struct P2P_ROLE_FSM_INFO *)
-			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
-			prGlueInfo->prAdapter,
-			ucRoleIdx);
-		prBssInfo =
-			GET_BSS_INFO_BY_INDEX(
-			prGlueInfo->prAdapter,
-			ucBssIdx);
-#if CFG_SUPPORT_802_11W
-		/* if encrypted deauth frame
-			* is in process, pending remove key
-			*/
-		if (fsm &&
-			prBssInfo &&
-			IS_BSS_APGO(prBssInfo) &&
-			(rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite))) {
-			fgWpa3Op = TRUE;
-			reinit_completion(&fsm->rDeauthComp);
-		}
+	DBGLOG(P2P, INFO,
+		"mac: " MACSTR " type: %d reason: %d wait: %d\n",
+		MAC2STR(mac), params->subtype, params->reason_code, wait);
+
+	prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+
+	if (wait) {
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+		reinit_completion(&prP2PInfo->rDelStaComp);
+#else
+		prP2PInfo->rDelStaComp.done = 0;
 #endif
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prDisconnectMsg,
-			MSG_SEND_METHOD_BUF);
-#if CFG_SUPPORT_802_11W
-		if (fgWpa3Op) {
-			waitRet = wait_for_completion_timeout(
-				&fsm->rDeauthComp,
-				MSEC_TO_JIFFIES(1000));
-			if (!waitRet) {
-				DBGLOG(RSN, WARN, "timeout\n");
-				fsm->encryptedDeauthIsInProcess = FALSE;
-			} else
-				DBGLOG(RSN, TRACE, "complete\n");
-		}
-#endif
-		i4Rslt = 0;
-	} while (FALSE);
+	}
 
+	mboxSendMsg(prGlueInfo->prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prDisconnectMsg,
+		MSG_SEND_METHOD_BUF);
+
+	if (wait) {
+		waitRet = wait_for_completion_timeout(&prP2PInfo->rDelStaComp,
+			MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+		if (!waitRet)
+			DBGLOG(P2P, WARN, "timeout\n");
+		else
+			DBGLOG(P2P, INFO, "complete\n");
+	}
+
+exit:
 	return i4Rslt;
-
 }				/* mtk_p2p_cfg80211_del_station */
 #else
 int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,

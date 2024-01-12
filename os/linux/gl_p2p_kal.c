@@ -2591,6 +2591,19 @@ void kalP2pNotifyDisconnComplete(struct ADAPTER *prAdapter,
 		complete(&prP2PInfo->rDisconnComp);
 }
 
+void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
+		uint8_t ucRoleIndex)
+{
+	struct GL_P2P_INFO *prP2PInfo;
+
+	if (!prAdapter)
+		return;
+
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIndex];
+	if (prP2PInfo && !completion_done(&prP2PInfo->rDelStaComp))
+		complete(&prP2PInfo->rDelStaComp);
+}
+
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
