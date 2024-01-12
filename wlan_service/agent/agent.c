@@ -5271,7 +5271,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 	s_int32 i4argc = 0;
 	s_int8 *apc_argv[AGENT_CFG_ARGV_MAX] = { 0 };
 	u_char tmpdata[AGENT_CFG_ARGV_MAX*SERV_MAC_ADDR_LEN] = { 0 };
-	s_int8 tmp_mac[SERV_MAC_ADDR_LEN] = { 0 };
+	u_int8 tmp_mac[SERV_MAC_ADDR_LEN] = { 0 };
 	u_int16 tmp_length = 0;
 	u_int32 tmp_value = 0;
 	u_int16 tmp_value2 = 0;
@@ -5319,13 +5319,13 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 
 				if (parasize == SERV_MAC_ADDR_LEN) {
 					ret = sscanf(apc_argv[j],
-					"%x:%x:%x:%x:%x:%x",
-					(unsigned int *)&tmp_mac[0],
-					(unsigned int *)&tmp_mac[1],
-					(unsigned int *)&tmp_mac[2],
-					(unsigned int *)&tmp_mac[3],
-					(unsigned int *)&tmp_mac[4],
-					(unsigned int *)&tmp_mac[5]);
+					"%hhx:%hhx:%hhx:%hhx:%hhx:%hhx",
+					&tmp_mac[0],
+					&tmp_mac[1],
+					&tmp_mac[2],
+					&tmp_mac[3],
+					&tmp_mac[4],
+					&tmp_mac[5]);
 
 					if (ret)
 					set_param_and_shift_buf(FALSE, parasize,
