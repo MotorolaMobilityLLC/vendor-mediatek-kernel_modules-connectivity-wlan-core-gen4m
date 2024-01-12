@@ -7940,6 +7940,172 @@ uint16_t rlmOpClassToBandwidth(uint8_t ucOpClass)
 	return BW_20;
 }
 
+int32_t rlmGetOpClassForChannel(
+	int32_t channel,
+	enum ENUM_BAND band)
+{
+	const u_int8_t support11n = TRUE;
+	const u_int8_t support11ac = TRUE;
+
+	/* 2GHz Band */
+	if ((band == BAND_2G4) != 0) {
+		if (channel == 14)
+			return 82;
+
+		if (channel >= 1 && channel <= 13) {
+			if (!support11n)
+				/* 20MHz channel */
+				return 81;
+
+			if (channel <= 9)
+				/* HT40 with secondary channel
+				 * above primary
+				 */
+				return 83;
+
+			/* HT40 with secondary channel
+			 * below primary
+			 */
+			return 84;
+		}
+		/* Error */
+		return 0;
+	}
+
+	/* 5GHz Band */
+	if ((band == BAND_5G) != 0) {
+		if (support11ac) {
+			switch (channel) {
+			case 42:
+			case 58:
+			case 106:
+			case 122:
+			case 138:
+			case 155:
+				/* 80MHz channel */
+				return 128;
+			case 50:
+			case 114:
+				/* 160MHz channel */
+				return 129;
+			}
+		}
+
+		if (!support11n) {
+			if (channel >= 36 && channel <= 48)
+				return 115;
+
+			if (channel >= 52 && channel <= 64)
+				return 118;
+
+			if (channel >= 100 && channel <= 144)
+				return 121;
+
+			if (channel >= 149 && channel <= 161)
+				return 124;
+
+			if (channel >= 165 && channel <= 169)
+				return 125;
+
+		} else {
+			switch (channel) {
+			case 36:
+			case 44:
+				/* HT40 with secondary channel
+				 * above primary
+				 */
+				return 116;
+			case 40:
+			case 48:
+				/* HT40 with secondary channel
+				 * below primary
+				 */
+				return 117;
+			case 52:
+			case 60:
+				/* HT40 with secondary channel
+				 * above primary
+				 */
+				return  119;
+			case 56:
+			case 64:
+				/* HT40 with secondary channel
+				 * below primary
+				 */
+				return 120;
+			case 100:
+			case 108:
+			case 116:
+			case 124:
+			case 132:
+			case 140:
+				/* HT40 with secondary channel
+				 * above primary
+				 */
+				return 122;
+			case 104:
+			case 112:
+			case 120:
+			case 128:
+			case 136:
+			case 144:
+				/* HT40 with secondary channel
+				 * below primary
+				 */
+				return 123;
+			case 149:
+			case 157:
+				/* HT40 with secondary channel
+				 * above primary
+				 */
+				return 126;
+			case 153:
+			case 161:
+				/* HT40 with secondary channel
+				 * below primary
+				 */
+				return 127;
+			}
+		}
+		/* Error */
+		return 0;
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6GHz Band */
+	if ((band == BAND_6G) != 0) {
+		/* Channels 1, 5. 9, 13, ... */
+		if ((channel & 0x03) == 0x01)
+			/* 20MHz channel */
+			return 131;
+
+		/* Channels 3, 11, 19, 27, ... */
+		if ((channel & 0x07) == 0x03)
+			/* 40MHz channel */
+			return 132;
+
+		/* Channels 7, 23, 39, 55, ... */
+		if ((channel & 0x0F) == 0x07)
+			/* 80MHz channel */
+			return 133;
+
+		/* Channels 15, 47, 69, ... */
+		if ((channel & 0x1F) == 0x0F)
+			/* 160MHz channel */
+			return 134;
+
+		if (channel == 2)
+			/* 20MHz channel */
+			return 136;
+
+		/* Error */
+		return 0;
+	}
+#endif
+
+	return 0;
+}
+
 #if CFG_SUPPORT_BFER
 /*----------------------------------------------------------------------------*/
 /*!

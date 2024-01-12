@@ -65,12 +65,6 @@ enum ROAM_TYPE {
 	ROAM_TYPE_NUM
 };
 
-struct BSS_DESC_SET {
-	struct BSS_DESC *prMainBssDesc;
-	uint8_t ucLinkNum; /* must smaller than MLD_LINK_MAX */
-	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
-};
-
 typedef uint8_t(*PFN_SELECTION_POLICY_FUNC) (
 	enum ENUM_BAND eCurrentBand,
 	int8_t cCandidateRssi,

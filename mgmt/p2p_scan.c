@@ -263,7 +263,8 @@ void scanRemoveP2pBssDesc(IN struct ADAPTER *prAdapter,
 }				/* scanRemoveP2pBssDesc */
 
 struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo)
+		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
+		IN struct BSS_DESC_SET *prBssDescSet)
 {
 	struct BSS_DESC *prCandidateBssDesc = (struct BSS_DESC *) NULL,
 		*prBssDesc = (struct BSS_DESC *) NULL;
@@ -343,6 +344,22 @@ struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
 		}
 
 	} while (FALSE);
+
+	if (prBssDescSet) {
+		if (prCandidateBssDesc) {
+			/* setup primary link */
+			prBssDescSet->ucLinkNum = 1;
+			prBssDescSet->aprBssDesc[0] = prCandidateBssDesc;
+			prBssDescSet->prMainBssDesc = prCandidateBssDesc;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			p2pScanFillSecondaryLink(prAdapter, prBssDescSet);
+#endif
+		} else {
+			prBssDescSet->ucLinkNum = 0;
+			prBssDescSet->prMainBssDesc = NULL;
+		}
+	}
 
 	return prCandidateBssDesc;
 }				/* scanP2pSearchDesc */

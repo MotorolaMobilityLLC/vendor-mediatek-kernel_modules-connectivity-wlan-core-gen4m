@@ -120,6 +120,7 @@ void scanRemoveP2pBssDesc(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc);
 
 struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo);
+		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
+		IN struct BSS_DESC_SET *prBssDescSet);
 
 #endif

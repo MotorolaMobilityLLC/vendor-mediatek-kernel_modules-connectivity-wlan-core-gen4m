@@ -772,6 +772,12 @@ struct NEIGHBOR_AP_INFO {
 };
 #endif
 
+struct BSS_DESC_SET {
+	struct BSS_DESC *prMainBssDesc;
+	uint8_t ucLinkNum; /* must smaller than MLD_LINK_MAX */
+	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

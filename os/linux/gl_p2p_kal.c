@@ -1362,6 +1362,15 @@ void kalP2PIndicateMgmtTxStatus(IN struct GLUE_INFO *prGlueInfo,
 				return;
 
 			prNetdevice = prGlueP2pInfo->aprRoleHandler;
+
+			if (!prNetdevice) {
+				DBGLOG(P2P, WARN,
+					"prMsduInfo->ucBssIndex %d, ucP2PDevBssIdx %d\n",
+					prMsduInfo->ucBssIndex,
+					prGlueInfo->prAdapter->ucP2PDevBssIdx);
+
+				prNetdevice = prGlueP2pInfo->prDevHandler;
+			}
 		}
 
 		cfg80211_mgmt_tx_status(
@@ -1542,12 +1551,27 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 		}
 
 		if (prP2pConnInfo) {
+			uint8_t aucBssid[MAC_ADDR_LEN];
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			struct STA_RECORD *prStaRec =
+				p2pGetDefaultLinkStaRec(prAdapter,
+				IFTYPE_P2P_CLIENT);
+
+			if (prStaRec &&
+				(prStaRec->ucMldStaIndex != MLD_GROUP_NONE))
+				COPY_MAC_ADDR(aucBssid,
+					prStaRec->aucMldAddr);
+			else
+#endif
+				COPY_MAC_ADDR(aucBssid,
+					prP2pConnInfo->aucBssid);
+
 			/* switch netif on */
 			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
 
 			cfg80211_connect_result(prGlueP2pInfo->aprRoleHandler,
 				/* struct net_device * dev, */
-				prP2pConnInfo->aucBssid,
+				aucBssid,
 				prP2pConnInfo->aucIEBuf,
 				prP2pConnInfo->u4BufLength,
 				pucRxIEBuf, u2RxIELen,
@@ -1601,12 +1625,27 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 		}
 
 		if (prP2pConnInfo) {
+			uint8_t aucBssid[MAC_ADDR_LEN];
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			struct STA_RECORD *prStaRec =
+				p2pGetDefaultLinkStaRec(prAdapter,
+				IFTYPE_P2P_CLIENT);
+
+			if (prStaRec &&
+				(prStaRec->ucMldStaIndex != MLD_GROUP_NONE))
+				COPY_MAC_ADDR(aucBssid,
+					prStaRec->aucMldAddr);
+			else
+#endif
+				COPY_MAC_ADDR(aucBssid,
+					prP2pConnInfo->aucBssid);
+
 			/* switch netif on */
 			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
 
 			cfg80211_connect_result(prGlueP2pInfo->aprRoleHandler,
 				/* struct net_device * dev, */
-				prP2pConnInfo->aucBssid,
+				aucBssid,
 				prP2pConnInfo->aucIEBuf,
 				prP2pConnInfo->u4BufLength,
 				pucRxIEBuf, u2RxIELen,
@@ -1636,6 +1675,7 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 		IN u_int8_t fgIsNew)
 {
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
+	uint8_t aucBssid[MAC_ADDR_LEN];
 
 	do {
 		if ((prGlueInfo == NULL) || (prCliStaRec == NULL)
@@ -1649,6 +1689,16 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 			/* This case may occur when the usb is unplugged */
 			break;
 		}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prCliStaRec->ucMldStaIndex != MLD_GROUP_NONE)
+			COPY_MAC_ADDR(aucBssid,
+				prCliStaRec->aucMldAddr);
+		else
+#endif
+			COPY_MAC_ADDR(aucBssid,
+				prCliStaRec->aucMacAddr);
+
 
 		if (fgIsNew) {
 			struct station_info rStationInfo;
@@ -1670,7 +1720,7 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 
 			cfg80211_new_sta(prP2pGlueInfo->aprRoleHandler,
 				/* struct net_device * dev, */
-				prCliStaRec->aucMacAddr,
+				aucBssid,
 				&rStationInfo, GFP_KERNEL);
 		} else {
 			++prP2pGlueInfo->i4Generation;
@@ -1685,7 +1735,7 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 				prCliStaRec->fgIsConnected = FALSE;
 				cfg80211_del_sta(prP2pGlueInfo->aprRoleHandler,
 					/* struct net_device * dev, */
-					prCliStaRec->aucMacAddr, GFP_KERNEL);
+					aucBssid, GFP_KERNEL);
 			}
 		}
 
