@@ -1757,6 +1757,8 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 			 IN int32_t i4Pending,
 			 IN uint32_t u4Used);
 uint32_t kalGetCpuBoostThreshold(void);
+uint32_t kalGetEmiMetOffset(void);
+void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(IN struct GLUE_INFO *glue, IN unsigned long value);
 extern int set_task_util_min_pct(pid_t pid, unsigned int min);
 

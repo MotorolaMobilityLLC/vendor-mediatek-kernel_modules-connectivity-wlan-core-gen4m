@@ -31,6 +31,8 @@ enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_NUM
 };
 
+static uint32_t u4EmiMetOffset = 0x45D400;
+
 uint32_t kalGetCpuBoostThreshold(void)
 {
 	DBGLOG(SW4, TRACE, "enter kalGetCpuBoostThreshold\n");
@@ -128,6 +130,16 @@ int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
 	kalTraceInt(fgRequested == ENUM_CPU_BOOST_STATUS_START, "kalBoostCpu");
 
 	return 0;
+}
+
+uint32_t kalGetEmiMetOffset(void)
+{
+	return u4EmiMetOffset;
+}
+
+void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
+{
+	u4EmiMetOffset = newEmiMetOffset;
 }
 
 #ifdef CFG_MTK_ANDROID_EMI

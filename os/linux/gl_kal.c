@@ -8138,6 +8138,16 @@ uint32_t __weak kalGetCpuBoostThreshold(void)
 	return 1;
 }
 
+uint32_t __weak kalGetEmiMetOffset(void)
+{
+	DBGLOG(SW4, WARN, "enter kalGetEmiMetOffset\n");
+	return 0;
+}
+void __weak kalSetEmiMetOffset(uint32_t newEmiMetOffset)
+{
+	DBGLOG(SW4, WARN, "enter kalSetEmiMetOffset\n");
+}
+
 int32_t __weak kalSetCpuNumFreq(uint32_t u4CoreNum,
 				uint32_t u4Freq)
 {
