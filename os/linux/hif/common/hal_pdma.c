@@ -2636,14 +2636,12 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop PDMA tx/rx ring operation & receive\n");
 			nicSerStopTxRx(prAdapter);
+#if (CFG_SUPPORT_CONNAC2X == 1)
 			/*get WFDMA HW data before Layer 1 SER*/
 			/*event*/
 			halRxReceiveRFBs(prAdapter, WFDMA1_RX_RING_IDX_0,
 						FALSE);
-			/*band 0 data*/
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
-			/*band 1 data*/
-			halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, TRUE);
+#endif
 #if CFG_SUPPORT_MULTITHREAD
 			kalSetRxProcessEvent(prAdapter->prGlueInfo);
 			DBGLOG(HAL, INFO,
