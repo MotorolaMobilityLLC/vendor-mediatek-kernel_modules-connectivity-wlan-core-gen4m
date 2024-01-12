@@ -936,8 +936,7 @@ void kalQueryTxChksumOffloadParam(IN void *pvPacket,
 	}
 
 	*pucFlag = ucFlag;
-
-}				/* kalQueryChksumOffloadParam */
+}
 
 /* 4 2007/10/8, mikewu, this is rewritten by Mike */
 /*----------------------------------------------------------------------------*/
@@ -959,10 +958,10 @@ void kalUpdateRxCSUMOffloadParam(IN void *pvPacket,
 
 	ASSERT(pvPacket);
 
-	if ((aeCSUM[CSUM_TYPE_IPV4] == CSUM_RES_SUCCESS
-	     || aeCSUM[CSUM_TYPE_IPV6] == CSUM_RES_SUCCESS)
-	    && ((aeCSUM[CSUM_TYPE_TCP] == CSUM_RES_SUCCESS)
-		|| (aeCSUM[CSUM_TYPE_UDP] == CSUM_RES_SUCCESS))) {
+	if ((aeCSUM[CSUM_TYPE_IPV4] == CSUM_RES_SUCCESS ||
+	     aeCSUM[CSUM_TYPE_IPV6] == CSUM_RES_SUCCESS) &&
+	    (aeCSUM[CSUM_TYPE_TCP] == CSUM_RES_SUCCESS ||
+	     aeCSUM[CSUM_TYPE_UDP] == CSUM_RES_SUCCESS)) {
 		skb->ip_summed = CHECKSUM_UNNECESSARY;
 	} else {
 		skb->ip_summed = CHECKSUM_NONE;
@@ -976,11 +975,9 @@ void kalUpdateRxCSUMOffloadParam(IN void *pvPacket,
 			DBGLOG(RX, TRACE, "RX: \"bad TCP Checksum\" Packet\n");
 		else if (aeCSUM[CSUM_TYPE_UDP] == CSUM_RES_FAILED)
 			DBGLOG(RX, TRACE, "RX: \"bad UDP Checksum\" Packet\n");
-
 #endif
 	}
-
-}				/* kalUpdateRxCSUMOffloadParam */
+}
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 /*----------------------------------------------------------------------------*/
