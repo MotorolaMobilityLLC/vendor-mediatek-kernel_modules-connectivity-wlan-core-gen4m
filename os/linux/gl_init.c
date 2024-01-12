@@ -196,6 +196,11 @@ unsigned long long gConEmiSize;
 EXPORT_SYMBOL(gConEmiSize);
 #endif
 
+#if CFG_MTK_ANDROID_EMI
+phys_addr_t gConEmiPhyBaseFinal;
+unsigned long long gConEmiSizeFinal;
+#endif
+
 int CFG80211_Suspend(struct wiphy *wiphy,
 		     struct cfg80211_wowlan *wow)
 {
@@ -3689,8 +3694,8 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 			prServiceTest->test_winfo->chip_id);
 
 #if (CFG_MTK_ANDROID_EMI == 1)
-	prServiceTest->test_winfo->emi_phy_base = gConEmiPhyBase;
-	prServiceTest->test_winfo->emi_phy_size = gConEmiSize;
+	prServiceTest->test_winfo->emi_phy_base = gConEmiPhyBaseFinal;
+	prServiceTest->test_winfo->emi_phy_size = gConEmiSizeFinal;
 #else
 	DBGLOG(RFTEST, WARN, "Platform doesn't support EMI address\n");
 #endif
@@ -5307,7 +5312,14 @@ static int initWlan(void)
 	gConEmiPhyBase = (phys_addr_t)ptr;
 #endif
 
+	gConEmiPhyBaseFinal = gConEmiPhyBase;
+	gConEmiSizeFinal = gConEmiSize;
 
+#if (CFG_SUPPORT_CONNINFRA == 1)
+	conninfra_get_phy_addr(
+		(unsigned int *)&gConEmiPhyBaseFinal,
+		(unsigned int *)&gConEmiSizeFinal);
+#endif
 
 	DBGLOG(INIT, INFO, "initWlan\n");
 
@@ -5360,7 +5372,7 @@ static int initWlan(void)
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 #ifdef CONFIG_MTK_EMI
 	/* Set WIFI EMI protection to consys permitted on system boot up */
-	kalSetEmiMpuProtection(gConEmiPhyBase, true);
+	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
 #endif
 #if CFG_MTK_ANDROID_WMT && (CFG_SUPPORT_CONNINFRA == 0)
 	mtk_wcn_wmt_mpu_lock_release();

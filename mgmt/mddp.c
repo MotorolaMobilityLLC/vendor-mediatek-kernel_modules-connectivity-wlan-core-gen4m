@@ -118,7 +118,7 @@ enum BOOTMODE {
 	UNKNOWN_BOOT
 };
 
-enum BOOTMODE g_boot_mode = NORMAL_BOOT;
+enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
 
 /*******************************************************************************
@@ -134,7 +134,7 @@ static int32_t mddpRegisterCb(void)
 {
 	int32_t ret = 0;
 
-	switch (g_boot_mode) {
+	switch (g_wifi_boot_mode) {
 	case RECOVERY_BOOT:
 		g_fgMddpEnabled = FALSE;
 		break;
@@ -778,7 +778,7 @@ void mddpInit(void)
 		return;
 
 	DBGLOG(INIT, INFO, "bootmode: 0x%x\n", tag->bootmode);
-	g_boot_mode = tag->bootmode;
+	g_wifi_boot_mode = tag->bootmode;
 }
 
 #endif

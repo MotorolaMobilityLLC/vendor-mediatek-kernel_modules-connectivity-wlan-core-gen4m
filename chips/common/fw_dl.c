@@ -444,26 +444,20 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 	uint8_t __iomem *pucEmiBaseAddr = NULL;
 	uint32_t u4Offset = u4DestAddr & WIFI_EMI_ADDR_MASK;
 
-	if (!gConEmiPhyBase) {
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		conninfra_get_phy_addr(
-			(unsigned int *)&gConEmiPhyBase,
-			(unsigned int *)&gConEmiSize);
-#endif
-
-		if (!gConEmiPhyBase) {
-			DBGLOG(INIT, ERROR,
-			       "Consys emi memory address gConEmiPhyBase invalid\n");
-			return WLAN_STATUS_FAILURE;
-		}
+	if (!gConEmiPhyBaseFinal) {
+		DBGLOG(INIT, ERROR,
+		       "Consys emi memory address gConEmiPhyBaseFinal invalid\n");
+		return WLAN_STATUS_FAILURE;
 	}
 
-	request_mem_region(gConEmiPhyBase, gConEmiSize, "WIFI-EMI");
-	kalSetEmiMpuProtection(gConEmiPhyBase, false);
-	pucEmiBaseAddr = ioremap_nocache(gConEmiPhyBase, gConEmiSize);
+	request_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal, "WIFI-EMI");
+	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, false);
+	pucEmiBaseAddr =
+		ioremap_nocache(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 	DBGLOG_LIMITED(INIT, INFO,
 	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
-	       (uint64_t)gConEmiPhyBase, u4Offset, gConEmiSize, pucEmiBaseAddr);
+	       (uint64_t)gConEmiPhyBaseFinal, u4Offset, gConEmiSizeFinal,
+	       pucEmiBaseAddr);
 	if (!pucEmiBaseAddr) {
 		DBGLOG(INIT, ERROR, "ioremap failed\n");
 		return WLAN_STATUS_FAILURE;
@@ -471,9 +465,9 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER
 
 	kalMemCopy((pucEmiBaseAddr + u4Offset), pucStartPtr, u4Len);
 
-	kalSetEmiMpuProtection(gConEmiPhyBase, true);
+	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, true);
 	iounmap(pucEmiBaseAddr);
-	release_mem_region(gConEmiPhyBase, gConEmiSize);
+	release_mem_region(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 #endif /* CFG_MTK_ANDROID_EMI */
 	return WLAN_STATUS_SUCCESS;
 }
