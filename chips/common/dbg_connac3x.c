@@ -2573,20 +2573,22 @@ void connac3x_show_mawd_info(struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo;
 	struct RTMP_DMABUF *prErrRpt;
 	uint32_t *pu4ErrRpt, *pu4HifTxd;
-	uint32_t u4Cidx = 0, u4Didx = 0, u4Val = 0, u4Idx, u4Num;
+	uint32_t u4Cidx = 0, u4Didx = 0, u4Val = 0, u4Idx, u4Num, u4MawdOffSet;
 
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prAdapter->chip_info->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prErrRpt = &prHifInfo->ErrRptRing;
 	pu4ErrRpt = prErrRpt->AllocVa;
+	u4MawdOffSet = prChipInfo->u4HostCsrOffset;
 
 	DBGLOG(HAL, INFO, "==============================\n");
 	DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
 	DBGLOG(HAL, INFO, "==============================\n");
 
 	HAL_RMCR_RD(OFFLOAD_DBG, prAdapter,
-		       prBusInfo->mawd_err_rpt_ctrl2, &u4Val);
+		    prBusInfo->mawd_err_rpt_ctrl2 + u4MawdOffSet,
+		    &u4Val);
 	u4Didx = (u4Val & BITS(16, 28)) >> 16;
 	u4Cidx = u4Val & BITS(0, 12);
 	DBGLOG(HAL, INFO, "ERR_RPT_CTRL2:0x%08x!\n", u4Val);
@@ -2597,12 +2599,16 @@ void connac3x_show_mawd_info(struct ADAPTER *prAdapter)
 		       u4Cidx, pu4ErrRpt[u4Cidx]);
 		INC_RING_INDEX(u4Cidx, prHifInfo->u4RxEvtRingSize);
 	}
-	HAL_MCR_WR(prAdapter, prBusInfo->mawd_err_rpt_ctrl2, u4Cidx);
+	HAL_MCR_WR(prAdapter,
+		   prBusInfo->mawd_err_rpt_ctrl2 + u4MawdOffSet,
+		   u4Cidx);
 
 	for (u4Idx = MAWD_HIF_TXD_MD_CTRL0;
 	     u4Idx <= MAWD_SETTING3; u4Idx += 4) {
-		HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+		HAL_RMCR_RD(OFFLOAD_DBG, prAdapter,
+			    u4Idx + u4MawdOffSet, &u4Val);
+		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
+		       u4Idx + u4MawdOffSet, u4Val);
 	}
 
 	for (u4Num = 0; u4Num < MAWD_MD_TX_RING_NUM; u4Num++) {
@@ -2627,7 +2633,7 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 	struct RTMP_DMABUF *prRxDesc;
 	struct RTMP_DMABUF *prAddrArray, *prIndCmd;
 	struct RRO_ADDR_ELEM *prAddrElem;
-	uint32_t u4Val = 0, u4Idx, u4AddrNum, u4Addr;
+	uint32_t u4Val = 0, u4Idx, u4AddrNum, u4Addr, u4MawdOffSet;
 	uint32_t u4BufferSize = 512, u4Pos = 0;
 	char *aucBuf;
 
@@ -2640,6 +2646,7 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd) &&
 	    halMawdCheckInfra(prAdapter)) {
+		u4MawdOffSet = prChipInfo->u4HostCsrOffset;
 
 		DBGLOG(HAL, INFO, "==============================\n");
 		DBGLOG(HAL, INFO, " MAWD DEBUG DUMP\n");
@@ -2647,46 +2654,57 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 
 		for (u4Idx = MAWD_IND_CMD_CTRL0;
 		     u4Idx <= MAWD_MD_RX_BLK_CTRL2; u4Idx += 4) {
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+			u4Addr = u4Idx + u4MawdOffSet;
+			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
 		}
 
 		for (u4Idx = MAWD_IND_CMD_SIGNATURE0;
 		     u4Idx <= MAWD_R2AXI_CTRL3; u4Idx += 4) {
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+			u4Addr = u4Idx + u4MawdOffSet;
+			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
 		}
 
 		for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
 		     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+			u4Addr = u4Idx + u4MawdOffSet;
+			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
 		}
 
 		for (u4Idx = MAWD_MD_INTERRUPT_SETTING0;
 		     u4Idx <= MAWD_AP_INTERRUPT_SETTING1; u4Idx += 4) {
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+			u4Addr = u4Idx + u4MawdOffSet;
+			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
 		}
 
 		for (u4Idx = MAWD_AXI_SLEEP_PROT_SETTING;
 		     u4Idx <= MAWD_INDEX_DBG_REG3; u4Idx += 4) {
-			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
-			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+			u4Addr = u4Idx + u4MawdOffSet;
+			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Addr, &u4Val);
+			DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]",
+			       u4Addr, u4Val);
 		}
 
-		u4Idx = MAWD_INDEX_DBG_REG0;
+		u4Idx = MAWD_INDEX_DBG_REG0 + u4MawdOffSet;
 		HAL_RMCR_RD(OFFLOAD_DBG, prAdapter, u4Idx, &u4Val);
 		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 
 		for (u4Idx = 0; u4Idx <= 0x10; u4Idx++) {
-			HAL_MCR_WR(prAdapter, MAWD_DEBUG_SETTING2, u4Idx);
+			HAL_MCR_WR(prAdapter,
+				   MAWD_DEBUG_SETTING2 + u4MawdOffSet, u4Idx);
 			HAL_RMCR_RD(OFFLOAD_DBG, prAdapter,
-				       MAWD_DEBUG_SETTING1, &u4Val);
+				    MAWD_DEBUG_SETTING1 + u4MawdOffSet, &u4Val);
 			DBGLOG(HAL, INFO,
 			       "CR [0x%08x]=[0x%08x] [0x%08x]=[0x%08x]",
-			       MAWD_DEBUG_SETTING2, u4Idx,
-			       MAWD_DEBUG_SETTING1, u4Val);
+			       MAWD_DEBUG_SETTING2 + u4MawdOffSet, u4Idx,
+			       MAWD_DEBUG_SETTING1 + u4MawdOffSet, u4Val);
 		}
 	}
 
