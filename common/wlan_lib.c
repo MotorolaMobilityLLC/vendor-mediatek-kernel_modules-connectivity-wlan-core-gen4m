@@ -9766,6 +9766,10 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 		  IN uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	struct BSS_DESC *prBssDesc;
+#endif
+
 	uint8_t ucRetValNss = prAdapter->rWifiVar.ucNSS;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -9784,6 +9788,18 @@ wlanGetSupportNss(IN struct ADAPTER *prAdapter,
 				ucRetValNss = prAdapter->rWifiVar.ucGo5gNSS;
 		}
 	}
+#if CFG_SUPPORT_IOT_AP_BLACKLIST
+	else if (IS_BSS_AIS(prBssInfo)) {
+		prBssDesc = scanSearchBssDescByBssid(prAdapter,
+						     prBssInfo->aucBSSID);
+		if (prBssDesc != NULL &&
+		    bssGetIotApAction(prAdapter,
+				      prBssDesc) == WLAN_IOT_AP_DBDC_1SS) {
+			DBGLOG(SW4, INFO, "Use 1x1 due to DBDC blacklist\n");
+			ucRetValNss = 1;
+		}
+	}
+#endif
 
 	if (ucRetValNss > prAdapter->rWifiVar.ucNSS)
 		ucRetValNss = prAdapter->rWifiVar.ucNSS;
