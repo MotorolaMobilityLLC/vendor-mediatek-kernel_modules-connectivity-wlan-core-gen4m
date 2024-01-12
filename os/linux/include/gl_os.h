@@ -178,6 +178,7 @@
 #endif
 
 #if defined(_HIF_SDIO)
+#include <linux/mmc/card.h>
 #include <linux/mmc/sdio.h>
 #include <linux/mmc/sdio_func.h>
 #endif
