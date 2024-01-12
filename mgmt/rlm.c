@@ -1194,6 +1194,56 @@ static void rlmFillHtOpIE(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	prMsduInfo->u2FrameLength += IE_SIZE(prHtOp);
 }
 
+
+void rlmGenerateHtTPEIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucPhyTypeSet;
+
+	ASSERT(prAdapter);
+	ASSERT(prMsduInfo);
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	prBssInfo = prAdapter->aprBssInfo[prMsduInfo->ucBssIndex];
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return;
+
+	if (!IS_BSS_ACTIVE(prBssInfo))
+		return;
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgSapAddTPEIE))
+		return;
+
+	/* Decide PHY type set source */
+	if (prStaRec) {
+		/* Get PHY type set from target STA */
+		ucPhyTypeSet = prStaRec->ucPhyTypeSet;
+	} else {
+		/* Get PHY type set from current BSS */
+		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
+	}
+
+	if (RLM_NET_IS_11N(prBssInfo) &&
+		(ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
+		struct IE_HT_TPE *prHtTpe;
+
+		prHtTpe = (struct IE_HT_TPE *)
+			(((uint8_t *)prMsduInfo->prPacket) +
+			prMsduInfo->u2FrameLength);
+
+		prHtTpe->ucId = ELEM_ID_PWR_CONSTRAINT;
+		prHtTpe->ucLength =
+			sizeof(struct IE_HT_TPE) - ELEM_HDR_LEN;
+		prHtTpe->u8TxPowerInfo = 3;
+
+		prMsduInfo->u2FrameLength += IE_SIZE(prHtTpe);
+	}
+}
+
 #if CFG_SUPPORT_802_11AC
 
 /*----------------------------------------------------------------------------*/

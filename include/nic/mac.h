@@ -3215,6 +3215,12 @@ struct _IE_TWT_T {
 } __KAL_ATTRIB_PACKED__;
 #endif
 
+struct IE_HT_TPE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t u8TxPowerInfo;
+} __KAL_ATTRIB_PACKED__;
+
 struct IE_VHT_TPE {
 	uint8_t ucId;
 	uint8_t ucLength;
