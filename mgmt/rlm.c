@@ -3477,9 +3477,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 					if (prBssInfo->fgIsEhtDscbPresent) {
 
-						u4EhtOffset += OFFSET_OF(
-							struct EHT_OP_INFO,
-							aucVarInfo[0]);
+					/* struct IE_EHT_OP is packed,
+					 * save to use sizeof instead of
+					 * using OFFSET_OF with ZERO array
+					 * at end
+					 */
+						u4EhtOffset += sizeof(
+							struct EHT_OP_INFO);
 
 						prEhtDscpInfo =
 							(struct EHT_DSCP_INFO *)

@@ -875,7 +875,13 @@ struct SW_RX_RPT_BLK_RXV {
 
 struct HW_MAC_RX_RPT_BLK {
 	uint32_t u4Header[RX_RPT_BLK_HDR_LEN];
-	uint32_t u4Rxv[0];
+	/* DO NOT use zero-array in middle of other struct
+	 * which confuse size of compiler other than gcc
+	 * its used in zero-array of HW_MAC_RX_REPORT
+	 * if use zero-arry to calculate size with OFFSET_OF
+	 * please use packed and sizeof
+	 */
+	/* uint32_t u4Rxv[0]; */
 };
 
 struct HW_MAC_RX_REPORT {

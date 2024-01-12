@@ -60,7 +60,13 @@ struct EHT_OP_INFO {
 	u_int8_t  ucControl;
 	u_int8_t  ucCCFS0;
 	u_int8_t  ucCCFS1;
-	u_int8_t  aucVarInfo[0];
+	/* DO NOT use zero-array in middle of other struct
+	 * which confuse size of compiler other than gcc
+	 * its used in the middle of struct BSS_INFO
+	 * if use zero-arry to calculate size with OFFSET_OF
+	 * please use packed and sizeof
+	 */
+	/* u_int8_t  aucVarInfo[0]; */
 } __KAL_ATTRIB_PACKED__;
 
 #define EHT_RESET_MAC_CAP(_aucMacCapInfo) \
