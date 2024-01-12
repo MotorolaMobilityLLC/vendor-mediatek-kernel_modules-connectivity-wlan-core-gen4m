@@ -1618,7 +1618,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 #if (CFG_DUMP_RXD == 1)
 		DBGLOG(HAL, INFO, "Dump RXD: \n");
-		dumpMemory8((uint8_t *)prRxStatus, prChipInfo->rxd_size);
+		DBGLOG_MEM8(HAL, INFO, prRxStatus, prChipInfo->rxd_size);
 #endif
 
 		prSwRfb->ucPacketType =
@@ -2493,11 +2493,11 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_DUMP_TXDMAD == 1)
 	DBGLOG(HAL, INFO, "Dump CMD TXDMAD: \n");
-	dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
+	DBGLOG_MEM8(HAL, INFO, (uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
 #endif
 #if (CFG_DUMP_TXD == 1)
 	DBGLOG(HAL, INFO, "Dump CMD TXD: \n");
-	dumpMemory8((uint8_t *)prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+	DBGLOG_MEM8(HAL, INFO, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 #endif
 
 	/* Increase TX_CTX_IDX, but write to register later. */

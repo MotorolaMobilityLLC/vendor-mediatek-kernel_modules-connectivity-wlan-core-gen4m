@@ -190,11 +190,12 @@ void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
 
 #if (CFG_DUMP_TXD == 1)
 	DBGLOG(HAL, INFO, "Dump DATA TXD: \n");
-	dumpMemory8((uint8_t *)pucBuffer, NIC_TX_DESC_LONG_FORMAT_LENGTH);
+	DBGLOG_MEM8(HAL, INFO, pucBuffer, NIC_TX_DESC_LONG_FORMAT_LENGTH);
 #endif
 #if (CFG_DUMP_TXP == 1)
 	DBGLOG(HAL, INFO, "Dump DATA TXP: \n");
-	dumpMemory8((uint8_t *)prHwTxDescAppend, sizeof(prHwTxDescAppend->CONNAC_APPEND));
+	DBGLOG_MEM8(HAL, INFO, (uint8_t *)prHwTxDescAppend,
+			sizeof(prHwTxDescAppend->CONNAC_APPEND));
 #endif
 }
 
