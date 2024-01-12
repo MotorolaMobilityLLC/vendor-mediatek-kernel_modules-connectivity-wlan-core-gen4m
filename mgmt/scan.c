@@ -160,7 +160,7 @@ void scnInit(IN struct ADAPTER *prAdapter)
 	/*Support AP Selection */
 	prScanInfo->u4ScanUpdateIdx = 0;
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	LINK_INITIALIZE(&prAdapter->rNeighborAPInfoList);
 #endif
 }	/* end of scnInit() */
@@ -208,7 +208,7 @@ void scnFreeAllPendingScanRquests(IN struct ADAPTER *prAdapter)
 void scnUninit(IN struct ADAPTER *prAdapter)
 {
 	struct SCAN_INFO *prScanInfo;
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
 #endif
 
@@ -238,7 +238,7 @@ void scnUninit(IN struct ADAPTER *prAdapter)
 	LINK_INITIALIZE(&prScanInfo->rFreeBSSDescList);
 	LINK_INITIALIZE(&prScanInfo->rBSSDescList);
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 	while (!LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList)) {
 		LINK_REMOVE_HEAD(&prAdapter->rNeighborAPInfoList,
 			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
@@ -3002,12 +3002,10 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			/* TODO */
 			if (IE_ID_EXT(pucIE) == EID_EXT_EHT_CAPS)
 				prBssDesc->fgIsEHTPresent = TRUE;
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD) {
 				ucMldIeExist = TRUE;
 				kalMemCopy(aucMldIe, pucIE, IE_LEN(pucIE) + 2);
 			}
-#endif
 #endif
 			if (fgEfuseCtrlAxOn == 1) {
 #if (CFG_SUPPORT_HE_ER == 1)
@@ -3121,7 +3119,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			break;
 #endif
 
-#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CFG_SUPPORT_WIFI_6G_OOB_RNR == 1)
 		case ELEM_ID_RNR:
 			ucRnrIeExist = TRUE;
 			kalMemCopy(aucRnrIe, pucIE, IE_LEN(pucIE) + 2);
