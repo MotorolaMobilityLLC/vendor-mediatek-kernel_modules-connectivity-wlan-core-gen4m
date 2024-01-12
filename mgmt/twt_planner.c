@@ -974,6 +974,7 @@ void twtPlannerTearingdown(
 {
 	struct BSS_INFO *prBssInfo;
 	struct _TWT_FLOW_T *prTWTFlow;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
@@ -1003,13 +1004,15 @@ void twtPlannerTearingdown(
 #endif
 
 	/* Delete driver & FW TWT agreement entry */
-	twtPlannerDelAgrtTbl(prAdapter, prBssInfo, prStaRec,
-		ucFlowId, FALSE,
+	rWlanStatus = twtPlannerDelAgrtTbl(prAdapter,
+		prBssInfo, prStaRec, ucFlowId, FALSE,
 		NULL, NULL /* handle TWT cmd timeout? */, TRUE);
 
 	/* Teardown FW TWT agreement entry */
-	twtPlannerTeardownAgrtTbl(prAdapter, prStaRec,
-		FALSE, NULL, NULL /* handle TWT cmd timeout? */);
+	if (rWlanStatus == WLAN_STATUS_SUCCESS)
+		twtPlannerTeardownAgrtTbl(prAdapter,
+			prStaRec, FALSE, NULL,
+			NULL /* handle TWT cmd timeout? */);
 
 #if (CFG_TWT_SMART_STA == 1)
 	g_TwtSmartStaCtrl.fgTwtSmartStaActivated = FALSE;
@@ -2436,6 +2439,7 @@ void mltwtPlannerDelAgrtTbl(
 	struct BSS_INFO *prCurrBssInfo = NULL;
 	struct STA_RECORD *prStaRecOfAP = NULL;
 	struct _TWT_FLOW_T *prTWTFlow = NULL;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 	/* Get MLD_BSS_INFO in MLO connection */
 	ASSERT(prAdapter);
@@ -2478,13 +2482,15 @@ void mltwtPlannerDelAgrtTbl(
 			continue;
 
 		/* Delete driver & FW TWT agreement entry */
-		twtPlannerDelAgrtTbl(prAdapter, prCurrBssInfo, prStaRecOfAP,
-			ucTWTFlowId, FALSE,
+		rWlanStatus = twtPlannerDelAgrtTbl(prAdapter,
+			prCurrBssInfo, prStaRecOfAP, ucTWTFlowId, FALSE,
 			NULL, NULL /* handle TWT cmd timeout? */, TRUE);
 
 		/* Teardown FW TWT agreement entry */
-		twtPlannerTeardownAgrtTbl(prAdapter, prStaRecOfAP,
-			FALSE, NULL, NULL /* handle TWT cmd timeout? */);
+		if (rWlanStatus == WLAN_STATUS_SUCCESS)
+			twtPlannerTeardownAgrtTbl(prAdapter,
+				prStaRecOfAP, FALSE, NULL,
+				NULL /* handle TWT cmd timeout? */);
 
 		prTWTFlow->fgIsMLTWT == FALSE;
 	}
