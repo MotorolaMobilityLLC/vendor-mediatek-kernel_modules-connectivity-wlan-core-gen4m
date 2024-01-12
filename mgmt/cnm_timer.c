@@ -89,6 +89,7 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+static bool gDoTimeOut = FALSE;
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -487,6 +488,14 @@ void cnmTimerStartTimer(IN struct ADAPTER *prAdapter, IN struct TIMER *prTimer,
 	prRootTimer = &prAdapter->rRootTimer;
 	prTimerList = &prRootTimer->rLinkHead;
 
+	if (gDoTimeOut) {
+		/* monitor the timer start in callback */
+		log_dbg(CNM, INFO,
+			"In DoTimeOut, timer %p func %pf %d ms timercount %d\n",
+			prTimer, prTimer->pfMgmtTimeOutFunc,
+			u4TimeoutMs, prTimerList->u4NumElem);
+	}
+
 	/* If timeout interval is larger than 1 minute, the mod value is set
 	 * to the timeout value first, then per minutue.
 	 */
@@ -585,6 +594,9 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 	prRootTimer->rNextExpiredSysTime
 		= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
 
+	log_dbg(CNM, INFO, "loop start [%d]\n", prTimerList->u4NumElem);
+	gDoTimeOut = TRUE;
+
 	LINK_FOR_EACH(prLinkEntry, prTimerList) {
 		if (prLinkEntry == NULL)
 			break;
@@ -615,7 +627,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 							     pfMgmtTimeOutFunc,
 							     ulTimeoutDataPtr))
 				#endif
-				log_dbg(CNM, TRACE, "timer timeout, timer %p func %pf\n",
+				log_dbg(CNM, INFO, "timer timeout, timer %p func %pf\n",
 					prTimer, prTimer->pfMgmtTimeOutFunc);
 
 					(pfMgmtTimeOutFunc) (prAdapter,
@@ -651,6 +663,9 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 				eType = TIMER_WAKELOCK_AUTO;
 		}
 	}	/* end of for loop */
+
+	log_dbg(CNM, INFO, "loop end");
+	gDoTimeOut = false;
 
 	/* Setup the prNext timeout event. It is possible the timer was already
 	 * set in the above timeout callback function.
