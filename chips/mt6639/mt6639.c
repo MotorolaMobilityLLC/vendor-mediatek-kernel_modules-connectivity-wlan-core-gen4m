@@ -1346,15 +1346,20 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 static void mt6639SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
 	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
+	uint32_t size = emi_mem_get_size(prAdapter->chip_info);
 
 	if (!base)
 		return;
 
-	DBGLOG(HAL, INFO, "base: 0x%llx\n", base);
+	DBGLOG(HAL, INFO, "base: 0x%llx, size: 0x%x\n", base, size);
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
 		   ((uint32_t)base >> 16));
+
+	HAL_MCR_WR(prAdapter,
+		   MT6639_EMI_SIZE_ADDR,
+		   size);
 }
 
 static u_int8_t mt6639_get_sw_interrupt_status(struct ADAPTER *prAdapter,
