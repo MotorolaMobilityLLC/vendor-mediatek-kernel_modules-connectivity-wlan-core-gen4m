@@ -8405,6 +8405,9 @@ void nicUniEventQueryCnmInfo(struct ADAPTER
 				legacy.ucBssOMACSet[i] = bss->ucBssOMACIndex;
 				legacy.ucBssOMACDBDCBand[i] =
 							bss->ucBssOMACDBDCBand;
+				legacy.ucBssOpTxNss[i] = bss->ucBssOpTxNss;
+				legacy.ucBssOpRxNss[i] = bss->ucBssOpRxNss;
+
 				bss++;
 			}
 		}

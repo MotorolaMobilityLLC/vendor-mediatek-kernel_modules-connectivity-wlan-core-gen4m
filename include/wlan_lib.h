@@ -1371,9 +1371,11 @@ struct PARAM_GET_CNM_T {
 	uint8_t	ucBssWmmDBDCBand[BSSID_NUM + 1];
 	uint8_t	ucBssOMACSet[BSSID_NUM + 1];
 	uint8_t	ucBssOMACDBDCBand[BSSID_NUM + 1];
+	uint8_t	ucBssOpTxNss[BSSID_NUM + 1];
+	uint8_t	ucBssOpRxNss[BSSID_NUM + 1];
 
 	/* Reserved fields */
-	uint8_t	au4Reserved[65]; /*Total 160 byte*/
+	uint8_t	au4Reserved[54]; /*Total 160 byte*/
 };
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
