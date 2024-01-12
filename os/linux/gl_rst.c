@@ -390,7 +390,8 @@ static void mtk_wifi_reset(struct work_struct *work)
 	wifi_reset_end(rst->rst_data);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	update_driver_reset_status(fgIsResetting);
-	complete(&g_RstOnComp);
+	if (g_IsWholeChipRst == TRUE)
+		complete(&g_RstOnComp);
 #endif
 #else
 	fgResult = rst_L0_notify_step1();
@@ -615,7 +616,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		kalSetRstEvent();
 	}
 	wait_for_completion(&g_RstOffComp);
-		DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
 
 	return bRet;
 }
@@ -623,6 +624,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 int glRstwlanPostWholeChipReset(void)
 {
 	glResetMsgHandler(WMTMSG_TYPE_RESET, WMTRSTMSG_RESET_END);
+	DBGLOG(INIT, INFO, "Wait Wi-Fi state recover.\n");
 	wait_for_completion(&g_RstOnComp);
 	g_IsWholeChipRst = FALSE;
 	DBGLOG(INIT, INFO,
