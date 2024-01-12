@@ -342,8 +342,7 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
 		if (!prRxRing->fgIsDumpLog) {
-			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-			halPrintHifDbgInfo(prAdapter);
+			DBGLOG(HAL, ERROR, "RX Done bit not ready(PortRead)\n");
 		}
 		prRxRing->fgIsDumpLog = true;
 		return FALSE;
@@ -881,8 +880,7 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	if (!kalWaitRxDmaDone(prGlueInfo, prRxRing, pRxD, u2Port)) {
 		if (!prRxRing->fgIsDumpLog) {
-			prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-			halPrintHifDbgInfo(prAdapter);
+			DBGLOG(HAL, ERROR, "RX Done bit not ready(ReadData)\n");
 		}
 		prRxRing->fgIsDumpLog = true;
 		return false;
