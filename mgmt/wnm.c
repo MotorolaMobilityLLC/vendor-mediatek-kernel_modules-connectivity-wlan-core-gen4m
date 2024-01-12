@@ -548,7 +548,7 @@ void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
 
 	/* MBO IE */
 	mbo = (struct IE_MBO_OCE *)pos;
-	if (IE_SIZE(mbo) > (len - (pos - ie)))
+	if (mbo->ucLength + 2 > (len - (pos - ie)))
 		goto fail;
 
 	len = mbo->ucLength - 4;
