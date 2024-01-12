@@ -1435,6 +1435,12 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			kalChannelFormatSwitch(chandef, chandef->chan,
 					&rRfChnlInfo);
 
+			DBGLOG(P2P, INFO, "pri: %d, s1: %d, s2: %d, bw: %d\n",
+				rRfChnlInfo.u2PriChnlFreq,
+				rRfChnlInfo.u4CenterFreq1,
+				rRfChnlInfo.u4CenterFreq2,
+				rRfChnlInfo.ucChnlBw);
+
 			/* Follow the channel info from wifi.cfg
 			 * prior to hostapd.conf
 			 */
