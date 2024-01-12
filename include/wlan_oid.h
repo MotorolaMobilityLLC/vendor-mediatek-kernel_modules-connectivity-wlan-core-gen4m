@@ -3662,6 +3662,19 @@ struct PARAM_MLD_REC {
 	u_int8_t fgAgcAggressiveMode[2]; /* Trig:0 Tx:1 */
 	struct MLD_RECORD_LINK arMldRecLink[MLD_LINK_MAX];
 };
+
+struct PARAM_EML_DEBUG_INFO {
+	uint32_t u4TimeoutMs;
+	uint16_t u2StaRecMldIdx;
+	uint8_t ucEmlsrBitMap;
+	/* protocol link index to band index */
+	uint8_t auMldLinkIdx[MLD_LINK_MAX];
+	/* same with ENUM_EML_STATE_T */
+	uint8_t ucCurrentState;
+	/* AP MLD responded the EML notification frame */
+	uint8_t ucEmlNegotiated;
+};
+
 #endif
 
 /* This structure is a replication of struct EXT_EVENT_SER_T.
@@ -5630,4 +5643,10 @@ wlanoidManipulateTid(struct ADAPTER *prAdapter,
 		     uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_MANIPULATE_TID */
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t
+wlanoidQueryEmlInfo(struct ADAPTER *prAdapter,
+			  void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			  uint32_t *pu4QueryInfoLen);
+#endif
 #endif /* _WLAN_OID_H */

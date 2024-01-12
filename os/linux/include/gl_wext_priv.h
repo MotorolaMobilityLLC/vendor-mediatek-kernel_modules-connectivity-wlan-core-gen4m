@@ -875,6 +875,8 @@ int priv_driver_dump_mld_bss(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_dump_mld_sta(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_dump_eml(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 int priv_driver_set_multista_use_case(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
