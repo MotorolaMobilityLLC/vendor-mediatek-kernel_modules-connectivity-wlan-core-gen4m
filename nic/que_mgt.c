@@ -702,7 +702,8 @@ struct MSDU_INFO *qmFlushStaTxQueues(struct ADAPTER *prAdapter,
 
 	DBGLOG(QM, TRACE, "QM: Enter qmFlushStaTxQueues(%u)\n", u4StaRecIdx);
 
-	ASSERT(u4StaRecIdx < CFG_STA_REC_NUM);
+	if (u4StaRecIdx >= CFG_STA_REC_NUM)
+		return NULL;
 
 	prStaRec = &prAdapter->arStaRec[u4StaRecIdx];
 	ASSERT(prStaRec);

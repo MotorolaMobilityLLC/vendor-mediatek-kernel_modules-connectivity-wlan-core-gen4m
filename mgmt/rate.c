@@ -157,7 +157,8 @@ rateGetRateSetFromIEs(
 		DBGLOG_MEM8(RLM, LOUD, (uint8_t *) prIeSupportedRate,
 			(uint32_t) prIeSupportedRate->ucLength);
 
-		for (i = 0; i < prIeSupportedRate->ucLength; i++) {
+		for (i = 0; i < prIeSupportedRate->ucLength &&
+			    i < ELEM_MAX_LEN_SUP_RATES_IOT; i++) {
 			ucRate =
 			    prIeSupportedRate->aucSupportedRates[i] & RATE_MASK;
 
@@ -191,7 +192,8 @@ rateGetRateSetFromIEs(
 		if (prIeExtSupportedRate->ucLength >
 			ELEM_MAX_LEN_EXTENDED_SUP_RATES - 1)
 			return;
-		for (i = 0; i < prIeExtSupportedRate->ucLength; i++) {
+		for (i = 0; i < prIeExtSupportedRate->ucLength &&
+			    i < ELEM_MAX_LEN_EXTENDED_SUP_RATES; i++) {
 			ucRate =
 			    prIeExtSupportedRate->aucExtSupportedRates[i] &
 			    RATE_MASK;

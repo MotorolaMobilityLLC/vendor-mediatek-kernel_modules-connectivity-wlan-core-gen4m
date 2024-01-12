@@ -3773,7 +3773,12 @@ void mtk_p2p_cfg80211_mgmt_frame_register(struct wiphy *wiphy,
 				break;
 			} else {
 				/* Non P2P device*/
-				ASSERT(ucRoleIdx < KAL_P2P_NUM);
+				if (ucRoleIdx >= KAL_P2P_NUM) {
+					DBGLOG(P2P, ERROR,
+						"Invalid RoleIdx %d\n",
+						ucRoleIdx);
+					break;
+				}
 				DBGLOG(P2P, TRACE,
 					"Open packet filer RoleIdx %u\n",
 					ucRoleIdx);

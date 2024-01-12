@@ -3117,7 +3117,8 @@ void nicTxInitPktPID(struct ADAPTER *prAdapter, uint8_t ucWlanIndex)
 	int i = 0;
 
 	ASSERT(prAdapter);
-	ASSERT(ucWlanIndex < WTBL_SIZE);
+	if (ucWlanIndex >= WTBL_SIZE)
+		return;
 
 	for (i = 0; i < ENUM_PKT_FLAG_NUM; i++)
 		GET_CURRENT_SYSTIME(&prAdapter->u4PktPIDTime[ucWlanIndex][i]);

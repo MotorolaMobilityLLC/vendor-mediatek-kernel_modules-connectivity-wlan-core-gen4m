@@ -1810,7 +1810,10 @@ heRlmComposeHtcNullFrame(
 	ASSERT(pucBuffer);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	ASSERT(prBssInfo);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return;
+	}
 
 	prQoSNullFrame = (struct WLAN_MAC_HEADER_HT *) pucBuffer;
 

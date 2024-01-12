@@ -10094,7 +10094,9 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				SCAN_DONE_EVENT_MAX_CHANNEL_NUM);
 			ASSERT(chnlinfo->u2Length == sizeof(*chnlinfo) +
 				chnlinfo->ucNumOfChnl * sizeof(*chnl));
-			for (i = 0; i < chnlinfo->ucNumOfChnl; i++, chnl++) {
+			for (i = 0; i < chnlinfo->ucNumOfChnl &&
+				    i < SCAN_DONE_EVENT_MAX_CHANNEL_NUM;
+				    i++, chnl++) {
 				legacy.aucChannelNum[i] =
 					chnl->ucChannelNum;
 				legacy.au2ChannelIdleTime[i] =

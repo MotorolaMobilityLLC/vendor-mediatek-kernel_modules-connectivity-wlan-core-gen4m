@@ -315,8 +315,10 @@ void kalP2PSetRole(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucRole, uint8_t ucRoleIdx)
 {
 	ASSERT(prGlueInfo);
-	ASSERT(ucRole <= 2);
-
+	if (ucRole > OP_MODE_ACCESS_POINT) {
+		DBGLOG(P2P, ERROR, "Invalid RoleIdx %d\n", ucRoleIdx);
+		return;
+	}
 	prGlueInfo->prP2PInfo[ucRoleIdx]->ucRole = ucRole;
 	/* Remove non-used code */
 }				/* end of kalP2PSetRole() */
@@ -520,7 +522,14 @@ uint16_t kalP2PCalWSC_IELen(struct GLUE_INFO *prGlueInfo,
 {
 	ASSERT(prGlueInfo);
 
-	ASSERT(ucType < 4);
+	if (ucRoleIdx >= KAL_P2P_NUM) {
+		DBGLOG(P2P, ERROR, "Invalid RoleIdx %d\n", ucRoleIdx);
+		return 0;
+	}
+	if (ucType >= 4) {
+		DBGLOG(P2P, ERROR, "Invalid Type %d\n", ucType);
+		return 0;
+	}
 
 	return prGlueInfo->prP2PInfo[ucRoleIdx]->u2WSCIELen[ucType];
 }
@@ -590,8 +599,14 @@ uint16_t kalP2PCalP2P_IELen(struct GLUE_INFO *prGlueInfo,
 		uint8_t ucIndex, uint8_t ucRoleIdx)
 {
 	ASSERT(prGlueInfo);
-
-	ASSERT(ucIndex < MAX_P2P_IE_SIZE);
+	if (ucRoleIdx >= KAL_P2P_NUM) {
+		DBGLOG(P2P, ERROR, "Invalid RoleIdx %d\n", ucRoleIdx);
+		return 0;
+	}
+	if (ucIndex >= MAX_P2P_IE_SIZE) {
+		DBGLOG(P2P, ERROR, "Invalid IE len Idx %d\n", ucIndex);
+		return 0;
+	}
 
 	return prGlueInfo->prP2PInfo[ucRoleIdx]->u2P2PIELen[ucIndex];
 }

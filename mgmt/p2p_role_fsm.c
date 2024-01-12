@@ -4294,8 +4294,8 @@ p2pProcessEvent_UpdateNOAParam(struct ADAPTER *prAdapter,
 
 	fgNoaAttrExisted |= prP2pSpecificBssInfo->fgEnableOppPS;
 
-	ASSERT(prP2pSpecificBssInfo->ucNoATimingCount <= P2P_MAXIMUM_NOA_COUNT);
-
+	if (prP2pSpecificBssInfo->ucNoATimingCount > P2P_MAXIMUM_NOA_COUNT)
+		prP2pSpecificBssInfo->ucNoATimingCount = P2P_MAXIMUM_NOA_COUNT;
 	for (i = 0; i < prP2pSpecificBssInfo->ucNoATimingCount; i++) {
 		/* in used */
 		prP2pSpecificBssInfo->arNoATiming[i].fgIsInUse =
