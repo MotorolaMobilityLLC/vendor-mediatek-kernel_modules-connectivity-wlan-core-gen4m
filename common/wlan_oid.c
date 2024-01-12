@@ -13557,6 +13557,13 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 	DBGLOG(INIT, INFO, "Set nan enable[%ld]\n", *prEnable);
 
+	if (*prEnable == 2) {
+		DBGLOG(INIT, INFO, "Set nan Unsync\n", *prEnable);
+		prAdapter->rNanDiscType = NAN_UNSYNC_DISC;
+	} else {
+		prAdapter->rNanDiscType = NAN_EXISTING_DISC;
+	}
+
 	if (*prEnable) {
 		if (nanLaunch(prAdapter->prGlueInfo)) {
 			/* ToDo:: ASSERT */

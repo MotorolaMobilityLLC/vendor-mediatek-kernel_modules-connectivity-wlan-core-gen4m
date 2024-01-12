@@ -767,7 +767,8 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	}
 
 	/* initialize NAN Scheduler */
-	nanSchedInit(prAdapter);
+	if (prAdapter->rNanDiscType == NAN_EXISTING_DISC)
+		nanSchedInit(prAdapter);
 
 	/* initialize NAN Discovery Engine */
 	nanDiscInit(prAdapter);
@@ -873,7 +874,8 @@ glUnregisterNAN(struct GLUE_INFO *prGlueInfo)
 	/* Clear pending cipher suite */
 	nanSecFlushCipherList();
 	/* uninitialize NAN Scheduler */
-	nanSchedUninit(prAdapter);
+	if (prAdapter->rNanDiscType == NAN_EXISTING_DISC)
+		nanSchedUninit(prAdapter);
 
 	/* 4 <1> Uninit NAN dev FSM */
 	/* Uninit NAN device FSM */

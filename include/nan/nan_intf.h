@@ -70,6 +70,8 @@
 #endif
 #define IPV6MACLEN 8
 
+#define NAN_MAX_UNSYNC_CH_NUM 8
+
 /* NAN Shared Key Security Cipher Suites Mask */
 #define NAN_CIPHER_SUITE_SHARED_KEY_NONE 0x00
 #define NAN_CIPHER_SUITE_SHARED_KEY_128_MASK 0x01
@@ -139,6 +141,11 @@ enum NanStatsType {
 	NAN_STATS_ID_DE_TIMING_SYNC,
 	NAN_STATS_ID_DE_DW,
 	NAN_STATS_ID_DE
+};
+
+enum NanDiscType {
+	NAN_EXISTING_DISC,
+	NAN_UNSYNC_DISC
 };
 
 /* NAN Protocol Event ID Codes */
@@ -1016,7 +1023,20 @@ struct NanEnableRequest {
 	uint32_t subscribe_sid_beacon_val;
 } __KAL_ATTRIB_PACKED__;
 
+/* Enable Unsync Message Structure
+ * The NanEnableUnsync message instructs the Discovery Engine to enter an
+ * operational state
+ */
 __KAL_ATTRIB_PACKED_FRONT__
+struct NanEnableUnsync {
+	uint8_t default_publish_channel;
+	uint8_t minDwellMultiplier;
+	uint8_t maxDwellMultiplier;
+	uint8_t ucChannelListNum;
+	uint8_t publish_channel_list[NAN_MAX_UNSYNC_CH_NUM];
+	/* now support 8 Channel */
+} __KAL_ATTRIB_PACKED__;
+
 struct NanDataReqReceive {
 	uint8_t ndpid;
 	uint8_t initiator_data_addr[NAN_MAC_ADDR_LEN];
