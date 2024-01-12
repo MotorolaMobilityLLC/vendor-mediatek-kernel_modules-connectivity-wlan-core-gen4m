@@ -100,7 +100,7 @@ uint32_t halWtblReadRaw(
 	return 0;
 }
 
-static u_int8_t connac3x_wtbl_get_sgi_info(
+u_int8_t connac3x_wtbl_get_sgi_info(
 	struct bwtbl_lmac_struct *pWtbl)
 {
 	if (!pWtbl)
@@ -130,7 +130,7 @@ static u_int8_t connac3x_wtbl_get_sgi_info(
 	}
 }
 
-static u_int8_t connac3x_wtbl_get_ldpc_info(
+u_int8_t connac3x_wtbl_get_ldpc_info(
 	uint8_t ucTxMode,
 	struct bwtbl_lmac_struct *pWtbl)
 {
@@ -688,24 +688,48 @@ int32_t connac3x_show_wtbl_info(
 	char *pcCommand,
 	int i4TotalLen)
 {
-	struct mt66xx_chip_info *prChipInfo;
-	uint32_t u4Value = 0;
-	uint32_t wtbl_lmac_baseaddr;
-	uint32_t wtbl_offset, addr;
-	unsigned char *wtbl_raw_dw = NULL;
+	uint8_t *wtbl_raw_dw = NULL;
 	struct bwtbl_lmac_struct *pwtbl;
 	int32_t i4BytesWritten = 0;
 
-	prChipInfo = prAdapter->chip_info;
-
-	wtbl_raw_dw = (unsigned char *)kalMemAlloc(
+	wtbl_raw_dw = (uint8_t *)kalMemAlloc(
 		sizeof(struct bwtbl_lmac_struct), VIR_MEM_TYPE);
 	if (!wtbl_raw_dw) {
 		DBGLOG(REQ, ERROR, "WTBL : Memory alloc failed\n");
 		return 0;
 	}
 
-	/* LMAC */
+	connac3x_get_lwtbl(prAdapter, u4Index, wtbl_raw_dw);
+
+	pwtbl = (struct bwtbl_lmac_struct *)wtbl_raw_dw;
+	i4BytesWritten = connac3x_dump_helper_wtbl_info(
+		prAdapter,
+		pcCommand,
+		i4TotalLen,
+		pwtbl,
+		u4Index);
+
+	/* print more info in log */
+	connac3x_print_wtbl_info(prAdapter, u4Index, pwtbl);
+
+	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
+			sizeof(struct bwtbl_lmac_struct));
+
+	return i4BytesWritten;
+}
+
+void connac3x_get_lwtbl(
+	struct ADAPTER *prAdapter,
+	uint32_t u4Index,
+	uint8_t *wtbl_raw_dw
+)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4Value = 0;
+	uint32_t wtbl_lmac_baseaddr;
+	uint32_t wtbl_offset, addr;
+
+	prChipInfo = prAdapter->chip_info;
 	CONNAC3X_LWTBL_CONFIG(prAdapter, prChipInfo->u4LmacWtblDUAddr, u4Index);
 	wtbl_lmac_baseaddr = CONNAC3X_LWTBL_IDX2BASE(
 		prChipInfo->u4LmacWtblDUAddr, u4Index, 0);
@@ -728,22 +752,6 @@ int32_t connac3x_show_wtbl_info(
 			(uint32_t *)&wtbl_raw_dw[wtbl_offset],
 			&u4Value, sizeof(uint32_t));
 	}
-
-	pwtbl = (struct bwtbl_lmac_struct *)wtbl_raw_dw;
-	i4BytesWritten = connac3x_dump_helper_wtbl_info(
-		prAdapter,
-		pcCommand,
-		i4TotalLen,
-		pwtbl,
-		u4Index);
-
-	/* print more info in log */
-	connac3x_print_wtbl_info(prAdapter, u4Index, pwtbl);
-
-	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
-			sizeof(struct bwtbl_lmac_struct));
-
-	return i4BytesWritten;
 }
 
 static bool is_wtbl_bigtk_exist(struct ADAPTER *prAdapter, uint32_t u4Index)
