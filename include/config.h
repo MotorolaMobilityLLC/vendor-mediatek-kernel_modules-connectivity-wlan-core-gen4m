@@ -1438,15 +1438,10 @@
 
 #define CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG	1
 
-#define CFG_FIX_2_TX_PORT			0
-
 #define CFG_CHANGE_CRITICAL_PACKET_PRIORITY	1
 
 #ifndef CFG_TX_HIF_PORT_QUEUE
 #define CFG_TX_HIF_PORT_QUEUE		0
-#endif
-#if (CFG_TX_HIF_PORT_QUEUE == 1) && CFG_FIX_2_TX_PORT
-#error "we did not expect fix 2 tx port queue supports TxHifPortQueue"
 #endif
 
 #ifndef CFG_TX_HIF_CREDIT_FEATURE
