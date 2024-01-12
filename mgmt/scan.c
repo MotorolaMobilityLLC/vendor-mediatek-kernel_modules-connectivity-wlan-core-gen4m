@@ -1367,31 +1367,48 @@ void scanHandleRnrSsid(struct SCAN_PARAM *prScanParam,
 }
 
 uint8_t scanGetRnrChannel(
-	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField,
-	uint8_t *pucBand)
+	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField)
 {
-	uint8_t ucRnrChNum;
+	uint8_t ucRnrChNum, ucBand;
 	uint32_t u4FreqInKHz;
 
 	/* get channel number for this neighborAPInfo */
-	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, pucBand);
+	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, &ucBand);
+	switch (ucBand) {
+	case BAND_2G4:
+		ucBand = KAL_BAND_2GHZ;
+		break;
+	case BAND_5G:
+		ucBand = KAL_BAND_5GHZ;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BAND_6G:
+		ucBand = KAL_BAND_6GHZ;
+		break;
+#endif
+	default:
+		log_dbg(SCN, WARN, "Band%d illegal, set to 2G\n",
+			ucBand);
+		ucBand = KAL_BAND_2GHZ;
+		break;
+	}
 	u4FreqInKHz =
 		kalGetChannelFrequency(
 		prNeighborAPInfoField->ucChannelNum,
-		*pucBand);
+		ucBand);
 	ucRnrChNum = nicFreq2ChannelNum(u4FreqInKHz * 1000);
 	return ucRnrChNum;
 }
 
 void scanProcessRnrChannel(uint8_t ucRnrChNum,
-	uint16_t u2OpClass,
+	uint8_t ucOpClass,
 	struct SCAN_PARAM *prScanParam)
 {
 	uint8_t i, ucHasSameCh = FALSE;
 	enum ENUM_BAND eBand;
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 
-	scanOpClassToBand(u2OpClass, (uint8_t *)&eBand);
+	scanOpClassToBand(ucOpClass, (uint8_t *)&eBand);
 	for (i = 0; i < prScanParam->ucChannelListNum; i++) {
 		if (ucRnrChNum == prScanParam->arChnlInfoList[i].ucChannelNum) {
 			ucHasSameCh = TRUE;
@@ -1465,7 +1482,7 @@ uint8_t scanSearchBssidInCurrentList(
 }
 
 uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
-	uint8_t ucRnrChNum, uint8_t ucBand)
+	uint8_t ucRnrChNum, uint8_t ucOpClass)
 {
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
@@ -1477,27 +1494,11 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &(prScanInfo->rScanParam);
+	scanOpClassToBand(ucOpClass, (uint8_t *)&eRfBand);
 
 	/* sanity check */
 	if (ucRnrChNum == 0)
 		return FALSE;
-
-	switch (ucBand) {
-	case KAL_BAND_2GHZ:
-		eRfBand = BAND_2G4;
-		break;
-	case KAL_BAND_5GHZ:
-		eRfBand = BAND_5G;
-		break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	case KAL_BAND_6GHZ:
-		eRfBand = BAND_6G;
-		break;
-#endif
-	default:
-		eRfBand = BAND_NULL;
-		break;
-	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eRfBand == BAND_6G &&
@@ -1527,7 +1528,6 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 		}
 	}
 
-
 	return TRUE;
 }
 
@@ -1543,7 +1543,7 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, uint8_t *pucIE)
 {
-	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum, ucBand = 0;
+	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
 	uint8_t ucShortSsidOffset, ucBssParamOffset, ucMldParamOffset;
 	uint8_t ucBssidNum = 0, ucCurrentLength = 0, ucShortSsidNum = 0;
 	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
@@ -1780,10 +1780,10 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		}
 
 		/* Get RNR channel */
-		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField, &ucBand);
-		if (!scanRnrChnlIsNeedScan(prAdapter, ucRnrChNum, ucBand)) {
-			DBGLOG(SCN, INFO, "Not handle RNR chnl(%d) band(%d)!\n",
-					ucRnrChNum, ucBand);
+		ucRnrChNum = scanGetRnrChannel(prNeighborAPInfoField);
+		if (!scanRnrChnlIsNeedScan(prAdapter, ucRnrChNum, ucOpClass)) {
+			DBGLOG(SCN, INFO, "Ignore RNR chnl(%d) OpClass(%d)!\n",
+				ucRnrChNum, ucOpClass);
 			if (ucNewLink)
 				cnmMemFree(prAdapter, prNeighborAPInfo);
 			/* Calculate next NeighborAPInfo's index if exists */
@@ -4835,7 +4835,7 @@ void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
 	case 128:
 	case 129:
 	case 130:
-		*band = KAL_BAND_5GHZ;
+		*band = BAND_5G;
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case 131:
@@ -4845,21 +4845,20 @@ void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band)
 	case 135:
 	case 136:
 	case 137:
-		*band = KAL_BAND_6GHZ;
+		*band = BAND_6G;
 		break;
 #endif
 	case 81:
 	case 82:
 	case 83:
 	case 84:
-		*band = KAL_BAND_2GHZ;
+		*band = BAND_2G4;
 		break;
 	/* not support 60Ghz */
 	case 180:
-		*band = KAL_NUM_BANDS;
-		break;
 	default:
-		*band = KAL_NUM_BANDS;
+		*band = BAND_NULL;
+		log_dbg(SCN, WARN, "OpClass%d illegal\n", ucOpClass);
 		break;
 	}
 }

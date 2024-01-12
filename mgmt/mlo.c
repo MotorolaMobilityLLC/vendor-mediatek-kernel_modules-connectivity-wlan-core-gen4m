@@ -800,25 +800,7 @@ uint8_t *mldHandleRnrMlParam(uint8_t *ie,
 				&prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
 			prProfile->ucLinkId = ucMldLinkId;
 		}
-
-		switch (band) {
-		case KAL_BAND_2GHZ:
-			prProfile->rChnlInfo.eBand = BAND_2G4;
-			break;
-		case KAL_BAND_5GHZ:
-			prProfile->rChnlInfo.eBand = BAND_5G;
-			break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		case KAL_BAND_6GHZ:
-			prProfile->rChnlInfo.eBand = BAND_6G;
-			break;
-#endif
-		default:
-			DBGLOG(ML, WARN, "unsupported band: %d\n",
-				band);
-			break;
-		}
-
+		prProfile->rChnlInfo.eBand = band;
 		prProfile->rChnlInfo.ucChannelNum =
 			prNeighborAPInfoField->ucChannelNum;
 
