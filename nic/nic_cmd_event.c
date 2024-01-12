@@ -6297,11 +6297,10 @@ void nicCmdEventQueryDpdCache(struct ADAPTER *prAdapter,
 void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
 	struct EVENT_STORED_FW_DROP_SSN_INFO *prSSN)
 {
-	struct QUE *prQue = NULL;
 	struct QUE rQue;
+	struct QUE *prQue = &rQue;
 	struct SW_RFB *prSwRfb;
 
-	prQue = &rQue;
 	QUEUE_INITIALIZE(prQue);
 #if CFG_RFB_TRACK
 	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_FW_DROP_SSN);
@@ -6339,14 +6338,18 @@ void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
 		prSSN->ucTid, prSSN->u2SSN,
 		prSSN->ucAmsduFormat);
 
-	nicRxAddFwDropSSN(prAdapter, prSwRfb);
+	/* insert prSwRfb into reordering queue */
+	qmProcessPktWithReordering(prAdapter, prSwRfb, prQue);
 
-	if (kalScheduleNapiTask(prAdapter)
-		== WLAN_STATUS_NOT_ACCEPTED) {
+	/* no prSwRfb is in return queue, so just early return */
+	if (QUEUE_IS_EMPTY(prQue))
+		return;
+
+	/* enqueue all prSwRfb to NAPI */
+	nicRxEnqueueRfbMainToNapi(prAdapter, prQue);
+	if (kalScheduleNapiTask(prAdapter) == WLAN_STATUS_NOT_ACCEPTED) {
 		/* Handle Non Rx-direct call path */
-		prSwRfb = nicRxGetFwDropSSN(prAdapter);
-		if (prSwRfb)
-			nicRxHandleFwDropSSN(prAdapter, prSwRfb);
+		nicRxIndicateRfbMainToNapi(prAdapter);
 	}
 }
 
@@ -6380,7 +6383,6 @@ void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
 		      struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_BAR_DELAY *prEventStoredBAR;
-	struct SW_RFB *prRetSwRfb;
 	struct QUE rReturnedQue;
 	struct QUE *prReturnedQue;
 	int i = 0;
@@ -6431,12 +6433,16 @@ void nicEventHandleDelayBar(struct ADAPTER *prAdapter,
 			);
 	}
 
-	if (QUEUE_IS_NOT_EMPTY(prReturnedQue))
-		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prReturnedQue), NULL);
+	/* no prSwRfb is in return queue, so just early return */
+	if (QUEUE_IS_EMPTY(prReturnedQue))
+		return;
 
-	prRetSwRfb = QUEUE_GET_HEAD(prReturnedQue);
-	if (prRetSwRfb != NULL)
-		nicRxIndicatePackets(prAdapter, prRetSwRfb);
+	/* enqueue all prSwRfb to NAPI */
+	nicRxEnqueueRfbMainToNapi(prAdapter, prReturnedQue);
+	if (kalScheduleNapiTask(prAdapter) == WLAN_STATUS_NOT_ACCEPTED) {
+		/* Handle Non Rx-direct call path */
+		nicRxIndicateRfbMainToNapi(prAdapter);
+	}
 }
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 

@@ -1920,55 +1920,35 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 	}
 }
 
-#if CFG_SUPPORT_FW_DROP_SSN
-struct SW_RFB *nicRxGetFwDropSSN(struct ADAPTER *prAdapter)
+void nicRxEnqueueRfbMainToNapi(struct ADAPTER *ad, struct QUE *prQue)
 {
-	struct SW_RFB *prSwRfb = NULL;
-
-	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
-	QUEUE_REMOVE_HEAD(&prAdapter->rRxFwDropSSNQue,
-			prSwRfb, struct SW_RFB *);
-	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
-
-	return prSwRfb;
+	KAL_ACQUIRE_SPIN_LOCK_BH(ad, SPIN_LOCK_RX_TO_NAPI);
+	QUEUE_CONCATENATE_QUEUES(&ad->rRxMainToNapiQue, prQue);
+	KAL_RELEASE_SPIN_LOCK_BH(ad, SPIN_LOCK_RX_TO_NAPI);
 }
 
-void nicRxAddFwDropSSN(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb)
+void nicRxIndicateRfbMainToNapi(struct ADAPTER *ad)
 {
-	KAL_ACQUIRE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
-	QUEUE_INSERT_TAIL(&prAdapter->rRxFwDropSSNQue, prSwRfb);
-	KAL_RELEASE_SPIN_LOCK_BH(prAdapter, SPIN_LOCK_RX_FW_DROP_SSN);
+	struct QUE rQue;
+	struct QUE *prQue = &rQue;
+
+	if (!ad)
+		return;
+
+	if (QUEUE_IS_EMPTY(&ad->rRxMainToNapiQue))
+		return;
+
+	QUEUE_INITIALIZE(prQue);
+	KAL_ACQUIRE_SPIN_LOCK_BH(ad, SPIN_LOCK_RX_TO_NAPI);
+	QUEUE_MOVE_ALL(prQue, &ad->rRxMainToNapiQue);
+	KAL_RELEASE_SPIN_LOCK_BH(ad, SPIN_LOCK_RX_TO_NAPI);
+
+	if (QUEUE_IS_EMPTY(prQue))
+		return;
+
+	QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prQue), NULL);
+	nicRxIndicatePackets(ad, QUEUE_GET_HEAD(prQue));
 }
-
-void nicRxHandleFwDropSSN(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb)
-{
-	struct QUE rReturnedQue;
-	struct QUE *prReturnedQue = &rReturnedQue;
-	struct SW_RFB *prRetSwRfb;
-
-	QUEUE_INITIALIZE(prReturnedQue);
-	qmProcessPktWithReordering(prAdapter, prSwRfb, prReturnedQue);
-
-	RX_INC_CNT(&prAdapter->rRxCtrl, RX_FW_DROP_SSN_COUNT);
-
-	/* The returned list of SW_RFBs must end with a NULL pointer */
-	if (QUEUE_IS_NOT_EMPTY(prReturnedQue)) {
-		QUEUE_ENTRY_SET_NEXT(QUEUE_GET_TAIL(prReturnedQue), NULL);
-		DBGLOG(NIC, TRACE,
-			"STA[%u] WIDX[%u] TID[%u] SSN[%u] PF[%u] Dequeue[%u]\n",
-			prSwRfb->ucStaRecIdx, prSwRfb->ucWlanIdx,
-			prSwRfb->ucTid, prSwRfb->u2SSN,
-			prSwRfb->ucPayloadFormat,
-			QUEUE_LENGTH(prReturnedQue));
-	}
-
-	prRetSwRfb = QUEUE_GET_HEAD(prReturnedQue);
-	if (prRetSwRfb != NULL)
-		nicRxIndicatePackets(prAdapter, prRetSwRfb);
-}
-#endif /* CFG_SUPPORT_FW_DROP_SSN */
 
 void nicRxParseDropPkt(struct SW_RFB *prSwRfb)
 {

@@ -1709,15 +1709,8 @@ void nicRxDequeuePendingQueue(struct ADAPTER *prAdapter);
 void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfbListHead);
 
-#if CFG_SUPPORT_FW_DROP_SSN
-struct SW_RFB *nicRxGetFwDropSSN(struct ADAPTER *prAdapter);
-
-void nicRxAddFwDropSSN(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb);
-
-void nicRxHandleFwDropSSN(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb);
-#endif /* CFG_SUPPORT_FW_DROP_SSN */
+void nicRxEnqueueRfbMainToNapi(struct ADAPTER *ad, struct QUE *prQue);
+void nicRxIndicateRfbMainToNapi(struct ADAPTER *ad);
 
 void nicRxParseDropPkt(struct SW_RFB *prSwRfb);
 
