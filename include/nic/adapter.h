@@ -1138,6 +1138,8 @@ struct WIFI_VAR {
 	uint32_t u4LTOValue;
 #endif /* CFG_TX_CUSTOMIZE_LTO */
 
+	uint8_t ucWarningTxTimeout;
+
 	uint32_t u4UapsdAcBmp;
 	uint32_t u4MaxSpLen;
 	uint32_t u4P2pUapsdAcBmp;
