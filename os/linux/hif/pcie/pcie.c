@@ -1489,7 +1489,10 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 	if (!prChipInfo)
 		prHif->CSRBaseAddress = prChipInfo->CSRBaseAddress;
 
-	SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
+	if (g_prPlatDev)
+		SET_NETDEV_DEV(prGlueInfo->prDevHandler, &g_prPlatDev->dev);
+	else
+		SET_NETDEV_DEV(prGlueInfo->prDevHandler, &prHif->pdev->dev);
 
 	prGlueInfo->u4InfType = MT_DEV_INF_PCIE;
 
