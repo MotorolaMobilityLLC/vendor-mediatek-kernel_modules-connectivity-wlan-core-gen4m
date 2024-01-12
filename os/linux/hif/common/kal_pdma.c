@@ -1760,6 +1760,14 @@ static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
 		return NULL;
 	}
 
+	u4TxdSize = prCmdInfo->u4TxdLen;
+	u4TxpSize = prCmdInfo->u4TxpLen;
+
+	if ((u4TxdSize + u4TxpSize) > TX_BUFFER_NORMSIZE) {
+		DBGLOG(HAL, ERROR, "u4TxdSize + u4TxpSize size overflow\n");
+		return NULL;
+	}
+
 	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
 	prNode = prHifInfo->rTxCmdFreeList.next;
 	list_del(prNode);
@@ -1769,16 +1777,10 @@ static struct TX_CMD_REQ *kalCloneCmd(struct GLUE_INFO *prGlueInfo,
 	kalMemCopy(&prCmdReq->rCmdInfo, prCmdInfo, sizeof(struct CMD_INFO));
 
 	aucBuff = prCmdReq->aucBuff;
-	u4TxdSize = prCmdInfo->u4TxdLen;
-	if (u4TxdSize > TX_BUFFER_NORMSIZE)
-		u4TxdSize = TX_BUFFER_NORMSIZE;
 	kalMemCopy(aucBuff, prCmdInfo->pucTxd, u4TxdSize);
 	prCmdReq->rCmdInfo.pucTxd = aucBuff;
 	aucBuff += u4TxdSize;
 
-	u4TxpSize = prCmdInfo->u4TxpLen;
-	if ((u4TxdSize + u4TxpSize) > TX_BUFFER_NORMSIZE)
-		u4TxpSize = TX_BUFFER_NORMSIZE - u4TxdSize;
 	kalMemCopy(aucBuff, prCmdInfo->pucTxp, u4TxpSize);
 	prCmdReq->rCmdInfo.pucTxp = aucBuff;
 
