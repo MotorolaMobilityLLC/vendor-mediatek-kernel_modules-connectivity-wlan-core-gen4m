@@ -326,6 +326,11 @@
 
 #define CFG_SUPPORT_SKB_CLONED_COPY		1
 
+/* Support windows Scatter/gather IO (NETIF_F_SG) */
+#ifndef CFG_SUPPORT_TX_SG
+#define CFG_SUPPORT_TX_SG                       0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of 6G SUPPORT
  *------------------------------------------------------------------------------

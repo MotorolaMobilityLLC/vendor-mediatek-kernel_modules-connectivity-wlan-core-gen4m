@@ -168,25 +168,79 @@ void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
 	struct TXD_PTR_LEN *prPtrLen;
 	uint64_t u8Addr = (uint64_t)rDmaAddr;
 
+	uint16_t u2Len = 0;
+#if (CFG_SUPPORT_TX_SG == 1)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	int i;
+	struct MSDU_TOKEN_ENTRY *prToken = prMsduInfo->prToken;
+#endif
+#endif
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
 		(pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] =
 		u4MsduId | TXD_MSDU_ID_VLD;
 	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
+	u2Len = prMsduInfo->u2FrameLength;
+
+#if (CFG_SUPPORT_TX_SG == 1)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	if (prToken && prToken->nr_frags)
+		u2Len = prMsduInfo->u2FrameLength - prToken->len_frags;
+#endif
+#endif
+	u2Len = (u2Len & TXD_LEN_MASK_V2) |
+		((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+	u2Len |= TXD_LEN_ML_V2;
 
 	if ((u4Idx & 1) == 0) {
 		prPtrLen->u4Ptr0 = (uint32_t)u8Addr;
-		prPtrLen->u2Len0 =
-			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
-		prPtrLen->u2Len0 |= TXD_LEN_ML_V2;
+		prPtrLen->u2Len0 = u2Len;
 	} else {
 		prPtrLen->u4Ptr1 = (uint32_t)u8Addr;
-		prPtrLen->u2Len1 =
-			(prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
-		prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
+		prPtrLen->u2Len1 = u2Len;
 	}
+
+#if (CFG_SUPPORT_TX_SG == 1)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/*
+	* set multiple data section for single MPDU
+	* 1. NOT SW-AMPDU mode (u4Idx>0)
+	* 2. There are frag-memories in skb
+	*/
+	if (u4Idx || !prToken || !prToken->nr_frags)
+		return;
+
+	prPtrLen->u2Len0 &= ~TXD_LEN_ML_V2;
+	for (i = 0; i < prToken->nr_frags; i++) {
+		uint8_t nr_idx = i + 1;
+		/* need to support 84 bit */
+		u8Addr = prToken->rPktDmaAddr_nr[i];
+		u2Len = prToken->u4PktDmaLength_nr[i];
+		u2Len = (u2Len & TXD_LEN_MASK_V2) |
+			((u8Addr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		if (nr_idx == prToken->nr_frags)
+			u2Len |= TXD_LEN_ML_V2;
+		prHwTxDescAppend->CONNAC_APPEND.au2MsduId[nr_idx] = 0;
+		prPtrLen = &prHwTxDescAppend->
+			CONNAC_APPEND.arPtrLen[nr_idx >> 1];
+		if ((nr_idx & 1) == 0) {
+			prPtrLen->u4Ptr0 = (uint32_t)u8Addr;
+			prPtrLen->u2Len0 = u2Len;
+			DBGLOG(HAL, TRACE, "[TX] u4Ptr0=0x%x\n",
+						prPtrLen->u4Ptr0);
+			DBGLOG(HAL, TRACE, "[TX] u2Len0=0x%x\n",
+						prPtrLen->u2Len0);
+		} else {
+			prPtrLen->u4Ptr1 = (uint32_t)u8Addr;
+			prPtrLen->u2Len1 = u2Len;
+			DBGLOG(HAL, TRACE, "[TX] u4Ptr1=0x%x\n",
+						prPtrLen->u4Ptr1);
+			DBGLOG(HAL, TRACE, "[TX] u2Len1=0x%x\n",
+						prPtrLen->u2Len1);
+		}
+	}
+#endif
+#endif
 
 #if (CFG_DUMP_TXD == 1)
 	DBGLOG(HAL, INFO, "Dump DATA TXD: \n");
