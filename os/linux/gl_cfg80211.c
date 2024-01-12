@@ -2535,6 +2535,7 @@ int _mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		*pu8GlCookie = *cookie;
 
 		prMgmtFrame->u2FrameLength = len;
+		prMgmtFrame->ucBssIndex = wlanGetBssIdx(wdev->netdev);
 
 #define TEMP_LOG_TEMPLATE "bssIdx: %d, band: %d, chan: %d, offchan: %d, " \
 		"wait: %d, len: %d, no_cck: %d, dont_wait_for_ack: %d, " \
