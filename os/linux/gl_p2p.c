@@ -125,6 +125,7 @@ struct net_device *g_P2pPrDev;
 struct wireless_dev *gprP2pWdev;
 struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
 struct net_device *gPrP2pDev[KAL_P2P_NUM];
+uint32_t g_u4DevIdx[KAL_P2P_NUM];
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 #if (CFG_ENABLE_UNIFY_WIPHY == 0)
@@ -913,6 +914,12 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 	netif_tx_stop_all_queues(prGlueInfo->prP2PInfo[0]->prDevHandler);
 
 	/* register for net device */
+	if (g_u4DevIdx[0]) {
+		prGlueInfo->prP2PInfo[0]->prDevHandler->ifindex =
+		g_u4DevIdx[0];
+		g_u4DevIdx[0] = 0;
+	}
+
 	if (register_netdev(prGlueInfo->prP2PInfo[0]->prDevHandler) < 0) {
 		DBGLOG(INIT, WARN, "unable to register netdevice for p2p\n");
 		/* free dev in glUnregisterP2P() */
@@ -930,6 +937,12 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		netif_carrier_off(prGlueInfo->prP2PInfo[1]->prDevHandler);
 		netif_tx_stop_all_queues(
 			prGlueInfo->prP2PInfo[1]->prDevHandler);
+
+		if (g_u4DevIdx[1]) {
+			prGlueInfo->prP2PInfo[1]->prDevHandler->ifindex
+			= g_u4DevIdx[1];
+			g_u4DevIdx[1] = 0;
+		}
 
 		/* register for net device */
 		if (register_netdev(
@@ -949,7 +962,9 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 
 
-		DBGLOG(P2P, INFO, "P2P 2nd interface work\n");
+		DBGLOG(P2P, INFO, "P2P 2nd interface work %d %d\n",
+			prGlueInfo->prP2PInfo[0]->prDevHandler->ifindex,
+			prGlueInfo->prP2PInfo[1]->prDevHandler->ifindex);
 	}
 	if (fgRollbackRtnlLock)
 		rtnl_lock();
