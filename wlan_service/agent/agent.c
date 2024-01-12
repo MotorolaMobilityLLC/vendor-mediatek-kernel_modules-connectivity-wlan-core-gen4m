@@ -578,6 +578,8 @@ static s_int32 hqa_set_rate(
 	/* Set parameters */
 	CONFIG_SET_PARAM(serv_test, mcs, (u_char)mcs, band_idx);
 
+	ret = mt_serv_set_rate(serv_test);
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: mcs=%u\n", __func__, mcs));
 
