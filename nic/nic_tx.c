@@ -6054,6 +6054,43 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 
 			QUEUE_INSERT_TAIL(prProcessingQue, prMsduInfo);
 
+#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+			if (prStaRec != NULL &&
+				prBssInfo->eNetworkType ==
+					NETWORK_TYPE_NAN) {
+				OS_SYSTIME rCurrentTime;
+				unsigned char fgExpired;
+
+				rCurrentTime = kalGetTimeTick();
+				fgExpired = CHECK_FOR_EXPIRATION(
+						rCurrentTime,
+						prStaRec->rNanExpiredSendTime);
+
+				/* avoid to flood the kernel log,
+				 * only the 1st expiry event logged
+				 */
+				if (fgExpired &&
+						!prStaRec->fgNanSendTimeExpired)
+					DBGLOG(NAN, INFO,
+						"[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
+						prStaRec->ucIndex,
+						prStaRec->rNanExpiredSendTime,
+						rCurrentTime);
+
+				if (fgExpired) {
+					prStaRec->fgNanSendTimeExpired =
+						TRUE;
+					/* NAN StaRec Stop Tx */
+					qmSetStaRecTxAllowed(prAdapter,
+							prStaRec, FALSE);
+				} else {
+					prStaRec->fgNanSendTimeExpired = FALSE;
+				}
+			}
+#endif
+#endif
+
 			/* Power-save & TxAllowed STA handling */
 			nicTxDirectCheckStaPsPendQ(prAdapter, prMsduInfo,
 					prMsduInfo->ucStaRecIndex,

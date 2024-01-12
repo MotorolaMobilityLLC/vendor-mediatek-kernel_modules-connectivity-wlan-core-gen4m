@@ -5809,15 +5809,18 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			prStaRec = &prAdapter->arStaRec[ucSTAIdx];
 			prStaRec->rNanExpiredSendTime = rExpiryTime;
 
-			if (prStaRec->fgNanSendTimeExpired)
+			if (prStaRec->fgNanSendTimeExpired) {
+				prStaRec->fgNanSendTimeExpired = FALSE;
 				fgNeedToSendPkt = TRUE;
+			}
 		}
 	}
 
-	if (fgNeedToSendPkt == TRUE &&
-	    wlanGetTxPendingFrameCount(prAdapter) > 0) {
-		DBGLOG(NAN, LOUD, "Trigger NAN tx request\n");
-		kalSetEvent(prAdapter->prGlueInfo);
+	if (fgNeedToSendPkt == TRUE) {
+		DBGLOG(NAN, INFO, "Trigger NAN tx request\n");
+		/* NAN StaRec Start Tx */
+		qmSetStaRecTxAllowed(prAdapter,
+			prStaRec, TRUE);
 	}
 }
 
