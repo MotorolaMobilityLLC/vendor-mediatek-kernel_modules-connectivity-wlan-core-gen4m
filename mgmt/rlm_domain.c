@@ -1222,50 +1222,6 @@ rlmDomainGetChnlList_V2(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Check if Channel supported by HW
- *
- * \param[in/out] eBand:          BAND_2G4, BAND_5G or BAND_NULL
- *                                (both 2.4G and 5G)
- *                ucNumOfChannel: channel number
- *
- * \return TRUE/FALSE
- */
-/*----------------------------------------------------------------------------*/
-u_int8_t rlmIsValidChnl(struct ADAPTER *prAdapter, uint8_t ucNumOfChannel,
-			enum ENUM_BAND eBand)
-{
-	struct ieee80211_supported_band *channelList;
-	int i, chSize;
-	struct GLUE_INFO *prGlueInfo;
-	struct wiphy *prWiphy;
-
-	prGlueInfo = prAdapter->prGlueInfo;
-	prWiphy = wlanGetWiphy();
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eBand == BAND_6G) {
-		channelList = prWiphy->bands[KAL_BAND_6GHZ];
-		chSize = channelList->n_channels;
-	} else
-#endif
-	if (eBand == BAND_5G) {
-		channelList = prWiphy->bands[KAL_BAND_5GHZ];
-		chSize = channelList->n_channels;
-	} else if (eBand == BAND_2G4) {
-		channelList = prWiphy->bands[KAL_BAND_2GHZ];
-		chSize = channelList->n_channels;
-	} else
-		return FALSE;
-
-	for (i = 0; i < chSize; i++) {
-		if ((channelList->channels[i]).hw_value == ucNumOfChannel)
-			return TRUE;
-	}
-	return FALSE;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Retrieve the supported channel list of specified band
  *
  * \param[in/out] eSpecificBand:   BAND_2G4, BAND_5G or BAND_NULL
@@ -1331,16 +1287,18 @@ rlmDomainGetChnlList(struct ADAPTER *prAdapter,
 
 				ch = prSubband->ucFirstChannelNum +
 				     j * prSubband->ucChannelSpan;
-				if (!rlmIsValidChnl(prAdapter, ch,
+
+				if (!kalIsValidChnl(prAdapter->prGlueInfo, ch,
 						prSubband->ucBand)) {
 					DBGLOG(RLM, INFO,
-					       "Not support ch%d!\n", ch);
+						   "Not support ch%d!\n", ch);
 					continue;
 				}
+
 				paucChannelList[ucNum].eBand =
 							prSubband->ucBand;
 				paucChannelList[ucNum].ucChannelNum = ch;
-				paucChannelList[ucNum].eDFS = prSubband->fgDfs;
+				paucChannelList[ucNum].fgDFS = prSubband->fgDfs;
 				ucNum++;
 			}
 		}
@@ -1390,10 +1348,13 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 
 					ch = prSubband->ucFirstChannelNum +
 					     j * prSubband->ucChannelSpan;
-					if (!rlmIsValidChnl(prAdapter, ch,
+
+					if (!kalIsValidChnl(
+							prAdapter->prGlueInfo,
+							ch,
 							prSubband->ucBand)) {
 						DBGLOG(RLM, INFO,
-					       "Not support ch%d!\n", ch);
+						   "Not support ch%d!\n", ch);
 						continue;
 					}
 
@@ -1516,21 +1477,12 @@ void rlmDomainSendDomainInfoCmd_V2(struct ADAPTER *prAdapter)
 	u32 buff_max_size, buff_valid_size;
 	struct CMD_SET_DOMAIN_INFO_V2 *prCmd;
 	struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prChs;
-	struct wiphy *pWiphy;
 
+	max_channel_count = kalGetChannelCount(prAdapter->prGlueInfo);
 
-	pWiphy = wlanGetWiphy();
-	if (pWiphy->bands[KAL_BAND_2GHZ] != NULL)
-		max_channel_count += pWiphy->bands[KAL_BAND_2GHZ]->n_channels;
-	if (pWiphy->bands[KAL_BAND_5GHZ] != NULL)
-		max_channel_count += pWiphy->bands[KAL_BAND_5GHZ]->n_channels;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (pWiphy->bands[KAL_BAND_6GHZ] != NULL)
-		max_channel_count += pWiphy->bands[KAL_BAND_6GHZ]->n_channels;
-#endif
 	if (max_channel_count == 0) {
 		DBGLOG(RLM, ERROR, "%s, invalid channel count.\n", __func__);
-		ASSERT(0);
+		return;
 	}
 
 
@@ -1841,16 +1793,17 @@ u_int8_t rlmDomainIsLegalChannel(struct ADAPTER *prAdapter,
 			for (j = 0; j < prSubband->ucNumChannels; j++) {
 				if ((prSubband->ucFirstChannelNum + j *
 				    prSubband->ucChannelSpan) == ucChannel) {
-					if (!rlmIsValidChnl(prAdapter,
-						    ucChannel,
-						    prSubband->ucBand)) {
+
+					if (!kalIsValidChnl(
+							prAdapter->prGlueInfo,
+							ucChannel,
+							prSubband->ucBand)) {
 						DBGLOG(RLM, INFO,
-						       "Not support ch%d!\n",
-						       ucChannel);
+							   "Not support ch%d!\n",
+							   ucChannel);
 						return FALSE;
 					} else
 						return TRUE;
-
 				}
 			}
 		}
@@ -2303,8 +2256,7 @@ void rlmDomainCountryCodeUpdate(
 	}
 #endif
 
-	if (pWiphy)
-		rlmDomainParsingChannel(pWiphy);
+	rlmDomainParsingChannel(prAdapter);
 
 	if (!regd_is_single_sku_en())
 		return;
@@ -7583,8 +7535,8 @@ void rlmDomainSetTempCountryCode(char *alpha2, u8 size_of_alpha2)
 
 }
 
-enum regd_state rlmDomainStateTransition(enum regd_state request_state,
-					 struct regulatory_request *pRequest)
+enum regd_state rlmDomainStateTransition(
+				enum regd_state request_state)
 {
 	enum regd_state next_state, old_state;
 	bool the_same = 0;
@@ -7648,66 +7600,27 @@ enum regd_state rlmDomainStateTransition(enum regd_state request_state,
 	return g_mtk_regd_control.state;
 }
 
-/**
- * rlmDomainChannelFlagString - Transform channel flags to readable string
- *
- * @ flags: the ieee80211_channel->flags for a channel
- * @ buf: string buffer to put the transformed string
- * @ buf_size: size of the buf
- **/
-void rlmDomainChannelFlagString(u32 flags, char *buf, size_t buf_size)
+void rlmDomainParsingChannel(struct ADAPTER *prAdapter)
 {
-	int32_t buf_written = 0;
-
-	if (!flags || !buf || !buf_size)
-		return;
-
-	if (flags & IEEE80211_CHAN_DISABLED) {
-		LOGBUF(buf, ((int32_t)buf_size), buf_written, "DISABLED ");
-		/* If DISABLED, don't need to check other flags */
-		return;
-	}
-	if (flags & IEEE80211_CHAN_PASSIVE_FLAG)
-		LOGBUF(buf, ((int32_t)buf_size), buf_written,
-		       IEEE80211_CHAN_PASSIVE_STR " ");
-	if (flags & IEEE80211_CHAN_RADAR)
-		LOGBUF(buf, ((int32_t)buf_size), buf_written, "RADAR ");
-	if (flags & IEEE80211_CHAN_NO_HT40PLUS)
-		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_HT40PLUS ");
-	if (flags & IEEE80211_CHAN_NO_HT40MINUS)
-		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_HT40MINUS ");
-	if (flags & IEEE80211_CHAN_NO_80MHZ)
-		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_80MHZ ");
-	if (flags & IEEE80211_CHAN_NO_160MHZ)
-		LOGBUF(buf, ((int32_t)buf_size), buf_written, "NO_160MHZ ");
-}
-
-void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
-{
-	u32 band_idx, ch_idx;
-	u32 ch_count;
-	struct ieee80211_supported_band *sband;
-	struct ieee80211_channel *chan;
 	struct CMD_DOMAIN_CHANNEL *pCh;
-	char chan_flag_string[64] = {0};
-#if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
+	u_int8_t fgDisconnection = FALSE;
 	struct GLUE_INFO *prGlueInfo;
-	bool fgDisconnection = FALSE;
 	uint8_t ucChannelNum = 0;
+#if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
 	uint32_t rStatus, u4BufLen;
 #endif
 
-	if (!pWiphy) {
-		DBGLOG(RLM, ERROR, "%s():  ERROR. pWiphy = NULL.\n", __func__);
-		ASSERT(0);
+	if (!prAdapter) {
+		DBGLOG(RLM, ERROR, "prAdapter = NULL.\n");
 		return;
 	}
 
+	prGlueInfo = prAdapter->prGlueInfo;
+
 #if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
 	/* Retrieve connected channel */
-	prGlueInfo = rlmDomainGetGlueInfo();
 	if (prGlueInfo && kalGetMediaStateIndicated(prGlueInfo) ==
-	    MEDIA_STATE_CONNECTED) {
+		MEDIA_STATE_CONNECTED) {
 		ucChannelNum =
 			wlanGetChannelNumberByNetwork(prGlueInfo->prAdapter,
 			   prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex);
@@ -7719,70 +7632,24 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 
 	rlmDomainResetActiveChannel();
 
-	ch_count = 0;
-	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
-		sband = pWiphy->bands[band_idx];
-		if (!sband)
-			continue;
+	pCh = rlmDomainGetActiveChannels();
 
-		for (ch_idx = 0; ch_idx < sband->n_channels; ch_idx++) {
-			chan = &sband->channels[ch_idx];
-			pCh = (rlmDomainGetActiveChannels() + ch_count);
-			/* Parse flags and get readable string */
-			kalMemZero(chan_flag_string, sizeof(chan_flag_string));
-			rlmDomainChannelFlagString(chan->flags,
-						   chan_flag_string,
-						   sizeof(chan_flag_string));
-
-			if (chan->flags & IEEE80211_CHAN_DISABLED) {
-				DBGLOG(RLM, INFO,
-				       "channels[%d][%d]: ch%d (freq = %d) flags=0x%x [ %s]\n",
-				    band_idx, ch_idx, chan->hw_value,
-				    chan->center_freq, chan->flags,
-				    chan_flag_string);
+	fgDisconnection = kalFillChannels(prGlueInfo,
+			pCh,
+			MAX_SUPPORTED_CH_COUNT,
+			ucChannelNum,
 #if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
-				/* Disconnect AP in the end of this function*/
-				if (chan->hw_value == ucChannelNum)
-					fgDisconnection = TRUE;
+			TRUE
+#else
+			FALSE
 #endif
-				continue;
-			}
+		);
 
-			/* Allowable channel */
-			if (ch_count == MAX_SUPPORTED_CH_COUNT) {
-				DBGLOG(RLM, ERROR,
-				       "%s(): no buffer to store channel information.\n",
-				       __func__);
-				break;
-			}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			/* 6G only add PSC channel */
-			if (band_idx == KAL_BAND_6GHZ &&
-				((chan->hw_value - 5) % 16) != 0) {
-				continue;
-			}
-#endif
-
-			rlmDomainAddActiveChannel(band_idx);
-
-			DBGLOG(RLM, INFO,
-			       "channels[%d][%d]: ch%d (freq = %d) flgs=0x%x [%s]\n",
-				band_idx, ch_idx, chan->hw_value,
-				chan->center_freq, chan->flags,
-				chan_flag_string);
-
-			pCh->u2ChNum = chan->hw_value;
-			pCh->eFlags = chan->flags;
-
-			ch_count += 1;
-		}
-
-	}
 #if (CFG_SUPPORT_REGD_UPDATE_DISCONNECT_ALLOWED == 1)
 	/* Disconnect with AP if connected channel is disabled in new country */
 	if (fgDisconnection) {
 		DBGLOG(RLM, STATE, "%s(): Disconnect! CH%d is DISABLED\n",
-		    __func__, ucChannelNum);
+			__func__, ucChannelNum);
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetDisassociate,
 				   NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
 
@@ -7791,6 +7658,7 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 	}
 #endif
 }
+
 void rlmExtractChannelInfo(u32 max_ch_count,
 			   struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST *prBuff)
 {

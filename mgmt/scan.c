@@ -1451,24 +1451,15 @@ uint8_t scanGetRnrChannel(
 	IN uint8_t *pucBand)
 {
 	uint8_t ucRnrChNum;
-	struct ieee80211_channel *prChannel;
+	uint32_t u4FreqInKHz;
 
 	/* get channel number for this neighborAPInfo */
 	scanOpClassToBand(prNeighborAPInfoField->ucOpClass, pucBand);
-
-	prChannel = (struct ieee80211_channel *)
-			kal_ieee80211_get_channel(wlanGetWiphy(),
-			kal_ieee80211_channel_to_frequency
-			(prNeighborAPInfoField->ucChannelNum,
-			*pucBand));
-
-	if (!prChannel) {
-		log_dbg(SCN, ERROR, "RnrCh=NULL!\n");
-		return 0;
-	}
-
-	ucRnrChNum = nicFreq2ChannelNum(prChannel->center_freq * 1000);
-
+	u4FreqInKHz =
+		kalGetChannelFrequency(
+		prNeighborAPInfoField->ucChannelNum,
+		*pucBand);
+	ucRnrChNum = nicFreq2ChannelNum(u4FreqInKHz * 1000);
 	return ucRnrChNum;
 }
 
@@ -1477,19 +1468,10 @@ void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
 	IN struct SCAN_PARAM *prScanParam)
 {
 	uint8_t i, ucHasSameCh = FALSE;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	enum nl80211_band band = KAL_BAND_6GHZ;
-#else
-	enum nl80211_band band = KAL_BAND_2GHZ;
-#endif
-
+	enum ENUM_BAND eBand;
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 
-	/* get channel number for this neighborAPInfo */
-	ieee80211_operating_class_to_band(u2OpClass, &band);
-	/* Check this NeighborAPInfo's reported 6G channel has recorded
-	 * or not.
-	 */
+	eBand = kalOperatingClassToBand(u2OpClass);
 	for (i = 0; i < prScanParam->ucChannelListNum; i++) {
 		if (ucRnrChNum == prScanParam->arChnlInfoList[i].ucChannelNum) {
 			ucHasSameCh = TRUE;
@@ -1502,22 +1484,7 @@ void scanProcessRnrChannel(IN uint8_t ucRnrChNum,
 		prRfChnlInfo = &prScanParam->arChnlInfoList[
 					prScanParam->ucChannelListNum];
 		prScanParam->ucChannelListNum++;
-		switch (band) {
-		case KAL_BAND_2GHZ:
-			prRfChnlInfo->eBand = BAND_2G4;
-			break;
-		case KAL_BAND_5GHZ:
-			prRfChnlInfo->eBand = BAND_5G;
-			break;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		case KAL_BAND_6GHZ:
-			prRfChnlInfo->eBand = BAND_6G;
-			break;
-#endif
-		default:
-			prRfChnlInfo->eBand = BAND_2G4;
-			break;
-		}
+		prRfChnlInfo->eBand = eBand;
 		prRfChnlInfo->ucChannelNum = ucRnrChNum;
 	}
 	log_dbg(SCN, LOUD, "RnrCh=%d\n", ucRnrChNum);

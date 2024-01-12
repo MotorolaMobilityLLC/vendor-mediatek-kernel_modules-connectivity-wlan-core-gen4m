@@ -2110,6 +2110,26 @@ void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
 void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen);
 
+uint32_t kalGetChannelFrequency(
+		uint8_t ucChannel,
+		uint8_t ucBand);
+
+enum ENUM_BAND kalOperatingClassToBand(uint16_t u2OpClass);
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+u_int8_t kalFillChannels(
+	struct GLUE_INFO *prGlueInfo,
+	struct CMD_DOMAIN_CHANNEL *pChBase,
+	uint8_t ucChSize,
+	uint8_t ucOpChannelNum,
+	u_int8_t fgDisconnectUponInvalidOpChannel
+);
+#endif
+uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo);
+
+u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
+			uint8_t ucNumOfChannel,
+			enum ENUM_BAND eBand);
+
 #ifndef __has_attribute
 #define __has_attribute(x) 0
 #endif

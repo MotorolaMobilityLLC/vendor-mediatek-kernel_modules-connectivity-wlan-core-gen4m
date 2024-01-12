@@ -1045,7 +1045,7 @@ struct RF_CHANNEL_INFO {
 	/* To record channel bandwidth from CFG80211 */
 	uint8_t ucChnlBw;
 	uint8_t ucChannelNum;
-	enum nl80211_dfs_state eDFS;
+	u_int8_t fgDFS;
 };
 
 enum ENUM_PS_FORWARDING_TYPE {

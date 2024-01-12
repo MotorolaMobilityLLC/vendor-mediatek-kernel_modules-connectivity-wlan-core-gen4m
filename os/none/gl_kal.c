@@ -202,6 +202,43 @@ void kalSetMgmtDirectTxEvent2Hif(
 }
 #endif
 
+uint32_t kalGetChannelFrequency(
+		uint8_t ucChannel,
+		uint8_t ucBand)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+enum ENUM_BAND kalOperatingClassToBand(uint16_t u2OpClass)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+#if (CFG_SUPPORT_SINGLE_SKU == 1)
+u_int8_t kalFillChannels(
+	struct GLUE_INFO *prGlueInfo,
+	struct CMD_DOMAIN_CHANNEL *pChBase,
+	uint8_t ucChSize,
+	uint8_t ucOpChannelNum,
+	u_int8_t fgDisconnectUponInvalidOpChannel
+)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
+
+u_int8_t kalIsValidChnl(struct GLUE_INFO *prGlueInfo,
+			uint8_t ucNumOfChannel,
+			enum ENUM_BAND eBand)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len)
@@ -265,30 +302,3 @@ const uint8_t *kalFindVendorIe(uint32_t oui, int type,
 
 	return ie;
 }
-
-bool ieee80211_operating_class_to_band(u8 operating_class,
-				       enum nl80211_band *band)
-{
-	switch (operating_class) {
-	case 112:
-	case 115 ... 127:
-	case 128 ... 130:
-		*band = NL80211_BAND_5GHZ;
-		return true;
-	case 131 ... 135:
-		*band = NL80211_BAND_6GHZ;
-		return true;
-	case 81:
-	case 82:
-	case 83:
-	case 84:
-		*band = NL80211_BAND_2GHZ;
-		return true;
-	case 180:
-		*band = NL80211_BAND_60GHZ;
-		return true;
-	}
-
-	return false;
-}
-

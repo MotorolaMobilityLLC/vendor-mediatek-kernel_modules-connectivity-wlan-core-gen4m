@@ -2565,7 +2565,7 @@ void p2pFuncChannelListFiltering(IN struct ADAPTER *prAdapter,
 				nicGetS1(BAND_5G,
 				paucOutChannelList[j].ucChannelNum,
 				ucFilteredBw),
-				paucOutChannelList[j].eDFS,
+				paucOutChannelList[j].fgDFS,
 				rddS1);
 			j++;
 		}
@@ -3444,112 +3444,6 @@ void p2pFuncSetChannel(IN struct ADAPTER *prAdapter,
 
 	} while (FALSE);
 }				/* p2pFuncSetChannel */
-
-int32_t p2pFuncPreStartRdd(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucRoleIdx,
-	IN struct cfg80211_chan_def *chandef,
-	IN unsigned int cac_time_ms)
-{
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
-		(struct MSG_P2P_DFS_CAC *) NULL;
-	struct RF_CHANNEL_INFO rRfChnlInfo;
-
-	do {
-		if ((prAdapter == NULL) || (chandef == NULL))
-			break;
-		prGlueInfo = prAdapter->prGlueInfo;
-		if (prGlueInfo == NULL)
-			break;
-
-		kalMemZero(
-			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa),
-			sizeof(struct cfg80211_chan_def));
-		prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan
-			= (struct ieee80211_channel *)
-			&(prGlueInfo->prP2PInfo[ucRoleIdx]->chanCsa);
-		kalMemZero(
-			prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
-			sizeof(struct ieee80211_channel));
-
-		/* Copy chan def to local buffer*/
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.center_freq1 = chandef->center_freq1;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.center_freq2 = chandef->center_freq2;
-		prGlueInfo->prP2PInfo[ucRoleIdx]
-			->chandefCsa.width = chandef->width;
-		memcpy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
-			chandef->chan, sizeof(struct ieee80211_channel));
-		prGlueInfo->prP2PInfo[ucRoleIdx]->cac_time_ms = cac_time_ms;
-
-		if (chandef) {
-			kalChannelFormatSwitch(chandef, chandef->chan,
-					&rRfChnlInfo);
-
-			p2pFuncSetChannel(prGlueInfo->prAdapter,
-				ucRoleIdx, &rRfChnlInfo);
-		}
-
-		DBGLOG(P2P, INFO,
-			"mtk_p2p_cfg80211_start_radar_detection.(role %d)\n",
-			ucRoleIdx);
-
-		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
-
-		prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *)
-			cnmMemAlloc(prGlueInfo->prAdapter,
-				RAM_TYPE_MSG, sizeof(*prP2pDfsCacMsg));
-
-		if (prP2pDfsCacMsg == NULL) {
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prP2pDfsCacMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DFS_CAC;
-
-		switch (chandef->width) {
-		case NL80211_CHAN_WIDTH_20_NOHT:
-		case NL80211_CHAN_WIDTH_20:
-		case NL80211_CHAN_WIDTH_40:
-			prP2pDfsCacMsg->eChannelWidth = CW_20_40MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_80:
-			prP2pDfsCacMsg->eChannelWidth = CW_80MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_160:
-			prP2pDfsCacMsg->eChannelWidth = CW_160MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_80P80:
-			prP2pDfsCacMsg->eChannelWidth = CW_80P80MHZ;
-			break;
-
-		default:
-			DBGLOG(P2P, ERROR,
-				"!!!Bandwidth do not support!!!\n");
-			ASSERT(FALSE);
-			break;
-		}
-
-		prP2pDfsCacMsg->ucRoleIdx = ucRoleIdx;
-
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prP2pDfsCacMsg,
-			MSG_SEND_METHOD_BUF);
-
-		i4Rslt = 0;
-
-	} while (FALSE);
-
-	return i4Rslt;
-}
-
 
 /*---------------------------------------------------------------------------*/
 /*!
@@ -6962,15 +6856,7 @@ void p2pFuncSwitchGcChannel(
 		return;
 	}
 
-	kalMemZero(
-		&(prGlueP2pInfo->chandefCsa),
-		sizeof(struct cfg80211_chan_def));
-	prGlueP2pInfo->chandefCsa.chan
-		= (struct ieee80211_channel *)
-		&(prGlueP2pInfo->chanCsa);
-	kalMemZero(
-		prGlueP2pInfo->chandefCsa.chan,
-		sizeof(struct ieee80211_channel));
+	kalP2pClearCsaChan(prGlueP2pInfo);
 
 	DBGLOG(P2P, INFO, "switch gc channel: %s band\n",
 		prP2pBssInfo->eBand == prChnlReqInfo->eBand ? "same" : "cross");
