@@ -2493,25 +2493,25 @@ struct CMD_SCAN_REQ_V2 {
 	uint8_t ucSSIDType;
 	uint8_t ucSSIDNum;
 	uint8_t ucNumProbeReq;
-	uint8_t aucReserved[2];					/*total 8*/
-	struct PARAM_SSID
-		arSSID[4];			/*(4+32)*4 = 144, total 152*/
+	uint8_t aucPadding_0[1];
+	uint8_t auVersion[1];
+	struct PARAM_SSID arSSID[4];
 	uint16_t u2ProbeDelayTime;
 	uint16_t u2ChannelDwellTime;
 	uint16_t u2TimeoutValue;
 	uint8_t ucChannelType;
-	uint8_t ucChannelListNum;				/*total 160*/
+	uint8_t ucChannelListNum;			/*total 160*/
 	struct CHANNEL_INFO arChannelList[32];		/*total 160+64=224*/
 	uint16_t u2IELen;				/*total 226*/
 	uint8_t aucIE[MAX_IE_LENGTH];			/*total 826*/
-	uint8_t ucScnCtrlFlag;
-	uint8_t aucReserved2;					/*total 828*/
-	/*Extend for Scan cmds*/
-	struct CHANNEL_INFO arChannelListExtend[32];	/*total 892*/
-	uint8_t arPerChannelControl[32];
-	uint8_t arPerExtendChannelControl[32];	/*total 956*/
-	uint8_t ucScanChannelListenTime;			/*total 957*/
-	uint8_t aucReserved3[3];	/*total 960, max 1024*/
+	uint8_t ucChannelListExtNum;
+	uint8_t ucSSIDExtNum;
+	uint8_t aucPadding_1[2];
+	struct CHANNEL_INFO arChannelListExtend[32];
+	struct PARAM_SSID arSSIDExtend[6];
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint8_t aucRandomMac[MAC_ADDR_LEN];
+	uint8_t aucPadding_2[64];
 };
 
 struct CMD_SCAN_CANCEL {

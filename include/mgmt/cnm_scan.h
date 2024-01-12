@@ -92,7 +92,6 @@
 
 #define SCN_PARTIAL_SCAN_IDLE_MSEC		100
 
-#define MAXIMUM_OPERATION_CHANNEL_LIST		32
 #define SCN_P2P_FULL_SCAN_PARAM			0
 
 /*******************************************************************************

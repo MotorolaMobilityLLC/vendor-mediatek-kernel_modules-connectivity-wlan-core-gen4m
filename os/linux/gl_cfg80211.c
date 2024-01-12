@@ -784,7 +784,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint32_t i, j, u4BufLen;
-	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
+	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	uint32_t num_ssid = 0;
 	uint32_t old_num_ssid = 0;
 	uint32_t u4ValidIdx = 0;
@@ -793,7 +793,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_scan\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_scan\n");
 
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prScanRequest != NULL) {
@@ -801,11 +801,17 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 		return -EBUSY;
 	}
 
-	kalMemZero(&rScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
+	prScanRequest = kalMemAlloc(sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
+	if (prScanRequest == NULL) {
+		DBGLOG(REQ, ERROR, "alloc scan request fail\n");
+		return -ENOMEM;
+
+	}
+	kalMemZero(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV));
 
 	if (request->n_ssids == 0) {
-		rScanRequest.u4SsidNum = 0;
-		rScanRequest.ucScanType = SCAN_TYPE_PASSIVE_SCAN;
+		prScanRequest->u4SsidNum = 0;
+		prScanRequest->ucScanType = SCAN_TYPE_PASSIVE_SCAN;
 	} else if ((request->ssids) && (request->n_ssids > 0)
 			&& (request->n_ssids <= (SCN_SSID_MAX_NUM + 1))) {
 		num_ssid = (uint32_t)request->n_ssids;
@@ -817,30 +823,31 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 				/* remove if this is a wildcard scan */
 				num_ssid--;
 				wildcard_flag |= (1 << i);
-				DBGLOG(REQ, INFO, "i=%d, wildcard scan\n", i);
+				DBGLOG(REQ, TRACE, "i=%d, wildcard scan\n", i);
 				continue;
 			}
-			COPY_SSID(rScanRequest.rSsid[u4ValidIdx].aucSsid,
-				rScanRequest.rSsid[u4ValidIdx].u4SsidLen,
+			COPY_SSID(prScanRequest->rSsid[u4ValidIdx].aucSsid,
+				prScanRequest->rSsid[u4ValidIdx].u4SsidLen,
 				request->ssids[i].ssid,
 				request->ssids[i].ssid_len);
 			DBGLOG(REQ, INFO,
 				"i=%d, u4ValidIdx=%d, Ssid=%s, SsidLen=%d\n",
 				i, u4ValidIdx,
-				rScanRequest.rSsid[u4ValidIdx].aucSsid,
-				rScanRequest.rSsid[u4ValidIdx].u4SsidLen);
+				prScanRequest->rSsid[u4ValidIdx].aucSsid,
+				prScanRequest->rSsid[u4ValidIdx].u4SsidLen);
 
 			u4ValidIdx++;
 			if (u4ValidIdx == SCN_SSID_MAX_NUM) {
-				DBGLOG(REQ, INFO, "SCN_SSID_MAX_NUM\n");
+				DBGLOG(REQ, TRACE, "SCN_SSID_MAX_NUM\n");
 				break;
 			}
 		}
 		/* real SSID number to firmware */
-		rScanRequest.u4SsidNum = u4ValidIdx;
-		rScanRequest.ucScanType = SCAN_TYPE_ACTIVE_SCAN;
+		prScanRequest->u4SsidNum = u4ValidIdx;
+		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 	} else {
 		DBGLOG(REQ, ERROR, "request->n_ssids:%d\n", request->n_ssids);
+		kalMemFree(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
 		return -EINVAL;
 	}
 	DBGLOG(REQ, INFO,
@@ -849,8 +856,9 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 
 	/* Set channel info */
 	if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
-		rScanRequest.u4ChannelNum = 0;
-		DBGLOG(REQ, TRACE, "Channel list exceed maximun support.\n");
+		prScanRequest->u4ChannelNum = 0;
+		DBGLOG(REQ, INFO, "Channel list %u exceed maximum support.\n",
+			request->n_channels);
 	} else {
 		j = 0;
 		for (i = 0; i < request->n_channels; i++) {
@@ -861,39 +869,40 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 					i, request->channels[i]->center_freq);
 				continue;
 			}
-			rScanRequest.arChannel[j].ucChannelNum = u4channel;
+			prScanRequest->arChannel[j].ucChannelNum = u4channel;
 			switch ((request->channels[i])->band) {
 			case KAL_BAND_2GHZ:
-				rScanRequest.arChannel[j].eBand = BAND_2G4;
+				prScanRequest->arChannel[j].eBand = BAND_2G4;
 				break;
 			case KAL_BAND_5GHZ:
-				rScanRequest.arChannel[j].eBand = BAND_5G;
+				prScanRequest->arChannel[j].eBand = BAND_5G;
 				break;
 			default:
 				DBGLOG(REQ, WARN, "UNKNOWN Band %d(chnl=%u)\n",
 					request->channels[i]->band,
 					u4channel);
-				rScanRequest.arChannel[j].eBand = BAND_NULL;
+				prScanRequest->arChannel[j].eBand = BAND_NULL;
 				break;
 			}
 			j++;
 		}
-		rScanRequest.u4ChannelNum = j;
+		prScanRequest->u4ChannelNum = j;
 	}
 	DBGLOG(REQ, INFO, "n_ssids(%d==>%u) n_channel(%u==>%u)\n",
 		request->n_ssids, num_ssid, request->n_channels,
-		rScanRequest.u4ChannelNum);
+		prScanRequest->u4ChannelNum);
 
 	if (request->ie_len > 0) {
-		rScanRequest.u4IELength = request->ie_len;
-		rScanRequest.pucIE = (uint8_t *) (request->ie);
+		prScanRequest->u4IELength = request->ie_len;
+		prScanRequest->pucIE = (uint8_t *) (request->ie);
 	}
 
 	prGlueInfo->prScanRequest = request;
 	rStatus = kalIoctl(prGlueInfo,
 			   wlanoidSetBssidListScanAdv,
-			   &rScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV), FALSE, FALSE, FALSE, &u4BufLen);
+			   prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV), FALSE, FALSE, FALSE, &u4BufLen);
 
+	kalMemFree(prScanRequest, sizeof(struct PARAM_SCAN_REQUEST_ADV), VIR_MEM_TYPE);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		prGlueInfo->prScanRequest = NULL;
 		DBGLOG(REQ, WARN, "scan error:%x\n", rStatus);
