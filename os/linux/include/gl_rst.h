@@ -91,9 +91,12 @@
 #endif
 
 #define RST_FLAG_CHIP_RESET        0
-#define RST_FLAG_DO_CORE_DUMP      BIT(0)
-#define RST_FLAG_PREVENT_POWER_OFF BIT(1)
-#define RST_FLAG_DO_WHOLE_RESET    BIT(2)
+#define RST_FLAG_DO_CORE_DUMP              BIT(0)
+#define RST_FLAG_PREVENT_POWER_OFF         BIT(1)
+#define RST_FLAG_DO_WHOLE_RESET            BIT(2)
+#define RST_FLAG_DO_PASSIVE_L0P5_RESET     BIT(3)
+#define RST_FLAG_DO_ACTIVE_L0P5_RESET      BIT(4)
+#define RST_FLAG_DO_L1_RESET               BIT(5)
 
 #if CFG_CHIP_RESET_HANG
 #define SER_L0_HANG_RST_NONE		0
@@ -247,35 +250,32 @@ extern u_int8_t fgIsResetHangState;
  *                                 M A C R O S
  *******************************************************************************
  */
-#define GL_COREDUMP_TRIGGER(_prAdapter)	\
-{ \
-	wlanoidSerExtCmd(_prAdapter, SER_ACTION_RECOVER, \
-					SER_SET_L0_RECOVER, 0); \
-}
-
 #if CFG_CHIP_RESET_SUPPORT
-#if CFG_WMT_RESET_API_SUPPORT
-#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
-	glResetTrigger(_prAdapter, (_u4Flags), \
-	(const uint8_t *)__FILE__, __LINE__)
+/* Each reset trigger reason has corresponding default reset action, which is
+ * defined in glResetSelectAction(). You can use this macro to trigger default
+ * action.
+ */
+#define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason)		\
+do { \
+	glSetRstReason(_eReason);    \
+	glResetTrigger(_prAdapter, glResetSelectAction(_prAdapter),	\
+		       (const uint8_t *)__FILE__, __LINE__);    \
+} while (FALSE)
+
+/* You can use this macro to trigger user defined reset actions instead of the
+ * default ones.
+ */
+#define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags)    \
+do { \
+	glSetRstReason(_eReason);    \
+	glResetTrigger(_prAdapter, _u4Flags,	\
+		       (const uint8_t *)__FILE__, __LINE__);    \
+} while (FALSE)
 #else
-#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
-{ \
-	if (glGetRstReason() == RST_OID_TIMEOUT || \
-		glGetRstReason() == RST_FW_ASSERT || \
-		glGetRstReason() == RST_CMD_TRIGGER || \
-		glGetRstReason() == RST_BT_TRIGGER) { \
-		glResetTrigger(_prAdapter, (_u4Flags), \
-			(const uint8_t *)__FILE__, __LINE__); \
-	} else { \
-		GL_COREDUMP_TRIGGER(_prAdapter);	\
-		DBGLOG(INIT, ERROR, "Trigger coredump in %s line %u!\n",  \
-							__FILE__, __LINE__); \
-	} \
-}
-#endif
-#else
-#define GL_RESET_TRIGGER(_prAdapter, _u4Flags) \
+#define GL_DEFAULT_RESET_TRIGGER(_prAdapter, _eReason) \
+	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
+
+#define GL_USER_DEFINE_RESET_TRIGGER(_prAdapter, _eReason, _u4Flags) \
 	DBGLOG(INIT, INFO, "DO NOT support chip reset\n")
 #endif
 
@@ -306,9 +306,11 @@ void glSendResetRequest(void);
 
 void glResetWholeChipResetTrigger(char *pcReason);
 
-u_int8_t glResetTrigger(struct ADAPTER *prAdapter,
-			uint32_t u4RstFlag, const uint8_t *pucFile,
-			uint32_t u4Line);
+uint32_t glResetSelectAction(IN struct ADAPTER *prAdapter);
+
+void glResetTrigger(struct ADAPTER *prAdapter,
+		    uint32_t u4RstFlag, const uint8_t *pucFile,
+		    uint32_t u4Line);
 
 #if CFG_WMT_RESET_API_SUPPORT
 int32_t glIsWmtCodeDump(void);
@@ -319,6 +321,8 @@ int glRstwlanPostWholeChipReset(void);
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
 #endif /* CFG_SUPPORT_CONNINFRA */
+#else
+void WfsysResetHdlr(struct work_struct *work);
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 #endif /* CFG_CHIP_RESET_SUPPORT */
 #endif /* _GL_RST_H */

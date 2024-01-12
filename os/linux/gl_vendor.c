@@ -3118,12 +3118,7 @@ int mtk_cfg80211_vendor_trigger_reset(
 	}
 	DBGLOG(REQ, INFO, "Framework trigger reset\n");
 
-	glSetRstReason(RST_FWK_TRIGGER);
-#if (CFG_SUPPORT_CONNINFRA == 0)
-	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_CHIP_RESET);
-#else
-	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
-#endif
+	GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FWK_TRIGGER);
 
 	return 0;
 }

@@ -1546,6 +1546,16 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.is_specify_he_cap_max_ampdu_len_exp = TRUE,
 	.uc2G4HeCapMaxAmpduLenExp = 3, /* 2 ^ (16 + 3) - 1 = 524287 */
 	.uc5GHeCapMaxAmpduLenExp = 1, /* 2 ^ (20 + 1) - 1 = 2,097,151 */
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	/* owner set true when feature is ready. */
+	.fgIsSupportL0p5Reset = FALSE,
+#elif defined(_HIF_USB)
+	.fgIsSupportL0p5Reset = TRUE,
+#elif defined(_HIF_SDIO)
+	/* owner set true when feature is ready. */
+	.fgIsSupportL0p5Reset = FALSE,
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {

@@ -378,11 +378,7 @@ static u_int8_t halDriverOwnCheckCR4(struct ADAPTER *prAdapter)
 			       "Skip waiting CR4 ready for next %ums\n",
 			       LP_OWN_BACK_FAILED_LOG_SKIP_MS);
 			fgStatus = FALSE;
-#if CFG_CHIP_RESET_SUPPORT
-			glSetRstReason(RST_DRV_OWN_FAIL);
-			GL_RESET_TRIGGER(prAdapter,
-					 RST_FLAG_CHIP_RESET);
-#endif
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
 			break;
 		}
 		/* Delay for CR4 to complete its operation. */
@@ -444,16 +440,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 				prChipDbgOps->showCsrInfo(prAdapter);
 			if (prChipInfo->dumpBusHangCr)
 				prChipInfo->dumpBusHangCr(prAdapter);
-#if CFG_CHIP_RESET_SUPPORT
-			/* Trigger RESET */
-			glSetRstReason(RST_DRV_OWN_FAIL);
-#if (CFG_SUPPORT_CONNINFRA == 0)
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
-#else
-			GL_RESET_TRIGGER(prAdapter, RST_FLAG_WF_RESET);
-#endif
-
-#endif
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
 	}
@@ -3090,8 +3077,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 
 #if CFG_CHIP_RESET_SUPPORT
 #if (CFG_SUPPORT_CONNINFRA == 0)
-	glSetRstReason(RST_SER_TIMEOUT);
-	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
+	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SER_TIMEOUT);
 #else
 	kalSetSerTimeoutEvent(prGlueInfo);
 #endif
@@ -3497,9 +3483,8 @@ void halEnableSlpProt(struct GLUE_INFO *prGlueInfo)
 			break;
 		if (u4WaitDelay == 0) {
 			DBGLOG(HAL, ERROR, "wait for sleep protect timeout.\n");
-			glSetRstReason(RST_SLP_PROT_TIMEOUT);
-			GL_RESET_TRIGGER(prGlueInfo->prAdapter,
-				RST_FLAG_CHIP_RESET);
+			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
+						 RST_SLP_PROT_TIMEOUT);
 			break;
 		}
 		kalUdelay(1);

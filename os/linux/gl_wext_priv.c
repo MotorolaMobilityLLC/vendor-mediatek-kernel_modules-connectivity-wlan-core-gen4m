@@ -13335,8 +13335,8 @@ static int priv_driver_set_rst_hang(IN struct net_device *prNetDev,
 
 		if (fgIsResetHangState == SER_L0_HANG_RST_CMD_TRG) {
 			DBGLOG(REQ, STATE, "[SER][L0] cmd trigger\n");
-			glSetRstReason(RST_CMD_TRIGGER);
-			GL_RESET_TRIGGER(NULL, RST_FLAG_CHIP_RESET);
+			GL_USER_DEFINE_RESET_TRIGGER(NULL, RST_CMD_TRIGGER,
+						     RST_FLAG_CHIP_RESET);
 		}
 
 	} else {
@@ -15309,8 +15309,8 @@ static int priv_driver_trigger_wfsys_reset(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-	glSetRstReason(RST_CMD_TRIGGER);
-	GL_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FLAG_WF_RESET);
+	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
+				     RST_CMD_TRIGGER, RST_FLAG_WF_RESET);
 
 	return i4BytesWritten;
 }

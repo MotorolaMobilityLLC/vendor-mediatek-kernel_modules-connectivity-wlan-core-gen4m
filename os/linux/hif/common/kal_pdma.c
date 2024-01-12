@@ -389,9 +389,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo,
 			if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
 				DBGLOG(HAL, ERROR,
 				       "Read register is deadfeed\n");
-				glSetRstReason(RST_REG_READ_DEADFEED);
-				GL_RESET_TRIGGER(prAdapter,
-						 RST_FLAG_CHIP_RESET);
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+							 RST_REG_READ_DEADFEED);
 			}
 			return FALSE;
 		}
