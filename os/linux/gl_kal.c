@@ -10016,6 +10016,13 @@ int32_t __weak kalPlatOpsInit(void)
 	return 0;
 }
 
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+u_int8_t __weak kalIsSupportMawd(void)
+{
+	return FALSE;
+}
+#endif
+
 /* mimic store_rps_map as net-sysfs.c does */
 int wlan_set_rps_map(struct netdev_rx_queue *queue, unsigned long rps_value)
 {
