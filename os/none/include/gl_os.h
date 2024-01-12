@@ -1222,10 +1222,14 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 #ifdef CFG_REMIND_IMPLEMENT
-#define wlanUpdateDfsChannelTable(_prGlueInfo, _ucChannel) \
+#define wlanUpdateDfsChannelTable(_prGlueInfo, \
+		_ucRoleIdx, _ucChannel, _ucBandWidth, \
+		_eBssSCO, _u4CenterFreq) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #else
-void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel);
+void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
+		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq);
 #endif
 #endif
 
