@@ -1832,44 +1832,46 @@ rlmGetSupportRxNssInVhtCap(struct IE_VHT_CAP *prVhtCap)
 {
 	uint8_t ucRxNss = 1;
 
-	if (prVhtCap) {
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_2SS_MASK) >>
-			VHT_CAP_INFO_MCS_2SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 2;
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_3SS_MASK)
-			>> VHT_CAP_INFO_MCS_3SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 3;
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_4SS_MASK)
-			>> VHT_CAP_INFO_MCS_4SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 4;
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_5SS_MASK)
-			>> VHT_CAP_INFO_MCS_5SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 5;
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_6SS_MASK)
-			>> VHT_CAP_INFO_MCS_6SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 6;
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_7SS_MASK)
-			>> VHT_CAP_INFO_MCS_7SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 7;
-		if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
-			VHT_CAP_INFO_MCS_8SS_MASK)
-			>> VHT_CAP_INFO_MCS_8SS_OFFSET)
-			!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
-			ucRxNss = 8;
-		} else
-			DBGLOG(RLM, WARN, "null prVhtCap, assume RxNss=1\n");
+	if (!prVhtCap) {
+		DBGLOG(RLM, TRACE, "null prVhtCap, assume RxNss=1\n");
+		return ucRxNss;
+	}
+
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_2SS_MASK) >>
+		VHT_CAP_INFO_MCS_2SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 2;
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_3SS_MASK)
+		>> VHT_CAP_INFO_MCS_3SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 3;
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_4SS_MASK)
+		>> VHT_CAP_INFO_MCS_4SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 4;
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_5SS_MASK)
+		>> VHT_CAP_INFO_MCS_5SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 5;
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_6SS_MASK)
+		>> VHT_CAP_INFO_MCS_6SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 6;
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_7SS_MASK)
+		>> VHT_CAP_INFO_MCS_7SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 7;
+	if (((prVhtCap->rVhtSupportedMcsSet.u2RxMcsMap &
+		VHT_CAP_INFO_MCS_8SS_MASK)
+		>> VHT_CAP_INFO_MCS_8SS_OFFSET)
+		!= VHT_CAP_INFO_MCS_NOT_SUPPORTED)
+		ucRxNss = 8;
 
 	return ucRxNss;
 }
