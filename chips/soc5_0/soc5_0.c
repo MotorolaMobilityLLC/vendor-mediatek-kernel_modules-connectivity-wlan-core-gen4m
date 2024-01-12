@@ -1479,6 +1479,8 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
 	while (g_IsNeedWaitCoredump) {
+		if (kalIsResetting() == FALSE)
+			break;
 		kalMsleep(100);
 		retryCount++;
 		if (retryCount >= MAX_WAIT_COREDUMP_COUNT) {
