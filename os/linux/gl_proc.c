@@ -106,10 +106,6 @@
 struct _TWT_SMART_STA_T g_TwtSmartStaCtrl;
 #endif
 
-#if CFG_SUPPORT_CSI
-struct CSI_DATA_T rTmpCSIData;
-#endif
-
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -249,6 +245,7 @@ static ssize_t procCSIDataRead(struct file *filp,
 	uint32_t u4StartIdx = 0;
 	int32_t i4Pos = 0;
 	struct CSI_INFO_T *prCSIInfo = NULL;
+	struct CSI_DATA_T *prTempCSIData = NULL;
 	u_int8_t bStatus;
 
 	if (g_prGlueInfo_proc && g_prGlueInfo_proc->u4ReadyFlag &&
@@ -265,15 +262,21 @@ static ssize_t procCSIDataRead(struct file *filp,
 		wait_event_interruptible(g_prGlueInfo_proc->waitq_csi,
 			prCSIInfo->u4CSIBufferUsed != 0);
 
+		prTempCSIData = glCsiGetCSIData();
+		if (!prTempCSIData) {
+			DBGLOG(REQ, ERROR, "[CSI] NULL CSI data.\n");
+			return -EFAULT;
+		}
+
 		/*
 		 * No older CSI data in buffer waiting for reading out,
 		 * so prepare a new one for reading.
 		 */
 		bStatus = wlanPopCSIData(g_prGlueInfo_proc->prAdapter,
-			&rTmpCSIData);
+			prTempCSIData);
 		if (bStatus)
 			i4Pos = wlanCSIDataPrepare(temp,
-				prCSIInfo, &rTmpCSIData);
+				prCSIInfo, prTempCSIData);
 
 		/* The frist run of reading the CSI data */
 		u4StartIdx = 0;
