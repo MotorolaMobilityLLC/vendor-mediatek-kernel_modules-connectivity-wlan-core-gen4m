@@ -896,7 +896,8 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
  */
 /*---------------------------------------------------------------------------*/
 int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
-	struct net_device *prP2pDev, uint8_t u4Idx, u_int8_t fgIsApMode, u_int8_t fgSkipRole)
+	struct net_device *prP2pDev, uint8_t u4Idx, u_int8_t fgIsApMode,
+	u_int8_t fgSkipRole, uint8_t aucIntfMac[])
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_P2P_INFO *prP2PInfo = NULL;
@@ -904,6 +905,10 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss;
+#endif
+	uint8_t ucGroupMldId = 0;
 	enum nl80211_iftype type;
 	uint8_t ucBssIndex;
 
@@ -1037,8 +1042,13 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* setup running mode */
 	p2pFuncInitConnectionSettings(prAdapter,
 		prAdapter->rWifiVar.prP2PConnSettings[u4Idx], fgIsApMode);
-
-	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, u4Idx, FALSE);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = p2pMldBssInit(prGlueInfo->prAdapter, aucIntfMac,
+				 fgIsApMode);
+	ucGroupMldId = prMldBss->ucGroupMldId;
+#endif
+	prNetDevPriv->ucBssIdx = p2pRoleFsmInit(prAdapter, u4Idx,
+		ucGroupMldId, aucIntfMac);
 	/* Currently wpasupplicant can't support create interface. */
 	/* so initial the corresponding data structure here. */
 	wlanBindBssIdxToNetInterface(prGlueInfo, prNetDevPriv->ucBssIdx,
@@ -1237,7 +1247,7 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 		kalMemCopy(prP2pDev->perm_addr, prP2pDev->dev_addr, ETH_ALEN);
 
 		if (glSetupP2P(prGlueInfo, prP2pWdev, prP2pDev, i,
-			fgIsApMode, fgSkipRole) != 0) {
+			       fgIsApMode, fgSkipRole, rMacAddr) != 0) {
 			DBGLOG(INIT, WARN, "glSetupP2P[%u] FAILED\n", i);
 			free_netdev(prP2pDev);
 			return FALSE;

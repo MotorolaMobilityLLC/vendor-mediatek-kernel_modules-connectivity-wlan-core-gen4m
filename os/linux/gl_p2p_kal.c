@@ -1606,7 +1606,7 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 
 				for (i = 0; i < MLD_LINK_MAX; i++) {
 					struct BSS_INFO *prP2pLinkBssInfo =
-						p2pGetLinkBssInfo(prAdapter,
+						p2pGetLinkBssInfo(
 						prP2pRoleFsmInfo, i);
 					struct STA_RECORD *prStaRec =
 						p2pGetLinkStaRec(

@@ -319,7 +319,7 @@ struct P2P_ROLE_FSM_INFO {
 	enum ENUM_P2P_ROLE_STATE eCurrentState;
 
 	/* Channel related. */
-	struct P2P_CHNL_REQ_INFO rChnlReqInfo;
+	struct P2P_CHNL_REQ_INFO rChnlReqInfo[MLD_LINK_MAX];
 
 	/* Scan related. */
 	struct P2P_SCAN_REQ_INFO rScanReqInfo;
@@ -332,8 +332,6 @@ struct P2P_ROLE_FSM_INFO {
 
 	/* FSM Timer */
 	struct TIMER rP2pRoleFsmTimeoutTimer;
-
-	struct TIMER rP2pCsaDoneTimer;
 
 #if	CFG_ENABLE_PER_STA_STATISTICS_LOG
 	/* Get statistics Timer */
@@ -366,14 +364,24 @@ struct P2P_ROLE_FSM_INFO {
 
 /*========================= Initial ============================*/
 
-uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx,
-	uint8_t fgUseInterfaceAddr);
+uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx, uint8_t ucGroupMldId,
+	uint8_t aucIntfMac[]);
 
 u_int8_t p2pRoleFsmNeedMlo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucRoleIdx);
 
 void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx);
+
+struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t aucMacAddr[],
+	uint8_t ucLinkIdx);
+
+void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	struct BSS_INFO *prP2pBssInfo);
 
 void p2pRoleFsmDelIface(
 	struct ADAPTER *prAdapter,

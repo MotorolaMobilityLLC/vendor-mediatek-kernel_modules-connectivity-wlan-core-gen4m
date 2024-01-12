@@ -4456,18 +4456,9 @@ uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 		}
 #if CFG_ENABLE_WIFI_DIRECT
 		else if (IS_BSS_P2P(bss)) {
+			struct BSS_DESC *prBssDesc = p2pGetTargetBssDesc(
+				prAdapter, ucBssIndex);
 
-			struct BSS_DESC *prBssDesc = NULL;
-			struct P2P_ROLE_FSM_INFO *p2p =
-				p2pGetDefaultRoleFsmInfo(prAdapter,
-					IFTYPE_P2P_CLIENT);
-
-			if (!p2p) {
-				DBGLOG(ML, WARN, "NULL prP2pRoleFsmInfo\n");
-				return FALSE;
-			}
-
-			prBssDesc = p2p->rJoinInfo.prTargetBssDesc;
 			if (!prBssDesc) {
 				DBGLOG(ML, WARN, "NULL prTargetBssDesc\n");
 				return FALSE;

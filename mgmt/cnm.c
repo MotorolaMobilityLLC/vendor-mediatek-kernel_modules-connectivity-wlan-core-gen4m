@@ -1814,11 +1814,7 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucAPBandwidth = MAX_BW_160MHZ;
 	struct BSS_DESC *prBssDesc = NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
-		(struct P2P_ROLE_FSM_INFO *)NULL;
-	uint8_t i = 0;
 	uint8_t ucOffset = (MAX_BW_80MHZ - CW_80MHZ);
-
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex);
@@ -1834,37 +1830,8 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 		prBssDesc
 			= aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	} else if (IS_BSS_P2P(prBssInfo)) {
-		/* P2P mode */
-
-		for (i = 0 ; i < BSS_P2P_NUM; i++) {
-
-			if (!prAdapter->rWifiVar.aprP2pRoleFsmInfo[i])
-				continue;
-
-			if (prAdapter->rWifiVar.aprP2pRoleFsmInfo[i]->ucBssIndex
-			    ==
-			    ucBssIndex)
-				break;
-
-		}
-
-		if (i >= BSS_P2P_NUM) {
-			prP2pRoleFsmInfo = NULL;
-		} else {
-			prP2pRoleFsmInfo =
-				prAdapter->rWifiVar.aprP2pRoleFsmInfo[i];
-
-			/*only GC need to consider GO's BW*/
-			if (!p2pFuncIsAPMode(
-					prAdapter->rWifiVar.prP2PConnSettings[
-						prBssInfo->u4PrivateData])) {
-				prBssDesc = prP2pRoleFsmInfo->rJoinInfo
-					.prTargetBssDesc;
-			}
-
-		}
-
-
+		/* P2P mode, only GC need to consider GO's BW */
+		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIndex);
 	}
 
 	if (prBssDesc) {
@@ -1877,7 +1844,6 @@ static uint8_t cnmGetAPBwPermitted(struct ADAPTER
 		} else {
 			ucAPBandwidth = prBssDesc->eChannelWidth + ucOffset;
 		}
-
 	}
 
 	return ucAPBandwidth;
@@ -2051,11 +2017,8 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 			}
 			/* P2P mode */
 			else {
-				if (prP2pRoleFsmInfo) {
-					prBssDesc =
-						prP2pRoleFsmInfo
-						->rJoinInfo.prTargetBssDesc;
-				}
+				prBssDesc = p2pGetTargetBssDesc(prAdapter,
+					ucBssIndex);
 
 				if (prBssDesc)
 					eBand = prBssDesc->eBand;
@@ -3113,9 +3076,16 @@ uint32_t cnmUpdateDbdcSetting(struct ADAPTER *prAdapter,
 			}
 		}
 		/* For P2P Device, we force it to use WMM3 */
-		prBssInfo = prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx];
-		if (prBssInfo->eBand == BAND_2G4)
-			prCmdBody->ucWmmBandBitmap |= BIT(MAX_HW_WMM_INDEX);
+		if (IS_BSS_INDEX_VALID(prAdapter->ucP2PDevBssIdx)) {
+			prBssInfo = prAdapter->aprBssInfo[
+				prAdapter->ucP2PDevBssIdx];
+			if (prBssInfo->eBand == BAND_2G4)
+				prCmdBody->ucWmmBandBitmap |= BIT(
+					MAX_HW_WMM_INDEX);
+		} else {
+			DBGLOG(CNM, ERROR, "Invalid p2p dev idx(%u)\n",
+				prAdapter->ucP2PDevBssIdx);
+		}
 	}
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)

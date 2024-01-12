@@ -248,7 +248,6 @@ p2pDevFsmStateTransition(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	ASSERT(prP2pDevFsmInfo->ucBssIndex == prAdapter->ucP2PDevBssIdx);
 	if (prP2pDevFsmInfo->ucBssIndex != prAdapter->ucP2PDevBssIdx) {
 		log_dbg(P2P, ERROR,
 			"prP2pDevFsmInfo->ucBssIndex %d should be prAdapter->ucP2PDevBssIdx(%d)!\n",

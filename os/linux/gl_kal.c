@@ -12250,7 +12250,7 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 
 		fgConnReqMloSupport = !!(prP2pRole->rJoinInfo.u4ConnFlags &
 					 CONNECT_REQ_MLO_SUPPORT);
-		prBssDesc = prP2pRole->rJoinInfo.prTargetBssDesc;
+		prBssDesc = p2pGetTargetBssDesc(prAdapter, ucBssIndex);
 		if (!prBssDesc) {
 			DBGLOG(SAA, WARN,
 			       "SAE auth failed without prTargetBssDesc\n");

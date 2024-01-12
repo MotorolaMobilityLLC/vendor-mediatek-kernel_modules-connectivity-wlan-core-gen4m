@@ -533,6 +533,9 @@ CONFIG_IFACE_CONCURRENT_MODE=2
 ccflags-y += -DCFG_SUPPORT_GLOBAL_AAD_NONCE
 ifneq ($(CONFIG_MTK_WIFI_MT6653_DEV), y)
     ccflags-y += -DCFG_SUPPORT_PRE_WIFI7
+else
+    ccflags-y += -DCFG_MAX_BSSID_NUM=6
+    ccflags-y += -DCFG_P2P_NUM=3
 endif
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
