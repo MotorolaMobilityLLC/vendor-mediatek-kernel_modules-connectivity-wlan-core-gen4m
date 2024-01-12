@@ -152,6 +152,7 @@ struct mddp_pcie_bar_info {
 
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
+u_int8_t g_fgMddpWifiEnabled = TRUE;
 struct MDDP_SETTINGS g_rSettings;
 enum ENUM_MDDPW_DRV_INFO_STATUS g_eMddpStatus;
 struct mutex rMddpLock;
@@ -2106,17 +2107,24 @@ void mddpEnableMddpSupport(void)
 {
 	if (!g_fgMddpEnabled)
 		mddpRegisterCb();
+
+	g_fgMddpWifiEnabled = TRUE;
 }
 
 void mddpDisableMddpSupport(void)
 {
 	if (gMddpFunc.wifi_handle)
 		mddpUnregisterCb();
+
+	g_fgMddpWifiEnabled = FALSE;
 }
 
 bool mddpIsSupportMcifWifi(void)
 {
 	int32_t i4Feature = 0;
+
+	if (!g_fgMddpWifiEnabled)
+		return false;
 
 	if (!gMddpWFunc.get_mddp_feature) {
 		DBGLOG_LIMITED(INIT, LOUD, "gMddpWFunc not register\n");
@@ -2131,7 +2139,7 @@ bool mddpIsSupportMcifWifi(void)
 
 	i4Feature = gMddpWFunc.get_mddp_feature();
 	if ((i4Feature & MDDP_FEATURE_MCIF_WIFI) == 0) {
-		DBGLOG(INIT, INFO, "feature: %d.\n", i4Feature);
+		DBGLOG_LIMITED(INIT, INFO, "feature: %d.\n", i4Feature);
 		return false;
 	}
 
