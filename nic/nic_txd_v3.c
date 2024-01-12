@@ -275,6 +275,9 @@ void nic_txd_v3_compose(
 	struct HW_MAC_CONNAC3X_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
+#if CFG_TX_CUSTOMIZE_LTO
+	struct WIFI_VAR *prWifiVar;
+#endif /* CFG_TX_CUSTOMIZE_LTO */
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta;
 #endif
@@ -284,6 +287,10 @@ void nic_txd_v3_compose(
 	uint8_t fgIsALTXQueue = FALSE;
 	uint8_t fgForceSendQ0 = FALSE;
 	uint8_t ucControlFlag;
+
+#if CFG_TX_CUSTOMIZE_LTO
+	prWifiVar = &prAdapter->rWifiVar;
+#endif /* CFG_TX_CUSTOMIZE_LTO */
 
 	prTxDesc = (struct HW_MAC_CONNAC3X_TX_DESC *) prTxDescBuffer;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
@@ -516,9 +523,18 @@ void nic_txd_v3_compose(
 	}
 
 	/* Remaining TX time */
-	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME))
-		prMsduInfo->u4RemainingLifetime =
-			nicTxGetRemainingTxTimeByTc(prMsduInfo->ucTC);
+	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME)) {
+#if CFG_TX_CUSTOMIZE_LTO
+		if (IS_FEATURE_ENABLED(prWifiVar->ucEnableConfigLTO) &&
+			nicTxEnableLTO(prAdapter, prMsduInfo, prBssInfo))
+			prMsduInfo->u4RemainingLifetime =
+				prWifiVar->u4LTOValue;
+		else
+#endif /* CFG_TX_CUSTOMIZE_LTO */
+			prMsduInfo->u4RemainingLifetime =
+				nicTxGetRemainingTxTimeByTc(prMsduInfo->ucTC);
+	}
+
 	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(
 		prTxDesc, prMsduInfo->u4RemainingLifetime);
 

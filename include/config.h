@@ -1407,6 +1407,10 @@
 #endif
 #endif /* CFG_TX_MGMT_BY_DATA_Q */
 
+#ifndef CFG_TX_CUSTOMIZE_LTO
+#define CFG_TX_CUSTOMIZE_LTO		0
+#endif /* CFG_TX_CUSTOMIZE_LTO */
+
 #ifndef CFG_SUPPORT_TX_DATA_DELAY
 #define CFG_SUPPORT_TX_DATA_DELAY		0
 #endif

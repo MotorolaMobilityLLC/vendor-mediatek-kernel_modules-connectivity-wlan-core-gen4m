@@ -1058,6 +1058,11 @@ struct WIFI_VAR {
 	uint8_t ucP2pShareMacAddr;
 	uint8_t ucSmartRTS;
 
+#if CFG_TX_CUSTOMIZE_LTO
+	uint8_t ucEnableConfigLTO;
+	uint32_t u4LTOValue;
+#endif /* CFG_TX_CUSTOMIZE_LTO */
+
 	uint32_t u4UapsdAcBmp;
 	uint32_t u4MaxSpLen;
 	uint32_t u4P2pUapsdAcBmp;

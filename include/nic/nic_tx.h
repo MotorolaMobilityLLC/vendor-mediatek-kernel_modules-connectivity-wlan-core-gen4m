@@ -2113,6 +2113,11 @@ void nicHifTxMsduDoneCb(struct ADAPTER *prAdapter,
 u_int8_t nicTxIsPrioPackets(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo);
 
+#if CFG_TX_CUSTOMIZE_LTO
+u_int8_t nicTxEnableLTO(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, struct BSS_INFO *prBssInfo);
+#endif /* CFG_TX_CUSTOMIZE_LTO */
+
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 #define NIC_TX_RES_IS_ACTIVE(__prAdapter, __u4TcIdx) \
 	(nicTxResourceIsPseCtrlNeeded(__prAdapter, __u4TcIdx) \
