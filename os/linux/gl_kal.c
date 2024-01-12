@@ -2278,6 +2278,8 @@ kalIoctl(IN struct GLUE_INFO *prGlueInfo,
 			ret = prGlueInfo->rPendStatus;
 		else
 			ret = prIoReq->rStatus;
+		if (ret != WLAN_STATUS_SUCCESS)
+			DBGLOG(OID, WARN, "kalIoctl: ret ErrCode: %d\n", ret);
 	}
 #if 0
 	{

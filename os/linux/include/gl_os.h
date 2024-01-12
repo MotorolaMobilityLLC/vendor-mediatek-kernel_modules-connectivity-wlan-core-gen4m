@@ -1078,9 +1078,9 @@ u16 wlanSelectQueue(struct net_device *dev, struct sk_buff *skb);
 
 void wlanDebugInit(void);
 
-uint32_t wlanSetDebugLevel(IN uint32_t u4DbgIdx, IN uint32_t u4DbgMask);
+uint32_t wlanSetDriverDbgLevel(IN uint32_t u4DbgIdx, IN uint32_t u4DbgMask);
 
-uint32_t wlanGetDebugLevel(IN uint32_t u4DbgIdx, OUT uint32_t *pu4DbgMask);
+uint32_t wlanGetDriverDbgLevel(IN uint32_t u4DbgIdx, OUT uint32_t *pu4DbgMask);
 
 void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable);
 

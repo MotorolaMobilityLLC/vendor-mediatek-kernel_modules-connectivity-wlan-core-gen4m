@@ -207,6 +207,190 @@ void wlanDumpTcResAndTxedCmd(uint8_t *pucBuf,
 }
 #endif
 
+uint32_t wlanSetDriverDbgLevel(IN uint32_t u4DbgIdx, IN uint32_t u4DbgMask)
+{
+	uint32_t u4Idx;
+	uint32_t fgStatus = WLAN_STATUS_SUCCESS;
+
+	if (u4DbgIdx == DBG_ALL_MODULE_IDX) {
+		for (u4Idx = 0; u4Idx < DBG_MODULE_NUM; u4Idx++)
+			aucDebugModule[u4Idx] = (uint8_t) u4DbgMask;
+		LOG_FUNC("Set ALL DBG module log level to [0x%02x]\n",
+				u4DbgMask);
+	} else if (u4DbgIdx < DBG_MODULE_NUM) {
+		aucDebugModule[u4DbgIdx] = (uint8_t) u4DbgMask;
+		LOG_FUNC("Set DBG module[%u] log level to [0x%02x]\n",
+				u4DbgIdx, u4DbgMask);
+	} else {
+		fgStatus = WLAN_STATUS_FAILURE;
+	}
+
+	if (fgStatus == WLAN_STATUS_SUCCESS)
+		wlanDriverDbgLevelSync();
+
+	return fgStatus;
+}
+
+uint32_t wlanGetDriverDbgLevel(IN uint32_t u4DbgIdx, OUT uint32_t *pu4DbgMask)
+{
+	if (u4DbgIdx < DBG_MODULE_NUM) {
+		*pu4DbgMask = aucDebugModule[u4DbgIdx];
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	return WLAN_STATUS_FAILURE;
+}
+
+uint32_t wlanDbgLevelUiSupport(IN struct ADAPTER *prAdapter, uint32_t u4Version,
+		uint32_t ucModule)
+{
+	uint32_t u4Enable = ENUM_WIFI_LOG_LEVEL_SUPPORT_DISABLE;
+
+	switch (u4Version) {
+	case ENUM_WIFI_LOG_LEVEL_VERSION_V1:
+		switch (ucModule) {
+		case ENUM_WIFI_LOG_MODULE_DRIVER:
+			u4Enable = ENUM_WIFI_LOG_LEVEL_SUPPORT_ENABLE;
+			break;
+		case ENUM_WIFI_LOG_MODULE_FW:
+			u4Enable = ENUM_WIFI_LOG_LEVEL_SUPPORT_ENABLE;
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
+	return u4Enable;
+}
+
+uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t ucModule)
+{
+	uint32_t u4Level = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+	switch (u4Version) {
+	case ENUM_WIFI_LOG_LEVEL_VERSION_V1:
+		wlanDbgGetGlobalLogLevel(ucModule, &u4Level);
+		break;
+	default:
+		break;
+	}
+
+	return u4Level;
+}
+
+void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
+		uint32_t u4Version, uint32_t u4Module, uint32_t u4level)
+{
+	uint32_t u4DriverLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+	uint32_t u4FwLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+	if (u4level >= ENUM_WIFI_LOG_LEVEL_NUM)
+		return;
+
+	switch (u4Version) {
+	case ENUM_WIFI_LOG_LEVEL_VERSION_V1:
+		wlanDbgSetGlobalLogLevel(u4Module, u4level);
+		switch (u4Module) {
+		case ENUM_WIFI_LOG_MODULE_DRIVER:
+		{
+			uint32_t u4DriverLogMask;
+
+			if (u4level == ENUM_WIFI_LOG_LEVEL_DEFAULT)
+				u4DriverLogMask = DBG_LOG_LEVEL_DEFAULT;
+			else if (u4level == ENUM_WIFI_LOG_LEVEL_MORE)
+				u4DriverLogMask = DBG_LOG_LEVEL_MORE;
+			else
+				u4DriverLogMask = DBG_LOG_LEVEL_EXTREME;
+
+			wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
+					(u4DriverLogMask & DBG_CLASS_MASK));
+		}
+			break;
+		case ENUM_WIFI_LOG_MODULE_FW:
+		{
+			struct CMD_EVENT_LOG_UI_INFO cmd;
+
+			kalMemZero(&cmd,
+					sizeof(struct CMD_EVENT_LOG_UI_INFO));
+			cmd.u4Version = u4Version;
+			cmd.u4LogLevel = u4level;
+
+			wlanSendSetQueryCmd(prAdapter,
+					CMD_ID_LOG_UI_INFO,
+					TRUE,
+					FALSE,
+					FALSE,
+					nicCmdEventSetCommon,
+					nicOidCmdTimeoutCommon,
+					sizeof(struct CMD_EVENT_LOG_UI_INFO),
+					(uint8_t *)&cmd,
+					NULL,
+					0);
+		}
+			break;
+		default:
+			break;
+		}
+		break;
+	default:
+		break;
+	}
+
+	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, &u4DriverLevel);
+	wlanDbgGetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_FW, &u4FwLevel);
+	if ((u4DriverLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT ||
+		u4FwLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT) &&
+		!get_logtoomuch_enable()) {
+		DBGLOG(OID, TRACE,
+			"Disable printk to much. driver: %d, fw: %d\n",
+			u4DriverLevel,
+			u4FwLevel);
+		set_logtoomuch_enable(0);
+	}
+}
+
+u_int8_t wlanDbgGetGlobalLogLevel(uint32_t u4Module, uint32_t *pu4Level)
+{
+	if (u4Module != ENUM_WIFI_LOG_MODULE_DRIVER &&
+			u4Module != ENUM_WIFI_LOG_MODULE_FW)
+		return FALSE;
+
+	*pu4Level = au4LogLevel[u4Module];
+	return TRUE;
+}
+
+u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level)
+{
+	if (u4Module != ENUM_WIFI_LOG_MODULE_DRIVER &&
+			u4Module != ENUM_WIFI_LOG_MODULE_FW)
+		return FALSE;
+
+	au4LogLevel[u4Module] = u4Level;
+	return TRUE;
+}
+
+void wlanDriverDbgLevelSync(void)
+{
+	uint8_t i = 0;
+	uint32_t u4Mask = DBG_CLASS_MASK;
+	uint32_t u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+	/* get the lowest level as module's level */
+	for (i = 0; i < DBG_MODULE_NUM; i++)
+		u4Mask &= aucDebugModule[i];
+
+	if ((u4Mask & DBG_LOG_LEVEL_EXTREME) == DBG_LOG_LEVEL_EXTREME)
+		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_EXTREME;
+	else if ((u4Mask & DBG_LOG_LEVEL_MORE) == DBG_LOG_LEVEL_MORE)
+		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_MORE;
+	else
+		u4DriverLogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
+
+	wlanDbgSetGlobalLogLevel(ENUM_WIFI_LOG_MODULE_DRIVER, u4DriverLogLevel);
+}
+
 static void
 firmwareHexDump(const uint8_t *pucPreFix,
 		int32_t i4PreFixType,

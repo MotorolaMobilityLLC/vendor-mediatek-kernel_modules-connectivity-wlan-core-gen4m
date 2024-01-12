@@ -5703,13 +5703,13 @@ void wlanCfgSetDebugLevel(IN struct ADAPTER *prAdapter)
 
 		/* DBG level special control */
 		if (u4DbgIdx == 0xFFFFFFFF) {
-			wlanSetDebugLevel(DBG_ALL_MODULE_IDX, u4DbgMask);
+			wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX, u4DbgMask);
 			DBGLOG(INIT, INFO, "Set ALL DBG module log level to [0x%02x]!", (uint8_t) u4DbgMask);
 		} else if (u4DbgIdx == 0xFFFFFFFE) {
 			wlanDebugInit();
 			DBGLOG(INIT, INFO, "Reset ALL DBG module log level to DEFAULT!");
 		} else if (u4DbgIdx < DBG_MODULE_NUM) {
-			wlanSetDebugLevel(u4DbgIdx, u4DbgMask);
+			wlanSetDriverDbgLevel(u4DbgIdx, u4DbgMask);
 			DBGLOG(INIT, INFO, "Set DBG module[%u] log level to [0x%02x]!", u4DbgIdx, (uint8_t) u4DbgMask);
 		}
 	}
