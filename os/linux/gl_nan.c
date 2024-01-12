@@ -77,25 +77,6 @@ static const struct iw_priv_args rNANIwPrivTable[] = {
 	  "driver" },
 };
 
-#if 0
-const struct iw_handler_def mtk_p2p_wext_handler_def = {
-	.num_standard =
-		(__u16) sizeof(rP2PIwStandardHandler) / sizeof(iw_handler),
-	/* .num_private = */
-	/*(__u16)sizeof(rP2PIwPrivHandler)/sizeof(iw_handler), */
-	.num_private_args =
-		(__u16) sizeof(rP2PIwPrivTable) / sizeof(struct iw_priv_args),
-	.standard = rP2PIwStandardHandler,
-	/* .private            = rP2PIwPrivHandler, */
-	.private_args = rP2PIwPrivTable,
-#if CFG_SUPPORT_P2P_RSSI_QUERY
-	.get_wireless_stats = mtk_p2p_wext_get_wireless_stats,
-#else
-	.get_wireless_stats = NULL,
-#endif
-};
-#endif
-
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -440,7 +421,6 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 	if (prNANInfo == NULL)
 		return FALSE;
 
-#if CFG_ENABLE_UNIFY_WIPHY
 	{
 		/* don't unregister the dev that share with the AIS */
 		uint32_t u4Idx = 0;
@@ -453,7 +433,6 @@ nanNetUnregister(struct GLUE_INFO *prGlueInfo,
 				return FALSE;
 		}
 	}
-#endif
 
 	if (netif_carrier_ok(prNANInfo->prDevHandler))
 		netif_carrier_off(prNANInfo->prDevHandler);
@@ -716,10 +695,6 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	struct net_device *prNanDev = NULL;
 	struct wiphy *prWiphy = NULL;
 	const char *prSetDevName;
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-	struct GL_HIF_INFO *prHif = NULL;
-	struct device *prDev;
-#endif
 	struct _GL_NAN_INFO_T *prNANInfo = (struct _GL_NAN_INFO_T *)NULL;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 
@@ -813,7 +788,6 @@ err_alloc_netdev:
 	return FALSE;
 } /* end of glRegisterNAN() */
 
-#if CFG_ENABLE_UNIFY_WIPHY
 unsigned char
 glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
@@ -842,7 +816,7 @@ glNanCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 
 	return TRUE;
 }
-#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Unregister Net Device for NAN
@@ -978,7 +952,6 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 	if (g_aprNanRoleWdev[ucIdx] == NULL)
 		return TRUE;
 
-#if CFG_ENABLE_UNIFY_WIPHY
 {
 	/* don't unregister the dev that share with the AIS */
 	uint32_t u4Idx = 0;
@@ -992,7 +965,6 @@ nanRemove(struct GLUE_INFO *prGlueInfo)
 		}
 	}
 }
-#endif
 
 	DBGLOG(INIT, INFO, "Unregister g_aprNanRoleWdev[%d]\n", ucIdx);
 

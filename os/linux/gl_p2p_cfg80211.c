@@ -418,7 +418,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			netdev_priv(prP2pInfo->aprRoleHandler);
 		prNetDevPriv->prGlueInfo = prGlueInfo;
 		prNetDevPriv->ucBssIdx = prP2pRoleFsmInfo->ucBssIndex;
-#if CFG_ENABLE_UNIFY_WIPHY
+
 		if (type == NL80211_IFTYPE_AP) {
 			prNetDevPriv->ucIsP2p = FALSE;
 #if CFG_MTK_MDDP_SUPPORT
@@ -436,7 +436,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				prAdapter->rWifiVar.prP2PConnSettings[u4Idx],
 				FALSE);
 		}
-#endif
 
 		/* Backup */
 		prP2pInfo->prWdev = prWdev;

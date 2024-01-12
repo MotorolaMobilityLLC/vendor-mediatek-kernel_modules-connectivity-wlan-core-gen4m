@@ -1020,9 +1020,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	struct GLUE_INFO *prGlueInfo;
 	struct work_struct workq;
 	uint8_t ucBssIdx;
-#if CFG_ENABLE_UNIFY_WIPHY
 	u_int8_t ucIsP2p;
-#endif
 	u_int8_t ucMddpSupport;
 	struct net_device_stats stats;
 #if CFG_SUPPORT_NAN
@@ -1602,9 +1600,7 @@ int set_p2p_mode_handler(struct net_device *netdev,
 int set_nan_handler(struct net_device *netdev, uint32_t ucEnable);
 #endif
 
-#if CFG_ENABLE_UNIFY_WIPHY
 const struct net_device_ops *wlanGetNdevOps(void);
-#endif
 
 netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
 

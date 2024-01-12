@@ -426,7 +426,6 @@ int mtk_cfg80211_suspend(struct wiphy *wiphy,
 int mtk_cfg80211_resume(struct wiphy *wiphy);
 
 /* cfg80211 wrapper hooks */
-#if CFG_ENABLE_UNIFY_WIPHY
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 				       const char *name,
@@ -760,8 +759,6 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 			struct wireless_dev *wdev,
 			int *dbm);
 #endif /* (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0) */
-
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 				struct cfg80211_update_ft_ies_params *ftie);

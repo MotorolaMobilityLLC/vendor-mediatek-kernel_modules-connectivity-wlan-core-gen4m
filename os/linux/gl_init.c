@@ -1052,70 +1052,6 @@ const uint32_t mtk_cipher_suites[] = {
 	WLAN_CIPHER_SUITE_NO_GROUP_ADDR
 };
 
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-static struct cfg80211_ops mtk_wlan_ops = {
-	.suspend = mtk_cfg80211_suspend,
-	.resume = mtk_cfg80211_resume,
-	.change_virtual_intf = mtk_cfg80211_change_iface,
-	.add_key = mtk_cfg80211_add_key,
-	.get_key = mtk_cfg80211_get_key,
-	.del_key = mtk_cfg80211_del_key,
-	.set_default_key = mtk_cfg80211_set_default_key,
-	.get_station = mtk_cfg80211_get_station,
-#if CFG_SUPPORT_TDLS
-	.change_station = mtk_cfg80211_change_station,
-	.add_station = mtk_cfg80211_add_station,
-	.del_station = mtk_cfg80211_del_station,
-#endif
-	.scan = mtk_cfg80211_scan,
-#if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
-	.abort_scan = mtk_cfg80211_abort_scan,
-#endif
-	.connect = mtk_cfg80211_connect,
-	.disconnect = mtk_cfg80211_disconnect,
-	.join_ibss = mtk_cfg80211_join_ibss,
-	.leave_ibss = mtk_cfg80211_leave_ibss,
-	.set_power_mgmt = mtk_cfg80211_set_power_mgmt,
-	.set_pmksa = mtk_cfg80211_set_pmksa,
-	.del_pmksa = mtk_cfg80211_del_pmksa,
-	.flush_pmksa = mtk_cfg80211_flush_pmksa,
-#if CONFIG_SUPPORT_GTK_REKEY
-	.set_rekey_data = mtk_cfg80211_set_rekey_data,
-#endif
-	.assoc = mtk_cfg80211_assoc,
-
-	/* Action Frame TX/RX */
-	.remain_on_channel = mtk_cfg80211_remain_on_channel,
-	.cancel_remain_on_channel = mtk_cfg80211_cancel_remain_on_channel,
-	.mgmt_tx = mtk_cfg80211_mgmt_tx,
-	/* .mgmt_tx_cancel_wait        = mtk_cfg80211_mgmt_tx_cancel_wait, */
-#if KERNEL_VERSION(5, 8, 0) > CFG80211_VERSION_CODE
-	.mgmt_frame_register = mtk_cfg80211_mgmt_frame_register,
-#endif
-#if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
-	.update_mgmt_frame_registrations = mtk_cfg_mgmt_frame_update,
-#endif
-
-#ifdef CONFIG_NL80211_TESTMODE
-	.testmode_cmd = mtk_cfg80211_testmode_cmd,
-#endif
-#if CFG_SUPPORT_SCHED_SCAN
-	.sched_scan_start = mtk_cfg80211_sched_scan_start,
-	.sched_scan_stop = mtk_cfg80211_sched_scan_stop,
-#endif /* CFG_SUPPORT_SCHED_SCAN */
-#if CFG_SUPPORT_TDLS
-	.tdls_oper = mtk_cfg80211_tdls_oper,
-	.tdls_mgmt = mtk_cfg80211_tdls_mgmt,
-#endif
-	.update_ft_ies = mtk_cfg80211_update_ft_ies,
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-	.set_monitor_channel = mtk_cfg80211_set_monitor_channel,
-#endif
-#if CFG_SUPPORT_WPA3
-	.external_auth = mtk_cfg80211_external_auth,
-#endif
-};
-#else /* CFG_ENABLE_UNIFY_WIPHY */
 static struct cfg80211_ops mtk_cfg_ops = {
 	.add_virtual_intf = mtk_cfg_add_iface,
 	.del_virtual_intf = mtk_cfg_del_iface,
@@ -1211,7 +1147,6 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.external_auth = mtk_cfg80211_external_auth,
 #endif
 };
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 
@@ -3473,12 +3408,10 @@ const struct net_device_ops wlan_netdev_ops = {
 	.ndo_set_mac_address = wlanSetMacAddress,
 };
 
-#if CFG_ENABLE_UNIFY_WIPHY
 const struct net_device_ops *wlanGetNdevOps(void)
 {
 	return &wlan_netdev_ops;
 }
-#endif
 void wlanNvramSetState(enum ENUM_NVRAM_STATE state)
 {
 	g_NvramFsm = state;
@@ -3590,12 +3523,7 @@ static void wlanCreateWirelessDevice(void)
 	prWdev[u4Idx]->iftype = NL80211_IFTYPE_STATION;
 
 	/* 4 <1.2> Create wiphy */
-#if CFG_ENABLE_UNIFY_WIPHY
 	prWiphy = wiphy_new(&mtk_cfg_ops, sizeof(struct GLUE_INFO *));
-#else
-	prWiphy = wiphy_new(&mtk_wlan_ops,
-			    sizeof(struct GLUE_INFO *));
-#endif
 
 	if (!prWiphy) {
 		DBGLOG(INIT, ERROR,
@@ -3734,17 +3662,11 @@ static void wlanCreateWirelessDevice(void)
 
 #ifdef CONFIG_CFG80211_WEXT
 	/* 4 <1.5> Use wireless extension to replace IOCTL */
-
-#if CFG_ENABLE_UNIFY_WIPHY
 	prWiphy->wext = NULL;
-#else
-	prWiphy->wext = &wext_handler_def;
-#endif
 #endif
 	/* initialize semaphore for halt control */
 	sema_init(&g_halt_sem, 1);
 
-#if CFG_ENABLE_UNIFY_WIPHY
 #if CFG_ENABLE_WIFI_DIRECT
 	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
 	prWiphy->n_iface_combinations =
@@ -3761,8 +3683,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->flags |= WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL;
 	prWiphy->flags |= WIPHY_FLAG_HAVE_AP_SME;
 	prWiphy->ap_sme_capa = 1;
-#endif
-#endif
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if CFG_ENABLE_OFFCHANNEL_TX
 	prWiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
@@ -3811,10 +3732,8 @@ free_wdev:
 static void wlanDestroyAllWdev(void)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-#if CFG_ENABLE_UNIFY_WIPHY
 	/* There is only one wiphy, avoid that double free the wiphy */
 	struct wiphy *wiphy = NULL;
-#endif
 	int i = 0;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
@@ -3825,13 +3744,12 @@ static void wlanDestroyAllWdev(void)
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		if (gprP2pRoleWdev[i] == NULL)
 			continue;
-#if CFG_ENABLE_UNIFY_WIPHY
 		if (wlanIsAisDev(gprP2pRoleWdev[i]->netdev)) {
 			/* This is AIS/AP Interface */
 			gprP2pRoleWdev[i] = NULL;
 			continue;
 		}
-#endif
+
 		/* Do wiphy_unregister here. Take care the case that the
 		 * gprP2pRoleWdev[i] is created by the cfg80211 add iface ops,
 		 * And the base P2P dev is in the gprP2pWdev.
@@ -3842,13 +3760,7 @@ static void wlanDestroyAllWdev(void)
 		if (gprP2pRoleWdev[i] == gprP2pWdev[i])
 			gprP2pWdev[i] = NULL;
 
-#if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = gprP2pRoleWdev[i]->wiphy;
-#else
-		set_wiphy_dev(gprP2pRoleWdev[i]->wiphy, NULL);
-		wiphy_unregister(gprP2pRoleWdev[i]->wiphy);
-		wiphy_free(gprP2pRoleWdev[i]->wiphy);
-#endif
 
 		kfree(gprP2pRoleWdev[i]);
 		gprP2pRoleWdev[i] = NULL;
@@ -3864,10 +3776,7 @@ static void wlanDestroyAllWdev(void)
 	 */
 	for (i = 0; i < KAL_P2P_NUM; i++) {
 		if (gprP2pWdev[i] != NULL) {
-#if CFG_ENABLE_UNIFY_WIPHY
 			wiphy = gprP2pWdev[i]->wiphy;
-#endif
-
 			kfree(gprP2pWdev[i]);
 			gprP2pWdev[i] = NULL;
 		}
@@ -3876,22 +3785,13 @@ static void wlanDestroyAllWdev(void)
 
 	/* free AIS wdev */
 	if (gprWdev[0]) {
-#if CFG_ENABLE_UNIFY_WIPHY
 		wiphy = wlanGetWiphy();
-#else
-		/* trunk doesn't do set_wiphy_dev, but trunk-ce1 does. */
-		/* set_wiphy_dev(gprWdev->wiphy, NULL); */
-		wiphy_unregister(gprWdev[0]->wiphy);
-		wiphy_free(gprWdev[0]->wiphy);
-#endif
-
 		for (i = 0; i < KAL_AIS_NUM; i++) {
 			kfree(gprWdev[i]);
 			gprWdev[i] = NULL;
 		}
 	}
 
-#if CFG_ENABLE_UNIFY_WIPHY
 	/* unregister & free wiphy */
 	if (wiphy) {
 		/* set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
@@ -3901,7 +3801,6 @@ static void wlanDestroyAllWdev(void)
 		wiphy_unregister(wiphy);
 		wiphy_free(wiphy);
 	}
-#endif
 }
 
 void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
@@ -3955,9 +3854,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct mt66xx_chip_info *prChipInfo;
-#if CFG_ENABLE_UNIFY_WIPHY
 	struct wiphy *prWiphy = NULL;
-#endif
 	struct net_device *prDevHandler;
 
 	uint8_t *prInfName = NULL;
@@ -3968,7 +3865,6 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		return NULL;
 	}
 
-#if CFG_ENABLE_UNIFY_WIPHY
 	/* The gprWdev is created at initWlan() and isn't reset when the
 	 * disconnection occur. That cause some issue.
 	 */
@@ -3993,7 +3889,6 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	if (rlmDomainGetCtrlState() == REGD_STATE_INVALID)
 		rlmDomainResetCtrlInfo(TRUE);
 #endif
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 	/* 4 <1.3> co-relate wiphy & prDev */
 	glGetDev(pvData, &pvDev);
@@ -4094,8 +3989,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		prChipInfo->txd_append_size;
 	prDevHandler->netdev_ops = &wlan_netdev_ops;
 #ifdef CONFIG_WIRELESS_EXT
-	prDevHandler->wireless_handlers =
-		&wext_handler_def;
+	prDevHandler->wireless_handlers = &wext_handler_def;
 #endif
 	netif_carrier_off(prDevHandler);
 	netif_tx_stop_all_queues(prDevHandler);

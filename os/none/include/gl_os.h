@@ -625,9 +625,7 @@ struct wpa_driver_hs20_data_s {
 struct NETDEV_PRIVATE_GLUE_INFO {
 	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucBssIdx;
-#if CFG_ENABLE_UNIFY_WIPHY
 	u_int8_t ucIsP2p;
-#endif
 	u_int8_t ucMddpSupport;
 };
 
@@ -1049,9 +1047,7 @@ void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
 #endif
 #endif
 
-#if CFG_ENABLE_UNIFY_WIPHY
 const struct net_device_ops *wlanGetNdevOps(void);
-#endif
 
 #if CFG_MTK_ANDROID_WMT
 extern void connectivity_flush_dcache_area(void *addr, size_t len);

@@ -792,9 +792,8 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 
 	prNetDevPrivate->ucBssIdx = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
 
-#if CFG_ENABLE_UNIFY_WIPHY
 	prNetDevPrivate->ucIsP2p = FALSE;
-#endif
+
 #if CFG_MTK_MDDP_SUPPORT
 	/* support both wlan0 and wlan1 */
 	prNetDevPrivate->ucMddpSupport = TRUE;

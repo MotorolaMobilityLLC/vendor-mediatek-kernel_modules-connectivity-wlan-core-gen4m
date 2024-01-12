@@ -364,38 +364,20 @@ retry:
 	for (idx = 0 ; idx < KAL_P2P_NUM; idx++) {
 		if (gprP2pRoleWdev[idx] == NULL)
 			continue;
-#if CFG_ENABLE_UNIFY_WIPHY
 		if (wlanIsAisDev(gprP2pRoleWdev[idx]->netdev)) {
 			/* This is AIS/AP Interface */
 			gprP2pRoleWdev[idx] = NULL;
 			continue;
 		}
-#endif
 		/* free gprP2pWdev in wlanDestroyAllWdev */
 		if (gprP2pRoleWdev[idx] == gprP2pWdev[idx])
 			continue;
 
 		DBGLOG(INIT, INFO, "Unregister gprP2pRoleWdev[%d]\n", idx);
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-		set_wiphy_dev(gprP2pRoleWdev[idx]->wiphy, NULL);
-		wiphy_unregister(gprP2pRoleWdev[idx]->wiphy);
-		wiphy_free(gprP2pRoleWdev[idx]->wiphy);
-#endif
 		kfree(gprP2pRoleWdev[idx]);
 		gprP2pRoleWdev[idx] = NULL;
 		break;
 	}
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-	/* gprP2pWdev: base P2P dev
-	 * Becase the interface dev (ex: usb_device) would be free
-	 * after un-plug event. Should set the wiphy->dev->parent which
-	 * pointer to the interface dev to NULL. Otherwise, the corresponding
-	 * system operation (poweroff, suspend) might reference it.
-	 * set_wiphy_dev(wiphy, NULL): set the wiphy->dev->parent = NULL
-	 */
-	if (gprP2pWdev[0] != NULL)
-		set_wiphy_dev(gprP2pWdev->wiphy, NULL);
-#endif
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	prAdapter->rP2PRegState = ENUM_P2P_REG_STATE_UNREGISTERED;

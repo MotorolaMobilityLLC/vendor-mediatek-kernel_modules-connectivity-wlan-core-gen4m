@@ -890,10 +890,6 @@
 #define CFG_HOTSPOT_SUPPORT_FORCE_ACS_SCC       0
 #endif
 
-#ifndef CFG_ENABLE_UNIFY_WIPHY
-#define CFG_ENABLE_UNIFY_WIPHY 1
-#endif
-
 #define CFG_ENABLE_OFFCHANNEL_TX 1
 
 /*------------------------------------------------------------------------------
