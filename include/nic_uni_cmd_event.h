@@ -1215,6 +1215,39 @@ struct UNI_CMD_OFFLOAD_BMC_RPY_DETECT
 	uint8_t aucReserved[4];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_CMD_HIF_CTRL
+{
+	/*fixed field*/
+	uint8_t ucHifType;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                             | ID  | structure
+	*   -------------                   | ----| -------------
+	*   UNI_CMD_HIF_CTRL_BASIC          | 0x0 | UNI_CMD_HIF_CTRL_BASIC_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* Suspend command Tag */
+enum ENUM_UNI_CMD_HIF_CTRL_TAG
+{
+	UNI_CMD_HIF_CTRL_TAG_BASIC = 0,
+	UNI_CMD_HIF_CTRL_TAG_NUM
+};
+
+struct UNI_CMD_HIF_CTRL_BASIC
+{
+	uint16_t u2Tag;                   // Tag = 0x00
+	uint16_t u2Length;
+
+	uint8_t ucHifSuspend;
+	uint8_t aucPadding[3];
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_BAND_CONFIG
 {
 	/*fixed field*/
@@ -3374,6 +3407,8 @@ uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
 uint32_t nicUniCmdInstallDefaultKey(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdHifCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
