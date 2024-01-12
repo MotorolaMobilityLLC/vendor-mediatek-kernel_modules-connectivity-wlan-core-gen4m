@@ -4029,7 +4029,7 @@ p2pFuncParseBeaconVenderId(IN struct ADAPTER *prAdapter,
 			prAdapter, pucIE, &ucOuiType, &u2SubTypeVersion)) {
 			if ((ucOuiType == VENDOR_OUI_TYPE_WPA)
 				&& (u2SubTypeVersion == VERSION_WPA)) {
-				if (kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
+				if (!kalP2PGetCcmpCipher(prAdapter->prGlueInfo,
 					ucRoleIndex))
 					kalP2PSetCipher(prAdapter->prGlueInfo,
 						IW_AUTH_CIPHER_TKIP,
