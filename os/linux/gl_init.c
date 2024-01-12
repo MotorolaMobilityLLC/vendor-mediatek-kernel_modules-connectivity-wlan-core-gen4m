@@ -5293,6 +5293,8 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, INFO, "Complete on-going ioctl as failure.\n");
 		prIoReq = &(prGlueInfo->OidEntry);
 		prIoReq->rStatus = WLAN_STATUS_FAILURE;
+		DBGLOG(NIC, TRACE, "&prGlueInfo->rPendComp=%p",
+				&prGlueInfo->rPendComp);
 		complete(&prGlueInfo->rPendComp);
 	}
 }

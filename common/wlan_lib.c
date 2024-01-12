@@ -3041,6 +3041,9 @@ wlanQueryInformation(IN struct ADAPTER *prAdapter,
 	/* ignore any OID request after connected, under PS current measurement
 	 * mode
 	 */
+	DBGLOG(NIC, TRACE, "u4PsCurrentMeasureEn=%u, aisGetConnectedBssInfo=%p",
+		prAdapter->u4PsCurrentMeasureEn,
+		aisGetConnectedBssInfo(prAdapter));
 	if (prAdapter->u4PsCurrentMeasureEn &&
 	    aisGetConnectedBssInfo(prAdapter)) {
 		/* note: return WLAN_STATUS_FAILURE or
@@ -3053,6 +3056,7 @@ wlanQueryInformation(IN struct ADAPTER *prAdapter,
 	/* most OID handler will just queue a command packet */
 	status = pfnOidQryHandler(prAdapter, pvInfoBuf,
 				  u4InfoBufLen, pu4QryInfoLen);
+	DBGLOG(NIC, TRACE, "%ps returns %u", pfnOidQryHandler, status);
 #else
 	if (wlanIsHandlerNeedHwAccess(pfnOidQryHandler, FALSE)) {
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
@@ -3107,6 +3111,9 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 	/* ignore any OID request after connected, under PS current measurement
 	 * mode
 	 */
+	DBGLOG(NIC, TRACE, "u4PsCurrentMeasureEn=%u, aisGetConnectedBssInfo=%p",
+		prAdapter->u4PsCurrentMeasureEn,
+		aisGetConnectedBssInfo(prAdapter));
 	if (prAdapter->u4PsCurrentMeasureEn &&
 	    aisGetConnectedBssInfo(prAdapter)) {
 		/* note: return WLAN_STATUS_FAILURE or WLAN_STATUS_SUCCESS
@@ -3121,6 +3128,7 @@ wlanSetInformation(IN struct ADAPTER *prAdapter,
 	 */
 	status = pfnOidSetHandler(prAdapter, pvInfoBuf,
 				  u4InfoBufLen, pu4SetInfoLen);
+	DBGLOG(NIC, TRACE, "%ps returns %u", pfnOidSetHandler, status);
 #else
 	if (wlanIsHandlerNeedHwAccess(pfnOidSetHandler, TRUE)) {
 		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
@@ -5905,9 +5913,17 @@ wlanoidQueryStaStatistics(IN struct ADAPTER *prAdapter,
 			   &prAdapter->rQueryStaStatistics,
 			   sizeof(struct PARAM_GET_STA_STATISTICS));
 		return WLAN_STATUS_SUCCESS;
-	} else
-		return wlanQueryStaStatistics(prAdapter, pvQueryBuffer,
+	} else {
+		uint32_t r;
+
+		DBGLOG(REQ, TRACE, "Call, pvQueryBuffer=%p, pu4QueryInfoLen=%p",
+			pvQueryBuffer, pu4QueryInfoLen);
+		r = wlanQueryStaStatistics(prAdapter, pvQueryBuffer,
 				u4QueryBufferLen, pu4QueryInfoLen, TRUE);
+		DBGLOG(REQ, TRACE, "r=%u, pvQueryBuffer=%p, pu4QueryInfoLen=%p",
+				r, pvQueryBuffer, pu4QueryInfoLen);
+		return r;
+	}
 #else
 	return wlanQueryStaStatistics(prAdapter, pvQueryBuffer,
 				      u4QueryBufferLen, pu4QueryInfoLen, TRUE);
@@ -6127,6 +6143,8 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 		rQueryCmdStaStatistics.ucResetCounter =
 			prQueryStaStatistics->ucResetCounter;
 
+		DBGLOG(REQ, TRACE, "Call fgIsOid=%u, pvQueryBuffer=%p",
+				fgIsOid, pvQueryBuffer);
 		rResult = wlanSendSetQueryCmd(prAdapter,
 				      CMD_ID_GET_STA_STATISTICS,
 				      FALSE,
@@ -6137,6 +6155,8 @@ wlanQueryStaStatistics(IN struct ADAPTER *prAdapter,
 				      sizeof(struct CMD_GET_STA_STATISTICS),
 				      (uint8_t *)&rQueryCmdStaStatistics,
 				      pvQueryBuffer, u4QueryBufferLen);
+		DBGLOG(REQ, TRACE, "rResult=%u, fgIsOid=%u, pvQueryBuffer=%p",
+				rResult, fgIsOid, pvQueryBuffer);
 
 		if ((!fgIsOid) && (rResult == WLAN_STATUS_PENDING))
 			rResult = WLAN_STATUS_SUCCESS;
@@ -12291,11 +12311,16 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	kalMemZero(prStat, sizeof(struct PARAM_802_11_STATISTICS_STRUCT));
 	COPY_MAC_ADDR(prQueryStaStatistics->aucMacAddr, arBssid);
 	prQueryStaStatistics->ucReadClear = TRUE;
+	DBGLOG(REQ, TRACE, "Call prQueryStaStatistics=%p, u4BufLen=%p",
+			prQueryStaStatistics, &prAdapter->u4BufLen);
 	u4Status = wlanQueryStaStatistics(prAdapter,
 				prQueryStaStatistics,
 				sizeof(struct PARAM_GET_STA_STATISTICS),
 				&(prAdapter->u4BufLen),
 				FALSE);
+	DBGLOG(REQ, TRACE, "u4Status=%u, prQueryStaStatistics=%p, u4BufLen=%p",
+			u4Status, prQueryStaStatistics, &prAdapter->u4BufLen);
+
 	u4Status = wlanQueryStatistics(prAdapter,
 				prStat,
 				sizeof(struct PARAM_802_11_STATISTICS_STRUCT),
