@@ -1539,7 +1539,7 @@ uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
  *          num_rate
  *          STATS_LLS_RATE_STAT[] <- up to 200 () *rx_mpdu
  */
-uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FULL_REPORT *src,
+uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 		struct ADAPTER *prAdapter)
 {
 	struct STATS_LLS_WIFI_IFACE_STAT *iface;
@@ -1648,7 +1648,7 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	struct sk_buff *skb = NULL;
 
 	uint8_t *ptr = NULL;
-	struct HAL_LLS_FULL_REPORT *src;
+	struct HAL_LLS_FW_REPORT *src;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);

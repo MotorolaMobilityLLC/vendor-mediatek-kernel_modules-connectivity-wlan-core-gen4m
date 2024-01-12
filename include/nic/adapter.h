@@ -1702,7 +1702,7 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_LLS
 	struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer;
-	struct HAL_LLS_FULL_REPORT *pucLinkStatsSrcBufferAddr;
+	struct HAL_LLS_FW_REPORT *pucLinkStatsSrcBufferAddr;
 	uint32_t u4RxMpduAc[STATS_LLS_WIFI_AC_MAX]; /* Store in LLS order */
 	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM];
 #endif
