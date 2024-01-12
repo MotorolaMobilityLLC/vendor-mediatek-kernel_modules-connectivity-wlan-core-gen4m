@@ -192,8 +192,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif
 #if CFG_SUPPORT_NAN
-	{ EVENT_ID_NAN_EXT_EVENT, nicNanEventDispatcher }
+	{ EVENT_ID_NAN_EXT_EVENT, nicNanEventDispatcher},
 #endif
+	{EVENT_ID_REPORT_U_EVENT, nicEventReportUEvent},
 };
 
 static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {

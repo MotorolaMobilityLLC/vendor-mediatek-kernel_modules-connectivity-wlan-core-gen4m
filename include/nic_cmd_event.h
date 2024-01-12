@@ -181,6 +181,8 @@
 #define ICAP_CONTENT_FIIQ		0x48
 #define ICAP_CONTENT_FDIQ		0x49
 
+#define MAX_UEVENT_LEN	300
+
 #if CFG_SUPPORT_BUFFER_MODE
 
 struct CMD_EFUSE_BUFFER_MODE {
@@ -2856,6 +2858,10 @@ struct EVENT_COEX_STATUS {
 	uint8_t aucReserved1[5]; /* 4 byte alignment */
 };
 
+struct EVENT_REPORT_U_EVENT {
+	uint8_t aucData[MAX_UEVENT_LEN];
+};
+
 #if (CFG_SUPPORT_TWT == 1)
 /*
  * Important: Used for Communication between Host and WM-CPU,
@@ -3455,6 +3461,9 @@ void nicNanNdlFlowCtrlEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf);
 void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
 			      IN struct WIFI_EVENT *prEvent);
 #endif
+
+void nicEventReportUEvent(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent);
 
 /*******************************************************************************
  *                              F U N C T I O N S
