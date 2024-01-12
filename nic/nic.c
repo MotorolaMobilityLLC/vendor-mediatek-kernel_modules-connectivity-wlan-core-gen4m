@@ -211,11 +211,13 @@ uint32_t nicAllocateAdapterMemory(IN struct ADAPTER
 		 * and its MGMT memory pool.
 		 */
 		prAdapter->u4MgtBufCachedSize = MGT_BUFFER_SIZE;
-
+#ifdef CFG_PREALLOC_MEMORY
+		prAdapter->pucMgtBufCached = preallocGetMem(MEM_ID_NIC_ADAPTER);
+#else
 		LOCAL_NIC_ALLOCATE_MEMORY(prAdapter->pucMgtBufCached,
 			prAdapter->u4MgtBufCachedSize, PHY_MEM_TYPE,
 			"COMMON MGMT MEMORY POOL");
-
+#endif
 		/* 4 <2> Memory for RX Descriptor */
 		/* Initialize the number of rx buffers
 		 * we will have in our queue.
@@ -246,9 +248,13 @@ uint32_t nicAllocateAdapterMemory(IN struct ADAPTER
 			halGetValidCoalescingBufSize(prAdapter);
 
 		/* Allocate memory for the common coalescing buffer. */
+#ifdef CFG_PREALLOC_MEMORY
+		prAdapter->pucCoalescingBufCached =
+			preallocGetMem(MEM_ID_IO_BUFFER);
+#else
 		prAdapter->pucCoalescingBufCached = kalAllocateIOBuffer(
 				prAdapter->u4CoalescingBufCachedSize);
-
+#endif
 		if (prAdapter->pucCoalescingBufCached == NULL) {
 			DBGLOG(INIT, ERROR,
 			       "Could not allocate %u bytes for coalescing buffer.\n",
@@ -299,9 +305,11 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 
 	/* 4 <4> Memory for Common Coalescing Buffer */
 	if (prAdapter->pucCoalescingBufCached) {
+#ifndef CFG_PREALLOC_MEMORY
 		kalReleaseIOBuffer((void *)
 				   prAdapter->pucCoalescingBufCached,
 				   prAdapter->u4CoalescingBufCachedSize);
+#endif
 		prAdapter->pucCoalescingBufCached = (uint8_t *) NULL;
 	}
 
@@ -319,8 +327,10 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 	}
 	/* 4 <1> Memory for Management Memory Pool */
 	if (prAdapter->pucMgtBufCached) {
+#ifndef CFG_PREALLOC_MEMORY
 		kalMemFree((void *) prAdapter->pucMgtBufCached,
 			   PHY_MEM_TYPE, prAdapter->u4MgtBufCachedSize);
+#endif
 		prAdapter->pucMgtBufCached = (uint8_t *) NULL;
 	}
 
