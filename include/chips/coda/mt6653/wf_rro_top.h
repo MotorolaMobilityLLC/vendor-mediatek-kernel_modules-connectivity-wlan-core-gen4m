@@ -55,6 +55,10 @@ extern "C" {
 #define WF_RRO_TOP_TIMEOUT_CONF_0_ADDR                         (WF_RRO_TOP_BASE + 0x64) 
 #define WF_RRO_TOP_TIMEOUT_CONF_1_ADDR                         (WF_RRO_TOP_BASE + 0x68) 
 #define WF_RRO_TOP_TIMEOUT_CTRL_ADDR                           (WF_RRO_TOP_BASE + 0x6C) 
+#define WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR \
+	(WF_RRO_TOP_BASE + 0x70)
+#define WF_RRO_TOP_BA_BITMAP_BASE_EXT1_ADDR \
+	(WF_RRO_TOP_BASE + 0x74)
 #define WF_RRO_TOP_SRAM_TEST_CTRL4_ADDR                        (WF_RRO_TOP_BASE + 0x80) 
 #define WF_RRO_TOP_SRAM_TEST_CTRL6_ADDR                        (WF_RRO_TOP_BASE + 0x88) 
 #define WF_RRO_TOP_BUF_RUN_OUT_CONF_0_ADDR                     (WF_RRO_TOP_BASE + 0x90) 

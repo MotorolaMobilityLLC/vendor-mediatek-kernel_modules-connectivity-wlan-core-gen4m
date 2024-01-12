@@ -410,6 +410,17 @@ static void halRroSetupBaBitmap(struct GLUE_INFO *prGlueInfo)
 	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_1_ADDR;
 	u4Val = prCache->AllocPa >> 32;
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+#ifdef WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR
+	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR;
+	u4Val = prCache->AllocPa;
+	u4Val += RRO_BA_BITMAP_SIZE * RRO_MAX_WINDOW_NUM / 2;
+	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+	u4Addr = WF_RRO_TOP_BA_BITMAP_BASE_EXT1_ADDR;
+	u4Val = prCache->AllocPa >> 32;
+	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+#endif /* WF_RRO_TOP_BA_BITMAP_BASE_EXT0_ADDR */
 }
 
 static void halRroSetupAddressElement(struct GLUE_INFO *prGlueInfo)
@@ -440,7 +451,9 @@ static void halRroSetupAddressElement(struct GLUE_INFO *prGlueInfo)
 
 #ifdef WF_RRO_TOP_PARTICULAR_CFG_1_ADDR
 	u4Addr = WF_RRO_TOP_PARTICULAR_CFG_1_ADDR;
-	u4Val = (prAddrArray->AllocPa >> 32) | (0x400 << 16) | BIT(31);
+	u4Val = (prAddrArray->AllocPa >> 32) |
+		(RRO_TOTAL_ADDR_ELEM_NUM << 16) |
+		BIT(31);
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
 #endif /* WF_RRO_TOP_PARTICULAR_CFG_1_ADDR */
 
