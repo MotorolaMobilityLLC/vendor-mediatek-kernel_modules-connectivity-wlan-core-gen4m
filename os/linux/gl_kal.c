@@ -1551,6 +1551,92 @@ void *kalGetPacketDev(void *pvPacket)
 	return (void *)NULL;
 }
 
+int kal_skb_checksum_help(void *pvPacket)
+{
+	struct sk_buff *prSkb;
+
+	if (pvPacket) {
+		prSkb = (struct sk_buff *)pvPacket;
+
+		if (prSkb->ip_summed == CHECKSUM_PARTIAL)
+			return skb_checksum_help(prSkb);
+	}
+	return 1;
+}
+
+void kalSkbCopyCbData(void *pvDstPacket, void *pvSrcPacket)
+{
+	struct sk_buff *prSkbDst;
+	struct sk_buff *prSkbSrc;
+
+	if (pvDstPacket && pvSrcPacket) {
+		prSkbDst = (struct sk_buff *)pvDstPacket;
+		prSkbSrc = (struct sk_buff *)pvSrcPacket;
+
+		kalMemCopy(&prSkbDst->cb[0], &prSkbSrc->cb[0],
+			sizeof(prSkbSrc->cb));
+	}
+}
+
+void *kal_skb_copy(void *pvPacket)
+{
+	struct sk_buff *prSkb;
+	void *prSkbCpy = NULL;
+
+	if (pvPacket) {
+		prSkb = (struct sk_buff *)pvPacket;
+		prSkbCpy = (void *)skb_copy(prSkb, GFP_ATOMIC);
+	}
+	return prSkbCpy;
+}
+
+void kal_skb_reserve(void *pvPacket, uint8_t ucLength)
+{
+	struct sk_buff *prSkb;
+
+	if (pvPacket) {
+		prSkb = (struct sk_buff *)pvPacket;
+		skb_reserve(prSkb, ucLength);
+	}
+}
+
+void kal_skb_split(void *pvPacket, void *pvPacket1, const uint32_t u4Length)
+{
+	struct sk_buff *prSkb;
+	struct sk_buff *prSkb1;
+
+	if (pvPacket && pvPacket1) {
+		prSkb = (struct sk_buff *)pvPacket;
+		prSkb1 = (struct sk_buff *)pvPacket1;
+
+		skb_split(prSkb, prSkb1, u4Length);
+	}
+}
+
+uint8_t *kal_skb_push(void *pvPacket, uint32_t u4Length)
+{
+	struct sk_buff *prSkb;
+	uint8_t *prSkbBuff = NULL;
+
+	if (pvPacket) {
+		prSkb = (struct sk_buff *)pvPacket;
+		prSkbBuff = (uint8_t *)skb_push(prSkb, u4Length);
+	}
+	return prSkbBuff;
+}
+
+uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length)
+{
+	struct sk_buff *prSkb;
+	uint8_t *prSkbBuff = NULL;
+
+	if (pvPacket) {
+		prSkb = (struct sk_buff *)pvPacket;
+		prSkbBuff = (uint8_t *)skb_pull(prSkb, u4Length);
+	}
+	return prSkbBuff;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Process the received packet for indicating to OS.

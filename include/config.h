@@ -1018,6 +1018,8 @@
 
 #endif /* CFG_SUPPORT_ROAMING */
 
+#define CFG_SUPPORT_MLR				1
+
 #define CFG_SUPPORT_SWCR			1
 
 #define CFG_SUPPORT_ANTI_PIRACY			1

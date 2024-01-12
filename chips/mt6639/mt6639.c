@@ -591,6 +591,7 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if CFG_SUPPORT_LLS
 	.get_rx_link_stats = mt6639_get_rx_link_stats,
 #endif
+	.dumpTxdInfo = connac3x_dump_tmac_info,
 };
 
 #if CFG_SUPPORT_QA_TOOL

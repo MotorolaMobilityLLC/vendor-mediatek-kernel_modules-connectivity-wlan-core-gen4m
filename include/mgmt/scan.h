@@ -515,6 +515,12 @@ struct BSS_DESC {
 	uint8_t fgIsERSUDisable;
 	uint8_t ucDCMMaxConRx;
 #endif
+#if CFG_SUPPORT_MLR
+	uint8_t ucMlrType;
+	uint8_t ucMlrLength;
+	uint8_t ucMlrSupportBitmap;
+	uint8_t fsIsMlrSupport;
+#endif
 };
 
 struct SCAN_PARAM {	/* Used by SCAN FSM */

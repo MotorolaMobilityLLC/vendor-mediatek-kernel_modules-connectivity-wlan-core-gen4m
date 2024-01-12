@@ -1016,6 +1016,9 @@ int connac2x_get_rx_rate_info(
 void connac3x_show_txd_Info(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
+void connac3x_dump_tmac_info(
+	struct ADAPTER *prAdapter,
+	uint8_t *tmac_info);
 void connac3x_get_lwtbl(
 	struct ADAPTER *prAdapter,
 	uint32_t u4Index,

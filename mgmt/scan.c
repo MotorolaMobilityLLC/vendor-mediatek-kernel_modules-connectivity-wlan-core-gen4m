@@ -2777,6 +2777,41 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				}
 			}
 #endif
+#if CFG_SUPPORT_MLR
+			if (pucIE[1] >= 7
+				/* Mediatek Specific OUI */
+				&& (kalMemCmp(pucIE + 2,
+				"\x00\x0c\xe7", 3) == 0)
+				&& (pucIE[5] == 0x01)) {
+				if (pucIE[9] == 0x01) {
+					/* MLR Type = 0x01 */
+					prBssDesc->ucMlrType = pucIE[9];
+					/* MLR Length = 0x01 */
+					prBssDesc->ucMlrLength = pucIE[10];
+					/* LR bitmap:
+					 * BIT[0]-MLR_V1,
+					 * BIT[1]->MLR_V2,
+					 * BIT[2]MLR+,
+					 * BIT[3]->ALR,
+					 * BIT[4]->DUAL_CTS
+					 */
+					prBssDesc->ucMlrSupportBitmap =
+						pucIE[11];
+					prBssDesc->fsIsMlrSupport =
+						MLR_BIT_SUPPORT(prBssDesc
+						->ucMlrSupportBitmap);
+
+					MLR_DBGLOG(prAdapter, SCN, INFO,
+						"MLR beacon - BSSID:" MACSTR
+						" IsMlrS:%d Type|Len|B[%d, %d, 0x%02x]\n",
+						MAC2STR(prBssDesc->aucBSSID),
+						prBssDesc->fsIsMlrSupport,
+						prBssDesc->ucMlrType,
+						prBssDesc->ucMlrLength,
+						prBssDesc->ucMlrSupportBitmap);
+				}
+			}
+#endif
 			scanCheckAdaptive11rIE(pucIE, prBssDesc);
 			break;
 		}

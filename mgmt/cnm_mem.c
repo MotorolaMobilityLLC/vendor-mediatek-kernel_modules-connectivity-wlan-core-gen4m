@@ -1272,6 +1272,32 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	cnmStaRecCmdEhtContentFill(prStaRec, prCmdContent);
 #endif
 
+#if CFG_SUPPORT_MLR
+	if (MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec)
+		&& MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, prStaRec->ucRCPI)
+		&& (prStaRec->ucStaState == STA_STATE_3)) {
+		prCmdContent->ucMlrMode = (prStaRec->ucMlrSupportBitmap &
+			prAdapter->u4MlrSupportBitmap);
+		prCmdContent->ucMlrState = MLR_STATE_START;
+	} else {
+		prCmdContent->ucMlrMode = (prStaRec->ucMlrSupportBitmap &
+			prAdapter->u4MlrSupportBitmap);
+		prCmdContent->ucMlrState = MLR_STATE_IDLE;
+	}
+
+	MLR_DBGLOG(prAdapter, REQ, INFO,
+		"MLR updatestarec StaRec[%u] WIDX[%u] ucStaState[%u] MLR[%d,0x%04x,%d,0x%02x] ucMlrMode[0x%02x] ucMlrState[%u] RCPI=%d(RSSI=%d)\n",
+		prCmdContent->ucStaIndex,
+		prCmdContent->ucWlanIndex,
+		prCmdContent->ucStaState,
+		prAdapter->ucMlrIsSupport, prAdapter->u4MlrSupportBitmap,
+		prStaRec->fgIsMlrSupported, prStaRec->ucMlrSupportBitmap,
+		prCmdContent->ucMlrMode,
+		prCmdContent->ucMlrState,
+		prStaRec->ucRCPI,
+		RCPI_TO_dBm(prStaRec->ucRCPI));
+#endif
+
 	log_dbg(REQ, TRACE, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
 		prCmdContent->ucStaIndex,
 		prCmdContent->ucWlanIndex,

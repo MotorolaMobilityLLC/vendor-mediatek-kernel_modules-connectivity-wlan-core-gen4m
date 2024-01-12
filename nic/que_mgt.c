@@ -6622,6 +6622,17 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 	prStaRec->fgIsMuEdcaSupported = FALSE;
 #endif
+#if CFG_SUPPORT_MLR
+	prStaRec->ucMlrSupportBitmap = prScanResult->ucMlrSupportBitmap;
+	prStaRec->fgIsMlrSupported = prScanResult->fsIsMlrSupport;
+	prStaRec->ucRCPI = prScanResult->ucRCPI;
+	MLR_DBGLOG(prAdapter, WMM, INFO,
+		"MLR beacon - MlrS=%d MlrSB=0x%04x ucRCPI=%d(RSSI=%d)\n",
+		prStaRec->fgIsMlrSupported,
+		prStaRec->ucMlrSupportBitmap,
+		prStaRec->ucRCPI,
+		RCPI_TO_dBm(prStaRec->ucRCPI));
+#endif
 
 	fgIsHtVht = FALSE;
 
