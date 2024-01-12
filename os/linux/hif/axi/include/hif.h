@@ -114,6 +114,11 @@ extern KAL_WAKE_LOCK_T *g_IntrWakeLock;
 
 struct GL_HIF_INFO;
 
+struct HIF_MEM {
+	phys_addr_t pa;
+	void *va;
+};
+
 struct HIF_MEM_OPS {
 	void (*allocTxDesc)(struct GL_HIF_INFO *prHifInfo,
 			    struct RTMP_DMABUF *prDescRing,
@@ -336,11 +341,6 @@ struct BUS_INFO {
 	void (*setupMcuEmiAddr)(struct ADAPTER *prAdapter);
 
 	struct SW_WFDMA_INFO rSwWfdmaInfo;
-};
-
-struct HIF_MEM {
-	phys_addr_t pa;
-	void *va;
 };
 
 struct HIF_PREALLOC_MEM {
