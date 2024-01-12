@@ -1591,7 +1591,6 @@ struct mt66xx_chip_info {
 	void (*calDebugCmd)(uint32_t cmd, uint32_t para);
 	uint32_t (*dmashdlQuotaDecision)(struct ADAPTER *prAdapter,
 		uint8_t ucWmmIndex);
-	void (*pdmaBurstSizeSetup)(struct ADAPTER *prAdapter, u_int8_t fgFwD);
 	u_int8_t is_support_nvram_fragment;
 	int (*checkbushang)(void *prAdapter,
 		uint8_t ucWfResetEnable);
