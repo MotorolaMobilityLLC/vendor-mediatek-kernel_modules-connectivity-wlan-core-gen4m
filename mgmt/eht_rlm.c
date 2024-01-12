@@ -220,7 +220,8 @@ void ehtRlmFillCapIE(
 #endif
 
 	if (!IS_BSS_APGO(prBssInfo)) {
-		phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
+		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtPartialBwDLMUMIMO))
+			phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
 
 		if (IS_FEATURE_ENABLED(prWifiVar->ucStaEht242ToneRUWt20M)) {
 			if (eht_bw == MAX_BW_20MHZ)
@@ -238,8 +239,9 @@ void ehtRlmFillCapIE(
 		/* set 3 to support AP NSS 4 */
 		SET_DOT11BE_PHY_CAP_BFEE_SS_LE_EQ_80M(phy_cap_1,
 			prWifiVar->ucEhtBfeeSSLeEq80m);
-		/* set 1 to support 2 TX NSS */
-		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(
+		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
+			/* set 1 to support 2 TX NSS */
+			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_LE_EQ_80M(
 				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
 	if (eht_bw >= MAX_BW_160MHZ) {
@@ -247,18 +249,20 @@ void ehtRlmFillCapIE(
 		/* set 3 to support AP NSS 4 */
 		SET_DOT11BE_PHY_CAP_BFEE_160M(phy_cap_1,
 			prWifiVar->ucEhtBfee160m);
-		/* set 1 to support TX NSS 2 */
-		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
-			phy_cap_1, (uint32_t)(ucSupportedNss - 1));
+		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
+			/* set 1 to support TX NSS 2 */
+			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_160M(
+				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
 	if (eht_bw >= MAX_BW_320MHZ) {
 		eht_mcs15_mru |= EHT_MCS15_MRU_3x996_tone_320M;
 		/* set 3 to support AP NSS 4 */
 		SET_DOT11BE_PHY_CAP_BFEE_320M(phy_cap_1,
 			prWifiVar->ucEhtBfee320m);
-		/* set 1 to support TX NSS 2 */
-		SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(
-			phy_cap_1, (uint32_t)(ucSupportedNss - 1));
+		if (IS_FEATURE_ENABLED(prWifiVar->ucEhtSUBfer))
+			/* set 1 to support TX NSS 2 */
+			SET_DOT11BE_PHY_CAP_SOUND_DIM_NUM_320M(
+				phy_cap_1, (uint32_t)(ucSupportedNss - 1));
 	}
 
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtNDP4xLTF3dot2usGI))
@@ -281,8 +285,6 @@ void ehtRlmFillCapIE(
 		phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_MU_BF_PARTIAL_BW_FEEDBACK;
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtTrigedCQIFeedback))
 		phy_cap_1 |= DOT11BE_PHY_CAP_TRIGED_CQI_FEEDBACK;
-	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtPartialBwDLMUMIMO))
-		phy_cap_2 |= DOT11BE_PHY_CAP_PARTIAL_BW_DL_MU_MIMO;
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_PSR_BASED_SR; */
 	/* phy_cap_2 &= ~DOT11BE_PHY_CAP_POWER_BOOST_FACTOR; */
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtMUPPDU4xEHTLTFdot8usGI))
