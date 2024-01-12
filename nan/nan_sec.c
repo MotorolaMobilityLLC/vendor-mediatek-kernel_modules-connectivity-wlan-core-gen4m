@@ -3002,6 +3002,13 @@ nanSecNotifyMsgBodyRdy(struct _NAN_NDP_INSTANCE_T *prNdp,
 	*ppu1SmGetMsgBodyBuf = pu1TxMsgBuf;
 	*pu4SmGetMsgBodyLen = u4TxMsgLen;
 
+	/* Mark the flag before adding MIC */
+	if (prNdp->eNDPRole == NAN_PROTOCOL_INITIATOR) {
+		prNdp->prInitiatorSecSmInfo->fgIsTxDone = TRUE;
+	} else { /* NAN_NDP_RESPONDER */
+		prNdp->prResponderSecSmInfo->fgIsTxDone = TRUE;
+	}
+
 	if (u1SrcMsg == NAN_SEC_M1) {
 		memset(g_aucAuthTokenBuf, 0, NAN_AUTH_TOKEN_LEN);
 
