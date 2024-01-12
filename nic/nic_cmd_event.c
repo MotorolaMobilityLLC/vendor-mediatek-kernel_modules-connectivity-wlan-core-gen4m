@@ -5211,7 +5211,7 @@ void nicEventRddSendPulse(IN struct ADAPTER *prAdapter,
 void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 			       IN struct WIFI_EVENT *prEvent)
 {
-	uint8_t i;
+	uint8_t i, j;
 	struct EVENT_UPDATE_COEX_PHYRATE *prEventUpdateCoexPhyrate;
 
 	ASSERT(prAdapter);
@@ -5221,11 +5221,19 @@ void nicEventUpdateCoexPhyrate(IN struct ADAPTER *prAdapter,
 	prEventUpdateCoexPhyrate = (struct EVENT_UPDATE_COEX_PHYRATE
 				    *)(prEvent->aucBuffer);
 
+	/* This event indicates HW BSS, need to convert to SW BSS */
 	for (i = 0; i < (prAdapter->ucHwBssIdNum + 1); i++) {
-		prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit =
-			prEventUpdateCoexPhyrate->au4PhyRateLimit[i];
-		DBGLOG_LIMITED(NIC, TRACE, "Coex:BSS[%d]R:%d\n", i,
-		       prAdapter->aprBssInfo[i]->u4CoexPhyRateLimit);
+		for (j = 0; j < (MAX_BSSID_NUM + 1); j++) {
+			if (prAdapter->aprBssInfo[j]->ucOwnMacIndex == i) {
+				prAdapter->aprBssInfo[j]->u4CoexPhyRateLimit =
+				  prEventUpdateCoexPhyrate->au4PhyRateLimit[i];
+
+				DBGLOG_LIMITED(NIC, INFO,
+				  "Coex:BSS[%d]R:%d, OwnMacID:%d\n", j,
+				  prAdapter->aprBssInfo[j]->u4CoexPhyRateLimit,
+				  prAdapter->aprBssInfo[j]->ucOwnMacIndex);
+			}
+		}
 	}
 
 	prAdapter->ucSmarGearSupportSisoOnly =
