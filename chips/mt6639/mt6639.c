@@ -501,7 +501,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
+#if IS_CE_SEGMENT
+	.downloadBufferBin = wlanConnac3XDownloadBufferBin,
+#else
 	.downloadBufferBin = NULL,
+#endif
 	.is_support_hw_amsdu = TRUE,
 	.is_support_nvram_fragment = TRUE,
 	.is_support_asic_lp = TRUE,
