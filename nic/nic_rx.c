@@ -4352,12 +4352,23 @@ nicRxGetRcpiValueFromRxv(IN uint8_t ucRcpiMode,
 			break;
 
 		case RCPI_MODE_AVG: /*Not recommended for CBW80+80*/
-			ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
+			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
+				ucRcpi1 <= RCPI_HIGH_BOUND)
+				ucRcpiValue = (ucRcpi0 + ucRcpi1) / 2;
+			else
+				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
+					(ucRcpi0) : (ucRcpi1);
 			break;
 
 		case RCPI_MODE_MAX:
-			ucRcpiValue =
-				(ucRcpi0 > ucRcpi1) ? (ucRcpi0) : (ucRcpi1);
+			if (ucRcpi0 <= RCPI_HIGH_BOUND &&
+				ucRcpi1 <= RCPI_HIGH_BOUND)
+				ucRcpiValue =
+					(ucRcpi0 > ucRcpi1) ?
+					(ucRcpi0) : (ucRcpi1);
+			else
+				ucRcpiValue = ucRcpi0 <= RCPI_HIGH_BOUND ?
+					(ucRcpi0) : (ucRcpi1);
 			break;
 
 		case RCPI_MODE_MIN:
