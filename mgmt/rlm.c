@@ -5665,8 +5665,10 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo)
 {
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
 
-	if (!prBssInfo)
-		DBGLOG(RLM, ERROR, "Reset CSA params failed");
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "Reset CSA params failed, Bssinfo null!");
+		return;
+	}
 
 	prCSAParams = &(prBssInfo->CSAParams);
 	kalMemZero(prCSAParams, sizeof(struct SWITCH_CH_AND_BAND_PARAMS));
