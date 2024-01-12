@@ -2863,6 +2863,12 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
+#if defined(_HIF_AXI)
+	if (nicProcessISTWithSpecifiedCount(prAdapter, 5) !=
+		WLAN_STATUS_NOT_INDICATING)
+		DBGLOG(INIT, INFO,
+		       "Handle pending interrupt\n");
+#endif
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
 
