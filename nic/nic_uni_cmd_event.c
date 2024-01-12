@@ -216,6 +216,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_HIF_CTRL] = nicUniEventHifCtrl,
 	[UNI_EVENT_ID_NAN] = nicUniEventNan,
 	[UNI_EVENT_ID_BF] = nicUniEventBF,
+	[UNI_EVENT_ID_PP] = nicUniEventPpCb,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -7454,6 +7455,60 @@ void nicUniEventAddKeyDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
+
+static void nicUniEventPpStat(
+	struct ADAPTER *ad,
+	struct UNI_EVENT_PP_ALG_CTRL *tag)
+{
+	DBGLOG(REQ, INFO,
+		"\n"
+		"\x1b[32m ============= Pp Band%d Stat ============= \x1b[m\n"
+		"\x1b[32m u4PpTimerIntv	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX2	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX3	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX4	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX5	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX6	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX7	      = %d               \x1b[m\n"
+		"\x1b[32m u4PpThrX8	      = %d               \x1b[m\n"
+		"\x1b[32m u4SwPpTime	      = %d (Unit: %d ms) \x1b[m\n"
+		"\x1b[32m u4HwPpTime	      = %d (Unit: %d ms) \x1b[m\n"
+		"\x1b[32m u4NoPpTime	      = %d (Unit: %d ms) \x1b[m\n"
+		"\x1b[32m =========================================== \x1b[m\n",
+		tag->u1DbdcIdx,
+		tag->u4PpTimerIntv,
+		tag->u4PpThrX2,
+		tag->u4PpThrX3,
+		tag->u4PpThrX4,
+		tag->u4PpThrX5,
+		tag->u4PpThrX6,
+		tag->u4PpThrX7,
+		tag->u4PpThrX8,
+		tag->u4SwPpTime,
+		tag->u4PpTimerIntv,
+		tag->u4HwPpTime,
+		tag->u4PpTimerIntv,
+		tag->u4NoPpTime,
+		tag->u4PpTimerIntv);
+}
+
+void nicUniEventPpCb(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	struct UNI_EVENT_PP *Ppevt = (struct UNI_EVENT_PP *)evt->aucBuffer;
+	struct UNI_EVENT_PP_ALG_CTRL *tag =
+		(struct UNI_EVENT_PP_ALG_CTRL *) Ppevt->au1TlvBuffer;
+
+	switch (TAG_ID(tag)) {
+	case UNI_EVENT_PP_TAG_ALG_CTRL:
+		nicUniEventPpStat(ad, tag);
+		break;
+	default:
+		DBGLOG(REQ, ERROR, "\x1b[31m %s: Invalid tag = %d\x1b[m\n"
+			, __func__, TAG_ID(tag));
+		break;
+	}
+}
+
 
 void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
