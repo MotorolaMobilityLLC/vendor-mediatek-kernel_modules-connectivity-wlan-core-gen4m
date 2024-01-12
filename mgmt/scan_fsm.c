@@ -285,6 +285,7 @@ void scnSendScanReqV2(IN struct ADAPTER *prAdapter)
 	prCmdScanReq->ucSSIDType = prScanParam->ucSSIDType;
 	prCmdScanReq->auVersion[0] = 1;
 	prCmdScanReq->ucScnFuncMask |= prScanParam->ucScnFuncMask;
+	prCmdScanReq->u4ScnFuncMaskExtend |= prScanParam->u4ScnFuncMaskExtend;
 	/* for 6G OOB scan */
 	kalMemCopy(prCmdScanReq->ucBssidMatchCh, prScanParam->ucBssidMatchCh,
 			CFG_SCAN_OOB_MAX_NUM);
@@ -683,6 +684,7 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	prScanParam->ucSSIDType = prScanReqMsg->ucSSIDType;
 	prScanParam->ucSSIDNum = prScanReqMsg->ucSSIDNum;
 	prScanParam->ucScnFuncMask |= prScanReqMsg->ucScnFuncMask;
+	prScanParam->u4ScnFuncMaskExtend |= prScanReqMsg->u4ScnFuncMaskExtend;
 
 	kalMemCopy(prScanParam->aucRandomMac, prScanReqMsg->aucRandomMac,
 		MAC_ADDR_LEN);
