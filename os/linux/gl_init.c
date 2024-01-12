@@ -897,7 +897,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_get_version
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = nla_get_version_policy,
+		.maxattr = LOGGER_ATTRIBUTE_MAX
 #endif
 	},
 	/* Get Supported Feature Set */

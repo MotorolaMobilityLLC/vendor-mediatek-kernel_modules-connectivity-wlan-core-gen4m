@@ -235,10 +235,11 @@ enum WIFI_RSSI_MONITOR_ATTRIBUTE {
 	WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX
 };
 
-/* moved from wifi_logger.cpp */
 enum LOGGER_ATTRIBUTE {
-	LOGGER_ATTRIBUTE_DRIVER_VER,
-	LOGGER_ATTRIBUTE_FW_VER
+	LOGGER_ATTRIBUTE_INVALID    = 0,
+	LOGGER_ATTRIBUTE_DRIVER_VER = 1,
+	LOGGER_ATTRIBUTE_FW_VER     = 2,
+	LOGGER_ATTRIBUTE_MAX	    = 3
 };
 
 enum RTT_ATTRIBUTE {
@@ -401,6 +402,9 @@ extern const struct nla_policy nla_get_acs_policy[
 
 extern const struct nla_policy nla_parse_wifi_rssi_monitor[
 		WIFI_ATTRIBUTE_RSSI_MONITOR_ATTRIBUTE_MAX + 1];
+
+extern const struct nla_policy nla_get_version_policy[
+		LOGGER_ATTRIBUTE_MAX + 1];
 
 /*******************************************************************************
  *                           MACROS
