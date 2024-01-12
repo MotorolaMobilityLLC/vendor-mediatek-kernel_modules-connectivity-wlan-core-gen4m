@@ -568,6 +568,8 @@ int priv_driver_set_pp_cap_ctrl(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_pp_alg_ctrl(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_hm_alg_ctrl(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_UNIFIED_COMMAND */
 int priv_driver_boostcpu(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

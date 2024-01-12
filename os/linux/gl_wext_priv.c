@@ -9862,6 +9862,86 @@ i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "Wrong param\n");
 
 	return i4BytesWritten;
 }
+
+int priv_driver_set_hm_alg_ctrl(struct net_device *prNetDev,
+					   char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+
+	uint8_t u1HmManualModeEn;
+	uint8_t u1ForceObss;
+	uint8_t u1ForceBT;
+	uint8_t u1HmForcePlan;
+	uint8_t u1ObssTimePercntg;
+	uint8_t u1BTPercntg;
+
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d",
+			&u1HmManualModeEn,
+			&u1ForceObss,
+			&u1ForceBT,
+			&u1HmForcePlan,
+			&u1ObssTimePercntg,
+			&u1BTPercntg);
+
+
+	if (i4Recv == 6) {
+		struct UNI_CMD_HM_ALG_CTRL_T hm_alg_ctrl;
+
+		hm_alg_ctrl.u1HmManualModeEn = u1HmManualModeEn;
+		hm_alg_ctrl.u1ForceObss = u1ForceObss;
+		hm_alg_ctrl.u1ForceBT = u1ForceBT;
+		hm_alg_ctrl.u1HmForcePlan = u1HmForcePlan;
+		hm_alg_ctrl.u1ObssTimePercntg = u1ObssTimePercntg;
+		hm_alg_ctrl.u1BTPercntg = u1BTPercntg;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+			"u1HmManualModeEn=%d\nu1ForceObss=%d\nu1ForceBT=%d\nu1HmForcePlan=%d\nu1ObssTimePercntg=%d\nu1BTPercntg=%d\n",
+			u1HmManualModeEn, u1ForceObss, u1ForceBT,
+			u1HmForcePlan, u1ObssTimePercntg, u1BTPercntg);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetHmAlg,
+					   &hm_alg_ctrl, sizeof(hm_alg_ctrl),
+					   &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(REQ, ERROR, "iwpriv wlanXX driver hmcapctrl=Option\n");
+		DBGLOG(REQ, ERROR,
+			"Option:[ManualMode]-[ForceObss]-[ForceBT]-[u1HmForcePlan]-[u1ObssTimePercntg]-[u1BTPercntg]\n");
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+					"Wrong param\n");
+	}
+
+	return i4BytesWritten;
+}
+
 #endif
 
 int priv_driver_set_em_cfg(struct net_device *prNetDev, char *pcCommand,

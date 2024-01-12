@@ -7608,6 +7608,76 @@ wlanoidSetPpAlgCtrl(struct ADAPTER *prAdapter,
 #endif
 }
 
+uint32_t
+wlanoidSetHmAlg(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer,
+		      uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_HM *uni_cmd;
+	struct UNI_CMD_HM_ALG_CTRL_T *tag;
+	struct UNI_CMD_HM_ALG_CTRL_T *para;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_HM) +
+			       sizeof(struct UNI_CMD_HM_ALG_CTRL_T);
+
+	if (prAdapter == NULL || pu4SetInfoLen == NULL)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	*pu4SetInfoLen = sizeof(struct UNI_CMD_HM_ALG_CTRL_T);
+
+	if (u4SetBufferLen < sizeof(struct UNI_CMD_HM_ALG_CTRL_T))
+		return WLAN_STATUS_INVALID_LENGTH;
+	else if (pvSetBuffer == NULL)
+		return WLAN_STATUS_INVALID_DATA;
+
+	para = (struct UNI_CMD_HM_ALG_CTRL_T *)pvSetBuffer;
+
+	uni_cmd = (struct UNI_CMD_HM *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_HM ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_HM_ALG_CTRL_T *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_HM_TAG_ALG_CTRL;
+	tag->u2Length =  sizeof(*tag);
+	tag->u1HmManualModeEn = para->u1HmManualModeEn;
+	tag->u1ForceObss = para->u1ForceObss;
+	tag->u1ForceBT = para->u1ForceBT;
+	tag->u1HmForcePlan = para->u1HmForcePlan;
+	tag->u1ObssTimePercntg = para->u1ObssTimePercntg;
+	tag->u1BTPercntg = para->u1BTPercntg;
+
+	DBGLOG(INIT, INFO, "hm_alg_ctrl: %d-%d-%d-%d-%d-%d\n",
+			tag->u1HmManualModeEn,
+			tag->u1ForceObss,
+			tag->u1ForceBT,
+			tag->u1HmForcePlan,
+			tag->u1ObssTimePercntg,
+			tag->u1BTPercntg);
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_HM,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicUniCmdEventSetCommon,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+#else
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 /*----------------------------------------------------------------------------*/
 /*!

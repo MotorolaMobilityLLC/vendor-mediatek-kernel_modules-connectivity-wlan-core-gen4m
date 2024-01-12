@@ -4363,6 +4363,12 @@ wlanoidSetPpAlgCtrl(struct ADAPTER *prAdapter,
 		      uint32_t *pu4SetInfoLen);
 
 uint32_t
+wlanoidSetHmAlg(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer,
+		      uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
+
+uint32_t
 wlanoidSetChipConfig(struct ADAPTER *prAdapter,
 		     void *pvSetBuffer,
 		     uint32_t u4SetBufferLen,
