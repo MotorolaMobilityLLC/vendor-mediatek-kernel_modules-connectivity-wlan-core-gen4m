@@ -92,6 +92,22 @@
 #define MTK_WCN_HIF_SDIO		0
 #endif
 
+#if defined(_HIF_AXI)
+#ifdef LINUX
+#ifdef CONFIG_X86
+#define MTK_WCN_HIF_AXI			0
+#else
+#define MTK_WCN_HIF_AXI			1
+#endif
+#else
+#define MTK_WCN_HIF_AXI			0
+#endif
+#else
+#define MTK_WCN_HIF_AXI			0
+#endif
+
+
+
 /* Android build-in driver switch, Mike 2016/11/11*/
 #ifndef CFG_BUILT_IN_DRIVER
 #define CFG_BUILT_IN_DRIVER         0
@@ -350,8 +366,8 @@
 
 #define MAX_BSSID_NUM			4	/* MAX BSSID number */
 
-#if (MTK_WCN_HIF_SDIO)
-#define CFG_CHIP_RESET_SUPPORT		1
+#if (MTK_WCN_HIF_SDIO == 1) || (MTK_WCN_HIF_AXI == 1)
+#define CFG_CHIP_RESET_SUPPORT          1
 #else
 #define CFG_CHIP_RESET_SUPPORT		0
 #endif
