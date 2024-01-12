@@ -1270,7 +1270,13 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prCmdContent->ucRxAmsduInAmpdu
 			&= prAdapter->rWifiVar.ucHtAmsduInAmpduRx;
 	}
-
+#if CFG_SUPPORT_WED_PROXY
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (IS_MLD_STAREC_MULTI(mldStarecGetByStarec(
+			prAdapter, prStaRec)))
+		prCmdContent->ucRxAmsduInAmpdu = 0;
+#endif
+#endif
 	if ((prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE) ||
 	    (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX))
 		prCmdContent->u4TxMaxAmsduInAmpduLen =
