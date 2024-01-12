@@ -295,6 +295,10 @@ uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand);
 
 uint32_t nicFreq2ChannelNum(IN uint32_t u4FreqInKHz);
 
+uint32_t nicGetS1Freq(IN enum ENUM_BAND eBand,
+			IN uint8_t ucPrimaryChannel,
+			IN uint8_t ucBandwidth);
+
 uint8_t nicGetS1(IN enum ENUM_BAND eBand,
 			IN uint8_t ucPrimaryChannel,
 		    IN uint8_t ucBandwidth);
@@ -311,7 +315,9 @@ uint8_t nicGetHe6gS1(IN uint8_t ucPrimaryChannel,
 /* NETWORK (WIFISYS) */
 uint32_t nicActivateNetwork(IN struct ADAPTER *prAdapter,
 			    IN uint8_t ucBssIndex);
-
+uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
+			    IN uint8_t ucBssIndex,
+			    IN uint8_t fgReset40mBw);
 uint32_t nicDeactivateNetwork(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucBssIndex);
 uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,

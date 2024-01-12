@@ -1988,27 +1988,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 		prP2pSetNewChannelMsg->rMsgHdr.eMsgId =
 			MID_MNY_P2P_SET_NEW_CHANNEL;
 
-		switch (params->chandef.width) {
-		case NL80211_CHAN_WIDTH_20_NOHT:
-		case NL80211_CHAN_WIDTH_20:
-		case NL80211_CHAN_WIDTH_40:
-			prP2pSetNewChannelMsg->eChannelWidth = CW_20_40MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_80:
-			prP2pSetNewChannelMsg->eChannelWidth = CW_80MHZ;
-			break;
-
-		case NL80211_CHAN_WIDTH_80P80:
-			prP2pSetNewChannelMsg->eChannelWidth = CW_80P80MHZ;
-			break;
-
-		default:
-			DBGLOG(P2P, ERROR,
-				"mtk_p2p_cfg80211_channel_switch. !!!Bandwidth do not support!!!\n");
-			ASSERT(FALSE);
-			break;
-		}
+		memcpy(&prP2pSetNewChannelMsg->rRfChannelInfo,
+			&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 		prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;

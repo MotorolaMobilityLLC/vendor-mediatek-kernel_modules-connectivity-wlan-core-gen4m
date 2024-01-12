@@ -6238,35 +6238,32 @@ void p2pFuncSwitchGcChannel(
 		prGlueP2pInfo->chandef = NULL;
 	}
 
-	/* Update bss & dbdc for cross band */
 	DBGLOG(P2P, INFO, "switch gc channel: %s band\n",
 		prP2pBssInfo->eBand == prChnlReqInfo->eBand ? "same" : "cross");
 
-	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-		prP2pBssInfo->eBand != prChnlReqInfo->eBand) {
+	/* Indicate PM abort to sync BSS state with FW */
+	nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+	prP2pBssInfo->ucDTIMPeriod = 0;
 
-		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
-		prP2pBssInfo->ucDTIMPeriod = 0;
+	/* Update BSS with temp. disconnect state to FW */
+	UNSET_NET_ACTIVE(prAdapter,
+		prP2pBssInfo->ucBssIndex);
+	nicDeactivateNetworkEx(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		FALSE);
+	p2pChangeMediaState(prAdapter, prP2pBssInfo,
+		MEDIA_STATE_DISCONNECTED);
+	nicUpdateBssEx(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		FALSE);
 
-		/* Update BSS with temp. disconnect state to FW */
-		UNSET_NET_ACTIVE(prAdapter,
-			prP2pBssInfo->ucBssIndex);
-		nicDeactivateNetworkEx(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			FALSE);
-		p2pChangeMediaState(prAdapter, prP2pBssInfo,
-			MEDIA_STATE_DISCONNECTED);
-		nicUpdateBssEx(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			FALSE);
 #if CFG_SUPPORT_DBDC
-		cnmDbdcPreConnectionEnableDecision(prAdapter,
-			prP2pBssInfo->ucBssIndex,
-			prP2pBssInfo->eBand,
-			prP2pBssInfo->ucPrimaryChannel,
-			prP2pBssInfo->ucWmmQueSet);
+	cnmDbdcPreConnectionEnableDecision(prAdapter,
+		prP2pBssInfo->ucBssIndex,
+		prP2pBssInfo->eBand,
+		prP2pBssInfo->ucPrimaryChannel,
+		prP2pBssInfo->ucWmmQueSet);
 #endif
-	}
 
 	/* Update channel parameters & channel request info */
 	rRfChnlInfo.ucChannelNum = prP2pBssInfo->ucPrimaryChannel;
@@ -6277,7 +6274,10 @@ void p2pFuncSwitchGcChannel(
 		nicChannelNum2Freq(rRfChnlInfo.ucChannelNum,
 			rRfChnlInfo.eBand) / 1000;
 	rRfChnlInfo.u4CenterFreq1 =
-		rRfChnlInfo.u2PriChnlFreq;
+		nicGetS1Freq(
+			rRfChnlInfo.eBand,
+			rRfChnlInfo.ucChannelNum,
+			rlmGetVhtOpBwByBssOpBw(rRfChnlInfo.ucChnlBw));
 	rRfChnlInfo.u4CenterFreq2 = 0;
 
 	p2pFuncSetChannel(prAdapter, role_idx, &rRfChnlInfo);
