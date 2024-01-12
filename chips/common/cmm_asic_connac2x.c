@@ -1795,16 +1795,11 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 {
 	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
 	uint8_t ucRCPI0 = 0, ucRCPI1 = 0;
-	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
-	uint32_t groupid = 0, mu = 0;
-	uint32_t u4RxVector0 = 0, u4RxVector1 = 0;
-	int rv;
-
-	uint32_t u4CurRate = 0;
-	uint32_t u4MaxRate = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
+	/* REMOVE DATA RATE Parsing Logic:Workaround only for 6885*/
+	/* Since MT6885 can not get Rx Data Rate dur to RXV HW Bug*/
 
 	if (ucBssIndex >= BSSID_NUM)
 		return;
@@ -1816,59 +1811,17 @@ void asicConnac2xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 	}
 
 	prRxStatusGroup3 = prSwRfb->prRxStatusGroup3;
-	u4RxVector0 = HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 0);
-	u4RxVector1 = HAL_RX_VECTOR_GET_RX_VECTOR(prRxStatusGroup3, 1);
-	if ((u4RxVector0 == 0) || (u4RxVector1 == 0)) {
-		DBGLOG(SW4, ERROR, "u4RxVector0 or u4RxVector1 is 0\n");
-		return;
-	}
-
-	rxmode = (u4RxVector0 & RX_VT_RX_MODE_MASK) >> RX_VT_RX_MODE_OFFSET;
-	rate = (u4RxVector0 & RX_VT_RX_RATE_MASK) >> RX_VT_RX_RATE_OFFSET;
-	frmode = (u4RxVector0 & RX_VT_FR_MODE_MASK) >> RX_VT_FR_MODE_OFFSET;
-	nsts = ((u4RxVector1 & RX_VT_NSTS_MASK) >> RX_VT_NSTS_OFFSET);
-	sgi = u4RxVector0 & RX_VT_SHORT_GI;
-	groupid = (u4RxVector1 & RX_VT_GROUP_ID_MASK) >> RX_VT_GROUP_ID_OFFSET;
-	if (groupid && groupid != 63) {
-		mu = 1;
-	} else {
-		mu = 0;
-		nsts += 1;
-	}
-	sgi = (sgi == 0) ? 0 : 1;
-	if (frmode >= 4) {
-		DBGLOG(SW4, ERROR, "frmode error: %u\n", frmode);
-		return;
-	}
-
-	if (rxmode == RX_VT_LEGACY_CCK) {
-		u4CurRate =  /* uint : 500 kbps => 100kbps */
-			(5 * nicGetHwRateByPhyRate(rate));
-	} else {
-		rv = wlanQueryRateByTable(rxmode, rate, frmode, sgi, nsts,
-				&u4CurRate, &u4MaxRate); /* uint :100kbps */
-
-		if (rv < 0)
-			return;
-	}
 
 	/* RCPI */
 	ucRCPI0 = HAL_RX_STATUS_GET_RCPI0(prRxStatusGroup3);
 	ucRCPI1 = HAL_RX_STATUS_GET_RCPI1(prRxStatusGroup3);
 
-
 	/* Record peak rate to Traffic Indicator*/
-	if (u4CurRate > prAdapter->prGlueInfo
-		->PerfIndCache.u2CurRxRate[ucBssIndex]) {
-		prAdapter->prGlueInfo->PerfIndCache.
-			u2CurRxRate[ucBssIndex] = u4CurRate; /* uint :100kbps */
-		prAdapter->prGlueInfo->PerfIndCache.
-			ucCurRxNss[ucBssIndex] = nsts;
-		prAdapter->prGlueInfo->PerfIndCache.
-			ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
-		prAdapter->prGlueInfo->PerfIndCache.
-			ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
-	}
+	prAdapter->prGlueInfo->PerfIndCache.
+		ucCurRxRCPI0[ucBssIndex] = ucRCPI0;
+	prAdapter->prGlueInfo->PerfIndCache.
+		ucCurRxRCPI1[ucBssIndex] = ucRCPI1;
+
 }
 #endif
 
