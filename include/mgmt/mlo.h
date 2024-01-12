@@ -78,6 +78,13 @@
 	& (MLD_CAP_MAX_SIMULTANEOUS_LINK_MASK)); \
 }
 
+#define BE_SET_MLD_CAP_TID_TO_LINK_NEGO(_u2Cap, _num) \
+{\
+	(_u2Cap) &= ~(MLD_CAP_TID_TO_LINK_NEGO_MASK); \
+	(_u2Cap) |= (((_num) << (MLD_CAP_TID_TO_LINK_NEGO_SHIFT)) \
+	& (MLD_CAP_TID_TO_LINK_NEGO_MASK)); \
+}
+
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
 #define MLD_PARSE_BASIC_MLIE(__a, __b, __c, __d, __e) \
@@ -184,6 +191,16 @@ struct IE_FRAGMENT {
 	uint8_t ucId;
 	uint8_t ucLength;
 	uint8_t pucData[0];
+} __KAL_ATTRIB_PACKED__;
+
+/*802.11be D3.0 Figure 9-1002ao TID-to-Link Mapping element format*/
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_TID_TO_LINK_MAPPING {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t ucCtrl;
+	uint8_t ucOptCtrl[0];
 } __KAL_ATTRIB_PACKED__;
 
 struct STA_PROFILE {
@@ -400,6 +417,9 @@ struct MLD_STA_RECORD *mldStarecGetByLinkAddr(struct ADAPTER *prAdapter,
 
 int8_t mldStarecSetSetupIdx(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
+
+uint32_t mldUpdateTidBitmap(struct ADAPTER *prAdapter,
+	 struct MLD_STA_RECORD *prMldStaRec);
 
 #if (CFG_MLD_INFO_PRESETUP == 1)
 int8_t mldSetupMlInfo(struct ADAPTER *prAdapter,

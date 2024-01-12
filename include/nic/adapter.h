@@ -859,6 +859,8 @@ struct WIFI_VAR {
 	uint8_t ucStaPreferMldAddr;
 	uint8_t ucEnableMlo;
 	uint8_t ucMaxSimuLinks;
+	uint8_t ucT2LMNegotiationSupport;
+	uint32_t u4T2LMMarginMs;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
 	uint8_t ucMlProbeRetryLimit;
 	struct LINK_MGMT rMldBlockList;
@@ -2650,6 +2652,9 @@ struct ADAPTER {
 	struct MLD_STA_RECORD aprMldStarec[CFG_STA_REC_NUM];
 	uint8_t ucBssAbsentBitmap;
 	uint32_t u4StaInPSBitmap;
+	uint8_t ucT2LMTxDialogToken;
+	uint8_t ucT2LMRxDialogToken;
+	uint8_t ucT2LMReqRetryCnt;
 #endif
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	uint8_t ucEpcsTxDialogToken;

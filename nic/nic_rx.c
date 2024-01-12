@@ -4057,6 +4057,13 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	case CATEGORY_PROTECTED_EHT_ACTION:
 		switch (prActFrame->ucAction) {
+		case TID2LINK_REQUEST:
+		case TID2LINK_RESPONSE:
+		case TID2LINK_TEARDOWN:
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+			t2lmProcessAction(prAdapter, prSwRfb);
+#endif
+			break;
 		case EPCS_ENABLE_REQUEST:
 		case EPCS_ENABLE_RESPONSE:
 		case EPCS_TEARDOWN:

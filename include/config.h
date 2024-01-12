@@ -1327,6 +1327,10 @@
 #define CFG_SUPPORT_802_11BE_EPCS                0
 #endif
 
+#ifndef CFG_SUPPORT_802_11BE_T2LM
+#define CFG_SUPPORT_802_11BE_T2LM                0
+#endif
+
 #ifndef CFG_MLD_INFO_PRESETUP
 #define CFG_MLD_INFO_PRESETUP                    0
 #endif

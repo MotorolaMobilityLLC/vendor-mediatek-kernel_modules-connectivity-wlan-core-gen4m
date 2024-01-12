@@ -7171,7 +7171,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"ApMldEML", FEATURE_DISABLED);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateCapAll(prAdapter);
-#endif
+	INIT_UINT(prWifiVar->ucT2LMNegotiationSupport,
+		"T2LMNegotiationSupport", T2LM_NO_SUPPORT);
+	INIT_UINT(prWifiVar->u4T2LMMarginMs, "T2LMMarginMs", 250);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif /* CFG_SUPPORT_802_11BE */
 	INIT_UINT(prWifiVar->ucApHt, "ApHT", FEATURE_ENABLED);
 #if CFG_TC1_FEATURE

@@ -212,6 +212,10 @@
 /* Dependency:  aa_fsm.h (ENUM_AA_STATE_T), p2p_fsm.h
  *   (WPS_ATTRI_MAX_LEN_DEVICE_NAME)
  */
+#if (CFG_SUPPORT_802_11BE_T2LM == 1)
+#include "t2lm.h"
+#endif
+
 #include "cnm_mem.h"
 #include "cnm_scan.h"
 
