@@ -7729,8 +7729,6 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 
 		eBand = prSwRfb->eRfBand;
 
-		nicRxdChNumTranslate(eBand, &ucChnlNum);
-
 		i4Freq = nicChannelNum2Freq(ucChnlNum, eBand) / 1000;
 
 		if (!prGlueInfo->fgIsRegistered) {

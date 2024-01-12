@@ -2401,8 +2401,6 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	/* 4 <4.2> Get channel and RCPI information */
 	ucHwChannelNum = prSwRfb->ucChnlNum;
 
-	nicRxdChNumTranslate(eHwBand, &ucHwChannelNum);
-
 	ucRxRCPI = nicRxGetRcpiValueFromRxv(prAdapter, RCPI_MODE_MAX, prSwRfb);
 	if (prBssDesc->eBand == BAND_2G4) {
 		/* Update RCPI if in right channel */
@@ -2589,7 +2587,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
 	ucChnlNum = prSwRfb->ucChnlNum;
-	nicRxdChNumTranslate(eHwBand, &ucChnlNum);
 
 	WLAN_GET_FIELD_16(&prWlanBeaconFrame->u2CapInfo, &u2CapInfo);
 	WLAN_GET_FIELD_64(&prWlanBeaconFrame->au4Timestamp[0], &u8Timestamp);

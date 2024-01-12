@@ -481,9 +481,6 @@ static void radiotap_fill_channel(
 	else
 		flags |= IEEE80211_CHAN_OFDM;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	nicRxdChNumTranslate(eBand, &ucChanNum);
-#endif
 	if (eBand == BAND_2G4) {
 		freq = (ucChanNum * 5 + 2407);
 	} else if (eBand == BAND_5G) {

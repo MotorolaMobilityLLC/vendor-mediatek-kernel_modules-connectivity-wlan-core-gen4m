@@ -1416,8 +1416,6 @@ kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 
 		eBand = prSwRfb->eRfBand;
 
-		nicRxdChNumTranslate(eBand, &ucChnlNum);
-
 #if DBG_P2P_MGMT_FRAME_INDICATION
 
 		prWlanHeader = (struct WLAN_MAC_HEADER *) prSwRfb->pvHeader;

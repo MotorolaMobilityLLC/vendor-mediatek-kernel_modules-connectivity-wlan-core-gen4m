@@ -1509,8 +1509,6 @@ uint32_t bssProcessProbeRequest(struct ADAPTER *prAdapter,
 		eBand = prSwRfb->eRfBand;
 		ucHwChannelNum = prSwRfb->ucChnlNum;
 
-		nicRxdChNumTranslate(eBand, &ucHwChannelNum);
-
 		if (prBssInfo->eBand != eBand)
 			continue;
 

@@ -6404,18 +6404,19 @@ void nicRXDataModeConfig(struct ADAPTER *prAdapter)
 
 #endif
 
-void nicRxdChNumTranslate(
-	enum ENUM_BAND eBand, uint8_t *pucHwChannelNum)
+uint8_t nicRxdChNumTranslate(enum ENUM_BAND eBand, uint8_t ucHwChannelNum)
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if ((eBand == BAND_6G) && (pucHwChannelNum != NULL))
-		if (*pucHwChannelNum != 15)
-			*pucHwChannelNum =
-				(((*pucHwChannelNum - 181) << 2) + 1);
-		/* 6 GHz channel 2, RXV channel will assign to 2 */
-		else
-			*pucHwChannelNum = 2;
+	if (eBand != BAND_6G)
+		return ucHwChannelNum;
+
+	if (ucHwChannelNum != HW_CHNL_NUM_MAX_2G4 + 1)
+		return (((ucHwChannelNum - CHNL_NUM_BASE_6G) << 2) + 1);
+	/* 6 GHz channel 2, RXV channel will assign to 15 */
+	else
+		return 2;
 #endif
+	return ucHwChannelNum;
 }
 
 void nicDumpMsduInfo(struct MSDU_INFO *prMsduInfo)

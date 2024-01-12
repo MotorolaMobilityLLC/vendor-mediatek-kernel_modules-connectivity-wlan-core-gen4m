@@ -2715,11 +2715,6 @@ done:
 	prDst->eRfBand = prBssDesc ? prBssDesc->eBand :
 		prSta->rChnlInfo.eBand;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prDst->eRfBand == BAND_6G)
-		prDst->ucChnlNum = ((prDst->ucChnlNum - 1) >> 2) + 181;
-#endif
-
 	DBGLOG(ML, INFO,
 		"Dump duplicated SwRFB for id=%d addr="
 		MACSTR " len=%d, chnl=%d, band=%d\n",

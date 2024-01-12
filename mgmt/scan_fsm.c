@@ -1473,13 +1473,10 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand = BAND_NULL; \
 		for (ucChCnt = 0; ucChCnt < ucScanChNum; ucChCnt++) { \
 			eBand = \
-			SCN_GET_EBAND_BY_CH_NUM( \
-			prScanDone->var[ucChCnt]); \
+			SCN_GET_EBAND_BY_CH_NUM(prScanDone->var[ucChCnt]); \
 			prScanInfo->aeChannelBand[ucChCnt] = eBand; \
-			prScanInfo->var[ucChCnt] \
-				= prScanDone->var[ucChCnt]; \
-			nicRxdChNumTranslate(eBand, \
-			&prScanInfo->var[ucChCnt]); \
+			prScanInfo->var[ucChCnt] = nicRxdChNumTranslate(eBand, \
+				prScanDone->var[ucChCnt]); \
 			u2Written += kalSnprintf(strbuf + u2Written, \
 				u2TotalLen - u2Written, "%6d", \
 				prScanInfo->var[ucChCnt]); \
@@ -1497,13 +1494,10 @@ scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand = BAND_NULL; \
 		for (ucChCnt = 0; ucChCnt < ucScanChNum; ucChCnt++) { \
 			eBand = \
-			SCN_GET_EBAND_BY_CH_NUM( \
-			prScanDone->var[ucChCnt]); \
+			SCN_GET_EBAND_BY_CH_NUM(prScanDone->var[ucChCnt]); \
 			prScanInfo->aeChannelBand[ucChCnt] = eBand; \
-			prScanInfo->var[ucChCnt] \
-				= prScanDone->var[ucChCnt]; \
-			nicRxdChNumTranslate(eBand, \
-			&prScanInfo->var[ucChCnt]); \
+			prScanInfo->var[ucChCnt] = nicRxdChNumTranslate(eBand, \
+				prScanDone->var[ucChCnt]); \
 			u2Written += kalSnprintf(strbuf + u2Written, \
 				u2TotalLen - u2Written, "%6d", \
 				prScanInfo->var[ucChCnt]); \
