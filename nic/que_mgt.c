@@ -1124,12 +1124,12 @@ void qmSetStaRecTxAllowed(IN struct ADAPTER *prAdapter,
 			if (fgIsTxAllowed) {
 				prSrcQ = &prStaRec->arPendingTxQueue[ucIdx];
 				prDstQ = &prStaRec->arTxQueue[ucIdx];
+				QUEUE_CONCATENATE_QUEUES(prDstQ, prSrcQ);
 			} else {
 				prSrcQ = &prStaRec->arTxQueue[ucIdx];
 				prDstQ = &prStaRec->arPendingTxQueue[ucIdx];
+				QUEUE_CONCATENATE_QUEUES_HEAD(prDstQ, prSrcQ);
 			}
-
-			QUEUE_CONCATENATE_QUEUES_HEAD(prDstQ, prSrcQ);
 			prStaRec->aprTargetQueue[ucIdx] = prDstQ;
 		}
 
