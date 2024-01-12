@@ -27,6 +27,14 @@
 #include "gl_sa_log.h"
 #include "wlan_ring.h"
 
+#if IS_ENABLED(CONFIG_MTK_AEE_IPANIC)
+extern int mrdump_mini_add_extra_file(
+	unsigned long vaddr,
+	unsigned long paddr,
+	unsigned long size,
+	const char *name);
+#endif
+
 #define SA_LOG_SIZE (128*1024)
 #define SA_WAIT_READY_MAX_CNT 2000
 #define SA_WAIT_READY_SLEEP_TIME 100
@@ -88,6 +96,13 @@ static int sa_ring_init(struct sa_ring *iRing, size_t size)
 				0,
 				0,
 				&iRing->ring_cache);
+#if IS_ENABLED(CONFIG_MTK_AEE_IPANIC)
+			mrdump_mini_add_extra_file(
+				(unsigned long) pBuffer,
+				__pa_nodebug(pBuffer),
+				size,
+				"WIFI_DRIVER_LOG");
+#endif
 		}
 	}
 
