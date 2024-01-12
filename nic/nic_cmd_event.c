@@ -1072,7 +1072,7 @@ void nicEventStatsLinkStats(struct ADAPTER *prAdapter,
 
 	if (unlikely(prEvent->u2PacketLength - sizeof(struct WIFI_EVENT) >
 					prCmdInfo->u4InformationBufferLength)) {
-		DBGLOG(RX, WARN, "prEventLen=%u-%u, BufLen=%u",
+		DBGLOG(RX, WARN, "prEventLen=%u-%zu, BufLen=%u",
 				prEvent->u2PacketLength,
 				sizeof(struct WIFI_EVENT),
 				prCmdInfo->u4InformationBufferLength);
