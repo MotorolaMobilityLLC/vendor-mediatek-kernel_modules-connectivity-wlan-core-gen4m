@@ -1655,7 +1655,7 @@ uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
-		DBGLOG(RX, WARN,
+		DBGLOG(RX, LOUD,
 		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
 			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
 		return WLAN_STATUS_FAILURE;
