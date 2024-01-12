@@ -1587,6 +1587,11 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 			IN struct CMD_INFO *prCmdInfo,
 			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
+void wlanReleaseCommandEx(IN struct ADAPTER *prAdapter,
+			IN struct CMD_INFO *prCmdInfo,
+			IN enum ENUM_TX_RESULT_CODE rTxDoneStatus,
+			IN u_int8_t fgIsNeedHandler);
+
 void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 			   IN unsigned long ulParamPtr);
 

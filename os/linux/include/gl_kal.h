@@ -1631,7 +1631,8 @@ uint32_t kalGetTxPendingFrameCount(IN struct GLUE_INFO
 uint32_t kalGetTxPendingCmdCount(IN struct GLUE_INFO
 				 *prGlueInfo);
 
-void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo);
+void kalClearCommandQueue(IN struct GLUE_INFO *prGlueInfo,
+	IN u_int8_t fgIsNeedHandler);
 
 u_int8_t kalSetTimer(IN struct GLUE_INFO *prGlueInfo,
 		     IN uint32_t u4Interval);
