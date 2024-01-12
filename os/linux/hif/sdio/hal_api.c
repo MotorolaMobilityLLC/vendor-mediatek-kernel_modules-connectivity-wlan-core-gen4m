@@ -113,6 +113,38 @@
 *                                 M A C R O S
 ********************************************************************************
 */
+/*
+ *TX Done Counter Layout
+ *
+ * enum HIF_TX_COUNT_IDX_T {
+ *
+ *	 /==== First WMM ====/
+ *
+ *	 HIF_TXC_IDX_0, ==>AC0 PSE
+ *	 HIF_TXC_IDX_1, ==>AC1 PSE
+ *	 HIF_TXC_IDX_2, ==>AC2 PSE
+ *	 HIF_TXC_IDX_3, ==>AC3 PLE
+ *	 HIF_TXC_IDX_4, ==>CPU PSE
+ *	 HIF_TXC_IDX_5, ==>AC0 PLE
+ *	 HIF_TXC_IDX_6, ==>AC1 PLE
+ *	 HIF_TXC_IDX_7, ==>AC2 PLE
+ *	 HIF_TXC_IDX_8, ==>AC3 PLE
+ *
+ *	/==== Second WMM ====/
+ *
+ *	 HIF_TXC_IDX_9, ==>AC10, AC11 PSE
+ *	 HIF_TXC_IDX_10, ==> AC12 PSE
+ *	 HIF_TXC_IDX_11, ==>AC13 PSE
+ *	 HIF_TXC_IDX_12, ==>AC10, AC11 PLE
+ *	 HIF_TXC_IDX_13, ==>AC12 PLE
+ *	 HIF_TXC_IDX_14, ==>Reservec
+ *	 HIF_TXC_IDX_15, ==>AC13 PLE
+ * };
+*/
+#define HIF_TXC_IDX_2_TC_IDX_PSE(hif_idx) (hif_idx)
+#define HIF_TXC_IDX_2_TC_IDX_PLE(hif_idx) (hif_idx - HIF_TXC_IDX_5)
+#define TC_IDX_PSE_2_HIF_TXC_IDX(ucTc) (ucTc)
+#define TC_IDX_PLE_2_HIF_TXC_IDX(ucTc) (ucTc + HIF_TXC_IDX_5)
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -468,11 +500,14 @@ BOOLEAN halSetDriverOwn(IN P_ADAPTER_T prAdapter)
 
 		HAL_MCR_RD(prAdapter, MCR_D2HRM1R, &i);
 		if (i == 0x77889901) {
+			struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+
 			/* fgIsWakeupFromDeepSleep */
 			wlanSendDummyCmd(prAdapter, FALSE);
 
 			/* Workaround for dummy command which is not count in Tx done count */
-			prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[TC4_INDEX]--;
+			if (prChipInfo->is_support_cr4)
+				prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[TC4_INDEX]--;
 		}
 	}
 #endif
@@ -771,27 +806,16 @@ BOOLEAN halTxReleaseResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxRlsCnt)
 	UINT_32 i;
 	P_SDIO_STAT_COUNTER_T prStatCnt;
 	UINT_16 au2TxDoneCnt[HIF_TX_NUM] = { 0 };
-	UINT_16 u2ReturnCnt;
-
-	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 	prTcqStatus = &prAdapter->rTxCtrl.rTc;
 	prStatCnt = &prAdapter->prGlueInfo->rHifInfo.rStatCounter;
 
 	/* Update Free Tc resource counter */
-	for (i = HIF_TX_AC0_INDEX; i <= HIF_TX_AC23_INDEX; i++)
-		au2TxDoneCnt[i % WMM_AC_INDEX_NUM] += au2TxRlsCnt[i];
-	au2TxDoneCnt[HIF_TX_CPU_INDEX] = au2TxRlsCnt[HIF_TX_CPU_INDEX];
+	halTxGetFreeResource(prAdapter, au2TxDoneCnt, au2TxRlsCnt);
 
 	/* Return free Tc page count */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-	for (i = TC0_INDEX; i < TC5_INDEX; i++) {
-		u2ReturnCnt = au2TxDoneCnt[nicTxGetTxQByTc(prAdapter, i)];
-		nicTxReleaseResource(prAdapter, i, u2ReturnCnt, FALSE);
-		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] -= u2ReturnCnt;
-	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	halTxReturnFreeResource(prAdapter, au2TxDoneCnt);
 	bStatus = TRUE;
 
 	/* Update Statistic counter */
@@ -1458,9 +1482,21 @@ VOID halRxProcessMsduReport(IN P_ADAPTER_T prAdapter, IN OUT P_SW_RFB_T prSwRfb)
 
 }
 
+UINT_32 halTxGetPageCountPSE(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength)
+{
+	UINT_32 u4PageSize = prAdapter->rTxCtrl.u4PageSize;
+
+	return ((u4FrameLength + prAdapter->nicTxReousrce.ucPpTxAddCnt + u4PageSize - 1)/u4PageSize);
+}
+
 UINT_32 halTxGetPageCount(IN P_ADAPTER_T prAdapter, IN UINT_32 u4FrameLength, IN BOOLEAN fgIncludeDesc)
 {
-	return 1;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->is_support_cr4)
+		return 1;
+
+	return halTxGetPageCountPSE(prAdapter, u4FrameLength);
 }
 
 UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32 u4Max)
@@ -2113,18 +2149,9 @@ VOID halPollDbgCr(IN P_ADAPTER_T prAdapter, IN UINT_32 u4LoopCount)
 VOID halSerHifReset(IN P_ADAPTER_T prAdapter)
 {
 	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	UINT_32 i;
-
-	KAL_SPIN_LOCK_DECLARATION();
 
 	/* Restore Tx resource */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-
-	for (i = TC0_INDEX; i <= TC5_INDEX; i++) {
-		nicTxReleaseResource(prAdapter, i, prHifInfo->au4PendingTxDoneCount[i], FALSE);
-		prHifInfo->au4PendingTxDoneCount[i] = 0;
-	}
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	halRestoreTxResource(prAdapter);
 
 	/* Clear interrupt status from Rx interrupt enhance mode */
 	prHifInfo->fgIsPendingInt = FALSE;
@@ -2156,11 +2183,255 @@ UINT_32 halGetHifTxPageSize(IN P_ADAPTER_T prAdapter)
 {
 	if (!prAdapter->chip_info->is_support_cr4) {
 		if (prAdapter->fgIsNicTxReousrceValid)
-			return prAdapter->nicTxReousrce.u4LmacResourceUnit;
+			return prAdapter->nicTxReousrce.u4DataResourceUnit;
 		else
 			return HIF_TX_PAGE_SIZE_STORED_FORWARD;
 	}
 
     /*cr4 mode*/
 	return HIF_TX_PAGE_SIZE;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Generic update Tx done counter
+*
+* @param prAdapter      Pointer to the Adapter structure.
+* @param au2TxDoneCnt   Pointer to the final reference table
+* @param au2TxRlsCnt    Pointer to the Tx done counter result got fom interrupt
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+
+VOID halTxGetFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt)
+{
+	UINT_8 i;
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->halTxGetFreeResource)
+		return prBusInfo->halTxGetFreeResource(prAdapter, au2TxDoneCnt, au2TxRlsCnt);
+
+	/* 6632, 7668 ways */
+	for (i = HIF_TX_AC0_INDEX; i <= HIF_TX_AC23_INDEX; i++)
+		au2TxDoneCnt[i % WMM_AC_INDEX_NUM] += au2TxRlsCnt[i];
+	au2TxDoneCnt[HIF_TX_CPU_INDEX] = au2TxRlsCnt[HIF_TX_CPU_INDEX];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Update Tx done counter for mt7663
+*
+* @param prAdapter      Pointer to the Adapter structure.
+* @param au2TxDoneCnt   Pointer to the final reference table
+* @param au2TxRlsCnt    Pointer to the Tx done counter result got fom interrupt
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+
+VOID halTxGetFreeResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt)
+{
+	UINT_8 i;
+
+	for (i = HIF_TXC_IDX_0; i < HIF_TXC_IDX_NUM; i++)
+		au2TxDoneCnt[i] = au2TxRlsCnt[i];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Generic return free resource to TCs
+*
+* @param prAdapter      Pointer to the Adapter structure.
+* @param au2TxDoneCnt   Pointer to the final reference table
+* @param au2TxRlsCnt    Pointer to the Tx done counter result got fom interrupt
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+
+VOID halTxReturnFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt)
+{
+	UINT_8 i;
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+	UINT_16 u2ReturnCnt;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+
+	if (prBusInfo->halTxReturnFreeResource)
+		prBusInfo->halTxReturnFreeResource(prAdapter, au2TxDoneCnt);
+	else {
+		/* 6632, 7668 ways */
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+		for (i = TC0_INDEX; i < TC5_INDEX; i++) {
+			u2ReturnCnt = au2TxDoneCnt[nicTxGetTxQByTc(prAdapter, i)];
+			nicTxReleaseResource_PSE(prAdapter, i, u2ReturnCnt, FALSE);
+			prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] -= u2ReturnCnt;
+		}
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Return free resource to TCs for mt7663
+*
+* @param prAdapter      Pointer to the Adapter structure.
+* @param au2TxDoneCnt   Pointer to the final reference table
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID halTxReturnFreeResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt)
+{
+	UINT_8 i;
+	UINT_16 u2ReturnCnt;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	/* WMM 1 */
+	for (i = HIF_TXC_IDX_0; i <= HIF_TXC_IDX_8; i++) {
+		UINT_8 ucTc;
+
+		u2ReturnCnt = au2TxDoneCnt[i];
+
+		if (i < HIF_TXC_IDX_5) {
+			ucTc = HIF_TXC_IDX_2_TC_IDX_PSE(i);
+			nicTxReleaseResource_PSE(prAdapter, ucTc, u2ReturnCnt, FALSE);
+		} else {
+			ucTc = HIF_TXC_IDX_2_TC_IDX_PLE(i);
+			nicTxReleaseResource_PLE(prAdapter, ucTc, u2ReturnCnt, FALSE);
+		}
+
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] -= u2ReturnCnt;
+	}
+
+	/* WMM 2,3 */
+	/*TBD*/
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Generic rollback resource to TCs
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+
+VOID halRestoreTxResource(IN P_ADAPTER_T prAdapter)
+{
+	UINT_8 i;
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+	P_GL_HIF_INFO_T prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	if (prBusInfo->halRestoreTxResource)
+		prBusInfo->halRestoreTxResource(prAdapter);
+	else {
+		/* 6632, 7668 ways */
+		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+		for (i = TC0_INDEX; i <= TC5_INDEX; i++) {
+			nicTxReleaseResource_PSE(prAdapter, i, prHifInfo->au4PendingTxDoneCount[i], FALSE);
+			prHifInfo->au4PendingTxDoneCount[i] = 0;
+		}
+		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+	}
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Rollback resource to TCs for mt7663
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (none)
+*/
+/*----------------------------------------------------------------------------*/
+
+VOID halRestoreTxResource_v1(IN P_ADAPTER_T prAdapter)
+{
+	UINT_8 i;
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+
+	/* WMM 1 */
+	/* PSE pages: HIF_TXC_IDX_0- */
+	for (i = HIF_TXC_IDX_0; i <= HIF_TXC_IDX_4; i++) {
+		nicTxReleaseResource_PSE(prAdapter, HIF_TXC_IDX_2_TC_IDX_PSE(i),
+					prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i],
+					FALSE);
+
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] = 0;
+	}
+
+	/* PLE pages */
+	for (i = HIF_TXC_IDX_5; i <= HIF_TXC_IDX_8; i++) {
+		nicTxReleaseResource_PLE(prAdapter, HIF_TXC_IDX_2_TC_IDX_PLE(i),
+					prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i],
+					FALSE);
+
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] = 0;
+	}
+
+	/* WMM 2,3 */
+	/*TBD*/
+
+	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
+}
+
+VOID halUpdateTxDonePendingCount(IN P_ADAPTER_T prAdapter, IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_32 u4Len)
+{
+	UINT_8 u2PageCnt;
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+
+	u2PageCnt = halTxGetPageCount(prAdapter, u4Len, FALSE);
+
+	if (prBusInfo->halUpdateTxDonePendingCount)
+		prBusInfo->halUpdateTxDonePendingCount(prAdapter, isIncr, ucTc, u2PageCnt);
+	else {
+		/* 6632, 7668 ways */
+		if (isIncr)
+			prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[ucTc] += u2PageCnt;
+		else
+			prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[ucTc] -= u2PageCnt;
+	}
+}
+
+VOID halUpdateTxDonePendingCount_v1(IN P_ADAPTER_T prAdapter, IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_16 u2Cnt)
+{
+	UINT_8 idx;
+
+	/* Update PSE part */
+	idx = TC_IDX_PSE_2_HIF_TXC_IDX(ucTc);
+
+	if (idx >= HIF_TXC_IDX_NUM)
+		ASSERT(0);
+
+	if (isIncr)
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] += u2Cnt;
+	else
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] -= u2Cnt;
+
+	/* Update PLE part */
+	if (!nicTxResourceIsPleCtrlNeeded(prAdapter, ucTc))
+		return;
+
+	idx = TC_IDX_PLE_2_HIF_TXC_IDX(ucTc);
+
+	if (idx >= HIF_TXC_IDX_NUM)
+		ASSERT(0);
+
+	if (isIncr)
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] += NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+	else
+		prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[idx] -= NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 }

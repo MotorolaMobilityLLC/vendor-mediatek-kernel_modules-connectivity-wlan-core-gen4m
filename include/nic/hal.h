@@ -1070,4 +1070,11 @@ VOID halPrintHifDbgInfo(IN P_ADAPTER_T prAdapter);
 BOOLEAN halIsTxResourceControlEn(IN P_ADAPTER_T prAdapter);
 VOID halTxResourceResetHwTQCounter(IN P_ADAPTER_T prAdapter);
 UINT_32 halGetHifTxPageSize(IN P_ADAPTER_T prAdapter);
+VOID halTxReturnFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt);
+VOID halTxGetFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt);
+VOID halRestoreTxResource(IN P_ADAPTER_T prAdapter);
+VOID halRestoreTxResource_v1(IN P_ADAPTER_T prAdapter);
+VOID halUpdateTxDonePendingCount_v1(IN P_ADAPTER_T prAdapter, IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_16 u2Cnt);
+VOID halUpdateTxDonePendingCount(IN P_ADAPTER_T prAdapter, IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_32 u4Len);
+VOID halTxReturnFreeResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt);
 #endif /* _HAL_H */

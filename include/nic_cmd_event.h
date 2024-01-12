@@ -1196,10 +1196,13 @@ typedef struct _NIC_EFUSE_ADDRESS_T {
 } NIC_EFUSE_ADDRESS_T, *P_NIC_EFUSE_ADDRESS_T;
 
 typedef struct _NIC_TX_RESOURCE_T {
-	UINT_32 u4McuTotalResource;  /* the total usable resource for MCU port */
-	UINT_32 u4McuResourceUnit;   /* the unit of a MCU resource */
-	UINT_32 u4LmacTotalResource; /* the total usable resource for LMAC port */
-	UINT_32 u4LmacResourceUnit;  /* the unit of a LMAC resource */
+	UINT_32 u4CmdTotalResource;  /* the total usable resource for MCU port */
+	UINT_32 u4CmdResourceUnit;   /* the unit of a MCU resource */
+	UINT_32 u4DataTotalResource; /* the total usable resource for LMAC port */
+	UINT_32 u4DataResourceUnit;  /* the unit of a LMAC resource */
+
+	/* Packet Processor 0x8206C000[15:8] * 4. Extra PSE resource is needed for HW.*/
+	UINT_8  ucPpTxAddCnt;
 } NIC_TX_RESOURCE_T, *P_NIC_TX_RESOURCE_T;
 
 /* modified version of WLAN_BEACON_FRAME_BODY_T for simplier buffering */

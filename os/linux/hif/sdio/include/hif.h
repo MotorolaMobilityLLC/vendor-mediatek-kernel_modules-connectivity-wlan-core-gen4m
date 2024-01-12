@@ -120,7 +120,7 @@
 
 #define HIF_TX_PAGE_SIZE_IN_POWER_OF_2      11
 #define HIF_TX_PAGE_SIZE                    2048	/* in unit of bytes */
-#define HIF_TX_PAGE_SIZE_STORED_FORWARD     256	/* in unit of bytes */
+#define HIF_TX_PAGE_SIZE_STORED_FORWARD     128	/* in unit of bytes */
 
 #define HIF_EXTRA_IO_BUFFER_SIZE \
 	(sizeof(ENHANCE_MODE_DATA_STRUCT_T) + HIF_RX_COALESCING_BUF_COUNT * HIF_RX_COALESCING_BUFFER_SIZE)
@@ -163,6 +163,26 @@
 #define SER_SDIO_HOST_N9_RESET_DONE_ACK            BIT(20)
 /* Host interrupt N9 System Error Recovery done */
 #define SER_SDIO_HOST_N9_RECOVERY_DONE_ACK         BIT(21)
+enum HIF_TX_COUNT_IDX_T {
+	HIF_TXC_IDX_0,
+	HIF_TXC_IDX_1,
+	HIF_TXC_IDX_2,
+	HIF_TXC_IDX_3,
+	HIF_TXC_IDX_4,
+	HIF_TXC_IDX_5,
+	HIF_TXC_IDX_6,
+	HIF_TXC_IDX_7,
+	HIF_TXC_IDX_8,
+	HIF_TXC_IDX_9,
+	HIF_TXC_IDX_10,
+	HIF_TXC_IDX_11,
+	HIF_TXC_IDX_12,
+	HIF_TXC_IDX_13,
+	HIF_TXC_IDX_14,
+	HIF_TXC_IDX_15,
+	HIF_TXC_IDX_NUM
+};
+
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -234,7 +254,7 @@ typedef struct _GL_HIF_INFO_T {
 	QUE_T rFreeQueue;
 	BOOLEAN fgIsPendingInt;
 
-	UINT_32 au4PendingTxDoneCount[6];
+	UINT_32 au4PendingTxDoneCount[HIF_TXC_IDX_NUM];
 
 	/* Statistic counter */
 	SDIO_STAT_COUNTER_T rStatCounter;
@@ -249,7 +269,11 @@ typedef struct _GL_HIF_INFO_T {
 } GL_HIF_INFO_T, *P_GL_HIF_INFO_T;
 
 typedef struct _BUS_INFO {
-
+	void (*halTxGetFreeResource)(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt);
+	void (*halTxReturnFreeResource)(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt);
+	void (*halRestoreTxResource)(IN P_ADAPTER_T prAdapter);
+	void (*halUpdateTxDonePendingCount)(IN P_ADAPTER_T prAdapter,
+					    IN BOOLEAN isIncr, IN UINT_8 ucTc, IN UINT_16 u2Cnt);
 } BUS_INFO, *P_BUS_INFO;
 
 /*******************************************************************************
@@ -334,6 +358,8 @@ VOID halGetMailbox(IN P_ADAPTER_T prAdapter, IN UINT_32 u4MailboxNum, OUT PUINT_
 VOID halDeAggRxPkt(P_ADAPTER_T prAdapter, P_SDIO_RX_COALESCING_BUF_T prRxBuf);
 VOID halPrintMailbox(IN P_ADAPTER_T prAdapter);
 VOID halPollDbgCr(IN P_ADAPTER_T prAdapter, IN UINT_32 u4LoopCount);
+void halTxGetFreeResource_v1(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt, IN PUINT_16 au2TxRlsCnt);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

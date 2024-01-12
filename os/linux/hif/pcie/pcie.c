@@ -950,7 +950,7 @@ BOOL kalDevWriteData(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T prMsduInfo)
 
 	DBGLOG_MEM32(HAL, TRACE, pucSrc, pTxD->SDLen0);
 
-	nicTxReleaseResource(prGlueInfo->prAdapter, prMsduInfo->ucTC,
+	nicTxReleaseResource_PSE(prGlueInfo->prAdapter, prMsduInfo->ucTC,
 		nicTxGetPageCount(prGlueInfo->prAdapter, prMsduInfo->u2FrameLength, TRUE), TRUE);
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
