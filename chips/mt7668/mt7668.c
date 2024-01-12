@@ -440,6 +440,8 @@ struct BUS_INFO mt7668_bus_info = {
 	.u4DmaMask = 32,
 
 	.pdmaSetup = mt7668PdmaConfig,
+	.pdmaStop = NULL,
+	.pdmaPollingIdle = NULL,
 	.updateTxRingMaxQuota = NULL,
 	.enableInterrupt = mt7668EnableInterrupt,
 	.disableInterrupt = mt7668DisableInterrupt,

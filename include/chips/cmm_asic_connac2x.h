@@ -1139,6 +1139,9 @@ void asicConnac2xWpdmaConfig(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t enable,
 	bool fgResetHif);
+void asicConnac2xWfdmaStop(
+	struct GLUE_INFO *prGlueInfo,
+	uint8_t enable);
 uint8_t asicConnac2xWfdmaWaitIdle(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t index,
@@ -1152,6 +1155,8 @@ void asicConnac2xWfdmaRxRingBasePtrExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *rx_ring,
 	u_int32_t index);
+u_int8_t asicConnac2xWfdmaPollingAllIdle(
+	struct GLUE_INFO *prGlueInfo);
 void asicConnac2xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,

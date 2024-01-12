@@ -599,6 +599,32 @@ void asicConnac2xWfdmaControl(
 	}
 }
 
+void asicConnac2xWfdmaStop(
+	struct GLUE_INFO *prGlueInfo,
+	u_int8_t enable)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	union WPDMA_GLO_CFG_STRUCT GloCfg;
+	uint32_t u4DmaCfgCr;
+	uint32_t idx;
+
+	for (idx = 0; idx < CONNAC2X_MAX_WFDMA_COUNT; idx++) {
+		u4DmaCfgCr = asicConnac2xWfdmaCfgAddrGet(prGlueInfo, idx);
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &GloCfg.word);
+
+		if (enable == TRUE) {
+			GloCfg.field_conn2x.tx_dma_en = 0;
+			GloCfg.field_conn2x.rx_dma_en = 0;
+		} else {
+			GloCfg.field_conn2x.tx_dma_en = 1;
+			GloCfg.field_conn2x.rx_dma_en = 1;
+		}
+
+		HAL_MCR_WR(prAdapter, u4DmaCfgCr, GloCfg.word);
+	}
+
+}
+
 void asicConnac2xWpdmaConfig(
 	struct GLUE_INFO *prGlueInfo,
 	u_int8_t enable,
@@ -667,7 +693,6 @@ u_int8_t asicConnac2xWfdmaWaitIdle(
 	return FALSE;
 }
 
-
 void asicConnac2xWfdmaTxRingBasePtrExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,
@@ -724,6 +749,23 @@ void asicConnac2xWfdmaRxRingBasePtrExtCtrl(
 			phy_addr_ext);
 }
 
+u_int8_t asicConnac2xWfdmaPollingAllIdle(
+	struct GLUE_INFO *prGlueInfo)
+{
+	u_int8_t ucDmaIdx;
+
+	for (ucDmaIdx = 0; ucDmaIdx < CONNAC2X_MAX_WFDMA_COUNT; ucDmaIdx++) {
+		if (asicConnac2xWfdmaWaitIdle(prGlueInfo, ucDmaIdx, 100, 1000)
+			== FALSE) {
+			DBGLOG(HAL, WARN,
+				"Polling PDMA idle Timeout!!DmaIdx:%d\n",
+				ucDmaIdx);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
 
 void asicConnac2xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,

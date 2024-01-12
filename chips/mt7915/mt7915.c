@@ -461,6 +461,8 @@ struct BUS_INFO mt7915_bus_info = {
 	.u4DmaMask = 32,
 
 	.pdmaSetup = asicConnac2xWpdmaConfig,
+	.pdmaStop = asicConnac2xWfdmaStop,
+	.pdmaPollingIdle = asicConnac2xWfdmaPollingAllIdle,
 	.enableInterrupt = asicConnac2xEnableExtInterrupt,
 	.disableInterrupt = asicConnac2xDisableExtInterrupt,
 	.processTxInterrupt = asicConnac2xProcessTxInterrupt,
