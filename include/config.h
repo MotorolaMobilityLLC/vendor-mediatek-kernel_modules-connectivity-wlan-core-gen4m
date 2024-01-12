@@ -429,6 +429,13 @@
 #error "NAPI should based on GRO in gen4m"
 #endif
 
+#ifndef CFG_SUPPORT_RX_NAPI_WORK
+#define CFG_SUPPORT_RX_NAPI_WORK                0
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
+#if (CFG_SUPPORT_RX_NAPI == 0) && (CFG_SUPPORT_RX_NAPI_WORK == 1)
+#error "NAPI_WORK should based on NAPI in gen4m"
+#endif
+
 /* There is a "budget" concept in original NAPI design. However,
  * the default budget in Linux is 64 and it's hard to aggreate a 64K packet
  * within 64-packets in throughput test.
@@ -593,7 +600,7 @@
 #ifdef MT6653
 #define CFG_TX_MAX_PKT_NUM                      11000
 #elif (CFG_SUPPORT_CONNAC3X == 1)
-#define CFG_TX_MAX_PKT_NUM                      4096
+#define CFG_TX_MAX_PKT_NUM                      8192
 #elif (CFG_SUPPORT_CONNAC2X == 1)
 #define CFG_TX_MAX_PKT_NUM                      2048
 #else

@@ -2504,6 +2504,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_TX_WORK
 	kalTxWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_WORK */
+#if CFG_SUPPORT_RX_NAPI_WORK
+	kalRxNapiWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
 #if CFG_SUPPORT_RX_WORK
 	kalRxWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_WORK */
@@ -2528,6 +2531,9 @@ static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_TX_WORK
 	kalTxWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_WORK */
+#if CFG_SUPPORT_RX_NAPI_WORK
+	kalRxNapiWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI_WORK */
 #if CFG_SUPPORT_RX_WORK
 	kalRxWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_WORK */

@@ -2146,8 +2146,7 @@ u_int8_t halRxInsertRecvRfbList(
 #endif /* CFG_RFB_TRACK */
 			if (KAL_FIFO_IN(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 				RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_IN_COUNT);
-				RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-				kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+				kalNapiSchedule(prAdapter);
 			} else {
 				/* should not enter here */
 				RX_INC_CNT(prRxCtrl,
@@ -2277,8 +2276,7 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		if (prGlueInfo->prRxDirectNapi &&
 			KAL_FIFO_IS_FULL(&prGlueInfo->rRxKfifoQ)) {
 			RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_FULL_COUNT);
-			RX_INC_CNT(prRxCtrl, RX_NAPI_SCHEDULE_COUNT);
-			kal_napi_schedule(prGlueInfo->prRxDirectNapi);
+			kalNapiSchedule(prAdapter);
 			break;
 		}
 #endif /* CFG_SUPPORT_RX_NAPI */
