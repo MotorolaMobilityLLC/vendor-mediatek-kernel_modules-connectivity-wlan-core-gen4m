@@ -74,7 +74,7 @@
 #if CFG_ENABLE_MAWD_MD_RING
 #define WFDMA_MD_MSI_NUM		1
 #else
-#define WFDMA_MD_MSI_NUM		8
+#define WFDMA_MD_MSI_NUM		1
 #endif
 
 extern struct PLE_TOP_CR rMt6653PleTopCr;
