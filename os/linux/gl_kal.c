@@ -97,6 +97,10 @@
 #include <linux/module.h>
 #include <linux/debugfs.h>
 
+/* for uevent */
+#include <linux/miscdevice.h>   /* for misc_register, and SYNTH_MINOR */
+#include <linux/kobject.h>
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -146,6 +150,8 @@ u_int8_t wlan_perf_monitor_force_enable = FALSE;
 
 static struct notifier_block wlan_fb_notifier;
 void *wlan_fb_notifier_priv_data;
+
+static struct miscdevice wlan_object;
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -6690,6 +6696,61 @@ int kalMetRemoveProcfs(void)
 
 #endif
 
+static u_int8_t kalSendUevent(const char *src)
+{
+	int ret;
+	char *envp[2];
+	char event_string[32];
+
+	envp[0] = event_string;
+	envp[1] = NULL;
+
+	/*send uevent*/
+	strlcpy(event_string, src, sizeof(event_string));
+	if (event_string[0] == '\0') { /*string is null*/
+		return FALSE;
+	}
+	ret = kobject_uevent_env(
+			&wlan_object.this_device->kobj,
+			KOBJ_CHANGE, envp);
+	if (ret != 0) {
+		DBGLOG(INIT, WARN, "uevent failed\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+int kalWlanUeventInit(void)
+{
+	int ret = 0;
+
+	/* dev init */
+	wlan_object.name = "wlan";
+	wlan_object.minor = MISC_DYNAMIC_MINOR;
+	ret = misc_register(&wlan_object);
+	if (ret) {
+		DBGLOG(INIT, WARN, "misc_register error:%d\n", ret);
+		return ret;
+	}
+
+	ret = kobject_uevent(
+			&wlan_object.this_device->kobj, KOBJ_ADD);
+
+	if (ret) {
+		misc_deregister(&wlan_object);
+		DBGLOG(INIT, WARN, "uevent creat fail:%d\n", ret);
+		return ret;
+	}
+
+	return ret;
+}
+
+void kalWlanUeventDeinit(void)
+{
+	misc_deregister(&wlan_object);
+}
+
 #if CFG_SUPPORT_DATA_STALL
 u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 				uint32_t event,
@@ -6701,6 +6762,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	char uevent[30];
 
 	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo,
@@ -6718,6 +6780,9 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->tmReportinterval);
 	}
+
+	kalSnprintf(uevent, sizeof(uevent), "code=%d", event);
+	kalSendUevent(uevent);
 
 	skb = cfg80211_vendor_event_alloc(wiphy, wdev,
 		dataLen,
