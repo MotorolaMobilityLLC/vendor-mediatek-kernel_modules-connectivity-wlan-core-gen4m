@@ -6522,9 +6522,12 @@ static int initWlan(void)
 /* 1 Module Leave Point */
 static void exitWlan(void)
 {
+#if defined(_HIF_USB) || CFG_SUPPORT_PERSIST_NETDEV
+	struct GLUE_INFO *prGlueInfo = NULL;
+#endif
+
 #if CFG_SUPPORT_PERSIST_NETDEV
 	uint32_t u4Idx = 0;
-	struct GLUE_INFO *prGlueInfo = NULL;
 	struct wiphy *wiphy = NULL;
 #endif
 
@@ -6540,6 +6543,16 @@ static void exitWlan(void)
 
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUninit();
+#endif
+
+#if defined(_HIF_USB)
+	/* for USB remove ko case, Power off Wifi CMD need to be DONE
+	 * before unregister bus, or connsys cannot enter deep sleep
+	 * after rmmod
+	 */
+	prGlueInfo = wlanGetGlueInfo();
+	if (prGlueInfo != NULL)
+		wlanPowerOffWifi(prGlueInfo->prAdapter);
 #endif
 
 	glUnregisterBus(wlanRemove);
