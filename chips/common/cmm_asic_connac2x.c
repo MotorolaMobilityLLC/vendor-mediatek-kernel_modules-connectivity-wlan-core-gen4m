@@ -76,6 +76,10 @@
 #include "precomp.h"
 #include "wlan_lib.h"
 
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+#include "fw_log_wifi.h"
+#endif /* CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH */
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -561,8 +565,8 @@ u_int8_t asicConnac2xWfdmaWaitIdle(
 
 	do {
 		HAL_MCR_RD(prAdapter, u4RegAddr, &GloCfg.word);
-		if ((GloCfg.field.TxDMABusy == 0) &&
-		    (GloCfg.field.RxDMABusy == 0)) {
+		if ((GloCfg.field_conn2x.tx_dma_busy == 0) &&
+		    (GloCfg.field_conn2x.rx_dma_busy == 0)) {
 			DBGLOG(HAL, TRACE, "==>  DMAIdle, GloCfg=0x%x\n",
 			       GloCfg.word);
 			return TRUE;
@@ -1968,6 +1972,7 @@ void asicConnac2xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)
 		ple_pkt_max_sz, pse_pkt_max_sz);
 
 }
+
 void asicConnac2xDmashdlSetRefill(struct ADAPTER *prAdapter, uint8_t ucGroup,
 			       u_int8_t fgEnable)
 {
@@ -2083,6 +2088,7 @@ void asicConnac2xDmashdlGetGroupControl(struct ADAPTER *prAdapter,
 		max_quota, min_quota);
 
 }
+
 void asicConnac2xDmashdlSetQueueMapping(struct ADAPTER *prAdapter,
 					uint8_t ucQueue,
 					uint8_t ucGroup)
@@ -2265,6 +2271,197 @@ void asicConnac2xDmashdlSetOptionalControl(struct ADAPTER *prAdapter,
 		  prCfg->rOptionalControlCrHifGupActMap.u4Shift);
 
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+}
+
+bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t status = 0;
+	bool ret = true;
+
+	if (!prAdapter)
+		return true;
+
+	prChipInfo = prAdapter->chip_info;
+
+	if (!prChipInfo->get_sw_interrupt_status)
+		goto exit;
+
+	ret = prChipInfo->get_sw_interrupt_status(prAdapter, &status);
+	if (ret == false) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		g_eWfRstSource = WF_RST_SOURCE_FW;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
+#endif
+		DBGLOG(HAL, ERROR, "get_sw_interrupt_status failed\n");
+		fgIsResetting = TRUE;
+		update_driver_reset_status(fgIsResetting);
+		kalSetRstEvent();
+		goto exit;
+	}
+
+	if (status == 0)
+		goto exit;
+
+#ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
+	if (status & BIT(SW_INT_FW_LOG))
+		fw_log_wifi_irq_handler();
+#endif
+
+	if (status & BIT(SW_INT_SUBSYS_RESET)) {
+		if (kalIsResetting()) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
+			if (!prAdapter->prGlueInfo->u4ReadyFlag)
+				g_IsNeedWaitCoredump = TRUE;
+#endif
+			DBGLOG(HAL, ERROR,
+				"Wi-Fi Driver trigger, need do complete(0x%x).\n",
+				status);
+			complete(&g_triggerComp);
+		} else {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			g_eWfRstSource = WF_RST_SOURCE_FW;
+			if (!prAdapter->prGlueInfo->u4ReadyFlag)
+				g_IsNeedWaitCoredump = TRUE;
+#endif
+			DBGLOG(HAL, ERROR,
+				"FW trigger assert(0x%x).\n", status);
+			fgIsResetting = TRUE;
+			update_driver_reset_status(fgIsResetting);
+			kalSetRstEvent();
+		}
+	}
+
+	if (status & BIT(SW_INT_WHOLE_RESET)) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+		g_eWfRstSource = WF_RST_SOURCE_FW;
+		if (!prAdapter->prGlueInfo->u4ReadyFlag)
+			g_IsNeedWaitCoredump = TRUE;
+#endif
+		DBGLOG(HAL, ERROR,
+			"FW trigger whole chip reset(0x%x).\n", status);
+		fgIsResetting = TRUE;
+		update_driver_reset_status(fgIsResetting);
+		g_IsWfsysBusHang = TRUE;
+		kalSetRstEvent();
+	}
+
+	/* SW wfdma cmd done interrupt */
+	if (status & BIT(SW_INT_SW_WFDMA)) {
+		struct SW_WFDMA_INFO *prSwWfdmaInfo =
+			&prChipInfo->bus_info->rSwWfdmaInfo;
+
+		if (prSwWfdmaInfo->fgIsEnSwWfdma) {
+			if (prAdapter->prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+				DBGLOG(HAL, TRACE,
+					"GLUE_FLAG_HALT skip SwWfdma INT\n");
+			} else {
+				DBGLOG(HAL, TRACE,
+					"FW trigger SwWfdma INT.\n");
+				kalSetHifIntEvent(prAdapter->prGlueInfo,
+						  HIF_FLAG_SW_WFDMA_INT_BIT);
+			}
+		}
+	}
+
+exit:
+	return ret;
+}
+
+int asicConnac2xPwrOnWmMcu(struct mt66xx_chip_info *chip_info)
+{
+	int ret = 0;
+	uint32_t u4ReMapReg = 0;
+	uint32_t u4Value = 0;
+
+	if (!chip_info)
+		return -EINVAL;
+
+	if (!chip_info->wmmcupwron)
+		return -EOPNOTSUPP;
+
+	/* conninfra power on */
+	if (!kalIsWholeChipResetting()) {
+		ret = conninfra_pwr_on(CONNDRV_TYPE_WIFI);
+		if (ret == CONNINFRA_ERR_RST_ONGOING) {
+			DBGLOG(INIT, ERROR,
+				"Conninfra is doing whole chip reset.\n");
+			goto exit;
+		}
+		if (ret != 0) {
+			DBGLOG(INIT, ERROR,
+				"Conninfra pwr on fail.\n");
+			goto exit;
+		}
+	}
+
+	/* wf driver power on */
+	ret = chip_info->wmmcupwron();
+	if (ret) {
+		if (chip_info->dumpBusHangCr)
+			chip_info->dumpBusHangCr(NULL);
+		goto exit;
+	}
+
+	/* set FW own after power on consys mcu to
+	 * keep Driver/FW/HW state sync
+	 */
+	if (halChipToStaticMapBusAddr(chip_info,
+	    CONNAC2X_BN0_LPCTL_ADDR, &u4ReMapReg)) {
+		RTMP_IO_READ32(chip_info, u4ReMapReg, &u4Value);
+		if ((u4Value & PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) !=
+		    PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) {
+			DBGLOG(INIT, INFO, "0x%08x = 0x%08x, Set FW Own\n",
+				u4ReMapReg,
+				u4Value);
+			RTMP_IO_WRITE32(chip_info, u4ReMapReg,
+				PCIE_LPCR_HOST_SET_OWN);
+		}
+	}
+
+exit:
+	DBGLOG(INIT, INFO, "ret: %d\n", ret);
+
+	return ret;
+}
+
+int asicConnac2xPwrOffWmMcu(struct mt66xx_chip_info *chip_info)
+{
+	int ret = 0;
+
+	if (!chip_info)
+		return -EINVAL;
+
+	if (!chip_info->wmmcupwroff)
+		return -EOPNOTSUPP;
+
+	/* wf driver power off */
+	ret = chip_info->wmmcupwroff();
+	if (ret != 0) {
+		if (chip_info->dumpBusHangCr)
+			chip_info->dumpBusHangCr(NULL);
+		goto exit;
+	}
+
+	/*
+	 * conninfra power off sequence
+	 * conninfra will do conninfra power off self during whole chip reset.
+	 */
+	if (!kalIsWholeChipResetting()) {
+		ret = conninfra_pwr_off(CONNDRV_TYPE_WIFI);
+		if (ret != 0) {
+			DBGLOG(INIT, ERROR,
+				"Conninfra pwr off fail.\n");
+			goto exit;
+		}
+	}
+
+exit:
+	DBGLOG(INIT, INFO, "ret: %d\n", ret);
+
+	return ret;
 }
 
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */

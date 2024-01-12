@@ -3070,7 +3070,7 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 		prGroup = &prBusInfo->wfmda_host_tx_group[i];
 		if (!prGroup->dump_ring_content)
 			continue;
-		DBGLOG(HAL, INFO, "Dump PDMA Tx Ring[%u]\n", i);
+		DBGLOG(HAL, INFO, "Dump WFDMA Tx Ring[%s]\n", prGroup->name);
 		prTxRing = &prHifInfo->TxRing[i];
 		u4SwIdx = prGroup->didx;
 		kalDumpTxRing(prAdapter->prGlueInfo, prTxRing,
@@ -3084,7 +3084,7 @@ void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter)
 		prGroup = &prBusInfo->wfmda_host_rx_group[i];
 		if (!prGroup->dump_ring_content)
 			continue;
-		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n", i);
+		DBGLOG(HAL, INFO, "Dump WFDMA Rx Ring[%s]\n", prGroup->name);
 		prRxRing = &prHifInfo->RxRing[i];
 		u4SwIdx = prGroup->didx;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing, u4SwIdx, true);

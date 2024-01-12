@@ -308,12 +308,6 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto out;
 	}
 
-#if defined(SOC3_0)
-	if ((void *)&mt66xx_driver_data_soc3_0 == (void *)id->driver_data)
-		DBGLOG(INIT, INFO,
-			"[MJ]&mt66xx_driver_data_soc3_0 == id->driver_data\n");
-#endif
-
 	DBGLOG(INIT, INFO, "pci_enable_device done!\n");
 
 	prChipInfo = ((struct mt66xx_hif_driver_data *)

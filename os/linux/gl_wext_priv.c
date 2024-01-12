@@ -13368,8 +13368,7 @@ static int priv_driver_trigger_whole_chip_reset(
 	glSetRstReason(RST_CMD_TRIGGER);
 	glSetRstReasonString(
 		"cmd test trigger whole chip reset");
-	if (prChipInfo->trigger_wholechiprst)
-		prChipInfo->trigger_wholechiprst(g_reason);
+	conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, g_reason);
 
 	return i4BytesWritten;
 }

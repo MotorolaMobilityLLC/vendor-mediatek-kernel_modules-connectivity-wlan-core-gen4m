@@ -489,7 +489,7 @@ void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(HAL, INFO, "Tx Contents\n");
 	if (prMemOps->dumpTx)
 		prMemOps->dumpTx(prHifInfo, prTxRing, u4Num, u4DumpLen);
-	DBGLOG(HAL, INFO, "\n\n");
+	DBGLOG(HAL, INFO, "\n");
 }
 
 void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
@@ -527,7 +527,7 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(HAL, INFO, "Rx Contents\n");
 	if (prMemOps->dumpRx)
 		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
-	DBGLOG(HAL, INFO, "\n\n");
+	DBGLOG(HAL, INFO, "\n");
 }
 
 void halShowPdmaInfo(IN struct ADAPTER *prAdapter)

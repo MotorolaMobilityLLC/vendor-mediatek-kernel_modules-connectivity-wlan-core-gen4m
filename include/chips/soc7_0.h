@@ -22,7 +22,6 @@
 *                              C O N S T A N T S
 ********************************************************************************
 */
-#define CONN_INFRA_CFG_BASE					0x830C0000
 #define CONNAC2x_CONN_CFG_ON_BASE				0x7C060000
 #define SOC7_0_TX_DESC_APPEND_LENGTH				32
 #define SOC7_0_RX_DESC_LENGTH					24
@@ -39,25 +38,79 @@
 		(CONNAC2x_CONN_CFG_ON_BASE + 0xF0)
 
 #define CONN_INFRA_CFG_AP2WF_REMAP_1_ADDR \
-	(CONN_INFRA_CFG_BASE + 0x0120)
+	(0x830c0000 + 0x0120)
 
 #define CONN_INFRA_CFG_PCIE2AP_REMAP_2_ADDR \
 	(0x7C00E000 + 0x068)
 
-#define WF_PP_TOP_BASE             0x820CC000
-#define WF_PP_TOP_DBG_CTRL_ADDR    (WF_PP_TOP_BASE + 0x00FC)
-#define WF_PP_TOP_DBG_CS_0_ADDR    (WF_PP_TOP_BASE + 0x0104)
-#define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x0108)
-#define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x010C)
+#define SOC7_CONNSYS_VERSION_ID					0x02050100
+#define SOC7_WFSYS_VERSION_ID					0x02040100
+#define SOC7_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_BASE	0x810F0000
+#define SOC7_REMAP0_BASE					0x18500000
+#define DEBUG_CTRL_AO_WFMCU_PWA_CTRL0				(SOC7_REMAP0_BASE + \
+	WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL0_ADDR - \
+	WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_BASE)
+#define DEBUG_CTRL_AO_WFMCU_PWA_CTRL3				(SOC7_REMAP0_BASE + \
+	WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_CTRL3_ADDR - \
+	WF_MCUSYS_INFRA_BUS_FULL_U_DEBUG_CTRL_AO_WFMCU_PWA_DEBUG_CTRL_AO_BASE)
+#define WFSYS_ON_TOP_WRITE_KEY					(0x5746 << CONN_INFRA_RGU_ON_WFSYS_ON_TOP_PWR_CTL_WFSYS_ON_TOP_WRITE_KEY_SHFT)
+
+#define MTK_CUSTOM_OID_INTERFACE_VERSION	0x00000200	/* for WPDWifi DLL */
+#define MTK_EM_INTERFACE_VERSION		0x0001
+#define WF_TRIGGER_AP2CONN_EINT			0x10001F00
+#define CONNSYS_ROM_DONE_CHECK			0x00001D1E
+
+#define WMMCU_ROM_PATCH_DATE_ADDR		0xF04954D0
+#define WMMCU_MCU_ROM_EMI_DATE_ADDR		0xF04954E0
+#define WMMCU_WIFI_ROM_EMI_DATE_ADDR		0xF04954F0
+#define DATE_CODE_SIZE 16
 
 extern struct PLE_TOP_CR rSoc7_0_PleTopCr;
 extern struct PSE_TOP_CR rSoc7_0_PseTopCr;
 extern struct PP_TOP_CR rSoc7_0_PpTopCr;
 
+struct ROM_EMI_HEADER {
+	uint8_t ucDateTime[16];
+	uint8_t ucPLat[4];
+	uint16_t u2HwVer;
+	uint16_t u2SwVer;
+	uint32_t u4PatchAddr;
+	uint32_t u4PatchType;
+	uint32_t u4CRC[4];
+};
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+extern void kalConstructDefaultFirmwarePrio(
+				struct GLUE_INFO	*prGlueInfo,
+				uint8_t **apucNameTable,
+				uint8_t **apucName,
+				uint8_t *pucNameIdx,
+				uint8_t ucMaxNameIdx);
+extern uint32_t kalFirmwareOpen(
+				IN struct GLUE_INFO *prGlueInfo,
+				IN uint8_t **apucNameTable);
+extern uint32_t kalFirmwareSize(
+				IN struct GLUE_INFO *prGlueInfo,
+				OUT uint32_t *pu4Size);
+extern uint32_t kalFirmwareLoad(
+			IN struct GLUE_INFO *prGlueInfo,
+			OUT void *prBuf, IN uint32_t u4Offset,
+			OUT uint32_t *pu4Size);
+extern uint32_t kalFirmwareClose(
+			IN struct GLUE_INFO *prGlueInfo);
+extern void wlanWakeLockInit(
+	struct GLUE_INFO *prGlueInfo);
+extern void wlanWakeLockUninit(
+	struct GLUE_INFO *prGlueInfo);
+extern struct wireless_dev *wlanNetCreate(
+		void *pvData,
+		void *pvDriverData);
+extern void wlanNetDestroy(
+	struct wireless_dev *prWdev);
+
 void soc7_0_show_wfdma_info(struct ADAPTER *prAdapter);
 void soc7_0_show_ple_info(struct ADAPTER *prAdapter, u_int8_t fgDumpTxd);
 void soc7_0_show_pse_info(struct ADAPTER *prAdapter);
@@ -66,5 +119,20 @@ void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+int soc7_0_Trigger_fw_assert(void);
+
+#if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
+void *soc7_0_kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
+	OUT void **ppvMapFileBuf, OUT uint32_t *pu4FileLength,
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t soc7_0_wlanImageSectionDownloadStage(
+	IN struct ADAPTER *prAdapter, IN void *pvFwImageMapFile,
+	IN uint32_t u4FwImageFileLength, IN uint8_t ucSectionNumber,
+	IN enum ENUM_IMG_DL_IDX_T eDlIdx);
+uint32_t soc7_0_wlanPowerOnDownload(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucDownloadItem);
+int32_t soc7_0_wlanPowerOnInit(void);
+#endif
 
 #endif  /* soc7_0 */
