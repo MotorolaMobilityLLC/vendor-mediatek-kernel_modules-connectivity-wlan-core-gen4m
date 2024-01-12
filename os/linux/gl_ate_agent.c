@@ -1744,7 +1744,7 @@ int Set_StaRecBfUpdate(struct net_device *prNetDev,
 			rStaRecBfUpdArg.u4NcBw160 = g_rPfmuHeInfo.ucNcBw160;
 		}
 
-		i4Status = StaRecBfUpdate(prNetDev, rStaRecBfUpdArg,
+		i4Status = StaRecBfUpdate(prNetDev, &rStaRecBfUpdArg,
 					  aucMemRow, aucMemCol);
 	} else
 		return -EINVAL;
