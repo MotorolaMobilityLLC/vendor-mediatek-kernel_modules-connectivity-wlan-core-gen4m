@@ -10772,6 +10772,102 @@ uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter)
 #endif
 
 #if CFG_SUPPORT_NAN
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
+{
+	struct UNI_EVENT_NAN *prUniEventNanInfo = NULL;
+	struct UNI_CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4SubEvent;
+	int status = 0;
+
+	ASSERT(prAdapter);
+
+	prUniEventNanInfo = (struct UNI_EVENT_NAN *)prBuffer;
+	prTlvElement =
+	(struct UNI_CMD_EVENT_TLV_ELEMENT_T *)prUniEventNanInfo->aucTlvBuffer;
+
+	u4SubEvent = prTlvElement->u2Tag;
+
+	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
+
+	switch (u4SubEvent) {
+	case UNI_EVENT_NAN_TAG_ID_DE_EVENT_IND:
+		status = mtk_cfg80211_vendor_event_nan_event_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_DISCOVERY_RESULT:
+		status = mtk_cfg80211_vendor_event_nan_match_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_FOLLOW_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_followup_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_REPLIED_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_replied_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_PUBLISH_TERMINATE_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_publish_terminate(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_SUBSCRIBE_TERMINATE_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_subscribe_terminate(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_SELF_FOLLOW_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_seldflwup_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_MASTER_IND_ATTR:
+		nanDevMasterIndEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_CLUSTER_ID_UPDATE:
+		nanDevClusterIdEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_SCHEDULE_CONFIG:
+	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
+	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
+	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
+		nanSchedulerEventDispatch(prAdapter, u4SubEvent,
+					  prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_PEER_SEC_CONTEXT_INFO:
+		nanDiscUpdateSecContextInfoAttr(prAdapter,
+						prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_PEER_CIPHER_SUITE_INFO:
+		nanDiscUpdateCipherSuiteInfoAttr(prAdapter,
+						 prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_DATA_NOTIFY:
+		nicNanEventSTATxCTL(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_FTM_DONE:
+		nanRangingFtmDoneEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_RANGING_BY_DISC:
+		nanRangingInvokedByDiscEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+	case UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL:
+		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#endif
+	case UNI_EVENT_NAN_TAG_NDL_DISCONNECT:
+		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_DISABLE_IND:
+		mtk_cfg80211_vendor_event_nan_disable_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	default:
+		DBGLOG(NAN, LOUD, "No match event!!\n");
+		break;
+	}
+}
+
+#else
 void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 {
 	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
@@ -10865,6 +10961,7 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 	}
 }
+#endif
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
