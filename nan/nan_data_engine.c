@@ -6812,10 +6812,19 @@ nanDataEngineDisconnectByStaIdx(struct ADAPTER *prAdapter,
 	prNDL = nanDataUtilSearchNdlByStaRec(prAdapter, prStaRec);
 	if (prNDL != NULL) {
 		for (i = 0; i < NAN_MAX_SUPPORT_NDP_NUM; i++) {
-			if (prNDL->arNDP[i].fgNDPValid == TRUE)
-				nanDataPathProtocolFsmStep(
-					prAdapter, NDP_TX_DP_TERMINATION,
-					&prNDL->arNDP[i]);
+			if (prNDL->arNDP[i].fgNDPValid == TRUE) {
+				if (prNDL->arNDP[i].eCurrentNDPProtocolState ==
+					NDP_NORMAL_TR) {
+					nanDataPathProtocolFsmStep(
+						prAdapter, NDP_DISCONNECT,
+						&prNDL->arNDP[i]);
+				} else {
+					nanDataPathProtocolFsmStep(
+						prAdapter,
+						NDP_TX_DP_TERMINATION,
+						&prNDL->arNDP[i]);
+				}
+			}
 		}
 	} else {
 		DBGLOG(NAN, INFO, "Not found the NDL\n");
