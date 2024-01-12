@@ -971,7 +971,7 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		DBGLOG(SAA, WARN,
 			"StaRec=%d, widx=%d, IS_AP_STA=%d, State=%d, found\n",
 			prStaRec->ucIndex, prStaRec->ucWlanIndex,
-			IS_AP_STA(prStaRec), prStaRec->eAuthAssocState);
+			!!IS_AP_STA(prStaRec), prStaRec->eAuthAssocState);
 
 		prSwRfb->ucStaRecIdx = prStaRec->ucIndex;
 	}

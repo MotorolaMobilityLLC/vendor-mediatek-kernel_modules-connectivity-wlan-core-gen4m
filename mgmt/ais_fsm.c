@@ -3668,10 +3668,13 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 				pucIE,
 				u2IELength);
 		if (mbo) {
-			reject = kalFindIeMatchMask(
+			int u4lenParam = mbo->ucLength - 4;
+
+			if (u4lenParam > 0)
+				reject = kalFindIeMatchMask(
 					OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT,
 					mbo->aucSubElements,
-					mbo->ucLength - 4,
+					u4lenParam,
 					NULL, 0, 0, NULL);
 			if (reject && reject[1] == 2) {
 				aisBssTmpDisallow(prAdapter, prBssDesc,
@@ -8169,7 +8172,8 @@ void aisTargetBssSetConnected(struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		if (ais->aprLinkInfo[i].prTargetBssDesc) {
 			if (!ais->aprLinkInfo[i].prBssInfo) {
-				DBGLOG(AIS, WARN, "link%d missing bssinfo\n");
+				DBGLOG(AIS, WARN, "link %d missing bssinfo\n",
+					i);
 				continue;
 			}
 
@@ -8187,7 +8191,8 @@ void aisTargetBssSetConnecting(struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		if (ais->aprLinkInfo[i].prTargetBssDesc) {
 			if (!ais->aprLinkInfo[i].prBssInfo) {
-				DBGLOG(AIS, WARN, "link%d missing bssinfo\n");
+				DBGLOG(AIS, WARN, "link %d missing bssinfo\n",
+					i);
 				continue;
 			}
 
@@ -8205,7 +8210,8 @@ void aisTargetBssResetConnected(struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		if (ais->aprLinkInfo[i].prTargetBssDesc) {
 			if (!ais->aprLinkInfo[i].prBssInfo) {
-				DBGLOG(AIS, WARN, "link%d missing bssinfo\n");
+				DBGLOG(AIS, WARN, "link %d missing bssinfo\n",
+					i);
 				continue;
 			}
 
@@ -8223,7 +8229,8 @@ void aisTargetBssResetConnecting(struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		if (ais->aprLinkInfo[i].prTargetBssDesc) {
 			if (!ais->aprLinkInfo[i].prBssInfo) {
-				DBGLOG(AIS, WARN, "link%d missing bssinfo\n");
+				DBGLOG(AIS, WARN, "link %d missing bssinfo\n",
+					i);
 				continue;
 			}
 

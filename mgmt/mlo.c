@@ -25,7 +25,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 	const uint8_t *ml;
 	struct LINK *links;
 	uint16_t frame_ctrl;
-	uint32_t offset;
+	int32_t offset;
 	uint8_t i;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
@@ -38,6 +38,11 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 		return TRUE;
 
 	offset = sortGetPayloadOffset(prAdapter, pucPacket);
+	if (offset < 0) {
+		DBGLOG(ML, WARN, "can't get the payload offset\n");
+		return FALSE;
+	}
+
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(pucPacket);
 	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
@@ -2458,6 +2463,11 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 	if (!bss) {
 		DBGLOG(ML, INFO, "AA but bss is null\n");
+		goto fail;
+	}
+
+	if (offset < 0) {
+		DBGLOG(ML, INFO, "Can't get the valid payload offset\n");
 		goto fail;
 	}
 
