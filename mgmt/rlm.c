@@ -10320,6 +10320,9 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		ucPwrLmtNum = TX_PWR_ENV_INFO_GET_TXPWR_COUNT(
 					prTxPwrEnvIE->ucTxPwrInfo) + 1;
 
+		if (ucPwrLmtNum > TX_PWR_ENV_MAX_TXPWR_BW_NUM)
+			ucPwrLmtNum = TX_PWR_ENV_MAX_TXPWR_BW_NUM;
+
 		/* Direct copy Transmit Power Envelope content */
 		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
 			eBwType < ucPwrLmtNum; eBwType++) {
