@@ -109,8 +109,8 @@
 #define P2P_WILDCARD_SSID           "DIRECT-"
 
 /* Device Charactoristic. */
-#define P2P_AP_CHNL_HOLD_TIME_MS 5000
 /* 1000 is too short , the deauth would block in the queue */
+#define P2P_AP_CHNL_HOLD_TIME_MS 5000
 #define P2P_DEFAULT_LISTEN_CHANNEL                   1
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -162,7 +162,8 @@ enum ENUM_P2P_CONNECT_STATE {
 struct P2P_INFO {
 	uint32_t u4DeviceNum;
 	enum ENUM_P2P_CONNECT_STATE eConnState;
-	struct EVENT_P2P_DEV_DISCOVER_RESULT arP2pDiscoverResult[CFG_MAX_NUM_BSS_LIST];
+	struct EVENT_P2P_DEV_DISCOVER_RESULT
+		arP2pDiscoverResult[CFG_MAX_NUM_BSS_LIST];
 	uint8_t *pucCurrIePtr;
 	/* A common pool for IE of all scan results. */
 	uint8_t aucCommIePool[CFG_MAX_COMMON_IE_BUF_LEN];
@@ -223,12 +224,13 @@ struct P2P_SCAN_REQ_INFO {
 	u_int8_t fgIsAbort;
 	u_int8_t fgIsScanRequest;
 	uint8_t ucNumChannelList;
-	struct RF_CHANNEL_INFO arScanChannelList[MAXIMUM_OPERATION_CHANNEL_LIST];
+	struct RF_CHANNEL_INFO
+		arScanChannelList[MAXIMUM_OPERATION_CHANNEL_LIST];
 	uint32_t u4BufLength;
 	uint8_t aucIEBuf[MAX_IE_LENGTH];
 	uint8_t ucSsidNum;
-	struct P2P_SSID_STRUCT arSsidStruct[SCN_SSID_MAX_NUM];
 	/* Currently we can only take one SSID scan request */
+	struct P2P_SSID_STRUCT arSsidStruct[SCN_SSID_MAX_NUM];
 };
 
 struct P2P_CHNL_REQ_INFO {
@@ -295,8 +297,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgIsNoaAttrExisted;
 
 	/* For P2P Device */
-	/*UINT_8 ucRegClass;*/
 	/* TH3 multiple P2P */	/* Regulatory Class for channel. */
+	/*UINT_8 ucRegClass;*/
 	/* Linten Channel only on channels 1, 6 and 11 in the 2.4 GHz. */
 	/*UINT_8 ucListenChannel;*//* TH3 multiple P2P */
 
@@ -314,8 +316,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	uint8_t aucAttributesCache[P2P_MAXIMUM_ATTRIBUTES_CACHE_SIZE];
 
 	/*UINT_16 u2WscAttributeLen;*//* TH3 multiple P2P */
-	/*UINT_8 aucWscAttributesCache[WPS_MAXIMUM_ATTRIBUTES_CACHE_SIZE];*/
 	/* TH3 multiple P2P */
+	/*UINT_8 aucWscAttributesCache[WPS_MAXIMUM_ATTRIBUTES_CACHE_SIZE];*/
 
 	/*UINT_8 aucGroupID[MAC_ADDR_LEN];*//* TH3 multiple P2P */
 	uint16_t u2GroupSsidLen;

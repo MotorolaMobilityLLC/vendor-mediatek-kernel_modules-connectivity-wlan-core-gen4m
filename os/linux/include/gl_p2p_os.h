@@ -50,75 +50,80 @@
  *
  *****************************************************************************/
 /*
-** Id:
-//Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/os/linux/include/gl_p2p_os.h#28
-*/
+ ** Id:
+ * //Department/DaVinci/TRUNK/MT6620_5931_WiFi_Driver/
+ * os/linux/include/gl_p2p_os.h#28
+ */
 
 /*! \file   gl_p2p_os.h
-*    \brief  List the external reference to OS for p2p GLUE Layer.
-*
-*    In this file we define the data structure - GLUE_INFO_T to store those objects
-*    we acquired from OS - e.g. TIMER, SPINLOCK, NET DEVICE ... . And all the
-*    external reference (header file, extern func() ..) to OS for GLUE Layer should
-*    also list down here.
-*/
+ *    \brief  List the external reference to OS for p2p GLUE Layer.
+ *
+ *    In this file we define the data structure - GLUE_INFO_T to
+ *    store those objects we acquired from OS -
+ *    e.g. TIMER, SPINLOCK, NET DEVICE ... . And all the
+ *    external reference (header file, extern func() ..) to OS
+ *    for GLUE Layer should also list down here.
+ */
 
 #ifndef _GL_P2P_OS_H
 #define _GL_P2P_OS_H
 
-/*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+/******************************************************************************
+ *                         C O M P I L E R   F L A G S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                    E X T E R N A L   R E F E R E N C E S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                    E X T E R N A L   V A R I A B L E
-********************************************************************************
-*/
+/******************************************************************************
+ *                    E X T E R N A L   V A R I A B L E
+ ******************************************************************************
+ */
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
 extern const struct net_device_ops p2p_netdev_ops;
 #endif
 
-/*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+/******************************************************************************
+ *                              C O N S T A N T S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
-#define OID_SET_GET_STRUCT_LENGTH		4096	/* For SET_STRUCT/GET_STRUCT */
+/******************************************************************************
+ *                                 M A C R O S
+ ******************************************************************************
+ */
+
+/* For SET_STRUCT/GET_STRUCT */
+#define OID_SET_GET_STRUCT_LENGTH		4096
 
 #define MAX_P2P_IE_SIZE	5
 
-/*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+/******************************************************************************
+ *                             D A T A   T Y P E S
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                            P U B L I C   D A T A
+ ******************************************************************************
+ */
+
 extern struct net_device *g_P2pPrDev;
 extern struct wireless_dev *gprP2pWdev;
 extern struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
 
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                           P R I V A T E   D A T A
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                  F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+/******************************************************************************
+ *                  F U N C T I O N   D E C L A R A T I O N S
+ ******************************************************************************
+ */
 
 struct GL_P2P_INFO {
 
@@ -155,19 +160,23 @@ struct GL_P2P_INFO {
 	/*move to glueinfo->adapter */
 	/* BOOLEAN                     fgIsRegistered; */
 	/*UINT_32 u4FreqInKHz;*//* TH3 multiple P2P */	/* frequency */
-	uint8_t ucRole;		/* 0: P2P Device, 1: Group Client, 2: Group Owner */
+	/* 0: P2P Device, 1: Group Client, 2: Group Owner */
+	uint8_t ucRole;
 	/*UINT_8 ucIntent;*//* TH3 multiple P2P */	/* range: 0-15 */
-	/*UINT_8 ucScanMode;*//* TH3 multiple P2P */	/* 0: Search & Listen, 1: Scan without probe response */
+	/* 0: Search & Listen, 1: Scan without probe response */
+	/*UINT_8 ucScanMode;*//* TH3 multiple P2P */
 
 	/*ENUM_PARAM_MEDIA_STATE_T eState;*//* TH3 multiple P2P */
 	/*UINT_32 u4PacketFilter;*//* TH3 multiple P2P */
-	/*PARAM_MAC_ADDRESS aucMCAddrList[MAX_NUM_GROUP_ADDR];*//* TH3 multiple P2P */
+	/* TH3 multiple P2P */
+	/*PARAM_MAC_ADDRESS aucMCAddrList[MAX_NUM_GROUP_ADDR];*/
 
 	/* connection-requested peer information *//* TH3 multiple P2P */
 	/*UINT_8 aucConnReqDevName[32];*//* TH3 multiple P2P */
 	/*INT_32 u4ConnReqNameLength;*//* TH3 multiple P2P */
 	/*PARAM_MAC_ADDRESS rConnReqPeerAddr;*//* TH3 multiple P2P */
-	/*PARAM_MAC_ADDRESS rConnReqGroupAddr;*//* TH3 multiple P2P */	/* For invitation group. */
+	/* For invitation group. */
+	/*PARAM_MAC_ADDRESS rConnReqGroupAddr;*//* TH3 multiple P2P */
 	/*UINT_8 ucConnReqDevType;*//* TH3 multiple P2P */
 	/*INT_32 i4ConnReqConfigMethod;*//* TH3 multiple P2P */
 	/*INT_32 i4ConnReqActiveConfigMethod;*//* TH3 multiple P2P */
@@ -175,16 +184,19 @@ struct GL_P2P_INFO {
 	uint32_t u4CipherPairwise;
 	/*UINT_8 ucWSCRunning;*//* TH3 multiple P2P */
 
-	uint8_t aucWSCIE[4][400];	/* 0 for beacon, 1 for probe req, 2 for probe response, 3 for assoc response */
+	/* 0: beacon, 1: probe req, 2:probe response, 3: assoc response */
+	uint8_t aucWSCIE[4][400];
 	uint16_t u2WSCIELen[4];
 
 	uint8_t aucP2PIE[MAX_P2P_IE_SIZE][400];
 	uint16_t u2P2PIELen[MAX_P2P_IE_SIZE];
 
 #if CFG_SUPPORT_WFD
-	uint8_t aucWFDIE[400];	/* 0 for beacon, 1 for probe req, 2 for probe response */
+	/* 0 for beacon, 1 for probe req, 2 for probe response */
+	uint8_t aucWFDIE[400];
 	uint16_t u2WFDIELen;
-	/* UINT_8                      aucVenderIE[1024]; *//* Save the other IE for prove resp */
+	/* Save the other IE for prove resp */
+	/* UINT_8                      aucVenderIE[1024]; */
 /* UINT_16                     u2VenderIELen; */
 #endif
 
@@ -209,7 +221,9 @@ struct GL_P2P_INFO {
 #if CFG_SUPPORT_HOTSPOT_WPS_MANAGER
 	/* Hotspot Client Management */
 	/* dependent with  #define P2P_MAXIMUM_CLIENT_COUNT 10,
-	 * fix me to uint8_t aucblackMACList[P2P_MAXIMUM_CLIENT_COUNT][PARAM_MAC_ADDR_LEN];
+	 * fix me to
+	 * uint8_t
+	 *     aucblackMACList[P2P_MAXIMUM_CLIENT_COUNT][PARAM_MAC_ADDR_LEN];
 	 */
 	uint8_t aucblackMACList[10][PARAM_MAC_ADDR_LEN];
 	uint8_t ucMaxClients;
@@ -289,7 +303,8 @@ struct NL80211_DRIVER_WFD_PARAMS {
 	uint32_t WfdFlag;
 	uint32_t WfdPolicy;
 	uint32_t WfdState;
-	uint8_t WfdSessionInformationIE[24 * 8];	/* Include Subelement ID, length */
+	/* Include Subelement ID, length */
+	uint8_t WfdSessionInformationIE[24 * 8];
 	uint16_t WfdSessionInformationIELen;
 	uint8_t aucReserved1[2];
 	uint8_t aucWfdPrimarySinkMac[MAC_ADDR_LEN];
@@ -309,15 +324,15 @@ struct NL80211_DRIVER_WFD_PARAMS {
 #endif
 #endif
 
-/*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                            P U B L I C   D A T A
+ ******************************************************************************
+ */
 
-/*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+/******************************************************************************
+ *                           P R I V A T E   D A T A
+ ******************************************************************************
+ */
 
 u_int8_t p2pRegisterToWlan(struct GLUE_INFO *prGlueInfo);
 
@@ -329,15 +344,24 @@ u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo);
 
 void p2pSetMode(IN uint8_t ucAPMode);
 
-u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName, const char *prDevName2, uint8_t ucApMode);
+u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo,
+		const char *prDevName,
+		const char *prDevName2,
+		uint8_t ucApMode);
 
-int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
-	       struct net_device *prP2pDev, int u4Idx, u_int8_t fgIsApMode);
+int glSetupP2P(struct GLUE_INFO *prGlueInfo,
+		struct wireless_dev *prP2pWdev,
+		struct net_device *prP2pDev,
+		int u4Idx,
+		u_int8_t fgIsApMode);
+
 u_int8_t glUnregisterP2P(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx);
 
-u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcquired);
+u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
+		u_int8_t fgIsRtnlLockAcquired);
 
-u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo, u_int8_t fgIsRtnlLockAcquired);
+u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
+		u_int8_t fgIsRtnlLockAcquired);
 
 
 u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex);
