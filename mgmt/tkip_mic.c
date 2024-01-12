@@ -461,7 +461,7 @@ u_int8_t tkipMicDecapsulateInRxHdrTransMode(
 	uint8_t *pucFrameBody;
 	uint16_t u2FrameBodyLen;
 	void *pvPacket;
-	uint8_t *pucBuff;
+	uint8_t *pucBuff = NULL;
 
 #if 0
 	struct WLAN_MAC_HEADER *prMacHeader;

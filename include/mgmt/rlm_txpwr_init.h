@@ -3153,13 +3153,13 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION
 };
 #endif
 
-static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp0[] = {};
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp0[] = {0};
 
-static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp1[] = {};
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp1[] = {0};
 
-static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp2[] = {};
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp2[] = {0};
 
-static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp3[] = {};
+static struct COUNTRY_POWER_LIMIT_COUNTRY_CODE g_u2CountryLimitGrp3[] = {0};
 
 struct COUNTRY_POWER_LIMIT_GROUP_TABLE arSupportCountryPowerLmtGrps[] = {
 	{

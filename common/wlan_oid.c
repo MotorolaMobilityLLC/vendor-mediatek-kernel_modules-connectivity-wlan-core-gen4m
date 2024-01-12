@@ -11542,7 +11542,7 @@ uint32_t
 wlanoidSetWapiAssocInfo(IN struct ADAPTER *prAdapter,
 			IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			OUT uint32_t *pu4SetInfoLen) {
-	struct WAPI_INFO_ELEM *prWapiInfo;
+	struct WAPI_INFO_ELEM *prWapiInfo = NULL;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
 
@@ -12565,7 +12565,7 @@ wlanoidQueryNvramRead(IN struct ADAPTER *prAdapter,
 		      OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		      OUT uint32_t *pu4QueryInfoLen) {
 	struct PARAM_CUSTOM_EEPROM_RW_STRUCT *rNvRwInfo;
-	uint16_t u2Data;
+	uint16_t u2Data = 0;
 	u_int8_t fgStatus;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4Ofs = 0;

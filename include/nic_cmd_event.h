@@ -421,6 +421,7 @@ enum ENUM_SR_EVENT_SUBID {
 /* End SR Event */
 #endif
 
+#if 0
 enum NDIS_802_11_WEP_STATUS {
 	Ndis802_11WEPEnabled,
 	Ndis802_11Encryption1Enabled = Ndis802_11WEPEnabled,
@@ -449,6 +450,7 @@ enum NDIS_802_11_WEP_STATUS {
 	Ndis802_11EncryptionSMS4Enabled,	/* WPI SMS4 support */
 #endif /* WAPI_SUPPORT */
 };
+#endif
 
 #if CFG_SUPPORT_MU_MIMO
 enum {

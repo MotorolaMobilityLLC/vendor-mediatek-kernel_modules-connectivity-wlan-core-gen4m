@@ -798,7 +798,7 @@ static void dump_key_table(
 {
 	uint8_t keytbl[ONE_KEY_ENTRY_LEN_IN_DW*4] = {0};
 	uint16_t x;
-	uint32_t u4Value;
+	uint32_t u4Value = 0;
 
 	DBGLOG(HAL, INFO, "\t\n");
 	DBGLOG(HAL, INFO, "\t%s:%d\n", "keyloc0", keyloc0);

@@ -4952,7 +4952,7 @@ void rlmProcessAssocReq(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 #if CFG_SUPPORT_802_11AC
 	struct IE_VHT_CAP *prVhtCap = NULL;
 	struct IE_OP_MODE_NOTIFICATION
-		*prOPModeNotification; /* Operation Mode Notification */
+		*prOPModeNotification = NULL; /* Operation Mode Notification */
 	u_int8_t fgHasOPModeIE = FALSE;
 #endif
 

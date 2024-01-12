@@ -480,7 +480,7 @@ TdlsDataFrameSend_TearDown(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	void *pvPacket = NULL;
-	uint8_t *pPkt;
+	uint8_t *pPkt = NULL;
 	uint32_t u4PktLen, u4IeLen;
 	uint16_t ReasonCode;
 
@@ -605,7 +605,7 @@ TdlsDataFrameSend_SETUP_REQ(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	void *pvPacket = NULL;
-	uint8_t *pPkt;
+	uint8_t *pPkt = NULL;
 	uint32_t u4PktLen, u4IeLen;
 	uint16_t u2CapInfo;
 
@@ -790,7 +790,7 @@ TdlsDataFrameSend_SETUP_RSP(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	void *pvPacket = NULL;
-	uint8_t *pPkt;
+	uint8_t *pPkt = NULL;
 	uint32_t u4PktLen, u4IeLen;
 	uint16_t u2CapInfo;
 
@@ -987,7 +987,7 @@ TdlsDataFrameSend_CONFIRM(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	void *pvPacket = NULL;
-	uint8_t *pPkt;
+	uint8_t *pPkt = NULL;
 	uint32_t u4PktLen, u4IeLen;
 
 	/* allocate/init packet */
@@ -1122,7 +1122,7 @@ TdlsDataFrameSend_DISCOVERY_REQ(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct PM_PROFILE_SETUP_INFO *prPmProfSetupInfo;
 	void *pvPacket = NULL;
-	uint8_t *pPkt, *pucInitiator, *pucResponder;
+	uint8_t *pPkt = NULL, *pucInitiator, *pucResponder;
 	uint32_t u4PktLen, u4IeLen;
 
 	prGlueInfo = (struct GLUE_INFO *) prAdapter->prGlueInfo;

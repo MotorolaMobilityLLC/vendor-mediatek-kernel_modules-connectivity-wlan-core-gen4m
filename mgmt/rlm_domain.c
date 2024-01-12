@@ -1070,7 +1070,7 @@ struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 	(sizeof(arSupportedRegDomains) / sizeof(struct DOMAIN_INFO_ENTRY))
 #define REG_DOMAIN_DEF_IDX	(REG_DOMAIN_GROUP_NUM - 1)
 
-	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo = NULL;
 	struct REG_INFO *prRegInfo;
 	uint16_t u2TargetCountryCode;
 	uint16_t i, j;
@@ -1443,7 +1443,7 @@ void rlmDomainGetDfsChnls(struct ADAPTER *prAdapter,
 u_int8_t rlmDomainIsDfsChnls(struct ADAPTER *prAdapter, uint8_t ucChannel)
 {
 	uint8_t ucNumOfChannel = 0;
-	struct RF_CHANNEL_INFO aucChannelList[64] = {};
+	struct RF_CHANNEL_INFO aucChannelList[64] = {0};
 	uint8_t ucCount = 0;
 
 	rlmDomainGetDfsChnls(prAdapter, 64, &ucNumOfChannel, aucChannelList);
@@ -1696,7 +1696,7 @@ void rlmDomainSendPassiveScanInfoCmd(struct ADAPTER *prAdapter)
 	(sizeof(arSupportedRegDomains_Passive)	\
 	 / sizeof(struct DOMAIN_INFO_ENTRY))
 
-	struct DOMAIN_INFO_ENTRY *prDomainInfo;
+	struct DOMAIN_INFO_ENTRY *prDomainInfo = NULL;
 	struct CMD_SET_DOMAIN_INFO *prCmd;
 	struct DOMAIN_SUBBAND_INFO *prSubBand;
 	uint16_t u2TargetCountryCode;
