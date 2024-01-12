@@ -2068,7 +2068,7 @@ void nicMldUpdateNetifTxTh(struct ADAPTER *prAdapter,
 	}
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		if ((prMldBssInfo->ucBssBitmap & i) == 0)
+		if ((prMldBssInfo->ucBssBitmap & BIT(i)) == 0)
 			continue;
 
 		nicUpdateNetifTxThByBssId(prAdapter, i,
@@ -2114,10 +2114,21 @@ void nicAdjustNetifTxTh(struct ADAPTER *prAdapter,
 		&& NIC_IS_BSS_BELOW_11AC(prBssInfo)) {
 		if (NIC_IS_BSS_11B(prBssInfo))
 			prBssInfo->fgIs11B = TRUE;
+		else
+			prBssInfo->fgIs11B = FALSE;
 
 		prBssInfo->u4TxStopTh = NIC_BSS_LOW_RATE_TOKEN_CNT;
 		prBssInfo->u4TxStartTh = prBssInfo->u4TxStopTh / 2;
-	} else {
+	}
+#ifdef CFG_SFD_DYNAMIC_ADJUST_NETIF_TH
+	else if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED
+		&& NIC_IS_BSS_11AC(prBssInfo)) {
+		prBssInfo->u4TxStopTh = NIC_BSS_LOW_RATE_TOKEN_CNT;
+		prBssInfo->u4TxStartTh = prBssInfo->u4TxStopTh / 2;
+		prBssInfo->fgIs11B = FALSE;
+	}
+#endif
+	else {
 		prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
 		prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
 		prBssInfo->fgIs11B = FALSE;
