@@ -2442,6 +2442,40 @@ struct UNI_EVENT_BEACON_TIMEOUT_INFO
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_PS_SYNC
+{
+	/*fixed field*/
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*   TAG                             | ID  | structure
+	*   -------------                   | ----| -------------
+	*   UNI_EVENT_CLIENT_PS_INFO          | 0x0 | UNI_EVENT_CLIENT_PS_INFO_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_PS_SYNC_TAG
+{
+	UNI_EVENT_PS_SYNC_TAG_CLIENT_PS_INFO = 0,
+	UNI_EVENT_PS_SYNC_TAG_NUM
+};
+
+/* PS SYNC (Tag0) */
+struct UNI_EVENT_CLIENT_PS_INFO
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucPsBit;
+	uint8_t aucPadding[1];
+	uint16_t ucWtblIndex;
+	uint8_t ucBufferSize;
+	uint8_t aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_SCAN_DONE {
 	/* fixed field */
 	uint8_t ucSeqNum;
@@ -2566,6 +2600,40 @@ struct UNI_EVENT_MAC_INFO_TSF
 	uint32_t   u4TsfBit63_32;
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_SAP
+{
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* SAP event Tag */
+enum ENUM_UNI_EVENT_SAP_TAG
+{
+	UNI_EVENT_SAP_TAG_AGING_TIMEOUT = 0,
+	UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA = 1,
+	UNI_EVENT_SAP_TAG_NUM
+};
+
+struct UNI_EVENT_SAP_AGING_TIMEOUT
+{
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint16_t u2StaRecIdx;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_UPDATE_STA_FREE_QUOTA
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2StaRecIdx;
+	uint8_t  ucUpdateMode;
+	uint8_t  ucFreeQuota;
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_CNM {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -2686,6 +2754,30 @@ struct UNI_EVENT_MBMC_SWITCH_DONE {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t  aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_BSS_IS_ABSENCE {
+	/* fixed field */
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* BSS Absence or Presence Event Tag */
+enum ENUM_UNI_EVENT_BSS_IS_ABSENCE_TAG {
+	UNI_EVENT_BSS_IS_ABSENCE_TAG_INFO = 0,
+	UNI_EVENT_BSS_IS_ABSENCE_TAG_NUM
+};
+
+struct UNI_EVENT_BSS_IS_ABSENCE_INFO {
+	uint16_t     u2Tag;
+	uint16_t     u2Length;
+	/* Event Body */
+	uint8_t	    ucIsAbsent;
+	uint8_t	    ucBssFreeQuota;
+	uint8_t	    aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_STATUS_TO_HOST {
@@ -3162,9 +3254,12 @@ void nicUniEventUpdateCoex(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventIdc(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
-
-
-
+void nicUniEventBssIsAbsence(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventPsSync(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventSap(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
 
 /*******************************************************************************
  *                              F U N C T I O N S

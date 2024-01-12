@@ -3409,6 +3409,12 @@ void nicEventBeaconTimeoutImpl(IN struct ADAPTER *prAdapter,
 			   IN struct EVENT_BSS_BEACON_TIMEOUT *);
 void nicEventUpdateNoaParams(IN struct ADAPTER *prAdapter,
 			     IN struct WIFI_EVENT *prEvent);
+void nicEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
+			     IN struct WIFI_EVENT *prEvent);
+void nicEventStaChangePsMode(IN struct ADAPTER *prAdapter,
+			     IN struct WIFI_EVENT *prEvent);
+void nicEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
+			     IN struct WIFI_EVENT *prEvent);
 void nicEventStaAgingTimeout(IN struct ADAPTER *prAdapter,
 			     IN struct WIFI_EVENT *prEvent);
 void nicEventApObssStatus(IN struct ADAPTER *prAdapter,

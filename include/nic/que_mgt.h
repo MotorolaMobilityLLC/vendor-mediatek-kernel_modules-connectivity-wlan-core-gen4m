@@ -1161,18 +1161,18 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER
 	IN enum ENUM_FRAME_TYPE_IN_CMD_Q eFrameType,
 	IN uint16_t u2FrameLength);
 
-void qmHandleEventBssAbsencePresence(IN struct ADAPTER
-				     *prAdapter, IN struct WIFI_EVENT *prEvent);
+void qmHandleEventBssAbsencePresence(IN struct ADAPTER *prAdapter,
+	IN struct EVENT_BSS_ABSENCE_PRESENCE *prEventBssStatus);
 
-void qmHandleEventStaChangePsMode(IN struct ADAPTER
-				  *prAdapter, IN struct WIFI_EVENT *prEvent);
+void qmHandleEventStaChangePsMode(IN struct ADAPTER *prAdapter,
+	IN struct EVENT_STA_CHANGE_PS_MODE *prEventStaChangePsMode);
 
 void mqmProcessAssocReq(IN struct ADAPTER *prAdapter,
 			IN struct SW_RFB *prSwRfb, IN uint8_t *pucIE,
 			IN uint16_t u2IELength);
 
-void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER
-				     *prAdapter, IN struct WIFI_EVENT *prEvent);
+void qmHandleEventStaUpdateFreeQuota(IN struct ADAPTER *prAdapter,
+	IN struct EVENT_STA_UPDATE_FREE_QUOTA *prEventStaUpdateFreeQuota);
 
 void
 qmUpdateFreeQuota(IN struct ADAPTER *prAdapter,
