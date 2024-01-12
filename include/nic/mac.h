@@ -1260,6 +1260,8 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
 #endif
 
+#define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
+
 #if (CFG_SUPPORT_802_11AX == 1)
 #define ELEM_MAX_LEN_EXT_CAP                        (10)
 #else
