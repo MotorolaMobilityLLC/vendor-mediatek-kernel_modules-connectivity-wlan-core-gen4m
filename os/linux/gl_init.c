@@ -4044,7 +4044,9 @@ void wlanOnP2pRegistration(struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	register_set_p2p_mode_handler(set_p2p_mode_handler);
-#elif (CFG_ENABLE_WIFI_DIRECT)
+#endif
+
+#if CFG_ENABLE_WIFI_DIRECT
 	if (prAdapter->rWifiVar.u4RegP2pIfAtProbe) {
 		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
 
@@ -4667,7 +4669,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	glRegisterAmpc(prGlueInfo);
 #endif
 
-	wlanOnP2pRegistration(prGlueInfo, prAdapter, prWdev);
 #if (CONFIG_WLAN_SERVICE == 1)
 	wlanServiceInit(prGlueInfo);
 #endif
@@ -4716,6 +4717,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       "wlanProbe: probe success, feature set: 0x%llx, persistNetdev: %d\n",
 		       wlanGetSupportedFeatureSet(prGlueInfo),
 		       CFG_SUPPORT_PERSIST_NETDEV);
+		wlanOnP2pRegistration(prGlueInfo, prAdapter, prWdev);
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
 		       eFailReason);

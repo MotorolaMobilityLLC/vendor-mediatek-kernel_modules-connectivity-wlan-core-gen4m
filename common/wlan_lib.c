@@ -6957,8 +6957,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					"ApUapsd", FEATURE_DISABLED);
 	prWifiVar->ucP2pUapsd = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"P2pUapsd", FEATURE_ENABLED);
+#if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
+	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"RegP2pIfAtProbe", FEATURE_ENABLED);
+#else
 	prWifiVar->u4RegP2pIfAtProbe = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"RegP2pIfAtProbe", FEATURE_DISABLED);
+#endif
 	prWifiVar->ucP2pShareMacAddr = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"P2pShareMacAddr", FEATURE_DISABLED);
 
