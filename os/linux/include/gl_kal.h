@@ -1195,6 +1195,9 @@ char *strtok_r(char *s, const char *delim, char **last);
 #define kalIsZeroEtherAddr(_addr) \
 	is_zero_ether_addr(_addr)
 
+#define kal_max_t(_type, _v1, _v2) max_t(_type, _v1, _v2)
+#define kal_min_t(_type, _v1, _v2) min_t(_type, _v1, _v2)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Notify OS with SendComplete event of the specific packet.

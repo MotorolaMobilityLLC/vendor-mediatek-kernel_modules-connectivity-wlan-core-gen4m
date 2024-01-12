@@ -74,13 +74,13 @@ union _NAN_BAND_CHNL_CTRL {
 		uint32_t u4Rsvd : 31;
 	} rInfo;
 
-	struct {
+	struct _NanBandCtrl {
 		uint32_t u4Type : 1;
 		uint32_t u4Rsvd : 23;
 		uint32_t u4BandIdMask : 8;
 	} rBand;
 
-	struct {
+	struct _NanChannelCtrl {
 		uint32_t u4Type : 1;
 		uint32_t u4Rsvd : 7;
 		uint32_t u4OperatingClass : 8;
