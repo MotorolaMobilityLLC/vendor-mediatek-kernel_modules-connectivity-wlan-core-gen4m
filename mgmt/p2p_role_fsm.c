@@ -314,8 +314,10 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 		LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prP2pBssInfo->ucLinkIndex = ucLinkIndex;
-		mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
+		if (prMldBssInfo) {
+			prP2pBssInfo->ucLinkIndex = ucLinkIndex;
+			mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
+		}
 #endif
 	} while (FALSE);
 
@@ -399,6 +401,10 @@ void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 		mldBssUnregister(prAdapter,
 			p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo),
 			prP2pBssInfo);
+
+		if (p2pGetMldBssInfo(prAdapter, prP2pRoleFsmInfo)->
+			rBssList.u4NumElem == 0)
+			p2pMldBssUninit(prAdapter);
 #endif
 
 		cnmFreeBssInfo(prAdapter, prP2pBssInfo);
@@ -888,22 +894,11 @@ p2pRoleFsmDeauthCompleteImpl(IN struct ADAPTER *prAdapter,
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 		}
 	} else { /* GC : Stop BSS when Deauth done */
-		uint8_t i;
-
-		for (i = 0; i < MLD_LINK_MAX; i++) {
-			struct BSS_INFO *bss =
-				p2pGetLinkBssInfo(prAdapter,
-				prP2pRoleFsmInfo, i);
-
-			if (!bss)
-				continue;
-
-			p2pChangeMediaState(prAdapter,
-				bss,
-				MEDIA_STATE_DISCONNECTED);
-			p2pFuncStopComplete(prAdapter,
-				bss);
-		}
+		p2pChangeMediaState(prAdapter,
+			prP2pBssInfo,
+			MEDIA_STATE_DISCONNECTED);
+		p2pFuncStopComplete(prAdapter,
+			prP2pBssInfo);
 
 		p2pRoleFsmStateTransition(prAdapter,
 			prP2pRoleFsmInfo,
@@ -920,6 +915,10 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	if (mld_starec) {
+		/* backup mldsta idx firstr because mldstarec is freed
+		 * when all starec unregister
+		 */
+		uint8_t mldsta_idx = mld_starec->ucIdx;
 		uint16_t i;
 		struct STA_RECORD *starec;
 
@@ -927,8 +926,8 @@ p2pRoleFsmDeauthComplete(IN struct ADAPTER *prAdapter,
 			starec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
 
 			if (!starec ||
-				!starec->fgIsInUse ||
-				starec->ucMldStaIndex != mld_starec->ucIdx)
+			    !starec->fgIsInUse ||
+			    starec->ucMldStaIndex != mldsta_idx)
 				continue;
 
 			DBGLOG(INIT, INFO,
@@ -1721,9 +1720,7 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	uint8_t ucRoleIdx;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
-
-
-	DBGLOG(P2P, INFO, "p2pRoleFsmRunEventDelIface\n");
+	uint32_t u4ConnType;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	if (prGlueInfo == NULL) {
@@ -1744,6 +1741,14 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 	}
 
 	prP2pBssInfo = prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex];
+	u4ConnType = bssInfoConnType(prAdapter, prP2pBssInfo);
+
+	DBGLOG(P2P, INFO,
+		"Delete bss%d connType=0x%x, netType=%d, op=%d, intend=%d\n",
+		prP2pBssInfo->ucBssIndex, u4ConnType,
+		prP2pBssInfo->eNetworkType,
+		prP2pBssInfo->eCurrentOPMode,
+		prP2pBssInfo->eIntendOPMode);
 
 	/* The state is in disconnecting and can not change any BSS status */
 	if (IS_NET_PWR_STATE_IDLE(prAdapter, prP2pBssInfo->ucBssIndex) &&
@@ -1787,7 +1792,10 @@ void p2pRoleFsmRunEventDelIface(IN struct ADAPTER *prAdapter,
 
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prP2pDelIfaceMsg->eIftype == IFTYPE_P2P_CLIENT)
+		/* don't use u4ConnType to check gc role because
+		 * upper layer might change iface fist
+		 */
+		if (p2pGetGCBssNum(prP2pRoleFsmInfo) > 1)
 			p2pLinkUninitGCRole(prAdapter);
 		else
 #endif

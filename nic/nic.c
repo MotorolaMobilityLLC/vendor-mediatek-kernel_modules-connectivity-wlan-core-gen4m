@@ -3332,17 +3332,44 @@ nicUpdateBeaconIETemplate(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void nicSetAvailablePhyTypeSet(IN struct ADAPTER *prAdapter)
 {
-	ASSERT(prAdapter);
-
-	if (prAdapter->rWifiVar.eDesiredPhyConfig
-		>= PHY_CONFIG_NUM) {
-		ASSERT(0);
+	if (!prAdapter)
 		return;
-	}
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNACAXBE;
+#elif (CFG_SUPPORT_802_11AX == 1)
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNACAX;
+#elif CFG_SUPPORT_802_11AC
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGNAC;
+#else
+	prAdapter->rWifiVar.eDesiredPhyConfig
+		= PHY_CONFIG_802_11ABGN;
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 0)
+		prAdapter->rWifiVar.eDesiredPhyConfig = PHY_CONFIG_802_11ABGNAC;
+#endif
+
+	if (prAdapter->rWifiVar.ucHwNotSupportAC)
+		prAdapter->rWifiVar.eDesiredPhyConfig = PHY_CONFIG_802_11ABGN;
+
+	/* Set default bandwidth modes */
+	prAdapter->rWifiVar.uc2G4BandwidthMode =
+		(prAdapter->rWifiVar.ucSta2gBandwidth == MAX_BW_40MHZ)
+		? CONFIG_BW_20_40M
+		: CONFIG_BW_20M;
+	prAdapter->rWifiVar.uc5GBandwidthMode = CONFIG_BW_20_40M;
+	prAdapter->rWifiVar.uc6GBandwidthMode = CONFIG_BW_20_40_80M;
+
+	if (prAdapter->rWifiVar.eDesiredPhyConfig >= PHY_CONFIG_NUM)
+		return;
 
 	prAdapter->rWifiVar.ucAvailablePhyTypeSet =
-		aucPhyCfg2PhyTypeSet[
-		prAdapter->rWifiVar.eDesiredPhyConfig];
+		aucPhyCfg2PhyTypeSet[prAdapter->rWifiVar.eDesiredPhyConfig];
 
 	DBGLOG(P2P, TRACE, "Avail Phy type: 0x%x, %d\n",
 		prAdapter->rWifiVar.ucAvailablePhyTypeSet,
@@ -3806,7 +3833,7 @@ void nicUninitMGMT(IN struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	p2MldBssUninit(prAdapter);
+	p2pMldBssUninit(prAdapter);
 #endif
 
 #if CFG_SUPPORT_SWCR

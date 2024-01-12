@@ -2232,6 +2232,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex +
 			MAT_OWN_MLD_ID_BASE;
 		prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
+		prBssInfo->ucLinkIndex = 0;
 #endif
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
@@ -2296,6 +2297,7 @@ omac_choosed:
 			prBssInfo->ucOwnMldId = ucBssIndex +
 				MAT_OWN_MLD_ID_BASE;
 			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
+			prBssInfo->ucLinkIndex = 0;
 #endif
 #if (CFG_HW_WMM_BY_BSS == 1)
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;

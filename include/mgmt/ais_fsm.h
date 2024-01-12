@@ -904,6 +904,10 @@ void aisSendNeighborRequest(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 /* end Support 11K */
 
+void aisCheckPmkidCache(IN struct ADAPTER *prAdapter,
+			IN struct BSS_DESC *prBss,
+			IN uint8_t ucAisIndex);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

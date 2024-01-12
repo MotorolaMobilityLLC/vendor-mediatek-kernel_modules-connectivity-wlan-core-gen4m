@@ -330,8 +330,11 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_WPA3
 		case SAA_STATE_EXTERNAL_AUTH:
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-				DBGLOG(ML, INFO,  "Start MLO");
+			if (mldIsMultiLinkFormed(prAdapter, prStaRec) ||
+			    mldSingleLink(prAdapter, prStaRec,
+					  prStaRec->ucBssIndex)) {
+				DBGLOG(ML, INFO,  "Send MLO");
+
 				kalVendorExternalAuthRequest(
 					prAdapter->prGlueInfo,
 					prStaRec, prStaRec->ucBssIndex);
