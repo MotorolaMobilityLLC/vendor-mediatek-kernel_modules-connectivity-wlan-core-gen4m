@@ -440,7 +440,7 @@ static void heRlmFillHeCapIE(
 		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex) - 1;
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
-	struct BSS_DESC *prBssDesc;
+	struct BSS_DESC *prBssDesc = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -461,8 +461,9 @@ static void heRlmFillHeCapIE(
 		prWifiVar->ucTrigMacPadDur);
 
 	/* Check HTC blacklist */
-	if (IS_BSS_AIS(prBssInfo) && prAisFsmInfo != NULL) {
-		prBssDesc = prAisFsmInfo->prTargetBssDesc;
+	if (IS_BSS_AIS(prBssInfo)) {
+		if (prAisFsmInfo != NULL)
+			prBssDesc = prAisFsmInfo->prTargetBssDesc;
 		if (prBssDesc != NULL &&
 			queryAxBlacklist(prAdapter, prBssDesc->aucBSSID,
 			    prBssInfo->ucBssIndex, BLACKLIST_DIS_HE_HTC)) {
@@ -472,7 +473,10 @@ static void heRlmFillHeCapIE(
 		} else {
 			HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
 		}
+	} else {
+		HE_SET_MAC_CAP_HTC_HE(prHeCap->ucHeMacCap);
 	}
+
 	HE_SET_MAC_CAP_OM_CTRL(prHeCap->ucHeMacCap);
 
 #if (CFG_SUPPORT_TWT == 1)
