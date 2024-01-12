@@ -329,6 +329,13 @@ void nicReleaseAdapterMemory(IN struct ADAPTER *prAdapter)
 		nicTxFreeDescTemplate(prAdapter,
 				      &prAdapter->arStaRec[u4Idx]);
 
+#if CFG_SUPPORT_LLS
+	/* LLS firmware EMI "WIFI-LLS" */
+	if (prAdapter->pucLinkStatsSrcBufferAddr)
+		iounmap(prAdapter->pucLinkStatsSrcBufferAddr);
+	prAdapter->pucLinkStatsSrcBufferAddr = NULL;
+#endif
+
 #if CFG_DBG_MGT_BUF
 	do {
 		u_int8_t fgUnfreedMem = FALSE;
