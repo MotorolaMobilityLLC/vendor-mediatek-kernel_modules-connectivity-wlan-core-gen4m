@@ -2384,14 +2384,14 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	struct pci_dev *pci_dev = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint32_t u4RegVal[25] = {0};
-	uint8_t dump = TRUE;
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
+	uint32_t link_info = mtk_pcie_dump_link_info(0);
+#endif
 
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
-	dump = mtk_pcie_dump_link_info(0);
-#endif /* IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT) */
-
-	if (!(dump & BIT(5)))
+	if (!(link_info & BIT(5)))
 		return FALSE;
+#endif
 
 	/*read pcie cfg.space 0x488 // level1: pcie*/
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -2504,14 +2504,16 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		return FALSE;
 	}
 
+#if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 	/* MalfTLP */
-	if (dump & BIT(8)) {
+	if (link_info & BIT(8)) {
 		fgIsBusAccessFailed = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
 #endif
 		return FALSE;
 	}
+#endif
 
 	return TRUE;
 }
