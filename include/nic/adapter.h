@@ -920,6 +920,7 @@ struct WIFI_VAR {
 #endif
 	uint8_t fgCsaInProgress;
 	uint8_t ucChannelSwitchMode;
+	uint8_t ucNewOperatingClass;
 	uint8_t ucNewChannelNumber;
 	uint8_t ucChannelSwitchCount;
 	uint8_t ucSecondaryOffset;
@@ -1176,6 +1177,7 @@ struct WIFI_VAR {
 	/* Only scan all 6g channels, including PSC and non-PSC */
 	u_int8_t fgEnOnlyScan6g;
 #endif
+	uint8_t ucCsaDeauthClient;
 
 #define LATENCY_STATS_MAX_SLOTS 5
 #if CFG_SUPPORT_TX_LATENCY_STATS
