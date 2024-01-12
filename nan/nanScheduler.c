@@ -6556,7 +6556,6 @@ static uint32_t updateDWIntervalTimeline(struct ADAPTER *prAdapter,
 	uint32_t u4SlotOffset;
 	uint32_t u4NanQuota;
 	uint32_t u4CrbNum;
-	uint32_t u4IterationNum;
 	uint32_t u4SlotIdx;
 	union _NAN_BAND_CHNL_CTRL rLocalChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rSelChnlInfo;
@@ -6573,13 +6572,11 @@ static uint32_t updateDWIntervalTimeline(struct ADAPTER *prAdapter,
 		u4SlotOffset = prAdapter->rWifiVar.ucDftQuotaStartOffset;
 
 
-	for (u4CrbNum = u4DefCrbNum, u4IterationNum = 0;
-	     u4CrbNum && u4IterationNum < u4NanQuota;
-	     u4SlotOffset = (u4SlotOffset + 1) % u4NanQuota,
-	     u4IterationNum++) {
+	for (u4CrbNum = u4DefCrbNum;
+	     u4CrbNum && u4SlotOffset < u4NanQuota;
+	     u4SlotOffset++) {
 		/* u4CrbNum: u4DefCrbNum..1, decrement
-		 * u4IterationNum: 0..31
-		 * u4SlotOffset: 0..31, could wrap around
+		 * u4SlotOffset: 0..31
 		 * => u4SlotIdx: u4SlotOffset..31 or by u4CrbNum
 		 */
 
