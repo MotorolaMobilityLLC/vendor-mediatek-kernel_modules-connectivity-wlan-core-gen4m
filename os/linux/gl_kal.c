@@ -208,6 +208,12 @@ static u_int8_t kalGetSkipRxGro(struct net_device *prNetDev);
 static void kalRxGroTcCheck(struct GLUE_INFO *glue);
 #endif /* CFG_SUPPORT_SKIP_RX_GRO_FOR_TC */
 
+#if CFG_SUPPORT_RX_NAPI
+#if CFG_SUPPORT_RX_WORK
+static void kalNapiWakeup(void);
+#endif /* CFG_SUPPORT_RX_WORK */
+#endif /* CFG_SUPPORT_RX_NAPI */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -6254,6 +6260,9 @@ uint32_t kalScheduleNapiTask(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_RX_NAPI
 	if (HAL_IS_RX_DIRECT(prAdapter)) {
 		kalNapiSchedule(prAdapter);
+#if CFG_SUPPORT_RX_WORK
+		kalNapiWakeup();
+#endif /* CFG_SUPPORT_RX_WORK */
 		rc = WLAN_STATUS_SUCCESS;
 	}
 #endif /* CFG_SUPPORT_RX_NAPI */
@@ -6790,6 +6799,11 @@ uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
 
 		/* no more schedule, so enable interrupt */
 		if (fgIsInt) {
+#if CFG_SUPPORT_RX_NAPI
+#if CFG_SUPPORT_RX_WORK
+			kalNapiWakeup();
+#endif /* CFG_SUPPORT_RX_WORK */
+#endif /* CFG_SUPPORT_RX_NAPI */
 			nicEnableInterrupt(pr->prAdapter);
 			return WLAN_STATUS_SUCCESS;
 		}
@@ -13166,6 +13180,28 @@ uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 }
 
 #if (CFG_SUPPORT_RX_NAPI == 1)
+#if CFG_SUPPORT_RX_WORK
+static void kalNapiWakeup(void)
+{
+	/*
+	 * napi_schedule use __raise_softirq_irqoff instead of
+	 * raise_softirq_irqoff since it expect this api only use in irq
+	 * context.
+	 *
+	 * since __raise_softirq_irqoff only or_softirq_pending and does not
+	 * wakeup ksoftirqd, it might introduce latency when there is no more
+	 * irq or local_bh_enable on this cpu.
+	 *
+	 * In order to fix this issue, we need to call local_bh_enable to
+	 * run __do_softirq to prevent this pending softirq left in the cpu
+	 * and introduce latency for NET_RX_SOFTIRQ to call kalNapiPoll.
+	 */
+	kalTraceEvent("kalNapiWakeup");
+	local_bh_disable();
+	local_bh_enable();
+}
+#endif /* CFG_SUPPORT_RX_WORK */
+
 void __kalNapiSchedule(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
@@ -15983,6 +16019,9 @@ void kalRxNapiWork(struct work_struct *work)
 
 	RX_INC_CNT(prRxCtrl, RX_NAPI_WORK_COUNT);
 	__kalNapiSchedule(prAdapter);
+#if CFG_SUPPORT_RX_WORK
+	kalNapiWakeup();
+#endif /* CFG_SUPPORT_RX_WORK */
 }
 
 inline void kalRxNapiWorkSetCpu(struct GLUE_INFO *pr,
