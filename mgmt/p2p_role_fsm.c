@@ -1505,6 +1505,8 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	if (!bSkipRdd && bSkipCac) {
 		p2pFuncStartRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+		prAdapter->aprBssInfo[prP2pRoleFsmInfo->ucBssIndex]
+			->fgIsDfsActive = TRUE;
 		DBGLOG(P2P, INFO, "start rdd without cac\n");
 	}
 #endif
@@ -2328,17 +2330,28 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		if (ucChannelNum == 165) {
 			prAdapter->rWifiVar
 				.prP2pSpecificBssInfo[ucRoleIndex]
-				->ucRddBw = VHT_OP_CHANNEL_WIDTH_20_40;
+				->ucRddBw = MAX_BW_20MHZ;
+			prP2pConnReqInfo->rChannelInfo.ucChnlBw =
+				MAX_BW_20MHZ;
 		} else {
 			prAdapter->rWifiVar
 				.prP2pSpecificBssInfo[ucRoleIndex]
-				->ucRddBw = VHT_OP_CHANNEL_WIDTH_80;
+				->ucRddBw = MAX_BW_80MHZ;
+			prP2pConnReqInfo->rChannelInfo.ucChnlBw =
+				MAX_BW_80MHZ;
 		}
 		/* Use rConnReqInfo bw */
 
 		if (IS_NET_PWR_STATE_ACTIVE(
 			prAdapter,
 			prP2pBssInfo->ucBssIndex)) {
+			prAdapter->rWifiVar.ucAp5gBandwidth =
+				MAX_BW_80MHZ;
+
+			rlmGetChnlInfoForCSA(prAdapter,
+				BAND_5G, ucChannelNum,
+				prP2pBssInfo->ucBssIndex,
+				&prP2pConnReqInfo->rChannelInfo);
 
 			cnmSapChannelSwitchReq(prAdapter,
 				&prP2pConnReqInfo->rChannelInfo,
@@ -2420,6 +2433,8 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 	prChnlReqInfo->eChannelWidth =
 		(enum ENUM_CHANNEL_WIDTH)
 		rlmGetVhtOpBwByBssOpBw(prRfChannelInfo->ucChnlBw);
+	prP2pRoleFsmInfo->rConnReqInfo.rChannelInfo.ucChnlBw =
+		prRfChannelInfo->ucChnlBw;
 	prChnlReqInfo->eChnlSco =
 		rlmGetScoByChnInfo(prAdapter, prRfChannelInfo);
 	prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
