@@ -1109,6 +1109,10 @@ struct WIFI_VAR {
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	uint32_t u4BackoffLevel;
 #endif
+
+#if CFG_SUPPORT_LLS
+	u_int8_t fgLinkStatsDump;
+#endif /* CFG_SUPPORT_LLS */
 };
 
 /* cnm_timer module */

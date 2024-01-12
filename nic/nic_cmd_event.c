@@ -2744,6 +2744,7 @@ uint32_t nicCmdEventHostStatusEmiOffset(IN struct ADAPTER *prAdapter,
 uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 					IN uint8_t *pucEventBuf)
 {
+#if CFG_MTK_ANDROID_EMI
 	struct CAP_LLS_DATA_EMI_OFFSET *prOffset =
 		(struct CAP_LLS_DATA_EMI_OFFSET *)pucEventBuf;
 	uint32_t size = sizeof(struct HAL_LLS_FULL_REPORT);
@@ -2807,7 +2808,7 @@ uint32_t nicCmdEventLinkStatsEmiOffset(IN struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, INFO, "EMI Base=0x%llx, offset= %x, size=%zu",
 			gConEmiPhyBase, prOffset->u4DataEmiOffset, size);
-
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
