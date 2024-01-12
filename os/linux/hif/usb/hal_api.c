@@ -2132,8 +2132,13 @@ void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 
 	/* get MCU SER event */
-	kalDevRegRead(prAdapter->prGlueInfo, prChipInfo->u4SerUsbMcuEventAddr,
-			 &u4SerAction);
+	if (!kalDevRegRead(prAdapter->prGlueInfo,
+			   prChipInfo->u4SerUsbMcuEventAddr,
+			   &u4SerAction)) {
+		DBGLOG(NIC, WARN, "get MCU SER event fail\n");
+
+		return;
+	}
 
 	if (u4SerAction) {
 		DBGLOG(NIC, INFO, "%s u4SerAction=0x%08X\n", __func__,
