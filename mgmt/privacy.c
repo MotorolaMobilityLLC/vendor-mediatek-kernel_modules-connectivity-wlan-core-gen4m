@@ -725,6 +725,7 @@ u_int8_t secPrivacySeekForEntry(
 				struct ADAPTER *prAdapter,
 				struct STA_RECORD *prSta)
 {
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BSS_INFO *prP2pBssInfo;
 	uint8_t ucEntry = WTBL_RESERVED_ENTRY;
 	uint8_t i;
@@ -752,6 +753,9 @@ u_int8_t secPrivacySeekForEntry(
 #else
 	ucStartIDX = 0;
 #endif
+	if (prChipInfo->is_support_dmashdl_lite)
+		ucStartIDX = 16;
+
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
