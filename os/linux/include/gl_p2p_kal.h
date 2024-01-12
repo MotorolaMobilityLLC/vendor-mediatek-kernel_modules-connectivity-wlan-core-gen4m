@@ -394,6 +394,7 @@ u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 void kalIdcRegisterRilNotifier(void);
 void kalIdcUnregisterRilNotifier(void);
+void kalIdcGetRilInfo(void);
 #endif
 #if CFG_SUPPORT_IDC_RIL_BRIDGE
 void kalSetRilBridgeChannelInfo(

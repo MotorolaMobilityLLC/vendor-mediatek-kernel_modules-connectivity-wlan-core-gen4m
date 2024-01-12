@@ -3056,19 +3056,26 @@ static struct notifier_block g_ril_notifier_block = {
 	.notifier_call = kalIdcRilNotifier,
 };
 
+void kalIdcGetRilInfo(void)
+{
+	int val = 1;
+
+	DBGLOG(INIT, INFO, "Get RIL Notifier\n");
+
+	dev_ril_bridge_send_msg(
+		IDC_RIL_CHANNEL_INFO,
+		sizeof(int), &val);
+}
+
 void kalIdcRegisterRilNotifier(void)
 {
 	if (!g_init_ril_notifier) {
-		int val = 1;
-
 		DBGLOG(INIT, INFO, "Register RIL Notifier\n");
 
 		register_dev_ril_bridge_event_notifier(
 			&g_ril_notifier_block);
 
-		dev_ril_bridge_send_msg(
-			IDC_RIL_CHANNEL_INFO,
-			sizeof(int), &val);
+		kalIdcGetRilInfo();
 
 		g_init_ril_notifier = 1;
 	}
