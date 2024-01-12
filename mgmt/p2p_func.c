@@ -8718,6 +8718,8 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 		 */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
 #if CFG_ENABLE_CSA_BLOCK_SCAN
+		cnmTimerStopTimer(prAdapter,
+				  &(prP2pRoleFsmInfo->rP2pCsaDoneTimer));
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pCsaDoneTimer),
 			SEC_TO_MSEC(7));
