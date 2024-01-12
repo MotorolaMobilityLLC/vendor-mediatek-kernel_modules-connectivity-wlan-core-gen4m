@@ -8373,7 +8373,8 @@ struct AIS_LINK_INFO *aisGetLink(struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-	if (ais->arBssId2LinkMap[ucBssIndex] != MLD_LINK_ID_NONE)
+	if (IS_BSS_INDEX_VALID(ucBssIndex) &&
+			ais->arBssId2LinkMap[ucBssIndex] != MLD_LINK_ID_NONE)
 		return &ais->aprLinkInfo[ais->arBssId2LinkMap[ucBssIndex]];
 
 	DBGLOG(AIS, WARN,

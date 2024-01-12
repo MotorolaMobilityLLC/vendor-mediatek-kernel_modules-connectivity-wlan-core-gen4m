@@ -3591,6 +3591,9 @@ int mtk_cfg80211_vendor_comb_matrix(
 
 	if (!prGlueInfo) {
 		DBGLOG(REQ, WARN, "Invalid glue info\n");
+		kalMemFree(pr_comb_matrix,
+			sizeof(struct ANDROID_T_COMB_MATRIX),
+			VIR_MEM_TYPE);
 		return -EFAULT;
 	}
 

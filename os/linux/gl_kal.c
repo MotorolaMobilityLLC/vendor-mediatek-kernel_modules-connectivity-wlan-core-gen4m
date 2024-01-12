@@ -284,12 +284,16 @@ void tracing_mark_write(const char *fmt, ...)
 #define __BUFFER_SIZE 1024
 	va_list ap;
 	char buf[__BUFFER_SIZE];
+	int retval;
 
 	if ((aucDebugModule[DBG_TRACE_IDX] & DBG_CLASS_TEMP) == 0)
 		return;
 
 	va_start(ap, fmt);
-	vsnprintf(buf, __BUFFER_SIZE, fmt, ap);
+	retval = vsnprintf(buf, __BUFFER_SIZE, fmt, ap);
+	if (retval < 0)
+		kalPrintLog("[%u] vsnprintf failed, ret: %d",
+		__LINE__, retval);
 	buf[__BUFFER_SIZE - 1] = '\0';
 	va_end(ap);
 
@@ -2089,6 +2093,12 @@ int kalIndicateNetlink2User(struct GLUE_INFO *prGlueInfo, void *pvBuf,
 	}
 
 	nlh = nlmsg_put(skb, 0, 1, NLMSG_DONE, u4BufLen + 1, 0);
+	if (nlh == NULL) {
+		DBGLOG(NAN, ERROR, "netlink msg put failed!\n");
+		kfree_skb(skb);
+		return -10;
+	}
+
 	kalMemCopy(nlmsg_data(nlh), pvBuf, u4BufLen);
 	res = nlmsg_multicast(prGlueInfo->NetLinkSK, skb, 0, MTKGRP,
 			      GFP_KERNEL);
@@ -2448,8 +2458,10 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxTotalCount = 0;
 		prGlueInfo->prAdapter->rLinkQualityInfo.u8RxErrCount = 0;
 #endif
-		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = 0;
-		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = 0;
+		if (ucBssIndex < BSSID_NUM) {
+			prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = 0;
+			prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = 0;
+		}
 
 		/* indicate disassoc event */
 		wext_indicate_wext_event(prGlueInfo, SIOCGIWAP, NULL, 0
@@ -3139,6 +3151,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
 		DBGLOG(INIT, INFO, "prBssInfo NULL for ucBssIndex:%u\n",
@@ -3386,6 +3401,9 @@ void kalSendCompleteAndAwakeQueue(struct GLUE_INFO
 	ASSERT(u2QueueIdx < CFG_MAX_TXQ_NUM);
 
 	ucBssIndex = GLUE_GET_PKT_BSS_IDX(pvPacket);
+
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
+		return;
 
 	GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingFrameNum);
 	GLUE_DEC_REF_CNT(
@@ -6574,6 +6592,10 @@ kalUpdateRSSI(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo || unlikely(ucBssIndex >= BSSID_NUM)) {
+		DBGLOG(AIS, WARN, "bss is In-valid\n");
+		return;
+	}
 
 	if (IS_BSS_AIS(prBssInfo))
 		pStats = (struct iw_statistics *)
@@ -10969,6 +10991,11 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, uBssIndex);
+	if (prBssInfo == NULL) {
+		DBGLOG(SAA, WARN,
+			"SAE auth failed with NULL prBssInfo\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		prAisFsmInfo =
@@ -11008,7 +11035,13 @@ int kalExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 	}
 #endif
 
+	if (prBssDesc == NULL) {
+		DBGLOG(SAA, WARN,
+			"SAE auth failed with NULL prBssDesc\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 	ndev = wlanGetNetDev(prGlueInfo, uBssIndex);
+	kalMemZero(&params, sizeof(struct cfg80211_external_auth_params));
 	params.action = NL80211_EXTERNAL_AUTH_START;
 	COPY_MAC_ADDR(params.bssid, prBssDesc->aucBSSID);
 	COPY_SSID(params.ssid.ssid, params.ssid.ssid_len,
@@ -11094,6 +11127,8 @@ int kalVendorExternalAuthRequest(struct GLUE_INFO *prGlueInfo,
 		DBGLOG(SAA, ERROR, "alloc vendor external auth event fail\n");
 		return -1;
 	}
+	if (!prBssDesc)
+		return WLAN_STATUS_INVALID_DATA;
 
 	kalMemZero(info, size);
 	info->id = GRID_EXTERNAL_AUTH;
