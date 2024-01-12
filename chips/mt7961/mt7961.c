@@ -650,6 +650,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = MT7961_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = MT7961_WIFI_UWTBL_BASE,
+	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {
