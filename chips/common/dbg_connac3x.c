@@ -272,7 +272,7 @@ void connac3x_dump_tmac_info(
 		CONNAC3X_TX_DESC_PACKET_FORMAT_OFFSET)]);
 
 	/* Q_IDX [31:25]  */
-	DBGLOG(HAL, INFO, "\t\tQueID =0x%x\n",
+	DBGLOG(HAL, INFO, "\t\tQueID =0x%lx\n",
 		((txd->u4DW0 & CONNAC3X_TX_DESC_QUEUE_INDEX_MASK) >>
 		CONNAC3X_TX_DESC_QUEUE_INDEX_OFFSET));
 
