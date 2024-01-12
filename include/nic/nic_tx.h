@@ -1658,19 +1658,19 @@ do { \
 	((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_TX_STATUS_TO_HOST)
 
 #define HAL_MAC_TX_DESC_IS_DA_FROM_WTBL(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_DA_SOURCE)?TRUE:FALSE)
+	(((_prHwMacTxDesc)->ucTxStatus & TX_DESC_DA_SOURCE)?TRUE:FALSE)
 #define HAL_MAC_TX_DESC_SET_DA_FROM_WTBL(_prHwMacTxDesc) \
-	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_DA_SOURCE)
+	((_prHwMacTxDesc)->ucTxStatus |= TX_DESC_DA_SOURCE)
 #define HAL_MAC_TX_DESC_SET_DA_FROM_MSDU(_prHwMacTxDesc) \
-	((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_DA_SOURCE)
+	((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_DA_SOURCE)
 
 #define HAL_MAC_TX_DESC_IS_SW_PM_CONTROL(_prHwMacTxDesc) \
-	(((_prHwMacTxDesc)->ucPowerOffset & TX_DESC_POWER_MANAGEMENT_CONTROL) \
+	(((_prHwMacTxDesc)->ucTxStatus & TX_DESC_POWER_MANAGEMENT_CONTROL) \
 	? TRUE : FALSE)
 #define HAL_MAC_TX_DESC_SET_SW_PM_CONTROL(_prHwMacTxDesc) \
-	((_prHwMacTxDesc)->ucPowerOffset |= TX_DESC_POWER_MANAGEMENT_CONTROL)
+	((_prHwMacTxDesc)->ucTxStatus |= TX_DESC_POWER_MANAGEMENT_CONTROL)
 #define HAL_MAC_TX_DESC_SET_HW_PM_CONTROL(_prHwMacTxDesc) \
-	((_prHwMacTxDesc)->ucPowerOffset &= ~TX_DESC_POWER_MANAGEMENT_CONTROL)
+	((_prHwMacTxDesc)->ucTxStatus &= ~TX_DESC_POWER_MANAGEMENT_CONTROL)
 
 /* DW 6 */
 #define HAL_MAC_TX_DESC_SET_FR_BW(_prHwMacTxDesc, ucBw) \
