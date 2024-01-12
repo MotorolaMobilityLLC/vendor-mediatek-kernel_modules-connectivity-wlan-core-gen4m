@@ -827,6 +827,9 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 #endif
 	.triggerfwassert = soc3_0_Trigger_fw_assert,
 	.dumpwfsyscpupcr = soc3_0_DumpWfsyscpupcr,
+
+	.coantSetWiFi = wlanCoAntWiFi,
+	.coantSetMD = wlanCoAntMD,
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	.coexpccifon = wlanConnacPccifon,
 	.coexpccifoff = wlanConnacPccifoff,
@@ -2187,6 +2190,28 @@ int hifWmmcuPwrOn(void)
 
 	return ret;
 }
+
+
+void wlanCoAntWiFi(void)
+{
+	u_int32 u4GPIO10 = 0x0;
+
+	wf_ioremap_read(0x100053a0, &u4GPIO10);
+	u4GPIO10 |= 0x20000;
+	wf_ioremap_write(0x100053a0, u4GPIO10);
+
+}
+
+void wlanCoAntMD(void)
+{
+	u_int32 u4GPIO10 = 0x0;
+
+	wf_ioremap_read(0x100053a0, &u4GPIO10);
+	u4GPIO10 |= 0x10000;
+	wf_ioremap_write(0x100053a0, u4GPIO10);
+
+}
+
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 int wlanConnacPccifon(void)
