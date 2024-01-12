@@ -2079,6 +2079,34 @@ void nicTxForceAmsduForCert(struct ADAPTER *prAdapter, u_int8_t *prTxDescBuffer)
 #endif
 }
 
+#if CFG_TX_CUSTOMIZE_LTO
+u_int8_t nicTxEnableLTO(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, struct BSS_INFO *prBssInfo)
+{
+	if (!prBssInfo)
+		return FALSE;
+
+	if (!prMsduInfo)
+		return FALSE;
+
+	if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+		return FALSE;
+
+	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+		return FALSE;
+
+	if ((prMsduInfo->ucPktType == ENUM_PKT_1X) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_DHCP) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_ARP) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_ICMP) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_DNS) ||
+		(prMsduInfo->ucPktType == ENUM_PKT_ICMPV6))
+		return FALSE;
+
+	return TRUE;
+}
+#endif /* CFG_TX_CUSTOMIZE_LTO */
+
 u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
 				   *prAdapter, struct MSDU_INFO *prMsduInfo,
 				   struct STA_RECORD *prStaRec)

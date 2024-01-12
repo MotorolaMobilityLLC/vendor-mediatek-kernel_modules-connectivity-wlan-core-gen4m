@@ -7914,6 +7914,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			u4PlatformBoostLittleCpuTh);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
+#if CFG_TX_CUSTOMIZE_LTO
+	INIT_UINT(prWifiVar->ucEnableConfigLTO, "EnableConfigLTO",
+		FEATURE_ENABLED);
+
+	INIT_UINT(prWifiVar->u4LTOValue, "LTOValue", 2000);
+#endif /* CFG_TX_CUSTOMIZE_LTO */
+
 	/**
 	 * A debugging switch for development phase to check the difference of
 	 * tput imposed by SW reordering, including the operation workload and

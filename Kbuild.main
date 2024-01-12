@@ -774,6 +774,12 @@ ifeq ($(CONFIG_TX_MGMT_BY_DATA_Q), n)
         ccflags-y += -DCFG_TX_MGMT_BY_DATA_Q=0
 endif
 
+ifeq ($(CONFIG_TX_CUSTOMIZE_LTO), y)
+        ccflags-y += -DCFG_TX_CUSTOMIZE_LTO=1
+else
+        ccflags-y += -DCFG_TX_CUSTOMIZE_LTO=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     ifeq (,$(filter CFG_RX_DIRECT,$(PLATFORM_FLAGS)))
         ccflags-y += -DCFG_RX_DIRECT=1
