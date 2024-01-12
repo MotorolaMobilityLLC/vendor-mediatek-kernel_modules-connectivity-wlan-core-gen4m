@@ -37,6 +37,7 @@
 #define MDDP_HIF_NOTIFY_MD_CRASH_2_FW	0
 #define MDDP_HIF_MD_FW_OWN		1
 #define MDDP_HIF_SER_RECOVERY		2
+#define MDDP_HIF_TRIGGER_RESET		3
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -157,6 +158,7 @@ struct mutex rMddpLock;
 u_int32_t g_u4CheckSerCnt;
 u_int8_t g_fgIsMdCrash;
 unsigned long g_ulMddpActionFlag;
+u_int32_t g_u4MddpRstFlag;
 
 struct mddpw_net_stat_ext_t stats;
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
@@ -1637,10 +1639,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				event->u4RstFlag,
 				event->u4Line,
 				event->pucFuncName);
-		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
-		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
-			RST_MDDP_MD_TRIGGER_EXCEPTION,
-			event->u4RstFlag | RST_FLAG_DO_CORE_DUMP);
+		mddpTriggerReset(prAdapter, event->u4RstFlag);
 	} else if (prMdInfo->info_type == MDDPW_MD_EVENT_COMMUNICATION) {
 		struct wsvc_md_event_comm_t *event;
 
@@ -1700,10 +1699,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				event->u4Reason == MD_INIT_FAIL ||
 				event->u4Reason == MD_STATE_ABNORMAL ||
 				event->u4Reason == MD_TX_CMD_FAIL) {
-			glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
-			GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
-				RST_MDDP_MD_TRIGGER_EXCEPTION,
-				event->u4RstFlag | RST_FLAG_DO_CORE_DUMP);
+			mddpTriggerReset(prAdapter, event->u4RstFlag);
 		} else {
 			DBGLOG(INIT, WARN,
 				"MD event reason undefined reason:%d\n",
@@ -1970,6 +1966,15 @@ void mddpInHifThread(struct ADAPTER *prAdapter)
 		    g_ulMddpActionFlag) &&
 	    prBusInfo->getMdSwIntSta)
 		mddpNotifyCheckSer(prBusInfo->getMdSwIntSta(prAdapter));
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    MDDP_HIF_TRIGGER_RESET,
+		    g_ulMddpActionFlag)) {
+		glSetRstReason(RST_MDDP_MD_TRIGGER_EXCEPTION);
+		GL_USER_DEFINE_RESET_TRIGGER(prAdapter,
+			RST_MDDP_MD_TRIGGER_EXCEPTION,
+			g_u4MddpRstFlag | RST_FLAG_DO_CORE_DUMP);
+	}
 }
 
 void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter)
@@ -1983,6 +1988,13 @@ void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter)
 void mddpTriggerMdSerRecovery(struct ADAPTER *prAdapter)
 {
 	KAL_SET_BIT(MDDP_HIF_SER_RECOVERY, g_ulMddpActionFlag);
+	kalSetMddpEvent(prAdapter->prGlueInfo);
+}
+
+void mddpTriggerReset(struct ADAPTER *prAdapter, uint32_t u4RstFlag)
+{
+	g_u4MddpRstFlag = u4RstFlag;
+	KAL_SET_BIT(MDDP_HIF_TRIGGER_RESET, g_ulMddpActionFlag);
 	kalSetMddpEvent(prAdapter->prGlueInfo);
 }
 
