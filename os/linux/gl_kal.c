@@ -1253,12 +1253,12 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 		 * disable preempt and protect by spin lock
 		 */
 		preempt_disable();
-		spin_lock_bh(&prGlueInfo->napi_spinlock);
 		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 			netdev_priv(prNetDev);
+		spin_lock_bh(&prNetDevPrivate->napi_spinlock);
 		napi_gro_receive(&prNetDevPrivate->napi, prSkb);
 		kal_gro_flush(prGlueInfo->prAdapter, prNetDev);
-		spin_unlock_bh(&prGlueInfo->napi_spinlock);
+		spin_unlock_bh(&prNetDevPrivate->napi_spinlock);
 		preempt_enable();
 		DBGLOG_LIMITED(INIT, INFO, "napi_gro_receive:%p\n", prNetDev);
 		return WLAN_STATUS_SUCCESS;
