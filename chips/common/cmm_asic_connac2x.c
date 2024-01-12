@@ -1607,7 +1607,12 @@ void asicConnac2xRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
 	uint32_t u4RetV;
 	struct RX_CTRL *prRxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
+	OS_SYSTIME u4CurrentTime;
+	static OS_SYSTIME u4PreTime = 1;
 
+	#define RXV_CHK_RST_CNT   1024
+	#define RXV_CHK_RST_INTV  1  /*unit: ms*/
+	GET_CURRENT_SYSTIME(&u4CurrentTime);
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 
@@ -1616,13 +1621,28 @@ void asicConnac2xRxProcessRxvChkRst(IN struct ADAPTER *prAdapter,
 			prChipInfo->asicRxProcessRxvforMSP(
 				prAdapter, prRetSwRfb);
 		if (u4RetV == WLAN_STATUS_SUCCESS) {
-			RX_RESET_CNT(prRxCtrl,
-				RX_FATAL_ERR_CNT);
+			if (RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT) > 0) {
+				DBGLOG(RX, WARN,
+					"RxvChkRst CntRst %d->0, reason RxOk\n",
+					RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT));
+			}
+			RX_RESET_CNT(prRxCtrl, RX_FATAL_ERR_CNT);
+
 		} else {
-			RX_INC_CNT(
-				prRxCtrl, RX_FATAL_ERR_CNT);
+			if (CHECK_FOR_TIMEOUT(u4CurrentTime, u4PreTime,
+			SEC_TO_SYSTIME(MSEC_TO_SEC(RXV_CHK_RST_INTV)))) {
+				DBGLOG(RX, WARN,
+					"RxvChkRst CntRst %d->0, reason RxFail\n",
+					RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT));
+				RX_RESET_CNT(prRxCtrl, RX_FATAL_ERR_CNT);
+			}
+			RX_INC_CNT(prRxCtrl, RX_FATAL_ERR_CNT);
+			DBGLOG(RX, WARN, "RxvChkRst Cnt %d\n",
+				RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT));
+			u4PreTime = u4CurrentTime;
+
 			if (RX_GET_CNT(prRxCtrl, RX_FATAL_ERR_CNT)
-					>= (prAdapter->rWifiVar.u2RxHeBaSize)) {
+					>= (RXV_CHK_RST_CNT)) {
 				GL_RESET_TRIGGER(prAdapter,
 					RST_FLAG_CHIP_RESET);
 			}
@@ -1637,7 +1657,6 @@ uint32_t asicConnac2xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 		DBGLOG(RX, WARN,
 		"prRetSwRfb->ucStaRecIdx(%d) >= CFG_STA_REC_NUM(%d)\n",
 			prRetSwRfb->ucStaRecIdx, CFG_STA_REC_NUM);
-		RX_INC_CNT(&prAdapter->rRxCtrl, RX_FATAL_ERR_CNT);
 		return WLAN_STATUS_FAILURE;
 	}
 
