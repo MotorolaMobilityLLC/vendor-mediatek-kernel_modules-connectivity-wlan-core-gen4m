@@ -15521,6 +15521,19 @@ uint32_t wlanoidSetMonitor(IN struct ADAPTER *prAdapter,
 
 	prGlueInfo = prAdapter->prGlueInfo;
 
+	DBGLOG(REQ, INFO,
+		"en[%d],bn[%d],pc[%d],sco[%d],bw[%d],cc1[%d],cc2[%d],bidx[%d],aid[%d],fcs[%d]\n",
+		prGlueInfo->fgIsEnableMon,
+		prGlueInfo->ucBand,
+		prGlueInfo->ucPriChannel,
+		prGlueInfo->ucSco,
+		prGlueInfo->ucChannelWidth,
+		prGlueInfo->ucChannelS1,
+		prGlueInfo->ucChannelS2,
+		prGlueInfo->ucBandIdx,
+		prGlueInfo->u2Aid,
+		prGlueInfo->fgDropFcsErrorFrame);
+
 	prCmdMonitor->ucEnable = prGlueInfo->fgIsEnableMon;
 	prCmdMonitor->ucBand = prGlueInfo->ucBand;
 	prCmdMonitor->ucPriChannel = prGlueInfo->ucPriChannel;

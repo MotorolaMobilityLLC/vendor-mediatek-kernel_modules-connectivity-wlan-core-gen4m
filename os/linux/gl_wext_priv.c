@@ -3886,6 +3886,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_SNIFFER         "SNIFFER"
 #endif /* CFG_SUPPORT_ICS */
 
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+#define CMD_SET_MONITOR         "MONITOR"
+#endif
+
 /* neptune doens't support "show" entry, use "driver" to handle
  * MU GET request, and MURX_PKTCNT comes from RX_STATS,
  * so this command will reuse RX_STAT's flow
@@ -8103,6 +8107,86 @@ static int priv_driver_sniffer(IN struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 #endif /* CFG_SUPPORT_ICS */
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+int priv_driver_set_monitor(IN struct net_device *prNetDev,
+			       IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+	uint8_t ucBandIdx, ucBand, ucPriChannel, ucChannelWidth;
+	uint8_t ucChannelS1, ucChannelS2, ucSco, fgDropFcsErrorFrame;
+	uint16_t u2Aid;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	DBGLOG(REQ, LOUD, "string = %s\n", this_char);
+
+	i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d",
+			&ucBandIdx, &ucBand, &ucPriChannel,
+			&ucChannelWidth, &ucChannelS1, &ucChannelS2,
+			&ucSco, &fgDropFcsErrorFrame, &u2Aid);
+
+	if (i4Recv == 9) {
+		prGlueInfo->ucBandIdx = ucBandIdx;
+		prGlueInfo->ucBand = ucBand;
+		prGlueInfo->ucPriChannel = ucPriChannel;
+		prGlueInfo->ucChannelWidth = ucChannelWidth;
+		prGlueInfo->ucChannelS1 = ucChannelS1;
+		prGlueInfo->ucChannelS2 = ucChannelS2;
+		prGlueInfo->ucSco = ucSco;
+		prGlueInfo->fgDropFcsErrorFrame = fgDropFcsErrorFrame;
+		prGlueInfo->u2Aid = u2Aid;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+			"Apply BnIdx %d\n", prGlueInfo->ucBandIdx);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetMonitor,
+			NULL, 0, FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+	} else {
+		DBGLOG(REQ, ERROR, "iwpriv wlanXX driver monitor=Option\n");
+		DBGLOG(REQ, ERROR,
+			"Option:[BnIdx]-[Bn]-[ChP]-[BW]-[ChS1]-[ChS2]-[Sco]-[dropFcsErr]-[AID]\n");
+		DBGLOG(REQ, ERROR, "[BnIdx]Band Index\n");
+		DBGLOG(REQ, ERROR, "[Bn]2G=1, 5G=2, 6G=3\n");
+		DBGLOG(REQ, ERROR, "[ChP]Primary Channel\n");
+		DBGLOG(REQ, ERROR, "[BW]BW20=0, BW40=0, BW80=1, BW160=2, BW80P80=3, BW320=6\n");
+		DBGLOG(REQ, ERROR, "[ChS1]Center1 Channel\n");
+		DBGLOG(REQ, ERROR, "[ChS2]Center2 Channel\n");
+		DBGLOG(REQ, ERROR, "[Sco]Secondary Channel Offset\n");
+		DBGLOG(REQ, ERROR, "[dropFcsErr]Drop FCS Error\n");
+		DBGLOG(REQ, ERROR, "[AID]OFDMA AID\n");
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+					"Wrong param\n");
+	}
+
+	return i4BytesWritten;
+}
+#endif
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 int priv_driver_set_unified_fixed_rate(IN struct net_device *prNetDev,
@@ -15198,6 +15282,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_SUPPORT_ICS == 1)
 	{CMD_SET_SNIFFER, priv_driver_sniffer},
 #endif /* CFG_SUPPORT_ICS */
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	{CMD_SET_MONITOR, priv_driver_set_monitor},
+#endif
 	{CMD_GET_SW_CTRL, priv_driver_get_sw_ctrl},
 	{CMD_SET_MCR, priv_driver_set_mcr},
 	{CMD_GET_MCR, priv_driver_get_mcr},
