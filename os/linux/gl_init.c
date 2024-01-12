@@ -905,6 +905,12 @@ static const struct nl80211_vendor_cmd_info
 	},
 #endif
 
+#if CFG_SUPPORT_DBDC
+	{
+		.vendor_id = OUI_MTK,
+		.subcmd = WIFI_EVENT_OP_MODE_CHANGE
+	},
+#endif
 };
 #endif
 
