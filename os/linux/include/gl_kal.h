@@ -441,6 +441,50 @@ typedef struct _MONITOR_RADIOTAP_T {
 #define IEEE80211_CHAN_PASSIVE_STR		"NO_IR"
 #endif
 
+#if KERNEL_VERSION(4, 7, 0) <= CFG80211_VERSION_CODE
+/**
+ * enum nl80211_band - Frequency band
+ * @NL80211_BAND_2GHZ: 2.4 GHz ISM band
+ * @NL80211_BAND_5GHZ: around 5 GHz band (4.9 - 5.7 GHz)
+ * @NL80211_BAND_60GHZ: around 60 GHz band (58.32 - 64.80 GHz)
+ * @NUM_NL80211_BANDS: number of bands, avoid using this in userspace
+ *	 since newer kernel versions may support more bands
+ */
+#define KAL_BAND_2GHZ NL80211_BAND_2GHZ
+#define KAL_BAND_5GHZ NL80211_BAND_5GHZ
+#define KAL_NUM_BANDS NUM_NL80211_BANDS
+#else
+#define KAL_BAND_2GHZ IEEE80211_BAND_2GHZ
+#define KAL_BAND_5GHZ IEEE80211_BAND_5GHZ
+#define KAL_NUM_BANDS IEEE80211_NUM_BANDS
+#endif
+
+/**
+ * kalCfg80211ScanDone - abstraction of cfg80211_scan_done
+ *
+ * @request: the corresponding scan request (sanity checked by callers!)
+ * @aborted: set to true if the scan was aborted for any reason,
+ *	userspace will be notified of that
+ *
+ * Since linux-4.8.y the 2nd parameter is changed from bool to
+ * struct cfg80211_scan_info, but we don't use all fields yet.
+ */
+#if KERNEL_VERSION(4, 8, 0) <= CFG80211_VERSION_CODE
+static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
+				       bool aborted)
+{
+	struct cfg80211_scan_info info = { .aborted = aborted };
+
+	cfg80211_scan_done(request, &info);
+}
+#else
+static inline void kalCfg80211ScanDone(struct cfg80211_scan_request *request,
+				       bool aborted)
+{
+	cfg80211_scan_done(request, aborted);
+}
+#endif
+
 /* Consider on some Android platform, using request_firmware_direct()
  * may cause system failed to load firmware. So we still use
  * request_firmware().
