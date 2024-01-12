@@ -1290,6 +1290,32 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 
 /*----------------------------------------------------------------------------*/
 /*!
+* \brief This function reset necessary hif related info when chip reset.
+*
+* \param[in] prGlueInfo Pointer to glue info structure
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+void glResetHifInfo(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+
+	ASSERT(prGlueInfo);
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	/* If chip supports event endpoint detection, ex: MT7961, then we shall
+	 * do the procedure again after chip reset. Otherwise, chip will be fail
+	 * to receive event in the re-initialization stage after chip reset.
+	 */
+	prHifInfo->fgEventEpDetected = FALSE;
+
+	glUsbSetState(prHifInfo, USB_STATE_LINK_UP);
+} /* end of glResetHifInfo() */
+
+/*----------------------------------------------------------------------------*/
+/*!
 * \brief Initialize bus operation and hif related information, request resources.
 *
 * \param[out] pvData    A pointer to HIF-specific data type buffer.
