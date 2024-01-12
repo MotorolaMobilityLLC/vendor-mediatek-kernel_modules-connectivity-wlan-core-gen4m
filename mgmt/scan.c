@@ -2821,16 +2821,34 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			&& prBssDesc->fgIsConnecting == FALSE) {
 			u_int8_t fgIsConnected, fgIsConnecting;
 			struct AIS_BLACKLIST_ITEM *prBlack;
+			uint32_t u4PairwiseCipher = 0;
+			uint32_t u4GroupCipher = 0;
+			uint32_t u4GroupMgmtCipher = 0;
+			uint32_t u4AkmSuite = 0;
+			uint8_t u4MgmtProtection = 0;
+			enum ENUM_PARAM_AUTH_MODE eAuthMode;
+
+			DBGLOG_LIMITED(SCN, INFO, "Reset BssDesc "MACSTR
+				"AP Timestamp: %llu BssDesc Timestamp: %llu\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				u8Timestamp,
+				prBssDesc->u8TimeStamp.QuadPart);
 
 			/* set flag for indicating this is a new BSS-DESC */
 			fgIsNewBssDesc = TRUE;
 
-			/* backup 2 flags for APs which reset
-			 * timestamp unexpectedly
-			 */
+			/* backup for APs which reset timestamp unexpectedly */
 			fgIsConnected = prBssDesc->fgIsConnected;
 			fgIsConnecting = prBssDesc->fgIsConnecting;
 			prBlack = prBssDesc->prBlack;
+			u4PairwiseCipher
+				= prBssDesc->u4RsnSelectedPairwiseCipher;
+			u4GroupCipher = prBssDesc->u4RsnSelectedGroupCipher;
+			u4GroupMgmtCipher
+				= prBssDesc->u4RsnSelectedGroupMgmtCipher;
+			u4AkmSuite = prBssDesc->u4RsnSelectedAKMSuite;
+			eAuthMode = prBssDesc->eRsnSelectedAuthMode;
+			u4MgmtProtection = prBssDesc->u4RsnSelectedPmf;
 
 			/* Connected BSS descriptor still be used by other
 			 * functions. Thus, we should re-initialize the BSS_DESC
@@ -2843,6 +2861,14 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->fgIsConnected = fgIsConnected;
 			prBssDesc->fgIsConnecting = fgIsConnecting;
 			prBssDesc->prBlack = prBlack;
+			prBssDesc->u4RsnSelectedPairwiseCipher
+						= u4PairwiseCipher;
+			prBssDesc->u4RsnSelectedGroupCipher = u4GroupCipher;
+			prBssDesc->u4RsnSelectedGroupMgmtCipher
+						= u4GroupMgmtCipher;
+			prBssDesc->u4RsnSelectedAKMSuite = u4AkmSuite;
+			prBssDesc->eRsnSelectedAuthMode = eAuthMode;
+			prBssDesc->u4RsnSelectedPmf = u4MgmtProtection;
 		}
 	}
 
@@ -2928,7 +2954,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	prBssDesc->fgExistBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
 	prBssDesc->u2MaximumMpdu = 0;
-#if CFG_SUPPORT_MBO
+	prBssDesc->fgExistTxPwr = FALSE;
+	prBssDesc->cTransmitPwr = 0;
 	prBssDesc->fgIsDisallowed = FALSE;
 	prBssDesc->fgExistEspIE = FALSE;
 	prBssDesc->fgExistEspOutIE = FALSE;
@@ -2936,7 +2963,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	memset(prBssDesc->ucEspOutInfo, 0, sizeof(prBssDesc->ucEspOutInfo));
 	prBssDesc->fgIsRWMValid = FALSE;
 	prBssDesc->u2ReducedWanMetrics = 0;
-#endif
 
 	if (fgIsProbeResp == FALSE) {
 		/* Probe response doesn't have TIM IE. Thus, we should
@@ -3309,6 +3335,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					(struct IE_MBO_OCE *)pucIE;
 				const uint8_t *disallow = NULL;
 				const uint8_t *rwm = NULL;
+				const uint8_t *txpwr = NULL;
 				uint32_t u4lenParam = mbo->ucLength - 4;
 
 				if (u4lenParam <= u2IELength) {
@@ -3320,6 +3347,12 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 					rwm = kalFindIeMatchMask(
 						OCE_ATTR_ID_REDUCED_WAN_METRICS,
+						mbo->aucSubElements,
+						u4lenParam,
+						NULL, 0, 0, NULL);
+
+					txpwr = kalFindIeMatchMask(
+						OCE_ATTR_ID_TRANSMIT_POWER,
 						mbo->aucSubElements,
 						u4lenParam,
 						NULL, 0, 0, NULL);
@@ -3337,6 +3370,14 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 					prBssDesc->u2ReducedWanMetrics =
 					(rwm[2] &
 					OCE_ATTIBUTE_REDUCED_WAN_METRICS_MASK);
+				}
+				if (txpwr && txpwr[1] >= 1) {
+					prBssDesc->fgExistTxPwr = TRUE;
+					prBssDesc->cTransmitPwr = txpwr[2];
+					DBGLOG(SCN, INFO,
+						MACSTR " Transmit power %d\n",
+						MAC2STR(prBssDesc->aucBSSID),
+						prBssDesc->cTransmitPwr);
 				}
 			}
 #endif

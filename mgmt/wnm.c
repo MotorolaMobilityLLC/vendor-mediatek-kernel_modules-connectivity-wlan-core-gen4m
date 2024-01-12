@@ -720,6 +720,13 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		struct SUB_IE_BSS_TERM_DURATION *prBssTermDuration =
 			(struct SUB_IE_BSS_TERM_DURATION *)pucOptInfo;
 
+		if (prSwRfb->u2PacketLen <
+			u2TmpLen + sizeof(struct SUB_IE_BSS_TERM_DURATION)) {
+			DBGLOG(WNM, WARN,
+			"BTM: Request frame length is too short\n");
+			return;
+		}
+
 		prBtmParam->u2TermDuration = prBssTermDuration->u2Duration;
 		kalMemCopy(prBtmParam->aucTermTsf,
 			   prBssTermDuration->aucTermTsf, 8);
@@ -730,7 +737,9 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		struct SESSION_INFO_URL *prSessionInfoURL =
 			(struct SESSION_INFO_URL *)pucOptInfo;
 
-		if (prSwRfb->u2PacketLen <
+		if (prSwRfb->u2PacketLen < u2TmpLen +
+			OFFSET_OF(struct SESSION_INFO_URL, ucURLLength) + 1 ||
+			prSwRfb->u2PacketLen <
 			u2TmpLen + prSessionInfoURL->ucURLLength) {
 			DBGLOG(WNM, WARN,
 		       "BTM: Request frame length is less than a standard BTM frame\n");
@@ -1130,7 +1139,8 @@ void wnmMulAPAgentRecvBTMResponse(struct ADAPTER *prAdapter,
 		"[SAP_Test] ucStatusCode = %u\n", prRxFrame->ucStatusCode);
 	DBGLOG(WNM, INFO,
 		"[SAP_Test] ucBssTermDelay = %u\n", prRxFrame->ucBssTermDelay);
-	if (prRxFrame->ucStatusCode == BSS_TRANSITION_MGT_STATUS_ACCEPT) {
+	if (prSwRfb->u2PacketLen >= u2TmpLen + MAC_ADDR_LEN &&
+		prRxFrame->ucStatusCode == BSS_TRANSITION_MGT_STATUS_ACCEPT) {
 		COPY_MAC_ADDR(prBtmReport->mDestBssid, pucOptInfo);
 		pucOptInfo += MAC_ADDR_LEN;
 		u2TmpLen += MAC_ADDR_LEN;

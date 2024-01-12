@@ -1318,6 +1318,9 @@ u_int8_t rsnPerformPolicySelection(
 	eEncStatus = aisGetEncStatus(prAdapter, ucBssIndex);
 	prMib = aisGetMib(prAdapter, ucBssIndex);
 
+	DBGLOG(RSN, TRACE, "BSS["MACSTR"] AuthMode [%d], EncStatus [%d]",
+		MAC2STR(prBss->aucBSSID), eAuthMode, eEncStatus);
+
 	u4PairwiseCipher = prMib->dot11RSNAConfigPairwiseCipher;
 	u4GroupCipher = prMib->dot11RSNAConfigGroupCipher;
 

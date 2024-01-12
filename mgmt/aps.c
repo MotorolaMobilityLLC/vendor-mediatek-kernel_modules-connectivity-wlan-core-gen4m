@@ -662,7 +662,8 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint16_t amsduByte = apsGetAmsduByte(bss);
 	uint16_t baSize = mpduLen[bss->eChannelWidth];
 	uint16_t slot = 0;
-	uint32_t airTime = 0, idle = 0, ideal = 0, slope = 0, tput = 0, est = 0;
+	uint32_t airTime = 0, idle = 0, ideal = 0, tput = 0, est = 0;
+	int32_t a = 0, b = 0, delta = 5;
 	uint8_t *pucIEs = NULL;
 
 	if (aps->ucConsiderEsp) {
@@ -709,10 +710,32 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 
 	/* Unit: mbps */
 	ideal = baSize * amsduByte * 8 / ppduDuration;
-	/* slope: from peak to zero -> RCPI from 100 to 50 */
-	slope = ideal / 50;
-	rcpi = bss->ucRCPI < 50 ? 50 : (bss->ucRCPI > 100 ? 100 : bss->ucRCPI);
-	tput = slope * (rcpi - 50);
+	rcpi = bss->ucRCPI;
+	/* Consider the TxPwr only when the RCPI is sufficiently good */
+	if (bss->fgExistTxPwr && bss->cTransmitPwr < 0 && rcpi > 100)
+		rcpi = rcpi -
+			(bss->cTransmitPwr > -10 ? bss->cTransmitPwr : -10);
+
+	rcpi = rcpi > 220 ? 220 : rcpi;
+	/* Adjust RCPI based on simultaneous equation */
+	if (rcpi > 100) {
+		/* RCPI from 220 to 100, peak(1) to breakpoint(1 - delta/100)
+		 * y = ax + b, through 2 points (220, 1) (100, 1 - delta /100)
+		 */
+		a = (delta * 60000 / 100) / 120;
+		b = 60000 - ((delta * 60000 / 100) * (220 / 120));
+	} else if (rcpi >= 50) {
+		/* RCPI from 100 to 50, breakpoint(1 - delta /100) to zero(0)
+		 * y = ax + b, through 2 points (100, 1 - delta /100) (50, 0)
+		 */
+		a = (60000 - (delta * 60000 / 100)) / 50;
+		b = (delta * 60000 / 100) - 60000;
+	} else {
+		/* RCPI less than 50, estimated tput will be zero */
+		a = 0;
+		b = 0;
+	}
+	tput = ideal * (a * rcpi + b) / 60000;
 	est = PERCENTAGE(airTime, 255) * tput / 100;
 
 	if (aps->ucConsiderEsp) {
@@ -729,9 +752,10 @@ uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 #endif
 
 	DBGLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d]\n",
+		"] EST:%d ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d] TxPwr[%d]\n",
 		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
-		slope, rcpi, tput, airTime, slot, fgIsGBandCoex);
+		a, b, rcpi, tput, airTime, slot,
+		fgIsGBandCoex, bss->cTransmitPwr);
 
 	return est;
 }
