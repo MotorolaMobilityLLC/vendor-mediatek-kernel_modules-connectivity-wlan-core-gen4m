@@ -97,6 +97,8 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[0 ... CMD_ID_END - 1] = NULL,
 	[CMD_ID_SCAN_REQ_V2] = nicUniCmdScanReqV2,
 	[CMD_ID_SCAN_CANCEL] = nicUniCmdScanCancel,
+	[CMD_ID_SET_SCAN_SCHED_ENABLE] = nicUniCmdSchedScanEnable,
+	[CMD_ID_SET_SCAN_SCHED_REQ] = nicUniCmdSchedScanReq,
 	[CMD_ID_BSS_ACTIVATE_CTRL] = nicUniCmdBssActivateCtrl,
 	[CMD_ID_GET_SET_CUSTOMER_CFG] = nicUniCmdCustomerCfg,
 	[CMD_ID_CHIP_CONFIG] = nicUniCmdChipCfg,
@@ -465,7 +467,7 @@ uint32_t nicUniCmdNotSupport(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicUniCmdScanTagScanReq(struct ADAPTER *ad,
+uint32_t nicUniCmdScanTagReq(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_REQ *tag = (struct UNI_CMD_SCAN_REQ *)buf;
@@ -482,7 +484,7 @@ uint32_t nicUniCmdScanTagScanReq(struct ADAPTER *ad,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagScanSsid(struct ADAPTER *ad, uint8_t *buf,
+uint32_t nicUniCmdScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
@@ -492,6 +494,9 @@ uint32_t nicUniCmdScanTagScanSsid(struct ADAPTER *ad, uint8_t *buf,
 	uint8_t ssid_ext_num = min((int)cmd->ucSSIDExtNum, 6);
 	uint16_t len = sizeof(*tag) +
 		(ssid_num + ssid_ext_num) * sizeof(struct PARAM_SSID);
+
+	if ((ssid_num + ssid_ext_num) == 0)
+		return 0;
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID;
 	tag->u2Length = len;
@@ -509,7 +514,7 @@ uint32_t nicUniCmdScanTagScanSsid(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagScanBssid(struct ADAPTER *ad, uint8_t *buf,
+uint32_t nicUniCmdScanTagBssid(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_BSSID *tag = (struct UNI_CMD_SCAN_BSSID *)buf;
@@ -525,7 +530,7 @@ uint32_t nicUniCmdScanTagScanBssid(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagScanChnlInfo(struct ADAPTER *ad, uint8_t *buf,
+uint32_t nicUniCmdScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_CHANNEL_INFO *tag =
@@ -536,6 +541,9 @@ uint32_t nicUniCmdScanTagScanChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	uint8_t chnl_ext_num = min((int)cmd->ucChannelListExtNum, 32);
 	uint16_t len = sizeof(*tag) +
 		(chnl_num + chnl_ext_num) * sizeof(struct CHANNEL_INFO);
+
+	if ((chnl_num + chnl_ext_num) == 0)
+		return 0;
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_CHANNEL;
 	tag->u2Length = len;
@@ -554,10 +562,13 @@ uint32_t nicUniCmdScanTagScanChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagScanIe(struct ADAPTER *ad, uint8_t *buf,
+uint32_t nicUniCmdScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_IE *tag = (struct UNI_CMD_SCAN_IE *)buf;
+
+	if (cmd->u2IELen == 0)
+		return 0;
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
 	tag->u2Length = sizeof(*tag) + cmd->u2IELen;
@@ -567,7 +578,7 @@ uint32_t nicUniCmdScanTagScanIe(struct ADAPTER *ad, uint8_t *buf,
 	return tag->u2Length;
 }
 
-uint32_t nicUniCmdScanTagScanMisc(struct ADAPTER *ad, uint8_t *buf,
+uint32_t nicUniCmdScanTagMisc(struct ADAPTER *ad, uint8_t *buf,
 	struct CMD_SCAN_REQ_V2 *cmd)
 {
 	struct UNI_CMD_SCAN_MISC *tag = (struct UNI_CMD_SCAN_MISC *)buf;
@@ -583,22 +594,21 @@ uint32_t nicUniCmdScanTagScanMisc(struct ADAPTER *ad, uint8_t *buf,
 }
 
 struct UNI_CMD_SCAN_TAG_HANDLE arSetScanReqTable[] = {
-	{sizeof(struct UNI_CMD_SCAN_REQ), nicUniCmdScanTagScanReq},
+	{sizeof(struct UNI_CMD_SCAN_REQ), nicUniCmdScanTagReq},
 	{sizeof(struct UNI_CMD_SCAN_SSID) + sizeof(struct PARAM_SSID) * 10,
-	 nicUniCmdScanTagScanSsid},
-	{sizeof(struct UNI_CMD_SCAN_BSSID), nicUniCmdScanTagScanBssid},
+	 nicUniCmdScanTagSsid},
+	{sizeof(struct UNI_CMD_SCAN_BSSID), nicUniCmdScanTagBssid},
 	{sizeof(struct UNI_CMD_SCAN_CHANNEL_INFO) +
 	 sizeof(struct CHANNEL_INFO) * 64,
-	 nicUniCmdScanTagScanChnlInfo},
-	{sizeof(struct UNI_CMD_SCAN_IE) + 600, nicUniCmdScanTagScanIe},
-	{sizeof(struct UNI_CMD_SCAN_MISC), nicUniCmdScanTagScanMisc},
+	 nicUniCmdScanTagChnlInfo},
+	{sizeof(struct UNI_CMD_SCAN_IE) + 600, nicUniCmdScanTagIe},
+	{sizeof(struct UNI_CMD_SCAN_MISC), nicUniCmdScanTagMisc},
 };
 
 uint32_t nicUniCmdScanReqV2(struct ADAPTER *ad,
 	struct WIFI_UNI_SETQUERY_INFO *info)
 {
-	struct CMD_SCAN_REQ_V2 *cmd =
-		(struct CMD_SCAN_REQ_V2 *)info->pucInfoBuffer;
+	struct CMD_SCAN_REQ_V2 *cmd;
 	struct UNI_CMD_SCAN *uni_cmd;
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint8_t *pos;
@@ -609,6 +619,7 @@ uint32_t nicUniCmdScanReqV2(struct ADAPTER *ad,
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
+	cmd = (struct CMD_SCAN_REQ_V2 *)info->pucInfoBuffer;
 	max_cmd_len += sizeof(struct UNI_CMD_SCAN);
 	for (i = 0; i < ARRAY_SIZE(arSetScanReqTable); i++)
 		max_cmd_len += arSetScanReqTable[i].u4Size;
@@ -1088,10 +1099,11 @@ uint32_t nicUniCmdSetDomainV2(struct ADAPTER *ad,
 
 	cmd = (struct CMD_SET_DOMAIN_INFO_V2 *) info->pucInfoBuffer;
 	valid_channel_count = cmd->arActiveChannels.u1ActiveChNum2g +
-			      cmd->arActiveChannels.u1ActiveChNum5g;
+			      cmd->arActiveChannels.u1ActiveChNum5g +
+			      cmd->arActiveChannels.u1ActiveChNum6g;
 	max_cmd_len = sizeof(struct UNI_CMD_DOMAIN_SET_INFO) +
-	  sizeof(struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST) +
-	  (valid_channel_count * sizeof(struct CMD_DOMAIN_CHANNEL));
+	     sizeof(struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST) +
+	     (valid_channel_count * sizeof(struct CMD_DOMAIN_CHANNEL));
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_DOMAIN_INFO,
 					max_cmd_len, NULL, NULL);
 
@@ -1102,7 +1114,7 @@ uint32_t nicUniCmdSetDomainV2(struct ADAPTER *ad,
 	uni_cmd->u4CountryCode = cmd->u4CountryCode;
 	uni_cmd->uc2G4Bandwidth = cmd->uc2G4Bandwidth;
 	uni_cmd->uc5GBandwidth = cmd->uc5GBandwidth;
-	uni_cmd->uc6GBandwidth = cmd->uc5GBandwidth; // TODO: uni cmd, 6g
+	uni_cmd->uc6GBandwidth = cmd->uc6GBandwidth;
 
 	tag = (struct UNI_CMD_DOMAIN_SET_INFO_DOMAIN_ACTIVE_CHANNEL_LIST *)
 		uni_cmd->aucTlvBuffer;
@@ -1111,6 +1123,7 @@ uint32_t nicUniCmdSetDomainV2(struct ADAPTER *ad,
 			sizeof(struct CMD_DOMAIN_CHANNEL) * valid_channel_count;
 	tag->u1ActiveChNum2g = cmd->arActiveChannels.u1ActiveChNum2g;
 	tag->u1ActiveChNum5g = cmd->arActiveChannels.u1ActiveChNum5g;
+	tag->u1ActiveChNum6g = cmd->arActiveChannels.u1ActiveChNum6g;
 
 	chl_dst = (struct CMD_DOMAIN_CHANNEL*) tag->aucActChnlListBuffer;
 	chl_src = cmd->arActiveChannels.arChannels;
@@ -1165,6 +1178,201 @@ uint32_t nicUniCmdScanCancel(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_CANCEL;
 	tag->u2Length = sizeof(*tag);
 	tag->ucIsExtChannel = cmd->ucIsExtChannel;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSchedScanEnable(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SET_SCHED_SCAN_ENABLE *cmd;
+	struct UNI_CMD_SCAN *uni_cmd;
+	struct UNI_CMD_SCAN_SCHED_SCAN_ENABLE *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SCAN) +
+	     		       sizeof(struct UNI_CMD_SCAN_SCHED_SCAN_ENABLE);
+
+	if (info->ucCID != CMD_ID_SET_SCAN_SCHED_ENABLE ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SET_SCHED_SCAN_ENABLE *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SCAN_REQ,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_SCAN *) entry->pucInfoBuffer;
+	uni_cmd->ucSeqNum = 0; /* unused */
+	uni_cmd->ucBssIndex = 0; /* unused */
+	tag = (struct UNI_CMD_SCAN_SCHED_SCAN_ENABLE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCHED_SCAN_ENABLE;
+	tag->u2Length = sizeof(*tag);
+	tag->ucSchedScanAct = cmd->ucSchedScanAct;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSchedScanTagReq(struct ADAPTER *ad,
+	uint8_t *buf, struct CMD_SCHED_SCAN_REQ *cmd)
+{
+	struct UNI_CMD_SCAN_SCHED_SCAN_REQ *tag =
+			(struct UNI_CMD_SCAN_SCHED_SCAN_REQ *)buf;
+
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCHED_SCAN_REQ;
+	tag->u2Length = sizeof(*tag);
+	tag->ucVersion = cmd->ucVersion;
+	tag->fgStopAfterIndication = cmd->fgStopAfterIndication;
+	tag->ucMspEntryNum = cmd->ucMspEntryNum;
+	tag->ucScnFuncMask = cmd->ucScnFuncMask;
+	kalMemCopy(tag->au2MspList, cmd->au2MspList, sizeof(tag->au2MspList));
+
+	return tag->u2Length;
+}
+
+uint32_t nicUniCmdSchedScanTagSsid(struct ADAPTER *ad, uint8_t *buf,
+	struct CMD_SCHED_SCAN_REQ *cmd)
+{
+	struct UNI_CMD_SCAN_SSID *tag = (struct UNI_CMD_SCAN_SSID *)buf;
+	uint8_t i;
+	uint8_t *pos = tag->aucSsidBuffer;
+	uint8_t num = min((int)cmd->ucSsidNum, 10);
+	uint16_t len = sizeof(*tag) + num * sizeof(struct PARAM_SSID);
+
+	if (num == 0)
+		return 0;
+
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID;
+	tag->u2Length = len;
+	tag->ucSSIDType = SCAN_REQ_SSID_SPECIFIED;
+	tag->ucSSIDNum = num;
+	for (i = 0; i < num; i++) {
+		kalMemCopy(pos, &cmd->auSsid[i], sizeof(struct PARAM_SSID));
+		pos += sizeof(struct PARAM_SSID);
+	}
+
+	return tag->u2Length;
+}
+
+uint32_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
+	struct CMD_SCHED_SCAN_REQ *cmd)
+{
+	struct UNI_CMD_SCAN_CHANNEL_INFO *tag =
+		(struct UNI_CMD_SCAN_CHANNEL_INFO *)buf;
+	uint8_t i;
+	uint8_t *pos = tag->aucChnlInfoBuffer;
+	uint8_t num = min((int)cmd->ucChnlNum, 64);
+	uint16_t len = sizeof(*tag) + num * sizeof(struct CHANNEL_INFO);
+
+	if (num == 0)
+		return 0;
+
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_CHANNEL;
+	tag->u2Length = len;
+	tag->ucChannelType = cmd->ucChannelType;
+	tag->ucChannelListNum = num;
+	for (i = 0; i < num; i++) {
+		kalMemCopy(pos, &cmd->aucChannel[i],
+			sizeof(struct CHANNEL_INFO));
+		pos += sizeof(struct CHANNEL_INFO);
+	}
+
+	return tag->u2Length;
+}
+
+uint32_t nicUniCmdSchedScanTagIe(struct ADAPTER *ad, uint8_t *buf,
+	struct CMD_SCHED_SCAN_REQ *cmd)
+{
+	struct UNI_CMD_SCAN_IE *tag = (struct UNI_CMD_SCAN_IE *)buf;
+
+	if (cmd->u2IELen == 0)
+		return 0;
+
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
+	tag->u2Length = sizeof(*tag) + cmd->u2IELen;
+	tag->u2IELen = cmd->u2IELen;
+	kalMemCopy(tag->aucIEBuffer, cmd->aucIE, cmd->u2IELen);
+
+	return tag->u2Length;
+}
+
+uint32_t nicUniCmdSchedScanTagSsidMatchSets(struct ADAPTER *ad, uint8_t *buf,
+	struct CMD_SCHED_SCAN_REQ *cmd)
+{
+	struct UNI_CMD_SCAN_SSID_MATCH_SETS *tag =
+		(struct UNI_CMD_SCAN_SSID_MATCH_SETS *)buf;
+	uint8_t i;
+	uint8_t *pos = tag->aucMatchSsidBuffer;
+	uint8_t num = min((int)cmd->ucMatchSsidNum, 16);
+	uint16_t len = sizeof(*tag) + num * sizeof(struct SSID_MATCH_SETS);
+
+	if (num == 0)
+		return 0;
+
+	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_SSID_MATCH_SETS;
+	tag->u2Length = len;
+	tag->ucMatchSsidNum = num;
+	for (i = 0; i < num; i++) {
+		kalMemCopy(pos, &cmd->auMatchSsid[i],
+			sizeof(struct SSID_MATCH_SETS));
+		pos += sizeof(struct SSID_MATCH_SETS);
+	}
+
+	return tag->u2Length;
+}
+
+struct UNI_CMD_SCHED_SCAN_TAG_HANDLE arSetSchedScanReqTable[] = {
+	{sizeof(struct UNI_CMD_SCAN_SCHED_SCAN_REQ), nicUniCmdSchedScanTagReq},
+	{sizeof(struct UNI_CMD_SCAN_SSID) + sizeof(struct PARAM_SSID) * 10,
+	 nicUniCmdSchedScanTagSsid},
+	{sizeof(struct UNI_CMD_SCAN_CHANNEL_INFO) +
+	 sizeof(struct CHANNEL_INFO) * 64,
+	 nicUniCmdSchedScanTagChnlInfo},
+	{sizeof(struct UNI_CMD_SCAN_IE) + 600, nicUniCmdSchedScanTagIe},
+	{sizeof(struct UNI_CMD_SCAN_SSID_MATCH_SETS) +
+	 sizeof(struct SSID_MATCH_SETS) * 16,
+	 nicUniCmdSchedScanTagSsidMatchSets},
+};
+
+uint32_t nicUniCmdSchedScanReq(struct ADAPTER *ad,
+	struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_SCHED_SCAN_REQ *cmd;
+	struct UNI_CMD_SCAN *uni_cmd;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint8_t *pos;
+	uint32_t max_cmd_len = 0;
+	int i;
+
+	if (info->ucCID != CMD_ID_SET_SCAN_SCHED_REQ)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_SCHED_SCAN_REQ *)info->pucInfoBuffer;
+	max_cmd_len += sizeof(struct UNI_CMD_SCAN);
+	for (i = 0; i < ARRAY_SIZE(arSetSchedScanReqTable); i++)
+		max_cmd_len += arSetSchedScanReqTable[i].u4Size;
+
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SCAN_REQ,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	pos = entry->pucInfoBuffer;
+	uni_cmd = (struct UNI_CMD_SCAN *) pos;
+	uni_cmd->ucSeqNum = cmd->ucSeqNum;
+	uni_cmd->ucBssIndex = cmd->ucBssIndex;
+	pos += sizeof(*uni_cmd);
+	for (i = 0; i < ARRAY_SIZE(arSetSchedScanReqTable); i++)
+		pos += arSetSchedScanReqTable[i].pfHandler(ad, pos, cmd);
+	entry->u4SetQueryInfoLen = pos - entry->pucInfoBuffer;
+
+	ASSERT(entry->u4SetQueryInfoLen <= max_cmd_len);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
