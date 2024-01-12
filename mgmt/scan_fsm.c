@@ -1011,14 +1011,16 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 			/* Restart ScanDone timer to avoid RNR scan
 			 * causing scan timeout
 			 */
-			prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
+			if (IS_BSS_INDEX_AIS(prAdapter,
+						prScanParam->ucBssIndex)) {
+				prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
 					prScanParam->ucBssIndex);
-			cnmTimerStopTimer(prAdapter,
+				cnmTimerStopTimer(prAdapter,
 					&prAisFsmInfo->rScanDoneTimer);
-			cnmTimerStartTimer(prAdapter,
+				cnmTimerStartTimer(prAdapter,
 					&prAisFsmInfo->rScanDoneTimer,
 					SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
-
+			}
 			/* go for next scan */
 			scnFsmSteps(prAdapter, SCAN_STATE_SCANNING);
 			return;

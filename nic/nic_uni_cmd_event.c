@@ -1531,7 +1531,7 @@ uint32_t nicUniCmdSchedScanTagIe(struct ADAPTER *ad, uint8_t *buf,
 		return 0;
 
 	tag->u2Tag = UNI_CMD_SCAN_TAG_SCAN_IE;
-	tag->u2Length = sizeof(*tag) + cmd->u2IELen;
+	tag->u2Length = sizeof(*tag) + ALIGN_4(cmd->u2IELen);
 	tag->u2IELen = cmd->u2IELen;
 	kalMemCopy(tag->aucIEBuffer, cmd->aucIE, cmd->u2IELen);
 
