@@ -445,7 +445,8 @@ int filsPmkToPtk(uint8_t *pmk, uint16_t pmk_len, uint8_t *spa,
 	kalMemZero(tmp, sizeof(tmp));
 	ret = 0;
 err:
-	kalMemZFree(data, VIR_MEM_TYPE, data_len);
+	if (data)
+		kalMemZFree(data, VIR_MEM_TYPE, data_len);
 	return ret;
 }
 
@@ -530,6 +531,8 @@ uint32_t filsProcessAuth(struct ADAPTER *ad, struct STA_RECORD *sta)
 
 	fils = sta->prFilsInfo;
 	bss = GET_BSS_INFO_BY_INDEX(ad, sta->ucBssIndex);
+	if (!bss)
+		return WLAN_STATUS_FAILURE;
 
 	if (!fils->fgFilsANonceSet) {
 		DBGLOG(FILS, ERROR, "ANonce not set\n");
@@ -580,7 +583,7 @@ uint32_t filsRxAuthRSNE(struct ADAPTER *ad,
 {
 	struct STA_RECORD *sta;
 	struct FILS_INFO *fils = NULL;
-	struct RSN_INFO rRsnInfo;
+	struct RSN_INFO rRsnInfo = {0};
 	struct PMKID_ENTRY *entry = NULL;
 	uint8_t bssidx;
 
@@ -620,10 +623,14 @@ uint32_t filsRxAuthRSNE(struct ADAPTER *ad,
 	}
 
 	entry = fils->prCurPmksa;
+	if (!entry) {
+		DBGLOG(FILS, ERROR, "No entry\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	DBGDUMP_MEM8(FILS, INFO, "PMKID\n", rRsnInfo.aucPmkid, IW_PMKID_LEN);
 
-	if (entry && kalMemCmp(entry->rBssidInfo.arPMKID,
+	if (kalMemCmp(entry->rBssidInfo.arPMKID,
 		rRsnInfo.aucPmkid, IW_PMKID_LEN) != 0) {
 		DBGLOG(FILS, ERROR, "PMKID mismatch\n");
 		DBGDUMP_MEM8(FILS, ERROR, "Expected PMKID\n",
@@ -1203,7 +1210,7 @@ uint32_t filsEncryptAssocReq(struct ADAPTER *ad, struct MSDU_INFO *msdu)
 	struct STA_RECORD *sta;
 	struct FILS_INFO *fils = NULL;
 	struct WLAN_ASSOC_REQ_FRAME *mgmt;
-	uint8_t *plain, *pos;
+	uint8_t *plain, *pos = NULL;
 	uint16_t plain_len;
 	const u8 *aad[5];
 	size_t aad_len[5];
@@ -1229,6 +1236,11 @@ uint32_t filsEncryptAssocReq(struct ADAPTER *ad, struct MSDU_INFO *msdu)
 	if (!plain) {
 		DBGLOG(FILS, ERROR, "No memory\n");
 		return WLAN_STATUS_RESOURCES;
+	}
+
+	if (!pos) {
+		kalMemFree(plain, plain_len, VIR_MEM_TYPE);
+		return WLAN_STATUS_FAILURE;
 	}
 
 	kalMemCopy(plain, pos, plain_len);
@@ -1334,6 +1346,7 @@ uint32_t filsDecryptAssocResp(struct ADAPTER *ad, struct SW_RFB *rfb,
 			    5, aad, aad_len, pos) < 0) {
 		DBGLOG(FILS, INFO,
 			   "FILS: Invalid AES-SIV data in the frame");
+		kalMemFree(crypt, crypt_len, VIR_MEM_TYPE);
 		return -1;
 	}
 
@@ -1620,6 +1633,9 @@ void filsRemoveKey(struct ADAPTER *ad, uint32_t keyidx, uint8_t bssidx)
 	DBGLOG(FILS, INFO, "Bss%d BSSID[" MACSTR "] remove key %d\n",
 		bssidx, MAC2STR(param.arBSSID), keyidx);
 
+	if (!bss)
+		return;
+
 	param.u4Length = sizeof(struct PARAM_REMOVE_KEY);
 	param.u4KeyIndex = keyidx;
 	param.ucBssIdx = bssidx;
@@ -1641,8 +1657,11 @@ uint32_t filsInstallPTK(struct ADAPTER *ad, struct STA_RECORD *sta)
 	struct PARAM_KEY param;
 	uint8_t keyidx = 0;
 	uint8_t pairwise = TRUE;
-	uint32_t cipher = bss->u4RsnSelectedPairwiseCipher;
+	uint32_t cipher;
 	uint32_t len = 0;
+
+	if (!bss)
+		return WLAN_STATUS_FAILURE;
 
 	if (bss->filskeyUsed[keyidx]) {
 		DBGLOG(FILS, WARN, "Bss%d key %d not cleard\n",	bssidx, keyidx);
@@ -1650,6 +1669,7 @@ uint32_t filsInstallPTK(struct ADAPTER *ad, struct STA_RECORD *sta)
 		bss->filskeyUsed[keyidx] = FALSE;
 	}
 
+	cipher = bss->u4RsnSelectedPairwiseCipher;
 	if (filsFillParamKey(&param,
 		sta->aucMacAddr,
 		fils->tk, fils->tk_len,
@@ -1677,11 +1697,15 @@ uint32_t filsInstallGTK(struct ADAPTER *ad, struct STA_RECORD *sta)
 	struct PARAM_KEY param;
 	uint8_t keyidx = 0;
 	uint8_t pairwise = FALSE;
-	uint32_t cipher = bss->u4RsnSelectedGroupCipher;
+	uint32_t cipher;
 	uint32_t len = 0;
 	uint16_t rsc_len, gtk_len;
 	uint8_t *gtk;
 
+	if (!bss)
+		return WLAN_STATUS_FAILURE;
+
+	cipher = bss->u4RsnSelectedGroupCipher;
 	switch (cipher) {
 	case RSN_CIPHER_SUITE_CCMP:
 	case RSN_CIPHER_SUITE_GCMP:
@@ -1763,7 +1787,7 @@ uint32_t filsInstallIGTK(struct ADAPTER *ad, struct STA_RECORD *sta)
 
 	WLAN_GET_FIELD_16(igtk->keyid, &keyidx);
 
-	if (keyidx > MAX_KEY_NUM) {
+	if (keyidx >= MAX_KEY_NUM) {
 		DBGLOG(FILS, ERROR, "wrong keyidx=%d\n", keyidx);
 		return WLAN_STATUS_FAILURE;
 	}
@@ -1828,6 +1852,9 @@ uint32_t filsRemoveAllKeys(struct ADAPTER *ad, uint8_t bssidx)
 {
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, bssidx);
 	uint8_t i;
+
+	if (!bss)
+		return WLAN_STATUS_FAILURE;
 
 	for (i = 0; i < MAX_KEY_NUM; i++) {
 		if (!bss->filskeyUsed[i])

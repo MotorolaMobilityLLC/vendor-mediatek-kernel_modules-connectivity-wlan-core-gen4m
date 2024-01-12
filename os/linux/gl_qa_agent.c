@@ -215,9 +215,16 @@ static int32_t HQA_StartTx(struct net_device *prNetDev,
 	       TxLength);
 
 	i4Ret = MT_ATESetTxCount(prNetDev, TxCount);
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		goto label_exit;
+
 	i4Ret = MT_ATESetTxLength(prNetDev, (uint32_t) TxLength);
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		goto label_exit;
+
 	i4Ret = MT_ATEStartTX(prNetDev, "TXFRAME");
 
+label_exit:
 	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 
 	return i4Ret;

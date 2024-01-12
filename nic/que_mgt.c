@@ -1927,7 +1927,7 @@ qmDequeueTxPacketsFromPerTypeQueues(struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM;
 	PFN_DEQUEUE_FUNCTION pfnDeQFunc[2];
 	u_int8_t fgChangeDeQFunc = TRUE;
-	u_int8_t fgGlobalQueFirst = TRUE;
+	u_int8_t fgGlobalQueFirst;
 	uint32_t u4MaxPageCntPerFrame;
 
 	DBGLOG(QM, TEMP, "Enter %s (TC = %d, quota = %u)\n",
@@ -1947,6 +1947,8 @@ qmDequeueTxPacketsFromPerTypeQueues(struct ADAPTER *prAdapter,
 #if QM_FORWARDING_FAIRNESS
 	u4TotalUsedResource = prQM->u4GlobalResourceUsedCount;
 	fgGlobalQueFirst = prQM->fgGlobalQFirst;
+#else
+	fgGlobalQueFirst = TRUE;
 #endif
 
 	/* Dequeue function selection */

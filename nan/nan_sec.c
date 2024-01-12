@@ -2911,7 +2911,7 @@ nanSecNotifyMsgBodyRdy(struct _NAN_NDP_INSTANCE_T *prNdp,
 	u8 u1SmCurMsg = 0;
 	u8 **ppu1SmGetMsgBodyBuf = NULL;
 	u32 *pu4SmGetMsgBodyLen = NULL;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus;
 
 	DBGLOG(NAN, INFO,
 	       "[%s] Enter, eNDPRole:%d, u1SrcMsg:%d, u4TxMsgLen:%d\n",
@@ -2989,7 +2989,7 @@ nanSecNotifyMsgBodyRdy(struct _NAN_NDP_INSTANCE_T *prNdp,
 					return WLAN_STATUS_FAILURE;
 				}
 
-				rStatus = nanSecGenAuthToken(
+				nanSecGenAuthToken(
 					prNdp->prResponderSecSmInfo
 						->u4SelCipherType,
 					prNdp->prResponderSecSmInfo

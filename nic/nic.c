@@ -943,11 +943,13 @@ void removeDuplicatePendingCmd(struct ADAPTER *prAdapter,
 
 static u_int8_t isPendingTxsData(uint8_t ucPID, struct MSDU_INFO *prMsduInfo)
 {
-	u_int8_t result = TRUE;
+	u_int8_t result;
 
 #if CFG_SUPPORT_SEPARATE_TXS_PID_POOL
 	if (!IS_TXS_DATA_PID(ucPID))
 		result = FALSE;
+	else
+		result = TRUE;
 #else
 		result = FALSE;
 #endif

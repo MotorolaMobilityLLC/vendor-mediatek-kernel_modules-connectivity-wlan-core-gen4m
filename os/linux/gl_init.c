@@ -2827,7 +2827,7 @@ static void wlanSetMulticastListWorkQueue(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4PacketFilter = 0;
 	uint32_t u4SetInfoLen;
-	struct net_device *prDev = gPrDev;
+	struct net_device *prDev;
 	uint8_t ucBssIndex = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
@@ -3521,7 +3521,7 @@ static u_int8_t wlanIsAdjacentChnl(struct GL_P2P_INFO *prGlueP2pInfo,
 		enum ENUM_BAND eBand)
 {
 	uint32_t u4AdjacentFreq = 0;
-	uint32_t u4BandWidth = 20;
+	uint32_t u4BandWidth;
 	uint32_t u4StartFreq, u4EndFreq;
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct ieee80211_channel *chnl = NULL;
@@ -6433,7 +6433,7 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	/* set HW checksum offload */
 	if (!bAtResetFlow && prAdapter->fgIsSupportCsumOffload) {
-		uint32_t rStatus = WLAN_STATUS_FAILURE;
+		uint32_t rStatus;
 		uint32_t u4CSUMFlags = CSUM_OFFLOAD_EN_ALL;
 		uint32_t u4SetInfoLen = 0;
 

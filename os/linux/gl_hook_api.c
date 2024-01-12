@@ -2585,7 +2585,7 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev,
 	struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoRead,
 		       rAccessEfuseInfoWrite;
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t i4Status = WLAN_STATUS_SUCCESS;
+	uint32_t i4Status;
 	uint8_t  u4Index = 0, u4Loop = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -2618,6 +2618,8 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev,
 			    sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
 			    &u4BufLen);
 
+	if (i4Status != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
 
 	/* Write */
 	kalMemSet(&rAccessEfuseInfoWrite, 0,

@@ -893,7 +893,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	struct _NanTlv outputTlv;
 	u16 readLen = 0;
 	u32 u4BufLen;
-	u32 i4Status = -EINVAL;
+	u32 i4Status;
 	u32 u4DelayIdx;
 	int ret = 0;
 	int remainingLen;

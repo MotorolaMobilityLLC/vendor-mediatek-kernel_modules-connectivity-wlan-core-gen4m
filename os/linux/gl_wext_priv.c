@@ -4187,7 +4187,7 @@ static int priv_driver_get_mib_info_uni(struct ADAPTER *prAdapter,
 		"\tRx_MDRDY_CNT=%llu\n",
 		prMibStats->u4MdrdyCnt);
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tMdrdyTime CCK=%llu, OFDM=0x%x, OFDM_GREEN=0x%x\n",
+		"\tMdrdyTime CCK=%llu, OFDM=0x%lx, OFDM_GREEN=0x%lx\n",
 		prMibStats->u4CCKMdrdyCnt,
 		prMibStats->u4OFDMLGMixMdrdy,
 		prMibStats->u4OFDMGreenMdrdy);
@@ -4227,7 +4227,7 @@ static int priv_driver_get_mib_info_uni(struct ADAPTER *prAdapter,
 	per_rem = do_div(per, 10);
 
 	i4BytesWritten = SHOW_DBGLOG(pcCommand, i4TotalLen, i4BytesWritten,
-		"\tAMPDU[Cnt:MpduCnt:MpduAckCnt:MpduPER]=[%u:%u:%u:%ld.%1ld%%]\n",
+		"\tAMPDU[Cnt:MpduCnt:MpduAckCnt:MpduPER]=[%lu:%lu:%lu:%lu.%1u%%]\n",
 		u4TxAmpdu, u4TxAmpduMpdu, u4TxAmpduAcked,
 		per, per_rem);
 
@@ -5118,7 +5118,7 @@ int priv_driver_dump_eml(struct net_device *prNetDev,
 	int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	struct PARAM_EML_DEBUG_INFO rQueryEmlInfo;
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
@@ -5247,7 +5247,7 @@ int priv_driver_preset_linkid(struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4BytesWritten = -1;
 	uint32_t u4SetInfoLen = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -5398,7 +5398,7 @@ int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	uint8_t ucBssIdx = 0;
 	uint8_t ucCapa = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE, u4Param = 0;
+	uint32_t rStatus, u4Param = 0;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
@@ -19606,7 +19606,7 @@ int priv_driver_get_tdls_available(
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	int32_t i4BytesWritten = 0;
-	uint8_t fgAvailable = TRUE;
+	uint8_t fgAvailable;
 	uint8_t ucBssIndex = 0;
 
 	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);

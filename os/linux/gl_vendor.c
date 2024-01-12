@@ -2472,7 +2472,7 @@ nla_put_failure:
 int mtk_cfg80211_vendor_set_tx_lat_montr_param(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
 {
-	int32_t rStatus = -EOPNOTSUPP;
+	int32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter;
 	struct nlattr *attr[WIFI_ATTR_TX_LAT_MONTR_MAX];
@@ -4166,7 +4166,7 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 #endif
 	struct sk_buff *skb = NULL;
 	uint32_t *puBuffer = NULL;
-	int32_t i4Status = -EINVAL;
+	int32_t i4Status;
 	uint16_t u2CopySize = 0;
 
 	ASSERT(wiphy);

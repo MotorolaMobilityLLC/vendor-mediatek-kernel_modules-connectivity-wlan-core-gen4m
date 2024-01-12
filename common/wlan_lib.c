@@ -7077,7 +7077,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
 	uint32_t u4TxHifRes = 0, u4Idx = 0;
-	uint32_t u4PlatformBoostCpuTh = 1;
+	uint32_t u4PlatformBoostCpuTh;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	uint32_t u4PlatformBoostLittleCpuTh = 1;
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
@@ -12172,7 +12172,7 @@ uint32_t wlanCfgSetGetFw(struct ADAPTER *prAdapter, const char *fwBuffer,
 			 int cmdNum, enum CMD_TYPE cmdType)
 {
 	struct CMD_HEADER *pcmdV1Header = NULL;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 
 	pcmdV1Header = (struct CMD_HEADER *)
 			kalMemAlloc(sizeof(struct CMD_HEADER), VIR_MEM_TYPE);

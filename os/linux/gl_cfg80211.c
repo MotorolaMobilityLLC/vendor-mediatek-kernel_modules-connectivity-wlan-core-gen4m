@@ -946,7 +946,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 				wlanoidQueryRssi,
 				&rLinkSpeed, sizeof(rLinkSpeed),
 				&u4BufLen, ucBssIndex);
-		if (IS_BSS_INDEX_VALID(ucBssIndex))
+		if (ucBssIndex < BSSID_NUM)
 			i4Rssi = rLinkSpeed.rLq[ucBssIndex].cRssi;
 
 		sinfo->filled |= STATION_INFO_SIGNAL;
@@ -1980,7 +1980,7 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy,
 			 struct cfg80211_external_auth_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint32_t u4BufLen;
 	struct PARAM_EXTERNAL_AUTH auth;
 
@@ -2950,7 +2950,7 @@ int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
 int mtk_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 		struct wireless_dev *wdev, u64 cookie)
 {
-	int32_t i4Rslt = -EINVAL;
+	int32_t i4Rslt;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct MSG_CANCEL_TX_WAIT_REQUEST *prMsgCancelTxWait =
 			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
@@ -4273,6 +4273,8 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 		     NL80211_STA_FLAG_AUTHORIZED))) {
 		rStatus = kalIoctl(prGlueInfo, wlanoidSetAuthorized,
 			(void *) mac, MAC_ADDR_LEN, &u4BufLen);
+
+		DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
 	}
 
 	if (prLinkParams->supported_rates == NULL)
@@ -4385,6 +4387,8 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 				   &TdlsSendChSwControlCmd,
 				   sizeof(struct CMD_TDLS_CH_SW),
 				   &u4BufLen);
+
+		DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
 	}
 
 	return 0;
@@ -5702,7 +5706,7 @@ int testmode_disable_tdls_ps(struct wiphy *wiphy,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4Ret = -1;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint8_t ucIsEnablePs = 0;
 	uint32_t u4SetInfoLen = 0;
 
@@ -5739,7 +5743,7 @@ int testmode_neighbor_request(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint8_t *pucSSID = NULL;
 	uint32_t u4SSIDLen = 0;
 	uint8_t ucBssIndex = 0;
@@ -5779,7 +5783,7 @@ int testmode_bss_tran_query(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint8_t *pucReason = NULL;
 	uint32_t u4ReasonLen = 0;
 	uint8_t ucBssIndex = 0;
@@ -5820,7 +5824,7 @@ int testmode_osharemod(struct wiphy *wiphy,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4Ret = -1;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	struct OSHARE_MODE_T cmdBuf;
 	struct OSHARE_MODE_T *pCmdHeader = NULL;
 	struct OSHARE_MODE_SETTING_V1_T *pCmdData = NULL;
@@ -5893,7 +5897,7 @@ int testmode_reassoc(struct wiphy *wiphy,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4Ret = -1;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct PARAM_CONNECT rNewSsid;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
@@ -6076,13 +6080,13 @@ int testmode_add_roam_scn_chnl(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
 {
 	uint32_t u4ChnlInfo = 0;
-	uint8_t i = 1;
+	uint8_t i;
 	uint8_t t = 0;
 	uint32_t u4SetInfoLen = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	int32_t i4Ret = -1;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	struct CFG_SCAN_CHNL *prRoamScnChnl;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -6366,7 +6370,7 @@ int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 {
 	int32_t i4Argc = 0, i4BytesWritten = -1;
 	uint32_t u4SetInfoLen = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t ucParam = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -7055,7 +7059,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 	struct mt66xx_chip_info *prChipInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	uint8_t ucBssIdx = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint8_t ucAisIndex;
 	uint32_t u4SetInfoLen;
 	struct sockaddr MacAddr;
@@ -9190,7 +9194,7 @@ int mtk_cfg80211_update_ft_ies(struct wiphy *wiphy, struct net_device *dev,
 #if CFG_SUPPORT_802_11R
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4InfoBufLen = 0;
-	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t rStatus;
 	uint8_t ucBssIndex = 0;
 
 	if (!wiphy)
