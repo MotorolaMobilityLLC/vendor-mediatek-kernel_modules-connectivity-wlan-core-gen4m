@@ -5087,17 +5087,20 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 	struct MSDU_TOKEN_INFO *prTokenInfo)
 {
 	uint32_t u4ConsysAll = 0, u4Connsys[BSSID_NUM] = {0};
-	uint32_t u4ConsysSlot0 = 0;
+	uint32_t u4ConsysSlot2 = 0;
 	uint32_t i = 0, j = 0;
 	uint32_t u4CurBitRate = 0;
 	uint32_t u4PredBitRate = 0;
+	uint32_t u4Ratio = prAdapter->rWifiVar.u4WfdSccBalanceRatio;
 
 	for (i = 0; i < BSSID_NUM; i++) {
 		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
 			u4ConsysAll += report->au4ConnsysLatency[i][j];
 			u4Connsys[i] += report->au4ConnsysLatency[i][j];
 		}
-		u4ConsysSlot0 += report->au4ConnsysLatency[i][0];
+		u4ConsysSlot2 += report->au4ConnsysLatency[i][0];
+		u4ConsysSlot2 += report->au4ConnsysLatency[i][1];
+		u4ConsysSlot2 += report->au4ConnsysLatency[i][2];
 	}
 
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
@@ -5107,19 +5110,21 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 		"C All: %u, CurRate: %u, PredRate: %u",
 		u4ConsysAll, u4CurBitRate, u4PredBitRate);
 
+	if (u4Ratio == 0)
+		u4Ratio = 1;
 
-	/* C<10ms % < 80% */
-	if (u4ConsysSlot0 < (u4ConsysAll*4/5) &&
+	/* C<50ms % < 80% */
+	if (u4ConsysSlot2 < (u4ConsysAll/u4Ratio) &&
 		(u4CurBitRate > u4PredBitRate*5/10)) {
 		DBGLOG(REQ, INFO,
 			"C[0]:[%u] < LowTH, FSM: [NO_LIMIT] -> [QUICK]",
-			u4ConsysSlot0);
+			u4ConsysSlot2);
 		return WFD_BSS_BALANCE_QUICK_STATE;
 	}
 
 	DBGLOG(REQ, INFO,
 		"C[0]:[%u] > LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]",
-		u4ConsysSlot0);
+		u4ConsysSlot2);
 	halWFDBssBalanceSetBssCntCfg(prAdapter,
 		prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);
 	return WFD_BSS_BALANCE_NO_LIMIT_STATE;
