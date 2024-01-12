@@ -200,6 +200,7 @@
 #define SER_ACTION_SET                      1
 #define SER_ACTION_SET_ENABLE_MASK          2
 #define SER_ACTION_RECOVER                  3
+#define SER_ACTION_L0P5_CTRL                4
 
 /* SER_ACTION_SET sub action */
 #define SER_SET_DISABLE         0
@@ -223,6 +224,10 @@
 #define SER_SET_L3_TX_DISABLE      5
 #define SER_SET_L3_BF_RECOVER      6
 
+/* SER_ACTION_L0P5_CTRL sub action */
+#define SER_ACTION_L0P5_CTRL_PAUSE_WDT          (0)
+#define SER_ACTION_L0P5_CTRL_RESUME_WDT         (1)
+#define SER_ACTION_L0P5_CTRL_WM_HANG            (2)
 
 /* SER user command */
 #define SER_USER_CMD_DISABLE         0
@@ -252,6 +257,9 @@
 #define SER_USER_CMD_L3_TX1_DISABLE      (307)
 #define SER_USER_CMD_L3_BF_RECOVER       (308)
 
+#define SER_USER_CMD_L0P5_PAUSE_WDT  (400)
+#define SER_USER_CMD_L0P5_RESUME_WDT (401)
+#define SER_USER_CMD_L0P5_WM_HANG    (444)
 
 #define TXPOWER_MAN_SET_INPUT_ARG_NUM 4
 
