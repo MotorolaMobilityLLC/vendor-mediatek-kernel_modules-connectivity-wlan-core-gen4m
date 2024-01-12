@@ -829,9 +829,6 @@ void p2pRoleFsmRunEventRxDeauthentication(IN struct ADAPTER *prAdapter,
 					- (WLAN_MAC_HEADER_LEN
 					+ REASON_CODE_FIELD_LEN);
 
-				ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
-
-
 #if CFG_WPS_DISCONNECT || (KERNEL_VERSION(4, 4, 0) <= CFG80211_VERSION_CODE)
 /* Indicate disconnect to Host. */
 				kalP2PGCIndicateConnectionStatus(
@@ -980,8 +977,6 @@ void p2pRoleFsmRunEventRxDisassociation(IN struct ADAPTER *prAdapter,
 				(struct WLAN_DISASSOC_FRAME *)
 					prSwRfb->pvHeader;
 			uint16_t u2IELength = 0;
-
-			ASSERT(prP2pBssInfo->prStaRecOfAP == prStaRec);
 
 			if (prP2pBssInfo->prStaRecOfAP != prStaRec)
 				break;
