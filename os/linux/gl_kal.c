@@ -4778,8 +4778,6 @@ void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo)
 	struct QUE *prReturnCmdQue = &rReturnCmdQue;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
 
-	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
-
 	GLUE_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prGlueInfo);
@@ -4792,23 +4790,9 @@ void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo)
 	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
 
-	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-			  struct QUE_ENTRY *);
+	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, struct QUE_ENTRY *);
 	while (prQueueEntry) {
-		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
-
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
-			if (prCmdInfo->pfCmdTimeoutHandler)
-				prCmdInfo->pfCmdTimeoutHandler(
-					prGlueInfo->prAdapter, prCmdInfo);
-			else
-				wlanReleaseCommand(prGlueInfo->prAdapter,
-					prCmdInfo, TX_RESULT_QUEUE_CLEARANCE);
-			cmdBufFreeCmdInfo(prGlueInfo->prAdapter, prCmdInfo);
-			GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingCmdNum);
-		} else {
-			QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
-		}
+		QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
 
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
 				  struct QUE_ENTRY *);
@@ -4830,8 +4814,8 @@ void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo)
  * \retval none
  */
 /*----------------------------------------------------------------------------*/
-void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO
-				    *prGlueInfo, uint8_t ucBssIndex)
+void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO *prGlueInfo,
+		uint8_t ucBssIndex)
 {
 	struct QUE *prCmdQue;
 	struct QUE rTempCmdQue;
@@ -4839,9 +4823,6 @@ void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO
 	struct QUE rReturnCmdQue;
 	struct QUE *prReturnCmdQue = &rReturnCmdQue;
 	struct QUE_ENTRY *prQueueEntry = (struct QUE_ENTRY *) NULL;
-	struct CMD_INFO *prCmdInfo = (struct CMD_INFO *) NULL;
-	struct MSDU_INFO *prMsduInfo;
-	u_int8_t fgFree;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -4855,30 +4836,9 @@ void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO
 	QUEUE_MOVE_ALL(prTempCmdQue, prCmdQue);
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_CMD_QUE);
 
-	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
-			  struct QUE_ENTRY *);
+	QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry, struct QUE_ENTRY *);
 	while (prQueueEntry) {
-		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
-		prMsduInfo = prCmdInfo->prMsduInfo;
-		fgFree = FALSE;
-
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME
-				&& prMsduInfo) {
-			if (prMsduInfo->ucBssIndex == ucBssIndex)
-				fgFree = TRUE;
-		}
-
-		if (fgFree) {
-			if (prCmdInfo->pfCmdTimeoutHandler)
-				prCmdInfo->pfCmdTimeoutHandler(
-					prGlueInfo->prAdapter, prCmdInfo);
-			else
-				wlanReleaseCommand(prGlueInfo->prAdapter,
-					prCmdInfo, TX_RESULT_QUEUE_CLEARANCE);
-			cmdBufFreeCmdInfo(prGlueInfo->prAdapter, prCmdInfo);
-			GLUE_DEC_REF_CNT(prGlueInfo->i4TxPendingCmdNum);
-		} else
-			QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
+		QUEUE_INSERT_TAIL(prReturnCmdQue, prQueueEntry);
 
 		QUEUE_REMOVE_HEAD(prTempCmdQue, prQueueEntry,
 				  struct QUE_ENTRY *);

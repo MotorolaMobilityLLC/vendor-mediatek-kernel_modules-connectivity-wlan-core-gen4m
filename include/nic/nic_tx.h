@@ -1922,9 +1922,6 @@ uint32_t nicTxInitCmd(struct ADAPTER *prAdapter,
 uint32_t nicTxInitResetResource(struct ADAPTER *prAdapter);
 #endif
 
-u_int8_t nicTxProcessCmdDataPacket(struct ADAPTER *prAdapter,
-			       struct MSDU_INFO *prMsduInfo);
-
 uint32_t nicTxEnqueueMsdu(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 

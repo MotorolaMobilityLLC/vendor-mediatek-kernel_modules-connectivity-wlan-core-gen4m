@@ -125,9 +125,6 @@ void wlanTraceTxCmd(struct CMD_INFO *prCmd)
 
 		prCurCmd->u.rMgmtFrame.u2FrameCtl = prMgmt->u2FrameCtrl;
 		prCurCmd->u.rMgmtFrame.u2DurationID = prMgmt->u2Duration;
-	} else if (prCmd->eCmdType == COMMAND_TYPE_DATA_FRAME) {
-		prCurCmd->u.rDataFrame.u2EthType =
-				kalQueryPacketEtherType(prCmd->prPacket);
 	} else {
 		prCurCmd->u.rCmd.ucCID = prCmd->ucCID;
 		prCurCmd->u.rCmd.ucCmdSeqNum = prCmd->ucCmdSeqNum;

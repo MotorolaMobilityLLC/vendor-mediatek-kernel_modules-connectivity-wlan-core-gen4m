@@ -1924,17 +1924,6 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER
 			eFrameAction = FRAME_ACTION_TX_PKT;
 			break;
 
-		case COMMAND_TYPE_DATA_FRAME:
-			/* inquire with QM */
-			prMsduInfo = prCmdInfo->prMsduInfo;
-
-			eFrameAction = qmGetFrameAction(prAdapter,
-						prMsduInfo->ucBssIndex,
-						prMsduInfo->ucStaRecIndex,
-						NULL, FRAME_TYPE_802_1X,
-						prCmdInfo->u2InfoBufLen);
-			break;
-
 		case COMMAND_TYPE_MANAGEMENT_FRAME:
 			/* inquire with QM */
 			prMsduInfo = prCmdInfo->prMsduInfo;
@@ -2018,9 +2007,7 @@ uint32_t wlanProcessCommandQueue(struct ADAPTER
 				 * request if no resource for true CMD.
 				 */
 				if (prCmdInfo->eCmdType !=
-					COMMAND_TYPE_MANAGEMENT_FRAME &&
-				    prCmdInfo->eCmdType !=
-					COMMAND_TYPE_DATA_FRAME)
+					COMMAND_TYPE_MANAGEMENT_FRAME)
 					break;
 			} else if (rStatus == WLAN_STATUS_PENDING) {
 				/* Do nothing */
@@ -2321,8 +2308,7 @@ uint32_t wlanSendCommandMthread(struct ADAPTER
 		 */
 		if (rStatus == WLAN_STATUS_SUCCESS) {
 			if (!prCmdInfo->fgSetQuery ||
-			    prCmdInfo->fgNeedResp ||
-			    prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
+			    prCmdInfo->fgNeedResp) {
 				rStatus = WLAN_STATUS_PENDING;
 			}
 		}
@@ -2966,21 +2952,10 @@ void wlanReleaseCommandEx(struct ADAPTER *prAdapter,
 		break;
 
 	case COMMAND_TYPE_MANAGEMENT_FRAME:
-	case COMMAND_TYPE_DATA_FRAME:
 		prMsduInfo = prCmdInfo->prMsduInfo;
 
-		if (prCmdInfo->eCmdType == COMMAND_TYPE_DATA_FRAME) {
-			kalCmdDataFrameSendComplete(prAdapter->prGlueInfo,
-						     prCmdInfo->prPacket,
-						     WLAN_STATUS_FAILURE);
-			/* Avoid skb multiple free */
-			prMsduInfo->prPacket = NULL;
-		}
-
 		DBGLOG(INIT, INFO,
-			"Free %s Frame: B[%u]W:P[%u:%u]TS[%u]STA[%u]RSP[%u]CS[%u]\n",
-		    prCmdInfo->eCmdType == COMMAND_TYPE_MANAGEMENT_FRAME ?
-				"MGMT" : "DATA",
+			"Free MGMT Frame: B[%u]W:P[%u:%u]TS[%u]STA[%u]RSP[%u]CS[%u]\n",
 		    prMsduInfo->ucBssIndex,
 		    prMsduInfo->ucWlanIndex,
 		    prMsduInfo->ucPID,
@@ -4111,131 +4086,6 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter,
 	}
 
 	return FALSE;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called to send data frame via firmware and queued
- *        into command queue
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- * @param prPacket       Pointer of native packet
- *
- * @return TRUE
- *         FALSE
- */
-/*----------------------------------------------------------------------------*/
-uint32_t wlanProcessCmdDataFrame(struct ADAPTER *prAdapter,
-				 void *prPacket)
-{
-	struct CMD_INFO *prCmdInfo;
-	struct MSDU_INFO *prMsduInfo;
-
-	ASSERT(prAdapter);
-	ASSERT(prPacket);
-
-	/* Allocate command buffer */
-	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, 0);
-	if (!prCmdInfo) {
-		DBGLOG_LIMITED(TX, INFO,
-			   "Failed to alloc CMD buffer for data frame!!\n");
-		return WLAN_STATUS_RESOURCES;
-	}
-
-	/* Get MSDU_INFO buffer */
-	prMsduInfo = cnmPktAlloc(prAdapter, 0);
-	if (!prMsduInfo) {
-		DBGLOG_LIMITED(TX, INFO,
-			   "Failed to alloc MSDU Info for data frame!!\n");
-
-		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-		return WLAN_STATUS_RESOURCES;
-	}
-
-	/* Fill-up MSDU_INFO and TxD*/
-	if (!nicTxFillMsduInfo(prAdapter, prMsduInfo, prPacket) ||
-		!nicTxProcessCmdDataPacket(prAdapter, prMsduInfo)) {
-
-		kalSendComplete(prAdapter->prGlueInfo, prPacket,
-				WLAN_STATUS_INVALID_PACKET);
-
-		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-		cnmPktFree(prAdapter, prMsduInfo);
-
-		return WLAN_STATUS_INVALID_PACKET;
-	}
-
-	/* Prepare command and enqueue */
-	prCmdInfo->eCmdType = COMMAND_TYPE_DATA_FRAME;
-	prCmdInfo->u2InfoBufLen = prMsduInfo->u2FrameLength;
-	prCmdInfo->pucInfoBuffer = NULL;
-	prCmdInfo->prPacket = prMsduInfo->prPacket;
-	prCmdInfo->prMsduInfo = prMsduInfo;
-	prCmdInfo->pfCmdDoneHandler = wlanCmdDataFrameTxDone;
-	prCmdInfo->pfCmdTimeoutHandler = wlanCmdDataFrameTxTimeout;
-	prCmdInfo->fgIsOid = FALSE;
-	prCmdInfo->fgSetQuery = TRUE;
-	prCmdInfo->fgNeedResp = FALSE;
-	prCmdInfo->ucCmdSeqNum = prMsduInfo->ucTxSeqNum;
-
-	DBGLOG(TX, INFO,
-		"EN-Q MSDU[0x%p] SEQ[%u] BSS[%u] STA[%u] Len[%u]to CMD Q\n",
-		prMsduInfo,
-		prMsduInfo->ucTxSeqNum,
-		prMsduInfo->ucBssIndex,
-		prMsduInfo->ucStaRecIndex,
-		prMsduInfo->u2FrameLength);
-
-	kalEnqueueCommand(prAdapter->prGlueInfo,
-			  (struct QUE_ENTRY *) prCmdInfo);
-
-	GLUE_SET_EVENT(prAdapter->prGlueInfo);
-
-	return WLAN_STATUS_SUCCESS;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called when command data frame has been
- *        sent to firmware
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- * @param prCmdInfo      Pointer of CMD_INFO_T
- * @param pucEventBuf    meaningless, only for API compatibility
- *
- * @return none
- */
-/*----------------------------------------------------------------------------*/
-void wlanCmdDataFrameTxDone(struct ADAPTER *prAdapter,
-			     struct CMD_INFO *prCmdInfo,
-			     uint8_t *pucEventBuf)
-{
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	kalCmdDataFrameSendComplete(prAdapter->prGlueInfo,
-				     prCmdInfo->prPacket, WLAN_STATUS_SUCCESS);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called when Command Data frame TX timeout
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- * @param prCmdInfo      Pointer of CMD_INFO_T
- *
- * @return none
- */
-/*----------------------------------------------------------------------------*/
-void wlanCmdDataFrameTxTimeout(struct ADAPTER *prAdapter,
-		struct CMD_INFO *prCmdInfo)
-{
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-
-	kalCmdDataFrameSendComplete(prAdapter->prGlueInfo,
-				     prCmdInfo->prPacket, WLAN_STATUS_FAILURE);
 }
 
 /*----------------------------------------------------------------------------*/

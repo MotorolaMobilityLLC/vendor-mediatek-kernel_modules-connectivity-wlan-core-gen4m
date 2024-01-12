@@ -1912,9 +1912,6 @@ void kalClearCmdDataFrames(struct GLUE_INFO *prGlueInfo);
 void kalClearCmdDataFramesByBssIdx(struct GLUE_INFO *prGlueInfo,
 				    uint8_t ucBssIndex);
 
-void kalCmdDataFrameSendComplete(struct GLUE_INFO *prGlueInfo,
-				  void *pvPacket, uint32_t rStatus);
-
 /*----------------------------------------------------------------------------*/
 /* Management Frame Clearance                                                 */
 /*----------------------------------------------------------------------------*/
