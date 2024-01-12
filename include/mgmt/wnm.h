@@ -131,11 +131,11 @@ void wnmTimingMeasUnitTest1(struct ADAPTER *prAdapter,
 			    uint8_t ucStaRecIndex);
 #endif
 
-#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
-void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
-
 void wnmSendBTMQueryFrame(struct ADAPTER *prAdapter,
 		 struct STA_RECORD *prStaRec, uint8_t ucQueryReason);
+
+#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
+void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
 void wnmSendBTMResponseFrame(struct ADAPTER *adapter,
 	struct STA_RECORD *staRec, PFN_TX_DONE_HANDLER pfTxDoneHandler,

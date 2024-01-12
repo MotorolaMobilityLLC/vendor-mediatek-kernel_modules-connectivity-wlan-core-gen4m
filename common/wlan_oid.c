@@ -15473,10 +15473,10 @@ uint32_t wlanoidSendBTMQuery(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		if (u4Ret)
 			DBGLOG(OID, WARN, "parse reason u4Ret=%d\n", u4Ret);
 	}
-#if CFG_SUPPORT_802_11V_BTM_OFFLOAD
+
 	wnmSendBTMQueryFrame(prAdapter, prStaRec, ucQueryReason);
 	DBGLOG(OID, INFO, "Send BTM Query, Reason %d\n", ucQueryReason);
-#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 
