@@ -13,7 +13,7 @@ void wlan_ring_init(void *base, unsigned int max_size, unsigned int read,
 	unsigned int write, struct wlan_ring *ring)
 {
 
-	KAL_WARN_ON(TRUE);
+	KAL_WARN_ON(!base);
 
 	/* making sure max_size is power of 2 */
 	KAL_WARN_ON(!max_size || (max_size & (max_size - 1)));
