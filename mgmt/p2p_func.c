@@ -1231,6 +1231,11 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 					"Drop Tx probe response due to resource issue\n");
 				fgDrop = TRUE;
 				break;
+			} else if (CFG_MTK_P2P_DROP_PROBE_DURING_CSA &&
+				   (prAdapter->rWifiVar.fgCsaInProgress ||
+				    prBssInfo->fgIsSwitchingChnl)) {
+				DBGLOG(P2P, INFO,
+					"Drop Tx probe response due to CSA\n");
 			} else if (p2pNeedSkipProbeResp(
 				prAdapter, prBssInfo)) {
 				fgDrop = TRUE;
