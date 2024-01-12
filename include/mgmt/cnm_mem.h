@@ -55,6 +55,8 @@
 #define MGT_BUFFER_SIZE		(MAX_NUM_OF_BUF_BLOCKS * MGT_BUF_BLOCK_SIZE)
 #define MSG_BUFFER_SIZE		(MAX_NUM_OF_BUF_BLOCKS * MSG_BUF_BLOCK_SIZE)
 
+#define ANY_BSS_INDEX			0xFF
+
 /* STA_REC related definitions */
 #define STA_REC_INDEX_BMCAST		0xFF
 #define STA_REC_INDEX_NOT_FOUND		0xFE
@@ -649,7 +651,7 @@ struct STA_RECORD {
 	uint64_t u8TotalRxPkts;
 	uint64_t u8GetDataRateTime;
 #endif
-	/* When this STA_REC is in use, set to TRUE. */
+	/* When this STA_REC called qmActivateStaRec, set to TRUE. */
 	u_int8_t fgIsValid;
 
 	/* TX key is ready */

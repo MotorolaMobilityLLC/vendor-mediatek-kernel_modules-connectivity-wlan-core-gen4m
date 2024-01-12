@@ -5896,8 +5896,7 @@ uint32_t
 updateStaStats(struct ADAPTER *prAdapter,
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics)
 {
-	struct STA_RECORD *prStaRec, *prTempStaRec;
-	uint8_t ucStaRecIdx;
+	struct STA_RECORD *prStaRec;
 	struct QUE_MGT *prQM;
 	uint8_t ucIdx;
 	enum ENUM_WMM_ACI eAci;
@@ -5914,22 +5913,10 @@ updateStaStats(struct ADAPTER *prAdapter,
 #endif
 
 	/* 4 2. Get StaRec by MAC address */
-	prStaRec = NULL;
+	prStaRec = cnmGetStaRecByAddress(prAdapter, ANY_BSS_INDEX,
+					 prQueryStaStatistics->aucMacAddr);
 
-	for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
-	     ucStaRecIdx++) {
-		prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
-		if (prTempStaRec->fgIsValid &&
-		    prTempStaRec->fgIsInUse) {
-			if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-			    prQueryStaStatistics->aucMacAddr)) {
-				prStaRec = prTempStaRec;
-				break;
-			}
-		}
-	}
-
-	if (!prStaRec)
+	if (!prStaRec || !prStaRec->fgIsValid)
 		return WLAN_STATUS_INVALID_DATA;
 
 	prQueryStaStatistics->u4Flag |= BIT(0);
@@ -6064,7 +6051,6 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 		       uint32_t *pu4QueryInfoLen,
 		       u_int8_t fgIsOid)
 {
-	uint8_t ucStaRecIdx;
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 	struct CMD_GET_STA_STATISTICS rQueryCmdStaStatistics = {0};
@@ -6076,9 +6062,7 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_NOT_SUPPORTED;
 
 	do {
-		struct STA_RECORD *prStaRec, *prTempStaRec;
-
-		prStaRec = NULL;
+		struct STA_RECORD *prStaRec;
 
 		ASSERT(pvQueryBuffer);
 
@@ -6105,20 +6089,10 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 		if (rResult != WLAN_STATUS_SUCCESS)
 			break;
 
-		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
-		     ucStaRecIdx++) {
-			prTempStaRec = &(prAdapter->arStaRec[ucStaRecIdx]);
-			if (prTempStaRec->fgIsValid &&
-			    prTempStaRec->fgIsInUse) {
-				if (EQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-				    prQueryStaStatistics->aucMacAddr)) {
-					prStaRec = prTempStaRec;
-					break;
-				}
-			}
-		}
+		prStaRec = cnmGetStaRecByAddress(prAdapter, ANY_BSS_INDEX,
+					prQueryStaStatistics->aucMacAddr);
 
-		if (!prStaRec)
+		if (!prStaRec || !prStaRec->fgIsValid)
 			return WLAN_STATUS_INVALID_DATA;
 
 		/* 4 6. Ensure FW supports get station link status */
@@ -6270,8 +6244,8 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 
 	uint8_t *buf;
 	struct BSS_INFO *prBssInfo;
-	struct STA_RECORD *prStaRec, *prTempStaRec;
-	uint8_t i, ucStaRecIdx;
+	struct STA_RECORD *prStaRec;
+	uint8_t i;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 
 	uni_cmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, cmd_len);
@@ -6298,31 +6272,17 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 
 	/* UNI_CMD_GET_STATISTICS_TAG_STA for connected AIS BSS */
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		prStaRec = NULL;
-
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 		if (!prBssInfo || !IS_BSS_AIS(prBssInfo) ||
 			kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 				i) != MEDIA_STATE_CONNECTED)
 			continue;
 
-		prQueryStaStatistics =
-			&prAdapter->rQueryStaStatistics[i];
-		for (ucStaRecIdx = 0; ucStaRecIdx < CFG_STA_REC_NUM;
-			ucStaRecIdx++) {
-			prTempStaRec = &(
-				prAdapter->arStaRec[ucStaRecIdx]);
-			if (!prTempStaRec->fgIsValid ||
-			    !prTempStaRec->fgIsInUse ||
-			    UNEQUAL_MAC_ADDR(prTempStaRec->aucMacAddr,
-				prQueryStaStatistics->aucMacAddr))
-				continue;
+		prQueryStaStatistics = &prAdapter->rQueryStaStatistics[i];
 
-			prStaRec = prTempStaRec;
-			break;
-
-		}
-		if (!prStaRec)
+		prStaRec = cnmGetStaRecByAddress(prAdapter, ANY_BSS_INDEX,
+					prQueryStaStatistics->aucMacAddr);
+		if (!prStaRec || !prStaRec->fgIsValid)
 			continue;
 
 		staStatsTag = (struct UNI_CMD_STA_STATISTICS *) buf;
