@@ -1061,16 +1061,38 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 #endif /*end of CFG_SUPPORT_CONNINFRA == 1*/
 	ret = request_irq(prHifInfo->u4IrqId, mtk_axi_interrupt, IRQF_SHARED,
 			  prNetDevice->name, prGlueInfo);
-	if (ret != 0)
-		DBGLOG(INIT, INFO,
-			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
+	if (ret != 0) {
+		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
+				prHifInfo->u4IrqId, ret);
+		goto exit;
+	}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	ret = enable_irq_wake(prHifInfo->u4IrqId);
+	if (ret) {
+		DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
+				prHifInfo->u4IrqId, ret);
+		goto exit;
+	}
+#endif
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = request_irq(prHifInfo->u4IrqId_1, mtk_sw_interrupt, IRQF_SHARED,
 			  prNetDevice->name, prGlueInfo);
-	if (ret != 0)
-		DBGLOG(INIT, INFO,
-			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
+	if (ret != 0) {
+		DBGLOG(INIT, INFO, "request_irq(%u) ERROR(%d)\n",
+				prHifInfo->u4IrqId_1, ret);
+		goto exit;
+	}
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	ret = enable_irq_wake(prHifInfo->u4IrqId_1);
+	if (ret) {
+		DBGLOG(INIT, INFO, "enable_irq_wake(%u) ERROR(%d)\n",
+				prHifInfo->u4IrqId_1, ret);
+		goto exit;
+	}
 #endif
+#endif
+
+exit:
 	return ret;
 }
 
