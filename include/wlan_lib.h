@@ -1595,6 +1595,16 @@ enum CHAN_FLAGS {
 	CHAN_NO_10MHZ,
 };
 
+/* Consistent order with delayTypeChar */
+enum ENUM_AVERAGE_TX_DELAY_TYPE {
+	DRIVER_TX_DELAY,
+	CONNSYS_TX_DELAY,
+	MAC_TX_DELAY,
+	AIR_TX_DELAY,
+	FAIL_CONNSYS_TX_DELAY,
+	MAX_AVERAGE_TX_DELAY_TYPE,
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

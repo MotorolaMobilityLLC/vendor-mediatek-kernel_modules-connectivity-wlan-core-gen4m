@@ -1606,7 +1606,11 @@ struct OID_HANDLER_RECORD {
  * @au4DriverLatency: Counter distribution of TX delay in Driver
  * @au4ConnsysLatency: Counter distribution of TX delay in Connsys
  * @au4MacLatency: Counter distribution of TX delay logged in MSDU report
+ * @au4AirLatency: Counter distribution of Air delay logged in MSDU report
  * @au4FailConnsysLatency: Counter distribution of TX Failed delay in Connsys
+ *
+ * @au8AccumulatedDelay: accumulated delay for counting average
+ *
  * @u4TxFail: Number of TX failed count
  */
 struct TX_LATENCY_STATS {
@@ -1615,13 +1619,24 @@ struct TX_LATENCY_STATS {
 	uint32_t au4MacLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4AirLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4FailConnsysLatency[BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+
+	uint64_t au8AccumulatedDelay[MAX_AVERAGE_TX_DELAY_TYPE][BSSID_NUM];
+
 	uint32_t u4TxFail;
+};
+
+/**
+ * A 2-dimentional array storing calculated TX avearge values
+ */
+struct TX_LATENCY_AVERAGE {
+	uint32_t au4AverageTxDelay[MAX_AVERAGE_TX_DELAY_TYPE][BSSID_NUM + 1];
 };
 
 /**
  * struct TX_LATENCY_REPORT_STATS - TX latency for reporting
  * @rCounting: Continuous counting counters of each TX delay metrics
  * @rReported: Reported counters of each TX delay metrics
+ * @rTxAverage: Store TX average for returning by function call
  * @u4ContinuousTxFail: Continuous TX fail monitor abnormal TX fail cases
  * @fgTxLatencyEnabled: A on/off switch controlling the reporting mechanism
  */
@@ -1632,6 +1647,7 @@ struct TX_LATENCY_REPORT_STATS {
 	struct TX_LATENCY_STATS rReported4SccB;
 	struct TX_LATENCY_STATS rDiff;
 #endif
+	struct TX_LATENCY_AVERAGE rAverage;
 	uint32_t u4ContinuousTxFail;
 	u_int8_t fgTxLatencyEnabled;
 };

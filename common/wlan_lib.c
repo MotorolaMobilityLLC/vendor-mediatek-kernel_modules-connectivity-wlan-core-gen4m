@@ -10123,11 +10123,16 @@ void wlanCountTxDelayOverLimit(struct ADAPTER *prAdapter,
 static void halAddDriverLatencyCount(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, uint32_t u4DriverLatency)
 {
+	struct TX_LATENCY_STATS *prCounting;
+	uint32_t *pDriverDelay;
 	uint32_t *pMaxDriverDelay = prAdapter->rWifiVar.au4DriverTxDelayMax;
-	uint32_t *pDriverDelay =
-		prAdapter->rMsduReportStats.rCounting.au4DriverLatency
-							[ucBssIndex];
-	int i;
+	uint8_t i;
+
+	prCounting = &prAdapter->rMsduReportStats.rCounting;
+	prCounting->au8AccumulatedDelay[DRIVER_TX_DELAY][ucBssIndex] +=
+					u4DriverLatency;
+
+	pDriverDelay = prCounting->au4DriverLatency[ucBssIndex];
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
 		if (u4DriverLatency <= *pMaxDriverDelay++) {
