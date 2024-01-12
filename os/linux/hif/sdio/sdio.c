@@ -427,23 +427,25 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	const char *func_id;
 	struct sdio_func *func;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	uint8_t drv_own_fail = FALSE;
 
 	DBGLOG(HAL, STATE, "==>\n");
 
 	func = dev_to_sdio_func(pDev);
 	prGlueInfo = sdio_get_drvdata(func);
+	prAdapter = prGlueInfo->prAdapter;
 
 	DBGLOG(REQ, STATE, "Wow:%d, WowEnable:%d, state:%d\n",
-		prGlueInfo->prAdapter->rWifiVar.ucWow,
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable,
+		prAdapter->rWifiVar.ucWow,
+		prAdapter->rWowCtrl.fgWowEnable,
 		kalGetMediaStateIndicated(prGlueInfo));
 
 	/* 1) wifi cfg "Wow" is true
 	*  2) wow is enable
 	*  3) WIfI connected => execute WOW flow
 	*/
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable &&
+	if (prAdapter->rWifiVar.ucWow && prAdapter->rWowCtrl.fgWowEnable &&
 		(kalGetMediaStateIndicated(prGlueInfo) ==
 		MEDIA_STATE_CONNECTED)) {
 		DBGLOG(HAL, STATE, "enter WOW flow\n");
@@ -456,25 +458,35 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	*  1. The other unfinished ownership handshakes
 	*  2. FW own back
 	*/
-	while (1) {
-		if (prGlueInfo->prAdapter->u4PwrCtrlBlockCnt == 0
-				&& prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
+	while (wait < 100) {
+		if ((prAdapter->u4PwrCtrlBlockCnt == 0) &&
+		    (prAdapter->fgIsFwOwn == TRUE) &&
+		    (drv_own_fail == FALSE)) {
 			DBGLOG(HAL, STATE, "************************\n");
-			DBGLOG(HAL, STATE, "* Entered SDIO Supsend *\n");
+			DBGLOG(HAL, STATE, "* Entered SDIO Suspend *\n");
 			DBGLOG(HAL, STATE, "************************\n");
 			DBGLOG(HAL, INFO, "wait = %d\n\n", wait);
 			break;
 		}
 
-		ACQUIRE_POWER_CONTROL_FROM_PM(prGlueInfo->prAdapter);
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		/* Prevent that suspend without FW Own:
+		 * Set Drv own has failed, and then Set FW Own is skipped
+		 */
+		if (prAdapter->fgIsFwOwn == FALSE)
+			drv_own_fail = FALSE;
+		else
+			drv_own_fail = TRUE;
+		/* For single core CPU, let hif_thread can be completed */
 		kalMsleep(10);
-		RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 
-		if (wait > 100) {
-			DBGLOG(HAL, ERROR, "Timeout !!\n");
-			return -EAGAIN;
-		}
 		wait++;
+	}
+
+	if (wait >= 100) {
+		DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
+		return -EAGAIN;
 	}
 
 	pm_caps = sdio_get_host_pm_caps(func);
@@ -490,8 +502,8 @@ static int mtk_sdio_pm_suspend(struct device *pDev)
 	}
 
 	/* If wow enable, ask kernel accept SDIO IRQ in suspend mode */
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow &&
-		prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
+	if (prAdapter->rWifiVar.ucWow &&
+		prAdapter->rWowCtrl.fgWowEnable) {
 		set_flag = MMC_PM_WAKE_SDIO_IRQ;
 		ret = sdio_set_host_pm_flags(func, set_flag);
 		if (ret) {

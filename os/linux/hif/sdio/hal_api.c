@@ -376,10 +376,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 
 	ASSERT(prAdapter);
 
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
 	if (prAdapter->fgIsFwOwn == FALSE)
-		return fgStatus;
+		goto unlock;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
@@ -552,8 +554,12 @@ u_int8_t halSetDriverOwn(IN struct ADAPTER *prAdapter)
 				(kalGetTimeTick() - u4CurrTick) : (kalGetTimeTick() + (~u4CurrTick)));
 	}
 #endif
+
 	DBGLOG(NIC, INFO, "DRIVER OWN %d, %d, DSLP %s, count %d\n",
 		u4DriverOwnTime, u4Cr4ReadyTime, ((j == 0x77889901)?"1":"0"), i);
+
+unlock:
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 
 	return fgStatus;
 }
@@ -574,8 +580,10 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	ASSERT(prAdapter);
-
 	ASSERT(prAdapter->u4PwrCtrlBlockCnt != 0);
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_SET_OWN);
+
 	/* Decrease Block to Enter Low Power Semaphore count */
 	GLUE_DEC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
 
@@ -584,20 +592,20 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 	if (prAdapter->u4PwrCtrlBlockCnt != 0) {
 		DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %d\n",
 			prAdapter->u4PwrCtrlBlockCnt);
-		return;
+		goto unlock;
 	}
 
 	if (prHifInfo->fgForceFwOwn == FALSE
 		&& prAdapter->fgWiFiInSleepyState == FALSE)
-		return;
+		goto unlock;
 
 	if (prAdapter->fgIsFwOwn == TRUE)
-		return;
+		goto unlock;
 
 	if ((nicProcessIST(prAdapter) != WLAN_STATUS_NOT_INDICATING) && !nicSerIsWaitingReset(prAdapter)) {
 		DBGLOG(INIT, STATE, "FW OWN Skipped due to pending INT\n");
 		/* pending interrupts */
-		return;
+		goto unlock;
 	}
 
 	if (fgEnableGlobalInt) {
@@ -609,15 +617,15 @@ void halSetFWOwn(IN struct ADAPTER *prAdapter, IN u_int8_t fgEnableGlobalInt)
 			/* if set firmware own not successful (possibly pending interrupts), */
 			/* indicate an own clear event */
 			HAL_LP_OWN_CLR(prAdapter, &fgResult);
+		} else {
+			prAdapter->fgIsFwOwn = TRUE;
 
-			return;
+			DBGLOG(INIT, INFO, "FW OWN\n");
 		}
-
-		prAdapter->fgIsFwOwn = TRUE;
-
-		DBGLOG(INIT, INFO, "FW OWN\n");
 	}
 
+unlock:
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_SET_OWN);
 }
 
 void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
@@ -2042,6 +2050,11 @@ void halPrintFirmwareAssertInfo(IN struct ADAPTER *prAdapter)
 void halPrintMailbox(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4MailBoxStatus0, u4MailBoxStatus1;
+	uint8_t fgResult;
+
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+	if (fgResult != TRUE)
+		return;
 
 	halGetMailbox(prAdapter, 0, &u4MailBoxStatus0);
 	halGetMailbox(prAdapter, 1, &u4MailBoxStatus1);
@@ -2121,8 +2134,14 @@ struct SDIO_INT_LOG_T *halGetIntLog(IN struct ADAPTER *prAdapter, IN uint32_t u4
 void halProcessAbnormalInterrupt(IN struct ADAPTER *prAdapter)
 {
 	uint32_t u4Data = 0;
+	uint8_t fgResult;
 
-	HAL_MCR_RD(prAdapter, MCR_WASR, &u4Data);
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+	if (fgResult == TRUE) {
+		/* Need driver own */
+		HAL_MCR_RD(prAdapter, MCR_WASR, &u4Data);
+	}
+
 	halPollDbgCr(prAdapter, 5);
 	halPrintIntStatus(prAdapter);
 
@@ -2479,24 +2498,39 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 
 void halPollDbgCr(IN struct ADAPTER *prAdapter, IN uint32_t u4LoopCount)
 {
-	uint32_t au4Value[] = {MCR_WASR, MCR_WCIR, MCR_WHLPCR, MCR_WHIER, MCR_D2HRM0R, MCR_D2HRM1R};
+	uint32_t au4Value[] = {MCR_WCIR, MCR_WHLPCR, MCR_D2HRM2R};
+	uint32_t au4Value1[] = {MCR_WHIER, MCR_D2HRM0R, MCR_D2HRM1R};
 	uint32_t u4Loop = 0;
 	uint32_t u4Data = 0;
-	uint8_t i = 0;
+	uint8_t i = 0, fgResult;
 #if MTK_WCN_HIF_SDIO
 	uint8_t *pucCCR = (uint8_t *)&au4Value[0];
 	unsigned long cltCtx = prAdapter->prGlueInfo->rHifInfo.cltCtx;
 #endif
 
-	for (u4Loop = 0; u4Loop < u4LoopCount; u4Loop++) {
-		HAL_MCR_RD(prAdapter, MCR_SWPCDBGR, &u4Data);
-		DBGLOG(INIT, WARN, "SWPCDBGR 0x%08X\n", u4Data);
-	}
-
 	for (; i < sizeof(au4Value)/sizeof(uint32_t); i++)
 		HAL_MCR_RD(prAdapter, au4Value[i], &au4Value[i]);
-	DBGLOG(REQ, WARN, "WASR:0x%x, WCIR:0x%x, WHLPCR:0x%x, WHIER:0x%x, D2HRM0R:0x%x, D2HRM1R:0x%x\n",
-		au4Value[0], au4Value[1], au4Value[2], au4Value[3], au4Value[4], au4Value[5]);
+	DBGLOG(REQ, WARN, "MCR_WCIR:0x%x, MCR_WHLPCR:0x%x, MCR_D2HRM2R:0x%x\n",
+		au4Value[0], au4Value[1], au4Value[2]);
+
+	/* Need driver own */
+	HAL_LP_OWN_RD(prAdapter, &fgResult);
+	if (fgResult == TRUE) {
+		/* dump N9 programming counter */
+		for (u4Loop = 0; u4Loop < u4LoopCount; u4Loop++) {
+			HAL_MCR_RD(prAdapter, MCR_SWPCDBGR, &u4Data);
+			DBGLOG(INIT, WARN, "SWPCDBGR 0x%08X\n", u4Data);
+		}
+
+		/* dump others */
+		for (i = 0; i < sizeof(au4Value1)/sizeof(uint32_t); i++)
+			HAL_MCR_RD(prAdapter, au4Value1[i], &au4Value1[i]);
+
+		DBGLOG(REQ, WARN, "MCR_WHIER:0x%x, MCR_D2HRM0R:0x%x",
+			au4Value1[0], au4Value1[1]);
+		DBGLOG(REQ, WARN, "MCR_D2HRM1R:0x%x\n",
+			au4Value1[2]);
+	}
 
 #if MTK_WCN_HIF_SDIO
 	for (i = 0; i < 8; i++)

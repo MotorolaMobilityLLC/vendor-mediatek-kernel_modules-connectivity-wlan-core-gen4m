@@ -908,17 +908,20 @@ void wlanIST(IN struct ADAPTER *prAdapter)
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
-	u4Status = nicProcessIST(prAdapter);
-	if (u4Status != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, INFO, "Fail in nicProcessIST! status [%d]\n",
-		       u4Status);
+	if (prAdapter->fgIsFwOwn == FALSE) {
+		u4Status = nicProcessIST(prAdapter);
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, INFO, "Fail: nicProcessIST! status [%d]\n",
+			       u4Status);
 
 #if defined(CONFIG_ANDROID) && (CFG_ENABLE_WAKE_LOCK)
-	if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
-				 &prAdapter->prGlueInfo->rIntrWakeLock))
-		KAL_WAKE_UNLOCK(prAdapter,
-				&prAdapter->prGlueInfo->rIntrWakeLock);
+		if (KAL_WAKE_LOCK_ACTIVE(prAdapter,
+					 &prAdapter->prGlueInfo->rIntrWakeLock))
+			KAL_WAKE_UNLOCK(prAdapter,
+					&prAdapter->prGlueInfo->rIntrWakeLock);
 #endif
+	}
+
 	nicEnableInterrupt(prAdapter);
 
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
