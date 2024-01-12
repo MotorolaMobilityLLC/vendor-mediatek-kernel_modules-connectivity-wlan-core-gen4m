@@ -315,7 +315,8 @@ void mldGenerateAssocIE(
 	struct LINK *links;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
-	uint32_t offset, offset_sta, len;
+	uint32_t len;
+	int32_t offset, offset_sta;
 	uint8_t count = 0;
 	const uint8_t *eht;
 
@@ -324,6 +325,11 @@ void mldGenerateAssocIE(
 
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 	offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
+	if (offset < 0) {
+		DBGLOG(ML, WARN, "Unknown packet\n");
+		return;
+	}
+
 	len = prMsduInfo->u2FrameLength;
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
 	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
@@ -390,6 +396,10 @@ void mldGenerateAssocIE(
 			}
 
 			offset_sta = sortMsduPayloadOffset(prAdapter, msdu_sta);
+			if (offset_sta < 0) {
+				DBGLOG(ML, WARN, "Unknown packet\n");
+				return;
+			}
 			if (offset_sta != offset) {
 				DBGLOG(ML, WARN,
 					"Payload offset = %d, expected = %d\n",
@@ -446,7 +456,8 @@ void mldGenerateProbeRspIE(
 	struct MLD_BSS_INFO *mld_bssinfo;
 	struct LINK *links;
 	struct BSS_INFO *bss;
-	uint32_t offset, offset_sta, len;
+	uint32_t len;
+	int32_t offset, offset_sta;
 	uint8_t count = 0, *common = NULL, *cur = NULL;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
@@ -457,6 +468,11 @@ void mldGenerateProbeRspIE(
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 	offset = sortMsduPayloadOffset(prAdapter, prMsduInfo);
+	if (offset < 0) {
+		DBGLOG(ML, WARN, "Unknown packet\n");
+		return;
+	}
+
 	len = prMsduInfo->u2FrameLength;
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
 	frame_ctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
@@ -495,6 +511,10 @@ void mldGenerateProbeRspIE(
 			}
 
 			offset_sta = sortMsduPayloadOffset(prAdapter, msdu_sta);
+			if (offset_sta < 0) {
+				DBGLOG(ML, WARN, "Unknown packet\n");
+				return;
+			}
 			if (offset_sta != offset) {
 				DBGLOG(ML, WARN,
 					"Payload offset = %d, expected = %d\n",
@@ -2452,6 +2472,9 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 	size_t len;
 
 	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
+	if (padding < 0)
+		return -1;
+
 	mgmt = (struct WLAN_BEACON_FRAME *)prSrc->pvHeader;
 	ie = (uint8_t *)prSrc->pvHeader + padding;
 	len = prSrc->u2PacketLen - padding;
