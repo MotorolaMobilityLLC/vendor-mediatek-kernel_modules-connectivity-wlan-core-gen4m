@@ -1136,18 +1136,6 @@ void halWakeUpWiFi(IN struct ADAPTER *prAdapter)
 	u_int8_t fgResult;
 	uint8_t ucCount = 0;
 
-#if CFG_SUPPORT_PMIC_SPI_CLOCK_SWITCH
-	uint32_t u4Value = 0;
-	/*E1 PMIC clock workaround*/
-	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
-
-	if ((TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK & u4Value) == 0)
-		HAL_MCR_WR(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, (TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK|u4Value));
-	HAL_MCR_RD(prAdapter, TOP_CKGEN2_CR_PMIC_CK_MANUAL, &u4Value);
-	DBGLOG(INIT, INFO, "PMIC SPI clock switch = %s\n",
-		(TOP_CKGEN2_CR_PMIC_CK_MANUAL_MASK&u4Value)?"SUCCESS":"FAIL");
-#endif
-
 	DBGLOG(INIT, INFO, "Power on Wi-Fi....\n");
 
 	HAL_WIFI_FUNC_READY_CHECK(prAdapter, WIFI_FUNC_INIT_DONE, &fgResult);
