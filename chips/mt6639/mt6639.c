@@ -177,6 +177,9 @@ static void mt6639PcieHwControlVote(
 
 #if CFG_SUPPORT_PCIE_ASPM
 static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
+				u_int8_t fgWakeup);
 static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 #endif
 
@@ -570,6 +573,8 @@ struct BUS_INFO mt6639_bus_info = {
 	.hwControlVote = mt6639PcieHwControlVote,
 #if CFG_SUPPORT_PCIE_ASPM
 	.configPcieAspm = mt6639ConfigPcieAspm,
+	.updatePcieAspm = mt6639UpdatePcieAspm,
+	.keepPcieWakeup = mt6639KeepPcieWakeup,
 	.dumpPcieStatus = mt6639DumpPcieDateFlowStatus,
 #endif
 	.pdmaStop = asicConnac3xWfdmaStop,
@@ -2048,6 +2053,7 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t u4Val = 0;
+
 	if (fgEn) {
 		/* Restore original setting*/
 		HAL_MCR_WR(prGlueInfo->prAdapter,
@@ -2080,6 +2086,39 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
 			   PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR,
 			   u4Val);
 		DBGLOG(HAL, INFO, "Disable aspm L1.1/L1.2 0x%08x\n", u4Val);
+	}
+}
+
+static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (fgEn) {
+		prHifInfo->eNextPcieState = PCIE_STATE_L1_2;
+	} else {
+		if (prHifInfo->eNextPcieState != PCIE_STATE_L0)
+			prHifInfo->eNextPcieState = PCIE_STATE_L1;
+	}
+
+	if (prHifInfo->eCurPcieState != prHifInfo->eNextPcieState) {
+		if (prHifInfo->eNextPcieState == PCIE_STATE_L1_2)
+			mt6639ConfigPcieAspm(prGlueInfo, TRUE);
+		else
+			mt6639ConfigPcieAspm(prGlueInfo, FALSE);
+		prHifInfo->eCurPcieState = prHifInfo->eNextPcieState;
+	}
+}
+
+static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
+				u_int8_t fgWakeup)
+{
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+
+	if (fgWakeup) {
+		prHifInfo->eNextPcieState = PCIE_STATE_L0;
+	} else {
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+			prHifInfo->eNextPcieState = PCIE_STATE_L1;
 	}
 }
 
