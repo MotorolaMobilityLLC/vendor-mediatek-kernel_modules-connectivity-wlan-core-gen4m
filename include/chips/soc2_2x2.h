@@ -23,18 +23,19 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define SOC2_2X2_CHIP_ID                          (0x0001)
+#define SOC2_2X2_CHIP_ID			(0x0001)
 #define CONNAC_CHIP_ADIE_INFO			(0x6635)
-#define SOC2_2X2_SW_SYNC0                         CONN_CFG_ON_CONN_ON_MISC_ADDR
+#define SOC2_2X2_SW_SYNC0			CONN_CFG_ON_CONN_ON_MISC_ADDR
 #define SOC2_2X2_SW_SYNC0_RDY_OFFSET \
 	CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT
-#define SOC2_2X2_PATCH_START_ADDR                 (0x0001C000)
+#define SOC2_2X2_PATCH_START_ADDR		(0x0001C000)
 #define SOC2_2X2_TOP_CFG_BASE			NIC_CONNAC_CFG_BASE
-#define SOC2_2X2_TX_DESC_APPEND_LENGTH            32
-#define SOC2_2X2_RX_DESC_LENGTH                   20
-#define SOC2_2X2_RX_INIT_EVENT_LENGTH             8
-#define SOC2_2X2_RX_EVENT_HDR_LENGTH              12
-#define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00000200	/* for WPDWifi DLL */
+#define SOC2_2X2_TX_DESC_APPEND_LENGTH		32
+#define SOC2_2X2_RX_DESC_LENGTH			20
+#define SOC2_2X2_RX_INIT_EVENT_LENGTH		8
+#define SOC2_2X2_RX_EVENT_HDR_LENGTH		12
+#define MTK_CUSTOM_OID_INTERFACE_VERSION \
+	0x00000200 /* for WPDWifi DLL */
 #define MTK_EM_INTERFACE_VERSION		0x0001
 
 /*******************************************************************************

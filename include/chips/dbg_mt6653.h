@@ -34,11 +34,6 @@ struct dump_cr_set {
 	uint32_t value;
 };
 
-#if (CFG_SUPPORT_DEBUG_SOP == 1)
-u_int8_t mt6653_show_debug_sop_info(struct ADAPTER *ad,
-	uint8_t ucCase);
-#endif
-
 #if defined(_HIF_PCIE)
 u_int8_t mt6653_pcie_show_mcu_debug_info(struct ADAPTER *ad,
 	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,

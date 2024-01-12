@@ -55,10 +55,6 @@
 #include "fw_log_emi.h"
 #endif
 
-#if (CFG_SUPPORT_DEBUG_SOP == 1)
-#include "dbg_mt6653.h"
-#endif
-
 #include "wlan_pinctrl.h"
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -71,15 +67,6 @@
 
 #include "gl_coredump.h"
 
-#define CFG_SUPPORT_VCODE_VDFS 0
-
-#if (CFG_SUPPORT_VCODE_VDFS == 1)
-#include <linux/pm_qos.h>
-
-#include <linux/platform_device.h>
-#include <linux/regulator/consumer.h>
-#endif /*#ifndef CFG_SUPPORT_VCODE_VDFS*/
-
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -89,14 +76,6 @@
 *                                 M A C R O S
 ********************************************************************************
 */
-#define WM_RAM_TYPE_MOBILE			0
-#define WM_RAM_TYPE_CE				1
-
-#define IS_MOBILE_SEGMENT \
-		(CONFIG_WM_RAM_TYPE == WM_RAM_TYPE_MOBILE)
-
-#define IS_CE_SEGMENT \
-		(CONFIG_WM_RAM_TYPE == WM_RAM_TYPE_CE)
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -184,7 +163,6 @@ static uint32_t mt6653_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	enum ENUM_FW_LOG_CTRL_TYPE type);
 static int32_t mt6653_ccif_trigger_fw_assert(struct ADAPTER *ad);
 
-#if IS_MOBILE_SEGMENT
 static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6653_mcu_init(struct ADAPTER *ad);
 static void mt6653_mcu_deinit(struct ADAPTER *ad);
@@ -192,7 +170,6 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable);
 static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter);
-#endif
 #endif
 
 /*******************************************************************************
@@ -227,12 +204,13 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x58000000, 0x06000, 0x1000},  /* WFDMA PCIE1 MCU DMA0 (MEM_DMA) */
 	{0x59000000, 0x07000, 0x1000},  /* WFDMA PCIE1 MCU DMA1 */
 	{0x820c0000, 0x08000, 0x4000},  /* WF_UMAC_TOP (PLE) */
-	{0x820c8000, 0x0c000, 0x2000},  /* WF_UMAC_TOP (PSE) */
-	{0x820cc000, 0x0e000, 0x2000},  /* WF_UMAC_TOP (PP) */
-#if IS_MOBILE_SEGMENT
-	{0x74030000, 0x1d0000, 0x2000},  /* PCIe MAC */
+	{0x820c8000, 0x0c000, 0xA000},  /* WF_UMAC_TOP (PSE) */
+	{0x820cc000, 0x0e000, 0xE000},  /* WF_UMAC_TOP (PP) */
+	{0x83000000, 0x10000, 0x10000},  /* WF_PHY_MAP3 */
+#if (y == CFG_MTK_FPGA_PLATFORM)
+	{0x74030000, 0x10000, 0x2000}, /* PCIe MAC (conninfra remap) */
 #else
-	{0x74030000, 0x10000, 0x1000},  /* PCIe MAC */
+	{0x74030000, 0x1d0000, 0x2000}, /* PCIe MAC (cbtop remap) */
 #endif
 	{0x820e0000, 0x20000, 0x0400},  /* WF_LMAC_TOP BN0 (WF_CFG) */
 	{0x820e1000, 0x20400, 0x0200},  /* WF_LMAC_TOP BN0 (WF_TRB) */
@@ -250,7 +228,10 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x820ed000, 0x24800, 0x0800},  /* WF_LMAC_TOP BN0 (WF_MIB) */
 	{0x820ca000, 0x26000, 0x2000},  /* WF_LMAC_TOP BN0 (WF_MUCOP) */
 	{0x820d0000, 0x30000, 0x10000}, /* WF_LMAC_TOP (WF_WTBLON) */
-	{0x40000000, 0x70000, 0x10000}, /* WF_UMAC_SYSRAM */
+	{0x830a0000, 0x40000, 0x10000},  /* WF_PHY_MAP0 */
+	{0x83080000, 0x50000, 0x10000},  /* WF_PHY_MAP1 */
+	{0x83090000, 0x60000, 0x10000},  /* WF_PHY_MAP2 */
+	{0xe0400000, 0x70000, 0x10000}, /* WF_UMAC_SYSRAM */
 	{0x00400000, 0x80000, 0x10000}, /* WF_MCU_SYSRAM */
 	{0x00410000, 0x90000, 0x10000}, /* WF_MCU_SYSRAM (configure register) */
 	{0x820f0000, 0xa0000, 0x0400},  /* WF_LMAC_TOP BN1 (WF_CFG) */
@@ -265,16 +246,24 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x820fb000, 0xa4200, 0x0400},  /* WF_LMAC_TOP BN1 (WF_LPON) */
 	{0x820fc000, 0xa4600, 0x0200},  /* WF_LMAC_TOP BN1 (WF_INT) */
 	{0x820fd000, 0xa4800, 0x0800},  /* WF_LMAC_TOP BN1 (WF_MIB) */
-	{0x820c4000, 0xa8000, 0x4000},  /* WF_LMAC_TOP BN1 (WF_MUCOP) */
-	{0x820b0000, 0xae000, 0x1000},  /* [APB2] WFSYS_ON */
+	{0x820c4000, 0xa8000, 0x0400},  /* WF_LMAC_TOP BN1 (WF_UMTBL) */
+	{0x81030000, 0xae000, 0x4100},  /* [APB2] WFSYS_ON */
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
+	{0x81040000, 0xd0000, 0x1000}, /* WF_MCU_CFG_ON */
+	{0x81050000, 0xd1000, 0x1000}, /* WF_MCU_EINT */
+	{0x81060000, 0xd2000, 0x1000}, /* WF_MCU_GPT */
+	{0x81070000, 0xd3000, 0x1000}, /* WF_MCU_WDT */
+	{0x80010000, 0xd4000, 0x1000}, /* WF_AXIDMA */
+	{0x83010000, 0xe0000, 0x10000}, /* WF_PHY_MAP4 */
+	{0x88000000, 0xf0000, 0x10000}, /* WF_MCU_CFG_LS */
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
+	{0x70010000, 0x1c0000, 0x10000},
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
-	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
+	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x70000000, 0x1e0000, 0x9000},
 	{0x0, 0x0, 0x0} /* End */
 };
@@ -584,32 +573,10 @@ struct BUS_INFO mt6653_bus_info = {
 	.wfdmaAllocRxRing = mt6653WfdmaAllocRxRing,
 	.setupMcuEmiAddr = mt6653SetupMcuEmiAddr,
 #endif /*_HIF_PCIE || _HIF_AXI */
-#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.DmaShdlInit = mt6653DmashdlInit,
 #endif
-#if defined(_HIF_USB)
-	.prDmashdlCfg = &rMt6653DmashdlCfg,
-	.u4UdmaWlCfg_0_Addr = CONNAC3X_UDMA_WLCFG_0,
-	.u4UdmaWlCfg_1_Addr = CONNAC3X_UDMA_WLCFG_1,
-	.u4UdmaWlCfg_0 =
-	    (CONNAC3X_UDMA_WLCFG_0_WL_TX_EN(1) |
-	     CONNAC3X_UDMA_WLCFG_0_WL_RX_EN(1) |
-	     CONNAC3X_UDMA_WLCFG_0_WL_RX_MPSZ_PAD0(1) |
-	     CONNAC3X_UDMA_WLCFG_0_TICK_1US_EN(1)),
-	.u4UdmaTxQsel = CONNAC3X_UDMA_TX_QSEL,
-	.u4device_vender_request_in = DEVICE_VENDOR_REQUEST_IN_CONNAC2,
-	.u4device_vender_request_out = DEVICE_VENDOR_REQUEST_OUT_CONNAC2,
-	.u4SuspendVer = SUSPEND_V2,
-	.fgIsSupportWdtEp = TRUE,
-	.asicUsbResume = asicConnac3xUsbResume,
-	.asicUsbEventEpDetected = asicConnac3xUsbEventEpDetected,
-	.asicUsbRxByteCount = asicConnac3xUsbRxByteCount,
-	.asicUdmaRxFlush = asicConnac3xUdmaRxFlush,
-	.updateTxRingMaxQuota = mt6653UpdateDmashdlQuota,
-#if CFG_CHIP_RESET_SUPPORT
-	.asicUsbEpctlRstOpt = NULL,
-#endif
-#endif
+
 #if defined(_HIF_NONE)
 	/* for compiler need one entry */
 	.DmaShdlInit = NULL
@@ -626,10 +593,8 @@ struct FWDL_OPS_T mt6653_fw_dl_ops = {
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 	.constrcutIdxLogBin = mt6653_ConstructIdxLogBinName,
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
-#if defined(_HIF_PCIE) && IS_MOBILE_SEGMENT
+#if defined(_HIF_PCIE)
 	.downloadPatch = mt6653_wlanDownloadPatch,
-#else
-	.downloadPatch = wlanDownloadPatch,
 #endif
 	.downloadFirmware = wlanConnacFormatDownload,
 	.downloadByDynMemMap = NULL,
@@ -641,7 +606,7 @@ struct FWDL_OPS_T mt6653_fw_dl_ops = {
 #else
 	.phyAction = NULL,
 #endif
-#if defined(_HIF_PCIE) && IS_MOBILE_SEGMENT
+#if defined(_HIF_PCIE)
 	.mcu_init = mt6653_mcu_init,
 	.mcu_deinit = mt6653_mcu_deinit,
 #endif
@@ -675,7 +640,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 	.showMibInfo = connac3x_show_mib_info,
 	.showUmacWtblInfo = connac3x_show_umac_wtbl_info,
 	.showCsrInfo = NULL,
-#if defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB)
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.showDmaschInfo = connac3x_show_dmashdl_info,
 #endif
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -695,17 +660,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 	.show_wfdma_dbg_probe_info = mt6653_show_wfdma_dbg_probe_info,
 	.show_wfdma_wrapper_info = mt6653_show_wfdma_wrapper_info,
 	.dumpwfsyscpupcr = mt6653_dumpWfsyscpupcr,
-#if (CFG_SUPPORT_DEBUG_SOP == 0)
 	.dumpBusHangCr = mt6653_DumpBusHangCr,
-#endif
-#endif
-#if (CFG_SUPPORT_DEBUG_SOP == 1)
-	.show_debug_sop_info = mt6653_show_debug_sop_info,
-#if defined(_HIF_PCIE)
-	.show_mcu_debug_info = mt6653_pcie_show_mcu_debug_info,
-#elif defined(_HIF_USB)
-	.show_mcu_debug_info = mt6653_usb_show_mcu_debug_info,
-#endif
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	.get_rx_rate_info = mt6653_get_rx_rate_info,
@@ -792,11 +747,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.sw_ready_bits = WIFI_FUNC_NO_CR4_READY_BITS,
 	.sw_ready_bit_offset =
 		Connac3x_CONN_CFG_ON_CONN_ON_MISC_DRV_FM_STAT_SYNC_SHFT,
-#if defined(_HIF_USB)
-	.vdr_pwr_on = USB_VND_PWR_ON_ADDR,
-	.vdr_pwr_on_chk_bit = USB_VND_PWR_ON_ACK_BIT,
-	.is_need_check_vdr_pwr_on = FALSE,
-#endif
 	.patch_addr = MT6653_PATCH_START_ADDR,
 	.is_support_cr4 = FALSE,
 	.is_support_wacpu = FALSE,
@@ -827,11 +777,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
-#if IS_CE_SEGMENT
-	.downloadBufferBin = wlanConnac3XDownloadBufferBin,
-#else
+
 	.downloadBufferBin = NULL,
-#endif
 	.is_support_hw_amsdu = TRUE,
 	.is_support_nvram_fragment = TRUE,
 	.is_support_asic_lp = TRUE,
@@ -865,16 +812,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif
 
 	.ucTxPwrLimitBatchSize = 3,
-
-#if defined(_HIF_USB)
-	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
-	.asicUsbInit_ic_specific = NULL,
-	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADDR,
-	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
-	.dmashdlQuotaDecision = mt6653dmashdlQuotaDecision,
-#endif
 #if defined(_HIF_PCIE)
-#if IS_MOBILE_SEGMENT
 	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
 		BIT(CHIP_CAPA_FW_LOG_TIME_SYNC_BY_CCIF) |
 		BIT(CHIP_CAPA_XTAL_TRIM),
@@ -904,10 +842,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif
 		.path = ENUM_LOG_READ_POINTER_PATH_CCIF,
 	},
-#else
-	.chip_capability = BIT(CHIP_CAPA_FW_LOG_TIME_SYNC) |
-		BIT(CHIP_CAPA_XTAL_TRIM),
-#endif
 	.ccif_ops = &mt6653_ccif_ops,
 	.get_sw_interrupt_status = mt6653_get_sw_interrupt_status,
 #else
@@ -923,8 +857,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	/* owner set true when feature is ready. */
 	.fgIsSupportL0p5Reset = TRUE,
-#elif defined(_HIF_USB)
-	.fgIsSupportL0p5Reset = FALSE,
 #elif defined(_HIF_SDIO)
 	/* owner set true when feature is ready. */
 	.fgIsSupportL0p5Reset = FALSE,
@@ -938,110 +870,12 @@ struct mt66xx_hif_driver_data mt66xx_driver_data_mt6653 = {
 
 void mt6653_icapRiseVcoreClockRate(void)
 {
-
-#if (CFG_SUPPORT_VCODE_VDFS == 1)
-	int value = 0;
-
-#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
-	/* Implementation for kernel-5.4 */
-	struct mt66xx_hif_driver_data *prDriverData =
-		get_platform_driver_data();
-	struct mt66xx_chip_info *prChipInfo;
-	void *pdev;
-
-	prChipInfo = ((struct mt66xx_hif_driver_data *)prDriverData)
-		->chip_info;
-	pdev = (void *)prChipInfo->pdev;
-
-	dvfsrc_vcore_power = regulator_get(
-		&((struct platform_device *)pdev)->dev, "dvfsrc-vcore");
-
-	/* Enable VCore to 0.725 */
-	regulator_set_voltage(dvfsrc_vcore_power, 725000, INT_MAX);
-#else
-	/* init */
-	if (!pm_qos_request_active(&wifi_req))
-		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
-						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
-
-	/* update Vcore */
-	pm_qos_update_request(&wifi_req, 0);
-#endif
-
-	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate done\n");
-
-	/* Seq2: update clock rate sel bus clock to 213MHz */
-
-	/* 0x1801_2050[6:4]=3'b111 */
-	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
-	value |= 0x00000070;
-	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
-
-	/* Seq3: enable clock select sw mode */
-
-	/* 0x1801_2050[0]=1'b1 */
-	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
-	value |= 0x1;
-	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
-
-#else
 	DBGLOG(HAL, STATE, "icapRiseVcoreClockRate skip\n");
-#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
 }
 
 void mt6653_icapDownVcoreClockRate(void)
 {
-
-#if (CFG_SUPPORT_VCODE_VDFS == 1)
-	int value = 0;
-
-#if (KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
-	/* Implementation for kernel-5.4 */
-	struct mt66xx_chip_info *prChipInfo;
-	struct mt66xx_hif_driver_data *prDriverData =
-		get_platform_driver_data();
-	void *pdev;
-
-	prChipInfo = ((struct mt66xx_hif_driver_data *)prDriverData)
-		->chip_info;
-	pdev = (void *)prChipInfo->pdev;
-
-	dvfsrc_vcore_power = regulator_get(
-		&((struct platform_device *)pdev)->dev, "dvfsrc-vcore");
-
-	/* resume to default Vcore value */
-	regulator_set_voltage(dvfsrc_vcore_power, 575000, INT_MAX);
-#else
-	/*init*/
-	if (!pm_qos_request_active(&wifi_req))
-		pm_qos_add_request(&wifi_req, PM_QOS_VCORE_OPP,
-						PM_QOS_VCORE_OPP_DEFAULT_VALUE);
-
-	/*restore to default Vcore*/
-	pm_qos_update_request(&wifi_req,
-		PM_QOS_VCORE_OPP_DEFAULT_VALUE);
-#endif
-
-	/*disable VCore to normal setting*/
-	DBGLOG(HAL, STATE, "icapDownVcoreClockRate done!\n");
-
-	/* Seq2: update clock rate sel bus clock to default value */
-
-	/* 0x1801_2050[6:4]=3'b000 */
-	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
-	value &= ~(0x00000070);
-	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
-
-	/* Seq3: disble clock select sw mode */
-
-	/* 0x1801_2050[0]=1'b0 */
-	wf_ioremap_read(WF_CONN_INFA_BUS_CLOCK_RATE, &value);
-	value &= ~(0x1);
-	wf_ioremap_write(WF_CONN_INFA_BUS_CLOCK_RATE, value);
-
-#else
 	DBGLOG(HAL, STATE, "icapDownVcoreClockRate skip\n");
-#endif  /*#ifndef CFG_BUILD_X86_PLATFORM*/
 }
 
 static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
@@ -2265,7 +2099,6 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 	return TRUE;
 }
 
-#if IS_MOBILE_SEGMENT
 static u_int8_t mt6653_check_recovery_needed(struct ADAPTER *ad)
 {
 	uint32_t u4Value = 0;
@@ -2433,18 +2266,6 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
-static void set_cbinfra_remap(struct ADAPTER *ad)
-{
-	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
-
-	HAL_MCR_WR(ad,
-		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,
-		0x74037001);
-	HAL_MCR_WR(ad,
-		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
-		0x70007000);
-}
-
 static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
@@ -2457,8 +2278,6 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
-
-	set_cbinfra_remap(ad);
 
 	rStatus = mt6653_mcu_reinit(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
@@ -2606,10 +2425,12 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 		return -1;
 	}
 
-	kalDevRegWrite(
+	/* To Do */
+	/*kalDevRegWrite(
 		NULL,
 		CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_1_BA_ADDR,
 		0x18051803);
+	*/
 
 	kalMemSetIo(vir_addr, 0xFF, MCIF_EMI_MEMORY_SIZE);
 	writel(0x4D4D434D, vir_addr);
@@ -2699,40 +2520,30 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 
 	return status;
 }
-#endif /* IS_MOBILE_SEGMENT */
 #endif /* _HIF_PCIE */
 
 static uint32_t mt6653GetFlavorVer(uint8_t *flavor)
 {
 	uint32_t ret = WLAN_STATUS_FAILURE;
 	uint32_t u4StrLen = 0;
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
-	if (IS_MOBILE_SEGMENT) {
-		uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN] = {0};
-
-		if (kalGetFwFlavor(&aucFlavor[0]) == 1) {
-			u4StrLen = kalStrnLen(aucFlavor,
+	if (kalGetFwFlavor(&aucFlavor[0]) == 1) {
+		u4StrLen = kalStrnLen(aucFlavor,
 						CFG_FW_FLAVOR_MAX_LEN);
-			if (u4StrLen == 1) {
-				kalScnprintf(flavor,
+		if (u4StrLen == 1) {
+			kalScnprintf(flavor,
 					CFG_FW_FLAVOR_MAX_LEN,
 					"%u%s", CFG_WIFI_IP_SET, aucFlavor);
-			} else {
-				kalScnprintf(flavor,
+		} else {
+			kalScnprintf(flavor,
 					CFG_FW_FLAVOR_MAX_LEN,
 					"%s", aucFlavor);
-			}
-			ret = WLAN_STATUS_SUCCESS;
-		} else if (kalScnprintf(flavor,
+		}
+		ret = WLAN_STATUS_SUCCESS;
+	} else if (kalScnprintf(flavor,
 					CFG_FW_FLAVOR_MAX_LEN,
 					"1") > 0) {
-			ret = WLAN_STATUS_SUCCESS;
-		} else {
-			ret = WLAN_STATUS_FAILURE;
-		}
-	} else if (kalScnprintf(flavor,
-				CFG_FW_FLAVOR_MAX_LEN,
-				"2") > 0) {
 		ret = WLAN_STATUS_SUCCESS;
 	} else {
 		ret = WLAN_STATUS_FAILURE;
