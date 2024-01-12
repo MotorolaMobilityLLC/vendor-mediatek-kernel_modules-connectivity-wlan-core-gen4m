@@ -183,6 +183,7 @@ enum MTK_WIFI_VENDOR_SUB_COMMAND {
 	MTK_SUBCMD_NDP = 81,
 	MTK_SUBCMD_GET_USABLE_CHANNEL = 82,
 	MTK_SUBCMD_GET_CHIP_CAPABILITIES = 83,
+	MTK_SUBCMD_GET_CHIP_CONCURRENCY_MATRIX = 84,
 
 	MTK_SUBCMD_STRING_CMD = 0x2454,
 };
@@ -233,6 +234,7 @@ enum WIFI_ATTRIBUTE {
 	WIFI_ATTRIBUTE_ROAMING_WHITELIST_SSID,
 	WIFI_ATTRIBUTE_ROAMING_STATE,
 	WIFI_ATTRIBUTE_TX_POWER_SCENARIO,
+	WIFI_ATTRIBUTE_CONCURRENCY_MATRIX,
 	WIFI_ATTRIBUTE_MAX,
 };
 
@@ -564,6 +566,68 @@ enum WIFI_USABLE_CHANNEL_REQ_ATTRIBUTE {
 	WIFI_ATTRIBUTE_USABLE_CHANNEL_FILTER,
 	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX_SIZE,
 	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX
+};
+
+#define MAX_IFACE_COMBINATIONS 16
+#define MAX_IFACE_LIMITS 8
+
+struct wifi_iface_limit {
+	/* Max number of interfaces of same type */
+	uint32_t max_limit;
+
+	/* BIT mask of interfaces from wifi_interface_type */
+	uint32_t iface_mask;
+};
+
+struct wifi_iface_combination {
+	/* Maximum number of concurrent interfaces allowed in this
+	 * combination
+	 */
+	uint32_t max_ifaces;
+
+	/* Total number of interface limits in a combination */
+	uint32_t num_iface_limits;
+
+	/* Interface limits */
+	struct wifi_iface_limit iface_limits[MAX_IFACE_LIMITS];
+};
+
+struct wifi_iface_concurrency_matrix {
+	/* Total count of possible iface combinations */
+	uint32_t num_iface_combinations;
+
+	/* Interface combinations */
+	struct wifi_iface_combination iface_combinations[
+		MAX_IFACE_COMBINATIONS];
+};
+
+struct mtk_wifi_iface_combination {
+	/* Maximum number of concurrent interfaces allowed in this
+	 * combination
+	 */
+	uint32_t max_ifaces;
+
+	/* Total number of interface limits in a combination */
+	uint32_t num_iface_limits;
+
+	/* Interface limits */
+	struct wifi_iface_limit *iface_limits;
+};
+
+struct mtk_wifi_iface_concurrency_matrix {
+	/* Total count of possible iface combinations */
+	uint32_t num_iface_combinations;
+
+	/* Interface combinations */
+	struct mtk_wifi_iface_combination *iface_combinations;
+};
+
+enum wifi_interface_type {
+	WIFI_INTERFACE_TYPE_STA        = 0,
+	WIFI_INTERFACE_TYPE_AP         = 1,
+	WIFI_INTERFACE_TYPE_P2P        = 2,
+	WIFI_INTERFACE_TYPE_NAN        = 3,
+	WIFI_INTERFACE_TYPE_AP_BRIDGED = 4,
 };
 
 /*******************************************************************************
@@ -1535,6 +1599,9 @@ int mtk_cfg80211_vendor_get_features(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_chip_capabilities(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+
+int mtk_cfg80211_vendor_get_chip_concurrency_matrix(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
 
 int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
