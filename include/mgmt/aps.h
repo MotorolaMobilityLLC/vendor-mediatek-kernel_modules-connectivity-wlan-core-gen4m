@@ -17,7 +17,6 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
-
 struct AP_COLLECTION {
 	struct LINK_ENTRY rLinkEntry;
 	struct AP_COLLECTION *hnext; /* next entry in hash table list */

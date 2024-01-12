@@ -2060,7 +2060,9 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prMainBss;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct GL_WPA_INFO *prWpaInfo;
-
+#if CFG_SUPPORT_DBDC
+	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+#endif
 
 	prConnSettings = &prAisFsmInfo->rConnSettings;
 	prWpaInfo = &prAisFsmInfo->rWpaInfo;
@@ -2114,14 +2116,12 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 		prAisBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 
 #if CFG_SUPPORT_DBDC
-		/* DBDC decsion.may change OpNss */
-		cnmDbdcPreConnectionEnableDecision(
-			prAdapter,
+		CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 			prAisBssInfo->ucBssIndex,
 			prBssDesc->eBand,
 			prBssDesc->ucChannelNum,
 			prAisBssInfo->ucWmmQueSet);
-#endif /*CFG_SUPPORT_DBDC*/
+#endif
 		DBGLOG(AIS, INFO, "[%d] mac: " MACSTR ", band: %d, ch: %d, wmm: %d\n",
 			i,
 			MAC2STR(prBssDesc->aucBSSID),
@@ -2129,6 +2129,13 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->ucChannelNum,
 			prAisBssInfo->ucWmmQueSet);
 	}
+
+#if CFG_SUPPORT_DBDC
+	/* DBDC decsion.may change OpNss */
+	cnmDbdcPreConnectionEnableDecision(
+			prAdapter,
+			&rDbdcDecisionInfo);
+#endif /*CFG_SUPPORT_DBDC*/
 }
 
 uint8_t aisBssDescAllowed(struct ADAPTER *prAdapter,
@@ -3892,6 +3899,9 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct GL_WPA_INFO *prWpaInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
+#if CFG_SUPPORT_DBDC
+	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
+#endif
 
 	if (!prBssInfo || !prBssDesc)
 		return;
@@ -3931,12 +3941,15 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 
 #if CFG_SUPPORT_DBDC
 	/* DBDC decsion.may change OpNss */
-	cnmDbdcPreConnectionEnableDecision(
-		ad,
+	CNM_DBDC_ADD_DECISION_INFO(rDbdcDecisionInfo,
 		prBssInfo->ucBssIndex,
 		prBssDesc->eBand,
 		prBssDesc->ucChannelNum,
 		prBssInfo->ucWmmQueSet);
+
+	cnmDbdcPreConnectionEnableDecision(
+		ad,
+		&rDbdcDecisionInfo);
 #endif /*CFG_SUPPORT_DBDC*/
 }
 

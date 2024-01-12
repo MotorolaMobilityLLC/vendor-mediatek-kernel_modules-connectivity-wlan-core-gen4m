@@ -1007,6 +1007,18 @@ struct RF_CHANNEL_INFO {
 	u_int8_t fgDFS;
 };
 
+struct DBDC_DECISION_ELEM {
+	uint8_t ucBssIndex;
+	enum ENUM_BAND eRfBand;
+	uint8_t ucPrimaryChannel;
+	uint8_t ucWmmQueIndex;
+};
+
+struct DBDC_DECISION_INFO {
+	uint8_t ucLinkNum;
+	struct DBDC_DECISION_ELEM dbdcElem[MLD_LINK_MAX];
+};
+
 enum ENUM_PS_FORWARDING_TYPE {
 	PS_FORWARDING_TYPE_NON_PS = 0,
 	PS_FORWARDING_TYPE_DELIVERY_ENABLED,
