@@ -3,12 +3,6 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-/*! \file   debug_idx_log.c
- *    \brief  Functions that provide many rx-related functions
- *
- *    This file includes the functions used to process fw idx log
- */
-
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -430,7 +424,7 @@ uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 
 			aucFormat[0] = '%';
 			for (j = 1; (j < (prLogEntry->u4StrLen - i)) &&
-					(j < PARAM_SIZE); j++) {
+					(j < (PARAM_SIZE - 1)); j++) {
 				i4Ret = dbgCheckTransText(prLogPtr[i+j]);
 				if (i4Ret == 0) {
 					aucFormat[j] = prLogPtr[i+j];
