@@ -903,9 +903,24 @@ struct QUE *qmDetermineStaTxQueue(struct ADAPTER *prAdapter,
 				fgCheckACMAgain = TRUE;
 			}
 		} else {
-			ucQueIdx = TX_QUEUE_INDEX_NON_QOS;
-			ucTC = nicTxWmmTc2ResTc(prAdapter,
-				prMsduInfo->ucBssIndex, NET_TC_WMM_AC_BE_INDEX);
+#if CFG_NON_QOS_ARP_USE_QOS_TXQ_MAPPING
+			if (GLUE_TEST_PKT_FLAG(prMsduInfo->prPacket,
+				ENUM_PKT_ARP)) {
+				eAci = aucTid2ACI[prMsduInfo->ucUserPriority];
+				if (eAci < WMM_AC_INDEX_NUM) {
+					ucQueIdx = aucACI2TxQIdx[eAci];
+					ucTC = nicTxWmmTc2ResTc(prAdapter,
+						prMsduInfo->ucBssIndex, eAci);
+				}
+			} else {
+#endif
+				ucQueIdx = TX_QUEUE_INDEX_NON_QOS;
+				ucTC = nicTxWmmTc2ResTc(prAdapter,
+					prMsduInfo->ucBssIndex,
+					NET_TC_WMM_AC_BE_INDEX);
+#if CFG_NON_QOS_ARP_USE_QOS_TXQ_MAPPING
+			}
+#endif
 		}
 
 		if (prAdapter->rWifiVar.ucTcRestrict < TC_NUM) {
