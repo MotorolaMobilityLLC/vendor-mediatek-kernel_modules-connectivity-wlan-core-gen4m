@@ -144,6 +144,45 @@ static const TX_TC_TRAFFIC_SETTING_T arTcTrafficSettings[NET_TC_NUM] = {
 ********************************************************************************
 */
 
+static PUINT_8 apucTxResultStr[TX_RESULT_NUM] = {
+	(PUINT_8) DISP_STRING("SUCCESS"),		/* success */
+	(PUINT_8) DISP_STRING("LIFE_TO"),		/* life timeout */
+	(PUINT_8) DISP_STRING("RTS_ER"),		/* RTS error */
+	(PUINT_8) DISP_STRING("MPDU_ER"),		/* MPDU error */
+	(PUINT_8) DISP_STRING("AGE_TO"),		/* aging timeout */
+	(PUINT_8) DISP_STRING("FLUSHED"),		/* flushed */
+	(PUINT_8) DISP_STRING("BIP_ER"),		/* BIP error */
+	(PUINT_8) DISP_STRING("UNSPEC_ER"),		/* unspecified error */
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) NULL,
+	(PUINT_8) DISP_STRING("DP_IN_DRV"),		/* drop in driver */
+	(PUINT_8) DISP_STRING("DP_IN_FW"),		/* drop in FW */
+	(PUINT_8) DISP_STRING("QUE_CLR"),		/* queue clearance */
+	(PUINT_8) DISP_STRING("INACT_BSS")		/* inactive BSS */
+};
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -2700,14 +2739,15 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 	if (prTxDone->ucFlag & BIT(TXS_WITH_ADVANCED_INFO)) {
 		/* Tx Done with advanced info */
 		DBGLOG(NIC, INFO,
-			"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u] TID[%u] SN[%u] CNT[%u] RATE[0x%04x] Flush[%u]\n",
-			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq, prTxDone->ucStatus, prTxDone->ucTid,
-			prTxDone->u2SequenceNumber, prTxDone->ucTxCount, prTxDone->u2TxRate,
-			prTxDone->ucFlushReason);
+			"EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u] TID[%u] CNT[%u] Flush[%u]\n",
+			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq, prTxDone->ucStatus,
+			apucTxResultStr[prTxDone->ucStatus], prTxDone->u2SequenceNumber, prTxDone->ucTid,
+			prTxDone->ucTxCount, prTxDone->ucFlushReason);
 
 		if (prTxDone->ucFlag & BIT(TXS_IS_EXIST)) {
 			UINT_8 ucNss, ucStbc;
 			INT_8 icTxPwr;
+			PUINT_32 pu4RawTxs = (PUINT_32)&prTxDone->aucRawTxS[0];
 
 			ucNss = (prTxDone->u2TxRate & TX_DESC_NSTS_MASK) >> TX_DESC_NSTS_OFFSET;
 			ucNss += 1;
@@ -2716,9 +2756,9 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 			if (ucStbc)
 				ucNss /= 2;
 
-			DBGLOG(NIC, INFO, "||BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
-				apucBandwidt[prTxDone->ucBandwidth], ucNss, prTxDone->ucRateTableIdx,
-				prTxDone->ucRspRate);
+			DBGLOG(NIC, INFO, "||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
+				prTxDone->u2TxRate, apucBandwidt[prTxDone->ucBandwidth], ucNss,
+				prTxDone->ucRateTableIdx, prTxDone->ucRspRate);
 
 			icTxPwr = (INT_8)prTxDone->ucTxPower;
 			if (icTxPwr & BIT(6))
@@ -2731,10 +2771,16 @@ VOID nicTxProcessTxDoneEvent(IN P_ADAPTER_T prAdapter, IN P_WIFI_EVENT_T prEvent
 				prTxDone->u4AppliedFlag & BIT(TX_FRAME_EXP_BF) ? TRUE:FALSE,
 				icTxPwr / 2, icTxPwr & BIT(0) ? ".5" : "",
 				prTxDone->u4Timestamp, prTxDone->u4TxDelay);
+
+			DBGLOG(NIC, INFO, "TxS[%08x %08x %08x %08x %08x %08x %08x]\n",
+				*pu4RawTxs, *(pu4RawTxs + 1), *(pu4RawTxs + 2),
+				*(pu4RawTxs + 3), *(pu4RawTxs + 4), *(pu4RawTxs + 5),
+				*(pu4RawTxs + 6));
 		}
 	} else {
-		DBGLOG(NIC, INFO, "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u] SN[%u]\n",
-			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq, prTxDone->ucStatus, prTxDone->u2SequenceNumber);
+		DBGLOG(NIC, INFO, "EVENT_ID_TX_DONE WIDX:PID[%u:%u] Status[%u:%s] SN[%u]\n",
+			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq, prTxDone->ucStatus,
+			apucTxResultStr[prTxDone->ucStatus], prTxDone->u2SequenceNumber);
 	}
 
 	/* call related TX Done Handler */
