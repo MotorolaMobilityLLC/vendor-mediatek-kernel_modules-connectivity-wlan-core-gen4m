@@ -17008,6 +17008,11 @@ uint32_t wlanoidGetWifiType(struct ADAPTER *prAdapter,
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
 				kalGetNetDevPriv(prParamGetWifiType->prNetDev);
 
+	if (prNetDevPrivate == NULL) {
+		DBGLOG(OID, ERROR, "invalid prNetDevPrivate NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
 	ucBssIdx = prNetDevPrivate->ucBssIdx;
 	DBGLOG(OID, INFO, "bss index=%d\n", ucBssIdx);
 	kalMemZero(prParamGetWifiType->arWifiTypeName,
