@@ -1521,6 +1521,13 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		/* Release CNM channel */
 		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
+		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+			kalP2pNotifyStopApComplete(prAdapter,
+				prP2pBssInfo->u4PrivateData);
+		else
+			kalP2pNotifyDisconnComplete(prAdapter,
+				prP2pBssInfo->u4PrivateData);
+
 		/* Reset current OPMode */
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 		prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
@@ -1528,9 +1535,6 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 
 		/* Point StaRecOfAP to NULL when GC role stop Complete */
 		prP2pBssInfo->prStaRecOfAP = NULL;
-
-		kalP2pNotifyStopApComplete(prAdapter,
-				prP2pBssInfo->u4PrivateData);
 	} while (FALSE);
 
 }				/* p2pFuncStopComplete */

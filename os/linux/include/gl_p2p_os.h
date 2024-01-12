@@ -189,6 +189,8 @@ struct GL_P2P_INFO {
 
 	/* indicate caller thread for stop ap complete */
 	struct completion rStopApComp;
+	/* indicate caller thread for disconnection complete */
+	struct completion rDisconnComp;
 
 	enum ENUM_CHNL_SWITCH_POLICY eChnlSwitchPolicy;
 	u_int8_t fgChannelSwitchReq;

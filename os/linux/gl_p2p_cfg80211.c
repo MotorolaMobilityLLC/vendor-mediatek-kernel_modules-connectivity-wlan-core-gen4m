@@ -273,7 +273,6 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				ucBssIdx =
 					p2pRoleFsmInit(prGlueInfo->prAdapter,
 						u4Idx);
-				init_completion(&prP2pInfo->rStopApComp);
 				break;
 			}
 		}
@@ -709,34 +708,57 @@ error:
 	prAdapter->rP2PNetRegState = ENUM_NET_REG_STATE_REGISTERED;
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	if (i4Ret == WLAN_STATUS_SUCCESS) {
-		rStatus = kalIoctlByBssIdx(prGlueInfo,
-			wlanoidP2pDelIface, NULL, 0,
-			&u4SetInfoLen, u4Idx);
-		if (rStatus != WLAN_STATUS_SUCCESS)
-			DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
-		if (prAdapter->fgDelIface[u4Idx]) {
-			uint32_t waitRet = 0;
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		goto exit;
 
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+		wlanoidP2pDelIface, NULL, 0,
+		&u4SetInfoLen, u4Idx);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
+
+	if (prAdapter->fgDelIface[u4Idx]) {
+		uint32_t waitRet = 0;
+
+		if (wdev->iftype == NL80211_IFTYPE_P2P_CLIENT) {
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+			reinit_completion(&prP2pInfo->rDisconnComp);
+#else
+			prP2pInfo->rDisconnComp.done = 0;
+#endif
+			waitRet = wait_for_completion_timeout(
+				&prP2pInfo->rDisconnComp,
+				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+			if (!waitRet)
+				DBGLOG(P2P, WARN, "disconnect timeout.\n");
+			else
+				DBGLOG(P2P, INFO, "disconnect complete.\n");
+		} else {
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
 			reinit_completion(&prP2pInfo->rStopApComp);
+#else
+			prP2pInfo->rStopApComp.done = 0;
+#endif
 			waitRet = wait_for_completion_timeout(
 				&prP2pInfo->rStopApComp,
 				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
 			if (!waitRet)
 				DBGLOG(P2P, WARN,
-					"under deauth procedure, timeout\n");
+					"stop ap timeout\n");
 			else
 				DBGLOG(P2P, INFO,
-					"under deauth procedure, complete\n");
-			/* Avoid p2pRoleFsmUninit in txdone callback */
-			rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidP2pDelIfaceDone, NULL, 0,
-				&u4SetInfoLen, u4Idx);
-			if (rStatus != WLAN_STATUS_SUCCESS)
-				DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
+					"stop ap complete\n");
 		}
+
+		/* Avoid p2pRoleFsmUninit in txdone callback */
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
+			wlanoidP2pDelIfaceDone, NULL, 0,
+			&u4SetInfoLen, u4Idx);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
 	}
 
+exit:
 	return i4Ret;
 }				/* mtk_p2p_cfg80211_del_iface */
 
@@ -2309,6 +2331,7 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 			(struct MSG_P2P_STOP_AP *) NULL;
 	uint8_t ucRoleIdx = 0;
 	struct GL_P2P_INFO *prP2PInfo;
+	uint32_t waitRet = 0;
 
 	do {
 		if (wiphy == NULL)
@@ -2351,17 +2374,13 @@ int mtk_p2p_cfg80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 			(struct MSG_HDR *) prP2pStopApMsg,
 			MSG_SEND_METHOD_BUF);
 
-		if (1) { /* AP or GO */
-			uint32_t waitRet = 0;
-
-			waitRet = wait_for_completion_timeout(
-				&prP2PInfo->rStopApComp,
-				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
-			if (!waitRet)
-				DBGLOG(P2P, WARN, "timeout\n");
-			else
-				DBGLOG(P2P, INFO, "complete\n");
-		}
+		waitRet = wait_for_completion_timeout(
+			&prP2PInfo->rStopApComp,
+			MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+		if (!waitRet)
+			DBGLOG(P2P, WARN, "timeout\n");
+		else
+			DBGLOG(P2P, INFO, "complete\n");
 
 		i4Rslt = 0;
 	} while (FALSE);
@@ -3264,6 +3283,8 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy,
 	struct MSG_P2P_CONNECTION_ABORT *prDisconnMsg =
 		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
 	uint8_t aucBCAddr[] = BC_MAC_ADDR;
+	struct GL_P2P_INFO *prP2PInfo;
+	uint32_t waitRet = 0;
 	uint8_t ucRoleIdx = 0;
 
 	do {
@@ -3291,6 +3312,13 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy,
 			break;
 		}
 
+		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
+		reinit_completion(&prP2PInfo->rDisconnComp);
+#else
+		prP2PInfo->rDisconnComp.done = 0;
+#endif
+
 		prDisconnMsg->rMsgHdr.eMsgId = MID_MNY_P2P_CONNECTION_ABORT;
 		prDisconnMsg->ucRoleIdx = ucRoleIdx;
 		prDisconnMsg->u2ReasonCode = reason_code;
@@ -3301,6 +3329,13 @@ int mtk_p2p_cfg80211_disconnect(struct wiphy *wiphy,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prDisconnMsg,
 			MSG_SEND_METHOD_BUF);
+
+		waitRet = wait_for_completion_timeout(&prP2PInfo->rDisconnComp,
+				MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+		if (!waitRet)
+			DBGLOG(P2P, WARN, "timeout.\n");
+		else
+			DBGLOG(P2P, INFO, "complete.\n");
 
 		i4Rslt = 0;
 	} while (FALSE);
