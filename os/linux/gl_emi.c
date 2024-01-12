@@ -169,9 +169,9 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 	}
 #endif
 
-	DBGLOG(HAL, INFO, "type: %d, emi pa=0x%x va=0x%x size=0x%x\n",
+	DBGLOG(HAL, INFO, "type: %d, emi pa=0x%llx va=%p size=0x%x\n",
 		emi->type,
-		emi->pa,
+		(uint64_t)emi->pa,
 		emi->va,
 		emi->size);
 
@@ -190,9 +190,9 @@ void emi_mem_uninit(struct mt66xx_chip_info *chip, void *dev)
 	if (!emi->initialized)
 		return;
 
-	DBGLOG(HAL, INFO, "type: %d, emi pa=0x%x va=0x%x size=0x%x\n",
+	DBGLOG(HAL, INFO, "type: %d, emi pa=0x%llx va=%p size=0x%x\n",
 		emi->type,
-		emi->pa,
+		(uint64_t)emi->pa,
 		emi->va,
 		emi->size);
 
