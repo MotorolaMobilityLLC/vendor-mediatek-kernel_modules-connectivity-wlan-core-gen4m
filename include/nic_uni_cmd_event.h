@@ -1799,6 +1799,14 @@ struct UNI_CMD_SCAN_TAG_HANDLE {
 	PFN_UNI_CMD_SCAN_TAG_HANDLER pfHandler;
 };
 
+typedef uint32_t(*PFN_UNI_CMD_SCHED_SCAN_TAG_HANDLER) (IN struct ADAPTER
+	*ad, IN uint8_t *buf, IN struct CMD_SCHED_SCAN_REQ *cmd);
+
+struct UNI_CMD_SCHED_SCAN_TAG_HANDLE {
+	uint32_t u4Size;
+	PFN_UNI_CMD_SCHED_SCAN_TAG_HANDLER pfHandler;
+};
+
 enum ENUM_UNI_CMD_SCAN_TAG {
 	UNI_CMD_SCAN_TAG_SCAN_REQ             = 1,
 	UNI_CMD_SCAN_TAG_SCAN_CANCEL          = 2,
@@ -1855,7 +1863,6 @@ struct UNI_CMD_SCAN_BSSID {
 	uint8_t aucBssid[MAC_ADDR_LEN];
 	uint8_t ucBssidMatchCh;
 	uint8_t ucBssidMatchSsidInd;
-
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_CHANNEL_INFO {
@@ -1866,7 +1873,6 @@ struct UNI_CMD_SCAN_CHANNEL_INFO {
 	uint8_t ucChannelListNum;
 	uint8_t aucPadding[2];
 	uint8_t aucChnlInfoBuffer[0];
-
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_IE {
@@ -1876,7 +1882,6 @@ struct UNI_CMD_SCAN_IE {
 	uint16_t u2IELen;
 	uint8_t  aucPadding[2];
 	uint8_t  aucIEBuffer[0];  //depends on u2IELen
-
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_MISC {
@@ -1886,7 +1891,6 @@ struct UNI_CMD_SCAN_MISC {
 	uint8_t aucRandomMac[MAC_ADDR_LEN];
 	uint8_t ucShortSSIDNum;
 	uint8_t aucReserved[1];
-
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_SCHED_SCAN_REQ {
@@ -1906,7 +1910,6 @@ struct UNI_CMD_SCAN_SCHED_SCAN_ENABLE {
 
 	uint8_t  ucSchedScanAct;  //ENUM_SCHED_SCAN_ACT
 	uint8_t  aucReserved[3];
-
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_CMD_SCAN_SSID_MATCH_SETS {
@@ -3456,6 +3459,10 @@ uint32_t nicUniCmdNotSupport(struct ADAPTER *ad,
 uint32_t nicUniCmdScanReqV2(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdScanCancel(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSchedScanEnable(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSchedScanReq(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdBssActivateCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
