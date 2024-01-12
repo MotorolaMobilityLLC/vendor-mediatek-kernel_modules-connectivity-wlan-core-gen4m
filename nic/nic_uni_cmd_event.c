@@ -5762,8 +5762,8 @@ uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 						max_cmd_len, nicUniEventRfTestHandler,
 						nicUniCmdTimeoutCommon);
 			} else {
-				DBGLOG(NIC, WARN, "Unknown funcIdx rf test cmd = %d\n",
-					cmd->u.rRfATInfo);
+				DBGLOG(NIC, WARN, "Err Test cmd funcId=%d\n",
+					cmd->u.rRfATInfo.u4FuncIndex);
 			}
 			break;
 
