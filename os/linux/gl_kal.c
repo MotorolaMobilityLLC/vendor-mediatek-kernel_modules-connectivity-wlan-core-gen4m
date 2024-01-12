@@ -5455,6 +5455,12 @@ void kalIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
+		if (prGlueInfo->u4OsMgmtFrameFilter == 0) {
+			DBGLOG(AIS, WARN,
+				"The cfg80211 hasn't do mgmt register!\n");
+			break;
+		}
+
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(prGlueInfo->prDevHandler->ieee80211_ptr,
 			i4Freq,	/* in MHz */
