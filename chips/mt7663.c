@@ -145,6 +145,7 @@ PCIE_CHIP_CR_MAPPING mt7663_bus2chip_cr_mapping[] = {
 
 	{0x80020000, 0x000B0000, 0x00010000}, /* CONN_TOP_MISC_OFF */
 	{0x81020000, 0x000C0000, 0x00010000}, /* CONN_TOP_MISC_ON */
+	{0x7c030000, 0x000F0000, 0x00010000}, /* CONN_TOP_MISC_ON */
 
 	{0x000E0000, 0x000E0000, 0x00010000}, /* HOST_CSR */
 
@@ -160,6 +161,7 @@ BUS_INFO mt7663_bus_info = {
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
 	.fgCheckDriverOwnInt = FALSE,
+	.fgInitPCIeInt = TRUE,
 
 	.pdmaSetup = halConnacWpdmaConfig,
 	.lowPowerOwnRead = asicLowPowerOwnRead,

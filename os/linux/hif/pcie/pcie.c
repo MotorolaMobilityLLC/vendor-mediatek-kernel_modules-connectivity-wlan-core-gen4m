@@ -110,7 +110,7 @@ static const struct pci_device_id mtk_pci_ids[] = {
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7668},
 #endif /* MT7668 */
 #ifdef MT7663
-	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
+	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, NIC7663_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7663},
 #endif /* MT7663 */
 #ifdef CONNAC
@@ -453,6 +453,7 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 {
 	int ret = 0;
 
+	P_BUS_INFO prBusInfo;
 	struct net_device *prNetDevice = NULL;
 	P_GLUE_INFO_T prGlueInfo = NULL;
 	P_GL_HIF_INFO_T prHifInfo = NULL;
@@ -468,6 +469,8 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 	if (!prGlueInfo)
 		return -1;
 
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
 	prHifInfo = &prGlueInfo->rHifInfo;
 	pdev = prHifInfo->pdev;
 
@@ -480,6 +483,8 @@ INT_32 glBusSetIrq(PVOID pvData, PVOID pfnIsr, PVOID pvCookie)
 
 	if (ret != 0)
 		DBGLOG(INIT, INFO, "glBusSetIrq: request_irq  ERROR(%d)\n", ret);
+	else if (prBusInfo->fgInitPCIeInt)
+		HAL_MCR_WR(prGlueInfo->prAdapter, MT_PCIE_IRQ_ENABLE, 1);
 
 	return ret;
 }

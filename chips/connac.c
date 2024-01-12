@@ -176,6 +176,7 @@ BUS_INFO connac_bus_info = {
 	.tx_ring_cmd_idx = 15,
 	.tx_ring_data_idx = 0,
 	.fgCheckDriverOwnInt = FALSE,
+	.fgInitPCIeInt = FALSE,
 
 	.pdmaSetup = halConnacWpdmaConfig,
 	.lowPowerOwnRead = asicLowPowerOwnRead,
