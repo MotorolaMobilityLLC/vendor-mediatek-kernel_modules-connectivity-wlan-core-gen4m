@@ -37,15 +37,20 @@
 /* NAN Attribute Header Length */
 #define NAN_ATTR_HDR_LEN 3
 
-/* Service Protocol Types */
-#define NAN_SERVICE_PROTOCOL_TYPE_RESERVED 0
-#define NAN_SERVICE_PROTOCOL_TYPE_BONJOUR 1
-#define NAN_SERVICE_PROTOCOL_TYPE_GENERIC 2
+/* NAN 4.0 Table 58. Service Protocol Types */
+enum NAN_SERVICE_PROTOCOL_TYPES {
+	NAN_SERVICE_PROTOCOL_TYPE_RESERVED,
+	NAN_SERVICE_PROTOCOL_TYPE_BONJOUR,
+	NAN_SERVICE_PROTOCOL_TYPE_GENERIC,
+	NAN_SERVICE_PROTOCOL_TYPE_CSA_MATTER,
+	/* 4~255: Reserved */
+};
 
 /* NAN Service Name Hash Length */
 #define NAN_SERVICE_HASH_LENGTH 6
 
 /* NAN Attribute ID Definitions */
+/* NAN 4.0 Table 42. NAN attributes in NAN Beacon frame and NAN SDF */
 #define NAN_ATTR_ID_MASTER_INDICATION 0x00
 #define NAN_ATTR_ID_CLUSTER 0x01
 #define NAN_ATTR_ID_SERVICE_ID_LIST 0x02
@@ -96,6 +101,7 @@
 #define NAN_ATTR_ID_VENDOR_SPECIFIC 0xDD
 
 /* NAN Reason Code Field */
+/* NAN 4.0 Table 43. Reason Code field */
 #define NAN_REASON_CODE_RESERVED 0
 #define NAN_REASON_CODE_UNSPECIFIED 1
 #define NAN_REASON_CODE_RESOURCE_LIMITATION 2
@@ -109,6 +115,7 @@
 #define NAN_REASON_CODE_NDP_REJECTED 10
 #define NAN_REASON_CODE_NDL_UNACCEPTABLE 11
 #define NAN_REASON_CODE_RANGING_SCHEDULE_UNACCEPTABLE 12
+#define NAN_REASON_CODE_RANGING_BOOTSTRAPPING_REJECTED 13
 
 /* NAN NDP Attribute - Type and Status */
 #define NAN_ATTR_NDP_TYPE_MASK BITS(0, 3)
@@ -158,8 +165,11 @@
 #define NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT BIT(4)
 
 /* NAN NDPE Attribute - TLV Type */
-#define NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL 0x00
-#define NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO 0x01
+/* NAN 4.0 Table 89. List of TLV Types for the NDPE attribute */
+enum NAN_ATTR_NDPE_TLV_TYPES {
+	NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL,
+	NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO,
+};
 
 #define NAN_ATTR_NDPE_SERVINFO_SUB_ATTR_TRANSPORT_PORT 0x00
 #define NAN_ATTR_NDPE_SERVINFO_SUB_ATTR_PROTOCOL 0x01
@@ -403,16 +413,18 @@ enum NAN_NDP_ROLE {
  */
 
 /* NAN Information Header */
+/* NAN 4.0 Table 29. NAN IE format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_IE_T {
 	uint8_t ucId;
 	uint8_t ucLength;
 	uint8_t aucNanOui[VENDOR_OUI_LEN];
 	uint8_t ucNanOuiType;
-	uint8_t ucNanDetails[1];
+	uint8_t ucNanDetails[]; /* one or more NAN attribute */
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN Action Frame */
+/* NAN 4.0 Table 34. General format of NAN Action frame format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ACTION_FRAME_T {
 	/* action MAC header */
@@ -429,10 +441,11 @@ struct _NAN_ACTION_FRAME_T {
 	uint8_t aucOUI[VENDOR_OUI_LEN];
 	uint8_t ucOUItype;
 	uint8_t ucOUISubtype;
-	uint8_t aucInfoContent[1];
+	uint8_t aucInfoContent[];
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN SDF Action Frame */
+/* NAN 4.0 Table 32. NAN Service Discovery frame format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_SDF_FRAME_T {
 	/* action MAC header */
@@ -448,15 +461,16 @@ struct _NAN_SDF_FRAME_T {
 	uint8_t ucAction;
 	uint8_t aucOUI[VENDOR_OUI_LEN];
 	uint8_t ucOUItype;
-	uint8_t aucInfoContent[1];
+	uint8_t aucInfoContent[];
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute general format */
+/* NAN 4.0 Table 41. List of NAN attributes */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_HDR_T {
 	uint8_t ucAttrId;
 	uint16_t u2Length;
-	uint8_t aucAttrBody[1];
+	uint8_t aucAttrBody[]; /* NAN attribute specific information field */
 } __KAL_ATTRIB_PACKED__;
 
 /* NAN attribute definitions */
@@ -473,6 +487,7 @@ struct _NAN_ATTR_DEVICE_CAPABILITY_T {
 	uint8_t ucCapabilities;
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 82. NDP attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDP_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDP */
@@ -485,16 +500,18 @@ struct _NAN_ATTR_NDP_T {
 	uint8_t ucNDPControl;
 	uint8_t ucPublishID;	   /* optional */
 	uint8_t aucResponderNDI[6];    /*optional */
-	uint8_t aucNDPSpecificInfo[1]; /*to be defined*/
+	uint8_t aucNDPSpecificInfo[]; /*to be defined*/
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 88. General TLV format for the NDPE attribute */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_GENERAL_TLV_T {
 	uint8_t ucType;
 	uint16_t u2Length;
-	uint8_t aucValue[1];
+	uint8_t aucValue[];
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 90. IPv6 Link Local TLV format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T {
 	uint8_t ucType; /* NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL */
@@ -502,23 +519,26 @@ struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T {
 	uint8_t aucInterfaceId[8];
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 91. Service Info TLV format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_SVC_INFO_TLV_T {
 	uint8_t ucType; /* NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO */
 	uint16_t u2Length;
-	uint8_t aucOui[VENDOR_OUI_LEN]; /* others than NAN_OUI */
-	uint8_t aucBody[1];
+	uint8_t aucOui[VENDOR_OUI_LEN]; /* Vendor OUI */
+	uint8_t aucBody[];
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 92. Wi-Fi Alliance Service Info TLV format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T {
 	uint8_t ucType; /* NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO */
 	uint16_t u2Length;
-	uint8_t aucOui[VENDOR_OUI_LEN]; /* than NAN_OUI */
-	uint8_t ucServiceProtocolType;  /* NAN_SERVICE_PROTOCOL_TYPE_* */
-	uint8_t aucBody[2];
+	uint8_t aucOui[VENDOR_OUI_LEN]; /* WFA specific OUI, 0x50-6F-9A */
+	uint8_t ucServiceProtocolType;  /* enum NAN_SERVICE_PROTOCOL_TYPES */
+	uint8_t aucBody[];
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 86. NAN Data Path Extension attribute format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_NDPE_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_NDP_EXTENSION */
@@ -531,9 +551,15 @@ struct _NAN_ATTR_NDPE_T {
 	uint8_t ucNDPEControl;
 	uint8_t ucPublishID;	/* optional */
 	uint8_t aucResponderNDI[6]; /*optional */
-	uint8_t aucTLVList[1];      /*to be defined*/
+	uint8_t aucTLVList[];      /* TLV list as specified in struct
+				    * _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T, or
+				    * _NAN_ATTR_NDPE_SVC_INFO_TLV_T
+				    */
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 139. Vendor Specific attribute format
+ * TODO (different from standard defined structure)
+ */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_VENDOR_SPECIFIC_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_VENDOR_SPECIFIC */
@@ -541,7 +567,7 @@ struct _NAN_ATTR_VENDOR_SPECIFIC_T {
 	uint8_t aucOui[VENDOR_OUI_LEN]; /* NAN_OUI */
 	uint8_t ucVendorSpecificOuiType;
 	uint16_t u2SubAttrLength;
-	uint8_t aucVendorSpecificOuiData[1];      /*to be defined*/
+	uint8_t aucVendorSpecificOuiData[];      /*to be defined*/
 } __KAL_ATTRIB_PACKED__;
 
 
@@ -641,18 +667,20 @@ struct _NAN_ATTR_ELEMENT_CONTAINER_T {
 	uint8_t aucElements[];
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 121. Cipher Sutie attribute field format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_CIPHER_SUITE_ATTRIBUTE_T {
 	uint8_t ucCipherSuiteID;
 	uint8_t ucPublishID;
 } __KAL_ATTRIB_PACKED__;
 
+/* NAN 4.0 Table 122. Cipher Suite Information attribute (CSIA) field format */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_CIPHER_SUITE_INFO_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_CIPHER_SUITE_INFO */
 	uint16_t u2Length;
 	uint8_t ucCapabilities;
-	uint8_t aucCipherSuiteList[1]; /* NAN_CIPHER_SUITE_ATTRIBUTE_T */
+	uint8_t aucCipherSuiteList[]; /* struct _NAN_CIPHER_SUITE_ATTRIBUTE_T */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -678,17 +706,22 @@ struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T {
 	uint8_t aucRSNAKeyDescriptor[];
 } __KAL_ATTRIB_PACKED__;
 
-/** NAN 2.0 Table 82 */
+/* NAN 4.0 Table 98. Band/Channel Entries List field format for the NAN
+ * Availability attribute
+ */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_BAND_CHNL_LIST_T {
 	uint8_t ucType : 1;
 	uint8_t ucNonContiguous : 1;
 	uint8_t ucRsvd : 2;
 	uint8_t ucNumberOfEntry : 4;
-	uint8_t aucEntry[1];
+	uint8_t aucEntry[]; /* if ucType==0, Band entries;
+			     * if ucType==1, Channel entries as
+			     * struct _NAN_CHNL_ENTRY_T
+			     */
 } __KAL_ATTRIB_PACKED__;
 
-/** NAN 2.0 Table 84 */
+/* NAN 4.0 Table 100. Channel Entry format for the NAN Availability attribute */
 __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_CHNL_ENTRY_T {
 	uint8_t ucOperatingClass;

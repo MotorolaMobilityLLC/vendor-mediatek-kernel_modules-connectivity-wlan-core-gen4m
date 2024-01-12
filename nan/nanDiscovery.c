@@ -1196,9 +1196,9 @@ nanDiscUpdateSecContextInfoAttr(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	return rRetStatus;
 }
 
-uint32_t
-nanDiscUpdateCipherSuiteInfoAttr(struct ADAPTER *prAdapter,
-		uint8_t *pcuEvtBuf) {
+uint32_t nanDiscUpdateCipherSuiteInfoAttr(struct ADAPTER *prAdapter,
+					  uint8_t *pcuEvtBuf)
+{
 	uint8_t *pucPublishNmiAddr;
 	uint8_t *pucCipherSuiteInfoAttr;
 	struct _NAN_SCHED_EVENT_NAN_ATTR_T *prEventNanAttr;

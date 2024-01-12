@@ -1026,8 +1026,8 @@ nanRangingRequestTxDone(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t
-nanRangingRequestRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
+uint32_t nanRangingRequestRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
 	struct _NAN_RANGING_INFO_T *prRangingInfo;
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
 	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
@@ -1395,8 +1395,8 @@ nanRangingReportTxDone(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t
-nanRangingReportRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
+uint32_t nanRangingReportRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
 	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
 	struct _NAN_RANGING_REPORT_CMD rgrpt;
