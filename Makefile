@@ -782,8 +782,10 @@ CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_common.o
 
 ifeq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
 CHIPS_OBJS += $(CHIPS_CMM)cmm_asic_connac2x.o \
-              $(CHIPS_CMM)dbg_connac2x.o \
-              $(CHIPS_CMM)pre_cal.o
+              $(CHIPS_CMM)dbg_connac2x.o
+ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
+CHIPS_OBJS += $(CHIPS_CMM)pre_cal.o
+endif
 NIC_OBJS += $(NIC_DIR)nic_ext_cmd_event.o \
             $(NIC_DIR)nic_txd_v2.o \
             $(NIC_DIR)nic_rxd_v2.o

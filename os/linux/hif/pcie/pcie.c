@@ -173,12 +173,12 @@ static const struct pci_device_id mtk_pci_ids[] = {
 
 static const struct platform_device_id mtk_axi_ids[] = {
 	{	.name = "CONNAC",
-#ifdef BELLWETHER
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_bellwether},
-#endif /* BELLWETHER */
-#ifdef MT6639
-		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6639},
-#endif /* MT6639 */
+#if defined(BELLWETHER)
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_bellwether
+#elif defined(MT6639)
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt6639
+#endif
+	},
 
 	{ /* end: all zeroes */ },
 };

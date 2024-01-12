@@ -401,7 +401,9 @@ struct BUS_INFO soc7_0_bus_info = {
 	.pdmaSetup = soc7_0asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnablePlatformIRQ,
 	.disableInterrupt = asicConnac2xDisablePlatformIRQ,
+#if defined(_HIF_AXI)
 	.disableSwInterrupt = asicConnac2xDisablePlatformSwIRQ,
+#endif
 	.processTxInterrupt = soc7_0asicConnac2xProcessTxInterrupt,
 	.processRxInterrupt = soc7_0asicConnac2xProcessRxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
