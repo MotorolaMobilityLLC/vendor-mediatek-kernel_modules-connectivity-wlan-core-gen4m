@@ -3587,10 +3587,12 @@ void cnmOpModeCallbackDispatcher(
 	struct CNM_OPMODE_BSS_REQ *prReq;
 	enum ENUM_CNM_OPMODE_REQ_T eReqIdx;
 
-	if (prAdapter == NULL || ucBssIndex >= BSS_DEFAULT_NUM) {
+	ASSERT(prAdapter);
+	if (ucBssIndex >= BSS_DEFAULT_NUM) {
 		DBGLOG(CNM, WARN,
 			"CbOpMode, invalid,B[%d]\n",
 			ucBssIndex);
+		return;
 	}
 
 	/* Step 1. Run callback function */
@@ -3605,16 +3607,17 @@ void cnmOpModeCallbackDispatcher(
 		case CNM_OPMODE_REQ_DBDC:
 			cnmDbdcOpModeChangeDoneCallback(
 				prAdapter, ucBssIndex, fgSuccess);
+			break;
 		default:
-			DBGLOG(CNM, INFO,
-				"CbOpMode,%s,Run,%s,T:%u,R:%u,%s\n",
-				apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
-				apucCnmOpModeReq[prBssOpCtrl->rRunning.eRunReq],
-				prBssOpCtrl->rRunning.ucOpTxNss,
-				prBssOpCtrl->rRunning.ucOpRxNss,
-				fgSuccess ? "OK" : "FAIL");
 			break;
 		}
+		DBGLOG(CNM, INFO,
+			"CbOpMode,%s,Run,%s,T:%u,R:%u,%s\n",
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eRunReq],
+			prBssOpCtrl->rRunning.ucOpTxNss,
+			prBssOpCtrl->rRunning.ucOpRxNss,
+			fgSuccess ? "OK" : "FAIL");
 	}
 	prBssOpCtrl->rRunning.fgIsRunning = false;
 
@@ -3657,9 +3660,10 @@ cnmOpModeReqDispatcher(
 		DBGLOG(CNM, INFO,
 			"OpMode %s (Tx:%d,Rx:%d) is running %s, defer new request\n",
 			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
-			apucCnmOpModeReq[prBssOpCtrl->rRunning.eRunReq],
 			prBssOpCtrl->rRunning.ucOpTxNss,
-			prBssOpCtrl->rRunning.ucOpRxNss);
+			prBssOpCtrl->rRunning.ucOpRxNss,
+			apucCnmOpModeReq[prBssOpCtrl->rRunning.eRunReq]
+			);
 		return CNM_OPMODE_REQ_NUM;
 	}
 
@@ -3709,8 +3713,9 @@ cnmOpModeSetTRxNss(
 	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
 
+	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucHwBssIdNum ||
-		ucBssIndex > BSS_DEFAULT_NUM) {
+		ucBssIndex >= BSS_DEFAULT_NUM) {
 		DBGLOG(CNM, WARN, "SetOpMode invalid BSS[%d]\n", ucBssIndex);
 		return CNM_OPMODE_REQ_STATUS_INVALID_PARAM;
 	}
