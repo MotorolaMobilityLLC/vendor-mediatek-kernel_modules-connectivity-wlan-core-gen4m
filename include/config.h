@@ -798,6 +798,10 @@
 #define CFG_WIFI_IP_SET                         1
 #endif
 
+#ifndef CFG_WLAN_IMG_SUPPORT
+#define CFG_WLAN_IMG_SUPPORT                    0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of Bluetooth-over-WiFi (BT 3.0 + HS) support
  *------------------------------------------------------------------------------

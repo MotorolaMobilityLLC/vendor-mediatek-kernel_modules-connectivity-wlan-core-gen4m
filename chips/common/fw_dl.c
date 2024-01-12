@@ -497,8 +497,8 @@ uint32_t wlanDownloadEMISection(IN struct ADAPTER *prAdapter,
 	kalSetEmiMpuProtection(gConEmiPhyBaseFinal, false);
 	pucEmiBaseAddr = ioremap(gConEmiPhyBaseFinal, gConEmiSizeFinal);
 	DBGLOG_LIMITED(INIT, INFO,
-	       "EmiPhyBase:0x%llx offset:0x%x, ioremap region 0x%lX @ 0x%lX\n",
-	       (uint64_t)gConEmiPhyBaseFinal, u4Offset, gConEmiSizeFinal,
+	       "EmiPhyBase:0x%llx offset:0x%x len:0x%x, ioremap region 0x%lX @ 0x%lX\n",
+	       (uint64_t)gConEmiPhyBaseFinal, u4Offset, u4Len, gConEmiSizeFinal,
 	       pucEmiBaseAddr);
 	if (!pucEmiBaseAddr) {
 		DBGLOG(INIT, ERROR, "ioremap failed\n");
@@ -1258,6 +1258,52 @@ exit:
 	return u4Status;
 }
 
+#if CFG_WLAN_IMG_SUPPORT
+uint32_t wlanFwImageSendStart(IN struct ADAPTER *prAdapter,
+			IN uint32_t u4StartAddress)
+{
+	struct INIT_CMD_WIFI_START rCmd = {0};
+	struct INIT_EVENT_CMD_RESULT rEvent = {0};
+	u_int8_t fgWaitResp = TRUE;
+	uint32_t u4Status;
+
+	rCmd.u4Override = 0;
+
+	/* 5G cal until send efuse buffer mode CMD */
+#if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
+	if (prAdapter->fgIsSupportDelayCal == TRUE)
+		rCmd.u4Override |= START_DELAY_CALIBRATION;
+#endif
+
+	rCmd.u4Address = u4StartAddress;
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_FW_IMAGE_START, &rCmd, sizeof(rCmd),
+		fgWaitResp, FALSE,
+		INIT_EVENT_ID_CMD_RESULT, &rEvent, sizeof(rEvent));
+	if (u4Status != WLAN_STATUS_SUCCESS)
+		goto exit;
+
+	if (prAdapter->chip_info->checkbushang)
+		prAdapter->chip_info->checkbushang((void *) prAdapter, FALSE);
+
+	if (rEvent.ucStatus != 0) {
+		DBGLOG(INIT, ERROR, "Event status: %d\n", rEvent.ucStatus);
+		u4Status = WLAN_STATUS_FAILURE;
+	}
+
+exit:
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, INFO, "FW_START EVT failed\n");
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_DL_FAIL);
+	} else {
+		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
+	}
+
+	return u4Status;
+}
+#endif
+
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 uint32_t wlanRamCodeDynMemMapSendComplete(IN struct ADAPTER *prAdapter,
 			IN u_int8_t fgEnable, IN uint32_t u4StartAddress,
@@ -1655,6 +1701,30 @@ uint32_t wlanHarvardFormatDownload(IN struct ADAPTER
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_WLAN_IMG_SUPPORT
+uint32_t wlanFwImageDownload(IN struct ADAPTER
+				  *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
+{
+	uint32_t rCfgStatus = 0;
+
+	if (prAdapter->chip_info->checkbushang) {
+		if (prAdapter->chip_info->checkbushang((void *) prAdapter,
+				TRUE) != 0) {
+			DBGLOG(INIT, WARN, "Check bus hang failed.\n");
+			rCfgStatus = WLAN_STATUS_FAILURE;
+			goto exit;
+		}
+	}
+
+	rCfgStatus = wlanFwImageSendStart(prAdapter, 0);
+
+exit:
+	if (rCfgStatus != WLAN_STATUS_SUCCESS)
+		return WLAN_STATUS_FAILURE;
+
+	return WLAN_STATUS_SUCCESS;
+}
+#else
 uint32_t wlanConnacFormatDownload(IN struct ADAPTER
 				  *prAdapter, IN enum ENUM_IMG_DL_IDX_T eDlIdx)
 {
@@ -1735,6 +1805,7 @@ exit:
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
 
 uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 {

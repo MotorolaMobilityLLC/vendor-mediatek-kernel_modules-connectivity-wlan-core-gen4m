@@ -2762,6 +2762,13 @@ bool asicConnac2xSwIntHandler(struct ADAPTER *prAdapter)
 				fw_log_connsys_coredump_start(-1, NULL);
 				g_IsNeedWaitCoredump = FALSE;
 #endif
+				if (prAdapter->chip_info->dumpwfsyscpupcr)
+					prAdapter->chip_info->
+					dumpwfsyscpupcr(prAdapter);
+
+				fgIsResetting = FALSE;
+				update_driver_reset_status(fgIsResetting);
+				g_eWfRstSource = WF_RST_SOURCE_NONE;
 			} else {
 				kalSetRstEvent();
 			}
