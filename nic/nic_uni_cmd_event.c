@@ -4552,7 +4552,15 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 			break;
 		case UNI_EVENT_SCAN_DONE_TAG_NLO:{
-			// TODO: uni cmd
+			struct UNI_EVENT_SCAN_DONE_NLO *nlo =
+				(struct UNI_EVENT_SCAN_DONE_NLO *) tag;
+			struct EVENT_SCHED_SCAN_DONE sched;
+
+			sched.ucStatus = nlo->ucStatus;
+			sched.ucSeqNum = legacy.ucSeqNum;
+
+			/* sched scan done, return directly */
+			return scnEventSchedScanDone(ad, &sched);
 		}
 			break;
 		default:
