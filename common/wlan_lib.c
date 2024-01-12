@@ -7296,6 +7296,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucHeHTC, "HeHTC", FEATURE_ENABLED);
 #endif
 
+	INIT_UINT(prWifiVar->ucBtmCap, "BtmCap", FEATURE_ENABLED);
 	/* 0: disabled
 	 * 1: Tx done event to driver
 	 * 2: Tx status to FW only
