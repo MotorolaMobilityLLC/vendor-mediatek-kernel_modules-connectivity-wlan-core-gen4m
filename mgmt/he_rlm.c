@@ -94,6 +94,10 @@
 #define MAX_PPE_THRESHOLD_LEN_2NSS  7
 #define MAX_PPE_THRESHOLD_LEN_1NSS  4
 
+#if (CFG_SUPPORT_HE_ER == 1)
+#define MAX_SUPPORT_CONSTELLATION_DCM_QPSK 2
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -420,6 +424,20 @@ static void heRlmFillHeCapIE(
 	}
 #endif
 
+#if (CFG_SUPPORT_HE_ER == 1)
+	if (IS_FEATURE_ENABLED(prWifiVar->u4ExtendedRange)) {
+		HE_SET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(prHeCap->ucHePhyCap,
+			MAX_SUPPORT_CONSTELLATION_DCM_QPSK);
+		HE_SET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(prHeCap->ucHePhyCap,
+			MAX_SUPPORT_CONSTELLATION_DCM_QPSK);
+		HE_SET_PHY_CAP_PARTIAL_BW_EXTENDED_RANGE(prHeCap->ucHePhyCap);
+		HE_SET_PHY_CAP_ER_SU_4X_HE_LTF(prHeCap->ucHePhyCap);
+		HE_SET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(prHeCap->ucHePhyCap);
+
+		DBGLOG(RLM, INFO, "ER: Set ER Phy capabilities\n");
+	}
+#endif
+
 	/* Set MCS map */
 	prHeSupportedMcsSet = (struct _HE_SUPPORTED_MCS_FIELD *)
 		(((uint8_t *) prHeCap) + u4OverallLen);
@@ -630,6 +648,20 @@ void heRlmRecHeCapInfo(
 	memcpy(prStaRec->ucHePhyCapInfo, prHeCap->ucHePhyCap,
 		HE_PHY_CAP_BYTE_NUM);
 
+#if (CFG_SUPPORT_HE_ER == 1)
+	DBGLOG(RLM, INFO, "ER: TX:%d, RX:%d, bw:%d, 4x LTF:%d, 1X LTF:%d\n",
+		HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(
+			prStaRec->ucHePhyCapInfo),
+		HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
+			prStaRec->ucHePhyCapInfo),
+		HE_GET_PHY_CAP_PARTIAL_BW_EXTENDED_RANGE(
+			prStaRec->ucHePhyCapInfo),
+		HE_GET_PHY_CAP_ER_SU_4X_HE_LTF(
+			prStaRec->ucHePhyCapInfo),
+		HE_GET_PHY_CAP_ER_SU_PPDU_1X_HE_LTF(
+			prStaRec->ucHePhyCapInfo));
+#endif
+
 	/* Disable peer bfer cap indication to FW
 	 * if our bfee feature is not on
 	 */
@@ -652,6 +684,16 @@ void heRlmRecHeOperation(
 	uint8_t *pucIE)
 {
 	struct _IE_HE_OP_T *prHeOp = (struct _IE_HE_OP_T *) pucIE;
+#if (CFG_SUPPORT_HE_ER == 1)
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (IS_FEATURE_DISABLED(prWifiVar->u4ExtendedRange)) {
+		HE_SET_OP_PARAM_ER_SU_DISABLE(prHeOp->ucHeOpParams);
+
+		DBGLOG(RLM, INFO, "ER: is ER SU: %d\n",
+			HE_IS_ER_SU_DISABLE(prHeOp->ucHeOpParams));
+	}
+#endif
 
 	memcpy(prBssInfo->ucHeOpParams, prHeOp->ucHeOpParams, HE_OP_BYTE_NUM);
 	prBssInfo->ucBssColorInfo = prHeOp->ucBssColorInfo;

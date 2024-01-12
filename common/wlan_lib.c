@@ -7135,6 +7135,12 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 			prAdapter, "TrafficThreshold",
 			TRAFFIC_RHRESHOLD);
 #endif
+
+#if CFG_SUPPORT_HE_ER
+	prWifiVar->u4ExtendedRange = (uint32_t) wlanCfgGetUint32(
+			prAdapter, "ExtendedRange",
+			FEATURE_ENABLED);
+#endif
 }
 
 void wlanCfgSetSwCtrl(IN struct ADAPTER *prAdapter)
