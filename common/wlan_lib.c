@@ -6144,9 +6144,8 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					FEATURE_ENABLED);
 #endif
 #if CFG_SUPPORT_VHT_IE_IN_2G
-	prWifiVar->ucVhtIeIn2g =
-		(uint8_t) wlanCfgGetUint32(prAdapter, "VhtIeIn2G",
-					FEATURE_ENABLED);
+	prWifiVar->ucVhtIeIn2g = (uint8_t) wlanCfgGetUint32(
+			prAdapter, "VhtIeIn2G", FEATURE_ENABLED);
 #endif
 	prWifiVar->ucCmdRsvResource = (uint8_t) wlanCfgGetUint32(
 					prAdapter, "TxCmdRsv",
