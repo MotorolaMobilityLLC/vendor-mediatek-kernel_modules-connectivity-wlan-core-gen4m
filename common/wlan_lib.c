@@ -6207,19 +6207,25 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 {
 	uint32_t rResult = WLAN_STATUS_SUCCESS;
 	struct UNI_CMD_GET_STATISTICS *uni_cmd;
+	uint8_t *buf;
+
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	struct UNI_CMD_REGULAR_STATS *regStats;
+#else
 	struct UNI_CMD_BASIC_STATISTICS *basicStatsTag;
 	struct UNI_CMD_LINK_QUALITY *lQTag;
 	struct UNI_CMD_STA_STATISTICS *staStatsTag;
 	struct UNI_CMD_LINK_LAYER_STATS *llsTag;
-#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-	struct UNI_CMD_CURRENT_TX_RATE *txRateTag;
-#endif
 
-	uint8_t *buf;
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec;
 	uint8_t i;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
+
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	struct UNI_CMD_CURRENT_TX_RATE *txRateTag;
+#endif
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
 
 	uni_cmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, cmd_len);
 	if (!uni_cmd) {
@@ -6230,7 +6236,11 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 
 	/* prepare unified cmd tags */
 	buf = uni_cmd->aucTlvBuffer;
-
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	regStats = (struct UNI_CMD_REGULAR_STATS *) buf;
+	regStats->u2Tag = UNI_CMD_GET_STATISTICS_TAG_REGULAR_STATS;
+	regStats->u2Length = sizeof(*regStats);
+#else
 	/* UNI_CMD_GET_STATISTICS_TAG_BASIC */
 	basicStatsTag = (struct UNI_CMD_BASIC_STATISTICS *) buf;
 	basicStatsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BASIC;
@@ -6284,6 +6294,7 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	txRateTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE;
 	txRateTag->u2Length = sizeof(*txRateTag);
 #endif
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
 
 	rResult = wlanSendSetQueryUniCmd(prAdapter,
 			UNI_CMD_ID_GET_STATISTICS,
@@ -6353,12 +6364,16 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 
 	/* prepare staStats driver stuff */
 	max_cmd_len = sizeof(struct UNI_CMD_GET_STATISTICS) +
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+		sizeof(struct UNI_CMD_REGULAR_STATS);
+#else
 		sizeof(struct UNI_CMD_BASIC_STATISTICS) +
 		sizeof(struct UNI_CMD_LINK_QUALITY) +
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 		sizeof(struct UNI_CMD_CURRENT_TX_RATE) +
 #endif
 		sizeof(struct UNI_CMD_LINK_LAYER_STATS);
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -6377,7 +6392,9 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			continue;
 
 		ucConnBss[i] = 1;
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 0)
 		max_cmd_len += sizeof(struct UNI_CMD_STA_STATISTICS);
+#endif
 	}
 
 	/* send cmd if emi doesnot update */
