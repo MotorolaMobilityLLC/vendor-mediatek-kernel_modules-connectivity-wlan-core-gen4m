@@ -1098,7 +1098,8 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 
 #if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_init(prChipInfo, pdev);
-
+#endif
+#if CFG_SUPPORT_WIFI_RSV_MEM
 	ret = halAllocHifMem(pdev, prDriverData);
 	if (ret)
 		goto exit;
@@ -1137,8 +1138,10 @@ static int mtk_wifi_remove(struct platform_device *pdev)
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	wifiCsrIounmap(pdev);
 #endif
-#if (CFG_MTK_ANDROID_WMT == 1)
+#if CFG_SUPPORT_WIFI_RSV_MEM
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WFDMA);
+#endif
+#if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
 #if (CFG_SUPPORT_RX_PAGE_POOL == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)

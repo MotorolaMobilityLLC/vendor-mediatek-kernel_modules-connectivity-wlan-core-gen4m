@@ -2976,6 +2976,18 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * Support alloc hif mem from reserved memory
+ *------------------------------------------------------------------------------
+ */
+#if (CFG_MTK_ANDROID_WMT == 1)
+#define CFG_SUPPORT_WIFI_RSV_MEM 1
+#else
+#ifndef CFG_SUPPORT_WIFI_RSV_MEM
+#define CFG_SUPPORT_WIFI_RSV_MEM 0
+#endif
+#endif
+
+/*------------------------------------------------------------------------------
  * Tx power limit channel definition:
  * 0 : Center Channel (config in rlm_txpwr_data_emi_cent.h)
  * 1 : Primary Channel (config in rlm_txpwr_data_emi_pri.h)
