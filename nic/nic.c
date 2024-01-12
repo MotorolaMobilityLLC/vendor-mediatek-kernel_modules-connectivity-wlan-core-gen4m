@@ -1054,8 +1054,10 @@ nicMediaStateChange(IN struct ADAPTER *prAdapter,
 			}
 
 			/* reset buffered link quality information */
-			prAdapter->fgIsLinkQualityValid = FALSE;
-			prAdapter->fgIsLinkRateValid = FALSE;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				fgIsLinkQualityValid = FALSE;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				fgIsLinkRateValid = FALSE;
 		} else if (prConnectionStatus->ucMediaStatus ==
 			   MEDIA_STATE_CONNECTED) {	/* connected */
 			struct PARAM_BSSID_EX *prCurrBssid =
@@ -4319,11 +4321,13 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 {
 	int8_t cRssi;
 	uint16_t u2AdjustRssi = 10;
+	struct LINK_SPEED_EX_ *prLq;
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 	ASSERT(prEventLinkQuality);
 
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	switch (GET_BSS_INFO_BY_INDEX(prAdapter,
 				      ucBssIndex)->eNetworkType) {
 	case NETWORK_TYPE_AIS:
@@ -4334,9 +4338,8 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 			 * incorrect initial RSSI from hardware
 			 */
 			/* buffer statistics for further query */
-			if (prAdapter->fgIsLinkQualityValid == FALSE
-			    || (kalGetTimeTick() -
-			    prAdapter->rLinkQualityUpdateTime) >
+			if (prLq->fgIsLinkQualityValid == FALSE ||
+			    (kalGetTimeTick() - prLq->rLinkQualityUpdateTime) >
 			    CFG_LINK_QUALITY_VALID_PERIOD) {
 				/* ranged from (-128 ~ 30) in unit of dBm */
 				cRssi =
@@ -4355,9 +4358,8 @@ void nicUpdateLinkQuality(IN struct ADAPTER *prAdapter,
 					cLinkQuality);
 			}
 
-			if (prAdapter->fgIsLinkRateValid == FALSE
-			    || (kalGetTimeTick() -
-			    prAdapter->rLinkRateUpdateTime)
+			if (prLq->fgIsLinkRateValid == FALSE ||
+			    (kalGetTimeTick() - prLq->rLinkRateUpdateTime)
 			    > CFG_LINK_QUALITY_VALID_PERIOD) {
 				nicUpdateLinkSpeed(prAdapter, ucBssIndex,
 					prEventLinkQuality->rLq[ucBssIndex].
@@ -4415,8 +4417,10 @@ void nicUpdateRSSI(IN struct ADAPTER *prAdapter,
 		if (GET_BSS_INFO_BY_INDEX(prAdapter,
 					  ucBssIndex)->eConnectionState ==
 		    MEDIA_STATE_CONNECTED) {
-			prAdapter->fgIsLinkQualityValid = TRUE;
-			prAdapter->rLinkQualityUpdateTime = kalGetTimeTick();
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				fgIsLinkQualityValid = TRUE;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				rLinkQualityUpdateTime = kalGetTimeTick();
 
 			prAdapter->rLinkQuality.rLq[ucBssIndex].
 				cRssi = cRssi;
@@ -4473,8 +4477,10 @@ void nicUpdateLinkSpeed(IN struct ADAPTER *prAdapter,
 					  ucBssIndex)->eConnectionState ==
 		    MEDIA_STATE_CONNECTED) {
 			/* buffer statistics for further query */
-			prAdapter->fgIsLinkRateValid = TRUE;
-			prAdapter->rLinkRateUpdateTime = kalGetTimeTick();
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				fgIsLinkRateValid = TRUE;
+			prAdapter->rLinkQuality.rLq[ucBssIndex].
+				rLinkRateUpdateTime = kalGetTimeTick();
 
 			prAdapter->rLinkQuality.rLq[ucBssIndex].
 				u2LinkSpeed = u2LinkSpeed;

@@ -603,8 +603,15 @@ enum ENUM_POWER_SAVE_PROFILE {
 
 struct LINK_SPEED_EX_ {
 	int8_t cRssi;
+
+	uint8_t fgIsLinkQualityValid;
+	OS_SYSTIME rLinkQualityUpdateTime;
 	int8_t cLinkQuality;
+
+	uint8_t fgIsLinkRateValid;
+	OS_SYSTIME rLinkRateUpdateTime;
 	uint32_t u2LinkSpeed;
+
 	uint8_t ucMediumBusyPercentage;
 	uint8_t ucIsLQ0Rdy;
 };
