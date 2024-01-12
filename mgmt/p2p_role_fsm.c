@@ -1077,7 +1077,7 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
 					NULL, NULL, 0,
-					REASON_CODE_DISASSOC_INACTIVITY,
+					REASON_CODE_DEAUTH_LEAVING_BSS,
 					WLAN_STATUS_MEDIA_DISCONNECT);
 
 
@@ -1086,7 +1086,7 @@ void p2pRoleFsmRunEventBeaconTimeout(IN struct ADAPTER *prAdapter,
 			kalP2PGCIndicateConnectionStatus(prAdapter->prGlueInfo,
 					prP2pRoleFsmInfo->ucRoleIndex,
 					NULL, NULL, 0,
-					REASON_CODE_DISASSOC_INACTIVITY);
+					REASON_CODE_DEAUTH_LEAVING_BSS);
 #endif
 
 			if (prP2pBssInfo->prStaRecOfAP != NULL) {
