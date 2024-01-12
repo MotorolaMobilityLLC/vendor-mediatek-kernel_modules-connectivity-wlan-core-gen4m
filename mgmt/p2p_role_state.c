@@ -580,6 +580,7 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t ucRfBw;
+	uint32_t u4CacTimeMs;
 
 	do {
 
@@ -606,10 +607,6 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 			prConnReqInfo->rChannelInfo.ucChannelNum;
 		prChnlReqInfo->eBand = prConnReqInfo->rChannelInfo.eBand;
 		prChnlReqInfo->eChnlSco = prBssInfo->eBssSCO;
-		prChnlReqInfo->u4MaxInterval =
-			prAdapter->prGlueInfo
-				->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]
-				->cac_time_ms;
 		prChnlReqInfo->eChnlReqType = CH_REQ_TYPE_DFS_CAC;
 
 		prBssInfo->ucVhtChannelWidth =
@@ -641,6 +638,21 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 		if (prChnlReqInfo->ucCenterFreqS1 == 0)
 			prChnlReqInfo->eChannelWidth =
 				VHT_OP_CHANNEL_WIDTH_20_40;
+
+		/* Update CAC time */
+		u4CacTimeMs = prAdapter->prGlueInfo
+				->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex]
+				->cac_time_ms;
+
+		if (p2pFuncCheckWeatherRadarBand(prChnlReqInfo))
+			u4CacTimeMs = P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS;
+
+		if (p2pFuncIsManualCac())
+			u4CacTimeMs = p2pFuncGetDriverCacTime() * 1000;
+		else
+			p2pFuncSetDriverCacTime(u4CacTimeMs/1000);
+
+		prChnlReqInfo->u4MaxInterval = u4CacTimeMs;
 
 		DBGLOG(P2P, TRACE,
 			"p2pRoleStatePrepare_To_DFS_CAC_STATE\n");
