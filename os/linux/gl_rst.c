@@ -439,8 +439,12 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 
 	dump_stack();
 	DBGLOG(INIT, ERROR,
-		"Trigger chip reset in %s line %u reason %s\n",
-		pucFile, u4Line, apucRstReason[eResetReason]);
+		"Trigger chip reset in %s line %u bushang %d flag 0x%x reason %s\n",
+		pucFile,
+		u4Line,
+		g_IsWfsysBusHang,
+		u4RstFlag,
+		apucRstReason[eResetReason]);
 
 	if (prDbgOps && prDbgOps->dumpBusHangCr)
 		prDbgOps->dumpBusHangCr(prAdapter);
@@ -1694,6 +1698,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			glResetMsgHandler(ENUM_RST_MSG_L04_END);
 		} else {
 			glResetUpdateFlag(FALSE);
+			g_IsWfsysBusHang = FALSE;
 			DBGLOG(INIT, INFO,
 				"Don't trigger subsys reset due to driver is not ready\n");
 		}
