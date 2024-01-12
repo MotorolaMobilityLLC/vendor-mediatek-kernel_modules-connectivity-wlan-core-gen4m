@@ -574,6 +574,11 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		prPhyCal =
 			(struct INIT_CMD_PHY_ACTION_CAL *)prPhyTlv->aucBuffer;
 		prPhyCal->ucCmd = ucCalCmd;
+#if CFG_MTK_ANDROID_WMT
+		prPhyCal->ucCalSaveResult = 1;
+#else
+		prPhyCal->ucCalSaveResult = 0;
+#endif
 
 		/* TAG HAL_PHY_ACTION_TAG_NVRAM */
 		prPhyTlv =
@@ -585,6 +590,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		prPhyTlv->u2BufLength = u4EpaELnaDataSize;
 		kalMemCopy(prPhyTlv->aucBuffer,
 		u1EpaELnaDataPointer, u4EpaELnaDataSize);
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 		/* TAG HAL_PHY_ACTION_TAG_COM_FEM */
 		prPhyTlv =
@@ -644,6 +650,12 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		prPhyCal =
 			(struct INIT_CMD_PHY_ACTION_CAL *)prPhyTlv->aucBuffer;
 		prPhyCal->ucCmd = ucCalCmd;
+#if CFG_MTK_ANDROID_WMT
+		prPhyCal->ucCalSaveResult = 1;
+#else
+		prPhyCal->ucCalSaveResult = 0;
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 		/* TAG HAL_PHY_ACTION_TAG_COM_FEM */
 		prPhyTlv =
