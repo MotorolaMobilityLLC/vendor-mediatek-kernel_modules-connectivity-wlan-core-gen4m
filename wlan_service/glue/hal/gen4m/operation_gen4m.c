@@ -1699,6 +1699,10 @@ s_int32 mt_op_start_rx(
 			ret = tm_rftest_set_auto_test(winfos,
 					RF_AT_FUNCID_SET_RX_MU_AID,
 					0xf800);/* 0xf800 to disable */
+	} else {
+		ret = tm_rftest_set_auto_test(winfos,
+					RF_AT_FUNCID_SET_RX_MU_AID,
+					0xf800);/* 0xf800 to disable */
 	}
 
 	sys_ad_move_mem(&func_data, configs->own_mac, 4);
