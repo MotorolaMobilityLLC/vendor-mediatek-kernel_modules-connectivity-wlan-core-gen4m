@@ -15242,6 +15242,36 @@ int kalRegulatoryHint(char *country)
 #if (CFG_VOLT_INFO == 1)
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get Volt info enable status, default value may different by platform,
+ *        So the function is declare as __weak attibute and will implement in
+ *        per platform's plat_priv.c
+ *
+ * \param[in] : void
+ *
+ * \return value : Volt info enable or not
+ */
+/*----------------------------------------------------------------------------*/
+uint8_t __weak kalVnfGetEnInitStatus(void)
+{
+	return FEATURE_DISABLED;
+}
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get Volt info low bound, default value may different by platform,
+ *        So the function is declare as __weak attibute and will implement in
+ *        per platform's plat_priv.c
+ *
+ * \param[in] : void
+ *
+ * \return value : voltage low bound
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t __weak kalVnfGetVoltLowBnd(void)
+{
+	return VOLT_INFO_LOW_BOUND_UNLMT;
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reset volt info debounce parameter
  *
  * \param[in] prVnfInfo : Pointer of _rVnfInfo
@@ -15668,6 +15698,33 @@ static void kalVnfBatNotifyModThresh(struct VOLT_INFO_T *prVnfInfo)
 }
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This func is use to read current volt level
+ *        The voltage will keep as low bound, if the low bound value have been
+ *        set.
+ *
+ * * \param[in] prVnfInfo : Pointer of _rVnfInfo
+ *
+ * \return value : volt
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t kalVnfReadVolt(struct VOLT_INFO_T *prVnfInfo)
+{
+	uint32_t u4Volt;
+	uint32_t u4VoltLowBnd;
+
+	u4VoltLowBnd = prVnfInfo->prAdapter->rWifiVar.u4VnfLowBnd;
+
+	u4Volt = lbat_read_volt();
+
+	/* Keep voltage level as low bound */
+	if (u4VoltLowBnd != VOLT_INFO_LOW_BOUND_UNLMT &&
+	    u4Volt < u4VoltLowBnd)
+		u4Volt = u4VoltLowBnd;
+
+	return u4Volt;
+}
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This func is use to :
  *        1. Calculate and send stable voltage info to FW which is from Vbat
  *        2. Register volt info nofify or modify volt info notify threshold
@@ -15700,7 +15757,7 @@ static void kalVnfHandler(struct work_struct *work)
 	u4DebInterval = kalVnfGetDebInterval(&_rVnfInfo);
 
 	/* Calculate Avg volt */
-	_rVnfInfo.rDebParam.u4Total += lbat_read_volt();
+	_rVnfInfo.rDebParam.u4Total += kalVnfReadVolt(&_rVnfInfo);
 	_rVnfInfo.rDebParam.u4Cnt++;
 
 	if (_rVnfInfo.rDebParam.u4Cnt < u4DebTimes) {

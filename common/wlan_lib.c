@@ -8722,14 +8722,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 #if (CFG_VOLT_INFO == 1)
-	INIT_UINT(prWifiVar->fgVnfEn,
-		  "VoltInfoEnable", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgVnfEn, "VoltInfoEnable",
+		kalVnfGetEnInitStatus(), FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4VnfDebTimes, "VoltInfoDebTimes",
 		  VOLT_INFO_DEBOUNCE_TIMES, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4VnfDebInterval, "VoltInfoDebInterval",
 		  VOLT_INFO_DEBOUNCE_INTERVAL, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4VnfDelta,
 		"VoltInfoDelta", VOLT_INFO_DELTA, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4VnfLowBnd,
+		"VoltInfoLowBound", kalVnfGetVoltLowBnd(), FEATURE_TO_CUSTOMER);
 #endif /* CFG_VOLT_INFO  */
 
 #if CFG_SUPPORT_MLR

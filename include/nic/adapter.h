@@ -1578,6 +1578,7 @@ struct WIFI_VAR {
 	uint32_t u4VnfDebTimes;
 	uint32_t u4VnfDebInterval;
 	uint32_t u4VnfDelta;
+	uint32_t u4VnfLowBnd;
 #endif /* CFG_VOLT_INFO */
 
 #if CFG_SUPPORT_MLR
