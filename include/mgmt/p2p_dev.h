@@ -175,6 +175,7 @@ struct MSG_P2P_ACS_REQUEST {
 	u_int8_t fgIsHtEnable;
 	u_int8_t fgIsHt40Enable;
 	u_int8_t fgIsVhtEnable;
+	u_int8_t fgIsEhtEnable;
 	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
 	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
 	uint32_t u4NumChannel;

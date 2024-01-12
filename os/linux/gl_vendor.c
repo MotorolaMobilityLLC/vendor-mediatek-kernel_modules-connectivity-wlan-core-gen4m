@@ -198,6 +198,7 @@ const struct nla_policy nla_get_acs_policy[
 	[WIFI_VENDOR_ATTR_ACS_CH_LIST] = { .type = NLA_UNSPEC },
 	[WIFI_VENDOR_ATTR_ACS_FREQ_LIST] = { .type = NLA_UNSPEC },
 #endif
+	[WIFI_VENDOR_ATTR_ACS_ACS_EHT_ENABLED] = { .type = NLA_FLAG },
 };
 
 const struct nla_policy nla_string_cmd_policy[
@@ -2971,8 +2972,8 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo;
 	struct nlattr *tb[WIFI_VENDOR_ATTR_ACS_MAX + 1] = {};
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	bool ht_enabled, ht40_enabled, vht_enabled;
-	uint8_t ch_width = 0;
+	bool ht_enabled, ht40_enabled, vht_enabled, eht_enabled = false;
+	uint16_t ch_width = 0;
 	enum P2P_VENDOR_ACS_HW_MODE hw_mode;
 	uint32_t *ch_list = NULL;
 	uint8_t ch_list_count = 0;
@@ -3040,6 +3041,14 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	else
 		vht_enabled = 0;
 
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (tb[WIFI_VENDOR_ATTR_ACS_ACS_EHT_ENABLED])
+		eht_enabled =
+			nla_get_flag(tb[WIFI_VENDOR_ATTR_ACS_ACS_EHT_ENABLED]);
+	else
+		eht_enabled = 0;
+#endif
+
 	if (tb[WIFI_VENDOR_ATTR_ACS_CHWIDTH])
 		ch_width = nla_get_u16(tb[WIFI_VENDOR_ATTR_ACS_CHWIDTH]);
 
@@ -3093,6 +3102,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	prMsgAcsRequest->fgIsHtEnable = ht_enabled;
 	prMsgAcsRequest->fgIsHt40Enable = ht40_enabled;
 	prMsgAcsRequest->fgIsVhtEnable = vht_enabled;
+	prMsgAcsRequest->fgIsEhtEnable = eht_enabled;
 	switch (ch_width) {
 	case 20:
 		prMsgAcsRequest->eChnlBw = MAX_BW_20MHZ;
@@ -3105,6 +3115,9 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		break;
 	case 160:
 		prMsgAcsRequest->eChnlBw = MAX_BW_160MHZ;
+		break;
+	case 320:
+		prMsgAcsRequest->eChnlBw = MAX_BW_320_1MHZ;
 		break;
 	default:
 		DBGLOG(REQ, ERROR, "unsupport width: %d.\n", ch_width);
