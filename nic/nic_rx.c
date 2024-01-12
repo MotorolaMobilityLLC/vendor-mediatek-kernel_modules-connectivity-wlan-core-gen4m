@@ -2763,7 +2763,7 @@ u_int8_t isRfbFromSpared(struct RX_CTRL *prRxCtrl, struct SW_RFB *prSwRfb)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxReturnRFB(struct ADAPTER *prAdapter,
+void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 		    struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
@@ -2814,7 +2814,18 @@ done:
 	if (halIsPendingRx(prAdapter)
 	    && (prRxCtrl->rFreeSwRfbList.u4NumElem > 0))
 		kalSetIntEvent(prGlueInfo);
-}				/* end of nicRxReturnRFB() */
+} /* end of __nicRxReturnRFB() */
+
+void nicRxReturnRFB(struct ADAPTER *prAdapter,
+		    struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_RX_PAGE_POOL
+	if (prSwRfb->pvPacket)
+		kalSkbReuseCheck(prSwRfb);
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+
+	__nicRxReturnRFB(prAdapter, prSwRfb);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
