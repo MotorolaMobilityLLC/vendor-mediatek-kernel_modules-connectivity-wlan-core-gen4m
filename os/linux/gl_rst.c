@@ -159,7 +159,7 @@ enum ENUM_WF_RST_SOURCE g_eWfRstSource = WF_RST_SOURCE_NONE;
 #if (CFG_SUPPORT_CONNINFRA == 0)
 static void mtk_wifi_reset(struct work_struct *work);
 static void mtk_wifi_trigger_reset(struct work_struct *work);
-static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
+static void glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
 			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength);
@@ -528,7 +528,7 @@ static void triggerHifDumpIfNeed(void)
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
+static void glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 			     enum ENUM_WMTDRV_TYPE eDstType,
 			     enum ENUM_WMTMSG_TYPE eMsgType, void *prMsgBody,
 			     unsigned int u4MsgLength)
@@ -571,8 +571,6 @@ static void *glResetCallback(enum ENUM_WMTDRV_TYPE eSrcType,
 	default:
 		break;
 	}
-
-	return NULL;
 }
 #else
 
