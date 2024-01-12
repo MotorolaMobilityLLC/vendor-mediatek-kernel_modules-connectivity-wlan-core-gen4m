@@ -1122,10 +1122,8 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
 
 u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB *prSwRfb);
 
-#if CFG_SUPPORT_SNIFFER
 void nicRxProcessMonitorPacket(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);
-#endif
 
 void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	IN OUT struct SW_RFB *prSwRfb);

@@ -100,6 +100,12 @@
 #define HAL_TEST_FLAG(_M, _F)            ((_M)->u4HwFlags & (_F))
 #define HAL_TEST_FLAGS(_M, _F)           (((_M)->u4HwFlags & (_F)) == (_F))
 
+#if CFG_SUPPORT_SNIFFER
+#define HAL_MON_EN(_prAdapter) (_prAdapter->prGlueInfo->fgIsEnableMon)
+#else
+#define HAL_MON_EN(_prAdapter) FALSE
+#endif
+
 #if defined(_HIF_SDIO)
 #define HAL_MCR_RD(_prAdapter, _u4Offset, _pu4Value) \
 do { \
