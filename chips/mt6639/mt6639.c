@@ -238,6 +238,12 @@ static void mt6639PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 #endif
 #endif
 
+#if (CFG_SUPPORT_APS == 1)
+static uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssIndex);
+#endif
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -1119,7 +1125,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #endif
 
 	.ucTxPwrLimitBatchSize = 3,
-
+#if (CFG_SUPPORT_APS == 1)
+	.apsLinkPlanDecision = mt6639_apsLinkPlanDecision,
+#endif
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac3xWfdmaInitForUSB,
 	.asicUsbInit_ic_specific = NULL,
@@ -3865,4 +3873,50 @@ int mt6639PowerDumpEnd(void *priv_data)
 	return 0;
 }
 #endif  /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
+#if (CFG_SUPPORT_APS == 1)
+uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
+		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssIndex)
+{
+	uint16_t i, ucNumLinkPlan;
+	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX];
+	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_6G, BAND_NULL},
+#endif
+	};
+
+#if (CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO == 1)
+	enum ENUM_BAND aeLinkPlanSingleLink[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_NULL, BAND_NULL},
+		{BAND_5G, BAND_NULL, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_6G, BAND_NULL, BAND_NULL},
+#endif
+		};
+#endif
+
+
+	tmpLinkPlan = aeLinkPlan;
+	ucNumLinkPlan = ARRAY_SIZE(aeLinkPlan);
+
+#if (CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO == 1)
+	if (p2pFuncIsDualAPActive(prAdapter)) {
+		tmpLinkPlan = aeLinkPlanSingleLink;
+		ucNumLinkPlan = ARRAY_SIZE(aeLinkPlanSingleLink);
+	}
+#endif
+
+	/* select best link plan */
+	for (i = 0; i < ucNumLinkPlan; ++i) {
+		enum ENUM_BAND *link_plan = tmpLinkPlan[i];
+
+		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+#endif /* CFG_SUPPORT_APS */
 #endif  /* MT6639 */
