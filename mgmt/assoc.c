@@ -161,6 +161,10 @@ APPEND_VAR_IE_ENTRY_T txAssocRespIETable[] = {
 #if CFG_SUPPORT_MTK_SYNERGY
 	{(ELEM_HDR_LEN + ELEM_MIN_LEN_MTK_OUI), NULL, rlmGenerateMTKOuiIE}	/* 221 */
 #endif
+	,
+#if CFG_SUPPORT_802_11W
+	{(ELEM_HDR_LEN + ELEM_MAX_LEN_TIMEOUT_IE), NULL, rsnPmfGenerateTimeoutIE}	/* 56 */
+#endif
 
 };
 #endif /* CFG_SUPPORT_AAA */
@@ -962,6 +966,8 @@ WLAN_STATUS assocSendDisAssocFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T p
 	ASSERT(prStaRec);
 	ASSERT(prStaRec->ucBssIndex <= prAdapter->ucHwBssIdNum);
 
+	DBGLOG(RSN, INFO, "assocSendDisAssocFrame\n");
+
 	/* 4 <1> Allocate a PKT_INFO_T for Disassociation Frame */
 	/* Init with MGMT Header Length + Length of Fixed Fields + IE Length */
 	u2EstimatedFrameLen = MAC_TX_RESERVED_FIELD + WLAN_MAC_MGMT_HEADER_LEN + REASON_CODE_FIELD_LEN;
@@ -981,12 +987,18 @@ WLAN_STATUS assocSendDisAssocFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T p
 					     MAC_TX_RESERVED_FIELD), pucMacAddress, u2ReasonCode);
 
 #if CFG_SUPPORT_802_11W
+	/* AP PMF */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		P_WLAN_DISASSOC_FRAME_T prDisassocFrame;
+		/* PMF certification 4.3.3.1, 4.3.3.2 send unprotected deauth reason 6/7 */
+		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
 
-		prDisassocFrame = (P_WLAN_DISASSOC_FRAME_T) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+			P_WLAN_DISASSOC_FRAME_T prDisassocFrame;
 
-		prDisassocFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+			prDisassocFrame =
+				(P_WLAN_DISASSOC_FRAME_T) ((ULONG) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+
+			prDisassocFrame->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
+		}
 	}
 #endif
 
@@ -1000,9 +1012,16 @@ WLAN_STATUS assocSendDisAssocFrame(IN P_ADAPTER_T prAdapter, IN P_STA_RECORD_T p
 		     WLAN_MAC_MGMT_HEADER_LEN, WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, NULL, MSDU_RATE_MODE_AUTO);
 
 #if CFG_SUPPORT_802_11W
+	/* AP PMF */
+	/* caution: access prStaRec only if true */
 	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
-		/* DBGLOG(RSN, TRACE, ("Set MSDU_OPT_PROTECTED_FRAME\n")); */
-		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
+		/* 4.3.3.1 send unprotected deauth reason 6/7 */
+		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
+			DBGLOG(RSN, INFO, "Disassoc Set MSDU_OPT_PROTECTED_FRAME\n");
+			nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME, TRUE);
+		}
+
+		prStaRec->rPmfCfg.fgRxDeauthResp = FALSE;
 	}
 #endif
 
@@ -1051,6 +1070,7 @@ assocProcessRxDisassocFrame(IN P_ADAPTER_T prAdapter,
 		       MAC2STR(prDisassocFrame->aucSrcAddr));
 		return WLAN_STATUS_FAILURE;
 	}
+
 	/* 4 <3> Parse the Fixed Fields of Deauthentication Frame Body. */
 	WLAN_GET_FIELD_16(&prDisassocFrame->u2ReasonCode, &u2RxReasonCode);
 	*pu2ReasonCode = u2RxReasonCode;
@@ -1190,7 +1210,7 @@ WLAN_STATUS assocProcessRxAssocReqFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
 			if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
 				prIeRsn = RSN_IE(pucIE);
-				rsnParserCheckForRSNCCMPPSK(prAdapter, prIeRsn, &u2StatusCode);
+				rsnParserCheckForRSNCCMPPSK(prAdapter, prIeRsn, prStaRec, &u2StatusCode);
 				if (u2StatusCode != STATUS_CODE_SUCCESSFUL) {
 					*pu2StatusCode = u2StatusCode;
 					return WLAN_STATUS_SUCCESS;

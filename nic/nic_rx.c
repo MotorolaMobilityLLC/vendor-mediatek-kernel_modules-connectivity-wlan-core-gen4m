@@ -3241,7 +3241,7 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 		return WLAN_STATUS_INVALID_PACKET;
 	prActFrame = (P_WLAN_ACTION_FRAME) prSwRfb->pvHeader;
 
-	/* DBGLOG(RSN, TRACE, ("[Rx] nicRxProcessActionFrame\n")); */
+	DBGLOG(RSN, INFO, "Action frame category=%d\n", prActFrame->ucCategory);
 
 #if CFG_SUPPORT_802_11W
 	if ((prActFrame->ucCategory <= CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION &&
@@ -3267,7 +3267,7 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 			return WLAN_STATUS_INVALID_PACKET;
 		}
 	}
-	/* DBGLOG(RSN, TRACE, ("[Rx] pre check done, handle cateory %d\n", prActFrame->ucCategory)); */
+	/* DBGLOG(RSN, INFO, "[Rx] pre check done, handle cateory %d\n", prActFrame->ucCategory); */
 #endif
 
 	if (prSwRfb->prStaRec)
@@ -3335,6 +3335,14 @@ WLAN_STATUS nicRxProcessActionFrame(IN P_ADAPTER_T prAdapter, IN P_SW_RFB_T prSw
 				    prAdapter->rWifiVar.rAisSpecificBssInfo.fgMgmtProtection /* Use MFP */) {
 					/* MFP test plan 5.3.3.4 */
 					rsnSaQueryAction(prAdapter, prSwRfb);
+				} else if ((prBssInfo->eNetworkType == NETWORK_TYPE_P2P) &&
+					(prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)) {
+					/* AP PMF */
+					DBGLOG(RSN, INFO, "[Rx] nicRx AP PMF SAQ action\n");
+					if (rsnCheckBipKeyInstalled(prAdapter, prSwRfb->prStaRec)) {
+						/* MFP test plan 4.3.3.4 */
+						rsnApSaQueryAction(prAdapter, prSwRfb);
+					}
 				}
 			}
 		}
