@@ -6733,6 +6733,12 @@ int32_t nicTxGetVectorInfo(char *pcCommand, int i4TotalLen,
 u_int8_t nicTxIsPrioPackets(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo)
 {
+#if CFG_SUPPORT_WED_PROXY
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableWed))
+		return FALSE;
+#endif
 	return prMsduInfo && prMsduInfo->ucTC == TC3_INDEX;
 }
 
