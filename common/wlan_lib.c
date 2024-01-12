@@ -730,11 +730,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 				    prRegInfo->u4ArSysParam3);
 #endif
 
-#if CFG_SUPPORT_DBDC
-		/* Update DBDC default setting */
-		cnmInitDbdcSetting(prAdapter);
-#endif /*CFG_SUPPORT_DBDC*/
-
 		/* Default QM RX BA timeout */
 		prAdapter->u4QmRxBaMissTimeout =
 			QM_RX_BA_ENTRY_MISS_TIMEOUT_MS;
