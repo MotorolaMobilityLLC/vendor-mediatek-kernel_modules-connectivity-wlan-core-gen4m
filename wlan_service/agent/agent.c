@@ -3337,7 +3337,7 @@ static s_int32 hqa_icap_ctrl(
 
 			ret = sys_ad_alloc_mem(
 				(u_char **)&icap_data, max_data_len);
-			if (ret) {
+			if (ret || (icap_data == NULL)) {
 				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 				("%s : Not enough memory!!\n"
 				, __func__));
