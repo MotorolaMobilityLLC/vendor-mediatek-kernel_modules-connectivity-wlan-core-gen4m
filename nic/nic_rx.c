@@ -3656,6 +3656,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
 		if (prAdapter->u4NoMoreRfb != 0) {
 			DBGLOG(RX, ERROR, "Free rfb and set IntEvent!!!!!\n");
 			kalSetIntEvent(prAdapter->prGlueInfo);
+			DBGLOG(RX, ERROR, "After set interrupt event\n");
 		}
 	} else {
 		/* QUEUE_INSERT_TAIL */

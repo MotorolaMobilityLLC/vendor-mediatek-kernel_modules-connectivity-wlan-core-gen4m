@@ -1194,6 +1194,8 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, u4Port);
 
+	DBGLOG(RX, LOUD, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
+
 	while (u4RxCnt--) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 		QUEUE_REMOVE_HEAD(&prRxCtrl->rFreeSwRfbList,

@@ -3457,6 +3457,7 @@ void qmProcessPktWithReordering(IN struct ADAPTER *prAdapter,
 
 	/* prMpduSwRfb = prReorderQueParm->prMpduSwRfb; */
 	u4SeqNo = (uint32_t)prSwRfb->u2SSN;
+	DBGLOG(RX, LOUD, "qmProcessPktWithReordering: SEQ:%d\n", u4SeqNo);
 
 	switch (u8AmsduSubframeIdx) {
 	case RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU:
