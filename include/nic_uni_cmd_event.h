@@ -79,6 +79,11 @@
 #define BUFFER_MODE_CONTENT_MAX 1024
 #define BUFFER_ACCESS_CONTENT_MAX 16
 
+#if (CFG_HW_ERR_REPORT == 1)
+/* UNI_EVENT_HW_ERROR_REPORT usage */
+#define HW_ERROR_REPORT_STR_MAX_LEN 64
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -4655,6 +4660,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_DELAY_BAR       = 0x61,
 	UNI_EVENT_ID_FW_DROP_SSN     = 0x62,
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
+	UNI_EVENT_ID_HW_ERROR_REPORT = 0x76,
 	UNI_EVENT_ID_NUM
 };
 
@@ -6900,6 +6906,29 @@ enum ENUM_UNI_EVENT_GET_VOLT_INFO_TAG {
 	UNI_EVENT_GET_VOLT_INFO_TAG_NUM
 };
 #endif /* CFG_VOLT_INFO */
+
+#if (CFG_HW_ERR_REPORT == 1)
+struct UNI_EVENT_HW_ERROR_REPORT {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_HW_ERROR_REPORT_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	uint8_t  aucStrBuffer[HW_ERROR_REPORT_STR_MAX_LEN];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_HW_ERROR_REPORT_TAG {
+	UNI_EVENT_HW_ERROR_REPORT_BASIC = 0x0,
+	UNI_EVENT_HW_ERROR_REPORT_TAG_NUM
+};
+#endif /* CFG_HW_ERR_REPORT */
+
 #if CFG_SUPPORT_PKT_OFLD
 struct UNI_EVENT_PKT_OFLD {
 	/*Fixed Fields*/
@@ -7720,6 +7749,10 @@ void nicUniEventFastPath(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventThermalProtect(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if (CFG_HW_ERR_REPORT == 1)
+void nicUniEventHwErrReport(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif /* CFG_HW_ERR_REPORT */
 #if CFG_SUPPORT_FW_DROP_SSN
 void nicUniEventFwDropSSN(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
