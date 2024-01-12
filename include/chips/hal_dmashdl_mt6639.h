@@ -52,10 +52,10 @@
 #define MT6639_DMASHDL_GROUP_13_REFILL_EN              (0)
 #define MT6639_DMASHDL_GROUP_14_REFILL_EN              (0)
 #define MT6639_DMASHDL_GROUP_15_REFILL_EN              (0)
-#define MT6639_DMASHDL_GROUP_0_MAX_QUOTA               (0xfff)
-#define MT6639_DMASHDL_GROUP_1_MAX_QUOTA               (0xfff)
-#define MT6639_DMASHDL_GROUP_2_MAX_QUOTA               (0xfff)
-#define MT6639_DMASHDL_GROUP_3_MAX_QUOTA               (0xfff)
+#define MT6639_DMASHDL_GROUP_0_MAX_QUOTA               (0x5E0)
+#define MT6639_DMASHDL_GROUP_1_MAX_QUOTA               (0x5E0)
+#define MT6639_DMASHDL_GROUP_2_MAX_QUOTA               (0x5E0)
+#define MT6639_DMASHDL_GROUP_3_MAX_QUOTA               (0x5E0)
 #define MT6639_DMASHDL_GROUP_4_MAX_QUOTA               (0x0)
 #define MT6639_DMASHDL_GROUP_5_MAX_QUOTA               (0x0)
 #define MT6639_DMASHDL_GROUP_6_MAX_QUOTA               (0x0)
@@ -96,9 +96,9 @@
 #define MT6639_DMASHDL_QUEUE_9_TO_GROUP                (0x0)   /* LMAC AC21 */
 #define MT6639_DMASHDL_QUEUE_10_TO_GROUP               (0x0)   /* LMAC AC22 */
 #define MT6639_DMASHDL_QUEUE_11_TO_GROUP               (0x2)   /* LMAC AC23 */
-#define MT6639_DMASHDL_QUEUE_12_TO_GROUP               (0x0)   /* LMAC AC30 */
-#define MT6639_DMASHDL_QUEUE_13_TO_GROUP               (0x0)   /* LMAC AC31 */
-#define MT6639_DMASHDL_QUEUE_14_TO_GROUP               (0x0)   /* LMAC AC32 */
+#define MT6639_DMASHDL_QUEUE_12_TO_GROUP               (0x1)   /* LMAC AC30 */
+#define MT6639_DMASHDL_QUEUE_13_TO_GROUP               (0x1)   /* LMAC AC31 */
+#define MT6639_DMASHDL_QUEUE_14_TO_GROUP               (0x1)   /* LMAC AC32 */
 #define MT6639_DMASHDL_QUEUE_15_TO_GROUP               (0x2)   /* LMAC AC33 */
 #define MT6639_DMASHDL_QUEUE_16_TO_GROUP               (0x3)   /* ALTX */
 #define MT6639_DMASHDL_QUEUE_17_TO_GROUP               (0x0)   /* BMC */
