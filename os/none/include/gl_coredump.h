@@ -6,7 +6,7 @@
 #ifndef _GL_COREDUMP_H
 #define _GL_COREDUMP_H
 
-#define COREDUMP_TIMEOUT			(10 * 1000)
+#define COREDUMP_TIMEOUT			(500)
 
 #define COREDUMP_OFFSET_CTRL_BLOCK		0x0
 
@@ -23,6 +23,19 @@
 #define COREDUMP_WIFI_DEV_NUM			1
 
 typedef int (*bushang_chk_func_cb)(void *, uint8_t);
+
+enum COREDUMP_SOURCE_TYPE {
+	COREDUMP_SOURCE_WF_DRIVER,
+	COREDUMP_SOURCE_WF_MAWD,
+	COREDUMP_SOURCE_WF_FW,
+	COREDUMP_SOURCE_MD,
+	COREDUMP_SOURCE_BT,
+	COREDUMP_SOURCE_FM,
+	COREDUMP_SOURCE_GPS,
+	COREDUMP_SOURCE_CONNV3,
+	COREDUMP_SOURCE_CONNINFRA,
+	COREDUMP_SOURCE_NUM
+};
 
 enum COREDUMP_CTRL_BLK_OFFSET {
 	CTRL_BLK_OFFSET_STATE             = 0x4,
@@ -102,13 +115,25 @@ struct coredump_ctx {
 #if CFG_WIFI_COREDUMP_SUPPORT
 int wifi_coredump_init(void *priv);
 void wifi_coredump_deinit(void);
-void wifi_coredump_start(uint8_t drv, char *reason);
+void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
+	char *reason,
+	u_int8_t force_dump);
 void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb);
+#if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src);
+enum COREDUMP_SOURCE_TYPE coredump_conn_type_to_src(enum consys_drv_type src);
+#endif
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+enum connv3_drv_type coredump_src_to_connv3_type(enum COREDUMP_SOURCE_TYPE src);
+enum COREDUMP_SOURCE_TYPE coredump_connv3_type_to_src(enum connv3_drv_type src);
+#endif
 #else
 static inline int wifi_coredump_init(void *priv)
 { return 0; }
 static inline void wifi_coredump_deinit(void) {}
-static inline void wifi_coredump_start(uint8_t drv, char *reason) {}
+static inline void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
+	char *reason,
+	u_int8_t force_dump) {}
 static inline void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb) {}
 #endif
 

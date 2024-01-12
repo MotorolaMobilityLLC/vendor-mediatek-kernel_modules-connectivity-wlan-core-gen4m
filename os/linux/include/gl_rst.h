@@ -166,6 +166,7 @@ struct RESET_STRUCT {
 	struct work_struct rst_work;
 #if CFG_WMT_RESET_API_SUPPORT
 	unsigned long ulFlag;
+	u_int8_t force_dump;
 	enum ENUM_RESET_STATUS rst_data;
 	struct work_struct rst_trigger_work;
 	uint32_t rst_trigger_flag;
@@ -201,14 +202,10 @@ extern int wifi_reset_end(enum ENUM_RESET_STATUS);
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
-#define RST_SOURCE_WIFI_DRIVER		0xFD
-#define RST_SOURCE_WIFI_FW		0xFE
-#define RST_SOURCE_WIFI_NONE		0xFF
-
 #if CFG_CHIP_RESET_SUPPORT
 extern u_int8_t fgIsResetting;
 extern u_int8_t fgIsRstPreventFwOwn;
-extern uint8_t g_ucWfRstSource;
+extern enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 
 #if CFG_CHIP_RESET_HANG
 extern u_int8_t fgIsResetHangState;
@@ -310,7 +307,7 @@ int wlan_post_whole_chip_rst_v2(void);
 #endif
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
-void kalSetRstEvent(void);
+void kalSetRstEvent(u_int8_t force_dump);
 void glRstSetRstEndEvent(void);
 int reset_wait_for_trigger_completion(void);
 void reset_done_trigger_completion(void);

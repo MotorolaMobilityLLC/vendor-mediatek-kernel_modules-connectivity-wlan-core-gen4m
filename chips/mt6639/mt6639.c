@@ -70,6 +70,8 @@
 #include "mtk_ccci_common.h"
 #endif
 
+#include "gl_coredump.h"
+
 #define CFG_SUPPORT_VCODE_VDFS 0
 
 #if (CFG_SUPPORT_VCODE_VDFS == 1)
@@ -176,6 +178,7 @@ static void mt6639_mcu_deinit(struct ADAPTER *ad);
 static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
+static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter);
 #endif
 #endif
 
@@ -575,7 +578,11 @@ struct FWDL_OPS_T mt6639_fw_dl_ops = {
 #if (CFG_SUPPORT_FW_IDX_LOG_TRANS == 1)
 	.constrcutIdxLogBin = mt6639_ConstructIdxLogBinName,
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+#if defined(_HIF_PCIE) && IS_MOBILE_SEGMENT
+	.downloadPatch = mt6639_wlanDownloadPatch,
+#else
 	.downloadPatch = wlanDownloadPatch,
+#endif
 	.downloadFirmware = wlanConnacFormatDownload,
 	.downloadByDynMemMap = NULL,
 	.getFwInfo = wlanGetConnacFwInfo,
@@ -2262,6 +2269,22 @@ exit:
 
 static void mt6639_mcu_deinit(struct ADAPTER *ad)
 {
+#define MAX_WAIT_COREDUMP_COUNT 10
+
+	int retry = 0;
+
+	while (is_wifi_coredump_processing()) {
+		if (retry >= MAX_WAIT_COREDUMP_COUNT) {
+			DBGLOG(INIT, WARN,
+				"Coredump spend long time, retry = %d\n",
+				retry);
+		}
+		kalMsleep(100);
+		retry++;
+	}
+
+	wifi_coredump_set_enable(FALSE);
+
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff(ad);
 }
@@ -2391,6 +2414,16 @@ static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable)
 
 exit:
 	return readable ? 0 : 1;
+}
+
+static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter)
+{
+	uint32_t status  = wlanDownloadPatch(prAdapter);
+
+	if (status == WLAN_STATUS_SUCCESS)
+		wifi_coredump_set_enable(TRUE);
+
+	return status;
 }
 #endif /* IS_MOBILE_SEGMENT */
 #endif /* _HIF_PCIE */

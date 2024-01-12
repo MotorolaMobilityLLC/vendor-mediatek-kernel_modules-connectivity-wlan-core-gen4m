@@ -27,6 +27,7 @@
 #include "precomp.h"
 #include "wlan_lib.h"
 #include "wlan_pinctrl.h"
+#include "gl_coredump.h"
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
@@ -2158,7 +2159,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			"Ignore fw assert due to whole chip reset ongoing.\n");
 	} else {
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
-		g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 
 		glSetRstReason(RST_FW_ASSERT);
 
@@ -2167,7 +2168,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		if (dbg_ops && dbg_ops->dumpBusHangCr)
 			dbg_ops->dumpBusHangCr(prAdapter);
 
-		kalSetRstEvent();
+		kalSetRstEvent(TRUE);
 	}
 }
 
@@ -2178,19 +2179,20 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
 
-	g_ucWfRstSource = RST_SOURCE_WIFI_FW;
+	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
 
 	if (dbg_ops && dbg_ops->dumpBusHangCr)
 		dbg_ops->dumpBusHangCr(prAdapter);
 
-	kalSetRstEvent();
+	kalSetRstEvent(TRUE);
 }
 #endif
 
 u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t u4Status = 0;
 	u_int8_t fgRet = TRUE;
@@ -2198,6 +2200,7 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (!prAdapter)
 		return TRUE;
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
 
 	if (!prChipInfo->get_sw_interrupt_status)
@@ -2207,7 +2210,8 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (fgRet == FALSE || u4Status == 0)
 		goto exit;
 
-	if (u4Status & BIT(SW_INT_FW_LOG))
+	if (!(prGlueInfo->ulFlag & GLUE_FLAG_HALT) &&
+	    (u4Status & BIT(SW_INT_FW_LOG)))
 		fw_log_handler();
 
 #if CFG_WMT_RESET_API_SUPPORT
