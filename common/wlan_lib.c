@@ -2726,7 +2726,7 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 	}
 
 	u4EventSize = prChipInfo->rxd_size + prChipInfo->init_event_size +
-		sizeof(struct INIT_CMD_ACCESS_REG);
+		sizeof(struct INIT_EVENT_ACCESS_REG);
 	aucBuffer = kalMemAlloc(u4EventSize, PHY_MEM_TYPE);
 
 	prCmdInfo->u2InfoBufLen = cmd_size;
