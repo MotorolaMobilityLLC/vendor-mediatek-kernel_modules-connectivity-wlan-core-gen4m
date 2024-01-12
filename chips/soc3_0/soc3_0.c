@@ -431,6 +431,23 @@ void soc3_0asicConnac2xWfdmaManualPrefetch(
 		WF_WFDMA_HOST_DMA0_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA1_WPDMA_RST_DTX_PTR_ADDR, 0xFFFFFFFF);
+
+#if defined(_HIF_AXI)
+    /*Bypass BID check*/
+	soc3_0_WfdmaAxiCtrl(prAdapter);
+#endif
+
+}
+
+void soc3_0_WfdmaAxiCtrl(
+	struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+
+	HAL_MCR_RD(prAdapter, WFDMA_AXI0_R2A_CTRL_0, &u4Val);
+	u4Val |= BID_CHK_BYP_EN_MASK;
+	HAL_MCR_WR(prAdapter, WFDMA_AXI0_R2A_CTRL_0, u4Val);
+
 }
 
 void soc3_0_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
