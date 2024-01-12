@@ -739,6 +739,10 @@ u_int8_t secPrivacySeekForEntry(
 	DBGLOG(RSN, INFO, "secPrivacySeekForEntry\n");
 
 	for (i = ucStartIDX; i <= ucMaxIDX; i++) {
+#if CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL
+	if (i % 8 == 0)
+		continue;
+#endif
 		if (prWtbl[i].ucUsed
 		    && EQUAL_MAC_ADDR(prSta->aucMacAddr, prWtbl[i].aucMacAddr)
 		    && prWtbl[i].ucPairwise
@@ -752,6 +756,10 @@ u_int8_t secPrivacySeekForEntry(
 
 	if (i == (ucMaxIDX + 1)) {
 		for (i = ucStartIDX; i <= ucMaxIDX; i++) {
+#if CFG_WIFI_WORKAROUND_HWITS00012836_WTBL_SEARCH_FAIL
+			if (i % 8 == 0)
+				continue;
+#endif
 			if (prWtbl[i].ucUsed == FALSE) {
 				ucEntry = i;
 				DBGLOG(RSN, TRACE,
