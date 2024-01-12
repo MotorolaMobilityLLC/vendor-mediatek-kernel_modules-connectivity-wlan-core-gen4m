@@ -223,6 +223,8 @@ struct P2P_RADAR_INFO {
 	struct WH_RDD_PULSE_CONTENT arContent[32];
 };
 
+#endif
+
 struct MSG_P2P_SET_NEW_CHANNEL {
 	struct MSG_HDR rMsgHdr;
 	struct RF_CHANNEL_INFO rRfChannelInfo;
@@ -234,7 +236,6 @@ struct MSG_P2P_CSA_DONE {
 	struct MSG_HDR rMsgHdr;
 	uint8_t ucBssIndex;
 };
-#endif
 
 struct MSG_P2P_DEL_IFACE {
 	struct MSG_HDR rMsgHdr;
@@ -276,8 +277,8 @@ enum ENUM_P2P_ROLE_STATE {
 	P2P_ROLE_STATE_OFF_CHNL_TX,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	P2P_ROLE_STATE_DFS_CAC,
-	P2P_ROLE_STATE_SWITCH_CHANNEL,
 #endif
+	P2P_ROLE_STATE_SWITCH_CHANNEL,
 	P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL,
 	P2P_ROLE_STATE_NUM
 };
@@ -434,15 +435,15 @@ void p2pRoleFsmRunEventDfsCac(struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
+void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
+		uintptr_t ulParamPtr);
+#endif
+
 void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
 void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
-
-void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
-		uintptr_t ulParamPtr);
-#endif
 
 void p2pRoleFsmRunEventWaitNextReqChnlTimeout(struct ADAPTER *prAdapter,
 		uintptr_t ulParamPtr);

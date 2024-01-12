@@ -223,10 +223,9 @@ struct GL_P2P_INFO {
 	/*UINT_8 aucSecCheck[256];*//* TH3 multiple P2P */
 	/*UINT_8 aucSecCheckRsp[256];*//* TH3 multiple P2P */
 #endif
-
-#if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct cfg80211_chan_def chandefCsa;
 	struct ieee80211_channel chanCsa;
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	uint32_t cac_time_ms;
 #endif
 

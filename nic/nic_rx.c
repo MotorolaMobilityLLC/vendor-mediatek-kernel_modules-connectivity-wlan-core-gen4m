@@ -202,11 +202,11 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_RDD_SEND_PULSE, nicEventRddSendPulse},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{EVENT_ID_RDD_REPORT, cnmRadarDetectEvent},
-	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
+#endif
 #if CFG_SUPPORT_IDC_CH_SWITCH
 	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
 #endif
-#endif
+	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
 	{EVENT_ID_GC_CSA, cnmPeerGcCsaHandler},
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_UPDATE_COEX_STATUS, nicEventUpdateCoexStatus},
@@ -220,7 +220,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_WOW_WAKEUP_REASON, nicEventWowWakeUpReason},
 #endif
 	{EVENT_ID_OPMODE_CHANGE, cnmOpmodeEventHandler},
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	{EVENT_ID_RDD_OPMODE_CHANGE, cnmRddOpmodeEventHandler},
+#endif
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif

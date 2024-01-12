@@ -104,8 +104,8 @@ static uint8_t *apucDebugMsg[] = {
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	(uint8_t *) DISP_STRING("MID_CNM_P2P_RADAR_DETECT"),
-	(uint8_t *) DISP_STRING("MID_CNM_P2P_CSA_DONE"),
 #endif
+	(uint8_t *) DISP_STRING("MID_CNM_P2P_CSA_DONE"),
 	(uint8_t *) DISP_STRING("MID_AIS_SCN_SCAN_REQ"),
 	(uint8_t *) DISP_STRING("MID_AIS_SCN_SCAN_REQ_V2"),
 	(uint8_t *) DISP_STRING("MID_AIS_SCN_SCAN_CANCEL"),
@@ -160,8 +160,8 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_MGMT_FRAME_UPDATE"),
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_DFS_CAC"),
-	(uint8_t *) DISP_STRING("MID_MNY_P2P_SET_NEW_CHANNEL"),
 #endif
+	(uint8_t *) DISP_STRING("MID_MNY_P2P_SET_NEW_CHANNEL"),
 #if CFG_SUPPORT_WFD
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_WFD_CFG_UPDATE"),
 #endif
@@ -216,12 +216,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #else
 	{MID_CNM_P2P_CH_GRANT, mboxDummy},
 #endif
-
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{MID_CNM_P2P_RADAR_DETECT, p2pRoleFsmRunEventRadarDet},
-	{MID_CNM_P2P_CSA_DONE, p2pRoleFsmRunEventCsaDone},
 #endif
-
+	{MID_CNM_P2P_CSA_DONE, p2pRoleFsmRunEventCsaDone},
 #if CFG_ENABLE_BT_OVER_WIFI
 	{MID_CNM_BOW_CH_GRANT, bowRunEventChGrant},
 #else
@@ -302,8 +300,8 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_MGMT_FRAME_UPDATE, p2pFsmRunEventUpdateMgmtFrame},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{MID_MNY_P2P_DFS_CAC, p2pRoleFsmRunEventDfsCac},
-	{MID_MNY_P2P_SET_NEW_CHANNEL, p2pRoleFsmRunEventSetNewChannel},
 #endif
+	{MID_MNY_P2P_SET_NEW_CHANNEL, p2pRoleFsmRunEventSetNewChannel},
 #if CFG_SUPPORT_WFD
 	{MID_MNY_P2P_WFD_CFG_UPDATE, p2pFsmRunEventWfdSettingUpdate},
 #endif

@@ -96,8 +96,8 @@ enum ENUM_MSG_ID {
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	MID_CNM_P2P_RADAR_DETECT,
-	MID_CNM_P2P_CSA_DONE,
 #endif
+	MID_CNM_P2P_CSA_DONE,
 	/*--------------------------------------------------*/
 	/* SCN Module Mailbox Messages                      */
 	/*--------------------------------------------------*/
@@ -200,8 +200,8 @@ enum ENUM_MSG_ID {
 	MID_MNY_P2P_MGMT_FRAME_UPDATE,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	MID_MNY_P2P_DFS_CAC,
-	MID_MNY_P2P_SET_NEW_CHANNEL,
 #endif
+	MID_MNY_P2P_SET_NEW_CHANNEL,
 #if CFG_SUPPORT_WFD
 	MID_MNY_P2P_WFD_CFG_UPDATE,
 #endif

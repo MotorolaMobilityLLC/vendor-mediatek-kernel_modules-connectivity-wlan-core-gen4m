@@ -289,9 +289,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
-
-void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
-	struct WIFI_EVENT *prEvent);
+#endif
 
 #if (CFG_SUPPORT_IDC_CH_SWITCH == 1)
 uint8_t cnmIdcCsaReq(struct ADAPTER *prAdapter,
@@ -303,7 +301,9 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter);
 void cnmIdcDetectHandler(struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent);
 #endif
-#endif
+
+void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
 
 uint8_t cnmOwnGcCsaReq(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand,
@@ -426,10 +426,12 @@ void cnmOpmodeEventHandler(
 	struct WIFI_EVENT *prEvent
 );
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 void cnmRddOpmodeEventHandler(
 	struct ADAPTER *prAdapter,
 	struct WIFI_EVENT *prEvent
 );
+#endif
 
 u_int8_t cnmP2pIsActive(struct ADAPTER *prAdapter);
 

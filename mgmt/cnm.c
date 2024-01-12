@@ -1147,6 +1147,7 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *)prP2pRddDetMsg, MSG_SEND_METHOD_BUF);
 }
+#endif
 
 void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 			struct WIFI_EVENT *prEvent)
@@ -1171,7 +1172,7 @@ void cnmCsaDoneEvent(struct ADAPTER *prAdapter,
 
 	p2pFunChnlSwitchNotifyDone(prAdapter);
 }
-#endif
+
 
 #define CFG_SUPPORT_IDC_CROSS_BAND_SWITCH   1
 
@@ -2092,11 +2093,12 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 		}
 		ucRoleIndex = prBssInfo->u4PrivateData;
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 		if (p2pFuncGetDfsState() == DFS_STATE_DETECTED)
 			ucMaxBandwidth = prAdapter->rWifiVar
 				.prP2pSpecificBssInfo[ucRoleIndex]
 				->ucRddBw;
-
+#endif
 	}
 
 #if CFG_SUPPORT_NAN
@@ -4368,7 +4370,9 @@ uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	prP2pConnReqInfo->eChnlBw =
 		prRfChannelInfo->ucChnlBw;
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+#endif
 
 	if (p2pFuncRoleToBssIdx(
 		prAdapter, ucRoleIdx, &ucBssIdx) !=
@@ -5159,6 +5163,7 @@ void cnmOpmodeEventHandler(
 #endif
 }
 
+#if (CFG_SUPPORT_DFS_MASTER == 1)
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Event handler for EVENT_ID_OPMODE_CHANGE
@@ -5312,6 +5317,7 @@ void cnmRddOpmodeEventHandler(
 			sizeof(struct EVENT_OPMODE_CHANGE));
 	}
 }
+#endif
 
 enum ENUM_CNM_WMM_QUOTA_REQ_T
 cnmWmmQuotaReqDispatcher(
@@ -5962,10 +5968,12 @@ void cnmPeerGcCsaHandler(struct ADAPTER *prAdapter,
 		DBGLOG(CNM, INFO,
 			"[CSA] GO step to MCC, reject peer GcCsa\n");
 	} else {
+#if CFG_SUPPORT_IDC_CH_SWITCH
 		cnmIdcCsaReq(prAdapter,
 			prCsaEvent->ucBand,
 			prCsaEvent->ucChannel,
 			prBssInfo->u4PrivateData);
+#endif
 	}
 }
 
