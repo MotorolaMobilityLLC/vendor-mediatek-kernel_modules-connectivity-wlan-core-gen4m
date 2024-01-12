@@ -374,6 +374,7 @@ void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex,
+		IN enum ENUM_BAND eBand,
 		IN uint8_t ucPrimaryCh,
 		IN uint8_t ucSecondCh,
 		IN uint8_t ucSeg0Ch,

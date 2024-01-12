@@ -1155,7 +1155,7 @@ const struct ieee80211_regdomain
 *rlmDomainSearchRegdomainFromLocalDataBase(char *alpha2);
 struct GLUE_INFO *rlmDomainGetGlueInfo(void);
 bool rlmDomainIsEfuseUsed(void);
-uint8_t rlmDomainGetChannelBw(uint8_t channelNum);
+uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum);
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 extern const struct mtk_regdomain *g_prRegRuleTable[];

@@ -2138,6 +2138,7 @@ void kalP2pIndicateQueuedMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 
 void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex,
+		IN enum ENUM_BAND eBand,
 		IN uint8_t ucPrimaryCh,
 		IN uint8_t ucSecondCh,
 		IN uint8_t ucSeg0Ch,
@@ -2173,8 +2174,9 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		break;
 	}
 
-	DBGLOG(P2P, INFO, "r=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d\n",
+	DBGLOG(P2P, INFO, "r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d\n",
 			ucRoleIndex,
+			eBand,
 			ucPrimaryCh,
 			ucSecondCh,
 			ucSeg0Ch,
@@ -2196,16 +2198,16 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		goto nla_put_failure;
 	}
 
-	if (unlikely(nla_put_u8(vendor_event,
-			WIFI_VENDOR_ATTR_ACS_PRIMARY_CHANNEL,
-			ucPrimaryCh) < 0)) {
+	if (unlikely(nla_put_u32(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_PRIMARY_FREQUENCY,
+			nicChannelNum2Freq(ucPrimaryCh, eBand) / 1000) < 0)) {
 		DBGLOG(P2P, ERROR, "put primary channel fail.\n");
 		goto nla_put_failure;
 	}
 
-	if (unlikely(nla_put_u8(vendor_event,
-			WIFI_VENDOR_ATTR_ACS_SECONDARY_CHANNEL,
-			ucSecondCh) < 0)) {
+	if (unlikely(nla_put_u32(vendor_event,
+			WIFI_VENDOR_ATTR_ACS_SECONDARY_FREQUENCY,
+			nicChannelNum2Freq(ucSecondCh, eBand) / 1000) < 0)) {
 		DBGLOG(P2P, ERROR, "put secondary channel fail.\n");
 		goto nla_put_failure;
 	}
@@ -2233,9 +2235,9 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 
 	if (unlikely(nla_put_u8(vendor_event,
 			WIFI_VENDOR_ATTR_ACS_HW_MODE,
-			ucPrimaryCh > 14 ?
-				P2P_VENDOR_ACS_HW_MODE_11A :
-				P2P_VENDOR_ACS_HW_MODE_11G) < 0)) {
+			eBand == BAND_2G4 ?
+				P2P_VENDOR_ACS_HW_MODE_11G :
+				P2P_VENDOR_ACS_HW_MODE_11A) < 0)) {
 		DBGLOG(P2P, ERROR, "put hw mode fail.\n");
 		goto nla_put_failure;
 	}

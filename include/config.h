@@ -600,8 +600,8 @@
 #if (CFG_SUPPORT_WIFI_6G == 1)
 #define MAX_2G_BAND_CHN_NUM		14
 #define MAX_5G_BAND_CHN_NUM		25
-#define MAX_6G_BAND_CHN_NUM		25 /* will be 59 for full channel set */
-#define MAX_PER_BAND_CHN_NUM		25
+#define MAX_6G_BAND_CHN_NUM		59 /* will be 59 for full channel set */
+#define MAX_PER_BAND_CHN_NUM		59
 #else
 #define MAX_2G_BAND_CHN_NUM		14
 #define MAX_5G_BAND_CHN_NUM		25

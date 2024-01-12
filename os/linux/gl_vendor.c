@@ -1578,7 +1578,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	bool ht_enabled, ht40_enabled, vht_enabled;
 	uint8_t ch_width = 0;
 	enum P2P_VENDOR_ACS_HW_MODE hw_mode;
-	uint8_t *ch_list = NULL;
+	uint32_t *ch_list = NULL;
 	uint8_t ch_list_count = 0;
 	uint8_t i;
 	uint32_t msg_size;
@@ -1642,27 +1642,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	if (tb[WIFI_VENDOR_ATTR_ACS_CHWIDTH])
 		ch_width = nla_get_u16(tb[WIFI_VENDOR_ATTR_ACS_CHWIDTH]);
 
-	if (tb[WIFI_VENDOR_ATTR_ACS_CH_LIST]) {
-		char *tmp = nla_data(tb[WIFI_VENDOR_ATTR_ACS_CH_LIST]);
-
-		ch_list_count = nla_len(tb[WIFI_VENDOR_ATTR_ACS_CH_LIST]);
-		if (ch_list_count) {
-			if (ch_list_count > MAX_CHN_NUM) {
-				DBGLOG(REQ, ERROR, "Invalid channel count.\n");
-				rStatus = -EINVAL;
-				goto exit;
-			}
-			ch_list = kalMemAlloc(sizeof(uint8_t) * ch_list_count,
-					VIR_MEM_TYPE);
-			if (ch_list == NULL) {
-				DBGLOG(REQ, ERROR, "allocate ch_list fail.\n");
-				rStatus = -ENOMEM;
-				goto exit;
-			}
-
-			kalMemCopy(ch_list, tmp, ch_list_count);
-		}
-	} else if (tb[WIFI_VENDOR_ATTR_ACS_FREQ_LIST]) {
+	if (tb[WIFI_VENDOR_ATTR_ACS_FREQ_LIST]) {
 		uint32_t *freq =
 			nla_data(tb[WIFI_VENDOR_ATTR_ACS_FREQ_LIST]);
 
@@ -1674,8 +1654,9 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 				rStatus = -EINVAL;
 				goto exit;
 			}
-			ch_list = kalMemAlloc(sizeof(uint8_t) * ch_list_count,
-					VIR_MEM_TYPE);
+			ch_list = kalMemAlloc(
+				sizeof(uint32_t) * ch_list_count,
+				VIR_MEM_TYPE);
 			if (ch_list == NULL) {
 				DBGLOG(REQ, ERROR, "allocate ch_list fail.\n");
 				rStatus = -ENOMEM;
@@ -1683,8 +1664,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 			}
 
 			for (i = 0; i < ch_list_count; i++)
-				ch_list[i] =
-					ieee80211_frequency_to_channel(freq[i]);
+				ch_list[i] = freq[i];
 		}
 	}
 
@@ -1738,12 +1718,22 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 		prRfChannelInfo =
 			&(prMsgAcsRequest->arChannelListInfo[i]);
 
-		prRfChannelInfo->ucChannelNum = ch_list[i];
+		prRfChannelInfo->ucChannelNum =
+			nicFreq2ChannelNum(ch_list[i] * 1000);
 
-		if (prRfChannelInfo->ucChannelNum <= 14)
+		if ((ch_list[i] >= 2412) && (ch_list[i] <= 2484))
 			prRfChannelInfo->eBand = BAND_2G4;
-		else
+		else if ((ch_list[i] >= 5180) && (ch_list[i] <= 5900))
 			prRfChannelInfo->eBand = BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		else if ((ch_list[i] >= 5955) && (ch_list[i] <= 7115))
+			prRfChannelInfo->eBand = BAND_6G;
+#endif
+
+		DBGLOG(REQ, TRACE, "acs channel, band[%d] ch[%d] freq[%d]\n",
+			prRfChannelInfo->eBand,
+			prRfChannelInfo->ucChannelNum,
+			ch_list[i]);
 
 		/* Iteration. */
 		prRfChannelInfo++;
