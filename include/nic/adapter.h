@@ -1054,7 +1054,6 @@ struct WIFI_VAR {
 	uint8_t ucVhtIeIn2g;
 #endif
 	uint8_t fgCsaInProgress;
-	uint8_t fgCsaInBeacon;
 	uint8_t ucChannelSwitchMode;
 	uint8_t ucNewChannelNumber;
 	uint8_t ucChannelSwitchCount;

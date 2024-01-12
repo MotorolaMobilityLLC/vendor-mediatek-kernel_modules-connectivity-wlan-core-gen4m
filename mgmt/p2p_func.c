@@ -7354,7 +7354,6 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 		 * reported once in the beacon.
 		 */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
-		prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 
 		/* Update Beacon */
 		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
