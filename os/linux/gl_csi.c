@@ -36,6 +36,7 @@
  *******************************************************************************
  */
 static struct CSI_INFO_T rCSIInfo;
+static uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -44,6 +45,11 @@ static struct CSI_INFO_T rCSIInfo;
 struct CSI_INFO_T *glCsiGetCSIInfo(void)
 {
 	return &rCSIInfo;
+}
+
+uint8_t *glCsiGetCSIBuf(void)
+{
+	return aucCSIBuf;
 }
 
 void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
@@ -189,12 +195,14 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 	uint16_t *pru2Tmp = NULL;
 	uint32_t *p32tmp = NULL;
 	struct CSI_DATA_T *prCSIData = NULL;
+	struct CSI_DATA_T *prCSIBuffer;
 	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
 	/* u2Offset is 8 bytes currently, tag 4 bytes + length 4 bytes */
 	uint16_t u2Offset = OFFSET_OF(struct CSI_TLV_ELEMENT, aucbody);
 	uint32_t u4Tmp = 0;
 	uint8_t ucLastTagFlg = false;
-	uint32_t u4DataCount = CSI_MAX_DATA_COUNT;
+	uint16_t u2DataCount = 0;
+	u_int8_t bStatus;
 
 #define CSI_EVENT_MAX_SIZE 2500
 
@@ -246,7 +254,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucFwVer = le32_to_cpup(
+			prCSIData->ucFwVer = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_CBW:
@@ -257,7 +265,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucBw = le32_to_cpup(
+			prCSIData->ucBw = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_RSSI:
@@ -268,7 +276,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->cRssi = le32_to_cpup(
+			prCSIData->cRssi = (int8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_SNR:
@@ -279,7 +287,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucSNR = le32_to_cpup(
+			prCSIData->ucSNR = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_BAND:
@@ -290,7 +298,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucDbdcIdx = le32_to_cpup(
+			prCSIData->ucDbdcIdx = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_CSI_NUM:
@@ -301,20 +309,20 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			u4DataCount = le32_to_cpup(
+			prCSIData->u2DataCount = (uint16_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
-			prCSIData->u2DataCount = u4DataCount;
-			break;
-		case CSI_EVENT_CSI_I_DATA:
-			if (prCSIData->u2DataCount > u4DataCount) {
+
+			if (prCSIData->u2DataCount > CSI_MAX_DATA_COUNT) {
 				DBGLOG(NIC, WARN,
 					"[CSI] Invalid CSI count %u\n",
 					prCSIData->u2DataCount);
 				goto out;
-			}
-
+			} else
+				u2DataCount = prCSIData->u2DataCount;
+			break;
+		case CSI_EVENT_CSI_I_DATA:
 			if (prCSITlvData->body_len !=
-				sizeof(int16_t) * u4DataCount) {
+				sizeof(int16_t) * u2DataCount) {
 				DBGLOG(NIC, WARN,
 					"[CSI] Invalid CSI num len %u",
 					prCSITlvData->body_len);
@@ -325,20 +333,13 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				sizeof(prCSIData->ac2IData));
 
 			pru2Tmp = (int16_t *) prCSITlvData->aucbody;
-			for (i2Idx = 0; i2Idx < prCSIData->u2DataCount; i2Idx++)
+			for (i2Idx = 0; i2Idx < u2DataCount; i2Idx++)
 				prCSIData->ac2IData[i2Idx] =
-					le16_to_cpup(pru2Tmp + i2Idx);
+					(int16_t) le16_to_cpup(pru2Tmp + i2Idx);
 			break;
 		case CSI_EVENT_CSI_Q_DATA:
-			if (prCSIData->u2DataCount > u4DataCount) {
-				DBGLOG(NIC, WARN,
-					"[CSI] Invalid CSI count %u\n",
-					prCSIData->u2DataCount);
-				goto out;
-			}
-
 			if (prCSITlvData->body_len !=
-				sizeof(int16_t) * u4DataCount) {
+				sizeof(int16_t) * u2DataCount) {
 				DBGLOG(NIC, WARN,
 					"[CSI] Invalid CSI num len %u",
 					prCSITlvData->body_len);
@@ -349,9 +350,9 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				sizeof(prCSIData->ac2QData));
 
 			pru2Tmp = (int16_t *) prCSITlvData->aucbody;
-			for (i2Idx = 0; i2Idx < prCSIData->u2DataCount; i2Idx++)
+			for (i2Idx = 0; i2Idx < u2DataCount; i2Idx++)
 				prCSIData->ac2QData[i2Idx] =
-					le16_to_cpup(pru2Tmp + i2Idx);
+					(int16_t) le16_to_cpup(pru2Tmp + i2Idx);
 			break;
 		case CSI_EVENT_DBW:
 			if (prCSITlvData->body_len != sizeof(uint32_t)) {
@@ -361,7 +362,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucDataBw = le32_to_cpup(
+			prCSIData->ucDataBw = (uint8_t) le32_to_cpup(
 					(int32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_CH_IDX:
@@ -372,7 +373,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucPrimaryChIdx = le32_to_cpup(
+			prCSIData->ucPrimaryChIdx = (uint8_t) le32_to_cpup(
 					(int32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_TA:
@@ -433,7 +434,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				prCSITlvData->aucbody,
 				prCSITlvData->body_len);
 
-			prCSIData->ucRsvd1Cnt =
+			prCSIData->ucRsvd1Cnt = (uint8_t)
 				prCSITlvData->body_len / sizeof(int32_t);
 			break;
 		case CSI_EVENT_RSVD2:
@@ -450,7 +451,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			p32tmp = (int32_t *) (prCSITlvData->aucbody);
 			for (i2Idx = 0; i2Idx < prCSIData->ucRsvd2Cnt; i2Idx++)
 				prCSIData->au4Rsvd2[i2Idx] =
-						le2cpu32(*(p32tmp + i2Idx));
+					(int32_t) le2cpu32(*(p32tmp + i2Idx));
 			break;
 		case CSI_EVENT_RSVD3:
 			if (prCSITlvData->body_len != sizeof(uint32_t)) {
@@ -460,7 +461,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->i4Rsvd3 = le32_to_cpup(
+			prCSIData->i4Rsvd3 = (int32_t) le32_to_cpup(
 					(int32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_RSVD4:
@@ -471,7 +472,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 				goto out;
 			}
 
-			prCSIData->ucRsvd4 = le32_to_cpup(
+			prCSIData->ucRsvd4 = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		case CSI_EVENT_H_IDX:
@@ -517,6 +518,28 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			prCSIData->u4Rsvd5 = le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
+		case CSI_EVENT_BW_SEG:
+			if (prCSITlvData->body_len != sizeof(uint32_t)) {
+				DBGLOG(NIC, WARN,
+					"[CSI] Invalid Segment Number len %u",
+					prCSITlvData->body_len);
+				goto out;
+			}
+
+			prCSIData->u4SegmentNum = le32_to_cpup(
+					(uint32_t *) prCSITlvData->aucbody);
+			break;
+		case CSI_EVENT_REMAIN_LAST:
+			if (prCSITlvData->body_len != sizeof(uint32_t)) {
+				DBGLOG(NIC, WARN,
+					"[CSI] Invalid Remain Last len %u",
+					prCSITlvData->body_len);
+				goto out;
+			}
+
+			prCSIData->ucRemainLast = (uint8_t) le32_to_cpup(
+					(uint32_t *) prCSITlvData->aucbody);
+			break;
 		default:
 			DBGLOG(NIC, WARN, "[CSI] Unsupported CSI tag %d\n",
 				prCSITlvData->tag_type);
@@ -528,29 +551,97 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			prBuf += (u2Offset + prCSITlvData->body_len);
 	}
 
-	/* mask the null tone */
-	wlanApplyCSIToneMask(prCSIData->ucRxMode,
-		prCSIData->ucBw, prCSIData->ucDataBw,
-		prCSIData->ucPrimaryChIdx,
-		prCSIData->ac2IData, prCSIData->ac2QData);
-
 	DBGLOG(NIC, INFO, "[CSI] u2DataCount=%d\n",
 				prCSIData->u2DataCount);
-	wlanPushCSIData(prAdapter, prCSIData);
-	switch (prCSIInfo->eCSIOutput) {
-	case CSI_OUTPUT_PROC_FILE:
-		wake_up_interruptible(&(prAdapter->prGlueInfo->waitq_csi));
-		break;
-	case CSI_OUTPUT_VENDOR_EVENT:
-		mtk_cfg80211_vendor_event_csi_raw_data(prAdapter);
-		break;
-	default:
-		DBGLOG(NIC, INFO, "[CSI] Unknown CSI data output method = %d",
-			prCSIInfo->eCSIOutput);
+
+	bStatus = wlanPushCSISegmentData(prAdapter, prCSIData);
+
+	if (bStatus && prCSIData->ucRemainLast == 0) {
+		if (prCSIData->u4SegmentNum == 0)
+			prCSIBuffer = prCSIData;
+		else
+			prCSIBuffer = &(prCSIInfo->rCSISegmentTemp);
+
+		/* mask the null tone */
+		wlanApplyCSIToneMask(prCSIBuffer->ucRxMode,
+			prCSIBuffer->ucBw, prCSIBuffer->ucDataBw,
+			prCSIBuffer->ucPrimaryChIdx,
+			prCSIBuffer->ac2IData, prCSIBuffer->ac2QData);
+
+		wlanPushCSIData(prAdapter, prCSIBuffer);
+
+		switch (prCSIInfo->eCSIOutput) {
+		case CSI_OUTPUT_PROC_FILE:
+			wake_up_interruptible(
+				&(prAdapter->prGlueInfo->waitq_csi));
+			break;
+		case CSI_OUTPUT_VENDOR_EVENT:
+			mtk_cfg80211_vendor_event_csi_raw_data(prAdapter);
+			break;
+		default:
+			DBGLOG(NIC, ERROR,
+				"[CSI] Unknown CSI data output method = %d",
+				prCSIInfo->eCSIOutput);
+		}
 	}
 
 out:
 	kalMemFree(prCSIData, VIR_MEM_TYPE, sizeof(struct CSI_DATA_T));
+}
+
+u_int8_t
+wlanPushCSISegmentData(struct ADAPTER *prAdapter,
+	struct CSI_DATA_T *prCSIData)
+{
+	struct CSI_INFO_T *prCSIInfo = &rCSIInfo;
+	struct CSI_DATA_T *prCSISegmentTemp;
+
+#if CFG_CSI_DEBUG
+	DBGLOG(NIC, INFO,
+		"[CSI] Segment number=%d, Remain last=%d\n",
+		prCSIData->u4SegmentNum, prCSIData->ucRemainLast);
+#endif
+
+	/* Put the segment CSI data into CSI segment temp */
+	if (prCSIData->u4SegmentNum == 0 &&
+		prCSIData->ucRemainLast == 1) {
+		kalMemCopy(&(prCSIInfo->rCSISegmentTemp),
+				prCSIData, sizeof(struct CSI_DATA_T));
+
+		return TRUE;
+	} else if (prCSIData->u4SegmentNum != 0) {
+		prCSISegmentTemp = &(prCSIInfo->rCSISegmentTemp);
+		if (prCSIData->Antenna_pattern !=
+			prCSISegmentTemp->Antenna_pattern ||
+			prCSIData->u4SegmentNum !=
+			(prCSISegmentTemp->u4SegmentNum + 1)) {
+			DBGLOG(NIC, ERROR,
+				"[CSI] H_IDX [%d/%d] is different or SEG_NUM [%d/%d] is not sequential.\n",
+				prCSISegmentTemp->Antenna_pattern,
+				prCSIData->Antenna_pattern,
+				prCSISegmentTemp->u4SegmentNum,
+				prCSIData->u4SegmentNum);
+
+			return FALSE;
+		}
+
+		kalMemCopy(&prCSISegmentTemp->ac2IData[
+				prCSISegmentTemp->u2DataCount],
+			prCSIData->ac2IData,
+			prCSIData->u2DataCount * sizeof(int16_t));
+
+		kalMemCopy(&prCSISegmentTemp->ac2QData[
+				prCSISegmentTemp->u2DataCount],
+			prCSIData->ac2QData,
+			prCSIData->u2DataCount * sizeof(int16_t));
+
+		prCSISegmentTemp->u2DataCount += prCSIData->u2DataCount;
+		prCSISegmentTemp->u4SegmentNum = prCSIData->u4SegmentNum;
+		prCSISegmentTemp->ucRemainLast = prCSIData->ucRemainLast;
+	}
+
+	return TRUE;
+
 }
 
 u_int8_t
@@ -583,6 +674,14 @@ wlanPushCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 		prCSIInfo->u4CSIBufferHead %= CSI_RING_SIZE;
 	}
 
+#if CFG_CSI_DEBUG
+	DBGLOG(NIC, INFO,
+		"[CSI] Push idx = %d, data count = %d, H_IDX = %d\n",
+		prCSIInfo->u4CSIBufferTail,
+		prCSIData->u2DataCount,
+		prCSIData->Antenna_pattern);
+#endif
+
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
 
 	return TRUE;
@@ -604,6 +703,14 @@ wlanPopCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 	kalMemCopy(prCSIData,
 		&(prCSIInfo->arCSIBuffer[prCSIInfo->u4CSIBufferHead]),
 		sizeof(struct CSI_DATA_T));
+
+#if CFG_CSI_DEBUG
+	DBGLOG(NIC, INFO,
+		"[CSI] Pop idx = %d, data count = %d, H_IDX = %d\n",
+		prCSIInfo->u4CSIBufferHead,
+		prCSIData->u2DataCount,
+		prCSIData->Antenna_pattern);
+#endif
 
 	prCSIInfo->u4CSIBufferUsed--;
 	if (prCSIInfo->u4CSIBufferUsed != 0) {
