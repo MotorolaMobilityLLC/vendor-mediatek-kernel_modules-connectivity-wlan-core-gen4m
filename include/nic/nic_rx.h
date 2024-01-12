@@ -1071,6 +1071,8 @@ struct RX_DESC_OPS_T {
 		void *prRxStatus);
 	uint8_t (*nic_rxd_get_ofld)(
 		void *prRxStatus);
+	uint8_t (*nic_rxd_get_HdrTrans)(
+		void *prRxStatus);
 	void (*nic_rxd_fill_rfb)(
 		struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
