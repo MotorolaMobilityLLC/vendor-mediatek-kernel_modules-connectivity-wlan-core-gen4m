@@ -1005,7 +1005,6 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 	P_PARAM_AUTH_EVENT_T pAuth = (P_PARAM_AUTH_EVENT_T) pStatus;
 	P_PARAM_PMKID_CANDIDATE_LIST_T pPmkid = (P_PARAM_PMKID_CANDIDATE_LIST_T) (pStatus + 1);
 	PARAM_MAC_ADDRESS arBssid;
-	struct cfg80211_scan_request *prScanRequest = NULL;
 	PARAM_SSID_T ssid;
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_bss *bss;
@@ -1191,14 +1190,10 @@ kalIndicateStatusAndComplete(IN P_GLUE_INFO_T prGlueInfo, IN WLAN_STATUS eStatus
 		/* 1. reset first for newly incoming request */
 		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 		if (prGlueInfo->prScanRequest != NULL) {
-			prScanRequest = prGlueInfo->prScanRequest;
+			kalCfg80211ScanDone(prGlueInfo->prScanRequest, FALSE);
 			prGlueInfo->prScanRequest = NULL;
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
-		/* 2. then CFG80211 Indication */
-		if (prScanRequest)
-			kalCfg80211ScanDone(prScanRequest, FALSE);
 
 		break;
 
