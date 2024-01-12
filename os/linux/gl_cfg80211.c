@@ -3528,8 +3528,14 @@ int mtk_cfg80211_sched_scan_start(IN struct wiphy *wiphy,
 	return 0;
 }
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
+				 IN struct net_device *ndev,
+				 IN u64 reqid)
+#else
 int mtk_cfg80211_sched_scan_stop(IN struct wiphy *wiphy,
 				 IN struct net_device *ndev)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
@@ -5214,7 +5220,13 @@ int mtk_cfg_channel_switch(struct wiphy *wiphy,
 #endif
 #endif
 
-#if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
+				       const char *name,
+				       unsigned char name_assign_type,
+				       enum nl80211_iftype type,
+				       struct vif_params *params)
+#elif KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 				       const char *name,
 				       unsigned char name_assign_type,
@@ -5230,6 +5242,9 @@ struct wireless_dev *mtk_cfg_add_iface(struct wiphy *wiphy,
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	u32 *flags = NULL;
+#endif
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
@@ -5276,15 +5291,25 @@ int mtk_cfg_del_iface(struct wiphy *wiphy,
 #endif  /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
 }
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_change_iface(struct wiphy *wiphy,
+			 struct net_device *ndev,
+			 enum nl80211_iftype type,
+			 struct vif_params *params)
+#else
 int mtk_cfg_change_iface(struct wiphy *wiphy,
 			 struct net_device *ndev,
 			 enum nl80211_iftype type, u32 *flags,
 			 struct vif_params *params)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetdevPriv = NULL;
 	struct P2P_INFO *prP2pInfo = NULL;
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	u32 *flags = NULL;
+#endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -5755,8 +5780,14 @@ int mtk_cfg_sched_scan_start(IN struct wiphy *wiphy,
 
 }
 
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
+			    IN struct net_device *ndev,
+			    IN u64 reqid)
+#else
 int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
 			    IN struct net_device *ndev)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -5766,8 +5797,11 @@ int mtk_cfg_sched_scan_stop(IN struct wiphy *wiphy,
 		DBGLOG(REQ, WARN, "driver is not ready\n");
 		return 0;
 	}
-
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	return mtk_cfg80211_sched_scan_stop(wiphy, ndev, reqid);
+#else
 	return mtk_cfg80211_sched_scan_stop(wiphy, ndev);
+#endif
 }
 #endif /* CFG_SUPPORT_SCHED_SCAN */
 

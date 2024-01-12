@@ -849,8 +849,7 @@ int mtk_cfg80211_vendor_set_rssi_monitoring(
 		goto nla_put_failure;
 	kalMemZero(attr, sizeof(struct nlattr *) *
 		   (WIFI_ATTRIBUTE_RSSI_MONITOR_START + 1));
-
-	if (nla_parse_nested(attr,
+	if (NLA_PARSE_NESTED(attr,
 			     WIFI_ATTRIBUTE_RSSI_MONITOR_START,
 			     (struct nlattr *)(data - NLA_HDRLEN),
 			     nla_parse_wifi_policy) < 0) {
@@ -930,7 +929,7 @@ int mtk_cfg80211_vendor_packet_keep_alive_start(
 		   * (MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC + 1));
 
 	prPkt->enable = TRUE; /*start packet keep alive*/
-	if (nla_parse_nested(attr,
+	if (NLA_PARSE_NESTED(attr,
 			     MKEEP_ALIVE_ATTRIBUTE_PERIOD_MSEC,
 			     (struct nlattr *)(data - NLA_HDRLEN),
 			     nla_parse_offloading_policy) < 0) {
@@ -1240,7 +1239,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	if (!prGlueInfo)
 		return -EFAULT;
 
-	if (nla_parse(tb, WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX,
+	if (NLA_PARSE(tb, WIFI_VENDOR_ATTR_PREFERRED_FREQ_LIST_MAX,
 			data, data_len, nla_get_preferred_freq_list_policy)) {
 		DBGLOG(REQ, ERROR, "Invalid ATTR.\n");
 		return -EINVAL;

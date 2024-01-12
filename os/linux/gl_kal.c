@@ -1035,7 +1035,12 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 
 	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb);
 
+#if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
+	/* ToDo jiffies assignment */
+#else
 	prNetDev->last_rx = jiffies;
+#endif
+
 #if CFG_SUPPORT_SNIFFER
 	if (prGlueInfo->fgIsEnableMon) {
 		skb_reset_mac_header(prSkb);
@@ -1136,6 +1141,10 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	uint8_t ucChannelNum;
 	struct BSS_DESC *prBssDesc = NULL;
 	uint8_t fgScanAborted = FALSE;
+
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	struct cfg80211_roam_info rRoamInfo = { 0 };
+#endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -1295,6 +1304,18 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 
 			/* CFG80211 Indication */
 			if (eStatus == WLAN_STATUS_ROAM_OUT_FIND_BEST) {
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+				rRoamInfo.bss = bss;
+				rRoamInfo.req_ie = prGlueInfo->aucReqIe;
+				rRoamInfo.req_ie_len =
+					prGlueInfo->u4ReqIeLength;
+				rRoamInfo.resp_ie = prGlueInfo->aucRspIe;
+				rRoamInfo.resp_ie_len =
+					prGlueInfo->u4RspIeLength;
+
+				cfg80211_roamed(prGlueInfo->prDevHandler,
+					&rRoamInfo, GFP_KERNEL);
+#else
 				cfg80211_roamed_bss(
 					prGlueInfo->prDevHandler,
 					bss,
@@ -1303,7 +1324,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					prGlueInfo->aucRspIe,
 					prGlueInfo->u4RspIeLength,
 					GFP_KERNEL);
-
+#endif
 			} else {
 				cfg80211_connect_result(
 					prGlueInfo->prDevHandler,
@@ -4774,8 +4795,11 @@ uint32_t kalFileRead(struct file *file,
 	oldfs = get_fs();
 	set_fs(get_ds());
 
+#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
+	ret = kernel_read(file, data, size, &offset);
+#else
 	ret = vfs_read(file, data, size, &offset);
-
+#endif
 	set_fs(oldfs);
 	return ret;
 }
@@ -4790,7 +4814,11 @@ uint32_t kalFileWrite(struct file *file,
 	oldfs = get_fs();
 	set_fs(get_ds());
 
+#if KERNEL_VERSION(4, 13, 0) <= CFG80211_VERSION_CODE
+	ret = kernel_write(file, data, size, &offset);
+#else
 	ret = vfs_write(file, data, size, &offset);
+#endif
 
 	set_fs(oldfs);
 	return ret;
@@ -5288,7 +5316,11 @@ void kalSchedScanResults(IN struct GLUE_INFO *prGlueInfo)
 			       BSS_TYPE_INFRASTRUCTURE, NULL);
 
 	scanlog_dbg(LOG_SCHED_SCAN_DONE_D2K, INFO, "Call cfg80211_sched_scan_results\n");
+#if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo), 0);
+#else
 	cfg80211_sched_scan_results(priv_to_wiphy(prGlueInfo));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -6902,8 +6934,6 @@ u_int8_t kalScanParseRandomMac(const struct net_device *ndev,
 	}
 #if KERNEL_VERSION(4, 10, 0) <= CFG80211_VERSION_CODE
 	{
-		uint8_t ucFullMask[MAC_ADDR_LEN];
-
 		if (kalIsValidMacAddr(request->bssid)) {
 			COPY_MAC_ADDR(pucRandomMac, request->bssid);
 			log_dbg(SCN, INFO, "random mac=" MACSTR "\n",
