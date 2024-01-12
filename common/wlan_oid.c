@@ -555,6 +555,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 	struct PARAM_BSSID_EX *prBssidEx;
 	uint8_t *cp;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -576,13 +577,13 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 	}
 
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
 	u4BssidListExLen = 0;
 
 	if (prAdapter->fgIsRadioOff == FALSE) {
 		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++)
-			u4BssidListExLen +=
-				ALIGN_4(prWlanInfo->arScanResult[i].u4Length);
+			u4BssidListExLen += ALIGN_4(prScanResult[i].u4Length);
 	}
 
 	if (u4BssidListExLen)
@@ -608,9 +609,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 			prBssidEx = (struct PARAM_BSSID_EX *) cp;
 
 			/* copy structure */
-			kalMemCopy(prBssidEx,
-				   &prWlanInfo->arScanResult[i],
-				   OFFSET_OF(struct PARAM_BSSID_EX, aucIEs));
+			*prBssidEx = prScanResult[i];
 
 			/* assign ie buffer head*/
 			prBssidEx->aucIEs = (uint8_t *)(prBssidEx + 1);
@@ -621,11 +620,11 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 			if (prBssidEx->rRssi > PARAM_WHQL_RSSI_MAX_DBM)
 				prBssidEx->rRssi = PARAM_WHQL_RSSI_MAX_DBM;
 
-			if (prWlanInfo->arScanResult[i].u4IELength > 0) {
+			if (prScanResult[i].u4IELength > 0) {
 				/* copy IEs */
 				kalMemCopy(prBssidEx->aucIEs,
-				    prWlanInfo->apucScanResultIEs[i],
-				    prWlanInfo->arScanResult[i].u4IELength);
+					   prWlanInfo->apucScanResultIEs[i],
+					   prScanResult[i].u4IELength);
 			}
 			/* 4-bytes alignement */
 			prBssidEx->u4Length = ALIGN_4(prBssidEx->u4Length);
@@ -773,6 +772,7 @@ wlanoidSetBssid(struct ADAPTER *prAdapter,
 	struct PARAM_BSSID_EX *prCurrBssid;
 	uint8_t ucBssIndex = 0;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -801,6 +801,7 @@ wlanoidSetBssid(struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 	pAddr = (uint8_t *) pvSetBuffer;
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
 	/* re-association check */
 	if (kalGetMediaStateIndicated(prGlueInfo, ucBssIndex) ==
@@ -826,8 +827,7 @@ wlanoidSetBssid(struct ADAPTER *prAdapter,
 
 	/* check if any scanned result matchs with the BSSID */
 	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
-		if (EQUAL_MAC_ADDR(
-		    prWlanInfo->arScanResult[i].arMacAddress, pAddr)) {
+		if (EQUAL_MAC_ADDR(prScanResult[i].arMacAddress, pAddr)) {
 			i4Idx = (int32_t) i;
 			break;
 		}
@@ -907,6 +907,7 @@ wlanoidSetSsid(struct ADAPTER *prAdapter,
 	struct PARAM_BSSID_EX *prCurrBssid;
 	uint8_t ucBssIndex = 0;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -959,13 +960,13 @@ wlanoidSetSsid(struct ADAPTER *prAdapter,
 	}
 
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
 	/* check if any scanned result matchs with the SSID */
 	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
-		uint8_t *aucSsid = prWlanInfo->arScanResult[i].rSsid.aucSsid;
-		uint8_t ucSsidLength = (uint8_t)
-			prWlanInfo->arScanResult[i].rSsid.u4SsidLen;
-		int32_t i4RSSI = prWlanInfo->arScanResult[i].rRssi;
+		uint8_t *aucSsid = prScanResult[i].rSsid.aucSsid;
+		uint8_t ucSsidLength = (uint8_t)prScanResult[i].rSsid.u4SsidLen;
+		int32_t i4RSSI = prScanResult[i].rRssi;
 
 		if (EQUAL_SSID(aucSsid, ucSsidLength, pParamSsid->aucSsid,
 			       pParamSsid->u4SsidLen) &&
@@ -1247,10 +1248,9 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 #if 0
 	/* check if any scanned result matchs with the SSID */
 	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
-		uint8_t *aucSsid = prWlanInfo->arScanResult[i].rSsid.aucSsid;
-		uint8_t ucSsidLength = (uint8_t)
-			prWlanInfo->arScanResult[i].rSsid.u4SsidLen;
-		int32_t i4RSSI = prWlanInfo->arScanResult[i].rRssi;
+		uint8_t *aucSsid = prScanResult[i].rSsid.aucSsid;
+		uint8_t ucSsidLength = (uint8_t)prScanResult[i].rSsid.u4SsidLen;
+		int32_t i4RSSI = prScanResult[i].rRssi;
 
 		if (EQUAL_SSID(aucSsid, ucSsidLength, pParamConn->pucSsid,
 			       pParamConn->u4SsidLen) &&
@@ -1258,8 +1258,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 			i4Idx = (int32_t) i;
 			i4MaxRSSI = i4RSSI;
 		}
-		if (EQUAL_MAC_ADDR(
-		    prWlanInfo->arScanResult[i].arMacAddress, pAddr)) {
+		if (EQUAL_MAC_ADDR(prScanResult[i].arMacAddress, pAddr)) {
 			i4Idx = (int32_t) i;
 			break;
 		}

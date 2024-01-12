@@ -1142,8 +1142,8 @@ void mqmFillAcQueParam(struct WMM_AC_PARAM *prAcParam,
 		struct AC_QUE_PARMS *prAcQueParams);
 
 void mqmProcessScanResult(struct ADAPTER *prAdapter,
-			struct BSS_DESC *prScanResult,
-			struct STA_RECORD *prStaRec);
+			  struct BSS_DESC *prScanResult,
+			  struct STA_RECORD *prStaRec);
 
 uint32_t mqmFillWmmInfoIE(uint8_t *pucOutBuf,
 	u_int8_t fgSupportUAPSD, uint8_t ucBmpDeliveryAC,

@@ -4077,49 +4077,43 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter, void *prPacket)
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void wlanClearScanningResult(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex)
+void wlanClearScanningResult(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	u_int8_t fgKeepCurrOne = FALSE;
 	uint32_t i;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 	struct PARAM_BSSID_EX *prCurrBssid;
 
 	ASSERT(prAdapter);
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
 	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 
 	/* clear scanning result */
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo,
-		ucBssIndex) ==
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
 	    MEDIA_STATE_CONNECTED) {
 
 		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 
 			if (!EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
-				    prWlanInfo->arScanResult[i].arMacAddress))
+					    prScanResult[i].arMacAddress))
 				continue;
 
 			fgKeepCurrOne = TRUE;
 
-			if (i != 0) {
-				/* copy structure */
-				kalMemCopy(prWlanInfo->arScanResult,
-					   &prWlanInfo->arScanResult[i],
-					   OFFSET_OF(struct PARAM_BSSID_EX,
-						     aucIEs));
-			}
+			if (i != 0) /* copy structure */
+				prScanResult[0] = prScanResult[i];
 
-			if (prWlanInfo->arScanResult[i].u4IELength > 0) {
+			if (prScanResult[i].u4IELength > 0) {
 				if (prWlanInfo->apucScanResultIEs[i] !=
 				    prWlanInfo->aucScanIEBuf) {
 
 				/* move IEs to head */
 				kalMemCopy(prWlanInfo->aucScanIEBuf,
 					   prWlanInfo->apucScanResultIEs[i],
-					   prWlanInfo->arScanResult[i]
-					   .u4IELength);
+					   prScanResult[i].u4IELength);
 				}
 
 				/* modify IE pointer */
@@ -4137,7 +4131,7 @@ void wlanClearScanningResult(struct ADAPTER *prAdapter,
 	if (fgKeepCurrOne == TRUE) {
 		prWlanInfo->u4ScanResultNum = 1;
 		prWlanInfo->u4ScanIEBufferUsage =
-		    ALIGN_4(prWlanInfo->arScanResult[0].u4IELength);
+			ALIGN_4(prScanResult[0].u4IELength);
 	} else {
 		prWlanInfo->u4ScanResultNum = 0;
 		prWlanInfo->u4ScanIEBufferUsage = 0;
@@ -4160,9 +4154,11 @@ void wlanClearBssInScanningResult(struct ADAPTER
 	uint32_t i, j, u4IELength = 0, u4IEMoveLength;
 	uint8_t *pucIEPtr;
 	struct WLAN_INFO *prWlanInfo;
+	struct PARAM_BSSID_EX *prScanResult;
 
 	ASSERT(prAdapter);
 	prWlanInfo = &prAdapter->rWlanInfo;
+	prScanResult = prWlanInfo->arScanResult;
 
 	/* clear scanning result */
 	i = 0;
@@ -4170,19 +4166,14 @@ void wlanClearBssInScanningResult(struct ADAPTER
 		if (i >= prWlanInfo->u4ScanResultNum)
 			break;
 
-		if (EQUAL_MAC_ADDR(arBSSID,
-				   prWlanInfo->arScanResult[i].arMacAddress)) {
+		if (EQUAL_MAC_ADDR(arBSSID, prScanResult[i].arMacAddress)) {
 			/* backup current IE length */
-			u4IELength =
-				ALIGN_4(prWlanInfo->arScanResult[i].u4IELength);
+			u4IELength = ALIGN_4(prScanResult[i].u4IELength);
 			pucIEPtr = prWlanInfo->apucScanResultIEs[i];
 
 			/* removed from middle */
 			for (j = i + 1; j < prWlanInfo->u4ScanResultNum; j++) {
-				kalMemCopy(&(prWlanInfo->arScanResult[j - 1]),
-					   &(prWlanInfo->arScanResult[j]),
-					   OFFSET_OF(struct PARAM_BSSID_EX,
-					   aucIEs));
+				prScanResult[j - 1] = prScanResult[j];
 
 				prWlanInfo->apucScanResultIEs[j - 1] =
 					prWlanInfo->apucScanResultIEs[j];
