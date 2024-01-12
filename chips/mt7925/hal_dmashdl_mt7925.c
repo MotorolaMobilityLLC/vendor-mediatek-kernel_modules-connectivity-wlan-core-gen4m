@@ -35,6 +35,8 @@
 ********************************************************************************
 */
 
+#define SW_WORKAROUND_FOR_DMASHDL_ISSUE_HWITS00058160 1
+
 /*******************************************************************************
 *                                 M A C R O S
 ********************************************************************************
@@ -290,6 +292,9 @@ struct DMASHDL_CFG rMt7925DmashdlCfg = {
 void mt7925DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
+#if (SW_WORKAROUND_FOR_DMASHDL_ISSUE_HWITS00058160 == 1)
+	uint32_t u4Val = 0;
+#endif
 
 	asicConnac3xDmashdlSetPlePktMaxPage(prAdapter,
 					 rMt7925DmashdlCfg.u2PktPleMaxPage);
@@ -327,6 +332,12 @@ void mt7925DmashdlInit(struct ADAPTER *prAdapter)
 	asicConnac3xDmashdlSetOptionalControl(prAdapter,
 		rMt7925DmashdlCfg.u2HifAckCntTh,
 		rMt7925DmashdlCfg.u2HifGupActMap);
+
+#if (SW_WORKAROUND_FOR_DMASHDL_ISSUE_HWITS00058160 == 1)
+	HAL_MCR_RD(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, &u4Val);
+	u4Val &= ~WF_HIF_DMASHDL_TOP_PAGE_SETTING_PP_OFFSET_ADD_ENA_MASK;
+	HAL_MCR_WR(prAdapter, WF_HIF_DMASHDL_TOP_PAGE_SETTING_ADDR, u4Val);
+#endif
 }
 
 #endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) || defined(_HIF_USB) */
