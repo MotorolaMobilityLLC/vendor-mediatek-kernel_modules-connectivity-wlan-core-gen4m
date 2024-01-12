@@ -9,6 +9,7 @@ enum ENUM_P2P_DEV_STATE {
 	P2P_DEV_STATE_REQING_CHANNEL,
 	P2P_DEV_STATE_CHNL_ON_HAND,
 	P2P_DEV_STATE_OFF_CHNL_TX,
+	P2P_DEV_STATE_LISTEN_OFFLOAD,
 	/* Requesting Channel to Send Specific Frame. */
 	P2P_DEV_STATE_NUM
 };
@@ -132,6 +133,9 @@ struct P2P_DEV_FSM_INFO {
 	/* Mgmt tx related. */
 	struct P2P_MGMT_TX_REQ_INFO rMgmtTxInfo;
 
+	/* Listen offload related. */
+	struct P2P_LISTEN_OFFLOAD_INFO rLoInfo;
+
 	/* FSM Timer */
 	struct TIMER rP2pFsmTimeoutTimer;
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
@@ -175,6 +179,11 @@ struct MSG_P2P_ACS_REQUEST {
 	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
 	uint32_t u4NumChannel;
 	struct RF_CHANNEL_INFO arChannelListInfo[1];
+};
+
+struct MSG_P2P_LISTEN_OFFLOAD {
+	struct MSG_HDR rMsgHdr;
+	struct P2P_LISTEN_OFFLOAD_INFO rInfo;
 };
 
 /*========================= Initial ============================*/
@@ -225,6 +234,18 @@ p2pDevFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 
 void p2pDevFsmRunEventMgmtTx(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
+
+void p2pDevFsmListenOffloadStart(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
+
+void p2pDevListenOffloadStopHandler(
+	struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
+
+void p2pDevFsmListenOffloadStop(
+	struct ADAPTER *prAdapter,
+	struct MSG_HDR *prMsgHdr);
 
 uint32_t
 p2pDevFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,

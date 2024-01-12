@@ -378,6 +378,20 @@ struct P2P_LINK_INFO {
 	struct STA_RECORD *prP2pTargetStaRec;
 };
 
+struct P2P_LISTEN_OFFLOAD_INFO {
+	uint8_t ucBssIndex;
+	uint32_t u4DevId;
+	uint32_t u4flags;
+	uint32_t u4Freq;
+	uint32_t u4Period;
+	uint32_t u4Interval;
+	uint32_t u4Count;
+	uint8_t aucDevice[MAX_UEVENT_LEN];
+	uint32_t u2DevLen;
+	uint8_t aucIE[MAX_IE_LENGTH];
+	uint16_t u2IELen;
+};
+
 /******************************************************************************
  *                            P U B L I C   D A T A
  ******************************************************************************

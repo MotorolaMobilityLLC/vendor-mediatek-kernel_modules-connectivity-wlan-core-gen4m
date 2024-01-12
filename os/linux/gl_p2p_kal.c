@@ -2855,4 +2855,49 @@ u_int8_t kalGetP2pDevScanSpecificSSID(struct GLUE_INFO *prGlueInfo)
 #endif
 	return fgScanSpecificSSID;
 }
+
+void kalP2pIndicateListenOffloadEvent(
+	struct GLUE_INFO *prGlueInfo,
+	uint32_t event)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo =
+		(struct GL_P2P_INFO *) NULL;
+	struct sk_buff *vendor_event = NULL;
+
+	prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
+	if (!prGlueP2pInfo) {
+		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
+		return;
+	}
+
+	vendor_event =
+		cfg80211_vendor_event_alloc(
+		prGlueP2pInfo->prWdev->wiphy,
+		prGlueP2pInfo->prWdev,
+		sizeof(uint32_t) + NLMSG_HDRLEN,
+		WIFI_EVENT_P2P_LISTEN_OFFLOAD,
+		GFP_KERNEL);
+	if (!vendor_event) {
+		DBGLOG(P2P, ERROR, "allocate vendor event fail.\n");
+		goto nla_put_failure;
+	}
+
+	if (unlikely(nla_put_u32(vendor_event,
+		QCA_WLAN_VENDOR_ATTR_P2P_LO_STOP_REASON,
+		event) < 0)) {
+		DBGLOG(P2P, ERROR, "put freq fail.\n");
+		goto nla_put_failure;
+	}
+
+	cfg80211_vendor_event(vendor_event, GFP_KERNEL);
+
+	DBGLOG(P2P, INFO,
+		"p2p_lo event: %d\n", event);
+
+	return;
+
+nla_put_failure:
+	if (vendor_event)
+		kfree_skb(vendor_event);
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
