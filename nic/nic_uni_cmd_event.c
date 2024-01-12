@@ -1438,18 +1438,26 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 	struct WIFI_UNI_CMD_ENTRY *entry;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
 	     		       sizeof(struct UNI_CMD_STAREC_REMOVE_INFO);
-	struct STA_RECORD *sta;
+	uint8_t widx;
 
 	if (info->ucCID != CMD_ID_REMOVE_STA_RECORD ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_REMOVE_STA_RECORD *) info->pucInfoBuffer;
-	/* don't use cnmGetStaRecByIndex because starec is not in-use */
-	if (cmd->ucStaIndex < CFG_STA_REC_NUM)
-		sta = &ad->arStaRec[cmd->ucStaIndex];
-	else
-		return WLAN_STATUS_INVALID_DATA;
+	if (cmd->ucActionType == STA_REC_CMD_ACTION_STA ||
+	    cmd->ucActionType == STA_REC_CMD_ACTION_BSS_EXCLUDE_STA) {
+		/* don't use cnmGetStaRecByIndex becayse starec is not in-use */
+		if (cmd->ucStaIndex < CFG_STA_REC_NUM)
+			widx = ad->arStaRec[cmd->ucStaIndex].ucWlanIndex;
+		else
+			return WLAN_STATUS_INVALID_DATA;
+	} else {
+		/* remove by bss, because widx indicates excluded starec,
+		   widx = WTBL_SIZE means no one will be excluded */
+		widx = WTBL_SIZE;
+	}
+
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
 			max_cmd_len, NULL, NULL);
 	if (!entry)
@@ -1457,8 +1465,7 @@ uint32_t nicUniCmdRemoveStaRec(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_STAREC *) entry->pucInfoBuffer;
 	uni_cmd->ucBssInfoIdx = cmd->ucBssIndex;
-	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
-		sta->ucWlanIndex);
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL, widx);
 
 	tag = (struct UNI_CMD_STAREC_REMOVE_INFO *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_STAREC_TAG_REMOVE;
