@@ -4486,7 +4486,7 @@ static void p2pFunBufferP2pActionFrame(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "Buffer the p2p action frame.\n");
 	prFrame->ucRoleIdx = ucRoleIdx;
 	prFrame->u4Freq = nicChannelNum2Freq(
-		prSwRfb->ucChnlNum, BAND_NULL) / 1000;
+		prSwRfb->ucChnlNum, prSwRfb->eRfBand) / 1000;
 	prFrame->u2Length = prSwRfb->u2PacketLen;
 	prFrame->prHeader = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
 			prSwRfb->u2PacketLen);

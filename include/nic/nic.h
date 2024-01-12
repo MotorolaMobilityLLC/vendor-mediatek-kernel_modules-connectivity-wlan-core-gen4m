@@ -509,8 +509,7 @@ uint32_t nicSetAutoTxPower(struct ADAPTER *prAdapter,
 			   struct CMD_AUTO_POWER_PARAM *prAutoPwrParam);
 
 /* RXD relative */
-void nicRxdChNumTranslate(
-	enum ENUM_BAND eBand, uint8_t *pucHwChannelNum);
+uint8_t nicRxdChNumTranslate(enum ENUM_BAND eBand, uint8_t ucHwChannelNum);
 
 /*----------------------------------------------------------------------------*/
 /* Calibration Control                                                        */

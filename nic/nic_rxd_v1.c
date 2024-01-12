@@ -153,6 +153,8 @@ void nic_rxd_v1_fill_rfb(
 	uint32_t u4HeaderOffset;
 	uint16_t u2RxStatusOffset;
 
+	uint8_t ucHwChnlNum;
+
 	prChipInfo = prAdapter->chip_info;
 	prRxStatus = prSwRfb->prRxStatus;
 
@@ -218,8 +220,10 @@ void nic_rxd_v1_fill_rfb(
 	prSwRfb->fgIsFCS = HAL_RX_STATUS_IS_FCS_ERROR(prRxStatus);
 	prSwRfb->fgIsAmpdu = HAL_RX_STATUS_IS_AMPDU_FORMAT(prRxStatus);
 	prSwRfb->ucRxvSeqNo = HAL_RX_STATUS_GET_RXV_SEQ_NO(prRxStatus);
-	prSwRfb->ucChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
+	ucHwChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
 	prSwRfb->eRfBand = HAL_RX_STATUS_GET_RF_BAND(prRxStatus);
+	prSwRfb->ucChnlNum =
+		nicRxdChNumTranslate(pwSwRfb->eRfBand, ucHwChnlNum);
 	prSwRfb->ucTcl = HAL_RX_STATUS_GET_TCL(prRxStatus);
 
 #if 0
