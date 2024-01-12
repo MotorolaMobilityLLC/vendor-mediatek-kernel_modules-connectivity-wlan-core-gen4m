@@ -289,11 +289,14 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 	enum ENUM_IMG_DL_IDX_T eDlIdx,
 	uint32_t u4DataMode)
 {
+#define PATCH_INFO_BUF_LENGTH	128
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct FWDL_OPS_T *prFwDlOps;
 	struct PATCH_FORMAT_V2_T *prPatchFormat;
 	uint8_t aucBuffer[32];
+	uint8_t patchInfoBuffer[PATCH_INFO_BUF_LENGTH];
+	int32_t i4Offset = 0;
 	struct PATCH_GLO_DESC *glo_desc;
 	struct PATCH_SEC_MAP *sec_map;
 	uint8_t *img_ptr;
@@ -319,14 +322,22 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 
 	/* Dump image information */
 	kalMemZero(aucBuffer, 32);
-	kalStrnCpy(aucBuffer, prPatchFormat->aucPlatform, 4);
-	DBGLOG(INIT, INFO,
-	       "PATCH INFO: platform[%s] HW/SW ver[0x%04X] ver[0x%04X]\n",
-	       aucBuffer, prPatchFormat->u4SwHwVersion,
-	       prPatchFormat->u4PatchVersion);
+	kalMemZero(patchInfoBuffer, PATCH_INFO_BUF_LENGTH);
 
-	kalStrnCpy(aucBuffer, prPatchFormat->aucBuildDate, 16);
-	DBGLOG(INIT, INFO, "date[%s]\n", aucBuffer);
+	kalStrnCpy(aucBuffer, prPatchFormat->aucPlatform, 4);
+	i4Offset += kalSnprintf(patchInfoBuffer + i4Offset,
+		   PATCH_INFO_BUF_LENGTH - i4Offset,
+		   "platform[%s] HW/SW ver[0x%04X] ver[0x%04X] ",
+		   aucBuffer, prPatchFormat->u4SwHwVersion,
+		   prPatchFormat->u4PatchVersion);
+
+	kalStrnCpy(aucBuffer, prPatchFormat->aucBuildDate,
+		   kalStrnLen(prPatchFormat->aucBuildDate, 16));
+	i4Offset += kalSnprintf(patchInfoBuffer + i4Offset,
+		   PATCH_INFO_BUF_LENGTH - i4Offset,
+		   "date:%s", aucBuffer);
+
+	DBGLOG(INIT, INFO, "PATCH INFO: %s", patchInfoBuffer);
 
 	/* Backup to FW version info */
 	kalMemCopy(&prAdapter->rVerInfo.rPatchHeader, prPatchFormat,
@@ -371,10 +382,6 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 		img_ptr += sizeof(struct PATCH_SEC_MAP);
 
 		section_type = be2cpu32(sec_map->section_type);
-		DBGLOG(INIT, INFO,
-			"\tSection %d: type = 0x%x, offset = 0x%x, size = 0x%x\n",
-			i, section_type, be2cpu32(sec_map->section_offset),
-			be2cpu32(sec_map->section_size));
 
 		if ((section_type & PATCH_SEC_TYPE_MASK) ==
 			PATCH_SEC_TYPE_BIN_INFO) {
@@ -388,11 +395,17 @@ uint32_t wlanGetPatchInfoAndDownloadV2(struct ADAPTER
 			sec_info = be2cpu32(sec_map->bin_info_spec.sec_info);
 
 			DBGLOG(INIT, INFO,
-				"\tTarget address: 0x%x, length: 0x%x\n",
-				region->img_dest_addr, region->img_size);
+				"\tSection %d: type = 0x%x, offset = 0x%x, size = 0x%x, target address: 0x%x, length: 0x%x\n",
+				i, section_type,
+				be2cpu32(sec_map->section_offset),
+				be2cpu32(sec_map->section_size),
+				region->img_dest_addr,
+				region->img_size);
 		} else {
 			region->img_ptr = NULL;
-			DBGLOG(INIT, INFO, "\tNot binary\n");
+			DBGLOG(INIT, INFO,
+				"\tSection %d: type = 0x%x, Not binary\n",
+				i, section_type);
 		}
 	}
 
