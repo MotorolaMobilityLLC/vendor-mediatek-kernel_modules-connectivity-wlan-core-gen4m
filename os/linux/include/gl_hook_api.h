@@ -326,6 +326,12 @@ int32_t BssInfoConnectOwnDev(struct net_device *prNetDev,
 		      uint8_t ucOwnMacIdx, uint8_t ucBssIdx,
 		      uint8_t ucBandIdx);
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+int32_t BssInfoUpdateUnify(struct net_device *prNetDev,
+		      uint8_t ucOwnMacIdx, uint8_t ucBssIdx,
+		      uint8_t ucBandIdx, uint8_t ucBssId[MAC_ADDR_LEN]);
+#endif
+
 int32_t StaRecCmmUpdate(struct net_device *prNetDev,
 			uint8_t ucWlanId, uint8_t ucBssId, uint8_t u4Aid,
 			uint8_t aucMacAddr[MAC_ADDR_LEN]

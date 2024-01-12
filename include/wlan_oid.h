@@ -1133,6 +1133,15 @@ struct PROFILE_TAG_READ {
 	uint8_t ucRsv;
 };
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+struct UNI_BASIC_BSSINFO_UPDATE {
+	uint8_t ucOwnMacIdx;
+	uint8_t ucBssIdx;
+	uint8_t ucBandIdx;
+	uint8_t ucBssId[MAC_ADDR_LEN];
+};
+#endif
+
 struct PROFILE_TAG_WRITE {
 	uint8_t ucTxBfCategory;
 	uint8_t ucPfmuId;
@@ -3121,6 +3130,13 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 			 IN void *pvQueryBuffer,
 			 IN uint32_t u4QueryBufferLen,
 			 OUT uint32_t *pu4QueryInfoLen);
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+uint32_t
+wlanoidBssInfoBasicUnify(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen);
+#endif
 
 uint32_t
 wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,

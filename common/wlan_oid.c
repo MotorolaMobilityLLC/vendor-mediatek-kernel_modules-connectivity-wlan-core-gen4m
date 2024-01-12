@@ -5168,6 +5168,67 @@ wlanoidStaRecBFRead(IN struct ADAPTER *prAdapter,
 #endif
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+uint32_t
+wlanoidBssInfoBasicUnify(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen)
+{
+	struct UNI_BASIC_BSSINFO_UPDATE *prBssInfo;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct UNI_CMD_BSSINFO *uni_cmd;
+	struct UNI_CMD_BSSINFO_BASIC *tag;
+	struct BSS_INFO *bss;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
+			       sizeof(struct UNI_CMD_BSSINFO_BASIC);
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = u4SetBufferLen;
+	if (u4SetBufferLen < sizeof(struct UNI_BASIC_BSSINFO_UPDATE))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prBssInfo = (struct UNI_BASIC_BSSINFO_UPDATE *) pvSetBuffer;
+	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prBssInfo->ucBssIdx);
+	uni_cmd = (struct UNI_CMD_BSSINFO *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BSSINFO ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+	uni_cmd->ucBssInfoIdx = prBssInfo->ucBssIdx;
+	tag = (struct UNI_CMD_BSSINFO_BASIC *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BSSINFO_TAG_BASIC;
+	tag->u2Length = sizeof(*tag);
+	tag->ucActive = TRUE;
+	tag->ucOwnMacIdx = prBssInfo->ucOwnMacIdx;
+	tag->ucHwBSSIndex = prBssInfo->ucBssIdx;
+	tag->ucDbdcIdx = prBssInfo->ucBandIdx;
+	tag->u4ConnectionType = OP_MODE_INFRASTRUCTURE;
+	COPY_MAC_ADDR(tag->aucBSSID, prBssInfo->ucBssId);
+	tag->u2BcMcWlanidx = prBssInfo->ucBssIdx;
+	tag->u2BcnInterval = 100;
+	tag->ucDtimPeriod = 1;
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_BSSINFO,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicCmdEventSetCommon,
+			     nicOidCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+	return status;
+}
+#endif
+
 uint32_t
 wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,
 		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,

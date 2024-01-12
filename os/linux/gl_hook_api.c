@@ -3719,6 +3719,34 @@ int32_t BssInfoConnectOwnDev(struct net_device *prNetDev,
 	return i4Status;
 }
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+int32_t BssInfoUpdateUnify(struct net_device *prNetDev,
+		      uint8_t ucOwnMacIdx, uint8_t ucBssIdx,
+		      uint8_t ucBandIdx, uint8_t ucBssId[MAC_ADDR_LEN])
+{
+	struct UNI_BASIC_BSSINFO_UPDATE rBssInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4BufLen = 0;
+	int32_t i4Status = 0;
+
+	ASSERT(prNetDev);
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	kalMemZero(&rBssInfo, sizeof(struct UNI_BASIC_BSSINFO_UPDATE));
+	kalMemCopy(rBssInfo.ucBssId, ucBssId, MAC_ADDR_LEN);
+	rBssInfo.ucOwnMacIdx = ucOwnMacIdx;
+	rBssInfo.ucBssIdx = ucBssIdx;
+	rBssInfo.ucBandIdx = ucBandIdx;
+
+	i4Status = kalIoctl(prGlueInfo,
+			    wlanoidBssInfoBasicUnify, &rBssInfo,
+			    sizeof(struct UNI_BASIC_BSSINFO_UPDATE),
+			    FALSE, FALSE, TRUE, &u4BufLen);
+
+	return i4Status;
+}
+#endif
+
 int32_t TxBfProfileDataRead(struct net_device *prNetDev,
 			    uint8_t profileIdx, uint8_t fgBFer,
 			    uint8_t ucSubCarrIdxMsb, uint8_t ucSubCarrIdxLsb)
