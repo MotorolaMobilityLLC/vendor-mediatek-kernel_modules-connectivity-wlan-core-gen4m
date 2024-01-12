@@ -58,12 +58,6 @@
 #define ICMP_IDENTIFIER_OFFSET			4
 #define ICMP_SEQ_NUM_OFFSET			6
 
-#if CFG_MSCS_SUPPORT
-#define TCP_FLAG_SYN				0x02
-#define TCP_FLAG_SYN_ACK			0x12
-#define TCP_FLAG_ACK				0x10
-#endif
-
 #define ETH_P_1X                                0x888E
 #define ETH_P_PRE_1X                            0x88C7
 #if CFG_SUPPORT_WAPI
@@ -134,7 +128,15 @@
 #define ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT      0x88 /* 136 */
 
 #define TCP_HDR_FLAG_OFFSET                     13
+#define TCP_HDR_FLAG_FIN_BIT                    BIT(0)
+#define TCP_HDR_FLAG_SYN_BIT                    BIT(1)
+#define TCP_HDR_FLAG_RST_BIT                    BIT(2)
+#define TCP_HDR_FLAG_PSH_BIT                    BIT(3)
 #define TCP_HDR_FLAG_ACK_BIT                    BIT(4)
+#define TCP_HDR_FLAG_URG_BIT                    BIT(5)
+#define TCP_HDR_FLAG_SYN_ACK \
+		(TCP_HDR_FLAG_SYN_BIT | TCP_HDR_FLAG_ACK_BIT)
+#define TCP_HDR_FLAGS				BITS(0, 5)
 #define TCP_HDR_SRC_PORT_OFFSET                 0
 #define TCP_HDR_DST_PORT_OFFSET                 2
 #define TCP_HDR_SEQ                             4

@@ -4232,7 +4232,7 @@ struct UNI_CMD_MDNS_RECORDE_SET {
 };
 #endif
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 /* Fast Path command (0x54) */
 struct UNI_CMD_FAST_PATH {
 	/* fixed field */
@@ -6678,7 +6678,7 @@ struct UNI_EVENT_DELAY_BAR_INFO {
 };
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 /** This structure is used for UNI_EVENT_ID_FAST_PATH event (0x54)
  *
  * @version Supported from ver:1.0.0.0
@@ -6720,7 +6720,7 @@ struct UNI_EVENT_FAST_PATH_PROCESS_T {
 	uint8_t ucKeynum;
 	uint8_t u4KeybitmapMatchStatus;
 } __KAL_ATTRIB_PACKED__;
-#endif /* CFG_MSCS_SUPPORT */
+#endif /* CFG_FAST_PATH_SUPPORT */
 
 #if (CFG_CE_ASSERT_DUMP == 1)
 struct UNI_EVENT_ASSERT_DUMP {

@@ -7598,7 +7598,7 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will validate the Rx Action Frame and indicate to uppoer
- *            layer if the specified conditions were matched.
+ *            layer.
  *
  * @param[in] prAdapter          Pointer to the Adapter structure.
  * @param[in] prSwRfb            Pointer to SW RFB data structure.
@@ -7615,40 +7615,26 @@ void aisFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("aisFuncValidateRxActionFrame");
 
-	do {
-		if (prSwRfb->prStaRec)
-			ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
+	if (prSwRfb->prStaRec)
+		ucBssIndex = prSwRfb->prStaRec->ucBssIndex;
 
-		/* CFG_SUPPORT_NAN and CFG_ENABLE_WIFI_DIRECT
-		* consider to bypass AIS RxActionFrame
-		*/
-		if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
-			DBGLOG(AIS, LOUD,
-				"Use default, invalid index = %d\n",
-				ucBssIndex);
-			return;
-		}
+	/* CFG_SUPPORT_NAN and CFG_ENABLE_WIFI_DIRECT
+	 * consider to bypass AIS RxActionFrame
+	 */
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		DBGLOG(AIS, LOUD,
+			"Use default, invalid index = %d\n", ucBssIndex);
+		return;
+	}
 
-		prAisFsmInfo
-			= aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
-		if (1
-		/* prAisFsmInfo->u4AisPacketFilter &
-		 * PARAM_PACKET_FILTER_ACTION_FRAME
-		 */
-		) {
-			/* Leave the action frame to wpa_supplicant. */
-			kalIndicateRxMgmtFrame(
-				prAdapter,
-				prAdapter->prGlueInfo,
-				prSwRfb,
-				ucBssIndex);
-		}
-
-	} while (FALSE);
+	/* All action frames indicate to wpa_supplicant */
+	/* Leave the action frame to wpa_supplicant. */
+	kalIndicateRxMgmtFrame(prAdapter, prAdapter->prGlueInfo,
+		prSwRfb, ucBssIndex);
 
 	return;
-
 }				/* aisFuncValidateRxActionFrame */
 
 /* Support AP Selection */

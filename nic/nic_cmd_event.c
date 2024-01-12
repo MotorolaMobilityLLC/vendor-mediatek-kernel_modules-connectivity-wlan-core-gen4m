@@ -109,7 +109,7 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #endif
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_HOST_SUSPEND_INFO,
 				nicCmdEventHostSuspendInfo),
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_FAST_PATH, nicCfgChipCapFastPath),
 #endif
 #if CFG_SUPPORT_MLR
@@ -2950,7 +2950,7 @@ uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 uint32_t nicCfgChipCapFastPath(struct ADAPTER *prAdapter,
 			       uint8_t *pucEventBuf)
 {

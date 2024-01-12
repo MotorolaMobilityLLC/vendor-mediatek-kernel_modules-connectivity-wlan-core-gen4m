@@ -185,7 +185,7 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	{EVENT_ID_LOW_LATENCY_INFO, nicEventUpdateLowLatencyInfoStatus},
 #endif
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 	{EVENT_ID_FAST_PATH, fpEventHandler},
 #endif
 #if CFG_SUPPORT_NAN
@@ -1856,7 +1856,7 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 			qmCheckRxEAPOLM3(prAdapter, prSwRfb, ucBssIndex);
 		}
 
-#if CFG_MSCS_SUPPORT
+#if CFG_FAST_PATH_SUPPORT
 		if (
 #if CFG_SUPPORT_LOWLATENCY_MODE
 			prAdapter->fgEnLowLatencyMode &&
@@ -3378,6 +3378,49 @@ uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
 }
 #endif
 
+static u_int8_t nicIsUnprotectedRobustActionFrame(struct ADAPTER *prAdapter,
+						struct SW_RFB *prSwRfb)
+{
+#if CFG_SUPPORT_802_11W
+	u_int8_t fgRobustAction;
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
+	struct WLAN_ACTION_FRAME *prActFrame = prSwRfb->pvHeader;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	fgRobustAction = secIsRobustActionFrame(prAdapter, prSwRfb->pvHeader);
+
+	if (!fgRobustAction)
+		return FALSE;
+	if (!prSwRfb->prStaRec)
+		return FALSE;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					prSwRfb->prStaRec->ucBssIndex);
+	if (prBssInfo && prBssInfo->eNetworkType != NETWORK_TYPE_AIS)
+		return FALSE;
+
+	prAisSpecBssInfo = aisGetAisSpecBssInfo(prAdapter,
+					prSwRfb->prStaRec->ucBssIndex);
+
+	if (!prAisSpecBssInfo->fgMgmtProtection)
+		return FALSE;
+
+	if (prActFrame->u2FrameCtrl & MASK_FC_PROTECTED_FRAME)
+		return FALSE;
+
+#if CFG_WIFI_SW_CIPHER_MISMATCH
+	if (!prSwRfb->fgIsCipherMS)
+#else
+	if (prSwRfb->ucSecMode != CIPHER_SUITE_CCMP)
+#endif
+		return FALSE;
+
+	return TRUE;
+#else
+	return FALSE;
+#endif
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief
@@ -3392,10 +3435,6 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 {
 	struct WLAN_ACTION_FRAME *prActFrame;
 	struct BSS_INFO *prBssInfo = NULL;
-#if CFG_SUPPORT_802_11W
-	u_int8_t fgRobustAction = FALSE;
-	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo;
-#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -3406,35 +3445,15 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_PACKET;
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
-#if CFG_SUPPORT_802_11W
-	/* DBGLOG(RSN, TRACE, ("[Rx] fgRobustAction=%d\n", fgRobustAction)); */
-	fgRobustAction = secIsRobustActionFrame(prAdapter, prSwRfb->pvHeader);
-	if (fgRobustAction && prSwRfb->prStaRec &&
-	    GET_BSS_INFO_BY_INDEX(prAdapter,
-				prSwRfb->prStaRec->ucBssIndex)->eNetworkType ==
-	    NETWORK_TYPE_AIS) {
-		prAisSpecBssInfo =
-			aisGetAisSpecBssInfo(prAdapter,
-			prSwRfb->prStaRec->ucBssIndex);
-
+	if (nicIsUnprotectedRobustActionFrame(prAdapter, prSwRfb)) {
 		DBGLOG(RSN, INFO,
-		       "[Rx]RobustAction %x %x\n",
-		       prSwRfb->ucWlanIdx,
-		       prSwRfb->ucSecMode);
-
-		if (prAisSpecBssInfo->fgMgmtProtection
-		    && (!(prActFrame->u2FrameCtrl & MASK_FC_PROTECTED_FRAME)
-#if CFG_WIFI_SW_CIPHER_MISMATCH
-			&& (prSwRfb->fgIsCipherMS))) {
-#else
-			&& (prSwRfb->ucSecMode == CIPHER_SUITE_CCMP))) {
-#endif
-			DBGLOG(RSN, INFO,
-			       "[MFP] Not handle and drop un-protected robust action frame!!\n");
-			return WLAN_STATUS_INVALID_PACKET;
-		}
+		       "[MFP] Not handle and drop un-protected robust action frame %x %x!!\n",
+		       prSwRfb->ucWlanIdx, prSwRfb->ucSecMode);
+		return WLAN_STATUS_INVALID_PACKET;
 	}
-#endif
+
+	DBGLOG(RSN, INFO, "[Rx]RobustAction %x %x\n",
+		       prSwRfb->ucWlanIdx, prSwRfb->ucSecMode);
 
 	if (prSwRfb->prStaRec)
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -3482,11 +3501,14 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 	case CATEGORY_HT_ACTION:
 		rlmProcessHtAction(prAdapter, prSwRfb);
 		break;
-#if CFG_MSCS_SUPPORT
+
 	case CATEGORY_VENDOR_SPECIFIC_PROTECTED_ACTION:
+#if CFG_FAST_PATH_SUPPORT
 		fpProcessVendorSpecProtectedFrame(prAdapter, prSwRfb);
-		break;
 #endif
+		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		break;
+
 	case CATEGORY_VENDOR_SPECIFIC_ACTION:
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered) {
@@ -3515,6 +3537,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 					prSwRfb);
 		}
 		break;
+
 #if CFG_SUPPORT_802_11W
 	case CATEGORY_SA_QUERY_ACTION: {
 		struct BSS_INFO *prBssInfo;
@@ -3548,6 +3571,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 	}
 	break;
 #endif
+
 	case CATEGORY_WNM_ACTION: {
 		if (prSwRfb->prStaRec &&
 		    GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -3590,8 +3614,9 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		case RM_ACTION_RM_REPORT:
 			rlmMulAPAgentProcessRadioMeasurementResponse(
 				prAdapter, prSwRfb);
-		break;
+			break;
 #endif /* CFG_AP_80211K_SUPPORT */
+
 		case RM_ACTION_RM_REQUEST:
 #if CFG_SUPPORT_RM_BEACON_REPORT_BY_SUPPLICANT
 			/* handle RM beacon request by supplicant */
@@ -3604,6 +3629,7 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 			rrmProcessRadioMeasurementRequest(prAdapter, prSwRfb);
 #endif
 			break;
+
 		case RM_ACTION_REIGHBOR_RESPONSE:
 			rrmProcessNeighborReportResonse(prAdapter, prActFrame,
 							prSwRfb);
@@ -3611,17 +3637,22 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 		}
 		break;
 #endif
+
 	case CATEGORY_WME_MGT_NOTIFICATION:
 		wmmParseQosAction(prAdapter, prSwRfb);
 		break;
+
 	case CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION:
 		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 		break;
-#if CFG_MSCS_SUPPORT
+
 	case CATEGORY_ROBUST_AV_STREAMING_ACTION:
+#if CFG_FAST_PATH_SUPPORT
 		mscsProcessRobustAVStreaming(prAdapter, prSwRfb);
-		break;
 #endif
+		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+		break;
+
 	default:
 		break;
 	}			/* end of switch case */
