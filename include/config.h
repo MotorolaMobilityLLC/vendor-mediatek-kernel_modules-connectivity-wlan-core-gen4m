@@ -1490,6 +1490,19 @@
  */
 #define CFG_SUPPORT_CNM_POWER_CTRL		    1
 
+/*------------------------------------------------------------------------------
+ * Connsys Power Throttling feature
+ * Value 1: support Connsys Power Throttling feature
+ * Value 0: not support Connsys Power Throttling feature
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_POWER_THROTTLING
+#define CFG_SUPPORT_POWER_THROTTLING 0
+#endif
+#if (CFG_SUPPORT_CONNINFRA == 0)
+#define CFG_SUPPORT_POWER_THROTTLING 0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

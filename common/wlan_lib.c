@@ -783,7 +783,7 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(&prAdapter->rTxDataDoneQueue);
 #endif
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	LINK_INITIALIZE(&prAdapter->rPwrLevelHandlerList);
 #endif
 

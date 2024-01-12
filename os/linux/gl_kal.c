@@ -9168,7 +9168,7 @@ void kalPrintLogLimited(const char *fmt, ...)
 	#endif
 }
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 					PFN_PWR_LEVEL_HANDLER hdlr)
 {

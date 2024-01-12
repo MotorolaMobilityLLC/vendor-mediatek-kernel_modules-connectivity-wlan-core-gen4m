@@ -168,7 +168,7 @@ static int priv_driver_set_sw_wfdma(
 	IN struct net_device *prNetDev,
 	IN char *pcCommand, IN int i4TotalLen);
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 static int priv_driver_set_pwr_level(
 	IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen);
 
@@ -3350,7 +3350,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #define CMD_SET_PWR_LEVEL	"SET_PWR_LEVEL"
 #define CMD_SET_PWR_TEMP	"SET_PWR_TEMP"
 #endif
@@ -14167,7 +14167,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
 	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
 	{CMD_GET_HAPD_CHANNEL, priv_driver_get_hapd_channel},
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	{CMD_SET_PWR_LEVEL, priv_driver_set_pwr_level},
 	{CMD_SET_PWR_TEMP, priv_driver_set_pwr_temp},
 #endif
@@ -14824,7 +14824,7 @@ static int priv_driver_set_sw_wfdma(
 	return i4BytesWritten;
 }				/* priv_driver_set_sw_wfdma */
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 static int priv_driver_set_pwr_level(IN struct net_device *prNetDev,
 	IN char *pcCommand, IN int i4TotalLen)
 {

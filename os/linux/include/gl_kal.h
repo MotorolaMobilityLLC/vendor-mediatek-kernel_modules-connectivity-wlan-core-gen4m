@@ -82,7 +82,7 @@
 #include "wlan_lib.h"
 #include "wlan_oid.h"
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #include "conn_power_throttling.h"
 #endif
 
@@ -1854,7 +1854,7 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 void kalPrintLog(const char *fmt, ...);
 void kalPrintLogLimited(const char *fmt, ...);
 
-#if (CFG_SUPPORT_CONNINFRA == 1)
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
 void kalPwrLevelHdlrRegister(IN struct ADAPTER *prAdapter,
 					PFN_PWR_LEVEL_HANDLER hdlr);
 
