@@ -4882,7 +4882,7 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 		u4NvramOffset +=
 			OFFSET_OF(struct WIFI_CFG_PARAM_STRUCT, ucTypeID0);
 
-		DBGLOG(INIT, TRACE,
+		DBGLOG(INIT, INFO,
 			   "NVRAM-Frag Startofs[0x%08X]ID[%d][0x%08X]Len:%d\n"
 			    , u4NvramStartOffset
 			    , u1TypeID
@@ -4898,10 +4898,20 @@ uint32_t wlanLoadManufactureData(struct ADAPTER
 			u4NvramOffset += (u1LenMSB << 8) | (u1LenLSB);
 			u4NvramFragmentSize = u4NvramOffset-u4NvramStartOffset;
 
-			DBGLOG(INIT, TRACE,
+			DBGLOG(INIT, INFO,
 			   "NVRAM Fragement(%d)Startofs[0x%08X]ID[%d]Len:%d\n",
 			   index, u4NvramStartOffset,
 			   u1TypeID, u4NvramFragmentSize);
+
+			if (u4NvramFragmentSize >
+				sizeof(struct CMD_NVRAM_FRAGMENT)) {
+				DBGLOG(INIT, ERROR,
+				"ID[%d]copy size[%d]bigger than buf size[%d]\n",
+				u1TypeID,
+				u4NvramFragmentSize,
+				sizeof(struct CMD_NVRAM_FRAGMENT));
+				return WLAN_STATUS_FAILURE;
+			}
 
 			kalMemCopy(prCmdNvramFragment,
 					   (pu1Addr + u4NvramStartOffset),
