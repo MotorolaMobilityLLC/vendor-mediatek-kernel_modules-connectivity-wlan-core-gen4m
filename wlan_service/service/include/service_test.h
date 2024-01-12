@@ -257,6 +257,11 @@ s_int32 mt_serv_reg_eprm_operation(
 s_int32 mt_serv_mps_operation(
 	struct service_test *serv_test, u_int32 item);
 s_int32 mt_serv_get_chipid(struct service_test *serv_test);
+s_int32 mt_serv_mps_set_nss(struct service_test *serv_test);
+s_int32 mt_serv_mps_set_per_packet_bw(struct service_test *serv_test);
+s_int32 mt_serv_mps_set_packet_count(struct service_test *serv_test);
+s_int32 mt_serv_mps_set_payload_length(struct service_test *serv_test);
+s_int32 mt_serv_mps_set_power_gain(struct service_test *serv_test);
 s_int32 mt_serv_mps_set_seq_data(struct service_test *serv_test);
 s_int32 mt_serv_set_tmr(struct service_test *serv_test);
 s_int32 mt_serv_set_preamble(struct service_test *serv_test);

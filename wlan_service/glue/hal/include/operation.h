@@ -276,6 +276,30 @@ s_int32 mt_op_set_band_mode(
 	struct test_band_state *band_state);
 s_int32 mt_op_get_chipid(
 	struct test_wlan_info *winfos);
+s_int32 mt_op_mps_start(
+	struct test_wlan_info *winfos,
+	u_char band_idx);
+s_int32 mt_op_mps_set_nss(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting);
+s_int32 mt_op_mps_set_per_packet_bw(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting);
+s_int32 mt_op_mps_set_packet_count(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting);
+
+s_int32 mt_op_mps_set_payload_length(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting);
+s_int32 mt_op_mps_set_power_gain(
+	struct test_wlan_info *winfos,
+	u_int32 len,
+	struct test_mps_setting *mps_setting);
 s_int32 mt_op_mps_set_seq_data(
 	struct test_wlan_info *winfos,
 	u_int32 len,
