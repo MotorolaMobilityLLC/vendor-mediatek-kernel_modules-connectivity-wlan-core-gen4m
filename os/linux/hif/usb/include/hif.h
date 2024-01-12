@@ -221,6 +221,7 @@ enum ENUM_USB_END_POINT {
 #define USB_DBDC1_TC                    (TC_NUM)/* for DBDC1 */
 #define USB_TC_NUM                      (TC_NUM + 1)/* for DBDC1 */
 #define USB_TX_EPOUT_NUM                (5)
+#define USB_DMASHDL_DATA_GROUP_NUM      (5)
 
 #define HIF_EXTRA_IO_BUFFER_SIZE        (0)
 
