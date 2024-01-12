@@ -2550,9 +2550,8 @@ static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 {
 	struct ICS_AGG_HEADER *prIcsAggHeader;
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
-	void *pvPacket = NULL;
 	uint32_t u4Size = 0;
-	uint8_t *pucRecvBuff = NULL;
+	uint8_t *pucBuf;
 	ssize_t ret;
 
 	ASSERT(prAdapter);
@@ -2561,43 +2560,43 @@ static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 	prIcsAggHeader = (struct ICS_AGG_HEADER *)prSwRfb->prRxStatus;
 	u4Size = prIcsAggHeader->rxByteCount + sizeof(
 			struct ICS_BIN_LOG_HDR);
-	pvPacket = kalPacketAlloc(prAdapter->prGlueInfo, u4Size, FALSE,
-				  &pucRecvBuff);
+	pucBuf = kalMemAlloc(u4Size, VIR_MEM_TYPE);
+	if (!pucBuf) {
+		DBGLOG_LIMITED(NIC, INFO, "pucBuf NULL\n");
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT);
+		return;
+	}
 
-	if (pvPacket) {
 #if CFG_SUPPORT_ICS_TIMESYNC
-		/* generate time sync ICS frame */
-		nicRxWriteIcsTimeSync(prAdapter, pucRecvBuff);
+	/* generate time sync ICS frame */
+	nicRxWriteIcsTimeSync(prAdapter, pucBuf);
 #endif /* CFG_SUPPORT_ICS_TIMESYNC */
 
-		/* prepare ICS header */
-		prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucRecvBuff;
-		prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
-		prIcsBinLogHeader->ucVer = 1;
-		prIcsBinLogHeader->ucRsv = 0;
-		prIcsBinLogHeader->u4Timestamp = 0;
-		prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_ICS;
-		prIcsBinLogHeader->u2Length = prIcsAggHeader->rxByteCount;
+	/* prepare ICS header */
+	prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucBuf;
+	prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+	prIcsBinLogHeader->ucVer = 1;
+	prIcsBinLogHeader->ucRsv = 0;
+	prIcsBinLogHeader->u4Timestamp = 0;
+	prIcsBinLogHeader->u2MsgID = RX_PKT_TYPE_ICS;
+	prIcsBinLogHeader->u2Length = prIcsAggHeader->rxByteCount;
 
-		prIcsBinLogHeader->u2SeqNo = prAdapter->u2IcsSeqNo++;
+	prIcsBinLogHeader->u2SeqNo = prAdapter->u2IcsSeqNo++;
 
-		/* prepare ICS frame */
-		kalMemCopy(pucRecvBuff + sizeof(struct ICS_BIN_LOG_HDR),
-				prIcsAggHeader,
-				prIcsAggHeader->rxByteCount);
+	/* prepare ICS frame */
+	kalMemCopy(pucBuf + sizeof(struct ICS_BIN_LOG_HDR),
+			prIcsAggHeader, prIcsAggHeader->rxByteCount);
 
-		/* write to ring, ret: written */
-		ret = kalIcsWrite(pucRecvBuff, u4Size);
-		if (ret != u4Size) {
-			DBGLOG_LIMITED(NIC, INFO,
-				"dropped written:%zd rxByteCount:%u\n",
-				ret, prIcsAggHeader->rxByteCount);
-			RX_INC_CNT(&prAdapter->rRxCtrl,
-				RX_ICS_DROP_COUNT);
-		}
-
-		kalPacketFree(prAdapter->prGlueInfo, pvPacket);
+	/* write to ring, ret: written */
+	ret = kalIcsWrite(pucBuf, u4Size);
+	if (ret != u4Size) {
+		DBGLOG_LIMITED(NIC, INFO,
+			"dropped written:%zd rxByteCount:%u\n",
+			ret, prIcsAggHeader->rxByteCount);
+		RX_INC_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT);
 	}
+
+	kalMemFree(pucBuf, VIR_MEM_TYPE, u4Size);
 }
 #endif /* #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1)) */
 
