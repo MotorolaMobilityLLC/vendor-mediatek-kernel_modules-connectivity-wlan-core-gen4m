@@ -1180,6 +1180,7 @@ void twtPlannerGetTsfDone(
 		break;
 	}
 
+#if (CFG_SUPPORT_BTWT == 1)
 	case TWT_GET_TSF_FOR_ADD_AGRT_BTWT:
 	{
 		struct _TWT_PARAMS_T *prTWTParams;
@@ -1197,6 +1198,7 @@ void twtPlannerGetTsfDone(
 
 		break;
 	}
+#endif
 
 	default:
 		DBGLOG(TWT_PLANNER, ERROR,
