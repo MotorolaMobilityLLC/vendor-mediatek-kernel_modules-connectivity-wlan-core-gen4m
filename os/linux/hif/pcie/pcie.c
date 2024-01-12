@@ -2419,7 +2419,7 @@ uint32_t glReadPcieCfgSpace(int offset)
 			"pci_read_config_dword failed, offset=0x%x\n",
 			offset);
 	else
-		DBGLOG(HAL, TRACE, "read 0x%08x=[0x%08x]\n", offset, val);
+		DBGLOG(HAL, LOUD, "read 0x%08x=[0x%08x]\n", offset, val);
 
 	return val;
 }
