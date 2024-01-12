@@ -5882,18 +5882,15 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 
 	/*Fill Rx Rate in unit of 100bps*/
 	if (wlanGetRxRateByBssid(prAdapter->prGlueInfo, ucBssIndex,
-		&u4CurRxRate, &u4MaxRxRate, &rRxRateInfo) == 0) {
+			&u4CurRxRate, &u4MaxRxRate, &rRxRateInfo) == 0) {
 		prAdapter->rLinkQuality.rLq[ucBssIndex].
 			u2RxLinkSpeed = u4CurRxRate * 1000;
 		prAdapter->rLinkQuality.rLq[ucBssIndex].
 			u4RxBw = rRxRateInfo.u4Bw;
 	} else {
-		prAdapter->rLinkQuality.rLq[ucBssIndex].
-			u2RxLinkSpeed = 0;
-		prAdapter->rLinkQuality.rLq[ucBssIndex].
-			u4RxBw = 0;
+		prAdapter->rLinkQuality.rLq[ucBssIndex].u2RxLinkSpeed = 0;
+		prAdapter->rLinkQuality.rLq[ucBssIndex].u4RxBw = 0;
 	}
-
 	/* change to unit of 100 bps */
 	/*
 	 *  FW report in 500kbps because u2TxLinkSpeed is 16 bytes
@@ -5907,9 +5904,10 @@ void nicUpdateLinkSpeed(struct ADAPTER *prAdapter,
 	prAdapter->rLinkQuality.rLq[ucBssIndex].fgIsLinkRateValid = TRUE;
 	prAdapter->rLinkQuality.rLq[ucBssIndex].rLinkRateUpdateTime
 		= kalGetTimeTick();
-	DBGLOG(NIC, TRACE, "bss:%u linkspeed:%u LRValid:%u updateTime:%u\n",
+	DBGLOG(NIC, TRACE, "bss:%u linkspeed:%u/%u LRValid:%u updateTime:%u\n",
 		ucBssIndex,
 		prAdapter->rLinkQuality.rLq[ucBssIndex].u2TxLinkSpeed,
+		prAdapter->rLinkQuality.rLq[ucBssIndex].u2RxLinkSpeed,
 		prAdapter->rLinkQuality.rLq[ucBssIndex].fgIsLinkRateValid,
 		prAdapter->rLinkQuality.rLq[ucBssIndex].rLinkRateUpdateTime);
 }

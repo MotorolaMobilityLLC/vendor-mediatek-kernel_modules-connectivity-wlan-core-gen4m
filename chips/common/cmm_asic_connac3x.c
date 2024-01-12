@@ -1912,6 +1912,8 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	  struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
+	struct STA_RECORD *prStaRec;
+	uint8_t ucStaRecIdx;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
@@ -1922,7 +1924,17 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	}
 
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
-		prRxV = prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx].au4RxV;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prStaRec = mldGetStaRecByBandIdx(prAdapter,
+				&prAdapter->arStaRec[prRetSwRfb->ucStaRecIdx],
+				prRetSwRfb->ucHwBandIdx);
+		if (!prStaRec)
+			return;
+		ucStaRecIdx = prStaRec->ucIndex;
+#else
+		ucStaRecIdx = prRetSwRfb->ucStaRecIdx;
+#endif
+		prRxV = prAdapter->arStaRec[ucStaRecIdx].au4RxV;
 		kalMemZero(prRxV, sizeof(uint32_t) * RXV_NUM);
 
 		prGroup3 = prRetSwRfb->prRxStatusGroup3;
