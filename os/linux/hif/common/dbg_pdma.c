@@ -140,39 +140,90 @@ void halPrintHifDbgInfo(IN struct ADAPTER *prAdapter)
 		prAdapter->chip_info->dumpwfsyscpupcr(prAdapter);
 }
 
+static bool halIsFwReadyDump(struct ADAPTER *prAdapter)
+{
+	struct CHIP_DBG_OPS *prDbgOps;
+	uint32_t u4Val = 0;
+
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+
+	if (prDbgOps && prDbgOps->getFwDebug)
+		u4Val = prDbgOps->getFwDebug(prAdapter);
+
+	u4Val &= DBG_PLE_INT_FW_READY_MASK;
+
+	return (u4Val == DBG_PLE_INT_FW_READY) || (u4Val == 0);
+}
+
+static void halDumpTxHangLog(struct ADAPTER *prAdapter)
+{
+	struct CHIP_DBG_OPS *prDbgOps;
+	uint32_t u4DebugLevel = 0, u4Val = 0;
+
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+	wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
+
+	/* check fw is dumping log */
+	if (prDbgOps && prDbgOps->getFwDebug)
+		u4Val = prDbgOps->getFwDebug(prAdapter);
+
+	if (u4Val & DBG_PLE_INT_FW_SYNC_MASK) {
+		DBGLOG(HAL, ERROR, "Fw is dumping log. Skip to dump mac log\n");
+		return;
+	}
+
+	if (!halIsFwReadyDump(prAdapter)) {
+		DBGLOG(HAL, ERROR, "Fw not ready to dump log\n");
+		return;
+	}
+
+	if (prDbgOps && prDbgOps->setFwDebug) {
+		/* set drv print log sync flag */
+		prDbgOps->setFwDebug(
+			prAdapter, false, 0, DBG_PLE_INT_DRV_SYNC_MASK);
+	}
+
+	if (prDbgOps && prDbgOps->dumpMacInfo)
+		prDbgOps->dumpMacInfo(prAdapter);
+
+	if (u4DebugLevel & DBG_CLASS_TRACE)
+		haldumpPhyInfo(prAdapter);
+
+	if (prDbgOps && prDbgOps->setFwDebug) {
+		/* clr drv print log sync flag */
+		prDbgOps->setFwDebug(
+			prAdapter, false, DBG_PLE_INT_DRV_SYNC_MASK, 0);
+
+		/* trigger tx debug sop */
+		prDbgOps->setFwDebug(
+			prAdapter, true, 0xffff, DBG_PLE_INT_TX_MASK);
+	}
+}
+
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
-	uint32_t u4DebugLevel = 0;
+	struct CHIP_DBG_OPS *prDbgOps;
+
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
 		if (halIsTxHang(prAdapter)) {
 			DBGLOG(HAL, ERROR,
 			       "Tx timeout, set hif debug info flag\n");
-			wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
-			if (u4DebugLevel & DBG_CLASS_TRACE) {
-				DBGLOG(HAL, ERROR, "Set debug flag bit\n");
-				prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
-			}
-			else {
-				struct CHIP_DBG_OPS *prDbgOps;
 
-				prDbgOps = prAdapter->chip_info->prDebugOps;
-				DBGLOG(HAL, ERROR, "Dump debug info\n");
-				if (prDbgOps && prDbgOps->showPleInfo)
-					prDbgOps->showPleInfo(prAdapter, FALSE);
+			if (prDbgOps && prDbgOps->showPleInfo)
+				prDbgOps->showPleInfo(prAdapter, FALSE);
 
-				if (prDbgOps && prDbgOps->showPseInfo)
-					prDbgOps->showPseInfo(prAdapter);
+			if (prDbgOps && prDbgOps->showPseInfo)
+				prDbgOps->showPseInfo(prAdapter);
 
-				if (prDbgOps && prDbgOps->showPdmaInfo)
-					prDbgOps->showPdmaInfo(prAdapter);
+			if (prDbgOps && prDbgOps->showPdmaInfo)
+				prDbgOps->showPdmaInfo(prAdapter);
 
-				if (prDbgOps && prDbgOps->showDmaschInfo)
-					prDbgOps->showDmaschInfo(prAdapter);
+			if (prDbgOps && prDbgOps->showDmaschInfo)
+				prDbgOps->showDmaschInfo(prAdapter);
 
-				if (prDbgOps && prDbgOps->dumpMacInfo)
-					prDbgOps->dumpMacInfo(prAdapter);
-
-			}
+			halDumpTxHangLog(prAdapter);
 		}
 	}
 

@@ -316,6 +316,8 @@ struct CHIP_DBG_OPS soc2_2x2_debug_ops = {
 	.showCsrInfo = halShowHostCsrInfo,
 	.showDmaschInfo = halShowDmaschInfo,
 	.dumpMacInfo = haldumpMacInfo,
+	.getFwDebug = halGetPleInt,
+	.setFwDebug = halSetPleInt,
 	.showHifInfo = soc2_2x2ShowHifInfo,
 #else
 	.showPdmaInfo = NULL,
