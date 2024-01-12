@@ -860,6 +860,41 @@ void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 void halWpdmaFreeMsduTasklet(unsigned long data);
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
 
+#if CFG_TX_DIRECT_VIA_HIF_THREAD
+#define KAL_HIF_TXDATAQ_LOCK_DECLARATION()
+#define KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port)
+#define KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Port)
+#else /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+#define KAL_HIF_TXDATAQ_LOCK_DECLARATION() \
+	unsigned long __ulHifTxDataQFlags
+
+#define KAL_HIF_TXDATAQ_LOCK(prHifInfo, u4Port) \
+	kalAcquireHifTxDataQLock(prHifInfo, u4Port, &__ulHifTxDataQFlags)
+
+#define KAL_HIF_TXDATAQ_UNLOCK(prHifInfo, u4Port) \
+	kalReleaseHifTxDataQLock(prHifInfo, u4Port, __ulHifTxDataQFlags)
+#endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
+
+#define KAL_HIF_TXRING_LOCK_DECLARATION() \
+	unsigned long __ulHifTxRingFlags
+
+#define KAL_HIF_TXRING_LOCK(prTxRing) \
+	kalAcquireHifTxRingLock(prTxRing, &__ulHifTxRingFlags)
+
+#define KAL_HIF_TXRING_UNLOCK(prTxRing) \
+	kalReleaseHifTxRingLock(prTxRing, __ulHifTxRingFlags)
+
+void kalAcquireHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
+		IN uint32_t u4Port,
+		OUT unsigned long *plHifTxDataQFlags);
+void kalReleaseHifTxDataQLock(IN struct GL_HIF_INFO *prHifInfo,
+		IN uint32_t u4Port,
+		IN unsigned long ulHifTxDataQFlags);
+void kalAcquireHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
+		OUT unsigned long *plHifTxRingFlags);
+void kalReleaseHifTxRingLock(IN struct RTMP_TX_RING *prTxRing,
+		IN unsigned long ulHifTxRingFlags);
+
 bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 		    struct SW_RFB *prSwRfb);
 bool kalDevKickCmd(struct GLUE_INFO *prGlueInfo);
