@@ -1512,7 +1512,7 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	g_prGlueInfo = prGlueInfo;
 
-	if (!prChipInfo)
+	if (prChipInfo)
 		prHif->CSRBaseAddress = prChipInfo->CSRBaseAddress;
 
 	if (g_prPlatDev)
@@ -2277,7 +2277,7 @@ bool glBusConfigASPML1SS(struct pci_dev *dev, int i4Enable)
 
 static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)
 {
-	struct CMD_HIF_CTRL rCmdHifCtrl;
+	struct CMD_HIF_CTRL rCmdHifCtrl = {0};
 	uint32_t rStatus;
 
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_PCIE;
@@ -2304,7 +2304,7 @@ static void halPciePreSuspendCmd(struct ADAPTER *prAdapter)
 
 static void halPcieResumeCmd(struct ADAPTER *prAdapter)
 {
-	struct CMD_HIF_CTRL rCmdHifCtrl;
+	struct CMD_HIF_CTRL rCmdHifCtrl = {0};
 	uint32_t rStatus;
 
 	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_PCIE;
