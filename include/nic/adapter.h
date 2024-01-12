@@ -599,6 +599,9 @@ struct BSS_INFO {
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct AP_PMF_CFG rApPmfCfg;
+	/* STA PMF: for encrypted deauth frame */
+	struct completion rDeauthComp;
+	u_int8_t encryptedDeauthIsInProcess;
 #endif
 
 #if (CFG_SUPPORT_HE_ER == 1)

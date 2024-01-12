@@ -487,7 +487,10 @@ void aisFsmInit(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		   sizeof(prAisSpecificBssInfo->rBTMParam));
 
 	rrmParamInit(prAdapter, ucBssIndex);
-
+#if CFG_SUPPORT_802_11W
+	init_completion(&prAisBssInfo->rDeauthComp);
+	prAisBssInfo->encryptedDeauthIsInProcess = FALSE;
+#endif
 	/* DBGPRINTF("[2] ucBmpDeliveryAC:0x%x,
 	 * ucBmpTriggerAC:0x%x, ucUapsdSp:0x%x",
 	 */
@@ -4955,14 +4958,16 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+#if CFG_SUPPORT_802_11W
 	/* Notify completion after encrypted deauth frame tx done */
-	if (prAdapter->prGlueInfo->encryptedDeauthIsInProcess == TRUE) {
-		if (!completion_done(&prAdapter->prGlueInfo->rDeauthComp)) {
+	if (prAisBssInfo->encryptedDeauthIsInProcess == TRUE) {
+		if (!completion_done(&prAisBssInfo->rDeauthComp)) {
 			DBGLOG(AIS, EVENT, "Complete rDeauthComp\n");
-			complete(&prAdapter->prGlueInfo->rDeauthComp);
+			complete(&prAisBssInfo->rDeauthComp);
 		}
 	}
-	prAdapter->prGlueInfo->encryptedDeauthIsInProcess = FALSE;
+	prAisBssInfo->encryptedDeauthIsInProcess = FALSE;
+#endif
 	if (rTxDoneStatus == TX_RESULT_SUCCESS)
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
 
