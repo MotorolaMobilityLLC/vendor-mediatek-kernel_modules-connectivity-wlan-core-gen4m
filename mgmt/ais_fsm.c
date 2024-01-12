@@ -2942,6 +2942,7 @@ void aisFsmStateAbort(IN struct ADAPTER *prAdapter,
 
 	case AIS_STATE_ONLINE_SCAN:
 		fgIsCheckConnected = TRUE;
+		/* fallthrough */
 	case AIS_STATE_SCAN:
 		/* Do abort SCAN */
 		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);
