@@ -7294,6 +7294,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			"MaxAmpduLenExt", HE_CAP_MAX_AMPDU_LEN_EXP);
 		INIT_UINT(prWifiVar->fgEnableSR,
 			"SREnable", FEATURE_DISABLED);
+		INIT_UINT(prWifiVar->ucHeSUMU4xHeLTF,
+			"HeSUMU4xHeLTF", FEATURE_ENABLED);
 	}
 #endif
 
