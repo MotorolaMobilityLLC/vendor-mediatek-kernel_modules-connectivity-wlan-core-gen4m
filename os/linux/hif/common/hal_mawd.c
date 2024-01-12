@@ -1534,11 +1534,6 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 	prToken->u2Port = u2Port;
 	pTxCell->prToken = prToken;
 
-#if (CFG_DUMP_TXDMAD == 1)
-	DBGLOG(HAL, INFO, "Dump TXDMAD:\n");
-	dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
-#endif
-
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
 
