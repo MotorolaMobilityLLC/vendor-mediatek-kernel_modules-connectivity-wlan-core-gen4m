@@ -3150,6 +3150,35 @@ struct UNI_EVENT_ADD_PKEY_DONE {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+struct UNI_EVENT_OBSS_UPDATE
+{
+	/* fixed field */
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[3];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* OBSS update event Tag */
+enum ENUM_UNI_EVENT_OBSS_UPDATE_TAG
+{
+	UNI_EVENT_OBSS_UPDATE_TAG_STATUS = 0,
+	UNI_EVENT_OBSS_UPDATE_TAG_NUM
+};
+
+/* Update OBSS STATUS (Tag0) */
+struct UNI_EVENT_OBSS_STATUS {
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+	uint8_t  ucObssErpProtectMode;
+	uint8_t  ucObssHtProtectMode;
+	uint8_t  ucObssGfOperationMode;
+	uint8_t  ucObssRifsOperationMode;
+	uint8_t  ucObssBeaconForcedTo20M;
+	uint8_t  aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_EVENT_IDC {
 	/* fixed field */
 	uint8_t aucPadding[4];
@@ -4024,6 +4053,8 @@ void nicUniEventBssIsAbsence(struct ADAPTER *ad,
 void nicUniEventPsSync(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventSap(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+void nicUniEventOBSS(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventRoaming(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
