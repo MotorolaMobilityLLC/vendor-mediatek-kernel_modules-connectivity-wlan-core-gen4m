@@ -4547,7 +4547,8 @@ uint32_t ServiceWlanOid(void *winfos,
 				/* Chips which support MIMO/DBDC */
 				/* band0 (2.4G+5G+6G) */
 				capability->ph_cap.channel_band_dbdc =
-					g_HqaCap.mimo_band0_supported_band;
+				g_HqaCap.mimo_band0_supported_band |
+				(g_HqaCap.mimo_band1_supported_band << 16);
 			} else {
 				/* band0 (5G+6G) band1 (2.4G+5G+6G) */
 				capability->ph_cap.channel_band_dbdc =
