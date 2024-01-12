@@ -450,6 +450,7 @@ ccflags-y += -DCFG_MTK_WIFI_WFDMA_BK_RS=1
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
 ccflags-y += -DCFG_WIFI_TX_DROP_SHORT_PAYLOAD=1
+ccflags-y += -DCFG_WIFI_TX_FIXED_RATE_NO_VTA=1
 endif
 
 ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)
