@@ -2566,7 +2566,7 @@ wext_get_rate(IN struct net_device *prNetDev,
 	if (!netif_carrier_ok(prNetDev))
 		return -ENOTCONN;
 
-	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+	if (ucBssIndex >= BSSID_NUM)
 		return -EFAULT;
 
 	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidQueryLinkSpeedEx,
