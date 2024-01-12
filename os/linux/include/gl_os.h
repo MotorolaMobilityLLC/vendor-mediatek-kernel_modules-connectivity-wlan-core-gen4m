@@ -1330,7 +1330,7 @@ extern void connectivity_export_show_stack(struct task_struct *tsk,
 	unsigned long *sp);
 #endif
 
-int wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
+netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev);
 
 typedef uint8_t (*file_buf_handler) (void *ctx,
 			const char __user *buf,
