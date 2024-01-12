@@ -1341,6 +1341,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
 	uint32_t u4MsduReportCnt = 0;
+	struct mt66xx_chip_info *prChipInfo;
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1360,6 +1361,7 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxRing[u4Port];
+	prChipInfo = prAdapter->chip_info;
 
 	u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, u4Port);
 
@@ -1403,6 +1405,11 @@ void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
 
 		prRxStatus = prSwRfb->prRxStatus;
 		ASSERT(prRxStatus);
+
+#if (CFG_DUMP_RXD == 1)
+		DBGLOG(HAL, INFO, "Dump RXD: \n");
+		dumpMemory8((uint8_t *)prRxStatus, prChipInfo->rxd_size);
+#endif
 
 		prSwRfb->ucPacketType =
 			prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
@@ -2248,6 +2255,15 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
 
+#if (CFG_DUMP_TXDMAD == 1)
+	DBGLOG(HAL, INFO, "Dump CMD TXDMAD: \n");
+	dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
+#endif
+#if (CFG_DUMP_TXD == 1)
+	DBGLOG(HAL, INFO, "Dump CMD TXD: \n");
+	dumpMemory8((uint8_t *)prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+#endif
+
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);
 
@@ -2336,6 +2352,11 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 	pTxD->LastSec1 = 0;
 	pTxD->Burst = 0;
 	pTxD->DMADONE = 0;
+
+#if (CFG_DUMP_TXDMAD == 1)
+	DBGLOG(HAL, INFO, "Dump TXDMAD: \n");
+	dumpMemory8((uint8_t *)pTxD, sizeof(struct TXD_STRUCT));
+#endif
 
 	/* Increase TX_CTX_IDX, but write to register later. */
 	INC_RING_INDEX(prTxRing->TxCpuIdx, TX_RING_SIZE);

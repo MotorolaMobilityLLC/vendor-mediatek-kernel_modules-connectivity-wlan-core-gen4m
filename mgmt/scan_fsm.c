@@ -664,6 +664,9 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
 	uint32_t i;
+	uint8_t ch_list[] = {1, 6, 11,
+			  36, 40, 44, 52, 64, 100, 149, 153, 157, 161};
+	uint32_t ch_idx;
 
 	ASSERT(prAdapter);
 	ASSERT(prScanReqMsg);
@@ -745,6 +748,17 @@ void scnFsmHandleScanMsgV2(IN struct ADAPTER *prAdapter,
 	kalMemCopy(&prScanParam->aucBSSID[0][0],
 		&prScanReqMsg->aucExtBssid[0][0],
 		SCN_SSID_MAX_NUM*MAC_ADDR_LEN);
+
+
+	// TODO: dvt workaround
+	prScanParam->ucChannelListNum = ARRAY_SIZE(ch_list);
+	for (ch_idx = 0; ch_idx < ARRAY_SIZE(ch_list); ch_idx++) {
+		prScanParam->arChnlInfoList[ch_idx].ucChannelNum
+			= ch_list[ch_idx];
+		prScanParam->arChnlInfoList[ch_idx].eBand = ch_list[ch_idx] <=
+			HW_CHNL_NUM_MAX_2G4 ? BAND_2G4 : BAND_5G;
+	}
+	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 }
 
 /*----------------------------------------------------------------------------*/

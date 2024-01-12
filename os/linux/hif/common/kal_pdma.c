@@ -401,6 +401,11 @@ u_int8_t kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 		goto skip;
 	}
 
+#if (CFG_DUMP_RXDMAD == 1)
+	DBGLOG(HAL, INFO, "Dump RXDMAD: \n");
+	dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
+#endif
+
 	prDmaBuf = &pRxCell->DmaBuf;
 	if (prMemOps->copyEvent &&
 	    !prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
@@ -965,6 +970,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 	prSwRfb->u4TcpUdpIpCksStatus = pRxD->RXINFO;
 #endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+
+#if (CFG_DUMP_RXDMAD == 1)
+	DBGLOG(HAL, INFO, "Dump RXDMAD: \n");
+	dumpMemory8((uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
+#endif
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT

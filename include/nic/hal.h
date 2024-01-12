@@ -75,7 +75,11 @@
  */
 #define WIFI_SER_SYNC_TIMER_TIMEOUT_IN_MS	(100)
 
-#define CFG_DUMP_RXD		0
+#define CFG_DUMP_TXDMAD		0
+#define CFG_DUMP_RXDMAD		0
+#define CFG_DUMP_TXD		1
+#define CFG_DUMP_TXP		0
+#define CFG_DUMP_RXD		1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
