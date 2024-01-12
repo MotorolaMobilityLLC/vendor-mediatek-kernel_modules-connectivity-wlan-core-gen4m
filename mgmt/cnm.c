@@ -578,6 +578,7 @@ static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
  *                                 M A C R O S 2
  *******************************************************************************
  */
+
 #define DBDC_FSM_EVENT_HANDLER(_prAdapter, _event) { \
 	if (g_rDbdcInfo.eDbdcFsmCurrState < 0 || \
 		g_rDbdcInfo.eDbdcFsmCurrState >= ENUM_DBDC_FSM_STATE_NUM) { \
@@ -2012,7 +2013,7 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	uint8_t ucRoleIndex = 0;
 #endif
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	uint8_t ucChannelBw = MAX_BW_80_80_MHZ;
+	uint8_t ucChannelBw;
 #endif
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -3140,6 +3141,11 @@ cnmDbdcFsmSteps(
 	enum ENUM_DBDC_FSM_STATE_T   eNextState,
 	enum ENUM_DBDC_FSM_EVENT_T   eEvent)
 {
+	if (eNextState < 0) {
+		log_dbg(CNM, ERROR, "[DBDC] eNextState=%d\n", eNextState);
+		return;
+	}
+
 	/* Do entering Next State and do its initial function. */
 	g_rDbdcInfo.eDbdcFsmPrevState = g_rDbdcInfo.eDbdcFsmCurrState;
 	g_rDbdcInfo.eDbdcFsmCurrState = eNextState;
@@ -4788,7 +4794,7 @@ cnmOpModeReqDispatcher(
 uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
-	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
+	uint8_t ucOpMaxBw;
 	uint8_t ucS1 = 0;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {

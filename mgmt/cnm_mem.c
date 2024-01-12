@@ -1467,7 +1467,7 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	if (!prBssInfo->fgIsInUse) {
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\t[ERROR] NOT IN USE!!\n", prBssInfo->ucBssIndex);
+			"\t[ERROR] NOT IN USE!!\n");
 		return i4BytesWritten;
 	}
 
@@ -1539,7 +1539,7 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	if (!prStaRec->fgIsInUse) {
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"\t[ERROR] NOT IN USE!!\n", prStaRec->ucBssIndex);
+			"\t[ERROR] NOT IN USE!!\n");
 		return i4BytesWritten;
 	}
 
