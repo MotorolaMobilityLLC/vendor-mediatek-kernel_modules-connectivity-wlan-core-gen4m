@@ -2259,8 +2259,10 @@ s_int32 mt_op_mps_set_seq_data(
 
 	ret = sys_ad_alloc_mem((u_char **)&mps_set, sizeof(u_int32) * len);
 
-	if (pr_oid_funcptr == NULL)
+	if (pr_oid_funcptr == NULL)	{
+		sys_ad_free_mem(mps_set);
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+	}
 
 	for (i = 0; i < len; i++) {
 		mode = mps_setting[i+1].tx_mode;
