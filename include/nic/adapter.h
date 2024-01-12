@@ -84,7 +84,6 @@ struct ESS_SCAN_RESULT_T {
 struct WLAN_INFO {
 	/* Scan Result */
 	struct PARAM_BSSID_EX arScanResult[CFG_MAX_NUM_BSS_LIST];
-	uint8_t *apucScanResultIEs[CFG_MAX_NUM_BSS_LIST];
 	uint32_t u4ScanResultNum;
 
 	struct ESS_SCAN_RESULT_T arScanResultEss[CFG_MAX_NUM_BSS_LIST];
@@ -96,7 +95,7 @@ struct WLAN_INFO {
 
 	/* IE pool for Scanning Result */
 	uint8_t aucScanIEBuf[CFG_MAX_COMMON_IE_BUF_LEN];
-	uint32_t u4ScanIEBufferUsage;
+	uint32_t u4ScanIEBufferUsage; /* += ALIGN_4(each scan u4IELength) */
 
 	OS_SYSTIME u4SysTime;
 

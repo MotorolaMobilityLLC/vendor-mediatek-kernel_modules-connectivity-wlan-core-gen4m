@@ -4084,40 +4084,36 @@ void wlanClearScanningResult(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 
 	/* clear scanning result */
-	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) ==
-	    MEDIA_STATE_CONNECTED) {
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo, ucBssIndex) !=
+	    MEDIA_STATE_CONNECTED)
+		goto clear_all;
 
-		for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
+	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
 
-			if (!EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
-					    prScanResult[i].arMacAddress))
-				continue;
+		if (!EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
+				    prScanResult[i].arMacAddress))
+			continue;
 
-			fgKeepCurrOne = TRUE;
+		fgKeepCurrOne = TRUE;
 
-			if (i != 0) /* copy structure */
-				prScanResult[0] = prScanResult[i];
+		if (i != 0) /* copy structure */
+			prScanResult[0] = prScanResult[i];
 
-			if (prScanResult[i].u4IELength > 0) {
-				if (prWlanInfo->apucScanResultIEs[i] !=
-				    prWlanInfo->aucScanIEBuf) {
-
+		if (prScanResult[i].u4IELength > 0) {
+			if (prScanResult[i].pucIE != prWlanInfo->aucScanIEBuf) {
 				/* move IEs to head */
 				kalMemCopy(prWlanInfo->aucScanIEBuf,
-					   prWlanInfo->apucScanResultIEs[i],
+					   prScanResult[i].pucIE,
 					   prScanResult[i].u4IELength);
-				}
-
-				/* modify IE pointer */
-				prWlanInfo->apucScanResultIEs[0] =
-					prWlanInfo->aucScanIEBuf;
-
-			} else {
-				prWlanInfo->apucScanResultIEs[0] = NULL;
 			}
 
-			break;
+			/* modify IE pointer */
+			prScanResult[0].pucIE = prWlanInfo->aucScanIEBuf;
+		} else {
+			prScanResult[0].pucIE = NULL;
 		}
+
+		break;
 	}
 
 	if (fgKeepCurrOne == TRUE) {
@@ -4125,6 +4121,7 @@ void wlanClearScanningResult(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		prWlanInfo->u4ScanIEBufferUsage =
 			ALIGN_4(prScanResult[0].u4IELength);
 	} else {
+clear_all:
 		prWlanInfo->u4ScanResultNum = 0;
 		prWlanInfo->u4ScanIEBufferUsage = 0;
 	}
@@ -4153,58 +4150,50 @@ void wlanClearBssInScanningResult(struct ADAPTER
 	prScanResult = prWlanInfo->arScanResult;
 
 	/* clear scanning result */
-	i = 0;
-	while (1) {
-		if (i >= prWlanInfo->u4ScanResultNum)
-			break;
+	for (i = 0; i < prWlanInfo->u4ScanResultNum; i++) {
+		/* NOTE: prWlanInfo->u4ScanResultNumi could change in loop */
+		if (!EQUAL_MAC_ADDR(arBSSID, prScanResult[i].arMacAddress))
+			continue;
 
-		if (EQUAL_MAC_ADDR(arBSSID, prScanResult[i].arMacAddress)) {
-			/* backup current IE length */
-			u4IELength = ALIGN_4(prScanResult[i].u4IELength);
-			pucIEPtr = prWlanInfo->apucScanResultIEs[i];
+		/* backup current IE length */
+		u4IELength = ALIGN_4(prScanResult[i].u4IELength);
+		pucIEPtr = prScanResult[i].pucIE;
 
-			/* removed from middle */
-			for (j = i + 1; j < prWlanInfo->u4ScanResultNum; j++) {
-				prScanResult[j - 1] = prScanResult[j];
+		/* removed from middle */
+		for (j = i + 1; j < prWlanInfo->u4ScanResultNum; j++) {
+			prScanResult[j - 1] = prScanResult[j];
 
-				prWlanInfo->apucScanResultIEs[j - 1] =
-					prWlanInfo->apucScanResultIEs[j];
-			}
+			prScanResult[j - 1].pucIE = prScanResult[j].pucIE;
+		}
 
-			prWlanInfo->u4ScanResultNum--;
+		prWlanInfo->u4ScanResultNum--;
 
-			/* remove IE buffer if needed := move rest of IE buffer
-			 */
-			if (u4IELength > 0) {
-				u4IEMoveLength = prWlanInfo->u4ScanIEBufferUsage
-					- (((uintptr_t) pucIEPtr)
-					+ u4IELength
-					- ((uintptr_t)
-					(&(prWlanInfo->aucScanIEBuf[0]))));
+		/* remove IE buffer if needed := move rest of IE buffer
+		 */
+		if (u4IELength > 0) {
+			u4IEMoveLength = prWlanInfo->u4ScanIEBufferUsage
+				- (((uintptr_t) pucIEPtr)
+				+ u4IELength
+				- ((uintptr_t)
+				(&(prWlanInfo->aucScanIEBuf[0]))));
 
-				kalMemCopy(pucIEPtr,
-					   (uint8_t *) (((uintptr_t)
-					   pucIEPtr) + u4IELength),
-					   u4IEMoveLength);
+			kalMemCopy(pucIEPtr,
+				   (uint8_t *) (((uintptr_t)
+				   pucIEPtr) + u4IELength),
+				   u4IEMoveLength);
 
-				prWlanInfo->u4ScanIEBufferUsage -=
-								u4IELength;
+			prWlanInfo->u4ScanIEBufferUsage -= u4IELength;
 
-				/* correction of pointers to IE buffer */
-				for (j = 0; j < prWlanInfo->u4ScanResultNum;
-				     j++) {
-					if (prWlanInfo->apucScanResultIEs[j] >
-					    pucIEPtr) {
-					prWlanInfo->apucScanResultIEs[j] =
-					    (uint8_t *)((uintptr_t)
-					    (prWlanInfo->apucScanResultIEs[j]) -
-					    u4IELength);
-					}
+			/* correction of pointers to IE buffer */
+			for (j = 0; j < prWlanInfo->u4ScanResultNum; j++) {
+				if (prScanResult[j].pucIE > pucIEPtr) {
+					prScanResult[j].pucIE =
+						(uint8_t *)((uintptr_t)
+						    (prScanResult[j].pucIE) -
+						    u4IELength);
 				}
 			}
 		}
-
-		i++;
 	}
 }
 

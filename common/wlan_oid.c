@@ -623,7 +623,7 @@ wlanoidQueryBssidList(struct ADAPTER *prAdapter,
 			if (prScanResult[i].u4IELength > 0) {
 				/* copy IEs */
 				kalMemCopy(prBssidEx->pucIE,
-					   prWlanInfo->apucScanResultIEs[i],
+					   prScanResult[i].pucIE,
 					   prScanResult[i].u4IELength);
 			}
 			/* 4-bytes alignement */
