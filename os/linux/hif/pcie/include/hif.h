@@ -36,7 +36,6 @@
  */
 #define PCIE_ISR_DEBUG_LOG                0
 #define AXI_CFG_PREALLOC_MEMORY_BUFFER    1
-#define AXI_ISR_DEBUG_LOG                 0
 #define AXI_TX_MAX_SIZE_PER_FRAME         (NIC_TX_MAX_SIZE_PER_FRAME +      \
 					   NIC_TX_DESC_AND_PADDING_LENGTH)
 #define AXI_TX_CMD_BUFF_SIZE              4096
@@ -237,6 +236,8 @@ struct GL_HIF_INFO {
 	uint32_t u4PcieLTR;
 	uint32_t u4PcieASPM;
 #endif
+
+	unsigned long ulHifIntEnBits;
 };
 
 struct BUS_INFO {
@@ -522,6 +523,7 @@ void halPciePreSuspendTimeout(struct ADAPTER *prAdapter,
 int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
 
+struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
 void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo);
@@ -532,6 +534,14 @@ irqreturn_t pcie_sw_int_thread_handler(int irq, void *dev_instance);
 irqreturn_t pcie_fw_log_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance);
 #endif
+irqreturn_t mtk_pci_isr_tx_data0_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_tx_data1_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_tx_free_done_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_rx_data0_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_rx_data1_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_rx_event_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_tx_cmd_thread(int irq, void *dev_instance);
+irqreturn_t mtk_pci_isr_lump_thread(int irq, void *dev_instance);
 #if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance);
 #endif

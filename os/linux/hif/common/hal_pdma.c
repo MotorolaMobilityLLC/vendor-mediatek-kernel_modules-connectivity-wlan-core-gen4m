@@ -4679,9 +4679,13 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	struct RTMP_RX_RING *prRxRing;
 	struct RX_CTRL *prRxCtrl;
 	struct TX_CTRL *prTxCtrl;
-	uint8_t i = 0;
+	uint8_t i = 0, u4HwIntNum = 1;
+	unsigned long ulMsiIntEn = 0;
 	uint32_t u4BufferSize = 512, pos = 0;
 	char *buf;
+#if defined(_HIF_PCIE)
+	struct pcie_msi_info *prMsiInfo;
+#endif
 
 	if (!prAdapter)
 		return;
@@ -4710,11 +4714,27 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	prHifStats->ulUpdatePeriod = jiffies +
 			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 
+#if defined(_HIF_PCIE)
+	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
+	if (prMsiInfo->fgMsiEnabled)
+		u4HwIntNum = PCIE_MSI_NUM;
+	ulMsiIntEn = prMsiInfo->ulEnBits;
+#endif
+
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "I[");
+	for (i = 0; i < u4HwIntNum; i++) {
+		pos += kalSnprintf(
+			buf + pos, u4BufferSize - pos,
+			"%u ",
+			GLUE_GET_REF_CNT(prHifStats->u4MsiIsrCount[i]));
+	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"I[%u %u %u %u]",
+			"/ %u %u %u 0x%x 0x%x %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
 			GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable),
+			prHifInfo->ulHifIntEnBits,
+			ulMsiIntEn,
 			GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt));
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" T[%u %u %u / %u %u %u %u]",
