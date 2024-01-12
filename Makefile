@@ -1429,7 +1429,8 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_custom.o \
 		$(OS_DIR)platform.o \
 		$(OS_DIR)gl_emi.o \
-		$(OS_DIR)gl_csi.o
+		$(OS_DIR)gl_csi.o \
+		$(OS_DIR)gl_ics.o
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         ccflags-y += -DCFG_MTK_CONNSYS_DEDICATED_LOG_PATH
         OS_OBJS += $(OS_DIR)gl_fw_log.o
@@ -1475,13 +1476,8 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)ie_sort.o \
 		$(MGMT_DIR)mscs.o \
 		$(MGMT_DIR)rtt.o \
-		$(MGMT_DIR)mlr.o
-
-ifneq ($(os), none)
-MGMT_OBJS +=	$(MGMT_DIR)wlan_ring.o \
-		$(MGMT_DIR)ics.o
-endif
-
+		$(MGMT_DIR)mlr.o \
+		$(MGMT_DIR)wlan_ring.o
 
 # ---------------------------------------------------
 # Chips Objects List

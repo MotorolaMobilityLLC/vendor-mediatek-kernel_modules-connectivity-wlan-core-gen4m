@@ -24,7 +24,7 @@
 #include <linux/netdevice.h>
 #include <linux/inetdevice.h>
 #include <linux/string.h>
-#include "ics.h"
+#include "gl_ics.h"
 #include "wlan_ring.h"
 
 #define ICS_LOG_SIZE (128*1024)

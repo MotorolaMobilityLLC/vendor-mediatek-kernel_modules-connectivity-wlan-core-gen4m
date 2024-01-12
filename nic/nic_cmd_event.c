@@ -76,7 +76,7 @@
 
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-#include "ics.h"
+#include "gl_ics.h"
 #endif
 
 

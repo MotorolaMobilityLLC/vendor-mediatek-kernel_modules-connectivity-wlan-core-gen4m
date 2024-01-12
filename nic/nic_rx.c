@@ -78,7 +78,7 @@
 #endif
 #include "radiotap.h"
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-#include "ics.h"
+#include "gl_ics.h"
 #endif
 
 #if CFG_SUPPORT_RX_PAGE_POOL
