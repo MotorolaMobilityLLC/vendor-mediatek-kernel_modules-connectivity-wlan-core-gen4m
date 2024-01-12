@@ -9665,6 +9665,11 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 				+ sizeof((HqaCmdFrame)->Sequence)
 				+ ntohs((HqaCmdFrame)->Length);
 
+			if (prIwReqData->data.length == 0 ||
+				prIwReqData->data.length > sizeof(*HqaCmdFrame))
+				return -EFAULT;
+
+
 			if (copy_to_user(prIwReqData->data.pointer
 				, (uint8_t *) (HqaCmdFrame)
 				, prIwReqData->data.length)) {
