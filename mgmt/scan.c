@@ -2030,6 +2030,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	uint8_t *pucIE;
 	uint16_t u2IELength;
+	int iPayloadOffset = 0;
 	uint16_t u2Offset = 0;
 
 	struct WLAN_BEACON_FRAME *prWlanBeaconFrame
@@ -2045,7 +2046,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsValidSsid = FALSE;
 	struct PARAM_SSID rSsid;
 	uint64_t u8Timestamp;
-	u_int8_t fgIsNewBssDesc = FALSE, fgIsCopy = FALSE;
+	u_int8_t fgIsNewBssDesc = FALSE;
 
 	uint32_t i;
 	uint8_t ucSSIDChar;
@@ -2108,15 +2109,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
 	    (uint16_t) OFFSET_OF(struct WLAN_BEACON_FRAME_BODY, aucInfoElem[0]);
 
-	if (u2IELength > CFG_IE_BUFFER_SIZE) {
-		/* Give an warning msg when IE is going to be
-		 * truncated.
-		 */
-		DBGLOG(SCN, ERROR,
-			"IE len(%u) > Max IE buffer size(%u), truncate IE!\n",
-			u2IELength, CFG_IE_BUFFER_SIZE);
-		u2IELength = CFG_IE_BUFFER_SIZE;
-	}
 	kalMemZero(&rSsid, sizeof(rSsid));
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		/* Error handling for disorder IE that IE length is 0 */
@@ -2380,7 +2372,12 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		}
 		kalMemCopy(prBssDesc->aucRawBuf,
 			prWlanBeaconFrame, prBssDesc->u2RawLength);
-		fgIsCopy = TRUE;
+
+		iPayloadOffset = sortGetPayloadOffset(prAdapter,
+							prBssDesc->aucRawBuf);
+		prBssDesc->pucIeBuf = prBssDesc->aucRawBuf + iPayloadOffset;
+		prBssDesc->u2IELength = prBssDesc->u2RawLength - iPayloadOffset;
+		u2IELength = prBssDesc->u2IELength;
 	}
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
@@ -2405,26 +2402,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 
 	prBssDesc->u2CapInfo = u2CapInfo;
 
-	/* 4 <2.1> Retrieve IEs for later parsing */
-	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
-	    (uint16_t) OFFSET_OF(struct WLAN_BEACON_FRAME_BODY, aucInfoElem[0]);
-
-	/* 2018/04/17 Frog: Only update IELength along with IE update */
-	if (fgIsCopy) {
-		if (u2IELength > CFG_IE_BUFFER_SIZE) {
-			u2IELength = CFG_IE_BUFFER_SIZE;
-			prBssDesc->fgIsIEOverflow = TRUE;
-		} else {
-			prBssDesc->fgIsIEOverflow = FALSE;
-		}
-		prBssDesc->u2IELength = u2IELength;
-
-		kalMemCopy(prBssDesc->aucIEBuf,
-			prWlanBeaconFrame->aucInfoElem,
-			u2IELength);
-	}
-
-	/* 4 <2.2> reset prBssDesc variables in case that AP
+	/* 4 <2.1> reset prBssDesc variables in case that AP
 	 * has been reconfigured
 	 */
 #if (CFG_SUPPORT_HE_ER == 1)
@@ -4588,8 +4566,6 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 							RCPI_TO_dBm(
 							prBssDesc->ucRCPI));
 					}
-					kalMemZero(prBssDesc->aucRawBuf,
-						CFG_RAW_BUFFER_SIZE);
 					prBssDesc->u2RawLength = 0;
 #if CFG_ENABLE_WIFI_DIRECT
 					prBssDesc->fgIsP2PReport = FALSE;

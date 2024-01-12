@@ -1531,7 +1531,7 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 	if (!prBssDesc || !prChannel || !prStaRec)
 		return NULL;
 
-	pos = prBssDesc->aucIEBuf;
+	pos = prBssDesc->pucIeBuf;
 	len = prBssDesc->u2IELength;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -1544,7 +1544,7 @@ struct cfg80211_bss * kalInformConnectionBss(struct ADAPTER *prAdapter,
 		} else {
 			uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 
-			kalMemCopy(pos, prBssDesc->aucIEBuf,
+			kalMemCopy(pos, prBssDesc->pucIeBuf,
 				prBssDesc->u2IELength);
 			pos += prBssDesc->u2IELength;
 			*pos++ = ELEM_ID_VENDOR;

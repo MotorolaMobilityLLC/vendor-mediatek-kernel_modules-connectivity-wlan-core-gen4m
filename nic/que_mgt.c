@@ -6534,7 +6534,7 @@ void mqmProcessScanResult(IN struct ADAPTER *prAdapter,
 		return;
 
 	u2IELength = prScanResult->u2IELength;
-	pucIE = prScanResult->aucIEBuf;
+	pucIE = prScanResult->pucIeBuf;
 
 	/* <1> Determine whether the peer supports WMM/QoS and UAPSDU */
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
