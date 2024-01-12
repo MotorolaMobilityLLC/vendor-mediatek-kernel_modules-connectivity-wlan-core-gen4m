@@ -4259,7 +4259,10 @@ void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 		struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo;
 		struct P2P_FILS_DISCOVERY_INFO *prFilsInfo;
 		struct P2P_UNSOL_PROBE_RESP_INFO *prUnsolProbeInfo;
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		uint8_t ucUnsolProbeResp =
+			prAdapter->rWifiVar.ucUnsolProbeResp;
+#endif
 		prWifiVar = &prAdapter->rWifiVar;
 		prP2pSpecBssInfo = prWifiVar->prP2pSpecificBssInfo[
 			prBcnUpdateMsg->ucRoleIndex];
@@ -4283,7 +4286,7 @@ void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 		}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		else if (prP2pBssInfo->eBand == BAND_6G &&
-			 (CFG_MTK_FORCE_ENABLE_UNSOL_PROBE_RESP ||
+			 (IS_FEATURE_FORCE_ENABLED(ucUnsolProbeResp) ||
 			  prUnsolProbeInfo->fgValid)) {
 			/* Update unsolicited probe response as beacon */
 			bssUpdateBeaconContentEx(prAdapter,

@@ -109,6 +109,8 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HE_6G_CAP), NULL,
 	   heRlmReqGenerateHe6gBandCapIE} /* 255, EXT 59 */
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RNR), NULL,
+	   heRlmRspGenerateHeRnrIE} /* 201 */
 #endif
 #endif
 #if CFG_SUPPORT_802_11BE

@@ -7240,7 +7240,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucTxGf, "GfTx", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->ucRxGf, "GfRx", FEATURE_ENABLED);
 	INIT_UINT(prWifiVar->ucMCS32, "MCS32", FEATURE_ENABLED);
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	INIT_UINT(prWifiVar->ucUnsolProbeResp,
+		"UnsolProbeResp", FEATURE_FORCE_ENABLED);
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (fgEfuseCtrlAxOn == 1) {
 		INIT_UINT(prWifiVar->ucHeAmsduInAmpduRx,

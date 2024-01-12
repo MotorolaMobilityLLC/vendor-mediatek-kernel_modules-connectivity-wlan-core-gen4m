@@ -376,6 +376,9 @@ struct P2P_SPECIFIC_BSS_INFO {
 	uint16_t u2OweIeLen;
 	uint8_t aucOweIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_WPA];
 
+	uint16_t u2RnrIeLen;
+	uint8_t aucRnrIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_RNR];
+
 	u_int8_t fgIsRddOpchng;
 	struct WIFI_EVENT *prRddPostOpchng;
 	u_int8_t ucRddBw;
