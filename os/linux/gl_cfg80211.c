@@ -1023,6 +1023,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 	prGlueInfo->scanCache.prRequest = request;
 	prGlueInfo->scanCache.n_channels = (uint32_t) request->n_channels;
 	prGlueInfo->scanCache.ucBssIndex = ucBssIndex;
+	prGlueInfo->scanCache.u4Flags = request->flags;
 	if (isScanCacheDone(&prGlueInfo->scanCache) == TRUE)
 		return 0;
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
