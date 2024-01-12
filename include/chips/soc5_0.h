@@ -96,6 +96,7 @@
 #define WF_PP_TOP_DBG_CS_1_ADDR    (WF_PP_TOP_BASE + 0x0108)
 #define WF_PP_TOP_DBG_CS_2_ADDR    (WF_PP_TOP_BASE + 0x010C)
 
+#define SOC5_0_PCIE2AP_REMAP_BASE_ADDR	0x50000
 #define SOC5_0_REMAP_BASE_ADDR		0x7c500000
 
 /*******************************************************************************

@@ -17,8 +17,8 @@
 #include "coda/mt6639/wf_wfdma_host_dma0.h"
 #include "coda/mt6639/wf_pse_top.h"
 #include "coda/mt6639/pcie_mac_ireg.h"
-#include "coda/mt6639/wf_mcu_bus_cr.h"
-#include "coda/mt6639/conn_infra_bus_cr_on.h"
+#include "coda/mt6639/conn_mcu_bus_cr.h"
+#include "coda/mt6639/conn_bus_cr_von.h"
 #include "hal_dmashdl_mt6639.h"
 
 #define CFG_SUPPORT_VCODE_VDFS 0
@@ -165,24 +165,24 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x80020000, 0xb0000, 0x10000}, /* WF_TOP_MISC_OFF */
 	{0x81020000, 0xc0000, 0x10000}, /* WF_TOP_MISC_ON */
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
-	{0x7c500000, 0x50000, 0x10000}, /* CONN_INFRA, dyn mem map */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x2000000}, /* remap */
 	{0x0, 0x0, 0x0} /* End */
 };
 #endif
 
 struct pcie2ap_remap mt6639_pcie2ap_remap = {
-	.reg_base = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_ADDR,
-	.reg_mask = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_MASK,
-	.reg_shift = CONN_INFRA_BUS_CR_ON_CONN_INFRA_PCIE2AP_REMAP_WF__5__4_cr_pcie2ap_public_remapping_wf_5_SHFT,
-	.base_addr = MT6639_REMAP_BASE_ADDR
+	.reg_base = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_ADDR,
+	.reg_mask = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_MASK,
+	.reg_shift = CONN_BUS_CR_VON_CONN_INFRA_PCIE2AP_REMAP_WF_0_76_cr_pcie2ap_public_remapping_wf_06_SHFT,
+	.base_addr = MT6639_PCIE2AP_REMAP_BASE_ADDR
 };
 
 struct ap2wf_remap mt6639_ap2wf_remap = {
-	.reg_base = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
-	.reg_mask = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
-	.reg_shift = WF_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
+	.reg_base = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
+	.reg_mask = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
+	.reg_shift = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_SHFT,
 	.base_addr = MT6639_REMAP_BASE_ADDR
 };
 
@@ -190,7 +190,6 @@ struct PCIE_CHIP_CR_REMAPPING mt6639_bus2chip_cr_remapping = {
 	.pcie2ap = &mt6639_pcie2ap_remap,
 	.ap2wf = &mt6639_ap2wf_remap,
 };
-
 
 struct wfdma_group_info mt6639_wfmda_host_tx_group[] = {
 	{"P0T0:AP DATA0", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING0_CTRL0_ADDR, true},
@@ -267,7 +266,7 @@ struct BUS_INFO mt6639_bus_info = {
 
 	.bus2chip = mt6639_bus2chip_cr_mapping,
 	.bus2chip_remap = &mt6639_bus2chip_cr_remapping,
-	.max_static_map_addr = 0x000f0000,
+	.max_static_map_addr = 0x00200000,
 
 	.tx_ring_fwdl_idx = CONNAC3X_FWDL_TX_RING_IDX,
 	.tx_ring_cmd_idx = 15,
