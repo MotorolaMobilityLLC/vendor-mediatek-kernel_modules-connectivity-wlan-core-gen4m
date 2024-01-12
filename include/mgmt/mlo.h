@@ -293,4 +293,8 @@ struct BSS_INFO *mldGetBssInfoByLinkID(
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+uint8_t mldIsMloFeatureEnabled(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t fgIsApMode);
+
 #endif /* !_MLO_H */
