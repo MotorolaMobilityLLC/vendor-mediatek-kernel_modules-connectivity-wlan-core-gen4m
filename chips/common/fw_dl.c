@@ -1217,11 +1217,11 @@ uint32_t wlanImageSectionConfig(
 	switch (eDlIdx) {
 #if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	case IMG_DL_IDX_BT_PATCH:
-		/* fallthrough */
+		kal_fallthrough;
 #endif
 #if CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	case IMG_DL_IDX_ZB_PATCH:
-		/* fallthrough */
+		kal_fallthrough;
 #endif
 	case IMG_DL_IDX_PATCH:
 		ucCmdId = INIT_CMD_ID_PATCH_START;

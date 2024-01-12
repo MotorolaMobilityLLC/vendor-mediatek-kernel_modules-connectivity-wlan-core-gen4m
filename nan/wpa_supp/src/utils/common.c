@@ -1057,7 +1057,7 @@ utf8_unescape(const char *inp, size_t in_size, char *outp, size_t out_size) {
 			if (!in_size--)
 				return 0;
 			inp++;
-		/* fall through */
+		kal_fallthrough;
 
 		default:
 			*outp++ = *inp++;
@@ -1095,7 +1095,7 @@ utf8_escape(const char *inp, size_t in_size, char *outp, size_t out_size) {
 			if (res_size++ >= out_size)
 				return 0;
 			*outp++ = '\\';
-		/* fall through */
+		kal_fallthrough;
 
 		default:
 			*outp++ = *inp++;

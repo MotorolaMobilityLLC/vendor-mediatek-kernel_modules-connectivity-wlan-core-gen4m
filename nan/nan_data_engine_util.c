@@ -1416,6 +1416,7 @@ nanElemContainerAttrHandler(
 			}
 #endif
 
+			break;
 		default:
 			break;
 		}

@@ -20,6 +20,7 @@
  */
 #include "precomp.h"
 #include "mddp.h"
+#include "gl_kal.h"
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -3483,7 +3484,7 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 
 	case AIS_STATE_ONLINE_SCAN:
 		fgIsCheckConnected = TRUE;
-		/* fallthrough */
+		kal_fallthrough;
 	case AIS_STATE_SCAN:
 		/* Do abort SCAN */
 		aisFsmStateAbort_SCAN(prAdapter, ucBssIndex);

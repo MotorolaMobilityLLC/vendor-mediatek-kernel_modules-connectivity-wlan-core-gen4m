@@ -19,6 +19,7 @@
  ******************************************************************************
  */
 #include "precomp.h"
+#include "gl_kal.h"
 #include "mgmt/rsn.h"
 #include "debug.h"
 #if CFG_SUPPORT_NAN
@@ -8666,10 +8667,10 @@ wlanoidSetAcpiDevicePowerState(struct ADAPTER *
 		break;
 	case ParamDeviceStateD1:
 		DBGLOG(REQ, INFO, "Set Power State: D1\n");
-		/* fallthrough */
+		kal_fallthrough;
 	case ParamDeviceStateD2:
 		DBGLOG(REQ, INFO, "Set Power State: D2\n");
-		/* fallthrough */
+		kal_fallthrough;
 	case ParamDeviceStateD3:
 		DBGLOG(REQ, INFO, "Set Power State: D3\n");
 		fgRetValue = nicpmSetAcpiPowerD3(prAdapter);

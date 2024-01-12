@@ -6945,12 +6945,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		case FAIL_BY_RESET:
 		case FAIL_MET_INIT_PROCFS:
 			kalMetRemoveProcfs();
-			/* fallthrough */
+			kal_fallthrough;
 		case PROC_INIT_FAIL:
 			wlanNetUnregister(prWdev);
 			/* Unregister notifier callback */
 			wlanUnregisterInetAddrNotifier();
-			/* fallthrough */
+			kal_fallthrough;
 		case NET_REGISTER_FAIL:
 			set_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag);
 #if CFG_SUPPORT_MULTITHREAD
@@ -6967,7 +6967,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			wait_for_completion_interruptible(
 							&prGlueInfo->rHaltComp);
 			wlanAdapterStop(prAdapter, FALSE);
-		/* fallthrough */
+		kal_fallthrough;
 		case ADAPTER_START_FAIL:
 			/*reset NVRAM State to ready for the next wifi-on*/
 			if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
@@ -6975,12 +6975,12 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			glBusFreeIrq(prWdev->netdev,
 				*((struct GLUE_INFO **)
 						netdev_priv(prWdev->netdev)));
-		/* fallthrough */
+		kal_fallthrough;
 		case BUS_SET_IRQ_FAIL:
 			glRxUninit(prGlueInfo);
 			if (prChipInfo && prChipInfo->fw_dl_ops->mcu_deinit)
 				prChipInfo->fw_dl_ops->mcu_deinit(prAdapter);
-		/* fallthrough */
+		kal_fallthrough;
 		case ROM_DL_FAIL:
 			wlanWakeLockUninit(prGlueInfo);
 			wlanNetDestroy(prWdev);
@@ -6989,9 +6989,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			 */
 			/* Set NULL value for local prAdapter as well */
 			prAdapter = NULL;
-		/* fallthrough */
+		kal_fallthrough;
 		case NET_CREATE_FAIL:
-		/* fallthrough */
+		kal_fallthrough;
 		case BUS_INIT_FAIL:
 #if (CFG_SUPPORT_STATISTICS == 1)
 			wlanWakeStaticsUninit();

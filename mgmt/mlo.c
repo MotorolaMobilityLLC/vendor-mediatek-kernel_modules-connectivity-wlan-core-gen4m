@@ -8,6 +8,7 @@
  */
 
 #include "precomp.h"
+#include "gl_kal.h"
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 
 #define MAX_DUP_IE_COUNT 64
@@ -2006,7 +2007,7 @@ int mldParseProfile(uint8_t *ie, uint32_t len, uint8_t *prof,
 				ninh = NON_INHERITANCE_IE(prof);
 				break;
 			}
-			/* fallthrough */
+			kal_fallthrough;
 		default:
 			prof_ies[profile_count++] = prof;
 			break;
