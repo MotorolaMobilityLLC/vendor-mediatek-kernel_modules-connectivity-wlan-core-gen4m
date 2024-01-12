@@ -10798,16 +10798,14 @@ uint32_t kalDumpPwrLevel(IN struct ADAPTER *prAdapter)
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 {
-	struct UNI_EVENT_NAN *prUniEventNanInfo = NULL;
 	struct UNI_CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
 	uint32_t u4SubEvent;
 	int status = 0;
 
 	ASSERT(prAdapter);
 
-	prUniEventNanInfo = (struct UNI_EVENT_NAN *)prBuffer;
 	prTlvElement =
-	(struct UNI_CMD_EVENT_TLV_ELEMENT_T *)prUniEventNanInfo->aucTlvBuffer;
+	(struct UNI_CMD_EVENT_TLV_ELEMENT_T *)prBuffer;
 
 	u4SubEvent = prTlvElement->u2Tag;
 
