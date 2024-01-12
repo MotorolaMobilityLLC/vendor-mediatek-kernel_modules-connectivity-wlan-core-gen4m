@@ -436,7 +436,21 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-		/* Type 1. WIFI_RAM_CODE_mt7990.bin */
+		/* Type 1. WIFI_RAM_CODE_MT7990_1_1.bin */
+		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
+				CFG_FW_NAME_MAX_LEN,
+				"WIFI_RAM_CODE_MT%x_%x_%u.bin",
+				MT7990_CHIP_ID,
+				MT7990_FLAVOR_VERSION,
+				MT7990_ROM_VERSION);
+		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+			(*pucNameIdx) += 1;
+		else
+			DBGLOG(INIT, ERROR,
+				"[%u] kalSnprintf failed, ret: %d\n",
+				__LINE__, ret);
+
+		/* Type 2. WIFI_RAM_CODE_7990.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 				CFG_FW_NAME_MAX_LEN, "%s.bin",
 				apucmt7990FwName[ucIdx]);
@@ -444,8 +458,8 @@ static void mt7990_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			(*pucNameIdx) += 1;
 		else
 			DBGLOG(INIT, ERROR,
-					"[%u] kalSnprintf failed, ret: %d\n",
-					__LINE__, ret);
+				"[%u] kalSnprintf failed, ret: %d\n",
+				__LINE__, ret);
 	}
 }
 
@@ -454,7 +468,21 @@ static void mt7990_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 {
 	int ret = 0;
 
-	/* Type 1. mt7990_patch_e1_hdr.bin */
+	/* Type 1. WIFI_MT7990_PATCH_MCU_1_1_hdr.bin */
+	ret = kalSnprintf(apucName[(*pucNameIdx)],
+			  CFG_FW_NAME_MAX_LEN,
+			  "WIFI_MT%x_PATCH_MCU_%x_%u_hdr.bin",
+			  MT7990_CHIP_ID,
+			  MT7990_FLAVOR_VERSION,
+			  MT7990_ROM_VERSION);
+	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
+		(*pucNameIdx) += 1;
+	else
+		DBGLOG(INIT, ERROR,
+			"[%u] kalSnprintf failed, ret: %d\n",
+			__LINE__, ret);
+
+	/* Type 2. mt7990_patch_e1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
 			  "mt7990_patch_e1_hdr.bin");

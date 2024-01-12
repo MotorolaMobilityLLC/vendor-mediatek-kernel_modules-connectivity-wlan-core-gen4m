@@ -72,6 +72,9 @@ extern struct PP_TOP_CR rMt7990PpTopCr;
 
 #define MT7990_REMAP_BASE_ADDR		0x7c500000
 
+#define MT7990_ROM_VERSION			1
+#define MT7990_FLAVOR_VERSION			1
+
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
