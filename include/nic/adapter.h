@@ -1563,6 +1563,10 @@ struct WIFI_VAR {
 	u_int8_t fgFwIdxLogTrans;
 #endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
 
+#if (CFG_SUPPORT_FW_IDX_LOG_SAVE == 1)
+	u_int8_t fgFwIdxLogSave;
+#endif /* CFG_SUPPORT_FW_IDX_LOG_TRANS */
+
 #if CFG_SUPPORT_PCIE_ASPM
 	/* 0: Keep L0, 1: enable PCIE enter L1.2 */
 	u_int8_t fgPcieEnableL1ss;
