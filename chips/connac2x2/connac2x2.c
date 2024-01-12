@@ -232,6 +232,7 @@ struct BUS_INFO connac2x2_bus_info = {
 	 * to support max HW(or SW) AMSDU number.
 	 */
 	.tx_ring1_data_idx = 1,
+	.max_static_map_addr = 0x000E0000,
 	.fgCheckDriverOwnInt = FALSE,
 	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 36,
