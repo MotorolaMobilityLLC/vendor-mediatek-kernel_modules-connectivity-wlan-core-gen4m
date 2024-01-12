@@ -220,6 +220,7 @@ struct FWDL_OPS_T {
 	void (*setup_date_info)(struct ADAPTER *prAdapter,
 		enum ENUM_IMG_DL_IDX_T eDlIdx,
 		uint8_t *date);
+	uint32_t (*getFlavorVer)(uint8_t *flavor);
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)

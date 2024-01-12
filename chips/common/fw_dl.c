@@ -2559,7 +2559,8 @@ void asicConnac3xConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	uint32_t u4FlavorVer;
+	struct FWDL_OPS_T *prFwDlOps;
+	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
@@ -2578,11 +2579,15 @@ void asicConnac3xConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
-	u4FlavorVer = 0x2;
+	prFwDlOps = prChipInfo->fw_dl_ops;
+	if (prFwDlOps && prFwDlOps->getFlavorVer)
+		prFwDlOps->getFlavorVer(&aucFlavor[0]);
+	else	/* default usage for mt6639 ce */
+		kalScnprintf(aucFlavor, CFG_FW_FLAVOR_MAX_LEN, "2");
 
 	kalSnprintf(apucName[(*pucNameIdx)],
-		CFG_FW_NAME_MAX_LEN, "BT_RAM_CODE_MT%x_%x_%x_hdr.bin",
-		prChipInfo->chip_id, u4FlavorVer,
+		CFG_FW_NAME_MAX_LEN, "BT_RAM_CODE_MT%x_%s_%x_hdr.bin",
+		prChipInfo->chip_id, aucFlavor,
 		asicConnac3xGetFwVer(prAdapter));
 }
 
