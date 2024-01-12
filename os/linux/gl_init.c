@@ -5535,6 +5535,10 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(INIT, WARN, "NAN fgIsNANfromHAL init %u\n",
 	       prAdapter->fgIsNANfromHAL);
 #endif
+
+#if CFG_SUPPORT_TDLS
+	prAdapter->u4TdlsLinkCount = 0;
+#endif
 }
 
 static

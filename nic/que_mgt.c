@@ -1453,17 +1453,19 @@ void qmDetermineStaRecIndex(IN struct ADAPTER *prAdapter,
 	case OP_MODE_BOW:
 		if (prBssInfo->prStaRecOfAP) {
 #if CFG_SUPPORT_TDLS
-
-			prTempStaRec =
-				cnmGetTdlsPeerByAddress(prAdapter,
-					prBssInfo->ucBssIndex,
-					prMsduInfo->aucEthDestAddr);
-			if (IS_DLS_STA(prTempStaRec)
-			    && prTempStaRec->ucStaState == STA_STATE_3) {
-				if (g_arTdlsLink[prTempStaRec->ucTdlsIndex]) {
-					prMsduInfo->ucStaRecIndex =
-						prTempStaRec->ucIndex;
-					return;
+			if (prAdapter->u4TdlsLinkCount > 0) {
+				prTempStaRec =
+					cnmGetTdlsPeerByAddress(prAdapter,
+						prBssInfo->ucBssIndex,
+						prMsduInfo->aucEthDestAddr);
+				if (IS_DLS_STA(prTempStaRec) &&
+				    prTempStaRec->ucStaState == STA_STATE_3) {
+					if (g_arTdlsLink[
+						prTempStaRec->ucTdlsIndex]) {
+						prMsduInfo->ucStaRecIndex =
+							prTempStaRec->ucIndex;
+						return;
+					}
 				}
 			}
 #endif
