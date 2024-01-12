@@ -338,7 +338,7 @@ void wlanGetEpaElnaFromNvram(
 		/*sanity check*/
 		if ((u1TypeID == 0) &&
 			(u1LenLSB == 0) && (u1LenMSB == 0)) {
-			DBGLOG(INIT, WARN, "TLV is Null\n");
+			DBGLOG(INIT, TRACE, "TLV is Null\n");
 			break;
 		}
 

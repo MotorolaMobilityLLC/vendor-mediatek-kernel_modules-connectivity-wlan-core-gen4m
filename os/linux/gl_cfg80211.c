@@ -7431,7 +7431,7 @@ int mtk_cfg_suspend(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	if (!wlanIsDriverReady(prGlueInfo)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
+		DBGLOG(REQ, TRACE, "driver is not ready\n");
 		return 0;
 	}
 
@@ -7446,7 +7446,7 @@ int mtk_cfg_resume(struct wiphy *wiphy)
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
 	if (!wlanIsDriverReady(prGlueInfo)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
+		DBGLOG(REQ, TRACE, "driver is not ready\n");
 		return 0;
 	}
 
