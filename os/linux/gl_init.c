@@ -5874,8 +5874,7 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	wlanOnP2pRegistration(prGlueInfo, prAdapter, gprWdev[0]);
-	if (prAdapter->u4HostStatusEmiOffset)
-		kalSetSuspendFlagToEMI(prAdapter, FALSE);
+	halSetSuspendFlagToFw(prAdapter, FALSE);
 #if CFG_MODIFY_TX_POWER_BY_BAT_VOLT
 	if (wlan_bat_volt == 3550) {
 		kalEnableTxPwrBackoffByBattVolt(prAdapter, TRUE);

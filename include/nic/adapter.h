@@ -1516,6 +1516,14 @@ struct CSI_INFO_T {
 };
 #endif
 
+struct HOST_SUSPEND_NOTIFY_INFO {
+	enum ENUM_HOST_SUSPEND_ADDR_TYPE eType;
+	uint32_t u4SetAddr;
+	uint32_t u4ClrAddr;
+	uint32_t u4Mask;
+	uint32_t u4Shift;
+};
+
 /*
  * Major ADAPTER structure
  * Major data structure for driver operation
@@ -1846,8 +1854,7 @@ struct ADAPTER {
 	/* COEX feature */
 	uint32_t u4FddMode;
 
-	/* host status EMI offset*/
-	uint32_t u4HostStatusEmiOffset;
+	struct HOST_SUSPEND_NOTIFY_INFO rHostSuspendInfo;
 
 	/* Casan load type */
 	uint32_t u4CasanLoadType;

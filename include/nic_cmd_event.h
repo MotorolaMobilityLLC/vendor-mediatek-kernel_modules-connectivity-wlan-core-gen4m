@@ -1137,6 +1137,7 @@ enum NIC_CAPABILITY_V2_TAG {
 	TAG_CAP_LLS_DATA_EMI_OFFSET = 0x1c, /* Shared EMI offset for LLS */
 	TAG_CAP_CASAN_LOAD_TYPE = 0x1d,
 	TAG_CAP_REDL_INFO = 0x1e,
+	TAG_CAP_HOST_SUSPEND_INFO = 0x1f,
 	TAG_CAP_TOTAL
 };
 
@@ -1373,6 +1374,23 @@ struct CAP_REDL_INFO {
 	uint32_t u4RedlOffset;
 	uint32_t u4RedlLen;
 	uint32_t u4Reserved;
+};
+
+enum ENUM_HOST_SUSPEND_ADDR_TYPE {
+	ENUM_HOST_SUSPEND_ADDR_TYPE_NONE,
+	ENUM_HOST_SUSPEND_ADDR_TYPE_EMI,
+	ENUM_HOST_SUSPEND_ADDR_TYPE_CONN_W_R_REG,
+	ENUM_HOST_SUSPEND_ADDR_TYPE_CONN_SET_CLR_REG,
+	ENUM_HOST_SUSPEND_ADDR_TYPE_NUM
+};
+
+struct CAP_HOST_SUSPEND_INFO_T {
+	enum ENUM_HOST_SUSPEND_ADDR_TYPE eType;
+	uint32_t u4SetAddr;
+	uint32_t u4ClrAddr;
+	uint32_t u4Mask;
+	uint8_t u4Shift;
+	uint8_t ucReserved[3];
 };
 
 /*
@@ -4167,6 +4185,9 @@ uint32_t nicCfgChipCapRedlInfo(IN struct ADAPTER *prAdapter,
 			       IN uint8_t *pucEventBuf);
 #endif
 #endif
+
+uint32_t nicCmdEventHostSuspendInfo(IN struct ADAPTER *prAdapter,
+					IN uint8_t *pucEventBuf);
 
 void nicExtEventICapIQData(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pucEventBuf);
