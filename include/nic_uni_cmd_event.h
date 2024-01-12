@@ -2114,8 +2114,9 @@ struct UNI_CMD_GET_MAC_INFO {
 
 /* Get mac info command TLV List */
 enum ENUM_UNI_CMD_MAC_INFO_TAG {
-    UNI_CMD_MAC_INFO_TAG_TSF = 0,
-    UNI_CMD_MAC_INFO_TAG_NUM
+	UNI_CMD_MAC_INFO_TAG_TSF = 0,
+	UNI_CMD_MAC_INFO_TAG_TWT_STA_CNM = 1,
+	UNI_CMD_MAC_INFO_TAG_NUM
 };
 
 /* Get tsf time (Tag0) */
@@ -2126,6 +2127,16 @@ struct UNI_CMD_MAC_INFO_TSF {
 	uint8_t ucHwBssidIndex;
 	uint8_t ucBssIndex;
 	uint8_t aucPadding[1];
+} __KAL_ATTRIB_PACKED__;
+
+/* TWT STA req CNM CH usage (Tag1) */
+struct UNI_CMD_MAC_INFO_TWT_STA_CNM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucDbdcIdx;
+	uint8_t ucHwBssidIndex;
+	uint8_t ucBssIndex;
+	uint8_t fgTwtEn;
 } __KAL_ATTRIB_PACKED__;
 
 /* TDLS command (0x1B) */
@@ -4075,6 +4086,7 @@ struct UNI_EVENT_MAC_IFNO {
 /* Mac info event Tag */
 enum ENUM_UNI_EVENT_MAC_INFO_TAG {
 	UNI_EVENT_MAC_INFO_TAG_TSF  = 0,
+	UNI_EVENT_MAC_INFO_TAG_TWT_STA_CNM = 1,
 	UNI_EVENT_MAC_INFO_TAG_NUM
 };
 
@@ -4087,6 +4099,16 @@ struct UNI_EVENT_MAC_INFO_TSF {
 	uint8_t    aucPadding[2];
 	uint32_t   u4TsfBit0_31;
 	uint32_t   u4TsfBit63_32;
+} __KAL_ATTRIB_PACKED__;
+
+/* Uni event for TWT STA req CNM CH usage (Tag1) */
+struct UNI_EVENT_MAC_INFO_TWT_STA_CNM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucDbdcIdx;
+	uint8_t ucHwBssidIndex;
+	uint8_t ucBssIndex;
+	uint8_t fgCnmGranted;
 } __KAL_ATTRIB_PACKED__;
 
 struct UNI_EVENT_STATISTICS {
@@ -5388,6 +5410,10 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+uint32_t nicUniCmdTwtStaGetCnmGranted(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 uint32_t nicUniUpdateDevInfo(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
@@ -5516,6 +5542,12 @@ void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
 	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+
+#if (CFG_SUPPORT_TWT_STA_CNM == 1)
+void nicUniCmdEventTWTGetCnmGrantedDone(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+#endif
+
 void nicUniCmdEventInstallKey(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventQueryCnmInfo(IN struct ADAPTER
