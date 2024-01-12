@@ -4410,7 +4410,6 @@ int mtk_cfg_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	struct ADAPTER *prAdapter = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetdevPriv = NULL;
 	struct P2P_INFO *prP2pInfo = NULL;
-	struct cfg80211_scan_request *prScanRequest = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -4458,13 +4457,10 @@ int mtk_cfg_change_iface(struct wiphy *wiphy, struct net_device *ndev,
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if ((prGlueInfo->prScanRequest != NULL) &&
 	    (prGlueInfo->prScanRequest->wdev == ndev->ieee80211_ptr)) {
-		prScanRequest = prGlueInfo->prScanRequest;
+		kalCfg80211ScanDone(prGlueInfo->prScanRequest, TRUE);
 		prGlueInfo->prScanRequest = NULL;
 	}
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-
-	if (prScanRequest)
-		kalCfg80211ScanDone(prScanRequest, TRUE);
 
 	/* expect that only AP & STA will be handled here (excluding IBSS) */
 
