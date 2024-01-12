@@ -439,6 +439,9 @@ void p2pRoleFsmDeauthTimeout(struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventBeaconTimeout(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo);
 
+void p2pRoleFsmRunEventAgingTimeout(struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec);
+
 void p2pRoleUpdateACLEntry(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx);
 
