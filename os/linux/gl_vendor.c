@@ -1150,12 +1150,11 @@ int mtk_cfg80211_vendor_cancel_rtt_config(
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	if ((data == NULL) || (data_len == 0))
 		return -EINVAL;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	WIPHY_PRIV(wiphy, prGlueInfo);
 	if (!prGlueInfo)
 		return -EINVAL;
 
