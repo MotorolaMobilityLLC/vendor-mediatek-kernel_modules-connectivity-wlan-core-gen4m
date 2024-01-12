@@ -86,7 +86,15 @@ enum ENUM_RST_MODULE_STATE_TYPE_T {
 	RST_MODULE_STATE_KO_RMMOD,
 	RST_MODULE_STATE_PROBE_START,
 	RST_MODULE_STATE_PROBE_DONE,
+	RST_MODULE_STATE_DUMP_START,
+	RST_MODULE_STATE_DUMP_END,
 	RST_MODULE_STATE_MAX
+};
+
+enum ENUM_RST_MODULE_RET_TYPE_T {
+	RST_MODULE_RET_SUCCESS = 0,
+	RST_MODULE_RET_FAIL,
+	RST_MODULE_RET_MAX
 };
 
 /*******************************************************************************
@@ -112,7 +120,8 @@ enum ENUM_RST_MODULE_STATE_TYPE_T {
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-void rstNotifyWholeChipRstStatus(enum ENUM_RST_MODULE_TYPE_T module,
+enum ENUM_RST_MODULE_RET_TYPE_T rstNotifyWholeChipRstStatus(
+				enum ENUM_RST_MODULE_TYPE_T module,
 				enum ENUM_RST_MODULE_STATE_TYPE_T status,
 				void *data);
 
