@@ -357,6 +357,10 @@ struct P2P_SPECIFIC_BSS_INFO {
 	struct WIFI_EVENT *prRddPostOpchng;
 	u_int8_t ucRddBw;
 	u_int8_t ucRddCh;
+#if CFG_SUPPORT_P2P_ECSA
+	u_int8_t fgEcsa;
+	u_int8_t ucEcsaBw;
+#endif
 };
 
 struct P2P_QUEUED_ACTION_FRAME {
