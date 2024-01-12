@@ -62,10 +62,10 @@
 
 /* == OFFSET_OF(IE_P2P_T,*/
 /*aucP2PAttributes[0]) */
-#define WFD_IE_OUI_HDR                              (ELEM_HDR_LEN + WFD_OUI_TYPE_LEN)
+#define WFD_IE_OUI_HDR    (ELEM_HDR_LEN + WFD_OUI_TYPE_LEN)
 
 /* WFD 4.1.1 - General WFD Attribute */
-#define WFD_ATTRI_HDR_LEN                           3	/* ID(1 octet) + Length(2 octets) */
+#define WFD_ATTRI_HDR_LEN    3	/* ID(1 octet) + Length(2 octets) */
 
 /* WFD Attribute Code */
 #define WFD_ATTRI_ID_DEV_INFO                                 0
@@ -76,12 +76,12 @@
 #define WFD_ATTRI_ID_ALTER_MAC_ADDRESS                10
 
 /* Maximum Length of WFD Attributes */
-#define WFD_ATTRI_MAX_LEN_DEV_INFO                              6	/* 0 */
-#define WFD_ATTRI_MAX_LEN_ASSOC_BSSID                       6	/* 1 */
-#define WFD_ATTRI_MAX_LEN_COUPLED_SINK_INFO              7	/* 6 */
-#define WFD_ATTRI_MAX_LEN_EXT_CAPABILITY                     2	/* 7 */
-#define WFD_ATTRI_MAX_LEN_SESSION_INFO                      0		/* 9 */	/* 24 * #Clients */
-#define WFD_ATTRI_MAX_LEN_ALTER_MAC_ADDRESS            6	/* 10 */
+#define WFD_ATTRI_MAX_LEN_DEV_INFO           6	/* 0 */
+#define WFD_ATTRI_MAX_LEN_ASSOC_BSSID        6	/* 1 */
+#define WFD_ATTRI_MAX_LEN_COUPLED_SINK_INFO 7	/* 6 */
+#define WFD_ATTRI_MAX_LEN_EXT_CAPABILITY     2	/* 7 */
+#define WFD_ATTRI_MAX_LEN_SESSION_INFO       0	/* 9 */	/* 24 * #Clients */
+#define WFD_ATTRI_MAX_LEN_ALTER_MAC_ADDRESS 6	/* 10 */
 
 struct WFD_DEVICE_INFORMATION_IE {
 	uint8_t ucElemID;
@@ -93,8 +93,10 @@ struct WFD_DEVICE_INFORMATION_IE {
 
 #endif
 
-uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
 
-void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo);
+void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo);
 
 #endif

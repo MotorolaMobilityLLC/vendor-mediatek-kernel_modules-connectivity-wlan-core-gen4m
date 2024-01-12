@@ -54,7 +54,8 @@ enum ENUM_P2P_DEV_STATE {
 	P2P_DEV_STATE_SCAN,
 	P2P_DEV_STATE_REQING_CHANNEL,
 	P2P_DEV_STATE_CHNL_ON_HAND,
-	P2P_DEV_STATE_OFF_CHNL_TX,	/* Requesting Channel to Send Specific Frame. */
+	P2P_DEV_STATE_OFF_CHNL_TX,
+	/* Requesting Channel to Send Specific Frame. */
 	P2P_DEV_STATE_NUM
 };
 
@@ -95,10 +96,14 @@ struct MSG_P2P_MGMT_TX_REQUEST {
 
 #if CFG_SUPPORT_WFD
 
-#define WFD_FLAGS_DEV_INFO_VALID            BIT(0)	/* 1. WFD_DEV_INFO, 2. WFD_CTRL_PORT, 3. WFD_MAT_TP. */
-#define WFD_FLAGS_SINK_INFO_VALID           BIT(1)	/* 1. WFD_SINK_STATUS, 2. WFD_SINK_MAC. */
-#define WFD_FLAGS_ASSOC_MAC_VALID        BIT(2)	/* 1. WFD_ASSOC_MAC. */
-#define WFD_FLAGS_EXT_CAPABILITY_VALID  BIT(3)	/* 1. WFD_EXTEND_CAPABILITY. */
+#define WFD_FLAGS_DEV_INFO_VALID            BIT(0)
+/* 1. WFD_DEV_INFO, 2. WFD_CTRL_PORT, 3. WFD_MAT_TP. */
+#define WFD_FLAGS_SINK_INFO_VALID           BIT(1)
+/* 1. WFD_SINK_STATUS, 2. WFD_SINK_MAC. */
+#define WFD_FLAGS_ASSOC_MAC_VALID        BIT(2)
+/* 1. WFD_ASSOC_MAC. */
+#define WFD_FLAGS_EXT_CAPABILITY_VALID  BIT(3)
+/* 1. WFD_EXTEND_CAPABILITY. */
 
 struct WFD_CFG_SETTINGS {
 	uint32_t u4WfdCmdType;
@@ -151,7 +156,8 @@ struct P2P_OFF_CHNL_TX_REQ_INFO {
 	u_int8_t fgNoneCckRate;
 	struct RF_CHANNEL_INFO rChannelInfo;	/* Off channel TX. */
 	enum ENUM_CHNL_EXT eChnlExt;
-	u_int8_t fgIsWaitRsp;	/* See if driver should keep at the same channel. */
+	u_int8_t fgIsWaitRsp;
+	/* See if driver should keep at the same channel. */
 };
 
 struct P2P_MGMT_TX_REQ_INFO {
@@ -203,36 +209,51 @@ void p2pDevFsmUninit(IN struct ADAPTER *prAdapter);
 /*========================= FUNCTIONs ============================*/
 
 void
-p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo, IN enum ENUM_P2P_DEV_STATE
-			 eNextState);
+p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
+		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+		IN enum ENUM_P2P_DEV_STATE eNextState);
 
-void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
+void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter,
+		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
-void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter, IN unsigned long ulParamPtr);
+void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
+		IN unsigned long ulParamPtr);
 
 /*================ Message Event =================*/
-void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
-void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 void
-p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
+p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr,
+		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
-void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
-void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 void
-p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr, IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
+p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr,
+		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo);
 
-void p2pDevFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 uint32_t
-p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO *prMsduInfo, IN enum ENUM_TX_RESULT_CODE
-				 rTxDoneStatus);
+p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
+		IN struct MSDU_INFO *prMsduInfo,
+		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
-void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 /* /////////////////////////////// */
 
-void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr);
+void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
