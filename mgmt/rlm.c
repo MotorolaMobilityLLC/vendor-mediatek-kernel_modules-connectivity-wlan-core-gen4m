@@ -928,10 +928,14 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		if (prStaRec) {
 			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
 				fgAppendVhtCap = TRUE;
-		} else if ((RLM_NET_IS_11AC(prBssInfo)) &&
-			   (prBssInfo->eCurrentOPMode ==
-			    OP_MODE_INFRASTRUCTURE))
+		} else if (RLM_NET_IS_11AC(prBssInfo) &&
+				((prBssInfo->eCurrentOPMode ==
+				OP_MODE_INFRASTRUCTURE) ||
+				(prBssInfo->eCurrentOPMode ==
+				OP_MODE_ACCESS_POINT))) {
 			fgAppendVhtCap = TRUE;
+		}
+
 	}
 
 	if (fgAppendVhtCap) {
@@ -991,10 +995,13 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		if (prStaRec) {
 			if (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AC)
 				fgAppendVhtCap = TRUE;
-		} else if ((RLM_NET_IS_11AC(prBssInfo)) &&
-			   (prBssInfo->eCurrentOPMode ==
-			    OP_MODE_INFRASTRUCTURE))
+		} else if (RLM_NET_IS_11AC(prBssInfo) &&
+				((prBssInfo->eCurrentOPMode ==
+				OP_MODE_INFRASTRUCTURE) ||
+				(prBssInfo->eCurrentOPMode ==
+				OP_MODE_ACCESS_POINT))) {
 			fgAppendVhtCap = TRUE;
+		}
 	}
 
 	if (fgAppendVhtCap) {
