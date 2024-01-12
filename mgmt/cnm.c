@@ -921,6 +921,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 	struct EVENT_CH_PRIVILEGE *prEventBody;
 	struct MSG_CH_GRANT *prChResp;
 	struct BSS_INFO *prBssInfo;
+	enum EUNM_MSG_SEND_METHOD eSendMethod = MSG_SEND_METHOD_BUF;
 
 	ASSERT(prAdapter);
 	ASSERT(prEvent);
@@ -962,8 +963,10 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		prChResp->rMsgHdr.eMsgId = MID_CNM_AIS_CH_GRANT;
 #if CFG_ENABLE_WIFI_DIRECT
 	else if (prAdapter->fgIsP2PRegistered
-		 && IS_BSS_P2P(prBssInfo))
+		 && IS_BSS_P2P(prBssInfo)) {
 		prChResp->rMsgHdr.eMsgId = MID_CNM_P2P_CH_GRANT;
+		eSendMethod = MSG_SEND_METHOD_UNBUF;
+	}
 #endif
 #if CFG_ENABLE_BT_OVER_WIFI
 	else if (IS_BSS_BOW(prBssInfo))
@@ -1000,7 +1003,7 @@ void cnmChMngrHandleChEvent(struct ADAPTER *prAdapter,
 		prEventBody->u4GrantInterval;
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
-		    (struct MSG_HDR *)prChResp, MSG_SEND_METHOD_BUF);
+		    (struct MSG_HDR *)prChResp, eSendMethod);
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
