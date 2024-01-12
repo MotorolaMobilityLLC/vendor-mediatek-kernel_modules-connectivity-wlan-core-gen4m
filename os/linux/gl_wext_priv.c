@@ -3902,8 +3902,8 @@ struct CMD_VALIDATE_POLICY set_pop_policy[PRIV_CMD_SET_ARG_NUM_4] = {
 
 struct CMD_VALIDATE_POLICY set_ed_policy[PRIV_CMD_SET_ARG_NUM_4] = {
 	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_U8, .min = 0, .max = 3},
-	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_S8, .min = -44, .max = -77},
-	[PRIV_CMD_ATTR_IDX_3] = {.type = NLA_S8, .min = -44, .max = -77}
+	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_S8, .min = -77, .max = -44},
+	[PRIV_CMD_ATTR_IDX_3] = {.type = NLA_S8, .min = -77, .max = -44}
 };
 
 struct CMD_VALIDATE_POLICY set_amsdu_policy[PRIV_CMD_SET_ARG_NUM_2] = {
