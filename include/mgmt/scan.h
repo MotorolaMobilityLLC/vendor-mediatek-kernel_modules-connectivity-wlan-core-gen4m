@@ -898,7 +898,7 @@ void scanRemoveConnFlagOfBssDescByBssid(IN struct ADAPTER *prAdapter,
 					IN uint8_t aucBSSID[],
 					IN uint8_t ucBssIndex);
 
-/* BSS-DESC Insertion - ALTERNATIVE */
+	/* BSS-DESC Insertion - ALTERNATIVE */
 struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 				  IN struct SW_RFB *prSwRfb);
 
