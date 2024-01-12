@@ -127,6 +127,7 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 #if CFG_CHIP_RESET_SUPPORT
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting;
+u_int8_t fgIsResetOnEnd;
 u_int8_t fgIsDrvTriggerWholeChipReset;
 enum COREDUMP_SOURCE_TYPE g_Coredump_source;
 u_int8_t fgIsRstPreventFwOwn;
@@ -200,6 +201,31 @@ u_int8_t kalIsRstPreventFwOwn(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * @brief This routine is called for checking if connectivity chip is
+ *        reset on ended
+ * @param   None
+ *
+ * @retval  TRUE
+ *          FALSE
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t kalIsResetOnEnd(void)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	return fgIsResetOnEnd;
+#else
+	return FALSE;
+#endif
+}
+
+void glResetOnEndUpdateFlag(u_int8_t reset_on_end)
+{
+	DBGLOG(INIT, TRACE, "reset_on_end: %d\n", reset_on_end);
+	fgIsResetOnEnd = reset_on_end;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * @brief This routine is called for checking if connectivity chip is resetting
  *
  * @param   None
@@ -253,6 +279,8 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	fgSimplifyResetFlow = FALSE;
 	fgIsDrvTriggerWholeChipReset = FALSE;
 	glResetUpdateFlag(FALSE);
+	glResetOnEndUpdateFlag(FALSE);
+
 	fgIsRstPreventFwOwn = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
 
@@ -589,6 +617,7 @@ void glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 
 	glResetUpdateFlag(TRUE);
+	glResetOnEndUpdateFlag(TRUE);
 
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 	if (eResetReason != RST_BT_TRIGGER)
@@ -1369,6 +1398,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		fw_log_handler();
 #endif
 		glResetUpdateFlag(TRUE);
+		glResetOnEndUpdateFlag(TRUE);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		fgSimplifyResetFlow = TRUE;
 #endif
@@ -1386,6 +1416,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		glResetUpdateFlag(FALSE);
 		wifi_rst.rst_data = RESET_SUCCESS;
 		mtk_wifi_reset_main(&wifi_rst, TRUE);
+		glResetOnEndUpdateFlag(FALSE);
 		break;
 
 	case ENUM_RST_MSG_L04_START:
@@ -1395,6 +1426,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		fw_log_handler();
 #endif
 		glResetUpdateFlag(TRUE);
+		glResetOnEndUpdateFlag(TRUE);
 #if (CFG_SUPPORT_CONNINFRA == 1)
 		fgSimplifyResetFlow = TRUE;
 #endif
@@ -1412,6 +1444,7 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		glResetUpdateFlag(FALSE);
 		wifi_rst.rst_data = RESET_SUCCESS;
 		mtk_wifi_reset_main(&wifi_rst, FALSE);
+		glResetOnEndUpdateFlag(FALSE);
 		break;
 
 	default:
@@ -1468,7 +1501,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
-		while (kalIsResetting()) {
+		while (kalIsResetOnEnd()) {
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			msleep(100);
 		}
@@ -1496,7 +1529,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 		else if (g_IsWfsysBusHang)
 			DBGLOG(INIT, INFO, "WFSYS bus hang!!!\n");
 
-		while (kalIsResetting() &&
+		while (kalIsResetOnEnd() &&
 				fgIsDrvTriggerWholeChipReset == FALSE) {
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			msleep(100);
@@ -1584,7 +1617,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
-		while (kalIsResetting()) {
+		while (kalIsResetOnEnd()) {
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			kalMsleep(100);
 		}
@@ -1594,7 +1627,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 					 RST_WHOLE_CHIP_TRIGGER);
 	} else {
-		while (kalIsResetting() &&
+		while (kalIsResetOnEnd() &&
 				fgIsDrvTriggerWholeChipReset == FALSE) {
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			kalMsleep(100);
@@ -1652,7 +1685,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	g_WholeChipRstReason = reason;
 
 	if (glRstCheckRstCriteria()) {
-		while (kalIsResetting()) {
+		while (kalIsResetOnEnd()) {
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			kalMsleep(100);
 		}
@@ -1662,7 +1695,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 					 RST_WHOLE_CHIP_TRIGGER);
 	} else {
-		while (kalIsResetting() &&
+		while (kalIsResetOnEnd() &&
 				fgIsDrvTriggerWholeChipReset == FALSE) {
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			kalMsleep(100);
