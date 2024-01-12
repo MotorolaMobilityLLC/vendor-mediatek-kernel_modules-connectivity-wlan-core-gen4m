@@ -685,7 +685,8 @@ nanDataUtilSearchNdpByPublishId(
  */
 /*----------------------------------------------------------------------------*/
 struct _NAN_NDL_INSTANCE_T *
-nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr) {
+nanDataUtilSearchNdlByMac(struct ADAPTER *prAdapter, uint8_t *pucAddr)
+{
 	struct _NAN_NDL_INSTANCE_T *prNDL = NULL;
 	uint32_t u4Idx;
 	uint8_t *pucMacAddr;
@@ -977,7 +978,13 @@ nanDataAllocateNdp(struct ADAPTER *prAdapter,
 
 	if (prNDL->ucNDPNum < UINT8_MAX)
 		prNDL->ucNDPNum++;
-	DBGLOG(NAN, INFO, "Create NDP ID [%d]\n", prNDP->ucNDPID);
+
+	nanDataGenerateNdpInstanceId(prAdapter, prNDL, prNDP);
+
+	DBGLOG(NAN, INFO, "Create NDP ID [%d,%d]\n",
+		prNDP->ucNDPID,
+		prNDP->ndp_instance_id);
+
 	return prNDP;
 }
 
@@ -3818,8 +3825,14 @@ int32_t nanCmdDataResponse(struct ADAPTER *prAdapter,
 				prAdapter, prNDL,
 				prNanCmdDataResponse->ucNDPId);
 	} else {
-		prNDP = nanDataUtilSearchNdpByNdpIdOnly(
-			prAdapter, prNanCmdDataResponse->ucNDPId);
+		if (prNanCmdDataResponse->ndp_instance_id)
+			prNDP = nanDataUtilSearchNdpByNdpInstanceId(
+				prAdapter,
+				prNanCmdDataResponse->ndp_instance_id);
+		else
+			prNDP = nanDataUtilSearchNdpByNdpIdOnly(
+				prAdapter,
+				prNanCmdDataResponse->ucNDPId);
 		if (prNDP != NULL)
 			prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
 	}
@@ -4072,8 +4085,12 @@ int32_t nanCmdDataEnd(struct ADAPTER *prAdapter,
 	dumpMemory8(prNanCmdDataEnd->aucInitiatorDataAddress, MAC_ADDR_LEN);
 #endif
 
-	prNDP = nanDataUtilSearchNdpByNdpIdOnly(prAdapter,
-					    prNanCmdDataEnd->ucNDPId);
+	if (prNanCmdDataEnd->ndp_instance_id)
+		prNDP = nanDataUtilSearchNdpByNdpInstanceId(prAdapter,
+			prNanCmdDataEnd->ndp_instance_id);
+	else
+		prNDP = nanDataUtilSearchNdpByNdpIdOnly(prAdapter,
+			prNanCmdDataEnd->ucNDPId);
 
 	if (prNDP == NULL) {
 		/* Send rsp event to wifi hal*/
@@ -4633,7 +4650,7 @@ uint32_t nanNdpSendDataPathResponse(struct ADAPTER *prAdapter,
 			}
 		}
 
-		/* For MIC calulation */
+		/* For MIC calculation */
 		if (prNDP->fgSecurityRequired) {
 			/* The body of Mx beginning from the Category */
 			pu1TxMsgBuf = ((uint8_t *)prMsduInfo->prPacket) +
@@ -4779,7 +4796,7 @@ uint32_t nanNdpSendDataPathConfirm(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* For MIC calulation */
+	/* For MIC calculation */
 	if (prNDP->fgSecurityRequired) {
 		/* The body of Mx beginning from the Category */
 		pu1TxMsgBuf = ((uint8_t *)prMsduInfo->prPacket) +
@@ -4895,7 +4912,7 @@ uint32_t nanNdpSendDataPathKeyInstall(struct ADAPTER *prAdapter,
 		}
 	}
 
-	/* For MIC calulation */
+	/* For MIC calculation */
 	if (prNDP->fgSecurityRequired) {
 		/* The body of Mx beginning from the Category */
 		pu1TxMsgBuf = ((uint8_t *)prMsduInfo->prPacket) +

@@ -1577,8 +1577,8 @@ nanElemContainerAttrHandler(
 				else
 					COPY_IE(&(prNDL->aucIeHeCap), pucIE);
 				/* TODO: match with local capabilities
-				* for STA-REC params
-				*/
+				 * for STA-REC params
+				 */
 			}
 			break;
 #endif
@@ -3435,7 +3435,7 @@ nanDataEngineNDPEPORTAttrAppend(struct ADAPTER *prAdapter,
 }
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief            NANE Attribute : Service Info check
+ * \brief            NAN Attribute : Service Info check
  *
  * \param[in]
  *
@@ -4721,8 +4721,8 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 	eBand = nanSchedGetSchRecBandByMac(prAdapter, prNDP->aucPeerNDIAddr);
 	if (eBand == BAND_NULL) {
 		/* Workaround: use NMI address to find peerSchRec,
-		* if search by NDI fail
-		*/
+		 * if search by NDI fail
+		 */
 		eBand = nanSchedGetSchRecBandByMac(prAdapter,
 				prNDL->aucPeerMacAddr);
 		DBGLOG(NAN, WARN,
