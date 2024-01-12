@@ -8690,6 +8690,9 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 		ucBssIdx = prGetTsfCtxt->ucBssIdx;
 		ucFlowId = prGetTsfCtxt->ucTWTFlowId;
 
+		/* For teardown we don't need this */
+		kalMemFree(prGetTsfCtxt, VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
 
 		if (prBssInfo == NULL) {
@@ -8699,8 +8702,10 @@ void nicUniCmdEventTWTGetCnmGrantedDone(struct ADAPTER *prAdapter,
 
 		prStaRec = prBssInfo->prStaRecOfAP;
 
-		/* For teardown we don't need this */
-		kalMemFree(prGetTsfCtxt, VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
+		if (prStaRec == NULL) {
+			DBGLOG(TWT_PLANNER, WARN, "prStaRec is null\n");
+			return;
+		}
 
 		/* Find and delete the agreement entry in the driver */
 		ucFlowId_real = ucFlowId;
