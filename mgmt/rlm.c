@@ -2628,10 +2628,12 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			/*Backup peer HT OP Info*/
 			prStaRec->ucHtPeerOpInfo1 = prHtOp->ucInfo1;
 
-			if (!prBssInfo->fg40mBwAllowed)
+			if (!prBssInfo->fg40mBwAllowed) {
+				DBGLOG(RLM, TRACE, "ucHtOpInfo1 reset\n");
 				prBssInfo->ucHtOpInfo1 &=
 					~(HT_OP_INFO1_SCO |
 					  HT_OP_INFO1_STA_CHNL_WIDTH);
+			}
 
 			if ((prBssInfo->ucHtOpInfo1 & HT_OP_INFO1_SCO) !=
 			    CHNL_EXT_RES) {
@@ -2868,14 +2870,14 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				    (sizeof(struct IE_WIDE_BAND_CHANNEL) - 2))
 				break;
 			DBGLOG(RLM, INFO,
-			       "[Channel Switch] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, 11AC\n");
+			       "[CSA] ELEM_ID_WIDE_BAND_CHANNEL_SWITCH, 11AC\n");
 			prWideBandChannelIE =
 				(struct IE_WIDE_BAND_CHANNEL *)pucIE;
 			prCSAParams->ucVhtBw =
 				prWideBandChannelIE->ucNewChannelWidth;
 			prCSAParams->ucVhtS1 = prWideBandChannelIE->ucChannelS1;
 			prCSAParams->ucVhtS2 = prWideBandChannelIE->ucChannelS2;
-			DBGLOG(RLM, INFO, "[Ch] BW=%d, s1=%d, s2=%d\n",
+			DBGLOG(RLM, INFO, "[CSA] BW=%d, s1=%d, s2=%d\n",
 			       prCSAParams->ucVhtBw,
 			       prCSAParams->ucVhtS1, prCSAParams->ucVhtS2);
 			break;
@@ -2939,7 +2941,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			if (prCSAIE->ucChannelSwitchMode != 1)
 				continue;
 
-			DBGLOG(RLM, INFO, "[Ch] Count=%d\n",
+			DBGLOG(RLM, INFO, "[CSA] Count = %d\n",
 			       prCSAIE->ucChannelSwitchCount);
 			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prCSAIE->ucChannelSwitchCount;
@@ -2950,7 +2952,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				/* AP */
 				qmSetStaRecTxAllowed(prAdapter,
 					prStaRec, FALSE);
-				DBGLOG(RLM, EVENT, "[Ch] TxAllowed = FALSE\n");
+				DBGLOG(RLM, EVENT, "[CSA] TxAllowed = FALSE\n");
 			}
 
 #ifdef CFG_DFS_CHSW_FORCE_BW20
@@ -2974,7 +2976,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prSecondaryOffsetIE =
 				(struct IE_SECONDARY_OFFSET *)pucIE;
-			DBGLOG(RLM, INFO, "[Channel Switch] SCO [%d]->[%d]\n",
+			DBGLOG(RLM, INFO, "[CSA] SCO [%d]->[%d]\n",
 			       prBssInfo->eBssSCO,
 			       prSecondaryOffsetIE->ucSecondaryOffset);
 			prCSAParams->eSco = (enum ENUM_CHNL_EXT)
@@ -3175,7 +3177,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer,
 			prBssInfo->u2BeaconInterval * ucCurrentCsaCount);
 		prCSAParams->ucCsaCount = ucCurrentCsaCount;
-		DBGLOG(RLM, INFO, "Channel switch Countdown: %d msecs\n",
+		DBGLOG(RLM, INFO, "[CSA] Channel switch Countdown: %d msecs\n",
 		       prBssInfo->u2BeaconInterval * prCSAParams->ucCsaCount);
 	}
 #endif
@@ -3184,7 +3186,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		/* AP */
 		qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
 
-		DBGLOG(RLM, EVENT, "[Ch] TxAllowed = TRUE\n");
+		DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
 		prBssInfo->fgHasStopTx = FALSE;
 	}
 
@@ -5671,7 +5673,6 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo)
 	prCSAParams->ucCsaCount = MAX_CSA_COUNT;
 	DBGLOG(RLM, INFO, "Reset CSA count to %u for BSS%d",
 	       prCSAParams->ucCsaCount, prBssInfo->ucBssIndex);
-	prBssInfo->fgHasStopTx = FALSE;
 }
 
 void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
