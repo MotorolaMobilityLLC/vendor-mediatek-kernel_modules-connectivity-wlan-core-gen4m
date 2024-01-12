@@ -7312,7 +7312,7 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 				return;
 			}
 		}
-		DBGLOG(RLM, INFO,
+		DBGLOG(RLM, TRACE,
 		       "BCN REQ: allocate entry for Bss %pM, total entry %u\n",
 			pucBssid, prRmRep->rReportLink.u4NumElem);
 		LINK_INSERT_TAIL(&prRmRep->rReportLink,
@@ -7423,7 +7423,7 @@ static void rlmCollectBeaconReport(IN struct ADAPTER *prAdapter,
 	prMeasReport->ucMeasurementType = ELEM_RM_TYPE_BEACON_REPORT;
 	prMeasReport->ucReportMode = 0;
 	prMeasReport->ucLength = 3 + ucBcnReportLen;
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 	       "BCN REQ: Bss %pM, ReportDeail %d, IncludeIE Num %d, chnl %d\n",
 	       pucBssid, ucReportDetail, ucReportIeIdsLen,
 	       prRepParams->ucChannel);
