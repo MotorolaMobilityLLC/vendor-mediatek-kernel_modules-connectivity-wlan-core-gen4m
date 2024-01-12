@@ -6720,6 +6720,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			wlanAdapterStop(prAdapter, FALSE);
 		/* fallthrough */
 		case ADAPTER_START_FAIL:
+			/*reset NVRAM State to ready for the next wifi-on*/
+			if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
+				g_NvramFsm = NVRAM_STATE_READY;
 			glBusFreeIrq(prWdev->netdev,
 				*((struct GLUE_INFO **)
 						netdev_priv(prWdev->netdev)));
