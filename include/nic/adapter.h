@@ -634,6 +634,8 @@ struct BSS_INFO {
 	/* Buffer for WPA2 PMKID */
 	/* The PMKID cache lifetime is expire by media_disconnect_indication */
 	struct LINK rPmkidCache;
+
+	uint8_t ucVhtChannelWidthBackup;
 };
 
 /* Support AP Selection */
