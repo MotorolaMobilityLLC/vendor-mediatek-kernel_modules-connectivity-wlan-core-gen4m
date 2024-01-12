@@ -4023,7 +4023,7 @@ static void wlanOnPostNetRegister(void)
 			       wlan_early_suspend, wlan_late_resume);
 #endif
 	/* 4 <5> Register Notifier callback */
-	wlanRegisterNotifier();
+	wlanRegisterInetAddrNotifier();
 }
 
 static
@@ -4981,7 +4981,7 @@ static void wlanRemove(void)
 	}
 
 	/* 4 <9> Unregister notifier callback */
-	wlanUnregisterNotifier();
+	wlanUnregisterInetAddrNotifier();
 
 #if CFG_CHIP_RESET_SUPPORT & !CFG_WMT_RESET_API_SUPPORT
 	fgIsResetting = FALSE;
@@ -5078,6 +5078,7 @@ static int initWlan(void)
 #endif
 	kalFbNotifierReg((struct GLUE_INFO *) wiphy_priv(
 				 wlanGetWiphy()));
+	wlanRegisterNetdevNotifier();
 
 #ifdef CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
@@ -5131,6 +5132,8 @@ static void exitWlan(void)
 	wlanFreeNetDev();
 #endif
 	kalFbNotifierUnReg();
+	wlanUnregisterNetdevNotifier();
+
 	/* printk("remove %p\n", wlanRemove); */
 #if CFG_CHIP_RESET_SUPPORT
 	glResetUninit();
