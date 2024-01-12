@@ -736,7 +736,7 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 #define BUF_SIZE 1024
 
 	uint32_t i = 0, u4Value = 0, pos = 0;
-	uint32_t offset, offset_ext, SwIdx;
+	uint32_t offset, offset_ext, SwIdx, SwIdx1, SwIdx2;
 	char *buf;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct BUS_INFO *prBus_info = prAdapter->chip_info->bus_info;
@@ -910,14 +910,22 @@ void halShowPdmaInfo(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "Dump PDMA Rx Ring[%u]\n",
 				wfmda_rx_group[i].ring_idx);
 		prRxRing = &prHifInfo->RxRing[i];
-		SwIdx = wfmda_rx_group[i].didx;
+		SwIdx1 = wfmda_rx_group[i].didx;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      SwIdx, true);
-		SwIdx = wfmda_rx_group[i].didx == 0 ?
+			      SwIdx1, true);
+		SwIdx2 = wfmda_rx_group[i].didx == 0 ?
 				wfmda_rx_group[i].cnt - 1 :
 				wfmda_rx_group[i].didx - 1;
 		kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
-			      SwIdx, true);
+			      SwIdx2, true);
+		SwIdx = wfmda_rx_group[i].cidx ==
+				wfmda_rx_group[i].cnt - 1 ?
+				0 :
+				wfmda_rx_group[i].cidx + 1;
+		if (SwIdx != SwIdx1 && SwIdx != SwIdx2) {
+			kalDumpRxRing(prAdapter->prGlueInfo, prRxRing,
+				      SwIdx, true);
+		}
 	}
 
 	/* PDMA Busy Status */

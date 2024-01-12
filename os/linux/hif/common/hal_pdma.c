@@ -285,11 +285,18 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 		if (halIsTimeout(u4Time, u4TimeoutValue)) {
 #if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
 			uint32_t u4Value = 0;
+			struct GL_HIF_INFO *prHifInfo = NULL;
+			struct RTMP_RX_RING *prRxRing;
+
+			prHifInfo = &prGlueInfo->rHifInfo;
+			prRxRing = &prHifInfo->RxRing[ucNewPort];
 
 			kalDevRegRead(prGlueInfo, CONN_HIF_ON_DBGCR01,
 				      &u4Value);
-			DBGLOG(HAL, ERROR, "CONN_HIF_ON_DBGCR01[0x%x]\n",
-			       u4Value);
+			DBGLOG(HAL, ERROR,
+				"CONN_HIF_ON_DBGCR01[0x%x], DDone TO: %d, Cnt: %u\n",
+				u4Value, prRxRing->fgIsWaitRxDmaDoneTimeout,
+				prRxRing->u4LastRxEventWaitDmaDoneCnt);
 #endif
 			return WLAN_STATUS_FAILURE;
 		}

@@ -7799,11 +7799,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"TRXDescDump", 0x40);
 
 	DBGLOG(INIT, TRACE,
-		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD=%u,%u,%u/%u,%u,%u",
+		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD,RxEvt=%u,%u,%u/%u,%u,%u,%u",
 		prWifiVar->fgDumpTxP, prWifiVar->fgDumpTxDmad,
 		prWifiVar->fgDumpTxD,
 		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
-		prWifiVar->fgDumpRxD);
+		prWifiVar->fgDumpRxD, prWifiVar->fgDumpRxEvt);
 
 	INIT_UINT(prWifiVar->fgFlushRxReordering,
 		"FlushRxReordering", FEATURE_ENABLED);
