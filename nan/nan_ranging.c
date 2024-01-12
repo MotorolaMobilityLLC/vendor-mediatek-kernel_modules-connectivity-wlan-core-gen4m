@@ -248,6 +248,9 @@ nanRangingInstanceDel(struct ADAPTER *prAdapter,
 
 	DBGLOG(NAN, INFO, "ID (%d)\n", prRanging->ranging_ctrl.u2RangingId);
 
+	cnmTimerStopTimer(prAdapter,
+		  &(prRanging->ranging_ctrl.rRangingSessionTimer));
+
 	dl_list_del(&(prRanging->list));
 
 	prRangingInfo->u2RangingCnt--;

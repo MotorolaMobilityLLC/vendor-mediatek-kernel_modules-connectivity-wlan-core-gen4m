@@ -1416,7 +1416,9 @@ nanDataEngineUninit(struct ADAPTER *prAdapter) {
 					nanDataFreeNdp(prAdapter, prNDP);
 				}
 			}
-
+			/* stop all timers for handsahking */
+			nanNdlDeactivateTimers(prAdapter,
+				&(prDataPathInfo->arNDL[i]));
 			nanDataFreeNdl(prAdapter, &(prDataPathInfo->arNDL[i]));
 		}
 	}

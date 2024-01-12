@@ -5194,7 +5194,8 @@ nanSchedNegoStop(struct ADAPTER *prAdapter) {
 		DBGLOG(NAN, ERROR, "NULL prPeerSchRecord\n");
 
 	cnmTimerStopTimer(prAdapter, &(prNegoCtrl->rCrbNegoDispatchTimer));
-	if (prNegoCtrl->ucNegoTransNum > 0)
+	if ((prNegoCtrl->ucNegoTransNum > 0) &&
+		nanGetScheduler(prAdapter)->fgInit)
 		cnmTimerStartTimer(prAdapter,
 				   &(prNegoCtrl->rCrbNegoDispatchTimer), 1);
 	else
