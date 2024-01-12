@@ -192,6 +192,8 @@
 #define CONNAC3X_RX_C_RXV_PE_DIS_AMB_OFFSET    1
 #define CONNAC3X_RX_C_RXV_UL_DL_MASK           BIT(2)
 #define CONNAC3X_RX_C_RXV_UL_DL_OFFSET         2
+#define CONNAC3X_RX_C_RXV_PPDU_TYPE_COMP_MASK  BITS(30, 31)
+#define CONNAC3X_RX_C_RXV_PPDU_TYPE_COMP_SHFT  30
 
 /* C-RXC Vector, 2nd Cycle */
 #define CONNAC3X_RX_C_RXV_GROUP_ID_MASK        BITS(22, 27)
@@ -246,6 +248,14 @@
 
 #define CONNAC3X_RX_C_RXV_SIGB_RU3_1_MASK      BITS(0, 3)
 #define CONNAC3X_RX_C_RXV_SIGB_RU3_1_OFFSET    5
+
+/* C-RXC Vector, 9th Cycle */
+#define CONNAC3X_RX_C_RXV_EHT_SIG_MCS_MASK     BITS(18, 19)
+#define CONNAC3X_RX_C_RXV_EHT_SIG_MCS_SHFT     18
+#define CONNAC3X_RX_C_RXV_EHT_LTF_SYM_NUM_MASK BITS(20, 22)
+#define CONNAC3X_RX_C_RXV_EHT_LTF_SYM_NUM_SHFT 20
+#define CONNAC3X_RX_C_RXV_EHT_SIG_SYM_NUM_MASK BITS(23, 30)
+#define CONNAC3X_RX_C_RXV_EHT_SIG_SYM_NUM_SHFT 23
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
@@ -482,7 +492,7 @@ CONNAC3X_RX_STATUS_PF_STS_OFFSET)
 #define HAL_MAC_CONNAC3X_RX_VT_GET_LDPC(_prHwMacRxStsGroup3)	\
 (((_prHwMacRxStsGroup3)->u4RxVector[0] & CONNAC3X_RX_P_RXV_LDPC_MASK) >> \
 	CONNAC3X_RX_P_RXV_LDPC_OFFSET)
-
+/* PS160, B7-B0 */
 #define HAL_MAC_CONNAC3X_RX_VT_GET_RU_ALLOC(_prHwMacRxStsGroup3)	\
 (((_prHwMacRxStsGroup3)->u4RxVector[0] & CONNAC3X_RX_P_RXV_RU_ALLOC_MASK) >> \
 	CONNAC3X_RX_P_RXV_RU_ALLOC_OFFSET)
@@ -533,6 +543,11 @@ CONNAC3X_RX_STATUS_PF_STS_OFFSET)
 #define HAL_MAC_CONNAC3X_RX_VT_GET_UL_DL(_prHwMacRxStsGroup5)	\
 (((_prHwMacRxStsGroup5)->u4RxVector[1] & CONNAC3X_RX_C_RXV_UL_DL_MASK) >> \
 	CONNAC3X_RX_C_RXV_UL_DL_OFFSET)
+
+#define HAL_MAC_CONNAC3X_RX_VT_GET_PPDU_TYPE_COMP(_prHwMacRxStsGroup5)	\
+(((_prHwMacRxStsGroup5)->u4RxVector[1] & \
+	CONNAC3X_RX_C_RXV_PPDU_TYPE_COMP_MASK) >> \
+	CONNAC3X_RX_C_RXV_PPDU_TYPE_COMP_SHFT)
 
 /* Group5 C-B-1 */
 #define HAL_MAC_CONNAC3X_RX_VT_GET_GROUP_ID(_prHwMacRxStsGroup5)	\
@@ -616,6 +631,22 @@ CONNAC3X_RX_STATUS_PF_STS_OFFSET)
 #define HAL_MAC_CONNAC3X_RX_VT_GET_SIGB_RU3_1(_prHwMacRxStsGroup5)	\
 (((_prHwMacRxStsGroup5)->u4RxVector[13] & CONNAC3X_RX_C_RXV_SIGB_RU3_1_MASK) << \
 	CONNAC3X_RX_C_RXV_SIGB_RU3_1_OFFSET)
+
+/* Group5 C-B-8 */
+#define HAL_MAC_CONNAC3X_RX_VT_GET_EHT_SIG_MCS(_prHwMacRxStsGroup5)	\
+(((_prHwMacRxStsGroup5)->u4RxVector[17] & \
+	CONNAC3X_RX_C_RXV_EHT_SIG_MCS_MASK) >> \
+	CONNAC3X_RX_C_RXV_EHT_SIG_MCS_SHFT)
+
+#define HAL_MAC_CONNAC3X_RX_VT_GET_EHT_LTF_SYM_NUM(_prHwMacRxStsGroup5)	\
+(((_prHwMacRxStsGroup5)->u4RxVector[17] & \
+	CONNAC3X_RX_C_RXV_EHT_LTF_SYM_NUM_MASK) >> \
+	CONNAC3X_RX_C_RXV_EHT_LTF_SYM_NUM_SHFT)
+
+#define HAL_MAC_CONNAC3X_RX_VT_GET_EHT_SIG_SYM_NUM(_prHwMacRxStsGroup5)	\
+(((_prHwMacRxStsGroup5)->u4RxVector[17] & \
+	CONNAC3X_RX_C_RXV_EHT_SIG_SYM_NUM_MASK) >> \
+	CONNAC3X_RX_C_RXV_EHT_SIG_SYM_NUM_SHFT)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
