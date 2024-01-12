@@ -716,9 +716,9 @@ BOOLEAN halTxCalculateResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxRlsCnt
 		au2TxRlsCnt[HIF_TX_AC1_INDEX], au2TxRlsCnt[HIF_TX_AC2_INDEX],
 		au2TxRlsCnt[HIF_TX_AC3_INDEX], au2TxRlsCnt[HIF_TX_CPU_INDEX]);
 
-	DBGLOG(TX, TRACE, "TxDone Page count, TC[%u:%u:%u:%u:%u:%u]\n",
+	DBGLOG(TX, TRACE, "TxDone Page count, TC[%u:%u:%u:%u:%u]\n",
 		au4TxDoneCnt[TC0_INDEX], au4TxDoneCnt[TC1_INDEX], au4TxDoneCnt[TC2_INDEX],
-		au4TxDoneCnt[TC3_INDEX], au4TxDoneCnt[TC4_INDEX], au4TxDoneCnt[TC5_INDEX]);
+		au4TxDoneCnt[TC3_INDEX], au4TxDoneCnt[TC4_INDEX]);
 
 	/* Calculate free Tc page count */
 	if (u4AvaliableCnt && u4TotalTxDoneCnt) {
@@ -822,7 +822,7 @@ BOOLEAN halTxReleaseResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxRlsCnt)
 	prStatCnt->u4TxDonePendingPktCnt += nicTxGetMsduPendingCnt(prAdapter);
 	prStatCnt->u4TxDoneIntTotCnt++;
 
-	for (i = HIF_TX_AC0_INDEX; i < HIF_TX_NUM; i++) {
+	for (i = HIF_TXC_IDX_0; i < HIF_TXC_IDX_NUM; i++) {
 		if (au2TxRlsCnt[i]) {
 			prStatCnt->u4TxDoneCnt[i] += au2TxRlsCnt[i];
 			prStatCnt->u4TxDoneIntCnt[i]++;
@@ -835,13 +835,21 @@ BOOLEAN halTxReleaseResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxRlsCnt)
 			au2TxRlsCnt[HIF_TX_AC1_INDEX], au2TxRlsCnt[HIF_TX_AC2_INDEX],
 			au2TxRlsCnt[HIF_TX_AC3_INDEX], au2TxRlsCnt[HIF_TX_CPU_INDEX]);
 
-	DBGLOG(TX, LOUD, "TCQ Status Free Page:Buf[%u:%u, %u:%u, %u:%u, %u:%u, %u:%u, %u:%u]\n",
+	DBGLOG(TX, LOUD, "TCQ Status Free Page <<PSE>>:Buf[%u:%u, %u:%u, %u:%u, %u:%u, %u:%u]\n",
 		prTcqStatus->au4FreePageCount[TC0_INDEX], prTcqStatus->au4FreeBufferCount[TC0_INDEX],
 		prTcqStatus->au4FreePageCount[TC1_INDEX], prTcqStatus->au4FreeBufferCount[TC1_INDEX],
 		prTcqStatus->au4FreePageCount[TC2_INDEX], prTcqStatus->au4FreeBufferCount[TC2_INDEX],
 		prTcqStatus->au4FreePageCount[TC3_INDEX], prTcqStatus->au4FreeBufferCount[TC3_INDEX],
-		prTcqStatus->au4FreePageCount[TC4_INDEX], prTcqStatus->au4FreeBufferCount[TC4_INDEX],
-		prTcqStatus->au4FreePageCount[TC5_INDEX], prTcqStatus->au4FreeBufferCount[TC5_INDEX]);
+		prTcqStatus->au4FreePageCount[TC4_INDEX], prTcqStatus->au4FreeBufferCount[TC4_INDEX]);
+
+
+	if (prAdapter->rTxCtrl.rTc.fgNeedPleCtrl)
+		DBGLOG(TX, LOUD, "TCQ Status Free Page <<PLE>>:Buf[%u:%u, %u:%u, %u:%u, %u:%u, %u:%u]\n",
+			prTcqStatus->au4FreePageCount_PLE[TC0_INDEX], prTcqStatus->au4FreePageCount_PLE[TC0_INDEX],
+			prTcqStatus->au4FreePageCount_PLE[TC1_INDEX], prTcqStatus->au4FreePageCount_PLE[TC1_INDEX],
+			prTcqStatus->au4FreePageCount_PLE[TC2_INDEX], prTcqStatus->au4FreePageCount_PLE[TC2_INDEX],
+			prTcqStatus->au4FreePageCount_PLE[TC3_INDEX], prTcqStatus->au4FreePageCount_PLE[TC3_INDEX],
+			prTcqStatus->au4FreePageCount_PLE[TC4_INDEX], prTcqStatus->au4FreePageCount_PLE[TC4_INDEX]);
 
 	return bStatus;
 }
@@ -1534,13 +1542,28 @@ UINT_32 halDumpHifStatus(IN P_ADAPTER_T prAdapter, IN PUINT_8 pucBuf, IN UINT_32
 		DIV2INT(prStatCnt->u4PktReadCnt[1], prStatCnt->u4PortReadCnt[1]),
 		DIV2DEC(prStatCnt->u4PktReadCnt[1], prStatCnt->u4PortReadCnt[1]));
 
-	LOGBUF(pucBuf, u4Max, u4Len, "Tx done pending cnt TC00~05[%u, %u, %u, %u, %u, %u]\n",
-		prHifInfo->au4PendingTxDoneCount[TC0_INDEX],
-		prHifInfo->au4PendingTxDoneCount[TC1_INDEX],
-		prHifInfo->au4PendingTxDoneCount[TC2_INDEX],
-		prHifInfo->au4PendingTxDoneCount[TC3_INDEX],
-		prHifInfo->au4PendingTxDoneCount[TC4_INDEX],
-		prHifInfo->au4PendingTxDoneCount[TC5_INDEX]);
+	LOGBUF(pucBuf, u4Max, u4Len, "Tx done pending cnt HIF_TXC00~04[%u, %u, %u, %u, %u]\n",
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_0],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_1],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_2],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_3],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_4]);
+
+	LOGBUF(pucBuf, u4Max, u4Len, "Tx done pending cnt HIF_TXC05~09[%u, %u, %u, %u, %u]\n",
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_5],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_6],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_7],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_8],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_9]);
+
+	LOGBUF(pucBuf, u4Max, u4Len, "Tx done pending cnt HIF_TXC10~15[%u, %u, %u, %u, %u, %u]\n",
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_10],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_11],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_12],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_13],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_14],
+		prHifInfo->au4PendingTxDoneCount[HIF_TXC_IDX_15]);
+
 
 	LOGBUF(pucBuf, u4Max, u4Len, "Tx done counter/int:\n");
 	LOGBUF(pucBuf, u4Max, u4Len, "AC00~03[%u.%u, %u.%u, %u.%u, %u.%u]\n",
@@ -2289,7 +2312,7 @@ VOID halTxReturnFreeResource(IN P_ADAPTER_T prAdapter, IN PUINT_16 au2TxDoneCnt)
 	else {
 		/* 6632, 7668 ways */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		for (i = TC0_INDEX; i < TC5_INDEX; i++) {
+		for (i = TC0_INDEX; i < TC_NUM; i++) {
 			u2ReturnCnt = au2TxDoneCnt[nicTxGetTxQByTc(prAdapter, i)];
 			nicTxReleaseResource_PSE(prAdapter, i, u2ReturnCnt, FALSE);
 			prAdapter->prGlueInfo->rHifInfo.au4PendingTxDoneCount[i] -= u2ReturnCnt;
@@ -2363,7 +2386,7 @@ VOID halRestoreTxResource(IN P_ADAPTER_T prAdapter)
 	else {
 		/* 6632, 7668 ways */
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_RESOURCE);
-		for (i = TC0_INDEX; i <= TC5_INDEX; i++) {
+		for (i = TC0_INDEX; i < TC_NUM; i++) {
 			nicTxReleaseResource_PSE(prAdapter, i, prHifInfo->au4PendingTxDoneCount[i], FALSE);
 			prHifInfo->au4PendingTxDoneCount[i] = 0;
 		}

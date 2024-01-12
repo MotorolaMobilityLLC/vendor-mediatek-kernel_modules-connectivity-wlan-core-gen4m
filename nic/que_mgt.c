@@ -1407,7 +1407,7 @@ qmDequeueTxPacketsFromPerStaQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 * \brief Dequeue TX packets from a per-Type-based Queue for a particular TC
 *
 * \param[out] prQue The queue to put the dequeued packets
-* \param[in] ucTC The TC index (Shall always be TC5_INDEX)
+* \param[in] ucTC The TC index(Shall always be BMC_TC_INDEX)
 * \param[in] ucMaxNum The maximum amount of available resource
 *
 * \return (none)
@@ -1489,7 +1489,7 @@ qmDequeueTxPacketsFromPerTypeQueues(IN P_ADAPTER_T prAdapter, OUT P_QUE_T prQue,
 * \brief Dequeue TX packets from a QM global Queue for a particular TC
 *
 * \param[out] prQue The queue to put the dequeued packets
-* \param[in] ucTC The TC index (Shall always be TC5_INDEX)
+* \param[in] ucTC The TC index(Shall always be BMC_TC_INDEX)
 * \param[in] ucMaxNum The maximum amount of available resource
 *
 * \return (none)
@@ -1686,6 +1686,7 @@ qmAdjustTcQuotasMthread(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdj
 	/* 4 <1> If TC resource is not just adjusted, exit directly */
 	if (!prQM->fgTcResourcePostAnnealing)
 		return FALSE;
+
 	/* 4 <2> Adjust TcqStatus according to the updated prQM->au4CurrentTcResource */
 	else {
 		INT_32 i4TotalExtraQuota = 0;
@@ -1738,10 +1739,12 @@ qmAdjustTcQuotasMthread(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdj
 
 			prTcqStatus->au4FreeBufferCount[i] += prTcqAdjust->ai4Variation[i];
 			prTcqStatus->au4MaxNumOfBuffer[i] += prTcqAdjust->ai4Variation[i];
-
-			ASSERT(prTcqStatus->au4FreeBufferCount[i] >= 0);
-			ASSERT(prTcqStatus->au4MaxNumOfBuffer[i] >= 0);
 		}
+
+
+		/* PLE */
+		qmAdjustTcQuotaPle(prAdapter, prTcqAdjust, prTcqStatus);
+
 
 #if QM_FAST_TC_RESOURCE_CTRL
 		prQM->fgTcResourceFastReaction = FALSE;
@@ -1754,6 +1757,59 @@ qmAdjustTcQuotasMthread(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdj
 	return FALSE;
 #endif
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Adjust the TC PLE quotas according to traffic demands
+*
+* \param[out] prTcqAdjust The resulting adjustment
+* \param[in] prTcqStatus Info about the current TC quotas and counters
+*
+* \return (none)
+*/
+/*----------------------------------------------------------------------------*/
+VOID qmAdjustTcQuotaPle(IN P_ADAPTER_T prAdapter, OUT P_TX_TCQ_ADJUST_T prTcqAdjust, IN P_TX_TCQ_STATUS_T prTcqStatus)
+{
+	UINT_8 i;
+	INT_32 i4pages;
+	P_TX_CTRL_T prTxCtrl;
+	P_TX_TCQ_STATUS_T prTc;
+
+	ASSERT(prAdapter);
+
+	prTxCtrl = &prAdapter->rTxCtrl;
+	prTc = &prTxCtrl->rTc;
+
+	/* no PLE resource control */
+	if (!prTc->fgNeedPleCtrl)
+		return;
+
+
+	for (i = TC0_INDEX; i < TC_NUM; i++) {
+
+		if (!nicTxResourceIsPleCtrlNeeded(prAdapter, i))
+			continue;
+
+		/* adjust ple resource */
+		i4pages = prTcqAdjust->ai4Variation[i] * NIX_TX_PLE_PAGE_CNT_PER_FRAME;
+
+		if (i4pages < 0) {
+			/* donate resource to other TC */
+			if (prTcqStatus->au4FreePageCount_PLE[i] < (-i4pages)) {
+				/* not enought to give */
+				i4pages = -(prTcqStatus->au4FreePageCount_PLE[i]);
+			}
+		}
+
+
+		prTcqStatus->au4FreePageCount_PLE[i] += i4pages;
+		prTcqStatus->au4MaxNumOfPage_PLE[i] += i4pages;
+
+		prTcqStatus->au4FreeBufferCount_PLE[i] += prTcqAdjust->ai4Variation[i];
+		prTcqStatus->au4MaxNumOfBuffer_PLE[i] += prTcqAdjust->ai4Variation[i];
+	}
+}
+
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -1905,7 +1961,7 @@ VOID qmAllocateResidualTcResource(IN P_ADAPTER_T prAdapter, IN PINT_32 ai4TcResD
 	UINT_32 u4Share = 0;
 	UINT_32 u4TcIdx;
 	UINT_8 ucIdx;
-	UINT_32 au4AdjTc[] = { TC3_INDEX, TC2_INDEX, TC5_INDEX, TC1_INDEX, TC0_INDEX };
+	UINT_32 au4AdjTc[] = { TC3_INDEX, TC2_INDEX, TC1_INDEX, TC0_INDEX };
 	UINT_32 u4AdjTcSize = (sizeof(au4AdjTc) / sizeof(UINT_32));
 	UINT_32 u4ResidualResource = *pu4ResidualResource;
 	UINT_32 u4ShareCount = *pu4ShareCount;
@@ -2025,6 +2081,7 @@ VOID qmReassignTcResource(IN P_ADAPTER_T prAdapter)
 			u4ShareCount = (QM_ACTIVE_TC_NUM - 1);	/* excluding TC4 */
 		else
 			u4ShareCount = u4ActiveTcCount;
+
 		u4ResidualResource = (UINT_32) (-i4TotalResourceDemand);
 		u4Share = (u4ResidualResource / u4ShareCount);
 
