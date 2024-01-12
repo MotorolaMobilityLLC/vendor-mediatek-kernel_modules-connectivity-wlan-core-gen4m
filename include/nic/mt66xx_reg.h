@@ -1549,6 +1549,12 @@ struct mt66xx_chip_info {
 	uint8_t ucMaxSwapAntenna;
 	uint32_t workAround;
 	char *prTxPwrLimitFile;
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+	char *prTxPwrLimit6GFile;
+#if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
+	char *prTxPwrLimit6G1ss1tFile;
+#endif
+#endif
 	uint8_t ucTxPwrLimitBatchSize;
 	u_int8_t is_support_asic_lp;
 	u_int8_t is_support_wfdma1;

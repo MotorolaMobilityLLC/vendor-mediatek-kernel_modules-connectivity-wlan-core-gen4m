@@ -297,6 +297,16 @@ struct TX_PWR_LIMIT_SECTION {
 	  "vht80", "vht160", "ru26", "ru52", "ru106", "ru242",
 	  "ru484", "ru996", "ru996x2"}
 	},
+	{35,
+	 {"cck", "ofdm", "ofdm40", "ofdm80", "ofdm160", "ofdm320",
+	  "ht20", "ht40", "vht20", "vht40",
+	  "vht80", "vht160", "ru26", "ru52", "ru106", "ru242",
+	  "ru484", "ru996", "ru996x2",
+	  "eht26", "eht52", "eht106", "eht242", "eht484", "eht996",
+	  "eht996x2", "eht996x4", "eht26_52", "eht26_106", "eht484_242",
+	  "eht996_484", "eht996_484_242", "eht996x2_484", "eht996x3",
+	  "eht996x3_484"}
+	}
 };
 
 
@@ -315,6 +325,31 @@ const u8 gTx_Pwr_Limit_Element_Num[][TX_PWR_LIMIT_SECTION_NUM] = {
 	 POWER_LIMIT_SKU_RU106_NUM, POWER_LIMIT_SKU_RU242_NUM,
 	 POWER_LIMIT_SKU_RU484_NUM, POWER_LIMIT_SKU_RU996_NUM,
 	 POWER_LIMIT_SKU_RU996X2_NUM},
+
+	{POWER_LIMIT_SKU_CCK_NUM,
+	 POWER_LIMIT_SKU_OFDM_NUM,
+	 POWER_LIMIT_SKU_OFDM_NUM,  /* OFDM40 */
+	 POWER_LIMIT_SKU_OFDM_NUM,  /* OFDM80 */
+	 POWER_LIMIT_SKU_OFDM_NUM,  /* OFDM160*/
+	 POWER_LIMIT_SKU_OFDM_NUM,  /* OFDM320 */
+
+	 POWER_LIMIT_SKU_HT20_NUM, POWER_LIMIT_SKU_HT40_NUM,
+	 POWER_LIMIT_SKU_VHT20_2_NUM, POWER_LIMIT_SKU_VHT40_2_NUM,
+	 POWER_LIMIT_SKU_VHT80_2_NUM, POWER_LIMIT_SKU_VHT160_2_NUM,
+	 POWER_LIMIT_SKU_RU26_NUM, POWER_LIMIT_SKU_RU52_NUM,
+	 POWER_LIMIT_SKU_RU106_NUM, POWER_LIMIT_SKU_RU242_NUM,
+	 POWER_LIMIT_SKU_RU484_NUM, POWER_LIMIT_SKU_RU996_NUM,
+	 POWER_LIMIT_SKU_RU996X2_NUM,
+	 POWER_LIMIT_SKU_EHT26_NUM, POWER_LIMIT_SKU_EHT52_NUM,
+	 POWER_LIMIT_SKU_EHT106_NUM, POWER_LIMIT_SKU_EHT242_NUM,
+	 POWER_LIMIT_SKU_EHT484_NUM, POWER_LIMIT_SKU_EHT996_NUM,
+	 POWER_LIMIT_SKU_EHT996X2_NUM, POWER_LIMIT_SKU_EHT996X4_NUM,
+	 POWER_LIMIT_SKU_EHT26_52_NUM,
+	 POWER_LIMIT_SKU_EHT26_106_NUM, POWER_LIMIT_SKU_EHT484_242_NUM,
+	 POWER_LIMIT_SKU_EHT996_484_NUM, POWER_LIMIT_SKU_EHT996_484_242_NUM,
+	 POWER_LIMIT_SKU_EHT996X2_484_NUM, POWER_LIMIT_SKU_EHT996X3_NUM,
+	 POWER_LIMIT_SKU_EHT996X3_484_NUM
+	}
 };
 
 const char *gTx_Pwr_Limit_Element[]
@@ -370,6 +405,71 @@ const char *gTx_Pwr_Limit_Element[]
 		 "m10", "m11"},
 		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
 		 "m10", "m11"},
+	},
+	{
+		{"c1", "c2", "c5", "c11"},
+		{"o6", "o9", "o12", "o18", "o24", "o36", "o48", "o54"},
+		{"o6", "o9", "o12", "o18", "o24", "o36", "o48", "o54"},
+		{"o6", "o9", "o12", "o18", "o24", "o36", "o48", "o54"},
+		{"o6", "o9", "o12", "o18", "o24", "o36", "o48", "o54"},
+		{"o6", "o9", "o12", "o18", "o24", "o36", "o48", "o54"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m32"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "rsvd", "rsvd"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+		{"m0", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9",
+		 "m10", "m11", "m12", "m13", "m14", "m15"},
+
 	},
 };
 
@@ -2462,7 +2562,7 @@ uint8_t rlmDomainTxPwrLimitGetTableVersion(
 	uint8_t *pucBuf, uint32_t u4BufLen)
 {
 #define TX_PWR_LIMIT_VERSION_STR_LEN 7
-#define TX_PWR_LIMIT_MAX_VERSION 2
+#define TX_PWR_LIMIT_MAX_VERSION 3
 	uint32_t u4TmpPos = 0;
 	uint8_t ucVersion = 0;
 
@@ -2822,6 +2922,7 @@ void rlmDomainTxPwrLimitRemoveComments(
 }
 
 u_int8_t rlmDomainTxPwrLimitLoad(
+	uint8_t *prFileName,
 	struct ADAPTER *prAdapter, uint8_t *pucBuf, uint32_t u4BufLen,
 	uint8_t ucVersion, uint32_t u4CountryCode,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
@@ -2831,8 +2932,6 @@ u_int8_t rlmDomainTxPwrLimitLoad(
 	uint32_t u4CountryStart = 0, u4CountryEnd = 0, u4Pos = 0;
 	struct TX_PWR_LIMIT_SECTION *prSection =
 		&gTx_Pwr_Limit_Section[ucVersion];
-	uint8_t *prFileName = prAdapter->chip_info->prTxPwrLimitFile;
-
 
 	if (!rlmDomainTxPwrLimitGetCountryRange(u4CountryCode, pucBuf,
 		u4BufLen, &u4CountryStart, &u4CountryEnd)) {
@@ -2972,7 +3071,7 @@ void rlmDomainTxPwrLimitPerRateSetChValues(
 	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE *pCmd,
 	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit)
 {
-	uint8_t section = 0, e = 0, count = 0;
+	uint16_t section = 0, e = 0, count = 0;
 	uint8_t ucElementNum = 0;
 
 	for (section = 0; section < TX_PWR_LIMIT_SECTION_NUM; section++) {
@@ -3065,12 +3164,12 @@ void rlmDomainTxPwrLimitPerRateSetValues(
 }
 
 u_int8_t rlmDomainTxPwrLimitLoadFromFile(
+	uint8_t *prFileName,
 	struct ADAPTER *prAdapter,
 	uint8_t **pucConfigBuf, uint32_t *pu4ConfigReadLen)
 {
 #define TXPWRLIMIT_FILE_LEN 64
 	u_int8_t bRet = TRUE;
-	uint8_t *prFileName = prAdapter->chip_info->prTxPwrLimitFile;
 	uint8_t aucPath[TXPWRLIMIT_FILE_LEN];
 
 	if (!prFileName || kalStrLen(prFileName) == 0) {
@@ -3105,6 +3204,7 @@ error:
 }
 
 u_int8_t rlmDomainGetTxPwrLimit(
+	uint8_t *prFileName,
 	uint32_t country_code,
 	uint8_t *pucVersion,
 	struct GLUE_INFO *prGlueInfo,
@@ -3114,7 +3214,8 @@ u_int8_t rlmDomainGetTxPwrLimit(
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 
-	bRet = rlmDomainTxPwrLimitLoadFromFile(prGlueInfo->prAdapter,
+	bRet = rlmDomainTxPwrLimitLoadFromFile(prFileName,
+		prGlueInfo->prAdapter,
 		&pucConfigBuf, &u4ConfigReadLen);
 
 	if (!bRet)
@@ -3124,7 +3225,9 @@ u_int8_t rlmDomainGetTxPwrLimit(
 	*pucVersion = rlmDomainTxPwrLimitGetTableVersion(pucConfigBuf,
 		u4ConfigReadLen);
 
-	if (!rlmDomainTxPwrLimitLoad(prGlueInfo->prAdapter,
+	if (!rlmDomainTxPwrLimitLoad(
+		prFileName,
+		prGlueInfo->prAdapter,
 		pucConfigBuf, u4ConfigReadLen, *pucVersion,
 		country_code, pTxPwrLimitData)) {
 		bRet = FALSE;
@@ -5160,6 +5263,9 @@ void rlmDomainTxPwrLimitSendPerRateCmd_6G(
 		prTempCmd->eBand = eBand;
 		prTempCmd->u4CountryCode =
 			rlmDomainGetCountryCode();
+
+		prTempCmd->eLimitType = prCmd->eLimitType;
+
 		prTempCmd->bCmdFinished = bCmdFinished;
 		u2ChIdx = i * ucCmdBatchSize;
 		kalMemCopy(
@@ -5169,6 +5275,7 @@ void rlmDomainTxPwrLimitSendPerRateCmd_6G(
 
 		u4SetQueryInfoLen = u4BufSize;
 		/* Update tx max. power info to chip */
+
 		rStatus = wlanSendSetQueryCmd(prAdapter,
 			CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE,
 			TRUE,
@@ -5264,6 +5371,7 @@ void rlmDomainTxPwrLimitSendPerRateCmd(
 	uint8_t band_idx = 0;
 	uint32_t u4SetCountryTxPwrLimitCmdSize =
 		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE);
+
 	uint32_t u4ChPwrLimitSize =
 		sizeof(struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE);
 	const uint8_t ucCmdBatchSize =
@@ -5278,6 +5386,9 @@ void rlmDomainTxPwrLimitSendPerRateCmd(
 				BAND_2G4 : BAND_5G;
 		uint16_t u2ChIdx = 0;
 		u_int8_t bCmdFinished = FALSE;
+
+		if ((band_idx != KAL_BAND_2GHZ) && (band_idx != KAL_BAND_5GHZ))
+			continue;
 
 		if (!prCmd[band_idx])
 			continue;
@@ -5322,6 +5433,7 @@ void rlmDomainTxPwrLimitSendPerRateCmd(
 				ucTempChNum * u4ChPwrLimitSize);
 
 			u4SetQueryInfoLen = u4BufSize;
+
 			/* Update tx max. power info to chip */
 			rStatus = wlanSendSetQueryCmd(prAdapter,
 				CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE,
@@ -5469,11 +5581,13 @@ void rlmDomainTxPwrSendTxBfBackoffCmd(
 void
 rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
-	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData,
+	enum ENUM_TX_POWER_LIMIT_PER_RATE_CMD_FORMAT_T eLimitType
+	)
 {
 	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
 		*prTxPwrLimitPerRateCmd_6G;
-	uint32_t rTxPwrLimitPerRateCmdSize_6G = 0;
+
 
 	uint32_t u4SetCmdTableMaxSize = 0;
 	uint32_t u4SetCountryTxPwrLimitCmdSize =
@@ -5487,7 +5601,6 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 	u4SetCmdTableMaxSize = u4SetCountryTxPwrLimitCmdSize +
 	ch_cnt * u4ChPwrLimitSize;
 
-	rTxPwrLimitPerRateCmdSize_6G = u4SetCmdTableMaxSize;
 	prTxPwrLimitPerRateCmd_6G =
 	kalMemAlloc(u4SetCmdTableMaxSize, VIR_MEM_TYPE);
 
@@ -5502,22 +5615,26 @@ rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
 		ch_cnt * u4ChPwrLimitSize);
 
 	prTxPwrLimitPerRateCmd_6G->ucNum = ch_cnt;
-	prTxPwrLimitPerRateCmd_6G->eBand = 0x3;
+	prTxPwrLimitPerRateCmd_6G->eBand = 0x3;  /* replace 0x3 with macro */
 	prTxPwrLimitPerRateCmd_6G->u4CountryCode = rlmDomainGetCountryCode();
+	prTxPwrLimitPerRateCmd_6G->eLimitType = eLimitType;
 
 	for (ch_idx = 0; ch_idx < ch_cnt; ch_idx++) {
 	prTxPwrLimitPerRateCmd_6G->rChannelPowerLimit[ch_idx].u1CentralCh =
 	prChannelList[ch_idx];
 	}
 
+	/* fill to whole cmd buffer */
 	rlmDomainTxPwrLimitPerRateSetValues(ucVersion,
 		prTxPwrLimitPerRateCmd_6G,
 		pTxPwrLimitData);
 
+	/* separate single cmd to several cmds due to max cmd size  */
 	rlmDomainTxPwrLimitSendPerRateCmd_6G(prAdapter,
 		prTxPwrLimitPerRateCmd_6G);
 
-	cnmMemFree(prAdapter, prTxPwrLimitPerRateCmd_6G);
+	kalMemFree(prTxPwrLimitPerRateCmd_6G, VIR_MEM_TYPE,
+		u4SetCmdTableMaxSize);
 
 }
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
@@ -5583,6 +5700,12 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData = NULL;
 
 	DBGLOG(RLM, INFO, "rlmDomainSendPwrLimitCmd()\n");
+
+	if (prAdapter->chip_info->prTxPwrLimitFile == NULL) {
+		DBGLOG(RLM, ERROR, "prTxPwrLimitFile is NULL\n");
+		goto error;
+	}
+
 	pTxPwrLimitData = rlmDomainInitTxPwrLimitData(prAdapter);
 
 	if (!pTxPwrLimitData) {
@@ -5591,10 +5714,10 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 		goto error;
 	}
 
-	/*
-	 * Get Max Tx Power from MT_TxPwrLimit.dat
-	 */
-	if (!rlmDomainGetTxPwrLimit(rlmDomainGetCountryCode(),
+	/* Get Max Tx Power from MT_TxPwrLimit.dat */
+	if (!rlmDomainGetTxPwrLimit(
+		prAdapter->chip_info->prTxPwrLimitFile,
+		rlmDomainGetCountryCode(),
 		&ucVersion,
 		prAdapter->prGlueInfo,
 		pTxPwrLimitData)) {
@@ -5607,7 +5730,8 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	if (ucVersion == 0) {
 		rlmDomainSendTxPwrLimitCmd(prAdapter,
 			ucVersion, pTxPwrLimitData);
-	 } else if (ucVersion == 1 || ucVersion == 2) {
+	} else if (ucVersion == 1 || ucVersion == 2 || ucVersion == 3) {
+
 		rlmDomainSendTxPwrLimitPerRateCmd(prAdapter,
 			ucVersion, pTxPwrLimitData);
 
@@ -5621,6 +5745,20 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 	}
 
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prAdapter->fgIsHwSupport6G == FALSE) {
+		DBGLOG(RLM, ERROR,
+			"fgIsHwSupport6G is False, skip 6G SKU process\n");
+		goto error;
+	}
+#endif
+
+	if (prAdapter->chip_info->prTxPwrLimit6GFile == NULL) {
+		DBGLOG(RLM, ERROR, "prTxPwrLimit6GFile is NULL\n");
+		goto error;
+	}
+
+	/* TODO: check if buffer allocation can be replaced by MEMSET */
 	if (pTxPwrLimitData && pTxPwrLimitData->rChannelTxPwrLimit)
 		kalMemFree(pTxPwrLimitData->rChannelTxPwrLimit, VIR_MEM_TYPE,
 			sizeof(struct CHANNEL_TX_PWR_LIMIT) *
@@ -5638,31 +5776,59 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 		goto error;
 	}
 
-	/*
-	 * Get Max Tx Power from MT_TxPwrLimit_6G.dat
-	 */
-	prAdapter->chip_info->prTxPwrLimitFile = "TxPwrLimit6G_MT79x1.dat";
-	if (!rlmDomainGetTxPwrLimit(rlmDomainGetCountryCode(),
+	if (!rlmDomainGetTxPwrLimit(
+		prAdapter->chip_info->prTxPwrLimit6GFile,
+		rlmDomainGetCountryCode(),
 		&ucVersion,
 		prAdapter->prGlueInfo,
 		pTxPwrLimitData)) {
 		DBGLOG(RLM, ERROR,
-			"Load TxPwrLimitData failed\n");
+			"Load TxPwrLimit6GFile failed\n");
 		goto error;
 	}
 
 	/* Prepare to send CMD to FW */
-	if (ucVersion == 2) {
+	if (ucVersion == 2  || ucVersion == 3) {
 		rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
-			ucVersion, pTxPwrLimitData);
+			ucVersion, pTxPwrLimitData,
+			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU);
 	} else {
 		DBGLOG(RLM, WARN,
-		"Unsupported TxPwrLimit6G_MT7961.dat version %u\n",
+		"Unsupported %s version %u\n",
+		prAdapter->chip_info->prTxPwrLimit6GFile,
 		ucVersion);
 	}
 
-	/* restore back to default value */
-	prAdapter->chip_info->prTxPwrLimitFile = "TxPwrLimit_MT79x1.dat";
+#if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1)
+	if (prAdapter->chip_info->prTxPwrLimit6G1ss1tFile == NULL) {
+		DBGLOG(RLM, ERROR, "prTxPwrLimit6G1ss1tFile is NULL\n");
+		goto error;
+	}
+
+	if (!rlmDomainGetTxPwrLimit(
+		prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
+		rlmDomainGetCountryCode(),
+		&ucVersion,
+		prAdapter->prGlueInfo,
+		pTxPwrLimitData)) {
+		DBGLOG(RLM, ERROR,
+			"Load %s failed\n",
+			prAdapter->chip_info->prTxPwrLimit6G1ss1tFile);
+		goto error;
+	}
+
+	/* Prepare to send CMD to FW */
+	if (ucVersion == 2 || ucVersion == 3) {
+		rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
+			ucVersion, pTxPwrLimitData,
+			TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_1SS_1T);
+	} else {
+		DBGLOG(RLM, WARN,
+		"Unsupported %s version %u\n",
+		prAdapter->chip_info->prTxPwrLimit6G1ss1tFile,
+		ucVersion);
+	}
+#endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G_1SS1T == 1) */
 #endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
 
 error:
@@ -5671,13 +5837,11 @@ error:
 			sizeof(struct CHANNEL_TX_PWR_LIMIT) *
 			pTxPwrLimitData->ucChNum);
 
-	if (pTxPwrLimitData)
+	if (pTxPwrLimitData) {
 		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
 			sizeof(struct TX_PWR_LIMIT_DATA));
-
-	/* restore back to default value */
-	prAdapter->chip_info->prTxPwrLimitFile = "TxPwrLimit_MT79x1.dat";
-#endif
+	}
+#endif /* #if (CFG_SUPPORT_SINGLE_SKU == 1) */
 }
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT

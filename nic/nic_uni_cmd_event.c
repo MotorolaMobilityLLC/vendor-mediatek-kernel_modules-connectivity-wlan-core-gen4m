@@ -5029,12 +5029,26 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 	struct UNI_CMD_POWER_LIMIT *uni_cmd;
 	struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_POWER_LIMIT) +
-		sizeof(struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM);
 
+#if 1 /* check max_cmd_len length */
+	uint32_t max_cmd_len =
+		sizeof(struct UNI_CMD_POWER_LIMIT) +
+		sizeof(uint16_t) + sizeof(uint16_t) +
+		info->u4SetQueryInfoLen;
+#else
+	uint32_t max_cmd_len =
+		sizeof(struct UNI_CMD_POWER_LIMIT)+
+		sizeof(struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM);
+#endif
+
+#if 1
+	if (info->ucCID != CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE)
+		return WLAN_STATUS_NOT_ACCEPTED;
+#else
 	if (info->ucCID != CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
+#endif
 
 	cmd = (struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE *)
 		info->pucInfoBuffer;
@@ -5048,13 +5062,20 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 	tag = (struct UNI_CMD_SET_PWR_LIMIT_PER_RATE_TABLE_PARAM *)
 		uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_POWER_LIMIT_PER_RATE_TABLE;
+
+#if 1
+	tag->u2Length = sizeof(tag->u2Tag) +
+					sizeof(tag->u2Length) +
+					info->u4SetQueryInfoLen;
+
+	kalMemCopy(&tag->config, cmd, info->u4SetQueryInfoLen);
+	DBGLOG_MEM8(INIT, INFO, &tag->config, info->u4SetQueryInfoLen);
+#else
 	tag->u2Length = sizeof(*tag);
+#endif
 	kalMemCopy(&tag->config, cmd, sizeof(tag->config));
-
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
-
 	return WLAN_STATUS_SUCCESS;
-
 }
 
 uint32_t nicUniCmdNvramFragmentHandler(struct ADAPTER *ad,

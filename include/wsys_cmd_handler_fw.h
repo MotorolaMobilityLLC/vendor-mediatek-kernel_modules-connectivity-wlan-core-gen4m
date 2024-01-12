@@ -2114,7 +2114,10 @@ struct CMD_SET_DOMAIN_INFO_V2 {
 	struct CMD_DOMAIN_ACTIVE_CHANNEL_LIST arActiveChannels;
 };
 
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_CONNAC3X == 1)
+#define SINGLE_SKU_LEGACY_OFDM_NUM 32
+#define SINGLE_SKU_PARAM_NUM (417+SINGLE_SKU_LEGACY_OFDM_NUM)
+#elif (CFG_SUPPORT_CONNAC2X == 1)
 #define SINGLE_SKU_PARAM_NUM 161
 #else
 #define SINGLE_SKU_PARAM_NUM 69
@@ -2129,6 +2132,14 @@ struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE {
 	struct CMD_SKU_TABLE_TYPE aucTxPwrLimit;
 };
 
+enum ENUM_TX_POWER_LIMIT_PER_RATE_CMD_FORMAT_T {
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU = 0,
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_ANT_SAR = 1,
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_1SS_1T = 2,
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_CH_SKU_LEGACY = 3,
+	TXPWR_LIMIT_PER_RATE_CMD_FORMAT_END
+};
+
 struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE {
 	/* DWORD_0 - Common info*/
 	uint8_t ucCmdVer;
@@ -2140,7 +2151,7 @@ struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE {
 	uint8_t eBand; /* 2.4g or 5g*/
 	uint8_t bCmdFinished;
 	/* hint for whether 2.4g/5g tx power limit value all be sent*/
-	uint8_t aucPadding1[1];
+	uint8_t eLimitType; /* aucPadding1[1]; */
 
 	/* DWORD_2 - Country code*/
 	uint32_t u4CountryCode;
