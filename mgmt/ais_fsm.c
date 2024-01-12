@@ -5741,6 +5741,7 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct BSS_INFO *prAisBssInfo;
+	u_int8_t fgIsReset = FALSE;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -5757,10 +5758,24 @@ aisDeauthXmitCompleteBss(IN struct ADAPTER *prAdapter,
 
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
 
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
+		spin_lock_bh(&prAdapter->rWfsysResetLock);
+
+		if (prAdapter->eWfsysResetState == WFSYS_RESET_STATE_REINIT) {
+			DBGLOG(AIS, INFO, "during L0.5 reset reinit state\n");
+
+			fgIsReset = TRUE;
+		}
+		spin_unlock_bh(&prAdapter->rWfsysResetLock);
+	}
+#endif /* CFG_CHIP_RESET_SUPPORT */
+
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_DISCONNECTING) {
 		DBGLOG(AIS, EVENT, "aisDeauthXmitComplete\n");
-		if (rTxDoneStatus != TX_RESULT_DROPPED_IN_DRIVER
+		if ((rTxDoneStatus != TX_RESULT_DROPPED_IN_DRIVER
 		    && rTxDoneStatus != TX_RESULT_QUEUE_CLEARANCE)
+			|| fgIsReset)
 			aisFsmStateAbort(prAdapter,
 					 prAisFsmInfo->ucReasonOfDisconnect,
 					 FALSE, ucBssIndex);
