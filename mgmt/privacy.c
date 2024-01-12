@@ -499,6 +499,16 @@ void secSetCipherSuite(IN struct ADAPTER *prAdapter,
 				    FALSE;
 			break;
 
+		case RSN_CIPHER_SUITE_GROUP_NOT_USED:
+			if (u4CipherSuitesFlags &
+			    (CIPHER_FLAG_CCMP | CIPHER_FLAG_TKIP))
+				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
+				    TRUE;
+			else
+				prEntry->dot11RSNAConfigPairwiseCipherEnabled =
+				    FALSE;
+			break;
+
 		case WPA_CIPHER_SUITE_WEP104:
 		case RSN_CIPHER_SUITE_WEP104:
 			if (u4CipherSuitesFlags & CIPHER_FLAG_WEP104)

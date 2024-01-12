@@ -1764,6 +1764,7 @@ wlanoidSetAuthMode(IN struct ADAPTER *prAdapter,
 	}
 
 	switch (*(enum ENUM_PARAM_AUTH_MODE *) pvSetBuffer) {
+	case AUTH_MODE_WPA_OSEN:
 	case AUTH_MODE_WPA:
 	case AUTH_MODE_WPA_PSK:
 	case AUTH_MODE_WPA2:
