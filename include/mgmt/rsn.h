@@ -235,6 +235,10 @@ u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
 			   uint32_t u4AkmSuite, uint32_t *pu4Index,
 			   uint8_t ucBssIndex);
 
+uint8_t rsnKeyMgmtWpa(struct ADAPTER *ad,
+	enum ENUM_PARAM_AUTH_MODE eAuthMode,
+	uint8_t bssidx);
+
 u_int8_t rsnPerformPolicySelection(struct ADAPTER
 				   *prAdapter,
 				   struct BSS_DESC *prBss,
