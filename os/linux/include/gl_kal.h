@@ -244,6 +244,7 @@ struct BOOST_INFO {
 	struct THREAD_INFO rHifThreadInfo;
 	struct THREAD_INFO rMainThreadInfo;
 	struct THREAD_INFO rRxThreadInfo;
+	struct THREAD_INFO rRxNapiThreadInfo;
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	int32_t i4RxRfbRetWorkCpu;

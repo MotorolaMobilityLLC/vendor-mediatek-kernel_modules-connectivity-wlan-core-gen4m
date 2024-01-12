@@ -473,6 +473,16 @@
 #error "NAPI_WORK should based on NAPI in gen4m"
 #endif
 
+#ifndef CFG_SUPPORT_RX_NAPI_THREADED
+#define CFG_SUPPORT_RX_NAPI_THREADED            0
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+#if (CFG_SUPPORT_RX_NAPI == 0) && (CFG_SUPPORT_RX_NAPI_THREADED == 1)
+#error "NAPI Threaded should based on NAPI"
+#endif
+#if (CFG_SUPPORT_RX_NAPI_WORK == 1) && (CFG_SUPPORT_RX_NAPI_THREADED == 1)
+#error "Cannot enable both RX_NAPI_WORK and RX_NAPI_THREADED"
+#endif
+
 /* There is a "budget" concept in original NAPI design. However,
  * the default budget in Linux is 64 and it's hard to aggreate a 64K packet
  * within 64-packets in throughput test.
