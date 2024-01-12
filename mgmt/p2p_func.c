@@ -726,6 +726,74 @@ p2pFuncUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	} while (FALSE);
 }				/* end of p2pUpdateBssInfoForJOIN() */
 
+void
+p2pFuncAddPendingMgmtLinkEntry(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, uint64_t u8Cookie)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
+
+	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
+		ucBssIdx);
+
+	if (prP2pRoleFsmInfo)
+		prGlueP2pInfo = prAdapter->prGlueInfo
+			->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex];
+	else
+		prGlueP2pInfo = prAdapter->prGlueInfo->prP2PInfo[0];
+
+	prPendingMgmtInfo = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+		sizeof(struct P2P_PENDING_MGMT_INFO));
+	if (!prPendingMgmtInfo) {
+		DBGLOG(P2P, WARN, "Allocate memory fail. cookie:0x%llx\n",
+			u8Cookie);
+		return;
+	}
+
+	prPendingMgmtInfo->u8PendingMgmtCookie = u8Cookie;
+	LINK_INSERT_TAIL(&prGlueP2pInfo->rWaitTxDoneLink,
+		&prPendingMgmtInfo->rLinkEntry);
+
+	DBGLOG(P2P, TRACE, "Add pending mgmt TX cookie:0x%llx\n", u8Cookie);
+}
+
+void
+p2pFuncRemovePendingMgmtLinkEntry(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx, uint64_t u8Cookie)
+{
+	struct GL_P2P_INFO *prGlueP2pInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfo = NULL;
+	struct P2P_PENDING_MGMT_INFO *prPendingMgmtInfoNext = NULL;
+
+	prP2pRoleFsmInfo = p2pFuncGetRoleByBssIdx(prAdapter,
+		ucBssIdx);
+
+	if (prP2pRoleFsmInfo)
+		prGlueP2pInfo = prAdapter->prGlueInfo
+			->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex];
+	else
+		prGlueP2pInfo = prAdapter->prGlueInfo->prP2PInfo[0];
+
+	LINK_FOR_EACH_ENTRY_SAFE(prPendingMgmtInfo,
+		prPendingMgmtInfoNext, &prGlueP2pInfo->rWaitTxDoneLink,
+		rLinkEntry, struct P2P_PENDING_MGMT_INFO) {
+		if (prPendingMgmtInfo->u8PendingMgmtCookie ==
+			u8Cookie) {
+			LINK_REMOVE_KNOWN_ENTRY(
+				&prGlueP2pInfo->rWaitTxDoneLink,
+				&prPendingMgmtInfo->rLinkEntry);
+			cnmMemFree(prAdapter,
+				prPendingMgmtInfo);
+			DBGLOG(P2P, TRACE,
+				"Remove pending mgmt TX cookie:0x%llx\n",
+				u8Cookie);
+			break;
+		}
+	}
+}
+
 uint32_t
 p2pFunMgmtFrameTxDone(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo,
