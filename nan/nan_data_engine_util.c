@@ -3321,10 +3321,10 @@ nanDataEngineNDPESpecAttrAppend(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint16_t
-nanDataEngineNDPEProtocolAttrLength(struct ADAPTER *prAdapter,
-				    struct _NAN_NDL_INSTANCE_T *prNDL,
-				    struct _NAN_NDP_INSTANCE_T *prNDP) {
+uint16_t nanDataEngineNDPEProtocolAttrLength(struct ADAPTER *prAdapter,
+					     struct _NAN_NDL_INSTANCE_T *prNDL,
+					     struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint16_t u2AttrLength = 0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -3352,11 +3352,11 @@ nanDataEngineNDPEProtocolAttrLength(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-void
-nanDataEngineNDPEProtocolAttrAppend(struct ADAPTER *prAdapter,
-				    uint8_t *pucOffset,
-				    struct _NAN_NDL_INSTANCE_T *prNDL,
-				    struct _NAN_NDP_INSTANCE_T *prNDP) {
+void nanDataEngineNDPEProtocolAttrAppend(struct ADAPTER *prAdapter,
+					 uint8_t *pucOffset,
+					 struct _NAN_NDL_INSTANCE_T *prNDL,
+					 struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -3383,10 +3383,10 @@ nanDataEngineNDPEProtocolAttrAppend(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint16_t
-nanDataEngineNDPEPORTAttrLength(struct ADAPTER *prAdapter,
-				struct _NAN_NDL_INSTANCE_T *prNDL,
-				struct _NAN_NDP_INSTANCE_T *prNDP) {
+uint16_t nanDataEngineNDPEPORTAttrLength(struct ADAPTER *prAdapter,
+					 struct _NAN_NDL_INSTANCE_T *prNDL,
+					 struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint16_t u2AttrLength = 0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -3414,11 +3414,11 @@ nanDataEngineNDPEPORTAttrLength(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-void
-nanDataEngineNDPEPORTAttrAppend(struct ADAPTER *prAdapter,
-		uint8_t *pucOffset,
-		struct _NAN_NDL_INSTANCE_T *prNDL,
-		struct _NAN_NDP_INSTANCE_T *prNDP) {
+void nanDataEngineNDPEPORTAttrAppend(struct ADAPTER *prAdapter,
+				     uint8_t *pucOffset,
+				     struct _NAN_NDL_INSTANCE_T *prNDL,
+				     struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	struct _NAN_ATTR_NDPE_GENERAL_TLV_T *TLV;
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -3459,10 +3459,10 @@ nanDataEngineServiceInfoCheck(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint16_t
-nanDataEngineNDPEAttrLength(struct ADAPTER *prAdapter,
-			    struct _NAN_NDL_INSTANCE_T *prNDL,
-			    struct _NAN_NDP_INSTANCE_T *prNDP) {
+uint16_t nanDataEngineNDPEAttrLength(struct ADAPTER *prAdapter,
+				     struct _NAN_NDL_INSTANCE_T *prNDL,
+				     struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint16_t u2AttrLength;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -3632,14 +3632,14 @@ nanDataEngineNDPEAttrAppend(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-void
-nanDataEngineNDPEAttrAppendImpl(struct ADAPTER *prAdapter,
+void nanDataEngineNDPEAttrAppendImpl(struct ADAPTER *prAdapter,
 				struct MSDU_INFO *prMsduInfo,
 				struct _NAN_NDL_INSTANCE_T *prNDL,
 				struct _NAN_NDP_INSTANCE_T *prNDP,
 				struct _NAN_ATTR_NDPE_T *prPeerAttrNDPE,
 				uint8_t ucTypeStatus,
-				uint8_t ucReasonCode) {
+				uint8_t ucReasonCode)
+{
 	const uint8_t aucOui[VENDOR_OUI_LEN] = NAN_OUI;
 	struct _NAN_ATTR_NDPE_T *prAttrNDPE = NULL;
 	struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T *prIPV6TLV = NULL;

@@ -1736,12 +1736,12 @@ nanParserGenChnlEntryField(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t
-nanParserGenBandChnlEntryListField(
-	struct ADAPTER *prAdapter,
-	union _NAN_BAND_CHNL_CTRL *prBandChnlListCtrl, uint32_t u4NumOfList,
-	uint8_t *pucBandChnlEntryListField,
-	uint32_t *pu4BandChnlEntryListFieldLength) {
+uint32_t nanParserGenBandChnlEntryListField(struct ADAPTER *prAdapter,
+			union _NAN_BAND_CHNL_CTRL *prBandChnlListCtrl,
+			uint32_t u4NumOfList,
+			uint8_t *pucBandChnlEntryListField,
+			uint32_t *pu4BandChnlEntryListFieldLength)
+{
 	struct _NAN_BAND_CHNL_LIST_T *prBandChnlList;
 	struct _NAN_CHNL_ENTRY_T *prChnlEntry;
 	uint8_t *pucPos;

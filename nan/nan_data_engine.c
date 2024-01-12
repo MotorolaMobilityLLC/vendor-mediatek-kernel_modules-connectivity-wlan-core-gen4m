@@ -4946,9 +4946,9 @@ send:
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
-			      struct _NAN_NDP_INSTANCE_T *prNDP) {
+uint32_t nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
+				       struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint32_t i;
 	uint16_t u2EstimatedFrameLen;
 	struct MSDU_INFO *prMsduInfo;
@@ -4977,9 +4977,7 @@ nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
 	/* estimate total length of NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen) {
 			u2EstimatedFrameLen +=
 				txDataAttributeTable[i]
@@ -5028,9 +5026,7 @@ nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
 				      pucLocalAddr, pucPeerAddr, prStaRec);
 
 	/* fill NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen &&
 		    txDataAttributeTable[i].pfnCalculateVariableAttrLen(
 			    prAdapter, prNDL, prNDP) != 0) {
@@ -5054,9 +5050,9 @@ nanNdpSendDataPathTermination(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
-			  struct _NAN_NDL_INSTANCE_T *prNDL) {
+uint32_t nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
+				   struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 	uint32_t i;
 	uint16_t u2EstimatedFrameLen;
 	struct MSDU_INFO *prMsduInfo;
@@ -5077,9 +5073,7 @@ nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
 	/* estimate total length of NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen) {
 			u2EstimatedFrameLen +=
 				txDataAttributeTable[i]
@@ -5113,9 +5107,7 @@ nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
 				      pucPeerAddr, prStaRec);
 
 	/* fill NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen &&
 		    txDataAttributeTable[i].pfnCalculateVariableAttrLen(
 			    prAdapter, prNDL, NULL) != 0) {
@@ -5139,13 +5131,13 @@ nanNdlSendScheduleRequest(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdlSendScheduleResponse(
-	struct ADAPTER *prAdapter, struct _NAN_NDL_INSTANCE_T *prNDL,
-
+uint32_t nanNdlSendScheduleResponse(struct ADAPTER *prAdapter,
+				    struct _NAN_NDL_INSTANCE_T *prNDL,
 	/* below are optional params, only valid when prNDL == NULL */
-	uint8_t *pucDestMacAddr, struct _NAN_ATTR_NDL_T *prPeerAttrNDL,
-	uint8_t ucReasonCode) {
+				    uint8_t *pucDestMacAddr,
+				    struct _NAN_ATTR_NDL_T *prPeerAttrNDL,
+				    uint8_t ucReasonCode)
+{
 	uint32_t i;
 	uint16_t u2EstimatedFrameLen;
 	/* struct _NAN_ACTION_FRAME_T* prNAF; */
@@ -5164,9 +5156,7 @@ nanNdlSendScheduleResponse(
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
 	/* estimate total length of NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen) {
 			u2EstimatedFrameLen +=
 				txDataAttributeTable[i]
@@ -5211,9 +5201,7 @@ nanNdlSendScheduleResponse(
 
 	if (prNDL) {
 		/* fill NAN attributes */
-		for (i = 0; i < sizeof(txDataAttributeTable) /
-					sizeof(struct _APPEND_ATTR_ENTRY_T);
-		     i++) {
+		for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 			if (txDataAttributeTable[i]
 				    .pfnCalculateVariableAttrLen &&
 			    txDataAttributeTable[i].pfnCalculateVariableAttrLen(
@@ -5249,9 +5237,9 @@ nanNdlSendScheduleResponse(
  */
 /*----------------------------------------------------------------------------*/
 
-uint32_t
-nanNdlSendScheduleConfirm(struct ADAPTER *prAdapter,
-			  struct _NAN_NDL_INSTANCE_T *prNDL) {
+uint32_t nanNdlSendScheduleConfirm(struct ADAPTER *prAdapter,
+				   struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 	uint32_t i;
 	uint16_t u2EstimatedFrameLen;
 	struct MSDU_INFO *prMsduInfo;
@@ -5272,9 +5260,7 @@ nanNdlSendScheduleConfirm(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
 	/* estimate total length of NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen) {
 			u2EstimatedFrameLen +=
 				txDataAttributeTable[i]
@@ -5309,9 +5295,7 @@ nanNdlSendScheduleConfirm(struct ADAPTER *prAdapter,
 				      pucPeerAddr, prStaRec);
 
 	/* fill NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen &&
 		    txDataAttributeTable[i].pfnCalculateVariableAttrLen(
 			    prAdapter, prNDL, NULL) != 0) {
@@ -5336,9 +5320,9 @@ nanNdlSendScheduleConfirm(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdlSendScheduleUpdateNotify(struct ADAPTER *prAdapter,
-			       struct _NAN_NDL_INSTANCE_T *prNDL) {
+uint32_t nanNdlSendScheduleUpdateNotify(struct ADAPTER *prAdapter,
+					struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 	uint32_t i;
 	uint16_t u2EstimatedFrameLen;
 	struct MSDU_INFO *prMsduInfo;
@@ -5354,9 +5338,7 @@ nanNdlSendScheduleUpdateNotify(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct _NAN_ACTION_FRAME_T, aucInfoContent);
 
 	/* estimate total length of NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen) {
 			u2EstimatedFrameLen +=
 				txDataAttributeTable[i]
@@ -5386,9 +5368,7 @@ nanNdlSendScheduleUpdateNotify(struct ADAPTER *prAdapter,
 				      pucLocalAddr, pucPeerAddr, prStaRec);
 
 	/* fill NAN attributes */
-	for (i = 0; i < sizeof(txDataAttributeTable) /
-				sizeof(struct _APPEND_ATTR_ENTRY_T);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txDataAttributeTable); i++) {
 		if (txDataAttributeTable[i].pfnCalculateVariableAttrLen &&
 		    txDataAttributeTable[i].pfnCalculateVariableAttrLen(
 			    prAdapter, prNDL, NULL) != 0) {
@@ -6270,11 +6250,11 @@ nanNdlGenerateDialogToken(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanDataEngineUpdateSSI(struct ADAPTER *prAdapter,
-		struct _NAN_NDP_INSTANCE_T *prNDP,
-		uint8_t ucServiceProtocolType, uint16_t u2ContextLen,
-		uint8_t *pucContext) {
+uint32_t nanDataEngineUpdateSSI(struct ADAPTER *prAdapter,
+				struct _NAN_NDP_INSTANCE_T *prNDP,
+				uint8_t ucServiceProtocolType,
+				uint16_t u2ContextLen, uint8_t *pucContext)
+{
 	uint32_t rStatus;
 	uint16_t u2Length = 0;
 #if (ENABLE_NDP_UT_LOG == 1)
