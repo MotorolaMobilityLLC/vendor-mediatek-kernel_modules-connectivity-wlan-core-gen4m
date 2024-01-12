@@ -1377,7 +1377,7 @@ static s_int32 mt_engine_store_tx_info(
 	void *virtual_wtbl,
 	struct test_tx_info *tx_info)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS, sta_idx = -1;
+	s_int32 ret = SERV_STATUS_SUCCESS, sta_idx;
 	u_char *pate_pkt = (u_char *)configs->test_pkt;
 	struct test_tx_stack *stack = &configs->stack;
 
@@ -2094,6 +2094,9 @@ s_int32 mt_engine_subscribe_tx(
 	/* Calculate duty_cycle related parameter first */
 	if (configs->duty_cycle > 0)
 		ret = mt_engine_calc_duty_cycle(configs);
+
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
 
 	tx_info.tx_mode = configs->tx_mode;
 	if (configs->per_pkt_bw >= TEST_BW_160C)

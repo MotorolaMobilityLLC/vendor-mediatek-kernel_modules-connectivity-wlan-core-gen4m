@@ -1741,7 +1741,14 @@ static s_int32 hqa_dbdc_tx_tone(
 			(u_int32)param.digi_pwr, param.band_idx);
 
 	ret = mt_serv_dbdc_tx_tone(serv_test);
+
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	ret = mt_serv_dbdc_tx_tone_pwr(serv_test);
+
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: band_idx=%u, tx_tone_en=%u, ant_idx=0x%x\n",
@@ -1758,6 +1765,7 @@ static s_int32 hqa_dbdc_tx_tone(
 	/* Update hqa_frame with response: status (2 bytes) */
 	update_hqa_frame(hqa_frame, 2, ret);
 
+err_out:
 	return ret;
 }
 
@@ -3736,6 +3744,9 @@ static s_int32 hqa_get_dump_recal(
 	ret = mt_serv_get_recal_cnt(serv_test,
 		&recal_cnt, &recal_dw_num);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx: %d, rxv_cnt: %d, rxv_dw_num: %d\n",
 		__func__, band_idx, recal_cnt, recal_dw_num));
@@ -3750,6 +3761,13 @@ static s_int32 hqa_get_dump_recal(
 	OriAddr = content;
 
 	ret = mt_serv_get_recal_content(serv_test, content);
+
+	if (ret != SERV_STATUS_SUCCESS) {
+		if (content)
+			sys_ad_free_mem(content);
+
+		goto err_out;
+	}
 
 	/* Update hqa_frame with response: status (2 bytes) */
 	value = SERV_OS_HTONL(recal_cnt);
@@ -3783,6 +3801,13 @@ error1:
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
 	return ret;
+
+err_out:
+	if (ret)
+		SERV_LOG(SERV_DBG_CAT_ENGN, SERV_DBG_LVL_ERROR,
+			("%s: err=0x%04x\n", __func__, ret));
+
+	return ret;
 }
 
 static s_int32 hqa_get_dump_rxv(
@@ -3808,6 +3833,9 @@ static s_int32 hqa_get_dump_rxv(
 
 	ret = mt_serv_get_rxv_cnt(serv_test, &rxv_cnt, &rxv_dw_num);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: band_idx: %d, rxv_cnt: %d, rxv_dw_num: %d\n",
 		__func__, band_idx, rxv_cnt, rxv_dw_num));
@@ -3821,6 +3849,13 @@ static s_int32 hqa_get_dump_rxv(
 	OriAddr = content;
 
 	ret = mt_serv_get_rxv_content(serv_test, dw_cnt, content);
+
+	if (ret != SERV_STATUS_SUCCESS) {
+		if (content)
+			sys_ad_free_mem(content);
+
+		goto err_out;
+	}
 
 	/* Update hqa_frame with response: Count (2 bytes) */
 	value = SERV_OS_HTONL(rxv_cnt);
@@ -3854,6 +3889,7 @@ error1:
 	/* TODO: respond to application for error handle */
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
+err_out:
 	return ret;
 }
 
@@ -3880,6 +3916,9 @@ static s_int32 hqa_get_dump_rdd(
 
 	ret = mt_serv_get_rdd_cnt(serv_test, &rdd_cnt, &rdd_dw_num);
 
+	if (ret != SERV_STATUS_SUCCESS)
+		goto err_out;
+
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
 		("%s: band_idx: %d, pulse number: %d, rdd buffer size: %d\n",
 		__func__, band_idx, rdd_cnt, rdd_dw_num));
@@ -3892,6 +3931,13 @@ static s_int32 hqa_get_dump_rdd(
 	OriAddr = content;
 
 	ret = mt_serv_get_rdd_content(serv_test, content, &total_cnt);
+
+	if (ret != SERV_STATUS_SUCCESS)	{
+		if (content)
+			sys_ad_free_mem(content);
+
+		goto err_out;
+	}
 
 	if (total_cnt > 0) {
 		/* Update hqa_frame with response: status (2 bytes) */
@@ -3941,6 +3987,7 @@ error1:
 	/* TODO: respond to application for error handle */
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
+err_out:
 	return ret;
 }
 
@@ -5382,6 +5429,9 @@ static s_int32 hqa_listmode_tx_cmd(
 		ret = sys_ad_alloc_mem(&pbuf,
 				sizeof(struct list_mode_tx_seg_header));
 
+		if (ret != SERV_STATUS_SUCCESS)
+			break;
+
 		/* alloc buffer to receive from FW */
 		ret = sys_ad_alloc_mem((u_char **)&pRsp,
 				sizeof(struct list_mode_event));
@@ -5396,6 +5446,9 @@ static s_int32 hqa_listmode_tx_cmd(
 			sizeof(struct list_mode_tx_seg_header),
 			&rsp_len,
 			pRsp);
+
+		if (ret != SERV_STATUS_SUCCESS)
+			break;
 	}	while (0);
 
 	if (pbuf != NULL)
@@ -5619,6 +5672,9 @@ static s_int32 hqa_listmode_rx_cmd(
 		ret = sys_ad_alloc_mem(&pbuf,
 				sizeof(struct list_mode_rx_seg_header));
 
+		if (ret != SERV_STATUS_SUCCESS)
+			break;
+
 		/* alloc buffer to receive from FW */
 		ret = sys_ad_alloc_mem((u_char **)&pRsp,
 				sizeof(struct list_mode_event));
@@ -5633,6 +5689,9 @@ static s_int32 hqa_listmode_rx_cmd(
 			sizeof(struct list_mode_rx_seg_header),
 			&rsp_len,
 			pRsp);
+
+		if (ret != SERV_STATUS_SUCCESS)
+			break;
 	} while (0);
 
 	if (pbuf != NULL)
@@ -6137,6 +6196,9 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 					set_param_and_shift_buf(TRUE, parasize,
 					(u_char *)&tmp_value, &data);
 				}
+
+				if (ret != SERV_STATUS_SUCCESS)
+					return ret;
 			}
 		}
 
