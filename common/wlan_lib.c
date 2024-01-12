@@ -771,9 +771,6 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		prAdapter->u4CompRecIdx = 0;
 		prAdapter->fgSetLogOnOff = true;
 		prAdapter->fgSetLogLevel = true;
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		prAdapter->u4FWLastUpdateTime = 0;
-#endif
 
 		/* Initialize rWlanInfo */
 		kalMemSet(&(prAdapter->rWlanInfo), 0,
@@ -8288,52 +8285,6 @@ void wlanCfgSetChip(IN struct ADAPTER *prAdapter)
 				   FALSE, FALSE, TRUE, &u4BufLen);
 	}
 }
-
-#if (CFG_SUPPORT_CONNINFRA == 1)
-/* Send kernel time to FW */
-void wlanCfgSetChipSyncTime(IN struct ADAPTER *prAdapter)
-{
-	struct timespec64 time;
-	unsigned int second, usecond;
-
-	int8_t aucKey[WLAN_CFG_VALUE_LEN_MAX];
-	int8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
-
-	uint32_t u4BufLen = 0;
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
-	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo;
-
-	ktime_get_real_ts64(&time);
-	/* UTC time second unit */
-	second = (unsigned int)time.tv_sec;
-	/* UTC time microsecond unit */
-	usecond = (unsigned int)KAL_GET_USEC(time);
-	prAdapter->u4FWLastUpdateTime = second;
-
-	kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
-	kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
-	kalSnprintf(aucKey, sizeof(aucKey), "SetChip");
-	kalSnprintf(aucValue, sizeof(aucValue),
-		"SyncTime %u %u", second, usecond);
-
-	DBGLOG(INIT, INFO,
-		"Sync kernel time, key=%s, value=%s",
-		aucKey, aucValue);
-
-	kalMemZero(&rChipConfigInfo, sizeof(rChipConfigInfo));
-
-	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_WO_RESPONSE;
-	rChipConfigInfo.u2MsgSize = kalStrnLen(aucValue,
-						   WLAN_CFG_VALUE_LEN_MAX);
-	kalStrnCpy(rChipConfigInfo.aucCmd, aucValue,
-		   CHIP_CONFIG_RESP_SIZE);
-
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetChipConfig,
-			   &rChipConfigInfo, sizeof(rChipConfigInfo),
-			   FALSE, FALSE, TRUE, &u4BufLen);
-}
-#endif /* CFG_SUPPORT_CONNINFRA */
 
 void wlanCfgSetDebugLevel(IN struct ADAPTER *prAdapter)
 {

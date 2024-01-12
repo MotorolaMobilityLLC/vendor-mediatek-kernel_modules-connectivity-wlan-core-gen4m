@@ -121,6 +121,11 @@ static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 static int wf_pwr_on_consys_mcu(void);
 static int wf_pwr_off_consys_mcu(void);
 
+static uint32_t soc7_0_ccif_get_interrupt_status(struct ADAPTER *ad);
+static void soc7_0_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
+	uint32_t sec,
+	uint32_t usec);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -505,7 +510,10 @@ struct ATE_OPS_T soc7_0_AteOps = {
 };
 #endif /* CFG_SUPPORT_QA_TOOL */
 
-
+static struct CCIF_OPS soc7_0_ccif_ops = {
+	.get_interrupt_status = soc7_0_ccif_get_interrupt_status,
+	.notify_utc_time_to_fw = soc7_0_ccif_notify_utc_time_to_fw,
+};
 
 struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 	.bus_info = &soc7_0_bus_info,
@@ -577,6 +585,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc7_0 = {
 #endif
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 	.isSupportMddpAOR = true,
+	.ccif_ops = &soc7_0_ccif_ops,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc7_0 = {
@@ -2810,10 +2819,7 @@ static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	if (check)
 		return false;
 
-	wf_ioremap_read(AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
-		&sw_int_value);
-	wf_ioremap_write(AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
-		sw_int_value);
+	sw_int_value = ccif_get_interrupt_status(prAdapter);
 
 	/* Disable conn_infra off domain force on 0x180601A4[0] = 1'b0 */
 	wf_ioremap_read(CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR, &value);
@@ -2822,6 +2828,35 @@ static bool soc7_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 
 	*status = sw_int_value;
 	return true;
+}
+
+static uint32_t soc7_0_ccif_get_interrupt_status(struct ADAPTER *ad)
+{
+	uint32_t value = 0;
+
+	HAL_MCR_RD(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_RCHNUM_ADDR,
+		&value);
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR,
+		value);
+
+	return value;
+}
+
+static void soc7_0_ccif_notify_utc_time_to_fw(struct ADAPTER *ad,
+	uint32_t sec,
+	uint32_t usec)
+{
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY1_ADDR,
+		sec);
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_DUMMY2_ADDR,
+		usec);
+	HAL_MCR_WR(ad,
+		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
+		SW_INT_TIME_SYNC);
 }
 
 #endif  /* soc7_0 */

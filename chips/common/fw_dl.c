@@ -1741,7 +1741,6 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	uint32_t rStatus = 0;
 	struct mt66xx_chip_info *prChipInfo;
 	struct FWDL_OPS_T *prFwDlOps;
-	struct timespec64 time;
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	uint32_t rPccifstatus = 0;
 #endif
@@ -1783,27 +1782,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	}
 #endif
 
-	if (prChipInfo->chip_capability & BIT(CHIP_CAPA_FW_LOG_TIME_SYNC)) {
-		ktime_get_real_ts64(&time);
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
-		rStatus = kalSyncTimeToFW(prAdapter, TRUE,
-			(unsigned int)time.tv_sec,
-			(unsigned int)NSEC_TO_USEC(time.tv_nsec));
-#else
-		rStatus = kalSyncTimeToFW(prAdapter, TRUE,
-			(unsigned int)time.tv_sec,
-			time.tv_usec);
-#endif
-
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, WARN,
-				"Failed to sync kernel time to FW: unhandled CMD ID 0x%x.\n",
-					INIT_CMD_ID_LOG_TIME_SYNC);
-		} else {
-			prAdapter->u4FWLastUpdateTime =
-				(unsigned int)time.tv_sec;
-		}
-	}
+	rStatus = kalSyncTimeToFW(prAdapter, TRUE);
 
 	if (prChipInfo->queryPmicInfo)
 		prChipInfo->queryPmicInfo(prAdapter);
