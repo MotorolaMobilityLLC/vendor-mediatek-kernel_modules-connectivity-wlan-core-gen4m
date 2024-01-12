@@ -257,7 +257,8 @@ int32_t fwLogMmioHandler(void)
 		DBGLOG(INIT, WARN,
 			"Skip due to driver own failed.\n");
 		prStats->skipped++;
-		return 0;
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
+		goto exit;
 	}
 
 	for (i = 0; i < ENUM_FW_LOG_CTRL_TYPE_NUM; i++) {
@@ -266,10 +267,12 @@ int32_t fwLogMmioHandler(void)
 		fwLogCtrlSubHandler(prAdapter, prCtrl, prSubCtrl);
 	}
 	wlanReleasePowerControl(prAdapter);
-	fwLogMmioStatsDump(prAdapter, prCtrl);
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_FW_LOG);
 
 	prStats->handled++;
+
+exit:
+	fwLogMmioStatsDump(prAdapter, prCtrl);
 
 	return 0;
 }
