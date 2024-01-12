@@ -3072,6 +3072,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	u_int8_t i = 0;
 	struct REG_INFO *prRegInfo;
 	struct mt66xx_chip_info *prChipInfo;
+	struct WIFI_VAR *prWifiVar;
 #if (MTK_WCN_HIF_SDIO && CFG_WMT_WIFI_PATH_SUPPORT)
 	int32_t i4RetVal = 0;
 #endif
@@ -3133,6 +3134,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		prGlueInfo->i4DevIdx = i4DevIdx;
 
 		prAdapter = prGlueInfo->prAdapter;
+		prWifiVar = &prAdapter->rWifiVar;
 
 		prGlueInfo->u4ReadyFlag = 0;
 
@@ -3238,6 +3240,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			eFailReason = ADAPTER_START_FAIL;
 			break;
 		}
+
+		/* change net device mtu from feature option */
+		if (prWifiVar->u4MTU > 0 && prWifiVar->u4MTU <= ETH_DATA_LEN)
+			prGlueInfo->prDevHandler->mtu = prWifiVar->u4MTU;
 
 		INIT_WORK(&prGlueInfo->rTxMsduFreeWork, kalFreeTxMsduWorker);
 		INIT_DELAYED_WORK(&prGlueInfo->rRxPktDeAggWork,

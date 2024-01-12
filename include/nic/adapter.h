@@ -1023,6 +1023,8 @@ struct WIFI_VAR {
 
 	/* Tx Msdu Queue method */
 	uint8_t ucTxMsduQueue;
+
+	uint32_t u4MTU; /* net device maximum transmission unit */
 };
 
 /* cnm_timer module */
