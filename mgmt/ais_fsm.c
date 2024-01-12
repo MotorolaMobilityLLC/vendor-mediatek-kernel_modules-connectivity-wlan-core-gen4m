@@ -4176,9 +4176,6 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 			}
 		}
 
-		aisFsmClearRequest(prAdapter,
-			AIS_REQUEST_RECONNECT, ucBssIndex);
-
 		if (fgDelayIndication) {
 			struct ROAMING_INFO *roam =
 				aisGetRoamingInfo(prAdapter, ucBssIndex);
@@ -4208,6 +4205,8 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 				DBGLOG(AIS, ERROR, "wrong reason %d",
 					prAisBssInfo->ucReasonOfDisconnect);
 			}
+			aisFsmClearRequest(prAdapter,
+				AIS_REQUEST_RECONNECT, ucBssIndex);
 			aisFsmInsertRequest(prAdapter,
 				AIS_REQUEST_RECONNECT, ucBssIndex);
 
