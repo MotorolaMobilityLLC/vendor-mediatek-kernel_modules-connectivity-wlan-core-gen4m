@@ -1196,6 +1196,13 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.eDefaultDbdcMode = ENUM_DBDC_MODE_STATIC,
 
 	.fgCheckRxDropThreshold = TRUE,
+
+#if CFG_SUPPORT_XONVRAM
+	.xo_infra_sysram = {
+		.addr = 0x7C05BA38,
+		.size = 25,
+	}
+#endif
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6639 = {

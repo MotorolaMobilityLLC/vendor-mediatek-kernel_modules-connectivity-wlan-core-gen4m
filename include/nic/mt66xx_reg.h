@@ -1440,6 +1440,14 @@ struct thermal_info {
 	struct thermal_sensor_info *sensor_info;
 };
 
+#if CFG_SUPPORT_XONVRAM
+struct connxo_infra_sysram {
+	/* ConnInfra Sysram address and size for ConnXO */
+	const uint32_t size;
+	const uint32_t addr;
+};
+#endif
+
 struct mt66xx_chip_info {
 	struct BUS_INFO *bus_info;
 	struct FWDL_OPS_T *fw_dl_ops;
@@ -1673,6 +1681,9 @@ struct mt66xx_chip_info {
 	void (*wifiNappingCtrl)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	u_int8_t fgWifiNappingEn; /* sw var used to align hw cfg */
 	u_int8_t fgWifiNappingForceDisable; /* main thread: w, hif thread: r */
+#if CFG_SUPPORT_XONVRAM
+	struct connxo_infra_sysram xo_infra_sysram;
+#endif
 };
 
 struct mt66xx_hif_driver_data {
