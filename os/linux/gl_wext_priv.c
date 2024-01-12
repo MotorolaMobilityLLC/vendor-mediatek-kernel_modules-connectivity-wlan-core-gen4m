@@ -11841,6 +11841,8 @@ int priv_driver_set_tx_ppdu(IN struct net_device *prNetDev, IN char *pcCommand,
 	uint32_t u4Ret, u4Parse = 0;
 	struct ADAPTER *prAdapter = NULL;
 	struct STA_RECORD *prStaRec;
+	uint32_t u4BufLen = 0;
+	struct CMD_ACCESS_REG rCmdAccessReg;
 
 	ASSERT(prNetDev);
 
@@ -11860,16 +11862,29 @@ int priv_driver_set_tx_ppdu(IN struct net_device *prNetDev, IN char *pcCommand,
 		if (u4Ret)
 			DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
 			       u4Ret);
+		rCmdAccessReg.u4Address =
+			prAdapter->chip_info->arb_ac_mode_addr;
 
 		if (u4Parse) {
 			/* HE_SU is allowed. */
 			prAdapter->fgTxPPDU = TRUE;
-			NIC_TX_PPDU_ENABLE(prAdapter);
+			rCmdAccessReg.u4Data = 0x0;
+			u4Ret = kalIoctl(prGlueInfo, wlanoidSetMcrWrite,
+					&rCmdAccessReg, sizeof(rCmdAccessReg),
+					FALSE, FALSE, FALSE, &u4BufLen);
+			if (u4Ret != WLAN_STATUS_SUCCESS)
+				return -1;
 		} else {
 			/* HE_SU is not allowed. */
 			prAdapter->fgTxPPDU = FALSE;
-			if (prStaRec && prStaRec->fgIsTxAllowed)
-				NIC_TX_PPDU_DISABLE(prAdapter);
+			rCmdAccessReg.u4Data = 0xFFFF;
+			if (prStaRec && prStaRec->fgIsTxAllowed) {
+				u4Ret = kalIoctl(prGlueInfo, wlanoidSetMcrWrite,
+					&rCmdAccessReg, sizeof(rCmdAccessReg),
+					FALSE, FALSE, FALSE, &u4BufLen);
+				if (u4Ret != WLAN_STATUS_SUCCESS)
+					return -1;
+			}
 		}
 
 		DBGLOG(REQ, STATE, "fgTxPPDU is %d\n", prAdapter->fgTxPPDU);
