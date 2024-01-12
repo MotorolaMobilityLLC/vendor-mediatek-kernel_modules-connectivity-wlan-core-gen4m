@@ -1147,6 +1147,29 @@ struct MTK_WCN_WLAN_CB_INFO {
 #endif
 #endif
 
+struct tag_bootmode {
+	u32 size;
+	u32 tag;
+	u32 bootmode;
+	u32 boottype;
+};
+
+enum BOOTMODE {
+	NORMAL_BOOT = 0,
+	META_BOOT = 1,
+	RECOVERY_BOOT = 2,
+	SW_REBOOT = 3,
+	FACTORY_BOOT = 4,
+	ADVMETA_BOOT = 5,
+	ATE_FACTORY_BOOT = 6,
+	ALARM_BOOT = 7,
+	KERNEL_POWER_OFF_CHARGING_BOOT = 8,
+	LOW_POWER_OFF_CHARGING_BOOT = 9,
+	FASTBOOT = 99,
+	DOWNLOAD_BOOT = 100,
+	UNKNOWN_BOOT
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

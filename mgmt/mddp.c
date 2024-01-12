@@ -139,29 +139,6 @@ struct mddp_txd_t {
 	uint8_t txd[0];
 } __packed;
 
-struct tag_bootmode {
-	u32 size;
-	u32 tag;
-	u32 bootmode;
-	u32 boottype;
-};
-
-enum BOOTMODE {
-	NORMAL_BOOT = 0,
-	META_BOOT = 1,
-	RECOVERY_BOOT = 2,
-	SW_REBOOT = 3,
-	FACTORY_BOOT = 4,
-	ADVMETA_BOOT = 5,
-	ATE_FACTORY_BOOT = 6,
-	ALARM_BOOT = 7,
-	KERNEL_POWER_OFF_CHARGING_BOOT = 8,
-	LOW_POWER_OFF_CHARGING_BOOT = 9,
-	FASTBOOT = 99,
-	DOWNLOAD_BOOT = 100,
-	UNKNOWN_BOOT
-};
-
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
 struct MDDP_SETTINGS g_rSettings;
@@ -1858,26 +1835,13 @@ void setMddpSupportRegister(struct ADAPTER *prAdapter)
 #endif
 }
 
-void mddpInit(void)
+void mddpInit(int bootmode)
 {
-	struct device_node *np_chosen;
-	struct tag_bootmode *tag = NULL;
-
-	np_chosen = of_find_node_by_path("/chosen");
-	if (!np_chosen)
-		np_chosen = of_find_node_by_path("/chosen@0");
-
-	if (!np_chosen)
+	/* failed to get bootmode */
+	if (bootmode == -1)
 		return;
 
-	tag = (struct tag_bootmode *) of_get_property(np_chosen, "atag,boot",
-			NULL);
-
-	if (!tag)
-		return;
-
-	DBGLOG(INIT, INFO, "bootmode: 0x%x\n", tag->bootmode);
-	g_wifi_boot_mode = tag->bootmode;
+	g_wifi_boot_mode = bootmode;
 
 	g_eMddpStatus = MDDPW_DRV_INFO_STATUS_OFF_END;
 	mutex_init(&rMddpLock);
