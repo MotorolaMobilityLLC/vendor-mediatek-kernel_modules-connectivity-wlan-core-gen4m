@@ -2194,7 +2194,7 @@ int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
 errHandleLabel:
 	kfree_skb(skb);
 #endif
-	return -EFAULT;
+	return -EOPNOTSUPP;
 }
 
 int mtk_cfg80211_vendor_set_multista_primary_connection(struct wiphy *wiphy,
