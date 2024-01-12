@@ -1320,6 +1320,25 @@ done:
 	return;
 }
 
+uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
+	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+{
+	if (!bss)
+		return FALSE;
+	if (aisQueryBlackList(ad, bss))
+		return FALSE;
+#if CFG_SUPPORT_ROAMING
+	if (reason == ROAMING_REASON_BTM) {
+		struct NEIGHBOR_AP *nei =
+			scanGetNeighborAPEntry(ad, bss->aucBSSID, bidx);
+
+		if (nei && nei->fgPrefPresence && !nei->ucPreference)
+			return FALSE;
+	}
+#endif
+	return TRUE;
+}
+
 void apsIntraApSelection(struct ADAPTER *ad,
 	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
 {
@@ -1343,7 +1362,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		uint16_t score;
 		struct BSS_DESC *bss = aisGetLinkBssDesc(ais, i);
 
-		if (!bss || aisQueryBlackList(ad, bss))
+		if (!apsIsValidBssDesc(ad, bss, reason, bidx))
 			continue;
 
 		score = scanCalculateTotalScore(ad, bss, reason, bidx);
