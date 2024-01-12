@@ -494,6 +494,8 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 			 * stopped
 			 */
 			prLinkEntry = (struct LINK_ENTRY *) prTimerList;
+			if (prLinkEntry == NULL)
+				break;
 
 			prRootTimer->rNextExpiredSysTime
 				= rCurSysTime + MGMT_MAX_TIMEOUT_INTERVAL;
