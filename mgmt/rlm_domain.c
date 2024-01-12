@@ -4606,7 +4606,7 @@ void txPwrCtrlGlobalVariableToList(struct ADAPTER *prAdapter)
 void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf;
-	uint32_t u4ConfigReadLen;
+	uint32_t u4ConfigReadLen = 0;
 
 	pucConfigBuf = (uint8_t *)kalMemAlloc(WLAN_CFG_FILE_BUF_SIZE,
 					      VIR_MEM_TYPE);
