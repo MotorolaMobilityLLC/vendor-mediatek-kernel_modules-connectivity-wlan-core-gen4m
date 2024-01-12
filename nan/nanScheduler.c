@@ -6544,7 +6544,10 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 	}
 
 	/* Step2 allocate new NDC CRB */
-	if (prScheduler->fgEn5gH || prScheduler->fgEn5gL)
+	if ((prScheduler->fgEn5gH || prScheduler->fgEn5gL)
+		&& (nanRegGetNanChnlBand(
+		nanSchedGetFixedChnlInfo(prAdapter))
+		!= BAND_2G4))
 		u4SlotOffset = NAN_5G_DW_INDEX + 1;
 	else
 		u4SlotOffset = NAN_2G_DW_INDEX + 1;
@@ -9994,8 +9997,19 @@ nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter) {
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
-	/* Skip if NDP not setup, and AIS operated under 2.4G */
-	if ((eNanBand == BAND_NULL) && (eNonNanBand == BAND_2G4)) {
+	/* Skip if NDP fix channel on 2.4G, and AIS operated under 5G */
+	if (nanRegGetNanChnlBand
+		(nanSchedGetFixedChnlInfo(prAdapter))
+		== BAND_2G4) {
+		if (eNonNanBand != BAND_2G4) {
+			DBGLOG(NAN, INFO,
+			"Skip. NDP fixed on 2.4G, AIS use 5G\n");
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
+	} else if (eNonNanBand == BAND_2G4) {
+		/* Skip if NDP not fix channel at 2.4G
+		* but AIS operated under 2.4G
+		*/
 		DBGLOG(NAN, INFO, "Skip. NDP Null, AIS in 2G\n");
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
