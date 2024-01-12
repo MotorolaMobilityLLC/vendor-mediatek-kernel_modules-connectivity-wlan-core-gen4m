@@ -2852,12 +2852,16 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				struct IE_MBO_OCE *mbo =
 					(struct IE_MBO_OCE *)pucIE;
 				const uint8_t *disallow = NULL;
+				uint32_t u4lenParam = mbo->ucLength - 4;
 
-				disallow = kalFindIeMatchMask(
+				if (u4lenParam <= u2IELength) {
+					disallow = kalFindIeMatchMask(
 						MBO_ATTR_ID_ASSOC_DISALLOW,
 						mbo->aucSubElements,
-						mbo->ucLength - 4,
+						u4lenParam,
 						NULL, 0, 0, NULL);
+				}
+
 				if (disallow && disallow[1] >= 1) {
 					prBssDesc->fgIsDisallowed = TRUE;
 					DBGLOG(SCN, INFO,
