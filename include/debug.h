@@ -544,6 +544,7 @@ struct CHIP_DBG_OPS {
 #endif
 	void (*dumpwfsyscpupcr)(struct ADAPTER *prAdapter);
 	void (*dumpBusHangCr)(struct ADAPTER *prAdapter);
+	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
 };
 
 enum PKT_PHASE {

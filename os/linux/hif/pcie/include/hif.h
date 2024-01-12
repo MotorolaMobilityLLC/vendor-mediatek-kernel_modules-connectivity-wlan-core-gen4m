@@ -416,7 +416,6 @@ struct BUS_INFO {
 	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	void (*updatePcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
-	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
 #endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
