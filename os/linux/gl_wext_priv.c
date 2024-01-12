@@ -22670,7 +22670,7 @@ int32_t priv_driver_cmds(struct net_device *prNetDev, int8_t *pcCommand,
 				 &i4BytesWritten);
 		} else if (!strnicmp(pcCommand, CMD_FW_EVENT, 9)) {
 			kalIoctl(prGlueInfo, wlanoidFwEventIT,
-				 (void *)(pcCommand + 9), i4TotalLen,
+				 (void *)(pcCommand + 9), i4TotalLen - 9,
 				 &i4BytesWritten);
 		} else if (!strnicmp(pcCommand, CMD_DUMP_UAPSD,
 				     strlen(CMD_DUMP_UAPSD))) {

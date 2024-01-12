@@ -4259,9 +4259,6 @@ wext_indicate_wext_event(struct GLUE_INFO *prGlueInfo,
 		goto skip_indicate_event;
 
 	switch (u4Cmd) {
-	case SIOCGIWTXPOW:
-		memcpy(&wrqu.power, pucData, u4dataLen);
-		break;
 	case SIOCGIWSCAN:
 		complete_all(&prGlueInfo->rScanComp);
 		break;
