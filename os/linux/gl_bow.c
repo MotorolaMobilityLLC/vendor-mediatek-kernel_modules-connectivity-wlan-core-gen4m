@@ -417,10 +417,10 @@ static int bow_ampc_open(struct inode *inodep, struct file *filp)
 
 	DBGLOG(BOW, INFO, "in %s\n", __func__);
 
-	prBowInfo = container_of(inodep->i_cdev, struct GL_BOW_INFO, cdev);
+	prBowInfo = CONTAINER_OF(inodep->i_cdev, struct GL_BOW_INFO, cdev);
 	ASSERT(prBowInfo);
 
-	prGlueInfo = container_of(prBowInfo, struct GLUE_INFO, rBowInfo);
+	prGlueInfo = CONTAINER_OF(prBowInfo, struct GLUE_INFO, rBowInfo);
 	ASSERT(prGlueInfo);
 
 	/* set-up private data */

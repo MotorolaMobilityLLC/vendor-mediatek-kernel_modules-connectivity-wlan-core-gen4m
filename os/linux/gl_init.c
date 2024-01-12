@@ -2966,8 +2966,8 @@ static void wlanSetMulticastList(struct net_device *prDev)
 static void wlanSetMulticastListWorkQueue(
 	struct work_struct *work)
 {
-	struct NETDEV_PRIVATE_GLUE_INFO *ifp = container_of(work,
-				struct NETDEV_PRIVATE_GLUE_INFO, workq);
+	struct NETDEV_PRIVATE_GLUE_INFO *ifp =
+		CONTAINER_OF(work, struct NETDEV_PRIVATE_GLUE_INFO, workq);
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4PacketFilter = 0;
 	uint32_t u4SetInfoLen;

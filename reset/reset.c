@@ -350,7 +350,7 @@ void resetkoNotifyWork(struct work_struct *work)
 	struct delayed_work *delay_work;
 
 	delay_work = to_delayed_work(work);
-	fsm = container_of(delay_work, struct FsmEntity, notifyWork);
+	fsm = CONTAINER_OF(delay_work, struct FsmEntity, notifyWork);
 
 	while (1) {
 		mutex_lock(&fsm->notifyEventMutex);

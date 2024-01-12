@@ -389,8 +389,7 @@ static int wlan_pm_notifier_call(struct notifier_block *notifier,
 {
 	struct RESET_STRUCT *rst;
 
-	rst = (struct RESET_STRUCT *)container_of(notifier,
-		struct RESET_STRUCT, pm_nb);
+	rst = CONTAINER_OF(notifier, struct RESET_STRUCT, pm_nb);
 
 	DBGLOG(REQ, INFO, "pm_event: %lu %s\n",
 		pm_event, pm_evt_to_str(pm_event));
@@ -1043,9 +1042,9 @@ void WfsysResetHdlr(struct work_struct *work)
 	struct ADAPTER *prAdapter;
 	struct mt66xx_hif_driver_data *prHifDrvData;
 
-	prGlueInfo = container_of(work, struct GLUE_INFO, rWfsysResetWork);
+	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO, rWfsysResetWork);
 	prAdapter = prGlueInfo->prAdapter;
-	prHifDrvData = container_of(&prAdapter->chip_info,
+	prHifDrvData = CONTAINER_OF(&prAdapter->chip_info,
 				    struct mt66xx_hif_driver_data, chip_info);
 
 	DBGLOG(INIT, STATE, "[SER][L0.5] Reset triggered eWfsysResetState=%d\n",
@@ -1214,8 +1213,8 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 /*----------------------------------------------------------------------------*/
 static void mtk_wifi_reset(struct work_struct *work)
 {
-	struct RESET_STRUCT *rst = container_of(work,
-						struct RESET_STRUCT, rst_work);
+	struct RESET_STRUCT *rst =
+		CONTAINER_OF(work, struct RESET_STRUCT, rst_work);
 	struct ADAPTER *prAdapter;
 	struct CHIP_DBG_OPS *prChipDbg;
 	u_int8_t fgDrvOwn;
@@ -1267,8 +1266,8 @@ void resetkoReset(void)
 static void mtk_wifi_trigger_reset(struct work_struct *work)
 {
 	u_int8_t fgResult = FALSE;
-	struct RESET_STRUCT *rst = container_of(work,
-					struct RESET_STRUCT, rst_trigger_work);
+	struct RESET_STRUCT *rst =
+		CONTAINER_OF(work, struct RESET_STRUCT, rst_trigger_work);
 
 	glResetUpdateFlag(TRUE);
 	/* Set the power off flag to FALSE in WMT to prevent chip power off

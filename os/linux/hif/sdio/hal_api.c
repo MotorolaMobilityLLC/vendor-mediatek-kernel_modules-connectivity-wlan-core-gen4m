@@ -2693,7 +2693,7 @@ void halDeAggRxPktWorker(struct work_struct *work)
 	if (g_u4HaltFlag)
 		return;
 
-	prGlueInfo = ENTRY_OF(work, struct GLUE_INFO, rRxPktDeAggWork);
+	prGlueInfo = CONTAINER_OF(work, struct GLUE_INFO, rRxPktDeAggWork.work);
 	prAdapter = prGlueInfo->prAdapter;
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT)
