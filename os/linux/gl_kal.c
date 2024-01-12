@@ -9708,16 +9708,28 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	OS_SYSTIME now, last;
 	int32_t period;
 	uint8_t i, j;
-	signed long txDiffBytes[MAX_BSSID_NUM],
-		    rxDiffBytes[MAX_BSSID_NUM],
-		    rxDiffPkts[MAX_BSSID_NUM],
-		    txDiffPkts[MAX_BSSID_NUM];
-	unsigned long lastTxBytes, lastRxBytes, lastTxPkts, lastRxPkts;
-	unsigned long currentTxBytes, currentRxBytes;
-	unsigned long currentTxPkts, currentRxPkts;
-	uint64_t throughput = 0, throughputInPPS = 0;
-	char *buf = NULL, *head1, *head2, *head3, *head4, *head5;
-	char *pos = NULL, *end = NULL;
+	signed long txDiffBytes[MAX_BSSID_NUM] = {0};
+	signed long rxDiffBytes[MAX_BSSID_NUM] = {0};
+	signed long rxDiffPkts[MAX_BSSID_NUM] = {0};
+	signed long txDiffPkts[MAX_BSSID_NUM] = {0};
+	unsigned long lastTxBytes;
+	unsigned long lastRxBytes;
+	unsigned long lastTxPkts;
+	unsigned long lastRxPkts;
+	unsigned long currentTxBytes;
+	unsigned long currentRxBytes;
+	unsigned long currentTxPkts;
+	unsigned long currentRxPkts;
+	uint64_t throughput = 0;
+	uint64_t throughputInPPS = 0;
+	char *buf = NULL;
+	char *head1;
+	char *head2;
+	char *head3;
+	char *head4;
+	char *head5;
+	char *pos;
+	char *end;
 	uint32_t slen;
 	uint8_t fgIsValidNetDevice = FALSE;
 #if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
