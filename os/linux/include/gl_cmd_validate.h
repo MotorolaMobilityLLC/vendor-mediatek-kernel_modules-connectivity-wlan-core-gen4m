@@ -385,6 +385,8 @@
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 #define CMD_GET_POWER_LIMIT		"GET_POWER_LIMIT"
 #endif /*#if CFG_SUPPORT_PWR_LMT_EMI == 1*/
+#define CMD_SET_ATXOP_SHARING			"SETATXOP"
+
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command
  *------------------------------------------------------------------------------

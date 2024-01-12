@@ -5543,4 +5543,10 @@ wlanoidSendPwrLimitToEmi(struct ADAPTER *prAdapter,
 		     uint32_t u4SetBufferLen,
 		     uint32_t *pu4SetInfoLen);
 #endif
+
+uint32_t
+wlanoidSetATXOP(struct ADAPTER *prAdapter,
+			   void *pvSetBuffer, uint32_t u4SetBufferLen,
+			   uint32_t *pu4SetInfoLen);
+
 #endif /* _WLAN_OID_H */
