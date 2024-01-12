@@ -2024,6 +2024,14 @@ uint32_t wlanDownloadFW(struct ADAPTER *prAdapter)
 		}
 	}
 
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	if (fgIsPreOnProcessing) {
+		rStatus = WLAN_STATUS_FAILURE;
+		DBGLOG(INIT, LOUD, "pre on process done, return\n");
+		goto exit;
+	}
+#endif
+
 #if CFG_SUPPORT_WIFI_DL_ZB_PATCH
 	if (prFwDlOps->downloadZbPatch && prAdapter->fgIsNeedDlPatch == TRUE) {
 		if (prFwDlOps->downloadZbPatch(prAdapter)

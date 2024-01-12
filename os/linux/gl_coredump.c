@@ -1696,10 +1696,10 @@ int wifi_coredump_post_start(void)
 
 	ctx->processing = TRUE;
 
-	/*__coredump_to_userspace_dfd_dump(ctx, chip_info);*/
+	__coredump_to_userspace_dfd_dump(ctx, chip_info);
 
 deinit:
-	DBGLOG(INIT, ERROR, "do coredump end\n");
+	DBGLOG(INIT, INFO, "do coredump end\n");
 	connv3_coredump_end(ctx->handler, mem->aee_str_buff);
 	__coredump_deinit(ctx);
 	ctx->processing = FALSE;

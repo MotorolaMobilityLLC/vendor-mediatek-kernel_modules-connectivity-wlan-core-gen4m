@@ -29,6 +29,7 @@
 #include "gl_coredump.h"
 #include "gl_fw_log.h"
 #include "gl_rst.h"
+#include "wlan_pinctrl.h"
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp.h"
@@ -1720,6 +1721,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
+	struct mt66xx_chip_info *chip = NULL;
 
 	DBGLOG(INIT, INFO,
 		"drv:%d, reason:%s, reset_type:%d\n",
@@ -1807,6 +1809,13 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 exit:
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
 
+	if (reset_type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
+		glGetChipInfo((void **)&chip);
+		if (!chip)
+			DBGLOG(HAL, ERROR, "NULL chip info pwr on.\n");
+		else
+			wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_ON);
+	}
 	return 0;
 }
 

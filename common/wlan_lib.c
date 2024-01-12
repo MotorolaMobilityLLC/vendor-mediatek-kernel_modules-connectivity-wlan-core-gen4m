@@ -1304,9 +1304,9 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		DRIVER_OWN_FAIL,
 		INIT_ADAPTER_FAIL,
 		INIT_HIFINFO_FAIL,
-		PRE_ON_PROCESS_DONE,
 		SET_CHIP_ECO_INFO_FAIL,
 		COPY_CONNSYS_CFG_FAIL,
+		PRE_ON_PROCESS_DONE,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
 		FAIL_REASON_MAX
@@ -1406,9 +1406,6 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 		if (fgIsPreOnProcessing) {
 			wifi_coredump_post_start();
-			u4Status = WLAN_STATUS_FAILURE;
-			eFailReason = PRE_ON_PROCESS_DONE;
-			break;
 		}
 #endif
 
@@ -1451,8 +1448,15 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 		u4Status = wlanDownloadFW(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+			if (fgIsPreOnProcessing) {
+				DBGLOG(INIT, INFO,
+					"PRE_ON_PROCESS_DONE finished\n");
+				eFailReason = PRE_ON_PROCESS_DONE;
+				break;
+			}
+#endif
 			eFailReason = RAM_CODE_DOWNLOAD_FAIL;
-
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_DL_FAIL);
 			break;
 		}
@@ -1614,11 +1618,10 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			switch (eFailReason) {
 			case WAIT_FIRMWARE_READY_FAIL:
 			case RAM_CODE_DOWNLOAD_FAIL:
+			case PRE_ON_PROCESS_DONE:
 			case COPY_CONNSYS_CFG_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
 				fw_log_deinit(prAdapter);
-			kal_fallthrough;
-			case PRE_ON_PROCESS_DONE:
 				halHifSwInfoUnInit(prAdapter->prGlueInfo);
 			kal_fallthrough;
 			case INIT_HIFINFO_FAIL:
