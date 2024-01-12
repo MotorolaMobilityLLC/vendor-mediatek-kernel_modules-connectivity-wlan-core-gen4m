@@ -1867,25 +1867,28 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 	if (prConnSettings == NULL)
 		return WLAN_STATUS_FAILURE;
 
-	fgConnReqMloSupport = !!(prConnSettings->u4ConnFlags &
-				 CONNECT_REQ_MLO_SUPPORT);
-
-	if (fgConnReqMloSupport)
-		/* pvSetBuffer is mld addr */
-		fgEqualMacAddr = EQUAL_MAC_ADDR(
-		    cnmStaRecAuthAddr(prAdapter, prAisBssInfo->prStaRecOfAP),
-		    pvSetBuffer);
-	else
-		/* pvSetBuffer is link addr */
-		fgEqualMacAddr = EQUAL_MAC_ADDR(
-			prAisBssInfo->prStaRecOfAP->aucMacAddr,
-			pvSetBuffer);
-
 	if (IS_BSS_AIS(prAisBssInfo) &&
-		prAisBssInfo->prStaRecOfAP &&
-		fgEqualMacAddr) {
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+		prAisBssInfo->prStaRecOfAP) {
 
+		fgConnReqMloSupport = !!(prConnSettings->u4ConnFlags &
+					CONNECT_REQ_MLO_SUPPORT);
+
+		if (fgConnReqMloSupport)
+			/* pvSetBuffer is mld addr */
+			fgEqualMacAddr = EQUAL_MAC_ADDR(
+				cnmStaRecAuthAddr(
+					prAdapter, prAisBssInfo->prStaRecOfAP),
+					pvSetBuffer);
+		else
+			/* pvSetBuffer is link addr */
+			fgEqualMacAddr = EQUAL_MAC_ADDR(
+				prAisBssInfo->prStaRecOfAP->aucMacAddr,
+				pvSetBuffer);
+
+		if (!fgEqualMacAddr)
+			return WLAN_STATUS_NOT_SUPPORTED;
+
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 			DBGLOG(QM, ERROR, "No channel occupation\n");
 		} else {
@@ -1894,11 +1897,9 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 				&prAisFsmInfo->rJoinTimeoutTimer);
 			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
 		}
-	} else {
-		return WLAN_STATUS_NOT_SUPPORTED;
+		return WLAN_STATUS_SUCCESS;
 	}
-
-	return WLAN_STATUS_SUCCESS;
+	return WLAN_STATUS_NOT_SUPPORTED;
 }
 
 #if 0
