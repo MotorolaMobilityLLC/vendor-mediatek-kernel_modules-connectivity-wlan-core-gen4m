@@ -3375,7 +3375,7 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 	u4Status = prErrRecoveryCtrl->u4Status;
 	prErrRecoveryCtrl->u4Status = 0;
 
-	if (prAdapter->rWifiVar.fgEnableSer == FALSE)
+	if (prAdapter->rWifiVar.fgEnableSerL1 == FALSE)
 		return;
 
 	switch (prErrRecoveryCtrl->eErrRecovState) {
