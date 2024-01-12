@@ -8,18 +8,13 @@
  *******************************************************************************
  */
 
-#ifdef MT6639
-#define CONFIG_CONNFEM_VER 1
-#else
-#define CONFIG_CONNFEM_VER 2
-#endif
 /*******************************************************************************
  *                    E X T E R N A L   R E F E R E N C E S
  *******************************************************************************
  */
 #include "precomp.h"
 #if (CFG_SUPPORT_CONNFEM == 1)
-#include "connfem.h"
+#include "connfem_api.h"
 #endif
 
 /*******************************************************************************
@@ -29,6 +24,9 @@
 
 #define PALIGN_4(_value)             (((_value) + 3) & ~3u)
 
+#if (CFG_SUPPORT_CONNFEM == 1) && !defined(CONNFEM_API_VERSION)
+#define CONNFEM_API_VERSION 1
+#endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -72,7 +70,7 @@ struct LAA_TAG_FORMAT {
 };
 #endif
 
-#if ((CONFIG_CONNFEM_VER >= 2) && (CFG_SUPPORT_CONNFEM == 1))
+#if ((CFG_SUPPORT_CONNFEM == 1) && (CONNFEM_API_VERSION >= 2))
 
 #define PHYACT_MAX_FEM_NUM 8
 #define PHYACT_MAX_PIN_NUM 6
@@ -216,7 +214,7 @@ struct PHYACT_CONN_FEM_SPDT_V2_T {
 
 };
 
-#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+#endif /* #if(CONNFEM_API_VERSION >= 2) */
 
 
 uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
@@ -519,7 +517,7 @@ exit:
 	return u4Status;
 }
 
-#if ((CONFIG_CONNFEM_VER >= 2) && (CFG_SUPPORT_CONNFEM == 1))
+#if ((CFG_SUPPORT_CONNFEM == 1) && (CONNFEM_API_VERSION >= 2))
 
 uint8_t _AddConnfemSkuTag(struct ADAPTER *prAdapter,
 	uint8_t *au1TagBuf,
@@ -879,7 +877,7 @@ exit:
 	return u4Status;
 }
 
-#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+#endif /* #if(CONNFEM_API_VERSION >= 2) */
 
 uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 	uint16_t u2Tag,
@@ -1250,7 +1248,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 	if (g_fgPreCal == FALSE) {
 		/* Setup calibration data from backup file */
 #if (CFG_SUPPORT_CONNFEM == 1)
-#if (CONFIG_CONNFEM_VER >= 2)
+#if (CONNFEM_API_VERSION >= 2)
 		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
 			DBGLOG(INIT, INFO, "connfem sku support");
 
@@ -1261,7 +1259,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 			wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
 			0);
-#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+#endif /* #if(CONNFEM_API_VERSION >= 2) */
 #endif /*#if (CFG_SUPPORT_CONNFEM == 1) */
 
 #if CFG_MTK_ANDROID_WMT
@@ -1278,7 +1276,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 	} else {
 #if (CFG_SUPPORT_CONNFEM == 1)
 
-#if (CONFIG_CONNFEM_VER >= 2)
+#if (CONNFEM_API_VERSION >= 2)
 		if (connfem_is_available(CONNFEM_TYPE_SKU)) {
 			DBGLOG(INIT, INFO, "connfem sku support");
 
@@ -1289,11 +1287,11 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 			wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
 			0);
-#else /* #if(CONFIG_CONNFEM_VER >= 2) */
+#else /* #if(CONNFEM_API_VERSION >= 2) */
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
 			0);
-#endif /* #if(CONFIG_CONNFEM_VER >= 2) */
+#endif /* #if(CONNFEM_API_VERSION >= 2) */
 
 #else /* #if (CFG_SUPPORT_CONNFEM == 1) */
 		wlanSendPhyAction(prAdapter,

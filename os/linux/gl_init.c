@@ -185,6 +185,11 @@ char *gprifnamexonv = "";
 module_param_named(xonvram, gprifnamexonv, charp, 0000);
 #endif
 
+#if (CFG_SUPPORT_CONNFEM == 1 && CFG_CONNFEM_DEFAULT == 1)
+uint32_t gu4ConnfemId;
+module_param_named(connfemid, gu4ConnfemId, uint, 0000);
+#endif
+
 /* NIC interface name */
 #ifdef CFG_COMBO_SLT_GOLDEN
 #define NIC_INF_NAME    "ra%d"
@@ -4157,6 +4162,13 @@ static uint8_t wlanXonvBufHandler(void *ctx,
 	return 0;
 }
 
+#endif
+
+#if (CFG_SUPPORT_CONNFEM == 1 && CFG_CONNFEM_DEFAULT == 1)
+uint32_t wlanConnFemGetId(void)
+{
+	return gu4ConnfemId;
+}
 #endif
 
 static void wlanCreateWirelessDevice(void)
