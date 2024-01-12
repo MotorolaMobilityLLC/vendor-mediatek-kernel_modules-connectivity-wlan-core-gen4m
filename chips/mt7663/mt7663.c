@@ -233,6 +233,7 @@ struct CHIP_DBG_OPS mt7663_debug_ops = {
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 #endif
+	.showHifInfo = NULL,
 };
 
 /* Litien code refine to support multi chip */

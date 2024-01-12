@@ -132,6 +132,41 @@ struct PCIE_CHIP_CR_MAPPING connac2x2_bus2chip_cr_mapping[] = {
 };
 #endif /* _HIF_PCIE || _HIF_AXI */
 
+void connac2x2ShowHifInfo(IN struct ADAPTER *prAdapter)
+{
+	uint32_t u4Value = 0;
+
+	/* conn2ap axi master sleep info */
+	HAL_MCR_RD(prAdapter, 0xBC010, &u4Value);
+	DBGLOG(HAL, INFO,
+		"Conn2ap axi master sleep prot info: 0x%08x\n", u4Value);
+
+	/* conn_mcu2ap axi master sleep info */
+	HAL_MCR_RD(prAdapter, 0xBC014, &u4Value);
+	DBGLOG(HAL, INFO,
+		"Conn_mcu2ap axi master sleep info: 0x%08x\n", u4Value);
+
+	/* conn2ap axi gals bus info */
+	HAL_MCR_RD(prAdapter, 0xBC018, &u4Value);
+	DBGLOG(HAL, INFO, "Conn2ap axi gals bus info: 0x%08x\n", u4Value);
+
+	/* conn2ap mux4to1 debug info */
+	HAL_MCR_RD(prAdapter, 0xBC01C, &u4Value);
+	DBGLOG(HAL, INFO, "Conn2ap mux4to1 debug info: 0x%08x\n", u4Value);
+
+	/* conn_hif_off bus busy info */
+	HAL_MCR_RD(prAdapter, 0xBC020, &u4Value);
+	DBGLOG(HAL, INFO, "Conn_hif_off bus busy info: 0x%08x\n", u4Value);
+
+	/* conn_hif_on misc info */
+	HAL_MCR_RD(prAdapter, 0x0713C, &u4Value);
+	DBGLOG(HAL, INFO, "Conn_hif_on misc info: 0x%08x\n", u4Value);
+
+	/* conn_on_host debug flag */
+	HAL_MCR_RD(prAdapter, 0xC1144, &u4Value);
+	DBGLOG(HAL, INFO, "Conn_on_host debug flag: 0x%08x\n", u4Value);
+}
+
 void connac2x2ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
 	uint8_t *pucNameIdx, uint8_t ucMaxNameIdx)
@@ -259,12 +294,14 @@ struct CHIP_DBG_OPS connac2x2_debug_ops = {
 	.showPleInfo = halShowPleInfo,
 	.showCsrInfo = halShowHostCsrInfo,
 	.showDmaschInfo = halShowDmaschInfo,
+	.showHifInfo = connac2x2ShowHifInfo,
 #else
 	.showPdmaInfo = NULL,
 	.showPseInfo = NULL,
 	.showPleInfo = NULL,
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
+	.showHifInfo = NULL,
 #endif
 };
 
