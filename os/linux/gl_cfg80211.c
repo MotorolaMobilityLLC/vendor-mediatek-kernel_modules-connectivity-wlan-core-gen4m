@@ -6675,7 +6675,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 			&u4SetInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {
-		DBGLOG(INIT, WARN, "set MAC%f addr fail 0x%x\n",
+		DBGLOG(INIT, WARN, "set MAC%d addr fail 0x%x\n",
 			ucAisIndex, rStatus);
 	} else {
 		kalMemCopy(prDevHandler->dev_addr,

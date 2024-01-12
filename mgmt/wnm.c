@@ -663,7 +663,7 @@ void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
 
 	return;
 fail:
-	DBGLOG(WNM, WARN, "MBO IE parsing failed (id=%u len=%u left=%zu)",
+	DBGLOG(WNM, WARN, "MBO IE parsing failed (id=%u len=%u left=%hu)",
 		   id, elen, len);
 }
 #endif
@@ -686,6 +686,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	uint8_t *pucOptInfo = NULL;
 	uint8_t ucRequestMode = 0;
 	uint16_t u2TmpLen = 0;
+	uint16_t u2SubIElen = 0;
 	struct MSG_AIS_BSS_TRANSITION *prMsg = NULL;
 	uint8_t ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 	uint8_t fgNeedResponse = FALSE;
@@ -740,14 +741,15 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		u2TmpLen += sizeof(*prBssTermDuration);
 	}
 	if (ucRequestMode & WNM_BSS_TM_REQ_ESS_DISASSOC_IMMINENT) {
-		if (prSwRfb->u2PacketLen < u2TmpLen + pucOptInfo[0]) {
+		u2SubIElen = pucOptInfo[0];
+		if (prSwRfb->u2PacketLen < u2TmpLen + u2SubIElen) {
 			DBGLOG(WNM, WARN,
 		       "BTM: Request frame length is less than a standard BTM frame\n");
 			return;
 		}
 		kalMemCopy(prBtmParam->aucSessionURL, &pucOptInfo[1],
-			   pucOptInfo[0]);
-		prBtmParam->ucSessionURLLen = pucOptInfo[0];
+			   u2SubIElen);
+		prBtmParam->ucSessionURLLen = u2SubIElen;
 		u2TmpLen += prBtmParam->ucSessionURLLen + 1;
 		pucOptInfo += prBtmParam->ucSessionURLLen + 1;
 	}
@@ -798,7 +800,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	     (ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) &&
 	     !(ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED))) {
 		DBGLOG(WNM, WARN,
-			"WNM: Invalid Frame mode (d,a,p)=(%d,%d,%d)\n",
+			"WNM: Invalid Frame mode (d,a,p)=(%u,%u,%u)\n",
 			ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT,
 			ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED,
 			ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED);
