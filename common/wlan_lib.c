@@ -8602,7 +8602,7 @@ void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
 		kalSprintf(aucKey, "SwCtrl%d", i);
 
 		/* get nothing */
-		if (wlanCfgGet(prAdapter, aucKey, aucValue, "",
+		if (wlanCfgGet(prAdapter, aucKey, aucValue, NULL,
 			       0) != WLAN_STATUS_SUCCESS)
 			continue;
 		if (!kalStrCmp(aucValue, ""))
@@ -8662,7 +8662,7 @@ void wlanCfgSetChip(struct ADAPTER *prAdapter)
 		kalSnprintf(aucKey, sizeof(aucKey), "SetChip%d", i);
 
 		/* get nothing */
-		if (wlanCfgGet(prAdapter, aucKey, aucValue, "",
+		if (wlanCfgGet(prAdapter, aucKey, aucValue, NULL,
 			       0) != WLAN_STATUS_SUCCESS)
 			continue;
 		if (!kalStrCmp(aucValue, ""))
@@ -8703,7 +8703,7 @@ void wlanCfgSetDebugLevel(struct ADAPTER *prAdapter)
 		kalSprintf(aucKey, "DbgLevel%d", i);
 
 		/* get nothing */
-		if (wlanCfgGet(prAdapter, aucKey, aucValue, "",
+		if (wlanCfgGet(prAdapter, aucKey, aucValue, NULL,
 			       0) != WLAN_STATUS_SUCCESS)
 			continue;
 		if (!kalStrCmp(aucValue, ""))
@@ -8764,7 +8764,7 @@ void wlanCfgSetCountryCode(struct ADAPTER *prAdapter)
 	int8_t aucValue[WLAN_CFG_VALUE_LEN_MAX];
 
 	/* Apply COUNTRY Config */
-	if (wlanCfgGet(prAdapter, "Country", aucValue, "",
+	if (wlanCfgGet(prAdapter, "Country", aucValue, NULL,
 		       0) == WLAN_STATUS_SUCCESS) {
 		prAdapter->rWifiVar.u2CountryCode =
 			(((uint16_t) aucValue[0]) << 8) |
@@ -8900,8 +8900,24 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(
 
 }
 
-
-
+/*----------------------------------------------------------------------------*/
+/*!
+ * wlanCfgGet() - Get value by key. If key is not exist, set default value.
+ * @prAdapter:    Pointer of Adapter Data Structure.
+ * @pucKey:       Key to search in @prAdapter.
+ * @pucValue:     The value get from @prAdapter or setted by @pucValueDef.
+ * @pucValueDef:  The default value if @pucKey is not exist in @prAdapter.
+ * @u4Flags:      Flags for wlanCfgGetEntry().
+ *
+ * For @pucValueDef, we expect to pass NULL instead of "" if caller don't want
+ * to set default value. Otherwise, passing none NULL value will always return
+ * WLAN_STATUS_SUCCESS.
+ *
+ * Return: WLAN_STATUS_SUCCESS  @pucValue are setted.
+ *         WLAN_STATUS_FAILURE  @pucKey is not exist in @prAdapter, and
+ *                              @pucValueDef is NULL.
+ */
+/*----------------------------------------------------------------------------*/
 uint32_t wlanCfgGet(struct ADAPTER *prAdapter,
 		    const int8_t *pucKey, int8_t *pucValue, int8_t *pucValueDef,
 		    uint32_t u4Flags)
@@ -8919,9 +8935,11 @@ uint32_t wlanCfgGet(struct ADAPTER *prAdapter,
 			   WLAN_CFG_VALUE_LEN_MAX);
 		return WLAN_STATUS_SUCCESS;
 	}
-	if (pucValueDef)
+	if (pucValueDef) {
 		kalStrnCpy(pucValue, pucValueDef,
 			   WLAN_CFG_VALUE_LEN_MAX);
+		return WLAN_STATUS_SUCCESS;
+	}
 	return WLAN_STATUS_FAILURE;
 
 
@@ -12286,6 +12304,7 @@ uint32_t wlanCfgSetGetFw(struct ADAPTER *prAdapter, const char *fwBuffer,
 			 int cmdNum, enum CMD_TYPE cmdType)
 {
 	struct CMD_HEADER *pcmdV1Header = NULL;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
 
 	pcmdV1Header = (struct CMD_HEADER *)
 			kalMemAlloc(sizeof(struct CMD_HEADER), VIR_MEM_TYPE);
@@ -12300,12 +12319,16 @@ uint32_t wlanCfgSetGetFw(struct ADAPTER *prAdapter, const char *fwBuffer,
 	pcmdV1Header->cmdBufferLen = cmdNum * sizeof(struct CMD_FORMAT_V1);
 	kalMemCopy(pcmdV1Header->buffer, fwBuffer, pcmdV1Header->cmdBufferLen);
 
-	wlanSendSetQueryCmd(prAdapter, CMD_ID_GET_SET_CUSTOMER_CFG,
+	rStatus = wlanSendSetQueryCmd(prAdapter, CMD_ID_GET_SET_CUSTOMER_CFG,
 				TRUE, FALSE, FALSE,
 				NULL, NULL,
 				sizeof(struct CMD_HEADER),
 				(uint8_t *) pcmdV1Header,
 				NULL, 0);
+
+	if (rStatus == WLAN_STATUS_FAILURE)
+		DBGLOG(INIT, INFO, "kalIoctl wifiSefCFG fail 0x%x\n", rStatus);
+
 	kalMemFree(pcmdV1Header, VIR_MEM_TYPE, sizeof(struct CMD_HEADER));
 	return WLAN_STATUS_SUCCESS;
 }

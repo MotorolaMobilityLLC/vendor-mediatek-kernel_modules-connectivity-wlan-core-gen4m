@@ -1919,11 +1919,11 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 				ucBssIdx, band_hint,
 				prAdapter->pu4TxTimePerLevels,
 				prAdapter->u4TxTimePerLevelsSize);
-		DBGLOG(REQ, TRACE, "Collected %u bytes for LLS", ptr - buf);
+		DBGLOG(REQ, TRACE, "Collected %td bytes for LLS", ptr - buf);
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);
 		if (!skb) {
-			DBGLOG(REQ, WARN, "allocate skb %u bytes failed",
+			DBGLOG(REQ, WARN, "allocate skb %td bytes failed",
 			       ptr - buf);
 			rStatus = -ENOMEM;
 			break;
