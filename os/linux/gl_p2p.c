@@ -81,187 +81,6 @@ struct wireless_dev *gprP2pRoleWdev[KAL_P2P_NUM];
 struct net_device *gPrP2pDev[KAL_P2P_NUM];
 uint32_t g_u4DevIdx[KAL_P2P_NUM];
 
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-static struct cfg80211_ops mtk_p2p_ops = {
-#if (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0)
-	/* Froyo */
-	.add_virtual_intf = mtk_p2p_cfg80211_add_iface,
-	.change_virtual_intf = mtk_p2p_cfg80211_change_iface,	/* 1 st */
-	.del_virtual_intf = mtk_p2p_cfg80211_del_iface,
-	.change_bss = mtk_p2p_cfg80211_change_bss,
-	.scan = mtk_p2p_cfg80211_scan,
-#if KERNEL_VERSION(4, 5, 0) <= CFG80211_VERSION_CODE
-	.abort_scan = mtk_p2p_cfg80211_abort_scan,
-#endif
-	.remain_on_channel = mtk_p2p_cfg80211_remain_on_channel,
-	.cancel_remain_on_channel = mtk_p2p_cfg80211_cancel_remain_on_channel,
-	.mgmt_tx = mtk_p2p_cfg80211_mgmt_tx,
-	.mgmt_tx_cancel_wait = mtk_p2p_cfg80211_mgmt_tx_cancel_wait,
-	.connect = mtk_p2p_cfg80211_connect,
-	.disconnect = mtk_p2p_cfg80211_disconnect,
-	.deauth = mtk_p2p_cfg80211_deauth,
-	.disassoc = mtk_p2p_cfg80211_disassoc,
-	.start_ap = mtk_p2p_cfg80211_start_ap,
-	.change_beacon = mtk_p2p_cfg80211_change_beacon,
-	.stop_ap = mtk_p2p_cfg80211_stop_ap,
-	.set_wiphy_params = mtk_p2p_cfg80211_set_wiphy_params,
-	.del_station = mtk_p2p_cfg80211_del_station,
-	.set_bitrate_mask = mtk_p2p_cfg80211_set_bitrate_mask,
-	.mgmt_frame_register = mtk_p2p_cfg80211_mgmt_frame_register,
-	.get_station = mtk_p2p_cfg80211_get_station,
-	.add_key = mtk_p2p_cfg80211_add_key,
-	.get_key = mtk_p2p_cfg80211_get_key,
-	.del_key = mtk_p2p_cfg80211_del_key,
-	.set_default_key = mtk_p2p_cfg80211_set_default_key,
-	.set_default_mgmt_key = mtk_p2p_cfg80211_set_mgmt_key,
-	.set_default_beacon_key = mtk_p2p_cfg80211_set_beacon_key,
-	.join_ibss = mtk_p2p_cfg80211_join_ibss,
-	.leave_ibss = mtk_p2p_cfg80211_leave_ibss,
-	.set_tx_power = mtk_p2p_cfg80211_set_txpower,
-	.get_tx_power = mtk_p2p_cfg80211_get_txpower,
-	.set_power_mgmt = mtk_p2p_cfg80211_set_power_mgmt,
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-	.start_radar_detection = mtk_p2p_cfg80211_start_radar_detection,
-#if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
-	.channel_switch = mtk_p2p_cfg80211_channel_switch,
-#endif
-#endif
-#ifdef CONFIG_NL80211_TESTMODE
-	.testmode_cmd = mtk_p2p_cfg80211_testmode_cmd,
-#endif
-#endif
-};
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
-
-static const struct wiphy_vendor_command mtk_p2p_vendor_ops[] = {
-	{
-		{
-			.vendor_id = GOOGLE_OUI,
-			.subcmd = WIFI_SUBCMD_GET_CHANNEL_LIST
-		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-				| WIPHY_VENDOR_CMD_NEED_NETDEV,
-		.doit = mtk_cfg80211_vendor_get_channel_list
-	},
-	{
-		{
-			.vendor_id = GOOGLE_OUI,
-			.subcmd = WIFI_SUBCMD_SET_COUNTRY_CODE
-		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-				| WIPHY_VENDOR_CMD_NEED_NETDEV,
-		.doit = mtk_cfg80211_vendor_set_country_code
-	},
-#if CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST
-	/* P2P get preferred freq list */
-	{
-		{
-			.vendor_id = OUI_QCA,
-			.subcmd = NL80211_VENDOR_SUBCMD_GET_PREFER_FREQ_LIST
-		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-				| WIPHY_VENDOR_CMD_NEED_NETDEV
-				| WIPHY_VENDOR_CMD_NEED_RUNNING,
-		.doit = mtk_cfg80211_vendor_get_preferred_freq_list
-	},
-#endif /* CFG_SUPPORT_P2P_PREFERRED_FREQ_LIST */
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-	{
-		{
-			.vendor_id = OUI_QCA,
-			.subcmd = NL80211_VENDOR_SUBCMD_ACS
-		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-				| WIPHY_VENDOR_CMD_NEED_NETDEV
-				| WIPHY_VENDOR_CMD_NEED_RUNNING,
-		.doit = mtk_cfg80211_vendor_acs
-	},
-#endif
-#if CFG_SUPPORT_DFS_MASTER
-	{
-		{
-			.vendor_id = OUI_QCA,
-			.subcmd = NL80211_VENDOR_SUBCMD_DFS_CAPABILITY
-		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-				| WIPHY_VENDOR_CMD_NEED_NETDEV,
-		.doit = mtk_cfg80211_vendor_dfs_capability
-	},
-#endif
-	{
-		{
-			.vendor_id = OUI_QCA,
-			.subcmd = NL80211_VENDOR_SUBCMD_GET_FEATURES
-		},
-		.flags = WIPHY_VENDOR_CMD_NEED_WDEV
-				| WIPHY_VENDOR_CMD_NEED_NETDEV,
-		.doit = mtk_cfg80211_vendor_get_features
-	},
-};
-
-static const struct nl80211_vendor_cmd_info mtk_p2p_vendor_events[] = {
-#if CFG_AUTO_CHANNEL_SEL_SUPPORT
-	{
-		.vendor_id = OUI_QCA,
-		.subcmd = NL80211_VENDOR_SUBCMD_ACS
-	},
-#endif
-};
-
-
-#endif
-
-/* There isn't a lot of sense in it, but you can transmit anything you like */
-static const struct ieee80211_txrx_stypes
-mtk_cfg80211_default_mgmt_stypes[NUM_NL80211_IFTYPES] = {
-	[NL80211_IFTYPE_ADHOC] = {
-			.tx = 0xffff,
-			.rx = BIT(IEEE80211_STYPE_ACTION >> 4)
-			},
-	[NL80211_IFTYPE_STATION] = {
-			.tx = 0xffff,
-			.rx = BIT(IEEE80211_STYPE_ACTION >> 4)
-				| BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-			},
-	[NL80211_IFTYPE_AP] = {
-			.tx = 0xffff,
-			.rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-				| BIT(IEEE80211_STYPE_ACTION >> 4)
-#if CFG_SUPPORT_SOFTAP_WPA3
-				| BIT(IEEE80211_STYPE_ASSOC_REQ >> 4) |
-				  BIT(IEEE80211_STYPE_REASSOC_REQ >> 4) |
-				  BIT(IEEE80211_STYPE_DISASSOC >> 4) |
-				  BIT(IEEE80211_STYPE_AUTH >> 4) |
-				  BIT(IEEE80211_STYPE_DEAUTH >> 4)
-#endif
-			},
-	[NL80211_IFTYPE_AP_VLAN] = {
-			/* copy AP */
-			.tx = 0xffff,
-		    .rx = BIT(IEEE80211_STYPE_ASSOC_REQ >> 4) |
-				BIT(IEEE80211_STYPE_REASSOC_REQ >> 4) |
-				BIT(IEEE80211_STYPE_PROBE_REQ >> 4) |
-				BIT(IEEE80211_STYPE_DISASSOC >> 4) |
-				BIT(IEEE80211_STYPE_AUTH >> 4) |
-				BIT(IEEE80211_STYPE_DEAUTH >> 4) |
-				BIT(IEEE80211_STYPE_ACTION >> 4)
-			},
-	[NL80211_IFTYPE_P2P_CLIENT] = {
-			.tx = 0xffff,
-			.rx = BIT(IEEE80211_STYPE_ACTION >> 4)
-				| BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-			},
-	[NL80211_IFTYPE_P2P_GO] = {
-			.tx = 0xffff,
-			.rx = BIT(IEEE80211_STYPE_PROBE_REQ >> 4)
-				| BIT(IEEE80211_STYPE_ACTION >> 4)
-			}
-};
-
-#endif
-#endif
-
 static const struct iw_priv_args rP2PIwPrivTable[] = {
 	{
 	 .cmd = IOC_P2P_CFG_DEVICE,
@@ -338,24 +157,6 @@ static const struct iw_priv_args rP2PIwPrivTable[] = {
 	 .name = "get_oid"}
 };
 
-#if 0
-const struct iw_handler_def mtk_p2p_wext_handler_def = {
-	.num_standard = (__u16) sizeof(rP2PIwStandardHandler)
-					/ sizeof(iw_handler),
-/* .num_private        = (__u16)sizeof(rP2PIwPrivHandler)/sizeof(iw_handler), */
-	.num_private_args = (__u16) sizeof(rP2PIwPrivTable)
-					/ sizeof(struct iw_priv_args),
-	.standard = rP2PIwStandardHandler,
-/* .private            = rP2PIwPrivHandler, */
-	.private_args = rP2PIwPrivTable,
-#if CFG_SUPPORT_P2P_RSSI_QUERY
-	.get_wireless_stats = mtk_p2p_wext_get_wireless_stats,
-#else
-	.get_wireless_stats = NULL,
-#endif
-};
-#endif
-
 #ifdef CONFIG_PM
 static const struct wiphy_wowlan_support mtk_p2p_wowlan_support = {
 	.flags = WIPHY_WOWLAN_DISCONNECT | WIPHY_WOWLAN_ANY,
@@ -405,10 +206,7 @@ mtk_iface_combinations_sta[] = {
 static const struct ieee80211_iface_combination
 mtk_iface_combinations_p2p[] = {
 	{
-#if CFG_ENABLE_UNIFY_WIPHY
-		/* The 2 MCC channels case has been verified */
-		.num_different_channels = 2,
-#elif defined(CFG_NUM_DIFFERENT_CHANNELS_P2P)
+#if defined(CFG_NUM_DIFFERENT_CHANNELS_P2P)
 		.num_different_channels = CFG_NUM_DIFFERENT_CHANNELS_P2P,
 #else
 		.num_different_channels = 2,
@@ -966,13 +764,11 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
-#if CFG_ENABLE_UNIFY_WIPHY
 		/* don't unregister the dev that share with the AIS */
 		if (wlanIsAisDev(prP2PInfo->prDevHandler)) {
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			continue;
 		}
-#endif
 
 		prRoleDev = prP2PInfo->aprRoleHandler;
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -1147,9 +943,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	/* set ucIsP2p for P2P function device */
 	if (fgIsApMode == TRUE) {
 		prP2pWdev->iftype = NL80211_IFTYPE_AP;
-#if CFG_ENABLE_UNIFY_WIPHY
 		prNetDevPriv->ucIsP2p = FALSE;
-#endif
 #if CFG_MTK_MDDP_SUPPORT
 		prNetDevPriv->ucMddpSupport = TRUE;
 #else
@@ -1157,9 +951,7 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 #endif
 	} else {
 		prP2pWdev->iftype = NL80211_IFTYPE_P2P_CLIENT;
-#if CFG_ENABLE_UNIFY_WIPHY
 		prNetDevPriv->ucIsP2p = TRUE;
-#endif
 		prNetDevPriv->ucMddpSupport = FALSE;
 	}
 
@@ -1253,10 +1045,6 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 	struct net_device *prP2pDev = NULL;
 	struct wiphy *prWiphy = NULL;
 	const char *prSetDevName;
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-	struct GL_HIF_INFO *prHif = NULL;
-	struct device *prDev;
-#endif
 	u_int8_t fgSkipRole = SKIP_ROLE_NONE;
 
 	GLUE_SPIN_LOCK_DECLARATION();
@@ -1362,14 +1150,6 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			return FALSE;
 		}
 
-#if (CFG_ENABLE_UNIFY_WIPHY == 0)
-		prHif = &prGlueInfo->rHifInfo;
-		glGetHifDev(prHif, &prDev);
-		if (!prDev)
-			DBGLOG(INIT, ERROR, "P2P[%d] parent dev is NULL\n", i);
-		set_wiphy_dev(prWiphy, prDev);
-#endif
-
 		i++;
 		/* prP2pInfo is alloc at glSetupP2P()->p2PAllocInfo() */
 		prAdapter->prP2pInfo->u4DeviceNum++;
@@ -1391,7 +1171,6 @@ err_alloc_netdev:
 	return FALSE;
 }				/* end of glRegisterP2P() */
 
-#if CFG_ENABLE_UNIFY_WIPHY
 u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 {
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
@@ -1435,126 +1214,6 @@ u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
 	return FALSE;
 #endif
 }
-#else	/* (CFG_ENABLE_UNIFY_WIPHY == 0) */
-u_int8_t glP2pCreateWirelessDevice(struct GLUE_INFO *prGlueInfo)
-{
-#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
-	struct wiphy *prWiphy = NULL;
-	struct wireless_dev *prWdev = NULL;
-	uint8_t	i = 0;
-
-	prWdev = kzalloc(sizeof(struct wireless_dev), GFP_KERNEL);
-	if (!prWdev) {
-		DBGLOG(P2P, ERROR,
-			"allocate p2p wireless device fail, no memory\n");
-		return FALSE;
-	}
-	/* 1. allocate WIPHY */
-	prWiphy = wiphy_new(&mtk_p2p_ops, sizeof(struct GLUE_INFO *));
-	if (!prWiphy) {
-		DBGLOG(P2P, ERROR, "unable to allocate wiphy for p2p\n");
-		goto free_wdev;
-	}
-
-	prWiphy->interface_modes = BIT(NL80211_IFTYPE_AP)
-	    | BIT(NL80211_IFTYPE_P2P_CLIENT)
-	    | BIT(NL80211_IFTYPE_P2P_GO)
-	    | BIT(NL80211_IFTYPE_STATION);
-
-	prWiphy->software_iftypes |= BIT(NL80211_IFTYPE_P2P_DEVICE);
-
-	prWiphy->iface_combinations = p_mtk_iface_combinations_p2p;
-	prWiphy->n_iface_combinations = mtk_iface_combinations_p2p_num;
-
-	prWiphy->bands[KAL_BAND_2GHZ] = &mtk_band_2ghz;
-	prWiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	prWiphy->bands[KAL_BAND_6GHZ] = &mtk_band_6ghz;
-	DBGLOG(INIT, INFO, "P2P support 6G\n");
-#endif
-
-	prWiphy->mgmt_stypes = mtk_cfg80211_default_mgmt_stypes;
-	prWiphy->max_remain_on_channel_duration = 5000;
-	prWiphy->n_cipher_suites = 5;
-	prWiphy->cipher_suites = mtk_cipher_suites;
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	prWiphy->flags = WIPHY_FLAG_CUSTOM_REGULATORY
-				| WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
-				| WIPHY_FLAG_HAVE_AP_SME;
-#else
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
-				| WIPHY_FLAG_HAVE_AP_SME
-				| WIPHY_FLAG_HAS_CHANNEL_SWITCH;
-	prWiphy->max_num_csa_counters = 2;
-#else
-	prWiphy->flags = WIPHY_FLAG_HAS_REMAIN_ON_CHANNEL
-				| WIPHY_FLAG_HAVE_AP_SME;
-#endif
-	prWiphy->regulatory_flags = REGULATORY_CUSTOM_REG;
-#endif
-	prWiphy->ap_sme_capa = 1;
-
-#if CFG_ENABLE_OFFCHANNEL_TX
-	prWiphy->flags |= WIPHY_FLAG_OFFCHAN_TX;
-#endif /* CFG_ENABLE_OFFCHANNEL_TX */
-	prWiphy->features |= NL80211_FEATURE_INACTIVITY_TIMER;
-
-	prWiphy->max_scan_ssids = MAX_SCAN_LIST_NUM;
-	prWiphy->max_scan_ie_len = MAX_SCAN_IE_LEN;
-	prWiphy->signal_type = CFG80211_SIGNAL_TYPE_MBM;
-#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
-	prWiphy->vendor_commands = mtk_p2p_vendor_ops;
-	prWiphy->n_vendor_commands = sizeof(mtk_p2p_vendor_ops)
-		/ sizeof(struct wiphy_vendor_command);
-	prWiphy->vendor_events = mtk_p2p_vendor_events;
-	prWiphy->n_vendor_events = ARRAY_SIZE(mtk_p2p_vendor_events);
-#endif
-
-#ifdef CONFIG_PM
-#if KERNEL_VERSION(3, 9, 0) > CFG80211_VERSION_CODE
-	prWiphy->wowlan = &mtk_p2p_wowlan_support;
-#endif
-#endif
-
-#if KERNEL_VERSION(3, 14, 0) < CFG80211_VERSION_CODE
-		prWiphy->max_ap_assoc_sta = P2P_MAXIMUM_CLIENT_COUNT;
-#endif
-
-	cfg80211_regd_set_wiphy(prWiphy);
-
-	/* 2.1 set priv as pointer to glue structure */
-	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
-	/* Here are functions which need rtnl_lock */
-	if (wiphy_register(prWiphy) < 0) {
-		DBGLOG(INIT, WARN, "fail to register wiphy for p2p\n");
-		goto free_wiphy;
-	}
-	prWdev->wiphy = prWiphy;
-
-	for (i = 0 ; i < KAL_P2P_NUM; i++) {
-		if (!gprP2pRoleWdev[i]) {
-			gprP2pRoleWdev[i] = prWdev;
-			DBGLOG(INIT, INFO,
-				"glP2pCreateWirelessDevice (%x)\n",
-				gprP2pRoleWdev[i]->wiphy);
-			break;
-		}
-	}
-
-	if (i == KAL_P2P_NUM)
-		DBGLOG(INIT, WARN, "fail to register wiphy to driver\n");
-
-	return TRUE;
-
-free_wiphy:
-	wiphy_free(prWiphy);
-free_wdev:
-	kfree(prWdev);
-#endif
-	return FALSE;
-}
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 /*---------------------------------------------------------------------------*/
 /*!

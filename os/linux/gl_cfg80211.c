@@ -6315,7 +6315,6 @@ end:
 	return 0;
 }
 
-#if CFG_ENABLE_UNIFY_WIPHY
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Check the net device is P2P net device (P2P GO/GC, AP), or not.
@@ -6817,8 +6816,7 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 		prChipInfo->txd_append_size;
 	prDevHandler->netdev_ops = &wlan_netdev_ops;
 #ifdef CONFIG_WIRELESS_EXT
-	prDevHandler->wireless_handlers =
-		&wext_handler_def;
+	prDevHandler->wireless_handlers = &wext_handler_def;
 #endif
 	netif_carrier_off(prDevHandler);
 	netif_tx_stop_all_queues(prDevHandler);
@@ -8690,7 +8688,6 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 	return mtk_p2p_cfg80211_get_txpower(wiphy, wdev, dbm);
 }
 #endif /* (CFG_ENABLE_WIFI_DIRECT_CFG_80211 != 0) */
-#endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 /*-----------------------------------------------------------------------*/
 /*!
