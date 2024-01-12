@@ -140,16 +140,17 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 	uint32_t rStatus;
 	enum ENUM_AA_STATE ePreviousState;
 	u_int8_t fgIsTransition;
+	uint32_t u4AuthAssocState;
 
 	if (!prStaRec)
 		return;
 
 	do {
-
-		if (prStaRec->eAuthAssocState < AA_STATE_NUM
+		u4AuthAssocState = prStaRec->eAuthAssocState;
+		if (u4AuthAssocState < AA_STATE_NUM
 				&& eNextState < AA_STATE_NUM) {
 			DBGLOG(SAA, STATE, "[SAA]TRANSITION: [%s] -> [%s]\n",
-				apucDebugAAState[prStaRec->eAuthAssocState],
+				apucDebugAAState[u4AuthAssocState],
 				apucDebugAAState[eNextState]);
 		}
 
