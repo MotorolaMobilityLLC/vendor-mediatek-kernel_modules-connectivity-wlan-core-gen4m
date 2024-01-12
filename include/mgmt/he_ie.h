@@ -504,6 +504,9 @@ enum ENUM_HEBA_TYPE {
 #define HE_SET_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[0] |=  HE_PHY_CAP0_CHAN_WIDTH_SET_BW40_2G)
 
+#define HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_2G(_aucHePhyCapInfo) \
+	(_aucHePhyCapInfo[0] & HE_PHY_CAP0_CHAN_WIDTH_SET_BW40_2G)
+
 #define HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW40_BW80_5G(_aucHePhyCapInfo) \
 	(_aucHePhyCapInfo[0] & HE_PHY_CAP0_CHAN_WIDTH_SET_BW40_BW80_5G)
 
