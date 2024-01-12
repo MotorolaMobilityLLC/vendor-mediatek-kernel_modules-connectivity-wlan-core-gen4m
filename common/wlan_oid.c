@@ -126,13 +126,17 @@ static void setApUapsdEnable(struct ADAPTER *prAdapter, u_int8_t enable)
 {
 	struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT rUapsdParams;
 	uint32_t u4SetInfoLen = 0;
-	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIdx;
 
-	prBssInfo = prAdapter->aprBssInfo[NETWORK_TYPE_P2P];
-	if (prBssInfo)
-		rUapsdParams.ucBssIdx = prBssInfo->ucBssIndex; /* TODO: */
+	/* FIX ME: Add p2p role index selection */
+	if (p2pFuncRoleToBssIdx(
+		prAdapter, 0, &ucBssIdx) != WLAN_STATUS_SUCCESS)
+		return;
 
-	DBGLOG(OID, INFO, "setApUapsdEnable: %d, ucBssIdx: %d\n", enable, rUapsdParams.ucBssIdx);
+	DBGLOG(OID, INFO, "setApUapsdEnable: %d, ucBssIdx: %d\n",
+		enable, ucBssIdx);
+
+	rUapsdParams.ucBssIdx = ucBssIdx;
 
 	if (enable) {
 		prAdapter->rWifiVar.ucApUapsd = TRUE;
@@ -141,7 +145,8 @@ static void setApUapsdEnable(struct ADAPTER *prAdapter, u_int8_t enable)
 		rUapsdParams.fgEnAPSD_AcBk = 1;
 		rUapsdParams.fgEnAPSD_AcVi = 1;
 		rUapsdParams.fgEnAPSD_AcVo = 1;
-		rUapsdParams.ucMaxSpLen = 0; /* default: 0, do not limit delivery pkt number */
+		/* default: 0, do not limit delivery pkt number */
+		rUapsdParams.ucMaxSpLen = 0;
 	} else {
 		prAdapter->rWifiVar.ucApUapsd = FALSE;
 		rUapsdParams.fgEnAPSD = 0;
@@ -149,11 +154,13 @@ static void setApUapsdEnable(struct ADAPTER *prAdapter, u_int8_t enable)
 		rUapsdParams.fgEnAPSD_AcBk = 0;
 		rUapsdParams.fgEnAPSD_AcVi = 0;
 		rUapsdParams.fgEnAPSD_AcVo = 0;
-		rUapsdParams.ucMaxSpLen = 0; /* default: 0, do not limit delivery pkt number */
+		/* default: 0, do not limit delivery pkt number */
+		rUapsdParams.ucMaxSpLen = 0;
 	}
 	wlanoidSetUApsdParam(prAdapter,
-				   &rUapsdParams,
-				   sizeof(struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT), &u4SetInfoLen);
+		&rUapsdParams,
+		sizeof(struct PARAM_CUSTOM_UAPSD_PARAM_STRUCT),
+		&u4SetInfoLen);
 }
 
 #if CFG_ENABLE_STATISTICS_BUFFERING
@@ -6457,7 +6464,9 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 		} else if (u2SubId == 0x0101)
 			prAdapter->rWifiVar.ucRxShortGI = (uint8_t) u4Data;
 		else if (u2SubId == 0x0103) { /* AP Mode WMMPS */
-			DBGLOG(OID, INFO, "ApUapsd 0x10010103 cmd received: %d\n", u4Data);
+			DBGLOG(OID, INFO,
+				"ApUapsd 0x10010103 cmd received: %d\n",
+				u4Data);
 			setApUapsdEnable(prAdapter, (u_int8_t) u4Data);
 		}
 		else if (u2SubId == 0x0110) {

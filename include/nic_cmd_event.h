@@ -1206,15 +1206,17 @@ struct CMD_ACCESS_EEPROM {
 };
 
 struct CMD_CUSTOM_NOA_PARAM_STRUCT {
-	uint32_t  u4NoaDurationMs;
-	uint32_t  u4NoaIntervalMs;
-	uint32_t  u4NoaCount;
-	uint8_t	 ucBssIdx;
-	uint8_t   aucReserved[3];
+	uint32_t u4NoaDurationMs;
+	uint32_t u4NoaIntervalMs;
+	uint32_t u4NoaCount;
+	uint8_t	ucBssIdx;
+	uint8_t aucReserved[3];
 };
 
 struct CMD_CUSTOM_OPPPS_PARAM_STRUCT {
 	uint32_t u4CTwindowMs;
+	uint8_t	ucBssIdx;
+	uint8_t aucReserved[3];
 };
 
 struct CMD_CUSTOM_UAPSD_PARAM_STRUCT {
