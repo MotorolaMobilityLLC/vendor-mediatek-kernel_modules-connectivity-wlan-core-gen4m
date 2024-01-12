@@ -527,7 +527,9 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 	struct SCAN_INFO *prScanInfo;
 	struct SCAN_PARAM *prScanParam;
 	struct CMD_SCAN_CANCEL rCmdScanCancel;
-
+#if (CFG_SUPPORT_WIFI_RNR == 1)
+	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
+#endif
 	ASSERT(prMsgHdr);
 
 	prScanCancel = (struct MSG_SCN_SCAN_CANCEL *) prMsgHdr;
@@ -535,6 +537,14 @@ void scnFsmMsgAbort(IN struct ADAPTER *prAdapter, IN struct MSG_HDR *prMsgHdr)
 	prScanParam = &prScanInfo->rScanParam;
 
 	if (prScanInfo->eCurrentState != SCAN_STATE_IDLE) {
+#if (CFG_SUPPORT_WIFI_RNR == 1)
+		while (!LINK_IS_EMPTY(&prScanInfo->rNeighborAPInfoList)) {
+			LINK_REMOVE_HEAD(&prScanInfo->rNeighborAPInfoList,
+				prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
+
+			cnmMemFree(prAdapter, prNeighborAPInfo);
+		}
+#endif
 		if (prScanCancel->ucSeqNum == prScanParam->ucSeqNum &&
 			prScanCancel->ucBssIndex == prScanParam->ucBssIndex) {
 			enum ENUM_SCAN_STATUS eStatus = SCAN_STATUS_DONE;
