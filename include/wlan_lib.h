@@ -692,6 +692,94 @@ struct WOW_CTRL {
 	uint8_t aucReserved2[3];
 };
 
+#if CFG_SUPPORT_MDNS_OFFLOAD
+#define MDNS_RESPONSE_RECORD_MAX_LEN	500
+#define MDNS_QUESTION_NAME_MAX_LEN	102
+#define MAX_MDNS_CACHE_NUM		4
+
+#define MDNS_CMD_ENABLE			1
+#define MDNS_CMD_DISABLE		2
+#define MDNS_CMD_ADD_RECORD		3
+#define MDNS_CMD_CLEAR_RECORD		4
+#define MDNS_CMD_DEL_RECORD		5
+
+#define MDNS_PAYLOAD_TYPE_LEN		2
+#define MDNS_PAYLOAD_CLASS_LEN		2
+#define MDNS_PAYLOAD_TTL_LEN		4
+#define MDNS_PAYLOAD_DATALEN_LEN	2
+
+#define MDNS_ELEM_TYPE_PTR		12
+#define MDNS_ELEM_TYPE_SRV		33
+#define MDNS_ELEM_TYPE_TXT		16
+#define MDNS_ELEM_TYPE_A		1
+
+#define MDNS_WAKEUP_BY_NO_MATCH_RECORD	BIT(0)
+#define MDNS_WAKEUP_BY_SUB_REQ		BIT(1)
+
+#define UDP_HEADER_LENGTH		8
+#define IPV4_HEADER_LENGTH		20
+
+struct WLAN_MAC_HEADER_QoS_T {
+	uint16_t u2FrameCtrl;
+	uint16_t DurationID;
+	uint8_t aucAddr1[MAC_ADDR_LEN];
+	uint8_t aucAddr2[MAC_ADDR_LEN];
+	uint8_t aucAddr3[MAC_ADDR_LEN];
+	uint16_t u2SeqCtrl;
+	uint16_t u2QosCtrl;
+};
+
+struct WLAN_MDNS_HDR_T {
+	uint16_t usMdnsId;
+	uint16_t usMdnsFlags;
+	uint16_t usQuestionCnt;
+	uint16_t usAnswerCnt;
+	uint16_t usAuthCnt;
+	uint16_t usAddtionCnt;
+};
+
+struct MDNS_TEMPLATE_T {
+	uint8_t name[MDNS_QUESTION_NAME_MAX_LEN];
+	uint8_t name_length;
+	uint16_t class;
+	uint16_t type;
+};
+
+struct MDNS_PARAM_T {
+	struct MDNS_TEMPLATE_T query_ptr;
+	struct MDNS_TEMPLATE_T query_srv;
+	struct MDNS_TEMPLATE_T query_txt;
+	struct MDNS_TEMPLATE_T query_a;
+	uint16_t response_len;
+	uint8_t response[MDNS_RESPONSE_RECORD_MAX_LEN];
+};
+
+struct MDNS_INFO_UPLAYER_T {
+	uint8_t ucCmd;
+	struct MDNS_PARAM_T mdns_param;
+};
+
+struct MDNS_PARAM_ENTRY_T {
+	struct LINK_ENTRY rLinkEntry;
+	struct MDNS_PARAM_T mdns_param;
+};
+
+struct CMD_MDNS_PARAM_T {
+	uint8_t ucCmd;
+	struct MDNS_PARAM_T mdns_param;
+	uint32_t u4RecordId;
+	uint8_t ucWakeFlag;
+	struct WLAN_MAC_HEADER_QoS_T aucMdnsMacHdr;
+	uint8_t aucMdnsIPHdr[IPV4_HEADER_LENGTH];
+	uint8_t aucMdnsUdpHdr[UDP_HEADER_LENGTH];
+};
+
+struct MDNS_INFO_T {
+	struct LINK rMdnsRecordList;
+	struct LINK rMdnsRecordFreeList;
+	struct MDNS_PARAM_ENTRY_T rMdnsEntry[MAX_MDNS_CACHE_NUM];
+};
+#endif /* CFG_SUPPORT_MDNS_OFFLOAD */
 #endif
 
 #if (CFG_SUPPORT_TWT == 1)

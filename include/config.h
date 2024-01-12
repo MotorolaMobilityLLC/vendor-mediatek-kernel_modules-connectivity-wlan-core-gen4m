@@ -276,6 +276,25 @@
 /* If skb_buff mark field marked with pre-defined value, change priority to VO*/
 #define CFG_CHANGE_PRIORITY_BY_SKB_MARK_FIELD	1
 
+/* Enable Mdns offload */
+#ifndef CFG_SUPPORT_MDNS_OFFLOAD
+#define CFG_SUPPORT_MDNS_OFFLOAD	0
+#endif
+
+#if CFG_SUPPORT_MDNS_OFFLOAD
+#ifndef CFG_SUPPORT_MDNS_OFFLOAD_GVA
+#define CFG_SUPPORT_MDNS_OFFLOAD_GVA 0
+#endif
+
+#if CFG_SUPPORT_MDNS_OFFLOAD_GVA
+#define CFG_SUPPORT_MDNS_OFFLOAD_TV 0
+#else
+#define CFG_SUPPORT_MDNS_OFFLOAD_TV 1
+#endif
+
+#define TEST_CODE_FOR_MDNS			0
+#endif
+
 #if KERNEL_VERSION(4, 4, 0) <= LINUX_VERSION_CODE
 #define CFG_SUPPORT_DATA_STALL			1
 #define CFG_SUPPORT_BIGDATA_PIP			1

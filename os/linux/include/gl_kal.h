@@ -1734,6 +1734,21 @@ uint32_t kalWriteIcsDumpFile(uint8_t *pucBuffer, uint16_t u2Size);
 void kalWowInit(IN struct GLUE_INFO *prGlueInfo);
 void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 		   uint8_t enable);
+#if CFG_SUPPORT_MDNS_OFFLOAD
+void kalMdnsProcess(IN struct GLUE_INFO *prGlueInfo,
+		IN struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+void kalMdnsOffloadInit(IN struct ADAPTER *prAdapter);
+struct MDNS_PARAM_ENTRY_T *mdnsAllocateParamEntry(IN struct ADAPTER *prAdapter);
+void kalSendClearRecordToFw(struct GLUE_INFO *prGlueInfo);
+void kalSendMdnsRecordToFw(struct GLUE_INFO *prGlueInfo);
+void kalSendMdnsEnableToFw(struct GLUE_INFO *prGlueInfo);
+void kalAddMdnsRecord(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+void kalShowMdnsRecord(struct GLUE_INFO *prGlueInfo);
+#if CFG_SUPPORT_MDNS_OFFLOAD_GVA
+void kalProcessMdnsRespPkt(struct GLUE_INFO *prGlueInfo, uint8_t *pucMdnsHdr);
+#endif
+#endif /* CFG_SUPPORT_MDNS_OFFLOAD */
 #endif
 
 int main_thread(void *data);

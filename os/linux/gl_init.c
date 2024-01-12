@@ -1932,6 +1932,11 @@ int wlanDoIOCTL(struct net_device *prDev,
 #endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 	}  else if (i4Cmd == SIOCDEVPRIVATE + 2) {
 		ret = priv_support_ioctl(prDev, prIfReq, i4Cmd);
+	} else if (i4Cmd == SIOCDEVPRIVATE + 3) {
+		/* For mDNS offload template. */
+#if (CFG_SUPPORT_MDNS_OFFLOAD && CFG_SUPPORT_MDNS_OFFLOAD_TV)
+		ret = priv_support_mdns_offload(prDev, prIfReq, i4Cmd);
+#endif
 	} else {
 		DBGLOG(INIT, WARN, "Unexpected ioctl command: 0x%04x\n",
 		       i4Cmd);
