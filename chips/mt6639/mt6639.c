@@ -307,7 +307,9 @@ struct PCIE_CHIP_CR_MAPPING mt6639_bus2chip_cr_mapping[] = {
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
 	{0x7c010000, 0x100000, 0x10000}, /* CONN_INFRA */
+#if CFG_MTK_CCCI_SUPPORT
 	{0x7c030000, 0x1a0000, 0x10000}, /* CONN_INFRA_ON_CCIF */
+#endif
 	{0x70020000, 0x1f0000, 0x10000}, /* Reserved for CBTOP, can't switch */
 	{0x7c500000, MT6639_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x70000000, 0x1e0000, 0x9000},
