@@ -537,9 +537,6 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 			/* 9. indicate disconnection as default status */
 			kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 					WLAN_STATUS_MEDIA_DISCONNECT, NULL, 0);
-
-			/*10. send regulatory information to firmware */
-			rlmDomainSendInfoToFirmware(prAdapter);
 		}
 
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
@@ -9348,3 +9345,15 @@ wlanAdapterStartForLowLatency(IN struct ADAPTER *prAdapter)
 	return u4Status;
 }
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
+	const uint8_t *pcFileName, uint8_t *pucBuf,
+	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw)
+{
+	if (bReqFw)
+		return kalRequestFirmware(pcFileName, pucBuf,
+				 u4MaxFileLen, pu4ReadFileLen,
+				 prAdapter->prGlueInfo->prDev);
+
+	return kalReadToFile(pcFileName, pucBuf,
+				u4MaxFileLen, pu4ReadFileLen);
+}
