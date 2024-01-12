@@ -501,7 +501,6 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	/* 4 <1> Initiate FSM */
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
-	prRoamingFsmInfo->ucRecoverBitmap = 0;
 	prRoamingFsmInfo->u4BssIdxBmap = 0;
 
 	for (i = 0; i < MAX_BSSID_NUM; i++)
@@ -1047,8 +1046,6 @@ void roamingFsmRunEventStart(struct ADAPTER *prAdapter,
 		/* Step to next state */
 		roamingFsmSteps(prAdapter, eNextState, ucBssIndex);
 	}
-
-	prRoamingFsmInfo->ucRecoverBitmap = 0;
 }				/* end of roamingFsmRunEventStart() */
 
 /*----------------------------------------------------------------------------*/
@@ -1278,7 +1275,6 @@ void roamingFsmRunEventAbort(struct ADAPTER *prAdapter,
 
 	/* abort all started links */
 	prRoamingFsmInfo->u4BssIdxBmap = 0;
-	prRoamingFsmInfo->ucRecoverBitmap = 0;
 }				/* end of roamingFsmRunEventAbort() */
 
 void roamingFsmRunEventNewCandidate(struct ADAPTER *prAdapter,
@@ -1409,36 +1405,6 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 	}
 
 	return WLAN_STATUS_SUCCESS;
-}
-
-void roamingFsmSetRecoverBitmap(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint8_t ucScenario)
-{
-	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
-
-	DBGLOG(ROAMING, INFO, "Set recover scenario: %d\n", ucScenario);
-
-	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
-	prRoamingFsmInfo->ucRecoverBitmap |= BIT(ucScenario);
-}
-
-void roamingFsmDoRecover(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
-{
-	struct ROAMING_INFO *prRoamInfo = NULL;
-	struct BSS_INFO *prBssInfo = NULL;
-
-	prRoamInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
-	prBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-
-	DBGLOG(AIS, INFO, "Recover after join failure[%d]!\n",
-		prRoamInfo->ucRecoverBitmap);
-
-	if (prRoamInfo->ucRecoverBitmap & BIT(ROAMING_RECOVER_BSS_UPDATE))
-		nicUpdateBss(prAdapter, ucBssIndex);
-	else if (prRoamInfo->ucRecoverBitmap & BIT(ROAMING_RECOVER_RLM_SYNC))
-		rlmSyncOperationParams(prAdapter, prBssInfo);
-
-	prRoamInfo->ucRecoverBitmap = 0;
 }
 
 uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
