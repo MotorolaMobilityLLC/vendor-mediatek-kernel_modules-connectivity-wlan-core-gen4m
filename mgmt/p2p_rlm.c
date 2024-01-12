@@ -490,7 +490,8 @@ VOID rlmUpdateParamsForAP(P_ADAPTER_T prAdapter, P_BSS_INFO_T prBssInfo, BOOLEAN
 			if (!(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N)) {
 				/* BG-only or A-only */
 				eHtProtectMode = HT_PROTECT_MODE_NON_HT;
-			} else if (!(prStaRec->u2HtCapInfo & HT_CAP_INFO_SUP_CHNL_WIDTH)) {
+			} else if (prBssInfo->fg40mBwAllowed &&
+				!(prStaRec->u2HtCapInfo & HT_CAP_INFO_SUP_CHNL_WIDTH)) {
 				/* 20MHz-only */
 				if (eHtProtectMode == HT_PROTECT_MODE_NONE)
 					eHtProtectMode = HT_PROTECT_MODE_20M;
