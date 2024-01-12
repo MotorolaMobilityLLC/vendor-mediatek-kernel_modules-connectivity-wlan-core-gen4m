@@ -1370,7 +1370,7 @@ static ssize_t procMCRRead(struct file *filp, char __user *buf,
 	 size_t count, loff_t *f_pos)
 {
 	struct GLUE_INFO *prGlueInfo;
-	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo;
+	struct PARAM_CUSTOM_MCR_RW_STRUCT rMcrInfo = {0};
 	uint32_t u4BufLen;
 	uint32_t u4Count;
 	uint8_t *temp = &g_aucProcBuf[0];
