@@ -828,7 +828,7 @@
  * to trigger roaming scan
  * after skip roaming in one ESSID AP case
  */
-#define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		1
+#define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		0
 #define CFG_SUPPORT_DRIVER_ROAMING		1
 #else
 #define CFG_SUPPORT_ROAMING_SKIP_ONE_AP		0
