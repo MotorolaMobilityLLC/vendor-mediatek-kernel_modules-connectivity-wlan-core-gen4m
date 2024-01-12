@@ -475,7 +475,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
 
-	DBGLOG(REQ, INFO, "mtk_cfg80211_get_station\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_get_station\n");
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
 				&arBssid[0], sizeof(arBssid), &u4BufLen);
@@ -511,22 +511,16 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->filled |= STATION_INFO_TX_BITRATE;
 #endif
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
-		/*
-		 *  DBGLOG(REQ, WARN, "unable to retrieve link speed\n"));
-		 */
+		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last link speed\n");
 		sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
 	} else {
-		/*
-		 *  sinfo->filled |= STATION_INFO_TX_BITRATE;
-		 */
-		sinfo->txrate.legacy = u4Rate /
-			       1000; /* convert from 100bps to 100kbps */
+		/* convert from 100bps to 100kbps */
+		sinfo->txrate.legacy = u4Rate / 1000;
 		prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
 	}
 
 	/* 3. fill RSSI */
-
 	rStatus = kalIoctl(prGlueInfo, wlanoidQueryRssi, &i4Rssi,
 				sizeof(i4Rssi), TRUE, FALSE, FALSE, &u4BufLen);
 
@@ -594,12 +588,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
-			       "unable to retrieve link speed,status code = %d\n",
-			       rStatus);
+			       "link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
+			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
 			DBGLOG(REQ, INFO,
-			       "BSSID: [" MACSTR
-			       "] TxFail:%u TxTimeOut:%u, TxOK:%u RxOK:%u\n",
+			       "link speed=%u, rssi=%d, BSSID:[" MACSTR
+			       "], TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u\n",
+			       sinfo->txrate.legacy, sinfo->signal,
 			       MAC2STR(arBssid),
 			       rQueryStaStatistics.u4TxFailCount,
 			       rQueryStaStatistics.u4TxLifeTimeoutCount,
@@ -635,7 +630,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 	ASSERT(prGlueInfo);
-	DBGLOG(REQ, INFO, "mtk_cfg80211_get_station\n");
+	DBGLOG(REQ, TRACE, "mtk_cfg80211_get_station\n");
 
 	kalMemZero(arBssid, MAC_ADDR_LEN);
 	wlanQueryInformation(prGlueInfo->prAdapter, wlanoidQueryBssid,
@@ -664,18 +659,12 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->filled |= STATION_INFO_TX_BITRATE;
 
 		if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
-			/*
-			 *  DBGLOG(REQ, WARN,
-			 *  "unable to retrieve link speed\n"));
-			 */
+			/* unable to retrieve link speed */
 			DBGLOG(REQ, WARN, "last link speed\n");
 			sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
 		} else {
-			/*
-			 *  sinfo->filled |= STATION_INFO_TX_BITRATE;
-			 */
-			sinfo->txrate.legacy = u4Rate /
-			       1000; /* convert from 100bps to 100kbps */
+			/* convert from 100bps to 100kbps */
+			sinfo->txrate.legacy = u4Rate / 1000;
 			prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
 		}
 	}
@@ -713,7 +702,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	/* Get statistics from net_dev */
 	prDevStats = (struct net_device_stats *)kalGetStats(ndev);
-
 	if (prDevStats) {
 		/* 4. fill RX_PACKETS */
 		sinfo->filled |= STATION_INFO_RX_PACKETS;
@@ -736,11 +724,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
-			       "unable to get sta statistics: status[0x%x]\n",
-			       rStatus);
+			       "link speed=%u, rssi=%d, unable to get sta statistics: status=%u\n",
+			       sinfo->txrate.legacy, sinfo->signal, rStatus);
 		} else {
-			DBGLOG(REQ, INFO, "BSSID: [" MACSTR
-			       "] TxFailCount %d LifeTimeOut %d\n",
+			DBGLOG(REQ, INFO,
+			       "link speed=%u, rssi=%d, BSSID=[" MACSTR
+			       "], TxFailCount=%d, LifeTimeOut=%d\n",
+			       sinfo->txrate.legacy, sinfo->signal,
 			       MAC2STR(arBssid),
 			       rQueryStaStatistics.u4TxFailCount,
 			       rQueryStaStatistics.u4TxLifeTimeoutCount);
@@ -3126,7 +3116,7 @@ int mtk_cfg80211_testmode_sw_cmd(IN struct wiphy *wiphy,
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
-#if 1
+#if 0
 	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
 #endif
 
@@ -3156,7 +3146,6 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy,
 	int32_t i4Status;
 
 	ASSERT(wiphy);
-	DBGLOG(INIT, INFO, "-->%s()\n", __func__);
 
 	if (!data || !len) {
 		DBGLOG(REQ, ERROR, "mtk_cfg80211_testmode_cmd null data\n");
@@ -3174,6 +3163,7 @@ static int mtk_wlan_cfg_testmode_cmd(struct wiphy *wiphy,
 
 	/* Clear the version byte */
 	prParams->index = prParams->index & ~BITS(24, 31);
+	DBGLOG(INIT, TRACE, "params index=%x\n", prParams->index);
 
 	switch (prParams->index) {
 	case TESTMODE_CMD_ID_SW_CMD:	/* SW cmd */
@@ -6167,12 +6157,13 @@ int mtk_cfg_get_txpower(struct wiphy *wiphy,
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
 
 	if ((!prGlueInfo) || (prGlueInfo->u4ReadyFlag == 0)) {
-		DBGLOG(REQ, WARN, "driver is not ready\n");
+		DBGLOG_LIMITED(REQ, WARN, "driver is not ready\n");
 		return -EFAULT;
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
-		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
+		DBGLOG_LIMITED(REQ, WARN,
+			"STA doesn't support this function\n");
 		return -EFAULT;
 	}
 

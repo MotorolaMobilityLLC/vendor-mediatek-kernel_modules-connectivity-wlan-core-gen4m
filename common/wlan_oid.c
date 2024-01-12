@@ -2462,7 +2462,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-	DBGLOG(RSN, INFO, "wlanoidSetAddKey\n");
+	DBGLOG(RSN, TRACE, "wlanoidSetAddKey\n");
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(RSN, WARN,
 			"Fail in set add key! (Adapter not ready). ACPI=D%d, Radio=%d\n",
@@ -2511,18 +2511,19 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		}
 	}
 	*pu4SetInfoLen = u4SetBufferLen;
+
 	/* Dump PARAM_KEY content. */
-	DBGLOG(RSN, INFO, "Set: Dump PARAM_KEY content\n");
-	DBGLOG(RSN, INFO, "Length    : 0x%08x\n", prNewKey->u4Length);
-	DBGLOG(RSN, INFO, "Key Index : 0x%08x\n", prNewKey->u4KeyIndex);
-	DBGLOG(RSN, INFO, "Key Length: 0x%08x\n", prNewKey->u4KeyLength);
-	DBGLOG(RSN, INFO, "BSSID:\n");
-	DBGLOG(RSN, INFO, MACSTR "\n", MAC2STR(prNewKey->arBSSID));
-	DBGLOG(RSN, INFO, "Cipher    : %d\n", prNewKey->ucCipher);
+	DBGLOG(RSN, TRACE, "Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
+		MACSTR
+		", KeyIdx: 0x%08x, KeyLen: 0x%08x, Cipher: %d, Material:\n",
+		prNewKey->u4Length, MAC2STR(prNewKey->arBSSID),
+		prNewKey->u4KeyIndex, prNewKey->u4KeyLength,
+		prNewKey->ucCipher);
+	DBGLOG_MEM8(RSN, TRACE, prNewKey->aucKeyMaterial,
+		    prNewKey->u4KeyLength);
 	DBGLOG(RSN, TRACE, "Key RSC:\n");
 	DBGLOG_MEM8(RSN, TRACE, &prNewKey->rKeyRSC, sizeof(uint64_t));
-	DBGLOG(RSN, INFO, "Key Material:\n");
-	DBGLOG_MEM8(RSN, INFO, prNewKey->aucKeyMaterial, prNewKey->u4KeyLength);
+
 	prGlueInfo = prAdapter->prGlueInfo;
 	prAisSpecBssInfo = &prAdapter->rWifiVar.rAisSpecificBssInfo;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prNewKey->ucBssIdx);
@@ -8435,6 +8436,8 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 		   OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
 		   OUT uint32_t *pu4QueryInfoLen) {
 	struct PARAM_RSSI_MONITOR_T rRssi;
+	int8_t orig_max_rssi_value;
+	int8_t orig_min_rssi_value;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4QueryInfoLen);
@@ -8452,6 +8455,13 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 
 	kalMemZero(&rRssi, sizeof(struct PARAM_RSSI_MONITOR_T));
 
+	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) ==
+		PARAM_MEDIA_STATE_DISCONNECTED)
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+
+	orig_max_rssi_value = rRssi.max_rssi_value;
+	orig_min_rssi_value = rRssi.min_rssi_value;
+
 	kalMemCopy(&rRssi, pvQueryBuffer,
 		   sizeof(struct PARAM_RSSI_MONITOR_T));
 	if (rRssi.enable) {
@@ -8465,8 +8475,9 @@ wlanoidRssiMonitor(IN struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(OID, INFO,
-	       "enable=%d, max_rssi_value=%d, min_rssi_value=%d\n",
-	       rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value);
+	       "enable=%d, max_rssi_value=%d, min_rssi_value=%d, orig_max_rssi_value=%d, orig_min_rssi_value=%d\n",
+	       rRssi.enable, rRssi.max_rssi_value, rRssi.min_rssi_value,
+	       orig_max_rssi_value, orig_min_rssi_value);
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_RSSI_MONITOR,
