@@ -182,10 +182,11 @@ struct DBDC_FSM_T {
 enum ENUM_CNM_OPMODE_REQ_T {
 	CNM_OPMODE_REQ_DBDC       = 0,
 	CNM_OPMODE_REQ_DBDC_SCAN  = 1,
-	CNM_OPMODE_REQ_SMARTGEAR  = 2,
-	CNM_OPMODE_REQ_COANT      = 3,
-	CNM_OPMODE_REQ_NUM        = 4,
-	CNM_OPMODE_REQ_MAX_CAP    = 5 /* just for coding */
+	CNM_OPMODE_REQ_COEX       = 2,
+	CNM_OPMODE_REQ_SMARTGEAR  = 3,
+	CNM_OPMODE_REQ_COANT      = 4,
+	CNM_OPMODE_REQ_NUM        = 5,
+	CNM_OPMODE_REQ_MAX_CAP    = 6 /* just for coding */
 };
 
 enum ENUM_CNM_OPMODE_REQ_STATUS {
@@ -523,6 +524,7 @@ static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[BSS_DEFAULT_NUM];
 static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
 	(uint8_t *) DISP_STRING("DBDC"),
 	(uint8_t *) DISP_STRING("DBDC Scan"),
+	(uint8_t *) DISP_STRING("COEX"),
 	(uint8_t *) DISP_STRING("SmartGear"),
 	(uint8_t *) DISP_STRING("CoAnt"),
 	(uint8_t *) DISP_STRING("N/A"),
@@ -3552,6 +3554,8 @@ cnmOpModeMapEvtReason(
 	case EVENT_OPMODE_CHANGE_REASON_SMARTGEAR:
 		eReqIdx = CNM_OPMODE_REQ_SMARTGEAR;
 		break;
+	case EVENT_OPMODE_CHANGE_REASON_COEX:
+		eReqIdx = CNM_OPMODE_REQ_COEX;
 	default:
 		eReqIdx = CNM_OPMODE_REQ_NUM;
 		break;
