@@ -1512,8 +1512,11 @@ void twtPlannerGetTsfDone(
 			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
 		u8Temp = u8CurTsf + u8twt_interval;
 
-		if (prTWTFlow == NULL) {
-			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+		if ((prTWTFlow == NULL) || (u8twt_interval == 0)) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"prTWTFlow NULL(%s)\nu8twt_interval 0x%x\n",
+				(prTWTFlow == NULL) ? "Y" : "N",
+				CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF));
 
 			kalMemFree(prGetTsfCtxt,
 				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
@@ -1550,8 +1553,11 @@ void twtPlannerGetTsfDone(
 			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
 		u8Temp = u8CurTsf + u8twt_interval;
 
-		if (prTWTFlow == NULL) {
-			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+		if ((prTWTFlow == NULL) || (u8twt_interval == 0)) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"prTWTFlow NULL(%s)\nu8twt_interval 0x%x\n",
+				(prTWTFlow == NULL) ? "Y" : "N",
+				CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF));
 
 			kalMemFree(prGetTsfCtxt,
 				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
@@ -1589,8 +1595,11 @@ void twtPlannerGetTsfDone(
 			<< prGetTsfCtxt->rTWTParams.ucWakeIntvalExponent;
 		u8Temp = u8CurTsf + u8twt_interval;
 
-		if (prTWTFlow == NULL) {
-			DBGLOG(TWT_PLANNER, ERROR, "prTWTFlow is NULL.\n");
+		if ((prTWTFlow == NULL) || (u8twt_interval == 0)) {
+			DBGLOG(TWT_PLANNER, ERROR,
+				"prTWTFlow NULL(%s)\nu8twt_interval 0x%x\n",
+				(prTWTFlow == NULL) ? "Y" : "N",
+				CPU_TO_LE32(u8twt_interval & 0xFFFFFFFF));
 
 			kalMemFree(prGetTsfCtxt,
 				VIR_MEM_TYPE, sizeof(*prGetTsfCtxt));
