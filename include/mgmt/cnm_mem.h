@@ -210,6 +210,26 @@ struct STA_PMF_CFG {
 };
 #endif
 
+/* Define a structure identical to cfg80211_qos_map in linux kernel redundantly
+ * for independent from underlying OS
+ */
+#define QOS_MAP_MAX_EX 21
+struct DSCP_EXCEPTION {
+	uint8_t dscp;
+	uint8_t up;
+};
+
+struct DSCP_RANGE {
+	uint8_t low;
+	uint8_t high;
+};
+
+struct QOS_MAP {
+	uint8_t ucDscpExNum; /* 0..21 */
+	struct DSCP_EXCEPTION arDscpException[QOS_MAP_MAX_EX];
+	struct DSCP_RANGE arDscpRange[WMM_UP_INDEX_NUM];
+};
+
 /* Define STA record structure */
 struct STA_RECORD {
 	struct LINK_ENTRY rLinkEntry;
@@ -713,9 +733,12 @@ struct STA_RECORD {
 #if CFG_AP_80211V_SUPPORT
 	struct TIMER rBTMReqDisassocTimer;
 #endif /* CFG_AP_80211V_SUPPORT */
-#if DSCP_SUPPORT
-	uint8_t  qosMapSet[64];
+
+#if QOS_MAP_LEGACY_DSCP_TABLE
+	uint8_t qosMapTable[64]; /* a legacy QoS Map for DSCP to TID */
 #endif
+	struct QOS_MAP rQosMap; /* a structure for cfg80211_classify8021d */
+
 #if (CFG_SUPPORT_TWT == 1)
 	/* TWT Requester state */
 	enum _ENUM_TWT_REQUESTER_STATE_T aeTWTReqState;

@@ -83,6 +83,19 @@ struct wireless_dev *gprWdev[KAL_AIS_NUM];
 struct sock *nl_sk;
 #endif/* CFG_AP_80211KVR_INTERFACE */
 
+/* Default QoS Map for BSS other than AIS */
+static struct cfg80211_qos_map default_qos_map = {
+	.num_des = 15,
+	.dscp_exception = { /* dscp, up */
+		{8, 1},
+		{18, 3}, {20, 3}, {22, 3},
+		{24, 4}, {26, 4}, {28, 4}, {30, 4},
+		{32, 4}, {34, 4}, {36, 4}, {38, 4},
+		{40, 5},
+		{44, 6}, {46, 6},
+	},
+	.up = {{0, 63}, },/* low, high */
+};
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1972,6 +1985,160 @@ unsigned int _cfg80211_classify8021d(struct sk_buff *skb)
 	return dscp >> 5;
 }
 #endif
+
+static bool is_critical_packet(struct net_device *dev,
+	struct sk_buff *skb, u16 orig_queue_index)
+{
+#if CFG_CHANGE_CRITICAL_PACKET_PRIORITY
+	uint8_t *pucPkt;
+	uint16_t u2EtherType;
+	bool is_critical = FALSE;
+
+	if (!skb)
+		return FALSE;
+
+	pucPkt = skb->data;
+	u2EtherType = pucPkt[ETH_TYPE_LEN_OFFSET] << 8 |
+		      pucPkt[ETH_TYPE_LEN_OFFSET + 1];
+
+	switch (u2EtherType) {
+	case ETH_P_ARP:
+		if (__netif_subqueue_stopped(dev, orig_queue_index))
+			is_critical = TRUE;
+		break;
+	case ETH_P_1X:
+	case ETH_P_PRE_1X:
+#if CFG_SUPPORT_WAPI
+	case ETH_WPI_1X:
+#endif
+		is_critical = TRUE;
+		break;
+	default:
+		is_critical = FALSE;
+		break;
+	}
+	return is_critical;
+#else
+	return FALSE;
+#endif
+}
+
+static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
+{
+	struct cfg80211_qos_map *qos_map = &default_qos_map;
+
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucBssIdx;
+
+	_Static_assert(sizeof(struct cfg80211_qos_map) ==
+			sizeof(struct QOS_MAP),
+			"sizeof(cfg80211_qos_map) != sizeof(QOS_MAP)");
+	_Static_assert(offsetof(struct cfg80211_qos_map, num_des) ==
+			offsetof(struct QOS_MAP, ucDscpExNum),
+			"offset(num_des) != offset(ucDscpExNuQOS_MAP)");
+	_Static_assert(offsetof(struct cfg80211_qos_map, dscp_exception) ==
+			offsetof(struct QOS_MAP, arDscpException),
+			"offset(dscp_exception) != offset(arDscpException)");
+	_Static_assert(offsetof(struct cfg80211_qos_map, up) ==
+			offsetof(struct QOS_MAP, arDscpRange),
+			"offset(up) != offset (arDscpRange)");
+
+	do {
+		prGlueInfo = *((struct GLUE_INFO **)netdev_priv(dev));
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter)
+			break;
+
+		ucBssIdx = wlanGetBssIdx(dev);
+		if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIdx))
+			break;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		if (!prBssInfo)
+			break;
+
+		prStaRec = prBssInfo->prStaRecOfAP;
+		if (!prStaRec)
+			break;
+
+		qos_map = (struct cfg80211_qos_map *)&prStaRec->rQosMap;
+	} while (0);
+
+	DBGLOG(TX, TEMP, "return %s qos_map\n", prStaRec ? "STA" : "default");
+	return qos_map;
+}
+
+static inline u16 kernel_ndev_select_queue(
+	struct net_device *dev,
+	struct sk_buff *skb,
+	void *fallback)
+{
+	u16 queue_index = 0;
+
+#if KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE
+	queue_index = netdev_pick_tx(dev, skb, NULL);
+#elif KERNEL_VERSION(4, 19, 0) <= LINUX_VERSION_CODE
+	select_queue_fallback_t select_queue = fallback;
+
+	queue_index = select_queue(dev, skb, NULL);
+#elif KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
+	select_queue_fallback_t select_queue = fallback;
+
+	queue_index = select_queue(dev, skb);
+#else
+	queue_index = __netdev_pick_tx(dev, skb);
+#endif
+	return queue_index;
+}
+
+/* The netdev provides multiple TX queues.
+ * This function returns the TX AC queue as the mapping sequence:
+ * DSCP in IP header (0..63) => User Priority (0..7) (~ TID) => AC queue
+ * NOTE: TID (4-bit) = 0(MSB) + User Priority (3-bit)
+ *
+ * The DSCP to UP mapping is determined by a QoS Map with default values
+ * defined in standard or updated from QoS Map Action frame announced from AP.
+ * skb->priority is updated in this function.
+ */
+static inline u16 mtk_wlan_ndev_select_queue(struct net_device *dev,
+	struct sk_buff *skb, void *fallback)
+{
+#if !CFG_KERNEL_MAPPING_TXQ
+	static const u16 ieee8021d_to_queue[8] = {
+		ACI_BK, ACI_BE, ACI_BE, ACI_BK, ACI_VI, ACI_VI, ACI_VO, ACI_VO};
+#endif
+	u16 queue_index = 0;
+	struct cfg80211_qos_map *qos_map = NULL;
+
+	qos_map = get_qos_map(dev);
+
+	/* cfg80211_classify8021d returns 0~7 */
+#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
+	skb->priority = cfg80211_classify8021d(skb);
+#else
+	skb->priority = cfg80211_classify8021d(skb, qos_map);
+#endif
+
+#if CFG_KERNEL_MAPPING_TXQ
+	queue_index = kernel_ndev_select_queue(dev, skb, fallback);
+#else
+	queue_index = ieee8021d_to_queue[skb->priority];
+#endif
+
+	if (is_critical_packet(dev, skb, queue_index)) {
+		skb->priority = WMM_UP_VO_INDEX;
+#if CFG_KERNEL_MAPPING_TXQ
+		queue_index = kernel_ndev_select_queue(dev, skb, fallback);
+#else
+		queue_index = ieee8021d_to_queue[skb->priority];
+#endif
+	}
+
+	return queue_index;
+}
 
 #if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 u16 wlanSelectQueue(struct net_device *dev,

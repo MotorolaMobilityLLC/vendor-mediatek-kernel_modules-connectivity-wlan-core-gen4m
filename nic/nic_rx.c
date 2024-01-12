@@ -3470,13 +3470,13 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 
 		break;
 #endif
-#if DSCP_SUPPORT
+
 	case CATEGORY_QOS_ACTION:
 		DBGLOG(RX, INFO, "received dscp action frame: %d\n",
 		       __LINE__);
 		handleQosMapConf(prAdapter, prSwRfb);
 		break;
-#endif
+
 	case CATEGORY_PUBLIC_ACTION:
 		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
 #if CFG_ENABLE_WIFI_DIRECT
