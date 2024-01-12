@@ -2149,6 +2149,8 @@ struct PARAM_SCAN_REQUEST_ADV {
 	uint8_t ucScanType;
 	uint32_t u4IELength;
 	uint8_t *pucIE;
+	uint32_t u4ChannelNum;
+	struct RF_CHANNEL_INFO arChannel[MAXIMUM_OPERATION_CHANNEL_LIST];
 };
 
 /*--------------------------------------------------------------*/

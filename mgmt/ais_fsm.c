@@ -1342,6 +1342,21 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter, enum ENUM_AIS_STATE eNextState)
 				ASSERT(0);
 			}
 
+			/* set channel to scan request message
+			 * We set channel according to current eScanChannel
+			 */
+			switch (prScanReqMsg->eScanChannel) {
+			case SCAN_CHANNEL_FULL:
+			case SCAN_CHANNEL_2G4:
+			case SCAN_CHANNEL_5G:
+				scanSetRequestChannel(
+					prAisFsmInfo->u4ScanChannelNum,
+					prAisFsmInfo->arChannel, prScanReqMsg);
+				break;
+			default:
+				break;
+			}
+
 			if (prAisFsmInfo->u4ScanIELength > 0) {
 				kalMemCopy(prScanReqMsg->aucIE, prAisFsmInfo->aucScanIEBuf,
 					   prAisFsmInfo->u4ScanIELength);
@@ -3458,9 +3473,10 @@ void aisFsmScanRequest(IN struct ADAPTER *prAdapter, IN struct PARAM_SSID *prSsi
 /*----------------------------------------------------------------------------*/
 void
 aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
-		     IN struct PARAM_SSID *prSsid,
-		     IN enum ENUM_SCAN_TYPE eScanType,
-		     IN uint8_t *pucIe, IN uint32_t u4IeLength)
+		IN struct PARAM_SSID *prSsid,
+		IN enum ENUM_SCAN_TYPE eScanType,
+		IN uint8_t *pucIe, IN uint32_t u4IeLength,
+		IN uint8_t u4ChannelNum, IN struct RF_CHANNEL_INFO *prChannel)
 {
 	uint32_t i;
 	struct CONNECTION_SETTINGS *prConnSettings;
@@ -3472,6 +3488,7 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 	ASSERT(prAdapter);
 	ASSERT(ucSsidNum <= SCN_SSID_MAX_NUM);
 	ASSERT(u4IeLength <= MAX_IE_LENGTH);
+	ASSERT(u4ChannelNum <= MAXIMUM_OPERATION_CHANNEL_LIST);
 
 	prAisBssInfo = prAdapter->prAisBssInfo;
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
@@ -3496,6 +3513,10 @@ aisFsmScanRequestAdv(IN struct ADAPTER *prAdapter, IN uint8_t ucSsidNum,
 			}
 		}
 		prAisFsmInfo->eScanType = eScanType;
+
+		prAisFsmInfo->u4ScanChannelNum = u4ChannelNum;
+		kalMemCopy(&prAisFsmInfo->arChannel[0], prChannel,
+			sizeof(struct RF_CHANNEL_INFO) * u4ChannelNum);
 
 		if (u4IeLength > 0 && u4IeLength <= MAX_IE_LENGTH) {
 			prAisFsmInfo->u4ScanIELength = u4IeLength;

@@ -781,23 +781,31 @@ wlanoidSetBssidListScanAdv(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RDD_TEST_MODE
 	if (prAdapter->prGlueInfo->rRegInfo.u4RddTestMode) {
 		if ((prAdapter->fgEnOnlineScan == TRUE) && (prAdapter->ucRddStatus)) {
-			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
+			if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
+					!= PARAM_MEDIA_STATE_CONNECTED) {
 				aisFsmScanRequestAdv(prAdapter, ucSsidNum,
-					rSsid, eScanType, pucIe, u4IeLength);
-			else
+				rSsid, eScanType, pucIe, u4IeLength,
+				prScanRequest->u4ChannelNum,
+				&prScanRequest->arChannel[0]);
+			} else
 				return WLAN_STATUS_FAILURE;
 		} else
 			return WLAN_STATUS_FAILURE;
 	} else
 #endif
 	{
-		if (prAdapter->fgEnOnlineScan == TRUE)
+		if (prAdapter->fgEnOnlineScan == TRUE) {
 			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
-						eScanType, pucIe, u4IeLength);
-		else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo) != PARAM_MEDIA_STATE_CONNECTED)
+						eScanType, pucIe, u4IeLength,
+						prScanRequest->u4ChannelNum,
+						&prScanRequest->arChannel[0]);
+		} else if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
+				!= PARAM_MEDIA_STATE_CONNECTED) {
 			aisFsmScanRequestAdv(prAdapter, ucSsidNum, rSsid,
-						eScanType, pucIe, u4IeLength);
-		else
+						eScanType, pucIe, u4IeLength,
+						prScanRequest->u4ChannelNum,
+						&prScanRequest->arChannel[0]);
+		} else
 			return WLAN_STATUS_FAILURE;
 	}
 	cnmTimerStartTimer(prAdapter, &prAdapter->rWifiVar.rAisFsmInfo.rScanDoneTimer,

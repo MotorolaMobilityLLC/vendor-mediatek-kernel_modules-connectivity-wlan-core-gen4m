@@ -783,7 +783,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
-	uint32_t i, u4BufLen;
+	uint32_t i, j, u4BufLen;
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	uint32_t num_ssid = 0;
 	uint32_t old_num_ssid = 0;
@@ -846,6 +846,43 @@ int mtk_cfg80211_scan(struct wiphy *wiphy, struct cfg80211_scan_request *request
 	DBGLOG(REQ, INFO,
 	"mtk_cfg80211_scan(), n_ssids=%d, num_ssid=(%u->%u), wildcard=0x%X\n",
 	request->n_ssids, old_num_ssid, num_ssid, wildcard_flag);
+
+	/* Set channel info */
+	if (request->n_channels > MAXIMUM_OPERATION_CHANNEL_LIST) {
+		rScanRequest.u4ChannelNum = 0;
+		DBGLOG(REQ, TRACE, "Channel list exceed maximun support.\n");
+	} else {
+		j = 0;
+		for (i = 0; i < request->n_channels; i++) {
+			uint32_t u4channel =
+				nicFreq2ChannelNum(request->channels[i]->center_freq * 1000);
+			if (u4channel == 0) {
+				DBGLOG(REQ, WARN, "Wrong Channel[%d] freq=%u\n",
+					i, request->channels[i]->center_freq);
+				continue;
+			}
+			rScanRequest.arChannel[j].ucChannelNum = u4channel;
+			switch ((request->channels[i])->band) {
+			case KAL_BAND_2GHZ:
+				rScanRequest.arChannel[j].eBand = BAND_2G4;
+				break;
+			case KAL_BAND_5GHZ:
+				rScanRequest.arChannel[j].eBand = BAND_5G;
+				break;
+			default:
+				DBGLOG(REQ, WARN, "UNKNOWN Band %d(chnl=%u)\n",
+					request->channels[i]->band,
+					u4channel);
+				rScanRequest.arChannel[j].eBand = BAND_NULL;
+				break;
+			}
+			j++;
+		}
+		rScanRequest.u4ChannelNum = j;
+	}
+	DBGLOG(REQ, INFO, "n_ssids(%d==>%u) n_channel(%u==>%u)\n",
+		request->n_ssids, num_ssid, request->n_channels,
+		rScanRequest.u4ChannelNum);
 
 	if (request->ie_len > 0) {
 		rScanRequest.u4IELength = request->ie_len;

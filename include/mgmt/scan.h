@@ -638,6 +638,11 @@ void scnInit(IN struct ADAPTER *prAdapter);
 
 void scnUninit(IN struct ADAPTER *prAdapter);
 
+/* Scan utilities */
+void scanSetRequestChannel(IN uint32_t u4ScanChannelNum,
+		IN struct RF_CHANNEL_INFO arChannel[],
+		OUT struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg);
+
 /* BSS-DESC Search */
 struct BSS_DESC *scanSearchBssDescByBssid(IN struct ADAPTER *prAdapter,
 					  IN uint8_t aucBSSID[]);
