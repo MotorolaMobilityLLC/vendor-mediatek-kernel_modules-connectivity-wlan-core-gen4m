@@ -3426,6 +3426,11 @@ void aisRestoreAllLink(struct ADAPTER *ad,
 		if (prStaRec != prAisBssInfo->prStaRecOfAP)
 			cnmStaRecFree(ad, prStaRec);
 
+		/* free bssinfo if it's not connected */
+		if (i != AIS_MAIN_LINK_INDEX &&
+		    prAisBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+			aisFreeBssInfo(ad, ais, i);
+
 		/* roaming but can't find connected bssdesc */
 		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
 		    !aisGetLinkBssDesc(ais, i))
@@ -3581,6 +3586,8 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 
 	aisTargetBssResetConnecting(prAdapter, prAisFsmInfo);
 
+	aisRestoreAllLink(prAdapter, prAisFsmInfo);
+
 	if (aisHandleTemporaryReject(prAdapter, prStaRec) ||
 	    prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
 		/* roaming fail count and time */
@@ -3595,8 +3602,6 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 			prAisBssInfo->prStaRecOfAP->fgIsTxAllowed = TRUE;
 
 		roamingFsmNotifyEvent(prAdapter, ucBssIndex, TRUE, prBssDesc);
-
-		aisRestoreAllLink(prAdapter, prAisFsmInfo);
 	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
 		CHECK_FOR_TIMEOUT(rCurrentTime, prAisFsmInfo->rJoinReqTime,
 		SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
@@ -5087,6 +5092,10 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 
 	/* 4 <4> Change Media State immediately. */
 	aisFsmDisconnectAllBss(prAdapter, prAisFsmInfo);
+	/* aisFsmRemoveAllBssDesc/aisFsmDisconnectAllBss already clear
+	 * bssdesc and starec, so clear link info as well
+	 */
+	aisClearAllLink(prAisFsmInfo);
 
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventAbort(prAdapter, ucBssIndex);
@@ -5286,8 +5295,13 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	case AIS_STATE_JOIN:
 		DBGLOG(AIS, WARN, "EVENT- JOIN TIMEOUT\n");
 
+		eNextState = aisHandleJoinFailure(prAdapter,
+				aisGetTargetStaRec(prAdapter, ucBssIndex),
+				NULL, ucBssIndex);
+
 		/* 1. Do abort JOIN */
 		aisFsmStateAbort_JOIN(prAdapter, ucBssIndex);
+#if 0
 
 		/* 2. Increase Join Failure Count */
 		/* Support AP Selection */
@@ -5320,6 +5334,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 			eNextState = AIS_STATE_JOIN_FAILURE;
 		}
 
+#endif
 		break;
 
 	case AIS_STATE_NORMAL_TR:
@@ -6280,6 +6295,11 @@ void aisFsmRoamingDisconnectPrevAllAP(struct ADAPTER *prAdapter,
 
 		aisFsmRoamingDisconnectPrevAP(prAdapter,
 			prAisBssInfo, prStaRec);
+
+		/* free bssinfo if it has no target starec */
+		if (i != AIS_MAIN_LINK_INDEX &&
+		    prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED)
+			aisFreeBssInfo(prAdapter, prAisFsmInfo, i);
 	}
 }
 
@@ -7918,6 +7938,8 @@ struct STA_RECORD *aisGetMainLinkStaRec(struct AIS_FSM_INFO *prAisFsmInfo)
 void aisClearAllLink(struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
+
+	DBGLOG(AIS, INFO, "Clear BssDesc and StaRec\n");
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prAisFsmInfo->aprLinkInfo[i].prTargetBssDesc = NULL;
