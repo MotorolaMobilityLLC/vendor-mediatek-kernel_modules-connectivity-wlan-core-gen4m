@@ -503,7 +503,9 @@
 #define MAX_BSSID_NUM			4	/* MAX BSSID number */
 #define MAX_MLDDEV_NUM			4;
 
-#define CFG_CHIP_RESET_SUPPORT          1
+#ifndef CFG_CHIP_RESET_SUPPORT
+#define CFG_CHIP_RESET_SUPPORT		1
+#endif
 
 #if CFG_CHIP_RESET_SUPPORT
 #define CFG_CHIP_RESET_HANG		0

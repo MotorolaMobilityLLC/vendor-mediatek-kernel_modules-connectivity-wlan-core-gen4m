@@ -2076,8 +2076,8 @@ void nicTxDirectClearAllStaPsQ(IN struct ADAPTER *prAdapter);
 void nicTxDirectClearAllStaPendQ(IN struct ADAPTER *prAdapter);
 
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void nicTxDirectTimerCheckSkbQ(struct timer_list *timer);
-void nicTxDirectTimerCheckHifQ(struct timer_list *timer);
+void nicTxDirectTimerCheckSkbQ(kal_timer_list *timer);
+void nicTxDirectTimerCheckHifQ(kal_timer_list *timer);
 #else
 void nicTxDirectTimerCheckSkbQ(unsigned long data);
 void nicTxDirectTimerCheckHifQ(unsigned long data);

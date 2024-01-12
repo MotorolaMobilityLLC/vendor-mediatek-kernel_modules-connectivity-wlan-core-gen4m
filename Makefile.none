@@ -62,6 +62,8 @@ export CONFIG_MTK_COMBO_PLAT_PATH=x86
 
 export CONFIG_MTK_SUPPORT_OS=none
 
+export CONFIG_CHIP_RESET_SUPPORT=n
+
 # leverage Makefile for common build option
 include Makefile
 

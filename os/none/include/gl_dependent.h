@@ -213,7 +213,9 @@ enum {
  * common/wlan_lib.c
  * include/mgmt/rsn.h
  */
+#ifndef LINUX_VERSION_CODE
 #define LINUX_VERSION_CODE 199947
+#endif
 #define CFG80211_VERSION_CODE LINUX_VERSION_CODE
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
 
@@ -789,6 +791,9 @@ void kal_do_gettimeofday(struct timeval *tv);
 
 #define mod_timer(_timer, _expires) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define from_timer(_type, _timer, _member) \
+	((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__))
+
 /*
  * kstrto* - convert a string to an *
  * @s: The start of the string. The string must be null-terminated, and may also

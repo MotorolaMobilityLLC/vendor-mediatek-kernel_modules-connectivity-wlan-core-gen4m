@@ -5714,7 +5714,7 @@ uint32_t nicTxDirectStartXmitMain(struct sk_buff
  */
 /*----------------------------------------------------------------------------*/
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void nicTxDirectTimerCheckSkbQ(struct timer_list *timer)
+void nicTxDirectTimerCheckSkbQ(kal_timer_list *timer)
 #else
 void nicTxDirectTimerCheckSkbQ(unsigned long data)
 #endif
@@ -5746,7 +5746,7 @@ void nicTxDirectTimerCheckSkbQ(unsigned long data)
  */
 /*----------------------------------------------------------------------------*/
 #if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
-void nicTxDirectTimerCheckHifQ(struct timer_list *timer)
+void nicTxDirectTimerCheckHifQ(kal_timer_list *timer)
 #else
 void nicTxDirectTimerCheckHifQ(unsigned long data)
 #endif
