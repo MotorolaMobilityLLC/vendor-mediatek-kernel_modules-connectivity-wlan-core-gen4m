@@ -7707,11 +7707,14 @@ void nicUniEventHwDetectReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			DBGLOG(NIC, INFO,
 				"HW Detect Report: %s\n", str_buf);
-			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
-				str_buf);
 
-			kalSendAeeWarning("WLAN", "HW Detect Report: %s\n",
-				str_buf);
+			if (hw_detect_report->fgIsReportNode)
+				conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
+					str_buf);
+
+			if (ad->rWifiVar.fgHwDetectReportEn == 2)
+				kalSendAeeWarning("WLAN",
+					"HW Detect Report: %s\n", str_buf);
 		}
 			break;
 		default:
