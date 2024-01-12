@@ -491,6 +491,10 @@
 #define CFG_RX_DIRECT                               0
 #endif
 
+#ifndef CFG_QM_ARP_MONITOR_MSG
+#define CFG_QM_ARP_MONITOR_MSG                      0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Integration
  *------------------------------------------------------------------------------

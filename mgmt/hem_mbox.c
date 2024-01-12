@@ -322,6 +322,11 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_LISTEN_OFFLOAD_START, p2pDevFsmListenOffloadStart},
 	{MID_MNY_P2P_LISTEN_OFFLOAD_STOP, p2pDevFsmListenOffloadStop},
 #endif
+#if ARP_MONITER_ENABLE
+#if CFG_QM_ARP_MONITOR_MSG
+	{MID_QM_ARP_MONITOR, qmArpMonitorHandleMsg},
+#endif /* CFG_QM_ARP_MONITOR_MSG */
+#endif /* ARP_MONITER_ENABLE */
 };
 
 /*******************************************************************************

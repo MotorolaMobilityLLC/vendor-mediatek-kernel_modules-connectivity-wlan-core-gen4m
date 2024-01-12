@@ -710,6 +710,9 @@ ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
         ccflags-y += -DCFG_TX_DIRECT_VIA_HIF_THREAD=1
     endif
+    ifneq ($(CONFIG_BUILD_NONE_STA), y)
+        ccflags-y += -DCFG_QM_ARP_MONITOR_MSG=1
+    endif
 endif
 
 ifeq ($(CONFIG_RX_WORK_SUPPORT), y)
