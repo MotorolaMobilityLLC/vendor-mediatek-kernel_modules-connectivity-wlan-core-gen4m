@@ -2250,6 +2250,7 @@ void connac3x_show_wfdma_ring_info(
 	uint32_t u4DmaCfgCrAddr;
 	struct wfdma_group_info *group;
 	uint32_t u4_hw_desc_base_value = 0;
+	uint64_t u8_hw_desc_base_value = 0;
 	uint32_t u4_hw_cnt_value = 0;
 	uint32_t u4_hw_cidx_value = 0;
 	uint32_t u4_hw_didx_value = 0;
@@ -2287,19 +2288,22 @@ void connac3x_show_wfdma_ring_info(
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
 
+		u8_hw_desc_base_value = (u4_hw_cnt_value & 0xF0000);
+		u8_hw_desc_base_value = (u8_hw_desc_base_value << 16)
+			| u4_hw_desc_base_value;
 		group->cnt = u4_hw_cnt_value & MT_RING_CNT_MASK;
 		group->cidx = u4_hw_cidx_value;
 		group->didx = u4_hw_didx_value;
 
 		queue_cnt = (u4_hw_cidx_value >= u4_hw_didx_value) ?
 			(u4_hw_cidx_value - u4_hw_didx_value) :
-			(u4_hw_cidx_value - u4_hw_didx_value + u4_hw_cnt_value);
+			(u4_hw_cidx_value - u4_hw_didx_value + group->cnt);
 
-		DBGLOG(HAL, INFO, "%4d %20s %8x %10x %8x %6x %6x %6x\n",
+		DBGLOG(HAL, INFO, "%4d %20s %8x %10llx %8x %6x %6x %6x\n",
 			idx,
 			group->name,
-			u4DmaCfgCrAddr, u4_hw_desc_base_value,
-			u4_hw_cnt_value, u4_hw_cidx_value,
+			u4DmaCfgCrAddr, u8_hw_desc_base_value,
+			group->cnt, u4_hw_cidx_value,
 			u4_hw_didx_value, queue_cnt);
 
 	}
@@ -2327,6 +2331,9 @@ void connac3x_show_wfdma_ring_info(
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x08, &u4_hw_cidx_value);
 		HAL_MCR_RD(prAdapter, u4DmaCfgCrAddr+0x0c, &u4_hw_didx_value);
 
+		u8_hw_desc_base_value = (u4_hw_cnt_value & 0xF0000);
+		u8_hw_desc_base_value = (u8_hw_desc_base_value << 16)
+			| u4_hw_desc_base_value;
 		group->cnt = u4_hw_cnt_value & MT_RING_CNT_MASK;
 		group->cidx = u4_hw_cidx_value;
 		group->didx = u4_hw_didx_value;
@@ -2334,13 +2341,13 @@ void connac3x_show_wfdma_ring_info(
 		queue_cnt = (u4_hw_didx_value > u4_hw_cidx_value) ?
 			(u4_hw_didx_value - u4_hw_cidx_value - 1) :
 			(u4_hw_didx_value - u4_hw_cidx_value
-			+ u4_hw_cnt_value - 1);
+			+ group->cnt - 1);
 
-		DBGLOG(HAL, INFO, "%4d %20s %8x %10x %8x %6x %6x %6x\n",
+		DBGLOG(HAL, INFO, "%4d %20s %8x %10llx %8x %6x %6x %6x\n",
 			idx,
 			group->name,
-			u4DmaCfgCrAddr, u4_hw_desc_base_value,
-			u4_hw_cnt_value, u4_hw_cidx_value,
+			u4DmaCfgCrAddr, u8_hw_desc_base_value,
+			group->cnt, u4_hw_cidx_value,
 			u4_hw_didx_value, queue_cnt);
 	}
 }

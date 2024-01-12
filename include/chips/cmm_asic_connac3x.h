@@ -1213,6 +1213,14 @@ uint8_t asicConnac3xWfdmaWaitIdle(
 	uint8_t index,
 	uint32_t round,
 	uint32_t wait_us);
+void asicConnac3xWfdmaTxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	u_int32_t index);
+void asicConnac3xWfdmaRxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	u_int32_t index);
 void asicConnac3xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,

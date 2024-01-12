@@ -568,7 +568,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
 	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 	.fgCheckDriverOwnInt = FALSE,
-	.u4DmaMask = 32,
+	.u4DmaMask = 34,
 	.wfmda_host_tx_group = mt6653_wfmda_host_tx_group,
 	.wfmda_host_tx_group_len = ARRAY_SIZE(mt6653_wfmda_host_tx_group),
 	.wfmda_host_rx_group = mt6653_wfmda_host_rx_group,
@@ -2292,6 +2292,8 @@ static void mt6653WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
 {
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	union WPDMA_GLO_CFG_STRUCT *prGloCfg = &prHifInfo->GloCfg;
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
 	uint32_t u4Addr = 0;
 
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_ADDR;
@@ -2302,6 +2304,11 @@ static void mt6653WfdmaControl(struct ADAPTER *prAdapter, u_int8_t fgEn)
 		prGloCfg->word |=
 			WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_TX_DMA_EN_MASK |
 			WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_RX_DMA_EN_MASK;
+	}
+
+	if (prBusInfo->u4DmaMask > 32) {
+		prGloCfg->word |=
+			WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_PDMA_ADDR_EXT_EN_MASK;
 	}
 
 	HAL_MCR_WR(prAdapter, u4Addr, prGloCfg->word);
@@ -2443,6 +2450,9 @@ static void mt6653WfdmaTxRingExtCtrl(
 				&prRingIdx->u2TxRing[i4EmiRingIdx];
 		*prTxRing->pu2EmiIdx = 0;
 	}
+
+	asicConnac3xWfdmaTxRingBasePtrExtCtrl(prGlueInfo,
+		prTxRing, index);
 }
 
 static void mt6653WfdmaRxRingExtCtrl(
@@ -2570,6 +2580,9 @@ static void mt6653WfdmaRxRingExtCtrl(
 		HAL_MCR_WR(prAdapter, prRxRing->hw_cnt_addr, u4Val);
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
+
+	asicConnac3xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
+		prRxRing, index);
 }
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
