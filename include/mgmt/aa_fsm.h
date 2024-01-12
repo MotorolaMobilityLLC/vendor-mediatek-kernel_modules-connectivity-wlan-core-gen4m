@@ -68,6 +68,9 @@
 #define SAP_CHAN_NOISE_GET_INFO_PERIOD              5000 /* ms */
 #endif
 
+#define TX_ACTION_RETRY_TIMEOUT_TU                  1000 /* TU. */
+#define TX_ACTION_RESPONSE_TIMEOUT_TU               1000 /* TU. */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
