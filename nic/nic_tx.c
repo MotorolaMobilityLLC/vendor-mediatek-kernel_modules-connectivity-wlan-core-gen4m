@@ -4687,19 +4687,30 @@ void nicTxDirectClearStaPsQ(IN struct ADAPTER *prAdapter,
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct QUE rNeedToFreeQue;
 	struct QUE *prNeedToFreeQue = &rNeedToFreeQue;
+	spinlock_t *prSpinLock = &prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT];
+	bool fgIrqDisabled = irqs_disabled();
 
 	QUEUE_INITIALIZE(prNeedToFreeQue);
-	spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+	if (fgIrqDisabled)
+		spin_lock(prSpinLock);
+	else
+		spin_lock_bh(prSpinLock);
 	if (QUEUE_IS_NOT_EMPTY(
 		    &prAdapter->rStaPsQueue[ucStaRecIndex])) {
 		QUEUE_MOVE_ALL(prNeedToFreeQue,
 			       &prAdapter->rStaPsQueue[ucStaRecIndex]);
-		spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		if (fgIrqDisabled)
+			spin_unlock(prSpinLock);
+		else
+			spin_unlock_bh(prSpinLock);
 
 		wlanProcessQueuedMsduInfo(prAdapter,
 			(struct MSDU_INFO *) QUEUE_GET_HEAD(prNeedToFreeQue));
 	} else {
-	    spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_TX_DIRECT]);
+		if (fgIrqDisabled)
+			spin_unlock(prSpinLock);
+		else
+			spin_unlock_bh(prSpinLock);
 	}
 }
 
