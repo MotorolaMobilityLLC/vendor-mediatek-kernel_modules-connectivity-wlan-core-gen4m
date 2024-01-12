@@ -2299,4 +2299,14 @@ u_int8_t kalIsSupportMawd(void);
 u_int8_t kalIsSupportSdo(void);
 u_int8_t kalIsSupportRro(void);
 #endif
+
+uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
+			 uint8_t **apucNameTable);
+uint32_t kalFirmwareClose(struct GLUE_INFO *prGlueInfo);
+uint32_t kalFirmwareSize(struct GLUE_INFO *prGlueInfo,
+			 uint32_t *pu4Size);
+uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
+			 void *prBuf, uint32_t u4Offset,
+			 uint32_t *pu4Size);
+
 #endif /* _GL_KAL_H */
