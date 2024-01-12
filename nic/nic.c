@@ -788,51 +788,6 @@ P_MSDU_INFO_T nicGetPendingTxMsduInfo(IN P_ADAPTER_T prAdapter, IN UINT_8 ucWlan
 	return prMsduInfo;
 }
 
-P_MSDU_INFO_T nicGetPendingStaMMPDU(IN P_ADAPTER_T prAdapter, IN UINT_8 ucStaRecIdx)
-{
-	P_MSDU_INFO_T prMsduInfoListHead = (P_MSDU_INFO_T) NULL;
-	P_QUE_T prTxingQue = (P_QUE_T) NULL;
-	QUE_T rTempQue;
-	P_QUE_T prTempQue = &rTempQue;
-	P_QUE_ENTRY_T prQueueEntry = (P_QUE_ENTRY_T) NULL;
-	P_MSDU_INFO_T prMsduInfo = (P_MSDU_INFO_T) NULL;
-
-	GLUE_SPIN_LOCK_DECLARATION();
-
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-	do {
-		if (prAdapter == NULL) {
-
-			ASSERT(FALSE);
-			break;
-		}
-
-		prTxingQue = &(prAdapter->rTxCtrl.rTxMgmtTxingQueue);
-		QUEUE_MOVE_ALL(prTempQue, prTxingQue);
-
-		QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, P_QUE_ENTRY_T);
-		while (prQueueEntry) {
-			prMsduInfo = (P_MSDU_INFO_T) prQueueEntry;
-
-			if ((prMsduInfo->ucStaRecIndex == ucStaRecIdx)
-			    && (prMsduInfo->pfTxDoneHandler != NULL)) {
-				QM_TX_SET_NEXT_MSDU_INFO(prMsduInfo, prMsduInfoListHead);
-				prMsduInfoListHead = prMsduInfo;
-			} else {
-				QUEUE_INSERT_TAIL(prTxingQue, prQueueEntry);
-
-				prMsduInfo = NULL;
-			}
-
-			QUEUE_REMOVE_HEAD(prTempQue, prQueueEntry, P_QUE_ENTRY_T);
-		}
-
-	} while (FALSE);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TXING_MGMT_LIST);
-
-	return prMsduInfoListHead;
-}				/* nicGetPendingStaMMPDU */
-
 VOID nicFreePendingTxMsduInfoByBssIdx(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 {
 	P_QUE_T prTxingQue;
@@ -1484,8 +1439,7 @@ WLAN_STATUS nicUpdateBss(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBssIndex)
 			if (kalP2PGetCcmpCipher(prAdapter->prGlueInfo, (UINT_8) prBssInfo->u4PrivateData)) {
 				rCmdSetBssInfo.ucAuthMode = (UINT_8) AUTH_MODE_WPA2_PSK;
 				rCmdSetBssInfo.ucEncStatus = (UINT_8) ENUM_ENCRYPTION3_ENABLED;
-			}
-			if (kalP2PGetTkipCipher(prAdapter->prGlueInfo, (UINT_8) prBssInfo->u4PrivateData)) {
+			} else if (kalP2PGetTkipCipher(prAdapter->prGlueInfo, (UINT_8) prBssInfo->u4PrivateData)) {
 				rCmdSetBssInfo.ucAuthMode = (UINT_8) AUTH_MODE_WPA_PSK;
 				rCmdSetBssInfo.ucEncStatus = (UINT_8) ENUM_ENCRYPTION2_ENABLED;
 			} else if (kalP2PGetCipher(prAdapter->prGlueInfo, (UINT_8) prBssInfo->u4PrivateData)) {
@@ -1707,7 +1661,8 @@ nicConfigPowerSaveProfile(IN P_ADAPTER_T prAdapter,
 
 	ASSERT(prAdapter);
 
-	if (ucBssIndex > prAdapter->ucHwBssIdNum) {
+	if (ucBssIndex >= prAdapter->ucHwBssIdNum) {
+
 		ASSERT(0);
 		return WLAN_STATUS_NOT_SUPPORTED;
 	}
@@ -2629,9 +2584,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_6M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_6M;
@@ -2642,9 +2597,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_9M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_9M;
@@ -2655,9 +2610,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_12M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_12M;
@@ -2668,9 +2623,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_18M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_18M;
@@ -2681,9 +2636,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_24M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_24M;
@@ -2694,9 +2649,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_36M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_36M;
@@ -2707,9 +2662,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_48M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_48M;
@@ -2720,9 +2675,9 @@ nicUpdateRateParams(IN P_ADAPTER_T prAdapter,
 		break;
 
 	case FIXED_RATE_54M:
-		if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_ERP)
+		if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_ERP)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_ERP;
-		else if ((*pucDesiredPhyTypeSet) | PHY_TYPE_BIT_OFDM)
+		else if ((*pucDesiredPhyTypeSet) & PHY_TYPE_BIT_OFDM)
 			*pucDesiredPhyTypeSet = PHY_TYPE_BIT_OFDM;
 
 		*pu2DesiredNonHTRateSet = RATE_SET_BIT_54M;
