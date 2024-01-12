@@ -139,6 +139,7 @@ static uint32_t u4RstCount;
 static uint32_t u4PowerOffCount;
 static u_int8_t fgIsPendingForReady;
 #endif
+enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T g_Coredump_type;
 #endif
 
 /*******************************************************************************
@@ -1534,7 +1535,6 @@ static u_int8_t glResetMsgHandler(enum ENUM_RST_MSG MsgBody)
 		wfsys_unlock();
 		complete(&g_RstOffComp);
 		break;
-
 	case ENUM_RST_MSG_L0_END:
 		DBGLOG(INIT, INFO, "Whole chip reset end!\n");
 		glResetUpdateFlag(FALSE);
@@ -1702,15 +1702,15 @@ int glRstwlanPostWholeChipReset(void)
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
-	char *reason)
+	char *reason, unsigned int reset_type)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
 	struct BUS_INFO *prBusInfo = NULL;
 
 	DBGLOG(INIT, INFO,
-		"drv: %d, reason: %s\n",
-		drv, reason);
+		"drv:%d, reason:%s, reset_type:%d\n",
+		drv, reason, reset_type);
 
 #if CFG_MTK_ANDROID_WMT
 	while (get_wifi_process_status() == 1) {
@@ -1759,6 +1759,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 
 	g_Coredump_source = coredump_connv3_type_to_src(drv);
 	g_WholeChipRstReason = reason;
+	g_Coredump_type = reset_type;
 
 	if (glRstCheckRstCriteria()) {
 		while (kalIsResetOnEnd()) {
@@ -1804,6 +1805,22 @@ int wlan_post_whole_chip_rst_v3(void)
 
 	return 0;
 }
+
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+int wlan_post_reset_on_v3(unsigned int type)
+{
+	int ret = 0;
+
+	DBGLOG(INIT, INFO, "type: %d\n", g_Coredump_type);
+
+	if (type != CONNV3_CHIP_RST_POST_ACTION_NOTHING)
+		goto exit;
+
+	ret = wlanFuncPreOnImpl();
+
+	return wifi_coredump_post_start();
+}
+#endif
 
 int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	char *reason)
@@ -2033,6 +2050,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 				wifi_coredump_start(
 					g_Coredump_source,
 					apucRstReason[eResetReason],
+					g_Coredump_type,
 					rst->force_dump);
 
 			g_IsNeedWaitCoredump = FALSE;
@@ -2074,6 +2092,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			wifi_coredump_start(
 				g_Coredump_source,
 				apucRstReason[eResetReason],
+				g_Coredump_type,
 				rst->force_dump);
 
 		g_IsNeedWaitCoredump = FALSE;
@@ -2162,6 +2181,7 @@ int wlan_reset_thread_main(void *data)
 				wifi_coredump_start(
 					g_Coredump_source,
 					g_WholeChipRstReason,
+					g_Coredump_type,
 					rst->force_dump);
 				rst->force_dump = FALSE;
 				g_IsNeedWaitCoredump = FALSE;

@@ -1603,7 +1603,9 @@ extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 extern uint32_t g_u4DevIdx[KAL_P2P_NUM];
 extern enum ENUM_NVRAM_STATE g_NvramFsm;
 
-
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+extern bool fgIsPreOnProcessing;
+#endif
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 extern char *gprifnameap;
 extern char *gprifnamep2p;
@@ -1749,6 +1751,9 @@ u_int8_t wlanIsAisDev(struct net_device *prDev);
 void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 struct net_device *prDev, u_int8_t fgSuspend);
 
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+int wlanFuncPreOnImpl(void);
+#endif
 int wlanFuncOnImpl(void);
 void wlanFuncOffImpl(void);
 int wlanFuncOn(void);

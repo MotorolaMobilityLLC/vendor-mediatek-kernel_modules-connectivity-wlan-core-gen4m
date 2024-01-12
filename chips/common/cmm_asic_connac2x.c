@@ -2790,7 +2790,8 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 			fw_log_handler();
 #endif
 #if (CFG_WIFI_COREDUMP_SUPPORT == 1)
-			wifi_coredump_start(g_Coredump_source, NULL, TRUE);
+			wifi_coredump_start(g_Coredump_source, NULL,
+				ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE, TRUE);
 			g_IsNeedWaitCoredump = FALSE;
 #endif
 			if (debug_ops && debug_ops->dumpwfsyscpupcr)
