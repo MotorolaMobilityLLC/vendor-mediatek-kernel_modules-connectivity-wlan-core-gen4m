@@ -1297,6 +1297,10 @@ ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/devfreq/
 ccflags-y += -I$(srctree)/net
 ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/connfem/include/
 
+ifeq ($(CONFIG_MTK_WIFI_MDDP_SUPPORT), y)
+CONFIG_MTK_MDDP_SUPPORT := y
+endif
+
 ifneq ($(CONFIG_MTK_MDDP_SUPPORT),)
 ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mddp/include/
 ccflags-y += -DCFG_MTK_MDDP_SUPPORT=1
