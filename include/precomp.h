@@ -301,6 +301,8 @@
 
 #if (CFG_SUPPORT_802_11BE == 1)
 #include "eht_ie.h"
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 #include "mlo.h"
 #endif
 

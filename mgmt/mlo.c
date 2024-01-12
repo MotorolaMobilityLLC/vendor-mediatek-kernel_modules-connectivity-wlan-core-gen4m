@@ -8,7 +8,7 @@
  */
 
 #include "precomp.h"
-#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 
 void beReqGenerateMLIE(
 	struct ADAPTER *prAdapter,
@@ -141,7 +141,7 @@ void beReqGenerateMultiLinkSTAInfo(
 		struct STA_RECORD) {
 		struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(prAdapter,
 				prCurrStarec->ucBssIndex);
-			
+
 		DBGLOG(INIT, INFO, "\tsta: %d, wlan_idx: %d, bss_idx: %d, mac: " MACSTR "\n",
 			prCurrStarec->ucIndex,
 			prCurrStarec->ucWlanIndex,
@@ -662,4 +662,4 @@ void mldStarecUninit(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO, "\n");
 }
 
-#endif /* CFG_SUPPORT_802_11BE == 1 */
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */

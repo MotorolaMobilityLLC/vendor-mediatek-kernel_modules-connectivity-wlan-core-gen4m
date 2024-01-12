@@ -2193,19 +2193,25 @@ uint32_t nicUniCmdBssInfoTagMld(struct ADAPTER *ad,
 {
 	struct UNI_CMD_BSSINFO_MLD *tag = (struct UNI_CMD_BSSINFO_MLD *)buf;
 	struct BSS_INFO *bss = GET_BSS_INFO_BY_INDEX(ad, cmd->ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByBss(ad, bss);
+#endif
 
 	if (bss->eConnectionState != MEDIA_STATE_CONNECTED)
 		return 0;
 
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_MLD;
 	tag->u2Length = sizeof(*tag);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prMldBssInfo) {
 		tag->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
 		tag->ucOmRemapIdx = prMldBssInfo->ucOmRemapIdx;
-	} else {
+	} else
+#endif
+	{
 		tag->ucGroupMldId = MLD_GROUP_NONE;
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, bss->aucBSSID);
@@ -2892,7 +2898,9 @@ uint32_t nicUniCmdStaRecTagEhtInfo(struct ADAPTER *ad,
 
 	return tag->u2Length;
 }
+#endif
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t nicUniCmdStaRecTagMldSetup(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {
@@ -3093,6 +3101,8 @@ struct UNI_CMD_STAREC_TAG_HANDLE arUpdateStaRecTable[] = {
 	{sizeof(struct UNI_CMD_STAREC_UAPSD_INFO), nicUniCmdStaRecTagUapsd},
 #if (CFG_SUPPORT_802_11BE == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_BASIC), nicUniCmdStaRecTagEhtInfo},
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{sizeof(struct UNI_CMD_STAREC_EHT_MLD), nicUniCmdStaRecTagEhtMld},
 	{sizeof(struct UNI_CMD_STAREC_MLD_SETUP), nicUniCmdStaRecTagMldSetup},
 #endif

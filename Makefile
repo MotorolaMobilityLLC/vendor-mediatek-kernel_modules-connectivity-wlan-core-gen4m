@@ -202,6 +202,7 @@ ccflags-y:=$(filter-out -UBELLWETHER,$(ccflags-y))
 ccflags-y += -DBELLWETHER
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
+CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC3X=y
 CONFIG_NUM_OF_WFDMA_RX_RING=5
 CONFIG_NUM_OF_WFDMA_TX_RING=0
@@ -217,6 +218,7 @@ ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
+CONFIG_MTK_WIFI_11BE_MLO_SUPPORT=y
 CONFIG_MTK_WIFI_CONNAC3X=y
 CONFIG_NUM_OF_WFDMA_RX_RING=2
 CONFIG_NUM_OF_WFDMA_TX_RING=0
@@ -252,11 +254,17 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11BE=1
-    ifneq ($(CONFIG_MLD_LINK_MAX),)
-        ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
+    ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
+        ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=1
+        ifneq ($(CONFIG_MLD_LINK_MAX),)
+            ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
+        endif
+    else
+        ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
     endif
 else
     ccflags-y += -DCFG_SUPPORT_802_11BE=0
+    ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=0
 endif
 
 ifneq ($(CONFIG_DBDC_MODE),)
@@ -874,8 +882,11 @@ MGMT_OBJS += $(MGMT_DIR)he_ie.o \
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
-MGMT_OBJS += $(MGMT_DIR)eht_rlm.o \
-             $(MGMT_DIR)mlo.o
+MGMT_OBJS += $(MGMT_DIR)eht_rlm.o
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
+MGMT_OBJS += $(MGMT_DIR)mlo.o
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TWT_SUPPORT), y)

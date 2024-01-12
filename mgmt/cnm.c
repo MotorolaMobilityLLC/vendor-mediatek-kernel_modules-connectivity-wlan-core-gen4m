@@ -2070,7 +2070,9 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = mldBssGetByIdx(prAdapter, ucMldGroupIdx);
+#endif
 
 	ASSERT(prAdapter);
 
@@ -2096,12 +2098,14 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		return prBssInfo;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (prMldBssInfo && prMldBssInfo->ucOmacIdx != INVALID_OMAC_IDX) {
 		ucOwnMacIdx = prMldBssInfo->ucOmacIdx;
 		DBGLOG(CNM, INFO, "Use mld omac idx %d instead\n",
 			ucOwnMacIdx);
-		goto omac_chosed;
+		goto omac_choosed;
 	}
+#endif
 
 	/* Find available HW set  with the order 1,2,..*/
 	do {
@@ -2119,14 +2123,15 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			/* No hit the ucOwnMacIndex could be
 			 * assigned to this new bss
 			 */
-			break;
+			omac_choosed;
 		}
 	} while (++ucOwnMacIdx < prAdapter->ucHwBssIdNum);
 
 	if (ucOwnMacIdx >= prAdapter->ucHwBssIdNum)
 		return NULL;
 
-omac_chosed:
+omac_choosed:
+
 	/* Find available BSS_INFO */
 	for (ucBssIndex = 0;
 	     ucBssIndex < prAdapter->ucHwBssIdNum;
@@ -2162,8 +2167,10 @@ omac_chosed:
 			rlmResetCSAParams(prBssInfo);
 			prBssInfo->fgHasStopTx = FALSE;
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (prMldBssInfo && prMldBssInfo->ucOmacIdx == INVALID_OMAC_IDX)
 				prMldBssInfo->ucOmacIdx = ucOwnMacIdx;
+#endif
 			log_dbg(CNM, INFO, "bss=%d,type=%d,omac=%d,omld=%d\n",
 				prBssInfo->ucBssIndex,
 				prBssInfo->eNetworkType,
