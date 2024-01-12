@@ -6869,6 +6869,7 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 #endif
 	uint32_t u4TxHifRes = 0, u4Idx = 0;
+	uint32_t u4PlatformBoostCpuTh = 1;
 
 	/* Feature options will be filled by config file */
 
@@ -7462,8 +7463,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 600);
 	prWifiVar->u4PerfMonTpTh[9] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
+
+	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
 	prWifiVar->u4BoostCpuTh =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh", 1);
+		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",
+			u4PlatformBoostCpuTh);
 
 	/* for SER */
 	prWifiVar->fgEnableSer = (uint8_t)wlanCfgGetUint32(prAdapter,
