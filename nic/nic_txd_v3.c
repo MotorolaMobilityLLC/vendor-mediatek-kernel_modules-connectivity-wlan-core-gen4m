@@ -391,6 +391,9 @@ void nic_txd_v3_compose(
 	HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
 		prTxDesc, prBssInfo->ucOwnMacIndex);
 
+	/* TGID should align HW band idx */
+	HAL_MAC_CONNAC3X_TXD_SET_TGID(prTxDesc, prBssInfo->eBandIdx);
+
 	/** DW2 **/
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
