@@ -2,7 +2,7 @@ LOCAL_PATH := $(call my-dir)
 
 ifeq ($(MTK_WLAN_SUPPORT), yes)
 
-ifeq ($(WLAN_CHIP_ID), common)
+ifeq ($(WLAN_BUILD_COMMON), true)
 	# for layer decoupling 2.0, we have to build all configurations
 	WLAN_CHIP_ID := 6893
 	WIFI_CHIP := CONNAC2X2_SOC3_0
