@@ -1408,21 +1408,23 @@ static void rlmFillVhtCapIE(struct ADAPTER *prAdapter,
 					       prMsduInfo->ucStaRecIndex);
 
 		if (prStaRec &&
-		(prStaRec->ucVhtCapNumSoundingDimensions > 0) &&
-		(prStaRec->ucVhtCapNumSoundingDimensions <
-		VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX) &&
+		(prStaRec->ucVhtCapNumSoundingDimensions == 0x2) &&
 		!prAdapter->rWifiVar.fgForceSTSNum) {
+		/* For the compatibility with netgear R7000 AP */
 			prVhtCap->u4VhtCapInfo |=
 		(((uint32_t)prStaRec->ucVhtCapNumSoundingDimensions)
 << VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_SUP_OFF);
 			DBGLOG(RLM, INFO, "Set VHT Cap BFEE STS CAP=%d\n",
 				       prStaRec->ucVhtCapNumSoundingDimensions);
-			} else {
+		} else {
+		/* For 11ac cert. VHT-5.2.63C MU-BFee step3,
+		 * it requires STAUT to set its maximum STS capability here
+		 */
 			prVhtCap->u4VhtCapInfo |=
 VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 			DBGLOG(RLM, TRACE, "Set VHT Cap BFEE STS CAP=%d\n",
 				VHT_CAP_INFO_BEAMFORMEE_STS_CAP_MAX);
-			}
+		}
 /* DBGLOG(RLM, INFO, "VhtCapInfo=%x\n", prVhtCap->u4VhtCapInfo); */
 #endif
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtMuBfee))
