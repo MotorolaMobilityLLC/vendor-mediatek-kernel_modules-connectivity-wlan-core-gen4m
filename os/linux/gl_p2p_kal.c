@@ -2175,14 +2175,16 @@ void kalP2pIndicateAcsResult(IN struct GLUE_INFO *prGlueInfo,
 		break;
 	}
 
-	DBGLOG(P2P, INFO, "r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d\n",
-			ucRoleIndex,
-			eBand,
-			ucPrimaryCh,
-			ucSecondCh,
-			ucSeg0Ch,
-			ucSeg1Ch,
-			ch_width);
+	DBGLOG(P2P, INFO,
+		"r=%d, b=%d, c=%d, s=%d, s0=%d, s1=%d, ch_w=%d, h=%d\n",
+		ucRoleIndex,
+		eBand,
+		ucPrimaryCh,
+		ucSecondCh,
+		ucSeg0Ch,
+		ucSeg1Ch,
+		ch_width,
+		eHwMode);
 
 #if KERNEL_VERSION(3, 14, 0) <= LINUX_VERSION_CODE
 	vendor_event = cfg80211_vendor_event_alloc(prGlueP2pInfo->prWdev->wiphy,
