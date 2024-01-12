@@ -4581,18 +4581,13 @@ nicGetTargetTlvElement(uint16_t u2TargetTlvElement, void *prCmdBuffer);
 uint32_t nicAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
 			     uint32_t prCmdBufferLen, void *prCmdBuffer);
 
-uint32_t nicDumpTlv(void *prCmdBuffer);
-void nicNanEventTestProcess(struct ADAPTER *prAdapter,
-			    struct WIFI_EVENT *prEvent);
 void nicNanEventDispatcher(struct ADAPTER *prAdapter,
 			   struct WIFI_EVENT *prEvent);
 void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 			  struct WIFI_EVENT *prEvent);
 void nicNanGetCmdInfoQueryTestBuffer(
 	struct _TXM_CMD_EVENT_TEST_T **prCmdInfoQueryTestBuffer);
-void nicNanTestQueryInfoDone(struct ADAPTER *prAdapter,
-			     struct CMD_INFO *prCmdInfo,
-			     uint8_t *pucEventBuf);
+
 void nicNanEventSTATxCTL(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
 void nicNanNdlFlowCtrlEvt(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf);
 void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter,

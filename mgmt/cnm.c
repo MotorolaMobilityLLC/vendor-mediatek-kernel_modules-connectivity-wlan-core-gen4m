@@ -1077,6 +1077,17 @@ void cnmRadarDetectEvent(struct ADAPTER *prAdapter,
 		prEventBody->u4OutPRI_STG3;
 	g_rP2pRadarInfo.u4OutPRIStgDmin =
 		prEventBody->u4OutPRIStgDmin;
+	if ((prEventBody->u1LongPulseNum > 32)
+		|| (prEventBody->u1PeriodicPulseNum > 32)
+		|| (prEventBody->u1HwPulseNum > 32)) {
+		log_dbg(CNM, WARN,
+			"Do not copy due to num reach limits(%d %d %d)\n",
+			prEventBody->u1LongPulseNum,
+			prEventBody->u1PeriodicPulseNum,
+			prEventBody->u1HwPulseNum);
+		cnmMemFree(prAdapter, prP2pRddDetMsg);
+		return;
+	}
 	kalMemCopy(&g_rP2pRadarInfo.arLongPulse[0],
 		   &prEventBody->arLongPulse[0],
 		   prEventBody->u1LongPulseNum * sizeof(struct

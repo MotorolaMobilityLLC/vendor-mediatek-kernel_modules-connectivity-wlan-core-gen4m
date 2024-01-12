@@ -2177,7 +2177,7 @@ void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
 void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 			  uint8_t *pucEventBuf)
 {
-	uint16_t u2Idx, u2PulseCnt;
+	uint16_t u2Idx, u2PulseCnt = 0;
 	struct EVENT_WIFI_RDD_TEST *prRddPulseEvent;
 
 	ASSERT(prAdapter);
@@ -2186,8 +2186,11 @@ void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 	prRddPulseEvent = (struct EVENT_WIFI_RDD_TEST *) (
 				  pucEventBuf);
 
-	u2PulseCnt = (prRddPulseEvent->u4FuncLength -
-		      RDD_EVENT_HDR_SIZE) / RDD_ONEPLUSE_SIZE;
+	/* underflow check */
+	if (prRddPulseEvent->u4FuncLength >= RDD_EVENT_HDR_SIZE) {
+		u2PulseCnt = (prRddPulseEvent->u4FuncLength -
+			RDD_EVENT_HDR_SIZE) / RDD_ONEPLUSE_SIZE;
+	}
 
 	DBGLOG(INIT, INFO, "[RDD]0x%08x %08d[RDD%d]\n",
 	       prRddPulseEvent->u4Prefix
@@ -3386,12 +3389,20 @@ void nicCmdEventQueryNicCapabilityV2(struct ADAPTER *prAdapter,
 		(struct EVENT_NIC_CAPABILITY_V2 *)pucEventBuf;
 	struct NIC_CAPABILITY_V2_ELEMENT *prElement;
 	uint32_t tag_idx, offset;
+	uint16_t u2TotalElementNum;
 
 	offset = 0;
+	u2TotalElementNum = ARRAY_SIZE(gNicCapabilityV2InfoTable);
 
 	/* process each element */
 	for (tag_idx = 0; tag_idx < prEventNicV2->u2TotalElementNum;
 	     tag_idx++) {
+		if (tag_idx > u2TotalElementNum) {
+			DBGLOG(INIT, ERROR,
+				"tag idx too long: %d > %d\n",
+				tag_idx, u2TotalElementNum);
+			break;
+		}
 
 		prElement = (struct NIC_CAPABILITY_V2_ELEMENT *)(
 				    prEventNicV2->aucBuffer + offset);
@@ -3594,6 +3605,20 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 	       prPhyIcsEvent->u4PhyTimestamp,
 	       prPhyIcsEvent->u4DataLen);
 
+	/* check u4Size overflow before using it */
+	if (checkMulOverflow(prPhyIcsEvent->u4DataLen, sizeof(uint32_t))) {
+		DBGLOG(RFTEST, ERROR,
+			"u4DataLen %d mul overflow!\n",
+			prPhyIcsEvent->u4DataLen);
+		return;
+	}
+	if (checkAddOverflow(prPhyIcsEvent->u4DataLen * sizeof(uint32_t),
+		sizeof(struct ICS_BIN_LOG_HDR))) {
+		DBGLOG(RFTEST, ERROR,
+			"u4DataLen %d add overflow!\n",
+			prPhyIcsEvent->u4DataLen);
+		return;
+	}
 	/* 1KB phy ics packet + fw parser header */
 	u4Size = prPhyIcsEvent->u4DataLen * sizeof(uint32_t) +
 			sizeof(struct ICS_BIN_LOG_HDR);
@@ -5556,6 +5581,9 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 	prEvtStaticPPDscb =
 			(struct EVENT_UPDATE_PP_DSCB *) (prEvent->aucBuffer);
 
+	if (prEvtStaticPPDscb->ucBssIndex > MAX_BSSID_NUM)
+		return;
+
 	prBssInfo = prAdapter->aprBssInfo[prEvtStaticPPDscb->ucBssIndex];
 
 	if ((!prBssInfo) || (!IS_BSS_ACTIVE(prBssInfo)))
@@ -5580,44 +5608,6 @@ void nicEventUpdateStaticPPDscb(struct ADAPTER *prAdapter,
 #endif /* #if CFG_SUPPORT_802_PP_DSCB */
 
 #if CFG_SUPPORT_NAN
-uint32_t nicDumpTlv(void *prCmdBuffer)
-{
-	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
-	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
-	uint16_t u2ElementNum = 1;
-	uint32_t u4BodyByteCnt;
-
-	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
-
-	DBGLOG(TX, INFO, "u2TotalElementNum:%d\n",
-	       prTlvCommon->u2TotalElementNum);
-
-	for (u2ElementNum = 1; u2ElementNum <= prTlvCommon->u2TotalElementNum;
-	     u2ElementNum++) {
-		prTlvElement =
-			nicGetTargetTlvElement(u2ElementNum, prCmdBuffer);
-		if (!prTlvElement) {
-			DBGLOG(TX, ERROR, "prTlvElementis null\n");
-			return WLAN_STATUS_FAILURE;
-		}
-		DBGLOG(TX, INFO, "TLV(%d) start address:%p\n", u2ElementNum,
-		       prTlvElement);
-		DBGLOG(TX, INFO, "TLV(%d) tag_type:%d\n", u2ElementNum,
-		       (uint32_t)prTlvElement->tag_type);
-		DBGLOG(TX, INFO, "TLV(%d) body_len:%d\n", u2ElementNum,
-		       (uint32_t)prTlvElement->body_len);
-
-		for (u4BodyByteCnt = 0; u4BodyByteCnt < prTlvElement->body_len;
-		     u4BodyByteCnt++) {
-			DBGLOG(TX, INFO, "TLV(%d) body[%d]:%x\n", u2ElementNum,
-			       u4BodyByteCnt,
-			       prTlvElement->aucbody[u4BodyByteCnt]);
-		}
-	}
-
-	return WLAN_STATUS_SUCCESS;
-}
-
 struct _CMD_EVENT_TLV_ELEMENT_T *nicGetTargetTlvElement(
 		   uint16_t u2TargetTlvElement, void *prCmdBuffer)
 {
@@ -5694,41 +5684,6 @@ uint32_t nicAddNewTlvElement(uint32_t u4Tag, uint32_t u4BodyLen,
 	return WLAN_STATUS_SUCCESS;
 }
 
-void nicNanEventTestProcess(struct ADAPTER *prAdapter,
-		       struct WIFI_EVENT *prEvent)
-{
-	struct CMD_INFO *prCmdInfo;
-
-	if (!prAdapter) {
-		DBGLOG(NAN, ERROR, "prAdapter error!\n");
-		return;
-	}
-	if (!prEvent) {
-		DBGLOG(NAN, ERROR, "prEvent error!\n");
-		return;
-	}
-
-	DBGLOG(TX, INFO, "nicNanEventDispatcher\n");
-
-	/* Dump Event content */
-	nicDumpTlv((void *)prEvent->aucBuffer);
-
-	/* Process CMD done handler */
-	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
-
-	if (prCmdInfo != NULL) {
-		if (prCmdInfo->pfCmdDoneHandler)
-			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
-						    prEvent->aucBuffer);
-		else if (prCmdInfo->fgIsOid)
-			kalOidComplete(prAdapter->prGlueInfo,
-				       prCmdInfo, 0,
-				       WLAN_STATUS_SUCCESS);
-
-		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
-	}
-}
-
 void nicNanEventSTATxCTL(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct EVENT_UPDATE_NAN_TX_STATUS *prUpdateTxStatus;
@@ -5794,6 +5749,9 @@ void nicNanReceiveEvent(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 {
 	struct NAN_FOLLOW_UP_EVENT *prDiscEvt;
 
+	_Static_assert(sizeof(rFollowInd.service_specific_info) ==
+		       sizeof(prDiscEvt->service_specific_info),
+		       "service_specific_info len not match");
 	prDiscEvt = (struct NAN_FOLLOW_UP_EVENT *)pcuEvtBuf;
 	dumpMemory8((uint8_t *)pcuEvtBuf, 32);
 	DBGLOG(NAN, LOUD, "receive followup event\n");
@@ -5802,6 +5760,15 @@ void nicNanReceiveEvent(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 	rFollowInd.publish_subscribe_id = prDiscEvt->publish_subscribe_id;
 	rFollowInd.requestor_instance_id = prDiscEvt->requestor_instance_id;
 	kalMemCopy(rFollowInd.addr, prDiscEvt->addr, MAC_ADDR_LEN);
+	if (unlikely(prDiscEvt->service_specific_info_len >
+		sizeof(rFollowInd.service_specific_info))) {
+		DBGLOG(NAN, WARN,
+			"service_specific_info len too large: %u > %u\n",
+			prDiscEvt->service_specific_info_len,
+			sizeof(rFollowInd.service_specific_info));
+		prDiscEvt->service_specific_info_len =
+			sizeof(rFollowInd.service_specific_info);
+	}
 	rFollowInd.service_specific_info_len =
 		prDiscEvt->service_specific_info_len;
 	kalMemCopy(rFollowInd.service_specific_info,
@@ -6094,9 +6061,6 @@ void nicNanIOEventHandler(struct ADAPTER *prAdapter,
 	}
 
 	switch (u4SubEvent) {
-	case NAN_EVENT_TEST:
-		nicNanEventTestProcess(prAdapter, prEvent);
-		break;
 	case NAN_EVENT_DISCOVERY_RESULT:
 		nicNanEventDiscoveryResult(prAdapter, prTlvElement->aucbody);
 		break;
@@ -6164,67 +6128,6 @@ void nicNanGetCmdInfoQueryTestBuffer(
 		(struct _TXM_CMD_EVENT_TEST_T *)&grCmdInfoQueryTestBuffer;
 }
 
-void nicNanTestQueryInfoDone(struct ADAPTER *prAdapter,
-	    struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
-	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
-	struct _TXM_CMD_EVENT_TEST_T *prEventContent = NULL;
-	struct _TXM_CMD_EVENT_TEST_T *prQueryInfoContent = NULL;
-	uint32_t u4QueryInfoLen;
-
-	ASSERT(prAdapter);
-	ASSERT(prCmdInfo);
-	ASSERT(pucEventBuf);
-
-	DBGLOG(TX, INFO, "nicNanTestQueryInfoDone\n");
-
-	if (prCmdInfo->fgIsOid) {
-		prGlueInfo = prAdapter->prGlueInfo;
-		prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)pucEventBuf;
-		prTlvElement = nicGetTargetTlvElement(1, prTlvCommon);
-		if (!prTlvElement) {
-			DBGLOG(REQ, ERROR,
-				"prTlvElement is null\n");
-			return;
-		}
-		prEventContent =
-			(struct _TXM_CMD_EVENT_TEST_T *)prTlvElement->aucbody;
-		prQueryInfoContent =
-			(struct _TXM_CMD_EVENT_TEST_T *)
-				prCmdInfo->pvInformationBuffer;
-		if (!prEventContent || !prQueryInfoContent) {
-			DBGLOG(REQ, ERROR,
-				"prEventContent or prQueryInfoContent is null\n");
-			return;
-		}
-		prQueryInfoContent->u4TestValue0 = prEventContent->u4TestValue0;
-		prQueryInfoContent->u4TestValue1 = prEventContent->u4TestValue1;
-		prQueryInfoContent->ucTestValue2 = prEventContent->ucTestValue2;
-		u4QueryInfoLen = sizeof(struct _TXM_CMD_EVENT_TEST_T);
-
-		nicDumpTlv((void *)pucEventBuf);
-
-		DBGLOG(TX, INFO, "grCmdInfoQueryTestBuffer.u4TestValue0 = %x\n",
-		       grCmdInfoQueryTestBuffer.u4TestValue0);
-		DBGLOG(TX, INFO, "grCmdInfoQueryTestBuffer.u4TestValue1 = %x\n",
-		       grCmdInfoQueryTestBuffer.u4TestValue1);
-		DBGLOG(TX, INFO, "grCmdInfoQueryTestBuffer.ucTestValue2 = %x\n",
-		       grCmdInfoQueryTestBuffer.ucTestValue2);
-
-		if ((grCmdInfoQueryTestBuffer.u4TestValue0 == 0x22222222) &&
-		    (grCmdInfoQueryTestBuffer.u4TestValue1 == 0x22222222) &&
-		    (grCmdInfoQueryTestBuffer.ucTestValue2 == 0x22)) {
-			DBGLOG(TX, INFO, ">>CMD done content check pass\n");
-		} else {
-			DBGLOG(TX, INFO, ">>CMD done content check fail\n");
-		}
-
-		kalOidComplete(prGlueInfo, prCmdInfo,
-			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
-	}
-}
 #endif
 
 void nicEventHandleAddBa(struct ADAPTER *prAdapter,
