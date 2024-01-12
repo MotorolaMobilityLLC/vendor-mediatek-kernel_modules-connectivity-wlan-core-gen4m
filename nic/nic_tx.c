@@ -240,6 +240,7 @@ static const char * const apucBandwidth[] = {
 /*----------------------------------------------------------------------------*/
 void nicTxInitialize(IN struct ADAPTER *prAdapter)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct TX_CTRL *prTxCtrl;
 	uint8_t *pucMemHandle;
 	struct MSDU_INFO *prMsduInfo;
@@ -309,6 +310,12 @@ void nicTxInitialize(IN struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_LIMITED_PKT_PID
 		nicTxInitPktPID(prAdapter, i);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		nicUpdateNetifTxThByBssId(prAdapter, i,
+			prWifiVar->u4NetifStopTh,
+			prWifiVar->u4NetifStartTh);
 	}
 
 	/* enable/disable TX resource control */

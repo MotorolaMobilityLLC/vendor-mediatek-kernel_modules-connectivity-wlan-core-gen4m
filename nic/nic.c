@@ -2009,6 +2009,126 @@ uint32_t nicDeactivateNetworkEx(IN struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
+void nicUpdateNetifTxThByBssId(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint32_t u4StopTh, uint32_t u4StartTh)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	prGlueInfo->u4TxStopTh[ucBssIndex] = u4StopTh;
+	prGlueInfo->u4TxStartTh[ucBssIndex] = u4StartTh;
+}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+void nicMldUpdateNetifTxTh(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+	struct BSS_INFO *prCurrBssInfo;
+	uint32_t u4TxStopTh = 0, u4TxStartTh = 0;
+	uint8_t ucBitmap11B = 0;
+	uint8_t i;
+
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prMldBssInfo) {
+		DBGLOG(NIC, WARN, "prMldBssInfo is NULL\n");
+		return;
+	}
+
+	if (prMldBssInfo->ucBssBitmap == 0) {
+		/* should not be empty, just for sanity */
+		DBGLOG(NIC, WARN, "ucBssBitmap is 0\n");
+		return;
+	}
+
+	prBssList = &prMldBssInfo->rBssList;
+	/* for MLO, we should use the largest netif threshold */
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
+			struct BSS_INFO) {
+		if (!prCurrBssInfo)
+			break;
+
+		if (prCurrBssInfo->u4TxStopTh > u4TxStopTh)
+			u4TxStopTh = prCurrBssInfo->u4TxStopTh;
+
+		if (prCurrBssInfo->u4TxStartTh > u4TxStartTh)
+			u4TxStartTh = prCurrBssInfo->u4TxStartTh;
+
+		if (prCurrBssInfo->fgIs11B)
+			ucBitmap11B |= BIT(prCurrBssInfo->ucBssIndex);
+	}
+
+	if (u4TxStartTh > u4TxStopTh) {
+		DBGLOG(NIC, WARN,
+			"Invalid threshold[%u:%u] for MLD[%u]\n",
+			u4TxStartTh, u4TxStopTh,
+			prMldBssInfo->ucGroupMldId);
+		u4TxStartTh = u4TxStopTh / 2;
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (prMldBssInfo->ucBssBitmap & i == 0)
+			continue;
+
+		nicUpdateNetifTxThByBssId(prAdapter, i,
+			u4TxStopTh, u4TxStartTh);
+	}
+
+	/*
+	 * turn on HIF adjust control only when all BSS in the same MLD is
+	 * under 11B
+	 */
+	if (prMldBssInfo->ucBssBitmap == ucBitmap11B)
+		prAdapter->ucAdjustCtrlBitmap |= ucBitmap11B;
+	else {
+		prAdapter->ucAdjustCtrlBitmap &=
+			~(prMldBssInfo->ucBssBitmap);
+	}
+}
+#else /* CFG_SUPPORT_802_11BE_MLO == 1 */
+void nicUpdateNetifTxTh(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	nicUpdateNetifTxThByBssId(prAdapter, prBssInfo->ucBssIndex,
+			prBssInfo->u4TxStopTh,
+			prBssInfo->u4TxStartTh);
+
+	if (prBssInfo->fgIs11B) {
+		prAdapter->ucAdjustCtrlBitmap |=
+			BIT(prBssInfo->ucBssIndex);
+	} else {
+		prAdapter->ucAdjustCtrlBitmap &=
+			~BIT(prBssInfo->ucBssIndex);
+	}
+}
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
+
+void nicAdjustNetifTxTh(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+	struct WIFI_VAR *prWifiVar;
+
+	prWifiVar = &prAdapter->rWifiVar;
+	if (prBssInfo->eConnectionState == MEDIA_STATE_CONNECTED
+		&& NIC_IS_BSS_BELOW_11AC(prBssInfo)) {
+		if (NIC_IS_BSS_11B(prBssInfo))
+			prBssInfo->fgIs11B = TRUE;
+
+		prBssInfo->u4TxStopTh = NIC_BSS_LOW_RATE_TOKEN_CNT;
+		prBssInfo->u4TxStartTh = prBssInfo->u4TxStopTh / 2;
+	} else {
+		prBssInfo->u4TxStopTh = prWifiVar->u4NetifStopTh;
+		prBssInfo->u4TxStartTh = prWifiVar->u4NetifStartTh;
+		prBssInfo->fgIs11B = FALSE;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	nicMldUpdateNetifTxTh(prAdapter, prBssInfo);
+#else
+	nicUpdateNetifTxTh(prAdapter, prBssInfo);
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
+}
+
 /* BSS-INFO */
 uint32_t nicUpdateBss(IN struct ADAPTER *prAdapter,
 			IN uint8_t ucBssIndex)
@@ -2039,6 +2159,7 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
+	nicAdjustNetifTxTh(prAdapter, prBssInfo);
 	halUpdateBssTokenCnt(prAdapter, ucBssIndex);
 
 	kalMemZero(&rCmdSetBssInfo,
@@ -2267,9 +2388,13 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 	rCmdSetBssInfo.ucMBSSIDIndex = prBssInfo->ucMBSSIDIndex;
 #endif
 
+#define TEMP_LOG_TEMPLATE \
+	"Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] " \
+	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u] " \
+	"NetIfTh[%u:%u]\n"
+
 	DBGLOG(BSS, INFO,
-	       "Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] "
-	       "BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u]\n",
+	       TEMP_LOG_TEMPLATE,
 	       ucBssIndex,
 	       prBssInfo->ucOwnMacIndex,
 	       rCmdSetBssInfo.ucWmmSet,
@@ -2278,7 +2403,10 @@ uint32_t nicUpdateBssEx(IN struct ADAPTER *prAdapter,
 	       MAC2STR(prBssInfo->aucBSSID),
 	       rCmdSetBssInfo.ucAuthMode,
 	       rCmdSetBssInfo.ucEncStatus,
-	       rCmdSetBssInfo.ucIotApAct);
+	       rCmdSetBssInfo.ucIotApAct,
+	       prBssInfo->u4TxStopTh,
+	       prBssInfo->u4TxStartTh);
+#undef TEMP_LOG_TEMPLATE
 
 	u4Status = wlanSendSetQueryCmd(prAdapter,
 				       CMD_ID_SET_BSS_INFO,
