@@ -379,6 +379,7 @@ struct CONNECTION_SETTINGS {
 	uint8_t *pucAssocIEs;
 	size_t assocIeLen;
 	u_int8_t fgAuthOsenWithRSN;
+	uint16_t u2LinkIdBitmap;
 };
 
 struct AIS_LINK_INFO {

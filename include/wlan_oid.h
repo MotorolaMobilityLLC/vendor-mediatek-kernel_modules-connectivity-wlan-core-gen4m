@@ -413,6 +413,7 @@ struct PARAM_CONNECT {
 	uint8_t *pucIEs;
 	uint32_t u4IesLen;
 	uint8_t fgTestMode;
+	uint16_t u2LinkIdBitmap;
 };
 
 struct PARAM_EXTERNAL_AUTH {
