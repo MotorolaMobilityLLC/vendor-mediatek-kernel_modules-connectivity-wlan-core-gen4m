@@ -4100,6 +4100,11 @@ nanNdpSendDataIndicationEvent(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	rDataReqInd.app_info.ndp_app_info_len = 0;
+	kalMemSet(rDataReqInd.app_info.ndp_app_info,
+				   0, NAN_DP_MAX_APP_INFO_LEN);
+	rDataReqInd.fgSupportNDPE = 0;
+
 	rDataReqInd.eventID = ENUM_NAN_DATA_INDICATION;
 	rDataReqInd.service_instance_id = prNDP->ucPublishId;
 	rDataReqInd.ndp_instance_id = prNDP->ucNDPID;
@@ -4158,6 +4163,8 @@ nanNdpSendDataConfirmEvent(struct ADAPTER *prAdapter,
 	}
 
 	prNDL = nanDataUtilGetNdl(prAdapter, prNDP);
+
+	rDataConfirmInd.fgSupportNDPE = 0;
 
 	rDataConfirmInd.eventID = ENUM_NAN_DATA_CONFIRM;
 	rDataConfirmInd.ndp_instance_id = prNDP->ucNDPID;
