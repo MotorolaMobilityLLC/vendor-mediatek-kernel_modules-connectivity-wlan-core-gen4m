@@ -703,6 +703,9 @@ struct GLUE_INFO {
 
 #endif
 	struct tasklet_struct rRxTask;
+#if (CFG_SUPPORT_RETURN_TASK == 1)
+	struct tasklet_struct rRxRfbRetTask;
+#endif
 	struct tasklet_struct rTxCompleteTask;
 #if CFG_SUPPORT_MULTITHREAD
 	struct work_struct rTxMsduFreeWork;
