@@ -187,6 +187,8 @@
 
 #define HIF_DEADFEED_VALUE      0xdeadfeed
 
+#define HIF_DEFAULT_BSS_FREE_CNT	64
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -376,6 +378,7 @@ struct MSDU_TOKEN_ENTRY {
 	uint32_t u4PktDmaLength;
 	uint16_t u2Port; /* tx ring number */
 	uint8_t ucWlanIndex;
+	uint8_t ucBssIndex;
 };
 
 struct MSDU_TOKEN_INFO {
@@ -383,6 +386,10 @@ struct MSDU_TOKEN_INFO {
 	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
 	spinlock_t rTokenLock;
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
+
+	/* control bss index packet number */
+	bool fgIsEnTxRingBssCtrl;
+	int32_t i4TxBssCnt[MAX_BSSID_NUM];
 };
 
 struct TX_CMD_REQ {
@@ -439,7 +446,8 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter);
 uint32_t halGetMsduTokenFreeCnt(IN struct ADAPTER *prAdapter);
 struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
 					      uint32_t u4TokenNum);
-struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter);
+struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
+					     uint8_t ucBssIdx);
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum);
 void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,

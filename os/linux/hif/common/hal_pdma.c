@@ -735,6 +735,10 @@ void halInitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 
+	prTokenInfo->fgIsEnTxRingBssCtrl = false;
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
+		prTokenInfo->i4TxBssCnt[u4Idx] = 0;
+
 	spin_lock_init(&prTokenInfo->rTokenLock);
 
 	DBGLOG(HAL, INFO, "Msdu Token Init: Tot[%u] Used[%u]\n",
@@ -786,6 +790,10 @@ void halUninitMsduTokenInfo(IN struct ADAPTER *prAdapter)
 
 	prTokenInfo->u4UsedCnt = 0;
 
+	prTokenInfo->fgIsEnTxRingBssCtrl = false;
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
+		prTokenInfo->i4TxBssCnt[u4Idx] = 0;
+
 	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
 		HIF_TX_MSDU_TOKEN_NUM, prTokenInfo->u4UsedCnt);
 }
@@ -810,7 +818,8 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(IN struct ADAPTER *prAdapter,
 	return &prTokenInfo->arToken[u4TokenNum];
 }
 
-struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
+struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter,
+					     uint8_t ucBssIndex)
 {
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -829,6 +838,11 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(IN struct ADAPTER *prAdapter)
 	ktime_get_ts64(&prToken->rTs);
 	prToken->fgInUsed = TRUE;
 	prTokenInfo->u4UsedCnt++;
+
+	if (ucBssIndex < BSS_DEFAULT_NUM) {
+		prToken->ucBssIndex = ucBssIndex;
+		prTokenInfo->i4TxBssCnt[ucBssIndex]++;
+	}
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 
@@ -886,14 +900,21 @@ static void halResetMsduToken(IN struct ADAPTER *prAdapter)
 		prTokenInfo->aprTokenStack[u4Idx] = prToken;
 	}
 	prTokenInfo->u4UsedCnt = 0;
+
+	prTokenInfo->fgIsEnTxRingBssCtrl = false;
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
+		prTokenInfo->i4TxBssCnt[u4Idx] = 0;
 }
 
 void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 {
+	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
 	unsigned long flags = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (!prTokenInfo->u4UsedCnt) {
 		DBGLOG(HAL, WARN, "MSDU token is full, Used[%u]\n",
@@ -908,6 +929,10 @@ void halReturnMsduToken(IN struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 	}
 
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
+
+	if (prToken->ucBssIndex < BSS_DEFAULT_NUM)
+		prTokenInfo->i4TxBssCnt[prToken->ucBssIndex]--;
+	prToken->ucBssIndex = BSS_DEFAULT_NUM;
 
 	prToken->fgInUsed = FALSE;
 	prTokenInfo->u4UsedCnt--;
@@ -2374,7 +2399,8 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	if (u4TotalLen <= (AXI_TX_MAX_SIZE_PER_FRAME + u4TxDescAppendSize)) {
 
 		/* Acquire MSDU token */
-		prToken = halAcquireMsduToken(prGlueInfo->prAdapter);
+		prToken = halAcquireMsduToken(prGlueInfo->prAdapter,
+					      prMsduInfo->ucBssIndex);
 		if (!prToken) {
 			DBGLOG(HAL, ERROR, "Write MSDU acquire token fail\n");
 			return false;
@@ -2470,7 +2496,8 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 		fgIsLast = (u4Idx == u4Num - 1);
 
 		/* Acquire MSDU token */
-		prToken = halAcquireMsduToken(prGlueInfo->prAdapter);
+		prToken = halAcquireMsduToken(prGlueInfo->prAdapter,
+					      prMsduInfo->ucBssIndex);
 		if (!prToken) {
 			DBGLOG(HAL, ERROR, "Write AMSDU acquire token fail\n");
 			return false;
@@ -3086,3 +3113,49 @@ void halNotifyMdCrash(IN struct ADAPTER *prAdapter)
 			MCU_INT_NOTIFY_MD_CRASH);
 }
 
+bool halIsTxBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+	uint8_t aucStrBuf[MAX_BSSID_NUM * 20];
+	uint32_t u4Idx, u4Offset = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(prAdapter->prGlueInfo);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+
+	if (!prTokenInfo->fgIsEnTxRingBssCtrl || ucBssIndex >= MAX_BSSID_NUM ||
+	    prTokenInfo->i4TxBssCnt[ucBssIndex] < HIF_DEFAULT_BSS_FREE_CNT)
+		return false;
+
+	kalMemZero(aucStrBuf, MAX_BSSID_NUM * 20);
+	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
+		u4Offset += kalSprintf(
+			aucStrBuf + u4Offset,
+			u4Idx == 0 ? "%d" : ":%d",
+			prTokenInfo->i4TxBssCnt[u4Idx]);
+	}
+
+	DBGLOG(HAL, TRACE, "Bss[%d] tx full, Cnt[%s]\n", ucBssIndex, aucStrBuf);
+
+	return true;
+}
+
+void halEnTxRingBssCtrl(struct ADAPTER *prAdapter, bool fgEn)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+
+	ASSERT(prAdapter);
+	ASSERT(prAdapter->prGlueInfo);
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+
+	if (prTokenInfo->fgIsEnTxRingBssCtrl != fgEn)
+		DBGLOG(HAL, INFO, "IsEnTxRingBssCtrl=[%d].\n", fgEn);
+
+	prTokenInfo->fgIsEnTxRingBssCtrl = fgEn;
+}
