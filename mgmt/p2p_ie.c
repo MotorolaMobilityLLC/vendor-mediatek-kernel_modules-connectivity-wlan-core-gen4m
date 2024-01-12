@@ -170,6 +170,7 @@ void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11AC
 		/* Add VHT IE */
 		rlmReqGenerateVhtCapIE(prAdapter, prMsduInfo);
+		rlmReqGenerateVhtOpNotificationIE(prAdapter, prMsduInfo);
 #endif
 
 #if CFG_SUPPORT_802_11AX
