@@ -218,6 +218,8 @@
 #define SW_WFDMA_MAX_RETRY_COUNT	100
 #define SW_WFDMA_RETRY_TIME		10
 
+#define MSDU_TOKEN_HISTORY_NUM 5
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -416,6 +418,16 @@ struct MSDU_TOKEN_ENTRY {
 	uint8_t ucBssIndex;
 };
 
+struct TOKEN_HISTORY {
+	uint32_t u4UsedCnt;
+	uint32_t u4LongestId;
+};
+
+struct MSDU_TOKEN_HISTORY_INFO {
+	struct TOKEN_HISTORY au4List[MSDU_TOKEN_HISTORY_NUM];
+	uint32_t u4CurIdx;
+};
+
 struct MSDU_TOKEN_INFO {
 	uint32_t u4UsedCnt;
 	struct MSDU_TOKEN_ENTRY *aprTokenStack[HIF_TX_MSDU_TOKEN_NUM];
@@ -425,6 +437,8 @@ struct MSDU_TOKEN_INFO {
 	/* control bss index packet number */
 	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
 	uint32_t u4MaxBssFreeCnt;
+
+	struct MSDU_TOKEN_HISTORY_INFO rHistory;
 };
 
 struct TX_CMD_REQ {
