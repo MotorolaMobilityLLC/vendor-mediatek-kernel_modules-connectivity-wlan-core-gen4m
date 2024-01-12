@@ -1909,7 +1909,7 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 			prMldStarec->aucPeerMldAddr);
 
 		DBGLOG(ML, INFO, "\tRX pkt count:\n");
-		for (j = 0; j < MLD_LINK_MAX; j++)
+		for (j = 0; j < ARRAY_SIZE(prMldStarec->aucRxPktCnt); j++)
 			DBGLOG(ML, INFO, "\t\tband%d:0x%llx\n",
 				j, prMldStarec->aucRxPktCnt[j]);
 
@@ -2140,7 +2140,7 @@ void mldStarecLogRxData(struct ADAPTER *prAdapter,
 	if (!mld_sta)
 		return;
 
-	if (ucHwBandIdx >= MLD_LINK_MAX)
+	if (ucHwBandIdx >= ENUM_BAND_NUM)
 		return;
 
 	mld_sta->aucRxPktCnt[ucHwBandIdx]++;
