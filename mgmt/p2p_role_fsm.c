@@ -64,7 +64,7 @@ u_int8_t p2pRoleFsmNeedMlo(
 	u_int8_t fgIsApMode = p2pFuncIsAPMode(
 		prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]);
 
-	return mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_P2P, fgIsApMode);
+	return mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, fgIsApMode);
 #else
 	return FALSE;
 #endif

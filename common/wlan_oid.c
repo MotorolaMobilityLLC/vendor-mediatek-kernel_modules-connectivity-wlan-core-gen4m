@@ -1200,7 +1200,7 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 		}
 	} else
 		DBGLOG(INIT, INFO, "No Bssid set\n");
-	prConnSettings->u4FreqInKHz = pParamConn->u4CenterFreq;
+	prConnSettings->u4FreqInMHz = pParamConn->u4CenterFreq;
 
 #if CFG_SUPPORT_ROAMING
 	/* prepare for CMD_BUILD_CONNECTION & CMD_GET_CONNECTION_STATUS */
@@ -1304,14 +1304,14 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, INFO,
 		"ucBssIndex %d, ssid %s, bssid " MACSTR ", bssid_hint " MACSTR
-		", conn policy %d, disc reason %d, freqInKHZ %d\n",
+		", conn policy %d, disc reason %d, freqInMHZ %d\n",
 		ucBssIndex,
 		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prConnSettings->aucBSSID),
 		MAC2STR(prConnSettings->aucBSSIDHint),
 		prConnSettings->eConnectionPolicy,
 		prAisAbortMsg->ucReasonOfDisconnect,
-		prConnSettings->u4FreqInKHz);
+		prConnSettings->u4FreqInMHz);
 	return WLAN_STATUS_SUCCESS;
 } /* end of wlanoidSetConnect */
 

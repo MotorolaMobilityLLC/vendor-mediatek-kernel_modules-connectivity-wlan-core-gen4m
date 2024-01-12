@@ -865,6 +865,8 @@ struct WIFI_VAR {
 	uint8_t ucMlProbeRetryLimit;
 	struct LINK_MGMT rMldBlockList;
 	uint8_t ucMldRetryCount;
+	uint8_t fgApRemovalByT2LM;
+	uint32_t u4ApRemovalMarginMs;
 	uint8_t ucNonApMldEMLSupport;
 	uint8_t ucApMldEMLSupport;
 	uint16_t u2NonApMldEMLCap;

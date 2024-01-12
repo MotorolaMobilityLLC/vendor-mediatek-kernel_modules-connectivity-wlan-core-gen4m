@@ -217,7 +217,9 @@ struct STA_PROFILE {
 	uint8_t ucChangeSeq;
 	uint16_t u2CapInfo;
 	uint16_t u2StatusCode;
-	uint16_t u2DeleteTimer;
+	uint16_t u2ApRemovalTimer;
+	uint8_t ucOpType;
+	uint32_t u4OpParam;
 	uint16_t u2IEbufLen;
 	uint8_t aucIEbuf[400];
 };
@@ -444,7 +446,12 @@ uint8_t mldGetBssIndexByHwBand(struct ADAPTER *prAdapter,
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
-uint8_t mldIsMloFeatureEnabled(
+uint8_t mldIsMultiLinkEnabled(
+	struct ADAPTER *prAdapter,
+	enum ENUM_NETWORK_TYPE eNetworkType,
+	uint8_t ucParam);
+
+uint8_t mldIsSingleLinkEnabled(
 	struct ADAPTER *prAdapter,
 	enum ENUM_NETWORK_TYPE eNetworkType,
 	uint8_t ucParam);
@@ -462,4 +469,8 @@ void mldDumpStarecList(struct ADAPTER *prAdapter,
 	struct MLD_STA_RECORD *prMldStarec);
 
 void mldCheckStarecList(struct ADAPTER *prAdapter);
+
+void mldCheckApRemoval(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, const uint8_t *pucIE);
+
 #endif /* !_MLO_H */

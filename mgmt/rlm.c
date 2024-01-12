@@ -2760,7 +2760,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	u_int8_t IsfgHe6gBandCapChange = FALSE;
 #endif
 #endif /* CFG_SUPPORT_802_11AX == 1 */
-
 #if CFG_SUPPORT_DFS
 	struct IE_CHANNEL_SWITCH *prCSAIE;
 	struct IE_EX_CHANNEL_SWITCH *prExCSAIE;
@@ -3431,9 +3430,15 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				ehtRlmRecOperation(prAdapter, prStaRec,
 					prBssInfo, pucIE);
 #endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD &&
+			    BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_RECONFIG))
+				mldCheckApRemoval(prAdapter, prStaRec, pucIE);
+
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_TID2LNK_MAP)
 				t2lmParseT2LMIE(prAdapter, prStaRec, pucIE);
+#endif /* CFG_SUPPORT_802_11BE_T2LM */
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif /* CFG_SUPPORT_802_11AX */
 			break;

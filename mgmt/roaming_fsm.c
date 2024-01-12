@@ -178,7 +178,7 @@ uint32_t roamingFsmSendFtActionFrame(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* set to FTR addr */
-	if (mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS,
+	if (mldIsSingleLinkEnabled(prAdapter, NETWORK_TYPE_AIS,
 		prStaRec->ucBssIndex) && prBssDesc->rMlInfo.fgValid)
 		aucTargetApAddr = prBssDesc->rMlInfo.aucMldAddr;
 #endif
@@ -239,7 +239,7 @@ uint32_t roamingFsmSendFtActionFrame(struct ADAPTER *prAdapter,
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS,
+	if (mldIsSingleLinkEnabled(prAdapter, NETWORK_TYPE_AIS,
 		prStaRec->ucBssIndex) && prBssDesc->rMlInfo.fgValid) {
 		struct IE_MULTI_LINK_CONTROL *common;
 		struct MLD_BSS_INFO *mld_bssinfo;
@@ -323,7 +323,7 @@ uint32_t roamingFsmCheckRxFtActionFrameStatus(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* set to FTR addr */
-	if (mldIsMloFeatureEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) &&
+	if (mldIsSingleLinkEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex) &&
 	    prBssDesc->rMlInfo.fgValid) {
 		struct MULTI_LINK_INFO parse, *info = &parse;
 		const uint8_t *ml;
@@ -900,7 +900,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 				aucTargetApAddr = prBssDesc->aucBSSID;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 				/* set to FTR addr */
-				if (mldIsMloFeatureEnabled(prAdapter,
+				if (mldIsSingleLinkEnabled(prAdapter,
 					NETWORK_TYPE_AIS, ucBssIndex) &&
 				    prBssDesc->rMlInfo.fgValid)
 					aucTargetApAddr =
@@ -1317,7 +1317,8 @@ void roamingFsmRunEventNewCandidate(struct ADAPTER *prAdapter,
 	}
 
 	if (prRoam->eReason == ROAMING_REASON_BTM &&
-	    (ucBtmReqMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT)) {
+	    (ucBtmReqMode & (WNM_BSS_TM_REQ_DISASSOC_IMMINENT |
+			     WNM_BSS_TM_REQ_BSS_TERMINATION_INCLUDED))) {
 		uint8_t ucDisImmiState = prBtm->ucDisImmiState;
 
 		if (prBtm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_1)

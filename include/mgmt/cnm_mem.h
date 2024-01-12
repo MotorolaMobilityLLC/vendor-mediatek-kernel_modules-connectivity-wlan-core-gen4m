@@ -271,6 +271,7 @@ struct STA_RECORD {
 	uint8_t ucPendingULTidBitmap;
 	uint8_t ucPendingDLTidBitmap;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
+	uint8_t fgApRemoval;
 #endif
 
 	uint8_t ucStaState;	/* STATE_1,2,3 */
@@ -867,6 +868,7 @@ struct MLD_STA_RECORD {
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
 	uint32_t u4StaBitmap;
+	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
 	struct TIMER rEpcsTimer;
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	enum ENUM_T2LM_STATE eT2LMState;

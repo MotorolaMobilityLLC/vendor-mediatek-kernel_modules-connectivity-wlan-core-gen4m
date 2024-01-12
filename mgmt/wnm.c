@@ -623,6 +623,9 @@ void wnmMboIeTransReq(struct ADAPTER *adapter, uint8_t wnmMode,
 				WLAN_GET_FIELD_16(pos, &u2DisallowSec);
 				aisBssTmpDisallow(adapter, bssDesc,
 					u2DisallowSec, 0);
+			} else {
+				DBGLOG(WNM, WARN,
+					"MBO: Association retry delay attribute not in disassoc imminent mode");
 			}
 			break;
 		case MBO_ATTR_ID_AP_CAPA_IND:
