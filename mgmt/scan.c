@@ -1732,9 +1732,8 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 		/* If opClass is not 6G, no need to do extra scan
 		 * directly check next neighborAPInfo if exist
 		 */
-
 		if (!IS_6G_OP_CLASS(ucOpClass) && !ucHasMlo) {
-			DBGLOG(SCN, INFO, "RNR op class(%d) is not 6G\n",
+			DBGLOG(SCN, TRACE, "RNR op class(%d) is not 6G\n",
 				ucOpClass);
 
 			/* Calculate next NeighborAPInfo's index if exists */
@@ -1831,10 +1830,6 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 
 		for (i = 0; i < u2TbttInfoCount; i++) {
 			j = i * u2TbttInfoLength;
-
-			log_dbg(SCN, INFO, "RnrIe[%x][" MACSTR "]\n", i,
-				MAC2STR(&prNeighborAPInfoField->
-					aucTbttInfoSet[j + 1]));
 
 			/* If this BSSID existed and update time diff is
 			 * smaller than 20s, or existed in current scan request,
@@ -1938,6 +1933,13 @@ void scanParsingRnrElement(IN struct ADAPTER *prAdapter,
 				    prScanParam->ucBssidMatchSsidInd[3],
 				    prScanParam->u2IELen,
 				    prScanInfo->rNeighborAPInfoList.u4NumElem);
+
+			log_dbg(SCN, INFO, "RnrIe " MACSTR " " MACSTR " " MACSTR
+					"" MACSTR "\n",
+					MAC2STR(prScanParam->aucBSSID[0]),
+					MAC2STR(prScanParam->aucBSSID[1]),
+					MAC2STR(prScanParam->aucBSSID[2]),
+					MAC2STR(prScanParam->aucBSSID[3]));
 			ucHasBssid = FALSE;
 		}
 		if (ucNewLink)
@@ -2385,7 +2387,6 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	if (u2IELength > CFG_IE_BUFFER_SIZE) {
 		u2IELength = CFG_IE_BUFFER_SIZE;
 		prBssDesc->fgIsIEOverflow = TRUE;
-		DBGLOG(SCN, WARN, "IE is truncated!\n");
 	} else {
 		prBssDesc->fgIsIEOverflow = FALSE;
 	}
