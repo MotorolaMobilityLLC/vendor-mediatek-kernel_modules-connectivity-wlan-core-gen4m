@@ -490,6 +490,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
+	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt7961 = {
