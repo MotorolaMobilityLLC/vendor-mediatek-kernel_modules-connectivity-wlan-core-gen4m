@@ -475,6 +475,7 @@ uint32_t wlanSendPhyAction(struct ADAPTER *prAdapter,
 		u4CmdSize += u4EpaELnaDataSize;
 		u4CmdSize += sizeof(struct HAL_PHY_ACTION_TLV);
 		u4CmdSize += sizeof(struct COM_FEM_TAG_FORMAT);
+		u4CmdSize += sizeof(struct HAL_PHY_ACTION_TLV);
 		u4CmdSize += sizeof(struct LAA_TAG_FORMAT);
 	}
 
@@ -933,10 +934,8 @@ int wlanPreCalPwrOn(void)
 
 		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_NVRAM,
-			0);
-
-		wlanSendPhyAction(prAdapter,
 			HAL_PHY_ACTION_TAG_COM_FEM,
+			HAL_PHY_ACTION_TAG_LAA,
 			0);
 
 		eFailReason = POWER_ON_INIT_DONE;
