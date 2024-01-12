@@ -15661,6 +15661,21 @@ uint32_t wlanoidSetSer(IN struct ADAPTER *prAdapter,
 				 SER_SET_L3_BF_RECOVER, 0);
 		break;
 
+	case SER_USER_CMD_L0P5_PAUSE_WDT:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_L0P5_CTRL,
+				 SER_ACTION_L0P5_CTRL_PAUSE_WDT, 0);
+		break;
+
+	case SER_USER_CMD_L0P5_RESUME_WDT:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_L0P5_CTRL,
+				 SER_ACTION_L0P5_CTRL_RESUME_WDT, 0);
+		break;
+
+	case SER_USER_CMD_L0P5_WM_HANG:
+		wlanoidSerExtCmd(prAdapter, SER_ACTION_L0P5_CTRL,
+				 SER_ACTION_L0P5_CTRL_WM_HANG, 0);
+		break;
+
 	default:
 		DBGLOG(OID, ERROR, "Error SER CMD\n");
 	}
