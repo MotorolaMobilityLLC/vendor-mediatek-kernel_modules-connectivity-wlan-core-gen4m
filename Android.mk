@@ -155,6 +155,9 @@ LOCAL_MODULE_PATH := $(TARGET_OUT_VENDOR)/lib/modules
 endif
 LOCAL_SRC_FILES := $(patsubst $(LOCAL_PATH)/%,%,$(shell find $(LOCAL_PATH) -type f -name '*.[cho]')) Makefile
 LOCAL_REQUIRED_MODULES := wmt_chrdev_wifi.ko
+
+LOCAL_POST_INSTALL_CMD := $(hide)$(TARGET_STRIP) --strip-unneeded $(LOCAL_MODULE_PATH)/$(LOCAL_MODULE)
+
 include $(BUILD_SYSTEM)/base_rules.mk
 
 WIFI_NAME := wlan_drv_gen4m
