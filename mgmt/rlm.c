@@ -7842,6 +7842,10 @@ void rlmSetSrControl(IN struct ADAPTER *prAdapter, bool fgIsEnableSr)
 	prCmdSrCap = (struct _SR_CMD_SR_CAP_T *)
 		kalMemAlloc(sizeof(struct _SR_CMD_SR_CAP_T),
 			VIR_MEM_TYPE);
+	if (prCmdSrCap == NULL) {
+		DBGLOG(RLM, ERROR, "LM: Mem alloc fail for SR_CMD_SR_CAP\n");
+		return;
+	}
 
 	prCmdSrCap->rSrCmd.u1CmdSubId = SR_CMD_SET_SR_CAP_SREN_CTRL;
 	prCmdSrCap->rSrCmd.u1DbdcIdx = 0;
