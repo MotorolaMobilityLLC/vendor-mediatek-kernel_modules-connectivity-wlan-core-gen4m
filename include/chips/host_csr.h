@@ -80,4 +80,25 @@
 #define HOST_CSR_CONN_HIF_ON_MD_IRQ_ENA_ADDR (HOST_CSR_DRIVER_OWN_INFO + 0x38)
 #endif
 
+/*
+* AP2CONN_ADDR_MAP1[31..16]
+* Mapping [0x180A_xxxx] to [ap2conn_addr_map0[15:0], xxxx]
+*
+* AP2CONN_ADDR_MAP0[15..0]
+* Mapping [0x180D_xxxx] to [ap2conn_addr_map1[15:0], xxxx]
+*/
+#define CONN_HIF_ON_ADDR_REMAP1					0x700C
+#define AP2CONN_ADDR_MAP0					0xD0000
+#define AP2CONN_ADDR_MAP1					0xA0000
+/*
+* AP2CONN_ADDR_MAP3[31..16]
+* Mapping [0x180F_xxxx] to [ap2conn_addr_map3[15:0], xxxx]
+*
+* AP2CONN_ADDR_MAP2[15..0]
+* Mapping [0x1804_xxxx] to [ap2conn_addr_map2[15:0], xxxx]
+*/
+#define CONN_HIF_ON_ADDR_REMAP2					0x7010
+#define AP2CONN_ADDR_MAP3					0x40000
+#define AP2CONN_ADDR_MAP4					0xF0000
+
 #endif /* __HOST_CSR_H__ */
