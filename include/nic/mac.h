@@ -1557,11 +1557,13 @@ enum BEACON_REPORT_DETAIL {
 
 /* 7.3.2.27 Extended Capabilities information element */
 #define ELEM_EXT_CAP_20_40_COEXIST_SUPPORT          BIT(0)
+#define ELEM_EXT_CAP_ECSA_CAP                       BIT(2)
 #define ELEM_EXT_CAP_PSMP_CAP                       BIT(4)
 #define ELEM_EXT_CAP_SERVICE_INTERVAL_GRANULARITY   BIT(5)
 #define ELEM_EXT_CAP_SCHEDULE_PSMP                  BIT(6)
 
 #define ELEM_EXT_CAP_20_40_COEXIST_SUPPORT_BIT      0
+#define ELEM_EXT_CAP_ECSA_CAP_BIT                   2
 #define ELEM_EXT_CAP_BSS_TRANSITION_BIT             19
 #define ELEM_EXT_CAP_MBSSID_BIT                     22
 #define ELEM_EXT_CAP_UTC_TSF_OFFSET_BIT             27

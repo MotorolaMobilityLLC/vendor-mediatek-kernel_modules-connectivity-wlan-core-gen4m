@@ -1667,6 +1667,15 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 #endif
 			break;
 
+		case ELEM_ID_EXTENDED_CAP:
+			DBGLOG(P2P, TRACE, "Dump ext cap.\n");
+			DBGLOG_MEM8(P2P, TRACE, pucIE, IE_SIZE(pucIE));
+			if (EXT_CAP_IE(pucIE)->ucLength > sizeof(uint8_t) &&
+			    (EXT_CAP_IE(pucIE)->aucCapabilities[0] &
+			     ELEM_EXT_CAP_ECSA_CAP))
+				prStaRec->fgEcsaCapable = TRUE;
+			break;
+
 		default:
 			for (i = 0;
 			     i <

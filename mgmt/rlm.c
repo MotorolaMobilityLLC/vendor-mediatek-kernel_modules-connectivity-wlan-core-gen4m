@@ -347,6 +347,9 @@ void rlmReqGenerateExtCapIE(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11AX == 1)
 		|| (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		|| (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11BE)
+#endif
 		)
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
 #if CFG_SUPPORT_PASSPOINT
@@ -440,7 +443,14 @@ void rlmRspGenerateExtCapIE(struct ADAPTER *prAdapter,
 		ucPhyTypeSet = prBssInfo->ucPhyTypeSet;
 	}
 
-	if (RLM_NET_IS_11N(prBssInfo) && (ucPhyTypeSet & PHY_TYPE_SET_802_11N))
+	if (RLM_NET_IS_11N(prBssInfo) && ((ucPhyTypeSet & PHY_TYPE_SET_802_11N)
+#if (CFG_SUPPORT_802_11AX == 1)
+		|| (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11AX)
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		|| (prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11BE)
+#endif
+	))
 		rlmFillExtCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
@@ -1225,6 +1235,9 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 	if (fg40mAllowed)
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 			ELEM_EXT_CAP_20_40_COEXIST_SUPPORT_BIT);
+
+	SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+		ELEM_EXT_CAP_ECSA_CAP_BIT);
 
 #if CFG_SUPPORT_802_11AC
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
@@ -3978,6 +3991,14 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 
 			break;
 #endif
+		case ELEM_ID_EXTENDED_CAP:
+			DBGLOG(P2P, TRACE, "Dump ext cap.\n");
+			DBGLOG_MEM8(P2P, TRACE, pucIE, IE_SIZE(pucIE));
+			if (EXT_CAP_IE(pucIE)->ucLength > sizeof(uint8_t) &&
+			    (EXT_CAP_IE(pucIE)->aucCapabilities[0] &
+			     ELEM_EXT_CAP_ECSA_CAP))
+				prStaRec->fgEcsaCapable = TRUE;
+			break;
 		default:
 			break;
 		} /* end of switch */
@@ -10282,12 +10303,14 @@ rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 			break;
 
 		DBGLOG(P2P, INFO,
-			"bss[%d] " MACSTR ", sta[%d][%d] " MACSTR "\n",
+			"bss[%d] " MACSTR ", sta[%d][%d] " MACSTR
+			", ecsa: %d\n",
 			prBssInfo->ucBssIndex,
 			MAC2STR(prBssInfo->aucOwnMacAddr),
 			prCurrStaRec->ucIndex,
 			prCurrStaRec->ucWlanIndex,
-			MAC2STR(prCurrStaRec->aucMacAddr));
+			MAC2STR(prCurrStaRec->aucMacAddr),
+			prCurrStaRec->fgEcsaCapable);
 
 		__rlmSendChannelSwitchFrame(prAdapter, prBssInfo,
 					    prCurrStaRec);
