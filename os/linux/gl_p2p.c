@@ -2135,7 +2135,6 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	struct ADAPTER *prAdapter = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct sockaddr *sa = NULL;
-	struct wireless_dev *wdev = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct BSS_INFO *prDevBssInfo = NULL;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
@@ -2151,14 +2150,6 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 		DBGLOG(INIT, ERROR, "Set macaddr with ndev(%d) and addr(%d)\n",
 		       (prDev == NULL) ? 0 : 1, (addr == NULL) ? 0 : 1);
 		return WLAN_STATUS_INVALID_DATA;
-	}
-
-	wdev = prDev->ieee80211_ptr;
-	if (wdev->ssid_len > 0 || (wdev->current_bss)) {
-		DBGLOG(INIT, ERROR,
-		       "Reject macaddr change due to ssid_len(%d) & bss(%d)\n",
-		       wdev->ssid_len, wdev->current_bss);
-		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prDev, &ucRoleIdx) != 0) {
@@ -2185,7 +2176,7 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
-	prP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+	prP2pInfo = prGlueInfo->prP2PInfo[0];
 	if (!prP2pInfo) {
 		DBGLOG(INIT, ERROR, "p2p info is null\n");
 		return WLAN_STATUS_INVALID_DATA;
@@ -2196,7 +2187,8 @@ int p2pSetMACAddress(IN struct net_device *prDev, void *addr)
 	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, sa->sa_data);
 	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
 
-	if (prP2pInfo->prDevHandler == prDev) {
+	if ((prP2pInfo->prDevHandler == prDev)
+		&& mtk_IsP2PNetDevice(prGlueInfo, prDev)) {
 		COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
 			sa->sa_data);
 		COPY_MAC_ADDR(prDevBssInfo->aucOwnMacAddr, sa->sa_data);
