@@ -450,7 +450,17 @@ end:
 				prRxStatus)
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 			) {
+			DBGLOG(RSN, INFO, "Trigger WTBL dump for ICV error!\n");
+			rsnDumpWTBL(prAdapter);
 			NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
+			if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.fgRxIcvErrDbg)
+				&& prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_4)) {
+				DBGLOG(RX, INFO, "****** RXD GROUP 4 ******\n");
+				DBGLOG_MEM8(RX, INFO,
+					(uint32_t *) prSwRfb->prRxStatusGroup4,
+					sizeof(struct HW_MAC_RX_STS_GROUP_4));
+			}
 			NIC_DUMP_ICV_RXP(prSwRfb->pvHeader,
 				prSwRfb->u2PacketLen);
 		}

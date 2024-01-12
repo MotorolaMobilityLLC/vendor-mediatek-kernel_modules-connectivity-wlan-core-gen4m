@@ -4256,3 +4256,21 @@ u_int8_t rsnIsFtOverTheAir(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	return FALSE;
 }
 
+void rsnDumpWTBL(struct ADAPTER *prAdapter)
+{
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint8_t cmd[30] = {0};
+	uint8_t strLen = 0;
+	uint32_t strOutLen = 0;
+
+	strLen = kalSnprintf(cmd, sizeof(cmd),
+			"icvErrDumpWTBL");
+	DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
+
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = strLen;
+	kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
+	wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+}
+
