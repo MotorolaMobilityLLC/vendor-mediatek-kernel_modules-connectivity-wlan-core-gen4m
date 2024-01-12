@@ -3569,6 +3569,16 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		}
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* reset mldtype if no ml ie */
+	if (!prBssDesc->rMlInfo.fgValid)
+		prBssDesc->rMlInfo.fgMldType = MLD_TYPE_INVALID;
+
+	if (prBssDesc->rMlInfo.fgValid &&
+		prBssDesc->rMlInfo.fgMldType == MLD_TYPE_INVALID)
+		prBssDesc->rMlInfo.fgMldType = MLD_TYPE_EXTERNAL;
+#endif
+
 	/* 4 <3.2> Save information from IEs - SSID */
 	/* Update Flag of Hidden SSID for used in SEARCH STATE. */
 
