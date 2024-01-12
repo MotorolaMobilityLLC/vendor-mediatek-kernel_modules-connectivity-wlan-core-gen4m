@@ -1047,12 +1047,7 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	prScanInfo->ucScnTimeoutTimes = 0;
 	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover) &&
-		prScanInfo->fgIsSparseChannelValid &&
-		prScanDone->ucSparseChannelArrayValidNum > 5 &&
-		(prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ ||
-		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2) &&
-		!(prScanParam->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID)) {
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover)) {
 		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
 				prScanInfo, prScanParam->ucBssIndex);
 	}
@@ -1721,9 +1716,33 @@ scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
 		struct SCAN_INFO *prScanInfo, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prAisBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint8_t i;
+	uint8_t i, fgRecovery = TRUE;
 	uint8_t fgZeroMdrdy = TRUE, fgZeroBeaconProbeReq = TRUE;
+
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	/* Check scan channel count > 5, too few channel might false alarm */
+	if (!prScanInfo->fgIsSparseChannelValid ||
+		prScanDone->ucSparseChannelArrayValidNum <= 5)
+		fgRecovery = FALSE;
+
+	/* Only AIS scan will do Recovery, exclude OOB scan */
+	if ((prScanInfo->rScanParam.eMsgId != MID_AIS_SCN_SCAN_REQ &&
+		prScanInfo->rScanParam.eMsgId != MID_AIS_SCN_SCAN_REQ_V2) ||
+		(prScanInfo->rScanParam.ucScnFuncMask &
+		ENUM_SCN_USE_PADDING_AS_BSSID))
+		fgRecovery = FALSE;
+
+	/* Not to do recovery for roaming scan*/
+	if (aisNeedTargetScan(prAdapter, ucBssIndex) ||
+		prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
+		fgRecovery = FALSE;
+
+	if (!fgRecovery)
+		return;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
