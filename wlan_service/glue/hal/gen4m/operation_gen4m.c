@@ -1825,9 +1825,7 @@ s_int32 mt_op_set_icap_start(
 	pr_rbist_info->emi_end_addr =
 		(u_int32) ((winfos->emi_phy_base +
 			winfos->emi_phy_size) & 0xFFFFFFFF);
-	pr_rbist_info->emi_msb_addr =
-		(u_int32) ((((u_int64) winfos->emi_phy_base) >> 32) &
-			0xFFFFFFFF);
+	pr_rbist_info->emi_msb_addr = 0; /*CONNAC 1.x useless*/
 
 	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
 		("%s: StartAddr=0x%08x,EndAddr=0x%08x,MsbAddr=0x%08x\n",
