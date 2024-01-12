@@ -1324,6 +1324,12 @@ struct BUS_INFO mt7961_bus_info = {
 	.asicUsbEpctlRstOpt = mt7961HalUsbEpctlRstOpt,
 #endif
 #endif
+#if defined(_HIF_SDIO)
+	.halTxGetFreeResource = halTxGetFreeResource_v1,
+	.halTxReturnFreeResource = halTxReturnFreeResource_v1,
+	.halRestoreTxResource = halRestoreTxResource_v1,
+	.halUpdateTxDonePendingCount = halUpdateTxDonePendingCount_v1,
+#endif /* _HIF_SDIO */
 };
 
 #if CFG_ENABLE_FW_DOWNLOAD

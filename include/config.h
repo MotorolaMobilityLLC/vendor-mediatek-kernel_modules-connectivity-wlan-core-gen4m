@@ -474,6 +474,11 @@
 /*! Maximum number of SW TX CMD packet buffer */
 #define CFG_TX_MAX_CMD_PKT_NUM                  64
 
+/* QM_CMD_RESERVED_THRESHOLD should less than the cmd tx resource */
+#ifndef QM_CMD_RESERVED_THRESHOLD
+#define QM_CMD_RESERVED_THRESHOLD               4
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags and Parameters for RX path
  *------------------------------------------------------------------------------
@@ -1764,6 +1769,15 @@
 #ifndef CFG_SUPPORT_FORCE_ALTX
 #define CFG_SUPPORT_FORCE_ALTX	0
 #endif
+
+/*------------------------------------------------------------------------------
+ * Flag of CMD over WFDMA support
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_SUPPORT_CMD_OVER_WFDMA
+#define CFG_SUPPORT_CMD_OVER_WFDMA	0
+#endif
+
 
 /*******************************************************************************
  *                             D A T A   T Y P E S

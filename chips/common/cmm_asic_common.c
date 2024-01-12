@@ -391,8 +391,8 @@ void asicWakeUpWiFi(IN struct ADAPTER *prAdapter)
 #endif /* _HIF_PCIE || _HIF_AXI */
 
 #if defined(_HIF_USB)
-void fillUsbHifTxDesc(IN uint8_t **pDest,
-		      IN uint16_t *pInfoBufLen)
+void fillUsbHifTxDesc(OUT uint8_t **pDest, IN uint16_t *pInfoBufLen,
+	IN uint8_t ucPacketType)
 {
 	/*USB TX Descriptor (4 bytes)*/
 	/* BIT[15:0] - TX Bytes Count
