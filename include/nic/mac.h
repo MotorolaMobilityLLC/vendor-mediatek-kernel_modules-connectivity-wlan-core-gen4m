@@ -3315,12 +3315,10 @@ struct WMM_ACTION_TSPEC_FRAME {
  */
 #define COPY_SSID(pucDestSsid, ucDestSsidLen, pucSrcSsid, ucSrcSsidLen) \
 	do { \
-		ucDestSsidLen = ucSrcSsidLen; \
-		if (ucSrcSsidLen) { \
-			ASSERT(ucSrcSsidLen <= ELEM_MAX_LEN_SSID); \
-			kalMemCopy(pucDestSsid, pucSrcSsid,	\
-			((ucSrcSsidLen > ELEM_MAX_LEN_SSID) \
-			? ELEM_MAX_LEN_SSID : ucSrcSsidLen)); \
+		ucDestSsidLen = (ucSrcSsidLen > ELEM_MAX_LEN_SSID) \
+			? ELEM_MAX_LEN_SSID : ucSrcSsidLen; \
+		if (ucDestSsidLen) { \
+			kalMemCopy(pucDestSsid, pucSrcSsid, ucDestSsidLen); \
 		} \
 	} while (FALSE)
 
