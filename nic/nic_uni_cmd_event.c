@@ -145,6 +145,8 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_HIF_CTRL] = nicUniCmdHifCtrl,
 	[CMD_ID_RDD_ON_OFF_CTRL] = nicUniCmdRddOnOffCtrl,
 	[CMD_ID_SET_TDLS_CH_SW] = nicUniCmdTdls,
+	[CMD_ID_SET_NOA_PARAM] = nicUniCmdSetP2pNoa,
+	[CMD_ID_SET_OPPPS_PARAM] = nicUniCmdSetP2pOppps,
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -173,6 +175,7 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 	[UNI_EVENT_ID_ROAMING] = nicUniEventRoaming,
 	[UNI_EVENT_ID_ADD_KEY_DONE] = nicUniEventAddKeyDone,
 	[UNI_EVENT_ID_FW_LOG_2_HOST] = nicUniEventFwLog2Host,
+	[UNI_EVENT_ID_P2P] = nicUniEventP2p,
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -3903,6 +3906,72 @@ uint32_t nicUniCmdTdls(struct ADAPTER *ad,
 #endif
 }
 
+uint32_t nicUniCmdSetP2pNoa(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_CUSTOM_NOA_PARAM_STRUCT *cmd;
+	struct UNI_CMD_P2P *uni_cmd;
+	struct UNI_CMD_SET_NOA_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
+			       sizeof(struct UNI_CMD_SET_NOA_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_NOA_PARAM ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_CUSTOM_NOA_PARAM_STRUCT *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_P2P,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_P2P *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_NOA_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_P2P_TAG_SET_NOA_PARAM;
+	tag->u2Length = sizeof(*tag);
+	tag->u4NoaDurationMs = cmd->u4NoaDurationMs;
+	tag->u4NoaIntervalMs = cmd->u4NoaIntervalMs;
+	tag->u4NoaCount = cmd->u4NoaCount;
+	tag->ucBssIdx = cmd->ucBssIdx;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdSetP2pOppps(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_CUSTOM_OPPPS_PARAM_STRUCT *cmd;
+	struct UNI_CMD_P2P *uni_cmd;
+	struct UNI_CMD_SET_OPPPS_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_P2P) +
+			       sizeof(struct UNI_CMD_SET_OPPPS_PARAM);
+
+	if (info->ucCID != CMD_ID_SET_OPPPS_PARAM ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_CUSTOM_OPPPS_PARAM_STRUCT *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_P2P,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_P2P *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_SET_OPPPS_PARAM *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_P2P_TAG_SET_OPPPS_PARAM;
+	tag->u2Length = sizeof(*tag);
+	tag->u4CTwindowMs = cmd->u4CTwindowMs;
+	tag->ucBssIdx = cmd->ucBssIdx;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdGetStaStatistics(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -5219,6 +5288,60 @@ void nicUniEventFwLog2Host(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 							legacy, size);
 
 			kalMemFree(legacy, size, VIR_MEM_TYPE);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+
+void nicUniEventP2p(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_P2P);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_P2P_TAG_UPDATE_NOA_PARAM: {
+			struct UNI_EVENT_UPDATE_NOA_PARAM *noa =
+				(struct UNI_EVENT_UPDATE_NOA_PARAM *) tag;
+			struct EVENT_UPDATE_NOA_PARAMS legacy;
+			uint8_t i;
+
+			legacy.ucBssIndex = noa->ucBssIndex;
+			legacy.ucEnableOppPS = noa->ucEnableOppPS;
+			legacy.u2CTWindow = noa->u2CTWindow;
+			legacy.ucNoAIndex = noa->ucNoAIndex;
+			legacy.ucNoATimingCount = noa->ucNoATimingCount;
+
+			for (i = 0; i < 8; i++) {
+				legacy.arEventNoaTiming[i].ucIsInUse =
+					noa->arEventNoaTiming[i].ucIsInUse;
+				legacy.arEventNoaTiming[i].ucCount =
+					noa->arEventNoaTiming[i].ucCount;
+				legacy.arEventNoaTiming[i].u4Duration =
+					noa->arEventNoaTiming[i].u4Duration;
+				legacy.arEventNoaTiming[i].u4Interval =
+					noa->arEventNoaTiming[i].u4Interval;
+				legacy.arEventNoaTiming[i].u4StartTime =
+					noa->arEventNoaTiming[i].u4StartTime;
+			}
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_UPDATE_NOA_PARAMS,
+								&legacy);
 		}
 			break;
 		default:
