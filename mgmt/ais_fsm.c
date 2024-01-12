@@ -7677,6 +7677,7 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 	struct LINK *prBlackList = &prAdapter->rWifiVar.rBlackList.rUsingLink;
 	OS_SYSTIME rCurrent;
 	struct BSS_DESC *prBssDesc = NULL;
+	struct PARAM_SSID rSsid;
 
 	GET_CURRENT_SYSTIME(&rCurrent);
 
@@ -7695,8 +7696,15 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 				       SEC_TO_MSEC(sec)))
 			continue;
 
-		prBssDesc = scanSearchBssDescByBssid(prAdapter,
-						     prEntry->aucBSSID);
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
+		COPY_SSID(rSsid.aucSsid,
+			  rSsid.u4SsidLen,
+			  prEntry->aucSSID,
+			  prEntry->ucSSIDLen);
+
+		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+						prEntry->aucBSSID,
+						TRUE, &rSsid);
 		if (prBssDesc) {
 			prBssDesc->prBlack = NULL;
 			prBssDesc->ucJoinFailureCount = 0;
@@ -7715,6 +7723,7 @@ static void aisRemoveDeauthBlacklist(struct ADAPTER *prAdapter)
 	struct AIS_BLACKLIST_ITEM *prNextEntry = NULL;
 	struct LINK *prBlackList = &prAdapter->rWifiVar.rBlackList.rUsingLink;
 	struct BSS_DESC *prBssDesc = NULL;
+	struct PARAM_SSID rSsid;
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlackList, rLinkEntry,
 				 struct AIS_BLACKLIST_ITEM) {
@@ -7722,8 +7731,15 @@ static void aisRemoveDeauthBlacklist(struct ADAPTER *prAdapter)
 		    !prEntry->fgDeauthLastTime)
 			continue;
 
-		prBssDesc = scanSearchBssDescByBssid(prAdapter,
-						     prEntry->aucBSSID);
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
+		COPY_SSID(rSsid.aucSsid,
+			  rSsid.u4SsidLen,
+			  prEntry->aucSSID,
+			  prEntry->ucSSIDLen);
+
+		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+						prEntry->aucBSSID,
+						TRUE, &rSsid);
 		if (prBssDesc) {
 			prBssDesc->prBlack = NULL;
 			prBssDesc->ucJoinFailureCount = 0;
