@@ -55,10 +55,6 @@
 #include <linux/input.h>
 #endif
 
-#if (CFG_SDIO_1BIT_DATA_MODE == 1)
-#include "test_driver_sdio_ops.h"
-#endif
-
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -980,14 +976,6 @@ u_int8_t glBusInit(void *pvData)
 	func = (struct sdio_func *)pvData;
 
 	sdio_claim_host(func);
-
-#if (CFG_SDIO_1BIT_DATA_MODE == 1)
-	ret = sdio_disable_wide(func->card);
-	if (ret)
-		DBGLOG(HAL, ERROR, "glBusInit() Error at enabling SDIO 1-BIT data mode.\n");
-	else
-		DBGLOG(HAL, INFO, "glBusInit() SDIO 1-BIT data mode is working.\n");
-#endif
 
 #if (CFG_SDIO_ASYNC_IRQ_AUTO_ENABLE == 1)
 	ret = mtk_sdio_async_irq_enable(func);
