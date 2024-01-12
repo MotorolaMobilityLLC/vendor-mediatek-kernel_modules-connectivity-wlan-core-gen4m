@@ -4050,7 +4050,7 @@ static s_int32 hqa_set_ru_info(
 				   &data,
 				   (u_char *)&seg_sta_cnt[0]);
 
-	if (seg_sta_cnt[0] >= SEG_STA_CNT || seg_sta_cnt[0] < 0)
+	if (seg_sta_cnt[0] >= SEG_STA_CNT)
 		seg_sta_cnt[0] = 1;
 
 	get_param_and_shift_buf(TRUE,
@@ -4058,12 +4058,12 @@ static s_int32 hqa_set_ru_info(
 				   &data,
 				   (u_char *)&seg_sta_cnt[1]);
 
-	if (seg_sta_cnt[1] >= SEG_STA_CNT || seg_sta_cnt[1] < 0)
+	if (seg_sta_cnt[1] >= SEG_STA_CNT)
 		seg_sta_cnt[1] = 1;
 
 	len -= sizeof(u_int32)*3;		/* array length */
 
-	if (seg_sta_cnt[0]+seg_sta_cnt[1] == 0)
+	if (seg_sta_cnt[0]+seg_sta_cnt[1] <= 0)
 		return SERV_STATUS_AGENT_INVALID_LEN;
 
 	len /= (seg_sta_cnt[0]+seg_sta_cnt[1]);	/* per ru length */

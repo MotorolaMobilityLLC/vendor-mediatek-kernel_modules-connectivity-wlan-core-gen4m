@@ -10353,7 +10353,7 @@ wlanoidRftestSetTestMode(IN struct ADAPTER *prAdapter,
 			 IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 			 OUT uint32_t *pu4SetInfoLen) {
 	uint32_t rStatus;
-	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl = {0};
 
 	DEBUGFUNC("wlanoidRftestSetTestMode");
 
@@ -10631,7 +10631,7 @@ wlanoidRftestSetAutoTest(IN struct ADAPTER *prAdapter,
 /* RF test OID set handler */
 uint32_t rftestSetATInfo(IN struct ADAPTER *prAdapter,
 			 uint32_t u4FuncIndex, uint32_t u4FuncData) {
-	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl = {0};
 
 	ASSERT(prAdapter);
 
@@ -10664,7 +10664,7 @@ uint32_t wlanoidExtRfTestICapStart(IN struct ADAPTER *prAdapter,
 				   OUT void *pvSetBuffer,
 				   IN uint32_t u4SetBufferLen,
 				   OUT uint32_t *pu4SetInfoLen) {
-	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl = {0};
 	struct RBIST_CAP_START_T *prCmdICapInfo;
 	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -10718,7 +10718,7 @@ uint32_t wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter,
 				    OUT void *pvSetBuffer,
 				    IN uint32_t u4SetBufferLen,
 				    OUT uint32_t *pu4SetInfoLen) {
-	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl = {0};
 	struct RBIST_CAP_START_T *prCmdICapInfo;
 	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -10769,7 +10769,7 @@ uint32_t wlanoidExtRfTestICapStatus(IN struct ADAPTER *prAdapter,
 void wlanoidRfTestICapRawDataProc(IN struct ADAPTER *
 				  prAdapter, uint32_t u4CapStartAddr,
 				  uint32_t u4TotalBufferSize) {
-	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl = {0};
 	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
 	uint32_t u4SetBufferLen = 0;
 	void *pvSetBuffer = NULL;
@@ -10830,7 +10830,7 @@ uint32_t wlanoidRfTestICapGetIQData(IN struct ADAPTER *prAdapter,
 	struct ICAP_INFO_T *prICapInfo = NULL;
 	struct RBIST_DUMP_IQ_T *prRbistDump = NULL;
 	struct RBIST_DUMP_IQ_T *prTmpRbistDump = NULL;
-	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl;
+	struct CMD_TEST_CTRL_EXT_T rCmdTestCtrl = {0};
 	struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T *prRfATInfo;
 
 	if (!prAdapter) {
@@ -11013,7 +11013,7 @@ uint32_t
 rftestQueryATInfo(IN struct ADAPTER *prAdapter,
 		  uint32_t u4FuncIndex, uint32_t u4FuncData,
 		  OUT void *pvQueryBuffer, IN uint32_t u4QueryBufferLen) {
-	struct CMD_TEST_CTRL rCmdTestCtrl;
+	struct CMD_TEST_CTRL rCmdTestCtrl = {0};
 	union EVENT_TEST_STATUS *prTestStatus;
 
 	ASSERT(prAdapter);
