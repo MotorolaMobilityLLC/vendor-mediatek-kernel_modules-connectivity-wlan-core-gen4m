@@ -1160,7 +1160,8 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 	 * beacon timeout AP but have no available pmkid.
 	 */
 	if (prAisBssInfo &&
-	    prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED &&
+	    (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	    aisFsmIsInProcessPostpone(prAdapter, prAisBssInfo->ucBssIndex)) &&
 	    (prConnSettings->eAuthMode == AUTH_MODE_WPA2 ||
 	     prConnSettings->eAuthMode == AUTH_MODE_WPA3_OWE ||
 	     prConnSettings->eAuthMode == AUTH_MODE_WPA3_SAE) &&
