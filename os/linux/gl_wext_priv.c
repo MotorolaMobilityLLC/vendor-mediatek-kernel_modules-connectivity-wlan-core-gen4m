@@ -4095,6 +4095,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 #define CMD_PRESET_LINKID	"PRESET_LINKID"
 #define CMD_SET_ML_PROBEREQ	"SET_ML_PROBEREQ"
+#define CMD_GET_ML_CAPA		"GET_ML_CAPA"
 #endif
 
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
@@ -5932,6 +5933,39 @@ int priv_driver_set_ml_probereq(IN struct net_device *prNetDev,
 		rStatus = WLAN_STATUS_INVALID_DATA;
 	}
 	return rStatus;
+}
+
+int priv_driver_get_ml_capa(IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	uint8_t ucCapa = 0;
+	int32_t i4BytesWritten = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAd = NULL;
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAd = prGlueInfo->prAdapter;
+
+	if (mldIsMloFeatureEnabled(prAd, FALSE)) {
+		struct BSS_INFO *bss =
+			prAd->aprBssInfo[prAd->ucMldReservedBssIdx];
+
+		if (!bss->fgIsInUse)
+			ucCapa = 1;
+	}
+
+	i4BytesWritten = kalSnprintf(
+		pcCommand, i4TotalLen, "%d", ucCapa);
+
+	DBGLOG(REQ, INFO, "command result is %s\n", pcCommand);
+
+	return i4BytesWritten;
 }
 #endif
 
@@ -19350,6 +19384,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{CMD_PRESET_LINKID, priv_driver_preset_linkid},
 	{CMD_SET_ML_PROBEREQ, priv_driver_set_ml_probereq},
+	{CMD_GET_ML_CAPA, priv_driver_get_ml_capa},
 #endif
 #if (CFG_WIFI_GET_DPD_CACHE == 1)
 	{CMD_GET_DPD_CACHE, priv_driver_get_dpd_cache},
