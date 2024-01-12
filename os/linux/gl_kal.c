@@ -13321,7 +13321,7 @@ void kalWlanHardStartXmit(void *pvPacket, void *pvDev)
 
 	wlanHardStartXmit(skb, dev);
 }
-uint8_t kalNlaPut(void *pvPacket, uint32_t attrType,
+int32_t kalNlaPut(void *pvPacket, uint32_t attrType,
 		uint32_t attrLen, const void *data)
 {
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
