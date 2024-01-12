@@ -3822,6 +3822,9 @@ void cnmOpModeGetTRxNss(
 	ucOpRxNss = ucOpTxNss = wlanGetSupportNss(prAdapter, ucBssIndex);
 	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
 
+	*pucOpTxNss = ucOpTxNss;
+	*pucOpRxNss = ucOpRxNss;
+
 	if (prBssOpCtrl->rRunning.fgIsRunning) {
 		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
 		*pucOpTxNss = prBssOpCtrl->rRunning.ucOpTxNss;
