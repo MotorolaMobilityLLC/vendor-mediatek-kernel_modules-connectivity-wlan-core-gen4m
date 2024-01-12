@@ -13065,8 +13065,11 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 	if (ucAPBwPermitted < ucBw)
 		ucBw = ucAPBwPermitted;
 
-	/* get Short GI Tx capability */
-	if (ucTxMode == TX_RATE_MODE_HTMIX || ucTxMode == TX_RATE_MODE_HTGF) {
+	/* Get Short GI Tx capability for HT/VHT, check from HT or VHT
+	 * capability BW SGI bit. Refer to 802.11 Short GI operation
+	 */
+	if (ucTxMode == TX_RATE_MODE_HTMIX || ucTxMode == TX_RATE_MODE_HTGF
+	    || ucTxMode == TX_RATE_MODE_VHT) {
 		if (prStaRec->u2HtCapInfo & HT_CAP_INFO_SHORT_GI_20M) {
 			DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_20M\n");
 			ucSgi = 1;
@@ -13075,10 +13078,8 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 			DBGLOG(RLM, TRACE, "HT_CAP_INFO_SHORT_GI_40M\n");
 			ucSgi = 1;
 		}
-	}
 
 #if CFG_SUPPORT_802_11AC
-	if (ucTxMode == TX_RATE_MODE_VHT) {
 		if (prStaRec->u4VhtCapInfo & VHT_CAP_INFO_SHORT_GI_80) {
 			DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_80\n");
 			ucSgi = 1;
@@ -13087,8 +13088,8 @@ int wlanGetMaxTxRate(struct ADAPTER *prAdapter,
 			DBGLOG(RLM, TRACE, "VHT_CAP_INFO_SHORT_GI_160_80P80\n");
 			ucSgi = 1;
 		}
-	}
 #endif
+	}
 
 	if (ucTxMode == TX_RATE_MODE_HE_SU) {
 		DBGLOG(SW4, TRACE, "TX_RATE_MODE_HE_SU\n");
