@@ -869,7 +869,7 @@ struct GLUE_INFO {
 	struct timer_list rTpeTimer;
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
 
-#if CFG_CHIP_RESET_SUPPORT
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	struct work_struct rWfsysResetWork;    /* work for Wfsys L0.5 reset  */
 #endif
 };
@@ -1427,6 +1427,13 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 #if (CFG_SUPPORT_CONNAC3X == 1)
 uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter);
 #endif
+
+#if CFG_CHIP_RESET_SUPPORT
+int32_t wlanOffAtReset(void);
+
+int32_t wlanOnAtReset(void);
+#endif
+
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************
@@ -1541,7 +1548,9 @@ int32_t sysCreateMonDbgFs(struct GLUE_INFO *prGlueInfo);
 void sysRemoveMonDbgFs(void);
 #endif
 
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 extern void WfsysResetHdlr(struct work_struct *work);
+#endif
 
 #if CFG_MTK_ANDROID_WMT
 extern void update_driver_loaded_status(uint8_t loaded);

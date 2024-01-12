@@ -4983,8 +4983,9 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 			halTxCompleteTasklet,
 			(unsigned long)prGlueInfo);
 
-#if CFG_CHIP_RESET_SUPPORT
-	INIT_WORK(&prGlueInfo->rWfsysResetWork, WfsysResetHdlr);
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset)
+		INIT_WORK(&prGlueInfo->rWfsysResetWork, WfsysResetHdlr);
 #endif
 
 #if CFG_SUPPORT_NAN
@@ -5435,7 +5436,7 @@ void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
  * WLAN_STATUS_SUCCESS - reset off success
  */
 /*----------------------------------------------------------------------------*/
-static int32_t wlanOffAtReset(void)
+int32_t wlanOffAtReset(void)
 {
 	struct ADAPTER *prAdapter = NULL;
 	struct net_device *prDev = NULL;
@@ -5545,7 +5546,7 @@ static int32_t wlanOffAtReset(void)
  * WLAN_STATUS_SUCCESS - reset on success
  */
 /*----------------------------------------------------------------------------*/
-static int32_t wlanOnAtReset(void)
+int32_t wlanOnAtReset(void)
 {
 	struct net_device *prDev = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -6229,8 +6230,9 @@ static void wlanRemove(void)
 	flush_work(&prGlueInfo->rTxMsduFreeWork);
 #endif
 	cancel_delayed_work_sync(&prGlueInfo->rRxPktDeAggWork);
-#if CFG_CHIP_RESET_SUPPORT
-	cancel_work_sync(&prGlueInfo->rWfsysResetWork);
+#if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
+	if (prAdapter->chip_info->fgIsSupportL0p5Reset)
+		cancel_work_sync(&prGlueInfo->rWfsysResetWork);
 #endif
 
 	wlanOffStopWlanThreads(prGlueInfo);
@@ -6354,38 +6356,6 @@ static void wlanRemove(void)
 	mddpNotifyWifiOffEnd();
 #endif
 }				/* end of wlanRemove() */
-
-#if CFG_CHIP_RESET_SUPPORT
-void WfsysResetHdlr(struct work_struct *work)
-{
-	struct GLUE_INFO *prGlueInfo;
-	struct ADAPTER *prAdapter;
-	struct mt66xx_hif_driver_data *prHifDrvData;
-
-	prGlueInfo = container_of(work, struct GLUE_INFO, rWfsysResetWork);
-	prAdapter = prGlueInfo->prAdapter;
-	prHifDrvData = container_of(&prAdapter->chip_info,
-				    struct mt66xx_hif_driver_data, chip_info);
-
-	DBGLOG(INIT, INFO, "WF L0.5 Reset triggered\n");
-
-	/* change SER FSM to SER_STOP_HOST_TX_RX */
-	nicSerStopTxRx(prAdapter);
-
-	HAL_CANCEL_TX_RX(prAdapter);
-
-	HAL_TOGGLE_WFSYS_RST(prAdapter);
-
-	wlanOffAtReset();
-
-	/* resume TX/RX */
-	nicSerStartTxRx(prAdapter);
-
-	wlanOnAtReset();
-
-	DBGLOG(INIT, INFO, "WF L0.5 Reset done\n");
-}
-#endif /* CFG_CHIP_RESET_SUPPORT */
 
 #if CFG_MTK_ANDROID_WMT
 static int wlanFunOn(void)

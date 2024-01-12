@@ -1803,6 +1803,13 @@ u_int8_t kalIsResetting(void);
 
 #if CFG_CHIP_RESET_SUPPORT
 void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo);
+
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalSetWfsysResetFlag(_prAdapter, _fgIsReset) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
+void kalSetWfsysResetFlag(IN struct ADAPTER *prAdapter, IN u_int8_t fgIsReset);
+#endif /* CFG_REMIND_IMPLEMENT */
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
