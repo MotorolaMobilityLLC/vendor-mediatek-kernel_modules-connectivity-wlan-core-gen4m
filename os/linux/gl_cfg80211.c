@@ -6598,7 +6598,11 @@ struct wireless_dev *mtk_cfg80211_add_iface(struct wiphy *wiphy,
 #endif
 	}
 
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	if (cfg80211_register_netdevice(prDevHandler) < 0) {
+#else
 	if (register_netdevice(prDevHandler) < 0) {
+#endif
 		DBGLOG(INIT, ERROR, "Register netdev %d failed\n", ucAisIndex);
 		goto fail;
 	}
@@ -6730,7 +6734,11 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 
 	netif_tx_stop_all_queues(prDevHandler);
 
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+	cfg80211_unregister_netdevice(prDevHandler);
+#else
 	unregister_netdevice(prDevHandler);
+#endif
 
 	/* netdev and wdev will be freed at mtk_vif_destructor */
 	return 0;
