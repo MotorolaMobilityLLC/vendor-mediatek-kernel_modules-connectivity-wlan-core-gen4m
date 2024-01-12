@@ -7377,7 +7377,7 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 
 	/* TODO: how to remove hard code [0..3] */
 	DBGLOG(SW4, INFO,
-		"Tput: %llu > [%ld][%ld] [%ld][%ld] [%ld][%ld] [%ld][%d],Pending[%d], Used[%d] PER[%ld %ld]\n",
+		"Tput: %llu > [%ld][%ld] [%ld][%ld] [%ld][%ld] [%ld][%d],Pending[%d], Used[%d] PER[%ld %ld] Curlv:%u\n",
 		prPerMonitor->ulThroughput,
 		txDiffBytes[0], rxDiffBytes[0],
 		txDiffBytes[1], rxDiffBytes[1],
@@ -7386,7 +7386,8 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 		GLUE_GET_REF_CNT(prGlueInfo->i4TxPendingFrameNum),
 		GLUE_GET_REF_CNT(prPerMonitor->u4UsedCnt),
 		prPerMonitor->ulTotalTxSuccessCount,
-		prPerMonitor->ulTotalTxFailCount);
+		prPerMonitor->ulTotalTxFailCount,
+		prPerMonitor->u4CurrPerfLevel);
 
 #if CFG_SUPPORT_DATA_STALL
 		/* test mode event */
