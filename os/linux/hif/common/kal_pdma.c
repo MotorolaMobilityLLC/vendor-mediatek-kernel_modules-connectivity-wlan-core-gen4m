@@ -1365,6 +1365,9 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_DMABUF *prDmaBuf;
 	uint32_t u4Size = 0;
 
+	if (prRxRing->fgEnEmiIdx)
+		return true;
+
 	for (u4Count = 0; pRxD->DMADONE == 0; u4Count++) {
 		if (u4Count > DMA_DONE_WAITING_COUNT) {
 			kalDevRegRead(prGlueInfo, prRxRing->hw_didx_addr,

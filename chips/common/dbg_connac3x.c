@@ -2832,12 +2832,26 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4DmaNum = 1;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_DMABUF *prRingIdx, *prRingIntSta;
+	uint32_t u4Val;
+#if CFG_ENABLE_MAWD_MD_RING
+	struct RTMP_DMABUF *prMdRingIdx, *prMdRingIntSta;
+#endif
 
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 	prWifiVar = &prAdapter->rWifiVar;
+	prRingIdx = &prHifInfo->rRingIdx;
+	prRingIntSta = &prHifInfo->rRingIntSta;
+
+#if CFG_ENABLE_MAWD_MD_RING
+	prMdRingIdx = &prHifInfo->rMdRingIdx;
+	prMdRingIntSta = &prHifInfo->rMdRingIntSta;
+#endif
 
 	if (prSwWfdmaInfo->rOps.dumpDebugLog)
 		prSwWfdmaInfo->rOps.dumpDebugLog(prAdapter->prGlueInfo);
@@ -2861,6 +2875,27 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	connac3x_show_wfdma_desc(prAdapter);
 
 	connac3xDumpPPDebugCr(prAdapter);
+
+	if (prRingIdx->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump RingIdx\n");
+		DBGLOG_MEM32(HAL, INFO, prRingIdx->AllocVa,
+			     prRingIdx->AllocSize);
+	}
+	if (prRingIntSta->AllocVa) {
+		u4Val = *((uint32_t *)prRingIntSta->AllocVa);
+		DBGLOG(HAL, INFO, "EmiIntSta[0x%08x]\n", u4Val);
+	}
+#if CFG_ENABLE_MAWD_MD_RING
+	if (prMdRingIdx->AllocVa) {
+		DBGLOG(HAL, INFO, "Dump MdRingIdx\n");
+		DBGLOG_MEM32(HAL, INFO, prMdRingIdx->AllocVa,
+			     prMdRingIdx->AllocSize);
+	}
+	if (prMdRingIntSta->AllocVa) {
+		u4Val = *((uint32_t *)prMdRingIntSta->AllocVa);
+		DBGLOG(HAL, INFO, "MdEmiIntSta[0x%08x]\n", u4Val);
+	}
+#endif
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdTx))

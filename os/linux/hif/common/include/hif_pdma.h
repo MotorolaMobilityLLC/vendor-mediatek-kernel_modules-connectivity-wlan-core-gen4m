@@ -353,8 +353,12 @@ do { \
 
 #define HAL_GET_RING_DIDX(_G, _R, _V) \
 do { \
-	kalDevRegRead(_G, _R->hw_didx_addr, _V); \
-	*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
+	if (_R->fgEnEmiIdx) { \
+		*_V = *_R->pu2EmiIdx; \
+	} else { \
+		kalDevRegRead(_G, _R->hw_didx_addr, _V); \
+		*_V = (*_V & _R->hw_didx_mask) >> _R->hw_didx_shift; \
+	} \
 } while (0)
 
 #define HAL_GET_RING_MCNT(_G, _R, _V) \
@@ -542,6 +546,8 @@ struct RTMP_TX_RING {
 	uint32_t hw_cnt_shift;
 	spinlock_t rTxDmaQLock;
 	u_int8_t fgStopRecycleDmad;
+	u_int8_t fgEnEmiIdx;
+	uint16_t *pu2EmiIdx;
 };
 
 struct RTMP_RX_RING {
@@ -569,6 +575,8 @@ struct RTMP_RX_RING {
 	void *pvPacket;
 	uint32_t u4PacketLen;
 	uint32_t u4MagicCnt;
+	u_int8_t fgEnEmiIdx;
+	uint16_t *pu2EmiIdx;
 };
 
 struct PCIE_CHIP_CR_MAPPING {
@@ -910,6 +918,17 @@ enum pcie_msi_wfdma_ring {
 	PCIE_MSI_CMD,
 	PCIE_MSI_LUMP,
 	PCIE_MSI_NUM
+};
+
+struct WFDMA_EMI_RING_IDX {
+	uint16_t u2TxRing[11];
+	uint16_t u2RxRing[5];
+};
+
+struct WFDMA_EMI_MD_RING_IDX {
+	uint16_t u2TxRing[8];
+	uint16_t u2RxRing[5];
+	uint16_t Rsv[3];
 };
 
 /*******************************************************************************
