@@ -1870,10 +1870,16 @@ void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter)
 #endif
 	if (value & (BIT(1) | BIT(2))) {
 		if (kalIsResetting()) {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			g_eWfRstSource = WF_RST_SOURCE_DRIVER;
+#endif
 			DBGLOG(HAL, ERROR,
 				"Wi-Fi Driver trigger, need do complete.\n");
 			complete(&g_triggerComp);
 		} else {
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+			g_eWfRstSource = WF_RST_SOURCE_FW;
+#endif
 			DBGLOG(HAL, ERROR,
 				"FW trigger assert.\n");
 			fgIsResetting = TRUE;
