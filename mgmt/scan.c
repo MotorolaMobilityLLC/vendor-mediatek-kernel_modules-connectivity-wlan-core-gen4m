@@ -1605,9 +1605,13 @@ uint8_t scanProcessRnrChannel(uint8_t ucRnrChNum,
 {
 	uint8_t i, ucHasSameCh = FALSE;
 	enum ENUM_BAND eBand;
+	uint8_t ucBand = 0;
+
 	prScanParam->eScanChannel = SCAN_CHANNEL_SPECIFIED;
 
-	scanOpClassToBand(ucOpClass, (uint8_t *)&eBand);
+	scanOpClassToBand(ucOpClass, &ucBand);
+	eBand = ucBand;
+
 	if (prAdapterScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED ||
 		prAdapterScanParam->ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY) {
 		struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
@@ -1716,12 +1720,14 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 	uint32_t i;
 	struct RF_CHANNEL_INFO *prCnlInfo;
 	enum ENUM_BAND eRfBand;
+	uint8_t ucBand = 0;
 
 	ASSERT(prAdapter);
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prScanParam = &(prScanInfo->rScanParam);
-	scanOpClassToBand(ucOpClass, (uint8_t *)&eRfBand);
+	scanOpClassToBand(ucOpClass, &ucBand);
+	eRfBand = ucBand;
 
 	/* sanity check */
 	if (ucRnrChNum == 0)
