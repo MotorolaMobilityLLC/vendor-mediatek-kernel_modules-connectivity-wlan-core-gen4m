@@ -2106,6 +2106,11 @@ u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
 		if (prAdapter->rWifiVar.ucDataTxRateMode)
 			return FALSE;
 
+#if defined(_HIF_USB)
+		if (!prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority])
+			return FALSE;
+#endif
+
 		return TRUE;
 	}
 	return FALSE;
@@ -2168,12 +2173,7 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 	u4TxDescLength = NIC_TX_DESC_LONG_FORMAT_LENGTH;
 
 	/* Get TXD from pre-allocated template */
-	if (nicTxIsTXDTemplateAllowed(prAdapter, prMsduInfo,
-				      prStaRec)
-#if defined(_HIF_USB)
-		&& prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority]
-#endif
-		) {
+	if (nicTxIsTXDTemplateAllowed(prAdapter, prMsduInfo, prStaRec)) {
 		prTxDescTemplate =
 			prStaRec->aprTxDescTemplate[prMsduInfo->ucUserPriority];
 	}
@@ -2326,6 +2326,19 @@ nicTxFillDesc(struct ADAPTER *prAdapter,
 		*pu4TxDescLength = u4TxDescLength;
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+static u_int8_t isEapolBeforeKeyReady(struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo)
+{
+	struct STA_RECORD *prStaRec;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+
+	return prMsduInfo->ucPktType == ENUM_PKT_1X &&
+		prStaRec && !prStaRec->fgIsTxKeyReady;
+}
+#endif
+
 void
 nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		  struct MSDU_INFO *prMsduInfo)
@@ -2346,14 +2359,20 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 	if (pucOutputBuf == NULL)
 		return;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (isEapolBeforeKeyReady(prAdapter, prMsduInfo)) {
+		nicTxConfigPktControlFlag(prMsduInfo,
+				MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
+	}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 	nicTxFillDesc(prAdapter, prMsduInfo, pucOutputBuf, NULL);
 	/* dump TXD to debug TX issue */
 	if (prAdapter->rWifiVar.ucDataTxDone == 1) {
 		struct CHIP_DBG_OPS *prDbgOps =
 			prAdapter->chip_info->prDebugOps;
 		if (prDbgOps && prDbgOps->dumpTxdInfo)
-			prDbgOps->dumpTxdInfo(prAdapter,
-			(uint8_t *)pucOutputBuf);
+			prDbgOps->dumpTxdInfo(prAdapter, pucOutputBuf);
 	}
 }
 

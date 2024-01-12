@@ -1124,7 +1124,8 @@ void rrmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
 		     prStaRec->ucIndex, WLAN_MAC_MGMT_HEADER_LEN,
 		     prRmRepParam->u2ReportFrameLen, NULL, MSDU_RATE_MODE_AUTO);
 
-	nicTxConfigPktControlFlag(prMsduInfo, MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+	nicTxConfigPktControlFlag(prMsduInfo,
+			MSDU_CONTROL_FLAG_FORCE_LINK, TRUE);
 
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 
