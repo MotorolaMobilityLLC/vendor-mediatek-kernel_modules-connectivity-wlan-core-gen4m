@@ -2467,8 +2467,12 @@ struct CMD_SCHED_SCAN_REQ {
 	uint8_t ucScnFuncMask;
 	struct CHANNEL_INFO aucChannel[64];
 	uint16_t au2MspList[10];
-	uint8_t aucPadding_3[64];
-
+	uint8_t ucBssIndex;
+	uint32_t u4DelayStartInSec;
+	uint32_t u4FastScanIteration;
+	uint32_t u4FastScanPeriod;
+	uint32_t u4SlowScanPeriod;
+	uint8_t aucPadding_3[47];
 	/* keep last */
 	uint8_t aucIE[0];             /* MUST be the last for IE content */
 };
