@@ -169,6 +169,15 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 		return WLAN_STATUS_FAILURE;
 	}
 
+	if (prSwRfb->u2PacketLen < sizeof(struct WLAN_AUTH_FRAME)) {
+		DBGLOG(AAA, WARN,
+			"Invalid packet length (%u)\n",
+			prSwRfb->u2PacketLen);
+		DBGLOG_MEM8(AAA, WARN, prSwRfb->pvHeader,
+			prSwRfb->u2PacketLen);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	u2RxFrameCtrl = prAuthFrame->u2FrameCtrl;
@@ -831,6 +840,13 @@ p2pRoleFsmRunEventAAAComplete(
 				GET_BSS_INFO_BY_INDEX(
 				prAdapter,
 				starec->ucBssIndex);
+
+			if (!bss) {
+				DBGLOG(P2P, WARN,
+					"\tNull bss by idx(%u)\n",
+					starec->ucBssIndex);
+				continue;
+			}
 
 			DBGLOG(INIT, INFO,
 				"\tsta: %d, wid: %d, bss: %d, " MACSTR "\n",
