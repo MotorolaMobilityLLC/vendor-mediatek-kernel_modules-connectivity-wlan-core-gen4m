@@ -1467,16 +1467,14 @@ int wlan_precal_docal_v2(void)
 
 		wlanFuncOffImpl();
 
-		if (wfsys_is_locked())
-			wfsys_unlock();
-
 exit:
 		g_fgPreCal = FALSE;
 		update_pre_cal_status(0);
 		g_fgEverCal = TRUE;
 		wlan_precal_done_notify();
 
-		wfsys_unlock();
+		if (wfsys_is_locked())
+			wfsys_unlock();
 	}
 	return ret;
 
