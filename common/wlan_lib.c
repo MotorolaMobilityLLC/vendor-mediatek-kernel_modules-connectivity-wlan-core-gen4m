@@ -737,6 +737,8 @@ void wlanOnPreAllocAdapterMem(IN struct ADAPTER *prAdapter,
 		prAdapter->u4HifDbgFlag = 0;
 		prAdapter->u4HifChkFlag = 0;
 		prAdapter->u4NoMoreRfb = 0;
+		prAdapter->u4WaitRecIdx = 0;
+		prAdapter->u4CompRecIdx = 0;
 
 		/* Initialize rWlanInfo */
 		kalMemSet(&(prAdapter->rWlanInfo), 0,
@@ -1808,7 +1810,7 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 
 				if (prCmdInfo->fgIsOid) {
 					kalOidComplete(prAdapter->prGlueInfo,
-						       prCmdInfo->fgSetQuery,
+						       prCmdInfo,
 						       prCmdInfo->u4SetInfoLen,
 						       rStatus);
 				}
@@ -1855,7 +1857,7 @@ uint32_t wlanProcessCommandQueue(IN struct ADAPTER
 					if (prCmdInfo->fgIsOid) {
 						kalOidComplete(
 						    prAdapter->prGlueInfo,
-						    prCmdInfo->fgSetQuery,
+						    prCmdInfo,
 						    prCmdInfo->u4SetInfoLen,
 						    rStatus);
 					}
@@ -2617,7 +2619,7 @@ void wlanReleaseCommand(IN struct ADAPTER *prAdapter,
 
 		if (prCmdInfo->fgIsOid) {
 			kalOidComplete(prAdapter->prGlueInfo,
-				       prCmdInfo->fgSetQuery,
+				       prCmdInfo,
 				       prCmdInfo->u4SetInfoLen,
 				       WLAN_STATUS_FAILURE);
 		}
@@ -2760,7 +2762,7 @@ void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
 							prAdapter, prCmdInfo);
 				} else {
 					kalOidComplete(prAdapter->prGlueInfo,
-						       prCmdInfo->fgSetQuery,
+						       prCmdInfo,
 						       0, WLAN_STATUS_FAILURE);
 				}
 
@@ -2838,7 +2840,7 @@ void wlanReleasePendingCMDbyBssIdx(IN struct ADAPTER
 							prAdapter, prCmdInfo);
 				} else if (prCmdInfo->fgIsOid) {
 					kalOidComplete(prAdapter->prGlueInfo,
-						       prCmdInfo->fgSetQuery,
+						       prCmdInfo,
 						       0, WLAN_STATUS_FAILURE);
 				}
 
@@ -11599,7 +11601,7 @@ void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid)
 			prCmdInfo->pfCmdTimeoutHandler(prAdapter, prCmdInfo);
 		} else if (prCmdInfo->fgIsOid) {
 			kalOidComplete(prAdapter->prGlueInfo,
-				       prCmdInfo->fgSetQuery, 0,
+				       prCmdInfo, 0,
 				       WLAN_STATUS_FAILURE);
 		}
 

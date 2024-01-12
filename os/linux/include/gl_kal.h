@@ -125,6 +125,8 @@ extern struct delayed_work sched_workq;
 #define KAL_P2P_NUM             1
 #endif
 
+#define OID_HDLR_REC_NUM	5
+
 #if CFG_SUPPORT_MULTITHREAD
 #define GLUE_FLAG_MAIN_PROCESS \
 	(GLUE_FLAG_HALT | GLUE_FLAG_SUB_MOD_MULTICAST | \
@@ -1326,7 +1328,7 @@ u_int8_t kalGetEthDestAddr(IN struct GLUE_INFO *prGlueInfo,
 
 void
 kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
-	       IN u_int8_t fgSetQuery, IN uint32_t u4SetQueryInfoLen,
+	       IN struct CMD_INFO *prCmdInfo, IN uint32_t u4SetQueryInfoLen,
 	       IN uint32_t rOidStatus);
 
 uint32_t
@@ -1853,6 +1855,9 @@ uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 	unsigned int second, unsigned int usecond);
 void kalSyncTimeToFWByIoctl(void);
 #endif /* CFG_SUPPORT_CONNINFRA == 1*/
+
+void kalUpdateCompHdlrRec(IN struct ADAPTER *prAdapter,
+	IN PFN_OID_HANDLER_FUNC pfnOidHandler, IN struct CMD_INFO *prCmdInfo);
 
 #endif /* _GL_KAL_H */
 

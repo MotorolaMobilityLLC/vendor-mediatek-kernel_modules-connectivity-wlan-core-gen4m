@@ -1170,7 +1170,7 @@ uint32_t kalReadExtCfg(IN struct GLUE_INFO *prGlueInfo);
 #define kalGetEthDestAddr(_prGlueInfo, _prPacket, _pucEthDestAddr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
-#define kalOidComplete(_prGlueInfo, _fgSetQuery, _u4SetQueryInfoLen, \
+#define kalOidComplete(_prGlueInfo, _prCmdInfo, _u4SetQueryInfoLen, \
 	       _rOidStatus) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _prGlueInfo)
 
@@ -1206,7 +1206,7 @@ u_int8_t kalGetEthDestAddr(IN struct GLUE_INFO *prGlueInfo,
 
 void
 kalOidComplete(IN struct GLUE_INFO *prGlueInfo,
-	       IN u_int8_t fgSetQuery, IN uint32_t u4SetQueryInfoLen,
+	       IN struct CMD_INFO *prCmdInfo, IN uint32_t u4SetQueryInfoLen,
 	       IN uint32_t rOidStatus);
 
 uint32_t
