@@ -442,7 +442,7 @@ uint8_t TdlsAdjustBw(
 	uint8_t bss,
 	uint8_t bw);
 
-#if CFG_SUPPORT_TDLS_P2P_AUTO
+#if CFG_SUPPORT_TDLS_AUTO
 enum STA_TDLS_STATUS {
 	STA_TDLS_NOT_SETUP,
 	STA_TDLS_SETUP_INPROCESS,
@@ -467,6 +467,13 @@ enum STA_TDLS_OP {
 	STA_TDLS_OP_GET_MAX_TP,
 	STA_TDLS_OP_UPDATE_TX,
 	STA_TDLS_OP_NUM
+};
+
+enum TDLS_AUTO_CONFIG {
+	TDLS_AUTO_NONE = 0,
+	TDLS_AUTO_P2P = 1,
+	TDLS_AUTO_ALL = 2,
+	TDLS_AUTO_TESTMODE = 99,
 };
 
 struct sta_tdls_info {
@@ -496,9 +503,6 @@ struct sta_tdls_info {
 #define STA_TDLS_HASH_SIZE (3)
 #define STA_TDLS_HASH(prSta) (prSta[5] % STA_TDLS_HASH_SIZE)
 
-uint8_t TdlsAllowedP2p(
-	struct ADAPTER *pAd,
-	uint8_t bss);
 uint32_t TdlsAutoSetup(
 	struct ADAPTER *ad,
 	uint8_t bss,
@@ -514,7 +518,7 @@ void TdlsUpdateTxRxStat(
 	uint64_t tx_bytes,
 	uint64_t rx_bytes,
 	uint8_t *prAddr);
-int32_t TdlsP2pAuto(
+int32_t TdlsAuto(
 	struct ADAPTER *pAd,
 	uint8_t bss,
 	uint64_t tx_bytes,
