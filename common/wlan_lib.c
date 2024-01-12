@@ -1610,11 +1610,24 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 	struct QUE rTempCmdQue;
 	struct QUE *prTempCmdQue;
 
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
+
 	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
 	prTxCtrl = &prAdapter->rTxCtrl;
+
+#if CFG_DBG_MGT_BUF
+	if (prCmdInfo->pucInfoBuffer &&
+			!IS_FROM_BUF(prAdapter, prCmdInfo->pucInfoBuffer))
+		prMemTrack =
+			(struct MEM_TRACK *)
+				((uint8_t *)prCmdInfo->pucInfoBuffer -
+					sizeof(struct MEM_TRACK));
+#endif
 
 	prTempCmdQue = &rTempCmdQue;
 	QUEUE_INITIALIZE(prTempCmdQue);
@@ -1658,6 +1671,14 @@ uint32_t wlanSendCommandMthread(IN struct ADAPTER
 			 *			  SPIN_LOCK_CMD_PENDING);
 			 */
 		}
+
+#if CFG_DBG_MGT_BUF
+		if (prMemTrack) {
+			prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+			prMemTrack->u2CmdIdAndWhere |= 0x0100;
+		}
+#endif
+
 		QUEUE_INSERT_TAIL(prTempCmdQue,
 				  (struct QUE_ENTRY *) prCmdInfo);
 
@@ -1718,6 +1739,9 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 	 * UINT_32 u4Address;
 	 */
 	uint32_t u4TxDoneQueueSize;
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
 
 	KAL_SPIN_LOCK_DECLARATION();
 
@@ -1748,13 +1772,34 @@ uint32_t wlanTxCmdMthread(IN struct ADAPTER *prAdapter)
 	while (prQueueEntry) {
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 		prCmdInfo->pfHifTxCmdDoneCb = wlanTxCmdDoneCb;
+#if CFG_DBG_MGT_BUF
+		if (prCmdInfo->pucInfoBuffer &&
+				!IS_FROM_BUF(prAdapter,
+					prCmdInfo->pucInfoBuffer))
+			prMemTrack =
+				(struct MEM_TRACK *)
+					((uint8_t *)prCmdInfo->pucInfoBuffer -
+						sizeof(struct MEM_TRACK));
+#endif
 
 		if ((!prCmdInfo->fgSetQuery) || (prCmdInfo->fgNeedResp)) {
 			KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				prMemTrack->u2CmdIdAndWhere |= 0x0200;
+			}
+#endif
 			QUEUE_INSERT_TAIL(&(prAdapter->rPendingCmdQueue),
 					  (struct QUE_ENTRY *) prCmdInfo);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_CMD_PENDING);
 		} else {
+#if CFG_DBG_MGT_BUF
+			if (prMemTrack) {
+				prMemTrack->u2CmdIdAndWhere &= 0x00FF;
+				prMemTrack->u2CmdIdAndWhere |= 0x0300;
+			}
+#endif
 			QUEUE_INSERT_TAIL(prTempCmdDoneQue, prQueueEntry);
 		}
 

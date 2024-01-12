@@ -208,8 +208,14 @@ void cmdBufDumpCmdQueue(struct QUE *prQueue,
  * @retval !NULL     Fail to allocat CMD Packet
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_DBG_MGT_BUF
+struct CMD_INFO *cmdBufAllocateCmdInfoX(IN struct ADAPTER
+					   *prAdapter, IN uint32_t u4Length,
+					   uint8_t *fileAndLine)
+#else
 struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 				       *prAdapter, IN uint32_t u4Length)
+#endif
 {
 	struct CMD_INFO *prCmdInfo;
 
@@ -233,8 +239,13 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 			/* Start address of allocated memory */
 			u4Length = TFCB_FRAME_PAD_TO_DW(u4Length);
 
+#if CFG_DBG_MGT_BUF
+			prCmdInfo->pucInfoBuffer = cnmMemAllocX(prAdapter,
+				RAM_TYPE_BUF, u4Length, fileAndLine);
+#else
 			prCmdInfo->pucInfoBuffer = cnmMemAlloc(prAdapter,
 				RAM_TYPE_BUF, u4Length);
+#endif
 
 			if (prCmdInfo->pucInfoBuffer == NULL) {
 				KAL_ACQUIRE_SPIN_LOCK(prAdapter,

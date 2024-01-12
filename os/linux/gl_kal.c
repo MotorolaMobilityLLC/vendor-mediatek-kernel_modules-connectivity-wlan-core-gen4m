@@ -4449,6 +4449,9 @@ void kalEnqueueCommand(IN struct GLUE_INFO *prGlueInfo,
 {
 	struct QUE *prCmdQue;
 	struct CMD_INFO *prCmdInfo;
+#if CFG_DBG_MGT_BUF
+	struct MEM_TRACK *prMemTrack = NULL;
+#endif
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -4458,6 +4461,18 @@ void kalEnqueueCommand(IN struct GLUE_INFO *prGlueInfo,
 	prCmdQue = &prGlueInfo->rCmdQueue;
 
 	prCmdInfo = (struct CMD_INFO *) prQueueEntry;
+
+#if CFG_DBG_MGT_BUF
+	if (prCmdInfo->pucInfoBuffer &&
+			!IS_FROM_BUF(prGlueInfo->prAdapter,
+				prCmdInfo->pucInfoBuffer)) {
+		prMemTrack = (struct MEM_TRACK *)
+			((uint8_t *)prCmdInfo->pucInfoBuffer -
+				sizeof(struct MEM_TRACK));
+		prMemTrack->u2CmdIdAndWhere = 0;
+		prMemTrack->u2CmdIdAndWhere |= prCmdInfo->ucCID;
+	}
+#endif
 
 	DBGLOG(INIT, INFO,
 	       "EN-Q CMD TYPE[%u] ID[0x%02X] SEQ[%u] to CMD Q\n",
