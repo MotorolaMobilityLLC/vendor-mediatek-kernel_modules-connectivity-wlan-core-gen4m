@@ -2257,7 +2257,17 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	prCmdRddOnOffCtrl->ucDfsCtrl = RDD_START_TXQ;
 
-	DBGLOG(P2P, TRACE,
+	/*
+	 * FIX ME: Mobile driver can't get correct band.
+	 * There is only 5G in DFS channel,
+	 * which is on band_0. So it assigned to ENUM_BAND_0
+	 * as temp solution.
+	 * Remember to fix it when driver could get
+	 * the correct band from firmware.
+	 */
+	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
+
+	DBGLOG(P2P, INFO,
 		"p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %d, RDD index: %d\n",
 		prCmdRddOnOffCtrl->ucDfsCtrl,
 		prCmdRddOnOffCtrl->ucRddIdx);
