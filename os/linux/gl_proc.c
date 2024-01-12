@@ -469,6 +469,13 @@ static ssize_t procDriverCmdRead(struct file *filp, char __user *buf,
 
 	if (g_u4NextDriverReadLen > 0)	/* Detect content to show */
 		u4CopySize = g_u4NextDriverReadLen;
+
+	if (u4CopySize > count) {
+		pr_err("count is too small: u4CopySize=%u, count=%u\n",
+		       u4CopySize, (uint32_t)count);
+		return -EFAULT;
+	}
+
 	if (copy_to_user(buf, g_aucProcBuf, u4CopySize)) {
 		pr_err("copy to user failed\n");
 		return -EFAULT;
@@ -751,6 +758,8 @@ static ssize_t procSetCamCfgWrite(struct file *file, const char __user *buffer,
 	g_aucProcBuf[u4CopySize] = '\0';
 	temp = &g_aucProcBuf[0];
 	while (temp) {
+		kalMemSet(aucModule, 0, MODULE_NAME_LEN_1);
+
 		/* pick up a string and teminated after meet : */
 		if (sscanf(temp, "%4s %d", aucModule, &u4Enabled) != 2) {
 			pr_info("read param fail, aucModule=%s\n", aucModule);
