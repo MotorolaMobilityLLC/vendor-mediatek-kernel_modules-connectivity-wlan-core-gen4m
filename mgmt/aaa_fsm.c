@@ -477,7 +477,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
-	uint16_t u2StatusCode = STATUS_CODE_RESERVED;
+	uint16_t u2StatusCode = STATUS_CODE_SUCCESSFUL;
 	uint16_t u2RxFrameCtrl;
 	u_int8_t fgReplyAssocResp = FALSE;
 	u_int8_t fgSendSAQ = FALSE;

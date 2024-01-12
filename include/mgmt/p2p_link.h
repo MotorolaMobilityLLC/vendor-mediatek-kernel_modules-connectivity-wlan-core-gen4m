@@ -21,7 +21,8 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct STA_RECORD *prStaRec,
-	struct SW_RFB *prSwRfb);
+	struct SW_RFB *prSwRfb,
+	uint16_t *pu2StatusCode);
 
 void p2pMldBssInit(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,

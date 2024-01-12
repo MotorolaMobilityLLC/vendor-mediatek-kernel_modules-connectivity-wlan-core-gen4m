@@ -910,6 +910,7 @@
 
 #define STATUS_FILS_AUTH_FAILURE		    112
 #define STATUS_UNKNOWN_AUTH_SERVER		    113
+#define WLAN_STATUS_SAE_HASH_TO_ELEMENT             126
 /* Denied because the requesting STA is afflicated with a
  * non-AP MLD that is associated with the AP MLD
  */
