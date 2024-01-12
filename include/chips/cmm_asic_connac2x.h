@@ -966,6 +966,8 @@ void asicConnac2xLowPowerOwnClear(
 	uint8_t *pfgResult);
 void asicConnac2xProcessSoftwareInterrupt(
 	struct ADAPTER *prAdapter);
+void asicConnac2xSoftwareInterruptMcu(
+	struct ADAPTER *prAdapter, u_int32_t intrBitMask);
 void asicConnac2xHifRst(
 	struct GLUE_INFO *prGlueInfo);
 void asicConnac2xReadExtIntStatus(

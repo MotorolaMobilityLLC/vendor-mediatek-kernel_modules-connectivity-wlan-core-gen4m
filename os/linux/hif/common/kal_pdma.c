@@ -510,7 +510,7 @@ u_int8_t kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-	if (prHifInfo->fgIsErrRecovery)
+	if (nicSerIsTxStop(prGlueInfo->prAdapter))
 		return kalDevWriteCmdByQueue(prGlueInfo, prCmdInfo, ucTC);
 
 	return halWpdmaWriteCmd(prGlueInfo, prCmdInfo, ucTC);
@@ -601,7 +601,7 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo,
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
-	if (prHifInfo->fgIsErrRecovery ||
+	if (nicSerIsTxStop(prGlueInfo->prAdapter) ||
 	    (prChipInfo->ucMaxSwAmsduNum > 1 &&
 	     kalGetSwAmsduNum(prGlueInfo, prMsduInfo) > 1))
 		return kalDevWriteDataByQueue(prGlueInfo, prMsduInfo);
