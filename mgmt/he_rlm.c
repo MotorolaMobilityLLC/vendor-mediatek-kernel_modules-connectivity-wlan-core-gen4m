@@ -1056,7 +1056,8 @@ void heRlmRecHeCapInfo(
 		HE_PHY_CAP_BYTE_NUM);
 
 #if (CFG_SUPPORT_HE_ER == 1)
-	DBGLOG(RLM, TRACE, "ER: TX:%d, RX:%d, bw:%d, 4x LTF:%d, 1X LTF:%d\n",
+	DBGLOG(RLM, TRACE,
+		"ER: TX:%lu, RX:%lu, bw:%lu, 4x LTF:%lu, 1X LTF:%lu\n",
 		HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(
 			prStaRec->ucHePhyCapInfo),
 		HE_GET_PHY_CAP_DCM_MAX_CONSTELLATION_RX(
@@ -1128,7 +1129,7 @@ void heRlmRecHeOperation(
 	if (IS_FEATURE_DISABLED(prWifiVar->u4ExtendedRange)) {
 		HE_SET_OP_PARAM_ER_SU_DISABLE(prHeOp->ucHeOpParams);
 
-		DBGLOG(RLM, INFO, "ER: is ER SU: %d\n",
+		DBGLOG(RLM, INFO, "ER: is ER SU: %lu\n",
 			HE_IS_ER_SU_DISABLE(prHeOp->ucHeOpParams));
 	}
 #endif
@@ -1303,7 +1304,8 @@ void heRlmReqGenerateHeHtcACtrlOM(
 	HE_SET_HTC_HE_OM_UL_MU_DISABLE(u4HTC, prHeActrlOM->fgDisMuUL);
 	HE_SET_HTC_HE_OM_UL_MU_DATA_DISABLE(u4HTC, prHeActrlOM->fgDisMuULData);
 	*pHtc = u4HTC;
-	DBGLOG(RLM, STATE, "heRlmReqGenerateHeHtcACtrlOM:: u4HTC = 0x%08x\n");
+	DBGLOG(RLM, STATE,
+		"heRlmReqGenerateHeHtcACtrlOM:: u4HTC = 0x%08x\n", u4HTC);
 }
 
 void heRlmParseHeHtcACtrlOM(

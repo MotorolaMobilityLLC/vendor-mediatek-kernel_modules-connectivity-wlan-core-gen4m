@@ -787,7 +787,7 @@ uint32_t roamingFsmProcessEvent(IN struct ADAPTER *prAdapter,
 
 	if (prTransit->u2Event == ROAMING_EVENT_DISCOVERY) {
 		DBGLOG(ROAMING, INFO,
-			"ROAMING_EVENT_DISCOVERY Data[%d] RCPI[%d(%d)] PER[%d] Thr[%d(%d)] Reason[%d] Time[%ld]\n",
+			"ROAMING_EVENT_DISCOVERY Data[%u] RCPI[%u] PER[%u] Thr[%u(%d)] Reason[%d] Time[%u]\n",
 			prTransit->u2Data,
 			(prTransit->u2Data) & 0xff,      /* L[8], RCPI */
 			RCPI_TO_dBm((prTransit->u2Data) & 0xff),

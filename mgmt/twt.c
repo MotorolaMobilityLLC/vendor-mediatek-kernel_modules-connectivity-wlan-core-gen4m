@@ -760,8 +760,8 @@ void twtProcessS1GAction(
 				if ((u2ReqType & TWT_REQ_TYPE_TRIGGER) ||
 				(!(u2ReqType & TWT_REQ_TYPE_FLOWTYPE))) {
 				/* Accepts only non-trigger & unannounce */
-				DBGLOG(TWT_RESPONDER, ERROR,
-					"Reject TWT Setup params tr[%d] ua[%d]\n",
+				DBGLOG(TWT_REQUESTER, ERROR,
+					"Reject TWT Setup params tr[%lu] ua[%lu]\n",
 					(u2ReqType & TWT_REQ_TYPE_TRIGGER),
 					(u2ReqType & TWT_REQ_TYPE_FLOWTYPE));
 
@@ -1620,6 +1620,11 @@ twtHotspotGetNearestTargetTSF(
 		return;
 	}
 
+	if (prTWTHotspotStaNode == NULL) {
+		DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]NULL node\n");
+		return;
+	}
 	if (p2pFuncIsAPMode(prAdapter->rWifiVar
 		.prP2PConnSettings[prBssInfo->u4PrivateData])) {
 
@@ -1643,7 +1648,11 @@ twtHotspotGetNearestTargetTSF(
 				p_twt_sch_link,
 				struct _TWT_HOTSPOT_STA_NODE,
 				list_entry);
-
+			if (curr_twt_node == NULL) {
+				DBGLOG(TWT_RESPONDER, ERROR,
+					"[TWT_RESP]can't find curr_twt_node\n");
+				return;
+			}
 			if (curr_twt_node->schedule_sp_start_tsf
 				>= sp_duration) {
 				/* insert before 1st node */
