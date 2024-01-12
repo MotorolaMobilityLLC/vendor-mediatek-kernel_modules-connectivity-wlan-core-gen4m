@@ -1456,10 +1456,12 @@ uint32_t wlanConfigWifiFunc(IN struct ADAPTER *prAdapter,
 		GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 	} else {
 		DBGLOG(INIT, INFO, "FW_START EVT success!!\n");
+
 #if defined(_HIF_PCIE)
 		if (ucPDA == PDA_CR4 && prChipInfo->is_support_wacpu)
 			prChipInfo->rx_event_port = WFDMA1_RX_RING_IDX_1;
 #endif /* _HIF_PCIE */
+
 	}
 
 exit:

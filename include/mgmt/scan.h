@@ -331,6 +331,9 @@ struct BSS_DESC {
 	u_int8_t fgIsERPPresent;
 	u_int8_t fgIsHTPresent;
 	u_int8_t fgIsVHTPresent;
+#if (CFG_SUPPORT_802_11AX == 1)
+	u_int8_t fgIsHEPresent;
+#endif
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	/* Max BSSID indicator. Range from 1 to 8.

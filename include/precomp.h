@@ -102,6 +102,10 @@
 /* Dependency:  mac.h (MAC_ADDR_LEN) */
 #include "wlan_def.h"
 
+#if (CFG_SUPPORT_802_11AX == 1)
+#include "he_ie.h"
+#endif
+
 #if CFG_SUPPORT_SWCR
 #include "swcr.h"
 #endif
@@ -157,6 +161,9 @@
  * .\include\mgmt
  *------------------------------------------------------------------------------
  */
+#if (CFG_SUPPORT_TWT == 1)
+#include "twt.h"
+#endif /* CFG_SUPPORT_802_11AX */
 
 #include "hem_mbox.h"
 
@@ -180,6 +187,16 @@
 #include "connac_dmashdl.h"
 #include "cmm_asic_connac.h"
 #include "cmm_asic_connac2x.h"
+
+#if (CFG_SUPPORT_802_11AX == 1)
+#include "he_rlm.h"
+#include "wlan_he.h"
+#endif /* CFG_SUPPORT_802_11AX == 1 */
+
+#if (CFG_SUPPORT_TWT == 1)
+#include "twt_req_fsm.h"
+#include "twt_planner.h"
+#endif
 
 #include "rlm.h"
 #include "rlm_domain.h"

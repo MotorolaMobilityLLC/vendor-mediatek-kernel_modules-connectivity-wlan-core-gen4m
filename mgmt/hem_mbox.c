@@ -177,6 +177,20 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_NCHO_ACTION_FRAME")
 #endif
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_ACS"),
+
+#if (CFG_SUPPORT_TWT == 1)
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_FSM_START"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_FSM_TEARDOWN"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_FSM_SUSPEND"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_FSM_RESUME"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_IND_RESULT"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_IND_SUSPEND_DONE"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_IND_RESUME_DONE"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_IND_TEARDOWN_DONE"),
+	(uint8_t *) DISP_STRING("MID_TWT_REQ_IND_INFOFRM"),
+	(uint8_t *) DISP_STRING("MID_TWT_PARAMS_SET"),
+#endif
+
 };
 
 /*lint -restore */
@@ -307,6 +321,20 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 		aisFsmRunEventNchoActionFrameTx},
 #endif
 	{MID_MNY_P2P_ACS, p2pRoleFsmRunEventAcs},
+
+#if (CFG_SUPPORT_TWT == 1)
+	{MID_TWT_REQ_FSM_START, twtReqFsmRunEventStart},
+	{MID_TWT_REQ_FSM_TEARDOWN, twtReqFsmRunEventTeardown},
+	{MID_TWT_REQ_FSM_SUSPEND, twtReqFsmRunEventSuspend},
+	{MID_TWT_REQ_FSM_RESUME, twtReqFsmRunEventResume},
+	{MID_TWT_REQ_IND_RESULT, twtPlannerRxNegoResult},
+	{MID_TWT_REQ_IND_SUSPEND_DONE, twtPlannerSuspendDone},
+	{MID_TWT_REQ_IND_RESUME_DONE, twtPlannerResumeDone},
+	{MID_TWT_REQ_IND_TEARDOWN_DONE, twtPlannerTeardownDone},
+	{MID_TWT_REQ_IND_INFOFRM, twtPlannerRxInfoFrm},
+	{MID_TWT_PARAMS_SET, twtPlannerSetParams},
+#endif
+
 };
 
 /*******************************************************************************

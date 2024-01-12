@@ -466,6 +466,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.top_hcr = CONNAC2X_TOP_HCR,
 	.top_hvr = CONNAC2X_TOP_HVR,
 	.top_fvr = CONNAC2X_TOP_FVR,
+	.arb_ac_mode_addr = MT7915_ARB_AC_MODE_ADDR,
 	.asicCapInit = asicConnac2xCapInit,
 #if defined(_HIF_USB)
 	.asicUsbInit = asicConnac2xWfdmaInitForUSB,

@@ -6054,6 +6054,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucStaVht = (uint8_t) wlanCfgGetUint32(prAdapter, "StaVHT",
 					FEATURE_ENABLED);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	prWifiVar->ucStaHe = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "StaHE", FEATURE_ENABLED);
+#endif
+
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
 					FEATURE_ENABLED);
 	prWifiVar->ucApVht = (uint8_t) wlanCfgGetUint32(prAdapter, "ApVHT",
@@ -6128,6 +6133,22 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucMCS32 = (uint8_t) wlanCfgGetUint32(prAdapter, "MCS32",
 					FEATURE_DISABLED);
 
+#if (CFG_SUPPORT_802_11AX == 1)
+	prWifiVar->ucHeAmsduInAmpduRx = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"HeAmsduInAmpduRx", FEATURE_ENABLED);
+	prWifiVar->ucHeAmsduInAmpduTx = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"HeAmsduInAmpduTx", FEATURE_ENABLED);
+	prWifiVar->ucTrigMacPadDur = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"TrigMacPadDur", HE_CAP_TRIGGER_PAD_DURATION_16);
+#endif
+
+#if (CFG_SUPPORT_TWT == 1)
+	prWifiVar->ucTWTRequester = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "TWTRequester", FEATURE_ENABLED);
+	prWifiVar->ucTWTResponder = (uint8_t)
+		wlanCfgGetUint32(prAdapter, "TWTResponder", FEATURE_DISABLED);
+#endif
+
 	prWifiVar->ucSigTaRts = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"SigTaRts", FEATURE_DISABLED);
 	prWifiVar->ucDynBwRts = (uint8_t) wlanCfgGetUint32(prAdapter,
@@ -6145,6 +6166,11 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 					"StaHTBfer", FEATURE_DISABLED);
 	prWifiVar->ucStaVhtBfer = (uint8_t) wlanCfgGetUint32(prAdapter,
 					"StaVHTBfer", FEATURE_DISABLED);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	prWifiVar->ucStaHeBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
+					"StaHEBfee", FEATURE_ENABLED);
+#endif
 
 	/* 0: disabled
 	 * 1: Tx done event to driver

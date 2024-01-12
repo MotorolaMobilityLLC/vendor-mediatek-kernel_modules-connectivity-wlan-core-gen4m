@@ -60,6 +60,7 @@
 
 #define CONN_INFRA_REMAPPING_OFFSET                    0x64000000
 #define CONNAC2X_WFDMA_DISP_MAX_CNT_MASK               0x000000FF
+#define CONNAC2X_WFDMA_DISP_BASE_PTR_MASK               0xFFFF0000
 
 #define CONNAC2X_MCU_WPDMA_0_BASE                      0x54000000
 #define CONNAC2X_MCU_WPDMA_1_BASE                      0x55000000
