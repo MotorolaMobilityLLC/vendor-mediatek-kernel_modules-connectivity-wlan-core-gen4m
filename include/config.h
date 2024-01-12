@@ -1427,8 +1427,12 @@
  * Flags of SDIO test pattern support
  *------------------------------------------------------------------------------
  */
+#if defined(_HIF_SDIO)
 #ifndef CFG_SUPPORT_SDIO_READ_WRITE_PATTERN
 #define CFG_SUPPORT_SDIO_READ_WRITE_PATTERN 1
+#endif
+#else
+#define CFG_SUPPORT_SDIO_READ_WRITE_PATTERN 0
 #endif
 
 /*------------------------------------------------------------------------------
