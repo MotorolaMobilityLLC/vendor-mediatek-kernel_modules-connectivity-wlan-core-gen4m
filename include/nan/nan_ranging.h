@@ -12,19 +12,19 @@
 #include "src/utils/list.h"
 
 /*******************************************************************************
-*                         C O M P I L E R   F L A G S
-********************************************************************************
-*/
+ *                         C O M P I L E R   F L A G S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                    E X T E R N A L   R E F E R E N C E S
-********************************************************************************
-*/
+ *                    E X T E R N A L   R E F E R E N C E S
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                              C O N S T A N T S
-********************************************************************************
-*/
+ *                              C O N S T A N T S
+ *******************************************************************************
+ */
 
 #define NAN_MAX_SUPPORT_RANGING_NUM 8
 
@@ -65,9 +65,9 @@ enum _ENUM_RANGING_STATE_T {
 };
 
 /*******************************************************************************
-*                             D A T A   T Y P E S
-********************************************************************************
-*/
+ *                             D A T A   T Y P E S
+ *******************************************************************************
+ */
 
 struct _NAN_FTM_PARAM_T {
 	unsigned char fgRttTrigger;
@@ -184,40 +184,40 @@ struct _NAN_RANGING_REPORT_CMD {
 } __KAL_ATTRIB_PACKED__;
 
 /*******************************************************************************
-*                            P U B L I C   D A T A
-********************************************************************************
-*/
+ *                            P U B L I C   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                           P R I V A T E   D A T A
-********************************************************************************
-*/
+ *                           P R I V A T E   D A T A
+ *******************************************************************************
+ */
 
 /*******************************************************************************
-*                                 M A C R O S
-********************************************************************************
-*/
+ *                                 M A C R O S
+ *******************************************************************************
+ */
 
 #define FTM_FMT_TO_RANGE_CM(_ftm_fmt) (((_ftm_fmt & BITS(0, 23)) * 100) >> 12)
 
 /*******************************************************************************
-*                   F U N C T I O N   D E C L A R A T I O N S
-********************************************************************************
-*/
+ *                   F U N C T I O N   D E C L A R A T I O N S
+ *******************************************************************************
+ */
 
 /************************************************
-*   Initialization and Uninitialization
-*************************************************
-*/
+ *   Initialization and Uninitialization
+ ************************************************
+ */
 
 void nanRangingEngineInit(struct ADAPTER *prAdapter);
 
 void nanRangingEngineUninit(struct ADAPTER *prAdapter);
 
 /************************************************
-*   NAN Ranging Instance
-*************************************************
-*/
+ *   NAN Ranging Instance
+ ************************************************
+ */
 void nanRangingInstanceInit(struct ADAPTER *prAdapter,
 			    struct _NAN_RANGING_INSTANCE_T *prRanging,
 			    uint8_t *puc_peer_mac, uint8_t ucRole);
@@ -239,9 +239,9 @@ struct _NAN_RANGING_INSTANCE_T *
 nanRangingInstanceSearchById(struct ADAPTER *prAdapter, uint16_t u2RangingId);
 
 /************************************************
-*   NAN Ranging Attribute
-*************************************************
-*/
+ *   NAN Ranging Attribute
+ ************************************************
+ */
 uint32_t nanGetFtmRangeReportAttr(struct ADAPTER *prAdapter, uint8_t **ppucAttr,
 				  uint32_t *pu4AttrLen, uint8_t *pucDevAddr);
 
@@ -265,9 +265,9 @@ uint32_t nanRangingSetupAttrHandler(struct ADAPTER *prAdapter,
 				    uint8_t *pucDevAddr);
 
 /************************************************
-*   NAN Ranging Frame
-*************************************************
-*/
+ *   NAN Ranging Frame
+ ************************************************
+ */
 void nanRangingFrameCompose(struct ADAPTER *prAdapter,
 			    struct MSDU_INFO *prMsduInfo,
 			    struct _NAN_RANGING_INSTANCE_T *prRanging,
@@ -325,9 +325,9 @@ uint32_t nanRangingReportRx(IN struct ADAPTER *prAdapter,
 			    IN struct SW_RFB *prSwRfb);
 
 /************************************************
-*   NAN Ranging State Machine
-*************************************************
-*/
+ *   NAN Ranging State Machine
+ ************************************************
+ */
 void nanRangingFsmStep(struct ADAPTER *prAdapter,
 		       struct _NAN_RANGING_INSTANCE_T *prRanging,
 		       enum _ENUM_RANGING_STATE_T eNextState);
@@ -335,9 +335,9 @@ void nanRangingFsmStep(struct ADAPTER *prAdapter,
 void nanRangingSessionTimeout(struct ADAPTER *prAdapter, unsigned long ulParam);
 
 /************************************************
-*   Interface for FTM
-*************************************************
-*/
+ *   Interface for FTM
+ ************************************************
+ */
 void nanRangingFtmParamCmd(IN struct ADAPTER *prAdapter,
 			   struct _NAN_RANGING_INSTANCE_T *prRanging);
 
@@ -352,9 +352,9 @@ nanRangingGeofencingCheck(struct ADAPTER *prAdapter,
 void nanRangingFtmDoneEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf);
 
 /************************************************
-*   Interface for NAN Discovery Engine
-*************************************************
-*/
+ *   Interface for NAN Discovery Engine
+ ************************************************
+ */
 void nanRangingReportDiscCmd(IN struct ADAPTER *prAdapter,
 			     struct _NAN_RANGING_REPORT_CMD *msg);
 
@@ -365,9 +365,9 @@ void nanRangingInvokedByDiscEvt(IN struct ADAPTER *prAdapter,
 				IN uint8_t *pcuEvtBuf);
 
 /************************************************
-*   Interface for Application
-*************************************************
-*/
+ *   Interface for Application
+ ************************************************
+ */
 uint32_t nanRangingRequest(struct ADAPTER *prAdapter, uint16_t *pu2Id,
 			   struct NanRangeRequest *msg);
 
@@ -385,9 +385,9 @@ void nanRangingResult(struct ADAPTER *prAdapter,
 		      uint32_t u4IndChk);
 
 /************************************************
-*   Interface for NAN Scheduler
-*************************************************
-*/
+ *   Interface for NAN Scheduler
+ ************************************************
+ */
 void nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter,
 				   uint8_t *pu1DevAddr,
 				   enum _ENUM_NAN_NEGO_TYPE_T eType,
@@ -400,9 +400,9 @@ uint32_t nanRangingScheduleViolation(struct ADAPTER *prAdapter,
 void nanRangingListPrint(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
-*                              F U N C T I O N S
-********************************************************************************
-*/
+ *                              F U N C T I O N S
+ *******************************************************************************
+ */
 
 #endif
 #endif /* _NAN_RANGING_H_ */
