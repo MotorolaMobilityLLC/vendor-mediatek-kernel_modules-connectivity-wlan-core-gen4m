@@ -2,8 +2,8 @@
 /*
  * Copyright (c) 2021 MediaTek Inc.
  */
-
 #include "precomp.h"
+#include "gl_kal.h"
 
 #if CFG_ENABLE_WIFI_DIRECT
 
@@ -264,11 +264,11 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 				prScanReqV2->ucChannelListNum =
 					prScanReqInfo->ucNumChannelList;
 			}
-			/* fallthrough */
+			kal_fallthrough;
 		case SCAN_CHANNEL_FULL:
-			/* fallthrough */
+			kal_fallthrough;
 		case SCAN_CHANNEL_2G4:
-			/* fallthrough */
+			kal_fallthrough;
 		case SCAN_CHANNEL_P2P_SOCIAL:
 			{
 				/* UINT_8 aucP2pSsid[] = P2P_WILDCARD_SSID; */
@@ -1923,7 +1923,7 @@ p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
 			case OP_MODE_INFRASTRUCTURE:
 				DBGLOG(P2P, TRACE,
 					"p2pFuncSwitchOPMode: Switch to Client.\n");
-				/* fall through */
+				kal_fallthrough;
 			case OP_MODE_ACCESS_POINT:
 				/* Change interface address. */
 				if (eOpMode == OP_MODE_ACCESS_POINT) {
@@ -4274,7 +4274,7 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 				return;
 			}
 		}
-		/* Fall through */
+		kal_fallthrough;
 	default:
 		break;
 	}

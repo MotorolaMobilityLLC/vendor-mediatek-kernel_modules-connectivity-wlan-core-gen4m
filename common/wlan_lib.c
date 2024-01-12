@@ -24,6 +24,7 @@
 #include "precomp.h"
 #include "mgmt/ais_fsm.h"
 #include "mddp.h"
+#include "gl_kal.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1534,16 +1535,16 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			case RAM_CODE_DOWNLOAD_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
 				fw_log_deinit(prAdapter);
-			/* fallthrough */
+			kal_fallthrough;
 			case INIT_HIFINFO_FAIL:
 				halHifSwInfoUnInit(prAdapter->prGlueInfo);
 				nicRxUninitialize(prAdapter);
 				nicTxRelease(prAdapter, FALSE);
 				/* System Service Uninitialization */
 				nicUninitSystemService(prAdapter);
-			/* fallthrough */
+			kal_fallthrough;
 			case INIT_ADAPTER_FAIL:
-			/* fallthrough */
+			kal_fallthrough;
 			case DRIVER_OWN_FAIL:
 				nicReleaseAdapterMemory(prAdapter);
 				break;
@@ -8869,7 +8870,7 @@ textresume:
 					x++;
 					continue;
 				}
-				/* fallthrough */
+				kal_fallthrough;
 			case '\n':
 				/* \ <lf> -> line continuation */
 				x++;

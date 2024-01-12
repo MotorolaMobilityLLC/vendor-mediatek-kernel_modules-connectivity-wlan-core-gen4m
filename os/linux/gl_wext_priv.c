@@ -511,7 +511,7 @@ int priv_support_ioctl(struct net_device *prNetDev,
 #endif
 
 #if CFG_SUPPORT_NAN
-	/* fallthrough */
+	kal_fallthrough;
 	case IOCTL_NAN_STRUCT:
 		return priv_nan_struct(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				       (char *)&(prIwReq->u));

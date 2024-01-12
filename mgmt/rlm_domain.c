@@ -20,6 +20,7 @@
  */
 #include "precomp.h"
 #include "rlm_txpwr_init.h"
+#include "gl_kal.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -3512,11 +3513,11 @@ rlmDomainGetStartEndIdx(enum ENUM_PWR_LIMIT_TYPE eType,
 
 	switch (eType) {
 	case PWR_LIMIT_TYPE_COMP_11AC:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11AC_V2:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11AX:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11AX_BW160: {
 		*pu1StartIdx = PWR_LMT_SUBBAND_2G4;
 		*pu1EndIdx = PWR_LMT_SUBBAND_UNII3;
@@ -3551,21 +3552,21 @@ rlmDomainGetStartEndIdx(enum ENUM_PWR_LIMIT_TYPE eType,
 	}
 		break;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_1:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_1: {
 		*pu1StartIdx = PWR_LMT_SUBBAND_UNII5A;
 		*pu1EndIdx = PWR_LMT_SUBBAND_UNII5B;
 	}
 		break;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_2:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_2: {
 		*pu1StartIdx = PWR_LMT_SUBBAND_UNII6;
 		*pu1EndIdx = PWR_LMT_SUBBAND_UNII7B;
 	}
 		break;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_3:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3: {
 		*pu1StartIdx = PWR_LMT_SUBBAND_UNII8;
 		*pu1EndIdx = PWR_LMT_SUBBAND_UNII8;
@@ -4447,43 +4448,43 @@ static void rlmDomainCompareFromConfigTable(int8_t *prPwrLmt,
 		break;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	case PWR_LIMIT_TYPE_COMP_11BE_1:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11BE_2:
 		size = PWR_LIMIT_EHT_NUM;
 		break;
 #endif /* CFG_SUPPORT_PWR_LIMIT_EHT */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case PWR_LIMIT_TYPE_COMP_6E_1:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_6E_2:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_6E_3:
 		size = PWR_LIMIT_6E_NUM;
 		break;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_1:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_2:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_6G_3:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_1:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_2:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_LEGACY_V2_6G_3:
 		size = PWR_LIMIT_LEGACY_6G_NUM;
 		break;
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_1:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_2:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_3:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_4:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_5:
-		/* fallthrough */
+		kal_fallthrough;
 	case PWR_LIMIT_TYPE_COMP_11BE_6G_6:
 		size = PWR_LIMIT_EHT_6G_NUM;
 		break;

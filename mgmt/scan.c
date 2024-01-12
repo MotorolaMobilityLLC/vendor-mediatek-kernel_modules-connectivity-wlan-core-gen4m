@@ -13,6 +13,7 @@
  *******************************************************************************
  */
 #include "precomp.h"
+#include "gl_kal.h"
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -770,9 +771,9 @@ scanSearchExistingBssDescWithSsid(struct ADAPTER *prAdapter,
 	switch (eBSSType) {
 	case BSS_TYPE_P2P_DEVICE:
 		fgCheckSsid = FALSE;
-		/* fall through */
+		kal_fallthrough;
 	case BSS_TYPE_INFRASTRUCTURE:
-		/* fall through */
+		kal_fallthrough;
 	case BSS_TYPE_BOW_DEVICE:
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 			aucBSSID, fgCheckSsid, prSsid);

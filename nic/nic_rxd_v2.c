@@ -564,6 +564,7 @@ void nic_rxd_v2_check_wakeup_reason(
 		}
 		break;
 	}
+	kal_fallthrough;
 	case RX_PKT_TYPE_RX_DATA:
 	{
 		uint16_t u2Temp = 0;
