@@ -1811,6 +1811,7 @@ int kalExternalAuthRequest(IN struct ADAPTER *prAdapter,
 
 int kalWlanUeventInit(void);
 void kalWlanUeventDeinit(void);
+u_int8_t kalSendUevent(const char *src);
 
 int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);
 int _kalSprintf(char *buf, const char *fmt, ...);

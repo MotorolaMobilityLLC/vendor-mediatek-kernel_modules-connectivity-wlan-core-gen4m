@@ -679,6 +679,41 @@ void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
 	}
 }				/* end of roamingFsmRunEventRoam() */
 
+void roamingFsmNotifyEvent(
+	IN struct ADAPTER *adapter, IN uint8_t bssIndex, IN uint8_t ucFail,
+	IN struct BSS_DESC *prBssDesc)
+{
+	struct ROAMING_INFO *roam = aisGetRoamingInfo(adapter, bssIndex);
+	struct ROAMING_EVENT_INFO *prEventInfo = &roam->rEventInfo;
+	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(adapter, bssIndex);
+	char uevent[300];
+
+	COPY_MAC_ADDR(roam->rEventInfo.aucPrevBssid, prAisBssInfo->aucBSSID);
+	COPY_MAC_ADDR(roam->rEventInfo.aucCurrBssid, prBssDesc->aucBSSID);
+	roam->rEventInfo.ucPrevChannel = prAisBssInfo->ucPrimaryChannel;
+	roam->rEventInfo.ucCurrChannel = prBssDesc->ucChannelNum;
+	roam->rEventInfo.ucBw = (uint8_t) prBssDesc->eBand;
+	roam->rEventInfo.u2ApLoading = prBssDesc->u2StaCnt;
+	roam->rEventInfo.ucSupportStbc = prBssDesc->fgMultiAnttenaAndSTBC;
+	roam->rEventInfo.ucSupportStbc = prBssDesc->fgMultiAnttenaAndSTBC;
+	roam->rEventInfo.ucPrevRcpi =
+		dBm_TO_RCPI(adapter->rLinkQuality.rLq[bssIndex].cRssi);
+	roam->rEventInfo.ucCurrRcpi = prBssDesc->ucRCPI;
+
+	kalSnprintf(uevent, sizeof(uevent),
+		"roam=Status:%s,BSSID:" MACSTR "/" MACSTR
+		",Reason:%d,Chann:%d/%d,RCPI:%d/%d,BW:%d,STBC:%s\n",
+		(ucFail == TRUE ? "FAIL" : "SUCCESS"),
+		MAC2STR(prEventInfo->aucPrevBssid),
+		MAC2STR(prEventInfo->aucCurrBssid), (uint8_t) roam->eReason,
+		prEventInfo->ucPrevChannel, prEventInfo->ucCurrChannel,
+		prEventInfo->ucPrevRcpi, prEventInfo->ucCurrRcpi,
+		prEventInfo->ucBw,
+		(prEventInfo->ucSupportStbc == TRUE ? "TRUE" : " FALSE"));
+	kalSendUevent(uevent);
+}
+
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Transit to Decision state as being failed to find out any candidate
@@ -689,7 +724,7 @@ void roamingFsmRunEventRoam(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
-	IN uint32_t u4Param, IN uint8_t ucBssIndex)
+	IN uint8_t ucReason, IN uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	enum ENUM_ROAMING_STATE eNextState;
@@ -706,7 +741,7 @@ void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
 	DBGLOG(ROAMING, STATE,
 	       "[%d] EVENT-ROAMING FAIL: reason %x Current Time = %d\n",
 	       ucBssIndex,
-	       u4Param, kalGetTimeTick());
+	       ucReason, kalGetTimeTick());
 
 	/* IDLE, ROAM -> DECISION */
 	/* Errors as IDLE, DECISION, DISCOVERY -> DECISION */
@@ -717,7 +752,7 @@ void roamingFsmRunEventFail(IN struct ADAPTER *prAdapter,
 	/* ROAM -> DECISION */
 	if (eNextState != prRoamingFsmInfo->eCurrentState) {
 		rTransit.u2Event = ROAMING_EVENT_FAIL;
-		rTransit.u2Data = (uint16_t) (u4Param & 0xffff);
+		rTransit.u2Data = (uint16_t) (ucReason & 0xffff);
 		rTransit.ucBssidx = ucBssIndex;
 		roamingFsmSendCmd(prAdapter,
 			(struct CMD_ROAMING_TRANSIT *) &rTransit);
