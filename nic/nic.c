@@ -1801,6 +1801,11 @@ uint32_t nicActivateNetworkEx(IN struct ADAPTER *prAdapter,
 	ASSERT(ucBssIndex <= prAdapter->ucHwBssIdNum);
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(NIC, INFO, "prBssInfo is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);
 
 	if (fgReset40mBw) {
