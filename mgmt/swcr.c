@@ -709,11 +709,19 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			case 1:
 #if QM_FORWARDING_FAIRNESS
+#if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 				if (ucOpt1 >= TC_NUM) {
 					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
 					   ucOpt1);
 					break;
 				}
+#else
+				if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES) {
+					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
+					   ucOpt1);
+					break;
+				}
+#endif
 				g_au4SwCr[1] =
 					prQM->au4ResourceUsedCount[ucOpt1];
 				g_au4SwCr[2] = prQM->au4HeadStaRecIndex[ucOpt1];
@@ -722,7 +730,7 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			case 2:
 				/* only one */
-				if (ucOpt1 >= NUM_OF_PER_STA_TX_QUEUES) {
+				if (ucOpt1 >= NUM_OF_PER_TYPE_TX_QUEUES) {
 					DBGLOG(SW4, WARN, "ucOpt1 %u invalid\n",
 					   ucOpt1);
 					break;
