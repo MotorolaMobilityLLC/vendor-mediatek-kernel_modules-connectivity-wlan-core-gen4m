@@ -1382,7 +1382,8 @@ struct WIFI_VAR {
 	uint8_t ucNanMacAddrOverride;
 	uint8_t aucNanMacAddrStr[WLAN_CFG_VALUE_LEN_MAX];
 	unsigned char fgEnableRandNdpid;
-	uint8_t fgNanUnrollInstallTk;
+	u_int8_t fgNanUnrollInstallTk;
+	uint32_t u4NanSendPacketGuardTime;
 #endif
 
 #if CFG_SUPPORT_TPENHANCE_MODE
