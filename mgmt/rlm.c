@@ -6530,6 +6530,12 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 				    u_int8_t fgIsSuccess)
 {
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback;
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	uint8_t cmd[30] = {0};
+	uint8_t strLen = 0;
+	uint32_t strOutLen = 0;
+#endif
 
 	ASSERT((prAdapter != NULL) && (prBssInfo != NULL));
 
@@ -6550,6 +6556,25 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 			bssUpdateBeaconContent(prAdapter,
 					       prBssInfo->ucBssIndex);
 	}
+
+	#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	/* notify FW if reason is ANT_CTRL and SMARTGEAR */
+	if (prAdapter->ucANTCtrlReason > 0) {
+		strLen = kalSnprintf(cmd, sizeof(cmd),
+			"AntControlConfig %d %d %d",
+			prAdapter->ucANTCtrlReason,
+			prBssInfo->ucOpTxNss,
+			prBssInfo->ucOpRxNss);
+		DBGLOG(RLM, INFO, "Notify FW %s, strlen=%d", cmd, strLen);
+
+		rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+		rChipConfigInfo.u2MsgSize = strLen;
+		kalStrnCpy(rChipConfigInfo.aucCmd, cmd, strLen);
+		wlanSetChipConfig(prAdapter, &rChipConfigInfo,
+			sizeof(rChipConfigInfo), &strOutLen, FALSE);
+		prAdapter->ucANTCtrlReason = 0;
+	}
+#endif
 
 	DBGLOG(RLM, INFO,
 		"Complete BSS[%d] OP Mode change to BW[%d] RxNss[%d] TxNss[%d]",

@@ -7677,13 +7677,22 @@ uint32_t
 wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen) {
+	DEBUGFUNC("wlanoidSetChipConfig");
+	return wlanSetChipConfig(prAdapter, pvSetBuffer, u4SetBufferLen,
+		pu4SetInfoLen, TRUE);
+}
+
+uint32_t
+wlanSetChipConfig(IN struct ADAPTER *prAdapter,
+		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		     OUT uint32_t *pu4SetInfoLen, IN uint8_t fgIsOid) {
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo;
 	struct CMD_CHIP_CONFIG rCmdChipConfig;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 	DATA_STRUCT_INSPECTING_ASSERT(
 		sizeof(prChipConfigInfo->aucCmd) == CHIP_CONFIG_RESP_SIZE);
-	DEBUGFUNC("wlanoidSetChipConfig");
+
 	DBGLOG(INIT, LOUD, "\n");
 
 	ASSERT(prAdapter);
@@ -7719,7 +7728,7 @@ wlanoidSetChipConfig(IN struct ADAPTER *prAdapter,
 					  CMD_ID_CHIP_CONFIG,
 					  TRUE,
 					  FALSE,
-					  TRUE,
+					  fgIsOid,
 					  nicCmdEventSetCommon,
 					  nicOidCmdTimeoutCommon,
 					  sizeof(struct CMD_CHIP_CONFIG),

@@ -4209,6 +4209,19 @@ void cnmOpmodeEventHandler(
 	prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
 		(prEvent->aucBuffer);
 
+#if (CFG_SUPPORT_CONNINFRA == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	/* store reason for ANT_CTRL and SMARTGEAR  */
+	if (prEvtOpMode->ucEnable &&
+			(prEvtOpMode->ucReason ==
+				EVENT_OPMODE_CHANGE_REASON_ANT_CTRL ||
+			prEvtOpMode->ucReason ==
+				EVENT_OPMODE_CHANGE_REASON_SMARTGEAR ||
+			prEvtOpMode->ucReason ==
+				EVENT_OPMODE_CHANGE_REASON_SMARTGEAR_1T2R)) {
+		prAdapter->ucANTCtrlReason = prEvtOpMode->ucReason;
+	}
+#endif
+
 	eReqIdx = cnmOpModeMapEvtReason(
 		(enum ENUM_EVENT_OPMODE_CHANGE_REASON)
 		prEvtOpMode->ucReason);
