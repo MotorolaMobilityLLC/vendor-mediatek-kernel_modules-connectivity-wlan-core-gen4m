@@ -383,7 +383,10 @@ static void mtk_wifi_reset(struct work_struct *work)
 		kalRemoveProbe(rst->prGlueInfo);
 
 #endif
-
+	if (fgSimplifyResetFlow) {
+		DBGLOG(INIT, INFO, "Force down the reset flag.\n");
+		fgSimplifyResetFlow = FALSE;
+	}
 	DBGLOG(INIT, STATE, "[SER][L0] flow end, fgResult=%d\n", fgResult);
 
 }
