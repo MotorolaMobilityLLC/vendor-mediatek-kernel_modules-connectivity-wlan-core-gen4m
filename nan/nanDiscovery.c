@@ -252,7 +252,7 @@ nanSetPublishPmkid(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 
 	/* Get BSS info */
 	prNanSpecificBssInfo = nanGetSpecificBssInfo(
-		prAdapter, NAN_BSS_INDEX_WOSEC);
+		prAdapter, NAN_BSS_INDEX_BAND0);
 	if (prNanSpecificBssInfo == NULL) {
 		DBGLOG(NAN, ERROR, "prNanSpecificBssInfo is null\n");
 		return;
