@@ -754,6 +754,8 @@ struct STA_RECORD {
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	struct STA_PMF_CFG rPmfCfg;
+	/* STA PMF */
+	uint32_t u4assocComeBackTime;
 #endif
 #if CFG_AP_80211K_SUPPORT
 	uint16_t u2BcnReqRepetition;
