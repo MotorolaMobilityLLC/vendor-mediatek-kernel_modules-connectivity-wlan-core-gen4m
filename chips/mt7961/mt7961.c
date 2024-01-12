@@ -1537,7 +1537,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7961 = {
 	.asicEnableFWDownload = NULL,
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 	.asicDumpSerDummyCR = mt7961DumpSerDummyCR,
-	.downloadBufferBin = wlanConnacDownloadBufferBin,
+	.downloadBufferBin = wlanConnac2XDownloadBufferBin,
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = FALSE,
