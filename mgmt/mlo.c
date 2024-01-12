@@ -3310,7 +3310,7 @@ void mldBssFree(struct ADAPTER *prAdapter,
 
 	prBssList = &prMldBssInfo->rBssList;
 
-	DBGLOG(ML, INFO, "ucGroupMldId: %d\n",
+	DBGLOG(ML, TRACE, "ucGroupMldId: %d\n",
 		prMldBssInfo->ucGroupMldId);
 
 	LINK_FOR_EACH_ENTRY_SAFE(prCurrBssInfo, prNextBssInfo, prBssList,
@@ -3387,7 +3387,7 @@ int8_t mldBssInit(struct ADAPTER *prAdapter)
 
 void mldBssUninit(struct ADAPTER *prAdapter)
 {
-	DBGLOG(ML, INFO, "\n");
+	DBGLOG(ML, TRACE, "\n");
 }
 
 void mldStarecDump(struct ADAPTER *prAdapter)
@@ -4057,7 +4057,7 @@ int8_t mldStarecInit(struct ADAPTER *prAdapter)
 
 void mldStarecUninit(struct ADAPTER *prAdapter)
 {
-	DBGLOG(ML, INFO, "\n");
+	DBGLOG(ML, TRACE, "\n");
 }
 
 struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,

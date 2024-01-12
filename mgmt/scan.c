@@ -214,7 +214,7 @@ void scnUninit(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
-	log_dbg(SCN, INFO, "%s()\n", __func__);
+	log_dbg(SCN, TRACE, "%s()\n", __func__);
 
 	scnFreeAllPendingScanRquests(prAdapter);
 

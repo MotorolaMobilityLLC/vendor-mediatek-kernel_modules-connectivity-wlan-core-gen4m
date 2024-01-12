@@ -52,7 +52,7 @@ uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 	uint8_t aucBuf[32];
 #endif
 
-	DBGLOG(HAL, INFO, "enter asicGetFwDlInfo\n");
+	DBGLOG(HAL, TRACE, "enter asicGetFwDlInfo\n");
 #if CFG_WLAN_LK_FWDL_SUPPORT
 	u4Offset += snprintf(pcBuf + u4Offset, i4TotalLen - u4Offset,
 				     "Release manifest: %s\n",

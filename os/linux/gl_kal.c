@@ -9501,7 +9501,7 @@ inline int32_t kalPerMonInit(struct GLUE_INFO
 	/* enable rps on all cpu cores */
 	kalSetRpsMap(prGlueInfo, 0xff);
 	KAL_SET_BIT(PERF_MON_INIT_BIT, prPerMonitor->ulPerfMonFlag);
-	DBGLOG(SW4, INFO, "exit %s\n", __func__);
+	DBGLOG(SW4, TRACE, "exit %s\n", __func__);
 	return 0;
 }
 
@@ -9515,7 +9515,7 @@ inline int32_t kalPerMonDisable(struct GLUE_INFO
 
 	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
 
-	DBGLOG(SW4, INFO, "enter %s\n", __func__);
+	DBGLOG(SW4, TRACE, "enter %s\n", __func__);
 	if (KAL_TEST_BIT(PERF_MON_RUNNING_BIT,
 			 prPerMonitor->ulPerfMonFlag)) {
 		DBGLOG(SW4, TRACE, "need to stop before disable\n");
@@ -9537,7 +9537,7 @@ inline int32_t kalPerMonEnable(struct GLUE_INFO
 
 	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
 
-	DBGLOG(SW4, INFO, "enter %s\n", __func__);
+	DBGLOG(SW4, TRACE, "enter %s\n", __func__);
 	KAL_CLR_BIT(PERF_MON_DISABLE_BIT,
 		    prPerMonitor->ulPerfMonFlag);
 	DBGLOG(SW4, TRACE, "exit %s\n", __func__);
@@ -9546,7 +9546,7 @@ inline int32_t kalPerMonEnable(struct GLUE_INFO
 
 inline int32_t kalSetPerMonEnable(struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(SW4, INFO, "enter %s\n", __func__);
+	DBGLOG(SW4, TRACE, "enter %s\n", __func__);
 	clear_bit(GLUE_FLAG_DISABLE_PERF_BIT, &prGlueInfo->ulFlag);
 	kalPerMonEnable(prGlueInfo);
 	DBGLOG(SW4, LOUD, "exit %s\n", __func__);
@@ -9555,7 +9555,7 @@ inline int32_t kalSetPerMonEnable(struct GLUE_INFO *prGlueInfo)
 
 inline int32_t kalSetPerMonDisable(struct GLUE_INFO *prGlueInfo)
 {
-	DBGLOG(SW4, INFO, "enter %s\n", __func__);
+	DBGLOG(SW4, TRACE, "enter %s\n", __func__);
 	set_bit(GLUE_FLAG_DISABLE_PERF_BIT, &prGlueInfo->ulFlag);
 	wake_up_interruptible(&prGlueInfo->waitq);
 	DBGLOG(SW4, LOUD, "exit %s\n", __func__);
@@ -9596,7 +9596,7 @@ inline int32_t kalPerMonStart(struct GLUE_INFO
 	KAL_SET_BIT(PERF_MON_RUNNING_BIT,
 		    prPerMonitor->ulPerfMonFlag);
 	KAL_CLR_BIT(PERF_MON_STOP_BIT, prPerMonitor->ulPerfMonFlag);
-	DBGLOG(SW4, INFO, "perf monitor started\n");
+	DBGLOG(SW4, TRACE, "perf monitor started\n");
 	return 0;
 }
 
@@ -9641,7 +9641,7 @@ inline int32_t kalPerMonStop(struct GLUE_INFO
 		prGlueInfo->prAdapter->rWifiVar.u4PerfMonTpCoalescingIntTh);
 #endif
 	}
-	DBGLOG(SW4, INFO, "perf monitor stopped\n");
+	DBGLOG(SW4, TRACE, "perf monitor stopped\n");
 	return 0;
 }
 
@@ -9661,7 +9661,7 @@ inline int32_t kalPerMonDestroy(struct GLUE_INFO
 	prPerMonitor = &prAdapter->rPerMonitor;
 	kalPerMonDisable(prGlueInfo);
 	KAL_CLR_BIT(PERF_MON_INIT_BIT, prPerMonitor->ulPerfMonFlag);
-	DBGLOG(SW4, INFO, "exit %s\n", __func__);
+	DBGLOG(SW4, TRACE, "exit %s\n", __func__);
 
 end:
 	return 0;
@@ -12754,7 +12754,7 @@ uint8_t kalRxGroInit(struct net_device *prDev)
 	prDev->features |= NETIF_F_GRO_FRAGLIST_BIT;
 #endif
 #endif
-	DBGLOG(INIT, INFO, "GRO Init Done\n");
+	DBGLOG(INIT, TRACE, "GRO Init Done\n");
 	return 0;
 }
 
@@ -12771,14 +12771,14 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
 			kalNapiPoll, NAPI_POLL_WEIGHT);
 #endif
-	DBGLOG(INIT, INFO, "Napi Init Done\n");
+	DBGLOG(INIT, TRACE, "Napi Init Done\n");
 	return 0;
 }
 
 uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 {
 	netif_napi_del(&prGlueInfo->napi);
-	DBGLOG(INIT, INFO, "Napi Uninit Done\n");
+	DBGLOG(INIT, TRACE, "Napi Uninit Done\n");
 	return 0;
 }
 
@@ -12835,7 +12835,7 @@ uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo)
 
 	prGlueInfo->prRxDirectNapi = &prGlueInfo->napi;
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 		"Init NapiDirect done Buf[%p:%u] Fifo[%p:%u]\n",
 		prGlueInfo->prRxKfifoBuf,
 		prGlueInfo->u4RxKfifoBufLen,
@@ -12874,7 +12874,7 @@ uint8_t kalNapiRxDirectUninit(struct GLUE_INFO *prGlueInfo)
 		prGlueInfo->prRxKfifoBuf = NULL;
 	}
 
-	DBGLOG(INIT, INFO, "Uninit NapiDirect done\n");
+	DBGLOG(INIT, TRACE, "Uninit NapiDirect done\n");
 
 	return TRUE;
 }
@@ -13086,7 +13086,7 @@ next_try:
 uint8_t kalNapiEnable(struct GLUE_INFO *prGlueInfo)
 {
 	napi_enable(&prGlueInfo->napi);
-	DBGLOG(RX, INFO, "RX NAPI enabled\n");
+	DBGLOG(RX, TRACE, "RX NAPI enabled\n");
 	return 0;
 }
 
@@ -13105,7 +13105,7 @@ uint8_t kalNapiDisable(struct GLUE_INFO *prGlueInfo)
 				!= NULL)
 			kfree_skb(skb);
 	}
-	DBGLOG(RX, INFO, "RX NAPI disabled\n");
+	DBGLOG(RX, TRACE, "RX NAPI disabled\n");
 	return 0;
 }
 #endif
@@ -15142,7 +15142,7 @@ void kalVnfUninit(void)
 	ret_BatWork = cancel_delayed_work_sync(&_rVnfInfo.dBatWork);
 	ret_dwork = cancel_delayed_work_sync(&_rVnfInfo.dwork);
 	kalVnfRstParam(&_rVnfInfo);
-	DBGLOG(SW4, INFO, "VOLT_INFO Uninit,ret_BatWork[%d],ret_dwork[%d]\n",
+	DBGLOG(SW4, TRACE, "VOLT_INFO Uninit,ret_BatWork[%d],ret_dwork[%d]\n",
 		ret_BatWork,
 		ret_dwork);
 }
