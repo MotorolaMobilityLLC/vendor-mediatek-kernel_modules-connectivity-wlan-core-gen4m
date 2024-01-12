@@ -2553,14 +2553,17 @@ s_int32 mt_serv_get_tx_info(struct service_test *serv_test)
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct test_configuration *test_configs_band0;
 	struct test_configuration *test_configs_band1;
+	struct test_configuration *test_configs_band2;
 
 	test_configs_band0 = &serv_test->test_config[TEST_DBDC_BAND0];
 	test_configs_band1 = &serv_test->test_config[TEST_DBDC_BAND1];
+	test_configs_band2 = &serv_test->test_config[TEST_DBDC_BAND2];
 
 	ret = serv_test->test_op->op_get_tx_info(
 		serv_test->test_winfo,
 		test_configs_band0,
-		test_configs_band1);
+		test_configs_band1,
+		test_configs_band2);
 
 	if (ret)
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,

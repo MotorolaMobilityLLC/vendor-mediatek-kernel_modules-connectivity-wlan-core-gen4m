@@ -2361,7 +2361,8 @@ s_int32 mt_op_dbdc_continuous_tx(
 s_int32 mt_op_get_tx_info(
 	struct test_wlan_info *winfos,
 	struct test_configuration *test_configs_band0,
-	struct test_configuration *test_configs_band1)
+	struct test_configuration *test_configs_band1,
+	struct test_configuration *test_configs_band2)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct param_mtk_wifi_test_struct rf_at_info;
@@ -2392,6 +2393,18 @@ s_int32 mt_op_get_tx_info(
 		&rf_at_info, &buf_len);
 	if (ret == SERV_STATUS_SUCCESS)
 		test_configs_band1->tx_stat.tx_done_cnt = rf_at_info.func_data;
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, TEST_DBDC_BAND2);
+
+	rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
+	rf_at_info.func_data = 0;
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+	if (ret == SERV_STATUS_SUCCESS)
+		test_configs_band2->tx_stat.tx_done_cnt = rf_at_info.func_data;
+#endif
 
 	return ret;
 }

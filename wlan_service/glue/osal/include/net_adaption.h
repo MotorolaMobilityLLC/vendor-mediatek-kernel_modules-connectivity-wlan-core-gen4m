@@ -1435,7 +1435,8 @@ struct test_operation {
 	s_int32 (*op_get_tx_info)(
 		struct test_wlan_info *winfos,
 		struct test_configuration *test_configs_band0,
-		struct test_configuration *test_configs_band1);
+		struct test_configuration *test_configs_band1,
+		struct test_configuration *test_configs_band2);
 	s_int32 (*op_set_antenna_port)(
 		struct test_wlan_info *winfos,
 		u_int8 rf_mode_mask, u_int8 rf_port_mask,

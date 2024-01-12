@@ -1871,7 +1871,7 @@ static s_int32 hqa_get_tx_info(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	u_int32 tx_cnt0 = 0, tx_cnt1 = 0;
+	u_int32 tx_cnt0 = 0, tx_cnt1 = 0, tx_cnt2 = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1887,13 +1887,21 @@ static s_int32 hqa_get_tx_info(
 				TEST_DBDC_BAND1);
 	tx_cnt1 = SERV_OS_HTONL(tx_cnt1);
 
+	tx_cnt2 = CONFIG_GET_PARAM(serv_test, tx_stat.tx_done_cnt,
+				TEST_DBDC_BAND2);
+	tx_cnt2 = SERV_OS_HTONL(tx_cnt2);
+
 	/* Update hqa_frame with response: status (2 bytes) */
 	sys_ad_move_mem((hqa_frame->data + 2),
 			&tx_cnt0, sizeof(tx_cnt0));
 	sys_ad_move_mem((hqa_frame->data + 2 + sizeof(tx_cnt0)),
 			&tx_cnt1, sizeof(tx_cnt1));
+	sys_ad_move_mem((hqa_frame->data + 2 + sizeof(tx_cnt0) +
+			sizeof(tx_cnt1)),
+			&tx_cnt2, sizeof(tx_cnt2));
 	update_hqa_frame(hqa_frame,
-			2 + sizeof(tx_cnt0) + sizeof(tx_cnt1), ret);
+			2 + sizeof(tx_cnt0) + sizeof(tx_cnt1) +
+			sizeof(tx_cnt2), ret);
 
 	return ret;
 }
