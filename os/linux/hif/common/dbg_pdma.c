@@ -301,7 +301,8 @@ uint32_t halDumpHifStatus(IN struct ADAPTER *prAdapter,
 {
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t u4Idx, u4DmaIdx, u4CpuIdx, u4MaxCnt;
+	uint32_t u4Idx, u4DmaIdx = 0;
+	uint32_t u4CpuIdx = 0, u4MaxCnt = 0;
 	uint32_t u4Len = 0;
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
