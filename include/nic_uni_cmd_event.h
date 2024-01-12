@@ -8373,6 +8373,11 @@ uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
 uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
+#if CFG_SUPPORT_WIFI_ICCM
+uint32_t nicUniCmdIccmSetParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
+
 uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
