@@ -877,7 +877,6 @@ void glSetHifInfo(struct GLUE_INFO *prGlueInfo, unsigned long ulCookie)
 
 	prHif->rErrRecoveryCtl.eErrRecovState = ERR_RECOV_STOP_IDLE;
 	prHif->rErrRecoveryCtl.u4Status = 0;
-	prHif->fgIsErrRecovery = FALSE;
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
 	timer_setup(&prHif->rSerTimer, halHwRecoveryTimeout, 0);
@@ -974,6 +973,8 @@ void glClearHifInfo(struct GLUE_INFO *prGlueInfo)
 		list_del(prCur);
 		prHifInfo->u4TxDataQLen--;
 	}
+
+	halCancelOngoingSer(prGlueInfo->prAdapter);
 }
 
 /*----------------------------------------------------------------------------*/

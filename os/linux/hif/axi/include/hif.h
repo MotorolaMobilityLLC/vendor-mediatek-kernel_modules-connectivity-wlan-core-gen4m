@@ -212,7 +212,6 @@ struct GL_HIF_INFO {
 	struct MSDU_TOKEN_INFO rTokenInfo;
 
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
-	u_int8_t fgIsErrRecovery;
 	struct timer_list rSerTimer;
 	u_int64_t rSerTimerData;
 	struct list_head rTxCmdQ;
