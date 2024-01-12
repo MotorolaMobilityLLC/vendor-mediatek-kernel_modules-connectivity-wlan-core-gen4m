@@ -10070,10 +10070,13 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		throughputInPPS += txDiffPkts[i] + rxDiffPkts[i];
 	}
 
+#if CFG_SUPPORT_RETURN_WORK
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	if (throughput == 0 && prAdapter->u4RfbUnUseCntLv != 0)
 		kalRxRfbReturnWorkSchedule(glue);
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
+#endif /* CFG_SUPPORT_RETURN_WORK */
+
 #if CFG_SAP_RPS_SUPPORT
 	if (prAdapter->rWifiVar.fgSapRpsEnable == 1) {
 		p2pFuncRpsKalCheck(prAdapter,
