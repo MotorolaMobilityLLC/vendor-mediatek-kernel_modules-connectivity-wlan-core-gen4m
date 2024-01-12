@@ -1607,17 +1607,24 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 		}
 	}
 #else
-
 	uint32_t u4TxLoopCount = prAdapter->rWifiVar.u4HifTxloopCount;
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif /* CFG_SUPPORT_TX_DATA_DELAY */
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
 	uint32_t u4Idx;
 #endif
-
 
 	if (halIsHifStateSuspend(prAdapter)) {
 		DBGLOG(TX, WARN, "Suspend TxMsduQueueMthread\n");
 		return WLAN_STATUS_SUCCESS;
 	}
+
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+	if (KAL_TEST_BIT(HIF_TX_DATA_DELAY_TIMEOUT_BIT,
+			 prHifInfo->ulTxDataTimeout))
+		HAL_KICK_TX_DATA(prAdapter);
+#endif /* CFG_SUPPORT_TX_DATA_DELAY */
 
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++)
