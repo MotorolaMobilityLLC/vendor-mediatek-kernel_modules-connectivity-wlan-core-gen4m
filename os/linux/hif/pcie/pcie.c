@@ -96,6 +96,7 @@
 #define NIC7663_PCIe_DEVICE_ID	0x7663
 #define CONNAC_PCI_VENDOR_ID	0x0E8D
 #define CONNAC_PCIe_DEVICE_ID	0x3280
+#define NIC7915_PCIe_DEVICE_ID	0x7915
 
 static const struct pci_device_id mtk_pci_ids[] = {
 #ifdef MT6632
@@ -121,6 +122,10 @@ static const struct pci_device_id mtk_pci_ids[] = {
 	{	PCI_DEVICE(CONNAC_PCI_VENDOR_ID, CONNAC_PCIe_DEVICE_ID),
 		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_connac2x2},
 #endif /* CONNAC */
+#ifdef MT7915
+	{	PCI_DEVICE(MTK_PCI_VENDOR_ID, NIC7915_PCIe_DEVICE_ID),
+		.driver_data = (kernel_ulong_t)&mt66xx_driver_data_mt7915},
+#endif /* MT7915 */
 	{ /* end: all zeroes */ },
 };
 
@@ -584,8 +589,8 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	if (ret != 0)
 		DBGLOG(INIT, INFO,
 			"glBusSetIrq: request_irq  ERROR(%d)\n", ret);
-	else if (prBusInfo->fgInitPCIeInt)
-		HAL_MCR_WR(prGlueInfo->prAdapter, MT_PCIE_IRQ_ENABLE, 1);
+	else if (prBusInfo->initPcieInt)
+		prBusInfo->initPcieInt(prGlueInfo);
 
 	return ret;
 }

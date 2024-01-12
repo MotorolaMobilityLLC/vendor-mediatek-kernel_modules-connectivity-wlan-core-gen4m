@@ -564,6 +564,59 @@ union WPDMA_INT_STA_STRUCT {
 		uint32_t fw_clr_own:1;
 	} field;
 
+	struct {
+		uint32_t rx_done_0:1;
+		uint32_t rx_done_1:1;
+		uint32_t rx_done_2:1;
+		uint32_t rx_done_3:1;
+		uint32_t tx_done:16;
+		uint32_t rx_coherent:1;
+		uint32_t tx_coherent:1;
+		uint32_t reserved:2;
+		uint32_t wpdma2host_err_int_en:1;
+		uint32_t tx_done_20:1;
+		uint32_t tx_done_16:1;
+		uint32_t tx_done_17:1;
+		uint32_t subsys_int_en:1;
+		uint32_t mcu2host_sw_int_en:1;
+		uint32_t tx_done_18:1;
+		uint32_t tx_done_19:1;
+	} field_conn2x;
+
+	struct {
+		uint32_t wfdma1_rx_done_0:1;
+		uint32_t wfdma1_rx_done_1:1;
+		uint32_t wfdma1_rx_done_2:1;
+		uint32_t wfdma1_rx_done_3:1;
+		uint32_t wfdma1_tx_done_0:1;
+		uint32_t wfdma1_tx_done_1:1;
+		uint32_t wfdma1_tx_done_2:1;
+		uint32_t wfdma1_tx_done_3:1;
+		uint32_t wfdma1_tx_done_4:1;
+		uint32_t wfdma1_tx_done_5:1;
+		uint32_t wfdma1_tx_done_6:1;
+		uint32_t wfdma1_tx_done_7:1;
+		uint32_t wfdma1_tx_done_8:1;
+		uint32_t reserved13:2;
+		uint32_t wfdma1_tx_done_20:1;
+		uint32_t wfdma0_rx_done_0:1;
+		uint32_t wfdma0_rx_done_1:1;
+		uint32_t wfdma0_rx_done_2:1;
+		uint32_t wfdma0_rx_done_3:1;
+		uint32_t wfdma1_rx_coherent:1;
+		uint32_t wfdma1_tx_coherent:1;
+		uint32_t wfdma0_rx_coherent:1;
+		uint32_t wfdma0_tx_coherent:1;
+		uint32_t wpdma2host1_err_int_en:1;
+		uint32_t wpdma2host0_err_int_en:1;
+		uint32_t wfdma1_tx_done_16:1;
+		uint32_t wfdma1_tx_done_17:1;
+		uint32_t wfdma1_subsys_int_en:1;
+		uint32_t wfdma1_mcu2host_sw_int_en:1;
+		uint32_t wfdma1_tx_done_18:1;
+		uint32_t wfdma1_tx_done_19:1;
+	} field_conn2x_ext;
+
 	uint32_t word;
 };
 
@@ -605,6 +658,59 @@ union WPDMA_INT_MASK {
 		uint32_t mcu2host_sw_int_ena:1;
 		uint32_t rsv_30_31:2;
 	} field_conn;
+
+	struct {
+		uint32_t rx_done_0:1;
+		uint32_t rx_done_1:1;
+		uint32_t rx_done_2:1;
+		uint32_t rx_done_3:1;
+		uint32_t tx_done:16;
+		uint32_t rx_coherent:1;
+		uint32_t tx_coherent:1;
+		uint32_t reserved:2;
+		uint32_t wpdma2host_err_int_en:1;
+		uint32_t tx_done_20:1;
+		uint32_t tx_done_16:1;
+		uint32_t tx_done_17:1;
+		uint32_t subsys_int_en:1;
+		uint32_t mcu2host_sw_int_en:1;
+		uint32_t tx_done_18:1;
+		uint32_t tx_done_19:1;
+	} field_conn2x;
+
+	struct {
+		uint32_t wfdma1_rx_done_0:1;
+		uint32_t wfdma1_rx_done_1:1;
+		uint32_t wfdma1_rx_done_2:1;
+		uint32_t wfdma1_rx_done_3:1;
+		uint32_t wfdma1_tx_done_0:1;
+		uint32_t wfdma1_tx_done_1:1;
+		uint32_t wfdma1_tx_done_2:1;
+		uint32_t wfdma1_tx_done_3:1;
+		uint32_t wfdma1_tx_done_4:1;
+		uint32_t wfdma1_tx_done_5:1;
+		uint32_t wfdma1_tx_done_6:1;
+		uint32_t wfdma1_tx_done_7:1;
+		uint32_t wfdma1_tx_done_8:1;
+		uint32_t reserved13:2;
+		uint32_t wfdma1_tx_done_20:1;
+		uint32_t wfdma0_rx_done_0:1;
+		uint32_t wfdma0_rx_done_1:1;
+		uint32_t wfdma0_rx_done_2:1;
+		uint32_t wfdma0_rx_done_3:1;
+		uint32_t wfdma1_rx_coherent:1;
+		uint32_t wfdma1_tx_coherent:1;
+		uint32_t wfdma0_rx_coherent:1;
+		uint32_t wfdma0_tx_coherent:1;
+		uint32_t wpdma2host1_err_int_en:1;
+		uint32_t wpdma2host0_err_int_en:1;
+		uint32_t wfdma1_tx_done_16:1;
+		uint32_t wfdma1_tx_done_17:1;
+		uint32_t wfdma1_subsys_int_en:1;
+		uint32_t wfdma1_mcu2host_sw_int_en:1;
+		uint32_t wfdma1_tx_done_18:1;
+		uint32_t wfdma1_tx_done_19:1;
+	} field_conn2x_ext;
 
 	uint32_t word;
 };
@@ -686,6 +792,34 @@ union WPDMA_GLO_CFG_STRUCT {
 		uint32_t rx_2b_offset:1;
 	} field_conn;
 
+	struct {
+		uint32_t tx_dma_en:1;
+		uint32_t tx_dma_busy:1;
+		uint32_t rx_dma_en:1;
+		uint32_t rx_dma_busy:1;
+		uint32_t pdma_bt_size:2;
+		uint32_t tx_wb_ddone:1;
+		uint32_t big_endian:1;
+		uint32_t dmad_32b_en:1;
+		uint32_t bypass_dmashdl_txring:1;
+		uint32_t reserved10:2;
+		uint32_t fifo_little_endian:1;
+		uint32_t csr_rx_wb_ddone:1;
+		uint32_t csr_pp_hif_txp_active_en:1;
+		uint32_t csr_disp_base_ptr_chain_en:1;
+		uint32_t csr_lbk_rx_q_sel:4;
+		uint32_t csr_lbk_rx_q_sel_en:1;
+		uint32_t reserved21:3;
+		uint32_t csr_sw_rst:1;
+		uint32_t force_tx_eof:1;
+		uint32_t pdma_addr_ext_en:1;
+		uint32_t omit_rx_info:1;
+		uint32_t omit_tx_info:1;
+		uint32_t byte_swap:1;
+		uint32_t clk_gate_dis:1;
+		uint32_t rx_2b_offset:1;
+	} field_conn2x;
+
 	uint32_t word;
 };
 
@@ -728,6 +862,7 @@ union DELAY_INT_CFG_STRUCT {
 #define PCIE_HIF_SYS_REV				BITS(0, 15)
 
 /* CFG_PCIE_LPCR_HOST */
+#define PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC	BIT(2)
 #define PCIE_LPCR_HOST_CLR_OWN			BIT(1)
 #define PCIE_LPCR_HOST_SET_OWN			BIT(0)
 

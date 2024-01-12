@@ -518,9 +518,14 @@ do { \
 #define HAL_GET_MAILBOX_READ_CLEAR(prAdapter) \
 	(prAdapter->prGlueInfo->rHifInfo.fgMbxReadClear)
 
-#define HAL_READ_INT_STATUS(prAdapter, _pu4IntStatus) \
+#define HAL_READ_INT_STATUS(_prAdapter, _pu4IntStatus) \
 { \
-	kalDevReadIntStatus(prAdapter, _pu4IntStatus);\
+	struct BUS_INFO *prBusInfo; \
+	prBusInfo = _prAdapter->chip_info->bus_info; \
+	if (prBusInfo->devReadIntStatus) \
+		prBusInfo->devReadIntStatus(_prAdapter, _pu4IntStatus); \
+	else \
+		kalDevReadIntStatus(_prAdapter, _pu4IntStatus);\
 }
 
 #define HAL_HIF_INIT(prAdapter)
@@ -1194,11 +1199,19 @@ void halUpdateTxDonePendingCount(IN struct ADAPTER *prAdapter,
 	IN u_int8_t isIncr, IN uint8_t ucTc, IN uint32_t u4Len);
 void halTxReturnFreeResource_v1(IN struct ADAPTER *prAdapter,
 	IN uint16_t *au2TxDoneCnt);
+
 #if defined(_HIF_USB)
 void halSerSyncTimerHandler(IN struct ADAPTER *prAdapter);
-#endif
+#endif /* defined(_HIF_USB) */
 bool halIsHifStateReady(IN struct ADAPTER *prAdapter, uint8_t *pucState);
 bool halIsHifStateLinkup(IN struct ADAPTER *prAdapter);
 bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter);
+
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+void halRxReceiveRFBs(IN struct ADAPTER *prAdapter, uint32_t u4Port,
+	uint8_t fgRxData);
+u_int8_t halWpdmaWaitIdle(struct GLUE_INFO *prGlueInfo,
+	int32_t round, int32_t wait_us);
+#endif /* defined(_HIF_PCIE) || defined(_HIF_AXI) */
 
 #endif /* _HAL_H */

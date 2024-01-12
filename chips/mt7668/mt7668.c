@@ -416,14 +416,26 @@ void mt7668WakeUpWiFi(IN struct ADAPTER *prAdapter)
 struct BUS_INFO mt7668_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7668_TOP_CFG_BASE,
+	.host_tx_ring_base = MT_TX_RING_BASE,
+	.host_tx_ring_ext_ctrl_base = MT_TX_RING_BASE_EXT,
+	.host_tx_ring_cidx_addr = MT_TX_RING_CIDX,
+	.host_tx_ring_didx_addr = MT_TX_RING_DIDX,
+	.host_tx_ring_cnt_addr = MT_TX_RING_CNT,
+
+	.host_rx_ring_base = MT_RX_RING_BASE,
+	.host_rx_ring_ext_ctrl_base = MT_RX_RING_BASE_EXT,
+	.host_rx_ring_cidx_addr = MT_RX_RING_CIDX,
+	.host_rx_ring_didx_addr = MT_RX_RING_DIDX,
+	.host_rx_ring_cnt_addr = MT_RX_RING_CNT,
 	.bus2chip = mt7668_bus2chip_cr_mapping,
 	.tx_ring_fwdl_idx = 3,
 	.tx_ring_cmd_idx = 2,
 	.tx_ring0_data_idx = 0,
 	.tx_ring1_data_idx = 0,
+	.fw_own_clear_addr = WPDMA_INT_STA,
+	.fw_own_clear_bit = WPDMA_FW_CLR_OWN_INT,
 	.max_static_map_addr = 0x00040000,
 	.fgCheckDriverOwnInt = FALSE,
-	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 32,
 
 	.pdmaSetup = mt7668PdmaConfig,
@@ -437,6 +449,11 @@ struct BUS_INFO mt7668_bus_info = {
 	.getMailboxStatus = NULL,
 	.setDummyReg = NULL,
 	.checkDummyReg = NULL,
+	.tx_ring_ext_ctrl = asicPdmaTxRingExtCtrl,
+	.rx_ring_ext_ctrl = asicPdmaRxRingExtCtrl,
+	.hifRst = NULL,
+	.initPcieInt = NULL,
+	.pcieDmaShdlInit = NULL,
 #endif /* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = UDMA_WLCFG_0,
@@ -492,6 +509,7 @@ struct CHIP_DBG_OPS mt7668_debug_ops = {
 	.showCsrInfo = NULL,
 	.showDmaschInfo = NULL,
 	.showHifInfo = NULL,
+	.printHifDbgInfo = NULL,
 };
 
 /* Litien code refine to support multi chip */

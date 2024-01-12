@@ -185,20 +185,68 @@ struct GL_HIF_INFO {
 };
 
 struct BUS_INFO {
-	const unsigned int top_cfg_base;	/* TOP_CFG_BASE address */
+	const uint32_t top_cfg_base;	/* TOP_CFG_BASE address */
 	const struct PCIE_CHIP_CR_MAPPING *bus2chip;
-	const unsigned int tx_ring_cmd_idx;
-	const unsigned int tx_ring_fwdl_idx;
-	const unsigned int tx_ring0_data_idx;
-	const unsigned int tx_ring1_data_idx;
+	const uint32_t tx_ring_cmd_idx;
+	const uint32_t tx_ring_wa_cmd_idx;
+	const uint32_t tx_ring_fwdl_idx;
+	const uint32_t tx_ring0_data_idx;
+	const uint32_t tx_ring1_data_idx;
 	const unsigned int max_static_map_addr;
+	const uint32_t fw_own_clear_addr;
+	const uint32_t fw_own_clear_bit;
 	const bool fgCheckDriverOwnInt;
-	const bool fgInitPCIeInt;
 	const uint32_t u4DmaMask;
+	/* host pdma/wfdma0 base address */
+	const uint32_t host_dma0_base;
+	/* host wfdma1 base address */
+	const uint32_t host_dma1_base;
+	/* host ext conn hif wrap */
+	const uint32_t host_ext_conn_hif_wrap_base;
+	const uint32_t host_int_status_addr;
+	const uint32_t host_int_txdone_bits;
+	const uint32_t host_int_rxdone_bits;
+
+	/* tx pdma/wfdma ring base address */
+	const uint32_t host_tx_ring_base;
+	/* tx pdma/wfdma ring ext control base address */
+	const uint32_t host_tx_ring_ext_ctrl_base;
+	/* tx pdma/wfdma ring cpu index address */
+	const uint32_t host_tx_ring_cidx_addr;
+	/* tx pdma/wfdma ring dma index address */
+	const uint32_t host_tx_ring_didx_addr;
+	/* tx pdma/wfdma ring count address */
+	const uint32_t host_tx_ring_cnt_addr;
+
+	/* rx pdma/wfdma ring base address */
+	const uint32_t host_rx_ring_base;
+	/* rx pdma/wfdma ring ext control base address */
+	const uint32_t host_rx_ring_ext_ctrl_base;
+	/* rx pdma/wfdma ring cpu index address */
+	const uint32_t host_rx_ring_cidx_addr;
+	/* rx pdma/wfdma ring dma index address */
+	const uint32_t host_rx_ring_didx_addr;
+	/* rx pdma/wfdma ring count address */
+	const uint32_t host_rx_ring_cnt_addr;
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	/* rx wfdma_1 ring base address */
+	const uint32_t host_wfdma1_rx_ring_base;
+	/* rx wfdma_1 ring cpu index address */
+	const uint32_t host_wfdma1_rx_ring_cidx_addr;
+	/* rx wfdma_1 ring dma index address */
+	const uint32_t host_wfdma1_rx_ring_didx_addr;
+	/* rx wfdma_1 ring count address */
+	const uint32_t host_wfdma1_rx_ring_cnt_addr;
+	/* rx wfdma_1 ring ext control base address */
+	const uint32_t host_wfdma1_rx_ring_ext_ctrl_base;
+#endif /* CFG_SUPPORT_CONNAC2X == 1 */
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable);
 	void (*enableInterrupt)(struct ADAPTER *prAdapter);
 	void (*disableInterrupt)(struct ADAPTER *prAdapter);
+	void (*processTxInterrupt)(struct ADAPTER *prAdapter);
+	void (*processRxInterrupt)(struct ADAPTER *prAdapter);
 	void (*lowPowerOwnRead)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnSet)(struct ADAPTER *prAdapter, u_int8_t *pfgResult);
 	void (*lowPowerOwnClear)(struct ADAPTER *prAdapter,
@@ -209,6 +257,17 @@ struct BUS_INFO {
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 	void (*setDummyReg)(struct GLUE_INFO *prGlueInfo);
 	void (*checkDummyReg)(struct GLUE_INFO *prGlueInfo);
+	void (*tx_ring_ext_ctrl)(struct GLUE_INFO *prGlueInfo,
+		struct RTMP_TX_RING *tx_ring, uint32_t index);
+	void (*rx_ring_ext_ctrl)(struct GLUE_INFO *prGlueInfo,
+		struct RTMP_RX_RING *rx_ring, uint32_t index);
+	void (*wfdmaManualPrefetch)(struct GLUE_INFO *prGlueInfo);
+	void (*processSoftwareInterrupt)(IN struct ADAPTER *prAdapter);
+	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
+	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
+	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
+		OUT uint32_t *pu4IntStatus);
+	void (*pcieDmaShdlInit)(IN struct ADAPTER *prAdapter);
 };
 
 

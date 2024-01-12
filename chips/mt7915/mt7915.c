@@ -158,6 +158,9 @@ struct PCIE_CHIP_CR_MAPPING mt7915_bus2chip_cr_mapping[] = {
 	{0x7c020000, 0xd0000, 0x10000}, /* CONN_INFRA, wfdma */
 	{0x7c060000, 0xe0000, 0x10000}, /* CONN_INFRA, conn_host_csr_top */
 	{0x7c000000, 0xf0000, 0x10000}, /* CONN_INFRA */
+	{0x000f0000, 0xf0000, 0x10000},
+	{0x000e0000, 0xe0000, 0x10000},
+	{0x0, 0x0, 0x0}
 };
 #endif				/* _HIF_PCIE */
 
@@ -200,6 +203,36 @@ uint16_t wlanHarrierUsbRxByteCount(
 	return u2RxByteCount;
 }
 #endif /* defined(_HIF_USB) */
+
+#if defined(_HIF_PCIE)
+static void wlanHarrierInitPcieInt(
+	struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4MacVal;
+
+	/* Backup original setting */
+	HAL_MCR_RD(prGlueInfo->prAdapter,
+		0xF11AC,
+		&u4MacVal);
+
+	/*
+	 *	To set 0x74030188 = 0x000000FF
+	 *	1. set 0xF11AC = 0x7403
+	 *	2. set 0xE0188 = 0x000000FF
+	*/
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		0xF11AC,
+		0x7403);
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		0xE0188,
+		0x000000FF);
+
+	/* Recovery original setting */
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		0xF11AC,
+		u4MacVal);
+}
+#endif /* _HIF_PCIE */
 
 void mt7915DumpSerDummyCR(
 	struct ADAPTER *prAdapter)
@@ -261,7 +294,6 @@ void mt7915DumpSerDummyCR(
 struct BUS_INFO mt7915_bus_info = {
 #if defined(_HIF_PCIE)
 	.top_cfg_base = MT7915_TOP_CFG_BASE,
-#if 0 /* merge next time 20181210 */
 	/* host_dma0 for TXP */
 	.host_dma0_base = CONNAC2X_HOST_WPDMA_0_BASE,
 	/* host_dma1 for TXD and host cmd to WX_CPU */
@@ -317,44 +349,38 @@ struct BUS_INFO mt7915_bus_info = {
 	.host_wfdma1_rx_ring_ext_ctrl_base =
 		CONNAC2X_WFDMA1_RX_RING_EXT_CTRL_BASE(
 			CONNAC2X_HOST_WPDMA_1_BASE),
-#endif /* if 0 */
+
 	.bus2chip = mt7915_bus2chip_cr_mapping,
+	.max_static_map_addr = 0x000f0000,
 	.tx_ring_fwdl_idx = CONNAC2X_FWDL_TX_RING_IDX,
 	.tx_ring_cmd_idx = CONNAC2X_CMD_TX_RING_IDX,
-#if 0 /* merge next time 20181210 */
 	.tx_ring_wa_cmd_idx = CONNAC2X_CMD_TX_WA_RING_IDX,
-#endif /* if 0 */
 	.tx_ring0_data_idx = CONNAC2X_DATA0_TXD_IDX,
 	.tx_ring1_data_idx = CONNAC2X_DATA1_TXD_IDX,
+	.fw_own_clear_addr = CONNAC2X_BN0_IRQ_STAT_ADDR,
+	.fw_own_clear_bit = PCIE_LPCR_FW_CLR_OWN,
 
 	.fgCheckDriverOwnInt = FALSE,
-	.fgInitPCIeInt = FALSE,
 	.u4DmaMask = 32,
 
-#if 0 /* merge next time 20181210 */
 	.pdmaSetup = asicConnac2xWpdmaConfig,
 	.enableInterrupt = asicConnac2xEnableExtInterrupt,
 	.disableInterrupt = asicConnac2xDisableExtInterrupt,
-#else
-	.pdmaSetup = NULL,
-	.enableInterrupt = NULL,
-	.disableInterrupt = NULL,
-#endif
-#if 0 /* merge next time 20181210 */
 	.processTxInterrupt = asicConnac2xProcessTxInterrupt,
 	.tx_ring_ext_ctrl = asicConnac2xWfdmaTxRingExtCtrl,
 	.rx_ring_ext_ctrl = asicConnac2xWfdmaRxRingExtCtrl,
 	/* null wfdmaManualPrefetch if want to disable manual mode */
 	.wfdmaManualPrefetch = asicConnac2xWfdmaManualPrefetch,
-#endif /* if 0 */
-	.lowPowerOwnRead = asicLowPowerOwnRead,/* merge next time 20181210 */
-	.lowPowerOwnSet = asicLowPowerOwnSet,/* merge next time 20181210 */
-	.lowPowerOwnClear = asicLowPowerOwnClear,/* merge next time 20181210 */
-#if 0 /* merge next time 20181210 */
+	.lowPowerOwnRead = asicConnac2xLowPowerOwnRead,
+	.lowPowerOwnSet = asicConnac2xLowPowerOwnSet,
+	.lowPowerOwnClear = asicConnac2xLowPowerOwnClear,
+	.wakeUpWiFi = asicWakeUpWiFi,
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
-	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
-#endif /* if 0 */
+	.processRxInterrupt = asicConnac2xProcessRxInterrupt,
+	.initPcieInt = wlanHarrierInitPcieInt,
+	.devReadIntStatus = asicConnac2xReadExtIntStatus,
+	.pcieDmaShdlInit = NULL,
 #endif				/* _HIF_PCIE */
 #if defined(_HIF_USB)
 	.u4UdmaWlCfg_0_Addr = CONNAC2X_UDMA_WLCFG_0,
@@ -402,18 +428,16 @@ struct TX_DESC_OPS_T mt7915TxDescOps = {
 struct RX_DESC_OPS_T mt7915RxDescOps = {
 };
 
-#if 0 /* merge next time 20181210 */
-struct __CHIP_DBG_API_T mt7915DbgOps = {
-	.asic_show_ple_info = asic_connac2x_show_ple_info,
-	.asic_show_pse_info = asic_connac2x_show_pse_info,
-	.asic_show_raw_wtbl_info = asic_connac2x_show_raw_wtbl_info,
-	.asic_show_new_wtbl_info = asic_connac2x_show_wtbl_info,
-	.asic_show_txd_info = asic_connac2x_show_txd_info,
-	.asic_show_umac_wtbl_info = asic_connac2x_show_umac_wtbl_info,
-	.asic_show_rx_rate_info = asic_connac2x_show_rx_rate_info,
-	.asic_show_rx_rssi_info = asic_connac2x_show_rx_rssi_info,
+
+struct CHIP_DBG_OPS mt7915_debug_ops = {
+	.showPdmaInfo = NULL,
+	.showPseInfo = NULL,
+	.showPleInfo = NULL,
+	.showCsrInfo = NULL,
+	.showDmaschInfo = NULL,
+	.showHifInfo = NULL,
+	.printHifDbgInfo = NULL,
 };
-#endif /* if 0 */
 
 /* Litien code refine to support multi chip */
 struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
@@ -421,11 +445,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 #if CFG_ENABLE_FW_DOWNLOAD
 	.fw_dl_ops = &mt7915_fw_dl_ops,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */
+	.prDebugOps = &mt7915_debug_ops,
 	.prTxDescOps = &mt7915TxDescOps,
 	.prRxDescOps = &mt7915RxDescOps,
-#if 0 /* merge next time 20181210 */
-	.prChipDbgOps = &mt7915DbgOps,
-#endif /* if 0 */
 	.chip_id = MT7915_CHIP_ID,
 	.should_verify_chip_id = FALSE,
 	.sw_sync0 = MT7915_SW_SYNC0,
