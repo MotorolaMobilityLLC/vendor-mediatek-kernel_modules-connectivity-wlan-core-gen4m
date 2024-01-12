@@ -109,6 +109,13 @@
 #ifndef WLAN_AKM_SUITE_FT_PSK
 #define WLAN_AKM_SUITE_FT_PSK           0x000FAC04
 #endif
+#ifndef WLAN_AKM_SUITE_8021X_SUITE_B
+#define WLAN_AKM_SUITE_8021X_SUITE_B    0x000FAC0B
+#endif
+#ifndef WLAN_AKM_SUITE_8021X_SUITE_B_192
+#define WLAN_AKM_SUITE_8021X_SUITE_B_192 0x000FAC0C
+#endif
+
 /* Add AKM SUITE for OWE since kernel haven't defined it. */
 #ifndef WLAN_AKM_SUITE_OWE
 #define WLAN_AKM_SUITE_OWE              0x000FAC12
