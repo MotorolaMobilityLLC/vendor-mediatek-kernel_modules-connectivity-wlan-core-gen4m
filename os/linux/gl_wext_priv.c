@@ -1752,7 +1752,6 @@ __priv_get_ints(IN struct net_device *prNetDev,
 		uint16_t i;
 		uint8_t NumOfChannel = 50;
 		uint8_t ucMaxChannelNum = 50;
-		uint32_t u4CopySize;
 		struct RF_CHANNEL_INFO *aucChannelList;
 
 		aucChannelList = (struct RF_CHANNEL_INFO *)
@@ -1777,15 +1776,9 @@ __priv_get_ints(IN struct net_device *prNetDev,
 		kalMemFree(aucChannelList, VIR_MEM_TYPE,
 			sizeof(struct RF_CHANNEL_INFO)*ucMaxChannelNum);
 
-		u4CopySize = NumOfChannel * sizeof(int32_t);
-		if (prIwReqData->data.length < u4CopySize) {
-			DBGLOG(REQ, INFO,
-			       "buffer too small: %u, %u\n",
-			       prIwReqData->data.length, u4CopySize);
-			return -EFAULT;
-		}
 		prIwReqData->data.length = NumOfChannel;
-		if (copy_to_user(prIwReqData->data.pointer, ch, u4CopySize))
+		if (copy_to_user(prIwReqData->data.pointer, ch,
+				 NumOfChannel * sizeof(int32_t)))
 			return -EFAULT;
 		else
 			return status;
@@ -2134,20 +2127,11 @@ __priv_get_struct(IN struct net_device *prNetDev,
 		       ndisReq->inNdisOidlength);
 #endif
 		if (priv_get_ndis(prNetDev, prNdisReq, &u4BufLen) == 0) {
-			uint32_t u4CopySize;
-
 			prNdisReq->outNdisOidLength = u4BufLen;
-			u4CopySize = u4BufLen +
-				sizeof(struct NDIS_TRANSPORT_STRUCT) -
-				sizeof(prNdisReq->ndisOidContent);
-			if (prIwReqData->data.length < u4CopySize) {
-				DBGLOG(REQ, INFO,
-				       "buffer too small: %u, %u\n",
-				       prIwReqData->data.length, u4CopySize);
-				return -EFAULT;
-			}
 			if (copy_to_user(prIwReqData->data.pointer,
-			    &aucOidBuf[0], u4CopySize)) {
+			    &aucOidBuf[0], u4BufLen +
+			    sizeof(struct NDIS_TRANSPORT_STRUCT) -
+			    sizeof(prNdisReq->ndisOidContent))) {
 				DBGLOG(REQ, INFO,
 				       "priv_get_struct() copy_to_user oidBuf fail(1)\n"
 				       );
