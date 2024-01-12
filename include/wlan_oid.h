@@ -5380,6 +5380,13 @@ uint32_t wlanoidGetLinkQualityInfo(struct ADAPTER *prAdapter,
 				   uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+uint32_t
+wlanoidQueryStatsOneCmd(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
+#endif
+
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */
 uint32_t wlanoidTxPowerControl(struct ADAPTER *prAdapter,

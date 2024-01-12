@@ -4221,6 +4221,10 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER
 				 *prAdapter, struct CMD_INFO *prCmdInfo,
 				 uint8_t *pucEventBuf);
 
+void nicUpdateStatistics(struct ADAPTER *prAdapter,
+	struct PARAM_802_11_STATISTICS_STRUCT *prStatistics,
+	struct EVENT_STATISTICS *prEventStatistics
+);
 void nicCmdEventQueryStatistics(struct ADAPTER
 				*prAdapter, struct CMD_INFO *prCmdInfo,
 				uint8_t *pucEventBuf);
@@ -4262,6 +4266,10 @@ void nicOidCmdEnterRFTestTimeout(struct ADAPTER
 void nicCmdEventBuildDateCode(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
+
+void nicUpdateStaStats(struct ADAPTER *prAdapter,
+	struct EVENT_STA_STATISTICS *prEvent,
+	struct PARAM_GET_STA_STATISTICS *prStaStatistics);
 
 void nicCmdEventQueryStaStatistics(struct ADAPTER
 				   *prAdapter, struct CMD_INFO *prCmdInfo,
