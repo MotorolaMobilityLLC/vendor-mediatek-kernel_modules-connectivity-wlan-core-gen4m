@@ -9464,7 +9464,7 @@ connsysPowerTempNotify(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, TRACE, "Notify FW new temp info: %d, %d\n",
 						u4MaxTemp, u4RecoveryTemp);
 
-	/* ToDo: thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp) */
+	thrmProtTempConfig(prAdapter, u4MaxTemp, u4RecoveryTemp);
 }
 
 void connsysPowerTempUpdate(enum conn_pwr_msg_type status,

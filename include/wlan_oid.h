@@ -4250,4 +4250,11 @@ wlanoidSetAxBlacklist(IN struct ADAPTER *prAdapter,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen);
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+uint32_t
+wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
+			IN void *pvSetBuffer,
+			IN uint32_t u4SetBufferLen,
+			OUT uint32_t *pu4SetInfoLen);
+#endif
 #endif /* _WLAN_OID_H */
