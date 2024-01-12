@@ -311,6 +311,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_OSHARE_MODE = 0x8E,
 	CMD_ID_RDD_ON_OFF_CTRL = 0x8F,      /* 0x8F(Set) */
 	CMD_ID_SET_FORCE_RTS = 0x90,
+#if (CFG_SUPPORT_ICS == 1)
+	CMD_ID_SET_ICS_SNIFFER = 0x93,
+#endif /* CFG_SUPPORT_ICS */
 	CMD_ID_WFC_KEEP_ALIVE = 0xA0,       /* 0xA0 (Set) */
 	CMD_ID_RSSI_MONITOR = 0xA1,         /* 0xA1 (Set) */
 	CMD_ID_CAL_BACKUP_IN_HOST_V2 = 0xAE,    /* 0xAE (Set / Query) */

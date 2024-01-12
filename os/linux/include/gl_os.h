@@ -288,6 +288,11 @@ typedef void (*wifi_fwlog_event_func_cb)(int, int);
 /* adaptor ko */
 extern int  wifi_fwlog_onoff_status(void);
 extern void wifi_fwlog_event_func_register(wifi_fwlog_event_func_cb pfFwlog);
+#if (CFG_SUPPORT_ICS == 1)
+typedef void (*ics_fwlog_event_func_cb)(int, int);
+extern ssize_t wifi_ics_fwlog_write(char *buf, size_t count);
+extern void wifi_ics_event_func_register(ics_fwlog_event_func_cb pfFwlog);
+#endif /* CFG_SUPPORT_ICS */
 #endif
 #if CFG_MTK_ANDROID_WMT
 extern void update_driver_loaded_status(uint8_t loaded);
