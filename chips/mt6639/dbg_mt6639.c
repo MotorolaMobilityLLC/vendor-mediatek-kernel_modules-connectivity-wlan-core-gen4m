@@ -2407,6 +2407,15 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 	chip_info = ad->chip_info;
 	debug_ops = chip_info->prDebugOps;
 
+	if (debug_ops) {
+		if (GLUE_GET_REF_CNT(debug_ops->fgIsDebugSopOnGoing)) {
+			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
+			return;
+		}
+		GLUE_SET_REF_CNT(1, debug_ops->fgIsDebugSopOnGoing);
+	}
+
+
 	DBGLOG(HAL, INFO, "Phase1: Trigger PCIe Scan Dump.\n");
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	/* Notify BT to start */
@@ -2506,6 +2515,9 @@ start_dump_via_scp:
 	msleep(200);
 	fgTriggerDebugSop = FALSE;
 #endif
+
+	if (debug_ops)
+		GLUE_SET_REF_CNT(0, debug_ops->fgIsDebugSopOnGoing);
 }
 #endif
 

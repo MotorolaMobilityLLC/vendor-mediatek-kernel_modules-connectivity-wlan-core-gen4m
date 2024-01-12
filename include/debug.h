@@ -564,6 +564,7 @@ struct CHIP_DBG_OPS {
 	void (*dumpPcieCr)(void);
 	bool (*checkDumpViaBt)(void);
 #endif
+	u_int8_t fgIsDebugSopOnGoing;
 #if CFG_MTK_WIFI_DEVAPC
 	void (*showDevapcDebugInfo)(void);
 #endif
