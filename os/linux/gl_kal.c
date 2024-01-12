@@ -2181,7 +2181,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 			     uint32_t u4BufLen, uint8_t ucBssIndex)
 {
 
-	uint32_t bufLen;
+	uint32_t bufLen = 0;
 	struct PARAM_STATUS_INDICATION *pStatus;
 	struct PARAM_AUTH_EVENT *pAuth;
 	struct PARAM_PMKID_CANDIDATE_LIST *pPmkid;
@@ -7630,8 +7630,8 @@ void kalSetNetAddressFromInterface(struct GLUE_INFO
 		   *prGlueInfo, struct net_device *prDev, u_int8_t fgSet)
 {
 	uint32_t u4NumIPv4, u4NumIPv6;
-	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM*2];
-	uint8_t pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM];
+	uint8_t pucIPv4Addr[IPV4_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM*2] = { 0 };
+	uint8_t pucIPv6Addr[IPV6_ADDR_LEN * CFG_PF_ARP_NS_MAX_NUM] = { 0 };
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
@@ -9160,8 +9160,10 @@ void kalFreeTxMsduWorker(struct work_struct *work)
 
 	while (QUEUE_IS_NOT_EMPTY(prTmpQue)) {
 		QUEUE_REMOVE_HEAD(prTmpQue, prMsduInfo, struct MSDU_INFO *);
-		nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
-		nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		if (prMsduInfo) {
+			nicTxFreePacket(prAdapter, prMsduInfo, FALSE);
+			nicTxReturnMsduInfo(prAdapter, prMsduInfo);
+		}
 	}
 }
 

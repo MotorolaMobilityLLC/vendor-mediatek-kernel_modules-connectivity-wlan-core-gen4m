@@ -2635,8 +2635,8 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev,
 	uint8_t  u4Index = 0, u4Loop = 0;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (!prGlueInfo) {
-		log_dbg(RFTEST, ERROR, "prGlueInfo is NULL\n");
+	if (!prGlueInfo || !(prGlueInfo->prAdapter)) {
+		log_dbg(RFTEST, ERROR, "prGlueInfo or prAdapter is NULL\n");
 		return -EFAULT;
 	}
 	kalMemSet(&rAccessEfuseInfoRead, 0,

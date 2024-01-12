@@ -618,7 +618,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus;
 	uint8_t arBssid[PARAM_MAC_ADDR_LEN];
-	uint32_t u4BufLen, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
+	uint32_t u4BufLen = 0, u4TxRate = 0, u4RxRate = 0, u4RxBw = 0;
 	int32_t i4Rssi = 0;
 	struct PARAM_GET_STA_STATISTICS rQueryStaStatistics;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
@@ -3994,7 +3994,7 @@ int mtk_cfg80211_assoc(struct wiphy *wiphy,
 	uint8_t *prDesiredIE = NULL;
 #endif /* CFG_SUPPORT_PASSPOINT */
 	uint32_t rStatus;
-	uint32_t u4BufLen;
+	uint32_t u4BufLen = 0;
 	uint8_t ucBssIndex = 0;
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
