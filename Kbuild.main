@@ -1053,6 +1053,12 @@ else
     ccflags-y += -DCFG_SUPPORT_802_11AX=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_11AX_SUPPORT)_$(CONFIG_SUPPORT_UPDTAE_HE_BSS_COLOR_FROM_BEACON), y_y)
+    ccflags-y += -DCFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON=1    # For BSS Color Update Issue
+else
+    ccflags-y += -DCFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_11BE_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11BE=1
 else
