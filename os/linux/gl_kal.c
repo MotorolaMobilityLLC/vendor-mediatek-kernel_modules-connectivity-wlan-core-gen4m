@@ -538,6 +538,12 @@ kalFirmwareImageMapping(IN struct GLUE_INFO *prGlueInfo,
 			kalFirmwareSize(prGlueInfo, &u4FwSize);
 			/* <3> Use vmalloc for allocating large memory trunk */
 			prFwBuffer = vmalloc(ALIGN_4(u4FwSize));
+			if (!prFwBuffer) {
+				DBGLOG(INIT, ERROR, "vmalloc(%u) failed\n",
+					ALIGN_4(u4FwSize));
+				kalFirmwareClose(prGlueInfo);
+				break;
+			}
 			/* <4> Load image binary into buffer */
 			if (kalFirmwareLoad(prGlueInfo, prFwBuffer, 0,
 					    &u4FwSize) != WLAN_STATUS_SUCCESS) {
