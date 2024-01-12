@@ -591,7 +591,8 @@ void heRlmFillHeCapIE(
 		HE_SET_PHY_CAP_TRIG_SU_BF_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_TRIG_MU_BF_PARTIAL_BW_FB(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_TRIG_CQI_FB(prHeCap->ucHePhyCap);
-		HE_SET_PHY_CAP_SU_MU_4X_HE_LTF(prHeCap->ucHePhyCap);
+		if (IS_FEATURE_ENABLED(prWifiVar->ucHeSUMU4xHeLTF))
+			HE_SET_PHY_CAP_SU_MU_4X_HE_LTF(prHeCap->ucHePhyCap);
 		HE_SET_PHY_CAP_MAX_NC(prHeCap->ucHePhyCap, ucSupportedNss);
 	}
 #endif

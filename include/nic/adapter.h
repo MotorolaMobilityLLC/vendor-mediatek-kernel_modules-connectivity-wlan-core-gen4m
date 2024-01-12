@@ -846,6 +846,7 @@ struct WIFI_VAR {
 	uint8_t ucStaHePpRx;
 	uint8_t ucHeDynamicSMPS;
 	uint8_t ucHeHTC;
+	uint8_t ucHeSUMU4xHeLTF;
 #endif
 #if (CFG_SUPPORT_TWT == 1)
 	uint8_t ucTWTRequester;
