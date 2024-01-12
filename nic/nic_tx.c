@@ -3234,6 +3234,14 @@ void nicTxFreePacket(struct ADAPTER *prAdapter,
 			kalSendComplete(prAdapter->prGlueInfo, prNativePacket,
 					rStatus);
 #endif
+			/*
+			 * nicTxMsduDoneCb -> wlanTxProfilingTagMsdu
+			 * nicTxFreePacket will free prMsduInfo->pvPacket
+			 * while the pointer for pvPacket is not
+			 * assigned to NULL before nicTxReturnMsduInfo,
+			 * while will lead write free packet
+			 */
+			prMsduInfo->prPacket = NULL;
 		}
 		if (fgDrop)
 			wlanUpdateTxStatistics(prAdapter, prMsduInfo,
