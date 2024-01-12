@@ -1019,7 +1019,7 @@ struct thermal_sensor_info mt6639_thermal_sensor_info[] = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 struct EMI_WIFI_MISC_RSV_MEM_INFO mt6639_wifi_misc_rsv_mem_info[] = {
 	{WIFI_MISC_MEM_BLOCK_NON_MMIO, 2048, {0}},
-	{WIFI_MISC_MEM_BLOCK_TX_POWER, 20480, {0}}
+	{WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT, 20480, {0}}
 };
 #endif
 

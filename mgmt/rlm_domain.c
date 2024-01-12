@@ -12465,7 +12465,7 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 
 	if (prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
-			WIFI_MISC_MEM_BLOCK_TX_POWER);
+			WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT);
 		prTxPowrEmiAddress = (uint8_t *)prMem->va;
 	}
 #endif
@@ -12567,7 +12567,7 @@ static void rlmDomainDumpPwrLimitEmiPayload(
 
 	if (prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
-			WIFI_MISC_MEM_BLOCK_TX_POWER);
+			WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT);
 		prTxPowrEmiAddress = (uint8_t *)prMem->va;
 	}
 #endif
@@ -12656,7 +12656,7 @@ int32_t rlmDomainReadPwrLimitEmiData(
 
 	if (prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
-			WIFI_MISC_MEM_BLOCK_TX_POWER);
+			WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT);
 		prTxPowrEmiAddress = (uint8_t *)prMem->va;
 	}
 #endif

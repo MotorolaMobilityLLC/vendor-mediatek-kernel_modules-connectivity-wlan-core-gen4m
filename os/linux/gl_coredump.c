@@ -126,8 +126,18 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
 {
 	struct mt66xx_chip_info *chip_info;
+	struct coredump_ctx *ctx = &g_coredump_ctx;
+	struct GLUE_INFO *prGlueInfo = ctx->priv;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint8_t *tmp_buf = NULL;
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
+	struct HIF_MEM *prMem = NULL;
+	void *emi2_buf = NULL;
+	uint8_t *prEmi2Address = NULL;
+#endif
 	ssize_t ret = 0;
+	uint8_t uIdx = 0;
 
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
@@ -171,11 +181,29 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	if (chip_info->rEmiInfo.coredump2_size == 0)
 		goto copy_to_user;
 
-	if (emi_mem_read(chip_info, COREDUMP_EMI2_DUMP_OFFSET,
-			 tmp_buf+chip_info->rEmiInfo.coredump_size,
-			 chip_info->rEmiInfo.coredump2_size)) {
-		DBGLOG(INIT, ERROR,
-			"emi2 read failed.\n");
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	emi2_buf = tmp_buf+chip_info->rEmiInfo.coredump_size;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		for (uIdx = 0; uIdx < WIFI_MISC_MEM_BLOCK_MAX_NUM; uIdx++) {
+			DBGLOG(INIT, LOUD, "Copy %d (%d)\n",
+				uIdx, chip_info->rsvMemWiFiMisc[uIdx].size);
+
+			prMem = prMemOps->getWifiMiscRsvEmi(chip_info, uIdx);
+			prEmi2Address = (uint8_t *)prMem->va;
+			if (prEmi2Address == NULL) {
+				DBGLOG(NIC, INFO,
+					"[%d] get EMI Address is NULL\n", uIdx);
+				continue;
+			}
+			kalMemCopyFromIo(emi2_buf, prEmi2Address,
+				chip_info->rsvMemWiFiMisc[uIdx].size);
+			emi2_buf += chip_info->rsvMemWiFiMisc[uIdx].size;
+		}
+	} else
+#endif
+	{
+		DBGLOG(INIT, INFO, "emi2 read failed.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -186,8 +214,7 @@ copy_to_user:
 
 exit:
 	if (tmp_buf)
-		kalMemFree(tmp_buf, VIR_MEM_TYPE,
-			chip_info->rEmiInfo.coredump_size);
+		kalMemFree(tmp_buf, VIR_MEM_TYPE, count);
 
 	return ret;
 }
