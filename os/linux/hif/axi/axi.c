@@ -278,8 +278,9 @@ static bool axiCsrIoremap(struct platform_device *pdev)
 	prChipInfo->u4HostCsrOffset = (uint32_t)g_u8CsrOffset;
 	prChipInfo->u4HostCsrSize = g_u4CsrSize;
 
-	DBGLOG(INIT, INFO, "CSRBaseAddress:0x%lX ioremap region 0x%X @ 0x%lX\n",
-	       CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
+	DBGLOG(INIT, INFO,
+	       "CSRBaseAddress:0x%llX ioremap region 0x%X @ 0x%llX\n",
+	       (uint64_t)CSRBaseAddress, g_u4CsrSize, g_u8CsrOffset);
 
 	return true;
 }
