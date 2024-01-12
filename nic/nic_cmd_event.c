@@ -6035,7 +6035,79 @@ void nicNanEventDispatcher(IN struct ADAPTER *prAdapter,
 		nicNanVendorEventHandler(prAdapter, prEvent);
 	}
 }
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent)
+{
+	struct UNI_CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4SubEvent;
 
+	ASSERT(prAdapter);
+
+	prTlvElement =
+	(struct UNI_CMD_EVENT_TLV_ELEMENT_T *)prEvent->aucBuffer;
+
+	u4SubEvent = prTlvElement->u2Tag;
+
+	DBGLOG(NAN, INFO, "nicNanIOEventHandler, subEvent:%d\n", u4SubEvent);
+
+	switch (u4SubEvent) {
+	case UNI_EVENT_NAN_TAG_DISCOVERY_RESULT:
+		nicNanEventDiscoveryResult(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_FOLLOW_EVENT:
+		nicNanReceiveEvent(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_REPLIED_EVENT:
+		nicNanRepliedEvnt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_PUBLISH_TERMINATE_EVENT:
+		nicNanPublishTerminateEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_SUBSCRIBE_TERMINATE_EVENT:
+		nicNanSubscribeTerminateEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_MASTER_IND_ATTR:
+		nanDevMasterIndEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_CLUSTER_ID_UPDATE:
+		nanDevClusterIdEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_SCHEDULE_CONFIG:
+	case UNI_EVENT_NAN_TAG_ID_PEER_AVAILABILITY:
+	case UNI_EVENT_NAN_TAG_ID_PEER_CAPABILITY:
+	case UNI_EVENT_NAN_TAG_ID_CRB_HANDSHAKE_TOKEN:
+		nanSchedulerUniEventDispatch(prAdapter, u4SubEvent,
+					  prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_PEER_SEC_CONTEXT_INFO:
+		nanDiscUpdateSecContextInfoAttr(prAdapter,
+						prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_PEER_CIPHER_SUITE_INFO:
+		nanDiscUpdateCipherSuiteInfoAttr(prAdapter,
+						 prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_ID_DATA_NOTIFY:
+		nicNanEventSTATxCTL(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_FTM_DONE:
+		nanRangingFtmDoneEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_RANGING_BY_DISC:
+		nanRangingInvokedByDiscEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+	case UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL:
+		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#endif
+	case UNI_EVENT_NAN_TAG_NDL_DISCONNECT:
+		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+	}
+}
+
+#else
 void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
 		     IN struct WIFI_EVENT *prEvent)
 {
@@ -6113,6 +6185,7 @@ void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
 		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
 	}
 }
+#endif
 
 void nicNanGetCmdInfoQueryTestBuffer(
 	struct _TXM_CMD_EVENT_TEST_T **prCmdInfoQueryTestBuffer)
