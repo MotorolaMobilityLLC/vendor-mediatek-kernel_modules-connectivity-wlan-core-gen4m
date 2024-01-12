@@ -2333,6 +2333,7 @@ reqExtSetAcpiDevicePowerState(IN P_GLUE_INFO_T prGlueInfo,
 #define CMD_CLEAR_ACL_ENTRY     "CLEAR_ACL_ENTRY"
 #define CMD_SET_RA_DBG		    "RADEBUG"
 #define CMD_SET_FIXED_FALLBACK	"FIXEDRATEFALLBACK"
+#define CMD_GET_STA_IDX         "GET_STA_IDX"
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START			"WOW_START"
@@ -4916,7 +4917,7 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev, IN char *pcCo
 	PCHAR apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	/* INT_32 u4Ret = 0; */
 	UINT_32 u4WCID = 0;
-	UINT_32 u4Mode = 0, u4Bw = 0, u4Mcs = 0, u4VhtNss = 0;
+	UINT_32 u4Mode = 0, u4Bw = 0, u4Mcs = 0, u4VhtNss = 0, u4Band = 0;
 	UINT_32 u4SGI = 0, u4Preamble = 0, u4STBC = 0, u4LDPC = 0, u4SpeEn = 0;
 	INT_32 i4Recv = 0;
 	CHAR *this_char = NULL;
@@ -4947,14 +4948,15 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev, IN char *pcCo
 	if (strnicmp(this_char, "auto", strlen("auto")) == 0) {
 		i4Recv = 1;
 	} else {
-		i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d-%d", &(u4WCID),
+		i4Recv = sscanf(this_char, "%d-%d-%d-%d-%d-%d-%d-%d-%d-%d-%d", &(u4WCID),
 					&(u4Mode), &(u4Bw), &(u4Mcs), &(u4VhtNss),
-					&(u4SGI), &(u4Preamble), &(u4STBC), &(u4LDPC), &(u4SpeEn));
+					&(u4SGI), &(u4Preamble), &(u4STBC), &(u4LDPC), &(u4SpeEn),
+					&(u4Band));
 
 		DBGLOG(REQ, LOUD, "u4WCID=%d\nu4Mode=%d\nu4Bw=%d\n", u4WCID, u4Mode, u4Bw);
 	    DBGLOG(REQ, LOUD, "u4Mcs=%d\nu4VhtNss=%d\nu4SGI=%d\n", u4Mcs, u4VhtNss, u4SGI);
 	    DBGLOG(REQ, LOUD, "u4Preamble=%d\nu4STBC=%d\n", u4Preamble, u4STBC);
-	    DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\n", u4LDPC, u4SpeEn);
+	    DBGLOG(REQ, LOUD, "u4LDPC=%d\nu4SpeEn=%d\nu4Band=%d\n", u4LDPC, u4SpeEn, u4Band);
 	}
 
 	if (i4Recv == 1) {
@@ -4968,7 +4970,7 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev, IN char *pcCo
 
 		if (rStatus != WLAN_STATUS_SUCCESS)
 			return -1;
-	} else if (i4Recv == 10) {
+	} else if (i4Recv == 11) {
 		rSwCtrlInfo.u4Id = u4Id;
 		rSwCtrlInfo.u4Data = u4Data;
 
@@ -4978,6 +4980,8 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev, IN char *pcCo
 			rSwCtrlInfo.u4Data |= BIT(29);
 		if (u4SpeEn)
 			rSwCtrlInfo.u4Data |= BIT(28);
+		if (u4Band)
+			rSwCtrlInfo.u4Data |= BIT(25);
 		if (u4STBC)
 			rSwCtrlInfo.u4Data |= BIT(11);
 
@@ -5093,13 +5097,14 @@ int priv_driver_set_fixed_fallback(IN struct net_device *prNetDev, IN char *pcCo
 	} else {
 		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver FixedRate=Option\n");
 		DBGLOG(INIT, ERROR,
-			"Option:[WCID]-[Mode]-[BW]-[MCS]-[VhtNss]-[SGI]-[Preamble]-[STBC]-[LDPC]-[SPE_EN]\n");
+			"Option:[WCID]-[Mode]-[BW]-[MCS]-[VhtNss]-[SGI]-[Preamble]-[STBC]-[LDPC]-[SPE_EN]-[BAND]\n");
 		DBGLOG(INIT, ERROR, "[WCID]Wireless Client ID\n");
 		DBGLOG(INIT, ERROR, "[Mode]CCK=0, OFDM=1, HT=2, GF=3, VHT=4\n");
 		DBGLOG(INIT, ERROR, "[BW]BW20=0, BW40=1, BW80=2,BW160=3\n");
 		DBGLOG(INIT, ERROR, "[MCS]CCK=0~3, OFDM=0~7, HT=0~32, VHT=0~9\n");
 		DBGLOG(INIT, ERROR, "[VhtNss]VHT=1~4, Other=ignore\n");
 		DBGLOG(INIT, ERROR, "[Preamble]Long=0, Other=Short\n");
+		DBGLOG(INIT, ERROR, "[BAND]2G=0, Other=5G\n");
 	}
 
 	return i4BytesWritten;
@@ -8400,6 +8405,42 @@ int priv_driver_set_monitor(IN struct net_device *prNetDev, IN char *pcCommand, 
 }
 #endif
 
+static int priv_driver_get_sta_index(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	P_ADAPTER_T prAdapter;
+	INT_32 i4BytesWritten = 0, i4Argc = 0;
+	UINT_8 ucStaIdx, ucWlanIndex;
+	PCHAR apcArgv[WLAN_CFG_ARGV_MAX];
+	UINT_8 aucMacAddr[MAC_ADDR_LEN];
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((P_GLUE_INFO_T *) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 2) {
+		wlanHwAddrToBin(apcArgv[1], &aucMacAddr[0]);
+
+		if (!wlanGetWlanIdxByAddress(prGlueInfo->prAdapter, &aucMacAddr[0], &ucWlanIndex))
+			return i4BytesWritten;
+
+		if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIndex, &ucStaIdx) != WLAN_STATUS_SUCCESS)
+			return i4BytesWritten;
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+				"StaIdx = %d, WlanIdx = %d\n", ucStaIdx, ucWlanIndex);
+	}
+
+	return i4BytesWritten;
+}
+
 static int priv_driver_get_version(IN struct net_device *prNetDev, IN char *pcCommand, IN int i4TotalLen)
 {
 	P_GLUE_INFO_T prGlueInfo = NULL;
@@ -9369,6 +9410,8 @@ INT_32 priv_driver_cmds(IN struct net_device *prNetDev, IN PCHAR pcCommand, IN I
 			i4BytesWritten = priv_driver_get_sta_statistics(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_BSS_STATISTICS, strlen(CMD_GET_BSS_STATISTICS)) == 0)
 			i4BytesWritten = priv_driver_get_bss_statistics(prNetDev, pcCommand, i4TotalLen);
+		else if (strnicmp(pcCommand, CMD_GET_STA_IDX, strlen(CMD_GET_STA_IDX)) == 0)
+			i4BytesWritten = priv_driver_get_sta_index(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_STA_INFO, strlen(CMD_GET_STA_INFO)) == 0)
 			i4BytesWritten = priv_driver_get_sta_info(prNetDev, pcCommand, i4TotalLen);
 		else if (strnicmp(pcCommand, CMD_GET_WTBL_INFO, strlen(CMD_GET_WTBL_INFO)) == 0)
