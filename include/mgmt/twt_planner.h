@@ -294,6 +294,26 @@ void mltwtPlannerDelAgrtTbl(
 	uint8_t ucTWTFlowId);
 #endif
 
+uint32_t
+twtPlannerSendReqSuspend(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucTWTFlowId);
+
+uint8_t
+twtPlannerDrvAgrtFind(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx,
+	uint8_t ucFlowId,
+	uint8_t *pucFlowId);
+
+uint32_t
+twtPlannerGetCurrentTSF(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************

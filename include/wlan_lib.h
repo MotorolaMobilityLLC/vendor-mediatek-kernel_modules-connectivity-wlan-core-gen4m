@@ -787,6 +787,13 @@ struct _TWT_PARAMS_T {
 	uint8_t fgByPassNego;
 	uint16_t u2WakeIntvalMantiss;
 	uint64_t u8TWT;
+#ifdef CFG_SUPPORT_TWT_EXT
+	uint32_t u4DesiredWakeTime;
+	uint32_t u4WakeIntvalMin;
+	uint32_t u4WakeIntvalMax;
+	uint32_t ucWakeDurMin;
+	uint32_t ucWakeDurMax;
+#endif
 };
 
 struct _NEXT_TWT_INFO_T {

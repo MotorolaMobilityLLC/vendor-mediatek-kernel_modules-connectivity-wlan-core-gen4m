@@ -2962,7 +2962,12 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			    prAssocRspSwRfb);
 
 #endif
-
+#ifdef CFG_SUPPORT_TWT_EXT
+			if (IS_FEATURE_ENABLED(
+				prAdapter->rWifiVar.ucTWTRequester))
+				twtPlannerCheckTeardownSuspend(prAdapter,
+					FALSE, TRUE);
+#endif
 		} else {
 			DBGLOG(P2P, ERROR,
 				"prAssocRspSwRfb or prAssocRspSwRfb->pvHeader is NULL!\n");
@@ -3856,6 +3861,12 @@ p2pRoleFsmRunEventAAACompleteImpl(struct ADAPTER *prAdapter,
 		if (eOriMediaState != prP2pBssInfo->eConnectionState)
 			nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
+#ifdef CFG_SUPPORT_TWT_EXT
+		if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucTWTRequester))
+			twtPlannerCheckTeardownSuspend(prAdapter,
+				FALSE, TRUE);
+#endif
 	} while (FALSE);
 
 	return rStatus;

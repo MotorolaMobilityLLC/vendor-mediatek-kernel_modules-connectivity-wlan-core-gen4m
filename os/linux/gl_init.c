@@ -6746,6 +6746,11 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	if (!ucEnable)
 		nanNetUnregister(prGlueInfo, FALSE);
 
+#ifdef CFG_SUPPORT_TWT_EXT
+	if (ucEnable)
+		twt_teardown_all(wlanGetWiphy(), prGlueInfo->prAdapter);
+#endif
+
 	rWlanStatus = kalIoctl(prGlueInfo, wlanoidSetNANMode, (void *)&ucEnable,
 			       sizeof(uint32_t), &u4BufLen);
 
