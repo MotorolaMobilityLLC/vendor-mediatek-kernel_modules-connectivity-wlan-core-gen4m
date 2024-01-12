@@ -9519,6 +9519,7 @@ uint32_t rlmRegTxPwrLimitUpdate(
 	uint8_t ucStartCh = 0;
 	uint8_t ucEndCh = 0;
 	uint8_t ucCurrChnl = 0;
+	uint32_t u4SwTestMode = 0;
 
 	/* Sanity check for null pointer & IE content */
 	if (!prAdapter || !prBssDesc || !prCountryIE)
@@ -9560,8 +9561,15 @@ uint32_t rlmRegTxPwrLimitUpdate(
 
 	/* Found a right country band */
 	if (ucRemainLen >= ucSubBandSize) {
-		if (rlmDomainIsDfsChnls(prAdapter, ucCurrChnl)) {
-			/* only DFS channel need to consider power constrant */
+		u4SwTestMode = prAdapter->rWifiVar.u4SwTestMode;
+
+		if ((u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_VOICE_ENT) ||
+			(rlmDomainIsDfsChnls(prAdapter, ucCurrChnl))) {
+			/* There is two case will consider power constrant
+			 * 1. DFS channel
+			 * 2. VOE test, due to the testcase is define
+			 *    not DFS channel.
+			 */
 			icNewPwrLimit =
 				prSubBand->cMaxTxPwrLv - ucPowerConstraint;
 		} else {
