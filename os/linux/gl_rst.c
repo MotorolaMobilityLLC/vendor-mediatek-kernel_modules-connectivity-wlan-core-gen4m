@@ -831,6 +831,9 @@ void glResetSubsysRstProcedure(
 	bool fgIsTimeout;
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
 
 	if (prWifiVar->fgRstRecover == 1)
 		g_fgRstRecover = TRUE;
@@ -871,10 +874,15 @@ void glResetSubsysRstProcedure(
 						apucRstReason[eResetReason]);
 			}
 #endif
-			glResetMsgHandler(WMTMSG_TYPE_RESET,
-					  WMTRSTMSG_0P5RESET_START);
-			glResetMsgHandler(WMTMSG_TYPE_RESET,
-					  WMTRSTMSG_RESET_END);
+			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+				glResetMsgHandler(WMTMSG_TYPE_RESET,
+						  WMTRSTMSG_0P5RESET_START);
+				glResetMsgHandler(WMTMSG_TYPE_RESET,
+						  WMTRSTMSG_RESET_END);
+			} else {
+				DBGLOG(INIT, INFO,
+					"Don't trigger subsys reset due to driver is not ready\n");
+			}
 			g_SubsysRstTotalCnt++;
 			g_SubsysRstCnt = 1;
 		} else {
@@ -904,10 +912,15 @@ void glResetSubsysRstProcedure(
 		}
 
 #endif
-		glResetMsgHandler(WMTMSG_TYPE_RESET,
-				  WMTRSTMSG_0P5RESET_START);
-		glResetMsgHandler(WMTMSG_TYPE_RESET,
-				  WMTRSTMSG_RESET_END);
+		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+			glResetMsgHandler(WMTMSG_TYPE_RESET,
+					  WMTRSTMSG_0P5RESET_START);
+			glResetMsgHandler(WMTMSG_TYPE_RESET,
+					  WMTRSTMSG_RESET_END);
+		} else {
+			DBGLOG(INIT, INFO,
+				"Don't trigger subsys reset due to driver is not ready\n");
+		}
 		g_SubsysRstTotalCnt++;
 		/*g_SubsysRstCnt < 3, but >30 sec,need to update rLastTs*/
 		if (fgIsTimeout == TRUE)
@@ -963,8 +976,7 @@ int wlan_reset_thread_main(void *data)
 				      prWlanRstThreadWakeLock);
 #endif
 		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wlanGetWiphy());
-		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag) &&
-			 ((prGlueInfo) && (prGlueInfo->u4ReadyFlag))) {
+		if (test_and_clear_bit(GLUE_FLAG_RST_START_BIT, &g_ulFlag)) {
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
 				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
 
@@ -976,10 +988,15 @@ int wlan_reset_thread_main(void *data)
 					g_WholeChipRstType,
 					g_WholeChipRstReason);
 #endif
-				glResetMsgHandler(WMTMSG_TYPE_RESET,
-							WMTRSTMSG_RESET_START);
-				glRstWholeChipRstParamInit();
-				glReset_timeinit(&rNowTs, &rLastTs);
+				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+					glResetMsgHandler(WMTMSG_TYPE_RESET,
+						WMTRSTMSG_RESET_START);
+					glRstWholeChipRstParamInit();
+					glReset_timeinit(&rNowTs, &rLastTs);
+				} else {
+					DBGLOG(INIT, INFO,
+						"Don't trigger whole chip reset due to driver is not ready\n");
+				}
 			} else {
 				/*wfsys reset start*/
 				g_IsWfsysRstDone = FALSE;
