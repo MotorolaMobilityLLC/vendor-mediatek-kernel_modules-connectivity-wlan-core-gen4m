@@ -1772,10 +1772,10 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 {
 	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
 	uint8_t ucShortSsidOffset, ucBssParamOffset, ucMldParamOffset;
-	uint8_t ucBssidNum = 0, ucCurrentLength = 0, ucShortSsidNum = 0;
+	uint8_t ucBssidNum = 0, ucShortSsidNum = 0;
 	uint8_t ucHasBssid = FALSE, ucScanEnable = TRUE, ucOpClass = 0;
 	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
-	uint16_t u2TbttInfoCount, u2TbttInfoLength;
+	uint16_t u2TbttInfoCount, u2TbttInfoLength, u2CurrentLength = 0;
 	uint8_t ucHasMlo = FALSE, ucNeedMlo = FALSE, ucHasSameCh = FALSE;
 	struct NEIGHBOR_AP_INFO *prNeighborAPInfo = NULL;
 	struct NEIGHBOR_AP_INFO_FIELD *prNeighborAPInfoField;
@@ -1796,9 +1796,9 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	ucNeedMlo = (prAdapter->rWifiVar.ucMldLinkMax > 1);
 #endif
 
-	while (ucCurrentLength < IE_LEN(pucIE)) {
+	while (u2CurrentLength < IE_LEN(pucIE)) {
 		prNeighborAPInfoField =	(struct NEIGHBOR_AP_INFO_FIELD *)
-					(prRnr->aucInfoField + ucCurrentLength);
+					(prRnr->aucInfoField + u2CurrentLength);
 		ucOpClass = prNeighborAPInfoField->ucOpClass;
 
 		/* get TBTT information count and length for
@@ -1873,9 +1873,9 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 			*/
 			DBGLOG(SCN, WARN,
 				"RNR w/o BSSID, length(%d,%d),TBTT(%d,%d)\n",
-				IE_LEN(pucIE), ucCurrentLength,
+				IE_LEN(pucIE), u2CurrentLength,
 				u2TbttInfoCount, u2TbttInfoLength);
-			ucCurrentLength += 4 +
+			u2CurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
 			continue;
 		}
@@ -1889,14 +1889,14 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 				ucOpClass, ucNeedMlo, ucHasMlo);
 
 			/* Calculate next NeighborAPInfo's index if exists */
-			ucCurrentLength += 4 +
+			u2CurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
 			continue;
 		} else {
 			/* RNR bring 6G channel, but chip not support 6G */
 			/* Calculate next NeighborAPInfo's index if exists */
 #if !(CFG_SUPPORT_WIFI_6G) && (CFG_SUPPORT_802_11BE_MLO == 0)
-			ucCurrentLength += 4 +
+			u2CurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
 			continue;
 #endif
@@ -2015,7 +2015,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 			if (ucNewLink)
 				cnmMemFree(prAdapter, prNeighborAPInfo);
 			/* Calculate next NeighborAPInfo's index if exists */
-			ucCurrentLength += 4 +
+			u2CurrentLength += 4 +
 				(u2TbttInfoCount * u2TbttInfoLength);
 			continue;
 		}
@@ -2112,7 +2112,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 						prBssDesc, ucBssidNum);
 		}
 		/* Calculate next NeighborAPInfo's index if exists */
-		ucCurrentLength += 4 + (u2TbttInfoCount * u2TbttInfoLength);
+		u2CurrentLength += 4 + (u2TbttInfoCount * u2TbttInfoLength);
 
 		/* Only handle RnR with BSSID */
 		if (ucHasBssid && ucScanEnable) {
