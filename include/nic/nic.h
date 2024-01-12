@@ -395,9 +395,20 @@ uint32_t nicChannelNum2Freq(uint32_t u4ChannelNum, enum ENUM_BAND eBand);
 
 uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz);
 
-uint32_t nicGetS1Freq(enum ENUM_BAND eBand,
-			uint8_t ucPrimaryChannel,
-			uint8_t ucBandwidth);
+uint8_t nicChannelInfo2OpClass(struct RF_CHANNEL_INFO *prChannelInfo);
+
+enum ENUM_CHNL_EXT nicGetSco(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand, uint8_t ucPrimaryCh);
+
+uint8_t nicGetSecCh(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
+		enum ENUM_CHNL_EXT eSCO,
+		uint8_t ucPrimaryCh);
+
+uint32_t nicGetS1Freq(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
+	uint8_t ucPrimaryChannel,
+	uint8_t ucBandwidth);
 
 #if (CFG_SUPPORT_802_11BE == 1)
 uint8_t nicGetEhtS1(enum ENUM_BAND eBand,

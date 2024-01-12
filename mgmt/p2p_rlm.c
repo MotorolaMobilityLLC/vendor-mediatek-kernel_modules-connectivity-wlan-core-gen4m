@@ -1686,11 +1686,8 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 
 	prRfChnlInfo->u2PriChnlFreq =
 		nicChannelNum2Freq(ucCh, eBandCsa) / 1000;
-	prRfChnlInfo->u4CenterFreq1 =
-		nicGetS1Freq(
-			eBandCsa,
-			prRfChnlInfo->ucChannelNum,
-			rlmGetVhtOpBwByBssOpBw(prRfChnlInfo->ucChnlBw));
+	prRfChnlInfo->u4CenterFreq1 = nicGetS1Freq(prAdapter,
+		eBandCsa, prRfChnlInfo->ucChannelNum, prRfChnlInfo->ucChnlBw);
 	prRfChnlInfo->u4CenterFreq2 = 0;
 
 	if ((eBand == BAND_5G) &&

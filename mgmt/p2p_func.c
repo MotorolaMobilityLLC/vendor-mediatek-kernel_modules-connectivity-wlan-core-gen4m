@@ -7249,11 +7249,10 @@ void p2pFuncSwitchGcChannel(
 	rRfChnlInfo.u2PriChnlFreq =
 		nicChannelNum2Freq(rRfChnlInfo.ucChannelNum,
 			rRfChnlInfo.eBand) / 1000;
-	rRfChnlInfo.u4CenterFreq1 =
-		nicGetS1Freq(
-			rRfChnlInfo.eBand,
-			rRfChnlInfo.ucChannelNum,
-			rlmGetVhtOpBwByBssOpBw(rRfChnlInfo.ucChnlBw));
+	rRfChnlInfo.u4CenterFreq1 = nicGetS1Freq(prAdapter,
+		rRfChnlInfo.eBand,
+		rRfChnlInfo.ucChannelNum,
+		rRfChnlInfo.ucChnlBw);
 	rRfChnlInfo.u4CenterFreq2 = 0;
 
 	p2pFuncSetChannel(prAdapter, role_idx, &rRfChnlInfo);
@@ -8383,86 +8382,6 @@ error:
 			prAcsReqInfo);
 }
 
-enum ENUM_CHNL_EXT p2pFunGetSco(struct ADAPTER *prAdapter,
-		enum ENUM_BAND eBand, uint8_t ucPrimaryCh)
-{
-	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
-	uint8_t ucSecondChannel;
-
-	if (eBand == BAND_2G4) {
-		if (ucPrimaryCh != 14)
-			eSCO = (ucPrimaryCh > 7) ? CHNL_EXT_SCB : CHNL_EXT_SCA;
-	} else {
-		if (regd_is_single_sku_en()) {
-			if (rlmDomainIsLegalChannel(prAdapter,
-					eBand,
-					ucPrimaryCh))
-				eSCO = rlmSelectSecondaryChannelType(prAdapter,
-						eBand,
-						ucPrimaryCh);
-		} else {
-			struct DOMAIN_INFO_ENTRY *prDomainInfo =
-					rlmDomainGetDomainInfo(prAdapter);
-			struct DOMAIN_SUBBAND_INFO *prSubband;
-			uint8_t i, j;
-
-			for (i = 0; i < MAX_SUBBAND_NUM; i++) {
-				prSubband = &prDomainInfo->rSubBand[i];
-				if (prSubband->ucBand != eBand)
-					continue;
-				for (j = 0; j < prSubband->ucNumChannels; j++) {
-					if ((prSubband->ucFirstChannelNum +
-						j * prSubband->ucChannelSpan) ==
-						ucPrimaryCh) {
-						eSCO = (j & 1) ?
-							CHNL_EXT_SCB :
-							CHNL_EXT_SCA;
-						break;
-					}
-				}
-
-				if (j < prSubband->ucNumChannels)
-					break;	/* Found */
-			}
-		}
-	}
-	/* Check if it is boundary channel
-	 * and 40MHz BW is permitted
-	*/
-	if (eSCO != CHNL_EXT_SCN) {
-		ucSecondChannel = (eSCO == CHNL_EXT_SCA)
-			? (ucPrimaryCh + CHNL_SPAN_20)
-			: (ucPrimaryCh - CHNL_SPAN_20);
-
-		if (!rlmDomainIsLegalChannel(prAdapter,
-			eBand,
-			ucSecondChannel))
-			eSCO = CHNL_EXT_SCN;
-	}
-	return eSCO;
-}
-
-uint8_t p2pFunGetSecCh(struct ADAPTER *prAdapter,
-		enum ENUM_BAND eBand,
-		enum ENUM_CHNL_EXT eSCO,
-		uint8_t ucPrimaryCh)
-{
-	uint8_t ucSecondCh;
-
-	if (eSCO == CHNL_EXT_SCN)
-		return 0;
-
-	if (eSCO == CHNL_EXT_SCA)
-		ucSecondCh = ucPrimaryCh + CHNL_SPAN_20;
-	else
-		ucSecondCh = ucPrimaryCh - CHNL_SPAN_20;
-
-	if (!rlmDomainIsLegalChannel(prAdapter, eBand, ucSecondCh))
-		ucSecondCh = 0;
-
-	return ucSecondCh;
-}
-
 void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
@@ -8534,11 +8453,11 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 		enum ENUM_CHNL_EXT eSCO;
 
 		eBand = prAcsReqInfo->eBand;
-		eSCO = p2pFunGetSco(prGlueInfo->prAdapter,
+		eSCO = nicGetSco(prGlueInfo->prAdapter,
 				eBand,
 				prAcsReqInfo->ucPrimaryCh);
 
-		prAcsReqInfo->ucSecondCh = p2pFunGetSecCh(
+		prAcsReqInfo->ucSecondCh = nicGetSecCh(
 				prGlueInfo->prAdapter,
 				eBand,
 				eSCO,
@@ -8746,16 +8665,8 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
 		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
-
-		if (prNewChannelInfo->eBand == BAND_2G4)
-			prAdapter->rWifiVar.ucNewOperatingClass = 81;
-		else if (prNewChannelInfo->eBand == BAND_5G)
-			prAdapter->rWifiVar.ucNewOperatingClass = 115;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prNewChannelInfo->eBand == BAND_6G)
-			prAdapter->rWifiVar.ucNewOperatingClass = 131;
-#endif
-
+		prAdapter->rWifiVar.ucNewOperatingClass =
+			nicChannelInfo2OpClass(prNewChannelInfo);
 		prAdapter->rWifiVar.ucNewChannelNumber =
 			prNewChannelInfo->ucChannelNum;
 		prAdapter->rWifiVar.ucChannelSwitchCount = 5;

@@ -1634,15 +1634,232 @@ uint32_t nicFreq2ChannelNum(uint32_t u4FreqInKHz)
 	}
 }
 
-uint32_t nicGetS1Freq(enum ENUM_BAND eBand,
+uint8_t nicChannelInfo2OpClass(struct RF_CHANNEL_INFO *prChannelInfo)
+{
+	uint8_t ucVhtOpClass;
+	uint32_t u4Freq = prChannelInfo->u4CenterFreq1;
+
+	if (u4Freq >= 2412 && u4Freq <= 2472) {
+		/* 2.407 GHz, channels 1..13 */
+		if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ) {
+			if (u4Freq > prChannelInfo->u2PriChnlFreq)
+				return 83; /* HT40+ */
+			else
+				return 84; /* HT40- */
+		} else
+			return 81;
+	}
+
+	if (u4Freq == 2484)
+		return 82; /* channel 14 */
+
+	switch (prChannelInfo->ucChnlBw) {
+	case MAX_BW_80MHZ:
+		ucVhtOpClass = 128;
+		break;
+	case MAX_BW_160MHZ:
+		ucVhtOpClass = 129;
+		break;
+	case MAX_BW_80_80_MHZ:
+		ucVhtOpClass = 130;
+		break;
+	default:
+		ucVhtOpClass = 0;
+		break;
+	}
+
+	/* 5 GHz, channels 36..48 */
+	if (u4Freq >= 5180 && u4Freq <= 5240) {
+		if (ucVhtOpClass)
+			return ucVhtOpClass;
+		else if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ) {
+			if (u4Freq > prChannelInfo->u2PriChnlFreq)
+				return 116;
+			else
+				return 117;
+		} else
+			return 115;
+	}
+
+	/* 5 GHz, channels 52..64 */
+	if (u4Freq >= 5260 && u4Freq <= 5320) {
+		if (ucVhtOpClass)
+			return ucVhtOpClass;
+		else if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ) {
+			if (u4Freq > prChannelInfo->u2PriChnlFreq)
+				return 119;
+			else
+				return 120;
+		} else
+			return 118;
+	}
+
+	/* 5 GHz, channels 100..144 */
+	if (u4Freq >= 5500 && u4Freq <= 5720) {
+		if (ucVhtOpClass)
+			return ucVhtOpClass;
+		else if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ) {
+			if (u4Freq > prChannelInfo->u2PriChnlFreq)
+				return 122;
+			else
+				return 123;
+		} else
+			return 121;
+	}
+
+	/* 5 GHz, channels 149..169 */
+	if (u4Freq >= 5745 && u4Freq <= 5845) {
+		if (ucVhtOpClass)
+			return ucVhtOpClass;
+		else if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ) {
+			if (u4Freq > prChannelInfo->u2PriChnlFreq)
+				return 126;
+			else
+				return 127;
+		} else if (u4Freq <= 5805)
+			return 124;
+		else
+			return 125;
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6 GHz, channels 1..233 */
+	if (u4Freq > 5950 && u4Freq <= 7115) {
+		switch (prChannelInfo->ucChnlBw) {
+		case MAX_BW_80MHZ:
+			return 133;
+		case MAX_BW_160MHZ:
+			return 134;
+		case MAX_BW_80_80_MHZ:
+			return 135;
+		case MAX_BW_320_1MHZ:
+		case MAX_BW_320_2MHZ:
+			return 137;
+		default:
+			if (prChannelInfo->ucChnlBw == MAX_BW_40MHZ)
+				return 132;
+			else
+				return 131;
+		}
+	}
+
+	if (u4Freq == 5935)
+		return 136;
+#endif
+
+	DBGLOG(NIC, ERROR,
+		"Get op class failed, band=%d channel=%d bw=%d freq=%d s1=%d s2=%d\n",
+		prChannelInfo->eBand,
+		prChannelInfo->ucChannelNum,
+		prChannelInfo->ucChnlBw,
+		prChannelInfo->u2PriChnlFreq,
+		prChannelInfo->u4CenterFreq1,
+		prChannelInfo->u4CenterFreq2);
+
+	return 0;
+}
+
+enum ENUM_CHNL_EXT nicGetSco(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand, uint8_t ucPrimaryCh)
+{
+	enum ENUM_CHNL_EXT eSCO = CHNL_EXT_SCN;
+	uint8_t ucSecondChannel;
+
+	if (eBand == BAND_2G4) {
+		if (ucPrimaryCh != 14)
+			eSCO = (ucPrimaryCh > 7) ? CHNL_EXT_SCB : CHNL_EXT_SCA;
+	} else {
+		if (regd_is_single_sku_en()) {
+			if (rlmDomainIsLegalChannel(prAdapter,
+					eBand,
+					ucPrimaryCh))
+				eSCO = rlmSelectSecondaryChannelType(prAdapter,
+						eBand,
+						ucPrimaryCh);
+		} else {
+			struct DOMAIN_INFO_ENTRY *prDomainInfo =
+					rlmDomainGetDomainInfo(prAdapter);
+			struct DOMAIN_SUBBAND_INFO *prSubband;
+			uint8_t i, j;
+
+			for (i = 0; i < MAX_SUBBAND_NUM; i++) {
+				prSubband = &prDomainInfo->rSubBand[i];
+				if (prSubband->ucBand != eBand)
+					continue;
+				for (j = 0; j < prSubband->ucNumChannels; j++) {
+					if ((prSubband->ucFirstChannelNum +
+						j * prSubband->ucChannelSpan) ==
+						ucPrimaryCh) {
+						eSCO = (j & 1) ?
+							CHNL_EXT_SCB :
+							CHNL_EXT_SCA;
+						break;
+					}
+				}
+
+				if (j < prSubband->ucNumChannels)
+					break;	/* Found */
+			}
+		}
+	}
+	/* Check if it is boundary channel
+	 * and 40MHz BW is permitted
+	*/
+	if (eSCO != CHNL_EXT_SCN) {
+		ucSecondChannel = (eSCO == CHNL_EXT_SCA)
+			? (ucPrimaryCh + CHNL_SPAN_20)
+			: (ucPrimaryCh - CHNL_SPAN_20);
+
+		if (!rlmDomainIsLegalChannel(prAdapter,
+			eBand,
+			ucSecondChannel))
+			eSCO = CHNL_EXT_SCN;
+	}
+	return eSCO;
+}
+
+uint8_t nicGetSecCh(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
+		enum ENUM_CHNL_EXT eSCO,
+		uint8_t ucPrimaryCh)
+{
+	uint8_t ucSecondCh;
+
+	if (eSCO == CHNL_EXT_SCN)
+		return 0;
+
+	if (eSCO == CHNL_EXT_SCA)
+		ucSecondCh = ucPrimaryCh + CHNL_SPAN_20;
+	else
+		ucSecondCh = ucPrimaryCh - CHNL_SPAN_20;
+
+	if (!rlmDomainIsLegalChannel(prAdapter, eBand, ucSecondCh))
+		ucSecondCh = 0;
+
+	return ucSecondCh;
+}
+
+uint32_t nicGetS1Freq(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth)
 {
-	uint8_t ucS1;
+	uint8_t ucS1Channel;
+	uint8_t ucSecChannel;
+	enum ENUM_CHNL_EXT eSCO;
+	uint8_t ucVhtBw;
 
-	ucS1 = nicGetS1(eBand, ucPrimaryChannel, ucBandwidth);
+	if (eBand == BAND_2G4) {
+		eSCO = nicGetSco(prAdapter, eBand, ucPrimaryChannel);
+		ucSecChannel = nicGetSecCh(prAdapter, eBand, eSCO,
+					      ucPrimaryChannel);
+		ucS1Channel = (ucPrimaryChannel + ucSecChannel) / 2;
+	} else {
+		ucVhtBw = rlmGetVhtOpBwByBssOpBw(ucBandwidth);
+		ucS1Channel = nicGetS1(eBand, ucPrimaryChannel, ucVhtBw);
+	}
 
-	return nicChannelNum2Freq(ucS1, eBand) / 1000;
+	return nicChannelNum2Freq(ucS1Channel, eBand) / 1000;
 }
 
 uint8_t nicGetS2(enum ENUM_BAND eBand,
