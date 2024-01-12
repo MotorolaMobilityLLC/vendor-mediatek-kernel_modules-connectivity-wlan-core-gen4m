@@ -7525,7 +7525,7 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 				tag->ucFrameTypeIndex,
 				tag->u4FrameType);
 #endif
-		} else if (cmd->ucCfgItem == CSI_CONFIG_OUTPUT_FORMAT) {
+		} else if (cmd->ucCfgItem == CSI_CONFIG_CHAIN_NUMBER) {
 			struct UNI_CMD_CSI_SET_CHAIN_NUMBER *tag;
 
 			max_cmd_len +=
@@ -7545,8 +7545,8 @@ uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 			tag->ucMaxChain = cmd->ucValue1;
 #if CFG_CSI_DEBUG
 			DBGLOG(NIC, INFO,
-			   "[CSI] Set chain number %d\n",
-				tag->ucMaxChain);
+			   "[CSI] Set chain number %d ucBandIdx=%d\n",
+				tag->ucMaxChain, uni_cmd->ucBandIdx);
 #endif
 		} else {
 			DBGLOG(NIC, WARN, "[CSI] No Support CSI CfgItem:%d\n",

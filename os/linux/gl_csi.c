@@ -37,11 +37,23 @@
  */
 static struct CSI_INFO_T rCSIInfo;
 static uint8_t aucCSIBuf[CSI_MAX_BUFFER_SIZE];
+static uint8_t g_ucBandIdx = ENUM_BAND_0;
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+uint8_t glCsiGetBandIdx(void)
+{
+	return g_ucBandIdx;
+}
+
+void glCsiSetBandIdx(uint8_t ucBandIdx)
+{
+	g_ucBandIdx = ucBandIdx;
+}
+
 struct CSI_INFO_T *glCsiGetCSIInfo(void)
 {
 	return &rCSIInfo;
@@ -347,6 +359,8 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 
 			prCSIData->ucDbdcIdx = (uint8_t) le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
+				DBGLOG(NIC, INFO, "[CSI] Band=%u\n",
+						prCSIData->ucDbdcIdx);
 			break;
 		case CSI_EVENT_CSI_NUM:
 			if (prCSITlvData->body_len != sizeof(uint32_t)) {
@@ -546,7 +560,7 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 		case CSI_EVENT_TX_RX_IDX:
 			if (prCSITlvData->body_len != sizeof(uint32_t)) {
 				DBGLOG(NIC, WARN,
-					"[CSI] Invalid TRxIdx len %u",
+					"[CSI] Invalid TRxIdx len %u\n",
 					prCSITlvData->body_len);
 				goto out;
 			}
@@ -596,6 +610,17 @@ void nicEventCSIData(struct ADAPTER *prAdapter,
 			}
 
 			prCSIData->u4Rsvd6 = le32_to_cpup(
+					(uint32_t *) prCSITlvData->aucbody);
+			break;
+		case CSI_EVENT_TONE_VALID:
+			if (prCSITlvData->body_len != sizeof(uint32_t)) {
+				DBGLOG(NIC, WARN,
+					"[CSI] Invalid TONE_VALID len %u",
+					prCSITlvData->body_len);
+				goto out;
+			}
+
+			prCSIData->u4ToneValid = le32_to_cpup(
 					(uint32_t *) prCSITlvData->aucbody);
 			break;
 		default:
@@ -967,6 +992,20 @@ ssize_t wlanCSIDataPrepare(
 	put_unaligned(sizeof(uint32_t), (int16_t *) (tmpBuf + i4Pos));
 	i4Pos += 2;
 	put_unaligned(prCSIData->u4Rsvd6, (uint32_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint32_t);
+
+	put_unaligned(CSI_DATA_BAND, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+	put_unaligned(sizeof(uint8_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(int16_t);
+	put_unaligned(prCSIData->ucDbdcIdx, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+
+	put_unaligned(CSI_DATA_TONE_VALID, (uint8_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(uint8_t);
+	put_unaligned(sizeof(uint32_t), (int16_t *) (tmpBuf + i4Pos));
+	i4Pos += sizeof(int16_t);
+	put_unaligned(prCSIData->u4ToneValid, (uint32_t *) (tmpBuf + i4Pos));
 	i4Pos += sizeof(uint32_t);
 
 	/*
