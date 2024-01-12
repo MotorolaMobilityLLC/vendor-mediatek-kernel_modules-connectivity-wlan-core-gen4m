@@ -65,13 +65,6 @@
  *                              F U N C T I O N S
  *******************************************************************************
  */
-const struct nla_policy mtk_wlan_vendor_nan_policy[NL80211_ATTR_MAX + 1] = {
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-	[NL80211_ATTR_VENDOR_DATA] = NLA_POLICY_MIN_LEN(0),
-#else
-	[NL80211_ATTR_VENDOR_DATA] = {.type = NLA_MIN_LEN, .len = 0},
-#endif
-};
 
 /* Helper function to Write and Read TLV called in indication as well as */
 /*  request */
