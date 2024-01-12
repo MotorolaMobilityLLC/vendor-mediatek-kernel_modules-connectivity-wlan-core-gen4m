@@ -55,6 +55,8 @@
 #define COUNTRY_CODE_AN (((uint16_t) 'A' << 8) | (uint16_t) 'N')
 /* Angola */
 #define COUNTRY_CODE_AO (((uint16_t) 'A' << 8) | (uint16_t) 'O')
+/*South Pole*/
+#define COUNTRY_CODE_AQ (((uint16_t) 'A' << 8) | (uint16_t) 'Q')
 /* Argentina */
 #define COUNTRY_CODE_AR (((uint16_t) 'A' << 8) | (uint16_t) 'R')
 /* American Samoa (USA) */
@@ -65,6 +67,8 @@
 #define COUNTRY_CODE_AU (((uint16_t) 'A' << 8) | (uint16_t) 'U')
 /* Aruba */
 #define COUNTRY_CODE_AW (((uint16_t) 'A' << 8) | (uint16_t) 'W')
+/* Aland Islands */
+#define COUNTRY_CODE_AX (((uint16_t) 'A' << 8) | (uint16_t) 'X')
 /* Azerbaijan */
 #define COUNTRY_CODE_AZ (((uint16_t) 'A' << 8) | (uint16_t) 'Z')
 /* Bosnia and Herzegovina */
@@ -97,6 +101,8 @@
 #define COUNTRY_CODE_BS (((uint16_t) 'B' << 8) | (uint16_t) 'S')
 /* Bhutan */
 #define COUNTRY_CODE_BT (((uint16_t) 'B' << 8) | (uint16_t) 'T')
+/*Bouvet Island*/
+#define COUNTRY_CODE_BV (((uint16_t) 'B' << 8) | (uint16_t) 'V')
 /* Botswana */
 #define COUNTRY_CODE_BW (((uint16_t) 'B' << 8) | (uint16_t) 'W')
 /* Belarus */
@@ -211,6 +217,8 @@
 #define COUNTRY_CODE_GQ (((uint16_t) 'G' << 8) | (uint16_t) 'Q')
 /* Greece */
 #define COUNTRY_CODE_GR (((uint16_t) 'G' << 8) | (uint16_t) 'R')
+/* South Georgia and the South Sandwich Islands */
+#define COUNTRY_CODE_GS (((uint16_t) 'G' << 8) | (uint16_t) 'S')
 /* Guatemala */
 #define COUNTRY_CODE_GT (((uint16_t) 'G' << 8) | (uint16_t) 'T')
 /* Guam */
@@ -221,6 +229,8 @@
 #define COUNTRY_CODE_GY (((uint16_t) 'G' << 8) | (uint16_t) 'Y')
 /* Hong Kong */
 #define COUNTRY_CODE_HK (((uint16_t) 'H' << 8) | (uint16_t) 'K')
+/* Heard and McDonald Islands */
+#define COUNTRY_CODE_HM (((uint16_t) 'H' << 8) | (uint16_t) 'M')
 /* Honduras */
 #define COUNTRY_CODE_HN (((uint16_t) 'H' << 8) | (uint16_t) 'N')
 /* Croatia */
@@ -427,8 +437,12 @@
 #define COUNTRY_CODE_SE (((uint16_t) 'S' << 8) | (uint16_t) 'E')
 /* Singapole */
 #define COUNTRY_CODE_SG (((uint16_t) 'S' << 8) | (uint16_t) 'G')
+/* Saint Helena */
+#define COUNTRY_CODE_SH (((uint16_t) 'S' << 8) | (uint16_t) 'H')
 /* Slovenia */
 #define COUNTRY_CODE_SI (((uint16_t) 'S' << 8) | (uint16_t) 'I')
+/* Svalbard and Jan Mayen */
+#define COUNTRY_CODE_SJ (((uint16_t) 'S' << 8) | (uint16_t) 'J')
 /* Slovakia */
 #define COUNTRY_CODE_SK (((uint16_t) 'S' << 8) | (uint16_t) 'K')
 /* Sierra Leone */
@@ -447,6 +461,8 @@
 #define COUNTRY_CODE_ST (((uint16_t) 'S' << 8) | (uint16_t) 'T')
 /* El Salvador */
 #define COUNTRY_CODE_SV (((uint16_t) 'S' << 8) | (uint16_t) 'V')
+/* Sint Maarten */
+#define COUNTRY_CODE_SX (((uint16_t) 'S' << 8) | (uint16_t) 'X')
 /* Syria */
 #define COUNTRY_CODE_SY (((uint16_t) 'S' << 8) | (uint16_t) 'Y')
 /* Swaziland */
@@ -487,6 +503,8 @@
 #define COUNTRY_CODE_UA (((uint16_t) 'U' << 8) | (uint16_t) 'A')
 /* Ugnada */
 #define COUNTRY_CODE_UG (((uint16_t) 'U' << 8) | (uint16_t) 'G')
+/* United States Minor Outlying Islands */
+#define COUNTRY_CODE_UM (((uint16_t) 'U' << 8) | (uint16_t) 'M')
 /* US */
 #define COUNTRY_CODE_US (((uint16_t) 'U' << 8) | (uint16_t) 'S')
 /* Uruguay */
@@ -511,6 +529,8 @@
 #define COUNTRY_CODE_WF (((uint16_t) 'W' << 8) | (uint16_t) 'F')
 /* Samoa */
 #define COUNTRY_CODE_WS (((uint16_t) 'W' << 8) | (uint16_t) 'S')
+/* Republic of Kosovo */
+#define COUNTRY_CODE_XK (((uint16_t) 'X' << 8) | (uint16_t) 'K')
 /* Yemen */
 #define COUNTRY_CODE_YE (((uint16_t) 'Y' << 8) | (uint16_t) 'E')
 /* Mayotte (France) */
