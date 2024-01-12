@@ -134,6 +134,7 @@ nan_read_tlv(u8 *pInTlv, struct _NanTlv *pOutTlv)
 		readLen += pOutTlv->length;
 	} else {
 		pOutTlv->value = NULL;
+		return 0;
 	}
 	return readLen;
 }
@@ -1029,6 +1030,11 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
+		if (readLen == 0) {
+			DBGLOG(REQ, ERROR, "readLen=0\n");
+			return -EFAULT;
+		}
+
 		nanEnableReq.master_pref = prAdapter->rWifiVar.ucMasterPref;
 		nanEnableReq.config_random_factor_force = 0;
 		nanEnableReq.random_factor_force_val = 0;
@@ -1159,6 +1165,11 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			remainingLen -= readLen;
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
+		}
+
+		if (readLen == 0) {
+			DBGLOG(REQ, ERROR, "readLen=0\n");
+			return -EFAULT;
 		}
 
 		nanConfigRsp.status = 0;
@@ -1425,6 +1436,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			remainingLen -= readLen;
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
+		}
+
+		if (readLen == 0) {
+			DBGLOG(REQ, ERROR, "readLen=0\n");
+			kfree(pNanPublishRsp);
+			kfree(pNanPublishReq);
+			return -EFAULT;
 		}
 
 		/* Publish response message */
@@ -1837,6 +1855,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
+		if (readLen == 0) {
+			DBGLOG(REQ, ERROR, "readLen=0\n");
+			kfree(pNanSubscribeReq);
+			kfree(pNanSubscribeRsp);
+			return -EFAULT;
+		}
+
 		/* Prepare command reply of Subscriabe response */
 		memcpy(&pNanSubscribeRsp->fwHeader, &nanMsgHdr,
 		       sizeof(struct _NanMsgHeader));
@@ -2115,6 +2140,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
+		if (readLen == 0) {
+			DBGLOG(REQ, ERROR, "readLen=0\n");
+			kfree(pNanXmitFollowupReq);
+			kfree(pNanXmitFollowupRsp);
+			return -EFAULT;
+		}
+
 		/* Follow up Command reply message */
 		memcpy(&pNanXmitFollowupRsp->fwHeader, &nanMsgHdr,
 		       sizeof(struct _NanMsgHeader));
@@ -2318,6 +2350,12 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			remainingLen -= readLen;
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
+		}
+
+		if (readLen == 0) {
+			DBGLOG(REQ, ERROR, "readLen=0\n");
+			kfree(pNanDebug);
+			return -EFAULT;
 		}
 
 		kfree(pNanDebug);
