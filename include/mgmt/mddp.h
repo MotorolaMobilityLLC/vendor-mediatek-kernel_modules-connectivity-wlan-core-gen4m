@@ -126,6 +126,9 @@ void mddpUninit(void);
 int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo);
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len);
 int32_t mddpGetMdStats(IN struct net_device *prDev);
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+int32_t mddpGetMdLlsStats(IN struct ADAPTER *prAdapter);
+#endif
 void mddpUpdateReorderQueParm(struct ADAPTER *prAdapter,
 			      struct RX_BA_ENTRY *prReorderQueParm,
 			      struct SW_RFB *prSwRfb);

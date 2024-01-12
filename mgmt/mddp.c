@@ -29,6 +29,9 @@
 #include "gl_os.h"
 #include "mddp_export.h"
 #include "mddp.h"
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+#include "cnm_mem.h"
+#endif
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -125,6 +128,12 @@ u_int8_t g_fgMddpEnabled = TRUE;
 struct MDDP_SETTINGS g_rSettings;
 
 struct mddpw_net_stat_ext_t stats;
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+struct wsvc_stat_lls_report_t cur_lls_stats;
+struct wsvc_stat_lls_report_t base_lls_stats;
+struct wsvc_stat_lls_report_t todo_lls_stats;
+u_int8_t isMdResetSinceLastQuery;
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -134,6 +143,9 @@ struct mddpw_net_stat_ext_t stats;
 static bool wait_for_md_on_complete(void);
 static bool wait_for_md_off_complete(void);
 static void save_mddp_stats(void);
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+static void save_mddp_lls_stats(void);
+#endif
 
 static void mddpRdFunc(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
 {
@@ -307,6 +319,12 @@ static int32_t mddpRegisterCb(void)
 			ret, g_fgMddpEnabled);
 
 	kalMemZero(&stats, sizeof(struct mddpw_net_stat_ext_t));
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+	kalMemZero(&cur_lls_stats, sizeof(struct wsvc_stat_lls_report_t));
+	kalMemZero(&base_lls_stats, sizeof(struct wsvc_stat_lls_report_t));
+	kalMemZero(&todo_lls_stats, sizeof(struct wsvc_stat_lls_report_t));
+	isMdResetSinceLastQuery = FALSE;
+#endif
 
 	return ret;
 }
@@ -379,6 +397,280 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 
 	return 0;
 }
+
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+int32_t mddpGetMdLlsStats(IN struct ADAPTER *prAdapter)
+{
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct GLUE_INFO *prGlueInfo;
+	struct STA_RECORD *prStaRec;
+	struct net_device *prDev;
+	uint8_t i, j, k, l;
+	int32_t ret;
+
+	if (!mddpIsSupportMcifWifi() || !mddpIsSupportMddpWh()) {
+		DBGLOG(INIT, ERROR, "mddp is not supported.\n");
+		return 0;
+	}
+
+	if (!prAdapter) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
+		return 0;
+	}
+
+	prDev = prAdapter->prGlueInfo->prDevHandler;
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDev);
+	prGlueInfo = prNetDevPrivate->prGlueInfo;
+
+	if (!prGlueInfo || (prGlueInfo->u4ReadyFlag == 0) ||
+			!prGlueInfo->prAdapter) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL\n");
+		return 0;
+	}
+
+	if (!prNetDevPrivate->ucMddpSupport) {
+		DBGLOG(INIT, ERROR,
+			"prNetDevPrivate->ucMddpSupport is not supported\n");
+		return 0;
+	}
+
+	if (!gMddpWFunc.get_lls_stat) {
+		DBGLOG(INIT, ERROR,
+			"gMddpWFunc.get_lls_stat is not supported\n");
+		return 0;
+	}
+
+	kalMemZero(&cur_lls_stats, sizeof(struct wsvc_stat_lls_report_t));
+	ret = gMddpWFunc.get_lls_stat(&cur_lls_stats);
+	if (ret != 0) {
+		DBGLOG(INIT, ERROR, "get_lls_stat fail, ret: %d.\n", ret);
+		return 0;
+	}
+
+	if (cur_lls_stats.version == 0) {
+		DBGLOG(INIT, ERROR, "MD is resetting.\n");
+		return 0;
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		for (j = 0; j < STATS_LLS_WIFI_AC_MAX; ++j) {
+			prAdapter->aprBssInfo[i]->u4RxMpduAc[j] +=
+				isMdResetSinceLastQuery ?
+				(cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j] +
+				todo_lls_stats.wmm_ac_stat_rx_mpdu[i][j]) :
+				(cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j] -
+				base_lls_stats.wmm_ac_stat_rx_mpdu[i][j]);
+			base_lls_stats.wmm_ac_stat_rx_mpdu[i][j] =
+				cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j];
+		}
+	}
+
+	for (i = 0; i < CFG_STA_REC_NUM; ++i) {
+		struct rate_stat_rx_mpdu_t *cur, *base, *todo;
+
+		cur = &cur_lls_stats.rate_stat_rx_mpdu[i];
+		base = &base_lls_stats.rate_stat_rx_mpdu[i];
+		todo = &todo_lls_stats.rate_stat_rx_mpdu[i];
+		prStaRec = &prAdapter->arStaRec[i];
+
+		for (k = 0; k < STATS_LLS_MAX_OFDM_BW_NUM; ++k) {
+			for (l = 0; l < STATS_LLS_OFDM_NUM; ++l) {
+				prStaRec->u4RxMpduOFDM[0][k][l] +=
+					isMdResetSinceLastQuery ?
+					(cur->u4RxMpduOFDM[0][k][l] +
+					todo->u4RxMpduOFDM[0][k][l]) :
+					(cur->u4RxMpduOFDM[0][k][l] -
+					base->u4RxMpduOFDM[0][k][l]);
+				base->u4RxMpduOFDM[0][k][l] =
+					cur->u4RxMpduOFDM[0][k][l];
+			}
+		}
+
+		for (k = 0; k < STATS_LLS_MAX_CCK_BW_NUM; ++k) {
+			for (l = 0; l < STATS_LLS_CCK_NUM; ++l) {
+				prStaRec->u4RxMpduCCK[0][k][l] +=
+					isMdResetSinceLastQuery ?
+					(cur->u4RxMpduCCK[0][k][l] +
+					todo->u4RxMpduCCK[0][k][l]) :
+					(cur->u4RxMpduCCK[0][k][l] -
+					base->u4RxMpduCCK[0][k][l]);
+				base->u4RxMpduCCK[0][k][l] =
+					cur->u4RxMpduCCK[0][k][l];
+			}
+		}
+
+		for (k = 0; k < STATS_LLS_MAX_HT_BW_NUM; ++k) {
+			for (l = 0; l < STATS_LLS_HT_NUM; ++l) {
+				prStaRec->u4RxMpduHT[0][k][l] +=
+					isMdResetSinceLastQuery ?
+					(cur->u4RxMpduHT[0][k][l] +
+					todo->u4RxMpduHT[0][k][l]) :
+					(cur->u4RxMpduHT[0][k][l] -
+					base->u4RxMpduHT[0][k][l]);
+				base->u4RxMpduHT[0][k][l] =
+					cur->u4RxMpduHT[0][k][l];
+			}
+		}
+
+		for (j = 0; j < STATS_LLS_MAX_NSS_NUM; ++j) {
+			for (k = 0; k < STATS_LLS_MAX_VHT_BW_NUM; ++k) {
+				for (l = 0; l < STATS_LLS_VHT_NUM; ++l) {
+					prStaRec->u4RxMpduVHT[j][k][l] +=
+						isMdResetSinceLastQuery ?
+						(cur->u4RxMpduVHT[j][k][l] +
+						todo->u4RxMpduVHT[j][k][l]) :
+						(cur->u4RxMpduVHT[j][k][l] -
+						base->u4RxMpduVHT[j][k][l]);
+					base->u4RxMpduVHT[j][k][l] =
+						cur->u4RxMpduVHT[j][k][l];
+				}
+			}
+		}
+
+		for (j = 0; j < STATS_LLS_MAX_NSS_NUM; ++j) {
+			for (k = 0; k < STATS_LLS_MAX_HE_BW_NUM; ++k) {
+				for (l = 0; l < STATS_LLS_HE_NUM; ++l) {
+					prStaRec->u4RxMpduHE[j][k][l] +=
+						isMdResetSinceLastQuery ?
+						(cur->u4RxMpduHE[j][k][l] +
+						todo->u4RxMpduHE[j][k][l]) :
+						(cur->u4RxMpduHE[j][k][l] -
+						base->u4RxMpduHE[j][k][l]);
+					base->u4RxMpduHE[j][k][l] =
+						cur->u4RxMpduHE[j][k][l];
+				}
+			}
+		}
+
+		for (j = 0; j < STATS_LLS_MAX_NSS_NUM; ++j) {
+			for (k = 0; k < STATS_LLS_MAX_EHT_BW_NUM; ++k) {
+				for (l = 0; l < STATS_LLS_EHT_NUM; ++l) {
+					prStaRec->u4RxMpduEHT[j][k][l] +=
+						isMdResetSinceLastQuery ?
+						(cur->u4RxMpduEHT[j][k][l] +
+						todo->u4RxMpduEHT[j][k][l]) :
+						(cur->u4RxMpduEHT[j][k][l] -
+						base->u4RxMpduEHT[j][k][l]);
+					base->u4RxMpduEHT[j][k][l] =
+						cur->u4RxMpduEHT[j][k][l];
+				}
+			}
+		}
+	}
+
+	isMdResetSinceLastQuery = FALSE;
+	kalMemZero(&todo_lls_stats,
+		sizeof(struct wsvc_stat_lls_report_t));
+
+	return 0;
+}
+
+static void save_mddp_lls_stats(void)
+{
+	uint8_t i, j, k, l;
+	int32_t ret;
+
+	if (!gMddpWFunc.get_lls_stat) {
+		DBGLOG(INIT, ERROR,
+			"gMddpWFunc.get_lls_stat is not supported.\n");
+		return;
+	}
+
+	kalMemZero(&cur_lls_stats, sizeof(struct wsvc_stat_lls_report_t));
+	ret = gMddpWFunc.get_lls_stat(&cur_lls_stats);
+	if (ret != 0) {
+		DBGLOG(INIT, ERROR, "get_lls_stat fail, ret: %d.\n", ret);
+		return;
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		for (j = 0; j < STATS_LLS_WIFI_AC_MAX; ++j) {
+			todo_lls_stats.wmm_ac_stat_rx_mpdu[i][j] +=
+				isMdResetSinceLastQuery ?
+				cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j] :
+				(cur_lls_stats.wmm_ac_stat_rx_mpdu[i][j] -
+				base_lls_stats.wmm_ac_stat_rx_mpdu[i][j]);
+		}
+	}
+
+	for (i = 0; i < CFG_STA_REC_NUM; ++i) {
+		struct rate_stat_rx_mpdu_t *cur, *base, *todo;
+
+		cur = &cur_lls_stats.rate_stat_rx_mpdu[i];
+		base = &base_lls_stats.rate_stat_rx_mpdu[i];
+		todo = &todo_lls_stats.rate_stat_rx_mpdu[i];
+
+		for (k = 0; k < STATS_LLS_MAX_OFDM_BW_NUM; ++k) {
+			for (l = 0; l < STATS_LLS_OFDM_NUM; ++l) {
+				todo->u4RxMpduOFDM[0][k][l] +=
+					isMdResetSinceLastQuery ?
+					cur->u4RxMpduOFDM[0][k][l] :
+					(cur->u4RxMpduOFDM[0][k][l] -
+					base->u4RxMpduOFDM[0][k][l]);
+			}
+		}
+
+		for (k = 0; k < STATS_LLS_MAX_CCK_BW_NUM; ++k) {
+			for (l = 0; l < STATS_LLS_CCK_NUM; ++l) {
+				todo->u4RxMpduCCK[j][k][l] +=
+					isMdResetSinceLastQuery ?
+					cur->u4RxMpduCCK[0][k][l] :
+					(cur->u4RxMpduCCK[0][k][l] -
+					base->u4RxMpduCCK[0][k][l]);
+			}
+		}
+
+		for (k = 0; k < STATS_LLS_MAX_HT_BW_NUM; ++k) {
+			for (l = 0; l < STATS_LLS_HT_NUM; ++l) {
+				todo->u4RxMpduHT[0][k][l] +=
+					isMdResetSinceLastQuery ?
+					cur->u4RxMpduHT[0][k][l] :
+					(cur->u4RxMpduHT[0][k][l] -
+					base->u4RxMpduHT[0][k][l]);
+			}
+		}
+
+		for (j = 0; j < STATS_LLS_MAX_NSS_NUM; ++j) {
+			for (k = 0; k < STATS_LLS_MAX_VHT_BW_NUM; ++k) {
+				for (l = 0; l < STATS_LLS_VHT_NUM; ++l) {
+					todo->u4RxMpduVHT[j][k][l] +=
+						isMdResetSinceLastQuery ?
+						cur->u4RxMpduVHT[j][k][l] :
+						(cur->u4RxMpduVHT[j][k][l] -
+						base->u4RxMpduVHT[j][k][l]);
+				}
+			}
+		}
+
+		for (j = 0; j < STATS_LLS_MAX_NSS_NUM; ++j) {
+			for (k = 0; k < STATS_LLS_MAX_HE_BW_NUM; ++k) {
+				for (l = 0; l < STATS_LLS_HE_NUM; ++l) {
+					todo->u4RxMpduHE[j][k][l] +=
+						isMdResetSinceLastQuery ?
+						cur->u4RxMpduHE[j][k][l] :
+						(cur->u4RxMpduHE[j][k][l] -
+						base->u4RxMpduHE[j][k][l]);
+				}
+			}
+		}
+
+		for (j = 0; j < STATS_LLS_MAX_NSS_NUM; ++j) {
+			for (k = 0; k < STATS_LLS_MAX_EHT_BW_NUM; ++k) {
+				for (l = 0; l < STATS_LLS_EHT_NUM; ++l) {
+					todo->u4RxMpduEHT[j][k][l] +=
+						isMdResetSinceLastQuery ?
+						cur->u4RxMpduEHT[j][k][l] :
+						(cur->u4RxMpduEHT[j][k][l] -
+						base->u4RxMpduEHT[j][k][l]);
+				}
+			}
+		}
+	}
+
+	DBGLOG(INIT, INFO, "save_mddp_lls_stats done.\n");
+}
+#endif
 
 static bool mddpIsSsnSent(struct ADAPTER *prAdapter,
 			  uint8_t *prReorderBuf, uint16_t u2SSN)
@@ -879,7 +1171,12 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 		int32_t ret;
 
+		DBGLOG(INIT, INFO, "MD resetting.\n");
 		save_mddp_stats();
+#if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
+		save_mddp_lls_stats();
+		isMdResetSinceLastQuery = TRUE;
+#endif
 		mddpNotifyWifiOnStart();
 		ret = mddpNotifyWifiOnEnd();
 		if (ret != WLAN_STATUS_SUCCESS) {
