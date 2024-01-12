@@ -2358,7 +2358,13 @@ int32_t glBusFuncOn(void)
 #endif
 
 	ret = pci_register_driver(&mtk_pci_driver);
-	if (ret) {
+	if (ret == -EBUSY) {
+		if (g_fgDriverProbed) {
+			WARN_ON_ONCE(TRUE);
+			ret = 0;
+		} else
+			goto exit_dump;
+	} else if (ret) {
 		DBGLOG(HAL, ERROR, "pci_register_driver failed, ret=%d\n",
 			ret);
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
@@ -2402,9 +2408,8 @@ int32_t glBusFuncOn(void)
 			DBGLOG(HAL, ERROR, "connv3_hif_dbg_end failed.\n");
 			goto exit_dump;
 		}
-
-exit_dump:
 #endif
+exit_dump:
 		pci_unregister_driver(&mtk_pci_driver);
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 		mtk_pcie_remove_port(0);
