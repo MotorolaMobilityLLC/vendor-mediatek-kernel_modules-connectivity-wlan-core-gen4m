@@ -1894,20 +1894,24 @@ void nicEventHifCtrl(IN struct ADAPTER *prAdapter,
 
 #if defined(_HIF_PCIE)
 	/* if PCIE suspend, polling sequence */
-	if ((prEventHifCtrl->ucHifType == ENUM_HIF_TYPE_PCIE) &&
-		(prEventHifCtrl->ucHifSuspend)) {
-		if (prEventHifCtrl->ucHifTxTrafficStatus ==
-		  ENUM_HIF_TRAFFIC_IDLE &&
-		  prEventHifCtrl->ucHifRxTrafficStatus ==
-		  ENUM_HIF_TRAFFIC_IDLE) {
-			/* success */
-			halPciePreSuspendDone(
-			  prAdapter, NULL,
-			  prEvent->aucBuffer);
-		} else {
-			/* busy */
-			/* invalid */
-			halPciePreSuspendTimeout(prAdapter, NULL);
+	if (prEventHifCtrl->ucHifType == ENUM_HIF_TYPE_PCIE) {
+		if (prEventHifCtrl->ucHifSuspend) {
+			if (prEventHifCtrl->ucHifTxTrafficStatus ==
+			  ENUM_HIF_TRAFFIC_IDLE &&
+			  prEventHifCtrl->ucHifRxTrafficStatus ==
+			  ENUM_HIF_TRAFFIC_IDLE) {
+				/* success */
+				halPciePreSuspendDone(
+				  prAdapter, NULL,
+				  prEvent->aucBuffer);
+			} else {
+				/* busy */
+				/* invalid */
+				halPciePreSuspendTimeout(prAdapter, NULL);
+			}
+		}  else {
+			prAdapter->prGlueInfo->rHifInfo.eSuspendtate =
+				PCIE_STATE_PRE_RESUME_DONE;
 		}
 	}
 #endif
