@@ -298,6 +298,14 @@ const struct nla_policy mtk_wfd_tx_br_montr_policy[
 	[WIFI_ATTR_WFD_TX_BR_MONTR_EN] = {.type = NLA_U8},
 };
 
+const struct nla_policy mtk_usable_channel_policy[
+	WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX + 1] = {
+	[WIFI_ATTRIBUTE_USABLE_CHANNEL_BAND] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_USABLE_CHANNEL_IFACE] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_USABLE_CHANNEL_FILTER] = {.type = NLA_U32},
+	[WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX_SIZE] = {.type = NLA_U32},
+};
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -4588,6 +4596,276 @@ end:
 	if (pr_comb_matrix)
 		kalMemFree(pr_comb_matrix,
 			sizeof(struct ANDROID_T_COMB_MATRIX),
+			VIR_MEM_TYPE);
+	kfree_skb(skb);
+	return i4Status;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is to send FWK the usable channel for each source.
+ *
+ * \param[in] wiphy wiphy
+ * \param[in] wdev wireless_dev
+ * \param[in] data (not used here)
+ * \param[in] data_len (not used here)
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_get_usable_channel(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct sk_buff *skb = NULL;
+	struct ANDROID_USABLE_CHANNEL_ARRAY *pr_channel_array = NULL;
+	int32_t i4Status = 0;
+	struct nlattr *attr;
+	uint32_t band = 0;
+	uint32_t iface_type = 0;
+	uint32_t max_size = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct nlattr *tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX + 1] = {};
+	struct RF_CHANNEL_INFO *aucChannelList;
+	uint32_t num_channels_2g;
+	uint32_t num_channels_5g;
+	uint32_t num_channels_6g = 0;
+	uint8_t i, j;
+	uint32_t channels_2g[MAX_CHN_NUM];
+	uint32_t channels_5g[MAX_CHN_NUM];
+	uint32_t channels_6g[MAX_CHN_NUM];
+	uint16_t u2CountryCode;
+	uint8_t ucNumOfChannel = 0;
+
+	if (NLA_PARSE(tb, WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX, data, data_len,
+			mtk_usable_channel_policy)) {
+		DBGLOG(REQ, ERROR, "parse acs attr fail.\n");
+		rStatus = -EINVAL;
+		goto end;
+	}
+
+	if (!tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_BAND]) {
+		DBGLOG(REQ, ERROR, "attr channel band failed.\n");
+		rStatus = -EINVAL;
+		goto end;
+	}
+	band = nla_get_u32(tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_BAND]);
+	DBGLOG(REQ, WARN, "mtk_cfg80211_usable_channel: band %d\n",
+		band);
+
+	if (!tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_IFACE]) {
+		DBGLOG(REQ, ERROR, "attr channel band failed.\n");
+		rStatus = -EINVAL;
+		goto end;
+	}
+	iface_type = nla_get_u32(tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_IFACE]);
+
+	if (!tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX_SIZE]) {
+		DBGLOG(REQ, ERROR, "attr channel band failed.\n");
+		rStatus = -EINVAL;
+		goto end;
+	}
+	max_size = nla_get_u32(tb[WIFI_ATTRIBUTE_USABLE_CHANNEL_BAND]);
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "Invalid glue info\n");
+		i4Status = -EFAULT;
+		goto end;
+	}
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	attr = (struct nlattr *)data;
+
+	aucChannelList = (struct RF_CHANNEL_INFO *)
+		kalMemAlloc(sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM,
+			VIR_MEM_TYPE);
+	if (!aucChannelList) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for rf channel info\n");
+		return -ENOMEM;
+	}
+	kalMemZero(aucChannelList,
+		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
+
+	if (band & BIT(0)) /* 2.4G band */
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_2G4, TRUE,
+			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+
+	kalMemZero(channels_2g, sizeof(channels_2g));
+	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
+	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
+		/* We need to report frequency list to HAL */
+		channels_2g[j] =
+			nicChannelNum2Freq(
+				aucChannelList[i].ucChannelNum,
+				aucChannelList[i].eBand) / 1000;
+		if (channels_2g[j] == 0)
+			continue;
+		else {
+			DBGLOG(REQ, TRACE, "channels[%d] = %d\n", j,
+				   channels_2g[j]);
+			j++;
+		}
+	}
+	num_channels_2g = j;
+
+	if (band & BIT(1)) {/* 5G band without DFS channels */
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_5G, TRUE,
+			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+	}
+	kalMemZero(channels_5g, sizeof(channels_5g));
+	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
+	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
+		/* We need to report frequency list to HAL */
+		channels_5g[j] =
+			nicChannelNum2Freq(
+				aucChannelList[i].ucChannelNum,
+				aucChannelList[i].eBand) / 1000;
+		if (channels_5g[j] == 0)
+			continue;
+		else if ((u2CountryCode == COUNTRY_CODE_TW) &&
+			 (channels_5g[j] >= 5180 && channels_5g[j] <= 5260)) {
+			/* Taiwan NCC has resolution to follow FCC spec
+			 * to support 5G Band 1/2/3/4
+			 * (CH36~CH48, CH52~CH64, CH100~CH140, CH149~CH165)
+			 * Filter CH36~CH52 for compatible with some old
+			 * devices.
+			 */
+			DBGLOG(REQ, TRACE, "skip channels[%d]=%d, country=%d\n",
+				   j, channels_5g[j], u2CountryCode);
+			continue;
+		} else {
+			DBGLOG(REQ, TRACE, "channels[%d] = %d\n", j,
+				   channels_5g[j]);
+			j++;
+		}
+	}
+	num_channels_5g = j;
+
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (band & BIT(2)) /* 6G band */
+		rlmDomainGetChnlList(prGlueInfo->prAdapter, BAND_6G, TRUE,
+			MAX_CHN_NUM, &ucNumOfChannel, aucChannelList);
+	kalMemZero(channels_6g, sizeof(channels_6g));
+	u2CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
+	for (i = 0, j = 0; i < ucNumOfChannel; i++) {
+		/* We need to report frequency list to HAL */
+		channels_6g[j] =
+			nicChannelNum2Freq(
+				aucChannelList[i].ucChannelNum,
+				aucChannelList[i].eBand) / 1000;
+		if (channels_6g[j] == 0)
+			continue;
+		else {
+			DBGLOG(REQ, TRACE, "channels[%d] = %d\n", j,
+				   channels_6g[j]);
+			j++;
+		}
+	}
+	num_channels_6g = j;
+#endif
+
+
+	kalMemFree(aucChannelList, VIR_MEM_TYPE,
+		sizeof(struct RF_CHANNEL_INFO)*MAX_CHN_NUM);
+
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
+		(sizeof(struct ANDROID_USABLE_CHANNEL_UNIT)*
+		(num_channels_2g + num_channels_5g + num_channels_6g) +
+		sizeof(u16)));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		i4Status = -ENOMEM;
+		goto end;
+	}
+	DBGLOG(REQ, ERROR, "sizeof(comb_matrix):%lu\n,",
+		sizeof(struct ANDROID_USABLE_CHANNEL_UNIT)*
+		(num_channels_2g + num_channels_5g + num_channels_6g) +
+		sizeof(u16));
+
+	pr_channel_array = (struct ANDROID_USABLE_CHANNEL_ARRAY *)
+		kalMemAlloc(
+		(sizeof(struct ANDROID_USABLE_CHANNEL_UNIT)*
+		(num_channels_2g + num_channels_5g + num_channels_6g) +
+		sizeof(struct ANDROID_USABLE_CHANNEL_ARRAY)),
+		VIR_MEM_TYPE);
+
+	if (!pr_channel_array) {
+		DBGLOG(REQ, ERROR,
+			"Can not alloc memory for stats info\n");
+		i4Status = -ENOMEM;
+		goto end;
+	}
+	pr_channel_array->array_size =
+		(num_channels_2g + num_channels_5g + num_channels_6g);
+
+	for (j = 0; j < num_channels_2g; j++) {
+		/* We need to report frequency list to HAL */
+		pr_channel_array->channel_array[j].channel_freq =
+			channels_2g[j];
+		pr_channel_array->channel_array[j].channel_width =
+			ANDROID_WIFI_CHAN_WIDTH_20;
+		pr_channel_array->channel_array[j].iface_mode_mask = 0xff;
+	}
+	for (j = 0; j < num_channels_5g; j++) {
+		/* We need to report frequency list to HAL */
+		pr_channel_array->channel_array
+			[j+num_channels_2g].channel_freq =
+			channels_5g[j];
+		pr_channel_array->channel_array
+			[j+num_channels_2g].channel_width =
+			ANDROID_WIFI_CHAN_WIDTH_80;
+		pr_channel_array->channel_array
+			[j+num_channels_2g].iface_mode_mask = 0xff;
+	}
+	for (j = 0; j < num_channels_6g; j++) {
+		/* We need to report frequency list to HAL */
+		if (iface_type == 0x2 &&
+			channels_6g[j] >= 6435)
+			continue;
+		pr_channel_array->channel_array
+			[j+num_channels_2g+num_channels_5g].channel_freq =
+			channels_6g[j];
+		pr_channel_array->channel_array
+			[j+num_channels_2g+num_channels_5g].channel_width
+			= ANDROID_WIFI_CHAN_WIDTH_160;
+		if (channels_6g[j] < 6435)
+			pr_channel_array->channel_array
+				[j+num_channels_2g+num_channels_5g]
+				.iface_mode_mask
+				= 0xff;
+		else
+			pr_channel_array->channel_array
+				[j+num_channels_2g+num_channels_5g]
+				.iface_mode_mask
+				= 0xfd;
+	}
+
+	if (unlikely(nla_put(skb,
+		WIFI_ATTRIBUTE_USABLE_CHANNEL_ARRAY,
+		sizeof(struct ANDROID_USABLE_CHANNEL_UNIT)*
+		(num_channels_2g + num_channels_5g + num_channels_6g) +
+		sizeof(struct ANDROID_USABLE_CHANNEL_ARRAY),
+		pr_channel_array) < 0)) {
+		i4Status = -EINVAL;
+		goto end;
+	}
+
+	kalMemFree(pr_channel_array,
+		sizeof(struct ANDROID_USABLE_CHANNEL_ARRAY),
+		VIR_MEM_TYPE);
+	return cfg80211_vendor_cmd_reply(skb);
+end:
+	if (pr_channel_array)
+		kalMemFree(pr_channel_array,
+			sizeof(struct ANDROID_USABLE_CHANNEL_ARRAY),
 			VIR_MEM_TYPE);
 	kfree_skb(skb);
 	return i4Status;
