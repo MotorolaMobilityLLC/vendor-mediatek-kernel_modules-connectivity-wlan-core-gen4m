@@ -287,4 +287,14 @@ enum ENUM_AC_PRIORITY {
 	AC_VO_PRIORITY
 };
 
+#if (CFG_SUPPORT_HE_ER == 1)
+struct EVENT_ER_TX_MODE {
+	uint8_t ucBssInfoIdx;
+	boolean fgIsTxErStarted;
+};
+
+void bssProcessErTxModeEvent(IN struct ADAPTER *prAdapter,
+	IN struct WIFI_EVENT *prEvent);
+#endif
+
 #endif /* _BSS_H */

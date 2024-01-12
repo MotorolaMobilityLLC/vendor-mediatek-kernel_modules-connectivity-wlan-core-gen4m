@@ -575,6 +575,18 @@ void nic_txd_v2_compose(
 			ENUM_SPE_SEL_BY_TXD);
 		HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_MODE_TO_DESC(prTxDesc);
 		HAL_MAC_CONNAC2X_TXD_SET_FIXED_RATE_ENABLE(prTxDesc);
+
+#if (CFG_SUPPORT_HE_ER == 1)
+		if (prBssInfo->fgIsTxErStarted == TRUE) {
+			/* 2 HE LTF */
+			HAL_MAC_CONNAC2X_TXD_SET_HE_LTF(prTxDesc, 1);
+			/* 1.6us GI */
+			HAL_MAC_CONNAC2X_TXD_SET_GI_TYPE(prTxDesc, 1);
+			/* DBGLOG(TX, WARN, "nic_txd:LTF:2(%x,GI:1.6(%x", */
+			/*    HAL_MAC_CONNAC2X_TXD_GET_HE_LTF(prTxDesc),    */
+			/*    HAL_MAC_CONNAC2X_TXD_GET_GI_TYPE(prTxDesc));  */
+		}
+#endif
 		break;
 
 	case MSDU_RATE_MODE_MANUAL_CR:

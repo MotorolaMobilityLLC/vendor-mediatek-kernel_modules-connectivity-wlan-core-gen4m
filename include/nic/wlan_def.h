@@ -93,6 +93,9 @@
 #define TX_MODE_HT_MM           0x80
 #define TX_MODE_HT_GF           0xC0
 #define TX_MODE_VHT             0x100
+#define TX_MODE_HE_SU           0x200
+#define TX_MODE_HE_ER_SU        0x240
+#define TX_MODE_HE_TB           0X280
 
 #define RATE_CCK_SHORT_PREAMBLE 0x4
 
@@ -120,6 +123,9 @@
 #define PHY_RATE_MCS8           0x8
 #define PHY_RATE_MCS9           0x9
 #define PHY_RATE_MCS32          0x20
+
+#define PHY_RATE_TONE_242       0x0
+#define PHY_RATE_TONE_106       0x1
 
 #define RATE_CCK_1M_LONG        (TX_MODE_CCK | PHY_RATE_1M)
 #define RATE_CCK_2M_LONG        (TX_MODE_CCK | PHY_RATE_2M)
@@ -170,6 +176,9 @@
 #define RATE_VHT_MCS_7          (TX_MODE_VHT | PHY_RATE_MCS7)
 #define RATE_VHT_MCS_8          (TX_MODE_VHT | PHY_RATE_MCS8)
 #define RATE_VHT_MCS_9          (TX_MODE_VHT | PHY_RATE_MCS9)
+
+#define RATE_HE_ER_TONE_242     (TX_MODE_HE_ER_SU | PHY_RATE_TONE_242)
+#define RATE_HE_ER_TONE_106     (TX_MODE_HE_ER_SU | PHY_RATE_TONE_106)
 
 #define RATE_NSTS_MASK					BITS(9, 10)
 #define RATE_NSTS_OFFSET				9
