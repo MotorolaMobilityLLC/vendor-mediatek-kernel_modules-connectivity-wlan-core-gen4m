@@ -848,6 +848,7 @@ bool IsOverRstTimeThreshold(
 	}
 	return fgIsTimeout;
 }
+
 void glResetSubsysRstProcedure(
 	struct ADAPTER *prAdapter,
 	struct timespec64 *rNowTs,
@@ -906,6 +907,7 @@ void glResetSubsysRstProcedure(
 						CONNDRV_TYPE_WIFI,
 						apucRstReason[eResetReason]);
 			}
+			g_IsNeedWaitCoredump = FALSE;
 #endif
 			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 				glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -947,7 +949,7 @@ void glResetSubsysRstProcedure(
 					CONNDRV_TYPE_WIFI,
 					apucRstReason[eResetReason]);
 		}
-
+		g_IsNeedWaitCoredump = FALSE;
 #endif
 		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 			glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -1028,6 +1030,7 @@ int wlan_reset_thread_main(void *data)
 				fw_log_connsys_coredump_start(
 					g_WholeChipRstType,
 					g_WholeChipRstReason);
+				g_IsNeedWaitCoredump = FALSE;
 #endif
 				if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
 					glResetMsgHandler(WMTMSG_TYPE_RESET,
@@ -1051,9 +1054,6 @@ int wlan_reset_thread_main(void *data)
 				/*wfsys reset done*/
 				g_IsWfsysRstDone = TRUE;
 			}
-#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
-			g_IsNeedWaitCoredump = FALSE;
-#endif
 			DBGLOG(INIT, INFO,
 			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
 				g_WholeChipRstTotalCnt,
