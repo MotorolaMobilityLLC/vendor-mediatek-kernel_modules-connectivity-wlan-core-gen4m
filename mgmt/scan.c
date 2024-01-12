@@ -2960,6 +2960,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 		iPayloadOffset = sortGetPayloadOffset(prAdapter,
 							prBssDesc->aucRawBuf);
+		if (iPayloadOffset < 0) {
+			DBGLOG(SCN, WARN, "Unknown packet\n");
+			return NULL;
+		}
 		prBssDesc->pucIeBuf = prBssDesc->aucRawBuf + iPayloadOffset;
 		prBssDesc->u2IELength = prBssDesc->u2RawLength - iPayloadOffset;
 		u2IELength = prBssDesc->u2IELength;
