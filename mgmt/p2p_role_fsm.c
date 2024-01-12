@@ -1553,6 +1553,13 @@ void p2pRoleFsmRunEventStartAP(IN struct ADAPTER *prAdapter,
 #endif
 	}
 
+	/* Clear current AP's STA_RECORD_T and current AID to prevent
+	 * using previous p2p connection state. This is needed because
+	 * upper layer may add keys before we start SAP/GO.
+	 */
+	prP2pBssInfo->prStaRecOfAP = (struct STA_RECORD *) NULL;
+	prP2pBssInfo->u2AssocId = 0;
+
 	/* Clear list to ensure no client staRec */
 	if (bssGetClientCount(prAdapter, prP2pBssInfo) != 0) {
 		DBGLOG(P2P, WARN,
