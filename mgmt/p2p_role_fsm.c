@@ -429,32 +429,32 @@ p2pRoleFsmStateTransition(IN struct ADAPTER *prAdapter,
 			if (!cnmP2PIsPermitted(prAdapter))
 				return;
 
+			if ((eNextState == P2P_ROLE_STATE_IDLE &&
+				prP2pRoleFsmInfo->eCurrentState ==
+					P2P_ROLE_STATE_IDLE)
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+				|| (eNextState == P2P_ROLE_STATE_SWITCH_CHANNEL)
+#endif
+
 #if CFG_SUPPORT_DBDC
-			if ((cnmDBDCIsReqPeivilegeLock() &&
-				(eNextState == P2P_ROLE_STATE_REQING_CHANNEL &&
+				|| (cnmDBDCIsReqPeivilegeLock() &&
+				((eNextState == P2P_ROLE_STATE_REQING_CHANNEL &&
 					(prChnlReqInfo->eChnlReqType ==
 						CH_REQ_TYPE_GO_START_BSS ||
 					prChnlReqInfo->eChnlReqType ==
-						CH_REQ_TYPE_JOIN)))
-				|| (eNextState == P2P_ROLE_STATE_IDLE &&
-					prP2pRoleFsmInfo->eCurrentState ==
-						P2P_ROLE_STATE_IDLE)
-#if (CFG_SUPPORT_DFS_MASTER == 1)
-				|| eNextState == P2P_ROLE_STATE_SWITCH_CHANNEL
+						CH_REQ_TYPE_JOIN))))
 #endif
 			) {
 				/* Do not activate network ruring DBDC HW
 				 * switch. Otherwise, BSS may use incorrect
 				 * CR and result in TRx problems.
 				 */
-				DBGLOG(P2P, STATE,
+				 DBGLOG(P2P, STATE,
 					"[P2P_ROLE][%d](Bss%d): Skip activate network [%s]\n",
 					prP2pRoleFsmInfo->ucRoleIndex,
 					prP2pRoleFsmInfo->ucBssIndex,
 					p2pRoleFsmGetFsmState(eNextState));
-			} else
-#endif
-			{
+			} else {
 				SET_NET_ACTIVE(prAdapter,
 					prP2pRoleBssInfo->ucBssIndex);
 				nicActivateNetwork(prAdapter,
