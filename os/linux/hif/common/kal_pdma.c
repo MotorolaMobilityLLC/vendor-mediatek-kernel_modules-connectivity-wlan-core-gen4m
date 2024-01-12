@@ -2783,6 +2783,43 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+int32_t wf_reg_via_hif_thread(
+	struct GLUE_INFO *glue,
+	struct CHIP_DBG_OPS *prDebugOps,
+	enum bt_dump_via_wf_op eOp,
+	uint32_t u4Addr, uint32_t *u4Value)
+{
+	int32_t ret = 0, i;
+
+	GLUE_SET_REF_CNT(0, prDebugOps->bt_dump_str.fgHifDone);
+	prDebugOps->bt_dump_str.eOp = eOp;
+	prDebugOps->bt_dump_str.u4Addr = u4Addr;
+	if (eOp == BT_DUMP_VIA_WF_WRITE)
+		prDebugOps->bt_dump_str.u4Value = *u4Value;
+	kalSetBtDumpViaWFEvent(glue);
+
+	for (i = 0; i < 1000; i++) {
+		if (GLUE_GET_REF_CNT(prDebugOps->bt_dump_str.fgHifDone) == 1) {
+			if (eOp == BT_DUMP_VIA_WF_READ)
+				*u4Value = prDebugOps->bt_dump_str.u4Value;
+			break;
+		}
+		kalUsleep(100);
+	}
+
+	if (GLUE_GET_REF_CNT(prDebugOps->bt_dump_str.fgHifDone) == 0) {
+		DBGLOG_LIMITED(HAL, WARN,
+			"op: %d cr timeout addr: %X, value: %X\n", eOp,
+			prDebugOps->bt_dump_str.u4Addr,
+			prDebugOps->bt_dump_str.u4Value);
+		ret = -EFAULT;
+	}
+
+	GLUE_SET_REF_CNT(0, prDebugOps->bt_dump_str.fgHifDone);
+
+	return ret;
+}
+
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value)
 {
@@ -2825,7 +2862,8 @@ int32_t wf_reg_read_wrapper(void *priv,
 		goto exit;
 	}
 
-	HAL_RMCR_RD(HIF_EXTDBG, ad, addr, value);
+	ret = wf_reg_via_hif_thread(glue, prDebugOps,
+		BT_DUMP_VIA_WF_READ, addr, value);
 
 exit:
 	return ret;
@@ -2874,7 +2912,8 @@ int32_t wf_reg_write_wrapper(void *priv,
 		goto exit;
 	}
 
-	HAL_MCR_WR(ad, addr, value);
+	ret = wf_reg_via_hif_thread(glue, prDebugOps,
+		BT_DUMP_VIA_WF_WRITE, addr, &value);
 
 exit:
 	return ret;
@@ -2924,10 +2963,12 @@ int32_t wf_reg_write_mask_wrapper(void *priv,
 		goto exit;
 	}
 
-	HAL_RMCR_RD(HIF_EXTDBG, ad, addr, &val);
+	ret = wf_reg_via_hif_thread(glue, prDebugOps,
+		BT_DUMP_VIA_WF_READ, addr, &val);
 	val &= ~mask;
 	val |= value;
-	HAL_MCR_WR(ad, addr, val);
+	ret = wf_reg_via_hif_thread(glue, prDebugOps,
+		BT_DUMP_VIA_WF_WRITE, addr, &val);
 
 exit:
 	return ret;
@@ -3036,6 +3077,29 @@ int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
 
 exit:
 	return ret;
+}
+
+void halHandleBtDumpviaWF(struct ADAPTER *prAdapter)
+{
+	struct CHIP_DBG_OPS *prDebugOps = NULL;
+	uint32_t val = 0;
+
+	if (prAdapter == NULL) {
+		DBGLOG_LIMITED(HAL, WARN, "adapter is null\n");
+		return;
+	}
+
+	prDebugOps = prAdapter->chip_info->prDebugOps;
+	if (prDebugOps->bt_dump_str.eOp == BT_DUMP_VIA_WF_READ) {
+		HAL_RMCR_RD(HIF_BT_DBG, prAdapter,
+			prDebugOps->bt_dump_str.u4Addr, &val);
+		prDebugOps->bt_dump_str.u4Value = val;
+	} else if (prDebugOps->bt_dump_str.eOp == BT_DUMP_VIA_WF_WRITE) {
+		val = prDebugOps->bt_dump_str.u4Value;
+		HAL_MCR_WR(prAdapter, prDebugOps->bt_dump_str.u4Addr, val);
+	}
+
+	GLUE_SET_REF_CNT(1, prDebugOps->bt_dump_str.fgHifDone);
 }
 #endif
 
