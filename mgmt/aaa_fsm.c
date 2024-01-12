@@ -556,6 +556,12 @@ uint32_t aaaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 		 */
 		prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 
+		/* No Wtbl handling */
+		if (!prStaRec) {
+			secHandleNoWtbl(prAdapter, prSwRfb);
+			prStaRec = prSwRfb->prStaRec;
+		}
+
 		/* We should have the corresponding Sta Record. */
 		if ((!prStaRec) || (!prStaRec->fgIsInUse)) {
 			/* Not to reply association response
