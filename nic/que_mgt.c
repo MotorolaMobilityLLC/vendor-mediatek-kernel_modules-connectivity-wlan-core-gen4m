@@ -587,8 +587,7 @@ void qmActivateStaRec(IN struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_MTK_MCIF_WIFI_SUPPORT
-	if (prAdapter->fgMddpActivated)
-		mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
+	mddpNotifyDrvTxd(prAdapter, prStaRec, TRUE);
 #endif
 
 	DBGLOG(QM, INFO, "QM: +STA[%d]\n", prStaRec->ucIndex);
@@ -647,8 +646,7 @@ void qmDeactivateStaRec(IN struct ADAPTER *prAdapter,
 	qmUpdateStaRec(prAdapter, prStaRec);
 
 #if CFG_MTK_MCIF_WIFI_SUPPORT
-	if (prAdapter->fgMddpActivated)
-		mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
+	mddpNotifyDrvTxd(prAdapter, prStaRec, FALSE);
 #endif
 
 	DBGLOG(QM, INFO, "QM: -STA[%u]\n", prStaRec->ucIndex);

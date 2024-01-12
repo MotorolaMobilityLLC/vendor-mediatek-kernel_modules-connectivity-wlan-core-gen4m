@@ -57,7 +57,9 @@ struct mddp_drv_conf_t gMddpDrvConf = {
 };
 
 struct mddp_drv_handle_t gMddpFunc = {
+#if CFG_MTK_MDDP_WH_SUPPORT
 	.change_state = mddpChangeState,
+#endif
 };
 
 #define MD_ON_OFF_TIMEOUT 1000
@@ -121,6 +123,8 @@ enum BOOTMODE {
 enum BOOTMODE g_wifi_boot_mode = NORMAL_BOOT;
 u_int8_t g_fgMddpEnabled = TRUE;
 
+struct mddpw_net_stat_ext_t stats;
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
@@ -129,6 +133,7 @@ u_int8_t g_fgMddpEnabled = TRUE;
 static void clear_md_wifi_off_bit(void);
 static void clear_md_wifi_on_bit(void);
 static bool wait_for_md_on_complete(void);
+static void save_mddp_stats(void);
 
 static int32_t mddpRegisterCb(void)
 {
@@ -153,6 +158,8 @@ static int32_t mddpRegisterCb(void)
 	DBGLOG(INIT, INFO, "mddp_drv_attach ret: %d, g_fgMddpEnabled: %d\n",
 			ret, g_fgMddpEnabled);
 
+	kalMemZero(&stats, sizeof(struct mddpw_net_stat_ext_t));
+
 	return ret;
 }
 
@@ -168,10 +175,11 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
 	struct net_device_stats *prStats;
 	struct GLUE_INFO *prGlueInfo;
-	struct mddpw_net_stat_t mddpNetStats;
+	struct mddpw_net_stat_ext_t mddpNetStats;
 	int32_t ret;
+	uint8_t i = 0;
 
-	if (!gMddpWFunc.get_net_stat)
+	if (!gMddpWFunc.get_net_stat_ext)
 		return 0;
 
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -180,35 +188,43 @@ int32_t mddpGetMdStats(IN struct net_device *prDev)
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 
 	if (!prGlueInfo || (prGlueInfo->u4ReadyFlag == 0) ||
-			!prGlueInfo->prAdapter ||
-			!prGlueInfo->prAdapter->fgMddpActivated)
+			!prGlueInfo->prAdapter)
 		return 0;
 
 	if (!prNetDevPrivate->ucMddpSupport)
 		return 0;
 
-	/* TODO: get stats by each netdev interface. */
-	ret = gMddpWFunc.get_net_stat(&mddpNetStats);
+	ret = gMddpWFunc.get_net_stat_ext(&mddpNetStats);
 	if (ret != 0) {
 		DBGLOG(INIT, ERROR, "get_net_stat fail, ret: %d.\n", ret);
 		return 0;
 	}
+	for (i = 0; i < NW_IF_NUM_MAX; i++) {
+		struct mddpw_net_stat_elem_ext_t *element, *prev;
 
-	prStats->rx_packets += mddpNetStats.rx_packets;
-	prStats->tx_packets += mddpNetStats.tx_packets;
-	prStats->rx_bytes += mddpNetStats.rx_bytes;
-	prStats->tx_bytes += mddpNetStats.tx_bytes;
-	prStats->rx_errors += mddpNetStats.rx_errors;
-	prStats->tx_errors += mddpNetStats.tx_errors;
-	DBGLOG(INIT, TRACE, "name: %s, [%u, %u, %u, %u, %u, %u], ret: %d.\n",
-			prDev->name,
-			mddpNetStats.rx_packets,
-			mddpNetStats.tx_packets,
-			mddpNetStats.rx_bytes,
-			mddpNetStats.tx_bytes,
-			mddpNetStats.rx_errors,
-			mddpNetStats.tx_errors,
-			ret);
+		element = &mddpNetStats.ifs[0][i];
+		prev = &stats.ifs[0][i];
+		if (kalStrnCmp(element->nw_if_name, prDev->name,
+				IFNAMSIZ) != 0)
+			continue;
+
+		prStats->rx_packets +=
+			element->rx_packets + prev->rx_packets;
+		prStats->tx_packets +=
+			element->tx_packets + prev->tx_packets;
+		prStats->rx_bytes +=
+			element->rx_bytes + prev->rx_bytes;
+		prStats->tx_bytes +=
+			element->tx_bytes + prev->tx_bytes;
+		prStats->rx_errors +=
+			element->rx_errors + prev->rx_errors;
+		prStats->tx_errors +=
+			element->tx_errors + prev->tx_errors;
+		prStats->rx_dropped +=
+			element->rx_dropped + prev->rx_dropped;
+		prStats->tx_dropped +=
+			element->tx_dropped + prev->tx_dropped;
+	}
 
 	return 0;
 }
@@ -533,24 +549,13 @@ int32_t mddpNotifyWifiOnEnd(void)
 		ret = wait_for_md_on_complete() ?
 				WLAN_STATUS_SUCCESS :
 				WLAN_STATUS_FAILURE;
-	if (ret == WLAN_STATUS_SUCCESS) {
-		struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
-
-		if (prGlueInfo && prGlueInfo->u4ReadyFlag &&
-				prGlueInfo->prAdapter)
-			prGlueInfo->prAdapter->fgMddpActivated = true;
-	}
 	return ret;
 }
 
 void mddpNotifyWifiOffStart(void)
 {
 	int32_t ret;
-	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
 
-	if (prGlueInfo && prGlueInfo->u4ReadyFlag &&
-			prGlueInfo->prAdapter)
-		prGlueInfo->prAdapter->fgMddpActivated = false;
 #if (CFG_SUPPORT_CONNAC2X == 0)
 	mtk_ccci_register_md_state_cb(NULL);
 #endif
@@ -600,6 +605,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 		int32_t ret;
 
+		save_mddp_stats();
 		mddpNotifyWifiOnStart();
 		ret = mddpNotifyWifiOnEnd();
 		if (ret != WLAN_STATUS_SUCCESS) {
@@ -640,10 +646,12 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	return 0;
 }
 
+#if CFG_MTK_MDDP_WH_SUPPORT
 int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	u_int8_t fgHalted = kalIsHalted();
 
 	if (gPrDev == NULL) {
 		DBGLOG(INIT, ERROR, "gPrDev is NULL.\n");
@@ -655,11 +663,18 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
 		return 0;
 	}
+
+	if (fgHalted || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "fgHalted: %d, u4ReadyFlag: %d\n",
+				fgHalted, prGlueInfo->u4ReadyFlag);
+		return 0;
+	}
+
 	prAdapter = prGlueInfo->prAdapter;
-		if (prAdapter == NULL) {
-			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-			return 0;
-		}
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return 0;
+	}
 
 	switch (event) {
 	case MDDP_STATE_ENABLING:
@@ -692,6 +707,7 @@ int32_t mddpChangeState(enum mddp_state_e event, void *buf, uint32_t *buf_len)
 	return 0;
 
 }
+#endif
 
 static void clear_md_wifi_off_bit(void)
 {
@@ -819,6 +835,38 @@ void  mddpMdStateChangedCb(enum MD_STATE old_state,
 		break;
 	default:
 		break;
+	}
+}
+
+static void save_mddp_stats(void)
+{
+	struct mddpw_net_stat_ext_t temp;
+	uint8_t i = 0;
+	int32_t ret;
+
+	if (!gMddpWFunc.get_net_stat_ext)
+		return;
+
+	ret = gMddpWFunc.get_net_stat_ext(&temp);
+	if (ret != 0) {
+		DBGLOG(INIT, ERROR, "get_net_stat fail, ret: %d.\n", ret);
+		return;
+	}
+
+	for (i = 0; i < NW_IF_NUM_MAX; i++) {
+		struct mddpw_net_stat_elem_ext_t *element, *curr;
+
+		element = &temp.ifs[0][i];
+		curr = &stats.ifs[0][i];
+
+		curr->rx_packets += element->rx_packets;
+		curr->tx_packets += element->tx_packets;
+		curr->rx_bytes += element->rx_bytes;
+		curr->tx_bytes += element->tx_bytes;
+		curr->rx_errors += element->rx_errors;
+		curr->tx_errors += element->tx_errors;
+		curr->rx_dropped += element->rx_dropped;
+		curr->tx_dropped += element->tx_dropped;
 	}
 }
 
