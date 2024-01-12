@@ -558,14 +558,15 @@ struct BUS_INFO mt6653_bus_info = {
 	.tx_altx_data_idx = 10,
 	.rx_data_ring_num = 6,
 	.rx_evt_ring_num = 3,
+	.rx_data_ring_size = 1024,
 #else
 	.tx_ring3_data_idx = 3,
 	.tx_prio_data_idx = 4,
 	.tx_altx_data_idx = 5,
 	.rx_data_ring_num = 3,
 	.rx_evt_ring_num = 2,
-#endif /* CFG_ENABLE_MAWD_MD_RING */
 	.rx_data_ring_size = 3072,
+#endif /* CFG_ENABLE_MAWD_MD_RING */
 	.rx_evt_ring_size = 128,
 	.rx_data_ring_prealloc_size = 1024,
 	.fw_own_clear_addr = CONNAC3X_BN0_IRQ_STAT_ADDR,
@@ -2036,7 +2037,8 @@ static void mt6653ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 	u4WrVal = enable ? 0xF800 : 0;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
-#if (CFG_MTK_MDDP_SUPPORT == 1) && (CFG_MTK_CCCI_SUPPORT == 1)
+#if (CFG_MTK_MDDP_SUPPORT == 1) && (CFG_MTK_CCCI_SUPPORT == 1) && \
+	(CFG_ENABLE_MAWD_MD_RING == 0)
 	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_MD_CTRL0_ADDR;
 	u4WrVal = (prAdapter->u8MdRingIdxBase) & DMA_LOWER_32BITS_MASK;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);

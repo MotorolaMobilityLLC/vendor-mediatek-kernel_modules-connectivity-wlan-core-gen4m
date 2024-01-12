@@ -602,6 +602,11 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	u4Addr = MAWD_RRO_ACK_SN_BASE_M;
 	u4Val = MAWD_WFDMA_HIGH_ADDR;
 	kalDevRegWrite(prGlueInfo, u4Addr, u4Val);
+
+#if (CFG_MTK_FPGA_PLATFORM == 1)
+	/* set remapping CR for MAWD in connsys FPGA */
+	kalDevRegWrite(prGlueInfo, 0x7C023118, 0x1);
+#endif
 }
 
 void halMawdAllocRxBlkRing(struct GLUE_INFO *prGlueInfo,

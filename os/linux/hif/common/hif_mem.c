@@ -318,6 +318,8 @@ int halAllocHifMem(struct platform_device *pdev,
 
 		if (u4Idx == TX_RING_DATA0 ||
 		    u4Idx == TX_RING_DATA1 ||
+		    u4Idx == TX_RING_DATA2 ||
+		    u4Idx == TX_RING_DATA3 ||
 		    u4Idx == TX_RING_DATA_PRIO ||
 		    u4Idx == TX_RING_DATA_ALTX)
 			u4Size = TX_RING_DATA_SIZE;
@@ -332,7 +334,8 @@ int halAllocHifMem(struct platform_device *pdev,
 	u4EvtNum = prBusInfo->rx_evt_ring_num;
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		if (u4Idx == RX_RING_DATA0 || u4Idx == RX_RING_DATA1 ||
-		    u4Idx == RX_RING_DATA2) {
+		    u4Idx == RX_RING_DATA2 || u4Idx == RX_RING_DATA3 ||
+		    u4Idx == RX_RING_DATA4 || u4Idx == RX_RING_DATA5) {
 			if (u4DataNum == 0)
 				continue;
 
@@ -373,7 +376,8 @@ int halAllocHifMem(struct platform_device *pdev,
 		uint32_t u4Cnt, u4PktSize;
 
 		if (u4Idx == RX_RING_DATA0 || u4Idx == RX_RING_DATA1 ||
-		    u4Idx == RX_RING_DATA2) {
+		    u4Idx == RX_RING_DATA2 || u4Idx == RX_RING_DATA3 ||
+		    u4Idx == RX_RING_DATA4 || u4Idx == RX_RING_DATA5) {
 			if (u4DataNum == 0)
 				continue;
 
