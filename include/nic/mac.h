@@ -605,11 +605,13 @@
 /* 7.3.1.1 Authentication Algorithm Number field */
 #define AUTH_ALGORITHM_NUM_FIELD_LEN                2
 
-#define AUTH_ALGORITHM_NUM_OPEN_SYSTEM          0	/* Open System */
-#define AUTH_ALGORITHM_NUM_SHARED_KEY           1	/* Shared Key */
-#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  \
-	2	/* Fast BSS Transition */
-#define AUTH_ALGORITHM_NUM_SAE                  3	/* WPA3 - SAE */
+#define AUTH_ALGORITHM_NUM_OPEN_SYSTEM          0 /* Open System */
+#define AUTH_ALGORITHM_NUM_SHARED_KEY           1 /* Shared Key */
+#define AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION  2 /* Fast BSS Transition */
+#define AUTH_ALGORITHM_NUM_SAE                  3 /* WPA3 - SAE */
+#define AUTH_ALGORITHM_NUM_FILS_SK		4 /* FILS - Shared key */
+#define AUTH_ALGORITHM_NUM_FILS_SK_PFS		5 /* FILS - SK with PFS */
+#define AUTH_ALGORITHM_NUM_FILS_PK		6 /* FILS - Public key */
 
 /* 7.3.1.2 Authentication Transaction Sequence Number field */
 #define AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN      2
@@ -853,6 +855,8 @@
 #define STATUS_INVALID_MDE                          54
 /* Invalid FTE */
 #define STATUS_INVALID_FTE                          55
+#define STATUS_FILS_AUTH_FAILURE		    112
+#define STATUS_UNKNOWN_AUTH_SERVER		    113
 /* Denied because the requesting STA is afflicated with a
  * non-AP MLD that is associated with the AP MLD
  */
@@ -934,6 +938,8 @@
 #if (CFG_SUPPORT_TWT == 1)
 #define CATEGORY_S1G_ACTION                         22  /* S1G action */
 #endif
+/* FILS action */
+#define CATEGORY_FILS_ACTION                        26
 /* EHT */
 #define CATEGORY_EHT_ACTION			    36
 /* Protected EHT */
@@ -1234,6 +1240,8 @@
 	244 /* RSN Extension */
 #define ELEM_ID_RESERVED \
 	255 /* Reserved */
+#define	ELEM_ID_EXTENSION \
+	255
 #define ELEM_ID_MAX_NUM \
 	256 /* EID: 0-255 */
 
@@ -1370,6 +1378,14 @@ enum MBO_TRANSITION_REJECT_REASON {
 	MBO_TRANSITION_REJECT_REASON_SERVICES = 6,
 };
 
+#define FILS_INFO_NUM_PUB_KEY_ID	BIT(0, 2)
+#define FILS_INFO_NUM_REALM_ID		BIT(3, 5)
+#define FILS_INFO_IP_ADDR_CONFIG	BIT(6)
+#define FILS_INFO_CACHE_ID_INCLUDED	BIT(7)
+#define FILS_INFO_HESSID_INCLUDED	BIT(8)
+#define FILS_INFO_SK_SUPPORTED		BIT(9)
+#define FILS_INFO_SK_PFS_SUPPORTED	BIT(10)
+#define FILS_INFO_PK_SUPPORTED		BIT(11)
 
 /* 7.3.2.1 SSID element */
 #define ELEM_MAX_LEN_SSID                           32
@@ -3419,6 +3435,55 @@ struct IE_BSS_MAX_IDLE_PERIOD {
 	uint8_t ucLength;
 	uint16_t u2MaxIdlePeriod;
 	uint8_t ucIdleOptions;
+} __KAL_ATTRIB_PACKED__;
+
+/* 9.4.2.183 FILS Indication element */
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_FILS_INDICATION_FRAME {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint16_t u2Info;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_FILS_NONCE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t aucNonce[16];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_FILS_SESSION {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t aucSession[8];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_FILS_WRAPPED_DATA {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t aucData[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_FILS_KEY_CONFIRMATION {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t aucKeyAuth[0];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct IE_KEY_DELIVERY {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t ucExtId;
+	uint8_t aucKeyRSC[8];
+	uint8_t aucKDEList[0];
 } __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_TWT == 1)

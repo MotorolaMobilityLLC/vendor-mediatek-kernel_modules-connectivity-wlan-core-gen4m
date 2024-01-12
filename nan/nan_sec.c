@@ -2294,8 +2294,6 @@ nan_sec_wpa_supplicant_start(void) {
 		return;
 	}
 
-	g_prAdapter = prAdapter;
-
 	/* CTX */
 	kalMemZero(&g_rNanSecCtx, sizeof(struct _NAN_SEC_CTX));
 

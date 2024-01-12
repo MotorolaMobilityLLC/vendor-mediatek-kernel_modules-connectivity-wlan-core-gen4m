@@ -3970,6 +3970,11 @@ static void wlanCreateWirelessDevice(void)
 #if CFG_SUPPORT_WPA3
 	prWiphy->features |= NL80211_FEATURE_SAE;
 #endif
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_FILS_SK_OFFLOAD);
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
 	prWiphy->vendor_commands = mtk_wlan_vendor_ops;
 	prWiphy->n_vendor_commands = sizeof(mtk_wlan_vendor_ops) /
@@ -6321,6 +6326,10 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 
 	/* send regulatory information to firmware */
 	rlmDomainSendInfoToFirmware(prAdapter);
+
+#if CFG_SUPPORT_CRYPTO
+	g_prAdapter = prAdapter;
+#endif
 
 	/* set MAC address */
 	if (!bAtResetFlow) {

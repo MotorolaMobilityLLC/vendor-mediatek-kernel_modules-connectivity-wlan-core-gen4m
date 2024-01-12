@@ -358,6 +358,10 @@ struct CONNECTION_SETTINGS {
 	/* b0~3: trigger-en AC0~3. b4~7: delivery-en AC0~3 */
 	uint8_t bmfgApsdEnAc;
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	struct EAP_ERP_KEY rErpKey;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 	u_int8_t fgSecModeChangeStartTimer;
 #endif
@@ -1090,6 +1094,12 @@ struct FT_EVENT_PARAMS *
 	aisGetFtEventParam(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+struct EAP_ERP_KEY *aisGetErpKey(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 u_int8_t addAxBlacklist(struct ADAPTER *prAdapter,
 	uint8_t aucBSSID[],

@@ -167,11 +167,12 @@ rijndaelDecrypt(const u32 rk[/*44*/], int Nr, const u8 ct[16], u8 pt[16]) {
 	PUTU32(pt + 12, s3);
 }
 
-void
-aes_decrypt(void *ctx, const u8 *crypt, u8 *plain) {
-	u32 *rk = ctx;
 
+int aes_decrypt(void *ctx, const u8 *crypt, u8 *plain)
+{
+	u32 *rk = ctx;
 	rijndaelDecrypt(ctx, rk[AES_PRIV_NR_POS], crypt, plain);
+	return 0;
 }
 
 void

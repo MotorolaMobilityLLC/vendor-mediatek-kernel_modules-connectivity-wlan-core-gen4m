@@ -1134,6 +1134,7 @@
  * Flags of Features
  *------------------------------------------------------------------------------
  */
+
 #ifndef CFG_SUPPORT_TDLS
 #define CFG_SUPPORT_TDLS		1
 #endif
@@ -1229,6 +1230,14 @@
 #ifndef CFG_SUPPORT_DPP
 #define CFG_SUPPORT_DPP                     1
 #endif
+
+#ifndef CFG_SUPPORT_CRYPTO
+#define CFG_SUPPORT_CRYPTO			0
+#endif
+
+#ifndef CFG_SUPPORT_FILS_SK_OFFLOAD
+#define CFG_SUPPORT_FILS_SK_OFFLOAD		0
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 #if (CFG_SUPPORT_802_11K == 1) && (CFG_SUPPORT_SUPPLICANT_SME == 1)
 /* Enable to do beacon reports by supplicant.

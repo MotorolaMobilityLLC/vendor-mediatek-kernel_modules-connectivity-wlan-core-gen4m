@@ -1088,20 +1088,35 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 			uint8_t ucBssIndex)
 {
 	struct PMKID_ENTRY *entry = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+	uint8_t	*prBssid = NULL;
+	struct PARAM_SSID rSsid = {0};
+	uint8_t	*prFilsCacheId = NULL;
 
 	if (!prStaRec) {
 		DBGLOG(AIS, ERROR, "prStaRec is NULL!");
 		return NULL;
 	}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (mldIsMultiLinkFormed(prAdapter, prStaRec)) {
-		entry = rsnSearchPmkidEntry(prAdapter,
-		      prStaRec->aucMldAddr, ucBssIndex);
-	} else
-#endif
-		entry = rsnSearchPmkidEntry(prAdapter,
-		      prStaRec->aucMacAddr, ucBssIndex);
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+	prBssid = cnmStaRecAuthAddr(prAdapter, prStaRec);
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA256 ||
+	    prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA384) {
+		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+		prFilsCacheId = scanGetFilsCacheIdFromBssDesc(prBssDesc);
+		prBssid = NULL;
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
+	entry = rsnSearchPmkidEntryEx(prAdapter,
+		prBssid, /* bssid */
+		&rSsid, /* SSDID */
+		prFilsCacheId, /* cache id */
+		ucBssIndex);
 
 	/* do not use invalid PMKID */
 	if (entry && rsnApInvalidPMK(entry->u2StatusCode))
@@ -1156,7 +1171,6 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter, struct BSS_DESC *prBss,
 			entry = rsnSearchPmkidEntry(prAdapter,
 					prBss->aucBSSID,
 					prAisBssInfo->ucBssIndex);
-
 		if (entry)
 			return;
 
@@ -1344,6 +1358,29 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 					"JOIN INIT: eAuthMode == OPEN | SAE\n");
 			}
 			break;
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+		case AUTH_MODE_FILS:
+			if (prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FILS_SK) {
+				if (aisGetErpKey(prAdapter, ucBssIndex) ||
+				    aisSearchPmkidEntry(prAdapter,
+					prStaRec, ucBssIndex)) {
+					prAisFsmInfo->ucAvailableAuthTypes =
+						(uint8_t) AUTH_TYPE_FILS_SK;
+					DBGLOG(AIS, INFO,
+						"JOIN INIT: eAuthMode == FILS\n");
+				} else {
+					DBGLOG(AIS, ERROR,
+						"JOIN INIT: FILS failed\n");
+					return;
+				}
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
+				DBGLOG(AIS, INFO,
+					"JOIN INIT: eAuthMode == OPEN\n");
+			}
+			break;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 		default:
 			DBGLOG(AIS, ERROR,
 			       "JOIN INIT: Auth Algorithm : %d was not supported by JOIN\n",
@@ -1391,7 +1428,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 		case AUTH_MODE_WPA2_PSK:
 		case AUTH_MODE_WPA3_OWE:
 			if (prWpaInfo->u4WpaVersion ==
-				IW_AUTH_WPA_VERSION_DISABLED &&
+			    IW_AUTH_WPA_VERSION_DISABLED &&
 			    prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FT) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
@@ -1431,6 +1468,29 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 					"SAE: change AUTH to OPEN | SAE when roaming with PMK\n");
 			}
 			break;
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+		case AUTH_MODE_FILS:
+			if (prWpaInfo->u4AuthAlg == IW_AUTH_ALG_FILS_SK) {
+				if (aisGetErpKey(prAdapter, ucBssIndex) ||
+				    aisSearchPmkidEntry(prAdapter,
+					prStaRec, ucBssIndex)) {
+					prAisFsmInfo->ucAvailableAuthTypes =
+						(uint8_t) AUTH_TYPE_FILS_SK;
+					DBGLOG(AIS, INFO,
+						"FILS: roaming eAuthMode == FILS\n");
+				} else {
+					DBGLOG(AIS, ERROR,
+						"FILS: roaming failed\n");
+					return;
+				}
+			} else {
+				prAisFsmInfo->ucAvailableAuthTypes =
+					(uint8_t) AUTH_TYPE_OPEN_SYSTEM;
+				DBGLOG(AIS, INFO,
+					"FILS: roaming eAuthMode == OPEN\n");
+			}
+			break;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 		default:
 			prAisFsmInfo->ucAvailableAuthTypes =
 			    prAisSpecificBssInfo->ucRoamingAuthTypes;
@@ -1461,6 +1521,18 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 		prStaRec->ucAuthAlgNum =
 		    (uint8_t) AUTH_ALGORITHM_NUM_SHARED_KEY;
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
+		   AUTH_TYPE_FILS_SK) {
+		DBGLOG(AIS, LOUD,
+		       "JOIN INIT: Try to do Authentication with AuthType == FILS_SK.\n");
+
+		prAisFsmInfo->ucAvailableAuthTypes &=
+		    ~(uint8_t) AUTH_TYPE_FILS_SK;
+
+		prStaRec->ucAuthAlgNum =
+		    (uint8_t) AUTH_ALGORITHM_NUM_FILS_SK;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 	} else if (prAisFsmInfo->ucAvailableAuthTypes & (uint8_t)
 		   AUTH_TYPE_FAST_BSS_TRANSITION) {
 
@@ -4834,6 +4906,12 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 		kalMemZero(prFtIEs,
 			sizeof(*prFtIEs));
 	}
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (prConnSettings)
+		kalMemZero(&prConnSettings->rErpKey,
+			   sizeof(prConnSettings->rErpKey));
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -8966,6 +9044,22 @@ struct FT_EVENT_PARAMS *aisGetFtEventParam(
 {
 	return &aisGetConnSettings(prAdapter, ucBssIndex)->rFtEventParam;
 }
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+struct EAP_ERP_KEY *aisGetErpKey(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	struct EAP_ERP_KEY *erp;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return NULL;
+
+	erp = &aisGetConnSettings(prAdapter, ucBssIndex)->rErpKey;
+
+	return erp->fgValid ? erp : NULL;
+}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 uint8_t *aisGetFsmState(
 	enum ENUM_AIS_STATE eCurrentState) {

@@ -1154,6 +1154,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
+
 	if (aisGetAisSpecBssInfo(prAdapter,
 		ucBssIndex)->fgCounterMeasure) {
 		DBGLOG(APS, WARN, MACSTR " Skip in counter measure period.\n",

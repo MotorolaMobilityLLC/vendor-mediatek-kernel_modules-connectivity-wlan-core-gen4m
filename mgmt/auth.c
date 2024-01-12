@@ -40,6 +40,9 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 	{0, authCalculateRSNIELen, authAddRSNIE}, /* Element ID: 48 */
 	{(ELEM_HDR_LEN + 1), NULL, authAddMDIE}, /* Element ID: 54 */
 	{0, authCalculateFTIELen, authAddFTIE}, /* Element ID: 55 */
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	{FILS_AUTH_MAX_LEN, 0, filsBuildAuthIE},
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	{0, mldCalculateMlIELen, mldGenerateMlIE}
 #endif
@@ -47,7 +50,13 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 };
 
 struct HANDLE_IE_ENTRY rxAuthIETable[] = {
-	{ELEM_ID_CHALLENGE_TEXT, authHandleIEChallengeText}
+	{ELEM_ID_CHALLENGE_TEXT, 0, authHandleIEChallengeText},
+	{ELEM_ID_RSN, 0, authHandleRSNE},
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	{ELEM_ID_EXTENSION, ELEM_EXT_ID_FILS_NONCE, filsRxAuthNonce},
+	{ELEM_ID_EXTENSION, ELEM_EXT_ID_FILS_SESSION, filsRxAuthSession},
+	{ELEM_ID_EXTENSION, ELEM_EXT_ID_FILS_WRAPPED_DATA, filsRxAuthWrapped},
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 };
 
 /*******************************************************************************
@@ -743,7 +752,7 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void authHandleIEChallengeText(struct ADAPTER *prAdapter,
+uint32_t authHandleIEChallengeText(struct ADAPTER *prAdapter,
 			       struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr)
 {
 	struct WLAN_AUTH_FRAME *prAuthFrame;
@@ -751,9 +760,10 @@ void authHandleIEChallengeText(struct ADAPTER *prAdapter,
 	uint16_t u2TransactionSeqNum;
 
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	if (!prStaRec)
-		return;
-
+	if (!prStaRec) {
+		DBGLOG(SAA, ERROR, "No starec\n");
+		return WLAN_STATUS_FAILURE;
+	}
 	/* For Management, frame header and payload are in
 	 * a continuous buffer
 	 */
@@ -777,8 +787,10 @@ void authHandleIEChallengeText(struct ADAPTER *prAdapter,
 		}
 		prStaRec->prChallengeText =
 		    cnmMemAlloc(prAdapter, RAM_TYPE_MSG, IE_SIZE(prIEHdr));
-		if (prStaRec->prChallengeText == NULL)
-			return;
+		if (prStaRec->prChallengeText == NULL) {
+			DBGLOG(SAA, ERROR, "No memory\n");
+			return WLAN_STATUS_RESOURCES;
+		}
 
 		/* Save the Challenge Text from Auth Seq 2 Frame,
 		 * before sending Auth Seq 3 Frame
@@ -786,9 +798,27 @@ void authHandleIEChallengeText(struct ADAPTER *prAdapter,
 		COPY_IE(prStaRec->prChallengeText, prIEHdr);
 	}
 
-	return;
-
+	return WLAN_STATUS_SUCCESS;
 }				/* end of authAddIEChallengeText() */
+
+uint32_t authHandleRSNE(struct ADAPTER *prAdapter,
+		    struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr)
+{
+	struct STA_RECORD *prStaRec;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+	if (!prStaRec) {
+		DBGLOG(SAA, ERROR, "No starec\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (filsRxAuthRSNE(prAdapter, prSwRfb, prIEHdr) !=
+		WLAN_STATUS_SUCCESS)
+		return WLAN_STATUS_FAILURE;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+	return WLAN_STATUS_SUCCESS;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -808,7 +838,9 @@ uint32_t authProcessRxAuth2_Auth4Frame(struct ADAPTER *prAdapter,
 	uint16_t u2IEsLen;
 	uint16_t u2Offset;
 	uint8_t ucIEID;
+	uint8_t ucIEExtID;
 	uint32_t i;
+	uint32_t u4Status;
 
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
@@ -819,16 +851,25 @@ uint32_t authProcessRxAuth2_Auth4Frame(struct ADAPTER *prAdapter,
 
 	IE_FOR_EACH(pucIEsBuffer, u2IEsLen, u2Offset) {
 		ucIEID = IE_ID(pucIEsBuffer);
+		ucIEExtID = IE_ID_EXT(pucIEsBuffer);
 
 		for (i = 0;
 		     i <
 		     (sizeof(rxAuthIETable) / sizeof(struct HANDLE_IE_ENTRY));
 		     i++) {
-			if ((ucIEID == rxAuthIETable[i].ucElemID)
-			    && (rxAuthIETable[i].pfnHandleIE != NULL))
-				rxAuthIETable[i].pfnHandleIE(prAdapter,
-					prSwRfb,
+			if (ucIEID != rxAuthIETable[i].ucElemID)
+				continue;
+			if (ucIEID == ELEM_ID_EXTENSION && ucIEExtID !=
+				rxAuthIETable[i].ucElemExtID)
+				continue;
+
+			if (rxAuthIETable[i].pfnHandleIE != NULL) {
+				u4Status = rxAuthIETable[i].pfnHandleIE(
+					prAdapter, prSwRfb,
 					(struct IE_HDR *)pucIEsBuffer);
+				if (u4Status != WLAN_STATUS_SUCCESS)
+					return u4Status;
+			}
 		}
 	}
 	if (prAuthFrame->u2AuthAlgNum ==
@@ -1357,7 +1398,7 @@ uint32_t authCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	/* Use R0 with auth, R1 with assoc */
 	struct FT_IES *prFtIEs = aisGetFtIe(prAdapter, ucBssIdx, AIS_FT_R0);
 
-	if (!prFtIEs || !prFtIEs->prFTIE ||
+	if (!prFtIEs || !prFtIEs->prFTIE || !prStaRec ||
 	    !rsnIsFtOverTheAir(prAdapter, ucBssIdx, prStaRec->ucIndex))
 		return 0;
 	return IE_SIZE(prFtIEs->prFTIE);
@@ -1394,7 +1435,25 @@ uint32_t authCalculateRSNIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 void authAddRSNIE(struct ADAPTER *prAdapter,
 		  struct MSDU_INFO *prMsduInfo)
 {
-	authAddRSNIE_impl(prAdapter, prMsduInfo, AIS_FT_R0);
+	struct STA_RECORD *prStaRec;
+
+	prStaRec = cnmGetStaRecByIndex(prAdapter,
+		prMsduInfo->ucStaRecIndex);
+	if (!prStaRec)
+		return;
+
+	if (rsnIsFtOverTheAir(prAdapter, prStaRec->ucBssIndex,
+			prStaRec->ucIndex)) {
+		authAddRSNIE_impl(prAdapter, prMsduInfo, AIS_FT_R0);
+		return;
+	}
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (rsnIsFilsAuthAlg(prStaRec->ucAuthAlgNum)) {
+		rsnGenerateRSNIEImpl(prAdapter, prMsduInfo);
+		return;
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 }
 
 uint32_t authAddRSNIE_impl(struct ADAPTER *prAdapter,

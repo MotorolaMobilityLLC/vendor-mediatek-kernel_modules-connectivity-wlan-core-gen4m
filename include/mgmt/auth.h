@@ -84,8 +84,11 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 			   uint16_t u2TransactionSeqNum,
 			   uint16_t *pu2StatusCode);
 
-void authHandleIEChallengeText(struct ADAPTER *prAdapter,
-			       struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr);
+uint32_t authHandleIEChallengeText(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr);
+
+uint32_t authHandleRSNE(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, struct IE_HDR *prIEHdr);
 
 uint32_t authProcessRxAuth2_Auth4Frame(struct ADAPTER
 				       *prAdapter, struct SW_RFB *prSwRfb);

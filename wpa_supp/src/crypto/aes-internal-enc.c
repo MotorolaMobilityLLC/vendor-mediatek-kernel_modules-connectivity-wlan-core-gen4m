@@ -21,12 +21,12 @@
 
 #include "wpa_supp/FourWayHandShake.h"
 
+#include "wpa_supp/src/utils/common.h"
 #include "wpa_supp/src/crypto/aes_i.h"
 #include "wpa_supp/src/crypto/crypto.h"
-#include "wpa_supp/src/utils/common.h"
 
-static void
-rijndaelEncrypt(const u32 rk[], int Nr, const u8 pt[16], u8 ct[16]) {
+static void rijndaelEncrypt(const u32 rk[], int Nr, const u8 pt[16], u8 ct[16])
+{
 	u32 s0, s1, s2, s3, t0, t1, t2, t3;
 #ifndef FULL_UNROLL
 	int r;
@@ -106,7 +106,7 @@ rijndaelEncrypt(const u32 rk[], int Nr, const u8 pt[16], u8 ct[16]) {
 }
 
 void *
-aes_encrypt_init_wpa(const u8 *key, size_t len) {
+aes_encrypt_init(const u8 *key, size_t len) {
 	u32 *rk;
 	int res = 0;
 
@@ -122,15 +122,17 @@ aes_encrypt_init_wpa(const u8 *key, size_t len) {
 	return rk;
 }
 
-void
-aes_encrypt_wpa(void *ctx, const u8 *plain, u8 *crypt) {
-	u32 *rk = ctx;
 
+int aes_encrypt(void *ctx, const u8 *plain, u8 *crypt)
+{
+	u32 *rk = ctx;
 	rijndaelEncrypt(ctx, rk[AES_PRIV_NR_POS], plain, crypt);
+	return 0;
 }
 
-void
-aes_encrypt_deinit_wpa(void *ctx) {
+
+void aes_encrypt_deinit(void *ctx)
+{
 	os_memset(ctx, 0, AES_PRIV_SIZE);
 	os_free(ctx);
 }

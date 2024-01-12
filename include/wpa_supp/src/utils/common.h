@@ -111,7 +111,6 @@ typedef INT8 s8;
 #else
 /*/#include <stdint.h>*/
 #endif
-#if 0 /*/*/
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint16_t u16;
@@ -120,7 +119,6 @@ typedef int64_t s64;
 typedef int32_t s32;
 typedef int16_t s16;
 typedef int8_t s8;
-#endif
 #define WPA_TYPES_DEFINED
 #endif /* !WPA_TYPES_DEFINED */
 
@@ -412,9 +410,12 @@ void perror(const char *s);
 #define __force __attribute__((force))
 #define __bitwise __attribute__((bitwise))
 #else
+#ifndef __force
 #define __force
-/* whsu */
-/* #define __bitwise */
+#endif
+#ifndef __bitwise
+#define __bitwise
+#endif
 #endif
 
 typedef u16 __bitwise be16;

@@ -166,6 +166,15 @@ os_memcmp_const(const void *a, const void *b, size_t len) {
 	return kalMemCmp(a, b, len);
 }
 
+void *os_memdup(const void *src, size_t len)
+{
+	void *r = os_malloc(len);
+
+	if (r && src)
+		os_memcpy(r, src, len);
+	return r;
+}
+
 void *
 os_memmove(void *dest, const void *src, size_t n) {
 	return kalMemMove(dest, src, n);

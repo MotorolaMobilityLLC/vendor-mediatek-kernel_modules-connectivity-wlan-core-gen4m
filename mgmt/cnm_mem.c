@@ -792,6 +792,14 @@ static void cnmStaRoutinesForAbort(struct ADAPTER *prAdapter,
 	secPrivacyFreeSta(prAdapter, prStaRec);
 
 	prStaRec->fgIsInUse = FALSE;
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	if (prStaRec->prFilsInfo) {
+		kalMemZFree(prStaRec->prFilsInfo, VIR_MEM_TYPE,
+			sizeof(struct FILS_INFO));
+		prStaRec->prFilsInfo = NULL;
+	}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -999,6 +1007,17 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 	}
 #endif
 #endif
+}
+
+uint8_t *cnmStaRecAuthAddr(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (mldIsMultiLinkFormed(prAdapter, prStaRec))
+		return prStaRec->aucMldAddr;
+#endif
+
+	return prStaRec->aucMacAddr;
 }
 
 /*----------------------------------------------------------------------------*/

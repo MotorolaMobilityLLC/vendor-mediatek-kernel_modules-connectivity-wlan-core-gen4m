@@ -168,6 +168,12 @@ void secInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prMib->dot11RSNAConfigAuthenticationSuitesTable
 	    [17].dot11RSNAConfigAuthenticationSuite =
 		RSN_AKM_SUITE_FT_SAE_EXT_KEY;
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [18].dot11RSNAConfigAuthenticationSuite =
+		RSN_AKM_SUITE_FILS_SHA256;
+	prMib->dot11RSNAConfigAuthenticationSuitesTable
+	    [19].dot11RSNAConfigAuthenticationSuite =
+		RSN_AKM_SUITE_FILS_SHA384;
 
 	for (i = 0; i < MAX_NUM_SUPPORTED_AKM_SUITES; i++) {
 		prMib->dot11RSNAConfigAuthenticationSuitesTable
@@ -673,7 +679,6 @@ u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter, void *prPacket)
 		return FALSE;
 
 	prActFrame = (struct WLAN_ACTION_FRAME *)prWlanHeader;
-
 	switch (prActFrame->ucCategory) {
 	case CATEGORY_SPEC_MGT:
 	case CATEGORY_QOS_ACTION:
@@ -687,6 +692,7 @@ u_int8_t secIsRobustActionFrame(struct ADAPTER *prAdapter, void *prPacket)
 	case CATEGORY_TDLS_ACTION:
 	case CATEGORY_MESH_ACTION:
 	case CATEGORY_MULTIHOP_ACTION:
+	case CATEGORY_FILS_ACTION:
 	case CATEGORY_DMG_ACTION:
 	case CATEGORY_FST_ACTION:
 	case CATEGORY_ROBUST_AV_STREAMING_ACTION:

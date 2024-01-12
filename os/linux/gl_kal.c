@@ -2350,6 +2350,46 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+void kalReportFilsInfoAndAddRemoveKey(struct ADAPTER *prAdapter,
+	struct cfg80211_fils_resp_params *param, uint8_t add,
+	uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct STA_RECORD *prStaRec;
+	struct FILS_INFO *prFils = NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+
+	if (add) {
+		prStaRec = prBssInfo->prStaRecOfAP;
+
+		if (!prStaRec || !rsnIsFilsAuthAlg(prStaRec->ucAuthAlgNum))
+			return;
+
+		prFils = prStaRec->prFilsInfo;
+		if (!prFils)
+			return;
+
+		if (param) {
+			param->kek = prFils->kek;
+			param->kek_len = prFils->kek_len;
+			param->update_erp_next_seq_num = 1;
+			param->erp_next_seq_num = prFils->prErpKey->nextSeq;
+			param->pmk = prFils->aucFilsPmk;
+			param->pmk_len = prFils->u2FilsPmkLen;
+			param->pmkid = prFils->aucFilsErpPmkid;
+		}
+
+		filsInstallKey(prAdapter, prStaRec);
+	} else {
+		filsRemoveAllKeys(prAdapter, ucBssIndex);
+	}
+}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 	struct net_device *netdev,
 	uint32_t eStatus, void *pvBuf,
@@ -2449,13 +2489,19 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		rRoamInfo.resp_ie_len =	prConnSettings->u4RspIeLength;
 #if KERNEL_VERSION(4, 15, 0) > CFG80211_VERSION_CODE
 		rRoamInfo.authorized = ucAuthorized;
-#endif
+#endif /* KERNEL_VERSION(4, 15, 0) > CFG80211_VERSION_CODE */
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+		kalReportFilsInfoAndAddRemoveKey(prAdapter,
+			&rRoamInfo.fils, TRUE, ucBssIndex);
+#endif /* (CFG_SUPPORT_FILS_SK_OFFLOAD == 1) */
+
 		cfg80211_roamed(netdev, &rRoamInfo, GFP_KERNEL);
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
 		if (ucAuthorized)
 			cfg80211_port_authorized(netdev,
 				links[0].bssid, GFP_KERNEL);
-#endif
+#endif /* KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE */
 #else /* KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE */
 		cfg80211_roamed_bss(
 			netdev,
@@ -2527,9 +2573,15 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 				MAC2STR(links[0].bssid), u2JoinStatus);
 		}
 #else /* (CFG_ADVANCED_80211_MLO == 1) || 6.0.0 <= CFG80211_VERSION_CODE */
-		params.bssid =	links[0].bssid;
+		params.bssid =  links[0].bssid;
 		params.bss = links[0].bss;
 #endif /* (CFG_ADVANCED_80211_MLO == 1) || 6.0.0 <= CFG80211_VERSION_CODE */
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+		kalReportFilsInfoAndAddRemoveKey(prAdapter,
+			&params.fils, u2JoinStatus == WLAN_STATUS_SUCCESS,
+			ucBssIndex);
+#endif /* (CFG_SUPPORT_FILS_SK_OFFLOAD == 1) */
 
 		cfg80211_connect_done(netdev, &params, GFP_KERNEL);
 
@@ -2818,6 +2870,12 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 			}
 			}
 #endif
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+			kalReportFilsInfoAndAddRemoveKey(prAdapter, NULL,
+				FALSE, ucBssIndex);
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 			/* CFG80211 Indication */
 			DBGLOG(INIT, INFO,
 			    "[wifi]Indicate disconnection: Reason=%d Locally[%d]\n",
@@ -6434,6 +6492,11 @@ uint32_t kalRandomNumber(void)
 	get_random_bytes(&number, 4);
 
 	return number;
+}
+
+void kalRandomGetBytes(void *buf, uint32_t len)
+{
+	get_random_bytes(buf, len);
 }
 
 /*----------------------------------------------------------------------------*/

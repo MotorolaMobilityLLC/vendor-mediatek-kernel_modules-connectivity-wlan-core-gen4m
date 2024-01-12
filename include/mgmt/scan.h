@@ -334,6 +334,10 @@ struct BSS_DESC {
 	u_int8_t ucMBSSIDIndex;
 #endif
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	u_int8_t ucIsFilsSkSupport;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 	uint8_t ucPhyTypeSet;	/* Available PHY Type Set of this BSS */
 
 	/* record from bcn or probe response */
@@ -1076,6 +1080,8 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 
 void scanHandleOceIE(struct SCAN_PARAM *prScanParam,
 	struct CMD_SCAN_REQ_V2 *prCmdScanReq);
+
+uint8_t	*scanGetFilsCacheIdFromBssDesc(struct BSS_DESC *bss);
 
 void scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 	struct EVENT_SCAN_DONE *prScanDone);

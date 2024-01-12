@@ -372,6 +372,8 @@
 			BIT(AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION)
 #define AUTH_TYPE_SAE \
 			BIT(AUTH_ALGORITHM_NUM_SAE)
+#define AUTH_TYPE_FILS_SK \
+			BIT(AUTH_ALGORITHM_NUM_FILS_SK)
 
 /* Authentication Retry Limit */
 #define TX_AUTH_ASSOCI_RETRY_LIMIT                  2
@@ -1059,7 +1061,7 @@ enum PFMU_PHY_MODE {
 /*----------------------------------------------------------------------------*/
 typedef void(*PFN_APPEND_IE_FUNC) (struct ADAPTER *,
 	struct MSDU_INFO *);
-typedef void(*PFN_HANDLE_IE_FUNC) (struct ADAPTER *,
+typedef uint32_t(*PFN_HANDLE_IE_FUNC) (struct ADAPTER *,
 	struct SW_RFB *, struct IE_HDR *);
 typedef void(*PFN_VERIFY_IE_FUNC) (struct ADAPTER *,
 	struct SW_RFB *, struct IE_HDR *,
@@ -1082,6 +1084,7 @@ struct APPEND_VAR_IE_ENTRY {
 
 struct HANDLE_IE_ENTRY {
 	uint8_t ucElemID;
+	uint8_t ucElemExtID;
 	PFN_HANDLE_IE_FUNC pfnHandleIE;
 };
 
@@ -1320,7 +1323,7 @@ enum ENUM_ROAMING_REASON {
 /* max number of supported cipher suites */
 #define MAX_NUM_SUPPORTED_CIPHER_SUITES 11
 /* max number of supported AKM suites */
-#define MAX_NUM_SUPPORTED_AKM_SUITES    18
+#define MAX_NUM_SUPPORTED_AKM_SUITES    20
 
 /* Structure of RSN Information */
 __KAL_ATTRIB_PACKED_FRONT__

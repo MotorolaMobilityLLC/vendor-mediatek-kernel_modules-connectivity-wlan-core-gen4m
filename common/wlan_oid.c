@@ -1975,6 +1975,7 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 	case AUTH_MODE_WPA2_FT_PSK:
 	case AUTH_MODE_WPA3_SAE:
 	case AUTH_MODE_WPA3_OWE:
+	case AUTH_MODE_FILS:
 		/* infrastructure mode only */
 		if (prConnSettings->eOPMode != NET_TYPE_INFRA)
 			return WLAN_STATUS_NOT_ACCEPTED;
@@ -1998,39 +1999,33 @@ wlanoidSetAuthMode(struct ADAPTER *prAdapter,
 	case AUTH_MODE_OPEN:
 		DBGLOG(RSN, TRACE, "New auth mode: open\n");
 		break;
-
 	case AUTH_MODE_SHARED:
 		DBGLOG(RSN, TRACE, "New auth mode: shared\n");
 		break;
-
 	case AUTH_MODE_AUTO_SWITCH:
 		DBGLOG(RSN, TRACE, "New auth mode: auto-switch\n");
 		break;
-
 	case AUTH_MODE_WPA:
 		DBGLOG(RSN, TRACE, "New auth mode: WPA\n");
 		break;
-
 	case AUTH_MODE_WPA_PSK:
 		DBGLOG(RSN, TRACE, "New auth mode: WPA PSK\n");
 		break;
-
 	case AUTH_MODE_WPA_NONE:
 		DBGLOG(RSN, TRACE, "New auth mode: WPA None\n");
 		break;
-
 	case AUTH_MODE_WPA2:
 		DBGLOG(RSN, TRACE, "New auth mode: WPA2\n");
 		break;
-
 	case AUTH_MODE_WPA2_PSK:
 		DBGLOG(RSN, TRACE, "New auth mode: WPA2 PSK\n");
 		break;
-
 	case AUTH_MODE_WPA3_SAE:
 		DBGLOG(RSN, INFO, "New auth mode: SAE\n");
 		break;
-
+	case AUTH_MODE_FILS:
+		DBGLOG(RSN, INFO, "New auth mode: FILS\n");
+		break;
 	default:
 		DBGLOG(RSN, TRACE, "New auth mode: unknown (%d)\n",
 		       prConnSettings->eAuthMode);
@@ -2485,7 +2480,7 @@ wlanoidPresetLinkId(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
+wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen,
 		uint8_t fgIsOID)
 {
@@ -2499,12 +2494,10 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 #if CFG_SUPPORT_TDLS
 	struct STA_RECORD *prTmpStaRec;
 #endif
-	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
-	DBGLOG(REQ, LOUD, "\n");
+
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
-	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(RSN, WARN,
 			"Fail in set add key! (Adapter not ready). ACPI=D%d, Radio=%d\n",
@@ -2556,7 +2549,7 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Dump PARAM_KEY content. */
-	DBGLOG_LIMITED(RSN, TRACE,
+	DBGLOG(RSN, TRACE,
 		"Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
 		MACSTR
 		", KeyIdx: 0x%08x, KeyLen: 0x%08x, Cipher: %d, Material:\n",
@@ -3036,8 +3029,9 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 } /* wlanoidSetAddKey */
 
 uint32_t
-wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
-		 uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		 uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen,
+		 uint8_t fgIsOID)
 {
 	struct PARAM_KEY *prNewKey;
 	struct BSS_INFO *prBssInfo;
@@ -3118,8 +3112,8 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			/* set oid is true only for the last cmd
 			 * otherwise oid may complete wrongly
 			 */
-			ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
-				u4SetBufferLen, pu4SetInfoLen,
+			ret = wlanSetAddKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen, fgIsOID &&
 				sta == LINK_PEEK_TAIL(&prMldStaRec->rStarecList,
 				struct STA_RECORD, rLinkEntryMld));
 			if (ret != WLAN_STATUS_SUCCESS &&
@@ -3136,24 +3130,32 @@ wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 				/* overwrite key info by link */
 				prNewKey->ucBssIdx = bss->ucBssIndex;
 
-				ret = wlanoidSetAddKeyImpl(prAdapter,
+				ret = wlanSetAddKeyImpl(prAdapter,
 					pvSetBuffer, u4SetBufferLen,
-					pu4SetInfoLen, TRUE);
+					pu4SetInfoLen, fgIsOID);
 				if (ret != WLAN_STATUS_SUCCESS &&
 			   	    ret != WLAN_STATUS_PENDING)
 					return ret;
 			}
 		}
 	} else {
-		ret = wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
-				u4SetBufferLen, pu4SetInfoLen, TRUE);
+		ret = wlanSetAddKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen, fgIsOID);
 	}
 
 	return ret;
 #else /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
-	return wlanoidSetAddKeyImpl(prAdapter, pvSetBuffer,
-				u4SetBufferLen, pu4SetInfoLen, TRUE);
+	return wlanSetAddKeyImpl(prAdapter, pvSetBuffer,
+				u4SetBufferLen, pu4SetInfoLen, fgIsOID);
 #endif /*  (CFG_SUPPORT_802_11BE_MLO == 1) */
+}
+
+uint32_t
+wlanoidSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		 uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+{
+	return wlanSetAddKey(prAdapter, pvSetBuffer,
+		u4SetBufferLen, pu4SetInfoLen, TRUE);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -11603,6 +11605,55 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 			  u4SetBufferLen);
 }				/* wlanoidSetAddKey */
 #endif
+
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+uint32_t
+wlanoidSetFilsConnInfo(struct ADAPTER *prAdapter,
+			   void *pvSetBuffer, uint32_t u4SetBufferLen,
+			   uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_FILS *prFils = NULL;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	uint8_t ucBssIndex = 0;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+
+	if (u4SetBufferLen < sizeof(*prFils))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	/* always clean old erp key */
+	kalMemZero(&prConnSettings->rErpKey, sizeof(prConnSettings->rErpKey));
+
+	prFils = (struct PARAM_FILS *)pvSetBuffer;
+
+	/* no need to update without erp */
+	if (prFils->u2ErpUsernameLen == 0)
+		return WLAN_STATUS_SUCCESS;
+
+	if (prFils->u2ErpUsernameLen + 1 + prFils->pucErpRealmLen >
+		FILS_MAX_KEY_NAME_NAI_LEN) {
+		DBGLOG(FILS, ERROR, "nai too long, name=%d realm=%d\n",
+			prFils->u2ErpUsernameLen, prFils->pucErpRealmLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	if (prFils->u2ErpRrkLen > ERP_MAX_KEY_LEN) {
+		DBGLOG(FILS, ERROR, "rrk too long %d\n",
+			prFils->u2ErpRrkLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	filsUpdateFilsInfo(prAdapter, &prConnSettings->rErpKey, prFils);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
 #if CFG_ENABLE_WAKEUP_ON_LAN
 uint32_t

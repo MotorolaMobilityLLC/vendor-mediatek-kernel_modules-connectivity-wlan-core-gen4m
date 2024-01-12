@@ -459,6 +459,10 @@ struct STA_RECORD {
 	 */
 	struct TIMER rDeauthTxDoneTimer;
 
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	struct FILS_INFO *prFilsInfo;
+#endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
+
 	/*----------------------------------------------------------------------
 	 * Power Management related fields (for STA/ AP/ P2P/ BOW power saving
 	 * mode)
@@ -1107,6 +1111,9 @@ struct STA_RECORD *cnmGetStaRecByAddress(struct ADAPTER *prAdapter,
 
 void cnmStaRecChangeState(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucNewState);
+
+uint8_t *cnmStaRecAuthAddr(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
 
 int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	char *pcCommand, int i4TotalLen);
