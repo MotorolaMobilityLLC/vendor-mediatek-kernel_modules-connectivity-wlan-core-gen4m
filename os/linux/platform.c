@@ -306,6 +306,7 @@ int glUnregisterEarlySuspend(struct early_suspend *prDesc)
 }
 #endif
 
+#if 0
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Utility function for reading data from files on NVRAM-FS
@@ -468,6 +469,7 @@ static int nvram_write(char *filename, char *buf,
 
 #endif
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -491,12 +493,19 @@ u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
 	if (pu2Data == NULL)
 		return FALSE;
 
+	if (u4Offset + len > CFG_FILE_WIFI_REC_SIZE)
+		return FALSE;
+
+	kalMemCopy(pu2Data, &g_aucNvram[u4Offset], len);
+	return TRUE;
+#if 0
 	if (nvram_read(WIFI_NVRAM_FILE_NAME,
 		       (char *)pu2Data, len, u4Offset) != len) {
 		return FALSE;
 	} else {
 		return TRUE;
 	}
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -519,6 +528,13 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
 	if (pu2Data == NULL)
 		return FALSE;
 
+	if (u4Offset + sizeof(unsigned short) > CFG_FILE_WIFI_REC_SIZE)
+		return FALSE;
+
+	kalMemCopy(pu2Data, &g_aucNvram[u4Offset],
+		sizeof(unsigned short));
+	return TRUE;
+#if 0
 	if (nvram_read(WIFI_NVRAM_FILE_NAME,
 		       (char *)pu2Data, sizeof(unsigned short),
 		       u4Offset) != sizeof(unsigned short)) {
@@ -526,6 +542,7 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
 	} else {
 		return TRUE;
 	}
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -544,6 +561,13 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Offset, uint16_t u2Data)
 {
+	if (u4Offset + sizeof(unsigned short) > CFG_FILE_WIFI_REC_SIZE)
+		return FALSE;
+
+	kalMemCopy(&g_aucNvram[u4Offset], &u2Data,
+		sizeof(unsigned short));
+	return TRUE;
+#if 0
 	if (nvram_write(WIFI_NVRAM_FILE_NAME,
 			(char *)&u2Data, sizeof(unsigned short),
 			u4Offset) != sizeof(unsigned short)) {
@@ -551,4 +575,5 @@ u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
 	} else {
 		return TRUE;
 	}
+#endif
 }

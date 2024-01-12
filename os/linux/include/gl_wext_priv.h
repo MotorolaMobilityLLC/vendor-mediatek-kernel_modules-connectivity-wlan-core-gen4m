@@ -155,7 +155,7 @@
 
 #define PRIV_CMD_GET_CH_LIST            24
 
-#define PRIV_CMD_SET_TX_POWER           25
+#define PRIV_CMD_SET_TX_POWER_NO_USED           25
 
 #define PRIV_CMD_BAND_CONFIG            26
 

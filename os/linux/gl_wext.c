@@ -218,8 +218,6 @@ static const struct iw_priv_args rIwPrivTable[] = {
 		1, 0, "set_band"},
 	{PRIV_CMD_BAND_CONFIG, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
 		1, "get_band"},
-
-	{PRIV_CMD_SET_TX_POWER, IW_PRIV_TYPE_INT | 4, 0, "set_txpower"},
 	{PRIV_CMD_GET_CH_LIST, 0, IW_PRIV_TYPE_INT | 50, "get_ch_list"},
 	{
 		PRIV_CMD_DUMP_MEM, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
