@@ -747,36 +747,61 @@ struct GNU_PACKED hqa_comm_rx_stat {
 };
 
 /* Test capability */
+/* VER 0x0001: Init version */
+/* VER 0x0002: Add hw_tx support, channel_band_dbdc */
+
+#define GET_CAPABILITY_VER		0x0002
+#define GET_CAPABILITY_TAG_NUM	2
+
+/* phy capability */
+#define GET_CAPABILITY_TAG_PHY			1
+#define GET_CAPABILITY_TAG_PHY_LEN		16
+
+/* phy capability ext */
+#define GET_CAPABILITY_TAG_PHY_EXT		2
+#define GET_CAPABILITY_TAG_PHY_EXT_LEN	16
+
 struct test_capability_ph_cap {
 	/* header */
-	u_int32 tag;		/* 1 */
-	u_int32 tag_len;	/* 16 */
+	u_int32 tag;		/* GET_CAPABILITY_TAG_PHY */
+	u_int32 tag_len;	/* GET_CAPABILITY_TAG_PHY_LEN */
 
-	/* content: 16 */
+	/* content: GET_CAPABILITY_TAG_PHY_LEN */
 
 	/* BIT0 : 11 a/b/g  BIT1: 11n , BIT2: 11ac , BIT3: 11ax */
 	u_int32 protocol;
+
 	/* 1:1x1, 2:2x2, ... */
 	u_int32 ant_num;
+
 	/* BIT0: DBDC support */
 	u_int32 dbdc;
+
 	/* BIT0: TxLDPC , BTI1 : RxLDPC , BIT2: TxSTBC , BIT3: RxSTBC */
 	u_int32 coding;
+
 	/* BIT0 : 2.4G  BIT1: 5G , BIT2: 6G */
 	u_int32 channel_band;
+
 	/* BIT0: BW20, BIT1:BW40, BIT2:BW80, BIT3:BW160, BIT4:BW80+80 */
 	u_int32 bandwidth;
-	u_int32 reserved[10];
+
+	/* BIT0 : Band0 2.4G  BIT1: Band1 5G , BIT2: Band0 6G */
+	/* BIT16 : Band1 2.4G  BIT17: Band1 5G , BIT18: Band1 6G */
+	u_int32 channel_band_dbdc;
+
+	u_int32 reserved[9];
 };
 
 struct test_capability_ext_cap {
 	/* header */
-	u_int32 tag;		/* 2 */
-	u_int32 tag_len;	/* 16 */
+	u_int32 tag;		/* GET_CAPABILITY_TAG_PHY_EXT */
+	u_int32 tag_len;	/* GET_CAPABILITY_TAG_PHY_EXT_LEN */
 
-	/* content: 16 */
+	/* content: GET_CAPABILITY_TAG_PHY_EXT_LEN */
 
 	/* BIT0: AntSwap */
+	/* BIT1: HW TX support */
 	u_int32 feature1;
 	u_int32 reserved[15];
 };

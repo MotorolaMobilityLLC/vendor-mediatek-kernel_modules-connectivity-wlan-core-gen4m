@@ -2315,12 +2315,12 @@ static s_int32 hqa_get_capability(
 	ret = mt_serv_get_capability(serv_test, &capability);
 
 	/* fill header */
-	capability.version = 0x0001;
-	capability.tag_num = 2;
-	capability.ph_cap.tag = 1;
-	capability.ph_cap.tag_len = 16;
-	capability.ext_cap.tag = 2;
-	capability.ext_cap.tag_len = 16;
+	capability.version = GET_CAPABILITY_VER;
+	capability.tag_num = GET_CAPABILITY_TAG_NUM;
+	capability.ph_cap.tag = GET_CAPABILITY_TAG_PHY;
+	capability.ph_cap.tag_len = GET_CAPABILITY_TAG_PHY_LEN;
+	capability.ext_cap.tag = GET_CAPABILITY_TAG_PHY_EXT;
+	capability.ext_cap.tag_len = GET_CAPABILITY_TAG_PHY_EXT_LEN;
 
 	cast = (u_int32 *)&capability;
 
