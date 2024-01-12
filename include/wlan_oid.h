@@ -5635,20 +5635,6 @@ uint32_t wlanoidSetLpKeepPwrCtrl(struct ADAPTER *prAdapter,
 			uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen);
 
-#if CFG_SUPPORT_LLW_SCAN
-uint32_t
-wlanoidSetScanParam(struct ADAPTER *prAdapter,
-			void *pvSetBuffer,
-			uint32_t u4SetBufferLen,
-			uint32_t *pu4SetInfoLen);
-
-uint32_t
-wlanoidSetLatencyCrtData(struct ADAPTER *prAdapter,
-			    void *pvSetBuffer,
-			    uint32_t u4SetBufferLen,
-			    uint32_t *pu4SetInfoLen);
-#endif
-
 #if CFG_SUPPORT_MANIPULATE_TID
 uint32_t
 wlanoidManipulateTid(struct ADAPTER *prAdapter,
