@@ -372,7 +372,7 @@ struct IE_MULTI_LINK_CONTROL *beGenerateMldCommonInfo(
 		*cp++ = 0;
 
 	if (BE_IS_ML_CTRL_PRESENCE_MLD_CAP(common->u2Ctrl)) {
-		WLAN_SET_FIELD_16(cp, MLD_LINK_MAX);
+		WLAN_SET_FIELD_16(cp, prAdapter->rWifiVar.ucMldLinkMax);
 		cp += 2;
 	}
 
@@ -1611,11 +1611,18 @@ void mldBssUpdateMldAddrByMainBss(
 	    prMldBssInfo->rBssList.u4NumElem == 0)
 		return;
 
-	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
-					struct BSS_INFO,
-					rLinkEntryMld);
-	mldBssUpdateMldAddr(prAdapter,
-		prMldBssInfo, prBssInfo->aucOwnMacAddr);
+	if (!prAdapter->rWifiVar.ucMldAddrOverride) {
+		prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
+						struct BSS_INFO,
+						rLinkEntryMld);
+		mldBssUpdateMldAddr(prAdapter,
+			prMldBssInfo, prBssInfo->aucOwnMacAddr);
+	} else {
+		uint8_t aucMldAddr[MAC_ADDR_LEN];
+
+		wlanHwAddrToBin(prAdapter->rWifiVar.aucMldAddrStr, aucMldAddr);
+		mldBssUpdateMldAddr(prAdapter, prMldBssInfo, aucMldAddr);
+	}
 }
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
