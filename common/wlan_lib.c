@@ -9788,8 +9788,10 @@ void wlanTxProfilingTagMsdu(IN struct ADAPTER *prAdapter,
 {
 	wlanTxLifetimeTagPacket(prAdapter, prMsduInfo, eTag);
 
-	wlanTxProfilingTagPacket(prAdapter, prMsduInfo->prPacket,
-				 eTag);
+	if (prMsduInfo->eSrc == TX_PACKET_OS) {
+		/* only profile packets from OS */
+		wlanTxProfilingTagPacket(prAdapter, prMsduInfo->prPacket, eTag);
+	}
 }
 
 void wlanUpdateTxStatistics(IN struct ADAPTER *prAdapter,
