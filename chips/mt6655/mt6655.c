@@ -1202,9 +1202,14 @@ static void mt6655DisableInterrupt(struct ADAPTER *prAdapter)
 
 static void mt6655WpdmaMsiConfig(struct ADAPTER *prAdapter)
 {
-#define WFDMA_AP_MSI_NUM		1
+/*
+ * ilog2(WFDMA_AP_MSI 1) = WFDMA_AP_MSI_NUM for CR shitf
+ * please do NOT use linux API, which is finally implemented in assembly
+ */
+#define WFDMA_AP_MSI_NUM		0
 #if CFG_MTK_MDDP_SUPPORT
-#define WFDMA_MD_MSI_NUM		8
+/*ilog2(WFDMA_MD_MSI 8) = WFDMA_AP_MSI_NUM for CR shitf */
+#define WFDMA_MD_MSI_NUM		3
 #endif
 
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1222,11 +1227,11 @@ static void mt6655WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	/* configure MSI number */
 	HAL_MCR_RD(prAdapter, WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_ADDR,
 		&u4Value);
-	u4Value |= ((ilog2(WFDMA_AP_MSI_NUM) <<
+	u4Value |= ((WFDMA_AP_MSI_NUM <<
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_SHFT) &
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_msi_num_MASK);
 #if CFG_MTK_MDDP_SUPPORT
-	u4Value |= ((ilog2(WFDMA_MD_MSI_NUM) <<
+	u4Value |= ((WFDMA_MD_MSI_NUM <<
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_md_msi_num_SHFT) &
 		WF_WFDMA_EXT_WRAP_CSR_WFDMA_HOST_CONFIG_pcie0_md_msi_num_MASK);
 #endif

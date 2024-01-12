@@ -1415,7 +1415,7 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	kalMemCopy(pTxCell->AllocVa, pucBuffer, u4TxDSize);
 
 	prHwTxDescAppend = (union HW_MAC_TX_DESC_APPEND *)
-		(pTxCell->AllocVa + NIC_TX_DESC_LONG_FORMAT_LENGTH);
+		((uint8_t *)pTxCell->AllocVa + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 
 	prHwTxDescAppend->CR4_APPEND.u2PktFlags = 0;
 	if (ucType)
