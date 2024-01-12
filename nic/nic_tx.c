@@ -193,6 +193,11 @@ static uint8_t *apucTxResultStr[TX_RESULT_NUM] = {
 	(uint8_t *) DISP_STRING("INACT_BSS")		/* inactive BSS */
 };
 
+static uint8_t *apucBandwidt[4] = {
+	(uint8_t *)"20", (uint8_t *)"40",
+	(uint8_t *)"80", (uint8_t *)"160/80+80"
+};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -3273,10 +3278,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 	struct EVENT_TX_DONE *prTxDone;
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
-
-	uint8_t *apucBandwidt[4] = {
-		(uint8_t *)"20", (uint8_t *)"40",
-		(uint8_t *)"80", (uint8_t *)"160/80+80"};
+	char *prBw = "INVALID";
 
 	prTxDone = (struct EVENT_TX_DONE *) (prEvent->aucBuffer);
 
@@ -3314,11 +3316,18 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 			if (ucStbc)
 				ucNss /= 2;
 
+			if (prTxDone->ucBandwidth >=
+				sizeof(apucBandwidt) / sizeof(uint8_t *))
+				DBGLOG(NIC, WARN, "Invalid bandwidth: %u",
+					prTxDone->ucBandwidth);
+			else
+				prBw = apucBandwidt[prTxDone->ucBandwidth];
+
 			if (prTxDone->ucStatus != 0)
 				DBGLOG_LIMITED(NIC, INFO,
 					"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
 					prTxDone->u2TxRate,
-					apucBandwidt[prTxDone->ucBandwidth],
+					prBw,
 					ucNss,
 					prTxDone->ucRateTableIdx,
 					prTxDone->ucRspRate);
@@ -3326,7 +3335,7 @@ void nicTxProcessTxDoneEvent(IN struct ADAPTER *prAdapter,
 				DBGLOG(NIC, TRACE,
 					"||RATE[0x%04x] BW[%s] NSS[%u] ArIdx[%u] RspRate[0x%02x]\n",
 					prTxDone->u2TxRate,
-					apucBandwidt[prTxDone->ucBandwidth],
+					prBw,
 					ucNss,
 					prTxDone->ucRateTableIdx,
 					prTxDone->ucRspRate);
