@@ -6943,12 +6943,12 @@ void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			}
 
 			len = TAG_LEN(tag) - sizeof(struct TAG_HDR);
-			dump = kalMemAlloc(len, VIR_MEM_TYPE);
+			dump = kalMemAlloc(len + 1, VIR_MEM_TYPE);
 			kalMemCopy(dump, tag + sizeof(struct TAG_HDR), len);
+			dump[len] = '\0';
+			appendCECoredump(ad, dump, len + 1);
 
-			appendCECoredump(ad, dump, len);
-
-			kalMemFree(dump, VIR_MEM_TYPE, len);
+			kalMemFree(dump, VIR_MEM_TYPE, len + 1);
 			break;
 		default:
 			DBGLOG(NIC, WARN, "unimplement tag:%d\n", TAG_ID(tag));
