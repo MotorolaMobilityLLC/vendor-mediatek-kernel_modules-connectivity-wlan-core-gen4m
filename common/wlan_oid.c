@@ -2981,6 +2981,9 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 							->ucIndex,
 						    prCmdKey->ucAlgorithmId,
 						    prCmdKey->ucKeyId);
+					kalMemCopy(prCmdKey->aucPeerAddr,
+						prBssInfo->prStaRecOfAP
+						->aucMacAddr, MAC_ADDR_LEN);
 				}
 			}
 
