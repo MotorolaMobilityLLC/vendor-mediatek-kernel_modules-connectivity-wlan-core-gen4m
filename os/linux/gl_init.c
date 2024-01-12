@@ -2512,6 +2512,7 @@ static void wlanSetMulticastListWorkQueue(
 	uint32_t u4SetInfoLen;
 	struct net_device *prDev = gPrDev;
 	uint8_t ucBssIndex = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 	ucBssIndex = wlanGetBssIdx(prDev);
 	if (!IS_BSS_INDEX_VALID(ucBssIndex))
@@ -2604,7 +2605,7 @@ static void wlanSetMulticastListWorkQueue(
 
 		up(&g_halt_sem);
 
-		kalIoctlByBssIdx(prGlueInfo,
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
 			 wlanoidSetMulticastList, prMCAddrList, (i * ETH_ALEN),
 			 &u4SetInfoLen, ucBssIndex);
 
@@ -2613,11 +2614,13 @@ static void wlanSetMulticastListWorkQueue(
 	} else if (u4PacketFilter & PARAM_PACKET_FILTER_ALL_MULTICAST) {
 		DBGLOG(INIT, INFO,
 			"Clear previous MAR settings to rx all mc pkt\n");
-		kalIoctlByBssIdx(prGlueInfo,
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
 			 wlanoidSetMulticastList, NULL, 0,
 			 &u4SetInfoLen, ucBssIndex);
 	}
-
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, ERROR,
+		"SetMulticastList fail 0x%x\n", rStatus);
 }				/* end of wlanSetMulticastList() */
 
 /*----------------------------------------------------------------------------*/

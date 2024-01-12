@@ -2479,9 +2479,8 @@ int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct BSS_INFO *prAisBssInfo;
 
 	ASSERT(wiphy);
-	ASSERT(dev->ieee80211_ptr);
 
-	if (dev == NULL)
+	if (dev == NULL || dev->ieee80211_ptr == NULL)
 		return -EINVAL;
 
 	DBGLOG(REQ, TRACE, "vendor command rssi=%d\r\n", rssi);
@@ -3657,7 +3656,10 @@ int mtk_cfg80211_vendor_comb_matrix(
 			VIR_MEM_TYPE);
 		goto nla_put_failure;
 	}
-
+	if (pr_comb_matrix != NULL)
+		kalMemFree(pr_comb_matrix,
+			sizeof(struct ANDROID_T_COMB_MATRIX),
+			VIR_MEM_TYPE);
 	return cfg80211_vendor_cmd_reply(skb);
 
 nla_put_failure:
