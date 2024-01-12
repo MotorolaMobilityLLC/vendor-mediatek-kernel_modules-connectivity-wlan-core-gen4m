@@ -2015,11 +2015,26 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 				wlanClearDevIdx(
 					gprWdev[u4Idx]->netdev);
 				i4DevIdx = -1;
+				break;
 			}
 		}
 
 		if (i4DevIdx != -1)
 			prGlueInfo->fgIsRegistered = TRUE;
+		else {
+			/* Unregister the registered netdev if one of netdev
+			 * registered fail
+			 */
+			for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+				if (!gprWdev[u4Idx] || !gprWdev[u4Idx]->netdev)
+					continue;
+				if (gprWdev[u4Idx]->netdev->reg_state !=
+						NETREG_REGISTERED)
+					continue;
+				wlanClearDevIdx(gprWdev[u4Idx]->netdev);
+				unregister_netdev(gprWdev[u4Idx]->netdev);
+			}
+		}
 	} while (FALSE);
 
 	return i4DevIdx;	/* success */
