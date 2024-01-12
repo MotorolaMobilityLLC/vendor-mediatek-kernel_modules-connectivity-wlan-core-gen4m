@@ -1124,39 +1124,6 @@ void soc3_0_DumpWfsyscpupcr(struct ADAPTER *prAdapter)
 			log_buf_lp[4]);
 }
 
-int wf_ioremap_read(size_t addr, unsigned int *val)
-{
-	void *vir_addr = NULL;
-
-	vir_addr = ioremap_nocache(addr, 0x10);
-	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
-		return -1;
-	}
-
-	*val = readl(vir_addr);
-	iounmap(vir_addr);
-	DBGLOG(INIT, TRACE, "Read CONSYS 0x%08x=0x%08x.\n", addr, *val);
-
-	return 0;
-}
-int wf_ioremap_write(phys_addr_t addr, unsigned int val)
-{
-	void *vir_addr = NULL;
-
-	vir_addr = ioremap_nocache(addr, 0x10);
-	if (!vir_addr) {
-		DBGLOG(INIT, ERROR, "%s: Cannot remap address.\n", __func__);
-		return -1;
-	}
-
-	writel(val, vir_addr);
-	iounmap(vir_addr);
-	DBGLOG(INIT, TRACE, "Write CONSYS 0x%08x=0x%08x.\n", addr, val);
-
-	return 0;
-}
-
 void soc3_0_CrRead(struct ADAPTER *prAdapter, size_t addr, unsigned int *val)
 {
 	if (prAdapter == NULL)
