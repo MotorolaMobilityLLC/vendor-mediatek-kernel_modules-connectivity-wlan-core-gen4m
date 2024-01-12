@@ -14087,6 +14087,23 @@ void kalConfigChksumOffload(
 }
 #endif
 
+void kalConfigWiFiSnappingForceDisable(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgForceDis)
+{
+	struct ADAPTER *prAdapter = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return;
+	}
+	prChipInfo = prAdapter->chip_info;
+
+	if (prChipInfo->fgWifiNappingForceDisable != fgForceDis)
+		prChipInfo->fgWifiNappingForceDisable = fgForceDis;
+}
+
 #if CFG_SUPPORT_THERMAL_QUERY
 #define MAX_REFRESH_TIME		(5 * 60) /* sec */
 #define MAX_TEMP_THRESHOLD		(60 * 1000)

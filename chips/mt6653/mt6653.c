@@ -191,6 +191,7 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter);
 static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable);
 static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter);
+static void mt6653WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #endif
 
 /*******************************************************************************
@@ -958,6 +959,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.fgIsSupportL0p5Reset = FALSE,
 #endif
 	.u4MinTxLen = 2,
+	.wifiNappingCtrl = mt6653WiFiNappingCtrl,
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_mt6653 = {
@@ -3283,5 +3285,49 @@ static uint32_t mt6653GetFlavorVer(uint8_t *flavor)
 	}
 
 	return ret;
+}
+
+static void mt6653WiFiNappingCtrl(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	uint32_t u4value = 0;
+	u_int8_t fgNappingEn = FALSE;
+
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(HAL, ERROR, "adapter is null\n");
+		return;
+	}
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	if (prChipInfo->fgWifiNappingForceDisable)
+		fgNappingEn = FALSE;
+	else
+		fgNappingEn = fgEn;
+
+	/* return if setting no chang */
+	if (prChipInfo->fgWifiNappingEn == fgNappingEn)
+		return;
+
+	prChipInfo->fgWifiNappingEn = fgNappingEn;
+
+	/*
+	 * [0]: 1: set wf bus active from wf napping sleep by driver.
+	 *      0: set wf bus goes back to napping sleep by driver
+	 */
+	if (fgNappingEn)
+		u4value = CONN_AON_WF_NAPPING_ENABLE;
+	else
+		u4value = CONN_AON_WF_NAPPING_DISABLE;
+
+	DBGLOG(INIT, TRACE,
+		"fgEn[%u] fgNappingEn[%u], WrAddr[0x%08x]=[0x%08x]\n",
+		fgEn, fgNappingEn,
+		CONN_HOST_CSR_TOP_ADDR_CR_CONN_AON_TOP_RESERVE_ADDR,
+		u4value);
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		   CONN_HOST_CSR_TOP_ADDR_CR_CONN_AON_TOP_RESERVE_ADDR,
+		   u4value);
 }
 #endif  /* MT6653 */

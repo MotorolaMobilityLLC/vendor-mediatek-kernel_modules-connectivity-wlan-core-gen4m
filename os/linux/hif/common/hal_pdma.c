@@ -1238,6 +1238,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	struct GL_HIF_INFO *prHifInfo;
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
+	struct mt66xx_chip_info *prChipInfo = NULL;
 
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -1248,6 +1249,7 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
 #endif
+	prChipInfo = prAdapter->chip_info;
 
 	if (!halGetMsduTokenFreeCnt(prAdapter)) {
 		DBGLOG(HAL, INFO, "No more free MSDU token, Used[%u]\n",
@@ -1267,6 +1269,8 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, FALSE);
 #endif
 #endif
+	if (prTokenInfo->u4UsedCnt == 0 && prChipInfo->wifiNappingCtrl)
+		prChipInfo->wifiNappingCtrl(prAdapter->prGlueInfo, FALSE);
 
 	prTokenInfo->u4UsedCnt++;
 
@@ -1360,6 +1364,7 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 #if CFG_SUPPORT_PCIE_ASPM
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
+	struct mt66xx_chip_info *prChipInfo = NULL;
 
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -1369,8 +1374,8 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 #if CFG_SUPPORT_PCIE_ASPM
 	prBusInfo = prAdapter->chip_info->bus_info;
 #endif
-
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
 
 	if (!prTokenInfo->u4UsedCnt) {
 		DBGLOG(HAL, WARN, "MSDU token is full, Used[%u]\n",
@@ -1405,6 +1410,8 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, TRUE);
 #endif
 #endif
+	if (prTokenInfo->u4UsedCnt == 0 && prChipInfo->wifiNappingCtrl)
+		prChipInfo->wifiNappingCtrl(prAdapter->prGlueInfo, TRUE);
 
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
 }
