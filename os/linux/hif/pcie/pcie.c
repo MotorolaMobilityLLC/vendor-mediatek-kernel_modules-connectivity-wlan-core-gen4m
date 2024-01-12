@@ -1543,78 +1543,10 @@ void glUnregisterBus(remove_card pfRemove)
 #endif
 }
 
-static void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
-{
-	prMemOps->allocRxDataBuf = halCopyPathAllocRxBuf;
-	prMemOps->copyRxData = halCopyPathCopyRxData;
-	prMemOps->mapRxBuf = NULL;
-	prMemOps->unmapRxBuf = NULL;
-	prMemOps->freePacket = NULL;
-	prMemOps->dumpRx = halCopyPathDumpRx;
-}
-
 static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,
 			     struct HIF_MEM_OPS *prMemOps)
 {
-	prMemOps->allocTxDesc = halZeroCopyPathAllocDesc;
-	prMemOps->allocRxDesc = halZeroCopyPathAllocDesc;
-	prMemOps->allocExtBuf = halZeroCopyPathAllocExtBuf;
-	prMemOps->allocTxCmdBuf = NULL;
-	prMemOps->allocTxDataBuf = halZeroCopyPathAllocTxDataBuf;
-	prMemOps->allocRuntimeMem = halZeroCopyPathAllocRuntimeMem;
-	prMemOps->copyCmd = halZeroCopyPathCopyCmd;
-	prMemOps->copyEvent = halZeroCopyPathCopyEvent;
-	prMemOps->copyTxData = halZeroCopyPathCopyTxData;
-	prMemOps->copyRxData = halZeroCopyPathCopyRxData;
-	prMemOps->mapTxBuf = halZeroCopyPathMapTxBuf;
-	prMemOps->mapRxBuf = halZeroCopyPathMapRxBuf;
-	prMemOps->unmapTxBuf = halZeroCopyPathUnmapTxBuf;
-	prMemOps->unmapRxBuf = halZeroCopyPathUnmapRxBuf;
-	prMemOps->freeDesc = halZeroCopyPathFreeDesc;
-	prMemOps->freeExtBuf = halZeroCopyPathFreeDesc;
-	prMemOps->freeBuf = halZeroCopyPathFreeBuf;
-	prMemOps->allocRxEvtBuf = halZeroCopyPathAllocRxBuf;
-#if CFG_SUPPORT_RX_PAGE_POOL
-	prMemOps->allocRxDataBuf = halZeroCopyPathAllocPagePoolRxBuf;
-	prMemOps->freePacket = halZeroCopyPathFreePagePoolPacket;
-#else
-	prMemOps->allocRxDataBuf = halZeroCopyPathAllocRxBuf;
-	prMemOps->freePacket = halZeroCopyPathFreePacket;
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
-
-	prMemOps->getWifiMiscRsvEmi = halGetWiFiMiscRsvEmi;
-#if 0
-	prMemOps->dumpTx = halZeroCopyPathDumpTx;
-	prMemOps->dumpRx = halZeroCopyPathDumpRx;
-#endif
-
-	if (g_prPlatDev) {
-		DBGLOG(HAL, TRACE, "Use pre-alloc mem ops instead.\n");
-		prMemOps->allocTxDesc = halCopyPathAllocTxDesc;
-		prMemOps->allocRxDesc = halCopyPathAllocRxDesc;
-#if (CFG_MTK_ANDROID_WMT == 1)
-		prMemOps->allocExtBuf = halCopyPathAllocExtBuf;
-		prMemOps->freeExtBuf = halCopyPathFreeExtBuf;
-#endif
-		prMemOps->allocTxCmdBuf = halCopyPathAllocTxCmdBuf;
-		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
-		prMemOps->allocRxEvtBuf = halCopyPathAllocRxBuf;
-		prMemOps->allocRuntimeMem = NULL;
-		prMemOps->copyCmd = halCopyPathCopyCmd;
-		prMemOps->copyEvent = halCopyPathCopyEvent;
-		prMemOps->copyTxData = halCopyPathCopyTxData;
-		prMemOps->mapTxBuf = NULL;
-		prMemOps->unmapTxBuf = NULL;
-		prMemOps->freeDesc = NULL;
-		prMemOps->freeBuf = NULL;
-		prMemOps->dumpTx = halCopyPathDumpTx;
-
-#if (CFG_SUPPORT_RX_ZERO_COPY == 1)
-		prMemOps->dumpRx = halZeroCopyPathDumpRx;
-#else
-		glUpdateRxCopyMemOps(prMemOps);
-#endif /* CFG_SUPPORT_RX_ZERO_COPY == 1 */
-	}
+	halSetMemOps(g_prPlatDev, prMemOps);
 }
 
 /*----------------------------------------------------------------------------*/

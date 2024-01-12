@@ -1785,8 +1785,8 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 
 	if (prTxRing->TxCpuIdx >= prTxRing->u4RingSize) {
 		DBGLOG(HAL, ERROR, "Error TxCpuIdx[%u]\n", prTxRing->TxCpuIdx);
-		if (prMemOps->freeBuf)
-			prMemOps->freeBuf(pucDst, u4Len);
+		if (prMemOps->freeCmdBuf)
+			prMemOps->freeCmdBuf(pucDst, u4Len);
 		return FALSE;
 	}
 
@@ -1799,8 +1799,8 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 	if (prMemOps->copyCmd &&
 	    !prMemOps->copyCmd(prHifInfo, pTxCell, pucDst,
 			       pucBuf, u4Len, NULL, 0)) {
-		if (prMemOps->freeBuf)
-			prMemOps->freeBuf(pucDst, u4Len);
+		if (prMemOps->freeCmdBuf)
+			prMemOps->freeCmdBuf(pucDst, u4Len);
 		ASSERT(0);
 		return FALSE;
 	}

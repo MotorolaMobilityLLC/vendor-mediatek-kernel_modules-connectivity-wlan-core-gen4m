@@ -430,6 +430,7 @@ int halAllocHifMem(struct platform_device *pdev,
 	}
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 0)
 	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		if (!halAllocRsvMem(HAL_TX_MAX_SIZE_PER_FRAME +
 				prChipInfo->txd_append_size,
@@ -437,6 +438,7 @@ int halAllocHifMem(struct platform_device *pdev,
 				WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);
 	}
+#endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
 #endif
 
 	DBGLOG(INIT, INFO, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
@@ -522,7 +524,6 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 	return 0;
 }
 #endif
-
 
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
@@ -1318,3 +1319,301 @@ void kalFreeHifSkb(struct sk_buff *prSkb)
 	skb_queue_tail(&g_rHifSkbList, prSkb);
 }
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
+
+static int halSetMemOpsTrxDesc(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_TRX_DESC_ZERO_COPY_PATH) {
+		prMemOps->allocTxDesc = halZeroCopyPathAllocDesc;
+		prMemOps->allocRxDesc = halZeroCopyPathAllocDesc;
+		prMemOps->freeDesc = halZeroCopyPathFreeDesc;
+	} else if (op_sets == WF_MEM_OP_TRX_DESC_COPY_PATH) {
+		prMemOps->allocTxDesc = halCopyPathAllocTxDesc;
+		prMemOps->allocRxDesc = halCopyPathAllocRxDesc;
+		prMemOps->freeDesc = NULL;
+	} else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsTxData(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_TX_DATA_ZERO_COPY_PATH) {
+		prMemOps->allocTxDataBuf = halZeroCopyPathAllocTxDataBuf;
+		prMemOps->copyTxData = halZeroCopyPathCopyTxData;
+		prMemOps->freeDataBuf = halZeroCopyPathFreeBuf;
+		prMemOps->mapTxDataBuf = halZeroCopyPathMapTxBuf;
+		prMemOps->unmapTxDataBuf = halZeroCopyPathUnmapTxBuf;
+	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH) {
+		prMemOps->allocTxDataBuf = halCopyPathAllocTxDataBuf;
+		prMemOps->copyTxData = halCopyPathCopyTxData;
+		prMemOps->freeDataBuf = NULL;
+		prMemOps->mapTxDataBuf = NULL;
+		prMemOps->unmapTxDataBuf = NULL;
+	} else if (op_sets ==
+			WF_MEM_OP_TX_DATA_ZERO_COPY_PATH_TX_DYN_CMA) {
+		prMemOps->allocTxDataBuf = halZeroCopyPathAllocTxDataBuf;
+		prMemOps->copyTxData = halZeroCopyPathCopyTxData;
+		prMemOps->freeDataBuf = halZeroCopyPathFreeBuf;
+		prMemOps->mapTxDataBuf = halZeroCopyPathMapTxBuf;
+		prMemOps->unmapTxDataBuf = halZeroCopyPathUnmapTxBuf;
+	} else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsTxCmd(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_TX_CMD_ZERO_COPY_PATH) {
+		prMemOps->allocTxCmdBuf = NULL;
+		prMemOps->copyCmd = halZeroCopyPathCopyCmd;
+		prMemOps->mapTxCmdBuf = halZeroCopyPathMapTxBuf;
+		prMemOps->unmapTxCmdBuf = halZeroCopyPathUnmapTxBuf;
+		prMemOps->freeCmdBuf = halZeroCopyPathFreeBuf;
+	} else if (op_sets == WF_MEM_OP_TX_CMD_COPY_PATH) {
+		prMemOps->allocTxCmdBuf = halCopyPathAllocTxCmdBuf;
+		prMemOps->copyCmd = halCopyPathCopyCmd;
+		prMemOps->mapTxCmdBuf = NULL;
+		prMemOps->unmapTxCmdBuf = NULL;
+		prMemOps->freeCmdBuf = NULL;
+	} else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsRxData(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_RX_DATA_ZERO_COPY_PATH) {
+		prMemOps->allocRxDataBuf = halZeroCopyPathAllocRxBuf;
+		prMemOps->copyRxData = halZeroCopyPathCopyRxData;
+		prMemOps->freePacket = halZeroCopyPathFreePacket;
+		prMemOps->mapRxBuf = halZeroCopyPathMapRxBuf;
+		prMemOps->unmapRxBuf = halZeroCopyPathUnmapRxBuf;
+	} else if (op_sets == WF_MEM_OP_RX_DATA_COPY_PATH) {
+		prMemOps->allocRxDataBuf = halCopyPathAllocRxBuf;
+		prMemOps->copyRxData = halCopyPathCopyRxData;
+		prMemOps->freePacket = NULL;
+		prMemOps->mapRxBuf = NULL;
+		prMemOps->unmapRxBuf = NULL;
+#if CFG_SUPPORT_RX_PAGE_POOL
+	} else if (op_sets ==
+		WF_MEM_OP_RX_DATA_ZERO_COPY_PATH_PAGE_POOL) {
+		prMemOps->allocRxDataBuf = halZeroCopyPathAllocPagePoolRxBuf;
+		prMemOps->copyRxData = halZeroCopyPathCopyRxData;
+		prMemOps->freePacket = halZeroCopyPathFreePagePoolPacket;
+		prMemOps->mapRxBuf = halZeroCopyPathMapRxBuf;
+		prMemOps->unmapRxBuf = halZeroCopyPathUnmapRxBuf;
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+	} else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsRxEvt(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_RX_EVT_ZERO_COPY_PATH) {
+		prMemOps->allocRxEvtBuf = halZeroCopyPathAllocRxBuf;
+		prMemOps->copyEvent = halZeroCopyPathCopyEvent;
+	} else if (op_sets == WF_MEM_OP_RX_EVT_COPY_PATH) {
+		prMemOps->allocRxEvtBuf = halCopyPathAllocRxBuf;
+		prMemOps->copyEvent = halCopyPathCopyEvent;
+	} else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsTxDump(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_TX_DUMP_ZERO_COPY_PATH)
+		prMemOps->dumpTx = NULL;
+	else if (op_sets == WF_MEM_OP_TX_DUMP_COPY_PATH)
+		prMemOps->dumpTx = halCopyPathDumpTx;
+	else if (op_sets == WF_MEM_OP_TX_DUMP_NULL)
+		prMemOps->dumpTx = NULL;
+	else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsRxDump(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_RX_DUMP_ZERO_COPY_PATH)
+		prMemOps->dumpRx = halZeroCopyPathDumpRx;
+	else if (op_sets == WF_MEM_OP_RX_DUMP_COPY_PATH)
+		prMemOps->dumpRx = halCopyPathDumpRx;
+	else if (op_sets == WF_MEM_OP_RX_DUMP_NULL)
+		prMemOps->dumpRx = NULL;
+	else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsExtBuf(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_EXT_BUF_ZERO_COPY_PATH) {
+		prMemOps->allocExtBuf = halZeroCopyPathAllocExtBuf;
+		prMemOps->freeExtBuf = halZeroCopyPathFreeDesc;
+#if (CFG_MTK_ANDROID_WMT == 1)
+	} else if (op_sets == WF_MEM_OP_EXT_BUF_COPY_PATH) {
+		prMemOps->allocExtBuf = halCopyPathAllocExtBuf;
+		prMemOps->freeExtBuf = halCopyPathFreeExtBuf;
+#endif /* CFG_MTK_ANDROID_WMT */
+	} else if (op_sets == WF_MEM_OP_EXT_BUF_NULL) {
+		prMemOps->allocExtBuf = NULL;
+		prMemOps->freeExtBuf = NULL;
+	} else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsRuntimeMem(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_RUNTIME_MEM_ZERO_COPY_PATH)
+		prMemOps->allocRuntimeMem = halZeroCopyPathAllocRuntimeMem;
+	else if (op_sets == WF_MEM_OP_RUNTIME_MEM_NULL)
+		prMemOps->allocRuntimeMem = NULL;
+	else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsWifiMiscEmi(
+	struct HIF_MEM_OPS *prMemOps,
+	enum WIFI_MEM_OPER_SETS op_sets)
+{
+	if (op_sets == WF_MEM_OP_WIFI_MISC_EMI_ENABLE)
+		prMemOps->getWifiMiscRsvEmi = halGetWiFiMiscRsvEmi;
+	else if (op_sets == WF_MEM_OP_WIFI_MISC_EMI_NULL)
+		prMemOps->getWifiMiscRsvEmi = NULL;
+	else
+		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
+
+	return 0;
+}
+
+static int halSetMemOpsAndroid(
+	struct HIF_MEM_OPS *prMemOps)
+{
+	halSetMemOpsTrxDesc(prMemOps, WF_MEM_OP_TRX_DESC_COPY_PATH);
+
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
+	halSetMemOpsTxData(prMemOps, WF_MEM_OP_TX_DATA_ZERO_COPY_PATH);
+#else /* !CFG_MTK_WIFI_TX_MEM_SLIM */
+	halSetMemOpsTxData(prMemOps, WF_MEM_OP_TX_DATA_COPY_PATH);
+#endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
+
+	halSetMemOpsTxCmd(prMemOps, WF_MEM_OP_TX_CMD_COPY_PATH);
+
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
+	halSetMemOpsTxDump(prMemOps, WF_MEM_OP_TX_DUMP_NULL);
+#else /* !CFG_MTK_WIFI_TX_MEM_SLIM */
+	halSetMemOpsTxDump(prMemOps, WF_MEM_OP_TX_DUMP_COPY_PATH);
+#endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+	halSetMemOpsRxData(prMemOps,
+		WF_MEM_OP_RX_DATA_ZERO_COPY_PATH_PAGE_POOL);
+#elif (CFG_SUPPORT_RX_ZERO_COPY == 1)
+	halSetMemOpsRxData(prMemOps, WF_MEM_OP_RX_DATA_ZERO_COPY_PATH);
+#else
+	halSetMemOpsRxData(prMemOps, WF_MEM_OP_RX_DATA_COPY_PATH);
+#endif
+
+	halSetMemOpsRxEvt(prMemOps, WF_MEM_OP_RX_EVT_COPY_PATH);
+
+#if (CFG_SUPPORT_RX_ZERO_COPY == 1)
+	halSetMemOpsRxDump(prMemOps, WF_MEM_OP_RX_DUMP_ZERO_COPY_PATH);
+#else
+	halSetMemOpsRxDump(prMemOps, WF_MEM_OP_RX_DUMP_COPY_PATH);
+#endif
+
+#if (CFG_MTK_ANDROID_WMT == 1)
+	halSetMemOpsExtBuf(prMemOps, WF_MEM_OP_EXT_BUF_COPY_PATH);
+#endif
+
+	halSetMemOpsRuntimeMem(prMemOps, WF_MEM_OP_RUNTIME_MEM_NULL);
+
+	halSetMemOpsWifiMiscEmi(prMemOps, WF_MEM_OP_WIFI_MISC_EMI_ENABLE);
+
+	return 0;
+}
+
+static int halSetMemOpsPC(
+	struct HIF_MEM_OPS *prMemOps)
+{
+	halSetMemOpsTrxDesc(prMemOps,
+		WF_MEM_OP_TRX_DESC_ZERO_COPY_PATH);
+
+	halSetMemOpsTxData(prMemOps,
+		WF_MEM_OP_TX_DATA_ZERO_COPY_PATH);
+
+	halSetMemOpsTxCmd(prMemOps,
+		WF_MEM_OP_TX_CMD_ZERO_COPY_PATH);
+
+	halSetMemOpsTxDump(prMemOps,
+		WF_MEM_OP_TX_DUMP_NULL);
+
+	halSetMemOpsRxData(prMemOps,
+		WF_MEM_OP_RX_DATA_ZERO_COPY_PATH);
+
+	halSetMemOpsRxEvt(prMemOps,
+		WF_MEM_OP_RX_EVT_ZERO_COPY_PATH);
+
+	halSetMemOpsRxDump(prMemOps,
+		WF_MEM_OP_RX_DUMP_NULL);
+
+	halSetMemOpsExtBuf(prMemOps,
+		WF_MEM_OP_EXT_BUF_ZERO_COPY_PATH);
+
+	halSetMemOpsRuntimeMem(prMemOps,
+		WF_MEM_OP_RUNTIME_MEM_ZERO_COPY_PATH);
+
+	halSetMemOpsWifiMiscEmi(prMemOps,
+		WF_MEM_OP_WIFI_MISC_EMI_NULL);
+
+	return 0;
+}
+
+int halSetMemOps(
+	struct platform_device *prPlatDev,
+	struct HIF_MEM_OPS *prMemOps)
+{
+	if (prPlatDev)
+		halSetMemOpsAndroid(prMemOps);
+	else
+		halSetMemOpsPC(prMemOps);
+
+	return 0;
+}
+
+void glUpdateRxCopyMemOps(struct HIF_MEM_OPS *prMemOps)
+{
+	halSetMemOpsRxData(prMemOps, WF_MEM_OP_RX_DATA_COPY_PATH);
+	halSetMemOpsRxDump(prMemOps, WF_MEM_OP_RX_DUMP_COPY_PATH);
+}
