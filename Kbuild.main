@@ -428,14 +428,19 @@ ifneq ($(filter MT6639,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6639,$(ccflags-y))
 ccflags-y += -DMT6639
 ifeq ($(MTK_ANDROID_WMT), y)
+    ifeq ($(CONFIG_ARCH_MEDIATEK),y)
+        CONFIG_MTK_WIFI_POWER_THROTTLING=y
+        CONFIG_MTK_WIFI_PCIE_SUPPORT=y
+        ifeq ($(call kver_ge,5,15),1)
+            CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+        endif
+    endif
     CONFIG_MTK_WIFI_CONNFEM_SUPPORT=y
-    CONFIG_MTK_WIFI_POWER_THROTTLING=y
     CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
     CONFIG_MTK_WIFI_APF_SUPPORT=y
     ifneq ($(CONFIG_PAGE_POOL),)
         CONFIG_RX_PAGE_POOL=y
     endif
-    CONFIG_MTK_WIFI_PCIE_SUPPORT=y
     CONFIG_MTK_WIFI_CONNV3_SUPPORT=y
     CONFIG_MTK_WIFI_PCIE_MSI_SUPPORT=y
     CONFIG_MTK_WIFI_FW_LOG_EMI=y
@@ -622,6 +627,12 @@ TARGET_BUILD_VARIANT = user
 endif
 # ===== Below will add compile flag based on project setting =====
 
+ifeq ($(CONFIG_ARCH_MEDIATEK), y)
+    ccflags-y += -DCFG_MTK_WIFI_PLAT_ALPS=1
+else
+    ccflags-y += -DCFG_MTK_WIFI_PLAT_ALPS=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_WIFI_MCIF_NO_MMIO_READ), y)
     ccflags-y += -DCFG_SUPPORT_WIFI_MCIF_NO_MMIO_READ=1
 else
@@ -656,12 +667,6 @@ endif
 
 ifeq ($(CONFIG_TX_MGMT_BY_DATA_Q), n)
         ccflags-y += -DCFG_TX_MGMT_BY_DATA_Q=0
-endif
-
-ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
-    ccflags-y += -DCFG_VOLT_INFO=1
-else
-    ccflags-y += -DCFG_VOLT_INFO=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
@@ -970,6 +975,24 @@ else
     WMT_SUPPORT := n
 endif
 
+ifeq ($(WMT_SUPPORT), y)
+    ifeq ($(CONFIG_ARCH_MEDIATEK),y)
+        CONFIG_MODIFY_TX_POWER_BY_BAT_VOLT=y
+    endif
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
+    ccflags-y += -DCFG_VOLT_INFO=1
+else
+    ccflags-y += -DCFG_VOLT_INFO=0
+endif
+
+ifeq ($(CONFIG_MODIFY_TX_POWER_BY_BAT_VOLT), y)
+    ccflags-y += -DCFG_MODIFY_TX_POWER_BY_BAT_VOLT=1
+else
+    ccflags-y += -DCFG_MODIFY_TX_POWER_BY_BAT_VOLT=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_UNIFIED_COMMAND
 endif
@@ -1120,9 +1143,9 @@ else
 endif
 
 ifeq ($(CONFIG_MTK_AEE_FEATURE), y)
-    ccflags-y += -DCFG_SUPPORT_AEE=1
+    ccflags-y += -DCFG_ENABLE_AEE_MSG=1
 else
-    ccflags-y += -DCFG_SUPPORT_AEE=0
+    ccflags-y += -DCFG_ENABLE_AEE_MSG=0
 endif
 
 # Disable ASSERT() for user load, enable for others

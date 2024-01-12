@@ -1265,7 +1265,7 @@ struct WIFI_VAR {
 	u_int8_t fgLinkStatsDump;
 #endif /* CFG_SUPPORT_LLS */
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+#if (CFG_SUPPORT_PKT_OFLD == 1)
 	uint8_t ucAbnWakeupDetectEn;
 	uint8_t ucAbnWakeupPktThld;
 	uint8_t ucAbnWakeupDetectIntv;

@@ -21,7 +21,6 @@
 #include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
 #include "coda/soc5_0/wf_pse_top.h"
 #include "hal_dmashdl_soc5_0.h"
-#include <connectivity_build_in_adapter.h>
 #include <linux/mfd/mt6359p/registers.h>
 #include <linux/regmap.h>
 

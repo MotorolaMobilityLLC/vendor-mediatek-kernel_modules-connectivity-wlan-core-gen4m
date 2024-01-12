@@ -1117,8 +1117,7 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 
 	drv_type = coredump_src_to_connv3_type(source);
 	if (!state_ready) {
-		uint8_t force_dump_buf[
-			kalStrLen(CONNV3_COREDUMP_FORCE_DUMP) + 1];
+		uint8_t force_dump_buf[32];
 
 		kalSnprintf(force_dump_buf, sizeof(force_dump_buf), "%s",
 			    CONNV3_COREDUMP_FORCE_DUMP);
