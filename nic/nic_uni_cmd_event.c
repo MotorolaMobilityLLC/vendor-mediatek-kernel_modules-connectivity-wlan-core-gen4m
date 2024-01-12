@@ -11768,6 +11768,15 @@ void nicUniEventDelayBar(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				kalMemCopy(&(legacy.arBAR[i]),
 					&(prDelayBarInfo->arBAR[i]),
 					sizeof(struct UNI_STORED_BAR_INFO));
+
+				/*
+				 * Connac 3.x FW naming issue:
+				 * ucStaRecIdx => wlanIdx in Connac 3.x new FW
+				 * architecture
+				 */
+				legacy.arBAR[i].ucStaRecIdx =
+					secGetStaIdxByWlanIdx(ad,
+						legacy.arBAR[i].ucStaRecIdx);
 			}
 
 			RUN_RX_EVENT_HANDLER(
