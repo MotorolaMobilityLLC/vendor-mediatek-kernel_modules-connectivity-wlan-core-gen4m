@@ -10480,8 +10480,15 @@ uint32_t __weak kalGetLittleCpuBoostThreshold(void)
 }
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
+uint32_t __weak kalGetConnsysVersion(void)
+{
+	/* SOC7_CONNSYS_VERSION_ID = 0x02050100 */
+	return 0x02050100;
+}
+
 uint32_t __weak kalGetWfIpVersion(void)
 {
+	/* SOC7_WFSYS_VERSION_ID = 0x02020100 */
 	return 0x02040100;
 }
 

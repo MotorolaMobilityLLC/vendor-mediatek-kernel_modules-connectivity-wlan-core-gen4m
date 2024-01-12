@@ -2200,6 +2200,7 @@ uint32_t kalGetCpuBoostThreshold(void);
 uint32_t kalGetLittleCpuBoostThreshold(void);
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter, uint8_t uBssIndex);
+uint32_t kalGetConnsysVersion(void);
 uint32_t kalGetWfIpVersion(void);
 uint32_t kalGetFwVerOffset(void);
 uint32_t kalGetEmiMetOffset(void);
