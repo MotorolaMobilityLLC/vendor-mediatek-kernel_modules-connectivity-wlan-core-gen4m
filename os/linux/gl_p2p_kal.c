@@ -1645,7 +1645,9 @@ u_int8_t kalP2PCmpBlackList(IN struct GLUE_INFO *prGlueInfo, IN uint8_t rbssid[P
 void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4MaxClient, IN uint8_t ucRoleIndex)
 {
 	ASSERT(prGlueInfo);
-	ASSERT(prGlueInfo->prP2PInfo[ucRoleIndex]);
+
+	if (prGlueInfo->prP2PInfo[ucRoleIndex] == NULL)
+		return;
 
 	if (u4MaxClient == 0 || prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients >= P2P_MAXIMUM_CLIENT_COUNT)
 		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients = P2P_MAXIMUM_CLIENT_COUNT;
@@ -1666,9 +1668,9 @@ void kalP2PSetMaxClients(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4MaxClien
 u_int8_t kalP2PMaxClients(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4NumClient, IN uint8_t ucRoleIndex)
 {
 	ASSERT(prGlueInfo);
-	ASSERT(prGlueInfo->prP2PInfo[ucRoleIndex]);
 
-	if (prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients) {
+	if (prGlueInfo->prP2PInfo[ucRoleIndex] &&
+		prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients) {
 		if ((uint8_t) u4NumClient > prGlueInfo->prP2PInfo[ucRoleIndex]->ucMaxClients)
 			return TRUE;
 		else
