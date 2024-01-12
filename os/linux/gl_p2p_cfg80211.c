@@ -1049,6 +1049,7 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_ssid *prSsid = NULL;
 	uint8_t ucBssIdx = 0;
+	uint8_t ucRoleIdx = 0;
 	u_int8_t fgIsFullChanScan = FALSE;
 
 	/* [-----Channel-----] [-----SSID-----][-----IE-----] */
@@ -1093,8 +1094,17 @@ int mtk_p2p_cfg80211_scan(struct wiphy *wiphy,
 		/* TODO: */
 		/* Find a way to distinct DEV port scan & ROLE port scan.
 		 */
-		ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
-		DBGLOG(P2P, TRACE, "Device Port Scan.\n");
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, request->wdev->netdev,
+			&ucRoleIdx) < 0)
+			break;
+
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+			ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
+			/* Can't find BSS index. */
+			break;
+		}
+
+		DBGLOG(P2P, TRACE, "p2p scan [%d].\n", ucBssIdx);
 
 		u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) +
 		    (request->n_channels * sizeof(struct RF_CHANNEL_INFO)) +
