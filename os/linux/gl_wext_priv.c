@@ -12951,56 +12951,57 @@ static int priv_driver_show_txd_info(
 #if (CONFIG_WLAN_SERVICE == 1)
 int8_t *RxStatCommonUser[] = {
 	/* common user stat info */
-	"rx_fifo_full	: 0x%08x\n"
-	"aci_hit_low	: 0x%08x\n"
-	"aci_hit_high	: 0x%08x\n"
-	"mu_pkt_count	: 0x%08x\n"
-	"sig_mcs	: 0x%08x\n"
-	"sinr	: 0x%08x\n"
-	"driver_rx_count	: 0x%08x\n"
+	"rx_fifo_full	: 0x%08x\n",
+	"aci_hit_low	: 0x%08x\n",
+	"aci_hit_high	: 0x%08x\n",
+	"mu_pkt_cnt	: 0x%08x\n",
+	"sig_mcs		: 0x%08x\n",
+	"sinr		: 0x%08x\n",
+	"driver_rx_count: 0x%08x\n"
 };
 
 int8_t *RxStatPerUser[] = {
    /* per user stat info */
-	"freq_offset_from_rx	: 0x%08x\n"
-	"snr	: 0x%08x\n"
-	"fcs_error_cnt	: 0x%08x\n"
+	"freq_ofst_from_rx: 0x%08x\n",
+	"snr		: 0x%08x\n",
+	"fcs_err_cnt	: 0x%08x\n"
 };
 
 int8_t *RxStatPerAnt[] = {
 	/* per anternna stat info */
-	"rcpi	: 0x%08x\n"
-	"rssi	: 0x%08x\n"
-	"fagc_ib_rssi	: 0x%08x\n"
-	"fagc_wb_ rssi	: 0x%08x\n"
-	"inst_ib_ rssi	: 0x%08x\n"
-	"inst_wb_ rssi	: 0x%08x\n"
+	"rcpi		: %d\n",
+	"rssi		: %d\n",
+	"fagc_ib_rssi	: %d\n",
+	"fagc_wb_rssi	: %d\n",
+	"inst_ib_rssi	: %d\n",
+	"inst_wb_rssi	: %d\n"
 };
 
 int8_t *RxStatPerBand[] = {
 	/* per band stat info */
-	"mac_rx_fcs_err_cnt	: 0x%08x\n"
-	"mac_rx_mdrdy_cnt	: 0x%08x\n"
-	"mac_rx_len_mismatch	: 0x%08x\n"
-	"mac_rx_fcs_ok_cnt	: 0x%08x\n"
-	"phy_rx_fcs_err_cnt_cck	: 0x%08x\n"
-	"phy_rx_fcs_err_cnt_ofdm	: 0x%08x\n"
-	"phy_rx_pd_cck	: 0x%08x\n"
-	"phy_rx_pd_ofdm	: 0x%08x\n"
-	"phy_rx_sig_err_cck	: 0x%08x\n"
-	"phy_rx_sfd_err_cck	: 0x%08x\n"
-	"phy_rx_sig_err_ofdm	: 0x%08x\n"
-	"phy_rx_tag_err_ofdm	: 0x%08x\n"
-	"phy_rx_mdrdy_cnt_cck	: 0x%08x\n"
-	"phy_rx_mdrdy_cnt_ofdm	: 0x%08x\n"
+	"mac_fcs_err_cnt	: 0x%08x\n",
+	"mac_mdy_cnt	: 0x%08x\n",
+	"mac_len_mismatch: 0x%08x\n",
+	"mac_fcs_ok_cnt	: 0x%08x\n",
+	"phy_fcs_err_cnt_cck: 0x%08x\n",
+	"phy_fcs_err_cnt_ofdm: 0x%08x\n",
+	"phy_pd_cck	: 0x%08x\n",
+	"phy_pd_ofdm	: 0x%08x\n",
+	"phy_sig_err_cck	: 0x%08x\n",
+	"phy_sfd_err_cck	: 0x%08x\n",
+	"phy_sig_err_ofdm: 0x%08x\n",
+	"phy_tag_err_ofdm: 0x%08x\n",
+	"phy_mdy_cnt_cck	: 0x%08x\n",
+	"phy_mdy_cnt_ofdm: 0x%08x\n"
 };
 
 int32_t priv_driver_rx_stat_parser(
 	IN uint8_t *dataptr,
+	IN int i4TotalLen,
 	OUT char *pcCommand
 )
 {
-	int32_t i4BytesWritten = 0, i4TotalLen = 0;
+	int32_t i4BytesWritten = 0;
 	int32_t i4tmpContent = 0;
 	int32_t i4TypeNum = 0, i4Type = 0, i4Version = 0;
 	int32_t i = 0, j = 0, i4ItemMask = 0, i4TypeLen = 0, i4SubLen = 0;
@@ -13100,8 +13101,11 @@ static int priv_driver_run_hqa(
 	int8_t *this_char = NULL;
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct hqa_frame_ctrl local_hqa;
+	bool IsShowRxStat = FALSE;
 	uint8_t *dataptr = NULL;
+	uint8_t *oridataptr = NULL;
 	int32_t datalen = 0;
+	int32_t oridatalen = 0;
 	int32_t ret = WLAN_STATUS_FAILURE;
 	int16_t i2tmpVal = 0;
 	int32_t i4tmpVal = 0;
@@ -13129,6 +13133,11 @@ static int priv_driver_run_hqa(
 	DBGLOG(REQ, LOUD, "this_char is %s\n", this_char);
 #if (CONFIG_WLAN_SERVICE == 1)
 	if (this_char) {
+		if (strncasecmp(this_char,
+		"GetRXStatisticsAllNew",
+		strlen("GetRXStatisticsAllNew")) == 0)
+		IsShowRxStat = TRUE;
+
 		local_hqa.type = 1;
 		local_hqa.hqa_frame_comm.hqa_frame_string = this_char;
 		ret = mt_agent_hqa_cmd_handler(&prGlueInfo->rService,
@@ -13143,6 +13152,9 @@ static int priv_driver_run_hqa(
 	if (dataptr == NULL)
 		return -1;
 
+	/* Backup Original Ptr /Len for mem Free */
+	oridataptr = dataptr;
+	oridatalen = datalen;
 	kalMemCopy(dataptr,
 	local_hqa.hqa_frame_comm.hqa_frame_eth->data, datalen);
 
@@ -13161,7 +13173,7 @@ static int priv_driver_run_hqa(
 	} else {
 		DBGLOG(REQ, ERROR,
 		"priv_driver_run_hqa not support\n");
-		kalMemFree(dataptr, VIR_MEM_TYPE, datalen);
+		kalMemFree(oridataptr, VIR_MEM_TYPE, oridatalen);
 		return -1;
 	}
 
@@ -13180,14 +13192,21 @@ static int priv_driver_run_hqa(
 				i4TotalLen, "Band%d TX : 0x%08x\n", i/4,
 				NTOHL(i4tmpVal));
 			} else {
+				if (IsShowRxStat) {
+				i += datalen;
+				i4BytesWritten +=
+				priv_driver_rx_stat_parser(dataptr,
+				i4TotalLen, pcCommand + i4BytesWritten);
+				} else {
 				i4BytesWritten +=
 				kalSnprintf(pcCommand + i4BytesWritten,
 				i4TotalLen, "id%d : 0x%08x\n", i/4,
 				NTOHL(i4tmpVal));
+				}
 			}
 		}
 	}
-	kalMemFree(dataptr, VIR_MEM_TYPE, datalen);
+	kalMemFree(oridataptr, VIR_MEM_TYPE, oridatalen);
 #else
 	DBGLOG(REQ, ERROR,
 	"wlan_service not support\n");
