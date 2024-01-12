@@ -5119,7 +5119,7 @@ void mqmProcessAssocRsp(IN struct ADAPTER *prAdapter,
 				u2IELength, TRUE);
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (fgEfuseCtrlAxOn == 1) {
-			mqmParseMUEdcaParams(prAdapter, prSwRfb,
+				mqmParseMUEdcaParams(prAdapter, prSwRfb,
 				pucIEStart, u2IELength, TRUE);
 			}
 #endif
@@ -5193,8 +5193,8 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 							prSwRfb, pucIE,
 							u2IELength, FALSE);
 #if (CFG_SUPPORT_802_11AX == 1)
-					if (fgEfuseCtrlAxOn == 1) {
-					fgNewMUEdca = mqmParseMUEdcaParams(
+				if (fgEfuseCtrlAxOn == 1) {
+				fgNewMUEdca = mqmParseMUEdcaParams(
 						prAdapter, prSwRfb, pucIE,
 						u2IELength, FALSE);
 					}
@@ -5207,6 +5207,7 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 				nicQmUpdateWmmParms(prAdapter,
 					prBssInfo->ucBssIndex);
 				fgNewParameter = FALSE;
+			}
 #if (CFG_SUPPORT_802_11AX == 1)
 			if (fgEfuseCtrlAxOn == 1) {
 				if (fgNewMUEdca) {
@@ -5216,10 +5217,10 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 				}
 			}
 #endif
-			}
-		}		/* end of IS_BSS_ACTIVE() */
-	}
+		}
+	}		/* end of IS_BSS_ACTIVE() */
 }
+
 
 u_int8_t mqmUpdateEdcaParameters(IN struct BSS_INFO	*prBssInfo,
 	IN uint8_t *pucIE, IN u_int8_t fgForceOverride)
