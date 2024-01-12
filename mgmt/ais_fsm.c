@@ -6957,8 +6957,6 @@ void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
 		goto exit;
 
 	prCancelTxWaitMsg = (struct MSG_CANCEL_TX_WAIT_REQUEST *) prMsgHdr;
-	if (prCancelTxWaitMsg == NULL)
-		goto exit;
 
 	ucBssIndex = prCancelTxWaitMsg->ucBssIdx;
 
