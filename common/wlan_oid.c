@@ -12602,7 +12602,7 @@ wlanoidSetStopSchedScan(IN struct ADAPTER *prAdapter,
 		ret = WLAN_STATUS_SUCCESS;
 	} else {
 		DBGLOG(REQ, WARN, "scnFsmSchedScanStopRequest failed.\n");
-		ret = WLAN_STATUS_FAILURE;
+		ret = WLAN_STATUS_RESOURCES;
 	}
 	return ret;
 }
