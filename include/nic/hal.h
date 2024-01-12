@@ -526,13 +526,19 @@ do { \
 #define HAL_READ_INT_STATUS(_prAdapter, _pu4IntStatus) \
 { \
 	struct BUS_INFO *prBusInfo; \
+	struct GL_HIF_INFO *prHifInfo; \
 	prBusInfo = _prAdapter->chip_info->bus_info; \
+	prHifInfo = &_prAdapter->prGlueInfo->rHifInfo; \
 	if (prBusInfo->devReadIntStatus) \
 		prBusInfo->devReadIntStatus(_prAdapter, _pu4IntStatus); \
 	else \
 		kalDevReadIntStatus(_prAdapter, _pu4IntStatus);\
 	if (_prAdapter->u4NoMoreRfb != 0) \
 		*_pu4IntStatus |= WHISR_RX0_DONE_INT; \
+	if (!prHifInfo->fgIsBackupIntSta) { \
+		prHifInfo->fgIsBackupIntSta = true; \
+		prHifInfo->u4WakeupIntSta = prHifInfo->u4IntStatus; \
+	} \
 }
 
 #define HAL_HIF_INIT(prAdapter)
