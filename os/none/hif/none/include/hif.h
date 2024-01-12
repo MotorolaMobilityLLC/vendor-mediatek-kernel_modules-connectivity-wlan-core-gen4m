@@ -310,6 +310,8 @@ struct PCIE_CHIP_CR_REMAPPING {
 
 #define glGetHifDev(_prHif, _ppDev)
 
+#define glGetChipInfo(_pprChipInfo)
+
 #define HAL_WAKE_UP_WIFI(_prAdapter)
 
 #define halWpdmaInitRing(_glueinfo, __fgResetHif) \

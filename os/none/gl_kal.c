@@ -467,7 +467,7 @@ uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-int32_t kalGetFwFlavor(struct ADAPTER *prAdapter, uint8_t *flavor)
+int32_t kalGetFwFlavor(uint8_t *flavor)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

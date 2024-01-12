@@ -2945,7 +2945,7 @@ void rlmDomainTxPwrLimitPerRateSetValues(
 
 u_int8_t rlmDomainTxPwrLimitLoadFromFile(
 	struct ADAPTER *prAdapter,
-	uint8_t *pucConfigBuf, uint32_t *pu4ConfigReadLen)
+	uint8_t **pucConfigBuf, uint32_t *pu4ConfigReadLen)
 {
 #define TXPWRLIMIT_FILE_LEN 64
 	u_int8_t bRet = TRUE;
@@ -2961,22 +2961,19 @@ u_int8_t rlmDomainTxPwrLimitLoadFromFile(
 	kalMemZero(aucPath, sizeof(aucPath));
 	kalSnprintf(aucPath, TXPWRLIMIT_FILE_LEN, "%s", prFileName);
 
-	kalMemZero(pucConfigBuf, WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE);
-	*pu4ConfigReadLen = 0;
-
-	if (wlanGetFileContent(
-			prAdapter,
+	if (kalRequestFirmware(
 			aucPath,
 			pucConfigBuf,
-			WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
-			pu4ConfigReadLen) == 0) {
+			pu4ConfigReadLen,
+			FALSE,
+			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
 		/* ToDo:: Nothing */
 	} else {
 		bRet = FALSE;
 		goto error;
 	}
 
-	if (pucConfigBuf[0] == '\0' || *pu4ConfigReadLen == 0) {
+	if (*pu4ConfigReadLen == 0) {
 		bRet = FALSE;
 		goto error;
 	}
@@ -2992,18 +2989,15 @@ u_int8_t rlmDomainGetTxPwrLimit(
 	struct GLUE_INFO *prGlueInfo,
 	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
 {
-	u_int8_t bRet = FALSE;
+	u_int8_t bRet;
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 
-	pucConfigBuf = (uint8_t *) kalMemAlloc(
-		WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE, VIR_MEM_TYPE);
-
-	if (!pucConfigBuf)
-		return bRet;
-
 	bRet = rlmDomainTxPwrLimitLoadFromFile(prGlueInfo->prAdapter,
-		pucConfigBuf, &u4ConfigReadLen);
+		&pucConfigBuf, &u4ConfigReadLen);
+
+	if (!bRet)
+		goto error;
 
 	rlmDomainTxPwrLimitRemoveComments(pucConfigBuf, u4ConfigReadLen);
 	*pucVersion = rlmDomainTxPwrLimitGetTableVersion(pucConfigBuf,
@@ -3018,8 +3012,8 @@ u_int8_t rlmDomainGetTxPwrLimit(
 
 error:
 
-	kalMemFree(pucConfigBuf,
-		VIR_MEM_TYPE, WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE);
+	if (pucConfigBuf)
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
 
 	return bRet;
 }
@@ -7549,29 +7543,21 @@ void txPwrCtrlGlobalVariableToList(struct ADAPTER *prAdapter)
 
 void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 {
-	uint8_t *pucConfigBuf;
+	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 
-	pucConfigBuf = (uint8_t *)kalMemAlloc(WLAN_CFG_FILE_BUF_SIZE,
-					      VIR_MEM_TYPE);
-	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
-	if (pucConfigBuf) {
-		if (kalRequestFirmware("txpowerctrl.cfg", pucConfigBuf,
-		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
-			/* ToDo:: Nothing */
-		}
-
-		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0
-			&& u4ConfigReadLen < WLAN_CFG_FILE_BUF_SIZE) {
-			pucConfigBuf[u4ConfigReadLen] = 0;
-			txPwrCtrlFileBufToList(prAdapter, pucConfigBuf);
-		} else
-			DBGLOG(RLM, INFO,
-			       "no txpowerctrl.cfg or file is empty\n");
-
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, WLAN_CFG_FILE_BUF_SIZE);
+	if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
+	    &u4ConfigReadLen, TRUE,
+	    kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+		/* ToDo:: Nothing */
 	}
+
+	if (pucConfigBuf) {
+		txPwrCtrlFileBufToList(prAdapter, pucConfigBuf);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
+	} else
+		DBGLOG(RLM, INFO,
+		       "no txpowerctrl.cfg or file is empty\n");
 }
 
 void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)

@@ -6621,15 +6621,17 @@ uint8_t kalGetRsnIeMfpCap(IN struct GLUE_INFO *prGlueInfo,
  * \param[in] dev
  *
  * \return
- *           0 success
- *           >0 fail
+ *           0: success
+ *           not 0: fail
  */
 /*----------------------------------------------------------------------------*/
 int32_t kalRequestFirmware(const uint8_t *pucPath,
-			   uint8_t *pucData, uint32_t u4Size,
-			   uint32_t *pu4ReadSize, struct device *dev)
+		uint8_t **ppucData, uint32_t *pu4ReadSize,
+		uint8_t ucIsZeroPadding, struct device *dev)
 {
 	const struct firmware *fw;
+	uint8_t *pucData = NULL;
+	uint32_t u4Size;
 	int ret = 0;
 
 	/*
@@ -6642,7 +6644,7 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 	if (ret != 0) {
 		DBGLOG(INIT, TRACE, "kalRequestFirmware %s Fail, errno[%d]!!\n",
 		       pucPath, ret);
-		pucData = NULL;
+		*ppucData = NULL;
 		*pu4ReadSize = 0;
 		return ret;
 	}
@@ -6650,12 +6652,23 @@ int32_t kalRequestFirmware(const uint8_t *pucPath,
 	DBGLOG(INIT, INFO, "kalRequestFirmware(): %s OK\n",
 	       pucPath);
 
-	if (fw->size < u4Size)
+	if (ucIsZeroPadding)
+		u4Size = fw->size + 1;
+	else
 		u4Size = fw->size;
 
-	memcpy(pucData, fw->data, u4Size);
-	if (pu4ReadSize)
-		*pu4ReadSize = u4Size;
+	pucData = kalMemAlloc(u4Size, VIR_MEM_TYPE);
+	if (pucData == NULL) {
+		*ppucData = NULL;
+		*pu4ReadSize = 0;
+		release_firmware(fw);
+		return -1;
+	}
+	kalMemCopy(pucData, fw->data, fw->size);
+	if (ucIsZeroPadding)
+		pucData[fw->size] = 0;
+	*ppucData = pucData;
+	*pu4ReadSize = u4Size;
 
 	release_firmware(fw);
 
@@ -9883,10 +9896,14 @@ int32_t __weak kalGetFwFlavorByPlat(uint8_t *flavor)
 	return 0;
 }
 
-int32_t kalGetFwFlavor(struct ADAPTER *prAdapter, uint8_t *flavor)
+int32_t kalGetFwFlavor(uint8_t *flavor)
 {
-	if (prAdapter && prAdapter->fw_flavor) {
-		*flavor = prAdapter->fw_flavor[0];
+	struct mt66xx_hif_driver_data *prDriverData;
+
+	prDriverData = get_platform_driver_data();
+
+	if (prDriverData->fw_flavor) {
+		*flavor = prDriverData->fw_flavor[0];
 		return 1;
 	}
 

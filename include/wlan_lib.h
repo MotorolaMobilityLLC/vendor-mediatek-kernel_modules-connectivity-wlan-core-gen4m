@@ -226,7 +226,6 @@
 #define WLAN_CFG_KEY_LEN_MAX	32	/* include \x00  EOL */
 #define WLAN_CFG_VALUE_LEN_MAX	128	/* include \x00 EOL */
 #define WLAN_CFG_FLAG_SKIP_CB	BIT(0)
-#define WLAN_CFG_FILE_BUF_SIZE	2048
 
 #define WLAN_CFG_REC_ENTRY_NUM_MAX 400
 
@@ -2142,9 +2141,6 @@ uint32_t wlanSetLowLatencyCommand(IN struct ADAPTER *prAdapter,
 uint32_t wlanSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 				IN uint32_t u4Events, uint8_t ucBssIndex);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
-int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
-	const uint8_t *pcFileName, uint8_t *pucBuf,
-	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen);
 
 #if CFG_SUPPORT_EASY_DEBUG
 uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf);

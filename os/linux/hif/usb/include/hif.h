@@ -523,8 +523,12 @@ void halUSBPreSuspendTimeout(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *p
 
 uint32_t halSerGetMcuEvent(IN struct ADAPTER *prAdapter, IN u_int8_t fgClear);
 
-void glGetDev(void *ctx, struct device **dev);
+void glGetDev(void *ctx, void **dev);
 void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev);
+
+struct mt66xx_hif_driver_data *get_platform_driver_data(void);
+
+void glGetChipInfo(void **prChipInfo);
 
 void halGetCompleteStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus);
 

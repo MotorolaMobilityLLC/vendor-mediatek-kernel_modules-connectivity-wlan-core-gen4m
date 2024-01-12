@@ -3542,6 +3542,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t i;
+	void *pvDev;
 	struct device *prDev;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
@@ -3587,9 +3588,10 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 #endif	/* CFG_ENABLE_UNIFY_WIPHY */
 
 	/* 4 <1.3> co-relate wiphy & prDev */
-	glGetDev(pvData, &prDev);
-	if (!prDev)
+	glGetDev(pvData, &pvDev);
+	if (!pvDev)
 		DBGLOG(INIT, ERROR, "unable to get struct dev for wlan\n");
+	prDev = (struct device *)pvDev;
 	/* Some kernel API (ex: cfg80211_get_drvinfo) will use wiphy_dev().
 	 * Without set_wiphy_dev(prWdev->wiphy, prDev), those API will crash.
 	 */
@@ -4161,35 +4163,28 @@ int set_p2p_mode_handler(struct net_device *netdev,
 /*----------------------------------------------------------------------------*/
 void wlanGetParseConfig(struct ADAPTER *prAdapter)
 {
-	uint8_t *pucConfigBuf;
+	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen;
 
 	wlanCfgInit(prAdapter, NULL, 0, 0);
-	pucConfigBuf = (uint8_t *) kalMemAlloc(
-			       WLAN_CFG_FILE_BUF_SIZE, VIR_MEM_TYPE);
-	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
+
+	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
+		   &u4ConfigReadLen, TRUE,
+		   prAdapter->prGlueInfo->prDev) == 0) {
+		/* ToDo:: Nothing */
+	} else if (kalRequestFirmware("wifi.cfg", &pucConfigBuf,
+		   &u4ConfigReadLen, TRUE,
+		   prAdapter->prGlueInfo->prDev) == 0) {
+		/* ToDo:: Nothing */
+	}
+
 	if (pucConfigBuf) {
-		if (kalRequestFirmware("wifi_sigma.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalRequestFirmware("wifi.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		}
-
-		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
-			wlanCfgParse(prAdapter, pucConfigBuf, u4ConfigReadLen,
-				     TRUE);
-
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
-			   WLAN_CFG_FILE_BUF_SIZE);
-	}			/* pucConfigBuf */
+		wlanCfgParse(prAdapter, pucConfigBuf, u4ConfigReadLen,
+			TRUE);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
+	}
 }
-
-
 #endif
 
 /*----------------------------------------------------------------------------*/
@@ -4203,36 +4198,32 @@ void wlanGetParseConfig(struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void wlanGetConfig(struct ADAPTER *prAdapter)
 {
-	uint8_t *pucConfigBuf;
-	uint32_t u4ConfigReadLen;
 #ifndef CFG_WIFI_CFG_FN
 #define WIFI_CFG_FN	"wifi.cfg"
 #else
 #define WIFI_CFG_FN	CFG_WIFI_CFG_FN
 #endif
+	uint8_t *pucConfigBuf = NULL;
+	uint32_t u4ConfigReadLen;
+
 	wlanCfgInit(prAdapter, NULL, 0, 0);
-	pucConfigBuf = (uint8_t *) kalMemAlloc(
-			       WLAN_CFG_FILE_BUF_SIZE, VIR_MEM_TYPE);
-	kalMemZero(pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE);
 	u4ConfigReadLen = 0;
+
+	if (kalRequestFirmware("wifi_sigma.cfg", &pucConfigBuf,
+		   &u4ConfigReadLen, TRUE,
+		   prAdapter->prGlueInfo->prDev) == 0) {
+		/* ToDo:: Nothing */
+	} else if (kalRequestFirmware(WIFI_CFG_FN, &pucConfigBuf,
+		   &u4ConfigReadLen, TRUE,
+		   prAdapter->prGlueInfo->prDev) == 0) {
+		/* ToDo:: Nothing */
+	}
+
 	if (pucConfigBuf) {
-		if (kalRequestFirmware("wifi_sigma.cfg", pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalRequestFirmware(WIFI_CFG_FN, pucConfigBuf,
-			   WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
-			   prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		}
-
-		if (pucConfigBuf[0] != '\0' && u4ConfigReadLen > 0)
-			wlanCfgInit(prAdapter,
-				pucConfigBuf, u4ConfigReadLen, 0);
-
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
-			   WLAN_CFG_FILE_BUF_SIZE);
-	}			/* pucConfigBuf */
+		wlanCfgInit(prAdapter, pucConfigBuf, u4ConfigReadLen,
+			0);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ConfigReadLen);
+	}
 }
 
 
@@ -4259,6 +4250,7 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE *prSetEfuseBufModeInfo
 			= NULL;
 	uint32_t u4ContentLen;
+	uint32_t u4ReadLen;
 	uint8_t *pucConfigBuf = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t chip_id;
@@ -4336,13 +4328,6 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 			/* Buffer mode */
 			/* Only in buffer mode need to access bin file */
 			/* 1 <1> Load bin file*/
-			pucConfigBuf = (uint8_t *) kalMemAlloc(
-					MAX_EEPROM_BUFFER_SIZE, VIR_MEM_TYPE);
-			if (pucConfigBuf == NULL)
-				goto label_exit;
-
-			kalMemZero(pucConfigBuf, MAX_EEPROM_BUFFER_SIZE);
-
 			/* 1 <2> Construct EEPROM binary name */
 			kalMemZero(aucEeprom, sizeof(aucEeprom));
 
@@ -4356,8 +4341,8 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 			}
 
 			/* 1 <3> Request buffer bin */
-			if (kalRequestFirmware(aucEeprom, pucConfigBuf,
-			    MAX_EEPROM_BUFFER_SIZE, &u4ContentLen,
+			if (kalRequestFirmware(aucEeprom, &pucConfigBuf,
+			    &u4ReadLen, FALSE,
 			    prGlueInfo->prDev) == 0) {
 				DBGLOG(INIT, INFO, "request file done\n");
 			} else {
@@ -4366,11 +4351,13 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 			}
 
 			/* 1 <4> Send CMD with bin file content */
-			prGlueInfo = prAdapter->prGlueInfo;
+			if (u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
+				goto label_exit;
 
 			/* Update contents in local table */
+			kalMemZero(uacEEPROMImage, MAX_EEPROM_BUFFER_SIZE);
 			kalMemCopy(uacEEPROMImage, pucConfigBuf,
-				   MAX_EEPROM_BUFFER_SIZE);
+				   u4ReadLen);
 
 			/* copy to the command buffer */
 #if (CFG_FW_Report_Efuse_Address)
@@ -4413,8 +4400,7 @@ label_exit:
 			   sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE));
 
 	if (pucConfigBuf != NULL)
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
-			   MAX_EEPROM_BUFFER_SIZE);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ReadLen);
 
 #if CFG_EFUSE_AUTO_MODE_SUPPORT
 	if (prAccessEfuseInfo != NULL)
@@ -4443,7 +4429,7 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T
 		*prSetEfuseBufModeInfo = NULL;
-	uint32_t u4ContentLen;
+	uint32_t u4ReadLen;
 	uint8_t *pucConfigBuf = NULL;
 	struct mt66xx_chip_info *prChipInfo;
 	uint32_t chip_id;
@@ -4521,13 +4507,6 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		/* Buffer mode */
 		/* Only in buffer mode need to access bin file */
 		/* 1 <1> Load bin file*/
-		pucConfigBuf = (uint8_t *) kalMemAlloc(
-				       MAX_EEPROM_BUFFER_SIZE, VIR_MEM_TYPE);
-		if (pucConfigBuf == NULL)
-			goto label_exit;
-
-		kalMemZero(pucConfigBuf, MAX_EEPROM_BUFFER_SIZE);
-
 		/* 1 <2> Construct EEPROM binary name */
 		kalMemZero(aucEeprom, sizeof(aucEeprom));
 
@@ -4541,28 +4520,28 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		}
 
 		/* 1 <3> Request buffer bin */
-		if (kalRequestFirmware(aucEeprom, pucConfigBuf,
-		    MAX_EEPROM_BUFFER_SIZE, &u4ContentLen, prGlueInfo->prDev)
+		if (kalRequestFirmware(aucEeprom, &pucConfigBuf,
+		    &u4ReadLen, FALSE, prGlueInfo->prDev)
 		    == 0) {
 			DBGLOG(INIT, INFO, "request file done\n");
 		} else {
 			DBGLOG(INIT, INFO, "can't find file\n");
 			goto label_exit;
 		}
-		DBGLOG(INIT, INFO, "u4ContentLen = %d\n", u4ContentLen);
+		DBGLOG(INIT, INFO, "u4ReadLen = %d\n", u4ReadLen);
 
 		/* 1 <4> Send CMD with bin file content */
 		prGlueInfo = prAdapter->prGlueInfo;
 
-		/* Update contents in local table */
-		kalMemCopy(uacEEPROMImage, pucConfigBuf,
-			   MAX_EEPROM_BUFFER_SIZE);
-
-		if (u4ContentLen > MAX_EEPROM_BUFFER_SIZE)
+		if (u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
 			goto label_exit;
 
+		/* Update contents in local table */
+		kalMemZero(uacEEPROMImage, MAX_EEPROM_BUFFER_SIZE);
+		kalMemCopy(uacEEPROMImage, pucConfigBuf, u4ReadLen);
+
 		kalMemCopy(prSetEfuseBufModeInfo->aBinContent, pucConfigBuf,
-			   u4ContentLen);
+			   u4ReadLen);
 
 		prSetEfuseBufModeInfo->ucSourceMode = 1;
 	} else {
@@ -4571,16 +4550,16 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 		 * from efuse
 		 */
 		prSetEfuseBufModeInfo->ucSourceMode = 0;
-		u4ContentLen = 0;
+		u4ReadLen = 0;
 	}
 	prSetEfuseBufModeInfo->ucContentFormat = 0x1 |
 			(prAdapter->rWifiVar.ucCalTimingCtrl << 4);
-	prSetEfuseBufModeInfo->u2Count = u4ContentLen;
+	prSetEfuseBufModeInfo->u2Count = u4ReadLen;
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidConnacSetEfusBufferMode,
 		(void *)prSetEfuseBufModeInfo,
 		OFFSET_OF(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T,
-		aBinContent) + u4ContentLen, &u4BufLen);
+		aBinContent) + u4ReadLen, &u4BufLen);
 
 	retWlanStat = WLAN_STATUS_SUCCESS;
 
@@ -4593,7 +4572,7 @@ label_exit:
 
 	if (pucConfigBuf != NULL)
 		kalMemFree(pucConfigBuf, VIR_MEM_TYPE,
-			   MAX_EEPROM_BUFFER_SIZE);
+			   u4ReadLen);
 
 #if CFG_EFUSE_AUTO_MODE_SUPPORT
 	if (prAccessEfuseInfo != NULL)
@@ -4614,6 +4593,7 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 	uint8_t *pucConfigBuf = NULL;
 	uint8_t aucEeprom[32];
 	uint32_t u4ContentLen = 0;
+	uint32_t u4ReadLen;
 	uint8_t uTotalPage = 0;
 	uint8_t uPageIdx = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -4694,12 +4674,6 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 		/* Buffer mode */
 		/* Only in buffer mode need to access bin file */
 		/* 1 <1> Load bin file*/
-		pucConfigBuf = (uint8_t *)
-			kalMemAlloc(MAX_EEPROM_BUFFER_SIZE, VIR_MEM_TYPE);
-		if (pucConfigBuf == NULL)
-			goto label_exit;
-		kalMemZero(pucConfigBuf, MAX_EEPROM_BUFFER_SIZE);
-
 		/* 1 <2> Construct EEPROM binary name */
 		kalMemZero(aucEeprom, sizeof(aucEeprom));
 		if (prChipInfo->constructBufferBinFileName == NULL) {
@@ -4717,26 +4691,26 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 		}
 
 		/* 1 <3> Request buffer bin */
-		if (kalRequestFirmware(aucEeprom, pucConfigBuf,
-				MAX_EEPROM_BUFFER_SIZE, &u4ContentLen,
+		if (kalRequestFirmware(aucEeprom, &pucConfigBuf,
+				&u4ReadLen, FALSE,
 				prGlueInfo->prDev) == 0) {
 			DBGLOG(INIT, INFO, "request file done\n");
 		} else {
 			DBGLOG(INIT, INFO, "can't find file\n");
 			goto label_exit;
 		}
-		DBGLOG(INIT, INFO, "u4ContentLen = %d\n", u4ContentLen);
+		DBGLOG(INIT, INFO, "u4ReadLen = %d\n", u4ReadLen);
 
 		/* 1 <4> Send CMD with bin file content */
-		if (u4ContentLen == 0 || u4ContentLen > MAX_EEPROM_BUFFER_SIZE)
+		if (u4ReadLen == 0 || u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
 			goto label_exit;
 
 		/* Update contents in local table */
-		kalMemCopy(uacEEPROMImage, pucConfigBuf,
-			MAX_EEPROM_BUFFER_SIZE);
+		kalMemZero(uacEEPROMImage, MAX_EEPROM_BUFFER_SIZE);
+		kalMemCopy(uacEEPROMImage, pucConfigBuf, u4ReadLen);
 
-		uTotalPage = u4ContentLen / BUFFER_BIN_PAGE_SIZE;
-		if ((u4ContentLen % BUFFER_BIN_PAGE_SIZE) == 0)
+		uTotalPage = u4ReadLen / BUFFER_BIN_PAGE_SIZE;
+		if ((u4ReadLen % BUFFER_BIN_PAGE_SIZE) == 0)
 			uTotalPage--;
 
 		prSetEfuseBufModeInfo->ucSourceMode = 1;
@@ -4746,10 +4720,11 @@ uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
 		 * from efuse
 		 */
 		prSetEfuseBufModeInfo->ucSourceMode = 0;
-		u4ContentLen = 0;
+		u4ReadLen = 0;
 		uTotalPage = 0;
 	}
 
+	u4ContentLen = u4ReadLen;
 	for (uPageIdx = 0; uPageIdx <= uTotalPage; uPageIdx++) {
 		/* set format */
 		prSetEfuseBufModeInfo->ucContentFormat = (
@@ -4796,7 +4771,7 @@ label_exit:
 		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE,
 			sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
 	if (pucConfigBuf != NULL)
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, MAX_EEPROM_BUFFER_SIZE);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ReadLen);
 
 #if CFG_EFUSE_AUTO_MODE_SUPPORT
 	if (prAccessEfuseInfo != NULL)
@@ -4818,6 +4793,7 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 	uint8_t *pucConfigBuf = NULL;
 	uint8_t aucEeprom[32];
 	uint32_t u4ContentLen = 0;
+	uint32_t u4ReadLen;
 	uint8_t uTotalPage = 0;
 	uint8_t uPageIdx = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -4863,12 +4839,6 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 		/* Buffer mode */
 		/* Only in buffer mode need to access bin file */
 		/* 1 <1> Load bin file*/
-		pucConfigBuf = (uint8_t *)
-			kalMemAlloc(MAX_EEPROM_BUFFER_SIZE, VIR_MEM_TYPE);
-		if (pucConfigBuf == NULL)
-			goto label_exit;
-		kalMemZero(pucConfigBuf, MAX_EEPROM_BUFFER_SIZE);
-
 		/* 1 <2> Construct EEPROM binary name */
 		kalMemZero(aucEeprom, sizeof(aucEeprom));
 
@@ -4890,26 +4860,26 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 		}
 
 		/* 1 <3> Request buffer bin */
-		if (kalRequestFirmware(aucEeprom, pucConfigBuf,
-				MAX_EEPROM_BUFFER_SIZE, &u4ContentLen,
+		if (kalRequestFirmware(aucEeprom, &pucConfigBuf,
+				&u4ReadLen, FALSE,
 				prGlueInfo->prDev) == 0) {
 			DBGLOG(INIT, INFO, "request file done\n");
 		} else {
 			DBGLOG(INIT, INFO, "can't find file\n");
 			goto label_exit;
 		}
-		DBGLOG(INIT, INFO, "u4ContentLen = %d\n", u4ContentLen);
+		DBGLOG(INIT, INFO, "u4ReadLen = %d\n", u4ReadLen);
 
 		/* 1 <4> Send CMD with bin file content */
-		if (u4ContentLen == 0 || u4ContentLen > MAX_EEPROM_BUFFER_SIZE)
+		if (u4ReadLen == 0 || u4ReadLen > MAX_EEPROM_BUFFER_SIZE)
 			goto label_exit;
 
 		/* Update contents in local table */
-		kalMemCopy(uacEEPROMImage, pucConfigBuf,
-			MAX_EEPROM_BUFFER_SIZE);
+		kalMemZero(uacEEPROMImage, MAX_EEPROM_BUFFER_SIZE);
+		kalMemCopy(uacEEPROMImage, pucConfigBuf, u4ReadLen);
 
-		uTotalPage = u4ContentLen / BUFFER_BIN_PAGE_SIZE;
-		if ((u4ContentLen % BUFFER_BIN_PAGE_SIZE) == 0)
+		uTotalPage = u4ReadLen / BUFFER_BIN_PAGE_SIZE;
+		if ((u4ReadLen % BUFFER_BIN_PAGE_SIZE) == 0)
 			uTotalPage--;
 
 		prSetEfuseBufModeInfo->ucSourceMode = 1;
@@ -4919,10 +4889,11 @@ uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
 		 * from efuse
 		 */
 		prSetEfuseBufModeInfo->ucSourceMode = 0;
-		u4ContentLen = 0;
+		u4ReadLen = 0;
 		uTotalPage = 0;
 	}
 
+	u4ContentLen = u4ReadLen;
 	for (uPageIdx = 0; uPageIdx <= uTotalPage; uPageIdx++) {
 		/* set format */
 		prSetEfuseBufModeInfo->ucContentFormat = (
@@ -4970,7 +4941,7 @@ label_exit:
 		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE,
 			sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
 	if (pucConfigBuf != NULL)
-		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, MAX_EEPROM_BUFFER_SIZE);
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, u4ReadLen);
 	return retWlanStat;
 }
 #endif

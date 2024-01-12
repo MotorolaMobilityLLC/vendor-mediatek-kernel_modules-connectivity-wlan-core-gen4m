@@ -238,6 +238,12 @@ static struct sdio_driver mtk_sdio_driver = {
 *                              F U N C T I O N S
 ********************************************************************************
 */
+
+struct mt66xx_hif_driver_data *get_platform_driver_data(void)
+{
+	return (struct mt66xx_hif_driver_data *) mtk_sdio_ids[0].driver_data;
+}
+
 #if CFG_SDIO_CONTEXT_DEBUG
 void print_content(uint32_t cmd_len, uint8_t *buffer)
 {
@@ -2082,10 +2088,11 @@ enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
 	return CMD_TX_RESULT_SUCCESS;
 }
 
-void glGetDev(void *ctx, struct device **dev)
+void glGetDev(void *ctx, void **dev)
 {
 #if MTK_WCN_HIF_SDIO
-	mtk_wcn_hif_sdio_get_dev(*((unsigned long *) ctx), dev);
+	mtk_wcn_hif_sdio_get_dev(*((unsigned long *) ctx),
+			(struct device **)dev);
 #else
 	*dev = &((struct sdio_func *)ctx)->dev;
 #endif
@@ -2098,6 +2105,17 @@ void glGetHifDev(struct GL_HIF_INFO *prHif, struct device **dev)
 #else
 	*dev = &(prHif->func->dev);
 #endif
+}
+
+void glGetChipInfo(void **prChipInfo)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+
+	prDriverData = get_platform_driver_data();
+	if (!prDriverData)
+		return;
+
+	*prChipInfo = (void *)prDriverData->chip_info;
 }
 
 u_int8_t glWakeupSdio(struct GLUE_INFO *prGlueInfo)

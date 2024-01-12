@@ -699,7 +699,7 @@ static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucIdx = 0;
 	uint8_t aucFlavor[2] = {0};
 
-	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
+	kalGetFwFlavor(&aucFlavor[0]);
 
 	for (ucIdx = 0; apucsoc5_0FwName[ucIdx]; ucIdx++) {
 		if ((*pucNameIdx + 3) >= ucMaxNameIdx) {
@@ -712,12 +712,10 @@ static void soc5_0_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 
 		/* Type 1. WIFI_RAM_CODE_soc5_0_1_1.bin */
 		ret = kalSnprintf(*(apucName + (*pucNameIdx)),
-				CFG_FW_NAME_MAX_LEN, "%s_%u%s_%u.bin",
+				CFG_FW_NAME_MAX_LEN, "%s_%u%s_1.bin",
 				apucsoc5_0FwName[ucIdx],
 				CFG_WIFI_IP_SET,
-				aucFlavor,
-				wlanGetEcoVersion(
-					prGlueInfo->prAdapter));
+				aucFlavor);
 		if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 			(*pucNameIdx) += 1;
 		else
@@ -1797,7 +1795,7 @@ soc5_0_kalFirmwareImageMapping(
 
 	*ppvMapFileBuf = NULL;
 	*pu4FileLength = 0;
-	kalGetFwFlavor(prGlueInfo->prAdapter, &aucFlavor[0]);
+	kalGetFwFlavor(&aucFlavor[0]);
 
 	do {
 		/* <0.0> Get FW name prefix table */

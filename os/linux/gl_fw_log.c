@@ -107,6 +107,16 @@ static long fw_log_wifi_unlocked_ioctl(struct file *filp, unsigned int cmd,
 
 		break;
 	}
+	case WIFI_FW_LOG_IOCTL_GET_VERSION:{
+		prInf->ver_length = 0;
+		kalMemZero(prInf->ver_name, MANIFEST_BUFFER_SIZE);
+		schedule_work(&prInf->getFwVerQ);
+		flush_work(&prInf->getFwVerQ);
+
+		copy_to_user((char *) arg, prInf->ver_name,
+			prInf->ver_length);
+		break;
+	}
 	default:
 		ret = -EINVAL;
 	}
@@ -136,6 +146,17 @@ static void fw_log_wifi_inf_event_cb(void)
 	struct fw_log_wifi_interface *prInf = &fw_log_wifi_inf;
 
 	wake_up_interruptible(&prInf->wq);
+}
+
+static void fw_log_get_version_workQ(struct work_struct *work)
+{
+	struct fw_log_wifi_interface *prInf = &fw_log_wifi_inf;
+	struct mt66xx_chip_info *prChipInfo;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo->fw_dl_ops->getFwVerInfo)
+		prChipInfo->fw_dl_ops->getFwVerInfo(prInf->ver_name,
+			&prInf->ver_length, MANIFEST_BUFFER_SIZE);
 }
 
 uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
@@ -241,6 +262,7 @@ int fw_log_wifi_inf_init(void)
 		fw_log_wifi_inf_event_cb);
 #endif
 
+	INIT_WORK(&prInf->getFwVerQ, fw_log_get_version_workQ);
 	init_waitqueue_head(&prInf->wq);
 	sema_init(&prInf->ioctl_mtx, 1);
 

@@ -411,6 +411,11 @@ static void halPcieResumeCmd(struct ADAPTER *prAdapter);
  *******************************************************************************
  */
 
+struct mt66xx_hif_driver_data *get_platform_driver_data(void)
+{
+	return (struct mt66xx_hif_driver_data *) mtk_pci_ids[0].driver_data;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE interrupt callback function
@@ -420,19 +425,6 @@ static void halPcieResumeCmd(struct ADAPTER *prAdapter);
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-
-struct mt66xx_hif_driver_data *get_platform_driver_data(void)
-{
-	if (g_prPlatDev)
-		return (struct mt66xx_hif_driver_data *) platform_get_drvdata(
-			g_prPlatDev);
-
-	if (g_prDev)
-		return (struct mt66xx_hif_driver_data *) pci_get_drvdata(
-			g_prDev);
-	return NULL;
-}
-
 irqreturn_t mtk_pci_interrupt(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -1843,7 +1835,7 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 {
 }
 
-void glGetDev(void *ctx, struct device **dev)
+void glGetDev(void *ctx, void **dev)
 {
 
 	*dev = &((struct pci_dev *)ctx)->dev;
