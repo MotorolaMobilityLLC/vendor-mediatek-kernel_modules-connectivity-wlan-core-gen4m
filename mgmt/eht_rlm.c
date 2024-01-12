@@ -399,7 +399,7 @@ void ehtRlmReqGenerateCapIE(
 		ehtRlmFillCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
-void ehtRlmRspGenerateCapIE(
+void ehtRlmRspGenerateCapIEImpl(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
@@ -433,6 +433,16 @@ void ehtRlmRspGenerateCapIE(
 		ehtRlmFillCapIE(prAdapter, prBssInfo, prMsduInfo);
 }
 
+void ehtRlmRspGenerateCapIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	/* pre-wifi7 device, build in vendor id */
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO)
+		return;
+
+	ehtRlmRspGenerateCapIEImpl(prAdapter, prMsduInfo);
+}
 
 uint8_t ehtRlmGetEhtOpBwByBssOpBw(uint8_t ucBssOpBw)
 {
@@ -556,7 +566,7 @@ static void ehtRlmFillOpIE(
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtOp);
 }
 
-void ehtRlmRspGenerateOpIE(
+void ehtRlmRspGenerateOpIEImpl(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo)
 {
@@ -589,6 +599,17 @@ void ehtRlmRspGenerateOpIE(
 	    (ucPhyTypeSet & PHY_TYPE_SET_802_11BE))
 		ehtRlmFillOpIE(prAdapter, prBssInfo, prMsduInfo);
 }
+
+void ehtRlmRspGenerateOpIE(
+	struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
+{
+	if (prMsduInfo->ucControlFlag & MSDU_CONTROL_FLAG_HIDE_INFO)
+		return;
+
+	ehtRlmRspGenerateOpIEImpl(prAdapter, prMsduInfo);
+}
+
 
 static void ehtRlmRecMcsMap(
 	struct ADAPTER *prAdapter,
@@ -667,6 +688,7 @@ void ehtRlmRecCapInfo(
 
 void ehtRlmRecOperation(
 	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
 	struct BSS_INFO *prBssInfo,
 	uint8_t *pucIE)
 {
@@ -686,6 +708,7 @@ void ehtRlmRecOperation(
 	prBssInfo->u4BasicEhtMcsNssSet = prEhtOp->u4BasicEhtMcsNssSet;
 
 	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams)) {
+		prBssInfo->fgIsEhtOpPresent = TRUE;
 		prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
 		prBssInfo->ucVhtChannelWidth =
 			ehtRlmGetVhtOpBwByEhtOpBw(prEhtOpInfo->ucControl);
@@ -693,6 +716,9 @@ void ehtRlmRecOperation(
 			prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
 			prBssInfo->ucVhtChannelWidth);
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;
+		prBssInfo->ucEhtCtrl = prEhtOpInfo->ucControl;
+		prBssInfo->ucEhtCcfs0 = prEhtOpInfo->ucCCFS0;
+		prBssInfo->ucEhtCcfs1 = prEhtOpInfo->ucCCFS1;
 
 		DBGLOG(RLM, INFO,
 			"EHT channel width: %d, s1 %d and s2 %d in IE -> s1 %d and s2 %d in driver\n",
@@ -701,24 +727,48 @@ void ehtRlmRecOperation(
 			prEhtOpInfo->ucCCFS1,
 			prBssInfo->ucVhtChannelFrequencyS1,
 			prBssInfo->ucVhtChannelFrequencyS2);
-	}
-
-	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x:%x\n",
-		prBssInfo->ucEhtOpParams);
-
-#if CFG_SUPPORT_802_PP_DSCB
-	if (EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))
-		prBssInfo->fgIsEhtOpPresent = TRUE;
-	else
+	} else {
 		prBssInfo->fgIsEhtOpPresent = FALSE;
+	}
 
 	if (EHT_IS_OP_PARAM_DIS_SUBCHANNEL_PRESENT(prEhtOp->ucEhtOpParams))
 		prBssInfo->fgIsEhtDscbPresent = TRUE;
 	else
 		prBssInfo->fgIsEhtDscbPresent = FALSE;
-#endif
 
+	DBGLOG(RLM, LOUD, "RlmEHTOpInfo-0x:%x\n",
+		prBssInfo->ucEhtOpParams);
+
+	/*Backup peer VHT OpInfo*/
+	prStaRec->ucVhtOpChannelWidth = prBssInfo->ucVhtChannelWidth;
+
+#if CFG_SUPPORT_802_PP_DSCB
+	if (prBssInfo->fgIsEhtOpPresent &&
+	    prBssInfo->fgIsEhtDscbPresent) {
+		struct EHT_DSCP_INFO *prEhtDscpInfo = NULL;
+		uint32_t u4EhtOffset;
+		uint16_t u2PreDscBitmap = 0;
+
+		/* struct IE_EHT_OP is packed,
+		 * save to use sizeof instead of
+		 * using OFFSET_OF with ZERO array
+		 * at end
+		 */
+		u4EhtOffset = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]) +
+			      sizeof(struct EHT_OP_INFO);
+		prEhtDscpInfo = (struct EHT_DSCP_INFO *)
+			(((uint8_t *) pucIE) + u4EhtOffset);
+		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
+		prBssInfo->u2EhtDisSubChanBitmap =
+			prEhtDscpInfo->u2DisSubChannelBitmap;
+		nicUpdateDscb(prAdapter,
+			prBssInfo->ucBssIndex,
+			u2PreDscBitmap,
+			prBssInfo->u2EhtDisSubChanBitmap);
+	}
+#endif
 }
+
 void ehtRlmInit(
 	struct ADAPTER *prAdapter)
 {

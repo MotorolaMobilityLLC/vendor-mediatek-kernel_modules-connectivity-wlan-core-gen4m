@@ -2313,7 +2313,6 @@ omac_choosed:
 		if (prBssInfo && !prBssInfo->fgIsInUse) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			/* reserve for mld secondary link */
-
 			if (mldIsMloFeatureEnabled(prAdapter, FALSE) &&
 			    ((fgIsMldReserved &&
 			     ucBssIndex != prAdapter->ucMldReservedBssIdx) ||

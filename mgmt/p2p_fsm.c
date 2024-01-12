@@ -496,7 +496,8 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 	if (i >= BSS_P2P_NUM)
 		return NULL;
 
-	if (p2pRoleFsmNeedMlo(prAdapter, i))
+	if (p2pGetLinkNum(p2pGetDefaultRoleFsmInfo(prAdapter,
+			IFTYPE_P2P_CLIENT)) > 1)
 		return p2pGetLinkBssDesc(
 			p2pGetDefaultRoleFsmInfo(prAdapter,
 			IFTYPE_P2P_CLIENT),

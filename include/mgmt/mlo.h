@@ -190,7 +190,8 @@ typedef struct MSDU_INFO* (*PFN_COMPOSE_ASSOC_IE_FUNC) (struct ADAPTER *,
 	struct STA_RECORD *);
 
 typedef struct MSDU_INFO* (*PFN_COMPOSE_PROBE_RESP_IE_FUNC) (
-	struct ADAPTER *, uint8_t, struct WLAN_BEACON_FRAME *);
+	struct ADAPTER *, uint8_t, uint8_t, uint8_t,
+	struct WLAN_BEACON_FRAME *);
 
 void mldGenerateAssocIE(
 	struct ADAPTER *prAdapter,
@@ -200,7 +201,7 @@ void mldGenerateAssocIE(
 
 void mldGenerateProbeRspIE(
 	struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
-	uint8_t ucBssIdx, uint8_t fgComplete,
+	uint8_t ucBssIdx, struct WLAN_BEACON_FRAME *prProbeRspFrame,
 	PFN_COMPOSE_PROBE_RESP_IE_FUNC pfnComposeIE);
 
 uint8_t *mldGenerateBasicCommonInfo(
@@ -229,6 +230,9 @@ uint32_t mldCalculateMlIELen(
 	struct STA_RECORD *prStaRec);
 
 void mldGenerateMlIE(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo);
+
+void mldGenerateMlIEImpl(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
 uint32_t mldCalculateRnrIELen(
@@ -300,8 +304,15 @@ void mldBssUninit(struct ADAPTER *prAdapter);
 
 void mldStarecDump(struct ADAPTER *prAdapter);
 
+uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter);
+
+#ifdef CFG_AAD_NONCE_NO_REPLACE
+void mldEnableCocurrentMld(struct ADAPTER *prAdapter);
+#endif
+
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStarec, uint8_t aucMacAddr[], uint8_t ucLinkId);
+	struct STA_RECORD *prStarec, uint8_t fgMldType,
+	uint8_t aucMacAddr[], uint8_t ucLinkId);
 
 void mldStarecUnregister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec);
@@ -312,7 +323,7 @@ int8_t mldStarecAlloc(struct ADAPTER *prAdapter,
 	uint8_t *aucMacAddr);
 
 void mldStarecFree(struct ADAPTER *prAdapter,
-	struct MLD_STA_RECORD *prMldStarec);
+	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStaRec);
 
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
@@ -351,5 +362,8 @@ uint8_t mldIsMloFeatureEnabled(
 
 uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex);
+
+uint8_t mldCheckMldType(struct ADAPTER *prAdapter,
+	uint8_t *pucIe, uint16_t u2Len);
 
 #endif /* !_MLO_H */
