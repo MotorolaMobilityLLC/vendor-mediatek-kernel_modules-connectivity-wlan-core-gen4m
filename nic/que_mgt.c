@@ -3873,7 +3873,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			QUEUE_INSERT_TAIL(prReturnedQue,
 				(struct QUE_ENTRY *) prCurrSwRfb);
 			DBGLOG(QM, INFO, "drop AMSDU attack packet\n");
-			continue;
 		}
 
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
@@ -3883,7 +3882,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				(struct QUE_ENTRY *) prCurrSwRfb);
 			DBGLOG(QM, INFO,
 				"drop EAPOL packet not in sec mode\n");
-			continue;
 		}
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 

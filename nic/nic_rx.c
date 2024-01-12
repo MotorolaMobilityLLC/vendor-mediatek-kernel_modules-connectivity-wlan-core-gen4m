@@ -2434,6 +2434,7 @@ void nicRxProcessPacketType(
 	case RX_PKT_TYPE_MSDU_REPORT:
 		nicRxProcessMsduReport(prAdapter,
 			prSwRfb);
+		nicRxReturnRFB(prAdapter, prSwRfb);
 		break;
 
 	case RX_PKT_TYPE_RX_REPORT:
