@@ -1846,8 +1846,8 @@ s_int32 mt_op_set_icap_start(
 	} else if (pr_rbist_info->trig == 0) { /*don't Capture data*/
 		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
 			OP_WLAN_OID_SET_TEST_ICAP_ABORT,
-			NULL,
-			0,
+			&r_test_info,
+			sizeof(r_test_info),
 			NULL,
 			NULL);
 	}

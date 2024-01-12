@@ -4550,12 +4550,11 @@ uint32_t ServiceWlanOid(void *winfos,
 	case OP_WLAN_OID_SET_TEST_ICAP_START:
 		ServiceIcapInit(prAdapter);
 		pfnOidHandler = wlanoidExtRfTestICapStart;
-		prIcapInfo->eIcapState = ICAP_STATE_START;
 		break;
 	case OP_WLAN_OID_SET_TEST_ICAP_ABORT:
 		i4Status = ServiceIcapDeInit(prAdapter);
-		prIcapInfo->eIcapState = ICAP_STATE_INIT;
-		return i4Status;
+		pfnOidHandler = wlanoidExtRfTestICapStart;
+		break;
 	case OP_WLAN_OID_SET_TEST_ICAP_STATUS:
 
 		if (!rsp_data)
@@ -4574,7 +4573,6 @@ uint32_t ServiceWlanOid(void *winfos,
 		}
 
 		pfnOidHandler = wlanoidExtRfTestICapStatus;
-		prIcapInfo->eIcapState = ICAP_STATE_QUERY_STATUS;
 		*resp = 1; /*response QA TOOL CAPTURE wait*/
 
 		break;
@@ -4594,7 +4592,6 @@ uint32_t ServiceWlanOid(void *winfos,
 			return WLAN_STATUS_NOT_SUPPORTED;
 		}
 		pfnOidHandler = wlanoidRfTestICapGetIQData;
-		prIcapInfo->eIcapState = ICAP_STATE_QA_TOOL_CAPTURE;
 		fgRead = TRUE;
 		fgWaitResp = FALSE;
 		fgCmd = FALSE;
