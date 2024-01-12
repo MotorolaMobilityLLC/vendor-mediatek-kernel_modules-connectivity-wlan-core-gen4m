@@ -6949,8 +6949,9 @@ uint32_t nicUniCmdTxPowerCtrl(struct ADAPTER *ad,
 uint32_t nicUniCmdThermalProtect(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdEfuseAccess(struct ADAPTER *ad,
-	struct WIFI_UNI_SETQUERY_INFO *info);
-
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdEfuseFreeBlock(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdEfuseBufferMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdNan(struct ADAPTER *ad,
@@ -7063,6 +7064,10 @@ void nicUniEventTxPowerInfo(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventEfuseControl(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventEfuseAccess(struct ADAPTER	*prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventEfuseFreeBlock(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventFwLogQueryBase(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
 void nicUniCmdEventQueryMldRec(struct ADAPTER *prAdapter,

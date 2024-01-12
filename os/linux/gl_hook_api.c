@@ -4263,7 +4263,6 @@ int32_t TxBfPseudoTagUpdate(struct net_device *prNetDev,
 #if (CONFIG_WLAN_SERVICE == 1)
 uint32_t ServiceRfTestInit(void *winfos)
 {
-
 	uint32_t u4SetInfoLen = 0;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint8_t ucBssIndex = 0;
@@ -4271,7 +4270,6 @@ uint32_t ServiceRfTestInit(void *winfos)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct test_wlan_info *prTestWinfo;
-
 
 	ASSERT(winfos);
 	prTestWinfo = (struct test_wlan_info *)winfos;
@@ -4299,8 +4297,18 @@ uint32_t ServiceRfTestInit(void *winfos)
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(REQ, ERROR, "wlanoidAbortScan fail 0x%x\n", rStatus);
 
-	return rStatus;
+	/* eFuse parameter init */
+	prTestWinfo->chip_cap.efuse_size = MAX_EEPROM_BUFFER_SIZE;
+	prTestWinfo->e2p_cur_mode = 0;
+	if (prAdapter->fgIsSupportQAAccessEfuse) {
+		prTestWinfo->use_efuse = TRUE;
+		prTestWinfo->e2p_access_mode = 1;
+	} else {
+		prTestWinfo->use_efuse = FALSE;
+		prTestWinfo->e2p_access_mode = 0;
+	}
 
+	return rStatus;
 }
 
 #if CFG_SUPPORT_QA_TOOL
@@ -4749,6 +4757,180 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif
 
 		return WLAN_STATUS_SUCCESS;
+
+	case OP_WLAN_OID_GET_EFUSE_FREE_BLOCK:
+		if (prTestWinfo->e2p_cur_mode == 1) {
+			struct test_eeprom *eprms = (struct test_eeprom *)param;
+			struct PARAM_CUSTOM_EFUSE_FREE_BLOCK rEfuseFreeBlock;
+			uint32_t len = 0;
+
+			kalMemSet(&rEfuseFreeBlock, 0,
+				sizeof(struct PARAM_CUSTOM_EFUSE_FREE_BLOCK));
+			rEfuseFreeBlock.ucDieIdx =
+				(uint8_t)eprms->efuse_die_idx;
+
+			DBGLOG(INIT, INFO,
+				"OP_WLAN_OID_GET_EFUSE_FREE_BLOCK, rEfuseFreeBlock.ucDieIdx=%d\n",
+				rEfuseFreeBlock.ucDieIdx);
+
+			i4Status = kalIoctl(prGlueInfo,
+				   wlanoidQueryEfuseFreeBlock,
+				   &rEfuseFreeBlock,
+				   sizeof(struct PARAM_CUSTOM_EFUSE_FREE_BLOCK),
+				   &len);
+
+			if (i4Status == WLAN_STATUS_SUCCESS) {
+				eprms->efuse_free_block =
+				(uint32_t)rEfuseFreeBlock.ucGetFreeBlock;
+				eprms->efuse_total_block =
+				(uint32_t)rEfuseFreeBlock.ucGetTotalBlock;
+			}
+
+			DBGLOG(INIT, INFO,
+				"OP_WLAN_OID_GET_EFUSE_FREE_BLOCK, i4Status(%d), rEfuseFreeBlock.ucDieIdx=%d, ucGetFreeBlock=%d, ucGetTotalBlock=%d\n",
+				i4Status,
+				rEfuseFreeBlock.ucDieIdx,
+				rEfuseFreeBlock.ucGetFreeBlock,
+				rEfuseFreeBlock.ucGetTotalBlock);
+		} else {
+			DBGLOG(INIT, INFO,
+				"OP_WLAN_OID_GET_EFUSE_FREE_BLOCK, QA tool current no efuse\n");
+		}
+		return i4Status;
+
+	case OP_WLAN_OID_EPRM_READ:
+		if (prTestWinfo->e2p_cur_mode == 1) {
+			struct test_eeprom *eprms = (struct test_eeprom *)param;
+			struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoRead;
+			uint32_t len = 0;
+			uint32_t alignByte = 0;
+
+			kalMemSet(&rAccessEfuseInfoRead, 0,
+				  sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+
+			alignByte = eprms->offset % EFUSE_BLOCK_SIZE;
+
+			rAccessEfuseInfoRead.u4Address =
+				eprms->offset - alignByte;
+
+			DBGLOG(INIT, INFO,
+				"OP_WLAN_OID_EPRM_READ, qa_addr=0x%x, u4Address=0x%x, qa_len=%d\n",
+				eprms->offset,
+				rAccessEfuseInfoRead.u4Address,
+				eprms->length);
+
+			if (eprms->length > EFUSE_BLOCK_SIZE)
+				return WLAN_STATUS_INVALID_LENGTH;
+
+			i4Status = kalIoctl(prGlueInfo,
+				wlanoidQueryProcessAccessEfuseRead,
+				&rAccessEfuseInfoRead,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+				&len);
+
+			if (i4Status == WLAN_STATUS_SUCCESS &&
+				rAccessEfuseInfoRead.u4Valid) {
+				kalMemCopy(eprms->value,
+				&rAccessEfuseInfoRead.aucData[alignByte],
+				EFUSE_BLOCK_SIZE);
+			}
+		} else {
+			DBGLOG(INIT, INFO,
+				"OP_WLAN_OID_EPRM_READ, QA tool current no efuse\n");
+		}
+		return i4Status;
+
+	case OP_WLAN_OID_EPRM_WRITE:
+		if (prTestWinfo->e2p_cur_mode == 1) {
+			struct test_eeprom *eprms = (struct test_eeprom *)param;
+			struct PARAM_CUSTOM_ACCESS_EFUSE rAccessEfuseInfoAccess;
+			uint32_t len = 0;
+			uint32_t alignByte = 0;
+			uint32_t count = 0;
+
+			if (eprms->length < EFUSE_BLOCK_SIZE) {
+
+				kalMemSet(&rAccessEfuseInfoAccess, 0,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE));
+
+				alignByte = eprms->offset % EFUSE_BLOCK_SIZE;
+
+				rAccessEfuseInfoAccess.u4Address =
+				eprms->offset - alignByte;
+
+				DBGLOG(INIT, INFO,
+					"OP_WLAN_OID_EPRM_WRITE, qa_addr=0x%x, u4Address=0x%x, qa_len=%d\n",
+					eprms->offset,
+					rAccessEfuseInfoAccess.u4Address,
+					eprms->length);
+
+				/* read back first for 16 bytes align */
+				i4Status = kalIoctl(prGlueInfo,
+				wlanoidQueryProcessAccessEfuseRead,
+				&rAccessEfuseInfoAccess,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+				&len);
+
+				if (i4Status != WLAN_STATUS_SUCCESS) {
+					DBGLOG(INIT, INFO,
+						"OP_WLAN_OID_EPRM_WRITE, read back fail\n");
+						return WLAN_STATUS_INVALID_DATA;
+				}
+
+				rAccessEfuseInfoAccess.u4Address =
+				eprms->offset - alignByte;
+
+				/* write data */
+				kalMemCopy(
+				&rAccessEfuseInfoAccess.aucData[alignByte],
+				(uint8_t *)eprms->value,
+				eprms->length);
+
+				i4Status = kalIoctl(prGlueInfo,
+				wlanoidQueryProcessAccessEfuseWrite,
+				&rAccessEfuseInfoAccess,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+				&len);
+			} else if (eprms->length + eprms->offset
+				< MAX_EEPROM_BUFFER_SIZE) {
+
+				DBGLOG(INIT, INFO,
+					"OP_WLAN_OID_EPRM_WRITE, qa_addr=0x%x, qa_len=%d\n",
+					eprms->offset,
+					eprms->length);
+
+				/* 16 bytes align write */
+				for (count = 0; count < eprms->length;
+						count += EFUSE_BLOCK_SIZE) {
+					rAccessEfuseInfoAccess.u4Address =
+					eprms->offset + count;
+
+					kalMemCopy(
+						rAccessEfuseInfoAccess.aucData,
+						(uint8_t *)eprms->value + count,
+						EFUSE_BLOCK_SIZE);
+
+				i4Status = kalIoctl(prGlueInfo,
+				wlanoidQueryProcessAccessEfuseWrite,
+				&rAccessEfuseInfoAccess,
+				sizeof(struct PARAM_CUSTOM_ACCESS_EFUSE),
+				&len);
+				}
+			} else {
+				DBGLOG(INIT, INFO,
+					"OP_WLAN_OID_EPRM_WRITE, qa_addr=0x%x, qa_len=%d, over %d\n",
+					eprms->offset,
+					eprms->length,
+					MAX_EEPROM_BUFFER_SIZE);
+
+				return WLAN_STATUS_INVALID_LENGTH;
+			}
+		} else {
+			DBGLOG(INIT, INFO,
+			"OP_WLAN_OID_EPRM_WRITE, QA tool current no efuse\n");
+		}
+		return i4Status;
+
 	case OP_WLAN_OID_NUM:
 	default:
 		return WLAN_STATUS_FAILURE;

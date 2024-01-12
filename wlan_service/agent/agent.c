@@ -1284,6 +1284,8 @@ static s_int32 hqa_read_eeprom(
 	get_param_and_shift_buf(TRUE, sizeof(u_int16),
 				&data, (u_char *)&test_eprms->offset);
 
+	test_eprms->length = 2;
+
 	/* Allocate value memory */
 	ret = sys_ad_alloc_mem((u_char **)&test_eprms->value, sizeof(u_int16));
 	if (ret) {
@@ -1329,6 +1331,8 @@ static s_int32 hqa_write_eeprom(
 				&data, (u_char *)&test_eprms->offset);
 	get_param_and_shift_buf(TRUE, sizeof(u_int16),
 				&data, (u_char *)&value);
+
+	test_eprms->length = 2;
 
 	/* Allocate value memory */
 	ret = sys_ad_alloc_mem((u_char **)&test_eprms->value, sizeof(u_int16));
@@ -1420,7 +1424,7 @@ static s_int32 hqa_read_bulk_eeprom(
 	/* Update hqa_frame with response: status (2 bytes) */
 	if (offset + length <= eeprom_size)
 		memcpy_eeprom(hqa_frame->data + 2,
-			(u_char *)test_eprms->value + offset, length);
+			(u_char *)test_eprms->value, length);
 	else {
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: exceed eeprom size (offset=0x%04x, size=%d)\n",
@@ -1477,7 +1481,8 @@ static s_int32 hqa_write_bulk_eeprom(
 
 		return ret;
 	}
-	memcpy_eeprom((u_char *)test_eprms->value + (test_eprms->offset & ~0x1),
+
+	memcpy_eeprom((u_char *)test_eprms->value,
 			data, test_eprms->length);
 
 	ret = mt_serv_reg_eprm_operation(serv_test,
@@ -1524,23 +1529,38 @@ static s_int32 hqa_get_free_efuse_block(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	u_int32 free_block;
+	u_char *data = hqa_frame->data;
+	u_int32 free_block, total_block;
+	u_int16 idx = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	if (hqa_frame->length >= 2)
+		get_param_and_shift_buf(TRUE, sizeof(idx),
+					&data, (u_char *)&idx);
+
+	EEPROM_SET_PARAM(serv_test, efuse_die_idx, idx);
 
 	ret = mt_serv_reg_eprm_operation(serv_test,
 					SERV_TEST_EEPROM_GET_FREE_EFUSE_BLOCK);
 
 	free_block = EEPROM_GET_PARAM(serv_test, efuse_free_block);
+	total_block = EEPROM_GET_PARAM(serv_test, efuse_total_block);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: efuse_free_block=%u\n", __func__, free_block));
 
 	free_block = SERV_OS_HTONL(free_block);
+	total_block = SERV_OS_HTONL(total_block);
 
 	/* Update hqa_frame with response: status (2 bytes) */
-	sys_ad_move_mem(hqa_frame->data + 2, &free_block, sizeof(free_block));
-	update_hqa_frame(hqa_frame, 2 + sizeof(free_block), ret);
+	sys_ad_move_mem(hqa_frame->data + 2,
+		&free_block, sizeof(free_block));
+	sys_ad_move_mem(hqa_frame->data + 2 + sizeof(free_block),
+		&total_block, sizeof(total_block));
+	update_hqa_frame(hqa_frame,
+		2 + sizeof(free_block) + sizeof(total_block),
+		ret);
 
 	return ret;
 }
@@ -3078,7 +3098,9 @@ static s_int32 hqa_check_efuse_mode_type(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 e2p_cur_mode = 0;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+	/* set current mode 1 if use_efuse */
+	if (WINFO_GET_PARAM(serv_test, use_efuse))
+		WINFO_SET_PARAM(serv_test, e2p_cur_mode, 1);
 
 	e2p_cur_mode = (u_int32)WINFO_GET_PARAM(serv_test, e2p_cur_mode);
 
@@ -3100,8 +3122,6 @@ static s_int32 hqa_check_efuse_nativemode_type(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 e2p_access_mode = 0;
-
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
 	e2p_access_mode = (u_int32)WINFO_GET_PARAM(serv_test, e2p_access_mode);
 

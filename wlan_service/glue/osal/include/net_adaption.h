@@ -1325,6 +1325,9 @@ struct test_eeprom {
 	u_int16 *value;
 	/* For get efuse block count only */
 	u_int32 efuse_free_block;
+	u_int32 efuse_total_block;
+	/* For efuse die idx */
+	u_int16 efuse_die_idx;
 };
 
 struct list_mode_tx_seg_header {
@@ -1614,6 +1617,12 @@ struct test_operation {
 		struct test_wlan_info *winfos,
 		struct test_register *regs);
 	s_int32 (*op_read_bulk_eeprom)(
+		struct test_wlan_info *winfos,
+		struct test_eeprom *eprms);
+	s_int32 (*op_write_bulk_eeprom)(
+		struct test_wlan_info *winfos,
+		struct test_eeprom *eprms);
+	s_int32 (*op_get_free_efuse_block)(
 		struct test_wlan_info *winfos,
 		struct test_eeprom *eprms);
 	s_int32 (*op_get_freq_offset)(

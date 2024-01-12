@@ -877,6 +877,14 @@ struct PARAM_CUSTOM_EFUSE_FREE_BLOCK {
 	uint8_t aucReserved[1];
 };
 
+struct PARAM_CUSTOM_EFUSE_BUFFER_RD_T {
+	uint8_t ucSourceMode;
+	uint8_t ucContentFormat;
+	uint16_t u2Offset;
+	uint16_t u2Count;
+	uint16_t u2Reserved;
+};
+
 struct PARAM_CUSTOM_GET_TX_POWER {
 	uint8_t ucTxPwrType;
 	uint8_t ucCenterChannel;
@@ -3991,6 +3999,12 @@ uint32_t wlanoidSetEfusBufferMode(struct ADAPTER
 				  uint32_t *pu4SetInfoLen);
 
 uint32_t wlanoidConnacSetEfusBufferMode(struct ADAPTER
+					*prAdapter,
+					void *pvSetBuffer,
+					uint32_t u4SetBufferLen,
+					uint32_t *pu4SetInfoLen);
+
+uint32_t wlanoidConnacSetEfuseBufferRD(struct ADAPTER
 					*prAdapter,
 					void *pvSetBuffer,
 					uint32_t u4SetBufferLen,
