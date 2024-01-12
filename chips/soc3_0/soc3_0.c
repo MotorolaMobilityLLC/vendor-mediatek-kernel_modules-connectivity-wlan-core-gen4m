@@ -1759,6 +1759,11 @@ int hifWmmcuPwrOn(void)
 	soc3_0_wlanPowerOnInit(ENUM_WLAN_POWER_ON_DOWNLOAD_ROM_PATCH);
 #endif
 #endif
+	/* set FW own after power on consys mcu to
+	 * keep Driver/FW/HW state sync
+	 */
+	wf_ioremap_write(CONN_HOST_CSR_TOP_BASE_ADDR + 0x0010,
+		PCIE_LPCR_HOST_SET_OWN);
 
 	return ret;
 }
