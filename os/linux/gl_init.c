@@ -86,7 +86,9 @@ enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 uint8_t g_aucNvram_OnlyPreCal[MAX_CFG_FILE_WIFI_RECAL_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
-
+#if CFG_MTK_ANDROID_WMT
+u_int8_t g_IsPlatCbsRegistered = FALSE;
+#endif
 #if CFG_AP_80211KVR_INTERFACE
 #define NETLINK_OSS_KERNEL 25
 struct sock *nl_sk;
@@ -2449,6 +2451,14 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 			if (fw->size > 0 && fw->size <= sizeof(g_aucNvram)) {
 				kalMemCopy(g_aucNvram, fw->data, fw->size);
 				g_NvramFsm = NVRAM_STATE_READY;
+				DBGLOG(INIT, INFO, "Set NVRAM state[%d]\n",
+					g_NvramFsm);
+#if CFG_MTK_ANDROID_WMT
+				if (!g_IsPlatCbsRegistered) {
+					register_plat_connsys_cbs();
+					g_IsPlatCbsRegistered = TRUE;
+				}
+#endif
 			}
 			release_firmware(fw);
 		}
@@ -3947,6 +3957,13 @@ static uint8_t wlanNvramBufHandler(void *ctx,
 
 	g_NvramFsm = NVRAM_STATE_READY;
 	DBGLOG(INIT, INFO, "Set NVRAM state[%d]\n", g_NvramFsm);
+#if CFG_MTK_ANDROID_WMT
+	if (!g_IsPlatCbsRegistered) {
+		register_plat_connsys_cbs();
+		g_IsPlatCbsRegistered = TRUE;
+	}
+#endif
+
 
 	/*do nvram update on test mode then driver sent new NVRAM to FW*/
 	wlanNvramUpdateOnTestMode();
@@ -8061,9 +8078,7 @@ static int initWlan(void)
 		goto INIT_WLAN_RETURN;
 	}
 
-#if CFG_MTK_ANDROID_WMT
-	register_plat_connsys_cbs();
-#else
+#if (!CFG_MTK_ANDROID_WMT)
 	ret = glBusFuncOn();
 	if (ret)
 		DBGLOG(INIT, ERROR, "glBusFuncOn failed.\n");
@@ -8201,6 +8216,7 @@ static void exitWlan(void)
 
 #if CFG_MTK_ANDROID_WMT
 	unregister_plat_connsys_cbs();
+	g_IsPlatCbsRegistered = FALSE;
 #else
 	glBusFuncOff();
 #endif /* CFG_MTK_ANDROID_WMT */
