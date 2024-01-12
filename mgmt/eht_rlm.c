@@ -778,10 +778,6 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	struct IE_EHT_OP *prEhtOp = (struct IE_EHT_OP *) pucIE;
 	struct EHT_OP_INFO *prEhtOpInfo;
 	uint8_t ucVhtOpBw = 0;
-#if CFG_SUPPORT_802_PP_DSCB
-	uint8_t  u1PreDscbPresent = 0;
-	uint16_t u2PreDscBitmap = 0;
-#endif
 
 	if (!(prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_BIT_EHT))
 		return;
@@ -833,8 +829,6 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 #if CFG_SUPPORT_802_PP_DSCB
 
-	u1PreDscbPresent = prBssInfo->fgIsEhtDscbPresent;
-
 	if (EHT_IS_OP_PARAM_DIS_SUBCHANNEL_PRESENT(prEhtOp->ucEhtOpParams))
 		prBssInfo->fgIsEhtDscbPresent = TRUE;
 	else
@@ -857,7 +851,6 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			OFFSET_OF(struct EHT_OP_INFO, u2EhtDisSubChanBitmap);
 		prEhtDscbInfo = (struct EHT_DSCB_INFO *)
 			(((uint8_t *) pucIE) + u4EhtOffset);
-		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
 		prBssInfo->u2EhtDisSubChanBitmap =
 			prEhtDscbInfo->u2DisSubChannelBitmap;
 	} else if (prBssInfo->fgIsEhtDscbPresent) {
@@ -872,19 +865,16 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		u4EhtOffset = OFFSET_OF(struct IE_EHT_OP, aucVarInfo[0]);
 		prEhtDscbInfo = (struct EHT_DSCB_INFO *)
 			(((uint8_t *) pucIE) + u4EhtOffset);
-		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
 		prBssInfo->u2EhtDisSubChanBitmap =
 			prEhtDscbInfo->u2DisSubChannelBitmap;
 	} else {
 		/* prBssInfo->fgIsEhtDscbPresent == 0
 		 * No dscb IE in beacon IE, so init DSCB as 0
 		*/
-		u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
 		prBssInfo->u2EhtDisSubChanBitmap = 0;
 	}
 
-	nicUpdateDscb(prAdapter, prBssInfo, u1PreDscbPresent, u2PreDscBitmap);
-	DBGLOG(RLM, LOUD, "DscbBitmap: 0x%x\n",
+	DBGLOG(RLM, INFO, "DscbBitmap: 0x%x\n",
 		prBssInfo->u2EhtDisSubChanBitmap);
 
 #endif

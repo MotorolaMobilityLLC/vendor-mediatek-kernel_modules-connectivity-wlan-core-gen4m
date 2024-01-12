@@ -4337,6 +4337,10 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	struct CMD_SET_BSS_RLM_PARAM rBssRlmParam;
 	struct CMD_SET_BSS_INFO rBssInfo;
 	u_int8_t fgNewParameter = FALSE;
+#if CFG_SUPPORT_802_PP_DSCB
+	uint8_t  u1PreDscbPresent = 0;
+	uint16_t u2PreDscBitmap = 0;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo && prSwRfb);
@@ -4390,6 +4394,10 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	rBssRlmParam.u2VhtBasicMcsSet = prBssInfo->u2VhtBasicMcsSet;
 	rBssRlmParam.ucRxNss = prBssInfo->ucOpRxNss;
 	rBssRlmParam.ucTxNss = prBssInfo->ucOpTxNss;
+#if CFG_SUPPORT_802_PP_DSCB
+	u1PreDscbPresent = prBssInfo->fgIsEhtDscbPresent;
+	u2PreDscBitmap = prBssInfo->u2EhtDisSubChanBitmap;
+#endif
 
 	kalMemZero(&rBssInfo, sizeof(struct CMD_SET_BSS_INFO));
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -4421,7 +4429,12 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 			prBssInfo->ucVhtChannelFrequencyS2 ||
 		rBssRlmParam.u2VhtBasicMcsSet != prBssInfo->u2VhtBasicMcsSet ||
 		rBssRlmParam.ucRxNss != prBssInfo->ucOpRxNss ||
-		rBssRlmParam.ucTxNss != prBssInfo->ucOpTxNss)
+		rBssRlmParam.ucTxNss != prBssInfo->ucOpTxNss
+#if CFG_SUPPORT_802_PP_DSCB
+		|| u1PreDscbPresent != prBssInfo->fgIsEhtDscbPresent
+		|| u2PreDscBitmap != prBssInfo->u2EhtDisSubChanBitmap
+#endif
+		)
 		fgNewParameter = TRUE;
 	else {
 		DBGLOG(RLM, TRACE,
