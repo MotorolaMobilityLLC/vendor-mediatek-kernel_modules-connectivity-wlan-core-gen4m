@@ -2034,6 +2034,9 @@ void p2pFuncStartRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 			"ucSetVal: %d\n", prCmdRddOnOffCtrl->ucSetVal);
 		break;
 	}
+
+	if (rlmDomainIsSameCountryCode("KR", 2))
+		prCmdRddOnOffCtrl->ucSetVal = ENUM_RDM_KR;
 #endif
 
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.u4CC2Region))
