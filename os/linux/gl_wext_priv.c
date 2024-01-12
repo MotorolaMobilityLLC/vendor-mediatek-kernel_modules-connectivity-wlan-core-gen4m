@@ -12897,8 +12897,8 @@ static int priv_driver_get_cnm(IN struct net_device *prNetDev,
 			);
 
 		i4BytesWritten += snprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "NSS=%u\n",
-			ucNss);
+			i4TotalLen - i4BytesWritten, "[TxNSS%u][RxNss%u]\n",
+			ucOpTxNss, ucOpRxNss);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	{
