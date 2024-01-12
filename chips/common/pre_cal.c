@@ -855,7 +855,7 @@ int wlanPreCalPwrOn(void)
 		QUEUE_INITIALIZE(&prAdapter->rTxP0Queue);
 		QUEUE_INITIALIZE(&prAdapter->rTxP1Queue);
 #else
-		for (i = 0; i < BSS_DEFAULT_NUM; i++)
+		for (i = 0; i < MAX_BSSID_NUM; i++)
 			for (j = 0; j < TX_PORT_NUM; j++)
 				QUEUE_INITIALIZE(&prAdapter->rTxPQueue[i][j]);
 #endif

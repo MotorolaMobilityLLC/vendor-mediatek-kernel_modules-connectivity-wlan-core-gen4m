@@ -1465,8 +1465,8 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 	}
 #else
 	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
-	struct QUE qDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
-	struct QUE *prDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	struct QUE qDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
+	struct QUE *prDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
 	int32_t i, j;
 	u_int8_t fgSetTx2Hif = FALSE;
 
@@ -1477,7 +1477,7 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 
 	prMsduInfo = prMsduInfoListHead;
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		for (j = 0; j < TX_PORT_NUM; j++) {
 			prDataPort[i][j] = &qDataPort[i][j];
 			QUEUE_INITIALIZE(prDataPort[i][j]);
@@ -1518,7 +1518,7 @@ uint32_t nicTxMsduInfoListMthread(IN struct ADAPTER
 
 	if (fgSetTx2Hif) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
-		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			for (j = 0; j < TX_PORT_NUM; j++) {
 				QUEUE_CONCATENATE_QUEUES(
 					(&(prAdapter->rTxPQueue[i][j])),
@@ -1632,8 +1632,8 @@ uint32_t nicTxMsduQueueMthread(IN struct ADAPTER *prAdapter)
 /*----------------------------------------------------------------------------*/
 void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 {
-	struct QUE qDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
-	struct QUE *prDataPort[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	struct QUE qDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
+	struct QUE *prDataPort[MAX_BSSID_NUM][TX_PORT_NUM];
 	int32_t i, j, k;
 	struct BSS_INFO	*prBssInfo;
 #if QM_FORWARDING_FAIRNESS
@@ -1642,7 +1642,7 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 
 	KAL_SPIN_LOCK_DECLARATION();
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		for (j = 0; j < TX_PORT_NUM; j++) {
 			prDataPort[i][j] = &qDataPort[i][j];
 			QUEUE_INITIALIZE(prDataPort[i][j]);
@@ -1655,7 +1655,7 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 #else
 		i = 0;
 #endif
-		for (k = 0; k < BSS_DEFAULT_NUM; k++) {
+		for (k = 0; k < MAX_BSSID_NUM; k++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 			while (!isNetAbsent(prAdapter, prBssInfo) &&
 			       QUEUE_IS_NOT_EMPTY(
@@ -1685,12 +1685,12 @@ void nicTxMsduQueueByPrio(struct ADAPTER *prAdapter)
 				}
 			}
 			i++;
-			i %= BSS_DEFAULT_NUM;
+			i %= MAX_BSSID_NUM;
 		}
 	}
 #if QM_FORWARDING_FAIRNESS
 	prQM->u4HeadBssInfoIndex++;
-	prQM->u4HeadBssInfoIndex %= BSS_DEFAULT_NUM;
+	prQM->u4HeadBssInfoIndex %= MAX_BSSID_NUM;
 #endif
 }
 
@@ -1717,7 +1717,7 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 	uint8_t ucPortIdx;
 
 	for (i4TcIdx = TX_PORT_NUM - 1; i4TcIdx >= 0; i4TcIdx--) {
-		for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			prTxQue = &(prAdapter->rTxPQueue[i][i4TcIdx]);
 			u4QSize = prTxQue->u4NumElem;
 			for (u4Idx = 0; u4Idx < u4QSize; u4Idx++) {
@@ -1768,12 +1768,12 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 {
 	struct WIFI_VAR *prWifiVar;
 	struct QUE qDataPort0, qDataPort1,
-		arTempQue[BSS_DEFAULT_NUM][TX_PORT_NUM];
+		arTempQue[MAX_BSSID_NUM][TX_PORT_NUM];
 	struct QUE *prDataPort0, *prDataPort1, *prDataPort, *prTxQue;
 	struct MSDU_INFO *prMsduInfo;
 	uint32_t u4Idx, u4IsNotAllQueneEmpty, i, j;
 	uint8_t ucPortIdx;
-	uint32_t au4TxCnt[BSS_DEFAULT_NUM][TX_PORT_NUM];
+	uint32_t au4TxCnt[MAX_BSSID_NUM][TX_PORT_NUM];
 	struct BSS_INFO	*prBssInfo;
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
@@ -1785,7 +1785,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 	QUEUE_INITIALIZE(prDataPort0);
 	QUEUE_INITIALIZE(prDataPort1);
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
 			QUEUE_INITIALIZE(&arTempQue[i][u4Idx]);
 			au4TxCnt[i][u4Idx] = 0;
@@ -1806,7 +1806,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 #else
 	i = 0;
 #endif
-	for (j = 0; j < BSS_DEFAULT_NUM; j++) {
+	for (j = 0; j < MAX_BSSID_NUM; j++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 		/* Dequeue each TCQ to dataQ by round-robin  */
 		/* Check each TCQ is empty or not */
@@ -1846,11 +1846,11 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 
 		}
 		i++;
-		i %= BSS_DEFAULT_NUM;
+		i %= MAX_BSSID_NUM;
 	}
 #if QM_FORWARDING_FAIRNESS
 	prQM->u4HeadBssInfoIndex++;
-	prQM->u4HeadBssInfoIndex %= BSS_DEFAULT_NUM;
+	prQM->u4HeadBssInfoIndex %= MAX_BSSID_NUM;
 #endif
 
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
@@ -1874,7 +1874,7 @@ void nicTxMsduQueueByRR(struct ADAPTER *prAdapter)
 			(struct QUE_ENTRY *) prMsduInfo);
 	}
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		for (u4Idx = 0; u4Idx < TX_PORT_NUM; u4Idx++) {
 			while (QUEUE_IS_NOT_EMPTY(&arTempQue[i][u4Idx])) {
 				QUEUE_REMOVE_HEAD(&arTempQue[i][u4Idx],
@@ -1898,7 +1898,7 @@ uint32_t nicTxGetMsduPendingCnt(IN struct ADAPTER
 	int32_t i, j;
 	uint32_t retValue = 0;
 
-	for (i = 0; i < BSS_DEFAULT_NUM; i++)
+	for (i = 0; i < MAX_BSSID_NUM; i++)
 		for (j = 0; j < TX_PORT_NUM; j++)
 			retValue += prAdapter->rTxPQueue[i][j].u4NumElem;
 	return retValue;
@@ -6503,7 +6503,7 @@ void nicTxHandleRoamingDone(struct ADAPTER *prAdapter,
 			&prMsduInfo->rQueEntry);
 	}
 #else
-	for (i = 0; i < BSS_DEFAULT_NUM; i++) {
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		for (ucIndex = 0; ucIndex < TX_PORT_NUM; ucIndex++) {
 			prMsduInfo = (struct MSDU_INFO *)QUEUE_GET_HEAD(
 				&prAdapter->rTxPQueue[i][ucIndex]);

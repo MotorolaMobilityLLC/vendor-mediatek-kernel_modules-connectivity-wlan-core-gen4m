@@ -127,8 +127,8 @@ static u_int8_t p2pRoleFsmNeedMlo(
 }
 #endif
 
-uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucRoleIdx)
+uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
+	IN uint8_t ucRoleIdx, IN u_int8_t fgIsMldReserved)
 {
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 		(struct P2P_ROLE_FSM_INFO *) NULL;
@@ -216,11 +216,8 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
 			NETWORK_TYPE_P2P,
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			prMldBssInfo != NULL ? prMldBssInfo->ucGroupMldId :
-#endif
-			MLD_GROUP_NONE,
-			FALSE);
+			FALSE,
+			fgIsMldReserved);
 
 		if (!prP2pBssInfo) {
 			DBGLOG(P2P, ERROR,
@@ -333,6 +330,12 @@ uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
 	else
 		return prAdapter->ucP2PDevBssIdx;
 }				/* p2pFsmInit */
+
+uint8_t p2pRoleFsmInit(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucRoleIdx)
+{
+	return p2pRoleFsmInitImpl(prAdapter, ucRoleIdx, FALSE);
+}
 
 void p2pRoleFsmUninit(IN struct ADAPTER *prAdapter, IN uint8_t ucRoleIdx)
 {
@@ -2373,10 +2376,6 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 
 	prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) prMsgHdr;
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	p2pLinkInitGCRole(prAdapter);
-#endif
-
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prP2pConnReqMsg->ucRoleIdx);
@@ -2470,6 +2469,11 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 		&set);
 	p2pFillLinkBssDesc(prAdapter,
 		prP2pRoleFsmInfo, &set);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (set.ucLinkNum > 1)
+		p2pLinkInitGCRole(prAdapter);
+#endif
 
 	if (prJoinInfo->prTargetBssDesc == NULL) {
 		p2pRoleFsmScanTargetBss(prAdapter,

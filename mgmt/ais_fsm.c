@@ -443,6 +443,104 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 	LINK_INITIALIZE(&prAisBssInfo->rPmkidCache);
 }
 
+struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIdx)
+{
+	struct BSS_INFO *bss = NULL;
+	struct net_device *net = wlanGetAisNetDev(prAdapter->prGlueInfo,
+			prAisFsmInfo->ucAisIndex);
+
+	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS,
+		FALSE, ucLinkIdx != AIS_MAIN_LINK_INDEX);
+	if (!bss) {
+		DBGLOG(AIS, ERROR,
+			"prAisBssInfo is NULL for link%d\n", ucLinkIdx);
+		if (ucLinkIdx == AIS_MAIN_LINK_INDEX)
+			ASSERT(0);
+	} else {
+		prAisFsmInfo->ucLinkNum++;
+		aisSetLinkBssInfo(prAisFsmInfo, bss, ucLinkIdx);
+		aisInitBssInfo(prAdapter, prAisFsmInfo, bss, ucLinkIdx);
+		wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
+				bss->ucBssIndex, net);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		mldBssRegister(prAdapter, prAisFsmInfo->prMldBssInfo, bss);
+#endif
+		DBGLOG(AIS, INFO,
+			"[AIS%d] link%d, bss=%d, omac=%d total=%d\n",
+			prAisFsmInfo->ucAisIndex, ucLinkIdx,
+			bss->ucBssIndex, bss->ucOwnMacIndex,
+			prAisFsmInfo->ucLinkNum);
+	}
+
+	return bss;
+}
+
+void aisFreeBssInfo(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIdx)
+{
+	struct BSS_INFO *bss = NULL;
+	uint8_t fgHalted = kalIsHalted();
+	uint8_t ucBssIndex;
+
+	bss = aisGetLinkBssInfo(prAisFsmInfo, ucLinkIdx);
+	/* 4 <3> Reset driver-domain BSS-INFO */
+	if (!bss)
+		return;
+
+	ucBssIndex = bss->ucBssIndex;
+
+	/* Deactivate BSS. */
+	UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
+	if (!fgHalted)
+		nicDeactivateNetwork(prAdapter,
+		       NETWORK_ID(ucBssIndex, ucLinkIdx));
+
+	if (bss->prBeacon) {
+		cnmMgtPktFree(prAdapter, bss->prBeacon);
+		bss->prBeacon = NULL;
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUnregister(prAdapter, prAisFsmInfo->prMldBssInfo, bss);
+#endif
+
+	wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
+		ucBssIndex, NULL);
+	cnmFreeBssInfo(prAdapter, bss);
+	aisSetLinkBssInfo(prAisFsmInfo, NULL, ucLinkIdx);
+	aisSetLinkStaRec(prAisFsmInfo, NULL, ucLinkIdx);
+	aisSetLinkBssDesc(prAisFsmInfo, NULL, ucLinkIdx);
+	prAisFsmInfo->ucLinkNum--;
+
+	DBGLOG(AIS, INFO,
+		"[AIS%d] link%d, bss=%d, total=%d\n",
+		prAisFsmInfo->ucAisIndex, ucLinkIdx, ucBssIndex,
+		prAisFsmInfo->ucLinkNum);
+}
+
+void aisFreeAllBssInfo(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t fgUninit)
+{
+	struct BSS_INFO *bss;
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		bss = aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		if (!bss)
+			break;
+
+		/* force to free all bssinfo if uninit ais,
+		 * otherwise free bssinfo which is not connected
+		 */
+		if (fgUninit ||
+		   (i != AIS_MAIN_LINK_INDEX &&
+		    bss->eConnectionState != MEDIA_STATE_CONNECTED))
+			aisFreeBssInfo(prAdapter, prAisFsmInfo, i);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief the function is used to initialize the value in AIS_FSM_INFO_T for
@@ -462,7 +560,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 #endif
-	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct AIS_MGMT_TX_REQ_INFO *prMgmtTxReqInfo =
@@ -471,9 +568,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
 	struct net_device *prNetDev;
-
-	uint8_t i;
-	uint8_t ucBssIndex;
+	uint8_t ucBssIndex, i;
 
 	prNetDev = wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex);
 	if (!prNetDev) {
@@ -492,33 +587,16 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucAisIndex = ucAisIndex;
 	if (ucAisIndex == AIS_DEFAULT_INDEX)
 		prAdapter->rWifiVar.prDefaultAisFsmInfo = prAisFsmInfo;
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssAlloc(prAdapter, &prMldBssInfo);
 	prAisFsmInfo->prMldBssInfo = prMldBssInfo;
 #endif
 
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		prAisBssInfo = cnmGetBssInfoAndInit(prAdapter,
-			NETWORK_TYPE_AIS,
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			prMldBssInfo != NULL ? prMldBssInfo->ucGroupMldId :
-#endif
-			MLD_GROUP_NONE,
-			FALSE);
-		if (!prAisBssInfo) {
-			DBGLOG(AIS, ERROR,
-				"aisFsmInit failed because prAisBssInfo is NULL, return.\n");
-			ASSERT(0);
-		}
-
-		aisSetLinkBssInfo(prAisFsmInfo, prAisBssInfo, i);
-		aisInitBssInfo(prAdapter, prAisFsmInfo, prAisBssInfo, i);
-		wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
- 			prAisBssInfo->ucBssIndex, prNetDev);
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldBssRegister(prAdapter, prMldBssInfo, prAisBssInfo);
-#endif
-	}
+	prAisFsmInfo->ucLinkNum = 0;
+	for (i = 0; i < MAX_BSSID_NUM + 1; i++)
+		prAisFsmInfo->arBssId2LinkMap[i] = MLD_LINK_ID_NONE;
+	aisAllocBssInfo(prAdapter, prAisFsmInfo, AIS_MAIN_LINK_INDEX);
 
 	/* after aisInitBssInfo, bssinfo is ready */
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
@@ -686,10 +764,8 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo =
 		aisFsmGetInstance(prAdapter, ucAisIndex);
-	struct BSS_INFO *prAisBssInfo;
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
-	uint8_t i;
 	u_int8_t fgHalted = kalIsHalted();
 	uint8_t ucBssIndex;
 
@@ -698,8 +774,10 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	DBGLOG(AIS, INFO, "->aisFsmUninit(%d)\n", ucAisIndex);
 
 	/* avoid that the prAisBssInfo is double freed */
-	if (aisGetMainLinkBssInfo(prAisFsmInfo) == NULL)
+	if (aisGetMainLinkBssInfo(prAisFsmInfo) == NULL) {
+		DBGLOG(AIS, INFO, "-> ais(%d) main bssinfo null\n", ucAisIndex);
 		return;
+	}
 
 	ucBssIndex = aisGetMainLinkBssIndex(prAdapter, prAisFsmInfo);
 	prAisSpecificBssInfo =
@@ -765,33 +843,8 @@ void aisFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 
 	wmmUnInit(prAdapter, ucBssIndex);
 
-	for (i = 0; i < MLD_LINK_MAX; i++) {
-		prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
-		/* 4 <3> Reset driver-domain BSS-INFO */
-		if (prAisBssInfo) {
-			/* Deactivate BSS. */
-			UNSET_NET_ACTIVE(prAdapter,
-				prAisBssInfo->ucBssIndex);
-			if (!fgHalted)
-				nicDeactivateNetwork(prAdapter,
-				       NETWORK_ID(prAisBssInfo->ucBssIndex, i));
+	aisFreeAllBssInfo(prAdapter, prAisFsmInfo, TRUE);
 
-			if (prAisBssInfo->prBeacon) {
-				cnmMgtPktFree(prAdapter,
-					prAisBssInfo->prBeacon);
-				prAisBssInfo->prBeacon = NULL;
-			}
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			mldBssUnregister(prAdapter, prAisFsmInfo->prMldBssInfo,
-				prAisBssInfo);
-#endif
-
-			wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
-  				prAisBssInfo->ucBssIndex, NULL);
-			cnmFreeBssInfo(prAdapter, prAisBssInfo);
-			aisSetLinkBssInfo(prAisFsmInfo, NULL, i);
-		}
-	}
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssFree(prAdapter, prAisFsmInfo->prMldBssInfo);
 	prAisFsmInfo->prMldBssInfo = NULL;
@@ -880,6 +933,13 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	prWpaInfo = &prAisFsmInfo->rWpaInfo;
 	prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, ucLinkIndex);
 	prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, ucLinkIndex);
+
+	if (!prAisBssInfo) {
+		DBGLOG(AIS, ERROR,
+			"aisFsmStateInit_JOIN failed because prAisBssInfo is NULL, return.\n");
+		return;
+	}
+
 	ucBssIndex = prAisBssInfo->ucBssIndex;
 
 	/* 4 <1> We are going to connect to this BSS. */
@@ -888,7 +948,7 @@ void aisFsmStateInit_JOIN(IN struct ADAPTER *prAdapter,
 	/* 4 <2> Setup corresponding STA_RECORD_T */
 	prStaRec = bssCreateStaRecFromBssDesc(prAdapter,
 					      STA_TYPE_LEGACY_AP,
-					      prAisBssInfo->ucBssIndex,
+					      ucBssIndex,
 					      prBssDesc);
 
 	if (!prStaRec) {
@@ -1612,9 +1672,16 @@ void aisFillBssInfoFromBssDesc(IN struct ADAPTER *prAdapter,
 
 	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
 		struct BSS_INFO *prAisBssInfo =
-			prAisFsmInfo->aprLinkInfo[i].prBssInfo;
+			aisGetLinkBssInfo(prAisFsmInfo, i);
 		struct BSS_DESC *prBssDesc =
 			prBssDescSet->aprBssDesc[i];
+
+		if (!prAisBssInfo) {
+			prAisBssInfo =
+				aisAllocBssInfo(prAdapter, prAisFsmInfo, i);
+			if (!prAisBssInfo)
+				continue;
+		}
 
 		prAisBssInfo->u4RsnSelectedGroupCipher =
 			prBssDesc->u4RsnSelectedGroupCipher;
@@ -1819,6 +1886,13 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 		for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
 			prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
 			prBssDesc = prBssDescSet->aprBssDesc[i];
+
+			if (!prAisBssInfo) {
+				prAisBssInfo = aisAllocBssInfo(prAdapter,
+					prAisFsmInfo, i);
+				if (!prAisBssInfo)
+					continue;
+			}
 
 			aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
 #if CFG_SUPPORT_DBDC
@@ -2046,6 +2120,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 		 * of function pointer to speed up state search.
 		 */
 		case AIS_STATE_IDLE:
+			/* recycle unused bssinfo */
+			aisFreeAllBssInfo(prAdapter, prAisFsmInfo, FALSE);
 
 			prAisReq = aisFsmGetNextRequest(prAdapter, ucBssIndex);
 			if (prAisFsmInfo->ePreviousState ==
@@ -2509,7 +2585,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				struct BSS_INFO *bss = aisGetLinkBssInfo(
 					prAisFsmInfo, i);
 
-				if (!aisGetLinkBssDesc(prAisFsmInfo, i))
+				if (!bss || !aisGetLinkBssDesc(prAisFsmInfo, i))
 					break;
 
 				/* for secondary link */
@@ -2545,7 +2621,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				struct BSS_INFO *bss = aisGetLinkBssInfo(
 					prAisFsmInfo, i);
 
-				if (!aisGetLinkBssDesc(prAisFsmInfo, i))
+				if (!bss || !aisGetLinkBssDesc(prAisFsmInfo, i))
 					break;
 				/* Renew op trx nss */
 				cnmOpModeGetTRxNss(prAdapter,
@@ -2584,6 +2660,9 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_ADHOC */
 
 		case AIS_STATE_NORMAL_TR:
+			/* recycle unused bssinfo */
+			aisFreeAllBssInfo(prAdapter, prAisFsmInfo, FALSE);
+
 			/* Don't do anything when rJoinTimeoutTimer
 			 * is still ticking
 			 */
@@ -3318,11 +3397,12 @@ void aisRestoreAllLink(IN struct ADAPTER *ad,
 	uint8_t i;
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct BSS_INFO *prAisBssInfo =
-			aisGetLinkBssInfo(ais, i);
-		struct STA_RECORD *prStaRec =
-			aisGetLinkStaRec(ais, i);
+		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
+		struct STA_RECORD *prStaRec = aisGetLinkStaRec(ais, i);
 		struct PARAM_SSID rSsid;
+
+		if (!prAisBssInfo)
+			break;
 
 		COPY_SSID(rSsid.aucSsid,
 			  rSsid.u4SsidLen,
@@ -3511,6 +3591,9 @@ void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
 
+		if (!prAisBssInfo)
+			break;
+
 		kalResetStats(
 			wlanGetNetDev(
 			prAdapter->prGlueInfo,
@@ -3526,12 +3609,12 @@ void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
 		    (prAisBssInfo->prStaRecOfAP->fgIsInUse) &&
 		    (prAisBssInfo->prStaRecOfAP->ucBssIndex ==
 		     prAisBssInfo->ucBssIndex)) {
-
 			cnmStaRecChangeState(prAdapter,
 				prAisBssInfo->prStaRecOfAP,
 				STA_STATE_1);
 			cnmStaRecFree(prAdapter,
 				prAisBssInfo->prStaRecOfAP);
+			prAisBssInfo->prStaRecOfAP = NULL;
 		}
 	}
 }
@@ -4463,7 +4546,7 @@ void aisUpdateAllBssInfoForJOIN(IN struct ADAPTER *prAdapter,
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
 
-		if (!prStaRec)
+		if (!prAisBssInfo || !prStaRec)
 			break;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -4794,6 +4877,9 @@ void aisFsmDisconnectAllBss(IN struct ADAPTER *prAdapter,
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
 
+		if (!prAisBssInfo)
+			break;
+
 		aisChangeMediaState(prAisBssInfo, MEDIA_STATE_DISCONNECTED);
 
 		/* 4 <4.1> sync. with firmware */
@@ -4801,7 +4887,6 @@ void aisFsmDisconnectAllBss(IN struct ADAPTER *prAdapter,
 		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
 	}
 }
-
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -7395,7 +7480,7 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 		DBGLOG(AIS, WARN,
 			"Use default, invalid index=%d caller=%pS\n",
 			ucBssIndex, KAL_TRACE);
-		return prAdapter->rWifiVar.prDefaultAisFsmInfo;
+		return aisGetDefaultAisInfo(prAdapter);
 	}
 
 	return aisFsmGetInstance(prAdapter,
@@ -7478,9 +7563,20 @@ struct STA_RECORD *aisGetDefaultStaRecOfAP(IN struct ADAPTER *prAdapter)
 void aisSetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBssInfo, uint8_t ucLinkIdx)
 {
+	struct BSS_INFO *ori = prAisFsmInfo->aprLinkInfo[ucLinkIdx].prBssInfo;
+
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return;
+
+	if (ori)
+		prAisFsmInfo->arBssId2LinkMap[ori->ucBssIndex] =
+			MLD_LINK_ID_NONE;
+
 	prAisFsmInfo->aprLinkInfo[ucLinkIdx].prBssInfo = prBssInfo;
+
+	if (prBssInfo)
+		prAisFsmInfo->arBssId2LinkMap[prBssInfo->ucBssIndex] =
+			ucLinkIdx;
 }
 
 struct BSS_INFO *aisGetLinkBssInfo(IN struct AIS_FSM_INFO *prAisFsmInfo,
@@ -7541,7 +7637,6 @@ uint8_t aisGetLinkNum(IN struct AIS_FSM_INFO *prAisFsmInfo)
 	return num;
 }
 
-
 struct BSS_DESC *aisGetMainLinkBssDesc(IN struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	return aisGetLinkBssDesc(prAisFsmInfo, AIS_MAIN_LINK_INDEX);
@@ -7587,7 +7682,7 @@ void aisDeactivateAllLink(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct BSS_INFO *bss = prAisFsmInfo->aprLinkInfo[i].prBssInfo;
 
-		if (IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
+		if (bss && IS_NET_ACTIVE(prAdapter, bss->ucBssIndex)) {
 			UNSET_NET_ACTIVE(prAdapter, bss->ucBssIndex);
 			nicDeactivateNetwork(prAdapter,
 				NETWORK_ID(bss->ucBssIndex, i));
@@ -7599,13 +7694,14 @@ struct AIS_LINK_INFO *aisGetLink(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	uint8_t ucMainBssIndex = aisGetMainLinkBssIndex(prAdapter, ais);
 
-	if(ucBssIndex >= ucMainBssIndex &&
-	       ucBssIndex < ucMainBssIndex + MLD_LINK_MAX)
-		return &ais->aprLinkInfo[ucBssIndex - ucMainBssIndex];
-	else
-		return aisGetDefaultLink(prAdapter);
+	if (ais->arBssId2LinkMap[ucBssIndex] != MLD_LINK_ID_NONE)
+		return &ais->aprLinkInfo[ais->arBssId2LinkMap[ucBssIndex]];
+
+	DBGLOG(AIS, WARN,
+		"Use default, invalid index=%d caller=%pS\n",
+		ucBssIndex, KAL_TRACE);
+	return aisGetDefaultLink(prAdapter);
 }
 
 struct BSS_INFO *aisGetAisBssInfo(

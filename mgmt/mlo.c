@@ -1911,6 +1911,30 @@ void mldBssUpdateMldAddrByMainBss(
 		prMldBssInfo, prBssInfo->aucOwnMacAddr);
 }
 
+void mldBssUpdateOmacIdx(
+	IN struct ADAPTER *prAdapter,
+	IN struct MLD_BSS_INFO *prMldBssInfo,
+	struct BSS_INFO *prBssInfo)
+{
+	if (!prAdapter || !prMldBssInfo ||
+	    LINK_IS_EMPTY(&prMldBssInfo->rBssList))
+		return;
+
+	if (prMldBssInfo->ucOmacIdx == INVALID_OMAC_IDX) {
+		struct BSS_INFO *prMainBssInfo =
+			LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
+					struct BSS_INFO, rLinkEntryMld);
+
+		prMldBssInfo->ucOmacIdx = prMainBssInfo->ucOwnMacIndex;
+	}
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
+		prMldBssInfo->ucOmacIdx);
+	prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
+#endif
+}
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBssInfo)
@@ -1930,6 +1954,7 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
 
 	mldBssUpdateMldAddrByMainBss(prAdapter, prMldBssInfo);
+	mldBssUpdateOmacIdx(prAdapter, prMldBssInfo, prBssInfo);
 
 	return 0;
 }

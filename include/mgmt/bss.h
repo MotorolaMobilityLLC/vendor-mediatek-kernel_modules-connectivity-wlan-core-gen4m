@@ -77,8 +77,6 @@ extern const uint8_t *apucNetworkType[NETWORK_TYPE_NUM];
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define BSS_DEFAULT_NUM         KAL_BSS_NUM
-
 /* Define how many concurrent operation networks. */
 #define BSS_P2P_NUM             KAL_P2P_NUM
 

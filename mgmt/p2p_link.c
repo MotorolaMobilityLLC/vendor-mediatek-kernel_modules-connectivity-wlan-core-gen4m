@@ -67,7 +67,8 @@ void p2pLinkInitGCRole(IN struct ADAPTER *prAdapter)
 		if (prP2pInfo == NULL)
 			continue;
 		DBGLOG(INIT, TRACE, "\n");
-		p2pRoleFsmInit(prAdapter, i);
+		p2pRoleFsmInitImpl(prAdapter,
+			i, i != P2P_MAIN_LINK_INDEX);
 		kal_init_completion(&prP2pInfo->rStopApComp);
 
 		fsm = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(

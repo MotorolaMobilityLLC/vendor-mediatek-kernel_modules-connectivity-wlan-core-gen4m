@@ -453,6 +453,8 @@ struct AIS_FSM_INFO {
 
 	uint8_t ucAvailableAuthTypes; /* Used for AUTH_MODE_AUTO_SWITCH */
 
+	uint8_t ucLinkNum;
+	uint8_t arBssId2LinkMap[MAX_BSSID_NUM + 1];
 	struct AIS_LINK_INFO aprLinkInfo[MLD_LINK_MAX];
 
 	struct CONNECTION_SETTINGS rConnSettings;

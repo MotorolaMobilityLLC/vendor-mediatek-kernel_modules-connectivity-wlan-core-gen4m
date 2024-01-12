@@ -333,8 +333,8 @@ uint8_t cnmGetBssBandBw(struct ADAPTER *prAdapter,
 uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
-	enum ENUM_NETWORK_TYPE eNetworkType, uint8_t ucMldGroupIdx,
-	u_int8_t fgIsP2pDevice);
+	enum ENUM_NETWORK_TYPE eNetworkType,
+	u_int8_t fgIsP2pDevice, u_int8_t fgIsMldReserved);
 
 void cnmFreeBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo);
 

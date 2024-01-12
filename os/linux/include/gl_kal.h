@@ -122,8 +122,6 @@ extern u_int8_t wlan_perf_monitor_force_enable;
  *******************************************************************************
  */
 /* Define how many concurrent operation networks. */
-#define KAL_BSS_NUM             4
-
 #if CFG_SUPPORT_DUAL_STA
 #define KAL_AIS_NUM           2
 #else
