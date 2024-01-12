@@ -998,7 +998,6 @@ secPrivacySeekForBcEntry(IN struct ADAPTER *prAdapter,
 	ucStartIDX = 0;
 	ucMaxIDX = prAdapter->ucTxDefaultWlanIndex - 1;
 
-	DBGLOG(INIT, INFO, "secPrivacySeekForBcEntry\n");
 	DBGLOG(INIT, INFO, "OpMode:%d, NetworkType:%d, CheckKeyId:%d\n",
 	       prBSSInfo->eCurrentOPMode, prBSSInfo->eNetworkType,
 	       fgCheckKeyId);
