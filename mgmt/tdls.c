@@ -1916,11 +1916,13 @@ TdlsDataFrameSend_DISCOVERY_RSP(struct ADAPTER *prAdapter,
 		prMsduInfoMgmt->u2FrameLength = u4PktLen;
 		prMsduInfoMgmt->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
 		prMsduInfoMgmt->pfTxDoneHandler = NULL;
-	} else
-		return TDLS_STATUS_RESOURCES;
 
-	/* Send them to HW queue */
-	nicTxEnqueueMsdu(prAdapter, prMsduInfoMgmt);
+		/* Send them to HW queue */
+		nicTxEnqueueMsdu(prAdapter, prMsduInfoMgmt);
+	}
+
+	if (prMsduInfo)
+		kalPacketFree(prGlueInfo, prMsduInfo);
 
 	return TDLS_STATUS_SUCCESS;
 }
