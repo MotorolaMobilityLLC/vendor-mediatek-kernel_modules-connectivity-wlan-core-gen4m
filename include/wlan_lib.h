@@ -1077,7 +1077,11 @@ struct MIB_INFO_STAT {
 	uint32_t u4RxFifoFull;
 	uint32_t u4AmpduTxSfCnt;
 	uint32_t u4AmpduTxAckSfCnt;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	uint32_t au4TxRangeAmpduCnt[AGG_RANGE_SEL_NUM + 1];
+#else
 	uint16_t au2TxRangeAmpduCnt[AGG_RANGE_SEL_NUM + 1];
+#endif
 };
 
 struct PARAM_GET_STA_STATISTICS {
@@ -1173,7 +1177,14 @@ struct PARAM_GET_STA_STATISTICS {
 #else
 	uint32_t u4AggRangeCtrl_2;
 	uint32_t u4AggRangeCtrl_3;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	uint32_t u4AggRangeCtrl_4;
+	uint32_t u4AggRangeCtrl_5;
+	uint32_t u4AggRangeCtrl_6;
+	uint32_t u4AggRangeCtrl_7;
+#else
 	uint8_t aucReserved5[16];
+#endif
 #endif
 #endif
 	uint8_t ucArStateCurr;

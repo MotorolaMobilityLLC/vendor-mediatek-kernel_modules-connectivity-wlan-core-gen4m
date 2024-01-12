@@ -138,7 +138,7 @@
  *******************************************************************************
  */
 static char *RATE_TBLE[] = {"B", "G", "N", "N_2SS", "AC", "AC_2SS", "BG",
-				"HE", "HE_2SS", "N/A"};
+				"HE", "HE_2SS", "EHT", "EHT_2SS", "N/A"};
 
 static char *RA_STATUS_TBLE[] = {"INVALID", "POWER_SAVING", "SLEEP", "STANDBY",
 					"RUNNING", "N/A"};
@@ -676,28 +676,18 @@ int32_t connac3x_show_rx_rate_info(
 		uint8_t ucStaIdx)
 {
 	int32_t i4BytesWritten = 0;
-	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, mu;
-	uint32_t dcm = 0, u4RxV0 = 0;
-
-	/* Group3 PRXV0[0:31] */
-	u4RxV0 = prAdapter->arStaRec[ucStaIdx].au4RxV[0];
+	uint32_t txmode, rate, frmode, sgi, nsts, ldpc, stbc, mu, dcm;
 
 	/* P-RXV0 */
-	rate = (u4RxV0 & CONNAC3X_RX_VT_RX_RATE_MASK)
-					>> CONNAC3X_RX_VT_RX_RATE_OFFSET;
-	nsts = (u4RxV0 & CONNAC3X_RX_VT_NSTS_MASK)
-					>> CONNAC3X_RX_VT_NSTS_OFFSET;
-	ldpc = u4RxV0 & CONNAC3X_RX_VT_LDPC;
-	frmode = (u4RxV0 & CONNAC3X_RX_VT_FR_MODE_MASK_V2)
-					>> CONNAC3X_RX_VT_FR_MODE_OFFSET_V2;
-	sgi = (u4RxV0 & CONNAC3X_RX_VT_SHORT_GI_MASK_V2)
-					>> CONNAC3X_RX_VT_SHORT_GI_OFFSET_V2;
-	stbc = (u4RxV0 & CONNAC3X_RX_VT_STBC_MASK_V2)
-					>> CONNAC3X_RX_VT_STBC_OFFSET_V2;
-	txmode = (u4RxV0 & CONNAC3X_RX_VT_RX_MODE_MASK_V2)
-					>> CONNAC3X_RX_VT_RX_MODE_OFFSET_V2;
-	mu = u4RxV0 & CONNAC3X_RX_VT_MU;
-	dcm = u4RxV0 & CONNAC3X_RX_VT_DCM;
+	rate = CONNAC3X_GET_RX_RATE_FROM_ADAPTER(prAdapter, ucStaIdx);
+	nsts = CONNAC3X_GET_RX_NSTS_FROM_ADAPTER(prAdapter, ucStaIdx);
+	ldpc = CONNAC3X_GET_RX_LDPC_FROM_ADAPTER(prAdapter, ucStaIdx);
+	frmode = CONNAC3X_GET_RX_FR_MODE_FROM_ADAPTER(prAdapter, ucStaIdx);
+	sgi = CONNAC3X_GET_RX_GI_FROM_ADAPTER(prAdapter, ucStaIdx);
+	stbc = CONNAC3X_GET_RX_STBC_ADAPTER(prAdapter, ucStaIdx);
+	txmode = CONNAC3X_GET_RX_MODE_ADAPTER(prAdapter, ucStaIdx);
+	mu = CONNAC3X_GET_RX_MU_ADAPTER(prAdapter, ucStaIdx);
+	dcm = CONNAC3X_GET_RX_DCM_ADAPTER(prAdapter, ucStaIdx);
 
 	if (mu == 0)
 		nsts += 1;
@@ -726,7 +716,7 @@ int32_t connac3x_show_rx_rate_info(
 
 	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 		i4TotalLen - i4BytesWritten, "%s, ",
-		frmode < 4 ? HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[4]);
+		frmode < 5 ? HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[5]);
 
 	if (txmode == TX_RATE_MODE_CCK)
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
@@ -777,22 +767,17 @@ int32_t connac3x_show_rx_rssi_info(
 {
 	int32_t i4RSSI0 = 0, i4RSSI1 = 0, i4RSSI2 = 0, i4RSSI3 = 0;
 	int32_t i4BytesWritten = 0;
-	uint32_t u4RCPI = 0;
 
-	u4RCPI = prAdapter->arStaRec[ucStaIdx].au4RxV[1];
-
-	DBGLOG(REQ, LOUD, "****** RCPI = 0x%08x ******\n", u4RCPI);
-
-	i4RSSI0 = RCPI_TO_dBm((u4RCPI & CONNAC3X_RX_VT_RCPI0_MASK) >>
-			      CONNAC3X_RX_VT_RCPI0_OFFSET);
-	i4RSSI1 = RCPI_TO_dBm((u4RCPI & CONNAC3X_RX_VT_RCPI1_MASK) >>
-			      CONNAC3X_RX_VT_RCPI1_OFFSET);
+	i4RSSI0 = RCPI_TO_dBm(CONNAC3X_GET_RCPI0_FROM_ADAPTER(
+			prAdapter, ucStaIdx));
+	i4RSSI1 = RCPI_TO_dBm(CONNAC3X_GET_RCPI1_FROM_ADAPTER(
+			prAdapter, ucStaIdx));
 
 	if (prAdapter->rWifiVar.ucNSS > 2) {
-		i4RSSI2 = RCPI_TO_dBm((u4RCPI & CONNAC3X_RX_VT_RCPI2_MASK) >>
-				      CONNAC3X_RX_VT_RCPI2_OFFSET);
-		i4RSSI3 = RCPI_TO_dBm((u4RCPI & CONNAC3X_RX_VT_RCPI3_MASK) >>
-				      CONNAC3X_RX_VT_RCPI3_OFFSET);
+		i4RSSI2 = RCPI_TO_dBm(CONNAC3X_GET_RCPI2_FROM_ADAPTER(
+				prAdapter, ucStaIdx));
+		i4RSSI3 = RCPI_TO_dBm(CONNAC3X_GET_RCPI3_FROM_ADAPTER(
+				prAdapter, ucStaIdx));
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten, "%-20s%s%d %d %d %d\n",
@@ -847,7 +832,7 @@ int32_t connac3xGetTxRateInfo(IN char *pcCommand, IN int i4TotalLen,
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"Rate idx[%d]    ", i);
+				"Rate index[%d]    ", i);
 
 			if (pWtbl->trx_cap.wtbl_d9.field.rate_idx == i) {
 				i4BytesWritten += kalScnprintf(
@@ -1029,7 +1014,7 @@ int32_t connac3x_get_tx_info_from_txv(IN char *pcCommand,
 	IN int i4TotalLen,
 	IN struct TX_VECTOR_BBP_LATCH *prTxV)
 {
-	uint8_t rate, txmode, frmode, sgi, ldpc, nsts, stbc;
+	uint8_t rate, txmode, frmode, sgi, ldpc, nsts, stbc, spe;
 	int8_t txpwr, pos_txpwr;
 	int32_t i4BytesWritten = 0;
 	uint8_t dcm, ersu106t;
@@ -1042,6 +1027,7 @@ int32_t connac3x_get_tx_info_from_txv(IN char *pcCommand,
 	ldpc = TX_VECTOR_GET_TX_LDPC(prTxV);
 	stbc = TX_VECTOR_GET_TX_STBC(prTxV);
 	txpwr = TX_VECTOR_GET_TX_PWR(prTxV);
+	spe = TX_VECTOR_GET_TX_SPE_IDX(prTxV);
 
 	dcm = TX_VECTOR_GET_TX_DCM(prTxV);
 	ersu106t = TX_VECTOR_GET_TX_106T(prTxV);
@@ -1119,11 +1105,12 @@ int32_t connac3x_get_tx_info_from_txv(IN char *pcCommand,
 				(sgi == 1 ? "MGI" : "LGI"));
 
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "%s%s%s%s%s\n",
+			i4TotalLen - i4BytesWritten, "%s%s%s%s%s%s%d\n",
 			(txmode < ENUM_TX_MODE_NUM ?
 			HW_TX_MODE_STR[txmode] : "N/A"),
 			dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
-			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC");
+			stbc ? ", STBC, " : ", ", ldpc == 0 ? "BCC" : "LDPC",
+			", SPE", spe);
 
 		pos_txpwr = (txpwr < 0) ? (~txpwr + 1) : (txpwr);
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
@@ -1184,7 +1171,7 @@ int32_t connac3x_show_stat_info(
 								sizeof(char *);
 	uint8_t ucRaBwStateNum = sizeof(BW_STATE_TBLE) / sizeof(char *);
 #endif
-	uint8_t aucAggRange[AGG_RANGE_SEL_NUM];
+	uint16_t au2AggRange[AGG_RANGE_SEL_NUM];
 	uint32_t au4RangeCtrl[AGG_RANGE_SEL_4BYTE_NUM];
 	enum AGG_RANGE_TYPE_T eRangeType = ENUM_AGG_RANGE_TYPE_TX;
 
@@ -1356,13 +1343,13 @@ int32_t connac3x_show_stat_info(
 		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
 					       i4TotalLen - i4BytesWritten,
 			"%s", "----- MIB Info (Group 0x02) -----\n");
-
+#if 0
 		if (prAdapter->rWifiVar.fgDbDcModeEn)
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"[DBDC_%d] :\n", ucBand);
-
+#endif
 		i4BytesWritten += kalScnprintf(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
@@ -1483,13 +1470,13 @@ int32_t connac3x_show_stat_info(
 			pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
 			"%s", "----- Last TX Info (Group 0x08) -----\n");
-
+#if 0
 		i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"[DBDC_%d] :\n",
 				ucBand);
-
+#endif
 		prChipDbg = prAdapter->chip_info->prDebugOps;
 		if (prChipDbg && prChipDbg->get_tx_info_from_txv) {
 			i4BytesWritten += (
@@ -1743,38 +1730,32 @@ int32_t connac3x_show_stat_info(
 
 	/* =========== Group 0x0040 =========== */
 	if (u4StatGroup & 0x0040) {
-		uint8_t ucIdx, ucInt;
+		uint8_t ucIdx;
 
 		au4RangeCtrl[0] = prQueryStaStatistics->u4AggRangeCtrl_0;
 		au4RangeCtrl[1] = prQueryStaStatistics->u4AggRangeCtrl_1;
 		au4RangeCtrl[2] = prQueryStaStatistics->u4AggRangeCtrl_2;
 		au4RangeCtrl[3] = prQueryStaStatistics->u4AggRangeCtrl_3;
+		au4RangeCtrl[4] = prQueryStaStatistics->u4AggRangeCtrl_4;
+		au4RangeCtrl[5] = prQueryStaStatistics->u4AggRangeCtrl_5;
+		au4RangeCtrl[6] = prQueryStaStatistics->u4AggRangeCtrl_6;
+		au4RangeCtrl[7] = prQueryStaStatistics->u4AggRangeCtrl_7;
 
 		eRangeType = (enum AGG_RANGE_TYPE_T)
 					prQueryStaStatistics->ucRangeType;
 
 		for (ucIdx = 0; ucIdx < AGG_RANGE_SEL_NUM; ucIdx++) {
-			ucInt = ucIdx >> 2;
-			if (ucIdx % 4 == 0)
-				aucAggRange[ucIdx] =
-					((au4RangeCtrl[ucInt] &
+			if (ucIdx % 2 == 0) {
+				au2AggRange[ucIdx] =
+					((au4RangeCtrl[ucIdx >> 1] &
 					AGG_RANGE_SEL_0_MASK) >>
 					AGG_RANGE_SEL_0_OFFSET);
-			else if (ucIdx % 4 == 1)
-				aucAggRange[ucIdx] =
-					((au4RangeCtrl[ucInt] &
+
+				au2AggRange[ucIdx + 1] =
+					((au4RangeCtrl[ucIdx >> 1] &
 					AGG_RANGE_SEL_1_MASK) >>
 					AGG_RANGE_SEL_1_OFFSET);
-			else if (ucIdx % 4 == 2)
-				aucAggRange[ucIdx] =
-					((au4RangeCtrl[ucInt] &
-					AGG_RANGE_SEL_2_MASK) >>
-					AGG_RANGE_SEL_2_OFFSET);
-			else if (ucIdx % 4 == 3)
-				aucAggRange[ucIdx] =
-					((au4RangeCtrl[ucInt] &
-					AGG_RANGE_SEL_3_MASK) >>
-					AGG_RANGE_SEL_3_OFFSET);
+			}
 		}
 
 		/* Tx Agg */
@@ -1792,14 +1773,14 @@ int32_t connac3x_show_stat_info(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%3s",
-				" TX  :", aucAggRange[0] + 1,
-				aucAggRange[0] + 2, "~", aucAggRange[1] + 1,
-				aucAggRange[1] + 2, "~", aucAggRange[2] + 1,
-				aucAggRange[2] + 2, "~", aucAggRange[3] + 1,
-				aucAggRange[3] + 2, "~", aucAggRange[4] + 1,
-				aucAggRange[4] + 2, "~", aucAggRange[5] + 1,
-				aucAggRange[5] + 2, "~", aucAggRange[6] + 1,
-				aucAggRange[6] + 2, "~256\n");
+				" TX  :", au2AggRange[0] + 1,
+				au2AggRange[0] + 2, "~", au2AggRange[1] + 1,
+				au2AggRange[1] + 2, "~", au2AggRange[2] + 1,
+				au2AggRange[2] + 2, "~", au2AggRange[3] + 1,
+				au2AggRange[3] + 2, "~", au2AggRange[4] + 1,
+				au2AggRange[4] + 2, "~", au2AggRange[5] + 1,
+				au2AggRange[5] + 2, "~", au2AggRange[6] + 1,
+				au2AggRange[6] + 2, "~1024\n");
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1809,28 +1790,28 @@ int32_t connac3x_show_stat_info(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%8u%8u%8u%8u%8u%8u%8u%8u\n",
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[0],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[1],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[2],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[3],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[4],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[5],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[6],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[7]);
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[0],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[1],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[2],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[3],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[4],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[5],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[6],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[7]);
 
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%-6s%8d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%3s",
-				" RX  :", aucAggRange[7] + 1,
-				aucAggRange[7] + 2, "~", aucAggRange[8] + 1,
-				aucAggRange[8] + 2, "~", aucAggRange[9] + 1,
-				aucAggRange[9] + 2, "~", aucAggRange[10] + 1,
-				aucAggRange[10] + 2, "~", aucAggRange[11] + 1,
-				aucAggRange[11] + 2, "~", aucAggRange[12] + 1,
-				aucAggRange[12] + 2, "~", aucAggRange[13] + 1,
-				aucAggRange[13] + 2, "~256\n");
+				" RX  :", au2AggRange[7] + 1,
+				au2AggRange[7] + 2, "~", au2AggRange[8] + 1,
+				au2AggRange[8] + 2, "~", au2AggRange[9] + 1,
+				au2AggRange[9] + 2, "~", au2AggRange[10] + 1,
+				au2AggRange[10] + 2, "~", au2AggRange[11] + 1,
+				au2AggRange[11] + 2, "~", au2AggRange[12] + 1,
+				au2AggRange[12] + 2, "~", au2AggRange[13] + 1,
+				au2AggRange[13] + 2, "~1024\n");
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
@@ -1840,82 +1821,82 @@ int32_t connac3x_show_stat_info(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"%8u%8u%8u%8u%8u%8u%8u%8u\n",
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[8],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[9],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[10],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[11],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[12],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[13],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[14],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[15]);
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[8],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[9],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[10],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[11],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[12],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[13],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[14],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[15]);
 		} else {
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-6s%8d%6d%1s%2d%6d%1s%2d%6d%1s%2d%6d%1s%2d%6d%1s%2d%6d%1s%2d%6d%1s%2d\n",
-				"Range:", aucAggRange[0] + 1,
-				aucAggRange[0] + 2, "~",
-				aucAggRange[1] + 1,
-				aucAggRange[1] + 2, "~",
-				aucAggRange[2] + 1,
-				aucAggRange[2] + 2, "~",
-				aucAggRange[3] + 1,
-				aucAggRange[3] + 2, "~",
-				aucAggRange[4] + 1,
-				aucAggRange[4] + 2, "~",
-				aucAggRange[5] + 1,
-				aucAggRange[5] + 2, "~",
-				aucAggRange[6] + 1,
-				aucAggRange[6] + 2, "~",
-				aucAggRange[7] + 1);
+				"%-6s%8d%6d%1s%2d%6d%1s%2d%6d%1s%2d%5d%1s%3d%5d%1s%3d%5d%1s%3d%5d%1s%3d\n",
+				"Range:", au2AggRange[0] + 1,
+				au2AggRange[0] + 2, "~",
+				au2AggRange[1] + 1,
+				au2AggRange[1] + 2, "~",
+				au2AggRange[2] + 1,
+				au2AggRange[2] + 2, "~",
+				au2AggRange[3] + 1,
+				au2AggRange[3] + 2, "~",
+				au2AggRange[4] + 1,
+				au2AggRange[4] + 2, "~",
+				au2AggRange[5] + 1,
+				au2AggRange[5] + 2, "~",
+				au2AggRange[6] + 1,
+				au2AggRange[6] + 2, "~",
+				au2AggRange[7] + 1);
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
 				ucBand,
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[0],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[1],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[2],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[3],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[4],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[5],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[6],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[7]);
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[0],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[1],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[2],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[3],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[4],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[5],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[6],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[7]);
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-6s%4d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%1s%2d%5d%3s",
-				"Range:", aucAggRange[7] + 2, "~",
-				aucAggRange[8] + 1,
-				aucAggRange[8] + 2, "~",
-				aucAggRange[9] + 1,
-				aucAggRange[9] + 2, "~",
-				aucAggRange[10] + 1,
-				aucAggRange[10] + 2, "~",
-				aucAggRange[11] + 1,
-				aucAggRange[11] + 2, "~",
-				aucAggRange[12] + 1,
-				aucAggRange[12] + 2, "~",
-				aucAggRange[13] + 1,
-				aucAggRange[13] + 2, "~",
-				aucAggRange[14] + 1,
-				aucAggRange[14] + 2, "~256\n");
+				"%-6s%4d%1s%3d%5d%1s%3d%5d%1s%3d%5d%1s%3d%5d%1s%3d%5d%1s%3d%5d%1s%3d%5d%5s",
+				"Range:", au2AggRange[7] + 2, "~",
+				au2AggRange[8] + 1,
+				au2AggRange[8] + 2, "~",
+				au2AggRange[9] + 1,
+				au2AggRange[9] + 2, "~",
+				au2AggRange[10] + 1,
+				au2AggRange[10] + 2, "~",
+				au2AggRange[11] + 1,
+				au2AggRange[11] + 2, "~",
+				au2AggRange[12] + 1,
+				au2AggRange[12] + 2, "~",
+				au2AggRange[13] + 1,
+				au2AggRange[13] + 2, "~",
+				au2AggRange[14] + 1,
+				au2AggRange[14] + 2, "~1024\n");
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
 				"DBDC%d%9u%9u%9u%9u%9u%9u%9u%9u\n",
 				ucBand,
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[8],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[9],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[10],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[11],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[12],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[13],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[14],
-				g_arMibInfo[ucBand].au2TxRangeAmpduCnt[15]);
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[8],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[9],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[10],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[11],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[12],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[13],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[14],
+				g_arMibInfo[ucBand].au4TxRangeAmpduCnt[15]);
 		}
 	}
 
@@ -3377,15 +3358,15 @@ int connac3x_get_rx_rate_info(IN const uint32_t *prRxV,
 				>> CONNAC3X_RX_VT_RX_RATE_OFFSET;
 	nsts = (prRxV[0] & CONNAC3X_RX_VT_NSTS_MASK)
 				>> CONNAC3X_RX_VT_NSTS_OFFSET;
-	frmode = (prRxV[0] & CONNAC3X_RX_VT_FR_MODE_MASK_V2)
-					>> CONNAC3X_RX_VT_FR_MODE_OFFSET_V2;
-	sgi = (prRxV[0] & CONNAC3X_RX_VT_SHORT_GI_MASK_V2)
-					>> CONNAC3X_RX_VT_SHORT_GI_OFFSET_V2;
-	rxmode = (prRxV[0] & CONNAC3X_RX_VT_RX_MODE_MASK_V2)
-					>> CONNAC3X_RX_VT_RX_MODE_OFFSET_V2;
-	stbc = (prRxV[0] & CONNAC3X_RX_VT_STBC_MASK_V2)
-				>> CONNAC3X_RX_VT_STBC_OFFSET_V2;
-	mu = prRxV[0] & CONNAC3X_RX_VT_MU;
+	frmode = (prRxV[2] & CONNAC3X_RX_VT_FR_MODE_MASK)
+					>> CONNAC3X_RX_VT_FR_MODE_OFFSET;
+	sgi = (prRxV[2] & CONNAC3X_RX_VT_GI_MASK)
+					>> CONNAC3X_RX_VT_GI_OFFSET;
+	rxmode = (prRxV[2] & CONNAC3X_RX_VT_RX_MODE_MASK)
+					>> CONNAC3X_RX_VT_RX_MODE_OFFSET;
+	stbc = (prRxV[2] & CONNAC3X_RX_VT_STBC_MASK)
+				>> CONNAC3X_RX_VT_STBC_OFFSET;
+	mu = prRxV[0] & CONNAC3X_RX_VT_MU_MASK;
 
 	if (mu == 0)
 		nsts += 1;

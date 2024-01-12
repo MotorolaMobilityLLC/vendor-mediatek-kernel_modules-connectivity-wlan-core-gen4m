@@ -2094,9 +2094,20 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 		prStaStatistics->u4AggRangeCtrl_3 =
 			prEvent->u4AggRangeCtrl_3;
 #endif
+#if (CFG_SUPPORT_CONNAC3X == 1)
+		prStaStatistics->u4AggRangeCtrl_4 =
+			prEvent->u4AggRangeCtrl_4;
+		prStaStatistics->u4AggRangeCtrl_5 =
+			prEvent->u4AggRangeCtrl_5;
+		prStaStatistics->u4AggRangeCtrl_6 =
+			prEvent->u4AggRangeCtrl_6;
+		prStaStatistics->u4AggRangeCtrl_7 =
+			prEvent->u4AggRangeCtrl_7;
+#else
 		kalMemCopy(prStaStatistics->aucReserved5,
 			   prEvent->aucReserved5,
 			   sizeof(prEvent->aucReserved5));
+#endif
 #endif
 		prStaStatistics->ucArStateCurr = prEvent->ucArStateCurr;
 		prStaStatistics->ucArStatePrev = prEvent->ucArStatePrev;
@@ -2131,10 +2142,17 @@ void nicCmdEventQueryStaStatistics(IN struct ADAPTER
 				prStaStatistics->rMibInfo[ucDbdcIdx].
 				u4AmpduTxAckSfCnt;
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+			for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM; ucIdx++)
+				g_arMibInfo[ucDbdcIdx].au4TxRangeAmpduCnt[ucIdx]
+					+= prStaStatistics->rMibInfo[ucDbdcIdx].
+					au4TxRangeAmpduCnt[ucIdx];
+#else
 			for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM; ucIdx++)
 				g_arMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[ucIdx]
 					+= prStaStatistics->rMibInfo[ucDbdcIdx].
 					au2TxRangeAmpduCnt[ucIdx];
+#endif
 		}
 
 		prStaStatistics->fgIsForceTxStream =

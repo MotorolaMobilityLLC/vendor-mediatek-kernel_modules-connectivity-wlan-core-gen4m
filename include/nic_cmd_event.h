@@ -3126,7 +3126,15 @@ struct EVENT_STA_STATISTICS {
 #if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
 	uint32_t u4AggRangeCtrl_2;
 	uint32_t u4AggRangeCtrl_3;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	uint32_t u4AggRangeCtrl_4;
+	uint32_t u4AggRangeCtrl_5;
+	uint32_t u4AggRangeCtrl_6;
+	uint32_t u4AggRangeCtrl_7;
+#else
 	uint8_t aucReserved5[16];
+#endif
+
 #else
 	uint8_t aucReserved5[24];
 #endif
