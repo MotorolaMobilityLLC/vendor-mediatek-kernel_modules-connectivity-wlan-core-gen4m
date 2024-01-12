@@ -8045,15 +8045,15 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgRxIcvErrDbg, "RxIcvErrDbg", FEATURE_DISABLED);
 	/**
 	 * Switching dumping TX/RX memory, set by bitmap format.
-	 * TXP(0x04),        TXDMAD(0x02), TXD(0x01),
-	 * RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
+	 * TXP_FULL(0x08),       TXP(0x04), TXDMAD(0x02), TXD(0x01),
+	 * RXEvent(0x80), RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
 	 */
 	INIT_UINT(prWifiVar->u4TxRxDescDump, "TRXDescDump", 0x40);
 
 	DBGLOG(INIT, TRACE,
-		"TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD,RxEvt=%u,%u,%u/%u,%u,%u,%u",
-		prWifiVar->fgDumpTxP, prWifiVar->fgDumpTxDmad,
-		prWifiVar->fgDumpTxD,
+		"TxPfull,TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD,RxEvt=%u,%u,%u,%u/%u,%u,%u,%u",
+		prWifiVar->fgDumpTxPfull, prWifiVar->fgDumpTxP,
+		prWifiVar->fgDumpTxDmad, prWifiVar->fgDumpTxD,
 		prWifiVar->fgDumpRxDsegment, prWifiVar->fgDumpRxDmad,
 		prWifiVar->fgDumpRxD, prWifiVar->fgDumpRxEvt);
 
