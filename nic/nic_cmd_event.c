@@ -1757,7 +1757,8 @@ void nicCmdEventBuildDateCode(struct ADAPTER *prAdapter,
 
 void nicUpdateStaStats(struct ADAPTER *prAdapter,
 	struct EVENT_STA_STATISTICS *prEvent,
-	struct PARAM_GET_STA_STATISTICS *prStaStatistics)
+	struct PARAM_GET_STA_STATISTICS *prStaStatistics,
+	uint8_t ucStaRecIdx)
 {
 	enum ENUM_WMM_ACI eAci;
 	struct STA_RECORD *prStaRec;
@@ -1910,7 +1911,7 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 			prEvent->ucVhtNonSpRateState;
 #endif
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
-					       prEvent->ucStaRecIdx);
+					       ucStaRecIdx);
 
 		if (prStaRec) {
 			/*link layer statistics */
@@ -1998,7 +1999,7 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 			log_dbg(P2P, INFO,
 				"[%u][%u] link_score=%u, rssi=%u, rate=%u, threshold_cnt=%u, fail_cnt=%u\n",
 				prEvent->ucNetworkTypeIndex,
-				prEvent->ucStaRecIdx,
+				ucStaRecIdx,
 				u4LinkScore,
 				prStaStatistics->ucRcpi,
 				prStaStatistics->u2LinkSpeed,
@@ -2020,6 +2021,9 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 			prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 			prLinkQualityInfo->u4CurTxRate = (
 				prEvent->u2LinkSpeed * 5);
+			DBGLOG(REQ, TRACE, "ucBssIndex=%u txRate:%u\n",
+				prStaRec->ucBssIndex,
+				prLinkQualityInfo->u4CurTxRate);
 		}
 #endif
 	}
@@ -2059,7 +2063,8 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 
 	u4QueryInfoLen = sizeof(struct PARAM_GET_STA_STATISTICS);
 
-	nicUpdateStaStats(prAdapter, prEvent, prStaStatistics);
+	nicUpdateStaStats(prAdapter, prEvent, prStaStatistics,
+		prEvent->ucStaRecIdx);
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo,
