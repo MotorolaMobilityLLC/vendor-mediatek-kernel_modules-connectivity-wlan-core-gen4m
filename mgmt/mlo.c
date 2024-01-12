@@ -1836,7 +1836,7 @@ sta:
 
 		if (pos > tail) {
 			DBGLOG(ML, WARN,
-				"invalid STA profile len=%d\n", tail - pos);
+				"invalid STA profile len=%td\n", tail - pos);
 			goto next;
 		}
 
@@ -1991,7 +1991,7 @@ void mldParseReconfigMlIE(struct MULTI_LINK_INFO *prMlInfo,
 
 		if (pos > tail) {
 			DBGLOG(ML, WARN,
-				"invalid STA profile len=%d\n", tail - pos);
+				"invalid STA profile len=%td\n", tail - pos);
 			goto next;
 		}
 
@@ -3330,7 +3330,7 @@ struct MLD_BSS_INFO *mldBssGetByIdx(struct ADAPTER *prAdapter,
 
 int8_t mldBssInit(struct ADAPTER *prAdapter)
 {
-	DBGLOG(ML, INFO, "Total %d MldBssInfo\n",
+	DBGLOG(ML, INFO, "Total %lu MldBssInfo\n",
 		ARRAY_SIZE(prAdapter->aprMldBssInfo));
 	kalMemZero(prAdapter->aprMldBssInfo, sizeof(prAdapter->aprMldBssInfo));
 	return 0;
@@ -3600,6 +3600,12 @@ static void mldStarecUpdateMldId(struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	prMldBssInfo = mldBssGetByIdx(prAdapter, prMldStarec->ucGroupMldId);
+
+	if (!prMldBssInfo) {
+		DBGLOG(ML, WARN, "null MldBssInfo! GroupMldId:%u\n",
+			prMldStarec->ucGroupMldId);
+		return;
+	}
 
 	prStarec = LINK_PEEK_HEAD(prStarecList,
 		struct STA_RECORD, rLinkEntryMld);
@@ -3957,7 +3963,7 @@ void mldStarecLogRxData(struct ADAPTER *prAdapter,
 
 int8_t mldStarecInit(struct ADAPTER *prAdapter)
 {
-	DBGLOG(ML, INFO, "Total %d MldStaRec\n",
+	DBGLOG(ML, INFO, "Total %lu MldStaRec\n",
 		ARRAY_SIZE(prAdapter->aprMldStarec));
 	kalMemZero(prAdapter->aprMldStarec, sizeof(prAdapter->aprMldStarec));
 	return 0;
