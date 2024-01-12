@@ -795,6 +795,7 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 	struct mem_region *region;
 	uint32_t idx = 0;
 	int ret = 0;
+	u_int8_t read_ret = FALSE;
 
 	for (idx = 0, region = mem->mem_regions;
 	     idx < mem->mem_region_num;
@@ -803,7 +804,19 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 				  glue->prAdapter,
 				  region->base,
 				  region->buf,
-				  region->size);
+				  region->size, read_ret);
+
+		if (read_ret == FALSE) {
+			DBGLOG(INIT, ERROR,
+				"[%d] Read mem region failed, %s 0x%x 0x%x\n",
+				idx,
+				region->name,
+				region->base,
+				region->size);
+			ret = -ENOMEM;
+			break;
+		}
+
 		region->ready = TRUE;
 
 		DBGLOG(INIT, INFO,

@@ -376,19 +376,20 @@ do { \
 	} \
 }
 
-#define HAL_RMCR_RD_RANGE(_RSN, _A, _R, _B, _S) \
+#define HAL_RMCR_RD_RANGE(_RSN, _A, _R, _B, _S, _RET) \
 { \
 	struct ADAPTER *_AD = _A; \
 	if (_AD == NULL) { \
-		kalDevRegReadRange( \
+		_RET = kalDevRegReadRange( \
 			HIF_DEV_REG_##_RSN, NULL, _R, _B, _S); \
 	} else { \
 		if (_AD->rAcpiState == ACPI_STATE_D3) \
 			ASSERT(0); \
-		kalDevRegReadRange( \
+		_RET = kalDevRegReadRange( \
 			HIF_DEV_REG_##_RSN, _AD->prGlueInfo, \
 			_R, _B, _S); \
 	} \
+	_RET; \
 }
 #else
 #define HAL_MCR_RD(_A, _R, _V) \
@@ -403,21 +404,22 @@ do { \
 	} \
 }
 
-#define HAL_MCR_RD_RANGE(_A, _R, _B, _S) \
+#define HAL_MCR_RD_RANGE(_A, _R, _B, _S, _RET) \
 { \
 	struct ADAPTER *_AD = _A; \
 	if (_AD == NULL) { \
-		kalDevRegReadRange(NULL, _R, _B, _S); \
+		_RET = kalDevRegReadRange(NULL, _R, _B, _S); \
 	} else { \
 		if (_AD->rAcpiState == ACPI_STATE_D3) \
 			ASSERT(0); \
-		kalDevRegReadRange(_AD->prGlueInfo, _R, _B, _S); \
+		_RET = kalDevRegReadRange(_AD->prGlueInfo, _R, _B, _S); \
 	} \
+	_RET; \
 }
 
 #define HAL_RMCR_RD(_RSN, _A, _R, _V)	HAL_MCR_RD(_A, _R, _V)
-#define HAL_RMCR_RD_RANGE(_RSN, _A, _R, _B, _S) \
-	HAL_MCR_RD_RANGE(_A, _R, _B, _S)
+#define HAL_RMCR_RD_RANGE(_RSN, _A, _R, _B, _S, _RET) \
+	HAL_MCR_RD_RANGE(_A, _R, _B, _S, _RET)
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #define HAL_MCR_WR(_prAdapter, _u4Offset, _u4Value) \
