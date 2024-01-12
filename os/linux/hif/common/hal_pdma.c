@@ -3038,8 +3038,10 @@ uint32_t halHifPowerOffWifi(IN struct ADAPTER *prAdapter)
 	/* Power off Wi-Fi */
 	wlanSendNicPowerCtrlCmd(prAdapter, TRUE);
 
-	if (prSwWfdmaInfo->fgIsEnSwWfdma && prSwWfdmaInfo->rOps.writeCmd) {
-		while (prSwWfdmaInfo->rOps.writeCmd(prAdapter->prGlueInfo)) {
+	if (prSwWfdmaInfo->fgIsEnSwWfdma &&
+	    prSwWfdmaInfo->rOps.processDmaDone) {
+		while (prSwWfdmaInfo->rOps.processDmaDone(
+			       prAdapter->prGlueInfo)) {
 			if (u4Retry >= SW_WFDMA_MAX_RETRY_COUNT) {
 				if (prSwWfdmaInfo->rOps.dumpDebugLog)
 					prSwWfdmaInfo->rOps.dumpDebugLog(

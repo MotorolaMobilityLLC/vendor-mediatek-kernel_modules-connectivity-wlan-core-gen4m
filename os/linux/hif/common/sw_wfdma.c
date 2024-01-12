@@ -329,10 +329,10 @@ bool halSwWfdmaWriteCmd(struct GLUE_INFO *prGlueInfo)
 	return true;
 }
 
-void halSwWfdmaProcessDmaDone(struct GLUE_INFO *prGlueInfo)
+bool halSwWfdmaProcessDmaDone(struct GLUE_INFO *prGlueInfo)
 {
 	halWpdmaProcessCmdDmaDone(prGlueInfo, TX_RING_CMD_IDX_2);
-	halSwWfdmaWriteCmd(prGlueInfo);
+	return halSwWfdmaWriteCmd(prGlueInfo);
 }
 
 void halSwWfdmaDumpDebugLog(struct GLUE_INFO *prGlueInfo)
