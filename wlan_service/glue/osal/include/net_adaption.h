@@ -557,6 +557,13 @@ struct test_backup_params {
 	u_int16 bcn_prd;
 };
 
+struct get_temp_adc {
+	u_int8 u1ThermalCategory;
+	u_int8 u1Reserved[3];
+	u_int32 temp;
+	u_int32 adc;
+};
+
 /* Test tx counters */
 struct test_tx_statistic {
 	u_int32 tx_cnt;

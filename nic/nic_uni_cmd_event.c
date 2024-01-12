@@ -7294,6 +7294,50 @@ uint32_t nicUniCmdQueryThermalDdieTemp(struct ADAPTER *ad,
 	return status;
 }
 
+uint32_t nicUniCmdQueryThermalAdcTemp(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen)
+{
+	struct THERMAL_TEMP_DATA_V2 *data = pvQueryBuffer;
+	struct UNI_CMD_THERMAL *uni_cmd;
+	struct UNI_CMD_THERMAL_TEMP_ADC_INFO *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_THERMAL) +
+		sizeof(struct UNI_CMD_THERMAL_TEMP_ADC_INFO);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_THERMAL *) cnmMemAlloc(ad,
+			RAM_TYPE_MSG, max_cmd_len);
+
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BF ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_THERMAL_TEMP_ADC_INFO *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_THERMAL_TAG_FEATURE_ADC_TEMPERATURE_QUERY;
+	tag->u2Length = sizeof(*tag);
+	tag->ucThermalCtrlFormatId = 0;
+	tag->ucType = data->ucType;
+	tag->ucIndex = data->ucIdx;
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_THERMAL,
+					FALSE,
+					TRUE,
+					TRUE,
+					nicUniEventThermalAdcTemp,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					pvQueryBuffer,
+					u4QueryBufferLen);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+
 uint32_t nicUniCmdSetCsiControl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -9493,6 +9537,50 @@ void nicUniEventThermalDdieTemp(struct ADAPTER *ad,
 		data = cmd->pvInformationBuffer;
 
 		data->u4Temperature = info->u4SensorResult;
+	}
+
+	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
+		WLAN_STATUS_SUCCESS);
+}
+
+void nicUniEventThermalAdcTemp(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_THERMAL *evt;
+	struct UNI_EVENT_THERMAL_RSP *tag;
+	struct UNI_EVENT_THERMAL_TEMP_ADC_INFO *info;
+	struct UNI_EVENT_THERMAL_TEMP_ADC_INFO *calbk;
+	struct THERMAL_TEMP_DATA_V2 *data;
+	uint8_t itemNum = 0, *pNum = NULL, index = 0;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_THERMAL)
+		return;
+
+	evt = (struct UNI_EVENT_THERMAL *)uni_evt->aucBuffer;
+
+	tag = (struct UNI_EVENT_THERMAL_RSP *)evt->aucTlvBuffer;
+	if (tag->u2Tag != UNI_THERMAL_EVENT_SENSOR_ADC_TEMP_INFO)
+		return;
+
+	info = (struct UNI_EVENT_THERMAL_TEMP_ADC_INFO *)tag->aucBuffer;
+
+	itemNum = (tag->u2Length - sizeof(struct UNI_EVENT_THERMAL_RSP)) /
+				sizeof(struct UNI_EVENT_THERMAL_TEMP_ADC_INFO);
+
+	if (cmd->pvInformationBuffer) {
+		data = cmd->pvInformationBuffer;
+		pNum = data->pu1SensorResult;
+		*pNum = itemNum;
+		pNum++;
+		calbk = (struct UNI_EVENT_THERMAL_TEMP_ADC_INFO *)pNum;
+
+		for (index = 0; index < itemNum; index++, calbk++, info++) {
+			calbk->u4Adc = info->u4Adc;
+			calbk->u4Temp = info->u4Temp;
+		}
+
 	}
 
 	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,

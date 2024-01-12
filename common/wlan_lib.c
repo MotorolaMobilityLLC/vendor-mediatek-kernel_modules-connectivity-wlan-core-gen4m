@@ -14340,6 +14340,24 @@ uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 	return status;
 }
 
+uint32_t wlanQueryThermalTempV2(struct ADAPTER *ad,
+	struct THERMAL_TEMP_DATA_V2 *data)
+{
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	PFN_OID_HANDLER_FUNC handler = NULL;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t len = 0;
+
+	if (!data)
+		return WLAN_STATUS_FAILURE;
+
+	handler = wlanoidQueryThermalAdcTemp;
+
+	status = kalIoctl(glue, handler, data, sizeof(*data), &len);
+
+	return status;
+}
+
 int8_t hexDigitToInt(uint8_t ch)
 {
 	if (ch >= 'a' && ch <= 'f')

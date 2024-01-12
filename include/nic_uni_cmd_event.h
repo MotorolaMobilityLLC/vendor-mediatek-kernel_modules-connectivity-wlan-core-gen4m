@@ -3810,6 +3810,7 @@ enum UNI_CMD_THERMAL_TAG {
 	UNI_CMD_THERMAL_TAG_PROTECT_DUTY_INFO = 0xA,
 	UNI_CMD_THERMAL_TAG_PROTECT_STATE_ACT = 0xB,
 	UNI_CMD_THERMAL_TAG_FEATURE_DDIE_INFO = 0xC,
+	UNI_CMD_THERMAL_TAG_FEATURE_ADC_TEMPERATURE_QUERY = 0xD,
 	UNI_CMD_THERMAL_TAG_NUM
 };
 
@@ -3836,6 +3837,16 @@ struct UNI_CMD_THERMAL_DDIE_SENSOR_INFO {
 	uint8_t ucThermalCtrlFormatId;
 	uint8_t ucActionIdx;
 	uint8_t ucSensorIdx;
+	uint8_t ucReserved;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_THERMAL_TEMP_ADC_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucThermalCtrlFormatId;
+	uint8_t ucType;
+	uint8_t ucIndex;
 	uint8_t ucReserved;
 } __KAL_ATTRIB_PACKED__;
 
@@ -6573,6 +6584,14 @@ struct UNI_EVENT_THERMAL_DDIE_SENSOR_INFO {
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_THERMAL_TEMP_ADC_INFO {
+	uint8_t ucCategory;
+	uint8_t ucReserved[3];
+	uint32_t u4Temp;
+	uint32_t u4Adc;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_THERMAL_PROTECT_MECH_INFO {
 	uint8_t ucSubEventId;
 	uint8_t uc1BandIdx;
@@ -6609,6 +6628,7 @@ enum UNI_THERMAL_EVENT_CATEGORY {
 	UNI_THERMAL_EVENT_THERMAL_PROTECT_MECH_INFO = 0x3,
 	UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_INFO = 0x4,
 	UNI_THERMAL_EVENT_DDIE_SENSOR_INFO = 0x5,
+	UNI_THERMAL_EVENT_SENSOR_ADC_TEMP_INFO = 0x05,
 	UNI_THERMAL_EVENT_THERMAL_PROTECT_DUTY_UPDATE = 0x6,
 	UNI_THERMAL_EVENT_THERMAL_PROTECT_RADIO_UPDATE = 0x7,
 	UNI_THERMAL_EVENT_NUM
@@ -8166,6 +8186,9 @@ uint32_t nicUniCmdQueryThermalAdieTemp(struct ADAPTER *ad,
 uint32_t nicUniCmdQueryThermalDdieTemp(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
+uint32_t nicUniCmdQueryThermalAdcTemp(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen);
 void nicUniEventEfuseAccess(struct ADAPTER	*prAdapter,
 	struct CMD_INFO *prCmdInfo,
 	uint8_t *pucEventBuf);
@@ -8310,6 +8333,8 @@ void nicUniCmdEventQueryMldRec(struct ADAPTER *prAdapter,
 void nicUniEventThermalAdieTemp(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
 void nicUniEventThermalDdieTemp(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
+void nicUniEventThermalAdcTemp(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
 void nicUniEventMibInfo(struct ADAPTER *ad,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
