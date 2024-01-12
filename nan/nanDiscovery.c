@@ -198,6 +198,8 @@ nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 
 	DBGLOG(INIT, INFO, "nan: service_name_len = %d\n",
 	       msg->service_name_len);
+	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN)
+		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
 	prPublishReq->service_name_len = msg->service_name_len;
 	kalMemCopy(prPublishReq->service_name, msg->service_name,
 		   msg->service_name_len);
@@ -344,6 +346,12 @@ nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	prPublishReq->ttl = msg->ttl;
 	prPublishReq->rssi_threshold_flag = msg->rssi_threshold_flag;
 	prPublishReq->recv_indication_cfg = msg->recv_indication_cfg;
+
+	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN) {
+		DBGLOG(NAN, ERROR, "Service name length error:%d\n",
+				msg->service_name_len);
+		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
+	}
 	prPublishReq->service_name_len = msg->service_name_len;
 	kalMemCopy(prPublishReq->service_name, msg->service_name,
 		   msg->service_name_len);
@@ -649,6 +657,12 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	prSubscribeReq->recv_indication_cfg = msg->recv_indication_cfg;
 	prSubscribeReq->period = msg->period;
 
+	if (msg->service_name_len > NAN_FW_MAX_SERVICE_NAME_LEN) {
+		DBGLOG(NAN, ERROR, "Service name length error:%d\n",
+				msg->service_name_len);
+		msg->service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
+	}
+
 	prSubscribeReq->service_name_len = msg->service_name_len;
 	kalMemCopy(prSubscribeReq->service_name, msg->service_name,
 		   msg->service_name_len);
@@ -730,6 +744,8 @@ nanSubscribeRequest(struct ADAPTER *prAdapter,
 	prSubscribeReq->serviceResponseInclude = msg->serviceResponseInclude;
 	prSubscribeReq->useServiceResponseFilter =
 		msg->useServiceResponseFilter;
+	if (msg->num_intf_addr_present > NAN_MAX_SUBSCRIBE_MAX_ADDRESS)
+		msg->num_intf_addr_present = NAN_MAX_SUBSCRIBE_MAX_ADDRESS;
 	prSubscribeReq->num_intf_addr_present = msg->num_intf_addr_present;
 	kalMemCopy(prSubscribeReq->intf_addr, msg->intf_addr,
 		   msg->num_intf_addr_present * MAC_ADDR_LEN);
