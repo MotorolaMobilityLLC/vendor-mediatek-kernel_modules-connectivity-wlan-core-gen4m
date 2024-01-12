@@ -3475,6 +3475,71 @@ static void processNanBmcRx(struct ADAPTER *prAdapter,
 #endif
 }
 
+/**
+ * When prCurrSwRfb->prStaRec == NULL, prBssInfo exist and start is connected,
+ * update the information from prBssInfo if address matched.
+ * Update these information:
+ *   prCurrSwRfb->pvHeader and the MAC address at where it points to
+ *   prCurrSwRfb->u2PacketLen
+ *   prCurrSwRfb->prStaRec
+ *   prCurrSwRfb->ucStaRecIdx
+ *   prCurrSwRfb->ucWlanIdx
+ */
+static void fixRxNullStaRec(struct ADAPTER *prAdapter,
+		struct SW_RFB *prCurrSwRfb, uint16_t u2FrameCtrl,
+		struct BSS_INFO *prBssInfo,
+		struct WLAN_MAC_HEADER *prWlanHeader)
+{
+	if (!RXM_IS_DATA_FRAME(u2FrameCtrl))
+		return;
+
+	if (!prBssInfo || prBssInfo->eConnectionState != MEDIA_STATE_CONNECTED)
+		return;
+
+	/* rx header translation */
+	DBGLOG(QM, WARN,
+		"RXD Trans: FrameCtrl=0x%02x GVLD=0x%x, StaRecIdx=%u, WlanIdx=%u PktLen=%u\n",
+		u2FrameCtrl, prCurrSwRfb->ucGroupVLD, prCurrSwRfb->ucStaRecIdx,
+		prCurrSwRfb->ucWlanIdx, prCurrSwRfb->u2PacketLen);
+
+	DBGLOG_MEM8(QM, LOUD, prCurrSwRfb->pvHeader,
+			prCurrSwRfb->u2PacketLen < 32 ?
+			prCurrSwRfb->u2PacketLen : 32);
+
+	if (!prBssInfo->prStaRecOfAP)
+		return;
+
+	if (EQUAL_MAC_ADDR(prWlanHeader->aucAddr1, prBssInfo->aucOwnMacAddr) &&
+	    EQUAL_MAC_ADDR(prWlanHeader->aucAddr2, prBssInfo->aucBSSID)) {
+		uint16_t u2MACLen;
+
+		/* QoS data, VHT */
+		if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl))
+			u2MACLen = sizeof(struct WLAN_MAC_HEADER_QOS);
+		else
+			u2MACLen = sizeof(struct WLAN_MAC_HEADER);
+		u2MACLen += ETH_LLC_LEN + ETH_SNAP_OUI_LEN;
+		u2MACLen -= ETHER_TYPE_LEN_OFFSET;
+		prCurrSwRfb->pvHeader =
+			(uint8_t *)prCurrSwRfb->pvHeader + u2MACLen;
+		prCurrSwRfb->u2PacketLen -= u2MACLen;
+		COPY_MAC_ADDR(prCurrSwRfb->pvHeader, prWlanHeader->aucAddr1);
+		COPY_MAC_ADDR((uint8_t *)prCurrSwRfb->pvHeader + MAC_ADDR_LEN,
+				prWlanHeader->aucAddr2);
+
+		/* record StaRec related info */
+		prCurrSwRfb->prStaRec = prBssInfo->prStaRecOfAP;
+		prCurrSwRfb->ucStaRecIdx = prCurrSwRfb->prStaRec->ucIndex;
+		prCurrSwRfb->ucWlanIdx = prCurrSwRfb->prStaRec->ucWlanIndex;
+		GLUE_SET_PKT_BSS_IDX(prCurrSwRfb->pvPacket,
+				secGetBssIdxByWlanIdx(prAdapter,
+					prCurrSwRfb->ucWlanIdx));
+		DBGLOG_MEM8(QM, WARN, prCurrSwRfb->pvHeader,
+				prCurrSwRfb->u2PacketLen < 64 ?
+				prCurrSwRfb->u2PacketLen : 64);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Handle RX packets (buffer reordering)
@@ -3713,16 +3778,14 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 			}
 #endif /* CFG_SUPPORT_PASSPOINT */
 		} else {
-			uint16_t u2FrameCtrl = 0;
-			struct WLAN_MAC_HEADER *prWlanHeader = NULL;
-			struct BSS_INFO *prBssInfo = NULL;
+			struct BSS_INFO *prBssInfo;
+			struct WLAN_MAC_HEADER *prWlanHeader;
+			uint16_t u2FrameCtrl;
 
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-				secGetBssIdxByWlanIdx(
-					prAdapter,
+				secGetBssIdxByWlanIdx(prAdapter,
 					prCurrSwRfb->ucWlanIdx));
-			prWlanHeader = (struct WLAN_MAC_HEADER *)
-				prCurrSwRfb->pvHeader;
+			prWlanHeader = prCurrSwRfb->pvHeader;
 			u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 			prCurrSwRfb->u2SequenceControl =
 				prWlanHeader->u2SeqCtrl;
@@ -3731,90 +3794,10 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 				processNanBmcRx(prAdapter, prCurrSwRfb,
 					prWlanHeader, u2FrameCtrl);
 
-			if (prCurrSwRfb->prStaRec == NULL &&
-				RXM_IS_DATA_FRAME(u2FrameCtrl) &&
-				(prBssInfo) && (prBssInfo->eConnectionState ==
-				MEDIA_STATE_CONNECTED)) {
-				/* rx header translation */
-				log_dbg(QM, WARN, "RXD Trans: FrameCtrl=0x%02x GVLD=0x%x, StaRecIdx=%d, WlanIdx=%d PktLen=%d\n",
-					u2FrameCtrl, prCurrSwRfb->ucGroupVLD,
-					prCurrSwRfb->ucStaRecIdx,
-					prCurrSwRfb->ucWlanIdx,
-					prCurrSwRfb->u2PacketLen);
-				DBGLOG_MEM8(QM, LOUD,
-						(uint8_t *)
-						prCurrSwRfb->pvHeader,
-						(prCurrSwRfb->
-						u2PacketLen > 32) ? 32 :
-						prCurrSwRfb->
-						u2PacketLen);
-				if (prBssInfo && prBssInfo->prStaRecOfAP)
-				if (EQUAL_MAC_ADDR(
-							prWlanHeader->
-							aucAddr1,
-							prBssInfo->
-							aucOwnMacAddr)
-				    && EQUAL_MAC_ADDR(
-							prWlanHeader->
-							aucAddr2,
-							prBssInfo->
-							aucBSSID)) {
-					uint16_t u2MACLen = 0;
-					/* QoS data, VHT */
-					if (RXM_IS_QOS_DATA_FRAME(
-						u2FrameCtrl))
-						u2MACLen = sizeof(
-						struct WLAN_MAC_HEADER_QOS);
-					else
-						u2MACLen = sizeof(
-							struct
-							WLAN_MAC_HEADER);
-					u2MACLen +=
-						ETH_LLC_LEN +
-						ETH_SNAP_OUI_LEN;
-					u2MACLen -=
-						ETHER_TYPE_LEN_OFFSET;
-					prCurrSwRfb->pvHeader = (void *)(
-						(uintptr_t)prCurrSwRfb->pvHeader
-						+ u2MACLen);
-					kalMemCopy(
-						prCurrSwRfb->pvHeader,
-						prWlanHeader->aucAddr1,
-						MAC_ADDR_LEN);
-					kalMemCopy(
-						(uint8_t *)(
-						(uintptr_t)prCurrSwRfb->pvHeader
-						+ MAC_ADDR_LEN),
-						prWlanHeader->aucAddr2,
-						MAC_ADDR_LEN);
-					prCurrSwRfb->u2PacketLen -=
-						u2MACLen;
-
-					/* record StaRec related info */
-					prCurrSwRfb->prStaRec =
-						prBssInfo->
-						prStaRecOfAP;
-					prCurrSwRfb->ucStaRecIdx =
-						prCurrSwRfb->prStaRec->
-						ucIndex;
-					prCurrSwRfb->ucWlanIdx =
-						prCurrSwRfb->prStaRec->
-						ucWlanIndex;
-					GLUE_SET_PKT_BSS_IDX(
-						prCurrSwRfb->pvPacket,
-						secGetBssIdxByWlanIdx(
-							prAdapter,
-							prCurrSwRfb->
-							ucWlanIdx));
-					DBGLOG_MEM8(QM, WARN,
-						(uint8_t *)((uintptr_t)
-						prCurrSwRfb->pvHeader),
-						(prCurrSwRfb->
-						u2PacketLen > 64) ? 64 :
-						prCurrSwRfb->
-						u2PacketLen);
-				}
-			}
+			if (!prCurrSwRfb->prStaRec)
+				fixRxNullStaRec(prAdapter, prCurrSwRfb,
+						u2FrameCtrl, prBssInfo,
+						prWlanHeader);
 		}
 
 #if CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION
