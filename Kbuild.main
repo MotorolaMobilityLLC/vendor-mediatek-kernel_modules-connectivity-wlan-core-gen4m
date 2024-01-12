@@ -2117,16 +2117,30 @@ else
     ccflags-y += -DCFG_SUPPORT_LLS_MDDP=0
 endif
 
+
 ifeq ($(CONFIG_MTK_WIFI_ON_READ_BY_CFG_SPACE), y)
     ccflags-y += -DCFG_MTK_WIFI_ON_READ_BY_CFG_SPACE=1
 else
     ccflags-y += -DCFG_MTK_WIFI_ON_READ_BY_CFG_SPACE=0
 endif
 
-ifeq ($(CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL), y)
-    ccflags-y += -DCFG_MTK_WIFI_SUPPORT_DSP_FWDL=1
+
+ifeq ($(CONFIG_TESTMODE_WMT_WIFI_ON_SUPPORT), y)
+ccflags-y += -DCFG_TESTMODE_WMT_WIFI_ON_SUPPORT=1
 else
-    ccflags-y += -DCFG_MTK_WIFI_SUPPORT_DSP_FWDL=0
+ccflags-y += -DCFG_TESTMODE_WMT_WIFI_ON_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_SUPPORT_TESTMODE_FWDL), y)
+ccflags-y += -DCFG_TESTMODE_FWDL_SUPPORT=1
+else
+ccflags-y += -DCFG_TESTMODE_FWDL_SUPPORT=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_DSP_FWDL), y)
+ccflags-y += -DCFG_MTK_WIFI_SUPPORT_DSP_FWDL=1
+else
+ccflags-y += -DCFG_MTK_WIFI_SUPPORT_DSP_FWDL=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI), y)

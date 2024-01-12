@@ -1156,6 +1156,7 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t ucIdx = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
+	uint8_t aucTestmode[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
 	mt6653GetFlavorVer(&aucFlavor[0]);
@@ -1186,10 +1187,17 @@ static void mt6653_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	/* Type 2. WIFI_RAM_CODE_MT6653_1_1.bin */
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	if (get_wifi_test_mode_fwdl() == 1)
+		kalScnprintf(aucTestmode,
+			CFG_FW_FLAVOR_MAX_LEN,
+			"TESTMODE_");
+#endif
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
-			"WIFI_RAM_CODE_MT%x_%s_%u.bin",
+			"WIFI_RAM_CODE_MT%x_%s%s_%u.bin",
 			MT6653_CHIP_ID,
+			aucTestmode,
 			aucFlavor,
 			MT6653_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
@@ -1226,6 +1234,7 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 {
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
+	uint8_t aucTestmode[CFG_FW_FLAVOR_MAX_LEN] = {0};
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
 	mt6653GetFlavorVer(&aucFlavor[0]);
@@ -1256,12 +1265,19 @@ static void mt6653_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	/* Type 2. WIFI_MT6653_PATCH_MCU_1_1_hdr.bin */
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	if (get_wifi_test_mode_fwdl() == 1)
+		kalScnprintf(aucTestmode,
+			CFG_FW_FLAVOR_MAX_LEN,
+			"TESTMODE_");
+#endif
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
-			  CFG_FW_NAME_MAX_LEN,
-			  "WIFI_MT%x_PATCH_MCU_%s_%u_hdr.bin",
-			  MT6653_CHIP_ID,
-			  aucFlavor,
-			  MT6653_ROM_VERSION);
+			CFG_FW_NAME_MAX_LEN,
+			"WIFI_MT%x_PATCH_MCU_%s%s_%u_hdr.bin",
+			MT6653_CHIP_ID,
+			aucTestmode,
+			aucFlavor,
+			MT6653_ROM_VERSION);
 	if (ret >= 0 && ret < CFG_FW_NAME_MAX_LEN)
 		(*pucNameIdx) += 1;
 	else
