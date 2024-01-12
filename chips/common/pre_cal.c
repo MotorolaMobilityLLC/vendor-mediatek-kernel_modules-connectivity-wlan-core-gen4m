@@ -1062,7 +1062,7 @@ int wlanPreCal(void)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct mt66xx_chip_info *prChipInfo;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 	u_int8_t fgResult;
 
 	if (get_pre_cal_status() == 0)
