@@ -438,9 +438,23 @@ static const int8_t gTx_Pwr_Limit_5g_Ch[] = {
 	36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56, 58, 60, 62, 64, 100, 102,
 	104, 106, 108, 110, 112, 114, 116, 118, 120, 122, 124, 126, 128, 132,
 	134, 136, 138, 140, 142, 144, 149, 151, 153, 155, 157, 159, 161, 165};
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+static const int8_t gTx_Pwr_Limit_6g_Ch[] = {
+	1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29, 33, 35,
+	37, 39,	41, 43, 45, 47, 49, 51, 53, 55, 57, 59, 61, 65, 67, 69,
+	71, 73, 75, 77, 79, 81, 83, 85, 87, 89, 91, 93, 97, 99, 101, 103,
+	105, 107, 109, 111, 113, 115, 117, 119, 121, 123, 125, 129, 131,
+	133, 135, 137, 139, 141, 143, 145, 147, 149, 151, 153, 155, 157,
+	161, 163, 165, 167, 169, 171, 173, 175, 177, 179, 181, 183, 185,
+	187, 189, 193, 195, 197, 199, 201, 203, 205, 207, 209, 211, 213,
+	215, 217, 219, 221, 225, 227, 229, 233};
+#endif
 
 #define TX_PWR_LIMIT_2G_CH_NUM (ARRAY_SIZE(gTx_Pwr_Limit_2g_Ch))
 #define TX_PWR_LIMIT_5G_CH_NUM (ARRAY_SIZE(gTx_Pwr_Limit_5g_Ch))
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+#define TX_PWR_LIMIT_6G_CH_NUM (ARRAY_SIZE(gTx_Pwr_Limit_6g_Ch))
+#endif
 
 u_int8_t g_bTxBfBackoffExists = FALSE;
 
@@ -2842,8 +2856,10 @@ void rlmDomainTxPwrLimitPerRateSetValues(
 	struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE *pChPwrLimit = NULL;
 	struct CHANNEL_TX_PWR_LIMIT *pChTxPwrLimit = NULL;
 
-	if (pSetCmd == NULL)
+	if (pSetCmd == NULL) {
+		DBGLOG(RLM, ERROR, "%s pSetCmd is NULL\n", __func__);
 		return;
+	}
 
 	for (ucIdx = 0; ucIdx < pSetCmd->ucNum; ucIdx++) {
 		pChPwrLimit = &(pSetCmd->rChannelPowerLimit[ucIdx]);
@@ -3727,6 +3743,70 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+struct TX_PWR_LIMIT_DATA *
+rlmDomainInitTxPwrLimitData_6G(struct ADAPTER *prAdapter)
+{
+	uint8_t ch_cnt = 0;
+	uint8_t ch_idx = 0;
+	uint8_t ch_num = 0;
+	const int8_t *prChannelList = NULL;
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData = NULL;
+	struct CHANNEL_TX_PWR_LIMIT *prChTxPwrLimit = NULL;
+
+	pTxPwrLimitData =
+		(struct TX_PWR_LIMIT_DATA *)
+		kalMemAlloc(sizeof(struct TX_PWR_LIMIT_DATA),
+			VIR_MEM_TYPE);
+
+	if (!pTxPwrLimitData) {
+		DBGLOG(RLM, ERROR,
+			"Alloc buffer for TxPwrLimit main struct failed\n");
+		return NULL;
+	}
+
+	pTxPwrLimitData->ucChNum = TX_PWR_LIMIT_6G_CH_NUM;
+
+	pTxPwrLimitData->rChannelTxPwrLimit =
+		(struct CHANNEL_TX_PWR_LIMIT *)
+		kalMemAlloc(sizeof(struct CHANNEL_TX_PWR_LIMIT) *
+			(pTxPwrLimitData->ucChNum), VIR_MEM_TYPE);
+
+	if (!pTxPwrLimitData->rChannelTxPwrLimit) {
+		DBGLOG(RLM, ERROR,
+			"Alloc buffer for TxPwrLimit ch values failed\n");
+
+		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
+			sizeof(struct TX_PWR_LIMIT_DATA));
+		return NULL;
+	}
+
+	for (ch_idx = 0; ch_idx < pTxPwrLimitData->ucChNum; ch_idx++) {
+		prChTxPwrLimit =
+			&(pTxPwrLimitData->rChannelTxPwrLimit[ch_idx]);
+		kalMemSet(prChTxPwrLimit->rTxPwrLimitValue,
+			MAX_TX_POWER,
+			sizeof(prChTxPwrLimit->rTxPwrLimitValue));
+		kalMemSet(prChTxPwrLimit->rTxBfBackoff,
+			MAX_TX_POWER,
+			sizeof(prChTxPwrLimit->rTxBfBackoff));
+	}
+
+	ch_cnt = 0;
+
+	prChannelList = gTx_Pwr_Limit_6g_Ch;
+	ch_num = TX_PWR_LIMIT_6G_CH_NUM;
+
+	for (ch_idx = 0; ch_idx < ch_num; ch_idx++) {
+		pTxPwrLimitData->rChannelTxPwrLimit[ch_cnt].ucChannel =
+			prChannelList[ch_idx];
+		++ch_cnt;
+	}
+
+	return pTxPwrLimitData;
+}
+#endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
+
 struct TX_PWR_LIMIT_DATA *
 rlmDomainInitTxPwrLimitData(struct ADAPTER *prAdapter)
 {
@@ -3942,6 +4022,93 @@ error:
 			cnmMemFree(prAdapter, prCmd[band_idx]);
 	}
 }
+
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+void rlmDomainTxPwrLimitSendPerRateCmd_6G(
+	struct ADAPTER *prAdapter,
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE *prCmd
+)
+{
+	uint32_t rStatus;
+	uint32_t u4SetQueryInfoLen;
+	uint32_t u4SetCountryTxPwrLimitCmdSize =
+		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE);
+	uint32_t u4ChPwrLimitSize =
+		sizeof(struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE);
+	const uint8_t ucCmdBatchSize =
+		prAdapter->chip_info->ucTxPwrLimitBatchSize;
+
+	uint8_t ucRemainChNum, i, ucTempChNum, prCmdBatchNum;
+	uint32_t u4BufSize = 0;
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
+		*prTempCmd = NULL;
+	enum ENUM_BAND eBand = 0x3;
+	uint16_t u2ChIdx = 0;
+	u_int8_t bCmdFinished = FALSE;
+
+	if (!prCmd) {
+		DBGLOG(RLM, ERROR, "%s: prCmd is NULL\n", __func__);
+		return;
+	}
+
+	ucRemainChNum = prCmd->ucNum;
+	prCmdBatchNum = (ucRemainChNum +
+			ucCmdBatchSize - 1) /
+			ucCmdBatchSize;
+
+	for (i = 0; i < prCmdBatchNum; i++) {
+		if (i == prCmdBatchNum - 1) {
+			ucTempChNum = ucRemainChNum;
+			bCmdFinished = TRUE;
+		} else {
+			ucTempChNum = ucCmdBatchSize;
+		}
+
+		u4BufSize = u4SetCountryTxPwrLimitCmdSize +
+			ucTempChNum * u4ChPwrLimitSize;
+
+		prTempCmd =
+			cnmMemAlloc(prAdapter,
+				RAM_TYPE_BUF, u4BufSize);
+
+		if (!prTempCmd) {
+			DBGLOG(RLM, ERROR,
+				"%s: no buf to send cmd\n", __func__);
+			return;
+		}
+
+		/*copy partial tx pwr limit*/
+		prTempCmd->ucNum = ucTempChNum;
+		prTempCmd->eBand = eBand;
+		prTempCmd->u4CountryCode =
+			rlmDomainGetCountryCode();
+		prTempCmd->bCmdFinished = bCmdFinished;
+		u2ChIdx = i * ucCmdBatchSize;
+		kalMemCopy(
+			&prTempCmd->rChannelPowerLimit[0],
+			&prCmd->rChannelPowerLimit[u2ChIdx],
+			ucTempChNum * u4ChPwrLimitSize);
+
+		u4SetQueryInfoLen = u4BufSize;
+		/* Update tx max. power info to chip */
+		rStatus = wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_SET_COUNTRY_POWER_LIMIT_PER_RATE,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			u4SetQueryInfoLen,
+			(uint8_t *) prTempCmd,
+			NULL,
+			0);
+
+		cnmMemFree(prAdapter, prTempCmd);
+
+		ucRemainChNum -= ucTempChNum;
+	}
+}
+#endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
 
 u_int32_t rlmDomainInitTxPwrLimitPerRateCmd(
 	struct ADAPTER *prAdapter,
@@ -4222,6 +4389,63 @@ void rlmDomainTxPwrSendTxBfBackoffCmd(
 
 }
 
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+void
+rlmDomainSendTxPwrLimitPerRateCmd_6G(struct ADAPTER *prAdapter,
+	uint8_t ucVersion,
+	struct TX_PWR_LIMIT_DATA *pTxPwrLimitData)
+{
+	struct wiphy *wiphy;
+	struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE
+		*prTxPwrLimitPerRateCmd_6G;
+	uint32_t rTxPwrLimitPerRateCmdSize_6G = 0;
+
+	uint32_t u4SetCmdTableMaxSize = 0;
+	uint32_t u4SetCountryTxPwrLimitCmdSize =
+		sizeof(struct CMD_SET_TXPOWER_COUNTRY_TX_POWER_LIMIT_PER_RATE);
+	uint32_t u4ChPwrLimitSize =
+		sizeof(struct CMD_TXPOWER_CHANNEL_POWER_LIMIT_PER_RATE);
+	uint8_t ch_cnt = TX_PWR_LIMIT_6G_CH_NUM;
+	uint8_t ch_idx = 0;
+	const int8_t *prChannelList = &gTx_Pwr_Limit_6g_Ch[0];
+
+	wiphy = priv_to_wiphy(prAdapter->prGlueInfo);
+
+	u4SetCmdTableMaxSize = u4SetCountryTxPwrLimitCmdSize +
+	ch_cnt * u4ChPwrLimitSize;
+
+	rTxPwrLimitPerRateCmdSize_6G = u4SetCmdTableMaxSize;
+	prTxPwrLimitPerRateCmd_6G =
+	kalMemAlloc(u4SetCmdTableMaxSize, VIR_MEM_TYPE);
+
+	if (!prTxPwrLimitPerRateCmd_6G) {
+		DBGLOG(RLM, ERROR,
+		"%s no buf to send cmd\n", __func__);
+		return;
+	}
+
+	/*initialize tx pwr table*/
+	kalMemSet(prTxPwrLimitPerRateCmd_6G->rChannelPowerLimit, MAX_TX_POWER,
+		ch_cnt * u4ChPwrLimitSize);
+
+	prTxPwrLimitPerRateCmd_6G->ucNum = ch_cnt;
+	prTxPwrLimitPerRateCmd_6G->eBand = 0x3;
+	prTxPwrLimitPerRateCmd_6G->u4CountryCode = rlmDomainGetCountryCode();
+
+	for (ch_idx = 0; ch_idx < ch_cnt; ch_idx++) {
+	prTxPwrLimitPerRateCmd_6G->rChannelPowerLimit[ch_idx].u1CentralCh =
+	prChannelList[ch_idx];
+	}
+
+	rlmDomainTxPwrLimitPerRateSetValues(ucVersion,
+		prTxPwrLimitPerRateCmd_6G,
+		pTxPwrLimitData);
+
+	rlmDomainTxPwrLimitSendPerRateCmd_6G(prAdapter,
+		prTxPwrLimitPerRateCmd_6G);
+}
+#endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
+
 void
 rlmDomainSendTxPwrLimitPerRateCmd(struct ADAPTER *prAdapter,
 	uint8_t ucVersion,
@@ -4325,6 +4549,51 @@ void rlmDomainSendPwrLimitCmd_V2(struct ADAPTER *prAdapter)
 			ucVersion);
 	}
 
+#if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
+	if (pTxPwrLimitData && pTxPwrLimitData->rChannelTxPwrLimit)
+		kalMemFree(pTxPwrLimitData->rChannelTxPwrLimit, VIR_MEM_TYPE,
+			sizeof(struct CHANNEL_TX_PWR_LIMIT) *
+			pTxPwrLimitData->ucChNum);
+
+	if (pTxPwrLimitData)
+		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
+			sizeof(struct TX_PWR_LIMIT_DATA));
+
+	pTxPwrLimitData = rlmDomainInitTxPwrLimitData_6G(prAdapter);
+
+	if (!pTxPwrLimitData) {
+		DBGLOG(RLM, ERROR,
+			"Init TxPwrLimitData 6G failed\n");
+		goto error;
+	}
+
+	/*
+	 * Get Max Tx Power from MT_TxPwrLimit_6G.dat
+	 */
+	prAdapter->chip_info->prTxPwrLimitFile = "TxPwrLimit6G_MT79x1.dat";
+	if (!rlmDomainGetTxPwrLimit(rlmDomainGetCountryCode(),
+		&ucVersion,
+		prAdapter->prGlueInfo,
+		pTxPwrLimitData)) {
+		DBGLOG(RLM, ERROR,
+			"Load TxPwrLimitData failed\n");
+		goto error;
+	}
+
+	/* Prepare to send CMD to FW */
+	if (ucVersion == 2) {
+		rlmDomainSendTxPwrLimitPerRateCmd_6G(prAdapter,
+			ucVersion, pTxPwrLimitData);
+	} else {
+		DBGLOG(RLM, WARN,
+		"Unsupported TxPwrLimit6G_MT7961.dat version %u\n",
+		ucVersion);
+	}
+
+	/* restore back to default value */
+	prAdapter->chip_info->prTxPwrLimitFile = "TxPwrLimit_MT79x1.dat";
+#endif /* #if (CFG_SUPPORT_SINGLE_SKU_6G == 1) */
+
 error:
 	if (pTxPwrLimitData && pTxPwrLimitData->rChannelTxPwrLimit)
 		kalMemFree(pTxPwrLimitData->rChannelTxPwrLimit, VIR_MEM_TYPE,
@@ -4334,6 +4603,9 @@ error:
 	if (pTxPwrLimitData)
 		kalMemFree(pTxPwrLimitData, VIR_MEM_TYPE,
 			sizeof(struct TX_PWR_LIMIT_DATA));
+
+	/* restore back to default value */
+	prAdapter->chip_info->prTxPwrLimitFile = "TxPwrLimit_MT79x1.dat";
 #endif
 }
 
