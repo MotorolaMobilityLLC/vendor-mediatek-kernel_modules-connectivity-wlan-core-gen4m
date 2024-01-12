@@ -9438,10 +9438,12 @@ static void aisScanProcessReqExtra(struct ADAPTER *prAdapter,
 	struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
-	/* Reduce APP scan's dwell time, prevent it affecting
-	 * TX/RX performance
+	/* Reduce APP scan's dwell time when scan ch > 5,
+	 * prevent it affecting TX/RX performance
 	 */
-	if (prScanRequest->u4Flags & NL80211_SCAN_FLAG_LOW_SPAN) {
+	if ((prScanRequest->u4Flags &
+		NL80211_SCAN_FLAG_LOW_SPAN)
+		&& prScanReqMsg->ucChannelListNum > 5) {
 		prScanReqMsg->u2ChannelDwellTime =
 			SCAN_CHANNEL_DWELL_TIME_MSEC_APP;
 		prScanReqMsg->u2ChannelMinDwellTime =
