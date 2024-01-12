@@ -9761,11 +9761,22 @@ inline int32_t kalPerMonStop(struct GLUE_INFO
 inline int32_t kalPerMonDestroy(struct GLUE_INFO
 				*prGlueInfo)
 {
-	struct PERF_MONITOR *prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
+	struct ADAPTER *prAdapter;
+	struct PERF_MONITOR *prPerMonitor;
 
+	if (!prGlueInfo)
+		goto end;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!prAdapter)
+		goto end;
+
+	prPerMonitor = &prAdapter->rPerMonitor;
 	kalPerMonDisable(prGlueInfo);
 	KAL_CLR_BIT(PERF_MON_INIT_BIT, prPerMonitor->ulPerfMonFlag);
 	DBGLOG(SW4, INFO, "exit %s\n", __func__);
+
+end:
 	return 0;
 }
 
