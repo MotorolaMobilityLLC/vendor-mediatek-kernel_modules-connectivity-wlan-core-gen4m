@@ -4467,6 +4467,11 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 	uint16_t u2PreDscBitmap = 0;
 #endif
 
+#if CFG_SUPPORT_BALANCE_MLR
+	struct WLAN_BEACON_FRAME *prWlanBeacon = NULL;
+	u_int8_t fgIsBeaconIntervalChange = FALSE;
+#endif /* CFG_SUPPORT_BALANCE_MLR */
+
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo && prSwRfb);
 	ASSERT(pucIE);
@@ -4485,6 +4490,18 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 #endif
+
+#if CFG_SUPPORT_BALANCE_MLR
+	/* Handle change of Beacon Interval */
+	prWlanBeacon = (struct WLAN_BEACON_FRAME *)(prSwRfb->pvHeader);
+	if (prBssInfo->u2BeaconInterval != prWlanBeacon->u2BeaconInterval) {
+		DBGLOG(RLM, TRACE, "Beacon interval change [%u]->[%u]\n",
+					       prBssInfo->u2BeaconInterval,
+					       prWlanBeacon->u2BeaconInterval);
+		prBssInfo->u2BeaconInterval = prWlanBeacon->u2BeaconInterval;
+		fgIsBeaconIntervalChange = TRUE;
+	}
+#endif /* CFG_SUPPORT_BALANCE_MLR */
 
 	/* Handle change of slot time */
 	prBssInfo->u2CapInfo =
@@ -4588,6 +4605,14 @@ static u_int8_t rlmRecBcnInfoForClient(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 		}
 #endif /* CFG_SUPPORT_802_11AX */
+
+#if CFG_SUPPORT_BALANCE_MLR
+	if (fgIsBeaconIntervalChange) {
+		DBGLOG(RLM, TRACE,
+			"Update Beacon info due to Beacon interval change\n");
+		nicPmIndicateBssConnected(prAdapter, prBssInfo->ucBssIndex);
+	}
+#endif /* CFG_SUPPORT_BALANCE_MLR */
 
 	return fgNewParameter;
 }
