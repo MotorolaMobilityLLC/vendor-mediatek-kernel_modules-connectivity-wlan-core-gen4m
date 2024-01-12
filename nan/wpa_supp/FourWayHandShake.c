@@ -28,12 +28,12 @@ wpas_timeoutCb(struct ADAPTER *prAdapter, unsigned long u4TimerIdx) {
 }
 
 uint32_t
-wpas_convertToMs(IN unsigned int secs, IN unsigned int usecs) {
+wpas_convertToMs(unsigned int secs, unsigned int usecs) {
 	return (SEC_TO_MSEC(secs) + USEC_TO_MSEC(usecs));
 }
 
 uint8_t
-wpas_getCorrespondingTimer(IN eloop_timeout_handler handler) {
+wpas_getCorrespondingTimer(eloop_timeout_handler handler) {
 	uint8_t i;
 
 	/*====== Search if current timer exists for this handler*/
@@ -46,8 +46,8 @@ wpas_getCorrespondingTimer(IN eloop_timeout_handler handler) {
 }
 
 uint8_t
-wpas_regCorrespondingTimer(IN eloop_timeout_handler handler,
-			   IN void *eloop_data, IN void *user_data) {
+wpas_regCorrespondingTimer(eloop_timeout_handler handler,
+			   void *eloop_data, void *user_data) {
 	uint8_t i;
 
 	/*====== Reserve an available timer for this handler*/

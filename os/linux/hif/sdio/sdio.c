@@ -1208,7 +1208,8 @@ u_int8_t glIsReadClearReg(uint32_t u4Address)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
+u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t *pu4Value)
 {
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
@@ -1265,7 +1266,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
+u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t *pu4Value)
 {
 	uint32_t value;
 	uint32_t u4Time, u4Current;
@@ -1381,7 +1383,8 @@ Exit:
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
+u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t u4Value)
 {
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
@@ -1433,7 +1436,8 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegWrite_mac(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
+u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t u4Value)
 {
 	uint32_t value;
 	uint32_t u4Time, u4Current;
@@ -1549,8 +1553,8 @@ Exit:
 */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
-	       IN uint16_t u2Port, IN uint32_t u4Len, OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
+kalDevPortRead(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
+		uint8_t *pucBuf, uint32_t u4ValidOutBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint8_t *pucDst = NULL;
@@ -1662,8 +1666,8 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
-		IN uint16_t u2Port, IN uint32_t u4Len, IN uint8_t *pucBuf, IN uint32_t u4ValidInBufSize)
+kalDevPortWrite(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
+		uint8_t *pucBuf, uint32_t u4ValidInBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint8_t *pucSrc = NULL;
@@ -1773,7 +1777,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 *
 */
 /*----------------------------------------------------------------------------*/
-void kalDevReadIntStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatus)
+void kalDevReadIntStatus(struct ADAPTER *prAdapter, uint32_t *pu4IntStatus)
 {
 #if CFG_SDIO_INTR_ENHANCE
 	struct ENHANCE_MODE_DATA_STRUCT *prSDIOCtrl;
@@ -1851,7 +1855,8 @@ void kalDevReadIntStatus(IN struct ADAPTER *prAdapter, OUT uint32_t *pu4IntStatu
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevWriteWithSdioCmd52(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Addr, IN uint8_t ucData)
+u_int8_t kalDevWriteWithSdioCmd52(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
+		uint8_t ucData)
 {
 	int ret = 0;
 
@@ -1872,7 +1877,7 @@ u_int8_t kalDevWriteWithSdioCmd52(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u
 
 }				/* end of kalDevWriteWithSdioCmd52() */
 
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode)
 {
 }
 
@@ -1887,7 +1892,8 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
+u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
+		struct MSDU_INFO *prMsduInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -1976,7 +1982,7 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *p
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -2022,8 +2028,8 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
-		IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(struct GLUE_INFO *prGlueInfo,
+		struct CMD_INFO *prCmdInfo, uint8_t ucTC)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 /*	P_GL_HIF_INFO_T prHifInfo = &prGlueInfo->rHifInfo; */
@@ -2156,7 +2162,7 @@ void glSdioSetState(struct GL_HIF_INFO *prHifInfo, enum sdio_state state)
 }
 
 #if (CFG_CHIP_RESET_SUPPORT == 1) && (MTK_WCN_HIF_SDIO == 0)
-void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 {
 	struct mmc_host *host;
 

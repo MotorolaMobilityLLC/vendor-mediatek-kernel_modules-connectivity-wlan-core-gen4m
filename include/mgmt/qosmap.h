@@ -100,19 +100,19 @@
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void handleQosMapConf(IN struct ADAPTER *prAdapter,
-		      IN struct SW_RFB *prSwRfb);
+void handleQosMapConf(struct ADAPTER *prAdapter,
+		      struct SW_RFB *prSwRfb);
 
-int qosHandleQosMapConfigure(IN struct ADAPTER *prAdapter,
-			     IN struct SW_RFB *prSwRfb);
+int qosHandleQosMapConfigure(struct ADAPTER *prAdapter,
+			     struct SW_RFB *prSwRfb);
 
-void qosMapSetInit(IN struct STA_RECORD *prStaRec);
+void qosMapSetInit(struct STA_RECORD *prStaRec);
 
-void qosParseQosMapSet(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec, IN uint8_t *qosMapSet);
+void qosParseQosMapSet(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec, uint8_t *qosMapSet);
 
-uint8_t getUpFromDscp(IN struct GLUE_INFO *prGlueInfo,
-		      IN uint8_t ucBssIndex, IN int dscp);
+uint8_t getUpFromDscp(struct GLUE_INFO *prGlueInfo,
+		      uint8_t ucBssIndex, int dscp);
 
 /*******************************************************************************
  *                              F U N C T I O N S

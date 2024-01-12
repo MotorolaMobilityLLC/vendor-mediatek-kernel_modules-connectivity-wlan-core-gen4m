@@ -423,54 +423,54 @@ bool receive_del_txs_queue(
 	uint32_t time_stamp);
 
 int priv_driver_txs_test(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 
 int priv_driver_txs_test_result(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 
 int is_frame_test(struct ADAPTER *pAd, uint8_t send_received);
 
-uint32_t AutomationTxDone(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+uint32_t AutomationTxDone(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 int priv_driver_set_tx_test(
-	IN struct net_device *prNetDev, IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen);
 int priv_driver_set_tx_test_ac(
-	IN struct net_device *prNetDev, IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev, char *pcCommand,
+	int i4TotalLen);
 
 /* RXV Test */
 int priv_driver_rxv_test(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 
 int priv_driver_rxv_test_result(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 
 void connac2x_rxv_correct_test(
-	IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb);
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb);
 
 /* CSO Test */
 int priv_driver_cso_test(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 
 /* skip legal channel sanity check for fpga dvt */
 int priv_driver_skip_legal_ch_check(
-	IN struct net_device *prNetDev,
-	IN char *pcCommand,
-	IN int i4TotalLen);
+	struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen);
 
 bool AutomationInit(struct ADAPTER *pAd, int32_t auto_type);
 

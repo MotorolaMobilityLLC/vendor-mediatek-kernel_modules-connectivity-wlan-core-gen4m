@@ -175,7 +175,7 @@ mt7668ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-void mt7668CapInit(IN struct ADAPTER *prAdapter)
+void mt7668CapInit(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
@@ -334,8 +334,8 @@ void mt7668PdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 
 }
 
-void mt7668LowPowerOwnRead(IN struct ADAPTER *prAdapter,
-	OUT u_int8_t *pfgResult)
+void mt7668LowPowerOwnRead(struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -343,7 +343,7 @@ void mt7668LowPowerOwnRead(IN struct ADAPTER *prAdapter,
 	*pfgResult = ((u4RegValue & WPDMA_FW_CLR_OWN_INT) ? TRUE : FALSE);
 }
 
-void mt7668LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
+void mt7668LowPowerOwnSet(struct ADAPTER *prAdapter, u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -352,8 +352,8 @@ void mt7668LowPowerOwnSet(IN struct ADAPTER *prAdapter, OUT u_int8_t *pfgResult)
 	*pfgResult = (u4RegValue == 0);
 }
 
-void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter,
-	OUT u_int8_t *pfgResult)
+void mt7668LowPowerOwnClear(struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
 {
 	uint32_t u4RegValue;
 
@@ -361,7 +361,7 @@ void mt7668LowPowerOwnClear(IN struct ADAPTER *prAdapter,
 	HAL_MCR_RD(prAdapter, CFG_PCIE_LPCR_HOST, &u4RegValue);
 	*pfgResult = (u4RegValue == 0);
 }
-void mt7668EnableInterrupt(IN struct ADAPTER *prAdapter)
+void mt7668EnableInterrupt(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	union WPDMA_INT_MASK IntMask;
@@ -385,7 +385,7 @@ void mt7668EnableInterrupt(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
 }
 
-void mt7668DisableInterrupt(IN struct ADAPTER *prAdapter)
+void mt7668DisableInterrupt(struct ADAPTER *prAdapter)
 {
 	union WPDMA_INT_MASK IntMask;
 
@@ -399,7 +399,7 @@ void mt7668DisableInterrupt(IN struct ADAPTER *prAdapter)
 	DBGLOG(HAL, TRACE, "%s\n", __func__);
 }
 
-void mt7668WakeUpWiFi(IN struct ADAPTER *prAdapter)
+void mt7668WakeUpWiFi(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgResult;
 

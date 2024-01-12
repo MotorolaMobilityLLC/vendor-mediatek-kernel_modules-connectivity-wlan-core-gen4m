@@ -463,22 +463,22 @@ struct MSG_SAA_EXTERNAL_AUTH_DONE {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void mboxSetup(IN struct ADAPTER *prAdapter,
-	       IN enum ENUM_MBOX_ID eMboxId);
+void mboxSetup(struct ADAPTER *prAdapter,
+	       enum ENUM_MBOX_ID eMboxId);
 
 void
-mboxSendMsg(IN struct ADAPTER *prAdapter,
-	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg,
-	    IN enum EUNM_MSG_SEND_METHOD eMethod);
+mboxSendMsg(struct ADAPTER *prAdapter,
+	    enum ENUM_MBOX_ID eMboxId, struct MSG_HDR *prMsg,
+	    enum EUNM_MSG_SEND_METHOD eMethod);
 
-void mboxRcvAllMsg(IN struct ADAPTER *prAdapter,
-		   IN enum ENUM_MBOX_ID eMboxId);
+void mboxRcvAllMsg(struct ADAPTER *prAdapter,
+		   enum ENUM_MBOX_ID eMboxId);
 
-void mboxInitialize(IN struct ADAPTER *prAdapter);
+void mboxInitialize(struct ADAPTER *prAdapter);
 
-void mboxDestroy(IN struct ADAPTER *prAdapter);
+void mboxDestroy(struct ADAPTER *prAdapter);
 
-void mboxDummy(IN struct ADAPTER *prAdapter,
+void mboxDummy(struct ADAPTER *prAdapter,
 	       struct MSG_HDR *prMsgHdr);
 
 /*******************************************************************************

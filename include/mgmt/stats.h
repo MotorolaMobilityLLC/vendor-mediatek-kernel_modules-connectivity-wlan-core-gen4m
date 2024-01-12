@@ -171,10 +171,10 @@ do { \
 
 uint64_t StatsEnvTimeGet(void);
 
-void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
-			IN struct MSDU_INFO *prMsduInfo);
+void StatsEnvTxTime2Hif(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo);
 
-void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
+void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 	void *pvPacket, void *prNetDev);
 
 void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
@@ -183,16 +183,16 @@ void StatsTxPktInfoDisplay(void *pvPacket);
 
 void StatsResetTxRx(void);
 
-void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx,
-			 IN uint8_t ucIpProto, IN uint16_t u2UdpPort,
+void StatsEnvSetPktDelay(uint8_t ucTxOrRx,
+			 uint8_t ucIpProto, uint16_t u2UdpPort,
 			 uint32_t u4DelayThreshold);
 
-void StatsEnvGetPktDelay(OUT uint8_t *pucTxRxFlag,
-			 OUT uint8_t *pucTxIpProto, OUT uint16_t *pu2TxUdpPort,
-			 OUT uint32_t *pu4TxDelayThreshold,
-			 OUT uint8_t *pucRxIpProto,
-			 OUT uint16_t *pu2RxUdpPort,
-			 OUT uint32_t *pu4RxDelayThreshold);
+void StatsEnvGetPktDelay(uint8_t *pucTxRxFlag,
+			 uint8_t *pucTxIpProto, uint16_t *pu2TxUdpPort,
+			 uint32_t *pu4TxDelayThreshold,
+			 uint8_t *pucRxIpProto,
+			 uint16_t *pu2RxUdpPort,
+			 uint32_t *pu4RxDelayThreshold);
 
 uint32_t statsTxGetTlvStatTotalLen(void);
 uint32_t statsRxGetTlvStatTotalLen(void);

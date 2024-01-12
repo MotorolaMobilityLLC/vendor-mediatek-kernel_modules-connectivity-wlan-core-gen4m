@@ -156,27 +156,27 @@ struct HS20_INFO {
 void hs20FillExtCapIE(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo, struct MSDU_INFO *prMsduInfo);
 
-void hs20FillProreqExtCapIE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE);
+void hs20FillProreqExtCapIE(struct ADAPTER *prAdapter, uint8_t *pucIE);
 
-void hs20FillHS20IE(IN struct ADAPTER *prAdapter, OUT uint8_t *pucIE);
+void hs20FillHS20IE(struct ADAPTER *prAdapter, uint8_t *pucIE);
 
-uint32_t hs20CalculateHS20RelatedIEForProbeReq(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucTargetBSSID);
+uint32_t hs20CalculateHS20RelatedIEForProbeReq(struct ADAPTER *prAdapter,
+		uint8_t *pucTargetBSSID);
 
-uint32_t hs20GenerateHS20RelatedIEForProbeReq(IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucTargetBSSID, OUT uint8_t *prIE);
+uint32_t hs20GenerateHS20RelatedIEForProbeReq(struct ADAPTER *prAdapter,
+		uint8_t *pucTargetBSSID, uint8_t *prIE);
 
-u_int8_t hs20IsGratuitousArp(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prCurrSwRfb);
+u_int8_t hs20IsGratuitousArp(struct ADAPTER *prAdapter,
+		struct SW_RFB *prCurrSwRfb);
 
-u_int8_t hs20IsUnsolicitedNeighborAdv(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prCurrSwRfb);
+u_int8_t hs20IsUnsolicitedNeighborAdv(struct ADAPTER *prAdapter,
+		struct SW_RFB *prCurrSwRfb);
 
-u_int8_t hs20IsUnsecuredFrame(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prCurrSwRfb);
+u_int8_t hs20IsUnsecuredFrame(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo, struct SW_RFB *prCurrSwRfb);
 
-u_int8_t hs20IsFrameFilterEnabled(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo);
+u_int8_t hs20IsFrameFilterEnabled(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo);
 
 #endif /* CFG_SUPPORT_PASSPOINT */
 #endif

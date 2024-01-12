@@ -766,8 +766,8 @@ struct PP_TOP_CR rSoc7_0_PpTopCr = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+void soc7_0_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t dbg_cr_idx[] = {0x0, 0x1, 0x2, 0x3, 0x30, 0x5, 0x7, 0xA, 0xB,
 		0xC};
@@ -812,8 +812,8 @@ void soc7_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 }
 
-void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+void soc7_0_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t u4DmaCfgCr[4] = {0};
 	uint32_t u4RegValue[4] = {0};
@@ -843,8 +843,8 @@ void soc7_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 }
 
 #ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
-int soc7_0_get_rx_rate_info(IN const uint32_t *prRxV,
-		OUT struct RxRateInfo *prRxRateInfo)
+int soc7_0_get_rx_rate_info(const uint32_t *prRxV,
+		struct RxRateInfo *prRxRateInfo)
 {
 	uint32_t rxmode = 0, rate = 0, frmode = 0, sgi = 0, nsts = 0;
 	uint32_t stbc = 0, nss = 0;
@@ -898,8 +898,8 @@ int soc7_0_get_rx_rate_info(IN const uint32_t *prRxV,
 }
 #endif
 
-void soc7_0_get_rx_link_stats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint32_t *pu4RxV)
+void soc7_0_get_rx_link_stats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint32_t *pu4RxV)
 {
 #if CFG_SUPPORT_LLS
 	static const uint8_t TX_MODE_2_LLS_MODE[] = {

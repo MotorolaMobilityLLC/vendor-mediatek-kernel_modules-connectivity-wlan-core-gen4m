@@ -274,9 +274,9 @@ struct PRIV_CONFIG_ENTRY {
 };
 
 typedef uint32_t(*PFN_OID_HANDLER_FUNC_REQ) (
-	IN void *prAdapter,
-	IN OUT void *pvBuf, IN uint32_t u4BufLen,
-	OUT uint32_t *pu4OutInfoLen);
+	void *prAdapter,
+	void *pvBuf, uint32_t u4BufLen,
+	uint32_t *pu4OutInfoLen);
 
 enum ENUM_OID_METHOD {
 	ENUM_OID_GLUE_ONLY,
@@ -330,72 +330,72 @@ enum AGG_RANGE_TYPE_T {
  */
 #if 0
 int
-priv_set_int(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo,
-	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
+priv_set_int(struct net_device *prNetDev,
+	     struct iw_request_info *prIwReqInfo,
+	     union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_get_int(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo,
-	     IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+priv_get_int(struct net_device *prNetDev,
+	     struct iw_request_info *prIwReqInfo,
+	     union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_set_ints(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      IN union iwreq_data *prIwReqData, IN char *pcExtra);
+priv_set_ints(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_get_ints(IN struct net_device *prNetDev,
-	      IN struct iw_request_info *prIwReqInfo,
-	      IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+priv_get_ints(struct net_device *prNetDev,
+	      struct iw_request_info *prIwReqInfo,
+	      union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_set_struct(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo,
-		IN union iwreq_data *prIwReqData, IN char *pcExtra);
+priv_set_struct(struct net_device *prNetDev,
+		struct iw_request_info *prIwReqInfo,
+		union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_get_struct(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo,
-		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+priv_get_struct(struct net_device *prNetDev,
+		struct iw_request_info *prIwReqInfo,
+		union iwreq_data *prIwReqData, char *pcExtra);
 
 #if CFG_SUPPORT_NCHO
-uint8_t CmdString2HexParse(IN uint8_t *InStr,
-			   OUT uint8_t **OutStr, OUT uint8_t *OutLen);
+uint8_t CmdString2HexParse(uint8_t *InStr,
+			   uint8_t **OutStr, uint8_t *OutLen);
 #endif
 
 int
-priv_set_driver(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo,
-		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+priv_set_driver(struct net_device *prNetDev,
+		struct iw_request_info *prIwReqInfo,
+		union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_set_ap(IN struct net_device *prNetDev,
-		IN struct iw_request_info *prIwReqInfo,
-		IN union iwreq_data *prIwReqData, IN OUT char *pcExtra);
+priv_set_ap(struct net_device *prNetDev,
+		struct iw_request_info *prIwReqInfo,
+		union iwreq_data *prIwReqData, char *pcExtra);
 
-int priv_support_ioctl(IN struct net_device *prDev,
-		       IN OUT struct ifreq *prReq, IN int i4Cmd);
+int priv_support_ioctl(struct net_device *prDev,
+		       struct ifreq *prReq, int i4Cmd);
 
-int priv_support_driver_cmd(IN struct net_device *prDev,
-			    IN OUT struct ifreq *prReq, IN int i4Cmd);
+int priv_support_driver_cmd(struct net_device *prDev,
+			    struct ifreq *prReq, int i4Cmd);
 
 #ifdef CFG_ANDROID_AOSP_PRIV_CMD
-int android_private_support_driver_cmd(IN struct net_device *prDev,
-IN OUT struct ifreq *prReq, IN int i4Cmd);
+int android_private_support_driver_cmd(struct net_device *prDev,
+struct ifreq *prReq, int i4Cmd);
 #endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 
-int32_t priv_driver_cmds(IN struct net_device *prNetDev,
-			 IN int8_t *pcCommand, IN int32_t i4TotalLen);
+int32_t priv_driver_cmds(struct net_device *prNetDev,
+			 int8_t *pcCommand, int32_t i4TotalLen);
 
-int priv_driver_set_cfg(IN struct net_device *prNetDev,
-			IN char *pcCommand, IN int i4TotalLen);
+int priv_driver_set_cfg(struct net_device *prNetDev,
+			char *pcCommand, int i4TotalLen);
 
 #if CFG_SUPPORT_QA_TOOL
 int
-priv_ate_set(IN struct net_device *prNetDev,
-	     IN struct iw_request_info *prIwReqInfo,
-	     IN union iwreq_data *prIwReqData, IN char *pcExtra);
+priv_ate_set(struct net_device *prNetDev,
+	     struct iw_request_info *prIwReqInfo,
+	     union iwreq_data *prIwReqData, char *pcExtra);
 #endif
 #else
 #endif

@@ -714,8 +714,8 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
  *             false: incorrect MTK OUI
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t rlmParseCheckMTKOuiIE(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
-			       IN uint32_t *pu4Cap)
+u_int8_t rlmParseCheckMTKOuiIE(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+			       uint32_t *pu4Cap)
 {
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	struct IE_MTK_OUI *prMtkOuiIE = (struct IE_MTK_OUI *)NULL;
@@ -2128,12 +2128,12 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void rlmTransferHe6gOpInfor(IN uint8_t ucChannelNum,
-	IN uint8_t ucChannelWidth,
-	OUT uint8_t *pucChannelWidth,
-	OUT uint8_t *pucCenterFreqS1,
-	OUT uint8_t *pucCenterFreqS2,
-	OUT enum ENUM_CHNL_EXT *peSco)
+void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
+	uint8_t ucChannelWidth,
+	uint8_t *pucChannelWidth,
+	uint8_t *pucCenterFreqS1,
+	uint8_t *pucCenterFreqS2,
+	enum ENUM_CHNL_EXT *peSco)
 {
 	switch (ucChannelWidth) {
 	case HE_OP_CHANNEL_WIDTH_20:
@@ -2382,11 +2382,11 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
  */
 /*----------------------------------------------------------------------------*/
 enum ENUM_CHNL_EXT rlmReviseSco(
-	IN enum ENUM_CHANNEL_WIDTH eChannelWidth,
-	IN uint8_t ucPrimaryCh,
-	IN uint8_t ucS1,
-	IN enum ENUM_CHNL_EXT eScoOrigin,
-	IN uint8_t ucMaxBandwidth)
+	enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	uint8_t ucPrimaryCh,
+	uint8_t ucS1,
+	enum ENUM_CHNL_EXT eScoOrigin,
+	uint8_t ucMaxBandwidth)
 {
 	enum ENUM_CHNL_EXT eSCO = eScoOrigin;
 
@@ -5739,9 +5739,9 @@ uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
-				  IN struct STA_RECORD *prStaRec,
-				  IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
+static void tpcComposeReportFrame(struct ADAPTER *prAdapter,
+				  struct STA_RECORD *prStaRec,
+				  PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct BSS_INFO *prBssInfo;
@@ -5814,9 +5814,9 @@ static void tpcComposeReportFrame(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-static void msmtComposeReportFrame(IN struct ADAPTER *prAdapter,
-				   IN struct STA_RECORD *prStaRec,
-				   IN PFN_TX_DONE_HANDLER pfTxDoneHandler)
+static void msmtComposeReportFrame(struct ADAPTER *prAdapter,
+				   struct STA_RECORD *prStaRec,
+				   PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct BSS_INFO *prBssInfo;
@@ -6155,7 +6155,7 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo)
 	       prCSAParams->ucCsaCount, prBssInfo->ucBssIndex);
 }
 
-void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
+void rlmCsaTimeout(struct ADAPTER *prAdapter,
 				   uintptr_t ulParamPtr)
 {
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
@@ -6536,9 +6536,9 @@ uint32_t rlmSendNotifyChannelWidthFrame(struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rlmNotifyVhtOpModeTxDone(IN struct ADAPTER *prAdapter,
-				  IN struct MSDU_INFO *prMsduInfo,
-				  IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t rlmNotifyVhtOpModeTxDone(struct ADAPTER *prAdapter,
+				  struct MSDU_INFO *prMsduInfo,
+				  enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	u_int8_t fgIsSuccess = FALSE;
 
@@ -6565,9 +6565,9 @@ uint32_t rlmNotifyVhtOpModeTxDone(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rlmSmPowerSaveTxDone(IN struct ADAPTER *prAdapter,
-			      IN struct MSDU_INFO *prMsduInfo,
-			      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t rlmSmPowerSaveTxDone(struct ADAPTER *prAdapter,
+			      struct MSDU_INFO *prMsduInfo,
+			      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	u_int8_t fgIsSuccess = FALSE;
 
@@ -6594,9 +6594,9 @@ uint32_t rlmSmPowerSaveTxDone(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rlmNotifyChannelWidthtTxDone(IN struct ADAPTER *prAdapter,
-				      IN struct MSDU_INFO *prMsduInfo,
-				      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t rlmNotifyChannelWidthtTxDone(struct ADAPTER *prAdapter,
+				      struct MSDU_INFO *prMsduInfo,
+				      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	u_int8_t fgIsSuccess = FALSE;
 
@@ -6623,10 +6623,10 @@ uint32_t rlmNotifyChannelWidthtTxDone(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-static void rlmOpModeTxDoneHandler(IN struct ADAPTER *prAdapter,
-				   IN struct MSDU_INFO *prMsduInfo,
-				   IN uint8_t ucOpChangeType,
-				   IN u_int8_t fgIsSuccess)
+static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
+				   struct MSDU_INFO *prMsduInfo,
+				   uint8_t ucOpChangeType,
+				   u_int8_t fgIsSuccess)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -7033,8 +7033,8 @@ uint8_t rlmGetBssOpBwByVhtAndHtOpInfo(struct BSS_INFO *prBssInfo)
 	return ucBssOpBw;
 }
 
-uint8_t rlmGetBssOpBwByOwnAndPeerCapability(IN struct ADAPTER *prAdapter,
-	IN struct BSS_INFO *prBssInfo)
+uint8_t rlmGetBssOpBwByOwnAndPeerCapability(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
 {
 	uint8_t ucOpMaxBw = MAX_BW_UNKNOWN;
 	uint8_t ucBssOpBw = MAX_BW_20MHZ;
@@ -7946,7 +7946,7 @@ void rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	       ucBssIndex, fgIsChangeSuccess);
 }
 
-void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
+void rlmSetMaxTxPwrLimit(struct ADAPTER *prAdapter, int8_t cLimit,
 			 uint8_t ucEnable)
 {
 	struct CMD_SET_AP_CONSTRAINT_PWR_LIMIT rTxPwrLimit;
@@ -7994,7 +7994,7 @@ void rlmSetMaxTxPwrLimit(IN struct ADAPTER *prAdapter, int8_t cLimit,
  * @return -
  */
 /*----------------------------------------------------------------------------*/
-void rlmSetSrControl(IN struct ADAPTER *prAdapter, bool fgIsEnableSr)
+void rlmSetSrControl(struct ADAPTER *prAdapter, bool fgIsEnableSr)
 {
 	struct _SR_CMD_SR_CAP_T *prCmdSrCap = NULL;
 
@@ -8038,9 +8038,9 @@ void rlmSetSrControl(IN struct ADAPTER *prAdapter, bool fgIsEnableSr)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-uint32_t rlmSendChannelSwitchTxDone(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t rlmSendChannelSwitchTxDone(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
@@ -8056,7 +8056,7 @@ uint32_t rlmSendChannelSwitchTxDone(IN struct ADAPTER *prAdapter,
 }
 
 void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	uint8_t ucBssIndex)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct ACTION_CHANNEL_SWITCH_FRAME *prTxFrame;
@@ -8133,9 +8133,9 @@ void rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 }
 
-uint32_t rlmSendExChannelSwitchTxDone(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+uint32_t rlmSendExChannelSwitchTxDone(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMsduInfo != NULL));
@@ -8151,7 +8151,7 @@ uint32_t rlmSendExChannelSwitchTxDone(IN struct ADAPTER *prAdapter,
 }
 
 void rlmSendExChannelSwitchFrame(struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex)
+	uint8_t ucBssIndex)
 {
 	struct MSDU_INFO *prMsduInfo;
 	struct ACTION_EX_CHANNEL_SWITCH_FRAME *prTxFrame;
@@ -8948,8 +8948,8 @@ static void rlmMulAPAgentFillApRrmCapa(uint8_t *pucCapa)
 }
 
 void rlmMulAPAgentGenerateApRRMEnabledCapIE(
-				IN struct ADAPTER *prAdapter,
-				IN struct MSDU_INFO *prMsduInfo)
+				struct ADAPTER *prAdapter,
+				struct MSDU_INFO *prMsduInfo)
 {
 	struct IE_RRM_ENABLED_CAP *prRrmEnabledCap = NULL;
 

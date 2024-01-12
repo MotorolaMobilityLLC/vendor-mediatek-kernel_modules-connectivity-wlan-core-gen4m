@@ -14,14 +14,14 @@
 #ifndef WPA_AUTH_GLUE_H
 #define WPA_AUTH_GLUE_H
 
-extern void secComposeEapolFrameHeader(IN uint8_t *pucBuffer,
-	IN unsigned char fgQos,
-	IN uint8_t aucPeerMACAddress[],
-	IN uint8_t aucMACAddress[],
-	IN uint8_t aucBSSIDAddress[]);
+extern void secComposeEapolFrameHeader(uint8_t *pucBuffer,
+	unsigned char fgQos,
+	uint8_t aucPeerMACAddress[],
+	uint8_t aucMACAddress[],
+	uint8_t aucBSSIDAddress[]);
 
-extern uint32_t secEapolTxStatusNotification(IN struct MSDU_INFO *prMsduInfo,
-					     IN uint32_t rTxDoneStatus);
+extern uint32_t secEapolTxStatusNotification(struct MSDU_INFO *prMsduInfo,
+					     uint32_t rTxDoneStatus);
 
 #define AP_STA_POSSIBLE_PSK_MISMATCH "AP-STA-POSSIBLE-PSK-MISMATCH "
 #define WPS_EVENT_REG_SUCCESS "WPS-REG-SUCCESS "

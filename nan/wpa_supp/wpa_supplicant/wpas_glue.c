@@ -56,8 +56,8 @@ wpa_alloc_eapol(const struct wpa_supplicant *wpa_s, u8 type, const void *data,
 
 #ifndef CFG_SUPPORT_NAN
 uint32_t
-secEapolTxStatusNotification(IN struct MSDU_INFO *prMsduInfo,
-			     IN uint32_t rTxDoneStatus) {
+secEapolTxStatusNotification(struct MSDU_INFO *prMsduInfo,
+			     uint32_t rTxDoneStatus) {
 	struct BSS_INFO *prBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 	uint16_t u2FrameCtrl = 0;
@@ -85,10 +85,10 @@ secEapolTxStatusNotification(IN struct MSDU_INFO *prMsduInfo,
 #endif
 
 void
-secComposeEapolFrameHeader(IN uint8_t *pucBuffer, IN unsigned char fgQos,
-			   IN uint8_t aucPeerMACAddress[],
-			   IN uint8_t aucMACAddress[],
-			   IN uint8_t aucBSSIDAddress[]) {
+secComposeEapolFrameHeader(uint8_t *pucBuffer, unsigned char fgQos,
+			   uint8_t aucPeerMACAddress[],
+			   uint8_t aucMACAddress[],
+			   uint8_t aucBSSIDAddress[]) {
 	struct WLAN_MAC_MGMT_HEADER *prMacHeader;
 	uint16_t u2FrameCtrl = MAC_FRAME_TYPE_DATA;
 
@@ -307,7 +307,7 @@ wpa_supplicant_eapol_send(void *ctx, int type, const u8 *buf, size_t len) {
 /*====== Rx related*/
 #ifndef CFG_SUPPORT_NAN
 int
-secRxProcessEapol(IN struct SW_RFB *prSwRfb, uint8_t *pucSendAddr) {
+secRxProcessEapol(struct SW_RFB *prSwRfb, uint8_t *pucSendAddr) {
 	struct WLAN_MAC_MGMT_HEADER *prWlanMacHdr;
 
 	wpa_printf(MSG_DEBUG, "[%s] Enter\n", __func__);

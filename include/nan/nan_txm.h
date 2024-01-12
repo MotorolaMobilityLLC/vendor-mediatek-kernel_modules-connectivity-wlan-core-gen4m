@@ -35,9 +35,9 @@ struct _WLAN_TX_UT_FRAME_T {
 	uint8_t aucTxmUtContent[TXM_UT_CONTENT_LEN];
 } __KAL_ATTRIB_PACKED__;
 
-uint32_t nanTxUtTxDone(IN struct ADAPTER *prAdapter,
-		       IN struct MSDU_INFO *prMsduInfo,
-		       IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+uint32_t nanTxUtTxDone(struct ADAPTER *prAdapter,
+		       struct MSDU_INFO *prMsduInfo,
+		       enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 #endif
 #endif /*_NAN_TXM_H_ */

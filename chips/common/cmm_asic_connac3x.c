@@ -383,7 +383,7 @@ void asicConnac3xFillInitCmdTxd(
 	struct ADAPTER *prAdapter,
 	struct WIFI_CMD_INFO *prCmdInfo,
 	u_int16_t *pu2BufInfoLen,
-	u_int8_t *pucSeqNum, OUT void **pCmdBuf)
+	u_int8_t *pucSeqNum, void **pCmdBuf)
 {
 	struct INIT_HIF_TX_HEADER *prInitHifTxHeader;
 	uint32_t u4TxdLen = sizeof(struct HW_MAC_CONNAC3X_TX_DESC);
@@ -785,7 +785,7 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 		   CONNAC3X_RX_RING_DISP_MAX_CNT);
 }
 
-void asicConnac3xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
+void asicConnac3xEnablePlatformIRQ(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
@@ -806,7 +806,7 @@ void asicConnac3xEnablePlatformIRQ(IN struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
-void asicConnac3xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
+void asicConnac3xDisablePlatformIRQ(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct mt66xx_chip_info *prChipInfo;
@@ -827,7 +827,7 @@ void asicConnac3xDisablePlatformIRQ(IN struct ADAPTER *prAdapter)
 }
 
 #if defined(_HIF_AXI)
-void asicConnac3xDisablePlatformSwIRQ(IN struct ADAPTER *prAdapter)
+void asicConnac3xDisablePlatformSwIRQ(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 
@@ -1149,7 +1149,7 @@ void asicConnac3xWfdmaInitForUSB(
 		prChipInfo->asicUsbInit_ic_specific(prAdapter, prChipInfo);
 }
 
-uint8_t asicConnac3xUsbEventEpDetected(IN struct ADAPTER *prAdapter)
+uint8_t asicConnac3xUsbEventEpDetected(struct ADAPTER *prAdapter)
 {
 	return USB_DATA_EP_IN;
 }
@@ -1201,8 +1201,8 @@ void asicConnac3xUdmaRxFlush(
 }
 
 u_int8_t asicConnac3xUsbResume(
-	IN struct ADAPTER *prAdapter,
-	IN struct GLUE_INFO *prGlueInfo)
+	struct ADAPTER *prAdapter,
+	struct GLUE_INFO *prGlueInfo)
 {
 	uint8_t count = 0;
 	struct mt66xx_chip_info *prChipInfo = NULL;
@@ -1345,7 +1345,7 @@ void fillConnac3xTxDescAppendBySdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	uint16_t u4MsduId,
-	phys_addr_t rDmaAddr, IN uint32_t u4Idx,
+	phys_addr_t rDmaAddr, uint32_t u4Idx,
 	u_int8_t fgIsLast,
 	uint8_t *pucBuffer)
 {
@@ -1609,8 +1609,8 @@ void asicConnac3xInitRxdHook(
 }
 
 #if (CFG_SUPPORT_MSP == 1)
-void asicConnac3xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
-	  IN OUT struct SW_RFB *prRetSwRfb)
+void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
+	  struct SW_RFB *prRetSwRfb)
 {
 	struct HW_MAC_RX_STS_GROUP_3_V2 *prGroup3;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
@@ -1647,8 +1647,8 @@ void asicConnac3xRxProcessRxvforMSP(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_MSP == 1 */
 
 uint8_t asicConnac3xRxGetRcpiValueFromRxv(
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb)
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb)
 {
 	uint8_t ucRcpi0, ucRcpi1, ucRcpi2, ucRcpi3;
 	uint8_t ucRcpiValue = 0;
@@ -1725,9 +1725,9 @@ uint8_t asicConnac3xRxGetRcpiValueFromRxv(
 }
 
 #if (CFG_SUPPORT_PERF_IND == 1)
-void asicConnac3xRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSwRfb,
-			       IN uint8_t ucBssIndex)
+void asicConnac3xRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb,
+			       uint8_t ucBssIndex)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_PERF_IND_INFO *prPerfIndInfo;

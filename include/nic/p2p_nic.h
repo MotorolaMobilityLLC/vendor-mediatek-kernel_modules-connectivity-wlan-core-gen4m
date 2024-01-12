@@ -103,14 +103,14 @@
  */
 
 void
-nicP2pMediaStateChange(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex,
-		IN struct EVENT_CONNECTION_STATUS *prConnectionStatus);
+nicP2pMediaStateChange(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex,
+		struct EVENT_CONNECTION_STATUS *prConnectionStatus);
 
 void
-nicRxAddP2pDevice(IN struct ADAPTER *prAdapter,
-		IN struct EVENT_P2P_DEV_DISCOVER_RESULT *prP2pResult,
-		IN uint8_t *pucRxIEBuf,
-		IN uint16_t u2RxIELength);
+nicRxAddP2pDevice(struct ADAPTER *prAdapter,
+		struct EVENT_P2P_DEV_DISCOVER_RESULT *prP2pResult,
+		uint8_t *pucRxIEBuf,
+		uint16_t u2RxIELength);
 
 #endif

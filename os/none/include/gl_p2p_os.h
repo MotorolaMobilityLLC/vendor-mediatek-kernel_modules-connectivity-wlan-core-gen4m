@@ -340,7 +340,7 @@ u_int8_t p2pLaunch(struct GLUE_INFO *prGlueInfo);
 
 u_int8_t p2pRemove(struct GLUE_INFO *prGlueInfo);
 
-void p2pSetMode(IN uint8_t ucAPMode);
+void p2pSetMode(uint8_t ucAPMode);
 
 uint8_t p2pGetMode(void);
 #endif
@@ -359,7 +359,7 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		u_int8_t fgIsRtnlLockAcquired);
 
 
-u_int8_t p2PAllocInfo(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucIdex);
+u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex);
 u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx);
 void p2PFreeMemSafe(struct GLUE_INFO *prGlueInfo,
 		void **pprMemInfo, uint32_t size);

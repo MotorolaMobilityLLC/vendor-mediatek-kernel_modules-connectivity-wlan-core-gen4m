@@ -725,8 +725,8 @@ struct PP_TOP_CR rMt7990PpTopCr = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-void mt7990_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+void mt7990_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t dbg_cr_idx[] = {0x0, 0x1, 0x2, 0x3, 0x30, 0x5, 0x7, 0xA, 0xB,
 		0xC};
@@ -751,8 +751,8 @@ void mt7990_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void mt7990_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+void mt7990_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t u4DmaCfgCr = 0;
 	uint32_t u4RegValue = 0;

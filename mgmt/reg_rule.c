@@ -288,7 +288,7 @@ const struct mtk_cc_dfs_regd_mapping *g_prDfsCountryTable[] = {
 	NULL /* this NULL SHOULD be at the end of the array */
 };
 
-uint8_t regCountryDfsMapping(IN struct ADAPTER *prAdapter)
+uint8_t regCountryDfsMapping(struct ADAPTER *prAdapter)
 {
 	u8 idx = 0;
 	const struct mtk_cc_dfs_regd_mapping *prRegd = NULL;

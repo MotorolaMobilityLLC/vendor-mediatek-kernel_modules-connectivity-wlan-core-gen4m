@@ -66,7 +66,7 @@ static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
 /*lint -restore */
 #endif /* DBG */
 
-uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
+uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -262,7 +262,7 @@ uint8_t p2pDevFsmInit(IN struct ADAPTER *prAdapter)
 #endif
 }				/* p2pDevFsmInit */
 
-void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
+void p2pDevFsmUninit(struct ADAPTER *prAdapter)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -372,9 +372,9 @@ void p2pDevFsmUninit(IN struct ADAPTER *prAdapter)
 }				/* p2pDevFsmUninit */
 
 void
-p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
-		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
-		IN enum ENUM_P2P_DEV_STATE eNextState)
+p2pDevFsmStateTransition(struct ADAPTER *prAdapter,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+		enum ENUM_P2P_DEV_STATE eNextState)
 {
 	u_int8_t fgIsLeaveState = (u_int8_t) FALSE;
 
@@ -490,8 +490,8 @@ p2pDevFsmStateTransition(IN struct ADAPTER *prAdapter,
 	} while (fgIsLeaveState);
 }				/* p2pDevFsmStateTransition */
 
-void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter,
-		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
+void p2pDevFsmRunEventAbort(struct ADAPTER *prAdapter,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -509,8 +509,8 @@ void p2pDevFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 	} while (FALSE);
 }				/* p2pDevFsmRunEventAbort */
 
-void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
-		IN uintptr_t ulParamPtr)
+void p2pDevFsmRunEventTimeout(struct ADAPTER *prAdapter,
+		uintptr_t ulParamPtr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) ulParamPtr;
@@ -559,8 +559,8 @@ void p2pDevFsmRunEventTimeout(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventTimeout */
 
 /*================ Message Event =================*/
-void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventScanRequest(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg =
 		(struct MSG_P2P_SCAN_REQUEST *) NULL;
@@ -667,8 +667,8 @@ void p2pDevFsmRunEventScanRequest(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanRequest */
 
-void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIdx)
+void p2pDevFsmRunEventScanAbort(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -695,9 +695,9 @@ void p2pDevFsmRunEventScanAbort(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventScanAbort */
 
 void
-p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr,
-		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
+p2pDevFsmRunEventScanDone(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
 	struct MSG_SCN_SCAN_DONE *prScanDoneMsg =
 		(struct MSG_SCN_SCAN_DONE *) prMsgHdr;
@@ -741,8 +741,8 @@ p2pDevFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventScanDone */
 
-void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventChannelRequest(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -830,8 +830,8 @@ void p2pDevFsmRunEventChannelRequest(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventChannelRequest */
 
-void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventChannelAbort(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -949,9 +949,9 @@ void p2pDevFsmRunEventChannelAbort(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventChannelAbort */
 
 void
-p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr,
-		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
+p2pDevFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo)
 {
 	struct MSG_CH_GRANT *prMsgChGrant = (struct MSG_CH_GRANT *) NULL;
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
@@ -1004,9 +1004,9 @@ p2pDevFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventChnlGrant */
 
 static u_int8_t
-p2pDevChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
-	IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
-	IN struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq)
+p2pDevChnlReqByOffChnl(struct ADAPTER *prAdapter,
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq)
 {
 	struct MSG_P2P_CHNL_REQUEST *prMsgChnlReq =
 			(struct MSG_P2P_CHNL_REQUEST *) NULL;
@@ -1040,9 +1040,9 @@ p2pDevChnlReqByOffChnl(IN struct ADAPTER *prAdapter,
 }				/* p2pDevChnlReqByOffChnl */
 
 static void
-p2pDevAbortChlReqIfNeed(IN struct ADAPTER *prAdapter,
-		IN struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
-		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+p2pDevAbortChlReqIfNeed(struct ADAPTER *prAdapter,
+		struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo,
+		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	struct MSG_P2P_CHNL_ABORT *prMsgChnlAbort =
 			(struct MSG_P2P_CHNL_ABORT *) NULL;
@@ -1070,8 +1070,8 @@ p2pDevAbortChlReqIfNeed(IN struct ADAPTER *prAdapter,
 }
 
 static void
-p2pDevAdjustChnlTime(IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
-	IN struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq)
+p2pDevAdjustChnlTime(struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxReq)
 {
 	enum ENUM_P2P_CONNECT_STATE eP2pActionFrameType = P2P_CNN_NORMAL;
 	uint32_t u4ExtendedTime = 0;
@@ -1115,10 +1115,10 @@ p2pDevAdjustChnlTime(IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
 }				/* p2pDevAdjustChnlTime */
 
 static u_int8_t
-p2pDevAddTxReq2Queue(IN struct ADAPTER *prAdapter,
-		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo,
-		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
-		OUT struct P2P_OFF_CHNL_TX_REQ_INFO **pprOffChnlTxReq)
+p2pDevAddTxReq2Queue(struct ADAPTER *prAdapter,
+		struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo,
+		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg,
+		struct P2P_OFF_CHNL_TX_REQ_INFO **pprOffChnlTxReq)
 {
 	struct P2P_OFF_CHNL_TX_REQ_INFO *prTmpOffChnlTxReq =
 			(struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
@@ -1154,8 +1154,8 @@ p2pDevAddTxReq2Queue(IN struct ADAPTER *prAdapter,
 }
 
 static void
-p2pDevHandleOffchnlTxReq(IN struct ADAPTER *prAdapter,
-		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
+p2pDevHandleOffchnlTxReq(struct ADAPTER *prAdapter,
+		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 			(struct P2P_DEV_FSM_INFO *) NULL;
@@ -1233,8 +1233,8 @@ error:
 }				/* p2pDevHandleOffchnlTxReq */
 
 static u_int8_t
-p2pDevNeedOffchnlTx(IN struct ADAPTER *prAdapter,
-		IN struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
+p2pDevNeedOffchnlTx(struct ADAPTER *prAdapter,
+		struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 			(struct P2P_DEV_FSM_INFO *) NULL;
@@ -1270,8 +1270,8 @@ p2pDevNeedOffchnlTx(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }				/* p2pDevNeedOffchnlTx */
 
-void p2pDevFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventMgmtTx(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_MGMT_TX_REQUEST *prMgmtTxMsg =
 			(struct MSG_MGMT_TX_REQUEST *) NULL;
@@ -1294,9 +1294,9 @@ void p2pDevFsmRunEventMgmtTx(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventMgmtTx */
 
 uint32_t
-p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+p2pDevFsmRunEventMgmtFrameTxDone(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	u_int8_t fgIsSuccess = FALSE;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
@@ -1356,8 +1356,8 @@ p2pDevFsmRunEventMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }				/* p2pDevFsmRunEventMgmtFrameTxDone */
 
-void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventMgmtFrameRegister(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	/* TODO: RX Filter Management. */
 
@@ -1365,8 +1365,8 @@ void p2pDevFsmRunEventMgmtFrameRegister(IN struct ADAPTER *prAdapter,
 		cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pDevFsmRunEventMgmtFrameRegister */
 
-void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventActiveDevBss(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
@@ -1392,7 +1392,7 @@ void p2pDevFsmRunEventActiveDevBss(IN struct ADAPTER *prAdapter,
 }				/* p2pDevFsmRunEventActiveDevBss */
 
 void
-p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType,
+p2pDevFsmNotifyP2pRx(struct ADAPTER *prAdapter, uint8_t p2pFrameType,
 		u_int8_t *prFgBufferFrame)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
@@ -1419,8 +1419,8 @@ p2pDevFsmNotifyP2pRx(IN struct ADAPTER *prAdapter, uint8_t p2pFrameType,
 	}
 }
 
-void p2pDevFsmRunEventTxCancelWait(IN struct ADAPTER *prAdapter,
-		IN struct MSG_HDR *prMsgHdr)
+void p2pDevFsmRunEventTxCancelWait(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 			(struct P2P_DEV_FSM_INFO *) NULL;
@@ -1469,8 +1469,8 @@ exit:
 } /* p2pDevFsmRunEventTxCancelWait */
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
-void p2pDevDbdcSwDelayTimeout(IN struct ADAPTER *prAdapter,
-		IN uintptr_t ulParamPtr)
+void p2pDevDbdcSwDelayTimeout(struct ADAPTER *prAdapter,
+		uintptr_t ulParamPtr)
 {
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) ulParamPtr;

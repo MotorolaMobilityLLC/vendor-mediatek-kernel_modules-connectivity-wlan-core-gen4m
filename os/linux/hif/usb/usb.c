@@ -450,10 +450,10 @@ static int mtk_usb_reset_resume(struct usb_interface *intf)
 *         non-zero   if fail, the return value of usb_control_msg()
 */
 /*----------------------------------------------------------------------------*/
-int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t uEndpointAddress, IN uint8_t RequestType,
-	    IN uint8_t Request, IN uint16_t Value, IN uint16_t Index,
-	    IN void *TransferBuffer, IN uint32_t TransferBufferLength)
+int32_t mtk_usb_vendor_request(struct GLUE_INFO *prGlueInfo,
+		uint8_t uEndpointAddress, uint8_t RequestType,
+	    uint8_t Request, uint16_t Value, uint16_t Index,
+	    void *TransferBuffer, uint32_t TransferBufferLength)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct BUS_INFO *prBusInfo = NULL;
@@ -533,7 +533,8 @@ int32_t mtk_usb_vendor_request(IN struct GLUE_INFO *prGlueInfo,
 * \retval
 */
 /*----------------------------------------------------------------------------*/
-static int mtk_usb_bulk_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len, OUT uint8_t *buffer, int InEp)
+static int mtk_usb_bulk_in_msg(struct GL_HIF_INFO *prHifInfo, uint32_t len,
+		uint8_t *buffer, int InEp)
 {
 	int ret = 0;
 	uint32_t count;
@@ -571,7 +572,8 @@ static int mtk_usb_bulk_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len
 	return ret;
 }
 
-static int mtk_usb_intr_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len, OUT uint8_t *buffer, int InEp)
+static int mtk_usb_intr_in_msg(struct GL_HIF_INFO *prHifInfo, uint32_t len,
+		uint8_t *buffer, int InEp)
 {
 	int ret = 0;
 	uint32_t count;
@@ -621,7 +623,8 @@ static int mtk_usb_intr_in_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len
 * \retval
 */
 /*----------------------------------------------------------------------------*/
-static int mtk_usb_bulk_out_msg(IN struct GL_HIF_INFO *prHifInfo, IN uint32_t len, IN uint8_t *buffer, int OutEp)
+static int mtk_usb_bulk_out_msg(struct GL_HIF_INFO *prHifInfo, uint32_t len,
+		uint8_t *buffer, int OutEp)
 {
 	int ret = 0;
 	uint32_t count;
@@ -1593,7 +1596,8 @@ int32_t glGetUsbDeviceSerialNumber(struct usb_device *dev, uint8_t *buffer, uint
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, OUT uint32_t *pu4Value)
+u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t *pu4Value)
 {
 	struct BUS_INFO *prBusInfo = NULL;
 	int ret = 0;
@@ -1665,7 +1669,8 @@ u_int8_t kalDevRegRead(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, 
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register, IN uint32_t u4Value)
+u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
+		uint32_t u4Value)
 {
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
@@ -1735,8 +1740,8 @@ u_int8_t kalDevRegWrite(IN struct GLUE_INFO *prGlueInfo, IN uint32_t u4Register,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevUhwRegRead(IN struct GLUE_INFO *prGlueInfo,
-			  IN uint32_t u4Register, OUT uint32_t *pu4Value)
+u_int8_t kalDevUhwRegRead(struct GLUE_INFO *prGlueInfo,
+			  uint32_t u4Register, uint32_t *pu4Value)
 {
 	struct BUS_INFO *prBusInfo = NULL;
 	int ret = 0;
@@ -1794,8 +1799,8 @@ u_int8_t kalDevUhwRegRead(IN struct GLUE_INFO *prGlueInfo,
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevUhwRegWrite(IN struct GLUE_INFO *prGlueInfo,
-			   IN uint32_t u4Register, IN uint32_t u4Value)
+u_int8_t kalDevUhwRegWrite(struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Register, uint32_t u4Value)
 {
 	int ret = 0;
 	uint8_t ucRetryCount = 0;
@@ -1853,8 +1858,8 @@ u_int8_t kalDevUhwRegWrite(IN struct GLUE_INFO *prGlueInfo,
 */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
-	       IN uint16_t u2Port, IN uint32_t u4Len, OUT uint8_t *pucBuf, IN uint32_t u4ValidOutBufSize)
+kalDevPortRead(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
+		uint8_t *pucBuf, uint32_t u4ValidOutBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint8_t *pucDst = NULL;
@@ -1920,8 +1925,8 @@ kalDevPortRead(IN struct GLUE_INFO *prGlueInfo,
 */
 /*----------------------------------------------------------------------------*/
 u_int8_t
-kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
-		IN uint16_t u2Port, IN uint32_t u4Len, IN uint8_t *pucBuf, IN uint32_t u4ValidInBufSize)
+kalDevPortWrite(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint32_t u4Len,
+		uint8_t *pucBuf, uint32_t u4ValidInBufSize)
 {
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	uint8_t *pucSrc = NULL;
@@ -1975,7 +1980,7 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode)
 {
 }
 
@@ -1990,7 +1995,8 @@ void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
+u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
+		struct MSDU_INFO *prMsduInfo)
 {
 	halTxUSBSendData(prGlueInfo, prMsduInfo);
 	return TRUE;
@@ -2006,7 +2012,7 @@ u_int8_t kalDevWriteData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *p
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
+u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 {
 #if 0
 	halTxUSBKickData(prGlueInfo);
@@ -2026,8 +2032,8 @@ u_int8_t kalDevKickData(IN struct GLUE_INFO *prGlueInfo)
 * \retval FALSE         operation fail
 */
 /*----------------------------------------------------------------------------*/
-enum ENUM_CMD_TX_RESULT kalDevWriteCmd(IN struct GLUE_INFO *prGlueInfo,
-		IN struct CMD_INFO *prCmdInfo, IN uint8_t ucTC)
+enum ENUM_CMD_TX_RESULT kalDevWriteCmd(struct GLUE_INFO *prGlueInfo,
+		struct CMD_INFO *prCmdInfo, uint8_t ucTC)
 {
 	halTxUSBSendCmd(prGlueInfo, ucTC, prCmdInfo);
 	return CMD_TX_RESULT_SUCCESS;
@@ -2058,7 +2064,7 @@ void glGetChipInfo(void **prChipInfo)
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t gpio_num, default_level, action_level, invert_time;
 #if CFG_CHIP_RESET_USE_DTS_GPIO_NUM

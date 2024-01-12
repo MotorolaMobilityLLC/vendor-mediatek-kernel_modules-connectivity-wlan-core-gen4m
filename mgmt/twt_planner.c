@@ -338,7 +338,7 @@ twtPlannerIsDrvAgrtExisting(struct ADAPTER *prAdapter)
 	return ret;
 }
 
-void twtPlannerInit(IN struct _TWT_PLANNER_T *pTWTPlanner)
+void twtPlannerInit(struct _TWT_PLANNER_T *pTWTPlanner)
 {
 	if (!pTWTPlanner) {
 		DBGLOG(TWT_PLANNER, ERROR,

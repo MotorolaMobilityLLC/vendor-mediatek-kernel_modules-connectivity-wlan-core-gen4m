@@ -109,7 +109,7 @@
  *******************************************************************************
  */
 
-void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter)
+void nicpmWakeUpWiFi(struct ADAPTER *prAdapter)
 {
 	if (!nicVerifyChipID(prAdapter)) {
 		DBGLOG(INIT, ERROR, "Chip id verify error!\n");
@@ -127,8 +127,8 @@ void nicpmWakeUpWiFi(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicpmSetFWOwn(IN struct ADAPTER *prAdapter,
-		   IN u_int8_t fgEnableGlobalInt)
+void nicpmSetFWOwn(struct ADAPTER *prAdapter,
+		   u_int8_t fgEnableGlobalInt)
 {
 	halSetFWOwn(prAdapter, fgEnableGlobalInt);
 }
@@ -142,7 +142,7 @@ void nicpmSetFWOwn(IN struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter)
+u_int8_t nicpmSetDriverOwn(struct ADAPTER *prAdapter)
 {
 	return halSetDriverOwn(prAdapter);
 }
@@ -156,7 +156,7 @@ u_int8_t nicpmSetDriverOwn(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
+u_int8_t nicpmSetAcpiPowerD0(struct ADAPTER *prAdapter)
 {
 
 #if 0
@@ -381,7 +381,7 @@ u_int8_t nicpmSetAcpiPowerD0(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicpmSetAcpiPowerD3(IN struct ADAPTER *prAdapter)
+u_int8_t nicpmSetAcpiPowerD3(struct ADAPTER *prAdapter)
 {
 	/*	UINT_32 i; */
 

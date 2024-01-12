@@ -887,7 +887,7 @@ static int _init_resv_mem(struct platform_device *pdev)
 
 #endif /* AXI_CFG_PREALLOC_MEMORY_BUFFER */
 
-static int mtk_axi_probe(IN struct platform_device *pdev)
+static int mtk_axi_probe(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
@@ -928,7 +928,7 @@ exit:
 	return ret;
 }
 
-static int mtk_axi_remove(IN struct platform_device *pdev)
+static int mtk_axi_remove(struct platform_device *pdev)
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	struct mt66xx_hif_driver_data *prDriverData =
@@ -947,7 +947,7 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 }
 
 #if CFG_SUPPORT_RX_PAGE_POOL
-static int mtk_page_pool_probe(IN struct platform_device *pdev)
+static int mtk_page_pool_probe(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
@@ -969,7 +969,7 @@ exit:
 	return 0;
 }
 
-static int mtk_page_pool_remove(IN struct platform_device *pdev)
+static int mtk_page_pool_remove(struct platform_device *pdev)
 {
 	kalReleaseRxPagePool(&pdev->dev);
 	platform_set_drvdata(pdev, NULL);
@@ -1873,7 +1873,7 @@ u_int8_t glIsReadClearReg(uint32_t u4Address)
 	return TRUE;
 }
 
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode)
 {
 }
 
@@ -2167,7 +2167,7 @@ static void pcieDumpRx(struct GL_HIF_INFO *prHifInfo,
 }
 
 #if CFG_CHIP_RESET_SUPPORT
-void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, WARN, "[SER][L0] not support...\n");
 }

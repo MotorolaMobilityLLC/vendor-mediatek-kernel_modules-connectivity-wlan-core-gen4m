@@ -360,11 +360,11 @@ void cnmMemInit(struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 #if CFG_DBG_MGT_BUF
-void *cnmMemAllocX(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
-	IN uint32_t u4Length, uint8_t *fileAndLine)
+void *cnmMemAllocX(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
+	uint32_t u4Length, uint8_t *fileAndLine)
 #else
-void *cnmMemAlloc(IN struct ADAPTER *prAdapter, IN enum ENUM_RAM_TYPE eRamType,
-	IN uint32_t u4Length)
+void *cnmMemAlloc(struct ADAPTER *prAdapter, enum ENUM_RAM_TYPE eRamType,
+	uint32_t u4Length)
 #endif
 {
 	struct BUF_INFO *prBufInfo;
@@ -503,7 +503,7 @@ exit:
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
+void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 {
 	struct BUF_INFO *prBufInfo;
 	uint32_t u4BlockIndex;
@@ -1573,7 +1573,7 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	return i4BytesWritten;
 }
 
-void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
+void cnmDumpBssInfo(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	struct BSS_INFO *prBssInfo;
 
@@ -1637,7 +1637,7 @@ void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
+void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 {
 	uint8_t ucWTEntry;
 	uint32_t i;
@@ -1786,8 +1786,8 @@ void cnmDumpStaRec(IN struct ADAPTER *prAdapter, IN uint8_t ucStaRecIdx)
 	log_dbg(SW4, INFO, "============= DUMP END ===========\n");
 }
 
-uint32_t cnmDumpMemoryStatus(IN struct ADAPTER *prAdapter, IN uint8_t *pucBuf,
-	IN uint32_t u4Max)
+uint32_t cnmDumpMemoryStatus(struct ADAPTER *prAdapter, uint8_t *pucBuf,
+	uint32_t u4Max)
 {
 	uint32_t u4Len = 0;
 #if CFG_DBG_MGT_BUF

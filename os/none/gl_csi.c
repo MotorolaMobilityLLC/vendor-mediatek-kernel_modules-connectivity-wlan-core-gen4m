@@ -46,47 +46,47 @@ struct CSI_INFO_T *glCsiGetCSIInfo(void)
 	return &rCSIInfo;
 }
 
-void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo)
+void glCsiSupportInit(struct GLUE_INFO *prGlueInfo)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void glCsiSupportDeinit(IN struct GLUE_INFO *prGlueInfo)
+void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-int32_t glCsiAddSta(IN struct GLUE_INFO *prGlueInfo,
+int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 	struct CMD_CSI_CONTROL_T *prCSICtrl)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-int32_t glCsiDelSta(IN struct GLUE_INFO *prGlueInfo,
+int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 	struct CMD_CSI_CONTROL_T *prCSICtrl)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void glCsiFreeStaList(IN struct GLUE_INFO *prGlueInfo)
+void glCsiFreeStaList(struct GLUE_INFO *prGlueInfo)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void nicEventCSIData(IN struct ADAPTER *prAdapter,
-			IN struct WIFI_EVENT *prEvent)
+void nicEventCSIData(struct ADAPTER *prAdapter,
+			struct WIFI_EVENT *prEvent)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 u_int8_t
-wlanPushCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
+wlanPushCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
 u_int8_t
-wlanPopCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
+wlanPopCSIData(struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

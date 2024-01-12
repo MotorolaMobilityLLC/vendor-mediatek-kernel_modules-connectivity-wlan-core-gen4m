@@ -423,8 +423,8 @@ static void radiotap_fill_flags(struct IEEE80211_RADIOTAP_INFO *p_radiotap_info,
 	p_flags->ucFlags = flags;
 }
 
-void radiotapFillRadiotap(IN struct ADAPTER *prAdapter,
-			    IN OUT struct SW_RFB *prSwRfb)
+void radiotapFillRadiotap(struct ADAPTER *prAdapter,
+			    struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl = &prAdapter->rRxCtrl;
 	struct IEEE80211_RADIOTAP_INFO radiotapInfo;

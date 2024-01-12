@@ -40,9 +40,9 @@
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
 
-int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
-		    IN uint32_t u4TarPerfLevel,
-		    IN uint32_t u4BoostCpuTh)
+int32_t kalBoostCpu(struct ADAPTER *prAdapter,
+		    uint32_t u4TarPerfLevel,
+		    uint32_t u4BoostCpuTh)
 {
 	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
 	int32_t i = 0, i4Freq = -1;

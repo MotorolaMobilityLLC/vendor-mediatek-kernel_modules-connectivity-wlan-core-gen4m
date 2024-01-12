@@ -271,18 +271,18 @@ struct CSI_TLV_ELEMENT {
  *******************************************************************************
  */
 struct CSI_INFO_T *glCsiGetCSIInfo(void);
-void glCsiSupportInit(IN struct GLUE_INFO *prGlueInfo);
-void glCsiSupportDeinit(IN struct GLUE_INFO *prGlueInfo);
-int32_t glCsiAddSta(IN struct GLUE_INFO *prGlueInfo,
+void glCsiSupportInit(struct GLUE_INFO *prGlueInfo);
+void glCsiSupportDeinit(struct GLUE_INFO *prGlueInfo);
+int32_t glCsiAddSta(struct GLUE_INFO *prGlueInfo,
 	struct CMD_CSI_CONTROL_T *prCSICtrl);
-int32_t glCsiDelSta(IN struct GLUE_INFO *prGlueInfo,
+int32_t glCsiDelSta(struct GLUE_INFO *prGlueInfo,
 	struct CMD_CSI_CONTROL_T *prCSICtrl);
-void glCsiFreeStaList(IN struct GLUE_INFO *prGlueInfo);
-void nicEventCSIData(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent);
-u_int8_t wlanPushCSIData(IN struct ADAPTER *prAdapter,
+void glCsiFreeStaList(struct GLUE_INFO *prGlueInfo);
+void nicEventCSIData(struct ADAPTER *prAdapter,
+	struct WIFI_EVENT *prEvent);
+u_int8_t wlanPushCSIData(struct ADAPTER *prAdapter,
 	struct CSI_DATA_T *prCSIData);
-u_int8_t wlanPopCSIData(IN struct ADAPTER *prAdapter,
+u_int8_t wlanPopCSIData(struct ADAPTER *prAdapter,
 	struct CSI_DATA_T *prCSIData);
 ssize_t wlanCSIDataPrepare(uint8_t *buf, struct CSI_INFO_T *prCSIInfo,
 	struct CSI_DATA_T *prCSIData);

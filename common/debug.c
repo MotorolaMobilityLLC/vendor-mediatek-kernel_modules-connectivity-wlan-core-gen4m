@@ -559,7 +559,7 @@ uint32_t wlanWakeDumpRes(void)
 
 #endif
 
-uint32_t wlanSetDriverDbgLevel(IN uint32_t u4DbgIdx, IN uint32_t u4DbgMask)
+uint32_t wlanSetDriverDbgLevel(uint32_t u4DbgIdx, uint32_t u4DbgMask)
 {
 	uint32_t u4Idx;
 	uint32_t fgStatus = WLAN_STATUS_SUCCESS;
@@ -583,7 +583,7 @@ uint32_t wlanSetDriverDbgLevel(IN uint32_t u4DbgIdx, IN uint32_t u4DbgMask)
 	return fgStatus;
 }
 
-uint32_t wlanGetDriverDbgLevel(IN uint32_t u4DbgIdx, OUT uint32_t *pu4DbgMask)
+uint32_t wlanGetDriverDbgLevel(uint32_t u4DbgIdx, uint32_t *pu4DbgMask)
 {
 	if (u4DbgIdx < DBG_MODULE_NUM) {
 		*pu4DbgMask = aucDebugModule[u4DbgIdx];
@@ -593,7 +593,7 @@ uint32_t wlanGetDriverDbgLevel(IN uint32_t u4DbgIdx, OUT uint32_t *pu4DbgMask)
 	return WLAN_STATUS_FAILURE;
 }
 
-uint32_t wlanDbgLevelUiSupport(IN struct ADAPTER *prAdapter, uint32_t u4Version,
+uint32_t wlanDbgLevelUiSupport(struct ADAPTER *prAdapter, uint32_t u4Version,
 		uint32_t ucModule)
 {
 	uint32_t u4Enable = ENUM_WIFI_LOG_LEVEL_SUPPORT_DISABLE;
@@ -616,7 +616,7 @@ uint32_t wlanDbgLevelUiSupport(IN struct ADAPTER *prAdapter, uint32_t u4Version,
 	return u4Enable;
 }
 
-uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
+uint32_t wlanDbgGetLogLevelImpl(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t ucModule)
 {
 	uint32_t u4Level = ENUM_WIFI_LOG_LEVEL_DEFAULT;
@@ -632,13 +632,13 @@ uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
 	return u4Level;
 }
 
-void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
+void wlanDbgSetLogLevelImpl(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t u4Module, uint32_t u4level)
 {
 	wlanDbgSetLogLevel(prAdapter, u4Version, u4Module, u4level, FALSE);
 }
 
-void wlanDbgSetLogLevel(IN struct ADAPTER *prAdapter,
+void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t u4Module,
 		uint32_t u4level, u_int8_t fgEarlySet)
 {

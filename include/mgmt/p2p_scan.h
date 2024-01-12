@@ -101,26 +101,26 @@
  ******************************************************************************
  */
 
-void scnEventReturnChannel(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucScnSeqNum);
+void scnEventReturnChannel(struct ADAPTER *prAdapter,
+		uint8_t ucScnSeqNum);
 
-u_int8_t scanUpdateP2pDeviceDesc(IN struct ADAPTER *prAdapter,
-		IN struct BSS_DESC *prBssDesc);
+u_int8_t scanUpdateP2pDeviceDesc(struct ADAPTER *prAdapter,
+		struct BSS_DESC *prBssDesc);
 
 void
-scanP2pProcessBeaconAndProbeResp(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		IN uint32_t *prStatus,
-		IN struct BSS_DESC *prBssDesc,
-		IN struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
+scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		uint32_t *prStatus,
+		struct BSS_DESC *prBssDesc,
+		struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
 
 void scanRemoveAllP2pBssDesc(struct ADAPTER *prAdapter);
 
 void scanRemoveP2pBssDesc(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc);
 
-struct BSS_DESC *scanP2pSearchDesc(IN struct ADAPTER *prAdapter,
-		IN struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		IN struct BSS_DESC_SET *prBssDescSet);
+struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
+		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
+		struct BSS_DESC_SET *prBssDescSet);
 
 #endif

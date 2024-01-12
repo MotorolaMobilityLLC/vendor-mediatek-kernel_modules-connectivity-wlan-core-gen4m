@@ -56,11 +56,11 @@ uint32_t kalGetCpuBoostThreshold(void)
 	return 5;
 }
 
-int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
-			 IN uint32_t u4CurrPerfLevel,
-			 IN uint32_t u4TarPerfLevel,
-			 IN int32_t i4Pending,
-			 IN uint32_t u4Used)
+int32_t kalCheckTputLoad(struct ADAPTER *prAdapter,
+			 uint32_t u4CurrPerfLevel,
+			 uint32_t u4TarPerfLevel,
+			 int32_t i4Pending,
+			 uint32_t u4Used)
 {
 	uint32_t pendingTh =
 		CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD *
@@ -74,7 +74,7 @@ int32_t kalCheckTputLoad(IN struct ADAPTER *prAdapter,
 	       TRUE : FALSE;
 }
 
-void kalSetTaskUtilMinPct(IN int pid, IN unsigned int min)
+void kalSetTaskUtilMinPct(int pid, unsigned int min)
 {
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	int ret = 0;
@@ -121,9 +121,9 @@ void kalSetTaskUtilMinPct(IN int pid, IN unsigned int min)
 #endif
 }
 
-int32_t kalBoostCpu(IN struct ADAPTER *prAdapter,
-		    IN uint32_t u4TarPerfLevel,
-		    IN uint32_t u4BoostCpuTh)
+int32_t kalBoostCpu(struct ADAPTER *prAdapter,
+		    uint32_t u4TarPerfLevel,
+		    uint32_t u4BoostCpuTh)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];

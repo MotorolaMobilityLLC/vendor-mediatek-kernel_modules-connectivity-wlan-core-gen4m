@@ -133,9 +133,9 @@ static uint8_t *apucDebugAAState[AA_STATE_NUM] = {
  */
 /*----------------------------------------------------------------------------*/
 void
-saaFsmSteps(IN struct ADAPTER *prAdapter,
-	    IN struct STA_RECORD *prStaRec, IN enum ENUM_AA_STATE eNextState,
-	    IN struct SW_RFB *prRetainedSwRfb)
+saaFsmSteps(struct ADAPTER *prAdapter,
+	    struct STA_RECORD *prStaRec, enum ENUM_AA_STATE eNextState,
+	    struct SW_RFB *prRetainedSwRfb)
 {
 	uint32_t rStatus;
 	enum ENUM_AA_STATE ePreviousState;
@@ -411,10 +411,10 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
-			    IN uint32_t rJoinStatus,
-			    IN struct STA_RECORD *prStaRec,
-			    IN struct SW_RFB *prSwRfb)
+saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
+			    uint32_t rJoinStatus,
+			    struct STA_RECORD *prStaRec,
+			    struct SW_RFB *prSwRfb)
 {
 	struct BSS_INFO *prBssInfo;
 
@@ -535,8 +535,8 @@ saaFsmSendEventJoinComplete(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
-			 IN struct MSG_HDR *prMsgHdr)
+void saaFsmRunEventStart(struct ADAPTER *prAdapter,
+			 struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SAA_FSM_START *prSaaFsmStartMsg;
 	struct STA_RECORD *prStaRec;
@@ -658,8 +658,8 @@ void saaFsmRunEventStart(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
-			      IN struct MSG_HDR *prMsgHdr)
+void saaFsmRunEventFTContinue(struct ADAPTER *prAdapter,
+			      struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SAA_FT_CONTINUE *prSaaFsmMsg = NULL;
 	struct STA_RECORD *prStaRec;
@@ -702,9 +702,9 @@ void saaFsmRunEventFTContinue(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
-		     IN struct MSDU_INFO *prMsduInfo,
-		     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+saaFsmRunEventTxDone(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo,
+		     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 
 	struct STA_RECORD *prStaRec;
@@ -848,8 +848,8 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
-				IN uintptr_t plParamPtr)
+void saaFsmRunEventTxReqTimeOut(struct ADAPTER *prAdapter,
+				uintptr_t plParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) plParamPtr;
 
@@ -885,8 +885,8 @@ void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
-				 IN uintptr_t ulParamPtr)
+void saaFsmRunEventRxRespTimeOut(struct ADAPTER *prAdapter,
+				 uintptr_t ulParamPtr)
 {
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) ulParamPtr;
 	enum ENUM_AA_STATE eNextState;
@@ -938,7 +938,7 @@ void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER *prAdapter,
 			    (struct SW_RFB *) NULL);
 }				/* end of saaFsmRunEventRxRespTimeOut() */
 
-struct STA_RECORD *saaFsmFindStaRec(IN struct ADAPTER *prAdapter,
+struct STA_RECORD *saaFsmFindStaRec(struct ADAPTER *prAdapter,
 		struct WLAN_MAC_MGMT_HEADER *mgmt)
 {
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
@@ -980,8 +980,8 @@ struct STA_RECORD *saaFsmFindStaRec(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
-			  IN struct SW_RFB *prSwRfb)
+void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
+			  struct SW_RFB *prSwRfb)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2StatusCode;
@@ -1184,8 +1184,8 @@ void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_BUFFER_RETAINED   if the status code was success
  */
 /*----------------------------------------------------------------------------*/
-uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSwRfb)
+uint32_t saaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb)
 {
 	struct STA_RECORD *prStaRec;
 	uint16_t u2StatusCode;
@@ -1301,8 +1301,8 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_SUCCESS   Always not retain deauthentication frames
  */
 /*----------------------------------------------------------------------------*/
-uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
-				IN struct SW_RFB *prSwRfb)
+uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
+				struct SW_RFB *prSwRfb)
 {
 	struct STA_RECORD *prStaRec;
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
@@ -1464,9 +1464,9 @@ uint32_t saaFsmRunEventRxDeauth(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 
-void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter,
-				 IN struct SW_RFB *prSwRfb,
-				 IN struct STA_RECORD *prStaRec)
+void saaChkDeauthfrmParamHandler(struct ADAPTER *prAdapter,
+				 struct SW_RFB *prSwRfb,
+				 struct STA_RECORD *prStaRec)
 {
 	struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 
@@ -1498,10 +1498,10 @@ void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
-			    IN struct STA_RECORD *prStaRec,
-			    IN struct BSS_INFO *prAisBssInfo,
-			    IN enum ENUM_AA_FRM_TYPE eFrmType)
+saaSendDisconnectMsgHandler(struct ADAPTER *prAdapter,
+			    struct STA_RECORD *prStaRec,
+			    struct BSS_INFO *prAisBssInfo,
+			    enum ENUM_AA_FRM_TYPE eFrmType)
 {
 	if (prStaRec->ucStaState == STA_STATE_3) {
 		struct MSG_AIS_ABORT *prAisAbortMsg;
@@ -1552,8 +1552,8 @@ saaSendDisconnectMsgHandler(IN struct ADAPTER *prAdapter,
  * @retval WLAN_STATUS_SUCCESS   Always not retain disassociation frames
  */
 /*----------------------------------------------------------------------------*/
-uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
-				  IN struct SW_RFB *prSwRfb)
+uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
+				  struct SW_RFB *prSwRfb)
 {
 	struct STA_RECORD *prStaRec;
 	struct WLAN_DISASSOC_FRAME *prDisassocFrame;
@@ -1716,10 +1716,10 @@ uint32_t saaFsmRunEventRxDisassoc(IN struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 
 void
-saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
-			      IN struct WLAN_DISASSOC_FRAME *prDisassocFrame,
-			      IN struct STA_RECORD *prStaRec,
-			      IN struct SW_RFB *prSwRfb)
+saaChkDisassocfrmParamHandler(struct ADAPTER *prAdapter,
+			      struct WLAN_DISASSOC_FRAME *prDisassocFrame,
+			      struct STA_RECORD *prStaRec,
+			      struct SW_RFB *prSwRfb)
 {
 	if (!IS_BMCAST_MAC_ADDR(prDisassocFrame->aucDestAddr)) {
 		/* MFP test plan 5.3.3.5 */
@@ -1744,8 +1744,8 @@ saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter,
-			 IN struct MSG_HDR *prMsgHdr)
+void saaFsmRunEventAbort(struct ADAPTER *prAdapter,
+			 struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SAA_FSM_ABORT *prSaaFsmAbortMsg;
 	struct STA_RECORD *prStaRec;
@@ -1784,8 +1784,8 @@ void saaFsmRunEventAbort(IN struct ADAPTER *prAdapter,
 #endif
 }				/* end of saaFsmRunEventAbort() */
 
-void saaFsmRunEventExternalAuthDone(IN struct ADAPTER *prAdapter,
-				    IN struct MSG_HDR *prMsgHdr)
+void saaFsmRunEventExternalAuthDone(struct ADAPTER *prAdapter,
+				    struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_SAA_EXTERNAL_AUTH_DONE *prSaaFsmMsg = NULL;
 	struct STA_RECORD *prStaRec;
@@ -1822,7 +1822,7 @@ void saaFsmRunEventExternalAuthDone(IN struct ADAPTER *prAdapter,
  * \retval WLAN_STATUS_FAILURE   Fail because of Join Timeout
  */
 /*----------------------------------------------------------------------------*/
-uint32_t joinFsmRunEventJoinTimeOut(IN struct ADAPTER *prAdapter)
+uint32_t joinFsmRunEventJoinTimeOut(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct STA_RECORD *prStaRec;
@@ -1875,7 +1875,7 @@ uint32_t joinFsmRunEventJoinTimeOut(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void joinAdoptParametersFromPeerBss(IN struct ADAPTER *prAdapter)
+void joinAdoptParametersFromPeerBss(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct BSS_DESC *prBssDesc;
@@ -1912,7 +1912,7 @@ void joinAdoptParametersFromPeerBss(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void joinAdoptParametersFromCurrentBss(IN struct ADAPTER *prAdapter)
+void joinAdoptParametersFromCurrentBss(struct ADAPTER *prAdapter)
 {
 	/* P_JOIN_INFO_T prJoinInfo = &prAdapter->rJoinInfo; */
 	struct BSS_INFO *prBssInfo;
@@ -1940,7 +1940,7 @@ void joinAdoptParametersFromCurrentBss(IN struct ADAPTER *prAdapter)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void joinComplete(IN struct ADAPTER *prAdapter)
+void joinComplete(struct ADAPTER *prAdapter)
 {
 	P_JOIN_INFO_T prJoinInfo;
 	struct BSS_DESC *prBssDesc;

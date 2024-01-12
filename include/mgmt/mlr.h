@@ -152,28 +152,28 @@ enum ENUM_MLR_STATE {
  *******************************************************************************
  */
 
-u_int8_t mlrDoFragPacket(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN uint16_t u2SplitSize,
-		IN uint16_t u2SplitThreshold,
-		IN void *prNativePacket,
-		OUT struct QUE *prFragmentedQue);
+u_int8_t mlrDoFragPacket(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t u2SplitSize,
+		uint16_t u2SplitThreshold,
+		void *prNativePacket,
+		struct QUE *prFragmentedQue);
 
-u_int8_t mlrCheckIfDoFrag(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo,
-		IN void *prNativePacket);
+u_int8_t mlrCheckIfDoFrag(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo,
+		void *prNativePacket);
 
-u_int8_t mlrDecideIfUseMlrRate(IN struct ADAPTER *prAdapter,
-		IN struct BSS_INFO *prBssInfo,
-		IN struct STA_RECORD *prStaRec,
-		IN struct MSDU_INFO *prMsduInfo,
-		OUT uint16_t *pu2RateCode);
+u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct STA_RECORD *prStaRec,
+		struct MSDU_INFO *prMsduInfo,
+		uint16_t *pu2RateCode);
 
 void mlrGenerateMTKOuiIEforMlr(struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo);
 
-void mlrEventMlrFsmUpdateHandler(IN struct ADAPTER *prAdapter,
-		IN struct WIFI_EVENT *prEvent);
+void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent);
 
 #endif
 #endif /* _MLR_H */

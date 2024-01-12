@@ -984,8 +984,8 @@ void mt7961_show_pse_info(
 }
 
 void show_wfdma_interrupt_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t idx;
 	uint32_t u4DmaCfgCrAddr;
@@ -1027,8 +1027,8 @@ void show_wfdma_interrupt_info(
 }
 
 void show_wfdma_glo_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint32_t idx;
 	uint32_t u4hostBaseCrAddr;
@@ -1064,8 +1064,8 @@ void show_wfdma_glo_info(
 }
 
 void show_wfdma_ring_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 
 	uint32_t idx;
@@ -1153,8 +1153,8 @@ void show_wfdma_ring_info(
 }
 
 void show_wfdma_dbg_probe_info(
-	IN struct ADAPTER *prAdapter,
-	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
+	struct ADAPTER *prAdapter,
+	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
 	uint16_t u2Idx;
 	uint32_t u4DbgIdxAddr, u4DbgProbeAddr, u4DbgIdxValue, u4DbgProbeValue;
@@ -1180,7 +1180,7 @@ void show_wfdma_dbg_probe_info(
 }
 
 void mt7961_show_wfdma_info(
-	IN struct ADAPTER *prAdapter)
+	struct ADAPTER *prAdapter)
 {
 	/* Dump Host WFMDA info */
 	DBGLOG(HAL, INFO, "==============================\n");
@@ -1206,8 +1206,8 @@ void mt7961_show_wfdma_info(
  *  to R/W these DEBUG CR.
  */
 u_int8_t sdio_show_mcu_debug_info(struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
-	OUT uint32_t *pu4Length)
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
 {
 	char *bt_func_name = "btmtk_sdio_read_wifi_mcu_pc";
 	typedef int (*p_bt_fun_type) (u8, u32*);
@@ -1258,8 +1258,8 @@ u_int8_t sdio_show_mcu_debug_info(struct ADAPTER *prAdapter,
 #endif
 
 #if defined(_HIF_USB)
-u_int8_t usb_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucPcLogSel, OUT uint32_t *pu4RetVal)
+u_int8_t usb_read_wifi_mcu_pc(struct ADAPTER *prAdapter,
+	uint8_t ucPcLogSel, uint32_t *pu4RetVal)
 {
 	u_int8_t fgStatus = FALSE;
 	uint32_t u4Val = 0;
@@ -1279,9 +1279,9 @@ u_int8_t usb_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-u_int8_t usb_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
-	OUT uint32_t *pu4Length)
+u_int8_t usb_show_mcu_debug_info(struct ADAPTER *prAdapter,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
 {
 	uint32_t u4Val = 0;
 	uint8_t  i = 0;
@@ -1362,8 +1362,8 @@ u_int8_t usb_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
 #endif
 
 #if defined(_HIF_PCIE)
-u_int8_t pcie_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucPcLogSel, OUT uint32_t *pu4RetVal)
+u_int8_t pcie_read_wifi_mcu_pc(struct ADAPTER *prAdapter,
+	uint8_t ucPcLogSel, uint32_t *pu4RetVal)
 {
 	uint32_t u4Val = 0;
 
@@ -1379,8 +1379,8 @@ u_int8_t pcie_read_wifi_mcu_pc(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-u_int8_t pcie_read_wifi_mcu_lr(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucPcLogSel, OUT uint32_t *pu4RetVal)
+u_int8_t pcie_read_wifi_mcu_lr(struct ADAPTER *prAdapter,
+	uint8_t ucPcLogSel, uint32_t *pu4RetVal)
 {
 	uint32_t u4Val = 0;
 
@@ -1396,9 +1396,9 @@ u_int8_t pcie_read_wifi_mcu_lr(IN struct ADAPTER *prAdapter,
 	return TRUE;
 }
 
-u_int8_t pcie_show_mcu_debug_info(IN struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max, IN uint8_t ucFlag,
-	OUT uint32_t *pu4Length)
+u_int8_t pcie_show_mcu_debug_info(struct ADAPTER *prAdapter,
+	uint8_t *pucBuf, uint32_t u4Max, uint8_t ucFlag,
+	uint32_t *pu4Length)
 {
 	uint32_t u4Val = 0;
 	uint8_t  i = 0;

@@ -162,8 +162,6 @@ typedef void(*remove_card) (void);
  *                                 M A C R O S
  *******************************************************************************
  */
-#define IN			/* volatile */
-#define OUT			/* volatile */
 
 #define __KAL_INLINE__                  inline
 #define __KAL_ATTRIB_PACKED_FRONT__     /* for OS compatibility not used */

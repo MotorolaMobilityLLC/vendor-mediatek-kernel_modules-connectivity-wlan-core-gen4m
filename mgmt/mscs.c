@@ -51,8 +51,8 @@
  *******************************************************************************
  */
 
-struct MSCS_FIVE_TUPLE_T *mscsSearchFiveTuple(IN struct ADAPTER *prAdapter,
-	IN uint8_t *prTargetTuple)
+struct MSCS_FIVE_TUPLE_T *mscsSearchFiveTuple(struct ADAPTER *prAdapter,
+	uint8_t *prTargetTuple)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct LINK *prMonitorList;
@@ -83,8 +83,8 @@ struct MSCS_FIVE_TUPLE_T *mscsSearchFiveTuple(IN struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-void mscsAddFiveTuple(IN struct ADAPTER *prAdapter,
-	IN uint8_t *prTargetTuple)
+void mscsAddFiveTuple(struct ADAPTER *prAdapter,
+	uint8_t *prTargetTuple)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct LINK *prMonitorList;
@@ -133,8 +133,8 @@ void mscsAddFiveTuple(IN struct ADAPTER *prAdapter,
 	LINK_INSERT_TAIL(prMonitorList, &prEntry->rLinkEntry);
 }
 
-void mscsDelFiveTuple(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb, IN uint8_t *prTargetTuple)
+void mscsDelFiveTuple(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb, uint8_t *prTargetTuple)
 {
 	struct STA_RECORD *prStaRec;
 	struct LINK *prMonitorList;
@@ -169,8 +169,8 @@ void mscsDelFiveTuple(IN struct ADAPTER *prAdapter,
 	DBGLOG_MEM8(TX, TRACE, prTargetTuple, 12);
 }
 
-void mscsFlushFiveTuple(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec)
+void mscsFlushFiveTuple(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	struct LINK *prMonitorList = &prStaRec->rMscsMonitorList;
 	struct MSCS_FIVE_TUPLE_T *prEntry;
@@ -186,8 +186,8 @@ void mscsFlushFiveTuple(IN struct ADAPTER *prAdapter,
 	}
 }
 
-struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(IN struct ADAPTER *prAdapter,
-	IN uint8_t *prTargetTcp)
+struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(struct ADAPTER *prAdapter,
+	uint8_t *prTargetTcp)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct LINK *prMonitorList;
@@ -218,8 +218,8 @@ struct MSCS_TCP_INFO_T *mscsSearchTcpEntry(IN struct ADAPTER *prAdapter,
 }
 
 
-void mscsAddTcpForMonitor(IN struct ADAPTER *prAdapter,
-	IN uint8_t *prTargetTuple)
+void mscsAddTcpForMonitor(struct ADAPTER *prAdapter,
+	uint8_t *prTargetTuple)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct LINK *prMonitorList;
@@ -267,8 +267,8 @@ void mscsAddTcpForMonitor(IN struct ADAPTER *prAdapter,
 	LINK_INSERT_TAIL(prMonitorList, &prEntry->rLinkEntry);
 }
 
-void mscsFlushMonitorTcp(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec)
+void mscsFlushMonitorTcp(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	struct LINK *prMonitorList = &prStaRec->rMscsTcpMonitorList;
 	struct MSCS_TCP_INFO_T *prEntry;
@@ -284,8 +284,8 @@ void mscsFlushMonitorTcp(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void mscsDeactivate(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec)
+void mscsDeactivate(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	if (!prStaRec)
 		return;
@@ -295,9 +295,9 @@ void mscsDeactivate(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t
-mscsTxDoneCb(IN struct ADAPTER *prAdapter,
-	      IN struct MSDU_INFO *prMsduInfo,
-	      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+mscsTxDoneCb(struct ADAPTER *prAdapter,
+	      struct MSDU_INFO *prMsduInfo,
+	      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	DBGLOG(TX, INFO,
 		"MSCS TX DONE, WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
@@ -306,7 +306,7 @@ mscsTxDoneCb(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint8_t fpIsPortAuthorized(IN struct ADAPTER *prAdapter)
+uint8_t fpIsPortAuthorized(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prAisBssInfo = NULL;
 
@@ -331,7 +331,7 @@ uint8_t fpIsPortAuthorized(IN struct ADAPTER *prAdapter)
 	return TRUE;
 }
 
-uint8_t mscsIsFpSupport(IN struct ADAPTER *prAdapter)
+uint8_t mscsIsFpSupport(struct ADAPTER *prAdapter)
 {
 	struct MSCS_CAP_FAST_PATH *prFastPathCap = &prAdapter->rFastPathCap;
 
@@ -349,7 +349,7 @@ uint8_t mscsIsFpSupport(IN struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
-uint8_t mscsIsTcpNeedMonitor(IN struct ADAPTER *prAdapter, IN uint8_t *pucPkt)
+uint8_t mscsIsTcpNeedMonitor(struct ADAPTER *prAdapter, uint8_t *pucPkt)
 {
 	uint8_t *pucEthBody = &pucPkt[ETH_HLEN];
 	uint8_t *pucTcpBody = &pucEthBody[IP_HEADER_LEN];
@@ -388,7 +388,7 @@ uint8_t mscsIsTcpNeedMonitor(IN struct ADAPTER *prAdapter, IN uint8_t *pucPkt)
 	return FALSE;
 }
 
-uint8_t mscsIsNeedRequest(IN struct ADAPTER *prAdapter, IN void *prPacket)
+uint8_t mscsIsNeedRequest(struct ADAPTER *prAdapter, void *prPacket)
 {
 	struct STA_RECORD *prStaRec = NULL;
 	struct MSCS_FIVE_TUPLE_T rTargetFiveTuple;
@@ -458,7 +458,7 @@ uint8_t mscsIsNeedRequest(IN struct ADAPTER *prAdapter, IN void *prPacket)
 	return TRUE;
 }
 
-uint8_t mscsIsMtkOui(IN uint8_t *pucAddress)
+uint8_t mscsIsMtkOui(uint8_t *pucAddress)
 {
 	uint8_t aucMTKOui[] = VENDOR_OUI_MTK;
 
@@ -468,10 +468,10 @@ uint8_t mscsIsMtkOui(IN uint8_t *pucAddress)
 	return FALSE;
 }
 
-uint32_t mscsSend(IN struct ADAPTER *prAdapter,
-	IN enum ENUM_MSCS_REQUEST_ACTION eAction, IN uint8_t fgRequestType,
-	IN uint8_t ucUPBitmap, IN uint8_t ucUPLimit,
-	IN struct IE_TCLAS_MASK *prTclas)
+uint32_t mscsSend(struct ADAPTER *prAdapter,
+	enum ENUM_MSCS_REQUEST_ACTION eAction, uint8_t fgRequestType,
+	uint8_t ucUPBitmap, uint8_t ucUPLimit,
+	struct IE_TCLAS_MASK *prTclas)
 {
 	static uint8_t ucDialogToken = 1;
 	struct MSDU_INFO *prMsduInfo;
@@ -596,8 +596,8 @@ uint32_t mscsSend(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t mscsGenerateTCLASType4(IN struct ADAPTER *prAdapter,
-	IN void *prPacket, OUT uint8_t *pucContent, IN uint32_t pu4Size)
+uint32_t mscsGenerateTCLASType4(struct ADAPTER *prAdapter,
+	void *prPacket, uint8_t *pucContent, uint32_t pu4Size)
 {
 	struct IE_TCLAS_MASK *prTclas;
 	struct IE_TCLAS_CLASS_TYPE_4 *prContent;
@@ -633,9 +633,9 @@ uint32_t mscsGenerateTCLASType4(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t mscsRequest(IN struct ADAPTER *prAdapter,
-	IN void *prPacket, IN enum ENUM_MSCS_REQUEST_ACTION eAction,
-	IN enum ENUM_MSCS_TCLAS_TYPE eTCLASType)
+uint32_t mscsRequest(struct ADAPTER *prAdapter,
+	void *prPacket, enum ENUM_MSCS_REQUEST_ACTION eAction,
+	enum ENUM_MSCS_TCLAS_TYPE eTCLASType)
 {
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	uint32_t u4TCLASLen = 0;
@@ -687,8 +687,8 @@ uint32_t mscsRequest(IN struct ADAPTER *prAdapter,
 	return u4Status;
 }
 
-void mscsProcessRobustAVStreaming(IN struct ADAPTER *prAdapter,
-			   IN struct SW_RFB *prSwRfb)
+void mscsProcessRobustAVStreaming(struct ADAPTER *prAdapter,
+			   struct SW_RFB *prSwRfb)
 {
 	struct ACTION_MSCS_RSP_FRAME *prRxFrame;
 	struct STA_RECORD *prStaRec;
@@ -748,7 +748,7 @@ void mscsProcessRobustAVStreaming(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void mscsHandleRxPacket(IN struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+void mscsHandleRxPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucPkt = NULL;
 	uint8_t *pucEthBody;
@@ -789,9 +789,9 @@ void mscsHandleRxPacket(IN struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 }
 
 uint32_t
-fpTxDoneCb(IN struct ADAPTER *prAdapter,
-	      IN struct MSDU_INFO *prMsduInfo,
-	      IN enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+fpTxDoneCb(struct ADAPTER *prAdapter,
+	      struct MSDU_INFO *prMsduInfo,
+	      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	DBGLOG(TX, INFO,
 		"Fast path request TX DONE, WIDX:PID[%u:%u] Status[%u], SeqNo: %d\n",
@@ -800,7 +800,7 @@ fpTxDoneCb(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t fpRequestPortAuth(IN struct ADAPTER *prAdapter,
+uint32_t fpRequestPortAuth(struct ADAPTER *prAdapter,
 	enum ENUM_FAST_PATH_TYPE eAuthType, enum ENUM_FAST_PATH_STATUS eStatus,
 	uint8_t ucTransactionId, uint16_t u2Mic)
 {
@@ -943,8 +943,8 @@ uint8_t fpExamKeyBitmap(uint32_t *pu4KeyBitmapA, uint32_t *pu4KeyBitmapB,
 	return fgIsKeyBitmapHitted;
 }
 
-void fpEventHandler(IN struct ADAPTER *prAdapter,
-		      IN struct WIFI_EVENT *prEvent)
+void fpEventHandler(struct ADAPTER *prAdapter,
+		      struct WIFI_EVENT *prEvent)
 {
 	struct EVENT_FAST_PATH *prFastPathInfo;
 	struct BSS_INFO *prAisBssInfo = NULL;
@@ -1000,8 +1000,8 @@ void fpEventHandler(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void fpProcessVendorSpecProtectedFrame(IN struct ADAPTER *prAdapter,
-					 IN struct SW_RFB *prSwRfb)
+void fpProcessVendorSpecProtectedFrame(struct ADAPTER *prAdapter,
+					 struct SW_RFB *prSwRfb)
 {
 	struct ACTION_VENDOR_SPEC_PROTECTED_FRAME *prRxFrame;
 	struct BSS_INFO *prAisBssInfo = NULL;

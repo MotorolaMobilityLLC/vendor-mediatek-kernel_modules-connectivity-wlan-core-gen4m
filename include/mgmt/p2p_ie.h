@@ -94,10 +94,10 @@ struct WFD_DEVICE_INFORMATION_IE {
 
 #endif
 
-uint32_t p2pCalculate_IEForAssocReq(IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+uint32_t p2pCalculate_IEForAssocReq(struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
-void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+void p2pGenerate_IEForAssocReq(struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
 #endif

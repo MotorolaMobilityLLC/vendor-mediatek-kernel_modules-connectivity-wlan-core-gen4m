@@ -2524,7 +2524,7 @@ netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb,
  * \return net_device_stats buffer pointer.
  */
 /*----------------------------------------------------------------------------*/
-struct net_device_stats *wlanGetStats(IN struct net_device
+struct net_device_stats *wlanGetStats(struct net_device
 				      *prDev)
 {
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
@@ -6010,8 +6010,8 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 }
 #endif
 
-void wlanOffWaitWlanThreads(IN struct completion *prComp,
-		IN struct task_struct *prThread)
+void wlanOffWaitWlanThreads(struct completion *prComp,
+		struct task_struct *prThread)
 {
 	uint32_t waitRet = 0;
 
@@ -6026,7 +6026,7 @@ void wlanOffWaitWlanThreads(IN struct completion *prComp,
 	}
 }
 
-void wlanOffStopWlanThreads(IN struct GLUE_INFO *prGlueInfo)
+void wlanOffStopWlanThreads(struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, TRACE, "start.\n");
 
@@ -6748,7 +6748,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 }				/* end of wlanProbe() */
 
 void
-wlanOffNotifyCfg80211Disconnect(IN struct GLUE_INFO *prGlueInfo)
+wlanOffNotifyCfg80211Disconnect(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Idx = 0;
 	u_int8_t bNotify = FALSE;
@@ -7877,8 +7877,8 @@ struct wiphy *wlanGetWiphy(void)
 	return NULL;
 }
 
-struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex)
+struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex)
 {
 	struct net_device *prNetDevice = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -7931,8 +7931,8 @@ struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
 	return prNetDevice;
 }
 
-struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucAisIndex)
+struct net_device *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucAisIndex)
 {
 	if (gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
 		return gprWdev[ucAisIndex]->netdev;
@@ -7941,8 +7941,8 @@ struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
 }
 
 
-struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucP2pIndex)
+struct net_device *wlanGetP2pNetDev(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucP2pIndex)
 {
 	if (gprP2pRoleWdev[ucP2pIndex] &&
 		gprP2pRoleWdev[ucP2pIndex]->netdev)

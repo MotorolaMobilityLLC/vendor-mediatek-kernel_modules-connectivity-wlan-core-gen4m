@@ -363,7 +363,7 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode)
 {
 }
 

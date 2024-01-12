@@ -763,7 +763,7 @@ static void axiSetupFwFlavor(struct platform_device *pdev,
  * \return void
  */
 /*----------------------------------------------------------------------------*/
-static int mtk_axi_probe(IN struct platform_device *pdev)
+static int mtk_axi_probe(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData;
 	struct mt66xx_chip_info *prChipInfo;
@@ -798,7 +798,7 @@ exit:
 	return ret;
 }
 
-static int mtk_axi_remove(IN struct platform_device *pdev)
+static int mtk_axi_remove(struct platform_device *pdev)
 {
 	struct mt66xx_hif_driver_data *prDriverData =
 		platform_get_drvdata(pdev);
@@ -814,13 +814,13 @@ static int mtk_axi_remove(IN struct platform_device *pdev)
 	return 0;
 }
 
-static int mtk_axi_suspend(IN struct platform_device *pdev,
-	IN pm_message_t state)
+static int mtk_axi_suspend(struct platform_device *pdev,
+	pm_message_t state)
 {
 	return 0;
 }
 
-int mtk_axi_resume(IN struct platform_device *pdev)
+int mtk_axi_resume(struct platform_device *pdev)
 {
 	return 0;
 }
@@ -1146,7 +1146,7 @@ u_int8_t glIsReadClearReg(uint32_t u4Address)
 	return TRUE;
 }
 
-void glSetPowerState(IN struct GLUE_INFO *prGlueInfo, IN uint32_t ePowerMode)
+void glSetPowerState(struct GLUE_INFO *prGlueInfo, uint32_t ePowerMode)
 {
 }
 

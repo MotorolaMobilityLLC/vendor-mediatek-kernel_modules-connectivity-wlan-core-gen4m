@@ -235,52 +235,52 @@
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-u_int8_t rsnParseRsnIE(IN struct ADAPTER *prAdapter,
-		       IN struct RSN_INFO_ELEM *prInfoElem,
-		       OUT struct RSN_INFO *prRsnInfo);
+u_int8_t rsnParseRsnIE(struct ADAPTER *prAdapter,
+		       struct RSN_INFO_ELEM *prInfoElem,
+		       struct RSN_INFO *prRsnInfo);
 
-u_int8_t rsnParseWpaIE(IN struct ADAPTER *prAdapter,
-		       IN struct WPA_INFO_ELEM *prInfoElem,
-		       OUT struct RSN_INFO *prWpaInfo);
+u_int8_t rsnParseWpaIE(struct ADAPTER *prAdapter,
+		       struct WPA_INFO_ELEM *prInfoElem,
+		       struct RSN_INFO *prWpaInfo);
 
-u_int8_t rsnSearchSupportedCipher(IN struct ADAPTER
+u_int8_t rsnSearchSupportedCipher(struct ADAPTER
 				  *prAdapter,
-				  IN uint32_t u4Cipher, OUT uint32_t *pu4Index,
-				  IN uint8_t ucBssIndex);
+				  uint32_t u4Cipher, uint32_t *pu4Index,
+				  uint8_t ucBssIndex);
 
-u_int8_t rsnIsSuitableBSS(IN struct ADAPTER *prAdapter,
-			  IN struct BSS_DESC *prBss,
-			  IN struct RSN_INFO *prBssRsnInfo,
-			  IN uint8_t ucBssIndex);
+u_int8_t rsnIsSuitableBSS(struct ADAPTER *prAdapter,
+			  struct BSS_DESC *prBss,
+			  struct RSN_INFO *prBssRsnInfo,
+			  uint8_t ucBssIndex);
 
-u_int8_t rsnSearchAKMSuite(IN struct ADAPTER *prAdapter,
-			   IN uint32_t u4AkmSuite, OUT uint32_t *pu4Index,
-			   IN uint8_t ucBssIndex);
+u_int8_t rsnSearchAKMSuite(struct ADAPTER *prAdapter,
+			   uint32_t u4AkmSuite, uint32_t *pu4Index,
+			   uint8_t ucBssIndex);
 
-u_int8_t rsnPerformPolicySelection(IN struct ADAPTER
+u_int8_t rsnPerformPolicySelection(struct ADAPTER
 				   *prAdapter,
-				   IN struct BSS_DESC *prBss,
-				   IN uint8_t ucBssIndex);
+				   struct BSS_DESC *prBss,
+				   uint8_t ucBssIndex);
 
-void rsnGenerateWpaNoneIE(IN struct ADAPTER *prAdapter,
-			  IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
+			  struct MSDU_INFO *prMsduInfo);
 
-void rsnGenerateWPAIE(IN struct ADAPTER *prAdapter,
-		      IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
 
-void rsnGenerateRSNIE(IN struct ADAPTER *prAdapter,
-		      IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
 
-void rsnGenerateRSNXIE(IN struct ADAPTER *prAdapter,
-		      IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateRSNXIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
 
-void rsnGenerateOWEIE(IN struct ADAPTER *prAdapter,
-		      IN struct MSDU_INFO *prMsduInfo);
+void rsnGenerateOWEIE(struct ADAPTER *prAdapter,
+		      struct MSDU_INFO *prMsduInfo);
 
 u_int8_t
-rsnParseCheckForWFAInfoElem(IN struct ADAPTER *prAdapter,
-			    IN uint8_t *pucBuf, OUT uint8_t *pucOuiType,
-			    OUT uint16_t *pu2SubTypeVersion);
+rsnParseCheckForWFAInfoElem(struct ADAPTER *prAdapter,
+			    uint8_t *pucBuf, uint8_t *pucOuiType,
+			    uint16_t *pu2SubTypeVersion);
 
 #if CFG_SUPPORT_AAA
 void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
@@ -289,61 +289,61 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 				 uint16_t *pu2StatusCode);
 #endif
 
-void rsnTkipHandleMICFailure(IN struct ADAPTER *prAdapter,
-			     IN struct STA_RECORD *prSta,
-			     IN u_int8_t fgErrorKeyType);
+void rsnTkipHandleMICFailure(struct ADAPTER *prAdapter,
+			     struct STA_RECORD *prSta,
+			     u_int8_t fgErrorKeyType);
 
-struct PMKID_ENTRY *rsnSearchPmkidEntry(IN struct ADAPTER *prAdapter,
-					IN uint8_t *pucBssid,
-					IN uint8_t ucBssIndex);
+struct PMKID_ENTRY *rsnSearchPmkidEntry(struct ADAPTER *prAdapter,
+					uint8_t *pucBssid,
+					uint8_t ucBssIndex);
 
-void rsnGeneratePmkidIndication(IN struct ADAPTER *prAdapter,
-				IN struct PARAM_PMKID_CANDIDATE *prCandi,
-				IN uint8_t ucBssIndex);
+void rsnGeneratePmkidIndication(struct ADAPTER *prAdapter,
+				struct PARAM_PMKID_CANDIDATE *prCandi,
+				uint8_t ucBssIndex);
 
-uint32_t rsnSetPmkid(IN struct ADAPTER *prAdapter,
-		     IN struct PARAM_PMKID *prPmkid);
+uint32_t rsnSetPmkid(struct ADAPTER *prAdapter,
+		     struct PARAM_PMKID *prPmkid);
 
-uint32_t rsnDelPmkid(IN struct ADAPTER *prAdapter,
-		     IN struct PARAM_PMKID *prPmkid);
+uint32_t rsnDelPmkid(struct ADAPTER *prAdapter,
+		     struct PARAM_PMKID *prPmkid);
 
-uint32_t rsnFlushPmkid(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex);
+uint32_t rsnFlushPmkid(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_802_11W
-uint32_t rsnCheckBipKeyInstalled(IN struct ADAPTER
-				 *prAdapter, IN struct STA_RECORD *prStaRec);
+uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
+				 *prAdapter, struct STA_RECORD *prStaRec);
 
 uint8_t rsnCheckSaQueryTimeout(
-	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
+	struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
-void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			  IN uintptr_t ulParamPtr);
+void rsnStartSaQueryTimer(struct ADAPTER *prAdapter,
+			  uintptr_t ulParamPtr);
 
-void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIdx);
+void rsnStartSaQuery(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx);
 
-void rsnStopSaQuery(IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIdx);
+void rsnStopSaQuery(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx);
 
-void rsnSaQueryRequest(IN struct ADAPTER *prAdapter,
-		       IN struct SW_RFB *prSwRfb);
+void rsnSaQueryRequest(struct ADAPTER *prAdapter,
+		       struct SW_RFB *prSwRfb);
 
-void rsnSaQueryAction(IN struct ADAPTER *prAdapter,
-		      IN struct SW_RFB *prSwRfb);
+void rsnSaQueryAction(struct ADAPTER *prAdapter,
+		      struct SW_RFB *prSwRfb);
 
-uint16_t rsnPmfCapableValidation(IN struct ADAPTER
-				 *prAdapter, IN struct BSS_INFO *prBssInfo,
-				 IN struct STA_RECORD *prStaRec);
+uint16_t rsnPmfCapableValidation(struct ADAPTER
+				 *prAdapter, struct BSS_INFO *prBssInfo,
+				 struct STA_RECORD *prStaRec);
 
 void rsnPmfGenerateTimeoutIE(struct ADAPTER *prAdapter,
 			     struct MSDU_INFO *prMsduInfo);
 
-void rsnApStartSaQuery(IN struct ADAPTER *prAdapter,
-		       IN struct STA_RECORD *prStaRec);
+void rsnApStartSaQuery(struct ADAPTER *prAdapter,
+		       struct STA_RECORD *prStaRec);
 
-void rsnApSaQueryAction(IN struct ADAPTER *prAdapter,
-			IN struct SW_RFB *prSwRfb);
+void rsnApSaQueryAction(struct ADAPTER *prAdapter,
+			struct SW_RFB *prSwRfb);
 
 #endif /* CFG_SUPPORT_802_11W */
 
@@ -365,15 +365,15 @@ u_int8_t rsnCheckSecurityModeChanged(struct ADAPTER
 uint32_t rsnCalculateFTIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 			     struct STA_RECORD *prStaRec);
 
-void rsnGenerateFTIE(IN struct ADAPTER *prAdapter,
-		     IN OUT struct MSDU_INFO *prMsduInfo);
+void rsnGenerateFTIE(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo);
 
-u_int8_t rsnIsFtOverTheAir(IN struct ADAPTER *prAdapter,
-			IN uint8_t ucBssIdx, IN uint8_t ucStaRecIdx);
+u_int8_t rsnIsFtOverTheAir(struct ADAPTER *prAdapter,
+			uint8_t ucBssIdx, uint8_t ucStaRecIdx);
 
-u_int8_t rsnParseRsnxIE(IN struct ADAPTER *prAdapter,
-		       IN struct RSNX_INFO_ELEM *prInfoElem,
-		       OUT struct RSNX_INFO *prRsnxeInfo);
+u_int8_t rsnParseRsnxIE(struct ADAPTER *prAdapter,
+		       struct RSNX_INFO_ELEM *prInfoElem,
+		       struct RSNX_INFO *prRsnxeInfo);
 
 /*******************************************************************************
  *                              F U N C T I O N S

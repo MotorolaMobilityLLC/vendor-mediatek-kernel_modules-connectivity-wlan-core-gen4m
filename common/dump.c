@@ -118,7 +118,7 @@
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void dumpHex(IN uint8_t *pucStartAddr, uint16_t u2Length)
+void dumpHex(uint8_t *pucStartAddr, uint16_t u2Length)
 {
 #if !DBG_DISABLE_ALL_LOG
 #define BUFSIZE 100
@@ -156,8 +156,8 @@ void dumpHex(IN uint8_t *pucStartAddr, uint16_t u2Length)
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void dumpMemory8(IN uint8_t *pucStartAddr,
-		 IN uint32_t u4Length)
+void dumpMemory8(uint8_t *pucStartAddr,
+		 uint32_t u4Length)
 {
 	ASSERT(pucStartAddr);
 
@@ -352,8 +352,8 @@ void dumpMemory8(IN uint8_t *pucStartAddr,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void dumpMemory32(IN uint32_t *pu4StartAddr,
-		  IN uint32_t u4Length)
+void dumpMemory32(uint32_t *pu4StartAddr,
+		  uint32_t u4Length)
 {
 	uint8_t *pucAddr;
 #define DM32_CASE15 "(0x%x) %08x %08x %08x --%02x%02x%02x\n"
@@ -514,8 +514,8 @@ void dumpMemory32(IN uint32_t *pu4StartAddr,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void dumpMemory128(IN uint32_t *pu4StartAddr,
-		  IN uint32_t u4Length)
+void dumpMemory128(uint32_t *pu4StartAddr,
+		  uint32_t u4Length)
 {
 	uint8_t *pucAddr;
 #define DM128_LEN64 "(0x%x) %08x %08x %08x %08x" \

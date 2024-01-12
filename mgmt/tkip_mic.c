@@ -214,7 +214,7 @@ const uint16_t tkipSBOX2[256] = {
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-void tkipMicB(IN OUT uint32_t *pu4L, IN OUT uint32_t *pu4R)
+void tkipMicB(uint32_t *pu4L, uint32_t *pu4R)
 {
 	*pu4R = *pu4R ^ ROTL32(*pu4L, 17);	/* r <- r ^ (l<<<17)    */
 	*pu4L = (*pu4L + *pu4R);	/* l <- (l+r) mod 2^32  */
@@ -242,10 +242,10 @@ void tkipMicB(IN OUT uint32_t *pu4L, IN OUT uint32_t *pu4R)
  */
 /*----------------------------------------------------------------------------*/
 void
-tkipMicGen(IN uint8_t *pucMickey,
-	   IN uint8_t *pucData,
-	   IN uint32_t u4DataLen, IN uint8_t *pucSa, IN uint8_t *pucDa,
-	   IN uint8_t ucPriority, OUT uint8_t *pucMic)
+tkipMicGen(uint8_t *pucMickey,
+	   uint8_t *pucData,
+	   uint32_t u4DataLen, uint8_t *pucSa, uint8_t *pucDa,
+	   uint8_t ucPriority, uint8_t *pucMic)
 {
 
 	uint32_t i;
@@ -334,11 +334,11 @@ tkipMicGen(IN uint8_t *pucMickey,
  */
 /*----------------------------------------------------------------------------*/
 void
-tkipMicEncapsulate(IN uint8_t *pucDa,
-		   IN uint8_t *pucSa,
-		   IN uint8_t ucPriority,
-		   IN uint16_t u2PayloadLen, IN uint8_t *pucPayload,
-		   IN uint8_t *pucMic, IN uint8_t *pucMicKey)
+tkipMicEncapsulate(uint8_t *pucDa,
+		   uint8_t *pucSa,
+		   uint8_t ucPriority,
+		   uint16_t u2PayloadLen, uint8_t *pucPayload,
+		   uint8_t *pucMic, uint8_t *pucMicKey)
 {
 	uint8_t aucMic[8];	/* MIC' */
 
@@ -362,8 +362,8 @@ tkipMicEncapsulate(IN uint8_t *pucDa,
 }				/* tkipSwMsduEncapsulate */
 
 /*----------------------------------------------------------------------------*/
-u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb,
-			    IN uint8_t *pucMicKey)
+u_int8_t tkipMicDecapsulate(struct SW_RFB *prSwRfb,
+			    uint8_t *pucMicKey)
 {
 	uint8_t *pucMic1;		/* MIC  */
 	uint8_t aucMic2[8];	/* MIC' */
@@ -451,8 +451,8 @@ u_int8_t tkipMicDecapsulate(IN struct SW_RFB *prSwRfb,
 /*----------------------------------------------------------------------------*/
 
 u_int8_t tkipMicDecapsulateInRxHdrTransMode(
-	IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb, IN uint8_t *pucMicKey)
+	struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb, uint8_t *pucMicKey)
 {
 	uint8_t *pucMic1;		/* MIC  */
 	uint8_t aucMic2[8];	/* MIC' */

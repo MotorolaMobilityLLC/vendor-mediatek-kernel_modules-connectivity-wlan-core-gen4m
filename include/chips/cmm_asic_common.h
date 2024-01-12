@@ -68,15 +68,15 @@
 uint32_t asicGetFwDlInfo(struct ADAPTER *prAdapter,
 	char *pcBuf, int i4TotalLen);
 uint32_t asicGetChipID(struct ADAPTER *prAdapter);
-void fillNicTxDescAppend(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo,
-	OUT uint8_t *prTxDescBuffer);
-void fillTxDescAppendByHostV2(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo, IN uint16_t u4MsduId,
-	IN dma_addr_t rDmaAddr, IN uint32_t u4Idx, IN u_int8_t fgIsLast,
-	OUT uint8_t *pucBuffer);
-void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint8_t *tmac_info);
-void asicWakeUpWiFi(IN struct ADAPTER *prAdapter);
+void fillNicTxDescAppend(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	uint8_t *prTxDescBuffer);
+void fillTxDescAppendByHostV2(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo, uint16_t u4MsduId,
+	dma_addr_t rDmaAddr, uint32_t u4Idx, u_int8_t fgIsLast,
+	uint8_t *pucBuffer);
+void halDumpTxdInfo(struct ADAPTER *prAdapter, uint8_t *tmac_info);
+void asicWakeUpWiFi(struct ADAPTER *prAdapter);
 
 int connsys_power_on(void);
 int connsys_power_done(void);

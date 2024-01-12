@@ -124,7 +124,7 @@ u_int8_t wlan_fb_power_down = FALSE;
  *****************************************************************************
  */
 #if CFG_CHIP_RESET_SUPPORT
-void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
+void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 {
 	DBGLOG(INIT, WARN, "[SER][L0] not support..\n");
 }
@@ -511,8 +511,8 @@ const uint8_t *kalFindIeExtIE(uint8_t eid,
 		return kalFindIeMatchMask(eid, ies, len, &exteid, 1, 2, NULL);
 }
 
-uint32_t kalSyncTimeToFW(IN struct ADAPTER *prAdapter,
-	IN u_int8_t fgInitCmd)
+uint32_t kalSyncTimeToFW(struct ADAPTER *prAdapter,
+	u_int8_t fgInitCmd)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }

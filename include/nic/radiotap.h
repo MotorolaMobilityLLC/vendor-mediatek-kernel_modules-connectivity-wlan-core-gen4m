@@ -562,8 +562,8 @@ struct IEEE80211_RADIOTAP_FIELD_FUNC {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void radiotapFillRadiotap(IN struct ADAPTER *prAdapter,
-		IN OUT struct SW_RFB *prSwRfb);
+void radiotapFillRadiotap(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
 
 #endif
 #endif /* _RADIOTAP_H */

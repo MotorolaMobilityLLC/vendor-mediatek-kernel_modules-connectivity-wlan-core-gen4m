@@ -105,19 +105,19 @@ struct WIFI_RTT_RESULT {
  *******************************************************************************
  */
 
-static void rttRequestDoneTimeOut(IN struct ADAPTER *prAdapter,
+static void rttRequestDoneTimeOut(struct ADAPTER *prAdapter,
 					  unsigned long ulParam);
-static void rttFreeAllResults(IN struct RTT_INFO *prRttInfo);
-static void rttUpdateStatus(IN struct ADAPTER *prAdapter,
-	IN struct CMD_RTT_REQUEST *prCmd);
-static struct RTT_INFO *rttGetInfo(IN struct ADAPTER *prAdapter);
+static void rttFreeAllResults(struct RTT_INFO *prRttInfo);
+static void rttUpdateStatus(struct ADAPTER *prAdapter,
+	struct CMD_RTT_REQUEST *prCmd);
+static struct RTT_INFO *rttGetInfo(struct ADAPTER *prAdapter);
 
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
 
-void rttInit(IN struct ADAPTER *prAdapter)
+void rttInit(struct ADAPTER *prAdapter)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
@@ -135,7 +135,7 @@ void rttInit(IN struct ADAPTER *prAdapter)
 
 }
 
-void rttUninit(IN struct ADAPTER *prAdapter)
+void rttUninit(struct ADAPTER *prAdapter)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
@@ -145,7 +145,7 @@ void rttUninit(IN struct ADAPTER *prAdapter)
 	rttUpdateStatus(prAdapter, NULL);
 }
 
-struct RTT_INFO *rttGetInfo(IN struct ADAPTER *prAdapter)
+struct RTT_INFO *rttGetInfo(struct ADAPTER *prAdapter)
 {
 	if (prAdapter)
 		return &(prAdapter->rWifiVar.rRttInfo);
@@ -153,7 +153,7 @@ struct RTT_INFO *rttGetInfo(IN struct ADAPTER *prAdapter)
 		return NULL;
 }
 
-void rttFreeAllResults(IN struct RTT_INFO *prRttInfo)
+void rttFreeAllResults(struct RTT_INFO *prRttInfo)
 {
 	struct RTT_RESULT_ENTRY *entry;
 
@@ -166,8 +166,8 @@ void rttFreeAllResults(IN struct RTT_INFO *prRttInfo)
 	}
 }
 
-void rttUpdateStatus(IN struct ADAPTER *prAdapter,
-	IN struct CMD_RTT_REQUEST *prCmd)
+void rttUpdateStatus(struct ADAPTER *prAdapter,
+	struct CMD_RTT_REQUEST *prCmd)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
@@ -183,8 +183,8 @@ void rttUpdateStatus(IN struct ADAPTER *prAdapter,
 	}
 }
 
-uint32_t rttSendCmd(IN struct ADAPTER *prAdapter,
-	IN struct CMD_RTT_REQUEST *cmd)
+uint32_t rttSendCmd(struct ADAPTER *prAdapter,
+	struct CMD_RTT_REQUEST *cmd)
 {
 	uint32_t status;
 
@@ -206,8 +206,8 @@ uint32_t rttSendCmd(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_FAILURE;
 }
 
-void rttActiveNetwork(IN struct ADAPTER *prAdapter,
-			    IN uint8_t ucBssIndex, IN uint8_t active)
+void rttActiveNetwork(struct ADAPTER *prAdapter,
+			    uint8_t ucBssIndex, uint8_t active)
 {
 	if (active) {
 		SET_NET_ACTIVE(prAdapter, ucBssIndex);
@@ -219,8 +219,8 @@ void rttActiveNetwork(IN struct ADAPTER *prAdapter,
 
 }
 
-uint32_t rttStartRttRequest(IN struct ADAPTER *prAdapter,
-			 IN struct PARAM_RTT_REQUEST *prRequest,
+uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
+			 struct PARAM_RTT_REQUEST *prRequest,
 			 uint8_t ucBssIndex)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
@@ -288,8 +288,8 @@ uint32_t rttStartRttRequest(IN struct ADAPTER *prAdapter,
 	return status;
 }
 
-uint32_t rttCancelRttRequest(IN struct ADAPTER *prAdapter,
-			 IN struct PARAM_RTT_REQUEST *prRequest)
+uint32_t rttCancelRttRequest(struct ADAPTER *prAdapter,
+			 struct PARAM_RTT_REQUEST *prRequest)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 	struct CMD_RTT_REQUEST *cmd;
@@ -311,9 +311,10 @@ uint32_t rttCancelRttRequest(IN struct ADAPTER *prAdapter,
 	return status;
 }
 
-uint32_t rttHandleRttRequest(IN struct ADAPTER *prAdapter,
-			 IN struct PARAM_RTT_REQUEST *prRequest,
-			 uint8_t ucBssIndex) {
+uint32_t rttHandleRttRequest(struct ADAPTER *prAdapter,
+			 struct PARAM_RTT_REQUEST *prRequest,
+			 uint8_t ucBssIndex)
+{
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 	uint32_t status;
 
@@ -337,13 +338,13 @@ uint32_t rttHandleRttRequest(IN struct ADAPTER *prAdapter,
 	return status;
 }
 
-static void rttRequestDoneTimeOut(IN struct ADAPTER *prAdapter,
+static void rttRequestDoneTimeOut(struct ADAPTER *prAdapter,
 					  unsigned long ulParam)
 {
 	rttEventDone(prAdapter, NULL);
 }
 
-void rttReportDone(IN struct ADAPTER *prAdapter)
+void rttReportDone(struct ADAPTER *prAdapter)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 	void *pvPacket = NULL;
@@ -393,7 +394,7 @@ void rttReportDone(IN struct ADAPTER *prAdapter)
 		kalKfreeSkb(pvPacket, TRUE);
 }
 
-void rttFakeEvent(IN struct ADAPTER *prAdapter)
+void rttFakeEvent(struct ADAPTER *prAdapter)
 {
 	struct EVENT_RTT_RESULT fake;
 	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0xa0, 0xab, 0x1b, 0x54, 0x65, 0x34};
@@ -432,8 +433,8 @@ void rttFakeEvent(IN struct ADAPTER *prAdapter)
 	rttEventResult(prAdapter, &fake);
 }
 
-void rttEventDone(IN struct ADAPTER *prAdapter,
-		      IN struct EVENT_RTT_DONE *prEvent)
+void rttEventDone(struct ADAPTER *prAdapter,
+		      struct EVENT_RTT_DONE *prEvent)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
@@ -458,8 +459,8 @@ void rttEventDone(IN struct ADAPTER *prAdapter,
 	rttReportDone(prAdapter);
 }
 
-void rttEventResult(IN struct ADAPTER *prAdapter,
-		      IN struct EVENT_RTT_RESULT *prEvent)
+void rttEventResult(struct ADAPTER *prAdapter,
+		      struct EVENT_RTT_RESULT *prEvent)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 	struct RTT_RESULT_ENTRY *entry;
@@ -487,7 +488,7 @@ void rttEventResult(IN struct ADAPTER *prAdapter,
 }
 
 #if 0
-void rttFreeResult(IN struct RTT_INFO *prRttInfo, IN uint8_t aucBSSID[])
+void rttFreeResult(struct RTT_INFO *prRttInfo, uint8_t aucBSSID[])
 {
 	struct RTT_RESULT_ENTRY *entry;
 	struct RTT_RESULT_ENTRY *entryNext;
@@ -506,14 +507,14 @@ void rttFreeResult(IN struct RTT_INFO *prRttInfo, IN uint8_t aucBSSID[])
 	}
 }
 
-void rttFreeAllRequests(IN struct RTT_INFO *prRttInfo)
+void rttFreeAllRequests(struct RTT_INFO *prRttInfo)
 {
 	kalMemFree(prRttInfo->prCmd,
 		VIR_MEM_TYPE, sizeof(struct CMD_RTT_REQUEST));
 	prRttInfo->prCmd = NULL;
 }
 
-void rttFreeRequest(IN struct RTT_INFO *prRttInfo, IN uint8_t aucBSSID[])
+void rttFreeRequest(struct RTT_INFO *prRttInfo, uint8_t aucBSSID[])
 {
 	struct CMD_RTT_REQUEST *cmd = prRttInfo->prCmd;
 	uint8_t i;

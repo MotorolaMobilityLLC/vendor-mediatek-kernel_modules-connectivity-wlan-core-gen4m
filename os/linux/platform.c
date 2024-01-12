@@ -371,9 +371,9 @@ int glUnregisterEarlySuspend(struct early_suspend *prDesc)
  *           FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
-			IN uint32_t u4Offset,
-			IN ssize_t len, OUT uint16_t *pu2Data)
+u_int8_t kalCfgDataRead(struct GLUE_INFO *prGlueInfo,
+			uint32_t u4Offset,
+			ssize_t len, uint16_t *pu2Data)
 {
 	if (pu2Data == NULL)
 		return FALSE;
@@ -407,8 +407,8 @@ u_int8_t kalCfgDataRead(IN struct GLUE_INFO *prGlueInfo,
  *           FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
-			  IN uint32_t u4Offset, OUT uint16_t *pu2Data)
+u_int8_t kalCfgDataRead16(struct GLUE_INFO *prGlueInfo,
+			  uint32_t u4Offset, uint16_t *pu2Data)
 {
 	if (pu2Data == NULL)
 		return FALSE;
@@ -443,7 +443,7 @@ u_int8_t kalCfgDataRead16(IN struct GLUE_INFO *prGlueInfo,
  *           FALSE
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
+u_int8_t kalCfgDataWrite16(struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4Offset, uint16_t u2Data)
 {
 	if (u4Offset + sizeof(unsigned short) > MAX_CFG_FILE_WIFI_REC_SIZE)
@@ -476,8 +476,8 @@ u_int8_t kalCfgDataWrite16(IN struct GLUE_INFO *prGlueInfo,
  */
 /*----------------------------------------------------------------------------*/
 
-u_int8_t kalCfgDataWrite8(IN struct GLUE_INFO *prGlueInfo,
-			   IN uint32_t u4Offset, IN uint8_t u1Data)
+u_int8_t kalCfgDataWrite8(struct GLUE_INFO *prGlueInfo,
+			   uint32_t u4Offset, uint8_t u1Data)
 {
 	if (u4Offset + sizeof(unsigned char) > MAX_CFG_FILE_WIFI_REC_SIZE)
 		return FALSE;

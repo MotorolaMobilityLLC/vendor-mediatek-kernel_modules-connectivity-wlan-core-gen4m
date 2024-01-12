@@ -136,13 +136,13 @@ enum ENUM_PHPTUT_SETTING {
  *******************************************************************************
  */
 
-uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
-			IN uint32_t u4CaseIndex);
-uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
-			IN uint8_t ucBssIndex,
-			IN struct PhTputSetting *prPhtputSetting);
-uint32_t dvtDeactivateNetworkPhTput(IN struct net_device *prNetDev,
-			IN uint8_t ucBssIndex);
+uint32_t dvtSetupPhTput(struct net_device *prNetDev,
+			uint32_t u4CaseIndex);
+uint32_t dvtActivateNetworkPhTput(struct net_device *prNetDev,
+			uint8_t ucBssIndex,
+			struct PhTputSetting *prPhtputSetting);
+uint32_t dvtDeactivateNetworkPhTput(struct net_device *prNetDev,
+			uint8_t ucBssIndex);
 
 #endif /* _DVT_PHTPUT_H */
 

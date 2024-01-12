@@ -91,8 +91,8 @@ uint8_t g_aucMicMaterialBuffer[NAN_MIC_BUF_SIZE];
  ************************************************
  */
 uint32_t
-nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-		      IN uint32_t u4SetBufferLen) {
+nan_sec_wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
+		      uint32_t u4SetBufferLen) {
 
 	struct CMD_802_11_KEY *prCmdFWKey;
 	struct CMD_802_11_KEY rCmdKey;
@@ -299,8 +299,8 @@ nan_sec_wlanSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 }
 
 uint32_t
-nan_sec_wlanSetRemoveKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
-			 IN uint32_t u4SetBufferLen) {
+nan_sec_wlanSetRemoveKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
+			 uint32_t u4SetBufferLen) {
 	struct GLUE_INFO *prGlueInfo;
 	struct CMD_802_11_KEY rCmdKey;
 	struct CMD_802_11_KEY *prCmdKey = &rCmdKey;
@@ -2319,9 +2319,9 @@ nan_sec_wpa_supplicant_start(void) {
  ************************************************
  */
 uint32_t
-nanSecGetNdpCsidAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp,
-		     OUT uint32_t *pu4CsidAttrLen,
-		     OUT uint8_t **ppu1CsidAttrBuf) {
+nanSecGetNdpCsidAttr(struct _NAN_NDP_INSTANCE_T *prNdp,
+		     uint32_t *pu4CsidAttrLen,
+		     uint8_t **ppu1CsidAttrBuf) {
 	struct _NAN_SEC_CSID_ATTR_HDR *prCsidAttrHdr = NULL;
 	struct _NAN_SEC_CSID_ATTR_LIST *prCsidAttrListHdr = NULL;
 	uint32_t u4TotalLen = 0;
@@ -2363,9 +2363,9 @@ nanSecGetNdpCsidAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp,
 }
 
 uint32_t
-nanSecGetNdpScidAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp,
-		     OUT uint32_t *pu4ScidAttrLen,
-		     OUT uint8_t **ppu1ScidAttrBuf) {
+nanSecGetNdpScidAttr(struct _NAN_NDP_INSTANCE_T *prNdp,
+		     uint32_t *pu4ScidAttrLen,
+		     uint8_t **ppu1ScidAttrBuf) {
 	struct _NAN_SEC_SCID_ATTR_HDR *prScidAttrHdr = NULL;
 	struct _NAN_SEC_SCID_ATTR_ENTRY *pr1ScidAttrListHdr = NULL;
 	uint32_t u4TotalLen = 0;
@@ -2490,7 +2490,7 @@ nanSecGetCsidAttr(uint32_t *pu4CsidAttrLen, uint8_t **ppu1CsidAttrBuf) {
 }
 
 uint32_t
-nanSecInsertCipherList(IN uint32_t u4CipherType, IN uint16_t u2PublishId) {
+nanSecInsertCipherList(uint32_t u4CipherType, uint16_t u2PublishId) {
 	struct _NAN_SEC_CIPHER_ENTRY *prCipherEntry = NULL;
 
 	DBGLOG(NAN, INFO, "[%s] Enter, u4CipherType:0x%x, u2PublishId:0x%x\n",
@@ -2562,8 +2562,8 @@ nanSecFlushCipherList(void) {
 }
 
 uint32_t
-nanSecSetCipherType(IN struct _NAN_NDP_INSTANCE_T *prNdp,
-		    IN uint32_t u4CipherType) {
+nanSecSetCipherType(struct _NAN_NDP_INSTANCE_T *prNdp,
+		    uint32_t u4CipherType) {
 	/* UINT_8  i; */
 	int32_t i4TmpKeyMgmt = 0, i4TmpCipher = 0, i4TmpProto = 0,
 	       i4TmpAuthAlg = 0, i4TmpKeyInfo = 0;
@@ -2627,8 +2627,8 @@ nanSecSetCipherType(IN struct _NAN_NDP_INSTANCE_T *prNdp,
 }
 
 uint32_t
-nanSecSetPmk(IN struct _NAN_NDP_INSTANCE_T *prNdp, IN uint32_t u4PmkLen,
-	     IN uint8_t *pu1Pmk) {
+nanSecSetPmk(struct _NAN_NDP_INSTANCE_T *prNdp, uint32_t u4PmkLen,
+	     uint8_t *pu1Pmk) {
 	DBGLOG(NAN, INFO, "[%s] Enter, u4PmkLen:%d, eNDPRole:%d\n", __func__,
 	       u4PmkLen, prNdp->eNDPRole);
 
@@ -2654,7 +2654,7 @@ nanSecSetPmk(IN struct _NAN_NDP_INSTANCE_T *prNdp, IN uint32_t u4PmkLen,
 }
 
 uint32_t
-nanSecNotify4wayBegin(IN struct _NAN_NDP_INSTANCE_T *prNdp) {
+nanSecNotify4wayBegin(struct _NAN_NDP_INSTANCE_T *prNdp) {
 	DBGLOG(NAN, INFO, "[%s] Enter, eNDPRole:%d, NDPID:%d\n", __func__,
 	       prNdp->eNDPRole, prNdp->ucNDPID);
 
@@ -2716,7 +2716,7 @@ nanSecNotify4wayBegin(IN struct _NAN_NDP_INSTANCE_T *prNdp) {
 }
 
 uint32_t
-nanSecNotify4wayTerminate(IN struct _NAN_NDP_INSTANCE_T *prNdp) {
+nanSecNotify4wayTerminate(struct _NAN_NDP_INSTANCE_T *prNdp) {
 	DBGLOG(NAN, INFO, "[%s] Enter, eNDPRole:%d, NDPID:%d\n", __func__,
 	       prNdp->eNDPRole, prNdp->ucNDPID);
 
@@ -2773,7 +2773,7 @@ nanSecNotify4wayTerminate(IN struct _NAN_NDP_INSTANCE_T *prNdp) {
 }
 
 uint32_t
-nanSecTxKdeAttrDone(IN struct _NAN_NDP_INSTANCE_T *prNdp, IN uint8_t u1DstMsg) {
+nanSecTxKdeAttrDone(struct _NAN_NDP_INSTANCE_T *prNdp, uint8_t u1DstMsg) {
 	u8 u1SmCurMsg = 0;
 	u8 **ppu1SmTmpKdeAttrBuf = NULL;
 	u32 *pu4SmTmpKdeAttrLen = NULL;
@@ -2820,9 +2820,9 @@ nanSecTxKdeAttrDone(IN struct _NAN_NDP_INSTANCE_T *prNdp, IN uint8_t u1DstMsg) {
 }
 
 uint32_t
-nanSecRxKdeAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp, IN uint8_t u1SrcMsg,
-		IN uint32_t u4KdeAttrLen, IN uint8_t *pu1KdeAttrBuf,
-		IN uint32_t u4RxMsgLen, IN uint8_t *pu1RxMsgBuf) {
+nanSecRxKdeAttr(struct _NAN_NDP_INSTANCE_T *prNdp, uint8_t u1SrcMsg,
+		uint32_t u4KdeAttrLen, uint8_t *pu1KdeAttrBuf,
+		uint32_t u4RxMsgLen, uint8_t *pu1RxMsgBuf) {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	u32 cipher;
 
@@ -2917,9 +2917,9 @@ nanSecRxKdeAttr(IN struct _NAN_NDP_INSTANCE_T *prNdp, IN uint8_t u1SrcMsg,
 }
 
 uint32_t
-nanSecNotifyMsgBodyRdy(IN struct _NAN_NDP_INSTANCE_T *prNdp,
-		IN uint8_t u1SrcMsg, IN OUT uint32_t u4TxMsgLen,
-		IN OUT uint8_t *pu1TxMsgBuf) {
+nanSecNotifyMsgBodyRdy(struct _NAN_NDP_INSTANCE_T *prNdp,
+		uint8_t u1SrcMsg, uint32_t u4TxMsgLen,
+		uint8_t *pu1TxMsgBuf) {
 	u8 u1SmCurMsg = 0;
 	u8 **ppu1SmGetMsgBodyBuf = NULL;
 	u32 *pu4SmGetMsgBodyLen = NULL;
@@ -3432,10 +3432,10 @@ nanSecGenAuthToken(u32 cipher, const u8 *auth_token_data,
 }
 
 uint32_t
-nanSecGenM3MicMaterial(IN uint8_t *pu1AuthTokenBuf, IN const u8 *pu1M3bodyBuf,
-		       IN uint32_t u4M3BodyLen,
-		       OUT uint8_t **ppu1M3MicMaterialBuf,
-		       OUT uint32_t *pu4M3MicMaterialLen) {
+nanSecGenM3MicMaterial(uint8_t *pu1AuthTokenBuf, const u8 *pu1M3bodyBuf,
+		       uint32_t u4M3BodyLen,
+		       uint8_t **ppu1M3MicMaterialBuf,
+		       uint32_t *pu4M3MicMaterialLen) {
 	uint32_t u4TotalLen = 0;
 	uint8_t *pu1MicMaterialBuf = NULL;
 
@@ -3621,7 +3621,7 @@ nanSecDumpEapolKey(struct wpa_eapol_key *key) {
 }
 
 void
-nanSecUpdateAttrCmd(IN struct ADAPTER *prAdapter, uint8_t aucAttrId,
+nanSecUpdateAttrCmd(struct ADAPTER *prAdapter, uint8_t aucAttrId,
 		    uint8_t *aucAttrBuf, uint16_t u2AttrLen) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -3690,9 +3690,9 @@ nanSecUpdatePeerNDI(struct _NAN_NDP_INSTANCE_T *prNdp,
 }
 
 int32_t
-nanSecCompareSA(IN struct ADAPTER *prAdapter,
-		IN struct _NAN_NDP_INSTANCE_T *prNdp1,
-		IN struct _NAN_NDP_INSTANCE_T *prNdp2) {
+nanSecCompareSA(struct ADAPTER *prAdapter,
+		struct _NAN_NDP_INSTANCE_T *prNdp1,
+		struct _NAN_NDP_INSTANCE_T *prNdp2) {
 	uint32_t au4Rank[2];
 	struct _NAN_NDP_INSTANCE_T *aprNdp[2];
 	uint32_t u4Idx;
@@ -3729,13 +3729,13 @@ nanSecCompareSA(IN struct ADAPTER *prAdapter,
  ************************************************
  */
 uint32_t
-nanNdpGetMsgBody(IN uint8_t u1NdpIdx, IN uint8_t u1Msg, IN uint8_t u1MicMode,
-		 OUT uint32_t *pu4MsgBodyLen, OUT uint8_t **ppu1MsgBody) {
+nanNdpGetMsgBody(uint8_t u1NdpIdx, uint8_t u1Msg, uint8_t u1MicMode,
+		 uint32_t *pu4MsgBodyLen, uint8_t **ppu1MsgBody) {
 	return 0;
 }
 
 uint32_t
-nanNdpNotifySecAttrRdy(IN uint8_t u1NdpIdx) {
+nanNdpNotifySecAttrRdy(uint8_t u1NdpIdx) {
 	return 0;
 }
 

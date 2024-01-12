@@ -326,7 +326,7 @@ static const struct ACTION_FRAME_SIZE_MAP arActionFrameReservedLen[] = {
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxInitialize(IN struct ADAPTER *prAdapter)
+void nicRxInitialize(struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
 	uint8_t *pucMemHandle;
@@ -400,7 +400,7 @@ void nicRxInitialize(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxUninitialize(IN struct ADAPTER *prAdapter)
+void nicRxUninitialize(struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
@@ -456,8 +456,8 @@ void nicRxUninitialize(IN struct ADAPTER *prAdapter)
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicRxFillRFB(IN struct ADAPTER *prAdapter,
-		  IN OUT struct SW_RFB *prSwRfb)
+void nicRxFillRFB(struct ADAPTER *prAdapter,
+		  struct SW_RFB *prSwRfb)
 {
 	struct RX_DESC_OPS_T *prRxDescOps = prAdapter->chip_info->prRxDescOps;
 
@@ -478,8 +478,8 @@ void nicRxFillRFB(IN struct ADAPTER *prAdapter,
  * prAdapter->arStaRec[prSwRfb->ucStaRecIdx].u4RxV[*], then can be used
  * for calling wlanGetRxRate().
  */
-void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb)
+void nicRxProcessRxv(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
 {
 #if (CFG_SUPPORT_MSP == 1)
 	struct mt66xx_chip_info *prChipInfo;
@@ -508,8 +508,8 @@ void nicRxProcessRxv(IN struct ADAPTER *prAdapter,
  * with CSUM_RES_NONE, CSUM_RES_SUCCESS, or CSUM_RES_FAILED.
  */
 /*----------------------------------------------------------------------------*/
-void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
-			   IN OUT struct SW_RFB *prSwRfb)
+void nicRxFillChksumStatus(struct ADAPTER *prAdapter,
+			   struct SW_RFB *prSwRfb)
 {
 	struct RX_CSO_REPORT_T *rReport;
 	uint32_t u4TcpUdpIpCksStatus;
@@ -573,8 +573,8 @@ void nicRxFillChksumStatus(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicRxClearFrag(IN struct ADAPTER *prAdapter,
-	IN struct STA_RECORD *prStaRec)
+void nicRxClearFrag(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
 	int i, j;
 	struct FRAG_INFO *prFragInfo;
@@ -605,8 +605,8 @@ void nicRxClearFrag(IN struct ADAPTER *prAdapter,
  * \retval NULL      Receive the fragment packet which is not the last
  */
 /*----------------------------------------------------------------------------*/
-struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSWRfb, OUT struct QUE *prReturnedQue)
+struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSWRfb, struct QUE *prReturnedQue)
 {
 
 	struct SW_RFB *prOutputSwRfb = (struct SW_RFB *) NULL;
@@ -953,7 +953,7 @@ struct SW_RFB *nicRxDefragMPDU(IN struct ADAPTER *prAdapter,
  * @return TRUE: a duplicate, FALSE: not a duplicate
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
+u_int8_t nicRxIsDuplicateFrame(struct SW_RFB
 			       *prSwRfb)
 {
 
@@ -1129,8 +1129,8 @@ u_int8_t nicRxIsDuplicateFrame(IN OUT struct SW_RFB
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicRxProcessPktWithoutReorder(IN struct ADAPTER
-				   *prAdapter, IN struct SW_RFB *prSwRfb)
+void nicRxProcessPktWithoutReorder(struct ADAPTER
+				   *prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct TX_CTRL *prTxCtrl;
@@ -1282,7 +1282,7 @@ void nicRxProcessPktWithoutReorder(IN struct ADAPTER
 }
 
 u_int8_t nicRxCheckForwardPktResource(
-	IN struct ADAPTER *prAdapter, uint32_t ucTid)
+	struct ADAPTER *prAdapter, uint32_t ucTid)
 {
 	struct TX_CTRL *prTxCtrl;
 	uint8_t i, uTxQidx;
@@ -1319,8 +1319,8 @@ u_int8_t nicRxCheckForwardPktResource(
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
-			    IN struct SW_RFB *prSwRfb)
+void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
+			    struct SW_RFB *prSwRfb)
 {
 	struct MSDU_INFO *prMsduInfo, *prRetMsduInfoList;
 	struct TX_CTRL *prTxCtrl;
@@ -1431,8 +1431,8 @@ void nicRxProcessForwardPkt(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
-				*prAdapter, IN struct SW_RFB *prSwRfb)
+void nicRxProcessGOBroadcastPkt(struct ADAPTER
+				*prAdapter, struct SW_RFB *prSwRfb)
 {
 	struct SW_RFB *prSwRfbDuplicated = NULL;
 	struct TX_CTRL *prTxCtrl;
@@ -1503,9 +1503,9 @@ void nicRxProcessGOBroadcastPkt(IN struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 #if CFG_SUPPORT_PERF_IND
-void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSwRfb,
-			       IN uint8_t ucBssIndex)
+void nicRxPerfIndProcessRXV(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb,
+			       uint8_t ucBssIndex)
 {
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -1522,11 +1522,11 @@ void nicRxPerfIndProcessRXV(IN struct ADAPTER *prAdapter,
 }
 #endif
 
-static void nicRxSendDeauthPacket(IN struct ADAPTER *prAdapter,
-		IN uint16_t u2FrameCtrl,
-		IN uint8_t *pucSrcAddr,
-		IN uint8_t *pucDestAddr,
-		IN uint8_t *pucBssid)
+static void nicRxSendDeauthPacket(struct ADAPTER *prAdapter,
+		uint16_t u2FrameCtrl,
+		uint8_t *pucSrcAddr,
+		uint8_t *pucDestAddr,
+		uint8_t *pucBssid)
 {
 	struct SW_RFB rSwRfb;
 	struct WLAN_MAC_HEADER rWlanHeader;
@@ -1554,8 +1554,8 @@ static void nicRxSendDeauthPacket(IN struct ADAPTER *prAdapter,
 		DBGLOG(NIC, WARN, "u4Status: %d\n", u4Status);
 }
 
-static void nicRxProcessDropPacket(IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb)
+static void nicRxProcessDropPacket(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
 {
 	struct WLAN_MAC_HEADER *prWlanHeader = NULL;
 	uint8_t ucBssIndex = 0;
@@ -1611,8 +1611,8 @@ static void nicRxProcessDropPacket(IN struct ADAPTER *prAdapter,
 }
 /* fos_change begin */
 #if CFG_SUPPORT_STAT_STATISTICS
-void nicRxGetNoiseLevelAndLastRate(IN struct ADAPTER *prAdapter,
-			       IN struct SW_RFB *prSwRfb)
+void nicRxGetNoiseLevelAndLastRate(struct ADAPTER *prAdapter,
+			       struct SW_RFB *prSwRfb)
 {
 	struct STA_RECORD *prStaRec;
 	uint8_t noise_level = 0;
@@ -1650,8 +1650,8 @@ void nicRxGetNoiseLevelAndLastRate(IN struct ADAPTER *prAdapter,
 }
 #endif /* fos_change end */
 
-void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfbListHead)
+void nicRxIndicatePackets(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfbListHead)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
@@ -1769,8 +1769,8 @@ void nicRxIndicatePackets(IN struct ADAPTER *prAdapter,
  *
  */
 /*----------------------------------------------------------------------------*/
-void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
-			    IN OUT struct SW_RFB *prSwRfb)
+void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
+			    struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prRetSwRfb;
@@ -1907,8 +1907,8 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
-			     IN OUT struct SW_RFB *prSwRfb)
+void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
+			     struct SW_RFB *prSwRfb)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct CMD_INFO *prCmdInfo;
@@ -2011,8 +2011,8 @@ void nicRxProcessEventPacket(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb)
+void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct GLUE_INFO *prGlueInfo;
 	uint8_t ucSubtype;
@@ -2135,15 +2135,15 @@ void nicRxProcessMgmtPacket(IN struct ADAPTER *prAdapter,
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
-void nicRxProcessMsduReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb)
+void nicRxProcessMsduReport(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	halRxProcessMsduReport(prAdapter, prSwRfb);
 	nicRxReturnRFB(prAdapter, prSwRfb);
 }
 
-void nicRxProcessRxReport(IN struct ADAPTER *prAdapter,
-	IN OUT struct SW_RFB *prSwRfb)
+void nicRxProcessRxReport(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct HW_MAC_RX_REPORT *prRxRpt;
 	uint32_t *prRxv = NULL;
@@ -2256,8 +2256,8 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
-static void nicRxProcessIcsLog(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prSwRfb)
+static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	struct ICS_AGG_HEADER *prIcsAggHeader;
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
@@ -2465,7 +2465,7 @@ void nicRxProcessPacketType(
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
+void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
@@ -2556,8 +2556,8 @@ void nicRxProcessRFBs(IN struct ADAPTER *prAdapter)
  * @retval WLAN_STATUS_RESOURCES
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
-		       IN struct SW_RFB *prSwRfb)
+uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter,
+		       struct SW_RFB *prSwRfb)
 {
 	void *pvPacket;
 	uint8_t *pucRecvBuff = NULL;
@@ -2603,7 +2603,7 @@ uint32_t nicRxSetupRFB(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 
-struct SW_RFB * nicRxAcquireRFB(IN struct ADAPTER *prAdapter, uint16_t num)
+struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 {
 	uint16_t i;
 	struct QUE tmp, *que = &tmp;
@@ -2648,7 +2648,7 @@ fail:
  */
 /*----------------------------------------------------------------------------*/
 
-void nicRxReceiveRFB(IN struct ADAPTER *prAdapter, struct SW_RFB *rfb)
+void nicRxReceiveRFB(struct ADAPTER *prAdapter, struct SW_RFB *rfb)
 {
 	struct SW_RFB *next = NULL;
 	struct RX_CTRL *ctrl;
@@ -2683,8 +2683,8 @@ void nicRxReceiveRFB(IN struct ADAPTER *prAdapter, struct SW_RFB *rfb)
  */
 /*----------------------------------------------------------------------------*/
 
-uint32_t nicRxCopyRFB(IN struct ADAPTER *prAdapter,
-		       IN struct SW_RFB *prDst, IN struct SW_RFB *prSrc)
+uint32_t nicRxCopyRFB(struct ADAPTER *prAdapter,
+		       struct SW_RFB *prDst, struct SW_RFB *prSrc)
 {
 	kalMemCopy(prDst->pucRecvBuff, prSrc->pucRecvBuff,
 	       ALIGN_4(prSrc->u2RxByteCount + HIF_RX_HW_APPENDED_LEN));
@@ -2706,8 +2706,8 @@ uint32_t nicRxCopyRFB(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
-		    IN struct SW_RFB *prSwRfb)
+void nicRxReturnRFB(struct ADAPTER *prAdapter,
+		    struct SW_RFB *prSwRfb)
 {
 	struct RX_CTRL *prRxCtrl;
 	struct QUE_ENTRY *prQueEntry;
@@ -2761,7 +2761,7 @@ void nicRxReturnRFB(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter)
+void nicProcessRxInterrupt(struct ADAPTER *prAdapter)
 {
 	ASSERT(prAdapter);
 	prAdapter->prGlueInfo->IsrRxCnt++;
@@ -2799,8 +2799,9 @@ void nicProcessRxInterrupt(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxUpdateCSUMStatistics(IN struct ADAPTER *
-	prAdapter, IN const enum ENUM_CSUM_RESULT aeCSUM[]) {
+void nicRxUpdateCSUMStatistics(struct ADAPTER *prAdapter,
+		const enum ENUM_CSUM_RESULT aeCSUM[])
+{
 	struct RX_CTRL *prRxCtrl;
 
 	ASSERT(prAdapter);
@@ -2853,8 +2854,8 @@ void nicRxUpdateCSUMStatistics(IN struct ADAPTER *
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxQueryStatus(IN struct ADAPTER *prAdapter,
-		      IN uint8_t *pucBuffer, OUT uint32_t *pu4Count)
+void nicRxQueryStatus(struct ADAPTER *prAdapter,
+		      uint8_t *pucBuffer, uint32_t *pu4Count)
 {
 	struct RX_CTRL *prRxCtrl;
 	uint8_t *pucCurrBuf = pucBuffer;
@@ -2898,7 +2899,7 @@ void nicRxQueryStatus(IN struct ADAPTER *prAdapter,
  * @return - (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxClearStatistics(IN struct ADAPTER *prAdapter)
+void nicRxClearStatistics(struct ADAPTER *prAdapter)
 {
 	struct RX_CTRL *prRxCtrl;
 
@@ -2921,8 +2922,8 @@ void nicRxClearStatistics(IN struct ADAPTER *prAdapter)
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
-			  IN uint8_t *pucBuffer, OUT uint32_t *pu4Count)
+void nicRxQueryStatistics(struct ADAPTER *prAdapter,
+			  uint8_t *pucBuffer, uint32_t *pu4Count)
 {
 	struct RX_CTRL *prRxCtrl;
 	uint8_t *pucCurrBuf = pucBuffer;
@@ -2979,9 +2980,9 @@ void nicRxQueryStatistics(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nicRxWaitResponse(IN struct ADAPTER *prAdapter,
-		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length) {
+nicRxWaitResponse(struct ADAPTER *prAdapter,
+		  uint8_t ucPortIdx, uint8_t *pucRspBuffer,
+		  uint32_t u4MaxRespBufferLen, uint32_t *pu4Length) {
 	return nicRxWaitResponseByWaitingInterval(
 				prAdapter, ucPortIdx,
 				pucRspBuffer, u4MaxRespBufferLen,
@@ -3002,10 +3003,10 @@ nicRxWaitResponse(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
-		  IN uint8_t ucPortIdx, OUT uint8_t *pucRspBuffer,
-		  IN uint32_t u4MaxRespBufferLen, OUT uint32_t *pu4Length,
-		  IN uint32_t u4WaitingInterval, IN uint32_t u4TimeoutValue) {
+nicRxWaitResponseByWaitingInterval(struct ADAPTER *prAdapter,
+		  uint8_t ucPortIdx, uint8_t *pucRspBuffer,
+		  uint32_t u4MaxRespBufferLen, uint32_t *pu4Length,
+		  uint32_t u4WaitingInterval, uint32_t u4TimeoutValue) {
 	struct mt66xx_chip_info *prChipInfo;
 	struct WIFI_EVENT *prEvent;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
@@ -3058,8 +3059,8 @@ nicRxWaitResponseByWaitingInterval(IN struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxEnablePromiscuousMode(IN struct ADAPTER *
-				prAdapter) {
+void nicRxEnablePromiscuousMode(struct ADAPTER *prAdapter)
+{
 	ASSERT(prAdapter);
 
 }				/* end of nicRxEnablePromiscuousMode() */
@@ -3073,8 +3074,8 @@ void nicRxEnablePromiscuousMode(IN struct ADAPTER *
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void nicRxDisablePromiscuousMode(IN struct ADAPTER *
-				 prAdapter) {
+void nicRxDisablePromiscuousMode(struct ADAPTER *prAdapter)
+{
 	ASSERT(prAdapter);
 
 }				/* end of nicRxDisablePromiscuousMode() */
@@ -3088,7 +3089,7 @@ void nicRxDisablePromiscuousMode(IN struct ADAPTER *
  * @retval WLAN_STATUS_SUCCESS   Flushed successfully
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicRxFlush(IN struct ADAPTER *prAdapter)
+uint32_t nicRxFlush(struct ADAPTER *prAdapter)
 {
 	struct SW_RFB *prSwRfb;
 
@@ -3112,7 +3113,7 @@ uint32_t nicRxFlush(IN struct ADAPTER *prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint8_t nicIsActionFrameValid(IN struct SW_RFB *prSwRfb)
+uint8_t nicIsActionFrameValid(struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prActFrame;
 	uint16_t u2ActionIndex = 0, u2ExpectedLen = 0;
@@ -3148,8 +3149,8 @@ uint8_t nicIsActionFrameValid(IN struct SW_RFB *prSwRfb)
 }
 
 #if CFG_SUPPORT_NAN
-uint32_t nicRxNANPMFCheck(IN struct ADAPTER *prAdapter,
-		 IN struct BSS_INFO *prBssInfo, IN struct SW_RFB *prSwRfb)
+uint32_t nicRxNANPMFCheck(struct ADAPTER *prAdapter,
+		 struct BSS_INFO *prBssInfo, struct SW_RFB *prSwRfb)
 {
 	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
 
@@ -3197,8 +3198,8 @@ uint32_t nicRxNANPMFCheck(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint32_t nicRxProcessNanPubActionFrame(IN struct ADAPTER *prAdapter,
-			      IN struct SW_RFB *prSwRfb)
+uint32_t nicRxProcessNanPubActionFrame(struct ADAPTER *prAdapter,
+			      struct SW_RFB *prSwRfb)
 {
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
@@ -3317,8 +3318,9 @@ uint32_t nicRxProcessNanPubActionFrame(IN struct ADAPTER *prAdapter,
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
-				 prAdapter, IN struct SW_RFB *prSwRfb) {
+uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
 	struct WLAN_ACTION_FRAME *prActFrame;
 	struct BSS_INFO *prBssInfo = NULL;
 #if CFG_SUPPORT_802_11W
@@ -3563,9 +3565,9 @@ uint32_t nicRxProcessActionFrame(IN struct ADAPTER *
  */
 /*----------------------------------------------------------------------------*/
 uint8_t nicRxGetRcpiValueFromRxv(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucRcpiMode,
-	IN struct SW_RFB *prSwRfb)
+	struct ADAPTER *prAdapter,
+	uint8_t ucRcpiMode,
+	struct SW_RFB *prSwRfb)
 {
 	struct mt66xx_chip_info *prChipInfo;
 
@@ -3589,8 +3591,8 @@ uint8_t nicRxGetRcpiValueFromRxv(
  * @retval
  */
 /*----------------------------------------------------------------------------*/
-int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
-				 IN int i4TotalLen, IN uint8_t ucWlanIdx)
+int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, char *pcCommand,
+				 int i4TotalLen, uint8_t ucWlanIdx)
 {
 	int32_t i4RSSI0 = 0, i4RSSI1 = 0, i4RSSI2 = 0, i4RSSI3 = 0;
 	int32_t i4BytesWritten = 0;
@@ -3652,8 +3654,8 @@ int32_t nicRxGetLastRxRssi(struct ADAPTER *prAdapter, IN char *pcCommand,
 	return i4BytesWritten;
 }
 
-void nicRxProcessRxvLinkStats(IN struct ADAPTER *prAdapter,
-	IN struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV)
+void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
+	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV)
 {
 #if CFG_SUPPORT_LLS
 	struct CHIP_DBG_OPS *prChipDbg;

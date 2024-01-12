@@ -479,8 +479,8 @@ void mboxInitMsgMap(void)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mboxSetup(IN struct ADAPTER *prAdapter,
-	       IN enum ENUM_MBOX_ID eMboxId)
+void mboxSetup(struct ADAPTER *prAdapter,
+	       enum ENUM_MBOX_ID eMboxId)
 {
 	struct MBOX *prMbox;
 
@@ -506,9 +506,9 @@ void mboxSetup(IN struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 void
-mboxSendMsg(IN struct ADAPTER *prAdapter,
-	    IN enum ENUM_MBOX_ID eMboxId, IN struct MSG_HDR *prMsg,
-	    IN enum EUNM_MSG_SEND_METHOD eMethod)
+mboxSendMsg(struct ADAPTER *prAdapter,
+	    enum ENUM_MBOX_ID eMboxId, struct MSG_HDR *prMsg,
+	    enum EUNM_MSG_SEND_METHOD eMethod)
 {
 	struct MBOX *prMbox;
 
@@ -559,7 +559,7 @@ mboxSendMsg(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mboxRcvAllMsg(IN struct ADAPTER *prAdapter,
+void mboxRcvAllMsg(struct ADAPTER *prAdapter,
 		   enum ENUM_MBOX_ID eMboxId)
 {
 	struct MBOX *prMbox;
@@ -600,7 +600,7 @@ void mboxRcvAllMsg(IN struct ADAPTER *prAdapter,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mboxInitialize(IN struct ADAPTER *prAdapter)
+void mboxInitialize(struct ADAPTER *prAdapter)
 {
 	uint32_t i;
 
@@ -624,7 +624,7 @@ void mboxInitialize(IN struct ADAPTER *prAdapter)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mboxDestroy(IN struct ADAPTER *prAdapter)
+void mboxDestroy(struct ADAPTER *prAdapter)
 {
 	struct MBOX *prMbox;
 	struct MSG_HDR *prMsg;
@@ -659,8 +659,8 @@ void mboxDestroy(IN struct ADAPTER *prAdapter)
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void mboxDummy(IN struct ADAPTER *prAdapter,
-	       IN struct MSG_HDR *prMsgHdr)
+void mboxDummy(struct ADAPTER *prAdapter,
+	       struct MSG_HDR *prMsgHdr)
 {
 	ASSERT(prAdapter);
 

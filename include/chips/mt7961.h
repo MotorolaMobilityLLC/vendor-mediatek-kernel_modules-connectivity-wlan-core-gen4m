@@ -161,23 +161,23 @@ void mt7961_show_pse_info(
 	struct ADAPTER *prAdapter);
 
 void mt7961_show_wfdma_info(
-	IN struct ADAPTER *prAdapter);
+	struct ADAPTER *prAdapter);
 
 #if defined(_HIF_SDIO)
 u_int8_t sdio_show_mcu_debug_info(
 	struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max,
-	IN uint8_t ucFlag, OUT uint32_t *pu4Length);
+	uint8_t *pucBuf, uint32_t u4Max,
+	uint8_t ucFlag, uint32_t *pu4Length);
 #elif defined(_HIF_USB)
 u_int8_t usb_show_mcu_debug_info(
 	struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max,
-	IN uint8_t ucFlag, OUT uint32_t *pu4Length);
+	uint8_t *pucBuf, uint32_t u4Max,
+	uint8_t ucFlag, uint32_t *pu4Length);
 #elif defined(_HIF_PCIE)
 u_int8_t pcie_show_mcu_debug_info(
 	struct ADAPTER *prAdapter,
-	IN uint8_t *pucBuf, IN uint32_t u4Max,
-	IN uint8_t ucFlag, OUT uint32_t *pu4Length);
+	uint8_t *pucBuf, uint32_t u4Max,
+	uint8_t ucFlag, uint32_t *pu4Length);
 #endif
 
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
@@ -213,8 +213,8 @@ uint32_t mt7961setWfdmaCoalescingInt(
 
 #endif /* _HIF_PCIE || _HIF_AXI */
 
-void mt7961SerInit(IN struct ADAPTER *prAdapter,
-		   IN const u_int8_t fgAtResetFlow);
+void mt7961SerInit(struct ADAPTER *prAdapter,
+		   const u_int8_t fgAtResetFlow);
 
 /*******************************************************************************
 *                              F U N C T I O N S

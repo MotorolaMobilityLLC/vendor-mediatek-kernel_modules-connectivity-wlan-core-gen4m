@@ -142,8 +142,8 @@ struct PhTputSetting g_rPhTputMap[] = {
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
-			IN uint32_t u4CaseIndex)
+uint32_t dvtSetupPhTput(struct net_device *prNetDev,
+			uint32_t u4CaseIndex)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -207,9 +207,9 @@ uint32_t dvtSetupPhTput(IN struct net_device *prNetDev,
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
-			IN uint8_t ucBssIndex,
-			IN struct PhTputSetting *prPhtputSetting)
+uint32_t dvtActivateNetworkPhTput(struct net_device *prNetDev,
+			uint8_t ucBssIndex,
+			struct PhTputSetting *prPhtputSetting)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -324,8 +324,8 @@ uint32_t dvtActivateNetworkPhTput(IN struct net_device *prNetDev,
  * @retval -
  */
 /*----------------------------------------------------------------------------*/
-uint32_t dvtDeactivateNetworkPhTput(IN struct net_device *prNetDev,
-                            IN uint8_t ucBssIndex)
+uint32_t dvtDeactivateNetworkPhTput(struct net_device *prNetDev,
+		uint8_t ucBssIndex)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;

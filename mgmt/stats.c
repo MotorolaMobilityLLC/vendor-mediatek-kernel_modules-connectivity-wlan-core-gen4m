@@ -96,10 +96,10 @@ uint64_t StatsEnvTimeGet(void)
 	return (uint64_t) u8Clk;	/* sched_clock *//* jiffies size = 4B */
 }
 
-void StatsEnvGetPktDelay(OUT uint8_t *pucTxRxFlag,
-	OUT uint8_t *pucTxIpProto, OUT uint16_t *pu2TxUdpPort,
-	OUT uint32_t *pu4TxDelayThreshold, OUT uint8_t *pucRxIpProto,
-	OUT uint16_t *pu2RxUdpPort, OUT uint32_t *pu4RxDelayThreshold)
+void StatsEnvGetPktDelay(uint8_t *pucTxRxFlag,
+	uint8_t *pucTxIpProto, uint16_t *pu2TxUdpPort,
+	uint32_t *pu4TxDelayThreshold, uint8_t *pucRxIpProto,
+	uint16_t *pu2RxUdpPort, uint32_t *pu4RxDelayThreshold)
 {
 	*pucTxRxFlag = g_ucTxRxFlag;
 	*pucTxIpProto = g_ucTxIpProto;
@@ -110,8 +110,8 @@ void StatsEnvGetPktDelay(OUT uint8_t *pucTxRxFlag,
 	*pu4RxDelayThreshold = g_u4RxDelayThreshold;
 }
 
-void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx, IN uint8_t ucIpProto,
-	IN uint16_t u2UdpPort, uint32_t u4DelayThreshold)
+void StatsEnvSetPktDelay(uint8_t ucTxOrRx, uint8_t ucIpProto,
+	uint16_t u2UdpPort, uint32_t u4DelayThreshold)
 {
 #define MODULE_RESET 0
 #define MODULE_TX 1
@@ -138,7 +138,7 @@ void StatsEnvSetPktDelay(IN uint8_t ucTxOrRx, IN uint8_t ucIpProto,
 	}
 }
 
-void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
+void StatsEnvRxTime2Host(struct ADAPTER *prAdapter,
 	void *pvPacket, void *prNetDev)
 {
 	uint16_t u2EthType = 0;
@@ -217,8 +217,8 @@ void StatsEnvRxTime2Host(IN struct ADAPTER *prAdapter,
 	}
 }
 
-void StatsEnvTxTime2Hif(IN struct ADAPTER *prAdapter,
-	IN struct MSDU_INFO *prMsduInfo)
+void StatsEnvTxTime2Hif(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo)
 {
 	uint64_t u8SysTime, u8SysTimeIn;
 	uint32_t u4TimeDiff;

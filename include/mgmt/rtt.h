@@ -199,18 +199,18 @@ struct RTT_INFO {
  *******************************************************************************
  */
 
-void rttInit(IN struct ADAPTER *prAdapter);
+void rttInit(struct ADAPTER *prAdapter);
 
-void rttUninit(IN struct ADAPTER *prAdapter);
+void rttUninit(struct ADAPTER *prAdapter);
 
-uint32_t rttHandleRttRequest(IN struct ADAPTER *prAdapter,
-	IN struct PARAM_RTT_REQUEST *prRequest,
+uint32_t rttHandleRttRequest(struct ADAPTER *prAdapter,
+	struct PARAM_RTT_REQUEST *prRequest,
 	uint8_t ucBssIndex);
 
-void rttEventDone(IN struct ADAPTER *prAdapter,
-		      IN struct EVENT_RTT_DONE *prEvent);
+void rttEventDone(struct ADAPTER *prAdapter,
+		      struct EVENT_RTT_DONE *prEvent);
 
-void rttEventResult(IN struct ADAPTER *prAdapter,
-		      IN struct EVENT_RTT_RESULT *prEvent);
+void rttEventResult(struct ADAPTER *prAdapter,
+		      struct EVENT_RTT_RESULT *prEvent);
 
 #endif /* _RTT_H */

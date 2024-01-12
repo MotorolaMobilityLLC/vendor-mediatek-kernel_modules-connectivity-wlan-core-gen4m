@@ -112,13 +112,13 @@ typedef u_int8_t(*P2P_LAUNCH) (struct GLUE_INFO *prGlueInfo);
 typedef u_int8_t(*P2P_REMOVE) (struct GLUE_INFO *prGlueInfo,
 					  u_int8_t fgIsWlanLaunched);
 
-typedef u_int8_t(*KAL_P2P_GET_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_CIPHER) (struct GLUE_INFO *prGlueInfo);
 
-typedef u_int8_t(*KAL_P2P_GET_TKIP_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_TKIP_CIPHER) (struct GLUE_INFO *prGlueInfo);
 
-typedef u_int8_t(*KAL_P2P_GET_CCMP_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_CCMP_CIPHER) (struct GLUE_INFO *prGlueInfo);
 
-typedef u_int8_t(*KAL_P2P_GET_WSC_MODE) (IN struct GLUE_INFO *prGlueInfo);
+typedef u_int8_t(*KAL_P2P_GET_WSC_MODE) (struct GLUE_INFO *prGlueInfo);
 
 typedef void(*KAL_P2P_SET_MULTICAST_WORK_ITEM) (struct GLUE_INFO *prGlueInfo);
 
@@ -126,45 +126,45 @@ typedef void(*P2P_NET_REGISTER) (struct GLUE_INFO *prGlueInfo);
 
 typedef void(*P2P_NET_UNREGISTER) (struct GLUE_INFO *prGlueInfo);
 
-typedef void(*KAL_P2P_UPDATE_ASSOC_INFO) (IN struct GLUE_INFO *prGlueInfo,
-		IN uint8_t *pucFrameBody,
-		IN uint32_t u4FrameBodyLen,
-		IN u_int8_t fgReassocRequest);
+typedef void(*KAL_P2P_UPDATE_ASSOC_INFO) (struct GLUE_INFO *prGlueInfo,
+		uint8_t *pucFrameBody,
+		uint32_t u4FrameBodyLen,
+		u_int8_t fgReassocRequest);
 
-typedef u_int8_t(*P2P_VALIDATE_AUTH) (IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		IN struct STA_RECORD **pprStaRec,
-		OUT uint16_t *pu2StatusCode);
+typedef u_int8_t(*P2P_VALIDATE_AUTH) (struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		struct STA_RECORD **pprStaRec,
+		uint16_t *pu2StatusCode);
 
-typedef u_int8_t(*P2P_VALIDATE_ASSOC_REQ) (IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		OUT uint16_t *pu4ControlFlags);
+typedef u_int8_t(*P2P_VALIDATE_ASSOC_REQ) (struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		uint16_t *pu4ControlFlags);
 
-typedef void(*P2P_RUN_EVENT_AAA_TX_FAIL) (IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec);
+typedef void(*P2P_RUN_EVENT_AAA_TX_FAIL) (struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec);
 
 typedef u_int8_t(*P2P_PARSE_CHECK_FOR_P2P_INFO_ELEM) (
-		IN struct ADAPTER *prAdapter,
-		IN uint8_t *pucBuf,
-		OUT uint8_t *pucOuiType);
+		struct ADAPTER *prAdapter,
+		uint8_t *pucBuf,
+		uint8_t *pucOuiType);
 
-typedef uint32_t(*P2P_RUN_EVENT_AAA_COMPLETE) (IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec);
+typedef uint32_t(*P2P_RUN_EVENT_AAA_COMPLETE) (struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec);
 
 typedef void(*P2P_PROCESS_EVENT_UPDATE_NOA_PARAM) (
-		IN struct ADAPTER *prAdapter,
+		struct ADAPTER *prAdapter,
 		uint8_t ucNetTypeIndex,
 		struct EVENT_UPDATE_NOA_PARAMS *prEventUpdateNoaParam);
 
 typedef void(*SCAN_P2P_PROCESS_BEACON_AND_PROBE_RESP) (
-		IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		IN uint32_t *prStatus,
-		IN struct BSS_DESC *prBssDesc,
-		IN struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		uint32_t *prStatus,
+		struct BSS_DESC *prBssDesc,
+		struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
 
 typedef void(*P2P_RX_PUBLIC_ACTION_FRAME) (struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb);
+		struct SW_RFB *prSwRfb);
 
 typedef void(*RLM_RSP_GENERATE_OBSS_SCAN_IE) (struct ADAPTER *prAdapter,
 		struct MSDU_INFO *prMsduInfo);
@@ -184,9 +184,9 @@ typedef void(*RLM_UPDATE_PARAMS_FOR_AP) (struct ADAPTER *prAdapter,
 typedef void(*RLM_HANDLE_OBSS_STATUS_EVENT_PKT) (struct ADAPTER *prAdapter,
 		struct EVENT_AP_OBSS_STATUS *prObssStatus);
 
-typedef u_int8_t(*P2P_FUNC_VALIDATE_PROBE_REQ) (IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb,
-		OUT uint32_t *pu4ControlFlags);
+typedef u_int8_t(*P2P_FUNC_VALIDATE_PROBE_REQ) (struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		uint32_t *pu4ControlFlags);
 
 typedef void(*RLM_BSS_INIT_FOR_AP) (struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
@@ -194,34 +194,34 @@ typedef void(*RLM_BSS_INIT_FOR_AP) (struct ADAPTER *prAdapter,
 typedef uint32_t(*P2P_GET_PROB_RSP_IE_TABLE_SIZE) (void);
 
 typedef uint8_t *(*P2P_BUILD_REASSOC_REQ_FRAME_COMMON_IES) (
-		IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo, IN uint8_t *pucBuffer);
+		struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo, uint8_t *pucBuffer);
 
-typedef void(*P2P_FUNC_DISCONNECT) (IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec,
-		IN u_int8_t fgSendDeauth, IN uint16_t u2ReasonCode);
+typedef void(*P2P_FUNC_DISCONNECT) (struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		u_int8_t fgSendDeauth, uint16_t u2ReasonCode);
 
-typedef void(*P2P_FSM_RUN_EVENT_RX_DEAUTH) (IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec,
-		IN struct SW_RFB *prSwRfb);
+typedef void(*P2P_FSM_RUN_EVENT_RX_DEAUTH) (struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		struct SW_RFB *prSwRfb);
 
-typedef void(*P2P_FSM_RUN_EVENT_RX_DISASSOC) (IN struct ADAPTER *prAdapter,
-		IN struct STA_RECORD *prStaRec,
-		IN struct SW_RFB *prSwRfb);
+typedef void(*P2P_FSM_RUN_EVENT_RX_DISASSOC) (struct ADAPTER *prAdapter,
+		struct STA_RECORD *prStaRec,
+		struct SW_RFB *prSwRfb);
 
-typedef u_int8_t(*P2P_FUN_IS_AP_MODE) (IN struct P2P_FSM_INFO *prP2pFsmInfo);
+typedef u_int8_t(*P2P_FUN_IS_AP_MODE) (struct P2P_FSM_INFO *prP2pFsmInfo);
 
-typedef void(*P2P_FSM_RUN_EVENT_BEACON_TIMEOUT) (IN struct ADAPTER *prAdapter);
+typedef void(*P2P_FSM_RUN_EVENT_BEACON_TIMEOUT) (struct ADAPTER *prAdapter);
 
 typedef void(*P2P_FUNC_STORE_ASSOC_RSP_IE_BUFFER) (
-		IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prSwRfb);
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
 
-typedef void(*P2P_GENERATE_P2P_IE) (IN struct ADAPTER *prAdapter,
-		IN struct MSDU_INFO *prMsduInfo);
+typedef void(*P2P_GENERATE_P2P_IE) (struct ADAPTER *prAdapter,
+		struct MSDU_INFO *prMsduInfo);
 
-typedef uint32_t(*P2P_CALCULATE_P2P_IE_LEN) (IN struct ADAPTER *prAdapter,
-		IN uint8_t ucBssIndex, IN struct STA_RECORD *prStaRec);
+typedef uint32_t(*P2P_CALCULATE_P2P_IE_LEN) (struct ADAPTER *prAdapter,
+		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
 
 /******************************************************************************
  *                            P U B L I C   D A T A

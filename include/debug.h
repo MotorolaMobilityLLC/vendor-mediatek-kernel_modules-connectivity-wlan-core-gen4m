@@ -542,20 +542,20 @@ struct CHIP_DBG_OPS {
 		int32_t i4TotalLen,
 		struct PARAM_MLD_REC *mld);
 #endif
-	void (*show_wfdma_dbg_probe_info)(IN struct ADAPTER *prAdapter,
-		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	void (*show_wfdma_dbg_probe_info)(struct ADAPTER *prAdapter,
+		enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
-	void (*show_wfdma_wrapper_info)(IN struct ADAPTER *prAdapter,
-		IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+	void (*show_wfdma_wrapper_info)(struct ADAPTER *prAdapter,
+		enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 #endif
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	int (*get_rx_rate_info)(
-		IN const uint32_t *prRxV,
+		const uint32_t *prRxV,
 		struct RxRateInfo *prRxRateInfo);
 #endif
 	int32_t (*get_tx_info_from_txv)(
-		IN char *pcCommand, IN int i4TotalLen,
-		IN struct TX_VECTOR_BBP_LATCH *prTxV);
+		char *pcCommand, int i4TotalLen,
+		struct TX_VECTOR_BBP_LATCH *prTxV);
 	void (*dumpPhyInfo)(struct ADAPTER *prAdapter);
 	int32_t (*showMibInfo)(struct ADAPTER *prAdapter,
 		uint32_t u4Index,
@@ -564,23 +564,23 @@ struct CHIP_DBG_OPS {
 
 #if CFG_SUPPORT_LLS
 	void (*get_rx_link_stats)(
-		IN struct ADAPTER *prAdapter,
-		IN struct SW_RFB *prRetSwRfb,
-		IN uint32_t *pu4RxV);
+		struct ADAPTER *prAdapter,
+		struct SW_RFB *prRetSwRfb,
+		uint32_t *pu4RxV);
 #endif
 	u_int8_t (*show_mcu_debug_info)(
 		struct ADAPTER *prAdapter,
-		IN uint8_t *pucBuf,
-		IN uint32_t u4Max,
-		IN uint8_t ucFlag,
-		OUT uint32_t *pu4Length);
+		uint8_t *pucBuf,
+		uint32_t u4Max,
+		uint8_t ucFlag,
+		uint32_t *pu4Length);
 #if (CFG_SUPPORT_DEBUG_SOP == 1)
 	u_int8_t (*show_debug_sop_info)(
 		struct ADAPTER *prAdapter,
 		uint8_t ucCase);
 #endif
-	void (*dumpwfsyscpupcr)(IN struct ADAPTER *prAdapter);
-	void (*dumpBusHangCr)(IN struct ADAPTER *prAdapter);
+	void (*dumpwfsyscpupcr)(struct ADAPTER *prAdapter);
+	void (*dumpBusHangCr)(struct ADAPTER *prAdapter);
 };
 
 enum PKT_PHASE {
@@ -869,26 +869,26 @@ enum WAKE_DATA_TYPE {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-void dumpHex(IN uint8_t *pucStartAddr, uint16_t u2Length);
-void dumpMemory8(IN uint8_t *pucStartAddr,
-		 IN uint32_t u4Length);
-void dumpMemory32(IN uint32_t *pu4StartAddr,
-		  IN uint32_t u4Length);
-void dumpMemory128(IN uint32_t *pu4StartAddr,
-		  IN uint32_t u4Length);
+void dumpHex(uint8_t *pucStartAddr, uint16_t u2Length);
+void dumpMemory8(uint8_t *pucStartAddr,
+		 uint32_t u4Length);
+void dumpMemory32(uint32_t *pu4StartAddr,
+		  uint32_t u4Length);
+void dumpMemory128(uint32_t *pu4StartAddr,
+		  uint32_t u4Length);
 void wlanPrintFwLog(uint8_t *pucLogContent,
 		    uint16_t u2MsgSize, uint8_t ucMsgType,
 		    const uint8_t *pucFmt, ...);
 
 void wlanDbgLogLevelInit(void);
 void wlanDbgLogLevelUninit(void);
-uint32_t wlanDbgLevelUiSupport(IN struct ADAPTER *prAdapter,
+uint32_t wlanDbgLevelUiSupport(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t ucModule);
-uint32_t wlanDbgGetLogLevelImpl(IN struct ADAPTER *prAdapter,
+uint32_t wlanDbgGetLogLevelImpl(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t ucModule);
-void wlanDbgSetLogLevelImpl(IN struct ADAPTER *prAdapter,
+void wlanDbgSetLogLevelImpl(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t u4Module, uint32_t u4level);
-void wlanDbgSetLogLevel(IN struct ADAPTER *prAdapter,
+void wlanDbgSetLogLevel(struct ADAPTER *prAdapter,
 		uint32_t u4Version, uint32_t u4Module,
 		uint32_t u4level, u_int8_t fgEarlySet);
 void wlanDriverDbgLevelSync(void);
@@ -898,19 +898,19 @@ u_int8_t wlanDbgSetGlobalLogLevel(uint32_t u4Module, uint32_t u4Level);
 void wlanFillTimestamp(struct ADAPTER *prAdapter, void *pvPacket,
 		       uint8_t ucPhase);
 
-void halShowPseInfo(IN struct ADAPTER *prAdapter);
+void halShowPseInfo(struct ADAPTER *prAdapter);
 uint32_t halGetPleInt(struct ADAPTER *prAdapter);
 void halSetPleInt(struct ADAPTER *prAdapter, bool fgTrigger,
 		  uint32_t u4SetMask, uint32_t u4ClrMask);
-void halShowPleInfo(IN struct ADAPTER *prAdapter,
+void halShowPleInfo(struct ADAPTER *prAdapter,
 	u_int8_t fgDumpTxd);
-void halShowDmaschInfo(IN struct ADAPTER *prAdapter);
-void haldumpMacInfo(IN struct ADAPTER *prAdapter);
+void halShowDmaschInfo(struct ADAPTER *prAdapter);
+void haldumpMacInfo(struct ADAPTER *prAdapter);
 void halShowTxdInfo(
 	struct ADAPTER *prAdapter,
 	u_int32_t fid);
 int32_t halShowStatInfo(struct ADAPTER *prAdapter,
-			IN char *pcCommand, IN int i4TotalLen,
+			char *pcCommand, int i4TotalLen,
 			struct PARAM_HW_WLAN_INFO *prHwWlanInfo,
 			struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics,
 			u_int8_t fgResetCnt, uint32_t u4StatGroup);
@@ -976,15 +976,15 @@ void connac2x_show_wfdma_dbg_flag_log(
 	struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
 	uint32_t u4DmaNum);
-void connac2x_show_wfdma_desc(IN struct ADAPTER *prAdapter);
+void connac2x_show_wfdma_desc(struct ADAPTER *prAdapter);
 
 void connac2x_show_wfdma_info_by_type(
 	struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
 	uint32_t u4DmaNum);
 
-void connac2x_show_wfdma_info(IN struct ADAPTER *prAdapter);
-void connac2x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
+void connac2x_show_wfdma_info(struct ADAPTER *prAdapter);
+void connac2x_show_dmashdl_info(struct ADAPTER *prAdapter);
 uint32_t connac2x_get_ple_int(struct ADAPTER *prAdapter);
 void connac2x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
 			  uint32_t u4ClrMask, uint32_t u4SetMask);
@@ -1087,8 +1087,8 @@ void connac3x_show_wfdma_info_by_type(
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type,
 	uint32_t u4DmaNum);
 
-void connac3x_show_wfdma_info(IN struct ADAPTER *prAdapter);
-void connac3x_show_dmashdl_info(IN struct ADAPTER *prAdapter);
+void connac3x_show_wfdma_info(struct ADAPTER *prAdapter);
+void connac3x_show_dmashdl_info(struct ADAPTER *prAdapter);
 uint32_t connac3x_get_ple_int(struct ADAPTER *prAdapter);
 void connac3x_set_ple_int(struct ADAPTER *prAdapter, bool fgTrigger,
 			  uint32_t u4ClrMask, uint32_t u4SetMask);
@@ -1110,8 +1110,8 @@ int connac3x_get_rx_rate_info(
 	struct RxRateInfo *prRxRateInfo);
 #endif
 int32_t connac3x_get_tx_info_from_txv(
-	IN char *pcCommand, IN int i4TotalLen,
-	IN struct TX_VECTOR_BBP_LATCH *prTxV);
+	char *pcCommand, int i4TotalLen,
+	struct TX_VECTOR_BBP_LATCH *prTxV);
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */
 

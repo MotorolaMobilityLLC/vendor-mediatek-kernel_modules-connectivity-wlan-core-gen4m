@@ -8,7 +8,7 @@
 #include "nan/nan_sec.h"
 
 uint8_t
-nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
+nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 	struct BSS_INFO *prnanBssInfo = (struct BSS_INFO *)NULL;
@@ -181,7 +181,7 @@ nanDevInit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 } /* p2pDevFsmInit */
 
 void
-nanDevFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
+nanDevFsmUninit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 	struct BSS_INFO *prnanBssInfo = (struct BSS_INFO *)NULL;
@@ -229,13 +229,13 @@ nanDevFsmUninit(IN struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	}
 } /* p2pDevFsmUninit */
 struct _NAN_SPECIFIC_BSS_INFO_T *
-nanGetSpecificBssInfo(IN struct ADAPTER *prAdapter,
+nanGetSpecificBssInfo(struct ADAPTER *prAdapter,
 		      uint8_t eIndex) {
 	return prAdapter->rWifiVar.aprNanSpecificBssInfo[eIndex];
 }
 
 uint8_t
-nanGetBssIdxbyBand(IN struct ADAPTER *prAdapter,
+nanGetBssIdxbyBand(struct ADAPTER *prAdapter,
 		      enum ENUM_BAND eBand) {
 	uint8_t ucIdx = 0;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo;
@@ -263,8 +263,8 @@ nanGetBssIdxbyBand(IN struct ADAPTER *prAdapter,
 }
 
 void
-nanDevCommonSetCb(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo,
-		  IN uint8_t *pucEventBuf) {
+nanDevCommonSetCb(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
+		  uint8_t *pucEventBuf) {
 
 	if (prAdapter == NULL) {
 		DBGLOG(NAN, ERROR, "[%s] prAdapter is NULL\n", __func__);
@@ -278,7 +278,7 @@ nanDevCommonSetCb(IN struct ADAPTER *prAdapter, IN struct CMD_INFO *prCmdInfo,
 }
 
 void
-nanDevSetMasterPreference(IN struct ADAPTER *prAdapter,
+nanDevSetMasterPreference(struct ADAPTER *prAdapter,
 			  uint8_t ucMasterPreference) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -334,7 +334,7 @@ nanDevSetMasterPreference(IN struct ADAPTER *prAdapter,
 }
 
 enum NanStatusType
-nanDevEnableRequest(IN struct ADAPTER *prAdapter,
+nanDevEnableRequest(struct ADAPTER *prAdapter,
 		    struct NanEnableRequest *prEnableReq) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
@@ -394,7 +394,7 @@ nanDevEnableRequest(IN struct ADAPTER *prAdapter,
 }
 
 enum NanStatusType
-nanDevDisableRequest(IN struct ADAPTER *prAdapter) {
+nanDevDisableRequest(struct ADAPTER *prAdapter) {
 	uint32_t rStatus;
 	void *prCmdBuffer;
 	uint32_t u4CmdBufferLen;
@@ -446,7 +446,7 @@ nanDevDisableRequest(IN struct ADAPTER *prAdapter) {
 }
 
 void
-nanDevMasterIndEvtHandler(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf) {
+nanDevMasterIndEvtHandler(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	struct _NAN_ATTR_MASTER_INDICATION_T *prMasterIndEvt;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
@@ -466,7 +466,7 @@ nanDevMasterIndEvtHandler(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf) {
 }
 
 uint32_t
-nanDevGetMasterIndAttr(IN struct ADAPTER *prAdapter,
+nanDevGetMasterIndAttr(struct ADAPTER *prAdapter,
 		       uint8_t *pucMasterIndAttrBuf,
 		       uint32_t *pu4MasterIndAttrLength) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
@@ -490,7 +490,7 @@ nanDevGetMasterIndAttr(IN struct ADAPTER *prAdapter,
 }
 
 void
-nanDevClusterIdEvtHandler(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf) {
+nanDevClusterIdEvtHandler(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 
@@ -505,7 +505,7 @@ nanDevClusterIdEvtHandler(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf) {
 }
 
 uint32_t
-nanDevGetClusterId(IN struct ADAPTER *prAdapter, OUT uint8_t *pucClusterId) {
+nanDevGetClusterId(struct ADAPTER *prAdapter, uint8_t *pucClusterId) {
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
 		(struct _NAN_SPECIFIC_BSS_INFO_T *)NULL;
 
@@ -525,7 +525,7 @@ nanDevGetClusterId(IN struct ADAPTER *prAdapter, OUT uint8_t *pucClusterId) {
 }
 
 uint32_t
-nanDevSendEnableRequestToCnm(IN struct ADAPTER *prAdapter)
+nanDevSendEnableRequestToCnm(struct ADAPTER *prAdapter)
 {
 	struct MSG_CH_REQ *prMsgChReq = NULL;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
@@ -585,7 +585,7 @@ nanDevSendEnableRequestToCnm(IN struct ADAPTER *prAdapter)
 }
 
 uint32_t
-nanDevSendAbortRequestToCnm(IN struct ADAPTER *prAdapter)
+nanDevSendAbortRequestToCnm(struct ADAPTER *prAdapter)
 {
 	struct MSG_CH_ABORT *prMsgChAbort = NULL;
 	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo =
