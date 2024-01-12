@@ -1002,6 +1002,7 @@ struct _ADAPTER_T {
 #endif				/* CFG_TCP_IP_CHKSUM_OFFLOAD */
 
 	ENUM_BAND_T aePreferBand[MAX_BSSID_NUM];
+	ENUM_BAND_T aeSetBand[NETWORK_TYPE_NUM];
 
 	/* ADAPTER flags */
 	UINT_32 u4Flags;
