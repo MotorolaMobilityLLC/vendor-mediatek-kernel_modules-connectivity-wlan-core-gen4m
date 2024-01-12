@@ -1638,6 +1638,47 @@ void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo)
 
 }
 
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo, uint8_t ucChannel)
+{
+	uint8_t i, j;
+	uint8_t ucNumOfChannel;
+	struct RF_CHANNEL_INFO aucChannelList[
+		ARRAY_SIZE(mtk_5ghz_channels)];
+
+	DBGLOG(INIT, TRACE, "ucChannel %u.\n", ucChannel);
+
+	/* 1. Get current domain DFS channel list */
+	rlmDomainGetDfsChnls(prGlueInfo->prAdapter,
+		ARRAY_SIZE(mtk_5ghz_channels),
+		&ucNumOfChannel, aucChannelList);
+
+	/* 2. Enable specific channel based on domain channel list */
+	for (i = 0; i < ucNumOfChannel; i++) {
+		for (j = 0; j < ARRAY_SIZE(mtk_5ghz_channels); j++) {
+			if (mtk_5ghz_channels[j].hw_value
+				== aucChannelList[i].ucChannelNum) {
+				if (aucChannelList[i].ucChannelNum
+					== ucChannel) {
+					mtk_5ghz_channels[j].dfs_state
+						= NL80211_DFS_AVAILABLE;
+					DBGLOG(INIT, INFO,
+						"ch (%d), force NL80211_DFS_AVAILABLE.\n",
+						ucChannel);
+				} else {
+					mtk_5ghz_channels[j].dfs_state
+						= NL80211_DFS_USABLE;
+					DBGLOG(INIT, TRACE,
+						"ch (%d), force NL80211_DFS_USABLE.\n",
+						ucChannel);
+				}
+				break;
+			}
+		}
+	}
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Register the device to the kernel and return the index.
