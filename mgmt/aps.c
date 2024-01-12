@@ -44,7 +44,9 @@
 /* Real Rssi of a Bss may range in current_rssi - 5 dbm
  *to current_rssi + 5 dbm
  */
-#define RSSI_DIFF_BETWEEN_BSS                   10 /* dbm */
+#define RSSI_DIFF_BIG_STEP			15 /* dbm */
+#define RSSI_DIFF_MED_STEP			10 /* dbm */
+#define RSSI_DIFF_SML_STEP			5 /* dbm */
 #define LOW_RSSI_FOR_5G_BAND                    -70 /* dbm */
 #define HIGH_RSSI_FOR_5G_BAND                   -60 /* dbm */
 
@@ -129,8 +131,40 @@ struct WEIGHT_CONFIG {
  *******************************************************************************
  */
 
-struct WEIGHT_CONFIG gasMtkWeightConfig[CONN_ROAM_TYPE_NUM] = {
-	[CONN_ROAM_TYPE_RCPI] = {
+enum ENUM_APS_REPLACE_REASON {
+	/* reason to not replace */
+	APS_LOW_SCORE = 0,
+	APS_UNMATCH_BSSID,
+	APS_UNMATCH_BSSID_HINT,
+	APS_WORSE_RSSI,
+
+	/* reason to replace */
+	APS_FIRST_CANDIDATE,
+	APS_HIGH_SCORE,
+	APS_MATCH_BSSID,
+	APS_MATCH_BSSID_HINT,
+	APS_BETTER_RSSI,
+
+	/* don't add after this */
+	APS_REPLACE_REASON_NUM,
+	APS_NEED_REPLACE = APS_FIRST_CANDIDATE,
+};
+
+/* mapping with ENUM_APS_REPLACE_REASON */
+static const uint8_t *apucReplaceReasonStr[APS_REPLACE_REASON_NUM] = {
+	(uint8_t *) DISP_STRING("LOW SCORE"),
+	(uint8_t *) DISP_STRING("UNMATCH BSSID"),
+	(uint8_t *) DISP_STRING("UNMATCH BSSID_HINT"),
+	(uint8_t *) DISP_STRING("WORSE RSSI"),
+	(uint8_t *) DISP_STRING("FIRST CANDIDATE"),
+	(uint8_t *) DISP_STRING("HIGH SCORE"),
+	(uint8_t *) DISP_STRING("MATCH BSSID"),
+	(uint8_t *) DISP_STRING("MATCH BSSID_HINT"),
+	(uint8_t *) DISP_STRING("BETTER RSSI"),
+};
+
+struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
+	[ROAM_TYPE_RCPI] = {
 		.ucChnlUtilWeight = WEIGHT_IDX_CHNL_UTIL,
 		.ucRssiWeight = WEIGHT_IDX_RSSI,
 		.ucProbeRespWeight = WEIGHT_IDX_PROBE_RSP,
@@ -186,13 +220,6 @@ const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM] = {
 };
 #endif
 
-uint8_t roamReasonToType[CONNECTING_ROAMING_REASON_NUM] = {
-	[0 ... CONNECTING_ROAMING_REASON_NUM - 1] = CONN_ROAM_TYPE_RCPI,
-#if CFG_SUPPORT_ROAMING
-	[ROAMING_REASON_TX_ERR]	       = ROAM_TYPE_PER,
-#endif
-};
-
 const uint16_t mpduLen[CW_320_2MHZ + 1] = {
 	[CW_20_40MHZ]  = 40,
 	[CW_80MHZ] = 80,
@@ -231,27 +258,6 @@ const uint8_t aucLinkPlan[] = {
 	(_addr[0] ^ _addr[1] ^ _addr[2] ^ _addr[3] ^ _addr[4] ^ _addr[5])
 #define AP_HASH(_addr) \
 	((uint8_t) (MAC_ADDR_HASH(_addr) & (AP_HASH_SIZE - 1)))
-
-#define CALCULATE_SCORE_BY_PROBE_RSP(prBssDesc, eRoamType) \
-	(gasMtkWeightConfig[eRoamType].ucProbeRespWeight * \
-	(prBssDesc->fgSeenProbeResp ? BSS_FULL_SCORE : 0))
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-#define CALCULATE_SCORE_BY_BAND(prAdapter, prBssDesc, cRssi, eRoamType) \
-	(gasMtkWeightConfig[eRoamType].ucBandWeight * \
-	((((prBssDesc->eBand == BAND_5G && prAdapter->fgEnable5GBand) || \
-	   (prBssDesc->eBand == BAND_6G && prAdapter->fgIsHwSupport6G)) && \
-	cRssi > -70) ? BSS_FULL_SCORE : 0))
-#else
-#define CALCULATE_SCORE_BY_BAND(prAdapter, prBssDesc, cRssi, eRoamType) \
-	(gasMtkWeightConfig[eRoamType].ucBandWeight * \
-	((prBssDesc->eBand == BAND_5G && prAdapter->fgEnable5GBand && \
-	cRssi > -70) ? BSS_FULL_SCORE : 0))
-#endif
-
-#define CALCULATE_SCORE_BY_STBC(prAdapter, prBssDesc, eRoamType) \
-	(gasMtkWeightConfig[eRoamType].ucStbcWeight * \
-	(prBssDesc->fgMultiAnttenaAndSTBC ? BSS_FULL_SCORE:0))
 
 #define CALCULATE_SCORE_BY_DEAUTH(prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucLastDeauthWeight * \
@@ -494,10 +500,23 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad, uint8_t bidx)
 	return count;
 }
 
+static enum ROAM_TYPE roamReasonToType(enum ENUM_ROAMING_REASON type)
+{
+	enum ROAM_TYPE ret = ROAM_TYPE_RCPI;
+
+	if (type >= ROAMING_REASON_NUM)
+		return ret;
+#if CFG_SUPPORT_ROAMING
+	if (type == ROAMING_REASON_TX_ERR)
+		ret = ROAM_TYPE_PER;
+#endif
+	return ret;
+}
+
 /* Channel Utilization: weight index will be */
-static uint16_t scanCalculateScoreByChnlInfo(
+static uint16_t apsCalculateScoreByChnlInfo(
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo, uint8_t ucChannel,
-	enum CONN_ROAM_TYPE eRoamType)
+	enum ROAM_TYPE eRoamType)
 {
 	struct ESS_CHNL_INFO *prEssChnlInfo = &prAisSpecificBssInfo->
 		arCurEssChnlInfo[0];
@@ -505,8 +524,8 @@ static uint16_t scanCalculateScoreByChnlInfo(
 	uint16_t u2Score = 0;
 	uint8_t weight = 0;
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
 
@@ -532,7 +551,7 @@ static uint16_t scanCalculateScoreByChnlInfo(
 				u2Score += weight *
 				(BSS_FULL_SCORE - prEssChnlInfo[i].ucApNum *
 					SCORE_PER_AP);
-			log_dbg(SCN, TRACE, "channel %d, AP num %d\n",
+			DBGLOG(APS, TRACE, "channel %d, AP num %d\n",
 				ucChannel, prEssChnlInfo[i].ucApNum);
 			break;
 		}
@@ -540,92 +559,83 @@ static uint16_t scanCalculateScoreByChnlInfo(
 	return u2Score;
 }
 
-static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
+static uint16_t apsCalculateScoreByBW(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType,
+	uint8_t ucBssIndex)
 {
 	uint16_t u2Score = 0;
-	enum ENUM_CHANNEL_WIDTH eChannelWidth = prBssDesc->eChannelWidth;
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	uint8_t ucSta6GBW = prAdapter->rWifiVar.ucSta6gBandwidth;
-#endif
-	uint8_t ucSta5GBW = prAdapter->rWifiVar.ucSta5gBandwidth;
-	uint8_t ucSta2GBW = prAdapter->rWifiVar.ucSta2gBandwidth;
-	uint8_t ucStaBW = prAdapter->rWifiVar.ucStaBandwidth;
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
 
-	if (prBssDesc->fgIsVHTPresent && prAdapter->fgEnable5GBand) {
-		if (ucSta5GBW > ucStaBW)
-			ucSta5GBW = ucStaBW;
-		switch (ucSta5GBW) {
-		case MAX_BW_20MHZ:
-		case MAX_BW_40MHZ:
-			eChannelWidth = CW_20_40MHZ;
-			break;
-		case MAX_BW_80MHZ:
-			eChannelWidth = CW_80MHZ;
-			break;
-		}
-		switch (eChannelWidth) {
-		case CW_20_40MHZ:
-			u2Score = 60;
-			break;
-		case CW_80MHZ:
-			u2Score = 80;
-			break;
-		case CW_160MHZ:
-		case CW_80P80MHZ:
-		case CW_320_1MHZ:
-		case CW_320_2MHZ:
-			u2Score = BSS_FULL_SCORE;
-			break;
-		}
-	} else if (prBssDesc->fgIsHTPresent) {
-		if (prBssDesc->eBand == BAND_2G4) {
-			if (ucSta2GBW > ucStaBW)
-				ucSta2GBW = ucStaBW;
-			u2Score = (prBssDesc->eSco == 0 ||
-					ucSta2GBW == MAX_BW_20MHZ) ? 40:60;
-		} else if (prBssDesc->eBand == BAND_5G) {
-			if (ucSta5GBW > ucStaBW)
-				ucSta5GBW = ucStaBW;
-			u2Score = (prBssDesc->eSco == 0 ||
-					ucSta5GBW == MAX_BW_20MHZ) ? 40:60;
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prBssDesc->eBand == BAND_6G) {
-			if (ucSta6GBW > ucStaBW)
-				ucSta6GBW = ucStaBW;
-			u2Score = (prBssDesc->eSco == 0 ||
-				ucSta6GBW == MAX_BW_20MHZ) ? 40:60;
-		}
-#endif
-	} else if (prBssDesc->u2BSSBasicRateSet & RATE_SET_OFDM)
-		u2Score = 20;
-	else
-		u2Score = 10;
+	switch (prBssDesc->eChannelWidth) {
+	case CW_20_40MHZ:
+		u2Score = 40;
+		break;
+	case CW_80MHZ:
+		u2Score = 60;
+		break;
+	case CW_160MHZ:
+	case CW_80P80MHZ:
+		u2Score = 80;
+		break;
+	case CW_320_1MHZ:
+	case CW_320_2MHZ:
+		u2Score = 100;
+		break;
+	}
 
 	return u2Score * gasMtkWeightConfig[eRoamType].ucBandWidthWeight;
 }
 
-static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
-			enum CONN_ROAM_TYPE eRoamType)
+static uint16_t apsCalculateScoreByBand(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, int8_t cRssi, enum ROAM_TYPE eRoamType)
+{
+	uint16_t u2Score = 0;
+
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
+
+	switch (prBssDesc->eBand) {
+	case BAND_2G4:
+		u2Score = 0;
+		break;
+	case BAND_5G:
+		if (prAdapter->fgEnable5GBand && cRssi > LOW_RSSI_FOR_5G_BAND)
+			u2Score = 80;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BAND_6G:
+		if (prAdapter->fgIsHwSupport6G && cRssi > LOW_RSSI_FOR_5G_BAND)
+			u2Score = BSS_FULL_SCORE;
+		break;
+#endif
+	default:
+		break;
+	}
+
+	return u2Score * gasMtkWeightConfig[eRoamType].ucBandWeight;
+}
+
+static uint16_t apsCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
+			enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	uint16_t u2StaCnt = 0;
 #define BSS_STA_CNT_NORMAL_SCORE 50
 #define BSS_STA_CNT_GOOD_THRESOLD 10
 
-	log_dbg(SCN, TRACE, "Exist bss load %d, sta cnt %d\n",
-			prBssDesc->fgExsitBssLoadIE, prBssDesc->u2StaCnt);
-
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
+
+	DBGLOG(APS, TRACE, "Exist bss load %d, sta cnt %d\n",
+			prBssDesc->fgExsitBssLoadIE, prBssDesc->u2StaCnt);
 
 	if (!prBssDesc->fgExsitBssLoadIE) {
 		u2Score = BSS_STA_CNT_NORMAL_SCORE;
@@ -644,35 +654,75 @@ static uint16_t scanCalculateScoreByClientCnt(struct BSS_DESC *prBssDesc,
 	return u2Score * gasMtkWeightConfig[eRoamType].ucClientCntWeight;
 }
 
-static uint16_t scanCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
-	enum CONN_ROAM_TYPE eRoamType)
+static uint16_t apsCalculateScoreByStbc(struct BSS_DESC *prBssDesc,
+	enum ROAM_TYPE eRoamType)
+{
+	uint16_t u2Score = 0;
+
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
+
+	if (prBssDesc->fgMultiAnttenaAndSTBC)
+		u2Score = BSS_FULL_SCORE;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* assume stbc is supported because 6g AP doesn't carry ht cap */
+	if (prBssDesc->eBand == BAND_6G)
+		u2Score = BSS_FULL_SCORE;
+#endif
+
+	u2Score *= gasMtkWeightConfig[eRoamType].ucStbcWeight;
+
+	return u2Score;
+}
+
+static uint16_t apsCalculateScoreByRssi(struct BSS_DESC *prBssDesc,
+	enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	int8_t cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
+
 	if (cRssi >= BEST_RSSI)
 		u2Score = 100;
+	else if (prBssDesc->eBand == BAND_5G && cRssi >= GOOD_RSSI_FOR_HT_VHT)
+		u2Score = 100;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssDesc->eBand == BAND_6G && cRssi >= GOOD_RSSI_FOR_HT_VHT)
+		u2Score = 100;
+#endif
+	else if (prBssDesc->eBand == BAND_2G4 && cRssi < MINIMUM_RSSI_2G4)
+		u2Score = 0;
+	else if (prBssDesc->eBand == BAND_5G && cRssi < MINIMUM_RSSI_5G)
+		u2Score = 0;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (prBssDesc->eBand == BAND_6G && cRssi < MINIMUM_RSSI_6G)
+		u2Score = 0;
+#endif
 	else if (cRssi <= -98)
 		u2Score = 0;
 	else
 		u2Score = (cRssi + 98) * 2;
+
 	u2Score *= gasMtkWeightConfig[eRoamType].ucRssiWeight;
 
 	return u2Score;
 }
 
-static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
+static uint16_t apsCalculateScoreBySaa(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 	struct STA_RECORD *prStaRec = (struct STA_RECORD *) NULL;
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
 
@@ -688,8 +738,8 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 	return u2Score;
 }
 
-static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
-	uint8_t ucChannel, enum CONN_ROAM_TYPE eRoamType,
+static uint16_t apsCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
+	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
 	struct BSS_DESC *prBssDesc, uint8_t ucBssIndex,
 	enum ENUM_BAND eBand)
 {
@@ -716,12 +766,12 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 		rssiFactor = 2 * (90 + rssi);
 	else
 		rssiFactor = 0;
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
-	if (prBssDesc->eBand < 0 || prBssDesc->eBand >= BAND_NUM) {
-		log_dbg(SCN, WARN, "Invalid Band %d\n", prBssDesc->eBand);
+	if (prBssDesc->eBand >= BAND_NUM) {
+		DBGLOG(APS, WARN, "Invalid Band %d\n", prBssDesc->eBand);
 		return 0;
 	}
 	if (prBssDesc->fgExsitBssLoadIE) {
@@ -775,7 +825,7 @@ static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
 
 	score = (rssiFactor * rssiWeight + cuFactor * cuWeight) >> 6;
 
-	log_dbg(SCN, TRACE,
+	DBGLOG(APS, TRACE,
 		MACSTR
 		" Band[%s],chl[%d],slt[%d],ld[%d] idle Score %d,rssi[%d],cu[%d],cuR[%d],rf[%d],rw[%d],cf[%d],cw[%d]\n",
 		MAC2STR(prBssDesc->aucBSSID),
@@ -790,15 +840,16 @@ done:
 
 }
 
-uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
+uint16_t apsCalculateScoreByBlackList(struct ADAPTER *prAdapter,
+	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
+
 	if (!prBssDesc->prBlack)
 		u2Score = 100;
 	else if (scanApOverload(prBssDesc->prBlack->u2AuthStatus,
@@ -811,13 +862,13 @@ uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
 	return u2Score * gasMtkWeightConfig[eRoamType].ucBlackListWeight;
 }
 
-uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum CONN_ROAM_TYPE eRoamType)
+uint16_t apsCalculateScoreByTput(struct ADAPTER *prAdapter,
+	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
 
@@ -829,31 +880,28 @@ uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
 	return u2Score * gasMtkWeightConfig[eRoamType].ucTputWeight;
 }
 
-uint16_t scanCalculateScoreByPreference(struct ADAPTER *prAdapter,
-	    struct BSS_DESC *prBssDesc, enum ENUM_CONN_ROAM_REASON eRoamReason)
+uint16_t apsCalculateScoreByPreference(struct ADAPTER *prAdapter,
+	    struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason)
 {
+	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
+
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
+		return 0;
+	}
+
 #if CFG_SUPPORT_ROAMING
 #if CFG_SUPPORT_802_11K
-	if (eRoamReason == ROAMING_REASON_BTM) {
-		if (prBssDesc->prNeighbor) {
-			enum CONN_ROAM_TYPE eRoamType =
-				roamReasonToType[eRoamReason];
-			if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-				log_dbg(SCN, WARN,
-					"Invalid roam type %d!\n", eRoamType);
-				return 0;
-			}
-			return prBssDesc->prNeighbor->ucPreference *
-			       gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
-		}
-	}
+	if (prBssDesc->prNeighbor)
+		return (prBssDesc->prNeighbor->ucPreference + 100) *
+		       gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
 #endif
 #endif
-	return 0;
+	return 100 * gasMtkWeightConfig[eRoamType].ucPreferenceWeight;
 }
 
-uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ENUM_CONN_ROAM_REASON eRoamReason,
+uint16_t apsCalculateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo = NULL;
@@ -863,7 +911,6 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	uint16_t u2ScoreChnlInfo = 0;
 	uint16_t u2ScoreSnrRssi = 0;
 	uint16_t u2ScoreDeauth = 0;
-	uint16_t u2ScoreProbeRsp = 0;
 	uint16_t u2ScoreBand = 0;
 	uint16_t u2ScoreSaa = 0;
 	uint16_t u2ScoreIdleTime = 0;
@@ -881,44 +928,42 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	char *extra = "";
 #endif
 	int8_t cRssi = -128;
-	enum CONN_ROAM_TYPE eRoamType = roamReasonToType[eRoamReason];
+	enum ROAM_TYPE eRoamType = roamReasonToType(eRoamReason);
 
 	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	cRssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
 
-	if (eRoamType < 0 || eRoamType >= CONN_ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (eRoamType >= ROAM_TYPE_NUM) {
+		DBGLOG(APS, WARN, "Invalid roam type %d!\n", eRoamType);
 		return 0;
 	}
-	if (prBssDesc->eBand < 0 || prBssDesc->eBand >= BAND_NUM) {
-		log_dbg(SCN, WARN, "Invalid Band %d\n", prBssDesc->eBand);
+	if (prBssDesc->eBand >= BAND_NUM) {
+		DBGLOG(APS, WARN, "Invalid Band %d\n", prBssDesc->eBand);
 		return 0;
 	}
-	u2ScoreBandwidth =
-		scanCalculateScoreByBandwidth(prAdapter, prBssDesc, eRoamType);
-	u2ScoreStaCnt = scanCalculateScoreByClientCnt(prBssDesc, eRoamType);
-	u2ScoreSTBC = CALCULATE_SCORE_BY_STBC(prAdapter, prBssDesc, eRoamType);
-	u2ScoreChnlInfo = scanCalculateScoreByChnlInfo(prAisSpecificBssInfo,
+	u2ScoreBandwidth = apsCalculateScoreByBW(prAdapter,
+		prBssDesc, eRoamType, ucBssIndex);
+	u2ScoreStaCnt = apsCalculateScoreByClientCnt(prBssDesc, eRoamType);
+	u2ScoreSTBC = apsCalculateScoreByStbc(prBssDesc, eRoamType);
+	u2ScoreChnlInfo = apsCalculateScoreByChnlInfo(prAisSpecificBssInfo,
 				prBssDesc->ucChannelNum, eRoamType);
-	u2ScoreSnrRssi = scanCalculateScoreByRssi(prBssDesc, eRoamType);
+	u2ScoreSnrRssi = apsCalculateScoreByRssi(prBssDesc, eRoamType);
 	u2ScoreDeauth = CALCULATE_SCORE_BY_DEAUTH(prBssDesc, eRoamType);
-	u2ScoreProbeRsp = CALCULATE_SCORE_BY_PROBE_RSP(prBssDesc, eRoamType);
-	u2ScoreBand = CALCULATE_SCORE_BY_BAND(prAdapter, prBssDesc,
+	u2ScoreBand = apsCalculateScoreByBand(prAdapter, prBssDesc,
 		cRssi, eRoamType);
-	u2ScoreSaa = scanCalculateScoreBySaa(prAdapter, prBssDesc, eRoamType);
-	u2ScoreIdleTime = scanCalculateScoreByIdleTime(prAdapter,
+	u2ScoreSaa = apsCalculateScoreBySaa(prAdapter, prBssDesc, eRoamType);
+	u2ScoreIdleTime = apsCalculateScoreByIdleTime(prAdapter,
 		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex,
 		prBssDesc->eBand);
 	u2BlackListScore =
-	       scanCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
+	       apsCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
 	u2PreferenceScore =
-	      scanCalculateScoreByPreference(prAdapter, prBssDesc, eRoamReason);
+	      apsCalculateScoreByPreference(prAdapter, prBssDesc, eRoamReason);
 
-	u2TputScore = scanCalculateScoreByTput(prAdapter, prBssDesc, eRoamType);
+	u2TputScore = apsCalculateScoreByTput(prAdapter, prBssDesc, eRoamType);
 
 	u2ScoreTotal = u2ScoreBandwidth + u2ScoreChnlInfo +
-		u2ScoreDeauth + u2ScoreProbeRsp +
-		u2ScoreSnrRssi + u2ScoreStaCnt + u2ScoreSTBC +
+		u2ScoreDeauth + u2ScoreSnrRssi + u2ScoreStaCnt + u2ScoreSTBC +
 		u2ScoreBand + u2BlackListScore + u2ScoreSaa +
 		u2ScoreIdleTime + u2TputScore;
 
@@ -929,8 +974,8 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 #endif
 
 #define TEMP_LOG_TEMPLATE\
-		MACSTR" Band[%s],Score[%d],cRSSI[%d],DE[%d]"\
-		",PR[%d],RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
+		"BSS["MACSTR"] Band[%s],Score[%d],cRSSI[%d],DE[%d]"\
+		",RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
 		",BW[%d],SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
 		",TPUT[%d]%s\n"
 
@@ -938,7 +983,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID), apucBandStr[prBssDesc->eBand],
 		u2ScoreTotal, cRssi,
-		u2ScoreDeauth, u2ScoreProbeRsp,
+		u2ScoreDeauth,
 		u2ScoreSnrRssi, u2ScoreBand, u2BlackListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
 		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
@@ -953,7 +998,7 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 }
 
 static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ENUM_CONN_ROAM_REASON eRoamReason,
+	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
@@ -971,14 +1016,14 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 				&disallow->aucList[index])) {
-			log_dbg(APS, WARN, MACSTR" disallowed list\n",
+			DBGLOG(APS, WARN, MACSTR" disallowed list\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
 	}
 
 	if (prBssDesc->fgIsDisallowed) {
-		log_dbg(APS, WARN, MACSTR" disallowed\n",
+		DBGLOG(APS, WARN, MACSTR" disallowed\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
@@ -987,7 +1032,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	    !(prBssDesc->prBlack->i4RssiThreshold > 0 &&
 	      RCPI_TO_dBm(prBssDesc->ucRCPI) >
 			prBssDesc->prBlack->i4RssiThreshold)) {
-		log_dbg(APS, WARN, MACSTR" disallowed delay, rssi %d(%d)\n",
+		DBGLOG(APS, WARN, MACSTR" disallowed delay, rssi %d(%d)\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			RCPI_TO_dBm(prBssDesc->ucRCPI),
 			prBssDesc->prBlack->i4RssiThreshold);
@@ -995,14 +1040,14 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 
 	if (prBssDesc->prBlack && prBssDesc->prBlack->fgDisallowed) {
-		log_dbg(APS, WARN, MACSTR" disallowed delay\n",
+		DBGLOG(APS, WARN, MACSTR" disallowed delay\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 #endif
 
 	if (!prBssDesc->fgIsInUse) {
-		log_dbg(APS, WARN, MACSTR" is not in use\n",
+		DBGLOG(APS, WARN, MACSTR" is not in use\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
@@ -1016,33 +1061,33 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucDisallowBand6G)
 #endif
 	) {
-		log_dbg(APS, WARN, MACSTR" Band[%s] is not allowed\n",
+		DBGLOG(APS, WARN, MACSTR" Band[%s] is not allowed\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			apucBandStr[prBssDesc->eBand]);
 		return FALSE;
 	}
 
 	if (prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE) {
-		log_dbg(APS, WARN, MACSTR" is not infrastructure\n",
+		DBGLOG(APS, WARN, MACSTR" is not infrastructure\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 
 	if (prBssDesc->prBlack) {
 		if (prBssDesc->prBlack->fgIsInFWKBlacklist) {
-			log_dbg(APS, WARN, MACSTR" in FWK blacklist\n",
+			DBGLOG(APS, WARN, MACSTR" in FWK blacklist\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
 
 		if (prBssDesc->prBlack->fgDeauthLastTime) {
-			log_dbg(APS, WARN, MACSTR " is sending deauth.\n",
+			DBGLOG(APS, WARN, MACSTR " is sending deauth.\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
 
 		if (prBssDesc->prBlack->ucCount >= 10)  {
-			log_dbg(APS, WARN,
+			DBGLOG(APS, WARN,
 				MACSTR
 				" Skip AP that add toblacklist count >= 10\n",
 				MAC2STR(prBssDesc->aucBSSID));
@@ -1054,7 +1099,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	if ((prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
 	    aisFsmIsInProcessPostpone(prAdapter, ucBssIndex))) {
 		if (!connected && prBssDesc->ucRCPI < RCPI_FOR_DONT_ROAM) {
-			log_dbg(APS, INFO, MACSTR " low rssi %d\n",
+			DBGLOG(APS, INFO, MACSTR " low rssi %d\n",
 				MAC2STR(prBssDesc->aucBSSID),
 				RCPI_TO_dBm(prBssDesc->ucRCPI));
 			return FALSE;
@@ -1063,7 +1108,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 	if (!(prBssDesc->ucPhyTypeSet &
 		(prAdapter->rWifiVar.ucAvailablePhyTypeSet))) {
-		log_dbg(APS, WARN,
+		DBGLOG(APS, WARN,
 			MACSTR" ignore unsupported ucPhyTypeSet = %x\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->ucPhyTypeSet);
@@ -1071,14 +1116,14 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 
 	if (prBssDesc->fgIsUnknownBssBasicRate) {
-		log_dbg(APS, WARN, MACSTR" unknown bss basic rate\n",
+		DBGLOG(APS, WARN, MACSTR" unknown bss basic rate\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 
 	if (!rlmDomainIsLegalChannel(prAdapter, prBssDesc->eBand,
 		prBssDesc->ucChannelNum)) {
-		log_dbg(APS, WARN, MACSTR" band %d channel %d is not legal\n",
+		DBGLOG(APS, WARN, MACSTR" band %d channel %d is not legal\n",
 			MAC2STR(prBssDesc->aucBSSID), prBssDesc->eBand,
 			prBssDesc->ucChannelNum);
 		return FALSE;
@@ -1088,7 +1133,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	    CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
 		SEC_TO_SYSTIME(wlanWfdEnabled(prAdapter) ?
 		SCN_BSS_DESC_STALE_SEC_WFD : SCN_BSS_DESC_STALE_SEC))) {
-		log_dbg(APS, WARN, MACSTR " description is too old.\n",
+		DBGLOG(APS, WARN, MACSTR " description is too old.\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
@@ -1097,7 +1142,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	if (aisGetWapiMode(prAdapter, ucBssIndex)) {
 		if (!wapiPerformPolicySelection(prAdapter, prBssDesc,
 			ucBssIndex)) {
-			log_dbg(APS, WARN, MACSTR " wapi policy select fail.\n",
+			DBGLOG(APS, WARN, MACSTR " wapi policy select fail.\n",
 				MAC2STR(prBssDesc->aucBSSID));
 			return FALSE;
 		}
@@ -1105,13 +1150,13 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 #endif
 	if (!rsnPerformPolicySelection(prAdapter, prBssDesc,
 		ucBssIndex)) {
-		log_dbg(APS, WARN, MACSTR " rsn policy select fail.\n",
+		DBGLOG(APS, WARN, MACSTR " rsn policy select fail.\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 	if (aisGetAisSpecBssInfo(prAdapter,
 		ucBssIndex)->fgCounterMeasure) {
-		log_dbg(APS, WARN, MACSTR " Skip in counter measure period.\n",
+		DBGLOG(APS, WARN, MACSTR " Skip in counter measure period.\n",
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
@@ -1128,7 +1173,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			if (prBssDesc->prNeighbor &&
 			    prBssDesc->prNeighbor->fgPrefPresence &&
 			    !prBssDesc->prNeighbor->ucPreference) {
-				log_dbg(APS, INFO,
+				DBGLOG(APS, INFO,
 				     MACSTR " preference is 0, skip it\n",
 				     MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
@@ -1138,7 +1183,7 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			    !prBssDesc->prNeighbor &&
 			    prBtmParam->ucDisImmiState !=
 				    AIS_BTM_DIS_IMMI_STATE_3) {
-				log_dbg(APS, INFO,
+				DBGLOG(APS, INFO,
 				     MACSTR " not in candidate list, skip it\n",
 				     MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
@@ -1181,7 +1226,7 @@ struct NEIGHBOR_AP *apsGetNeighborAPEntry(
 uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	struct BSS_DESC *cand, struct BSS_DESC *curr,
 	uint16_t cand_score, uint16_t curr_score,
-	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(ais);
@@ -1197,7 +1242,7 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 
 uint8_t apsIntraUpdateTargetAp(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	uint8_t link_idx, uint16_t goal_score,
-	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(ais);
@@ -1269,7 +1314,7 @@ try_again:
 			}
 		}
 
-		score = scanCalculateTotalScore(ad, bss, reason, bidx);
+		score = apsCalculateTotalScore(ad, bss, reason, bidx);
 		if (apsIntraNeedReplace(ad, cand, bss,
 			goal_score, score, reason, bidx)) {
 			cand = bss;
@@ -1291,10 +1336,9 @@ try_again:
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (cand->rMlInfo.fgValid)
 			DBGLOG(APS, INFO,
-				"APC[" MACSTR "][%d/%d] select BSS["
+				"[%d/%d] Select BSS["
 				MACSTR " %s mld=" MACSTR
 				"] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
-				MAC2STR(ap->aucAddr),
 				link_idx, ap->ucLinkNum,
 				MAC2STR(cand->aucBSSID),
 				apucBandStr[cand->eBand],
@@ -1304,9 +1348,8 @@ try_again:
 		else
 #endif
 			DBGLOG(APS, INFO,
-				"APC[" MACSTR "][%d/%d] select BSS[" MACSTR
+				"[%d/%d] Select BSS[" MACSTR
 				" %s] score[%d] conn[%d] policy[%d] bssid[%d] bssid_hint[%d]\n",
-				MAC2STR(ap->aucAddr),
 				link_idx, ap->ucLinkNum,
 				MAC2STR(cand->aucBSSID),
 				apucBandStr[cand->eBand], goal_score,
@@ -1323,9 +1366,7 @@ try_again:
 	}
 
 	DBGLOG(APS, INFO,
-		"APC[" MACSTR
-		"][%d/%d] select NONE policy[%d] bssid[%d] bssid_hint[%d]\n",
-		MAC2STR(ap->aucAddr),
+		"[%d/%d] Select NONE policy[%d] bssid[%d] bssid_hint[%d]\n",
 		link_idx, ap->ucLinkNum,
 		policy, ap->fgIsMatchBssid, ap->fgIsMatchBssidHint);
 done:
@@ -1333,7 +1374,7 @@ done:
 }
 
 uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
-	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	if (!bss)
 		return FALSE;
@@ -1352,24 +1393,130 @@ uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	return TRUE;
 }
 
-void apsIntraApSelection(struct ADAPTER *ad,
-	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
+{
+	uint16_t bssAmsduLen = 0, amsduLen = 0;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (bss->eBand == BAND_6G) {
+		bssAmsduLen = (bss->u2MaximumMpdu &
+			HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
+
+		if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_8K)
+			amsduLen = APS_AMSDU_VHT_HE_8K;
+		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_11K)
+			amsduLen = APS_AMSDU_VHT_HE_11K;
+		else if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_3K)
+			amsduLen = APS_AMSDU_VHT_HE_3K;
+		else {
+			DBGLOG(APS, INFO,
+				"Unexpected HE maximum mpdu length\n");
+			amsduLen = APS_AMSDU_VHT_HE_3K;
+		}
+		return amsduLen;
+	}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (bss->fgIsEHTPresent == TRUE) {
+		bssAmsduLen = (bss->u2MaximumMpdu &
+			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
+
+		if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_8K)
+			amsduLen = APS_AMSDU_VHT_HE_8K;
+		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_11K)
+			amsduLen = APS_AMSDU_VHT_HE_11K;
+		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_3K)
+			amsduLen = APS_AMSDU_VHT_HE_3K;
+		else {
+			DBGLOG(APS, INFO,
+				"Unexpected HE maximum mpdu length\n");
+			amsduLen = APS_AMSDU_VHT_HE_3K;
+		}
+		return amsduLen;
+	}
+#endif
+	if (bss->u2MaximumMpdu) {
+		bssAmsduLen = (bss->u2MaximumMpdu &
+			VHT_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
+		if (bss->fgIsVHTPresent) {
+			if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_8K)
+				amsduLen = APS_AMSDU_VHT_HE_8K;
+			else if (bssAmsduLen ==
+				VHT_CAP_INFO_MAX_MPDU_LEN_11K)
+				amsduLen = APS_AMSDU_VHT_HE_11K;
+			else if (bssAmsduLen ==
+				VHT_CAP_INFO_MAX_MPDU_LEN_3K)
+				amsduLen = APS_AMSDU_VHT_HE_3K;
+			else {
+				DBGLOG(APS, INFO,
+					"Unexpected VHT maximum mpdu length\n");
+				amsduLen = APS_AMSDU_VHT_HE_3K;
+			}
+		} else
+			amsduLen = APS_AMSDU_HT_8K;
+	} else {
+		if (bss->fgIsVHTPresent)
+			amsduLen = APS_AMSDU_VHT_HE_3K;
+		else
+			amsduLen = APS_AMSDU_HT_3K;
+	}
+
+	return amsduLen;
+}
+
+uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
+{
+	uint8_t rcpi = 0;
+	uint16_t amsduByte = apsGetAmsduByte(bss);
+	uint16_t baSize = mpduLen[bss->eChannelWidth];
+	uint16_t slot = 0;
+	uint32_t airTime = 0, idle = 0, ideal = 0, slope = 0, tput = 0, est = 0;
+
+	/* TODO: get CU from other AP's cu if AP doesn't support BSS load */
+	if (bss->fgExsitBssLoadIE) {
+		airTime = (255 - bss->ucChnlUtilization) * 100 / 255;
+	} else {
+#if CFG_SUPPORT_ROAMING
+		slot = roamingGetChIdleSlot(ad, bss->eBand, bss->ucChannelNum);
+#endif
+		/* 90000 ms = 90ms dwell time to micro sec */
+		idle = (slot * 9 * 100) / (90000);
+		airTime  = idle > 100 ? 100 : idle;
+		/* Give a default value of air time */
+		if (airTime == 0)
+			airTime = 45;
+	}
+
+	/* Unit: mbps */
+	ideal = baSize * amsduByte * 8 / PPDU_DURATION;
+	/* slope: from peak to zero -> RCPI from 100 to 50 */
+	slope = ideal / 50;
+	rcpi = bss->ucRCPI < 50 ? 50 : (bss->ucRCPI > 100 ? 100 : bss->ucRCPI);
+	tput = slope * (rcpi - 50);
+	est = airTime * tput / 100;
+
+	DBGLOG(APS, INFO, "BSS["MACSTR
+		"] EST: %d ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] est[%d] airTime[%d] slot[%d]\n",
+		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
+		slope, rcpi, tput, airTime, slot);
+
+	return est;
+}
+
+struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(ais);
 	struct LINK *ess = &s->rCurEssLink;
-	struct AP_COLLECTION *ap, *nap;
+	struct AP_COLLECTION *ap, *nap, *current_ap = NULL;
 	struct BSS_DESC *bss;
 	uint16_t delta = 0, base = 0, goal = 0, score = 0;
 	int i, j, k;
 
-
-	if (reason == CONNECTING_ROAMING_REASON_POOR_RCPI
-#if CFG_SUPPORT_ROAMING
-			|| reason == ROAMING_REASON_INACTIVE
-#endif
-		)
+	if (reason == ROAMING_REASON_POOR_RCPI ||
+	    reason == ROAMING_REASON_INACTIVE)
 		delta += ROAM_SCORE_DELTA;
 
 	/* minium requirement */
@@ -1379,7 +1526,7 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		if (!apsIsValidBssDesc(ad, bss, reason, bidx))
 			continue;
 
-		score = scanCalculateTotalScore(ad, bss, reason, bidx);
+		score = apsCalculateTotalScore(ad, bss, reason, bidx);
 		if (base == 0 || score < base)
 			base = score;
 	}
@@ -1388,11 +1535,10 @@ void apsIntraApSelection(struct ADAPTER *ad,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	DBGLOG(APS, INFO,
-		"GOAL SCORE=%d(MloEnabled=%d,StaMldLinkMax=%d,LinkAvailable=%d,PreferMldAddr=%d)\n",
+		"GOAL SCORE=%d (EnableMlo=%d,StaMldLinkMax=%d,StaPreferMldAddr=%d)\n",
 		goal,
-		mldIsMloFeatureEnabled(ad, NETWORK_TYPE_AIS, FALSE),
+		ad->rWifiVar.ucEnableMlo,
 		ad->rWifiVar.ucStaMldLinkMax,
-		aisSecondLinkAvailable(ad, bidx),
 		ad->rWifiVar.ucStaPreferMldAddr);
 #else
 	DBGLOG(APS, INFO, "GOAL SCORE=%d\n", goal);
@@ -1476,6 +1622,8 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		}
 
 		for (i = 0, j = 0, k = 0; i < ap->ucLinkNum; i++) {
+			ap->u4Tput += apsGetEstimatedTput(ad, ap->aprTarget[i]);
+
 			if (ap->aprTarget[i]->prBlack)
 				j++;
 
@@ -1486,174 +1634,261 @@ void apsIntraApSelection(struct ADAPTER *ad,
 		if (j == ap->ucLinkNum)
 			ap->fgIsAllLinkInBlackList = TRUE;
 
-		if (k == ap->ucLinkNum)
+		if (k == ap->ucLinkNum) {
 			ap->fgIsAllLinkConnected = TRUE;
-	}
-}
-
-uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
-{
-	uint16_t bssAmsduLen = 0, amsduLen = 0;
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (bss->eBand == BAND_6G) {
-		bssAmsduLen = (bss->u2MaximumMpdu &
-			HE_6G_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
-
-		if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_8K)
-			amsduLen = APS_AMSDU_VHT_HE_8K;
-		else if (bssAmsduLen == HE_6G_CAP_INFO_MAX_MPDU_LEN_11K)
-			amsduLen = APS_AMSDU_VHT_HE_11K;
-		else if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_3K)
-			amsduLen = APS_AMSDU_VHT_HE_3K;
-		else {
-			log_dbg(SCN, INFO,
-				"Unexpected HE maximum mpdu length\n");
-			amsduLen = APS_AMSDU_VHT_HE_3K;
+			current_ap = ap;
 		}
-		return amsduLen;
-	}
-#endif
-#if (CFG_SUPPORT_802_11BE == 1)
-	if (bss->fgIsEHTPresent == TRUE) {
-		bssAmsduLen = (bss->u2MaximumMpdu &
-			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
 
-		if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_8K)
-			amsduLen = APS_AMSDU_VHT_HE_8K;
-		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_11K)
-			amsduLen = APS_AMSDU_VHT_HE_11K;
-		else if (bssAmsduLen == EHT_MAC_CAP_MAX_MPDU_LEN_3K)
-			amsduLen = APS_AMSDU_VHT_HE_3K;
-		else {
-			log_dbg(SCN, INFO,
-				"Unexpected HE maximum mpdu length\n");
-			amsduLen = APS_AMSDU_VHT_HE_3K;
-		}
-		return amsduLen;
-	}
-#endif
-	if (bss->u2MaximumMpdu) {
-		bssAmsduLen = (bss->u2MaximumMpdu &
-			VHT_CAP_INFO_MAX_MPDU_LEN_MASK) & 0xffff;
-		if (bss->fgIsVHTPresent) {
-			if (bssAmsduLen == VHT_CAP_INFO_MAX_MPDU_LEN_8K)
-				amsduLen = APS_AMSDU_VHT_HE_8K;
-			else if (bssAmsduLen ==
-				VHT_CAP_INFO_MAX_MPDU_LEN_11K)
-				amsduLen = APS_AMSDU_VHT_HE_11K;
-			else if (bssAmsduLen ==
-				VHT_CAP_INFO_MAX_MPDU_LEN_3K)
-				amsduLen = APS_AMSDU_VHT_HE_3K;
-			else {
-				log_dbg(SCN, INFO,
-					"Unexpected VHT maximum mpdu length\n");
-				amsduLen = APS_AMSDU_VHT_HE_3K;
-			}
-		} else
-			amsduLen = APS_AMSDU_HT_8K;
-	} else {
-		if (bss->fgIsVHTPresent)
-			amsduLen = APS_AMSDU_VHT_HE_3K;
-		else
-			amsduLen = APS_AMSDU_HT_3K;
+		DBGLOG(APS, INFO,
+			"-- APC[" MACSTR "], Total(%d) EST: %d %s%s\n",
+			MAC2STR(ap->aucAddr), ap->ucLinkNum, ap->u4Tput,
+			ap->fgIsAllLinkConnected ? "(connected)" : "",
+			ap->fgIsAllLinkInBlackList ? "(in blocklist)" : "");
 	}
 
-	return amsduLen;
+	return current_ap;
 }
 
-uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss)
-{
-	uint8_t rcpi = 0;
-	uint16_t amsduByte = apsGetAmsduByte(bss);
-	uint16_t baSize = mpduLen[bss->eChannelWidth];
-	uint16_t slot = 0;
-	uint32_t airTime = 0, idle = 0, ideal = 0, slope = 0, est = 0;
-
-	/* TODO: get CU from other AP's cu if AP doesn't support BSS load */
-	if (bss->fgExsitBssLoadIE) {
-		airTime = (255 - bss->ucChnlUtilization) * 100 / 255;
-	} else {
-#if CFG_SUPPORT_ROAMING
-		slot = roamingGetChIdleSlot(ad, bss->eBand, bss->ucChannelNum);
-#endif
-		/* 90000 ms = 90ms dwell time to micro sec */
-		idle = (slot * 9 * 100) / (90000);
-		airTime  = idle > 100 ? 100 : idle;
-		/* Give a default value of air time */
-		if (airTime == 0)
-			airTime = 45;
-	}
-
-	/* Unit: mbps */
-	ideal = baSize * amsduByte * 8 / PPDU_DURATION;
-	/* slope: from peak to zero -> RCPI from 100 to 50 */
-	slope = ideal / 50;
-	rcpi = bss->ucRCPI < 50 ? 50 : (bss->ucRCPI > 100 ? 100 : bss->ucRCPI);
-	est = slope * (rcpi - 50);
-
-	DBGLOG(APS, INFO, MACSTR
-		": ideal[%d] ba[%d] amsdu[%d] slope[%d] rcpi[%d] est[%d] airTime[%d] slot[%d]\n",
-		MAC2STR(bss->aucBSSID), ideal, baSize, amsduByte, slope, rcpi,
-		est, airTime, slot);
-
-	return airTime * est / 100;
-}
-
-int32_t apsCalculateTotalTput(struct ADAPTER *ad,
-	struct AP_COLLECTION *ap, enum ENUM_CONN_ROAM_REASON reason,
+uint32_t apsCalculateApScore(struct ADAPTER *ad,
+	struct AP_COLLECTION *ap, enum ENUM_ROAMING_REASON reason,
 	uint8_t bidx)
 {
-	uint8_t i, num = 0;
-	uint32_t tput = 0;
+	uint32_t score = 0;
 
-	for (i = 0; i < ap->ucLinkNum; i++) {
-		if (!ap->aprTarget[i])
-			continue;
-
-		num++;
+	switch (reason) {
 #if CFG_SUPPORT_ROAMING
-		if (reason == ROAMING_REASON_BTM) {
-			uint32_t pref = scanCalculateScoreByPreference(
-				ad, ap->aprTarget[i], reason);
+	case ROAMING_REASON_BTM: {
+		uint8_t i;
 
-			/* select highest pref as tput score */
-			if (tput == 0 || pref > tput)
-				tput = pref;
-		} else
-#endif
-		{
-			tput += apsGetEstimatedTput(ad,
-				ap->aprTarget[i]);
+		if (!aisCheckNeighborApValidity(ad, bidx)) {
+			score = ap->u4Tput;
+		} else {
+			for (i = 0; i < ap->ucLinkNum; i++) {
+				uint32_t pref;
+
+				if (!ap->aprTarget[i])
+					continue;
+
+				pref = apsCalculateScoreByPreference(
+					ad, ap->aprTarget[i], reason);
+
+				/* select highest pref as tput score */
+				if (score == 0 || pref > score)
+					score = pref;
+			}
 		}
 	}
-
-	if (num) {
-		DBGLOG(APS, INFO,
-			"APC[" MACSTR "], Total(%d/%d) EST: %d (Reason=%d)",
-			MAC2STR(ap->aucAddr), num,
-			ap->ucLinkNum, tput, reason);
-		return tput;
+		break;
+#endif
+	default:
+		score = ap->u4Tput;
+		break;
 	}
 
-	return -1;
+	return score;
 }
 
-uint8_t apsInterNeedReplace(struct ADAPTER *ad,
-	struct AP_COLLECTION *cand, struct AP_COLLECTION *curr,
-	int32_t cand_tput, int32_t curr_tput,
-	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+static uint8_t apsNeedReplaceCandidateByRssi(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prCandBss, struct BSS_DESC *prCurrBss,
+	enum ENUM_ROAMING_REASON eRoamReason)
 {
-	if (curr_tput < 0)
+	int8_t cCandRssi = RCPI_TO_dBm(prCandBss->ucRCPI);
+	int8_t cCurrRssi = RCPI_TO_dBm(prCurrBss->ucRCPI);
+	enum ENUM_BAND eCurrBand = prCurrBss->eBand;
+	enum ENUM_BAND eCandBand = prCandBss->eBand;
+
+#if CFG_SUPPORT_NCHO
+	if (prAdapter->rNchoInfo.fgNCHOEnabled)
+		return cCurrRssi >= cCandRssi ? TRUE : FALSE;
+#endif
+
+	/* 1.3 Hard connecting RSSI check */
+	if ((eCurrBand == BAND_5G && cCurrRssi < MINIMUM_RSSI_5G) ||
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	   (eCurrBand == BAND_6G && cCurrRssi < MINIMUM_RSSI_6G) ||
+#endif
+	   (eCurrBand == BAND_2G4 && cCurrRssi < MINIMUM_RSSI_2G4))
 		return FALSE;
-
-	if (!cand)
+	else if ((eCandBand == BAND_5G && cCandRssi < MINIMUM_RSSI_5G) ||
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	   (eCandBand == BAND_6G && cCandRssi < MINIMUM_RSSI_6G) ||
+#endif
+	   (eCandBand == BAND_2G4 && cCandRssi < MINIMUM_RSSI_2G4))
 		return TRUE;
 
-	if (curr_tput > cand_tput)
-		return TRUE;
+	/* 1.4 prefer to select 5G Bss if Rssi of a 5G band BSS is good */
+	if (eCandBand != eCurrBand) {
+		switch (eCandBand) {
+		case BAND_2G4:
+			/* Current AP is 2.4G, replace candidate AP if target
+			 * AP is good
+			 */
+			if (eCurrBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			 || eCurrBand == BAND_6G
+#endif
+			) {
+				if (cCurrRssi >= GOOD_RSSI_FOR_HT_VHT)
+					return TRUE;
+
+				if (cCurrRssi < LOW_RSSI_FOR_5G_BAND &&
+				   (cCandRssi > cCurrRssi + RSSI_DIFF_BIG_STEP))
+					return FALSE;
+
+				if (cCandRssi - cCurrRssi >= RSSI_DIFF_BIG_STEP)
+					return FALSE;
+
+				if (cCurrRssi - cCandRssi >= RSSI_DIFF_SML_STEP)
+					return TRUE;
+			}
+			break;
+		case BAND_5G:
+			/* Candidate AP is 5G, don't replace it if it's
+			 * good enough.
+			 */
+			if (eCurrBand == BAND_2G4) {
+				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
+					return FALSE;
+
+				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
+				   (cCurrRssi > cCandRssi + RSSI_DIFF_BIG_STEP))
+					return TRUE;
+
+				if (cCandRssi - cCurrRssi >= RSSI_DIFF_SML_STEP)
+					return FALSE;
+
+				if (cCurrRssi - cCandRssi >= RSSI_DIFF_BIG_STEP)
+					return TRUE;
+			}
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			else if (eCurrBand == BAND_6G) {
+				/* Target AP is 6G, replace candidate AP
+				 * if target AP is good
+				 */
+				if (cCurrRssi >= GOOD_RSSI_FOR_HT_VHT)
+					return TRUE;
+
+				if (cCurrRssi < LOW_RSSI_FOR_5G_BAND &&
+				   (cCandRssi > cCurrRssi + RSSI_DIFF_MED_STEP))
+					return FALSE;
+
+				if (cCandRssi - cCurrRssi >= RSSI_DIFF_MED_STEP)
+					return FALSE;
+
+				if (cCurrRssi - cCandRssi >= RSSI_DIFF_SML_STEP)
+					return TRUE;
+			}
+#endif
+			break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case BAND_6G:
+			/* Candidate AP is 6G, don't replace it if
+			 * it's good enough.
+			 */
+			if (eCurrBand == BAND_2G4) {
+				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
+					return FALSE;
+
+				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
+				   (cCurrRssi > cCandRssi + RSSI_DIFF_BIG_STEP))
+					return TRUE;
+
+				if (cCandRssi - cCurrRssi >= RSSI_DIFF_SML_STEP)
+					return FALSE;
+
+				if (cCurrRssi - cCandRssi >= RSSI_DIFF_BIG_STEP)
+					return TRUE;
+			} else if (eCurrBand == BAND_5G) {
+				if (cCandRssi >= GOOD_RSSI_FOR_HT_VHT)
+					return FALSE;
+
+				if (cCandRssi < LOW_RSSI_FOR_5G_BAND &&
+				   (cCurrRssi > cCandRssi + RSSI_DIFF_MED_STEP))
+					return TRUE;
+
+				if (cCandRssi - cCurrRssi >= RSSI_DIFF_SML_STEP)
+					return FALSE;
+
+				if (cCurrRssi - cCandRssi >= RSSI_DIFF_MED_STEP)
+					return TRUE;
+			}
+			break;
+#endif
+		default:
+			break;
+		}
+	} else {
+		if (cCandRssi - cCurrRssi >= RSSI_DIFF_MED_STEP)
+			return FALSE;
+		if (cCurrRssi - cCandRssi >= RSSI_DIFF_MED_STEP)
+			return TRUE;
+	}
 
 	return FALSE;
+}
+
+static uint8_t apsNeedReplaceByRssi(struct ADAPTER *ad,
+	struct AP_COLLECTION *cand, struct AP_COLLECTION *curr,
+	enum ENUM_ROAMING_REASON reason)
+{
+	uint8_t i, j;
+
+	for (i = 0; i < curr->ucLinkNum; i++) {
+		uint8_t better_rssi = TRUE;
+
+		if (!curr->aprTarget[i])
+			continue;
+
+		for (j = 0; j < cand->ucLinkNum; j++) {
+			if (!cand->aprTarget[j])
+				continue;
+
+			if (!apsNeedReplaceCandidateByRssi(ad,
+				cand->aprTarget[j],
+				curr->aprTarget[i],
+				reason)) {
+				better_rssi = FALSE;
+				break;
+			}
+		}
+
+		if (better_rssi)
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
+enum ENUM_APS_REPLACE_REASON apsInterNeedReplace(struct ADAPTER *ad,
+	enum ENUM_PARAM_CONNECTION_POLICY policy,
+	struct AP_COLLECTION *cand, struct AP_COLLECTION *curr,
+	uint32_t cand_score, uint32_t curr_score,
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
+{
+	if (policy == CONNECT_BY_BSSID) {
+		if (curr->fgIsMatchBssid)
+			return APS_MATCH_BSSID;
+		else
+			return APS_UNMATCH_BSSID;
+	} else if (policy == CONNECT_BY_BSSID_HINT) {
+		if (curr->fgIsMatchBssidHint)
+			return APS_MATCH_BSSID_HINT;
+		if (cand && cand->fgIsMatchBssidHint)
+			return APS_UNMATCH_BSSID_HINT;
+	}
+
+	if (!cand)
+		return APS_FIRST_CANDIDATE;
+
+	if (reason == ROAMING_REASON_POOR_RCPI ||
+	    reason == ROAMING_REASON_INACTIVE) {
+		if (apsNeedReplaceByRssi(ad, cand, curr, reason))
+			return APS_BETTER_RSSI;
+		if (apsNeedReplaceByRssi(ad, curr, cand, reason))
+			return APS_WORSE_RSSI;
+	}
+
+	return curr_score > cand_score ? APS_HIGH_SCORE : APS_LOW_SCORE;
 }
 
 struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
@@ -1720,72 +1955,83 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 done:
 	/* first bss desc is main bss */
 	set->prMainBssDesc = set->aprBssDesc[0];
+	if (ap) {
+		set->fgIsMatchBssid = ap->fgIsMatchBssid;
+		set->fgIsMatchBssidHint = ap->fgIsMatchBssidHint;
+		set->fgIsAllLinkInBlackList = ap->fgIsAllLinkInBlackList;
+		set->fgIsAllLinkConnected = ap->fgIsAllLinkConnected;
+	}
 	DBGLOG(APS, INFO, "Total %d link(s)\n", set->ucLinkNum);
 	return set->prMainBssDesc;
 }
 
 struct BSS_DESC *apsInterApSelection(struct ADAPTER *ad,
 	struct BSS_DESC_SET *set,
-	enum ENUM_CONN_ROAM_REASON reason, uint8_t bidx)
+	enum ENUM_ROAMING_REASON reason, uint8_t bidx,
+	struct AP_COLLECTION *current_ap)
 {
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct LINK *ess = &s->rCurEssLink;
 	struct AP_COLLECTION *ap, *cand = NULL;
-	int32_t best = 0, tput = 0;
-	uint8_t tryBlackList = FALSE;
+	uint32_t best = 0, score = 0;
+	uint8_t try_blockList = FALSE;
+	enum ENUM_APS_REPLACE_REASON replace_reason;
 
 try_again:
 	LINK_FOR_EACH_ENTRY(ap, ess, rLinkEntry, struct AP_COLLECTION) {
-		if (!tryBlackList && ap->fgIsAllLinkInBlackList) {
-			DBGLOG(APS, INFO, "All links in blacklist\n");
+		if (ap->ucLinkNum == 0)
 			continue;
-		}
 
-		if (policy == CONNECT_BY_BSSID) {
-			if (ap->fgIsMatchBssid) {
-				DBGLOG(APS, INFO, "match bssid\n");
-				cand = ap;
-				break;
-			}
+		if (!try_blockList && ap->fgIsAllLinkInBlackList)
 			continue;
-		} else if (policy == CONNECT_BY_BSSID_HINT) {
-			if (ap->fgIsMatchBssidHint) {
-				DBGLOG(APS, INFO, "match bssid_hint\n");
-				cand = ap;
-				break;
-			}
-		}
 
-		tput = apsCalculateTotalTput(ad, ap, reason, bidx);
-		if (apsInterNeedReplace(ad, cand, ap,
-				best, tput, reason, bidx)) {
-			best = tput;
+		score = apsCalculateApScore(ad, ap, reason, bidx);
+		replace_reason = apsInterNeedReplace(ad, policy,
+			cand, ap, best, score, reason, bidx);
+		if (replace_reason >= APS_NEED_REPLACE) {
+			best = score;
 			cand = ap;
 		}
+
+		DBGLOG(APS, INFO,
+			"%s APC[" MACSTR
+			"] Total(%d) Score: %d (%s)",
+			replace_reason >= APS_FIRST_CANDIDATE ? "--->" : "<---",
+			MAC2STR(ap->aucAddr), ap->ucLinkNum, score,
+			replace_reason < APS_REPLACE_REASON_NUM ?
+			apucReplaceReasonStr[replace_reason] :
+			(const uint8_t *)"UNKNOWN");
+
+		/* early leave for specific reasons */
+		if (replace_reason == APS_MATCH_BSSID ||
+		    replace_reason == APS_MATCH_BSSID_HINT)
+			goto done;
 	}
 
-	if (!tryBlackList && (!cand || cand->fgIsAllLinkConnected)) {
-		tryBlackList = TRUE;
+	if (!try_blockList && (!cand || cand->fgIsAllLinkConnected)) {
+		try_blockList = TRUE;
 		DBGLOG(APS, INFO, "No ap collection found, try blacklist\n");
 		goto try_again;
 	}
 
+done:
 	return apsFillBssDescSet(ad, cand, set, bidx);
 }
 
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
-	enum ENUM_CONN_ROAM_REASON reason,
+	enum ENUM_ROAMING_REASON reason,
 	uint8_t bidx, struct BSS_DESC_SET *set)
 {
 	struct AIS_SPECIFIC_BSS_INFO *s = aisGetAisSpecBssInfo(ad, bidx);
 	struct LINK *ess = &s->rCurEssLink;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	struct BSS_DESC *cand = NULL;
+	struct AP_COLLECTION *current_ap = NULL;
 	uint16_t count = 0;
 
-	if (reason >= CONNECTING_ROAMING_REASON_NUM) {
+	if (reason >= ROAMING_REASON_NUM) {
 		DBGLOG(APS, ERROR, "reason %d!\n", reason);
 		return NULL;
 	}
@@ -1805,8 +2051,8 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 	aisCheckNeighborApValidity(ad, bidx);
 #endif
 
-	apsIntraApSelection(ad, reason, bidx);
-	cand = apsInterApSelection(ad, set, reason, bidx);
+	current_ap = apsIntraApSelection(ad, reason, bidx);
+	cand = apsInterApSelection(ad, set, reason, bidx, current_ap);
 	if (cand) {
 		if (cand->eBand < 0 || cand->eBand >= BAND_NUM) {
 			DBGLOG(APS, WARN, "Invalid Band %d\n", cand->eBand);

@@ -323,8 +323,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			GET_CURRENT_SYSTIME(
 				&prRoamingFsmInfo->rRoamingLastDecisionTime);
 #endif
-			prRoamingFsmInfo->eReason =
-				CONNECTING_ROAMING_REASON_POOR_RCPI;
+			prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
 			break;
 
 		case ROAMING_STATE_DISCOVERY: {

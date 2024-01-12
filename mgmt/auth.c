@@ -705,9 +705,10 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 	u2RxTransactionSeqNum = prAuthFrame->u2AuthTransSeqNo;
 	/* NOTE(Kevin): Optimized for ARM */
 	if (u2RxTransactionSeqNum != u2TransactionSeqNum) {
-		DBGLOG(SAA, WARN,
-		       "Discard Auth frame with Transaction Seq No = %d\n",
-		       u2RxTransactionSeqNum);
+		if (u2RxAuthAlgNum != AUTH_ALGORITHM_NUM_SAE)
+			DBGLOG(SAA, WARN,
+				"Discard Auth frame with Transaction Seq No = %d\n",
+				u2RxTransactionSeqNum);
 		*pu2StatusCode = STATUS_CODE_AUTH_OUT_OF_SEQ;
 		return WLAN_STATUS_FAILURE;
 	}

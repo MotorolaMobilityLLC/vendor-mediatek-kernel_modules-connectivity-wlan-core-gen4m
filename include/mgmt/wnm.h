@@ -42,6 +42,8 @@ struct TIMINGMSMT_PARAM {
 };
 
 struct BSS_TRANSITION_MGT_PARAM {
+	/* bssidx to response */
+	uint8_t ucRspBssIndex;
 	/* for Query */
 	uint8_t ucQueryDialogToken;
 	uint8_t fgWaitBtmRequest;

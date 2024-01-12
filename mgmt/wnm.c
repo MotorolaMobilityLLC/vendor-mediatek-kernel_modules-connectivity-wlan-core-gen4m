@@ -654,8 +654,13 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		return;
 	}
 
-	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
 	prBssDesc = scanSearchBssDescByBssid(prAdapter, prRxFrame->aucBSSID);
+	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+	prBtmParam->ucRspBssIndex = ucBssIndex;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prBtmParam->ucRspBssIndex = mldGetBssIndexByHwBand(prAdapter,
+		prSwRfb->ucHwBandIdx, ucBssIndex);
+#endif
 
 	DBGLOG(WNM, INFO,
 	       "BTM: Req 0x%x, VInt %d, DiscTimer %d, Token %d\n",
@@ -813,8 +818,11 @@ uint8_t wnmSendBTMResponse(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct BSS_TRANSITION_MGT_PARAM *prBtmParam;
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prBtmParam = aisGetBTMParam(prAdapter, ucBssIndex);
+	/* reply btm resp to the link sending btm req but
+	 * keep bssid the same as setup link's bssid
+	 */
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, prBtmParam->ucRspBssIndex);
 	if (prBtmParam->fgPendingResponse) {
 		prBtmParam->fgPendingResponse = FALSE;
 		prBtmParam->fgWaitBtmRespDone = (ucReason == WNM_BSS_TM_ACCEPT);

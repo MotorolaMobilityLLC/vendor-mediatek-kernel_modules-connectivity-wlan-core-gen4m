@@ -67,8 +67,9 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 
 	if (IS_BSS_APGO(bss)) {
 		/* ap mode, check auth/assoc req */
-		if (mldSingleLink(prAdapter, NULL, ucBssIndex)) {
-			mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
+		mld_bssinfo = mldBssGetByBss(prAdapter, bss);
+		if (mld_bssinfo) {
 			links =  &mld_bssinfo->rBssList;
 
 			/* reject if sta has unexpected link info */
@@ -137,9 +138,9 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					return FALSE;
 				}
 			}
-
-			/* early leave because check done */
-			return TRUE;
+		} else if (ml) {
+			DBGLOG(ML, ERROR, "STA should not have ML ie\n");
+			return FALSE;
 		}
 	} else {
 		/* sta mode, check auth/assoc resp */
@@ -205,9 +206,9 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 				}
 				starec->u2StatusCode = profile->u2StatusCode;
 			}
-
-			/* early leave because check done */
-			return TRUE;
+		} else if (ml) {
+			DBGLOG(ML, ERROR, "AP should not reply ML ie\n");
+			return FALSE;
 		}
 	}
 
@@ -264,7 +265,7 @@ void mldGenerateMlIEImpl(struct ADAPTER *prAdapter,
 		if (IS_BSS_APGO(bss)) {
 			if (sta && !kalIsZeroEtherAddr(sta->aucMldAddr)) {
 				DBGLOG(ML, INFO,
-					"Reply MLO (TranSeq: %d)", seq);
+					"Start MLO (TranSeq: %d)", seq);
 				mldGenerateBasicCommonInfo(prAdapter,
 					prMsduInfo, frame_ctrl);
 			} else {
@@ -276,10 +277,10 @@ void mldGenerateMlIEImpl(struct ADAPTER *prAdapter,
 					"No MLO (TranSeq: %d)", seq);
 			}
 		} else {
-			if (IS_MLD_STAREC_VALID(mld_starec) ||
-			    mldSingleLink(prAdapter, sta, ucBssIndex)) {
+			if (mld_starec) {
 				DBGLOG(ML, INFO,
-					"Send MLO (TranSeq: %d)", seq);
+					"Start MLO (TranSeq: %d) linkNum=%d",
+					seq, mld_starec->rStarecList.u4NumElem);
 				mldGenerateBasicCommonInfo(prAdapter,
 					prMsduInfo, frame_ctrl);
 			} else {
@@ -346,31 +347,23 @@ void mldGenerateAssocIE(
 		return;
 	}
 
-	if (IS_BSS_APGO(bss)) {
-		/* for AP, reply when sta has ml ie */
-		if (prStaRec && !kalIsZeroEtherAddr(prStaRec->aucMldAddr))
-			cur = common = mldGenerateBasicCommonInfo(
-				prAdapter, prMsduInfo, frame_ctrl);
+	if (mld_starec) {
+		cur = common = mldGenerateBasicCommonInfo(
+			prAdapter, prMsduInfo, frame_ctrl);
 	} else {
-		if (IS_MLD_STAREC_VALID(mld_starec) ||
-		    mldSingleLink(prAdapter, prStaRec, prMsduInfo->ucBssIndex))
-			cur = common = mldGenerateBasicCommonInfo(
-				prAdapter, prMsduInfo, frame_ctrl);
-	}
-
-	if (!common || !IS_MLD_STAREC_VALID(mld_starec)) {
-		DBGLOG(ML, INFO, "%s MLO (%sAssoc%s)",
-			!common ? "No" : "Send",
+		DBGLOG(ML, INFO, "No MLO (%sAssoc%s)",
 			(frame_ctrl & 0x20) ? "Re" : "",
 			(frame_ctrl & 0x10) ? "Resp" : "Req");
 		goto done;
 	}
 
-	DBGLOG(ML, INFO, "Start MLO (%sAssoc%s)",
-		(frame_ctrl & 0x20) ? "Re" : "",
-		(frame_ctrl & 0x10) ? "Resp" : "Req");
-
 	links = &mld_starec->rStarecList;
+
+	DBGLOG(ML, INFO, "Start MLO (%sAssoc%s) linkNum=%d",
+		(frame_ctrl & 0x20) ? "Re" : "",
+		(frame_ctrl & 0x10) ? "Resp" : "Req",
+		links->u4NumElem);
+
 	LINK_FOR_EACH_ENTRY(starec, links, rLinkEntryMld,
 		struct STA_RECORD) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, starec->ucBssIndex);
@@ -1377,8 +1370,7 @@ uint32_t mldCalculateRnrIELen(
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 
-	if (!mldSingleLink(prAdapter, NULL, ucBssIndex) ||
-	    !IS_MLD_BSSINFO_VALID(mld_bssinfo))
+	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo))
 		return 0;
 
 	/* num - 1 for skipping self,
@@ -1404,8 +1396,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
 	mld_bssinfo = mldBssGetByBss(prAdapter, bss);
 
-	if (!mldSingleLink(prAdapter, NULL, prMsduInfo->ucBssIndex) ||
-	    !IS_MLD_BSSINFO_VALID(mld_bssinfo))
+	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo))
 		return;
 
 	rnr = (struct IE_RNR *)	((uint8_t *)prMsduInfo->prPacket +
@@ -2746,7 +2737,7 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"StaPreferMldAddr:%d\nStaMldMainLinkIdx:%d\nApMldMainLinkIdx:%d\nStaEht:%d\nApEht:%d\nGoEht:%d\nGcEht:%d\n",
+		"StaPreferMldAddr:%d\nStaMldMainLinkIdx:%d\nApMldMainLinkIdx:%d\nStaEHT:%d\nApEHT:%d\nP2pGoEHT:%d\nP2pGcEHT:%d\n",
 		prAdapter->rWifiVar.ucStaPreferMldAddr,
 		prAdapter->rWifiVar.ucStaMldMainLinkIdx,
 		prAdapter->rWifiVar.ucApMldMainLinkIdx,
@@ -3977,18 +3968,15 @@ void mldStarecUninit(struct ADAPTER *prAdapter)
 	DBGLOG(ML, INFO, "\n");
 }
 
-struct BSS_INFO *mldGetBssInfoByLinkID(
-		struct ADAPTER *prAdapter,
-		struct MLD_BSS_INFO *prMldBssInfo,
-		uint8_t ucLinkIndex,
-		uint8_t fgPeerSta
-		)
+struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo, uint8_t ucLinkIndex,
+	uint8_t fgPeerSta)
 {
 	struct BSS_INFO *prCurrBssInfo = NULL;
 	struct LINK *prBssList = NULL;
 	struct STA_RECORD *prStaRecOfAP = NULL;
 
-	if ((!prAdapter) || (!prMldBssInfo))
+	if (!prMldBssInfo)
 		return NULL;
 
 	prBssList = &prMldBssInfo->rBssList;
@@ -4012,6 +4000,41 @@ struct BSS_INFO *mldGetBssInfoByLinkID(
 	}
 
 	return NULL;
+}
+
+uint8_t mldGetBssIndexByHwBand(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucBssIndex)
+{
+	struct BSS_INFO *prBssInfo;
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct BSS_INFO *prCurrBssInfo = NULL;
+	struct LINK *prBssList = NULL;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo || prBssInfo->eHwBandIdx == ucHwBandIdx)
+		return ucBssIndex;
+
+	/* For mlo, swrfb wlanidx is already changed to primary link.
+	 * Using hw band to search correct link for btm response.
+	 */
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (!prMldBssInfo)
+		return ucBssIndex;
+
+	prBssList = &prMldBssInfo->rBssList;
+	LINK_FOR_EACH_ENTRY(prCurrBssInfo, prBssList, rLinkEntryMld,
+			struct BSS_INFO) {
+		if (prCurrBssInfo->eHwBandIdx ==
+		    (enum ENUM_MBMC_BN) ucHwBandIdx) {
+			DBGLOG(ML, INFO,
+			       "Change from BssInfo%d(hwband=%d) -> BssInfo%d(hwband=%d)\n",
+			       prBssInfo->ucBssIndex, prBssInfo->eHwBandIdx,
+			       prCurrBssInfo->ucBssIndex, ucHwBandIdx);
+			return prCurrBssInfo->ucBssIndex;
+		}
+	}
+
+	return ucBssIndex;
 }
 
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,

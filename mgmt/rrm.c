@@ -968,32 +968,41 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReqParam = NULL;
 	struct RADIO_MEASUREMENT_REPORT_PARAMS *prRmRepParam = NULL;
 	enum RM_REQ_PRIORITY eNewPriority;
-	struct BSS_INFO *prAisBssInfo = NULL;
+	struct BSS_INFO *prBssInfo = NULL, *prRspBssInfo = NULL;
 	struct STA_RECORD *prStaRec = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter,
+	prBssInfo = aisGetAisBssInfo(prAdapter,
 		secGetBssIdxByRfb(prAdapter, prSwRfb));
-	if (prAisBssInfo == NULL) {
+	if (prBssInfo == NULL) {
 		DBGLOG(RRM, INFO, "Ignored due to AIS isn't created\n");
 		return;
 	}
 
 	prRmReqFrame = (struct ACTION_RM_REQ_FRAME *)prSwRfb->pvHeader;
 	prRmReqParam = aisGetRmReqParam(prAdapter,
-		prAisBssInfo->ucBssIndex);
+		prBssInfo->ucBssIndex);
 	prRmRepParam = aisGetRmReportParam(prAdapter,
-		prAisBssInfo->ucBssIndex);
+		prBssInfo->ucBssIndex);
 
 	if (!rrmRmFrameIsValid(prSwRfb))
 		return;
-	prStaRec = prAisBssInfo->prStaRecOfAP;
+	prStaRec = prBssInfo->prStaRecOfAP;
 	if (!prStaRec) {
 		DBGLOG(RRM, INFO, "StaRec is NULL, ignore request\n");
 		return;
 	}
+
+	prRmRepParam->ucRspBssIndex = prBssInfo->ucBssIndex;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prRmRepParam->ucRspBssIndex = mldGetBssIndexByHwBand(prAdapter,
+		prSwRfb->ucHwBandIdx, prBssInfo->ucBssIndex);
+#endif
+	prRspBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prRmRepParam->ucRspBssIndex);
+
 	DBGLOG(RRM, INFO, "RM Request From "MACSTR", DialogToken %d, rpt %d\n",
 			MAC2STR(prRmReqFrame->aucSrcAddr),
 			prRmReqFrame->ucDialogToken,
@@ -1008,11 +1017,11 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	if (prRmReqParam->fgRmIsOngoing) {
 		DBGLOG(RRM, INFO, "Old RM is on-going, cancel it first\n");
 		rrmTxRadioMeasurementReport(prAdapter,
-			prAisBssInfo->ucBssIndex);
+			prBssInfo->ucBssIndex);
 		wmmRemoveAllTsmMeasurement(prAdapter, FALSE,
-			prAisBssInfo->ucBssIndex);
+			prBssInfo->ucBssIndex);
 		rrmFreeMeasurementResources(prAdapter,
-			prAisBssInfo->ucBssIndex);
+			prBssInfo->ucBssIndex);
 	}
 	prRmReqParam->fgRmIsOngoing = TRUE;
 	/* Step1: Save Measurement Request Params */
@@ -1044,7 +1053,7 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 	prRmReqParam->prCurrMeasElem =
 		(struct IE_MEASUREMENT_REQ *)prRmReqParam->pucReqIeBuf;
 	prRmReqParam->fgInitialLoop = TRUE;
-	rrmHandleBeaconReqSubelem(prAdapter, prAisBssInfo->ucBssIndex);
+	rrmHandleBeaconReqSubelem(prAdapter, prBssInfo->ucBssIndex);
 
 	/* Step2: Prepare Report Frame and fill in Frame Header */
 	prRmRepParam->pucReportFrameBuff =
@@ -1060,8 +1069,7 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 				prRmRepParam->pucReportFrameBuff;
 	prReportFrame->u2FrameCtrl = MAC_FRAME_ACTION;
 	COPY_MAC_ADDR(prReportFrame->aucDestAddr, prRmReqFrame->aucSrcAddr);
-	COPY_MAC_ADDR(prReportFrame->aucSrcAddr,
-		      prAisBssInfo->aucOwnMacAddr);
+	COPY_MAC_ADDR(prReportFrame->aucSrcAddr, prRspBssInfo->aucOwnMacAddr);
 	COPY_MAC_ADDR(prReportFrame->aucBSSID, prRmReqFrame->aucBSSID);
 	prReportFrame->ucCategory = CATEGORY_RM_ACTION;
 	prReportFrame->ucAction = RM_ACTION_RM_REPORT;
@@ -1070,7 +1078,7 @@ void rrmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 		OFFSET_OF(struct ACTION_RM_REPORT_FRAME, aucInfoElem);
 	rrmCalibrateRepetions(prRmReqParam);
 	/* Step3: Start to process Measurement Request Element */
-	rrmStartNextMeasurement(prAdapter, TRUE, prAisBssInfo->ucBssIndex);
+	rrmStartNextMeasurement(prAdapter, TRUE, prBssInfo->ucBssIndex);
 }
 
 void rrmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
@@ -1088,7 +1096,7 @@ void rrmTxRadioMeasurementReport(struct ADAPTER *prAdapter,
 		       prRmRepParam->u2ReportFrameLen);
 		goto out;
 	}
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, prRmRepParam->ucRspBssIndex);
 	if (!prAisBssInfo) {
 		DBGLOG(RRM, INFO, "ais bss info is NULL\n");
 		goto out;

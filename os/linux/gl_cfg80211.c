@@ -5869,6 +5869,7 @@ int testmode_reassoc(struct wiphy *wiphy,
 		rNewSsid.pucSsid = aucSSID;
 		rNewSsid.u4SsidLen = ucSSIDLen;
 		rNewSsid.ucBssIdx = ucBssIndex;
+		rNewSsid.fgTestMode = TRUE;
 
 		DBGLOG(INIT, INFO,
 		       "Reassoc ssid=%s(%d) bssid=" MACSTR " freq=%d\n",

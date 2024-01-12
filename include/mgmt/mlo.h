@@ -10,10 +10,10 @@
 #ifndef _MLO_H
 #define _MLO_H
 
-#define IS_MLD_BSSINFO_VALID(__prMldBssInfo) \
+#define IS_MLD_BSSINFO_MULTI(__prMldBssInfo) \
 	(__prMldBssInfo && __prMldBssInfo->rBssList.u4NumElem > 1)
 
-#define IS_MLD_STAREC_VALID(__prMldStaRec) \
+#define IS_MLD_STAREC_MULTI(__prMldStaRec) \
 	(__prMldStaRec && __prMldStaRec->rStarecList.u4NumElem > 1)
 
 #define BE_IS_ML_CTRL_TYPE(__pucIE, __TYPE) \
@@ -382,11 +382,12 @@ int8_t mldStarecInit(struct ADAPTER *prAdapter);
 
 void mldStarecUninit(struct ADAPTER *prAdapter);
 
-struct BSS_INFO *mldGetBssInfoByLinkID(
-	struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo,
-	uint8_t ucLinkIndex,
+struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo, uint8_t ucLinkIndex,
 	uint8_t fgPeerSta);
+
+uint8_t mldGetBssIndexByHwBand(struct ADAPTER *prAdapter,
+	uint8_t ucHwBandIdx, uint8_t ucBssIndex);
 
 uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
