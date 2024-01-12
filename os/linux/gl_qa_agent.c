@@ -9447,8 +9447,12 @@ int priv_qa_agent(struct net_device *prNetDev,
 	}
 
 	/* workaroud for meta tool */
-	if (prGlueInfo->prAdapter->fgTestMode == FALSE)
-		MT_ATEStart(prNetDev, "ATESTART");
+	if (prGlueInfo->prAdapter->fgTestMode == FALSE) {
+		if (MT_ATEStart(prNetDev, "ATESTART") != WLAN_STATUS_SUCCESS) {
+			i4Status = -EFAULT;
+			goto ERROR0;
+		}
+	}
 
 	if (!prIwReqData || prIwReqData->data.length == 0 ||
 		prIwReqData->data.length > sizeof(*HqaCmdFrame)) {

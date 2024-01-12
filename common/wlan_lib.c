@@ -14477,6 +14477,28 @@ uint32_t wlanQueryThermalTempV2(struct ADAPTER *ad,
 	return status;
 }
 
+uint32_t wlanSetRFTestModeCMD(struct GLUE_INFO *prGlueInfo, bool fgEn)
+{
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+#if CFG_SUPPORT_QA_TOOL
+	PFN_OID_HANDLER_FUNC handler = NULL;
+	uint32_t u4Buflen = 0;
+
+	DBGLOG(REQ, INFO, "%s set %s Test Mode CMD\n", __func__,
+		(fgEn) ? "Enter" : "Abort");
+
+	if (fgEn == 1)
+		handler = wlanoidRftestSetTestMode;
+	else
+		handler = wlanoidRftestSetAbortTestMode;
+
+	u4Status = kalIoctl(prGlueInfo, handler, NULL, 0, &u4Buflen);
+
+	DBGLOG(REQ, INFO, "%s status : %d\n", __func__, u4Status);
+#endif
+	return u4Status;
+}
+
 int8_t hexDigitToInt(uint8_t ch)
 {
 	if (ch >= 'a' && ch <= 'f')

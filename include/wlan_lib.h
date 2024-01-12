@@ -2381,6 +2381,8 @@ uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 uint32_t wlanQueryThermalTempV2(struct ADAPTER *ad,
 	struct THERMAL_TEMP_DATA_V2 *data);
 
+uint32_t wlanSetRFTestModeCMD(struct GLUE_INFO *prGlueInfo, bool fgEn);
+
 int8_t hexDigitToInt(uint8_t ch);
 
 int wlanChipConfigWithType(struct ADAPTER *prAdapter,

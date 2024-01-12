@@ -115,6 +115,7 @@ bool fgIsPreOnProcessing = FALSE;
 #define NETLINK_OSS_KERNEL 25
 struct sock *nl_sk;
 #endif/* CFG_AP_80211KVR_INTERFACE */
+struct service_test *gprServiceTest;
 
 /* Default QoS Map for BSS other than AIS */
 static struct cfg80211_qos_map default_qos_map = {
@@ -4364,6 +4365,11 @@ static void wlanCreateWirelessDevice(void)
 	register_file_buf_handler(wlanNvramBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_NVRAM);
 #endif
+
+#if ((CFG_MTK_ANDROID_WMT) && (CFG_TESTMODE_WMT_WIFI_ON_SUPPORT))
+	register_is_wifi_in_test_mode_handler(glIsWifiInTestMode);
+#endif
+
 	DBGLOG(INIT, INFO, "Create wireless device success\n");
 	return;
 
@@ -6222,6 +6228,92 @@ label_exit:
 #endif
 
 #if (CONFIG_WLAN_SERVICE == 1)
+static uint32_t wlanServiceAllocInfo(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (!gprServiceTest) {
+		gprServiceTest =
+			kalMemAlloc(sizeof(struct service_test),
+				VIR_MEM_TYPE);
+		if (gprServiceTest == NULL) {
+			DBGLOG(INIT, INFO, "gprServiceTest malloc fail\n");
+			return WLAN_STATUS_FAILURE;
+		}
+
+		gprServiceTest->test_winfo
+			= kalMemAlloc(sizeof(struct test_wlan_info),
+				VIR_MEM_TYPE);
+		if (gprServiceTest->test_winfo == NULL) {
+			DBGLOG(INIT, INFO,
+				"gprServiceTest->test_winfo malloc fail\n");
+			goto label_exit;
+		}
+
+		gprServiceTest->test_op
+			= kalMemAlloc(sizeof(struct test_operation),
+				VIR_MEM_TYPE);
+		if (gprServiceTest->test_op == NULL) {
+			DBGLOG(INIT, INFO,
+				"gprServiceTest->test_op malloc fail\n");
+			goto label_exit;
+		}
+	} else {
+		DBGLOG(INIT, INFO, "gprServiceTest has been malloc\n");
+	}
+
+	prGlueInfo->rService.serv_handle = gprServiceTest;
+	return rStatus;
+
+label_exit:
+	/* free memory */
+	if (gprServiceTest != NULL) {
+
+		if (gprServiceTest->test_winfo != NULL)
+			kalMemFree(gprServiceTest->test_winfo, VIR_MEM_TYPE,
+				   sizeof(struct test_wlan_info));
+
+		if (gprServiceTest->test_op != NULL)
+			kalMemFree(gprServiceTest->test_op, VIR_MEM_TYPE,
+				   sizeof(struct test_operation));
+
+		kalMemFree(gprServiceTest, VIR_MEM_TYPE,
+			sizeof(struct service_test));
+	}
+
+	return WLAN_STATUS_FAILURE;
+}
+
+static uint32_t wlanServiceFreeInfo(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (!gprServiceTest)
+		return rStatus;
+
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	if (get_wifi_in_switch_mode() == true)
+		return rStatus;
+#endif
+
+	KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
+	if (gprServiceTest->test_winfo)
+		kalMemFree(gprServiceTest->test_winfo, VIR_MEM_TYPE,
+			sizeof(struct test_wlan_info));
+
+	if (gprServiceTest->test_op)
+		kalMemFree(gprServiceTest->test_op, VIR_MEM_TYPE,
+			sizeof(struct test_operation));
+
+	kalMemFree(gprServiceTest, VIR_MEM_TYPE,
+		sizeof(struct service_test));
+
+	gprServiceTest = NULL;
+	KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
+
+	return rStatus;
+}
+
 uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 {
 
@@ -6240,22 +6332,13 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prGlueInfo->rService.serv_id = SERV_HANDLE_TEST;
-	prGlueInfo->rService.serv_handle
-		= kalMemAlloc(sizeof(struct service_test), VIR_MEM_TYPE);
-	if (prGlueInfo->rService.serv_handle == NULL) {
-		DBGLOG(INIT, WARN,
-			"prGlueInfo->rService.serv_handle memory alloc fail!\n");
-			return WLAN_STATUS_FAILURE;
-	}
+
+	rStatus = wlanServiceAllocInfo(prGlueInfo);
+	if (rStatus == WLAN_STATUS_FAILURE)
+		return rStatus;
 
 	prServiceTest = (struct service_test *)prGlueInfo->rService.serv_handle;
-	prServiceTest->test_winfo
-		= kalMemAlloc(sizeof(struct test_wlan_info), VIR_MEM_TYPE);
-	if (prServiceTest->test_winfo == NULL) {
-		DBGLOG(INIT, WARN,
-			"prServiceTest->test_winfo memory alloc fail!\n");
-			goto label_exit;
-	}
+
 	winfos = prServiceTest->test_winfo;
 
 	prServiceTest->test_winfo->net_dev = gPrDev;
@@ -6286,13 +6369,6 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 	DBGLOG(RFTEST, WARN, "Platform doesn't support EMI address\n");
 #endif
 
-	prServiceTest->test_op
-		= kalMemAlloc(sizeof(struct test_operation), VIR_MEM_TYPE);
-	if (prServiceTest->test_op == NULL) {
-		DBGLOG(INIT, WARN,
-			"prServiceTest->test_op memory alloc fail!\n");
-			goto label_exit;
-	}
 #if CFG_SUPPORT_QA_TOOL
 	/* icap setting */
 	prAteOps = prChipInfo->prAteOps;
@@ -6327,30 +6403,11 @@ uint32_t wlanServiceInit(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(INIT, WARN, "%s init fail err:%d\n", __func__, rStatus);
 
 	return rStatus;
-
-label_exit:
-
-	/* free memory */
-	if (prGlueInfo->rService.serv_handle != NULL) {
-
-		if (prServiceTest->test_winfo != NULL)
-			kalMemFree(prServiceTest->test_winfo, VIR_MEM_TYPE,
-				   sizeof(struct test_wlan_info));
-
-		if (prServiceTest->test_op != NULL)
-			kalMemFree(prServiceTest->test_op, VIR_MEM_TYPE,
-				   sizeof(struct test_operation));
-
-		kalMemFree(prGlueInfo->rService.serv_handle, VIR_MEM_TYPE,
-			sizeof(struct service_test));
-	}
-
-	return WLAN_STATUS_FAILURE;
 }
+
 uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	struct service_test *prServiceTest;
 
 	DBGLOG(INIT, TRACE, "%s enter\n", __func__);
 
@@ -6359,25 +6416,11 @@ uint32_t wlanServiceExit(struct GLUE_INFO *prGlueInfo)
 
 	rStatus = mt_agent_exit_service(&prGlueInfo->rService);
 
-	prServiceTest = (struct service_test *)prGlueInfo->rService.serv_handle;
-
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		DBGLOG(INIT, WARN, "wlanServiceExit fail err:%d\n", rStatus);
-	KAL_ACQUIRE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
-	if (prGlueInfo->rService.serv_handle) {
-		if (prServiceTest->test_winfo)
-			kalMemFree(prServiceTest->test_winfo,
-			VIR_MEM_TYPE, sizeof(struct test_wlan_info));
 
-		if (prServiceTest->test_op)
-			kalMemFree(prServiceTest->test_op,
-			VIR_MEM_TYPE, sizeof(struct test_operation));
+	wlanServiceFreeInfo(prGlueInfo);
 
-		kalMemFree(prGlueInfo->rService.serv_handle,
-		VIR_MEM_TYPE, sizeof(struct service_test));
-		prGlueInfo->rService.serv_handle = NULL;
-	}
-	KAL_RELEASE_MUTEX(prGlueInfo->prAdapter, MUTEX_HQA_TEST);
 	prGlueInfo->rService.serv_id = 0;
 	return rStatus;
 }
@@ -7380,6 +7423,14 @@ int32_t wlanOffAtReset(void)
 #endif
 	kalPerMonDestroy(prGlueInfo);
 
+	/* Auto abort test mode at wifi off*/
+	if (prAdapter->fgTestMode == TRUE) {
+		wlanSetRFTestModeCMD(prGlueInfo, 0);
+		/*reset NVRAM State to ready for the next wifi-on*/
+		if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
+			g_NvramFsm = NVRAM_STATE_READY;
+	}
+
 	/* complete possible pending oid, which may block wlanRemove some time
 	 * and then whole chip reset may failed
 	 */
@@ -7979,6 +8030,13 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 	if (i4Status == 0) {
 		wlanOnWhenProbeSuccess(prGlueInfo, prAdapter, FALSE);
+
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+		/* After switch test mode FW, auto send enter test mode CMD */
+		if (get_wifi_test_mode_fwdl() == 1)
+			wlanSetRFTestModeCMD(prGlueInfo, 1);
+#endif
+
 		DBGLOG(INIT, INFO,
 		       "wlanProbe: probe success, feature set: 0x%llx, persistNetdev: %d\n",
 		       wlanGetSupportedFeatureSet(prGlueInfo),
@@ -8214,6 +8272,14 @@ static void wlanRemove(void)
 #if CFG_MTK_ANDROID_WMT
 	update_driver_loaded_status(prGlueInfo->u4ReadyFlag);
 #endif
+
+	/* Auto abort test mode at wifi off*/
+	if (prAdapter->fgTestMode == TRUE) {
+		wlanSetRFTestModeCMD(prGlueInfo, 0);
+		/*reset NVRAM State to ready for the next wifi-on*/
+		if (g_NvramFsm == NVRAM_STATE_SEND_TO_FW)
+			g_NvramFsm = NVRAM_STATE_READY;
+	}
 
 #if (CONFIG_WLAN_SERVICE == 1)
 	wlanServiceExit(prGlueInfo);

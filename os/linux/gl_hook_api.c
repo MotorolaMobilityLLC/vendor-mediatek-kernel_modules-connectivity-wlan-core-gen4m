@@ -22,6 +22,7 @@
 #include "gl_cfg80211.h"
 #include "gl_ate_agent.h"
 #include "gl_qa_agent.h"
+#include "gl_hook_api.h"
 #if KERNEL_VERSION(3, 8, 0) <= CFG80211_VERSION_CODE
 #include <uapi/linux/nl80211.h>
 #endif
@@ -70,7 +71,6 @@ uint8_t g_uBandIdx;
 int32_t MT_ATEStart(struct net_device *prNetDev,
 		    uint8_t *prInBuf)
 {
-	uint32_t u4BufLen = 0;
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -78,11 +78,7 @@ int32_t MT_ATEStart(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
-			    wlanoidRftestSetTestMode,	/* pfnOidHandler */
-			    NULL,	/* pvInfoBuf */
-			    0,	/* u4InfoBufLen */
-			    &u4BufLen);	/* pu4QryInfoLen */
+	i4Status = glSetRFTestMode(prGlueInfo, 1);
 
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -240,7 +236,6 @@ int32_t MT_ICAPCommand(struct net_device *prNetDev,
 int32_t MT_ATEStop(struct net_device *prNetDev,
 		   uint8_t *prInBuf)
 {
-	uint32_t u4BufLen = 0;
 	int32_t i4Status;
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -248,11 +243,7 @@ int32_t MT_ATEStop(struct net_device *prNetDev,
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
-	i4Status = kalIoctl(prGlueInfo,	/* prGlueInfo */
-		    wlanoidRftestSetAbortTestMode, /* pfnOidHandler */
-		    NULL,	/* pvInfoBuf */
-		    0,	/* u4InfoBufLen */
-		    &u4BufLen);	/* pu4QryInfoLen */
+	i4Status = glSetRFTestMode(prGlueInfo, 0);
 
 	if (i4Status != WLAN_STATUS_SUCCESS)
 		return -EFAULT;
@@ -4437,16 +4428,21 @@ uint32_t ServiceWlanOid(void *winfos,
 		DBGLOG(RFTEST, INFO,
 			"Test Mode Start Workaround for META!\n");
 
+#if CFG_TESTMODE_FWDL_SUPPORT
+		i4Status = glSetRFTestMode(prGlueInfo, 1);
+		if (i4Status == WLAN_STATUS_SUCCESS)
+			ServiceRfTestInit(winfos);
+#else
 		ServiceRfTestInit(winfos);
-
-		i4Status = kalIoctl(prGlueInfo, /* prGlueInfo */
-			wlanoidRftestSetTestMode,  /* pfnOidHandler */
-			NULL, /* pvInfoBuf */
-			0, /* u4InfoBufLen */
-			u4BufLen); /* pu4QryInfoLen */
+		i4Status = glSetRFTestMode(prGlueInfo, 1);
+#endif /*CFG_TESTMODE_FWDL_SUPPORT*/
 
 		DBGLOG(RFTEST, INFO,
-			"Test Mode Start Workaround for META2!\n");
+			"Test Mode Start Workaround for META2! status : %d\n",
+			i4Status);
+
+		if (i4Status != WLAN_STATUS_SUCCESS)
+			return i4Status;
 	}
 #endif
 
@@ -4454,13 +4450,27 @@ uint32_t ServiceWlanOid(void *winfos,
 #if CFG_SUPPORT_QA_TOOL
 	case OP_WLAN_OID_SET_TEST_MODE_START:
 		DBGLOG(RFTEST, INFO, "Test Mode Start Bellwether!\n");
+#if CFG_TESTMODE_FWDL_SUPPORT
+		i4Status = glSetRFTestMode(prGlueInfo, 1);
+		if (i4Status == WLAN_STATUS_SUCCESS)
+			ServiceRfTestInit(winfos);
+		return i4Status;
+#else
 		ServiceRfTestInit(winfos);
 		pfnOidHandler = wlanoidRftestSetTestMode;
 		break;
+#endif /*CFG_TESTMODE_FWDL_SUPPORT*/
+
 	case OP_WLAN_OID_SET_TEST_MODE_ABORT:
 		DBGLOG(RFTEST, INFO, "Test Mode Abort!\n");
+#if CFG_TESTMODE_FWDL_SUPPORT
+		i4Status = glSetRFTestMode(prGlueInfo, 0);
+		return i4Status;
+#else
 		pfnOidHandler = wlanoidRftestSetAbortTestMode;
 		break;
+#endif /*CFG_TESTMODE_FWDL_SUPPORT*/
+
 	case OP_WLAN_OID_RFTEST_SET_AUTO_TEST:
 		pfnOidHandler = wlanoidRftestSetAutoTest;
 		break;
@@ -4994,5 +5004,100 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif
 #endif
 	return i4Status;
+}
+
+#if CFG_TESTMODE_FWDL_SUPPORT
+static uint32_t glRFTestSwitchMode(struct GLUE_INFO *prGlueInfo,
+			bool fgIsSwitchToTestMode)
+{
+
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	/* In net device ioctl, kernel will hold rtnl lock until ioctl return.
+	 * So in switch mode scenario, we need to hold rtnl lock and
+	 * excute test mode FW re download.
+	 */
+
+	if (!prGlueInfo) {
+		DBGLOG(RFTEST, STATE, "prGlueInfo is NULL\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(RFTEST, STATE, "prGlueInfo->prAdapter is NULL\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+
+	/* avoid wifi on/off process concurrent with switch mode operation */
+	if (wfsys_is_locked()) {
+		DBGLOG(RFTEST, STATE, "wfsys is lock, reject\n");
+		u4Status = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+
+	DBGLOG(RFTEST, STATE, "target:%d, now:%d\n",
+		fgIsSwitchToTestMode, prGlueInfo->prAdapter->fgTestMode);
+
+	if (prGlueInfo->prAdapter->fgTestMode == TRUE
+		 && fgIsSwitchToTestMode == true) {
+		u4Status = WLAN_STATUS_SUCCESS;
+		goto done;
+	}
+	if (prGlueInfo->prAdapter->fgTestMode == FALSE
+		 && fgIsSwitchToTestMode == false) {
+		u4Status = WLAN_STATUS_SUCCESS;
+		goto done;
+	}
+
+	u4Status = wlan_test_mode_on(fgIsSwitchToTestMode);
+
+done:
+	if (u4Status == WLAN_STATUS_SUCCESS)
+		DBGLOG(RFTEST, STATE, "%s : switch mode success, now:%d\n",
+				__func__, prGlueInfo->prAdapter->fgTestMode);
+	else
+		DBGLOG(RFTEST, STATE, "%s : switch mode fail\n",
+				__func__, u4Status);
+
+	return u4Status;
+}
+#endif /*CFG_TESTMODE_FWDL_SUPPORT*/
+
+uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, bool fgEn)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	DBGLOG(RFTEST, STATE, "%s : %s Test Mode\n", __func__,
+		(fgEn) ? "Enter" : "Abort");
+
+#if CFG_TESTMODE_FWDL_SUPPORT
+	u4Status = glRFTestSwitchMode(prGlueInfo, fgEn);
+#else
+	u4Status = wlanSetRFTestModeCMD(prGlueInfo, fgEn);
+#endif /*CFG_TESTMODE_FWDL_SUPPORT*/
+
+	return u4Status;
+}
+
+uint8_t glIsWifiInTestMode(struct net_device *prNetDev)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	if (!prNetDev)
+		DBGLOG(RFTEST, STATE, "prNetDev is NULL\n");
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!prGlueInfo)
+		DBGLOG(RFTEST, STATE, "prGlueInfo is NULL\n");
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter)
+		DBGLOG(RFTEST, STATE, "prAdapter is NULL\n");
+
+	return wlanQueryTestMode(prAdapter);
 }
 #endif

@@ -21,6 +21,7 @@
 #include "gl_os.h"
 #include "gl_wext_priv.h"
 #include "gl_cmd_validate.h"
+#include "gl_hook_api.h"
 
 #if CFG_SUPPORT_QA_TOOL
 #include "gl_ate_agent.h"
@@ -112,6 +113,16 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 			      *prGlueInfo,
 			      void *pvSetBuffer, uint32_t u4SetBufferLen,
 			      uint32_t *pu4SetInfoLen);
+
+static uint32_t glWextRfTestSetTestMode(void *ptr,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
+
+static uint32_t glWextRfTestSetAbortTestMode(void *ptr,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
 
 #if (CFG_WIFI_ISO_DETECT == 1)
 static int priv_driver_iso_detect(struct GLUE_INFO *prGlueInfo,
@@ -212,17 +223,17 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	{
 		OID_CUSTOM_TEST_MODE,
 		DISP_STRING("OID_CUSTOM_TEST_MODE"),
-		FALSE, FALSE, ENUM_OID_DRIVER_CORE, 0,
+		FALSE, FALSE, ENUM_OID_GLUE_EXTENSION, 0,
 		NULL,
-		(PFN_OID_HANDLER_FUNC_REQ) wlanoidRftestSetTestMode
+		(PFN_OID_HANDLER_FUNC_REQ) glWextRfTestSetTestMode
 	}
 	,
 	{
 		OID_CUSTOM_ABORT_TEST_MODE,
 		DISP_STRING("OID_CUSTOM_ABORT_TEST_MODE"),
-		FALSE, FALSE, ENUM_OID_DRIVER_CORE, 0,
+		FALSE, FALSE, ENUM_OID_GLUE_EXTENSION, 0,
 		NULL,
-		(PFN_OID_HANDLER_FUNC_REQ) wlanoidRftestSetAbortTestMode
+		(PFN_OID_HANDLER_FUNC_REQ) glWextRfTestSetAbortTestMode
 	}
 	,
 	{
@@ -3164,6 +3175,81 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 	return rStatus;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief glue layer set test mode function via switch mode for private ioctl
+ *
+ * \param[in] ptr  - void pointer to the GLUE_INFO structure
+ * \param[in] pvSetBuffer - dont care
+ * \param[in] u4SetBufferLen - dont care
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *   bytes read from the set buffer. If the call failed due to invalid length of
+ *   the set buffer, returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_FAILURE
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t
+glWextRfTestSetTestMode(void *ptr,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	prGlueInfo = (struct GLUE_INFO *) ptr;
+
+	if (!prGlueInfo)
+		return WLAN_STATUS_FAILURE;
+
+	rStatus = glSetRFTestMode(prGlueInfo, 1);
+
+	return rStatus;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief glue layer abort test mode function via switch mode for private ioctl
+ *
+ * \param[in] ptr  - void pointer to the GLUE_INFO structure
+ * \param[in] pvSetBuffer - dont care
+ * \param[in] u4SetBufferLen - dont care
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *   bytes read from the set buffer. If the call failed due to invalid length of
+ *   the set buffer, returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_FAILURE
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t
+glWextRfTestSetAbortTestMode(void *ptr,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	if (!pu4SetInfoLen)
+		return WLAN_STATUS_FAILURE;
+
+	*pu4SetInfoLen = 0;
+
+	prGlueInfo = (struct GLUE_INFO *) ptr;
+
+	if (!prGlueInfo)
+		return WLAN_STATUS_FAILURE;
+
+	rStatus = glSetRFTestMode(prGlueInfo, 0);
+
+	return rStatus;
+}
+
 #define CMD_START		"START"
 #define CMD_STOP		"STOP"
 #define CMD_SCAN_ACTIVE		"SCAN-ACTIVE"
@@ -5865,7 +5951,6 @@ int priv_driver_set_test_mode(struct net_device *prNetDev,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
-	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
@@ -5888,13 +5973,9 @@ int priv_driver_set_test_mode(struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "The Set Test Mode Magic Key is %d\n", u4MagicKey);
 
 	if (u4MagicKey == PRIV_CMD_TEST_MAGIC_KEY) {
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidRftestSetTestMode,
-				   NULL, 0, &u4BufLen);
+		rStatus = glSetRFTestMode(prGlueInfo, 1);
 	} else if (u4MagicKey == 0) {
-		rStatus = kalIoctl(prGlueInfo,
-				   wlanoidRftestSetAbortTestMode,
-				   NULL, 0, &u4BufLen);
+		rStatus = glSetRFTestMode(prGlueInfo, 0);
 	}
 
 	DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
@@ -5905,6 +5986,29 @@ int priv_driver_set_test_mode(struct net_device *prNetDev,
 	return i4BytesWritten;
 
 }				/* priv_driver_set_test_mode */
+
+int priv_driver_get_test_mode(struct net_device *prNetDev,
+				     char *pcCommand, int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+	uint32_t ret = 0;
+
+	if (!prNetDev)
+		return i4BytesWritten;
+
+	ret = glIsWifiInTestMode(prNetDev);
+
+	if (ret == TRUE) {
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+						"Wifi In Test Mode\n");
+	} else {
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
+						"Wifi In Normal Mode\n");
+	}
+
+	return i4BytesWritten;
+
+}				/* priv_driver_get_test_mode */
 
 int priv_driver_set_test_cmd(struct net_device *prNetDev,
 				    char *pcCommand, int i4TotalLen)
