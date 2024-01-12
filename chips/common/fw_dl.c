@@ -2655,7 +2655,7 @@ uint32_t wlanImageSectionGetBtPatchInfo(struct ADAPTER *prAdapter,
 		region->img_size =
 			le2cpu32(sec_map->bin_info_spec.dl_size) +
 			le2cpu32(sec_map->bin_info_spec.align_len);
-		if (!(region->img_size % 16))
+		if ((region->img_size % 16))
 			DBGLOG(INIT, WARN,
 			       "BT Patch is not 16-byte aligned\n");
 		region->img_ptr = pvFwImageMapFile +
