@@ -60,6 +60,9 @@
 #include <linux/workqueue.h>
 #endif
 
+/* for sched_clock() */
+#include <linux/sched/clock.h>
+
 #if DBG
 extern int allocatedMemSize;
 #endif
