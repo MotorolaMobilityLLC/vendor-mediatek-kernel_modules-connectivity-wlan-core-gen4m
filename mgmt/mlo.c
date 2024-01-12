@@ -1865,7 +1865,7 @@ sta:
 		prStaProfile->u2IEbufLen = 0;
 		if (tail - pos < sizeof(prStaProfile->aucIEbuf)) {
 			if (show_info)
-				DBGLOG(ML, INFO, "\tcopy sta profile len=%d\n",
+				DBGLOG(ML, INFO, "\tcopy sta profile len=%td\n",
 					tail - pos);
 			kalMemCopy(prStaProfile->aucIEbuf,
 				pos, tail - pos);
