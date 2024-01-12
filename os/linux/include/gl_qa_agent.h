@@ -428,8 +428,6 @@ int32_t connacSetICapStart(struct GLUE_INFO *prGlueInfo,
 			   uint32_t u4SourceAddrMSB, uint32_t u4Band);
 int32_t connacGetICapStatus(struct GLUE_INFO *prGlueInfo);
 
-int32_t commonGetICapIQData(struct GLUE_INFO *prGlueInfo,
-			uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum);
 int32_t connacGetICapIQData(struct GLUE_INFO *prGlueInfo,
 			uint8_t *pData, uint32_t u4IQType, uint32_t u4WFNum);
 

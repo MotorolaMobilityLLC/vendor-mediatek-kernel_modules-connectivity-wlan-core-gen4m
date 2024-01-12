@@ -2437,47 +2437,20 @@ u_int8_t rlmDomainTxPwrLimitLoadFromFile(
 #define TXPWRLIMIT_FILE_LEN 64
 	u_int8_t bRet = TRUE;
 	uint8_t *prFileName = prAdapter->chip_info->prTxPwrLimitFile;
-	uint8_t aucPath[4][TXPWRLIMIT_FILE_LEN];
+	uint8_t aucPath[TXPWRLIMIT_FILE_LEN];
 
 	kalMemZero(aucPath, sizeof(aucPath));
-	kalSnprintf(aucPath[0], TXPWRLIMIT_FILE_LEN, "%s", prFileName);
-	kalSnprintf(aucPath[1], TXPWRLIMIT_FILE_LEN,
-		"/data/misc/%s", prFileName);
-	kalSnprintf(aucPath[2], TXPWRLIMIT_FILE_LEN,
-		"/data/misc/wifi/%s", prFileName);
-	kalSnprintf(aucPath[3], TXPWRLIMIT_FILE_LEN,
-		"/storage/sdcard0/%s", prFileName);
+	kalSnprintf(aucPath, TXPWRLIMIT_FILE_LEN, "%s", prFileName);
 
 	kalMemZero(pucConfigBuf, WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE);
 	*pu4ConfigReadLen = 0;
 
 	if (wlanGetFileContent(
 			prAdapter,
-			aucPath[0],
+			aucPath,
 			pucConfigBuf,
 			WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
-			pu4ConfigReadLen, TRUE) == 0) {
-		/* ToDo:: Nothing */
-	} else if (wlanGetFileContent(
-				prAdapter,
-				aucPath[1],
-				pucConfigBuf,
-				WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
-				pu4ConfigReadLen, FALSE) == 0) {
-		/* ToDo:: Nothing */
-	} else if (wlanGetFileContent(
-				prAdapter,
-				aucPath[2],
-				pucConfigBuf,
-				WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
-				pu4ConfigReadLen, FALSE) == 0) {
-		/* ToDo:: Nothing */
-	} else if (wlanGetFileContent(
-				prAdapter,
-				aucPath[3],
-				pucConfigBuf,
-				WLAN_TX_PWR_LIMIT_FILE_BUF_SIZE,
-				pu4ConfigReadLen, FALSE) == 0) {
+			pu4ConfigReadLen) == 0) {
 		/* ToDo:: Nothing */
 	} else {
 		bRet = FALSE;
@@ -4678,14 +4651,6 @@ void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 		if (kalRequestFirmware("txpowerctrl.cfg", pucConfigBuf,
 		    WLAN_CFG_FILE_BUF_SIZE, &u4ConfigReadLen,
 		    prAdapter->prGlueInfo->prDev) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/data/misc/wifi/txpowerctrl.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
-			/* ToDo:: Nothing */
-		} else if (kalReadToFile("/storage/sdcard0/txpowerctrl.cfg",
-			   pucConfigBuf, WLAN_CFG_FILE_BUF_SIZE,
-			   &u4ConfigReadLen) == 0) {
 			/* ToDo:: Nothing */
 		}
 

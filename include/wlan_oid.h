@@ -3123,12 +3123,6 @@ wlanoidQueryMcrRead(IN struct ADAPTER *prAdapter,
 		    OUT uint32_t *pu4QueryInfoLen);
 
 uint32_t
-wlanoidQueryMemDump(IN struct ADAPTER *prAdapter,
-		    IN void *pvQueryBuffer,
-		    IN uint32_t u4QueryBufferLen,
-		    OUT uint32_t *pu4QueryInfoLen);
-
-uint32_t
 wlanoidSetMcrWrite(IN struct ADAPTER *prAdapter,
 		   IN void *pvSetBuffer,
 		   IN uint32_t u4SetBufferLen,
@@ -3584,10 +3578,6 @@ wlanoidSetScanMacOui(IN struct ADAPTER *prAdapter,
 		IN void *pvSetBuffer,
 		IN uint32_t u4SetBufferLen,
 		OUT uint32_t *pu4SetInfoLen);
-
-uint32_t wlanSendMemDumpCmd(IN struct ADAPTER *prAdapter,
-			    IN void *pvQueryBuffer,
-			    IN uint32_t u4QueryBufferLen);
 
 #if CFG_SLT_SUPPORT
 
