@@ -1334,6 +1334,8 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	prConnSettings =
 		aisGetConnSettings(prGlueInfo->prAdapter,
 		ucBssIndex);
+	/* init to prevent returning status success due to no valid ap. */
+	prConnSettings->u2JoinStatus = WLAN_STATUS_AUTH_TIMEOUT;
 	if (prConnSettings->eOPMode >
 	    NET_TYPE_AUTO_SWITCH)
 		rOpMode.eOpMode = NET_TYPE_AUTO_SWITCH;
