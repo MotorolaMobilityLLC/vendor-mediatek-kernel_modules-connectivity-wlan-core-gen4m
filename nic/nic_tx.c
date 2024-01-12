@@ -2970,7 +2970,7 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 		if (prMsduInfo->fgIsPacketSkb &&
 			prMsduInfo->fgMgmtUseDataQ) {
 			kalKfreeSkb(prNativePacket, FALSE);
-			prNativePacket = prMsduInfo->prTxP;
+			prMsduInfo->prPacket = prMsduInfo->prTxP;
 			prMsduInfo->fgIsPacketSkb = FALSE;
 		}
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
@@ -2980,7 +2980,7 @@ void nicTxFreePacket(IN struct ADAPTER *prAdapter,
 		    TX_RESULT_DROPPED_IN_DRIVER);
 
 		if (prNativePacket)
-			cnmMemFree(prAdapter, prNativePacket);
+			cnmMemFree(prAdapter, prMsduInfo->prHead);
 	} else if (prMsduInfo->eSrc == TX_PACKET_FORWARDING) {
 		GLUE_DEC_REF_CNT(prTxCtrl->i4PendingFwdFrameCount);
 		GLUE_DEC_REF_CNT(prTxCtrl
