@@ -477,7 +477,6 @@ void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
 
 }
 
-#endif /* CFG_SUPPORT_TX_BF */
 #if CFG_SUPPORT_MU_MIMO
 void nicCmdEventGetQd(IN struct ADAPTER *prAdapter,
 		      IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
@@ -664,6 +663,7 @@ void nicCmdEventGetCalcInitMcs(IN struct ADAPTER *prAdapter,
 
 }
 #endif /* CFG_SUPPORT_MU_MIMO */
+#endif /* CFG_SUPPORT_TX_BF */
 #endif /* CFG_SUPPORT_QA_TOOL */
 
 void nicCmdEventQuerySwCtrlRead(IN struct ADAPTER
@@ -3666,6 +3666,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 		break;
 	}
 
+#if CFG_SUPPORT_TX_BF
 	case EXT_EVENT_ID_BF_STATUS_READ:
 		prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
 		if (prCmdInfo != NULL && prCmdInfo->pfCmdDoneHandler) {
@@ -3676,6 +3677,7 @@ void nicEventLayer0ExtMagic(IN struct ADAPTER *prAdapter,
 						    prExtBfStatus->aucBuf);
 		}
 		break;
+#endif
 
 	case EXT_EVENT_ID_MAX_AMSDU_LENGTH_UPDATE:
 	{
