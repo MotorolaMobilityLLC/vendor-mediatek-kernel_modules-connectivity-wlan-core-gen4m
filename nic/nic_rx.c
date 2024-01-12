@@ -1890,7 +1890,7 @@ void nicRxProcessDataPacket(IN struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WIFI_SYSDVT */
 					if (prStaRec &&
 					prStaRec->ucBssIndex < MAX_BSSID_NUM) {
-						GET_CURRENT_SYSTIME(
+						GET_BOOT_SYSTIME(
 							&prRxCtrl->u4LastRxTime
 							[prStaRec->ucBssIndex]);
 					}
