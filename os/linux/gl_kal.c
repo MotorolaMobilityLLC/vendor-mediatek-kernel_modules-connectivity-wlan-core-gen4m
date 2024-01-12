@@ -4400,11 +4400,6 @@ int hif_thread(void *data)
 		    test_and_clear_bit(GLUE_FLAG_DRV_INT_BIT,
 				       &prGlueInfo->ulFlag)) {
 			kalTraceBegin("INT");
-			/* the Wi-Fi interrupt is already disabled in mmc
-			 * thread, so we set the flag only to enable the
-			 * interrupt later
-			 */
-			prAdapter->fgIsIntEnable = FALSE;
 			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 				|| kalIsResetting()
 				) {
@@ -4818,13 +4813,6 @@ int main_thread(void *data)
 
 				wlanAcquirePowerControl(prGlueInfo->prAdapter);
 			}
-
-			/* the Wi-Fi interrupt is already disabled in mmc
-			 * thread, so we set the flag only to enable the
-			 * interrupt later
-			 */
-			prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
-			/* wlanISR(prGlueInfo->prAdapter, TRUE); */
 
 			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
 					kalIsResetting()) {

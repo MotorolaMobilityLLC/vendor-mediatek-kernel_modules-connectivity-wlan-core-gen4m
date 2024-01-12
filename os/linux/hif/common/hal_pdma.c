@@ -3789,11 +3789,6 @@ void halRxTasklet(unsigned long data)
 			GLUE_FLAG_RX_DIRECT_INT_BIT,
 			prGlueInfo->ulFlag);
 
-	/* the Wi-Fi interrupt is already disabled in mmc
-	 * thread, so we set the flag only to enable the
-	 * interrupt later
-	 */
-	prGlueInfo->prAdapter->fgIsIntEnable = FALSE;
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 		|| kalIsResetting()
 		) {
