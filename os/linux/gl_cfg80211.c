@@ -536,11 +536,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->filled |= STATION_INFO_SIGNAL;
 #endif
 
-	if ((rStatus != WLAN_STATUS_SUCCESS)
-	    || (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM)
-	    || (i4Rssi == PARAM_WHQL_RSSI_MAX_DBM)) {
-		DBGLOG(REQ, WARN, "last rssi\n");
-		sinfo->signal = prGlueInfo->i4RssiCache;
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN,
+			"Query RSSI failed, use last RSSI %d\n",
+			prGlueInfo->i4RssiCache);
+		sinfo->signal = prGlueInfo->i4RssiCache ?
+			prGlueInfo->i4RssiCache :
+			PARAM_WHQL_RSSI_INITIAL_DBM;
+	} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
+			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
+		DBGLOG(REQ, WARN,
+			"RSSI abnormal, use last RSSI %d\n",
+			prGlueInfo->i4RssiCache);
+		sinfo->signal = prGlueInfo->i4RssiCache ?
+			prGlueInfo->i4RssiCache : i4Rssi;
 	} else {
 		sinfo->signal = i4Rssi;	/* dBm */
 		prGlueInfo->i4RssiCache = i4Rssi;
@@ -682,11 +691,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 		sinfo->filled |= STATION_INFO_SIGNAL;
 
-		if ((rStatus != WLAN_STATUS_SUCCESS)
-		    || (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM)
-		    || (i4Rssi == PARAM_WHQL_RSSI_MAX_DBM)) {
-			DBGLOG(REQ, WARN, "last rssi\n");
-			sinfo->signal = prGlueInfo->i4RssiCache;
+		if (rStatus != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN,
+				"Query RSSI failed, use last RSSI %d\n",
+				prGlueInfo->i4RssiCache);
+			sinfo->signal = prGlueInfo->i4RssiCache ?
+				prGlueInfo->i4RssiCache :
+				PARAM_WHQL_RSSI_INITIAL_DBM;
+		} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
+			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
+			DBGLOG(REQ, WARN,
+				"RSSI abnormal, use last RSSI %d\n",
+				prGlueInfo->i4RssiCache);
+			sinfo->signal = prGlueInfo->i4RssiCache ?
+				prGlueInfo->i4RssiCache : i4Rssi;
 		} else {
 			sinfo->signal = i4Rssi;	/* dBm */
 			prGlueInfo->i4RssiCache = i4Rssi;
