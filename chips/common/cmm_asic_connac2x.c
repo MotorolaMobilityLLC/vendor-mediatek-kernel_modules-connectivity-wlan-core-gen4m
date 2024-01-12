@@ -285,6 +285,49 @@ void asicConnac2xFillInitCmdTxd(
 	}
 }
 
+void asicConnac2xWfdmaDummyCrRead(
+	struct ADAPTER *prAdapter,
+	u_int8_t *pfgResult)
+{
+	u_int32_t u4RegValue;
+
+	HAL_MCR_RD(prAdapter,
+		CONNAC2X_WFDMA_DUMMY_CR,
+		&u4RegValue);
+	*pfgResult = (u4RegValue &
+		CONNAC2X_WFDMA_NEED_REINIT_BIT)
+		== 0 ? TRUE : FALSE;
+}
+
+
+void asicConnac2xWfdmaDummyCrWrite(
+	struct ADAPTER *prAdapter)
+{
+	u_int32_t u4RegValue;
+
+	HAL_MCR_RD(prAdapter,
+		CONNAC2X_WFDMA_DUMMY_CR,
+		&u4RegValue);
+	u4RegValue |= CONNAC2X_WFDMA_NEED_REINIT_BIT;
+
+	HAL_MCR_WR(prAdapter,
+		CONNAC2X_WFDMA_DUMMY_CR,
+		u4RegValue);
+}
+void asicConnac2xWfdmaReInit(
+	struct ADAPTER *prAdapter)
+{
+	u_int8_t fgResult;
+	/*WFDMA re-init flow after chip deep sleep*/
+	asicConnac2xWfdmaDummyCrRead(prAdapter, &fgResult);
+	if (fgResult) {
+		DBGLOG(INIT, INFO, "WFDMA reinit due to deep sleep\n");
+		halWpdmaInitRing(prAdapter->prGlueInfo);
+		nicEnableInterrupt(prAdapter);
+		asicConnac2xWfdmaDummyCrWrite(prAdapter);
+	}
+}
+
 void asicConnac2xFillCmdTxd(
 	struct ADAPTER *prAdapter,
 	struct WIFI_CMD_INFO *prCmdInfo,

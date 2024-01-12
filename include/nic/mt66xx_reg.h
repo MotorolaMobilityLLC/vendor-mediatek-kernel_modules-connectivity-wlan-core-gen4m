@@ -1263,6 +1263,7 @@ struct mt66xx_chip_info {
 	uint32_t u4SerUsbHostAckAddr;
 #endif
 	void (*asicDumpSerDummyCR)(IN struct ADAPTER *prAdapter);
+	void (*asicWfdmaReInit)(IN struct ADAPTER *prAdapter);
 };
 
 struct mt66xx_hif_driver_data {
