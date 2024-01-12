@@ -1135,17 +1135,16 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	if (u2RxStatusCode == STATUS_CODE_SUCCESSFUL) {
-		/* Update the information in the structure used to query and set
-		 *  OID_802_11_ASSOCIATION_INFORMATION.
-		 */
-		kalUpdateReAssocRspInfo(prAdapter->prGlueInfo,
-					(uint8_t *) &
-					prAssocRspFrame->u2CapInfo,
-					prSwRfb->u2PacketLen -
-						prSwRfb->u2HeaderLen,
-					prStaRec->ucBssIndex);
-	}
+	/* Update the information in the structure used to query and set
+	 *  OID_802_11_ASSOCIATION_INFORMATION.
+	 */
+	kalUpdateReAssocRspInfo(prAdapter->prGlueInfo,
+				(uint8_t *) &
+				prAssocRspFrame->u2CapInfo,
+				prSwRfb->u2PacketLen -
+					prSwRfb->u2HeaderLen,
+				prStaRec->ucBssIndex);
+
 	/* 4 <5> Update CAP_INFO and ASSOC_ID */
 	if (u2RxStatusCode == STATUS_CODE_SUCCESSFUL) {
 		prStaRec->u2CapInfo = u2RxCapInfo;
