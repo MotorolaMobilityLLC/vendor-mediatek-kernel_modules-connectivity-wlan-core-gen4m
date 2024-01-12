@@ -94,7 +94,7 @@ void beReqGenerateMultiLinkSTAInfo(
 {
 	struct IE_MULTI_LINK_INFO_STA_CONTROL *prMultiLinkSTAControlIE;
 	const uint8_t *primary_IE;
-	uint32_t primary_IE_start;
+	uint32_t primary_IE_start = 0;
 	uint32_t primary_IE_end;
 	uint32_t i, t;
 	struct MSDU_INFO *prMsduInfoSta;
