@@ -9463,8 +9463,6 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 				   sizeof(struct WLAN_CFG_ENTRY));
 		} else {
 			prWlanCfgEntry = NULL;
-			DBGLOG(INIT, ERROR,
-			       "wifi config there is no empty entry\n");
 		}
 	} /* !prWlanCfgEntry */
 	else
@@ -9491,17 +9489,12 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 	if (prWlanCfgEntry) {
 		return WLAN_STATUS_SUCCESS;
 	}
-	if (pucKey)
-		DBGLOG(INIT, ERROR, "Set wifi config error key \'%s\'\n",
-		       pucKey);
 
-	if (pucValue)
-		DBGLOG(INIT, ERROR, "Set wifi config error value \'%s\'\n",
-		       pucValue);
+	DBGLOG(INIT, ERROR,
+			"WIFI CFG has no empty entry, key \'%s\', value \'%s\'\n",
+			pucKey ? pucKey : NULL, pucValue ? pucValue : NULL);
 
 	return WLAN_STATUS_FAILURE;
-
-
 }
 
 uint32_t wlanCfgSetUint32(struct ADAPTER *prAdapter,
