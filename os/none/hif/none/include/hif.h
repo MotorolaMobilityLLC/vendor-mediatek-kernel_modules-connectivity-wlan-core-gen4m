@@ -147,6 +147,8 @@ struct BUS_INFO {
 
 #define glClearHifInfo(_prGlueInfo)
 
+#define glResetHifInfo(_prGlueInfo)
+
 #define glBusInit(_pvData)
 
 #define glBusRelease(_pData)
