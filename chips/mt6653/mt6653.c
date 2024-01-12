@@ -3709,7 +3709,6 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		{BAND_2G4, BAND_5G, BAND_5G},
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		{BAND_2G4, BAND_5G, BAND_6G},
-		{BAND_2G4, BAND_6G, BAND_6G},
 #endif
 	};
 
