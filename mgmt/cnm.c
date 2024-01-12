@@ -2295,6 +2295,7 @@ omac_choosed:
 				(uintptr_t)ucBssIndex);
 
 			rlmResetCSAParams(prBssInfo, TRUE);
+			prBssInfo->fgIsAisSwitchingChnl = FALSE;
 #endif
 			cnmTimerInitTimer(prAdapter,
 				&prBssInfo->rObssScanTimer,

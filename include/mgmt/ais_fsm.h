@@ -942,6 +942,17 @@ void aisCheckApRemoval(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint16_t u2ApRemovalTimer);
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+/*----------------------------------------------------------------------------*/
+/* CSA Handler                                                                */
+/*----------------------------------------------------------------------------*/
+void aisUpdateParamsForCSA(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+
+void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo,
+	struct BSS_INFO *prBss,
+	uint8_t *ucChTokenId);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

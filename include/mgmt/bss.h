@@ -123,6 +123,10 @@ void bssDetermineApBssInfoPhyTypeSet(struct ADAPTER
 				     *prAdapter, u_int8_t fgIsPureAp,
 				     struct BSS_INFO *prBssInfo);
 
+void bssUpdateStaRecFromBssDesc(struct ADAPTER *prAdapter,
+				struct BSS_DESC *prBssDesc,
+				struct STA_RECORD *prStaRec);
+
 int8_t bssGetHtRxNss(struct BSS_DESC *prBssDesc);
 int8_t bssGetVhtRxNss(struct BSS_DESC *prBssDesc);
 int8_t bssGetHeRxNss(struct BSS_DESC *prBssDesc);
