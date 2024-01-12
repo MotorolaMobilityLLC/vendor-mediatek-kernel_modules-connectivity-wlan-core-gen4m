@@ -178,7 +178,12 @@ struct MSDU_INFO *cnmPktAllocWrapper(struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo;
 
+#if CFG_DBG_MGT_BUF
+	prMsduInfo = cnmPktAllocX(prAdapter, u4Length, pucStr);
+#else
 	prMsduInfo = cnmPktAlloc(prAdapter, u4Length);
+#endif
+
 	log_dbg(MEM, LOUD, "Alloc MSDU_INFO[0x%p] by [%s]\n",
 		prMsduInfo, pucStr);
 
@@ -212,7 +217,12 @@ void cnmPktFreeWrapper(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
  * \return none
  */
 /*----------------------------------------------------------------------------*/
+#if CFG_DBG_MGT_BUF
+struct MSDU_INFO *cnmPktAllocX(struct ADAPTER *prAdapter, uint32_t u4Length,
+	uint8_t *fileAndLine)
+#else
 struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
+#endif
 {
 	struct MSDU_INFO *prMsduInfo = NULL;
 	struct QUE *prQueList;
@@ -232,9 +242,14 @@ struct MSDU_INFO *cnmPktAlloc(struct ADAPTER *prAdapter, uint32_t u4Length)
 		if (u4Length) {
 			u4TxHeadRoomSize = NIC_TX_DESC_AND_PADDING_LENGTH +
 				prAdapter->chip_info->txd_append_size;
+#if CFG_DBG_MGT_BUF
+			prMsduInfo->prHead = cnmMemAllocX(prAdapter,
+				RAM_TYPE_BUF, u4Length + u4TxHeadRoomSize,
+				fileAndLine);
+#else
 			prMsduInfo->prHead = cnmMemAlloc(prAdapter,
-				RAM_TYPE_BUF,
-				u4Length + u4TxHeadRoomSize);
+				RAM_TYPE_BUF, u4Length + u4TxHeadRoomSize);
+#endif
 			prMsduInfo->prPacket = (uint8_t *)
 				((uintptr_t)prMsduInfo->prHead +
 				u4TxHeadRoomSize);
