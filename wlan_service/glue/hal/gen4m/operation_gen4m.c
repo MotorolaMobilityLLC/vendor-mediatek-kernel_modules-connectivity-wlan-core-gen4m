@@ -273,7 +273,7 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_MPS_NSS = 133,
 	RF_AT_FUNCID_SET_MPS_PACKAGE_BW = 134,
 
-	RF_AT_FUNCID_GET_CH_TX_PWR_OFFSET = 136,
+	RF_AT_FUNCID_GET_TX_POWER = 136,
 	/* Antenna swap feature*/
 	RF_AT_FUNCID_SET_ANT_SWP = 153,
 	RF_AT_FUNCID_SET_RX_MU_AID = 157,
@@ -316,6 +316,9 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_GET_TSSI_MEAS_DBV = 199,
 	RF_AT_FUNCID_SET_GAIN_ENABLE = 200,
 	RF_AT_FUNCID_SET_GAIN_VALUE = 201,
+
+	/* Get EEPROM/NVRAM/Bufferbin default power */
+	RF_AT_FUNCID_GET_DEFAULT_TX_POWER = 224,
 
 	RF_AT_FUNCID_NULL = 0xFF
 };
@@ -2982,7 +2985,80 @@ s_int32 mt_op_get_tx_pwr(
 	tm_trans_Preamble_rate(winfos, configs);
 #endif /* #if (CFG_SUPPORT_CONNAC3X == 0) */
 
-	rf_at_info.func_idx = RF_AT_FUNCID_GET_CH_TX_PWR_OFFSET;
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_TX_POWER;
+	rf_at_info.func_data = 0;
+
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+
+	if (ret == SERV_STATUS_SUCCESS)	{
+		*power = rf_at_info.func_data;
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: pwr:%u!\n",
+			__func__, *power));
+	} else {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s:  fail!\n",
+			__func__));
+	}
+
+	return ret;
+}
+
+s_int32 mt_op_get_tx_default_pwr(
+	struct test_wlan_info *winfos,
+	struct test_configuration *configs,
+	u_char band_idx,
+	u_char channel,
+	u_char ant_idx,
+	u_int32 *power)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	struct param_mtk_wifi_test_struct rf_at_info;
+	u_int32 buf_len = 0;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	struct test_ru_info *ru_sta = &configs->ru_info_list[0];
+#endif
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
+
+	if ((configs->tx_mode == TEST_MODE_HE_TB) ||
+		(configs->tx_mode == TEST_MODE_EHT_TB_UL_OFDMA)) {
+		if (ru_sta->valid) {
+			configs->dmnt_ru_idx = 0;
+
+			/* apply ru rate*/
+			configs->mcs = ru_sta->rate;
+			configs->nss = ru_sta->nss;
+			configs->ldpc = ru_sta->ldpc;
+			if (configs->tx_mode == TEST_MODE_HE_TB)
+				/*Do Calc Manual HE TB TX*/
+				mt_op_set_manual_he_tb_value(winfos,
+				ru_sta, configs);
+			else
+				/*Do Calc Manual EHT TB TX*/
+				mt_op_set_manual_eht_tb_value(winfos,
+				ru_sta, configs);
+		}
+	}
+
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_RATE, configs->mcs);
+#else
+	tm_trans_Preamble_rate(winfos, configs);
+#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
+
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_DEFAULT_TX_POWER;
 	rf_at_info.func_data = 0;
 
 	ret = tm_rftest_query_auto_test(winfos,

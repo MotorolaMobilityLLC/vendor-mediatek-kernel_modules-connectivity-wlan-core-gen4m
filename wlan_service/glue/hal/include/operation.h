@@ -399,6 +399,13 @@ s_int32 mt_op_get_tx_pwr(
 	u_char channel,
 	u_char ant_idx,
 	u_int32 *power);
+s_int32 mt_op_get_tx_default_pwr(
+	struct test_wlan_info *winfos,
+	struct test_configuration *configs,
+	u_char band_idx,
+	u_char channel,
+	u_char ant_idx,
+	u_int32 *power);
 s_int32 mt_op_set_tx_pwr(
 	struct test_wlan_info *winfos,
 	struct test_configuration *configs,
