@@ -2147,7 +2147,7 @@ s_int32 mt_op_get_recal_content(
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
 	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
-		OP_WLAN_OID_GET_RECAL_COUNT,
+		OP_WLAN_OID_GET_RECAL_CONTENT,
 		NULL,
 		0,
 		content,

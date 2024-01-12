@@ -2358,6 +2358,8 @@ static s_int32 hqa_do_cal_item(
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: item: %d, band_idx: %d\n", __func__, item, band_idx));
 
+	update_hqa_frame(hqa_frame, 2, ret);
+
 	return ret;
 }
 
@@ -3364,7 +3366,7 @@ static s_int32 hqa_get_dump_recal(
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 recal_cnt = 0, recal_dw_num = 0;
-	u_int32 *content = NULL;
+	u_int32 *content = NULL, *OriAddr = NULL;
 	u_int32 value = 0, dw_cnt = 0, i = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -3388,6 +3390,8 @@ static s_int32 hqa_get_dump_recal(
 	if (ret != SERV_STATUS_SUCCESS)
 		goto error1;
 
+	OriAddr = content;
+
 	ret = mt_serv_get_recal_content(serv_test, content);
 
 	/* Update hqa_frame with response: status (2 bytes) */
@@ -3407,7 +3411,7 @@ static s_int32 hqa_get_dump_recal(
 	}
 
 	/* Free memory */
-	sys_ad_free_mem(content);
+	sys_ad_free_mem(OriAddr);
 
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
@@ -3432,7 +3436,7 @@ static s_int32 hqa_get_dump_rxv(
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 rxv_cnt = 0, rxv_dw_num = 0;
-	u_int32 *content = NULL;
+	u_int32 *content = NULL, *OriAddr = NULL;
 	u_int32 value = 0, dw_cnt = 0, i = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -3454,6 +3458,8 @@ static s_int32 hqa_get_dump_rxv(
 	if (ret != SERV_STATUS_SUCCESS)
 		goto error1;
 
+	OriAddr = content;
+
 	ret = mt_serv_get_rxv_content(serv_test, dw_cnt, content);
 
 	/* Update hqa_frame with response: Count (2 bytes) */
@@ -3474,7 +3480,7 @@ static s_int32 hqa_get_dump_rxv(
 			("%s: resp_len = %d\n", __func__, resp_len));
 
 	/* Free memory */
-	sys_ad_free_mem(content);
+	sys_ad_free_mem(OriAddr);
 
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
@@ -3499,7 +3505,7 @@ static s_int32 hqa_get_dump_rdd(
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 rdd_cnt = 0, rdd_dw_num = 0;
-	u_int32 *content = NULL;
+	u_int32 *content = NULL, *OriAddr = NULL;
 	u_int32 value = 0, i = 0, total_cnt = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -3519,6 +3525,8 @@ static s_int32 hqa_get_dump_rdd(
 		sizeof(*content) * rdd_dw_num);
 	if (ret != SERV_STATUS_SUCCESS)
 		goto error1;
+
+	OriAddr = content;
 
 	ret = mt_serv_get_rdd_content(serv_test, content, &total_cnt);
 
@@ -3556,7 +3564,7 @@ static s_int32 hqa_get_dump_rdd(
 	}
 
 	/* Free memory */
-	sys_ad_free_mem(content);
+	sys_ad_free_mem(OriAddr);
 
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
