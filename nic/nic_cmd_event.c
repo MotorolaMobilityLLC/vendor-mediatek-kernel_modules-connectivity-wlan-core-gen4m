@@ -933,7 +933,8 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prStatistics->rMdrdyCnt = prEventStatistics->rMdrdyCnt;
 	prStatistics->rChnlIdleCnt = prEventStatistics->rChnlIdleCnt;
-	prStatistics->rHwAwakeDuration = prEventStatistics->rHwMacAwakeDuration;
+	prStatistics->u4HwAwakeDuration =
+		prEventStatistics->u4HwMacAwakeDuration;
 
 	prLinkQualityInfo =
 		&(prAdapter->rLinkQualityInfo);
@@ -960,8 +961,8 @@ void nicCmdEventQueryStatistics(IN struct ADAPTER
 		prStatistics->rMdrdyCnt.QuadPart;
 	prLinkQualityInfo->u8IdleSlotCount =
 		prStatistics->rChnlIdleCnt.QuadPart;
-	prLinkQualityInfo->u8HwMacAwakeDuration =
-		prStatistics->rHwAwakeDuration.QuadPart;
+	prLinkQualityInfo->u4HwMacAwakeDuration =
+		prStatistics->u4HwAwakeDuration;
 	if (prScanInfo->eCurrentState == SCAN_STATE_SCANNING)
 		prLinkQualityInfo->u2FlagScanning = 1;
 	else
