@@ -820,6 +820,7 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+	prGlueInfo->fgIsInSuspendMode = TRUE;
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
@@ -968,6 +969,7 @@ int mtk_pci_resume(struct pci_dev *pdev)
 	/* FW own */
 	RECLAIM_POWER_CONTROL_TO_PM(prGlueInfo->prAdapter, FALSE);
 
+	prGlueInfo->fgIsInSuspendMode = FALSE;
 	/* Allow upper layers to call the device hard_start_xmit routine. */
 	netif_tx_wake_all_queues(prGlueInfo->prDevHandler);
 
