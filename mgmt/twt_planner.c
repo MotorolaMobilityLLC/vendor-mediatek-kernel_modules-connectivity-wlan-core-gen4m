@@ -507,6 +507,7 @@ twtPlannerAddAgrtTbl(
 	}
 #endif
 
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
 
 	return rWlanStatus;
 }
@@ -580,6 +581,8 @@ twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
 			(uint8_t *) (prTWTAgrtUpdate),
 			NULL, 0);
 
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
+
 	return rWlanStatus;
 }
 
@@ -647,6 +650,8 @@ twtPlannerModifyAgrtTbl(struct ADAPTER *prAdapter,
 			(uint8_t *) (prTWTAgrtUpdate),
 			NULL, 0);
 
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
+
 	return rWlanStatus;
 }
 
@@ -713,6 +718,8 @@ twtPlannerDelAgrtTbl(struct ADAPTER *prAdapter,
 			(uint8_t *) (prTWTAgrtUpdate),
 			NULL, 0);
 
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
+
 	return rWlanStatus;
 }
 
@@ -753,6 +760,8 @@ twtPlannerTeardownAgrtTbl(struct ADAPTER *prAdapter,
 			sizeof(struct _EXT_CMD_TWT_ARGT_UPDATE_T),
 			(uint8_t *) (prTWTAgrtUpdate),
 			NULL, 0);
+
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
 
 	return rWlanStatus;
 }
@@ -816,6 +825,8 @@ uint32_t twtPlannerReset(
 	g_TwtSmartStaCtrl.u4TwtSwitch == 0;
 	g_TwtSmartStaCtrl.eState = TWT_SMART_STA_STATE_IDLE;
 #endif
+
+	cnmMemFree(prAdapter, prTWTAgrtUpdate);
 
 	return rWlanStatus;
 }
@@ -987,6 +998,8 @@ twtPlannerGetCurrentTSF(
 					sizeof(struct _EXT_CMD_GET_MAC_INFO_T),
 					(uint8_t *) (prMacInfoCmd),
 					pvSetBuffer, u4SetBufferLen);
+
+	cnmMemFree(prAdapter, prMacInfoCmd);
 
 	return rWlanStatus;
 }
