@@ -1066,6 +1066,28 @@ exit:
 }
 #endif
 
+int32_t kalGetScpDumpInfo(u64 *addr, unsigned int *size)
+{
+	struct device_node *scp_node = NULL;
+
+	scp_node = of_find_compatible_node(NULL, NULL,
+		"mediatek,mt6991-conn_scp");
+	if (!scp_node) {
+		DBGLOG(INIT, ERROR, "kernel option CONFIG_OF not enabled.\n");
+		return -EINVAL;
+	}
+
+	if (of_property_read_u64(scp_node, "dfd-cmd-addr", addr))
+		return -EINVAL;
+
+	if (of_property_read_u32(scp_node, "dfd-cmd-size", size))
+		return -EINVAL;
+
+	DBGLOG(INIT, INFO, "scp dump addr:0x%llx, size:%u\n",
+		addr, size);
+	return 0;
+}
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t kalIsSupportMawd(void)
 {

@@ -25,6 +25,9 @@
 #include "mgmt/ais_fsm.h"
 #include "mddp.h"
 #include "gl_kal.h"
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+#include "gl_coredump.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1301,8 +1304,8 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		DRIVER_OWN_FAIL,
 		INIT_ADAPTER_FAIL,
 		INIT_HIFINFO_FAIL,
-		SET_CHIP_ECO_INFO_FAIL,
 		PRE_ON_PROCESS_DONE,
+		SET_CHIP_ECO_INFO_FAIL,
 		COPY_CONNSYS_CFG_FAIL,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
@@ -1402,9 +1405,10 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 		if (fgIsPreOnProcessing) {
-			/* wlanShowDFDInfo(prAdapter); */
-			DBGLOG(INIT, INFO, "Get DFD dump Info\n");
+			wifi_coredump_post_start();
+			u4Status = WLAN_STATUS_FAILURE;
 			eFailReason = PRE_ON_PROCESS_DONE;
+			break;
 		}
 #endif
 

@@ -2546,7 +2546,7 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	if (dbg_ops && dbg_ops->dumpBusHangCr)
 		dbg_ops->dumpBusHangCr(prAdapter);
 
-	kalSetRstEvent(TRUE);
+	kalSetRstFwNotifyTriggerEvent(TRUE);
 }
 #endif
 
@@ -2666,6 +2666,85 @@ exit:
 		kalMemFree(prEvent, VIR_MEM_TYPE, u4EventSize);
 
 	return u4Status;
+}
+
+const struct DEBUG_DUMP_REGIOM debug_info_region[NUM_OF_SYSTEM_DEBUG_INFO] = {
+	{DEBUG_INFO_PMIC_DUMP,
+		DEBUG_INFO_PMIC_DUMP_LENG}, /*PMIC INFO*/
+	{DEBUG_INFO_DFD_CB_INFRA_INFO,
+		DEBUG_INFO_DFD_CB_INFRA_INFO_LENG}, /*CB_INFRA INFO*/
+	{DEBUG_INFO_DFD_CB_INFRA_SRAM,
+		DEBUG_INFO_DFD_CB_INFRA_SRAM_LENG}, /*CB_INFRA SRAM*/
+	{DEBUG_INFO_DFD_CB_INFRA_WF_SRAM,
+		DEBUG_INFO_DFD_CB_INFRA_WF_SRAM_LENG}, /*CB_INFRA WIFI SRAM*/
+	{DEBUG_INFO_DFD_CB_INFRA_BT_SRAM,
+		DEBUG_INFO_DFD_CB_INFRA_BT_SRAM_LENG}, /*CB_INFRA BT SRAM*/
+	{DEBUG_INFO_DFD_CB_INFRA_DEBUG_INFO,
+		DEBUG_INFO_DFD_CB_INFRA_DEBUG_INFO_LENG}, /*CB_INFRA DBG INFO*/
+	{DEBUG_INFO_DFD_WF_DEBUG_INFO,
+		DEBUG_INFO_DFD_WF_DEBUG_INFO_LENG}, /*WIFI DEBUG INFO*/
+	{DEBUG_INFO_DFD_BT_DEBUG_INFO,
+		DEBUG_INFO_DFD_BT_DEBUG_INFO_LENG}, /*BT DEBUG INFO*/
+};
+
+uint32_t asicConnac3xQueryDFDInfo(
+	struct ADAPTER *prAdapter, uint32_t u4InfoIdx, uint32_t u4Offset,
+	uint32_t u4Length, uint8_t *pBuf)
+{
+	uint32_t u4DFDInfoLength = 0;
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	struct INIT_CMD_DFD_INFO_QUERY rCmd = {0};
+	struct INIT_EVENT_DFD_INFO_QUERY *prDfdEvent = NULL;
+	uint32_t u4EventSize = 0;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+
+	if (u4Length > debug_info_region[u4InfoIdx].u4Length) {
+		DBGLOG(INIT, ERROR, "length %d over [%d]%d\n",
+			u4Length, u4InfoIdx,
+			debug_info_region[u4InfoIdx].u4Length);
+		goto exit;
+	}
+
+	rCmd.u4InfoIdx = u4InfoIdx;
+	rCmd.u4Offset = u4Offset;
+	rCmd.u4Length = u4Length;
+
+	u4EventSize = sizeof(struct INIT_EVENT_DFD_INFO_QUERY);
+	prDfdEvent = kalMemAlloc(u4EventSize, VIR_MEM_TYPE);
+	if (!prDfdEvent) {
+		DBGLOG(INIT, ERROR, "Allocate event packet FAILED.\n");
+		goto exit;
+	}
+	kalMemZero(prDfdEvent, u4EventSize);
+
+	u4Status = wlanSendInitSetQueryCmd(prAdapter,
+		INIT_CMD_ID_DFD_INFO_QUERY, &rCmd, sizeof(rCmd),
+		TRUE, FALSE,
+		INIT_EVENT_ID_CMD_RESULT, prDfdEvent, u4EventSize);
+	if (u4Status != WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, ERROR, "[%d] Get EVT(%d) failed\n",
+			u4InfoIdx, prDfdEvent->u4Length);
+		goto exit;
+	}
+
+	if (prDfdEvent->u4Length > DEBUG_INFO_DFD_MAX_EVENT_LEN ||
+	    prDfdEvent->u4Length == 0) {
+		DBGLOG(INIT, ERROR, "[%d] Unexpected dump length: %d.\n",
+			u4InfoIdx, prDfdEvent->u4Length);
+		goto exit;
+	}
+
+	kalMemCopy(pBuf, prDfdEvent->aucDFDInfoBuf, prDfdEvent->u4Length);
+	u4DFDInfoLength = prDfdEvent->u4Length;
+	DBGLOG(INIT, TRACE, "[%d] Get dump length: %d\n",
+		u4InfoIdx, u4DFDInfoLength);
+	/* DBGLOG_MEM32(INIT, INFO, &prDfdEvent->aucDFDInfoBuf[0], 32); */
+
+exit:
+	if (prDfdEvent)
+		kalMemFree(prDfdEvent, VIR_MEM_TYPE, u4EventSize);
+#endif
+	return u4DFDInfoLength;
 }
 
 uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter)

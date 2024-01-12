@@ -22,7 +22,6 @@
 #define COREDUMP_WIFI_INF_NAME			"coredump_wifi"
 #define COREDUMP_WIFI_DEV_NUM			1
 
-
 #if CFG_WIFI_SECURITY_COREDUMP
 /* security coredump */
 #define S2P_CMD_TX_BASE			0x7c02363c
@@ -43,6 +42,13 @@
 
 #define S2P_CMD_CLR_WR_BIT		0x00100
 #endif /* #if CFG_WIFI_SECURITY_COREDUMP */
+
+#ifdef MT6653
+#define COREDUMP_EMI2_DUMP_OFFSET	0x1600000
+#else
+#define COREDUMP_EMI2_DUMP_OFFSET	0x0
+#endif
+
 
 typedef int (*bushang_chk_func_cb)(void *, uint8_t);
 
@@ -133,6 +139,7 @@ struct coredump_mem {
 	struct mem_region *mem_regions;
 	uint32_t mem_region_num;
 	uint32_t mem_region_offset;
+	uint8_t *aee_str_buff;
 };
 
 struct coredump_ctx {

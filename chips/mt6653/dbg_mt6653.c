@@ -1591,7 +1591,7 @@ void mt6653_DumpBusHangCr(struct ADAPTER *ad)
 		return;
 	}
 
-	DBGLOG(HAL, INFO, "[PSOP9_1] version=%s\n",
+	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
 			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
 
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
