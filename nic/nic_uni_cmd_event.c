@@ -9196,6 +9196,9 @@ void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t fail_cnt = 0;
+	struct UNI_EVENT_WOW *wow;
+
+	wow = (struct UNI_EVENT_WOW *) data;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
@@ -9215,6 +9218,34 @@ void nicUniEventWow(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 				EVENT_ID_WOW_WAKEUP_REASON,
 				&legacy
 			);
+		}
+			break;
+		case UNI_EVENT_WOW_TAG_RX_DEAUTH_REASON: {
+			struct UNI_EVENT_WOW_RX_DEAUTH_REASON_INFO
+				*prUniRxDeauthReason =
+			    (struct UNI_EVENT_WOW_RX_DEAUTH_REASON_INFO *)tag;
+			struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
+
+			prBssInfo = GET_BSS_INFO_BY_INDEX(ad,
+				wow->ucBssIndex);
+
+			if (!prBssInfo) {
+				DBGLOG(NIC, WARN,
+					"Bss=%d not found", wow->ucBssIndex);
+				return;
+			}
+
+			DBGLOG(NIC, INFO, "Deauth Reason Code: %d\n",
+				prUniRxDeauthReason->u2RxDeauthReason);
+
+			prBssInfo->u2DeauthReason =
+				      prUniRxDeauthReason->u2RxDeauthReason;
+
+			aisFsmStateAbort(ad,
+				DISCONNECT_REASON_CODE_LOCALLY,
+				FALSE,
+				wow->ucBssIndex);
+
 		}
 			break;
 		default:
