@@ -2543,7 +2543,7 @@ kalIndicateStatusAndComplete(struct GLUE_INFO
 				rPayload.u2ReasonCode = u2DeauthReason;
 			}
 
-			if (prGlueInfo->prAdapter) {
+			if (prGlueInfo->prAdapter && ucBssIndex < BSSID_NUM) {
 				rPayload.cRssi =
 					prGlueInfo->prAdapter->rLinkQuality
 					.rLq[ucBssIndex].cRssi;

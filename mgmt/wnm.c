@@ -800,7 +800,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	     (ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED) &&
 	     !(ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED))) {
 		DBGLOG(WNM, WARN,
-			"WNM: Invalid Frame mode (d,a,p)=(%u,%u,%u)\n",
+			"WNM: Invalid Frame mode (d,a,p)=(%lu,%lu,%lu)\n",
 			ucRequestMode & WNM_BSS_TM_REQ_DISASSOC_IMMINENT,
 			ucRequestMode & WNM_BSS_TM_REQ_ABRIDGED,
 			ucRequestMode & WNM_BSS_TM_REQ_PREF_CAND_LIST_INCLUDED);
