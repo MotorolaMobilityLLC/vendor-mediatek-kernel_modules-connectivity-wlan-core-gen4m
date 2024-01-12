@@ -93,6 +93,8 @@ endif
 ##############################################################
 #/***** Common part ******/
 
+WM_RAM ?= ce
+
 # Define maximum different channels supported for ieee80211_iface_combination setting.
 CFG_NUM_DIFFERENT_CHANNELS_STA=1
 CFG_NUM_DIFFERENT_CHANNELS_P2P=1
