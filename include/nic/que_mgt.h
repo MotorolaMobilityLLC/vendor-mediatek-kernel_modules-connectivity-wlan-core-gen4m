@@ -944,6 +944,9 @@ struct MSDU_INFO *qmFlushTxQueues(struct ADAPTER
 struct MSDU_INFO *qmFlushStaTxQueues(struct ADAPTER
 	*prAdapter, uint32_t u4StaRecIdx);
 
+void qmDetermineTxPacketRate(struct ADAPTER *prAdapter,
+			struct MSDU_INFO *prMsduInfo);
+
 struct MSDU_INFO *qmEnqueueTxPackets(struct ADAPTER
 	*prAdapter, struct MSDU_INFO *prMsduInfoListHead);
 

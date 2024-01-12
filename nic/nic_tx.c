@@ -2340,6 +2340,8 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	int16_t i2HeadLength;
 
+	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
+
 	i2HeadLength = NIC_TX_DESC_AND_PADDING_LENGTH
 			+ prChipInfo->txd_append_size;
 
@@ -6068,30 +6070,6 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 
 			/* Check the Tx descriptor template is valid */
 			qmSetTxPacketDescTemplate(prAdapter, prMsduInfo);
-
-			/* Set Tx rate */
-			switch (prAdapter->rWifiVar.ucDataTxRateMode) {
-			case DATA_RATE_MODE_BSS_LOWEST:
-				nicTxSetPktLowestFixedRate(prAdapter,
-					prMsduInfo);
-				break;
-
-			case DATA_RATE_MODE_MANUAL:
-				prMsduInfo->u4FixedRateOption =
-					prAdapter->rWifiVar.u4DataTxRateCode;
-
-				prMsduInfo->ucRateMode =
-					MSDU_RATE_MODE_MANUAL_DESC;
-				break;
-
-			case DATA_RATE_MODE_AUTO:
-			default:
-				if (prMsduInfo->ucRateMode
-					== MSDU_RATE_MODE_LOWEST_RATE)
-					nicTxSetPktLowestFixedRate(
-						prAdapter, prMsduInfo);
-				break;
-			}
 
 			/* BMC pkt need limited rate according to coex report*/
 			if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
