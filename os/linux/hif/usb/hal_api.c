@@ -321,6 +321,21 @@ uint32_t halTxUSBSendCmd(IN struct GLUE_INFO *prGlueInfo, IN uint8_t ucTc, IN st
 	       ((TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) - u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR));
 	prBufCtrl->u4WrIdx = TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength) + LEN_USB_UDMA_TX_TERMINATOR;
 
+#if (CFG_DUMP_TXD == 1)
+#define MAX_DUMP_CMD_LEN	(128)
+	{
+		uint32_t dump_len = 0;
+
+		if (prBufCtrl->u4WrIdx > MAX_DUMP_CMD_LEN)
+			dump_len = MAX_DUMP_CMD_LEN;
+		else
+			dump_len = prBufCtrl->u4WrIdx;
+		DBGLOG(HAL, INFO, "Dump CMD TXD: (total length: %d)\n",
+		       prBufCtrl->u4WrIdx);
+		dumpMemory8(prBufCtrl->pucBuf, dump_len);
+	}
+#endif
+
 	prUsbReq->prPriv = (void *) prCmdInfo;
 	usb_fill_bulk_urb(prUsbReq->prUrb,
 			  prHifInfo->udev,
@@ -627,6 +642,21 @@ uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *
 		memset(prBufCtrl->pucBuf + prBufCtrl->u4WrIdx, 0, u4PaddingLength);
 		prBufCtrl->u4WrIdx += u4PaddingLength;
 	}
+
+#if (CFG_DUMP_TXD == 1)
+#define MAX_DUMP_DATA_LEN	(128)
+	{
+		uint32_t dump_len = 0;
+
+		if (prBufCtrl->u4WrIdx > MAX_DUMP_DATA_LEN)
+			dump_len = MAX_DUMP_DATA_LEN;
+		else
+			dump_len = prBufCtrl->u4WrIdx;
+		DBGLOG(HAL, INFO, "Dump DATA TXD: (total length: %d)\n",
+		       prBufCtrl->u4WrIdx);
+		dumpMemory8(prBufCtrl->pucBuf, dump_len);
+	}
+#endif
 
 	if (!prMsduInfo->pfTxDoneHandler)
 		QUEUE_INSERT_TAIL(&prUsbReq->rSendingDataMsduInfoList, (struct QUE_ENTRY *) prMsduInfo);
