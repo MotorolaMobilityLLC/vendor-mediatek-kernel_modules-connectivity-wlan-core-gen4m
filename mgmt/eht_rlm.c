@@ -236,6 +236,10 @@ void ehtRlmFillCapIE(
 	/* TXOP_SHARING: not support */
 	/* SET_EHT_MAC_CAP_TXOP_SHARING(prEhtCap->ucEhtMacCap); */
 
+	/* SCS: default support for STA */
+	if (IS_BSS_AIS(prBssInfo))
+		SET_EHT_MAC_CAP_SCS(prEhtCap->ucEhtMacCap);
+
 	/* PHY capabilities */
 	EHT_RESET_PHY_CAP(prEhtCap->ucEhtPhyCap);
 
