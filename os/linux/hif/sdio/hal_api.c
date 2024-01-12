@@ -3271,6 +3271,77 @@ void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t is
 			NIX_TX_PLE_PAGE_CNT_PER_FRAME;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Send HIF_CTRL command to inform FW stop send packet/event to host
+*	suspend = 1
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (void)
+*/
+/*----------------------------------------------------------------------------*/
+void halPreSuspendCmd(IN struct ADAPTER *prAdapter)
+{
+	struct CMD_HIF_CTRL rCmdHifCtrl;
+	uint32_t rStatus;
+
+	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_SDIO;
+	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
+	rCmdHifCtrl.ucHifStop = 1;
+	rCmdHifCtrl.ucHifSuspend = 1;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+				CMD_ID_HIF_CTRL,  /* ucCID */
+				TRUE, /* fgSetQuery */
+				FALSE,	  /* fgNeedResp */
+				FALSE,	  /* fgIsOid */
+				NULL, /* nicEventHifCtrl */
+				NULL, /* pfCmdTimeoutHandler */
+				sizeof(struct CMD_HIF_CTRL),
+				(uint8_t *)&rCmdHifCtrl,  /* pucInfoBuffer */
+				NULL, /* pvSetQueryBuffer */
+				0 /* u4SetQueryBufferLen */
+		);
+
+	ASSERT(rStatus == WLAN_STATUS_PENDING);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Send HIF_CTRL command to inform FW allow send packet/event to host
+*	suspend = 0
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (void)
+*/
+/*----------------------------------------------------------------------------*/
+void halPreResumeCmd(IN struct ADAPTER *prAdapter)
+{
+	struct CMD_HIF_CTRL rCmdHifCtrl;
+	uint32_t rStatus;
+
+	rCmdHifCtrl.ucHifType = ENUM_HIF_TYPE_SDIO;
+	rCmdHifCtrl.ucHifDirection = ENUM_HIF_TX;
+	rCmdHifCtrl.ucHifStop = 0;
+	rCmdHifCtrl.ucHifSuspend = 0;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+				CMD_ID_HIF_CTRL,  /* ucCID */
+				TRUE, /* fgSetQuery */
+				FALSE,	  /* fgNeedResp */
+				FALSE,	  /* fgIsOid */
+				NULL, /* nicEventHifCtrl */
+				NULL, /* pfCmdTimeoutHandler */
+				sizeof(struct CMD_HIF_CTRL),
+				(uint8_t *)&rCmdHifCtrl,  /* pucInfoBuffer */
+				NULL, /* pvSetQueryBuffer */
+				0 /* u4SetQueryBufferLen */
+		);
+
+	ASSERT(rStatus == WLAN_STATUS_PENDING);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -3283,7 +3354,17 @@ void halUpdateTxDonePendingCount_v1(IN struct ADAPTER *prAdapter, IN u_int8_t is
 /*----------------------------------------------------------------------------*/
 u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 {
-	/* SDIO owner should implement this function */
+	if (!prGlueInfo)
+		return FALSE;
+
+	if (prGlueInfo->u4ReadyFlag == 0)
+		return FALSE;
+
+	if (pucState)
+		*pucState = prGlueInfo->rHifInfo.state;
+
+	if (prGlueInfo->rHifInfo.state != SDIO_STATE_READY)
+		return FALSE;
 
 	return TRUE;
 }
@@ -3299,7 +3380,18 @@ u_int8_t halIsHifStateReady(IN struct GLUE_INFO *prGlueInfo, uint8_t *pucState)
 /*----------------------------------------------------------------------------*/
 bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
 {
-	/* SDIO owner should implement this function */
+	enum sdio_state state;
+
+	if (!prAdapter)
+		return FALSE;
+
+	if (!prAdapter->prGlueInfo)
+		return FALSE;
+
+	state = prAdapter->prGlueInfo->rHifInfo.state;
+
+	if (state == SDIO_STATE_SUSPEND)
+		return TRUE;
 
 	return FALSE;
 }

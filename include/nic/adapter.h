@@ -1858,6 +1858,10 @@ struct ADAPTER {
 	struct input_dev *prWowInputDev;
 #endif
 
+#if CFG_SUPPORT_WOW_EINT
+	struct WOWLAN_DEV_NODE rWowlanDevNode;
+#endif
+
 #if CFG_SUPPORT_NCHO			/*  NCHO information */
 	struct NCHO_INFO rNchoInfo;
 #endif
