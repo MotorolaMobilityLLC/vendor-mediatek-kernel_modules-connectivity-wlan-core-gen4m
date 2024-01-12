@@ -2342,6 +2342,9 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 	/* CMD_ACCESS_REG rCmdAccessReg; */
 	uint32_t rWlanStatus;
 	uint8_t ucBssIdx;
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	uint32_t *prLevel;
+#endif
 
 	DEBUGFUNC("nicEnterCtiaMode");
 	DBGLOG(INIT, TRACE, "nicEnterCtiaMode: %d\n", fgEnterCtia);
@@ -2382,6 +2385,14 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 
 		/* 5. Disable Beacon Timeout Detection */
 		prAdapter->fgDisBcnLostDetection = TRUE;
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		/* 6. Disable Connsys Power Throttling feature. */
+		conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI, NULL);
+		*prLevel = CONN_PWR_THR_LV_0;
+		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
+							&prLevel);
+#endif
 	} else {
 		/* 1. Enaable On-Lin Scan */
 		prAdapter->fgEnOnlineScan = TRUE;
@@ -2417,6 +2428,15 @@ uint32_t nicEnterCtiaMode(IN struct ADAPTER *prAdapter,
 		/* 5. Enable Beacon Timeout Detection */
 		prAdapter->fgDisBcnLostDetection = FALSE;
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		/* 6. Enable Connsys Power Throttling feature. */
+		conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
+			(CONN_PWR_EVENT_CB)connsys_power_event_notification);
+		conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI,
+						&(prAdapter->u4PwrLevel));
+		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
+						&(prAdapter->u4PwrLevel));
+#endif
 	}
 
 	return rWlanStatus;
