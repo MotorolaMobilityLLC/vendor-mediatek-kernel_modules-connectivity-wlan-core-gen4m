@@ -300,9 +300,9 @@ void nic_txd_v2_compose(
 	struct HW_MAC_CONNAC2X_TX_DESC *prTxDesc;
 	struct STA_RECORD *prStaRec;
 	struct BSS_INFO *prBssInfo;
-	u_int8_t ucEtherTypeOffsetInWord;
+	uint8_t ucEtherTypeOffsetInWord;
 	u_int32_t u4TxDescAndPaddingLength;
-	u_int8_t ucWmmQueSet, ucTarQueue, ucTarPort;
+	uint8_t ucWmmQueSet, ucTarQueue, ucTarPort;
 #if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 	enum ENUM_WF_PATH_FAVOR_T eWfPathFavor;
 #endif
@@ -343,10 +343,15 @@ void nic_txd_v2_compose(
 		if (fgIsTemplate != TRUE
 			&& prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA
 			&& ucWmmQueSet != prMsduInfo->ucWmmQueSet) {
+#if CFG_SUPPORT_DROP_INVALID_MSDUINFO
+			prMsduInfo->fgDrop = TRUE;
+#endif /* CFG_SUPPORT_DROP_INVALID_MSDUINFO */
 			DBGLOG(RSN, ERROR,
-				"ucStaRecIndex:%x ucWmmQueSet mismatch[%d,%d]\n",
+				"WmmQueSet mismatch[%u,%u,%u,%u]\n",
+				prMsduInfo->ucBssIndex,
 				prMsduInfo->ucStaRecIndex,
-				ucWmmQueSet, prMsduInfo->ucWmmQueSet);
+				ucWmmQueSet,
+				prMsduInfo->ucWmmQueSet);
 		}
 
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
