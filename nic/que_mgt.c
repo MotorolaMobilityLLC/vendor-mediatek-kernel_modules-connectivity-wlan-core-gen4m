@@ -9705,7 +9705,10 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	uint8_t *pucData = (uint8_t *) prSwRfb->pvHeader;
 	uint8_t ucBssIndex
 		= secGetBssIdxByWlanIdx(prAdapter, prSwRfb->ucWlanIdx);
+#if ((CFG_SUPPORT_LOWLATENCY_MODE == 1) || (CFG_SUPPORT_OSHARE == 1) || \
+	(CFG_MTK_MDDP_SUPPORT == 1))
 	u_int8_t fgCheckDrop = FALSE;
+#endif
 	struct BSS_INFO *prBssInfo = NULL;
 
 	if (!pucData)
@@ -9744,8 +9747,11 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	}
 #endif
 
+#if ((CFG_SUPPORT_LOWLATENCY_MODE == 1) || (CFG_SUPPORT_OSHARE == 1) || \
+	(CFG_MTK_MDDP_SUPPORT == 1))
 	if (fgCheckDrop && qmIsIPLayerPacket(pucData))
 		return TRUE;
+#endif
 
 	/* For some special packet, like DNS, DHCP,
 	 * do not drop evan fall behind.
