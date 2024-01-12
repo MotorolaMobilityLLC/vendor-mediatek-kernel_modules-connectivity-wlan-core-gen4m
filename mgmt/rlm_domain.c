@@ -6107,7 +6107,7 @@ void rlmDomainParsingChannel(IN struct wiphy *pWiphy)
 			}
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			/* 6G only add PSC channel */
-			if (band_idx == NL80211_BAND_6GHZ &&
+			if (band_idx == KAL_BAND_6GHZ &&
 				((chan->hw_value - 5) % 16) != 0) {
 				continue;
 			}

@@ -509,7 +509,7 @@ glSetupNAN(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prNanWdev,
 	prNANInfo = prGlueInfo->aprNANDevInfo[u4Idx];
 
 	if (!prAdapter->fgEnable5GBand)
-		prNanWdev->wiphy->bands[BAND_5G] = NULL;
+		prNanWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
 	/* setup netdev */
 	/* Point to shared glue structure */
 	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)netdev_priv(prNanDev);

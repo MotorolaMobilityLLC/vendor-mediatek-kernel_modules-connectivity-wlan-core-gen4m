@@ -1166,13 +1166,13 @@ int glSetupP2P(struct GLUE_INFO *prGlueInfo, struct wireless_dev *prP2pWdev,
 	prP2PInfo->prWdev = prP2pWdev;
 
 	if (!prAdapter->fgEnable5GBand)
-		prP2pWdev->wiphy->bands[BAND_5G] = NULL;
+		prP2pWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
 
 #endif /* CFG_ENABLE_WIFI_DIRECT_CFG_80211 */
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (!prAdapter->fgIsHwSupport6G)
-		prP2pWdev->wiphy->bands[BAND_6G] = NULL;
+		prP2pWdev->wiphy->bands[KAL_BAND_6GHZ] = NULL;
 #endif
 
 	/* setup netdev */
