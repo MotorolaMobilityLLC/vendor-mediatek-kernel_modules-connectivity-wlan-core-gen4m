@@ -9953,13 +9953,14 @@ void wlanChipRstPreAct(IN struct ADAPTER *prAdapter)
 static void halAddDriverLatencyCount(IN struct ADAPTER *prAdapter,
 	uint32_t u4DriverLatency)
 {
-	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-	uint8_t i;
+	uint32_t *pMaxDriverDelay = prAdapter->rWifiVar.au4DriverTxDelayMax;
+	uint32_t *pDriverDelay =
+		prAdapter->rMsduReportStats.rCounting.au4DriverLatency;
+	int i;
 
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4DriverLatency < prWifiVar->au4DriverTxDelayMax[i]) {
-			GLUE_INC_REF_CNT(stats->au4DriverLatency[i]);
+	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++, pDriverDelay++) {
+		if (u4DriverLatency <= *pMaxDriverDelay++) {
+			GLUE_INC_REF_CNT(*pDriverDelay);
 			break;
 		}
 	}
