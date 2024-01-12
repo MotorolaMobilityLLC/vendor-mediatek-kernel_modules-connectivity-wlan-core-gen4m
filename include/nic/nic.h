@@ -473,8 +473,7 @@ nicUpdateBeaconIETemplate(struct ADAPTER *prAdapter,
 			  uint8_t ucBssIndex, uint16_t u2Capability,
 			  uint8_t *aucIe, uint16_t u2IELen);
 
-uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter,
-			     uint8_t ucBssIndex);
+uint32_t nicQmUpdateWmmParms(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 uint32_t nicQmUpdateMUEdcaParams(struct ADAPTER *prAdapter,
