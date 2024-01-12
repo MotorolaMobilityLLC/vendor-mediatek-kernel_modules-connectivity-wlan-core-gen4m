@@ -370,7 +370,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 	ASSERT(prGlueInfo);
 
 	if (g_u4HaltFlag) {
-		DBGLOG(RSN, WARN, "wlan is halt, skip key deletion\n");
+		DBGLOG_LIMITED(RSN, WARN, "wlan is halt, skip key deletion\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -381,11 +381,12 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 	DBGLOG(RSN, TRACE, "ucBssIndex = %d\n", ucBssIndex);
 #if DBG
 	if (mac_addr) {
-		DBGLOG(RSN, TRACE,
+		DBGLOG_LIMITED(RSN, TRACE,
 		       "keyIdx = %d pairwise = %d mac = " MACSTR "\n",
 		       key_index, pairwise, MAC2STR(mac_addr));
 	} else {
-		DBGLOG(RSN, TRACE, "keyIdx = %d pairwise = %d null mac\n",
+		DBGLOG_LIMITED(RSN, TRACE,
+			"keyIdx = %d pairwise = %d null mac\n",
 		       key_index, pairwise);
 	}
 #endif
@@ -407,7 +408,7 @@ int mtk_cfg80211_del_key(struct wiphy *wiphy,
 			rRemoveKey.u4Length, FALSE, FALSE, TRUE, &u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(RSN, WARN, "remove key error:%x\n", rStatus);
+		DBGLOG_LIMITED(RSN, WARN, "remove key error:%x\n", rStatus);
 	else
 		i4Rslt = 0;
 

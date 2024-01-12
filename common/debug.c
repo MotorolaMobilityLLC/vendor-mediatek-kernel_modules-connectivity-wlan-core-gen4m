@@ -299,7 +299,7 @@ uint32_t wlanWakeLogCmd(uint8_t ucCmdId)
 		}
 
 		if (j >= WAKE_MAX_CMD_EVENT_NUM) {
-			DBGLOG(OID, WARN,
+			DBGLOG_LIMITED(OID, WARN,
 			"Wake cmd over flow %d-0x%02x\n",
 			WAKE_MAX_CMD_EVENT_NUM, ucCmdId);
 		}

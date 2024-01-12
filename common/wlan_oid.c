@@ -2572,14 +2572,14 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	struct STA_RECORD *prTmpStaRec;
 #endif
 
-	DEBUGFUNC("wlanoidSetAddKey");
+	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
 	DBGLOG(REQ, LOUD, "\n");
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
 	ASSERT(pu4SetInfoLen);
 	prChipInfo = prAdapter->chip_info;
 
-	DBGLOG(RSN, TRACE, "wlanoidSetAddKey\n");
+	DBGLOG_LIMITED(RSN, TRACE, "wlanoidSetAddKey\n");
 	if (prAdapter->rAcpiState == ACPI_STATE_D3) {
 		DBGLOG(RSN, WARN,
 			"Fail in set add key! (Adapter not ready). ACPI=D%d, Radio=%d\n",
@@ -2589,7 +2589,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	prNewKey = (struct PARAM_KEY *) pvSetBuffer;
 	/* Verify the key structure length. */
 	if (prNewKey->u4Length > u4SetBufferLen) {
-		DBGLOG(RSN, WARN,
+		DBGLOG_LIMITED(RSN, WARN,
 		       "Invalid key structure length (%d) greater than total buffer length (%d)\n",
 		       (uint8_t) prNewKey->u4Length, (uint8_t) u4SetBufferLen);
 		*pu4SetInfoLen = u4SetBufferLen;
@@ -2598,7 +2598,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	/* Verify the key material length for key material buffer */
 	if (prNewKey->u4KeyLength > prNewKey->u4Length -
 	    OFFSET_OF(struct PARAM_KEY, aucKeyMaterial)) {
-		DBGLOG(RSN, WARN, "Invalid key material length (%d)\n",
+		DBGLOG_LIMITED(RSN, WARN, "Invalid key material length (%d)\n",
 			(uint8_t) prNewKey->u4KeyLength);
 		*pu4SetInfoLen = u4SetBufferLen;
 		return WLAN_STATUS_INVALID_DATA;
@@ -2630,7 +2630,8 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	*pu4SetInfoLen = u4SetBufferLen;
 
 	/* Dump PARAM_KEY content. */
-	DBGLOG(RSN, TRACE, "Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
+	DBGLOG_LIMITED(RSN, TRACE,
+		"Set: Dump PARAM_KEY content, Len: 0x%08x, BSSID: "
 		MACSTR
 		", KeyIdx: 0x%08x, KeyLen: 0x%08x, Cipher: %d, Material:\n",
 		prNewKey->u4Length, MAC2STR(prNewKey->arBSSID),
@@ -2646,7 +2647,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		aisGetAisSpecBssInfo(prAdapter, prNewKey->ucBssIdx);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prNewKey->ucBssIdx);
 	if (!prBssInfo) {
-		DBGLOG(REQ, INFO, "BSS Info not exist !!\n");
+		DBGLOG_LIMITED(REQ, INFO, "BSS Info not exist !!\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 	/*         Tx  Rx KeyType addr
@@ -2676,7 +2677,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			    >= AUTH_MODE_WPA &&
 			    aisGetAuthMode(prAdapter, prNewKey->ucBssIdx) !=
 			    AUTH_MODE_WPA_NONE) {
-				DBGLOG(RSN, WARN,
+				DBGLOG_LIMITED(RSN, WARN,
 					"Set wep at not open/shared setting\n");
 				return WLAN_STATUS_SUCCESS;
 			}
@@ -2687,7 +2688,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 				prBssInfo->ucBssIndex, prNewKey->arBSSID);
 		if (!prStaRec) {	/* Already disconnected ? */
-			DBGLOG(REQ, INFO,
+			DBGLOG_LIMITED(REQ, INFO,
 				"[wlan] Not set the peer key while disconnect\n");
 			return WLAN_STATUS_SUCCESS;
 		}
@@ -2695,7 +2696,8 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 	cmd_size = prChipInfo->u2CmdTxHdrSize +	sizeof(struct CMD_802_11_KEY);
 	prCmdInfo = cmdBufAllocateCmdInfo(prAdapter, cmd_size);
 	if (!prCmdInfo) {
-		DBGLOG(INIT, ERROR, "Allocate CMD_INFO_T ==> FAILED.\n");
+		DBGLOG_LIMITED(INIT, ERROR,
+			"Allocate CMD_INFO_T ==> FAILED.\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -2744,7 +2746,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		}
 	} else {
 		if (!IS_BSS_ACTIVE(prBssInfo))
-			DBGLOG(REQ, INFO,
+			DBGLOG_LIMITED(REQ, INFO,
 				"[wlan] BSS info (%d) not active yet!",
 				prNewKey->ucBssIdx);
 	}
@@ -2791,7 +2793,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 			/* AP PMF */
 			if ((prCmdKey->ucKeyId >= 4 && prCmdKey->ucKeyId <= 5)
 			    && (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP)) {
-				DBGLOG(RSN, INFO, "AP mode set BIP\n");
+				DBGLOG_LIMITED(RSN, INFO, "AP mode set BIP\n");
 				prBssInfo->rApPmfCfg.fgBipKeyInstalled = TRUE;
 			}
 #endif
@@ -2913,7 +2915,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		/* AP PMF */
 		if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP) {
 			if (prCmdKey->ucIsAuthenticator) {
-				DBGLOG(RSN, INFO,
+				DBGLOG_LIMITED(RSN, INFO,
 				"Authenticator BIP bssid:%d\n",
 				prBssInfo->ucBssIndex);
 
@@ -2934,7 +2936,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 					    prCmdKey->ucKeyId);
 			}
 
-			DBGLOG(RSN, INFO, "BIP BC wtbl index:%d\n",
+			DBGLOG_LIMITED(RSN, INFO, "BIP BC wtbl index:%d\n",
 				prCmdKey->ucWlanIndex);
 		} else
 #endif
@@ -2957,7 +2959,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						MAC_ADDR_LEN);
 #if CFG_SUPPORT_802_11W
 					/* AP PMF */
-					DBGLOG(RSN, INFO,
+					DBGLOG_LIMITED(RSN, INFO,
 						"Assign client PMF flag = %d\n",
 						prStaRec->rPmfCfg.fgApplyPmf);
 					prCmdKey->ucMgmtProtection =
@@ -2968,7 +2970,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 				}
 			} else { /* Overwrite the old one for AP and STA WEP */
 				if (prBssInfo->prStaRecOfAP) {
-					DBGLOG(RSN, INFO, "AP REC\n");
+					DBGLOG_LIMITED(RSN, INFO, "AP REC\n");
 					prCmdKey->ucWlanIndex =
 					    secPrivacySeekForBcEntry(
 						prAdapter,
@@ -2984,7 +2986,8 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						   ->aucMacAddr,
 						   MAC_ADDR_LEN);
 				} else {
-					DBGLOG(RSN, INFO, "!AP && !STA REC\n");
+					DBGLOG_LIMITED(RSN, INFO,
+						"!AP && !STA REC\n");
 					prCmdKey->ucWlanIndex =
 						secPrivacySeekForBcEntry(
 						prAdapter,
@@ -2998,7 +3001,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						MAC_ADDR_LEN);
 				}
 				if (prCmdKey->ucKeyId >= MAX_KEY_NUM) {
-					DBGLOG(RSN, ERROR,
+					DBGLOG_LIMITED(RSN, ERROR,
 						"prCmdKey->ucKeyId [%u] overrun\n",
 						prCmdKey->ucKeyId);
 					return WLAN_STATUS_FAILURE;
@@ -3025,7 +3028,7 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 						prCmdKey->ucWlanIndex;
 					prBssInfo->ucBMCWlanIndexSUsed[
 						prCmdKey->ucKeyId] = TRUE;
-					DBGLOG(RSN, INFO,
+					DBGLOG_LIMITED(RSN, INFO,
 					       "BMCWlanIndex kid = %d, index = %d\n",
 					       prCmdKey->ucKeyId,
 					       prCmdKey->ucWlanIndex);
@@ -3039,23 +3042,26 @@ wlanoidSetAddKey(IN struct ADAPTER *prAdapter, IN void *pvSetBuffer,
 		}
 	}
 #if 1
-	DBGLOG(RSN, INFO, "Add key cmd to wlan index %d:",
+	DBGLOG_LIMITED(RSN, INFO, "Add key cmd to wlan index %d:",
 	       prCmdKey->ucWlanIndex);
-	DBGLOG(RSN, INFO, "(BSS = %d) " MACSTR "\n", prCmdKey->ucBssIdx,
+	DBGLOG_LIMITED(RSN, INFO,
+		"(BSS = %d) " MACSTR "\n", prCmdKey->ucBssIdx,
 	       MAC2STR(prCmdKey->aucPeerAddr));
-	DBGLOG(RSN, INFO, "Tx = %d type = %d Auth = %d\n", prCmdKey->ucTxKey,
+	DBGLOG_LIMITED(RSN, INFO,
+		"Tx = %d type = %d Auth = %d\n", prCmdKey->ucTxKey,
 	       prCmdKey->ucKeyType,
 	       prCmdKey->ucIsAuthenticator);
-	DBGLOG(RSN, INFO, "cipher = %d keyid = %d keylen = %d\n",
+	DBGLOG_LIMITED(RSN, INFO, "cipher = %d keyid = %d keylen = %d\n",
 	       prCmdKey->ucAlgorithmId, prCmdKey->ucKeyId,
 	       prCmdKey->ucKeyLen);
 	DBGLOG_MEM8(RSN, INFO, prCmdKey->aucKeyMaterial, prCmdKey->ucKeyLen);
-	DBGLOG(RSN, INFO, "wepkeyUsed = %d\n",
+	DBGLOG_LIMITED(RSN, INFO, "wepkeyUsed = %d\n",
 	       prBssInfo->wepkeyUsed[prCmdKey->ucKeyId]);
-	DBGLOG(RSN, INFO, "wepkeyWlanIdx = %d:", prBssInfo->wepkeyWlanIdx);
-	DBGLOG(RSN, INFO, "ucBMCWlanIndexSUsed = %d\n",
+	DBGLOG_LIMITED(RSN, INFO,
+		"wepkeyWlanIdx = %d:", prBssInfo->wepkeyWlanIdx);
+	DBGLOG_LIMITED(RSN, INFO, "ucBMCWlanIndexSUsed = %d\n",
 	       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId]);
-	DBGLOG(RSN, INFO, "ucBMCWlanIndexS = %d:",
+	DBGLOG_LIMITED(RSN, INFO, "ucBMCWlanIndexS = %d:",
 	       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
 #endif
 	prAisSpecBssInfo->ucKeyAlgorithmId =
