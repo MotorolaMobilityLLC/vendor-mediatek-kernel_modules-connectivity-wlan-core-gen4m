@@ -815,7 +815,7 @@ struct SW_EMI_RING_INFO {
 	u_int8_t fgIsEnable;
 	uint32_t u4CcifTchnumAddr;
 	uint32_t u4CcifChlNum;
-	spinlock_t rRingLock;
+	uint32_t u4ReadBlockCnt;
 };
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
