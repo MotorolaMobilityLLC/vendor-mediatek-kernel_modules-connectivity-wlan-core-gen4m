@@ -929,6 +929,7 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 #define kalStrStr(ct, cs)                  strstr(ct, cs)
 #define kalStrSep(s, ct)                   strsep(s, ct)
 #define kalStrCat(dest, src)               strcat(dest, src)
+#define kalStrnCat(dst, src, n)            strncat(dst, src, n)
 #define kalIsXdigit(c)                     isxdigit(c)
 #define kalStrtoint(_data, _base, _res) kstrtoint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kstrtoul(_data, _base, _res)
