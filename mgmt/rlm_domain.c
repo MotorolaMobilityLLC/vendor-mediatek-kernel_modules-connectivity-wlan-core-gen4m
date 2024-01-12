@@ -1121,18 +1121,19 @@ VOID rlmDomainSendPassiveScanInfoCmd(P_ADAPTER_T prAdapter, BOOLEAN fgIsOid)
 BOOLEAN rlmDomainIsLegalChannel_V2(P_ADAPTER_T prAdapter, ENUM_BAND_T eBand, UINT_8 ucChannel)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
-	UINT_8 idx, toatl_count;
+	UINT_8 idx, start_idx, end_idx;
 	struct channel *prCh;
 
 	if (eBand == BAND_2G4) {
-		idx = 0;
-		toatl_count = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
+		start_idx = 0;
+		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
 	} else {
-		idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
-		toatl_count = rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
+		start_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ);
+		end_idx = rlmDomainGetActiveChannelCount(IEEE80211_BAND_2GHZ) +
+					rlmDomainGetActiveChannelCount(IEEE80211_BAND_5GHZ);
 	}
 
-	for ( ; idx < toatl_count; idx++) {
+	for (idx = start_idx; idx < end_idx; idx++) {
 		prCh = rlmDomainGetActiveChannels() + idx;
 
 		if (prCh->chNum == ucChannel)
