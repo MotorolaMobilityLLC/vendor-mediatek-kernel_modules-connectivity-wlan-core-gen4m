@@ -81,6 +81,12 @@ static uint32_t nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter,
  *         WLAN_STATUS_RESOURCES
  */
 /*----------------------------------------------------------------------------*/
+unsigned char
+nanGetFeatureIsSigma(struct ADAPTER *prAdapter)
+{
+	return prAdapter->rWifiVar.fgNanIsSigma;
+}
+
 static uint32_t
 nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter, uint8_t *pucNanAttrList,
 			 uint16_t u2NanAttrListLength,
@@ -132,6 +138,84 @@ nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter, uint8_t *pucNanAttrList,
 	return rStatus;
 }
 
+static const char *attr_str(uint8_t attr)
+{
+	static const char * const nan_attr_string[
+		NAN_ATTR_ID_TRANSMIT_POWER_ENVELOPE + 1] = {
+		[NAN_ATTR_ID_MASTER_INDICATION] = "Master Indication",
+		[NAN_ATTR_ID_CLUSTER] = "Cluster",
+		[NAN_ATTR_ID_SERVICE_ID_LIST] = "Service ID List",
+		[NAN_ATTR_ID_SERVICE_DESCRIPTOR] = "Service Descriptor",
+		[NAN_ATTR_ID_NAN_CONNECTION_CAPABILITY] =
+			"NAN Connection Capability",
+		[NAN_ATTR_ID_WLAN_INFRASTRUCTURE] =
+			"WLAN Infrastructure attribute",
+		[NAN_ATTR_ID_P2P_OPERATION] = "P2P Operation",
+		[NAN_ATTR_ID_IBSS] = "IBSS attribute",
+		[NAN_ATTR_ID_MESH] = "Mesh attribute",
+		[NAN_ATTR_ID_FSD] = "Further NAN Service Discovery",
+		[NAN_ATTR_ID_FURTHER_AVAILABILITY_MAP] =
+			"Further Availability Map",
+		[NAN_ATTR_ID_COUNTRY_CODE] = "Country Code",
+		[NAN_ATTR_ID_RANGING] = "Ranging",
+		/* Cluster Discovery is intended to be carried in any Beacon
+		 * frame other than a NAN Beacon and Probe Response frames
+		 */
+		[NAN_ATTR_ID_CLUSTER_DISCOVERY] = "Cluster Discovery",
+		[NAN_ATTR_ID_SDEA] = "Service Descriptor Extended (SDEA)",
+		[NAN_ATTR_ID_DEVICE_CAPABILITY] = "Device Capability",
+		[NAN_ATTR_ID_NDP] = "NDP",
+		[NAN_ATTR_ID_NMSG] = "NMSG",
+		[NAN_ATTR_ID_NAN_AVAILABILITY] = "NAN Availability",
+		[NAN_ATTR_ID_NDC] = "NDC",
+		[NAN_ATTR_ID_NDL] = "NDL",
+		[NAN_ATTR_ID_NDL_QOS] = "NDL QoS",
+		[NAN_ATTR_ID_MULTICAST_SCHEDULE] = "Multicast Schedule",
+		[NAN_ATTR_ID_UNALIGNED_SCHEDULE] = "Unaligned Schedule",
+		[NAN_ATTR_ID_PAGING_UNICAST] = "Paging - Unicast",
+		[NAN_ATTR_ID_PAGING_MULTICAST] = "Paging - Multicast",
+		[NAN_ATTR_ID_RANGING_INFORMATION] = "Ranging Information",
+		[NAN_ATTR_ID_RANGING_SETUP] = "Ranging Setup",
+		[NAN_ATTR_ID_FTM_RANGING_REPORT] = "FTM Ranging Report",
+		[NAN_ATTR_ID_ELEMENT_CONTAINER] = "Element Container",
+		[NAN_ATTR_ID_EXT_WLAN_INFRASTRUCTURE] =
+			"Ext WLAN Infrastructure",
+		[NAN_ATTR_ID_EXT_P2P_OPERATION] = "Ext P2P Operation",
+		[NAN_ATTR_ID_EXT_IBSS] = "Ext IBSS",
+		[NAN_ATTR_ID_EXT_MESH] = "Ext Mesh",
+		[NAN_ATTR_ID_CIPHER_SUITE_INFO] = "Cipher Suite Info (CSIA)",
+		[NAN_ATTR_ID_SECURITY_CONTEXT_INFO] =
+			"Security Context Info (SCIA)",
+		[NAN_ATTR_ID_SHARED_KEY_DESCRIPTOR] =
+			"Shared-Key Descriptor",
+		[NAN_ATTR_ID_MULTICAST_SCHEDULE_CHANGE] =
+			"Multicast Schedule Change",
+		[NAN_ATTR_ID_MULTICAST_SCHEDULE_OWNER_CHANGE] =
+			"Multicast Schedule Owner Change",
+		[NAN_ATTR_ID_PUBLIC_AVAILABILITY] = "Public Availability",
+		[NAN_ATTR_ID_SUBSCRIBE_SERVICE_ID_LIST] =
+			"Subscriber Service ID List",
+		[NAN_ATTR_ID_NDP_EXTENSION] = "NDP Extension",
+		[NAN_ATTR_ID_DEVICE_CAPABILITY_EXT] =
+			"Device Capability Extension",
+		[NAN_ATTR_ID_NAN_IDENTITY_RESOLUTION] =
+			"NAN Identity Resolution",
+		[NAN_ATTR_ID_NAN_PAIRING_BOOTSTRAPPING] =
+			"NAN Pairing Bootstrapping",
+		[NAN_ATTR_ID_S3] = "S3",
+		[NAN_ATTR_ID_TRANSMIT_POWER_ENVELOPE] =
+			"Transmit Power Envelope",
+	};
+
+	if (attr == NAN_ATTR_ID_VENDOR_SPECIFIC)
+		return "Vendor Specific";
+	else if (attr <= NAN_ATTR_ID_TRANSMIT_POWER_ENVELOPE &&
+		 nan_attr_string[attr])
+		return nan_attr_string[attr];
+	else
+		return "";
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief        This utility function search through whole attr body list
@@ -160,12 +244,12 @@ nanRetrieveAttrById(uint8_t *pucAttrList, uint16_t u2Length,
 #endif
 
 	if (!pucAttrList) {
-		DBGLOG(NAN, ERROR, "[%s] pucAttrList error\n", __func__);
+		DBGLOG(NAN, ERROR, "pucAttrList error\n");
 		return NULL;
 	}
 
 	if (u2Length <= 0) {
-		DBGLOG(NAN, ERROR, "[%s] u2Length invalid\n", __func__);
+		DBGLOG(NAN, ERROR, "u2Length invalid\n");
 		return NULL;
 	}
 
@@ -173,6 +257,8 @@ nanRetrieveAttrById(uint8_t *pucAttrList, uint16_t u2Length,
 
 		ucAttrId = NAN_GET_U8(pucPtr);
 		u2Length = NAN_GET_U16(pucPtr + 1);
+		DBGLOG(NAN, INFO, "ucAttrId = %d (%s)\n", ucAttrId,
+				attr_str(ucAttrId));
 
 		if (ucAttrId == ucTargetAttrId) {
 			prTargetAttr = (struct _NAN_ATTR_HDR_T *)pucPtr;
@@ -217,7 +303,8 @@ uint32_t
 nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
 	      struct MSDU_INFO *prMsduInfo,
 	      enum _NAN_ACTION_T eAction,
-	      uint8_t *pucLocalMacAddr, uint8_t *pucPeerMacAddr) {
+	      uint8_t *pucLocalMacAddr, uint8_t *pucPeerMacAddr,
+	      struct STA_RECORD *prStaRec) {
 	struct _NAN_ACTION_FRAME_T *prNAF = NULL;
 	const uint8_t aucOui[VENDOR_OUI_LEN] = NAN_OUI;
 
@@ -249,7 +336,16 @@ nanDataEngineComposeNAFHeader(struct ADAPTER *prAdapter,
 	prNAF->u2SeqCtrl = 0;
 
 	/* action frame body */
-	prNAF->ucCategory = CATEGORY_PUBLIC_ACTION;
+	if (prStaRec && prStaRec->fgTransmitKeyExist == TRUE) {
+		DBGLOG(NAN, INFO,
+			"CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION\n");
+		prNAF->ucCategory = CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION;
+	} else {
+		DBGLOG(NAN, INFO,
+			"CATEGORY_PUBLIC_ACTION\n");
+		prNAF->ucCategory = CATEGORY_PUBLIC_ACTION;
+	}
+
 	prNAF->ucAction = ACTION_PUBLIC_VENDOR_SPECIFIC;
 	kalMemCopy(prNAF->aucOUI, aucOui, VENDOR_OUI_LEN);
 	prNAF->ucOUItype = VENDOR_OUI_TYPE_NAN_NAF;
@@ -625,7 +721,8 @@ nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
 			    NAN_ATTR_NDPE_STATUS_OFFSET) ==
 			   NAN_ATTR_NDPE_STATUS_REJECTED) {
 			DBGLOG(NAN, WARN,
-			       "NAF Data Response: Being REJECTed\n");
+			       "NDP Response: Being REJECTed, reason = %d\n",
+			       prAttrNDPE->ucReasonCode);
 			return WLAN_STATUS_FAILURE;
 		}
 
@@ -752,6 +849,25 @@ nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
 		u2CountLen += MAC_ADDR_LEN;
 	}
 
+	DBGLOG(NAN, INFO, "[%s] NDPE TLV len = %d\n", __func__,
+		prAttrNDPE->u2Length - u2CountLen);
+	dumpMemory8(pucPivot, prAttrNDPE->u2Length - u2CountLen);
+
+	if (!nanGetFeatureIsSigma(prAdapter) &&
+		prAttrNDPE->u2Length > u2CountLen) {
+		if (prNDP->pucPeerAppInfo != NULL)
+			cnmMemFree(prAdapter, prNDP->pucPeerAppInfo);
+		prNDP->pucPeerAppInfo = cnmMemAlloc(
+			prAdapter, RAM_TYPE_BUF,
+			prAttrNDPE->u2Length - u2CountLen);
+		if (prNDP->pucPeerAppInfo != NULL) {
+			kalMemCopy(prNDP->pucPeerAppInfo,
+			   pucPivot, prAttrNDPE->u2Length - u2CountLen);
+			prNDP->u2PeerAppInfoLen =
+				prAttrNDPE->u2Length - u2CountLen;
+		}
+	}
+
 	/* 3.2 TLV parsing if there is still field */
 	while (prAttrNDPE->u2Length > u2CountLen) {
 		prTLV = (struct _NAN_ATTR_NDPE_GENERAL_TLV_T *)pucPivot;
@@ -774,15 +890,15 @@ nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
 				if (prNDP->fgIsInitiator == TRUE)
 					kalMemCopy(prNDP->aucRspInterfaceId,
 						   prIPV6TLV->aucInterfaceId,
-						   8);
+						   IPV6MACLEN);
 				else
 					kalMemCopy(prNDP->aucInterfaceId,
 						   prIPV6TLV->aucInterfaceId,
-						   8);
+						   IPV6MACLEN);
 			}
 
 			break;
-#if 0
+#ifdef NAN_UNUSED
 		case NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO:
 			prAppInfoTLV =
 			    (struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T *) prTLV;
@@ -861,6 +977,51 @@ nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_SUPPORT_802_11AX == 1)
+void nanNdpeAttrVendorSpecificHandler(
+		struct ADAPTER *prAdapter,
+		struct _NAN_ATTR_VENDOR_SPECIFIC_T *prAttrVendorSpecific,
+		struct _NAN_NDL_INSTANCE_T *prNDL)
+{
+	uint8_t aucSsOui[] = {0x00, 0x00, 0xF0}, ucHeCapLen = 0;
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+			prAdapter, NAN_BSS_INDEX_BAND1)->ucBssIndex];
+#else
+			prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
+#endif
+
+	DBGLOG(NAN, INFO, "Receive NAN vendor specific IE\n");
+	DBGLOG_MEM8(NAN, INFO, prAttrVendorSpecific,
+		prAttrVendorSpecific->u2Length + ELEM_HDR_LEN);
+
+	/* Not SS OUI or OUI type not 0x33
+	 * (VENDOR_COMPATIBILITY_OUI_TYPE declared in SS), skip
+	 */
+	if (kalMemCmp(prAttrVendorSpecific->aucOui, aucSsOui, 3) ||
+		prAttrVendorSpecific->ucVendorSpecificOuiType != 0x33)
+		return;
+
+	/* If Bit0 = 1 (HE supported) and we did not set HE CAP yet */
+	if ((prAttrVendorSpecific->aucVendorSpecificOuiData[0]
+		& BIT(0) == 1) &&
+		!(prNDL->ucPhyTypeSet & PHY_TYPE_BIT_HE)) {
+		DBGLOG(NAN, INFO,
+			"NAN peer supports HE due to VendorSpecific IE\n");
+
+		ucHeCapLen = heRlmFillNANHECapIE(
+					prAdapter, prBssInfo,
+					prNDL->aucIeHeCap);
+
+		if (ucHeCapLen)
+			prNDL->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+	}
+
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -997,11 +1158,11 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
  *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
+uint32_t nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 		enum _NAN_ACTION_T eNanAction,
 		struct _NAN_ATTR_NDL_T *prAttrNDL,
-		struct _NAN_NDL_INSTANCE_T *prNDL) {
+		struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 	uint16_t u2NDLImmutableScheduleLen;
 	uint8_t *pucNDLImmutableSchedule;
 	uint8_t *pucPivot;
@@ -1067,13 +1228,6 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 			       eNanAction, prAttrNDL->ucTypeStatus);
 
 			return WLAN_STATUS_FAILURE;
-		} else if (prAttrNDL->ucDialogToken != prNDL->ucDialogToken) {
-			DBGLOG(NAN, WARN,
-			       "NAF(%d): NDLDialogToken Mismatch (%d:%d)\n",
-			       eNanAction, prAttrNDL->ucDialogToken,
-			       prNDL->ucDialogToken);
-
-			return WLAN_STATUS_FAILURE;
 		} else if (((prAttrNDL->ucTypeStatus &
 			     NAN_ATTR_NDL_STATUS_MASK) >>
 			    NAN_ATTR_NDL_STATUS_OFFSET) ==
@@ -1083,8 +1237,18 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 			   NAN_ATTR_NDL_STATUS_MASK) >>
 			  NAN_ATTR_NDL_STATUS_OFFSET) ==
 			 NAN_ATTR_NDL_STATUS_CONTINUED) {
-			prNDL->prOperatingNDP->fgConfirmRequired = TRUE;
+			if (prNDL->prOperatingNDP)
+				prNDL->prOperatingNDP->fgConfirmRequired = TRUE;
 			prNDL->fgIsCounter = TRUE;
+		}
+
+		if (prAttrNDL->ucDialogToken != prNDL->ucDialogToken) {
+			DBGLOG(NAN, WARN,
+			       "NAF(%d): NDLDialogToken Mismatch (%d:%d)\n",
+			       eNanAction, prAttrNDL->ucDialogToken,
+			       prNDL->ucDialogToken);
+
+			prNDL->ucDialogToken = prAttrNDL->ucDialogToken;
 		}
 		/* TODO: check if matching current operating parameters */
 
@@ -1099,13 +1263,6 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 			       eNanAction, prAttrNDL->ucTypeStatus);
 
 			return WLAN_STATUS_FAILURE;
-		} else if (prAttrNDL->ucDialogToken != prNDL->ucDialogToken) {
-			DBGLOG(NAN, WARN,
-			       "NAF(%d): NDLDialogToken Mismatch (%d:%d)\n",
-			       eNanAction, prAttrNDL->ucDialogToken,
-			       prNDL->ucDialogToken);
-
-			return WLAN_STATUS_FAILURE;
 		} else if (((prAttrNDL->ucTypeStatus &
 			     NAN_ATTR_NDL_STATUS_MASK) >>
 			    NAN_ATTR_NDL_STATUS_OFFSET) ==
@@ -1118,6 +1275,15 @@ nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 			 */
 
 			/* TODO: inform scheduler for final result */
+		}
+
+		if (prAttrNDL->ucDialogToken != prNDL->ucDialogToken) {
+			DBGLOG(NAN, WARN,
+			       "NAF(%d): NDLDialogToken Mismatch (%d:%d)\n",
+			       eNanAction, prAttrNDL->ucDialogToken,
+			       prNDL->ucDialogToken);
+
+			prNDL->ucDialogToken = prAttrNDL->ucDialogToken;
 		}
 	} else if (eNanAction == NAN_ACTION_SCHEDULE_UPDATE_NOTIFICATION) {
 		/* TODO: check if matching current operating parameters */
@@ -1402,20 +1568,17 @@ nanElemContainerAttrHandler(
 				prNDL->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 				if (IE_SIZE(pucIE) > sizeof(prNDL->aucIeHeCap))
 					DBGLOG(NAN, WARN,
-						"HE_CAP IE_LEN (%d) exceed MAX LEN(%zu)!\n"
+						"HE_CAP IE_LEN (%d) exceed MAX LEN(%d)!\n"
 						, IE_LEN(pucIE)
 						, sizeof(prNDL->aucIeHeCap));
-				else {
+				else
 					COPY_IE(&(prNDL->aucIeHeCap), pucIE);
-					kalMemCopy(&(prNDL->aucIeHeCap), pucIE,
-						IE_SIZE(pucIE));
-				}
 				/* TODO: match with local capabilities
 				* for STA-REC params
 				*/
 			}
-			break;
 #endif
+
 		default:
 			break;
 		}
@@ -1664,6 +1827,8 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		switch (prNanAttr->ucAttrId) {
 		case NAN_ATTR_ID_NDP:
 			fgExistNDP = TRUE;
+			DBGLOG(NAN, ERROR, "[%s] NDP exist, fgExistNDPE= %d\n",
+				__func__, fgExistNDPE);
 
 			/* only parse NDP when support NDPE is turned off,
 			 * or NDPE is not there
@@ -1758,12 +1923,21 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		case NAN_ATTR_ID_NDP_EXTENSION:
 			fgExistNDPE = TRUE;
 			/* only parse NDPE if option is turned on */
-			if (fgExistNDP == FALSE)
-				rStatus = nanNdpeAttrUpdateNdp(
-					prAdapter, eNanAction,
-					(struct _NAN_ATTR_NDPE_T *)prNanAttr,
-					prNDL, prNDP);
+
+			DBGLOG(NAN, INFO, "[%s] NDPE exist, fgExistNDP = %d\n",
+			__func__, fgExistNDP);
+			rStatus = nanNdpeAttrUpdateNdp(
+				prAdapter, eNanAction,
+				(struct _NAN_ATTR_NDPE_T *)prNanAttr,
+				prNDL, prNDP);
 			break;
+#if (CFG_SUPPORT_802_11AX == 1)
+		case NAN_ATTR_ID_VENDOR_SPECIFIC:
+			nanNdpeAttrVendorSpecificHandler(prAdapter,
+				(struct _NAN_ATTR_VENDOR_SPECIFIC_T *)prNanAttr,
+				prNDL);
+			break;
+#endif
 		default:
 			break;
 		}
@@ -1850,9 +2024,11 @@ nanDataEngineNDPAttrLength(struct ADAPTER *prAdapter,
 	u2AttrLength = OFFSET_OF(struct _NAN_ATTR_NDP_T, ucPublishID);
 
 	if (prNDP != NULL) {
-		if (nanDataEngineNDPECheck(prAdapter, prNDP->fgSupportNDPE) ==
-		    TRUE)
+		if (nanDataEngineNDPECheck(prAdapter, prNDP->fgSupportNDPE)) {
+			DBGLOG(NAN, INFO, "[%s] NDPE instead\n",
+				__func__);
 			return 0;
+		}
 
 		u2AttrLength += prNDP->u2AppInfoLen;
 
@@ -2109,23 +2285,25 @@ nanDataEngineNDLAttrLength(struct ADAPTER *prAdapter,
 				fgGenerateNDL = TRUE;
 			} else
 				fgGenerateNDL = FALSE;
-
+#ifdef NAN_UNUSED
 			/* Sigma 5.3.2 must pass with NDL attr */
 			fgGenerateNDL = TRUE;
-
+#endif
 			break;
 		case NDP_RESPONDER_TX_DP_RESPONSE:
 			fgGenerateNDL =
 				(prNDL->fgScheduleEstablished == TRUE ? FALSE
 								      : TRUE);
+			fgGenerateNDL = TRUE;
 			break;
 
 		default:
 			break;
 		}
-
+#ifdef NAN_UNUSED
 		if (prNDL->fgScheduleEstablished == TRUE)
 			fgGenerateNDL = FALSE;
+#endif
 	}
 
 	if (fgGenerateNDL == TRUE) {
@@ -2241,15 +2419,17 @@ nanDataEngineNDLAttrAppendImpl(struct ADAPTER *prAdapter,
 			prAttrNDL->ucReasonCode = ucReasonCode;
 			prAttrNDL->ucNDLControl = 0;
 		} else {
-			prAttrNDL->ucDialogToken = prNDL->ucDialogToken;
 			prNDP = prNDL->prOperatingNDP;
+			if (prNDP)
+				prNDL->ucDialogToken = prNDP->ucDialogToken;
+			prAttrNDL->ucDialogToken = prNDL->ucDialogToken;
 
 			if (prNDP == NULL) {
 				switch (prNDL->eCurrentNDLMgmtState) {
 				case NDL_INITIATOR_TX_SCHEDULE_REQUEST:
 					prAttrNDL->ucTypeStatus =
 						NAN_ATTR_NDL_TYPE_REQUEST |
-						(prNDL->ucNDLSetupCurrentStatus
+						(NAN_ATTR_NDL_STATUS_CONTINUED
 						 << NAN_ATTR_NDL_STATUS_OFFSET);
 					break;
 
@@ -2280,7 +2460,7 @@ nanDataEngineNDLAttrAppendImpl(struct ADAPTER *prAdapter,
 				case NDP_INITIATOR_TX_DP_REQUEST:
 					prAttrNDL->ucTypeStatus =
 						NAN_ATTR_NDL_TYPE_REQUEST |
-						(prNDL->ucNDLSetupCurrentStatus
+						(NAN_ATTR_NDL_STATUS_CONTINUED
 						 << NAN_ATTR_NDL_STATUS_OFFSET);
 					break;
 
@@ -2393,14 +2573,18 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 				     struct _NAN_NDL_INSTANCE_T *prNDL,
 				     struct _NAN_NDP_INSTANCE_T *prNDP) {
 	uint16_t u2AttrLength;
-	struct BSS_INFO *prBssInfo;
 #if (CFG_SUPPORT_802_11AX == 1)
-	uint8_t ucHeLen;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucHeCapLen, ucHeOpLen;
+	uint8_t aucElements[50];
 
 	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+				prAdapter, NAN_BSS_INDEX_BAND1)->ucBssIndex];
+#else
 				prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
 #endif
-
+#endif
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
@@ -2413,9 +2597,18 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 	u2AttrLength += ELEM_HDR_LEN + ELEM_MAX_LEN_VHT_CAP;
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
-	ucHeLen = heRlmCalculateHeCapIELen(prAdapter,
-				prBssInfo->ucBssIndex, NULL);
-	u2AttrLength += ucHeLen;
+	DBGLOG(NAN, INFO, "Calculate HE IE\n");
+	ucHeCapLen = heRlmFillNANHECapIE(
+		prAdapter, prBssInfo, aucElements);
+
+	u2AttrLength += ucHeCapLen;
+	DBGLOG(NAN, INFO, "Len HE Cap IE (%d)\n", ucHeCapLen);
+
+	ucHeOpLen = heRlmFillNANHeOpIE(
+		prAdapter, prBssInfo, aucElements);
+
+	u2AttrLength += ucHeOpLen;
+	DBGLOG(NAN, INFO, "Len HE OP IE (%d)\n", ucHeOpLen);
 #endif
 
 	if ((prNDP == NULL) || (prNDL == NULL)) {
@@ -2429,7 +2622,7 @@ nanDataEngineElemContainerAttrLength(struct ADAPTER *prAdapter,
 
 	case NDP_RESPONDER_TX_DP_RESPONSE:
 		return u2AttrLength;
-#if 0
+#ifdef NAN_UNUSED
 		if (prNDL->fgScheduleEstablished == FALSE) {
 			if (prNDL->ucNDLSetupCurrentStatus ==
 				    NAN_ATTR_NDL_STATUS_ACCEPTED ||
@@ -2477,7 +2670,7 @@ nanDataEngineElemContainerAttrAppend(struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = prAdapter->aprBssInfo[nanGetSpecificBssInfo(
-#if (CFG_SUPPORT_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 			prAdapter, NAN_BSS_INDEX_BAND1)->ucBssIndex];
 #else
 			prAdapter, NAN_BSS_INDEX_BAND0)->ucBssIndex];
@@ -3289,61 +3482,75 @@ nanDataEngineNDPEAttrLength(struct ADAPTER *prAdapter,
 		if (nanDataEngineNDPECheck(prAdapter, prNDP->fgSupportNDPE) ==
 		    FALSE) {
 			DBGLOG(NAN, INFO,
-			       "prNDP->fgSupportNDPE %d nanGetFeatureNDPE %d\n",
-			       prNDP->fgSupportNDPE,
-			       nanGetFeatureNDPE(prAdapter));
+				"[%s] Do not carry NDPE Attr. fgSupportNDPE %d nanGetFeatureNDPE %d\n",
+				 __func__,
+				prNDP->fgSupportNDPE,
+				nanGetFeatureNDPE(prAdapter));
 			return 0;
 		}
 
-		if (prNDP->fgCarryIPV6 == TRUE)
-			u2AttrLength += sizeof(
+		DBGLOG(NAN, INFO,
+		   "[%s] Append AppInfoLen = %d, fgIpv6 = %d\n",
+		   __func__,
+		   prNDP->u2AppInfoLen,
+		   prNDP->fgCarryIPV6);
+
+		if (!nanGetFeatureIsSigma(prAdapter)) {
+			if (prNDP->fgCarryIPV6 == TRUE)
+				u2AttrLength += sizeof(
 				struct _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
-#if 0
-		if (prNDP->u2AppInfoLen > 0)
-			u2AttrLength +=
-				OFFSET_OF(
-				  struct _NAN_ATTR_NDPE_WFA_SERVICE_INFO_TLV_T,
-				  aucBody);
-				+ prNDP->u2AppInfoLen;
 
-		if (prNDP->u2OtherAppInfoLen > 0)
-			u2AttrLength +=
-				OFFSET_OF(
-				  struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				  aucBody)
-				+ prNDP->u2OtherAppInfoLen;
-#else
-		if (prNDP->eCurrentNDPProtocolState ==
-			    NDP_INITIATOR_TX_DP_REQUEST ||
-		    prNDP->eCurrentNDPProtocolState ==
-			    NDP_RESPONDER_TX_DP_RESPONSE) {
-			if (nanDataEngineServiceInfoCheck(prAdapter, prNDP) ==
-			    TRUE) {
-				uint8_t i = 0;
-
-				u2AttrLength += OFFSET_OF(
+			if (prNDP->u2AppInfoLen > 0)
+				u2AttrLength += prNDP->u2AppInfoLen;
+		} else {
+#ifdef NAN_UNUSED
+			if (prNDP->u2AppInfoLen > 0)
+				u2AttrLength +=
+					OFFSET_OF(
 					struct
-					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					aucBody);
-				for (i = 0;
-				     i < sizeof(txServInfoSSITable) /
-						 sizeof(struct
-							_APPEND_ATTR_ENTRY_T);
-				     i++) {
-					if (txServInfoSSITable[i]
-						.pfnCalculateVariableAttrLen) {
-						u2AttrLength +=
+					_NAN_ATTR_NDPE_WFA_SERVICE_INFO_TLV_T,
+					aucBody)
+					+ prNDP->u2AppInfoLen;
+
+			if (prNDP->u2OtherAppInfoLen > 0)
+				u2AttrLength +=
+					OFFSET_OF(
+					struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucBody)
+					+ prNDP->u2OtherAppInfoLen;
+#else
+		if ((prNDP->eCurrentNDPProtocolState ==
+			NDP_INITIATOR_TX_DP_REQUEST ||
+			prNDP->eCurrentNDPProtocolState ==
+			NDP_RESPONDER_TX_DP_RESPONSE) &&
+			nanDataEngineServiceInfoCheck(prAdapter,
+			prNDP) == TRUE) {
+			uint8_t i = 0;
+
+			u2AttrLength += OFFSET_OF(
+			struct
+			_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+			aucBody);
+			for (i = 0;
+				i <
+				sizeof(txServInfoSSITable) /
+				sizeof(struct
+				_APPEND_ATTR_ENTRY_T);
+				 i++) {
+				if (txServInfoSSITable[i]
+					.pfnCalculateVariableAttrLen) {
+					u2AttrLength +=
 						txServInfoSSITable[i]
-						  .pfnCalculateVariableAttrLen(
-						  prAdapter,
-						  prNDL,
-						  prNDP);
-					}
+						.pfnCalculateVariableAttrLen(
+						prAdapter,
+						prNDL,
+						prNDP);
 				}
 			}
 		}
-
 #endif
+		}
 		switch (prNDP->eCurrentNDPProtocolState) {
 		case NDP_INITIATOR_TX_DP_REQUEST:
 			u2AttrLength++; /* for Publish ID */
@@ -3461,209 +3668,229 @@ nanDataEngineNDPEAttrAppendImpl(struct ADAPTER *prAdapter,
 
 	u2AttrLength = nanDataEngineNDPEAttrLength(prAdapter, prNDL, prNDP);
 
-	if (u2AttrLength != 0) {
-		prAttrNDPE->ucAttrId = NAN_ATTR_ID_NDP_EXTENSION;
-		prAttrNDPE->u2Length =
-			u2AttrLength -
-			OFFSET_OF(struct _NAN_ATTR_NDPE_T, ucDialogToken);
+	if (u2AttrLength == 0)
+		return;
 
-		if (prNDP == NULL) {
-			prAttrNDPE->ucDialogToken =
-				prPeerAttrNDPE->ucDialogToken;
-			prAttrNDPE->ucTypeStatus = ucTypeStatus;
-			prAttrNDPE->ucReasonCode = ucReasonCode;
+	prAttrNDPE->ucAttrId = NAN_ATTR_ID_NDP_EXTENSION;
+	prAttrNDPE->u2Length =
+		u2AttrLength -
+		OFFSET_OF(struct _NAN_ATTR_NDPE_T, ucDialogToken);
+
+	if (prNDP == NULL) {
+		prAttrNDPE->ucDialogToken =
+			prPeerAttrNDPE->ucDialogToken;
+		prAttrNDPE->ucTypeStatus = ucTypeStatus;
+		prAttrNDPE->ucReasonCode = ucReasonCode;
+		COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
+			      prPeerAttrNDPE->aucInitiatorNDI);
+		prAttrNDPE->ucNDPID = prPeerAttrNDPE->ucNDPID;
+		prAttrNDPE->ucNDPEControl = 0;
+	} else {
+		prAttrNDPE->ucDialogToken = prNDP->ucDialogToken;
+		prAttrNDPE->ucTypeStatus = prNDP->ucTxNextTypeStatus;
+		prAttrNDPE->ucReasonCode = prNDP->ucReasonCode;
+
+		if (prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR)
 			COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
-				      prPeerAttrNDPE->aucInitiatorNDI);
-			prAttrNDPE->ucNDPID = prPeerAttrNDPE->ucNDPID;
-			prAttrNDPE->ucNDPEControl = 0;
-		} else {
-			prAttrNDPE->ucDialogToken = prNDP->ucDialogToken;
-			prAttrNDPE->ucTypeStatus = prNDP->ucTxNextTypeStatus;
-			prAttrNDPE->ucReasonCode = prNDP->ucReasonCode;
+				      prNDP->aucLocalNDIAddr);
 
+		else
+			COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
+				      prNDP->aucPeerNDIAddr);
+
+		prAttrNDPE->ucNDPID = prNDP->ucNDPID;
+
+		prAttrNDPE->ucNDPEControl = 0;
+		if (prNDP->fgConfirmRequired)
+			prAttrNDPE->ucNDPEControl |=
+				NAN_ATTR_NDPE_CTRL_CONFIRM_REQUIRED;
+		if (prNDP->fgSecurityRequired)
+			prAttrNDPE->ucNDPEControl |=
+				NAN_ATTR_NDPE_CTRL_SECURITY_PRESENT;
+		if (prNDP->eCurrentNDPProtocolState ==
+		    NDP_INITIATOR_TX_DP_REQUEST)
+			prAttrNDPE->ucNDPEControl |=
+				NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT;
+		if (prNDP->eCurrentNDPProtocolState ==
+		    NDP_RESPONDER_TX_DP_RESPONSE) {
+			if (prNDP->ucNDPSetupStatus ==
+				    NAN_ATTR_NDP_STATUS_CONTINUED ||
+			    prNDP->ucNDPSetupStatus ==
+				NAN_ATTR_NDP_STATUS_ACCEPTED) {
+				prAttrNDPE->ucNDPEControl |=
+				    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT;
+			}
+		}
+
+		/* start to fill option field */
+		pucOffset = &(prAttrNDPE->ucPublishID);
+		if (prAttrNDPE->ucNDPEControl &
+		    NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT) {
+			*pucOffset = prNDP->ucPublishId;
+			pucOffset++;
+		}
+
+		if (prAttrNDPE->ucNDPEControl &
+		    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT) {
 			if (prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR)
-				COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
-					      prNDP->aucLocalNDIAddr);
-
-			else
-				COPY_MAC_ADDR(prAttrNDPE->aucInitiatorNDI,
+				COPY_MAC_ADDR(pucOffset,
 					      prNDP->aucPeerNDIAddr);
 
-			prAttrNDPE->ucNDPID = prNDP->ucNDPID;
+			else
+				COPY_MAC_ADDR(pucOffset,
+					      prNDP->aucLocalNDIAddr);
+			pucOffset += MAC_ADDR_LEN;
+		}
 
-			prAttrNDPE->ucNDPEControl = 0;
-			if (prNDP->fgConfirmRequired)
-				prAttrNDPE->ucNDPEControl |=
-					NAN_ATTR_NDPE_CTRL_CONFIRM_REQUIRED;
-			if (prNDP->fgSecurityRequired)
-				prAttrNDPE->ucNDPEControl |=
-					NAN_ATTR_NDPE_CTRL_SECURITY_PRESENT;
-			if (prNDP->eCurrentNDPProtocolState ==
-			    NDP_INITIATOR_TX_DP_REQUEST)
-				prAttrNDPE->ucNDPEControl |=
-					NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT;
-			if (prNDP->eCurrentNDPProtocolState ==
-			    NDP_RESPONDER_TX_DP_RESPONSE) {
-				if (prNDP->ucNDPSetupStatus ==
-					    NAN_ATTR_NDP_STATUS_CONTINUED ||
-				    prNDP->ucNDPSetupStatus ==
-					NAN_ATTR_NDP_STATUS_ACCEPTED) {
-					prAttrNDPE->ucNDPEControl |=
-					    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT;
-				}
-			}
+		if (prNDP->fgCarryIPV6 == TRUE) {
+			prIPV6TLV =
+				(struct
+				 _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T *)
+					pucOffset;
 
-			/* start to fill option field */
-			pucOffset = &(prAttrNDPE->ucPublishID);
-			if (prAttrNDPE->ucNDPEControl &
-			    NAN_ATTR_NDPE_CTRL_PUBLISHID_PRESENT) {
-				*pucOffset = prNDP->ucPublishId;
-				pucOffset++;
-			}
+			/* filling */
+			prIPV6TLV->ucType =
+				NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL;
+			prIPV6TLV->u2Length =
+			    sizeof(struct
+				_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T) -
+				OFFSET_OF(struct
+				_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T,
+				aucInterfaceId);
+			if (prNDP->fgIsInitiator == TRUE)
+				kalMemCopy(prIPV6TLV->aucInterfaceId,
+					   prNDP->aucInterfaceId, 8);
+			else
+				kalMemCopy(prIPV6TLV->aucInterfaceId,
+					   prNDP->aucRspInterfaceId, 8);
+			/* move to next */
+			pucOffset += sizeof(
+				struct
+				_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
+		}
 
-			if (prAttrNDPE->ucNDPEControl &
-			    NAN_ATTR_NDPE_CTRL_RESP_NDI_PRESENT) {
-				if (prNDP->eNDPRole == NAN_PROTOCOL_INITIATOR)
-					COPY_MAC_ADDR(pucOffset,
-						      prNDP->aucPeerNDIAddr);
-
-				else
-					COPY_MAC_ADDR(pucOffset,
-						      prNDP->aucLocalNDIAddr);
-				pucOffset += MAC_ADDR_LEN;
-			}
-
-			if (prNDP->fgCarryIPV6 == TRUE) {
-				prIPV6TLV =
-					(struct
-					 _NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T *)
-						pucOffset;
-
-				/* filling */
-				prIPV6TLV->ucType =
-					NAN_ATTR_NDPE_TLV_TYPE_IPV6_LINK_LOCAL;
-				prIPV6TLV->u2Length =
-				    sizeof(struct
-					_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T) -
-					OFFSET_OF(struct
-					_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T,
-					aucInterfaceId);
-				if (prNDP->fgIsInitiator == TRUE)
-					kalMemCopy(prIPV6TLV->aucInterfaceId,
-						   prNDP->aucInterfaceId, 8);
-				else
-					kalMemCopy(prIPV6TLV->aucInterfaceId,
-						   prNDP->aucRspInterfaceId, 8);
-				/* move to next */
-				pucOffset += sizeof(
-					struct
-					_NAN_ATTR_NDPE_IPV6_LINK_LOCAL_TLV_T);
-			}
-
-			if ((prNDP->eCurrentNDPProtocolState ==
-				     NDP_INITIATOR_TX_DP_REQUEST ||
+		if ((prNDP->eCurrentNDPProtocolState ==
+			     NDP_INITIATOR_TX_DP_REQUEST ||
+		     prNDP->eCurrentNDPProtocolState ==
+			     NDP_RESPONDER_TX_DP_RESPONSE ||
 			     prNDP->eCurrentNDPProtocolState ==
-				     NDP_RESPONDER_TX_DP_RESPONSE) &&
-			    nanDataEngineServiceInfoCheck(prAdapter, prNDP) ==
-				    TRUE) {
+			     NDP_RESPONDER_TX_DP_SECURITY_INSTALL) &&
+		    nanDataEngineServiceInfoCheck(prAdapter, prNDP) ==
+			    TRUE) {
+
+			if (nanGetFeatureIsSigma(prAdapter)) {
 				uint8_t i = 0;
 				uint16_t u2OffSet = 0, u2SubAttrLen = 0,
 					u2TotalSubAttrLen = 0;
 
 				prWFAAppInfoTLV =
-					(struct
-					 _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T
-						 *)pucOffset;
+				(struct
+				_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T
+				*)pucOffset;
 
 				prWFAAppInfoTLV->ucType =
-					NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO;
+				NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO;
 
-				kalMemCopy(prWFAAppInfoTLV->aucOui, aucOui,
-					   VENDOR_OUI_LEN);
+				kalMemCopy(prWFAAppInfoTLV->aucOui,
+					aucOui,
+					VENDOR_OUI_LEN);
 				prWFAAppInfoTLV->ucServiceProtocolType =
-					NAN_SERVICE_PROTOCOL_TYPE_GENERIC;
+				NAN_SERVICE_PROTOCOL_TYPE_GENERIC;
 
 				/* move to next */
 				pucOffset += OFFSET_OF(
-					struct
-					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					aucBody);
+				struct
+				_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+				aucBody);
 				/* fill NAN attributes */
 				for (i = 0;
 				     i < sizeof(txServInfoSSITable) /
-						 sizeof(struct
-							_APPEND_ATTR_ENTRY_T);
-				     i++) {
+						sizeof(struct
+						_APPEND_ATTR_ENTRY_T);
+					i++) {
 					u2SubAttrLen =
-					    txServInfoSSITable[i]
-						.pfnCalculateVariableAttrLen(
-							prAdapter,
-							prNDL, prNDP);
+					txServInfoSSITable[i]
+					.pfnCalculateVariableAttrLen(
+						prAdapter,
+						prNDL, prNDP);
 					if (u2SubAttrLen != 0 &&
-					    txServInfoSSITable[i]
-						    .pfnAppendAttr) {
 						txServInfoSSITable[i]
-						    .pfnAppendAttr(
+						.pfnAppendAttr) {
+						txServInfoSSITable[i]
+						.pfnAppendAttr(
 							prAdapter,
 							pucOffset +
 							u2OffSet,
 							prNDL, prNDP);
-						u2OffSet += u2SubAttrLen;
+						u2OffSet +=
+							u2SubAttrLen;
 						u2TotalSubAttrLen +=
 							u2SubAttrLen;
 					}
 				}
+
 				prWFAAppInfoTLV->u2Length =
-					OFFSET_OF(struct
-					    _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					    aucBody) +
+				OFFSET_OF(struct
+					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+					aucBody) +
 					u2TotalSubAttrLen -
 					OFFSET_OF(struct
-					    _NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
-					    aucOui);
+					_NAN_ATTR_NDPE_WFA_SVC_INFO_TLV_T,
+					aucOui);
+			} else {
+				if (prNDP->u2AppInfoLen > 0)
+					/* AppInfo: portNum,
+					 * protocolType
+					 */
+					kalMemCopy(pucOffset,
+						prNDP->pucAppInfo,
+						prNDP->u2AppInfoLen);
 			}
-#if 0
+#ifdef NAN_UNUSED /* OtherAppinfo */
 			if (prNDP->u2OtherAppInfoLen > 0) {
 				prOtherAppInfoTLV =
-				  (struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T *)
-				  pucOffset;
+				(struct
+				_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T *)
+				pucOffset;
 
 				prOtherAppInfoTLV->ucType =
 					NAN_ATTR_NDPE_TLV_TYPE_SERVICE_INFO;
-				prOtherAppInfoTLV->u2Length =
-				    OFFSET_OF(
-				    struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				    aucBody)
-				    + prNDP->u2OtherAppInfoLen
-				    - OFFSET_OF(struct
-				    _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				    aucOui);
+					prOtherAppInfoTLV->u2Length =
+					OFFSET_OF(
+					struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucBody)
+					+ prNDP->u2OtherAppInfoLen
+					- OFFSET_OF(struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucOui);
 				kalMemCopy(prOtherAppInfoTLV->aucOui,
-						prNDP->aucOtherAppInfoOui,
-						VENDOR_OUI_LEN);
+					prNDP->aucOtherAppInfoOui,
+					VENDOR_OUI_LEN);
 				kalMemCopy(prOtherAppInfoTLV->aucBody,
-						prNDP->pucOtherAppInfo,
-						prNDP->u2OtherAppInfoLen);
+					prNDP->pucOtherAppInfo,
+					prNDP->u2OtherAppInfoLen);
 
 				/* move to next */
 				pucOffset +=
-				    OFFSET_OF(
-				    struct _NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
-				    aucBody) +
-				    prNDP->u2OtherAppInfoLen;
+					OFFSET_OF(
+					struct
+					_NAN_ATTR_NDPE_SERVICE_INFO_TLV_T,
+					aucBody) +
+					prNDP->u2OtherAppInfoLen;
 			}
 #endif
+			}
 		}
 #if (ENABLE_NDP_UT_LOG == 1)
-		DBGLOG(NAN, INFO, "NAN NDPE ROW DATA\n");
-		dumpMemory8((uint8_t *)prMsduInfo->prPacket +
-				    prMsduInfo->u2FrameLength,
-			    u2AttrLength);
-		DBGLOG(NAN, INFO, "NAN NDPE ROW DATA END\n");
+	DBGLOG(NAN, INFO, "NAN NDPE ROW DATA\n");
+	dumpMemory8((uint8_t *)prMsduInfo->prPacket +
+			    prMsduInfo->u2FrameLength,
+		    u2AttrLength);
+	DBGLOG(NAN, INFO, "NAN NDPE ROW DATA END\n");
 #endif
-		/* update payload length */
-		prMsduInfo->u2FrameLength += u2AttrLength;
-	}
+	/* update payload length */
+	prMsduInfo->u2FrameLength += u2AttrLength;
 }
 
 uint32_t
@@ -3678,7 +3905,7 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 	uint8_t ucVhtCapMcsOwnNotSupportOffset;
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
-	const uint8_t *prHeCap;
+	uint8_t *prHeCap;
 #endif
 	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)NULL;
@@ -3689,12 +3916,15 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 
-	if (nanGetPeerDevCapability(prAdapter, ENUM_NAN_DEVCAP_RX_ANT_NUM,
-				    prNDL->aucPeerMacAddr, NAN_INVALID_MAP_ID,
-				    &u4PeerNSS) == WLAN_STATUS_SUCCESS) {
-		ucPeerBW = nanGetPeerMinBw(prAdapter, prNDL->aucPeerMacAddr);
-		DBGLOG(NAN, INFO, "[%s] PeerBW %d , PeerNSS %d\n", __func__,
-		       ucPeerBW, u4PeerNSS);
+	if (nanGetPeerDevCapability(prAdapter,
+		ENUM_NAN_DEVCAP_RX_ANT_NUM,
+		prNDL->aucPeerMacAddr, NAN_INVALID_MAP_ID,
+		&u4PeerNSS) == WLAN_STATUS_SUCCESS) {
+		ucPeerBW = nanGetPeerMinBw(prAdapter,
+			prNDL->aucPeerMacAddr, prBssInfo->eBand);
+		DBGLOG(NAN, INFO,
+			"[%s] PeerBW %d , PeerNSS %d\n", __func__,
+			ucPeerBW, u4PeerNSS);
 	} else {
 		ucPeerBW = 20;
 		/* whsu */
@@ -3714,6 +3944,7 @@ nanDataEngineSetupStaRec(struct ADAPTER *prAdapter,
 	prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
 	prStaRec->ucNonHTBasicPhyType = PHY_TYPE_ERP_INDEX;
 	prStaRec->u2DesiredNonHTRateSet = prBssInfo->u2OperationalRateSet;
+
 	nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
 	/* fill HT Capabilities */
@@ -4139,8 +4370,7 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 	fgSecurityRequired = prTargetNdpSA->fgSecurityRequired;
 
 	eBand = nanSchedGetSchRecBandByMac(prAdapter, pucPeerNMI);
-	ucBssIndex = nanGetSpecificBssInfobyBand(
-		prAdapter, eBand)->ucBssIndex;
+	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex, pucPeerNMI,
 				     prNDP->ucRCPI, &prNdpCxt->prNanStaRec) !=
@@ -4158,7 +4388,8 @@ nanDataEngineEnrollNMIContext(struct ADAPTER *prAdapter,
 				NAN_BSS_INDEX_BAND0,
 				prNdpCxt->prNanStaRec->ucIndex,
 				prNdpCxt->ucId,
-				prNdpCxt->prNanStaRec->ucWlanIndex);
+				prNdpCxt->prNanStaRec->ucWlanIndex,
+				prNDP->aucPeerNDIAddr);
 
 	if (fgSecurityRequired == FALSE)
 		nanSecResetTk(prNdpCxt->prNanStaRec);
@@ -4300,12 +4531,14 @@ nanDataEngineUnrollNMIContext(struct ADAPTER *prAdapter,
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					STA_REC_INDEX_NOT_FOUND,
 					prNdpCxt->ucId,
-					STA_REC_INDEX_NOT_FOUND);
+					STA_REC_INDEX_NOT_FOUND,
+					prNDP->aucPeerNDIAddr);
 	} else {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					prNdpCxt->prNanStaRec->ucIndex,
 					prNdpCxt->ucId,
-					prNdpCxt->prNanStaRec->ucWlanIndex);
+					prNdpCxt->prNanStaRec->ucWlanIndex,
+					prNDP->aucPeerNDIAddr);
 	}
 
 	for (; u4Idx < (NAN_MAX_SUPPORT_NDP_NUM - 1); u4Idx++)
@@ -4493,8 +4726,7 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 		DBGLOG(NAN, WARN,
 			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
 	}
-	ucBssIndex = nanGetSpecificBssInfobyBand(
-		prAdapter, eBand)->ucBssIndex;
+	ucBssIndex = nanGetBssIdxbyBand(prAdapter, eBand);
 
 	if (nanDataEngineAllocStaRec(prAdapter, prNDL, ucBssIndex,
 				     prNDP->aucPeerNDIAddr, prNDP->ucRCPI,
@@ -4520,7 +4752,8 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 	nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 				prNdpCxt->prNanStaRec->ucIndex,
 				prNDP->prContext->ucId,
-				prNdpCxt->prNanStaRec->ucWlanIndex);
+				prNdpCxt->prNanStaRec->ucWlanIndex,
+				prNDP->aucPeerNDIAddr);
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
 	if (atomic_inc_return(&(prDataPathInfo->NetDevRefCount[eRole])) == 1) {
@@ -4531,18 +4764,6 @@ nanDataEngineEnrollNDPContext(struct ADAPTER *prAdapter,
 	}
 
 	nanDataEngineEnrollNMIContext(prAdapter, prNDL, prNDP);
-
-	if (nanGetNdpCntByBand(prAdapter, eBand) >= 1)
-		nanGetSpecificBssInfobyBand(
-			prAdapter, eBand)->fgIsNdp = 1;
-
-	DBGLOG(NAN, INFO, "[%s] BSS:%d BN:%d NDP:%d fgNdp:%d\n",
-			__func__, ucBssIndex, eBand,
-			nanGetNdpCntByBand(prAdapter, eBand),
-			nanGetSpecificBssInfobyBand(
-				prAdapter, eBand)->fgIsNdp);
-
-	nicUpdateBssEx(prAdapter, ucBssIndex, FALSE);
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Summary\n", __func__);
@@ -4602,28 +4823,12 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 	struct _NAN_NDP_INSTANCE_T *prTargetNdpSA;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
 	struct _NAN_DATA_PATH_INFO_T *prDataPathInfo;
-	enum ENUM_BAND eBand = BAND_NULL;
-	uint8_t ucBssIndex;
 
 	if ((prNDL == NULL) || (prNDP == NULL))
 		return WLAN_STATUS_FAILURE;
 
 	if (prNDP->prContext == NULL)
 		return WLAN_STATUS_FAILURE;
-
-	eBand = nanSchedGetSchRecBandByMac(prAdapter, prNDP->aucPeerNDIAddr);
-	if (eBand == BAND_NULL) {
-		/* Workaround: use NMI address to find peerSchRec,
-		* if search by NDI fail
-		*/
-		eBand = nanSchedGetSchRecBandByMac(prAdapter,
-				prNDL->aucPeerMacAddr);
-		DBGLOG(NAN, WARN,
-			"Search peerSchRec fail, use NMI, band:%d\n", eBand);
-	}
-
-	ucBssIndex = nanGetSpecificBssInfobyBand(
-		prAdapter, eBand)->ucBssIndex;
 
 	nanDataEngineUnrollNMIContext(prAdapter, prNDL, prNDP);
 
@@ -4669,12 +4874,14 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					STA_REC_INDEX_NOT_FOUND,
 					prNdpCxt->ucId,
-					STA_REC_INDEX_NOT_FOUND);
+					STA_REC_INDEX_NOT_FOUND,
+					prNDP->aucPeerNDIAddr);
 	} else {
 		nanSchedCmdMapStaRecord(prAdapter, prNDL->aucPeerMacAddr, eRole,
 					prNdpCxt->prNanStaRec->ucIndex,
 					prNdpCxt->ucId,
-					prNdpCxt->prNanStaRec->ucWlanIndex);
+					prNdpCxt->prNanStaRec->ucWlanIndex,
+					prNDP->aucPeerNDIAddr);
 	}
 
 	prDataPathInfo = &(prAdapter->rDataPathInfo);
@@ -4710,18 +4917,6 @@ nanDataEngineUnrollNDPContext(struct ADAPTER *prAdapter,
 		}
 	}
 	prNDP->prContext = NULL;
-
-	if (nanGetNdpCntByBand(prAdapter, eBand) == 0)
-		nanGetSpecificBssInfobyBand(
-			prAdapter, eBand)->fgIsNdp = 0;
-
-	DBGLOG(NAN, INFO, "[%s] BSS:%d BN:%d NDP:%d fgNdp:%d\n",
-				__func__, ucBssIndex, eBand,
-				nanGetNdpCntByBand(prAdapter, eBand),
-				nanGetSpecificBssInfobyBand(
-					prAdapter, eBand)->fgIsNdp);
-
-	nicUpdateBssEx(prAdapter, ucBssIndex, FALSE);
 
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Summary\n", __func__);
@@ -4797,3 +4992,38 @@ nanDataEngineSearchNDPContext(struct ADAPTER *prAdapter,
 
 	return NULL;
 }
+
+struct _NAN_NDP_CONTEXT_T *
+nanDataEngineSearchFirstNDP(struct ADAPTER *prAdapter,
+	      struct _NAN_NDL_INSTANCE_T *prNDL,
+	      uint8_t *pucLocalAddr, uint8_t *pucPeerAddr)
+{
+	uint32_t u4Idx;
+	struct _NAN_NDP_CONTEXT_T *prNdpCxt;
+
+	if (prNDL == NULL) {
+		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
+		return NULL;
+	}
+
+	for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++) {
+		prNdpCxt = &prNDL->arNdpCxt[u4Idx];
+		if (prNdpCxt->fgValid == FALSE)
+			continue;
+
+		DBGLOG(NAN, ERROR,
+			"[%s] Local[" MACSTR "], Peer[" MACSTR "]\n",
+			__func__,
+			MAC2STR(prNdpCxt->aucLocalNDIAddr),
+			MAC2STR(prNdpCxt->aucPeerNDIAddr));
+
+		if ((kalMemCmp(prNdpCxt->aucLocalNDIAddr, pucLocalAddr,
+			       MAC_ADDR_LEN) == 0) &&
+		    (kalMemCmp(prNdpCxt->aucPeerNDIAddr, pucPeerAddr,
+			       MAC_ADDR_LEN) != 0))
+			return prNdpCxt;
+	}
+
+	return NULL;
+}
+

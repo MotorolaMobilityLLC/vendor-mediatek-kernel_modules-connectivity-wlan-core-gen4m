@@ -4105,6 +4105,10 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 
 	case CATEGORY_PROTECTED_DUAL_OF_PUBLIC_ACTION:
 		aisFuncValidateRxActionFrame(prAdapter, prSwRfb);
+#if CFG_SUPPORT_NAN
+		if (prAdapter->fgIsNANRegistered)
+			nicRxProcessNanPubActionFrame(prAdapter, prSwRfb);
+#endif
 		break;
 
 	case CATEGORY_ROBUST_AV_STREAMING_ACTION:

@@ -5963,6 +5963,8 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 			KAL_RELEASE_SPIN_LOCK(prAdapter,
 					SPIN_LOCK_NAN_NDL_FLOW_CTRL);
 		}
+
+		kalSetEvent(prAdapter->prGlueInfo); /* Wakeup TX */
 	}
 }
 

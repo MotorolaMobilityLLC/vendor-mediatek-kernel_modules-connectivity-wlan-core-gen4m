@@ -9,6 +9,7 @@
 #if CFG_SUPPORT_NAN
 
 extern uint8_t g_u2IndPubId;
+extern uint8_t g_aucNanServiceId[6];
 
 struct NAN_DISCOVERY_EVENT {
 	uint16_t u2SubscribeID;
@@ -36,6 +37,7 @@ struct NAN_FOLLOW_UP_EVENT {
 	 * This Id will be used in subsequent UnmatchInd/FollowupInd messages.
 	 */
 	uint32_t requestor_instance_id;
+	uint16_t transaction_id;
 	uint8_t addr[NAN_MAC_ADDR_LEN];
 
 	/* Flag which the DE uses to decide if received in a DW or a FAW */
@@ -80,6 +82,16 @@ struct NAN_PUBLISH_TERMINATE_EVENT {
 struct NAN_SUBSCRIBE_TERMINATE_EVENT {
 	uint16_t u2Subid;
 	uint8_t ucReasonCode;
+};
+
+struct NAN_MATCH_EXPIRE_EVENT {
+	/* Publish or Subscribe Id of an earlier Publish/Subscribe */
+	uint16_t u2PublishSubscribeID;
+	/*
+	 * A 32 bit value sent by the DE in a previous
+	 * MatchInd/FollowupInd to the application.
+	 */
+	uint32_t u4RequestorInstanceID;
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -397,6 +409,7 @@ struct NanFWTransmitFollowupRequest {
 	 * part of earlier MatchInd/FollowupInd message.
 	 */
 	uint32_t requestor_instance_id;
+	uint16_t transaction_id;
 	uint8_t addr[NAN_MAC_ADDR_LEN]; /* Unicast address */
 	/* NanTxPriority priority; */    /* priority of the request 2=high */
 	enum NanTransmitWindowType
@@ -451,6 +464,30 @@ struct _NAN_DISC_ENGINE_T {
 	struct LINK rFreeServiceSessionList;
 	struct _NAN_SERVICE_SESSION_T
 		arServiceSessionList[NAN_NUM_SERVICE_SESSION];
+};
+
+struct _NAN_PUBLISH_SPECIFIC_INFO_T {
+	uint8_t ucUsed;
+	uint8_t ucPublishId;
+	uint8_t ucReportTerminate;
+};
+
+struct _NAN_PUBLISH_INFO_T {
+	uint8_t ucNanPubNum;
+	struct _NAN_PUBLISH_SPECIFIC_INFO_T
+		rPubSpecificInfo[NAN_MAX_PUBLISH_NUM];
+};
+
+struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T {
+	uint8_t ucUsed;
+	uint8_t ucSubscribeId;
+	uint8_t ucReportTerminate;
+};
+
+struct _NAN_SUBSCRIBE_INFO_T {
+	uint8_t ucNanSubNum;
+	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T
+		rSubSpecificInfo[NAN_MAX_SUBSCRIBE_NUM];
 };
 
 __KAL_ATTRIB_PACKED_FRONT__

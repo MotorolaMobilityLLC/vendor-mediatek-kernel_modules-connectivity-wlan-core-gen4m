@@ -365,7 +365,8 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 			ENUM_NET_REG_STATE_REGISTERED;
 
 #if CFG_SUPPORT_NAN_CARRIER_ON_INIT
-		rtnl_lock();
+		if (!fgIsRtnlLockAcquired)
+			rtnl_lock();
 		dev_change_flags(
 			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler,
 			prGlueInfo->aprNANDevInfo[eRole]
@@ -375,7 +376,8 @@ nanNetRegister(struct GLUE_INFO *prGlueInfo,
 				, NULL
 #endif
 				);
-		rtnl_unlock();
+		if (!fgIsRtnlLockAcquired)
+			rtnl_unlock();
 		netif_carrier_on(
 			prGlueInfo->aprNANDevInfo[eRole]->prDevHandler);
 #endif
@@ -697,6 +699,7 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 	const char *prSetDevName;
 	struct _GL_NAN_INFO_T *prNANInfo = (struct _GL_NAN_INFO_T *)NULL;
 	enum NAN_BSS_ROLE_INDEX eRole = NAN_BSS_INDEX_BAND0;
+	uint8_t rMacAddrOverride[PARAM_MAC_ADDR_LEN];
 
 	if (!prGlueInfo) {
 		DBGLOG(NAN, ERROR, "prGlueInfo error!\n");
@@ -744,6 +747,12 @@ glRegisterNAN(struct GLUE_INFO *prGlueInfo, const char *prDevName)
 
 	/* change to local administrated address */
 	rRandMacAddr[0] ^= (eRole + 1) << 3;
+	if (prGlueInfo->prAdapter->rWifiVar.ucNanMacAddrOverride == 1) {
+		wlanHwAddrToBin(
+			prGlueInfo->prAdapter->rWifiVar.aucNanMacAddrStr,
+			rMacAddrOverride);
+		COPY_MAC_ADDR(rRandMacAddr, rMacAddrOverride);
+	}
 #if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
 	eth_hw_addr_set(prNanDev, rRandMacAddr);
 #else
@@ -1024,6 +1033,7 @@ nanOpen(struct net_device *prDev)
 	/* 2. carrier on & start TX queue */
 	/*DFS todo 20161220_DFS*/
 
+	netif_carrier_on(prDev);
 	netif_tx_start_all_queues(prDev);
 
 	return 0; /* success */
@@ -1156,10 +1166,9 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 		(struct NETDEV_PRIVATE_GLUE_INFO *)NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint8_t ucBssIndex;
-#if (CFG_SUPPORT_DBDC == 1)
 	struct TX_PACKET_INFO prTxPktInfo;
 	struct STA_RECORD *prStaRec;
-#endif
+	struct _NAN_SPECIFIC_BSS_INFO_T *prNANSpecInfo = NULL;
 
 	if (!prSkb) {
 		DBGLOG(NAN, ERROR, "prSkb error!\n");
@@ -1174,12 +1183,28 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
 
-#if (CFG_SUPPORT_DBDC == 1)
+	prNANSpecInfo =
+		nanGetSpecificBssInfo(prGlueInfo->prAdapter,
+#if (CFG_SUPPORT_NAN_DBDC == 1)
+		NAN_BSS_INDEX_BAND1
+#else
+		NAN_BSS_INDEX_BAND0
+#endif
+	);
+
+	if (prNANSpecInfo == NULL) {
+		DBGLOG(NAN, ERROR, "prNANSpecInfo is NULL!\n");
+		return NETDEV_TX_BUSY;
+	}
+
 	if (kalQoSFrameClassifierAndPacketInfo(
 			prGlueInfo, prSkb, &prTxPktInfo)) {
 
 		if (IS_BMCAST_MAC_ADDR(prTxPktInfo.aucEthDestAddr)) {
-			DBGLOG(NAN, LOUD, "TX with DA = BMCAST\n");
+			ucBssIndex = prNANSpecInfo->ucBssIndex;
+			DBGLOG(NAN, LOUD,
+				"TX with DA = BMCAST, ucBssIndex=%d\n",
+				ucBssIndex);
 		} else {
 			prStaRec = nanGetStaRecByNDI(prGlueInfo->prAdapter,
 				prTxPktInfo.aucEthDestAddr);
@@ -1190,7 +1215,6 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 			}
 		}
 	}
-#endif
 
 	kalResetPacket(prGlueInfo, (void *)prSkb);
 

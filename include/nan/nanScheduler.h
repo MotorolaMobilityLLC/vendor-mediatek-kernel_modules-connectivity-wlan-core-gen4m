@@ -246,13 +246,10 @@ uint32_t nanGetPeerDevCapability(struct ADAPTER *prAdapter,
 				 uint8_t *pucNmiAddr, uint8_t ucMapID,
 				 uint32_t *pu4RetValue);
 
-uint8_t nanGetPeerMinBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
+uint8_t nanGetPeerMinBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
+				enum ENUM_BAND eBand);
 
 uint8_t nanGetPeerMaxBw(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr);
-
-uint8_t
-nanGetNdpCntByBand(struct ADAPTER *prAdapter,
-	enum ENUM_BAND eBand);
 
 uint32_t nanSchedDbgDumpPeerAvailability(struct ADAPTER *prAdapter,
 					 uint8_t *pucNmiAddr);
@@ -319,7 +316,8 @@ uint32_t nanSchedCmdMapStaRecord(struct ADAPTER *prAdapter,
 				 enum NAN_BSS_ROLE_INDEX eRoleIdx,
 				 uint8_t ucStaRecIdx,
 				 uint8_t ucNdpCxtId,
-				 uint8_t ucWlanIndex);
+				 uint8_t ucWlanIndex,
+				 uint8_t *pucNdiAddr);
 
 unsigned char
 nanSchedPeerSchRecordIsValid(struct ADAPTER *prAdapter, uint32_t u4SchIdx);
@@ -362,7 +360,7 @@ nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter);
 #if (CFG_SUPPORT_NAN_NDP_DUAL_BAND == 0)
 uint32_t
 nanSchedRemoveDiffBandChnlList(
-	struct ADAPTER *prAdapter, unsigned char fgCommitOrCond);
+	struct ADAPTER *prAdapter);
 #endif /* (CFG_SUPPORT_NAN_NDP_DUAL_BAND == 0) */
 
 #endif

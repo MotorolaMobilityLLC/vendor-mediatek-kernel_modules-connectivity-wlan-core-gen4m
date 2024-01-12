@@ -8301,7 +8301,7 @@ wlanoidSetNANMulticastList(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 
 	/* The data must be a multiple of the Ethernet address size. */
 	if ((u4SetBufferLen % MAC_ADDR_LEN)) {
-		DBGLOG(REQ, WARN, "Invalid MC list length %u\n",
+		DBGLOG(REQ, WARN, "Invalid MC list length %ld\n",
 		       u4SetBufferLen);
 
 		*pu4SetInfoLen =
@@ -13293,18 +13293,19 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	/* P_MSG_P2P_NETDEV_REGISTER_T prP2pNetdevRegMsg =
 	 * (P_MSG_P2P_NETDEV_REGISTER_T)NULL;
 	 */
+
 	if (!prAdapter || !pu4SetInfoLen || !pvSetBuffer)
 		return WLAN_STATUS_FAILURE;
 
 	*pu4SetInfoLen = sizeof(uint32_t);
 	if (u4SetBufferLen < sizeof(uint32_t)) {
-		DBGLOG(REQ, WARN, "Invalid length %u\n", u4SetBufferLen);
+		DBGLOG(REQ, WARN, "Invalid length %ld\n", u4SetBufferLen);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
 	prEnable = (uint32_t *)pvSetBuffer;
 
-	DBGLOG(INIT, INFO, "Set nan enable[%u]\n", *prEnable);
+	DBGLOG(INIT, INFO, "Set nan enable[%ld]\n", *prEnable);
 
 	if (*prEnable) {
 		if (nanLaunch(prAdapter->prGlueInfo)) {
@@ -13317,8 +13318,8 @@ wlanoidSetNANMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		} else {
 			status = WLAN_STATUS_FAILURE;
 		}
-		prAdapter->ucNanPubNum = 0;
-		prAdapter->ucNanSubNum = 0;
+		prAdapter->rPublishInfo.ucNanPubNum = 0;
+		prAdapter->rSubscribeInfo.ucNanSubNum = 0;
 	} else {
 		if (prAdapter->fgIsNANRegistered)
 			nanRemove(prAdapter->prGlueInfo);

@@ -386,6 +386,7 @@ sha2_hmac(const unsigned char *key, size_t keylen, const unsigned char *input,
 	memset(&ctx, 0, sizeof(struct sha2_context));
 }
 
+
 #define min_local(a, b) (((a) < (b)) ? (a) : (b))
 
 void

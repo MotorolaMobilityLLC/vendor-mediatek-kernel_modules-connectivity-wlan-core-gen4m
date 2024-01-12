@@ -37,7 +37,7 @@
 #define NAN_MAX_SERVICE_SPECIFIC_INFO_LEN 255
 #define NAN_MAX_SDEA_SERVICE_SPECIFIC_INFO_LEN 255
 
-#define NAN_FW_MAX_SERVICE_NAME_LEN 32
+#define NAN_FW_MAX_SERVICE_NAME_LEN 64
 #define NAN_FW_MAX_MATCH_FILTER_LEN 64
 #define NAN_FW_MAX_SERVICE_SPECIFIC_INFO_LEN 255
 #define NAN_FW_MAX_SCID_BUF_LEN 128
@@ -84,7 +84,7 @@
 
 enum NAN_BSS_ROLE_INDEX {
 	NAN_BSS_INDEX_BAND0 = 0,
-#if (CFG_SUPPORT_DBDC == 1)
+#if (CFG_SUPPORT_NAN_DBDC == 1)
 	NAN_BSS_INDEX_BAND1,
 #endif
 	NAN_BSS_INDEX_NUM
@@ -1353,6 +1353,7 @@ struct NanTransmitFollowupRequest {
 	 * part of earlier MatchInd/FollowupInd message.
 	 */
 	uint32_t requestor_instance_id;
+	uint16_t transaction_id;
 	/* Unicast address */
 	uint8_t addr[NAN_MAC_ADDR_LEN];
 	/* priority of the request 2=high */

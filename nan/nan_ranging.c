@@ -1209,7 +1209,7 @@ uint32_t
 nanRangingResponseRx(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
 	struct _NAN_ACTION_FRAME_T *prActionFrame = NULL;
-	unsigned char bSchedPass;
+	unsigned char bSchedPass = TRUE;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 
 	if (prAdapter == NULL) {
@@ -1649,7 +1649,7 @@ nanRangingUpdateDistance(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
-	DBGLOG(NAN, INFO, "Report %lu (1/4096 m), Range %u cm\n",
+	DBGLOG(NAN, INFO, "Report %u (1/4096 m), Range %u cm\n",
 	       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range,
 	       FTM_FMT_TO_RANGE_CM(
 		       pCtrl->rNanFtmReport.arRangeEntry[0].u4Range));
@@ -2253,7 +2253,7 @@ nanRangingScheduleNegoGranted(struct ADAPTER *prAdapter, uint8_t *pu1DevAddr,
 			      enum _ENUM_NAN_NEGO_ROLE_T eRole, void *pvToken) {
 	struct _NAN_RANGING_INSTANCE_T *prRanging = NULL;
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
-	unsigned char bSchedPass;
+	unsigned char bSchedPass = TRUE;
 	uint32_t u4RejectCode = NAN_REASON_CODE_RESERVED;
 	enum NanRangingAutoResponse ucAutoRsp;
 

@@ -4413,6 +4413,7 @@ enum ENUM_UNI_CMD_NAN_TAG {
 	UNI_CMD_NAN_TAG_MANAGE_SCID = 23,
 	UNI_CMD_NAN_TAG_CHANGE_ADDRESS = 24,
 	UNI_CMD_NAN_TAG_SET_SCHED_VERSION = 25,
+	UNI_CMD_NAN_TAG_SET_DW_INTERVAL = 26,
 	UNI_CMD_NAN_TAG_MAX_NUM
 };
 
@@ -4440,6 +4441,17 @@ struct UNI_CMD_NAN_DISABLE_REQUEST {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t aucPadding[4];
+} __KAL_ATTRIB_PACKED__;
+
+/* Cancel Publish (Tag2), Cancel Subscribe (Tag5) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_NAN_CANCEL_REQUEST {
+	/* Indicate the service is publish or
+	 * subscribe, 1=publish, 0=subscribe
+	 */
+	uint16_t publish_or_subscribe;
+	/* Publish or Subscribe Id of an earlier Publish/Subscribe */
+	uint16_t publish_subscribe_id;
 } __KAL_ATTRIB_PACKED__;
 #endif
 
@@ -7169,6 +7181,7 @@ enum ENUM_UNI_EVENT_NAN_TAG {
 	UNI_EVENT_NAN_TAG_DISABLE_IND = 21,
 	UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2 = 22,
 	UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY = 23,
+	UNI_EVENT_NAN_ID_MATCH_EXPIRE = 24,
 	UNI_EVENT_NAN_TAG_NUM
 };
 

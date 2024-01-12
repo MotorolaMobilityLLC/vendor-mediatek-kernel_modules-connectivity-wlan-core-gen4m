@@ -47,12 +47,11 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t u8NanFollowupID;
 uint8_t g_enableNAN = TRUE;
 uint8_t g_disableNAN = TRUE;
 uint8_t g_deEvent = FALSE;
 uint8_t g_aucNanServiceName[NAN_MAX_SERVICE_NAME_LEN];
-
+uint8_t g_aucNanServiceId[6];
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -134,7 +133,6 @@ nan_read_tlv(u8 *pInTlv, struct _NanTlv *pOutTlv)
 		readLen += pOutTlv->length;
 	} else {
 		pOutTlv->value = NULL;
-		return 0;
 	}
 	return readLen;
 }
@@ -196,14 +194,13 @@ nanMapPublishReqParams(u16 *pIndata, struct NanPublishRequest *pOutparams)
 	readLen += 4;
 
 	DBGLOG(REQ, INFO,
-	       "[Publish Req] ttl: %u, period: %u, recv_indication_cfg: %x, publish_type: %u,tx_type: %u, rssi_threshold_flag: %u, publish_match_indicator: %u, publish_count:%u, connmap:%u\n",
+	       "[Publish Req] ttl: %u, period: %u, recv_indication_cfg: %x, publish_type: %u,tx_type: %u, rssi_threshold_flag: %u, publish_match_indicator: %u, publish_count:%u, connmap:%u, readLen:%u\n",
 	       pOutparams->ttl, pOutparams->period,
 	       pOutparams->recv_indication_cfg, pOutparams->publish_type,
 	       pOutparams->tx_type, pOutparams->rssi_threshold_flag,
 	       pOutparams->publish_match_indicator, pOutparams->publish_count,
-	       pOutparams->connmap);
+	       pOutparams->connmap, readLen);
 
-	DBGLOG(REQ, INFO, " readLen : %d\n", readLen);
 	return readLen;
 }
 
@@ -300,16 +297,15 @@ nanMapSdeaCtrlParams(u32 *pIndata,
 		GET_SDEA_RANGE_LIMIT_PRESENT(*pIndata);
 
 	DBGLOG(NAN, INFO,
-	       "[%s]config_nan_data_path: %u, ndp_type: %u, security_cfg: %u\n",
-	       __func__, prNanSdeaCtrlParms->config_nan_data_path,
+	       "config_nan_data_path: %u, ndp_type: %u, security_cfg: %u\n",
+	       prNanSdeaCtrlParms->config_nan_data_path,
 	       prNanSdeaCtrlParms->ndp_type, prNanSdeaCtrlParms->security_cfg);
 	DBGLOG(NAN, INFO,
-	       "[%s]ranging_state: %u, range_report: %u, fgFSDRequire: %u\n",
-	       __func__, prNanSdeaCtrlParms->ranging_state,
+	       "ranging_state: %u, range_report: %u, fgFSDRequire: %u, fgGAS: %u, fgQoS: %u, fgRangeLimit: %u\n",
+	       prNanSdeaCtrlParms->ranging_state,
 	       prNanSdeaCtrlParms->range_report,
-	       prNanSdeaCtrlParms->fgFSDRequire);
-	DBGLOG(NAN, INFO, "[%s]fgGAS: %u, fgQoS: %u, fgRangeLimit: %u\n",
-	       __func__, prNanSdeaCtrlParms->fgGAS, prNanSdeaCtrlParms->fgQoS,
+	       prNanSdeaCtrlParms->fgFSDRequire,
+	       prNanSdeaCtrlParms->fgGAS, prNanSdeaCtrlParms->fgQoS,
 	       prNanSdeaCtrlParms->fgRangeLimit);
 }
 
@@ -408,8 +404,8 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		pNanCapabilitiesRsp->fwHeader.transactionId;
 	nanCapabilitiesRsp.status = 0;
 	nanCapabilitiesRsp.max_concurrent_nan_clusters = 1;
-	nanCapabilitiesRsp.max_service_name_len = NAN_MAX_SERVICE_NAME_LEN;
-	nanCapabilitiesRsp.max_match_filter_len = NAN_MAX_MATCH_FILTER_LEN;
+	nanCapabilitiesRsp.max_service_name_len = NAN_FW_MAX_SERVICE_NAME_LEN;
+	nanCapabilitiesRsp.max_match_filter_len = NAN_FW_MAX_MATCH_FILTER_LEN;
 	nanCapabilitiesRsp.max_service_specific_info_len =
 		NAN_MAX_SERVICE_SPECIFIC_INFO_LEN;
 	nanCapabilitiesRsp.max_sdea_service_specific_info_len =
@@ -422,7 +418,8 @@ wlanoidGetNANCapabilitiesRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	nanCapabilitiesRsp.max_ndi_interfaces = 1;
 	nanCapabilitiesRsp.max_publishes = NAN_MAX_PUBLISH_NUM;
 	nanCapabilitiesRsp.max_subscribes = NAN_MAX_SUBSCRIBE_NUM;
-	nanCapabilitiesRsp.max_ndp_sessions = NAN_MAX_NDP_SESSIONS;
+	nanCapabilitiesRsp.max_ndp_sessions =
+		prAdapter->rWifiVar.ucNanMaxNdpSession;
 	nanCapabilitiesRsp.max_app_info_len = NAN_DP_MAX_APP_INFO_LEN;
 	nanCapabilitiesRsp.max_queued_transmit_followup_msgs = 2;
 	nanCapabilitiesRsp.max_subscribe_address = 1;
@@ -598,8 +595,6 @@ wlanoidNanPublishRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
 		       ->ieee80211_ptr;
-
-	DBGLOG(REQ, INFO, "%s\n", __func__);
 
 	/* Prepare publish response header*/
 	nanPublishRsp.fwHeader.msgVersion = 1;
@@ -857,8 +852,6 @@ wlanoidNANFollowupRsp(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	nanXmitFollowupRsp.status = pNanXmitFollowupRsp->status;
 	nanXmitFollowupRsp.value = 0;
 
-	u8NanFollowupID = nanXmitFollowupRsp.fwHeader.transactionId;
-
 	/*  Fill values of NanSubscribeServiceCancelRspMsg */
 	skb = kalCfg80211VendorEventAlloc(
 		wiphy, wdev,
@@ -893,10 +886,11 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	struct _NanTlv outputTlv;
 	u16 readLen = 0;
 	u32 u4BufLen;
-	u32 i4Status;
+	u32 i4Status = -EINVAL;
 	u32 u4DelayIdx;
 	int ret = 0;
 	int remainingLen;
+	u32 waitRet = 0;
 
 	if (data_len < sizeof(struct _NanMsgHeader)) {
 		DBGLOG(NAN, ERROR, "data_len error!\n");
@@ -950,7 +944,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	case NAN_MSG_ID_ENABLE_REQ: {
 		struct NanEnableRequest nanEnableReq;
 		struct NanEnableRspMsg nanEnableRsp;
+#if KERNEL_VERSION(5, 12, 0) > CFG80211_VERSION_CODE
 		uint8_t fgRollbackRtnlLock = FALSE;
+#endif
 
 		for (u4DelayIdx = 0; u4DelayIdx < 5; u4DelayIdx++) {
 			if (g_enableNAN == TRUE) {
@@ -959,7 +955,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			}
 			msleep(1000);
 		}
-
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		wiphy_unlock(wiphy);
+#else
 		/* to avoid re-enter rtnl lock during
 		 * register_netdev/unregister_netdev NAN/P2P
 		 * we take away lock first and return later
@@ -968,11 +966,17 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			fgRollbackRtnlLock = TRUE;
 			rtnl_unlock();
 		}
-
-		set_nan_handler(wdev->netdev, 1);
-
+#endif
+		DBGLOG(REQ, TRACE,
+			"[DBG] NAN enable enter set_nan_handler, lock(%d)\n",
+			rtnl_is_locked());
+		set_nan_handler(wdev->netdev, 1, rtnl_is_locked());
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		wiphy_lock(wiphy);
+#else
 		if (fgRollbackRtnlLock)
 			rtnl_lock();
+#endif
 
 		kalMemZero(&nanEnableReq, sizeof(struct NanEnableRequest));
 		kalMemZero(&nanEnableRsp, sizeof(struct NanEnableRspMsg));
@@ -981,22 +985,15 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			(readLen = nan_read_tlv((u8 *)data, &outputTlv)))) {
 			switch (outputTlv.type) {
 			case NAN_TLV_TYPE_CONFIG_DISCOVERY_INDICATIONS:
-				if (outputTlv.length >
-					sizeof(
-					nanEnableReq.discovery_indication_cfg
-					)) {
-					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
-					return -EFAULT;
-				}
-				memcpy(&nanEnableReq.discovery_indication_cfg,
-					outputTlv.value, outputTlv.length);
+					nanEnableReq.discovery_indication_cfg =
+						*outputTlv.value;
 				break;
 			case NAN_TLV_TYPE_CLUSTER_ID_LOW:
 				if (outputTlv.length >
 					sizeof(nanEnableReq.cluster_low)) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"type%d outputTlv.length is invalid!\n",
+						outputTlv.type);
 					return -EFAULT;
 				}
 				memcpy(&nanEnableReq.cluster_low,
@@ -1006,7 +1003,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				if (outputTlv.length >
 					sizeof(nanEnableReq.cluster_high)) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"type%d outputTlv.length is invalid!\n",
+						outputTlv.type);
 					return -EFAULT;
 				}
 				memcpy(&nanEnableReq.cluster_high,
@@ -1016,7 +1014,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				if (outputTlv.length >
 					sizeof(nanEnableReq.master_pref)) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"type%d outputTlv.length is invalid!\n",
+						outputTlv.type);
 					return -EFAULT;
 				}
 				memcpy(&nanEnableReq.master_pref,
@@ -1030,11 +1029,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
-		if (readLen == 0) {
-			DBGLOG(REQ, ERROR, "readLen=0\n");
-			return -EFAULT;
-		}
-
 		nanEnableReq.master_pref = prAdapter->rWifiVar.ucMasterPref;
 		nanEnableReq.config_random_factor_force = 0;
 		nanEnableReq.random_factor_force_val = 0;
@@ -1042,8 +1036,23 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		nanEnableReq.hop_count_force_val = 0;
 		nanEnableReq.config_5g_channel =
 			prAdapter->rWifiVar.ucConfig5gChannel;
-		nanEnableReq.channel_5g_val =
-			prAdapter->rWifiVar.ucChannel5gVal;
+		if (rlmDomainIsLegalChannel(prAdapter,
+			BAND_5G, prAdapter->rWifiVar.ucChannel5gVal))
+			nanEnableReq.channel_5g_val =
+				prAdapter->rWifiVar.ucChannel5gVal;
+		else
+			nanEnableReq.channel_5g_val = 44;
+
+		/* Wait DBDC enable here, then send Nan neable request */
+		waitRet = wait_for_completion_timeout(
+			&prAdapter->prGlueInfo->rNanHaltComp,
+			MSEC_TO_JIFFIES(4*1000));
+
+		if (waitRet == 0) {
+			DBGLOG(INIT, ERROR,
+				"wait event timeout!\n");
+			return FALSE;
+		}
 
 		nanEnableRsp.status = nanDevEnableRequest(prAdapter,
 							  &nanEnableReq);
@@ -1073,6 +1082,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		i4Status = kalIoctl(prGlueInfo, wlanoidNANEnableRsp,
 				    (void *)&nanEnableRsp,
 				    sizeof(struct NanEnableRequest), &u4BufLen);
+
 		if (i4Status != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "kalIoctl failed\n");
 			return -EFAULT;
@@ -1082,7 +1092,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	}
 	case NAN_MSG_ID_DISABLE_REQ: {
 		struct NanDisableRspMsg nanDisableRsp;
+#if KERNEL_VERSION(5, 12, 0) > CFG80211_VERSION_CODE
 		uint8_t fgRollbackRtnlLock = FALSE;
+#endif
 
 		for (u4DelayIdx = 0; u4DelayIdx < 5; u4DelayIdx++) {
 			if (g_disableNAN == TRUE) {
@@ -1096,6 +1108,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		nanDisableRsp.status =
 			nanDevDisableRequest(prGlueInfo->prAdapter);
 
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		wiphy_unlock(wiphy);
+#else
 		/* to avoid re-enter rtnl lock during
 		 * register_netdev/unregister_netdev NAN/P2P
 		 * we take away lock first and return later
@@ -1104,11 +1119,17 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			fgRollbackRtnlLock = TRUE;
 			rtnl_unlock();
 		}
-
-		set_nan_handler(wdev->netdev, 0);
-
+#endif
+		DBGLOG(REQ, TRACE,
+			"[DBG] NAN disable, enter set_nan_handler, lock(%d)\n",
+			rtnl_is_locked());
+		set_nan_handler(wdev->netdev, 0, rtnl_is_locked());
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		wiphy_lock(wiphy);
+#else
 		if (fgRollbackRtnlLock)
 			rtnl_lock();
+#endif
 
 		memcpy(&nanDisableRsp.fwHeader, &nanMsgHdr,
 		       sizeof(struct _NanMsgHeader));
@@ -1165,11 +1186,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			remainingLen -= readLen;
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
-		}
-
-		if (readLen == 0) {
-			DBGLOG(REQ, ERROR, "readLen=0\n");
-			return -EFAULT;
 		}
 
 		nanConfigRsp.status = 0;
@@ -1281,13 +1297,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->service_name_len =
 					outputTlv.length;
-				DBGLOG(INIT, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(INIT, INFO, "outputTlv.length:%u\n",
-				       outputTlv.length);
 				DBGLOG(INIT, INFO,
-				       "pNanPublishReq->service_name_len:%u\n",
-				       pNanPublishReq->service_name_len);
+					"type:SERVICE_NAME:%u Len:%u\n",
+					outputTlv.type, outputTlv.length);
+
 				break;
 			case NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO:
 				if (outputTlv.length >
@@ -1302,20 +1315,17 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->service_specific_info_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length:%u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO,
-				       "pNanPublishReq->service_specific_info_len:%u\n",
-				       pNanPublishReq
-					       ->service_specific_info_len);
+				DBGLOG(INIT, INFO,
+					"type:SERVICE_SPECIFIC_INFO:%u Len:%u\n",
+					outputTlv.type, outputTlv.length);
+
 				break;
 			case NAN_TLV_TYPE_RX_MATCH_FILTER:
 				if (outputTlv.length >
-					NAN_MAX_MATCH_FILTER_LEN) {
+					NAN_FW_MAX_MATCH_FILTER_LEN) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"outputTlv.length %d is invalid!\n",
+						outputTlv.length);
 					kfree(pNanPublishRsp);
 					kfree(pNanPublishReq);
 					return -EFAULT;
@@ -1324,14 +1334,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->rx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO,
-				       "RX_MATCH_FILTER outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length:%u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO,
-				       "pNanPublishReq->rx_match_filter_len:%u\n",
-				       pNanPublishReq->rx_match_filter_len);
+				DBGLOG(INIT, INFO,
+					"type:RX_MATCH_FILTER:%u Len:%u\n",
+					outputTlv.type, outputTlv.length);
+
 				dumpMemory8(
 					(uint8_t *)
 						pNanPublishReq->rx_match_filter,
@@ -1339,9 +1345,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				break;
 			case NAN_TLV_TYPE_TX_MATCH_FILTER:
 				if (outputTlv.length >
-					NAN_MAX_MATCH_FILTER_LEN) {
+					NAN_FW_MAX_MATCH_FILTER_LEN) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"outputTlv.length %d is invalid!\n",
+						outputTlv.length);
 					kfree(pNanPublishRsp);
 					kfree(pNanPublishReq);
 					return -EFAULT;
@@ -1350,14 +1357,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanPublishReq->tx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO,
-				       "TX_MATCH_FILTER outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length:%u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO,
-				       "pNanPublishReq->tx_match_filter_len:%u\n",
-				       pNanPublishReq->tx_match_filter_len);
+				DBGLOG(INIT, INFO,
+					"type:TX_MATCH_FILTER:%u Len:%u\n",
+					outputTlv.type, outputTlv.length);
+
 				dumpMemory8(
 					(uint8_t *)
 						pNanPublishReq->tx_match_filter,
@@ -1366,10 +1369,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			case NAN_TLV_TYPE_NAN_SERVICE_ACCEPT_POLICY:
 				pNanPublishReq->service_responder_policy =
 					*(outputTlv.value);
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length:%u\n",
-				       outputTlv.length);
+				DBGLOG(INIT, INFO,
+					"type:SERVICE_ACCEPT_POLICY:%u Len:%u\n",
+					outputTlv.type, outputTlv.length);
+
 				break;
 			case NAN_TLV_TYPE_NAN_CSID:
 				pNanPublishReq->cipher_type =
@@ -1409,10 +1412,10 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				nanMapSdeaCtrlParams(
 					(u32 *)outputTlv.value,
 					&pNanPublishReq->sdea_params);
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length:%u\n",
-				       outputTlv.length);
+				DBGLOG(INIT, INFO,
+					"type:_SDEA_CTRL_PARAMS:%u Len:%u\n",
+					outputTlv.type, outputTlv.length);
+
 				break;
 			case NAN_TLV_TYPE_NAN_RANGING_CFG:
 				nanMapRangingConfigParams(
@@ -1438,13 +1441,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
-		if (readLen == 0) {
-			DBGLOG(REQ, ERROR, "readLen=0\n");
-			kfree(pNanPublishRsp);
-			kfree(pNanPublishReq);
-			return -EFAULT;
-		}
-
 		/* Publish response message */
 		memcpy(&pNanPublishRsp->fwHeader, &nanMsgHdr,
 		       sizeof(struct _NanMsgHeader));
@@ -1452,30 +1448,37 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			wiphy, sizeof(struct NanPublishServiceRspMsg));
 
 		if (!skb) {
-			DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+			DBGLOG(REQ, ERROR,
+				"Allocate skb failed\n");
 			kfree(pNanPublishRsp);
 			kfree(pNanPublishReq);
 			return -ENOMEM;
 		}
 
 		if (unlikely(nla_put_nohdr(
-				     skb,
-				     sizeof(struct NanPublishServiceRspMsg),
-				     pNanPublishRsp) < 0)) {
+			skb,
+			sizeof(struct NanPublishServiceRspMsg),
+			pNanPublishRsp) < 0)) {
 			kfree_skb(skb);
 			kfree(pNanPublishRsp);
 			kfree(pNanPublishReq);
 			DBGLOG(REQ, ERROR, "Fail send reply\n");
 			return -EFAULT;
 		}
+		/* WIFI HAL will set nanMsgHdr.handle to 0xFFFF
+		 * if publish id is 0. (means new publish) Otherwise set
+		 * to previous publish id.
+		 */
+		if (nanMsgHdr.handle != 0xFFFF)
+			pNanPublishReq->publish_id = nanMsgHdr.handle;
 
 		/* return publish ID */
 		publish_id = (uint16_t)nanPublishRequest(prGlueInfo->prAdapter,
 							pNanPublishReq);
 		pNanPublishRsp->fwHeader.handle = publish_id;
 		DBGLOG(REQ, INFO,
-		       "pNanPublishRsp->fwHeader.handle %u, publish_id : %u\n",
-		       pNanPublishRsp->fwHeader.handle, publish_id);
+			"pNanPublishRsp->fwHeader.handle %u, publish_id : %u\n",
+			pNanPublishRsp->fwHeader.handle, publish_id);
 
 		if (pNanPublishReq->sdea_params.security_cfg &&
 			publish_id != 0) {
@@ -1612,6 +1615,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			DBGLOG(REQ, ERROR, "Allocate failed\n");
 			return -ENOMEM;
 		}
+
 		pNanSubscribeRsp = kmalloc(
 			sizeof(struct NanSubscribeServiceRspMsg), GFP_ATOMIC);
 
@@ -1624,6 +1628,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			   sizeof(struct NanSubscribeRequest));
 		kalMemZero(pNanSubscribeRsp,
 			   sizeof(struct NanSubscribeServiceRspMsg));
+
+		/* WIFI HAL will set nanMsgHdr.handle to 0xFFFF
+		 * if subscribe_id is 0. (means new subscribe)
+		 */
+		if (nanMsgHdr.handle != 0xFFFF)
+			pNanSubscribeReq->subscribe_id = nanMsgHdr.handle;
+
 		/* Mapping subscribe req related parameters */
 		readLen =
 			nanMapSubscribeReqParams((u16 *)data, pNanSubscribeReq);
@@ -1648,18 +1659,12 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->service_name_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO, "outputTlv.value: %s\n",
-				       outputTlv.value);
 				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->service_name_len: %u\n",
-				       pNanSubscribeReq->service_name_len);
-				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->service_name:%s\n",
-				       pNanSubscribeReq->service_name);
+					"SERVICE_NAME type:%u len:%u value:%u SRV_name:%s\n",
+					outputTlv.type,
+					outputTlv.length,
+					outputTlv.value,
+					pNanSubscribeReq->service_name);
 				break;
 			case NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO:
 				if (outputTlv.length >
@@ -1674,25 +1679,20 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->service_specific_info_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO, "outputTlv.value: %s\n",
-				       outputTlv.value);
 				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->service_specific_info_len: %u\n",
-				       pNanSubscribeReq
-					       ->service_specific_info_len);
-				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->service_specific_info:%s\n",
-				       pNanSubscribeReq->service_specific_info);
+					"SERVICE_SPECIFIC_INFO type:%u len:%u value:%u SRV_spec_info:%s\n",
+					outputTlv.type,
+					outputTlv.length,
+					outputTlv.value,
+					pNanSubscribeReq
+					->service_specific_info);
 				break;
 			case NAN_TLV_TYPE_RX_MATCH_FILTER:
 				if (outputTlv.length >
-					NAN_MAX_MATCH_FILTER_LEN) {
+					NAN_FW_MAX_MATCH_FILTER_LEN) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"outputTlv.length %d is invalid!\n",
+						outputTlv.length);
 					kfree(pNanSubscribeReq);
 					kfree(pNanSubscribeRsp);
 					return -EFAULT;
@@ -1701,27 +1701,22 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->rx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO, "outputTlv.value: %s\n",
-				       outputTlv.value);
 				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->rx_match_filter_len: %u\n",
-				       pNanSubscribeReq->rx_match_filter_len);
-				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->rx_match_filter:%s\n",
-				       pNanSubscribeReq->rx_match_filter);
+					"RX_MATCH_FILTER type:%u len:%u value:%u rx_match_filter:%s\n",
+					outputTlv.type,
+					outputTlv.length,
+					outputTlv.value,
+					pNanSubscribeReq->rx_match_filter);
 				dumpMemory8((uint8_t *)pNanSubscribeReq
 						    ->rx_match_filter,
 					    outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_TX_MATCH_FILTER:
 				if (outputTlv.length >
-					NAN_MAX_MATCH_FILTER_LEN) {
+					NAN_FW_MAX_MATCH_FILTER_LEN) {
 					DBGLOG(NAN, ERROR,
-						"outputTlv.length is invalid!\n");
+						"outputTlv.length %d is invalid!\n",
+						outputTlv.length);
 					kfree(pNanSubscribeReq);
 					kfree(pNanSubscribeRsp);
 					return -EFAULT;
@@ -1730,18 +1725,12 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->tx_match_filter_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
-				DBGLOG(REQ, INFO, "outputTlv.value: %s\n",
-				       outputTlv.value);
 				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->tx_match_filter_len: %u\n",
-				       pNanSubscribeReq->tx_match_filter_len);
-				DBGLOG(REQ, INFO,
-				       "pNanSubscribeReq->tx_match_filter:%s\n",
-				       pNanSubscribeReq->tx_match_filter);
+					"TX_MATCH_FILTERtype:%u len:%u value:%u tx_match_filter:%s\n",
+					outputTlv.type,
+					outputTlv.length,
+					outputTlv.value,
+					pNanSubscribeReq->tx_match_filter);
 				dumpMemory8((uint8_t *)pNanSubscribeReq
 						    ->tx_match_filter,
 					    outputTlv.length);
@@ -1763,10 +1752,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			case NAN_TLV_TYPE_NAN_CSID:
 				pNanSubscribeReq->cipher_type =
 					*(outputTlv.value);
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
+				DBGLOG(REQ, INFO, "NAN_CSID type:%u len:%u\n",
+				       outputTlv.type, outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_NAN_PMK:
 				if (outputTlv.length >
@@ -1797,19 +1784,20 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				       outputTlv.value, outputTlv.length);
 				pNanSubscribeReq->key_info.body.passphrase_info
 					.passphrase_len = outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
+				DBGLOG(REQ, INFO,
+					"NAN_PASSPHRASE type:%u len:%u\n",
+					outputTlv.type,
+					outputTlv.length);
 				break;
 			case NAN_TLV_TYPE_SDEA_CTRL_PARAMS:
 				nanMapSdeaCtrlParams(
 					(u32 *)outputTlv.value,
 					&pNanSubscribeReq->sdea_params);
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
+				DBGLOG(REQ, INFO,
+					"SDEA_CTRL_PARAMS type:%u len:%u\n",
+					outputTlv.type,
+					outputTlv.length);
+
 				break;
 			case NAN_TLV_TYPE_NAN_RANGING_CFG:
 				fgRangingCFG = TRUE;
@@ -1834,10 +1822,11 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 				pNanSubscribeReq
 					->sdea_service_specific_info_len =
 					outputTlv.length;
-				DBGLOG(REQ, INFO, "outputTlv.type:%u\n",
-				       outputTlv.type);
-				DBGLOG(REQ, INFO, "outputTlv.length: %u\n",
-				       outputTlv.length);
+				DBGLOG(REQ, INFO,
+					"SDEA_SERVICE_SPECIFIC_INFO type:%u len:%u\n",
+					outputTlv.type,
+					outputTlv.length);
+
 				break;
 			case NAN_TLV_TYPE_NAN20_RANGING_REQUEST:
 				fgRangingREQ = TRUE;
@@ -1853,13 +1842,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			remainingLen -= readLen;
 			data += readLen;
 			memset(&outputTlv, 0, sizeof(outputTlv));
-		}
-
-		if (readLen == 0) {
-			DBGLOG(REQ, ERROR, "readLen=0\n");
-			kfree(pNanSubscribeReq);
-			kfree(pNanSubscribeRsp);
-			return -EFAULT;
 		}
 
 		/* Prepare command reply of Subscriabe response */
@@ -2140,16 +2122,13 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
-		if (readLen == 0) {
-			DBGLOG(REQ, ERROR, "readLen=0\n");
-			kfree(pNanXmitFollowupReq);
-			kfree(pNanXmitFollowupRsp);
-			return -EFAULT;
-		}
-
 		/* Follow up Command reply message */
 		memcpy(&pNanXmitFollowupRsp->fwHeader, &nanMsgHdr,
 		       sizeof(struct _NanMsgHeader));
+
+		pNanXmitFollowupReq->transaction_id =
+			pNanXmitFollowupRsp->fwHeader.transactionId;
+
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(
 			wiphy, sizeof(struct NanTransmitFollowupRspMsg));
 
@@ -2352,12 +2331,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 			memset(&outputTlv, 0, sizeof(outputTlv));
 		}
 
-		if (readLen == 0) {
-			DBGLOG(REQ, ERROR, "readLen=0\n");
-			kfree(pNanDebug);
-			return -EFAULT;
-		}
-
 		kfree(pNanDebug);
 		return 0;
 	}
@@ -2366,7 +2339,6 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 	}
 
 	return ret;
-
 }
 
 /* Indication part */
@@ -2545,7 +2517,7 @@ mtk_cfg80211_vendor_event_nan_replied_indication(struct ADAPTER *prAdapter,
 
 	kalMemZero(prNanPubRepliedInd, message_len);
 
-	DBGLOG(NAN, INFO, "[%s] message_len : %zu\n", __func__, message_len);
+	DBGLOG(NAN, INFO, "[%s] message_len : %d\n", __func__, message_len);
 	prNanPubRepliedInd->fwHeader.msgVersion = 1;
 	prNanPubRepliedInd->fwHeader.msgId = NAN_MSG_ID_PUBLISH_REPLIED_IND;
 	prNanPubRepliedInd->fwHeader.msgLen = message_len;
@@ -2700,7 +2672,9 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	struct wireless_dev *wdev;
 	struct NAN_PUBLISH_TERMINATE_EVENT *prPubTerEvt;
 	struct NanPublishTerminatedIndMsg nanPubTerInd;
+	struct _NAN_PUBLISH_SPECIFIC_INFO_T *prPubSpecificInfo = NULL;
 	size_t message_len = 0;
+	uint8_t i;
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
@@ -2718,26 +2692,41 @@ mtk_cfg80211_vendor_event_nan_publish_terminate(struct ADAPTER *prAdapter,
 	nanPubTerInd.fwHeader.transactionId = 0;
 	/* For all user should be success. */
 	nanPubTerInd.reason = prPubTerEvt->ucReasonCode;
+	prAdapter->rPublishInfo.ucNanPubNum--;
 
-	DBGLOG(NAN, INFO, "[%s] Cancel Pub ID = %d\n",
-	       __func__, nanPubTerInd.fwHeader.handle);
+	DBGLOG(NAN, INFO, "Cancel Pub ID = %d, PubNum = %d\n",
+	       nanPubTerInd.fwHeader.handle,
+	       prAdapter->rPublishInfo.ucNanPubNum);
 
-	/*  Fill skb and send to kernel by nl80211*/
-	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
-					  message_len + NLMSG_HDRLEN,
-					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
-	if (!skb) {
-		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
-		return -ENOMEM;
+	for (i = 0; i < NAN_MAX_PUBLISH_NUM; i++) {
+		prPubSpecificInfo =
+			&prAdapter->rPublishInfo.rPubSpecificInfo[i];
+		if (prPubSpecificInfo->ucPublishId == prPubTerEvt->u2Pubid) {
+			prPubSpecificInfo->ucUsed = FALSE;
+			if (prPubSpecificInfo->ucReportTerminate) {
+				/* Fill skb and send to kernel by nl80211 */
+				skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
+					message_len + NLMSG_HDRLEN,
+					WIFI_EVENT_SUBCMD_NAN,
+					GFP_KERNEL);
+				if (!skb) {
+					DBGLOG(REQ, ERROR,
+						"Allocate skb failed\n");
+					return -ENOMEM;
+				}
+				if (unlikely(nla_put(skb,
+					MTK_WLAN_VENDOR_ATTR_NAN,
+					message_len,
+					&nanPubTerInd) < 0)) {
+					DBGLOG(REQ, ERROR,
+						"nla_put_nohdr failed\n");
+					kfree_skb(skb);
+					return -EFAULT;
+				}
+				cfg80211_vendor_event(skb, GFP_KERNEL);
+			}
+		}
 	}
-	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN, message_len,
-			     &nanPubTerInd) < 0)) {
-		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
-		kfree_skb(skb);
-		return -EFAULT;
-	}
-	cfg80211_vendor_event(skb, GFP_KERNEL);
-
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -2750,7 +2739,9 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	struct wireless_dev *wdev;
 	struct NAN_SUBSCRIBE_TERMINATE_EVENT *prSubTerEvt;
 	struct NanSubscribeTerminatedIndMsg nanSubTerInd;
+	struct _NAN_SUBSCRIBE_SPECIFIC_INFO_T *prSubSpecificInfo = NULL;
 	size_t message_len = 0;
+	uint8_t i;
 
 	wiphy = wlanGetWiphy();
 	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
@@ -2768,23 +2759,41 @@ mtk_cfg80211_vendor_event_nan_subscribe_terminate(struct ADAPTER *prAdapter,
 	nanSubTerInd.fwHeader.transactionId = 0;
 	/* For all user should be success. */
 	nanSubTerInd.reason = prSubTerEvt->ucReasonCode;
+	prAdapter->rSubscribeInfo.ucNanSubNum--;
 
-	/*  Fill skb and send to kernel by nl80211*/
-	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
-					  message_len + NLMSG_HDRLEN,
-					  WIFI_EVENT_SUBCMD_NAN, GFP_KERNEL);
-	if (!skb) {
-		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
-		return -ENOMEM;
-	}
-	if (unlikely(nla_put(skb, MTK_WLAN_VENDOR_ATTR_NAN, message_len,
-			     &nanSubTerInd) < 0)) {
-		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
-		kfree_skb(skb);
-		return -EFAULT;
-	}
-	cfg80211_vendor_event(skb, GFP_KERNEL);
+	DBGLOG(NAN, INFO, "Cancel Sub ID = %d, SubNum = %d\n",
+		nanSubTerInd.fwHeader.handle,
+		prAdapter->rSubscribeInfo.ucNanSubNum);
 
+	for (i = 0; i < NAN_MAX_SUBSCRIBE_NUM; i++) {
+		prSubSpecificInfo =
+			&prAdapter->rSubscribeInfo.rSubSpecificInfo[i];
+		if (prSubSpecificInfo->ucSubscribeId == prSubTerEvt->u2Subid) {
+			prSubSpecificInfo->ucUsed = FALSE;
+			if (prSubSpecificInfo->ucReportTerminate) {
+				/*  Fill skb and send to kernel by nl80211*/
+				skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
+					message_len + NLMSG_HDRLEN,
+					WIFI_EVENT_SUBCMD_NAN,
+					GFP_KERNEL);
+				if (!skb) {
+					DBGLOG(REQ, ERROR,
+						"Allocate skb failed\n");
+					return -ENOMEM;
+				}
+				if (unlikely(nla_put(skb,
+					MTK_WLAN_VENDOR_ATTR_NAN,
+					message_len,
+					&nanSubTerInd) < 0)) {
+					DBGLOG(REQ, ERROR,
+						"nla_put_nohdr failed\n");
+					kfree_skb(skb);
+					return -EFAULT;
+				}
+				cfg80211_vendor_event(skb, GFP_KERNEL);
+			}
+		}
+	}
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -2836,7 +2845,7 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 		prFollowupEvt->requestor_instance_id;
 	prNanFollowupInd->followupIndParams.window = prFollowupEvt->dw_or_faw;
 
-	DBGLOG(NAN, LOUD, "[%s] matchHandle: %d, window:%d\n", __func__,
+	DBGLOG(NAN, INFO, "[%s] matchHandle: %d, window:%d\n", __func__,
 	       prNanFollowupInd->followupIndParams.matchHandle,
 	       prNanFollowupInd->followupIndParams.window);
 
@@ -2848,6 +2857,17 @@ mtk_cfg80211_vendor_event_nan_followup_indication(struct ADAPTER *prAdapter,
 	tlvs = nanAddTlv(NAN_TLV_TYPE_SERVICE_SPECIFIC_INFO,
 			 prFollowupEvt->service_specific_info_len,
 			 prFollowupEvt->service_specific_info, tlvs);
+
+	DBGLOG(NAN, INFO,
+		"pub/subid: %d, addr: %02x:%02x:%02x:%02x:%02x:%02x, specific_info[0]: %02x\n",
+		prNanFollowupInd->fwHeader.handle,
+		((uint8_t *)prFollowupEvt->addr)[0],
+		((uint8_t *)prFollowupEvt->addr)[1],
+		((uint8_t *)prFollowupEvt->addr)[2],
+		((uint8_t *)prFollowupEvt->addr)[3],
+		((uint8_t *)prFollowupEvt->addr)[4],
+		((uint8_t *)prFollowupEvt->addr)[5],
+		prFollowupEvt->service_specific_info[0]);
 
 	/* Ranging report
 	 * To be implement. NAN_TLV_TYPE_SDEA_SERVICE_SPECIFIC_INFO
@@ -2907,9 +2927,11 @@ mtk_cfg80211_vendor_event_nan_seldflwup_indication(
 	prNanFollowupInd->fwHeader.msgId =
 			NAN_MSG_ID_SELF_TRANSMIT_FOLLOWUP_IND;
 	prNanFollowupInd->fwHeader.msgLen = message_len;
-	prNanFollowupInd->fwHeader.handle = prFollowupEvt->publish_subscribe_id;
+	prNanFollowupInd->fwHeader.handle =
+		prFollowupEvt->publish_subscribe_id;
 	/* Indication doesn't have transition ID */
-	prNanFollowupInd->fwHeader.transactionId = u8NanFollowupID;
+	prNanFollowupInd->fwHeader.transactionId =
+		prFollowupEvt->transaction_id;
 
 	/*  Fill skb and send to kernel by nl80211*/
 	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
@@ -2932,3 +2954,69 @@ mtk_cfg80211_vendor_event_nan_seldflwup_indication(
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+int
+mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
+					       uint8_t *pcuEvtBuf)
+{
+	struct sk_buff *skb = NULL;
+	struct wiphy *wiphy;
+	struct wireless_dev *wdev;
+	struct NAN_MATCH_EXPIRE_EVENT *prMatchExpireEvt;
+	struct NanMatchExpiredIndMsg *prNanMatchExpiredInd;
+	size_t message_len = 0;
+
+	wiphy = wlanGetWiphy();
+	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
+		       ->ieee80211_ptr;
+
+	prMatchExpireEvt = (struct NAN_MATCH_EXPIRE_EVENT *)pcuEvtBuf;
+
+	message_len = sizeof(struct NanMatchExpiredIndMsg);
+
+	prNanMatchExpiredInd = kmalloc(message_len, GFP_KERNEL);
+	if (!prNanMatchExpiredInd) {
+		DBGLOG(REQ, ERROR, "Allocate failed\n");
+		return -ENOMEM;
+	}
+
+	kalMemZero(prNanMatchExpiredInd, message_len);
+
+	prNanMatchExpiredInd->fwHeader.msgVersion = 1;
+	prNanMatchExpiredInd->fwHeader.msgId = NAN_MSG_ID_MATCH_EXPIRED_IND;
+	prNanMatchExpiredInd->fwHeader.msgLen = message_len;
+	prNanMatchExpiredInd->fwHeader.handle =
+			prMatchExpireEvt->u2PublishSubscribeID;
+	prNanMatchExpiredInd->fwHeader.transactionId = 0;
+
+	prNanMatchExpiredInd->matchExpiredIndParams.matchHandle =
+		prMatchExpireEvt->u4RequestorInstanceID;
+
+	DBGLOG(NAN, INFO, "[%s] Handle:%d, matchHandle:%d\n", __func__,
+		prNanMatchExpiredInd->fwHeader.handle,
+		prNanMatchExpiredInd->matchExpiredIndParams.matchHandle);
+
+	/* Fill skb and send to kernel by nl80211 */
+	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
+		message_len + NLMSG_HDRLEN,
+		WIFI_EVENT_SUBCMD_NAN,
+		GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		kfree(prNanMatchExpiredInd);
+		return -ENOMEM;
+	}
+	if (unlikely(nla_put(skb,
+		MTK_WLAN_VENDOR_ATTR_NAN,
+		message_len,
+		prNanMatchExpiredInd) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		kfree_skb(skb);
+		return -EFAULT;
+	}
+	cfg80211_vendor_event(skb, GFP_KERNEL);
+	kfree(prNanMatchExpiredInd);
+
+	return WLAN_STATUS_SUCCESS;
+}
+

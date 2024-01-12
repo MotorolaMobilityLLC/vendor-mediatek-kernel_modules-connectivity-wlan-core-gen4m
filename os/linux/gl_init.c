@@ -4552,6 +4552,9 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	init_completion(&prGlueInfo->rHifHaltComp);
 	init_completion(&prGlueInfo->rRxHaltComp);
 #endif
+#if CFG_SUPPORT_NAN
+	init_completion(&prGlueInfo->rNanHaltComp);
+#endif
 
 #if CFG_SUPPORT_NCHO
 	init_completion(&prGlueInfo->rAisChGrntComp);
@@ -4960,6 +4963,20 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 #endif
 		wlanNotifyFwSuspend(prGlueInfo, prDev, fgEnable);
 	}
+
+#if CFG_SUPPORT_NAN
+	if (prGlueInfo->prAdapter->fgIsNANRegistered) {
+		if (fgEnable) {
+			DBGLOG(NAN, INFO,
+				"Enter suspend mode, SetDWInterval 8\n");
+			nanDevSetDWInterval(prGlueInfo->prAdapter, 8);
+		} else {
+			DBGLOG(NAN, INFO,
+				"Leave suspend mode, SetDWInterval 1\n");
+			nanDevSetDWInterval(prGlueInfo->prAdapter, 1);
+		}
+	}
+#endif
 }
 
 #if CFG_ENABLE_EARLY_SUSPEND
@@ -6616,8 +6633,8 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_SUPPORT_NAN
 	prAdapter->fgIsNANfromHAL = TRUE;
-	prAdapter->ucNanPubNum = 0;
-	prAdapter->ucNanSubNum = 0;
+	prAdapter->rPublishInfo.ucNanPubNum = 0;
+	prAdapter->rSubscribeInfo.ucNanSubNum = 0;
 	DBGLOG(INIT, WARN, "NAN fgIsNANfromHAL init %u\n",
 	       prAdapter->fgIsNANfromHAL);
 #endif
@@ -6934,12 +6951,19 @@ int32_t wlanOnWhenProbeSuccess(struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_SUPPORT_NAN
-int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
+int set_nan_handler(struct net_device *netdev, uint32_t ucEnable,
+	uint8_t fgIsHoldRtnlLock)
 {
 	struct GLUE_INFO *prGlueInfo =
 		*((struct GLUE_INFO **)netdev_priv(netdev));
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
+#ifdef CFG_DRIVER_INITIAL_RUNNING_MODE
+#define NAN_DISABLE_P2P_MODE \
+	(CFG_DRIVER_INITIAL_RUNNING_MODE <= RUNNING_DUAL_P2P_MODE)
+#else
+#define NAN_DISABLE_P2P_MODE (0)
+#endif
 
 	if (kalIsResetting())
 		return 0;
@@ -6949,7 +6973,11 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	else if ((!prGlueInfo->prAdapter->fgIsNANRegistered) && (!ucEnable))
 		return 0;
 
-#if CFG_ENABLE_WIFI_DIRECT
+#if (NAN_DISABLE_P2P_MODE == 1)
+	/* Disable p2p */
+	if ((!ucEnable) && (kalIsResetting() == FALSE)) {
+		nanNetUnregister(prGlueInfo, fgIsHoldRtnlLock);
+	}
 	if (ucEnable) {
 		struct PARAM_CUSTOM_P2P_SET_STRUCT rSetP2P;
 
@@ -6957,10 +6985,10 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 		rSetP2P.u4Enable = 0;
 		set_p2p_mode_handler(netdev, rSetP2P);
 	}
-#endif
-
+#else
 	if (!ucEnable)
-		nanNetUnregister(prGlueInfo, FALSE);
+		nanNetUnregister(prGlueInfo, fgIsHoldRtnlLock);
+#endif
 
 #ifdef CFG_SUPPORT_TWT_EXT
 	if (ucEnable)
@@ -6977,12 +7005,18 @@ int set_nan_handler(struct net_device *netdev, uint32_t ucEnable)
 	 * in this case, kalIOCTL return success always,
 	 * and prGlueInfo->prP2PInfo[0] may be NULL
 	 */
-	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered))
-		nanNetRegister(prGlueInfo, FALSE); /* Fixme: error handling */
+	/* Fixme: error handling */
+	if ((ucEnable) && (prGlueInfo->prAdapter->fgIsNANRegistered) &&
+		(kalIsResetting() == FALSE))
+		nanNetRegister(prGlueInfo, fgIsHoldRtnlLock);
 
-	if (!ucEnable)
+#if (NAN_DISABLE_P2P_MODE == 1)
+	/* Disable p2p */
+	if ((!ucEnable) && (kalIsResetting() == FALSE)) {
 		wlanOnP2pRegistration(prGlueInfo,
 			prGlueInfo->prAdapter, gprWdev[0]);
+	}
+#endif
 
 	return 0;
 }

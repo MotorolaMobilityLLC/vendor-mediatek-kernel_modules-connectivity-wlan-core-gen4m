@@ -98,7 +98,7 @@ struct wpa_sm {
 	u8 u1MicCalState;
 	bool fgIsTxDone;
 
-	u8 *pu1TmpKdeAttrBuf; /*For Tx*/
+	u8 au1TmpKdeAttrBuf[150]; /*For Tx*/
 	u32 u4TmpKdeAttrLen;
 
 	u8 *pu1GetTxMsgBodyBuf;
