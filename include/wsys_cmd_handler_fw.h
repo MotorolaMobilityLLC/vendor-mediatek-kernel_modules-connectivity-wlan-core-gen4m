@@ -623,6 +623,15 @@ struct INIT_EVENT_CMD_RESULT {
 	uint8_t      aucReserved[2];
 };
 
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+struct INIT_EVENT_BT_PATCH_SEMA_CTRL {
+	uint8_t      ucStatus;
+	uint8_t      aucReserved[3];
+	uint32_t     u4RemapAddr;
+	uint8_t      aucReserved1[4];
+};
+#endif /* CFG_SUPPORT_WIFI_DL_BT_PATCH */
+
 /*---------------------------------------------------------------------------*/
 /* Parameters of User Configuration which match to NDIS5.1                */
 /*---------------------------------------------------------------------------*/

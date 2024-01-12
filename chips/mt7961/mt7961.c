@@ -762,7 +762,7 @@ uint16_t mt7961Connac2xUsbRxByteCount(
 }
 #endif /*_HIF_USB */
 
-#if 0 /* TODO: #if CFG_SUPPORT_WIFI_DL_BT_PATCH */
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
 void mt7961ConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucName, uint8_t *pucNameIdx)
 {
@@ -841,8 +841,7 @@ uint32_t wlanBtPatchSendSemaControl(IN struct ADAPTER *prAdapter,
 		prCmdInfo->ucCID,
 		INIT_CMD_PDA_PACKET_TYPE_ID,
 		pucSeqNum, FALSE,
-		(void **)&prBtPatchSemaCtrl, TRUE, 0, S2D_INDEX_CMD_H2N,
-		FALSE);
+		(void **)&prBtPatchSemaCtrl, TRUE, 0, S2D_INDEX_CMD_H2N);
 
 	/* Setup DOWNLOAD_BUF */
 	kalMemZero(prBtPatchSemaCtrl,
@@ -1335,7 +1334,7 @@ struct FWDL_OPS_T mt7961_fw_dl_ops = {
 	.downloadFirmware = wlanConnacFormatDownload,
 	.getFwInfo = wlanGetConnacFwInfo,
 	.getFwDlInfo = asicGetFwDlInfo,
-#if 0 /* TODO: #if CFG_SUPPORT_WIFI_DL_BT_PATCH */
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
 	.constructBtPatchName = mt7961ConstructBtPatchName,
 	.downloadBtPatch = mt7961DownloadBtPatch,
 #endif

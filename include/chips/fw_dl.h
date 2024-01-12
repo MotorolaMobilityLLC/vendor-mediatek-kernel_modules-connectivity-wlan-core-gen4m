@@ -146,13 +146,17 @@ extern unsigned long long gConEmiSize;
 #define FW_SECT_BINARY_TYPE_BT_PATCH			0x00000002
 #define FW_SECT_BINARY_TYPE_BT_ILM_TEXT_EX9_DATA	0x00000080
 #define FW_SECT_BINARY_TYPE_WF_PATCH			0x00000100
+#define FW_SECT_BINARY_TYPE_ZB_FW			0x00001000
 
 enum ENUM_IMG_DL_IDX_T {
 	IMG_DL_IDX_N9_FW,
 	IMG_DL_IDX_CR4_FW,
 	IMG_DL_IDX_PATCH,
 	IMG_DL_IDX_MCU_ROM_EMI,
-	IMG_DL_IDX_WIFI_ROM_EMI
+	IMG_DL_IDX_WIFI_ROM_EMI,
+	IMG_DL_IDX_BT_PATCH,
+	IMG_DL_IDX_ZB_PATCH
+
 };
 
 struct FWDL_OPS_T {
@@ -179,6 +183,16 @@ struct FWDL_OPS_T {
 		char *pcBuf, int i4TotalLen);
 	uint32_t (*phyAction)(IN struct ADAPTER *prAdapter);
 	uint32_t (*dlRomCode)(struct ADAPTER *prAdapter);
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH
+	void (*constructBtPatchName)(struct GLUE_INFO *prGlueInfo,
+		uint8_t **apucName, uint8_t *pucNameIdx);
+	uint32_t (*downloadBtPatch)(IN struct ADAPTER *prAdapter);
+#endif
+#if CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	void (*constructZbPatchName)(struct GLUE_INFO *prGlueInfo,
+		uint8_t **apucName, uint8_t *pucNameIdx);
+	uint32_t (*downloadZbPatch)(IN struct ADAPTER *prAdapter);
+#endif
 };
 
 #if (CFG_UMAC_GENERATION >= 0x20)
@@ -291,7 +305,8 @@ struct PATCH_SEC_MAP {
 			uint32_t dl_size;
 			uint32_t sec_info;
 			uint32_t align_len;
-			uint32_t reserved[9];
+			uint32_t bin_type; /* BT uses this filed as BIN TYPE */
+			uint32_t reserved[8];
 		} bin_info_spec;
 	};
 };
@@ -300,6 +315,9 @@ struct patch_dl_buf {
 	uint8_t *img_ptr;
 	uint32_t img_dest_addr;
 	uint32_t img_size;
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+	uint32_t bin_type;
+#endif
 	bool check_crc;
 };
 
@@ -324,6 +342,9 @@ enum ENUM_WLAN_POWER_ON_DOWNLOAD {
 #if CFG_ENABLE_FW_DOWNLOAD
 uint32_t wlanGetDataMode(IN struct ADAPTER *prAdapter,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx, IN uint8_t ucFeatureSet);
+
+uint32_t wlanGetPatchDataModeV2(IN struct ADAPTER *prAdapter,
+	IN uint32_t u4SecInfo);
 
 void wlanGetHarvardFwInfo(IN struct ADAPTER *prAdapter,
 	IN uint8_t u4SecIdx, IN enum ENUM_IMG_DL_IDX_T eDlIdx,
@@ -363,7 +384,11 @@ uint32_t wlanImageSectionDownloadStage(IN struct ADAPTER *prAdapter,
 	IN enum ENUM_IMG_DL_IDX_T eDlIdx,
 	OUT u_int8_t *pfgIsDynamicMemMap);
 
-uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter);
+uint32_t wlanPatchSendComplete(IN struct ADAPTER *prAdapter
+#if CFG_SUPPORT_WIFI_DL_BT_PATCH || CFG_SUPPORT_WIFI_DL_ZB_PATCH
+			       , IN uint8_t ucPatchType
+#endif
+				);
 
 #if (CFG_DOWNLOAD_DYN_MEMORY_MAP == 1)
 uint32_t wlanPatchDynMemMapSendComplete(IN struct ADAPTER *prAdapter);
