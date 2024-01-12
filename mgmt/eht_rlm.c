@@ -177,8 +177,7 @@ static void ehtRlmFillBW20MCSMap(
 	} else if (prAdapter->fgMcsMapBeenSet & SET_HE_MCS_MAP) {
 		uint8_t map = prAdapter->ucMcsMapSetFromSigma;
 
-		if (map >= HE_CAP_INFO_MCS_MAP_MCS7)
-			_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
 		if (map >= HE_CAP_INFO_MCS_MAP_MCS9)
 			_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
 		if (map >= HE_CAP_INFO_MCS_MAP_MCS11)

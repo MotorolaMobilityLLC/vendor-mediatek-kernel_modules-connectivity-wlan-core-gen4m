@@ -1122,8 +1122,7 @@ u_int8_t rsnPerformPolicySelection(
 	}
 #if CFG_ENABLE_WIFI_DIRECT
 	if ((prAdapter->fgIsP2PRegistered) &&
-	    (GET_BSS_INFO_BY_INDEX(prAdapter,
-		ucBssIndex)->eNetworkType == NETWORK_TYPE_P2P)) {
+		IS_BSS_INDEX_P2P(prAdapter, ucBssIndex)) {
 		if (u4PairwiseCipher != RSN_CIPHER_SUITE_CCMP ||
 		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
 		    || u4AkmSuite != RSN_AKM_SUITE_PSK) {
@@ -1136,7 +1135,8 @@ u_int8_t rsnPerformPolicySelection(
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI
-	if (GET_BSS_INFO_BY_INDEX(prAdapter,
+	if (GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex) &&
+	    GET_BSS_INFO_BY_INDEX(prAdapter,
 		ucBssIndex)->eNetworkType == NETWORK_TYPE_BOW) {
 		if (u4PairwiseCipher != RSN_CIPHER_SUITE_CCMP ||
 		    u4GroupCipher != RSN_CIPHER_SUITE_CCMP
@@ -1287,8 +1287,7 @@ void rsnGenerateWpaNoneIE(struct ADAPTER *prAdapter,
 
 	ucBssIndex = prMsduInfo->ucBssIndex;
 
-	if (GET_BSS_INFO_BY_INDEX(prAdapter,
-				  ucBssIndex)->eNetworkType != NETWORK_TYPE_AIS)
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return;
 
 	if (aisGetAuthMode(prAdapter, ucBssIndex) != AUTH_MODE_WPA_NONE)
@@ -1595,8 +1594,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 			u2PairwiseKeyCipherSuiteCount, 1);
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered
-			&& GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->
-			eNetworkType == NETWORK_TYPE_P2P) {
+			&& IS_BSS_INDEX_P2P(prAdapter, ucBssIndex)) {
 			WLAN_SET_FIELD_32(cp, WPA_CIPHER_SUITE_TKIP);
 		} else
 #endif
@@ -1609,8 +1607,7 @@ void rsnGenerateWPAIE(struct ADAPTER *prAdapter,
 		cp += 2;
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAdapter->fgIsP2PRegistered
-		    && GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->
-			eNetworkType == NETWORK_TYPE_P2P) {
+		    && IS_BSS_INDEX_P2P(prAdapter, ucBssIndex)) {
 			WLAN_SET_FIELD_32(cp, WPA_AKM_SUITE_PSK);
 		} else
 #endif
@@ -1668,6 +1665,10 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 		return;
 	}
 #endif
+	if (ucBssIndex >= MAX_BSSID_NUM) {
+		DBGLOG(RSN, ERROR, "ucBssIndex out of range!\n");
+		return;
+	}
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 
 	if (
@@ -1733,17 +1734,15 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 			WLAN_SET_FIELD_16(cp, 1);	/* AKM suite count */
 			cp += 2;
 			/* AKM suite */
-			WLAN_SET_FIELD_32(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
-			    ucBssIndex)->u4RsnSelectedAKMSuite);
+			WLAN_SET_FIELD_32(cp,
+				prBssInfo->u4RsnSelectedAKMSuite);
 			cp += 4;
 		}
 
 		/* Capabilities */
-		WLAN_SET_FIELD_16(cp, GET_BSS_INFO_BY_INDEX(prAdapter,
-				  ucBssIndex)->u2RsnSelectedCapInfo);
+		WLAN_SET_FIELD_16(cp, prBssInfo->u2RsnSelectedCapInfo);
 		DBGLOG(RSN, TRACE,
-		       "Gen RSN IE = %x\n", GET_BSS_INFO_BY_INDEX(prAdapter,
-				       ucBssIndex)->u2RsnSelectedCapInfo);
+		       "Gen RSN IE = %x\n", prBssInfo->u2RsnSelectedCapInfo);
  #if CFG_SUPPORT_802_11W
 		if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 			if (kalGetRsnIeMfpCap(prAdapter->prGlueInfo,
@@ -2469,6 +2468,12 @@ uint32_t rsnCheckBipKeyInstalled(struct ADAPTER
 	/* caution: prStaRec might be null ! */
 	if (prStaRec) {
 		if (GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
+			== NULL) {
+			DBGLOG(RSN, ERROR, "prBssInfo is null\n");
+			return FALSE;
+		}
+
+		if (GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
 		    ->eNetworkType == (uint8_t) NETWORK_TYPE_AIS) {
 			return aisGetAisSpecBssInfo(prAdapter,
 				prStaRec->ucBssIndex)
@@ -2496,8 +2501,7 @@ uint32_t rsnCheckBipGmacKeyInstall(struct ADAPTER
 {
 	/* caution: prStaRec might be null ! */
 	if (prStaRec) {
-		if (GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex)
-		    ->eNetworkType == (uint8_t) NETWORK_TYPE_AIS) {
+		if (IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex)) {
 			return aisGetAisSpecBssInfo(prAdapter,
 				prStaRec->ucBssIndex)
 				->fgBipGmacKeyInstalled;
