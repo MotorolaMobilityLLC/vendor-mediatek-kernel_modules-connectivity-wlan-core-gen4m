@@ -174,9 +174,6 @@ struct BSS_INFO {
 	struct LINK_ENTRY rLinkEntryMld;
 	enum ENUM_NETWORK_TYPE eNetworkType;
 
-	/* index of a ais/p2p/ap... wdev which owns this bssinfo */
-	uint8_t ucWdevIndex;
-
 	/* Private data parameter for each NETWORK type usage. */
 	uint32_t u4PrivateData;
 	/* P2P network type has 3 network interface to distinguish. */

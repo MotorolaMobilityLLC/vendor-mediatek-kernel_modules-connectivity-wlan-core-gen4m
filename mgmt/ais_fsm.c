@@ -388,6 +388,10 @@ void aisInitBssInfo(IN struct ADAPTER *prAdapter,
 	    (uint8_t) prAdapter->u4UapsdAcBmp;
 	prAisBssInfo->rPmProfSetupInfo.ucUapsdSp =
 	    (uint8_t) prAdapter->u4MaxSpLen;
+
+	/* For BSS_INFO back trace to AIS FSM. */
+	prAisBssInfo->u4PrivateData = prAisFsmInfo->ucAisIndex;
+
 	LINK_INITIALIZE(&prAisBssInfo->rPmkidCache);
 }
 
@@ -443,7 +447,6 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 			prMldBssInfo != NULL ? prMldBssInfo->ucGroupMldId :
 #endif
 			MLD_GROUP_NONE,
-			ucAisIndex,
 			FALSE);
 		if (!prAisBssInfo) {
 			DBGLOG(AIS, ERROR,
@@ -7070,7 +7073,7 @@ struct AIS_FSM_INFO *aisGetAisFsmInfo(
 	}
 
 	return aisFsmGetInstance(prAdapter,
-		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->ucWdevIndex);
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex)->u4PrivateData);
 }
 
 struct AIS_FSM_INFO *aisFsmGetInstance(IN struct ADAPTER *prAdapter,

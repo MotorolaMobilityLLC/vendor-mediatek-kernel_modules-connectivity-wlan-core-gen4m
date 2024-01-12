@@ -2063,10 +2063,9 @@ uint8_t cnmGetBssMaxBwToChnlBW(struct ADAPTER
  */
 /*----------------------------------------------------------------------------*/
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
-	enum ENUM_NETWORK_TYPE eNetworkType,
-	uint8_t ucMldGroupIdx,
-	uint8_t ucWdevIndex,
-	u_int8_t fgIsP2pDevice)
+				      enum ENUM_NETWORK_TYPE eNetworkType,
+				      uint8_t ucMldGroupIdx,
+				      u_int8_t fgIsP2pDevice)
 {
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
 	uint8_t i, ucBssIndex, ucOwnMacIdx = 0;
@@ -2158,7 +2157,6 @@ omac_choosed:
 				prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
 				prBssInfo->wepkeyUsed[i] = FALSE;
 			}
-			prBssInfo->ucWdevIndex = ucWdevIndex;
 #if CFG_SUPPORT_DFS
 			cnmTimerInitTimer(prAdapter,
 				&prBssInfo->rCsaTimer,
