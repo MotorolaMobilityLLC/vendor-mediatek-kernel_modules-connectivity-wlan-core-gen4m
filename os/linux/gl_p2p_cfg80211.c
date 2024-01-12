@@ -941,6 +941,7 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 	uint8_t ucBssIdx = 0;
 	uint32_t u4Rate = 0;
 	uint32_t u4BufLen = 0;
+	uint32_t rStatus;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct GL_P2P_INFO *prP2pGlueInfo = (struct GL_P2P_INFO *) NULL;
 	struct P2P_STATION_INFO rP2pStaInfo;
@@ -994,12 +995,13 @@ int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 			return 0;
 		}
 
-		kalIoctlByBssIdx(prGlueInfo,
+		rStatus = kalIoctlByBssIdx(prGlueInfo,
 				 wlanoidQueryLinkSpeedEx,
 				 &rLinkSpeed, sizeof(rLinkSpeed),
 				 TRUE, FALSE, FALSE,
 				 &u4BufLen, ucBssIdx);
-		if (ucBssIdx < BSSID_NUM) {
+		if (rStatus == WLAN_STATUS_SUCCESS
+			&& ucBssIdx < BSSID_NUM) {
 			u4Rate = rLinkSpeed.rLq[ucBssIdx].u2LinkSpeed;
 			i4Rssi = rLinkSpeed.rLq[ucBssIdx].cRssi;
 		}
