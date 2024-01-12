@@ -4632,9 +4632,9 @@ uint32_t ServiceWlanOid(void *winfos,
 
 		if (prTestWinfo->chip_id == 0x7903) {
 			/* band0 (2.4G) */
-			capability->ph_cap.channel_band_dbdc = BIT(0);
+			capability->ph_cap.channel_band_dbdc = BIT(1)+BIT(2);
 			/* band2 (5G+6G) */
-			capability->ph_cap.channel_band_dbdc_ext = BIT(1)+BIT(2);
+			capability->ph_cap.channel_band_dbdc_ext = BIT(0);
 		}
 		else {
 			/* band0 (2.4G) band1 (5G+6G) */
