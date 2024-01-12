@@ -58,6 +58,21 @@ struct AP_COLLECTION {
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
 };
 
+#if (CFG_SUPPORT_AVOID_DESENSE == 1)
+struct WFA_DESENSE_CHANNEL_LIST {
+	int8_t ucChLowerBound;
+	int8_t ucChUpperBound;
+};
+
+extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
+
+#define IS_CHANNEL_IN_DESENSE_RANGE(_prAdapter, _ch, _band) \
+	(!!(_prAdapter->fgIsNeedAvoidDesenseFreq && \
+	(_band != BAND_2G4) && (_band < BAND_NUM) && \
+	(_ch >= desenseChList[_band].ucChLowerBound) && \
+	(_ch <= desenseChList[_band].ucChUpperBound)))
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
