@@ -31,7 +31,7 @@
 /* 1: 3rd arbitration makes decision based on group priority in current slot.
  * 0: 3rd arbitration makes decision based on fixed user-defined priority.
  */
-#define SOC7_0_DMASHDL_SLOT_ARBITER_EN                 (1)
+#define SOC7_0_DMASHDL_SLOT_ARBITER_EN                 (0)
 #define SOC7_0_DMASHDL_PKT_PLE_MAX_PAGE                (0x1)
 /* Buzzard CMD packet flow control is controlled by WFDMA, not DMASHDL.
  * So, CMD packet (group 15) related CRs in DMASHDL are ignored.
@@ -68,7 +68,7 @@
 #define SOC7_0_DMASHDL_GROUP_12_MAX_QUOTA              (0x0)
 #define SOC7_0_DMASHDL_GROUP_13_MAX_QUOTA              (0x0)
 #define SOC7_0_DMASHDL_GROUP_14_MAX_QUOTA              (0x0)
-#define SOC7_0_DMASHDL_GROUP_15_MAX_QUOTA              (0x0)
+#define SOC7_0_DMASHDL_GROUP_15_MAX_QUOTA              (0x30)
 #define SOC7_0_DMASHDL_GROUP_0_MIN_QUOTA               (0x3)
 #define SOC7_0_DMASHDL_GROUP_1_MIN_QUOTA               (0x3)
 #define SOC7_0_DMASHDL_GROUP_2_MIN_QUOTA               (0x0)
@@ -84,7 +84,7 @@
 #define SOC7_0_DMASHDL_GROUP_12_MIN_QUOTA              (0x0)
 #define SOC7_0_DMASHDL_GROUP_13_MIN_QUOTA              (0x0)
 #define SOC7_0_DMASHDL_GROUP_14_MIN_QUOTA              (0x0)
-#define SOC7_0_DMASHDL_GROUP_15_MIN_QUOTA              (0x0)
+#define SOC7_0_DMASHDL_GROUP_15_MIN_QUOTA              (0x30)
 #define SOC7_0_DMASHDL_QUEUE_0_TO_GROUP                (0x0)   /* LMAC AC00 */
 #define SOC7_0_DMASHDL_QUEUE_1_TO_GROUP                (0x0)   /* LMAC AC01 */
 #define SOC7_0_DMASHDL_QUEUE_2_TO_GROUP                (0x0)   /* LMAC AC02 */
@@ -133,6 +133,10 @@
 #define SOC7_0_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define SOC7_0_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define SOC7_0_DMASHDL_PRIORITY15_GROUP                (0xF)
+/* 3 rings are used */
+#define SOC7_0_DMASHDL_HIF_ACK_CNT_TH                  (0x3)
+/* Ring 0/1/15 are used */
+#define SOC7_0_DMASHDL_HIF_GUP_ACT_MAP                 (0x8003)
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
@@ -168,6 +172,8 @@ struct SOC7_0_DMASHDL_CFG {
 	uint16_t au2MinQuota[ENUM_SOC7_0_DMASHDL_GROUP_NUM];
 	uint8_t aucQueue2Group[32];
 	uint8_t aucPriority2Group[16];
+	uint16_t u2HifAckCntTh;
+	uint16_t u2HifGupActMap;
 };
 
 /*******************************************************************************

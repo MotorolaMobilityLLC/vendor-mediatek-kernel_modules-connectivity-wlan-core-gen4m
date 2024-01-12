@@ -133,6 +133,10 @@
 #define SOC5_0_DMASHDL_PRIORITY13_GROUP                (0xD)
 #define SOC5_0_DMASHDL_PRIORITY14_GROUP                (0xE)
 #define SOC5_0_DMASHDL_PRIORITY15_GROUP                (0xF)
+/* 2 rings are used */
+#define SOC5_0_DMASHDL_HIF_ACK_CNT_TH                  (0x2)
+/* Ring 0/1 are used */
+#define SOC5_0_DMASHDL_HIF_GUP_ACT_MAP                 (0x0003)
 
 /*******************************************************************************
 *                         D A T A   T Y P E S
@@ -168,6 +172,8 @@ struct SOC5_0_DMASHDL_CFG {
 	uint16_t au2MinQuota[ENUM_SOC5_0_DMASHDL_GROUP_NUM];
 	uint8_t aucQueue2Group[32];
 	uint8_t aucPriority2Group[16];
+	uint16_t u2HifAckCntTh;
+	uint16_t u2HifGupActMap;
 };
 
 /*******************************************************************************
