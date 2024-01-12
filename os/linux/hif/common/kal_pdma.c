@@ -486,7 +486,7 @@ void kalDevReadIntStatus(IN struct ADAPTER *prAdapter,
 
 	HAL_MCR_RD(prAdapter, WPDMA_INT_STA, &u4RegValue);
 
-	if (HAL_IS_RX_DONE_INTR(u4RegValue))
+	if (HAL_IS_RX_DONE_INTR(u4RegValue) || prAdapter->u4NoMoreRfb != 0)
 		*pu4IntStatus |= WHISR_RX0_DONE_INT;
 
 	if (HAL_IS_TX_DONE_INTR(u4RegValue))

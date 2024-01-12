@@ -4210,17 +4210,10 @@ void qmPopOutDueToFallAhead(IN struct ADAPTER *prAdapter,
 void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 	IN unsigned long ulParamPtr)
 {
-	struct mt66xx_chip_info *prChipInfo;
 	struct RX_BA_ENTRY *prReorderQueParm =
 		(struct RX_BA_ENTRY *) ulParamPtr;
-	struct SW_RFB *prSwRfb = (struct SW_RFB *) NULL;
-	struct WIFI_EVENT *prEvent;
-	struct EVENT_CHECK_REORDER_BUBBLE *prCheckReorderEvent;
-
-	KAL_SPIN_LOCK_DECLARATION();
 
 	ASSERT(prAdapter);
-	prChipInfo = prAdapter->chip_info;
 
 	if (!prReorderQueParm->fgIsValid) {
 		DBGLOG(QM, TRACE,
@@ -4241,95 +4234,23 @@ void qmHandleReorderBubbleTimeout(IN struct ADAPTER *prAdapter,
 		prReorderQueParm->ucStaRecIdx, prReorderQueParm->ucTid,
 		prReorderQueParm->u2FirstBubbleSn);
 
-	/* Generate a self-inited event to Rx path */
-	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-	QUEUE_REMOVE_HEAD(&prAdapter->rRxCtrl.rFreeSwRfbList,
-		prSwRfb, struct SW_RFB *);
-	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
-
-	if (prSwRfb) {
-		prEvent = (struct WIFI_EVENT *)
-			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
-		prEvent->ucEID = EVENT_ID_CHECK_REORDER_BUBBLE;
-		prEvent->ucSeqNum = 0;
-		prEvent->u2PacketLength =
-			prChipInfo->rxd_size + prChipInfo->event_hdr_size +
-			sizeof(struct EVENT_CHECK_REORDER_BUBBLE);
-
-		prCheckReorderEvent = (struct EVENT_CHECK_REORDER_BUBBLE *)
-			prEvent->aucBuffer;
-		prCheckReorderEvent->ucStaRecIdx =
-			prReorderQueParm->ucStaRecIdx;
-		prCheckReorderEvent->ucTid = prReorderQueParm->ucTid;
-
-		prSwRfb->ucPacketType = RX_PKT_TYPE_SW_DEFINED;
-		prSwRfb->prRxStatus->u2PktTYpe = RXM_RXD_PKT_TYPE_SW_EVENT;
-
-		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-		QUEUE_INSERT_TAIL(&prAdapter->rRxCtrl.rReceivedRfbList,
-			&prSwRfb->rQueEntry);
-		RX_INC_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT);
-		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-
-		DBGLOG(QM, LOUD,
-			"QM:(Bub Check Event Sent) STA[%u] TID[%u]\n",
-			prReorderQueParm->ucStaRecIdx,
-			prReorderQueParm->ucTid);
-
-		nicRxProcessRFBs(prAdapter);
-
-		DBGLOG(QM, LOUD,
-			"QM:(Bub Check Event Handled) STA[%u] TID[%u]\n",
-			prReorderQueParm->ucStaRecIdx,
-			prReorderQueParm->ucTid);
-	} else {
-		DBGLOG(QM, TRACE,
-			"QM:(Bub Check Cancel) STA[%u] TID[%u], Bub check event alloc failed\n",
-			prReorderQueParm->ucStaRecIdx,
-			prReorderQueParm->ucTid);
-
-		cnmTimerStartTimer(prAdapter,
-			&(prReorderQueParm->rReorderBubbleTimer),
-			prAdapter->u4QmRxBaMissTimeout);
-
-		DBGLOG(QM, TRACE,
-			"QM:(Bub Timer Restart) STA[%u] TID[%u] BubSN[%u] Win{%d, %d}\n",
-			prReorderQueParm->ucStaRecIdx,
-			prReorderQueParm->ucTid,
-			prReorderQueParm->u2FirstBubbleSn,
-			prReorderQueParm->u2WinStart,
-			prReorderQueParm->u2WinEnd);
-	}
-
+	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
 }
 
 void qmHandleEventCheckReorderBubble(IN struct ADAPTER *prAdapter,
-	IN struct WIFI_EVENT *prEvent)
+				     struct RX_BA_ENTRY *prReorderQueParm)
 {
-	struct EVENT_CHECK_REORDER_BUBBLE *prCheckReorderEvent;
-	struct RX_BA_ENTRY *prReorderQueParm;
 	struct QUE *prReorderQue;
 	struct QUE rReturnedQue;
 	struct QUE *prReturnedQue = &rReturnedQue;
 	struct SW_RFB *prReorderedSwRfb, *prSwRfb;
 	OS_SYSTIME *prMissTimeout;
 
-	prCheckReorderEvent = (struct EVENT_CHECK_REORDER_BUBBLE *)
-		(prEvent->aucBuffer);
-
 	QUEUE_INITIALIZE(prReturnedQue);
-
-	/* Get target Rx BA entry */
-	prReorderQueParm = qmLookupRxBaEntry(prAdapter,
-		prCheckReorderEvent->ucStaRecIdx,
-		prCheckReorderEvent->ucTid);
 
 	/* Sanity Check */
 	if (!prReorderQueParm) {
-		DBGLOG(QM, TRACE,
-			"QM:(Bub Check Cancel) STA[%u] TID[%u], No Rx BA entry\n",
-			prCheckReorderEvent->ucStaRecIdx,
-			prCheckReorderEvent->ucTid);
+		DBGLOG(QM, TRACE, "QM:(Bub Check Cancel) No Rx BA entry\n");
 		return;
 	}
 
