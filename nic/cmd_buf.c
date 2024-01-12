@@ -283,11 +283,10 @@ struct CMD_INFO *cmdBufAllocateCmdInfo(IN struct ADAPTER
 		       prCmdInfo, u4Length, prAdapter->rFreeCmdList.u4NumElem);
 
 	} else {
-		struct CHIP_DBG_OPS *prDbgOps;
 
-		prDbgOps = prAdapter->chip_info->prDebugOps;
-		if (prDbgOps && prDbgOps->showPdmaInfo)
-			prDbgOps->showPdmaInfo(prAdapter);
+		/* dump debug log */
+		prAdapter->u4HifDbgFlag |= DEG_HIF_PDMA;
+		kalSetHifDbgEvent(prAdapter->prGlueInfo);
 
 			DBGLOG(MEM, ERROR,
 		       "CMD allocation failed! LEN[%04u], Rest[%u]\n",
