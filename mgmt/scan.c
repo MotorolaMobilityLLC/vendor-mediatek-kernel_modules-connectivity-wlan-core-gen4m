@@ -3607,7 +3607,8 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 			if ((prBssDesc->eBSSType == eBSSType)
 #if CFG_ENABLE_WIFI_DIRECT
 			    || ((eBSSType == BSS_TYPE_P2P_DEVICE)
-			    && (prBssDesc->fgIsP2PReport == TRUE))
+			    && (prBssDesc->fgIsP2PReport == TRUE
+			    && prAdapter->p2p_scan_report_all_bss))
 #endif
 			    ) {
 
@@ -3640,7 +3641,9 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 #endif
 				} else {
 #if CFG_ENABLE_WIFI_DIRECT
-					if (prBssDesc->fgIsP2PReport == TRUE) {
+					if ((prBssDesc->fgIsP2PReport == TRUE &&
+					     prAdapter->p2p_scan_report_all_bss)
+					    && prBssDesc->u2RawLength != 0) {
 #endif
 						rChannelInfo.ucChannelNum
 							= prBssDesc
