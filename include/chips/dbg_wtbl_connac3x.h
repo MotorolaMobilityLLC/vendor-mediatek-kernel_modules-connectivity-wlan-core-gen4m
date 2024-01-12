@@ -98,7 +98,7 @@
 #define WTBL_RESP_RCPI2_MASK           BITS(16, 23)
 #define WTBL_RESP_RCPI2_OFFSET         16
 #define WTBL_RESP_RCPI3_MASK           BITS(24, 31)
-#define WTBL_RESP_RCPI3_OFFSET         2
+#define WTBL_RESP_RCPI3_OFFSET         24
 
 /***** WTBL(LMAC) DW Offset *****/
 /* LMAC WTBL Group - Peer Unique Information */

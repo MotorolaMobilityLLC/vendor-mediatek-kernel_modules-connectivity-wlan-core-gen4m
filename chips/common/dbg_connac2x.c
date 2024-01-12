@@ -1588,6 +1588,15 @@ void connac2x_get_rssi_from_wtbl(
 			*pi4Rssi3 = RCPI_TO_dBm((rCmdAccessReg.u4Data &
 				CONNAC2X_WTBL_RESP_RCPI3_MASK) >>
 				CONNAC2X_WTBL_RESP_RCPI3_OFFSET);
+	} else {
+		if (pi4Rssi0 != NULL)
+			*pi4Rssi0 = 0;
+		if (pi4Rssi1 != NULL)
+			*pi4Rssi1 = 0;
+		if (pi4Rssi2 != NULL)
+			*pi4Rssi2 = 0;
+		if (pi4Rssi3 != NULL)
+			*pi4Rssi3 = 0;
 	}
 }
 

@@ -1944,6 +1944,10 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 					prEvent->arLinkStatistics[eAci].
 					u4TxRetryMsdu;
 			}
+#if CFG_SUPPORT_STA_INFO
+			prStaStatistics->u4RxBmcCnt = prEvent->u4RxBmcCnt;
+			prStaRec->u4RxBmcCnt = prEvent->u4RxBmcCnt;
+#endif
 		}
 		if (prEvent->u4TxCount) {
 			uint32_t u4TxDoneAirTimeMs =

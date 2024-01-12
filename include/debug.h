@@ -1071,8 +1071,7 @@ int32_t connac3x_show_rx_rate_info(
 void connac3x_get_rssi_from_wtbl(
 	struct ADAPTER *prAdapter, uint32_t u4Index,
 	int32_t *pi4Rssi0, int32_t *pi4Rssi1,
-	int32_t *pi4Rssi2, int32_t *pi4Rssi3
-);
+	int32_t *pi4Rssi2, int32_t *pi4Rssi3);
 
 int32_t connac3x_show_rx_rssi_info(
 	struct ADAPTER *prAdapter,

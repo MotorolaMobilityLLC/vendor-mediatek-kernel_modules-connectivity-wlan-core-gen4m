@@ -173,6 +173,16 @@ void nic_rxd_v3_fill_rfb(
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
 		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_4);
 
+#if CFG_SUPPORT_STA_INFO
+#define RETRY_BIT 3
+		if (prSwRfb->ucPacketType == RX_PKT_TYPE_RX_DATA && (
+			prSwRfb->prRxStatusGroup4->u2FrameCtl &
+			BIT(RETRY_BIT)) >> RETRY_BIT) {
+			if (prSwRfb->prStaRec)
+				prSwRfb->prStaRec->u4RxRetryCnt += 1;
+		}
+#endif
+
 		NIC_DUMP_RXD_HEADER(prAdapter, "****** RXD GROUP 4 ******\n");
 		NIC_DUMP_RXD(prAdapter, (uint32_t *) prSwRfb->prRxStatusGroup4,
 			sizeof(struct HW_MAC_RX_STS_GROUP_4));
