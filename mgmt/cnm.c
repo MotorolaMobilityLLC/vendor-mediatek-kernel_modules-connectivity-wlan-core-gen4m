@@ -351,7 +351,7 @@ cnmOpModeSetTRxNss(
 static void
 cnmWmmQuotaCallback(
 	IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr
+	IN uintptr_t plParamPtr
 );
 
 
@@ -639,7 +639,7 @@ void cnmInit(struct ADAPTER *prAdapter)
 			&(prWmmQuotaCtrl->rTimer),
 			(PFN_MGMT_TIMEOUT_FUNC)
 			cnmWmmQuotaCallback,
-			(unsigned long)
+			(uintptr_t)
 			ucWmmIndex);
 		for (eReqIdxWmm = CNM_WMM_REQ_DBDC;
 				eReqIdxWmm < CNM_WMM_REQ_NUM; eReqIdxWmm++)
@@ -2297,7 +2297,7 @@ omac_choosed:
 			cnmTimerInitTimer(prAdapter,
 				&prBssInfo->rCsaTimer,
 				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
-				(unsigned long)ucBssIndex);
+				(uintptr_t)ucBssIndex);
 			rlmResetCSAParams(prBssInfo);
 			prBssInfo->fgHasStopTx = FALSE;
 #endif
@@ -2380,7 +2380,7 @@ void cnmInitDbdcSetting(IN struct ADAPTER *prAdapter)
 		cnmTimerInitTimer(prAdapter,
 			&g_rDbdcInfo.rDbdcGuardTimer,
 			(PFN_MGMT_TIMEOUT_FUNC)cnmDbdcGuardTimerCallback,
-			(unsigned long) NULL);
+			(uintptr_t) NULL);
 
 		g_rDbdcInfo.eDdbcGuardTimerType =
 			ENUM_DBDC_GUARD_TIMER_NONE;
@@ -4035,7 +4035,7 @@ dbdc_check:
 /*----------------------------------------------------------------------------*/
 void cnmDbdcGuardTimerCallback(IN struct ADAPTER
 			       *prAdapter,
-			       IN unsigned long plParamPtr)
+			       IN uintptr_t plParamPtr)
 {
 	log_dbg(CNM, INFO, "[DBDC Debug] Timer %u",
 	       g_rDbdcInfo.eDdbcGuardTimerType);
@@ -5231,7 +5231,7 @@ cnmWmmQuotaReqDispatcher(
 void
 cnmWmmQuotaCallback(
 	IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr
+	IN uintptr_t plParamPtr
 )
 {
 	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;

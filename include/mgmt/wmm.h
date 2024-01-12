@@ -173,8 +173,8 @@ struct MSG_TS_OPERATE {
 
 extern uint8_t const aucUp2ACIMap[8];
 void wmmFillTsinfo(struct PARAM_QOS_TSINFO *prTsInfo, uint8_t *pucTsInfo);
-void wmmSetupTspecTimeOut(struct ADAPTER *prAdapter, unsigned long ulParam);
-void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam,
+void wmmSetupTspecTimeOut(struct ADAPTER *prAdapter, uintptr_t ulParam);
+void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, uintptr_t ulParam,
 	uint8_t ucBssIndex);
 void wmmRunEventTSOperate(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
 u_int8_t wmmParseQosAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);

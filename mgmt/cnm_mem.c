@@ -517,25 +517,25 @@ void cnmMemFree(IN struct ADAPTER *prAdapter, IN void *pvMemory)
 		return;
 
 	/* Judge it belongs to which RAM type */
-	if (((unsigned long) pvMemory
-		>= (unsigned long)&prAdapter->aucMsgBuf[0])
-		&& ((unsigned long) pvMemory
-		<= (unsigned long)&prAdapter->aucMsgBuf[MSG_BUFFER_SIZE - 1])) {
+	if (((uintptr_t) pvMemory
+		>= (uintptr_t)&prAdapter->aucMsgBuf[0])
+		&& ((uintptr_t) pvMemory
+		<= (uintptr_t)&prAdapter->aucMsgBuf[MSG_BUFFER_SIZE - 1])) {
 
 		prBufInfo = &prAdapter->rMsgBufInfo;
-		u4BlockIndex = ((unsigned long) pvMemory
-			- (unsigned long) prBufInfo->pucBuf)
+		u4BlockIndex = ((uintptr_t) pvMemory
+			- (uintptr_t) prBufInfo->pucBuf)
 			>> MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 		ASSERT(u4BlockIndex < MAX_NUM_OF_BUF_BLOCKS);
 		eRamType = RAM_TYPE_MSG;
-	} else if (((unsigned long) pvMemory
-		>= (unsigned long) prAdapter->pucMgtBufCached)
-		&& ((unsigned long) pvMemory
-		<= ((unsigned long) prAdapter->pucMgtBufCached
+	} else if (((uintptr_t) pvMemory
+		>= (uintptr_t) prAdapter->pucMgtBufCached)
+		&& ((uintptr_t) pvMemory
+		<= ((uintptr_t) prAdapter->pucMgtBufCached
 		 + MGT_BUFFER_SIZE - 1))) {
 		prBufInfo = &prAdapter->rMgtBufInfo;
-		u4BlockIndex = ((unsigned long) pvMemory
-			- (unsigned long) prBufInfo->pucBuf)
+		u4BlockIndex = ((uintptr_t) pvMemory
+			- (uintptr_t) prBufInfo->pucBuf)
 			>> MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
 		ASSERT(u4BlockIndex < MAX_NUM_OF_BUF_BLOCKS);
 		eRamType = RAM_TYPE_BUF;

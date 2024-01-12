@@ -322,7 +322,7 @@ uint8_t rsnCheckSaQueryTimeout(
 	IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx);
 
 void rsnStartSaQueryTimer(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr);
+			  IN uintptr_t ulParamPtr);
 
 void rsnStartSaQuery(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIdx);

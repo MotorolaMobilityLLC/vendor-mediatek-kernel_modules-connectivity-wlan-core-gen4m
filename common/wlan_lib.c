@@ -1062,7 +1062,7 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 	cnmTimerInitTimer(prAdapter,
 			  &prAdapter->rOidTimeoutTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) wlanReleasePendingOid,
-			  (unsigned long) NULL);
+			  (uintptr_t) NULL);
 
 	prAdapter->ucOidTimeoutCount = 0;
 
@@ -1073,7 +1073,7 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 			  &prAdapter->rPacketDelaySetupTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC)
 				wlanReturnPacketDelaySetupTimeout,
-			  (unsigned long) NULL);
+			  (uintptr_t) NULL);
 
 	/* Power state initialization */
 	prAdapter->fgWiFiInSleepyState = FALSE;
@@ -3008,7 +3008,7 @@ uint32_t wlanGetTxdAppendSize(IN struct ADAPTER *prAdapter)
  */
 /*----------------------------------------------------------------------------*/
 void wlanReleasePendingOid(IN struct ADAPTER *prAdapter,
-			   IN unsigned long ulParamPtr)
+			   IN uintptr_t ulParamPtr)
 {
 	struct QUE *prCmdQue;
 	struct QUE rTempCmdQue;
@@ -3245,7 +3245,7 @@ void wlanReturnPacketDelaySetup(IN struct ADAPTER *prAdapter)
 }
 
 #if (CFG_SUPPORT_RETURN_TASK == 1)
-void wlanReturnPacketDelaySetupTasklet(unsigned long data)
+void wlanReturnPacketDelaySetupTasklet(uintptr_t data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 
@@ -3254,7 +3254,7 @@ void wlanReturnPacketDelaySetupTasklet(unsigned long data)
 #endif
 
 void wlanReturnPacketDelaySetupTimeout(IN struct ADAPTER
-				       *prAdapter, IN unsigned long ulParamPtr)
+				       *prAdapter, IN uintptr_t ulParamPtr)
 {
 #if (CFG_SUPPORT_RETURN_TASK == 1)
 	kal_tasklet_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
@@ -4340,13 +4340,13 @@ void wlanClearBssInScanningResult(IN struct ADAPTER
 			 */
 			if (u4IELength > 0) {
 				u4IEMoveLength = prWlanInfo->u4ScanIEBufferUsage
-					- (((unsigned long) pucIEPtr)
+					- (((uintptr_t) pucIEPtr)
 					+ u4IELength
-					- ((unsigned long)
+					- ((uintptr_t)
 					(&(prWlanInfo->aucScanIEBuf[0]))));
 
 				kalMemCopy(pucIEPtr,
-					   (uint8_t *) (((unsigned long)
+					   (uint8_t *) (((uintptr_t)
 					   pucIEPtr) + u4IELength),
 					   u4IEMoveLength);
 
@@ -4359,7 +4359,7 @@ void wlanClearBssInScanningResult(IN struct ADAPTER
 					if (prWlanInfo->apucScanResultIEs[j] >
 					    pucIEPtr) {
 					prWlanInfo->apucScanResultIEs[j] =
-					    (uint8_t *)((unsigned long)
+					    (uint8_t *)((uintptr_t)
 					    (prWlanInfo->apucScanResultIEs[j]) -
 					    u4IELength);
 					}
@@ -5676,7 +5676,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER
 					struct IE_SSID, aucSSID) +
 					prSsid->ucLength -
 					WLAN_MAC_MGMT_HEADER_LEN,
-				 (uint8_t *) ((unsigned long) (prBeacon) +
+				 (uint8_t *) ((uintptr_t) (prBeacon) +
 					WLAN_MAC_MGMT_HEADER_LEN));
 	}
 #endif
@@ -5732,7 +5732,7 @@ uint32_t wlanCheckSystemConfiguration(IN struct ADAPTER
 					 OFFSET_OF(struct IE_SSID,
 						aucSSID) + prSsid->ucLength -
 						WLAN_MAC_MGMT_HEADER_LEN,
-					 (uint8_t *) ((unsigned long) (prBeacon)
+					 (uint8_t *) ((uintptr_t) (prBeacon)
 						+ WLAN_MAC_MGMT_HEADER_LEN));
 		}
 	}
@@ -10552,7 +10552,7 @@ void wlanCorDumpTimerInit(IN struct ADAPTER *prAdapter)
 	cnmTimerInitTimer(prAdapter,
 			  &prAdapter->rN9CorDumpTimer,
 			  (PFN_MGMT_TIMEOUT_FUNC) wlanN9CorDumpTimeOut,
-			  (unsigned long) NULL);
+			  (uintptr_t) NULL);
 }
 
 void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter)
@@ -10570,7 +10570,7 @@ void wlanCorDumpTimerReset(IN struct ADAPTER *prAdapter)
 }
 
 void wlanN9CorDumpTimeOut(IN struct ADAPTER *prAdapter,
-			  IN unsigned long ulParamPtr)
+			  IN uintptr_t ulParamPtr)
 {
 	/* Trigger RESET */
 	GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_FW_ASSERT_TIMEOUT);
@@ -13797,7 +13797,7 @@ uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
 
 #if (CFG_WIFI_GET_MCS_INFO == 1)
 void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
-					    unsigned long ulParamPtr)
+					    uintptr_t ulParamPtr)
 {
 	static uint8_t ucSmapleCnt;
 	uint8_t ucBssIdx = 0;

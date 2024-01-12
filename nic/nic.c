@@ -156,7 +156,7 @@ struct TIMER rSerSyncTimer = {
 			u4Size, (char *) pucComment); \
 		break; \
 	} \
-	ASSERT(((unsigned long)pucMem % 4) == 0); \
+	ASSERT(((uintptr_t)pucMem % 4) == 0); \
 	DBGLOG(INIT, TRACE, "Alloc %u bytes, addr = 0x%p for %s.\n", \
 		u4Size, (void *) pucMem, (char *) pucComment); \
 }
@@ -4004,12 +4004,12 @@ void nicFreeScanResultIE(IN struct ADAPTER *prAdapter,
 		prAdapter->rWlanInfo.arScanResult[u4Idx].u4IELength);
 
 	pucPivot = prAdapter->rWlanInfo.apucScanResultIEs[u4Idx];
-	pucMovePivot = (uint8_t *) ((unsigned long) (
+	pucMovePivot = (uint8_t *) ((uintptr_t) (
 		prAdapter->rWlanInfo.apucScanResultIEs[u4Idx]) +
 		u4FreeSize);
 
-	u4ReserveSize = ((unsigned long) pucPivot) -
-		(unsigned long) (&(prAdapter->rWlanInfo.aucScanIEBuf[0]));
+	u4ReserveSize = ((uintptr_t) pucPivot) -
+		(uintptr_t) (&(prAdapter->rWlanInfo.aucScanIEBuf[0]));
 	u4MoveSize = prAdapter->rWlanInfo.u4ScanIEBufferUsage -
 		     u4ReserveSize - u4FreeSize;
 
@@ -4022,7 +4022,7 @@ void nicFreeScanResultIE(IN struct ADAPTER *prAdapter,
 			if (prAdapter->rWlanInfo.apucScanResultIEs[i] >=
 			    pucMovePivot) {
 				prAdapter->rWlanInfo.apucScanResultIEs[i] =
-					(uint8_t *) ((unsigned long) (
+					(uint8_t *) ((uintptr_t) (
 						prAdapter->rWlanInfo.
 						apucScanResultIEs[i])
 						- u4FreeSize);
@@ -5485,7 +5485,7 @@ void nicSerReInitBeaconFrame(IN struct ADAPTER *prAdapter)
 
 #if defined(_HIF_USB)
 void nicSerTimerHandler(IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr)
+	IN uintptr_t plParamPtr)
 {
 	halSerSyncTimerHandler(prAdapter);
 	cnmTimerStartTimer(prAdapter,
@@ -5524,7 +5524,7 @@ void nicSerInit(IN struct ADAPTER *prAdapter, IN const u_int8_t bAtResetFlow)
 			cnmTimerInitTimer(prAdapter,
 					  &rSerSyncTimer,
 			      (PFN_MGMT_TIMEOUT_FUNC) nicSerTimerHandler,
-					  (unsigned long) NULL);
+					  (uintptr_t) NULL);
 		}
 		cnmTimerStartTimer(prAdapter,
 				   &rSerSyncTimer,

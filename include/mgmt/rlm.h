@@ -486,7 +486,7 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter,
 void rlmResetCSAParams(struct BSS_INFO *prBssInfo);
 
 void rlmCsaTimeout(IN struct ADAPTER *prAdapter,
-				unsigned long ulParamPtr);
+				uintptr_t ulParamPtr);
 #endif
 
 uint32_t

@@ -325,7 +325,7 @@ void
 cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 			IN struct TIMER *prTimer,
 			IN PFN_MGMT_TIMEOUT_FUNC pfFunc,
-			IN unsigned long ulDataPtr,
+			IN uintptr_t ulDataPtr,
 			IN enum ENUM_TIMER_WAKELOCK_TYPE_T eType)
 {
 	struct LINK *prTimerList;
@@ -574,7 +574,7 @@ void cnmTimerDoTimeOutCheck(IN struct ADAPTER *prAdapter)
 	struct TIMER *prTimer;
 	OS_SYSTIME rCurSysTime;
 	PFN_MGMT_TIMEOUT_FUNC pfMgmtTimeOutFunc;
-	unsigned long ulTimeoutDataPtr;
+	uintptr_t ulTimeoutDataPtr;
 	u_int8_t fgNeedWakeLock;
 	enum ENUM_TIMER_WAKELOCK_TYPE_T eType = TIMER_WAKELOCK_NONE;
 

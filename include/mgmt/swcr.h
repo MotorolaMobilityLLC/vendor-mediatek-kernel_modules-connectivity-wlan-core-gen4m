@@ -259,7 +259,7 @@ void swCtrlSwCr(struct ADAPTER *prAdapter, uint8_t ucRead,
 void swCrDebugCheck(struct ADAPTER *prAdapter,
 		    struct CMD_SW_DBG_CTRL *prCmdSwCtrl);
 void swCrDebugCheckTimeout(IN struct ADAPTER *prAdapter,
-			   unsigned long ulParamPtr);
+			   uintptr_t ulParamPtr);
 void swCrDebugQuery(IN struct ADAPTER *prAdapter,
 		    IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void swCrDebugQueryTimeout(IN struct ADAPTER *prAdapter,

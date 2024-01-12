@@ -226,7 +226,7 @@ void nic_txd_v3_fill_by_pkt_option(
 		if (fgProtected && prMsduInfo->prPacket) {
 			struct WLAN_MAC_HEADER *prWlanHeader =
 			    (struct WLAN_MAC_HEADER *)
-			    ((unsigned long) (prMsduInfo->prPacket)
+			    ((uintptr_t) (prMsduInfo->prPacket)
 				+ MAC_TX_RESERVED_FIELD);
 
 			prWlanHeader->u2FrameCtrl |= MASK_FC_PROTECTED_FRAME;
@@ -432,7 +432,8 @@ void nic_txd_v3_compose(
 	/* Type */
 	if (prMsduInfo->fgIs802_11) {
 		struct WLAN_MAC_HEADER *prWlanHeader = (struct WLAN_MAC_HEADER *)(
-			(unsigned long) (prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
+			(uintptr_t) (prMsduInfo->prPacket) +
+			MAC_TX_RESERVED_FIELD);
 
 		HAL_MAC_CONNAC3X_TXD_SET_TYPE(
 			prTxDesc,

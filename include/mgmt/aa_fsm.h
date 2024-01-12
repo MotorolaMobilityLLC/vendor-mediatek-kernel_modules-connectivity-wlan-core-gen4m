@@ -179,10 +179,10 @@ saaFsmRunEventTxDone(IN struct ADAPTER *prAdapter,
 		     IN enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 void saaFsmRunEventTxReqTimeOut(IN struct ADAPTER
-				*prAdapter, IN unsigned long plParamPtr);
+				*prAdapter, IN uintptr_t plParamPtr);
 
 void saaFsmRunEventRxRespTimeOut(IN struct ADAPTER
-				 *prAdapter, IN unsigned long ulParamPtr);
+				 *prAdapter, IN uintptr_t ulParamPtr);
 
 void saaFsmRunEventRxAuth(IN struct ADAPTER *prAdapter,
 			  IN struct SW_RFB *prSwRfb);
@@ -246,6 +246,6 @@ void aaaMulAPAgentStaEventNotify(IN struct STA_RECORD *prStaRec,
 	IN unsigned char *pucAddr, IN unsigned char fgIsConnected);
 
 void aaaMulAPAgentUnassocStaMeasureTimeout(
-	IN struct ADAPTER *prAdapter, unsigned long ulParamPtr);
+	IN struct ADAPTER *prAdapter, uintptr_t ulParamPtr);
 #endif
 #endif /* _AA_FSM_H */

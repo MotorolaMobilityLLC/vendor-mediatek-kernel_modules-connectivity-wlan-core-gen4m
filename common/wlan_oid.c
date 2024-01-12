@@ -10090,8 +10090,8 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 		}
 
 		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-			((unsigned long) prNetworkAddress +
-			(unsigned long) (prNetworkAddress->u2AddressLength*2 +
+			((uintptr_t) prNetworkAddress +
+			(uintptr_t) (prNetworkAddress->u2AddressLength*2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -10162,8 +10162,8 @@ wlanoidSetNetworkAddress(IN struct ADAPTER *prAdapter,
 			}
 
 			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-				((unsigned long)prNetworkAddress +
-				(unsigned long)(prNetworkAddress->
+				((uintptr_t)prNetworkAddress +
+				(uintptr_t)(prNetworkAddress->
 				u2AddressLength*2 +
 				OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
 				aucAddress)));
@@ -10247,8 +10247,8 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 		}
 
 		prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-			((unsigned long) prNetworkAddress +
-			(unsigned long) (prNetworkAddress->u2AddressLength * 2 +
+			((uintptr_t) prNetworkAddress +
+			(uintptr_t) (prNetworkAddress->u2AddressLength * 2 +
 			OFFSET_OF(struct PARAM_NETWORK_ADDRESS, aucAddress)));
 	}
 
@@ -10303,8 +10303,8 @@ wlanoidSetIPv6NetworkAddress(IN struct ADAPTER *prAdapter,
 			}
 
 			prNetworkAddress = (struct PARAM_NETWORK_ADDRESS *)
-			    ((unsigned long)prNetworkAddress +
-			    (unsigned long)(
+			    ((uintptr_t)prNetworkAddress +
+			    (uintptr_t)(
 				prNetworkAddress->u2AddressLength * 2
 				+ OFFSET_OF(struct PARAM_NETWORK_ADDRESS,
 				aucAddress)));
