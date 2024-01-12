@@ -958,6 +958,7 @@ struct test_capability_ext_cap {
 	/* BIT0: AntSwap */
 	/* BIT1: HW TX support */
 	/* BIT2: Little core support */
+	/* BIT3: XTAL trim support */
 	u_int32 feature1;
 	u_int32 reserved[15];
 };
