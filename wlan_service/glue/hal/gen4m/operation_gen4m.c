@@ -2299,12 +2299,20 @@ s_int32 mt_op_get_tx_info(
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
+	/* make sure use AT CMD (32) get txed count by BN0 dbdc idx */
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, TEST_DBDC_BAND0);
+
 	rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT;
 	rf_at_info.func_data = 0;
 	ret = tm_rftest_query_auto_test(winfos,
 		&rf_at_info, &buf_len);
 	if (ret == SERV_STATUS_SUCCESS)
 		test_configs_band0->tx_stat.tx_done_cnt = rf_at_info.func_data;
+
+	/* make sure use AT CMD (288) get txed count by BN1 dbdc idx */
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_DBDC_BAND_IDX, TEST_DBDC_BAND1);
 
 	rf_at_info.func_idx = RF_AT_FUNCID_TXED_COUNT | BIT(8);
 	rf_at_info.func_data = 0;
