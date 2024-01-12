@@ -10569,6 +10569,7 @@ uint32_t
 wlanQueryLteSafeChannel(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex)
 {
+#if CFG_SUPPORT_GET_LTE_SAFE_CHANNEL
 	uint32_t rResult = WLAN_STATUS_FAILURE;
 	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN = {0};
 	struct PARAM_GET_CHN_INFO *prQueryLteChn;
@@ -10603,8 +10604,11 @@ wlanQueryLteSafeChannel(struct ADAPTER *prAdapter,
 			0);
 		rResult = WLAN_STATUS_SUCCESS;
 	} while (FALSE);
-
 	return rResult;
+#else
+	DBGLOG(P2P, TRACE, "[ACS] Not Support Get safe LTE Channels\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif /* CFG_SUPPORT_GET_LTE_SAFE_CHANNEL */
 }				/* wlanoidQueryLteSafeChannel */
 #endif
 /*----------------------------------------------------------------------------*/
