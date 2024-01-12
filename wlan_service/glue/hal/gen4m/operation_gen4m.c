@@ -248,9 +248,12 @@ enum ENUM_RF_AT_FUNCID {
 	RF_AT_FUNCID_SET_HWTX_MODE = 167,
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
-
 	/* 11 be */
 	RF_AT_FUNCID_SET_PUNCTURE = 168,
+
+	/* Set FREQ OFFSET C2 */
+	RF_AT_FUNCID_SET_FREQ_OFFSET_C2_SET = 171,
+	RF_AT_FUNCID_SET_FREQ_OFFSET_C2_GET = 172,
 
 	RF_AT_FUNCID_SET_CFG_ON = 176,
 	RF_AT_FUNCID_SET_CFG_OFF = 177,
@@ -823,6 +826,24 @@ s_int32 mt_op_set_freq_offset(
 
 	return ret;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_set_freq_offset_C2(
+	struct test_wlan_info *winfos,
+	u_int32 freq_offset, u_char band_idx)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_SET_FREQ_OFFSET_C2_SET, freq_offset);
+
+	return ret;
+}
+#endif
 
 s_int32 mt_op_set_phy_counter(
 	struct test_wlan_info *winfos,
@@ -2501,8 +2522,48 @@ s_int32 mt_op_get_freq_offset(
 	u_char band_idx,
 	u_int32 *freq_offset)
 {
-	return SERV_STATUS_SUCCESS;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct param_mtk_wifi_test_struct rf_at_info;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int32 buf_len = 0;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	rf_at_info.func_idx = RF_AT_FUNCID_GET_FREQ_OFFSET;
+	rf_at_info.func_data = 0;
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+	if (ret == SERV_STATUS_SUCCESS)
+		*freq_offset = rf_at_info.func_data;
+
+	return ret;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_get_freq_offset_C2(
+	struct test_wlan_info *winfos,
+	u_char band_idx,
+	u_int32 *freq_offset)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct param_mtk_wifi_test_struct rf_at_info;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	u_int32 buf_len = 0;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	rf_at_info.func_idx = RF_AT_FUNCID_SET_FREQ_OFFSET_C2_GET;
+	rf_at_info.func_data = 0;
+	ret = tm_rftest_query_auto_test(winfos,
+		&rf_at_info, &buf_len);
+	if (ret == SERV_STATUS_SUCCESS)
+		*freq_offset = rf_at_info.func_data;
+
+	return ret;
+}
+#endif
 
 s_int32 mt_op_get_cfg_on_off(
 	struct test_wlan_info *winfos,

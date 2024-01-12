@@ -371,6 +371,15 @@ s_int32 mt_op_set_freq_offset(
 	return ret;
 }
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_set_freq_offset_C2(
+	struct test_wlan_info *winfos,
+	u_int32 freq_offset, u_char band_idx)
+{
+	return SERV_STATUS_AGENT_NOT_SUPPORTED;
+}
+#endif
+
 s_int32 mt_op_set_phy_counter(
 	struct test_wlan_info *winfos,
 	s_int32 control, u_char band_idx)
@@ -1399,6 +1408,16 @@ s_int32 mt_op_get_freq_offset(
 
 	return ret;
 }
+
+#if (CFG_SUPPORT_CONNAC3X == 1)
+s_int32 mt_op_get_freq_offset_C2(
+	struct test_wlan_info *winfos,
+	u_char band_idx,
+	u_int32 *freq_offset)
+{
+	return SERV_STATUS_AGENT_NOT_SUPPORTED;
+}
+#endif
 
 s_int32 mt_op_get_cfg_on_off(
 	struct test_wlan_info *winfos,
