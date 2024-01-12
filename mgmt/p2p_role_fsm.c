@@ -120,7 +120,7 @@ uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
 		(struct P2P_CHNL_REQ_INFO *) NULL;
 	struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxReqInfo =
 		(struct P2P_MGMT_TX_REQ_INFO *) NULL;
-	struct GL_P2P_INFO *prP2PInfo = NULL;
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	uint8_t ucLinkIndex = ucRoleIdx;
@@ -221,9 +221,9 @@ uint8_t p2pRoleFsmInitImpl(IN struct ADAPTER *prAdapter,
 		 * Maybe only using ucRoleIdx to calc MAC addr is better than
 		 * using Role type.
 		 */
-		prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
-		COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
-			      prP2PInfo->prDevHandler->dev_addr);
+
+		kalSetP2pDevMac(prAdapter->prGlueInfo,
+			prP2pBssInfo, ucRoleIdx);
 
 		/* For BSS_INFO back trace to P2P Role & get Role FSM. */
 		prP2pBssInfo->u4PrivateData = ucRoleIdx;

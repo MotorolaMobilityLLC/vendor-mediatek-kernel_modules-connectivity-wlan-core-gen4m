@@ -447,8 +447,6 @@ struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIdx)
 {
 	struct BSS_INFO *bss = NULL;
-	struct net_device *net = wlanGetAisNetDev(prAdapter->prGlueInfo,
-			prAisFsmInfo->ucAisIndex);
 
 	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS,
 		FALSE, ucLinkIdx != AIS_MAIN_LINK_INDEX);
@@ -462,7 +460,11 @@ struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
 		aisSetLinkBssInfo(prAisFsmInfo, bss, ucLinkIdx);
 		aisInitBssInfo(prAdapter, prAisFsmInfo, bss, ucLinkIdx);
 		wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
-				bss->ucBssIndex, net);
+				bss->ucBssIndex,
+				wlanGetAisNetDev(prAdapter->prGlueInfo,
+					prAisFsmInfo->ucAisIndex)
+				);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssRegister(prAdapter, prAisFsmInfo->prMldBssInfo, bss);
 #endif
@@ -567,11 +569,9 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 	struct GL_WPA_INFO *prWpaInfo;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
-	struct net_device *prNetDev;
 	uint8_t ucBssIndex, i;
 
-	prNetDev = wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex);
-	if (!prNetDev) {
+	if (!wlanGetAisNetDev(prAdapter->prGlueInfo, ucAisIndex)) {
 		DBGLOG(AIS, INFO, "-> ais(%d) netdev null\n", ucAisIndex);
 		return;
 	}
@@ -600,7 +600,10 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 
 	/* after aisInitBssInfo, bssinfo is ready */
 	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-				netdev_priv(prNetDev);
+				kalGetNetDevPriv(
+					wlanGetAisNetDev(prAdapter->prGlueInfo,
+					ucAisIndex)
+				);
 
 	prNetDevPrivate->ucBssIdx = AIS_MAIN_BSS_INDEX(prAdapter, ucAisIndex);
 

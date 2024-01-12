@@ -1300,7 +1300,7 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 #endif
 
 #if (CFG_SUPPORT_STATISTICS == 1)
-	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb, prNetDev);
+	StatsEnvRxTime2Host(prGlueInfo->prAdapter, prSkb, (void *)prNetDev);
 #endif
 
 #if KERNEL_VERSION(4, 11, 0) <= CFG80211_VERSION_CODE
@@ -10866,12 +10866,14 @@ void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
-			    IN const struct ieee80211_regdomain *pRegdom)
+kalApplyCustomRegulatory(
+	const struct ieee80211_regdomain *pRegdom)
 {
+	struct wiphy *pWiphy;
 	u32 band_idx, ch_idx;
 	struct ieee80211_supported_band *sband;
 	struct ieee80211_channel *chan;
+	pWiphy = wlanGetWiphy();
 
 	DBGLOG(RLM, INFO, "%s()\n", __func__);
 
@@ -12374,5 +12376,96 @@ u_int8_t kalFillChannels(
 	}
 
 	return fgRet;
+}
+#endif
+
+void *kalGetNetDevPriv(void *prNet)
+{
+	void *prPriv = NULL;
+	struct net_device *prNetDev;
+
+	prNetDev = (struct net_device *)prNet;
+
+	if (prNetDev) {
+		prPriv =
+			netdev_priv(prNetDev);
+	}
+
+	return prPriv;
+}
+
+uint32_t kalGetNetDevRxPacket(void *prNet)
+{
+	struct net_device *prNetDev = NULL;
+	uint32_t u4Num = 0;
+
+	prNetDev = (struct net_device *)prNet;
+	if (prNetDev)
+		u4Num = prNetDev->stats.rx_packets;
+
+	return u4Num;
+}
+
+#if CFG_SUPPORT_TDLS
+
+void kalTdlsOpReq(
+	struct GLUE_INFO *prGlueInfo,
+	struct STA_RECORD *prStaRec,
+	uint16_t eOpMode,
+	uint16_t u2ReasonCode
+	)
+{
+	enum nl80211_tdls_operation oper;
+	struct net_device *prDev = NULL;
+	u_int8_t fgIsOpVaild = FALSE;
+
+	if (!prGlueInfo || !prStaRec) {
+		DBGLOG(TDLS, ERROR, "GlueInfo/StaRec NULL.\n");
+		return;
+	}
+	prDev = wlanGetNetDev(prGlueInfo, prStaRec->ucBssIndex);
+
+	if (!prDev)
+		return;
+
+	oper = (enum nl80211_tdls_operation)eOpMode;
+	switch (oper) {
+	case NL80211_TDLS_DISCOVERY_REQ:
+	case NL80211_TDLS_SETUP:
+	case NL80211_TDLS_TEARDOWN:
+	case NL80211_TDLS_ENABLE_LINK:
+	case NL80211_TDLS_DISABLE_LINK:
+		fgIsOpVaild = TRUE;
+		break;
+	default:
+		fgIsOpVaild = FALSE;
+		break;
+	}
+
+	if (fgIsOpVaild)
+		cfg80211_tdls_oper_request(prDev,
+					prStaRec->aucMacAddr,
+					oper,
+					u2ReasonCode,
+					GFP_ATOMIC);
+
+}
+#endif
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+
+
+void kalConfigChksumOffload(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
+{
+	if (fgEnable) {
+		prGlueInfo->prDevHandler->features |=
+				(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+	} else {
+		prGlueInfo->prDevHandler->features &=
+			~(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+	}
+
+	DBGLOG(OID, INFO, "Checksum offload: [%llu]\n",
+			prGlueInfo->prDevHandler->features);
 }
 #endif

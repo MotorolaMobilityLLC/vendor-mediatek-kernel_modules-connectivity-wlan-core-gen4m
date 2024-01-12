@@ -132,8 +132,8 @@ void kalRemoveProbe(IN struct GLUE_INFO *prGlueInfo)
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(IN struct wiphy *pWiphy,
-	IN const struct ieee80211_regdomain *pRegdom) { }
+kalApplyCustomRegulatory(
+	const struct ieee80211_regdomain *pRegdom) { }
 #endif
 
 void kalSetLogTooMuch(uint32_t u4DriverLevel,
@@ -192,6 +192,7 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
 	u_int8_t fgIsSetLen)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
 }
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
@@ -239,6 +240,37 @@ uint8_t kalGetChannelCount(struct GLUE_INFO *prGlueInfo)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+void *kalGetNetDevPriv(void *prNet)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+uint32_t kalGetNetDevRxPacket(void *prNet)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return 0;
+}
+#if CFG_SUPPORT_TDLS
+
+void kalTdlsOpReq(
+	struct GLUE_INFO *prGlueInfo,
+	struct STA_RECORD *prStaRec,
+	uint16_t eOpMode,
+	uint16_t u2ReasonCode
+	)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
+
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+void kalConfigChksumOffload(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+#endif
 const uint8_t *kalFindIeExtIE(uint8_t eid,
 				uint8_t exteid,
 				const uint8_t *ies, int len)

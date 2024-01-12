@@ -10423,79 +10423,6 @@ wlanGetStaAddrByWlanIdx(IN struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-void
-wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
-		    struct net_device *prDev, u_int8_t fgSuspend)
-{
-	uint32_t rStatus;
-	uint32_t u4SetInfoLen;
-	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate =
-		(struct NETDEV_PRIVATE_GLUE_INFO *) NULL;
-	struct CMD_SUSPEND_MODE_SETTING rSuspendCmd;
-
-	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
-			  netdev_priv(prDev);
-
-	if (prNetDevPrivate->prGlueInfo != prGlueInfo)
-		DBGLOG(REQ, WARN, "%s: unexpected prGlueInfo(0x%p)!\n",
-		       __func__, prNetDevPrivate->prGlueInfo);
-
-	rSuspendCmd.ucBssIndex = prNetDevPrivate->ucBssIdx;
-	rSuspendCmd.ucEnableSuspendMode = fgSuspend;
-
-#if CFG_WOW_SUPPORT
-	if (prGlueInfo->prAdapter->rWifiVar.ucWow
-	    && prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		/* cfg enable + wow enable => Wow On mdtim*/
-		rSuspendCmd.ucMdtim =
-			prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim;
-		rSuspendCmd.ucWowSuspend = TRUE;
-		DBGLOG(REQ, TRACE, "mdtim [1]\n");
-	} else if (prGlueInfo->prAdapter->rWifiVar.ucWow
-		   && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
-		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
-			/* cfg enable + wow disable + adv pws enable
-			 * => Wow Off mdtim
-			 */
-			rSuspendCmd.ucMdtim =
-				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
-			rSuspendCmd.ucWowSuspend = TRUE;
-			DBGLOG(REQ, TRACE, "mdtim [2]\n");
-		}
-	} else if (!prGlueInfo->prAdapter->rWifiVar.ucWow) {
-		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
-			/* cfg disable + adv pws enable => MT6632 case
-			 * => Wow Off mdtim
-			 */
-			rSuspendCmd.ucMdtim =
-				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
-			rSuspendCmd.ucWowSuspend = FALSE;
-			DBGLOG(REQ, TRACE, "mdtim [3]\n");
-		}
-	} else
-#endif
-	{
-		rSuspendCmd.ucMdtim = 1;
-		rSuspendCmd.ucWowSuspend = FALSE;
-	}
-
-	/* When FW receive command, it check connection state to decide apply
-	 * setting or not
-	 */
-
-	rStatus = kalIoctl(prGlueInfo,
-			   wlanoidNotifyFwSuspend,
-			   (void *)&rSuspendCmd,
-			   sizeof(rSuspendCmd),
-			   FALSE,
-			   FALSE,
-			   TRUE,
-			   &u4SetInfoLen);
-
-	if (rStatus != WLAN_STATUS_SUCCESS)
-		DBGLOG(REQ, INFO, "wlanNotifyFwSuspend fail\n");
-}
-
 uint32_t
 wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 		       IN uint8_t ucIndex, OUT uint8_t *pucStaIdx)
@@ -10513,121 +10440,6 @@ wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 	}
 	return WLAN_STATUS_FAILURE;
 }
-
-struct wiphy *wlanGetWiphy(void)
-{
-	if (gprWdev[0])
-		return gprWdev[0]->wiphy;
-
-	return NULL;
-}
-
-struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex)
-{
-	struct net_device *prNetDevice = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
-	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
-
-	GLUE_SPIN_LOCK_DECLARATION();
-
-	if (!prGlueInfo)
-		return NULL;
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!prAdapter)
-		return NULL;
-
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo)
-		return NULL;
-
-	/* AIS */
-	if (IS_BSS_INDEX_AIS(prGlueInfo->prAdapter, ucBssIndex)) {
-		struct AIS_FSM_INFO *ais =
-			aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex);
-
-		if (gprWdev[ais->ucAisIndex])
-			return gprWdev[ais->ucAisIndex]->netdev;
-	} else if (IS_BSS_P2P(prBssInfo)) { /* P2P */
-		GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-		if (prAdapter->rP2PNetRegState ==
-			ENUM_NET_REG_STATE_REGISTERED) {
-			prP2pInfo =
-				prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
-
-			if (prP2pInfo) {
-				if ((prP2pInfo->aprRoleHandler != NULL) &&
-					(prP2pInfo->aprRoleHandler !=
-						prP2pInfo->prDevHandler))
-					prNetDevice = prP2pInfo->aprRoleHandler;
-				else
-					prNetDevice = prP2pInfo->prDevHandler;
-			}
-		}
-		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
-	}
-
-	if (prNetDevice == NULL)
-		DBGLOG(REQ, LOUD, "bssidx=%d has NULL netdev caller=%pS\n",
-			ucBssIndex, KAL_TRACE);
-
-	return prNetDevice;
-}
-
-struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucAisIndex)
-{
-	if (gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
-		return gprWdev[ucAisIndex]->netdev;
-
-	return NULL;
-}
-
-struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucP2pIndex)
-{
-	if (gprP2pRoleWdev[ucP2pIndex] &&
-		gprP2pRoleWdev[ucP2pIndex]->netdev)
-		return gprP2pRoleWdev[ucP2pIndex]->netdev;
-
-	return NULL;
-}
-
-uint8_t wlanGetBssIdx(struct net_device *ndev)
-{
-	if (ndev) {
-		struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate
-			= (struct NETDEV_PRIVATE_GLUE_INFO *)
-			netdev_priv(ndev);
-
-		DBGLOG(REQ, LOUD,
-			"ucBssIndex = %d, ndev(%p)\n",
-			prNetDevPrivate->ucBssIdx,
-			ndev);
-
-		return prNetDevPrivate->ucBssIdx;
-	}
-
-	DBGLOG(REQ, LOUD,
-		"ucBssIndex = 0xff, ndev(%p)\n",
-		ndev);
-
-	return 0xff;
-}
-
-u_int8_t wlanIsAisDev(struct net_device *prDev)
-{
-	uint32_t u4Idx = 0;
-
-	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++)
-		if (gprWdev[u4Idx] && prDev == gprWdev[u4Idx]->netdev)
-			return TRUE;
-
-	return FALSE;
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to query LTE safe channels.
@@ -11856,18 +11668,14 @@ uint32_t wlanSetLowLatencyMode(
 		if (prAdapter->fgIsSupportCsumOffload) {
 			if (prAdapter->fgEnTxDupDetect) {
 				/* Disable csum offload for command data */
-				prAdapter->prGlueInfo->
-					prDevHandler->features &=
-					~(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+				kalConfigChksumOffload(
+					prAdapter->prGlueInfo, FALSE);
 			} else {
 				/* Enable csum offload for cut-through data */
-				prAdapter->prGlueInfo->
-					prDevHandler->features |=
-					(NETIF_F_IP_CSUM | NETIF_F_IPV6_CSUM);
+				kalConfigChksumOffload(
+					prAdapter->prGlueInfo, TRUE);
 			}
 		}
-		DBGLOG(OID, INFO, "Checksum offload: [%llu]\n",
-			prAdapter->prGlueInfo->prDevHandler->features);
 #endif
 		/* Send command to firmware */
 		wlanSetLowLatencyCommand(prAdapter,

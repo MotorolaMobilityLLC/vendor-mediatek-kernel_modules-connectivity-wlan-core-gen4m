@@ -128,3 +128,24 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER *prAdapter)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
+
+void *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucAisIndex)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+void *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucP2pIndex)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}
+
+void *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return NULL;
+}

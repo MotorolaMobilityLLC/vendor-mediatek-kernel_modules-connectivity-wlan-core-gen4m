@@ -279,17 +279,6 @@ uint32_t kal_skb_headroom(struct sk_buff *skb)
 	return 0;
 }
 
-struct sk_buff *kal_skb_dequeue_tail(struct sk_buff_head *list)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
-}
-
-void kal_skb_queue_head(struct sk_buff_head *list, struct sk_buff *newsk)
-{
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-}
-
 void kal_skb_reset_tail_pointer(struct sk_buff *skb)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);

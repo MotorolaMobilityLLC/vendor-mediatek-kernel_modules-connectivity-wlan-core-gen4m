@@ -97,8 +97,6 @@
 #ifndef HZ
 #define HZ (1000)
 #endif
-#define jiffies (0)
-
 /*
  * comment: cipher type should not related to os
  * defined in os/linux/gl_wext.h,
@@ -149,20 +147,6 @@ struct timespec {
 	long tv_nsec;		/* nanoseconds */
 };
 #endif
-
-/*
- * defined in linux/time64.h
- * in cnm_timer.h
- * we do (?!), we may just add undef NSEC_PER_MSEC then define ours
- * #undef MSEC_PER_SEC
- * #define MSEC_PER_SEC            1000
- * #undef USEC_PER_MSEC
- * #define USEC_PER_MSEC           1000
- * #undef USEC_PER_SEC
- * #define USEC_PER_SEC            1000000
- */
-#define NSEC_PER_MSEC	1000000L
-
 /*
  * needed by nic/nic_cmd_event.c
  * defined in uapi/asm-generic/fcntl.h
@@ -218,57 +202,6 @@ enum {
 #endif
 #define CFG80211_VERSION_CODE LINUX_VERSION_CODE
 #define KERNEL_VERSION(a, b, c) (((a) << 16) + ((b) << 8) + (c))
-
-/* needed by nic/nic_cmd_event.c */
-struct wireless_dev {
-
-	struct wiphy *wiphy;
-	struct net_device *netdev;
-
-};
-/* needed by
- * common/wlan_lib.c & wlan_lib.h
- * mgmt/tdls.c
- * mgmt/p2p_role_fsm.c
- * nic/nic_cmd_event.c
- */
-struct net_device_stats {
-	unsigned long	rx_packets;
-	unsigned long	tx_packets;
-	unsigned long	rx_bytes;
-	unsigned long	tx_bytes;
-	unsigned long	rx_errors;
-	unsigned long	tx_errors;
-	unsigned long	rx_dropped;
-	unsigned long	tx_dropped;
-	unsigned long	multicast;
-	unsigned long	collisions;
-	unsigned long	rx_length_errors;
-	unsigned long	rx_over_errors;
-	unsigned long	rx_crc_errors;
-	unsigned long	rx_frame_errors;
-	unsigned long	rx_fifo_errors;
-	unsigned long	rx_missed_errors;
-	unsigned long	tx_aborted_errors;
-	unsigned long	tx_carrier_errors;
-	unsigned long	tx_fifo_errors;
-	unsigned long	tx_heartbeat_errors;
-	unsigned long	tx_window_errors;
-	unsigned long	rx_compressed;
-	unsigned long	tx_compressed;
-};
-
-struct net_device {
-	/*
-	 * access member of member of GlueInfo directly
-	 * in mgmt/p2p_role_fsm.c
-	 */
-	unsigned char *dev_addr;
-	/* needed by nic/nic_cmd_event.c */
-	struct wireless_dev	*ieee80211_ptr;
-	uint64_t features;
-	struct net_device_stats	stats;
-};
 
 struct device {
 };
@@ -441,35 +374,6 @@ struct ieee80211_regdomain {
 	.flags = reg_flags,                             \
 }
 #endif
-/* needed by
- * mgmt/rlm_domain.c
- * nic/nic_cmd_event.c
- */
-struct wiphy {
-};
-
-#define NSEC_PER_USEC	1000L
-
-/*
- * needed by
- * mgmt/tdls.c
- * mgmt/saa_fsm.c, saaFsmSteps
- *
- * enum nl80211_tdls_operation - values for %NL80211_ATTR_TDLS_OPERATION
- * @NL80211_TDLS_DISCOVERY_REQ: Send a TDLS discovery request
- * @NL80211_TDLS_SETUP: Setup TDLS link
- * @NL80211_TDLS_TEARDOWN: Teardown a TDLS link which is already established
- * @NL80211_TDLS_ENABLE_LINK: Enable TDLS link
- * @NL80211_TDLS_DISABLE_LINK: Disable TDLS link
- */
-enum nl80211_tdls_operation {
-	NL80211_TDLS_DISCOVERY_REQ,
-	NL80211_TDLS_SETUP,
-	NL80211_TDLS_TEARDOWN,
-	NL80211_TDLS_ENABLE_LINK,
-	NL80211_TDLS_DISABLE_LINK,
-};
-
 /*
  * needed by mgmt/tdls.c
  */
@@ -746,32 +650,6 @@ uint32_t kal_skb_headroom(struct sk_buff *skb);
 #define skb_headroom(_skb) kal_skb_headroom(_skb)
 
 /*
- * needed by nic_tx.c
- * __skb_dequeue - remove from the head of the queue
- * @list: list to dequeue from
- *
- *	Remove the head of the list. This function does not take any locks
- *	so must be used with appropriate locks held only. The head item is
- *	returned or %NULL if the list is empty.
- */
-struct sk_buff *kal_skb_dequeue_tail(struct sk_buff_head *list);
-#define skb_dequeue(_list) kal_skb_dequeue_tail(_list)
-
-/*
- * needed by nic_tx.c, what's wrong with struct QUE?
- * __skb_queue_head - queue a buffer at the list head
- * @list: list to use
- * @newsk: buffer to queue
- *
- *	Queue a buffer at the start of a list. This function takes no locks
- *	and you must therefore hold required locks before calling it.
- *
- *	A buffer cannot be placed on two lists at the same time.
- */
-void kal_skb_queue_head(struct sk_buff_head *list, struct sk_buff *newsk);
-#define skb_queue_head(_list, _newsk) kal_skb_queue_head(_list, _newsk)
-
-/*
  * needed by nic_rx.c
  * make the tail pointer in skb point to beginning of data
  */
@@ -814,13 +692,6 @@ struct sk_buff *kal_dev_alloc_skb(unsigned int length);
  */
 #define min(_a, _b) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-
-/* needed by mgmt/stats.c */
-#define rtc_time_to_tm(_time, _tm) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-#undef rtc_time64_to_tm
-#define rtc_time64_to_tm rtc_time_to_tm
-
 /*	implemented: os/linux/gl_wext.c
  *	used: common/wlan_oid.c, wlanoidSetWapiAssocInfo
  *	why function called "search WPAIIE" has been implement under wext
@@ -830,19 +701,6 @@ struct sk_buff *kal_dev_alloc_skb(unsigned int length);
 #define wextSrchDesiredWAPIIE(_pucIEStart, _i4TotalIeLen, \
 	_ppucDesiredIE) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif
-
-/* common/wlan_lib.c */
-#define netdev_priv(_ndev) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _ndev)
-
-/*
- * needed by
- * mgmt/rlm_domain.c
- * nic/nic_cmd_event.c
- */
-#define priv_to_wiphy(_priv) \
-((void *) KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _priv))
-
 
 /* needed by mgmt/rlm_domain.c
  * implementation in linux is in gl_cfg80211.c
@@ -855,29 +713,6 @@ struct sk_buff *kal_dev_alloc_skb(unsigned int length);
 #define regulatory_hint(_wiphy, _alpha2) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-/* needed by mgmt/tdls.c */
-#define cfg80211_tdls_oper_request(_dev, _peer, _oper, \
-	_reason_code, _gfp) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-
-/*
- * needed by
- * mgmt/p2p_func.c
- *
- * cfg80211_ch_switch_notify - update wdev channel and notify userspace
- * @dev: the device which switched channels
- * @chandef: the new channel definition
- *
- * Caller must acquire wdev_lock, therefore must only be called from sleepable
- * driver context!
- */
-#define cfg80211_ch_switch_notify(_dev, _chandef) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
-/*
- * needed by mgmt/rlm.c
- */
-#define get_random_bytes(_buf, _nbytes) \
-	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 /*
  * needed by: nic/nic_cmd_event.c
  * 0: no error !0: error

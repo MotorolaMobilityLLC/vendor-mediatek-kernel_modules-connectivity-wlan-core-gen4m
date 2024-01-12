@@ -1255,13 +1255,16 @@ void rlmDomainAssert(u_int8_t cond);
 void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha);
 uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size);
 uint8_t rlmDomainCountryCodeUpdateSanity(
-	struct GLUE_INFO *prGlueInfo, struct wiphy *pWiphy,
+	struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER **prAdapter);
+
 void rlmDomainCountryCodeUpdate(struct ADAPTER *prAdapter,
-	struct wiphy *pWiphy, uint32_t u4CountryCode);
+		uint32_t u4CountryCode);
 void rlmDomainSetCountry(struct ADAPTER *prAdapter);
-uint32_t rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-	struct wiphy *pWiphy, uint32_t u4CountryCode);
+
+uint32_t
+rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
+	uint32_t u4CountryCode);
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */

@@ -120,9 +120,6 @@ typedef u_int8_t(*KAL_P2P_GET_CCMP_CIPHER) (IN struct GLUE_INFO *prGlueInfo);
 
 typedef u_int8_t(*KAL_P2P_GET_WSC_MODE) (IN struct GLUE_INFO *prGlueInfo);
 
-typedef struct net_device *(*KAL_P2P_GET_DEV_HDLR) (
-		struct GLUE_INFO *prGlueInfo);
-
 typedef void(*KAL_P2P_SET_MULTICAST_WORK_ITEM) (struct GLUE_INFO *prGlueInfo);
 
 typedef void(*P2P_NET_REGISTER) (struct GLUE_INFO *prGlueInfo);

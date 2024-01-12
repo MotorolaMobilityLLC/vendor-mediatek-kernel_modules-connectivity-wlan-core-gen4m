@@ -1992,22 +1992,6 @@ uint32_t wlanCfgGetTotalCfgNum(
 
 uint32_t wlanGetStaIdxByWlanIdx(IN struct ADAPTER *prAdapter,
 				IN uint8_t ucIndex, OUT uint8_t *pucStaIdx);
-
-uint8_t wlanGetBssIdx(struct net_device *ndev);
-
-struct net_device *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucBssIndex);
-
-struct net_device *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucAisIndex);
-
-struct net_device *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
-	IN uint8_t ucP2pIndex);
-
-struct wiphy *wlanGetWiphy(void);
-
-u_int8_t wlanIsAisDev(struct net_device *prDev);
-
 /*----------------------------------------------------------------------------*/
 /* update per-AC statistics for LLS                */
 /*----------------------------------------------------------------------------*/
@@ -2030,10 +2014,6 @@ uint32_t wlanAccessRegister(IN struct ADAPTER *prAdapter,
 	IN uint32_t u4Data, IN uint8_t ucSetQuery);
 
 uint32_t wlanSetChipEcoInfo(IN struct ADAPTER *prAdapter);
-
-void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
-			 struct net_device *prDev, u_int8_t fgSuspend);
-
 void wlanClearPendingInterrupt(IN struct ADAPTER *prAdapter);
 
 #if CFG_WMT_WIFI_PATH_SUPPORT
@@ -2121,7 +2101,6 @@ u_int8_t wlanIsDriverReady(IN struct GLUE_INFO *prGlueInfo, uint32_t u4Check);
 void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 				IN const u_int8_t bAtResetFlow);
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
-uint8_t wlanGetBssIdx(struct net_device *ndev);
 int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			uint32_t frmode, uint32_t sgi, uint32_t nsts,
 			uint32_t *pu4CurRate, uint32_t *pu4MaxRate);

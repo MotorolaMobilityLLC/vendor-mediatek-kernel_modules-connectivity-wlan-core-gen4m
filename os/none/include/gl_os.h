@@ -1009,13 +1009,19 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 
 uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter);
 
+void *wlanGetAisNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucAisIndex);
+
+void *wlanGetP2pNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucP2pIndex);
+
+void *wlanGetNetDev(IN struct GLUE_INFO *prGlueInfo,
+	IN uint8_t ucBssIndex);
+
 /*******************************************************************************
  *			 E X T E R N A L   F U N C T I O N S / V A R I A B L E
  *******************************************************************************
  */
-extern struct net_device *gPrP2pDev[KAL_P2P_NUM];
-extern struct net_device *gPrDev;
-extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 extern uint32_t g_u4DevIdx[KAL_P2P_NUM];
 extern enum ENUM_NVRAM_STATE g_NvramFsm;
 
