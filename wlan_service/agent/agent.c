@@ -3916,6 +3916,32 @@ error1:
 	return ret;
 }
 
+#if (CFG_SUPPORT_CONNAC3X == 1)
+static s_int32 hqa_set_max_pac_ext(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_char *data = hqa_frame->data;
+	u_int32 MaxPacExt = 0;
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF, ("%s\n", __func__));
+
+	/* Request format type */
+	get_param_and_shift_buf(TRUE, sizeof(MaxPacExt),
+				&data, (u_char *)&MaxPacExt);
+
+	ret = mt_serv_set_max_pac_ext(serv_test, MaxPacExt);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+		("%s: MaxPacExt: %d\n", __func__, MaxPacExt));
+
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2, ret);
+
+	return ret;
+}
+#endif
+
 static s_int32 hqa_get_hetb_info(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -4409,6 +4435,9 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x81,	hqa_get_dump_recal},
 	{0x82,	hqa_get_dump_rxv},
 	{0x83,	hqa_get_dump_rdd},
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	{0x90,  hqa_set_max_pac_ext},
+#endif
 	{0x91,	hqa_get_hetb_info},
 	{0x94,	hqa_set_ru_info}
 };
