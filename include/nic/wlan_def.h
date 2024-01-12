@@ -1510,6 +1510,14 @@ struct P2P_DEVICE_DESC {
 		__cp[1] = (uint8_t)(_value); \
 	}
 
+#define WLAN_SET_FIELD_24(_memAddr_p, _value) \
+	{ \
+		uint8_t *__cp = (uint8_t *)(_memAddr_p); \
+		__cp[0] = (uint8_t)(_value); \
+		__cp[1] = (uint8_t)((_value) >> 8); \
+		__cp[2] = (uint8_t)((_value) >> 16); \
+	}
+
 #define WLAN_SET_FIELD_32(_memAddr_p, _value) \
 	{ \
 		uint8_t *__cp = (uint8_t *)(_memAddr_p); \

@@ -245,7 +245,7 @@ static void heRlmFillMCSMap(
 		uint8_t ucMcsMap;
 
 		if (i < ucSupportedNss) {
-			if (prAdapter->fgMcsMapBeenSet)
+			if (prAdapter->fgMcsMapBeenSet & SET_HE_MCS_MAP)
 				ucMcsMap = prAdapter->ucMcsMapSetFromSigma;
 			else
 				ucMcsMap = HE_CAP_INFO_MCS_MAP_MCS11;
