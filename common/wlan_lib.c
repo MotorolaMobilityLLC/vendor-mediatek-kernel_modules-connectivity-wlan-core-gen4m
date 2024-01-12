@@ -11492,6 +11492,11 @@ uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
 					prMsduInfo->ucBssIndex);
 	}
 #endif
+
+	if (GLUE_GET_PKT_IS_CONTROL_PORT_TX(prMsduInfo->prPacket))
+		kalIndicateControlPortTxStatus(prAdapter, prMsduInfo,
+					       rTxDoneStatus);
+
 	return WLAN_STATUS_SUCCESS;
 }
 #if (CFG_CE_ASSERT_DUMP == 1)

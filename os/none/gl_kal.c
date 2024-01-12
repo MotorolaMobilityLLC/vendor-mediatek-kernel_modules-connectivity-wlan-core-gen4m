@@ -796,3 +796,10 @@ uint32_t kalFirmwareLoad(struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return 0;
 }
+
+void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
+	struct MSDU_INFO *prMsduInfo,
+	enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}

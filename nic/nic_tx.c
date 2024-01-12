@@ -3150,8 +3150,10 @@ static inline bool nicTxPktPIDIsLimited(struct ADAPTER *prAdapter,
 static u_int8_t txsRequired(struct ADAPTER *prAdapter,
 			struct MSDU_INFO *prMsduInfo)
 {
-	if (prMsduInfo->ucPktType == 0)
+	if (prMsduInfo->ucPktType == 0 &&
+	    GLUE_GET_PKT_IS_CONTROL_PORT_TX(prMsduInfo->prPacket) == 0)
 		return FALSE;
+
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 	else if (prMsduInfo->ucPktType == ENUM_PKT_IP_FRAG)
 		return FALSE;

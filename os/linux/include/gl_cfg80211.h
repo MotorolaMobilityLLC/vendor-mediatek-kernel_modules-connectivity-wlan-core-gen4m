@@ -803,6 +803,14 @@ int mtk_cfg80211_external_auth(struct wiphy *wiphy, struct net_device *dev,
 			       struct cfg80211_external_auth_params *params);
 #endif
 
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_CONTROL_PORT_OVER_NL80211 == 1)
+int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
+				 const u8 *buf, size_t len,
+				 const u8 *dest, __be16 proto, bool unencrypted,
+				 int link_id, u64 *cookie);
+#endif
+
 int mtk_IsP2PNetDevice(struct GLUE_INFO *prGlueInfo,
 			  struct net_device *ndev);
 

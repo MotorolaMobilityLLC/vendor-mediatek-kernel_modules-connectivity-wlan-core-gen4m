@@ -3641,7 +3641,7 @@ void mldStarecDump(struct ADAPTER *prAdapter)
 
 struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
-	uint8_t aucMacAddr[])
+	const uint8_t aucMacAddr[])
 {
 	struct MLD_STA_RECORD *prMldSta;
 	struct LINK *prClientList;

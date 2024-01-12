@@ -638,7 +638,7 @@ struct PACKET_PRIVATE_DATA {
 	/* only tx use cb */
 	uint8_t ucTid;		/* 1byte */
 	uint8_t ucHeaderLen;	/* 1byte */
-	uint8_t ucProfilingFlag;	/* 1byte */
+	uint8_t ucFlag;		/* 1byte */
 	uint8_t ucSeqNo;		/* 1byte */
 	uint16_t u2Flag;		/* 2byte total:24 */
 
@@ -775,10 +775,16 @@ enum nl80211_wpa_versions {
 	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucSeqNo)
 
 #define GLUE_SET_PKT_FLAG_PROF_MET(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucProfilingFlag |= BIT(0))
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag |= BIT(0))
 
 #define GLUE_GET_PKT_IS_PROF_MET(_p) \
-	    (GLUE_GET_PKT_PRIVATE_DATA(_p)->ucProfilingFlag & BIT(0))
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag & BIT(0))
+
+#define GLUE_SET_PKT_CONTROL_PORT_TX(_p) \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag |= BIT(1))
+
+#define GLUE_GET_PKT_IS_CONTROL_PORT_TX(_p) \
+	(GLUE_GET_PKT_PRIVATE_DATA(_p)->ucFlag & BIT(1))
 
 #define GLUE_SET_PKT_XTIME(_p, _rSysTime) \
 	(GLUE_GET_PKT_PRIVATE_DATA(_p)->u8ArriveTime = (uint64_t)(_rSysTime))

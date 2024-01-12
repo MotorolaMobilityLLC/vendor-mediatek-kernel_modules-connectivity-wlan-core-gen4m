@@ -1313,6 +1313,10 @@ static struct cfg80211_ops mtk_cfg_ops = {
 #if CFG_SUPPORT_WPA3
 	.external_auth = mtk_cfg80211_external_auth,
 #endif
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_CONTROL_PORT_OVER_NL80211 == 1)
+	.tx_control_port = mtk_cfg80211_tx_control_port,
+#endif
 };
 
 #if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
@@ -4403,6 +4407,14 @@ static void wlanCreateWirelessDevice(void)
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	wiphy_ext_feature_set(prWiphy, NL80211_EXT_FEATURE_DFS_OFFLOAD);
+#endif
+
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_CONTROL_PORT_OVER_NL80211 == 1)
+	wiphy_ext_feature_set(prWiphy,
+		NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211);
+	wiphy_ext_feature_set(prWiphy,
+		NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211_TX_STATUS);
 #endif
 
 	if (wiphy_register(prWiphy) < 0) {
