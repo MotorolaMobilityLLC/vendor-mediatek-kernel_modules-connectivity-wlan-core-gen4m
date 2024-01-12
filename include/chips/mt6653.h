@@ -76,6 +76,8 @@ extern struct PLE_TOP_CR rMt6653PleTopCr;
 extern struct PSE_TOP_CR rMt6653PseTopCr;
 extern struct PP_TOP_CR rMt6653PpTopCr;
 
+#define CONN_AON_WF_NAPPING_ENABLE	0
+#define CONN_AON_WF_NAPPING_DISABLE	1
 
 /*------------------------------------------------------------------------------
  * MACRO for MT6653 RXVECTOR Parsing

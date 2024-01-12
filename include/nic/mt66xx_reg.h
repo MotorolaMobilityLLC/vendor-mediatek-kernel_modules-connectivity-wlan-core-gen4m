@@ -1637,6 +1637,9 @@ struct mt66xx_chip_info {
 	struct thermal_info thermal_info;
 	struct FW_LOG_INFO fw_log_info;
 	void (*setCrypto)(struct ADAPTER *prAdapter);
+	void (*wifiNappingCtrl)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
+	u_int8_t fgWifiNappingEn; /* sw var used to align hw cfg */
+	u_int8_t fgWifiNappingForceDisable; /* main thread: w, hif thread: r */
 };
 
 struct mt66xx_hif_driver_data {

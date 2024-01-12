@@ -251,6 +251,7 @@ struct BOOST_INFO {
 	u_int8_t fgDramBoost;
 	u_int8_t fgKeepPcieWakeup;
 	uint32_t u4WfdmaTh;
+	u_int8_t fgWifiNappingForceDis;
 };
 
 #define WORK_ALL_CPU_OK 999
@@ -2499,6 +2500,9 @@ void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Th);
 #endif /* defined(_HIF_PCIE) */
 
 void kalSetISRMask(struct ADAPTER *prAdapter, uint32_t set_mask);
+void kalConfigWiFiSnappingForceDisable(
+	struct GLUE_INFO *prGlueInfo,
+	u_int8_t fgForceDis);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD
 void kalConfigChksumOffload(
