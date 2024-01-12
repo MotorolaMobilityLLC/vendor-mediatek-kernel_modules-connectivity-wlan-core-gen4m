@@ -1,21 +1,21 @@
 /*
-* Copyright (C) 2016 MediaTek Inc.
-*
-* This program is free software: you can redistribute it and/or modify it under
-* the terms of the
-* GNU General Public License version 2 as published by the Free Software
-* Foundation.
-*
-* This program is distributed in the hope that it will be useful, but WITHOUT
-* ANY WARRANTY;
-* without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-* PARTICULAR PURPOSE.
-* See the GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License along with
-* this program.
-* If not, see <http://www.gnu.org/licenses/>.
-*/
+ * Copyright (C) 2016 MediaTek Inc.
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the
+ * GNU General Public License version 2 as published by the Free Software
+ * Foundation.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+ * PARTICULAR PURPOSE.
+ * See the GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ */
 
 #include "precomp.h"
 
@@ -133,10 +133,10 @@ void wmmFillTsinfo(struct PARAM_QOS_TSINFO *prTsInfo, uint8_t *pucTsInfo)
 {
 	uint32_t u4TsInfoValue = 0;
 	/*	|    0         |1-4  | 5-6 |	7-8          | 9           |
-	*10  | 11-13 | 14-23  |
-	**	Traffic Type|TSID| Dir  |Access Policy|Reserved | PSB|	UP
-	*|reserved|
-	*/
+	 *10  | 11-13 | 14-23  |
+	 **	Traffic Type|TSID| Dir  |Access Policy|Reserved | PSB|	UP
+	 *|reserved|
+	 */
 
 	u4TsInfoValue = prTsInfo->ucTrafficType & 0x1;
 	u4TsInfoValue |= (prTsInfo->ucTid & 0xf) << 1;
@@ -176,8 +176,8 @@ void wmmComposeTspecIE(IN struct ADAPTER *prAdapter,
 	/*1.2 BODY*/
 	/*nominal size*/
 	/* DumpData(prParamQosTspec, sizeof(struct PARAM_QOS_TSPEC),
-	** "QosTspc");
-	*/
+	 ** "QosTspc");
+	 */
 	WLAN_SET_FIELD_16(pucTemp, prParamQosTspec->u2NominalMSDUSize);
 	pucTemp += 2;
 	WLAN_SET_FIELD_16(pucTemp, prParamQosTspec->u2MaxMSDUsize);
@@ -509,9 +509,9 @@ void wmmTspecSteps(struct ADAPTER *prAdapter, uint8_t ucTid,
 							   ->prTsmReq);
 
 			/* nicTxChangeDataPortByAc(
-			** prAdapter->prAisBssInfo->prStaRecOfAP,
-			** prCurTs->eAC, TRUE);
-			*/
+			 ** prAdapter->prAisBssInfo->prStaRecOfAP,
+			 ** prCurTs->eAC, TRUE);
+			 */
 		} else {
 			prCurTs->eState = QOS_TS_INACTIVE;
 			DBGLOG(WMM, ERROR, "ADD TS is rejected, status=%d\n",
@@ -564,8 +564,8 @@ void wmmTspecSteps(struct ADAPTER *prAdapter, uint8_t ucTid,
 					   1000);
 			break;
 		/* for case: TS of tid N has existed, then setup TS with this
-		** tid again.
-		*/
+		 ** tid again.
+		 */
 		case RX_ADDTS_RSP: {
 			struct WMM_ADDTS_RSP_STEP_PARAM *prParam =
 				(struct WMM_ADDTS_RSP_STEP_PARAM *)prStepParams;
@@ -775,8 +775,8 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 
 		prTsmReq->ucACI = aucUp2ACIMap[ucTid];
 		/* if current TID is not admitted, don't start measurement, only
-		** save this requirement
-		*/
+		 ** save this requirement
+		 */
 		if (prStaRec->afgAcmRequired[prTsmReq->ucACI] &&
 		    !(ucTsAcs & BIT(prTsmReq->ucACI))) {
 			DBGLOG(WMM, INFO,
@@ -790,15 +790,15 @@ void wmmStartTsmMeasurement(struct ADAPTER *prAdapter, unsigned long ulParam)
 	kalMemZero(&rTsmStatistics, sizeof(rTsmStatistics));
 	if (prTsmReq->u2Duration) {
 		/* If a non-AP QoS STa receives a Transmit Stream/Category
-		*Measurement Request for a TC, or
-		** TS that is already being measured using a triggered transmit
-		*stream/category measurement,
-		** the triggered traffic stream measurement shall be suspended
-		*for the duration of the requested
-		** traffic stream measurement. When triggered measurement
-		*resumes, the traffic stream metrics
-		** shall be reset.  See end part of 802.11k 11.10.8.8
-		**/
+		 *Measurement Request for a TC, or
+		 ** TS that is already being measured using a triggered transmit
+		 *stream/category measurement,
+		 ** the triggered traffic stream measurement shall be suspended
+		 *for the duration of the requested
+		 ** traffic stream measurement. When triggered measurement
+		 *resumes, the traffic stream metrics
+		 ** shall be reset.  See end part of 802.11k 11.10.8.8
+		 **/
 		LINK_FOR_EACH_ENTRY(prActiveTsmReq, &prWMMInfo->rActiveTsmReq,
 				    rLinkEntry, struct ACTIVE_RM_TSM_REQ)
 		{
@@ -1026,8 +1026,8 @@ u_int8_t wmmParseTspecIE(struct ADAPTER *prAdapter, uint8_t *pucIE,
 	if (IE_ID(pucIE) == ELEM_ID_TSPEC) {
 		DBGLOG(WMM, INFO, "found 802.11 Tspec Information Element\n");
 		/* todo: implement 802.11 Tspec here, assign value to
-		** u4TsInfoValue and pucTemp
-		*/
+		 ** u4TsInfoValue and pucTemp
+		 */
 		u4TsInfoValue = 0;
 		pucTemp = NULL;
 		return FALSE; /* we didn't support IEEE 802.11 Tspec now */
@@ -1129,8 +1129,8 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 		wmmGetActiveTsmReq(prAdapter, prTsmStatistic->ucTid,
 				   !prTsmStatistic->ucReportReason, FALSE);
 	/* prCmdInfo is not NULL or report reason is 0 means it is a command
-	** reply, so we need to stop the timer
-	*/
+	 ** reply, so we need to stop the timer
+	 */
 	if (prCmdInfo || !prTsmStatistic->ucReportReason)
 		cnmTimerStopTimer(prAdapter, &prWMMInfo->rTsmTimer);
 	if (!prCurrentTsmReq) {
@@ -1181,8 +1181,8 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 
 		wmmRemoveTSM(prAdapter, prCurrentTsmReq, FALSE);
 		/* Resume all triggered tsm whose TC is same with this normal
-		** tsm
-		*/
+		 ** tsm
+		 */
 		LINK_FOR_EACH_ENTRY(prCurrentTsmReq, &prWMMInfo->rActiveTsmReq,
 				    rLinkEntry, struct ACTIVE_RM_TSM_REQ)
 		{
@@ -1225,8 +1225,8 @@ void wmmComposeTsmRpt(struct ADAPTER *prAdapter, struct CMD_INFO *prCmdInfo,
 		rlmScheduleNextRm(prAdapter);
 	} else {
 		/* Triggered TSM, we should send TSM report to peer if the first
-		** report time to now more than 10 second
-		*/
+		 ** report time to now more than 10 second
+		 */
 		OS_SYSTIME rCurrent = kalGetTimeTick();
 
 		if (prWMMInfo->rTriggeredTsmRptTime == 0)
@@ -1259,12 +1259,12 @@ u_int8_t wmmTsmIsOngoing(struct ADAPTER *prAdapter)
 }
 
 /* This function implements TS replacement rule
-** Replace case base on same AC:
-** 1. old: Uni-dir; New: Bi-dir or same dir with old
-** 2. old: Bi-dir; New: Bi-dir or Uni-dir
-** 3. old: two diff Uni-dir; New: Bi-dir
-** for detail, see WMM spec V1.2.0, section 3.5
-*/
+ ** Replace case base on same AC:
+ ** 1. old: Uni-dir; New: Bi-dir or same dir with old
+ ** 2. old: Bi-dir; New: Bi-dir or Uni-dir
+ ** 3. old: two diff Uni-dir; New: Bi-dir
+ ** for detail, see WMM spec V1.2.0, section 3.5
+ */
 static void wmmMayDoTsReplacement(struct ADAPTER *prAdapter, uint8_t ucNewTid)
 {
 	struct TSPEC_INFO *prTspec = &prAdapter->rWifiVar.rWmmInfo.arTsInfo[0];
@@ -1337,8 +1337,8 @@ uint32_t wmmDumpActiveTspecs(struct ADAPTER *prAdapter, uint8_t *pucBuffer,
 
 #if CFG_SUPPORT_SOFT_ACM
 /* u2PktLen: Ethernet payload length, exclude eth header.
-** Return value: estimated tx time in unit us.
-*/
+ ** Return value: estimated tx time in unit us.
+ */
 uint32_t wmmCalculatePktUsedTime(struct BSS_INFO *prBssInfo,
 				 struct STA_RECORD *prStaRec, uint16_t u2PktLen)
 {
@@ -1411,15 +1411,15 @@ uint32_t wmmCalculatePktUsedTime(struct BSS_INFO *prBssInfo,
 }
 
 /* 1. u4PktTxTime is 0, this function give a fast check if remain medium time is
-*enough to Deq
-** 2. u4PktTxTime is not 0, if remain medium time is greater than u4PktTxTime,
-*statistic deq number
-**     and remain time. Otherwise, start a timer to schedule next dequeue
-*interval
-** return value:
-** TRUE: Can dequeue
-** FALSE: No time to dequeue
-*/
+ *enough to Deq
+ ** 2. u4PktTxTime is not 0, if remain medium time is greater than u4PktTxTime,
+ *statistic deq number
+ **     and remain time. Otherwise, start a timer to schedule next dequeue
+ *interval
+ ** return value:
+ ** TRUE: Can dequeue
+ ** FALSE: No time to dequeue
+ */
 u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 			  uint32_t u4PktTxTime)
 {
@@ -1465,20 +1465,20 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 			return TRUE;
 	}
 	/* If not enough medium time to dequeue next packet, should start a
-	*timer to schedue next dequeue
-	** We didn't consider the case u4RemainTime is enough to dequeue packets
-	*except the head of the
-	** station tx queue, because it is too complex to implement dequeue
-	*routine.
-	** We should reset u4RemainTime to 0, used to skip next dequeue request
-	*if still in this deq interval.
-	** the dequeue interval is 1 second according to WMM-AC specification.
-	*/
+	 * timer to schedue next dequeue
+	 * We didn't consider the case u4RemainTime is enough to dequeue
+	 * packets except the head of the
+	 * station tx queue, because it is too complex to implement dequeue
+	 * routine.
+	 * We should reset u4RemainTime to 0, used to skip next dequeue request
+	 * if still in this deq interval.
+	 * the dequeue interval is 1 second according to WMM-AC specification.
+	 */
 	prAcmCtrl->u4RemainTime = 0;
 	/* Start a timer to schedule next dequeue interval, since application
-	*may stop sending data to driver,
-	** but driver still pending some data to dequeue
-	*/
+	 * may stop sending data to driver,
+	 * but driver still pending some data to dequeue
+	 */
 	if (!timerPendingTimer(&prWmmInfo->rAcmDeqTimer)) {
 		uint32_t u4EndMsec = prAcmCtrl->u4IntervalEndSec * 1000;
 
@@ -1505,23 +1505,22 @@ static uint16_t wmmAcmTxTimePLCPCal(uint16_t u2Length, uint16_t u2Rate,
 	if (FlgIsGmode) {
 		u2Rate <<= 1;
 		/* EX1: BodyLen = 30B and rate = 54Mbps,
-		** 1. additional 22 bit in PSDU
-				PLCP = 30*8 + 22 = 262 bits
-			2. round_up{X / 4} * 4 means OFDM symbol is in unit of 4
-		usec
-				PLCP = (262/54) = 4.8xxx us
-				4.8xxx / 4 = 1.2xxx
-			3. PLCP = round up(1.2xxx) * 4 = 2 * 4 = 8 us
-
-			EX2: BodyLen = 14B and rate = 6Mbps,
-			1. additional 22 bit in PSDU
-				PLCP = 14*8 + 22 = 134 bits
-			2. round_up{X / 4} * 4 means OFDM symbol is in unit of 4
-		usec
-				PLCP = (134/6) = 22.3xxx us
-				22.3xxx / 4 = 5.583xxx
-			3. PLCP = round up(5.583xxx) * 4 = 6 * 4 = 24 us
-		*/
+		 * 1. additional 22 bit in PSDU
+		 * PLCP = 30*8 + 22 = 262 bits
+		 * 2. round_up{X / 4} * 4 means OFDM symbol is in unit of 4
+		 * usec
+		 * PLCP = (262/54) = 4.8xxx us
+		 * 4.8xxx / 4 = 1.2xxx
+		 * 3. PLCP = round up(1.2xxx) * 4 = 2 * 4 = 8 us
+		 * EX2: BodyLen = 14B and rate = 6Mbps,
+		 * 1. additional 22 bit in PSDU
+		 * PLCP = 14*8 + 22 = 134 bits
+		 * 2. round_up{X / 4} * 4 means OFDM symbol is in unit of 4
+		 * usec
+		 * PLCP = (134/6) = 22.3xxx us
+		 * 22.3xxx / 4 = 5.583xxx
+		 * 3. PLCP = round up(5.583xxx) * 4 = 6 * 4 = 24 us
+		 */
 		u2PLCP = (u2Length << 3) + 22; /* need to add 22 bits in 11g */
 		u2PLCP = (u2PLCP % u2Rate) ? (u2PLCP / u2Rate) + 1
 					   : (u2PLCP / u2Rate);
@@ -1533,8 +1532,8 @@ static uint16_t wmmAcmTxTimePLCPCal(uint16_t u2Length, uint16_t u2Rate,
 }
 
 /* For G mode, no long or short preamble time, only long (20us) or short slot
-** time (9us).
-*/
+ ** time (9us).
+ */
 static uint16_t wmmAcmTxTimeCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 				uint16_t u2DataRate, uint16_t u2BasicRate,
 				uint8_t ucFlags)
@@ -1558,8 +1557,8 @@ static uint16_t wmmAcmTxTimeCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 						u2BasicRate, fgIsGMode);
 	}
 	/* Data Pkt Preamble Time + RTS/CTS time + 802.11 QoS hdr + LLC header +
-	** Ethernet Payload + sec extra + FCS
-	*/
+	 ** Ethernet Payload + sec extra + FCS
+	 */
 	u2TxTime += u2PreambleTime +
 		    wmmAcmTxTimePLCPCal(WLAN_MAC_HEADER_QOS_LEN + 8 +
 						u2EthBodyLen + u2SecExtra + 4,
@@ -1572,30 +1571,30 @@ static uint16_t wmmAcmTxTimeCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 }
 
 /* Reference to Draft802.11n_D3.07, Transmission Time =
-** 1. Mix mode, short GI
-**	TXTIME =	T_LEG_PREAMBLE + T_L_SIG + T_HT_PREAMBLE + T_HT_SIG +
-**				T_SYM * Ceiling{T_SYMS * N_SYM / T_SYM}
-** 2. Mix mode, regular GI
-**	TXTIME =	T_LEG_PREAMBLE + T_L_SIG + T_HT_PREAMBLE + T_HT_SIG +
-**				T_SYM * N_SYM
-** 3. GreenField mode, short GI
-**	TXTIME =	T_GF_HT_PREAMBLE + T_HT_SIG + T_SYMS * N_SYM
-** 4. GreenField mode, regular GI
-**	TXTIME =	T_GF_HT_PREAMBLE + T_HT_SIG + T_SYM * N_SYM
-** Where
-** (1) T_LEG_PREAMBLE	= T_L_STF + T_L_LTF = 8 + 8 = 16 us
-** (2) T_L_SIG			= 4 us
-** (3) T_HT_PREAMBLE	= T_HT_STF + T_HT_LTF1 + (N_LTF - 1) * T_HT_LTFS
-**					= 4 + 4 + ((N_DLTF + N_ELTF) - 1) * 4
-**	EX: Nss = 2, N_DLTF = 2, Ness = 0, N_ELTF = 0, T_HT_PREAMBLE = 12 us
-** (4) T_HT_SIG		= 8 us
-** (5) T_SYM			= 4 us
-** (6) T_SYMS			= 3.6 us
-** (7) N_SYM			= mSTBC * Ceil((8*len+16+6*N_ES)/(mSTBC *
-*N_DBPS))
-** (8) T_GF_HT_PREAMBLE= T_HT_GF_STF + T_HT_LTF1 + (N_LTF - 1) * T_HT_LTFS
-**					= 8 + 4 + ((N_DLTF + N_ELTF) - 1) * 4
-*/
+ ** 1. Mix mode, short GI
+ **	TXTIME =	T_LEG_PREAMBLE + T_L_SIG + T_HT_PREAMBLE + T_HT_SIG +
+ **				T_SYM * Ceiling{T_SYMS * N_SYM / T_SYM}
+ ** 2. Mix mode, regular GI
+ **	TXTIME =	T_LEG_PREAMBLE + T_L_SIG + T_HT_PREAMBLE + T_HT_SIG +
+ **				T_SYM * N_SYM
+ ** 3. GreenField mode, short GI
+ **	TXTIME =	T_GF_HT_PREAMBLE + T_HT_SIG + T_SYMS * N_SYM
+ ** 4. GreenField mode, regular GI
+ **	TXTIME =	T_GF_HT_PREAMBLE + T_HT_SIG + T_SYM * N_SYM
+ ** Where
+ ** (1) T_LEG_PREAMBLE	= T_L_STF + T_L_LTF = 8 + 8 = 16 us
+ ** (2) T_L_SIG			= 4 us
+ ** (3) T_HT_PREAMBLE	= T_HT_STF + T_HT_LTF1 + (N_LTF - 1) * T_HT_LTFS
+ **					= 4 + 4 + ((N_DLTF + N_ELTF) - 1) * 4
+ **	EX: Nss = 2, N_DLTF = 2, Ness = 0, N_ELTF = 0, T_HT_PREAMBLE = 12 us
+ ** (4) T_HT_SIG		= 8 us
+ ** (5) T_SYM			= 4 us
+ ** (6) T_SYMS			= 3.6 us
+ ** (7) N_SYM			= mSTBC * Ceil((8*len+16+6*N_ES)/(mSTBC *
+ *N_DBPS))
+ ** (8) T_GF_HT_PREAMBLE= T_HT_GF_STF + T_HT_LTF1 + (N_LTF - 1) * T_HT_LTFS
+ **					= 8 + 4 + ((N_DLTF + N_ELTF) - 1) * 4
+ */
 static uint16_t wmmAcmTxTimeHtPLCPCal(uint16_t u2Length, uint8_t ucMcsId,
 				      uint8_t ucNess, uint8_t ucFlags)
 {
@@ -1705,9 +1704,9 @@ static uint16_t wmmAcmTxTimeHtCal(uint16_t u2SecExtra, uint16_t u2EthBodyLen,
 	u2TxTime += wmmAcmTxTimePLCPCal(FRM_LENGTH_BLOCK_ACK, RATE_24M, TRUE);
 
 	/* Data Pkt Preamble Time + RTS/CTS time + 802.11 QoS hdr + LLC header +
-	** Ethernet Payload + sec extra + FCS
-	** Nss always set to 1 due to only
-	*/
+	 ** Ethernet Payload + sec extra + FCS
+	 ** Nss always set to 1 due to only
+	 */
 	u2TxTime += wmmAcmTxTimeHtPLCPCal(WLAN_MAC_HEADER_QOS_LEN + 8 +
 						  u2EthBodyLen + u2SecExtra + 4,
 					  ucMcsId, 0, ucFlags);
