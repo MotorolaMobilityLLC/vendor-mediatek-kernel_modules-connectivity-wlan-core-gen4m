@@ -3717,16 +3717,15 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 		prMldStarec->aucStrBitmap,
 		sizeof(tag->afgStrCapBitmap));
 	kalMemCopy(tag->aucEmlCap,
-		prMldStarec->aucEmlCap,
-		sizeof(tag->aucEmlCap));
+		&prMldStarec->u2EmlCap,
+		sizeof(prMldStarec->u2EmlCap));
 
 	DBGLOG(INIT, INFO,
-		"[%d] bss=%d,nsep=%d,eml=0x%02x%04x,str[0x%x,0x%x,0x%x] mldType=%d\n",
+		"[%d] bss=%d,nsep=%d,eml=0x%%04x,str[0x%x,0x%x,0x%x] mldType=%d\n",
 		prStaRec->ucIndex,
 		cmd->ucBssIndex,
 		tag->fgNSEP,
-		*(uint8_t *)(tag->aucEmlCap + 2),
-		*(uint16_t *)(tag->aucEmlCap),
+		*(uint16_t *)tag->aucEmlCap,
 		tag->afgStrCapBitmap[0],
 		tag->afgStrCapBitmap[1],
 		tag->afgStrCapBitmap[2],

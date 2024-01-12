@@ -2201,6 +2201,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 			prBssInfo->ucBMCWlanIndexS[i] = WTBL_RESERVED_ENTRY;
 			prBssInfo->wepkeyUsed[i] = FALSE;
 		}
+		prBssInfo->eCurrentOPMode = OP_MODE_P2P_DEVICE;
 
 		return prBssInfo;
 	}
@@ -2271,6 +2272,7 @@ omac_choosed:
 #endif
 			prBssInfo->u4PowerSaveFlag = 0;
 			prBssInfo->ePwrMode = Param_PowerModeCAM;
+			prBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 
 			kalMemZero(prBssInfo->aucBSSID, MAC_ADDR_LEN);
 

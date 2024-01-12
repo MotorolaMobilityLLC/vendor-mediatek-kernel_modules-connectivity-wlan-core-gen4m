@@ -290,6 +290,11 @@ void mldBssUpdateMldAddr(
 void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
+void mldBssUpdateCap(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
+
+void mldBssUpdateCapAll(struct ADAPTER *prAdapter);
+
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
 	struct BSS_INFO *prBss);
@@ -327,7 +332,8 @@ void mldEnableCocurrentMld(struct ADAPTER *prAdapter);
 
 int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec, uint8_t fgMldType,
-	uint8_t aucMacAddr[], uint8_t ucLinkId);
+	uint8_t aucMacAddr[], uint8_t ucLinkId, uint16_t u2EmlCap,
+	uint16_t u2MldCap);
 
 void mldStarecUnregister(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStarec);

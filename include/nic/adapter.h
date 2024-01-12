@@ -554,6 +554,9 @@ struct MLD_BSS_INFO {
 	uint8_t aucOwnMldAddr[MAC_ADDR_LEN];
 	uint8_t ucBssBitmap;
 	uint8_t ucHwBandBitmap; /* BIT(i), i = prBssInfo->eBandIdx */
+	uint8_t ucMaxSimuLinks;
+	uint8_t ucEmlEnabled;
+	uint16_t u2EMLCap;
 };
 #endif
 
@@ -787,6 +790,10 @@ struct WIFI_VAR {
 	uint8_t ucMlProbeRetryLimit;
 	struct LINK_MGMT rMldBlockList;
 	uint8_t ucMldRetryCount;
+	uint8_t ucNonApMldEMLSupport;
+	uint8_t ucApMldEMLSupport;
+	uint16_t u2NonApMldEMLCap;
+	uint16_t u2ApMldEMLCap;
 #endif
 	uint8_t ucApHt;
 	uint8_t ucApVht;
