@@ -1412,11 +1412,14 @@ VOID p2pRoleFsmRunEventConnectionRequest(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_
 
 	SET_NET_PWR_STATE_ACTIVE(prAdapter, prP2pBssInfo->ucBssIndex);
 
-	/* Do not process the connect procedure if the Deauth frame be sent */
+	/* In P2P GC case, the interval of two ASSOC flow could be very short, */
+	/* we must start to connect directly before Deauth done */
 	prStaRec = prP2pBssInfo->prStaRecOfAP;
 	if (prStaRec) {
-		if (timerPendingTimer(&prStaRec->rDeauthTxDoneTimer))
-			goto error;
+		if (timerPendingTimer(&prStaRec->rDeauthTxDoneTimer)) {
+			cnmTimerStopTimer(prAdapter, &(prStaRec->rDeauthTxDoneTimer));
+			p2pRoleFsmDeauhComplete(prAdapter, prStaRec);/* Force to stop */
+		}
 	}
 	/* Make sure the state is in IDLE state. */
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_IDLE)
