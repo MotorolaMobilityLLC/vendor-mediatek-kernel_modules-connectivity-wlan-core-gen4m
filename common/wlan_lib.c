@@ -6841,6 +6841,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->ucStaEhtBfee = (uint8_t) wlanCfgGetUint32(prAdapter,
 		"StaEHTBfee", FEATURE_ENABLED);
 	prWifiVar->ucLinkIdForKey = 0xff;
+	prWifiVar->ucMldLinkMax = (uint8_t) wlanCfgGetUint32(prAdapter,
+		"MldLinkMax", MLD_LINK_MAX);
+	prWifiVar->ucMldAddrOverride = (uint8_t) wlanCfgGetInt32(
+				       prAdapter, "MldAddrOverride", 0);
+	if (wlanCfgGet(prAdapter, "MldAddr", prWifiVar->aucMldAddrStr,
+	    "00:0c:e7:00:11:be", 0))
+		DBGLOG(INIT, TRACE, "get MldAddr fail, use default\n");
 #endif
 
 	prWifiVar->ucApHt = (uint8_t) wlanCfgGetUint32(prAdapter, "ApHT",
