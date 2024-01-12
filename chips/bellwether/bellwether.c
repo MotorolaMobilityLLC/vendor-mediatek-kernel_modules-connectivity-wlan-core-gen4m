@@ -878,6 +878,7 @@ exit:
 	return ret;
 }
 
+#if CFG_MTK_FPGA_PLATFORM
 static void __init_pcie_settings(struct ADAPTER *prAdapter)
 {
 	/*
@@ -892,6 +893,7 @@ static void __init_pcie_settings(struct ADAPTER *prAdapter)
 	 */
 	HAL_MCR_WR(prAdapter, PCIE_MAC_IREG_PCIE_DEBUG_DUMMY_0_ADDR, 0x10000);
 }
+#endif
 
 static u_int8_t check_mcu_idle(struct ADAPTER *prAdapter)
 {
@@ -1067,8 +1069,9 @@ static uint32_t bellwetherDownloadRomCode(struct ADAPTER *prAdapter)
 	if (ret != WLAN_STATUS_SUCCESS)
 		goto exit1;
 
-	/* TODO: only needed for fpga platform */
+#if CFG_MTK_FPGA_PLATFORM
 	__init_pcie_settings(prAdapter);
+#endif
 
 	HAL_MCR_RD(prAdapter, CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_ADDR, &u4Value);
 	u4Value |= CONN_INFRA_RGU_ON_WFSYS_CPU_SW_RST_B_WFSYS_CPU_SW_RST_B_MASK;
