@@ -664,6 +664,14 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 	u_int8_t fgResult = FALSE;
 #if CFG_WMT_RESET_API_SUPPORT
 	int32_t ret;
+#endif
+
+	if (rst == NULL) {
+		DBGLOG(INIT, ERROR, "input value rst is NULL.\n");
+		return;
+	}
+
+#if CFG_WMT_RESET_API_SUPPORT
 	/* wlanOnAtReset(); */
 	ret = wifi_reset_end(rst->rst_data);
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -679,7 +687,7 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst)
 
 	wait_core_dump_end();
 
-	if (rst != NULL && rst->prGlueInfo != NULL &&
+	if (rst->prGlueInfo != NULL &&
 		rst->prGlueInfo->prAdapter != NULL &&
 		rst->prGlueInfo->prAdapter->chip_info != NULL &&
 		rst->prGlueInfo->prAdapter->chip_info
