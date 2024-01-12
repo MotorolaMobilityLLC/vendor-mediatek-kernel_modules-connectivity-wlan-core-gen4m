@@ -511,7 +511,6 @@ int priv_support_ioctl(struct net_device *prNetDev,
 #endif
 
 #if CFG_SUPPORT_NAN
-	kal_fallthrough;
 	case IOCTL_NAN_STRUCT:
 		return priv_nan_struct(prNetDev, &rIwReqInfo, &(prIwReq->u),
 				       (char *)&(prIwReq->u));
@@ -4173,7 +4172,7 @@ static int priv_driver_get_sta_statistics(
 			       MAC2STR(prAisBssInfo
 			       ->prStaRecOfAP->aucMacAddr));
 		} else {
-			DBGLOG(RSN, INFO, "not connect to ais ap %lx\n",
+			DBGLOG(RSN, INFO, "not connect to ais ap %p\n",
 			       prAisBssInfo
 			       ->prStaRecOfAP);
 			i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
@@ -5762,7 +5761,8 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
-	uint8_t aucMacAddr[MAC_ADDR_LEN], aucIe[100];
+	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
+	uint8_t aucIe[100];
 	uint32_t u4BufLen, rStatus, u4Freq, u4PerSta;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
@@ -10231,15 +10231,9 @@ int priv_driver_set_pp_alg_ctrl(struct net_device *prNetDev,
 	i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen,
 	"PpAction=%d\n", rPpAlgCtrl.u1PpAction);
 
-	if (rPpAlgCtrl.u1PpAction == UNI_CMD_PP_ALG_GET_STATISTICS) {
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetPpAlgCtrl,
-			&rPpAlgCtrl, sizeof(struct UNI_CMD_PP_ALG_CTRL),
-			&u4BufLen);
-	} else {
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetPpAlgCtrl,
-			&rPpAlgCtrl, sizeof(struct UNI_CMD_PP_ALG_CTRL),
-			&u4BufLen);
-	}
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetPpAlgCtrl,
+		&rPpAlgCtrl, sizeof(struct UNI_CMD_PP_ALG_CTRL),
+		&u4BufLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		return -1;
@@ -10487,7 +10481,7 @@ int priv_driver_set_cfg(struct net_device *prNetDev, char *pcCommand,
 		       ucTmp);
 		if (kalStrLen(apcArgv[1]) > WLAN_CFG_KEY_LEN_MAX - 1) {
 			DBGLOG(INIT, ERROR,
-				   "apcArgv[1] length [%d] overrun\n",
+				   "apcArgv[1] length [%lu] overrun\n",
 				   kalStrLen(apcArgv[1]));
 			return -1;
 		}
@@ -23750,11 +23744,13 @@ static int priv_driver_set_csi(struct net_device *prNetDev,
 	uint32_t u4BufLen = 0;
 	int32_t i4BytesWritten = 0;
 	int32_t i4Argc = 0;
-	signed char *apcArgv[WLAN_CFG_ARGV_MAX];
+	signed char *apcArgv[WLAN_CFG_ARGV_MAX] = {NULL};
 	uint8_t aucMacAddr[MAC_ADDR_LEN] = {0};
 	struct CMD_CSI_CONTROL_T *prCSICtrl = NULL;
 	struct CSI_INFO_T *prCSIInfo = NULL;
 	struct BSS_INFO *prAisBssInfo;
+	enum CSI_OUTPUT_METHOND_COMMAND eOutPut;
+	enum CSI_STA_MAC_MODE_T eStaMode;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
@@ -23849,18 +23845,19 @@ static int priv_driver_set_csi(struct net_device *prNetDev,
 	prCSIInfo->ucValue1[prCSICtrl->ucCfgItem] = prCSICtrl->ucValue1;
 
 	if (prCSICtrl->ucCfgItem == CSI_CONFIG_OUTPUT_METHOD) {
-		if (prCSICtrl->ucValue1 == CSI_PROC_FILE_COMMAND) {
+		eOutPut = (enum CSI_OUTPUT_METHOND_COMMAND) prCSICtrl->ucValue1;
+		if (eOutPut == CSI_PROC_FILE_COMMAND) {
 			prCSIInfo->eCSIOutput = CSI_OUTPUT_PROC_FILE;
 			DBGLOG(REQ, INFO,
 				"[CSI] Set CSI data output to proc file\n");
-		} else if (prCSICtrl->ucValue1 == CSI_VENDOR_EVENT_COMMAND) {
+		} else if (eOutPut == CSI_VENDOR_EVENT_COMMAND) {
 			prCSIInfo->eCSIOutput = CSI_OUTPUT_VENDOR_EVENT;
 			DBGLOG(REQ, INFO,
 				"[CSI] Set CSI data output to vendor event\n");
 		} else {
 			DBGLOG(REQ, ERROR,
 				"[CSI] Invalid csi output method %d\n",
-				prCSICtrl->ucValue1);
+				eOutPut);
 			i4BytesWritten = -1;
 		}
 		goto out;
@@ -23900,29 +23897,32 @@ static int priv_driver_set_csi(struct net_device *prNetDev,
 		goto out;
 	}
 
-	if (prCSICtrl->ucCfgItem == CSI_CONFIG_FILTER_MODE &&
-			prCSICtrl->ucValue1 == CSI_STA_MAC_ADD) {
-		switch (prCSICtrl->u4Value2) {
-		case CSI_STA_MAC_ADD:
-			i4Ret = glCsiAddSta(prGlueInfo, prCSICtrl);
-			if (i4Ret < 0) {
-				i4BytesWritten = -1;
-				goto out;
-			}
+	if (prCSICtrl->ucCfgItem == CSI_CONFIG_FILTER_MODE) {
+		eStaMode = (enum CSI_STA_MAC_MODE_T) prCSICtrl->ucValue1;
+		if (eStaMode == CSI_STA_MAC_ADD) {
+			switch (prCSICtrl->u4Value2) {
+			case CSI_STA_MAC_ADD:
+				i4Ret = glCsiAddSta(prGlueInfo, prCSICtrl);
+				if (i4Ret < 0) {
+					i4BytesWritten = -1;
+					goto out;
+				}
 
-			break;
-		case CSI_STA_MAC_DEL:
-			i4Ret = glCsiDelSta(prGlueInfo, prCSICtrl);
-			if (i4Ret < 0) {
-				i4BytesWritten = -1;
-				goto out;
-			}
+				break;
+			case CSI_STA_MAC_DEL:
+				i4Ret = glCsiDelSta(prGlueInfo, prCSICtrl);
+				if (i4Ret < 0) {
+					i4BytesWritten = -1;
+					goto out;
+				}
 
-			break;
-		default:
-			DBGLOG(REQ, ERROR, "[CSI] Invalid STA MAC mode: %d\n",
-				prCSICtrl->u4Value2);
-			break;
+				break;
+			default:
+				DBGLOG(REQ, ERROR,
+					"[CSI] Invalid STA MAC mode: %d\n",
+					prCSICtrl->u4Value2);
+				break;
+			}
 		}
 	}
 

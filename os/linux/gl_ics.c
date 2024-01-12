@@ -130,7 +130,7 @@ static ssize_t ics_ring_read(
 	}
 
 return_fn:
-	DBGLOG(ICS, TEMP, "[Done] read:%d left:%d\n", read,
+	DBGLOG(ICS, TEMP, "[Done] read:%ld left:%ld\n", read,
 		left_to_read);
 	return read;
 }
@@ -160,7 +160,7 @@ static ssize_t ics_ring_write(struct ics_ring *iRing, char *buf,
 	}
 
 skip:
-	DBGLOG(ICS, TEMP, "[Done] written:%d left:%d\n", written,
+	DBGLOG(ICS, TEMP, "[Done] written:%ld left:%ld\n", written,
 		left_to_write);
 	return written;
 }
