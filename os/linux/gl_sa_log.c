@@ -36,14 +36,25 @@ extern int mrdump_mini_add_extra_file(
 #endif
 
 #define SA_DBGLOG(_Mod, _Clz, _Fmt, ...) \
+do { \
+	if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		 DBG_CLASS_##_Clz) == 0) \
+		break; \
 	pr_info("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-		KAL_GET_CURRENT_THREAD_ID(), \
-		__func__, ##__VA_ARGS__)
+		 KAL_GET_CURRENT_THREAD_ID(), \
+		 __func__, ##__VA_ARGS__); \
+} while (0)
 
 #define SA_DBGLOG_LIMITED(_Mod, _Clz, _Fmt, ...) \
-	pr_info("[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
-		KAL_GET_CURRENT_THREAD_ID(), \
-		__func__, ##__VA_ARGS__)
+do { \
+	if ((aucDebugModule[DBG_##_Mod##_IDX] & \
+		 DBG_CLASS_##_Clz) == 0) \
+		break; \
+	pr_info_ratelimited(\
+		"[%u]%s:(" #_Mod " " #_Clz ") " _Fmt, \
+		 KAL_GET_CURRENT_THREAD_ID(), \
+		 __func__, ##__VA_ARGS__); \
+} while (0)
 
 #define SA_LOG_SIZE (128*1024)
 #define SA_WAIT_READY_MAX_CNT 2000
