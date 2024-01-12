@@ -7031,7 +7031,7 @@ void rlmProcessRadioMeasurementRequest(struct ADAPTER *prAdapter,
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter,
 		secGetBssIdxByRfb(prAdapter, prSwRfb));
-	if (prAdapter->prAisBssInfo == NULL) {
+	if (prAisBssInfo == NULL) {
 		DBGLOG(RLM, INFO, "Ignored due to AIS isn't created\n");
 		return;
 	}
