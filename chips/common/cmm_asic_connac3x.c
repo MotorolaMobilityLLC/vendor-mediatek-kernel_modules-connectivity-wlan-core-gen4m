@@ -32,6 +32,10 @@
 #include "connv3.h"
 #endif
 
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+#include <linux/soc/mediatek/devapc_public.h>
+#endif
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -47,6 +51,9 @@
 *                           P R I V A T E   D A T A
 ********************************************************************************
 */
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+u_int8_t g_fgIsRegDevapcCb;
+#endif
 
 #define USB_ACCESS_RETRY_LIMIT           1
 
@@ -2493,6 +2500,18 @@ static void register_connv3_cbs(void)
 }
 #endif
 
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+static void wlan_devapc_debug_dump(void)
+{
+	GL_DEFAULT_RESET_TRIGGER(NULL, RST_DEVAPC);
+}
+
+static struct devapc_vio_callbacks wlan_devapc_vio_handle = {
+	.id = INFRA_SUBSYS_PCIE,
+	.debug_dump = wlan_devapc_debug_dump,
+};
+#endif
+
 void unregister_plat_connsys_cbs(void)
 {
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
@@ -2516,6 +2535,13 @@ void register_plat_connsys_cbs(void)
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	power_throttling_init();
+#endif
+
+#if IS_ENABLED(CONFIG_MTK_DEVAPC)
+	if (!g_fgIsRegDevapcCb) {
+		register_devapc_vio_callback(&wlan_devapc_vio_handle);
+		g_fgIsRegDevapcCb = TRUE;
+	}
 #endif
 }
 #endif
