@@ -659,7 +659,7 @@ struct IE_WMM_TSPEC {
 	/* WMM TSPEC body */
 	uint8_t aucTsInfo[3];	/* TS Info */
 	/* Note: Utilize PARAM_QOS_TSPEC to fill (memory copy) */
-	uint8_t aucTspecBodyPart[1];
+	uint8_t aucTspecBodyPart[];
 };
 
 struct IE_WMM_HDR {
@@ -669,7 +669,7 @@ struct IE_WMM_HDR {
 	uint8_t ucOuiType;	/* OUI Type */
 	uint8_t ucOuiSubtype;	/* OUI Subtype */
 	uint8_t ucVersion;	/* Version */
-	uint8_t aucBody[1];	/* IE body */
+	uint8_t aucBody[];	/* IE body */
 };
 
 __KAL_ATTRIB_PACKED_FRONT__

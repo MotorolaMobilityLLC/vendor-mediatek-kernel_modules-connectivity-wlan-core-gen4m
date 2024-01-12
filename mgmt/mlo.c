@@ -447,10 +447,10 @@ done:
 	}
 }
 
-void mldGenerateProbeRspIE(
-	struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
-	uint8_t ucBssIdx, struct WLAN_BEACON_FRAME *prProbeRspFrame,
-	PFN_COMPOSE_PROBE_RESP_IE_FUNC pfnComposeIE)
+void mldGenerateProbeRspIE(struct ADAPTER *prAdapter,
+			   struct MSDU_INFO *prMsduInfo, uint8_t ucBssIdx,
+			   struct WLAN_BEACON_FRAME *prProbeRspFrame,
+			   PFN_COMPOSE_PROBE_RESP_IE_FUNC pfnComposeIE)
 {
 	struct MSDU_INFO *msdu_sta;
 	struct MLD_BSS_INFO *mld_bssinfo;
@@ -2602,10 +2602,11 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(que);
 }
 
-uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
-	struct SW_RFB *prDst, struct SW_RFB *prSrc, const uint8_t *ml,
-	struct STA_PROFILE *prSta, struct BSS_DESC *prBssDesc,
-	struct STA_RECORD *prStaRec, const char *pucDesc)
+uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
+			      struct SW_RFB *prSrc, const uint8_t *ml,
+			      struct STA_PROFILE *prSta,
+			      struct BSS_DESC *prBssDesc,
+			      struct STA_RECORD *prStaRec, const char *pucDesc)
 {
 	int offset;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
@@ -2653,8 +2654,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
 	mgmt->u2FrameCtrl = fctrl;
 
 	if (fctrl == MAC_FRAME_PROBE_RSP || fctrl == MAC_FRAME_BEACON) {
-		struct WLAN_BEACON_FRAME *bcn =
-			(struct WLAN_BEACON_FRAME *)prDst->pvHeader;
+		struct WLAN_BEACON_FRAME *bcn = prDst->pvHeader;
 
 		if (prBssDesc)
 			bcn->u2CapInfo = prBssDesc->u2CapInfo;

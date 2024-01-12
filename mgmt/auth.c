@@ -244,9 +244,7 @@ struct MSDU_INFO *authComposeAuthFrame(struct ADAPTER *prAdapter,
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
 
-	for (i = 0;
-	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txAuthIETable); i++) {
 		if (txAuthIETable[i].u2EstimatedFixedIELen != 0)
 			u2EstimatedExtraIELen +=
 				txAuthIETable[i].u2EstimatedFixedIELen;
@@ -338,9 +336,7 @@ struct MSDU_INFO *authComposeAuthFrame(struct ADAPTER *prAdapter,
 		nicTxConfigPktOption(prMsduInfo, MSDU_OPT_PROTECTED_FRAME,
 				     TRUE);
 	/* 4 <4> Compose IEs in MSDU_INFO_T */
-	for (i = 0;
-	     i < sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txAuthIETable); i++) {
 		if (txAuthIETable[i].pfnAppendIE)
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 	}
@@ -757,10 +753,7 @@ uint32_t authProcessRxAuth2_Auth4Frame(struct ADAPTER *prAdapter,
 		ucIEID = IE_ID(pucIEsBuffer);
 		ucIEExtID = IE_ID_EXT(pucIEsBuffer);
 
-		for (i = 0;
-		     i <
-		     (sizeof(rxAuthIETable) / sizeof(struct HANDLE_IE_ENTRY));
-		     i++) {
+		for (i = 0; i < ARRAY_SIZE(rxAuthIETable); i++) {
 			if (ucIEID != rxAuthIETable[i].ucElemID)
 				continue;
 			if (ucIEID == ELEM_ID_EXTENSION && ucIEExtID !=

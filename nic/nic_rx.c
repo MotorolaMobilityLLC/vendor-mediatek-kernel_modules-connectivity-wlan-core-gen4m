@@ -3558,7 +3558,7 @@ uint8_t nicIsActionFrameValid(struct SW_RFB *prSwRfb)
 {
 	struct WLAN_ACTION_FRAME *prActFrame;
 	uint16_t u2ActionIndex = 0, u2ExpectedLen = 0;
-	uint32_t u4Idx, u4Size;
+	uint32_t u4Idx;
 
 	if (prSwRfb->u2PacketLen < sizeof(struct WLAN_ACTION_FRAME) - 1)
 		return FALSE;
@@ -3568,9 +3568,7 @@ uint8_t nicIsActionFrameValid(struct SW_RFB *prSwRfb)
 	       prActFrame->ucCategory, prActFrame->ucAction);
 
 	u2ActionIndex = prActFrame->ucCategory | prActFrame->ucAction << 8;
-	u4Size = sizeof(arActionFrameReservedLen) /
-		 sizeof(struct ACTION_FRAME_SIZE_MAP);
-	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(arActionFrameReservedLen); u4Idx++) {
 		if (u2ActionIndex == arActionFrameReservedLen[u4Idx].u2Index) {
 			u2ExpectedLen = (uint16_t)
 				arActionFrameReservedLen[u4Idx].len;

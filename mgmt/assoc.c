@@ -1465,11 +1465,10 @@ uint32_t assocProcessRxAssocReqFrame(
 		pu2StatusCode);
 }
 
-uint32_t assocProcessRxAssocReqFrameImpl(
-	struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb,
-	struct STA_RECORD *prStaRec,
-	uint16_t *pu2StatusCode)
+uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
+					 struct SW_RFB *prSwRfb,
+					 struct STA_RECORD *prStaRec,
+					 uint16_t *pu2StatusCode)
 {
 	struct WLAN_ASSOC_REQ_FRAME *prAssocReqFrame;
 	struct BSS_INFO *prBssInfo;
@@ -1508,7 +1507,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 #endif
 
 	/* 4 <1> locate the Association Req Frame. */
-	prAssocReqFrame = (struct WLAN_ASSOC_REQ_FRAME *)prSwRfb->pvHeader;
+	prAssocReqFrame = prSwRfb->pvHeader;
 
 	/* WLAN_GET_FIELD_16(&prAssocReqFrame->u2FrameCtrl,
 	 *    &u2RxFrameCtrl);
@@ -1731,11 +1730,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(
 			break;
 
 		default:
-			for (i = 0;
-			     i <
-			     (sizeof(rxAssocReqIETable) /
-			      sizeof(struct VERIFY_IE_ENTRY)); i++) {
-
+			for (i = 0; i < ARRAY_SIZE(rxAssocReqIETable); i++) {
 				if (((IE_ID(pucIE)) ==
 				     rxAssocReqIETable[i].ucElemID)
 				    && (rxAssocReqIETable[i].pfnVarifyIE !=
@@ -2099,11 +2094,7 @@ struct MSDU_INFO *assocComposeReAssocRespFrame(struct ADAPTER *prAdapter,
 	/* + Extra IE Length */
 	u2EstimatedExtraIELen = 0;
 
-	for (i = 0;
-	     i <
-	     (uint32_t) sizeof(txAssocRespIETable) /
-	     (uint32_t) sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txAssocRespIETable); i++) {
 		if (txAssocRespIETable[i].u2EstimatedFixedIELen != 0) {
 			u2EstimatedExtraIELen +=
 			    txAssocRespIETable[i].u2EstimatedFixedIELen;
@@ -2164,10 +2155,7 @@ struct MSDU_INFO *assocComposeReAssocRespFrame(struct ADAPTER *prAdapter,
 	/* 4 <5> Compose IEs in MSDU_INFO_T */
 
 	/* Append IE */
-	for (i = 0;
-	     i <
-	     sizeof(txAssocRespIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txAssocRespIETable); i++) {
 		if (txAssocRespIETable[i].pfnAppendIE)
 			txAssocRespIETable[i].pfnAppendIE(prAdapter,
 							  prMsduInfo);
