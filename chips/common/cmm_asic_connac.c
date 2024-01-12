@@ -1691,3 +1691,73 @@ int connsys_power_done(void)
 void connsys_power_off(void)
 {
 }
+
+#if CFG_MTK_ANDROID_WMT
+static int wlanWmtCbGetBusCnt(void)
+{
+	struct wireless_dev *prWdev = gprWdev[0];
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return 0;
+
+	return prGlueInfo->rHifInfo.u4HifCnt;
+}
+
+static int wlanWmtCbClrBusCnt(void)
+{
+	struct wireless_dev *prWdev = gprWdev[0];
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prGlueInfo->rHifInfo.u4HifCnt = 0;
+
+	return 0;
+}
+
+static int wlanWmtCbSetMpuProtect(bool enable)
+{
+	struct mt66xx_hif_driver_data *data = get_platform_driver_data();
+
+#if CFG_MTK_ANDROID_EMI
+	kalSetEmiMpuProtection(emi_mem_get_phy_base(data->chip_info),
+		enable);
+#endif
+	return 0;
+}
+
+static int wlanWmtCbIsWifiDrvOwn(void)
+{
+	struct wireless_dev *prWdev = gprWdev[0];
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->prAdapter)
+		return 0;
+
+	return (prGlueInfo->prAdapter->fgIsFwOwn == FALSE) ? 1 : 0;
+}
+
+void unregister_plat_connsys_cbs(void)
+{
+	mtk_wcn_wmt_wlan_unreg();
+}
+
+void register_plat_connsys_cbs(void)
+{
+	struct _MTK_WCN_WMT_WLAN_CB_INFO rWmtCb;
+
+	kalMemZero(&rWmtCb, sizeof(struct _MTK_WCN_WMT_WLAN_CB_INFO));
+	rWmtCb.wlan_probe_cb = wlanFuncOn;
+	rWmtCb.wlan_remove_cb = wlanFuncOff;
+	rWmtCb.wlan_bus_cnt_get_cb = wlanWmtCbGetBusCnt;
+	rWmtCb.wlan_bus_cnt_clr_cb = wlanWmtCbClrBusCnt;
+	rWmtCb.wlan_emi_mpu_set_protection_cb = wlanWmtCbSetMpuProtect;
+	rWmtCb.wlan_is_wifi_drv_own_cb = wlanWmtCbIsWifiDrvOwn;
+
+	mtk_wcn_wmt_wlan_reg(&rWmtCb);
+}
+#endif
+

@@ -81,6 +81,11 @@
 #include "conninfra.h"
 #endif
 
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#include "conninfra.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************

@@ -1037,6 +1037,16 @@ void mddpNotifyWifiOnStart(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
+	if (!is_cal_flow_finished())
+		return;
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing())
+		return;
+#endif
+#endif
+
 	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
@@ -1048,6 +1058,16 @@ int32_t mddpNotifyWifiOnEnd(void)
 
 	if (!mddpIsSupportMcifWifi())
 		return ret;
+
+	if (!is_cal_flow_finished())
+		return ret;
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing())
+		return ret;
+#endif
+#endif
 
 	/* Notify Driver own timeout time before Wi-Fi on end */
 	mddpNotifyDrvOwnTimeoutTime();
@@ -1085,6 +1105,16 @@ void mddpNotifyWifiOffStart(void)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
+	if (!is_cal_flow_finished())
+		return;
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing())
+		return;
+#endif
+#endif
+
 	mddpSetMDFwOwn();
 
 	mtk_ccci_register_md_state_cb(NULL);
@@ -1107,6 +1137,16 @@ void mddpNotifyWifiOffEnd(void)
 
 	if (!mddpIsSupportMcifWifi())
 		return;
+
+	if (!is_cal_flow_finished())
+		return;
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (is_pwr_on_notify_processing())
+		return;
+#endif
+#endif
 
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_SHM)
 		u4ClrBits = g_rSettings.u4WifiOnBit;

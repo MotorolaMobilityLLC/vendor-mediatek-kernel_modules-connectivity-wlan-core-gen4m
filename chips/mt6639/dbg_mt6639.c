@@ -1816,6 +1816,9 @@ void mt6639_dumpWfBusReg(struct ADAPTER *ad)
 
 static void mt6639_dumpConninfraBus(struct ADAPTER *ad)
 {
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI);
+#endif
 }
 
 void mt6639_DumpBusHangCr(struct ADAPTER *ad)
