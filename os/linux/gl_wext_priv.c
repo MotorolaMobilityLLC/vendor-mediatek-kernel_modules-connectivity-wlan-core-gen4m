@@ -16156,27 +16156,6 @@ int priv_driver_get_capab_rsdb(struct net_device *prNetDev,
 
 }
 
-static uint8_t *_getStrFromBssOpBw(struct BSS_INFO *prBssInfo)
-{
-	uint8_t *apucDebug[] = {
-		(uint8_t *) DISP_STRING("20"),
-		(uint8_t *) DISP_STRING("40"),
-		(uint8_t *) DISP_STRING("80"),
-		(uint8_t *) DISP_STRING("160"),
-		(uint8_t *) DISP_STRING("80+80"),
-		(uint8_t *) DISP_STRING("320-1"),
-		(uint8_t *) DISP_STRING("320-2"),
-		(uint8_t *) DISP_STRING("UNKNOWN"),
-	};
-	uint8_t ucBssOpBw =
-		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
-
-	if (ucBssOpBw < MAX_BW_UNKNOWN)
-		return apucDebug[ucBssOpBw];
-
-	return (uint8_t *) DISP_STRING("UNKNOWN");
-}
-
 int priv_driver_get_cnm(struct net_device *prNetDev,
 			       char *pcCommand, int i4TotalLen)
 {
@@ -16334,7 +16313,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 			prCnmInfo->ucBssWmmDBDCBand[ucBssIdx],
 			prCnmInfo->ucBssOMACSet[ucBssIdx],
 			prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
-			_getStrFromBssOpBw(prBssInfo),
+			bssOpBw2Str(prBssInfo),
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 			prCnmInfo->ucBssOpTxNss[ucBssIdx],
 			prCnmInfo->ucBssOpRxNss[ucBssIdx]);

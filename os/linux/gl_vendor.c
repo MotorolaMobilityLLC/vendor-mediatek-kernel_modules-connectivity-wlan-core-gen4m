@@ -3546,9 +3546,11 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	}
 
 	DBGLOG(P2P, TRACE, "num. of preferred freq list = %d\n", num_freq_list);
-	for (i = 0; i < num_freq_list; i++)
-		DBGLOG(P2P, TRACE, "dump preferred freq list[%d] = %d\n",
-			i, freq_list[i]);
+	for (i = 0; i < num_freq_list; i++) {
+		DBGLOG(P2P, TRACE, "dump preferred freq list[%u]: %u, ch: %u\n",
+			i, freq_list[i],
+			nicFreq2ChannelNum(freq_list[i] * 1000));
+	}
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(u32) +
 			sizeof(uint32_t) * num_freq_list + NLMSG_HDRLEN);

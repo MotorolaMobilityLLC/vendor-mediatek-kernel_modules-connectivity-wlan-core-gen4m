@@ -884,6 +884,91 @@ bssSendQoSNullFrame(struct ADAPTER *prAdapter,
 
 }				/* end of bssSendQoSNullFrame() */
 
+uint8_t *bssOpBw2Str(struct BSS_INFO *prBssInfo)
+{
+	uint8_t *apucDebug[] = {
+		(uint8_t *) DISP_STRING("20"),
+		(uint8_t *) DISP_STRING("40"),
+		(uint8_t *) DISP_STRING("80"),
+		(uint8_t *) DISP_STRING("160"),
+		(uint8_t *) DISP_STRING("80+80"),
+		(uint8_t *) DISP_STRING("320-1"),
+		(uint8_t *) DISP_STRING("320-2"),
+		(uint8_t *) DISP_STRING("UNKNOWN"),
+	};
+	uint8_t ucBssOpBw =
+		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+
+	if (ucBssOpBw < MAX_BW_UNKNOWN)
+		return apucDebug[ucBssOpBw];
+
+	return (uint8_t *) DISP_STRING("UNKNOWN");
+}
+
+uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
+			      struct BSS_INFO **prBssList,
+			      uint8_t fgIsForPrefFreq)
+{
+	struct BSS_INFO *bss;
+	uint8_t i, ucNumAliveBss = 0, fgIsApGoExist = FALSE;
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!IS_BSS_ALIVE(prAdapter, bss) || bss->eBand != eBand)
+			continue;
+
+		if (IS_BSS_APGO(bss))
+			fgIsApGoExist = TRUE;
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!IS_BSS_ALIVE(prAdapter, bss) || bss->eBand != eBand)
+			continue;
+
+		/* only get AP/GO if AP/GO exist for pref freq selection */
+		if (!fgIsForPrefFreq || !fgIsApGoExist || IS_BSS_APGO(bss)) {
+			prBssList[ucNumAliveBss++] = bss;
+			DBGLOG(BSS, TRACE, "[%s] BSS%u, band:%u, ch:%u, bw:%s",
+			       bssGetRoleTypeString(prAdapter, bss),
+			       i, bss->eBand, bss->ucPrimaryChannel,
+			       bssOpBw2Str(bss));
+		} else {
+			DBGLOG(BSS, TRACE,
+			       "AP/GO exist in band, ignore BSS[%u] to prevent MCC for pref freq selection",
+			       i);
+		}
+	}
+	return ucNumAliveBss;
+}
+
+const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
+				 struct BSS_INFO *bss)
+{
+	if (IS_BSS_AIS(bss))
+		return "STA";
+#if CFG_ENABLE_WIFI_DIRECT
+	else if (IS_BSS_P2P(bss)) {
+		if (IS_BSS_GC(bss))
+			return "GC";
+		else if (IS_BSS_APGO(bss)) {
+			if (p2pFuncIsAPMode(
+				prAdapter->rWifiVar.prP2PConnSettings[
+					bss->u4PrivateData]))
+				return "SAP";
+			else
+				return "GO";
+		}
+	}
+#endif
+	else if (IS_BSS_BOW(bss))
+		return "BOW";
+
+	return "Unknown";
+}
+
 #if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 /*---------------------------------------------------------------------------*/
 /* Routines for both IBSS(AdHoc) and BSS(AP)                                 */
