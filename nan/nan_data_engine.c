@@ -4413,6 +4413,12 @@ static struct MSDU_INFO *nanCopyFromRetryMsdu(struct ADAPTER *prAdapter,
 		return prMsduInfo;
 
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, prRetryMsduInfo->u2FrameLength);
+
+	if (prMsduInfo == NULL) {
+		DBGLOG(NAN, WARN, "Can't alloc prMsduInfo\n");
+		return prMsduInfo;
+	}
+
 	kalMemCopy(prMsduInfo->prPacket, prRetryMsduInfo->prPacket,
 			   prRetryMsduInfo->u2FrameLength);
 	prMsduInfo->u2FrameLength = prRetryMsduInfo->u2FrameLength;
