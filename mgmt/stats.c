@@ -408,11 +408,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 0x85:
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX><IPv6> Router Solicitation\n");
 				break;
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX><IPv6> Router Solicitation\n");
 				break;
 			}
@@ -420,11 +420,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 0x86:
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX><IPv6> Router Advertisement\n");
 				break;
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX><IPv6> Router Advertisement\n");
 				break;
 			}
@@ -432,11 +432,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case ICMPV6_TYPE_NEIGHBOR_SOLICITATION:
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX><IPv6> Neighbor Solicitation\n");
 				break;
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX><IPv6> Neighbor Solicitation\n");
 				break;
 			}
@@ -444,11 +444,11 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT:
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG_LIMITED(RX, INFO,
+				DBGLOG_LIMITED(RX, TRACE,
 					"<RX><IPv6> Neighbor Advertisement\n");
 				break;
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO,
+				DBGLOG_LIMITED(TX, TRACE,
 					"<TX><IPv6> Neighbor Advertisement\n");
 				break;
 			}
@@ -480,10 +480,12 @@ static void statsParsePktInfo(uint8_t *pucPkt, struct sk_buff *skb,
 		case 1: /* eapol start */
 			switch (eventType) {
 			case EVENT_RX:
-				DBGLOG_LIMITED(RX, INFO, "<RX> EAPOL: start\n");
+				DBGLOG_LIMITED(RX, TRACE,
+					"<RX> EAPOL: start\n");
 				break;
 			case EVENT_TX:
-				DBGLOG_LIMITED(TX, INFO, "<TX> EAPOL: start\n");
+				DBGLOG_LIMITED(TX, TRACE,
+					"<TX> EAPOL: start\n");
 				break;
 			}
 			break;
