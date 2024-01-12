@@ -3676,14 +3676,14 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 /*!
  * \brief Unregister the device from the kernel
  *
- * \param[in] prWdev      Pointer to struct net_device.
+ * \param[in] prWdev      Pointer to struct wireless_dev.
  *
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
 static void wlanNetUnregister(struct wireless_dev *prWdev)
 {
-	struct GLUE_INFO *prGlueInfo;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	if (!prWdev) {
 		DBGLOG(INIT, ERROR, "The device context is NULL\n");
@@ -3691,6 +3691,19 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 	}
 
 	WIPHY_PRIV(prWdev->wiphy, prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return;
+	}
+
+	if (!prGlueInfo->prDevHandler) {
+		DBGLOG(INIT, ERROR, "prDevHandler is NULL.\n");
+		return;
+	}
+
+	if (netif_carrier_ok(prGlueInfo->prDevHandler))
+		netif_carrier_off(prGlueInfo->prDevHandler);
+	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
 
 #if !CFG_SUPPORT_PERSIST_NETDEV
 	{
