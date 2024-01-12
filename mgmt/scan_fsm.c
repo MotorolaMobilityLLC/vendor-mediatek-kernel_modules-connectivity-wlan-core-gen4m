@@ -264,7 +264,7 @@ void scnSendScanReqV2(struct ADAPTER *prAdapter)
 	if (prScanParam->ucScnFuncMask & ENUM_SCN_USE_PADDING_AS_BSSID ||
 		prScanParam->u4ScnFuncMaskExtend & ENUM_SCN_ML_PROBE) {
 		kalMemCopy(prCmdScanReq->aucExtBSSID,
-			&prScanParam->aucBSSID[0][0],
+			prScanParam->aucBSSID,
 			CFG_SCAN_OOB_MAX_NUM * MAC_ADDR_LEN);
 	} else {
 		COPY_MAC_ADDR(prCmdScanReq->aucBSSID,
@@ -781,8 +781,8 @@ void scnFsmHandleScanMsgV2(struct ADAPTER *prAdapter,
 	prScanParam->eMsgId = prScanReqMsg->rMsgHdr.eMsgId;
 	prScanParam->fgIsScanV2 = TRUE;
 
-	kalMemCopy(&prScanParam->aucBSSID[0][0],
-		&prScanReqMsg->aucExtBssid[0][0],
+	kalMemCopy(prScanParam->aucBSSID,
+		prScanReqMsg->aucExtBssid,
 		CFG_SCAN_OOB_MAX_NUM * MAC_ADDR_LEN);
 
 #if CFG_MTK_FPGA_PLATFORM
@@ -1047,7 +1047,8 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 	prScanInfo->ucScnTimeoutTimes = 0;
 	prScanInfo->ucScnTimeoutSubsysResetCnt = 0;
 
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover)) {
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover)
+		&& IS_BSS_INDEX_AIS(prAdapter, prScanParam->ucBssIndex)) {
 		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
 				prScanInfo, prScanParam->ucBssIndex);
 	}
@@ -1729,14 +1730,12 @@ scnDoZeroMdrdyRecoveryCheck(struct ADAPTER *prAdapter,
 		prScanDone->ucSparseChannelArrayValidNum <= 5)
 		fgRecovery = FALSE;
 
-	/* Only AIS scan will do Recovery, exclude OOB scan */
-	if ((prScanInfo->rScanParam.eMsgId != MID_AIS_SCN_SCAN_REQ &&
-		prScanInfo->rScanParam.eMsgId != MID_AIS_SCN_SCAN_REQ_V2) ||
-		(prScanInfo->rScanParam.ucScnFuncMask &
-		ENUM_SCN_USE_PADDING_AS_BSSID))
+	/* exclude OOB scan */
+	if (prScanInfo->rScanParam.ucScnFuncMask
+		& ENUM_SCN_USE_PADDING_AS_BSSID)
 		fgRecovery = FALSE;
 
-	/* Not to do recovery for roaming scan*/
+	/* Not to do recovery for roaming scan */
 	if (aisNeedTargetScan(prAdapter, ucBssIndex) ||
 		prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
 		fgRecovery = FALSE;
