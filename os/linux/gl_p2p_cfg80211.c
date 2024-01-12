@@ -1389,7 +1389,11 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 									     +
 									     settings->beacon.head_len +
 									     settings->beacon.tail_len +
-									     settings->beacon.assocresp_ies_len));
+									     settings->beacon.assocresp_ies_len
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+										 + settings->beacon.proberesp_ies_len
+#endif
+									     ));
 
 		if (prP2pBcnUpdateMsg == NULL) {
 			ASSERT(FALSE);
@@ -1443,6 +1447,17 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy, struct net_device *dev, struc
 			prP2pBcnUpdateMsg->u4AssocRespLen = 0;
 			prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
 		}
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+		if (settings->beacon.proberesp_ies_len != 0 && settings->beacon.proberesp_ies != NULL) {
+			prP2pBcnUpdateMsg->pucProbeRespIE = pucBuffer;
+			kalMemCopy(pucBuffer, settings->beacon.proberesp_ies, settings->beacon.proberesp_ies_len);
+			prP2pBcnUpdateMsg->u4ProbeRespLen = settings->beacon.proberesp_ies_len;
+		} else {
+			prP2pBcnUpdateMsg->u4ProbeRespLen = 0;
+			prP2pBcnUpdateMsg->pucProbeRespIE = NULL;
+		}
+#endif
 
 		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pBcnUpdateMsg, MSG_SEND_METHOD_BUF);
 
@@ -1829,7 +1844,11 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 			    (struct MSG_P2P_BEACON_UPDATE *) cnmMemAlloc(prGlueInfo->prAdapter,
 								    RAM_TYPE_MSG, (sizeof(struct MSG_P2P_BEACON_UPDATE)
 										   + info->head_len + info->tail_len
-										   + info->assocresp_ies_len));
+										   + info->assocresp_ies_len
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+										   + info->proberesp_ies_len
+#endif
+											));
 
 			if (prP2pBcnUpdateMsg == NULL) {
 				ASSERT(FALSE);
@@ -1878,6 +1897,17 @@ int mtk_p2p_cfg80211_change_beacon(struct wiphy *wiphy, struct net_device *dev, 
 				prP2pBcnUpdateMsg->u4AssocRespLen = 0;
 				prP2pBcnUpdateMsg->pucAssocRespIE = NULL;
 			}
+
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+			if (info->proberesp_ies_len != 0 && info->proberesp_ies != NULL) {
+				prP2pBcnUpdateMsg->pucProbeRespIE = pucBuffer;
+				kalMemCopy(pucBuffer, info->proberesp_ies, info->proberesp_ies_len);
+				prP2pBcnUpdateMsg->u4ProbeRespLen = info->proberesp_ies_len;
+			} else {
+				prP2pBcnUpdateMsg->u4ProbeRespLen = 0;
+				prP2pBcnUpdateMsg->pucProbeRespIE = NULL;
+			}
+#endif
 
 			kalP2PSetRole(prGlueInfo, 2, ucRoleIdx);
 

@@ -2113,6 +2113,95 @@ p2pFuncDisassoc(IN struct ADAPTER *prAdapter,
 
 #endif
 
+#if CFG_SUPPORT_P2P_GO_OFFLOAD_PROBE_RSP
+uint32_t
+p2pFuncProbeRespUpdate(IN struct ADAPTER *prAdapter,
+		IN struct BSS_INFO *prP2pBssInfo,
+		IN uint8_t *ProbeRespIE, IN uint32_t u4ProbeRespLen)
+
+{
+	struct MSDU_INFO *prMsduInfo = (struct MSDU_INFO *) NULL;
+	uint32_t u4IeArraySize = 0, u4Idx = 0;
+	uint8_t *pucP2pIe = (uint8_t *) NULL;
+	uint8_t *pucWpsIe = (uint8_t *) NULL;
+	uint8_t *pucWfdIe = (uint8_t *) NULL;
+
+	if (prP2pBssInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	/* reuse beacon MsduInfo */
+	prMsduInfo = prP2pBssInfo->prBeacon;
+
+	/* beacon prMsduInfo will be NULLify once BSS deactivated, so skip if it is */
+	if (!prMsduInfo)
+		return WLAN_STATUS_SUCCESS;
+
+	if (!ProbeRespIE) {
+		DBGLOG(BSS, INFO, "change beacon: has no extra probe response IEs\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[prP2pBssInfo->u4PrivateData])) {
+		DBGLOG(BSS, INFO, "change beacon: pure Ap mode do not add extra probe response IEs\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+	prMsduInfo->u2FrameLength = 0;
+
+	bssBuildBeaconProbeRespFrameCommonIEs(prMsduInfo, prP2pBssInfo, ProbeRespIE);
+
+	u4IeArraySize = sizeof(txProbeRspIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+
+	for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
+		if (txProbeRspIETable[u4Idx].pfnAppendIE)
+			txProbeRspIETable[u4Idx].pfnAppendIE(prAdapter, prMsduInfo);
+	}
+
+	/* process probe response IE from supplicant */
+	pucP2pIe = (uint8_t *) cfg80211_find_vendor_ie(WLAN_OUI_WFA,
+			WLAN_OUI_TYPE_WFA_P2P,
+			ProbeRespIE,
+			u4ProbeRespLen);
+
+	pucWfdIe = (uint8_t *) cfg80211_find_vendor_ie(WLAN_OUI_WFA,
+			WLAN_OUI_TYPE_WFA_P2P + 1,
+			ProbeRespIE,
+			u4ProbeRespLen);
+
+	pucWpsIe = (uint8_t *) cfg80211_find_vendor_ie(WLAN_OUI_MICROSOFT,
+			WLAN_OUI_TYPE_MICROSOFT_WPS,
+			ProbeRespIE,
+			u4ProbeRespLen);
+
+	if (pucP2pIe) {
+		kalMemCopy(prMsduInfo->prPacket + prMsduInfo->u2FrameLength,
+				pucP2pIe, IE_SIZE(pucP2pIe));
+		prMsduInfo->u2FrameLength += IE_SIZE(pucP2pIe);
+	}
+
+	if (pucWfdIe) {
+		kalMemCopy(prMsduInfo->prPacket + prMsduInfo->u2FrameLength,
+				pucWfdIe, IE_SIZE(pucWfdIe));
+		prMsduInfo->u2FrameLength += IE_SIZE(pucWfdIe);
+	}
+
+	if (pucWpsIe) {
+		kalMemCopy(prMsduInfo->prPacket + prMsduInfo->u2FrameLength,
+				pucWpsIe, IE_SIZE(pucWpsIe));
+		prMsduInfo->u2FrameLength += IE_SIZE(pucWpsIe);
+	}
+
+	DBGLOG(BSS, INFO, "update probe response for bss index: %d, IE len: %d\n",
+				prP2pBssInfo->ucBssIndex, prMsduInfo->u2FrameLength);
+	/* dumpMemory8(prMsduInfo->prPacket, prMsduInfo->u2FrameLength); */
+
+	return nicUpdateBeaconIETemplate(prAdapter,
+					IE_UPD_METHOD_UPDATE_PROBE_RSP,
+					prP2pBssInfo->ucBssIndex,
+					prP2pBssInfo->u2CapInfo,
+					prMsduInfo->prPacket,
+					prMsduInfo->u2FrameLength);
+}
+#endif
+
 /*----------------------------------------------------------------------------*/
 /*!
 * @brief This function is called to dissolve from group or one group. (Would not change P2P FSM.)
