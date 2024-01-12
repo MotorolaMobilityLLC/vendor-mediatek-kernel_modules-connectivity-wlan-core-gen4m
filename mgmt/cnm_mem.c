@@ -1391,6 +1391,156 @@ uint8_t *cnmStaRecGetRoleString(enum ENUM_STA_TYPE eStaType)
 	return pucRoleString;
 }
 
+int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
+	char *pcCommand, int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tBSS[%d]:\n", prBssInfo->ucBssIndex);
+
+	if (!prBssInfo->fgIsInUse) {
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"\t[ERROR] NOT IN USE!!\n", prBssInfo->ucBssIndex);
+		return i4BytesWritten;
+	}
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		 "\tACTIVE/HW_BAND/OMAC_IDX/OMAC_ADDR: %u/%u/%u/"MACSTR"\n",
+		prBssInfo->fgIsNetActive,
+		prBssInfo->eBandIdx,
+		prBssInfo->ucOwnMacIndex,
+		MAC2STR(prBssInfo->aucOwnMacAddr));
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		 "\tBMC/OP_MODE/WMM/CONN_STATE/BSSID: %u/%u/%u/%u/"MACSTR"\n",
+		prBssInfo->ucBMCWlanIndex,
+		prBssInfo->eCurrentOPMode,
+		prBssInfo->ucWmmQueSet,
+		prBssInfo->eConnectionState,
+		MAC2STR(prBssInfo->aucBSSID));
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		 "\tSSID/QBSS: %d %s/%u\n",
+		prBssInfo->ucSSIDLen,
+		prBssInfo->aucSSID,
+		prBssInfo->fgIsQBSS);
+#if 0
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		 "AID/BCN_INT/PHY/RATE/PROT:%d/%d/0x%x/0x%x/%u\n",
+		prBssInfo->u2AssocId,
+		prBssInfo->u2BeaconInterval,
+		prBssInfo->ucPhyTypeSet,
+		prBssInfo->u2BSSBasicRateSet,
+		secIsProtectedBss(prAdapter, prBssInfo));
+#endif
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tRF_BAND/CHANNEL/WIDTH/S1/S2: %u/%u/%u/%u/%u/\n",
+		prBssInfo->eBand,
+		prBssInfo->ucPrimaryChannel,
+		prBssInfo->ucVhtChannelWidth,
+		prBssInfo->ucVhtChannelFrequencyS1,
+		prBssInfo->ucVhtChannelFrequencyS2);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tGRP_MLD_ID/OWN_MLD_ID/LINK_ID: %u/%u/%u\n",
+		prBssInfo->ucGroupMldId,
+		prBssInfo->ucOwnMldId,
+		prBssInfo->ucLinkIndex);
+#endif
+
+	return i4BytesWritten;
+}
+
+int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
+	char *pcCommand, int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tSTA[%d][WIDX=%d]:\n",
+		prStaRec->ucIndex, prStaRec->ucWlanIndex);
+
+	if (!prStaRec->fgIsInUse) {
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"\t[ERROR] NOT IN USE!!\n", prStaRec->ucBssIndex);
+		return i4BytesWritten;
+	}
+
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tBSS_IDX/STATE/RCPI/MAC: %u/%u/%u/"MACSTR"\n",
+		prStaRec->ucBssIndex,
+		prStaRec->ucStaState,
+		prStaRec->ucRCPI,
+		MAC2STR(prStaRec->aucMacAddr));
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tDESIRE_PHY/BASIC_PHY/WMM/UAPSD: 0x%x/0x%x/%u/%u\n",
+		prStaRec->ucDesiredPhyTypeSet,
+		prStaRec->ucNonHTBasicPhyType,
+		prStaRec->fgIsWmmSupported,
+		prStaRec->fgIsUapsdSupported);
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tAID/OP_RATE/DESIRE_RATE/DEFAULT_RATE: %d/0x%x/0x%x/0x%x\n",
+		prStaRec->u2AssocId,
+		prStaRec->u2OperationalRateSet,
+		prStaRec->u2DesiredNonHTRateSet,
+		prStaRec->u2HwDefaultFixedRateCode);
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tPS/TX_ALLOWED/KEY_READY/TX_AMPDU/RX_AMPDU: %u/%u/%u/%u/%u\n",
+		prStaRec->fgIsInPS,
+		prStaRec->fgIsTxAllowed,
+		prStaRec->fgIsTxKeyReady,
+		prStaRec->fgTxAmpduEn,
+		prStaRec->fgRxAmpduEn);
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tHT_CAP/HT_EXT_CAP/TX_BF_CAP/VHT_CAP: 0x%x/0x%x/0x%x/0x%x\n",
+		prStaRec->u2HtCapInfo,
+		prStaRec->u2HtExtendedCap,
+		prStaRec->u4TxBeamformingCap,
+		prStaRec->u4VhtCapInfo);
+#if (CFG_SUPPORT_802_11AX == 1)
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tHE_MAC_CAP/HE_PHY_CAP: 0x%04x%08x/0x%02x%04x%016llx\n",
+		*(uint16_t *)(prStaRec->ucHeMacCapInfo + 4),
+		*(uint32_t *)(prStaRec->ucHeMacCapInfo),
+		*(uint8_t *)(prStaRec->ucHePhyCapInfo + 10),
+		*(uint16_t *)(prStaRec->ucHePhyCapInfo + 8),
+		*(uint64_t *)(prStaRec->ucHePhyCapInfo));
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tEHT_MAC_CAP/EHT_PHY_CAP: 0x%04x/0x%016llx\n",
+		(*(uint16_t *)(prStaRec->ucEhtMacCapInfo)),
+		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfo)));
+#endif
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	i4BytesWritten += kalSnprintf(
+		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+		"\tMLD_STA/LINK_ID/TID_BMAP/MLD_ADDR: %u/%u/0x%x/" MACSTR "\n",
+		prStaRec->ucMldStaIndex,
+		prStaRec->ucLinkIndex,
+		prStaRec->ucTidBitmap,
+		MAC2STR(prStaRec->aucMldAddr));
+#endif
+
+	return i4BytesWritten;
+}
+
 void cnmDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 {
 	struct BSS_INFO *prBssInfo;

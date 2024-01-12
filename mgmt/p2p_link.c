@@ -210,6 +210,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 {
 	struct WLAN_ASSOC_REQ_FRAME *prFrame = NULL;
 	struct MLD_STA_RECORD *prMldStarec = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 	struct STA_RECORD *prCurr;
 	struct LINK *prStarecList = NULL;
 	struct MULTI_LINK_INFO rMlInfo;
@@ -271,7 +272,9 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 		mldStarecRegister(prAdapter, prStaRec,
 			prMlInfo->aucMldAddr, MLD_GROUP_NONE);
 
-	prMldStarec = mldStarecGetByAddr(prAdapter, prStaRec->aucMldAddr);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+	prMldStarec = mldStarecGetByAddr(prAdapter,
+		prMldBssInfo, prStaRec->aucMldAddr);
 	if (!prMlInfo->ucValid || !prMldStarec) {
 		DBGLOG(AAA, WARN, "Incorrect ml valid=%d, mldStarec=%p!\n",
 			prMlInfo->ucValid, prMldStarec);
