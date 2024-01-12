@@ -1918,6 +1918,39 @@ struct UNI_CMD_SCAN_SSID_MATCH_SETS {
 	uint8_t  aucMatchSsidBuffer[0]; // SCAN_SCHED_SSID_MATCH_SETS_T
 } __KAL_ATTRIB_PACKED__;
 
+/* RDD set command (0x19) */
+struct UNI_CMD_RDD
+{
+	/*fixed field*/
+	uint8_t aucPadding[4];
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**< the TLVs included in this field:
+	*
+	*  TAG                          | ID   | structure
+	*  -------------                | -----| -------------
+	*  UNI_CMD_ID_RDD_ON_OFF_CTRL   | 0x0  | UNI_CMD_RDD_ON_OFF_CTRL_PARM_T
+	*/
+} __KAL_ATTRIB_PACKED__;
+
+/* RDD set command Tag */
+enum ENUM_UNI_CMD_RDD_TAG
+{
+	UNI_CMD_RDD_TAG_ON_OFF_CTRL_PARM = 0,
+	UNI_CMD_RDD_TAG_NUM
+};
+
+/* RDD on off command (Tag0) */
+struct UNI_CMD_RDD_ON_OFF_CTRL_PARM
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t u1DfsCtrl;
+	uint8_t u1RddIdx;
+	uint8_t u1RddRxSel;
+	uint8_t u1SetVal;
+	uint8_t aucReserve[4];
+} __KAL_ATTRIB_PACKED__;
+
 /* Get mac info command (0x1A) */
 struct UNI_CMD_GET_MAC_INFO
 {
@@ -3501,6 +3534,8 @@ uint32_t nicUniCmdInstallDefaultKey(struct ADAPTER *ad,
 uint32_t nicUniCmdOffloadKey(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdHifCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdRddOnOffCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
 /*******************************************************************************
