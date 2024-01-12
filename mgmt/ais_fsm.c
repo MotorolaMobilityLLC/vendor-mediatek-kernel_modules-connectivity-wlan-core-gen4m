@@ -1079,6 +1079,7 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	uint8_t	*prBssid = NULL;
 	struct PARAM_SSID rSsid = {0};
 	uint8_t	*prFilsCacheId = NULL;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
@@ -1094,6 +1095,7 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 
 	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	prBssid = cnmStaRecAuthAddr(prAdapter, prStaRec);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (prBssDesc->u4RsnSelectedAKMSuite == RSN_AKM_SUITE_FILS_SHA256 ||
@@ -1120,6 +1122,14 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 		(rsnApInvalidPMK(entry->u2StatusCode) ||
 		 prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE))
 		entry = NULL;
+
+	if (entry && prConnSettings->eAuthMode == AUTH_MODE_WPA3_OWE
+		&& bssGetIotApAction(prAdapter, prBssDesc) ==
+		WLAN_IOT_AP_OWE_PMK_REMOVE) {
+		DBGLOG(RSN, INFO,
+			"IoT AP: Do not apply PMKID in RSNIE if auth type is OWE");
+		entry = NULL;
+	}
 
 	return entry;
 }
