@@ -330,6 +330,9 @@ struct CHIP_DBG_OPS soc2_2x2_debug_ops = {
 	.showWtblInfo = NULL,
 	.printHifDbgInfo = halPrintHifDbgInfo,
 	.show_stat_info = halShowStatInfo,
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	.get_rx_rate_info = connac_get_rx_rate_info,
+#endif
 };
 
 struct mt66xx_chip_info mt66xx_chip_info_soc2_2x2 = {

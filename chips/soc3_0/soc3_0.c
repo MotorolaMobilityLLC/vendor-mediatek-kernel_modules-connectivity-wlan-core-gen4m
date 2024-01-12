@@ -1030,6 +1030,9 @@ struct CHIP_DBG_OPS soc3_0_debug_ops = {
 	.show_rx_rssi_info = connac2x_show_rx_rssi_info,
 	.show_stat_info = connac2x_show_stat_info,
 	.show_wfdma_dbg_probe_info = soc3_0_show_wfdma_dbg_probe_info,
+#ifdef CFG_SUPPORT_LINK_QUALITY_MONITOR
+	.get_rx_rate_info = connac2x_get_rx_rate_info
+#endif
 };
 
 #if CFG_SUPPORT_QA_TOOL
@@ -1089,6 +1092,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.is_support_hw_amsdu = TRUE,
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma1 = TRUE,
+	.get_rxv_from_rxrpt = TRUE,
 	.is_support_nvram_fragment = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
 	.asicWfdmaReInit_handshakeInit = asicConnac2xWfdmaDummyCrWrite,
