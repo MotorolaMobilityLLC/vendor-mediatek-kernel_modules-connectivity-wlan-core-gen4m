@@ -1,3 +1,12 @@
+# Makefile.x86: Makefile for Linux PC
+# You can build specific .ko name by assiging the "MTK_COMBO_CHIP" and "hif" parameters
+# hif = pcie or sdio or usb
+# Examples:
+# - Default=wlan_mt6632_pcie.ko:
+# 	make -f Makefile.x86
+# - wlan_mt7663_usb.ko:
+# 	make -f Makefile.x86 MTK_COMBO_CHIP=mt7663 hif=usb
+
 LINUX_SRC=/lib/modules/$(shell uname -r)/build
 
 export CONFIG_MTK_COMBO_PLATFORM=x86
@@ -34,6 +43,19 @@ export CONFIG_MTK_COMBO_PLAT_PATH=x86
 ##############################################################
 #/***** Common part ******/
 
+# Define maximum different channels supported for ieee80211_iface_combination setting.
+#CFG_NUM_DIFFERENT_CHANNELS_STA=1
+#CFG_NUM_DIFFERENT_CHANNELS_P2P=1
+
+# Define initial driver running mode.
+# 0=RUNNING_P2P_MODE, 1=RUNNING_AP_MODE, 2=RUNNING_DUAL_AP_MODE, 3=RUNNING_P2P_AP_MODE
+#CFG_DRIVER_INITIAL_RUNNING_MODE=3
+
+# Define to enable Android wake_lock
+#CFG_ENABLE_WAKE_LOCK=0
+
+#CFG_DEFAULT_DBG_LEVEL=0xF
+
 CFG_TX_DIRECT_USB=1
 
 CFG_RX_DIRECT_USB=1
@@ -53,8 +75,30 @@ CFG_USB_REQ_RX_DATA_CNT=2
 # eg. insmod wlan_mt76x8_usb.ko sta=wlan p2p=p2p ap=ap
 CFG_DRIVER_INF_NAME_CHANGE=n
 
+# Support firmware auto roaming
+#CFG_SUPPORT_ROAMING=0
 
 #/***** Manage configs into compile options ******/
+ifneq ($(CFG_NUM_DIFFERENT_CHANNELS_STA),)
+PLATFORM_FLAGS += -DCFG_NUM_DIFFERENT_CHANNELS_STA=$(CFG_NUM_DIFFERENT_CHANNELS_STA)
+endif
+
+ifneq ($(CFG_NUM_DIFFERENT_CHANNELS_P2P),)
+PLATFORM_FLAGS += -DCFG_NUM_DIFFERENT_CHANNELS_P2P=$(CFG_NUM_DIFFERENT_CHANNELS_P2P)
+endif
+
+ifneq ($(CFG_DRIVER_INITIAL_RUNNING_MODE),)
+PLATFORM_FLAGS += -DCFG_DRIVER_INITIAL_RUNNING_MODE=$(CFG_DRIVER_INITIAL_RUNNING_MODE)
+endif
+
+ifneq ($(CFG_ENABLE_WAKE_LOCK),)
+PLATFORM_FLAGS += -DCFG_ENABLE_WAKE_LOCK=$(CFG_ENABLE_WAKE_LOCK)
+endif
+
+ifneq ($(CFG_DEFAULT_DBG_LEVEL),)
+PLATFORM_FLAGS += -DCFG_DEFAULT_DBG_LEVEL=$(CFG_DEFAULT_DBG_LEVEL)
+endif
+
 ifneq ($(CFG_TX_DIRECT_USB),)
 PLATFORM_FLAGS += -DCFG_TX_DIRECT_USB=$(CFG_TX_DIRECT_USB)
 endif
@@ -73,6 +117,10 @@ endif
 
 ifneq ($(CFG_USB_REQ_RX_DATA_CNT),)
 PLATFORM_FLAGS += -DCFG_USB_REQ_RX_DATA_CNT=$(CFG_USB_REQ_RX_DATA_CNT)
+endif
+
+ifneq ($(CFG_SUPPORT_ROAMING),)
+PLATFORM_FLAGS += -DCFG_SUPPORT_ROAMING=$(CFG_SUPPORT_ROAMING)
 endif
 
 ifneq ($(CFG_SUPPORT_DFS_MASTER),)
