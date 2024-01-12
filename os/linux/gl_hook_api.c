@@ -4802,10 +4802,15 @@ uint32_t ServiceWlanOid(void *winfos,
 
 	if ((prStatsData) &&
 		(oidType == OP_WLAN_OID_QUERY_RX_STATISTICS)) {
-
+#if (CFG_SUPPORT_CONNAC3X == 0)
+		kalMemCopy(prStatsData,
+					&g_HqaRxStat,
+					HQA_RX_STATISTIC_NUM*4);
+#else
 		kalMemCopy(prStatsData,
 					&g_HqaRxStat,
 					sizeof(struct hqa_m_rx_stat));
+#endif
 	}
 
 #if (CFG_SUPPORT_ICAP_SOLICITED_EVENT == 1)

@@ -5215,13 +5215,14 @@ uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 
 	uni_cmd = (struct UNI_CMD_TESTMODE_RX_STAT *)entry->pucInfoBuffer;
 	tag = (struct UNI_CMD_TESTMODE_RX_GET_STAT_ALL *)uni_cmd->aucTlvBuffer;
+	tag->u2Length = sizeof(*tag);
 #if (CFG_SUPPORT_CONNAC3X == 0)
 	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL;
+	tag->u1DbdcIdx = 0;
 #else
 	tag->u2Tag = UNI_CMD_TESTMODE_RX_TAG_GET_STAT_ALL_V2;
-#endif
-	tag->u2Length = sizeof(*tag);
 	tag->u1DbdcIdx = cmd->ucDbdcIdx;
+#endif
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

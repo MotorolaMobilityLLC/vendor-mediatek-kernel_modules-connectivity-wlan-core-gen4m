@@ -5133,6 +5133,12 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 	*pu4QueryInfoLen = 8 + prRxStatistics->u4TotalNum;
 
 	do {
+#if (CFG_SUPPORT_CONNAC3X == 0)
+		prCmdAccessRxStat->u4SeqNum =
+			prRxStatistics->u4SeqNum;
+		prCmdAccessRxStat->u4TotalNum =
+			prRxStatistics->u4TotalNum;
+#else
 		prCmdAccessRxStat->u2SeqNum =
 			prRxStatistics->u2SeqNum;
 		prCmdAccessRxStat->u4TotalNum =
@@ -5141,6 +5147,7 @@ wlanoidQueryRxStatistics(IN struct ADAPTER *prAdapter,
 			prRxStatistics->ucDbdcIdx;
 		prCmdAccessRxStat->ucData =
 			prRxStatistics->ucData;
+#endif
 
 		rStatus = wlanSendSetQueryCmd(prAdapter,
 			      CMD_ID_ACCESS_RX_STAT,
