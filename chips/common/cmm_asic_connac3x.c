@@ -681,6 +681,59 @@ u_int8_t asicConnac3xWfdmaWaitIdle(
 	return FALSE;
 }
 
+void asicConnac3xWfdmaTxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_TX_RING *tx_ring,
+	u_int32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t phy_addr_ext = 0;
+	u_int32_t u4RegValue = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->u4DmaMask <= 32)
+		return;
+
+	phy_addr_ext = (((uint64_t)tx_ring->Cell[0].AllocPa >>
+			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK) << 16;
+
+	u4RegValue = tx_ring->u4RingSize & MT_RING_CNT_MASK;
+	phy_addr_ext |= u4RegValue;
+	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
+
+	HAL_MCR_WR(prAdapter, tx_ring->hw_cnt_addr,
+			phy_addr_ext);
+}
+
+void asicConnac3xWfdmaRxRingBasePtrExtCtrl(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *rx_ring,
+	u_int32_t index)
+{
+	struct BUS_INFO *prBusInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	uint32_t phy_addr_ext = 0;
+	u_int32_t u4RegValue = 0;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+
+	if (prBusInfo->u4DmaMask <= 32)
+		return;
+
+	phy_addr_ext = (((uint64_t)rx_ring->Cell[0].AllocPa >>
+			DMA_BITS_OFFSET) & DMA_HIGHER_4BITS_MASK) << 16;
+
+	u4RegValue = rx_ring->u4RingSize & MT_RING_CNT_MASK;
+	phy_addr_ext |= u4RegValue;
+	DBGLOG(HAL, TRACE, "phy_addr_ext=0x%x\n", phy_addr_ext);
+
+	HAL_MCR_WR(prAdapter, rx_ring->hw_cnt_addr,
+			phy_addr_ext);
+}
+
+
 void asicConnac3xWfdmaTxRingExtCtrl(
 	struct GLUE_INFO *prGlueInfo,
 	struct RTMP_TX_RING *tx_ring,
@@ -733,6 +786,8 @@ void asicConnac3xWfdmaTxRingExtCtrl(
 		prBusInfo->host_tx_ring_ext_ctrl_base + ext_offset;
 	HAL_MCR_WR(prAdapter, tx_ring->hw_desc_base_ext,
 		   CONNAC3X_TX_RING_DISP_MAX_CNT);
+	asicConnac3xWfdmaTxRingBasePtrExtCtrl(prGlueInfo,
+		tx_ring, index);
 }
 
 void asicConnac3xWfdmaRxRingExtCtrl(
@@ -775,6 +830,8 @@ void asicConnac3xWfdmaRxRingExtCtrl(
 
 	HAL_MCR_WR(prAdapter, rx_ring->hw_desc_base_ext,
 		   CONNAC3X_RX_RING_DISP_MAX_CNT);
+	asicConnac3xWfdmaRxRingBasePtrExtCtrl(prGlueInfo,
+		rx_ring, index);
 }
 
 void asicConnac3xEnablePlatformIRQ(struct ADAPTER *prAdapter)

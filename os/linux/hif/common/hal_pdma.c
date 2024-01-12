@@ -3055,22 +3055,22 @@ void halWpdmaInitTxRing(struct GLUE_INFO *prGlueInfo, bool fgResetHif)
 
 		prTxRing->hw_cidx_addr =
 			prBusInfo->host_tx_ring_cidx_addr + offset;
-		prTxRing->hw_cidx_mask = BITS(0, 12);
+		prTxRing->hw_cidx_mask = BITS(0, 11);
 		prTxRing->hw_cidx_shift = 0;
 		prTxRing->hw_didx_addr =
 			prBusInfo->host_tx_ring_didx_addr + offset;
-		prTxRing->hw_didx_mask = BITS(0, 12);
+		prTxRing->hw_didx_mask = BITS(0, 11);
 		prTxRing->hw_didx_shift = 0;
 		prTxRing->hw_cnt_addr =
 			prBusInfo->host_tx_ring_cnt_addr + offset;
-		prTxRing->hw_cnt_mask = BITS(0, 12);
+		prTxRing->hw_cnt_mask = BITS(0, 11);
 		prTxRing->hw_cnt_shift = 0;
 
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_desc_base, phy_addr);
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cidx_addr,
 			prTxRing->TxCpuIdx);
 		kalDevRegWrite(prGlueInfo, prTxRing->hw_cnt_addr,
-			prTxRing->u4RingSize);
+			prTxRing->u4RingSize & prTxRing->hw_cnt_mask);
 
 		if (prBusInfo->tx_ring_ext_ctrl)
 			prBusInfo->tx_ring_ext_ctrl(prGlueInfo, prTxRing, i);
@@ -3091,13 +3091,13 @@ uint8_t halSetRxRingHwAddr(
 	offset = u4SwRingIdx * MT_RINGREG_DIFF;
 	prRxRing->hw_desc_base = prBusInfo->host_rx_ring_base + offset;
 	prRxRing->hw_cidx_addr = prBusInfo->host_rx_ring_cidx_addr + offset;
-	prRxRing->hw_cidx_mask = BITS(0, 12);
+	prRxRing->hw_cidx_mask = BITS(0, 11);
 	prRxRing->hw_cidx_shift = 0;
 	prRxRing->hw_didx_addr = prBusInfo->host_rx_ring_didx_addr + offset;
-	prRxRing->hw_didx_mask = BITS(0, 12);
+	prRxRing->hw_didx_mask = BITS(0, 11);
 	prRxRing->hw_didx_shift = 0;
 	prRxRing->hw_cnt_addr = prBusInfo->host_rx_ring_cnt_addr + offset;
-	prRxRing->hw_cnt_mask = BITS(0, 12);
+	prRxRing->hw_cnt_mask = BITS(0, 11);
 	prRxRing->hw_cnt_shift = 0;
 
 	return TRUE;
@@ -3136,7 +3136,7 @@ void halWpdmaInitRxRing(struct GLUE_INFO *prGlueInfo)
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cidx_addr,
 			prRxRing->RxCpuIdx);
 		kalDevRegWrite(prGlueInfo, prRxRing->hw_cnt_addr,
-			prRxRing->u4RingSize);
+			prRxRing->u4RingSize & prRxRing->hw_cnt_mask);
 		/* Reset DMADONE bit */
 		for (j = 0; j < prRxRing->u4RingSize; j++) {
 			pRxD = (struct RXD_STRUCT *) prRxRing->Cell[j].AllocVa;
