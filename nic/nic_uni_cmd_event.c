@@ -28,7 +28,7 @@
 #include "gl_csi.h"
 #endif
 
-#if (CFG_HW_ERR_REPORT == 1)
+#if (CFG_HW_DETECT_REPORT == 1)
 #include "conn_dbg.h"
 #endif
 
@@ -270,8 +270,8 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_CE_ASSERT_DUMP == 1)
 	[UNI_EVENT_ID_ASSERT_DUMP] = nicUniEventAssertDump,
 #endif
-#if (CFG_HW_ERR_REPORT == 1)
-	[UNI_EVENT_ID_HW_ERROR_REPORT] = nicUniEventHwErrReport,
+#if (CFG_HW_DETECT_REPORT == 1)
+	[UNI_EVENT_ID_HW_DETECT_REPORT] = nicUniEventHwDetectReport,
 #endif
 	[UNI_EVENT_ID_UPDATE_LP] = nicUniEventUpdateLp,
 #if CFG_SUPPORT_WIFI_POWER_METRICS
@@ -7459,33 +7459,47 @@ uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 }
 #endif /* CFG_VOLT_INFO */
 
-#if (CFG_HW_ERR_REPORT == 1)
-void nicUniEventHwErrReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+#if (CFG_HW_DETECT_REPORT == 1)
+void nicUniEventHwDetectReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
+#define HW_DETECT_REPORT_STR_TO_NODE_MAX_LEN	(HW_DETECT_REPORT_STR_MAX_LEN+7)
 	int32_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_HW_ERROR_REPORT);
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_HW_DETECT_REPORT);
 	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint32_t fail_cnt = 0;
+	uint8_t	str_buf[HW_DETECT_REPORT_STR_TO_NODE_MAX_LEN];
+
+	if (!ad->rWifiVar.fgHwDetectReportEn)
+		return;
 
 	tags_len = data_len - fixed_len;
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		switch (TAG_ID(tag)) {
-		case UNI_EVENT_HW_ERROR_REPORT_BASIC: {
-			struct UNI_EVENT_HW_ERROR_REPORT_PARAM *hw_err_report =
-				(struct UNI_EVENT_HW_ERROR_REPORT_PARAM *)tag;
+		case UNI_EVENT_HW_DETECT_REPORT_BASIC: {
+			struct UNI_EVENT_HW_DETECT_REPORT_PARAM
+				*hw_detect_report =
+				(struct UNI_EVENT_HW_DETECT_REPORT_PARAM *)tag;
+
+			if (snprintf(str_buf,
+				HW_DETECT_REPORT_STR_TO_NODE_MAX_LEN,
+				"[wlan]%s\n",
+				hw_detect_report->aucStrBuffer) < 0) {
+				DBGLOG(NIC, ERROR,
+			       "HW Detect Report: %s copy failure\n", str_buf);
+				return;
+			}
 
 			DBGLOG(NIC, INFO,
-				"HW Detect Report: %s\n",
-				hw_err_report->aucStrBuffer);
+				"HW Detect Report: %s\n", str_buf);
 			conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
-				hw_err_report->aucStrBuffer);
+				str_buf);
 
 			kalSendAeeWarning("WLAN", "HW Detect Report: %s\n",
-				hw_err_report->aucStrBuffer);
+				str_buf);
 		}
 			break;
 		default:
@@ -7496,7 +7510,7 @@ void nicUniEventHwErrReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 }
-#endif /* CFG_HW_ERR_REPORT */
+#endif /* CFG_HW_DETECT_REPORT */
 
 #if CFG_FAST_PATH_SUPPORT
 uint32_t nicUniCmdFastPath(struct ADAPTER *ad,

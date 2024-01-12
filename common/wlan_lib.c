@@ -8438,6 +8438,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	prWifiVar->fgDynamicIcs = (uint8_t) wlanCfgGetUint32(
 		prAdapter, "DynamicIcsEn", FEATURE_ENABLED);
 #endif
+#if (CFG_HW_DETECT_REPORT == 1)
+	prWifiVar->fgHwDetectReportEn = (bool) wlanCfgGetUint32(
+		prAdapter, "HwDetectReportEnable", FEATURE_ENABLED);
+#endif /* CFG_HW_DETECT_REPORT  */
 
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
