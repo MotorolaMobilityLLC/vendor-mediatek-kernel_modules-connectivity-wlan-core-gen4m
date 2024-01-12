@@ -136,6 +136,7 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
 	[EXT_CMD_ID_STAREC_UPDATE] = nicUniCmdStaRecUpdateExt,
 	[EXT_CMD_ID_BF_ACTION] = nicUniCmdBFAction,
 	[EXT_CMD_ID_SER] = nicUniCmdSerAction,
+	[EXT_CMD_ID_GET_MAC_INFO] = nicUniCmdGetTsf,
 };
 
 static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
@@ -2236,6 +2237,38 @@ uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdGetTsf(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct _EXT_CMD_GET_MAC_INFO_T *cmd;
+	struct UNI_CMD_GET_MAC_INFO *uni_cmd;
+	struct UNI_CMD_MAC_INFO_TSF *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_MAC_INFO) +
+	     		       sizeof(struct UNI_CMD_MAC_INFO_TSF);
+
+	if (info->ucCID != CMD_ID_LAYER_0_EXT_MAGIC_NUM ||
+	    info->ucExtCID != EXT_CMD_ID_GET_MAC_INFO)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct _EXT_CMD_GET_MAC_INFO_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GET_MAC_INFO, max_cmd_len,
+			nicUniCmdEventGetTsfDone, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_GET_MAC_INFO *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MAC_INFO_TSF *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MAC_INFO_TAG_TSF;
+	tag->u2Length = sizeof(*tag);
+ 	tag->ucDbdcIdx = ENUM_BAND_AUTO;
+	tag->ucHwBssidIndex = cmd->rExtraArgument.rTsfArg.ucHwBssidIndex;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdStaRecConnType(struct ADAPTER *ad, uint32_t legacy_sta_type)
 {
 	if (legacy_sta_type == STA_TYPE_LEGACY_AP)
@@ -3155,6 +3188,21 @@ void nicUniCmdEventQueryMcrRead(IN struct ADAPTER *prAdapter,
 	legacy.u4Data = tag->u4Value;
 
 	nicCmdEventQueryMcrRead(prAdapter, prCmdInfo, (uint8_t *)&legacy);
+}
+
+void nicUniCmdEventGetTsfDone(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	struct UNI_EVENT_MAC_IFNO *evt =
+		(struct UNI_EVENT_MAC_IFNO *)pucEventBuf;
+	struct UNI_EVENT_MAC_INFO_TSF *tag =
+		(struct UNI_EVENT_MAC_INFO_TSF *) evt->aucTlvBuffer;
+	struct EXT_EVENT_MAC_INFO_T legacy;
+
+	legacy.rMacInfoResult.rTsfResult.u4TsfBitsLow = tag->u4TsfBit0_31;
+	legacy.rMacInfoResult.rTsfResult.u4TsfBitsHigh = tag->u4TsfBit63_32;
+
+	twtPlannerGetTsfDone(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
 
 void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
