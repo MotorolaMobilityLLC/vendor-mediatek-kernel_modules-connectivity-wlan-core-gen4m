@@ -12864,7 +12864,7 @@ int wlanGetMaxTxRate(IN struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE == 1)
 	if (ucPhyType & PHY_TYPE_SET_802_11BE)
-		ucTxMode = TX_RATE_MODE_EHT;
+		ucTxMode = TX_RATE_MODE_EHT_MU;
 	else
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)

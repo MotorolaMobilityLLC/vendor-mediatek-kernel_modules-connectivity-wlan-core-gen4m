@@ -26,6 +26,8 @@
 #include "coda/bellwether/conn_infra_cfg.h"
 #include "coda/bellwether/conn_infra_cfg_on.h"
 #include "hal_dmashdl_bellwether.h"
+#include "coda/bellwether/wf_wtblon_top.h"
+#include "coda/bellwether/wf_uwtbl_top.h"
 
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
