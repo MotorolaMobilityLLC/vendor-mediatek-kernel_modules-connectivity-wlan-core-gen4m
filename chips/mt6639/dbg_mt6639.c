@@ -1787,6 +1787,22 @@ void mt6639_dumpPcieReg(void)
 	DBGLOG(HAL, INFO, "CR[0x7403121C] value[0x%08x]\n", u4Value);
 }
 
+void mt6639_dumpPcieRegWithScanDump(void)
+{
+	uint32_t i = 0;
+	uint32_t u4Value = 0;
+	uint32_t u4RegVal = 0;
+
+	/* dump range from 0x7403_0000 to 0x7403_47FC */
+	for (i = 0; i <= 0x47FC; i += 4) {
+		u4RegVal = 0x74030000 + i;
+		connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+			u4RegVal, &u4Value);
+		DBGLOG(HAL, INFO, "CR[0x%08x] value[0x%08x]\n",
+			u4RegVal, u4Value);
+	}
+}
+
 bool mt6639_CheckDumpViaBt(void)
 {
 	return (fgIsBusAccessFailed || fgIsMcuOff) && fgTriggerDebugSop;
@@ -2345,6 +2361,31 @@ void mt6639_DumpBusHangCr(struct ADAPTER *ad)
 
 	chip_info = ad->chip_info;
 	debug_ops = chip_info->prDebugOps;
+
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (glGetRstReason() == RST_DRV_OWN_FAIL ||
+		mtk_get_aer_triggered()) {
+		/* Notify BT to start */
+		ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT);
+		if (ret != 0) {
+			DBGLOG(HAL, ERROR, "connv3_hif_dbg_start failed.\n");
+			goto exit_pcie_scan_dump;
+		} else {
+			DBGLOG(HAL, INFO,
+			"start BT dump for PCIe EP Scan dump.\n");
+		}
+
+		mt6639_dumpPcieRegWithScanDump();
+
+		/* Notify BT to end */
+		ret = connv3_hif_dbg_end(CONNV3_DRV_TYPE_WIFI,
+			CONNV3_DRV_TYPE_BT);
+		if (ret != 0)
+			DBGLOG(HAL, ERROR, "connv3_hif_dbg_end failed.\n");
+	}
+exit_pcie_scan_dump:
+#endif
 
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
