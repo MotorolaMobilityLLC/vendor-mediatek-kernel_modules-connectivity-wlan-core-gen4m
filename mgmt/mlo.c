@@ -2234,7 +2234,7 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 		}
 	}
 
-	return (struct SW_RFB *) QUEUE_GET_HEAD(que);
+	return QUEUE_GET_HEAD(que);
 }
 
 uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
@@ -2432,7 +2432,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		}
 	}
 
-	return (struct SW_RFB *) QUEUE_GET_HEAD(que);
+	return QUEUE_GET_HEAD(que);
 }
 
 void mldProcessBeaconAndProbeResp(

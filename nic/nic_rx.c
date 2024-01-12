@@ -755,8 +755,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 				prFragInfo->pr1stFrag->eDst =
 					RX_PKT_DESTINATION_NULL;
 				QUEUE_INSERT_TAIL(prReturnedQue,
-					(struct QUE_ENTRY *)
-					prFragInfo->pr1stFrag);
+						prFragInfo->pr1stFrag);
 
 				prFragInfo->pr1stFrag = (struct SW_RFB *) NULL;
 			}
@@ -905,9 +904,7 @@ struct SW_RFB *nicRxDefragMPDU(struct ADAPTER *prAdapter,
 		    CFG_RX_MAX_PKT_SIZE) {
 
 			prFragInfo->pr1stFrag->eDst = RX_PKT_DESTINATION_NULL;
-			QUEUE_INSERT_TAIL(prReturnedQue,
-				(struct QUE_ENTRY *)
-				prFragInfo->pr1stFrag);
+			QUEUE_INSERT_TAIL(prReturnedQue, prFragInfo->pr1stFrag);
 
 			prFragInfo->pr1stFrag = (struct SW_RFB *) NULL;
 
@@ -1234,8 +1231,7 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
 		QUEUE_INSERT_TAIL(&(prAdapter->rRxQueue),
-				  (struct QUE_ENTRY *) GLUE_GET_PKT_QUEUE_ENTRY(
-					  prSwRfb->pvPacket));
+				  GLUE_GET_PKT_QUEUE_ENTRY(prSwRfb->pvPacket));
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_TO_OS_QUE);
 
 		prRxCtrl->ucNumIndPacket++;
@@ -1699,10 +1695,7 @@ void nicRxIndicatePackets(struct ADAPTER *prAdapter,
 #endif
 
 		/* save next first */
-		prNextSwRfb = (struct SW_RFB *)
-			QUEUE_GET_NEXT_ENTRY(
-				(struct QUE_ENTRY *)
-				prRetSwRfb);
+		prNextSwRfb = QUEUE_GET_NEXT_ENTRY(prRetSwRfb);
 
 		switch (prRetSwRfb->eDst) {
 		case RX_PKT_DESTINATION_HOST:
@@ -2658,7 +2651,7 @@ struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 	if (likely(i == num))
-		return (struct SW_RFB *)QUEUE_GET_HEAD(que);
+		return QUEUE_GET_HEAD(que);
 
 	/* Fail to get RFB from rFreeSwRfbList */
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
@@ -2679,7 +2672,7 @@ struct SW_RFB *nicRxAcquireRFB(struct ADAPTER *prAdapter, uint16_t num)
 	}
 
 	/* Assume heap is always sufficient, skip check allocated num */
-	return (struct SW_RFB *)QUEUE_GET_HEAD(que);
+	return QUEUE_GET_HEAD(que);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2707,8 +2700,7 @@ void nicRxReceiveRFB(struct ADAPTER *prAdapter, struct SW_RFB *rfb)
 	KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
 
 	while(rfb) {
-		next = (struct SW_RFB *) QUEUE_GET_NEXT_ENTRY((
-					 struct QUE_ENTRY *) rfb);
+		next = QUEUE_GET_NEXT_ENTRY(rfb);
 		QUEUE_INSERT_TAIL(&ctrl->rReceivedRfbList, &rfb->rQueEntry);
 		rfb = next;
 	}
@@ -3160,8 +3152,7 @@ uint32_t nicRxFlush(struct ADAPTER *prAdapter)
 			struct SW_RFB *prNextSwRfb;
 
 			/* save next first */
-			prNextSwRfb = (struct SW_RFB *) QUEUE_GET_NEXT_ENTRY((
-						struct QUE_ENTRY *) prSwRfb);
+			prNextSwRfb = QUEUE_GET_NEXT_ENTRY(prSwRfb);
 
 			/* free */
 			nicRxReturnRFB(prAdapter, prSwRfb);

@@ -900,11 +900,9 @@ err_handler_2: /* handling that processing MsduInfo happens an exception */
 	} else if (prFragmentedQue->u4NumElem > 1) {
 		DBGLOG(TX, ERROR, "MLR frag - handle err2-3\n");
 		QUEUE_MOVE_ALL(prNeedToFreeQue, prFragmentedQue);
-		prCurrMsduInfo = (struct MSDU_INFO *)
-			QUEUE_GET_HEAD(prNeedToFreeQue);
+		prCurrMsduInfo = QUEUE_GET_HEAD(prNeedToFreeQue);
 		while (prCurrMsduInfo) {
-			prNextMsduInfo =
-				(struct MSDU_INFO *) QUEUE_GET_NEXT_ENTRY(
+			prNextMsduInfo = QUEUE_GET_NEXT_ENTRY(
 					&prCurrMsduInfo->rQueEntry);
 			if (prCurrMsduInfo == prMsduInfo) {
 				DBGLOG(TX, ERROR,

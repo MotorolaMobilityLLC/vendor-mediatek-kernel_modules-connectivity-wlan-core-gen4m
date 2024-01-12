@@ -2459,8 +2459,7 @@ nanSecGetCsidAttr(uint32_t *pu4CsidAttrLen, uint8_t **ppu1CsidAttrBuf) {
 	prCsidAttrListHdr = (struct _NAN_SEC_CSID_ATTR_LIST
 				     *)(g_rNanSecCtx.pu1CsidAttrBuf +
 					sizeof(struct _NAN_SEC_CSID_ATTR_HDR));
-	prCipherEntry = (struct _NAN_SEC_CIPHER_ENTRY *)QUEUE_GET_HEAD(
-		&g_rNanSecCtx.rNanSecCipherList);
+	prCipherEntry = QUEUE_GET_HEAD(&g_rNanSecCtx.rNanSecCipherList);
 
 	while (prCipherEntry != NULL) {
 		prCsidAttrListHdr->u1CipherType = prCipherEntry->u4CipherType;
@@ -2469,9 +2468,7 @@ nanSecGetCsidAttr(uint32_t *pu4CsidAttrLen, uint8_t **ppu1CsidAttrBuf) {
 		prCsidAttrListHdr =
 			prCsidAttrListHdr +
 			1; /* sizeof(struct _NAN_SEC_CSID_ATTR_LIST) */
-		prCipherEntry =
-			(struct _NAN_SEC_CIPHER_ENTRY *)QUEUE_GET_NEXT_ENTRY(
-				&prCipherEntry->rQueEntry);
+		prCipherEntry = QUEUE_GET_NEXT_ENTRY(&prCipherEntry->rQueEntry);
 	}
 
 	*ppu1CsidAttrBuf = g_rNanSecCtx.pu1CsidAttrBuf;
@@ -2499,8 +2496,7 @@ nanSecInsertCipherList(uint32_t u4CipherType, uint16_t u2PublishId) {
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	/* Duplicate case handling */
-	prCipherEntry = (struct _NAN_SEC_CIPHER_ENTRY *)QUEUE_GET_HEAD(
-		&g_rNanSecCtx.rNanSecCipherList);
+	prCipherEntry = QUEUE_GET_HEAD(&g_rNanSecCtx.rNanSecCipherList);
 
 	while (prCipherEntry != NULL) {
 		if (prCipherEntry->u2PublishId == u2PublishId) {
@@ -2513,9 +2509,7 @@ nanSecInsertCipherList(uint32_t u4CipherType, uint16_t u2PublishId) {
 			return 0;
 		}
 
-		prCipherEntry =
-			(struct _NAN_SEC_CIPHER_ENTRY *)QUEUE_GET_NEXT_ENTRY(
-				&prCipherEntry->rQueEntry);
+		prCipherEntry = QUEUE_GET_NEXT_ENTRY(&prCipherEntry->rQueEntry);
 	}
 
 	/* Insert the new one */
