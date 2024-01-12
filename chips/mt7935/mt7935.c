@@ -1695,10 +1695,8 @@ static void mt7935ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 	if (prIntFlag->err_int)
 		prSwDoneFlag->err_int = prHwDoneFlag->err_int;
 
-	if (prIntFlag->sw_int) {
+	if (prIntFlag->sw_int)
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
-		prSwDoneFlag->sw_int = prHwDoneFlag->sw_int;
-	}
 
 	if (prIntFlag->subsys_int)
 		prSwDoneFlag->subsys_int = prHwDoneFlag->subsys_int;
@@ -1796,19 +1794,39 @@ static void mt7935ProcessSoftwareInterruptByEmi(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
+	struct RTMP_DMABUF *prHwDoneFlagBuf, *prSwDoneFlagBuf;
+	struct WFDMA_EMI_DONE_FLAG *prHwDoneFlag, *prSwDoneFlag;
 	uint32_t u4Sta = 0, u4Addr = 0;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
 
+	prHwDoneFlagBuf = &prHifInfo->rHwDoneFlag;
+	prSwDoneFlagBuf = &prHifInfo->rSwDoneFlag;
+	prHwDoneFlag = (struct WFDMA_EMI_DONE_FLAG *)prHwDoneFlagBuf->AllocVa;
+	prSwDoneFlag = (struct WFDMA_EMI_DONE_FLAG *)prSwDoneFlagBuf->AllocVa;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
-	u4Sta = prHifInfo->rIntFlag.sw_int;
+	u4Sta = prHwDoneFlag->sw_int ^ prSwDoneFlag->sw_int;
+	u4Sta = ((u4Sta & BITS(2, 17)) >> 2) |
+		((u4Sta & BIT(0)) << 31) |
+		((u4Sta & BIT(1)) << 29);
 
+	DBGLOG(HAL, TRACE, "sw_int[0x%x]hwdone[0x%x]swdone[0x%x]\n",
+	       u4Sta, prHwDoneFlag->sw_int, prSwDoneFlag->sw_int);
+
+	prSwDoneFlag->sw_int = prHwDoneFlag->sw_int;
 	prErrRecoveryCtrl->u4BackupStatus = u4Sta;
 	if (u4Sta & ERROR_DETECT_SUBSYS_BUS_TIMEOUT) {
 		DBGLOG(INIT, ERROR, "[SER][L0.5] wfsys timeout!!\n");
 		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_SUBSYS_BUS_HANG);
 	} else if (u4Sta & ERROR_DETECT_MASK) {
+		/* reset the done flag to zero when wfdma resetting */
+		if (u4Sta & ERROR_DETECT_STOP_PDMA) {
+			kalMemZero(prHwDoneFlagBuf->AllocVa,
+				   prHwDoneFlagBuf->AllocSize);
+			kalMemZero(prSwDoneFlagBuf->AllocVa,
+				   prSwDoneFlagBuf->AllocSize);
+		}
 		prErrRecoveryCtrl->u4Status = u4Sta;
 		halHwRecoveryFromError(prAdapter);
 	} else
