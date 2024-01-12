@@ -982,7 +982,7 @@ int32_t mddpNotifyCheckSer(uint32_t u4Status)
 	u4BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 		      sizeof(struct mddpw_drv_info_t) +
 		      sizeof(struct wsv_check_ser_info_t));
-	buff = kalMemAlloc(u4BufSize, VIR_MEM_TYPE);
+	buff = kalMemAlloc(u4BufSize, PHY_MEM_TYPE);
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
 		ret = -1;
@@ -1004,7 +1004,7 @@ int32_t mddpNotifyCheckSer(uint32_t u4Status)
 	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
 	DBGLOG(NIC, INFO, "check ser sn: %u, sta:0x%08x, ret: %d.\n",
 	       prSerInfo->sn, u4Status, ret);
-	kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
+	kalMemFree(buff, PHY_MEM_TYPE, u4BufSize);
 
 exit:
 	return ret;
