@@ -161,7 +161,7 @@ const struct net_device_ops nan_netdev_ops = {
 	.ndo_set_rx_mode = nanSetMulticastList,
 	.ndo_get_stats = nanGetStats,
 	.ndo_do_ioctl = nanDoIOCTL,
-#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE
 	.ndo_siocdevprivate = nanDoPrivIOCTL,
 #endif
 	.ndo_start_xmit = nanHardStartXmit,

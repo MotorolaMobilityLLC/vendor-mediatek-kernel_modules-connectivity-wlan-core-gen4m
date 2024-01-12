@@ -521,7 +521,7 @@ const struct net_device_ops p2p_netdev_ops = {
 	.ndo_set_rx_mode = p2pSetMulticastList,
 	.ndo_get_stats = p2pGetStats,
 	.ndo_do_ioctl = p2pDoIOCTL,
-#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE
 	.ndo_siocdevprivate = p2pDoPrivIOCTL,
 #endif
 	.ndo_start_xmit = p2pHardStartXmit,

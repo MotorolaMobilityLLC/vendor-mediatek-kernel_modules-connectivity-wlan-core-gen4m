@@ -3454,7 +3454,7 @@ const struct net_device_ops wlan_netdev_ops = {
 	.ndo_set_rx_mode = wlanSetMulticastList,
 	.ndo_get_stats = wlanGetStats,
 	.ndo_do_ioctl = wlanDoIOCTL,
-#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+#if KERNEL_VERSION(5, 15, 0) <= LINUX_VERSION_CODE
 	.ndo_siocdevprivate = wlanDoPrivIOCTL,
 #endif
 	.ndo_start_xmit = wlanHardStartXmit,
