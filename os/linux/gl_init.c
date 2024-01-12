@@ -3522,17 +3522,26 @@ static int wlanSetMacAddress(struct net_device *ndev, void *addr)
 static int wlanOpen(struct net_device *prDev)
 {
 /* fos_change begin */
-#if CFG_SUPPORT_EXCEPTION_STATISTICS || CFG_SUPPORT_WAKEUP_STATISTICS
+#if CFG_SUPPORT_EXCEPTION_STATISTICS || CFG_SUPPORT_WAKEUP_STATISTICS || \
+CFG_SUPPORT_WED_PROXY
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif /* fos_change end */
+#if CFG_SUPPORT_WED_PROXY
+	uint32_t u4BufLen = 0;
+#endif
 	ASSERT(prDev);
 
 /* fos_change begin */
-#if CFG_SUPPORT_EXCEPTION_STATISTICS || CFG_SUPPORT_WAKEUP_STATISTICS
+#if CFG_SUPPORT_EXCEPTION_STATISTICS || CFG_SUPPORT_WAKEUP_STATISTICS || \
+CFG_SUPPORT_WED_PROXY
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prDev));
 	ASSERT(prGlueInfo);
 #endif /* fos_change begin */
 
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctlByBssIdx(prGlueInfo, wlanoidWedAttachWarp, prDev,
+		sizeof(struct net_device *), &u4BufLen, wlanGetBssIdx(prDev));
+#endif
 	netif_tx_start_all_queues(prDev);
 /* fos_change begin */
 #if CFG_SUPPORT_WAKEUP_STATISTICS
@@ -3624,6 +3633,10 @@ static int wlanStop(struct net_device *prDev)
 	}
 
 	netif_tx_stop_all_queues(prDev);
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
+	      sizeof(struct net_device *), &u4SetInfoLen, wlanGetBssIdx(prDev));
+#endif
 
 	return 0;		/* success */
 }				/* end of wlanStop() */
@@ -6861,6 +6874,10 @@ void wlanOnPreAdapterStart(struct GLUE_INFO *prGlueInfo,
 	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++)
 		prAdapter->e6GPwrMode[ucBssIdx] = PWR_MODE_6G_LPI;
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
+
+#if CFG_SUPPORT_WED_PROXY
+	wedInitial(prAdapter);
+#endif
 }
 
 static

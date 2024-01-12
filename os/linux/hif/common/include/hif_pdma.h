@@ -1065,6 +1065,10 @@ struct pcie_msi_info {
 	u_int8_t fgMsiEnabled;
 	uint32_t u4MsiNum;
 	unsigned long ulEnBits;
+#if CFG_SUPPORT_WED_PROXY
+	unsigned long address_lo;
+	unsigned long address_hi;
+#endif
 };
 
 enum pcie_msi_wfdma_ring {

@@ -2046,6 +2046,11 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			     prSkb->len);
 	}
 
+#if CFG_SUPPORT_WED_PROXY
+	/* HW Rx request after skb->dev to be assign */
+	wedHwRxRequest(prSkb);
+#endif
+
 	if (prSkb->protocol == NTOHS(ETH_P_8021Q)
 	    && !FEAT_SUP_LLC_VLAN_RX(prChipInfo)) {
 		/*

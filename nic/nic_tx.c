@@ -5940,6 +5940,15 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 				nicTxSetPktLowestFixedRate(prAdapter,
 					prMsduInfo);
 
+#if CFG_SUPPORT_WED_PROXY
+			/* Hw Tx request after nicTxFillMsduInfo(ucBssIndex)
+			 * and qmDetermineStaRecIndex(ucStaRecIndex), so that
+			 * can get the right wlan_idx and need before
+			 * kalGetPacketBufHeadManipulate to modify skb
+			 */
+			wedHwTxRequest(prAdapter, prMsduInfo);
+#endif
+
 			nicTxFillDataDesc(prAdapter, prMsduInfo);
 
 			prStaRec = cnmGetStaRecByIndex(prAdapter,

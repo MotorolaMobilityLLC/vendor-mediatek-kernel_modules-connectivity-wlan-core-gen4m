@@ -1268,6 +1268,11 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 		return;
 	}
 
+#if CFG_SUPPORT_WED_PROXY
+	/* Add info to SKB headroom after SKB reset */
+	wedHwRxInfoWrapper(prSwRfb);
+#endif
+
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(prAdapter)
 		|| kalRxNapiValidSkb(prAdapter->prGlueInfo, prSwRfb->pvPacket)

@@ -43,6 +43,9 @@
 #include <linux/of_irq.h>
 #include <linux/of_address.h>
 #include <linux/of.h>
+#if CFG_SUPPORT_WED_PROXY
+#include <linux/msi.h>
+#endif
 
 #if CFG_SUPPORT_RX_PAGE_POOL
 #if KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE
@@ -228,6 +231,7 @@ const struct of_device_id mtk_wifi_misc_of_ids[] = {
 
 #define HIF_WFDMA_INT_BIT	0
 #define HIF_MAWD_INT_BIT	1
+#define HIF_WED_INT_BIT		2
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -452,6 +456,14 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 			goto exit;
 		}
 	}
+#if CFG_SUPPORT_WED_PROXY
+	if (IsWedAttached()) {
+		if (KAL_TEST_BIT(HIF_WED_INT_BIT, prHifInfo->ulHifIntEnBits))
+			return IRQ_NONE;
+		disable_irq_nosync(irq);
+		KAL_SET_BIT(HIF_WED_INT_BIT, prHifInfo->ulHifIntEnBits);
+	}
+#endif
 
 exit:
 	return IRQ_WAKE_THREAD;
@@ -492,7 +504,14 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 			enable_irq(prHifInfo->u4IrqId);
 		return;
 	}
-
+#if CFG_SUPPORT_WED_PROXY
+	if (IsWedAttached()) {
+		if (KAL_TEST_AND_CLEAR_BIT(HIF_WED_INT_BIT,
+					   prHifInfo->ulHifIntEnBits))
+			enable_irq(prHifInfo->u4IrqId);
+		return;
+	}
+#endif
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
 		if (prMsiLayout->type != AP_INT ||
@@ -529,7 +548,16 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 		}
 		return;
 	}
-
+#if CFG_SUPPORT_WED_PROXY
+	if (IsWedAttached()) {
+		if (!KAL_TEST_BIT(HIF_WED_INT_BIT,
+				  prHifInfo->ulHifIntEnBits)) {
+			disable_irq_nosync(prHifInfo->u4IrqId);
+			KAL_SET_BIT(HIF_WED_INT_BIT, prHifInfo->ulHifIntEnBits);
+		}
+		return;
+	}
+#endif
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
 		if (prMsiLayout->type != AP_INT ||
@@ -1757,6 +1785,24 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			KBUILD_MODNAME,
 			prGlueInfo);
 
+#if CFG_SUPPORT_WED_PROXY
+		if (prMsiLayout->type == AP_INT) {
+			struct irq_data *data;
+			struct msi_desc *entry;
+
+			data = irq_get_irq_data(irqn);
+			if (data) {
+				entry = irq_data_get_msi_desc(data);
+				DBGLOG(INIT, INFO,
+					"messages address [0x%x, 0x%x]\n",
+					entry->msg.address_lo,
+					entry->msg.address_hi);
+				prMsiInfo->address_lo = entry->msg.address_lo;
+				prMsiInfo->address_hi = entry->msg.address_hi;
+			}
+		}
+#endif
+
 #if IS_ENABLED(CFG_MTK_WIFI_PCIE_SUPPORT)
 #if CFG_MTK_MDDP_SUPPORT
 		if (prMsiLayout->type == MDDP_INT) {
@@ -1917,6 +1963,12 @@ int32_t glBusSetIrq(void *pvData, void *pfnIsr, void *pvCookie)
 	pdev = prHifInfo->pdev;
 
 	prHifInfo->u4IrqId = pdev->irq;
+
+#if CFG_SUPPORT_WED_PROXY
+	prHifInfo->irq_handler = mtk_pci_isr;
+	prHifInfo->irq_handler_thread = mtk_pci_isr_thread;
+#endif
+
 	if (prMsiInfo && prMsiInfo->fgMsiEnabled)
 		ret = glBusSetMsiIrq(pdev, prGlueInfo, prBusInfo);
 	else

@@ -10617,6 +10617,9 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			struct UNI_EVENT_RX_ADDBA *ba =
 				(struct UNI_EVENT_RX_ADDBA *) tag;
 			nicUniHandleEventRxAddBa(ad, ba);
+#if CFG_SUPPORT_WED_PROXY
+			wedStaRecRxAddBaUpdate(ad, ba);
+#endif
 		}
 			break;
 		case UNI_EVENT_BA_OFFLOAD_TAG_RX_DELBA:{

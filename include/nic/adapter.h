@@ -1711,6 +1711,9 @@ struct WIFI_VAR {
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
 	uint8_t aucDmaMaxQuota[WLAN_CFG_VALUE_LEN_MAX];
 #endif
+#if CFG_SUPPORT_WED_PROXY
+	u_int8_t fgEnableWed;
+#endif
 };
 
 /* cnm_timer module */
@@ -2872,6 +2875,9 @@ struct ADAPTER {
 	u_int8_t fg6GPwrModeForce;
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE == 1 */
 	OS_SYSTIME rRsnFwDumpTime;
+#if CFG_SUPPORT_WED_PROXY
+	void *prWedInfo;
+#endif
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 	struct SET_COUNTRY_CHANNEL_POWER_LIMIT **prPwrLimit;
 	struct EMI_POWER_LIMIT_INFO

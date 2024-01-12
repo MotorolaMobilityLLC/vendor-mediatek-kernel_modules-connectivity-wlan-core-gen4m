@@ -1373,6 +1373,16 @@ do { \
 	dma_unmap_single(&((struct pci_dev *)(_dev))->dev, _addr, _size, _dir)
 #define KAL_DMA_MAPPING_ERROR(_dev, _addr) \
 	dma_mapping_error(&((struct pci_dev *)(_dev))->dev, _addr)
+
+#if CFG_SUPPORT_WED_PROXY
+#define KAL_DMA_MAP_SINGLE_ATTRS(_dev, _ptr, _size, _dir) \
+	dma_map_single_attrs(&((struct pci_dev *)(_dev))->dev, \
+	_ptr, _size, _dir, DMA_ATTR_SKIP_CPU_SYNC)
+#define KAL_DMA_UNMAP_SINGLE_ATTRS(_dev, _addr, _size, _dir) \
+	dma_unmap_single_attrs(&((struct pci_dev *)(_dev))->dev, \
+	_addr, _size, _dir, DMA_ATTR_SKIP_CPU_SYNC)
+#endif
+
 #else
 #define KAL_DMA_TO_DEVICE	DMA_TO_DEVICE
 #define KAL_DMA_FROM_DEVICE	DMA_FROM_DEVICE
@@ -1793,6 +1803,16 @@ u_int8_t kalDevRegRead_mac(struct GLUE_INFO *prGlueInfo,
 u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 			uint32_t u4Register,
 			uint32_t u4Value);
+
+#if CFG_SUPPORT_WED_PROXY
+u_int8_t kalDevRegWriteDirectly(struct GLUE_INFO *prGlueInfo,
+			uint32_t u4Register,
+			uint32_t u4Value);
+u_int8_t kalDevRegReadDirectly(struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register,
+		       uint32_t *pu4Value);
+#endif
+
 u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo,
 			    uint32_t u4Register, uint32_t u4Value);
 u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,

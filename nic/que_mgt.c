@@ -3647,6 +3647,12 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSwRxReordering);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+#if CFG_SUPPORT_WED_PROXY
+	/* SwRRO must be disabled when wed attached (wed RRO is enabled) */
+	if (IsWedAttached())
+		fgSwRxReordering = FALSE;
+#endif
+
 	ASSERT(prSwRfbListHead);
 
 	prReturnedQue = &rReturnedQue;

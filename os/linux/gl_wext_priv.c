@@ -22419,6 +22419,152 @@ int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
 
 }
 #endif
+
+#if CFG_SUPPORT_WED_PROXY
+int priv_driver_set_wed_enable(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t u4Ret = 0;
+	int32_t Enable = -1;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE) {
+		DBGLOG(REQ, ERROR, "input arg is null.\n");
+		return -1;
+	}
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtos32(apcArgv[1], 0, &Enable);
+	if (Enable)
+		wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_IFON);
+	else
+		wedDetachWarp(prAdapter, prNetDev, WED_DETACH_IFDOWN);
+
+	return 0;
+}
+
+int priv_driver_get_drv_mcr_directly(struct net_device *prNetDev,
+				   char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret;
+
+	/* Add Antenna Selection Input */
+	/* INT_32 i4ArgNum_with_ant_sel = 3; */
+
+	int32_t i4ArgNum = 2;
+
+	struct CMD_ACCESS_REG rCmdAccessReg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		rCmdAccessReg.u4Address = 0;
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		/* rCmdAccessReg.u4Address = kalStrtoul(apcArgv[1], NULL, 0); */
+		rCmdAccessReg.u4Data = 0;
+
+		DBGLOG(REQ, LOUD, "address is %x\n", rCmdAccessReg.u4Address);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryDrvMcrReadDirectly,
+				   &rCmdAccessReg, sizeof(rCmdAccessReg),
+				   &u4BufLen);
+
+		DBGLOG(REQ, LOUD, "rStatus %u\n", rStatus);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+		i4BytesWritten = kalSnprintf(pcCommand, i4TotalLen, "0x%08x",
+					  (unsigned int)rCmdAccessReg.u4Data);
+		DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__,
+		       pcCommand);
+	}
+
+	return i4BytesWritten;
+
+}				/* priv_driver_get_drv_mcr */
+
+int priv_driver_set_drv_mcr_directly(struct net_device *prNetDev,
+				char *pcCommand,
+				int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+
+	/* Add Antenna Selection Input */
+	/* INT_32 i4ArgNum_with_ant_sel = 4; */
+
+	int32_t i4ArgNum = 3;
+
+	struct CMD_ACCESS_REG rCmdAccessReg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdAccessReg.u4Address));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rCmdAccessReg.u4Data));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_drv_mcr error (Data) u4Ret=%d\n",
+			       u4Ret);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetDrvMcrWriteDirectly,
+				   &rCmdAccessReg, sizeof(rCmdAccessReg),
+				   &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+	}
+
+	return i4BytesWritten;
+
+}
+#endif /* CFG_SUPPORT_WED_PROXY */
+
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen)

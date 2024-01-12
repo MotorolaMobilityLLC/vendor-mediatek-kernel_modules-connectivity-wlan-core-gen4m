@@ -1152,7 +1152,12 @@ struct PACKET_PRIVATE_TX_DATA {      /* total: 24byte */
 
 struct PACKET_PRIVATE_RX_DATA {      /* total: 24byte */
 	u_int8_t fgIsIndependentPkt; /* 1byte */
+#if CFG_SUPPORT_WED_PROXY
+	uint8_t aucReserved[3];      /* 3byte */
+	uint32_t u4PpeType;          /* 4byte */
+#else
 	uint8_t aucReserved[7];      /* 7byte */
+#endif
 	uint64_t u8IntTime;          /* 8byte */
 	uint64_t u8RxTime;           /* 8byte */
 };
@@ -1364,6 +1369,14 @@ enum BOOTMODE {
 
 #define GLUE_RX_GET_PKT_RX_TIME(_p) \
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u8RxTime)
+
+#if CFG_SUPPORT_WED_PROXY
+#define GLUE_RX_SET_PKT_PPE_TYPE(_p, _idx) \
+	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u4PpeType = (uint32_t)(_idx))
+
+#define GLUE_RX_GET_PKT_PPE_TYPE(_p) \
+	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u4PpeType)
+#endif
 
 #define GLUE_GET_PKT_ETHER_DEST_ADDR(_p)    \
 	    ((uint8_t *)&(((struct sk_buff *)(_p))->data))

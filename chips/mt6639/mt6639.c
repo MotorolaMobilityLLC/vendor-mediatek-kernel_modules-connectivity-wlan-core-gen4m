@@ -1907,8 +1907,12 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
 
+#if CFG_SUPPORT_WED_PROXY
+	u4Addr = WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR;
+#else
 	u4Addr = enable ? WF_WFDMA_HOST_DMA0_HOST_INT_ENA_SET_ADDR :
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_CLR_ADDR;
+#endif
 	u4WrVal =
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA6_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA7_MASK |
@@ -1938,6 +1942,11 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	u4WrVal |=
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA4_MASK |
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_HOST_RX_DONE_INT_ENA5_MASK;
+
+#if CFG_SUPPORT_WED_PROXY
+	if (!enable)
+		u4WrVal = 0;
+#endif
 
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
 }
