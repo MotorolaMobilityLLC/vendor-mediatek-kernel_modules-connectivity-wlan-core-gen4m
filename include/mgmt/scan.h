@@ -312,6 +312,8 @@ struct BSS_DESC {
 	struct ML_INFO rMlInfo;
 #endif
 
+	uint8_t fgIsInUse; /* Indicate if this entry is in use or not */
+
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 
 	/* For IBSS, the SrcAddr is different from BSSID */
@@ -1046,9 +1048,9 @@ void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	struct SCAN_LOG_CACHE *prScanLogCache,
 	enum ENUM_SCAN_LOG_PREFIX prefix);
 
-void scanRemoveBssDescFromList(IN struct LINK *prBSSDescList,
-			       IN struct BSS_DESC *prBssDesc,
-			       IN struct ADAPTER *prAdapter);
+void scanRemoveBssDescFromList(IN struct ADAPTER *prAdapter,
+			       IN struct LINK *prBSSDescList,
+			       IN struct BSS_DESC *prBssDesc);
 void scanInsertBssDescToList(IN struct LINK *prBSSDescList,
 			     IN struct BSS_DESC *prBssDesc,
 			     IN u_int8_t init);

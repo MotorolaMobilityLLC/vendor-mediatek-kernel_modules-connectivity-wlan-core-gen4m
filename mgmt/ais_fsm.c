@@ -148,7 +148,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t *ucChTokenId);
 
-static void aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
+static uint32_t aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
 	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest);
 
@@ -1852,32 +1852,33 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED) {
 		/* 4 <2.a> If we have the matched one */
 		if (prBssDescSet->ucLinkNum > 0) {
-			/* 4 <A> Stored the Selected BSS security cipher. or
-			 * later asoc req compose IE
-			 */
-
-			aisFillBssInfoFromBssDesc(prAdapter,
-				prAisFsmInfo, prBssDescSet);
-
-			/* 4 <B> Do STATE transition and update current
-			 * Operation Mode.
-			 */
-			/* 4 <B.1> If target connected AP has MultiLink, but
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			/* If target connected AP has MultiLink, but
 			 * we only scan one link(ucLinkNum=1), need to send ML
 			 * probe request to get completed ML info first.
 			 */
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (prBssDescSet->ucLinkNum == 1 &&
+			if (mldIsMloFeatureEnabled(prAdapter, FALSE) &&
+				prBssDescSet->ucLinkNum == 1 &&
 				prBssDescSet->prMainBssDesc->rMlInfo.fgValid &&
 				prAisFsmInfo->ucMlProbeSendCount <
 				ML_PROBE_RETRY_COUNT) {
 
 				prAisFsmInfo->ucMlProbeSendCount++;
 				prAisFsmInfo->ucMlProbeEnable = TRUE;
+				prAisFsmInfo->prMlProbeBssDesc =
+					prBssDescSet->aprBssDesc[0];
 				return AIS_STATE_LOOKING_FOR;
 			}
 #endif
-			/* 4 <B.2> If target connected AP does not have
+
+			/* Stored the Selected BSS security cipher. or
+			 * later asoc req compose IE
+			 */
+
+			aisFillBssInfoFromBssDesc(prAdapter,
+				prAisFsmInfo, prBssDescSet);
+
+			/* If target connected AP does not have
 			 * MultiLink or already scan 2 links, directly
 			 * request channel
 			 */
@@ -1885,6 +1886,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prAisFsmInfo->ucMlProbeSendCount = 0;
 			prAisFsmInfo->ucMlProbeEnable = FALSE;
+			prAisFsmInfo->prMlProbeBssDesc = NULL;
 #endif
 			return AIS_STATE_REQ_CHANNEL_JOIN;
 		} else {
@@ -2326,11 +2328,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			prScanReqMsg =
 			    (struct MSG_SCN_SCAN_REQ_V2 *)cnmMemAlloc(prAdapter,
 					RAM_TYPE_MSG,
-					OFFSET_OF
-					(struct
-					MSG_SCN_SCAN_REQ_V2,
-					aucIE) +
-					u2ScanIELen);
+					sizeof(struct MSG_SCN_SCAN_REQ_V2));
 			if (!prScanReqMsg) {
 				DBGLOG(AIS, ERROR, "Can't trigger SCAN FSM\n");
 				return;
@@ -2340,11 +2338,10 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 				prScanReqMsg, prScanRequest,
 				u2ScanIELen);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (prAisFsmInfo->ucMlProbeEnable) {
-				aisScanGenMlScanReq(prAdapter, ucBssIndex,
-					prScanReqMsg, prScanRequest);
+			if (prAisFsmInfo->ucMlProbeEnable &&
+			    !aisScanGenMlScanReq(prAdapter, ucBssIndex,
+					prScanReqMsg, prScanRequest))
 				goto send_msg;
-			}
 #endif
 
 #if CFG_SUPPORT_802_11K
@@ -8053,7 +8050,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		    MSG_SEND_METHOD_BUF);
 }
 #if (CFG_SUPPORT_802_11BE == 1 && CFG_SUPPORT_802_11BE_MLO == 1)
-static void aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
+static uint32_t aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
 	IN uint8_t ucBssIndex, IN struct MSG_SCN_SCAN_REQ_V2 *prScanReqMsg,
 	IN struct PARAM_SCAN_REQUEST_ADV *prScanRequest)
 {
@@ -8065,7 +8062,12 @@ static void aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prBssDesc = prAisFsmInfo->aprLinkInfo[0].prTargetBssDesc;
+	prBssDesc = prAisFsmInfo->prMlProbeBssDesc;
+
+	if (!prBssDesc) {
+		DBGLOG(AIS, INFO, "no ml probe target\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
 
 	/* Generate ML probe request IE */
 	kalMemZero(aucIe, sizeof(aucIe));
@@ -8097,6 +8099,8 @@ static void aisScanGenMlScanReq(IN struct ADAPTER *prAdapter,
 	if (u4ScanIELen > 0)
 		kalMemCopy(prScanReqMsg->aucIE, aucIe, u4ScanIELen);
 	prScanReqMsg->u2IELen = (uint16_t)u4ScanIELen;
+
+	return WLAN_STATUS_SUCCESS;
 }
 #endif
 
