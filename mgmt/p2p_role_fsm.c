@@ -2957,6 +2957,9 @@ p2pRoleFsmRunEventChnlGrant(IN struct ADAPTER *prAdapter,
 					0x00,
 					#endif
 					rlmDummyChangeOpHandler);
+				prAdapter->prGlueInfo->
+					prP2PInfo[prP2pBssInfo->u4PrivateData]->
+					fgChannelSwitchReq = TRUE;
 				kalP2pIndicateChnlSwitch(prAdapter,
 					prP2pBssInfo);
 			} else { /* GO */
