@@ -2323,6 +2323,7 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	struct FT_IES *prFtIEs;
 	struct GL_WPA_INFO *prWpaInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
 
 	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
 		return;
@@ -2346,6 +2347,18 @@ void assocGenerateMDIE(struct ADAPTER *prAdapter,
 	if (!prFtIEs) {
 		DBGLOG(SAA, ERROR, "prFtIEs is null\n");
 		return;
+	}
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	if (prConnSettings->assocIeLen > 0) {
+		const uint8_t *mdieConn;
+
+		mdieConn = kalFindIeMatchMask(ELEM_ID_MOBILITY_DOMAIN,
+					      prConnSettings->pucAssocIEs,
+					      prConnSettings->assocIeLen,
+					      NULL, 0, 0, NULL);
+		/* skip appending MDIE due to it is already in assoc req ie */
+		if (mdieConn)
+			return;
 	}
 
 	if (!prFtIEs->prMDIE) {
