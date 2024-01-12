@@ -328,6 +328,14 @@
 
 #define CFG_SUPPORT_SKB_CLONED_COPY		1
 
+#ifndef CFG_SUPPORT_CSI
+#define CFG_SUPPORT_CSI 0
+#endif
+
+#if CFG_SUPPORT_CSI
+#define CFG_CSI_DEBUG 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flags of 6G SUPPORT
  *------------------------------------------------------------------------------

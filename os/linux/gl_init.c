@@ -3736,6 +3736,11 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	skb_queue_head_init(&(prGlueInfo->rCoreDumpSkbQueue));
 #endif
 
+#if CFG_SUPPORT_CSI
+	/* init CSI wait queue  */
+	init_waitqueue_head(&(prGlueInfo->prAdapter->rCSIInfo.waitq));
+#endif
+
 	return prWdev;
 
 netcreate_err:

@@ -12413,6 +12413,566 @@ uint32_t wlanWakeUpWiFi(IN struct ADAPTER *prAdapter)
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_SUPPORT_CSI
+u_int8_t
+wlanPushCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
+{
+	struct CSI_INFO_T *prCSIInfo = &(prAdapter->rCSIInfo);
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
+
+	/* Put the CSI data into CSI event queue */
+	if (prCSIInfo->u4CSIBufferUsed != 0) {
+		prCSIInfo->u4CSIBufferTail++;
+		prCSIInfo->u4CSIBufferTail %= CSI_RING_SIZE;
+	}
+
+	kalMemCopy(&(prCSIInfo->arCSIBuffer[prCSIInfo->u4CSIBufferTail]),
+		prCSIData, sizeof(struct CSI_DATA_T));
+
+	if (prCSIInfo->u4CSIBufferUsed < CSI_RING_SIZE) {
+		prCSIInfo->u4CSIBufferUsed++;
+	} else {
+		/*
+		 * While new CSI event comes and the ring buffer is
+		 * already full, the new coming CSI event will
+		 * overwrite the oldest one in the ring buffer.
+		 * Thus, the Head pointer which points to * the
+		 * oldest CSI event in the buffer should be moved too.
+		 */
+		prCSIInfo->u4CSIBufferHead++;
+		prCSIInfo->u4CSIBufferHead %= CSI_RING_SIZE;
+	}
+
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
+
+	return TRUE;
+}
+
+u_int8_t
+wlanPopCSIData(IN struct ADAPTER *prAdapter, struct CSI_DATA_T *prCSIData)
+{
+	struct CSI_INFO_T *prCSIInfo = &(prAdapter->rCSIInfo);
+
+	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
+
+	/* No CSI data in the ring buffer */
+	if (prCSIInfo->u4CSIBufferUsed == 0) {
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
+		return FALSE;
+	}
+
+	kalMemCopy(prCSIData,
+		&(prCSIInfo->arCSIBuffer[prCSIInfo->u4CSIBufferHead]),
+		sizeof(struct CSI_DATA_T));
+
+	prCSIInfo->u4CSIBufferUsed--;
+	if (prCSIInfo->u4CSIBufferUsed != 0) {
+		prCSIInfo->u4CSIBufferHead++;
+		prCSIInfo->u4CSIBufferHead %= CSI_RING_SIZE;
+	}
+	KAL_RELEASE_MUTEX(prAdapter, MUTEX_CSI_BUFFER);
+
+	return TRUE;
+}
+
+/*
+*CSI TONE MASK
+*this function mask(clear) the null tone && pilot tones
+*for example, bw20 has  64 tones in total.however there
+*are some null tone && pilot tones we do not need for the
+*feature of channel state information(CSI).
+*so we need to clear these tone.
+*/
+void wlanApplyCSIToneMask(
+	uint8_t ucRxMode,
+	uint8_t ucCBW,
+	uint8_t ucDBW,
+	uint8_t ucPrimaryChIdx,
+	int16_t *ai2IData,
+	int16_t *ai2QData)
+{
+	uint8_t ucSize = sizeof(int16_t);
+
+#define ZERO(index) \
+{ ai2IData[index] = 0; ai2QData[index] = 0; }
+
+#define ZERO_RANGE(start, end) \
+{\
+	kalMemZero(&ai2IData[start], ucSize * (end - start + 1));\
+	kalMemZero(&ai2QData[start], ucSize * (end - start + 1));\
+}
+
+	/*Mask the NULL TONE*/
+	if (ucRxMode == RX_VT_LEGACY_OFDM) {
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			ZERO(0);
+			ZERO_RANGE(27, 37);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				ZERO(32); ZERO(96);
+				ZERO_RANGE(0, 5);
+				ZERO_RANGE(59, 69);
+				ZERO_RANGE(123, 127);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(96);
+					ZERO_RANGE(0, 69);
+					ZERO_RANGE(123, 127);
+				} else {
+					ZERO(32);
+					ZERO_RANGE(0, 5);
+					ZERO_RANGE(59, 127);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				ZERO(32); ZERO(96);
+				ZERO(160); ZERO(224);
+				ZERO_RANGE(0, 5);
+				ZERO_RANGE(59, 69);
+				ZERO_RANGE(123, 133);
+				ZERO_RANGE(187, 197);
+				ZERO_RANGE(251, 255);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					ZERO(160); ZERO(224);
+					ZERO_RANGE(0, 133);
+					ZERO_RANGE(187, 197);
+					ZERO_RANGE(251, 255);
+				} else {
+					ZERO(32); ZERO(96);
+					ZERO_RANGE(0, 5);
+					ZERO_RANGE(59, 69);
+					ZERO_RANGE(123, 255);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(160);
+					ZERO_RANGE(0, 133);
+					ZERO_RANGE(187, 255);
+				} else if (ucPrimaryChIdx == 1) {
+					ZERO(224);
+					ZERO_RANGE(0, 197);
+					ZERO_RANGE(251, 255);
+				} else if (ucPrimaryChIdx == 2) {
+					ZERO(32);
+					ZERO_RANGE(0, 5);
+					ZERO_RANGE(59, 255);
+				} else {
+					ZERO(96);
+					ZERO_RANGE(0, 69);
+					ZERO_RANGE(123, 255);
+				}
+			}
+		}
+	} else if (ucRxMode == RX_VT_MIXED_MODE ||
+		ucRxMode == RX_VT_GREEN_MODE ||
+		ucRxMode == RX_VT_VHT_MODE) {
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			ZERO(0);
+			ZERO_RANGE(29, 35);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				ZERO(0); ZERO(1); ZERO(127);
+				ZERO_RANGE(59, 69);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(96);
+					ZERO_RANGE(0, 67);
+					ZERO_RANGE(125, 127);
+				} else {
+					ZERO(32);
+					ZERO_RANGE(0, 3);
+					ZERO_RANGE(61, 127);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				ZERO(0); ZERO(1); ZERO(255);
+				ZERO_RANGE(123, 133);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					ZERO_RANGE(0, 133);
+					ZERO_RANGE(191, 193);
+					ZERO_RANGE(251, 255);
+				} else {
+					ZERO_RANGE(0, 5);
+					ZERO_RANGE(63, 65);
+					ZERO_RANGE(123, 127);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(160);
+					ZERO_RANGE(0, 131);
+					ZERO_RANGE(189, 255);
+				} else if (ucPrimaryChIdx == 1) {
+					ZERO(224);
+					ZERO_RANGE(0, 195);
+					ZERO_RANGE(253, 255);
+				} else if (ucPrimaryChIdx == 2) {
+					ZERO(32);
+					ZERO_RANGE(0, 3);
+					ZERO_RANGE(61, 255);
+				} else {
+					ZERO(96);
+					ZERO_RANGE(0, 67);
+					ZERO_RANGE(125, 255);
+				}
+			}
+		}
+	} else if (ucRxMode == RX_VT_HE_MODE) {		/*11ax support*/
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			ZERO(0);
+			ZERO_RANGE(31, 33);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				ZERO(0);
+				ZERO_RANGE(62, 66);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(96); ZERO(127);
+					ZERO_RANGE(0, 65);
+				} else {
+					ZERO(0);
+					ZERO(1); ZERO(32);
+					ZERO_RANGE(63, 127);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				ZERO(0);
+				ZERO_RANGE(126, 130);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					ZERO_RANGE(0, 130);
+					ZERO(192);
+					ZERO_RANGE(254, 255);
+				} else {
+					ZERO_RANGE(0, 2);
+					ZERO(64);
+					ZERO_RANGE(126, 255);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO_RANGE(0, 129);
+					ZERO(160);
+					ZERO_RANGE(191, 255);
+				} else if (ucPrimaryChIdx == 1) {
+					ZERO_RANGE(0, 193);
+					ZERO(224);
+					ZERO(255);
+				} else if (ucPrimaryChIdx == 2) {
+					ZERO_RANGE(0, 1);
+					ZERO(32);
+					ZERO_RANGE(63, 255);
+				} else {
+					ZERO_RANGE(0, 65);
+					ZERO(96);
+					ZERO_RANGE(127, 255);
+				}
+			}
+		}
+	}
+
+	/*Mask the VHT Pilots*/
+	if (ucRxMode == RX_VT_VHT_MODE) {
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			ZERO(7); ZERO(21); ZERO(43); ZERO(57);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				ZERO(11); ZERO(25); ZERO(53);
+				ZERO(75); ZERO(103); ZERO(117);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(75); ZERO(89);
+					ZERO(103); ZERO(117);
+				} else {
+					ZERO(11); ZERO(25);
+					ZERO(39); ZERO(53);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				ZERO(11); ZERO(39); ZERO(75); ZERO(103);
+				ZERO(153); ZERO(181); ZERO(217); ZERO(245);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					ZERO(139); ZERO(167); ZERO(181);
+					ZERO(203); ZERO(217); ZERO(245);
+				} else {
+					ZERO(11); ZERO(39); ZERO(53);
+					ZERO(75); ZERO(89); ZERO(117);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(139); ZERO(153);
+					ZERO(167); ZERO(181);
+				} else if (ucPrimaryChIdx == 1) {
+					ZERO(203); ZERO(217);
+					ZERO(231); ZERO(245);
+				} else if (ucPrimaryChIdx == 2) {
+					ZERO(11); ZERO(25);
+					ZERO(39); ZERO(53);
+				} else {
+					ZERO(75); ZERO(89);
+					ZERO(103); ZERO(117);
+				}
+			}
+		}
+	} else if (ucRxMode == RX_VT_HE_MODE) {			/*11ax support*/
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			ZERO(12); ZERO(29);
+			ZERO(52); ZERO(35);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				ZERO(9); ZERO(26);
+				ZERO(36); ZERO(53);
+				ZERO(119); ZERO(102);
+				ZERO(92); ZERO(75);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(67); ZERO(84);
+					ZERO(108); ZERO(125);
+				} else {
+					ZERO(3); ZERO(20);
+					ZERO(61); ZERO(44);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				ZERO(6); ZERO(23);
+				ZERO(100); ZERO(117);
+				ZERO(250); ZERO(233);
+				ZERO(156); ZERO(139);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					ZERO(201); ZERO(218);
+					ZERO(228); ZERO(245);
+					ZERO(183); ZERO(166);
+					ZERO(156); ZERO(139);
+				} else {
+					ZERO(73); ZERO(90);
+					ZERO(100); ZERO(117);
+					ZERO(55); ZERO(38);
+					ZERO(28); ZERO(11);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					ZERO(172); ZERO(189);
+					ZERO(148); ZERO(131);
+				} else if (ucPrimaryChIdx == 1) {
+					ZERO(236); ZERO(253);
+					ZERO(212); ZERO(195);
+				} else if (ucPrimaryChIdx == 2) {
+					ZERO(44); ZERO(61);
+					ZERO(20); ZERO(3);
+				} else {
+					ZERO(108); ZERO(125);
+					ZERO(84); ZERO(67);
+				}
+			}
+		}
+		}
+}
+
+void
+wlanShiftCSI(
+	uint8_t ucRxMode,
+	uint8_t ucCBW,
+	uint8_t ucDBW,
+	uint8_t ucPrimaryChIdx,
+	int16_t *ai2IData,
+	int16_t *ai2QData,
+	int16_t *ai2ShiftIData,
+	int16_t *ai2ShiftQData)
+{
+	uint8_t ucSize = sizeof(int16_t);
+
+	if (ai2IData == NULL) {
+		DBGLOG(RSN, ERROR, "[CSI] ai2IData = NULL\n");
+		return;
+	}
+	if (ai2QData == NULL) {
+		DBGLOG(RSN, ERROR, "[CSI] ai2QData = NULL\n");
+		return;
+	}
+	if (ai2ShiftIData == NULL) {
+		DBGLOG(RSN, ERROR, "[CSI] ai2ShiftIData = NULL\n");
+		return;
+	}
+	if (ai2ShiftQData == NULL) {
+		DBGLOG(RSN, ERROR, "[CSI] ai2ShiftQData = NULL\n");
+		return;
+	}
+
+#define COPY_RANGE(dest, start, end) \
+{\
+	kalMemCopy(&ai2ShiftIData[dest], \
+		&ai2IData[start], ucSize * (end - start + 1)); \
+	kalMemCopy(&ai2ShiftQData[dest], \
+		&ai2QData[start], ucSize * (end - start + 1)); \
+}
+
+#define COPY(dest, src) \
+{ ai2ShiftIData[dest] = ai2IData[src]; ai2ShiftQData[dest] = ai2QData[src]; }
+
+	if (ucRxMode == RX_VT_LEGACY_OFDM) {
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			COPY_RANGE(0, 0, 63);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				COPY_RANGE(0, 0, 127);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					COPY(0, 96);
+					COPY_RANGE(38, 70, 95);
+					COPY_RANGE(1, 97, 122);
+				} else {
+					COPY(0, 32);
+					COPY_RANGE(38, 6, 31);
+					COPY_RANGE(1, 33, 58);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				COPY_RANGE(0, 0, 255);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					COPY(0, 192);
+					COPY_RANGE(2, 198, 250);
+					COPY_RANGE(74, 134, 186);
+				} else {
+					COPY(0, 64);
+					COPY_RANGE(2, 70, 122);
+					COPY_RANGE(74, 6, 58);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					COPY(0, 160);
+					COPY_RANGE(1, 161, 186);
+					COPY_RANGE(38, 134, 159);
+				} else if (ucPrimaryChIdx == 1) {
+					COPY(0, 224);
+					COPY_RANGE(1, 225, 250);
+					COPY_RANGE(38, 198, 223);
+				} else if (ucPrimaryChIdx == 2) {
+					COPY(0, 32);
+					COPY_RANGE(1, 33, 58);
+					COPY_RANGE(38, 6, 31);
+				} else {
+					COPY(0, 96);
+					COPY_RANGE(1, 97, 122);
+					COPY_RANGE(38, 70, 95);
+				}
+			}
+		}
+	} else if (ucRxMode == RX_VT_MIXED_MODE ||
+		ucRxMode == RX_VT_GREEN_MODE ||
+		ucRxMode == RX_VT_VHT_MODE) {
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			COPY_RANGE(0, 0, 63);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				COPY_RANGE(0, 0, 127);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					COPY(0, 96);
+					COPY_RANGE(36, 68, 95);
+					COPY_RANGE(1, 97, 124);
+				} else {
+					COPY(0, 32);
+					COPY_RANGE(36, 4, 31);
+					COPY_RANGE(1, 33, 60);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				COPY_RANGE(0, 0, 255);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					COPY(0, 192);
+					COPY_RANGE(2, 194, 250);
+					COPY_RANGE(70, 134, 190);
+				} else {
+					COPY(0, 64);
+					COPY_RANGE(2, 66, 122);
+					COPY_RANGE(70, 6, 62);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					COPY(0, 160);
+					COPY_RANGE(1, 161, 188);
+					COPY_RANGE(36, 132, 159);
+				} else if (ucPrimaryChIdx == 1) {
+					COPY(0, 224);
+					COPY_RANGE(1, 225, 252);
+					COPY_RANGE(36, 196, 223);
+				} else if (ucPrimaryChIdx == 2) {
+					COPY(0, 32);
+					COPY_RANGE(1, 33, 60);
+					COPY_RANGE(36, 4, 31);
+				} else {
+					COPY(0, 96);
+					COPY_RANGE(1, 97, 124);
+					COPY_RANGE(36, 68, 95);
+				}
+			}
+		}
+	} else if (ucRxMode == RX_VT_HE_MODE) {
+		if (ucCBW == RX_VT_FR_MODE_20) {
+			COPY_RANGE(0, 0, 63);
+		} else if (ucCBW == RX_VT_FR_MODE_40) {
+			if (ucDBW == RX_VT_FR_MODE_40) {
+				COPY_RANGE(0, 0, 127);
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					COPY(0, 96);
+					COPY_RANGE(34, 66, 95);
+					COPY_RANGE(1, 97, 126);
+				} else {
+					COPY(0, 32);
+					COPY_RANGE(34, 2, 31);
+					COPY_RANGE(1, 31, 62);
+				}
+			}
+		} else if (ucCBW == RX_VT_FR_MODE_80) {
+			if (ucDBW == RX_VT_FR_MODE_80) {
+				COPY_RANGE(0, 0, 255);
+			} else if (ucDBW == RX_VT_FR_MODE_40) {
+				if (ucPrimaryChIdx <= 1) {
+					COPY(0, 192);
+					COPY_RANGE(1, 193, 253);
+					COPY_RANGE(67, 131, 191);
+				} else {
+					COPY(0, 64);
+					COPY_RANGE(1, 65, 125);
+					COPY_RANGE(67, 3, 63);
+				}
+			} else if (ucDBW == RX_VT_FR_MODE_20) {
+				if (ucPrimaryChIdx == 0) {
+					COPY(0, 160);
+					COPY_RANGE(1, 161, 190);
+					COPY_RANGE(34, 130, 159);
+				} else if (ucPrimaryChIdx == 1) {
+					COPY(0, 224);
+					COPY_RANGE(1, 225, 254);
+					COPY_RANGE(34, 194, 223);
+				} else if (ucPrimaryChIdx == 2) {
+					COPY(0, 32);
+					COPY_RANGE(1, 33, 62);
+					COPY_RANGE(34, 2, 31);
+				} else {
+					COPY(0, 96);
+					COPY_RANGE(1, 97, 126);
+					COPY_RANGE(34, 66, 95);
+				}
+			}
+		}
+	}
+}
+#endif
+
 static uint32_t wlanHwRateOfdmNum(uint16_t ofdm_idx)
 {
 	switch (ofdm_idx) {

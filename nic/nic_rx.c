@@ -223,6 +223,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 #if CFG_SUPPORT_NAN
 	{EVENT_ID_NAN_EXT_EVENT, nicNanEventDispatcher},
 #endif
+#if CFG_SUPPORT_CSI
+	{EVENT_ID_CSI_DATA, nicEventCSIData},
+#endif
 	{EVENT_ID_REPORT_U_EVENT, nicEventReportUEvent},
 #if (CFG_COALESCING_INTERRUPT == 1)
 	{EVENT_ID_PF_CF_COALESCING_INT_DONE, nicEventCoalescingIntDone},
