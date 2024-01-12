@@ -7801,6 +7801,9 @@ static int initWlan(void)
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanRegisterRebootNotifier();
 #endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+	kalIdcRegisterRilNotifier();
+#endif
 #if CFG_AP_80211KVR_INTERFACE
 	nl_sk = netlink_kernel_create(&init_net, NETLINK_OSS_KERNEL, NULL);
 	if (!nl_sk) {
@@ -7970,6 +7973,9 @@ static void exitWlan(void)
 
 #if CFG_POWER_OFF_CTRL_SUPPORT
 	wlanUnregisterRebootNotifier();
+#endif
+#if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
+	kalIdcUnregisterRilNotifier();
 #endif
 	DBGLOG(INIT, INFO, "exitWlan::End\n");
 }				/* end of exitWlan() */
