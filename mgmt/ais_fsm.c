@@ -3760,6 +3760,14 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 		aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
 			fgDelayIndication, ucBssIndex);
 	}
+
+	/* Change to MEDIA_STATE_TO_BE_INDICATED so
+	 * aisIndicationOfMediaStateToHost can report to host when it's really
+	 * disconnected or connected.
+	 */
+	if (ucReasonOfDisconnect == DISCONNECT_REASON_CODE_NEW_CONNECTION)
+		prBssInfo->eConnectionStateIndicated =
+			MEDIA_STATE_TO_BE_INDICATED;
 }				/* end of aisFsmRunEventAbort() */
 
 /*----------------------------------------------------------------------------*/
@@ -5070,24 +5078,16 @@ aisIndicationOfMediaStateToHost(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prStaRec = aisGetStaRecOfAP(prAdapter, ucBssIndex);
 
-	DBGLOG(AIS, LOUD,
-	       "AIS%d indicate Media State to Host Current State [%d]\n",
-	       ucBssIndex,
-	       prAisBssInfo->eConnectionState);
-
-	/* NOTE(Kevin): Move following line to aisChangeMediaState()
-	 * macro per CM's request.
-	 */
-	/* prAisBssInfo->eConnectionState = eConnectionState; */
-
 	/* For indicating the Disconnect Event only if current media state is
 	 * disconnected and we didn't do indication yet.
 	 */
 	DBGLOG(AIS, INFO,
-		"[%d] Current state: %d, connection state indicated: %d\n",
+		"[%d] Current state: %d, connection state %d: indicated: %d to %d\n",
 		ucBssIndex,
 		prAisFsmInfo->eCurrentState,
-		prAisBssInfo->eConnectionStateIndicated);
+		prAisBssInfo->eConnectionState,
+		prAisBssInfo->eConnectionStateIndicated,
+		eConnectionState);
 
 	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
 		/* if receive DEAUTH in JOIN state, report disconnect*/
