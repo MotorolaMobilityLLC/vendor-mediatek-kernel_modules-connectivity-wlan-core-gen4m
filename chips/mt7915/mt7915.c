@@ -376,6 +376,7 @@ struct BUS_INFO mt7915_bus_info = {
 	.lowPowerOwnClear = asicConnac2xLowPowerOwnClear,
 	.wakeUpWiFi = asicWakeUpWiFi,
 	.processSoftwareInterrupt = asicConnac2xProcessSoftwareInterrupt,
+	.softwareInterruptMcu = asicConnac2xSoftwareInterruptMcu,
 	.hifRst = asicConnac2xHifRst,
 	.processRxInterrupt = asicConnac2xProcessRxInterrupt,
 	.initPcieInt = wlanHarrierInitPcieInt,
@@ -471,7 +472,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7915 = {
 	.u4SerUsbMcuEventAddr = WF_SW_DEF_CR_USB_MCU_EVENT_ADD,
 	.u4SerUsbHostAckAddr = WF_SW_DEF_CR_USB_HOST_ACK_ADDR,
 #endif
-
+	.asicDumpSerDummyCR = mt7915DumpSerDummyCR,
 #if CFG_ENABLE_FW_DOWNLOAD
 	.asicEnableFWDownload = NULL,
 #endif				/* CFG_ENABLE_FW_DOWNLOAD */

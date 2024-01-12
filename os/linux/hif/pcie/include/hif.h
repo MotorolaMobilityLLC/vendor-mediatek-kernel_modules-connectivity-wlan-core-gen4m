@@ -174,7 +174,6 @@ struct GL_HIF_INFO {
 	struct MSDU_TOKEN_INFO rTokenInfo;
 
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
-	u_int8_t fgIsErrRecovery;
 	struct timer_list rSerTimer;
 	struct list_head rTxCmdQ;
 	struct list_head rTxDataQ;
@@ -263,6 +262,8 @@ struct BUS_INFO {
 		struct RTMP_RX_RING *rx_ring, uint32_t index);
 	void (*wfdmaManualPrefetch)(struct GLUE_INFO *prGlueInfo);
 	void (*processSoftwareInterrupt)(IN struct ADAPTER *prAdapter);
+	void (*softwareInterruptMcu)(IN struct ADAPTER *prAdapter,
+		u_int32_t intrBitMask);
 	void (*hifRst)(struct GLUE_INFO *prGlueInfo);
 	void (*initPcieInt)(struct GLUE_INFO *prGlueInfo);
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,

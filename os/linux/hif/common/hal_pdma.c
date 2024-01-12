@@ -2532,20 +2532,21 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			prChipInfo = prAdapter->chip_info;
 			if (prChipInfo->asicDumpSerDummyCR)
 				prChipInfo->asicDumpSerDummyCR(prAdapter);
-
-			if (!prHifInfo->fgIsErrRecovery) {
-				prHifInfo->fgIsErrRecovery = TRUE;
-				halStartSerTimer(prAdapter);
-			}
-
+			halStartSerTimer(prAdapter);
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop PDMA tx/rx ring operation\n");
 			nicSerStopTxRx(prAdapter);
 
 			DBGLOG(HAL, INFO,
 				"SER(F) Host ACK PDMA tx/rx ring stop operation\n");
-			kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
-				MCU_INT_PDMA0_STOP_DONE);
+
+			if (prBusInfo->softwareInterruptMcu) {
+				prBusInfo->softwareInterruptMcu(prAdapter,
+					MCU_INT_PDMA0_STOP_DONE);
+			} else {
+				kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
+					MCU_INT_PDMA0_STOP_DONE);
+			}
 
 			/* re-call for change status to stop dma0 */
 			prErrRecoveryCtrl->eErrRecovState =
@@ -2565,14 +2566,18 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 
 			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo);
-			kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_TX_Q, 0);
 
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_RESET_PDMA0;
-			kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
-				MCU_INT_PDMA0_INIT_DONE);
+			if (prBusInfo->softwareInterruptMcu) {
+				prBusInfo->softwareInterruptMcu(prAdapter,
+					MCU_INT_PDMA0_INIT_DONE);
+			} else {
+				kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
+					MCU_INT_PDMA0_INIT_DONE);
+			}
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -2585,8 +2590,13 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 				"SER(Q) Host interrupt MCU SER handle done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_WAIT_MCU_NORMAL;
-			kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
-				MCU_INT_PDMA0_RECOVERY_DONE);
+			if (prBusInfo->softwareInterruptMcu) {
+				prBusInfo->softwareInterruptMcu(prAdapter,
+					MCU_INT_PDMA0_RECOVERY_DONE);
+			} else {
+				kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
+					MCU_INT_PDMA0_RECOVERY_DONE);
+			}
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -2605,8 +2615,10 @@ void halHwRecoveryFromError(IN struct ADAPTER *prAdapter)
 			kalDevKickData(prAdapter->prGlueInfo);
 			halRxReceiveRFBs(prAdapter, RX_RING_EVT_IDX_1, FALSE);
 			halRxReceiveRFBs(prAdapter, RX_RING_DATA_IDX_0, TRUE);
-			prHifInfo->fgIsErrRecovery = FALSE;
 			nicSerStartTxRx(prAdapter);
+#if CFG_SUPPORT_MULTITHREAD
+			kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+#endif
 			prErrRecoveryCtrl->eErrRecovState = ERR_RECOV_STOP_IDLE;
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
