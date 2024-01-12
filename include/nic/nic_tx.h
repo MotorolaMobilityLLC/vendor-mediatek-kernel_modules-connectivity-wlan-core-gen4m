@@ -1920,6 +1920,9 @@ void nicTxSetPktLifeTime(IN struct MSDU_INFO *prMsduInfo,
 void nicTxSetPktRetryLimit(IN struct MSDU_INFO *prMsduInfo,
 	IN uint8_t ucRetryLimit);
 
+void nicTxSetForceRts(IN struct MSDU_INFO *prMsduInfo,
+	IN int8_t fgForceRts);
+
 void nicTxSetPktPowerOffset(IN struct MSDU_INFO *prMsduInfo,
 	IN int8_t cPowerOffset);
 
