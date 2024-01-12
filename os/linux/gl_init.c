@@ -1390,7 +1390,8 @@ static const struct wiphy_vendor_command
 		.doit = mtk_cfg80211_vendor_nan
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		,
-		.policy = VENDOR_CMD_RAW_DATA
+		.policy = mtk_wlan_vendor_nan_policy,
+		.maxattr = NL80211_ATTR_MAX
 #endif
 	},
 	{
