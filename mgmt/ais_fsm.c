@@ -440,7 +440,7 @@ void aisFsmInit(IN struct ADAPTER *prAdapter,
 		aisSetLinkBssInfo(prAisFsmInfo, prAisBssInfo, i);
 	}
 
-	aisResetAllLink(prAisFsmInfo);
+	aisClearAllLink(prAisFsmInfo);
 
 	/* from this point , bssinfo is ready to use */
 	prAisFsmInfo->ucMainBssIndex =
@@ -2369,7 +2369,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			nicMediaJoinFailure(prAdapter,
 					    prAisBssInfo->ucBssIndex,
 					    WLAN_STATUS_JOIN_FAILURE);
-			aisResetAllLink(prAisFsmInfo);
+			aisClearAllLink(prAisFsmInfo);
 			prAisFsmInfo->ucConnTrialCountLimit = 0;
 			eNextState = AIS_STATE_IDLE;
 			fgIsTransition = TRUE;
@@ -3321,6 +3321,11 @@ void aisChangeAllMediaState(IN struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
 
+		kalResetStats(
+			wlanGetNetDev(
+			prAdapter->prGlueInfo,
+			prAisBssInfo->ucBssIndex));
+
 		aisChangeMediaState(prAisBssInfo, state);
 
 		/* 4 <1.2> Deactivate previous AP's STA_RECORD_T
@@ -3402,10 +3407,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					   prAdapter, ucBssIndex, FALSE,
 					   aisGetMainLinkBssDesc(prAisFsmInfo));
 				}
-				kalResetStats(
-					wlanGetNetDev(
-					prAdapter->prGlueInfo,
-					ucBssIndex));
 
 				/* 4 <1.1> Change FW's Media State
 				 * immediately.
@@ -3836,7 +3837,7 @@ void aisFsmDisconnectedAction(IN struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prRoamingFsmInfo->eReason = ROAMING_REASON_POOR_RCPI;
 
 	aisRemoveDeauthBlacklist(prAdapter);
-	aisResetAllLink(prAisFsmInfo);
+	aisClearAllLink(prAisFsmInfo);
 
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);
@@ -4544,6 +4545,23 @@ u_int8_t aisValidateProbeReq(IN struct ADAPTER *prAdapter,
 
 #endif /* CFG_SUPPORT_ADHOC */
 
+void aisFsmDisconnectAllBss(IN struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo)
+{
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prAisBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		aisChangeMediaState(prAisBssInfo, MEDIA_STATE_DISCONNECTED);
+
+		/* 4 <4.1> sync. with firmware */
+		nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
+		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
+	}
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4678,14 +4696,8 @@ void aisFsmDisconnect(IN struct ADAPTER *prAdapter,
 
 	/* 4 <4> Change Media State immediately. */
 	if (prAisFsmInfo->ucReasonOfDisconnect !=
-	    DISCONNECT_REASON_CODE_REASSOCIATION) {
-		aisChangeMediaState(prAisBssInfo,
-			MEDIA_STATE_DISCONNECTED);
-
-		/* 4 <4.1> sync. with firmware */
-		nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
-		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
-	}
+	    DISCONNECT_REASON_CODE_REASSOCIATION)
+		aisFsmDisconnectAllBss(prAdapter, prAisFsmInfo);
 
 #if CFG_SUPPORT_ROAMING
 	roamingFsmRunEventAbort(prAdapter, ucBssIndex);
@@ -7225,7 +7237,7 @@ struct STA_RECORD *aisGetMainLinkStaRec(IN struct AIS_FSM_INFO *prAisFsmInfo)
 	return aisGetLinkStaRec(prAisFsmInfo, AIS_MAIN_LINK_INDEX);
 }
 
-void aisResetAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo)
+void aisClearAllLink(IN struct AIS_FSM_INFO *prAisFsmInfo)
 {
 	uint8_t i;
 
