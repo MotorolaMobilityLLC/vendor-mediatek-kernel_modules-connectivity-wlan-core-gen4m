@@ -6724,3 +6724,126 @@ void p2pFunCalAcsChnScores(IN struct ADAPTER *prAdapter)
 	wlanSortChannel(prAdapter);
 }
 
+enum ENUM_CHNL_SWITCH_POLICY
+p2pFunDetermineChnlSwitchPolicy(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIdx,
+		IN struct RF_CHANNEL_INFO *prNewChannelInfo)
+{
+	enum ENUM_CHNL_SWITCH_POLICY ePolicy = CHNL_SWITCH_POLICY_CSA;
+
+#if CFG_SEND_DEAUTH_DURING_CHNL_SWITCH
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	/* Send deauth frame to clients:
+	 * 1. Cross band
+	 * 2. BW > 20MHz
+	 */
+	if (prNewChannelInfo->eBand == BAND_5G ||
+			(prBssInfo && prBssInfo->eBand == BAND_5G &&
+				prNewChannelInfo->eBand == BAND_2G4))
+		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
+#endif
+
+	return ePolicy;
+}
+
+void
+p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
+		IN uint8_t ucBssIdx,
+		enum ENUM_CHNL_SWITCH_POLICY ePolicy,
+		IN struct RF_CHANNEL_INFO *prNewChannelInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct LINK *prClientList;
+	struct STA_RECORD *prCurrStaRec;
+
+	DBGLOG(P2P, INFO, "bss index: %d, policy: %d\n", ucBssIdx, ePolicy);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	prClientList = &prBssInfo->rStaRecOfClientList;
+
+	switch (ePolicy) {
+	case CHNL_SWITCH_POLICY_DEAUTH:
+		if (prClientList && prClientList->u4NumElem > 0) {
+			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+					rLinkEntry, struct STA_RECORD) {
+				struct TIMER *prTimer;
+
+				if (!prCurrStaRec)
+					continue;
+
+				prTimer = &(prCurrStaRec->rDeauthTxDoneTimer);
+
+				p2pFuncDisconnect(prAdapter, prBssInfo,
+						prCurrStaRec, TRUE,
+						REASON_CODE_DEAUTH_LEAVING_BSS);
+
+				if (!timerPendingTimer(prTimer)) {
+					cnmTimerInitTimer(prAdapter,
+						prTimer,
+						(PFN_MGMT_TIMEOUT_FUNC)
+						p2pRoleFsmDeauthTimeout,
+						(unsigned long) prCurrStaRec);
+					cnmTimerStartTimer(prAdapter,
+						prTimer,
+						P2P_DEAUTH_TIMEOUT_TIME_MS);
+				}
+			}
+			/* wait for deauth TX done & switch channel */
+		} else {
+			p2pFunChnlSwitchNotifyDone(prAdapter);
+		}
+		break;
+	case CHNL_SWITCH_POLICY_CSA:
+		/* Set CSA IE */
+		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
+		prAdapter->rWifiVar.ucNewChannelNumber =
+			prNewChannelInfo->ucChannelNum;
+		prAdapter->rWifiVar.ucChannelSwitchCount = 5;
+
+		/* Send Action Frame */
+		rlmSendChannelSwitchFrame(prAdapter, prBssInfo->ucBssIndex);
+
+		/* Update Beacon */
+		bssUpdateBeaconContent(prAdapter, prBssInfo->ucBssIndex);
+		break;
+	default:
+		DBGLOG(P2P, WARN, "invalid policy for channel switch: %d\n",
+			ePolicy);
+		break;
+	}
+}
+
+void
+p2pFunChnlSwitchNotifyDone(IN struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	struct MSG_P2P_CSA_DONE *prP2pCsaDoneMsg;
+
+	if (!prAdapter)
+		return;
+
+	prBssInfo = cnmGetSapBssInfo(prAdapter);
+	if (!prBssInfo)
+		return;
+
+	prP2pCsaDoneMsg = (struct MSG_P2P_CSA_DONE *) cnmMemAlloc(prAdapter,
+			RAM_TYPE_MSG,
+			sizeof(*prP2pCsaDoneMsg));
+
+	if (!prP2pCsaDoneMsg) {
+		log_dbg(CNM, ERROR, "allocate for prP2pCsaDoneMsg failed!\n");
+		return;
+	}
+
+	DBGLOG(CNM, INFO, "ucBssIndex = %d\n", prBssInfo->ucBssIndex);
+
+	prP2pCsaDoneMsg->rMsgHdr.eMsgId = MID_CNM_P2P_CSA_DONE;
+	prP2pCsaDoneMsg->ucBssIndex = prBssInfo->ucBssIndex;
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *) prP2pCsaDoneMsg,
+			MSG_SEND_METHOD_BUF);
+}
+
