@@ -388,6 +388,7 @@ struct STA_RECORD {
 	uint16_t u2VhtTxHighestSupportedDataRate;
 	uint8_t ucVhtOpMode;
 #endif
+	uint8_t ucOpModeInOpNotificationIE;
 
 #if (CFG_SUPPORT_802_11AX == 1)
 	/*--------------------------------------------------------------------*/
