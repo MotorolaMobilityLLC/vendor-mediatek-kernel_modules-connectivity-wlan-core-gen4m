@@ -9614,9 +9614,9 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 	prCmdPerfReport->u2CmdLen = sizeof(struct CMD_PERF_IND);
 
 	prCmdPerfReport->u4VaildPeriod = PERF_UPDATE_PERIOD;
-	prCmdPerfReport->ucBssNum = MAX_BSSID_NUM;
+	prCmdPerfReport->ucBssNum = prAdapter->ucSwBssIdNum;
 
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
+	for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
 		prCmdPerfReport->rUniCmdParm[i].u4CurTxBytes =
 			prAdapter->prGlueInfo->PerfIndCache.u4CurTxBytes[i];
 		prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes =
@@ -9636,7 +9636,7 @@ void kalSetPerfReport(struct ADAPTER *prAdapter)
 		    prCmdPerfReport->rUniCmdParm[i].u4CurRxBytes;
 	}
 	if (u4CurrentTp != 0) {
-		for (i = 0; i < MAX_BSSID_NUM; i++) {
+		for (i = 0; i < prCmdPerfReport->ucBssNum; i++) {
 			DBGLOG(SW4, TRACE,
 			"Total TP[%d] BSS[%d] TX-Byte[%d],RX-Byte[%d],Rate[%d],RCPI0[%d],RCPI1[%d]\n",
 			u4CurrentTp,
