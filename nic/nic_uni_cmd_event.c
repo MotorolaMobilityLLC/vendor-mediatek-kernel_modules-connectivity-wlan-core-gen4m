@@ -4304,7 +4304,7 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 			sub_req = (struct MSG_CH_REQ *)msg;
 			tag->u2Tag = UNI_CMD_CNM_TAG_CH_PRIVILEGE_REQ;
 		} else {
-			sub_req = (struct MSG_CH_REQ *)&msg->aucBuffer[i];
+			sub_req = (struct MSG_CH_REQ *)&msg[i];
 			tag->u2Tag = UNI_CMD_CNM_TAG_CH_PRIVILEGE_MLO_SUB_REQ;
 		}
 		tag->u2Length = sizeof(*tag);

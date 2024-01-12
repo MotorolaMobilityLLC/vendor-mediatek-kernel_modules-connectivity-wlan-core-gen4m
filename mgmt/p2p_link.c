@@ -785,11 +785,7 @@ void p2pLinkAcquireChJoin(
 			    prBss->ucBssIndex);
 		}
 
-		if (i == 0)
-			prSubReq = prMsgChReq;
-		else
-			prSubReq = (struct MSG_CH_REQ *)
-				&prMsgChReq->aucBuffer[i];
+		prSubReq = (struct MSG_CH_REQ *)&prMsgChReq[i];
 
 		p2pFuncReleaseCh(prAdapter,
 			prBss->ucBssIndex,
