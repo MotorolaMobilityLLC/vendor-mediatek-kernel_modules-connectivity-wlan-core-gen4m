@@ -70,8 +70,10 @@
 /* Stat CMD will have different format due to different algorithm support */
 #if (defined(MT6632) || defined(MT7668))
 #define CFG_SUPPORT_RA_GEN			0
+#define CFG_SUPPORT_TXPOWER_INFO		0
 #else
 #define CFG_SUPPORT_RA_GEN			1
+#define CFG_SUPPORT_TXPOWER_INFO		1
 #endif
 
 /*******************************************************************************
@@ -237,6 +239,11 @@
 /* Define magic key of test mode (Don't change it for future compatibity) */
 #define PRIV_CMD_TEST_MAGIC_KEY                         2011
 #define PRIV_CMD_TEST_MAGIC_KEY_ICAP                         2013
+
+#if (CFG_SUPPORT_TXPOWER_INFO == 1)
+#define TX_POWER_SHOW_INFO                              0x7
+#endif
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
