@@ -551,6 +551,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
 	.ucMaxSwAmsduNum = 0,
+	.ucMaxSwapAntenna = 0,
 	.workAround = 0,
 	.prTxPwrLimitFile = "TxPwrLimit_MT76x8.dat",
 	.ucTxPwrLimitBatchSize = 32,

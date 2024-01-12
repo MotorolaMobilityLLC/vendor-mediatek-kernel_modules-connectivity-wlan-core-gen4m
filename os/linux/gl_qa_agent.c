@@ -1385,6 +1385,92 @@ static int32_t HQA_LowPower(struct net_device *prNetDev,
 	return i4Ret;
 }
 
+#if CFG_SUPPORT_ANT_SWAP
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  QA Agent For query ant swap capablity
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prIwReqData
+ * \param[in] HqaCmdFrame	Ethernet Frame Format receive from QA Tool DLL
+ * \param[out] None
+ *
+ * \retval 0			On success.
+ */
+/*----------------------------------------------------------------------------*/
+static int32_t HQA_GetAntSwapCapability(struct net_device *prNetDev,
+			    IN union iwreq_data *prIwReqData,
+			    struct HQA_CMD_FRAME *HqaCmdFrame)
+{
+	int32_t i4Ret = 0;
+	uint32_t value = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
+		DBGLOG(RFTEST, ERROR, "prGlueInfo or prAdapter is NULL\n");
+		return -EFAULT;
+	}
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	if (!prChipInfo) {
+		DBGLOG(RFTEST, ERROR, "prChipInfo is NULL\n");
+		return -EFAULT;
+	}
+
+	DBGLOG(RFTEST, INFO, "HQA_GetAntSwapCapability [%d]\n",
+				prGlueInfo->prAdapter->fgIsSupportAntSwp);
+
+	DBGLOG(RFTEST, INFO, "ucMaxSwapAntenna = [%d]\n",
+				prChipInfo->ucMaxSwapAntenna);
+
+	if (prGlueInfo->prAdapter->fgIsSupportAntSwp)
+		value = ntohl(prChipInfo->ucMaxSwapAntenna);
+	else
+		value = 0;
+
+	memcpy(HqaCmdFrame->Data + 2, &value, sizeof(value));
+	ResponseToQA(HqaCmdFrame, prIwReqData, 2 + sizeof(value), i4Ret);
+	return i4Ret;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  QA Agent For setting antenna swap
+ *
+ * \param[in] prNetDev		Pointer to the Net Device
+ * \param[in] prIwReqData
+ * \param[in] HqaCmdFrame	Ethernet Frame Format receive from QA Tool DLL
+ * \param[out] None
+ *
+ * \retval 0			On success.
+ */
+/*----------------------------------------------------------------------------*/
+static int32_t HQA_SetAntSwap(struct net_device *prNetDev,
+			    IN union iwreq_data *prIwReqData,
+			    struct HQA_CMD_FRAME *HqaCmdFrame)
+{
+	int32_t i4Ret = 0;
+	uint32_t u4Ant = 0, u4Band = 0;
+
+	memcpy(&u4Band, HqaCmdFrame->Data, sizeof(uint32_t));
+	memcpy(&u4Ant, HqaCmdFrame->Data +  sizeof(uint32_t), sizeof(uint32_t));
+	u4Ant = ntohl(u4Ant);
+
+	DBGLOG(RFTEST, INFO, "Band = %d, Ant = %d\n", u4Band, u4Ant);
+
+	i4Ret = MT_ATESetAntSwap(prNetDev, u4Ant);
+	if (i4Ret != WLAN_STATUS_SUCCESS)
+		return -EFAULT;
+
+	ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
+	return i4Ret;
+
+}
+#endif
+
+
 static HQA_CMD_HANDLER HQA_CMD_SET1[] = {
 	/* cmd id start from 0x1100 */
 	HQA_SetChannel,		/* 0x1100 */
@@ -1399,6 +1485,11 @@ static HQA_CMD_HANDLER HQA_CMD_SET1[] = {
 	HQA_SetTssiOnOff,	/* 0x1109 */
 	HQA_SetRxHighLowTemperatureCompensation,	/* 0x110A */
 	HQA_LowPower,		/* 0x110B */
+	NULL,			/* 0x110C */
+#if CFG_SUPPORT_ANT_SWAP
+	HQA_GetAntSwapCapability,	/* 0x110D */
+	HQA_SetAntSwap,		/* 0x110E */
+#endif
 };
 
 /*----------------------------------------------------------------------------*/

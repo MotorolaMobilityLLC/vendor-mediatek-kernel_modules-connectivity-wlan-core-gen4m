@@ -194,6 +194,11 @@ int32_t MT_ATEWriteEfuse(struct net_device *prNetDev,
 			 uint16_t u2Offset, uint16_t u2Content);
 int32_t MT_ATESetTxTargetPower(struct net_device *prNetDev,
 			       uint8_t ucTxTargetPower);
+
+#if CFG_SUPPORT_ANT_SWAP
+int32_t MT_ATESetAntSwap(struct net_device *prNetDev, uint32_t u4Ant);
+#endif
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 int32_t MT_ATESetRddReport(struct net_device *prNetDev,
 			   uint8_t ucDbdcIdx);

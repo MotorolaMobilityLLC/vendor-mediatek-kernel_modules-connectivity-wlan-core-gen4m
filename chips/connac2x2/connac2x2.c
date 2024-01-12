@@ -377,6 +377,11 @@ struct mt66xx_chip_info mt66xx_chip_info_connac2x2 = {
 #endif
 	.is_support_hw_amsdu = TRUE,
 	.ucMaxSwAmsduNum = 0,
+	/* Driver uses SOC to decide to use connac or connac2x2 configs
+	 * But sometimes one SOC may use connac2x2 on 1x1 chip
+	 * So we have to update the related configs for compatibility
+	 */
+	.ucMaxSwapAntenna = 2,
 	.workAround = 0,
 
 	.top_hcr = TOP_HCR,
