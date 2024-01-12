@@ -1168,6 +1168,12 @@ else
     ccflags-y += -DCFG_SUPPORT_BCN_PROT=0
 endif
 
+ifneq ($(CONFIG_SW_BIP_GMAC), n)
+    ccflags-y += -DCFG_SUPPORT_SW_BIP_GMAC=1
+else
+    ccflags-y += -DCFG_SUPPORT_SW_BIP_GMAC=0
+endif
+
 ifeq ($(CONFIG_MTK_DBDC_SW_FOR_P2P_LISTEN), y)
     ccflags-y += -DCFG_DBDC_SW_FOR_P2P_LISTEN=1
 endif

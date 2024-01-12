@@ -2881,7 +2881,11 @@ uint32_t nicUniCmdBcnProt(struct ADAPTER *ad,
 			tag->ucBcnProtEnabled = 2; /* HW mode */
 		} else if (cmd->ucAlgorithmId == CIPHER_SUITE_BIP_GMAC_256) {
 			tag->ucBcnProtCipherId = CIPHER_SUITE_BCN_PROT_GMAC_256;
+#if CFG_SUPPORT_SW_BIP_GMAC
 			tag->ucBcnProtEnabled = 1; /* SW mode */
+#else
+			tag->ucBcnProtEnabled = 2; /* HW mode */
+#endif
 		} else {
 			DBGLOG(INIT, INFO,
 				"unsupported cipher for BCN PROT: %d",
