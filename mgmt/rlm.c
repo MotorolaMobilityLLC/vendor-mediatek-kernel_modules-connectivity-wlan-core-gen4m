@@ -1001,19 +1001,18 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11V_MBSSID == 1)
 	if (prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
-	prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
+	prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 	SET_EXT_CAP(prHsExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 		    ELEM_EXT_CAP_MBSSID_BIT);
 	}
 #endif
 
-	if ((extCapIeLen - ELEM_HDR_LEN) > prHsExtCap->ucLength)
-		prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
-	if (extCapConn)
+	if (extCapConn) {
+		if ((extCapIeLen - ELEM_HDR_LEN) > prHsExtCap->ucLength)
+			prHsExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 		rlmSyncExtCapIEwithSupplicant(prHsExtCap->aucCapabilities,
 			extCapConn, extCapIeLen);
-	else
+	} else
 		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
 	ASSERT(IE_SIZE(prHsExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
@@ -1097,13 +1096,12 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP_11ABGNAC;
 #endif
 
-	if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
-		prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
-
-	if (extCapConn)
+	if (extCapConn) {
+		if ((extCapIeLen - ELEM_HDR_LEN) > prExtCap->ucLength)
+			prExtCap->ucLength = ELEM_MAX_LEN_EXT_CAP;
 		rlmSyncExtCapIEwithSupplicant(prExtCap->aucCapabilities,
 			extCapConn, extCapIeLen);
-	else
+	} else
 		DBGLOG(RLM, WARN, "extCapConn = NULL!");
 
 	ASSERT(IE_SIZE(prExtCap) <= (ELEM_HDR_LEN + ELEM_MAX_LEN_EXT_CAP));
