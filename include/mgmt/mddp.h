@@ -40,7 +40,7 @@
  */
 #include "mddp_export.h"
 #include "mddp.h"
-#include "mt-plat/mtk_ccci_common.h"
+#include "mtk_ccci_common.h"
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
