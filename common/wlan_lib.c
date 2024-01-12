@@ -11064,7 +11064,7 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 #endif
 
 	DBGLOG(SW4, INFO,
-	       "Link Quality: Tx(rate:%u, total:%lu, retry:%lu, fail:%lu, RTS fail:%lu, ACK fail:%lu), Rx(rate:%u, total:%lu, dup:%u, error:%lu), PER(%u), Congestion(idle slot:%lu, diff:%lu)\n",
+	       "Link Quality: Tx(rate:%u, total:%lu, retry:%lu, fail:%lu, RTS fail:%lu, ACK fail:%lu), Rx(rate:%u, total:%lu, dup:%u, error:%lu), PER(%u), Congestion(idle slot:%lu, diff:%lu, AwakeDur:%u)\n",
 	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
 	       prLinkQualityInfo->u8TxTotalCount, /* tx total packages */
 	       prLinkQualityInfo->u8TxRetryCount, /* tx retry count */
@@ -11078,7 +11078,8 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 	       prLinkQualityInfo->u4CurTxPer, /* current Tx PER */
 	       /* congestion stats */
 	       prLinkQualityInfo->u8IdleSlotCount, /* idle slot */
-	       prLinkQualityInfo->u8DiffIdleSlotCount /* idle slot diff */
+	       prLinkQualityInfo->u8DiffIdleSlotCount, /* idle slot diff */
+	       prLinkQualityInfo->u8HwMacAwakeDuration
 	);
 
 	return u4Status;
