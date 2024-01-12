@@ -93,7 +93,9 @@
 
 #define CFG_TX_STOP_NETIF_QUEUE_THRESHOLD   256	/* packets */
 
-#if defined(CONFIG_MTK_WIFI_HE160) || defined(CONFIG_MTK_WIFI_BW320)
+#if defined(CONFIG_MTK_WIFI_HE160) || \
+	defined(CONFIG_MTK_WIFI_BW320) || \
+	defined(CONFIG_MTK_WIFI_EHT160)
 #define CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD   4096	/* packets */
 #define CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD  3072	/* packets */
 #elif defined(CONFIG_MTK_WIFI_HE80)
