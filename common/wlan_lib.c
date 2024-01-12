@@ -3229,16 +3229,14 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 
 	KAL_SPIN_LOCK_DECLARATION();
 	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct QUE *prQueList;
 
 	ASSERT(prAdapter);
 
 	prRxCtrl = &prAdapter->rRxCtrl;
 	ASSERT(prRxCtrl);
 
-	prQueList = &prRxCtrl->rIndicatedRfbList;
-	DBGLOG(RX, TRACE, "%s: IndicatedRfbList num = %u\n",
-	       __func__, prQueList->u4NumElem);
+	DBGLOG(RX, LOUD, "IndicatedRfbList num = %u\n",
+		RX_GET_INDICATED_RFB_CNT(prRxCtrl));
 
 	while (QUEUE_IS_NOT_EMPTY(&prRxCtrl->rIndicatedRfbList)) {
 		KAL_ACQUIRE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
@@ -3247,6 +3245,10 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_FREE_QUE);
 
 		if (prSwRfb) {
+#if CFG_RFB_TRACK
+			RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb,
+				RFB_TRACK_PACKET_SETUP);
+#endif /* CFG_RFB_TRACK */
 			status = nicRxSetupRFB(prAdapter, prSwRfb);
 			nicRxReturnRFB(prAdapter, prSwRfb);
 		} else {
@@ -3262,8 +3264,8 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 		DBGLOG(RX, WARN,
 			"Restart ReturnIndicatedRfb Timer (%ums) I,F:%u,%u\n",
 			RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC,
-			prRxCtrl->rIndicatedRfbList.u4NumElem,
-			prRxCtrl->rFreeSwRfbList.u4NumElem);
+			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+			RX_GET_FREE_RFB_CNT(prRxCtrl));
 		/* restart timer */
 		cnmTimerStartTimer(prAdapter,
 			&prAdapter->rPacketDelaySetupTimer,
@@ -3346,8 +3348,8 @@ void wlanReturnPacket(struct ADAPTER *prAdapter,
 			DBGLOG(RX, WARN,
 			       "Start ReturnIndicatedRfb Timer (%ums) I,F:%u,%u\n",
 			       RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC,
-			       prRxCtrl->rIndicatedRfbList.u4NumElem,
-			       prRxCtrl->rFreeSwRfbList.u4NumElem);
+			       RX_GET_INDICATED_RFB_CNT(prRxCtrl),
+			       RX_GET_FREE_RFB_CNT(prRxCtrl));
 			cnmTimerStartTimer(prAdapter,
 			    &prAdapter->rPacketDelaySetupTimer,
 			    RX_RETURN_INDICATED_RFB_TIMEOUT_MSEC);
@@ -8041,6 +8043,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->uArpMonitorCriticalThres,
 			"ArpMonitorCriticalThres", 4);
 #endif /* ARP_MONITER_ENABLE */
+
+
+#if CFG_RFB_TRACK
+	INIT_UINT(prWifiVar->fgRfbTrackEn, "RfbTrackEn", FEATURE_DISABLED);
+	/* unit: second */
+	INIT_UINT(prWifiVar->u4RfbTrackInterval,
+		"RfbTrackInterval", RFB_TRACK_INTERVAL);
+	INIT_UINT(prWifiVar->u4RfbTrackTimeout,
+		"RfbTrackTimeout", RFB_TRACK_TIMEOUT);
+#endif /* CFG_RFB_TRACK */
 
 #if CFG_SUPPORT_SCAN_NO_AP_RECOVERY
 	INIT_UINT(prWifiVar->ucScanNoApRecover,

@@ -1052,6 +1052,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_TX_DELAY_STATS_SUPPORT=y
     CONFIG_MSCS_FAST_PATH_SUPPORT=y
     CONFIG_MCC_BOOST_CPU=y
+    CONFIG_RFB_TRACK=y
     ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
     ifeq ($(CONFIG_DRV_OWN_INT_MODE),y)
         ccflags-y += -DCFG_MTK_WIFI_DRV_OWN_INT_MODE=1
@@ -1688,6 +1689,12 @@ ifeq ($(CONFIG_MCC_BOOST_CPU), y)
 ccflags-y += -DCFG_SUPPORT_MCC_BOOST_CPU=1
 else
 ccflags-y += -DCFG_SUPPORT_MCC_BOOST_CPU=0
+endif
+
+ifeq ($(CONFIG_RFB_TRACK), y)
+ccflags-y += -DCFG_RFB_TRACK=1
+else
+ccflags-y += -DCFG_RFB_TRACK=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_WFDMA_BK_RS), y)
