@@ -1272,6 +1272,12 @@ struct CMD_ACCESS_REG {
 	uint32_t u4Data;
 };
 
+/* CMD_ID_SET_MDVT */
+struct CMD_MDVT_CFG {
+	uint32_t u4ModuleId;
+	uint32_t u4CaseId;
+};
+
 #if CFG_SUPPORT_CAL_RESULT_BACKUP_TO_HOST
 /* CMD_ID_CAL_BACKUP_IN_HOST_V2 & EVENT_ID_CAL_BACKUP_IN_HOST_V2 */
 struct CMD_CAL_BACKUP_STRUCT_V2 {

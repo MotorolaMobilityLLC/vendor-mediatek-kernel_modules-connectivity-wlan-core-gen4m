@@ -16606,3 +16606,37 @@ uint32_t wlanoidThermalProtectAct(IN struct ADAPTER *prAdapter,
 	return rStatus;
 }
 #endif
+uint32_t
+wlanoidSetMdvt(IN struct ADAPTER *prAdapter,
+			   IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+			   OUT uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_MDVT_STRUCT *prMdvtInfo;
+	struct CMD_MDVT_CFG rCmdMdvtCfg;
+
+	DEBUGFUNC("wlanoidSetMdvt");
+
+	ASSERT(prAdapter);
+
+	*pu4SetInfoLen = sizeof(struct PARAM_MDVT_STRUCT);
+
+	if (u4SetBufferLen < sizeof(struct PARAM_MDVT_STRUCT))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prMdvtInfo = (struct PARAM_MDVT_STRUCT *)pvSetBuffer;
+	rCmdMdvtCfg.u4ModuleId = prMdvtInfo->u4ModuleId;
+	rCmdMdvtCfg.u4CaseId = prMdvtInfo->u4CaseId;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				   CMD_ID_SET_MDVT,
+				   TRUE,
+				   FALSE,
+				   TRUE,
+				   nicCmdEventSetCommon,
+				   nicOidCmdTimeoutCommon,
+				   sizeof(struct CMD_MDVT_CFG),
+				   (uint8_t *) &rCmdMdvtCfg,
+				   pvSetBuffer, u4SetBufferLen);
+}	/* wlanoidSetMdvt */

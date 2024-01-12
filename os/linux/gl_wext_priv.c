@@ -3871,6 +3871,7 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_TX_POWER_INFO   "TxPowerInfo"
 #define CMD_TX_POWER_MANUAL_SET "TxPwrManualSet"
 #define CMD_GET_HAPD_CHANNEL       "HAPD_GET_CHANNEL"
+#define CMD_SET_MDVT		"SET_MDVT"
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #define CMD_SET_PWR_LEVEL	"SET_PWR_LEVEL"
@@ -5449,6 +5450,56 @@ int priv_driver_set_mcr(IN struct net_device *prNetDev, IN char *pcCommand,
 
 	return i4BytesWritten;
 
+}
+
+int priv_driver_set_mdvt(IN struct net_device *prNetDev, IN char *pcCommand,
+			IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret;
+	int32_t i4ArgNum = 3;
+	struct CMD_MDVT_CFG rCmdMdvtCfg;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= i4ArgNum) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &(rCmdMdvtCfg.u4ModuleId));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_mcr error (Address) u4Ret=%d\n",
+			       u4Ret);
+
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &(rCmdMdvtCfg.u4CaseId));
+		if (u4Ret)
+			DBGLOG(REQ, LOUD,
+			       "parse get_mcr error (Data) u4Ret=%d\n", u4Ret);
+
+#if (CFG_SUPPORT_WIFI_SYSDVT == 1)
+		if (rCmdMdvtCfg.u4ModuleId == MDVT_MODULE_PH_TPUT)
+			dvtSetupPhTput(prNetDev, rCmdMdvtCfg.u4CaseId);
+#endif
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetMdvt,
+				   &rCmdMdvtCfg, sizeof(rCmdMdvtCfg),
+				   FALSE, FALSE, TRUE, &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return -1;
+
+	}
+
+	return i4BytesWritten;
 }
 
 static int priv_driver_set_test_mode(IN struct net_device *prNetDev,
@@ -15276,6 +15327,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_THERMAL_PROTECT_DUTY_CFG, priv_driver_thermal_protect_duty_cfg},
 	{CMD_THERMAL_PROTECT_STATE_ACT, priv_driver_thermal_protect_state_act},
 #endif
+	{CMD_SET_MDVT, priv_driver_set_mdvt},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,
