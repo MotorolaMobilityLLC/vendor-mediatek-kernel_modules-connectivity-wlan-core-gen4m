@@ -2870,7 +2870,7 @@ static void nicUpdateMgmtSubtypeCounter(struct ADAPTER *prAdapter,
 
 	/* Only Mgmt frames are expected */
 	if ((prWlanHdr->u2FrameCtrl & MASK_FC_TYPE) != MAC_FRAME_TYPE_MGT) {
-		DBGLOG(INIT, TRACE, "Unexpected type: %u",
+		DBGLOG(INIT, TRACE, "Unexpected type: %lu",
 				prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE);
 		return;
 	}
