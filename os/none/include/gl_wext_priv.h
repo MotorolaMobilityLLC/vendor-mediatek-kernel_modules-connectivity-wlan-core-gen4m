@@ -289,11 +289,6 @@ priv_get_int(struct net_device *prNetDev,
 	     union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_set_ints(struct net_device *prNetDev,
-	      struct iw_request_info *prIwReqInfo,
-	      union iwreq_data *prIwReqData, char *pcExtra);
-
-int
 priv_get_ints(struct net_device *prNetDev,
 	      struct iw_request_info *prIwReqInfo,
 	      union iwreq_data *prIwReqData, char *pcExtra);

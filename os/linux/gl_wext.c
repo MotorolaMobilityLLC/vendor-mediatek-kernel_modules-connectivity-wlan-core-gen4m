@@ -67,36 +67,106 @@ const long channel_freq[] = {
  */
 /* NOTE: name in iwpriv_args only have 16 bytes */
 static const struct iw_priv_args rIwPrivTable[] = {
+	{IOCTL_GET_DRIVER, IW_PRIV_TYPE_CHAR | IW_PRIV_SET_BUF_SIZE,
+		IW_PRIV_TYPE_CHAR | IW_PRIV_GET_BUF_SIZE, "driver"},
+/*---------------------------------------------------------------------------
+ *  debug only
+ *---------------------------------------------------------------------------
+ */
+#if BUILD_QA_DBG
+	/* SET_INT, GET_INT */
 	{IOCTL_SET_INT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, ""},
 	{IOCTL_GET_INT, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, ""},
 	{IOCTL_SET_INT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 3, 0, ""},
 	{IOCTL_GET_INT, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 3, ""},
 	{IOCTL_SET_INT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2, 0, ""},
 	/* fos_change online */
+	{
+		IOCTL_GET_INT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, ""
+	},
+	{IOCTL_SET_INTS, IW_PRIV_TYPE_INT | 4, 0, ""},
+	{IOCTL_GET_INT, 0, IW_PRIV_TYPE_INT | 50, ""},
+#if CFG_TCP_IP_CHKSUM_OFFLOAD
+	{PRIV_CMD_CSUM_OFFLOAD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_tcp_csum"},
+#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
+	{PRIV_CMD_POWER_MODE, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_power_mode"},
+	{PRIV_CMD_WMM_PS, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		3, 0, "set_wmm_ps"},
+	{PRIV_CMD_TEST_MODE, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_test_mode"},
+	{PRIV_CMD_TEST_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		2, 0, "set_test_cmd"},
+	/* added for set_oid and get_oid */
+	{IOCTL_SET_STRUCT, 256, 0, ""},
+#if CFG_SUPPORT_PRIV_MCR_RW
+	{PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		2, 0, "set_mcr"},
+	{
+		PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_mcr"
+	},
+	{
+		PRIV_CMD_DUMP_MEM, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_mem"
+	},
+#endif
+	{
+		PRIV_CMD_TEST_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_test_result"
+	},
+	{PRIV_CMD_BAND_CONFIG, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_band"},
+	{PRIV_CMD_BAND_CONFIG, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, "get_band"},
+	{PRIV_CMD_GET_CH_LIST, 0, IW_PRIV_TYPE_INT | 50, "get_ch_list"},
+#if CFG_ENABLE_WIFI_DIRECT
+	{PRIV_CMD_P2P_MODE, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		2, 0, "set_p2p_mode"},
+#endif
+	{PRIV_CMD_MET_PROFILING, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		2, 0, "set_met_prof"},
+	{PRIV_CMD_SET_SER, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_ser"},
+	{PRIV_CMD_SHOW_CHANNEL, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+	"show_Channel"},
+
+	/* GET_STR */
 	{IOCTL_GET_STR, 0, IW_PRIV_TYPE_CHAR | 2000, ""},
 	{
 		IOCTL_GET_INT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, ""
 	},
+	{PRIV_CMD_CONNSTATUS, 0, IW_PRIV_TYPE_CHAR | 2000, "connStatus"},
+#if CFG_SUPPORT_STAT_STATISTICS
+	{PRIV_CMD_STAT, 0, IW_PRIV_TYPE_CHAR | 2000, "stat"},
+#endif
+#if CFG_SUPPORT_WAKEUP_STATISTICS
+	{PRIV_CMD_INT_STAT, 0, IW_PRIV_TYPE_CHAR | 2000, "get_int_stat" },
+#endif
+#if CFG_SUPPORT_EXCEPTION_STATISTICS
+	{PRIV_CMD_EXCEPTION_STAT, 0, IW_PRIV_TYPE_CHAR | 2000, "get_exp_stat" },
+#endif
+	/* SET STRUCT */
+	{PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		2, 0, "set_sw_ctrl"},
+#if CFG_SUPPORT_BCM && CFG_SUPPORT_BCM_BWCS
+	{PRIV_CUSTOM_BWCS_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_bwcs"},
+#endif
+	{PRIV_CMD_OID, 256, 0, "set_oid"},
+
+	/* GET_STRUCT */
+	{IOCTL_GET_STRUCT, 0, 256, ""},
+	{PRIV_CMD_OID, 0, 256, "get_oid"},
 	{
-		IOCTL_GET_INT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, ""
+		PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_sw_ctrl"
 	},
 
-	{IOCTL_SET_INTS, IW_PRIV_TYPE_INT | 4, 0, ""},
-	{IOCTL_GET_INT, 0, IW_PRIV_TYPE_INT | 50, ""},
-
-	/* added for set_oid and get_oid */
-	{IOCTL_SET_STRUCT, 256, 0, ""},
-	{IOCTL_GET_STRUCT, 0, 256, ""},
-
-	{IOCTL_GET_DRIVER, IW_PRIV_TYPE_CHAR | IW_PRIV_SET_BUF_SIZE,
-		IW_PRIV_TYPE_CHAR | IW_PRIV_GET_BUF_SIZE, "driver"},
-
-#if CFG_SUPPORT_QA_TOOL
-	/* added for ATE iwpriv Command */
-	{IOCTL_IWPRIV_ATE, IW_PRIV_TYPE_CHAR | 2000, 0, ""},
-#endif
+	/* SET_AP */
 	{IOC_AP_SET_CFG, IW_PRIV_TYPE_CHAR | 256,
 	 IW_PRIV_TYPE_CHAR | 1024, "AP_SET_CFG"},
 	{IOC_AP_GET_STA_LIST, IW_PRIV_TYPE_CHAR | 1024,
@@ -110,129 +180,47 @@ static const struct iw_priv_args rIwPrivTable[] = {
 	{IOC_AP_SET_BW, IW_PRIV_TYPE_CHAR | 256,
 	 IW_PRIV_TYPE_CHAR | 1024, "AP_SET_BW"},
 
-	/* sub-ioctl definitions */
-#if 0
-	{PRIV_CMD_REG_DOMAIN, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_reg_domain"},
-	{PRIV_CMD_REG_DOMAIN, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, "get_reg_domain"},
+	/* IWPRIV_ATE */
+#if CFG_SUPPORT_QA_TOOL
+	{IOCTL_IWPRIV_ATE, IW_PRIV_TYPE_CHAR | 2000, 0, ""},
+	{PRIV_QACMD_SET, IW_PRIV_TYPE_CHAR | 2000, 0, "set"},
 #endif
-
-#if CFG_TCP_IP_CHKSUM_OFFLOAD
-	{PRIV_CMD_CSUM_OFFLOAD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_tcp_csum"},
-#endif /* CFG_TCP_IP_CHKSUM_OFFLOAD */
-
-	{PRIV_CMD_POWER_MODE, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_power_mode"},
 	{PRIV_CMD_POWER_MODE, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
 		1, "get_power_mode"},
 
-	{PRIV_CMD_WMM_PS, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		3, 0, "set_wmm_ps"},
-
-	{PRIV_CMD_TEST_MODE, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_test_mode"},
-	{PRIV_CMD_TEST_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		2, 0, "set_test_cmd"},
-	{
-		PRIV_CMD_TEST_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_test_result"
-	},
-#if BUILD_QA_DBG
-#if CFG_SUPPORT_PRIV_MCR_RW
-	{PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		2, 0, "set_mcr"},
-	{
-		PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_mcr"
-	},
-#endif
-#endif
-
-#if CFG_SUPPORT_QA_TOOL
-	{PRIV_QACMD_SET, IW_PRIV_TYPE_CHAR | 2000, 0, "set"},
-#endif
-
-	{PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		2, 0, "set_sw_ctrl"},
-	{
-		PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_sw_ctrl"
-	},
-
-#if CFG_SUPPORT_BCM && CFG_SUPPORT_BCM_BWCS
-	{PRIV_CUSTOM_BWCS_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_bwcs"},
-	/* GET STRUCT sub-ioctls commands */
+	/* unused */
 	{
 		PRIV_CUSTOM_BWCS_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
 		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_bwcs"
 	},
-#endif
-
-	/* SET STRUCT sub-ioctls commands */
-	{PRIV_CMD_OID, 256, 0, "set_oid"},
-	/* GET STRUCT sub-ioctls commands */
-	{PRIV_CMD_OID, 0, 256, "get_oid"},
-
-	{PRIV_CMD_BAND_CONFIG, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_band"},
-	{PRIV_CMD_BAND_CONFIG, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, "get_band"},
-	{PRIV_CMD_GET_CH_LIST, 0, IW_PRIV_TYPE_INT | 50, "get_ch_list"},
-	{
-		PRIV_CMD_DUMP_MEM, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_mem"
-	},
-
-#if CFG_ENABLE_WIFI_DIRECT
-	{PRIV_CMD_P2P_MODE, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		2, 0, "set_p2p_mode"},
-#endif
-	{PRIV_CMD_MET_PROFILING, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		2, 0, "set_met_prof"},
-	{PRIV_CMD_SET_SER, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_ser"},
-/* fos_change begin */
-	{PRIV_CMD_CONNSTATUS, 0, IW_PRIV_TYPE_CHAR | 2000,
-	"connStatus"},
-#if CFG_SUPPORT_STAT_STATISTICS
-	{PRIV_CMD_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
-	"stat"},
-#endif
-#if CFG_SUPPORT_WAKEUP_STATISTICS
-	{PRIV_CMD_INT_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
-	"get_int_stat" },
-#endif
-#if CFG_SUPPORT_EXCEPTION_STATISTICS
-	{PRIV_CMD_EXCEPTION_STAT, 0, IW_PRIV_TYPE_CHAR | 2000,
-	"get_exp_stat" },
-#endif
-	{PRIV_CMD_SHOW_CHANNEL, 0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-	"show_Channel"},
 	{PRIV_CMD_SET_MDVT, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 2, 0,
 	"set_mdvt"},
+#endif /* BUILD_QA_DBG */
 };
 
 static const iw_handler rIwPrivHandler[] = {
+	[IOCTL_GET_DRIVER - SIOCIWFIRSTPRIV] = priv_set_driver,
+#if CFG_SUPPORT_NAN_PRIV
+	[IOCTL_NAN_STRUCT - SIOCIWFIRSTPRIV] = priv_nan_struct,
+#endif
+
+/*---------------------------------------------------------------------------
+ *  debug only
+ *---------------------------------------------------------------------------
+ */
 	[IOCTL_SET_INT - SIOCIWFIRSTPRIV] = priv_set_int,
 	[IOCTL_GET_INT - SIOCIWFIRSTPRIV] = priv_get_int,
 	[IOCTL_SET_ADDRESS - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_GET_ADDRESS - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_SET_STR - SIOCIWFIRSTPRIV] = NULL,
-	[IOCTL_GET_STR - SIOCIWFIRSTPRIV] = priv_get_string,
 	[IOCTL_SET_KEY - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_GET_KEY - SIOCIWFIRSTPRIV] = NULL,
-	[IOCTL_SET_STRUCT - SIOCIWFIRSTPRIV] = priv_set_struct,
+	[IOCTL_SET_INTS - SIOCIWFIRSTPRIV] = NULL,
+	[IOCTL_GET_STR - SIOCIWFIRSTPRIV] = priv_get_string,
 	[IOCTL_GET_STRUCT - SIOCIWFIRSTPRIV] = priv_get_struct,
-	[IOCTL_SET_STRUCT_FOR_EM - SIOCIWFIRSTPRIV] = priv_set_struct,
-	[IOCTL_SET_INTS - SIOCIWFIRSTPRIV] = priv_set_ints,
 	[IOCTL_GET_INTS - SIOCIWFIRSTPRIV] = priv_get_ints,
-	[IOCTL_GET_DRIVER - SIOCIWFIRSTPRIV] = priv_set_driver,
-#if CFG_SUPPORT_NAN_PRIV
-	[IOCTL_NAN_STRUCT - SIOCIWFIRSTPRIV] = priv_nan_struct,
-#endif
+	[IOCTL_SET_STRUCT - SIOCIWFIRSTPRIV] = priv_set_struct,
+	[IOCTL_SET_STRUCT_FOR_EM - SIOCIWFIRSTPRIV] = priv_set_struct,
 #if CFG_ENABLE_WIFI_DIRECT
 	[IOC_AP_GET_STA_LIST - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_SET_MAC_FLTR - SIOCIWFIRSTPRIV] = priv_set_ap,
@@ -243,7 +231,7 @@ static const iw_handler rIwPrivHandler[] = {
 #endif
 #if CFG_SUPPORT_QA_TOOL
 	[IOCTL_QA_TOOL_DAEMON - SIOCIWFIRSTPRIV] = priv_qa_agent,
-	[IOCTL_IWPRIV_ATE - SIOCIWFIRSTPRIV] = priv_ate_set
+	[IOCTL_IWPRIV_ATE - SIOCIWFIRSTPRIV] = priv_ate_set,
 #endif
 };
 

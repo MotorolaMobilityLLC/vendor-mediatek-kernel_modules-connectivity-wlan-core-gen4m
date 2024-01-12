@@ -433,11 +433,6 @@ priv_get_int(struct net_device *prNetDev,
 	     union iwreq_data *prIwReqData, char *pcExtra);
 
 int
-priv_set_ints(struct net_device *prNetDev,
-	      struct iw_request_info *prIwReqInfo,
-	      union iwreq_data *prIwReqData, char *pcExtra);
-
-int
 priv_get_ints(struct net_device *prNetDev,
 	      struct iw_request_info *prIwReqInfo,
 	      union iwreq_data *prIwReqData, char *pcExtra);
@@ -1065,6 +1060,30 @@ int priv_driver_get_power_limit_emi_data(struct net_device *prNetDev,
 #endif /* CFG_SUPPORT_PWR_LMT_EMI == 1 */
 int priv_driver_set_atxop(struct net_device *prNetDev, char *pcCommand,
 			int i4TotalLen);
+int priv_driver_show_tr_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_show_ple_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_show_pse_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_show_csr_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_show_dmasch_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#if CFG_SUPPORT_EASY_DEBUG
+int priv_driver_fw_param(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
+int priv_driver_tspec_operation(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_it_operation(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_fw_event(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_uapsd(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_show_ahdbg(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
