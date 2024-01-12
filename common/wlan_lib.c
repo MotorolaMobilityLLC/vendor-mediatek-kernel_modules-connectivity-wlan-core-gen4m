@@ -1596,11 +1596,6 @@ uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 				WLAN_STATUS_NOT_INDICATING)
 				DBGLOG_LIMITED(INIT, INFO,
 				       "Handle pending interrupt\n");
-#elif defined(_HIF_AXI)
-			if (nicProcessISTWithSpecifiedCount(prAdapter, 5) !=
-				WLAN_STATUS_NOT_INDICATING)
-				DBGLOG(INIT, INFO,
-				       "Handle pending interrupt\n");
 #endif /* _HIF_USB or _HIF_SDIO */
 		}
 		u4CurTime = kalGetTimeTick();
