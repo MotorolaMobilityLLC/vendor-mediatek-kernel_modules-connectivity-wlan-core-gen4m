@@ -10431,19 +10431,29 @@ static uint8_t rlmDomainPwrLmt6GPwrModeGet(struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIdx = 0;
 	struct BSS_INFO *prBssInfo;
-	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_LPI;
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode = PWR_MODE_6G_SP;
+	uint8_t fgUseDefault = TRUE;
 
 	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
 
 		prBssInfo = prAdapter->aprBssInfo[ucBssIdx];
-		/* 6G power mode priority VLP(High)->LPI->SP(Low) */
-		if ((prBssInfo->fgIsNetActive) &&
-		    (prAdapter->e6GPwrMode[ucBssIdx] > e6GPwrMode)) {
+		/* 1. For normal mode will check whether the net is active or
+		 *    not but test mode will not check
+		 * 2. 6G power mode priority VLP(H)->LPI(M)->SP(L)
+		 */
+		if ((((prAdapter->fgTestMode != TRUE) &&
+			(prBssInfo->fgIsNetActive)) ||
+			(prAdapter->fgTestMode == TRUE)) &&
+		    (prAdapter->e6GPwrMode[ucBssIdx] >= e6GPwrMode)) {
 			e6GPwrMode = prAdapter->e6GPwrMode[ucBssIdx];
+			fgUseDefault = FALSE;
 		}
 	}
 
-	return e6GPwrMode;
+	if (fgUseDefault)
+		return PWR_MODE_6G_LPI; /* default mode */
+	else
+		return e6GPwrMode;
 }
 /*----------------------------------------------------------------------------*/
 /*!

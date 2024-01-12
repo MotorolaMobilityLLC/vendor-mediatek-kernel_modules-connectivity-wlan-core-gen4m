@@ -2674,7 +2674,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		return NULL;
 	}
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
-	if (eHwBand == BAND_6G) {
+	/* In force mode, not update 6G power mode by beacon info */
+	if ((eHwBand == BAND_6G) && (prAdapter->fg6GPwrModeForce) != TRUE) {
 		e6GPwrModeCurr = rlmDomain6GPwrModeDecision(
 					prAdapter,
 					fgIsHE6GPresent,

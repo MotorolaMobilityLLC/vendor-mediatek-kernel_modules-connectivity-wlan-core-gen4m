@@ -17344,3 +17344,56 @@ wlanoidQueryEmlInfo(struct ADAPTER *prAdapter,
 #endif
 }
 #endif
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is use to update 6G power mode
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvSetBuffer A pointer to the buffer that holds the data to be set.
+ * \param[in] u4SetBufferLen The length of the set buffer.
+ * \param[out] pu4SetInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_FAILURE
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSet6GPwrMode(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer, uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint8_t ucBssIdx = 0, ucMode = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(uint8_t);
+
+	if (u4SetBufferLen < sizeof(uint8_t))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	ucMode = *(uint8_t *)pvSetBuffer;
+
+	for (ucBssIdx = 0; ucBssIdx < MAX_BSSID_NUM; ucBssIdx++) {
+		rStatus = rlmDomain6GPwrModeUpdate(prAdapter,
+						ucBssIdx,
+						ucMode);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			return WLAN_STATUS_FAILURE;
+
+	}
+
+	prAdapter->fg6GPwrModeForce = TRUE;
+
+	return rStatus;
+}	/* wlanoidSet6GPwrMode */
+#endif

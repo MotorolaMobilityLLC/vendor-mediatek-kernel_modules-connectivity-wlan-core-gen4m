@@ -377,7 +377,9 @@
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 #define CMD_SET_PCIE_SPEED		"SET_PCIE_SPEED"
 #endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
-
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+#define CMD_SET_6G_POWER_MODE		"SET_6G_PWR_MODE"
+#endif /*CFG_SUPPORT_WIFI_6G_PWR_MODE */
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command
  *------------------------------------------------------------------------------

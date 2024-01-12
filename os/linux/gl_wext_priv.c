@@ -22442,3 +22442,47 @@ int priv_driver_set_pcie_speed(struct net_device *prNetDev,
 	return i4Argc;
 }
 #endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+int priv_driver_set_6g_pwr_mode(struct net_device *prNetDev, char *pcCommand,
+			int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4BufLen = 0;
+	int32_t i4BytesWritten = 0, i4Argc = 0, u4Ret = 0;
+	uint8_t ucMode = 0, c = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	for (c = 0; (c < i4Argc) && (c + 1 < i4Argc); c++) {
+		if (kalStrCmp(apcArgv[c], "mode") == 0) {
+			u4Ret = kalkStrtou8(apcArgv[c+1], 0, &ucMode);
+			if (u4Ret) {
+				DBGLOG(REQ, ERROR,
+					"parse set_6g_pwr_mode error Ret=%d\n",
+					u4Ret);
+				return WLAN_STATUS_INVALID_DATA;
+			}
+			rStatus = kalIoctl(prGlueInfo, wlanoidSet6GPwrMode,
+				   &ucMode, sizeof(uint8_t), &u4BufLen);
+
+			if (rStatus != WLAN_STATUS_SUCCESS)
+				return WLAN_STATUS_FAILURE;
+		}
+	}
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		   i4TotalLen - i4BytesWritten,
+		   "Set 6G Power Mode = [%u] success\n", ucMode);
+
+	return i4BytesWritten;
+
+}
+#endif
