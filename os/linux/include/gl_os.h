@@ -836,6 +836,7 @@ struct GLUE_INFO {
 #endif
 
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
+	struct QUE rTxMsduRetQueue;
 	struct kfifo rTxMsduRetFifo;
 	uint8_t *prTxMsduRetFifoBuf;
 	uint32_t u4TxMsduRetFifoLen;
