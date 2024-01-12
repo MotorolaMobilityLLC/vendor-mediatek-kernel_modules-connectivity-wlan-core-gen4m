@@ -2529,20 +2529,16 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "CSA from band: %d to %d\n",
 		prP2pBssInfo->eBand,
 		prChnlReqInfo->eBand);
-	if (prAdapter->rWifiVar.eDbdcMode != ENUM_DBDC_MODE_DISABLED &&
-		cnmGet80211Band(prP2pBssInfo->eBand) !=
-			cnmGet80211Band(prChnlReqInfo->eBand)) {
-		if (prClientList && prClientList->u4NumElem > 0) {
-			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
-					rLinkEntry, struct STA_RECORD) {
-				qmSetStaRecTxAllowed(prAdapter,
-					prCurrStaRec, FALSE);
-			}
+	if (prClientList && prClientList->u4NumElem > 0) {
+		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+				rLinkEntry, struct STA_RECORD) {
+			qmSetStaRecTxAllowed(prAdapter,
+				prCurrStaRec, FALSE);
 		}
-		p2pCsaControlFlow(prAdapter,
-				prP2pBssInfo,
-				prChnlReqInfo);
 	}
+	p2pCsaControlFlow(prAdapter,
+			prP2pBssInfo,
+			prChnlReqInfo);
 
 	p2pRoleFsmStateTransition(prAdapter,
 		prP2pRoleFsmInfo,
