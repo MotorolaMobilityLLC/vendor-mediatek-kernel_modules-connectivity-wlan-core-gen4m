@@ -1571,18 +1571,9 @@ kalP2PGCIndicateConnectionStatus(IN struct GLUE_INFO *prGlueInfo,
 
 		if (prP2pConnInfo) {
 			uint8_t aucBssid[MAC_ADDR_LEN];
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			struct STA_RECORD *prStaRec =
-				p2pGetDefaultLinkStaRec(prAdapter,
-				IFTYPE_P2P_CLIENT);
 
-			if (mldIsMultiLinkFormed(prAdapter, prStaRec))
-				COPY_MAC_ADDR(aucBssid,
-					prStaRec->aucMldAddr);
-			else
-#endif
-				COPY_MAC_ADDR(aucBssid,
-					prP2pConnInfo->aucBssid);
+			COPY_MAC_ADDR(aucBssid,
+				prP2pConnInfo->aucBssid);
 
 			/* switch netif on */
 			netif_carrier_on(prGlueP2pInfo->aprRoleHandler);
@@ -1641,15 +1632,8 @@ kalP2PGOStationUpdate(IN struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (mldIsMultiLinkFormed(prGlueInfo->prAdapter, prCliStaRec))
-			COPY_MAC_ADDR(aucBssid,
-				prCliStaRec->aucMldAddr);
-		else
-#endif
-			COPY_MAC_ADDR(aucBssid,
-				prCliStaRec->aucMacAddr);
-
+		COPY_MAC_ADDR(aucBssid,
+			prCliStaRec->aucMacAddr);
 
 		if (fgIsNew) {
 			struct station_info rStationInfo;

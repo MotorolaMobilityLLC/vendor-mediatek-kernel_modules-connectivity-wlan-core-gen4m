@@ -119,6 +119,12 @@
 #define AIS_MAIN_BSS_INFO(_adapter, _ais_idx) \
 	aisGetMainLinkBssInfo(aisFsmGetInstance(_adapter, _ais_idx))
 
+#define AIS_MAIN_STA_REC(_adapter, _ais_idx) \
+	aisGetMainLinkStaRec(aisFsmGetInstance(_adapter, _ais_idx))
+
+#define AIS_LINK_NUM(_adapter, _ais_idx) \
+	aisGetLinkNum(aisFsmGetInstance(_adapter, _ais_idx))
+
 #define AIS_INDEX(_adapter, _bss_idx) \
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucAisIndex
 
