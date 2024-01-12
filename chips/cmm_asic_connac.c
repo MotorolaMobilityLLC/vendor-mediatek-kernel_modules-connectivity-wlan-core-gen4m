@@ -118,6 +118,15 @@ UINT_8 arAcQIdx2GroupId[MAC_TXQ_NUM] = {
 };
 
 /*******************************************************************************
+*                           P R I V A T E   D A T A
+********************************************************************************
+*/
+#if defined(_HIF_USB)
+#define USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA 0x3
+#define USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA 0x1FF
+#endif /* _HIF_USB */
+
+/*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
 */
@@ -345,6 +354,7 @@ VOID asicUsbDmaShdlGroupInit(IN P_ADAPTER_T prAdapter, UINT_32 u4RefillGroup)
 {
 	UINT_32 u4BaseAddr, u4MacVal = 0;
 	struct mt66xx_chip_info *prChipInfo;
+	UINT_32 u4CfgVal = 0;
 
 	ASSERT(prAdapter);
 
@@ -361,40 +371,60 @@ VOID asicUsbDmaShdlGroupInit(IN P_ADAPTER_T prAdapter, UINT_32 u4RefillGroup)
 		| CONN_HIF_DMASHDL_TOP_REFILL_CONTROL_GROUP3_REFILL_PRIORITY_MASK);
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_REFILL_CONTROL(u4BaseAddr), u4RefillGroup);
 
-#if 1
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x1ff);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP3_CTRL(u4BaseAddr), u4MacVal);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP4_CTRL(u4BaseAddr), u4MacVal);
-#else
-	/* WMM0 BK - Group0 */
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x1);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x40);
-	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
-
-	/* WMM0 BE - Group1 */
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x3);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0xC8);
+#if CFG_SUPPORT_CFG_FILE
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup1MinQuota", USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(u4CfgVal);
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup1MaxQuota", USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4CfgVal);
+#else /* CFG_SUPPORT_CFG_FILE */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+#endif /* !CFG_SUPPORT_CFG_FILE */
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP1_CTRL(u4BaseAddr), u4MacVal);
 
-	/* WMM0 VI - Group2 */
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x2);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x40);
+#if CFG_SUPPORT_CFG_FILE
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup0MinQuota", USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(u4CfgVal);
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup0MaxQuota", USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4CfgVal);
+#else /* CFG_SUPPORT_CFG_FILE */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+#endif /* !CFG_SUPPORT_CFG_FILE */
+	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP0_CTRL(u4BaseAddr), u4MacVal);
+
+#if CFG_SUPPORT_CFG_FILE
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup2MinQuota", USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(u4CfgVal);
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup2MaxQuota", USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4CfgVal);
+#else /* CFG_SUPPORT_CFG_FILE */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+#endif /* !CFG_SUPPORT_CFG_FILE */
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP2_CTRL(u4BaseAddr), u4MacVal);
 
-	/* WMM0 VI - Group3 */
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x2);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x40);
+#if CFG_SUPPORT_CFG_FILE
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup3MinQuota", USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(u4CfgVal);
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup3MaxQuota", USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4CfgVal);
+#else /* CFG_SUPPORT_CFG_FILE */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+#endif /* !CFG_SUPPORT_CFG_FILE */
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP3_CTRL(u4BaseAddr), u4MacVal);
 
-	/* WMM1 Group4 */
-	u4MacVal = DMASHDL_MIN_QUOTA_NUM(0x1);
-	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(0x30);
+#if CFG_SUPPORT_CFG_FILE
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup4MinQuota", USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(u4CfgVal);
+	u4CfgVal = wlanCfgGetUint32(prAdapter, "DmaShdlGroup4MaxQuota", USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(u4CfgVal);
+#else /* CFG_SUPPORT_CFG_FILE */
+	u4MacVal = DMASHDL_MIN_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MIN_QUOTA);
+	u4MacVal |= DMASHDL_MAX_QUOTA_NUM(USB_DMA_SHDL_GROUP_DEF_MAX_QUOTA);
+#endif /* !CFG_SUPPORT_CFG_FILE */
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP4_CTRL(u4BaseAddr), u4MacVal);
-#endif
 
 	u4MacVal = ((arAcQIdx2GroupId[MAC_TXQ_AC0_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE0_MAPPING) |
 		(arAcQIdx2GroupId[MAC_TXQ_AC1_INDEX] << CONN_HIF_DMASHDL_TOP_QUEUE_MAPPING0_QUEUE1_MAPPING) |
