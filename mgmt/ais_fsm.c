@@ -2040,6 +2040,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			prBssDesc->u4RsnSelectedPairwiseCipher;
 		prAisBssInfo->u4RsnSelectedAKMSuite =
 			prBssDesc->u4RsnSelectedAKMSuite;
+		prAisBssInfo->eBand = prBssDesc->eBand;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
 		/* connac3 MLO all bss use the same wmm index as main bss use */
