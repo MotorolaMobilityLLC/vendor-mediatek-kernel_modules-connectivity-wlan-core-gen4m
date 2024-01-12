@@ -1407,6 +1407,7 @@ __priv_get_struct(struct net_device *prNetDev,
 
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t u4BufLen = 0;
+	uint32_t u4DataLen = 0;
 	/* uint32_t *pu4IntBuf = NULL; */
 	int status = 0;
 
@@ -1440,8 +1441,13 @@ __priv_get_struct(struct net_device *prNetDev,
 
 	switch (u4SubCmd) {
 	case PRIV_CMD_OID:
+		if (prIwReqData->data.length >
+			sizeof(struct NDIS_TRANSPORT_STRUCT))
+			u4DataLen = sizeof(struct NDIS_TRANSPORT_STRUCT);
+		else
+			u4DataLen = prIwReqData->data.length;
 		if (copy_from_user(&aucOidBuf[0], prIwReqData->data.pointer,
-				   sizeof(struct NDIS_TRANSPORT_STRUCT))) {
+				   u4DataLen)) {
 			DBGLOG(REQ, INFO,
 			       "priv_get_struct() copy_from_user oidBuf fail\n");
 			return -EFAULT;
