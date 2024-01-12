@@ -996,6 +996,8 @@
 
 #define CFG_SUPPORT_SUPPLICANT_SME              0
 
+#define CFG_SUPPORT_DPP                     1
+
 #if (CFG_SUPPORT_802_11K == 1) && (CFG_SUPPORT_SUPPLICANT_SME == 1)
 /* Enable to do beacon reports by supplicant.
  * Beacon report is a sub-feature of 802_11K(RRM)
