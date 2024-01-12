@@ -1098,7 +1098,7 @@ static void mt7925ReadIntStatus(struct ADAPTER *prAdapter,
 	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BUS_INFO *prBusInfo = prChipInfo->bus_info;
-	uint32_t u4RegValue, u4WrValue = 0, u4Addr;
+	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr;
 #if CFG_CHIP_RESET_SUPPORT
 	uint32_t u4IntSta = 0;
 #endif
