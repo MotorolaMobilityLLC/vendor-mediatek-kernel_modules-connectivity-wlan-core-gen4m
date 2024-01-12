@@ -2859,11 +2859,6 @@ struct EVENT_LTE_SAFE_CHN {
 	struct LTE_SAFE_CHN_INFO rLteSafeChn;
 };
 
-struct CMD_STATS_LOG {
-	uint32_t u4DurationInMs;
-	uint8_t aucReserved[32];
-};
-
 struct EVENT_WIFI_RDD_TEST {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncLength;
