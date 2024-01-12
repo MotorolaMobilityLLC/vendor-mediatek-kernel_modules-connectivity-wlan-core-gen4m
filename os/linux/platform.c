@@ -195,9 +195,10 @@ static int netdev_event(struct notifier_block *nb,
 		 *  ("netdev_event: MEDIA_STATE_DISCONNECTED. (%d)\n",
 		 * prGlueInfo->eParamMediaStateIndicated));
 		 */
-		return NOTIFY_DONE;
+		/* return NOTIFY_DONE; */
 	}
 
+	DBGLOG(REQ, INFO, "netdev_event: set net addr\n");
 	kalSetNetAddressFromInterface(prGlueInfo, prDev, TRUE);
 
 	return NOTIFY_DONE;

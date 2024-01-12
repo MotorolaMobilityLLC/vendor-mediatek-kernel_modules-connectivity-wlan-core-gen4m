@@ -3615,6 +3615,7 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 	struct BSS_DESC *prBssDesc;
 	struct PARAM_SSID rSsid;
+	struct IE_BSS_MAX_IDLE_PERIOD *prBssMaxIdlePeriod;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -3674,6 +3675,19 @@ static void rlmRecAssocRespIeInfoForClient(struct ADAPTER *prAdapter,
 #endif
 			break;
 
+		case WLAN_EID_BSS_MAX_IDLE_PERIOD:
+			if (IE_LEN(pucIE) !=
+				(sizeof(struct IE_BSS_MAX_IDLE_PERIOD) - 2))
+				break;
+
+			prBssMaxIdlePeriod =
+				(struct IE_BSS_MAX_IDLE_PERIOD *) pucIE;
+			prBssInfo->u2MaxIdlePeriod =
+				prBssMaxIdlePeriod->u2MaxIdlePeriod;
+			prBssInfo->ucIdleOptions =
+				prBssMaxIdlePeriod->ucIdleOptions;
+
+			break;
 
 		default:
 			break;

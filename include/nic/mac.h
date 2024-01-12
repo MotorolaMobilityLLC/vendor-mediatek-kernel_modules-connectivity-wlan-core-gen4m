@@ -3116,6 +3116,14 @@ struct IE_20_40_COEXIST {
 	uint8_t ucData;
 } __KAL_ATTRIB_PACKED__;
 
+/* 9.4.2.78 BSS Max Idle Period element */
+struct IE_BSS_MAX_IDLE_PERIOD {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint16_t u2MaxIdlePeriod;
+	uint8_t ucIdleOptions;
+} __KAL_ATTRIB_PACKED__;
+
 #if (CFG_SUPPORT_TWT == 1)
 /* 11ax TWT element */
 struct _IE_TWT_T {
