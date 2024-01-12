@@ -87,7 +87,7 @@ ccflags-y += -DDRIVER_BUILD_DATE='"$(DRIVER_BUILD_DATE)"'
 # ---------------------------------------------------
 # Compile Options
 # ---------------------------------------------------
-WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6655 -UMT7990
+WLAN_CHIP_LIST:=-UMT6620 -UMT6628 -UMT5931 -UMT6630 -UMT6632 -UMT7663 -UCONNAC -USOC2_1X1 -USOC2_2X2 -UUT_TEST_MODE -UMT7915 -USOC3_0 -UMT7961 -USOC5_0 -USOC7_0 -UBELLWETHER -UMT6639 -UMT6655 -UMT7990 -UMT7925
 # '-D' and '-U' options are processed in the order they are given on the command line.
 # All '-imacros file' and '-include file' options are processed after all '-D' and '-U' options.
 ccflags-y += $(WLAN_CHIP_LIST)
@@ -513,6 +513,26 @@ CONFIG_NSS=4
 CONFIG_BAND_NUM=3
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
+endif
+
+ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
+ccflags-y:=$(filter-out -UMT7925,$(ccflags-y))
+ccflags-y += -DMT7925
+ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
+    CONFIG_MTK_WIFI_NAN=y
+else
+    CONFIG_MTK_WIFI_NAN=n
+endif
+CONFIG_MTK_WIFI_TRX_DIRECT=y
+CONFIG_NOT_CLR_FREE_MSDU_IN_DEACTIVE_NETWORK=y
+ccflags-y += -DCFG_WIFI_SW_WTBL_SEARCH_FAIL=0
+CONFIG_MTK_WIFI_WFDMA_BK_RS=y
+ccflags-y += -DCONFIG_MTK_WIFI_BW160
+ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
+ccflags-y += -DCFG_WIFI_TX_FIXED_RATE_NO_VTA=1
+ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
+    ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=1024
+endif
 endif
 
 # ===== Before is project setting =====
@@ -1558,6 +1578,12 @@ ifneq ($(filter MT7990,$(MTK_COMBO_CHIP)),)
 CHIPS_OBJS += $(CHIPS)mt7990/mt7990.o
 CHIPS_OBJS += $(CHIPS)mt7990/dbg_mt7990.o
 CHIPS_OBJS += $(CHIPS)mt7990/hal_dmashdl_mt7990.o
+endif
+
+ifneq ($(filter MT7925,$(MTK_COMBO_CHIP)),)
+CHIPS_OBJS += $(CHIPS)mt7925/mt7925.o
+CHIPS_OBJS += $(CHIPS)mt7925/dbg_mt7925.o
+CHIPS_OBJS += $(CHIPS)mt7925/hal_dmashdl_mt7925.o
 endif
 
 ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_TRANS), y)
