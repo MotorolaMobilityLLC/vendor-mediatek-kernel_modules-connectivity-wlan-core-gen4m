@@ -3485,6 +3485,8 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	enum CONN_MODE_IFACE_TYPE type;
 	enum ENUM_IFTYPE eIftype;
 	uint32_t i;
+	uint32_t au4FreqWhiteList[MAX_CHN_NUM] = { 0 };
+	uint8_t ucWhiteFreqNum;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -3538,8 +3540,11 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		return -EINVAL;
 	}
 
+	ucWhiteFreqNum = p2pFuncGetAllFreqList(prGlueInfo->prAdapter,
+					       au4FreqWhiteList);
 	rStatus = p2pFunGetPreferredFreqList(prGlueInfo->prAdapter, eIftype,
-			freq_list, &num_freq_list);
+			freq_list, &num_freq_list, au4FreqWhiteList,
+			ucWhiteFreqNum);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "get preferred freq list failed.\n");
 		return -EINVAL;

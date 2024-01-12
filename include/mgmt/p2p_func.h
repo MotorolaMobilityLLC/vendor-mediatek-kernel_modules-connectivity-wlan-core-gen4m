@@ -455,12 +455,16 @@ void p2pFuncSwitchGcChannel(struct ADAPTER *prAdapter,
 
 void p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter);
 
+uint8_t p2pFuncGetAllFreqList(struct ADAPTER *prAdapter,
+			      uint32_t *pau4WhiteFreqList);
+
 uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 	uint8_t ucNumOfAliveBss, uint32_t *prFreqList);
 
 uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
-		uint32_t *pu4FreqListNum);
+		uint32_t *pu4FreqListNum, uint32_t *pau4FreqWhiteList,
+		uint8_t ucWhiteFreqNum);
 
 enum ENUM_P2P_CONNECT_STATE
 p2pFuncGetP2pActionFrameType(struct MSDU_INFO *prMgmtMsdu);
