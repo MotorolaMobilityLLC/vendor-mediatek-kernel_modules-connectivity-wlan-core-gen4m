@@ -4362,8 +4362,7 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	}
 
 	/* Check whether the BA agreement exists */
-	prReorderQueParm = ((
-		prStaRec->aprRxReorderParamRefTbl)[prSwRfb->ucTid]);
+	prReorderQueParm = prStaRec->aprRxReorderParamRefTbl[prSwRfb->ucTid];
 	if (!prReorderQueParm || !(prReorderQueParm->fgIsValid)) {
 		DBGLOG(RX, TEMP,
 			"Reordering but no BA agreement for STA[%d] TID[%d]\n",
