@@ -7584,6 +7584,10 @@ void nicUniEventAssertDump(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 			len = TAG_LEN(tag) - sizeof(struct TAG_HDR);
 			dump = kalMemAlloc(len + 1, VIR_MEM_TYPE);
+			if (dump == NULL) {
+				DBGLOG(NIC, ERROR, "dump is null\n");
+				break;
+			}
 			kalMemCopy(dump, tag + sizeof(struct TAG_HDR), len);
 			dump[len] = '\0';
 			appendCECoredump(ad, dump, len + 1);
