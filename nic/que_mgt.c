@@ -1068,11 +1068,13 @@ struct QUE *qmDetermineStaTxQueue(IN struct ADAPTER *prAdapter,
 	}
 
 	*pucTC = ucTC;
+#if CFG_ENABLE_PER_STA_STATISTICS
 	/*
 	 * Record how many packages enqueue this STA
 	 * to TX during statistic intervals
 	 */
 	prStaRec->u4EnqueueCounter++;
+#endif
 
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)
 	DBGLOG(HIF_WMM_ENHANCE, TRACE,
@@ -1887,7 +1889,9 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				QUEUE_INSERT_TAIL(prQue,
 					(struct QUE_ENTRY *)
 					prDequeuedPkt);
+#if CFG_ENABLE_PER_STA_STATISTICS
 				prStaRec->u4DeqeueuCounter++;
+#endif
 				prQM->u4DequeueCounter++;
 
 				u4AvaliableResource -=

@@ -319,7 +319,9 @@ void nic_rxd_v1_parse_drop_pkt(struct SW_RFB *prSwRfb)
 		prSwRfb->u2PacketLen, prSwRfb->ucSecMode,
 		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
 	);
+#if (CFG_SUPPORT_STATISTICS == 1)
 	STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
+#endif
 }
 
 u_int8_t nic_rxd_v1_sanity_check(

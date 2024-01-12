@@ -1496,6 +1496,7 @@ static const struct wiphy_vendor_command
 		.maxattr = STRING_ATTRIBUTE_MAX
 #endif
 	},
+#if (CFG_SUPPORT_STATISTICS == 1)
 	/* Get Trx Stats */
 	{
 		{
@@ -1510,6 +1511,7 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+#endif
 	/* Get Wifi Reset */
 	{
 		{

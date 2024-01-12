@@ -3313,7 +3313,7 @@ err_handle_label:
 	kfree_skb(skb);
 	return i4Status;
 }
-
+#if (CFG_SUPPORT_STATISTICS == 1)
 int mtk_cfg80211_vendor_get_trx_stats(struct wiphy *wiphy,
 					 struct wireless_dev *wdev,
 					 const void *data, int data_len)
@@ -3384,7 +3384,7 @@ err_handle_label:
 	kfree_skb(skb);
 	return i4Status;
 }
-
+#endif
 #endif /* KERNEL_VERSION(3, 16, 0) <= LINUX_VERSION_CODE */
 
 /*----------------------------------------------------------------------------*/
