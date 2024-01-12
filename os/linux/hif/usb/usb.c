@@ -308,7 +308,7 @@ static int mtk_usb_resume(struct usb_interface *intf)
 	prGlueInfo->fgIsInSuspendMode = FALSE;
 
 	/* Allow upper layers to call the device hard_start_xmit routine. */
-	netif_tx_start_all_queues(prGlueInfo->prDevHandler);
+	netif_tx_wake_all_queues(prGlueInfo->prDevHandler);
 
 	DBGLOG(HAL, STATE, "mtk_usb_resume() done ret=%d!\n", ret);
 

@@ -971,6 +971,7 @@ struct WIFI_VAR {
 	/* bit 4, beacon lost */
 	uint8_t ucWowDetectType;
 	uint32_t u4TxHangFullDumpMode;
+	uint8_t ucMobileLikeSuspend; /* allow mobile like suspend */
 
 	uint8_t u4SwTestMode;
 	uint8_t	ucCtrlFlagAssertPath;
