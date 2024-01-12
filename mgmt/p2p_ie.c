@@ -160,8 +160,8 @@ void p2pGenerate_IEForAssocReq(IN struct ADAPTER *prAdapter,
 
 		prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
-		pucIEBuf = (uint8_t *) ((unsigned long) prMsduInfo->prPacket
-			+ (unsigned long) prMsduInfo->u2FrameLength);
+		pucIEBuf = (uint8_t *) ((uintptr_t) prMsduInfo->prPacket
+			+ prMsduInfo->u2FrameLength);
 
 		kalMemCopy(pucIEBuf, prConnReqInfo->aucIEBuf,
 			prConnReqInfo->u4BufLength);
@@ -231,8 +231,8 @@ wfdFuncAppendAttriDevInfo(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
-		pucBuffer = (uint8_t *) ((unsigned long) pucBuf
-			+ (unsigned long) (*pu2Offset));
+		pucBuffer = (uint8_t *) ((uintptr_t) pucBuf
+			+ *pu2Offset);
 
 		ASSERT_BREAK(pucBuffer != NULL);
 

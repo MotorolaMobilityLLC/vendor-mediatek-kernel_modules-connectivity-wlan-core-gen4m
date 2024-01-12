@@ -841,7 +841,8 @@ void mldGenerateBasicCompleteProfile(
 			 */
 			primary = kalFindIeMatchMask(
 					IE_ID(pucBuf),
-					prMsduInfo->prPacket + u4BeginOffset,
+					(uint8_t *)prMsduInfo->prPacket
+					+ u4BeginOffset,
 					u4PrimaryLength - u4BeginOffset,
 					pucBuf + 2, IE_LEN(pucBuf), 2, NULL);
 		else
@@ -1141,14 +1142,14 @@ void mldParseBasicMlIE(IN struct MULTI_LINK_INFO *prMlInfo,
 		u2StaControl = prIeSta->u2StaCtrl;
 		ucLinkId = (u2StaControl & ML_STA_CTRL_LINK_ID_MASK);
 
-		if (linkid_map & BIT(ucLinkId)) {
+		if (linkid_map & (uint64_t)BIT(ucLinkId)) {
 			prMlInfo->ucValid = FALSE;
 			DBGLOG(ML, WARN, "dup sta profile, LinkID=%d",
 				ucLinkId);
 			return;
 		}
 
-		linkid_map |= BIT(ucLinkId);
+		linkid_map |= (uint64_t)BIT(ucLinkId);
 		prStaProfile = &prMlInfo->rStaProfiles[prMlInfo->ucProfNum++];
 		prStaProfile->ucLinkId = ucLinkId;
 		prStaProfile->u2StaCtrl = u2StaControl;
@@ -1534,7 +1535,7 @@ int mldDupMbssNonTxProfileImpl(struct ADAPTER *prAdapter,
 
 	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
 	mgmt = (struct WLAN_BEACON_FRAME *)prSrc->pvHeader;
-	ie = prSrc->pvHeader + padding;
+	ie = (uint8_t *)prSrc->pvHeader + padding;
 	len = prSrc->u2PacketLen - padding;
 
 	if (mldParseProfile(ie, len, pucProf, u2ProfLen,
@@ -1614,7 +1615,7 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 		return NULL;
 
 	QUEUE_INITIALIZE(que);
-	pucIE = prSrc->pvHeader + offset;
+	pucIE = (uint8_t *)prSrc->pvHeader + offset;
 	u2IELen = prSrc->u2PacketLen - offset;
 	IE_FOR_EACH(pucIE, u2IELen, offset) {
 		if (IE_ID(pucIE) != ELEM_ID_MBSSID)
@@ -1772,7 +1773,7 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
 	fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
-	ie = prSrc->pvHeader + padding;
+	ie = (uint8_t *)prSrc->pvHeader + padding;
 	len = prSrc->u2PacketLen - padding;
 
 	/* only valid mgmt can be duplicated from complete profile */
@@ -1916,7 +1917,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 
 	QUEUE_INITIALIZE(que);
 
-	ml = mldFindMlIE(prSrc->pvHeader + offset,
+	ml = mldFindMlIE((uint8_t *)prSrc->pvHeader + offset,
 		prSrc->u2PacketLen - offset, ML_CTRL_TYPE_BASIC);
 	if (!ml)
 		return NULL;
@@ -1933,7 +1934,8 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 
 	/* get channel info from rnr if exist*/
 	rnr = (struct IE_RNR *) kalFindIeExtIE(ELEM_ID_RNR, 0,
-		prSrc->pvHeader + offset, prSrc->u2PacketLen - offset);
+		(uint8_t *)prSrc->pvHeader + offset,
+		prSrc->u2PacketLen - offset);
 	if (!rnr) {
 		DBGLOG(ML, INFO, "probe resp but no rnr\n");
 		return NULL;
@@ -2016,8 +2018,9 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 		goto fail;
 	}
 
-	ml = mldFindMlIE(prSrc->pvHeader + offset,
+	ml = mldFindMlIE((uint8_t *)prSrc->pvHeader + offset,
 		prSrc->u2PacketLen - offset, ML_CTRL_TYPE_BASIC);
+
 	if (!ml) {
 		DBGLOG(ML, INFO, "AA but no ml ie\n");
 		goto fail;
