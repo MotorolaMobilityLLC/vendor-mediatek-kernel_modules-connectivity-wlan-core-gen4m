@@ -7990,6 +7990,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4LTOValue, "LTOValue", 2000);
 #endif /* CFG_TX_CUSTOMIZE_LTO */
 
+	INIT_UINT(prWifiVar->ucWarningTxTimeout,
+		"WarningTxTimeout", FEATURE_DISABLED);
+
 	/**
 	 * A debugging switch for development phase to check the difference of
 	 * tput imposed by SW reordering, including the operation workload and
