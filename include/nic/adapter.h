@@ -1788,6 +1788,11 @@ struct ADAPTER {
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 	bool fgIsNeedAvoidDesenseFreq;
 #endif
+
+#if (CFG_SUPPORT_RX_QUOTA_INFO == 1)
+	uint32_t ucRxMaxMpduLen;
+#endif
+
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************
