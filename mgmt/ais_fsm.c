@@ -2301,6 +2301,8 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 #endif
 			prScanReqMsg->u2IELen = u2ScanIELen;
 
+			scanInitEssResult(prAdapter);
+
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *)prScanReqMsg,
 				    MSG_SEND_METHOD_BUF);
@@ -2324,6 +2326,7 @@ void aisFsmSteps(IN struct ADAPTER *prAdapter,
 			 * is triggered by Driver
 			*/
 			prScanRequest->u4Flags = 0;
+
 			break;
 
 		case AIS_STATE_REQ_CHANNEL_JOIN:
@@ -2640,10 +2643,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	struct ROAMING_INFO *prRoamingFsmInfo = NULL;
 	uint8_t ucBssIndex = 0;
 
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	struct NEIGHBOR_AP_INFO *prNeighborAPInfo;
-#endif
-
 	DEBUGFUNC("aisFsmRunEventScanDone()");
 
 	prScanDoneMsg = (struct MSG_SCN_SCAN_DONE *)prMsgHdr;
@@ -2680,12 +2679,9 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 		prAisFsmInfo->u2SeqNumOfScanReport) {
 		prAisFsmInfo->u2SeqNumOfScanReport = AIS_SCN_REPORT_SEQ_NOT_SET;
 		prConnSettings->fgIsScanReqIssued = FALSE;
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-		if (LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList))
-#endif
-			kalScanDone(prAdapter->prGlueInfo, ucBssIndex,
-				(eStatus == SCAN_STATUS_DONE) ?
-				WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
+		kalScanDone(prAdapter->prGlueInfo, ucBssIndex,
+			(eStatus == SCAN_STATUS_DONE) ?
+			WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE);
 	}
 	if (ucSeqNumOfCompMsg != prAisFsmInfo->ucSeqNumOfScanReq) {
 		DBGLOG(AIS, WARN,
@@ -2736,20 +2732,6 @@ void aisFsmRunEventScanDone(IN struct ADAPTER *prAdapter,
 	}
 	if (eNextState != prAisFsmInfo->eCurrentState)
 		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
-
-#if (CFG_SUPPORT_WIFI_RNR == 1)
-	if (!LINK_IS_EMPTY(&prAdapter->rNeighborAPInfoList)) {
-		LINK_REMOVE_HEAD(&prAdapter->rNeighborAPInfoList,
-			prNeighborAPInfo, struct NEIGHBOR_AP_INFO *);
-		cnmTimerStartTimer(prAdapter,
-				   aisGetScanDoneTimer(prAdapter, ucBssIndex),
-				   SEC_TO_MSEC(AIS_SCN_DONE_TIMEOUT_SEC));
-		aisFsmScanRequestAdv(prAdapter,
-			&prNeighborAPInfo->rScanRequest);
-		cnmMemFree(prAdapter, prNeighborAPInfo);
-		return;
-	}
-#endif
 
 	if (prBcnRmParam->eState == RM_NO_REQUEST)
 		return;
