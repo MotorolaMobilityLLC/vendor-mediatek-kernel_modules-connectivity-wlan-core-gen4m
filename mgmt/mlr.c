@@ -1100,8 +1100,10 @@ u_int8_t mlrDecideIfUseMlrRate(struct ADAPTER *prAdapter,
 			/* In case of Data frame and it is fragmented */
 			} else if (MLR_CHECK_IF_ENABLE_TX_FRAG(prStaRec)
 				&& prMsduInfo->eSrc == TX_PACKET_OS
-				&& MLR_CHECK_IF_MSDU_IS_FRAG(
-				prMsduInfo)) {
+				&& (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo)
+				/* Consider fixed rate (ARP, DHCP, EAPOL) */
+				|| prMsduInfo->ucRateMode ==
+				MSDU_RATE_MODE_MANUAL_DESC)) {
 				*pu2RateCode = RATE_MLR_1_5M;
 				fgIsUseMlrRate = TRUE;
 				DBGLOG(NIC, INFO,
