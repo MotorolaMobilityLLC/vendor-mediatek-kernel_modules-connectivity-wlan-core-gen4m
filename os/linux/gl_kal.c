@@ -9838,8 +9838,9 @@ void kalPerMonHandler(IN struct ADAPTER *prAdapter,
 			u4BoostCpuTh,
 			prPerMonitor->ulPerfMonFlag);
 
-			kalBoostCpu(prAdapter, prPerMonitor->u4TarPerfLevel,
-				    u4BoostCpuTh);
+			kalBoostCpu(prAdapter,
+				prPerMonitor->u4TarPerfLevel,
+				u4BoostCpuTh);
 		}
 
 #if (CFG_COALESCING_INTERRUPT == 1)
@@ -9997,6 +9998,12 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	return ucRet;
 }
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
+void __weak kalSetCpuBoost(struct ADAPTER *prAdapter,
+		struct BOOST_INFO *prBoostInfo)
+{
+	DBGLOG(SW4, INFO, "enter kalSetCpuBoost\n");
+}
 
 int32_t __weak kalBoostCpu(IN struct ADAPTER *prAdapter,
 			   IN uint32_t u4TarPerfLevel, IN uint32_t u4BoostCpuTh)

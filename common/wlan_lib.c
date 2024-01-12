@@ -7769,13 +7769,13 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->u4PerfMonTpTh[5] =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv6", 300);
 	prWifiVar->u4PerfMonTpTh[6] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv7", 400);
+		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv7", 700);
 	prWifiVar->u4PerfMonTpTh[7] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv8", 500);
+		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv8", 1200);
 	prWifiVar->u4PerfMonTpTh[8] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 600);
+		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv9", 2500);
 	prWifiVar->u4PerfMonTpTh[9] =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 700);
+		(uint32_t) wlanCfgGetUint32(prAdapter, "PerfMonLv10", 3500);
 
 #if CFG_SUPPORT_LLS
 	prWifiVar->fgLinkStatsDump = (bool)wlanCfgGetUint32(
@@ -7853,11 +7853,15 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 	prWifiVar->au4ConnsysTxFailDelayMax[4] = UINT_MAX;
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
+	prWifiVar->fgBoostCpuEn =
+		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuEn",
+			FEATURE_ENABLED);
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
 	prWifiVar->u4BoostCpuTh =
 		(uint32_t) wlanCfgGetUint32(prAdapter, "BoostCpuTh",
 			u4PlatformBoostCpuTh);
 	prWifiVar->fgIsBoostCpuThAdjustable = FALSE;
+
 	if (!wlanCfgGetEntry(prAdapter, "BoostCpuTh", FALSE)) {
 		prWifiVar->fgIsBoostCpuThAdjustable  = TRUE;
 		DBGLOG(INIT, TRACE, "BoostCPUTh is not config, adjustable\n");

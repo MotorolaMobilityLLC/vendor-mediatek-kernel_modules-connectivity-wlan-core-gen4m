@@ -3905,6 +3905,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 
 #define CMD_SET_USE_CASE	"SET_USE_CASE"
 
+#define CMD_SET_BOOSTCPU        "BOOSTCPU"
+
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 #define CMD_SET_SNIFFER         "SNIFFER"
 #endif /* CFG_SUPPORT_ICS */
@@ -9291,6 +9293,70 @@ int priv_driver_set_sw_ctrl(IN struct net_device *prNetDev, IN char *pcCommand,
 	return i4BytesWritten;
 
 }				/* priv_driver_set_sw_ctrl */
+
+static int priv_driver_boostcpu(IN struct net_device *prNetDev,
+				  IN char *pcCommand, IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4Recv = 0;
+	int8_t *this_char = NULL;
+	struct BOOST_INFO rBoostInfo;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %d, apcArgv[0] = %s\n\n", i4Argc, *apcArgv);
+
+	this_char = kalStrStr(*apcArgv, "=");
+	if (!this_char)
+		return -1;
+	this_char++;
+
+	kalMemZero(&rBoostInfo, sizeof(struct BOOST_INFO));
+	i4Recv = sscanf(this_char,
+		"%d-%d-%02x-%02x-%02x-%u-%u-%u-%x-%x-%d",
+		&(rBoostInfo.rCpuInfo.i4LittleCpuFreq),
+		&(rBoostInfo.rCpuInfo.i4BigCpuFreq),
+		&(rBoostInfo.rHifThreadInfo.u4CpuMask),
+		&(rBoostInfo.rMainThreadInfo.u4CpuMask),
+		&(rBoostInfo.rRxThreadInfo.u4CpuMask),
+		&(rBoostInfo.rHifThreadInfo.u4Priority),
+		&(rBoostInfo.rMainThreadInfo.u4Priority),
+		&(rBoostInfo.rRxThreadInfo.u4Priority),
+		&(rBoostInfo.u4RpsMap),
+		&(rBoostInfo.u4ISRMask),
+		&(rBoostInfo.fgDramBoost)
+		);
+
+	if (i4Recv == 11) {
+		/* Disable BoostCpu by PerMon */
+		prAdapter->rWifiVar.fgBoostCpuEn = FEATURE_DISABLED;
+
+		/* Manually BoostCpu */
+		if (rBoostInfo.rCpuInfo.i4LittleCpuFreq != 0)
+			rBoostInfo.rCpuInfo.i4LittleCpuFreq *= 1000;
+		else
+			rBoostInfo.rCpuInfo.i4LittleCpuFreq = -1;
+		if (rBoostInfo.rCpuInfo.i4BigCpuFreq != 0)
+			rBoostInfo.rCpuInfo.i4BigCpuFreq *= 1000;
+		else
+			rBoostInfo.rCpuInfo.i4BigCpuFreq = -1;
+		kalSetCpuBoost(prAdapter, &rBoostInfo);
+	} else {
+		DBGLOG(REQ, ERROR,
+			"BoostCpu CMD: Number of PARAMETERS is WRONG\n");
+	}
+	return i4BytesWritten;
+}
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 static int priv_driver_sniffer(IN struct net_device *prNetDev,
@@ -19749,7 +19815,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_PP_CAP_CTRL, priv_driver_set_pp_cap_ctrl},
 	{CMD_SET_PP_ALG_CTRL, priv_driver_set_pp_alg_ctrl},
 #endif
-
+	{CMD_SET_BOOSTCPU, priv_driver_boostcpu},
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
 	{CMD_SET_SNIFFER, priv_driver_sniffer},
 #endif /* CFG_SUPPORT_ICS */
