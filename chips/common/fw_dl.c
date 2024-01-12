@@ -675,7 +675,7 @@ uint32_t wlanImageSectionDownloadStage(
 				&u4Len, &u4DataMode, &fgIsEMIDownload,
 				&fgIsNotDownload);
 
-			DBGLOG_LIMITED(INIT, INFO,
+			DBGLOG(INIT, TRACE,
 			       "DL Offset[%u] addr[0x%08x] len[%u] datamode[0x%08x]\n",
 			       u4Offset, u4Addr, u4Len, u4DataMode);
 
@@ -2291,7 +2291,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 	if (prFwDlOps->phyAction)
 		prFwDlOps->phyAction(prAdapter);
 
-	DBGLOG(INIT, INFO, "FW download Start\n");
+	DBGLOG(INIT, TRACE, "FW download Start\n");
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	if (prChipInfo->coexpccifon) {
 		rPccifstatus = prChipInfo->coexpccifon();
@@ -2316,7 +2316,7 @@ uint32_t wlanDownloadFW(IN struct ADAPTER *prAdapter)
 		}
 #endif
 	}
-	DBGLOG(INIT, INFO, "FW download End\n");
+	DBGLOG(INIT, TRACE, "FW download End\n");
 
 	HAL_ENABLE_FWDL(prAdapter, FALSE);
 
@@ -2485,13 +2485,14 @@ void fwDlGetReleaseInfoSection(struct ADAPTER *prAdapter, uint8_t *pucStartPtr)
 	uint8_t ucManifestExist = 0;
 
 	prFirstInfo = (struct HEADER_RELEASE_INFO *)pucCurPtr;
-	DBGLOG(INIT, INFO, "Release info tag[%u] len[%u]\n",
+	DBGLOG(INIT, TRACE, "Release info tag[%u] len[%u]\n",
 	       prFirstInfo->ucTag, prFirstInfo->u2Len);
 
 	pucCurPtr += sizeof(struct HEADER_RELEASE_INFO);
 	while (u2Offset < prFirstInfo->u2Len) {
 		prRelInfo = (struct HEADER_RELEASE_INFO *)pucCurPtr;
-		DBGLOG(INIT, INFO, "Release info tag[%u] len[%u] padding[%u]\n",
+		DBGLOG(INIT, TRACE,
+		       "Release info tag[%u] len[%u] padding[%u]\n",
 		       prRelInfo->ucTag, prRelInfo->u2Len,
 		       prRelInfo->ucPaddingLen);
 
