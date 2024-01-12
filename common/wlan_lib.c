@@ -7266,9 +7266,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	 * Note: For VHT STA, BW 80Mhz is a must!
 	 */
 	INIT_UINT(prWifiVar->ucStaBandwidth, "StaBw", MAX_BW_320_2MHZ);
-	INIT_UINT(prWifiVar->ucSta2gBandwidth, "Sta2gBw", MAX_BW_20MHZ);
-	INIT_UINT(prWifiVar->ucSta5gBandwidth, "Sta5gBw", MAX_BW_160MHZ);
-	INIT_UINT(prWifiVar->ucSta6gBandwidth, "Sta6gBw", MAX_BW_320_2MHZ);
+	INIT_UINT(prWifiVar->ucSta2gBandwidth, "Sta2gBw", DEFAULT_STA_2G_BW);
+	INIT_UINT(prWifiVar->ucSta5gBandwidth, "Sta5gBw", DEFAULT_STA_5G_BW);
+	INIT_UINT(prWifiVar->ucSta6gBandwidth, "Sta6gBw", DEFAULT_STA_6G_BW);
+
 	/* GC,GO */
 	INIT_UINT(prWifiVar->ucP2p2gBandwidth, "P2p2gBw", MAX_BW_20MHZ);
 	INIT_UINT(prWifiVar->ucP2p5gBandwidth, "P2p5gBw", MAX_BW_80MHZ);

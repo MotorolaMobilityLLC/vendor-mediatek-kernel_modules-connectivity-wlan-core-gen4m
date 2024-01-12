@@ -2622,7 +2622,6 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 			struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 				p2pGetChnlReqInfo(prAdapter,
 				prP2pRoleFsmInfo, i);
-			uint8_t ucRfBw;
 
 			if (!prP2pBssInfo || !prBssDesc)
 				continue;
@@ -2643,14 +2642,6 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 				AIS_JOIN_CH_REQUEST_INTERVAL;
 			prChnlReqInfo->eChnlReqType =
 				CH_REQ_TYPE_JOIN;
-
-			rlmReviseMaxBw(prAdapter,
-				prP2pBssInfo->ucBssIndex,
-				&prChnlReqInfo->eChnlSco,
-				(enum ENUM_CHANNEL_WIDTH *)
-				&prChnlReqInfo->eChannelWidth,
-				&prChnlReqInfo->ucCenterFreqS1,
-				&prChnlReqInfo->ucReqChnlNum);
 
 			prP2pBssInfo->eBand = prChnlReqInfo->eBand;
 			p2pGetLinkWmmQueSet(prAdapter, prP2pBssInfo);
@@ -2676,26 +2667,21 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 			   prP2pBssInfo->ucOpRxNss,
 			   prP2pBssInfo->ucOpTxNss);
 
-			/* Decide RF BW by own OP and Peer OP BW */
-#if CFG_SUPPORT_DBDC
-			ucRfBw = cnmGetDbdcBwCapability(prAdapter,
-				prP2pBssInfo->ucBssIndex);
-#else
-			ucRfBw = cnmGetBssMaxBw(prAdapter,
-				prP2pBssInfo->ucBssIndex);
-#endif
-			/* Revise to VHT OP BW */
-			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-			if (ucRfBw > prBssDesc->eChannelWidth)
-				ucRfBw = prBssDesc->eChannelWidth;
-
-			prChnlReqInfo->eChannelWidth = ucRfBw;
+			prChnlReqInfo->eChannelWidth = prBssDesc->eChannelWidth;
 			/* TODO: BW80+80 support */
 			prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
 				prChnlReqInfo->eBand,
 				prChnlReqInfo->ucReqChnlNum,
 				prChnlReqInfo->eChannelWidth);
 			prChnlReqInfo->ucCenterFreqS2 = 0;
+
+			rlmReviseMaxBw(prAdapter,
+				prP2pBssInfo->ucBssIndex,
+				&prChnlReqInfo->eChnlSco,
+				(enum ENUM_CHANNEL_WIDTH *)
+				&prChnlReqInfo->eChannelWidth,
+				&prChnlReqInfo->ucCenterFreqS1,
+				&prChnlReqInfo->ucReqChnlNum);
 		}
 
 		p2pRoleFsmStateTransition(prAdapter,

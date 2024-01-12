@@ -3638,7 +3638,7 @@ void aisFsmRunEventJoinComplete(struct ADAPTER *prAdapter,
 void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	struct BSS_DESC *prBssDesc)
 {
-	uint8_t ucRfBw, ucRfCenterFreqSeg1, ucPrimaryChannel;
+	uint8_t ucRfCenterFreqSeg1, ucPrimaryChannel;
 	enum ENUM_CHANNEL_WIDTH eRfChannelWidth;
 	enum ENUM_CHNL_EXT eRfSco;
 
@@ -3653,16 +3653,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	prBssInfo->eBand = prBssDesc->eBand;
 	ucPrimaryChannel = prBssDesc->ucChannelNum;
 	eRfSco = prBssDesc->eSco;
-
-#if CFG_SUPPORT_DBDC
-	ucRfBw = cnmGetDbdcBwCapability(ad, prBssInfo->ucBssIndex);
-#else
-	ucRfBw = cnmGetBssMaxBw(ad, prBssInfo->ucBssIndex);
-#endif
-	ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-	if (ucRfBw > prBssDesc->eChannelWidth)
-		ucRfBw = prBssDesc->eChannelWidth;
-	eRfChannelWidth = ucRfBw;
+	eRfChannelWidth = prBssDesc->eChannelWidth;
 	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
 		eRfChannelWidth);
 
@@ -8854,7 +8845,6 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	for (i = 0; i < ucReqChNum; i++) {
 		struct BSS_INFO *prBss = aisGetLinkBssInfo(prAisFsmInfo, i);
 		struct BSS_DESC *prBssDesc = aisGetLinkBssDesc(prAisFsmInfo, i);
-		uint8_t ucRfBw;
 
 		if (!prBss || !prBssDesc)
 			continue;
@@ -8897,15 +8887,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->ucPrimaryChannel = prBssDesc->ucChannelNum;
 		prSubReq->eRfSco = prBssDesc->eSco;
 		prSubReq->eRfBand = prBssDesc->eBand;
-#if CFG_SUPPORT_DBDC
-		ucRfBw = cnmGetDbdcBwCapability(prAdapter, prBss->ucBssIndex);
-#else
-		ucRfBw = cnmGetBssMaxBw(prAdapter, prBss->ucBssIndex);
-#endif
-		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-		if (ucRfBw > prBssDesc->eChannelWidth)
-			ucRfBw = prBssDesc->eChannelWidth;
-		prSubReq->eRfChannelWidth = ucRfBw;
+		prSubReq->eRfChannelWidth = prBssDesc->eChannelWidth;
 		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prSubReq->eRfBand,
 			prSubReq->ucPrimaryChannel,
 			prSubReq->eRfChannelWidth);

@@ -1689,13 +1689,8 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	       prBssInfo->ucBssIndex, fgIsOwnCap, prBssInfo->ucOpRxNss);
 
 	if (fgIsOwnCap) {
-#if CFG_SUPPORT_DBDC
 		ucOpModeBw = cnmGetDbdcBwCapability(prAdapter,
 						    prBssInfo->ucBssIndex);
-#else
-		ucOpModeBw = cnmGetBssMaxBw(prAdapter,
-						    prBssInfo->ucBssIndex);
-#endif
 		/*handle 80P80 case*/
 		if (ucOpModeBw >= MAX_BW_160MHZ) {
 			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;
@@ -2393,11 +2388,8 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
-#if CFG_SUPPORT_DBDC
 	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
-#else
-	ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
-#endif
+
 	if (*peChannelWidth > CW_20_40MHZ) {
 		/*case BW > 80 , 160 80P80 */
 		ucCurrentBandwidth = (uint8_t)*peChannelWidth + ucOffset;
@@ -2412,29 +2404,12 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	if (ucCurrentBandwidth > ucMaxBandwidth) {
 		if (ucMaxBandwidth <= MAX_BW_40MHZ) { /* BW20, BW40 */
 			*peChannelWidth = CW_20_40MHZ;
-		} else { /* BW80, BW160, BW80P80 */
-			/*
-			 * Note that we should make sure S1 is non-zeno
-			 * before changing BW / S1. Clients may want
-			 * to stick bandwidth on CW_20_40MHZ even we
-			 * have more bandwidth capability.
-			 */
-			if (ucS1Origin) {
-				*peChannelWidth = (ucMaxBandwidth - ucOffset);
+		} else { /* BW80, BW160, BW80P80, BW320 */
+			*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
-				/* modify S1 for Bandwidth 160 -> 80 or
-				 * 320 -> 160
-				 */
-				if ((ucCurrentBandwidth == MAX_BW_160MHZ &&
-					ucMaxBandwidth == MAX_BW_80MHZ) ||
-				    ((ucCurrentBandwidth == MAX_BW_320_1MHZ ||
-				      ucCurrentBandwidth == MAX_BW_320_2MHZ) &&
-					ucMaxBandwidth == MAX_BW_160MHZ)) {
-					*pucS1 = nicGetS1(prBssInfo->eBand,
-						*pucPrimaryCh,
-						*peChannelWidth);
-				}
-			}
+			*pucS1 = nicGetS1(prBssInfo->eBand,
+				*pucPrimaryCh,
+				*peChannelWidth);
 		}
 
 		if (eChBwOrigin != *peChannelWidth) {

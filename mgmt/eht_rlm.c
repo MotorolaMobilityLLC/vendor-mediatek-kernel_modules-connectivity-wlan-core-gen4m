@@ -81,7 +81,7 @@ uint32_t ehtRlmCalculateCapIELen(
 		return u4OverallLen;
 	}
 
-	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
+	ucMaxBw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 	if (ucMaxBw == MAX_BW_20MHZ) {
 		/* 20 MHz-Only Non-AP STA */
@@ -236,7 +236,7 @@ void ehtRlmFillCapIE(
 	/* PHY capabilities */
 	EHT_RESET_PHY_CAP(prEhtCap->ucEhtPhyCap);
 
-	eht_bw = cnmGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
+	eht_bw = cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBssInfo->eBand == BAND_6G) {

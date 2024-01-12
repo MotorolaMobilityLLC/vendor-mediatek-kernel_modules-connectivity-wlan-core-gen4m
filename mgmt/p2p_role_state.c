@@ -586,13 +586,8 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 		prChnlReqInfo->eChannelWidth = prBssInfo->ucVhtChannelWidth;
 
 		/* Decide RF BW by own OP BW */
-#if CFG_SUPPORT_DBDC
 		ucRfBw = cnmGetDbdcBwCapability(prAdapter,
 			prBssInfo->ucBssIndex);
-#else
-		ucRfBw = cnmGetBssMaxBw(prAdapter,
-						    prBssInfo->ucBssIndex);
-#endif
 
 		if (p2pFuncIsDualAPMode(prAdapter) &&
 			(ucRfBw >= MAX_BW_160MHZ))
