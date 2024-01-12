@@ -3195,7 +3195,7 @@ static s_int32 hqa_icap_ctrl(
 	u_int32 wf_num = 0, iq_type = 0;
 	u_int32 control = 0, resp_len = 2;
 	u_int32 value = 0, i = 0;
-	u_long max_data_len = 0;
+	u_long max_data_len = 1024;
 	u_char src_addr[SERV_MAC_ADDR_LEN];
 	s_int32 *icap_data = NULL;
 	s_int32 *icap_data_cnt = NULL;
