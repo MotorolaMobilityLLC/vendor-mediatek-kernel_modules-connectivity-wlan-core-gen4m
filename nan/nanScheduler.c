@@ -1562,7 +1562,7 @@ nanParserGenTimeBitmapField(struct ADAPTER *prAdapter, uint32_t *pu4AvailMap,
 
 		if (!fgCheckDone)
 			u4RepeatInterval--;
-	} while ((u4RepeatInterval > ENUM_TIME_BITMAP_CTRL_PERIOD_128) &&
+	} while (u4RepeatInterval > ENUM_TIME_BITMAP_CTRL_PERIOD_128 &&
 		 !fgCheckDone);
 
 #if CFG_NAN_SIGMA_TEST
@@ -4789,9 +4789,9 @@ nanSchedNegoDecideChnlInfoForEmptySlot(struct ADAPTER *prAdapter,
 				DBGLOG(NAN, ERROR, "u4PrimaryChnl equals 0!\n");
 				return WLAN_STATUS_FAILURE;
 			}
-			nanSchedAddCrbToChnlList(
-				prAdapter, &rSelChnlInfo, u4SlotIdx, 1,
-				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, FALSE, NULL);
+			nanSchedAddCrbToChnlList(prAdapter, &rSelChnlInfo,
+				u4SlotIdx, 1, ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+				FALSE, NULL);
 		}
 	}
 
@@ -5317,14 +5317,14 @@ nanSchedNegoApplyCustChnlList(struct ADAPTER *prAdapter) {
 
 			eConcurr = nanSchedChkConcurrOp(rCustChnl, rCommitChnl);
 			if (eConcurr == CNM_CH_CONCURR_MCC) {
-				nanSchedDeleteCrbFromChnlList(
-					prAdapter, u4SlotIdx, 1,
+				nanSchedDeleteCrbFromChnlList(prAdapter,
+					u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE);
 			}
 
-			rRetStatus = nanSchedAddCrbToChnlList(
-				prAdapter, &rCustChnl, u4SlotIdx, 1,
+			rRetStatus = nanSchedAddCrbToChnlList(prAdapter,
+				&rCustChnl, u4SlotIdx, 1,
 				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, TRUE, NULL);
 			if (rRetStatus != WLAN_STATUS_SUCCESS)
 				DBGLOG(NAN, INFO,
@@ -5379,8 +5379,7 @@ nanSchedNegoValidateCondChnlList(struct ADAPTER *prAdapter) {
 		}
 
 		if (u4RmtChnl != u4LocalChnl)
-			nanSchedDeleteCrbFromChnlList(
-				prAdapter, u4SlotIdx, 1,
+			nanSchedDeleteCrbFromChnlList(prAdapter, u4SlotIdx, 1,
 				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, FALSE);
 	}
 
@@ -5418,13 +5417,12 @@ nanSchedNegoCommitCondChnlList(struct ADAPTER *prAdapter) {
 				continue;
 
 			/* remove CRB from conditional window list */
-			nanSchedDeleteCrbFromChnlList(
-				prAdapter, u4SlotIdx, 1,
+			nanSchedDeleteCrbFromChnlList(prAdapter, u4SlotIdx, 1,
 				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, FALSE);
 
 			/* add CRB to committed window list */
-			rRetStatus = nanSchedAddCrbToChnlList(
-				prAdapter, &rCondChnl, u4SlotIdx, 1,
+			rRetStatus = nanSchedAddCrbToChnlList(prAdapter,
+				&rCondChnl, u4SlotIdx, 1,
 				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, TRUE, NULL);
 			if (rRetStatus != WLAN_STATUS_SUCCESS)
 				DBGLOG(NAN, INFO,
@@ -5749,8 +5747,8 @@ CHK_QOS_LATENCY_DONE:
 					    u4Idx1;
 				rSelChnlInfo = nanSchedNegoSelectChnlInfo(
 					prAdapter, u4SlotIdx);
-				rRetStatus = nanSchedAddCrbToChnlList(
-					prAdapter, &rSelChnlInfo, u4SlotIdx, 1,
+				rRetStatus = nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					FALSE, NULL);
 				if (rRetStatus != WLAN_STATUS_SUCCESS)
@@ -6430,33 +6428,217 @@ nanSchedNegoAddNdcCrb(struct ADAPTER *prAdapter,
 	return rRetStatus;
 }
 
-uint32_t
-nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
-		unsigned char fgChkRmtCondSlot) {
-	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
-	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
-	uint32_t u4SlotIdx;
-	uint32_t u4SlotOffset;
-	uint32_t u4DwIdx;
-	uint32_t u4AvailDbIdx;
-	uint32_t u4DefCrbNum;
-	uint32_t u4DefCrbNumBackup;
-	uint32_t u4IterationNum;
+static void updateDbTimeline(struct ADAPTER *prAdapter,
+			     uint8_t fgChkRmtCondSlot,
+			     const struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl,
+			     union _NAN_BAND_CHNL_CTRL *prLocalChnlInfo,
+			     struct _NAN_SCHEDULE_TIMELINE_T *prSchedTimeline,
+			     uint32_t *pu4CrbNum,
+			     uint32_t u4SlotIdx)
+{
 	unsigned char fgFound;
-	unsigned char fgPeerAvailMapValid;
+	uint32_t u4AvailDbIdx;
 	union _NAN_BAND_CHNL_CTRL rRmtChnlInfo;
+	union _NAN_BAND_CHNL_CTRL rSelChnlInfo;
+
+	fgFound = FALSE;
+
+	for (u4AvailDbIdx = 0; u4AvailDbIdx < NAN_NUM_AVAIL_DB;
+	     u4AvailDbIdx++) {
+		if (!nanSchedPeerAvailabilityDbValidByID(prAdapter,
+				prNegoCtrl->u4SchIdx, u4AvailDbIdx))
+			continue;
+
+		rRmtChnlInfo = nanGetPeerChnlInfoBySlot(prAdapter,
+				prNegoCtrl->u4SchIdx, u4AvailDbIdx,
+				u4SlotIdx, fgChkRmtCondSlot);
+		DBGLOG(NAN, LOUD,
+		       "Slot:%d, localChnl:%d, rmtChnl:%d\n",
+		       u4SlotIdx, prLocalChnlInfo->rChannel.u4PrimaryChnl,
+		       rRmtChnlInfo.rChannel.u4PrimaryChnl);
+		if (rRmtChnlInfo.rChannel.u4PrimaryChnl == 0 &&
+		    !fgChkRmtCondSlot) {
+			if (prLocalChnlInfo->rChannel.u4PrimaryChnl == 0) {
+				rSelChnlInfo =
+					nanSchedNegoSelectChnlInfo(prAdapter,
+								   u4SlotIdx);
+				/* Clear this slot before adding channel to it
+				 * to avoid adding multiple channels to the
+				 * same slot
+				 * Note: currently only add
+				 * fgCommitOrCond=FALSE (cond)
+				 * in this function,
+				 * so also clear this type here
+				 */
+				nanSchedDeleteCrbFromChnlList(prAdapter,
+					u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					FALSE);
+				nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					FALSE, NULL);
+			}
+
+			fgFound = TRUE;
+			(*pu4CrbNum)--;
+			break;
+		} else if (rRmtChnlInfo.rChannel.u4PrimaryChnl != 0) {
+			if (!nanIsAllowedChannel(prAdapter,
+				rRmtChnlInfo.rChannel.u4PrimaryChnl))
+				continue;
+
+			if (prLocalChnlInfo->rChannel.u4PrimaryChnl != 0) {
+				if (nanSchedChkConcurrOp(*prLocalChnlInfo,
+							 rRmtChnlInfo) !=
+				    CNM_CH_CONCURR_MCC) {
+					fgFound = TRUE;
+
+					if (u4AvailDbIdx == 0)
+						(*pu4CrbNum)--;
+				}
+				continue;
+			}
+
+			/* no local channel allocation case */
+			rSelChnlInfo = nanSchedConvergeChnlInfo(prAdapter,
+								rRmtChnlInfo);
+			if (rSelChnlInfo.rChannel.u4PrimaryChnl != 0) {
+				/* Clear this slot before adding channel to it
+				 * to avoid adding multiple channels to the
+				 * same slot
+				 * Note: currently only add
+				 * fgCommitOrCond=FALSE (cond)
+				 * in this function,
+				 * so also clear this type here
+				 */
+				nanSchedDeleteCrbFromChnlList(prAdapter,
+					u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					FALSE);
+				nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					FALSE, NULL);
+
+				fgFound = TRUE;
+				if (u4AvailDbIdx == 0)
+					(*pu4CrbNum)--;
+				continue;
+			}
+		}
+	}
+
+	if (fgFound && prSchedTimeline)
+		NAN_TIMELINE_SET(prSchedTimeline->au4AvailMap, u4SlotIdx);
+}
+
+/**
+ * updateDWTimeline() - update Timeline of a Discovery Window interval
+ * @prAdapter: pointer to adapter
+ * @u4DefCrbNum: requested number of CRBs
+ * @fgChkRmtCondSlot: need to check remote conditional slots
+ * @fgPeerAvailMapValid: is peer availability map valid
+ * @prSchedTimeline: schedule timeline to be updated
+ * @prNegoCtrl: negotiation control context
+ * @u4DwIdx: iteration index 0..15 to fill the DW interval index.
+ *	A DW interval is 512 TU, represented by 32-bit as 16 TU for each.
+ */
+static uint32_t updateDWIntervalTimeline(struct ADAPTER *prAdapter,
+			       uint32_t u4DefCrbNum,
+			       uint8_t fgChkRmtCondSlot,
+			       uint8_t fgPeerAvailMapValid,
+			       struct _NAN_SCHEDULE_TIMELINE_T *prSchedTimeline,
+			       const struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl,
+			       uint32_t u4DwIdx)
+{
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SlotOffset;
+	uint32_t u4NanQuota;
+	uint32_t u4CrbNum;
+	uint32_t u4IterationNum;
+	uint32_t u4SlotIdx;
 	union _NAN_BAND_CHNL_CTRL rLocalChnlInfo;
 	union _NAN_BAND_CHNL_CTRL rSelChnlInfo;
+
+	u4NanQuota = NAN_SLOTS_PER_DW_INTERVAL; /* 32 */
+#if (CFG_NAN_SCHEDULER_VERSION == 0)
+	if (!fgChkRmtCondSlot)
+		u4NanQuota -= prAdapter->rWifiVar.ucAisQuotaVal;
+#endif
+
+	if (fgChkRmtCondSlot)
+		u4SlotOffset = 1;
+	else
+		u4SlotOffset = prAdapter->rWifiVar.ucDftQuotaStartOffset;
+
+
+	for (u4CrbNum = u4DefCrbNum, u4IterationNum = 0;
+	     u4CrbNum && u4IterationNum < u4NanQuota;
+	     u4SlotOffset = (u4SlotOffset + 1) % u4NanQuota,
+	     u4IterationNum++) {
+		/* u4CrbNum: u4DefCrbNum..1, decrement
+		 * u4IterationNum: 0..31
+		 * u4SlotOffset: 0..31, could wrap around
+		 * => u4SlotIdx: u4SlotOffset..31 or by u4CrbNum
+		 */
+
+		u4SlotIdx = u4SlotOffset + u4DwIdx * NAN_SLOTS_PER_DW_INTERVAL;
+
+		if (nanWindowType(prAdapter, u4SlotIdx) == ENUM_NAN_DW)
+			continue;
+
+		rLocalChnlInfo = nanGetChnlInfoBySlot(prAdapter, u4SlotIdx);
+
+		if (!fgPeerAvailMapValid) {
+			if (rLocalChnlInfo.rChannel.u4PrimaryChnl == 0) {
+				rSelChnlInfo =
+					nanSchedNegoSelectChnlInfo(prAdapter,
+								   u4SlotIdx);
+				nanSchedAddCrbToChnlList(prAdapter,
+					&rSelChnlInfo, u4SlotIdx, 1,
+					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
+					FALSE, NULL);
+			}
+
+			u4CrbNum--;
+
+			if (prSchedTimeline)
+				NAN_TIMELINE_SET(prSchedTimeline->au4AvailMap,
+						 u4SlotIdx);
+
+			continue;
+		}
+
+		updateDbTimeline(prAdapter, fgChkRmtCondSlot, prNegoCtrl,
+				 &rLocalChnlInfo, prSchedTimeline, &u4CrbNum,
+				 u4SlotIdx);
+	}
+
+	if (u4CrbNum)
+		rRetStatus = WLAN_STATUS_RESOURCES;
+
+	return rRetStatus;
+}
+
+uint32_t nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
+			       uint8_t fgChkRmtCondSlot)
+{
+	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus;
+	struct _NAN_CRB_NEGO_CTRL_T *prNegoCtrl;
+	uint32_t u4DwIdx;
+	uint32_t u4DefCrbNum;
+	uint8_t fgPeerAvailMapValid;
 	struct _NAN_SCHEDULE_TIMELINE_T *prSchedTimeline = NULL;
 	struct _NAN_TIMELINE_MGMT_T *prNanTimelineMgmt;
-	uint32_t u4NanQuota;
 
 	prNanTimelineMgmt = nanGetTimelineMgmt(prAdapter);
 	prNegoCtrl = nanGetNegoControlBlock(prAdapter);
 
-	if ((prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR) &&
-	    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_RESPONDER) &&
-	    (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_WAIT_RESP)) {
+	if (prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_INITIATOR &&
+	    prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_RESPONDER &&
+	    prNegoCtrl->eState != ENUM_NAN_CRB_NEGO_STATE_WAIT_RESP) {
 		rRetStatus = WLAN_STATUS_FAILURE;
 		goto GEN_DFT_CRB_DONE;
 	}
@@ -6471,15 +6653,14 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 		goto GEN_DFT_CRB_DONE;
 	}
 
-	if ((prSchedTimeline != NULL) &&
-	    (prSchedTimeline->ucMapId == NAN_INVALID_MAP_ID)) {
+	if (prSchedTimeline && prSchedTimeline->ucMapId == NAN_INVALID_MAP_ID) {
 		prSchedTimeline->ucMapId = prNanTimelineMgmt->ucMapId;
 		kalMemZero(prSchedTimeline->au4AvailMap,
 			   sizeof(prSchedTimeline->au4AvailMap));
 	}
 
-	fgPeerAvailMapValid = nanSchedPeerAvailabilityDbValid(
-		prAdapter, prNegoCtrl->u4SchIdx);
+	fgPeerAvailMapValid = nanSchedPeerAvailabilityDbValid(prAdapter,
+					prNegoCtrl->u4SchIdx);
 	DBGLOG(NAN, INFO,
 	       "StaIdx:%d, fgChkRmtCondSlot:%d, Num:%d, PeerAvailValid:%d\n",
 	       prNegoCtrl->u4SchIdx, fgChkRmtCondSlot, u4DefCrbNum,
@@ -6490,175 +6671,15 @@ nanSchedNegoGenDefCrb(struct ADAPTER *prAdapter,
 		goto GEN_DFT_CRB_DONE;
 	}
 
-	u4NanQuota = NAN_SLOTS_PER_DW_INTERVAL;
-#if (CFG_NAN_SCHEDULER_VERSION == 0)
-	if (!fgChkRmtCondSlot)
-		u4NanQuota -= prAdapter->rWifiVar.ucAisQuotaVal;
-#endif
-
 	/* try to allocate basic CRBs for every DW interval */
-	u4DefCrbNumBackup = u4DefCrbNum;
-	for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) {
-		if (fgChkRmtCondSlot)
-			u4SlotOffset = 1;
-		else {
-			u4SlotOffset =
-				prAdapter->rWifiVar.ucDftQuotaStartOffset;
-		}
-
-		for ((u4DefCrbNum = u4DefCrbNumBackup), (u4IterationNum = 0);
-		     (u4DefCrbNum && (u4IterationNum < u4NanQuota));
-		     (u4SlotOffset = (u4SlotOffset + 1) % u4NanQuota),
-		     (u4IterationNum++)) {
-
-		u4SlotIdx = u4SlotOffset +
-			    u4DwIdx * NAN_SLOTS_PER_DW_INTERVAL;
-
-		if (nanWindowType(prAdapter, u4SlotIdx) == ENUM_NAN_DW)
-			continue;
-
-		rLocalChnlInfo =
-			nanGetChnlInfoBySlot(prAdapter, u4SlotIdx);
-
-		if (!fgPeerAvailMapValid) {
-			if (rLocalChnlInfo.rChannel.u4PrimaryChnl ==
-			    0) {
-				rSelChnlInfo =
-				nanSchedNegoSelectChnlInfo(
-					prAdapter, u4SlotIdx);
-				nanSchedAddCrbToChnlList(
-					prAdapter, &rSelChnlInfo,
-					u4SlotIdx, 1,
-				ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
-					FALSE, NULL);
-			}
-
-			u4DefCrbNum--;
-
-			if (prSchedTimeline)
-				NAN_TIMELINE_SET(
-					prSchedTimeline->au4AvailMap,
-					u4SlotIdx);
-
-			continue;
-		}
-
-		fgFound = FALSE;
-
-		for (u4AvailDbIdx = 0; u4AvailDbIdx < NAN_NUM_AVAIL_DB;
-		     u4AvailDbIdx++) {
-			if (nanSchedPeerAvailabilityDbValidByID(
-				    prAdapter, prNegoCtrl->u4SchIdx,
-				    u4AvailDbIdx) == FALSE)
-				continue;
-
-			rRmtChnlInfo = nanGetPeerChnlInfoBySlot(
-				prAdapter, prNegoCtrl->u4SchIdx,
-				u4AvailDbIdx, u4SlotIdx,
-				fgChkRmtCondSlot);
-			DBGLOG(NAN, LOUD,
-				"Slot:%d, localChnl:%d, rmtChnl:%d\n",
-				u4SlotIdx,
-				rLocalChnlInfo.rChannel.u4PrimaryChnl,
-				rRmtChnlInfo.rChannel.u4PrimaryChnl);
-			if ((rRmtChnlInfo.rChannel.u4PrimaryChnl ==
-				0) &&
-			    !fgChkRmtCondSlot) {
-				if (rLocalChnlInfo.rChannel
-				    .u4PrimaryChnl == 0) {
-					rSelChnlInfo =
-					nanSchedNegoSelectChnlInfo(
-						prAdapter,
-						u4SlotIdx);
-					/* Clear
-					 * this slot before addding CH
-					 * to it to avoid
-					 * adding multiple CH
-					 * to the same slot
-					 * Note: currently only add
-					 * fgCommitOrCond=FALSE (cond)
-					 * in this function,
-					 * so also clear this type here
-					 */
-					nanSchedDeleteCrbFromChnlList(
-						prAdapter, u4SlotIdx, 1,
-					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
-						FALSE);
-					nanSchedAddCrbToChnlList(
-						prAdapter,
-						&rSelChnlInfo,
-						u4SlotIdx, 1,
-				    ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
-						FALSE, NULL);
-				}
-
-				fgFound = TRUE;
-				u4DefCrbNum--;
-				break;
-			} else if (
-				rRmtChnlInfo.rChannel
-				.u4PrimaryChnl != 0) {
-				if (!nanIsAllowedChannel(
-				    prAdapter,
-				    rRmtChnlInfo.rChannel
-				    .u4PrimaryChnl))
-					continue;
-
-				if ((rLocalChnlInfo.rChannel
-				     .u4PrimaryChnl != 0) &&
-				    (nanSchedChkConcurrOp(
-					rLocalChnlInfo,
-					rRmtChnlInfo) !=
-					CNM_CH_CONCURR_MCC)) {
-					fgFound = TRUE;
-					if (u4AvailDbIdx == 0)
-						u4DefCrbNum--;
-					continue;
-				} else if (rLocalChnlInfo.rChannel
-					   .u4PrimaryChnl != 0) {
-					continue;
-				}
-
-				/* no local channel allocation case */
-				rSelChnlInfo = nanSchedConvergeChnlInfo(
-					prAdapter, rRmtChnlInfo);
-				if (rSelChnlInfo.rChannel.u4PrimaryChnl
-					!= 0) {
-					/* Clear this slot before
-					 * addding CH to it to
-					 * avoid adding multiple CH
-					 * to the same slot
-					 * Note: currently only
-					 * add fgCommitOrCond=FALSE (cond)
-					 * in this function,
-					 * so also clear this type here
-					 */
-					nanSchedDeleteCrbFromChnlList(
-						prAdapter, u4SlotIdx, 1,
-					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
-						FALSE);
-					nanSchedAddCrbToChnlList(
-					prAdapter,
-					&rSelChnlInfo,
-					u4SlotIdx, 1,
-				    ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
-					FALSE, NULL);
-
-					fgFound = TRUE;
-					if (u4AvailDbIdx == 0)
-						u4DefCrbNum--;
-					continue;
-				}
-			}
-		}
-
-		if ((fgFound == TRUE) && prSchedTimeline)
-			NAN_TIMELINE_SET(prSchedTimeline->au4AvailMap,
-					 u4SlotIdx);
-		}
-
-		if (u4DefCrbNum)
-			rRetStatus = WLAN_STATUS_RESOURCES;
+	for (u4DwIdx = 0; u4DwIdx < NAN_TOTAL_DW; u4DwIdx++) { /* 0..15 */
+		rStatus = updateDWIntervalTimeline(prAdapter, u4DefCrbNum,
+						   fgChkRmtCondSlot,
+						   fgPeerAvailMapValid,
+						   prSchedTimeline,
+						   prNegoCtrl, u4DwIdx);
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			rRetStatus = rStatus;
 	}
 
 #if (CFG_SUPPORT_NAN_NDP_DUAL_BAND == 0)
@@ -6852,8 +6873,8 @@ nanSchedNegoGenNdcCrb(struct ADAPTER *prAdapter) {
 			/* Assign channel for new NDC */
 			rSelChnlInfo = nanSchedNegoSelectChnlInfo(prAdapter,
 								  u4SlotIdx);
-			rRetStatus = nanSchedAddCrbToChnlList(
-				prAdapter, &rSelChnlInfo, u4SlotIdx, 1,
+			rRetStatus = nanSchedAddCrbToChnlList(prAdapter,
+				&rSelChnlInfo, u4SlotIdx, 1,
 				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, FALSE, NULL);
 			if (rRetStatus != WLAN_STATUS_SUCCESS)
 				break;
@@ -6960,8 +6981,7 @@ nanSchedNegoResetControlInfo(struct ADAPTER *prAdapter,
 				continue;
 			}
 
-			nanSchedDeleteCrbFromChnlList(
-				prAdapter, u4SlotIdx, 1,
+			nanSchedDeleteCrbFromChnlList(prAdapter, u4SlotIdx, 1,
 				ENUM_TIME_BITMAP_CTRL_PERIOD_8192, FALSE);
 		}
 
@@ -9779,18 +9799,18 @@ nanSchedSwDbg4(struct ADAPTER *prAdapter, uint32_t u4Data) /* 0x7426000d */
 		rChnlInfo.rChannel.u4OperatingClass =
 			NAN_5G_LOW_DISC_CH_OP_CLASS;
 		rChnlInfo.rChannel.u4PrimaryChnl = 36;
-		rRetStatus = nanSchedAddCrbToChnlList(
-			prAdapter, &rChnlInfo, 9, 2,
-			ENUM_TIME_BITMAP_CTRL_PERIOD_512, TRUE, NULL);
+		rRetStatus = nanSchedAddCrbToChnlList(prAdapter, &rChnlInfo,
+				9, 2, ENUM_TIME_BITMAP_CTRL_PERIOD_512,
+				TRUE, NULL);
 #endif
 
 #if 1
 		rChnlInfo.rChannel.u4OperatingClass =
 			NAN_5G_HIGH_DISC_CH_OP_CLASS;
 		rChnlInfo.rChannel.u4PrimaryChnl = 161;
-		rRetStatus = nanSchedAddCrbToChnlList(
-			prAdapter, &rChnlInfo, 13, 1,
-			ENUM_TIME_BITMAP_CTRL_PERIOD_512, TRUE, NULL);
+		rRetStatus = nanSchedAddCrbToChnlList(prAdapter, &rChnlInfo,
+				13, 1, ENUM_TIME_BITMAP_CTRL_PERIOD_512,
+				TRUE, NULL);
 #endif
 		break;
 
@@ -10280,23 +10300,18 @@ nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter) {
 				if (nanSchedChkConcurrOp(
 					rCommitChnlInfo, rNonNanChnlInfo)
 					== CNM_CH_CONCURR_MCC) {
-					nanSchedDeleteCrbFromChnlList(
-					prAdapter,
+					nanSchedDeleteCrbFromChnlList(prAdapter,
 					u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE);
-					nanSchedAddCrbToChnlList(
-					prAdapter,
-					&rNonNanChnlInfo,
-					u4SlotIdx, 1,
+					nanSchedAddCrbToChnlList(prAdapter,
+					&rNonNanChnlInfo, u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 				}
 			} else
-				nanSchedAddCrbToChnlList(
-					prAdapter,
-					&rNonNanChnlInfo,
-					u4SlotIdx, 1,
+				nanSchedAddCrbToChnlList(prAdapter,
+					&rNonNanChnlInfo, u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					TRUE, NULL);
 		}
@@ -10401,8 +10416,8 @@ nanSchedRemoveDiffBandChnlList(
 			eBand = nanRegGetNanChnlBand(rChnlInfo);
 
 			if (eBand != eSelBand)
-				nanSchedDeleteCrbFromChnlList(
-					prAdapter, u4SlotIdx, 1,
+				nanSchedDeleteCrbFromChnlList(prAdapter,
+					u4SlotIdx, 1,
 					ENUM_TIME_BITMAP_CTRL_PERIOD_8192,
 					fgCommitOrCond);
 		}
