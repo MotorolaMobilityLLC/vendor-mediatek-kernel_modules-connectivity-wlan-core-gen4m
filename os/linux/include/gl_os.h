@@ -1251,6 +1251,8 @@ extern struct net_device *gPrP2pDev[KAL_P2P_NUM];
 extern struct net_device *gPrDev;
 extern struct wireless_dev *gprWdev[KAL_AIS_NUM];
 extern uint32_t g_u4DevIdx[KAL_P2P_NUM];
+extern enum ENUM_NVRAM_STATE g_NvramFsm;
+
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 extern char *gprifnameap;

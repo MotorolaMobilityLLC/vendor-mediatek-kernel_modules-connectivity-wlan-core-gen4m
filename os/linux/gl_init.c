@@ -99,7 +99,7 @@
 struct semaphore g_halt_sem;
 int g_u4HaltFlag;
 int g_u4WlanInitFlag;
-static enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
+enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
