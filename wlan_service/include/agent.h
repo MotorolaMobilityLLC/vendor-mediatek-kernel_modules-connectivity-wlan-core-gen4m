@@ -190,6 +190,10 @@ struct GNU_PACKED hqa_rx_stat_band_info {
 	u_int32 phy_rx_tag_err_ofdm;
 	u_int32 phy_rx_mdrdy_cnt_cck;
 	u_int32 phy_rx_mdrdy_cnt_ofdm;
+#if (CFG_SUPPORT_CONNAC3X == 1) /* band info v1*/
+	u_int32 aci_hit_low;
+	u_int32 aci_hit_high;
+#endif
 };
 
 struct GNU_PACKED hqa_rx_stat_path_info {
@@ -199,6 +203,9 @@ struct GNU_PACKED hqa_rx_stat_path_info {
 	u_int32 fagc_wb_rssi;
 	u_int32 inst_ib_rssi;
 	u_int32 inst_wb_rssi;
+#if (CFG_SUPPORT_CONNAC3X == 1) /* path_info v1 */
+	u_int32 adc_rssi;
+#endif
 };
 
 struct GNU_PACKED hqa_rx_stat_user_info {
@@ -209,12 +216,17 @@ struct GNU_PACKED hqa_rx_stat_user_info {
 
 struct GNU_PACKED hqa_rx_stat_comm_info {
 	u_int32 rx_fifo_full;
+#if (CFG_SUPPORT_CONNAC3X == 0) /* comm_info v1 */
 	u_int32 aci_hit_low;
 	u_int32 aci_hit_high;
+#endif
 	u_int32 mu_pkt_count;
 	u_int32 sig_mcs;
 	u_int32 sinr;
 	u_int32 driver_rx_count;
+#if (CFG_SUPPORT_CONNAC3X == 1) /* comm_info v1 */
+	u_int32 ne_var_db;
+#endif
 };
 
 struct GNU_PACKED hqa_rx_stat_leg {

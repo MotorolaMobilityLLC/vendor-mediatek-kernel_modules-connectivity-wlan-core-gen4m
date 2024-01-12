@@ -230,6 +230,7 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 				  *prAdapter, IN struct CMD_INFO *prCmdInfo,
 				  IN uint8_t *pucEventBuf)
 {
+#if (CFG_SUPPORT_CONNAC3X == 0)
 	struct PARAM_CUSTOM_ACCESS_RX_STAT *prRxStatistics;
 	struct EVENT_ACCESS_RX_STAT *prEventAccessRxStat;
 	uint32_t u4QueryInfoLen, i;
@@ -299,7 +300,7 @@ void nicCmdEventQueryRxStatistics(IN struct ADAPTER
 		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
-
+#endif
 }
 
 #if CFG_SUPPORT_TX_BF
