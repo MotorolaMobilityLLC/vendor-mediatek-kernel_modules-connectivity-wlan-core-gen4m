@@ -2338,7 +2338,9 @@ void kalP2pPreStartRdd(
 		DBGLOG(P2P, ERROR, "p2p glue info null.\n");
 		return;
 	}
-
+	kalMemZero(
+		&chandef,
+		sizeof(struct cfg80211_chan_def));
 	chan = ieee80211_get_channel(
 		prGlueP2pInfo->prWdev->wiphy,
 		freq);
@@ -3089,7 +3091,7 @@ static int kalIdcRilNotifier(
 	}
 
 	DBGLOG(INIT, LOUD,
-		"ril notification size %d\n", size);
+		"ril notification size %lu\n", size);
 
 	msg = (struct dev_ril_bridge_msg *)buf;
 

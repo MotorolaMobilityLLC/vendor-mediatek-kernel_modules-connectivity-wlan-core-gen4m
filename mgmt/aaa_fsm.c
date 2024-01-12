@@ -257,6 +257,7 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 	struct WLAN_AUTH_FRAME *prAuthFrame = (struct WLAN_AUTH_FRAME *) NULL;
 	uint32_t rStatus;
 	struct P2P_CONNECTION_SETTINGS *prP2pConnSettings = NULL;
+	uint16_t u2MinPayloadLen;
 
 	ASSERT(prAdapter);
 
@@ -268,6 +269,21 @@ void aaaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 
 	do {
 		prAuthFrame = (struct WLAN_AUTH_FRAME *) prSwRfb->pvHeader;
+		u2MinPayloadLen = (AUTH_ALGORITHM_NUM_FIELD_LEN +
+				   AUTH_TRANSACTION_SEQENCE_NUM_FIELD_LEN +
+				   STATUS_CODE_FIELD_LEN);
+		if ((prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
+			u2MinPayloadLen) {
+			DBGLOG(AAA, WARN,
+				"Rx Auth  len[%u] < min expected len[%u]\n",
+				(prSwRfb->u2PacketLen -
+				prSwRfb->u2HeaderLen),
+				u2MinPayloadLen);
+			DBGLOG(AAA, WARN, "=== Dump Rx Auth ===\n");
+			DBGLOG_MEM8(AAA, WARN, prAuthFrame,
+				   prSwRfb->u2PacketLen);
+			return;
+		}
 
 		DBGLOG(AAA, INFO,
 			"SA: " MACSTR ", bssid: " MACSTR ", %d %d sta: %d\n",
