@@ -1125,7 +1125,9 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 					IN const u_int8_t bAtResetFlow)
 {
 	struct BUS_INFO *prBusInfo = NULL;
+#if CFG_MTK_WIFI_SW_WFDMA
 	struct SW_WFDMA_INFO *prSwWfdmaInfo = NULL;
+#endif
 	uint32_t u4Status = WLAN_STATUS_SUCCESS;
 	enum ENUM_ADAPTER_START_FAIL_REASON {
 		ALLOC_ADAPTER_MEM_FAIL,
@@ -1143,7 +1145,9 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 	DEBUGFUNC("wlanAdapterStart");
 
 	prBusInfo = prAdapter->chip_info->bus_info;
+#if CFG_MTK_WIFI_SW_WFDMA
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+#endif
 
 	eFailReason = FAIL_REASON_MAX;
 
@@ -1207,11 +1211,13 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 		wlanOnPostNicInitAdapter(prAdapter, prRegInfo, bAtResetFlow);
 
+#if CFG_MTK_WIFI_SW_WFDMA
 		if (prSwWfdmaInfo->fgIsEnAfterFwdl) {
 			if (prSwWfdmaInfo->rOps.enable)
 				prSwWfdmaInfo->rOps.enable(
 					prAdapter->prGlueInfo, false);
 		}
+#endif
 
 		/* 4 <5> HIF SW info initialize */
 		if (!halHifSwInfoInit(prAdapter)) {
@@ -1258,11 +1264,13 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 		}
 #endif
 
+#if CFG_MTK_WIFI_SW_WFDMA
 		if (prSwWfdmaInfo->fgIsEnAfterFwdl) {
 			if (prSwWfdmaInfo->rOps.enable)
 				prSwWfdmaInfo->rOps.enable(
 					prAdapter->prGlueInfo, true);
 		}
+#endif
 
 		DBGLOG(INIT, INFO, "Waiting for Ready bit..\n");
 

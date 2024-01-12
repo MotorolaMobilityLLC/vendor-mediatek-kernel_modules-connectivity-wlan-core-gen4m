@@ -335,6 +335,7 @@ struct BUS_INFO {
 	uint32_t u4UdmaWlCfg_0;
 	uint32_t u4UdmaTxTimeout; /* UDMA Tx time out limit, unit: us */
 	uint32_t u4SuspendVer;
+	struct DMASHDL_CFG *prDmashdlCfg;
 	u_int8_t (*asicUsbSuspend)(
 		IN struct ADAPTER *prAdapter,
 		IN struct GLUE_INFO *prGlueInfo);
@@ -346,6 +347,7 @@ struct BUS_INFO {
 		IN struct BUS_INFO *prBusInfo,
 		IN uint8_t *pRXD);
 	void (*DmaShdlInit)(IN struct ADAPTER *prAdapter);
+	void (*processAbnormalInterrupt)(struct ADAPTER *prAdapter);
 };
 
 /* USB_REQ_T prPriv field for TxData */

@@ -177,9 +177,11 @@ static int priv_driver_set_power_control(IN struct net_device *prNetDev,
 			      IN int i4TotalLen);
 #endif
 
+#if CFG_MTK_WIFI_SW_WFDMA
 static int priv_driver_set_sw_wfdma(
 	IN struct net_device *prNetDev,
 	IN char *pcCommand, IN int i4TotalLen);
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 static int priv_driver_set_pwr_level(
@@ -4021,7 +4023,9 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_SET_WFSYS_RESET      "SET_WFSYS_RESET"
 #endif
 
+#if CFG_MTK_WIFI_SW_WFDMA
 #define CMD_SET_SW_WFDMA         "SET_SW_WFDMA"
+#endif
 
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
@@ -15695,7 +15699,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_SET_STA1NSS, priv_driver_set_sta1ss},
 	{CMD_SET_NVRAM, priv_driver_set_nvram},
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
+#if CFG_MTK_WIFI_SW_WFDMA
 	{CMD_SET_SW_WFDMA, priv_driver_set_sw_wfdma},
+#endif
 	{CMD_GET_HAPD_CHANNEL, priv_driver_get_hapd_channel},
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	{CMD_SET_PWR_LEVEL, priv_driver_set_pwr_level},
@@ -16308,6 +16314,7 @@ static int priv_driver_set_power_control(IN struct net_device *prNetDev,
 }
 #endif
 
+#if CFG_MTK_WIFI_SW_WFDMA
 static int priv_driver_set_sw_wfdma(
 	IN struct net_device *prNetDev,
 	IN char *pcCommand, IN int i4TotalLen)
@@ -16362,6 +16369,7 @@ static int priv_driver_set_sw_wfdma(
 	}
 	return i4BytesWritten;
 }				/* priv_driver_set_sw_wfdma */
+#endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 static int priv_driver_set_pwr_level(IN struct net_device *prNetDev,
