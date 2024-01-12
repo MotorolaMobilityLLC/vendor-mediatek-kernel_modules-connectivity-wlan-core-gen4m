@@ -403,6 +403,9 @@ struct P2P_SPECIFIC_BSS_INFO {
 
 	uint16_t u2RsnxIeLen;
 	uint8_t aucRsnxIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_RSN];
+
+	uint16_t u2OweIeLen;
+	uint8_t aucOweIeBuffer[ELEM_HDR_LEN + ELEM_MAX_LEN_WPA];
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

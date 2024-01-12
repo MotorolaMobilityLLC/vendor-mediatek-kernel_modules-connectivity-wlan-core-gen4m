@@ -316,6 +316,8 @@
 #define RATE_HT_PHY         127
 /* BSS Selector - Hash to Element only */
 #define RATE_H2E_ONLY                           123
+#define RATE_H2E_ONLY_VAL                       (0x80 | 123)
+
 /* mask bits for the rate */
 #define RATE_MASK                               BITS(0, 6)
 /* mask bit for the rate belonging to the BSSBasicRateSet */
@@ -1534,6 +1536,10 @@ enum BEACON_REPORT_DETAIL {
 #if (CFG_SUPPORT_TWT == 1)
 #define ELEM_EXT_CAP_TWT_REQUESTER_BIT              77
 #endif
+#define ELEM_EXT_CAP_SAE_PW_USED_BIT                81
+#define ELEM_EXT_CAP_SAE_PW_EX_BIT                  82
+#define ELEM_EXT_CAP_MSCS_BIT                       85
+#define ELEM_EXT_CAP_SAE_PK_BIT                     88
 
 #define ELEM_MAX_LEN_EXT_CAP_11ABGNAC               (8)
 
@@ -1608,6 +1614,9 @@ enum BEACON_REPORT_DETAIL {
 
 #define ELEM_MAX_LEN_VHT_OP_MODE_NOTIFICATION \
 	(3 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_OP_MODE_T)-2 */
+
+#define ELEM_MAX_LEN_TPE \
+	(8 - ELEM_HDR_LEN)	/* sizeof(IE_VHT_TPE)-2 */
 
 /*8.4.2.160.3 VHT Supported MCS Set field*/
 
@@ -2035,6 +2044,7 @@ enum BEACON_REPORT_DETAIL {
 #define VENDOR_OUI_TYPE_P2P                         9
 #define VENDOR_OUI_TYPE_WFD                         10
 #define VENDOR_OUI_TYPE_MBO                         22
+#define VENDOR_OUI_TYPE_OWE                         28
 
 #define VENDOR_IE_TYPE_MBO                          0x506f9a16
 
@@ -3119,6 +3129,13 @@ struct _IE_TWT_T {
 	uint8_t ucReserved;	/* TWT Channel for 11ah. Reserved for 11ax */
 } __KAL_ATTRIB_PACKED__;
 #endif
+
+struct IE_VHT_TPE {
+	uint8_t ucId;
+	uint8_t ucLength;
+	uint8_t u8TxPowerInfo;
+	uint8_t u8TxPowerBw[4];
+} __KAL_ATTRIB_PACKED__;
 
 #if (CFG_SUPPORT_BTWT == 1)
 struct _IE_BTWT_T {

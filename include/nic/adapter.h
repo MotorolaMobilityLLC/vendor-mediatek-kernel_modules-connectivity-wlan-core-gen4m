@@ -539,6 +539,8 @@ struct BSS_INFO {
 	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;
 	uint8_t fgHasStopTx;
 #endif
+
+	u_int8_t fgEnableH2E;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -1059,6 +1061,7 @@ struct WIFI_VAR {
 	uint8_t fgSapConcurrencyPolicy;
 	uint8_t fgSapAuthPolicy;
 	uint8_t fgSapOverwriteAcsChnlBw;
+	uint8_t fgSapAddTPEIE;
 	uint8_t fgSapOffload;
 	uint8_t ucDfsRegion;
 	uint32_t u4ByPassCacTime;

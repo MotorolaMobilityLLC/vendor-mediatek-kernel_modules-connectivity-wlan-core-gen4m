@@ -1964,7 +1964,7 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 
 		prP2pSetNewChannelMsg->ucRoleIdx = ucRoleIdx;
 		prP2pSetNewChannelMsg->ucBssIndex = ucBssIdx;
-
+		p2pFuncSetCsaBssIndex(ucBssIdx);
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prP2pSetNewChannelMsg,
@@ -2715,6 +2715,77 @@ int mtk_p2p_cfg80211_change_bss(struct wiphy *wiphy,
 
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_change_bss */
+
+int mtk_p2p_cfg80211_change_station(
+	struct wiphy *wiphy,
+	struct net_device *ndev,
+	const u8 *mac,
+	struct station_parameters *params)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return -EINVAL;
+
+	ucBssIndex = wlanGetBssIdx(ndev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(
+		prGlueInfo->prAdapter,
+		ucBssIndex);
+	if (prBssInfo &&
+		(prBssInfo->u4RsnSelectedAKMSuite ==
+		RSN_AKM_SUITE_OWE)) {
+		DBGLOG(P2P, INFO,
+			"[OWE] Bypass set station\n");
+		return 0;
+	}
+
+	DBGLOG(REQ, WARN,
+		"P2P/AP don't support this function\n");
+
+	return -EFAULT;
+}
+
+int mtk_p2p_cfg80211_add_station(
+	struct wiphy *wiphy,
+	struct net_device *ndev,
+	const u8 *mac)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucBssIndex = 0;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!prGlueInfo)
+		return -EINVAL;
+
+	ucBssIndex = wlanGetBssIdx(ndev);
+	if (!IS_BSS_INDEX_VALID(ucBssIndex))
+		return -EINVAL;
+
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(
+		prGlueInfo->prAdapter,
+		ucBssIndex);
+	if (prBssInfo &&
+		(prBssInfo->u4RsnSelectedAKMSuite ==
+		RSN_AKM_SUITE_OWE)) {
+		DBGLOG(P2P, INFO,
+			"[OWE] Bypass add station\n");
+		return 0;
+	}
+
+	DBGLOG(REQ, WARN,
+		"P2P/AP don't support this function\n");
+
+	return -EFAULT;
+}
 
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 #if KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
