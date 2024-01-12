@@ -17424,15 +17424,15 @@ uint32_t wlanoidSetLowLatencyMode(
 	IN uint32_t u4SetBufferLen,
 	OUT uint32_t *pu4SetInfoLen)
 {
-	uint32_t u4Events;
+	struct PARAM_LOWLATENCY_DATA rParams;
 	uint8_t ucBssIndex;
 
 	DEBUGFUNC("wlanoidSetLowLatencyMode");
 
 	ASSERT(prAdapter);
 	ASSERT(pvSetBuffer);
-	if (u4SetBufferLen != sizeof(uint32_t)) {
-		*pu4SetInfoLen = sizeof(uint32_t);
+	if (u4SetBufferLen != (sizeof(uint32_t) * 7)) {
+		*pu4SetInfoLen = (sizeof(uint32_t) * 7);
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 	ASSERT(pu4SetInfoLen);
@@ -17440,12 +17440,25 @@ uint32_t wlanoidSetLowLatencyMode(
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 
 	/* Initialize */
-	kalMemCopy(&u4Events, pvSetBuffer, u4SetBufferLen);
+	kalMemCopy(&rParams, pvSetBuffer, u4SetBufferLen);
 
 	/* Set low latency mode */
-	DBGLOG(OID, INFO, "DPP LowLatencySet(from oid set) event:0x%x\n",
-		u4Events);
-	wlanSetLowLatencyMode(prAdapter, u4Events, ucBssIndex);
+	DBGLOG(OID, INFO,
+		"DPP LowLatencySet(from oid set) event:0x%x, delay bound:udp(%d) tcp(%d), phy rate:%d, priority:udp(%d) tcp(%d), protocol:%d\n",
+		rParams.u4Events, rParams.u4UdpDelayBound,
+		rParams.u4TcpDelayBound, rParams.u4DataPhyRate,
+		rParams.u4UdpPriority, rParams.u4TcpPriority,
+		rParams.u4SupportProtocol);
+
+	prAdapter->rWifiVar.ucUdpTspecUp = (uint8_t) rParams.u4UdpPriority;
+	prAdapter->rWifiVar.ucTcpTspecUp = (uint8_t) rParams.u4TcpPriority;
+	prAdapter->rWifiVar.u4UdpDelayBound = rParams.u4UdpDelayBound;
+	prAdapter->rWifiVar.u4TcpDelayBound = rParams.u4TcpDelayBound;
+	prAdapter->rWifiVar.ucDataRate = (uint8_t) rParams.u4DataPhyRate;
+	prAdapter->rWifiVar.ucSupportProtocol =
+		(uint8_t) rParams.u4SupportProtocol;
+
+	wlanSetLowLatencyMode(prAdapter, rParams.u4Events, ucBssIndex);
 
 	*pu4SetInfoLen = 0; /* We do not need to read */
 

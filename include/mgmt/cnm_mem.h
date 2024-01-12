@@ -830,6 +830,10 @@ struct STA_RECORD {
 	uint32_t au4RxV1[MCS_INFO_SAMPLE_CNT];
 	uint32_t au4RxV2[MCS_INFO_SAMPLE_CNT];
 #endif
+
+	u_int8_t fgIsMscsSupported;
+	struct LINK rMscsMonitorList;
+	struct LINK rMscsTcpMonitorList;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
