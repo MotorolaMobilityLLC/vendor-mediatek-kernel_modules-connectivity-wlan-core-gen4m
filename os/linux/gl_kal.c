@@ -13789,6 +13789,23 @@ void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo)
 {
 	return (void *)(prGlueInfo->prScanRequest);
 }
+
+void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	return (void *)(prGlueInfo->prSchedScanRequest);
+}
+
+void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	kalMemFree(prGlueInfo->prSchedScanRequest->pucIE,
+		   VIR_MEM_TYPE,
+		   prGlueInfo->prSchedScanRequest->u4IELength);
+	kalMemFree(prGlueInfo->prSchedScanRequest,
+		   VIR_MEM_TYPE,
+		   sizeof(struct PARAM_SCHED_SCAN_REQUEST));
+	prGlueInfo->prSchedScanRequest = NULL;
+}
+
 void kalGetFtIeParam(void *pvftie,
 	uint16_t *pu2MDID, uint32_t *pu4IeLength,
 	const uint8_t **pucIe)

@@ -2388,6 +2388,8 @@ struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
 void kalGetPlatDev(void **dev);
 void kalClearGlueScanReq(struct GLUE_INFO *prGlueInfo);
 void *kalGetGlueScanReq(struct GLUE_INFO *prGlueInfo);
+void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
+void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
 void kalGetFtIeParam(void *pvftie,
 	uint16_t *pu2MDID, uint32_t *pu4IeLength,
 	const uint8_t **pucIe);

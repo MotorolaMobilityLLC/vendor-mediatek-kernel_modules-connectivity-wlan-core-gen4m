@@ -1000,6 +1000,12 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 		GLUE_RELEASE_SPIN_LOCK(prAdapter->prGlueInfo,
 				SPIN_LOCK_NET_DEV);
 	}
+	/* For FW assert trigger reset case, stop sched scan */
+	if (kalGetGlueSchedScanReq(prAdapter->prGlueInfo) != NULL) {
+		if (kalIsResetting())
+			kalClearGlueSchedScanReq(prAdapter->prGlueInfo);
+	}
+
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rScanDoneTimer);
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rChannelTimeoutTimer);
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE

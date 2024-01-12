@@ -103,6 +103,12 @@ int32_t __KAL_INLINE__ kalGetFwFlavor(uint8_t *flavor)
 }
 
 /*----------------------------------------------------------------------------*/
+/* SCAN                                                                      */
+/*----------------------------------------------------------------------------*/
+void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
+void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo);
+
+/*----------------------------------------------------------------------------*/
 /* RX                                                                         */
 /*----------------------------------------------------------------------------*/
 #ifdef CFG_REMIND_IMPLEMENT

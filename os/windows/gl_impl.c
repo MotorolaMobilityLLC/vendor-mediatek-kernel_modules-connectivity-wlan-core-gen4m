@@ -63,3 +63,14 @@
  *                              F U N C T I O N S
  *****************************************************************************
  */
+
+void *kalGetGlueSchedScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+	return (void *)NULL;
+}
+
+void kalClearGlueSchedScanReq(struct GLUE_INFO *prGlueInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
