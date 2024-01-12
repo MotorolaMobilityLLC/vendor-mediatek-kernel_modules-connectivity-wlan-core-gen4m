@@ -4010,7 +4010,7 @@ static void wlanCreateWirelessDevice(void)
 	*((struct GLUE_INFO **) wiphy_priv(prWiphy)) = prGlueInfo;
 
 	/* 4 <1.3> configure wireless_dev & wiphy */
-	prWiphy->max_scan_ssids = SCN_SSID_MAX_NUM +
+	prWiphy->max_scan_ssids = CFG_SCAN_SSID_MAX_NUM +
 				  1; /* include one wildcard ssid */
 	prWiphy->max_scan_ie_len = 512;
 #if CFG_SUPPORT_SCHED_SCAN

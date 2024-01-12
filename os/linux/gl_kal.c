@@ -11380,7 +11380,7 @@ void kalScanReqLog(struct cfg80211_scan_request *request)
 	uint32_t slen = 0;
 	int i, snum, cnum;
 
-	snum = min_t(int, request->n_ssids, SCN_SSID_MAX_NUM + 1);
+	snum = min_t(int, request->n_ssids, CFG_SCAN_SSID_MAX_NUM + 1);
 	cnum = min_t(u32, request->n_channels, MAXIMUM_OPERATION_CHANNEL_LIST);
 
 	for (i = 0; i < snum; ++i) {

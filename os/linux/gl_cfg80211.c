@@ -1136,7 +1136,7 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 		prScanRequest->u4SsidNum = 0;
 		prScanRequest->ucScanType = SCAN_TYPE_PASSIVE_SCAN;
 	} else if ((request->ssids) && (request->n_ssids > 0)
-		   && (request->n_ssids <= (SCN_SSID_MAX_NUM + 1))) {
+		   && (request->n_ssids <= (CFG_SCAN_SSID_MAX_NUM + 1))) {
 		num_ssid = (uint32_t)request->n_ssids;
 		old_num_ssid = (uint32_t)request->n_ssids;
 		u4ValidIdx = 0;
@@ -1165,8 +1165,8 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 			       prScanRequest->rSsid[u4ValidIdx].u4SsidLen);
 
 			u4ValidIdx++;
-			if (u4ValidIdx == SCN_SSID_MAX_NUM) {
-				DBGLOG(REQ, STATE, "SCN_SSID_MAX_NUM\n");
+			if (u4ValidIdx == CFG_SCAN_SSID_MAX_NUM) {
+				DBGLOG(REQ, STATE, "CFG_SCAN_SSID_MAX_NUM\n");
 				break;
 			}
 		}
@@ -1262,7 +1262,6 @@ int mtk_cfg80211_scan(struct wiphy *wiphy,
 
 	prScanRequest->ucBssIndex = ucBssIndex;
 	prScanRequest->u4Flags = request->flags;
-	prScanRequest->fgOobRnrParseEn = TRUE;
 
 	prGlueInfo->prScanRequest = request;
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetBssidListScanAdv,

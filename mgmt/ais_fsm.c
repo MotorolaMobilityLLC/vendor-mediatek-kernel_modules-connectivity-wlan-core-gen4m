@@ -2898,6 +2898,7 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 
 			prScanRequest = aisGetScanReq(prAdapter,
 				prAisBssInfo->ucBssIndex);
+			prScanRequest->fgOobRnrParseEn = TRUE;
 
 			prScanReqMsg =
 			    (struct MSG_SCN_SCAN_REQ_V2 *)cnmMemAlloc(prAdapter,
