@@ -209,17 +209,17 @@
 #define MT6639_DMASHDL_QUEUE_13_TO_GROUP               (0x4)   /* LMAC AC31 */
 #define MT6639_DMASHDL_QUEUE_14_TO_GROUP               (0x4)   /* LMAC AC32 */
 #define MT6639_DMASHDL_QUEUE_15_TO_GROUP               (0x4)   /* LMAC AC33 */
-#define MT6639_DMASHDL_QUEUE_16_TO_GROUP               (0x4)   /* ALTX */
-#define MT6639_DMASHDL_QUEUE_17_TO_GROUP               (0x4)   /* BMC */
-#define MT6639_DMASHDL_QUEUE_18_TO_GROUP               (0x4)   /* BCN */
+#define MT6639_DMASHDL_QUEUE_16_TO_GROUP               (0x3)   /* ALTX */
+#define MT6639_DMASHDL_QUEUE_17_TO_GROUP               (0x0)   /* BMC */
+#define MT6639_DMASHDL_QUEUE_18_TO_GROUP               (0x0)   /* BCN */
 #define MT6639_DMASHDL_QUEUE_19_TO_GROUP               (0x1)   /* HW Reserved */
 #define MT6639_DMASHDL_QUEUE_20_TO_GROUP               (0x1)   /* HW Reserved */
 #define MT6639_DMASHDL_QUEUE_21_TO_GROUP               (0x1)   /* HW Reserved */
 #define MT6639_DMASHDL_QUEUE_22_TO_GROUP               (0x1)   /* HW Reserved */
 #define MT6639_DMASHDL_QUEUE_23_TO_GROUP               (0x1)   /* HW Reserved */
-#define MT6639_DMASHDL_QUEUE_24_TO_GROUP               (0x4)   /* NAF */
-#define MT6639_DMASHDL_QUEUE_25_TO_GROUP               (0x4)   /* NBCN */
-#define MT6639_DMASHDL_QUEUE_26_TO_GROUP               (0x4)   /* FIXFID */
+#define MT6639_DMASHDL_QUEUE_24_TO_GROUP               (0x0)   /* NAF */
+#define MT6639_DMASHDL_QUEUE_25_TO_GROUP               (0x0)   /* NBCN */
+#define MT6639_DMASHDL_QUEUE_26_TO_GROUP               (0x0)   /* FIXFID */
 #define MT6639_DMASHDL_QUEUE_27_TO_GROUP               (0x1)   /* Reserved */
 #define MT6639_DMASHDL_QUEUE_28_TO_GROUP               (0x1)   /* Reserved */
 #define MT6639_DMASHDL_QUEUE_29_TO_GROUP               (0x1)   /* Reserved */

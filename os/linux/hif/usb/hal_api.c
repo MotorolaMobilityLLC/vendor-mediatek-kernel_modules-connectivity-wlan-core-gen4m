@@ -568,6 +568,16 @@ uint32_t halTxUSBSendAggData(IN struct GL_HIF_INFO *prHifInfo, IN uint8_t ucTc, 
 }
 #endif
 
+static uint8_t halUsbDetermineTc(struct MSDU_INFO *prMsduInfo)
+{
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	if (prMsduInfo->fgMgmtUseDataQ)
+		return prMsduInfo->ucTC;
+#endif
+
+	return (prMsduInfo->ucWmmQueSet) ? USB_DBDC1_TC : prMsduInfo->ucTC;
+}
+
 uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *prMsduInfo)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
@@ -592,7 +602,7 @@ uint32_t halTxUSBSendData(IN struct GLUE_INFO *prGlueInfo, IN struct MSDU_INFO *
 	pucBuf = skb->data;
 	u4Length = skb->len;
 	u4TotalLen = u4Length + prChipInfo->u2HifTxdSize;
-	ucTc = USB_TRANS_MSDU_TC(prMsduInfo);
+	ucTc = halUsbDetermineTc(prMsduInfo);
 #if (CFG_SUPPORT_DMASHDL_SYSDVT)
 	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP) {
 		if (DMASHDL_DVT_QUEUE_MAPPING_TYPE1(prGlueInfo->prAdapter)
@@ -1613,7 +1623,7 @@ u_int8_t halTxIsDataBufEnough(IN struct ADAPTER *prAdapter, IN struct MSDU_INFO 
 	skb = (struct sk_buff *)prMsduInfo->prPacket;
 	u4Length = skb->len;
 	u4Length += prChipInfo->u2HifTxdSize;
-	ucTc = USB_TRANS_MSDU_TC(prMsduInfo);
+	ucTc = halUsbDetermineTc(prMsduInfo);
 
 	spin_lock_irqsave(&prHifInfo->rTxDataQLock, flags);
 
