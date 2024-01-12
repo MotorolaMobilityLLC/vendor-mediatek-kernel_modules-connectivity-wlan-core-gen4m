@@ -198,7 +198,8 @@ void beGenerateRnrIE(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
 void beParseMldElement(IN struct MULTI_LINK_INFO *prMlInfo,
-	IN const uint8_t *pucIE, IN const uint8_t *paucBssId);
+	IN const uint8_t *pucIE, IN const uint8_t *paucBssId,
+	IN const char* pucDesc);
 
 void beProcessBeaconAndProbeResp(
 	struct ADAPTER *prAdapter, struct SW_RFB *prSrc);
@@ -208,6 +209,15 @@ struct SW_RFB * beDuplicateAssocSwRfb(
 	struct STA_RECORD *prStaRec);
 
 void mldBssDump(struct ADAPTER *prAdapter);
+
+void mldBssUpdateMldAddrByMainBss(
+	IN struct ADAPTER *prAdapter,
+	IN struct MLD_BSS_INFO *prMldBssInfo);
+
+void mldBssUpdateMldAddr(
+	IN struct ADAPTER *prAdapter,
+	IN struct MLD_BSS_INFO *prMldBssInfo,
+	IN const uint8_t *paucBssId);
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,

@@ -1370,7 +1370,7 @@ void scanEhtParsingMldElement(IN struct BSS_DESC *prBssDesc, IN const uint8_t *p
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
 
 	kalMemSet(prMlInfo, 0, sizeof(rMlInfo));
-	beParseMldElement(prMlInfo, pucIE, prBssDesc->aucBSSID);
+	beParseMldElement(prMlInfo, pucIE, prBssDesc->aucBSSID, "SCAN");
 
 	prBssDesc->rMlInfo.fgValid = prMlInfo->ucValid;
 
