@@ -191,6 +191,8 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
 void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx);
 
+void p2pFuncCsaUpdateGcStaRec(struct BSS_INFO *prBssInfo);
+
 void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo,
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo);
