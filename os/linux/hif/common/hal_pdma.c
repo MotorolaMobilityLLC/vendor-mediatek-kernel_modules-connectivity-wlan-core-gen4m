@@ -3352,7 +3352,7 @@ u_int8_t halChipToStaticMapBusAddr(struct mt66xx_chip_info *prChipInfo,
 		if (u4EndAddr == 0x0)
 			return FALSE;
 
-		if ((u4ChipAddr >= u4StartAddr) && (u4ChipAddr <= u4EndAddr)) {
+		if ((u4ChipAddr >= u4StartAddr) && (u4ChipAddr < u4EndAddr)) {
 			u4BusAddr = (u4ChipAddr - u4StartAddr) +
 				prBusInfo->bus2chip[u4Idx].u4BusAddr;
 			break;
