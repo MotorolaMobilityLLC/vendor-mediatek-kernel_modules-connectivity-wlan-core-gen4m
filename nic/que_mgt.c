@@ -6098,7 +6098,7 @@ void mqmProcessBcn(IN struct ADAPTER *prAdapter,
 	for (i = 0; i < prAdapter->ucHwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!prBssInfo && !IS_BSS_ACTIVE(prBssInfo))
+		if (!prBssInfo || !IS_BSS_ACTIVE(prBssInfo))
 			continue;
 
 		if (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE &&
