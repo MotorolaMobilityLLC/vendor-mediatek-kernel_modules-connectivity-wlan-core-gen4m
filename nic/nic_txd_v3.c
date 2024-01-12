@@ -394,15 +394,33 @@ void nic_txd_v3_compose(
 		MSDU_CONTROL_FLAG_FORCE_TX);
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
-	if (fgIsALTXQueue)
+	if (fgIsALTXQueue) {
 		/* packet with always tx flag */
 		ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
-	else
-	{
+		/* For CONNAC 3.0 FW, separate inband CMD to q0
+		 * mgmt frame(CMD) to q1.
+		 */
+		if (ucTarPort == PORT_INDEX_MCU &&
+		    prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+			/* For cmd packet, ALTXQ(16) will send to q0,
+			 * due to hw just see bit 0:1, so if need send to CPU q1
+			 * and forward to ALTXQ, need set with ALTXQ(16) +
+			 * MCUQ1(1), FW have correpond change will revise Q
+			 * to ALTXQ(16).
+			 */
+			ucTarQueue |= MCU_Q1_INDEX;
+	} else {
 		ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+
 		if (ucTarPort == PORT_INDEX_LMAC)
 			ucTarQueue +=
 				(ucWmmQueSet * WMM_AC_INDEX_NUM);
+		/* For CONNAC 3.0 FW, separate inband CMD to q0
+		 * mgmt frame(CMD) to q1.
+		 */
+		else if (ucTarPort == PORT_INDEX_MCU &&
+		    prMsduInfo->ucPacketType == TX_PACKET_TYPE_MGMT)
+			ucTarQueue = MCU_Q1_INDEX;
 	}
 
 	HAL_MAC_CONNAC3X_TXD_SET_QUEUE_INDEX(prTxDesc, ucTarQueue);
