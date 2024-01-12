@@ -2818,6 +2818,189 @@ void aisFsmRunEventJoinComplete(IN struct ADAPTER *prAdapter,
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* end of aisFsmRunEventJoinComplete() */
 
+
+uint8_t aisHandleJoinFailure(IN struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	IN struct SW_RFB *prAssocRspSwRfb, uint8_t ucBssIndex)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *prBssDesc;
+	struct PARAM_SSID rSsid;
+	struct CONNECTION_SETTINGS *prConnSettings;
+	enum ENUM_AIS_STATE eNextState;
+	struct WLAN_ASSOC_RSP_FRAME *prAssocRspFrame = NULL;
+	uint16_t u2IELength = 0;
+	uint8_t *pucIE = NULL;
+	OS_SYSTIME rCurrentTime;
+
+	GET_CURRENT_SYSTIME(&rCurrentTime);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prBssDesc = prAisFsmInfo->prTargetBssDesc;
+	eNextState = prAisFsmInfo->eCurrentState;
+	if (prAssocRspSwRfb) {
+		prAssocRspFrame = (struct WLAN_ASSOC_RSP_FRAME *)
+			prAssocRspSwRfb->pvHeader;
+		u2IELength = (uint16_t)
+			((prAssocRspSwRfb->u2PacketLen -
+			prAssocRspSwRfb->u2HeaderLen) -
+		       (OFFSET_OF(struct WLAN_ASSOC_RSP_FRAME, aucInfoElem[0]) -
+			WLAN_MAC_MGMT_HEADER_LEN));
+		pucIE = prAssocRspFrame->aucInfoElem;
+	}
+
+	/* 1. Increase Failure Count */
+	prStaRec->ucJoinFailureCount++;
+
+	/* 2. release channel */
+	aisFsmReleaseCh(prAdapter, ucBssIndex);
+
+	/* 3.1 stop join timeout timer */
+	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rJoinTimeoutTimer);
+
+	/* Support AP Selection */
+	prAisFsmInfo->ucJoinFailCntAfterScan++;
+
+	kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
+	if (prBssDesc)
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen);
+	else
+		COPY_SSID(rSsid.aucSsid, rSsid.u4SsidLen,
+			prConnSettings->aucSSID, prConnSettings->ucSSIDLen);
+
+	prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+		prStaRec->aucMacAddr, TRUE, &rSsid);
+
+	if (prBssDesc == NULL) {
+		DBGLOG(AIS, ERROR, "Can't get bss descriptor\n");
+		return AIS_STATE_JOIN_FAILURE;
+	}
+
+	DBGLOG(AIS, INFO,
+	       "ucJoinFailureCount=%d %d, Status=%d Reason=%d, eConnectionState=%d",
+	       prStaRec->ucJoinFailureCount,
+	       prBssDesc->ucJoinFailureCount,
+	       prStaRec->u2StatusCode,
+	       prStaRec->u2ReasonCode,
+	       prAisBssInfo->eConnectionState);
+
+	prBssDesc->u2JoinStatus = prStaRec->u2StatusCode;
+	prBssDesc->ucJoinFailureCount++;
+	GET_CURRENT_SYSTIME(&prBssDesc->rJoinFailTime);
+
+	if (prBssDesc->ucJoinFailureCount >= SCN_BSS_JOIN_FAIL_THRESOLD) {
+		aisAddBlacklist(prAdapter, prBssDesc);
+		DBGLOG(AIS, INFO,
+		       "" MACSTR "join fail %d times,temp disable at time:%u\n",
+		       MAC2STR(prBssDesc->aucBSSID),
+		       prBssDesc->ucJoinFailureCount,
+		       prBssDesc->rJoinFailTime);
+
+	} else if (scanApOverload(prStaRec->u2StatusCode,
+			prStaRec->u2ReasonCode)) {
+		aisAddBlacklist(prAdapter, prBssDesc);
+		DBGLOG(AIS, INFO,
+		       "" MACSTR "overload status=%d reason=%d at time:%u\n",
+		       MAC2STR(prBssDesc->aucBSSID),
+		       prStaRec->u2StatusCode,
+		       prStaRec->u2ReasonCode,
+		       prBssDesc->rJoinFailTime);
+	} else if (prStaRec->u2StatusCode == STATUS_INVALID_PMKID) {
+		aisAddBlacklist(prAdapter, prBssDesc);
+		DBGLOG(AIS, INFO,
+			"Add blacklist due to STATUS_INVALID_PMKID\n");
+#if CFG_SUPPORT_MBO
+	} else if (pucIE && prStaRec->u2StatusCode ==
+			STATUS_CODE_ASSOC_DENIED_POOR_CHANNEL) {
+		struct IE_MBO_OCE *mbo = NULL;
+		const uint8_t *reject = NULL;
+
+		dumpMemory8(pucIE, u2IELength);
+
+		mbo = (struct IE_MBO_OCE *) kalFindVendorIe(
+				VENDOR_IE_TYPE_MBO >> 8,
+				VENDOR_OUI_TYPE_MBO,
+				pucIE,
+				u2IELength);
+		if (mbo) {
+			reject = kalFindIeMatchMask(
+					OCE_ATTR_ID_RSSI_BASED_ASSOC_REJECT,
+					mbo->aucSubElements,
+					mbo->ucLength - 4,
+					NULL, 0, 0, NULL);
+			if (reject && reject[1] == 2) {
+				aisBssTmpDisallow(prAdapter, prBssDesc,
+				    reject[3],
+				    reject[2] + RCPI_TO_dBm(prBssDesc->ucRCPI),
+				    ucBssIndex);
+				prBssDesc->ucJoinFailureCount +=
+					SCN_BSS_JOIN_FAIL_THRESOLD;
+			}
+		}
+#endif
+	}
+
+	if (prBssDesc->prBlack)
+		prBssDesc->prBlack->u2AuthStatus = prStaRec->u2StatusCode;
+
+	if (prBssDesc)
+		prBssDesc->fgIsConnecting &= ~BIT(ucBssIndex);
+
+	/* 3.3 Free STA-REC */
+	if (prStaRec != prAisBssInfo->prStaRecOfAP)
+		cnmStaRecFree(prAdapter, prStaRec);
+
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	    prStaRec->u2StatusCode == STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
+		struct PARAM_SSID rSsid;
+
+		/* roaming fail count and time */
+		prAdapter->prGlueInfo->u4RoamFailCnt++;
+		prAdapter->prGlueInfo->u8RoamFailTime =
+		    sched_clock();
+#if CFG_SUPPORT_ROAMING
+		eNextState = AIS_STATE_WAIT_FOR_NEXT_SCAN;
+#endif /* CFG_SUPPORT_ROAMING */
+
+		if (prAisBssInfo->prStaRecOfAP)
+			prAisBssInfo->prStaRecOfAP->fgIsTxAllowed = TRUE;
+
+		COPY_SSID(rSsid.aucSsid,
+			  rSsid.u4SsidLen,
+			  prAisBssInfo->aucSSID,
+			  prAisBssInfo->ucSSIDLen);
+		prAisFsmInfo->prTargetBssDesc =
+			scanSearchBssDescByBssidAndSsid(prAdapter,
+				prAisBssInfo->aucBSSID, TRUE, &rSsid);
+		prAisFsmInfo->prTargetStaRec = prAisBssInfo->prStaRecOfAP;
+		if (!prAisFsmInfo->prTargetBssDesc)
+			DBGLOG(AIS, ERROR,
+			       "Can't retrieve target bss descriptor\n");
+	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
+		CHECK_FOR_TIMEOUT(rCurrentTime, prAisFsmInfo->rJoinReqTime,
+		SEC_TO_SYSTIME(AIS_JOIN_TIMEOUT))) {
+		/* 4.a temrminate join operation */
+		eNextState = AIS_STATE_JOIN_FAILURE;
+	} else if (prAisFsmInfo->rJoinReqTime != 0 &&
+		prBssDesc->ucJoinFailureCount >= SCN_BSS_JOIN_FAIL_THRESOLD &&
+		prBssDesc->u2JoinStatus) {
+		/* AP reject STA for
+		 * STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD
+		 * , or AP block STA
+		 */
+		eNextState = AIS_STATE_JOIN_FAILURE;
+	} else {
+		/* 4.b send reconnect request */
+		aisFsmInsertRequest(prAdapter,
+			AIS_REQUEST_RECONNECT, ucBssIndex);
+		eNextState = AIS_STATE_IDLE;
+	}
+	return eNextState;
+}
+
 enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 					     IN struct MSG_HDR *prMsgHdr)
 {
@@ -2828,13 +3011,10 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct SW_RFB *prAssocRspSwRfb;
 	struct BSS_INFO *prAisBssInfo;
-	OS_SYSTIME rCurrentTime;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	uint8_t ucBssIndex = 0;
 
 	DEBUGFUNC("aisFsmJoinCompleteAction()");
-
-	GET_CURRENT_SYSTIME(&rCurrentTime);
 
 	prJoinCompMsg = (struct MSG_SAA_FSM_COMP *)prMsgHdr;
 	prStaRec = prJoinCompMsg->prStaRec;
@@ -2986,164 +3166,9 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(IN struct ADAPTER *prAdapter,
 			 */
 			if (aisFsmStateInit_RetryJOIN(prAdapter, prStaRec,
 				ucBssIndex) == FALSE) {
-				struct BSS_DESC *prBssDesc;
-				struct PARAM_SSID rSsid;
-				struct CONNECTION_SETTINGS *prConnSettings;
-
-				prConnSettings =
-				    aisGetConnSettings(prAdapter,
-				    ucBssIndex);
-				prBssDesc = prAisFsmInfo->prTargetBssDesc;
-
-				/* 1. Increase Failure Count */
-				prStaRec->ucJoinFailureCount++;
-
-				/* 2. release channel */
-				aisFsmReleaseCh(prAdapter, ucBssIndex);
-
-				/* 3.1 stop join timeout timer */
-				cnmTimerStopTimer(prAdapter,
-					&prAisFsmInfo->rJoinTimeoutTimer);
-
-				/* Support AP Selection */
-				prAisFsmInfo->ucJoinFailCntAfterScan++;
-
-				kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
-				if (prBssDesc)
-					COPY_SSID(rSsid.aucSsid,
-						  rSsid.u4SsidLen,
-						  prBssDesc->aucSSID,
-						  prBssDesc->ucSSIDLen);
-				else
-					COPY_SSID(rSsid.aucSsid,
-						  rSsid.u4SsidLen,
-						  prConnSettings->aucSSID,
-						  prConnSettings->ucSSIDLen);
-
-				prBssDesc =
-				    scanSearchBssDescByBssidAndSsid(prAdapter,
-					prStaRec->aucMacAddr,
-					TRUE,
-					&rSsid);
-
-				if (prBssDesc == NULL) {
-					eNextState = AIS_STATE_JOIN_FAILURE;
-					DBGLOG(AIS, ERROR,
-						"Can't get bss descriptor\n");
-					break;
-				}
-
-				DBGLOG(AIS, INFO,
-				       "ucJoinFailureCount=%d %d, Status=%d Reason=%d, eConnectionState=%d",
-				       prStaRec->ucJoinFailureCount,
-				       prBssDesc->ucJoinFailureCount,
-				       prStaRec->u2StatusCode,
-				       prStaRec->u2ReasonCode,
-				       prAisBssInfo->eConnectionState);
-
-				prBssDesc->u2JoinStatus =
-				    prStaRec->u2StatusCode;
-				prBssDesc->ucJoinFailureCount++;
-				if (prBssDesc->ucJoinFailureCount >=
-				    SCN_BSS_JOIN_FAIL_THRESOLD ||
-				    scanApOverload(prStaRec->u2StatusCode,
-						prStaRec->u2ReasonCode)) {
-					/* Support AP Selection */
-					aisAddBlacklist(prAdapter, prBssDesc);
-
-					GET_CURRENT_SYSTIME
-					    (&prBssDesc->rJoinFailTime);
-					DBGLOG(AIS, INFO,
-					       "Bss " MACSTR
-					       " join fail %d times, temp disable it at time: %u\n",
-					       MAC2STR(prBssDesc->aucBSSID),
-					       prBssDesc->ucJoinFailureCount,
-					       prBssDesc->rJoinFailTime);
-				}
-
-				if (prStaRec->u2StatusCode
-					== STATUS_INVALID_PMKID) {
-					struct AIS_BLACKLIST_ITEM *prBlackList =
-						aisAddBlacklist(prAdapter,
-							prBssDesc);
-					if (prBlackList) {
-						prBlackList->u2AuthStatus =
-							prStaRec->u2StatusCode;
-						DBGLOG(AIS, INFO,
-						    "Add blacklist due to STATUS_INVALID_PMKID\n");
-					}
-				}
-
-				/* Support AP Selection */
-				if (prBssDesc->prBlack)
-					prBssDesc->prBlack->u2AuthStatus =
-					    prStaRec->u2StatusCode;
-
-				if (prBssDesc)
-					prBssDesc->fgIsConnecting &=
-						~BIT(ucBssIndex);
-
-				/* 3.3 Free STA-REC */
-				if (prStaRec != prAisBssInfo->prStaRecOfAP)
-					cnmStaRecFree(prAdapter, prStaRec);
-
-				if (prAisBssInfo->eConnectionState ==
-				    MEDIA_STATE_CONNECTED ||
-				    prStaRec->u2StatusCode ==
-				    STATUS_CODE_ASSOC_REJECTED_TEMPORARILY) {
-					struct PARAM_SSID rSsid;
-
-					/* roaming fail count and time */
-					prAdapter->prGlueInfo->u4RoamFailCnt++;
-					prAdapter->prGlueInfo->u8RoamFailTime =
-					    sched_clock();
-#if CFG_SUPPORT_ROAMING
-					eNextState =
-					    AIS_STATE_WAIT_FOR_NEXT_SCAN;
-#endif /* CFG_SUPPORT_ROAMING */
-
-					if (prAisBssInfo->prStaRecOfAP)
-						prAisBssInfo->
-						    prStaRecOfAP->fgIsTxAllowed
-						    = TRUE;
-
-					COPY_SSID(rSsid.aucSsid,
-						  rSsid.u4SsidLen,
-						  prAisBssInfo->aucSSID,
-						  prAisBssInfo->ucSSIDLen);
-					prAisFsmInfo->prTargetBssDesc =
-					    scanSearchBssDescByBssidAndSsid
-					    (prAdapter, prAisBssInfo->aucBSSID,
-					     TRUE, &rSsid);
-					prAisFsmInfo->prTargetStaRec =
-					    prAisBssInfo->prStaRecOfAP;
-					if (!prAisFsmInfo->prTargetBssDesc)
-						DBGLOG(AIS, ERROR,
-						       "Can't retrieve target bss descriptor\n");
-				} else if (prAisFsmInfo->rJoinReqTime != 0
-					   && CHECK_FOR_TIMEOUT(rCurrentTime,
-						prAisFsmInfo->rJoinReqTime,
-						SEC_TO_SYSTIME
-						(AIS_JOIN_TIMEOUT))) {
-					/* 4.a temrminate join operation */
-					eNextState = AIS_STATE_JOIN_FAILURE;
-				} else if (prAisFsmInfo->rJoinReqTime != 0
-					   && prBssDesc->ucJoinFailureCount >=
-					   SCN_BSS_JOIN_FAIL_THRESOLD
-					   && prBssDesc->u2JoinStatus) {
-					/* AP reject STA for
-					 * STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD
-					 * , or AP block STA
-					 */
-					eNextState = AIS_STATE_JOIN_FAILURE;
-				} else {
-					/* 4.b send reconnect request */
-					aisFsmInsertRequest(prAdapter,
-						AIS_REQUEST_RECONNECT,
-						ucBssIndex);
-
-					eNextState = AIS_STATE_IDLE;
-				}
+				eNextState = aisHandleJoinFailure(
+					prAdapter, prStaRec,
+					prAssocRspSwRfb, ucBssIndex);
 			}
 		}
 	} while (0);
@@ -6162,6 +6187,22 @@ void aisRefreshFWKBlacklist(struct ADAPTER *prAdapter)
 	}
 }
 
+void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
+	uint32_t sec, int32_t rssiThreshold, uint8_t ucBssIndex)
+{
+	struct AIS_BLACKLIST_ITEM *blk =
+		aisAddBlacklist(prAdapter, prBssDesc);
+
+	if (blk) {
+		blk->fgDisallowed = TRUE;
+		blk->u2DisallowSec = sec;
+		blk->i4RssiThreshold = rssiThreshold;
+		DBGLOG(AIS, INFO,
+			"Temp disallow: retry delay %d, rssi threshold %d",
+			sec, rssiThreshold);
+	}
+}
+
 struct AIS_BLACKLIST_ITEM *aisAddBlacklist(struct ADAPTER *prAdapter,
 					   struct BSS_DESC *prBssDesc)
 {
@@ -6245,10 +6286,8 @@ struct AIS_BLACKLIST_ITEM *aisQueryBlackList(struct ADAPTER *prAdapter,
 			    struct AIS_BLACKLIST_ITEM) {
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, prEntry) &&
 		    EQUAL_SSID(prBssDesc->aucSSID, prBssDesc->ucSSIDLen,
-			       prEntry->aucSSID, prEntry->ucSSIDLen)) {
-			prBssDesc->prBlack = prEntry;
+			       prEntry->aucSSID, prEntry->ucSSIDLen))
 			return prEntry;
-		}
 	}
 	DBGLOG(AIS, TRACE, MACSTR " is not in blacklist\n",
 	       MAC2STR(prBssDesc->aucBSSID));
@@ -6267,10 +6306,19 @@ void aisRemoveTimeoutBlacklist(struct ADAPTER *prAdapter)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlackList, rLinkEntry,
 				 struct AIS_BLACKLIST_ITEM) {
-		if (prEntry->fgIsInFWKBlacklist ||
-		    !CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
-				       SEC_TO_MSEC(AIS_BLACKLIST_TIMEOUT)))
+		uint16_t sec = AIS_BLACKLIST_TIMEOUT;
+
+		if (prEntry->fgIsInFWKBlacklist == TRUE)
 			continue;
+
+#if CFG_SUPPORT_MBO
+		if (prEntry->fgDisallowed)
+			sec = prEntry->u2DisallowSec;
+#endif
+		if (!CHECK_FOR_TIMEOUT(rCurrent, prEntry->rAddTime,
+				       SEC_TO_MSEC(sec)))
+			continue;
+
 		prBssDesc = scanSearchBssDescByBssid(prAdapter,
 						     prEntry->aucBSSID);
 		if (prBssDesc) {

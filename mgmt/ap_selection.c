@@ -120,8 +120,9 @@
 #define WEIGHT_IDX_DEAUTH_LAST                  1
 #define WEIGHT_IDX_BLACK_LIST                   2
 #define WEIGHT_IDX_SAA                          0
-#define WEIGHT_IDX_CHNL_IDLE                    0
+#define WEIGHT_IDX_CHNL_IDLE                    1
 #define WEIGHT_IDX_OPCHNL                       0
+#define WEIGHT_IDX_TPUT                         1
 
 #define WEIGHT_IDX_CHNL_UTIL_PER                0
 #define WEIGHT_IDX_RSSI_PER                     4
@@ -137,6 +138,7 @@
 #define WEIGHT_IDX_SAA_PER                      1
 #define WEIGHT_IDX_CHNL_IDLE_PER                6
 #define WEIGHT_IDX_OPCHNL_PER                   6
+#define WEIGHT_IDX_TPUT_PER                     2
 
 struct WEIGHT_CONFIG {
 	uint8_t ucChnlUtilWeight;
@@ -154,6 +156,7 @@ struct WEIGHT_CONFIG {
 	uint8_t ucSaaWeight;
 	uint8_t ucChnlIdleWeight;
 	uint8_t ucOpchnlWeight;
+	uint8_t ucTputWeight;
 };
 
 struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
@@ -171,7 +174,8 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucBlackListWeight = WEIGHT_IDX_BLACK_LIST,
 		.ucSaaWeight = WEIGHT_IDX_SAA,
 		.ucChnlIdleWeight = WEIGHT_IDX_CHNL_IDLE,
-		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL
+		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL,
+		.ucTputWeight = WEIGHT_IDX_TPUT
 	},
 	[ROAM_TYPE_PER] = {
 		.ucChnlUtilWeight = WEIGHT_IDX_CHNL_UTIL_PER,
@@ -187,7 +191,8 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 		.ucBlackListWeight = WEIGHT_IDX_BLACK_LIST_PER,
 		.ucSaaWeight = WEIGHT_IDX_SAA_PER,
 		.ucChnlIdleWeight = WEIGHT_IDX_CHNL_IDLE_PER,
-		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL_PER
+		.ucOpchnlWeight = WEIGHT_IDX_OPCHNL_PER,
+		.ucTputWeight = WEIGHT_IDX_TPUT_PER
 	}
 };
 
@@ -563,9 +568,19 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
+
+
+	if (prBssDesc->prBlack && prBssDesc->prBlack->fgDisallowed &&
+	    !(prBssDesc->prBlack->i4RssiThreshold > 0 &&
+	      RCPI_TO_dBm(prBssDesc->ucRCPI) >
+			prBssDesc->prBlack->i4RssiThreshold)) {
+		log_dbg(SCN, WARN, MACSTR" disallowed delay, rssi %d(%d)\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			RCPI_TO_dBm(prBssDesc->ucRCPI),
+			prBssDesc->prBlack->i4RssiThreshold);
+		return FALSE;
+	}
 #endif
-
-
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 	if (prBssDesc->prBlack) {
@@ -724,46 +739,91 @@ static uint16_t scanCalculateScoreBySaa(struct ADAPTER *prAdapter,
 }
 
 static uint16_t scanCalculateScoreByIdleTime(struct ADAPTER *prAdapter,
-	uint8_t ucChannel, enum ROAM_TYPE eRoamType, uint8_t ucBssIndex)
+	uint8_t ucChannel, enum ROAM_TYPE eRoamType,
+	IN struct BSS_DESC *prBssDesc, uint8_t ucBssIndex)
 {
-	uint8_t u4ChCnt = 0;
-	uint16_t u2Score = 0;
-	uint16_t u2ChIdleSlot;
-	uint16_t u2ChIdleTime;
-	uint16_t u2ChIdleUtil;
-	uint16_t u2ChDwellTime;
-	struct SCAN_INFO *prScanInfo;
-	struct SCAN_PARAM *prScanParam;
-	struct BSS_INFO *prAisBssInfo;
+	struct SCAN_INFO *info;
+	struct SCAN_PARAM *param;
+	struct BSS_INFO *bss;
+	int32_t score, rssi, cu = 0, cuRatio, dwell;
+	uint32_t rssiFactor, cuFactor, rssiWeight, cuWeight;
+	uint32_t slot = 0, idle;
+	uint8_t i;
 
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
-	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-	prScanParam = &(prScanInfo->rScanParam);
-
-	if (prScanParam->u2ChannelDwellTime > 0)
-		u2ChDwellTime = prScanParam->u2ChannelDwellTime;
-	else if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED)
-		u2ChDwellTime = CHNL_DWELL_TIME_ONLINE;
+	rssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
+	rssiWeight = 65;
+	cuWeight = 35;
+	if (rssi >= -55)
+		rssiFactor = 100;
+	else if (rssi < -55 && rssi >= -60)
+		rssiFactor = 90 + 2 * (60 + rssi);
+	else if (rssi < -60 && rssi >= -70)
+		rssiFactor = 60 + 3 * (70 + rssi);
+	else if (rssi < -70 && rssi >= -80)
+		rssiFactor = 20 + 4 * (80 + rssi);
+	else if (rssi < -80 && rssi >= -90)
+		rssiFactor = 2 * (90 + rssi);
 	else
-		u2ChDwellTime = CHNL_DWELL_TIME_DEFAULT;
+		rssiFactor = 0;
 
-	for (u4ChCnt = 0; u4ChCnt < prScanInfo
-		->ucSparseChannelArrayValidNum; u4ChCnt++) {
-		if (ucChannel == prScanInfo->aucChannelNum[u4ChCnt]) {
-			u2ChIdleSlot =
-				prScanInfo->au2ChannelIdleTime[u4ChCnt];
-			u2ChIdleTime = u2ChIdleSlot * 9;
-			u2ChIdleUtil =
-				(u2ChIdleTime * 100) / (u2ChDwellTime * 1000);
-			if (u2ChIdleUtil > BSS_FULL_SCORE)
-				u2ChIdleUtil = BSS_FULL_SCORE;
-			u2Score = u2ChIdleUtil *
-				gasMtkWeightConfig[eRoamType].ucChnlIdleWeight;
-			break;
+	if (prBssDesc->fgExsitBssLoadIE) {
+		cu = prBssDesc->ucChnlUtilization;
+	} else {
+		bss = aisGetAisBssInfo(prAdapter, ucBssIndex);
+		info = &(prAdapter->rWifiVar.rScanInfo);
+		param = &(info->rScanParam);
+
+		if (param->u2ChannelDwellTime > 0)
+			dwell = param->u2ChannelDwellTime;
+		else if (bss->eConnectionState == MEDIA_STATE_CONNECTED)
+			dwell = CHNL_DWELL_TIME_ONLINE;
+		else
+			dwell = CHNL_DWELL_TIME_DEFAULT;
+
+		for (i = 0; i < info->ucSparseChannelArrayValidNum; i++) {
+			if (prBssDesc->ucChannelNum == info->aucChannelNum[i]) {
+				slot = info->au2ChannelIdleTime[i];
+				idle = (slot * 9 * 100) / (dwell * 1000);
+				if (eRoamType == ROAM_TYPE_PER) {
+					score = idle > BSS_FULL_SCORE ?
+						BSS_FULL_SCORE : idle;
+					goto done;
+				}
+				cu = 255 - idle * 255 / 100;
+				break;
+			}
 		}
 	}
 
-	return u2Score;
+	cuRatio = cu * 100 / 255;
+	if (prBssDesc->eBand == BAND_2G4) {
+		if (cuRatio < 10)
+			cuFactor = 100;
+		else if (cuRatio < 70 && cuRatio >= 10)
+			cuFactor = 111 - (13 * cuRatio / 10);
+		else
+			cuFactor = 20;
+	} else {
+		if (cuRatio < 30)
+			cuFactor = 100;
+		else if (cuRatio < 80 && cuRatio >= 30)
+			cuFactor = 148 - (16 * cuRatio / 10);
+		else
+			cuFactor = 20;
+	}
+
+	score = (rssiFactor * rssiWeight + cuFactor * cuWeight) >> 6;
+
+	log_dbg(SCN, TRACE,
+		MACSTR
+		" 5G[%d],chl[%d],slt[%d],ld[%d] idle Score %d,rssi[%d],cu[%d],cuR[%d],rf[%d],rw[%d],cf[%d],cw[%d]\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		(prBssDesc->eBand == BAND_5G ? 1 : 0),
+		prBssDesc->ucChannelNum, slot,
+		prBssDesc->fgExsitBssLoadIE, score, rssi, cu, cuRatio,
+		rssiFactor, rssiWeight, cuFactor, cuWeight);
+done:
+	return score * gasMtkWeightConfig[eRoamType].ucChnlIdleWeight;
 }
 
 u_int8_t scanApOverload(uint16_t status, uint16_t reason)
@@ -801,6 +861,18 @@ uint16_t scanCalculateScoreByBlackList(struct ADAPTER *prAdapter,
 	return u2Score * gasMtkWeightConfig[eRoamType].ucBlackListWeight;
 }
 
+uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,
+	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
+{
+	uint16_t u2Score = 0;
+
+#if CFG_SUPPORT_MBO
+	if (prBssDesc->fgExistEspIE)
+		u2Score = (prBssDesc->u4EspInfo[WIFI_AC_BE] >> 8) & 0xff;
+#endif
+	return u2Score * gasMtkWeightConfig[eRoamType].ucTputWeight;
+}
+
 uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType,
 	uint8_t ucBssIndex)
@@ -819,9 +891,9 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	uint16_t u2ScoreIdleTime = 0;
 	uint16_t u2ScoreTotal = 0;
 	uint16_t u2BlackListScore = 0;
-#if (CFG_SUPPORT_802_11AX == 1)
 	uint16_t u2AxApScore = 0;
-#endif
+	uint16_t u2TputScore = 0;
+
 	int8_t cRssi = -128;
 
 	prAisSpecificBssInfo =
@@ -844,34 +916,25 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		cRssi, eRoamType);
 	u2ScoreSaa = scanCalculateScoreBySaa(prAdapter, prBssDesc, eRoamType);
 	u2ScoreIdleTime = scanCalculateScoreByIdleTime(prAdapter,
-		prBssDesc->ucChannelNum, eRoamType, ucBssIndex);
+		prBssDesc->ucChannelNum, eRoamType, prBssDesc, ucBssIndex);
 	u2BlackListScore =
 	       scanCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
-
 #if (CFG_SUPPORT_802_11AX == 1)
 	u2AxApScore = CALCULATE_SCORE_BY_AX_AP(prAdapter, prBssDesc, eRoamType);
 #endif
+	u2TputScore = scanCalculateScoreByTput(prAdapter, prBssDesc, eRoamType);
+
 	u2ScoreTotal = u2ScoreBandwidth + u2ScoreChnlInfo +
 		u2ScoreDeauth + u2ScoreProbeRsp + u2ScoreScanMiss +
 		u2ScoreSnrRssi + u2ScoreStaCnt + u2ScoreSTBC +
 		u2ScoreBand + u2BlackListScore + u2ScoreSaa +
-		u2ScoreIdleTime;
-#if (CFG_SUPPORT_802_11AX == 1)
-	u2ScoreTotal += u2AxApScore;
-#endif
+		u2ScoreIdleTime + u2AxApScore + u2TputScore;
 
-#if (CFG_SUPPORT_802_11AX == 1)
 #define TEMP_LOG_TEMPLATE\
 		MACSTR" cRSSI[%d] 5G[%d] Score,Total %d,DE[%d]"\
 		", PR[%d], SM[%d], RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
 		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d]"\
-		", HE[%d], AxWeight[%d], AxScoreDiv[%d], AxScore[%d]\n"
-#else
-#define TEMP_LOG_TEMPLATE\
-		MACSTR" cRSSI[%d] 5G[%d] Score,Total %d,DE[%d]"\
-		", PR[%d], SM[%d], RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
-		", BW[%d], SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d]\n"
-#endif
+		", AX[%d], TPUT[%d]\n"
 
 	log_dbg(SCN, INFO,
 		TEMP_LOG_TEMPLATE,
@@ -882,14 +945,9 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
 		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
 		prBssDesc->fgExsitBssLoadIE,
-		prBssDesc->ucChnlUtilization
-#if (CFG_SUPPORT_802_11AX == 1)
-		, prBssDesc->fgIsHEPresent
-		, (prAdapter->rWifiVar).ucApSelAxWeight
-		, (prAdapter->rWifiVar).ucApSelAxScoreDiv
-		, u2AxApScore
-#endif
-		);
+		prBssDesc->ucChnlUtilization,
+		u2AxApScore, u2TputScore);
+
 #undef TEMP_LOG_TEMPLATE
 
 	return u2ScoreTotal;
@@ -990,7 +1048,13 @@ try_again:
 				MAC2STR(prBssDesc->aucBSSID));
 			continue;
 		} else if (policy == CONNECT_BY_BSSID_HINT) {
-			if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			uint8_t oce = FALSE;
+
+#if CFG_SUPPORT_MBO
+			oce = prAdapter->rWifiVar.u4SwTestMode ==
+				ENUM_SW_TEST_MODE_SIGMA_OCE;
+#endif
+			if (!oce && EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
 					prConnSettings->aucBSSIDHint)) {
 				log_dbg(SCN, INFO, MACSTR" match bssid_hint\n",
 					MAC2STR(prBssDesc->aucBSSID));

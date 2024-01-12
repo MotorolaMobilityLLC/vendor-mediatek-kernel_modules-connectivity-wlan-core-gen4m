@@ -201,30 +201,23 @@ saaFsmSteps(IN struct ADAPTER *prAdapter,
 
 			/* Only trigger this event once */
 			if (ePreviousState != prStaRec->eAuthAssocState) {
+				uint32_t status =
+					prStaRec->u2StatusCode ==
+					STATUS_CODE_SUCCESSFUL &&
+					prRetainedSwRfb ?
+					WLAN_STATUS_SUCCESS :
+					WLAN_STATUS_FAILURE;
+				uint32_t result = saaFsmSendEventJoinComplete(
+						prAdapter, status, prStaRec,
+						prRetainedSwRfb);
 
-				if (prRetainedSwRfb) {
-					if (saaFsmSendEventJoinComplete(
-						prAdapter,
-						WLAN_STATUS_SUCCESS,
-						prStaRec,
-						prRetainedSwRfb) ==
-						WLAN_STATUS_SUCCESS) {
-						/* ToDo:: Nothing */
-					} else {
-						eNextState = AA_STATE_RESOURCE;
-						fgIsTransition = TRUE;
-					}
-				} else {
-					if (saaFsmSendEventJoinComplete(
-						prAdapter,
-						WLAN_STATUS_FAILURE,
-						prStaRec, NULL) ==
-						WLAN_STATUS_RESOURCES) {
+				if (result != WLAN_STATUS_SUCCESS) {
+					if (status == WLAN_STATUS_SUCCESS ||
+					    result == WLAN_STATUS_RESOURCES) {
 						eNextState = AA_STATE_RESOURCE;
 						fgIsTransition = TRUE;
 					}
 				}
-
 			}
 
 			/* Free allocated TCM memory */
@@ -1167,6 +1160,7 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 			/* Record the Status Code of Authentication Request */
 			prStaRec->u2StatusCode = u2StatusCode;
+			prRetainedSwRfb = prSwRfb;
 
 			if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 
@@ -1182,8 +1176,6 @@ uint32_t saaFsmRunEventRxAssoc(IN struct ADAPTER *prAdapter,
 
 				/* Clear history. */
 				prStaRec->ucJoinFailureCount = 0;
-
-				prRetainedSwRfb = prSwRfb;
 				rStatus = WLAN_STATUS_PENDING;
 			} else {
 				cnmStaRecChangeState(prAdapter, prStaRec,
