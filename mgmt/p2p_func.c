@@ -1837,7 +1837,7 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 			prP2pBssInfo->eIntendOPMode = OP_MODE_P2P_DEVICE;
 #if CFG_SUPPORT_IDC_RIL_BRIDGE_NOTIFY
 			if (p2pFuncIsAPMode(prAdapter->rWifiVar
-			.prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIdx]))
+			.prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIndex]))
 				kalIdcUnregisterRilNotifier();
 #endif
 		}
