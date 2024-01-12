@@ -18980,6 +18980,8 @@ int32_t priv_driver_rx_stat_parser(
 	char *pcCommand
 )
 {
+#define	RX_STAT_TYPE_LEN_MAX	1000
+
 	int32_t i4BytesWritten = 0;
 	int32_t i4tmpContent = 0;
 	int32_t i4TypeNum = 0, i4Type = 0, i4Version = 0;
@@ -19016,6 +19018,10 @@ int32_t priv_driver_rx_stat_parser(
 		dataptr += 4;
 		DBGLOG(REQ, LOUD, "i4TypeLen is %x\n", i4TypeLen);
 
+		/* SANITY CHECK */
+		if (i4TypeLen > RX_STAT_TYPE_LEN_MAX)
+			return 0;
+
 		/*Get Sub Len*/
 		if (i4Type != 0) {
 			while (j) {
@@ -19041,21 +19047,41 @@ int32_t priv_driver_rx_stat_parser(
 				"i4tmpContent is %x\n", i4tmpContent);
 
 				if (i4Type == 0) {
+					if ((i/4) >=
+						(sizeof(RxStatPerBand)/
+						sizeof(int8_t *)))
+						return 0;
+
 					i4BytesWritten += kalSnprintf(
 						pcCommand + i4BytesWritten,
 						i4TotalLen, RxStatPerBand[i/4],
 						i4tmpContent);
 				} else if (i4Type == 1) {
+					if ((i/4) >=
+						(sizeof(RxStatPerAnt)/
+						sizeof(int8_t *)))
+						return 0;
+
 					i4BytesWritten += kalSnprintf(
 						pcCommand + i4BytesWritten,
 						i4TotalLen, RxStatPerAnt[i/4],
 						i4tmpContent);
 				} else if (i4Type == 2) {
+					if ((i/4) >=
+						(sizeof(RxStatPerUser)/
+						sizeof(int8_t *)))
+						return 0;
+
 					i4BytesWritten += kalSnprintf(
 						pcCommand + i4BytesWritten,
 						i4TotalLen, RxStatPerUser[i/4],
 						i4tmpContent);
 				} else {
+					if ((i/4) >=
+						(sizeof(RxStatCommonUser)/
+						sizeof(int8_t *)))
+						return 0;
+
 					i4BytesWritten += kalSnprintf(
 						pcCommand + i4BytesWritten,
 						i4TotalLen,

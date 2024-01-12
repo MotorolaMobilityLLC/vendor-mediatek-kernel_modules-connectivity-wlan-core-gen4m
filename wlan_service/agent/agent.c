@@ -2408,7 +2408,7 @@ static s_int32 hqa_get_rx_statistics_all(
 	dbdc_mode = IS_TEST_DBDC(serv_test->test_winfo);
 
 	/* check wifi path combination for specific band */
-	ret = mt_serv_get_wf_path_comb(serv_test,
+	mt_serv_get_wf_path_comb(serv_test,
 			band_idx,
 			dbdc_mode,
 			path,

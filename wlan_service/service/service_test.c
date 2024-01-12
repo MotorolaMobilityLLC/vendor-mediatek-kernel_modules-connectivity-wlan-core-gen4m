@@ -1662,6 +1662,9 @@ s_int32 mt_serv_get_rx_stat(
 				sizeof(struct test_rx_stat_band_info));
 		break;
 	case TEST_RX_STAT_PATH:
+		if (blk_idx >= TEST_ANT_NUM)
+			break;
+
 		ret = ops->op_get_rx_stat_path(
 		serv_test->test_winfo,
 		band_idx,
