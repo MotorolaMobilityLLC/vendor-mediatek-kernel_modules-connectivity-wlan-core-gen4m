@@ -1347,6 +1347,85 @@ static void mt_op_set_manual_he_tb_value(
 
 }
 
+#if (CFG_SUPPORT_CONNAC3X == 0)
+static s_int32 tm_trans_Preamble_rate(
+	struct test_wlan_info *winfos,
+	struct test_configuration *configs)
+{
+	struct test_ru_info *ru_sta = &configs->ru_info_list[0];
+
+	u_char tx_mode = configs->tx_mode;
+	u_char mcs = configs->mcs;
+	u_int8 backukp_dmnt_ru_idx = configs->dmnt_ru_idx;
+
+	/* Trans preamble and rate for get correct default txpwr*/
+	if (tx_mode == TEST_MODE_OFDM) {
+		tx_mode = TEST_MODE_CCK;
+		mcs += 4;
+	} else if ((tx_mode == TEST_MODE_CCK)
+		&& ((mcs == 9)
+		|| (mcs == 10) || (mcs == 11)))
+		tx_mode = TEST_MODE_OFDM;
+
+	tm_rftest_set_auto_test(winfos,
+	RF_AT_FUNCID_PREAMBLE, tx_mode);
+
+	if (tx_mode == TEST_MODE_CCK) {
+		mcs |= 0x00000000;
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_RATE, mcs);
+	} else if (tx_mode == TEST_MODE_OFDM) {
+		if (mcs == 9)
+			mcs = 1;
+		else if (mcs == 10)
+			mcs = 2;
+		else if (mcs == 11)
+			mcs = 3;
+		mcs |= 0x00000000;
+
+		tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_RATE, mcs);
+	} else if (tx_mode >= TEST_MODE_HTMIX &&
+	tx_mode <= TEST_MODE_HE_TB) {
+
+	if (tx_mode == TEST_MODE_HE_TB) {
+		/*do ru operation*/
+		if (ru_sta->valid) {
+			/*Calculate HE TB PHY Info*/
+			mt_engine_calc_phy(ru_sta,
+			ru_sta->mpdu_length+13,
+			configs->stbc,
+			configs->sgi,
+			configs->max_pkt_ext);
+
+			configs->dmnt_ru_idx = 0;
+
+			/*Replace mcs/nss/ldpc/mpdu_len setting*/
+			configs->mcs = ru_sta->rate;
+			configs->nss = ru_sta->nss;
+			configs->ldpc = ru_sta->ldpc;
+			tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_PKTLEN,
+			ru_sta->mpdu_length);
+
+			/*Do Calc Manual HE TB TX*/
+			mt_op_set_manual_he_tb_value(winfos,
+			ru_sta, configs);
+
+			/*restore configs->dmnt_ru_idx*/
+			configs->dmnt_ru_idx = backukp_dmnt_ru_idx;
+		}
+	}
+	mcs |= 0x80000000;
+	tm_rftest_set_auto_test(winfos,
+		RF_AT_FUNCID_RATE, mcs);
+	}
+
+	return SERV_STATUS_SUCCESS;
+}
+#endif /* #if (CFG_SUPPORT_CONNAC3X == 0) */
+
+
 #if (CFG_SUPPORT_CONNAC3X == 1)
 static void mt_op_set_manual_eht_tb_value(
 	struct test_wlan_info *winfos,
@@ -1515,7 +1594,9 @@ s_int32 mt_op_start_tx(
 	u_int32 aifs = configs->ipg_param.ipg;
 	u_int32 pkt_cnt = configs->tx_stat.tx_cnt;
 	s_int32 ret = SERV_STATUS_SUCCESS;
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	struct test_ru_info *ru_sta = &configs->ru_info_list[0];
+#endif
 	struct param_mtk_wifi_test_struct rf_at_info;
 	u_int32 tx_cnt = 0, buf_len = 0;
 #if (CFG_WAIT_TSSI_READY == 1)
@@ -1571,64 +1652,7 @@ s_int32 mt_op_start_tx(
 		RF_AT_FUNCID_RATE, configs->mcs);
 
 #else
-
-	if (configs->tx_mode == TEST_MODE_OFDM) {
-		configs->tx_mode = TEST_MODE_CCK;
-		configs->mcs += 4;
-	} else if ((configs->tx_mode == TEST_MODE_CCK)
-	&& ((configs->mcs == 9)
-		|| (configs->mcs == 10) || (configs->mcs == 11)))
-		configs->tx_mode = TEST_MODE_OFDM;
-
-	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
-
-	if (configs->tx_mode == TEST_MODE_CCK) {
-		configs->mcs |= 0x00000000;
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_RATE, configs->mcs);
-	} else if (configs->tx_mode == TEST_MODE_OFDM) {
-		if (configs->mcs == 9)
-			configs->mcs = 1;
-		else if (configs->mcs == 10)
-			configs->mcs = 2;
-		else if (configs->mcs == 11)
-			configs->mcs = 3;
-		configs->mcs |= 0x00000000;
-
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_RATE, configs->mcs);
-	} else if (configs->tx_mode >= TEST_MODE_HTMIX &&
-	configs->tx_mode <= TEST_MODE_HE_TB) {
-
-		if (configs->tx_mode == TEST_MODE_HE_TB) {
-			/*do ru operation*/
-			if (ru_sta->valid) {
-				/*Calculate HE TB PHY Info*/
-				mt_engine_calc_phy(ru_sta,
-						ru_sta->mpdu_length+13,
-						configs->stbc,
-						configs->sgi,
-						configs->max_pkt_ext);
-
-				configs->dmnt_ru_idx = 0;
-
-				/*Replace the mcs/nss/ldpc/mpdu_len setting*/
-				configs->mcs = ru_sta->rate;
-				configs->nss = ru_sta->nss;
-				configs->ldpc = ru_sta->ldpc;
-				tm_rftest_set_auto_test(winfos,
-				RF_AT_FUNCID_PKTLEN, ru_sta->mpdu_length);
-
-				/*Do Calc Manual HE TB TX*/
-				mt_op_set_manual_he_tb_value(winfos,
-				ru_sta, configs);
-			}
-		}
-		configs->mcs |= 0x80000000;
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_RATE, configs->mcs);
-	}
+	tm_trans_Preamble_rate(winfos, configs);
 #endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 	if (tx_pwr > 0x3F)
@@ -2825,9 +2849,6 @@ s_int32 mt_op_get_tx_pwr(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	struct param_mtk_wifi_test_struct rf_at_info;
-#if (CFG_SUPPORT_CONNAC3X == 0)
-	struct test_ru_info *ru_sta = &configs->ru_info_list[0];
-#endif /* #if (CFG_SUPPORT_CONNAC3X == 0) */
 	u_int32 buf_len = 0;
 
 	if (pr_oid_funcptr == NULL)
@@ -2837,65 +2858,7 @@ s_int32 mt_op_get_tx_pwr(
 		RF_AT_FUNCID_SET_DBDC_BAND_IDX, band_idx);
 
 #if (CFG_SUPPORT_CONNAC3X == 0)
-	/* Trans preamble and rate for get correct default txpwr*/
-	if (configs->tx_mode == TEST_MODE_OFDM) {
-		configs->tx_mode = TEST_MODE_CCK;
-		configs->mcs += 4;
-	} else if ((configs->tx_mode == TEST_MODE_CCK)
-	&& ((configs->mcs == 9)
-		|| (configs->mcs == 10) || (configs->mcs == 11)))
-		configs->tx_mode = TEST_MODE_OFDM;
-
-	tm_rftest_set_auto_test(winfos,
-		RF_AT_FUNCID_PREAMBLE, configs->tx_mode);
-
-	if (configs->tx_mode == TEST_MODE_CCK) {
-		configs->mcs |= 0x00000000;
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_RATE, configs->mcs);
-	} else if (configs->tx_mode == TEST_MODE_OFDM) {
-		if (configs->mcs == 9)
-			configs->mcs = 1;
-		else if (configs->mcs == 10)
-			configs->mcs = 2;
-		else if (configs->mcs == 11)
-			configs->mcs = 3;
-		configs->mcs |= 0x00000000;
-
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_RATE, configs->mcs);
-	} else if (configs->tx_mode >= TEST_MODE_HTMIX &&
-	configs->tx_mode <= TEST_MODE_HE_TB) {
-
-		if (configs->tx_mode == TEST_MODE_HE_TB) {
-			/*do ru operation*/
-			if (ru_sta->valid) {
-				/*Calculate HE TB PHY Info*/
-				mt_engine_calc_phy(ru_sta,
-				ru_sta->mpdu_length+13,
-				configs->stbc,
-				configs->sgi,
-				configs->max_pkt_ext);
-
-				configs->dmnt_ru_idx = 0;
-
-				/*Replace mcs/nss/ldpc/mpdu_len setting*/
-				configs->mcs = ru_sta->rate;
-				configs->nss = ru_sta->nss;
-				configs->ldpc = ru_sta->ldpc;
-				tm_rftest_set_auto_test(winfos,
-				RF_AT_FUNCID_PKTLEN,
-				ru_sta->mpdu_length);
-
-				/*Do Calc Manual HE TB TX*/
-				mt_op_set_manual_he_tb_value(winfos,
-				ru_sta, configs);
-			}
-		}
-		configs->mcs |= 0x80000000;
-		tm_rftest_set_auto_test(winfos,
-			RF_AT_FUNCID_RATE, configs->mcs);
-	}
+	tm_trans_Preamble_rate(winfos, configs);
 #endif /* #if (CFG_SUPPORT_CONNAC3X == 0) */
 
 	rf_at_info.func_idx = RF_AT_FUNCID_GET_CH_TX_PWR_OFFSET;

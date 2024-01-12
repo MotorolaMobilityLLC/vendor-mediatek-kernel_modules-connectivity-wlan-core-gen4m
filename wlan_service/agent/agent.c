@@ -4245,6 +4245,9 @@ static s_int32 hqa_set_ru_info_v2(
 				   &data,
 				   (u_char *)&band_idx);
 
+	if (band_idx >= TEST_DBDC_BAND_NUM)
+		band_idx = 0;
+
 	/*seg count*/
 	get_param_and_shift_buf(TRUE,
 				   sizeof(u_int32),
