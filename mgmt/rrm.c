@@ -1701,7 +1701,7 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	uint8_t *bssid = prBssDesc->aucBSSID;
 	uint8_t *pos = prBssDesc->pucIeBuf;
 	uint32_t ies_len = prBssDesc->u2IELength;
-	struct RM_BCN_REPORT rep;
+	struct RM_BCN_REPORT rep = {0};
 	struct RM_MEASURE_REPORT_ENTRY *reportEntry = NULL;
 	struct RM_MEASURE_REPORT_ENTRY *tmp = NULL;
 	u_int8_t idx = 0;
