@@ -1508,8 +1508,6 @@ struct mt66xx_chip_info {
 	const u_int8_t is_support_sdo;		/* support SDO */
 	const u_int8_t is_support_rro;		/* support RRO */
 	const u_int8_t is_en_fix_rro_amsdu_error;
-	const uint32_t mawd_cr_backup_offset;
-	const uint32_t *mawd_idx_patch;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	const u_int8_t is_en_wfdma_no_mmio_read;
 #if CFG_MTK_WIFI_WFDMA_WB

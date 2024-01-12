@@ -334,6 +334,7 @@ struct wfdma_group_info mt6653_wfmda_host_tx_group[] = {
 	{"P0T9:MD DATA1", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_CTRL0_ADDR},
 	{"P0T10:MD DATA2", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_CTRL0_ADDR},
 	{"P0T11:MD DATA3", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_CTRL0_ADDR},
+	{"P0T12:MD DATA4", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_CTRL0_ADDR},
 	{"P0T14:MD CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING14_CTRL0_ADDR},
 	{"P0T15:AP CMD", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING15_CTRL0_ADDR},
 	{"P0T16:FWDL", WF_WFDMA_HOST_DMA0_WPDMA_TX_RING16_CTRL0_ADDR},
@@ -922,37 +923,6 @@ struct thermal_sensor_info mt6653_thermal_sensor_info[] = {
 };
 #endif
 
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-/* reset mawd idx to default value
- * 0: md_rx_blk_ring_dma_idx	(default = 0)
- * 1: ap_rx_blk_ring_dma_idx	(default = 0)
- * 2: ind_cmd_q_magic		(default = 0)
- * 3: ind_cmd_q_rdix		(default = 0)
- * 4: ring0_hiftxd_adr_off	(default = 0)
- * 5: hiftxd_q0_ridx		(default = 0)
- * 6: ring1_hiftxd_adr_off	(default = 0)
- * 7: hiftxd_q1_ridx		(default = 0)
- * 8: ring2_hiftxd_adr_off	(default = 0)
- * 9: hiftxd_q2_ridx		(default = 0)
- * 10: err_rpt_dma_idx		(default = 0)
- * 11: dmad_q0_widx		(default = 0)
- * 12: dmad_q1_widx		(default = 0)
- * 13: dmad_q2_widx		(default = 0)
- * 14: dmad_q0_ridx		(default = 0)
- * 15: dmad_q1_ridx		(default = 0)
- * 16: dmad_q2_ridx		(default = 0)
- * 17: md_rx_blk_ing_magic_cnt	(default = 0)
- * 18: ap_rx_blk_ing_magic_cnt	(default = 0)
- */
-uint32_t mt6653_mawd_idx_patch[] = {
-	0, 0, 0, 0,
-	0, 0, 0, 0,
-	0, 0, 0, 0,
-	0, 0, 0, 0,
-	0, 0, 0
-};
-#endif
-
 #if CFG_NEW_HIF_DEV_REG_IF
 enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_HIF_DBG,
@@ -1012,8 +982,6 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.is_support_mawd = TRUE,
 	.is_support_sdo = TRUE,
 	.is_support_rro = TRUE,
-	.mawd_cr_backup_offset = 128,
-	.mawd_idx_patch = mt6653_mawd_idx_patch,
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	.is_en_wfdma_no_mmio_read = FALSE,
 #endif /* _HIF_PCIE */
@@ -1711,14 +1679,14 @@ static void mt6653WfdmaManualPrefetch(
 
 #if CFG_MTK_MDDP_SUPPORT || CFG_ENABLE_MAWD_MD_RING
 	for (u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING8_EXT_CTRL_ADDR;
-	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING9_EXT_CTRL_ADDR;
+	     u4Addr <= WF_WFDMA_HOST_DMA0_WPDMA_TX_RING11_EXT_CTRL_ADDR;
 	     u4Addr += 0x4) {
 		u4WrVal = (u4WrVal & 0xFFFF0000) | u4TxDataPrefetchCnt;
 		HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 		u4WrVal += u4TxDataPrefetchBase;
 	}
 
-	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING10_EXT_CTRL_ADDR;
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_TX_RING12_EXT_CTRL_ADDR;
 	u4WrVal = (u4WrVal & 0xFFFF0000) | u4PrefetchCnt;
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 	u4WrVal += u4PrefetchBase;
