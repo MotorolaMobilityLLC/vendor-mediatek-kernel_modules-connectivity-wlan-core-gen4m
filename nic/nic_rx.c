@@ -197,7 +197,7 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_CAL_ALL_DONE, nicEventCalAllDone},
 #endif
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
-	{EVENT_ID_RXM_DELAY_BAR, nicEventHandleDelayBar},
+	{EVENT_ID_DELAY_BAR, nicEventHandleDelayBar},
 #endif
 	{EVENT_ID_HIF_CTRL, nicEventHifCtrl},
 	{EVENT_ID_RDD_SEND_PULSE, nicEventRddSendPulse},

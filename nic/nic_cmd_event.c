@@ -6480,24 +6480,24 @@ void nicEventHandleDelayBar(IN struct ADAPTER *prAdapter,
 	QUEUE_INITIALIZE(prReturnedQue);
 	for (i = 0; i < prEventStoredBAR->ucBaNum; i++) {
 		/* always add 1 since cnt=0 for 1st stored in fw */
-		prEventStoredBAR->rBAR[i].ucStoredBARCount++;
+		prEventStoredBAR->arBAR[i].ucStoredBARCount++;
 
 		DBGLOG(NIC, INFO,
 			"[Id:StaId:Tid:SSN:StoredCnt]:[%d:%d:%d:%d:%d]\n",
 			i,
-			prEventStoredBAR->rBAR[i].ucStaRecIdx,
-			prEventStoredBAR->rBAR[i].ucTid,
-			prEventStoredBAR->rBAR[i].u2SSN,
-			prEventStoredBAR->rBAR[i].ucStoredBARCount);
+			prEventStoredBAR->arBAR[i].ucStaRecIdx,
+			prEventStoredBAR->arBAR[i].ucTid,
+			prEventStoredBAR->arBAR[i].u2SSN,
+			prEventStoredBAR->arBAR[i].ucStoredBARCount);
 
 		qmHandleRxReorderWinShift(prAdapter,
-			prEventStoredBAR->rBAR[i].ucStaRecIdx,
-			prEventStoredBAR->rBAR[i].ucTid,
-			prEventStoredBAR->rBAR[i].u2SSN,
+			prEventStoredBAR->arBAR[i].ucStaRecIdx,
+			prEventStoredBAR->arBAR[i].ucTid,
+			prEventStoredBAR->arBAR[i].u2SSN,
 			prReturnedQue);
 
 		RX_ADD_CNT(&prAdapter->rRxCtrl, RX_BAR_DELAY_COUNT,
-			prEventStoredBAR->rBAR[i].ucStoredBARCount
+			prEventStoredBAR->arBAR[i].ucStoredBARCount
 			);
 	}
 

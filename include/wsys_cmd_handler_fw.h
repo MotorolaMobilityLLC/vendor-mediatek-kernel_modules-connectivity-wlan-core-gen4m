@@ -581,7 +581,7 @@ enum ENUM_EVENT_ID {
 #endif
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
-	EVENT_ID_RXM_DELAY_BAR = 0xB5,
+	EVENT_ID_DELAY_BAR = 0xB5,
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 
 	EVENT_ID_TPUT_INFO = 0xCB,
@@ -1520,7 +1520,7 @@ struct EVENT_ADD_KEY_DONE_INFO {
  * because we must ensure event structure no change
  */
 #define BAR_DELAY_INDICATION_BA_MAX 80
-struct EVENT_STORED_BA_REQUEST {
+struct EVENT_STORED_BAR_INFO {
 	uint16_t u2SSN;
 	uint8_t ucTid;
 	uint8_t ucStaRecIdx;
@@ -1532,8 +1532,8 @@ struct EVENT_BAR_DELAY {
 	uint8_t ucEvtVer;
 	uint8_t ucBaNum;
 	uint8_t aucPadding[2];
-	struct EVENT_STORED_BA_REQUEST
-		rBAR[BAR_DELAY_INDICATION_BA_MAX];
+	struct EVENT_STORED_BAR_INFO
+		arBAR[BAR_DELAY_INDICATION_BA_MAX];
 };
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 

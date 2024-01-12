@@ -4336,6 +4336,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_WOW	     = 0x5B,
 	UNI_EVENT_ID_GET_VOLT_INFO   = 0x5C,
 	UNI_EVENT_ID_PKT_OFLD	     = 0x60,
+	UNI_EVENT_ID_DELAY_BAR       = 0x61,
 	UNI_EVENT_ID_NUM
 };
 
@@ -6540,6 +6541,41 @@ struct UNI_EVENT_PKT_OFLD {
 
 #endif
 
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+struct UNI_EVENT_DELAY_BAR {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+};
+
+/* Delay Bar event tag */
+enum UNI_EVENT_DELAY_BAR_TAG {
+	UNI_EVENT_DELAY_BAR_INFO_TAG = 0,
+	UNI_EVENT_DELAY_BAR_TAG_NUM
+};
+
+struct UNI_STORED_BAR_INFO {
+	uint16_t u2SSN;
+	uint8_t ucTid;
+	uint8_t ucStaRecIdx;
+	uint8_t ucStoredBARCount;
+	uint8_t aucPadding[3];
+};
+
+struct UNI_EVENT_DELAY_BAR_INFO {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	/* event body */
+	uint8_t ucEvtVer;
+	uint8_t ucBaNum;
+	uint8_t aucPadding[2];
+	struct UNI_STORED_BAR_INFO
+		arBAR[BAR_DELAY_INDICATION_BA_MAX];
+};
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
+
 #if CFG_MSCS_SUPPORT
 /** This structure is used for UNI_EVENT_ID_FAST_PATH event (0x54)
  *
@@ -7068,6 +7104,10 @@ void nicUniEventCsiData(struct ADAPTER *ad,
 void nicUniEventGetVnf(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif
+#if CFG_SUPPORT_BAR_DELAY_INDICATION
+void nicUniEventDelayBar(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */
 void nicUniEventFastPath(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 void nicUniEventThermalProtect(struct ADAPTER *ad,
