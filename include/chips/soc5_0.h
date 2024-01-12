@@ -63,5 +63,7 @@ void soc5_0_show_wfdma_dbg_probe_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
 void soc5_0_show_wfdma_wrapper_info(IN struct ADAPTER *prAdapter,
 	IN enum _ENUM_WFDMA_TYPE_T enum_wfdma_type);
+void soc5_0_dump_mac_info(
+	IN struct ADAPTER *prAdapter);
 
 #endif  /* soc5_0 */
