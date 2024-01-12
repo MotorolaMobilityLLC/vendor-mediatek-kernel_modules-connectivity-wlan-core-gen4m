@@ -3770,6 +3770,9 @@ p2pFuncParseBeaconContent(IN struct ADAPTER *prAdapter,
 				(uint8_t) prP2pBssInfo->u4PrivateData);
 
 		prP2pBssInfo->ucCountryIELen = 0;
+#if (CFG_SUPPORT_802_11AX == 1)
+		prP2pBssInfo->ucPhyTypeSet &= ~PHY_TYPE_SET_802_11AX;
+#endif
 
 		IE_FOR_EACH(pucIE, u4IELen, u2Offset) {
 			switch (IE_ID(pucIE)) {
