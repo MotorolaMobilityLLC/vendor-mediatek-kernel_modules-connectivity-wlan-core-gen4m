@@ -2324,7 +2324,9 @@ void wlanClearTxOidCommand(IN struct ADAPTER *prAdapter)
 		prCmdInfo = (struct CMD_INFO *) prQueueEntry;
 
 		if (prCmdInfo->fgIsOid) {
-
+			DBGLOG(OID, INFO,
+				"Clear pending OID CMD ID[0x%02X] SEQ[%u]\n",
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 			if (prCmdInfo->pfCmdTimeoutHandler)
 				prCmdInfo->pfCmdTimeoutHandler(prAdapter,
 							       prCmdInfo);

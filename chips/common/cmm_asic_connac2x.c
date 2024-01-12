@@ -279,7 +279,13 @@ static void asicConnac2xFillCmdTxdInfo(
 	if (pucSeqNum)
 		*pucSeqNum = prWifiCmd->ucSeqNum;
 
-	DBGLOG_LIMITED(INIT, INFO,
+	if (aucDebugModule[DBG_TX_IDX] & DBG_CLASS_TRACE)
+		DBGLOG(TX, TRACE,
+			"TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
+			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
+			prWifiCmd->ucSetQuery, prCmdInfo->u2InfoBufLen);
+	else
+		DBGLOG_LIMITED(TX, INFO,
 			"TX CMD: ID[0x%02X] SEQ[%u] SET[%u] LEN[%u]\n",
 			prWifiCmd->ucCID, prWifiCmd->ucSeqNum,
 			prWifiCmd->ucSetQuery, prCmdInfo->u2InfoBufLen);
