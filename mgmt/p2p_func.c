@@ -6658,9 +6658,9 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 		u4LteSafeChnMask_2G = prLteSafeChnList->au4SafeChannelBitmask[
 			ENUM_SAFE_CH_MASK_BAND_2G4];
 
-		prAcsReqInfo->u4LteSafeChnMask_2G &= u4LteSafeChnMask_2G;
 		for (i = 0; i < ucNumOfChannel; i++) {
 			if ((prAcsReqInfo->u4LteSafeChnMask_2G &
+					u4LteSafeChnMask_2G &
 					BIT(aucChannelList[i].ucChannelNum)))
 				fgIsMaskValid = TRUE;
 		}
@@ -6669,6 +6669,9 @@ void p2pFunProcessAcsReport(IN struct ADAPTER *prAdapter,
 				"All mask invalid, mark all as valid\n");
 			prAcsReqInfo->u4LteSafeChnMask_2G = BITS(1, 14);
 		}
+
+		prAcsReqInfo->u4LteSafeChnMask_2G &= u4LteSafeChnMask_2G;
+
 #if CFG_TC1_FEATURE
 		/* Restrict 2.4G band channel selection range
 		 * to 1/6/11 per customer's request
