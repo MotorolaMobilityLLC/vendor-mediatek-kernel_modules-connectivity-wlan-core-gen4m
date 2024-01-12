@@ -463,7 +463,7 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 }
 #endif
 
-#if (CFG_MTK_MDDP_SUPPORT || IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER))
+#if (CFG_MTK_MDDP_SUPPORT || CFG_MTK_CCCI_SUPPORT)
 irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 {
 	return IRQ_HANDLED;
@@ -1613,7 +1613,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			irq_chip_mask_parent(data);
 		}
 #endif
-#if IS_ENABLED(CONFIG_MTK_ECCCI_DRIVER)
+#if CFG_MTK_CCCI_SUPPORT
 		if (prMsiLayout->type == CCIF_INT) {
 			struct irq_data *data;
 

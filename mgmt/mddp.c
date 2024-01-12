@@ -1044,7 +1044,9 @@ void mddpNotifyWifiOnStart(void)
 #endif
 #endif
 
+#if CFG_MTK_CCCI_SUPPORT
 	mtk_ccci_register_md_state_cb(&mddpMdStateChangedCb);
+#endif
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
 }
@@ -1057,12 +1059,12 @@ int32_t mddpNotifyWifiOnEnd(void)
 		return ret;
 
 	if (!is_cal_flow_finished())
-		return ret;
+		return;
 
 #if CFG_MTK_ANDROID_WMT
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
-		return ret;
+		return;
 #endif
 #endif
 
@@ -1114,7 +1116,9 @@ void mddpNotifyWifiOffStart(void)
 
 	mddpSetMDFwOwn();
 
+#if CFG_MTK_CCCI_SUPPORT
 	mtk_ccci_register_md_state_cb(NULL);
+#endif
 
 	DBGLOG(INIT, INFO, "md off start.\n");
 	if (g_rSettings.u4MDDPSupportMode == MDDP_SUPPORT_AOP) {
@@ -1537,6 +1541,7 @@ static void notifyMdCrash2FW(void)
 	kalSetMdCrashEvent(prGlueInfo);
 }
 
+#if CFG_MTK_CCCI_SUPPORT
 void  mddpMdStateChangedCb(enum MD_STATE old_state,
 		enum MD_STATE new_state)
 {
@@ -1552,6 +1557,7 @@ void  mddpMdStateChangedCb(enum MD_STATE old_state,
 		break;
 	}
 }
+#endif
 
 static void save_mddp_stats(void)
 {
