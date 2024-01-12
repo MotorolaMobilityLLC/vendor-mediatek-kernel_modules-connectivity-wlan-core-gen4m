@@ -2628,9 +2628,7 @@ void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
 		IN struct CMD_INFO *prCmdInfo,
 		IN uint8_t *pucEventBuf)
 {
-	uint32_t u4QueryInfoLen;
 	struct EVENT_LTE_SAFE_CHN *prEvent;
-	struct GLUE_INFO *prGlueInfo;
 	struct PARAM_GET_CHN_INFO *prLteSafeChnInfo;
 	uint8_t ucIdx = 0;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
@@ -2641,13 +2639,17 @@ void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
 		return;
 	}
 
-	prGlueInfo = prAdapter->prGlueInfo;
 	prEvent = (struct EVENT_LTE_SAFE_CHN *) pucEventBuf;
 
 	prLteSafeChnInfo = (struct PARAM_GET_CHN_INFO *)
 			prCmdInfo->pvInformationBuffer;
 
-	u4QueryInfoLen = sizeof(struct PARAM_GET_CHN_INFO);
+	if (prLteSafeChnInfo->ucRoleIndex >= BSS_P2P_NUM) {
+		ASSERT(FALSE);
+		kalMemFree(prLteSafeChnInfo, VIR_MEM_TYPE,
+				sizeof(struct PARAM_GET_CHN_INFO));
+		return;
+	}
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prLteSafeChnInfo->ucRoleIndex);
 
@@ -2675,6 +2677,8 @@ void nicCmdEventQueryLteSafeChn(IN struct ADAPTER *prAdapter,
 			prLteSafeChnInfo->ucRoleIndex,
 			prLteSafeChnInfo,
 			&(prP2pRoleFsmInfo->rAcsReqInfo));
+	kalMemFree(prLteSafeChnInfo, VIR_MEM_TYPE,
+			sizeof(struct PARAM_GET_CHN_INFO));
 }
 
 void nicEventRddPulseDump(IN struct ADAPTER *prAdapter,
