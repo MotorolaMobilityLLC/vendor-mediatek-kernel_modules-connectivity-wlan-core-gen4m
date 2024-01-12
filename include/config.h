@@ -1063,7 +1063,9 @@
 #define CFG_MTK_STAGE_SCAN			1
 
 /* Enable driver support multicore */
-#define CFG_SUPPORT_MULTITHREAD			1
+#ifndef CFG_SUPPORT_MULTITHREAD
+#define CFG_SUPPORT_MULTITHREAD		1
+#endif
 
 #define CFG_SUPPORT_MTK_SYNERGY			1
 

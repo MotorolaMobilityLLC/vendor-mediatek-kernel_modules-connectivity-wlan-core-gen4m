@@ -687,8 +687,10 @@ static void halDefaultProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 		fgIsSetHifTxEvent = true;
 	}
 
+#if CFG_SUPPORT_MULTITHREAD
 	if (fgIsSetHifTxEvent)
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+#endif
 }
 
 
@@ -1421,8 +1423,9 @@ void halRxProcessMsduReport(IN struct ADAPTER *prAdapter,
 	/* Indicate Service Thread */
 	if (wlanGetTxPendingFrameCount(prAdapter) > 0)
 		kalSetEvent(prAdapter->prGlueInfo);
-
+#if CFG_SUPPORT_MULTITHREAD
 	kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+#endif
 }
 
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,

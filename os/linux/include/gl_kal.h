@@ -154,7 +154,7 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
 /* All flags for single thread driver */
-#define GLUE_FLAG_TX_PROCESS  0xFFFFFFFF
+#define GLUE_FLAG_MAIN_PROCESS  0xFFFFFFFF
 #endif
 
 #define PERF_MON_INIT_BIT       (0)
@@ -1711,11 +1711,11 @@ int32_t kalHaltTryLock(void);
 void kalHaltUnlock(void);
 void kalSetHalted(u_int8_t fgHalt);
 u_int8_t kalIsHalted(void);
-
+#if CFG_SUPPORT_MULTITHREAD
 void kalFreeTxMsduWorker(struct work_struct *work);
 void kalFreeTxMsdu(struct ADAPTER *prAdapter,
 		   struct MSDU_INFO *prMsduInfo);
-
+#endif
 int32_t kalPerMonInit(IN struct GLUE_INFO *prGlueInfo);
 int32_t kalPerMonDisable(IN struct GLUE_INFO *prGlueInfo);
 int32_t kalPerMonEnable(IN struct GLUE_INFO *prGlueInfo);

@@ -4124,10 +4124,9 @@ u_int8_t wlanProcessSecurityFrame(IN struct ADAPTER
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_PROTECTED_1X))
 			nicTxConfigPktOption(prMsduInfo,
 					MSDU_OPT_PROTECTED_FRAME, TRUE);
-#if CFG_SUPPORT_MULTITHREAD
+
 		nicTxComposeSecurityFrameDesc(prAdapter, prCmdInfo,
 					prMsduInfo->aucTxDescBuffer, NULL);
-#endif
 
 		kalEnqueueCommand(prAdapter->prGlueInfo,
 				  (struct QUE_ENTRY *) prCmdInfo);
@@ -13467,8 +13466,10 @@ void wlanReleaseAllTxCmdQueue(struct ADAPTER *prAdapter)
 	/* dump queue info before release for debug */
 	cmdBufDumpCmdQueue(&prAdapter->rPendingCmdQueue,
 				   "waiting response CMD queue");
+#if CFG_SUPPORT_MULTITHREAD
 	cmdBufDumpCmdQueue(&prAdapter->rTxCmdQueue,
 				   "Tx CMD queue");
+#endif
 
 	DBGLOG(OID, INFO, "Remove all pending Cmd\n");
 	/* 1: Clear Pending OID */

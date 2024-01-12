@@ -908,7 +908,9 @@ u_int8_t halTxReleaseResource(IN struct ADAPTER *prAdapter, IN uint16_t *au2TxRl
 	bStatus = TRUE;
 
 	/* Update Statistic counter */
+#if CFG_SUPPORT_MULTITHREAD
 	prStatCnt->u4TxDonePendingPktCnt += nicTxGetMsduPendingCnt(prAdapter);
+#endif
 	prStatCnt->u4TxDoneIntTotCnt++;
 
 	for (i = HIF_TXC_IDX_0; i < HIF_TXC_IDX_NUM; i++) {
@@ -2465,10 +2467,11 @@ void halDeAggRxPktWorker(struct work_struct *work)
 			RX_ADD_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT, prTempRxRfbList->u4NumElem);
 			QUEUE_CONCATENATE_QUEUES(&prRxCtrl->rReceivedRfbList, prTempRxRfbList);
 			KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_RX_QUE);
-
+#if CFG_SUPPORT_MULTITHREAD
 			/* Wake up Rx handling thread */
 			set_bit(GLUE_FLAG_RX_BIT, &(prAdapter->prGlueInfo->ulFlag));
 			wake_up_interruptible(&(prAdapter->prGlueInfo->waitq));
+#endif
 		}
 
 		if (prTempFreeRfbList->u4NumElem) {

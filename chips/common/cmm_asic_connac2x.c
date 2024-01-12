@@ -1109,15 +1109,17 @@ void asicConnac2xProcessTxInterrupt(IN struct ADAPTER *prAdapter)
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_18) {
 		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
 			TX_RING_DATA0_IDX_0);
-
+#if CFG_SUPPORT_MULTITHREAD
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+#endif
 	}
 
 	if (rIntrStatus.field_conn2x_ext.wfdma1_tx_done_19) {
 		halWpdmaProcessDataDmaDone(prAdapter->prGlueInfo,
 			TX_RING_DATA1_IDX_1);
-
+#if CFG_SUPPORT_MULTITHREAD
 		kalSetTxEvent2Hif(prAdapter->prGlueInfo);
+#endif
 	}
 }
 
