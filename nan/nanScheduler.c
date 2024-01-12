@@ -527,61 +527,72 @@ enum _ENUM_CNM_CH_CONCURR_T {
 	CNM_CH_CONCURR_NUM
 };
 
-void
-cnmGetChBound(uint8_t ucPrimaryCh, enum ENUM_CHANNEL_WIDTH eChannelWidth,
-	      enum ENUM_CHNL_EXT eSCO, uint8_t ucChannelS1,
-	      uint8_t ucChannelS2, uint8_t *pucChLowBound1,
-	      uint8_t *pucChHighBound1, uint8_t *pucChLowBound2,
-	      uint8_t *pucChHighBound2) {
+/**
+ * nanGetChBound() - Get Channel high/low bounds with given parameters
+ * @ucPrimaryCh: Primary channel
+ * @eChannelWidth: Bandwidth
+ * @eSCO: Secondary Channel Offset. Value of no secondary channel (SCN),
+ *	  secondary channel above (SCA), or secondary channel below (SCB).
+ * @ucChannelS1: segment 1 channel
+ * @ucChannelS2: segment 2 channel, only for non-contiguous (80+80)
+ * @pucChLowBound1: return low bound of segment 1 channel
+ * @pucChHighBound1: return high bound of segment 1 channel
+ * @pucChLowBound2: return low bound of segment 2 channel, only for 80+80
+ * @pucChHighBound2: return high bound of segment 2 channel, only for 80+80
+ *
+ * Return: return channel parameters in the passed-in pointer arguments.
+ */
+void nanGetChBound(uint8_t ucPrimaryCh, enum ENUM_CHANNEL_WIDTH eChannelWidth,
+	      enum ENUM_CHNL_EXT eSCO, uint8_t ucChannelS1, uint8_t ucChannelS2,
+	      uint8_t *pucChLowBound1, uint8_t *pucChHighBound1,
+	      uint8_t *pucChLowBound2, uint8_t *pucChHighBound2)
+{
+	*pucChLowBound1 = ucPrimaryCh;
+	*pucChHighBound1 = ucPrimaryCh;
+
 	switch (eChannelWidth) {
 	case CW_20_40MHZ:
-		if (eSCO == CHNL_EXT_SCB) {
-			*pucChLowBound1 = (ucPrimaryCh - 4);
-			*pucChHighBound1 = ucPrimaryCh;
-		} else if (eSCO == CHNL_EXT_SCA) {
-			*pucChLowBound1 = ucPrimaryCh;
-			*pucChHighBound1 = (ucPrimaryCh + 4);
-		} else {
-			*pucChLowBound1 = ucPrimaryCh;
-			*pucChHighBound1 = ucPrimaryCh;
-		}
-
+		if (eSCO == CHNL_EXT_SCB)
+			*pucChLowBound1 = ucPrimaryCh - 4;
+		else if (eSCO == CHNL_EXT_SCA)
+			*pucChHighBound1 = ucPrimaryCh + 4;
 		break;
 
 	case CW_80MHZ:
-		*pucChLowBound1 = (ucChannelS1 - 6);
-		*pucChHighBound1 = (ucChannelS1 + 6);
+		*pucChLowBound1 = ucChannelS1 - 6;
+		*pucChHighBound1 = ucChannelS1 + 6;
 		break;
 
 	case CW_160MHZ:
-		*pucChLowBound1 = (ucChannelS1 - 14);
-		*pucChHighBound1 = (ucChannelS1 + 14);
+		*pucChLowBound1 = ucChannelS1 - 14;
+		*pucChHighBound1 = ucChannelS1 + 14;
 		break;
 
 	case CW_80P80MHZ:
-		*pucChLowBound1 = (ucChannelS1 - 6);
-		*pucChHighBound1 = (ucChannelS1 + 6);
-		*pucChLowBound2 = (ucChannelS2 * 2 - ucChannelS1 -
-				   6); /* S1 + (S2-S1)*2 = S2*2 - S1 */
-		*pucChHighBound2 = (ucChannelS2 * 2 - ucChannelS1 +
-				    6); /* S1 + (S2-S1)*2 = S2*2 - S1 */
+		*pucChLowBound1 = ucChannelS1 - 6;
+		*pucChHighBound1 = ucChannelS1 + 6;
+		*pucChLowBound2 = ucChannelS2 * 2 - ucChannelS1 - 6;
+				/* S1 + (S2-S1)*2 = S2*2 - S1 */
+		*pucChHighBound2 = ucChannelS2 * 2 - ucChannelS1 + 6;
+				/* S1 + (S2-S1)*2 = S2*2 - S1 */
 		break;
 
-	default:
-		*pucChLowBound1 = ucPrimaryCh;
-		*pucChHighBound1 = ucPrimaryCh;
+	default: /* 320MHz */
+		/* TODO */
 		break;
 	}
 }
 
 enum _ENUM_CNM_CH_CONCURR_T
-cnmChConCurrType(uint8_t ucPrimaryChNew,
+nanChConCurrType(uint8_t ucPrimaryChNew,
 		 enum ENUM_CHANNEL_WIDTH eChannelWidthNew,
-		 enum ENUM_CHNL_EXT eSCONew, uint8_t ucChannelS1New,
-		 uint8_t ucChannelS2New, uint8_t ucPrimaryChCurr,
+		 enum ENUM_CHNL_EXT eSCONew,
+		 uint8_t ucChannelS1New, uint8_t ucChannelS2New,
+		 uint8_t ucPrimaryChCurr,
 		 enum ENUM_CHANNEL_WIDTH eChannelWidthCurr,
-		 enum ENUM_CHNL_EXT eSCOCurr, uint8_t ucChannelS1Curr,
-		 uint8_t ucChannelS2Curr) {
+		 enum ENUM_CHNL_EXT eSCOCurr,
+		 uint8_t ucChannelS1Curr, uint8_t ucChannelS2Curr)
+{
 	uint8_t ucChLowBound_New1;
 	uint8_t ucChHighBound_New1;
 	uint8_t ucChLowBound_New2;
@@ -592,29 +603,27 @@ cnmChConCurrType(uint8_t ucPrimaryChNew,
 	uint8_t ucChLowBound_Curr2;
 	uint8_t ucChHighBound_Curr2;
 
-	cnmGetChBound(ucPrimaryChNew, eChannelWidthNew, eSCONew, ucChannelS1New,
+	if (ucPrimaryChNew != ucPrimaryChCurr)
+		return CNM_CH_CONCURR_MCC;
+
+	nanGetChBound(ucPrimaryChNew, eChannelWidthNew, eSCONew, ucChannelS1New,
 		      ucChannelS2New, &ucChLowBound_New1, &ucChHighBound_New1,
 		      &ucChLowBound_New2, &ucChHighBound_New2);
 
-	cnmGetChBound(ucPrimaryChCurr, eChannelWidthCurr, eSCOCurr,
+	nanGetChBound(ucPrimaryChCurr, eChannelWidthCurr, eSCOCurr,
 		      ucChannelS1Curr, ucChannelS2Curr, &ucChLowBound_Curr1,
 		      &ucChHighBound_Curr1, &ucChLowBound_Curr2,
 		      &ucChHighBound_Curr2);
 
 	if (eChannelWidthNew != CW_80P80MHZ &&
 	    eChannelWidthCurr != CW_80P80MHZ) {
-
-		if ((ucChLowBound_Curr1 >= ucChLowBound_New1) &&
-		    (ucChHighBound_Curr1 <= ucChHighBound_New1)) {
-
-			return CNM_CH_CONCURR_SCC_NEW;
-
-		} else if ((ucChLowBound_New1 >= ucChLowBound_Curr1) &&
-			   (ucChHighBound_New1 <= ucChHighBound_Curr1)) {
-
+		if ((ucChLowBound_New1 >= ucChLowBound_Curr1) &&
+		    (ucChHighBound_New1 <= ucChHighBound_Curr1)) {
 			return CNM_CH_CONCURR_SCC_CURR;
+		} else if ((ucChLowBound_Curr1 >= ucChLowBound_New1) &&
+			 (ucChHighBound_Curr1 <= ucChHighBound_New1)) {
+			return CNM_CH_CONCURR_SCC_NEW;
 		}
-
 	} else {
 
 		if (eChannelWidthNew == CW_80P80MHZ &&
@@ -2639,15 +2648,15 @@ nanSchedChkConcurrOp(union _NAN_BAND_CHNL_CTRL rCurrChnlInfo,
 				     &ucChannelS2Curr) != WLAN_STATUS_SUCCESS)
 		return CNM_CH_CONCURR_MCC;
 
-	if (nanRegConvertNanChnlInfo(
-		    rNewChnlInfo, &ucPrimaryChNew, &eChannelWidthNew, &eSCONew,
+	if (nanRegConvertNanChnlInfo(rNewChnlInfo, &ucPrimaryChNew,
+				     &eChannelWidthNew, &eSCONew,
 		    &ucChannelS1New, &ucChannelS2New) != WLAN_STATUS_SUCCESS)
 		return CNM_CH_CONCURR_MCC;
 
-	return cnmChConCurrType(ucPrimaryChNew, eChannelWidthNew, eSCONew,
-				ucChannelS1New, ucChannelS2New, ucPrimaryChCurr,
-				eChannelWidthCurr, eSCOCurr, ucChannelS1Curr,
-				ucChannelS2Curr);
+	return nanChConCurrType(ucPrimaryChNew, eChannelWidthNew, eSCONew,
+				ucChannelS1New, ucChannelS2New,
+				ucPrimaryChCurr, eChannelWidthCurr, eSCOCurr,
+				ucChannelS1Curr, ucChannelS2Curr);
 }
 
 struct _NAN_CHANNEL_TIMELINE_T *
