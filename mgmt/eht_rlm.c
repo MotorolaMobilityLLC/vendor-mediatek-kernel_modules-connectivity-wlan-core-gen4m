@@ -74,6 +74,10 @@ uint32_t ehtRlmCalculateCapIELen(
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	u4OverallLen = OFFSET_OF(struct IE_EHT_CAP, aucVarInfo[0]);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return u4OverallLen;
+	}
 
 	ucMaxBw = cnmGetBssBandBw(prAdapter, prBssInfo, prBssInfo->eBand);
 
@@ -621,6 +625,10 @@ static void ehtRlmRecMcsMap(
 	uint8_t *pos;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(RLM, ERROR, "prBssInfo is null\n");
+		return;
+	}
 	pos = prEhtCap->aucVarInfo;
 	ucMaxBw = heRlmPeerMaxBwCap(prStaRec->ucHePhyCapInfo);
 
