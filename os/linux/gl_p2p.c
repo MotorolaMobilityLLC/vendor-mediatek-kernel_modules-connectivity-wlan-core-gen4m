@@ -875,7 +875,6 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		u_int8_t fgIsRtnlLockAcquired)
 {
 	u_int8_t fgDoRegister = FALSE;
-	u_int8_t fgRollbackRtnlLock = FALSE;
 	struct net_device *prDevHandler = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t ret = FALSE;
@@ -928,20 +927,14 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-		fgRollbackRtnlLock = FALSE;
+		if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-		if (!rtnl_is_locked()) {
-			fgRollbackRtnlLock = TRUE;
-			rtnl_lock();
-		}
-		i4RetReg = cfg80211_register_netdevice(prDevHandler);
+			i4RetReg = cfg80211_register_netdevice(prDevHandler);
 #else
-		if (rtnl_is_locked()) {
-			fgRollbackRtnlLock = TRUE;
-			rtnl_unlock();
-		}
-		i4RetReg = register_netdev(prDevHandler);
+			i4RetReg = register_netdevice(prDevHandler);
 #endif
+		} else
+			i4RetReg = register_netdev(prDevHandler);
 
 		/* register for net device */
 		if (i4RetReg < 0) {
@@ -956,13 +949,6 @@ u_int8_t p2pNetRegister(struct GLUE_INFO *prGlueInfo,
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 			ret = TRUE;
 		}
-
-		if (fgRollbackRtnlLock)
-#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-			rtnl_unlock();
-#else
-			rtnl_lock();
-#endif
 
 		DBGLOG(P2P, INFO, "P2P interface %d work %d\n",
 			i, prDevHandler->ifindex);
@@ -979,7 +965,6 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		u_int8_t fgIsRtnlLockAcquired)
 {
 	u_int8_t fgDoUnregister = FALSE;
-	u_int8_t fgRollbackRtnlLock = FALSE;
 	uint8_t ucRoleIdx;
 	struct ADAPTER *prAdapter = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv = NULL;
@@ -1068,24 +1053,19 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 		netif_tx_stop_all_queues(prP2PInfo->prDevHandler);
 
-		fgRollbackRtnlLock = FALSE;
 		/* Here are the functions which need rtnl_lock */
 		if ((prRoleDev) && (prP2PInfo->prDevHandler != prRoleDev)) {
 			DBGLOG(INIT, INFO, "unregister p2p[%d]\n", ucRoleIdx);
 			if (prRoleDev->reg_state == NETREG_REGISTERED) {
+				if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-				if (!rtnl_is_locked()) {
-					fgRollbackRtnlLock = TRUE;
-					rtnl_lock();
-				}
-				cfg80211_unregister_netdevice(prRoleDev);
+					cfg80211_unregister_netdevice(
+						prRoleDev);
 #else
-				if (rtnl_is_locked()) {
-					fgRollbackRtnlLock = TRUE;
-					rtnl_unlock();
-				}
-				unregister_netdev(prRoleDev);
+					unregister_netdevice(prRoleDev);
 #endif
+				} else
+					unregister_netdev(prRoleDev);
 			}
 			/* This ndev is created in mtk_p2p_cfg80211_add_iface(),
 			 * and unregister_netdev will also free the ndev.
@@ -1094,27 +1074,16 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 		DBGLOG(INIT, INFO, "unregister p2pdev[%d]\n", ucRoleIdx);
 		if (prP2PInfo->prDevHandler->reg_state == NETREG_REGISTERED) {
+			if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-			if (!rtnl_is_locked()) {
-				fgRollbackRtnlLock = TRUE;
-				rtnl_lock();
-			}
-			cfg80211_unregister_netdevice(prP2PInfo->prDevHandler);
+				cfg80211_unregister_netdevice(
+					prP2PInfo->prDevHandler);
 #else
-			if (rtnl_is_locked()) {
-				fgRollbackRtnlLock = TRUE;
-				rtnl_unlock();
-			}
-			unregister_netdev(prP2PInfo->prDevHandler);
+				unregister_netdevice(prP2PInfo->prDevHandler);
 #endif
+			} else
+				unregister_netdev(prP2PInfo->prDevHandler);
 		}
-
-		if (fgRollbackRtnlLock)
-#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-			rtnl_unlock();
-#else
-			rtnl_lock();
-#endif
 	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
