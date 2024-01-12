@@ -5244,6 +5244,10 @@ void wlanGetConfig(struct ADAPTER *prAdapter)
 		/* ToDo:: Nothing */
 	}
 
+#if WLAN_INCLUDE_SYS
+	iniFileErrorCheck(prAdapter, &pucConfigBuf, &u4ConfigReadLen);
+#endif
+
 	if (pucConfigBuf) {
 		wlanCfgInit(prAdapter, pucConfigBuf, u4ConfigReadLen,
 			0);
