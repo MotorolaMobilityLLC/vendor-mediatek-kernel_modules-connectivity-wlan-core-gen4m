@@ -9524,6 +9524,9 @@ inline int32_t kalPerMonDisable(struct GLUE_INFO
 {
 	struct PERF_MONITOR *prPerMonitor;
 
+	if (!prGlueInfo->prAdapter)
+		return 0;
+
 	prPerMonitor = &prGlueInfo->prAdapter->rPerMonitor;
 
 	DBGLOG(SW4, INFO, "enter %s\n", __func__);
