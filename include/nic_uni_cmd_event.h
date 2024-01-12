@@ -185,8 +185,8 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_IDC			= 0x17, /* IDC */
 	UNI_CMD_ID_ECC_OPER		= 0x18, /* ECC Operation */
 	UNI_CMD_ID_RDD_ON_OFF_CTRL	= 0x19, /* RDD On/Off Control */
-	UNI_CMD_ID_GET_MAC_INFO 	= 0x1A, /* Get MAC info */
-	UNI_CMD_ID_TDLS 		= 0x1B, /* TDLS */
+	UNI_CMD_ID_GET_MAC_INFO		= 0x1A, /* Get MAC info */
+	UNI_CMD_ID_TDLS			= 0x1B, /* TDLS */
 	UNI_CMD_ID_TXCMD_CTRL		= 0x1D, /* Txcmd ctrl */
 	UNI_CMD_ID_SET_DROP_PACKET_CFG	= 0x1E,  /* Set Packet Drop cfg */
 	UNI_CMD_ID_BA_OFFLOAD		= 0x1F, /* BA Offload */
@@ -194,20 +194,20 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_SMART_GEAR		= 0x21, /* Smart Gear */
 	UNI_CMD_ID_MIB			= 0x22, /* Get MIB counter */
 	UNI_CMD_ID_GET_STATISTICS	= 0x23, /* Get Statistics */
-	UNI_CMD_ID_SNIFFER_MODE 	= 0x24, /* Sniffer Mode */
+	UNI_CMD_ID_SNIFFER_MODE		= 0x24, /* Sniffer Mode */
 	UNI_CMD_ID_SR			= 0x25, /* SR */
 	UNI_CMD_ID_SCS			= 0x26, /* SCS */
 	UNI_CMD_ID_CNM			= 0x27, /*CNM*/
-	UNI_CMD_ID_MBMC 		= 0x28, /*MBMC*/
+	UNI_CMD_ID_MBMC			= 0x28, /*MBMC*/
 	UNI_CMD_ID_DVT			= 0x29, /* DVT */
-	UNI_CMD_ID_GPIO 		= 0x2A, /* GPIO setting*/
+	UNI_CMD_ID_GPIO			= 0x2A, /* GPIO setting*/
 	UNI_CMD_ID_TXPOWER		= 0x2B, /* RLM Tx Power */
 	UNI_CMD_ID_POWER_LIMIT		= 0x2C, /* Tx Power Limit*/
 	UNI_CMD_ID_EFUSE_CONTROL	= 0x2D, /* EFUSE Control */
 	UNI_CMD_ID_NVRAM_SETTINGS	= 0x2E, /* Set NVRAM setting */
 	UNI_CMD_ID_RA			= 0x2F, /* RA */
 	UNI_CMD_ID_SPECTRUM		= 0x30, /* Spectrum */
-	UNI_CMD_ID_MURU 		= 0x31, /* MURU */
+	UNI_CMD_ID_MURU			= 0x31, /* MURU */
 	UNI_CMD_ID_TESTMODE_RX_STAT	= 0x32, /* testmode Rx statistic */
 	UNI_CMD_ID_BF			= 0x33, /* BF */
 	UNI_CMD_ID_CHAN_SWITCH		= 0x34, /* Channel Switch */
@@ -219,7 +219,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_MEC			= 0x3A, /* MEC */
 	UNI_CMD_ID_POWER_METRICS	= 0x3F, /* Power Metrics */
 	UNI_CMD_ID_FR_TABLE		= 0x40, /* Set Fixed Rate TBL */
-	UNI_CMD_ID_RSSI_MONITOR 	= 0x41, /* Set monitoring RSSI range */
+	UNI_CMD_ID_RSSI_MONITOR		= 0x41, /* Set monitoring RSSI range */
 	UNI_CMD_ID_TEST_TR_PARAM	= 0x42, /* Set/Get testmode parameter */
 	UNI_CMD_ID_MQM_UPDATE_MU_EDCA_PARMS = 0x43, /* MU */
 	UNI_CMD_ID_PERF_IND = 0x44, /* Support performance indicate*/
@@ -232,7 +232,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_CAL			= 0x4C, /* CAL */
 	UNI_CMD_ID_HWCFG_CTRL		= 0x4E, /* Hwcfg */
 	UNI_CMD_ID_SWACI_CTRL		= 0x4F, /* SWACI */
-	UNI_CMD_ID_DYN_WMM_CTRL 	= 0x50, /* DYN_WMM */
+	UNI_CMD_ID_DYN_WMM_CTRL		= 0x50, /* DYN_WMM */
 	UNI_CMD_ID_EAP_CTRL		= 0x51, /* EAP */
 	UNI_CMD_ID_PHY_STATE_INFO	= 0x52, /* PHY_STATE */
 	UNI_CMD_ID_LED			= 0x53, /* LED */
@@ -247,6 +247,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_GAMING_MODE          = 0x63, /* Gaming Mode */
 	UNI_CMD_ID_MDNS_RECORD		= 0x64, /* Keep alive */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
+	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x73, /* TX RESET SCRAMBLE */
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
 };
 
@@ -4513,6 +4514,26 @@ struct UNI_CMD_MDNS_RECORDE_SET {
 };
 #endif
 
+/* Reset Tx Scramble Seed (0x73) */
+struct UNI_CMD_RESET_TX_SCRAMBLE {
+	/* fixed field */
+	uint8_t ucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+	/**
+	 * the TLVs included in this field:
+	 * TAG                           | ID  | structure
+	 * ------------------------------|-----|--------------------------------
+	 * UNI_CMD_RESET_TX_SCRAMBLE_TAG | 0x0 | UNI_CMD_RESET_TX_SCRAMBLE_PARAM
+	 */
+} __KAL_ATTRIB_PACKED__;
+
+enum UNI_CMD_RESET_TX_SCRAMBLE_TAG {
+	UNI_CMD_RESET_TX_SCRAMBLE_TAG = 0x0,
+	UNI_CMD_RESET_TX_SCRAMBLE_TAG_MAX_NUM,
+};
+
 /* Gaming Mode command (0x63) */
 struct UNI_CMD_GAMING_MODE {
 	/* fixed field */
@@ -7602,6 +7623,8 @@ uint32_t nicUniCmdSetCountryPwrLimitPerRate(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t wlanResetTxScrambleSeed(struct ADAPTER *ad,
+		uint8_t ucHwBandIdx);
 #if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,

@@ -1506,6 +1506,8 @@ struct mt66xx_chip_info {
 	uint16_t u2RxSwPktEvent;
 	uint16_t u2RxSwPktFrame;
 
+	u_int8_t fgCheckRxDropThreshold;
+
 	/* Extra TXD Size for TX Byte Count field (in unit of Byte) */
 	uint32_t u4ExtraTxByteCount;
 	uint32_t u4HifDmaShdlBaseAddr;

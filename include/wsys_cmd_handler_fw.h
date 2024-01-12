@@ -2406,6 +2406,14 @@ struct EVENT_WOW_WAKEUP_REASON_INFO {
 };
 #endif
 
+struct UNI_CMD_RESET_TX_SCRAMBLE_PARAM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t  ucDbdcIdx; /* band idnex to reset */
+	uint8_t  aucReserved[3];
+};
+
 struct CMD_FAST_PATH {
 	/* DWORD_0 - Common Part */
 	uint8_t  ucCmdVer;
