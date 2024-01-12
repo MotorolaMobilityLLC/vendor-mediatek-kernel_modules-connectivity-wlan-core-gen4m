@@ -1008,8 +1008,9 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER  *prAdapter = NULL;
+	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = NULL;
-	unsigned char ucBssIndex = AIS_DEFAULT_BSS_INDEX;
+	unsigned char ucBssIndex;
 	uint32_t status;
 	struct PARAM_CMD_GET_TXPWR_TBL pwr_tbl;
 	struct POWER_LIMIT *tx_pwr_tbl = pwr_tbl.tx_pwr_tbl;
@@ -1043,6 +1044,8 @@ static ssize_t procGetTxpwrTblRead(struct file *filp, char __user *buf,
 	}
 
 	prAdapter = prGlueInfo->prAdapter;
+	prWifiVar = &prAdapter->rWifiVar;
+	ucBssIndex = prWifiVar->ucBssIdStartValue;
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
 	if (!prBssInfo) {
 		DBGLOG(REQ, WARN, "can't get the BssInfo from adapter");

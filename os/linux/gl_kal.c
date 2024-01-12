@@ -4749,13 +4749,16 @@ kalIoctl(struct GLUE_INFO *prGlueInfo,
 	 void *pvInfoBuf, uint32_t u4InfoBufLen,
 	 uint32_t *pu4QryInfoLen)
 {
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
 	return kalIoctlByBssIdx(
 		prGlueInfo,
 		pfnOidHandler,
 		pvInfoBuf,
 		u4InfoBufLen,
 		pu4QryInfoLen,
-		AIS_DEFAULT_BSS_INDEX);
+		prWifiVar->ucBssIdStartValue);
 }
 
 /**

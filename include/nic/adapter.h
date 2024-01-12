@@ -733,9 +733,7 @@ struct WIFI_VAR {
 #endif
 	enum ENUM_PWR_STATE aePwrState[MAX_BSSID_NUM + 1];
 
-	struct BSS_INFO arBssInfoPool[MAX_BSSID_NUM];
-
-	struct BSS_INFO rP2pDevInfo;
+	struct BSS_INFO arBssInfoPool[MAX_BSSID_NUM + 1];
 
 #if CFG_SUPPORT_NAN
 	struct _NAN_SPECIFIC_BSS_INFO_T
@@ -1039,6 +1037,7 @@ struct WIFI_VAR {
 	uint32_t u4MaxTxDeQLimit;
 	uint8_t ucAlwaysResetUsedRes;
 
+	uint8_t ucBssIdStartValue;
 	uint32_t u4NetifStopTh;
 	uint32_t u4NetifStartTh;
 #if CFG_ADJUST_NETIF_TH_BY_BAND

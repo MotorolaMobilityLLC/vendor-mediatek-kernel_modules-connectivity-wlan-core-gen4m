@@ -1224,7 +1224,7 @@ uint8_t secGetBssIdxByRfb(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
 
 	if (!prAdapter)
-		return AIS_DEFAULT_BSS_INDEX;
+		return 0;
 
 	if (prSwRfb) {
 		uint8_t	ucBssIndex =

@@ -3127,35 +3127,37 @@ uint32_t nicCfgChipCapMacCap(struct ADAPTER *prAdapter,
 {
 	struct CAP_MAC_CAP *prMacCap = (struct CAP_MAC_CAP *)pucEventBuf;
 
-	if (prMacCap->ucHwBssIdNum > 0
-	    && prMacCap->ucHwBssIdNum <= MAX_BSSID_NUM) {
+	if (prMacCap->ucHwBssIdNum > 0 &&
+	    prMacCap->ucHwBssIdNum <= HW_BSSID_NUM) {
 		prAdapter->ucHwBssIdNum = prMacCap->ucHwBssIdNum;
 		prAdapter->ucP2PDevBssIdx = prAdapter->ucHwBssIdNum;
-		prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx] =
-			&prAdapter->rWifiVar.rP2pDevInfo;
+	}
+
+	if (prMacCap->ucSwBssIdNum > 0) {
+		if (prMacCap->ucSwBssIdNum <= MAX_BSSID_NUM) {
+			prAdapter->ucSwBssIdNum = prMacCap->ucSwBssIdNum;
+			prAdapter->ucP2PDevBssIdx = prAdapter->ucSwBssIdNum;
+		} else {
+			/* p2p dev init faii if over MAX_BSSID_NUM */
+			prAdapter->ucP2PDevBssIdx = MAX_BSSID_NUM + 1;
+		}
 	}
 
 	if (prMacCap->ucWtblEntryNum > 0
 	    && prMacCap->ucWtblEntryNum <= WTBL_SIZE) {
 		prAdapter->ucWtblEntryNum = prMacCap->ucWtblEntryNum;
-		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum
-						  - 1;
+		prAdapter->ucTxDefaultWlanIndex = prAdapter->ucWtblEntryNum - 1;
 	}
 
 	prAdapter->ucWmmSetNum = prMacCap->ucWmmSet > 0 ?
 		prMacCap->ucWmmSet : 1;
 
-	/* WIFI7 Plugfest MU dynamic SMPS STR test update capability */
-	wlanCfgSetUint32(prAdapter, "Sta2gHtSmpsCap",
-			prAdapter->rWifiVar.ucHtSmps2g4);
-	wlanCfgSetUint32(prAdapter, "Sta5gHtSmpsCap",
-			prAdapter->rWifiVar.ucHtSmps5g);
-	wlanCfgSetUint32(prAdapter, "Sta6gHtSmpsCap",
-			prAdapter->rWifiVar.ucHtSmps6g);
-
 	DBGLOG(INIT, INFO,
-		"ucHwBssIdNum: %d, ucWtblEntryNum: %d, ucWmmSetNum: %d.\n",
+		"ucHwBssIdNum: %d, ucSwBssIdNum: %d(MAX=%d), ucP2PDevBssIdx: %d, ucWtblEntryNum: %d, ucWmmSetNum: %d.\n",
 			prMacCap->ucHwBssIdNum,
+			prMacCap->ucSwBssIdNum,
+			MAX_BSSID_NUM,
+			prAdapter->ucP2PDevBssIdx,
 			prMacCap->ucWtblEntryNum,
 			prMacCap->ucWmmSet);
 

@@ -2166,6 +2166,9 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 	prWifiVar = &prAdapter->rWifiVar;
 	/*specific case for p2p device scan*/
 	if (eNetworkType == NETWORK_TYPE_P2P && fgIsP2pDevice) {
+		if (!IS_BSS_INDEX_VALID(prAdapter->ucP2PDevBssIdx))
+			return NULL;
+
 		prBssInfo =
 			prAdapter->aprBssInfo[prAdapter->ucP2PDevBssIdx];
 
@@ -2196,7 +2199,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 
 	/* Find available HW set  with the order 1,2,..*/
 	do {
-		for (ucBssIndex = 0;
+		for (ucBssIndex = prWifiVar->ucBssIdStartValue;
 		     ucBssIndex < prAdapter->ucSwBssIdNum;
 		     ucBssIndex++) {
 			prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
@@ -2220,7 +2223,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 omac_choosed:
 
 	/* Find available BSS_INFO */
-	for (ucBssIndex = 0;
+	for (ucBssIndex = prWifiVar->ucBssIdStartValue;
 	     ucBssIndex < prAdapter->ucSwBssIdNum;
 	     ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];

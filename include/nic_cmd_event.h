@@ -1261,7 +1261,7 @@ struct CAP_MAC_CAP {
 	uint8_t ucHwBssIdNum; /* HW BSSID number */
 	uint8_t ucWmmSet; /* 1: AC0~3, 2: AC0~3 and AC10~13, ... */
 	uint8_t ucWtblEntryNum; /* WTBL entry number */
-	uint8_t ucReserved;
+	uint8_t ucSwBssIdNum; /* SW BssInfo number */
 };
 
 struct CAP_FRAME_BUF_CAP {
