@@ -414,8 +414,8 @@ struct MSDU_TOKEN_INFO {
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
 
 	/* control bss index packet number */
-	bool fgIsEnTxRingBssCtrl;
-	int32_t i4TxBssCnt[MAX_BSSID_NUM];
+	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
+	uint32_t u4MaxBssFreeCnt;
 };
 
 struct TX_CMD_REQ {
