@@ -2891,13 +2891,15 @@ uint32_t nicUniCmdBcnProt(struct ADAPTER *ad,
 			sizeof(tag->aucBcnProtKey));
 	}
 	tag->ucBcnProtKeyId = cmd->ucKeyId;
+	tag->ucBmcWlanIndex = cmd->ucWlanIndex;
 	DBGLOG(INIT, INFO,
-		"%s BIGTK Bss=%d, ucBcnProtEnabled=%d, ucBcnProtCipherId=%d, ucBcnProtKeyId=%d\n",
+		"%s BIGTK Bss=%d, ucBcnProtEnabled=%d, ucBcnProtCipherId=%d, ucBcnProtKeyId=%d, wlanidx=%d\n",
 		(cmd->ucAddRemove ? "Add" : "Remove"),
 		uni_cmd->ucBssInfoIdx,
 		tag->ucBcnProtEnabled,
 		tag->ucBcnProtCipherId,
-		tag->ucBcnProtKeyId);
+		tag->ucBcnProtKeyId,
+		tag->ucBmcWlanIndex);
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 

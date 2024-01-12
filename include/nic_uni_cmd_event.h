@@ -607,7 +607,8 @@ struct UNI_CMD_BSSINFO_BCN_PROT {
 	uint8_t ucBcnProtCipherId;
 	uint8_t aucBcnProtKey[32];
 	uint8_t ucBcnProtKeyId;
-	uint8_t aucReserved[3];
+	uint8_t ucBmcWlanIndex;
+	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* TxCMD Mode information (Tag 0x12) */

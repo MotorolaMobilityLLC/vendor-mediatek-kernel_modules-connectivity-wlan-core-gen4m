@@ -714,6 +714,7 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
 endif
 ccflags-y += -DCFG_MLO_LINK_PLAN_MODE=1
+CONFIG_BCN_PROT=y
 endif
 
 ifneq ($(filter MT7935,$(MTK_COMBO_CHIP)),)
