@@ -2011,6 +2011,9 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 			break;
 		}
 
+		/* Down the flag */
+		prAdapter->rWifiVar.ucChannelSwitchMode = 0;
+
 		DBGLOG(P2P, INFO,
 			"role(%d) b=%d f=%d w=%d s1=%d s2=%d\n",
 			role_idx,
@@ -6153,8 +6156,8 @@ void p2pFuncSwitchSapChannel(
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	uint8_t ucStaChannelNum = 0;
 	uint8_t ucSapChannelNum = 0;
-	enum ENUM_BAND eStaBand;
-	enum ENUM_BAND eSapBand;
+	enum ENUM_BAND eStaBand = BAND_NULL;
+	enum ENUM_BAND eSapBand = BAND_NULL;
 
 #if CFG_SUPPORT_DFS_MASTER && CFG_SUPPORT_IDC_CH_SWITCH
 	fgEnable = TRUE;
@@ -6170,8 +6173,23 @@ void p2pFuncSwitchSapChannel(
 
 	if (kalGetMediaStateIndicated(prAdapter->prGlueInfo)
 		!= MEDIA_STATE_CONNECTED) {
-		DBGLOG(P2P, WARN, "STA is not connected\n");
-		goto exit;
+		ucStaChannelNum = 0;
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+			0);
+#endif
+	} else {
+		/* Get current channel info */
+		ucStaChannelNum = prAdapter->prAisBssInfo->ucPrimaryChannel;
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
+		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
+			ucStaChannelNum);
+#endif
+		eStaBand = prAdapter->prAisBssInfo->eBand;
+		if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
+			DBGLOG(P2P, WARN, "STA has invalid band\n");
+			goto exit;
+		}
 	}
 
 	/* Assume only one sap bss info */
@@ -6188,13 +6206,6 @@ void p2pFuncSwitchSapChannel(
 		goto exit;
 	}
 
-	/* Get current channel info */
-	ucStaChannelNum = prAdapter->prAisBssInfo->ucPrimaryChannel;
-	eStaBand = prAdapter->prAisBssInfo->eBand;
-	if (eStaBand != BAND_2G4 && eStaBand != BAND_5G) {
-		DBGLOG(P2P, WARN, "STA has invalid band\n");
-		goto exit;
-	}
 	ucSapChannelNum = prP2pBssInfo->ucPrimaryChannel;
 	eSapBand = prP2pBssInfo->eBand;
 	if (eSapBand != BAND_2G4 && eSapBand != BAND_5G) {
@@ -6205,6 +6216,19 @@ void p2pFuncSwitchSapChannel(
 	if (eSapBand == BAND_5G)
 		fgIsSapDfs = rlmDomainIsLegalDfsChannel(prAdapter,
 			eSapBand, ucSapChannelNum);
+
+	/* STA is not connected */
+	if (ucStaChannelNum == 0) {
+		if (fgIsSapDfs) {
+			/* Choose one 5G channel */
+			ucStaChannelNum = 36;
+			eStaBand = BAND_5G;
+			DBGLOG(P2P, INFO, "[SCC] Choose a channel\n");
+		} else {
+			DBGLOG(P2P, WARN, "STA is not connected\n");
+			goto exit;
+		}
+	}
 
 #if CFG_SUPPORT_DBDC
 	fgDbDcModeEn = prAdapter->rWifiVar.fgDbDcModeEn;
