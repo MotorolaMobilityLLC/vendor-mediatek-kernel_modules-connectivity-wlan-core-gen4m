@@ -235,6 +235,7 @@ enum ENUM_MSG_ID {
 	MID_QM_ARP_MONITOR,
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 #endif /* ARP_MONITER_ENABLE */
+	MID_RSN_FW_DUMP,
 	MID_TOTAL_NUM
 };
 
@@ -406,6 +407,12 @@ struct MSG_SAA_EXTERNAL_AUTH_DONE {
 	struct MSG_HDR rMsgHdr;
 	struct STA_RECORD *prStaRec;
 	uint16_t status;
+};
+
+struct MSG_FW_DUMP {
+	struct MSG_HDR rMsgHdr; /* Must be the first member */
+	enum ENUM_FW_DUMP eType;
+	uint8_t ucBssIndex;
 };
 
 /* specific message data types */

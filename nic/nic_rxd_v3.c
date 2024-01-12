@@ -464,8 +464,7 @@ end:
 				prRxStatus)
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 			) {
-			DBGLOG(RSN, INFO, "Trigger WTBL dump for ICV error!\n");
-			rsnDumpWTBL(prAdapter);
+			rsnReqDumpWTBL(prAdapter, FW_DUMP_WTBL, ucBssIndex);
 			NIC_DUMP_ICV_RXD(prAdapter, prRxStatus);
 			if (IS_FEATURE_ENABLED(
 				prAdapter->rWifiVar.fgRxIcvErrDbg)
