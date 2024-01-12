@@ -6782,7 +6782,7 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 				struct TIMER *prTimer;
 
 				if (!prCurrStaRec)
-					continue;
+					break;
 
 				prTimer = &(prCurrStaRec->rDeauthTxDoneTimer);
 
