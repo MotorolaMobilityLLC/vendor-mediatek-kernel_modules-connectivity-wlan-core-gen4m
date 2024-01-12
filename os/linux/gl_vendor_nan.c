@@ -1291,6 +1291,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 					kfree(pNanPublishReq);
 					return -EFAULT;
 				}
+				memset(g_aucNanServiceName, 0,
+					NAN_MAX_SERVICE_NAME_LEN);
 				memcpy(pNanPublishReq->service_name,
 				       outputTlv.value, outputTlv.length);
 				memcpy(g_aucNanServiceName,
@@ -1653,6 +1655,8 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 					kfree(pNanSubscribeRsp);
 					return -EFAULT;
 				}
+				memset(g_aucNanServiceName, 0,
+					NAN_MAX_SERVICE_NAME_LEN);
 				memcpy(pNanSubscribeReq->service_name,
 				       outputTlv.value, outputTlv.length);
 				memcpy(g_aucNanServiceName,
