@@ -11309,6 +11309,9 @@ int priv_driver_set_bf(IN struct net_device *prNetDev, IN char *pcCommand,
 #if (CFG_SUPPORT_802_11AX == 1)
 		prGlueInfo->prAdapter->rWifiVar.ucStaHeBfee = ucBfEnable;
 #endif /* CFG_SUPPORT_802_11AX == 1 */
+#if (CFG_SUPPORT_802_11BE == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucStaEhtBfee = ucBfEnable;
+#endif /* CFG_SUPPORT_802_11BE == 1 */
 		prGlueInfo->prAdapter->rWifiVar.ucStaVhtMuBfee = ucBfEnable;
 		DBGLOG(REQ, ERROR, "ucBfEnable = %d\n", ucBfEnable);
 	} else {
@@ -11388,6 +11391,9 @@ int priv_driver_set_amsdu_tx(IN struct net_device *prNetDev, IN char *pcCommand,
 #if (CFG_SUPPORT_802_11AX == 1)
 		prGlueInfo->prAdapter->rWifiVar.ucHeAmsduInAmpduTx = ucAmsduTx;
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucEhtAmsduInAmpduTx = ucAmsduTx;
+#endif
 		DBGLOG(REQ, LOUD, "ucAmsduTx = %d\n", ucAmsduTx);
 	} else {
 		DBGLOG(INIT, ERROR, "iwpriv wlanXX driver SET_NSS <nss>\n");
@@ -11429,6 +11435,9 @@ int priv_driver_set_amsdu_rx(IN struct net_device *prNetDev, IN char *pcCommand,
 		prGlueInfo->prAdapter->rWifiVar.ucVhtAmsduInAmpduRx = ucAmsduRx;
 #if (CFG_SUPPORT_802_11AX == 1)
 		prGlueInfo->prAdapter->rWifiVar.ucHeAmsduInAmpduRx = ucAmsduRx;
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+		prGlueInfo->prAdapter->rWifiVar.ucEhtAmsduInAmpduRx = ucAmsduRx;
 #endif
 		DBGLOG(REQ, LOUD, "ucAmsduRx = %d\n", ucAmsduRx);
 	} else {
@@ -11745,6 +11754,8 @@ int priv_driver_set_trx_ba_size(IN struct net_device *prNetDev,
 			i4Type = WLAN_TYPE_LEGACY;
 		else if (strnicmp(apcArgv[1], "HE", strlen("HE")) == 0)
 			i4Type = WLAN_TYPE_HE;
+		else if (strnicmp(apcArgv[1], "EHT", strlen("EHT")) == 0)
+			i4Type = WLAN_TYPE_EHT;
 
 		if (i4Type != WLAN_TYPE_UNKNOWN) {
 			u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Parse);

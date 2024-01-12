@@ -212,6 +212,9 @@ uint8_t mtk_reason_to_type[ROAMING_REASON_NUM] = {
 	(prBssDesc->fgIsHEPresent ? \
 	(BSS_FULL_SCORE/(prAdapter->rWifiVar).ucApSelAxScoreDiv) : 0)):0)
 #endif
+#if (CFG_SUPPORT_802_11BE == 1)
+/* TODO */
+#endif
 
 #define CALCULATE_SCORE_BY_PROBE_RSP(prBssDesc, eRoamType) \
 	(gasMtkWeightConfig[eRoamType].ucProbeRespWeight * \
@@ -955,6 +958,9 @@ uint16_t scanCalculateTotalScore(struct ADAPTER *prAdapter,
 	       scanCalculateScoreByBlackList(prAdapter, prBssDesc, eRoamType);
 #if (CFG_SUPPORT_802_11AX == 1)
 	u2AxApScore = CALCULATE_SCORE_BY_AX_AP(prAdapter, prBssDesc, eRoamType);
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	/* TODO */
 #endif
 	u2TputScore = scanCalculateScoreByTput(prAdapter, prBssDesc, eRoamType);
 

@@ -153,7 +153,11 @@ static void cnmStaRecCmdHeContentFill(
 	struct STA_RECORD *prStaRec,
 	struct CMD_UPDATE_STA_RECORD *prCmdContent);
 #endif
-
+#if (CFG_SUPPORT_802_11BE == 1)
+static void cnmStaRecCmdEhtContentFill(
+	struct STA_RECORD *prStaRec,
+	struct CMD_UPDATE_STA_RECORD *prCmdContent);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1125,6 +1129,16 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	/* AMSDU in AMPDU global configuration */
 	prCmdContent->ucTxAmsduInAmpdu = prAdapter->rWifiVar.ucAmsduInAmpduTx;
 	prCmdContent->ucRxAmsduInAmpdu = prAdapter->rWifiVar.ucAmsduInAmpduRx;
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE) {
+		/* EHT peer AMSDU in AMPDU configuration */
+		prCmdContent->ucTxAmsduInAmpdu &=
+			prAdapter->rWifiVar.ucEhtAmsduInAmpduTx;
+		prCmdContent->ucRxAmsduInAmpdu &=
+		prAdapter->rWifiVar.ucEhtAmsduInAmpduRx;
+	} else
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	/* prStaRec->ucDesiredPhyTypeSet firm in */
 		/* bssDetermineStaRecPhyTypeSet() in advance */
@@ -1153,6 +1167,14 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 
 	prCmdContent->u4TxMaxAmsduInAmpduLen
 		= prAdapter->rWifiVar.u4TxMaxAmsduInAmpduLen;
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11BE) {
+		prCmdContent->rBaSize.rEhtBaSize.u2RxBaSize =
+				prAdapter->rWifiVar.u2RxEhtBaSize;
+		prCmdContent->rBaSize.rEhtBaSize.u2TxBaSize =
+				prAdapter->rWifiVar.u2TxEhtBaSize;
+	} else
+#endif
 #if (CFG_SUPPORT_802_11AX == 1)
 	if (prStaRec->ucDesiredPhyTypeSet & PHY_TYPE_SET_802_11AX) {
 		prCmdContent->rBaSize.rHeBaSize.u2RxBaSize =
@@ -1190,6 +1212,9 @@ void cnmStaSendUpdateCmd(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	prCmdContent->u2He6gBandCapInfo = prStaRec->u2He6gBandCapInfo;
 #endif
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	cnmStaRecCmdEhtContentFill(prStaRec, prCmdContent);
 #endif
 
 	log_dbg(REQ, TRACE, "Update StaRec[%u] WIDX[%u] State[%u] Type[%u] BssIdx[%u] AID[%u]\n",
@@ -1871,6 +1896,19 @@ static void cnmStaRecCmdHeContentFill(
 		CPU_TO_LE16(prStaRec->u2HeRxMcsMapBW80P80);
 	prCmdContent->u2HeTxMcsMapBW80P80 =
 		CPU_TO_LE16(prStaRec->u2HeTxMcsMapBW80P80);
+}
+#endif
+
+#if (CFG_SUPPORT_802_11BE == 1)
+static void cnmStaRecCmdEhtContentFill(
+	struct STA_RECORD *prStaRec,
+	struct CMD_UPDATE_STA_RECORD *prCmdContent)
+{
+	prCmdContent->ucVersion = CMD_UPDATE_STAREC_VER1;
+	memcpy(prCmdContent->ucEhtMacCapInfo, prStaRec->ucEhtMacCapInfo,
+		EHT_MAC_CAP_BYTE_NUM);
+	memcpy(prCmdContent->ucEhtPhyCapInfo, prStaRec->ucEhtPhyCapInfo,
+		EHT_PHY_CAP_BYTE_NUM);
 }
 #endif
 
