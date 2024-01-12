@@ -1341,10 +1341,21 @@ kalGetIPv4Address(IN struct net_device *prDev,
 		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv4Addrs,
 		  OUT uint32_t *pu4NumOfIpv4Addr);
 
+#if IS_ENABLED(CONFIG_IPV6)
 u_int8_t
 kalGetIPv6Address(IN struct net_device *prDev,
 		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv6Addrs,
 		  OUT uint32_t *pu4NumOfIpv6Addr);
+#else
+static inline u_int8_t
+kalGetIPv6Address(IN struct net_device *prDev,
+		  IN uint32_t u4MaxNumOfAddr, OUT uint8_t *pucIpv6Addrs,
+		  OUT uint32_t *pu4NumOfIpv6Addr) {
+	/* Not support IPv6 */
+	*pu4NumOfIpv6Addr = 0;
+	return 0;
+}
+#endif /* IS_ENABLED(CONFIG_IPV6) */
 
 void kalSetNetAddressFromInterface(IN struct GLUE_INFO
 				   *prGlueInfo,
