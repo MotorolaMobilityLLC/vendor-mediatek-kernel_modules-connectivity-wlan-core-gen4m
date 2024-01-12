@@ -163,7 +163,13 @@
 #define CHNL_LIST_SZ_5G         14
 
 /*! CNM(STA_RECORD_T) related definition */
-#define CFG_STA_REC_NUM         27
+#ifdef CFG_STA_REC_MAXIMUM
+#define CFG_STA_REC_NUM                      CFG_STA_REC_MAXIMUM
+#else
+#define CFG_STA_REC_NUM                      27
+#endif
+
+
 #define CFG_MLD_STAREC_NUM      128
 
 /* PHY TYPE bit definitions */
