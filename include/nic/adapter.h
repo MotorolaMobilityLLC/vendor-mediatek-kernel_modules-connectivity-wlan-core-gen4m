@@ -1576,6 +1576,10 @@ struct WIFI_VAR {
 	uint32_t u4PagePoolMaxCnt;
 #endif
 
+#if (CFG_HW_DETECT_REPORT == 1)
+	uint8_t fgHwDetectReportEn;
+#endif /* CFG_HW_DETECT_REPORT */
+
 	uint16_t u2ListenInterval;
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 	int8_t icTxPwrEnvLmtMin;
