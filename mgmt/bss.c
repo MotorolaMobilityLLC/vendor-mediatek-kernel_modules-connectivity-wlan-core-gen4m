@@ -1403,10 +1403,6 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 	for (ucBssIndex = 0; ucBssIndex <= prAdapter->ucP2PDevBssIdx;
 	     ucBssIndex++) {
 
-		if ((ucBssIndex >= prAdapter->ucHwBssIdNum)
-		    && (ucBssIndex != prAdapter->ucP2PDevBssIdx))
-			continue;
-
 		if (!IS_NET_ACTIVE(prAdapter, ucBssIndex))
 			continue;
 
