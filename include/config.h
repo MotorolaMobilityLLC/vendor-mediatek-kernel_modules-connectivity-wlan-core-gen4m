@@ -1358,6 +1358,17 @@
 #ifndef CFG_SUPPORT_SMART_GEAR
 #define CFG_SUPPORT_SMART_GEAR 1
 #endif
+
+/*------------------------------------------------------------------------------
+ * Flag used for AIS persistent netdev creating.
+ * Value 0: Create & register AIS netdev for each wifi on,
+ *          and unregister & free AIS netdev for each wifi off.
+ * Value 1: Create & register AIS netdev for first wifi on,
+ *          and unregister & free AIS netdev during module exit.
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_PERSIST_NETDEV 1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

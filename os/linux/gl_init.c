@@ -100,6 +100,10 @@ static enum ENUM_NVRAM_STATE g_NvramFsm = NVRAM_STATE_INIT;
 
 uint8_t g_aucNvram[MAX_CFG_FILE_WIFI_REC_SIZE];
 struct wireless_dev *gprWdev[KAL_AIS_NUM];
+
+#if CFG_SUPPORT_PERSIST_NETDEV
+static u_int8_t g_fgAisNetdevRegistered;
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -985,8 +989,13 @@ static void wlanFreeNetDev(void)
 	uint32_t u4Idx = 0;
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
-		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
+		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+			DBGLOG(INIT, INFO, "free_netdev wlan%d netdev start.\n",
+					u4Idx);
 			free_netdev(gprWdev[u4Idx]->netdev);
+			DBGLOG(INIT, INFO, "free_netdev wlan%d netdev end.\n",
+					u4Idx);
+		}
 	}
 }
 
@@ -1043,6 +1052,14 @@ static int wlanGetDevIdx(struct net_device *prDev)
 			u4WlanDevNum++;
 			return i;
 		}
+#if CFG_SUPPORT_PERSIST_NETDEV
+		else if (arWlanDevInfo[i].prDev == prDev) {
+			DBGLOG(INIT, INFO,
+				"PERSIST_NETDEV: found existed prDev!, return arWlanDevInfo[%d]\n",
+				i);
+			return i;
+		}
+#endif
 	}
 
 	return -1;
@@ -1975,6 +1992,14 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 			wlanBindBssIdxToNetInterface(prGlueInfo,
 				     u4Idx,
 				     (void *)gprWdev[u4Idx]->netdev);
+#if CFG_SUPPORT_PERSIST_NETDEV
+			if (g_fgAisNetdevRegistered) {
+				DBGLOG(INIT, INFO,
+					"PERSIST_NETDEV[%d]: Already registered netdev.\n",
+					u4Idx);
+				continue;
+			}
+#endif
 			if (register_netdev(gprWdev[u4Idx]->netdev)
 				< 0) {
 				DBGLOG(INIT, ERROR,
@@ -1988,6 +2013,12 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 
 		if (i4DevIdx != -1)
 			prGlueInfo->fgIsRegistered = TRUE;
+#if CFG_SUPPORT_PERSIST_NETDEV
+		if (i4DevIdx != -1)
+			g_fgAisNetdevRegistered = TRUE;
+		else
+			g_fgAisNetdevRegistered = FALSE;
+#endif
 	} while (FALSE);
 
 	return i4DevIdx;	/* success */
@@ -2006,7 +2037,9 @@ static int32_t wlanNetRegister(struct wireless_dev *prWdev)
 static void wlanNetUnregister(struct wireless_dev *prWdev)
 {
 	struct GLUE_INFO *prGlueInfo;
+#if !CFG_SUPPORT_PERSIST_NETDEV
 	uint32_t u4Idx = 0;
+#endif
 
 	if (!prWdev) {
 		DBGLOG(INIT, ERROR, "The device context is NULL\n");
@@ -2015,6 +2048,7 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 
 	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(prWdev->wiphy);
 
+#if !CFG_SUPPORT_PERSIST_NETDEV
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
 		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
 			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
@@ -2023,6 +2057,7 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 	}
 
 	prGlueInfo->fgIsRegistered = FALSE;
+#endif
 
 #if CFG_SUPPORT_SNIFFER
 	if (prGlueInfo->prMonDevHandler) {
@@ -2506,6 +2541,9 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	 * disconnection occur. That cause some issue.
 	 */
 	prWiphy = prWdev->wiphy;
+#if CFG_SUPPORT_PERSIST_NETDEV
+	if (!g_fgAisNetdevRegistered) {
+#endif
 	for (i = 0; i < KAL_AIS_NUM; i++) {
 		if (gprWdev[i]) {
 			memset(gprWdev[i], 0, sizeof(struct wireless_dev));
@@ -2513,6 +2551,10 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 			gprWdev[i]->iftype = NL80211_IFTYPE_STATION;
 		}
 	}
+#if CFG_SUPPORT_PERSIST_NETDEV
+	}
+#endif
+
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	/* XXX: ref from cfg80211_regd_set_wiphy().
 	 * The error case: Sometimes after unplug/plug usb, the wlan0 STA can't
@@ -2545,7 +2587,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		DBGLOG(INIT, ERROR,
 		       "Allocating memory to adapter failed\n");
 		glClearHifInfo(prGlueInfo);
-		goto netcreate_err;
+		return NULL;
 	}
 
 	prChipInfo = ((struct mt66xx_hif_driver_data *)
@@ -2569,17 +2611,33 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	for (i = 0; i < KAL_AIS_NUM; i++) {
 		struct net_device *prDevHandler;
 
-#if KERNEL_VERSION(3, 18, 0) <= LINUX_VERSION_CODE
-		prDevHandler =
-		alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
-			prInfName, NET_NAME_PREDICTABLE, ether_setup,
-			CFG_MAX_TXQ_NUM);
-#else
-		prDevHandler =
-		alloc_netdev_mq(sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
-			prInfName,
-			ether_setup, CFG_MAX_TXQ_NUM);
+#if CFG_SUPPORT_PERSIST_NETDEV
+		if (!g_fgAisNetdevRegistered) {
+			DBGLOG(INIT, INFO, "netdev not allocated yet.\n");
+			prDevHandler = alloc_netdev_mq(
+				sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
+				prInfName,
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+				NET_NAME_PREDICTABLE,
 #endif
+				ether_setup,
+				CFG_MAX_TXQ_NUM);
+		} else {
+			DBGLOG(INIT, INFO,
+				"PERSIST_NETDEV[%d]: netdev already allocated.\n",
+				i);
+			prDevHandler = gprWdev[i]->netdev;
+		}
+#else
+		prDevHandler = alloc_netdev_mq(
+			sizeof(struct NETDEV_PRIVATE_GLUE_INFO),
+			prInfName,
+#if KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE
+			NET_NAME_PREDICTABLE,
+#endif
+			ether_setup,
+			CFG_MAX_TXQ_NUM);
+#endif /* end of CFG_SUPPORT_PERSIST_NETDEV */
 
 		if (!prDevHandler) {
 			DBGLOG(INIT, ERROR,
@@ -2636,7 +2694,9 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 #endif
 
 	prGlueInfo->ePowerState = ParamDeviceStateD0;
+#if !CFG_SUPPORT_PERSIST_NETDEV
 	prGlueInfo->fgIsRegistered = FALSE;
+#endif
 	prGlueInfo->prScanRequest = NULL;
 	prGlueInfo->prSchedScanRequest = NULL;
 
@@ -2709,13 +2769,6 @@ netcreate_err:
 		wlanAdapterDestroy(prAdapter);
 		prAdapter = NULL;
 	}
-
-	for (i = 0; i < KAL_AIS_NUM; i++) {
-		if (gprWdev[i]->netdev != NULL) {
-			free_netdev(gprWdev[i]->netdev);
-			gprWdev[i]->netdev = NULL;
-		}
-	}
 	prGlueInfo->prDevHandler = NULL;
 
 	return prWdev;
@@ -2768,8 +2821,9 @@ void wlanNetDestroy(struct wireless_dev *prWdev)
 	/* Free net_device and private data, which are allocated by
 	 * alloc_netdev().
 	 */
+#if !CFG_SUPPORT_PERSIST_NETDEV
 	wlanFreeNetDev();
-
+#endif
 	/* gPrDev is assigned by prGlueInfo->prDevHandler,
 	 * set NULL to this global variable.
 	 */
@@ -4896,8 +4950,14 @@ static void wlanRemove(void)
 #endif
 
 	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+#if CFG_SUPPORT_PERSIST_NETDEV
+		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev == NULL)
+			DBGLOG(INIT, INFO,
+				"gprWdev[%d]->netdev is NULL.\n", u4Idx);
+#else
 		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev)
 			gprWdev[u4Idx]->netdev = NULL;
+#endif /* CFG_SUPPORT_PERSIST_NETDEV */
 	}
 
 	/* 4 <9> Unregister notifier callback */
@@ -4943,6 +5003,10 @@ static int initWlan(void)
 
 
 	DBGLOG(INIT, INFO, "initWlan\n");
+
+#if CFG_SUPPORT_PERSIST_NETDEV
+	g_fgAisNetdevRegistered = FALSE;
+#endif
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 
@@ -5022,6 +5086,31 @@ static int initWlan(void)
 /* 1 Module Leave Point */
 static void exitWlan(void)
 {
+#if CFG_SUPPORT_PERSIST_NETDEV
+	uint32_t u4Idx = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct wiphy *wiphy = NULL;
+
+	wiphy = wlanGetWiphy();
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+
+	for (u4Idx = 0; u4Idx < KAL_AIS_NUM; u4Idx++) {
+		if (gprWdev[u4Idx] && gprWdev[u4Idx]->netdev) {
+			wlanClearDevIdx(gprWdev[u4Idx]->netdev);
+			DBGLOG(INIT, INFO, "Unregister wlan%d netdev start.\n",
+					u4Idx);
+			unregister_netdev(gprWdev[u4Idx]->netdev);
+			DBGLOG(INIT, INFO, "Unregister wlan%d netdev end.\n",
+					u4Idx);
+		}
+	}
+
+	prGlueInfo->fgIsRegistered = FALSE;
+	g_fgAisNetdevRegistered = FALSE;
+
+	DBGLOG(INIT, INFO, "Free wlan device..\n");
+	wlanFreeNetDev();
+#endif
 	kalFbNotifierUnReg();
 	/* printk("remove %p\n", wlanRemove); */
 #if CFG_CHIP_RESET_SUPPORT
