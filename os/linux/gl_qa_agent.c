@@ -7336,6 +7336,7 @@ static int32_t HQA_MUGetLQ(struct net_device *prNetDev,
 	prInBuf = kmalloc(sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 			  GFP_KERNEL);
 	ASSERT(prInBuf);
+	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
 
 	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_MUGetLQ\n");
 
