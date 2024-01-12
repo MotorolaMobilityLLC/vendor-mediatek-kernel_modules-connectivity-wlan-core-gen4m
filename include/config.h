@@ -914,8 +914,6 @@
 #define CFG_DBG_MGT_BUF                         1
 #endif
 
-#define CFG_RX_PKTS_DUMP                        0
-
 #ifndef CFG_SUPPORT_STATISTICS
 #define CFG_SUPPORT_STATISTICS			1
 #endif

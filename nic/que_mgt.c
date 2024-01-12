@@ -3683,26 +3683,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		/* TODO: (Tehuang) Check if relaying */
 		prCurrSwRfb->eDst = RX_PKT_DESTINATION_HOST;
 
-		/* Decide the Destination */
-#if CFG_RX_PKTS_DUMP
-		if (prAdapter->rRxCtrl.u4RxPktsDumpTypeMask & BIT(
-			    HIF_RX_PKT_TYPE_DATA)) {
-			log_dbg(SW4, INFO,
-				"QM RX DATA: net _u sta idx %u wlan idx %u",
-				prCurrSwRfb->ucStaRecIdx,
-				prCurrSwRfb->ucWlanIdx);
-			log_dbg(SW4, INFO,
-				" ssn _u tid %u ptype %u 11 %u\n",
-				prCurrSwRfb->ucTid,
-				prCurrSwRfb->ucPacketType,
-				prCurrSwRfb->fgReorderBuffer);
-
-			DBGLOG_MEM8(SW4, TRACE,
-				(uint8_t *) prCurrSwRfb->pvHeader,
-				prCurrSwRfb->u2PacketLen);
-		}
-#endif
-
 		fgIsBMC = (prCurrSwRfb->fgIsBC | prCurrSwRfb->fgIsMC);
 		fgIsHTran = FALSE;
 

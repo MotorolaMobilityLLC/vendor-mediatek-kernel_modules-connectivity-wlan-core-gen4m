@@ -2262,56 +2262,6 @@ void nicRxProcessMgmtPacket(struct ADAPTER *prAdapter,
 	ucSubtype = (*(uint8_t *) (prSwRfb->pvHeader) &
 		     MASK_FC_SUBTYPE) >> OFFSET_OF_FC_SUBTYPE;
 
-#if CFG_RX_PKTS_DUMP
-	{
-		struct WLAN_MAC_MGMT_HEADER *prWlanMgmtHeader;
-		uint16_t u2TxFrameCtrl;
-
-		u2TxFrameCtrl = (*(uint8_t *) (prSwRfb->pvHeader) &
-				 MASK_FRAME_TYPE);
-
-#if ((CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_SYSDVT == 1))
-	if (fgEfuseCtrlAxOn == 1) {
-		if (RXM_IS_TRIGGER_FRAME(u2TxFrameCtrl)) {
-			if (prAdapter->fgEnShowHETrigger) {
-				DBGLOG(NIC, STATE,
-						"HE Trigger --------------\n");
-				dumpMemory8((uint8_t *)prSwRfb->prRxStatus,
-					prSwRfb->u2RxByteCount);
-				DBGLOG(NIC, STATE,
-						"HE Trigger end --------------\n");
-			}
-			nicRxReturnRFB(prAdapter, prSwRfb);
-			return;
-		}
-	}
-#endif /* CFG_SUPPORT_802_11AX == 1 */
-
-		if (prAdapter->rRxCtrl.u4RxPktsDumpTypeMask & BIT(
-			    HIF_RX_PKT_TYPE_MANAGEMENT)) {
-			if (u2TxFrameCtrl == MAC_FRAME_BEACON
-			    || u2TxFrameCtrl == MAC_FRAME_PROBE_RSP) {
-
-				prWlanMgmtHeader =
-					(struct WLAN_MAC_MGMT_HEADER *) (
-							   prSwRfb->pvHeader);
-
-				DBGLOG(SW4, INFO,
-					"QM RX MGT: net %u sta idx %u wlan idx %u ssn %u ptype %u subtype %u 11 %u\n",
-				  prSwRfb->prStaRec->ucBssIndex,
-				  prSwRfb->ucStaRecIdx,
-				  prSwRfb->ucWlanIdx,
-				  prWlanMgmtHeader->u2SeqCtrl,
-				  /* The new SN of the frame */
-				  prSwRfb->ucPacketType, ucSubtype);
-
-				DBGLOG_MEM8(SW4, TRACE,
-					(uint8_t *) prSwRfb->pvHeader,
-					prSwRfb->u2PacketLen);
-			}
-		}
-	}
-#endif
 #if CFG_SUPPORT_802_11W
 	if (prSwRfb->fgIcvErr) {
 		if (prSwRfb->ucSecMode == CIPHER_SUITE_BIP ||

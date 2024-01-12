@@ -7045,13 +7045,6 @@ wlanoidSetSwCtrlWrite(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_SWCR
 	case 0x1002:
-#if CFG_RX_PKTS_DUMP
-		if (u2SubId == 0x0) {
-			if (u4Data)
-				u4Data = BIT(HIF_RX_PKT_TYPE_MANAGEMENT);
-			swCrFrameCheckEnable(prAdapter, u4Data);
-		}
-#endif
 		if (u2SubId == 0x1) {
 			u_int8_t fgIsEnable;
 			uint8_t ucType;

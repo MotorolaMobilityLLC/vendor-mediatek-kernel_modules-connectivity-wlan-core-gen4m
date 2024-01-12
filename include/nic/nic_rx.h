@@ -1039,10 +1039,6 @@ struct RX_CTRL {
 	uint64_t au8RROStatistics[RRO_COUNTER_NUM + 1];
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 
-#if CFG_RX_PKTS_DUMP
-	uint32_t u4RxPktsDumpTypeMask;
-#endif
-
 	/* Store SysTime of Last Rx */
 	uint32_t u4LastRxTime[MAX_BSSID_NUM];
 

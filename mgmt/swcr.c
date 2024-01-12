@@ -423,11 +423,6 @@ void swCtrlCmdCategory0(struct ADAPTER *prAdapter,
 
 			break;
 #endif
-#if CFG_RX_PKTS_DUMP
-		case SWCTRL_RX_PKTS_DUMP:
-			prAdapter->rRxCtrl.u4RxPktsDumpTypeMask = g_au4SwCr[1];
-			break;
-#endif
 		case SWCTRL_RX_FILTER: {
 			uint32_t u4rxfilter;
 			u_int8_t fgUpdate = FALSE;
@@ -1187,9 +1182,6 @@ void swCrFrameCheckEnable(struct ADAPTER *prAdapter,
 			  uint32_t u4DumpType)
 {
 	g_u4SwcrDebugFrameDumpType = u4DumpType;
-#if CFG_RX_PKTS_DUMP
-	prAdapter->rRxCtrl.u4RxPktsDumpTypeMask = u4DumpType;
-#endif
 }
 
 void swCrDebugInit(struct ADAPTER *prAdapter)
