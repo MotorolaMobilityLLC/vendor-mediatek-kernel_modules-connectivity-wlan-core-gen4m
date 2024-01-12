@@ -8003,8 +8003,12 @@ int mtk_cfg_change_beacon(struct wiphy *wiphy,
 	return mtk_p2p_cfg80211_change_beacon(wiphy, dev, info);
 }
 
-int mtk_cfg_stop_ap(struct wiphy *wiphy,
-		    struct net_device *dev)
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev,
+	unsigned int link_id)
+#else
+int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -8041,10 +8045,18 @@ int mtk_cfg_set_wiphy_params(struct wiphy *wiphy,
 	return mtk_p2p_cfg80211_set_wiphy_params(wiphy, changed);
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
+			     struct net_device *dev,
+			     unsigned int link_id,
+			     const u8 *peer,
+			     const struct cfg80211_bitrate_mask *mask)
+#else
 int mtk_cfg_set_bitrate_mask(struct wiphy *wiphy,
 			     struct net_device *dev,
 			     const u8 *peer,
 			     const struct cfg80211_bitrate_mask *mask)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 

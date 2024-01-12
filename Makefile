@@ -1154,6 +1154,12 @@ else
 ccflags-y += -DCFG_MTK_MDDP_SUPPORT=0
 endif
 
+ifneq ($(CONFIG_MTK_ADVANCED_80211_MLO),)
+ccflags-y += -DCFG_ADVANCED_80211_MLO=1
+else
+ccflags-y += -DCFG_ADVANCED_80211_MLO=0
+endif
+
 ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 ccflags-y += -I$(src)/os/$(os)/hif/sdio/include
 else ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)

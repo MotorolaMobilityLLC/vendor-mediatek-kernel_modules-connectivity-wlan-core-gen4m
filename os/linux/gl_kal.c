@@ -149,6 +149,16 @@ extern uint32_t get_wifi_standalone_log_mode(void) __attribute__((weak));
 #define RESTORE_VOLT 3650
 #endif
 
+static uint8_t aucBandTranslate[BAND_NUM] = {
+	KAL_BAND_2GHZ,
+	KAL_BAND_2GHZ,
+	KAL_BAND_5GHZ
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	,
+	KAL_BAND_6GHZ
+#endif
+};
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2219,13 +2229,16 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 	struct PARAM_SSID ssid = {0};
 	struct ieee80211_channel *prChannel = NULL;
 	struct cfg80211_bss *bss = NULL;
-	uint8_t ucChannelNum;
+	uint8_t chnlNum, band;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t fgScanAborted = FALSE;
 	struct net_device *prDevHandler;
 	struct CONNECTION_SETTINGS *prConnSettings = NULL;
 	struct FT_IES *prFtIEs;
 	enum ENUM_BAND eBand;
+#if (CFG_ADVANCED_80211_MLO == 1)
+	uint8_t ucLinkIdx = 0;
+#endif
 
 #if KERNEL_VERSION(4, 12, 0) <= CFG80211_VERSION_CODE
 	struct cfg80211_roam_info rRoamInfo = { 0 };
@@ -2296,42 +2309,29 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				15; /* only loop 15 times to avoid dead loop */
 
 			/* retrieve channel */
-			ucChannelNum =
-				wlanGetChannelNumberByNetwork(
+			chnlNum = wlanGetChannelNumberByNetwork(
 					prGlueInfo->prAdapter,
 					ucBssIndex);
-			eBand =
-				wlanGetBandIndexByNetwork(
+			eBand = wlanGetBandIndexByNetwork(
 					prGlueInfo->prAdapter,
 					ucBssIndex);
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			if (eBand == BAND_6G) {
-				prChannel =
-					ieee80211_get_channel(
-						wlanGetWiphy(),
-						ieee80211_channel_to_frequency
-						(ucChannelNum, KAL_BAND_6GHZ));
-			} else
-#endif
-			if (ucChannelNum <= 14) {
-				prChannel =
-					ieee80211_get_channel(
-						wlanGetWiphy(),
-						ieee80211_channel_to_frequency
-						(ucChannelNum, KAL_BAND_2GHZ));
-			} else {
-				prChannel =
-					ieee80211_get_channel(
-						wlanGetWiphy(),
-						ieee80211_channel_to_frequency
-						(ucChannelNum, KAL_BAND_5GHZ));
+			if (eBand > BAND_NULL && eBand < BAND_NUM)
+				band = aucBandTranslate[eBand];
+			else {
+				DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
+				return;
 			}
+
+			prChannel = ieee80211_get_channel(
+					wlanGetWiphy(),
+					ieee80211_channel_to_frequency(
+						chnlNum, band));
 
 			if (!prChannel)
 				DBGLOG(SCN, ERROR,
 				       "prChannel is NULL and ucChannelNum is %d\n",
-				       ucChannelNum);
+				       chnlNum);
 
 			/* ensure BSS exists */
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
@@ -2404,7 +2404,29 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 				uint8_t ucAuthorized = pvBuf ?
 					*(uint8_t *) pvBuf : FALSE;
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+				struct BSS_INFO *prBssInfo =
+					aisGetAisBssInfo(prAdapter, ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				struct BSS_DESC *bssDesc = aisGetTargetBssDesc(
+						prAdapter, ucBssIndex);
+
+				if (bssDesc)
+					rRoamInfo.ap_mld_addr =
+						bssDesc->rMlInfo.aucMldAddr;
+#else
+
+				rRoamInfo.ap_mld_addr = arBssid;
+#endif
+				if (prBssInfo)
+					rRoamInfo.links[ucLinkIdx].addr =
+						prBssInfo->aucOwnMacAddr;
+				rRoamInfo.links[ucLinkIdx].bssid = arBssid;
+				rRoamInfo.links[ucLinkIdx].bss = bss;
+				rRoamInfo.links[ucLinkIdx].channel = prChannel;
+#else
 				rRoamInfo.bss = bss;
+#endif
 				rRoamInfo.req_ie = prConnSettings->aucReqIe;
 				rRoamInfo.req_ie_len =
 					prConnSettings->u4ReqIeLength;
@@ -2556,8 +2578,7 @@ kalIndicateStatusAndComplete(IN struct GLUE_INFO
 					prGlueInfo->prAdapter->rLinkQuality
 					.rLq[ucBssIndex].u2TxLinkSpeed;
 
-				prTemp =
-					aisGetTargetBssDesc(
+				prTemp = aisGetTargetBssDesc(
 						prGlueInfo->prAdapter,
 						ucBssIndex);
 
@@ -10291,27 +10312,20 @@ void kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
 	struct cfg80211_chan_def chandef;
 	struct ieee80211_channel *prChannel = NULL;
 	enum nl80211_channel_type rChannelType;
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eBand == BAND_6G) {
-		prChannel =
-			ieee80211_get_channel(
-				wlanGetWiphy(),
-				ieee80211_channel_to_frequency
-				(ucChannelNum, KAL_BAND_6GHZ));
-	} else
+	uint8_t band = 0;
+#if (CFG_ADVANCED_80211_MLO == 1)
+	uint8_t linkIdx = 0;
 #endif
-	if (ucChannelNum <= 14) {
-		prChannel =
-		    ieee80211_get_channel(wlanGetWiphy(),
-			ieee80211_channel_to_frequency(ucChannelNum,
-			KAL_BAND_2GHZ));
-	} else {
-		prChannel =
-		    ieee80211_get_channel(wlanGetWiphy(),
-			ieee80211_channel_to_frequency(ucChannelNum,
-			KAL_BAND_5GHZ));
+
+	if (eBand > BAND_NULL && eBand < BAND_NUM)
+		band = aucBandTranslate[eBand];
+	else {
+		DBGLOG(REQ, ERROR, "Invalid band:%d!\n", eBand);
+		return;
 	}
+	prChannel = ieee80211_get_channel(
+			wlanGetWiphy(),
+			ieee80211_channel_to_frequency(ucChannelNum, band));
 
 	if (!prChannel) {
 		DBGLOG(REQ, ERROR, "ieee80211_get_channel fail!\n");
@@ -10340,7 +10354,11 @@ void kalIndicateChannelSwitch(IN struct GLUE_INFO *prGlueInfo,
 	DBGLOG(REQ, STATE, "DFS channel switch to %d\n", ucChannelNum);
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
+#if (CFG_ADVANCED_80211_MLO == 1)
+	cfg80211_ch_switch_notify(prGlueInfo->prDevHandler, &chandef, linkIdx);
+#else
 	cfg80211_ch_switch_notify(prGlueInfo->prDevHandler, &chandef);
+#endif
 }
 #endif
 

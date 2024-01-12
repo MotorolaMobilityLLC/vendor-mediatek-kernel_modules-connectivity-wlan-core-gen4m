@@ -674,11 +674,46 @@ static struct ieee80211_rate mtk_rates[] = {
 #define WLAN_HE_CAP_160_INFO					\
 {								\
 	.has_he = true,						\
-	.he_cap_elem = WLAN_HE_CAP_160_ELEM_INFO,			\
+	.he_cap_elem = WLAN_HE_CAP_160_ELEM_INFO,		\
 	.he_mcs_nss_supp = WLAN_HE_MCS_NSS_SUPP_INFO,		\
 }
 
-static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
+#if (CFG_ADVANCED_80211_MLO == 1)
+
+#define WLAN_EHT_CAP_ELEM_INFO					\
+{								\
+	.mac_cap_info[0] =					\
+		IEEE80211_EHT_MAC_CAP0_OM_CONTROL,		\
+	.phy_cap_info[0] =					\
+		IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMER		\
+		| IEEE80211_EHT_PHY_CAP0_SU_BEAMFORMEE,		\
+}
+
+#define WLAN_EHE_MCS_NSS_SUPP_BW_INFO				\
+{								\
+	.rx_tx_mcs9_max_nss = 0x22,				\
+	.rx_tx_mcs11_max_nss = 0x22,				\
+	.rx_tx_mcs13_max_nss = 0x22,				\
+}
+
+#define WLAN_EHE_MCS_NSS_SUPP_INFO				\
+{								\
+	.bw._80 = WLAN_EHE_MCS_NSS_SUPP_BW_INFO,		\
+	.bw._160 = WLAN_EHE_MCS_NSS_SUPP_BW_INFO,		\
+	.bw._320 = WLAN_EHE_MCS_NSS_SUPP_BW_INFO,		\
+}
+
+#define WLAN_EHT_CAP_INFO					\
+{								\
+	.has_eht = true,					\
+	.eht_cap_elem = WLAN_EHT_CAP_ELEM_INFO,			\
+	.eht_mcs_nss_supp = WLAN_EHE_MCS_NSS_SUPP_INFO,		\
+}
+
+#endif
+
+
+static struct ieee80211_sband_iftype_data mtk_cap[] = {
 	{
 		.types_mask =
 			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
@@ -686,6 +721,12 @@ static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
 		.he_cap = WLAN_HE_CAP_160_INFO,
 #else
 		.he_cap = WLAN_HE_CAP_INFO,
+#endif
+
+#if (CFG_SUPPORT_802_11BE == 1)
+#if (CFG_ADVANCED_80211_MLO == 1)
+		.eht_cap = WLAN_EHT_CAP_INFO,
+#endif
 #endif
 	},
 };
@@ -724,7 +765,7 @@ static struct ieee80211_sband_iftype_data mtk_he_cap[] = {
 		| HE_6GHZ_BAND_CAP_TX_ANTPAT_CONS,			\
 }
 
-static struct ieee80211_sband_iftype_data mtk_he_cap_6g[] = {
+static struct ieee80211_sband_iftype_data mtk_cap_6g[] = {
 	{
 		.types_mask =
 			BIT(NL80211_IFTYPE_STATION) | BIT(NL80211_IFTYPE_AP),
@@ -749,7 +790,7 @@ struct ieee80211_supported_band mtk_band_2ghz = {
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 	.n_iftype_data = 1,
-	.iftype_data = mtk_he_cap,
+	.iftype_data = mtk_cap,
 #endif
 #endif
 };
@@ -770,7 +811,7 @@ struct ieee80211_supported_band mtk_band_5ghz = {
 #if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 	.n_iftype_data = 1,
-	.iftype_data = mtk_he_cap,
+	.iftype_data = mtk_cap,
 #endif
 #endif
 };
@@ -786,7 +827,7 @@ struct ieee80211_supported_band mtk_band_6ghz = {
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_802_11AX == 1)
 	.n_iftype_data = 1,
-	.iftype_data = mtk_he_cap_6g,
+	.iftype_data = mtk_cap_6g,
 #endif
 #endif
 };
