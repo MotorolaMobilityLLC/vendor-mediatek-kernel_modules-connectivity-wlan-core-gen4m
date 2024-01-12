@@ -7273,6 +7273,31 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 	return -EFAULT;
 }
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
+		struct net_device *ndev, int link_id, u8 key_index)
+#else
+int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
+		struct net_device *ndev, u8 key_index)
+#endif
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	if (mtk_IsP2PNetDevice(prGlueInfo, ndev) > 0)
+		return mtk_p2p_cfg80211_set_beacon_key(wiphy, ndev, key_index);
+	/* STA Mode */
+	DBGLOG(REQ, WARN, "STA don't support this function\n");
+	return -EFAULT;
+}
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_get_station(struct wiphy *wiphy,
 			struct net_device *ndev,

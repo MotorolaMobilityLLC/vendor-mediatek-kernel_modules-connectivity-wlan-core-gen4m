@@ -2621,6 +2621,74 @@ uint32_t nicUniCmdSetBssRlm(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdBcnProt(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_802_11_KEY *cmd;
+	struct UNI_CMD_BSSINFO *uni_cmd;
+	struct UNI_CMD_BSSINFO_BCN_PROT *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_BSSINFO) +
+			       sizeof(struct UNI_CMD_BSSINFO_BCN_PROT);
+	struct PARAM_KEY *key;
+
+	if (info->ucCID != CMD_ID_ADD_REMOVE_KEY ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_802_11_KEY *) info->pucInfoBuffer;
+	if (cmd->ucKeyId < 6 || cmd->ucKeyId > 7)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	key = (struct PARAM_KEY *) info->pvSetQueryBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_BSSINFO,
+			max_cmd_len,
+			nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_BSSINFO *) entry->pucInfoBuffer;
+	uni_cmd->ucBssInfoIdx = cmd->ucBssIdx;
+	tag = (struct UNI_CMD_BSSINFO_BCN_PROT *)uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_BSSINFO_TAG_BCN_PROT;
+	tag->u2Length = sizeof(*tag);
+
+	if (cmd->ucAddRemove == 0) { /* remove BIGTK */
+		tag->ucBcnProtEnabled = 0;
+	} else if (cmd->ucAddRemove == 1) { /* add BIGTK */
+		kalMemCopy(tag->aucBcnProtPN, key->aucKeyPn,
+			sizeof(tag->aucBcnProtPN));
+		if (cmd->ucAlgorithmId == CIPHER_SUITE_BIP_CMAC_128) {
+			tag->ucBcnProtCipherId = CIPHER_SUITE_BCN_PROT_CMAC_128;
+			tag->ucBcnProtEnabled = 2; /* HW mode */
+		} else if (cmd->ucAlgorithmId == CIPHER_SUITE_BIP_CMAC_256) {
+			tag->ucBcnProtCipherId = CIPHER_SUITE_BCN_PROT_CMAC_256;
+			tag->ucBcnProtEnabled = 2; /* HW mode */
+		} else if (cmd->ucAlgorithmId == CIPHER_SUITE_BIP_GMAC_256) {
+			tag->ucBcnProtCipherId = CIPHER_SUITE_BCN_PROT_GMAC_256;
+			tag->ucBcnProtEnabled = 1; /* SW mode */
+		} else {
+			DBGLOG(INIT, INFO,
+				"unsupported cipher for BCN PROT: %d",
+				cmd->ucAlgorithmId);
+		}
+		kalMemCopy(tag->aucBcnProtKey, cmd->aucKeyMaterial,
+			sizeof(tag->aucBcnProtKey));
+	}
+	tag->ucBcnProtKeyId = cmd->ucKeyId;
+	DBGLOG(INIT, INFO,
+		"%s BIGTK Bss=%d, ucBcnProtEnabled=%d, ucBcnProtCipherId=%d, ucBcnProtKeyId=%d\n",
+		(cmd->ucAddRemove ? "Add" : "Remove"),
+		uni_cmd->ucBssInfoIdx,
+		tag->ucBcnProtEnabled,
+		tag->ucBcnProtCipherId,
+		tag->ucBcnProtKeyId);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t nicUniCmdPowerSaveMode(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -4662,6 +4730,11 @@ uint32_t nicUniCmdInstallKey(struct ADAPTER *ad,
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_802_11_KEY *) info->pucInfoBuffer;
+
+	/* bigtk */
+	if (cmd->ucKeyId >= 6 && cmd->ucKeyId <= 7)
+		return nicUniCmdBcnProt(ad, info);
+
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_STAREC_INFO,
 		max_cmd_len, cmd->ucAddRemove ? nicUniCmdEventInstallKey :
 		nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);

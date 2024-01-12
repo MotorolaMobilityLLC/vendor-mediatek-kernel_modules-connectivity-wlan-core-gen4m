@@ -355,6 +355,11 @@ mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy,
 		struct net_device *dev,
 		u8 key_index);
 
+int
+mtk_p2p_cfg80211_set_beacon_key(struct wiphy *wiphy,
+		struct net_device *dev,
+		u8 key_index);
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_p2p_cfg80211_get_station(struct wiphy *wiphy,
 		struct net_device *ndev,

@@ -1538,6 +1538,7 @@ enum BEACON_REPORT_DETAIL {
 #endif
 #define ELEM_EXT_CAP_SAE_PW_USED_BIT                81
 #define ELEM_EXT_CAP_SAE_PW_EX_BIT                  82
+#define ELEM_EXT_CAP_BCN_PROT_BIT                   84
 #define ELEM_EXT_CAP_MSCS_BIT                       85
 #define ELEM_EXT_CAP_SAE_PK_BIT                     88
 

@@ -498,6 +498,14 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 		struct net_device *ndev, u8 key_index);
 #endif
 
+#if (CFG_ADVANCED_80211_MLO == 1)
+int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
+		struct net_device *ndev, int link_id, u8 key_index);
+#else
+int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
+		struct net_device *ndev, u8 key_index);
+#endif
+
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg_get_station(struct wiphy *wiphy,
 			struct net_device *ndev,

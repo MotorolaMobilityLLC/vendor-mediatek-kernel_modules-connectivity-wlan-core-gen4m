@@ -1224,6 +1224,14 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 				ELEM_EXT_CAP_MBSSID_BIT);
 #endif
 
+#if (CFG_SUPPORT_BCN_PROT == 1)
+#if KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE
+	if (IS_BSS_AIS(prBssInfo))
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+				ELEM_EXT_CAP_BCN_PROT_BIT);
+#endif
+#endif
+
 #if CFG_MSCS_SUPPORT
 	if (mscsIsFpSupport(prAdapter) && IS_BSS_AIS(prBssInfo))
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,

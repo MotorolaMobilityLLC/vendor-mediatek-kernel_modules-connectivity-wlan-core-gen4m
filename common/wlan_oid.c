@@ -2678,7 +2678,8 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
 			    prCmdKey->ucAlgorithmId ==
 					CIPHER_SUITE_BIP_GMAC_256) {
-				if (prCmdKey->ucKeyId >= 4) {
+				if (prCmdKey->ucKeyId >= 4 &&
+				    prCmdKey->ucKeyId <= 5) {
 					prAisSpecBssInfo->fgBipKeyInstalled =
 						TRUE;
 
@@ -2722,6 +2723,11 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 					  &prCmdKey->aucKeyMaterial[24],
 					  MIC_KEY_LEN);
 				}
+			}
+			/* BIGTK */
+			if (prCmdKey->ucKeyId >= 6 && prCmdKey->ucKeyId <= 7) {
+				prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId]
+					= TRUE;
 			}
 		} else {
 #if CFG_SUPPORT_802_11W
@@ -3020,9 +3026,10 @@ wlanoidSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		       prBssInfo->wepkeyWlanIdx);
 
 		DBGLOG(RSN, INFO,
-		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d\n",
+		       "ucBMCWlanIndexSUsed=%d,ucBMCWlanIndexS=%d,ucBcnProtInstalled=%d\n",
 		       prBssInfo->ucBMCWlanIndexSUsed[prCmdKey->ucKeyId],
-		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId]);
+		       prBssInfo->ucBMCWlanIndexS[prCmdKey->ucKeyId],
+		       prBssInfo->ucBcnProtInstalled[prCmdKey->ucKeyId]);
 	}
 #endif
 	if (prAisSpecBssInfo)
@@ -3231,8 +3238,8 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_WIFI_IGTK_GTK_SEPARATE == 0)
-	if (u4KeyIndex >= 4) {
-		DBGLOG(RSN, INFO, "Remove bip key Index : 0x%08x\n",
+	if (u4KeyIndex >= 4 && u4KeyIndex <= 5) {
+		DBGLOG(RSN, INFO, "Remove bip key Index (IGTK) : 0x%08x\n",
 		       u4KeyIndex);
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -3249,7 +3256,15 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 			prBssInfo->fgBcDefaultKeyExist = FALSE;
 	}
 
-	if (!prStaRec) {
+	/* BIGTK */
+	if (u4KeyIndex >= 6 && u4KeyIndex <= 7) {
+		if (prBssInfo->ucBcnProtInstalled[u4KeyIndex] == TRUE) {
+			prBssInfo->ucBcnProtInstalled[u4KeyIndex] = FALSE;
+			DBGLOG(RSN, INFO,
+				"Remove BIGTK, key id = %d", u4KeyIndex);
+		} else
+			return WLAN_STATUS_SUCCESS;
+	} else if (!prStaRec) {
 		if (prBssInfo->wepkeyUsed[u4KeyIndex] == TRUE)
 			fgRemoveWepKey = TRUE;
 
@@ -3320,6 +3335,8 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 		prStaRec->fgTransmitKeyExist = FALSE;
 	} else if (ucRemoveBCKeyAtIdx < WTBL_SIZE) {
 		rCmdKey.ucWlanIndex = ucRemoveBCKeyAtIdx;
+	} else if (u4KeyIndex >= 6 && u4KeyIndex <= 7) {
+		/* BIGTK */
 	} else {
 		ASSERT(FALSE);
 	}
