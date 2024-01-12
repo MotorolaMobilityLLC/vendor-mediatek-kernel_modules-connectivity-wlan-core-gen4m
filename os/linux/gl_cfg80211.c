@@ -556,11 +556,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last link speed\n");
-		sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
+		sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache[ucBssIndex];
 	} else {
 		/* convert from 100bps to 100kbps */
 		sinfo->txrate.legacy = u4Rate / 1000;
-		prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
+		prGlueInfo->u4LinkSpeedCache[ucBssIndex] = u4Rate / 1000;
 	}
 
 	/* 3. fill RSSI */
@@ -577,20 +577,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN,
 			"Query RSSI failed, use last RSSI %d\n",
-			prGlueInfo->i4RssiCache);
-		sinfo->signal = prGlueInfo->i4RssiCache ?
-			prGlueInfo->i4RssiCache :
+			prGlueInfo->i4RssiCache[ucBssIndex]);
+		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
+			prGlueInfo->i4RssiCache[ucBssIndex] :
 			PARAM_WHQL_RSSI_INITIAL_DBM;
 	} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
 			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
 		DBGLOG(REQ, WARN,
 			"RSSI abnormal, use last RSSI %d\n",
-			prGlueInfo->i4RssiCache);
-		sinfo->signal = prGlueInfo->i4RssiCache ?
-			prGlueInfo->i4RssiCache : i4Rssi;
+			prGlueInfo->i4RssiCache[ucBssIndex]);
+		sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
+			prGlueInfo->i4RssiCache[ucBssIndex] : i4Rssi;
 	} else {
 		sinfo->signal = i4Rssi;	/* dBm */
-		prGlueInfo->i4RssiCache = i4Rssi;
+		prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 	}
 
 	/* Get statistics from net_dev */
@@ -721,11 +721,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		if ((rStatus != WLAN_STATUS_SUCCESS) || (u4Rate == 0)) {
 			/* unable to retrieve link speed */
 			DBGLOG(REQ, WARN, "last link speed\n");
-			sinfo->txrate.legacy = prGlueInfo->u4LinkSpeedCache;
+			sinfo->txrate.legacy =
+				prGlueInfo->u4LinkSpeedCache[ucBssIndex];
 		} else {
 			/* convert from 100bps to 100kbps */
 			sinfo->txrate.legacy = u4Rate / 1000;
-			prGlueInfo->u4LinkSpeedCache = u4Rate / 1000;
+			prGlueInfo->u4LinkSpeedCache[ucBssIndex] =
+				u4Rate / 1000;
 		}
 	}
 
@@ -745,20 +747,20 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, WARN,
 				"Query RSSI failed, use last RSSI %d\n",
-				prGlueInfo->i4RssiCache);
-			sinfo->signal = prGlueInfo->i4RssiCache ?
-				prGlueInfo->i4RssiCache :
+				prGlueInfo->i4RssiCache[ucBssIndex]);
+			sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
+				prGlueInfo->i4RssiCache[ucBssIndex] :
 				PARAM_WHQL_RSSI_INITIAL_DBM;
 		} else if (i4Rssi == PARAM_WHQL_RSSI_MIN_DBM ||
 			i4Rssi == PARAM_WHQL_RSSI_MAX_DBM) {
 			DBGLOG(REQ, WARN,
 				"RSSI abnormal, use last RSSI %d\n",
-				prGlueInfo->i4RssiCache);
-			sinfo->signal = prGlueInfo->i4RssiCache ?
-				prGlueInfo->i4RssiCache : i4Rssi;
+				prGlueInfo->i4RssiCache[ucBssIndex]);
+			sinfo->signal = prGlueInfo->i4RssiCache[ucBssIndex] ?
+				prGlueInfo->i4RssiCache[ucBssIndex] : i4Rssi;
 		} else {
 			sinfo->signal = i4Rssi;	/* dBm */
-			prGlueInfo->i4RssiCache = i4Rssi;
+			prGlueInfo->i4RssiCache[ucBssIndex] = i4Rssi;
 		}
 	}
 
