@@ -357,6 +357,9 @@ extern uint8_t
 keyStructBuf[100];	/* add/remove key shared buffer */
 #endif
 
+extern const struct nla_policy nla_get_acs_policy[
+		WIFI_VENDOR_ATTR_ACS_MAX + 1];
+
 /*******************************************************************************
  *                           MACROS
  *******************************************************************************
