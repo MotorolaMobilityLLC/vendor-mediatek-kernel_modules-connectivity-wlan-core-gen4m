@@ -486,6 +486,7 @@ struct mt66xx_chip_info mt66xx_chip_info_soc3_0 = {
 	.is_support_asic_lp = TRUE,
 	.is_support_wfdma = TRUE,
 	.asicWfdmaReInit = asicConnac2xWfdmaReInit,
+	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 };
 
 struct mt66xx_hif_driver_data mt66xx_driver_data_soc3_0 = {

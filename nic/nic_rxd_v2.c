@@ -242,7 +242,7 @@ void nic_rxd_v2_fill_rfb(
 	if (prSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_5)) {
 		prSwRfb->prRxStatusGroup5 = (struct HW_MAC_RX_STS_GROUP_5 *)
 			((uint8_t *) prRxStatus + u2RxStatusOffset);
-		u2RxStatusOffset += sizeof(struct HW_MAC_RX_STS_GROUP_5);
+		u2RxStatusOffset += prChipInfo->group5_size;
 	}
 
 

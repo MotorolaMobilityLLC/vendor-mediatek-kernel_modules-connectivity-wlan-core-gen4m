@@ -682,8 +682,21 @@ struct HW_MAC_RX_STS_GROUP_3_V2 {
 
 struct HW_MAC_RX_STS_GROUP_5 {
 	/*  CRXVector Info */
-	uint32_t u4RxVector[16]; /* FALCON: DW 18~33 */
+	/* FALCON: DW 18~33 for harrier E1,  DW 18~35 for harrier E2
+	 * Other project: give group5_size in chip info,
+	 * e.g Soc3_0.c,
+	 * or modify prChipInfo->group5_size when doing wlanCheckAsicCap,
+	 * e.g. Harrier E1
+	 */
+	uint32_t u4RxVector[18];
 };
+
+struct HW_MAC_RX_STS_HARRIER_E1_GROUP_5 {
+	/*  CRXVector Info */
+	/* FALCON: DW 18~33 for harrier E1,  DW 18~35 for harrier E2 */
+	uint32_t u4RxVector[16];
+};
+
 
 #define CONNAC2X_RSSI_MASK	BITS(0, 31)
 #define CONNAC2X_SEL_ANT	BITS(28, 30)

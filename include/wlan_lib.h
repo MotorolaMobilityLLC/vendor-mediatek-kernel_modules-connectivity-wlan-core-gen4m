@@ -1280,6 +1280,8 @@ uint32_t wlanAdapterStart(IN struct ADAPTER *prAdapter,
 
 uint32_t wlanAdapterStop(IN struct ADAPTER *prAdapter);
 
+void wlanCheckAsicCap(IN struct ADAPTER *prAdapter);
+
 uint32_t wlanCheckWifiFunc(IN struct ADAPTER *prAdapter,
 			   IN u_int8_t fgRdyChk);
 
