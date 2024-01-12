@@ -7319,6 +7319,7 @@ p2pFunNotifyChnlSwitch(IN struct ADAPTER *prAdapter,
 	case CHNL_SWITCH_POLICY_CSA:
 		/* Set CSA IE */
 		prAdapter->rWifiVar.fgCsaInProgress = TRUE;
+		prAdapter->rWifiVar.fgCsaInBeacon = FALSE;
 		prAdapter->rWifiVar.ucChannelSwitchMode = 1;
 		prAdapter->rWifiVar.ucNewChannelNumber =
 			prNewChannelInfo->ucChannelNum;
