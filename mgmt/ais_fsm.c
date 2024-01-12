@@ -252,6 +252,10 @@ VOID aisFsmInit(IN P_ADAPTER_T prAdapter)
 	DEBUGFUNC("aisFsmInit()");
 	DBGLOG(SW1, INFO, "->aisFsmInit()\n");
 
+	/* avoid that the prAisBssInfo is realloc */
+	if (prAdapter->prAisBssInfo != NULL)
+		return;
+
 	prAdapter->prAisBssInfo = prAisBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS, FALSE);
 	ASSERT(prAisBssInfo);
 
@@ -386,6 +390,10 @@ VOID aisFsmUninit(IN P_ADAPTER_T prAdapter)
 
 	DEBUGFUNC("aisFsmUninit()");
 	DBGLOG(SW1, INFO, "->aisFsmUninit()\n");
+
+	/* avoid that the prAisBssInfo is double freed */
+	if (prAdapter->prAisBssInfo == NULL)
+		return;
 
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prAisBssInfo = prAdapter->prAisBssInfo;
@@ -1585,6 +1593,13 @@ VOID aisFsmRunEventScanDone(IN P_ADAPTER_T prAdapter, IN P_MSG_HDR_T prMsgHdr)
 
 	DBGLOG(AIS, LOUD, "EVENT-SCAN DONE: Current Time = %u\n", kalGetTimeTick());
 
+	if (prAdapter->prAisBssInfo == NULL) {
+		/* This case occurs when the AIS isn't done, but the wlan0 */
+		/* has changed to AP mode. And the prAisBssInfo is freed.  */
+		DBGLOG(AIS, WARN, "prAisBssInfo is NULL, and then return\n");
+		return;
+	}
+
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 
@@ -1759,6 +1774,11 @@ VOID aisFsmStateAbort(IN P_ADAPTER_T prAdapter, UINT_8 ucReasonOfDisconnect, BOO
 
 	prAisFsmInfo = &(prAdapter->rWifiVar.rAisFsmInfo);
 	prAisBssInfo = prAdapter->prAisBssInfo;
+
+	/* XXX: The wlan0 may has been changed to AP mode. */
+	if (prAisBssInfo == NULL)
+		return;
+
 	prConnSettings = &(prAdapter->rWifiVar.rConnSettings);
 	fgIsCheckConnected = FALSE;
 

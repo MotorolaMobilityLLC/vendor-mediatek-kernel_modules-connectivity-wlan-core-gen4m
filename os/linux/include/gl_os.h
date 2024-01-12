@@ -245,6 +245,10 @@
 extern BOOLEAN fgIsBusAccessFailed;
 extern const struct ieee80211_iface_combination *p_mtk_iface_combinations_sta;
 extern const INT_32 mtk_iface_combinations_sta_num;
+#if CFG_ENABLE_UNIFY_WIPHY
+extern const struct ieee80211_iface_combination *p_mtk_iface_combinations_p2p;
+extern const INT_32 mtk_iface_combinations_p2p_num;
+#endif
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -746,6 +750,9 @@ struct wpa_driver_hs20_data_s {
 typedef struct _NETDEV_PRIVATE_GLUE_INFO {
 	P_GLUE_INFO_T prGlueInfo;
 	UINT_8 ucBssIdx;
+#if CFG_ENABLE_UNIFY_WIPHY
+	BOOLEAN ucIsP2p;
+#endif
 } NETDEV_PRIVATE_GLUE_INFO, *P_NETDEV_PRIVATE_GLUE_INFO;
 
 typedef struct _PACKET_PRIVATE_DATA {
@@ -1060,6 +1067,7 @@ WLAN_STATUS wlanConnacDownloadBufferBin(P_ADAPTER_T prAdapter);
 */
 extern struct net_device *gPrP2pDev[KAL_P2P_NUM];
 extern struct net_device *gPrDev;
+extern struct wireless_dev *gprWdev;
 
 #ifdef CFG_DRIVER_INF_NAME_CHANGE
 extern char *gprifnameap;
@@ -1069,7 +1077,6 @@ extern char *gprifnamesta;
 
 extern void wlanRegisterNotifier(void);
 extern void wlanUnregisterNotifier(void);
-
 #if (MTK_WCN_HIF_SDIO && CFG_SUPPORT_MTK_ANDROID_KK)
 typedef int (*set_p2p_mode) (struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_T p2pmode);
 extern void register_set_p2p_mode_handler(set_p2p_mode handler);
@@ -1094,4 +1101,7 @@ VOID wlanUpdateChannelTable(P_GLUE_INFO_T prGlueInfo);
 int set_p2p_mode_handler(struct net_device *netdev, PARAM_CUSTOM_P2P_SET_STRUCT_T p2pmode);
 #endif
 
+#if CFG_ENABLE_UNIFY_WIPHY
+const struct net_device_ops *wlanGetNdevOps(void);
+#endif
 #endif /* _GL_OS_H */

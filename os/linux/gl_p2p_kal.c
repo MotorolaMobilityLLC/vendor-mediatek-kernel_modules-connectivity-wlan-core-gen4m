@@ -1073,12 +1073,20 @@ VOID kalP2PIndicateMgmtTxStatus(IN P_GLUE_INFO_T prGlueInfo, IN P_MSDU_INFO_T pr
 
 		if (prMsduInfo->ucBssIndex == prGlueInfo->prAdapter->ucP2PDevBssIdx) {
 			prGlueP2pInfo = prGlueInfo->prP2PInfo[0];
+
+			if (prGlueP2pInfo == NULL)
+				return;
+
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 
 		} else {
 			P_BSS_INFO_T prP2pBssInfo =
 			    GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, prMsduInfo->ucBssIndex);
 			prGlueP2pInfo = prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData];
+
+			if (prGlueP2pInfo == NULL)
+				return;
+
 			prNetdevice = prGlueP2pInfo->aprRoleHandler;
 		}
 
@@ -1193,6 +1201,13 @@ kalP2PGCIndicateConnectionStatus(IN P_GLUE_INFO_T prGlueInfo,
 
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
+		/* FIXME: This exception occurs at wlanRemove. */
+		if ((prGlueP2pInfo == NULL) ||
+		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
+		    ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 1)) {
+			break;
+		}
+
 		if (prP2pConnInfo) {
 			cfg80211_connect_result(prGlueP2pInfo->aprRoleHandler,
 						/* struct net_device * dev, */
@@ -1231,6 +1246,13 @@ kalP2PGCIndicateConnectionStatus(IN P_GLUE_INFO_T prGlueInfo,
 
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
+		/* FIXME: This exception occurs at wlanRemove. */
+		if ((prGlueP2pInfo == NULL) ||
+		    (prGlueP2pInfo->aprRoleHandler == NULL) ||
+		    ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 1)) {
+			break;
+		}
+
 		if (prP2pConnInfo) {
 			cfg80211_connect_result(prGlueP2pInfo->aprRoleHandler,
 						/* struct net_device * dev, */
@@ -1265,6 +1287,12 @@ kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo,
 
 		prP2pGlueInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
+		if ((prP2pGlueInfo == NULL) ||
+		    (prP2pGlueInfo->aprRoleHandler == NULL)) {
+			/* This case may occur when the usb is unplugged */
+			break;
+		}
+
 		if (fgIsNew) {
 			struct station_info rStationInfo;
 
@@ -1284,9 +1312,14 @@ kalP2PGOStationUpdate(IN P_GLUE_INFO_T prGlueInfo,
 		} else {
 			++prP2pGlueInfo->i4Generation;
 
-			cfg80211_del_sta(prP2pGlueInfo->aprRoleHandler,
-					 /* struct net_device * dev, */
+			/* FIXME: The exception occurs at wlanRemove, and
+			 *    check GLUE_FLAG_HALT is the temporarily solution.
+			 */
+			if ((prGlueInfo->ulFlag & GLUE_FLAG_HALT) == 0) {
+				cfg80211_del_sta(prP2pGlueInfo->aprRoleHandler,
+					/* struct net_device * dev, */
 					 prCliStaRec->aucMacAddr, GFP_KERNEL);
+			}
 		}
 
 	} while (FALSE);
@@ -1398,11 +1431,14 @@ struct ieee80211_channel *kalP2pFuncGetChannelEntry(IN P_GL_P2P_INFO_T prP2pInfo
 {
 	struct ieee80211_channel *prTargetChannelEntry = (struct ieee80211_channel *)NULL;
 	UINT_32 u4TblSize = 0, u4Idx = 0;
-	struct wiphy *wiphy = prP2pInfo->prWdev->wiphy;
+	struct wiphy *wiphy = NULL;
+
+	if ((prP2pInfo == NULL) || (prChannelInfo == NULL))
+		return NULL;
+
+	wiphy = prP2pInfo->prWdev->wiphy;
 
 	do {
-		if ((prP2pInfo == NULL) || (prChannelInfo == NULL))
-			break;
 
 		switch (prChannelInfo->eBand) {
 		case BAND_2G4:

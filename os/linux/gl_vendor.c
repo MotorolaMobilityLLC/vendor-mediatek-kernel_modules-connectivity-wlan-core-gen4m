@@ -766,10 +766,15 @@ int mtk_cfg80211_vendor_get_channel_list(struct wiphy *wiphy, struct wireless_de
 
 		DBGLOG(REQ, INFO, "Get channel list for band: %d\n", band);
 
-		if (wdev->iftype == NL80211_IFTYPE_AP)
-			prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
-		else
+#if CFG_ENABLE_UNIFY_WIPHY
+		prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+		if (wdev == gprWdev)	/* wlan0 */
 			prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+		else
+			prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
 		if (!prGlueInfo)
 			return -EFAULT;
 
@@ -845,10 +850,15 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy *wiphy, struct wireless_de
 
 	DBGLOG(REQ, INFO, "Set country code: %c%c\n", country[0], country[1]);
 
-	if (wdev->iftype == NL80211_IFTYPE_AP)
-		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
-	else
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)	/* wlan0 */
 		prGlueInfo = (P_GLUE_INFO_T) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((P_GLUE_INFO_T *) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
 	if (!prGlueInfo)
 		return -EFAULT;
 

@@ -2158,6 +2158,9 @@ p2pFuncDissolve(IN P_ADAPTER_T prAdapter,
 
 			prClientList = &prP2pBssInfo->rStaRecOfClientList;
 
+			/* This case may let LINK_FOR_EACH_ENTRY_SAFE crash */
+			if (prClientList == NULL)
+				break;
 			LINK_FOR_EACH_ENTRY_SAFE(prCurrStaRec, prStaRecNext,
 				prClientList, rLinkEntry, STA_RECORD_T) {
 				ASSERT(prCurrStaRec);

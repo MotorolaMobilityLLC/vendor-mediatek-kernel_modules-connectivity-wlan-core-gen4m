@@ -1430,8 +1430,10 @@ wlanoidSetInfrastructureMode(IN P_ADAPTER_T prAdapter,
 #endif
 
 	/* Clean up the Tx key flag */
-	prAdapter->prAisBssInfo->fgBcDefaultKeyExist = FALSE;
-	prAdapter->prAisBssInfo->ucBcDefaultKeyIdx = 0xFF;
+	if (prAdapter->prAisBssInfo != NULL) {
+		prAdapter->prAisBssInfo->fgBcDefaultKeyExist = FALSE;
+		prAdapter->prAisBssInfo->ucBcDefaultKeyIdx = 0xFF;
+	}
 
 	/* prWlanTable = prAdapter->rWifiVar.arWtbl; */
 	/* prWlanTable[prAdapter->prAisBssInfo->ucBMCWlanIndex].ucKeyId = 0; */
