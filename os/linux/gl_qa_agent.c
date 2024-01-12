@@ -2937,13 +2937,12 @@ static int32_t HQA_GetFreqOffset(struct net_device
 	struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-	if (!prGlueInfo) {
+	if (!prGlueInfo || !prGlueInfo->prAdapter) {
 		ResponseToQA(HqaCmdFrame, prIwReqData, 2, i4Ret);
 		return i4Ret;
 	}
 
-	if (prGlueInfo->prAdapter)
-		prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
 
 	/* Mobile chips don't support GetFreqOffset */
 	if (prChipInfo && prChipInfo->u4ChipIpVersion
