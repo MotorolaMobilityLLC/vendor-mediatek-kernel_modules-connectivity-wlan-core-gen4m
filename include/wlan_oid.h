@@ -5437,6 +5437,12 @@ wlanoidQueryThermalDdieTemp(struct ADAPTER *prAdapter,
 	uint32_t u4QueryBufferLen,
 	uint32_t *pu4QueryInfoLen);
 
+uint32_t
+wlanoidQueryThermalAdcTemp(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen);
+
 uint32_t wlanoidGetRttCapabilities(struct ADAPTER *prAdapter,
 			 void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			 uint32_t *pu4QueryInfoLen);

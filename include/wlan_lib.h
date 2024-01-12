@@ -1527,6 +1527,12 @@ struct THERMAL_TEMP_DATA {
 	uint32_t u4Temperature;
 };
 
+struct THERMAL_TEMP_DATA_V2 {
+	uint8_t ucType;
+	uint8_t ucIdx;
+	uint8_t *pu1SensorResult;
+};
+
 /* channel operating width */
 enum WIFI_CHANNEL_WIDTH {
 	WIFI_CHAN_WIDTH_20 = 0,
@@ -2332,6 +2338,9 @@ void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
 
 uint32_t wlanQueryThermalTemp(struct ADAPTER *ad,
 	struct THERMAL_TEMP_DATA *data);
+
+uint32_t wlanQueryThermalTempV2(struct ADAPTER *ad,
+	struct THERMAL_TEMP_DATA_V2 *data);
 
 int8_t hexDigitToInt(uint8_t ch);
 

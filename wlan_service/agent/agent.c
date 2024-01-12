@@ -4,6 +4,7 @@
  */
 
 #include "agent.h"
+#include "precomp.h"
 
 u_char *agnt_rstrtok;
 int8_t g_hqa_frame_ctrl;
@@ -2145,21 +2146,125 @@ static s_int32 hqa_get_thermal_val(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 value = 0;
 	u_char band_idx;
+	u_char *data = hqa_frame->data;
+	u_int32 Die_Type = 0, index = 0;
+	u_char *pu1SensorResult = NULL;
+	u_int32 adc = 0, temp = 0, sensorCount = 0, reSenCnt = 0;
+	u_int32 length = 0;
+	u_int8 idx = 0;
+	struct get_temp_adc *temp_adc = NULL;
+
+	struct THERMAL_TEMP_DATA_V2 temp_data;
+	struct GLUE_INFO *glue = wlanGetGlueInfo();
+	struct ADAPTER *ad = NULL;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
 	/* request format type */
 	band_idx = serv_test->ctrl_band_idx;
 
-	ret = mt_serv_get_thermal_val(serv_test, band_idx, &value);
+	if (hqa_frame->length == 8) {
+		do {
+			if (glue == NULL)
+				break;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
-		("%s: value: %d\n", __func__, value));
+			ad = glue->prAdapter;
 
-	/* update hqa_frame with response: status (2 bytes) */
-	value = SERV_OS_HTONL(value);
-	sys_ad_move_mem(hqa_frame->data + 2, &value, sizeof(value));
-	update_hqa_frame(hqa_frame, 2 + sizeof(value), ret);
+			/* Request format type */
+			get_param_and_shift_buf(TRUE, sizeof(Die_Type),
+						&data, (u_char *)&Die_Type);
+			get_param_and_shift_buf(TRUE, sizeof(index),
+						&data, (u_char *)&index);
+
+			ret = sys_ad_alloc_mem(&pu1SensorResult,
+				sizeof(u_int8) + (sizeof(struct get_temp_adc) *
+					DDIE_NUM));
+
+			if (ret != SERV_STATUS_SUCCESS) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s: allocate memory failed. ret: %d\n",
+				__func__, ret));
+
+				break;
+			}
+
+			temp_data.ucType = Die_Type;
+			temp_data.ucIdx = index;
+			temp_data.pu1SensorResult = pu1SensorResult;
+
+			ret = wlanQueryThermalTempV2(ad, &temp_data);
+
+			if (ret != SERV_STATUS_SUCCESS) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+					("%s: Fail to get thermal. ret: %d\n",
+					__func__, ret));
+
+				break;
+			}
+
+			sensorCount = *temp_data.pu1SensorResult;
+
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s: ucType=%d index=%d sensorCount: %d\n",
+					__func__,
+					Die_Type,
+					index,
+					sensorCount));
+
+			if (sensorCount > 0)
+				temp_adc = (struct get_temp_adc *)
+					(temp_data.pu1SensorResult + 1);
+
+			reSenCnt = SERV_OS_HTONL(sensorCount);
+			length += 2;
+			sys_ad_move_mem(hqa_frame->data + length,
+				&reSenCnt, sizeof(sensorCount));
+			length += sizeof(reSenCnt);
+
+			if (sensorCount > DDIE_NUM) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+					("%s: sensorCount:%d ret:%d\n",
+					__func__, sensorCount, ret));
+
+				break;
+			}
+
+			for (idx = 0 ; idx < sensorCount && idx < DDIE_NUM;
+				idx++, temp_adc++) {
+				SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+					("%s: idx:%d adc:%d temp:%d\n",
+					__func__, idx, temp_adc->adc,
+					temp_adc->temp));
+
+				adc = temp_adc->adc;
+				temp = temp_adc->temp;
+				adc = SERV_OS_HTONL(adc);
+				temp = SERV_OS_HTONL(temp);
+				sys_ad_move_mem(hqa_frame->data + length,
+					&adc, sizeof(adc));
+				length += sizeof(adc);
+				sys_ad_move_mem(hqa_frame->data + length,
+					&temp, sizeof(temp));
+				length += sizeof(temp);
+			}
+		} while (0);
+
+		if (pu1SensorResult != NULL)
+			sys_ad_free_mem(pu1SensorResult);
+
+		/* Update hqa_frame with response: status (2 bytes) */
+		update_hqa_frame(hqa_frame, length, ret);
+	} else {
+		ret = mt_serv_get_thermal_val(serv_test, band_idx, &value);
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: value: %d\n", __func__, value));
+
+		/* update hqa_frame with response: status (2 bytes) */
+		value = SERV_OS_HTONL(value);
+		sys_ad_move_mem(hqa_frame->data + 2, &value, sizeof(value));
+		update_hqa_frame(hqa_frame, 2 + sizeof(value), ret);
+	}
 
 	return ret;
 }
