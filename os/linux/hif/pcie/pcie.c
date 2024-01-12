@@ -478,9 +478,8 @@ static bool axiGetRsvMemSizeRsvedByKernel(struct platform_device *pdev)
 
 static bool axiAllocRsvMem(uint32_t u4Size, struct HIF_MEM *prMem)
 {
-	/* 8 bytes alignment */
-	if (u4Size & 7)
-		u4Size += 8 - (u4Size & 7);
+	/* 256 bytes alignment */
+	u4Size = (u4Size + 0xFF) & ~0xFF;
 
 	if ((grMem.u4Offset + u4Size) >= gWifiRsvMemSize)
 		return false;
