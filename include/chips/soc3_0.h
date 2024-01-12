@@ -221,6 +221,7 @@ extern struct platform_device *g_prPlatDev;
 extern u_int8_t g_IsWfsysBusHang;
 extern struct completion g_triggerComp;
 extern bool g_IsTriggerTimeout;
+extern u_int8_t fgIsResetting;
 #endif
 /*******************************************************************************
 *                           P R I V A T E   D A T A
@@ -315,6 +316,7 @@ int wlanConnacPccifoff(void);
 int soc3_0_Trigger_whole_chip_rst(char *reason);
 void soc3_0_Sw_interrupt_handler(struct ADAPTER *prAdapter);
 void soc3_0_Conninfra_cb_register(void);
+extern void update_driver_reset_status(uint8_t fgIsResetting);
 #endif
 void soc3_0_DumpWfsysdebugflag(void);
 #if (CFG_POWER_ON_DOWNLOAD_EMI_ROM_PATCH == 1)
