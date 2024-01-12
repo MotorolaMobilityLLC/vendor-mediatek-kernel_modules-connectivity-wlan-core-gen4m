@@ -642,6 +642,8 @@ endif
 
 ifeq ($(CONFIG_ARCH_MEDIATEK), y)
     ccflags-y += -DCFG_MTK_WIFI_PLAT_ALPS=1
+else ifeq ($(MTK_WIFI_PLAT_ALPS), y)
+    ccflags-y += -DCFG_MTK_WIFI_PLAT_ALPS=1
 else
     ccflags-y += -DCFG_MTK_WIFI_PLAT_ALPS=0
 endif
