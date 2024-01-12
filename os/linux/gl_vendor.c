@@ -1727,6 +1727,7 @@ static void sum_ac_rx_mpdu(struct STATS_LLS_WMM_AC_STAT ac[],
 		ac[i].rx_mpdu += pu4RxMpduAc[i];
 }
 
+#if AOSP_LLS_V1_SINGLE_INTERFACE /* For legacy Android S/T */
 static void fill_iface_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
 	struct STATS_LLS_WIFI_IFACE_STAT *iface)
 {
@@ -1792,6 +1793,7 @@ static uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 
 	return dst - orig;
 }
+#endif /* AOSP_LLS_V1_SINGLE_INTERFACE */
 
 /**
  * Copy per-AC RX MPDU count stored in the BSS info with the given bss_idx.
@@ -1800,13 +1802,25 @@ static void fill_ml_link_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
 	struct STATS_LLS_WIFI_LINK_STAT *link)
 {
 	struct BSS_INFO *prBssInfo;
+	uint32_t i;
 
-	/* ASSERT(prAdapter->ucLinkStatsBssNum == BSSID_NUM) */
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, bss_idx);
-	if (!prBssInfo)
-		return;
+	if (prAdapter->ucLinkStatsBssNum == 1) {
+		/* FW report only one record, all data are summed up into one */
+		for (i = 0; i < MAX_BSSID_NUM + 1; i++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (!prBssInfo)
+				continue;
 
-	sum_ac_rx_mpdu(link->ac, prBssInfo);
+			sum_ac_rx_mpdu(link->ac, prBssInfo);
+		}
+	} else {
+		/* ASSERT(prAdapter->ucLinkStatsBssNum == BSSID_NUM) */
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, bss_idx);
+		if (!prBssInfo)
+			return;
+
+		sum_ac_rx_mpdu(link->ac, prBssInfo);
+	}
 }
 
 static uint32_t find_bss_group(struct ADAPTER *prAdapter, uint8_t bss_idx)
@@ -2265,10 +2279,11 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 		/* Fill returning buffer from shared EMI address(src) */
 		ptr = buf;
 
-		if (prAdapter->ucLinkStatsBssNum == 1)
-			ptr += fill_iface(ptr, src, prAdapter, ucBssIdx);
-		else /* multiple links, Android U goes here */
-			ptr += fill_ml_iface(ptr, src, prAdapter, ucBssIdx);
+#if AOSP_LLS_V1_SINGLE_INTERFACE /* leave legecy code here, need to verify */
+		ptr += fill_iface(ptr, src, prAdapter, ucBssIdx);
+#else /* multiple links, Android U goes here, support connac2/3 */
+		ptr += fill_ml_iface(ptr, src, prAdapter, ucBssIdx);
+#endif
 
 		/* Set band_hint = 0x00 here to collect band/radio
 		 * by Bss HW band index.
