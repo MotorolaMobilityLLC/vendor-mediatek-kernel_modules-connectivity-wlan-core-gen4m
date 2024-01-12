@@ -5322,23 +5322,22 @@ static void consys_log_event_notification(int cmd, int value)
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t rStatus = WLAN_STATUS_FAILURE;
 	uint32_t u4BufLen;
+	u_int8_t fgRetrieveLog = FALSE;
 
 	DBGLOG(INIT, INFO, "cmd=%d, value=%d\n", cmd, value);
 
-	if (cmd == FW_LOG_CMD_ON_OFF) {
+	switch (cmd) {
+	case FW_LOG_CMD_ON_OFF:
 		u4LogOnOffCache = value;
-
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#if (CFG_SUPPORT_CONNINFRA == 1)
-		if (u4LogOnOffCache == 0) {
-			fw_log_wifi_irq_handler();
-			DBGLOG(INIT, TRACE, "Stopping logs...\n");
-		}
-#endif
-#endif
-	}
-	if (cmd == FW_LOG_CMD_SET_LEVEL)
+		if (u4LogOnOffCache == 0)
+			fgRetrieveLog = TRUE;
+		break;
+	case FW_LOG_CMD_SET_LEVEL:
 		u4LogLevelCache = value;
+		break;
+	default:
+		break;
+	}
 
 	if (kalIsHalted()) { /* power-off */
 		DBGLOG(INIT, INFO,
@@ -5370,6 +5369,9 @@ static void consys_log_event_notification(int cmd, int value)
 
 	rStatus = kalIoctl(prGlueInfo, connsysFwLogControl, &rFwLogCmd,
 			sizeof(struct CMD_CONNSYS_FW_LOG), &u4BufLen);
+
+	if (fgRetrieveLog)
+		fw_log_wifi_irq_handler();
 }
 #endif
 

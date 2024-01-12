@@ -2116,7 +2116,6 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	uint32_t r4Status = 0;
-	u_int8_t fgNeedPwrCtrl = FALSE;
 	u_int8_t fgRet = TRUE;
 
 	if (!prAdapter)
@@ -2131,18 +2130,8 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (fgRet == FALSE || r4Status == 0)
 		goto exit;
 
-#if IS_ENABLED(CFG_MTK_WIFI_FW_LOG_MMIO)
-	fgNeedPwrCtrl = TRUE;
-#endif
-
-	if (fgNeedPwrCtrl)
-		wlanAcquirePowerControl(prAdapter);
-
 	if (r4Status & BIT(SW_INT_FW_LOG))
 		fw_log_wifi_irq_handler();
-
-	if (fgNeedPwrCtrl)
-		wlanReleasePowerControl(prAdapter);
 
 exit:
 	return fgRet;
