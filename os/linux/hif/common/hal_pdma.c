@@ -1655,6 +1655,8 @@ static void halAddMacLatencyCount(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+
+	wlanCountTxDelayOverLimit(prAdapter, MAC_DELAY, u4MacLatency);
 }
 
 static void halAddAirLatencyCount(struct ADAPTER *prAdapter,
@@ -4697,6 +4699,44 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 #endif
 }
 
+static void checkTxDelayOverLimit(struct ADAPTER *prAdapter)
+{
+#if CFG_SUPPORT_TX_LATENCY_STATS
+	static unsigned long next_update; /* in ms */
+	unsigned long update_interval; /* in ms */
+	struct TX_DELAY_OVER_LIMIT_REPORT_STATS *stats =
+			&prAdapter->rTxDelayOverLimitStats;
+	uint8_t i;
+
+	if (!stats->fgTxDelayOverLimitReportEnabled ||
+	    time_before(jiffies, next_update))
+		return;
+
+	update_interval = stats->fgTxDelayOverLimitReportInterval * HZ / 1000;
+	next_update = jiffies + update_interval;
+	kalMemZero(stats->fgReported, sizeof(stats->fgReported));
+
+	if (stats->eTxDelayOverLimitStatsType != REPORT_AVERAGE)
+		return;
+
+	for (i = 0; i < MAX_TX_OVER_LIMIT_TYPE; i++) {
+		if (stats->u4DelayNum[i] == 0)
+			continue;
+
+		DBGLOG(HAL, INFO, "Delay[i]=%u, DelayNum[i]=%u, DelayLimit=%u",
+			stats->u4Delay[i], stats->u4DelayNum[i],
+			stats->u4DelayLimit[i]);
+		if (stats->u4Delay[i] / stats->u4DelayNum[i] >
+			stats->u4DelayLimit[i])
+			wlanReportTxDelayOverLimit(prAdapter, i,
+				stats->u4Delay[i] / stats->u4DelayNum[i]);
+
+		stats->u4Delay[i] = 0;
+		stats->u4DelayNum[i] = 0;
+	}
+#endif
+}
+
 void halUpdateHifConfig(struct ADAPTER *prAdapter)
 {
 	struct mt66xx_chip_info *prChipInfo;
@@ -4737,6 +4777,8 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 		return;
 
 	prGlueInfo = prAdapter->prGlueInfo;
+
+	checkTxDelayOverLimit(prAdapter);
 
 	halDumpMsduReportStats(prAdapter);
 
