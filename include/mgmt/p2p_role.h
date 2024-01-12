@@ -70,14 +70,14 @@ struct MSG_P2P_BEACON_UPDATE {
 	uint8_t *pucProbeRespIE;
 #endif
 	u_int8_t fgIsWepCipher;
-	uint8_t aucBuffer[1];	/* Header & Body & Extra IEs are put here. */
+	uint8_t aucBuffer[];	/* Header & Body & Extra IEs are put here. */
 };
 
 struct MSG_P2P_MGMT_FRAME_UPDATE {
 	struct MSG_HDR rMsgHdr;
 	enum ENUM_BUFFER_TYPE eBufferType;
 	uint32_t u4BufferLen;
-	uint8_t aucBuffer[1];
+	uint8_t aucBuffer[];
 };
 
 struct MSG_P2P_SWITCH_OP_MODE {
@@ -109,7 +109,7 @@ struct MSG_P2P_CONNECTION_REQUEST {
 	struct RF_CHANNEL_INFO rChannelInfo;
 	enum ENUM_PARAM_AUTH_MODE eAuthMode;
 	uint32_t u4IELen;
-	uint8_t aucIEBuf[1];
+	uint8_t aucIEBuf[];
 };
 
 struct MSG_P2P_CONNECTION_ABORT {
