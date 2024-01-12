@@ -1448,9 +1448,13 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 	       prBssInfo->ucBssIndex, fgIsOwnCap, prBssInfo->ucOpRxNss);
 
 	if (fgIsOwnCap) {
+#if CFG_SUPPORT_DBDC
 		ucOpModeBw = cnmGetDbdcBwCapability(prAdapter,
 						    prBssInfo->ucBssIndex);
-
+#else
+		ucOpModeBw = cnmGetBssMaxBw(prAdapter,
+						    prBssInfo->ucBssIndex);
+#endif
 		/*handle 80P80 case*/
 		if (ucOpModeBw >= MAX_BW_160MHZ) {
 			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;
@@ -2369,8 +2373,12 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	enum ENUM_CHNL_EXT eScoModify;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
 
+#if CFG_SUPPORT_DBDC
+	ucMaxBandwidth = cnmGetDbdcBwCapability(prAdapter, ucBssIndex);
+#else
+	ucMaxBandwidth = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+#endif
 	if (*peChannelWidth > CW_20_40MHZ) {
 		/*case BW > 80 , 160 80P80 */
 		ucCurrentBandwidth = (uint8_t)*peChannelWidth + ucOffset;
@@ -7268,9 +7276,11 @@ rlmChangeOperationMode(
 		return OP_CHANGE_STATUS_VALID_NO_CHANGE;
 	}
 
+#if CFG_SUPPORT_DBDC
 	/* Indicate operation mode changes */
 	kalIndicateOpModeChange(prAdapter, ucBssIndex,
 		ucChannelWidth, ucOpTxNss, ucOpRxNss);
+#endif
 
 	DBGLOG(RLM, INFO,
 		"Intend to change BSS[%d] OP Mode to BW[%d] RxNss[%d] TxNss[%d]\n",

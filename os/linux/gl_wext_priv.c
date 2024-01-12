@@ -16031,7 +16031,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
 	{CMD_RUN_HQA, priv_driver_run_hqa},
 	{CMD_CALIBRATION, priv_driver_calibration},
+#if CFG_SUPPORT_DBDC
 	{CMD_SET_STA1NSS, priv_driver_set_sta1ss},
+#endif
 	{CMD_SET_NVRAM, priv_driver_set_nvram},
 	{CMD_GET_NVRAM, priv_driver_get_nvram},
 #if CFG_MTK_WIFI_SW_WFDMA

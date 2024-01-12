@@ -936,10 +936,8 @@ struct WIFI_VAR {
 	uint8_t ucCtiaMode;
 	uint8_t ucTpTestMode;
 	uint8_t ucSigmaTestMode;
-#if CFG_SUPPORT_DBDC
 	enum ENUM_CNM_DBDC_MODE eDbdcMode;
 	u_int8_t fgDbDcModeEn;
-#endif
 	uint8_t u4ScanCtrl;
 	uint8_t ucScanChannelListenTime;
 

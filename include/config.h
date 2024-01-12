@@ -1262,8 +1262,9 @@
  * Flags for DBDC Feature
  *------------------------------------------------------------------------------
  */
-
+#ifndef CFG_SUPPORT_DBDC
 #define CFG_SUPPORT_DBDC	1
+#endif
 #define CFG_SUPPORT_DBDC_NO_BLOCKING_OPMODE 1
 #define CFG_SUPPORT_SAP_DFS_CHANNEL 1
 
@@ -1437,11 +1438,7 @@
 *------------------------------------------------------------------------------
 */
 #ifndef CFG_SUPPORT_IOT_AP_BLACKLIST
-#if CFG_SUPPORT_DBDC
 #define CFG_SUPPORT_IOT_AP_BLACKLIST 1
-#else
-#define CFG_SUPPORT_IOT_AP_BLACKLIST 0
-#endif
 #endif
 
 #if CFG_SUPPORT_IOT_AP_BLACKLIST

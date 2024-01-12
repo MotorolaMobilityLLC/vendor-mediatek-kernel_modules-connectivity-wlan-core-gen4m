@@ -2346,8 +2346,13 @@ void p2pRoleFsmRunEventConnectionRequest(IN struct ADAPTER *prAdapter,
 
 
 		/* Decide RF BW by own OP and Peer OP BW */
+#if CFG_SUPPORT_DBDC
 		ucRfBw = cnmGetDbdcBwCapability(prAdapter,
 			prP2pBssInfo->ucBssIndex);
+#else
+		ucRfBw = cnmGetBssMaxBw(prAdapter,
+			prP2pBssInfo->ucBssIndex);
+#endif
 		/* Revise to VHT OP BW */
 		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
 		if (ucRfBw > prJoinInfo->prTargetBssDesc->eChannelWidth)

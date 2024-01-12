@@ -321,6 +321,24 @@ struct EVENT_LTE_SAFE_CHN g_rLteSafeChInfo;
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+static enum ENUM_CNM_OPMODE_REQ_STATUS
+cnmOpModeSetTRxNss(
+	IN struct ADAPTER *prAdapter,
+	IN uint8_t ucBssIndex,
+	IN enum ENUM_CNM_OPMODE_REQ_T eNewReq,
+	IN bool fgEnable,
+	IN uint8_t ucOpRxNss,
+	IN uint8_t ucOpTxNss
+);
+
+static void
+cnmWmmQuotaCallback(
+	IN struct ADAPTER *prAdapter,
+	IN unsigned long plParamPtr
+);
+
+
+#if CFG_SUPPORT_DBDC
 static void
 cnmDbdcFsmEntryFunc_DISABLE_IDLE(
 	IN struct ADAPTER *prAdapter
@@ -421,22 +439,6 @@ cnmDbdcOpModeChangeDoneCallback(
 	IN bool fgSuccess
 );
 
-static enum ENUM_CNM_OPMODE_REQ_STATUS
-cnmOpModeSetTRxNss(
-	IN struct ADAPTER *prAdapter,
-	IN uint8_t ucBssIndex,
-	IN enum ENUM_CNM_OPMODE_REQ_T eNewReq,
-	IN bool fgEnable,
-	IN uint8_t ucOpRxNss,
-	IN uint8_t ucOpTxNss
-);
-
-static void
-cnmWmmQuotaCallback(
-	IN struct ADAPTER *prAdapter,
-	IN unsigned long plParamPtr
-);
-
 static void
 cnmWmmQuotaSetMaxQuota(
 	IN struct ADAPTER *prAdapter,
@@ -508,7 +510,6 @@ static struct DBDC_FSM_T arDdbcFsmActionTable[] = {
 	},
 };
 
-#if CFG_SUPPORT_DBDC
 static struct DBDC_INFO_T g_rDbdcInfo;
 #endif
 
@@ -637,10 +638,10 @@ void cnmUninit(struct ADAPTER *prAdapter)
 {
 	struct CNM_WMM_QUOTA_CONTROL_T *prWmmQuotaCtrl;
 	uint8_t ucWmmIndex;
-
+#if CFG_SUPPORT_DBDC
 	cnmTimerStopTimer(prAdapter,
 		&g_rDbdcInfo.rDbdcGuardTimer);
-
+#endif
 	for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 		ucWmmIndex++) {
 		prWmmQuotaCtrl = &(g_arWmmQuotaControl[ucWmmIndex]);
@@ -4056,6 +4057,7 @@ void cnmOpModeCallbackDispatcher(
 	/* Step 1. Run callback function */
 	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
 	if (!prBssOpCtrl->rRunning.fgIsRunning) {
+#if CFG_SUPPORT_DBDC
 		/* GO/AP run cb immediately. */
 		DBGLOG(CNM, INFO,
 			"CbOpMode, BSS[%d] none running, OpModeState[%d]\n",
@@ -4069,12 +4071,15 @@ void cnmOpModeCallbackDispatcher(
 			cnmDbdcOpModeChangeDoneCallback(
 				prAdapter, ucBssIndex, fgSuccess);
 		}
+#endif
 	} else {
 		switch (prBssOpCtrl->rRunning.eReqIdx) {
+#if CFG_SUPPORT_DBDC
 		case CNM_OPMODE_REQ_DBDC:
 			cnmDbdcOpModeChangeDoneCallback(
 				prAdapter, ucBssIndex, fgSuccess);
 			break;
+#endif
 		default:
 			break;
 		}
@@ -4647,6 +4652,7 @@ cnmWmmQuotaCallback(
 	}
 }
 
+#if CFG_SUPPORT_DBDC
 void cnmWmmQuotaSetMaxQuota(
 	IN struct ADAPTER *prAdapter,
 	IN uint8_t ucWmmIndex,
@@ -4694,6 +4700,7 @@ void cnmWmmQuotaSetMaxQuota(
 
 	cnmWmmQuotaCallback(prAdapter, ucWmmIndex);
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

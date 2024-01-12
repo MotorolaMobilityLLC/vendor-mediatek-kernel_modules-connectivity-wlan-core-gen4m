@@ -2135,9 +2135,10 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 
 	/* Down the flag */
 	prAdapter->rWifiVar.ucChannelSwitchMode = 0;
-
+#if CFG_SUPPORT_DBDC
 	/* Check DBDC status */
 	cnmDbdcRuntimeCheckDecision(prAdapter, prBssInfo->ucBssIndex);
+#endif
 	cnmIdcSwitchSapChannel(prAdapter);
 } /* p2pFuncDfsSwitchCh */
 
