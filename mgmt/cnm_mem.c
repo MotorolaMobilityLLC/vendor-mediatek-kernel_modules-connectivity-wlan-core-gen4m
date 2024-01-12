@@ -514,7 +514,6 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 		u4BlockIndex = ((uintptr_t) pvMemory
 			- (uintptr_t) prBufInfo->pucBuf)
 			>> MSG_BUF_BLOCK_SIZE_IN_POWER_OF_2;
-		ASSERT(u4BlockIndex < MAX_NUM_OF_BUF_BLOCKS);
 		eRamType = RAM_TYPE_MSG;
 	} else if (((uintptr_t) pvMemory
 		>= (uintptr_t) prAdapter->pucMgtBufCached)
@@ -525,7 +524,6 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 		u4BlockIndex = ((uintptr_t) pvMemory
 			- (uintptr_t) prBufInfo->pucBuf)
 			>> MGT_BUF_BLOCK_SIZE_IN_POWER_OF_2;
-		ASSERT(u4BlockIndex < MAX_NUM_OF_BUF_BLOCKS);
 		eRamType = RAM_TYPE_BUF;
 	} else {
 #ifdef LINUX
@@ -556,6 +554,14 @@ void cnmMemFree(struct ADAPTER *prAdapter, void *pvMemory)
 #if CFG_DBG_MGT_BUF
 		GLUE_INC_REF_CNT(prAdapter->u4MemFreeDynamicCount);
 #endif
+		return;
+	}
+
+	if (u4BlockIndex >= MAX_NUM_OF_BUF_BLOCKS) {
+		DBGLOG(MEM, ERROR,
+			"u4BlockIndex %d>=[%d]\n",
+			u4BlockIndex, MAX_NUM_OF_BUF_BLOCKS);
+		ASSERT(0);
 		return;
 	}
 
