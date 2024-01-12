@@ -1691,7 +1691,7 @@ void scanHandleRnrMldParam(IN struct ADAPTER *prAdapter,
 				ucMldParamOffset = 7;
 				break;
 			/* 16: Neighbor AP TBTT Offset + BSSID + Short SSID + BSS parameters + 20MHz PSD + MLD Parameter */
-			case 16:
+			case 16 ... 255:
 				ucMldParamOffset = 13;
 				break;
 
@@ -1895,7 +1895,7 @@ uint8_t scanValidRnrTbttInfo(IN uint16_t u2TbttInfoLength)
 	case 11:
 	case 12:
 	case 13:
-	case 16:
+	case 16 ... 255:
 		ucValidInfo = TRUE;
 		break;
 	default:
