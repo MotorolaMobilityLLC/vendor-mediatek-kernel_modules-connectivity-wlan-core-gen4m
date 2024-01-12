@@ -727,6 +727,12 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 #endif
 #endif
 
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	/* dynamic tx power control initialization */
+	/* note: call this API before loading NVRAM */
+	txPwrCtrlInit(prAdapter);
+#endif
+
 	/* Check hardware 5g band support */
 	if (prAdapter->fgIsHw5GBandDisabled)
 		prAdapter->fgEnable5GBand = FALSE;
@@ -757,6 +763,11 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 	wlanAdapterStartForLowLatency(prAdapter);
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	/* dynamic tx power control load configuration */
+	/* note: call this API after loading NVRAM */
+	txPwrCtrlLoadConfig(prAdapter);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1054,7 +1065,10 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 
 		/* System Service Uninitialization */
 		nicUninitSystemService(prAdapter);
-
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+		/* dynamic tx power control uninitialization */
+		txPwrCtrlUninit(prAdapter);
+#endif
 		nicReleaseAdapterMemory(prAdapter);
 
 #if defined(_HIF_SPI)

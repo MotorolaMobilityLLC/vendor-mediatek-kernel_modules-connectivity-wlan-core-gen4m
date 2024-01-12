@@ -1264,6 +1264,94 @@ nla_put_failure:
 	return -ENOMEM;
 }
 
+int mtk_cfg80211_vendor_set_tx_power_scenario(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len)
+{
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
+	struct GLUE_INFO *prGlueInfo;
+	struct nlattr *attr;
+	struct sk_buff *skb;
+	uint32_t u4Scenario;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4SetInfoLen = 0;
+	uint8_t index = 0;
+	char name[] = { "_G_Scenario" };
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+
+#if CFG_ENABLE_UNIFY_WIPHY
+	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+#else	/* CFG_ENABLE_UNIFY_WIPHY */
+	if (wdev == gprWdev)	/* wlan0 */
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+	else
+		prGlueInfo = *((struct GLUE_INFO **) wiphy_priv(wiphy));
+#endif	/* CFG_ENABLE_UNIFY_WIPHY */
+
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	attr = (struct nlattr *)data;
+	if (attr->nla_type == WIFI_ATTRIBUTE_TX_POWER_SCENARIO)
+		u4Scenario = nla_get_u32(attr);
+	else
+		return -EINVAL;
+
+	if (u4Scenario == UINT_MAX) {
+		index = 0;
+	} else if ((u4Scenario >= 0) && (u4Scenario <= 4)) {
+		index = u4Scenario + 1;
+	} else {
+		DBGLOG(REQ, ERROR, "invalid scenario index: %u\n", u4Scenario);
+		return -EINVAL;
+	}
+
+	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+	rPwrCtrlParam.name = name;
+	rPwrCtrlParam.index = index;
+
+	DBGLOG(REQ, INFO,
+	       "applied=[%d], name=[%s], index=[%u], setting=[%s], UINT_MAX=[%u], iftype=[%d]\n",
+	       rPwrCtrlParam.fgApplied,
+	       rPwrCtrlParam.name,
+	       rPwrCtrlParam.index,
+	       rPwrCtrlParam.newSetting,
+	       UINT_MAX,
+	       wdev->iftype);
+
+	rStatus = kalIoctl(prGlueInfo,
+		 wlanoidTxPowerControl,
+		 (void *)&rPwrCtrlParam,
+		 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+		 FALSE,
+		 FALSE,
+		 TRUE,
+		 &u4SetInfoLen);
+
+	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, sizeof(rStatus));
+	if (!skb) {
+		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+		return -ENOMEM;
+	}
+
+	if (unlikely(
+	    nla_put_nohdr(skb, sizeof(rStatus), &rStatus) < 0)) {
+		DBGLOG(REQ, ERROR, "nla_put_nohdr failed\n");
+		goto errHandleLabel;
+	}
+
+	DBGLOG(REQ, INFO, "rStatus=0x%x\n", rStatus);
+
+	return cfg80211_vendor_cmd_reply(skb);
+
+errHandleLabel:
+	kfree_skb(skb);
+#endif
+	return -EFAULT;
+}
+
 int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		*wiphy, struct wireless_dev *wdev, const void *data,
 		int data_len)
