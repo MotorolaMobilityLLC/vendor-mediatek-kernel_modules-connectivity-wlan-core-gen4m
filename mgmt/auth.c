@@ -90,9 +90,6 @@ struct APPEND_VAR_IE_ENTRY txAuthIETable[] = {
 	{0, authCalculateRSNIELen, authAddRSNIE}, /* Element ID: 48 */
 	{(ELEM_HDR_LEN + 1), NULL, authAddMDIE}, /* Element ID: 54 */
 	{0, rsnCalculateFTIELen, rsnGenerateFTIE}, /* Element ID: 55 */
-//#if (CFG_SUPPORT_802_11BE == 1)
-//	{(ELEM_HDR_LEN + MAX_LEN_OF_MLIE), NULL, beReqGenerateMLIE} /* ML IE should be in the last */
-//#endif
 };
 
 struct HANDLE_IE_ENTRY rxAuthIETable[] = {
@@ -419,6 +416,12 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 	}
 
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (IS_STA_IN_AIS(prStaRec)
+		&& mldStarecGetByStarec(prAdapter, prStaRec)) {
+		u2EstimatedFrameLen += MAX_LEN_OF_MLIE;
+	}
+#endif
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
@@ -502,6 +505,14 @@ authSendAuthFrame(IN struct ADAPTER *prAdapter,
 		if (txAuthIETable[i].pfnAppendIE)
 			txAuthIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 	}
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (IS_STA_IN_AIS(prStaRec)) {
+		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_AUTH,
+			txAuthIETable,
+			(sizeof(txAuthIETable) / sizeof(struct APPEND_VAR_IE_ENTRY)));
+	}
+#endif
 
 	/* TODO(Kevin):
 	 * Also release the unused tail room of the composed MMPDU

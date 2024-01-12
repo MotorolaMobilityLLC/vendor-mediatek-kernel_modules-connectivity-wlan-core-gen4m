@@ -138,9 +138,6 @@ struct APPEND_VAR_IE_ENTRY txAssocReqIETable[] = {
 				/* 221 */
 	,
 #endif
-#if (CFG_SUPPORT_802_11BE == 1)
-	{(ELEM_HDR_LEN + MAX_LEN_OF_MLIE), NULL, beReqGenerateMLIE} /* ML IE should be in the last */
-#endif
 };
 
 #if CFG_SUPPORT_AAA
@@ -664,8 +661,17 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	/* Calculate non-wfa vendor specific ie len */
 	u2EstimatedExtraIELen += assoc_get_nonwfa_vend_ie_len(prAdapter,
 		prStaRec->ucBssIndex);
+
 #endif
 	u2EstimatedFrameLen += u2EstimatedExtraIELen;
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (IS_STA_IN_AIS(prStaRec)
+		&& mldStarecGetByStarec(prAdapter, prStaRec)) {
+		//add MLIE estimated length
+		u2EstimatedExtraIELen += MAX_LEN_OF_MLIE;
+	}
+#endif
 
 	/* Allocate a MSDU_INFO_T */
 	prMsduInfo = cnmMgtPktAlloc(prAdapter, u2EstimatedFrameLen);
@@ -734,6 +740,13 @@ uint32_t assocSendReAssocReqFrame(IN struct ADAPTER *prAdapter,
 	}
 	/* Append non-wfa vendor specific ies for AIS mode */
 	assoc_build_nonwfa_vend_ie(prAdapter, prMsduInfo);
+#endif
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (IS_STA_IN_AIS(prStaRec)) {
+		beReqGenerateMLIE(prAdapter, prMsduInfo, TYPE_ASSOC,
+			txAssocReqIETable, txAssocReqIENums);
+	}
 #endif
 
 	/* 4 <6> Update the (Re)association request information */
