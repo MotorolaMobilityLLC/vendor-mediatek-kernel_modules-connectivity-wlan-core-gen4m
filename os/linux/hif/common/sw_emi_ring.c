@@ -98,7 +98,7 @@ void halSwEmiInit(struct GLUE_INFO *prGlueInfo)
 
 	kalMemSet(prEmi, 0, sizeof(struct SW_EMI_CTX));
 	prEmi->u4RingSize = SW_EMI_RING_SIZE;
-	spin_lock_init(&prSwEmiRingInfo->rRingLock);
+	prSwEmiRingInfo->u4ReadBlockCnt = 0;
 	prSwEmiRingInfo->fgIsEnable = TRUE;
 
 	DBGLOG(HAL, INFO, "base: 0x%llx\n", prMem->pa);
@@ -115,7 +115,6 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	struct SW_EMI_CTX *prEmi;
 	uint32_t u4DrvIdx = 0, u4Cnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
-	unsigned long ulFlags = 0;
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -133,6 +132,12 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 		goto exit;
 	}
 
+	if (!prSwEmiRingInfo->rOps.triggerInt) {
+		DBGLOG(HAL, ERROR, "triggerInt callback is null!\n");
+		fgRet = FALSE;
+		goto exit;
+	}
+
 	if ((prEmi->u4DrvIdx >= SW_EMI_RING_SIZE) ||
 	    (prEmi->u4FwIdx >= SW_EMI_RING_SIZE) ||
 	    (prEmi->u4RingSize > SW_EMI_RING_SIZE) ||
@@ -145,7 +150,14 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg))
 		KAL_REC_TIME_START();
 
-	kalAcquireSpinLock(prGlueInfo, SPIN_LOCK_SW_EMI_RING, &ulFlags);
+	if (GLUE_GET_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt) != 0) {
+		DBGLOG(INIT, WARN, "ReadBlockCnt = %u\n",
+		       prSwEmiRingInfo->u4ReadBlockCnt);
+		fgRet = FALSE;
+		goto exit;
+	}
+
+	GLUE_INC_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
 
 	if (prEmi->u4DrvIdx != prEmi->u4FwIdx) {
 		DBGLOG(HAL, ERROR, "DrvIdx[%u] & FwIdx[%u] mismatch!\n",
@@ -158,19 +170,16 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	prEmi->au4Addr[u4DrvIdx] = u4Addr;
 	INC_RING_INDEX(u4DrvIdx, prEmi->u4RingSize);
 
-	if (prSwEmiRingInfo->rOps.triggerInt) {
-		prSwEmiRingInfo->rOps.triggerInt(prGlueInfo);
-	} else {
-		DBGLOG(HAL, ERROR, "triggerInt callback is null!\n");
-		fgRet = FALSE;
-		goto unlock;
-	}
+	prSwEmiRingInfo->rOps.triggerInt(prGlueInfo);
 
 	for (u4Cnt = 0; u4DrvIdx != prEmi->u4FwIdx; u4Cnt++) {
 		if (u4Cnt > SW_EMI_WAITING_FW_READY_CNT) {
+			DBGLOG(HAL, ERROR,
+			       "Read[0x%08x] timeout DrvIdx[%u] & FwIdx[%u] ",
+			       u4Addr, prEmi->u4DrvIdx, prEmi->u4FwIdx);
 			fgDbg = TRUE;
 			fgRet = FALSE;
-			goto unlock;
+			goto end;
 		}
 		kalUdelay(10);
 	}
@@ -178,8 +187,8 @@ u_int8_t halSwEmiRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 	*pu4Val = prEmi->au4Val[prEmi->u4DrvIdx];
 	prEmi->u4DrvIdx = u4DrvIdx;
 
-unlock:
-	kalReleaseSpinLock(prGlueInfo, SPIN_LOCK_SW_EMI_RING, ulFlags);
+end:
+	GLUE_DEC_REF_CNT(prSwEmiRingInfo->u4ReadBlockCnt);
 
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
 		KAL_REC_TIME_END();
@@ -190,9 +199,6 @@ unlock:
 	}
 debug:
 	if (fgDbg) {
-		DBGLOG(HAL, ERROR,
-		       "Read[0x%08x] timeout DrvIdx[%u] & FwIdx[%u] ",
-		       u4Addr, prEmi->u4DrvIdx, prEmi->u4FwIdx);
 		halSwEmiDebug(prGlueInfo);
 		if (prDbgOps && prDbgOps->dumpwfsyscpupcr)
 			prDbgOps->dumpwfsyscpupcr(prGlueInfo->prAdapter);
