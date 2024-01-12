@@ -188,8 +188,8 @@ void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
-void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen,
-	u_int8_t fgIsSetLen)
+void *kalBuildSkb(void *pvPacket, uint32_t u4MgmtLength,
+	uint32_t u4TotLen, u_int8_t fgIsSetLen)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 	return NULL;
