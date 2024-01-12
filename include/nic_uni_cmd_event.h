@@ -1415,6 +1415,69 @@ struct UNI_CMD_POWER_OFF
 	uint8_t aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
+/* Rx header translation command (0x12) */
+struct UNI_CMD_SER
+{
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0]; /**<the TLVs includer in this field:
+        *
+        *  TAG                    | ID   | structure
+        *  -------------          | -----| -------------
+        *  UNI_CMD_SER_QUERY      | 0x0  | UNI_CMD_SER_QUERY_T
+        *  UNI_CMD_SER_ENABLE     | 0x1  | UNI_CMD_SER_ENABLE_T
+        *  UNI_CMD_SER_SET        | 0x2  | UNI_CMD_SER_SET_T
+        *  UNI_CMD_SER_TRIGGER    | 0x3  | UNI_CMD_SER_TRIGGER_T
+        */
+} __KAL_ATTRIB_PACKED__;
+
+/* SER command TLV List */
+enum ENUM_UNI_CMD_SER_TAG
+{
+	UNI_CMD_SER_TAG_QUERY = 0,
+	UNI_CMD_SER_TAG_ENABLE = 1,
+	UNI_CMD_SER_TAG_SET = 2,
+	UNI_CMD_SER_TAG_TRIGGER = 3,
+	UNI_CMD_SER_TAG_L0P5_CTRL = 4,
+	UNI_CMD_SER_TAG_NUM
+};
+
+/* Show ser (Tag0) */
+struct UNI_CMD_SER_QUERY
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+/* Enable/disable ser (Tag1) */
+struct UNI_CMD_SER_ENABLE
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgEnable;
+	uint8_t aucPadding[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* config ser (Tag2) */
+struct UNI_CMD_SER_SET
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4EnableMask;
+} __KAL_ATTRIB_PACKED__;
+
+/* trigger ser recovery (Tag3) */
+struct UNI_CMD_SER_TRIGGER
+{
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucTriggerMethod;
+	uint8_t ucDbdcIdx;
+	uint8_t aucPadding[2];
+} __KAL_ATTRIB_PACKED__;
+
 struct UNI_CMD_TWT
 {
 	/*fixed field*/
@@ -2865,6 +2928,8 @@ uint32_t nicUniCmdTwtArgtUpdate(struct ADAPTER *ad,
 uint32_t nicUniCmdStaRecUpdateExt(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdBFAction(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniCmdSerAction(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdUpdateEdcaSet(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
