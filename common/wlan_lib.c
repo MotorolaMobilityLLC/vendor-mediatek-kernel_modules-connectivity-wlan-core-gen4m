@@ -7273,11 +7273,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"ForceRrmMloScan", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucMldLinkMax, "MldLinkMax", MLD_LINK_MAX,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucStaMldLinkMax, "StaMldLinkMax", MLD_LINK_MAX,
+	INIT_UINT(prWifiVar->ucStaMldLinkMax, "StaMldLinkMax", MLD_STA_LINK_MAX,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucApMldLinkMax, "ApMldLinkMax", MLD_AP_LINK_MAX,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucP2pMldLinkMax, "P2pMldLinkMax", MLD_LINK_MAX,
+	INIT_UINT(prWifiVar->ucP2pMldLinkMax, "P2pMldLinkMax", MLD_P2P_LINK_MAX,
 		  FEATURE_TO_CUSTOMER);
 	if (prWifiVar->ucStaMldLinkMax > prWifiVar->ucMldLinkMax) {
 		DBGLOG(INIT, WARN,
