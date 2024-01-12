@@ -2143,6 +2143,10 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 	uint8_t ucBssIdx;
+	static const uint32_t WLAN_DRV_READY =
+		WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND |
+		WLAN_DRV_READY_CHECK_RESET;
 
 	_Static_assert(sizeof(struct cfg80211_qos_map) ==
 			sizeof(struct QOS_MAP),
@@ -2159,8 +2163,16 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 
 	do {
 		prGlueInfo = *((struct GLUE_INFO **)netdev_priv(dev));
+		if (unlikely(!prGlueInfo))
+			break;
+
+		if (unlikely(!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY))) {
+			DBGLOG(TX, WARN, "Driver is not ready\n");
+			break;
+		}
+
 		prAdapter = prGlueInfo->prAdapter;
-		if (!prAdapter)
+		if (unlikely(!prAdapter))
 			break;
 
 		ucBssIdx = wlanGetBssIdx(dev);
@@ -2168,11 +2180,11 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 			break;
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-		if (!prBssInfo)
+		if (unlikely(!prBssInfo))
 			break;
 
 		prStaRec = prBssInfo->prStaRecOfAP;
-		if (!prStaRec)
+		if (unlikely(!prStaRec))
 			break;
 
 		qos_map = (struct cfg80211_qos_map *)&prStaRec->rQosMap;
