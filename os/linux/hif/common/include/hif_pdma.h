@@ -163,6 +163,8 @@
 
 #define HIF_MSDU_REPORT_RETURN_TIMEOUT		10	/* sec */
 #define HIF_SER_TIMEOUT				10000	/* msec */
+#define HIF_SER_POWER_OFF_RETRY_COUNT		100
+#define HIF_SER_POWER_OFF_RETRY_TIME		10	/* msec */
 
 #define MT_RINGREG_DIFF		0x10
 #define MT_RINGREG_EXT_DIFF	0x04
