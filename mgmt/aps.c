@@ -1308,13 +1308,21 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	uint32_t bmap = aisGetBssIndexBmap(ais);
-	uint8_t connected = !!(prBssDesc->fgIsConnected & bmap);
+	uint32_t bmap;
+	uint8_t connected;
 	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	uint32_t i = 0;
 #endif
+
+	if (ais == NULL) {
+		DBGLOG(APS, WARN, "ais is NULL\n");
+		return FALSE;
+	}
+
+	bmap = aisGetBssIndexBmap(ais);
+	connected = !!(prBssDesc->fgIsConnected & bmap);
 
 	/* Don't skip connected AP if reassociation or btm */
 	if (eRoamReason != ROAMING_REASON_UPPER_LAYER_TRIGGER &&
