@@ -3966,9 +3966,10 @@ struct CMD_VALIDATE_POLICY get_tsf_policy[PRIV_CMD_SET_ARG_NUM_2] = {
 				 .min = 0, .max = MAX_BSS_INDEX - 1}
 };
 
-struct CMD_VALIDATE_POLICY set_ml_probereq_policy[PRIV_CMD_SET_ARG_NUM_3] = {
+struct CMD_VALIDATE_POLICY set_ml_probereq_policy[PRIV_CMD_SET_ARG_NUM_4] = {
 	[PRIV_CMD_ATTR_IDX_1] = {.type = NLA_STRING, .len = 17},
-	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
+	[PRIV_CMD_ATTR_IDX_2] = {.type = NLA_U32, .min = 0, .max = U32_MAX},
+	[PRIV_CMD_ATTR_IDX_3] = {.type = NLA_U32, .min = 0, .max = 1}
 };
 
 struct CMD_VALIDATE_POLICY set_trx_ba_size_policy[PRIV_CMD_SET_ARG_NUM_3] = {
@@ -5744,7 +5745,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	struct ADAPTER *prAdapter = NULL;
 	struct PARAM_SCAN_REQUEST_ADV *prScanRequest;
 	uint8_t aucMacAddr[MAC_ADDR_LEN], aucIe[100];
-	uint32_t u4BufLen, rStatus, u4Freq;
+	uint32_t u4BufLen, rStatus, u4Freq, u4PerSta;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
@@ -5758,7 +5759,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		return -EINVAL;
 	}
 
-	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 3) {
+	if (rStatus == WLAN_STATUS_SUCCESS && i4Argc >= 4) {
 		struct BSS_DESC *prBssDesc;
 
 		DBGLOG(REQ, INFO, "argc %i, cmd [%s]\n", i4Argc, apcArgv[1]);
@@ -5770,6 +5771,13 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 					i4BytesWritten);
 			return -1;
 		}
+		i4BytesWritten = kalkStrtou32(apcArgv[3], 0, &u4PerSta);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "parse ucType error %d\n",
+					i4BytesWritten);
+			return -1;
+		}
+
 		prBssDesc = scanSearchBssDescByBssid(prAdapter, aucMacAddr);
 		if (!prBssDesc) {
 			DBGLOG(REQ, ERROR, "Can't find "MACSTR"\n",
@@ -5789,7 +5797,7 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 		prScanRequest->ucScanType = SCAN_TYPE_ACTIVE_SCAN;
 		kalMemZero(aucIe, 100);
 		prScanRequest->u4IELength = mldFillScanIE(prAdapter, prBssDesc,
-			aucIe, sizeof(aucIe), AIS_DEFAULT_BSS_INDEX);
+			aucIe, sizeof(aucIe), u4PerSta);
 		prScanRequest->pucIE = aucIe;
 		prScanRequest->arChannel[0].ucChannelNum =
 					nicFreq2ChannelNum(u4Freq * 1000);
@@ -21944,7 +21952,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.pcCmdStr  = CMD_SET_ML_PROBEREQ,
 		.pfHandler = priv_driver_set_ml_probereq,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_3,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM_4,
 		.policy    = set_ml_probereq_policy
 	},
 	{

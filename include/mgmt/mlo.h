@@ -210,10 +210,10 @@ uint8_t *mldGenerateBasicCommonInfo(
 	uint16_t u2FrameCtrl);
 
 uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc,
-	uint8_t *pucIE, uint32_t u4IELength);
+	uint8_t *pucIE, uint32_t u4IELength, uint8_t fgPerSta);
 
 uint32_t mldFillScanIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
-	uint8_t *pucIE, uint32_t u4IELength, uint8_t ucBssIndex);
+	uint8_t *pucIE, uint32_t u4IELength, uint8_t fgPerSta);
 
 uint8_t *mldGenerateBasicCompleteProfile(
 	struct ADAPTER *prAdapter,

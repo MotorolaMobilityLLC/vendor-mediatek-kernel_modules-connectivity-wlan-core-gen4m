@@ -8938,7 +8938,7 @@ static uint32_t aisScanGenMlScanReq(struct ADAPTER *prAdapter,
 	/* Generate ML probe request IE */
 	kalMemZero(aucIe, sizeof(aucIe));
 	u4ScanIELen = mldFillScanIE(prAdapter, prBssDesc,
-		aucIe, sizeof(aucIe), ucBssIndex);
+		aucIe, sizeof(aucIe), TRUE);
 	prScanReqMsg->eScanType = SCAN_TYPE_ACTIVE_SCAN;
 	prScanReqMsg->ucSSIDType = SCAN_REQ_SSID_WILDCARD;
 
@@ -9025,6 +9025,9 @@ void aisScanAddRlmIE(struct ADAPTER *prAdapter,
 	struct MSG_SCN_SCAN_REQ_V2 *prCmdScanReq)
 {
 	struct BSS_INFO *bss;
+
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucStaEht))
+		return;
 
 	bss = GET_BSS_INFO_BY_INDEX(prAdapter, prCmdScanReq->ucBssIndex);
 	if (!bss) {
