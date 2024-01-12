@@ -2425,9 +2425,16 @@ uint32_t wlanTxCmdMthread(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 
 	if (halIsHifStateSuspend(prAdapter)) {
-		DBGLOG(TX, WARN, "Suspend TxCmdMthread\n");
+		DBGLOG(TX, ERROR, "Suspend TxCmdMthread\n");
 		return WLAN_STATUS_SUCCESS;
 	}
+
+#if defined(_HIF_USB)
+	if (halTxGetFreeCmdCnt(prAdapter) <= 0) {
+		DBGLOG(TX, ERROR, "Waiting for HIF-resource\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+#endif
 
 	prTempCmdQue = &rTempCmdQue;
 	QUEUE_INITIALIZE(prTempCmdQue);

@@ -268,8 +268,11 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 		return WLAN_STATUS_FAILURE;
 
 	prUsbReq = glUsbDequeueReq(prHifInfo, &prHifInfo->rTxCmdFreeQ, &prHifInfo->rTxCmdQLock);
-	if (prUsbReq == NULL)
+	if (prUsbReq == NULL) {
+		DBGLOG(HAL, ERROR, "TX CMD CID[0x%X] SEQ[%d] no URB!\n",
+				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		return WLAN_STATUS_RESOURCES;
+	}
 
 	prBufCtrl = prUsbReq->prBufCtrl;
 
@@ -282,8 +285,9 @@ uint32_t halTxUSBSendCmd(struct GLUE_INFO *prGlueInfo, uint8_t ucTc,
 		return WLAN_STATUS_RESOURCES;
 	}
 
-	DBGLOG(HAL, INFO, "TX CMD CID[0x%X] URB[0x%p]\n", prCmdInfo->ucCID,
-	       prUsbReq->prUrb);
+	DBGLOG(HAL, INFO, "TX CMD CID[0x%X] URB[0x%p] SEQ[%d]\n",
+			prCmdInfo->ucCID,
+			prUsbReq->prUrb, prCmdInfo->ucCmdSeqNum);
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prTxDescOps = prChipInfo->prTxDescOps;
@@ -1646,6 +1650,32 @@ void halDevInit(struct ADAPTER *prAdapter)
 
 	glUdmaRxAggEnable(prGlueInfo, FALSE);
 	glUdmaTxRxEnable(prGlueInfo, TRUE);
+}
+u_int32_t halTxGetFreeCmdCnt(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct USB_REQ *prUsbReq, *prNext;
+	unsigned long flags;
+	u_int16_t u2Cnt = 0;
+
+	if (prAdapter == NULL) {
+		DBGLOG(HAL, ERROR, "prAdapter is NULL error\n");
+		return 0;
+	}
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	if (prHifInfo == NULL) {
+		DBGLOG(HAL, ERROR, "prHifInfo is NULL error\n");
+		return 0;
+	}
+
+	spin_lock_irqsave(&prHifInfo->rTxCmdQLock, flags);
+	list_for_each_entry_safe(prUsbReq,
+			prNext, &prHifInfo->rTxCmdFreeQ, list)
+		u2Cnt++;
+	spin_unlock_irqrestore(&prHifInfo->rTxCmdQLock, flags);
+	return u2Cnt;
 }
 
 u_int8_t halTxIsCmdBufEnough(struct ADAPTER *prAdapter)
