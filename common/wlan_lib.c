@@ -10169,7 +10169,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 		rSuspendCmd.ucMdtim =
 			prGlueInfo->prAdapter->rWifiVar.ucWowOnMdtim;
 		rSuspendCmd.ucWowSuspend = TRUE;
-		DBGLOG(REQ, INFO, "mdtim [1]\n");
+		DBGLOG(REQ, TRACE, "mdtim [1]\n");
 	} else if (prGlueInfo->prAdapter->rWifiVar.ucWow
 		   && !prGlueInfo->prAdapter->rWowCtrl.fgWowEnable) {
 		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
@@ -10179,7 +10179,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			rSuspendCmd.ucMdtim =
 				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
 			rSuspendCmd.ucWowSuspend = TRUE;
-			DBGLOG(REQ, INFO, "mdtim [2]\n");
+			DBGLOG(REQ, TRACE, "mdtim [2]\n");
 		}
 	} else if (!prGlueInfo->prAdapter->rWifiVar.ucWow) {
 		if (prGlueInfo->prAdapter->rWifiVar.ucAdvPws) {
@@ -10189,7 +10189,7 @@ wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			rSuspendCmd.ucMdtim =
 				prGlueInfo->prAdapter->rWifiVar.ucWowOffMdtim;
 			rSuspendCmd.ucWowSuspend = FALSE;
-			DBGLOG(REQ, INFO, "mdtim [3]\n");
+			DBGLOG(REQ, TRACE, "mdtim [3]\n");
 		}
 	} else
 #endif
