@@ -146,6 +146,9 @@ static enum ENUM_AIS_STATE aisSearchHandleReconnect(struct ADAPTER *ad,
 static uint8_t aisFsmUpdateRsnSetting(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBss, uint8_t ucBssIndex);
 
+static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
+				     uint8_t ucBssIndex);
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -2850,8 +2853,8 @@ send_msg:
 			nicMediaJoinFailure(prAdapter,
 					    prAisBssInfo->ucBssIndex,
 					    WLAN_STATUS_JOIN_FAILURE);
-			aisClearAllLink(prAisFsmInfo);
-			prAisFsmInfo->ucConnTrialCountLimit = 0;
+			aisFsmDisconnectedAction(prAdapter,
+				prAisBssInfo->ucBssIndex);
 			eNextState = AIS_STATE_IDLE;
 			fgIsTransition = TRUE;
 
@@ -4636,9 +4639,11 @@ void aisFsmRunEventFoundIBSSPeer(struct ADAPTER *prAdapter,
  * @return (none)
  */
 /*----------------------------------------------------------------------------*/
-void aisFsmDisconnectedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
+				     uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct CONNECTION_SETTINGS *prConnSettings;
 #if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *prRoamingFsmInfo;
 #endif
@@ -4651,16 +4656,20 @@ void aisFsmDisconnectedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 #endif
 	struct BSS_INFO *prAisBssInfo;
+	struct FT_IES *prFtIEs;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_ROAMING
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 #endif
 
 	kalMemZero(prAisBssInfo->aucBSSID, MAC_ADDR_LEN);
+	prAisBssInfo->ucSSIDLen = 0;
 	prAisFsmInfo->ucConnTrialCount = 0;
 	prAdapter->rAddRoamScnChnl.ucChannelListNum = 0;
+	prAisFsmInfo->ucConnTrialCountLimit = 0;
 
 #if CFG_SUPPORT_ROAMING
 	if (prRoamingFsmInfo != NULL)
@@ -4688,6 +4697,36 @@ void aisFsmDisconnectedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		prBssDesc->fgQueriedCandidates = FALSE;
 	}
 #endif
+
+	if (prConnSettings && prConnSettings->assocIeLen > 0) {
+		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
+			   prConnSettings->assocIeLen);
+		prConnSettings->assocIeLen = 0;
+		prConnSettings->pucAssocIEs = NULL;
+	}
+
+	if (prConnSettings && prConnSettings->u4RspIeLength > 0) {
+		kalMemFree(prConnSettings->aucRspIe, VIR_MEM_TYPE,
+			prConnSettings->u4RspIeLength);
+		prConnSettings->u4RspIeLength = 0;
+		prConnSettings->aucRspIe = NULL;
+	}
+
+	if (prConnSettings && prConnSettings->u4ReqIeLength > 0) {
+		kalMemFree(prConnSettings->aucReqIe, VIR_MEM_TYPE,
+			prConnSettings->u4ReqIeLength);
+		prConnSettings->u4ReqIeLength = 0;
+		prConnSettings->aucReqIe = NULL;
+	}
+
+	prFtIEs = aisGetFtIe(prAdapter, ucBssIndex);
+	if (prFtIEs) {
+		kalMemFree(prFtIEs->pucIEBuf,
+			VIR_MEM_TYPE,
+			prFtIEs->u4IeLength);
+		kalMemZero(prFtIEs,
+			sizeof(*prFtIEs));
+	}
 }
 
 /*----------------------------------------------------------------------------*/
@@ -4906,7 +4945,8 @@ void aisPostponedEventOfDisconnTimeout(struct ADAPTER *prAdapter,
 	while (fgFound)
 		fgFound = aisFsmClearRequest(prAdapter,
 				AIS_REQUEST_RECONNECT, ucBssIndex);
-	if (prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR)
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_LOOKING_FOR ||
+	    prAisFsmInfo->eCurrentState == AIS_STATE_JOIN_FAILURE)
 		prAisFsmInfo->eCurrentState = AIS_STATE_IDLE;
 
 	/* 4 <3> Indicate Disconnected Event to Host immediately. */
@@ -5025,7 +5065,6 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 
 	/* 3 <3> Update BSS_INFO_T from SW_RFB_T (Association Resp Frame) */
 	/* 4 <3.1> Setup BSSID */
-	/* TODO: mlo, Use BSSID in assoc resp frame instead */
 	COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prBssDesc->aucBSSID);
 
 	u2IELength =
