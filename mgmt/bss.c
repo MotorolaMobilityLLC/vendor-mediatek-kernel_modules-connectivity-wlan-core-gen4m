@@ -2275,11 +2275,17 @@ void bssDumpBssInfo(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIndex)
 	       MAC2STR(prBssInfo->aucOwnMacAddr), MAC2STR(prBssInfo->aucBSSID),
 	       prBssInfo->aucSSID);
 
-	DBGLOG(SW4, INFO,
-	       "BSS IDX[%u] Type[%s] OPMode[%s] ConnState[%u] Absent[%u]\n",
-	       prBssInfo->ucBssIndex, apucNetworkType[prBssInfo->eNetworkType],
-	       apucNetworkOpMode[prBssInfo->eCurrentOPMode],
-	       prBssInfo->eConnectionState, prBssInfo->fgIsNetAbsent);
+	if (prBssInfo->eNetworkType >= 0
+			&& prBssInfo->eNetworkType < NETWORK_TYPE_NUM
+			&& prBssInfo->eCurrentOPMode >= 0
+			&& prBssInfo->eCurrentOPMode < OP_MODE_NUM) {
+		DBGLOG(SW4, INFO,
+			"BSS IDX[%u] Type[%s] OPMode[%s] ConnState[%u] Absent[%u]\n",
+			prBssInfo->ucBssIndex,
+			apucNetworkType[prBssInfo->eNetworkType],
+			apucNetworkOpMode[prBssInfo->eCurrentOPMode],
+			prBssInfo->eConnectionState, prBssInfo->fgIsNetAbsent);
+	}
 
 	DBGLOG(SW4, INFO,
 	       "Channel[%u] Band[%u] SCO[%u] Assoc40mBwAllowed[%u] 40mBwAllowed[%u]\n",
