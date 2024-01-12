@@ -4321,7 +4321,6 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 		TRUE; /*For data frame only, no sense for management frame*/
 	prMsduInfo->u4FixedRateOption = 0;
 	prMsduInfo->cPowerOffset = 0;
-	prMsduInfo->u4Option = 0;
 	prMsduInfo->ucTxSeqNum = nicIncreaseTxSeqNum(prAdapter);
 	prMsduInfo->ucPID = NIC_TX_DESC_PID_RESERVED;
 	prMsduInfo->ucPacketType = TX_PACKET_TYPE_MGMT;
