@@ -3113,6 +3113,20 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 }
 #endif
 
+#if (CFG_MTK_FPGA_PLATFORM == 0)
+static void set_cbinfra_remap(struct ADAPTER *ad)
+{
+	DBGLOG(INIT, INFO, "set_cbinfra_remap.\n");
+
+	HAL_MCR_WR(ad,
+		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_ADDR,
+		0x74037001);
+	HAL_MCR_WR(ad,
+		CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
+		0x70007000);
+}
+#endif
+
 static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 {
 #define MCU_IDLE		0x1D1E
@@ -3125,6 +3139,10 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 		rStatus = WLAN_STATUS_FAILURE;
 		goto exit;
 	}
+
+#if (CFG_MTK_FPGA_PLATFORM == 0)
+	set_cbinfra_remap(ad);
+#endif
 
 #if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
 	rStatus = mt6653_mcu_reset(ad);
