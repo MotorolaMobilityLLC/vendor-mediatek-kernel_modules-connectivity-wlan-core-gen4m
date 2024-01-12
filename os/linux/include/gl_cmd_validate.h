@@ -363,6 +363,9 @@
 #define CMD_STA_MEASUREMENT_ENABLE	"mnt_en"
 #define CMD_STA_MEASUREMENT_INFO	"mnt_info"
 #endif /* CFG_AP_80211KVR_INTERFACE */
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+#define CMD_SET_PCIE_SPEED		"SET_PCIE_SPEED"
+#endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */
 
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command

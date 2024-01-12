@@ -185,6 +185,10 @@ static struct VOLT_INFO_T _rVnfInfo = {
 };
 #endif /* CFG_VOLT_INFO */
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+uint32_t pcie_monitor_count;
+#endif
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -10279,9 +10283,12 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	if (!wlan_perf_monitor_force_enable &&
 			(wlan_fb_power_down ||
 			prGlueInfo->fgIsInSuspendMode ||
-			!keep_alive))
+			!keep_alive)) {
+		DBGLOG(SW4, TRACE, "kalPerMonStop[%u][%u][%u][%u]\n",
+			wlan_perf_monitor_force_enable, wlan_fb_power_down,
+			prGlueInfo->fgIsInSuspendMode, keep_alive);
 		kalPerMonStop(prGlueInfo);
-	else {
+	} else {
 		uint32_t u4PrevTputLv, u4CurrTputLv;
 
 		if (prPerMonitor->u4UpdatePeriod < SEC_TO_MSEC(1)) {
@@ -10346,6 +10353,11 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			kalBoostCpu(prAdapter, u4CurrTputLv,
 				u4BoostCpuTh);
 		}
+
+/* switch pcie gen */
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+		kalSetPcieGen(prAdapter);
+#endif
 
 #if (CFG_COALESCING_INTERRUPT == 1)
 		u4CoalescingIntTh =
@@ -15403,5 +15415,48 @@ void kalRxRfbReturnWorkSchedule(struct GLUE_INFO *pr)
 			&pr->rRxRfbRetWork);
 	}
 }
-#endif /* CFG_SUPPORT_RETURN_WORK */
+#endif /* CFG_SUPPORT_RETURN_WORK */\
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+void kalSetPcieGen(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4Thr = 0, u4Time = 0;
+
+	if (!prAdapter) {
+		DBGLOG(INIT, INFO, "prAdapter is NULL\n");
+		return;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	u4Thr = prAdapter->rWifiVar.u4PcieGenSwitchTputThr;
+	u4Time = prAdapter->rWifiVar.u4PcieGenSwitchJudgeTime;
+
+	DBGLOG(SW4, TRACE,
+		"Thr=[%u], Time=[%u], Tput=[%u], cnt=[%u], gen=[%u]\n",
+		u4Thr, u4Time, kalGetTpMbps(prAdapter, PKT_PATH_ALL),
+		pcie_monitor_count, prBusInfo->pcie_current_speed);
+	if (kalGetTpMbps(prAdapter, PKT_PATH_ALL) > u4Thr) {
+		/* change to gen3 */
+		pcie_monitor_count = 0;
+		if (prBusInfo->pcie_current_speed != PCIE_GEN3 &&
+			prBusInfo->setPcieSpeed) {
+			prBusInfo->setPcieSpeed(prGlueInfo, PCIE_GEN3);
+		}
+	} else {
+		/* change to gen1 */
+		pcie_monitor_count++;
+		if (pcie_monitor_count > u4Time &&
+			prBusInfo->pcie_current_speed != PCIE_GEN1 &&
+			prBusInfo->setPcieSpeed) {
+			prBusInfo->setPcieSpeed(prGlueInfo, PCIE_GEN1);
+		}
+		if (pcie_monitor_count > PCIE_GEN_SWITCH_MONITOR_TIMES_MAX)
+			pcie_monitor_count = 0;
+	}
+}
+#endif /* CFG_SUPPORT_PCIE_GEN_SWITCH */

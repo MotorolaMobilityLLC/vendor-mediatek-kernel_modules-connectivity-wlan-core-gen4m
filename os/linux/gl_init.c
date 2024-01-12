@@ -6673,6 +6673,11 @@ int32_t wlanOnAtReset(void)
 		FAIL_REASON_NUM
 	} eFailReason = FAIL_REASON_NUM;
 
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	struct mt66xx_chip_info *prChipInfo;
+	struct BUS_INFO *prBusInfo;
+#endif
+
 	DBGLOG(INIT, STATE, "[SER] Driver On during Reset\n");
 
 	if (u4WlanDevNum > 0
@@ -6703,6 +6708,13 @@ int32_t wlanOnAtReset(void)
 
 	prGlueInfo->ulFlag = 0;
 	fgSimplifyResetFlow = FALSE;
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
+	prBusInfo->pcie_current_speed = PCIE_GEN3;
+#endif
+
 	do {
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
 		wlanDebugTC4Init();
@@ -6894,6 +6906,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct WIFI_VAR *prWifiVar;
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	struct mt66xx_hif_driver_data *prHifDriverData;
+#endif
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	struct BUS_INFO *prBusInfo;
 #endif
 
 #if CFG_CHIP_RESET_KO_SUPPORT
@@ -7226,6 +7241,11 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		send_reset_event(RESET_MODULE_TYPE_WIFI, RFSM_EVENT_PROBE_FAIL);
 #endif
 	}
+
+#if CFG_SUPPORT_PCIE_GEN_SWITCH
+	prBusInfo = prChipInfo->bus_info;
+	prBusInfo->pcie_current_speed = PCIE_GEN3;
+#endif
 
 	return i4Status;
 }				/* end of wlanProbe() */
