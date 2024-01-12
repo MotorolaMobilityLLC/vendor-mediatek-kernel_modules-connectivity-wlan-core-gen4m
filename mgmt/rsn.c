@@ -2443,10 +2443,32 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 			&& rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)
 			&& rRsnIe.u2PmkidCount > 0) {
 			struct PMKID_ENTRY *entry;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			struct MLD_STA_RECORD *prMldSta;
+#endif
 
 			entry = rsnSearchPmkidEntry(prAdapter,
 				cnmStaRecAuthAddr(prAdapter, prStaRec),
 				prStaRec->ucBssIndex);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			prMldSta = mldStarecGetByStarec(prAdapter,
+				prStaRec);
+			if (!entry && prMldSta &&
+			    IS_MLD_STAREC_MULTI(prMldSta)) {
+				struct STA_RECORD *prSta;
+
+				LINK_FOR_EACH_ENTRY(prSta,
+						    &prMldSta->rStarecList,
+						    rLinkEntryMld,
+						    struct STA_RECORD) {
+					entry = rsnSearchPmkidEntry(prAdapter,
+						prStaRec->aucMldAddr,
+						prSta->ucBssIndex);
+					if (entry)
+						break;
+				}
+			}
+#endif
 
 			DBGLOG(RSN, LOUD,
 				"Parse PMKID " PMKSTR " from " MACSTR "\n",
@@ -2461,7 +2483,18 @@ void rsnParserCheckForRSNCCMPPSK(struct ADAPTER *prAdapter,
 				MAC2STR(prStaRec->aucMacAddr));
 
 			if (!entry) {
-				DBGLOG(RSN, WARN, "RSN with no PMKID\n");
+				DBGLOG(RSN, WARN,
+					"RSN with no PMKID, bss=%d, sta addr="
+					MACSTR "\n",
+					prStaRec->ucBssIndex,
+					MAC2STR(prStaRec->aucMacAddr));
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+				DBGLOG(RSN, WARN,
+					"mlo=%d, sta mld addr=" MACSTR "\n",
+					mldIsMultiLinkFormed(prAdapter,
+						prStaRec),
+					MAC2STR(prStaRec->aucMldAddr));
+#endif
 				*pu2StatusCode = STATUS_INVALID_PMKID;
 				return;
 			} else if (kalMemCmp(
