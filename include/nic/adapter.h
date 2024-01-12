@@ -1961,6 +1961,10 @@ struct ADAPTER {
 	u_int8_t fgIsNeedDlPatch;
 #endif
 	uint8_t CurNoResSeqID;
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+	struct TIMER rRxMcsInfoTimer;
+	u_int8_t fgIsMcsInfoValid;
+#endif
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

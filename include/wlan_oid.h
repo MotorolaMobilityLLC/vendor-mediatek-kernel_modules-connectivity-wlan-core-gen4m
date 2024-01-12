@@ -3084,6 +3084,17 @@ struct PARAM_BSS_DISALLOWED_LIST {
 };
 #endif
 
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+struct PARAM_TX_MCS_INFO {
+	uint8_t   ucStaIndex;
+	uint16_t  au2TxRateCode[MCS_INFO_SAMPLE_CNT];
+	uint8_t   aucTxBw[MCS_INFO_SAMPLE_CNT];
+	uint8_t   aucTxSgi[MCS_INFO_SAMPLE_CNT];
+	uint8_t   aucTxLdpc[MCS_INFO_SAMPLE_CNT];
+	uint8_t   aucTxRatePer[MCS_INFO_SAMPLE_CNT];
+};
+#endif
+
 struct PARAM_AX_BLACKLIST {
 	uint8_t ucType;
 	uint8_t ucCount;
@@ -4874,4 +4885,11 @@ wlanoidQueryDpdCache(IN struct ADAPTER *prAdapter,
 		 OUT uint32_t *pu4QueryInfoLen);
 #endif
 
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+uint32_t
+wlanoidTxQueryMcsInfo(IN struct ADAPTER *prAdapter,
+		 IN void *pvQueryBuffer,
+		 IN uint32_t u4QueryBufferLen,
+		 OUT uint32_t *pu4QueryInfoLen);
+#endif
 #endif /* _WLAN_OID_H */

@@ -224,6 +224,11 @@ endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), sdio)
 CONFIG_SUPPORT_DEBUG_SOP=y
 endif
+ifeq ($(CFG_WIFI_GET_MCS_INFO), y)
+	ccflags-y += -DCFG_WIFI_GET_MCS_INFO=1
+else
+	ccflags-y += -DCFG_WIFI_GET_MCS_INFO=0
+endif
 endif
 
 ifneq ($(filter 6873, $(WLAN_CHIP_ID)),)

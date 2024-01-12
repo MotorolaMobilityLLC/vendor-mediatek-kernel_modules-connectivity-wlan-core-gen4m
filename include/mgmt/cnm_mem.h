@@ -817,6 +817,11 @@ struct STA_RECORD {
 			[STATS_LLS_MAX_HE_BW_NUM][STATS_LLS_HE_NUM];
 	};
 #endif
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+	uint32_t au4RxV0[MCS_INFO_SAMPLE_CNT];
+	uint32_t au4RxV1[MCS_INFO_SAMPLE_CNT];
+	uint32_t au4RxV2[MCS_INFO_SAMPLE_CNT];
+#endif
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

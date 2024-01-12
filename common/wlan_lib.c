@@ -1133,6 +1133,9 @@ void wlanOnPostFirmwareReady(IN struct ADAPTER *prAdapter,
 	/* note: call this API after loading NVRAM */
 	txPwrCtrlLoadConfig(prAdapter);
 #endif
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+	prAdapter->fgIsMcsInfoValid = FALSE;
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -13919,4 +13922,32 @@ uint32_t wlanSetEd(IN struct ADAPTER *prAdapter, int32_t i4EdVal2G,
 		sizeof(rSwCtrlInfo), FALSE, FALSE, TRUE, &u4BufLen);
 }
 #endif
+
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+void wlanRxMcsInfoMonitor(struct ADAPTER *prAdapter,
+					    unsigned long ulParamPtr)
+{
+	static uint8_t ucSmapleCnt;
+	uint8_t ucBssIdx = 0;
+	struct STA_RECORD *prStaRec;
+
+	ucBssIdx = GET_IOCTL_BSSIDX(prAdapter);
+	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIdx);
+
+	if (prStaRec == NULL)
+		goto out;
+
+	if (prStaRec->fgIsValid && prStaRec->fgIsInUse) {
+		prStaRec->au4RxV0[ucSmapleCnt] = prStaRec->u4RxVector0;
+		prStaRec->au4RxV1[ucSmapleCnt] = prStaRec->u4RxVector1;
+		prStaRec->au4RxV2[ucSmapleCnt] = prStaRec->u4RxVector2;
+
+		ucSmapleCnt = (ucSmapleCnt + 1) % MCS_INFO_SAMPLE_CNT;
+	}
+
+out:
+	cnmTimerStartTimer(prAdapter, &prAdapter->rRxMcsInfoTimer,
+			   MCS_INFO_SAMPLE_PERIOD);
+}
+#endif /* CFG_WIFI_GET_MCS_INFO */
 

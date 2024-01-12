@@ -4064,6 +4064,10 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
 #define CMD_GET_DPD_CACHE		"GET_DPD_CACHE"
 #endif
 
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+#define CMD_GET_MCS_INFO		"GET_MCS_INFO"
+#endif
+
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 
 struct cmd_tlv {
@@ -15633,6 +15637,579 @@ static int priv_driver_get_wifi_type(IN struct net_device *prNetDev,
 	return (int)u4BytesWritten;
 }
 
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+static int32_t priv_driver_last_sec_mcs_info(struct ADAPTER *prAdapter,
+			IN char *pcCommand, IN int i4TotalLen,
+			struct PARAM_TX_MCS_INFO *prTxMcsInfo)
+{
+	uint8_t ucBssIdx = 0, i = 0, j = 0, ucCnt = 0, ucPerSum = 0;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint8_t dcm = 0, ersu106t = 0;
+#endif
+	uint16_t u2RateCode = 0;
+	uint32_t au4RxV0[MCS_INFO_SAMPLE_CNT], au4RxV1[MCS_INFO_SAMPLE_CNT],
+		au4RxV2[MCS_INFO_SAMPLE_CNT];
+	uint32_t txmode = 0, rate = 0, frmode = 0, sgi = 0,
+		nsts = 0, ldpc = 0, stbc = 0, groupid = 0, mu = 0, bw = 0;
+	uint32_t u4RxV0 = 0, u4RxV1 = 0, u4RxV2 = 0;
+	int32_t i4BytesWritten = 0;
+	struct STA_RECORD *prStaRec = NULL;
+	struct CHIP_DBG_OPS *prChipDbg;
+
+	ucBssIdx = GET_IOCTL_BSSIDX(prAdapter);
+	prStaRec = aisGetTargetStaRec(prAdapter, ucBssIdx);
+
+	if (prStaRec != NULL && prStaRec->fgIsValid && prStaRec->fgIsInUse) {
+		kalMemCopy(au4RxV0, prStaRec->au4RxV0, sizeof(au4RxV0));
+		kalMemCopy(au4RxV1, prStaRec->au4RxV1, sizeof(au4RxV1));
+		kalMemCopy(au4RxV2, prStaRec->au4RxV2, sizeof(au4RxV2));
+	} else {
+		i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Not Connect to AP\n");
+		return i4BytesWritten;
+	}
+
+
+	/* Output the TX MCS Info */
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "\nTx MCS:\n");
+
+	for (i = 0; i < MCS_INFO_SAMPLE_CNT; i++) {
+		if (prTxMcsInfo->au2TxRateCode[i] == 0xFFFF)
+			continue;
+
+		txmode = HW_TX_RATE_TO_MODE(prTxMcsInfo->au2TxRateCode[i]);
+		if (txmode >= ENUM_TX_MODE_NUM)
+			txmode = ENUM_TX_MODE_NUM - 1;
+
+		rate = HW_TX_RATE_TO_MCS(prTxMcsInfo->au2TxRateCode[i]);
+		nsts = HW_TX_RATE_TO_NSS(prTxMcsInfo->au2TxRateCode[i]) + 1;
+		stbc = HW_TX_RATE_TO_STBC(prTxMcsInfo->au2TxRateCode[i]);
+		bw = prTxMcsInfo->aucTxBw[i];
+		sgi = prTxMcsInfo->aucTxSgi[i];
+		ldpc = prTxMcsInfo->aucTxLdpc[i];
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+		dcm = HW_TX_RATE_TO_DCM(prTxMcsInfo->au2TxRateCode[i]);
+		ersu106t = HW_TX_RATE_TO_106T(prTxMcsInfo->au2TxRateCode[i]);
+
+		if (dcm)
+			rate = CONNAC2X_HW_TX_RATE_UNMASK_DCM(rate);
+		if (ersu106t)
+			rate = CONNAC2X_HW_TX_RATE_UNMASK_106T(rate);
+#endif
+
+		ucCnt = 0;
+		ucPerSum = 0;
+		u2RateCode = prTxMcsInfo->au2TxRateCode[i];
+		for (j = 0; j < MCS_INFO_SAMPLE_CNT; j++) {
+			if (u2RateCode == prTxMcsInfo->au2TxRateCode[j]) {
+				ucPerSum += prTxMcsInfo->aucTxRatePer[j];
+				ucCnt++;
+				prTxMcsInfo->au2TxRateCode[j] = 0xFFFF;
+				prTxMcsInfo->aucTxBw[j] = 0xFF;
+				prTxMcsInfo->aucTxSgi[j] = 0xFF;
+				prTxMcsInfo->aucTxLdpc[j] = 0xFF;
+			}
+		}
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", HW_TX_RATE_CCK_STR[rate & 0x3]);
+		else if (txmode == TX_RATE_MODE_OFDM)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", nicHwRateOfdmStr(rate));
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+			 (txmode == TX_RATE_MODE_HTGF))
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"MCS%d, ", rate);
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"NSS%d_MCS%d, ", nsts, rate);
+
+		i4BytesWritten += kalScnprintf(
+		    pcCommand + i4BytesWritten,
+		    i4TotalLen - i4BytesWritten,
+		    "%s, ", (bw < 4) ? HW_TX_RATE_BW[bw] : HW_TX_RATE_BW[4]);
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", (rate < 4) ? "LP" : "SP");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			;
+		else if ((txmode == TX_RATE_MODE_HTMIX) ||
+				(txmode == TX_RATE_MODE_HTGF) ||
+				(txmode == TX_RATE_MODE_VHT) ||
+				(txmode == TX_RATE_MODE_PLR))
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ", (sgi == 0) ? "LGI" : "SGI");
+		else
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%s, ",
+				(sgi == 0) ?
+				"SGI" : (sgi == 1 ? "MGI" : "LGI"));
+
+		i4BytesWritten += kalScnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"%s%s%s%s%s [PER: %02d%%]\t",
+			(txmode <= ENUM_TX_MODE_NUM) ?
+			HW_TX_MODE_STR[txmode] : "N/A",
+#if (CFG_SUPPORT_CONNAC2X == 1)
+			dcm ? ", DCM" : "", ersu106t ? ", 106t" : "",
+#else
+			"", "",
+#endif
+			stbc ? ", STBC, " : ", ",
+			((ldpc == 0) ||
+				(txmode == TX_RATE_MODE_CCK) ||
+				(txmode == TX_RATE_MODE_OFDM)) ?
+			"BCC" : "LDPC", ucPerSum/ucCnt);
+
+		for (j = 0; j < ucCnt; j++)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "*");
+
+		i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "\n");
+
+	}
+
+
+	/* Output the RX MCS info */
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "\nRx MCS:\n");
+
+	/* connac2x_show_rx_rate_info() */
+	prChipDbg = prAdapter->chip_info->prDebugOps;
+
+	for (i = 0; i < MCS_INFO_SAMPLE_CNT; i++) {
+		if (au4RxV0[i] == 0xFFFFFFFF)
+			continue;
+
+		u4RxV0 = au4RxV0[i];
+		u4RxV1 = au4RxV1[i];
+		u4RxV2 = au4RxV2[i];
+
+		if (prChipDbg &&
+			prChipDbg->show_rx_rate_info ==
+			connac2x_show_rx_rate_info) {
+
+			if (CONNAC2X_RX_DBG_INFO_GRP3(prAdapter)) {
+				/* Rx DBG info from group 3 */
+				goto GET_MCS_INFO_BIT_MASK_G3;
+			} else {
+				/* Rx DBG info from group 3 and group 5 */
+				goto GET_MCS_INFO_BIT_MASK_G3_G5;
+			}
+
+		} else {
+			goto GET_MCS_INFO_BIT_MASK_LEGACY;
+		}
+
+
+GET_MCS_INFO_BIT_MASK_G3:
+		/* u4RxV0: Group3 PRXV0[0:31] */
+		/* P-RXV0 */
+		rate = (u4RxV0 & CONNAC2X_RX_VT_RX_RATE_MASK)
+				>> CONNAC2X_RX_VT_RX_RATE_OFFSET;
+		nsts = ((u4RxV0 & CONNAC2X_RX_VT_NSTS_MASK)
+				>> CONNAC2X_RX_VT_NSTS_OFFSET);
+		ldpc = u4RxV0 & CONNAC2X_RX_VT_LDPC;
+		frmode =
+			(u4RxV0 & CONNAC2X_RX_VT_FR_MODE_MASK_V2)
+				>> CONNAC2X_RX_VT_FR_MODE_OFFSET_V2;
+		sgi = (u4RxV0 & CONNAC2X_RX_VT_SHORT_GI_MASK_V2)
+				>> CONNAC2X_RX_VT_SHORT_GI_OFFSET_V2;
+		stbc = (u4RxV0 & CONNAC2X_RX_VT_STBC_MASK_V2)
+				>> CONNAC2X_RX_VT_STBC_OFFSET_V2;
+		txmode =
+			(u4RxV0 & CONNAC2X_RX_VT_RX_MODE_MASK_V2)
+				>> CONNAC2X_RX_VT_RX_MODE_OFFSET_V2;
+		mu = (u4RxV0 & CONNAC2X_RX_VT_MU);
+		dcm = (u4RxV0 & CONNAC2X_RX_VT_DCM);
+
+		if (mu == 0)
+			nsts += 1;
+
+		goto GET_MCS_INFO_OUTPUT_RX;
+
+
+GET_MCS_INFO_BIT_MASK_G3_G5:
+		/* u4RxV0: Group3 PRXV0[0:31] */
+		/* u4RxV1: Group5 C-B-0[0:31] */
+		/* u4RxV2: Group5 C-B-1[0:31] */
+
+		/* P-RXV0 */
+		rate = (u4RxV0 & CONNAC2X_RX_VT_RX_RATE_MASK)
+				>> CONNAC2X_RX_VT_RX_RATE_OFFSET;
+		nsts = ((u4RxV0 & CONNAC2X_RX_VT_NSTS_MASK)
+				>> CONNAC2X_RX_VT_NSTS_OFFSET);
+		ldpc = u4RxV0 & CONNAC2X_RX_VT_LDPC;
+
+		/* C-B-0 */
+		stbc = (u4RxV1 & CONNAC2X_RX_VT_STBC_MASK)
+				>> CONNAC2X_RX_VT_STBC_OFFSET;
+		txmode =
+			(u4RxV1 & CONNAC2X_RX_VT_RX_MODE_MASK)
+				>> CONNAC2X_RX_VT_RX_MODE_OFFSET;
+		frmode =
+			(u4RxV1 & CONNAC2X_RX_VT_FR_MODE_MASK)
+				>> CONNAC2X_RX_VT_FR_MODE_OFFSET;
+		sgi = (u4RxV1 & CONNAC2X_RX_VT_SHORT_GI_MASK)
+				>> CONNAC2X_RX_VT_SHORT_GI_OFFSET;
+		/* C-B-1 */
+		groupid =
+			(u4RxV2 & CONNAC2X_RX_VT_GROUP_ID_MASK)
+				>> CONNAC2X_RX_VT_GROUP_ID_OFFSET;
+
+		if (groupid && groupid != 63) {
+			mu = 1;
+		} else {
+			mu = 0;
+			nsts += 1;
+		}
+
+		goto GET_MCS_INFO_OUTPUT_RX;
+
+
+GET_MCS_INFO_BIT_MASK_LEGACY:
+		/* 1st Cycle RX_VT_RX_MODE : bit 12 - 14 */
+		txmode = (u4RxV0 & RX_VT_RX_MODE_MASK)
+			>> RX_VT_RX_MODE_OFFSET;
+
+		/* 1st Cycle RX_VT_RX_RATE: bit 0 - 6 */
+		rate = (u4RxV0 & RX_VT_RX_RATE_MASK)
+			>> RX_VT_RX_RATE_OFFSET;
+
+		/* 1st Cycle RX_VT_RX_FR_MODE: bit 15 - 16 */
+		frmode = (u4RxV0 & RX_VT_FR_MODE_MASK)
+			>> RX_VT_FR_MODE_OFFSET;
+
+		/* 2nd Cycle RX_VT_NSTS: bit 27 - 29 */
+		nsts = ((u4RxV1 & RX_VT_NSTS_MASK)
+			>> RX_VT_NSTS_OFFSET);
+
+		/* 1st Cycle RX_VT_STBC: bit 7 - 8 */
+		stbc = (u4RxV0 & RX_VT_STBC_MASK)
+			>> RX_VT_STBC_OFFSET;
+
+		/* 1st Cycle RX_VT_SHORT_GI: bit 19 */
+		sgi = u4RxV0 & RX_VT_SHORT_GI;
+
+		/* 1st Cycle RX_VT_LDPC: bit 9 */
+		ldpc = u4RxV0 & RX_VT_LDPC;
+
+		/* 2nd Cycle RX_VT_GROUP_ID_MASK: bit 21 - 26 */
+		groupid =
+			(u4RxV1 & RX_VT_GROUP_ID_MASK)
+				>> RX_VT_GROUP_ID_OFFSET;
+
+		if (groupid && groupid != 63) {
+			mu = 1;
+		} else {
+			mu = 0;
+			nsts += 1;
+		}
+
+		goto GET_MCS_INFO_OUTPUT_RX;
+
+
+GET_MCS_INFO_OUTPUT_RX:
+
+		/* Distribution Calculation clear the same sample content */
+		ucCnt = 0;
+		for (j = 0; j < MCS_INFO_SAMPLE_CNT; j++) {
+			if ((u4RxV0 & RX_MCS_INFO_MASK) ==
+			    (au4RxV0[j] & RX_MCS_INFO_MASK)) {
+				au4RxV0[j] = 0xFFFFFFFF;
+				ucCnt++;
+			}
+		}
+
+		if (prChipDbg &&
+			prChipDbg->show_rx_rate_info ==
+				connac2x_show_rx_rate_info) {
+
+			if (txmode == TX_RATE_MODE_CCK)
+				i4BytesWritten +=
+					kalScnprintf(pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s, ", (rate < 4) ?
+						HW_TX_RATE_CCK_STR[rate] :
+						((rate < 8) ?
+						HW_TX_RATE_CCK_STR[rate - 4] :
+						HW_TX_RATE_CCK_STR[4]));
+			else if (txmode == TX_RATE_MODE_OFDM)
+				i4BytesWritten +=
+					kalScnprintf(pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s, ",
+						nicHwRateOfdmStr(rate));
+			else if ((txmode == TX_RATE_MODE_HTMIX) ||
+				 (txmode == TX_RATE_MODE_HTGF))
+				i4BytesWritten +=
+					kalScnprintf(pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"MCS%d, ", rate);
+			else
+				i4BytesWritten +=
+					kalScnprintf(pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s%d_MCS%d, ",
+						(stbc == 1) ? "NSTS" : "NSS",
+						nsts, rate);
+
+		} else {
+
+			if (txmode == TX_RATE_MODE_CCK)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%s, ",
+					(rate < 4) ?
+						HW_TX_RATE_CCK_STR[rate] :
+						HW_TX_RATE_CCK_STR[4]);
+			else if (txmode == TX_RATE_MODE_OFDM)
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%s, ",
+					nicHwRateOfdmStr(rate));
+			else if ((txmode == TX_RATE_MODE_HTMIX) ||
+				 (txmode == TX_RATE_MODE_HTGF))
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"MCS%d, ", rate);
+			else
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"NSS%d_MCS%d, ",
+					nsts, rate);
+		}
+
+		i4BytesWritten +=
+			kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s, ",
+				(frmode < 4) ?
+				HW_TX_RATE_BW[frmode] : HW_TX_RATE_BW[4]);
+
+		if (txmode == TX_RATE_MODE_CCK)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s, ",
+				(rate < 4) ? "LP" : "SP");
+		else if (txmode == TX_RATE_MODE_OFDM)
+			;
+		else if (txmode == TX_RATE_MODE_HTMIX ||
+			 txmode == TX_RATE_MODE_HTGF ||
+			 txmode == TX_RATE_MODE_VHT)
+			i4BytesWritten += kalScnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s, ",
+				(sgi == 0) ? "LGI" : "SGI");
+		else
+			i4BytesWritten +=
+				kalScnprintf(pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%s, ",
+					(sgi == 0) ? "SGI" :
+						(sgi == 1 ? "MGI" : "LGI"));
+
+		i4BytesWritten +=
+			kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "%s",
+				(stbc == 0) ? "" : "STBC, ");
+
+		if (prChipDbg &&
+			prChipDbg->show_rx_rate_info ==
+			connac2x_show_rx_rate_info) {
+
+			if (CONNAC2X_RX_DBG_INFO_GRP3(prAdapter))
+				i4BytesWritten +=
+					kalScnprintf(pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s",
+						(dcm == 0) ? "" : "DCM, ");
+
+			if (mu) {
+				if (CONNAC2X_RX_DBG_INFO_GRP3(prAdapter))
+					i4BytesWritten += kalScnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s, %s, %s\t",
+						(txmode < ENUM_TX_MODE_NUM) ?
+							HW_TX_MODE_STR[txmode] :
+							"N/A",
+						(ldpc == 0) ? "BCC" : "LDPC",
+						"MU");
+				else
+					i4BytesWritten += kalScnprintf(
+						pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s, %s, %s (%d)\t",
+						(txmode < ENUM_TX_MODE_NUM) ?
+						HW_TX_MODE_STR[txmode] : "N/A",
+						(ldpc == 0) ?
+							"BCC" : "LDPC",
+						"MU", groupid);
+			} else {
+				i4BytesWritten +=
+					kalScnprintf(pcCommand + i4BytesWritten,
+						i4TotalLen - i4BytesWritten,
+						"%s, %s\t",
+						(txmode < ENUM_TX_MODE_NUM) ?
+							HW_TX_MODE_STR[txmode] :
+							"N/A",
+						(ldpc == 0) ? "BCC" : "LDPC");
+			}
+
+		} else {
+
+			if (mu) {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"%s, %s, %s (%d)\t",
+					(txmode < ENUM_TX_MODE_NUM) ?
+						HW_TX_MODE_STR[txmode] : "N/A",
+					(ldpc == 0) ? "BCC" : "LDPC",
+					"MU", groupid);
+			} else {
+				i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "%s, %s\t",
+					(txmode < ENUM_TX_MODE_NUM) ?
+						HW_TX_MODE_STR[txmode] : "N/A",
+					(ldpc == 0) ? "BCC" : "LDPC");
+			}
+
+		}
+
+		/* Output the using times of this data rate */
+		for (j = 0; j < ucCnt; j++)
+			i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten, "*");
+
+		i4BytesWritten +=
+			kalScnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "\n");
+	}
+
+	return i4BytesWritten;
+}
+
+static int32_t priv_driver_get_mcs_info(IN struct net_device *prNetDev,
+	IN char *pcCommand, IN int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4BytesWritten = 0, i4Argc = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct PARAM_TX_MCS_INFO *prTxMcsInfo = NULL;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (prAdapter->rRxMcsInfoTimer.pfMgmtTimeOutFunc == NULL) {
+		cnmTimerInitTimer(prAdapter,
+			&prAdapter->rRxMcsInfoTimer,
+			(PFN_MGMT_TIMEOUT_FUNC) wlanRxMcsInfoMonitor,
+			(unsigned long) NULL);
+	}
+
+	if (i4Argc >= 2) {
+
+		if (strnicmp(apcArgv[1], "START", strlen("START")) == 0) {
+			cnmTimerStartTimer(prAdapter,
+			&prAdapter->rRxMcsInfoTimer, MCS_INFO_SAMPLE_PERIOD);
+			prAdapter->fgIsMcsInfoValid = TRUE;
+
+			i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+					i4TotalLen - i4BytesWritten,
+					"\nStart the MCS Info Function\n");
+			return i4BytesWritten;
+
+		} else if (strnicmp(apcArgv[1], "STOP", strlen("STOP")) == 0) {
+			cnmTimerStopTimer(prAdapter,
+				&prAdapter->rRxMcsInfoTimer);
+			prAdapter->fgIsMcsInfoValid = FALSE;
+
+			i4BytesWritten += kalScnprintf(
+					pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\nStop the MCS Info Function\n");
+			return i4BytesWritten;
+
+		} else
+			goto warning;
+	}
+
+	if (prGlueInfo->prAdapter->fgIsMcsInfoValid != TRUE)
+		goto warning;
+
+	prTxMcsInfo = (struct PARAM_TX_MCS_INFO *)kalMemAlloc(
+			sizeof(struct PARAM_TX_MCS_INFO), VIR_MEM_TYPE);
+	if (!prTxMcsInfo) {
+		DBGLOG(REQ, ERROR, "Allocate prTxMcsInfo failed!\n");
+		i4BytesWritten = -1;
+		goto out;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidTxQueryMcsInfo, prTxMcsInfo,
+			   sizeof(struct PARAM_TX_MCS_INFO),
+			   TRUE, TRUE, TRUE, &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		goto out;
+
+	i4BytesWritten = priv_driver_last_sec_mcs_info(prGlueInfo->prAdapter,
+			pcCommand, i4TotalLen, prTxMcsInfo);
+
+	DBGLOG(REQ, INFO, "%s: command result is %s\n", __func__, pcCommand);
+
+	goto out;
+
+warning:
+
+	i4BytesWritten += kalScnprintf(pcCommand + i4BytesWritten,
+		i4TotalLen - i4BytesWritten,
+		"\nWARNING: Use GET_MCS_INFO [START/STOP]\n");
+
+out:
+
+	if (prTxMcsInfo)
+		kalMemFree(prTxMcsInfo, VIR_MEM_TYPE,
+			sizeof(struct PARAM_TX_MCS_INFO));
+
+	return i4BytesWritten;
+}
+#endif /* CFG_WIFI_GET_MCS_INFO */
+
 #if CFG_ENABLE_WIFI_DIRECT
 static int priv_driver_set_p2p_ps(IN struct net_device *prNetDev,
 				  IN char *pcCommand, IN int i4TotalLen)
@@ -17112,6 +17689,9 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{CMD_GET_DPD_CACHE, priv_driver_get_dpd_cache},
 #endif
 	{CMD_COEX_CONTROL, priv_driver_coex_ctrl},
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+	{CMD_GET_MCS_INFO, priv_driver_get_mcs_info},
+#endif
 };
 
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT

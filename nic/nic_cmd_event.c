@@ -5885,3 +5885,95 @@ void nicCmdEventGetTxPwrTbl(IN struct ADAPTER *prAdapter,
 	}
 }
 #endif /* CFG_WIFI_TXPWR_TBL_DUMP */
+
+#if (CFG_WIFI_GET_MCS_INFO == 1)
+void nicCmdEventQueryTxMcsInfo(IN struct ADAPTER *prAdapter,
+	IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf)
+{
+	uint32_t u4QueryInfoLen;
+	struct GLUE_INFO *prGlueInfo;
+	struct EVENT_TX_MCS_INFO *prTxMcsEvent;
+	struct PARAM_TX_MCS_INFO *prTxMcsInfo;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf || !prCmdInfo->pvInformationBuffer) {
+		if (prCmdInfo->fgIsOid) {
+			kalOidComplete(prAdapter->prGlueInfo,
+					prCmdInfo->fgSetQuery,
+					0,
+					WLAN_STATUS_FAILURE);
+		}
+
+		if (!pucEventBuf)
+			DBGLOG(NIC, ERROR, "NULL pucEventBuf!\n");
+
+		if (!prCmdInfo->pvInformationBuffer)
+			DBGLOG(NIC, ERROR, "NULL pvInformationBuffer!\n");
+
+		return;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		prGlueInfo = prAdapter->prGlueInfo;
+
+		prTxMcsEvent = (struct EVENT_TX_MCS_INFO *) pucEventBuf;
+		prTxMcsInfo = (struct PARAM_TX_MCS_INFO *)
+			      prCmdInfo->pvInformationBuffer;
+
+		u4QueryInfoLen = sizeof(struct EVENT_TX_MCS_INFO);
+
+		kalMemCopy(prTxMcsInfo->au2TxRateCode,
+			   prTxMcsEvent->au2TxRateCode,
+			   sizeof(prTxMcsEvent->au2TxRateCode));
+		kalMemCopy(prTxMcsInfo->aucTxBw,
+			   prTxMcsEvent->aucTxBw,
+			   sizeof(prTxMcsEvent->aucTxBw));
+		kalMemCopy(prTxMcsInfo->aucTxSgi,
+			   prTxMcsEvent->aucTxSgi,
+			   sizeof(prTxMcsEvent->aucTxSgi));
+		kalMemCopy(prTxMcsInfo->aucTxLdpc,
+			   prTxMcsEvent->aucTxLdpc,
+			   sizeof(prTxMcsEvent->aucTxLdpc));
+		kalMemCopy(prTxMcsInfo->aucTxRatePer,
+			   prTxMcsEvent->aucTxRatePer,
+			   sizeof(prTxMcsEvent->aucTxRatePer));
+
+		kalOidComplete(prGlueInfo, prCmdInfo->fgSetQuery,
+				u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+
+
+}
+
+void nicEventTxMcsInfo(IN struct ADAPTER *prAdapter,
+		     IN struct WIFI_EVENT *prEvent)
+{
+	struct CMD_INFO *prCmdInfo;
+
+	DBGLOG(RSN, INFO, "EVENT_ID_TX_MCS_INFO");
+	/* command response handling */
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter,
+					 prEvent->ucSeqNum);
+
+	if (prCmdInfo != NULL) {
+		if (prCmdInfo->pfCmdDoneHandler)
+			prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+				prEvent->aucBuffer);
+		else if (prCmdInfo->fgIsOid)
+			kalOidComplete(prAdapter->prGlueInfo,
+				prCmdInfo->fgSetQuery,
+				0, WLAN_STATUS_SUCCESS);
+		/* return prCmdInfo */
+		cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+	}
+}
+#endif /* CFG_WIFI_GET_MCS_INFO */
