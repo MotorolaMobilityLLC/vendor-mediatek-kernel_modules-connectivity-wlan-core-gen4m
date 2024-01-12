@@ -1287,9 +1287,6 @@ void halStartTxDelayTimer(struct ADAPTER *prAdapter);
 #endif
 
 /* Debug functions */
-int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2);
-u_int8_t halGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
-			 struct timespec64 *prTsRst);
 void halShowPdmaInfo(struct ADAPTER *prAdapter);
 bool halShowHostCsrInfo(struct ADAPTER *prAdapter);
 void kalDumpTxRing(struct GLUE_INFO *prGlueInfo,

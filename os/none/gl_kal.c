@@ -508,6 +508,17 @@ const uint8_t *kalFindIeExtIE(uint8_t eid,
 		return kalFindIeMatchMask(eid, ies, len, &exteid, 1, 2, NULL);
 }
 
+int kalTimeCompare(uint32_t *pu4Ts1, uint32_t *pu4Ts2)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+u_int8_t kalGetDeltaTime(uint32_t *pu4Ts1, uint32_t *pu4Ts2,
+			 uint32_t *pu4TsRst)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 uint32_t kalSyncTimeToFW(struct ADAPTER *prAdapter,
 	u_int8_t fgInitCmd)
 {

@@ -3067,7 +3067,6 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 	prAdapter->prStatsAllRegStat =
 		emi_mem_get_vir_base(prAdapter->chip_info) +
 		emi_mem_offset_convert(offset);
-	prAdapter->u4RegStatLastSyncFwMs = 0;
 
 	DBGLOG(INIT, INFO, "offset:%x addr:%p\n",
 	       offset,

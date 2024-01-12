@@ -6327,8 +6327,7 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	uint32_t u4CurrTick;
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
 	uint32_t u4EmiUpdateMs = 0;
-	uint32_t u4SyncDrvTick;
-	uint32_t u4SyncFwMs;
+	struct timespec64 rNow, rDrvDiff, rFwDiff, rUpdate, rTimeout, rPeriod;
 #endif
 
 
@@ -6405,27 +6404,59 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	}
 
 	/* get last sync driver/fw time */
-	u4SyncDrvTick = prAdapter->u4RegStatLastSyncDrvTick;
-	u4SyncFwMs = prAdapter->u4RegStatLastSyncFwMs;
+	ktime_get_ts64(&rNow);
 
 	/* get EMI update time */
 	kalMemCopyFromIo(&u4EmiUpdateMs,
 			&prAdapter->prStatsAllRegStat->u4LastUpdateTime,
 			sizeof(uint32_t));
-	DBGLOG(REQ, TRACE, "drv cur/sync=%u/%u fw cur/sync=%u/%u\n",
-		u4CurrTick, u4SyncDrvTick, u4EmiUpdateMs, u4SyncFwMs);
 
-	if (u4EmiUpdateMs != 0 && u4SyncDrvTick != 0 &&
-		u4SyncFwMs != 0 && u4CurrTick >= u4SyncDrvTick &&
-		u4EmiUpdateMs >= u4SyncFwMs &&
-		(u4EmiUpdateMs - u4SyncFwMs + prParam->u4Period
-			>= u4CurrTick - u4SyncDrvTick))
+	if (u4EmiUpdateMs == 0)
+		goto send_cmd;
+
+	DBGLOG(REQ, TRACE,
+		"update:%u drvCur=%ld.%ld drvSync=%ld.%ld fwSync=%ld.%ld\n",
+		u4EmiUpdateMs,
+		rNow.tv_sec,
+		KAL_GET_TIME_OF_USEC_OR_NSEC(rNow),
+		prAdapter->rRegStatSyncDrvTs.tv_sec,
+		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncDrvTs),
+		prAdapter->rRegStatSyncFwTs.tv_sec,
+		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncFwTs));
+
+	KAL_SET_MSEC_TO_TIME(rUpdate, u4EmiUpdateMs);
+	KAL_SET_MSEC_TO_TIME(rPeriod, prParam->u4Period);
+
+	if (kalGetDeltaTime(&rNow, &prAdapter->rRegStatSyncDrvTs, &rDrvDiff) &&
+		kalGetDeltaTime(
+			&rUpdate, &prAdapter->rRegStatSyncFwTs, &rFwDiff) &&
+		kalGetDeltaTime(&rDrvDiff, &rFwDiff, &rTimeout) &&
+		kalTimeCompare(&rTimeout, &rPeriod) <= 0)
 		nicCollectRegStatFromEmi(prAdapter);
-	else
+	else {
+#define TEMP_LOG_TEMPLATE\
+	"drvDiff=%ld.%ld fwDiff=%ld.%ld"\
+	" to=%ld.%ld per=%ld.%ld\n"
+
+		DBGLOG(REQ, TRACE, TEMP_LOG_TEMPLATE,
+			rDrvDiff.tv_sec,
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rDrvDiff),
+			rFwDiff.tv_sec,
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rFwDiff),
+			rTimeout.tv_sec,
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout),
+			rPeriod.tv_sec,
+			KAL_GET_TIME_OF_USEC_OR_NSEC(rPeriod));
+#undef TEMP_LOG_TEMPLATE
+
+#else
+	{
 #endif
+send_cmd:
 		rResult = sendStatsUniCmd(prAdapter, pvQueryBuffer,
 			u4QueryBufferLen, pu4QueryInfoLen,
 			fgIsOid, max_cmd_len);
+	}
 
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		if (!ucConnBss[i])

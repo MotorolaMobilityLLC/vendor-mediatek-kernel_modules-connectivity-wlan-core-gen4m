@@ -1959,8 +1959,8 @@ bool IsOverRstTimeThreshold(
 		rLastTs->tv_sec,
 		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs));
 	if (rLastTs->tv_sec != 0) {
-		if (halGetDeltaTime(rNowTs, rLastTs, &rTime)) {
-			if (halTimeCompare(&rTime, &rTimeout) >= 0)
+		if (kalGetDeltaTime(rNowTs, rLastTs, &rTime)) {
+			if (kalTimeCompare(&rTime, &rTimeout) >= 0)
 				fgIsTimeout = TRUE;
 			else
 				fgIsTimeout = FALSE;

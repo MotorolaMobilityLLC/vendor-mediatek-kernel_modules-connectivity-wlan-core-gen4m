@@ -1755,7 +1755,7 @@ static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
 
 	ktime_get_ts64(&rNowTs);
 	if (prBusInfo->u4EnHifIntTs &&
-	    halGetDeltaTime(&rNowTs, &prBusInfo->rHifIntTs, &rTime)) {
+	    kalGetDeltaTime(&rNowTs, &prBusInfo->rHifIntTs, &rTime)) {
 		DBGLOG(HAL, INFO,
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 		       "RX[%u] done bit ready time[%lld.%.9ld] cnt[%d]\n",

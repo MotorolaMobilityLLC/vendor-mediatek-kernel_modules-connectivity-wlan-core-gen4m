@@ -499,59 +499,6 @@ uint32_t halDumpHifStatus(struct ADAPTER *prAdapter,
 	return u4Len;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Compare two struct timeval
- *
- * @param prTs1          a pointer to timeval
- * @param prTs2          a pointer to timeval
- *
- *
- * @retval 0             two time value is equal
- * @retval 1             prTs1 value > prTs2 value
- * @retval -1            prTs1 value < prTs2 value
- */
-/*----------------------------------------------------------------------------*/
-int halTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
-{
-	if (prTs1->tv_sec > prTs2->tv_sec)
-		return 1;
-	else if (prTs1->tv_sec < prTs2->tv_sec)
-		return -1;
-	/* sec part is equal */
-	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) >
-		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
-		return 1;
-	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) <
-		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
-		return -1;
-	return 0;
-}
-
-u_int8_t halGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
-			 struct timespec64 *prTsRst)
-{
-	/* Ignore now time < token time */
-	if (halTimeCompare(prTs1, prTs2) < 0)
-		return FALSE;
-
-	prTsRst->tv_sec = prTs1->tv_sec - prTs2->tv_sec;
-	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) =
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1);
-	if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2) >
-	    KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1)) {
-		prTsRst->tv_sec -= 1;
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_NSEC(1);
-#else
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_USEC(1);
-#endif
-	}
-	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) -=
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2);
-	return TRUE;
-}
-
 static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 				 struct MSDU_TOKEN_HISTORY_INFO *prHistory)
 {
@@ -724,12 +671,12 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	prToken = list_first_entry(&prTokenInfo->used_msdu_list,
 		struct MSDU_TOKEN_ENTRY, msdu_list);
 	if (prToken->fgInUsed &&
-		halGetDeltaTime(&rNowTs, &prToken->rTs, &rTime)) {
-		if (halTimeCompare(&rTime, &rTimeout) >= 0)
+		kalGetDeltaTime(&rNowTs, &prToken->rTs, &rTime)) {
+		if (kalTimeCompare(&rTime, &rTimeout) >= 0)
 			fgIsTimeout = TRUE;
 
 		/* rTime > rLongest */
-		if (halTimeCompare(&rTime, &rLongest) > 0) {
+		if (kalTimeCompare(&rTime, &rLongest) > 0) {
 			rLongest.tv_sec = rTime.tv_sec;
 			KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) =
 				KAL_GET_TIME_OF_USEC_OR_NSEC(rTime);
@@ -792,7 +739,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 	/* Trigger SER */
 	if (rLongest.tv_sec >= u4TimeoutSerTime) {
-		if (halGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
+		if (kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
 				&& rTime.tv_sec >= u4TimeoutSerTime) {
 			prAdapter->u4HifChkFlag |= HIF_DRV_SER;
 			DBGLOG(HAL, INFO, "Timeout > %ds, trigger SER\n",

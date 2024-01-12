@@ -2361,8 +2361,8 @@ struct ADAPTER {
 	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM][MLD_LINK_MAX];
 #endif
 #if CFG_SUPPORT_REG_STAT_FROM_EMI
-	uint32_t u4RegStatLastSyncFwMs;
-	uint32_t u4RegStatLastSyncDrvTick;
+	struct timespec64 rRegStatSyncFwTs;
+	struct timespec64 rRegStatSyncDrvTs;
 	struct STATS_REG_STAT_FW_REPORT *prStatsAllRegStat;
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	u_int8_t fgTxRateOffsetMapped;
