@@ -7230,17 +7230,6 @@ struct UNI_EVENT_RTT_DONE_T {
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_SUPPORT_RTT */
 
-#if CFG_SUPPORT_NAN
-__KAL_ATTRIB_PACKED_FRONT__
-struct UNI_EVENT_NAN {
-	/* fixed field */
-	uint8_t aucPadding[4];
-
-	/* tlv */
-	uint8_t aucTlvBuffer[0];
-
-} __KAL_ATTRIB_PACKED__;
-
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_EVENT_TLV_ELEMENT_T {
 	uint16_t u2Tag;
@@ -7337,6 +7326,17 @@ struct UNI_EVENT_MDDP_FWOWN_RETRY {
 };
 /** @} */
 #endif /* CFG_MTK_MDDP_SUPPORT */
+
+#if CFG_SUPPORT_NAN
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_NAN {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+
+} __KAL_ATTRIB_PACKED__;
 
 enum ENUM_UNI_EVENT_NAN_TAG {
 	UNI_EVENT_NAN_TAG_DISCOVERY_RESULT = 0,
