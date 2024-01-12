@@ -80,7 +80,9 @@
  */
 const struct NIC_CAPABILITY_V2_REF_TABLE
 	gNicCapabilityV2InfoTable[] = {
-	/* {TAG_CAP_TX_RESOURCE, nicEventQueryTxResourceEntry}, */
+#if defined(_HIF_SDIO)
+	{TAG_CAP_TX_RESOURCE, nicEventQueryTxResourceEntry},
+#endif
 	{TAG_CAP_TX_EFUSEADDRESS, nicCmdEventQueryNicEfuseAddr},
 	{TAG_CAP_COEX_FEATURE, nicCmdEventQueryNicCoexFeature},
 	{TAG_CAP_SINGLE_SKU, rlmDomainExtractSingleSkuInfoFromFirmware},
