@@ -390,6 +390,11 @@ int mtk_cfg80211_vendor_set_scan_mac_oui(struct wiphy *wiphy,
 		log_dbg(REQ, ERROR, "Invalid glue info\n");
 		return -EFAULT;
 	}
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
 	prNetDevPrivate =
 		(struct NETDEV_PRIVATE_GLUE_INFO *) netdev_priv(wdev->netdev);
 	if (!prNetDevPrivate) {
