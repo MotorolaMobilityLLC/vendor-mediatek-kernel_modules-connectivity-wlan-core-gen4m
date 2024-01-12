@@ -499,6 +499,9 @@ void p2pRoleFsmRunEventRxDisassociation(struct ADAPTER *prAdapter,
 void p2pRoleFsmRunEventSwitchOPMode(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
+void p2pRoleFsmReInitBeaconAll(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
+
 void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 

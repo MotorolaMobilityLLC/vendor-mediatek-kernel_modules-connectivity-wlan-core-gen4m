@@ -4033,6 +4033,30 @@ error:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/* p2pRoleFsmRunEventSwitchOPMode */
 
+void p2pRoleFsmReInitBeaconAll(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucRoleIdx, ucBssIdx;
+
+	for (ucRoleIdx = 0; ucRoleIdx < BSS_P2P_NUM; ucRoleIdx++) {
+		if (p2pFuncRoleToBssIdx(prAdapter, ucRoleIdx, &ucBssIdx) !=
+				WLAN_STATUS_SUCCESS)
+			continue;
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+		if (!prBssInfo || !IS_BSS_APGO(prBssInfo) ||
+		    !IS_BSS_ACTIVE(prBssInfo))
+			continue;
+
+		bssUpdateBeaconContent(prAdapter, ucBssIdx);
+		DBGLOG(P2P, INFO,
+			"Role[%d] Beacon frame is updated\n", ucRoleIdx);
+	}
+
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
 /* /////////////////////////////// TO BE REFINE //////////////////////////// */
 
 void p2pRoleFsmRunEventBeaconUpdate(struct ADAPTER *prAdapter,
