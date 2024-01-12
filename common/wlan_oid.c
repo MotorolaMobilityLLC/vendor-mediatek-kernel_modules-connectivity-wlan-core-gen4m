@@ -18641,3 +18641,43 @@ uint32_t wlanoidHandleRttRequest(IN struct ADAPTER *prAdapter,
 	return rttHandleRttRequest(prAdapter, prRttRequest, ucBssIndex);
 }
 
+#if (CONFIG_WLAN_SERVICE == 1)
+uint32_t wlanoidListMode(IN struct ADAPTER *prAdapter,
+			 IN void *pvQueryBuffer, IN uint32_t u4QueryBufferLen,
+			 OUT uint32_t *pu4QueryInfoLen) {
+	uint8_t *pCmdBuf = NULL;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (!prAdapter || !pvQueryBuffer)
+		return WLAN_STATUS_INVALID_DATA;
+
+	DBGLOG(OID, TRACE, "wlanoidListMode\n");
+
+	pCmdBuf = kalMemAlloc(u4QueryBufferLen, VIR_MEM_TYPE);
+
+	if (pCmdBuf == NULL)
+		return WLAN_STATUS_RESOURCES;
+
+	kalMemCopy(pCmdBuf, pvQueryBuffer, u4QueryBufferLen);
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+		      CMD_ID_LIST_MODE,
+		      FALSE,
+		      TRUE,
+		      TRUE,
+		      nicCmdEventListmode,
+		      nicOidCmdTimeoutCommon,
+		      u4QueryBufferLen,
+		      pCmdBuf,
+		      pvQueryBuffer,
+		      u4QueryBufferLen);
+
+	/* Prevent list mode command takes more than 2 seconds */
+	if (rStatus == WLAN_STATUS_FAILURE)
+		rStatus = WLAN_STATUS_SUCCESS;
+
+	kalMemFree(pCmdBuf, VIR_MEM_TYPE, u4QueryBufferLen);
+	return rStatus;
+}
+#endif
+

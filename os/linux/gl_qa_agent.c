@@ -100,6 +100,10 @@ static struct hqa_rx_stat_band_format g_backup_band0_info;
 static struct hqa_rx_stat_band_format g_backup_band1_info;
 #endif
 
+#if (CONFIG_WLAN_SERVICE == 1)
+struct list_mode_event g_HqaListModeStatus;
+#endif
+
 #if CFG_SUPPORT_BUFFER_MODE
 uint8_t	uacEEPROMImage[MAX_EEPROM_BUFFER_SIZE] = {
 	/* 0x000 ~ 0x00F */
