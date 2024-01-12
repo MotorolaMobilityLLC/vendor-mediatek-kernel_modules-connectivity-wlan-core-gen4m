@@ -107,6 +107,11 @@
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_MASK         0x00000001/*HOST_LPCR_FW_OWN[0]*/
 #define CONN_CFG_ON_CONN_ON_MISC_HOST_LPCR_FW_OWN_SHFT         0
 
+#define CONN_HIF_BASE                           0x7000
+#define CONN_HIF_ON_LPCTL                       (CONN_HIF_BASE)
+#define CONN_HIF_ON_IRQ_STAT                    (CONN_HIF_BASE + 0x4)
+#define CONN_HIF_ON_IRQ_ENA                     (CONN_HIF_BASE + 0x8)
+
 #if defined(_HIF_USB)
 #define CONNAC_UDMA_BASE                         0x7C000000
 #define CONNAC_UDMA_TX_QSEL                      (CONNAC_UDMA_BASE + 0x8)
