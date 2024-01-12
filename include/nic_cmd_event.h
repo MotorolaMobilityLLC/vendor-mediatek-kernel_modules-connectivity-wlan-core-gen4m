@@ -2994,6 +2994,98 @@ struct EVENT_LOW_LATENCY_INFO {
 	uint8_t  aucPayload[1024];
 };
 
+#if CFG_SUPPORT_NAN
+struct _CMD_EVENT_TLV_COMMOM_T {
+	uint16_t u2TotalElementNum;
+	uint8_t aucReserved[2];
+	uint8_t aucBuffer[0];
+};
+
+struct _CMD_EVENT_TLV_ELEMENT_T {
+	uint32_t tag_type;
+	uint32_t body_len;
+	uint8_t aucbody[0];
+};
+
+struct _TXM_CMD_EVENT_TEST_T {
+	uint32_t u4TestValue0;
+	uint32_t u4TestValue1;
+	uint8_t ucTestValue2;
+	uint8_t aucReserved[3]; /*For 4 bytes alignment*/
+};
+
+struct _NAN_CMD_MASTER_PREFERENCE_T {
+	uint8_t ucMasterPreference;
+	uint8_t aucReserved[3];
+};
+
+struct EVENT_UPDATE_NAN_TX_STATUS {
+	uint8_t aucFlowCtrl[CFG_STA_REC_NUM];
+};
+
+struct _NAN_CMD_UPDATE_ATTR_STRUCT {
+	uint8_t ucAttrId;
+	uint16_t u2AttrLen;
+	uint8_t aucAttrBuf[1024];
+};
+
+enum _ENUM_NAN_SUB_CMD {
+	NAN_CMD_TEST, /* 0 */
+	NAN_TXM_TEST,
+	NAN_CMD_MASTER_PREFERENCE,
+	NAN_CMD_HOP_COUNT,
+	NAN_CMD_PUBLISH,
+	NAN_CMD_CANCEL_PUBLISH, /* 5 */
+	NAN_CMD_UPDATE_PUBLISH,
+	NAN_CMD_SUBSCRIBE,
+	NAN_CMD_CANCEL_SUBSCRIBE,
+	NAN_CMD_TRANSMIT,
+	NAN_CMD_ENABLE_REQUEST, /* 10 */
+	NAN_CMD_DISABLE_REQUEST,
+	NAN_CMD_UPDATE_AVAILABILITY,
+	NAN_CMD_UPDATE_CRB,
+	NAN_CMD_CRB_HANDSHAKE_TOKEN,
+	NAN_CMD_MANAGE_PEER_SCH_RECORD, /* 15 */
+	NAN_CMD_MAP_STA_RECORD,
+	NAN_CMD_RANGING_REPORT_DISC,
+	NAN_CMD_FTM_PARAM,
+	NAN_CMD_UPDATE_PEER_UAW,
+	NAN_CMD_UPDATE_ATTR, /* 20 */
+	NAN_CMD_UPDATE_PHY_SETTING,
+	NAN_CMD_UPDATE_POTENTIAL_CHNL_LIST,
+	NAN_CMD_UPDATE_AVAILABILITY_CTRL,
+	NAN_CMD_UPDATE_PEER_CAPABILITY,
+	NAN_CMD_ADD_CSID,
+	NAN_CMD_MANAGE_SCID,
+
+	NAN_CMD_NUM
+};
+
+enum _ENUM_NAN_SUB_EVENT {
+	NAN_EVENT_TEST, /* 0 */
+	NAN_EVENT_DISCOVERY_RESULT,
+	NAN_EVENT_FOLLOW_EVENT,
+	NAN_EVENT_MASTER_IND_ATTR,
+	NAN_EVENT_CLUSTER_ID_UPDATE,
+	NAN_EVENT_REPLIED_EVENT, /* 5 */
+	NAN_EVENT_PUBLISH_TERMINATE_EVENT,
+	NAN_EVENT_SUBSCRIBE_TERMINATE_EVENT,
+	NAN_EVENT_ID_SCHEDULE_CONFIG,
+	NAN_EVENT_ID_PEER_AVAILABILITY,
+	NAN_EVENT_ID_PEER_CAPABILITY, /* 10 */
+	NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN,
+	NAN_EVENT_ID_DATA_NOTIFY,
+	NAN_EVENT_FTM_DONE,
+	NAN_EVENT_RANGING_BY_DISC,
+	NAN_EVENT_NDL_FLOW_CTRL, /* 15 */
+	NAN_EVENT_DW_INTERVAL,
+	NAN_EVENT_NDL_DISCONNECT,
+	NAN_EVENT_ID_PEER_CIPHER_SUITE_INFO,
+	NAN_EVENT_ID_PEER_SEC_CONTEXT_INFO,
+
+	NAN_EVENT_NUM
+};
+#endif
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -3307,6 +3399,31 @@ void nicOidCmdTimeoutSetAddKey(IN struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LOWLATENCY_MODE
 void nicEventUpdateLowLatencyInfoStatus(IN struct ADAPTER *prAdapter,
 		  IN struct WIFI_EVENT *prEvent);
+#endif
+
+#if CFG_SUPPORT_NAN
+struct _CMD_EVENT_TLV_ELEMENT_T *
+nicGetTargetTlvElement(IN uint16_t u2TargetTlvElement, IN void *prCmdBuffer);
+
+uint32_t nicAddNewTlvElement(IN uint32_t u4Tag, IN uint32_t u4BodyLen,
+			     IN uint32_t prCmdBufferLen, IN void *prCmdBuffer);
+
+uint32_t nicDumpTlv(IN void *prCmdBuffer);
+void nicNanEventTestProcess(IN struct ADAPTER *prAdapter,
+			    IN struct WIFI_EVENT *prEvent);
+void nicNanEventDispatcher(IN struct ADAPTER *prAdapter,
+			   IN struct WIFI_EVENT *prEvent);
+void nicNanIOEventHandler(IN struct ADAPTER *prAdapter,
+			  IN struct WIFI_EVENT *prEvent);
+void nicNanGetCmdInfoQueryTestBuffer(
+	struct _TXM_CMD_EVENT_TEST_T **prCmdInfoQueryTestBuffer);
+void nicNanTestQueryInfoDone(IN struct ADAPTER *prAdapter,
+			     IN struct CMD_INFO *prCmdInfo,
+			     IN uint8_t *pucEventBuf);
+void nicNanEventSTATxCTL(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf);
+void nicNanNdlFlowCtrlEvt(IN struct ADAPTER *prAdapter, IN uint8_t *pcuEvtBuf);
+void nicNanVendorEventHandler(IN struct ADAPTER *prAdapter,
+			      IN struct WIFI_EVENT *prEvent);
 #endif
 
 /*******************************************************************************

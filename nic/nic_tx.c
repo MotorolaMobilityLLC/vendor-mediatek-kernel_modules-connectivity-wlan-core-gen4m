@@ -72,6 +72,9 @@
  */
 #include "precomp.h"
 #include "que_mgt.h"
+#if CFG_SUPPORT_NAN
+#include "nan_txm.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -1933,6 +1936,15 @@ nicTxFillDesc(IN struct ADAPTER *prAdapter,
 		DBGLOG(TX, ERROR,
 			"%s:: no nic_txd_header_format_op??\n",
 			__func__);
+
+#if CFG_SUPPORT_NAN
+	/* BMC */
+	if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST) {
+		/* NAN Todo: not using the struct HW_MAC_TX_DESC */
+		HAL_MAC_TX_DESC_SET_BMC((struct HW_MAC_TX_DESC *)prTxDesc);
+		HAL_MAC_TX_DESC_SET_NO_ACK((struct HW_MAC_TX_DESC *)prTxDesc);
+	}
+#endif
 
 	if (pu4TxDescLength)
 		*pu4TxDescLength = u4TxDescLength;
@@ -3863,6 +3875,9 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 		       uint8_t ucRateMode)
 {
 	static uint16_t u2SwSn;
+#if CFG_SUPPORT_NAN
+	struct WLAN_MAC_HEADER *prWifiHdr;
+#endif
 	ASSERT(prMsduInfo);
 
 	prMsduInfo->ucBssIndex = ucBssIndex;
@@ -3885,6 +3900,20 @@ void nicTxSetMngPacket(struct ADAPTER *prAdapter,
 	prMsduInfo->ucPacketType = TX_PACKET_TYPE_MGMT;
 	prMsduInfo->ucUserPriority = 0;
 	prMsduInfo->eSrc = TX_PACKET_MGMT;
+#if CFG_SUPPORT_NAN
+	prWifiHdr =
+		(struct WLAN_MAC_HEADER *)((uint8_t *)(prMsduInfo->prPacket) +
+					       MAC_TX_RESERVED_FIELD);
+
+	if (IS_BMCAST_MAC_ADDR(prWifiHdr->aucAddr1)) {
+		prMsduInfo->ucStaRecIndex = STA_REC_INDEX_BMCAST;
+		if (pfTxDoneHandler != NULL) {
+			prMsduInfo->pfTxDoneHandler = NULL;
+			DBGLOG(TX, WARN,
+			       "TX done handler can't use for BMC case\n");
+		}
+	}
+#endif
 	u2SwSn++;
 	if (u2SwSn > 4095)
 		u2SwSn = 0;

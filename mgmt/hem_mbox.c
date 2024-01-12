@@ -341,6 +341,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_CNS_DRV_PWR_TEMP, connsysPowerTempNotify},
 #endif
 
+#if (CFG_SUPPORT_NAN == 1)
+	{MID_CNM_NAN_CH_GRANT, nanDevSendEnableRequest}
+#endif
 };
 
 /*******************************************************************************

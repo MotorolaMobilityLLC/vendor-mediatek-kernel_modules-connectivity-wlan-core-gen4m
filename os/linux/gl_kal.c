@@ -118,6 +118,13 @@
 /* the maximum number of all possible file name */
 #define FILE_NAME_TOTAL 8
 
+#if CFG_SUPPORT_NAN
+/* Protocol family, consistent in both kernel prog and user prog. */
+#define MTKPROTO 25
+/* Multicast group, consistent in both kernel prog and user prog. */
+#define MTKGRP 22
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -1286,6 +1293,93 @@ uint32_t kalRxIndicateOnePkt(IN struct GLUE_INFO
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if CFG_SUPPORT_NAN
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief Called by driver to indicate event to upper layer, for example, the wpa
+*        supplicant or wireless tools.
+*
+* \param[in] pvAdapter Pointer to the adapter descriptor.
+* \param[in] eStatus Indicated status.
+* \param[in] NAN_BSS_ROLE_INDEX eIndex
+*
+* \return (none)
+*
+*/
+/*----------------------------------------------------------------------------*/
+void kalNanIndicateStatusAndComplete(IN struct GLUE_INFO *prGlueInfo,
+				IN uint32_t eStatus, IN uint8_t ucRoleIdx)
+{
+
+	DBGLOG(NAN, INFO, "NanIndicateStatus %x\n", eStatus);
+	switch (eStatus) {
+	case WLAN_STATUS_MEDIA_CONNECT:
+#if !CFG_SUPPORT_NAN_CARRIER_ON_INIT
+		netif_carrier_on(
+			prGlueInfo->aprNANDevInfo[ucRoleIdx]->prDevHandler);
+#endif
+		break;
+
+	case WLAN_STATUS_MEDIA_DISCONNECT:
+	case WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY:
+#if !CFG_SUPPORT_NAN_CARRIER_ON_INIT
+		netif_carrier_off(
+			prGlueInfo->aprNANDevInfo[ucRoleIdx]->prDevHandler);
+#endif
+		break;
+
+	default:
+		break;
+	}
+}
+
+void kalCreateUserSock(IN struct GLUE_INFO *prGlueInfo)
+{
+	prGlueInfo->NetLinkSK =
+		netlink_kernel_create(&init_net, MTKPROTO, NULL);
+	DBGLOG(INIT, INFO, "Create netlink Socket\n");
+	if (!prGlueInfo->NetLinkSK)
+		DBGLOG(INIT, INFO, "Create Socket Fail\n");
+}
+void kalReleaseUserSock(IN struct GLUE_INFO *prGlueInfo)
+{
+	if (prGlueInfo->NetLinkSK) {
+		DBGLOG(INIT, INFO, "Release netlink Socket\n");
+		netlink_kernel_release(prGlueInfo->NetLinkSK);
+	}
+}
+
+int kalIndicateNetlink2User(IN struct GLUE_INFO *prGlueInfo, IN void *pvBuf,
+			IN uint32_t u4BufLen)
+{
+	struct sk_buff *skb;
+	struct nlmsghdr *nlh;
+	int res;
+
+	if (!prGlueInfo->NetLinkSK) {
+		DBGLOG(NAN, INFO, "Socket not create\n");
+		return -10;
+	}
+	DBGLOG(NAN, LOUD, "Creating skb.\n");
+
+	skb = nlmsg_new(NLMSG_ALIGN(u4BufLen + 1), GFP_KERNEL);
+	if (!skb) {
+		DBGLOG(NAN, ERROR, "Allocation failure.\n");
+		return -10;
+	}
+
+	nlh = nlmsg_put(skb, 0, 1, NLMSG_DONE, u4BufLen + 1, 0);
+	kalMemCopy(nlmsg_data(nlh), pvBuf, u4BufLen);
+	res = nlmsg_multicast(prGlueInfo->NetLinkSK, skb, 0, MTKGRP,
+			      GFP_KERNEL);
+	if (res < 0)
+		DBGLOG(NAN, ERROR, "nlmsg_multicast() error: %d\n", res);
+	else
+		DBGLOG(NAN, LOUD, "Success\n");
+	return 0;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4348,6 +4442,12 @@ int main_thread(void *data)
 			}
 			kalTraceEnd();
 		}
+
+#if CFG_SUPPORT_NAN
+		if (test_and_clear_bit(GLUE_FLAG_NAN_MULTICAST_BIT,
+				       &prGlueInfo->ulFlag))
+			nanSetMulticastListWorkQueueWrapper(prGlueInfo);
+#endif
 
 		if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 			|| kalIsResetting()
@@ -9293,6 +9393,89 @@ void connsysPowerTempUpdate(enum conn_pwr_msg_type status,
 	DBGLOG(INIT, INFO, "Update power message type %d, current temp: %d\n",
 				status, currentTemp);
 	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, status, &currentTemp);
+}
+#endif
+
+#if CFG_SUPPORT_NAN
+void kalNanHandleVendorEvent(IN struct ADAPTER *prAdapter, uint8_t *prBuffer)
+{
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	uint32_t u4SubEvent;
+	int status = 0;
+
+	ASSERT(prAdapter);
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prBuffer;
+	prTlvElement =
+		(struct _CMD_EVENT_TLV_ELEMENT_T *)prTlvCommon->aucBuffer;
+
+	u4SubEvent = prTlvElement->tag_type;
+
+	DBGLOG(NAN, INFO, "[%s] subEvent:%d\n", __func__, u4SubEvent);
+
+	switch (u4SubEvent) {
+	case NAN_EVENT_DISCOVERY_RESULT:
+		status = mtk_cfg80211_vendor_event_nan_match_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_FOLLOW_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_followup_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_REPLIED_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_replied_indication(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_PUBLISH_TERMINATE_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_publish_terminate(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_SUBSCRIBE_TERMINATE_EVENT:
+		status = mtk_cfg80211_vendor_event_nan_subscribe_terminate(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_MASTER_IND_ATTR:
+		nanDevMasterIndEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_CLUSTER_ID_UPDATE:
+		nanDevClusterIdEvtHandler(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_SCHEDULE_CONFIG:
+	case NAN_EVENT_ID_PEER_AVAILABILITY:
+	case NAN_EVENT_ID_PEER_CAPABILITY:
+	case NAN_EVENT_ID_CRB_HANDSHAKE_TOKEN:
+		nanSchedulerEventDispatch(prAdapter, u4SubEvent,
+					  prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_PEER_SEC_CONTEXT_INFO:
+		nanDiscUpdateSecContextInfoAttr(prAdapter,
+						prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_PEER_CIPHER_SUITE_INFO:
+		nanDiscUpdateCipherSuiteInfoAttr(prAdapter,
+						 prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_ID_DATA_NOTIFY:
+		nicNanEventSTATxCTL(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_FTM_DONE:
+		nanRangingFtmDoneEvt(prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_RANGING_BY_DISC:
+		nanRangingInvokedByDiscEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+	case NAN_EVENT_NDL_FLOW_CTRL:
+		nicNanNdlFlowCtrlEvt(prAdapter, prTlvElement->aucbody);
+		break;
+#endif
+	case NAN_EVENT_NDL_DISCONNECT:
+		nanDataEngingDisconnectEvt(prAdapter, prTlvElement->aucbody);
+	default:
+		DBGLOG(NAN, LOUD, "No match event!!\n");
+		break;
+	}
 }
 #endif
 

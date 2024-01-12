@@ -1477,6 +1477,21 @@ struct QUE *qmDequeueStaTxPackets(IN struct ADAPTER *prAdapter)
 
 	return NULL;
 }
+#if CFG_SUPPORT_NAN
+void
+qmUpdateFreeNANQouta(IN struct ADAPTER *prAdapter,
+		     struct EVENT_UPDATE_NAN_TX_STATUS *prTxStatus) {
+	struct EVENT_UPDATE_NAN_TX_STATUS *prUpdateTxStatus;
+	uint8_t ucStaIndex = 0;
+	struct STA_RECORD *prStaRec; /* The current focused STA */
+
+	prUpdateTxStatus = prTxStatus;
+
+	prStaRec = &prAdapter->arStaRec[ucStaIndex];
+
+	kalSetEvent(prAdapter->prGlueInfo);
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1521,6 +1536,11 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 	struct QUE_MGT *prQM = &prAdapter->rQM;
 
 	uint8_t *pucPsStaFreeQuota;
+#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+	unsigned char fgIsNanStaRec;
+#endif
+#endif
 #if CFG_SUPPORT_SOFT_ACM
 	uint8_t ucAc;
 	u_int8_t fgAcmFlowCtrl = FALSE;
@@ -1600,6 +1620,17 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 				}
 			}
 
+#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+			fgIsNanStaRec = FALSE;
+			if (prBssInfo->eNetworkType == NETWORK_TYPE_NAN) {
+				fgIsNanStaRec = TRUE;
+				DBGLOG(NAN, TEMP, "NAN STA:%d, TC:%d\n",
+				       prStaRec->ucIndex, ucTC);
+			}
+#endif
+#endif
+
 			/* fgIsInPS */
 			/* Absent BSS handling */
 			if (prBssInfo->fgIsNetAbsent) {
@@ -1672,6 +1703,40 @@ qmDequeueTxPacketsFromPerStaQueues(IN struct ADAPTER *prAdapter,
 						"sta_rec is not valid\n");
 					break;
 				}
+
+#if CFG_SUPPORT_NAN
+#if CFG_SUPPORT_NAN_ADVANCE_DATA_CONTROL
+				if (fgIsNanStaRec == TRUE) {
+					OS_SYSTIME rCurrentTime;
+					unsigned char fgExpired;
+
+					rCurrentTime = kalGetTimeTick();
+					fgExpired = CHECK_FOR_EXPIRATION(
+						rCurrentTime,
+						prStaRec->rNanExpiredSendTime);
+
+					/* avoid to flood the kernel log, */
+					/*only the 1st expiry event logged */
+					if (fgExpired &&
+					    !prStaRec->fgNanSendTimeExpired)
+						DBGLOG(NAN, TEMP,
+						       "[NAN Pkt Tx Expired] Sta:%u, Exp:%u, Now:%u\n",
+						       prStaRec->ucIndex,
+						       prStaRec->
+							rNanExpiredSendTime,
+						       rCurrentTime);
+
+					if (fgExpired) {
+						prStaRec->fgNanSendTimeExpired =
+							TRUE;
+						break;
+					}
+
+					prStaRec->fgNanSendTimeExpired = FALSE;
+				}
+#endif
+#endif
+
 #if CFG_SUPPORT_SOFT_ACM
 				if (fgAcmFlowCtrl) {
 					uint32_t u4PktTxTime = 0;
@@ -3153,6 +3218,59 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 			u2FrameCtrl = prWlanHeader->u2FrameCtrl;
 			prCurrSwRfb->u2SequenceControl =
 				prWlanHeader->u2SeqCtrl;
+#if (CFG_SUPPORT_NAN == 1)
+			if (prCurrSwRfb->prStaRec == NULL)
+				prCurrSwRfb->prStaRec = nanGetStaRecByNDI(
+					prAdapter, prWlanHeader->aucAddr2);
+
+			if (prCurrSwRfb->prStaRec != NULL && fgIsBMC) {
+				struct BSS_INFO *prBssInfo;
+
+				prBssInfo = prAdapter->aprBssInfo[
+					prCurrSwRfb->prStaRec->ucBssIndex];
+				if (prBssInfo->eNetworkType ==
+					NETWORK_TYPE_NAN) {
+					uint16_t u2MACLen = 0;
+
+					DBGLOG(QM, INFO,
+						   "NAN special case for BMC packet\n");
+					if (RXM_IS_QOS_DATA_FRAME(u2FrameCtrl))
+						u2MACLen = sizeof(
+							struct
+							WLAN_MAC_HEADER_QOS);
+					else
+						u2MACLen =
+							sizeof(struct
+							WLAN_MAC_HEADER);
+					u2MACLen +=
+						ETH_LLC_LEN + ETH_SNAP_OUI_LEN;
+					u2MACLen -=
+						ETHER_TYPE_LEN_OFFSET;
+					prCurrSwRfb->pvHeader += u2MACLen;
+					kalMemCopy(prCurrSwRfb->pvHeader,
+					   prWlanHeader->aucAddr1,
+					   MAC_ADDR_LEN);
+					kalMemCopy(prCurrSwRfb->pvHeader +
+					   MAC_ADDR_LEN,
+					   prWlanHeader->aucAddr2,
+					   MAC_ADDR_LEN);
+					prCurrSwRfb->u2PacketLen -= u2MACLen;
+					/* record StaRec related info */
+					prCurrSwRfb->ucStaRecIdx =
+						prCurrSwRfb->prStaRec->ucIndex;
+					prCurrSwRfb->ucWlanIdx =
+						prCurrSwRfb->
+						prStaRec->ucWlanIndex;
+					GLUE_SET_PKT_BSS_IDX(
+						prCurrSwRfb->pvPacket,
+						secGetBssIdxByWlanIdx(
+							prAdapter,
+							prCurrSwRfb->
+							ucWlanIdx));
+				}
+			}
+#endif
+
 			if (prCurrSwRfb->prStaRec == NULL &&
 				RXM_IS_DATA_FRAME(u2FrameCtrl) &&
 				(prAisBssInfo) &&
@@ -6524,6 +6642,13 @@ enum ENUM_FRAME_ACTION qmGetFrameAction(IN struct ADAPTER *prAdapter,
 				break;
 			}
 		}
+#if CFG_SUPPORT_NAN
+		if (prMsduInfo->ucTxToNafQueFlag == TRUE) {
+			eFrameAction = FRAME_ACTION_TX_PKT;
+			break;
+		}
+#endif
+
 		/* 4 <2> Drop, if BSS is inactive */
 		if (!IS_BSS_ACTIVE(prBssInfo)) {
 			DBGLOG(QM, TRACE,

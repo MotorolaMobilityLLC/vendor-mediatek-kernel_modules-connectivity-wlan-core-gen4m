@@ -6938,7 +6938,7 @@ void wlanBindBssIdxToNetInterface(IN struct GLUE_INFO *prGlueInfo,
 	/* prGlueInfo->aprBssIdxToNetInterfaceInfo[ucBssIndex] = prNetIfInfo; */
 }
 
-#if 0
+#if CFG_SUPPORT_NAN
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to GET BSS index for a network interface.
@@ -6950,15 +6950,12 @@ void wlanBindBssIdxToNetInterface(IN struct GLUE_INFO *prGlueInfo,
  * @return UINT_8                         Index of BSS
  */
 /*----------------------------------------------------------------------------*/
-uint8_t wlanGetBssIdxByNetInterface(IN struct GLUE_INFO
-				    *prGlueInfo, IN void *pvNetInterface)
+uint8_t wlanGetBssIdxByNetInterface(IN struct GLUE_INFO *prGlueInfo,
+			    IN void *pvNetInterface)
 {
 	uint8_t ucIdx = 0;
 
-	ASSERT(prGlueInfo);
-
-	for (ucIdx = 0; ucIdx < prGlueInfo->prAdapter->ucHwBssIdNum;
-	     ucIdx++) {
+	for (ucIdx = 0; ucIdx < HW_BSSID_NUM; ucIdx++) {
 		if (prGlueInfo->arNetInterfaceInfo[ucIdx].pvNetInterface ==
 		    pvNetInterface)
 			break;
@@ -7734,6 +7731,47 @@ void wlanInitFeatureOption(IN struct ADAPTER *prAdapter)
 		"P2pGoACSEnable Setting:ACS Enable[%d]\n",
 		prAdapter->rWifiVar.ucP2pGoACS);
 
+#endif
+
+#if CFG_SUPPORT_NAN
+	prWifiVar->ucMasterPref =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanMasterPref", 2);
+	prWifiVar->ucConfig5gChannel =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanConfig5gChannel", 1);
+	prWifiVar->ucChannel5gVal =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanChannel5gVal", 149);
+	prWifiVar->ucAisQuotaVal =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanAisQuota", 8);
+	prWifiVar->ucDftNdlQuotaVal =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQuota", 5);
+	prWifiVar->ucDftRangQuotaVal =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftRangQuota", 1);
+	prWifiVar->ucDftQuotaStartOffset =
+		(uint8_t)wlanCfgGetUint32(prAdapter,
+		"NanDftQuotaStartOffset", 2);
+	prWifiVar->ucDftNdcStartOffset =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdcStartOffset", 0);
+	prWifiVar->ucNanFixChnl =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanFixChnl", 0);
+	prWifiVar->fgEnableNDPE =
+		((wlanCfgGetUint32(prAdapter, "NanEnableNDPE", 0) == 0) ? FALSE
+								     : TRUE);
+	prWifiVar->u2DftNdlQosLatencyVal =
+		wlanCfgGetUint32(prAdapter, "NanDftNdlQosLatency", 0);
+	prWifiVar->ucDftNdlQosQuotaVal =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftNdlQosQuota", 0);
+	prWifiVar->ucNanBandwidth =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanBw", MAX_BW_20MHZ);
+	prWifiVar->fgEnNanVHT =
+		(unsigned char)wlanCfgGetUint32(prAdapter, "NanVHT", 1);
+	prWifiVar->ucNanFtmBw = (uint8_t)wlanCfgGetUint32(
+		prAdapter, "NanFtmBw", FTM_FORMAT_BW_HT_MIXED_BW20);
+	prWifiVar->ucNanDiscBcnInterval =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDiscBcnInterval", 100);
+	prWifiVar->ucNanCommittedDw =
+		(uint8_t)wlanCfgGetUint32(prAdapter, "NanDftCommittedDw", 1);
+	prWifiVar->fgNoPmf =
+		(unsigned char)wlanCfgGetUint32(prAdapter, "NanForceNoPmf", 0);
 #endif
 
 	prWifiVar->fgReuseRSNIE = (uint32_t) wlanCfgGetUint32(
