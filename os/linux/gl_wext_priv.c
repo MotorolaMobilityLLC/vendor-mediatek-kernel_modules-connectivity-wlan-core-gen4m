@@ -2936,6 +2936,8 @@ reqExtSetAcpiDevicePowerState(IN struct GLUE_INFO
  * so this command will reuse RX_STAT's flow
  */
 #define CMD_GET_MU_RX_PKTCNT	"hqa_get_murx_pktcnt"
+#define CMD_RUN_HQA	"hqa"
+
 
 #if CFG_WOW_SUPPORT
 #define CMD_WOW_START		"WOW_START"
@@ -14194,6 +14196,172 @@ static int priv_driver_show_txd_info(
 	return i4BytesWritten;
 }
 
+int8_t *RxstatisticsArray[] = {
+	"mac_rx_fcs_err_cnt         : 0x%08x\n",
+	"mac_rx_fcs_err_cnt         : 0x%08x\n",
+	"mac_rx_mdrdy_cnt           : 0x%08x\n",
+	"phy_rx_fcs_err_cnt_cck     : 0x%08x\n",
+	"phy_rx_fcs_err_cnt_ofdm    : 0x%08x\n",
+	"phy_rx_pd_cck              : 0x%08x\n",
+	"phy_rx_pd_ofdm             : 0x%08x\n",
+	"phy_rx_sig_err_cck         : 0x%08x\n",
+	"phy_rx_sfd_err_cck         : 0x%08x\n",
+	"phy_rx_sig_err_ofdm        : 0x%08x\n",
+	"phy_rx_tag_err_ofdm        : 0x%08x\n",
+	"wb_rssi0                   : 0x%08x\n",
+	"ib_rssi0                   : 0x%08x\n",
+	"wb_rssi1                   : 0x%08x\n",
+	"ib_rssi1                   : 0x%08x\n",
+	"phy_rx_mdrdy_cnt_cck       : 0x%08x\n",
+	"phy_rx_mdrdy_cnt_ofdm      : 0x%08x\n",
+	"driver_rx_count            : 0x%08x\n",
+	"rcpi0                      : 0x%08x\n",
+	"rcpi1                      : 0x%08x\n",
+	"freq_offset_from_rx        : 0x%08x\n",
+	"rssi0                      : 0x%08x\n",
+	"rssi1                      : 0x%08x\n",
+	"rx_fifo_full               : 0x%08x\n",  /* out_of_resource */
+	"mac_rx_len_mismatch        : 0x%08x\n",
+	"mac_rx_fcs_err_cnt_band1   : 0x%08x\n",
+	"mac_rx_mdrdy_cnt_band1     : 0x%08x\n",
+	"fagc_ib_RSSSI0             : 0x%08x\n",
+	"fagc_ib_RSSSI1             : 0x%08x\n",
+	"fagc_ib_RSSSI2             : 0x%08x\n",
+	"fagc_ib_RSSSI3             : 0x%08x\n",
+	"fagc_wb_RSSSI0             : 0x%08x\n",
+	"fagc_wb_RSSSI1             : 0x%08x\n",
+	"fagc_wb_RSSSI2             : 0x%08x\n",
+	"fagc_wb_RSSSI3             : 0x%08x\n",
+	"inst_ib_RSSSI0             : 0x%08x\n",
+	"inst_ib_RSSSI1             : 0x%08x\n",
+	"inst_ib_RSSSI2             : 0x%08x\n",
+	"inst_ib_RSSSI3             : 0x%08x\n",
+	"inst_wb_RSSSI0             : 0x%08x\n",
+	"inst_wb_RSSSI1             : 0x%08x\n",
+	"inst_wb_RSSSI2             : 0x%08x\n",
+	"inst_wb_RSSSI3             : 0x%08x\n",
+	"aci_hit_low                : 0x%08x\n",
+	"aci_hit_high               : 0x%08x\n",
+	"driver_rx_count1           : 0x%08x\n",
+	"rcpi2                      : 0x%08x\n",
+	"rcpi3                      : 0x%08x\n",
+	"rssi2                      : 0x%08x\n",
+	"rssi3                      : 0x%08x\n",
+	"snr0                       : 0x%08x\n",
+	"snr1                       : 0x%08x\n",
+	"snr2                       : 0x%08x\n",
+	"snr3                       : 0x%08x\n",
+	"rx_fifo_full_band1         : 0x%08x\n",
+	"mac_rx_len_mismatch_band1  : 0x%08x\n",
+	"phy_rx_pd_cck_band1        : 0x%08x\n",
+	"phy_rx_pd_ofdm_band1       : 0x%08x\n",
+	"phy_rx_sig_err_cck_band1   : 0x%08x\n",
+	"phy_rx_sfd_err_cck_band1   : 0x%08x\n",
+	"phy_rx_sig_err_ofdm_band1  : 0x%08x\n",
+	"phy_rx_tag_err_ofdm_band1  : 0x%08x\n",
+	"phy_rx_mdrdy_cnt_cck_band1 : 0x%08x\n",
+	"phy_rx_mdrdy_cnt_ofdm_band1: 0x%08x\n",
+	"phy_rx_fcs_err_cnt_cck_band1   : 0x%08x\n",
+	"phy_rx_fcs_err_cnt_ofdm_band1  : 0x%08x\n",
+	"mu_pkt_count               : 0x%08x\n",
+	"sig_mcs                    : 0x%08x\n",
+	"sinr                       : 0x%08x\n",
+	"rxv_rssi                   : 0x%08x\n",
+	/* "reserved[184]", */
+	"phy_mdrdy                  : 0x%08x\n",
+	"noise_floor                : 0x%08x\n",
+	"all_len_mismatch_ch_cnt_band0  : 0x%08x\n",
+	"all_len_mismatch_ch_cnt_band1  : 0x%08x\n",
+	"all_mac_mdrdy0             : 0x%08x\n",
+	"all_mac_mdrdy1             : 0x%08x\n",
+	"all_fcs_err0               : 0x%08x\n",
+	"all_fcs_err1               : 0x%08x\n",
+	"rx_ok0                     : 0x%08x\n",
+	"rx_ok1                     : 0x%08x\n",
+	"per0                       : 0x%08x\n",
+	"per1                       : 0x%08x\n",
+};
+static int priv_driver_run_hqa(
+	IN struct net_device *prNetDev,
+	IN char *pcCommand,
+	IN int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int8_t *this_char = NULL;
+	struct hqa_frame_ctrl local_hqa;
+	s_int32 ret = WLAN_STATUS_FAILURE;
+	u_int8 *dataptr = NULL;
+	int32_t i = 0, datalen = 0;
+
+	ASSERT(prNetDev);
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	/*Roll over "HQA ", handle xxx=y,y,y,y,y,y....*/
+	/* iwpriv wlan0 driver HQA xxx=y,y,y,y,y,y.....*/
+	this_char = kalStrStr(pcCommand, "HQA ");
+	if (!this_char)
+		return -1;
+	this_char += strlen("HQA ");
+
+	/*handle white space*/
+	i = strspn(this_char, " ");
+	this_char += i;
+
+	DBGLOG(REQ, LOUD, "this_char is %s\n", this_char);
+
+	if (this_char) {
+		local_hqa.type = 1;
+		local_hqa.hqa_frame_comm.hqa_frame_string = this_char;
+		ret = mt_agent_hqa_cmd_handler(&prGlueInfo->rService,
+		&local_hqa);
+	}
+
+	if (ret != WLAN_STATUS_SUCCESS)
+		return -1;
+
+	dataptr = local_hqa.hqa_frame_comm.hqa_frame_eth->data;
+	datalen = NTOHS(local_hqa.hqa_frame_comm.hqa_frame_eth->length);
+
+	DBGLOG(REQ, LOUD,
+	"priv_driver_run_hqa datalen is %d\n", datalen);
+	DBGLOG_MEM8(REQ, LOUD, dataptr, datalen);
+
+	/*parsing ret 2 bytes*/
+	if ((dataptr) && (datalen)) {
+		i4BytesWritten = snprintf(pcCommand, i4TotalLen,
+		"Return : 0x%04x\n", (s_int16)*dataptr);
+
+		datalen -= 2;
+		dataptr += 2;
+	} else {
+		DBGLOG(REQ, ERROR,
+		"priv_driver_run_hqa not support\n");
+		return -1;
+	}
+
+	/*parsing remaining data n bytes ( 4 bytes per parameter)*/
+	for (i = 0; i < datalen ; i += 4, dataptr += 4) {
+		if ((dataptr) && (datalen)) {
+			if (datalen == 4) {
+				i4BytesWritten +=
+				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
+				"ExtId : 0x%08x\n", (s_int32)*dataptr);
+			} else {
+				i4BytesWritten +=
+				snprintf(pcCommand + i4BytesWritten, i4TotalLen,
+				RxstatisticsArray[i/4], (s_int32)*dataptr);
+			}
+		}
+	}
+
+	return i4BytesWritten;
+
+}
 
 typedef int(*PRIV_CMD_FUNCTION) (
 		IN struct net_device *prNetDev,
@@ -14336,6 +14504,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 #endif /* CFG_SUPPORT_CONNAC2X == 1 */
 	{CMD_SHOW_TXD_INFO, priv_driver_show_txd_info},
 	{CMD_GET_MU_RX_PKTCNT, priv_driver_show_rx_stat},
+	{CMD_RUN_HQA, priv_driver_run_hqa},
 };
 
 int32_t priv_driver_cmds(IN struct net_device *prNetDev, IN int8_t *pcCommand,

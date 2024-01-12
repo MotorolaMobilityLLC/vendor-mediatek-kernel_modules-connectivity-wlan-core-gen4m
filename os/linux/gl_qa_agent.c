@@ -8970,6 +8970,7 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 #if (CONFIG_WLAN_SERVICE == 1)
 	struct GLUE_INFO *prGlueInfo = NULL;
 #endif
+	struct hqa_frame_ctrl local_hqa;
 
 	HqaCmdFrame = kmalloc(sizeof(*HqaCmdFrame), GFP_KERNEL);
 
@@ -8998,8 +8999,12 @@ int priv_qa_agent(IN struct net_device *prNetDev,
 		prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 		ASSERT(prGlueInfo);
 
+		local_hqa.type = 0;
+		local_hqa.hqa_frame_comm.hqa_frame_eth =
+		(struct hqa_frame *)HqaCmdFrame;
+
 		i4Status = mt_agent_hqa_cmd_handler(&prGlueInfo->rService,
-			(struct hqa_frame *)HqaCmdFrame);
+			(struct hqa_frame_ctrl *)&local_hqa);
 
 		if (i4Status == WLAN_STATUS_SUCCESS) {
 			/*Response to QA */
