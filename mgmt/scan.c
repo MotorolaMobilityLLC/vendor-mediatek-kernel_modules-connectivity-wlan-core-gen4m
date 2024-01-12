@@ -1305,8 +1305,8 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	struct WLAN_BEACON_FRAME *prWlanBeaconFrame
 		= (struct WLAN_BEACON_FRAME *) NULL;
 	struct IE_SSID *prIeSsid = (struct IE_SSID *) NULL;
-	struct IE_SUPPORTED_RATE *prIeSupportedRate
-		= (struct IE_SUPPORTED_RATE *) NULL;
+	struct IE_SUPPORTED_RATE_IOT *prIeSupportedRate
+		= (struct IE_SUPPORTED_RATE_IOT *) NULL;
 	struct IE_EXT_SUPPORTED_RATE *prIeExtSupportedRate
 		= (struct IE_EXT_SUPPORTED_RATE *) NULL;
 	uint8_t ucHwChannelNum = 0;
@@ -1787,7 +1787,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 			 */
 			if ((!prIeSupportedRate)
 				&& (IE_LEN(pucIE) <= RATE_NUM_SW))
-				prIeSupportedRate = SUP_RATES_IE(pucIE);
+				prIeSupportedRate = SUP_RATES_IOT_IE(pucIE);
 			break;
 
 		case ELEM_ID_TIM:
