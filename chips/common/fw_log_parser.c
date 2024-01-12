@@ -186,6 +186,13 @@ static uint8_t *apucFwDbgModule[] = {
 	(uint8_t *) DISP_STRING("AHDBG"),		/* 80 */
 	(uint8_t *) DISP_STRING("DPP"),
 	(uint8_t *) DISP_STRING("NAN"),
+	(uint8_t *) DISP_STRING("DYNWMM"),
+	(uint8_t *) DISP_STRING("EXT_SND"),
+	(uint8_t *) DISP_STRING("EXT_BSRP"),		/* 85 */
+	(uint8_t *) DISP_STRING("EXT_TPUTM"),
+	(uint8_t *) DISP_STRING("MLO"),
+	(uint8_t *) DISP_STRING("AMSDU"),
+	(uint8_t *) DISP_STRING("MLR"),
 };
 
 static uint8_t *apucFwDbgLvl[] = {
@@ -397,6 +404,8 @@ inline int32_t dbgCheckTransText(uint8_t ucText)
 		return 0;
 	else if (ucText >= '0' && ucText <= '9')
 		return 1;
+	else if (ucText == 'l') /* for %lx case */
+		return 1;
 	else
 		return -1;
 }
@@ -407,18 +416,42 @@ inline uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 				 uint8_t *aucLogBuf)
 {
 	uint8_t *prLogPtr;
-	uint8_t aucFormat[8]; /* expect the len of the "%0.X" won't over 7 */
+#define PARAM_SIZE 8
+	uint8_t aucFormat[PARAM_SIZE]; /* expect the "%0.X" < 7 chars */
 	uint32_t i, j, k, l = 0, u4LogLen = 0;
 	uint32_t *prArgu;
 	uint32_t i4Ret;
+	uint32_t u4HeadPos;
+	uint8_t aucModule[PARAM_SIZE] = {0};
+	uint8_t aucLevel[PARAM_SIZE] = {0};
+	uint8_t *prModule;
+	uint8_t *prLevel;
 
 	prIdxV2Header = (struct IDX_LOG_V2_FORMAT *)pucIdxLog;
 	prArgu = (uint32_t *)(pucIdxLog + sizeof(struct IDX_LOG_V2_FORMAT));
 	prLogPtr = prLogEntry->prStr;
 
+	if (prIdxV2Header->ucModId >=
+		sizeof(apucFwDbgModule)/sizeof(uint8_t *)) {
+		kalSnprintf(aucModule, PARAM_SIZE, "%d",
+			prIdxV2Header->ucModId);
+		prModule = aucModule;
+	} else {
+		prModule = apucFwDbgModule[prIdxV2Header->ucModId];
+	}
+
+	if (prIdxV2Header->ucLevelId >=
+		sizeof(apucFwDbgLvl)/sizeof(uint8_t *)) {
+		kalSnprintf(aucLevel, PARAM_SIZE, "%d",
+			prIdxV2Header->ucLevelId);
+		prLevel = aucLevel;
+	} else {
+		prLevel = apucFwDbgLvl[prIdxV2Header->ucLevelId];
+	}
+
 	u4LogLen = kalSnprintf(aucLogBuf, DBG_LOG_BUF_SIZE, "<FW> %s(%s):",
-				apucFwDbgModule[prIdxV2Header->ucModId],
-				apucFwDbgLvl[prIdxV2Header->ucLevelId]);
+				prModule, prLevel);
+	u4HeadPos = u4LogLen;
 
 	for (i = 0; i < prLogEntry->u4StrLen; i++) {
 		if (prLogPtr[i] == 0x0)
@@ -442,7 +475,8 @@ inline uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 				goto out;
 
 			aucFormat[0] = '%';
-			for (j = 1; j < (prLogEntry->u4StrLen - i); j++) {
+			for (j = 1; (j < (prLogEntry->u4StrLen - i)) &&
+					(j < PARAM_SIZE); j++) {
 				i4Ret = dbgCheckTransText(prLogPtr[i+j]);
 				if (i4Ret == 0) {
 					aucFormat[j] = prLogPtr[i+j];
@@ -456,10 +490,18 @@ inline uint8_t *dbgFwLogIdxToStr(struct IDX_LOG_ENTRY *prLogEntry,
 					u4LogLen += k;
 					i += j;
 					break;
-				} else if (i4Ret == 1)
+				} else if (i4Ret == 1) {
 					aucFormat[j] = prLogPtr[i+j];
-				else /* -1 : format error */
+				} else {
+					/* -1 : format error */
+					u4LogLen = kalSnprintf(
+					    &aucLogBuf[u4HeadPos],
+					    (DBG_LOG_BUF_SIZE - u4HeadPos),
+					    "%s",
+					    prLogEntry->prStr);
+					u4LogLen += u4HeadPos;
 					goto out;
+				}
 			}
 		}
 	}
@@ -532,7 +574,8 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 	if (prIdxV2Header->ucVerType == VER_TYPE_IDX_LOG_V2) {
 		if ((prIdxV2Header->ucNumArgs * 4 +
 		     sizeof(struct IDX_LOG_V2_FORMAT)) > u2MsgSize) {
-			DBGLOG(INIT, ERROR, "length error : %d:%d\n", u2MsgSize,
+			DBGLOG(INIT, WARN, "offset=0x%x, length err: %d:%d\n",
+				prIdxV2Header->u4IdxId, u2MsgSize,
 				(prIdxV2Header->ucNumArgs * 4 +
 				 sizeof(struct IDX_LOG_V2_FORMAT)));
 			return WLAN_STATUS_FAILURE;
@@ -562,7 +605,7 @@ uint32_t wlanFwLogIdxToStr(struct ADAPTER *prAdapter, uint8_t *pucIdxLog,
 
 		if ((prTextLog->ucPayloadSize_wo_padding +
 			sizeof(struct TEXT_LOG_FORMAT)) > u2MsgSize) {
-			DBGLOG(INIT, STATE, "error payload size (%d:%d:%d)\n",
+			DBGLOG(INIT, WARN, "error payload size (%d:%d:%d)\n",
 				prTextLog->ucPayloadSize_wo_padding,
 				prTextLog->ucPayloadSize_w_padding,
 				u2MsgSize);
