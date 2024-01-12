@@ -4634,33 +4634,34 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		return;
 	}
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
-
-	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
-			GLUE_FLAG_RX_DIRECT_INT_BIT,
-			prGlueInfo->ulFlag);
-
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
 		|| kalIsResetting()
 		) {
 		/* Should stop now... skip pending interrupt */
 		DBGLOG_LIMITED(INIT, INFO,
 		       "ignore pending interrupt\n");
-	} else {
-		/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
-		prGlueInfo->TaskIsrCnt++;
+		return;
+	}
+
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+
+	fgEnInt = KAL_TEST_AND_CLEAR_BIT(
+			GLUE_FLAG_RX_DIRECT_INT_BIT,
+			prGlueInfo->ulFlag);
+
+	/* DBGLOG(INIT, INFO, ("HIF Interrupt!\n")); */
+	prGlueInfo->TaskIsrCnt++;
+	wlanIST(prAdapter, FALSE);
+
+	/* Read data again if wfdma rx ring is non-empty and
+	 * wfdma th > 0 (high tput)
+	 */
+	while (!halIsWfdmaRxRingsEmpty(prGlueInfo)) {
+		if (prAdapter->ulNoMoreRfb ||
+		    prBusInfo->u4WfdmaTh == 0)
+			break;
+
 		wlanIST(prAdapter, FALSE);
-
-		/* Read data again if wfdma rx ring is non-empty and
-		 * wfdma th > 0 (high tput)
-		 */
-		while (!halIsWfdmaRxRingsEmpty(prGlueInfo)) {
-			if (prAdapter->ulNoMoreRfb ||
-			    prBusInfo->u4WfdmaTh == 0)
-				break;
-
-			wlanIST(prAdapter, FALSE);
-		}
 	}
 
 #if CFG_SUPPORT_RX_WORK

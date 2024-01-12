@@ -2620,6 +2620,9 @@ static void glTaskletInit(struct GLUE_INFO *prGlueInfo)
 	tasklet_init(&prGlueInfo->rTxCompleteTask,
 			halTxCompleteTasklet,
 			(unsigned long)prGlueInfo);
+
+	GLUE_SET_REF_CNT(0, prGlueInfo->u4RxTaskScheduleCnt);
+
 }
 
 static void glTaskletUninit(struct GLUE_INFO *prGlueInfo)
