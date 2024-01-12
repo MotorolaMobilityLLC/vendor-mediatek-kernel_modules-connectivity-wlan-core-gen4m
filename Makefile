@@ -56,6 +56,16 @@ ifndef TOP
     TOP := $(srctree)/..
 endif
 $(info os option: $(os))
+
+# script for check the kernel version condition
+# example check kernel >= 5.4 : $(call kver_ge,5,4)
+kver_ge = $(shell \
+echo check_ver | awk '{if($(VERSION) < $(1)) {print 0} else { \
+if($(VERSION) > $(1)) {print 1} else { \
+if($(PATCHLEVEL) < $(2)) {print 0} else {print 1} \
+}}}' \
+)
+
 # ---------------------------------------------------
 # ALPS Setting
 # ---------------------------------------------------
@@ -220,7 +230,7 @@ CONFIG_MTK_WIFI_CONNAC2X=y
 CONFIG_MTK_WIFI_11AX_SUPPORT=y
 # unless patch wifi 6G setting in kernel before kernel version 5.4,
 # it will build fail when enable wifi 6G flag
-ifeq ($(shell expr $(VERSION).$(PATCHLEVEL) \>= 5.4),1)
+ifeq ($(call kver_ge,5,4),1)
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 else
 CONFIG_MTK_WIFI_6G_SUPPORT=n
