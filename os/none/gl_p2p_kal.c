@@ -101,7 +101,6 @@ void kalIdcUnregisterRilNotifier(void)
 void kalIdcGetRilInfo(void)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
-	return NULL;
 }
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */
