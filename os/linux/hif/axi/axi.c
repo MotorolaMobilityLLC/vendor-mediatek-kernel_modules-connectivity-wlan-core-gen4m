@@ -697,7 +697,9 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
+#if AXI_ISR_DEBUG_LOG
 		DBGLOG(HAL, INFO, "No glue info in mtk_axi_interrupt()\n");
+#endif
 		return IRQ_NONE;
 	}
 
@@ -705,7 +707,9 @@ static irqreturn_t mtk_axi_interrupt(int irq, void *dev_instance)
 	halDisableInterrupt(prGlueInfo->prAdapter);
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT) {
+#if AXI_ISR_DEBUG_LOG
 		DBGLOG(HAL, INFO, "GLUE_FLAG_HALT skip INT\n");
+#endif
 		return IRQ_NONE;
 	}
 
