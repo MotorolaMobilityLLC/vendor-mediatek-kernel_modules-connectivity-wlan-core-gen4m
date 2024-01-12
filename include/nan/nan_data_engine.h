@@ -285,6 +285,8 @@ struct _NAN_NDP_INSTANCE_T {
 	struct TIMER rNDPUserSpaceResponseTimer;
 
 	struct _NAN_NDP_CONTEXT_T *prContext;
+
+	struct MSDU_INFO *prRetryMsduInfo; /* For retry on TX Done failed */
 };
 
 struct _NAN_NDL_INSTANCE_T;
