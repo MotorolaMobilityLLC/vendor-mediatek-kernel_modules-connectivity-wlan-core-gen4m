@@ -7853,6 +7853,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
 	INIT_UINT(prWifiVar->fgBoostCpuEn,  "BoostCpuEn", FEATURE_ENABLED);
+	INIT_UINT(prWifiVar->fgBoostCpuByPPSEn,  "BoostCpuByPPSEn",
+		FEATURE_ENABLED);
+
 	u4PlatformBoostCpuTh = kalGetCpuBoostThreshold();
 	INIT_UINT(prWifiVar->u4BoostCpuTh,
 		"BoostCpuTh", u4PlatformBoostCpuTh);

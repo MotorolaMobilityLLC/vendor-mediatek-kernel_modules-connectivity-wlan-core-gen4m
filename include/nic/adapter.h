@@ -1153,6 +1153,7 @@ struct WIFI_VAR {
 	uint32_t u4MccBoostForAllTputLvTh;
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 	u_int8_t fgBoostCpuEn;
+	u_int8_t fgBoostCpuByPPSEn;
 	uint32_t u4BoostCpuTh;
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 	uint32_t u4BoostLittleCpuTh;

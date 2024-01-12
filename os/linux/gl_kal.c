@@ -10546,8 +10546,11 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 	}
 
 	prPerMonitor->u4TarPerfLevel = PERF_MON_TP_MAX_THRESHOLD;
-	maxTput = max(prPerMonitor->ulThroughput,
-		prPerMonitor->ulThroughputInPPS);
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgBoostCpuByPPSEn)) {
+		maxTput = max(prPerMonitor->ulThroughput,
+			prPerMonitor->ulThroughputInPPS);
+	} else
+		maxTput = prPerMonitor->ulThroughput;
 
 	for (u4Idx = 0; u4Idx < PERF_MON_TP_MAX_THRESHOLD; u4Idx++) {
 		if ((maxTput >> 20) <
@@ -10592,8 +10595,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 
 			DBGLOG(SW4, INFO,
 			"PerfMon overloading total:%3lu.%03lu mbps lv:%u->%u th:%u fg:0x%lx Pending[%d], Used[%d]\n",
-			(unsigned long) (prPerMonitor->ulThroughput >> 20),
-			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
+			(unsigned long) (maxTput >> 20),
+			(unsigned long) ((maxTput >> 10)
 					& BITS(0, 9)),
 			u4PrevTputLv,
 			u4CurrTputLv,
@@ -10612,8 +10615,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 			) && (u4BoostCpuTh < PERF_MON_TP_MAX_THRESHOLD)) {
 			DBGLOG(SW4, INFO,
 			"PerfMon total:%3lu.%03lu mbps lv:%u->%u th:%u fg:0x%lx\n",
-			(unsigned long) (prPerMonitor->ulThroughput >> 20),
-			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
+			(unsigned long) (maxTput >> 20),
+			(unsigned long) ((maxTput >> 10)
 					& BITS(0, 9)),
 			u4PrevTputLv,
 			u4CurrTputLv,
@@ -10646,8 +10649,8 @@ void kalPerMonHandler(struct ADAPTER *prAdapter,
 
 			DBGLOG(SW4, INFO,
 			"PerfMon %3lu.%03lu mbps lv:%u CoalesTh:%u fg:0x%lx\n",
-			(unsigned long) (prPerMonitor->ulThroughput >> 20),
-			(unsigned long) ((prPerMonitor->ulThroughput >> 10)
+			(unsigned long) (maxTput >> 20),
+			(unsigned long) ((maxTput >> 10)
 					& BITS(0, 9)),
 			u4CurrTputLv,
 			u4CoalescingIntTh,
