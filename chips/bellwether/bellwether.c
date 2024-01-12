@@ -15,6 +15,7 @@
 #include "precomp.h"
 #include "bellwether.h"
 #include "coda/bellwether/wf_wfdma_host_dma0.h"
+#include "coda/bellwether/wf_wfdma_mcu_dma0.h"
 #include "coda/bellwether/wf_pse_top.h"
 #include "coda/bellwether/pcie_mac_ireg.h"
 #include "coda/bellwether/conn_infra_rgu_on.h"
@@ -203,6 +204,19 @@ struct wfdma_group_info bellwether_wfmda_host_rx_group[] = {
 	{"P0R9:AP TDONE2", WF_WFDMA_HOST_DMA0_WPDMA_RX_RING9_CTRL0_ADDR, true},
 };
 
+struct wfdma_group_info bellwether_wfmda_wm_tx_group[] = {
+	{"P0T0:AP EVENT", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING0_CTRL0_ADDR},
+	{"P0T4:DATA", WF_WFDMA_MCU_DMA0_WPDMA_TX_RING4_CTRL0_ADDR},
+};
+
+struct wfdma_group_info bellwether_wfmda_wm_rx_group[] = {
+	{"P0R0:FWDL", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING0_CTRL0_ADDR},
+	{"P0R1:AP CMD", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING1_CTRL0_ADDR},
+	{"P0R5:DATA", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING5_CTRL0_ADDR},
+	{"P0R6:TXDONE", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING6_CTRL0_ADDR},
+	{"P0R7:RPT", WF_WFDMA_MCU_DMA0_WPDMA_RX_RING7_CTRL0_ADDR},
+};
+
 struct pse_group_info bellwether_pse_group[] = {
 	{"HIF0(TX data)", WF_PSE_TOP_PG_HIF0_GROUP_ADDR,
 		WF_PSE_TOP_HIF0_PG_INFO_ADDR},
@@ -286,10 +300,10 @@ struct BUS_INFO bellwether_bus_info = {
 	.wfmda_host_tx_group_len = ARRAY_SIZE(bellwether_wfmda_host_tx_group),
 	.wfmda_host_rx_group = bellwether_wfmda_host_rx_group,
 	.wfmda_host_rx_group_len = ARRAY_SIZE(bellwether_wfmda_host_rx_group),
-	.wfmda_wm_tx_group = NULL,
-	.wfmda_wm_tx_group_len = 0,
-	.wfmda_wm_rx_group = NULL,
-	.wfmda_wm_rx_group_len = 0,
+	.wfmda_wm_tx_group = bellwether_wfmda_wm_tx_group,
+	.wfmda_wm_tx_group_len = ARRAY_SIZE(bellwether_wfmda_wm_tx_group),
+	.wfmda_wm_rx_group = bellwether_wfmda_wm_rx_group,
+	.wfmda_wm_rx_group_len = ARRAY_SIZE(bellwether_wfmda_wm_rx_group),
 	.prDmashdlCfg = &rBellwetherDmashdlCfg,
 	.prPleTopCr = &rBellwetherPleTopCr,
 	.prPseTopCr = &rBellwetherPseTopCr,
@@ -717,7 +731,7 @@ static void bellwetherConfigIntMask(struct GLUE_INFO *prGlueInfo,
 		   WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, &u4Val);
 
 	DBGLOG(HAL, TRACE,
-	       "HOST_INT_STA(0x%08x):0x%08x, En:%u, Word:0x%08x\n",
+	       "HOST_INT_ENA(0x%08x):0x%08x, En:%u, Word:0x%08x\n",
 	       WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
 	       u4Val,
 	       enable,
