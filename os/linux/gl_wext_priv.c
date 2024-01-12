@@ -115,6 +115,7 @@
 #if (CFG_SUPPORT_TWT == 1)
 #define CMD_TWT_ACTION_TEN_PARAMS        10
 #define CMD_TWT_ACTION_THREE_PARAMS      3
+#define CMD_TWT_ACTION_SIX_PARAMS      6
 #define CMD_TWT_MAX_PARAMS CMD_TWT_ACTION_TEN_PARAMS
 #endif
 
@@ -13788,9 +13789,10 @@ static int priv_driver_set_twtparams(
 	struct _TWT_PARAMS_T *prTWTParams;
 	uint16_t i;
 	int32_t u4Ret = 0;
-	uint16_t au2Setting[CMD_TWT_MAX_PARAMS];
+	uint32_t au4Setting[CMD_TWT_MAX_PARAMS];
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 	struct _MSG_TWT_PARAMS_SET_T *prTWTParamSetMsg;
+	uint64_t u8Val = 0x0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -13806,12 +13808,13 @@ static int priv_driver_set_twtparams(
 	prAdapter = prNetDevPrivate->prGlueInfo->prAdapter;
 
 	/* Check param number and convert TWT params to integer type */
-	if (i4Argc == CMD_TWT_ACTION_TEN_PARAMS ||
-		i4Argc == CMD_TWT_ACTION_THREE_PARAMS) {
+	if ((i4Argc == CMD_TWT_ACTION_TEN_PARAMS) ||
+		(i4Argc == CMD_TWT_ACTION_THREE_PARAMS) ||
+		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS)) {
 		for (i = 0; i < (i4Argc - 1); i++) {
 
-			u4Ret = kalkStrtou16(apcArgv[i + 1],
-				0, &(au2Setting[i]));
+			u4Ret = kalkStrtou32(apcArgv[i + 1],
+				0, &(au4Setting[i]));
 
 			if (u4Ret)
 				DBGLOG(REQ, INFO, "Argv error ret=%d\n", u4Ret);
@@ -13821,35 +13824,69 @@ static int priv_driver_set_twtparams(
 		return -1;
 	}
 
-	if ((IS_TWT_PARAM_ACTION_DEL(au2Setting[0]) ||
-		IS_TWT_PARAM_ACTION_SUSPEND(au2Setting[0]) ||
-		IS_TWT_PARAM_ACTION_RESUME(au2Setting[0])) &&
-		i4Argc == CMD_TWT_ACTION_THREE_PARAMS) {
+	if (IS_TWT_PARAM_ACTION_RESUME(au4Setting[0]) &&
+		(i4Argc == CMD_TWT_ACTION_SIX_PARAMS)) {
+		DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "TWT Flow ID=%d\n", au4Setting[1]);
+		DBGLOG(REQ, INFO, "Next TWT size=%d\n", au4Setting[2]);
+		DBGLOG(REQ, INFO, "Next TWT=%x %x\n",
+			au4Setting[4], au4Setting[3]);
 
-		DBGLOG(REQ, INFO, "Action=%d\n", au2Setting[0]);
-		DBGLOG(REQ, INFO, "TWT Flow ID=%d\n", au2Setting[1]);
-
-		if (au2Setting[1] >= TWT_MAX_FLOW_NUM) {
+		if (au4Setting[1] >= TWT_MAX_FLOW_NUM) {
 			/* Simple sanity check failure */
 			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
 			return -1;
 		}
 
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
-		rTWTCtrl.ucCtrlAction = au2Setting[0];
-		rTWTCtrl.ucTWTFlowId = au2Setting[1];
+		rTWTCtrl.ucCtrlAction = (uint8_t)au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = (uint8_t)au4Setting[1];
+		rTWTCtrl.rNextTWT.ucNextTWTSize = au4Setting[2];
+		rTWTCtrl.rNextTWT.u8NextTWT = (uint64_t)
+			(((((uint64_t)au4Setting[4])<<32) &
+			0xFFFFFFFF00000000)|au4Setting[3]);
 
+		u8Val = rTWTCtrl.rNextTWT.u8NextTWT * 1000000;
+
+		if ((u8Val & 0xFFFFFFFF00000000) != 0)
+			rTWTCtrl.rNextTWT.ucNextTWTSize = 3;
+
+		rTWTCtrl.rNextTWT.u8NextTWT = u8Val;
+	} else if (IS_TWT_PARAM_ACTION_TESTBED_CONFIG(au4Setting[0]) &&
+		(i4Argc == CMD_TWT_ACTION_THREE_PARAMS)) {
+			DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
+			DBGLOG(REQ, INFO, "IsTestBed=%d\n", au4Setting[1]);
+
+			g_IsWfaTestBed = (uint8_t)au4Setting[1];
+
+			return 0;
+	} else if ((IS_TWT_PARAM_ACTION_DEL(au4Setting[0]) ||
+		IS_TWT_PARAM_ACTION_SUSPEND(au4Setting[0])) &&
+		i4Argc == CMD_TWT_ACTION_THREE_PARAMS) {
+
+		DBGLOG(REQ, INFO, "Action=%d\n", au4Setting[0]);
+		DBGLOG(REQ, INFO, "TWT Flow ID=%d\n", au4Setting[1]);
+
+		if (au4Setting[1] >= TWT_MAX_FLOW_NUM) {
+			/* Simple sanity check failure */
+			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
+			return -1;
+		}
+
+		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
+		rTWTCtrl.ucCtrlAction = (uint8_t)au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = (uint8_t)au4Setting[1];
 	} else if (i4Argc == CMD_TWT_ACTION_TEN_PARAMS) {
-		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au2Setting[0]);
+		DBGLOG(REQ, INFO, "Action bitmap=%d\n", au4Setting[0]);
 		DBGLOG(REQ, INFO,
 			"TWT Flow ID=%d Setup Command=%d Trig enabled=%d\n",
-			au2Setting[1], au2Setting[2], au2Setting[3]);
+			au4Setting[1], au4Setting[2], au4Setting[3]);
 		DBGLOG(REQ, INFO,
 			"Unannounced enabled=%d Wake Interval Exponent=%d\n",
-			au2Setting[4], au2Setting[5]);
+			au4Setting[4], au4Setting[5]);
 		DBGLOG(REQ, INFO, "Protection enabled=%d Duration=%d\n",
-			au2Setting[6], au2Setting[7]);
-		DBGLOG(REQ, INFO, "Wake Interval Mantissa=%d\n", au2Setting[8]);
+			au4Setting[6], au4Setting[7]);
+		DBGLOG(REQ, INFO, "Wake Interval Mantissa=%d\n", au4Setting[8]);
 		/*
 		 *  au2Setting[0]: Whether bypassing nego or not
 		 *  au2Setting[1]: TWT Flow ID
@@ -13861,9 +13898,9 @@ static int priv_driver_set_twtparams(
 		 *  au2Setting[7]: Nominal Minimum TWT Wake Duration
 		 *  au2Setting[8]: TWT Wake Interval Mantissa
 		 */
-		if (au2Setting[1] >= TWT_MAX_FLOW_NUM ||
-			au2Setting[2] > TWT_SETUP_CMD_DEMAND ||
-			au2Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
+		if (au4Setting[1] >= TWT_MAX_FLOW_NUM ||
+			au4Setting[2] > TWT_SETUP_CMD_DEMAND ||
+			au4Setting[5] > TWT_MAX_WAKE_INTVAL_EXP) {
 			/* Simple sanity check failure */
 			DBGLOG(REQ, INFO, "Invalid TWT Params\n");
 			return -1;
@@ -13872,17 +13909,17 @@ static int priv_driver_set_twtparams(
 		prTWTParams = &(rTWTCtrl.rTWTParams);
 		kalMemSet(prTWTParams, 0, sizeof(struct _TWT_PARAMS_T));
 		prTWTParams->fgReq = TRUE;
-		prTWTParams->ucSetupCmd = (uint8_t) au2Setting[2];
-		prTWTParams->fgTrigger = (au2Setting[3]) ? TRUE : FALSE;
-		prTWTParams->fgUnannounced = (au2Setting[4]) ? TRUE : FALSE;
-		prTWTParams->ucWakeIntvalExponent = (uint8_t) au2Setting[5];
-		prTWTParams->fgProtect = (au2Setting[6]) ? TRUE : FALSE;
-		prTWTParams->ucMinWakeDur = (uint8_t) au2Setting[7];
-		prTWTParams->u2WakeIntvalMantiss = au2Setting[8];
+		prTWTParams->ucSetupCmd = (uint8_t) au4Setting[2];
+		prTWTParams->fgTrigger = (au4Setting[3]) ? TRUE : FALSE;
+		prTWTParams->fgUnannounced = (au4Setting[4]) ? TRUE : FALSE;
+		prTWTParams->ucWakeIntvalExponent = (uint8_t) au4Setting[5];
+		prTWTParams->fgProtect = (au4Setting[6]) ? TRUE : FALSE;
+		prTWTParams->ucMinWakeDur = (uint8_t) au4Setting[7];
+		prTWTParams->u2WakeIntvalMantiss = au4Setting[8];
 
 		rTWTCtrl.ucBssIdx = prNetDevPrivate->ucBssIdx;
-		rTWTCtrl.ucCtrlAction = au2Setting[0];
-		rTWTCtrl.ucTWTFlowId = au2Setting[1];
+		rTWTCtrl.ucCtrlAction = au4Setting[0];
+		rTWTCtrl.ucTWTFlowId = au4Setting[1];
 	} else {
 		DBGLOG(REQ, INFO, "wrong argc for update agrt: %d\n", i4Argc);
 		return -1;

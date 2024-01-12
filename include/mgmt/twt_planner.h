@@ -119,6 +119,7 @@ enum {
 	TWT_PARAM_ACTION_DEL = 5,
 	TWT_PARAM_ACTION_SUSPEND = 6,
 	TWT_PARAM_ACTION_RESUME = 7,
+	TWT_PARAM_ACTION_TESTBED_CONFIG = 8,
 	TWT_PARAM_ACTION_MAX
 };
 
@@ -136,6 +137,8 @@ enum {
 	((ucCtrlAction) == TWT_PARAM_ACTION_SUSPEND)
 #define IS_TWT_PARAM_ACTION_RESUME(ucCtrlAction) \
 	((ucCtrlAction) == TWT_PARAM_ACTION_RESUME)
+#define IS_TWT_PARAM_ACTION_TESTBED_CONFIG(ucCtrlAction) \
+	((ucCtrlAction) == TWT_PARAM_ACTION_TESTBED_CONFIG)
 
 /*******************************************************************************
 *                  F U N C T I O N   D E C L A R A T I O N S
@@ -164,6 +167,19 @@ void twtPlannerTeardownDone(
 void twtPlannerResumeDone(
 	struct ADAPTER *prAdapter,
 	struct MSG_HDR *prMsgHdr);
+
+void twtPlannerFillResumeData(
+	struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	uint8_t ucFlowId,
+	uint64_t u8NextTWT);
+
+uint32_t
+twtPlannerResumeAgrtTbl(struct ADAPTER *prAdapter,
+			struct BSS_INFO *prBssInfo, struct STA_RECORD *prStaRec,
+			uint8_t ucFlowId, uint8_t fgIsOid,
+			PFN_CMD_DONE_HANDLER pfCmdDoneHandler,
+			PFN_CMD_TIMEOUT_HANDLER pfCmdTimeoutHandler);
 
 void twtPlannerRxInfoFrm(
 	struct ADAPTER *prAdapter,
