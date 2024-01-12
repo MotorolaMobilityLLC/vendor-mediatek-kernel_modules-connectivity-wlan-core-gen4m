@@ -171,6 +171,7 @@ static void ehtRlmFillCapIE(
 	struct BSS_INFO *prBssInfo,
 	struct MSDU_INFO *prMsduInfo)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	enum ENUM_BAND eHePhyCapBand = BAND_5G;
 	struct IE_EHT_CAP *prEhtCap;
 	struct EHT_PHY_CAP_INFO eht_phy_cap;
@@ -198,7 +199,8 @@ static void ehtRlmFillCapIE(
 	/* NSEP: not support for the time being */
 	/* SET_EHT_MAC_CAP_NSEP_PRI_ACCESS(prEhtCap->ucEhtMacCap); */
 	/* OM_CTRL: default support for both STA and AP; */
-	SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);
+	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtOMCtrl))
+		SET_EHT_MAC_CAP_OM_CTRL(prEhtCap->ucEhtMacCap);
 
 	/* TXOP_SHARING: not support */
 	/* SET_EHT_MAC_CAP_TXOP_SHARING(prEhtCap->ucEhtMacCap); */
