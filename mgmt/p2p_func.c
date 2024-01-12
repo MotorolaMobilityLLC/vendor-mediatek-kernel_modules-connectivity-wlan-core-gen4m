@@ -3125,8 +3125,10 @@ p2pFuncValidateAuth(IN struct ADAPTER *prAdapter,
 		/* AP PMF. if PMF connection, do not reset state & FSM */
 		fgPmfConn = rsnCheckBipKeyInstalled(prAdapter, prStaRec);
 		if (fgPmfConn &&
-			prP2pBssInfo->u4RsnSelectedAKMSuite !=
-			RSN_AKM_SUITE_SAE) {
+			((prP2pBssInfo->u4RsnSelectedAKMSuite !=
+			RSN_AKM_SUITE_SAE) ||
+			(prAdapter->rWifiVar.u4SwTestMode ==
+			ENUM_SW_TEST_MODE_SIGMA_PMF))) {
 			DBGLOG(P2P, WARN, "PMF Connction, return false\n");
 			return FALSE;
 		}
