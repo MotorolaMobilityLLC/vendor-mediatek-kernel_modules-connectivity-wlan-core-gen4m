@@ -2513,10 +2513,28 @@ void nicAdjustNetifTxTh(struct ADAPTER *prAdapter,
 }
 
 /* BSS-INFO */
-uint32_t nicUpdateBss(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex)
+uint32_t nicUpdateBss(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	return nicUpdateBssEx(prAdapter, ucBssIndex, TRUE);
+}
+
+void nicUpdateQos(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec)
+{
+	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucQoS))
+		return;
+
+	if (prStaRec->fgIsWmmSupported)
+		nicQmUpdateWmmParms(prAdapter, prStaRec->ucBssIndex);
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (fgEfuseCtrlAxOn == 1) {
+		if (prStaRec->fgIsMuEdcaSupported ||
+		    prAdapter->fgMuEdcaOverride) {
+			nicQmUpdateMUEdcaParams(prAdapter,
+						prStaRec->ucBssIndex);
+		}
+	}
+#endif
 }
 
 #if CFG_SUPPORT_802_PP_DSCB
