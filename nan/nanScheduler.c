@@ -177,7 +177,7 @@ struct _NAN_PEER_SCHEDULE_RECORD_T {
 	uint32_t u4DefNdlNumSlots;
 	uint32_t u4DefRangingNumSlots;
 
-	uint8_t aucStaRecIdx[NAN_MAX_SUPPORT_NDP_NUM];
+	uint8_t aucStaRecIdx[NAN_MAX_SUPPORT_NDP_CXT_NUM];
 
 	struct _NAN_PEER_SCH_DESC_T *prPeerSchDesc;
 
@@ -1139,7 +1139,7 @@ nanSchedResetPeerSchedRecord(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 	}
 	kalMemZero((uint8_t *)prPeerSchRecord, sizeof(*prPeerSchRecord));
 
-	for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_NUM; u4Idx++)
+	for (u4Idx = 0; u4Idx < NAN_MAX_SUPPORT_NDP_CXT_NUM; u4Idx++)
 		prPeerSchRecord->aucStaRecIdx[u4Idx] = STA_REC_INDEX_NOT_FOUND;
 
 	prPeerSchRecord->rCommImmuNdlTimeline.ucMapId = NAN_INVALID_MAP_ID;
