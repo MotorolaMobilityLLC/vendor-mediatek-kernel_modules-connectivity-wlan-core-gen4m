@@ -10026,11 +10026,18 @@ uint32_t __weak kalGetLittleCpuBoostThreshold(void)
 }
 #endif /* CFG_SUPPORT_LITTLE_CPU_BOOST */
 
+uint32_t __weak kalGetFwVerOffsetAddr(void)
+{
+	DBGLOG(SW4, WARN, "NO firmware version build.\n");
+	return 0;
+}
+
 uint32_t __weak kalGetEmiMetOffset(void)
 {
 	DBGLOG(SW4, WARN, "enter kalGetEmiMetOffset\n");
 	return 0;
 }
+
 void __weak kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 {
 	DBGLOG(SW4, WARN, "enter kalSetEmiMetOffset\n");

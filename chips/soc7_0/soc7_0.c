@@ -470,6 +470,7 @@ struct FWDL_OPS_T soc7_0_fw_dl_ops = {
 	.mcu_deinit = soc7_0_McuDeInit,
 	.constructRomName = soc7_0_ConstructRomName,
 	.setup_date_info = soc7_0_SetupFwDateInfo,
+	.getFwVerInfo = wlanReadRamCodeReleaseManifest,
 };
 #endif /* CFG_ENABLE_FW_DOWNLOAD */
 
