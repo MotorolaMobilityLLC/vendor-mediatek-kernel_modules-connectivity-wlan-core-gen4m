@@ -79,10 +79,10 @@
 
 #include "precomp.h"
 #include "wlan_lib.h"
-
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#include "fw_log_wifi.h"
-#endif /* CFG_MTK_CONNSYS_DEDICATED_LOG_PATH */
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#include "gl_coredump.h"
+#endif
+#include "gl_fw_log.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S

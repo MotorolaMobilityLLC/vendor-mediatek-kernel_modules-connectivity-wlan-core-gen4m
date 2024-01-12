@@ -74,11 +74,11 @@
 #include <linux/workqueue.h>
 
 #include "precomp.h"
-#include "gl_rst.h"
-
-#ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
-#include "fw_log_wifi.h"
+#if (CFG_ANDORID_CONNINFRA_COREDUMP_SUPPORT == 1)
+#include "gl_coredump.h"
 #endif
+#include "gl_fw_log.h"
+#include "gl_rst.h"
 
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp.h"

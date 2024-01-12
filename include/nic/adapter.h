@@ -2079,7 +2079,6 @@ struct ADAPTER {
 #if CFG_SUPPORT_CSI
 	struct CSI_INFO_T rCSIInfo;
 #endif
-
 };				/* end of _ADAPTER_T */
 
 /*******************************************************************************

@@ -84,7 +84,7 @@ static void soc5_0_getIntSta(struct GLUE_INFO *prGlueInfo,  uint32_t *pu4Sta);
 
 static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable);
 static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter);
-static bool soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status);
 static int wf_pwr_on_consys_mcu(void);
 static int wf_pwr_off_consys_mcu(void);
@@ -2718,7 +2718,7 @@ static int soc5_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	return ret;
 }
 
-static bool soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
+static u_int8_t soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	uint32_t *status)
 {
 #define MAX_POLLING_CNT 10
@@ -2757,7 +2757,7 @@ static bool soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 		if (!conninfra_reg_readable()) {
 			DBGLOG(HAL, ERROR,
 				"conninfra_reg_readable fail\n");
-			return false;
+			return FALSE;
 		}
 	}
 
@@ -2770,7 +2770,7 @@ static bool soc5_0_get_sw_interrupt_status(struct ADAPTER *prAdapter,
 	wf_ioremap_write(CONN_INFRA_WAKEUP_WF_ADDR, value);
 
 	*status = sw_int_value;
-	return true;
+	return TRUE;
 }
 
 #endif  /* soc5_0 */

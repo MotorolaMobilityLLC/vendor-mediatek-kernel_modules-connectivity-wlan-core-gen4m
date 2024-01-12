@@ -298,6 +298,8 @@
 
 #include "ais_fsm.h"
 
+#include "fw_log_mmio.h"
+
 #include "adapter.h"
 #include "ccif.h"
 
