@@ -3657,6 +3657,18 @@ struct IE_SHORT_SSID_LIST {
 	uint8_t      aucShortSsidList[0];
 } __KAL_ATTRIB_PACKED__;
 
+struct RSNX_INFO {
+	uint8_t ucElemId;
+	uint8_t ucLength;
+	uint16_t u2Cap;
+} __KAL_ATTRIB_PACKED__;
+
+struct RSNX_INFO_ELEM {
+	uint8_t ucElemId;
+	uint8_t ucLength;
+	uint8_t aucCap[0];
+} __KAL_ATTRIB_PACKED__;
+
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()
 #endif
