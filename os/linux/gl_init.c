@@ -6511,29 +6511,31 @@ int connsys_power_event_notification(
 	return 0;
 }
 
-void power_throttling_init(void)
+void power_throttling_start(void)
 {
 	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI,
 		(CONN_PWR_EVENT_CB)connsys_power_event_notification);
 }
 
-void power_throttling_deinit(void)
+void power_throttling_stop(void)
 {
 	conn_pwr_register_event_cb(CONN_PWR_DRV_WIFI, NULL);
 }
 
-void power_throttling_start(void)
+void power_throttling_pre_start(void)
 {
 	struct mt66xx_hif_driver_data *prDriverData =
 		get_platform_driver_data();
 
+	/* Notify CONN_PWR wifi will be on, and it can calculate new level. */
 	conn_pwr_drv_pre_on(CONN_PWR_DRV_WIFI, &prDriverData->u4PwrLevel);
 	conn_pwr_send_msg(CONN_PWR_DRV_WIFI, CONN_PWR_MSG_GET_TEMP,
 			&prDriverData->rTempInfo);
 }
 
-void power_throttling_stop(void)
+void power_throttling_post_stop(void)
 {
+	/* Notify CONN_PWR wifi is off, and it can calculate new level */
 	conn_pwr_drv_post_off(CONN_PWR_DRV_WIFI);
 }
 #endif
@@ -7563,15 +7565,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 
-#if (CFG_SUPPORT_POWER_THROTTLING == 1)
-		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
-		prAdapter->u4PwrLevel = prHifDriverData->u4PwrLevel;
-		kalMemCopy(&prAdapter->rTempInfo, &prHifDriverData->rTempInfo,
-				sizeof(struct conn_pwr_event_max_temp));
-		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
-				&(prAdapter->u4PwrLevel));
-#endif
-
 		/* 4 <3> Register the card */
 		i4DevIdx = wlanNetRegister(prWdev);
 		if (i4DevIdx < 0) {
@@ -7583,6 +7576,17 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		}
 
 		wlanOnPostNetRegister();
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+		prHifDriverData = (struct mt66xx_hif_driver_data *)pvDriverData;
+		prAdapter->u4PwrLevel = prHifDriverData->u4PwrLevel;
+		kalMemCopy(&prAdapter->rTempInfo, &prHifDriverData->rTempInfo,
+				sizeof(struct conn_pwr_event_max_temp));
+		connsys_power_event_notification(CONN_PWR_EVENT_LEVEL,
+				&(prAdapter->u4PwrLevel));
+
+		power_throttling_start();
+#endif
 
 		/* 4 <6> Initialize /proc filesystem */
 #if WLAN_INCLUDE_PROC
@@ -7698,6 +7702,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			kal_fallthrough;
 			/* fallthrough */
 		case PROC_INIT_FAIL:
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+			power_throttling_stop();
+#endif
 			wlanNetUnregister(prWdev);
 			/* Unregister notifier callback */
 			wlanUnregisterInetAddrNotifier();
@@ -8083,6 +8090,10 @@ static void wlanRemove(void)
 	wlanWakeStaticsUninit();
 #endif
 
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	power_throttling_stop();
+#endif
+
 	/* 4 <6> Unregister the card */
 	wlanNetUnregister(prDev->ieee80211_ptr);
 
@@ -8126,7 +8137,7 @@ int wlanFuncOnImpl(void)
 	int ret = 0;
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_start();
+	power_throttling_pre_start();
 #endif
 
 	ret = glBusFuncOn();
@@ -8134,14 +8145,14 @@ int wlanFuncOnImpl(void)
 		DBGLOG(HAL, ERROR,
 			"glBusFuncOn failed, ret=%d\n",
 			ret);
-		goto power_throttling_stop;
+		goto power_throttling_post_stop;
 	}
 
 	goto exit;
 
-power_throttling_stop:
+power_throttling_post_stop:
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_stop();
+	power_throttling_post_stop();
 #endif
 exit:
 	return ret;
@@ -8153,7 +8164,7 @@ void wlanFuncOffImpl(void)
 
 	glBusFuncOff();
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
-	power_throttling_stop();
+	power_throttling_post_stop();
 #endif
 
 	glGetChipInfo((void **)&chip);
