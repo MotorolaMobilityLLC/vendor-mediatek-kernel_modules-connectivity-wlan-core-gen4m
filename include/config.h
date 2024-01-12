@@ -1286,11 +1286,13 @@
 #define CFG_TX_HIF_CREDIT_FEATURE		0
 #endif
 
+#ifndef CFG_TX_MGMT_BY_DATA_Q
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_TX_MGMT_BY_DATA_Q		1
 #else
 #define CFG_TX_MGMT_BY_DATA_Q		0
 #endif
+#endif /* CFG_TX_MGMT_BY_DATA_Q */
 
 #ifndef CFG_SUPPORT_TX_DATA_DELAY
 #define CFG_SUPPORT_TX_DATA_DELAY		0
