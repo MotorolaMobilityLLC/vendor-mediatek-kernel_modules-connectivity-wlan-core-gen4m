@@ -370,8 +370,11 @@ void ehtRlmFillCapIE(
 	SET_DOT11BE_PHY_CAP_MCS_15(phy_cap_2,
 		prWifiVar->ucEhtMCS15 != 0xFF ?
 		prWifiVar->ucEhtMCS15 : eht_mcs15_mru);
-	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtDup6G))
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (prBssInfo->eBand == BAND_6G &&
+	    IS_FEATURE_ENABLED(prWifiVar->ucEhtDup6G))
 		phy_cap_2 |= DOT11BE_PHY_CAP_EHT_DUP_6G;
+#endif
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEht20MRxNDPWiderBW))
 		phy_cap_2 |= DOT11BE_PHY_CAP_20M_RX_NDP_W_WIDER_BW;
 	if (IS_FEATURE_ENABLED(prWifiVar->ucEhtTbSndFBRateLimit))
