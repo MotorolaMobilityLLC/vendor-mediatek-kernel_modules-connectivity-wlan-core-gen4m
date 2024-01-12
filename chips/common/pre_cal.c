@@ -702,7 +702,7 @@ uint32_t wlanPhyAction(struct ADAPTER *prAdapter)
 }
 
 #if CFG_MTK_ANDROID_WMT
-int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
+int wlan_precal_get_res(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 {
 #if CFG_MTK_ANDROID_EMI
 	/* Shift 4 for bypass Cal result CRC */
@@ -719,11 +719,54 @@ int wlanGetCalResultCb(uint32_t *pEmiCalOffset, uint32_t *pEmiCalSize)
 	return WLAN_STATUS_SUCCESS;
 }
 
-int wlanPreCalPwrOn(void)
+int wlan_precal_pwron_v1(void)
+{
+	DBGLOG(INIT, INFO, "\n");
+
+	if (!wfsys_is_locked())
+		wfsys_lock();
+
+	return 0;
+}
+
+int wlan_precal_docal_v1(void)
 {
 	int32_t ret = 0;
 
-	DBGLOG(INIT, INFO, "wlanPreCalPwrOn.\n");
+	DBGLOG(INIT, INFO, "\n");
+
+	if (!wfsys_is_locked())
+		wfsys_lock();
+
+	update_pre_cal_status(1);
+	g_fgPreCal = TRUE;
+
+	ret = wlanFuncOnImpl();
+	if (ret) {
+		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+		goto exit;
+	}
+
+	wlanFuncOffImpl();
+
+exit:
+	g_fgPreCal = FALSE;
+	update_pre_cal_status(0);
+
+	if (!g_fgEverCal)
+		g_fgEverCal = TRUE;
+
+	if (wfsys_is_locked())
+		wfsys_unlock();
+
+	return ret;
+}
+
+int wlan_precal_pwron_v2(void)
+{
+	int32_t ret = 0;
+
+	DBGLOG(INIT, INFO, "\n");
 
 	if (!wfsys_is_locked())
 		wfsys_lock();
@@ -749,22 +792,26 @@ exit:
 	return ret;
 }
 
-int wlanPreCal(void)
+int wlan_precal_docal_v2(void)
 {
-	DBGLOG(INIT, INFO, "wlanPreCal.\n");
+	DBGLOG(INIT, INFO, "\n");
+
 	if (!g_fgEverCal)
 		g_fgEverCal = TRUE;
+
 	if (wfsys_is_locked())
 		wfsys_unlock();
 
 	return 0;
 }
 
-int wlanPreCalErr(void)
+int wlan_precal_err(void)
 {
-	DBGLOG(INIT, INFO, "wlanPreCalErr.\n");
+	DBGLOG(INIT, INFO, "\n");
+
 	if (!g_fgEverCal)
 		g_fgEverCal = TRUE;
+
 	if (wfsys_is_locked())
 		wfsys_unlock();
 
