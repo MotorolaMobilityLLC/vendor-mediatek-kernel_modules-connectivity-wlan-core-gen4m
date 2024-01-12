@@ -5523,7 +5523,7 @@ wlanoidStaRecUpdate(IN struct ADAPTER *prAdapter,
 	/* fix me: configurable ucBssIndex */
 	prStaRecCmm = (struct STAREC_COMMON *) pvSetBuffer;
 	prStaRecUpdateInfo->ucBssIndex = 0;
-	prStaRecUpdateInfo->ucWlanIdx = prStaRecCmm->u2Reserve1;
+	prStaRecUpdateInfo->ucWlanIdx = (prStaRecCmm->u2ExtraInfo & 0xFF00) >> 8;
 	prStaRecUpdateInfo->u2TotalElementNum = 1;
 	kalMemCopy(prStaRecUpdateInfo->aucBuffer, pvSetBuffer,
 		   u4SetBufferLen);
@@ -5658,6 +5658,66 @@ wlanoidBssInfoBasic(IN struct ADAPTER *prAdapter,
 }
 
 uint32_t
+wlanoidBssInfoConOwnDev(IN struct ADAPTER *prAdapter,
+		    IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
+		    OUT uint32_t *pu4SetInfoLen) {
+	struct CMD_BSS_INFO_UPDATE *prBssInfoUpdateBasic;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct BSSINFO_CONNECT_OWN_DEV *prBssinfoConOwnDev = NULL;
+
+	DEBUGFUNC("wlanoidManualAssoc");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+
+	*pu4SetInfoLen = sizeof(struct BSSINFO_CONNECT_OWN_DEV);
+	if (u4SetBufferLen < sizeof(struct BSSINFO_CONNECT_OWN_DEV))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ASSERT(pvSetBuffer);
+
+	prBssInfoUpdateBasic = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			   (CMD_BSSINFO_UPDATE_HDR_SIZE + u4SetBufferLen));
+	if (!prBssInfoUpdateBasic) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate P_CMD_DEV_INFO_UPDATE_T ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (pvSetBuffer == NULL) {
+		prBssInfoUpdateBasic->ucBssIndex = 0;
+		DBGLOG(RFTEST, INFO,
+			"prBssInfoUpdateBasic->ucBssIndex=0(default)\n");
+	} else {
+		prBssinfoConOwnDev =
+			(struct BSSINFO_CONNECT_OWN_DEV *)(pvSetBuffer);
+		prBssInfoUpdateBasic->ucBssIndex =
+			prBssinfoConOwnDev->ucHwBSSIndex;
+		DBGLOG(RFTEST, INFO,
+			"prBssInfoUpdateBasic->ucBssIndex =%d\n",
+			prBssInfoUpdateBasic->ucBssIndex);
+	}
+	prBssInfoUpdateBasic->u2TotalElementNum = 1;
+	kalMemCopy(prBssInfoUpdateBasic->aucBuffer, pvSetBuffer,
+		   u4SetBufferLen);
+
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+			     CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+			     EXT_CMD_ID_BSSINFO_UPDATE,
+			     TRUE,
+			     FALSE,
+			     TRUE,
+			     nicCmdEventSetCommon,
+			     nicOidCmdTimeoutCommon,
+			     (CMD_BSSINFO_UPDATE_HDR_SIZE + u4SetBufferLen),
+			     (uint8_t *) prBssInfoUpdateBasic, NULL, 0);
+
+	cnmMemFree(prAdapter, prBssInfoUpdateBasic);
+
+	return rWlanStatus;
+}
+
+uint32_t
 wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
 		     IN void *pvSetBuffer, IN uint32_t u4SetBufferLen,
 		     OUT uint32_t *pu4SetInfoLen) {
@@ -5693,11 +5753,13 @@ wlanoidDevInfoActive(IN struct ADAPTER *prAdapter,
 		prCmdDevinfoActive =
 			(struct CMD_DEVINFO_ACTIVE *)pvSetBuffer;
 		prDevInfoUpdateActive->ucOwnMacIdx =
-			prCmdDevinfoActive->aucReserve[0];
+			prCmdDevinfoActive->ucOwnMacIdx;
 		DBGLOG(RFTEST, INFO,
 			"prDevInfoUpdateActive->ucOwnMacIdx = %d\n",
 			prDevInfoUpdateActive->ucOwnMacIdx);
 	}
+	prDevInfoUpdateActive->ucDbdcIdx =
+			prCmdDevinfoActive->ucBandNum;
 	prDevInfoUpdateActive->ucAppendCmdTLV = 0;
 	prDevInfoUpdateActive->u2TotalElementNum = 1;
 	kalMemCopy(prDevInfoUpdateActive->aucBuffer, pvSetBuffer,

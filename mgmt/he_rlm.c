@@ -556,6 +556,14 @@ static void heRlmFillHeCapIE(
 	}
 #endif
 
+#if CFG_SUPPORT_BFER
+	if (IS_FEATURE_ENABLED(prWifiVar->ucStaHeSuBfer)) {
+		HE_SET_PHY_CAP_SU_BFMER(prHeCap->ucHePhyCap);
+		HE_SET_PHY_CAP_NUM_OF_SND_DIM_LT_OR_EQ_80M(prHeCap->ucHePhyCap, 1);
+		HE_SET_PHY_CAP_TRIG_SU_BF_FB(prHeCap->ucHePhyCap);
+	}
+#endif
+
 #if (CFG_SUPPORT_HE_ER == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->u4ExtendedRange)) {
 		HE_SET_PHY_CAP_DCM_MAX_CONSTELLATION_TX(prHeCap->ucHePhyCap,

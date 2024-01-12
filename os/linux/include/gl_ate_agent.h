@@ -95,6 +95,7 @@ struct STA_REC_BF_UPD_ARGUMENT {
 	uint32_t u4PfmuId;
 	uint32_t u4SuMu;
 	uint32_t u4eTxBfCap;
+	uint32_t u4SoundingPhy;
 	uint32_t u4NdpaRate;
 	uint32_t u4NdpRate;
 	uint32_t u4ReptPollRate;
@@ -102,11 +103,25 @@ struct STA_REC_BF_UPD_ARGUMENT {
 	uint32_t u4Nc;
 	uint32_t u4Nr;
 	uint32_t u4Bw;
-	uint32_t u4SpeIdx;
 	uint32_t u4TotalMemReq;
 	uint32_t u4MemReq20M;
 	uint32_t au4MemRow[4];
 	uint32_t au4MemCol[4];
+	uint32_t u4SmartAnt;
+	uint32_t u4SpeIdx;
+	uint32_t u4iBfTimeOut;
+	uint32_t u4iBfDBW;
+	uint32_t u4iBfNcol;
+	uint32_t u4iBfNrow;
+	uint32_t u4RuStartIdx;
+	uint32_t u4RuEndIdx;
+	uint32_t u4TriggerSu;
+	uint32_t u4TriggerMu;
+	uint32_t u4Ng16Su;
+	uint32_t u4Ng16Mu;
+	uint32_t u4Codebook42Su;
+	uint32_t u4Codebook75Mu;
+	uint32_t u4HeLtf;
 };
 
 struct ATE_OPS_T {
@@ -222,6 +237,8 @@ int Set_TxBfProfileTagWrite(struct net_device *prNetDev,
 int Set_StaRecCmmUpdate(struct net_device *prNetDev,
 			uint8_t *prInBuf);
 int Set_StaRecBfUpdate(struct net_device *prNetDev,
+		       uint8_t *prInBuf);
+int Set_StaRecBfHeUpdate(struct net_device *prNetDev,
 		       uint8_t *prInBuf);
 
 int Set_DevInfoUpdate(struct net_device *prNetDev,

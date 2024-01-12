@@ -379,42 +379,55 @@ void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[1],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[2],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[3]);
+	DBGLOG(INIT, INFO,
+	       " Row data4 : %x, Row data5 : %x, Row data6 : %x\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[4],
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[5],
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.au4RawData[6]);
 	DBGLOG(INIT, INFO, "ProfileID = %d Invalid status = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucProfileID,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucInvalidProf);
 	DBGLOG(INIT, INFO, "0:iBF / 1:eBF = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucTxBf);
-	DBGLOG(INIT, INFO, "0:SU / 1:MU = %d\n",
-	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSU_MU);
 	DBGLOG(INIT, INFO, "DBW(0/1/2/3 BW20/40/80/160NC) = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucDBW);
-	DBGLOG(INIT, INFO, "RMSD = %d\n",
-	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRMSD);
+	DBGLOG(INIT, INFO, "0:SU / 1:MU = %d\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSU_MU);
 	DBGLOG(INIT, INFO,
 	       "Nrow = %d, Ncol = %d, Ng = %d, LM = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucNrow,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucNcol,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucNgroup,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucLM);
+	DBGLOG(INIT, INFO, "  ucCodeBook  = %d\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucCodeBook);
+	DBGLOG(INIT, INFO, "  ucRMSD = %d\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRMSD);
 	DBGLOG(INIT, INFO,
 	       "Mem1(%d, %d), Mem2(%d, %d), Mem3(%d, %d), Mem4(%d, %d)\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr1ColIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr1RowIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr2ColIdx,
-	       (prEventPfmuTagRead->ru4TxBfPFMUTag1.
-		rField.ucMemAddr2RowIdx |
-		(prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr2RowIdxMsb
-		 << 5)),
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr2RowIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr3ColIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr3RowIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr4ColIdx,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucMemAddr4RowIdx);
+	DBGLOG(INIT, INFO, "  ucRuStartIdx = 0x%x ucRuEndIdx = 0x%x\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRuStartIdx,
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucRuEndIdx);
 	DBGLOG(INIT, INFO,
 	       "SNR STS0=0x%x, SNR STS1=0x%x, SNR STS2=0x%x, SNR STS3=0x%x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS0,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS1,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS2,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS3);
+	DBGLOG(INIT, INFO,
+	       "SNR STS4=0x%x, SNR STS5=0x%x, SNR STS6=0x%x, SNR STS7=0x%x\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS4,
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS5,
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS6,
+	       prEventPfmuTagRead->ru4TxBfPFMUTag1.rField.ucSNR_STS7);
 	DBGLOG(INIT, INFO,
 	       "===============================================================\n");
 
@@ -425,21 +438,16 @@ void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[0],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[1],
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[2]);
+	DBGLOG(INIT, INFO,
+	       " Raw data3 : %x, Raw data4 : %x, Raw data5 : %x, Raw data6 : %x\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[3],
+	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[4],
+	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[5],
+	       prEventPfmuTagRead->ru4TxBfPFMUTag2.au4RawData[6]);
 	DBGLOG(INIT, INFO, "Smart Ant Cfg = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.u2SmartAnt);
 	DBGLOG(INIT, INFO, "SE index = %d\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucSEIdx);
-	DBGLOG(INIT, INFO, "RMSD Threshold = %d\n",
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucRMSDThd);
-	DBGLOG(INIT, INFO,
-	       "MCS TH L1SS = %d, S1SS = %d, L2SS = %d, S2SS = %d\n"
-	       "L3SS = %d, S3SS = %d\n",
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucMCSThL1SS,
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucMCSThS1SS,
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucMCSThL2SS,
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucMCSThS2SS,
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucMCSThL3SS,
-	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.ucMCSThS3SS);
 	DBGLOG(INIT, INFO, "iBF lifetime limit(unit:4ms) = 0x%x\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfTimeOut);
 	DBGLOG(INIT, INFO,
@@ -451,6 +459,9 @@ void nicCmdEventPfmuTagRead(IN struct ADAPTER *prAdapter,
 	DBGLOG(INIT, INFO,
 	       "iBF desired Nrow = %d\n  0/1/2/3 : Nrow = 1 ~ 4\n",
 	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfNrow);
+	DBGLOG(INIT, INFO,
+	       "iBf Ru = %d\n",
+	       prEventPfmuTagRead->ru4TxBfPFMUTag2.rField.uciBfRu);
 	DBGLOG(INIT, INFO,
 	       "===============================================================\n");
 
