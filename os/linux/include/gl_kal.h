@@ -969,9 +969,11 @@ kalCfg80211VendorEventAlloc(struct wiphy *wiphy, struct wireless_dev *wdev,
 #define kalStrtoint(_data, _base, _res) kstrtoint(_data, _base, _res)
 #define kalStrtoul(_data, _base, _res) kstrtoul(_data, _base, _res)
 
-int8_t *strtok_r(int8_t *s, const int8_t *delim, int8_t **last);
+char *strtok_r(char *s, const char *delim, char **last);
 #define kalStrtokR(_buf, _tok, _saved) \
-	strtok_r((int8_t *)_buf, _tok, (int8_t **)_saved)
+	strtok_r(_buf, _tok, _saved)
+
+#define kalFfs ffs
 
 int8_t atoi(uint8_t ch);
 #define kalAtoi(_ch) atoi(_ch)

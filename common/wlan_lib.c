@@ -13528,7 +13528,7 @@ wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
 	char arQueryMib[64] = "getMibCount";
 	char arQueryTRx[64] = "getTxRxCount";
 	uint8_t *pucItem = NULL;
-	uint8_t *pucSavedPtr = NULL;
+	char *pucSavedPtr = NULL;
 	uint32_t u4temp = 0;
 	uint32_t index = 0;
 
@@ -13553,15 +13553,14 @@ wlanGetTRXInfo(IN struct ADAPTER *prAdapter,
 	index = 0;
 	wlanChipConfig(prAdapter, &arQueryTRx[0], sizeof(arQueryTRx));
 	DBGLOG(REQ, INFO, "TRX:%s\n", arQueryTRx);
-	pucItem = (uint8_t *)kalStrtokR(&arQueryTRx[0], " ", &pucSavedPtr);
+	pucItem = kalStrtokR(&arQueryTRx[0], " ", &pucSavedPtr);
 	while (pucItem) {
 		kalkStrtou32(pucItem, 0, &u4temp);
 		if (index % 2 == 0)
 			prTRxInfo->u4TxOk[index / 2] = u4temp;
 		else
 			prTRxInfo->u4RxOk[index / 2] = u4temp;
-		pucItem =
-			(uint8_t *)kalStrtokR(NULL, " ", &pucSavedPtr);
+		pucItem = kalStrtokR(NULL, " ", &pucSavedPtr);
 		index++;
 	}
 	DBGLOG(REQ, INFO, "TxOk:%d %d %d %d, RxOk:%d %d %d %d\n",

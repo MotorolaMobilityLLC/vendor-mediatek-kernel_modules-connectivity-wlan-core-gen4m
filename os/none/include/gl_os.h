@@ -1120,7 +1120,7 @@ extern void connectivity_arch_setup_dma_ops(
 
 #ifndef ARRAY_SIZE
 #define ARRAY_SIZE(arr) \
-	(sizeof(arr) / sizeof(((typeof(arr)){})[0]))
+	(sizeof(arr) / sizeof((arr)[0]))
 #endif
 
 #define wlanNvramSetState(_state) \
