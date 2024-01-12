@@ -2135,6 +2135,115 @@ label_exit:
 	return retWlanStat;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+* \brief this function send buffer bin EEPROB_MTxxxx.bin to FW.
+*
+* \param[in] prAdapter
+*
+* \retval WLAN_STATUS_SUCCESS Success
+* \retval WLAN_STATUS_FAILURE Failed
+*/
+/*----------------------------------------------------------------------------*/
+WLAN_STATUS wlanConnacDownloadBufferBin(P_ADAPTER_T prAdapter)
+{
+	P_GLUE_INFO_T prGlueInfo = NULL;
+	UINT_32 u4BufLen = 0;
+	WLAN_STATUS rStatus = WLAN_STATUS_SUCCESS;
+	struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T *prSetEfuseBufModeInfo = NULL;
+	UINT_32 u4ContentLen;
+	PUINT_8 pucConfigBuf = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	UINT_32 chip_id;
+	UINT_8 aucEeprom[32];
+	WLAN_STATUS retWlanStat = WLAN_STATUS_FAILURE;
+
+	if (prAdapter->fgIsSupportPowerOnSendBufferModeCMD == FALSE)
+		return WLAN_STATUS_SUCCESS;
+
+	DBGLOG(INIT, INFO, "Start Efuse Buffer Mode ..\n");
+	DBGLOG(INIT, INFO, "ucEfuseBUfferModeCal is %x\n", prAdapter->rWifiVar.ucEfuseBufferModeCal);
+
+	prChipInfo = prAdapter->chip_info;
+	chip_id = prChipInfo->chip_id;
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	if (prGlueInfo == NULL || prGlueInfo->prDev == NULL)
+		goto label_exit;
+
+	/* allocate memory for buffer mode info */
+	prSetEfuseBufModeInfo = (struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T *)
+		kalMemAlloc(sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T), VIR_MEM_TYPE);
+	if (prSetEfuseBufModeInfo == NULL)
+		goto label_exit;
+	kalMemZero(prSetEfuseBufModeInfo, sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
+
+	if (prAdapter->rWifiVar.ucEfuseBufferModeCal == TRUE) {
+		/* Buffer mode */
+		/* Only in buffer mode need to access bin file */
+		/* 1 <1> Load bin file*/
+		pucConfigBuf = (PUINT_8) kalMemAlloc(MAX_EEPROM_BUFFER_SIZE, VIR_MEM_TYPE);
+		if (pucConfigBuf == NULL)
+			goto label_exit;
+
+		kalMemZero(pucConfigBuf, MAX_EEPROM_BUFFER_SIZE);
+
+		/* 1 <2> Construct EEPROM binary name */
+		kalMemZero(aucEeprom, sizeof(aucEeprom));
+
+		snprintf(aucEeprom, 32, "%s%x.bin",
+				apucEepromName[0], chip_id);
+
+		/* 1 <3> Request buffer bin */
+		if (kalRequestFirmware(aucEeprom,
+			pucConfigBuf, MAX_EEPROM_BUFFER_SIZE, &u4ContentLen, prGlueInfo->prDev) == 0) {
+			DBGLOG(INIT, INFO, "request file done\n");
+		} else {
+			DBGLOG(INIT, INFO, "can't find file\n");
+			goto label_exit;
+		}
+		DBGLOG(INIT, INFO, "u4ContentLen = %d\n", u4ContentLen);
+
+		/* 1 <4> Send CMD with bin file content */
+		prGlueInfo = prAdapter->prGlueInfo;
+
+		/* Update contents in local table */
+		kalMemCopy(uacEEPROMImage, pucConfigBuf, MAX_EEPROM_BUFFER_SIZE);
+
+		if (u4ContentLen > MAX_EEPROM_BUFFER_SIZE)
+			goto label_exit;
+
+		kalMemCopy(prSetEfuseBufModeInfo->aBinContent, pucConfigBuf, u4ContentLen);
+
+		prSetEfuseBufModeInfo->ucSourceMode = 1;
+	} else {
+		/* eFuse mode */
+		/* Only need to tell FW the content from, contents are directly from efuse */
+		prSetEfuseBufModeInfo->ucSourceMode = 0;
+		u4ContentLen = 0;
+	}
+	prSetEfuseBufModeInfo->ucContentFormat = 0x1 | (prAdapter->rWifiVar.ucCalTimingCtrl << 4);
+	prSetEfuseBufModeInfo->u2Count = u4ContentLen;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidConnacSetEfusBufferMode,
+			   (PVOID)prSetEfuseBufModeInfo,
+			   OFFSET_OF(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T, aBinContent) + u4ContentLen,
+			   FALSE, TRUE, TRUE, &u4BufLen);
+
+	retWlanStat = WLAN_STATUS_SUCCESS;
+
+label_exit:
+
+	/* free memory */
+	if (prSetEfuseBufModeInfo != NULL)
+		kalMemFree(prSetEfuseBufModeInfo, VIR_MEM_TYPE, sizeof(struct PARAM_CUSTOM_EFUSE_BUFFER_MODE_CONNAC_T));
+
+	if (pucConfigBuf != NULL)
+		kalMemFree(pucConfigBuf, VIR_MEM_TYPE, MAX_EEPROM_BUFFER_SIZE);
+
+	return retWlanStat;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -2345,9 +2454,8 @@ static INT_32 wlanProbe(PVOID pvData, PVOID pvDriverData)
 
 #if CFG_SUPPORT_BUFFER_MODE
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
-		if (wlanDownloadBufferBin(prAdapter) != WLAN_STATUS_SUCCESS)
+		if (prChipInfo->downloadBufferBin(prAdapter) != WLAN_STATUS_SUCCESS)
 			return -1;
-
 #endif
 #endif
 		/* set MAC address */
