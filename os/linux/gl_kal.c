@@ -12937,6 +12937,11 @@ void kalSetLogTooMuch(uint32_t u4DriverLevel,
 #endif /* KERNEL_VERSION(4, 14, 0) >= LINUX_VERSION_CODE */
 }
 
+uint64_t kalGetUIntRealTime(void)
+{
+	return ktime_get_real_ns();
+}
+
 void kalGetRealTime(struct REAL_TIME *prRealTime)
 {
 	struct rtc_time tm;

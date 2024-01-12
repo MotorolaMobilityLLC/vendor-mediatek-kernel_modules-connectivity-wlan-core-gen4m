@@ -2308,6 +2308,41 @@ static void nicRxCheckWakeupReason(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WAKEUP_REASON_DEBUG */
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+#if CFG_SUPPORT_ICS_TIMESYNC
+static void nicRxWriteIcsTimeSync(struct ADAPTER *prAdapter,
+	uint8_t *pucRecvBuff)
+{
+	struct ICS_BIN_TIMESYNC_HDR *prIcsTimeSyncHeader;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	ssize_t ret;
+
+	if ((prAdapter->u2IcsSeqNo % prWifiVar->u4IcsTimeSyncCnt) != 0)
+		return;
+
+	/* prepare ICS header */
+	prIcsTimeSyncHeader = (struct ICS_BIN_TIMESYNC_HDR *)pucRecvBuff;
+	prIcsTimeSyncHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;
+	prIcsTimeSyncHeader->ucVer = 1;
+	prIcsTimeSyncHeader->ucRsv = 0;
+	prIcsTimeSyncHeader->u4Timestamp = 0;
+	prIcsTimeSyncHeader->u2MsgID = RX_PKT_TYPE_SW_TIMESYNC;
+	prIcsTimeSyncHeader->u2Length = sizeof(prIcsTimeSyncHeader->u8Time);
+
+	prIcsTimeSyncHeader->u2SeqNo = prAdapter->u2IcsSeqNo++;
+	prIcsTimeSyncHeader->u8Time = kalGetUIntRealTime();
+
+	ret = kalIcsWrite(pucRecvBuff,
+		sizeof(struct ICS_BIN_TIMESYNC_HDR));
+	if (ret != sizeof(struct ICS_BIN_TIMESYNC_HDR)) {
+		DBGLOG_LIMITED(NIC, INFO,
+			"timesync dropped written:%d rxByteCount:%d\n",
+			ret, prIcsTimeSyncHeader->u2Length);
+		RX_INC_CNT(&prAdapter->rRxCtrl,
+			RX_ICS_DROP_COUNT);
+	}
+}
+#endif /* CFG_SUPPORT_ICS_TIMESYNC */
+
 static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb)
 {
@@ -2328,6 +2363,11 @@ static void nicRxProcessIcsLog(struct ADAPTER *prAdapter,
 				  &pucRecvBuff);
 
 	if (pvPacket) {
+#if CFG_SUPPORT_ICS_TIMESYNC
+		/* generate time sync ICS frame */
+		nicRxWriteIcsTimeSync(prAdapter, pucRecvBuff);
+#endif /* CFG_SUPPORT_ICS_TIMESYNC */
+
 		/* prepare ICS header */
 		prIcsBinLogHeader = (struct ICS_BIN_LOG_HDR *)pucRecvBuff;
 		prIcsBinLogHeader->u4MagicNum = ICS_BIN_LOG_MAGIC_NUM;

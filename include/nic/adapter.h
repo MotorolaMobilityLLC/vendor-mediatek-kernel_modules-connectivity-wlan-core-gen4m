@@ -1312,6 +1312,9 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_LIMITED_PKT_PID
 	uint32_t u4PktPIDTimeout;
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
+#if CFG_SUPPORT_ICS_TIMESYNC
+	uint32_t u4IcsTimeSyncCnt;
+#endif /* CFG_SUPPORT_ICS_TIMESYNC */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* Only scan all 6g channels, including PSC and non-PSC */
 	u_int8_t fgEnOnlyScan6g;

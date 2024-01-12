@@ -594,8 +594,11 @@ enum ENUM_MAC_RX_PKT_TYPE {
 	RX_PKT_TYPE_ICS = 12,
 #endif /* CFG_SUPPORT_ICS */
 #if (CFG_SUPPORT_PHY_ICS == 1)
-	RX_PKT_TYPE_PHY_ICS = 13
+	RX_PKT_TYPE_PHY_ICS = 13,
 #endif /* #if CFG_SUPPORT_PHY_ICS */
+#if CFG_SUPPORT_ICS_TIMESYNC
+	RX_PKT_TYPE_SW_TIMESYNC = 0x110,
+#endif /* CFG_SUPPORT_ICS_TIMESYNC */
 };
 
 enum ENUM_MAC_RX_GROUP_VLD {
@@ -693,6 +696,17 @@ struct ICS_BIN_LOG_HDR {
 	uint32_t u4Timestamp;
 	uint16_t u2MsgID;
 	uint16_t u2Length;
+};
+
+struct ICS_BIN_TIMESYNC_HDR {
+	uint32_t u4MagicNum;
+	uint8_t  ucVer;
+	uint8_t  ucRsv;
+	uint16_t u2SeqNo;
+	uint32_t u4Timestamp;
+	uint16_t u2MsgID;
+	uint16_t u2Length;
+	uint64_t u8Time;
 };
 
 struct ICS_AGG_HEADER {
