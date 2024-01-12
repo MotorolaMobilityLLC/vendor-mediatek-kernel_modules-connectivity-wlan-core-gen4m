@@ -182,6 +182,9 @@ static struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_UPDATE_COEX_PHYRATE, nicEventUpdateCoexPhyrate},
 	{EVENT_ID_RDD_REPORT, cnmRadarDetectEvent},
 	{EVENT_ID_CSA_DONE, cnmCsaDoneEvent},
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	{EVENT_ID_LTE_IDC_REPORT, cnmIdcDetectHandler},
+#endif
 #else
 	{EVENT_ID_UPDATE_COEX_PHYRATE,		nicEventUpdateCoexPhyrate},
 #endif

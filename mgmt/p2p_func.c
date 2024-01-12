@@ -1801,6 +1801,7 @@ void p2pFuncStopRdd(IN struct ADAPTER *prAdapter, IN uint8_t ucBssIdx)
 
 }				/* p2pFuncStopRdd */
 
+
 void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 		IN struct BSS_INFO *prBssInfo,
 		IN struct P2P_CHNL_REQ_INFO rP2pChnlReqInfo)
@@ -1823,6 +1824,48 @@ void p2pFuncDfsSwitchCh(IN struct ADAPTER *prAdapter,
 	prBssInfo->ucPrimaryChannel = rP2pChnlReqInfo.ucReqChnlNum;
 	prBssInfo->eBand = rP2pChnlReqInfo.eBand;
 	prBssInfo->eBssSCO = rP2pChnlReqInfo.eChnlSco;
+
+/* To Support Cross Band Channel Swtich */
+#if CFG_SUPPORT_IDC_CH_SWITCH
+	if (prBssInfo->eBand == BAND_5G) {
+		/* Depend on eBand */
+		prBssInfo->ucPhyTypeSet =
+			(prAdapter->rWifiVar.ucAvailablePhyTypeSet
+				& PHY_TYPE_SET_802_11AN);
+		/* Depend on eCurrentOPMode and ucPhyTypeSet */
+		prBssInfo->ucConfigAdHocAPMode = AP_MODE_11A;
+	} else { /* Only SAP mode should enter this function */
+		/* Depend on eBand */
+		prBssInfo->ucPhyTypeSet =
+			(prAdapter->rWifiVar.ucAvailablePhyTypeSet
+				& PHY_TYPE_SET_802_11BGN);
+		/* Depend on eCurrentOPMode and ucPhyTypeSet */
+		prBssInfo->ucConfigAdHocAPMode = AP_MODE_MIXED_11BG;
+	}
+
+	/* Overwrite BSS PHY type set by Feature Options */
+	bssDetermineApBssInfoPhyTypeSet(prAdapter,
+		TRUE, prBssInfo);
+
+	prBssInfo->ucNonHTBasicPhyType = (uint8_t)
+		rNonHTApModeAttributes
+			[prBssInfo->ucConfigAdHocAPMode]
+				.ePhyTypeIndex;
+	prBssInfo->u2BSSBasicRateSet =
+		rNonHTApModeAttributes
+			[prBssInfo->ucConfigAdHocAPMode]
+				.u2BSSBasicRateSet;
+	prBssInfo->u2OperationalRateSet =
+		rNonHTPhyAttributes
+			[prBssInfo->ucNonHTBasicPhyType]
+				.u2SupportedRateSet;
+	kalMemZero(prBssInfo->aucAllSupportedRates, RATE_NUM_SW);
+	rateGetDataRatesFromRateSet(
+		prBssInfo->u2OperationalRateSet,
+		prBssInfo->u2BSSBasicRateSet,
+		prBssInfo->aucAllSupportedRates,
+		&prBssInfo->ucAllSupportedRatesLen);
+#endif
 
 	/* Setup channel and bandwidth */
 	rlmBssInitForAPandIbss(prAdapter, prBssInfo);
