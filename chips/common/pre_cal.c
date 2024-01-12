@@ -802,7 +802,7 @@ int wlanPreCalPwrOn(void)
 	}
 
 	/* wf driver power on */
-	if (asicConnac2xPwrOnWmMcu(prChipInfo) != 0) {
+	if (prChipInfo->wmmcupwron() != 0) {
 		update_pre_cal_status(0);
 		return CONNINFRA_CB_RET_CAL_FAIL_POWER_OFF;
 	}
