@@ -6318,7 +6318,8 @@ aisDeauthXmitCompleteBss(struct ADAPTER *prAdapter,
 	prAisFsmInfo->encryptedDeauthIsInProcess = FALSE;
 #endif
 
-	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
+	if (rTxDoneStatus == TX_RESULT_SUCCESS)
+		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rDeauthDoneTimer);
 
 #if CFG_CHIP_RESET_SUPPORT && !CFG_WMT_RESET_API_SUPPORT
 	if (prAdapter->chip_info->fgIsSupportL0p5Reset) {
