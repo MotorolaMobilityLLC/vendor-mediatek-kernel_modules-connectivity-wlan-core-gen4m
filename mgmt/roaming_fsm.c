@@ -618,6 +618,13 @@ void roamingFsmNotifyEvent(
 	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(adapter, bssIndex);
 	char uevent[300];
 
+	/* Check if bss index valid to pass coverity */
+	if (bssIndex >= ARRAY_SIZE(adapter->rLinkQuality.rLq)) {
+		DBGLOG(ROAMING, WARN, "invalid bss idx %u, caller=%pS\n",
+				bssIndex, KAL_TRACE);
+		return;
+	}
+
 	COPY_MAC_ADDR(roam->rEventInfo.aucPrevBssid, prAisBssInfo->aucBSSID);
 	COPY_MAC_ADDR(roam->rEventInfo.aucCurrBssid, prBssDesc->aucBSSID);
 	roam->rEventInfo.ucPrevChannel = prAisBssInfo->ucPrimaryChannel;
