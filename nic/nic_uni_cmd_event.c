@@ -8443,7 +8443,7 @@ void nicUniEventMibInfo(struct ADAPTER *ad,
 		case UNI_EVENT_MIB_DATA_TAG: {
 			struct UNI_EVENT_MIB_DATA *tlv =
 				(struct UNI_EVENT_MIB_DATA *) tag;
-			uint64_t u4Counter = tlv->u4Counter;
+			uint32_t u4Counter = tlv->u4Counter;
 
 			if (u4Counter >= UNI_CMD_MIB_CNT_MAX_NUM)
 				continue;
@@ -8740,7 +8740,7 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			nicUniEvtBasicStatToLegacy(tlv, &legacy);
 
 			DBGLOG(RX, TRACE,
-				"tag=%u Fail:%lu Retry:%lu RtsF:%lu AckF:%lu Idle:%lu\n",
+				"Fail:%lu Retry:%lu RtsF:%lu AckF:%lu Idle:%lu\n",
 					tlv->u8FailedCount, tlv->u8RetryCount,
 					tlv->u8RTSFailureCount,
 					tlv->u8ACKFailureCount,
