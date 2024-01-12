@@ -1371,6 +1371,9 @@ exit:
 
 int wlan_precal_pwron_v2(void)
 {
+
+#ifdef MT6639
+
 	int32_t ret = 0;
 
 	DBGLOG(INIT, INFO, "\n");
@@ -1403,10 +1406,33 @@ exit:
 	}
 
 	return ret;
+
+#else /* #ifdef MT6639 */
+
+	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+
+	if (g_fgEverCal == TRUE)
+		return 1;
+
+#if CFG_MTK_ANDROID_EMI
+	/* CONNAC 2 use backup /restore EMI */
+	gEmiCalNoUseEmiData = FALSE;
+#endif
+
+	if (!wfsys_is_locked())
+		wfsys_lock();
+
+	return 0;
+
+#endif /* #ifdef MT6639 */
+
 }
 
 int wlan_precal_docal_v2(void)
 {
+
+#ifdef MT6639
+
 	DBGLOG(INIT, INFO, "\n");
 
 	if (!g_fgEverCal)
@@ -1416,6 +1442,38 @@ int wlan_precal_docal_v2(void)
 		wfsys_unlock();
 
 	return 0;
+
+#else /* #ifdef MT6639 */
+
+	int32_t ret = 0;
+
+	DBGLOG(INIT, INFO, "ever = %d\n", g_fgEverCal);
+
+	if (!g_fgEverCal) {
+		update_pre_cal_status(1);
+		g_fgPreCal = TRUE;
+
+		ret = wlanFuncOnImpl();
+		if (ret) {
+			DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+			goto exit;
+		}
+
+		wlanFuncOffImpl();
+
+		if (wfsys_is_locked())
+			wfsys_unlock();
+
+exit:
+		g_fgPreCal = FALSE;
+		update_pre_cal_status(0);
+		g_fgEverCal = TRUE;
+
+		wfsys_unlock();
+	}
+	return ret;
+
+#endif /* #ifdef MT6639 */
 }
 
 int wlan_precal_err(void)
