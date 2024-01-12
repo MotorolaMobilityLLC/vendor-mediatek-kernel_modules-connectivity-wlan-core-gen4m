@@ -1769,6 +1769,9 @@ void wlanOffUninitNicModule(IN struct ADAPTER *prAdapter,
 				IN const u_int8_t bAtResetFlow);
 void wlanOffClearAllQueues(IN struct ADAPTER *prAdapter);
 uint8_t wlanGetBssIdx(struct net_device *ndev);
+int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
+			uint32_t frmode, uint32_t sgi, uint32_t nsts,
+			uint32_t *pu4CurRate, uint32_t *pu4MaxRate);
 
 #if CFG_SUPPORT_DATA_STALL
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
