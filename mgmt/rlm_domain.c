@@ -5261,7 +5261,7 @@ uint8_t rlmDomainGetChannelBw(uint8_t channelNum)
 			channelBw = MAX_BW_20MHZ;
 	}
 
-	DBGLOG(RLM, INFO, "ch=%d, BW=%d\n", channelNum, channelBw);
+	DBGLOG(RLM, TRACE, "ch=%d, BW=%d\n", channelNum, channelBw);
 	return channelBw;
 }
 #endif
