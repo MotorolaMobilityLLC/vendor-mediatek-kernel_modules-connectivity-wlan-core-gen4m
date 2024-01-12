@@ -7133,8 +7133,10 @@ void nicUniEventBF(struct ADAPTER *ad,
 #endif
 void nicUniEventSR(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#if CFG_WOW_SUPPORT
 void nicUniEventWow(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+#endif
 void nicUniEventCsiData(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #if (CFG_VOLT_INFO == 1)

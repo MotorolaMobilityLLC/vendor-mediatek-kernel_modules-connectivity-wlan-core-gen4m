@@ -8358,12 +8358,14 @@ u_int8_t clearAxBlacklist(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void aisPreSuspendFlow(struct ADAPTER *prAdapter)
 {
-	struct BSS_INFO *prAisBssInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct SCAN_INFO *prScanInfo;
+#if CFG_WOW_SUPPORT
+	struct BSS_INFO *prAisBssInfo = NULL;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_CANCEL_REMAIN_ON_CHANNEL *prMsgChnlAbort;
+#endif
 
 	if (prAdapter == NULL)
 		return;
