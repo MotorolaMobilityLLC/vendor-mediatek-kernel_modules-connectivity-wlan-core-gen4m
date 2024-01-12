@@ -6096,7 +6096,7 @@ int mtk_uninit_sta_role(struct ADAPTER *prAdapter,
 int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 		     struct net_device *ndev)
 {
-	int u4Idx = 0;
+	uint8_t u4Idx = 0;
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 
 	for (u4Idx = 0; u4Idx < KAL_P2P_NUM; u4Idx++) {
