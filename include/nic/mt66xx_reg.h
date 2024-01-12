@@ -1281,6 +1281,7 @@ struct mt66xx_chip_info {
 	const unsigned int is_support_wacpu;	/* support WA-CPU */
 	const unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int rxd_size;	        /* hw mac rxd size */
+	const unsigned int init_evt_rxd_size;	/* init event rxd size */
 	const unsigned int pse_header_length;	/* NIC_TX_PSE_HEADER_LENGTH */
 	const unsigned int init_event_size;     /* init event w/o rxd size */
 	const unsigned int event_hdr_size;      /* event w/o rxd size */

@@ -91,6 +91,7 @@
 #else
 #define CONNAC_RX_DESC_LENGTH                   20
 #endif
+#define CONNAC_INIT_EVT_RX_DESC_LENGTH          16
 #define CONNAC_RX_INIT_EVENT_LENGTH             8
 #define CONNAC_RX_EVENT_HDR_LENGTH              12
 #define MTK_CUSTOM_OID_INTERFACE_VERSION     0x00006620	/* for WPDWifi DLL */

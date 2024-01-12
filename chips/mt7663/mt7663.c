@@ -289,6 +289,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7663 = {
 	.is_support_cr4 = FALSE,
 	.txd_append_size = MT7663_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT7663_RX_DESC_LENGTH,
+	.init_evt_rxd_size = MT7663_RX_DESC_LENGTH,
 	.pse_header_length = NIC_TX_PSE_HEADER_LENGTH,
 	.init_event_size = MT7663_RX_INIT_EVENT_LENGTH,
 	.event_hdr_size = MT7663_RX_EVENT_HDR_LENGTH,
