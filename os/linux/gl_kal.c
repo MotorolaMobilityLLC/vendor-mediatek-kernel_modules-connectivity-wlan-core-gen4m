@@ -3087,6 +3087,8 @@ kalIoctlByBssIdx(IN struct GLUE_INFO *prGlueInfo,
 	if (prGlueInfo->main_thread == NULL) {
 		dump_stack();
 		DBGLOG(OID, WARN, "skip executing request.\n");
+		up(&prGlueInfo->ioctl_sem);
+		up(&g_halt_sem);
 		return WLAN_STATUS_FAILURE;
 	}
 
