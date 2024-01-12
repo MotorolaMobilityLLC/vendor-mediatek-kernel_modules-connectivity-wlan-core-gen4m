@@ -2668,6 +2668,12 @@ void kalInformFtEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex)
 		mld_starec = mldStarecGetByStarec(prAdapter,
 			ft_param->prTargetAp);
 
+		if (!mld_starec || !mld_bssinfo) {
+			DBGLOG(INIT, WARN, "mld_starec=%p, mld_bssinfo=%p\n",
+					mld_starec, mld_bssinfo);
+			goto mld_formed_end;
+		}
+
 		/* Vendor[PRE_WIFI7[ML[STA Profile * N]]] */
 
 		MTK_OUI_IE(vendor_ie)->ucId = ELEM_ID_VENDOR;
@@ -2715,9 +2721,9 @@ void kalInformFtEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex)
 			uint16_t control = 0;
 
 			bssinfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-					starec->ucBssIndex);
+				starec->ucBssIndex);
 
-			if (bssinfo->ucBssIndex == ucBssIndex)
+			if (!bssinfo || bssinfo->ucBssIndex == ucBssIndex)
 				continue;
 
 			sta_ctrl->ucSubID = SUB_IE_MLD_PER_STA_PROFILE;
@@ -2752,6 +2758,8 @@ void kalInformFtEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex)
 		DBGLOG(INIT, INFO, "FT: MTK_PRE_WIFI7");
 		DBGLOG_MEM8(INIT, INFO, vendor_ie, IE_SIZE(vendor_ie));
 	}
+
+mld_formed_end:
 #endif
 
 	ft_event.ies = buf;
