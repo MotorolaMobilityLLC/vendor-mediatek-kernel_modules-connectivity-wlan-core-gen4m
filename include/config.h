@@ -276,7 +276,7 @@
 
 #define CFG_SUPPORT_HE_ER               1
 
-
+#define CFG_SUPPORT_ICS                 1
 
 /*------------------------------------------------------------------------------
  * Flags of Buffer mode SUPPORT

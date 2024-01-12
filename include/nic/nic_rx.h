@@ -73,6 +73,10 @@
  *******************************************************************************
  */
 
+#if (CFG_SUPPORT_ICS == 1)
+#define ICS_BIN_LOG_MAGIC_NUM	0x44E98CAF
+#endif /* CFG_SUPPORT_ICS */
+
 #define UNIFIED_MAC_RX_FORMAT               1
 
 #define MAX_SEQ_NO                  4095
@@ -597,7 +601,10 @@ enum ENUM_MAC_RX_PKT_TYPE {
 	RX_PKT_TYPE_TM_REPORT,
 	RX_PKT_TYPE_MSDU_REPORT = 6,
 	RX_PKT_TYPE_SW_DEFINED = 7,
-	RX_PKT_TYPE_RX_REPORT = 11
+	RX_PKT_TYPE_RX_REPORT = 11,
+#if (CFG_SUPPORT_ICS == 1)
+	RX_PKT_TYPE_ICS = 12
+#endif /* CFG_SUPPORT_ICS */
 };
 
 enum ENUM_MAC_RX_GROUP_VLD {
@@ -684,6 +691,23 @@ enum {
  *                            P U B L I C   D A T A
  *******************************************************************************
  */
+#if (CFG_SUPPORT_ICS == 1)
+struct ICS_BIN_LOG_HDR {
+	uint32_t u4MagicNum;
+	uint32_t u4Timestamp;
+	uint16_t u2MsgID;
+	uint16_t u2Length;
+};
+
+struct ICS_AGG_HEADER {
+	uint16_t rxByteCount;
+	uint16_t frameCount:5;
+	uint16_t reserved1:6;
+	uint16_t pktType:5;
+	uint16_t reserved2;
+	uint16_t pseFid;
+};
+#endif /* CFG_SUPPORT_ICS */
 
 /*! A data structure which is identical with MAC RX DMA Descriptor */
 struct HW_MAC_RX_DESC {
