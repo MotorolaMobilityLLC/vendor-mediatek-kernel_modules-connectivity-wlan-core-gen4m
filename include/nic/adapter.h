@@ -216,6 +216,13 @@ typedef struct _CONNECTION_SETTINGS_T {
 
 	BOOLEAN fgIsAdHocQoSEnable;
 
+	/* Indicates if OKC feature is enabled in wpa_supplicant for this ESS */
+	BOOLEAN fgOkcEnabled;
+	/* Indicates that there's a PMKSA associated with this ESS
+	** in supplicant to generate PMKID for each BSS
+	*/
+	BOOLEAN fgOkcPmksaReady;
+
 	ENUM_PARAM_PHY_CONFIG_T eDesiredPhyConfig;
 
 	/* Used for AP mode for desired channel and bandwidth */
