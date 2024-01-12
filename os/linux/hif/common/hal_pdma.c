@@ -1965,14 +1965,17 @@ void halProcessSoftwareInterrupt(IN struct ADAPTER *prAdapter)
 
 static void halHwRecoveryTimeout(unsigned long arg)
 {
+#if CFG_CHIP_RESET_SUPPORT
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) arg;
+	struct ADAPTER *prAdapter = NULL;
 
 	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
 
-	DBGLOG(HAL, ERROR, "SER timer Timeout\n");
-#if CFG_CHIP_RESET_SUPPORT
 	GL_RESET_TRIGGER(prAdapter, RST_FLAG_CHIP_RESET);
 #endif
+	DBGLOG(HAL, ERROR, "SER timer Timeout\n");
 }
 
 void halInitSerTimer(IN struct ADAPTER *prAdapter)
