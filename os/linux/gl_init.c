@@ -4314,6 +4314,9 @@ static void wlanCreateWirelessDevice(void)
 	prWdev[u4Idx]->wiphy = prWiphy;
 	gprWdev[u4Idx] = prWdev[u4Idx];
 
+#if CFG_TESTMODE_WMT_WIFI_ON_SUPPORT
+	register_set_wifi_test_mode_fwdl_handler(set_wifi_test_mode_fwdl);
+#endif
 #if CFG_WLAN_ASSISTANT_NVRAM
 	register_file_buf_handler(wlanXonvBufHandler, (void *)NULL,
 			ENUM_BUF_TYPE_XONV);

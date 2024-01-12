@@ -2229,6 +2229,13 @@ void wlanClearPendingInterrupt(struct ADAPTER *prAdapter);
 extern int32_t mtk_wcn_wmt_wifi_fem_cfg_report(void *pvInfoBuf);
 #endif
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+void set_wifi_test_mode_fwdl(const int mode);
+uint8_t get_wifi_test_mode_fwdl(void);
+void set_wifi_in_switch_mode(const int enabled);
+uint8_t get_wifi_in_switch_mode(void);
+#endif
+
 #if ((CFG_SISO_SW_DEVELOP == 1) || (CFG_SUPPORT_SPE_IDX_CONTROL == 1))
 uint8_t wlanGetAntPathType(struct ADAPTER *prAdapter,
 			   enum ENUM_WF_PATH_FAVOR_T eWfPathFavor);

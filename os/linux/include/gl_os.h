@@ -1621,6 +1621,12 @@ extern void wlanRegisterRebootNotifier(void);
 extern void wlanUnregisterRebootNotifier(void);
 #endif
 
+#if CFG_MTK_ANDROID_WMT && CFG_TESTMODE_WMT_WIFI_ON_SUPPORT
+typedef void (*set_test_mode_on) (const int);
+extern void register_set_wifi_test_mode_fwdl_handler(
+	set_test_mode_on handler);
+#endif
+
 #if CFG_MTK_ANDROID_WMT
 typedef int (*set_p2p_mode) (struct net_device *netdev,
 			     struct PARAM_CUSTOM_P2P_SET_STRUCT p2pmode);

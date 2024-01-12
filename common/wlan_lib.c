@@ -92,6 +92,11 @@ u_int8_t fgTriggerDebugSop = FALSE;
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+static uint8_t wifi_test_mode_fwdl;
+static uint8_t wifi_in_switch_mode;
+#endif
+
 /* data rate mapping table for CCK */
 struct cckDataRateMappingTable_t {
 	uint32_t rate[4];
@@ -5239,6 +5244,28 @@ uint8_t wlanGetRomVersion(struct ADAPTER *prAdapter)
 	return ucRomVersion;
 
 }
+
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+void set_wifi_test_mode_fwdl(const int mode)
+{
+	wifi_test_mode_fwdl = mode;
+}
+
+uint8_t get_wifi_test_mode_fwdl(void)
+{
+	return wifi_test_mode_fwdl;
+}
+
+void set_wifi_in_switch_mode(const int enabled)
+{
+	wifi_in_switch_mode = enabled;
+}
+
+uint8_t get_wifi_in_switch_mode(void)
+{
+	return wifi_in_switch_mode;
+}
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
