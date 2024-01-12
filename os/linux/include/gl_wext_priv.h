@@ -334,7 +334,11 @@ struct NDIS_TRANSPORT_STRUCT {
 	uint32_t ndisOidCmd;
 	uint32_t inNdisOidlength;
 	uint32_t outNdisOidLength;
+#if CFG_SUPPORT_QA_TOOL
+	uint8_t ndisOidContent[20];
+#else
 	uint8_t ndisOidContent[16];
+#endif	/* CFG_SUPPORT_QA_TOOL */
 };
 
 #if CFG_SUPPORT_NAN
