@@ -622,6 +622,18 @@ kalDevPortWrite(IN struct GLUE_INFO *prGlueInfo,
 	prMemOps = &prHifInfo->rMemOps;
 	prTxRing = &prHifInfo->TxRing[u2Port];
 
+	if (prTxRing->u4UsedCnt + 1 >= TX_RING_SIZE) {
+		DBGLOG(HAL, INFO, "Force recycle port %d DMA resource.\n",
+			u2Port);
+		halWpdmaProcessCmdDmaDone(prGlueInfo, u2Port);
+	}
+
+	if (prTxRing->u4UsedCnt + 1 >= TX_RING_SIZE) {
+		DBGLOG(HAL, ERROR, "Port %d TX resource is NOT enough.\n",
+			u2Port);
+		return FALSE;
+	}
+
 	if (prMemOps->allocRuntimeMem)
 		pucDst = prMemOps->allocRuntimeMem(u4Len);
 
