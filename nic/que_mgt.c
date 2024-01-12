@@ -4227,110 +4227,6 @@ u_int8_t qmAmsduAttackDetection(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_FRAG_AGG_ATTACK_DETECTION */
 
-/**
- * Flush if RFB is not sufficient to read full RX ring (< 3/4 of RX ring) and
- * reordering entries queued up (>= 3/4 of WinSize).
- * Only when a last AMSDU or single MSDU were just eneuqued.
- *
- * In the case of BA WinSize == 1024, each AMPDU is about 360 x 7 = 2520.
- */
-static u_int8_t needFlushReordering(
-	struct ADAPTER *prAdapter,
-	struct RX_BA_ENTRY *prReorderQueParm,
-	uint32_t u4IndicateSwRfbNum,
-	uint32_t u4FreeSwRfbNum)
-{
-#if CFG_SUPPORT_RX_FLUSH_REORDERING
-	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	uint16_t u2ReorderingHigh = prReorderQueParm->u2WinSize;
-	const uint16_t u2SwRfbLow = prHifInfo->u4RxDataRingSize -
-		(prHifInfo->u4RxDataRingSize >> 2);
-
-	if (u4FreeSwRfbNum >= u2SwRfbLow)
-		return FALSE;
-
-	u2ReorderingHigh -= u2ReorderingHigh >> 2; /* 3/4 of WinSize */
-
-#if CFG_SUPPORT_RX_CACHE_INDEX
-	if (prReorderQueParm->u2CacheIndexCount >= u2ReorderingHigh) {
-		DBGLOG(QM, TRACE,
-			"Flush reordering: Reordering=%u Ind=%u FreeRFB=%u\n",
-			prReorderQueParm->u2CacheIndexCount,
-			u4IndicateSwRfbNum, u4FreeSwRfbNum);
-		return TRUE;
-	}
-#else
-	/* ASMSDU = 7 by experience */
-	if (prReorderQueParm->rReOrderQue->u4NumElem >= u2ReorderingHigh * 7) {
-		DBGLOG(QM, TRACE,
-			"Flush reordering: reordering=%u Ind=%u FreeRFB=%u\n",
-			prReorderQueParm->rReOrderQue->u4NumElem,
-			u4IndicateSwRfbNum, u4FreeSwRfbNum);
-		return TRUE;
-	}
-#endif
-
-#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
-	return FALSE;
-}
-
-/**
- * This feature was developed in the middle of SQC as a remedy to prevent from
- * deadlock if the waiting SN was queued in RX ring, but driver has no RFB to
- * receive it.
- * In the later stage of SQC, with CPU boost and allocating data from heap
- * were implemented, this mechanism was discovered harm to the RX throughput.
- *
- * Flushing early will harm throughput in 2.4GHz bw 40MHz + 6GHz MLO
- * and especially for 2.4GHz bw 20MHz + 6GHz MLO.
- * Therefore, this mechanism was disabled by default.
- */
-static void checkToFlushReordering(struct ADAPTER *prAdapter,
-				struct RX_BA_ENTRY *prReorderQueParm,
-				struct RX_CTRL *prRxCtrl)
-{
-#if CFG_SUPPORT_RX_FLUSH_REORDERING
-#if CFG_SUPPORT_RX_CACHE_INDEX
-	uint32_t u4ReorderingNum = prReorderQueParm->u2CacheIndexCount;
-#else
-	uint32_t u4ReorderingNum = prReorderQueParm->rReOrderQue->u4NumElem;
-#endif
-	uint32_t u4IndicateSwRfbNum = RX_GET_INDICATED_RFB_CNT(prRxCtrl);
-	uint32_t u4FreeSwRfbNum = RX_GET_FREE_RFB_CNT(prRxCtrl);
-	uint32_t u4NewReorderingNum;
-
-	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgFlushRxReordering))
-		return;
-
-	if (!needFlushReordering(prAdapter, prReorderQueParm,
-				u4IndicateSwRfbNum, u4FreeSwRfbNum))
-		return;
-
-	if (likely(prReorderQueParm->fgHasBubble)) {
-		cnmTimerStopTimer(prAdapter,
-			&prReorderQueParm->rReorderBubbleTimer);
-	}
-	prReorderQueParm->u2FlushedSSN = prReorderQueParm->u2WinStart;
-	qmHandleEventCheckReorderBubble(prAdapter, prReorderQueParm);
-
-#if CFG_SUPPORT_RX_CACHE_INDEX
-	u4NewReorderingNum = prReorderQueParm->u2CacheIndexCount;
-#else
-	u4NewReorderingNum = prReorderQueParm->rReOrderQue->u4NumElem;
-#endif
-	if (u4NewReorderingNum < u4ReorderingNum)
-		SET_FLUSHED_SSN_VALID(prReorderQueParm);
-
-	wlanReturnPacketDelaySetup(prAdapter);
-	DBGLOG(QM, INFO,
-		"Flushed reordering: Reordering=%u->%u Ind=%u->%u FreeRFB=%u->%u\n",
-		u4ReorderingNum, u4NewReorderingNum,
-		u4IndicateSwRfbNum, RX_GET_INDICATED_RFB_CNT(prRxCtrl),
-		u4FreeSwRfbNum, RX_GET_FREE_RFB_CNT(prRxCtrl));
-#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Reorder the received packet
@@ -4349,8 +4245,6 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	struct RX_BA_ENTRY *prReorderQueParm;
 	struct RX_CTRL *prRxCtrl;
-	uint16_t u2WinStart;
-	uint16_t u2WinEnd;
 
 #if CFG_SUPPORT_RX_AMSDU
 	uint8_t ucAmsduSubframeIdx;
@@ -4460,27 +4354,11 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	u2WinStart = prReorderQueParm->u2WinStart,
-	u2WinEnd = prReorderQueParm->u2WinEnd;
-
 	/* Insert reorder packet */
-	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm,
-		prReturnedQue);
+	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm, prReturnedQue);
 
 	if (HAL_IS_RX_DIRECT(prAdapter))
 		RX_DIRECT_REORDER_UNLOCK(prAdapter->prGlueInfo, 0);
-
-
-	/* Only when a last AMSDU or single MSDU were just processed */
-	if (ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_MSDU ||
-	    ucAmsduSubframeIdx == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU) {
-		if (prAdapter->rWifiVar.u4BaVerboseLogging)
-			DBGLOG(QM, TRACE, "Rx SN=%u, Window{%u,%u}->{%u,%u}\n",
-				u2SeqNo, u2WinStart, u2WinEnd,
-				prReorderQueParm->u2WinStart,
-				prReorderQueParm->u2WinEnd);
-		checkToFlushReordering(prAdapter, prReorderQueParm, prRxCtrl);
-	}
 }
 
 void qmProcessBarFrame(struct ADAPTER *prAdapter,
@@ -4633,18 +4511,6 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 		prReorderQueParm->u2LastRcvdSN = u2SeqNo;
 #endif /* CFG_SUPPORT_RX_OOR_BAR */
 
-#if CFG_SUPPORT_RX_FLUSH_REORDERING
-		if (IS_FLUSHED_SSN_VALID(prReorderQueParm)) {
-			prReorderQueParm->u2FlushedSSN = 0;
-			CLR_FLUSHED_SSN_VALID(prReorderQueParm);
-			DBGLOG(RX, INFO,
-				"Clear %u:%u Flush SSN, SN %d >= u2WinStart %d\n",
-				prReorderQueParm->ucStaRecIdx,
-				prReorderQueParm->ucTid,
-				u2SeqNo, u2WinStart);
-		}
-#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
-
 		qmInsertFallWithinReorderPkt(prAdapter, prSwRfb,
 					     prReorderQueParm, prReturnedQue);
 
@@ -4741,22 +4607,6 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 			return;
 		}
 #endif /* CFG_SUPPORT_RX_OOR_BAR */
-
-#if CFG_SUPPORT_RX_FLUSH_REORDERING
-		if (IS_FLUSHED_SSN_VALID(prReorderQueParm) &&
-		    SEQ_SMALLER(u2SeqNo, u2WinStart) &&
-		    (u2SeqNo == prReorderQueParm->u2FlushedSSN || /* AMSDU */
-		     SEQ_SMALLER(prReorderQueParm->u2FlushedSSN, u2SeqNo))) {
-			qmPopOutReorderPkt(prAdapter, prReorderQueParm, prSwRfb,
-				prReturnedQue, RX_DATA_REORDER_BEHIND_COUNT);
-			DBGLOG(RX, TRACE,
-				"QM: Data after Flushed:[%d](%d){%d,%d} total:%lu",
-				prSwRfb->ucTid, u2SeqNo, u2WinStart, u2WinEnd,
-				RX_GET_CNT(&prAdapter->rRxCtrl,
-				RX_DATA_REORDER_BEHIND_COUNT));
-			return;
-		}
-#endif /* CFG_SUPPORT_RX_FLUSH_REORDERING */
 
 #if CFG_SUPPORT_LOWLATENCY_MODE || CFG_SUPPORT_OSHARE
 		if (qmIsNoDropPacket(prAdapter, prSwRfb) ||
