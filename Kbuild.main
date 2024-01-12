@@ -1269,6 +1269,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     ifeq ($(CONFIG_ARCH_MEDIATEK),y)
         CONFIG_MTK_AEE_FEATURE=y
     endif
+    CONFIG_SUPPORT_HRTIMER=y
 else ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
@@ -1283,6 +1284,12 @@ ifeq ($(WMT_SUPPORT), y)
     endif
     ccflags-y += -DCFG_ENABLE_WAKE_LOCK=1
     ccflags-y += -DCFG_SUPPORT_MET_LOG=1
+endif
+
+ifeq ($(CONFIG_SUPPORT_HRTIMER), y)
+    ccflags-y += -DCFG_SUPPORT_HRTIMER=1
+else
+    ccflags-y += -DCFG_SUPPORT_HRTIMER=0
 endif
 
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO), y)
