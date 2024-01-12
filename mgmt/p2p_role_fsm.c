@@ -5142,8 +5142,8 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	prP2pScanReqMsg->u4NumChannel = prMsgAcsRequest->u4NumChannel;
 	prP2pScanReqMsg->u4IELen = 0;
 	prP2pScanReqMsg->eScanReason = SCAN_REASON_ACS;
-	kalMemCopy(&(prP2pScanReqMsg->arChannelListInfo),
-			&(prMsgAcsRequest->arChannelListInfo),
+	kalMemCopy(prP2pScanReqMsg->arChannelListInfo,
+			prMsgAcsRequest->arChannelListInfo,
 			(prMsgAcsRequest->u4NumChannel *
 				sizeof(struct RF_CHANNEL_INFO)));
 	p2pRoleFsmRunEventScanRequest(prAdapter,
