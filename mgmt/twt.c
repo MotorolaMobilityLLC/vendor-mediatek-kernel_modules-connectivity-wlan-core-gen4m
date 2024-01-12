@@ -351,7 +351,7 @@ uint32_t twtSendInfoFrame(
 	}
 
 	DBGLOG(TWT_REQUESTER, WARN,
-			"TWT Info Frame %d %d %d 0x%x 0x%x 0x%x\n",
+			"TWT Info Frame %d %d %d 0x%x 0x%x 0x%llx\n",
 			u2EstimatedFrameLen,
 			sizeof(struct _ACTION_TWT_INFO_FRAME),
 			twtGetNextTWTByteCnt(
@@ -440,6 +440,11 @@ static void btwtParseTWTElement(
 		DBGLOG(TWT_REQUESTER, ERROR,
 			"invalid prTWTParams\n");
 
+		return;
+	}
+
+	if (prBTWTIE->u2WakeIntvalMantiss == 0)	{
+		/* For coverity check */
 		return;
 	}
 
