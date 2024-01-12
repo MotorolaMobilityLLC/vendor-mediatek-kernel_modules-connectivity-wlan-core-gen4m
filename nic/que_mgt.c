@@ -3530,8 +3530,10 @@ struct SW_RFB *qmHandleRxPackets(IN struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	u_int8_t fgIsHwRROSupport =
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableRro);
-	/* SwRRO is only enabled when HwRRO is disabled */
-	u_int8_t fgSwRxReordering = !fgIsHwRROSupport;
+	/* SwRRO must be disabled when HwRRO is enabled */
+	u_int8_t fgSwRxReordering =
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableRro) ? FALSE :
+		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSwRxReordering);
 #else /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	u_int8_t fgSwRxReordering =
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgSwRxReordering);
