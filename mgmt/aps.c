@@ -1478,6 +1478,39 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 #endif
+		/* onle limited for wlan1 */
+		if (ais && ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+			struct AIS_FSM_INFO *mainAis =
+				aisFsmGetInstance(prAdapter, AIS_DEFAULT_INDEX);
+			struct BSS_DESC *mainBssDesc =
+				aisGetMainLinkBssDesc(mainAis);
+			uint32_t mainBmap = aisGetBssIndexBmap(mainAis);
+			uint8_t mainConnected =
+				prBssDesc->fgIsConnected & mainBmap;
+
+			/* Disallow to pick a bss that already connected */
+			if (mainConnected) {
+				DBGLOG(APS, INFO,
+					MACSTR " already connected by wlan0",
+					MAC2STR(prBssDesc->aucBSSID));
+				return FALSE;
+			}
+
+			/* Disallow wlan1 to use same band with wlan0 */
+			if (
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			    /* When mainAis is MLO, always DBDC */
+			    mldGetMloLinkNum(prAdapter,
+				aisGetMainLinkStaRec(mainAis)) <= 1 &&
+#endif
+			    mainBssDesc &&
+			    prBssDesc->eBand == mainBssDesc->eBand) {
+				DBGLOG(APS, INFO,
+					MACSTR " same band with wlan0",
+					MAC2STR(prBssDesc->aucBSSID));
+				return FALSE;
+			}
+		}
 	}
 
 #if CFG_SUPPORT_NCHO
