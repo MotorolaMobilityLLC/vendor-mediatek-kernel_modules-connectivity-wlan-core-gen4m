@@ -674,6 +674,10 @@ int mtk_cfg80211_vendor_get_version(struct wiphy *wiphy,
 				    struct wireless_dev *wdev,
 				    const void *data, int data_len);
 
+int mtk_cfg80211_vendor_get_supported_feature_set(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len);
+
 int mtk_cfg80211_vendor_event_rssi_beyond_range(
 	struct wiphy *wiphy,
 	struct wireless_dev *wdev, int rssi);

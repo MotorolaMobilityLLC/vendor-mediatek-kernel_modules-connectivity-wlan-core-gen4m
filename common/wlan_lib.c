@@ -9755,3 +9755,15 @@ integer_part:
 	return u4Ret;
 }
 
+uint32_t wlanGetSupportedFeatureSet(IN struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4FeatureSet = WIFI_HAL_FEATURE_SET;
+	struct REG_INFO *prRegInfo;
+
+	prRegInfo = &(prGlueInfo->rRegInfo);
+	if ((prRegInfo != NULL) && (prRegInfo->ucSupport5GBand))
+		u4FeatureSet |= WIFI_FEATURE_INFRA_5G;
+
+	return u4FeatureSet;
+}
+
