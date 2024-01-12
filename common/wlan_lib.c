@@ -11579,9 +11579,11 @@ wlanGetSpeIdx(struct ADAPTER *prAdapter,
 			ucRetValSpeIdx = wlanAntPathFavorSelect(prAdapter,
 				eWfPathFavor);
 	}
-	DBGLOG(INIT, TRACE, "SpeIdx:%d,D:%d,G=%d,B=%d,Bss=%d\n",
-	       ucRetValSpeIdx, prAdapter->rWifiVar.fgDbDcModeEn,
-	       prBssInfo->fgIsGranted, eBand, ucBssIndex);
+	DBGLOG(INIT, TRACE,
+		"SpeIdx:%d,D:%d,G=%d,RfBand=%d,Bss=%d,HwBand=%d,BkHwBand=%d\n",
+		ucRetValSpeIdx, prAdapter->rWifiVar.fgDbDcModeEn,
+		prBssInfo->fgIsGranted, eBand, ucBssIndex,
+		prBssInfo->eHwBandIdx, prBssInfo->eBackupHwBandIdx);
 #endif
 	return ucRetValSpeIdx;
 }

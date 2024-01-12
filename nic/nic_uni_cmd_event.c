@@ -8461,6 +8461,7 @@ void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 		if (prBssInfo->eHwBandIdx != ucBandIdx &&
 		    prBssInfo->eHwBandIdx != ENUM_BAND_AUTO)
 			nicUniUpdateStaRecFastAll(ad, prBssInfo);
+		prBssInfo->eBackupHwBandIdx = prBssInfo->eHwBandIdx;
 		prBssInfo->eHwBandIdx = (enum ENUM_MBMC_BN)ucBandIdx;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		mldBssUpdateBandIdxBitmap(ad, prBssInfo);
