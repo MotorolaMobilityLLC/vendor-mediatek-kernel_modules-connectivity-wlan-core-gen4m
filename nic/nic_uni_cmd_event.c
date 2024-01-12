@@ -10101,6 +10101,8 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t fail_cnt = 0;
+	uint8_t bss_idx = MAX_BSSID_NUM + 1;
+	uint8_t req_type = CH_REQ_TYPE_NUM;
 
 	DBGLOG_MEM8(CNM, TRACE, data, data_len);
 
@@ -10114,6 +10116,10 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *grant =
 				(struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *)tag;
 
+			/* for CH_GRANT_INFO */
+			bss_idx = grant->ucBssIndex;
+			req_type = grant->ucReqType;
+
 			nicUniUpdateMbmcIdx(ad, grant->ucBssIndex,
 				grant->ucDBDCBand);
 		}
@@ -10122,6 +10128,10 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *grant =
 				(struct UNI_EVENT_CNM_CH_PRIVILEGE_GRANT *)tag;
 			struct EVENT_CH_PRIVILEGE legacy = {0};
+
+			/* for CH_GRANT_INFO */
+			bss_idx = grant->ucBssIndex;
+			req_type = grant->ucReqType;
 
 			nicUniUpdateMbmcIdx(ad, grant->ucBssIndex,
 				grant->ucDBDCBand);
@@ -10160,6 +10170,26 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			legacy.u4GrantInterval = grant->u4GrantInterval;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_CH_PRIVILEGE, &legacy);
+		}
+			break;
+		case UNI_EVENT_CNM_TAG_CH_GRANT_INFO: {
+			struct UNI_EVENT_CNM_CH_GRANT_INFO *info =
+				(struct UNI_EVENT_CNM_CH_GRANT_INFO *)tag;
+			struct BSS_INFO *prBssInfo =
+				GET_BSS_INFO_BY_INDEX(ad, bss_idx);
+
+			if (prBssInfo &&
+				(req_type == CH_REQ_TYPE_JOIN ||
+				 req_type == CH_REQ_TYPE_GO_START_BSS)) {
+				prBssInfo->ucGrantTxNss = info->ucTxNss;
+				prBssInfo->ucGrantRxNss = info->ucRxNss;
+				prBssInfo->ucGrantBW = info->ucChannelWidth;
+				DBGLOG(CNM, INFO,
+					"Channel granted TxNss = %d, RxNss = %d, BW = %d\n",
+					prBssInfo->ucGrantTxNss,
+					prBssInfo->ucGrantRxNss,
+					prBssInfo->ucGrantBW);
+			}
 		}
 			break;
 		case UNI_EVENT_CNM_TAG_OPMODE_CHANGE: {
@@ -10205,6 +10235,39 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 }
 
+static void nicUniEventMbmcSwitchUpdate(
+	struct ADAPTER *ad, struct UNI_EVENT_MBMC_SWITCH_DONE *switch_evt)
+{
+	uint8_t bitmap = 0;
+	uint16_t bands = 0;
+	uint8_t bss = 0;
+
+	if (!ad || !switch_evt || !(switch_evt->ucMBMCCmdSuccess))
+		return;
+
+	bitmap = switch_evt->ucBssIndexValidBitmap;
+	bands = switch_evt->u2UsedBssBandIndexBitmap;
+
+	/* Using 1 bit show each existed BSS index
+	 * Using 2 bits show each existed BSS Band index
+	 * for Example:
+	 *    if Bss0 is on band1, Bss2 is on band2, and Bss3 is on band1
+	 *    ucBssIndexValidBitmap = 13 (00001101)
+	 *    u2UsedBssBandIndexBitmap = 97 (00000000 01100001)
+	 */
+	for (bss = 0; bss < 8 && bitmap > 0 ; bss++) {
+		if (bitmap & 0x1) {
+			uint8_t band = bands & BITS(0, 1);
+
+			DBGLOG(CNM, TRACE,
+				"Update BSS%d to Band%d\n", bss, band);
+			nicUniUpdateMbmcIdx(ad, bss, band);
+		}
+		bitmap >>= 1;
+		bands >>= 2;
+	}
+}
+
 void nicUniEventMbmcHandleEvent(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
 	uint16_t tags_len;
@@ -10222,6 +10285,9 @@ void nicUniEventMbmcHandleEvent(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 		switch (TAG_ID(tag)) {
 		case UNI_EVENT_MBMC_TAG_SWITCH_DONE:
+			nicUniEventMbmcSwitchUpdate(
+				ad, (struct UNI_EVENT_MBMC_SWITCH_DONE *)tag);
+
 			RUN_RX_EVENT_HANDLER_EXT(EVENT_ID_DBDC_SWITCH_DONE,
 								NULL, 0);
 			break;
