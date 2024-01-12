@@ -1285,7 +1285,7 @@ try_again:
 			if (EQUAL_MAC_ADDR(bss->aucBSSID, conn->aucBSSID)) {
 				ap->fgIsMatchBssid = TRUE;
 				cand = bss;
-				goal_score = 20000;
+				goal_score = 33333;
 				break;
 			}
 		} else if (policy == CONNECT_BY_BSSID_HINT) {
@@ -1309,7 +1309,7 @@ try_again:
 				{
 					ap->fgIsMatchBssidHint = TRUE;
 					cand = bss;
-					goal_score = 10000;
+					goal_score = 22222;
 					break;
 				}
 			}

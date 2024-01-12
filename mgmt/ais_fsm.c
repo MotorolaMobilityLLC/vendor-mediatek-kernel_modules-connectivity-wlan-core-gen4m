@@ -4800,25 +4800,28 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_ROAMING
 	struct ROAMING_INFO *prRoamingFsmInfo;
 #endif
-#if CFG_SUPPORT_802_11W
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
-#endif
 #if CFG_SUPPORT_802_11K
 	struct BSS_DESC *prBssDesc = NULL;
 	struct LINK *prBSSDescList =
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 #endif
 	struct BSS_INFO *prAisBssInfo;
+	struct PARAM_BSSID_EX *prCurrBssid;
 	struct FT_IES *prFtIEs;
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
+	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 #if CFG_SUPPORT_ROAMING
 	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
 #endif
+	prCurrBssid = aisGetCurrBssId(prAdapter, ucBssIndex);
 
 	kalMemZero(prAisBssInfo->aucBSSID, MAC_ADDR_LEN);
+	kalMemZero(prAisSpecificBssInfo->aucCurrentApAddr, MAC_ADDR_LEN);
+	kalMemZero(prCurrBssid, sizeof(*prCurrBssid));
 	prAisBssInfo->ucSSIDLen = 0;
 	prAisFsmInfo->ucConnTrialCount = 0;
 	prAdapter->rAddRoamScnChnl.ucChannelListNum = 0;
@@ -4839,7 +4842,6 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 
 #if CFG_SUPPORT_802_11W
-	prAisSpecificBssInfo = aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 	prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
 	rsnStopSaQuery(prAdapter, ucBssIndex);
 #endif
@@ -5233,6 +5235,8 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	/* 3 <3> Update BSS_INFO_T from SW_RFB_T (Association Resp Frame) */
 	/* 4 <3.1> Setup BSSID */
 	COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prBssDesc->aucBSSID);
+	COPY_MAC_ADDR(prAisSpecBssInfo->aucCurrentApAddr,
+		      cnmStaRecAuthAddr(prAdapter, prStaRec));
 
 	u2IELength =
 	    (uint16_t) ((prAssocRspSwRfb->u2PacketLen -
@@ -8992,6 +8996,13 @@ struct PARAM_BSSID_EX *aisGetCurrBssId(
 	uint8_t ucBssIndex)
 {
 	return &aisGetAisFsmInfo(prAdapter, ucBssIndex)->rCurrBssId;
+}
+
+uint8_t *aisGetCurrentApAddr(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex)
+{
+	return aisGetAisSpecBssInfo(prAdapter, ucBssIndex)->aucCurrentApAddr;
 }
 
 #if CFG_SUPPORT_PASSPOINT

@@ -190,6 +190,9 @@ struct AIS_SPECIFIC_BSS_INFO {
 	/* This value indicate the roaming type used in AIS_JOIN */
 	uint8_t ucRoamingAuthTypes;
 
+	/* current ap field for reassociation */
+	uint8_t aucCurrentApAddr[MAC_ADDR_LEN];
+
 	u_int8_t fgIsIBSSActive;
 
 	/*! \brief Global flag to let arbiter stay at standby
@@ -1053,6 +1056,10 @@ struct ROAMING_INFO *aisGetRoamingInfo(
 #endif
 
 struct PARAM_BSSID_EX *aisGetCurrBssId(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
+uint8_t *aisGetCurrentApAddr(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
