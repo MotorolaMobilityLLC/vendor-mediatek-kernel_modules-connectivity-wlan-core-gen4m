@@ -565,6 +565,59 @@ VOID kalP2PUpdateWSC_IE(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucType, IN PUINT_
 
 }				/* kalP2PUpdateWSC_IE */
 
+UINT_16 kalP2PCalP2P_IELen(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIndex, IN UINT_8 ucRoleIdx)
+{
+	ASSERT(prGlueInfo);
+
+	ASSERT(ucIndex < MAX_P2P_IE_SIZE);
+
+	return prGlueInfo->prP2PInfo[ucRoleIdx]->u2P2PIELen[ucIndex];
+}
+
+VOID kalP2PGenP2P_IE(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIndex, IN PUINT_8 pucBuffer, IN UINT_8 ucRoleIdx)
+{
+	P_GL_P2P_INFO_T prGlP2pInfo = (P_GL_P2P_INFO_T) NULL;
+
+	do {
+		if ((prGlueInfo == NULL) || (ucIndex >= MAX_P2P_IE_SIZE) || (pucBuffer == NULL))
+			break;
+
+		prGlP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+
+		kalMemCopy(pucBuffer, prGlP2pInfo->aucP2PIE[ucIndex], prGlP2pInfo->u2P2PIELen[ucIndex]);
+
+	} while (FALSE);
+}
+
+VOID kalP2PUpdateP2P_IE(IN P_GLUE_INFO_T prGlueInfo, IN UINT_8 ucIndex, IN PUINT_8 pucBuffer,
+	IN UINT_16 u2BufferLength, IN UINT_8 ucRoleIdx)
+{
+	P_GL_P2P_INFO_T prGlP2pInfo = (P_GL_P2P_INFO_T) NULL;
+
+	do {
+		if ((prGlueInfo == NULL) ||
+			(ucIndex >= MAX_P2P_IE_SIZE) ||
+			((u2BufferLength > 0) && (pucBuffer == NULL)))
+			break;
+
+		if (u2BufferLength > 400) {
+			DBGLOG(P2P, ERROR,
+			       "kalP2PUpdateP2P_IE > Buffer length is not enough, GLUE only 400 bytes but %d received\n",
+					u2BufferLength);
+			ASSERT(FALSE);
+			break;
+		}
+
+		prGlP2pInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
+
+		kalMemCopy(prGlP2pInfo->aucP2PIE[ucIndex], pucBuffer, u2BufferLength);
+
+		prGlP2pInfo->u2P2PIELen[ucIndex] = u2BufferLength;
+
+	} while (FALSE);
+
+}
+
 #if 0
 /*----------------------------------------------------------------------------*/
 /*!

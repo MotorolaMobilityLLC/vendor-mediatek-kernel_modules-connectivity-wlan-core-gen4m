@@ -3502,11 +3502,12 @@ P_MSDU_INFO_T p2pFuncProcessP2pProbeRsp(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBs
 	P_WLAN_PROBE_RSP_FRAME_T prProbeRspFrame = (P_WLAN_PROBE_RSP_FRAME_T) NULL;
 	PUINT_8 pucIEBuf = (PUINT_8) NULL;
 	UINT_16 u2Offset = 0, u2IELength = 0, u2ProbeRspHdrLen = 0;
-	BOOLEAN fgIsP2PIE = FALSE, fgIsWSCIE = FALSE;
+	BOOLEAN fgIsWSCIE = FALSE;
 	BOOLEAN fgIsWFDIE = FALSE;
 	P_BSS_INFO_T prP2pBssInfo = (P_BSS_INFO_T) NULL;
 	UINT_16 u2EstimateSize = 0, u2EstimatedExtraIELen = 0;
 	UINT_32 u4IeArraySize = 0, u4Idx = 0;
+	BOOLEAN u4P2PIEIdx = 0;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prMgmtTxMsdu != NULL));
@@ -3535,14 +3536,14 @@ P_MSDU_INFO_T p2pFuncProcessP2pProbeRsp(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBs
 				{
 					p2pFuncProcessP2pProbeRspAction(prAdapter, pucIEBuf, ELEM_ID_SSID,
 									&ucBssIdx, &prP2pBssInfo, &fgIsWSCIE,
-									&fgIsP2PIE, &fgIsWFDIE);
+									&u4P2PIEIdx, &fgIsWFDIE);
 				}
 				break;
 			case ELEM_ID_VENDOR:
 				{
 					p2pFuncProcessP2pProbeRspAction(prAdapter, pucIEBuf, ELEM_ID_VENDOR,
 									&ucBssIdx, &prP2pBssInfo, &fgIsWSCIE,
-									&fgIsP2PIE, &fgIsWFDIE);
+									&u4P2PIEIdx, &fgIsWFDIE);
 				}
 				break;
 			default:
@@ -3581,9 +3582,10 @@ P_MSDU_INFO_T p2pFuncProcessP2pProbeRsp(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBs
 			u2EstimatedExtraIELen += kalP2PCalWSC_IELen(prAdapter->prGlueInfo, 2,
 			(UINT_8) prP2pBssInfo->u4PrivateData);
 
-		if (fgIsP2PIE) {
-			u2EstimatedExtraIELen += kalP2PCalWSC_IELen(prAdapter->prGlueInfo, 1,
-				(UINT_8) prP2pBssInfo->u4PrivateData);
+		if (u4P2PIEIdx > 0) {
+			for (u4Idx = 0; u4Idx < u4P2PIEIdx; u4Idx++)
+				u2EstimatedExtraIELen += kalP2PCalP2P_IELen(prAdapter->prGlueInfo, u4Idx,
+					(UINT_8) prP2pBssInfo->u4PrivateData);
 			u2EstimatedExtraIELen += p2pFuncCalculateP2P_IE_NoA(prAdapter, ucBssIdx, NULL);
 		}
 #if CFG_SUPPORT_WFD
@@ -3646,15 +3648,18 @@ P_MSDU_INFO_T p2pFuncProcessP2pProbeRsp(IN P_ADAPTER_T prAdapter, IN UINT_8 ucBs
 				(UINT_8) prP2pBssInfo->u4PrivateData);
 		}
 
-		if (fgIsP2PIE) {
-			kalP2PGenWSC_IE(prAdapter->prGlueInfo,
-					1,
-					(PUINT_8) ((ULONG) prRetMsduInfo->prPacket +
-						   (ULONG) prRetMsduInfo->u2FrameLength),
-						   (UINT_8) prP2pBssInfo->u4PrivateData);
+		if (u4P2PIEIdx > 0) {
+			for (u4Idx = 0; u4Idx < u4P2PIEIdx; u4Idx++) {
+				kalP2PGenP2P_IE(prAdapter->prGlueInfo,
+						u4Idx,
+						(PUINT_8) ((ULONG) prRetMsduInfo->prPacket +
+							   (ULONG) prRetMsduInfo->u2FrameLength),
+							   (UINT_8) prP2pBssInfo->u4PrivateData);
 
-			prRetMsduInfo->u2FrameLength += (UINT_16) kalP2PCalWSC_IELen(prAdapter->prGlueInfo, 1,
-				(UINT_8) prP2pBssInfo->u4PrivateData);
+				prRetMsduInfo->u2FrameLength +=
+					(UINT_16) kalP2PCalP2P_IELen(prAdapter->prGlueInfo, u4Idx,
+					(UINT_8) prP2pBssInfo->u4PrivateData);
+			}
 			p2pFuncGenerateP2P_IE_NoA(prAdapter, prRetMsduInfo);
 
 		}
@@ -3696,7 +3701,7 @@ static VOID
 p2pFuncProcessP2pProbeRspAction(IN P_ADAPTER_T prAdapter,
 				IN PUINT_8 pucIEBuf, IN UINT_8 ucElemIdType,
 				OUT UINT_8 *ucBssIdx, OUT P_BSS_INFO_T *prP2pBssInfo, OUT BOOLEAN *fgIsWSCIE,
-				OUT BOOLEAN *fgIsP2PIE, OUT BOOLEAN *fgIsWFDIE)
+				OUT BOOLEAN *u4P2PIEIdx, OUT BOOLEAN *fgIsWFDIE)
 {
 	UINT_8 ucOuiType = 0;
 	UINT_16 u2SubTypeVersion = 0;
@@ -3739,9 +3744,13 @@ p2pFuncProcessP2pProbeRspAction(IN P_ADAPTER_T prAdapter,
 				/* 2 Note(frog): I use WSC IE buffer for Probe Request
 				 * to store the P2P IE for Probe Response.
 				 */
-				kalP2PUpdateWSC_IE(prAdapter->prGlueInfo, 1, pucIEBuf, IE_SIZE(pucIEBuf),
-					(UINT_8) ((P_BSS_INFO_T)*prP2pBssInfo)->u4PrivateData);
-				*fgIsP2PIE = TRUE;
+				if (*u4P2PIEIdx < MAX_P2P_IE_SIZE) {
+					kalP2PUpdateP2P_IE(prAdapter->prGlueInfo, *u4P2PIEIdx,
+						pucIEBuf, IE_SIZE(pucIEBuf),
+						(UINT_8) ((P_BSS_INFO_T)*prP2pBssInfo)->u4PrivateData);
+					*u4P2PIEIdx = *u4P2PIEIdx + 1;
+				} else
+					DBGLOG(P2P, WARN, "Too much P2P IE for ProbeResp, skip update\n");
 			}
 #if CFG_SUPPORT_WFD
 			else if (ucOuiType == VENDOR_OUI_TYPE_WFD) {

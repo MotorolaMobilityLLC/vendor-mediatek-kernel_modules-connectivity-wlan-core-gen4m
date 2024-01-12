@@ -95,6 +95,8 @@ extern const struct net_device_ops p2p_netdev_ops;
 */
 #define OID_SET_GET_STRUCT_LENGTH		4096	/* For SET_STRUCT/GET_STRUCT */
 
+#define MAX_P2P_IE_SIZE	5
+
 /*******************************************************************************
 *                             D A T A   T Y P E S
 ********************************************************************************
@@ -175,6 +177,9 @@ struct _GL_P2P_INFO_T {
 
 	UINT_8 aucWSCIE[4][400];	/* 0 for beacon, 1 for probe req, 2 for probe response, 3 for assoc response */
 	UINT_16 u2WSCIELen[4];
+
+	UINT_8 aucP2PIE[MAX_P2P_IE_SIZE][400];
+	UINT_16 u2P2PIELen[MAX_P2P_IE_SIZE];
 
 #if CFG_SUPPORT_WFD
 	UINT_8 aucWFDIE[400];	/* 0 for beacon, 1 for probe req, 2 for probe response */
