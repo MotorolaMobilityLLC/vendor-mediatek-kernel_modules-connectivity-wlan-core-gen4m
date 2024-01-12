@@ -2406,6 +2406,19 @@ bool cnmIsMccMode(IN struct ADAPTER *prAdapter)
 		(ucLast2GChNum != 0 && ucLast5GChNum != 0);
 }
 
+uint8_t cnmGetDbdcNss(
+   IN struct ADAPTER *prAdapter,
+   IN uint8_t ucBssIndex,
+   IN u_int8_t fgDbdcEn)
+{
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_NSS == 1)
+	if (fgDbdcEn)
+		return 1;
+#endif
+
+	return wlanGetSupportNss(prAdapter, ucBssIndex);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    MT6632 HW capability will change between BW160+NSS2 and BW80+NSS1
@@ -2434,8 +2447,7 @@ static enum ENUM_DBDC_PROTOCOL_STATUS_T cnmDbdcOpmodeChangeAndWait(
 		ucBssIndex < prAdapter->ucHwBssIdNum && ucBssIndex < BSSID_NUM;
 		ucBssIndex++) {
 		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-		ucTRxNss = fgDbdcEn ?
-			1 : wlanGetSupportNss(prAdapter, ucBssIndex);
+		ucTRxNss = cnmGetDbdcNss(prAdapter, ucBssIndex, fgDbdcEn);
 
 		if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
 			eStatus = cnmOpModeSetTRxNss(prAdapter,
@@ -3418,9 +3430,11 @@ uint8_t cnmGetDbdcBwCapability(IN struct ADAPTER
 
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, ucBssIndex);
 
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 	/* Can't use BW160 when DBDC enabled */
 	if (USE_DBDC_CAPABILITY() && (ucMaxBw >= MAX_BW_160MHZ))
 		ucMaxBw = MAX_BW_80MHZ;
+#endif
 
 	/* TODO: BW80+80 support */
 	if (ucMaxBw == MAX_BW_80_80_MHZ)
@@ -4176,6 +4190,7 @@ cnmOpModeSetTRxNss(
 		 * make sure you can restore to current peer's OpBw.
 		 */
 		ucOpBwFinal = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 		if ((eRunReq ==  CNM_OPMODE_REQ_DBDC ||
 			eRunReq == CNM_OPMODE_REQ_DBDC_SCAN) &&
 			ucOpBwFinal > MAX_BW_80MHZ) {
@@ -4186,7 +4201,7 @@ cnmOpModeSetTRxNss(
 				ucOpBwFinal);
 			ucOpBwFinal = MAX_BW_80MHZ;
 		}
-
+#endif
 		if (eNewReq == CNM_OPMODE_REQ_COEX) {
 			if (fgEnable) {
 				if (ucOpBwFinal == MAX_BW_40MHZ &&

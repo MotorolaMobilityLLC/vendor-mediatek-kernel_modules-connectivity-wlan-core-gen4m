@@ -1639,6 +1639,12 @@
 #define DEFAULT_DBDC_MODE ENUM_DBDC_MODE_DYNAMIC
 #endif
 
+#ifdef CFG_NSS
+#define DEFAULT_NSS (CFG_NSS)
+#else
+#define DEFAULT_NSS (2)
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
