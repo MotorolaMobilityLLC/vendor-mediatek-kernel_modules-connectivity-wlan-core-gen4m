@@ -507,6 +507,7 @@ struct GLUE_INFO {
 	struct device *prDev;
 	/* not necessary for built */
 	/* TODO: os-related */
+	uint32_t u4ReadyFlag;	/* check if card is ready */
 #if 0
 
 	/* Device */

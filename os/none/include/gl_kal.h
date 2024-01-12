@@ -1723,9 +1723,16 @@ uint32_t kalCloseCorDumpFile(u_int8_t fgIsN9);
  */
 
 #if CFG_WOW_SUPPORT
+#ifdef CFG_REMIND_IMPLEMENT
+#define kalWowInit(_glueinfo) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalWowProcess(_glueinfo, _enable) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#else
 void kalWowInit(IN struct GLUE_INFO *prGlueInfo);
 void kalWowProcess(IN struct GLUE_INFO *prGlueInfo,
 		   uint8_t enable);
+#endif
 #endif
 
 int main_thread(void *data);

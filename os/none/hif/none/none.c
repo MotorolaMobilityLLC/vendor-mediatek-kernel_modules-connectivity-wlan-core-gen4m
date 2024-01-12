@@ -314,3 +314,19 @@ void halDumpTxdInfo(IN struct ADAPTER *prAdapter, uint32_t *tmac_info)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+* @brief Check if HIF state is during supend process
+*
+* @param prAdapter      Pointer to the Adapter structure.
+*
+* @return (TRUE: suspend, reject the caller action. FALSE: not suspend)
+*/
+/*----------------------------------------------------------------------------*/
+bool halIsHifStateSuspend(IN struct ADAPTER *prAdapter)
+{
+	/* HIF owner should implement this function */
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
+	return FALSE;
+}
