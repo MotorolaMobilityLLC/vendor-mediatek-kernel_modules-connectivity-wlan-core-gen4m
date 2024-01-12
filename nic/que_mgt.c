@@ -9225,7 +9225,7 @@ static __KAL_INLINE__ void qmArpMonitorResetGateway(uint8_t ucBssIndex)
 }
 
 void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
-	struct MSDU_INFO *prMsduInfo)
+			   struct MSDU_INFO *prMsduInfo)
 {
 	struct STA_RECORD *prStaRec;
 	uint8_t ucBssIndex;
@@ -9234,6 +9234,7 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
 	struct WIFI_VAR *prWifiVar = NULL;
+	struct ARP_MONITOR_PKT_INFO rArpMonPktInfo = {0};
 
 	if (!prAdapter ||
 		!prAdapter->prGlueInfo) {
@@ -9306,47 +9307,62 @@ void qmDetectArpNoResponse(struct ADAPTER *prAdapter,
 		&pucArpPkt[ARP_TARGET_IP_OFFSET]))
 		return;
 
+	rArpMonPktInfo.ucBssIndex = ucBssIndex;
+	rArpMonPktInfo.u2PacketLen = kalQueryPacketLength(prMsduInfo->prPacket);
+	rArpMonPktInfo.pucData = pucData;
+
 #if CFG_QM_ARP_MONITOR_MSG
 	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_TX_ARP,
-		ucBssIndex,
-		pucData, kalQueryPacketLength(prMsduInfo->prPacket));
+			    &rArpMonPktInfo);
 #else /* CFG_QM_ARP_MONITOR_MSG */
 	qmArpMonitorHandlePkt(prAdapter, ARP_MONITOR_TYPE_TX_ARP,
-		ucBssIndex,
-		pucData, kalQueryPacketLength(prMsduInfo->prPacket));
+			      &rArpMonPktInfo);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 }
 
-void qmHandleRxArpPackets(struct ADAPTER *prAdapter,
-	struct SW_RFB *prSwRfb)
+void qmHandleRxArpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
-	uint8_t *pucData = NULL;
+	uint8_t *pucData;
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
 	uint8_t ucBssIndex;
+	struct ARP_MONITOR_PKT_INFO rArpMonPktInfo = {0};
 
-	pucData = (uint8_t *)prSwRfb->pvHeader;
+	pucData = prSwRfb->pvHeader;
 	if (!pucData)
 		return;
 
-	pucArpPkt = qmGetArpPkt(pucData,
-			prSwRfb->u2PacketLen);
+	pucArpPkt = qmGetArpPkt(pucData, prSwRfb->u2PacketLen);
 	if (!pucArpPkt)
 		return;
 
-	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
-			pucArpPkt[ARP_OPERATION_OFFSET + 1];
+	arpOpCode = pucArpPkt[ARP_OPERATION_OFFSET] << 8 |
+		    pucArpPkt[ARP_OPERATION_OFFSET + 1];
 	if (arpOpCode != ARP_PRO_RSP)
 		return;
 
 	ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 
+
+	/* 802.11 header TA */
+	if (prSwRfb->fgHdrTran) {
+		HAL_RX_STATUS_GET_TA(prSwRfb->prRxStatusGroup4,
+				     rArpMonPktInfo.aucTaAddr);
+	} else {
+		COPY_MAC_ADDR(rArpMonPktInfo.aucTaAddr,
+			      ((struct WLAN_MAC_HEADER *)pucData)->aucAddr2);
+	}
+
+	rArpMonPktInfo.ucBssIndex = ucBssIndex;
+	rArpMonPktInfo.u2PacketLen = prSwRfb->u2PacketLen;
+	rArpMonPktInfo.pucData = pucData;
+
 #if CFG_QM_ARP_MONITOR_MSG
 	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_RX_ARP,
-		ucBssIndex, pucData, prSwRfb->u2PacketLen);
+			    &rArpMonPktInfo);
 #else /* CFG_QM_ARP_MONITOR_MSG */
 	qmArpMonitorHandlePkt(prAdapter, ARP_MONITOR_TYPE_RX_ARP,
-		ucBssIndex, pucData, prSwRfb->u2PacketLen);
+			      &rArpMonPktInfo);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 }
 
@@ -9356,6 +9372,7 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	struct DHCP_PROTOCOL *prDhcp;
 	uint16_t dhcpLen = 0;
 	uint8_t ucBssIndex;
+	struct ARP_MONITOR_PKT_INFO rArpMonPktInfo = {0};
 
 	pucData = prSwRfb->pvHeader;
 	if (!pucData)
@@ -9368,12 +9385,16 @@ void qmHandleRxDhcpPackets(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	ucBssIndex = secGetBssIdxByRfb(prAdapter, prSwRfb);
 
+	rArpMonPktInfo.ucBssIndex = ucBssIndex;
+	rArpMonPktInfo.u2PacketLen = prSwRfb->u2PacketLen;
+	rArpMonPktInfo.pucData = pucData;
+
 #if CFG_QM_ARP_MONITOR_MSG
 	qmArpMonitorSendMsg(prAdapter, ARP_MONITOR_TYPE_RX_DHCP,
-		ucBssIndex, pucData, prSwRfb->u2PacketLen);
+			    &rArpMonPktInfo);
 #else /* CFG_QM_ARP_MONITOR_MSG */
 	qmArpMonitorHandlePkt(prAdapter, ARP_MONITOR_TYPE_RX_DHCP,
-		ucBssIndex, pucData, prSwRfb->u2PacketLen);
+			    &rArpMonPktInfo);
 #endif /* CFG_QM_ARP_MONITOR_MSG */
 }
 
@@ -9570,7 +9591,7 @@ void qmArpMonitorHandleLegacyBTOEvent(struct ADAPTER *prAdapter)
 #endif /* !CFG_QM_ARP_MONITOR_MSG */
 
 void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
+				struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	void *pvDevHandler = NULL;
@@ -9579,6 +9600,10 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
+	uint8_t ucBssIndex = prArpMonPktInfo->ucBssIndex;
+	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
+	uint8_t *pucData = prArpMonPktInfo->pucData;
+
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	if (!prGlueInfo)
@@ -9646,8 +9671,7 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 			prRxCtrl->u4LastUnicastRxTime[ucBssIndex]);
 	}
 
-	if (qmArpMonitorGetTxCnt(ucBssIndex) >
-		prWifiVar->uArpMonitorNumber) {
+	if (qmArpMonitorGetTxCnt(ucBssIndex) > prWifiVar->uArpMonitorNumber) {
 		if (qmArpMonitorIsIOTIssue(prAdapter, ucBssIndex)) {
 			DBGLOG(QM, WARN, "IOT issue, arp no resp!\n");
 			if (prAisBssInfo)
@@ -9693,11 +9717,15 @@ void qmArpMonitorHandleTxArpPkt(struct ADAPTER *prAdapter,
 }
 
 void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
+				struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo)
 {
 	struct BSS_INFO *prAisBssInfo = NULL;
 	uint8_t *pucArpPkt = NULL;
 	int arpOpCode = 0;
+	uint8_t ucBssIndex = prArpMonPktInfo->ucBssIndex;
+	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
+	uint8_t *pucData = prArpMonPktInfo->pucData;
+	u_int8_t fgIsFromApIpOrGatewayIp;
 
 	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(QM, WARN, "Invalid BssIndex %u\n", ucBssIndex);
@@ -9716,14 +9744,18 @@ void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
 			pucArpPkt[ARP_OPERATION_OFFSET + 1];
 	if (arpOpCode != ARP_PRO_RSP)
 		return;
+	fgIsFromApIpOrGatewayIp = !qmArpMonitorNotApIpAndGatewayIp(ucBssIndex,
+					&pucArpPkt[ARP_SENDER_IP_OFFSET]);
 
 	DBGLOG(QM, LOUD,
-		"ArpSrcMac:" MACSTR " ArpSrcIp:" IPV4STR "\n",
+		"ArpSrcMac:" MACSTR " ArpSrcIp:" IPV4STR " ArpTaMac:" MACSTR
+		" isFromAp/gatewayIP [%d]\n",
 		MAC2STR(&pucArpPkt[ARP_SENDER_MAC_OFFSET]),
-		IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]));
+		IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]),
+		MAC2STR(prArpMonPktInfo->aucTaAddr),
+		fgIsFromApIpOrGatewayIp);
 
-	if (prAisBssInfo &&
-		prAisBssInfo->prStaRecOfAP) {
+	if (prAisBssInfo && prAisBssInfo->prStaRecOfAP) {
 		if (EQUAL_MAC_ADDR(
 			&(pucArpPkt[ARP_SENDER_MAC_OFFSET]),
 			/* source hardware address */
@@ -9732,16 +9764,30 @@ void qmArpMonitorHandleRxArpPkt(struct ADAPTER *prAdapter,
 			qmArpMonitorSetApIp(ucBssIndex,
 				&(pucArpPkt[ARP_SENDER_IP_OFFSET]));
 			DBGLOG(INIT, TRACE,
-				"get arp response from AP " IPV4STR "\n",
-				IPV4TOSTR(qmArpMonitorGetApIpPtr(
-						ucBssIndex)));
+				"get arp response from AP " IPV4STR "(SA:"
+				MACSTR ")\n",
+				IPV4TOSTR(qmArpMonitorGetApIpPtr(ucBssIndex)),
+				MAC2STR(&pucArpPkt[ARP_SENDER_MAC_OFFSET]));
+		} else if (EQUAL_MAC_ADDR((prArpMonPktInfo->aucTaAddr),
+			prAisBssInfo->prStaRecOfAP->aucMacAddr) &&
+			fgIsFromApIpOrGatewayIp) {
+			qmArpMonitorResetTxCnt(ucBssIndex);
+			DBGLOG(INIT, TRACE,
+				"get arp response from AP " IPV4STR "(TA:"
+				MACSTR ")\n",
+				IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]),
+				MAC2STR(prArpMonPktInfo->aucTaAddr));
 		}
+
 	}
 }
 
 void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint8_t *pucData, uint16_t u2PacketLen)
+				 struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo)
 {
+	uint8_t ucBssIndex = prArpMonPktInfo->ucBssIndex;
+	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
+	uint8_t *pucData = prArpMonPktInfo->pucData;
 	uint8_t rSrcMacAddr[MAC_ADDR_LEN];
 	struct DHCP_PROTOCOL *prDhcp;
 	uint16_t dhcpLen = 0;
@@ -9792,8 +9838,7 @@ void qmArpMonitorHandleRxDhcpPkt(struct ADAPTER *prAdapter,
 			dhcpGatewayGot = 1;
 
 			/* Record the MAC address of gateway */
-			qmGetSrcMac(pucData, u2PacketLen,
-				&rSrcMacAddr[0]);
+			qmGetSrcMac(pucData, u2PacketLen, &rSrcMacAddr[0]);
 			qmArpMonitorSetGatewayMac(ucBssIndex, &rSrcMacAddr[0]);
 			break;
 
@@ -9971,9 +10016,11 @@ void qmArpMonitorGetUnicastPktTime(struct ADAPTER *prAdapter,
 
 #if CFG_QM_ARP_MONITOR_MSG
 void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
-	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
-	uint8_t *pucData, uint16_t u2PacketLen)
+	enum ENUM_ARP_MONITOR_TYPE eType,
+	struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo)
 {
+	uint8_t *pucData = prArpMonPktInfo->pucData;
+	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
 	struct MSG_ARP_MONITOR *prArpMonitorMsg;
 
 	if (u2PacketLen >= ETHER_MAX_PKT_SZ) {
@@ -9990,78 +10037,65 @@ void qmArpMonitorSendMsg(struct ADAPTER *prAdapter,
 
 	prArpMonitorMsg->rMsgHdr.eMsgId = MID_QM_ARP_MONITOR;
 	prArpMonitorMsg->eType = eType;
-	prArpMonitorMsg->ucBssIndex = ucBssIndex;
-	prArpMonitorMsg->u2PacketLen = u2PacketLen;
-	kalMemCopy(&(prArpMonitorMsg->arData[0]), pucData, u2PacketLen);
+	kalMemCopy(prArpMonitorMsg->arData, pucData, u2PacketLen);
+	/* Set pointer to data buffer holding copied data */
+	prArpMonPktInfo->pucData = prArpMonitorMsg->arData;
+	prArpMonitorMsg->rArpMonPktInfo = *prArpMonPktInfo;
 
 	DBGLOG(QM, LOUD,
 		"Send Msg eMsgId:%u eType:%u ucBssIndex:%u u2PacketLen:%u\n",
 		prArpMonitorMsg->rMsgHdr.eMsgId,
 		prArpMonitorMsg->eType,
-		prArpMonitorMsg->ucBssIndex,
-		prArpMonitorMsg->u2PacketLen);
+		prArpMonitorMsg->rArpMonPktInfo.ucBssIndex,
+		prArpMonitorMsg->rArpMonPktInfo.u2PacketLen);
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		(struct MSG_HDR *) prArpMonitorMsg, MSG_SEND_METHOD_BUF);
 }
 
 void qmArpMonitorHandleTxArpMsg(struct ADAPTER *prAdapter,
-	struct MSG_ARP_MONITOR *prArpMonitorMsg)
+				struct MSG_ARP_MONITOR *prArpMonitorMsg)
 {
-	qmArpMonitorHandleTxArpPkt(prAdapter,
-		prArpMonitorMsg->ucBssIndex,
-		&(prArpMonitorMsg->arData[0]),
-		prArpMonitorMsg->u2PacketLen
-		);
+	qmArpMonitorHandleTxArpPkt(prAdapter, &prArpMonitorMsg->rArpMonPktInfo);
 }
 
 void qmArpMonitorHandleRxArpMsg(struct ADAPTER *prAdapter,
-	struct MSG_ARP_MONITOR *prArpMonitorMsg)
+				struct MSG_ARP_MONITOR *prArpMonitorMsg)
 {
-	qmArpMonitorHandleRxArpPkt(prAdapter,
-		prArpMonitorMsg->ucBssIndex,
-		&(prArpMonitorMsg->arData[0]),
-		prArpMonitorMsg->u2PacketLen
-		);
+	qmArpMonitorHandleRxArpPkt(prAdapter, &prArpMonitorMsg->rArpMonPktInfo);
 }
 
 void qmArpMonitorHandleRxDhcpMsg(struct ADAPTER *prAdapter,
-	struct MSG_ARP_MONITOR *prArpMonitorMsg)
+				 struct MSG_ARP_MONITOR *prArpMonitorMsg)
 {
 	qmArpMonitorHandleRxDhcpPkt(prAdapter,
-		prArpMonitorMsg->ucBssIndex,
-		&(prArpMonitorMsg->arData[0]),
-		prArpMonitorMsg->u2PacketLen);
+				    &prArpMonitorMsg->rArpMonPktInfo);
 }
 
-void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter,
-	struct MSG_HDR *prMsgHdr)
+void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 {
 	struct MSG_ARP_MONITOR *prArpMonitorMsg;
 
-	prArpMonitorMsg = (struct MSG_ARP_MONITOR *) prMsgHdr;
+	prArpMonitorMsg = (struct MSG_ARP_MONITOR *)prMsgHdr;
 
 	DBGLOG(QM, LOUD,
 		"Handle Msg eMsgId:%u eType:%u ucBssIndex:%u u2PacketLen:%u\n",
 		prArpMonitorMsg->rMsgHdr.eMsgId,
 		prArpMonitorMsg->eType,
-		prArpMonitorMsg->ucBssIndex,
-		prArpMonitorMsg->u2PacketLen);
+		prArpMonitorMsg->rArpMonPktInfo.ucBssIndex,
+		prArpMonitorMsg->rArpMonPktInfo.u2PacketLen);
 
 	switch (prArpMonitorMsg->eType) {
 	case ARP_MONITOR_TYPE_TX_ARP:
-		qmArpMonitorHandleTxArpMsg(prAdapter,
-			prArpMonitorMsg);
+		qmArpMonitorHandleTxArpMsg(prAdapter, prArpMonitorMsg);
 		break;
 
 	case ARP_MONITOR_TYPE_RX_ARP:
-		qmArpMonitorHandleRxArpMsg(prAdapter,
-			prArpMonitorMsg);
+		qmArpMonitorHandleRxArpMsg(prAdapter, prArpMonitorMsg);
 		break;
 
 	case ARP_MONITOR_TYPE_RX_DHCP:
-		qmArpMonitorHandleRxDhcpMsg(prAdapter,
-			prArpMonitorMsg);
+		qmArpMonitorHandleRxDhcpMsg(prAdapter, prArpMonitorMsg);
 		break;
 
 	default:
@@ -10074,23 +10108,20 @@ void qmArpMonitorHandleMsg(struct ADAPTER *prAdapter,
 }
 #else /* CFG_QM_ARP_MONITOR_MSG */
 void qmArpMonitorHandlePkt(struct ADAPTER *prAdapter,
-	enum ENUM_ARP_MONITOR_TYPE eType, uint8_t ucBssIndex,
-	uint8_t *pucData, uint16_t u2PacketLen)
+	enum ENUM_ARP_MONITOR_TYPE eType,
+	struct ARP_MONITOR_PKT_INFO *prArpMonPktInfo)
 {
 	switch (eType) {
 	case ARP_MONITOR_TYPE_TX_ARP:
-		qmArpMonitorHandleTxArpPkt(prAdapter,
-			ucBssIndex, pucData, u2PacketLen);
+		qmArpMonitorHandleTxArpPkt(prAdapter, prArpMonPktInfo);
 		break;
 
 	case ARP_MONITOR_TYPE_RX_ARP:
-		qmArpMonitorHandleRxArpPkt(prAdapter,
-			ucBssIndex, pucData, u2PacketLen);
+		qmArpMonitorHandleRxArpPkt(prAdapter, prArpMonPktInfo);
 		break;
 
 	case ARP_MONITOR_TYPE_RX_DHCP:
-		qmArpMonitorHandleRxDhcpPkt(prAdapter,
-			ucBssIndex, pucData, u2PacketLen);
+		qmArpMonitorHandleRxDhcpPkt(prAdapter, prArpMonPktInfo);
 		break;
 
 	default:

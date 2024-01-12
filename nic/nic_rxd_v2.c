@@ -348,7 +348,7 @@ u_int8_t nic_rxd_v2_sanity_check(
 
 #if CFG_SUPPORT_FRAG_AGG_VALIDATION
 			/*
-			 * let qmAmsduAttackDetection check this subframe
+			 * let qmAmsduValidation check this subframe
 			 * before drop it
 			 */
 			if (prSwRfb->ucPayloadFormat
