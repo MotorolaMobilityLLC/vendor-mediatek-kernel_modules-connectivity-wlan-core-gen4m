@@ -7,15 +7,23 @@
 #include <linux/sched/debug.h>
 #include <linux/stacktrace.h>
 
+
+#if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
 static void wfsys_lock_print_trace(struct timer_list *unused);
 static DEFINE_TIMER(wfsys_lock_timer, wfsys_lock_print_trace);
+#else
+static void wfsys_lock_print_trace(unsigned long unused);
+static DEFINE_TIMER(wfsys_lock_timer, wfsys_lock_print_trace, 0, 0);
+#endif
 static DEFINE_MUTEX(wfsys_mutex);
 static struct wfsys_lock_dbg_t wfsys_dbg;
 
+#if (KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE)
 static int __save_stack_trace(unsigned long *trace)
 {
 	return stack_trace_save(trace, WFSYS_LOCK_MAX_TRACE, 0);
 }
+#endif
 
 static void wfsys_lock_record_trace(struct task_struct *who)
 {
@@ -25,13 +33,19 @@ static void wfsys_lock_record_trace(struct task_struct *who)
 	wfsys_dbg.start_time_nsec = do_div(wfsys_dbg.start_time_sec,
 					   NSEC_PER_SEC) / MSEC_PER_SEC;
 	wfsys_dbg.start_time = sched_clock();
+#if (KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE)
 	wfsys_dbg.nr_entries = __save_stack_trace(wfsys_dbg.addrs);
+#endif
 
 	mod_timer(&wfsys_lock_timer, jiffies +
 		  MSEC_TO_JIFFIES(WFSYS_LOCK_MAX_HOLD_TIME * MSEC_PER_SEC));
 }
 
+#if (KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE)
 static void wfsys_lock_print_trace(struct timer_list *unused)
+#else
+static void wfsys_lock_print_trace(unsigned long unused)
+#endif
 {
 	DBGLOG(INIT, WARN,
 		"[%d %s][%c] hold wfsys lock more than %d sec from %llu.%06llu\n",
@@ -41,8 +55,10 @@ static void wfsys_lock_print_trace(struct timer_list *unused)
 		WFSYS_LOCK_MAX_HOLD_TIME,
 		wfsys_dbg.start_time_sec,
 		wfsys_dbg.start_time_nsec);
+#if (KERNEL_VERSION(5, 2, 0) <= LINUX_VERSION_CODE)
 	stack_trace_print(wfsys_dbg.addrs, wfsys_dbg.nr_entries, 0);
 	sched_show_task(wfsys_dbg.task);
+#endif
 
 	mod_timer(&wfsys_lock_timer, jiffies +
 		  MSEC_TO_JIFFIES(WFSYS_LOCK_PRINT_PERIOD * MSEC_PER_SEC));
