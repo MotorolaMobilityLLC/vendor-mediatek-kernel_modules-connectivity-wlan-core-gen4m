@@ -1552,6 +1552,7 @@ struct WIFI_VAR {
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	uint32_t u4TxDataDelayTimeout;
 	uint32_t u4TxDataDelayCnt;
+	u_int8_t fgEnTxDataDelayDbg;
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
