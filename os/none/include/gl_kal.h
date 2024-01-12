@@ -857,8 +857,8 @@ do { \
 
 /* TODO: os-related HIF should we move to os/xxx/hif/include? */
 #if defined(_HIF_PCIE)
-#define KAL_DMA_TO_DEVICE	PCI_DMA_TODEVICE
-#define KAL_DMA_FROM_DEVICE	PCI_DMA_FROMDEVICE
+#define KAL_DMA_TO_DEVICE	DMA_TO_DEVICE
+#define KAL_DMA_FROM_DEVICE	DMA_FROM_DEVICE
 
 #define KAL_DMA_ALLOC_COHERENT(_dev, _size, _handle) \
 KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)

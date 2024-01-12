@@ -1083,11 +1083,11 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 	DBGLOG(INIT, INFO, "ret=%d, fgMsiEnabled=%d, u4MsiNum=%d\n",
 		ret, prMsiInfo->fgMsiEnabled, prMsiInfo->u4MsiNum);
 
-	ret = pci_set_dma_mask(pdev,
+	ret = dma_set_mask(&pdev->dev,
 		DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask));
 	if (ret != 0) {
 		DBGLOG(INIT, INFO,
-			"pci_set_dma_mask failed, ret=%d\n", ret);
+			"dma_set_mask failed, ret=%d\n", ret);
 		goto err_free_irq_vectors;
 	}
 
