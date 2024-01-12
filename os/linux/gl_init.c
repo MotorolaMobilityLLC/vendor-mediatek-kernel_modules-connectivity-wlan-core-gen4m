@@ -2977,7 +2977,6 @@ netdev_tx_t wlanHardStartXmit(struct sk_buff *prSkb,
 	if (kalHardStartXmit(prSkb, prDev, prGlueInfo,
 			     ucBssIndex) == WLAN_STATUS_SUCCESS) {
 		/* Successfully enqueue to Tx queue */
-		/* Successfully enqueue to Tx queue */
 		if (netif_carrier_ok(prDev))
 			kalPerMonStart(prGlueInfo);
 	}
@@ -8228,7 +8227,7 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 		struct AIS_FSM_INFO *ais =
 			aisGetAisFsmInfo(prGlueInfo->prAdapter, ucBssIndex);
 
-		if (gprWdev[ais->ucAisIndex])
+		if (ais && gprWdev[ais->ucAisIndex])
 			return gprWdev[ais->ucAisIndex]->netdev;
 	}
 #if CFG_ENABLE_WIFI_DIRECT
