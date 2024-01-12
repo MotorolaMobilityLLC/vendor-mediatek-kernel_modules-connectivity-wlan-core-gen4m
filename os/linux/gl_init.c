@@ -2163,7 +2163,7 @@ void wlanDebugInit(void)
 			      CFG_DEFAULT_DBG_LEVEL);
 #else
 	wlanSetDriverDbgLevel(DBG_ALL_MODULE_IDX,
-			      DBG_LOG_LEVEL_MORE);
+			      DBG_LOG_LEVEL_DEFAULT);
 #endif
 #endif /* DBG */
 
