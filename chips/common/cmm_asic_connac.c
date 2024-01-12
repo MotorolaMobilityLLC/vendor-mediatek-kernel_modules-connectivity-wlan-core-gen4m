@@ -257,38 +257,64 @@ VOID fillNicTxDescAppendWithCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsd
 }
 
 VOID fillTxDescAppendByHost(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-			    IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
+			    IN dma_addr_t rDmaAddr, IN UINT_32 u4Idx, IN BOOLEAN fgIsLast,
+			    OUT PUINT_8 pucBuffer)
 {
 	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+	P_TXD_PTR_LEN_T prPtrLen;
 
 	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[0] = u4MsduId | TXD_MSDU_ID_VLD;
-	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u4Ptr0 = rDmaAddr;
-	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u2Len0 = prMsduInfo->u2FrameLength | TXD_LEN_AL | TXD_LEN_ML;
+	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] = u4MsduId | TXD_MSDU_ID_VLD;
+	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
+	if ((u4Idx & 1) == 0) {
+		prPtrLen->u4Ptr0 = rDmaAddr;
+		prPtrLen->u2Len0 = prMsduInfo->u2FrameLength;
+		if (fgIsLast)
+			prPtrLen->u2Len0 |= TXD_LEN_AL | TXD_LEN_ML;
+	} else {
+		prPtrLen->u4Ptr1 = rDmaAddr;
+		prPtrLen->u2Len1 = prMsduInfo->u2FrameLength;
+		if (fgIsLast)
+			prPtrLen->u2Len1 |= TXD_LEN_AL | TXD_LEN_ML;
+	}
 }
 
 VOID fillTxDescAppendByHostV2(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-			      IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
+			      IN dma_addr_t rDmaAddr, IN UINT_32 u4Idx, IN BOOLEAN fgIsLast,
+			      OUT PUINT_8 pucBuffer)
 {
 	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
+	P_TXD_PTR_LEN_T prPtrLen;
 
 	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
-	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[0] = u4MsduId | TXD_MSDU_ID_VLD;
-	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u4Ptr0 = rDmaAddr;
-	prHwTxDescAppend->CONNAC_APPEND.arPtrLen[0].u2Len0 = (prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2) |
-		((rDmaAddr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK) | TXD_LEN_ML_V2;
+	prHwTxDescAppend->CONNAC_APPEND.au2MsduId[u4Idx] = u4MsduId | TXD_MSDU_ID_VLD;
+	prPtrLen = &prHwTxDescAppend->CONNAC_APPEND.arPtrLen[u4Idx >> 1];
+	if ((u4Idx & 1) == 0) {
+		prPtrLen->u4Ptr0 = rDmaAddr;
+		prPtrLen->u2Len0 = (prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2)
+			| ((rDmaAddr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		if (fgIsLast)
+			prPtrLen->u2Len0 |= TXD_LEN_ML_V2;
+	} else {
+		prPtrLen->u4Ptr1 = rDmaAddr;
+		prPtrLen->u2Len1 = (prMsduInfo->u2FrameLength & TXD_LEN_MASK_V2)
+			| ((rDmaAddr >> TXD_ADDR2_OFFSET) & TXD_ADDR2_MASK);
+		if (fgIsLast)
+			prPtrLen->u2Len1 |= TXD_LEN_ML_V2;
+	}
 }
 
 VOID fillTxDescAppendByCR4(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo, IN UINT_16 u4MsduId,
-			   IN dma_addr_t rDmaAddr, OUT PUINT_8 pucBuffer)
+			   IN dma_addr_t rDmaAddr, IN UINT_32 u4Idx, IN BOOLEAN fgIsLast,
+			   OUT PUINT_8 pucBuffer)
 {
 	P_HW_MAC_TX_DESC_APPEND_T prHwTxDescAppend;
 
 	prHwTxDescAppend = (P_HW_MAC_TX_DESC_APPEND_T) (pucBuffer + NIC_TX_DESC_LONG_FORMAT_LENGTH);
 	prHwTxDescAppend->CR4_APPEND.u2MsduToken = u4MsduId;
-	prHwTxDescAppend->CR4_APPEND.ucBufNum = 1;
-	prHwTxDescAppend->CR4_APPEND.au4BufPtr[0] = rDmaAddr;
-	prHwTxDescAppend->CR4_APPEND.au2BufLen[0] = prMsduInfo->u2FrameLength;
+	prHwTxDescAppend->CR4_APPEND.ucBufNum = u4Idx + 1;
+	prHwTxDescAppend->CR4_APPEND.au4BufPtr[u4Idx] = rDmaAddr;
+	prHwTxDescAppend->CR4_APPEND.au2BufLen[u4Idx] = prMsduInfo->u2FrameLength;
 }
 
 VOID fillTxDescTxByteCount(IN P_ADAPTER_T prAdapter, IN P_MSDU_INFO_T prMsduInfo,
@@ -384,6 +410,92 @@ VOID asicPcieDmaShdlInit(IN P_ADAPTER_T prAdapter)
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP12_CTRL(u4BaseAddr), u4MacVal);
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP13_CTRL(u4BaseAddr), u4MacVal);
 	HAL_MCR_WR(prAdapter, CONN_HIF_DMASHDL_GROUP14_CTRL(u4BaseAddr), u4MacVal);
+}
+
+VOID asicPdmaLoopBackConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable)
+{
+	WPDMA_GLO_CFG_STRUCT GloCfg;
+	UINT_32 word = 1;
+
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+
+	GloCfg.field_conn.bypass_dmashdl_txring3 = 1;
+	GloCfg.field_conn.pdma_addr_ext_en = 0;
+	GloCfg.field_conn.omit_rx_info = 1;
+	GloCfg.field_conn.omit_tx_info = 1;
+	GloCfg.field_conn.multi_dma_en = 0;
+	GloCfg.field_conn.pdma_addr_ext_en = 0;
+	GloCfg.field_conn.tx_dma_en = 1;
+	GloCfg.field_conn.rx_dma_en = 1;
+	GloCfg.field_conn.multi_dma_en = 0;
+
+	kalDevRegWrite(prGlueInfo, WPDMA_FIFO_TEST_MOD, word);
+	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+}
+
+VOID asicPdmaConfig(P_GLUE_INFO_T prGlueInfo, BOOLEAN fgEnable)
+{
+	P_BUS_INFO prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	WPDMA_GLO_CFG_STRUCT GloCfg;
+	WPMDA_INT_MASK IntMask;
+
+	kalDevRegRead(prGlueInfo, WPDMA_GLO_CFG, &GloCfg.word);
+	kalDevRegRead(prGlueInfo, WPDMA_INT_MSK, &IntMask.word);
+
+	if (fgEnable == TRUE) {
+		GloCfg.field_conn.tx_dma_en = 1;
+		GloCfg.field_conn.rx_dma_en = 1;
+		GloCfg.field_conn.pdma_bt_size = 3;
+		GloCfg.field_conn.pdma_addr_ext_en = (prBusInfo->u4DmaMask > 32) ? 1 : 0;
+		GloCfg.field_conn.tx_wb_ddone = 1;
+		GloCfg.field_conn.multi_dma_en = 3;
+		GloCfg.field_conn.fifo_little_endian = 1;
+		GloCfg.field_conn.clk_gate_dis = 1;
+
+		IntMask.field.rx_done_0 = 1;
+		IntMask.field.rx_done_1 = 1;
+		IntMask.field.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+			BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
+		IntMask.field.tx_dly_int = 0;
+		IntMask.field_conn.mcu2host_sw_int_ena = 1;
+	} else {
+		GloCfg.field_conn.tx_dma_en = 0;
+		GloCfg.field_conn.rx_dma_en = 0;
+
+		IntMask.field_conn.rx_done_0 = 0;
+		IntMask.field_conn.rx_done_1 = 0;
+		IntMask.field_conn.tx_done = 0;
+		IntMask.field_conn.tx_dly_int = 0;
+		IntMask.field_conn.mcu2host_sw_int_ena = 0;
+	}
+
+	kalDevRegWrite(prGlueInfo, WPDMA_INT_MSK, IntMask.word);
+	kalDevRegWrite(prGlueInfo, WPDMA_GLO_CFG, GloCfg.word);
+	kalDevRegWrite(prGlueInfo, MCU2HOST_SW_INT_ENA, ERROR_DETECT_MASK);
+}
+
+VOID asicEnableInterrupt(IN P_ADAPTER_T prAdapter)
+{
+	P_BUS_INFO prBusInfo = prAdapter->chip_info->bus_info;
+	WPMDA_INT_MASK IntMask;
+
+	prAdapter->fgIsIntEnable = TRUE;
+
+	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+
+	IntMask.field_conn.rx_done_0 = 1;
+	IntMask.field_conn.rx_done_1 = 1;
+	IntMask.field_conn.tx_done = BIT(prBusInfo->tx_ring_fwdl_idx) |
+		BIT(prBusInfo->tx_ring_cmd_idx) | BIT(prBusInfo->tx_ring_data_idx);
+	IntMask.field_conn.tx_coherent = 0;
+	IntMask.field_conn.rx_coherent = 0;
+	IntMask.field_conn.tx_dly_int = 0;
+	IntMask.field_conn.rx_dly_int = 0;
+	IntMask.field_conn.mcu2host_sw_int_ena = 1;
+
+	HAL_MCR_WR(prAdapter, WPDMA_INT_MSK, IntMask.word);
+
+	DBGLOG(HAL, TRACE, "%s [0x%08x]\n", __func__, IntMask.word);
 }
 
 VOID asicLowPowerOwnRead(IN P_ADAPTER_T prAdapter, OUT PBOOLEAN pfgResult)

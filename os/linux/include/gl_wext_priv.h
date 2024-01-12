@@ -166,6 +166,8 @@
 #define PRIV_CMD_SET_WOW_PAR			35
 #endif
 
+#define PRIV_CMD_SET_SER                37
+
 /* 802.3 Objects (Ethernet) */
 #define OID_802_3_CURRENT_ADDRESS           0x01010102
 

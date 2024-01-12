@@ -377,5 +377,6 @@ VOID nicSerStartTxRx(IN P_ADAPTER_T prAdapter);
 BOOLEAN nicSerIsWaitingReset(IN P_ADAPTER_T prAdapter);
 BOOLEAN nicSerIsTxStop(IN P_ADAPTER_T prAdapter);
 BOOLEAN nicSerIsRxStop(IN P_ADAPTER_T prAdapter);
+VOID nicSerReInitBeaconFrame(IN P_ADAPTER_T prAdapter);
 
 #endif /* _NIC_H */

@@ -112,6 +112,22 @@
 #define CONN_HIF_ON_IRQ_STAT                    (CONN_HIF_BASE + 0x4)
 #define CONN_HIF_ON_IRQ_ENA                     (CONN_HIF_BASE + 0x8)
 
+#if defined(_HIF_PCIE)
+/* MCU Interrupt Event */
+#define HOST2MCU_SW_INT_SET			(PCIE_HIF_BASE + 0x0108)
+
+/* MCU2HOST Software interrupt set */
+#define MCU2HOST_SW_INT_SET			(PCIE_HIF_BASE + 0x010C)
+
+/* MCU to Host interrupt status */
+#define MCU2HOST_SW_INT_STA			(PCIE_HIF_BASE + 0x01F0)
+
+/* MCU to Host interrupt enable */
+#define MCU2HOST_SW_INT_ENA			(PCIE_HIF_BASE + 0x01F4)
+
+#define WPDMA_PAUSE_TX_Q			(PCIE_HIF_BASE + 0x0224)
+#endif /* _HIF_PCIE */
+
 #if defined(_HIF_USB)
 #define CONNAC_UDMA_BASE                         0x7C000000
 #define CONNAC_UDMA_TX_QSEL                      (CONNAC_UDMA_BASE + 0x8)
@@ -159,6 +175,32 @@
 #define GET_PSE_PKT_MAX_SIZE_NUM(p) (((p) & PSE_PKT_MAX_SIZE_MASK) >> 16)
 
 #define EXTRA_TXD_SIZE_FOR_TX_BYTE_COUNT         32
+
+#define MCU_INT_PDMA0_STOP_DONE         BIT(0)
+#define MCU_INT_PDMA0_INIT_DONE         BIT(1)
+#define MCU_INT_SER_TRIGGER_FROM_HOST   BIT(2)
+#define MCU_INT_PDMA0_RECOVERY_DONE     BIT(3)
+#define CONNAC_MCU_SW_INT BIT(29)
+
+#define ERROR_DETECT_STOP_PDMA_WITH_FW_RELOAD BIT(1)
+#define ERROR_DETECT_STOP_PDMA BIT(2)
+#define ERROR_DETECT_RESET_DONE BIT(3)
+#define ERROR_DETECT_RECOVERY_DONE BIT(4)
+#define ERROR_DETECT_N9_NORMAL_STATE  BIT(5)
+#define CP_LMAC_HANG_WORKAROUND_STEP1 BIT(8)
+#define CP_LMAC_HANG_WORKAROUND_STEP2 BIT(9)
+#define ERROR_DETECT_LMAC_ERROR BIT(24)
+#define ERROR_DETECT_PSE_ERROR BIT(25)
+#define ERROR_DETECT_PLE_ERROR BIT(26)
+#define ERROR_DETECT_PDMA_ERROR BIT(27)
+#define ERROR_DETECT_PCIE_ERROR BIT(28)
+
+#define ERROR_DETECT_MASK			\
+	(ERROR_DETECT_STOP_PDMA			\
+	 | ERROR_DETECT_RESET_DONE		\
+	 | ERROR_DETECT_RECOVERY_DONE		\
+	 | ERROR_DETECT_N9_NORMAL_STATE)
+
 
 /*******************************************************************************
 *                             D A T A   T Y P E S
