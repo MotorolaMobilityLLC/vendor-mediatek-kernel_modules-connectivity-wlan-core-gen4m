@@ -1739,8 +1739,7 @@ static void nicTxMsduPickHighPrioPkt(struct ADAPTER *prAdapter,
 					prDataPort1 : prDataPort0;
 
 				u4Mark = kalGetPacketMark(prMsduInfo->prPacket);
-				if (u4Mark == NIC_TX_SKB_PRIORITY_MARK1 ||
-				    (u4Mark &
+				if ((u4Mark &
 					BIT(NIC_TX_SKB_PRIORITY_MARK_BIT))) {
 					QUEUE_INSERT_TAIL(
 						prDataPort,
@@ -5696,6 +5695,15 @@ uint32_t nicTxDirectStartXmitMain(void *pvPacket,
 			wlanProcessQueuedMsduInfo(prAdapter, prMsduInfo);
 			return WLAN_STATUS_FAILURE;
 		}
+
+#if CFG_MSCS_SUPPORT
+		/* Check if need to send a MSCS request */
+		if (mscsIsNeedRequest(prAdapter, pvPacket)) {
+			/* Request a mscs frame if needed */
+			mscsRequest(prAdapter, pvPacket, MSCS_REQUEST,
+				FRAME_CLASSIFIER_TYPE_4);
+		}
+#endif
 
 		qmDetermineStaRecIndex(prAdapter, prMsduInfo);
 
