@@ -517,6 +517,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_DISABLE_CMD_DDONE_INTR=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+    ccflags-y += -DCFG_SAP_CROSS_BAND_CSA
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
@@ -539,7 +540,6 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_HIF_NUM_OF_QM_RX_PKT_NUM=2048
     ccflags-y += -DCFG_SFD_DYNAMIC_ADJUST_NETIF_TH
 endif
-
 # ===== project override =====
 ifeq ($(CONFIG_MTK_EAP), y)
 CONFIG_MTK_MDDP_SUPPORT=
@@ -591,6 +591,7 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_MTK_WIFI_MBU=y
     ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
     ccflags-y += -DCFG_SUPPORT_SET_IPV6_NETWORK=1
+    ccflags-y += -DCFG_SAP_CROSS_BAND_CSA
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
