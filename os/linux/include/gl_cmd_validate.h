@@ -386,6 +386,7 @@
 #define CMD_NCHO_MODE_SET			"SETNCHOMODE"
 #define CMD_NCHO_MODE_GET			"GETNCHOMODE"
 #endif
+#define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
 
 /*****************************************************************************
 *                             D A T A   T Y P E S

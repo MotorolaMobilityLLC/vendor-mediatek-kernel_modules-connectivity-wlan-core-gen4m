@@ -798,6 +798,8 @@ int testmode_set_ax_blacklist(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_rtt_test(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_set_report_vendor_specified(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 #if CFG_SUPPORT_NCHO
 int testmode_set_ncho_roam_trigger(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);

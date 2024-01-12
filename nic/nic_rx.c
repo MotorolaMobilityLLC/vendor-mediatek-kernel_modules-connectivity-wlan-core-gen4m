@@ -3499,8 +3499,8 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 					prSwRfb, TRUE, 0);
 		}
 #endif
-#if CFG_SUPPORT_NCHO
 		if (prBssInfo && prBssInfo->eNetworkType == NETWORK_TYPE_AIS) {
+#if CFG_SUPPORT_NCHO
 			if (prAdapter->rNchoInfo.fgNCHOEnabled == TRUE
 			    && prAdapter->rNchoInfo.u4WesMode == TRUE) {
 				aisFuncValidateRxActionFrame(prAdapter,
@@ -3508,8 +3508,11 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 				DBGLOG(INIT, INFO,
 				       "NCHO CATEGORY_VENDOR_SPECIFIC_ACTION\n");
 			}
-		}
 #endif
+			if (prAdapter->ucEnVendorSpecifiedRpt)
+				aisFuncValidateRxActionFrame(prAdapter,
+					prSwRfb);
+		}
 		break;
 #if CFG_SUPPORT_802_11W
 	case CATEGORY_SA_QUERY_ACTION: {
