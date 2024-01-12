@@ -9,15 +9,14 @@
 #if (CFG_SUPPORT_802_11BE == 1)
 
 #define EHT_MAC_CAP_BYTE_NUM                            (2)
-#define EHT_PHY_CAP_BYTE_NUM                            (8)
+#define EHT_PHY_CAP_BYTE_NUM                            (9)
 
 struct IE_EHT_CAP {
 	u_int8_t  ucId;
 	u_int8_t  ucLength;
 	u_int8_t  ucExtId;
 	u_int8_t  ucEhtMacCap[EHT_MAC_CAP_BYTE_NUM];
-	u_int8_t  ucEhtPhyCap[EHT_PHY_CAP_BYTE_NUM]; /* BIT0 ~ BIT63 */
-	u_int8_t  ucEhtPhyCapExt; /* BIT64 ~ BIT71 */
+	u_int8_t  ucEhtPhyCap[EHT_PHY_CAP_BYTE_NUM]; /* BIT0 ~ BIT71 */
 	u_int8_t  aucVarInfo[0];
 } __KAL_ATTRIB_PACKED__;
 

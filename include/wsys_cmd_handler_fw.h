@@ -164,7 +164,7 @@
 #define HE_MAC_CAP_BYTE_NUM                     6
 #define HE_PHY_CAP_BYTE_NUM                     11
 #define EHT_MAC_CAP_BYTE_NUM                    (2)
-#define EHT_PHY_CAP_BYTE_NUM                    (8)
+#define EHT_PHY_CAP_BYTE_NUM                    (9)
 
 /*****************************************************************************
 *                             D A T A   T Y P E S
