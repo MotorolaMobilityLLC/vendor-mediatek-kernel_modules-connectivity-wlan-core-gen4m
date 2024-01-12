@@ -237,6 +237,7 @@ struct BOOST_INFO {
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	u_int8_t fgDramBoost;
+	u_int8_t fgKeepPcieWakeup;
 	uint32_t u4WfdmaThNum;
 };
 
@@ -2448,6 +2449,8 @@ void kalTdlsOpReq(
 #endif
 
 #if defined(_HIF_PCIE)
+void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
+			  u_int8_t fgKeepPcieWakeup);
 void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
 #endif /* defined(_HIF_PCIE) */
 

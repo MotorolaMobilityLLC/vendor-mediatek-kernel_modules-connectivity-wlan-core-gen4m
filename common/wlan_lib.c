@@ -7664,16 +7664,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[5], "PerfMonLv6", 300);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[6], "PerfMonLv7", 700);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[7], "PerfMonLv8", 1200);
-	INIT_UINT(prWifiVar->u4PerfMonTpTh[8], "PerfMonLv9", 2500);
+	INIT_UINT(prWifiVar->u4PerfMonTpTh[8], "PerfMonLv9", 2000);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[9], "PerfMonLv10", 3500);
 
 #if CFG_SUPPORT_MCC_BOOST_CPU
-	prWifiVar->u4MccBoostTputLvTh =
-		(uint32_t) wlanCfgGetUint32(prAdapter, "MccBoostTputLvTh",
-			MCC_BOOST_LEVEL);
-	prWifiVar->u4MccBoostPresentTime =
-		(uint32_t) wlanCfgGetUint32(prAdapter,
-			"MccBoostPresentTimeMin", MCC_BOOST_MIN_TIME);
+	INIT_UINT(prWifiVar->u4MccBoostTputLvTh, "MccBoostTputLvTh",
+		MCC_BOOST_LEVEL);
+	INIT_UINT(prWifiVar->u4MccBoostPresentTime,
+		"MccBoostPresentTimeMin", MCC_BOOST_MIN_TIME);
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 
 #if CFG_SUPPORT_LLS

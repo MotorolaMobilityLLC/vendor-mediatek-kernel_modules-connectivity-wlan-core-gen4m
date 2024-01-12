@@ -13686,6 +13686,20 @@ void kalTdlsOpReq(
 #endif
 
 #if defined(_HIF_PCIE)
+void kalSetPcieKeepWakeup(struct GLUE_INFO *prGlueInfo,
+	u_int8_t fgKeepPcieWakeup)
+{
+#if CFG_SUPPORT_PCIE_ASPM
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo = NULL;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+	if (prBusInfo->keepPcieWakeup != NULL)
+		prBusInfo->keepPcieWakeup(prGlueInfo, fgKeepPcieWakeup);
+#endif /* CFG_SUPPORT_PCIE_ASPM */
+}
+
 void kalConfigWfdmaTh(struct GLUE_INFO *prGlueInfo, uint32_t u4Num)
 {
 	struct ADAPTER *prAdapter;
