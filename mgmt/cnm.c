@@ -4120,9 +4120,9 @@ enum ENUM_CNM_NETWORK_TYPE_T cnmGetBssNetworkType(
 u_int8_t cnmSapIsConcurrent(IN struct ADAPTER *prAdapter)
 {
 	if (prAdapter)
-		return (prAdapter->u4P2pMode == RUNNING_P2P_AP_MODE);
-	else
-		return FALSE;
+		return (prAdapter->u4P2pMode != RUNNING_P2P_MODE);
+
+	return TRUE;
 }
 
 u_int8_t cnmSapIsActive(IN struct ADAPTER *prAdapter)
