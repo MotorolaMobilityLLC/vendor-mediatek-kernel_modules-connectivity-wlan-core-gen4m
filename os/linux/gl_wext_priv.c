@@ -22115,15 +22115,15 @@ int priv_driver_set_csi(struct net_device *prNetDev,
 	}
 
 	if (prCSICtrl->ucCfgItem == CSI_CONFIG_BAND) {
-		if (prCSICtrl->ucValue1 < ENUM_BAND_NUM) {
-			DBGLOG(REQ, INFO, "[CSI] set band number: %d\n",
-					prCSICtrl->ucValue1);
-			glCsiSetBandIdx(prCSICtrl->ucValue1);
+		uint8_t ucBand = prCSICtrl->ucValue1;
+
+		if (ucBand < ENUM_BAND_NUM) {
+			DBGLOG(REQ, INFO, "[CSI] set band: %d\n", ucBand);
+			glCsiSetBandIdx(ucBand);
 			i4BytesWritten = 0;
 			goto out;
 		} else {
-			DBGLOG(REQ, ERROR, "[CSI] Invalid band number: %d\n",
-					prCSICtrl->ucValue1);
+			DBGLOG(REQ, ERROR, "[CSI] Invalid band: %d\n", ucBand);
 			i4BytesWritten = -1;
 			goto out;
 		}
