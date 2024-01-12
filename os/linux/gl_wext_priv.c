@@ -13161,6 +13161,7 @@ static int priv_driver_get_ch_rank_list(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
+	kalMemZero(aucChannelList, sizeof(aucChannelList));
 
 	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, ucBandIdx,
@@ -13199,6 +13200,7 @@ static int priv_driver_get_ch_dirtiness(IN struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prChnLoadInfo = &(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo);
 	kalMemZero(pcCommand, i4TotalLen);
+	kalMemZero(aucChannelList, sizeof(aucChannelList));
 
 	for (ucBandIdx = BAND_2G4; ucBandIdx < BAND_NUM; ucBandIdx++) {
 		rlmDomainGetChnlList(prGlueInfo->prAdapter, ucBandIdx,
