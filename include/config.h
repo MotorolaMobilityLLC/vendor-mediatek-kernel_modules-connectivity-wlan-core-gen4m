@@ -1743,6 +1743,13 @@
 #define CFG_SUPPORT_LLW_SCAN		(CFG_TC10_FEATURE)
 
 /*------------------------------------------------------------------------------
+ * Flags of Manipulate TID for UDP packets
+ * TC10 only: To improve the latency of UDP packet
+ *------------------------------------------------------------------------------
+ */
+#define CFG_SUPPORT_MANIPULATE_TID	(CFG_TC10_FEATURE)
+
+/*------------------------------------------------------------------------------
  * Flags of Key Word Exception Mechanism
  *------------------------------------------------------------------------------
  */

@@ -3329,6 +3329,15 @@ struct PARAM_SCAN {
 };
 #endif
 
+#if CFG_SUPPORT_MANIPULATE_TID
+struct PARAM_MANIUPLATE_TID {
+	/* 0:default; others:enable */
+	uint8_t ucMode;
+	uint8_t ucTid;
+	uint32_t u4Uid;
+};
+#endif
+
 struct PARAM_AX_BLACKLIST {
 	uint8_t ucType;
 	uint8_t ucCount;
@@ -5582,5 +5591,13 @@ wlanoidSetLatencyCrtData(struct ADAPTER *prAdapter,
 			    uint32_t u4SetBufferLen,
 			    uint32_t *pu4SetInfoLen);
 #endif
+
+#if CFG_SUPPORT_MANIPULATE_TID
+uint32_t
+wlanoidManipulateTid(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_MANIPULATE_TID */
 
 #endif /* _WLAN_OID_H */

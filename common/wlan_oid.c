@@ -18426,3 +18426,37 @@ uint32_t wlanoidSetLatencyCrtData(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_MANIPULATE_TID
+uint32_t
+wlanoidManipulateTid(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_MANIUPLATE_TID *prSetTid = NULL;
+
+	*pu4SetInfoLen = sizeof(struct PARAM_MANIUPLATE_TID);
+
+	if (u4SetBufferLen < sizeof(struct PARAM_MANIUPLATE_TID))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	prSetTid = (struct PARAM_MANIUPLATE_TID *) pvSetBuffer;
+
+	if (prAdapter->rManipulateTidInfo.ucUserPriority >= TX_DESC_TID_NUM) {
+		DBGLOG(INIT, ERROR, "Manipilate Tid Invalid TID=[%d]\n",
+			prAdapter->rManipulateTidInfo.ucUserPriority);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prAdapter->rManipulateTidInfo.fgManipulateTidEnabled =
+		prSetTid->ucMode;
+	prAdapter->rManipulateTidInfo.ucUserPriority =
+		prSetTid->ucTid;
+
+	DBGLOG(INIT, INFO, "Manipilate Tid [Enable:TID]=[%d:%d]\n",
+	       prSetTid->ucMode, prSetTid->ucTid);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_MANIPULATE_TID */
+

@@ -6106,6 +6106,44 @@ label_exit:
 	return rStatus;
 }
 
+#if CFG_SUPPORT_MANIPULATE_TID
+int testmode_manipulate_tid(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t u4SetInfoLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_MANIUPLATE_TID param = { 0 };
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	rStatus = wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR,
+			"Error input parameters(%d):%s\n", i4Argc, pcCommand);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (kalkStrtou8(apcArgv[1], 0, &param.ucMode))
+		DBGLOG(REQ, LOUD, "Mode parse %s error\n", apcArgv[1]);
+
+	if (kalkStrtou8(apcArgv[3], 0, &param.ucTid))
+		DBGLOG(REQ, LOUD, "Tid parse %s error\n", apcArgv[3]);
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidManipulateTid,
+			&param, sizeof(struct PARAM_MANIUPLATE_TID),
+			&u4SetInfoLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "SET_TID fail 0x%x\n", rStatus);
+	else
+		DBGLOG(INIT, TRACE, "SET_TID successed\n");
+
+	return rStatus;
+}
+#endif /* CFG_SUPPORT_MANIPULATE_TID */
 
 int testmode_set_ax_blacklist(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)

@@ -2081,6 +2081,58 @@ static bool is_critical_packet(struct net_device *dev,
 #endif
 }
 
+#if CFG_SUPPORT_MANIPULATE_TID
+static bool need_manipulate_priority_for_udp(
+	struct sk_buff *skb,
+	uint8_t *pucUserPriority)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint16_t u2EtherType = 0;
+	struct iphdr *iph = NULL;
+	struct ipv6hdr *ipv6h = NULL;
+
+	if (!skb)
+		return FALSE;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(skb->dev));
+
+	if (!prGlueInfo ||
+		!prGlueInfo->prAdapter->
+		rManipulateTidInfo.fgManipulateTidEnabled)
+		return FALSE;
+
+	u2EtherType = NTOHS(skb_eth_hdr(skb)->h_proto);
+
+	DBGLOG(TX, TEMP, "Ethertype = [%d]\n", u2EtherType);
+
+	if (u2EtherType == ETH_P_IPV4) {
+		iph = ip_hdr(skb);
+
+		DBGLOG(TX, TEMP, "IPv4 protocol = [%d]\n", iph->protocol);
+
+		if (iph->protocol == IPPROTO_UDP) {
+			*pucUserPriority =
+				prGlueInfo->prAdapter->
+				rManipulateTidInfo.ucUserPriority;
+			return TRUE;
+		}
+	} else if (u2EtherType == ETH_P_IPV6) {
+		ipv6h = ipv6_hdr(skb);
+
+		DBGLOG(TX, TEMP, "IPv6 protocol = [%d]\n", ipv6h->nexthdr);
+
+		if (ipv6h->nexthdr == IPPROTO_UDP) {
+			*pucUserPriority =
+				prGlueInfo->prAdapter->
+				rManipulateTidInfo.ucUserPriority;
+			return TRUE;
+		}
+	}
+
+	return FALSE;
+}
+#endif
+
 static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 {
 	struct cfg80211_qos_map *qos_map = &default_qos_map;
@@ -2170,7 +2222,14 @@ static inline u16 mtk_wlan_ndev_select_queue(struct net_device *dev,
 #endif
 	u16 queue_index = 0;
 	struct cfg80211_qos_map *qos_map = NULL;
+#if CFG_SUPPORT_MANIPULATE_TID
+	uint8_t ucUserPriority = 0;
 
+	if (need_manipulate_priority_for_udp(skb, &ucUserPriority)) {
+		skb->priority = ucUserPriority;
+		return ieee8021d_to_queue[skb->priority];
+	}
+#endif
 	qos_map = get_qos_map(dev);
 
 	/* cfg80211_classify8021d returns 0~7 */
