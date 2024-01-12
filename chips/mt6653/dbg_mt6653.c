@@ -1294,8 +1294,10 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 void mt6653_show_wfdma_dbg_probe_info(struct ADAPTER *prAdapter,
 	enum _ENUM_WFDMA_TYPE_T enum_wfdma_type)
 {
-	uint32_t dbg_cr_idx[] = {0x0, 0x1, 0x2, 0x3, 0x30, 0x5, 0x7, 0xA, 0xB,
-		0xC};
+	uint32_t dbg_cr_idx[] = {
+		0x0, 0x1, 0x2, 0x3, 0x30, 0x5, 0x7, 0xA, 0xB, 0xC,
+		0x62
+	};
 	uint32_t i = 0, u4DbgIdxAddr = 0, u4DbgProbeAddr = 0, u4DbgIdxValue = 0,
 		u4DbgProbeValue = 0;
 
@@ -1332,27 +1334,32 @@ void mt6653_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = 0x7c027078;
+	u4DmaCfgCr = 0x20027078;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = 0x7c02707C;
+	u4DmaCfgCr = 0x2002707C;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
+
+	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
+	DBGLOG(HAL, INFO, "WFDMA_MSI_CONFIG_ADDR(0x%08x): [0x%08x]",
+	       u4DmaCfgCr, u4RegValue);
 }
 
 #if defined(_HIF_PCIE)

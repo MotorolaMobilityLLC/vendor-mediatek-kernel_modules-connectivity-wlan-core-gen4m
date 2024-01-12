@@ -1268,27 +1268,32 @@ void mt7935_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_HIF_MISC_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
 	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_AXI_SLPPROT_CTRL_ADDR;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = 0x7c027078;
+	u4DmaCfgCr = 0x20027078;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
 
-	u4DmaCfgCr = 0x7c02707C;
+	u4DmaCfgCr = 0x2002707C;
 	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
-	DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
+	DBGLOG(HAL, INFO, "WFDMA_AXI_SLPPROT1_CTRL(0x%08x): 0x%08x\n",
 	       u4DmaCfgCr,
 	       u4RegValue);
+
+	u4DmaCfgCr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_MSI_CONFIG_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4DmaCfgCr, &u4RegValue);
+	DBGLOG(HAL, INFO, "WFDMA_MSI_CONFIG_ADDR(0x%08x): [0x%08x]",
+	       u4DmaCfgCr, u4RegValue);
 }
 
 #if defined(_HIF_PCIE)
