@@ -1346,9 +1346,7 @@ void saaChkDeauthfrmParamHandler(IN struct ADAPTER *prAdapter,
 
 	do {
 		prDeauthFrame = (struct WLAN_DEAUTH_FRAME *) prSwRfb->pvHeader;
-		if (!IS_BMCAST_MAC_ADDR(prDeauthFrame->aucDestAddr) &&
-		    (prStaRec->u2ReasonCode == REASON_CODE_CLASS_2_ERR
-		     || prStaRec->u2ReasonCode == REASON_CODE_CLASS_3_ERR)) {
+		if (!IS_BMCAST_MAC_ADDR(prDeauthFrame->aucDestAddr)) {
 			DBGLOG(RSN, INFO,
 				"[%d] QM RX MGT: rsnStartSaQuery\n",
 				prStaRec->ucBssIndex);
@@ -1593,9 +1591,7 @@ saaChkDisassocfrmParamHandler(IN struct ADAPTER *prAdapter,
 			      IN struct STA_RECORD *prStaRec,
 			      IN struct SW_RFB *prSwRfb)
 {
-	if (!IS_BMCAST_MAC_ADDR(prDisassocFrame->aucDestAddr) &&
-	    (prStaRec->u2ReasonCode == REASON_CODE_CLASS_2_ERR ||
-	     prStaRec->u2ReasonCode == REASON_CODE_CLASS_3_ERR)) {
+	if (!IS_BMCAST_MAC_ADDR(prDisassocFrame->aucDestAddr)) {
 		/* MFP test plan 5.3.3.5 */
 		DBGLOG(RSN, INFO,
 			"[%d] QM RX MGT: rsnStartSaQuery\n",
