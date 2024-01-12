@@ -1239,7 +1239,7 @@ struct test_operation {
 		u_int32 iq_type);
 	s_int32 (*op_do_cal_item)(
 		struct test_wlan_info *winfos,
-		u_char item, u_char band_idx);
+		u_int32 item, u_char band_idx);
 	s_int32 (*op_set_band_mode)(
 		struct test_wlan_info *winfos,
 		struct test_band_state *band_state);
