@@ -1175,6 +1175,7 @@ void fillConnac3xTxDescAppendBySdo(
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] = SDO_PARTIAL_PAYLOAD_SIZE;
 }
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 void fillConnac3xTxDescAppendByMawdSdo(
 	struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
@@ -1276,6 +1277,7 @@ void fillConnac3xTxDescAppendByMawdSdo(
 	prHwTxDescAppend->CR4_APPEND.au2BufLen[1] =
 		prMsduInfo->u2FrameLength - ETH_HLEN;
 }
+#endif
 
 void fillConnac3xTxDescTxByteCountWithSdo(
 	struct ADAPTER *prAdapter,
@@ -1362,6 +1364,7 @@ void asicConnac3xInitTxdHook(
 			fillConnac3xTxDescTxByteCountWithSdo;
 	}
 
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	if (prChipInfo->is_support_mawd_tx) {
 		prChipInfo->txd_append_size =
 			prChipInfo->hif_txd_append_size;
@@ -1372,6 +1375,7 @@ void asicConnac3xInitTxdHook(
 		prTxDescOps->fillTxByteCount =
 			fillConnac3xTxDescTxByteCountWithSdo;
 	}
+#endif
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 }
 
