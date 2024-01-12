@@ -1156,10 +1156,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.rsvMemWiFiMisc = mt6653_wifi_misc_rsv_mem_info,
 #endif
-#if CFG_SUPPORT_XONVRAM
-	.xo_infra_sysram = {
-		.addr = 0x7C05B28C,
-		.size = 25,
+#if CFG_SUPPORT_CONNAC3X
+	/* Platform custom config for conninfra */
+	.rPlatcfgInfraSysram = {
+		.addr = CONNAC3X_PLAT_CFG_ADDR,
+		.size = CONNAC3X_PLAT_CFG_SIZE,
 	}
 #endif
 };

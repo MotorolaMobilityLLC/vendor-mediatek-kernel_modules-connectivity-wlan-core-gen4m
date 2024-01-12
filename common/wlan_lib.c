@@ -1164,55 +1164,115 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_XONVRAM
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Because TOP POS will set XO ATOP CR, and the XO parameter is saved in
- *        ConnInfra sysram. Hence this function should be called before TOP POS
- *        i.e. before patch download
+ * \brief Because each SKU will have different platform config, such as
+ *        clock type. The platform config will be divided into two parts:
+ *        XO NVRAM and clock type/source.
+ *        XO NVRAM will be set from offset 0, while other config will be
+ *        set from the end of conninfra sysram.
+ *        This function should be called before patch download.
+ *
+ * \param[in]  prGlueInfo        Pointer to the Adapter structure.
+ * \param[in]  prXo              Pointer of XO_CFG_PARAM_STRUCT.
+ * \param[in]  prPlat            Pointer of platcfg_infra_sysram.
+ */
+/*----------------------------------------------------------------------------*/
+static uint32_t
+wlanCopyXonvramToSysram(struct GLUE_INFO *prGlueInfo,
+	struct XO_CFG_PARAM_STRUCT *prXo, struct platcfg_infra_sysram *prPlat)
+{
+#if defined(_HIF_PCIE)
+	ASSERT(prGlueInfo);
+	ASSERT(prPlat);
+
+	if (prXo == NULL) {
+		DBGLOG(INIT, TRACE, "Unsupport xo nvram\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if (prXo->u2DataLen == 0) {
+		DBGLOG(INIT, TRACE, "Xo nvram length is zero\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if (prPlat->size < prXo->u2DataLen) {
+		DBGLOG(INIT, WARN, "Invalid length : %d, %d\n"
+				, prPlat->size, prXo->u2DataLen);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (kalDevRegWriteRange(prGlueInfo, prPlat->addr,
+		prXo, prXo->u2DataLen) < 0) {
+		DBGLOG(INIT, WARN, "Fail to copy XO to infra sysram\n");
+		return WLAN_STATUS_FAILURE;
+	}
+#endif
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
+#if CFG_SUPPORT_CONNAC3X
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Because each SKU will have different platform config, such as
+ *        clock type. The platform config will be divided into two parts:
+ *        XO NVRAM and clock type/source.
+ *        XO NVRAM will be set from offset 0, while other config will be
+ *        set from the end of conninfra sysram.
+ *        This function should be called before patch download.
  *
  * \param[in]  prAdapter        Pointer to the Adapter structure.
  * \param[in]  prRegInfo        Pointer of REG_INFO_T.
  */
 /*----------------------------------------------------------------------------*/
 static uint32_t
-wlanCopyXoNvramToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
+wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 {
 	struct GLUE_INFO *prGlueInfo;
-	struct connxo_infra_sysram *prXoInfra;
-	struct XO_CFG_PARAM_STRUCT *prXoCfg;
-	uint32_t u4Size, u4Addr;
+	struct platcfg_infra_sysram *prPlatCfg;
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	uint32_t u4Addr, u4Size;
+	uint8_t *pu1Cfg;
+#endif
 
 	ASSERT(prAdapter);
 	ASSERT(prRegInfo);
 
-	prXoInfra = &(prAdapter->chip_info->xo_infra_sysram);
-	if ((prXoInfra->size == 0) || (prXoInfra->addr == 0)) {
-		DBGLOG(INIT, TRACE, "Not support Conn XO\n");
-		return WLAN_STATUS_SUCCESS;
-	}
-
 	prGlueInfo = prAdapter->prGlueInfo;
-	prXoCfg = prRegInfo->prXonvCfg;
-	u4Size = prXoInfra->size;
-	u4Addr = prXoInfra->addr;
-
-	if (prXoCfg == NULL) {
-		DBGLOG(INIT, TRACE, "Not support Conn XO\n");
+	prPlatCfg = &(prAdapter->chip_info->rPlatcfgInfraSysram);
+	if ((prPlatCfg->size == 0) || (prPlatCfg->addr == 0)) {
+		DBGLOG(INIT, TRACE, "No available infra sysram for plat cfg\n");
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	if ((prXoCfg->u2DataLen != 0) && (u4Size != prXoCfg->u2DataLen)) {
-		DBGLOG(INIT, WARN, "Size: Infra Sysram XO %d != Cfg XO %d\n"
-				, u4Size, prXoCfg->u2DataLen);
+#if CFG_SUPPORT_XONVRAM
+	if (wlanCopyXonvramToSysram(prGlueInfo, prRegInfo->prXonvCfg, prPlatCfg)
+		!= WLAN_STATUS_SUCCESS) {
+		DBGLOG(INIT, TRACE, "Fail to copy xo nvram\n");
+		return WLAN_STATUS_FAILURE;
+	}
+#endif
+
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	pu1Cfg = connv3_get_plat_config(&u4Size);
+	if (u4Size == 0) {
+		DBGLOG(INIT, TRACE, "No need to copy plat config\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	if ((u4Size + prRegInfo->prXonvCfg->u2DataLen) > prPlatCfg->size) {
+		DBGLOG(INIT, TRACE, "No enough size for plat cfg\n");
 		return WLAN_STATUS_FAILURE;
 	}
 
-	if (kalDevRegWriteRange(prGlueInfo, u4Addr, prXoCfg, u4Size) < 0) {
-		DBGLOG(INIT, WARN, "Fail to copy XO to infra sysram\n");
+	u4Addr = prPlatCfg->addr + prPlatCfg->size - u4Size;
+	if (kalDevRegWriteRange(prGlueInfo, u4Addr, pu1Cfg, u4Size) < 0) {
+		DBGLOG(INIT, WARN, "Fail to copy plat cfg to infra sysram\n");
 		return WLAN_STATUS_FAILURE;
 	}
-
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
-#endif
+#endif /* #if CFG_SUPPORT_CONNAC3X */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1248,7 +1308,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		INIT_HIFINFO_FAIL,
 		SET_CHIP_ECO_INFO_FAIL,
 		PRE_ON_PROCESS_DONE,
-		COPY_XONVRAM_FAIL,
+		COPY_CONNSYS_CFG_FAIL,
 		RAM_CODE_DOWNLOAD_FAIL,
 		WAIT_FIRMWARE_READY_FAIL,
 		FAIL_REASON_MAX
@@ -1369,13 +1429,13 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* recheck Asic capability depends on ECO version */
 		wlanCheckAsicCap(prAdapter);
 
-#if CFG_SUPPORT_XONVRAM
-		/* Copy XO NVRAM to ConnInfra sysram before patch download */
-		if (wlanCopyXoNvramToSysram(prAdapter, prRegInfo)
+#if CFG_SUPPORT_CONNAC3X
+		/* Copy config to infra sysram before patch download */
+		if (wlanCopyPlatCfgToSysram(prAdapter, prRegInfo)
 					!= WLAN_STATUS_SUCCESS) {
-			DBGLOG(INIT, ERROR, "wlanCopyXoNvramToSysram failed\n");
+			DBGLOG(INIT, ERROR, "wlanCopyPlatCfgToSysram failed\n");
 			u4Status = WLAN_STATUS_FAILURE;
-			eFailReason = COPY_XONVRAM_FAIL;
+			eFailReason = COPY_CONNSYS_CFG_FAIL;
 		}
 #endif
 
@@ -1554,7 +1614,7 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 			switch (eFailReason) {
 			case WAIT_FIRMWARE_READY_FAIL:
 			case RAM_CODE_DOWNLOAD_FAIL:
-			case COPY_XONVRAM_FAIL:
+			case COPY_CONNSYS_CFG_FAIL:
 			case SET_CHIP_ECO_INFO_FAIL:
 				fw_log_deinit(prAdapter);
 			kal_fallthrough;
@@ -14534,7 +14594,7 @@ int8_t hexDigitToInt(uint8_t ch)
 	return 0;
 }
 
-#if CFG_SUPPORT_XONVRAM
+#if (CFG_SUPPORT_XONVRAM && CFG_SUPPORT_QA_TOOL)
 uint32_t wlanTestModeXoCal(struct ADAPTER *ad,
 	struct TEST_MODE_XO_CAL *data)
 {

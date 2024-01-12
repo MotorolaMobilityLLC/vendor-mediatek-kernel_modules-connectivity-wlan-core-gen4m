@@ -1461,9 +1461,9 @@ struct thermal_info {
 	struct thermal_sensor_info *sensor_info;
 };
 
-#if CFG_SUPPORT_XONVRAM
-struct connxo_infra_sysram {
-	/* ConnInfra Sysram address and size for ConnXO */
+#if CFG_SUPPORT_CONNAC3X
+struct platcfg_infra_sysram {
+	/* Conninfra sysram address and size for custom config */
 	const uint32_t size;
 	const uint32_t addr;
 };
@@ -1718,8 +1718,8 @@ struct mt66xx_chip_info {
 	u_int8_t fgWifiNappingEn; /* sw var used to align hw cfg */
 	u_int8_t fgWifiNappingForceDisable; /* main thread: w, hif thread: r */
 	struct EMI_WIFI_MISC_RSV_MEM_INFO *rsvMemWiFiMisc;
-#if CFG_SUPPORT_XONVRAM
-	struct connxo_infra_sysram xo_infra_sysram;
+#if CFG_SUPPORT_CONNAC3X
+	struct platcfg_infra_sysram rPlatcfgInfraSysram;
 #endif
 };
 
