@@ -34,6 +34,9 @@ enum op_wlan_oid {
 	OP_WLAN_OID_RESET_RECAL_COUNT = 16,
 	OP_WLAN_OID_GET_CAPABILITY = 17,
 	OP_WLAN_OID_LIST_MODE = 18,
+	OP_WLAN_OID_GET_EFUSE_FREE_BLOCK = 25,
+	OP_WLAN_OID_EPRM_READ = 26,
+	OP_WLAN_OID_EPRM_WRITE = 27,
 	OP_WLAN_OID_NUM
 };
 
@@ -374,7 +377,12 @@ s_int32 mt_op_write_bulk_rf_reg(
 s_int32 mt_op_read_bulk_eeprom(
 	struct test_wlan_info *winfos,
 	struct test_eeprom *eprms);
-
+s_int32 mt_op_write_bulk_eeprom(
+	struct test_wlan_info *winfos,
+	struct test_eeprom *eprms);
+s_int32 mt_op_get_free_efuse_block(
+	struct test_wlan_info *winfos,
+	struct test_eeprom *eprms);
 /* For test phy usage */
 s_int32 mt_op_get_tx_pwr(
 	struct test_wlan_info *winfos,

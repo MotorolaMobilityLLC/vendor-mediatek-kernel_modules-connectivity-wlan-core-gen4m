@@ -234,7 +234,7 @@ enum ENUM_EXT_CMD_ID {
 #if CFG_SUPPORT_MU_MIMO
 	EXT_CMD_ID_MU_CTRL = 0x40,
 #endif /* CFG_SUPPORT_MU_MIMO */
-
+	EXT_CMD_ID_EFUSE_BUFFER_RD = 0x4E,
 	EXT_CMD_ID_EFUSE_FREE_BLOCK = 0x4F,
 	EXT_CMD_ID_DUMP_MEM = 0x57,
 	EXT_CMD_ID_TX_POWER_FEATURE_CTRL = 0x58,
@@ -358,6 +358,14 @@ struct CMD_EFUSE_BUFFER_MODE_CONNAC_T {
 #else
 	uint8_t aBinContent[MAX_EEPROM_BUFFER_SIZE];
 #endif
+};
+
+struct CMD_EFUSE_BUFFER_RD_T {
+	uint8_t ucSourceMode;
+	uint8_t ucContentFormat;
+	uint16_t u2Offset;
+	uint16_t u2Count;
+	uint16_t u2Reserved;
 };
 
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/

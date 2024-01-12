@@ -119,6 +119,8 @@ static s_int32 mt_serv_init_op(struct test_operation *ops)
 	ops->op_read_bulk_rf_reg = mt_op_read_bulk_rf_reg;
 	ops->op_write_bulk_rf_reg = mt_op_write_bulk_rf_reg;
 	ops->op_read_bulk_eeprom = mt_op_read_bulk_eeprom;
+	ops->op_write_bulk_eeprom = mt_op_write_bulk_eeprom;
+	ops->op_get_free_efuse_block = mt_op_get_free_efuse_block;
 	ops->op_listmode_cmd = mt_op_listmode_cmd;
 	ops->op_set_efem_mode = mt_op_set_efem_mode;
 	ops->op_set_tx_gain = mt_op_set_tx_gain;
@@ -1987,32 +1989,30 @@ s_int32 mt_serv_reg_eprm_operation(
 	struct service_test *serv_test, u_int32 item)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
-	struct test_operation *ops;
-
-	ops = serv_test->test_op;
+	struct test_operation *ops = serv_test->test_op;
 
 	switch (item) {
 	case SERV_TEST_REG_MAC_READ:
 		if (!serv_test->engine_offload) {
-		ret = net_ad_read_mac_bbp_reg(serv_test->test_winfo,
-						&serv_test->test_reg);
+			ret = net_ad_read_mac_bbp_reg(
+					serv_test->test_winfo,
+					&serv_test->test_reg);
 		} else {
-			ops = serv_test->test_op;
 			ret = ops->op_read_bulk_mac_bbp_reg(
-				serv_test->test_winfo,
-				&serv_test->test_reg);
+						serv_test->test_winfo,
+						&serv_test->test_reg);
 		}
 		break;
 
 	case SERV_TEST_REG_MAC_WRITE:
 		if (!serv_test->engine_offload) {
-
-		ret = net_ad_write_mac_bbp_reg(serv_test->test_winfo,
-						&serv_test->test_reg);
+			ret = net_ad_write_mac_bbp_reg(
+					serv_test->test_winfo,
+					&serv_test->test_reg);
 		} else {
-			ops = serv_test->test_op;
-			ret = ops->op_write_mac_bbp_reg(serv_test->test_winfo,
-				&serv_test->test_reg);
+			ret = ops->op_write_mac_bbp_reg(
+						serv_test->test_winfo,
+						&serv_test->test_reg);
 		}
 		break;
 
@@ -2023,32 +2023,33 @@ s_int32 mt_serv_reg_eprm_operation(
 				&serv_test->test_config[TEST_DBDC_BAND0],
 				&serv_test->test_reg);
 		} else {
-			ops = serv_test->test_op;
 			ret = ops->op_read_bulk_mac_bbp_reg(
-				serv_test->test_winfo,
-				&serv_test->test_reg);
+						serv_test->test_winfo,
+						&serv_test->test_reg);
 		}
 		break;
 
 	case SERV_TEST_REG_RF_READ_BULK:
 		if (!serv_test->engine_offload) {
-		ret = net_ad_read_bulk_rf_reg(serv_test->test_winfo,
-			&serv_test->test_reg);
+			ret = net_ad_read_bulk_rf_reg(
+					serv_test->test_winfo,
+					&serv_test->test_reg);
 		} else {
-			ops = serv_test->test_op;
-			ret = ops->op_read_bulk_rf_reg(serv_test->test_winfo,
-				&serv_test->test_reg);
+			ret = ops->op_read_bulk_rf_reg(
+						serv_test->test_winfo,
+						&serv_test->test_reg);
 		}
 		break;
 
 	case SERV_TEST_REG_RF_WRITE_BULK:
 		if (!serv_test->engine_offload) {
-		ret = net_ad_write_bulk_rf_reg(serv_test->test_winfo,
-			&serv_test->test_reg);
+			ret = net_ad_write_bulk_rf_reg(
+					serv_test->test_winfo,
+					&serv_test->test_reg);
 		} else {
-			ops = serv_test->test_op;
-			ret = ops->op_write_bulk_rf_reg(serv_test->test_winfo,
-				&serv_test->test_reg);
+			ret = ops->op_write_bulk_rf_reg(
+						serv_test->test_winfo,
+						&serv_test->test_reg);
 		}
 		break;
 
@@ -2061,38 +2062,68 @@ s_int32 mt_serv_reg_eprm_operation(
 		break;
 
 	case SERV_TEST_EEPROM_READ:
-		ret = net_ad_read_write_eeprom(serv_test->test_winfo,
-			&serv_test->test_eprm,
-			TRUE);
+		if (!serv_test->engine_offload) {
+			ret = net_ad_read_write_eeprom(
+					serv_test->test_winfo,
+					&serv_test->test_eprm,
+					TRUE);
+		} else {
+			ret = ops->op_read_bulk_eeprom(
+						serv_test->test_winfo,
+						&serv_test->test_eprm);
+		}
 		break;
 
 	case SERV_TEST_EEPROM_WRITE:
-		ret = net_ad_read_write_eeprom(serv_test->test_winfo,
-			&serv_test->test_eprm,
-			FALSE);
+		if (!serv_test->engine_offload) {
+			ret = net_ad_read_write_eeprom(
+					serv_test->test_winfo,
+					&serv_test->test_eprm,
+					FALSE);
+		} else {
+			ret = ops->op_write_bulk_eeprom(
+						serv_test->test_winfo,
+						&serv_test->test_eprm);
+		}
 		break;
 
 	case SERV_TEST_EEPROM_READ_BULK:
 		if (!serv_test->engine_offload) {
-		ret = net_ad_read_write_bulk_eeprom(serv_test->test_winfo,
-			&serv_test->test_eprm,
-			TRUE);
+			ret = net_ad_read_write_bulk_eeprom(
+					serv_test->test_winfo,
+					&serv_test->test_eprm,
+					TRUE);
 		} else {
-			ops = serv_test->test_op;
-			ret = ops->op_read_bulk_eeprom(serv_test->test_winfo,
-				&serv_test->test_eprm);
+			ret = ops->op_read_bulk_eeprom(
+						serv_test->test_winfo,
+						&serv_test->test_eprm);
 		}
 		break;
 
 	case SERV_TEST_EEPROM_WRITE_BULK:
-		ret = net_ad_read_write_bulk_eeprom(serv_test->test_winfo,
-			&serv_test->test_eprm,
-			FALSE);
+		if (!serv_test->engine_offload) {
+			ret = net_ad_read_write_bulk_eeprom(
+					serv_test->test_winfo,
+					&serv_test->test_eprm,
+					FALSE);
+		} else {
+			ret = ops->op_write_bulk_eeprom(
+						serv_test->test_winfo,
+						&serv_test->test_eprm);
+		}
 		break;
 
 	case SERV_TEST_EEPROM_GET_FREE_EFUSE_BLOCK:
-		ret = net_ad_get_free_efuse_block(serv_test->test_winfo,
-			&serv_test->test_eprm);
+
+		if (!serv_test->engine_offload) {
+			ret = net_ad_get_free_efuse_block(
+					serv_test->test_winfo,
+					&serv_test->test_eprm);
+		} else {
+			ret = ops->op_get_free_efuse_block(
+						serv_test->test_winfo,
+						&serv_test->test_eprm);
+		}
 		break;
 
 	default:

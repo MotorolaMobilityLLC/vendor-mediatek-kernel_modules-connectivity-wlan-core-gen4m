@@ -4845,6 +4845,87 @@ wlanoidConnacSetEfusBufferMode(struct ADAPTER *prAdapter,
 	return rWlanStatus;
 }
 
+uint32_t
+wlanoidConnacSetEfuseBufferRD(struct ADAPTER *prAdapter,
+			       void *pvSetBuffer,
+			       uint32_t u4SetBufferLen,
+			       uint32_t *pu4SetInfoLen) {
+	struct PARAM_CUSTOM_EFUSE_BUFFER_RD_T
+		*prSetEfuseBufModeInfo;
+	struct CMD_EFUSE_BUFFER_RD_T
+		*prCmdSetEfuseBufRDInfo = NULL;
+	uint32_t u4EfuseContentSize;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	DEBUGFUNC("wlanoidSetEfusBufferRD");
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	DBGLOG(OID, INFO, "u4SetBufferLen = %d\n", u4SetBufferLen);
+	/* get the buffer mode info */
+	prSetEfuseBufModeInfo =
+		(struct PARAM_CUSTOM_EFUSE_BUFFER_RD_T *) pvSetBuffer;
+
+	/* copy command header */
+	prCmdSetEfuseBufRDInfo = (struct CMD_EFUSE_BUFFER_RD_T *)
+		kalMemAlloc(sizeof(struct CMD_EFUSE_BUFFER_RD_T),
+			    VIR_MEM_TYPE);
+	if (prCmdSetEfuseBufRDInfo == NULL)
+		return WLAN_STATUS_FAILURE;
+	kalMemZero(prCmdSetEfuseBufRDInfo,
+		   sizeof(struct CMD_EFUSE_BUFFER_RD_T));
+	prCmdSetEfuseBufRDInfo->ucSourceMode =
+		prSetEfuseBufModeInfo->ucSourceMode;
+	prCmdSetEfuseBufRDInfo->ucContentFormat =
+		prSetEfuseBufModeInfo->ucContentFormat;
+	prCmdSetEfuseBufRDInfo->u2Count =
+		prSetEfuseBufModeInfo->u2Count;
+
+	DBGLOG(OID, INFO,
+		"[%d] ucSourceMode = %d, ucContentFormat = 0x%x, u2Count = %d\n"
+		, __LINE__,
+		prCmdSetEfuseBufRDInfo->ucSourceMode,
+		prCmdSetEfuseBufRDInfo->ucContentFormat,
+		prCmdSetEfuseBufRDInfo->u2Count);
+
+	u4EfuseContentSize = prCmdSetEfuseBufRDInfo->u2Count;
+#if 0
+	u4QueryInfoLen = OFFSET_OF(struct
+				   CMD_EFUSE_BUFFER_RD_T,
+				   NULL) + u4EfuseContentSize;
+
+	if (u4SetBufferLen < u4QueryInfoLen) {
+		kalMemFree(prCmdSetEfuseBufRDInfo, VIR_MEM_TYPE,
+			   sizeof(struct CMD_EFUSE_BUFFER_RD_T));
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	*pu4SetInfoLen = u4QueryInfoLen;
+	kalMemCopy(prCmdSetEfuseBufRDInfo->aBinContent,
+		   prSetEfuseBufModeInfo->aBinContent,
+		   u4EfuseContentSize);
+#endif
+	rWlanStatus = wlanSendSetQueryExtCmd(prAdapter,
+				CMD_ID_LAYER_0_EXT_MAGIC_NUM,
+				EXT_CMD_ID_EFUSE_BUFFER_RD,
+				FALSE,
+				TRUE,
+				TRUE,
+				NULL,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct CMD_EFUSE_BUFFER_RD_T),
+				(uint8_t *) (prCmdSetEfuseBufRDInfo),
+				pvSetBuffer, u4SetBufferLen);
+
+	kalMemFree(prCmdSetEfuseBufRDInfo, VIR_MEM_TYPE,
+		   sizeof(struct CMD_EFUSE_BUFFER_RD_T));
+
+	return rWlanStatus;
+}
+
+
 /*#if (CFG_EEPROM_PAGE_ACCESS == 1)*/
 /*----------------------------------------------------------------------------*/
 /*!
@@ -4894,7 +4975,6 @@ wlanoidQueryProcessAccessEfuseRead(struct ADAPTER *prAdapter,
 	rCmdSetAccessEfuse.u4Address =
 		prSetAccessEfuseInfo->u4Address;
 	rCmdSetAccessEfuse.u4Valid = prSetAccessEfuseInfo->u4Valid;
-
 
 	DBGLOG(INIT, INFO,
 	       "MT6632 : wlanoidQueryProcessAccessEfuseRead, address=%d\n",

@@ -1168,28 +1168,61 @@ s_int32 mt_op_read_bulk_eeprom(
 	struct test_wlan_info *winfos,
 	struct test_eeprom *eprms)
 {
-#if 0
-	struct param_custom_mcr_rw_struct mcr_info;
-	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
-	u_int32 idx;
 	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 
 	if (pr_oid_funcptr == NULL)
 		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
 
-	for (idx = 0; idx < eprms->length; idx++) {
-		mcr_info.mcr_offset = eprms->offset + idx * 4;
-		mcr_info.mcr_data = 0;
-
-		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
-			OP_WLAN_OID_QUERY_MCR_READ,
-			&mcr_info,
-			sizeof(mcr_info),
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_EPRM_READ,
+			(void *)eprms,
+			sizeof(struct test_eeprom),
 			NULL,
 			NULL);
-	}
-#endif
-	return SERV_STATUS_SUCCESS;
+
+	return ret;
+}
+
+s_int32 mt_op_write_bulk_eeprom(
+	struct test_wlan_info *winfos,
+	struct test_eeprom *eprms)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_EPRM_WRITE,
+			(void *)eprms,
+			sizeof(struct test_eeprom),
+			NULL,
+			NULL);
+
+	return ret;
+}
+
+s_int32 mt_op_get_free_efuse_block(
+	struct test_wlan_info *winfos,
+	struct test_eeprom *eprms)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_GET_EFUSE_FREE_BLOCK,
+		(void *)eprms,
+		sizeof(struct test_eeprom),
+		NULL,
+		NULL);
+
+	return ret;
 }
 
 static void mt_op_set_manual_he_tb_value(
