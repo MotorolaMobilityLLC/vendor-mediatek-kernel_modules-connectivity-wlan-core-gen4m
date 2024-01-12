@@ -185,6 +185,10 @@ else
     ccflags-y += -DCFG_SUPPORT_DUAL_STA=1
 endif
 
+ifneq ($(filter 6779, $(WLAN_CHIP_ID)),)
+    ccflags-y += -DCFG_FORCE_AP1NSS
+endif
+
 ifeq ($(MTK_ANDROID_WMT), y)
     ccflags-y += -DCFG_MTK_ANDROID_WMT=1
     WMT_SUPPORT := y
