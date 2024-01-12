@@ -2931,7 +2931,7 @@ struct UNI_CMD_TESTMODE_RF_CTRL {
 	union {
 		uint32_t u4OpMode;
 		uint32_t u4ChannelFreq;
-		struct PARAM_MTK_WIFI_TEST_STRUCT rRfATInfo;
+		struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
 	}u;
 }__KAL_ATTRIB_PACKED__;
 
@@ -3094,7 +3094,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_TEST_TR_PARAM   = 0x42,
 	UNI_EVENT_ID_CHIP_CAPABILITY = 0x43,
 	UNI_EVENT_ID_UPDATE_COEX_PHYRATE = 0x44,
-
+	UNI_EVENT_ID_TESTMODE_CTRL   = 0x46,
 	UNI_EVENT_ID_NUM
 };
 
@@ -4201,12 +4201,18 @@ enum UNI_EVENT_TESTMODE_CTRL_TAG {
  * @param[in] aucBuffer            Icap , recal event
  */
 /* Testmode RF status (Tag0) */
-struct UNI_EVENT_RF_TEST_RESULT {
+struct UNI_EVENT_RF_TEST_TLV_T {
     uint16_t u2Tag;
     uint16_t u2Length;
 
     uint8_t  aucBuffer[0];
 
+} __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_RF_TEST_RESULT {
+	uint32_t u4FuncIndex;
+	uint32_t u4PayloadLength;
+	uint8_t  aucEvent[0];
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
@@ -4529,6 +4535,8 @@ uint32_t nicUniCmdSetNvramSettings(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdTestmodeRxStat(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetTxAmpdu(struct ADAPTER *ad,
@@ -4593,6 +4601,8 @@ void nicUniEventQueryRfTestATInfo(IN struct ADAPTER
 void nicUniEventQueryRxStatAll(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 void nicUniEventBugReport(IN struct ADAPTER
+	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
+void nicUniEventRfTestHandler(IN struct ADAPTER
 	*prAdapter, IN struct CMD_INFO *prCmdInfo, IN uint8_t *pucEventBuf);
 
 /*******************************************************************************
