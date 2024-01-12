@@ -2036,7 +2036,7 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u_int8_t fgIsValidSsid = FALSE;
 	struct PARAM_SSID rSsid;
 	uint64_t u8Timestamp;
-	u_int8_t fgIsNewBssDesc = FALSE;
+	u_int8_t fgIsNewBssDesc = FALSE, fgIsCopy = FALSE;
 
 	uint32_t i;
 	uint8_t ucSSIDChar;
@@ -2354,18 +2354,24 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 		}
 	}
 
-	prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
-	if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE) {
-		prBssDesc->u2RawLength = CFG_RAW_BUFFER_SIZE;
-		/* Give an warning msg when content is going to be
-		 * truncated.
-		 */
-		DBGLOG(SCN, WARN,
-			"Pkt len(%u) > Max RAW buffer size(%u), truncate it!\n",
-			prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
+	/* 2018/04/17 Frog: always update IE is not a good choice */
+	/* Because of not considering hidden BSS */
+	/* Hidden BSS Beacon v.s. hidden BSS probe response */
+	if ((prBssDesc->u2RawLength == 0) || (fgIsValidSsid)) {
+		prBssDesc->u2RawLength = prSwRfb->u2PacketLen;
+		if (prBssDesc->u2RawLength > CFG_RAW_BUFFER_SIZE) {
+			prBssDesc->u2RawLength = CFG_RAW_BUFFER_SIZE;
+			/* Give an warning msg when content is going to be
+			 * truncated.
+			 */
+			DBGLOG(SCN, WARN,
+				"Pkt len(%u) > Max RAW buffer size(%u), truncate it!\n",
+				prSwRfb->u2PacketLen, CFG_RAW_BUFFER_SIZE);
+		}
+		kalMemCopy(prBssDesc->aucRawBuf,
+			prWlanBeaconFrame, prBssDesc->u2RawLength);
+		fgIsCopy = TRUE;
 	}
-	kalMemCopy(prBssDesc->aucRawBuf,
-		prWlanBeaconFrame, prBssDesc->u2RawLength);
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
 	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting) {
@@ -2393,18 +2399,21 @@ struct BSS_DESC *scanAddToBssDesc(IN struct ADAPTER *prAdapter,
 	u2IELength = (prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) -
 	    (uint16_t) OFFSET_OF(struct WLAN_BEACON_FRAME_BODY, aucInfoElem[0]);
 
-	if (u2IELength > CFG_IE_BUFFER_SIZE) {
-		u2IELength = CFG_IE_BUFFER_SIZE;
-		prBssDesc->fgIsIEOverflow = TRUE;
-	} else {
-		prBssDesc->fgIsIEOverflow = FALSE;
-	}
-	prBssDesc->u2IELength = u2IELength;
+	/* 2018/04/17 Frog: Only update IELength along with IE update */
+	if (fgIsCopy) {
+		if (u2IELength > CFG_IE_BUFFER_SIZE) {
+			u2IELength = CFG_IE_BUFFER_SIZE;
+			prBssDesc->fgIsIEOverflow = TRUE;
+		} else {
+			prBssDesc->fgIsIEOverflow = FALSE;
+		}
+		prBssDesc->u2IELength = u2IELength;
 
-	if (fgIsProbeResp || fgIsValidSsid) {
-		kalMemCopy(prBssDesc->aucIEBuf, prWlanBeaconFrame->aucInfoElem,
-		u2IELength);
+		kalMemCopy(prBssDesc->aucIEBuf,
+			prWlanBeaconFrame->aucInfoElem,
+			u2IELength);
 	}
+
 	/* 4 <2.2> reset prBssDesc variables in case that AP
 	 * has been reconfigured
 	 */
@@ -4472,15 +4481,17 @@ void scanReportBss2Cfg80211(IN struct ADAPTER *prAdapter,
 				SpecificprBssDesc->aucSSID);
 
 			if (eBSSType == BSS_TYPE_INFRASTRUCTURE) {
-				kalIndicateBssInfo(
-					prAdapter->prGlueInfo,
-					(uint8_t *)
-					SpecificprBssDesc->aucRawBuf,
-					SpecificprBssDesc->u2RawLength,
-					SpecificprBssDesc->ucChannelNum,
-					SpecificprBssDesc->eBand,
-					RCPI_TO_dBm(
-					SpecificprBssDesc->ucRCPI));
+				if (SpecificprBssDesc->u2RawLength != 0) {
+					kalIndicateBssInfo(
+						prAdapter->prGlueInfo,
+						(uint8_t *)
+						SpecificprBssDesc->aucRawBuf,
+						SpecificprBssDesc->u2RawLength,
+						SpecificprBssDesc->ucChannelNum,
+						SpecificprBssDesc->eBand,
+						RCPI_TO_dBm(
+						SpecificprBssDesc->ucRCPI));
+				}
 			} else {
 
 				rChannelInfo.ucChannelNum
