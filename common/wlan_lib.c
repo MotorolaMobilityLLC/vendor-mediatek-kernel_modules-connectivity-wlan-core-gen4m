@@ -11158,6 +11158,129 @@ uint32_t wlanSetLowLatencyMode(
 
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 
+#if CFG_SUPPORT_EASY_DEBUG
+
+void wlanCfgFwSetParam(uint8_t *fwBuffer, char *cmdStr, char *value, int num,
+		       int type)
+{
+	struct CMD_FORMAT_V1 *cmd = (struct CMD_FORMAT_V1 *)fwBuffer + num;
+
+	kalMemSet(cmd, 0, sizeof(struct CMD_FORMAT_V1));
+	cmd->itemType = type;
+
+	cmd->itemStringLength = strlen(cmdStr);
+	if (cmd->itemStringLength > MAX_CMD_NAME_MAX_LENGTH)
+		cmd->itemStringLength = MAX_CMD_NAME_MAX_LENGTH;
+
+	/* here will not ensure the end will be '\0' */
+	kalMemCopy(cmd->itemString, cmdStr, cmd->itemStringLength);
+
+	cmd->itemValueLength = strlen(value);
+	if (cmd->itemValueLength > MAX_CMD_VALUE_MAX_LENGTH)
+		cmd->itemValueLength = MAX_CMD_VALUE_MAX_LENGTH;
+
+	/* here will not ensure the end will be '\0' */
+	kalMemCopy(cmd->itemValue, value, cmd->itemValueLength);
+}
+
+uint32_t wlanCfgSetGetFw(IN struct ADAPTER *prAdapter, const char *fwBuffer,
+			 int cmdNum, enum CMD_TYPE cmdType)
+{
+	struct CMD_HEADER *pcmdV1Header = NULL;
+
+	pcmdV1Header = (struct CMD_HEADER *)
+			kalMemAlloc(sizeof(struct CMD_HEADER), VIR_MEM_TYPE);
+
+	if (pcmdV1Header == NULL)
+		return WLAN_STATUS_FAILURE;
+
+	kalMemSet(pcmdV1Header->buffer, 0, MAX_CMD_BUFFER_LENGTH);
+	pcmdV1Header->cmdType = cmdType;
+	pcmdV1Header->cmdVersion = CMD_VER_1_EXT;
+	pcmdV1Header->itemNum = cmdNum;
+	pcmdV1Header->cmdBufferLen = cmdNum * sizeof(struct CMD_FORMAT_V1);
+	kalMemCopy(pcmdV1Header->buffer, fwBuffer, pcmdV1Header->cmdBufferLen);
+
+	wlanSendSetQueryCmd(prAdapter, CMD_ID_GET_SET_CUSTOMER_CFG,
+				TRUE, FALSE, FALSE,
+				NULL, NULL,
+				sizeof(struct CMD_HEADER),
+				(uint8_t *) pcmdV1Header,
+				NULL, 0);
+	kalMemFree(pcmdV1Header, VIR_MEM_TYPE, sizeof(struct CMD_HEADER));
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf)
+{
+	/* here return a list should be better */
+	char *saveptr1, *saveptr2;
+	char *cfgItems = pucConfigBuf;
+	uint8_t cmdNum = 0;
+
+	uint8_t *cmdBuffer = kalMemAlloc(MAX_CMD_BUFFER_LENGTH, VIR_MEM_TYPE);
+
+	if (cmdBuffer == 0) {
+		DBGLOG(INIT, INFO, "omega, cmd buffer return fail!");
+		return WLAN_STATUS_FAILURE;
+	}
+	kalMemSet(cmdBuffer, 0, MAX_CMD_BUFFER_LENGTH);
+
+	while (1) {
+		char *keyStr = NULL;
+		char *valueStr = NULL;
+		char *cfgEntry = kalStrtokR(cfgItems, "\n\r", &saveptr1);
+
+		if (!cfgEntry) {
+			if (cmdNum)
+				wlanCfgSetGetFw(prAdapter, cmdBuffer, cmdNum,
+						CMD_TYPE_SET);
+
+			if (cmdBuffer)
+				kalMemFree(cmdBuffer, VIR_MEM_TYPE,
+					   MAX_CMD_BUFFER_LENGTH);
+
+			return WLAN_STATUS_SUCCESS;
+		}
+		cfgItems = NULL;
+
+		keyStr = kalStrtokR(cfgEntry, " \t", &saveptr2);
+		valueStr = kalStrtokR(NULL, "\0", &saveptr2);
+
+		/* maybe a blank line, but with some tab or whitespace */
+		if (!keyStr)
+			continue;
+
+		/* here take '#' at the beginning of line as comment */
+		if (keyStr[0] == '#')
+			continue;
+
+		/* remove the \t " " at the beginning of the valueStr */
+		while (valueStr && (*valueStr == '\t' || *valueStr == ' '))
+			valueStr++;
+
+		if (keyStr && valueStr) {
+			wlanCfgFwSetParam(cmdBuffer, keyStr, valueStr, cmdNum,
+					  1);
+			cmdNum++;
+			if (cmdNum == MAX_CMD_ITEM_MAX) {
+				wlanCfgSetGetFw(prAdapter, cmdBuffer,
+						MAX_CMD_ITEM_MAX, CMD_TYPE_SET);
+				kalMemSet(cmdBuffer, 0, MAX_CMD_BUFFER_LENGTH);
+				cmdNum = 0;
+			}
+		} else {
+			/* here will not to try send the cmd has been parsed,
+			 * but not sent yet
+			 */
+			if (cmdBuffer)
+				kalMemFree(cmdBuffer, VIR_MEM_TYPE,
+					   MAX_CMD_BUFFER_LENGTH);
+			return WLAN_STATUS_FAILURE;
+		}
+	}
+}
+#endif /* CFG_SUPPORT_EASY_DEBUG */
 
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,

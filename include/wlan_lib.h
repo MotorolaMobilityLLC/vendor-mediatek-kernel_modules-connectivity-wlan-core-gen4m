@@ -300,7 +300,7 @@
 
 enum CMD_VER {
 	CMD_VER_1,	/* Type[2]+String[32]+Value[32] */
-	CMD_VER_2	/* for furtur define. */
+	CMD_VER_1_EXT
 };
 
 
@@ -1741,6 +1741,10 @@ uint32_t wlanSetLowLatencyMode(IN struct ADAPTER *prAdapter,
 int32_t wlanGetFileContent(struct ADAPTER *prAdapter,
 	const uint8_t *pcFileName, uint8_t *pucBuf,
 	uint32_t u4MaxFileLen, uint32_t *pu4ReadFileLen, u_int8_t bReqFw);
+
+#if CFG_SUPPORT_EASY_DEBUG
+uint32_t wlanFwCfgParse(IN struct ADAPTER *prAdapter, uint8_t *pucConfigBuf);
+#endif /* CFG_SUPPORT_EASY_DEBUG */
 
 void wlanReleasePendingCmdById(struct ADAPTER *prAdapter, uint8_t ucCid);
 
