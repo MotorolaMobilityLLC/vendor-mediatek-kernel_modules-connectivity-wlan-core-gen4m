@@ -843,13 +843,18 @@ endif
 
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
 CONFIG_SUPPORT_PCIE_ASPM=n
+CONFIG_SUPPORT_PCIE_PLAT_INT_FLOW=n
 endif
 ifeq ($(CONFIG_SUPPORT_PCIE_ASPM), y)
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=1
 else
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=0
 endif
-
+ifeq ($(CONFIG_SUPPORT_PCIE_PLAT_INT_FLOW), y)
+    ccflags-y += -DCFG_SUPPORT_PCIE_PLAT_INT_FLOW=1
+else
+    ccflags-y += -DCFG_SUPPORT_PCIE_PLAT_INT_FLOW=0
+endif
 ifeq ($(CONFIG_DEVICE_SUSPEND_BY_MOBILE), y)
     ccflags-y += -DCFG_DEVICE_SUSPEND_BY_MOBILE=1
 else

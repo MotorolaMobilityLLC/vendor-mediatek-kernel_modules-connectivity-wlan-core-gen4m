@@ -145,6 +145,11 @@ static void mt6639ReadIntStatusByMsi(struct ADAPTER *prAdapter,
 static void mt6639ReadIntStatus(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
 
+#if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
+static void mt6639EnableInterruptViaPcie(struct ADAPTER *prAdapter);
+static void mt6639DisableInterruptViaPcie(struct ADAPTER *prAdapter);
+#endif
+
 static void mt6639EnableInterrupt(struct ADAPTER *prAdapter);
 static void mt6639DisableInterrupt(struct ADAPTER *prAdapter);
 
@@ -550,8 +555,13 @@ struct BUS_INFO mt6639_bus_info = {
 	.prPseGroup = mt6639_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt6639_pse_group),
 	.pdmaSetup = mt6639WpdmaConfig,
+#if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
+	.enableInterrupt = mt6639EnableInterruptViaPcie,
+	.disableInterrupt = mt6639DisableInterruptViaPcie,
+#else
 	.enableInterrupt = mt6639EnableInterrupt,
 	.disableInterrupt = mt6639DisableInterrupt,
+#endif
 	.configWfdmaIntMask = mt6639ConfigIntMask,
 	.configWfdmaRxRingTh = mt6639ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
@@ -1680,6 +1690,33 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 	       enable,
 	       u4WrVal);
 }
+
+#if defined(_HIF_PCIE) && (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
+static void mt6639EnableInterruptViaPcie(struct ADAPTER *prAdapter)
+{
+	/*
+	 * Problem Statement:
+	 * Current rx driver own flow is disable wfdma
+	 * interrupt, then set driver own.
+	 * It may cause Falcon enter sleep after disable
+	 * wfdma interrupt and cause read driver own timeout.
+	 *
+	 * Solution:
+	 * Confirmed with DE, correct rx driver own flow
+	 * Set driver own and read driver own before disable/enable
+	 * wfdma interrupt
+	 */
+
+	mt6639ConfigIntMask(prAdapter->prGlueInfo, FALSE);
+	mt6639ConfigIntMask(prAdapter->prGlueInfo, TRUE);
+	asicConnac3xEnablePlatformIRQ(prAdapter);
+}
+
+static void mt6639DisableInterruptViaPcie(struct ADAPTER *prAdapter)
+{
+	asicConnac3xDisablePlatformIRQ(prAdapter);
+}
+#endif
 
 static void mt6639EnableInterrupt(struct ADAPTER *prAdapter)
 {
