@@ -204,6 +204,13 @@ static void mt7961EnableInterrupt(
 
 	IntMask.field_conn2x_single.wfdma0_rx_coherent = 0;
 	IntMask.field_conn2x_single.wfdma0_tx_coherent = 0;
+
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+	if (HAL_IS_TX_DIRECT() &&
+		kalIsTputMode(prAdapter, PKT_PATH_ALL, MAX_BSSID_NUM))
+		IntMask.field_conn2x_single.wfdma0_tx_done_0 = 0;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
 	HAL_MCR_WR(prAdapter,
 		WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR, IntMask.word);
 

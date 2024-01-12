@@ -1058,7 +1058,10 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_RX_GRO
 	uint32_t ucGROFlushTimeout; /* Flush packet timeout (ms) */
 	uint32_t ucGROEnableTput; /* Threshold of enable GRO Tput */
-#endif
+#endif /* CFG_SUPPORT_RX_GRO */
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+	uint32_t u4TputThresholdMbps;
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
 #if CFG_SUPPORT_IOT_AP_BLACKLIST
 	uint8_t fgEnDefaultIotApRule;
