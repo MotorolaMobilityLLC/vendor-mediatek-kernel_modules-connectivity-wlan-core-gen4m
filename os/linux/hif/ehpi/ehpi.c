@@ -140,7 +140,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 /*----------------------------------------------------------------------------*/
 u_int8_t
 kalDevPortRead(struct GLUE_INFO *prGlueInfo, uint16_t u2Port, uint16_t u2Len,
-		uint8_t *pucBuf, uint16_t u2ValidOutBufSize)
+	       uint8_t *pucBuf, uint16_t u2ValidOutBufSize, u_int8_t isPollMode)
 {
 	uint32_t i;
 

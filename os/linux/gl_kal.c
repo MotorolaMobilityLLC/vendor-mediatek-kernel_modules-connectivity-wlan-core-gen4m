@@ -5661,8 +5661,9 @@ int main_thread(void *data)
 			if (prGlueInfo->fgSdioReadWriteMode == TRUE) {
 				/* read test */
 				kalDevPortRead(prGlueInfo, MCR_WTMDR, 256,
-				       prGlueInfo->aucSdioTestBuffer,
-				       sizeof(prGlueInfo->aucSdioTestBuffer));
+					prGlueInfo->aucSdioTestBuffer,
+					sizeof(prGlueInfo->aucSdioTestBuffer),
+					FALSE);
 			} else {
 				/* write test */
 				kalDevPortWrite(prGlueInfo, MCR_WTMDR, 172,

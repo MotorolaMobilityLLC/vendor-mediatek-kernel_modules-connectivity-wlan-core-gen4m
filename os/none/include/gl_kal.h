@@ -1190,7 +1190,7 @@ u_int8_t kalDevRegWrite_mac(struct GLUE_INFO *prGlueInfo,
 u_int8_t
 kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 	       uint16_t u2Port, uint32_t u2Len, uint8_t *pucBuf,
-	       uint32_t u2ValidOutBufSize);
+	       uint32_t u2ValidOutBufSize, u_int8_t isPollMode);
 
 u_int8_t
 kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
