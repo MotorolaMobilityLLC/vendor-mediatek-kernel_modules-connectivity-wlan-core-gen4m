@@ -285,7 +285,7 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 			(S2P_CMD_WR << 18) | (0x00 << 16) |
 			(s2p_type << 8) | (bit_7_0));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
-		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+		DBGLOG(INIT, LOUD, "S2P composed cmd: %x\n",
 			(S2P_CMD_WR << 18) | (0x00 << 16) |
 			(s2p_type << 8) | (bit_7_0));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
@@ -297,7 +297,7 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 			(S2P_CMD_WR << 18) | (0x01 << 16) |
 			(s2p_type << 8) | (bit_15_8));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
-		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+		DBGLOG(INIT, LOUD, "S2P composed cmd: %x\n",
 			(S2P_CMD_WR << 18) | (0x01 << 16) |
 			(s2p_type << 8) | (bit_15_8));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
@@ -310,7 +310,7 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 			(S2P_CMD_WR << 18) | (0x02 << 16) |
 			(s2p_type << 8) | (bit_23_16));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
-		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+		DBGLOG(INIT, LOUD, "S2P composed cmd: %x\n",
 			(S2P_CMD_WR << 18) | (0x02 << 16) |
 			(s2p_type << 8) | (bit_23_16));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
@@ -323,7 +323,7 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 			(S2P_CMD_WR << 18) | (0x03 << 16) |
 			(s2p_type << 8) | (bit_31_24));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
-		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+		DBGLOG(INIT, LOUD, "S2P composed cmd: %x\n",
 			(S2P_CMD_WR << 18) | (0x03 << 16) |
 			(s2p_type << 8) | (bit_31_24));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
@@ -337,7 +337,7 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 			(S2P_CMD_WR << 18) | (0x00 << 16) |
 			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
-		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+		DBGLOG(INIT, LOUD, "S2P composed cmd: %x\n",
 			(S2P_CMD_WR << 18) | (0x00 << 16) |
 			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
 		break;
@@ -346,7 +346,7 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 			(S2P_CMD_WR << 18) | (0x01 << 16) |
 			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE, S2P_CMD_CLR_WR_BIT);
-		DBGLOG(INIT, TRACE, "S2P composed cmd: %x\n",
+		DBGLOG(INIT, LOUD, "S2P composed cmd: %x\n",
 			(S2P_CMD_WR << 18) | (0x01 << 16) |
 			(S2P_CMD_AES_DRVOWN_TRIGGER << 8) | (bit_7_0));
 		break;
@@ -397,7 +397,7 @@ static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
 			&aes_busy);
 	}
-	DBGLOG(INIT, INFO, "aes done, aes_busy=%d\n", aes_busy);
+	DBGLOG(INIT, LOUD, "aes done, aes_busy=%d\n", aes_busy);
 	return ret;
 }
 #endif

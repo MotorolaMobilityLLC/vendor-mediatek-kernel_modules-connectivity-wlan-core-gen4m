@@ -1238,8 +1238,8 @@ struct PP_TOP_CR rMt6653PpTopCr = {
 static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 	const struct wlan_dump_list *dump_list)
 {
-#define MAX_REG_DUMP_NUM		16
-#define REG_DUMP_ARRAY_SIZE		170
+#define MAX_REG_DUMP_NUM		48
+#define REG_DUMP_ARRAY_SIZE		(MAX_REG_DUMP_NUM*9+16)
 
 	uint32_t u4ReadSize = dump_list->read_cmd_size;
 	const struct wlan_dbg_command *pCmdList = NULL;
@@ -1274,6 +1274,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 				u4Line++;
 			}
 
+			u4ReadVal = 0x12345678;
 			HAL_RMCR_RD(PLAT_DBG, prAdapter, pCmdList[i].r_addr,
 				&u4ReadVal);
 			u4Offset += snprintf(dumpLineBuf + u4Offset,
@@ -1591,12 +1592,12 @@ void mt6653_DumpBusHangCr(struct ADAPTER *ad)
 		return;
 	}
 
-	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
-			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
-
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6653_dumpConninfraBus(ad);
 #endif
+
+	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
+			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
 	mt6653_dumpCbInfraReg(ad);
 	mt6653_dumpWfsyscpupcr(ad);
 	mt6653_dumpPcGprLog(ad);
