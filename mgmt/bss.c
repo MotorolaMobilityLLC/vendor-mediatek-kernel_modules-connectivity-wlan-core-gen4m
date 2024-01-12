@@ -109,6 +109,10 @@ struct APPEND_VAR_IE_ENTRY txBcnIETable[] = {
 	 bssGenerateExtSuppRate_IE}	/* 50 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL,
 	   rlmRspGenerateErpIE}	/* 42 */
+#if CFG_AP_80211K_SUPPORT
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RRM_CAP), NULL,
+	   rlmMulAPAgentGenerateApRRMEnabledCapIE} /* 70 */
+#endif /* CFG_AP_80211K_SUPPORT */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL,
 	   rlmRspGenerateHtCapIE}	/* 45 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
@@ -184,6 +188,10 @@ struct APPEND_VAR_IE_ENTRY txProbRspIETable[] = {
 	 bssGenerateExtSuppRate_IE}	/* 50 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_ERP), NULL,
 	   rlmRspGenerateErpIE}	/* 42 */
+#if CFG_AP_80211K_SUPPORT
+	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_RRM_CAP), NULL,
+	   rlmMulAPAgentGenerateApRRMEnabledCapIE} /* 70 */
+#endif /* CFG_AP_80211K_SUPPORT */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_CAP), NULL,
 	   rlmRspGenerateHtCapIE}	/* 45 */
 	, {(ELEM_HDR_LEN + ELEM_MAX_LEN_HT_OP), NULL,
@@ -1448,6 +1456,12 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand = 0;
 	uint8_t ucHwChannelNum = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
+#if CFG_AP_80211KVR_INTERFACE
+	uint8_t ucIndex;
+	struct T_MULTI_AP_STA_UNASSOC_METRICS *prUnAssocSTA;
+	uint8_t aucNullAddr[] = NULL_MAC_ADDR;
+	struct HW_MAC_RX_STS_GROUP_3 *prRxStatusGroup3;
+#endif
 
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
 	/* 4 <1> Parse Probe Req and Get BSSID */
@@ -1506,6 +1520,31 @@ uint32_t bssProcessProbeRequest(IN struct ADAPTER *prAdapter,
 						     prAdapter->ucP2PDevBssIdx),
 						    (uint8_t)
 						    prBssInfo->u4PrivateData);
+#if CFG_AP_80211KVR_INTERFACE
+			for (ucIndex = 0;
+				ucIndex < SAP_UNASSOC_METRICS_STA_MAX;
+				ucIndex++) {
+				prUnAssocSTA =
+					&prBssInfo->arUnAssocSTA[ucIndex];
+
+				if (EQUAL_MAC_ADDR(prUnAssocSTA->mStaMac,
+					prMgtHdr->aucSrcAddr)
+					&& UNEQUAL_MAC_ADDR(aucNullAddr,
+					prMgtHdr->aucSrcAddr)) {
+					prRxStatusGroup3 =
+					prSwRfb->prRxStatusGroup3;
+					prUnAssocSTA->iRssi =
+						RCPI_TO_dBm(
+						((prRxStatusGroup3)
+						->u4RxVector[3]
+						& RX_VT_RCPI0_MASK)
+						>> RX_VT_RCPI0_OFFSET);
+					prUnAssocSTA->u8Channel =
+						prBssInfo->ucPrimaryChannel;
+					prUnAssocSTA->uTime = kalGetTimeTick();
+				}
+			}
+#endif
 		}
 #endif
 #if CFG_ENABLE_BT_OVER_WIFI
@@ -2326,6 +2365,9 @@ void bssInitForAP(IN struct ADAPTER *prAdapter, IN struct BSS_INFO *prBssInfo,
 
 	if (prBssInfo->fgUseShortSlotTime)
 		prBssInfo->u2CapInfo |= CAP_INFO_SHORT_SLOT_TIME;
+#if CFG_AP_80211K_SUPPORT
+	prBssInfo->u2CapInfo |= CAP_INFO_RADIO_MEASUREMENT;
+#endif /* CFG_AP_80211K_SUPPORT */
 #endif
 	/* 4 <6> Find Lowest Basic Rate Index for default TX Rate of MMPDU */
 	nicTxUpdateBssDefaultRate(prBssInfo);

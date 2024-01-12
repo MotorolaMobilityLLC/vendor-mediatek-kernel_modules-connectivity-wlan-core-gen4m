@@ -362,6 +362,11 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t ucRoleIndex);
 
+#if CFG_AP_80211KVR_INTERFACE
+void kalP2PCatBlackList(IN struct GLUE_INFO *prGlueInfo,
+		IN bool flag);
+#endif
+
 u_int8_t kalP2PCmpBlackList(IN struct GLUE_INFO *prGlueInfo,
 		IN uint8_t rbssid[PARAM_MAC_ADDR_LEN],
 		IN uint8_t ucRoleIndex);

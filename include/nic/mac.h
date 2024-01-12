@@ -1590,6 +1590,8 @@ enum BEACON_REPORT_DETAIL {
 #define RRM_CAP_INFO_BEACON_PASSIVE_MEASURE_BIT     4
 #define RRM_CAP_INFO_BEACON_ACTIVE_MEASURE_BIT      5
 #define RRM_CAP_INFO_BEACON_TABLE_BIT               6
+#define RRM_CAP_INFO_CHANNEL_LOAD_MEASURE_BIT       9
+#define RRM_CAP_INFO_NOISE_HISTOGRAM_MEASURE_BIT    10
 #define RRM_CAP_INFO_TSM_BIT                        14
 #define RRM_CAP_INFO_RRM_BIT                        17
 
@@ -2276,6 +2278,16 @@ enum BEACON_REPORT_DETAIL {
 /* Figure 9-1002n - Presence Bitmap field of the Probe Request ML element */
 #define MLD_ID_PRESENT					BIT(0)
 
+
+#if CFG_AP_80211K_SUPPORT
+/* Optional subelement IDs for Beacon request (Table 9-88) */
+#define BCN_REQ_ELEM_SUBID_SSID              0
+#define BCN_REQ_ELEM_SUBID_BEACON_REPORTING  1
+#define BCN_REQ_ELEM_SUBID_REPORTING_DETAIL  2
+#define BCN_REQ_ELEM_SUBID_REQUEST           10
+#define BCN_REQ_ELEM_SUBID_AP_CHANNEL_REPORT 51
+#define BCN_REQ_ELEM_SUBID_WIDE_BW_CH_SWITCH 163
+#endif /* CFG_AP_80211K_SUPPORT */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -4063,6 +4075,35 @@ struct RSNX_INFO_ELEM {
 	uint8_t ucLength;
 	uint8_t aucCap[0];
 } __KAL_ATTRIB_PACKED__;
+
+#if CFG_AP_80211K_SUPPORT
+struct SUB_IE_BEACON_REPORTING {
+	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_BEACON_REPORTING */
+	uint8_t ucLength;
+	uint8_t ucReportingCond;
+	uint8_t ucReportingRef;
+} __KAL_ATTRIB_PACKED__;
+
+struct SUB_IE_REQUEST {
+	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_REQUEST */
+	uint8_t ucLength;
+	uint8_t aucElems[1]; /* requested element ids */
+} __KAL_ATTRIB_PACKED__;
+
+struct SUB_IE_AP_CHANNEL_REPORT {
+	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_AP_CHANNEL_REPORT */
+	uint8_t ucLength;
+	uint8_t ucOpClass;
+	uint8_t aucElems[1]; /* channel lists */
+} __KAL_ATTRIB_PACKED__;
+
+struct SUB_IE_WIDE_BW_CH_SWITCH {
+	uint8_t ucId; /* BCN_REQ_ELEM_SUBID_WIDE_BW_CH_SWITCH */
+	uint8_t ucLength;
+	uint8_t ucNewChWidth;
+	uint8_t aucNewChCenterFreq[2];
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_AP_80211K_SUPPORT */
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)
 #pragma pack()

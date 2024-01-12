@@ -2006,6 +2006,10 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 	if (EQUAL_MAC_ADDR(rbssid, aucNullAddr))
 		return FALSE;
 
+#if CFG_AP_80211KVR_INTERFACE
+	kalP2PCatBlackList(prGlueInfo, 1);
+#endif
+
 	if (fgIsblock) {
 		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
 			if (EQUAL_MAC_ADDR(
@@ -2039,6 +2043,11 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 						PARAM_CUSTOM_ACL_POLICY_ADD,
 						rbssid);
 				}
+#if CFG_AP_80211KVR_INTERFACE
+				kalP2PCatBlackList(
+					prGlueInfo,
+					0);
+#endif
 				return FALSE;
 			}
 		}
@@ -2061,10 +2070,16 @@ u_int8_t kalP2PSetBlackList(IN struct GLUE_INFO *prGlueInfo,
 						PARAM_CUSTOM_ACL_POLICY_REMOVE,
 						rbssid);
 				}
+#if CFG_AP_80211KVR_INTERFACE
+				kalP2PCatBlackList(prGlueInfo, 0);
+#endif
 				return FALSE;
 			}
 		}
 	}
+#if CFG_AP_80211KVR_INTERFACE
+	kalP2PCatBlackList(prGlueInfo, 0);
+#endif
 
 	return FALSE;
 
@@ -2105,6 +2120,28 @@ u_int8_t kalP2PResetBlackList(IN struct GLUE_INFO *prGlueInfo,
 	return TRUE;
 }
 
+#if CFG_AP_80211KVR_INTERFACE
+void kalP2PCatBlackList(IN struct GLUE_INFO *prGlueInfo, IN bool flag)
+{
+	uint32_t i;
+	uint8_t ucRoleIndex;
+
+	if (flag)
+		DBGLOG(INIT, INFO, "Before Set BlackLis\n");
+	else
+		DBGLOG(INIT, INFO, "After Set BlackLis\n");
+
+	for (ucRoleIndex = 0; ucRoleIndex < KAL_P2P_NUM; ucRoleIndex++) {
+		for (i = 0; i < P2P_MAXIMUM_CLIENT_COUNT; i++) {
+			DBGLOG(INIT, INFO,
+				"ucRoleIndex[%d]-BlackList[%d] MA="MACSTR"\n",
+				ucRoleIndex, i,
+				&(prGlueInfo->prP2PInfo[ucRoleIndex]
+				->aucblackMACList[i]));
+		}
+	}
+}
+#endif
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief to compare the black list of Hotspot

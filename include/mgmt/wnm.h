@@ -180,6 +180,16 @@ uint8_t wnmSendBTMResponse(IN struct ADAPTER *prAdapter,
 	IN const uint8_t *aucBssid, IN uint8_t ucStatus,
 	IN uint8_t ucReason, IN uint8_t ucBssIndex);
 
+#if CFG_AP_80211V_SUPPORT
+void wnmMulAPAgentSendBTMRequestFrame(
+			IN struct ADAPTER *prAdapter,
+			IN struct STA_RECORD *prStaRec,
+			struct PARAM_CUSTOM_BTM_REQ_STRUCT *prSetBtmReqInfo);
+
+void wnmMulAPAgentRecvBTMResponse(IN struct ADAPTER *prAdapter,
+	IN struct SW_RFB *prSwRfb);
+#endif /* CFG_AP_80211V_SUPPORT */
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
