@@ -1935,6 +1935,22 @@
 #define CFG_WIFI_ISO_DETECT  1
 #endif
 
+
+/*------------------------------------------------------------------------------
+ * To enable Tx Power Table Dump
+ * CFG_WIFI_TXPWR_TBL_DUMP : CCK + OFDM + HT + VHT
+ * CFG_WIFI_TXPWR_TBL_DUMP_HE : CCK + OFDM + HT + VHT + HE
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_WIFI_TXPWR_TBL_DUMP
+#define CFG_WIFI_TXPWR_TBL_DUMP 0
+#define CFG_WIFI_TXPWR_TBL_DUMP_HE 0
+#else
+#ifndef CFG_WIFI_TXPWR_TBL_DUMP_HE
+#define CFG_WIFI_TXPWR_TBL_DUMP_HE 0
+#endif
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
