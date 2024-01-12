@@ -138,6 +138,13 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
 		if (IS_MLD_STAREC_VALID(mld_starec)) {
 			links =  &mld_starec->rStarecList;
+
+			/* auth is handled in supplicant */
+			if (frame_ctrl == MAC_FRAME_AUTH &&
+			    prStaRec->eAuthAssocState ==
+				SAA_STATE_EXTERNAL_AUTH)
+				return TRUE;
+
 			/* sta already send ml ie, expected ml ie in resp */
 			if (!info->ucValid ||
 			   (frame_ctrl == MAC_FRAME_AUTH &&
@@ -821,14 +828,12 @@ uint8_t *mldHandleRnrMlParam(uint8_t *ie,
 		prProfile->rChnlInfo.u4CenterFreq1 = 0;
 		prProfile->rChnlInfo.u4CenterFreq2 = 0;
 		DBGLOG(ML, TRACE,
-			"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d, s1:%d, s2:%d\n",
+			"link_id:%d, op:%d, rfband:%d, ch:%d, bw:%d\n",
 			prProfile->ucLinkId,
 			prNeighborAPInfoField->ucOpClass,
 			prProfile->rChnlInfo.eBand,
 			prProfile->rChnlInfo.ucChannelNum,
-			prProfile->rChnlInfo.ucChnlBw,
-			prProfile->rChnlInfo.u4CenterFreq1,
-			prProfile->rChnlInfo.u4CenterFreq2);
+			prProfile->rChnlInfo.ucChnlBw);
 	}
 
 	return ie + 4 + u2TbttInfoCount * u2TbttInfoLength;
@@ -1840,6 +1845,13 @@ sta:
 				pos += 2;
 			}
 		}
+
+		if (pos > tail) {
+			DBGLOG(ML, WARN,
+				"invalid STA profile len=%d\n", tail - pos);
+			goto next;
+		}
+
 		/* (tail - pos) is length of STA Profile
 		 * copy STA profile in Per-STA profile subelement.
 		 */
@@ -2243,30 +2255,40 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(que);
 }
 
-uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
-	struct SW_RFB *prSrc, struct STA_PROFILE *prSta,
+uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter,
+	struct SW_RFB *prDst, struct SW_RFB *prSrc,
+	struct STA_PROFILE *prSta, struct BSS_DESC *prBssDesc,
 	struct STA_RECORD *prStaRec, const char *pucDesc)
 {
-	int padding;
+	int offset;
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
-	uint8_t i, ie_count, *ie, *ies[MAX_DUP_IE_COUNT], *pos;
-	size_t len;
-	uint16_t fctrl;
+	uint8_t i, ie_count, *ie = NULL, *ies[MAX_DUP_IE_COUNT], *pos;
+	uint16_t fctrl, ie_len;
 
-	padding = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
-	mgmt = (struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
-	fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
-	ie = (uint8_t *)prSrc->pvHeader + padding;
-	len = prSrc->u2PacketLen - padding;
-
-	if (pucDesc)
-		DBGLOG(ML, TRACE, "%s", pucDesc);
-
-	/* only valid mgmt can be duplicated from complete profile */
-	if (padding < 0 || !mldIsValidForCompleteProfile(fctrl, prStaRec))
+	offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
+	if (offset < 0 || offset > prSrc->u2PacketLen)
 		return WLAN_STATUS_INVALID_PACKET;
 
-	if (mldParseProfile(ie, len, prSta->aucIEbuf, prSta->u2IEbufLen,
+	mgmt = (struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
+	fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
+
+	if (prBssDesc && prBssDesc->fgIsConnected) {
+		ie = prBssDesc->pucIeBuf;
+		ie_len = prBssDesc->u2IELength;
+	} else if (prSta->ucComplete) {
+		ie = (uint8_t *)prSrc->pvHeader + offset;
+		ie_len = prSrc->u2PacketLen - offset;
+	}
+
+	if (!ie) {
+		DBGLOG(ML, WARN, "no target, complete=%d", prSta->ucComplete);
+		return WLAN_STATUS_NOT_SUPPORTED;
+	}
+
+	if (pucDesc)
+		DBGLOG(ML, TRACE, "%s complete=%d", pucDesc, prSta->ucComplete);
+
+	if (mldParseProfile(ie, ie_len, prSta->aucIEbuf, prSta->u2IEbufLen,
 		ies, &ie_count, MAX_DUP_IE_COUNT, FALSE) < 0)
 		return WLAN_STATUS_INVALID_PACKET;
 
@@ -2299,26 +2321,26 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 	}
 
 	DBGLOG(ML, LOUD, "header total %d ies\n", ie_count);
-	DBGLOG_MEM8(ML, LOUD, pos, padding);
+	DBGLOG_MEM8(ML, LOUD, pos, offset);
 
 	/* compose IE */
 	for (i = 0; i < ie_count; i++) {
 		DBGLOG_MEM8(ML, LOUD, ies[i], IE_SIZE(ies[i]));
-		kalMemCopy(pos + padding, ies[i], IE_SIZE(ies[i]));
-		padding += IE_SIZE(ies[i]);
+		kalMemCopy(pos + offset, ies[i], IE_SIZE(ies[i]));
+		offset += IE_SIZE(ies[i]);
 	}
 
-	DBGLOG(ML, LOUD, "total len=%d\n", padding);
+	DBGLOG(ML, LOUD, "total len=%d\n", offset);
 
 	/* copy common info for scan result, don't include per sta profile other
 	 * scanProcessBeaconAndProbeResp will enter infinite loop
 	 */
-	if (fctrl == MAC_FRAME_PROBE_RSP) {
+	if (fctrl == MAC_FRAME_PROBE_RSP && !prBssDesc) {
 		struct IE_MULTI_LINK_CONTROL *src, *dst;
 
 		src = (struct IE_MULTI_LINK_CONTROL *)
-			mldFindMlIE(ie, len, ML_CTRL_TYPE_BASIC);
-		dst = (struct IE_MULTI_LINK_CONTROL *)(pos + padding);
+			mldFindMlIE(ie, ie_len, ML_CTRL_TYPE_BASIC);
+		dst = (struct IE_MULTI_LINK_CONTROL *)(pos + offset);
 
 		if (!src) {
 			DBGLOG(ML, ERROR, "no ml ie\n");
@@ -2335,15 +2357,17 @@ uint32_t mldDupByMlStaProfile(struct ADAPTER *prAdapter, struct SW_RFB *prDst,
 		DBGLOG(ML, LOUD, "dst ml len=%d\n", IE_SIZE(dst));
 		DBGLOG_MEM8(ML, LOUD, (uint8_t *)dst, IE_SIZE(dst));
 
-		padding += IE_SIZE(dst);
+		offset += IE_SIZE(dst);
 	}
 
 done:
-	prDst->u2PacketLen = padding;
+	prDst->u2PacketLen = offset;
 	prDst->u2RxByteCount = ((uint8_t *)prDst->pvHeader) +
-		padding - prDst->pucRecvBuff;
-	prDst->ucChnlNum = prSta->rChnlInfo.ucChannelNum;
-	prDst->eRfBand = prSta->rChnlInfo.eBand;
+		offset - prDst->pucRecvBuff;
+	prDst->ucChnlNum = prBssDesc ? prBssDesc->ucChannelNum :
+		prSta->rChnlInfo.ucChannelNum;
+	prDst->eRfBand = prBssDesc ? prBssDesc->eBand :
+		prSta->rChnlInfo.eBand;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prDst->eRfBand == BAND_6G)
@@ -2354,8 +2378,8 @@ done:
 		"Dump duplicated SwRFB for id=%d addr="
 		MACSTR " len=%d, chnl=%d, band=%d\n",
 		prSta->ucLinkId, MAC2STR(prSta->aucLinkAddr),
-		padding, prDst->ucChnlNum, prDst->eRfBand);
-	DBGLOG_MEM8(ML, INFO, pos, padding);
+		offset, prDst->ucChnlNum, prDst->eRfBand);
+	DBGLOG_MEM8(ML, INFO, pos, offset);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -2374,11 +2398,11 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		(struct WLAN_MAC_MGMT_HEADER *)prSrc->pvHeader;
 	struct SW_RFB *rfb;
 	int offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
-	uint16_t fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 	uint8_t i, ret, *pos;
-	const uint8_t *ml;
+	const uint8_t *ml, *ssid;
+	struct PARAM_SSID rSsid;
 
-	if (offset < 0 || fctrl != MAC_FRAME_PROBE_RSP)
+	if (offset < 0 || offset > prSrc->u2PacketLen)
 		return NULL;
 
 	QUEUE_INITIALIZE(que);
@@ -2415,27 +2439,35 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
 	}
 
-	for (i = 0; i < info->ucProfNum; i++) {
-		sta = &info->rStaProfiles[i];
+	kalMemZero(&rSsid, sizeof(rSsid));
+	ssid = kalFindIeMatchMask(ELEM_ID_SSID,
+	       (uint8_t *)prSrc->pvHeader + offset,
+	       prSrc->u2PacketLen - offset,
+	       NULL, 0, 0, NULL);
+	if (ssid)
+		COPY_SSID(rSsid.aucSsid,
+			  rSsid.u4SsidLen,
+			  SSID_IE(ssid)->aucSSID,
+			  SSID_IE(ssid)->ucLength);
 
-		/* skip if no complete info or already exist */
-		if (!sta->ucComplete ||
-		    EQUAL_MAC_ADDR(mgmt->aucBSSID, sta->aucLinkAddr) ||
-		    scanSearchExistingBssDescWithSsid(
-			prAdapter,
-			BSS_TYPE_INFRASTRUCTURE,
-			sta->aucLinkAddr,
-			sta->aucLinkAddr,
-			FALSE, NULL))
+	for (i = 0; i < info->ucProfNum; i++) {
+		struct BSS_DESC *prBssDesc;
+
+		/* no need to dup again if profile is for trainsmiting ap */
+		sta = &info->rStaProfiles[i];
+		if (EQUAL_MAC_ADDR(mgmt->aucBSSID, sta->aucLinkAddr))
 			continue;
 
 		rfb = nicRxAcquireRFB(prAdapter, 1);
 		if (!rfb)
 			break;
 
+		/* if already exist, try to update bssdesc */
+		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
+			sta->aucLinkAddr, ssid ? TRUE : FALSE, &rSsid);
 		ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc,
-			sta, NULL, __func__);
-		if (ret == 0) {
+			sta, prBssDesc, NULL, __func__);
+		if (ret == WLAN_STATUS_SUCCESS) {
 			QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
 		} else {
 			nicRxReturnRFB(prAdapter, rfb);
@@ -2535,7 +2567,7 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 	}
 
 	ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc,
-		sta, prStaRec, __func__);
+		sta, NULL, prStaRec, __func__);
 	if (ret == WLAN_STATUS_SUCCESS)
 		return rfb;
 fail:

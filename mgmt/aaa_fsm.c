@@ -471,8 +471,7 @@ bow_proc:
 		}
 
 		if (rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite) ||
-		    prBssInfo->u4RsnSelectedAKMSuite ==
-						RSN_AKM_SUITE_OWE) {
+		    prBssInfo->u4RsnSelectedAKMSuite ==	RSN_AKM_SUITE_OWE) {
 			kalP2PIndicateRxMgmtFrame(prAdapter,
 				prAdapter->prGlueInfo,
 				prSwRfb,
@@ -887,8 +886,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 
 		/* NOTE: Ignore the return status for AAA */
 		/* 4 <4.2> Reply  Assoc Resp */
-		if (prBssInfo->u4RsnSelectedAKMSuite ==
-			RSN_AKM_SUITE_OWE) {
+		if (prBssInfo->u4RsnSelectedAKMSuite ==	RSN_AKM_SUITE_OWE) {
 			kalP2PIndicateRxMgmtFrame(prAdapter,
 				prAdapter->prGlueInfo,
 				prSwRfb,

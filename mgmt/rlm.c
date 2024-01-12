@@ -2603,6 +2603,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DFS
 	struct IE_CHANNEL_SWITCH *prCSAIE;
 	struct IE_EX_CHANNEL_SWITCH *prExCSAIE;
+	struct IE_MAX_CHANNEL_SWITCH_TIME *prMaxCSATimeIE;
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
 	uint8_t ucCurrentCsaCount;
 	struct IE_SECONDARY_OFFSET *prSecondaryOffsetIE;
@@ -3014,8 +3015,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			ucCurrentCsaCount = prCSAIE->ucChannelSwitchCount;
 
 			/* Stop tx */
-			if (!prBssInfo->fgHasStopTx) {
-				prBssInfo->fgHasStopTx = TRUE;
+			if (!prCSAParams->fgHasStopTx) {
+				prCSAParams->fgHasStopTx = TRUE;
 				/* AP */
 				qmSetStaRecTxAllowed(prAdapter,
 					prStaRec, FALSE);
@@ -3102,8 +3103,33 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			break;
 #endif
 
-#if (CFG_SUPPORT_802_11AX == 1)
+		case ELEM_ID_CH_SW_WRAPPER:
+			DBGLOG(RLM, LOUD, "[CSA] Channel switch wrapper\n");
+			break;
+
 		case ELEM_ID_RESERVED:
+#if CFG_SUPPORT_DFS
+			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MAX_CH_SW_TIME) {
+				uint32_t u4MaxSwitchTime = 0;
+
+				if (IE_SIZE(pucIE) !=
+				    sizeof(struct IE_MAX_CHANNEL_SWITCH_TIME))
+					break;
+
+				prMaxCSATimeIE =
+				    (struct IE_MAX_CHANNEL_SWITCH_TIME *) pucIE;
+				WLAN_GET_FIELD_24(
+					&prMaxCSATimeIE->ucChannelSwitchTime[0],
+					&u4MaxSwitchTime);
+				prCSAParams->u4MaxSwitchTime =
+					TU_TO_MSEC(u4MaxSwitchTime);
+				DBGLOG(RLM, INFO,
+					"[CSA] Max switch time %d in TU, %d in MSEC\n",
+					u4MaxSwitchTime,
+					prCSAParams->u4MaxSwitchTime);
+			}
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
 			if (fgEfuseCtrlAxOn != 1)
 				break;
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_CAP)
@@ -3185,8 +3211,9 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				ehtRlmRecOperation(prAdapter, prStaRec,
 					prBssInfo, pucIE);
 #endif
-			break;
 #endif /* CFG_SUPPORT_802_11AX */
+			break;
+
 		case ELEM_ID_VENDOR:
 			rlmParseMtkOui(prAdapter, prStaRec, prBssInfo, pucIE);
 #if CFG_SUPPORT_RXSMM_WHITELIST
@@ -3505,21 +3532,31 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DFS
 	if (SHOULD_CH_SWITCH(ucCurrentCsaCount, prCSAParams)) {
+		uint16_t u2SwitchTime;
 		cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
+		if (prCSAParams->u4MaxSwitchTime != 0)
+			u2SwitchTime =
+			       prBssInfo->u2BeaconInterval * ucCurrentCsaCount +
+			       prCSAParams->u4MaxSwitchTime;
+		else
+			u2SwitchTime =
+				prBssInfo->u2BeaconInterval * ucCurrentCsaCount;
+
 		cnmTimerStartTimer(prAdapter, &prBssInfo->rCsaTimer,
-			prBssInfo->u2BeaconInterval * ucCurrentCsaCount);
+			u2SwitchTime);
+
 		prCSAParams->ucCsaCount = ucCurrentCsaCount;
 		DBGLOG(RLM, INFO, "[CSA] Channel switch Countdown: %d msecs\n",
-		       prBssInfo->u2BeaconInterval * prCSAParams->ucCsaCount);
+		       u2SwitchTime);
 	}
 #endif
 
-	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) && prBssInfo->fgHasStopTx) {
+	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) && prCSAParams->fgHasStopTx) {
 		/* AP */
 		qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
 
 		DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
-		prBssInfo->fgHasStopTx = FALSE;
+		prCSAParams->fgHasStopTx = FALSE;
 	}
 
 	/* Do not write prBssInfo->ucVhtChannelWidth directly
@@ -5277,6 +5314,10 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	EHT_RESET_OP(prBssInfo->ucEhtOpParams);
 	/*TODO */
 #endif
+
+#if CFG_SUPPORT_DFS
+	rlmResetCSAParams(prBssInfo);
+#endif
 }
 
 #if CFG_SUPPORT_TDLS
@@ -6156,8 +6197,8 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					/* Need to stop data
 					 * transmission immediately
 					 */
-					if (!prBssInfo->fgHasStopTx) {
-						prBssInfo->fgHasStopTx = TRUE;
+					if (!prCSAParams->fgHasStopTx) {
+						prCSAParams->fgHasStopTx = TRUE;
 						/* AP */
 						qmSetStaRecTxAllowed(prAdapter,
 							   prStaRec,
