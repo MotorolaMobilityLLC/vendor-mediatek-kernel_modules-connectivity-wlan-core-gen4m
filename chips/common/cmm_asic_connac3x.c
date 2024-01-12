@@ -72,10 +72,11 @@
 
 #include "precomp.h"
 #include "wlan_lib.h"
+#include "wlan_pinctrl.h"
+
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 #include "connv3.h"
 #endif
-#include "wlan_pinctrl.h"
 
 /*******************************************************************************
 *                              C O N S T A N T S
@@ -2353,9 +2354,178 @@ void connsys_power_off(void)
 	}
 
 	halMawdPwrOff();
-	wlan_pinctrl_action(chip, WLAN_PINCTRL_MSG_FUNC_OFF);
 	connv3_pwr_off(CONNV3_DRV_TYPE_WIFI);
 #endif
 }
+
+#if CFG_MTK_ANDROID_WMT
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+static int wlan_pre_pwr_on(void)
+{
+	struct mt66xx_hif_driver_data *prDriverData =
+		get_platform_driver_data();
+	struct mt66xx_chip_info *prChipInfo = prDriverData->chip_info;
+
+	DBGLOG(INIT, INFO, "wlan_pre_pwr_on\n");
+
+	return wlan_pinctrl_action(prChipInfo, WLAN_PINCTRL_MSG_FUNC_ON);
+}
+
+static int wlan_efuse_on(void)
+{
+	int32_t ret = 0;
+
+	DBGLOG(INIT, INFO, "wlan_efuse_on.\n");
+
+	/* expect unlock wfsys at the end of do_cal_cb */
+	wfsys_lock();
+	set_cal_enabled(FALSE);
+	ret = wlanFuncOnImpl();
+	if (ret)
+		goto exit;
+
+	wlanFuncOffImpl();
+
+exit:
+	set_cal_enabled(TRUE);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+		wfsys_unlock();
+	}
+
+	return ret;
+}
+
+static struct work_struct pwr_on_notify_work;
+static u_int8_t fgInPwrOnNotifyCb;
+static void __wlan_pwr_on_notify(struct work_struct *work)
+{
+	struct GLUE_INFO *glue = NULL;
+	int32_t ret = 0;
+
+	DBGLOG(INIT, INFO, "__wlan_pwr_on_notify.\n");
+
+	wfsys_lock();
+
+	WIPHY_PRIV(wlanGetWiphy(), glue);
+	if (glue->u4ReadyFlag == 1) {
+		DBGLOG(INIT, TRACE, "Skip due to wifi is already on.\n");
+		ret = 0;
+		goto exit;
+	}
+
+	fgInPwrOnNotifyCb = TRUE;
+	set_cal_enabled(FALSE);
+	ret = wlanFuncOn();
+	if (ret)
+		goto exit;
+
+	wlanFuncOff();
+
+exit:
+	set_cal_enabled(TRUE);
+	fgInPwrOnNotifyCb = FALSE;
+	if (ret)
+		DBGLOG(INIT, ERROR, "failed, ret=%d\n", ret);
+	wfsys_unlock();
+}
+
+u_int8_t is_pwr_on_notify_processing(void)
+{
+	return fgInPwrOnNotifyCb;
+}
+
+static int wlan_pwr_on_notify(void)
+{
+	DBGLOG(INIT, INFO, "wlan_pwr_on_notify.\n");
+
+	schedule_work(&pwr_on_notify_work);
+
+	return 0;
+}
+
+static void unregister_connv3_cbs(void)
+{
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	conninfra_sub_drv_ops_unregister(CONNDRV_TYPE_MAWD);
+#endif
+
+	connv3_sub_drv_ops_unregister(CONNV3_DRV_TYPE_WIFI);
+}
+
+static void register_connv3_cbs(void)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct connv3_sub_drv_ops_cb cb;
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	struct sub_drv_ops_cb conninfra_wf_cb;
+#endif
+	int ret = 0;
+
+	kalMemZero(&cb, sizeof(cb));
+	cb.pwr_on_cb.pre_power_on = wlan_pre_pwr_on;
+	cb.pwr_on_cb.power_on_notify = wlan_pwr_on_notify;
+
+	INIT_WORK(&pwr_on_notify_work, __wlan_pwr_on_notify);
+
+#if (CFG_SUPPORT_PRE_ON_PHY_ACTION == 1)
+	cb.pre_cal_cb.pre_on_cb = wlan_pre_pwr_on;
+	cb.pre_cal_cb.efuse_on_cb = wlan_efuse_on;
+	cb.pre_cal_cb.pwr_on_cb = wlanPreCalPwrOn;
+	cb.pre_cal_cb.do_cal_cb = wlanPreCal;
+	cb.pre_cal_cb.pre_cal_error = wlanPreCalErr;
+#endif
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	cb.cr_cb.priv_data = prGlueInfo;
+	cb.cr_cb.read = wf_reg_read_wrapper;
+	cb.cr_cb.write = wf_reg_write_wrapper;
+	cb.cr_cb.write_mask = wf_reg_write_mask_wrapper;
+
+	ret = connv3_sub_drv_ops_register(CONNV3_DRV_TYPE_WIFI, &cb);
+	if (ret)
+		DBGLOG(INIT, ERROR,
+			"connv3_sub_drv_ops_register failed, ret=%d\n",
+			ret);
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	kalMemZero(&conninfra_wf_cb, sizeof(struct sub_drv_ops_cb));
+
+	ret = conninfra_sub_drv_ops_register(CONNDRV_TYPE_MAWD,
+		&conninfra_wf_cb);
+	if (ret)
+		DBGLOG(INIT, ERROR,
+			"conninfra_sub_drv_ops_register failed, ret=%d\n",
+			ret);
+#endif
+}
+#endif
+
+void unregister_plat_connsys_cbs(void)
+{
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	power_throttling_deinit();
+#endif
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	unregister_connv3_cbs();
+#endif
+
+	unregister_chrdev_cbs();
+}
+
+void register_plat_connsys_cbs(void)
+{
+	register_chrdev_cbs();
+
+#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	register_connv3_cbs();
+#endif
+
+#if (CFG_SUPPORT_POWER_THROTTLING == 1)
+	power_throttling_init();
+#endif
+}
+#endif
 
 #endif /* CFG_SUPPORT_CONNAC3X == 1 */

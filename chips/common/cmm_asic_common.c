@@ -455,3 +455,63 @@ void fillUsbHifTxDesc(uint8_t **pDest, uint16_t *pInfoBufLen,
 		   sizeof(uint16_t));
 }
 #endif
+
+#if CFG_MTK_ANDROID_WMT
+#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+static int wlan_func_on_by_chrdev(void)
+{
+#define MAX_RETRY_COUNT		100
+
+	int retry = 0;
+	int ret = 0;
+
+	while (TRUE) {
+		if (retry >= MAX_RETRY_COUNT) {
+			DBGLOG(INIT, WARN,
+				"Timeout, pre_cal_flow: %d, locked: %d.\n",
+				is_cal_flow_finished(),
+				wfsys_is_locked());
+			ret = -EBUSY;
+			goto exit;
+		}
+
+		if (is_cal_flow_finished() && !wfsys_is_locked())
+			break;
+
+		retry++;
+		kalMdelay(100);
+	}
+
+	wfsys_lock();
+	ret = wlanFuncOn();
+	wfsys_unlock();
+
+exit:
+	return ret;
+}
+
+static int wlan_func_off_by_chrdev(void)
+{
+	wfsys_lock();
+	wlanFuncOff();
+	wfsys_unlock();
+
+	return 0;
+}
+
+void unregister_chrdev_cbs(void)
+{
+	mtk_wcn_wlan_unreg();
+}
+
+void register_chrdev_cbs(void)
+{
+	struct MTK_WCN_WLAN_CB_INFO rWlanCb;
+
+	kalMemZero(&rWlanCb, sizeof(struct MTK_WCN_WLAN_CB_INFO));
+	rWlanCb.wlan_probe_cb = wlan_func_on_by_chrdev;
+	rWlanCb.wlan_remove_cb = wlan_func_off_by_chrdev;
+	mtk_wcn_wlan_reg(&rWlanCb);
+}
+#endif
+#endif

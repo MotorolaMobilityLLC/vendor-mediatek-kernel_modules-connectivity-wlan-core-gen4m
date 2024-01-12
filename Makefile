@@ -1475,6 +1475,9 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
 		$(OS_DIR)gl_csi.o \
 		$(OS_DIR)gl_ics.o \
 		$(OS_DIR)gl_reg_rule.o
+	ifeq ($(WMT_SUPPORT), y)
+		OS_OBJS += $(OS_DIR)gl_sys_lock.o
+	endif
     ifeq ($(CONFIG_MTK_CONNSYS_DEDICATED_LOG_PATH), y)
         OS_OBJS += $(OS_DIR)gl_fw_log.o
     endif

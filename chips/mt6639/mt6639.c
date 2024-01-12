@@ -56,6 +56,8 @@
 #include "dbg_mt6639.h"
 #endif
 
+#include "wlan_pinctrl.h"
+
 #if CFG_MTK_MDDP_SUPPORT
 #include "mddp_export.h"
 #include "mtk_ccci_common.h"
