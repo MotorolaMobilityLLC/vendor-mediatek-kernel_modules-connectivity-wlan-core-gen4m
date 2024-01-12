@@ -40,6 +40,10 @@
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+struct WED_WO_CMD {
+	struct QUE_ENTRY rQueEntry;
+	struct WO_CMD_INFO prWoCmdInfo;
+};
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -54,6 +58,11 @@
 static struct WED_INFO grWedInfo;
 static struct dma_token_que grWedToken;
 static struct net_device *grNetList[MAX_BSSID_NUM];
+static struct net_device *grNetStashList[MAX_BSSID_NUM];
+static u_int8_t fgIsWedInSer, fgIsWedInSuspend;
+static struct mutex rWedMutex, rWoCmdMutex;
+static struct delayed_work rWedWoCmdWork;
+static struct QUE rWoCmdQueue;
 uint32_t g_u4SuspendCnt;
 uint32_t g_u4ResumeCnt;
 
@@ -93,11 +102,164 @@ static uint32_t mt6639_wed_mirror_table[] = {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-
+static int wedAttachWarp(struct ADAPTER *prAdapter,
+	struct net_device *prNetDev, uint8_t AttachType);
+static int wedDetachWarp(struct ADAPTER *prAdapter,
+	struct net_device *prNetDev, uint8_t DetachType);
+static void wedRxTokenInfoRelease(struct ADAPTER *prAdapter);
+static void wedSendCommand2WO(struct work_struct *work);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
  */
+
+static void wedNetDevStash(struct net_device *prNetDev)
+{
+	uint32_t i = 0;
+
+	if (!prNetDev)
+		return;
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (grNetStashList[i] == prNetDev)
+			return;
+		if (grNetStashList[i] == NULL) {
+			grNetStashList[i] = prNetDev;
+			break;
+		}
+	}
+}
+
+static struct net_device *wedNetDevStashPop(void)
+{
+	uint32_t i = 0;
+	struct net_device *prNetDev = NULL;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (grNetStashList[i] != NULL) {
+			prNetDev = grNetStashList[i];
+			grNetStashList[i] = NULL;
+			return prNetDev;
+		}
+	}
+	return NULL;
+}
+
+static void wedNetDevStashRemove(struct net_device *prNetDev)
+{
+	uint32_t i = 0;
+
+	if (!prNetDev)
+		return;
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (grNetStashList[i] == prNetDev) {
+			grNetStashList[i] = NULL;
+			break;
+		}
+	}
+}
+
+void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
+{
+	int i, j;
+	struct net_device *prNetDev;
+	struct STA_RECORD *prStaRec;
+
+	DBGLOG(HAL, INFO, "SER(E) hook to warp : %d\n", status);
+
+	mutex_lock(&rWedMutex);
+	if (status == WIFI_ERR_RECOV_L0P5_BEGIN) {
+		if (fgIsWedInSer == TRUE)
+			return;
+
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			prNetDev = grNetList[i];
+			if (!prNetDev)
+				continue;
+			DBGLOG(HAL, STATE, "ser detach %s!\n", prNetDev->name);
+			wedNetDevStash(prNetDev);
+			wedDetachWarp(prAdapter, prNetDev, WED_DETACH_IFDOWN);
+		}
+		fgIsWedInSer = TRUE;
+	} else if (status == WIFI_ERR_RECOV_L0P5_END) {
+		if (fgIsWedInSer == FALSE)
+			return;
+		fgIsWedInSer = FALSE;
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			prNetDev = wedNetDevStashPop();
+			if (!prNetDev)
+				break;
+			DBGLOG(HAL, STATE, "ser attach %s!\n", prNetDev->name);
+			wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_IFON);
+		}
+	} else if (status == WIFI_ERR_RECOV_HIF_INIT) {
+		/* wed hif init */
+		wedRxTokenInfoRelease(prAdapter);
+		if (wedRxTokenInfoSetup(prAdapter) < 0) {
+			DBGLOG(HAL, INFO, "SER(E) fail: wedRxTokenInfoSetup\n");
+			goto end;
+		}
+		wedProxyHookCall(PROXY_WLAN_HOOK_HIF_INIT, &grWedInfo);
+		wedProxyHookCall(PROXY_WLAN_HOOK_DMA_SET, &grWedInfo);
+		kalDevRegWrite(prAdapter->prGlueInfo,
+			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
+			grWedInfo.int_enable_mask);
+
+		/* update sta record */
+		for (i = 0; i < CFG_STA_REC_NUM; i++) {
+			prStaRec = cnmGetStaRecByIndex(prAdapter, i);
+			if (!prStaRec)
+				continue;
+			prNetDev = wlanGetNetDev(prAdapter->prGlueInfo,
+						 prStaRec->ucBssIndex);
+			if (!prNetDev)
+				continue;
+			for (j = 0; j < MAX_BSSID_NUM; j++) {
+				if (prNetDev != grNetList[j])
+					continue;
+				wedStaRecUpdate(prAdapter, prStaRec);
+				break;
+			}
+		}
+	} else {
+		wedProxyHookCall(PROXY_WLAN_HOOK_SER, &status);
+	}
+end:
+	mutex_unlock(&rWedMutex);
+}
+
+void wedAttachDetach(struct ADAPTER *prAdapter, struct net_device *prNetDev,
+			u_int8_t fgIsAttach)
+{
+	if (prAdapter == NULL || prNetDev == NULL)
+		return;
+
+	mutex_lock(&rWedMutex);
+	if (fgIsAttach == TRUE)
+		wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_IFON);
+	else
+		wedDetachWarp(prAdapter, prNetDev, WED_DETACH_IFDOWN);
+	mutex_unlock(&rWedMutex);
+}
+
+void wedSuspendResume(u_int8_t fgIsSuspend)
+{
+	mutex_lock(&rWedMutex);
+	if (fgIsSuspend == TRUE)
+		wedSuspendTrigger();
+	else
+		wedResumeTrigger();
+	mutex_unlock(&rWedMutex);
+}
+
+void wedTriggerReset(void)
+{
+	uint32_t u4CmdId = SER_USER_CMD_L1_RECOVER;
+	uint32_t ret;
+
+	kalIoctl(grWedInfo.pAdAdapter,
+		wlanoidSetSer, (void *)&u4CmdId,
+		sizeof(u4CmdId), &ret);
+}
 
 void wedProxyIoRead(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BusAddr, uint32_t *pu4Value)
@@ -144,16 +306,30 @@ void wedProxyIoWrite(struct GLUE_INFO *prGlueInfo,
 	}
 }
 
-int wedInitial(struct ADAPTER *prAdapter)
+int wedInitAdapterInfo(struct ADAPTER *prAdapter)
 {
 	if (prAdapter->prWedInfo != NULL) {
 		DBGLOG(HAL, WARN, "WED already initialized before\n");
 		return -1;
 	}
-	memset(&grWedInfo, 0, sizeof(struct WED_INFO));
+
 	prAdapter->prWedInfo = &grWedInfo;
 	grWedInfo.pAdAdapter = prAdapter;
 	grWedInfo.prGlueInfo = prAdapter->prGlueInfo;
+
+	DBGLOG(HAL, STATE, "WED adapter info initialized\n");
+	return 0;
+}
+
+int wedInitial(void)
+{
+	memset(&grWedInfo, 0, sizeof(struct WED_INFO));
+	fgIsWedInSer = FALSE;
+	fgIsWedInSuspend = FALSE;
+	mutex_init(&rWedMutex);
+	mutex_init(&rWoCmdMutex);
+	QUEUE_INITIALIZE(&rWoCmdQueue);
+	INIT_DELAYED_WORK(&rWedWoCmdWork, wedSendCommand2WO);
 
 	DBGLOG(HAL, STATE, "WED info initialized\n");
 	return 0;
@@ -286,6 +462,9 @@ int wedInfoSetup(struct ADAPTER *prAdapter)
 	prwedinfo->wedRxTokenInit = wedRxTokenInit;
 	/* enable WED's DMA TX/RX */
 	prwedinfo->wed_dma_ctrl = DMA_TX_RX;
+
+	/* ser */
+	prwedinfo->wifi_reset = wedTriggerReset;
 
 	return 0;
 }
@@ -469,7 +648,7 @@ static void wedHwnatSet(struct ADAPTER *prAdapter,
 	}
 }
 
-int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
+static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 						uint8_t AttachType)
 {
 	uint32_t val = 0;
@@ -482,11 +661,17 @@ int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	}
 	if (grWedInfo.proxy_ops == NULL) {
 		DBGLOG(HAL, WARN, "warp_proxy not regisgered\n");
+		wedNetDevStash(prNetDev);
 		return -1;
 	}
-
 	/* step.1 Register net_dev to hwnat */
 	/* Direct call to cover DBDC */
+	if (fgIsWedInSer == TRUE || fgIsWedInSuspend == TRUE) {
+		wedNetDevStash(prNetDev);
+		DBGLOG(HAL, WARN,
+			"wed in ser or str, add ndev to stash list\n");
+		return 0;
+	}
 	wedHwnatSet(prAdapter, TRUE, prNetDev);
 
 	if (IsWedAttached()) {
@@ -581,7 +766,7 @@ error:
 	return ret;
 }
 
-int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
+static int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	uint8_t DetachType)
 {
 	struct BUS_INFO *prBusInfo;
@@ -595,15 +780,24 @@ int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 		DBGLOG(HAL, WARN, "WED disabled by wifi.cfg\n");
 		return ret;
 	}
+	if (grWedInfo.proxy_ops == NULL) {
+		DBGLOG(HAL, WARN, "warp_proxy not regisgered\n");
+		wedNetDevStashRemove(prNetDev);
+		return ret;
+	}
 
 	/* step.1 Unregister net_dev to hwnat */
 	/* Direct call to cover DBDC */
+	if (fgIsWedInSer == TRUE || fgIsWedInSuspend == TRUE) {
+		wedNetDevStashRemove(prNetDev);
+		DBGLOG(HAL, WARN,
+			"wed in ser or str, remove from stash list\n");
+		return 0;
+	}
 	wedHwnatSet(prAdapter, FALSE, prNetDev);
 
 	/* Detach is required only when all interfaces go down */
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		if (DetachType == WED_DETACH_SUSPEND)
-			break;
 		if (grNetList[i] != NULL)
 			return -1;
 	}
@@ -613,6 +807,7 @@ int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 		return -1;
 	}
 
+	flush_delayed_work(&rWedWoCmdWork);
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
 	DBGLOG(HAL, STATE, "WED proxy detaching, reason: %u\n", DetachType);
@@ -673,6 +868,11 @@ error:
 	return ret;
 }
 
+int wedShowDebugInfo(void)
+{
+	return wedProxyHookCall(PROXY_WLAN_HOOK_DEBUG, &grWedInfo);
+}
+
 int wedProxyHookCall(uint16_t hook, void *priv)
 {
 	struct proxy_wlan_hook_ops *ops;
@@ -692,15 +892,19 @@ int wedProxyHookCall(uint16_t hook, void *priv)
 		"PROXY_WLAN_HOOK_WRITE",		/* 12 */
 		"PROXY_WLAN_HOOK_SEND_CMD",		/* 13 */
 		"PROXY_WLAN_HOOK_SWAP_IRQ",		/* 14 */
-		"PROXY_WLAN_HOOK_END"			/* 15 */
+		"PROXY_WLAN_HOOK_DEBUG",		/* 15 */
+		"PROXY_WLAN_HOOK_END"			/* 16 */
 	};
 
 	ops = grWedInfo.proxy_ops;
+	if (!ops) {
+		DBGLOG(HAL, WARN, "warp_proxy not regisgered\n");
+		return -1;
+	}
 
 	if (ops->hooks & BIT(hook)) {
 		DBGLOG(SW1, LOUD, "hook: %s\n", hook_str[hook]);
-		if (ops->fun(hook, &grWedInfo, priv) == 0)
-			return 0;
+		return ops->fun(hook, &grWedInfo, priv);
 	}
 
 	DBGLOG(HAL, WARN, "WED proxy ops invalid\n");
@@ -710,6 +914,8 @@ int wedProxyHookCall(uint16_t hook, void *priv)
 
 int wedProxyHookRegister(struct proxy_wlan_hook_ops *ops)
 {
+	struct net_device *prNetDev;
+
 	if (!ops)
 		return -1;
 
@@ -721,8 +927,17 @@ int wedProxyHookRegister(struct proxy_wlan_hook_ops *ops)
 	DBGLOG(HAL, INFO, "WED proxy ops registered\n");
 	grWedInfo.proxy_ops = ops;
 
-	return 0;
+	if (grWedInfo.pAdAdapter == NULL) {
+		DBGLOG(HAL, INFO, "grWedInfo.pAdAdapter is null\n");
+		return 0;
+	}
 
+	mutex_lock(&rWedMutex);
+	while (prNetDev = wedNetDevStashPop(), prNetDev != NULL)
+		wedAttachWarp(grWedInfo.pAdAdapter, prNetDev, WED_ATTACH_IFON);
+	mutex_unlock(&rWedMutex);
+
+	return 0;
 }
 EXPORT_SYMBOL(wedProxyHookRegister);
 
@@ -742,6 +957,7 @@ int wedProxyHookUnregister(struct proxy_wlan_hook_ops *ops)
 	if (IsWedAttached()) {
 		dump_stack();
 		DBGLOG(HAL, ERROR, "WED not yet Detach!\n");
+		mutex_lock(&rWedMutex);
 		for (i = 0; i < MAX_BSSID_NUM; i++) {
 			if (grNetList[i] != NULL) {
 				DBGLOG(HAL, ERROR, "need disable %s!\n",
@@ -750,6 +966,7 @@ int wedProxyHookUnregister(struct proxy_wlan_hook_ops *ops)
 					grNetList[i], WED_DETACH_IFDOWN);
 			}
 		}
+		mutex_unlock(&rWedMutex);
 	}
 
 	DBGLOG(HAL, INFO, "WED proxy ops unregistered\n");
@@ -1040,19 +1257,47 @@ uint32_t wedMirrorRevert(void)
 	return 0;
 }
 
-static uint32_t wedSendCommand2WO(uint32_t woCmdId, void *prWoCmdContent,
-	uint32_t prWoCmdLen)
+static void wedSendCommand2WO(struct work_struct *work)
 {
-	struct WO_CMD_INFO prWoCmdInfo;
+	struct QUE rTmpQue;
+	struct QUE *prTmpQue = &rTmpQue;
+	struct QUE *prWoCmdQueue = &rWoCmdQueue;
+	struct WED_WO_CMD *rCmdInfo;
+	struct CMD_STAREC_UPDATE_WO *prCmdContent;
+	int ret;
+	int retry;
 
-	if (!IsWedAttached())
-		return 0;
+	mutex_lock(&rWoCmdMutex);
+	QUEUE_MOVE_ALL(prTmpQue, prWoCmdQueue);
+	mutex_unlock(&rWoCmdMutex);
 
-	prWoCmdInfo.pMsg = prWoCmdContent;
-	prWoCmdInfo.u4MsgLen = prWoCmdLen;
-	prWoCmdInfo.wo_cmd_id = woCmdId;
+	while (QUEUE_IS_NOT_EMPTY(prTmpQue)) {
+		if (!IsWedAttached())
+			break;
+		QUEUE_REMOVE_HEAD(prTmpQue, rCmdInfo, struct WED_WO_CMD *);
+		if (!rCmdInfo)
+			break;
 
-	return wedProxyHookCall(PROXY_WLAN_HOOK_SEND_CMD, &prWoCmdInfo);
+		retry = 0;
+		do {
+			ret = wedProxyHookCall(PROXY_WLAN_HOOK_SEND_CMD,
+						&rCmdInfo->prWoCmdInfo);
+			if (ret)
+				DBGLOG(HAL, INFO,
+					"send wo cmd(%d) timeout, retry %d\n",
+					rCmdInfo->prWoCmdInfo.wo_cmd_id, retry);
+		} while (ret && (++retry < 3));
+
+		if (ret == 0)
+			continue;
+
+		prCmdContent = (struct CMD_STAREC_UPDATE_WO *)
+						(rCmdInfo->prWoCmdInfo.pMsg);
+		DBGLOG(HAL, ERROR,
+		 "send wo cmd(%d) timeout, retry %d, BssIndex %d, WlanIdx %d\n",
+			rCmdInfo->prWoCmdInfo.wo_cmd_id, retry,
+			prCmdContent->ucBssIndex, prCmdContent->ucWlanIdx);
+	}
 }
 
 uint32_t wedHwTxRequest(struct ADAPTER *prAdapter,
@@ -1140,6 +1385,8 @@ uint32_t wedStaRecUpdate(struct ADAPTER *prAdapter,
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 	uint32_t size;
 	struct CMD_STAREC_UPDATE_WO *prCmdContent;
+	struct WED_WO_CMD *rCmdInfo;
+	struct QUE *prWoCmdQueue = &rWoCmdQueue;
 
 	if (!IsWedAttached())
 		return 0;
@@ -1178,10 +1425,22 @@ uint32_t wedStaRecUpdate(struct ADAPTER *prAdapter,
 		(uint8_t *)prCmdContent + sizeof(struct CMD_STAREC_UPDATE_WO),
 		(void *)pStaRecCfg);
 
-	wedSendCommand2WO(WO_CMD_STA_REC, prCmdContent, size);
+	rCmdInfo = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+				sizeof(struct WED_WO_CMD));
+	if (!rCmdInfo) {
+		DBGLOG(HAL, WARN, "rCmdInfo allocation failed!\n");
+		cnmMemFree(prAdapter, prCmdContent);
+		return WLAN_STATUS_RESOURCES;
+	}
+	rCmdInfo->prWoCmdInfo.pMsg = prCmdContent;
+	rCmdInfo->prWoCmdInfo.u4MsgLen = size;
+	rCmdInfo->prWoCmdInfo.wo_cmd_id = WO_CMD_STA_REC;
 
-	/* free prCmdContent */
-	cnmMemFree(prAdapter, prCmdContent);
+	mutex_lock(&rWoCmdMutex);
+	QUEUE_INSERT_TAIL(prWoCmdQueue, rCmdInfo);
+	mutex_unlock(&rWoCmdMutex);
+
+	schedule_delayed_work(&rWedWoCmdWork, 0);
 
 	return rWlanStatus;
 }
@@ -1218,6 +1477,8 @@ uint32_t wedStaRecRxAddBaUpdate(struct ADAPTER *prAdapter, void *ba)
 	struct CMD_STAREC_UPDATE_WO *prCmdContent = NULL;
 	uint8_t ucBssIndex = 0;
 	uint32_t size;
+	struct WED_WO_CMD *rCmdInfo;
+	struct QUE *prWoCmdQueue = &rWoCmdQueue;
 
 	if (!IsWedAttached())
 		return 0;
@@ -1259,10 +1520,22 @@ uint32_t wedStaRecRxAddBaUpdate(struct ADAPTER *prAdapter, void *ba)
 		(uint8_t *) prCmdContent + sizeof(struct CMD_STAREC_UPDATE_WO),
 		(void *) prRxAddBa);
 
-	wedSendCommand2WO(WO_CMD_STA_REC, prCmdContent, size);
+	rCmdInfo = cnmMemAlloc(prAdapter, RAM_TYPE_BUF,
+				sizeof(struct WED_WO_CMD));
+	if (!rCmdInfo) {
+		DBGLOG(HAL, WARN, "rCmdInfo allocation failed!\n");
+		cnmMemFree(prAdapter, prCmdContent);
+		return WLAN_STATUS_RESOURCES;
+	}
+	rCmdInfo->prWoCmdInfo.pMsg = prCmdContent;
+	rCmdInfo->prWoCmdInfo.u4MsgLen = size;
+	rCmdInfo->prWoCmdInfo.wo_cmd_id = WO_CMD_STA_REC;
 
-	/* free prCmdContent */
-	cnmMemFree(prAdapter, prCmdContent);
+	mutex_lock(&rWoCmdMutex);
+	QUEUE_INSERT_TAIL(prWoCmdQueue, rCmdInfo);
+	mutex_unlock(&rWoCmdMutex);
+
+	schedule_delayed_work(&rWedWoCmdWork, 0);
 
 	return rWlanStatus;
 }
@@ -1303,19 +1576,28 @@ void wedSuspendTrigger(void)
 {
 	struct WED_INFO *prwedinfo;
 	struct ADAPTER *prAdapter;
-	struct net_device *prNetDev = NULL;
+	struct net_device *prNetDev;
+	int i;
 
 	DBGLOG(HAL, STATE, "WED Suspend Start!\n");
 
 	prwedinfo = &grWedInfo;
 	prAdapter = prwedinfo->pAdAdapter;
 
-	if (!wedIsAPUp(prAdapter->prGlueInfo))
+	if (fgIsWedInSuspend == TRUE) {
+		DBGLOG(HAL, STATE, "WED not in Resume!\n");
 		return;
+	}
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prNetDev = grNetList[i];
+		if (!prNetDev)
+			continue;
+		DBGLOG(HAL, STATE, "suspend detach %s!\n", prNetDev->name);
+		wedNetDevStash(prNetDev);
+		wedDetachWarp(prAdapter, prNetDev, WED_DETACH_SUSPEND);
+	}
+	fgIsWedInSuspend = TRUE;
 
-	prNetDev = wlanGetNetDev(prAdapter->prGlueInfo, 1);
-
-	wedDetachWarp(prAdapter, prNetDev, WED_DETACH_SUSPEND);
 	INC_CNT(g_u4SuspendCnt);
 	DBGLOG(HAL, STATE, "WED Suspend Done! CNT: %u\n", g_u4SuspendCnt);
 }
@@ -1324,19 +1606,28 @@ void wedResumeTrigger(void)
 {
 	struct WED_INFO *prwedinfo;
 	struct ADAPTER *prAdapter;
-	struct net_device *prNetDev = NULL;
+	struct net_device *prNetDev;
+	int i;
 
 	DBGLOG(HAL, STATE, "WED Resume Start!\n");
 
 	prwedinfo = &grWedInfo;
 	prAdapter = prwedinfo->pAdAdapter;
 
-	if (!wedIsAPUp(prAdapter->prGlueInfo))
+	if (fgIsWedInSuspend == FALSE) {
+		DBGLOG(HAL, STATE, "WED not in Suspend!\n");
 		return;
-
-	prNetDev = wlanGetNetDev(prAdapter->prGlueInfo, 1);
-
-	wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_RESUME);
+	}
+	fgIsWedInSuspend = FALSE;
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		prNetDev = wedNetDevStashPop();
+		if (!prNetDev)
+			break;
+		DBGLOG(HAL, STATE, "resume attach %s!\n", prNetDev->name);
+		wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_RESUME);
+		if (!netif_carrier_ok(prNetDev))
+			DBGLOG(HAL, STATE, "%s is down ???\n", prNetDev->name);
+	}
 	INC_CNT(g_u4ResumeCnt);
 	DBGLOG(HAL, STATE, "WED Resume Done! CNT: %u\n", g_u4ResumeCnt);
 }

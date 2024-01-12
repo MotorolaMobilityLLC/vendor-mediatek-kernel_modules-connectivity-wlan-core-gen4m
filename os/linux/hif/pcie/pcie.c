@@ -1492,6 +1492,7 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	int wait = 0;
 	struct ADAPTER *prAdapter = NULL;
 	uint8_t drv_own_fail = FALSE;
+	int ret;
 
 	DBGLOG(HAL, STATE, "mtk_pci_suspend()\n");
 
@@ -1519,6 +1520,10 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 
 	wlanSuspendPmHandle(prGlueInfo);
 
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctl(prGlueInfo, wlanoidWedSuspend, NULL, 0, &ret);
+#endif
+
 #if !CFG_ENABLE_WAKE_LOCK
 	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_PRE_SUSPEND_WAITING;
 #endif
@@ -1529,7 +1534,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		PCIE_STATE_PRE_SUSPEND_DONE) {
 		if (count > 500) {
 			DBGLOG(HAL, ERROR, "pcie pre_suspend timeout\n");
-			return -EAGAIN;
+			ret = -EAGAIN;
+			goto SUSPEND_FAIL;
 		}
 		kalMsleep(2);
 		count++;
@@ -1541,8 +1547,10 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	/* Polling until HIF side PDMAs are all idle */
 	prBusInfo = prAdapter->chip_info->bus_info;
 	if (prBusInfo->pdmaPollingIdle) {
-		if (prBusInfo->pdmaPollingIdle(prGlueInfo) != TRUE)
-			return -EAGAIN;
+		if (prBusInfo->pdmaPollingIdle(prGlueInfo) != TRUE) {
+			ret = -EAGAIN;
+			goto SUSPEND_FAIL;
+		}
 	} else
 		DBGLOG(HAL, ERROR, "PDMA polling idle API didn't register\n");
 
@@ -1593,7 +1601,8 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 
 	if (wait >= 500) {
 		DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
-		return -EAGAIN;
+		ret = -EAGAIN;
+		goto SUSPEND_FAIL;
 	}
 
 	pci_save_state(pdev);
@@ -1608,6 +1617,11 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
 
 	return 0;
+SUSPEND_FAIL:
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctl(prGlueInfo, wlanoidWedResume, NULL, 0, &ret);
+#endif
+	return ret;
 #endif
 }
 
@@ -1622,6 +1636,9 @@ int mtk_pci_resume(struct pci_dev *pdev)
 #else
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct BUS_INFO *prBusInfo;
+#if CFG_SUPPORT_WED_PROXY
+	uint32_t ret;
+#endif
 
 	DBGLOG(HAL, STATE, "mtk_pci_resume()\n");
 
@@ -1652,6 +1669,10 @@ int mtk_pci_resume(struct pci_dev *pdev)
 		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
 
 	halPcieResumeCmd(prGlueInfo->prAdapter);
+
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctl(prGlueInfo, wlanoidWedResume, NULL, 0, &ret);
+#endif
 
 	wlanResumePmHandle(prGlueInfo);
 
@@ -1930,12 +1951,16 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			data = irq_get_irq_data(irqn);
 			if (data) {
 				entry = irq_data_get_msi_desc(data);
-				DBGLOG(INIT, INFO,
-					"messages address [0x%x, 0x%x]\n",
-					entry->msg.address_lo,
-					entry->msg.address_hi);
-				prMsiInfo->address_lo = entry->msg.address_lo;
-				prMsiInfo->address_hi = entry->msg.address_hi;
+				if (entry) {
+					DBGLOG(INIT, INFO,
+					      "messages address [0x%x, 0x%x]\n",
+					      entry->msg.address_lo,
+					      entry->msg.address_hi);
+					prMsiInfo->address_lo =
+							entry->msg.address_lo;
+					prMsiInfo->address_hi =
+							entry->msg.address_hi;
+				}
 			}
 		}
 #endif
@@ -2235,6 +2260,11 @@ void glBusFreeIrq(void *pvData, void *pvCookie)
 			prHifInfo->u4IrqId_1);
 	prHifInfo->u4IrqId_1 = 0;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
+
+#if CFG_SUPPORT_WED_PROXY
+	if (IsWedAttached())
+		return;
+#endif
 
 #if KERNEL_VERSION(4, 8, 0) <= CFG80211_VERSION_CODE
 	pci_free_irq_vectors(pdev);

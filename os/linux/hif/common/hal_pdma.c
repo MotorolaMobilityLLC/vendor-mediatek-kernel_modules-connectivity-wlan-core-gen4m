@@ -4650,6 +4650,9 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 	struct WIFI_VAR *prWifiVar;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4Status = 0;
+#if CFG_SUPPORT_WED_PROXY
+	uint32_t u4WedSerStatus, ret;
+#endif
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -4681,6 +4684,12 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			if (prChipInfo->asicDumpSerDummyCR)
 				prChipInfo->asicDumpSerDummyCR(prAdapter);
 			halStartSerTimer(prAdapter);
+#if CFG_SUPPORT_WED_PROXY
+			u4WedSerStatus = WIFI_ERR_RECOV_STOP_IDLE;
+			kalIoctl(prAdapter->prGlueInfo,
+				wlanoidWedRecoveryStatus, &u4WedSerStatus,
+				sizeof(u4WedSerStatus), &ret);
+#endif
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop PDMA tx/rx ring operation & receive\n");
 			nicSerStopTxRx(prAdapter);
@@ -4715,6 +4724,12 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			/* re-call for change status to stop dma0 */
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_STOP_PDMA0;
+#if CFG_SUPPORT_WED_PROXY
+			u4WedSerStatus = WIFI_ERR_RECOV_STOP_IDLE_DONE;
+			kalIoctl(prAdapter->prGlueInfo,
+				wlanoidWedRecoveryStatus, &u4WedSerStatus,
+				sizeof(u4WedSerStatus), &ret);
+#endif
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -4723,6 +4738,12 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
+#if CFG_SUPPORT_WED_PROXY
+			u4WedSerStatus = WIFI_ERR_RECOV_STOP_PDMA0;
+			kalIoctl(prAdapter->prGlueInfo,
+				wlanoidWedRecoveryStatus, &u4WedSerStatus,
+				sizeof(u4WedSerStatus), &ret);
+#endif
 			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
 
 			if (prSwWfdmaInfo->rOps.backup)
@@ -4769,7 +4790,12 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 			if (prBusInfo->configWfdmaIntMask)
 				prBusInfo->configWfdmaIntMask(prGlueInfo, TRUE);
-
+#if CFG_SUPPORT_WED_PROXY
+			u4WedSerStatus = WIFI_ERR_RECOV_HIF_INIT;
+			kalIoctl(prAdapter->prGlueInfo,
+				wlanoidWedRecoveryStatus, &u4WedSerStatus,
+				sizeof(u4WedSerStatus), &ret);
+#endif
 			DBGLOG(HAL, INFO,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =

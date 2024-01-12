@@ -161,6 +161,14 @@
 	WF_WFDMA_HOST_DMA0_PCI_BASE(\
 	WF_WFDMA_HOST_DMA0_WPDMA_RX_RING6_CTRL3_ADDR)
 
+/* WED SER status */
+#define WIFI_ERR_RECOV_STOP_IDLE		0x00
+#define WIFI_ERR_RECOV_STOP_PDMA0		0x01
+#define WIFI_ERR_RECOV_RESET_PDMA0		0x02
+#define WIFI_ERR_RECOV_STOP_IDLE_DONE		0x03
+#define WIFI_ERR_RECOV_HIF_INIT			0x04
+#define WIFI_ERR_RECOV_L0P5_BEGIN		0x10
+#define WIFI_ERR_RECOV_L0P5_END			0x11
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -168,7 +176,7 @@
 struct proxy_wlan_hook_ops {
 	const char name[WARP_PROXY_NAME_MAX];
 	uint32_t (*fun)(uint16_t hook, void *WedInfo, void *priv);
-	uint16_t hooks;
+	uint32_t hooks;
 };
 
 enum MAC_TYPE_VER {
@@ -193,20 +201,21 @@ enum PROXY_WLAN_DMA_TRX {
 enum PROXY_WLAN_HOOK_PT {
 	PROXY_WLAN_HOOK_HIF_INIT = 0,
 	PROXY_WLAN_HOOK_HIF_EXIT,		/* 1 */
-	PROXY_WLAN_HOOK_TX,				/* 2 */
-	PROXY_WLAN_HOOK_RX,				/* 3 */
+	PROXY_WLAN_HOOK_TX,			/* 2 */
+	PROXY_WLAN_HOOK_RX,			/* 3 */
 	PROXY_WLAN_HOOK_SYS_UP,			/* 4 */
 	PROXY_WLAN_HOOK_SYS_DOWN,		/* 5 */
-	PROXY_WLAN_HOOK_ISR,				/* 6 */
-	PROXY_WLAN_HOOK_DMA_SET,			/* 7 */
-	PROXY_WLAN_HOOK_SER,				/* 8 */
-	PROXY_WLAN_HOOK_SUSPEND,			/* 9 */
+	PROXY_WLAN_HOOK_ISR,			/* 6 */
+	PROXY_WLAN_HOOK_DMA_SET,		/* 7 */
+	PROXY_WLAN_HOOK_SER,			/* 8 */
+	PROXY_WLAN_HOOK_SUSPEND,		/* 9 */
 	PROXY_WLAN_HOOK_RESUME,			/* 10 */
-	PROXY_WLAN_HOOK_READ,				/* 11 */
+	PROXY_WLAN_HOOK_READ,			/* 11 */
 	PROXY_WLAN_HOOK_WRITE,			/* 12 */
-	PROXY_WLAN_HOOK_SEND_CMD,			/* 13 */
+	PROXY_WLAN_HOOK_SEND_CMD,		/* 13 */
 	PROXY_WLAN_HOOK_SWAP_IRQ,		/* 14 */
-	PROXY_WLAN_HOOK_END				/* 15 */
+	PROXY_WLAN_HOOK_DEBUG,			/* 15 */
+	PROXY_WLAN_HOOK_END			/* 16 */
 };
 
 enum WO_CMD_ID {
@@ -360,6 +369,9 @@ struct WED_INFO {
 	uint8_t wed_ver;
 	unsigned long pcie_msi_msg_addr_lo;
 	unsigned long pcie_msi_msg_addr_hi;
+
+	/* ser */
+	void (*wifi_reset)(void);
 };
 
 struct WO_CMD_INFO {
@@ -444,17 +456,18 @@ struct STAREC_BA_WO {
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
-int wedInitial(struct ADAPTER *prAdapter);
+int wedInitial(void);
+int wedInitAdapterInfo(struct ADAPTER *prAdapter);
 int wedProxyHookRegister(struct proxy_wlan_hook_ops *ops);
 int wedProxyHookUnregister(struct proxy_wlan_hook_ops *ops);
 void wedProxyIoRead(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BusAddr, uint32_t *pu4Value);
 void wedProxyIoWrite(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4BusAddr, uint32_t u4Value);
-int wedAttachWarp(struct ADAPTER *prAdapter,
-	struct net_device *prNetDev, uint8_t AttachType);
-int wedDetachWarp(struct ADAPTER *prAdapter,
-	struct net_device *prNetDev, uint8_t DetachType);
+void wedAttachDetach(struct ADAPTER *prAdapter,
+			struct net_device *prNetDev,
+			u_int8_t fgIsAttach);
+void wedSuspendResume(u_int8_t fgIsSuspend);
 uint32_t wedMirrorRevert(void);
 bool wedDevReadData(struct GLUE_INFO *prGlueInfo,
 	uint16_t u2Port, struct SW_RFB *prSwRfb);
@@ -468,8 +481,9 @@ uint32_t wedHwRxRequest(void *prSkb);
 void wedSuspendTrigger(void);
 void wedResumeTrigger(void);
 bool IsWedAttached(void);
-
+void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status);
 int wedProxyHookCall(uint16_t hook, void *priv);
+int wedShowDebugInfo(void);
 uint32_t wedMirrorAddrCheck(uint32_t u4BusAddr);
 int wedInfoSetup(struct ADAPTER *prAdapter);
 int wedRxTokenInfoSetup(struct ADAPTER *prAdapter);

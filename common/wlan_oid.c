@@ -18037,7 +18037,8 @@ wlanoidWedAttachWarp(struct ADAPTER *prAdapter,
 
 	prDev = (struct net_device *)pvSetBuffer;
 
-	wedAttachWarp(prAdapter, prDev, WED_ATTACH_IFON);
+	DBGLOG(HAL, STATE, "WED_ATTACH_IFON\n");
+	wedAttachDetach(prAdapter, prDev, TRUE);
 
 	return rStatus;
 }
@@ -18059,7 +18060,62 @@ wlanoidWedDetachWarp(struct ADAPTER *prAdapter,
 
 	prDev = (struct net_device *)pvSetBuffer;
 
-	wedDetachWarp(prAdapter, prDev, WED_DETACH_IFDOWN);
+	DBGLOG(HAL, STATE, "WED_DETACH_IFDOWN\n");
+	wedAttachDetach(prAdapter, prDev, FALSE);
+
+	return rStatus;
+}
+
+uint32_t
+wlanoidWedSuspend(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prAdapter);
+
+	DBGLOG(HAL, STATE, "WED_DETACH_SUSPEND\n");
+	wedSuspendResume(TRUE);
+
+	return rStatus;
+}
+
+uint32_t
+wlanoidWedResume(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	ASSERT(prAdapter);
+
+	DBGLOG(HAL, STATE, "WED_ATTACH_RESUME\n");
+	wedSuspendResume(FALSE);
+
+	return rStatus;
+}
+
+uint32_t
+wlanoidWedRecoveryStatus(struct ADAPTER *prAdapter,
+		     void *pvSetBuffer,
+		     uint32_t u4SetBufferLen,
+		     uint32_t *pu4SetInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t ser_status;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+
+	if (u4SetBufferLen < sizeof(uint32_t))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ser_status = *(uint32_t *)pvSetBuffer;
+
+	wedHwRecoveryFromError(prAdapter, ser_status);
 
 	return rStatus;
 }

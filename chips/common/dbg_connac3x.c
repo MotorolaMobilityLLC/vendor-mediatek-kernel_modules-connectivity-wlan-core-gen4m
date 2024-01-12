@@ -2956,6 +2956,11 @@ void connac3x_show_wfdma_info(struct ADAPTER *prAdapter)
 	if (prBusInfo->showDebugInfo)
 		prBusInfo->showDebugInfo(prAdapter->prGlueInfo);
 #endif /*_HIF_PCIE || _HIF_AXI */
+
+#if CFG_SUPPORT_WED_PROXY
+	/* show wed cfg/tx/rx info */
+	wedShowDebugInfo();
+#endif
 }
 
 static void asicConnac3xDmashdlGetPktMaxPage(struct ADAPTER *prAdapter)

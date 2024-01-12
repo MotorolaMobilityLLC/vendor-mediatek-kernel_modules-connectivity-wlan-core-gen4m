@@ -22171,10 +22171,19 @@ int priv_driver_set_wed_enable(struct net_device *prNetDev,
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	u4Ret = kalkStrtos32(apcArgv[1], 0, &Enable);
+	if (u4Ret) {
+		DBGLOG(REQ, ERROR, "kalkStrtos32 error %d\n", u4Ret);
+		return -1;
+	}
+
 	if (Enable)
-		wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_IFON);
+		kalIoctlByBssIdx(prGlueInfo, wlanoidWedAttachWarp,
+				prNetDev, sizeof(struct net_device *),
+				&Enable, wlanGetBssIdx(prNetDev));
 	else
-		wedDetachWarp(prAdapter, prNetDev, WED_DETACH_IFDOWN);
+		kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp,
+				prNetDev, sizeof(struct net_device *),
+				&Enable, wlanGetBssIdx(prNetDev));
 
 	return 0;
 }

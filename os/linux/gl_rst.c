@@ -1152,7 +1152,9 @@ void WfsysResetHdlr(struct work_struct *work)
 			prAdapter->u2WfsysResetCnt++;
 
 		glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_RESET);
-
+#if CFG_SUPPORT_WED_PROXY
+		wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_L0P5_BEGIN);
+#endif
 		HAL_CANCEL_TX_RX(prAdapter);
 
 		if (wlanOffAtReset() != WLAN_STATUS_SUCCESS)
@@ -1176,7 +1178,9 @@ void WfsysResetHdlr(struct work_struct *work)
 
 	if (wlanOnAtReset() != WLAN_STATUS_SUCCESS)
 		goto FAIL;
-
+#if CFG_SUPPORT_WED_PROXY
+	wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_L0P5_END);
+#endif
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 
 	DBGLOG(INIT, INFO, "[SER][L0.5] Reset done\n");
