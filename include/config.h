@@ -1704,6 +1704,11 @@
 #define CFG_MTK_WIFI_WFDMA_BK_RS		0
 #endif
 
+/* 1(default): Run on big core when tput over threshold
+ * 0: Disable (Let system scheduler decide)
+ */
+#define CFG_SUPPORT_TPUT_ON_BIG_CORE 1
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
