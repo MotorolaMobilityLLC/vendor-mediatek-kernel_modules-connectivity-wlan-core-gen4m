@@ -533,12 +533,14 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 	}
 
 	log_dbg(CNM, INFO,
-	       "ChReq net=%d token=%d b=%d c=%d s=%d w=%d s1=%d s2=%d\n",
+	       "ChReq net=%d token=%d b=%d c=%d s=%d w=%d s1=%d s2=%d d=%d t=%d\n",
 	       prMsgChReq->ucBssIndex, prMsgChReq->ucTokenID,
 	       prMsgChReq->eRfBand, prMsgChReq->ucPrimaryChannel,
 	       prMsgChReq->eRfSco, prMsgChReq->eRfChannelWidth,
 	       prMsgChReq->ucRfCenterFreqSeg1,
-	       prMsgChReq->ucRfCenterFreqSeg2);
+	       prMsgChReq->ucRfCenterFreqSeg2,
+	       prMsgChReq->u4MaxInterval,
+	       prMsgChReq->eReqType);
 
 	prCmdBody->ucBssIndex = prMsgChReq->ucBssIndex;
 	prCmdBody->ucTokenID = prMsgChReq->ucTokenID;

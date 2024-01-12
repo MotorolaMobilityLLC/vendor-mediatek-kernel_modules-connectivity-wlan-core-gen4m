@@ -189,6 +189,7 @@ enum ENUM_MSG_ID {
 	MID_MNY_P2P_CHNL_REQ,
 	MID_MNY_P2P_CHNL_ABORT,
 	MID_MNY_P2P_MGMT_TX,
+	MID_MNY_P2P_MGMT_TX_CANCEL_WAIT,
 	MID_MNY_P2P_GROUP_DISSOLVE,
 	MID_MNY_P2P_MGMT_FRAME_REGISTER,
 	MID_MNY_P2P_NET_DEV_REGISTER,
@@ -221,6 +222,7 @@ enum ENUM_MSG_ID {
 	MID_MNY_AIS_REMAIN_ON_CHANNEL,
 	MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
 	MID_MNY_AIS_MGMT_TX,
+	MID_MNY_AIS_MGMT_TX_CANCEL_WAIT,
 	MID_WNM_AIS_BSS_TRANSITION,
 	MID_OID_WMM_TSPEC_OPERATE,
 	MID_RLM_RM_SCHEDULE,
@@ -295,6 +297,7 @@ struct MSG_REMAIN_ON_CHANNEL {
 	uint8_t ucChannelNum;
 	uint32_t u4DurationMs;
 	uint64_t u8Cookie;
+	enum ENUM_CH_REQ_TYPE eReqType;
 };
 
 struct MSG_CANCEL_REMAIN_ON_CHANNEL {
@@ -304,10 +307,21 @@ struct MSG_CANCEL_REMAIN_ON_CHANNEL {
 
 struct MSG_MGMT_TX_REQUEST {
 	struct MSG_HDR rMsgHdr;
+	uint8_t ucBssIdx;
 	struct MSDU_INFO *prMgmtMsduInfo;
 	uint64_t u8Cookie;	/* For indication. */
 	u_int8_t fgNoneCckRate;
+	u_int8_t fgIsOffChannel;
+	struct RF_CHANNEL_INFO rChannelInfo;
+	enum ENUM_CHNL_EXT eChnlExt;
 	u_int8_t fgIsWaitRsp;
+	uint32_t u4Duration;
+};
+
+struct MSG_CANCEL_TX_WAIT_REQUEST {
+	struct MSG_HDR rMsgHdr;	/* Must be the first member */
+	uint64_t u8Cookie;
+	uint8_t ucBssIdx;
 };
 
 struct MSG_SAA_FT_CONTINUE {

@@ -671,8 +671,9 @@ p2pFunMgmtFrameTxDone(IN struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 
 }				/* p2pFunMgmtFrameTxDone */
+
 const char *
-p2pToString(enum p2p_action_frame_type eP2pAction)
+p2pActionFrameToString(enum ENUM_P2P_ACTION_FRAME_TYPE eP2pAction)
 {
 	switch (eP2pAction) {
 	case P2P_GO_NEG_REQ:
@@ -697,7 +698,6 @@ p2pToString(enum p2p_action_frame_type eP2pAction)
 
 	return "UNKNOWN P2P Public Action";
 }
-
 
 const char *
 paToString(int32_t u4PaAction)
@@ -773,14 +773,13 @@ p2pFuncTagActionActionP2PFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 	DBGLOG(P2P, INFO,
 		"Found P2P_%s, SA: " MACSTR
 			" - DA: " MACSTR ", cookie: 0x%llx, SeqNO: %d\n",
-		p2pToString(ucP2pAction),
+		p2pActionFrameToString(ucP2pAction),
 		MAC2STR(prActFrame->aucSrcAddr),
 		MAC2STR(prActFrame->aucDestAddr),
 		u8Cookie,
 		prMgmtTxMsdu->ucTxSeqNum);
 	return ucP2pAction + 1;
 }
-
 
 enum ENUM_P2P_CONNECT_STATE
 p2pFuncTagActionActionFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
@@ -833,7 +832,6 @@ p2pFuncTagActionCategoryFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 		IN uint8_t ucCategory,
 		IN uint64_t u8Cookie)
 {
-
 	uint8_t ucAction = 0;
 	enum ENUM_P2P_CONNECT_STATE eCNNState = P2P_CNN_NORMAL;
 
@@ -857,7 +855,7 @@ p2pFuncTagActionCategoryFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 }
 
 void p2pProcessActionResponse(IN struct ADAPTER *prAdapter,
-		enum p2p_action_frame_type eType)
+		enum ENUM_P2P_ACTION_FRAME_TYPE eType)
 {
 	u_int8_t fgIdle = FALSE;
 
@@ -889,9 +887,8 @@ void p2pProcessActionResponse(IN struct ADAPTER *prAdapter,
 		break;
 	}
 
-	DBGLOG(P2P, INFO,
-		"eConnState: %d, eType: %d\n",
-		prAdapter->prP2pInfo->eConnState, eType);
+	DBGLOG(P2P, INFO, "eConnState: %d, eType: %d\n",
+			prAdapter->prP2pInfo->eConnState, eType);
 
 	if (fgIdle)
 		prAdapter->prP2pInfo->eConnState = P2P_CNN_NORMAL;
@@ -909,7 +906,6 @@ void p2pProcessActionResponse(IN struct ADAPTER *prAdapter,
  * Provision Discovery Req
  * Provision Discovery Res
  */
-
 enum ENUM_P2P_CONNECT_STATE
 p2pFuncTagMgmtFrame(IN struct MSDU_INFO *prMgmtTxMsdu,
 		IN uint64_t u8Cookie)
@@ -1080,7 +1076,11 @@ p2pFuncTxMgmtFrame(IN struct ADAPTER *prAdapter,
 		nicTxConfigPktControlFlag(prMgmtTxMsdu,
 			MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
 
-		prAdapter->prP2pInfo->eConnState =
+		if (p2pFuncNeedWaitRsp(prAdapter,
+				prAdapter->prP2pInfo->eConnState))
+			prAdapter->prP2pInfo->eConnState =
+				p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
+		else
 			p2pFuncTagMgmtFrame(prMgmtTxMsdu, u8GlCookie);
 
 		nicTxEnqueueMsdu(prAdapter, prMgmtTxMsdu);
@@ -3674,55 +3674,54 @@ void p2pFuncValidateRxActionFrame(IN struct ADAPTER *prAdapter,
 
 	DEBUGFUNC("p2pFuncValidateRxActionFrame");
 
-	do {
+	if (prAdapter == NULL || prSwRfb == NULL) {
+		DBGLOG(P2P, ERROR, "Invalid parameter.\n");
+		return;
+	}
+	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
-		ASSERT_BREAK((prAdapter != NULL) && (prSwRfb != NULL));
-		prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+	switch (prActFrame->ucCategory) {
+	case CATEGORY_PUBLIC_ACTION:
+		if (prActFrame->ucAction != 0x9)
+			break;
+		WLAN_GET_FIELD_BE32(prActFrame->ucActionDetails, &u4OUI);
+		DBGLOG(P2P, TRACE, "Action: oui: 0x%x\n", u4OUI);
+		if (u4OUI != P2P_IE_VENDOR_TYPE ||
+				prSwRfb->u2PacketLen <
+				sizeof(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME))
+			break;
 
-		switch (prActFrame->ucCategory) {
-		case CATEGORY_PUBLIC_ACTION:
-			if (prActFrame->ucAction != 0x9)
-				break;
-			WLAN_GET_FIELD_BE32(
-				prActFrame->ucActionDetails, &u4OUI);
-			DBGLOG(P2P, TRACE, "Action: oui: 0x%x\n", u4OUI);
-			if (u4OUI != P2P_IE_VENDOR_TYPE ||
-			    prSwRfb->u2PacketLen <
-			    sizeof(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME))
-				break;
-
-			prActPubVenFrame =
+		prActPubVenFrame =
 				(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME *)
 				prActFrame;
-			p2pProcessActionResponse(prAdapter,
+		p2pProcessActionResponse(prAdapter,
 				prActPubVenFrame->ucPubSubType);
-			if (fgIsDevInterface) {
-				p2pDevFsmNotifyP2pRx(prAdapter,
-						prActPubVenFrame->ucPubSubType,
-						&fgBufferFrame);
-			}
-		default:
-			break;
+		if (fgIsDevInterface) {
+			p2pDevFsmNotifyP2pRx(prAdapter,
+					prActPubVenFrame->ucPubSubType,
+					&fgBufferFrame);
 		}
+		/* Fall through */
+	default:
+		break;
+	}
 
-		if (fgBufferFrame) {
-			p2pFunBufferP2pActionFrame(prAdapter,
-					prSwRfb,
-					ucRoleIdx);
-			break;
-		}
+	if (fgBufferFrame) {
+		p2pFunBufferP2pActionFrame(prAdapter,
+				prSwRfb,
+				ucRoleIdx);
+		return;
+	}
 
-		if (prAdapter->u4OsPacketFilter
-			& PARAM_PACKET_FILTER_ACTION_FRAME) {
-			/* Leave the Action frame to p2p_supplicant. */
-			kalP2PIndicateRxMgmtFrame(prAdapter->prGlueInfo,
-				prSwRfb, fgIsDevInterface, ucRoleIdx);
-		} else {
-			DBGLOG(P2P, INFO,
-				"do not indicate action frame as filter closed\n");
-		}
-
-	} while (FALSE);
+	if (prAdapter->u4OsPacketFilter
+		& PARAM_PACKET_FILTER_ACTION_FRAME) {
+		/* Leave the Action frame to p2p_supplicant. */
+		kalP2PIndicateRxMgmtFrame(prAdapter->prGlueInfo,
+			prSwRfb, fgIsDevInterface, ucRoleIdx);
+	} else {
+		DBGLOG(P2P, INFO,
+			"do not indicate action frame as filter closed\n");
+	}
 
 	return;
 
@@ -6340,3 +6339,83 @@ p2pFunGetPreferredFreqList(IN struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+enum ENUM_P2P_CONNECT_STATE
+p2pFuncGetP2pActionFrameType(IN struct MSDU_INFO *prMgmtMsdu)
+{
+	struct WLAN_MAC_HEADER *prWlanHdr = (struct WLAN_MAC_HEADER *) NULL;
+	struct WLAN_ACTION_FRAME *prActFrame;
+	uint8_t *pucVendor = NULL;
+
+	prWlanHdr = (struct WLAN_MAC_HEADER *)
+			((unsigned long) prMgmtMsdu->prPacket +
+					MAC_TX_RESERVED_FIELD);
+	if ((prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) != MAC_FRAME_ACTION)
+		return P2P_CNN_NORMAL;
+	prActFrame = (struct WLAN_ACTION_FRAME *) prWlanHdr;
+	if (prActFrame->ucCategory != WLAN_ACTION_PUBLIC)
+		return P2P_CNN_NORMAL;
+	if (prActFrame->ucAction != WLAN_PA_VENDOR_SPECIFIC)
+		return P2P_CNN_NORMAL;
+	pucVendor = (uint8_t *) prActFrame + 26;
+	if (*(pucVendor + 0) == 0x50 &&
+			*(pucVendor + 1) == 0x6f &&
+			*(pucVendor + 2) == 0x9a &&
+			*(pucVendor + 3) == 0x09)
+		return ((uint8_t) *(pucVendor + 4)) + 1;
+	else
+		return P2P_CNN_NORMAL;
+}
+
+u_int8_t
+p2pFuncCheckOnRocChnl(IN struct RF_CHANNEL_INFO *prTxChnl,
+		IN struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+{
+	if (prTxChnl == NULL || prChnlReqInfo == NULL)
+		return FALSE;
+
+	if (prTxChnl->ucChannelNum == prChnlReqInfo->ucReqChnlNum &&
+			prChnlReqInfo->fgIsChannelRequested)
+		return TRUE;
+
+	return FALSE;
+}
+
+u_int8_t
+p2pFuncNeedWaitRsp(IN struct ADAPTER *prAdapter,
+		IN enum ENUM_P2P_CONNECT_STATE eConnState)
+{
+	switch (eConnState) {
+	case P2P_CNN_GO_NEG_REQ:
+	case P2P_CNN_GO_NEG_RESP:
+	case P2P_CNN_INVITATION_REQ:
+	case P2P_CNN_DEV_DISC_REQ:
+	case P2P_CNN_PROV_DISC_REQ:
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
+void
+p2pFunClearAllTxReq(IN struct ADAPTER *prAdapter,
+		IN struct P2P_MGMT_TX_REQ_INFO *prP2pMgmtTxInfo)
+{
+	struct P2P_OFF_CHNL_TX_REQ_INFO *prOffChnlTxPkt =
+			(struct P2P_OFF_CHNL_TX_REQ_INFO *) NULL;
+
+	while (!LINK_IS_EMPTY(&(prP2pMgmtTxInfo->rTxReqLink))) {
+		LINK_REMOVE_HEAD(&(prP2pMgmtTxInfo->rTxReqLink),
+				prOffChnlTxPkt,
+				struct P2P_OFF_CHNL_TX_REQ_INFO *);
+		if (!prOffChnlTxPkt)
+			continue;
+		kalP2PIndicateMgmtTxStatus(
+				prAdapter->prGlueInfo,
+				prOffChnlTxPkt->prMgmtTxMsdu,
+				FALSE);
+		cnmPktFree(prAdapter, prOffChnlTxPkt->prMgmtTxMsdu);
+		cnmMemFree(prAdapter, prOffChnlTxPkt);
+	}
+}
+

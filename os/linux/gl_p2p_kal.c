@@ -1374,9 +1374,6 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 				prWlanHeader->u2FrameCtrl, ucChnlNum);
 			break;
 		}
-
-		DBGLOG(P2P, TRACE,
-			"from: " MACSTR "\n", MAC2STR(prWlanHeader->aucAddr2));
 #endif
 		i4Freq = nicChannelNum2Freq(ucChnlNum) / 1000;
 
@@ -1384,6 +1381,10 @@ kalP2PIndicateRxMgmtFrame(IN struct GLUE_INFO *prGlueInfo,
 			prNetdevice = prGlueP2pInfo->prDevHandler;
 		else
 			prNetdevice = prGlueP2pInfo->aprRoleHandler;
+
+		DBGLOG(P2P, TRACE, "from: " MACSTR ", netdev: %p\n",
+				MAC2STR(prWlanHeader->aucAddr2),
+				prNetdevice);
 
 #if (KERNEL_VERSION(3, 18, 0) <= CFG80211_VERSION_CODE)
 		cfg80211_rx_mgmt(

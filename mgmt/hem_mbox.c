@@ -146,6 +146,7 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_CHNL_REQ"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_CHNL_ABORT"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_MGMT_TX"),
+	(uint8_t *) DISP_STRING("MID_MNY_P2P_MGMT_TX_CANCEL_WAIT"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_GROUP_DISSOLVE"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_MGMT_FRAME_REGISTER"),
 	(uint8_t *) DISP_STRING("MID_MNY_P2P_NET_DEV_REGISTER"),
@@ -170,6 +171,7 @@ static uint8_t *apucDebugMsg[] = {
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL"),
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX"),
+	(uint8_t *) DISP_STRING("MID_MNY_AIS_MGMT_TX_CANCEL_WAIT"),
 	(uint8_t *) DISP_STRING("MID_WNM_AIS_BSS_TRANSITION"),
 #if CFG_SUPPORT_NCHO
 	(uint8_t *) DISP_STRING("MID_MNY_AIS_NCHO_ACTION_FRAME")
@@ -266,7 +268,8 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_STOP_AP, p2pRoleFsmRunEventStopAP},
 	{MID_MNY_P2P_CHNL_REQ, p2pDevFsmRunEventChannelRequest},	/* V */
 	{MID_MNY_P2P_CHNL_ABORT, p2pDevFsmRunEventChannelAbort},	/* V */
-	{MID_MNY_P2P_MGMT_TX, p2pDevFsmRunEventMgmtTx},	/* V */
+	{MID_MNY_P2P_MGMT_TX, p2pFsmRunEventMgmtFrameTx},	/* V */
+	{MID_MNY_P2P_MGMT_TX_CANCEL_WAIT, p2pFsmRunEventTxCancelWait},
 	{MID_MNY_P2P_GROUP_DISSOLVE, p2pRoleFsmRunEventDissolve},
 	{MID_MNY_P2P_MGMT_FRAME_REGISTER,
 		p2pDevFsmRunEventMgmtFrameRegister},
@@ -294,6 +297,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_AIS_CANCEL_REMAIN_ON_CHANNEL,
 		aisFsmRunEventCancelRemainOnChannel},
 	{MID_MNY_AIS_MGMT_TX, aisFsmRunEventMgmtFrameTx},
+	{MID_MNY_AIS_MGMT_TX_CANCEL_WAIT, aisFsmRunEventCancelTxWait},
 	{MID_WNM_AIS_BSS_TRANSITION, aisFsmRunEventBssTransition},
 	{MID_OID_WMM_TSPEC_OPERATE, wmmRunEventTSOperate},
 	{MID_RLM_RM_SCHEDULE, rlmRunEventProcessNextRm},

@@ -128,6 +128,7 @@ enum ENUM_AIS_STATE {
 	AIS_STATE_DISCONNECTING,
 	AIS_STATE_REQ_REMAIN_ON_CHANNEL,
 	AIS_STATE_REMAIN_ON_CHANNEL,
+	AIS_STATE_OFF_CHNL_TX,
 	AIS_STATE_NUM
 };
 
@@ -174,9 +175,11 @@ struct AIS_REQ_CHNL_INFO {
 	uint8_t ucChannelNum;
 	uint32_t u4DurationMs;
 	uint64_t u8Cookie;
+	enum ENUM_CH_REQ_TYPE eReqType;
 };
 
 struct AIS_MGMT_TX_REQ_INFO {
+	struct LINK rTxReqLink;
 	u_int8_t fgIsMgmtTxRequested;
 	struct MSDU_INFO *prMgmtTxMsdu;
 	uint64_t u8Cookie;
@@ -284,6 +287,18 @@ struct AIS_FSM_INFO {
 
 	/* Scan target channel when device roaming */
 	uint8_t fgTargetChnlScanIssued;
+};
+
+struct AIS_OFF_CHNL_TX_REQ_INFO {
+	struct LINK_ENTRY rLinkEntry;
+	struct MSDU_INFO *prMgmtTxMsdu;
+	u_int8_t fgNoneCckRate;
+	struct RF_CHANNEL_INFO rChannelInfo;	/* Off channel TX. */
+	enum ENUM_CHNL_EXT eChnlExt;
+	/* See if driver should keep at the same channel. */
+	u_int8_t fgIsWaitRsp;
+	uint64_t u8Cookie; /* cookie used to match with supplicant */
+	uint32_t u4Duration; /* wait time for tx request */
 };
 
 enum WNM_AIS_BSS_TRANSITION {
@@ -526,6 +541,9 @@ void aisFsmRunEventSetOkcPmk(IN struct ADAPTER *prAdapter);
 
 void aisFsmRunEventBssTransition(IN struct ADAPTER *prAdapter,
 				IN struct MSG_HDR *prMsgHdr);
+
+void aisFsmRunEventCancelTxWait(IN struct ADAPTER *prAdapter,
+		IN struct MSG_HDR *prMsgHdr);
 
 enum ENUM_AIS_STATE aisFsmStateSearchAction(
 	IN struct ADAPTER *prAdapter, uint8_t ucPhase);

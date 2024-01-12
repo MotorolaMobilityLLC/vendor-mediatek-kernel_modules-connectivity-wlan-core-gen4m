@@ -132,113 +132,6 @@
  ******************************************************************************
  */
 
-u_int8_t
-mtk_p2p_cfg80211func_channel_sco_switch(
-		IN enum nl80211_channel_type channel_type,
-		IN enum ENUM_CHNL_EXT *prChnlSco)
-{
-	u_int8_t fgIsValid = FALSE;
-
-	do {
-		if (prChnlSco) {
-
-			switch (channel_type) {
-			case NL80211_CHAN_NO_HT:
-				*prChnlSco = CHNL_EXT_SCN;
-				break;
-			case NL80211_CHAN_HT20:
-				*prChnlSco = CHNL_EXT_SCN;
-				break;
-			case NL80211_CHAN_HT40MINUS:
-				*prChnlSco = CHNL_EXT_SCA;
-				break;
-			case NL80211_CHAN_HT40PLUS:
-				*prChnlSco = CHNL_EXT_SCB;
-				break;
-			default:
-				ASSERT(FALSE);
-				*prChnlSco = CHNL_EXT_SCN;
-				break;
-			}
-		}
-
-		fgIsValid = TRUE;
-	} while (FALSE);
-
-	return fgIsValid;
-}
-
-u_int8_t
-mtk_p2p_cfg80211func_channel_format_switch(
-		IN struct cfg80211_chan_def *channel_def,
-		IN struct ieee80211_channel *channel,
-		IN struct RF_CHANNEL_INFO *prRfChnlInfo)
-{
-	u_int8_t fgIsValid = FALSE;
-
-	do {
-		if (channel == NULL)
-			break;
-
-		DBGLOG(P2P, INFO,
-			"switch channel band: %d, freq: %d\n",
-			channel->band, channel->center_freq);
-
-		if (prRfChnlInfo) {
-			prRfChnlInfo->ucChannelNum =
-				nicFreq2ChannelNum(channel->center_freq * 1000);
-
-			switch (channel->band) {
-			case KAL_BAND_2GHZ:
-				prRfChnlInfo->eBand = BAND_2G4;
-				break;
-			case KAL_BAND_5GHZ:
-				prRfChnlInfo->eBand = BAND_5G;
-				break;
-			default:
-				prRfChnlInfo->eBand = BAND_2G4;
-				break;
-			}
-
-		}
-
-		if (channel_def && prRfChnlInfo) {
-
-			switch (channel_def->width) {
-			case NL80211_CHAN_WIDTH_20_NOHT:
-			case NL80211_CHAN_WIDTH_20:
-				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
-				break;
-			case NL80211_CHAN_WIDTH_40:
-				prRfChnlInfo->ucChnlBw = MAX_BW_40MHZ;
-				break;
-			case NL80211_CHAN_WIDTH_80:
-				prRfChnlInfo->ucChnlBw = MAX_BW_80MHZ;
-				break;
-			case NL80211_CHAN_WIDTH_80P80:
-				prRfChnlInfo->ucChnlBw = MAX_BW_80_80_MHZ;
-				break;
-			case NL80211_CHAN_WIDTH_160:
-				prRfChnlInfo->ucChnlBw = MAX_BW_160MHZ;
-				break;
-			default:
-				prRfChnlInfo->ucChnlBw = MAX_BW_20MHZ;
-				break;
-			}
-			prRfChnlInfo->u2PriChnlFreq = channel->center_freq;
-			prRfChnlInfo->u4CenterFreq1 = channel_def->center_freq1;
-			prRfChnlInfo->u4CenterFreq2 = channel_def->center_freq2;
-		}
-
-		fgIsValid = TRUE;
-
-	} while (FALSE);
-
-	return fgIsValid;
-}
-
-/* mtk_p2p_cfg80211func_channel_format_switch */
-
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 		struct net_device *ndev, uint8_t *pucRoleIdx)
 {
@@ -1530,8 +1423,8 @@ int mtk_p2p_cfg80211_start_ap(struct wiphy *wiphy,
 			break;
 
 		if (chandef) {
-			mtk_p2p_cfg80211func_channel_format_switch(chandef,
-				chandef->chan, &rRfChnlInfo);
+			kalChannelFormatSwitch(chandef, chandef->chan,
+					&rRfChnlInfo);
 
 			/* Follow the channel info from wifi.cfg
 			 * prior to hostapd.conf
@@ -1801,8 +1694,8 @@ static int mtk_p2p_cfg80211_start_radar_detection_impl(struct wiphy *wiphy,
 		prGlueInfo->prP2PInfo[ucRoleIdx]->cac_time_ms = cac_time_ms;
 
 		if (chandef) {
-			mtk_p2p_cfg80211func_channel_format_switch(chandef,
-				chandef->chan, &rRfChnlInfo);
+			kalChannelFormatSwitch(chandef, chandef->chan,
+					&rRfChnlInfo);
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter,
 				ucRoleIdx, &rRfChnlInfo);
@@ -1943,9 +1836,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			sizeof(struct ieee80211_channel));
 
 		if (params) {
-			mtk_p2p_cfg80211func_channel_format_switch(
-				&params->chandef,
-				params->chandef.chan, &rRfChnlInfo);
+			kalChannelFormatSwitch(&params->chandef,
+					params->chandef.chan, &rRfChnlInfo);
 
 			p2pFuncSetChannel(prGlueInfo->prAdapter,
 				ucRoleIdx, &rRfChnlInfo);
@@ -2403,11 +2295,11 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 		prMsgChnlReq->rMsgHdr.eMsgId = MID_MNY_P2P_CHNL_REQ;
 		prMsgChnlReq->u8Cookie = *cookie;
 		prMsgChnlReq->u4Duration = duration;
-		prMsgChnlReq->eChnlReqType = CH_REQ_TYPE_P2P_LISTEN;
+		prMsgChnlReq->eChnlReqType = CH_REQ_TYPE_ROC;
 
-		mtk_p2p_cfg80211func_channel_format_switch(NULL, chan,
+		kalChannelFormatSwitch(NULL, chan,
 			&prMsgChnlReq->rChannelInfo);
-		mtk_p2p_cfg80211func_channel_sco_switch(NL80211_CHAN_NO_HT,
+		kalChannelScoSwitch(NL80211_CHAN_NO_HT,
 			&prMsgChnlReq->eChnlSco);
 
 		mboxSendMsg(prGlueInfo->prAdapter,
@@ -2465,17 +2357,16 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_cancel_remain_on_channel */
-#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
-int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
-			struct wireless_dev *wdev,
-			struct cfg80211_mgmt_tx_params *params,
-			u64 *cookie)
+
+int _mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
+		struct wireless_dev *wdev, struct ieee80211_channel *chan,
+		bool offchan, unsigned int wait, const u8 *buf, size_t len,
+		bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_MGMT_TX_REQUEST *prMsgTxReq =
-		(struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
+	struct MSG_MGMT_TX_REQUEST *prMsgTxReq =
+		(struct MSG_MGMT_TX_REQUEST *) NULL;
 	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
 	uint8_t *pucFrameBuf = (uint8_t *) NULL;
 	uint64_t *pu8GlCookie = (uint64_t *) NULL;
@@ -2483,20 +2374,13 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	struct net_device *dev = NULL;
 
 	do {
-		if ((wiphy == NULL) || (wdev == NULL)
-			|| (params == 0) || (cookie == NULL))
+		if ((wiphy == NULL) || (wdev == NULL) || (cookie == NULL))
 			break;
-
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_mgmt_tx\n");
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-		/* The owner of this function please check following line*/
-		prGlueP2pInfo = (struct GL_P2P_INFO *) prGlueInfo->prP2PInfo;
-
 		dev = wdev->netdev;
 
-		/* The owner of this function please check following line*/
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
 			/* Device Interface. */
 			ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
@@ -2509,162 +2393,35 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 				break;
 			}
 		}
-		/* The owner of this function please check following line*/
+
 		*cookie = prGlueInfo->u8Cookie++;
 
-		/* Channel & Channel Type & Wait time are ignored. */
 		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
-			RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_TX_REQUEST));
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_MGMT_TX_REQUEST));
 
 		if (prMsgTxReq == NULL) {
 			ASSERT(FALSE);
 			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		if (params->offchan) {
-			DBGLOG(P2P, TRACE, "   Off channel TRUE\n");
-			prMsgTxReq->fgIsOffChannel = TRUE;
-
-			mtk_p2p_cfg80211func_channel_format_switch(NULL,
-				params->chan,
-				&prMsgTxReq->rChannelInfo);
-			mtk_p2p_cfg80211func_channel_sco_switch(
-				NL80211_CHAN_NO_HT,
-				&prMsgTxReq->eChnlExt);
-		} else {
-			prMsgTxReq->fgIsOffChannel = FALSE;
-		}
-
-		if (params->no_cck)
-			prMsgTxReq->fgNoneCckRate = TRUE;
-		else
-			prMsgTxReq->fgNoneCckRate = FALSE;
-
-		if (params->dont_wait_for_ack)
-			prMsgTxReq->fgIsWaitRsp = FALSE;
-		else
-			prMsgTxReq->fgIsWaitRsp = TRUE;
-		prMgmtFrame =
-		    cnmMgtPktAlloc(prGlueInfo->prAdapter,
-				(int32_t)
-				(params->len + sizeof(uint64_t)
-				+ MAC_TX_RESERVED_FIELD));
-		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
-		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
-			/* ASSERT(FALSE); */
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prMsgTxReq->u8Cookie = *cookie;
-		prMsgTxReq->rMsgHdr.eMsgId = MID_MNY_P2P_MGMT_TX;
-		prMsgTxReq->ucBssIdx = ucBssIdx;
-
-		pucFrameBuf =
-			(uint8_t *)
-			((unsigned long) prMgmtFrame->prPacket
-			+ MAC_TX_RESERVED_FIELD);
-
-		pu8GlCookie =
-			(uint64_t *)
-			((unsigned long) prMgmtFrame->prPacket
-			+ (unsigned long)params->len
-			+ MAC_TX_RESERVED_FIELD);
-
-		kalMemCopy(pucFrameBuf, params->buf, params->len);
-
-		*pu8GlCookie = *cookie;
-
-		prMgmtFrame->u2FrameLength = params->len;
-
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prMsgTxReq,
-			MSG_SEND_METHOD_BUF);
-
-		i4Rslt = 0;
-	} while (FALSE);
-
-	if ((i4Rslt != 0) && (prMsgTxReq != NULL)) {
-		if (prMsgTxReq->prMgmtMsduInfo != NULL)
-			cnmMgtPktFree(prGlueInfo->prAdapter,
-				prMsgTxReq->prMgmtMsduInfo);
-
-		cnmMemFree(prGlueInfo->prAdapter, prMsgTxReq);
-	}
-
-	return i4Rslt;
-}				/* mtk_p2p_cfg80211_mgmt_tx */
-#else
-int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
-			     struct wireless_dev *wdev,
-			     struct ieee80211_channel *chan, bool offchan,
-			     unsigned int wait, const u8 *buf, size_t len,
-			     bool no_cck, bool dont_wait_for_ack, u64 *cookie)
-{
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo =
-		(struct GL_P2P_DEV_INFO *) NULL;
-	int32_t i4Rslt = -EINVAL;
-	struct MSG_P2P_MGMT_TX_REQUEST *prMsgTxReq =
-		(struct MSG_P2P_MGMT_TX_REQUEST *) NULL;
-	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
-	uint8_t *pucFrameBuf = (uint8_t *) NULL;
-	uint64_t *pu8GlCookie = (uint64_t *) NULL;
-	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
-	struct net_device *dev = NULL;
-
-	do {
-		if ((wiphy == NULL) || (buf == NULL) || (len == 0) ||
-		    /* (dev == NULL) || */
-		    (cookie == NULL)) {
-			break;
-		}
-
-		DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_mgmt_tx\n");
-
-		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
-
-		prGlueP2pDevInfo = prGlueInfo->prP2PDevInfo;
-
-		dev = wdev->netdev;
-		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
-			/* Device Interface. */
-			ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
-		} else {
-			ASSERT(ucRoleIdx < KAL_P2P_NUM);
-			/* Role Interface. */
-			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
-				ucRoleIdx, &ucBssIdx) < 0) {
-				/* Can't find BSS index. */
-				break;
-			}
-		}
-
-		*cookie = prGlueP2pDevInfo->u8Cookie++;
-
-		/* Channel & Channel Type & Wait time are ignored. */
-		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
-			RAM_TYPE_MSG, sizeof(struct MSG_P2P_MGMT_TX_REQUEST));
-
-		if (prMsgTxReq == NULL) {
-			ASSERT(FALSE);
-			i4Rslt = -ENOMEM;
+			DBGLOG(P2P, ERROR, "Allocate TX req msg fails.\n");
 			break;
 		}
 
 		if (offchan) {
-			DBGLOG(P2P, TRACE, "   Off channel TRUE\n");
 			prMsgTxReq->fgIsOffChannel = TRUE;
 
-			mtk_p2p_cfg80211func_channel_format_switch(NULL, chan,
-				&prMsgTxReq->rChannelInfo);
-			mtk_p2p_cfg80211func_channel_sco_switch(
-				NL80211_CHAN_NO_HT, &prMsgTxReq->eChnlExt);
+			kalChannelFormatSwitch(NULL, chan,
+					&prMsgTxReq->rChannelInfo);
+			kalChannelScoSwitch(NL80211_CHAN_NO_HT,
+					&prMsgTxReq->eChnlExt);
 		} else {
 			prMsgTxReq->fgIsOffChannel = FALSE;
 		}
+
+		if (wait)
+			prMsgTxReq->u4Duration = wait;
+		else
+			prMsgTxReq->u4Duration = 0;
 
 		if (no_cck)
 			prMsgTxReq->fgNoneCckRate = TRUE;
@@ -2676,16 +2433,14 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		else
 			prMsgTxReq->fgIsWaitRsp = TRUE;
 
-		prMgmtFrame =
-		    cnmMgtPktAlloc(prGlueInfo->prAdapter,
-		    (uint32_t)
-		    (len + sizeof(uint64_t)
-		    + MAC_TX_RESERVED_FIELD));
-
+		prMgmtFrame = cnmMgtPktAlloc(prGlueInfo->prAdapter,
+				(int32_t) (len + sizeof(uint64_t)
+				+ MAC_TX_RESERVED_FIELD));
 		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
 		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
 			/* ASSERT(FALSE); */
 			i4Rslt = -ENOMEM;
+			DBGLOG(P2P, ERROR, "Allocate TX packet fails.\n");
 			break;
 		}
 
@@ -2707,11 +2462,24 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 		kalMemCopy(pucFrameBuf, buf, len);
 
 		*pu8GlCookie = *cookie;
-		DBGLOG(P2P, INFO,
-			"cfg80211: Tx frame with cookie: 0x%llx\n",
-			*cookie);
 
 		prMgmtFrame->u2FrameLength = len;
+
+#define TEMP_LOG_TEMPLATE "netdev: %p, bssIdx: %d, band: %d, chan: %d, " \
+		"offchan: %d, wait: %d, len: %d, no_cck: %d, " \
+		"dont_wait_for_ack: %d, cookie: 0x%llx\n"
+		DBGLOG(P2P, INFO, TEMP_LOG_TEMPLATE,
+				dev,
+				prMsgTxReq->ucBssIdx,
+				prMsgTxReq->rChannelInfo.eBand,
+				prMsgTxReq->rChannelInfo.ucChannelNum,
+				prMsgTxReq->fgIsOffChannel,
+				prMsgTxReq->u4Duration,
+				prMsgTxReq->prMgmtMsduInfo->u2FrameLength,
+				prMsgTxReq->fgNoneCckRate,
+				prMsgTxReq->fgIsWaitRsp,
+				prMsgTxReq->u8Cookie);
+#undef TEMP_LOG_TEMPLATE
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
@@ -2730,6 +2498,31 @@ int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
 	}
 
 	return i4Rslt;
+}
+
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
+int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
+		struct wireless_dev *wdev,
+		struct cfg80211_mgmt_tx_params *params,
+		u64 *cookie)
+{
+	if (params == NULL)
+		return -EINVAL;
+
+	return _mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, params->chan,
+			params->offchan, params->wait, params->buf,
+			params->len, params->no_cck, params->dont_wait_for_ack,
+			cookie);
+}				/* mtk_p2p_cfg80211_mgmt_tx */
+#else
+int mtk_p2p_cfg80211_mgmt_tx(struct wiphy *wiphy,
+		struct wireless_dev *wdev,
+		struct ieee80211_channel *chan, bool offchan,
+		unsigned int wait, const u8 *buf, size_t len,
+		bool no_cck, bool dont_wait_for_ack, u64 *cookie)
+{
+	return _mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, chan, offchan, wait, buf,
+			len, no_cck, dont_wait_for_ack, cookie);
 }				/* mtk_p2p_cfg80211_mgmt_tx */
 #endif
 
@@ -2737,8 +2530,58 @@ int mtk_p2p_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 		struct wireless_dev *wdev, u64 cookie)
 {
 	int32_t i4Rslt = -EINVAL;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	struct MSG_CANCEL_TX_WAIT_REQUEST *prMsgCancelTxWait =
+			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
 
-	DBGLOG(P2P, INFO, "%s: not support now\n", __func__);
+	do {
+		ASSERT(wiphy);
+
+		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo,
+			wdev->netdev, &ucRoleIdx) < 0) {
+			/* Device Interface. */
+			ucBssIdx = prGlueInfo->prAdapter->ucP2PDevBssIdx;
+		} else {
+			ASSERT(ucRoleIdx < KAL_P2P_NUM);
+			/* Role Interface. */
+			if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+				ucRoleIdx,
+				&ucBssIdx) != WLAN_STATUS_SUCCESS) {
+				/* Can't find BSS index. */
+				break;
+			}
+		}
+
+		DBGLOG(P2P, INFO, "bssIdx: %d, cookie: 0x%llx\n",
+				ucBssIdx,
+				cookie);
+
+		prMsgCancelTxWait = cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_CANCEL_TX_WAIT_REQUEST));
+
+		if (prMsgCancelTxWait == NULL) {
+			ASSERT(FALSE);
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		prMsgCancelTxWait->rMsgHdr.eMsgId =
+				MID_MNY_P2P_MGMT_TX_CANCEL_WAIT;
+		prMsgCancelTxWait->u8Cookie = cookie;
+		prMsgCancelTxWait->ucBssIdx = ucBssIdx;
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgCancelTxWait,
+			MSG_SEND_METHOD_BUF);
+
+		i4Rslt = 0;
+	} while (FALSE);
+
 	return i4Rslt;
 }				/* mtk_p2p_cfg80211_mgmt_tx_cancel_wait */
 
@@ -3110,10 +2953,10 @@ int mtk_p2p_cfg80211_connect(struct wiphy *wiphy,
 			}
 		}
 
-		mtk_p2p_cfg80211func_channel_format_switch(NULL, channel,
-			&prConnReqMsg->rChannelInfo);
-		mtk_p2p_cfg80211func_channel_sco_switch(
-			NL80211_CHAN_NO_HT, &prConnReqMsg->eChnlSco);
+		kalChannelFormatSwitch(NULL, channel,
+				&prConnReqMsg->rChannelInfo);
+		kalChannelScoSwitch(NL80211_CHAN_NO_HT,
+				&prConnReqMsg->eChnlSco);
 
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
@@ -3297,8 +3140,7 @@ int mtk_p2p_cfg80211_set_channel(IN struct wiphy *wiphy,
 
 		P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-		mtk_p2p_cfg80211func_channel_format_switch(
-			chandef, chandef->chan, &rRfChnlInfo);
+		kalChannelFormatSwitch(chandef, chandef->chan, &rRfChnlInfo);
 
 		if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0)
 			break;

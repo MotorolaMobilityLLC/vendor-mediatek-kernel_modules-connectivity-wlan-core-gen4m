@@ -2185,9 +2185,9 @@ int mtk_cfg80211_remain_on_channel(struct wiphy *wiphy,
 			MID_MNY_AIS_REMAIN_ON_CHANNEL;
 		prMsgChnlReq->u8Cookie = *cookie;
 		prMsgChnlReq->u4DurationMs = duration;
-
+		prMsgChnlReq->eReqType = CH_REQ_TYPE_ROC;
 		prMsgChnlReq->ucChannelNum = nicFreq2ChannelNum(
-						     chan->center_freq * 1000);
+				chan->center_freq * 1000);
 
 		switch (chan->band) {
 		case KAL_BAND_2GHZ:
@@ -2267,6 +2267,129 @@ int mtk_cfg80211_cancel_remain_on_channel(
 	return i4Rslt;
 }
 
+int _mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
+		struct wireless_dev *wdev, struct ieee80211_channel *chan,
+		bool offchan, unsigned int wait, const u8 *buf, size_t len,
+		bool no_cck, bool dont_wait_for_ack, u64 *cookie)
+{
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	int32_t i4Rslt = -EINVAL;
+	struct MSG_MGMT_TX_REQUEST *prMsgTxReq =
+			(struct MSG_MGMT_TX_REQUEST *) NULL;
+	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
+	uint8_t *pucFrameBuf = (uint8_t *) NULL;
+	uint64_t *pu8GlCookie = (uint64_t *) NULL;
+
+	do {
+		if ((wiphy == NULL) || (wdev == NULL) || (cookie == NULL))
+			break;
+
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+		ASSERT(prGlueInfo);
+
+		*cookie = prGlueInfo->u8Cookie++;
+
+		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_MGMT_TX_REQUEST));
+
+		if (prMsgTxReq == NULL) {
+			ASSERT(FALSE);
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		if (offchan) {
+			prMsgTxReq->fgIsOffChannel = TRUE;
+
+			kalChannelFormatSwitch(NULL, chan,
+					&prMsgTxReq->rChannelInfo);
+			kalChannelScoSwitch(NL80211_CHAN_NO_HT,
+					&prMsgTxReq->eChnlExt);
+		} else {
+			prMsgTxReq->fgIsOffChannel = FALSE;
+		}
+
+		if (wait)
+			prMsgTxReq->u4Duration = wait;
+		else
+			prMsgTxReq->u4Duration = 0;
+
+		if (no_cck)
+			prMsgTxReq->fgNoneCckRate = TRUE;
+		else
+			prMsgTxReq->fgNoneCckRate = FALSE;
+
+		if (dont_wait_for_ack)
+			prMsgTxReq->fgIsWaitRsp = FALSE;
+		else
+			prMsgTxReq->fgIsWaitRsp = TRUE;
+
+		prMgmtFrame = cnmMgtPktAlloc(prGlueInfo->prAdapter,
+				(int32_t) (len + sizeof(uint64_t)
+				+ MAC_TX_RESERVED_FIELD));
+		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
+		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
+			/* ASSERT(FALSE); */
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		prMsgTxReq->u8Cookie = *cookie;
+		prMsgTxReq->rMsgHdr.eMsgId = MID_MNY_AIS_MGMT_TX;
+		prMsgTxReq->ucBssIdx =
+				prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+
+		pucFrameBuf =
+			(uint8_t *)
+			((unsigned long) prMgmtFrame->prPacket
+			+ MAC_TX_RESERVED_FIELD);
+		pu8GlCookie =
+			(uint64_t *)
+			((unsigned long) prMgmtFrame->prPacket
+			+ (unsigned long) len
+			+ MAC_TX_RESERVED_FIELD);
+
+		kalMemCopy(pucFrameBuf, buf, len);
+
+		*pu8GlCookie = *cookie;
+
+		prMgmtFrame->u2FrameLength = len;
+
+#define TEMP_LOG_TEMPLATE "bssIdx: %d, band: %d, chan: %d, offchan: %d, " \
+		"wait: %d, len: %d, no_cck: %d, dont_wait_for_ack: %d, " \
+		"cookie: 0x%llx\n"
+		DBGLOG(P2P, INFO, TEMP_LOG_TEMPLATE,
+				prMsgTxReq->ucBssIdx,
+				prMsgTxReq->rChannelInfo.eBand,
+				prMsgTxReq->rChannelInfo.ucChannelNum,
+				prMsgTxReq->fgIsOffChannel,
+				prMsgTxReq->u4Duration,
+				prMsgTxReq->prMgmtMsduInfo->u2FrameLength,
+				prMsgTxReq->fgNoneCckRate,
+				prMsgTxReq->fgIsWaitRsp,
+				prMsgTxReq->u8Cookie);
+#undef TEMP_LOG_TEMPLATE
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgTxReq,
+			MSG_SEND_METHOD_BUF);
+
+		i4Rslt = 0;
+	} while (FALSE);
+
+	if ((i4Rslt != 0) && (prMsgTxReq != NULL)) {
+		if (prMsgTxReq->prMgmtMsduInfo != NULL)
+			cnmMgtPktFree(prGlueInfo->prAdapter,
+				prMsgTxReq->prMgmtMsduInfo);
+
+		cnmMemFree(prGlueInfo->prAdapter, prMsgTxReq);
+	}
+
+	return i4Rslt;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to send a management frame
@@ -2279,161 +2402,28 @@ int mtk_cfg80211_cancel_remain_on_channel(
 /*----------------------------------------------------------------------------*/
 #if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
-			 struct wireless_dev *wdev,
-			 struct cfg80211_mgmt_tx_params *params,
-			 u64 *cookie)
+			struct wireless_dev *wdev,
+			struct cfg80211_mgmt_tx_params *params,
+			u64 *cookie)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4Rslt = -EINVAL;
-	struct MSG_MGMT_TX_REQUEST *prMsgTxReq = (struct
-			MSG_MGMT_TX_REQUEST *) NULL;
-	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
-	uint8_t *pucFrameBuf = (uint8_t *) NULL;
+	if (params == NULL)
+		return -EINVAL;
 
-	do {
-		if ((wiphy == NULL) || (wdev == NULL) || (params == 0)
-		    || (cookie == NULL))
-			break;
-
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-		ASSERT(prGlueInfo);
-
-		DBGLOG(REQ, INFO, "mtk_cfg80211_mgmt_tx\n");
-
-		*cookie = prGlueInfo->u8Cookie++;
-
-		/* Channel & Channel Type & Wait time are ignored. */
-		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter,
-					 RAM_TYPE_MSG,
-					 sizeof(struct MSG_MGMT_TX_REQUEST));
-
-		if (prMsgTxReq == NULL) {
-			ASSERT(FALSE);
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prMsgTxReq->fgNoneCckRate = FALSE;
-		prMsgTxReq->fgIsWaitRsp = TRUE;
-
-		prMgmtFrame = cnmMgtPktAlloc(prGlueInfo->prAdapter,
-					     (uint32_t) (params->len +
-					     MAC_TX_RESERVED_FIELD));
-		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
-		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
-			ASSERT(FALSE);
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prMsgTxReq->u8Cookie = *cookie;
-		prMsgTxReq->rMsgHdr.eMsgId = MID_MNY_AIS_MGMT_TX;
-
-		pucFrameBuf = (uint8_t *) ((unsigned long)
-					   prMgmtFrame->prPacket +
-					   MAC_TX_RESERVED_FIELD);
-
-		kalMemCopy(pucFrameBuf, params->buf, params->len);
-
-		prMgmtFrame->u2FrameLength = params->len;
-
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
-			    (struct MSG_HDR *) prMsgTxReq, MSG_SEND_METHOD_BUF);
-
-		i4Rslt = 0;
-	} while (FALSE);
-
-	if ((i4Rslt != 0) && (prMsgTxReq != NULL)) {
-		if (prMsgTxReq->prMgmtMsduInfo != NULL)
-			cnmMgtPktFree(prGlueInfo->prAdapter,
-				      prMsgTxReq->prMgmtMsduInfo);
-
-		cnmMemFree(prGlueInfo->prAdapter, prMsgTxReq);
-	}
-
-	return i4Rslt;
+	return _mtk_cfg80211_mgmt_tx(wiphy, wdev, params->chan,
+			params->offchan, params->wait, params->buf, params->len,
+			params->no_cck, params->dont_wait_for_ack, cookie);
 }
 #else
 int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
-			 struct wireless_dev *wdev,
-			 struct ieee80211_channel *channel, bool offscan,
-			 unsigned int wait,
-			 const u8 *buf, size_t len, bool no_cck,
-			 bool dont_wait_for_ack, u64 *cookie)
+		struct wireless_dev *wdev, struct ieee80211_channel *channel,
+		bool offchan, unsigned int wait, const u8 *buf, size_t len,
+		bool no_cck, bool dont_wait_for_ack, u64 *cookie)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	int32_t i4Rslt = -EINVAL;
-	struct MSG_MGMT_TX_REQUEST *prMsgTxReq = (struct
-			MSG_MGMT_TX_REQUEST *) NULL;
-	struct MSDU_INFO *prMgmtFrame = (struct MSDU_INFO *) NULL;
-	uint8_t *pucFrameBuf = (uint8_t *) NULL;
-
-	do {
-		if ((wiphy == NULL)
-		    || (buf == NULL)
-		    || (len == 0)
-		    || (wdev == NULL)
-		    || (cookie == NULL)) {
-			break;
-		}
-
-		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-		ASSERT(prGlueInfo);
-
-		DBGLOG(REQ, INFO, "mtk_cfg80211_mgmt_tx\n");
-
-		*cookie = prGlueInfo->u8Cookie++;
-
-		/* Channel & Channel Type & Wait time are ignored. */
-		prMsgTxReq = cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-					sizeof(struct MSG_MGMT_TX_REQUEST));
-
-		if (prMsgTxReq == NULL) {
-			ASSERT(FALSE);
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prMsgTxReq->fgNoneCckRate = FALSE;
-		prMsgTxReq->fgIsWaitRsp = TRUE;
-
-		prMgmtFrame = cnmMgtPktAlloc(prGlueInfo->prAdapter,
-				     (uint32_t) (len + MAC_TX_RESERVED_FIELD));
-		prMsgTxReq->prMgmtMsduInfo = prMgmtFrame;
-		if (prMsgTxReq->prMgmtMsduInfo == NULL) {
-			ASSERT(FALSE);
-			i4Rslt = -ENOMEM;
-			break;
-		}
-
-		prMsgTxReq->u8Cookie = *cookie;
-		prMsgTxReq->rMsgHdr.eMsgId = MID_MNY_AIS_MGMT_TX;
-
-		pucFrameBuf = (uint8_t *) ((unsigned long)
-					   prMgmtFrame->prPacket +
-					   MAC_TX_RESERVED_FIELD);
-
-		kalMemCopy(pucFrameBuf, buf, len);
-
-		prMgmtFrame->u2FrameLength = len;
-
-		mboxSendMsg(prGlueInfo->prAdapter, MBOX_ID_0,
-			    (struct MSG_HDR *) prMsgTxReq, MSG_SEND_METHOD_BUF);
-
-		i4Rslt = 0;
-	} while (FALSE);
-
-	if ((i4Rslt != 0) && (prMsgTxReq != NULL)) {
-		if (prMsgTxReq->prMgmtMsduInfo != NULL)
-			cnmMgtPktFree(prGlueInfo->prAdapter,
-				      prMsgTxReq->prMgmtMsduInfo);
-
-		cnmMemFree(prGlueInfo->prAdapter, prMsgTxReq);
-	}
-
-	return i4Rslt;
+	return _mtk_cfg80211_mgmt_tx(wiphy, wdev, channel, offchan, wait, buf,
+			len, no_cck, dont_wait_for_ack, cookie);
 }
 #endif
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This routine is responsible for requesting to cancel the wait time
@@ -2446,20 +2436,46 @@ int mtk_cfg80211_mgmt_tx(struct wiphy *wiphy,
  */
 /*----------------------------------------------------------------------------*/
 int mtk_cfg80211_mgmt_tx_cancel_wait(struct wiphy *wiphy,
-				     struct wireless_dev *wdev, u64 cookie)
+		struct wireless_dev *wdev, u64 cookie)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4Rslt = -EINVAL;
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
+	struct MSG_CANCEL_TX_WAIT_REQUEST *prMsgCancelTxWait =
+			(struct MSG_CANCEL_TX_WAIT_REQUEST *) NULL;
 
-	prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
-	ASSERT(prGlueInfo);
+	do {
+		ASSERT(wiphy);
 
-#if 1
-	DBGLOG(INIT, INFO, "--> %s()\n", __func__);
-#endif
+		prGlueInfo = (struct GLUE_INFO *) wiphy_priv(wiphy);
+		ASSERT(prGlueInfo);
 
-	/* not implemented */
+		DBGLOG(P2P, INFO, "cookie: 0x%llx\n", cookie);
 
-	return -EINVAL;
+		prMsgCancelTxWait = cnmMemAlloc(prGlueInfo->prAdapter,
+				RAM_TYPE_MSG,
+				sizeof(struct MSG_CANCEL_TX_WAIT_REQUEST));
+
+		if (prMsgCancelTxWait == NULL) {
+			ASSERT(FALSE);
+			i4Rslt = -ENOMEM;
+			break;
+		}
+
+		prMsgCancelTxWait->rMsgHdr.eMsgId =
+				MID_MNY_AIS_MGMT_TX_CANCEL_WAIT;
+		prMsgCancelTxWait->u8Cookie = cookie;
+		prMsgCancelTxWait->ucBssIdx =
+				prGlueInfo->prAdapter->prAisBssInfo->ucBssIndex;
+
+		mboxSendMsg(prGlueInfo->prAdapter,
+			MBOX_ID_0,
+			(struct MSG_HDR *) prMsgCancelTxWait,
+			MSG_SEND_METHOD_BUF);
+
+		i4Rslt = 0;
+	} while (FALSE);
+
+	return i4Rslt;
 }
 
 #ifdef CONFIG_NL80211_TESTMODE
@@ -6040,11 +6056,10 @@ int mtk_cfg_mgmt_tx(struct wiphy *wiphy,
 		    struct wireless_dev *wdev,
 		    struct cfg80211_mgmt_tx_params *params, u64 *cookie)
 #else
-int mtk_cfg_mgmt_tx(struct wiphy *wiphy,
-		    struct wireless_dev *wdev,
-		    struct ieee80211_channel *channel, bool offscan,
-		    unsigned int wait, const u8 *buf, size_t len, bool no_cck,
-		    bool dont_wait_for_ack, u64 *cookie)
+int mtk_cfg_mgmt_tx(struct wiphy *wiphy, struct wireless_dev *wdev,
+		struct ieee80211_channel *channel, bool offchan,
+		unsigned int wait, const u8 *buf, size_t len, bool no_cck,
+		bool dont_wait_for_ack, u64 *cookie)
 #endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -6064,12 +6079,12 @@ int mtk_cfg_mgmt_tx(struct wiphy *wiphy,
 	return mtk_cfg80211_mgmt_tx(wiphy, wdev, params, cookie);
 #else /* KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE */
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) > 0) {
-		return mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, channel, offscan,
+		return mtk_p2p_cfg80211_mgmt_tx(wiphy, wdev, channel, offchan,
 			wait, buf, len, no_cck, dont_wait_for_ack, cookie);
 	}
 	/* STA Mode */
-	return mtk_cfg80211_mgmt_tx(wiphy, wdev, channel, offscan, wait, buf,
-					len, no_cck, dont_wait_for_ack, cookie);
+	return mtk_cfg80211_mgmt_tx(wiphy, wdev, channel, offchan, wait, buf,
+			len, no_cck, dont_wait_for_ack, cookie);
 #endif
 }
 
@@ -6166,8 +6181,7 @@ int mtk_cfg_mgmt_tx_cancel_wait(struct wiphy *wiphy,
 	}
 
 	if (mtk_IsP2PNetDevice(prGlueInfo, wdev->netdev) <= 0) {
-		DBGLOG(REQ, WARN, "STA doesn't support this function\n");
-		return -EFAULT;
+		return mtk_cfg80211_mgmt_tx_cancel_wait(wiphy, wdev, cookie);
 	}
 
 	return mtk_p2p_cfg80211_mgmt_tx_cancel_wait(wiphy, wdev,
