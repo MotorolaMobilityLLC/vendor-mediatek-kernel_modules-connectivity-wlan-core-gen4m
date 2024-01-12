@@ -1079,7 +1079,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 	prSchedScanCmd = (struct CMD_SCHED_SCAN_REQ *) cnmMemAlloc(prAdapter,
 		RAM_TYPE_BUF, sizeof(struct CMD_SCHED_SCAN_REQ) + u2IeLen);
 	if (!prSchedScanCmd) {
-		log_dbg(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%d+%d) fail\n",
+		log_dbg(SCN, ERROR, "alloc CMD_SCHED_SCAN_REQ (%zu+%u) fail\n",
 			sizeof(struct CMD_SCHED_SCAN_REQ), u2IeLen);
 		return FALSE;
 	}
@@ -1160,7 +1160,7 @@ scnFsmSchedScanRequest(IN struct ADAPTER *prAdapter,
 
 	scnSetSchedScanPlan(prAdapter, prSchedScanCmd);
 
-	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%u)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n",
+	log_dbg(SCN, INFO, "V(%u)seq(%u)sz(%zu)chT(%u)chN(%u)ssid(%u)match(%u)IE(%u=>%u)MSP(%u)\n",
 		prSchedScanCmd->ucVersion,
 		prSchedScanCmd->ucSeqNum, sizeof(struct CMD_SCHED_SCAN_REQ),
 		prSchedScanCmd->ucChannelType, prSchedScanCmd->ucChnlNum,
