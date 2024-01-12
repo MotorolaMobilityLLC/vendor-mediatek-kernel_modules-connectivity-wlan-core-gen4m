@@ -3983,7 +3983,7 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter,
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ICMPV6))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ICMPV6);
 
-#ifdef CFG_IP_FRAG_DISABLE_HW_CHECKSUM
+#if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_IP_FRAG))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_IP_FRAG);
 #endif
