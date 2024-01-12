@@ -99,7 +99,7 @@ uint32_t wlanAccessCalibrationEMI(
 				break;
 			}
 
-			memcpy_fromio(gEmiCalResult,
+			kalMemCopyFromIo(gEmiCalResult,
 				(pucEmiBaseAddr + gEmiCalOffset),
 				gEmiCalSize);
 
@@ -119,7 +119,7 @@ uint32_t wlanAccessCalibrationEMI(
 			break;
 		}
 
-		memcpy_toio((pucEmiBaseAddr + gEmiCalOffset),
+		kalMemCopyToIo((pucEmiBaseAddr + gEmiCalOffset),
 			gEmiCalResult,
 			gEmiCalSize);
 
