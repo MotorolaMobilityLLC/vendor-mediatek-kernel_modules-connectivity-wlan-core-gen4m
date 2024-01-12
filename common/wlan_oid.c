@@ -7528,6 +7528,7 @@ wlanoidSetSwCtrlWrite(IN struct ADAPTER *prAdapter,
 
 	case 0x9000:
 	default: {
+		kalMemSet(&rCmdSwCtrl, 0, sizeof(struct CMD_SW_DBG_CTRL));
 		rCmdSwCtrl.u4Id = prSwCtrlInfo->u4Id;
 		rCmdSwCtrl.u4Data = prSwCtrlInfo->u4Data;
 		rWlanStatus = wlanSendSetQueryCmd(prAdapter,
@@ -17054,6 +17055,7 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 	struct AIS_SPECIFIC_BSS_INFO *aiss = NULL;
 	struct LINK *ess = NULL;
 	uint8_t *pos = NULL;
+	int32_t i4Ret = 0;
 
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	ais = aisGetAisBssInfo(prAdapter, ucBssIndex);
@@ -17105,10 +17107,20 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 		rxframe->u2DisassocTimer = 600;
 		rxframe->ucValidityInterval = 255;
 
-		if (i4Argc > 1)
-			kalkStrtou8(apcArgv[1], 0, &rxframe->ucRequestMode);
-		if (i4Argc > 2)
-			kalkStrtou16(apcArgv[2], 0, &rxframe->u2DisassocTimer);
+		if (i4Argc > 1) {
+			i4Ret = kalkStrtou8(
+				apcArgv[1], 0, &rxframe->ucRequestMode);
+			DBGLOG(OID, TRACE,
+				"parse ucRequestMode error i4Ret=%d\n",
+				i4Ret);
+		}
+		if (i4Argc > 2) {
+			i4Ret = kalkStrtou16(
+				apcArgv[2], 0, &rxframe->u2DisassocTimer);
+			DBGLOG(OID, TRACE,
+				"parse u2DisassocTimer error i4Ret=%d\n",
+				i4Ret);
+		}
 
 		pos = aucPacket + sizeof(struct ACTION_BTM_REQ_FRAME);
 
@@ -17128,10 +17140,20 @@ uint32_t wlanoidPktProcessIT(struct ADAPTER *prAdapter, void *pvBuffer,
 			uint8_t len = sizeof(struct IE_NEIGHBOR_REPORT) -
 				ELEM_HDR_LEN + 3;
 
-			if (i4Argc > 3)
-				kalkStrtou8(apcArgv[3], 0, &targetPref);
-			if (i4Argc > 4)
-				kalkStrtou8(apcArgv[4], 0, &diff);
+			if (i4Argc > 3) {
+				i4Ret = kalkStrtou8(
+					apcArgv[3], 0, &targetPref);
+				DBGLOG(OID, TRACE,
+					"parse targetPref error i4Ret=%d\n",
+					i4Ret);
+			}
+			if (i4Argc > 4) {
+				i4Ret = kalkStrtou8(
+					apcArgv[4], 0, &diff);
+				DBGLOG(OID, TRACE,
+					"parse diff error i4Ret=%d\n",
+					i4Ret);
+			}
 
 			neig = (struct IE_NEIGHBOR_REPORT *) pos;
 			pos += sizeof(struct IE_NEIGHBOR_REPORT);
