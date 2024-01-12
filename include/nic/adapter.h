@@ -1041,6 +1041,10 @@ struct WIFI_VAR {
 
 	uint32_t u4NetifStopTh;
 	uint32_t u4NetifStartTh;
+#if CFG_ADJUST_NETIF_TH_BY_BAND
+	uint32_t au4NetifStopTh[BAND_NUM];
+	uint32_t au4NetifStartTh[BAND_NUM];
+#endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
 	struct PARAM_GET_CHN_INFO rChnLoadInfo;
 
 #if CFG_SUPPORT_MTK_SYNERGY

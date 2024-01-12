@@ -7546,6 +7546,27 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"NetifStopTh", CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD);
 	INIT_UINT(prWifiVar->u4NetifStartTh,
 		"NetifStartTh", CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD);
+
+#if CFG_ADJUST_NETIF_TH_BY_BAND
+	/*
+	 * 2.4g Band:
+	 * StartTh: 128
+	 * StopTh : 256
+	 */
+	INIT_UINT(prWifiVar->au4NetifStopTh[BAND_2G4],
+		"2gNetifStopTh", NIC_BSS_LOW_RATE_TOKEN_CNT);
+	INIT_UINT(prWifiVar->au4NetifStartTh[BAND_2G4],
+		"2gNetifStartTh", NIC_BSS_LOW_RATE_TOKEN_CNT >> 1);
+	INIT_UINT(prWifiVar->au4NetifStopTh[BAND_5G],
+		"5gNetifStopTh", CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD);
+	INIT_UINT(prWifiVar->au4NetifStartTh[BAND_5G],
+		"5gNetifStartTh", CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD);
+	INIT_UINT(prWifiVar->au4NetifStopTh[BAND_6G],
+		"6gNetifStopTh", CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD);
+	INIT_UINT(prWifiVar->au4NetifStartTh[BAND_6G],
+		"6gNetifStartTh", CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD);
+#endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
+
 	INIT_UINT(prWifiVar->ucTxBaSize, "TxBaSize", WLAN_LEGACY_MAX_BA_SIZE);
 	INIT_UINT(prWifiVar->ucRxHtBaSize,
 		"RxHtBaSize", WLAN_LEGACY_MAX_BA_SIZE);
