@@ -131,6 +131,7 @@ struct WFD_CFG_SETTINGS {
 	uint8_t aucReverved3[64];
 	/* Group 3 64 bytes */
 	uint8_t aucReverved4[64];
+	uint32_t u4LinkScore;
 };
 
 #endif
