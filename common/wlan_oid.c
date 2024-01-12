@@ -13117,6 +13117,20 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 	return status;
 
 }
+
+uint32_t
+wlanoidP2pDelIface(
+	struct ADAPTER *prAdapter,
+	void *pvSetBuffer,
+	uint32_t u4SetBufferLen,
+	uint32_t *pu4SetInfoLen)
+{
+	p2pRoleFsmDelIface(prAdapter,
+		GET_IOCTL_BSSIDX(prAdapter));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif
 
 #if CFG_SUPPORT_NAN

@@ -209,6 +209,36 @@ static void mtk_p2p_initsettings(
 		type == NL80211_IFTYPE_AP);
 }
 
+int mtk_p2p_cfg80211_del_iface_impl(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	u_int8_t fgIsApMode);
+
+static void mtk_p2p_need_remove_iface(
+	struct ADAPTER *prAdapter,
+	struct wiphy *wiphy,
+	enum nl80211_iftype type)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct P2P_ROLE_FSM_INFO *fsm =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+
+	fsm = p2pGetDefaultRoleFsmInfo(prAdapter,
+		IFTYPE_P2P_CLIENT);
+
+	/* Remove MLO GC before starting SAP */
+	if (fsm &&
+		(p2pGetGCBssNum(fsm) > 1) &&
+		(type == NL80211_IFTYPE_AP)) {
+		mtk_p2p_cfg80211_del_iface_impl(
+			wiphy,
+			gprP2pRoleWdev[P2P_MAIN_ROLE_INDEX],
+			false);
+	}
+#endif
+}
+
+
 #if KERNEL_VERSION(4, 1, 0) <= CFG80211_VERSION_CODE
 struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		const char *name, unsigned char name_assign_type,
@@ -263,6 +293,9 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 			prAdapter->rP2PNetRegState);
 		return ERR_PTR(-EBUSY);
 	}
+
+	mtk_p2p_need_remove_iface(prAdapter,
+		wiphy, type);
 
 	do {
 		prChipInfo = prAdapter->chip_info;
@@ -535,50 +568,12 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 	return ERR_PTR(-ENOMEM);
 }				/* mtk_p2p_cfg80211_add_iface */
 
-int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
+int mtk_p2p_cfg80211_del_iface_impl(
+	struct wiphy *wiphy,
+	struct wireless_dev *wdev,
+	u_int8_t fgNeedUnreg)
 {
-#if 0
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
-		(struct MSG_P2P_DEL_IFACE *) NULL;
-	struct MSG_P2P_ACTIVE_DEV_BSS *prMsgActiveBss =
-		(struct MSG_P2P_ACTIVE_DEV_BSS *) NULL;
-
-	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
-	if (prGlueInfo == NULL)
-		return -EINVAL;
-
-	prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *)
-		cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-		sizeof(struct MSG_P2P_DEL_IFACE));
-
-	if (prP2pDelIfaceMsg == NULL) {
-		ASSERT(FALSE);
-		DBGLOG(INIT, WARN, "unable to alloc msg\n");
-	} else {
-		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
-		prP2pDelIfaceMsg->ucRoleIdx = 0;
-
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prP2pDelIfaceMsg,
-			MSG_SEND_METHOD_BUF);
-
-		/* Send Msg to DevFsm and Deactive P2P dev BSS */
-		prMsgActiveBss = cnmMemAlloc(prGlueInfo->prAdapter,
-			RAM_TYPE_MSG,
-			sizeof(struct MSG_P2P_ACTIVE_DEV_BSS));
-		prMsgActiveBss->rMsgHdr.eMsgId = MID_MNY_P2P_ACTIVE_BSS;
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prMsgActiveBss,
-			MSG_SEND_METHOD_BUF);
-	}
-
-#else
-	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
-	struct MSG_P2P_DEL_IFACE *prP2pDelIfaceMsg =
-		(struct MSG_P2P_DEL_IFACE *) NULL;
 	struct ADAPTER *prAdapter;
 	struct GL_P2P_INFO *prP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
@@ -589,13 +584,14 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	unsigned char ucBssIdx = 0;
 	struct BSS_INFO *prP2pBssInfo = NULL;
 	uint32_t u4Idx = 0;
-#if 1
 	struct cfg80211_scan_request *prScanRequest = NULL;
-#endif
+	uint32_t u4SetInfoLen;
+	uint32_t rStatus;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
-	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_iface\n");
+	DBGLOG(P2P, INFO, "mtk_p2p_cfg80211_del_iface (unreg=%d)\n",
+		fgNeedUnreg);
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
@@ -617,6 +613,18 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	}
 	if (u4Idx == KAL_P2P_NUM) {
 		DBGLOG(INIT, WARN, "can't find the matched dev\n");
+		UnregRoleHander = wdev->netdev;
+		/* prepare for removal */
+		if (netif_carrier_ok(UnregRoleHander))
+			netif_carrier_off(UnregRoleHander);
+		netif_tx_stop_all_queues(UnregRoleHander);
+		/* Here are functions which need rtnl_lock */
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		cfg80211_unregister_netdevice(UnregRoleHander);
+#else
+		unregister_netdevice(UnregRoleHander);
+#endif
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 		return -EINVAL;
 	}
 
@@ -685,63 +693,39 @@ int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 #endif
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
-	/* prepare for removal */
-	if (netif_carrier_ok(UnregRoleHander))
-		netif_carrier_off(UnregRoleHander);
+	if (fgNeedUnreg) {
+		/* prepare for removal */
+		if (netif_carrier_ok(UnregRoleHander))
+			netif_carrier_off(UnregRoleHander);
 
-	netif_tx_stop_all_queues(UnregRoleHander);
+		netif_tx_stop_all_queues(UnregRoleHander);
 
-	/* Here are functions which need rtnl_lock */
+		/* Here are functions which need rtnl_lock */
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
-	cfg80211_unregister_netdevice(UnregRoleHander);
+		cfg80211_unregister_netdevice(UnregRoleHander);
 #else
-	unregister_netdevice(UnregRoleHander);
+		unregister_netdevice(UnregRoleHander);
 #endif
+	}
 
 	/* free is called at destructor */
 	/* free_netdev(UnregRoleHander); */
 
 	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DEL_INF);
 
-	prP2pDelIfaceMsg = (struct MSG_P2P_DEL_IFACE *)
-		cnmMemAlloc(prGlueInfo->prAdapter, RAM_TYPE_MSG,
-			sizeof(struct MSG_P2P_DEL_IFACE));
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+		wlanoidP2pDelIface, NULL, 0,
+		&u4SetInfoLen, u4Idx);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(REQ, WARN, "Uninit error:%x\n", rStatus);
 
-	if (prP2pDelIfaceMsg == NULL) {
-		DBGLOG(INIT, WARN, "unable to alloc msg\n");
-	} else {
-		prP2pDelIfaceMsg->rMsgHdr.eMsgId = MID_MNY_P2P_DEL_IFACE;
-		prP2pDelIfaceMsg->ucRoleIdx = u4Idx;
-		switch (wdev->iftype) {
-		case NL80211_IFTYPE_P2P_CLIENT:
-			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_CLIENT.\n");
-			prP2pDelIfaceMsg->eIftype = IFTYPE_P2P_CLIENT;
-			break;
-		case NL80211_IFTYPE_STATION:
-			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_STATION.\n");
-			prP2pDelIfaceMsg->eIftype = IFTYPE_STATION;
-			break;
-		case NL80211_IFTYPE_AP:
-			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_AP.\n");
-			prP2pDelIfaceMsg->eIftype = IFTYPE_AP;
-			break;
-		case NL80211_IFTYPE_P2P_GO:
-			DBGLOG(P2P, TRACE, "NL80211_IFTYPE_P2P_GO not AP.\n");
-			prP2pDelIfaceMsg->eIftype = IFTYPE_P2P_GO;
-			break;
-		default:
-			prP2pDelIfaceMsg->eIftype = IFTYPE_P2P_DEVICE;
-			break;
-		}
-
-		mboxSendMsg(prGlueInfo->prAdapter,
-			MBOX_ID_0,
-			(struct MSG_HDR *) prP2pDelIfaceMsg,
-			MSG_SEND_METHOD_BUF);
-	}
-#endif
 	return 0;
 }				/* mtk_p2p_cfg80211_del_iface */
+
+int mtk_p2p_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
+{
+	return mtk_p2p_cfg80211_del_iface_impl(wiphy, wdev, true);
+}
 
 int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 		 struct net_device *ndev,

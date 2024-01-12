@@ -406,6 +406,10 @@ u_int8_t p2pRoleFsmNeedMlo(
 
 void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx);
 
+void p2pRoleFsmDelIface(
+	struct ADAPTER *prAdapter,
+	uint8_t ucRoleIdx);
+
 /*================== Message Event ==================*/
 
 void p2pRoleFsmRunEventAbort(struct ADAPTER *prAdapter,
