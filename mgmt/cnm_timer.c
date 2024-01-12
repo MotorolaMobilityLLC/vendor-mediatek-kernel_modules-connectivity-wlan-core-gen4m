@@ -254,7 +254,7 @@ cnmTimerInitTimerOption(IN struct ADAPTER *prAdapter,
 	if (prTimer->pfMgmtTimeOutFunc == pfFunc
 		&& prTimer->rLinkEntry.prNext) {
 		log_dbg(CNM, WARN, "re-init timer, func %p\n", pfFunc);
-		kal_show_stack(NULL, NULL);
+		kal_show_stack(prAdapter, NULL, NULL);
 	}
 
 	LINK_ENTRY_INITIALIZE(&prTimer->rLinkEntry);

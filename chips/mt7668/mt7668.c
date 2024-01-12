@@ -428,6 +428,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7668 = {
 	.asicCapInit = mt7668CapInit,
 	.asicEnableFWDownload = NULL,
 	.downloadBufferBin = wlanDownloadBufferBin,
+	.showTaskStack = NULL,
 	.features = 0,
 	.is_support_hw_amsdu = FALSE,
 	.workAround = 0,
