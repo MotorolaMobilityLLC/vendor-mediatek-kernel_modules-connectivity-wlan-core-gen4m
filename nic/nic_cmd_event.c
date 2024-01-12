@@ -6650,3 +6650,80 @@ void nicEventGetVnf(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_VOLT_INFO */
 
+void nicCmdEventGetSlpCntInfo(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct PARAM_SLEEP_CNT_INFO *prSlpCntInfo = NULL;
+	struct PARAM_SLEEP_CNT_INFO *prInfoEvent = NULL;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf) {
+		DBGLOG(NIC, ERROR, "NULL pucEventBuf!\n");
+		return;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		prSlpCntInfo = (struct PARAM_SLEEP_CNT_INFO *)
+				prCmdInfo->pvInformationBuffer;
+		prInfoEvent = (struct PARAM_SLEEP_CNT_INFO *)pucEventBuf;
+
+		kalMemCopy(prSlpCntInfo, prInfoEvent,
+			   sizeof(struct PARAM_SLEEP_CNT_INFO));
+
+		prGlueInfo = prAdapter->prGlueInfo;
+		u4QueryInfoLen = sizeof(struct PARAM_SLEEP_CNT_INFO);
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}
+
+void nicCmdEventLpKeepPwrCtrl(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct CMD_LP_DBG_CTRL *prCmdLp = NULL;
+	struct CMD_LP_DBG_CTRL *prInfoEvent = NULL;
+	struct GLUE_INFO *prGlueInfo;
+	uint32_t u4QueryInfoLen;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (!pucEventBuf) {
+		DBGLOG(NIC, ERROR, "NULL pucEventBuf!\n");
+		return;
+	}
+
+	if (prCmdInfo->fgIsOid) {
+		prCmdLp = (struct CMD_LP_DBG_CTRL *)
+			   prCmdInfo->pvInformationBuffer;
+		prInfoEvent = (struct CMD_LP_DBG_CTRL *)pucEventBuf;
+
+		kalMemCopy(prCmdLp, prInfoEvent,
+			   sizeof(struct CMD_LP_DBG_CTRL));
+
+		prGlueInfo = prAdapter->prGlueInfo;
+		u4QueryInfoLen = sizeof(struct CMD_LP_DBG_CTRL);
+
+		kalOidComplete(prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
+	}
+}

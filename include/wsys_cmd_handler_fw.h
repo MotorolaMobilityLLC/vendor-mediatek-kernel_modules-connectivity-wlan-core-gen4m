@@ -355,6 +355,7 @@ enum ENUM_CMD_ID {
 #if (CFG_COALESCING_INTERRUPT == 1)
 	CMD_ID_PF_CF_COALESCING_INT = 0xB2,    /* 0xB2 (Set) */
 #endif
+	CMD_ID_LP_DBG_CTRL = 0xB3,             /* 0xB3 (Set / Query) */
 
 	CMD_ID_ACCESS_REG           = 0xc0, /* 0xc0 (Set / Query) */
 	CMD_ID_MAC_MCAST_ADDR,              /* 0xc1 (Set / Query) */
@@ -579,7 +580,7 @@ enum ENUM_EVENT_ID {
 #if (CFG_COALESCING_INTERRUPT == 1)
 	EVENT_ID_PF_CF_COALESCING_INT_DONE = 0xB2,    /* 0xB2 (Query) */
 #endif
-
+	EVENT_ID_LP_DBG_CTRL = 0xB3,            /* 0xB3 (Set / Query) */
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	EVENT_ID_DELAY_BAR = 0xB5,
 #endif /* CFG_SUPPORT_BAR_DELAY_INDICATION */

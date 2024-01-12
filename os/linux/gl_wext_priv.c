@@ -3710,6 +3710,9 @@ reqExtSetAcpiDevicePowerState(struct GLUE_INFO
 #define CMD_GET_EMI			"GET_EMI"
 #define CMD_QUERY_THERMAL_TEMP		"QUERY_THERMAL_TEMP"
 
+#define CMD_GET_SLEEP_CNT_INFO		"GET_SLEEP_CNT_INFO"
+#define CMD_SET_LP_KEEP_PWR_CTRL	"SET_LP_KEEP_PWR_CTRL"
+
 #if CFG_SUPPORT_WFD
 static uint8_t g_ucMiracastMode = MIRACAST_MODE_OFF;
 #endif
@@ -21273,6 +21276,185 @@ exit:
 }
 #endif /* CFG_AP_80211V_SUPPORT */
 
+static int priv_driver_get_sleep_cnt_info(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	struct PARAM_SLEEP_CNT_INFO *prSlpCntInfo;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	prSlpCntInfo = (struct PARAM_SLEEP_CNT_INFO *)kalMemAlloc(
+			sizeof(struct PARAM_SLEEP_CNT_INFO), VIR_MEM_TYPE);
+
+	if (!prSlpCntInfo) {
+		DBGLOG(REQ, ERROR, "mem is null\n");
+		return -1;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidGetSleepCntInfo, prSlpCntInfo,
+			  sizeof(struct PARAM_SLEEP_CNT_INFO), &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "rStatus 0x%8X\n", rStatus);
+		i4BytesWritten = -1;
+		goto end;
+	}
+
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\n======== Low Power Sleep Count ========\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Band0 LMAC Sleep Count \t= %d\n",
+				prSlpCntInfo->au4LmacSlpCnt[ENUM_BAND_0]);
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Band1 LMAC Sleep Count \t= %d\n",
+				prSlpCntInfo->au4LmacSlpCnt[ENUM_BAND_1]);
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"WFSYS Sleep Count \t= %d\n",
+				prSlpCntInfo->u4WfsysSlpCnt);
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"CBINFRA Sleep Count \t= %d\n",
+				prSlpCntInfo->u4CbinfraSlpCnt);
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"Whole Chip Sleep Count \t= %d\n",
+				prSlpCntInfo->u4ChipSlpCnt);
+
+end:
+	kalMemFree(prSlpCntInfo, VIR_MEM_TYPE,
+		   sizeof(struct PARAM_SLEEP_CNT_INFO));
+
+	return i4BytesWritten;
+}
+
+static int priv_driver_set_lp_keep_pwr_ctrl(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	struct CMD_LP_DBG_CTRL rCmdLp = {0};
+	int32_t u4BandIdx;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t u4BufLen = 0;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc < 3)
+		goto op_invalid;
+	else if (i4Argc == 3) {
+		rStatus = kalkStrtos32(apcArgv[1], 0, &u4BandIdx);
+
+		if (rStatus ||
+		    (u4BandIdx != ENUM_BAND_0 && u4BandIdx != ENUM_BAND_1)) {
+			DBGLOG(REQ, ERROR, "invalid band index, u4Ret=%d\n",
+				rStatus);
+			i4BytesWritten = -1;
+			goto op_invalid;
+		}
+		rCmdLp.ucBandIdx = u4BandIdx;
+
+		if (strnicmp(apcArgv[2], "PHY+LMAC", strlen("PHY+LMAC")) == 0) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\nKEEP PHY+LMAC\n");
+			rCmdLp.ucKeepPwr = ENUM_KEEP_PWR_PHY_LMAC;
+		} else if (strnicmp(apcArgv[2], "PHY", strlen("PHY")) == 0) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\nKEEP PHY\n");
+			rCmdLp.ucKeepPwr = ENUM_KEEP_PWR_PHY;
+		} else if (strnicmp(apcArgv[2], "LMAC", strlen("LMAC")) == 0) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\nKEEP LMAC\n");
+			rCmdLp.ucKeepPwr = ENUM_KEEP_PWR_LMAC;
+		} else if (strnicmp(apcArgv[2], "RFDIG",
+				strlen("RFDIG")) == 0) {
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"\nKEEP RFDIG\n");
+			rCmdLp.ucKeepPwr = ENUM_KEEP_PWR_RFDIG;
+		} else
+			goto op_invalid;
+	} else
+		goto op_invalid;
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetLpKeepPwrCtrl, &rCmdLp,
+			  sizeof(struct CMD_LP_DBG_CTRL), &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "rStatus 0x%8X\n", rStatus);
+		i4BytesWritten = -1;
+		goto end;
+	}
+
+	if (rCmdLp.ucKeepPwr == ENUM_KEEP_PWR_RFDIG) {
+		if (rCmdLp.ucRfdigStatus == 0)
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "SUCCESS\n");
+		else
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "FAIL\n");
+	} else
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten, "SUCCESS\n");
+
+	return i4BytesWritten;
+
+op_invalid:
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\nHelp menu [Band0/Band1]\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\tkeep PHY+LMAC:\t\"set_lp_keep_pwr_ctrl [0/1] PHY+LMAC\"\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\tkeep PHY:\t\"set_lp_keep_pwr_ctrl [0/1] PHY\"\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\tkeep LMAC:\t\"set_lp_keep_pwr_ctrl [0/1] LMAC\"\n");
+	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"\tkeep RFDIG:\t\"set_lp_keep_pwr_ctrl [0/1] RFDIG\"\n");
+
+end:
+
+	return i4BytesWritten;
+}
+
 typedef int(*PRIV_CMD_FUNCTION) (
 		struct net_device *prNetDev,
 		char *pcCommand,
@@ -22991,6 +23173,20 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL
 	},
 #endif
+	{
+		.pcCmdStr  = CMD_GET_SLEEP_CNT_INFO,
+		.pfHandler = priv_driver_get_sleep_cnt_info,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_SET_LP_KEEP_PWR_CTRL,
+		.pfHandler = priv_driver_set_lp_keep_pwr_ctrl,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = PRIV_CMD_SET_ARG_NUM,
+		.policy    = NULL
+	},
 };
 
 uint8_t priv_cmd_validate(struct net_device *prNetDev,
