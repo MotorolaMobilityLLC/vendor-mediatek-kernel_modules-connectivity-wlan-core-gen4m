@@ -1294,9 +1294,6 @@ void p2pRoleFsmRunEventBeaconTimeout(struct ADAPTER *prAdapter,
 			struct P2P_ROLE_FSM_INFO *fsm;
 			struct BSS_INFO *bss;
 
-			if (!prCurrStarec)
-				break;
-
 			bss = GET_BSS_INFO_BY_INDEX(prAdapter,
 						    prCurrStarec->ucBssIndex);
 			if (!bss) {
@@ -1361,9 +1358,6 @@ void p2pRoleFsmRunEventAgingTimeout(struct ADAPTER *prAdapter,
 		LINK_FOR_EACH_ENTRY_SAFE(prCurrStarec, prNextStarec,
 					 prStarecList, rLinkEntryMld,
 					 struct STA_RECORD) {
-			if (!prCurrStarec)
-				break;
-
 			prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 				prCurrStarec->ucBssIndex);
 			if (!prP2pBssInfo) {
