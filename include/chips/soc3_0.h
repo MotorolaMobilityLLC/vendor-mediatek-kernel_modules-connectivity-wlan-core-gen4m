@@ -118,6 +118,15 @@
 ********************************************************************************
 */
 
+void soc3_0_show_ple_info(
+	struct ADAPTER *prAdapter,
+	u_int8_t fgDumpTxd);
+void soc3_0_show_pse_info(
+	struct ADAPTER *prAdapter);
+
+void soc3_0_show_wfdma_info(
+	IN struct ADAPTER *prAdapter);
+
 /*******************************************************************************
 *                              F U N C T I O N S
 ********************************************************************************
