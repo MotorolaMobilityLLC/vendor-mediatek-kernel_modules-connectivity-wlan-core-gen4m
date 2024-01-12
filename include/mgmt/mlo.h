@@ -411,7 +411,7 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 uint8_t mldIsMloFeatureEnabled(
 	struct ADAPTER *prAdapter,
 	enum ENUM_NETWORK_TYPE eNetworkType,
-	uint8_t fgIsApMode);
+	uint8_t ucParam);
 
 uint8_t mldSingleLink(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, uint8_t ucBssIndex);

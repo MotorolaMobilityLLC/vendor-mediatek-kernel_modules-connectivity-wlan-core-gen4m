@@ -59,12 +59,6 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 			bss->aucOwnMacAddr,
 			frame_ctrl);
 
-	if (!mldSingleLink(prAdapter, prStaRec, ucBssIndex) && ml) {
-		DBGLOG(ML, ERROR, "%s should not have ML ie\n",
-			IS_BSS_APGO(bss) ? "STA" : "AP");
-		return FALSE;
-	}
-
 	if (IS_BSS_APGO(bss)) {
 		/* ap mode, check auth/assoc req */
 		mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
@@ -4148,17 +4142,29 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 uint8_t mldIsMloFeatureEnabled(
 	struct ADAPTER *prAdapter,
 	enum ENUM_NETWORK_TYPE eNetworkType,
-	uint8_t fgIsApMode)
+	uint8_t ucParam)
 {
-	uint8_t ret;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint8_t ret = TRUE;
 	uint8_t linkMax = 0;
+	uint8_t ucEhtOption = FEATURE_ENABLED;
+	uint8_t fgIsApMode = FALSE;
 
 	if (eNetworkType == NETWORK_TYPE_AIS) {
+		uint8_t ucBssIndex = ucParam;
+
 		linkMax = kal_min_t(uint8_t,
 			prAdapter->rWifiVar.ucMldLinkMax,
 			prAdapter->rWifiVar.ucStaMldLinkMax);
+
+		if (AIS_INDEX(prAdapter, ucBssIndex) <
+		    prWifiVar->u4AisEHTNumber)
+			ucEhtOption = prWifiVar->ucStaEht;
+		else
+			ucEhtOption = FEATURE_DISABLED;
 	} else if (eNetworkType == NETWORK_TYPE_P2P &&
 		   p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+		fgIsApMode = ucParam;
 		if (fgIsApMode) {
 			linkMax = prAdapter->rWifiVar.ucMldLinkMax;
 		} else {
@@ -4168,30 +4174,31 @@ uint8_t mldIsMloFeatureEnabled(
 		}
 	}
 
-	if (linkMax <= 1 ||
-		IS_FEATURE_DISABLED(
-		prAdapter->rWifiVar.ucEnableMlo))
-		ret = FALSE;
-	else if (fgIsApMode &&
-		IS_FEATURE_FORCE_ENABLED(
-		prAdapter->rWifiVar.ucEnableMlo))
-		ret = TRUE;
-	else if (!fgIsApMode)
-		ret = TRUE;
-	else
+
+	/* mlo is disable when one of these is true
+	 * 1. eht disabled
+	 * 2. max link num < 2
+	 * 3. EnableMlo 0 (disabled)
+	 * 4. SAP but EnableMlo is not 2 (force enabled)
+	 */
+	if (IS_FEATURE_DISABLED(ucEhtOption) ||
+	    linkMax < 2 ||
+	    IS_FEATURE_DISABLED(prWifiVar->ucEnableMlo) ||
+	   (fgIsApMode &&
+	    !IS_FEATURE_FORCE_ENABLED(prWifiVar->ucEnableMlo))) {
 		ret = FALSE;
 
-
-	if (ret == FALSE)
 		DBGLOG(ML, TRACE,
-			"ucMldLinkMax:%d,(sta=%d,p2p=%d) ucEnableMlo:%d, eNetworkType:%d, p2pMode:%d isApMode:%d => mlo feature disabled\n",
-			prAdapter->rWifiVar.ucMldLinkMax,
-			prAdapter->rWifiVar.ucStaMldLinkMax,
-			prAdapter->rWifiVar.ucP2pMldLinkMax,
-			prAdapter->rWifiVar.ucEnableMlo,
+			"ucMldLinkMax:%d,(sta=%d,p2p=%d) ucEnableMlo:%d, EhtOption:%d, eNetworkType:%d, p2pMode:%d Param:%d => mlo feature disabled\n",
+			prWifiVar->ucMldLinkMax,
+			prWifiVar->ucStaMldLinkMax,
+			prWifiVar->ucP2pMldLinkMax,
+			prWifiVar->ucEnableMlo,
+			ucEhtOption,
 			eNetworkType,
 			p2pGetMode(),
-			fgIsApMode);
+			ucParam);
+	}
 
 	return ret;
 }

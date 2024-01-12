@@ -348,18 +348,7 @@ void apsHashDel(struct ADAPTER *ad, struct AP_COLLECTION *ap, uint8_t bidx)
 uint8_t apsCanFormMld(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
-	uint8_t ucEhtOption = FEATURE_ENABLED;
-
-	if (AIS_INDEX(ad, bidx) < ad->rWifiVar.u4AisEHTNumber)
-		ucEhtOption = prWifiVar->ucStaEht;
-	else
-		ucEhtOption = FEATURE_DISABLED;
-
-	if (IS_FEATURE_DISABLED(ucEhtOption))
-		return FALSE;
-
-	if (!mldIsMloFeatureEnabled(ad, NETWORK_TYPE_AIS, FALSE) ||
+	if (!mldIsMloFeatureEnabled(ad, NETWORK_TYPE_AIS, bidx) ||
 	    !aisSecondLinkAvailable(ad, bidx))
 		return FALSE;
 
