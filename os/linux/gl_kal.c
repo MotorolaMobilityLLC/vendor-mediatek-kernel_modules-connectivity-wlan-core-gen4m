@@ -5533,12 +5533,11 @@ int main_thread(void *data)
 #ifdef UT_TEST_MODE
 		testThreadEnd(prGlueInfo->prAdapter);
 #endif
-#if (CFG_SUPPORT_CONNINFRA == 1)
+
 		if (test_and_clear_bit(GLUE_FLAG_SER_TIMEOUT_BIT,
-			&prGlueInfo->ulFlag))
+				       &prGlueInfo->ulFlag))
 			GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 						 RST_SER_TIMEOUT);
-#endif
 
 		kalSyncTimeToFW(prGlueInfo->prAdapter, FALSE);
 
