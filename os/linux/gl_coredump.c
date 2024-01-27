@@ -944,6 +944,9 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	struct cr_region *region;
 	uint32_t i = 0, j = 0;
 	int ret = 0;
+#if CFG_MTK_WIFI_MBU
+	u_int8_t fgRet = FALSE;
+#endif
 
 	if (mem->cr_region_num == 0)
 		goto exit;
@@ -955,9 +958,14 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 			continue;
 
 		for (j = 0; j < region->size; j += 4) {
+#if CFG_MTK_WIFI_MBU
+			HAL_MCR_EMI_RD(glue->prAdapter, region->base + j,
+					(uint32_t *)&region->buf[j], &fgRet);
+#else
 			HAL_RMCR_RD(COREDUMP_DBG, glue->prAdapter,
 				    region->base + j,
 				    (uint32_t *)&region->buf[j]);
+#endif
 		}
 		region->ready = TRUE;
 	}

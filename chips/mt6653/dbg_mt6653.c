@@ -1247,6 +1247,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 	uint32_t u4Line = 0, u4ReadCount = 0, u4ReadVal;
 	uint32_t u4Offset = 0, u4TotalLen = REG_DUMP_ARRAY_SIZE;
 	uint32_t i;
+	u_int8_t fgRet = TRUE;
 
 	if (!prAdapter)
 		return;
@@ -1264,10 +1265,18 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 
 		if (pCmdList[i].write) {
 			if (pCmdList[i].mask) {
+#if CFG_MTK_WIFI_MBU
+				HAL_MCR_EMI_RD(prAdapter, pCmdList[i].w_addr,
+					&u4ReadVal, &fgRet);
+#else
 				HAL_RMCR_RD(PLAT_DBG, prAdapter,
 					pCmdList[i].w_addr, &u4ReadVal);
-				HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
-					(pCmdList[i].value & pCmdList[i].mask));
+#endif
+				if (fgRet == TRUE)
+					HAL_MCR_WR(prAdapter,
+						pCmdList[i].w_addr,
+						u4ReadVal & ~pCmdList[i].mask |
+						pCmdList[i].value);
 			} else
 				HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
 					pCmdList[i].value);
@@ -1281,8 +1290,13 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 			}
 
 			u4ReadVal = 0x12345678;
+#if CFG_MTK_WIFI_MBU
+			HAL_MCR_EMI_RD(prAdapter, pCmdList[i].r_addr,
+					&u4ReadVal, &fgRet);
+#else
 			HAL_RMCR_RD(PLAT_DBG, prAdapter, pCmdList[i].r_addr,
 				&u4ReadVal);
+#endif
 			u4Offset += snprintf(dumpLineBuf + u4Offset,
 					u4TotalLen - u4Offset,
 					" %08X", u4ReadVal);
