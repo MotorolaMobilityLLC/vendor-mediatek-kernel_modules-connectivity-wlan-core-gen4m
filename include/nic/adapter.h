@@ -587,6 +587,8 @@ struct BSS_INFO {
 	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;
 	uint8_t ucVhtChannelWidthBeforeCsa;
 	enum ENUM_CHNL_EXT eBssScoBeforeCsa;
+	uint8_t ucOpRxNssBeforeCsa;
+	uint8_t ucOpTxNssBeforeCsa;
 	uint8_t fgIsAisSwitchingChnl;
 #endif
 
