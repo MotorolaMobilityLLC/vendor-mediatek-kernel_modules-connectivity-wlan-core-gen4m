@@ -567,8 +567,14 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WIFI_MISC) == -1)
 		return -1;
 
+
+	if (prChipInfo->rsvMemWiFiMisc == NULL) {
+		DBGLOG(INIT, ERROR, "rsvMemWiFiMisc is NULL\n");
+		return -1;
+	}
+
 	/* alloc all memory blocks in wifi_misc */
-	for (u4idx = 0; u4idx < WIFI_MISC_MEM_BLOCK_MAX_NUM; u4idx++) {
+	for (u4idx = 0; u4idx < prChipInfo->rsvMemWiFiMiscSize; u4idx++) {
 		if (!halAllocRsvMem(
 				prChipInfo->rsvMemWiFiMisc[u4idx].size,
 				&prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem,
@@ -577,8 +583,9 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 	}
 
 	DBGLOG(INIT, INFO,
-		"grMemWiFiMisc.u4Offset[WIFI_RSV_MEM_WIFI_MISC] = [0x%x]\n",
-		grMem.u4Offset[WIFI_RSV_MEM_WIFI_MISC]);
+		"grMemWiFiMisc.u4Offset[WIFI_RSV_MEM_WIFI_MISC] = [0x%x], size[%u]\n",
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_MISC],
+		prChipInfo->rsvMemWiFiMiscSize);
 
 	return 0;
 }
@@ -1634,9 +1641,20 @@ void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 
 struct HIF_MEM *halGetWiFiMiscRsvEmi(
 	struct mt66xx_chip_info *prChipInfo,
-	enum WIFI_MISC_MEM_BLOCK_NAME u4idx)
+	enum WIFI_MISC_MEM_BLOCK_NAME u4name)
 {
-	return &prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem;
+	uint32_t u4i = 0;
+
+	if (prChipInfo->rsvMemWiFiMisc == NULL ||
+			prChipInfo->rsvMemWiFiMiscSize == 0)
+		return NULL;
+
+	for (u4i = 0; u4i < prChipInfo->rsvMemWiFiMiscSize; u4i++) {
+		if (prChipInfo->rsvMemWiFiMisc[u4i].block_name == u4name)
+			return &prChipInfo->rsvMemWiFiMisc[u4i].rRsvEmiMem;
+	}
+
+	return NULL;
 }
 
 #if CFG_SUPPORT_PAGE_POOL_USE_CMA

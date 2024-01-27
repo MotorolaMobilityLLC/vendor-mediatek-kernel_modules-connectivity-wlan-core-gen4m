@@ -1710,6 +1710,7 @@ struct mt66xx_chip_info {
 	u_int8_t fgWifiNappingEn; /* sw var used to align hw cfg */
 	u_int8_t fgWifiNappingForceDisable; /* main thread: w, hif thread: r */
 	struct EMI_WIFI_MISC_RSV_MEM_INFO *rsvMemWiFiMisc;
+	uint32_t rsvMemWiFiMiscSize;
 #if CFG_SUPPORT_CONNAC3X
 	struct platcfg_infra_sysram rPlatcfgInfraSysram;
 #endif

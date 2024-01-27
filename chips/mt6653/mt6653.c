@@ -1204,6 +1204,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.rsvMemWiFiMisc = mt6653_wifi_misc_rsv_mem_info,
+	.rsvMemWiFiMiscSize = ARRAY_SIZE(mt6653_wifi_misc_rsv_mem_info),
 #endif
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
 	.dmashdlQuotaDecision = asicConnac3xDynamicDmashdlQuotaDecision,
