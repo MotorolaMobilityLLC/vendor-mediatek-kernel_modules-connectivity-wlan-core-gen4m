@@ -2952,10 +2952,13 @@ nanDataPathProtocolFsmStep(struct ADAPTER *prAdapter,
 			prNDP->ucNDPSetupStatus = NAN_ATTR_NDP_STATUS_CONTINUED;
 			nanNdpUpdateTypeStatus(prAdapter, prNDP);
 
-			/* generate new dialog token */
-			if (prNDL->fgScheduleEstablished == FALSE)
-				nanNdlGenerateDialogToken(prAdapter, prNDL);
-			nanNdpGenerateDialogToken(prAdapter, prNDP);
+			if (!prNDP->prRetryMsduInfo) {
+				/* generate new dialog token */
+				if (prNDL->fgScheduleEstablished == FALSE)
+					nanNdlGenerateDialogToken(prAdapter,
+								  prNDL);
+				nanNdpGenerateDialogToken(prAdapter, prNDP);
+			}
 
 			/* send Data Path Request NAF */
 			nanNdpSendDataPathRequest(prAdapter, prNDP);
@@ -6186,13 +6189,9 @@ nanNdpUpdateTypeStatus(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdpGenerateDialogToken(struct ADAPTER *prAdapter,
-			  struct _NAN_NDP_INSTANCE_T *prNDP) {
-#if (ENABLE_NDP_UT_LOG == 1)
-	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
-#endif
-
+uint32_t nanNdpGenerateDialogToken(struct ADAPTER *prAdapter,
+				   struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	if (!prNDP) {
 		DBGLOG(NAN, ERROR, "[%s] prNDP error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
@@ -6209,6 +6208,7 @@ nanNdpGenerateDialogToken(struct ADAPTER *prAdapter,
 	else
 		prNDP->ucDialogToken = 1; /* always non-zero */
 
+	DBGLOG(NAN, INFO, "NDP->DialogToken=%u\n", prNDP->ucDialogToken);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -6221,13 +6221,9 @@ nanNdpGenerateDialogToken(struct ADAPTER *prAdapter,
  * \return Status
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdlGenerateDialogToken(struct ADAPTER *prAdapter,
-			  struct _NAN_NDL_INSTANCE_T *prNDL) {
-#if (ENABLE_NDP_UT_LOG == 1)
-	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
-#endif
-
+uint32_t nanNdlGenerateDialogToken(struct ADAPTER *prAdapter,
+				   struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 	if (!prNDL) {
 		DBGLOG(NAN, ERROR, "[%s] prNDL error\n", __func__);
 		return WLAN_STATUS_INVALID_DATA;
@@ -6244,6 +6240,7 @@ nanNdlGenerateDialogToken(struct ADAPTER *prAdapter,
 	else
 		prNDL->ucDialogToken = 1; /* always non-zero */
 
+	DBGLOG(NAN, INFO, "NDL->DialogToken=%u\n", prNDL->ucDialogToken);
 	return WLAN_STATUS_SUCCESS;
 }
 /*----------------------------------------------------------------------------*/
