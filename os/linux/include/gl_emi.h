@@ -7,7 +7,7 @@
 #define _GL_EMI_H
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 extern phys_addr_t gConEmiPhyBase;
 extern unsigned long long gConEmiSize;
 #endif
