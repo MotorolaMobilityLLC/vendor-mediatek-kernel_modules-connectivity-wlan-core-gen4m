@@ -1095,8 +1095,7 @@ struct RX_DESC_OPS_T {
 		void *prRxStatus);
 	uint8_t (*nic_rxd_get_ofld)(
 		void *prRxStatus);
-	uint8_t (*nic_rxd_get_HdrTrans)(
-		void *prRxStatus);
+	uint8_t (*nic_rxd_get_HdrTrans)(void *prRxStatus);
 	void (*nic_rxd_fill_rfb)(
 		struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb);
@@ -1776,6 +1775,9 @@ uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
 
 void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	struct SW_RFB *prRetSwRfb, uint32_t *pu4RxV);
+
+uint16_t nicRxGetFrameControl(struct ADAPTER *prAdapter,
+			      struct SW_RFB *prSwRfb);
 
 #if CFG_RFB_TRACK
 void nicRxRfbTrackInit(struct ADAPTER *prAdapter,

@@ -425,8 +425,7 @@ end:
 	return fgDrop;
 }
 
-uint8_t nic_rxd_v2_get_HdrTrans(
-	void *prRxStatus)
+uint8_t nic_rxd_v2_get_HdrTrans(void *prRxStatus)
 {
 	return HAL_MAC_CONNAC2X_RX_STATUS_IS_HEADER_TRAN(
 		(struct HW_MAC_CONNAC2X_RX_DESC *)prRxStatus);

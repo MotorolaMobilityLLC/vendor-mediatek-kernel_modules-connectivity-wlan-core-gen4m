@@ -436,8 +436,7 @@ end:
 	return fgDrop;
 }
 
-uint8_t nic_rxd_v1_get_HdrTrans(
-	void *prRxStatus)
+uint8_t nic_rxd_v1_get_HdrTrans(void *prRxStatus)
 {
 	return HAL_RX_STATUS_IS_HEADER_TRAN(
 		(struct HW_MAC_RX_DESC *)prRxStatus);
