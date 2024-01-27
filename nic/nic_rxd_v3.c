@@ -133,14 +133,12 @@ uint8_t nic_rxd_v3_get_ofld(
 }
 
 static uint8_t getUnicastWlanIndex(struct ADAPTER *prAdapter,
-				   struct SW_RFB *prSwRfb,
-				   struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus)
+				   struct SW_RFB *prSwRfb)
 {
-	struct WLAN_MAC_HEADER *prWlanHeader;
 	uint16_t u2FrameCtrl;
+	struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus = prSwRfb->prRxStatus;
 
-	prWlanHeader = prSwRfb->pvHeader;
-	u2FrameCtrl = prWlanHeader->u2FrameCtrl;
+	u2FrameCtrl = nicRxGetFrameControl(prAdapter, prSwRfb);
 
 	if (RXM_IS_MGMT_FRAME(u2FrameCtrl))
 		return getWlanIdxByBand(prAdapter, prSwRfb->ucHwBandIdx,
@@ -152,14 +150,14 @@ static uint8_t getUnicastWlanIndex(struct ADAPTER *prAdapter,
 			HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus));
 }
 
-static uint8_t getWlanIndex(struct ADAPTER *prAdapter,
-			    struct SW_RFB *prSwRfb,
-			    struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus)
+static uint8_t getWlanIndex(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 {
+	struct HW_MAC_CONNAC3X_RX_DESC *prRxStatus = prSwRfb->prRxStatus;
+
 	if (prSwRfb->fgIsBC || prSwRfb->fgIsMC)
 		return HAL_MAC_CONNAC3X_RX_STATUS_GET_MLD_ID(prRxStatus);
 	else
-		return getUnicastWlanIndex(prAdapter, prSwRfb, prRxStatus);
+		return getUnicastWlanIndex(prAdapter, prSwRfb);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -274,7 +272,7 @@ void nic_rxd_v3_fill_rfb(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 		(uint8_t) HAL_MAC_CONNAC3X_RX_STATUS_GET_TID(prRxStatus);
 
 	/* prerequisite: ucTid, fgIsBC, fgIsMC, ucHwBandIdx */
-	prSwRfb->ucWlanIdx = getWlanIndex(prAdapter, prSwRfb, prRxStatus);
+	prSwRfb->ucWlanIdx = getWlanIndex(prAdapter, prSwRfb);
 
 	prSwRfb->ucStaRecIdx = secGetStaIdxByWlanIdx(prAdapter,
 			prSwRfb->ucWlanIdx);
@@ -522,8 +520,7 @@ end:
 	return fgDrop;
 }
 
-uint8_t nic_rxd_v3_get_HdrTrans(
-	void *prRxStatus)
+uint8_t nic_rxd_v3_get_HdrTrans(void *prRxStatus)
 {
 	return HAL_MAC_CONNAC3X_RX_STATUS_IS_HEADER_TRAN(
 		(struct HW_MAC_CONNAC3X_RX_DESC *)prRxStatus);

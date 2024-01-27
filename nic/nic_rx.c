@@ -4649,3 +4649,32 @@ void nicRxProcessRxvLinkStats(struct ADAPTER *prAdapter,
 	updateLinkStatsMpduAc(prAdapter, prRetSwRfb);
 #endif
 }
+
+uint16_t nicRxGetFrameControl(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
+{
+	uint16_t u2FrameCtrl = 0;
+	struct RX_DESC_OPS_T *prRxDescOps;
+	void *prRxStatus = prSwRfb->prRxStatus;
+	struct WLAN_MAC_HEADER *prWlanHeader;
+	uint8_t isHdrTans = FALSE;
+
+	if (likely(prAdapter->chip_info && prAdapter->chip_info->prRxDescOps)) {
+		prRxDescOps = prAdapter->chip_info->prRxDescOps;
+		if (prRxDescOps->nic_rxd_get_HdrTrans)
+			isHdrTans =
+				prRxDescOps->nic_rxd_get_HdrTrans(prRxStatus);
+	}
+
+	if (isHdrTans) {
+		if (prSwRfb->prRxStatusGroup4)
+			u2FrameCtrl = prSwRfb->prRxStatusGroup4->u2FrameCtl;
+		else
+			DBGLOG(RX, ERROR, "Header trans w/o Group4\n");
+	} else {
+		prWlanHeader = prSwRfb->pvHeader;
+		u2FrameCtrl = prWlanHeader->u2FrameCtrl;
+	}
+
+	return u2FrameCtrl;
+}
+
