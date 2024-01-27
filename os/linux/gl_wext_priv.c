@@ -2582,6 +2582,9 @@ static u_int8_t reqSearchSupportedOidEntry(uint32_t rOid,
 		} else {
 			i = k + 1;
 		}
+
+		if (k == 0)
+			break;
 	}
 
 	return FALSE;
