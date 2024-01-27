@@ -313,8 +313,11 @@ struct CMD_VALIDATE_POLICY it_operation_policy[COMMON_CMD_SET_ARG_NUM(5)] = {
 	[COMMON_CMD_ATTR_IDX(4)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
 };
 
-struct CMD_VALIDATE_POLICY fw_event_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 7}
+struct CMD_VALIDATE_POLICY fw_event_policy[COMMON_CMD_SET_ARG_NUM(5)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .len = 7},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(4)] = {.type = NLA_U8, .min = 0, .max = U8_MAX}
 };
 
 struct CMD_VALIDATE_POLICY show_ahdbg_policy[COMMON_CMD_SET_ARG_NUM(4)] = {
@@ -2330,7 +2333,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	{
 		.pcCmdStr  = CMD_FW_EVENT,
 		.pfHandler = priv_driver_fw_event,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
 		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
 		.policy    = fw_event_policy,
 		.u4PolicySize = ARRAY_SIZE(fw_event_policy)

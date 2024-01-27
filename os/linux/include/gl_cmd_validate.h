@@ -369,7 +369,7 @@
 #define CMD_BTM_IT		"BTM-IT"
 #define CMD_BT_IT		"BT-IT"
 #define CMD_DUMP_UAPSD		"dumpuapsd"
-#define CMD_FW_EVENT		"FW-EVENT "
+#define CMD_FW_EVENT		"FW-EVENT"
 #if CFG_SUPPORT_EASY_DEBUG
 #define CMD_FW_PARAM				"set_fw_param"
 #endif /* CFG_SUPPORT_EASY_DEBUG */

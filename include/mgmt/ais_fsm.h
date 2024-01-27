@@ -488,6 +488,7 @@ struct AIS_FSM_INFO {
 
 	uint32_t u4ChGrantedInterval;
 
+	uint8_t ucScanTrialCount;
 	uint8_t ucConnTrialCount;
 	uint8_t ucConnTrialCountLimit;
 
