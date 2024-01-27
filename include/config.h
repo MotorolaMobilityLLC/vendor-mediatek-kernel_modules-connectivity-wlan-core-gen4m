@@ -1693,6 +1693,13 @@
 #define CFG_SUPPORT_MSP				1
 
 
+/*------------------------------------------------------------------------------
+ * Flags of driver trigger TxTimeout SER
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_DISABLE_TXTIMEOUT_SER
+#define CFG_DISABLE_TXTIMEOUT_SER		0
+#endif
 
 /*------------------------------------------------------------------------------
  * Flags of driver fw customization

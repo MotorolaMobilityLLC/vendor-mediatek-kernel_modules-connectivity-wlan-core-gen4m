@@ -203,6 +203,7 @@
 
 #define NIC_MSDU_REPORT_DUMP_TIMEOUT		5	/* sec */
 #define NIC_MSDU_REPORT_TIMEOUT_SER_TIME	20	/* sec */
+#define NIC_MSDU_REPORT_DISABLE_SER_TIME	0
 
 /*------------------------------------------------------------------------*/
 /* Tx status related information                                          */

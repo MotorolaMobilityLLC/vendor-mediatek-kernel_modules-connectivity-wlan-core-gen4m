@@ -8359,9 +8359,16 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 	INIT_UINT(prWifiVar->u4MsduReportTimeout, "MsduReportTimeout",
 		  NIC_MSDU_REPORT_DUMP_TIMEOUT, FEATURE_DEBUG_ONLY);
+#if CFG_DISABLE_TXTIMEOUT_SER
+	/* default not trigger SER during SQC */
+	INIT_UINT(prWifiVar->u4MsduReportTimeoutSerTime,
+		  "MsduReportTimeoutSerTime",
+		  NIC_MSDU_REPORT_DISABLE_SER_TIME, FEATURE_DEBUG_ONLY);
+#else
 	INIT_UINT(prWifiVar->u4MsduReportTimeoutSerTime,
 		  "MsduReportTimeoutSerTime",
 		  NIC_MSDU_REPORT_TIMEOUT_SER_TIME, FEATURE_DEBUG_ONLY);
+#endif
 
 #if CFG_SUPPORT_DATA_STALL
 	INIT_UINT(prWifiVar->u4PerHighThreshole, "PerHighThreshole",
