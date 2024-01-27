@@ -2288,6 +2288,28 @@ wlanoidPresetLinkId(struct ADAPTER *prAdapter,
 }
 #endif
 
+#if CFG_SUPPORT_802_11W
+static void assignPmfFlag(struct STA_RECORD *prStaRec,
+	struct BSS_INFO *prBssInfo,
+	struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo,
+	struct CMD_802_11_KEY *prCmdKey)
+{
+	if (IS_BSS_AIS(prBssInfo)) {
+		prCmdKey->ucMgmtProtection =
+			prAisSpecBssInfo->fgMgmtProtection;
+		DBGLOG(RSN, INFO,
+			"Ais PMF flag = %d\n",
+			prAisSpecBssInfo->fgMgmtProtection);
+	} else {
+		/* AP PMF */
+		DBGLOG_LIMITED(RSN, INFO,
+			"Client PMF flag = %d\n",
+			prStaRec->rPmfCfg.fgApplyPmf);
+		prCmdKey->ucMgmtProtection =
+			prStaRec->rPmfCfg.fgApplyPmf;
+	}
+}
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This routine is called to set a key to the driver.
@@ -2395,6 +2417,11 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		DBGLOG_LIMITED(REQ, INFO, "BSS Info not exist !!\n");
 		return WLAN_STATUS_SUCCESS;
 	}
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		prAisSpecBssInfo = aisGetAisSpecBssInfo(
+			prAdapter, prNewKey->ucBssIdx);
+	}
 	/*         Tx  Rx KeyType addr
 	 *  STA, GC:
 	 *  case1: 1   1   0  BC addr (no sta record of AP at this moment)  WEP,
@@ -2476,8 +2503,6 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 	if (prNewKey->ucCipher) {
 		prCmdKey->ucAlgorithmId = prNewKey->ucCipher;
 		if (IS_BSS_AIS(prBssInfo)) {
-			prAisSpecBssInfo = aisGetAisSpecBssInfo(
-				prAdapter, prNewKey->ucBssIdx);
 #if CFG_SUPPORT_802_11W
 			if (prCmdKey->ucAlgorithmId == CIPHER_SUITE_BIP ||
 			    prCmdKey->ucAlgorithmId ==
@@ -2732,12 +2757,10 @@ wlanSetAddKeyImpl(struct ADAPTER *prAdapter, void *pvSetBuffer,
 						prNewKey->arBSSID,
 						MAC_ADDR_LEN);
 #if CFG_SUPPORT_802_11W
-					/* AP PMF */
-					DBGLOG_LIMITED(RSN, INFO,
-						"Assign client PMF flag = %d\n",
-						prStaRec->rPmfCfg.fgApplyPmf);
-					prCmdKey->ucMgmtProtection =
-						prStaRec->rPmfCfg.fgApplyPmf;
+					assignPmfFlag(prStaRec,
+						prBssInfo,
+						prAisSpecBssInfo,
+						prCmdKey);
 #endif
 				} else {
 					ASSERT(FALSE);
