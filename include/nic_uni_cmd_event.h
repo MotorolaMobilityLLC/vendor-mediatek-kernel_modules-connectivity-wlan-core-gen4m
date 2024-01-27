@@ -5717,9 +5717,15 @@ struct UNI_EVENT_RDD
  event Tag */
 enum ENUM_UNI_EVENT_RDD_TAG {
 	UNI_EVENT_RDD_TAG_SEND_PULSE = 0,
-	UNI_EVENT_RDD_TAG_REPORT     = 1,
+	UNI_EVENT_RDD_TAG_REPORT = 1,
 	UNI_EVENT_RDD_TAG_NUM
 };
+
+#define INC_RING_INDEX2(_idx, _RingSize)		\
+{ \
+	(_idx) = (_idx+1) % (_RingSize); \
+	KAL_MB_W(); \
+}
 
 /* Beacon timeout reason (Tag0) */
 __KAL_ATTRIB_PACKED_FRONT__

@@ -10200,6 +10200,95 @@ uint32_t nicUniUpdateStaRecFastAll(
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+static uint32_t MT_ATEInsertRDD(
+	struct _ATE_LOG_DUMP_ENTRY *entry,
+	uint8_t *data, uint32_t len)
+{
+	int8_t ret = 0;
+	struct _ATE_RDD_LOG *result = NULL;
+	uint32_t *pulse = 0;
+
+	if (!entry)
+		goto err0;
+
+	if (!data)
+		goto err0;
+
+	kalMemZero(entry, sizeof(*entry));
+
+	entry->un_dumped = TRUE;
+
+	if (len > sizeof(entry->rdd))
+		len = sizeof(entry->rdd);
+
+	kalMemMove((uint8_t *)&entry->rdd, data, len);
+
+	result = &entry->rdd;
+	pulse = (uint32_t *)result->aucBuffer;
+
+	DBGLOG(INIT, ERROR,
+		"[RDD]0x%08x %08x\n", pulse[0], pulse[1]);
+
+	return ret;
+err0:
+	DBGLOG(RFTEST, ERROR, "%s: NULL entry %p, data %p\n",
+			__func__, entry, data);
+	return -1;
+}
+
+uint32_t MT_ATEInsertLog(struct ADAPTER *prAdapter, uint8_t *log, uint32_t len)
+{
+	uint32_t ret = 0;
+
+	struct _ATE_LOG_DUMP_CB *log_cb;
+	uint32_t idx = 0;
+	uint32_t is_dumping = 0;
+	uint32_t (*insert_func)(
+		struct _ATE_LOG_DUMP_ENTRY *entry,
+		uint8_t *data, uint32_t len) = NULL;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+
+	insert_func = MT_ATEInsertRDD;
+
+	if (!insert_func)
+		goto err1;
+
+	log_cb = &prAdapter->rRddRawData;
+	idx = log_cb->idx;
+	is_dumping = log_cb->is_dumping;
+
+	if (is_dumping)
+		goto err1;
+
+	if ((log_cb->idx + 1) == log_cb->len) {
+		if (!log_cb->overwritable)
+			goto err0;
+		else
+			log_cb->is_overwritten = TRUE;
+	}
+
+	if (!log_cb->entry)
+		goto err0;
+
+	ret = insert_func(&log_cb->entry[idx], log, len);
+
+	if (ret)
+		goto err0;
+
+	INC_RING_INDEX2(log_cb->idx, log_cb->len);
+	DBGLOG(CNM, WARN,
+	"idx:%d, log_cb->idx:%d\n",
+			  idx, log_cb->idx);
+	return ret;
+err0:
+	DBGLOG(CNM, ERROR, "[WARN]: idx:%x, overwritable:%x\n",
+			  idx, (log_cb) ? log_cb->overwritable:0xff);
+err1:
+	DBGLOG(CNM, ERROR, "Log dumping\n");
+	return status;
+
+}
 
 void nicUniEventRDD(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt)
@@ -10253,6 +10342,70 @@ void nicUniEventRDD(struct ADAPTER *ad,
 	}
 		break;
 
+	case UNI_EVENT_RDD_TAG_REPORT: {
+
+		struct _ATE_RDD_LOG unit;
+		struct UNI_EVENT_RDD_REPORT *log =
+			(struct UNI_EVENT_RDD_REPORT *)tag;
+		uint64_t *data = (uint64_t *)log->aucBuffer;
+		int8_t i = 0;
+		uint64_t len = 0;
+		uint32_t dbg_len = 0;
+		uint32_t *tmp = 0;
+		int8_t k = 0;
+
+		log->u4FuncLength = le2cpu32(log->u4FuncLength);
+		log->u4Prefix = le2cpu32(log->u4Prefix);
+		log->u4Count = le2cpu32(log->u4Count);
+
+		dbg_len = (log->u4FuncLength
+			- sizeof(struct UNI_EVENT_RDD_REPORT)
+			+ sizeof(log->u4FuncIndex)
+			+ sizeof(log->u4FuncIndex)) >> 2;
+
+		len = dbg_len / 2;
+
+		tmp = (uint32_t *)log->aucBuffer;
+
+		for (k = 0; k < log->u4Count; k = k + 8) {
+			DBGLOG(CNM, WARN,
+			"RDD RAW DWORD1 %8d\t%3d\t\t%4d\t\t%d\t\t%d\t\t%02x%02x%02x%02x"
+			, 1
+			, 1
+			, 1
+			, 1
+			, 1
+			, log->aucBuffer[k+3], log->aucBuffer[k+2]
+			, log->aucBuffer[k+1], log->aucBuffer[k]);
+			DBGLOG(CNM, WARN,
+			" %02x%02x%02x%02x\n"
+			, log->aucBuffer[k+7], log->aucBuffer[k+6]
+			, log->aucBuffer[k+5], log->aucBuffer[k+4]);
+		}
+
+		for (i = 0; i < dbg_len; i++)
+			DBGLOG(CNM, WARN,
+				"RDD RAW DWORD%d:%08x\n", i, tmp[i]);
+
+		DBGLOG(CNM, WARN,
+		"RDD FuncLen:%u, len:%u, prefix:%08x, cnt:%u, dbg_len:%u, len:%u\n",
+		log->u4FuncLength, len, log->u4Prefix,
+		log->u4Count, dbg_len, len);
+
+		kalMemZero(&unit, sizeof(unit));
+		unit.u4Prefix = log->u4Prefix;
+		unit.u4Count = log->u4Count/8;
+
+		for (i = 0; i < len; i++) {
+			kalMemCopy(unit.aucBuffer, data++,
+				ATE_RDD_LOG_SIZE);
+			MT_ATEInsertLog(ad,
+				(uint8_t *)&unit, sizeof(unit));
+			unit.byPass = TRUE;
+		}
+	}
+		break;
+
 	default:
 		fail_cnt++;
 		DBGLOG(CNM, WARN,
@@ -10262,7 +10415,7 @@ void nicUniEventRDD(struct ADAPTER *ad,
 	}
 
 }
-#endif
+#endif /*(CFG_SUPPORT_DFS_MASTER == 1)*/
 
 void nicUniUpdateMbmcIdx(struct ADAPTER *ad,
 	uint8_t ucBssIdx,

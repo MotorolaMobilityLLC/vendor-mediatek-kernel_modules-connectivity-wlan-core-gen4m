@@ -4160,12 +4160,17 @@ static s_int32 hqa_get_dump_rdd(
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
+	get_param_and_shift_buf(TRUE, sizeof(total_cnt),
+				&data, (u_char *)&total_cnt);
+
 	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	serv_test->ctrl_band_idx = (u_char)band_idx;
 
 	ret = mt_serv_get_rdd_cnt(serv_test, &rdd_cnt, &rdd_dw_num);
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: total_cnt %d\n", __func__, total_cnt));
 
 	if (ret != SERV_STATUS_SUCCESS)
 		goto err_out;
@@ -4199,7 +4204,7 @@ static s_int32 hqa_get_dump_rdd(
 		 * [count (4 bytes)] + value1 (4 bytes) + value2 (4 bytes)
 		 */
 		/* Count = Total number of 4 bytes RDD values divided by 2 */
-		value = SERV_OS_HTONL(total_cnt/2);
+		value = SERV_OS_HTONL(total_cnt);
 		sys_ad_move_mem(hqa_frame->data + resp_len,
 			&value, sizeof(value));
 		resp_len += sizeof(value);

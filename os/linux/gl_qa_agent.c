@@ -5620,9 +5620,7 @@ static int32_t HQA_RDDStartExt(struct net_device *prNetDev,
 {
 	int32_t i4Ret = 0;
 
-	DBGLOG(RFTEST, INFO, "QA_AGENT HQA_RDDStartExt\n");
-
-	DBGLOG(RFTEST, INFO, "[RDD DUMP START]\n");
+	DBGLOG(RFTEST, INFO, "[RDD DUMP START] QA_AGENT\n");
 
 	i4Ret = MT_ATERDDStart(prNetDev, "RDDSTART");
 

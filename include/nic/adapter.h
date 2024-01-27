@@ -2580,6 +2580,8 @@ struct ADAPTER {
 	struct EXT_EVENT_RBIST_DUMP_DATA_T IcapDumpEvent;
 	struct RECAL_INFO_T rReCalInfo;
 
+	struct _ATE_LOG_DUMP_CB rRddRawData;
+
 	/* Support change QM RX BA entry miss timeout (unit: ms) dynamically */
 	uint32_t u4QmRxBaMissTimeout;
 

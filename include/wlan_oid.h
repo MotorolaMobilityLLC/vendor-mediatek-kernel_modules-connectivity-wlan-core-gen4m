@@ -812,6 +812,48 @@ struct STAREC_COMMON {
 	uint16_t u2ExtraInfo;
 };
 
+/* RDD */
+#define ATE_RDD_LOG_SIZE 8 /* Pulse size * num of pulse = 8 * 32 for one event*/
+#define INC_RING_INDEX3(_idx, _RingSize)		\
+{ \
+	(_idx) = (_idx+1) % (_RingSize); \
+	KAL_MB_W(); \
+}
+/* Log_Dump for Gen4m, align struct EVENT_WIFI_RDD_TEST */
+struct _ATE_RDD_LOG {
+	uint32_t u4Prefix;
+	uint32_t u4Count;
+	uint32_t u4FuncLength;
+	uint8_t byPass;
+	uint8_t ucRddIdx;
+	uint8_t aucBuffer[ATE_RDD_LOG_SIZE];
+};
+
+struct _ATE_LOG_DUMP_ENTRY {
+	uint32_t log_type; // UINT32 log_type;
+	uint8_t un_dumped; // UINT8 un_dumped;
+	struct _ATE_RDD_LOG rdd;
+};
+
+struct test_rdd_dump_params_s {
+	uint32_t rdd_cnt;
+	uint32_t rdd_dw_num;
+};
+
+struct _ATE_LOG_DUMP_CB {
+	uint8_t overwritable; // UINT8 overwritable;
+	uint8_t is_dumping; // UINT8 is_dumping;
+	uint8_t is_overwritten; // UINT8 is_overwritten;
+	int32_t idx; // INT32 idx;
+	int32_t len; // INT32 len;
+	uint32_t recal_curr_type; // UINT32 recal_curr_type;
+#ifdef LOGDUMP_TO_FILE
+	int file_idx; // INT32 file_idx;
+	RTMP_OS_FD_EXT fd;
+#endif
+	struct _ATE_LOG_DUMP_ENTRY *entry;
+};
+
 /* Device information (Tag0) */
 struct CMD_DEVINFO_ACTIVE {
 	uint16_t u2Tag;		/* Tag = 0x00 */
@@ -2392,10 +2434,22 @@ struct TX_LAT_MONTR_PARAM_STRUCT {
 	bool fgIsAvg;
 };
 
+struct CMD_RDD_ON_OFF_CTRL_T {
+	uint8_t ucDfsCtrl;
+	uint8_t ucRddIdx;
+	uint8_t ucRddRxSel;
+	uint8_t ucSetVal;
+	uint8_t aucReserved[4];
+};
+
 __KAL_ATTRIB_PACKED_FRONT__
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
+	union {
+		uint32_t u4FuncData;
+		struct CMD_RDD_ON_OFF_CTRL_T rRDDParam;
+	} Data;
 }__KAL_ATTRIB_PACKED__;
 
 struct _RBIST_IQ_DATA_T {
@@ -2589,7 +2643,7 @@ struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T {
 		struct TX_TONE_POWER_GAIN_T rTxToneGainParam;
 		struct RBIST_CAP_START_T rICapInfo;
 		struct RBIST_DUMP_RAW_DATA_T rICapDump;
-		struct EXT_CMD_RDD_ON_OFF_CTRL_T rRDDParam;
+		struct CMD_RDD_ON_OFF_CTRL_T rRDDParam;
 		struct SET_ADC_T rSetADC;
 		struct SET_RX_GAIN_T rSetRxGain;
 		struct SET_TTG_T rSetTTG;
@@ -5086,6 +5140,37 @@ wlanoidQuerySetRadarDetectMode(struct ADAPTER *prAdapter,
 			       void *pvSetBuffer,
 			       uint32_t u4SetBufferLen,
 			       uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidInitRddLog(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer,
+			 uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetRddStart(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer,
+			 uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetRddStop(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer,
+			 uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidQueryRddLog(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer,
+			 uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidQueryRddLogContent(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer,
+			 uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen);
+
 #endif
 
 uint32_t

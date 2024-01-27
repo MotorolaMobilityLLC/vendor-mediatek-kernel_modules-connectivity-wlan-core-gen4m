@@ -14284,7 +14284,7 @@ wlanoidQuerySetTxTargetPower(struct ADAPTER *prAdapter,
 
 	return rWlanStatus;
 }
-#endif
+#endif /*CFG_SUPPORT_QA_TOOL*/
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 /*----------------------------------------------------------------------------*/
@@ -14444,7 +14444,306 @@ wlanoidQuerySetRadarDetectMode(struct ADAPTER *prAdapter,
 
 	return rWlanStatus;
 }
+#endif /*(CFG_SUPPORT_DFS_MASTER == 1)*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set rdd report.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidInitRddLog(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer,
+			 uint32_t size,
+			 uint32_t *pu4SetInfoLen)
+{
+	struct _ATE_LOG_DUMP_CB *log_cb;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	size = 2000;
+	ASSERT(prAdapter);
+	log_cb = &prAdapter->rRddRawData;
+	if (!log_cb->entry) {
+		kalMemZero(log_cb, sizeof(*log_cb));
+		log_cb->entry =
+			kalMemAlloc(size * sizeof(struct _ATE_LOG_DUMP_ENTRY),
+			VIR_MEM_TYPE);
+
+		if (log_cb->entry == NULL)
+			goto err0;
+
+		kalMemZero(log_cb->entry, size * sizeof
+			(struct _ATE_LOG_DUMP_ENTRY));
+		log_cb->len = size;
+
+		DBGLOG(INIT, ERROR,
+			"Init log cb size: %u, log_cb->len: %u\n",
+			size, log_cb->len);
+		log_cb->idx = 0;
+	}
+
+	log_cb->overwritable = FALSE;
+	log_cb->is_overwritten = FALSE;
+#ifdef LOGDUMP_TO_FILE
+	log_cb->file_idx = 0;
 #endif
+
+	return rWlanStatus;
+err0:
+	DBGLOG(INIT, ERROR, "%s: Alcated memory fail! size %u\n",
+		__func__, size);
+	return WLAN_STATUS_SUCCESS;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set rdd report.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetRddStart(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer, uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen)
+{
+	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(*prCmdRddOnOffCtrl));
+
+		if (!prCmdRddOnOffCtrl)
+			return WLAN_STATUS_FAILURE;
+
+		prCmdRddOnOffCtrl->ucDfsCtrl = TESTMODE_RDD_START;
+		prCmdRddOnOffCtrl->ucRddIdx = 0x0;
+
+		DBGLOG(RFTEST, ERROR,
+			"TESTMODE RDD_START - DFS ctrl: %d, RDD index: %d\n",
+			prCmdRddOnOffCtrl->ucDfsCtrl,
+			prCmdRddOnOffCtrl->ucRddIdx);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_RDD_ON_OFF_CTRL,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmdRddOnOffCtrl),
+			(uint8_t *) prCmdRddOnOffCtrl, NULL, 0);
+
+		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
+#endif /*(CFG_SUPPORT_DFS_MASTER == 1)*/
+
+	return WLAN_STATUS_SUCCESS;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set rdd report.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetRddStop(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer, uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen)
+{
+	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
+
+	ASSERT(prAdapter);
+	ASSERT(pvSetBuffer);
+	ASSERT(pu4SetInfoLen);
+
+#if (CFG_SUPPORT_DFS_MASTER == 1)
+		prCmdRddOnOffCtrl = (struct CMD_RDD_ON_OFF_CTRL *)
+			cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(*prCmdRddOnOffCtrl));
+
+		if (!prCmdRddOnOffCtrl)
+			return WLAN_STATUS_FAILURE;
+
+		prCmdRddOnOffCtrl->ucDfsCtrl = TESTMODE_RDD_STOP;
+
+		prCmdRddOnOffCtrl->ucRddIdx = 0x0;
+
+		DBGLOG(RFTEST, ERROR,
+			"Testmode RDD_STOP - DFS ctrl: %d, RDD index: %d\n",
+			prCmdRddOnOffCtrl->ucDfsCtrl,
+			prCmdRddOnOffCtrl->ucRddIdx);
+
+		wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_RDD_ON_OFF_CTRL,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmdRddOnOffCtrl),
+			(uint8_t *) prCmdRddOnOffCtrl, NULL, 0);
+
+		cnmMemFree(prAdapter, prCmdRddOnOffCtrl);
+#endif /*(CFG_SUPPORT_DFS_MASTER == 1)*/
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+static int MT_ATERDDParseResult(struct _ATE_LOG_DUMP_ENTRY entry, int8_t idx)
+{
+	struct _ATE_RDD_LOG *result = NULL;
+	uint32_t *pulse = 0;
+
+	result = &entry.rdd;
+	pulse = (uint32_t *)result->aucBuffer;
+
+	DBGLOG(INIT, ERROR,
+		"[RDD]%08x %08x[RDD0]\n", pulse[0], pulse[1]);
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set rdd report.
+ *
+ * \param[in] pvAdapter Pointer to the Adapter structure.
+ * \param[out] pvQueryBuf A pointer to the buffer that holds the result of
+ *                           the query.
+ * \param[in] u4QueryBufLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                            bytes written into the query buffer. If the call
+ *                            failed due to invalid length of the query buffer,
+ *                            returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ * \retval WLAN_STATUS_INVALID_LENGTH
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidQueryRddLog(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer, uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen)
+{
+	struct _ATE_LOG_DUMP_CB *log_cb;
+	struct test_rdd_dump_params_s *log_cb_qa;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+
+	log_cb = &prAdapter->rRddRawData;
+
+	log_cb_qa = (struct test_rdd_dump_params_s *)pvSetBuffer;
+	DBGLOG(REQ, ERROR, "[DUMP START] idx : %d, log_cb : %d\n",
+		log_cb_qa->rdd_cnt, log_cb_qa->rdd_dw_num);
+
+	log_cb_qa->rdd_cnt = log_cb->idx;
+	log_cb_qa->rdd_dw_num = log_cb->len;
+	DBGLOG(REQ, ERROR, "[DUMP START] idx : %d, log_cb : %d\n",
+		log_cb_qa->rdd_cnt, log_cb_qa->rdd_dw_num);
+
+	return rWlanStatus;
+}
+
+uint32_t
+wlanoidQueryRddLogContent(struct ADAPTER *prAdapter,
+			 void *pvSetBuffer, uint32_t u4SetBufferLen,
+			 uint32_t *pu4SetInfoLen)
+{
+	struct _ATE_LOG_DUMP_CB *log_cb;
+	struct _ATE_LOG_DUMP_CB *log_cb_qa_a;
+	int32_t idx = 0;
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	int32_t (*dump_func)(struct _ATE_LOG_DUMP_ENTRY, int8_t idx) = NULL;
+
+	log_cb = &prAdapter->rRddRawData;
+
+	log_cb_qa_a = (struct _ATE_LOG_DUMP_CB *)pvSetBuffer;
+
+	if (!log_cb || !log_cb->entry)
+		goto err0;
+
+	if (log_cb->is_overwritten)
+		idx = log_cb->idx;
+
+	dump_func = MT_ATERDDParseResult;
+
+	if (!dump_func)
+		goto err0;
+
+	log_cb->is_dumping = TRUE;
+
+	if (log_cb != 0 && log_cb_qa_a != 0)
+		kalMemCopy(log_cb_qa_a, log_cb, sizeof(*log_cb));
+
+	if (!log_cb_qa_a
+	|| log_cb->entry[idx].un_dumped == 0
+	|| log_cb_qa_a->entry[idx].un_dumped == 0)
+		goto err0;
+
+	do {
+		if (log_cb->entry[idx].un_dumped) {
+			dump_func(log_cb->entry[idx], idx);
+			log_cb->entry[idx].un_dumped = FALSE;
+		}
+		INC_RING_INDEX3(idx, log_cb->len);
+	} while (idx != log_cb->idx);
+
+	if (idx == log_cb->idx) {
+		DBGLOG(REQ, ERROR,
+		"[DUMP START] idx : %d, log_cb : %d, log_cb_qa_a : %d\n",
+		idx, log_cb->entry[0].un_dumped,
+		log_cb_qa_a->entry[0].un_dumped);
+	}
+
+	log_cb->idx = 0;
+	log_cb->is_dumping = FALSE;
+	DBGLOG(REQ, ERROR, "[DUMP END], log_cb->len : %d, %d\n",
+	log_cb_qa_a->idx, log_cb_qa_a->len);
+	return rWlanStatus;
+
+err0:
+	return -1;
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

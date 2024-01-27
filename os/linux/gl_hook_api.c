@@ -4394,6 +4394,8 @@ uint32_t ServiceWlanOid(void *winfos,
 #endif
 	struct ICAP_INFO_T *prIcapInfo = NULL;
 	struct test_capability *capability = NULL;
+	struct test_rdd_dump_params_s *log_cb_qa = NULL;
+	struct _ATE_LOG_DUMP_CB *log_cb_qa_a = NULL;
 	struct ATE_OPS_T *prAteOps = NULL;
 
 	ASSERT(winfos);
@@ -4713,6 +4715,35 @@ uint32_t ServiceWlanOid(void *winfos,
 		break;
 	/* ICAP Operation Function -- END*/
 #endif
+
+	case OP_WLAN_OID_SET_TEST_RDD_START:
+		pfnOidHandler = wlanoidSetRddStart;
+		break;
+
+	case OP_WLAN_OID_SET_TEST_RDD_STOP:
+		pfnOidHandler = wlanoidSetRddStop;
+		break;
+
+	case OP_WLAN_OID_GET_RDD_CNT:
+		log_cb_qa = (struct test_rdd_dump_params_s *)param;
+		DBGLOG(REQ, ERROR, "[DUMP START] idx : %d, log_cb : %d\n",
+			log_cb_qa->rdd_cnt, log_cb_qa->rdd_dw_num);
+		pfnOidHandler = wlanoidQueryRddLog;
+		break;
+
+	case OP_WLAN_OID_GET_RDD_CONTENT:
+		log_cb_qa_a = (struct _ATE_LOG_DUMP_CB *)param;
+		SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("mt_op_get_rdd_content : %d, %d, %d, %d\n",
+		log_cb_qa_a->is_dumping, log_cb_qa_a->is_overwritten,
+		log_cb_qa_a->len, log_cb_qa_a->idx));
+		pfnOidHandler = wlanoidQueryRddLogContent;
+		break;
+
+	case OP_WLAN_OID_SET_LOG_ONFF:
+		pfnOidHandler = wlanoidInitRddLog;
+		break;
+
 	case OP_WLAN_OID_SET_MCR_WRITE:
 		pfnOidHandler = wlanoidSetMcrWrite;
 		fgRead = TRUE;
