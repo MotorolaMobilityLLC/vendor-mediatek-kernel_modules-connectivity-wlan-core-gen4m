@@ -307,6 +307,13 @@ const struct nla_policy mtk_usable_channel_policy[
 	[WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX_SIZE] = {.type = NLA_U32},
 };
 
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+const struct nla_policy mtk_set_dtim_param_policy[
+		WIFI_ATTR_SET_DTIM_MAX + 1] = {
+	[WIFI_ATTR_SET_DTIM_PARAMS] = {.type = NLA_U32},
+};
+#endif
+
 /*******************************************************************************
  *                           P R I V A T E   D A T A
  *******************************************************************************
@@ -625,6 +632,87 @@ int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
 	return mtk_cfg80211_process_str_cmd(wiphy, wdev, cmd,
 		(data_len > strlen(cmd)) ? strlen(cmd) : data_len);
 }
+
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
+	struct wireless_dev *wdev, const void *data, int data_len)
+{
+	struct ADAPTER *prAdapter;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT rChipConfigInfo = {0};
+	struct nlattr *attr[WIFI_ATTR_SET_DTIM_PARAMS + 1];
+	char str[64] = {0};
+	uint8_t len;
+	uint32_t u4SetDtimPeriod = 0, rStatus, u4BufLen;
+
+
+	ASSERT(wiphy);
+	ASSERT(wdev);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (!prGlueInfo)
+		return -EFAULT;
+
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter)
+		return -EFAULT;
+
+	if ((data == NULL) || (data_len == 0))
+		goto fail;
+
+	kalMemZero(attr, sizeof(struct nlattr *) *
+			   (WIFI_ATTR_SET_DTIM_PARAMS + 1));
+
+	if (NLA_PARSE_NESTED(attr,
+			     WIFI_ATTR_SET_DTIM_PARAMS,
+			     (struct nlattr *)(data - NLA_HDRLEN),
+			     mtk_set_dtim_param_policy) < 0) {
+		DBGLOG(REQ, ERROR, "%s nla_parse_nested failed\n",
+		       __func__);
+		goto fail;
+	}
+
+	u4SetDtimPeriod = nla_get_u32(attr[WIFI_ATTR_SET_DTIM_PARAMS]);
+
+	len = kalSnprintf(str, sizeof(str), "DtimPeriod %d", u4SetDtimPeriod);
+
+	if (len <= 0 || u4SetDtimPeriod < 0) {
+		DBGLOG(REQ, ERROR,
+			"set_dtim_param invalid parameters! %d\n",
+			u4SetDtimPeriod);
+		goto fail;
+	}
+
+	DBGLOG(REQ, INFO,
+		"vendor_set_dtim_param: str=%s, len=%d\n", str, len);
+
+	kalMemZero(&rChipConfigInfo, sizeof(rChipConfigInfo));
+	rChipConfigInfo.ucType = CHIP_CONFIG_TYPE_ASCII;
+	rChipConfigInfo.u2MsgSize = len;
+	kalStrnCpy(rChipConfigInfo.aucCmd, str,
+		   CHIP_CONFIG_RESP_SIZE - 1);
+	rChipConfigInfo.aucCmd[CHIP_CONFIG_RESP_SIZE - 1] = '\0';
+
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidSetChipConfig,
+		&rChipConfigInfo, sizeof(rChipConfigInfo), &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "%s: kalIoctl ret=%d\n", __func__,
+		       rStatus);
+		return -1;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+fail:
+	return -EINVAL;
+}
+#endif
 
 int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len)

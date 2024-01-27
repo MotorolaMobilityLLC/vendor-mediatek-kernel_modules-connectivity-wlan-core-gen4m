@@ -1996,6 +1996,22 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA,
 #endif
 	},
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+	{
+		{
+			.vendor_id = OUI_MTK,
+			.subcmd = MTK_SUBCMD_SET_CHIP_DTIM_PERIOD
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV,
+		.doit = mtk_cfg80211_vendor_set_dtim_param
+#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+		,
+		.policy = mtk_set_dtim_param_policy,
+		.maxattr = WIFI_ATTR_SET_DTIM_MAX
+#endif
+	},
+#endif
 };
 
 static const struct nl80211_vendor_cmd_info

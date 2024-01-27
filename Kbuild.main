@@ -2394,6 +2394,12 @@ else
     ccflags-y += -DCFG_SUPPORT_WIFI_ICCM=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_WIFI_ADJUST_DTIM), y)
+    ccflags-y += -DCFG_SUPPORT_WIFI_ADJUST_DTIM=1
+else
+    ccflags-y += -DCFG_SUPPORT_WIFI_ADJUST_DTIM=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_DBDC_DOWNGRADE_NSS), y)
     ccflags-y += -DCFG_SUPPORT_DBDC_DOWNGRADE_NSS=1
 else
