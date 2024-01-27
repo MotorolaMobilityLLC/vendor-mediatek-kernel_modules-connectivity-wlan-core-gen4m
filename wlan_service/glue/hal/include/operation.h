@@ -11,6 +11,11 @@
 
 extern int8_t g_hqa_frame_ctrl;
 
+#define INC_RING_INDEX1(_idx, _RingSize)	\
+	{								\
+		(_idx) = (_idx+1) % (_RingSize);	   \
+	}
+
 /*****************************************************************************
  *	Enum value definition
  *****************************************************************************/
@@ -35,6 +40,11 @@ enum op_wlan_oid {
 	OP_WLAN_OID_RESET_RECAL_COUNT = 16,
 	OP_WLAN_OID_GET_CAPABILITY = 17,
 	OP_WLAN_OID_LIST_MODE = 18,
+	OP_WLAN_OID_SET_TEST_RDD_START = 19,
+	OP_WLAN_OID_SET_TEST_RDD_STOP = 20,
+	OP_WLAN_OID_GET_RDD_CNT = 21,
+	OP_WLAN_OID_GET_RDD_CONTENT = 22,
+	OP_WLAN_OID_SET_LOG_ONFF = 23,
 	OP_WLAN_OID_GET_EFUSE_FREE_BLOCK = 25,
 	OP_WLAN_OID_EPRM_READ = 26,
 	OP_WLAN_OID_EPRM_WRITE = 27,
@@ -56,6 +66,12 @@ enum ENUM_M_BAND_NUM {
 /*****************************************************************************
  *	Structure definition
  *****************************************************************************/
+struct param_rdd_log_struct {
+	u_int32 band_idx;
+	u_int32 log_size;
+	u_int32 log_ctrl;
+};
+
 struct param_mtk_wifi_test_struct {
 	u_int32 func_idx;
 	u_int32 func_data;
@@ -134,6 +150,41 @@ struct test_struct_ext {
 		u_int32 cal_dump;
 		struct hqa_rbist_cap_start icap_info;
 	} data;
+};
+
+struct test_rdd_params {
+	u_int32 rdd_idx;
+	u_int32 rdd_sel;
+};
+
+struct test_rdd_dump_params {
+	u_int32 rdd_cnt;
+	u_int32 rdd_dw_num;
+};
+
+/* Pulse size * num of pulse = 8 * 32 for one event*/
+#define TEST_RDD_LOG_SIZE 8
+struct test_rdd_log {
+	u_int32 prefix;
+	u_int32 cnt;
+	u_int8 by_pass;
+	u_int8 buffer[TEST_RDD_LOG_SIZE];
+};
+
+struct test_log_dump_entry {
+	u_int32 log_type;
+	u_int8 un_dumped;
+	struct test_rdd_log rdd;
+};
+
+struct test_log_dump_cb {
+	u_int8 overwritable; // UINT8 overwritable;
+	u_int8 is_dumping; // UINT8 is_dumping;
+	u_int8 is_overwritten; // UINT8 is_overwritten;
+	s_int32 idx; // INT32 idx;
+	s_int32 len; // INT32 len;
+	u_int32 recal_curr_type; // UINT32 recal_curr_type;
+	struct test_log_dump_entry *entry;
 };
 
 /*****************************************************************************

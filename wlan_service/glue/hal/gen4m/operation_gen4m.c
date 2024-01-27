@@ -589,6 +589,28 @@ static s_int32 tm_icap_mode(
 	return SERV_STATUS_SUCCESS;
 }
 
+static s_int32 tm_log_query_auto_test(
+	struct test_wlan_info *winfos,
+	struct param_rdd_log_struct *log_info,
+	u_int32 *buf_len)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_SET_LOG_ONFF,
+		log_info,
+		sizeof(*log_info),
+		NULL,
+		NULL);
+
+	return ret;
+
+}
+
 s_int32 mt_op_set_tr_mac(
 	struct test_wlan_info *winfos,
 	s_int32 op_type, boolean enable, u_char band_idx)
@@ -760,6 +782,7 @@ s_int32 mt_op_log_on_off(
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	struct param_mtk_wifi_test_struct rf_at_info;
+	struct param_rdd_log_struct log_info;
 	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
 	u_int32 buf_len = 0;
 	u_int32 rxv;
@@ -801,6 +824,16 @@ s_int32 mt_op_log_on_off(
 		}
 
 		/* TOOL_PRINTLOG(RFTEST, ERROR, "[LOG DUMP END]\n"); */
+	}
+
+	if (log_type == ATE_LOG_RDD) {
+
+		log_info.band_idx = band_idx;
+		log_info.log_size = log_size;
+		log_info.log_ctrl = log_ctrl;
+
+		ret = tm_log_query_auto_test(winfos,
+			&log_info, &buf_len);
 	}
 
 	return ret;
@@ -3431,6 +3464,33 @@ s_int32 mt_op_set_rdd_test(
 	u_int32 rdd_sel,
 	u_int32 enable)
 {
+	struct test_rdd_params rdd_info;
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	rdd_info.rdd_idx = rdd_idx;
+	rdd_info.rdd_sel = rdd_sel;
+
+
+	if (enable) {
+		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_SET_TEST_RDD_START,
+			&rdd_info,
+			sizeof(rdd_info),
+			NULL,
+			NULL);
+	} else {
+		ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+			OP_WLAN_OID_SET_TEST_RDD_STOP,
+			&rdd_info,
+			sizeof(rdd_info),
+			NULL,
+			NULL);
+	}
+
 	return SERV_STATUS_SUCCESS;
 }
 
@@ -3448,6 +3508,30 @@ s_int32 mt_op_get_rdd_cnt(
 	u_int32 *rdd_cnt,
 	u_int32 *rdd_dw_num)
 {
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	struct test_rdd_dump_params rdd_info;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_GET_RDD_CNT,
+		&rdd_info,
+		sizeof(rdd_info),
+		NULL,
+		NULL);
+	SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("%s : %d, %d\n", __func__,
+		rdd_info.rdd_cnt, rdd_info.rdd_dw_num));
+	if (ret == SERV_STATUS_SUCCESS) {
+		SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("%s : %d, %d\n", __func__,
+		rdd_info.rdd_cnt, rdd_info.rdd_dw_num));
+		*rdd_cnt = rdd_info.rdd_cnt;
+		*rdd_dw_num = rdd_info.rdd_dw_num;
+	}
+
 	return SERV_STATUS_SUCCESS;
 }
 
@@ -3456,6 +3540,51 @@ s_int32 mt_op_get_rdd_content(
 	u_int32 *content,
 	u_int32 *total_cnt)
 {
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	struct test_rdd_log *result = NULL;
+	s_int32 *pulse = NULL;
+	wlan_oid_handler_t pr_oid_funcptr = winfos->oid_funcptr;
+	struct test_log_dump_cb rdd_info;
+	int32_t idx = 0;
+
+	if (pr_oid_funcptr == NULL)
+		return SERV_STATUS_HAL_OP_INVALID_NULL_POINTER;
+
+	ret = pr_oid_funcptr(winfos, /*call back to ServiceWlanOid*/
+		OP_WLAN_OID_GET_RDD_CONTENT,
+		&rdd_info,
+		sizeof(rdd_info),
+		NULL,
+		NULL);
+
+	if (ret == SERV_STATUS_SUCCESS) {
+
+		SERV_LOG(SERV_DBG_CAT_MISC, SERV_DBG_LVL_WARN,
+		("%s : %d, %d, %d, %d\n", __func__,
+		idx, rdd_info.len, rdd_info.idx, rdd_info.entry[0].un_dumped));
+
+		do {
+			idx = (idx % (rdd_info.len));
+			/* 1 pulse: 64 bits */
+			result = &rdd_info.entry[idx].rdd;
+			pulse = (s_int32 *)result->buffer;
+
+			rdd_info.entry[idx].un_dumped = FALSE;
+
+			*content = pulse[0];
+			content++;
+			*content = pulse[1];
+			content++;
+			*total_cnt = *total_cnt + 2;
+
+			INC_RING_INDEX1(idx, rdd_info.len);
+		} while (idx != rdd_info.idx);
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("[After RDD dumping] idx: %d, end: %d, total_cnt: %d\n",
+		idx, rdd_info.len, *total_cnt));
+	}
+
 	return SERV_STATUS_SUCCESS;
 }
 
