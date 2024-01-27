@@ -4844,7 +4844,11 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			kalDevKickCmd(prAdapter->prGlueInfo);
 			kalDevKickData(prAdapter->prGlueInfo);
 			halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
-			halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+			if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+#endif
+				halRxReceiveRFBs(prAdapter, RX_RING_DATA0,
+						 TRUE);
 			nicSerStartTxRx(prAdapter);
 #if CFG_SUPPORT_MULTITHREAD
 			kalSetTxEvent2Hif(prAdapter->prGlueInfo);

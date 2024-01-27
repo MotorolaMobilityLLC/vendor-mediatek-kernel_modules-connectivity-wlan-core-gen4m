@@ -8704,6 +8704,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEnableRroAdvDump,
 		  "EnableRroAdvDump", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->fgEnableMawdSramDump,
+		  "EnableMawdSramDump", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 
 	if (IS_FEATURE_FORCE_ENABLED(prWifiVar->fgEnableMawd))
 		prWifiVar->fgEnableMawd = FEATURE_ENABLED;
