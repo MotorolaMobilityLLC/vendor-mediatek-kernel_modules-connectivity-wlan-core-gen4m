@@ -738,7 +738,9 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	halWarningTxTimeout(prAdapter, rLongest.tv_sec);
 
 	/* Trigger SER */
-	if (rLongest.tv_sec >= u4TimeoutSerTime) {
+	if (u4TimeoutSerTime == NIC_MSDU_REPORT_DISABLE_SER_TIME) {
+		DBGLOG(HAL, TRACE, "Do not trigger SER");
+	} else if (rLongest.tv_sec >= u4TimeoutSerTime) {
 		if (kalGetDeltaTime(&rNowTs, prLastMsduRptChangedTime, &rTime)
 				&& rTime.tv_sec >= u4TimeoutSerTime) {
 			prAdapter->u4HifChkFlag |= HIF_DRV_SER;
