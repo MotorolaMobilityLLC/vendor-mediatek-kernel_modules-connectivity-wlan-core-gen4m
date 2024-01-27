@@ -450,6 +450,7 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
+		DBGLOG_LIMITED(HAL, INFO, "No glue info(%d)\n", irq);
 		disable_irq_nosync(irq);
 		goto exit;
 	}
@@ -572,15 +573,19 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 
 	if (!prMsiInfo->fgMsiEnabled) {
 		if (KAL_TEST_AND_CLEAR_BIT(HIF_WFDMA_INT_BIT,
-					   prHifInfo->ulHifIntEnBits))
+					   prHifInfo->ulHifIntEnBits)) {
 			enable_irq(prHifInfo->u4IrqId);
+			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
+		}
 		return;
 	}
 #if CFG_SUPPORT_WED_PROXY
 	if (IsWedAttached()) {
 		if (KAL_TEST_AND_CLEAR_BIT(HIF_WED_INT_BIT,
-					   prHifInfo->ulHifIntEnBits))
+					   prHifInfo->ulHifIntEnBits)) {
 			enable_irq(prHifInfo->u4IrqId);
+			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
+		}
 		return;
 	}
 #endif
@@ -592,6 +597,7 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 
 		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits)) {
 			enable_irq(prMsiLayout->irq_num);
+			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 			if (prBusInfo->is_en_drv_unmask_pci_msi_irq)
 				mtk_pci_msi_unmask_irq(prMsiLayout->irq_num);
@@ -2036,6 +2042,10 @@ err:
 
 	if (buf)
 		kalMemFree(buf, VIR_MEM_TYPE, BUF_SIZE);
+
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	mtk_pcie_dump_link_info(0);
+#endif
 
 	return ret;
 #else
