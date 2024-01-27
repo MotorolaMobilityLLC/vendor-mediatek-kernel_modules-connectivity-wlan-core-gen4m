@@ -2601,7 +2601,7 @@ void asicConnac3xConstructBtPatchName(struct GLUE_INFO *prGlueInfo,
 
 	prFwDlOps = prChipInfo->fw_dl_ops;
 	if (prFwDlOps && prFwDlOps->getFlavorVer)
-		prFwDlOps->getFlavorVer(&aucFlavor[0]);
+		prFwDlOps->getFlavorVer(prGlueInfo, &aucFlavor[0]);
 	else	/* default usage for mt6639 ce */
 		kalScnprintf(aucFlavor, CFG_FW_FLAVOR_MAX_LEN, "2");
 

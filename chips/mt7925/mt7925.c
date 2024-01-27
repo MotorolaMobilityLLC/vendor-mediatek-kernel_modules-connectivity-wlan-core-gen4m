@@ -65,7 +65,8 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
-static uint32_t mt7925GetFlavorVer(uint8_t *flavor);
+static uint32_t mt7925GetFlavorVer(struct GLUE_INFO *prGlueInfo,
+	uint8_t *flavor);
 
 static void mt7925_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t **apucNameTable, uint8_t **apucName,
@@ -907,7 +908,7 @@ static void mt7925_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7925GetFlavorVer(&aucFlavor[0]);
+	mt7925GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	/* Type 0. mt7925_wifi.bin */
@@ -934,7 +935,9 @@ static void mt7925_ConstructFirmwarePrio(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 #endif
 
-	/* Type 2. WIFI_RAM_CODE_MT7925_1_1.bin */
+	/* Type 2 */
+	/* WIFI_RAM_CODE_MT7925_1_1.bin */
+	/* WIFI_RAM_CODE_MT7925_1t_1.bin */
 	ret = kalSnprintf(*(apucName + (*pucNameIdx)),
 			CFG_FW_NAME_MAX_LEN,
 			"WIFI_RAM_CODE_MT%x_%s_%u.bin",
@@ -976,7 +979,7 @@ static void mt7925_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
 	kalMemZero(aucFlavor, sizeof(aucFlavor));
-	mt7925GetFlavorVer(&aucFlavor[0]);
+	mt7925GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
 #if CFG_SUPPORT_SINGLE_FW_BINARY
 	/* Type 0. mt7925_wifi.bin */
@@ -1003,7 +1006,9 @@ static void mt7925_ConstructPatchName(struct GLUE_INFO *prGlueInfo,
 			__LINE__, ret);
 #endif
 
-	/* Type 2. WIFI_MT7925_PATCH_MCU_1_1_hdr.bin */
+	/* Type 2 */
+	/* WIFI_MT7925_PATCH_MCU_1_1_hdr.bin */
+	/* WIFI_MT7925_PATCH_MCU_1t_1_hdr.bin */
 	ret = kalSnprintf(apucName[(*pucNameIdx)],
 			  CFG_FW_NAME_MAX_LEN,
 			  "WIFI_MT%x_PATCH_MCU_%s_%u_hdr.bin",
@@ -1034,9 +1039,11 @@ static void mt7925_ConstructIdxLogBinName(struct GLUE_INFO *prGlueInfo,
 	int ret = 0;
 	uint8_t aucFlavor[CFG_FW_FLAVOR_MAX_LEN];
 
-	mt7925GetFlavorVer(&aucFlavor[0]);
+	mt7925GetFlavorVer(prGlueInfo, &aucFlavor[0]);
 
-	/* ex: WIFI_RAM_CODE_MT7925_2_1_idxlog.bin */
+	/* Type 1 */
+	/* WIFI_RAM_CODE_MT7925_1_1_idxlog.bin */
+	/* WIFI_RAM_CODE_MT7925_1t_1_idxlog.bin */
 	ret = kalSnprintf(apucName[0],
 			  CFG_FW_NAME_MAX_LEN,
 			  "WIFI_RAM_CODE_MT%x_%s_%u_idxlog.bin",
@@ -1587,11 +1594,19 @@ static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState)
 #endif
 #endif /* _HIF_PCIE */
 
-static uint32_t mt7925GetFlavorVer(uint8_t *flavor)
+static uint32_t mt7925GetFlavorVer(struct GLUE_INFO *prGlueInfo,
+	uint8_t *flavor)
 {
 	int ret;
+	bool fgTestFW = FALSE;
 
-	ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN, "1");
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	if (prGlueInfo)
+		fgTestFW = prGlueInfo->fgTestFwDl;
+#endif
+
+	ret = kalScnprintf(flavor, CFG_FW_FLAVOR_MAX_LEN,
+		fgTestFW ? "1t" : "1");
 	return ret;
 }
 

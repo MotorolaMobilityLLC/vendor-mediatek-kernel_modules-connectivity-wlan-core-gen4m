@@ -2303,6 +2303,12 @@ else
 ccflags-y += -DCFG_MTK_WIFI_SUPPORT_DSP_FWDL=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_TESTMODE_L0P5_FWDL), y)
+ccflags-y += -DCFG_TESTMODE_L0P5_FWDL_SUPPORT=1
+else
+ccflags-y += -DCFG_TESTMODE_L0P5_FWDL_SUPPORT=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI), y)
     ifeq ($(MTK_ANDROID_WMT), y)
         ccflags-y += -DCFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI=1

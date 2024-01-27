@@ -1016,6 +1016,11 @@ struct GLUE_INFO {
 #if CFG_SUPPORT_RX_PAGE_POOL
 	struct page_pool *aprPagePool[PAGE_POOL_MAX_SIZE];
 #endif
+
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	bool fgTestFwDl;
+	wait_queue_head_t waitQTestFwDl;
+#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
