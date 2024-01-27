@@ -312,6 +312,65 @@ nanSetPublishPmkid(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	kalMemCopy(msg->scid, pmkid, 16);
 }
 
+uint32_t nanAddVendorPayload(
+	struct ADAPTER *prAdapter,
+	struct NanVendorPayload *payload)
+{
+	uint32_t rStatus;
+	void *prCmdBuffer;
+	uint32_t u4CmdBufferLen;
+	struct _CMD_EVENT_TLV_COMMOM_T *prTlvCommon = NULL;
+	struct _CMD_EVENT_TLV_ELEMENT_T *prTlvElement = NULL;
+	struct NanVendorPayload *pNanVendorPayload = NULL;
+
+	u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
+			 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
+			 sizeof(struct NanVendorPayload);
+	prCmdBuffer = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, u4CmdBufferLen);
+	if (!prCmdBuffer) {
+		DBGLOG(CNM, ERROR, "Memory allocation fail\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTlvCommon = (struct _CMD_EVENT_TLV_COMMOM_T *)prCmdBuffer;
+	prTlvCommon->u2TotalElementNum = 0;
+
+	rStatus = nicAddNewTlvElement(NAN_CMD_VENDOR_PAYLOAD,
+				      sizeof(struct NanVendorPayload),
+				      u4CmdBufferLen, prCmdBuffer);
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(TX, ERROR, "Add new Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	prTlvElement = nicGetTargetTlvElement(1, prCmdBuffer);
+	if (prTlvElement == NULL) {
+		DBGLOG(TX, ERROR, "Get target Tlv element fail\n");
+		cnmMemFree(prAdapter, prCmdBuffer);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	pNanVendorPayload = (struct NanVendorPayload *)prTlvElement->aucbody;
+	kalMemCopy(pNanVendorPayload, payload, sizeof(struct NanVendorPayload));
+
+	wlanSendSetQueryCmd(prAdapter,		  /* prAdapter */
+			    CMD_ID_NAN_EXT_CMD,   /* ucCID */
+			    TRUE,		  /* fgSetQuery */
+			    FALSE,		  /* fgNeedResp */
+			    FALSE,		  /* fgIsOid */
+			    NULL,		  /* pfCmdDoneHandler */
+			    NULL,		  /* pfCmdTimeoutHandler */
+			    u4CmdBufferLen,       /* u4SetQueryInfoLen */
+			    (uint8_t *)prCmdBuffer, /* pucInfoBuffer */
+			    NULL,		  /* pvSetQueryBuffer */
+			    0 /* u4SetQueryBufferLen */);
+
+	cnmMemFree(prAdapter, prCmdBuffer);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t
 nanPublishRequest(struct ADAPTER *prAdapter, struct NanPublishRequest *msg) {
 	uint8_t i, auc_tk[32];

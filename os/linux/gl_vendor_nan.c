@@ -3028,6 +3028,15 @@ mtk_cfg80211_vendor_event_nan_match_expire(struct ADAPTER *prAdapter,
 }
 
 int
+mtk_cfg80211_vendor_event_nan_report_beacon(
+	struct ADAPTER *prAdapter,
+	uint8_t *pcuEvtBuf)
+{
+	/* TODO */
+	return WLAN_STATUS_SUCCESS;
+}
+
+int
 mtk_cfg80211_vendor_event_nan_schedule_config(
 	struct ADAPTER *prAdapter,
 	uint8_t *pcuEvtBuf)

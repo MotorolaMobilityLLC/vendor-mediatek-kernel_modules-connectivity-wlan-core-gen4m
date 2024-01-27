@@ -12979,6 +12979,7 @@ static const char *nan_unisubevent_str(uint32_t u4SubEvent)
 		[UNI_EVENT_NAN_TAG_NDL_FLOW_CTRL_V2] = "NDL Flow Ctrl v2",
 		[UNI_EVENT_NAN_TAG_ID_DEVICE_CAPABILITY] = "Device Capability",
 		[UNI_EVENT_NAN_ID_MATCH_EXPIRE] = "Match Expire",
+		[UNI_EVENT_NAN_TAG_REPORT_BEACON] = "Report Beacon",
 	};
 
 	if (u4SubEvent < UNI_EVENT_NAN_TAG_NUM)
@@ -13089,6 +13090,10 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 	case UNI_EVENT_NAN_ID_MATCH_EXPIRE:
 		status = mtk_cfg80211_vendor_event_nan_match_expire(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case UNI_EVENT_NAN_TAG_REPORT_BEACON:
+		mtk_cfg80211_vendor_event_nan_report_beacon(
 			prAdapter, prTlvElement->aucbody);
 		break;
 	default:
@@ -13251,6 +13256,10 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 		break;
 	case NAN_EVENT_MATCH_EXPIRE:
 		mtk_cfg80211_vendor_event_nan_match_expire(
+			prAdapter, prTlvElement->aucbody);
+		break;
+	case NAN_EVENT_REPORT_BEACON:
+		mtk_cfg80211_vendor_event_nan_report_beacon(
 			prAdapter, prTlvElement->aucbody);
 		break;
 	default:

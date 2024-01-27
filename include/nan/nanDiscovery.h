@@ -8,6 +8,8 @@
 
 #if CFG_SUPPORT_NAN
 
+#define NAN_MAX_VENDOR_PAYLOAD_SIZE 256
+
 extern uint8_t g_u2IndPubId;
 extern uint8_t g_aucNanServiceId[6];
 
@@ -436,6 +438,13 @@ struct service_specificy_info {
 
 #define NAN_NUM_SERVICE_SESSION 30
 
+struct NanVendorPayload {
+	uint32_t flags; /* nan_mgmt_frame_type */
+	uint16_t body_len;
+	uint8_t aucReserved[2];
+	uint8_t body[NAN_MAX_VENDOR_PAYLOAD_SIZE];
+};
+
 struct _NAN_SERVICE_SESSION_T {
 	struct LINK_ENTRY rLinkEntry;
 
@@ -502,6 +511,9 @@ uint32_t nanCancelPublishRequest(struct ADAPTER *prAdapter,
 
 uint32_t nanUpdatePublishRequest(struct ADAPTER *prAdapter,
 				 struct NanPublishRequest *msg);
+
+uint32_t nanAddVendorPayload(struct ADAPTER *prAdapter,
+			struct NanVendorPayload *payload);
 
 uint32_t nanPublishRequest(struct ADAPTER *prAdapter,
 			  struct NanPublishRequest *msg);
