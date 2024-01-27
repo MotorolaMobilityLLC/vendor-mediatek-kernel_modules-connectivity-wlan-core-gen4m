@@ -451,6 +451,11 @@ int32_t mtk_usb_vendor_request(struct GLUE_INFO *prGlueInfo,
 		return -EFAULT;
 	}
 
+	if (prHifInfo == NULL) {
+		DBGLOG(REQ, WARN, "prHifInfo = NULL\n");
+		return -EINVAL;
+	}
+
 	if (unlikely(TransferBufferLength > prHifInfo->vendor_req_buf_sz)) {
 		DBGLOG(REQ, ERROR, "len %u exceeds limit %u\n",
 			TransferBufferLength,
