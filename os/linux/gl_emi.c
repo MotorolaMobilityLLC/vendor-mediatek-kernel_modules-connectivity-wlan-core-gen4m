@@ -153,7 +153,7 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 		break;
 	case EMI_ALLOC_TYPE_WMT:
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 		emi->pa = gConEmiPhyBase;
 		emi->size = gConEmiSize;
 #endif

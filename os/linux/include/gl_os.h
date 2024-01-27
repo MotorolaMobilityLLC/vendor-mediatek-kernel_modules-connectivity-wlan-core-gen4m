@@ -1193,7 +1193,7 @@ struct CMD_CONNSYS_FW_LOG {
 };
 
 #if CFG_MTK_ANDROID_WMT
-#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if !CFG_SUPPORT_CONNAC1X
 struct MTK_WCN_WLAN_CB_INFO {
 	int (*wlan_probe_cb)(void);
 	int (*wlan_remove_cb)(void);
@@ -1777,7 +1777,7 @@ extern void WfsysResetHdlr(struct work_struct *work);
 
 #if CFG_MTK_ANDROID_WMT
 extern void update_driver_loaded_status(uint8_t loaded);
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 extern int mtk_wcn_consys_hw_wifi_paldo_ctrl(unsigned int enable);
 #else
 extern int mtk_wcn_wlan_reg(

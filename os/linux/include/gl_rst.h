@@ -22,7 +22,7 @@
  */
 #include "gl_typedef.h"
 
-#if CFG_MTK_ANDROID_WMT && IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC1X
 #include "wmt_exp.h"
 #endif
 

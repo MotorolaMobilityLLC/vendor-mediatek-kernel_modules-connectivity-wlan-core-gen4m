@@ -37,7 +37,7 @@ int connsys_power_done(void);
 void connsys_power_off(void);
 
 #if CFG_MTK_ANDROID_WMT
-#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if !CFG_SUPPORT_CONNAC1X
 void unregister_chrdev_cbs(void);
 void register_chrdev_cbs(void);
 #endif

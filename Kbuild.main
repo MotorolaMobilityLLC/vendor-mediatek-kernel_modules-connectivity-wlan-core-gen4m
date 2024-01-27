@@ -1048,8 +1048,14 @@ endif
 
 ifneq ($(CONFIG_MTK_WIFI_CONNAC3X), y)
 ifneq ($(CONFIG_MTK_WIFI_CONNAC2X), y)
-    ccflags-y += -DCFG_SUPPORT_CONNAC1X=1
+    CONFIG_MTK_WIFI_CONNAC1X=y
 endif
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_CONNAC1X), y)
+    ccflags-y += -DCFG_SUPPORT_CONNAC1X=1
+else
+    ccflags-y += -DCFG_SUPPORT_CONNAC1X=0
 endif
 
 ifneq ($(CONFIG_MTK_WIFI_CONNAC3X_DS_VER),)

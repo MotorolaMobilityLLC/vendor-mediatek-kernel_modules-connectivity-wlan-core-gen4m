@@ -334,7 +334,7 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter, uint8_t ucPortIdx,
 		}
 
 		if (fgIsTimeout) {
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 			uint32_t u4Value = 0;
 			struct GL_HIF_INFO *prHifInfo = NULL;
 			struct RTMP_RX_RING *prRxRing;

@@ -18814,7 +18814,7 @@ int priv_driver_trigger_whole_chip_reset(
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
 	glSetRstReason(RST_CMD_TRIGGER);
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
 			RST_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
 #else
@@ -18853,7 +18853,7 @@ int priv_driver_trigger_wfsys_reset(
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
 
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
 			RST_CMD_TRIGGER, RST_FLAG_CHIP_RESET);
 #else

@@ -109,7 +109,7 @@ static u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
  * \retval FALSE         connsys is alive
  */
 /*----------------------------------------------------------------------------*/
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
+#if CFG_SUPPORT_CONNAC1X || CFG_SUPPORT_CONNAC2X
 static inline bool kalIsChipDead(struct GLUE_INFO *prGlueInfo,
 				 uint32_t u4Register, uint32_t *pu4Value)
 {
@@ -882,9 +882,6 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t *pu4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
 	if (!pu4Value) {
@@ -892,23 +889,9 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
-	if (prGlueInfo) {
-		prHifInfo = &prGlueInfo->rHifInfo;
-		prAdapter = prGlueInfo->prAdapter;
-		if (!prAdapter) {
-			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-			return FALSE;
-		}
-	}
-
 	glGetChipInfo((void **)&prChipInfo);
 	if (!prChipInfo)
 		return FALSE;
-
-	if (kalIsHostReg(prChipInfo, u4Register)) {
-		RTMP_HOST_IO_READ32(prChipInfo, u4Register, pu4Value);
-		return TRUE;
-	}
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
@@ -923,38 +906,9 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
-	prBusInfo = prChipInfo->bus_info;
-
-	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
-	    prBusInfo->isValidRegAccess &&
-	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
-		/* Don't print log when resetting */
-		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
-			DBGLOG(HAL, ERROR,
-			       "Invalid access! Get CR[0x%08x/0x%08x] value[0x%08x]\n",
-			       u4Register, u4BusAddr, *pu4Value);
-		}
-		*pu4Value = HIF_DEADFEED_VALUE;
-		return FALSE;
-	}
-
 	/* Static mapping */
-	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
+	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr))
 		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
-		if (prGlueInfo &&
-		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
-			/* Don't print log when resetting */
-			if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
-				DBGLOG(HAL, ERROR,
-				       "Read register is deadfeed\n");
-				GL_DEFAULT_RESET_TRIGGER(prAdapter,
-							 RST_REG_READ_DEADFEED);
-			}
-			return FALSE;
-		}
-#endif
-	}
 
 	return TRUE;
 }
@@ -1048,19 +1002,6 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 #else
 		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
 #endif
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X) || (CFG_SUPPORT_CONNAC2X == 1)
-		if (prGlueInfo &&
-		    kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
-			/* Don't print log when resetting */
-			if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
-				DBGLOG(HAL, ERROR,
-				       "Read register is deadfeed\n");
-				GL_DEFAULT_RESET_TRIGGER(prAdapter,
-							 RST_REG_READ_DEADFEED);
-			}
-			return FALSE;
-		}
-#endif
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
 			kalDevRegL1Read(prGlueInfo, prChipInfo, u4Register,
@@ -1070,6 +1011,21 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 				pu4Value);
 	}
 
+#if CFG_SUPPORT_CONNAC1X || CFG_SUPPORT_CONNAC2X
+	if (prGlueInfo && kalIsChipDead(prGlueInfo, u4Register, pu4Value)) {
+		/* Don't print log when resetting */
+		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
+			DBGLOG(HAL, ERROR, "Read register is deadfeed\n");
+			if (in_interrupt())
+				DBGLOG(INIT, INFO, "Skip reset in tasklet\n");
+			else
+				GL_DEFAULT_RESET_TRIGGER(prAdapter,
+					RST_REG_READ_DEADFEED);
+		}
+		return FALSE;
+	}
+#endif
+
 	return TRUE;
 }
 
@@ -1077,30 +1033,11 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t u4Value)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
-
-	if (prGlueInfo) {
-		prHifInfo = &prGlueInfo->rHifInfo;
-		prAdapter = prGlueInfo->prAdapter;
-		if (!prAdapter) {
-			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-			return FALSE;
-		}
-	}
 
 	glGetChipInfo((void **)&prChipInfo);
 	if (!prChipInfo)
 		return FALSE;
-
-	prBusInfo = prChipInfo->bus_info;
-
-	if (kalIsHostReg(prChipInfo, u4Register)) {
-		RTMP_HOST_IO_WRITE32(prChipInfo, u4Register, u4Value);
-		return TRUE;
-	}
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
@@ -1112,18 +1049,6 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 				u4Register, u4Value);
 		}
 #endif
-		return FALSE;
-	}
-
-	if (prHifInfo && !prHifInfo->fgIsDumpLog &&
-	    prBusInfo->isValidRegAccess &&
-	    !prBusInfo->isValidRegAccess(prAdapter, u4Register)) {
-		/* Don't print log when resetting */
-		if (prAdapter && !wlanIsChipNoAck(prAdapter)) {
-			DBGLOG(HAL, ERROR,
-			       "Invalid access! Set CR[0x%08x/0x%08x] value[0x%08x]\n",
-			       u4Register, u4BusAddr, u4Value);
-		}
 		return FALSE;
 	}
 
@@ -1154,9 +1079,6 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr))
 		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
 #endif
-
-	if (prHifInfo)
-		prHifInfo->u4HifCnt++;
 
 	return TRUE;
 }

@@ -12,7 +12,7 @@
 #include "connsys_debug_utility.h"
 #endif
 
-#if IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if CFG_SUPPORT_CONNAC1X
 #define CONNLOG_TYPE_WF			CONNLOG_TYPE_WIFI
 #elif (CFG_SUPPORT_CONNAC2X == 1)
 #define CONNLOG_TYPE_WF			CONN_DEBUG_TYPE_WIFI

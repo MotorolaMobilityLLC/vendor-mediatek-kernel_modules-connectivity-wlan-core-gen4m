@@ -423,7 +423,7 @@ void fillUsbHifTxDesc(uint8_t **pDest, uint16_t *pInfoBufLen,
 #endif
 
 #if CFG_MTK_ANDROID_WMT
-#if !IS_ENABLED(CFG_SUPPORT_CONNAC1X)
+#if !CFG_SUPPORT_CONNAC1X
 static int wlan_func_on_by_chrdev(void)
 {
 #define MAX_RETRY_COUNT		100
