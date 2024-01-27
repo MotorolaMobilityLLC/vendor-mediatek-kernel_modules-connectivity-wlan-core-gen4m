@@ -27,7 +27,7 @@ struct MSG_P2P_SCAN_REQUEST {
 	u_int8_t fgIsAbort;
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 	enum ENUM_SCAN_REASON eScanReason;
-	struct RF_CHANNEL_INFO arChannelListInfo[1];
+	struct RF_CHANNEL_INFO arChannelListInfo[];
 };
 
 struct MSG_P2P_CHNL_REQUEST {
