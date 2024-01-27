@@ -484,19 +484,27 @@
 
 #ifndef CFG_SUPPORT_RX_NAPI_WORK
 #define CFG_SUPPORT_RX_NAPI_WORK                0
-#endif /* CFG_SUPPORT_RX_NAPI_WORK */
-#if (CFG_SUPPORT_RX_NAPI == 0) && (CFG_SUPPORT_RX_NAPI_WORK == 1)
-#error "NAPI_WORK should based on NAPI in gen4m"
 #endif
 
 #ifndef CFG_SUPPORT_RX_NAPI_THREADED
 #define CFG_SUPPORT_RX_NAPI_THREADED            0
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
-#if (CFG_SUPPORT_RX_NAPI == 0) && (CFG_SUPPORT_RX_NAPI_THREADED == 1)
-#error "NAPI Threaded should based on NAPI"
+
+#ifndef CFG_SUPPORT_RX_NAPI_IN_RX_THREAD
+#define CFG_SUPPORT_RX_NAPI_IN_RX_THREAD        0
 #endif
-#if (CFG_SUPPORT_RX_NAPI_WORK == 1) && (CFG_SUPPORT_RX_NAPI_THREADED == 1)
-#error "Cannot enable both RX_NAPI_WORK and RX_NAPI_THREADED"
+
+#if (CFG_SUPPORT_RX_NAPI == 0) && \
+	((CFG_SUPPORT_RX_NAPI_WORK == 1) || \
+	(CFG_SUPPORT_RX_NAPI_THREADED == 1) || \
+	(CFG_SUPPORT_RX_NAPI_IN_RX_THREAD == 1))
+#error "NAPI feature should based on NAPI in gen4m"
+#endif
+
+#if ((CFG_SUPPORT_RX_NAPI_WORK + \
+	CFG_SUPPORT_RX_NAPI_THREADED + \
+	CFG_SUPPORT_RX_NAPI_IN_RX_THREAD) > 1)
+#error "Cannot enable more than one NAPI feature"
 #endif
 
 /* There is a "budget" concept in original NAPI design. However,
