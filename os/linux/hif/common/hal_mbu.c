@@ -246,6 +246,9 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	if (prMbuInfo->u4RemapAddr) {
 		HAL_MCR_WR(prAdapter, prMbuInfo->u4RemapAddr,
 			   prMbuInfo->u4RemapVal);
+		/* dummy write */
+		HAL_MCR_WR(prAdapter, prMbuInfo->u4RemapAddr,
+			   prMbuInfo->u4RemapVal);
 	}
 
 	prMsiMirror = &prEmi->arMsiMirror[MBU_MSI_MIRROR_IDX];
@@ -260,8 +263,6 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	/* 5. Trigger events */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
 	if (IS_CBTOP_PHY_ADDR(u4ReadAddr)) {
-		/* dummy write */
-		HAL_MCR_WR(prAdapter, CB_INFRA_MBU_OPD_TOP_H_ADDR, 0);
 		u4Val = u4ReadAddr;
 	} else {
 		/* set cb top remap */
