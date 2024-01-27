@@ -87,6 +87,8 @@
 #define RX_SYNC_BEACON_MASK 0x02
 #define RX_SERVICE_DISCOVERY_MASK 0x04
 
+#define NAN_AM_RANK_SIZE 8
+
 enum NAN_BSS_ROLE_INDEX {
 	NAN_BSS_INDEX_BAND0 = 0,
 #if (CFG_SUPPORT_NAN_DBDC == 1)
@@ -1027,7 +1029,7 @@ struct NanEnableRequest {
  * The NanEnableUnsync message instructs the Discovery Engine to enter an
  * operational state
  */
-__KAL_ATTRIB_PACKED_FRONT__
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
 struct NanEnableUnsync {
 	uint8_t default_publish_channel;
 	uint8_t minDwellMultiplier;
@@ -1035,7 +1037,7 @@ struct NanEnableUnsync {
 	uint8_t ucChannelListNum;
 	uint8_t publish_channel_list[NAN_MAX_UNSYNC_CH_NUM];
 	/* now support 8 Channel */
-} __KAL_ATTRIB_PACKED__;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 struct NanDataReqReceive {
 	uint8_t ndpid;
@@ -2311,6 +2313,35 @@ struct NanDataPathEndInd {
 	 */
 	uint32_t ndp_instance_id;
 } __KAL_ATTRIB_PACKED__;
+
+/*
+ * NAN Role Election from host or not
+ */
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
+struct NanHostElection {
+	uint8_t enable;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
+
+/*
+ * NAN Role Election from host or not
+ */
+__KAL_ATTRIB_PACKED_FRONT__ __KAL_ATTRIB_ALIGNED_FRONT__(4)
+struct NanRoleConfig {
+	uint8_t      ucElRole;
+	uint8_t      fgIsAnchorMaster;
+	uint8_t      ucElFlag;
+	uint8_t      ucElHopCount;
+	uint8_t      aucElEtherAddr[NAN_MAC_ADDR_LEN];
+	uint8_t      aucElClusterId[NAN_MAC_ADDR_LEN];
+	/* uint16_t     u2Channel; */
+	/* uint8_t     aucReserved[2]; */
+	uint32_t     u4ElLtsf_h;
+	uint32_t     u4ElLtsf_l;
+	/* uint32_t     u4Rtsf_h; */
+	/* uint32_t     u4Rtsf_l; */
+	uint8_t      aucElAnchorMasterRank[NAN_AM_RANK_SIZE];
+	uint32_t     u4ElAmbtt;
+} __KAL_ATTRIB_PACKED__ __KAL_ATTRIB_ALIGNED__(4);
 
 /* Event indicating Range Request received on the
  * Published side.
