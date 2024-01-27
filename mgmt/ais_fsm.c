@@ -531,14 +531,16 @@ void aisFreeAllBssInfo(struct ADAPTER *prAdapter,
 	}
 }
 
-void aisFreeIesMem(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+void aisFreeIesMem(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t fgUninit)
 {
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct FT_IES *prFtIEs;
 
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
-	if (prConnSettings && prConnSettings->assocIeLen > 0) {
+	if (fgUninit &&
+		prConnSettings && prConnSettings->assocIeLen > 0) {
 		kalMemFree(prConnSettings->pucAssocIEs, VIR_MEM_TYPE,
 			prConnSettings->assocIeLen);
 		prConnSettings->assocIeLen = 0;
@@ -1084,7 +1086,7 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	rsnFlushPmkid(prAdapter, ucBssIndex);
 
 	/* make sure allocated buffer for IEs is free after uninit*/
-	aisFreeIesMem(prAdapter, ucBssIndex);
+	aisFreeIesMem(prAdapter, ucBssIndex, TRUE);
 
 	rrmParamInit(prAdapter, ucBssIndex);
 	clearAxBlocklist(prAdapter, ucBssIndex, BLOCKLIST_AX_TO_AC);
@@ -5068,7 +5070,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	/* free allocated memory for assoc IE and FT IE */
-	aisFreeIesMem(prAdapter, ucBssIndex);
+	aisFreeIesMem(prAdapter, ucBssIndex, FALSE);
 
 #if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
 	if (prConnSettings)
