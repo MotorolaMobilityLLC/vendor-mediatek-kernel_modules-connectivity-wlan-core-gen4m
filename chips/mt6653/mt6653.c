@@ -3581,7 +3581,7 @@ static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter)
 #define MCIF_EMI_BASE_OFFSET 0xE4
 static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 {
-#if CFG_MTK_CCCI_SUPPORT
+#if CFG_MTK_CCCI_SUPPORT && CFG_MTK_MDDP_SUPPORT
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	uint32_t ccif_base = 0x160000;
 	uint32_t mcif_emi_base, u4Val = 0, u4WifiEmi = 0;

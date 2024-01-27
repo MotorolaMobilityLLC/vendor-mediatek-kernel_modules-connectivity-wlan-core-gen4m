@@ -651,6 +651,12 @@ ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     endif
 endif
 CONFIG_IFACE_CONCURRENT_MODE=2
+
+# ===== project override =====
+ifeq ($(CONFIG_MTK_EAP), y)
+CONFIG_MTK_MDDP_SUPPORT=
+endif
+
 endif
 
 ifneq ($(filter MT6655,$(MTK_COMBO_CHIP)),)
