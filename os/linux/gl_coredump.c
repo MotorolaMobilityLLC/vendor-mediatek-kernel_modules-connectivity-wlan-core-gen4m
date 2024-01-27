@@ -126,18 +126,18 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
 {
 	struct mt66xx_chip_info *chip_info;
+	uint8_t *tmp_buf = NULL;
+	ssize_t ret = 0;
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 	struct GLUE_INFO *prGlueInfo = ctx->priv;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint8_t *tmp_buf = NULL;
-#if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
 	struct HIF_MEM *prMem = NULL;
 	void *emi2_buf = NULL;
 	uint8_t *prEmi2Address = NULL;
-#endif
-	ssize_t ret = 0;
 	uint8_t uIdx = 0;
+#endif
 
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
@@ -204,8 +204,7 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 #endif
 	{
 		DBGLOG(INIT, INFO, "emi2 read failed.\n");
-		ret = -EFAULT;
-		goto exit;
+		goto copy_to_user;
 	}
 
 copy_to_user:
