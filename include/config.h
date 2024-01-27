@@ -1507,6 +1507,10 @@
 #define CFG_SUPPORT_TX_DATA_DELAY		0
 #endif
 
+#ifndef CFG_BMC_DISABLE_RETRY_RTS
+#define CFG_BMC_DISABLE_RETRY_RTS	0
+#endif /* CFG_BMC_DISABLE_RETRY_RTS */
+
 /*------------------------------------------------------------------------------
  * Flags of bus error tolerance
  *------------------------------------------------------------------------------

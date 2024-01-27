@@ -641,6 +641,13 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	    (MSDU_CONTROL_FLAG_FORCE_TX | MSDU_CONTROL_FLAG_DIS_MAT))
 		HAL_MAC_CONNAC3X_TXD_SET_DIS_MAT(prTxDesc);
 
+#if CFG_BMC_DISABLE_RETRY_RTS
+	/* BMC packet disable retry RTS*/
+	if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST
+		|| prMsduInfo->ucStaRecIndex == STA_REC_INDEX_NOT_FOUND)
+		HAL_MAC_CONNAC3X_TXD_SET_RTS_DIS(prTxDesc);
+#endif /* CFG_TXD_DISABLE_RTS */
+
 	/* Msdu count */
 	HAL_MAC_CONNAC3X_TXD_SET_MSDU_COUNT(prTxDesc, 1);
 

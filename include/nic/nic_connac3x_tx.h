@@ -148,6 +148,7 @@
 #define CONNAC3X_TX_DESC_AMSDU_CAP_UTXB                  BIT(1)
 #define CONNAC3X_TX_DESC_DA_SOURCE_SELECTION             BIT(2)
 #define CONNAC3X_TX_DESC_DIS_MAT                         BIT(3)
+#define CONNAC3X_TX_DESC_RTS_DIS                         BIT(4)
 #if (CFG_CONNAC3X_DS_VER >= 3600)
 #define CONNAC3X_TX_DESC_MSDU_COUNT_MASK                 BITS(10, 15)
 #define CONNAC3X_TX_DESC_MSDU_COUNT_OFFSET               10
@@ -765,6 +766,13 @@ TRUE:FALSE)
 ((_prHwMacTxDesc)->u4DW6 |= CONNAC3X_TX_DESC_DIS_MAT)
 #define HAL_MAC_CONNAC3X_TXD_UNSET_DIS_MAT(_prHwMacTxDesc) \
 ((_prHwMacTxDesc)->u4DW6 &= ~CONNAC3X_TX_DESC_DIS_MAT)
+
+#define HAL_MAC_CONNAC3X_TXD_IS_RTS_DIS(_prHwMacTxDesc) \
+(((_prHwMacTxDesc)->u4DW6 & CONNAC3X_TX_DESC_RTS_DIS) ? TRUE:FALSE)
+#define HAL_MAC_CONNAC3X_TXD_SET_RTS_DIS(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW6 |= CONNAC3X_TX_DESC_RTS_DIS)
+#define HAL_MAC_CONNAC3X_TXD_UNSET_RTS_DIS(_prHwMacTxDesc) \
+((_prHwMacTxDesc)->u4DW6 &= ~CONNAC3X_TX_DESC_RTS_DIS)
 
 #define HAL_MAC_CONNAC3X_TXD_GET_MSDU_COUNT(_prHwMacTxDesc) \
 TX_DESC_GET_FIELD((_prHwMacTxDesc)->u4DW6, \

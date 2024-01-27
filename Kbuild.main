@@ -958,6 +958,12 @@ else
         ccflags-y += -DCFG_TX_CUSTOMIZE_LTO=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_BMC_DISABLE_RETRY_RTS), y)
+        ccflags-y += -DCFG_BMC_DISABLE_RETRY_RTS=1
+else
+        ccflags-y += -DCFG_BMC_DISABLE_RETRY_RTS=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_TRX_DIRECT), y)
     ifeq (,$(filter CFG_RX_DIRECT,$(PLATFORM_FLAGS)))
         ccflags-y += -DCFG_RX_DIRECT=1
