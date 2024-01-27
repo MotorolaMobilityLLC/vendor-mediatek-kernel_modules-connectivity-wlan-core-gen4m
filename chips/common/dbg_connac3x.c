@@ -2708,6 +2708,9 @@ void connac3x_show_rro_info(struct ADAPTER *prAdapter)
 		}
 	}
 
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawdSramDump))
+		halMawdDumpSram(prAdapter->prGlueInfo);
+
 	DBGLOG(HAL, INFO, "==============================\n");
 	DBGLOG(HAL, INFO, " RRO DEBUG DUMP\n");
 	DBGLOG(HAL, INFO, "==============================\n");

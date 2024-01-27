@@ -66,8 +66,9 @@
 
 #define MAWD_CR_BACKUP_OFFSET_VER_1_0	88
 #define MAWD_CR_BACKUP_OFFSET_VER_1_1	128
+#define MAWD_CR_BACKUP_NUM		64
 
-#define MAWD_AMSDU_MAX_CNT		7
+#define MAWD_AMSDU_MAX_CNT		8
 #define MAWD_READ_COUNT_BY_EMI		0
 
 /*******************************************************************************
@@ -183,9 +184,22 @@ static void __halMawdSleep(void);
  *                              F U N C T I O N S
  *******************************************************************************
  */
-u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
+static void halMawdWakeupSleepDebugDump(struct ADAPTER *prAdapter)
 {
-#if MAWD_ENABLE_WAKEUP_SLEEP
+	uint32_t u4Addr = 0, u4Idx = 0, u4Val = 0;
+
+	for (u4Idx = 0x11 ; u4Idx <= 0x13; u4Idx++) {
+		u4Addr = MAWD_DEBUG_SETTING2;
+		HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Idx);
+		u4Addr = MAWD_DEBUG_SETTING1;
+		HAL_MAWD_MCR_RD(prAdapter, u4Addr, &u4Val);
+		DBGLOG(HAL, INFO, "WR 100=[%x], RD 104=[0x%08x]\n",
+		       u4Idx, u4Val);
+	}
+}
+
+static u_int8_t halMawdWakeUpVer1_0(struct GLUE_INFO *prGlueInfo)
+{
 	struct GL_HIF_INFO *prHifInfo;
 	struct ADAPTER *prAdapter;
 	struct RTMP_RX_RING *prRxRing;
@@ -197,20 +211,6 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 	prAdapter = prGlueInfo->prAdapter;
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxRing = &prHifInfo->RxBlkRing[0];
-
-#if (CFG_MTK_FPGA_PLATFORM == 0)
-	fgRet = __halMawdWakeup();
-	if (!fgRet)
-		goto exit;
-#endif
-
-	if (!prAdapter->fgIsFwDownloaded ||
-	    !prHifInfo->fgIsMawdSuspend)
-		goto exit;
-
-	u4Addr = MAWD_REG_PLL_CTRL_0;
-	u4Val = BIT(0);
-	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
 
 	u4Addr = MAWD_AP_WAKE_UP;
 	u4Val = BIT(0);
@@ -265,12 +265,92 @@ u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
 		MAWD_WFDMA_HIGH_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	if (kalGetMawdVer() == MAWD_VER_1_0) {
-		u4Addr = MAWD_SOFTRESET;
-		HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
-	}
+	u4Addr = MAWD_SOFTRESET;
+	HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+
 done:
+	return fgRet;
+}
+
+static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct ADAPTER *prAdapter;
+	struct WIFI_VAR *prWifiVar;
+	uint32_t u4Addr = 0, u4Val = 0, u4Idx = 0;
+	u_int8_t fgRet = TRUE;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
+	prWifiVar = &prAdapter->rWifiVar;
+
+	/* mawd speed up */
+	u4Addr = MAWD_POWER_UP;
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		HAL_MAWD_MCR_RD(prAdapter, u4Addr, &u4Val);
+		if ((u4Val & BIT(2)) == BIT(2))
+			break;
+		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
+	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT) {
+		fgRet = FALSE;
+		DBGLOG(HAL, ERROR, "Mawd wakeup polling failed[0x%08x]\n",
+		       u4Val);
+		halMawdWakeupSleepDebugDump(prAdapter);
+	}
+
+	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+		goto done;
+
+	/* BKRS index from RRO */
+	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
+	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
+	u4Addr = MAWD_IND_CMD_SIGNATURE1;
+	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
+	u4Val = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK |
+		MAWD_WFDMA_HIGH_ADDR;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+done:
+	return fgRet;
+}
+
+u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo)
+{
+#if MAWD_ENABLE_WAKEUP_SLEEP
+	struct GL_HIF_INFO *prHifInfo;
+	struct ADAPTER *prAdapter;
+	u_int8_t fgRet = TRUE;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
+
+#if CFG_MTK_ANDROID_WMT
+	if (!is_cal_flow_finished())
+		goto exit;
+#endif
+
+#if (CFG_MTK_FPGA_PLATFORM == 0)
+	fgRet = __halMawdWakeup();
+	if (!fgRet)
+		goto exit;
+#endif
+
+	if (!prAdapter->fgIsFwDownloaded ||
+	    !prHifInfo->fgIsMawdSuspend)
+		goto exit;
+
+	if (kalGetMawdVer() == MAWD_VER_1_0)
+		fgRet = halMawdWakeUpVer1_0(prGlueInfo);
+	else
+		fgRet = halMawdWakeUpVer1_1(prGlueInfo);
+	if (!fgRet)
+		goto exit;
+
 	prHifInfo->fgIsMawdSuspend = FALSE;
+	DBGLOG(HAL, LOUD, "Mawd wakeup done\n");
 
 exit:
 	return fgRet;
@@ -279,9 +359,8 @@ exit:
 #endif /* MAWD_ENABLE_WAKEUP_SLEEP */
 }
 
-u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
+static u_int8_t halMawdSleepVer1_0(struct GLUE_INFO *prGlueInfo)
 {
-#if MAWD_ENABLE_WAKEUP_SLEEP
 	struct GL_HIF_INFO *prHifInfo;
 	struct ADAPTER *prAdapter;
 	struct WIFI_VAR *prWifiVar;
@@ -293,17 +372,6 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 	prAdapter = prGlueInfo->prAdapter;
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxRing = &prHifInfo->RxBlkRing[0];
-
-	if (!prAdapter->fgIsFwDownloaded ||
-	    p2pFuncNeedForceSleep(prAdapter) ||
-	    prHifInfo->fgIsMawdSuspend ||
-	    prAdapter->ucSerState != SER_IDLE_DONE)
-		goto exit;
-
-	if (halMawdGetRxBlkDoneCnt(prGlueInfo, 0)) {
-		fgRet = FALSE;
-		goto exit;
-	}
 
 	u4Addr = MAWD_AP_WAKE_UP;
 	u4Val = BIT(1);
@@ -347,12 +415,89 @@ done:
 	u4Addr = MAWD_AP_WAKE_UP;
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
 
-	u4Addr = MAWD_REG_PLL_CTRL_0;
-	HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+exit:
+	return fgRet;
+}
+
+static u_int8_t halMawdSleepVer1_1(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct ADAPTER *prAdapter;
+	struct WIFI_VAR *prWifiVar;
+	uint32_t u4Addr, u4Val, u4Idx;
+	u_int8_t fgRet = TRUE;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
+	prWifiVar = &prAdapter->rWifiVar;
+
+	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
+		goto exit;
+
+	u4Addr = MAWD_POWER_UP;
+	u4Val = BIT(1);
+	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		HAL_MAWD_MCR_RD(prAdapter, u4Addr, &u4Val);
+		if ((u4Val & BIT(1)) == 0)
+			break;
+		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
+	}
+	if (u4Idx == MAWD_POWER_UP_RETRY_CNT) {
+		fgRet = FALSE;
+		DBGLOG(HAL, ERROR, "Mawd sleep polling failed[0x%08x]\n",
+		       u4Val);
+		halMawdWakeupSleepDebugDump(prAdapter);
+		goto exit;
+	}
+
+	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
+	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
+	u4Val &= ~WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+exit:
+	return fgRet;
+}
+
+u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
+{
+#if MAWD_ENABLE_WAKEUP_SLEEP
+	struct GL_HIF_INFO *prHifInfo;
+	struct ADAPTER *prAdapter;
+	u_int8_t fgRet = TRUE;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
+
+#if CFG_MTK_ANDROID_WMT
+	if (!is_cal_flow_finished())
+		goto exit;
+#endif
+
+	if (!prAdapter->fgIsFwDownloaded ||
+	    p2pFuncNeedForceSleep(prAdapter) ||
+	    prHifInfo->fgIsMawdSuspend ||
+	    prAdapter->ucSerState != SER_IDLE_DONE)
+		goto exit;
+
+	if (halMawdGetRxBlkDoneCnt(prGlueInfo, 0)) {
+		fgRet = FALSE;
+		goto exit;
+	}
+
+	if (kalGetMawdVer() == MAWD_VER_1_0)
+		fgRet = halMawdSleepVer1_0(prGlueInfo);
+	else
+		fgRet = halMawdSleepVer1_1(prGlueInfo);
+	if (!fgRet)
+		goto exit;
+
 #if (CFG_MTK_FPGA_PLATFORM == 0)
 	__halMawdSleep();
 #endif
 	prHifInfo->fgIsMawdSuspend = TRUE;
+	DBGLOG(HAL, LOUD, "Mawd sleep done\n");
 
 exit:
 	return fgRet;
@@ -674,8 +819,6 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	u4Val = BIT(0);
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	halMawdInitSram(prGlueInfo);
-
 	/* setup addr array */
 	u4Addr = MAWD_ADDR_ARRAY_BASE_L;
 	u4Val = prAddrArray->AllocPa;
@@ -709,6 +852,9 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	if (kalGetMawdVer() == MAWD_VER_1_0) {
 		u4Addr = MAWD_SOFTRESET;
 		HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+	} else {
+		u4Addr = MAWD_CR_OFFSET + 0x1140;
+		HAL_MCR_WR(NULL, u4Addr, BIT(0));
 	}
 
 #if CFG_MTK_FPGA_PLATFORM
@@ -1170,6 +1316,9 @@ void halRroInit(struct GLUE_INFO *prGlueInfo)
 	} else if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro2Md)) {
 		halRroSetup(prGlueInfo);
 	}
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
+		halMawdInitSram(prGlueInfo);
 }
 
 void halRroUninit(struct GLUE_INFO *prGlueInfo)
@@ -2092,11 +2241,10 @@ static void halMawdReadRxBlkRing(
 		}
 #endif /* CFG_SUPPORT_RX_NAPI */
 
-		if (prFreeSwRfbList->u4NumElem < MAWD_AMSDU_MAX_CNT)
-			break;
-
 		prRxCell = &prRxRing->Cell[prRxRing->RxCpuIdx];
 		prRxBlkD = (struct RX_BLK_DESC *)prRxCell->AllocVa;
+		if (prFreeSwRfbList->u4NumElem < prRxBlkD->msdu_cnt)
+			break;
 
 #if (MAWD_READ_COUNT_BY_EMI == 0)
 		if (!halMawdWaitMagicCnt(prAdapter, prRxBlkD,
@@ -2397,17 +2545,16 @@ static void halMawdReadSram(
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings2, &u4Val);
-	u4Val = (u4Val & BITS(16, 25)) | (u4Offset & BITS(0, 6));
+	u4Val = (u4Val & BITS(16, 25)) | (u4Offset & BITS(0, 7));
 	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings2, u4Val);
 
-	HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings4, &u4Val);
+	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings4, BIT(1));
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings4, &u4Val);
 		if ((u4Val & BIT(8)) == 0)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
 	}
-	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings4, BIT(1));
 	HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings5, pu4ValL);
 	HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings6, pu4ValH);
 }
@@ -2416,7 +2563,7 @@ static void halMawdInitSram(struct GLUE_INFO *prGlueInfo)
 {
 	uint32_t u4Val = 0, u4Addr = 0, u4Idx = 0;
 
-	for (u4Idx = 0; u4Idx < 64; u4Idx++) {
+	for (u4Idx = 0; u4Idx < MAWD_CR_BACKUP_NUM; u4Idx++) {
 		u4Addr = MAWD_REG_BASE + u4Idx * 4;
 		HAL_MAWD_MCR_RD(prGlueInfo->prAdapter, u4Addr, &u4Val);
 		halMawdBackupCr(prGlueInfo, u4Addr, u4Val);
@@ -2439,20 +2586,35 @@ static void halMawdUpdateSram(
 	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings0, u4ValL);
 	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings1, u4ValH);
 	HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings2, &u4Val);
-	u4Val = (u4Val & BITS(16, 25)) | (u4Offset & BITS(0, 6));
+	u4Val = (u4Val & BITS(16, 25)) | (u4Offset & BITS(0, 7));
 	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings2, u4Val);
 
-	HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings4, &u4Val);
+	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings4, BIT(0));
 	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
 		HAL_MAWD_MCR_RD(prAdapter, prBusInfo->mawd_settings4, &u4Val);
 		if ((u4Val & BIT(8)) == 0)
 			break;
 		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
 	}
-	HAL_MAWD_MCR_WR(prAdapter, prBusInfo->mawd_settings4, BIT(0));
 
 	DBGLOG(HAL, TRACE, "Update SRAM[%d] H[0x%08x] L[0x%08x]",
 	       u4Offset, u4ValH, u4ValL);
+}
+
+void halMawdDumpSram(struct GLUE_INFO *prGlueInfo)
+{
+	uint32_t u4BackupOffset = MAWD_CR_BACKUP_OFFSET_VER_1_1;
+	uint32_t u4ValL, u4ValH, u4Idx, u4Num;
+
+	if (kalGetMawdVer() == MAWD_VER_1_0)
+		u4BackupOffset = MAWD_CR_BACKUP_OFFSET_VER_1_0;
+
+	u4Num = u4BackupOffset + MAWD_CR_BACKUP_NUM / 2 + 1;
+	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
+		halMawdReadSram(prGlueInfo, u4Idx, &u4ValL, &u4ValH);
+		DBGLOG(HAL, INFO, "Read SRAM[%d] H[0x%08x] L[0x%08x]",
+		       u4Idx, u4ValH, u4ValL);
+	}
 }
 
 static void halMawdBackupCr(struct GLUE_INFO *prGlueInfo,
@@ -2936,6 +3098,10 @@ static u_int8_t __halMawdWakeup(void)
 		fgRet = FALSE;
 		goto exit;
 	}
+
+	u4Addr = MAWD_REG_PLL_CTRL_0;
+	HAL_MAWD_MCR_WR(NULL, u4Addr, BIT(0));
+
 exit:
 	return fgRet;
 }
@@ -2945,6 +3111,8 @@ static void __halMawdSleep(void)
 	uint32_t u4Addr;
 
 	/* sequence 3 */
+	u4Addr = MAWD_REG_PLL_CTRL_0;
+	HAL_MAWD_MCR_WR(NULL, u4Addr, 0);
 
 	/* sequence 2 */
 	u4Addr = MAWD_CR_OFFSET + 0x120A8;

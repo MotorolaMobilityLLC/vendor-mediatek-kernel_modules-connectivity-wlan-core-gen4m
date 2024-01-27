@@ -1359,6 +1359,7 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 			union mawd_l2tbl rL2Tbl, uint32_t u4Set);
+void halMawdDumpSram(struct GLUE_INFO *prGlueInfo);
 #else
 static inline int halMawdPwrOn(void) { return 0; }
 static inline void halMawdPwrOff(void) {}

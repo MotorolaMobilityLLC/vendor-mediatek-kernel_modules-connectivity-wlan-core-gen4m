@@ -1562,6 +1562,7 @@ struct WIFI_VAR {
 	u_int8_t fgEnableRroPreFillRxRing;
 	u_int8_t fgEnableRroDbg;
 	u_int8_t fgEnableRroAdvDump;
+	u_int8_t fgEnableMawdSramDump;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 	u_int8_t fgIcmpTxDone;
