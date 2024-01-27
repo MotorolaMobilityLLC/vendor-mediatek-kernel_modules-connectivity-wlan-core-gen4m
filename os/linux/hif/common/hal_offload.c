@@ -71,6 +71,9 @@
 #define MAWD_AMSDU_MAX_CNT		8
 #define MAWD_READ_COUNT_BY_EMI		0
 
+#define RRO_STA_EMI_BASE		0x78000000
+#define RRO_STA_EMI_OFFSET		0x255B80
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -275,6 +278,7 @@ done:
 static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 {
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
 	struct ADAPTER *prAdapter;
 	struct WIFI_VAR *prWifiVar;
 	uint32_t u4Addr = 0, u4Val = 0, u4Idx = 0;
@@ -282,6 +286,7 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prAdapter = prGlueInfo->prAdapter;
+	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
 
 	/* mawd speed up */
@@ -303,8 +308,13 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 		goto done;
 
 	/* BKRS index from RRO */
-	u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
-	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
+	if (emi_mem_read(prChipInfo, RRO_STA_EMI_OFFSET,
+			 &u4Val, sizeof(uint32_t))) {
+		/* read cr only if read emi fail */
+		u4Addr = WF_RRO_TOP_IND_CMD_0_CTRL3_ADDR;
+		u4Val = 0;
+		HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
+	}
 	u4Addr = MAWD_IND_CMD_SIGNATURE1;
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
 
@@ -401,8 +411,7 @@ static u_int8_t halMawdSleepVer1_0(struct GLUE_INFO *prGlueInfo)
 	}
 
 	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
-	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
-	u4Val &= ~WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK;
+	u4Val = MAWD_WFDMA_HIGH_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 mawd_sleep:
@@ -451,9 +460,9 @@ static u_int8_t halMawdSleepVer1_1(struct GLUE_INFO *prGlueInfo)
 		goto exit;
 	}
 
+	/* disable rro IND_CMD writeback */
 	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
-	HAL_RMCR_RD(OFFLOAD_READ, prAdapter, u4Addr, &u4Val);
-	u4Val &= ~WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK;
+	u4Val = MAWD_WFDMA_HIGH_ADDR;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 exit:
@@ -2962,6 +2971,11 @@ void halMawdReset(struct GLUE_INFO *prGlueInfo)
 	uint32_t *au4MawdIdxPatch = au4MawdIdxPatchVer1_1;
 
 	prAdapter = prGlueInfo->prAdapter;
+
+#if CFG_MTK_ANDROID_WMT
+	if (!is_cal_flow_finished())
+		return;
+#endif
 
 	if (kalGetMawdVer() == MAWD_VER_1_0)
 		au4MawdIdxPatch = au4MawdIdxPatchVer1_0;
