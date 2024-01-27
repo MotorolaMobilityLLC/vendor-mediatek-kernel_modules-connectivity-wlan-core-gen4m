@@ -5037,6 +5037,60 @@ uint32_t ServiceWlanOid(void *winfos,
 	return i4Status;
 }
 
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+static uint32_t glRFTestL0P5(struct GLUE_INFO *prGlueInfo,
+	bool fgIsSwitchToTestMode)
+{
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	int timeout = msecs_to_jiffies(5000);
+
+	if (!prGlueInfo) {
+		DBGLOG(RFTEST, ERROR, "[%s]prGlueInfo is NULL\n", __func__);
+		return u4Status;
+	}
+
+	if (!prGlueInfo->prAdapter) {
+		DBGLOG(RFTEST, ERROR,
+			"[%s]prGlueInfo->prAdapter is NULL\n", __func__);
+		return u4Status;
+	}
+
+	if (fgIsSwitchToTestMode == prGlueInfo->fgTestFwDl) {
+		DBGLOG(RFTEST, STATE, "[%s]already switch to %d\n",
+			__func__, fgIsSwitchToTestMode);
+		u4Status = WLAN_STATUS_SUCCESS;
+		return u4Status;
+	}
+
+	DBGLOG(RFTEST, STATE, "target:%d, now:%d\n",
+		fgIsSwitchToTestMode, prGlueInfo->fgTestFwDl);
+
+	/* Ensure all previously L0P5 reset has finished */
+	flush_work(&prGlueInfo->rWfsysResetWork);
+
+	/* Trigger L0P5 */
+	prGlueInfo->fgTestFwDl = fgIsSwitchToTestMode;
+	GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
+		RST_CMD_TRIGGER, RST_FLAG_DO_L0P5_RESET);
+
+	/* Wait for reset complete */
+	timeout = wait_event_interruptible_timeout(
+		prGlueInfo->waitQTestFwDl,
+		!kalIsResetting(), timeout);
+	if (timeout == 0) {
+		DBGLOG(RFTEST, ERROR,
+			"[%s]: L0P5 reset(WfsResetHdlr) timeout!\n", __func__);
+		return u4Status;
+	}
+
+	/* enter/abort test mode */
+	u4Status = wlanSetRFTestModeCMD(prGlueInfo,
+		fgIsSwitchToTestMode);
+
+	return u4Status;
+}
+#endif
+
 #if CFG_TESTMODE_FWDL_SUPPORT
 static uint32_t glRFTestSwitchMode(struct GLUE_INFO *prGlueInfo,
 			bool fgIsSwitchToTestMode)
@@ -5104,8 +5158,8 @@ uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, bool fgEn)
 
 #if CFG_TESTMODE_FWDL_SUPPORT
 	u4Status = glRFTestSwitchMode(prGlueInfo, fgEn);
-#else
-	u4Status = wlanSetRFTestModeCMD(prGlueInfo, fgEn);
+#elif CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	u4Status = glRFTestL0P5(prGlueInfo, fgEn);
 #endif /*CFG_TESTMODE_FWDL_SUPPORT*/
 
 	return u4Status;

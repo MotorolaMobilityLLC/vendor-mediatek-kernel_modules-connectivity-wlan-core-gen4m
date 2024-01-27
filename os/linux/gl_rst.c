@@ -311,6 +311,10 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	fgIsRstPreventFwOwn = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
 	u4ProbeCount = 0;
+
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	init_waitqueue_head(&prGlueInfo->waitQTestFwDl);
+#endif
 #if CFG_CHIP_RESET_KO_SUPPORT
 	u4RstCount = 0;
 	u4PowerOffCount = 0;
@@ -1188,6 +1192,10 @@ void WfsysResetHdlr(struct work_struct *work)
 	wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_L0P5_END);
 #endif
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
+
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	wake_up_interruptible(&prGlueInfo->waitQTestFwDl);
+#endif
 
 	DBGLOG(INIT, INFO, "[SER][L0.5] Reset done\n");
 
