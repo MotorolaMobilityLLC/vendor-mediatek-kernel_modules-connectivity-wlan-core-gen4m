@@ -586,6 +586,7 @@ static void ehtRlmFillOpIE(
 	uint32_t u4OverallLen = sizeof(struct IE_EHT_OP);
 	uint8_t eht_bw = 0;
 	struct EHT_OP_INFO *prEhtOpInfo;
+	struct EHT_SUPPORTED_MCS_BW20_FIELD *prEhtMcsSet;
 
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
@@ -593,6 +594,8 @@ static void ehtRlmFillOpIE(
 
 	prEhtOp = (struct IE_EHT_OP *)
 		(((uint8_t *)prMsduInfo->prPacket)+prMsduInfo->u2FrameLength);
+	prEhtMcsSet = (struct EHT_SUPPORTED_MCS_BW20_FIELD *)
+		&prEhtOp->u4BasicEhtMcsNssSet;
 
 	prEhtOp->ucId = ELEM_ID_RESERVED;
 	prEhtOp->ucExtId = ELEM_EXT_ID_EHT_OP;
@@ -605,9 +608,8 @@ static void ehtRlmFillOpIE(
 	eht_bw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
 
 	/* Basic EHT-MCS And Nss Set */
-	ehtRlmFillBW20MCSMap(
-		prAdapter, prBssInfo,
-		(uint8_t *) &prEhtOp->u4BasicEhtMcsNssSet);
+	kalMemZero(prEhtMcsSet, sizeof(*prEhtMcsSet));
+	prEhtMcsSet->eht_bw20_mcs_0_7 = 1 + (1 << 4);
 
 	/* filling operation info field */
 	prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
