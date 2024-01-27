@@ -625,7 +625,7 @@ void rlmSyncExtCapIEwithSupplicant(uint8_t *aucCapabilities,
 
 int32_t rlmGetOpClassForChannel(int32_t channel,
 	enum ENUM_BAND band, enum ENUM_CHNL_EXT eSco,
-	enum ENUM_CHANNEL_WIDTH eChBw);
+	enum ENUM_CHANNEL_WIDTH eChBw, uint16_t u2Country);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 void rlmSetSrControl(struct ADAPTER *prAdapter, bool fgIsEnableSr);

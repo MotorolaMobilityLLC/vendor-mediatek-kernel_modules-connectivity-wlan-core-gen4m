@@ -10108,7 +10108,7 @@ uint16_t rlmOpClassToBandwidth(uint8_t ucOpClass)
 
 int32_t rlmGetOpClassForChannel(int32_t channel,
 	enum ENUM_BAND band, enum ENUM_CHNL_EXT eSco,
-	enum ENUM_CHANNEL_WIDTH eChBw)
+	enum ENUM_CHANNEL_WIDTH eChBw, uint16_t u2Country)
 {
 	/* 2GHz Band */
 	if ((band == BAND_2G4) != 0) {
@@ -10116,10 +10116,13 @@ int32_t rlmGetOpClassForChannel(int32_t channel,
 			return 82;
 
 		if (channel >= 1 && channel <= 13) {
-			if (eSco == CHNL_EXT_SCN)
+			if (eSco == CHNL_EXT_SCN) {
 				/* 20MHz channel */
-				return 81;
-
+				if (u2Country == COUNTRY_CODE_US)
+					return 12;
+				else
+					return 81;
+			}
 			if (channel <= 9 && eSco == CHNL_EXT_SCA)
 			/* HT40 with secondary channel
 			 * above primary, priCH will be 1~9
@@ -10139,20 +10142,36 @@ int32_t rlmGetOpClassForChannel(int32_t channel,
 	if ((band == BAND_5G) != 0) {
 		/* BW20 */
 		if (eChBw == CW_20_40MHZ && eSco == CHNL_EXT_SCN) {
-			if (channel >= 36 && channel <= 48)
-				return 115;
-
-			if (channel >= 52 && channel <= 64)
-				return 118;
-
-			if (channel >= 100 && channel <= 144)
-				return 121;
-
-			if (channel >= 149 && channel <= 161)
-				return 124;
-
-			if (channel >= 165 && channel <= 169)
-				return 125;
+			if (channel >= 36 && channel <= 48) {
+				if (u2Country == COUNTRY_CODE_US)
+					return 1;
+				else
+					return 115;
+			}
+			if (channel >= 52 && channel <= 64) {
+				if (u2Country == COUNTRY_CODE_US)
+					return 2;
+				else
+					return 118;
+			}
+			if (channel >= 100 && channel <= 144) {
+				if (u2Country == COUNTRY_CODE_US)
+					return 4;
+				else
+					return 121;
+			}
+			if (channel >= 149 && channel <= 161) {
+				if (u2Country == COUNTRY_CODE_US)
+					return 3;
+				else
+					return 124;
+			}
+			if (channel >= 165 && channel <= 169) {
+				if (u2Country == COUNTRY_CODE_US)
+					return 5;
+				else
+					return 125;
+			}
 		/* BW 40 */
 		} else if (eChBw == CW_20_40MHZ &&
 			(eSco == CHNL_EXT_SCA || eSco == CHNL_EXT_SCB)) {

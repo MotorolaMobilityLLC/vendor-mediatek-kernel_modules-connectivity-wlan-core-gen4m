@@ -1797,9 +1797,13 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	}
 
 	/* Fixed length field */
-	rep.ucRegulatoryClass = rlmGetOpClassForChannel(
-		prBssDesc->ucChannelNum, prBssDesc->eBand,
-		prBssDesc->eSco, prBssDesc->eChannelWidth);
+	rep.ucRegulatoryClass =
+			rlmGetOpClassForChannel(prBssDesc->ucChannelNum,
+						prBssDesc->eBand,
+						prBssDesc->eSco,
+						prBssDesc->eChannelWidth,
+						prBssDesc->u2CurrCountryCode);
+
 	rep.ucChannel = prBssDesc->ucChannelNum;
 	rep.u2Duration = bcnReq->u2Duration;
 	/* ucReportInfo: Bit 0 is the type of frame, 0 means beacon/probe

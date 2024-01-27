@@ -466,6 +466,7 @@ struct BSS_DESC {
 	struct NEIGHBOR_AP *prNeighbor;
 	uint8_t fgQueriedCandidates;
 #endif
+	uint16_t u2CurrCountryCode;
 	uint8_t fgIsDisallowed;
 	uint8_t fgExistEspIE;
 	uint32_t u4EspInfo[ESP_AC_NUM];
