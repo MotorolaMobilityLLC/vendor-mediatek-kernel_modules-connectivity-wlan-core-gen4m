@@ -184,8 +184,8 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	emi2_buf = tmp_buf+chip_info->rEmiInfo.coredump_size;
 
-	if (prMemOps->getWifiMiscRsvEmi) {
-		for (uIdx = 0; uIdx < WIFI_MISC_MEM_BLOCK_MAX_NUM; uIdx++) {
+	if (prMemOps->getWifiMiscRsvEmi && chip_info->rsvMemWiFiMisc) {
+		for (uIdx = 0; uIdx < chip_info->rsvMemWiFiMiscSize; uIdx++) {
 			DBGLOG(INIT, LOUD, "Copy %d (%d)\n",
 				uIdx, chip_info->rsvMemWiFiMisc[uIdx].size);
 
