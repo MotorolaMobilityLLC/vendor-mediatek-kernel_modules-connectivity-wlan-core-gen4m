@@ -382,9 +382,11 @@ static void coredump_aes_drv_ctl_s2pcmd(struct ADAPTER *prAdapter,
 static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 	uint32_t src, uint32_t dest, uint32_t length)
 {
+#define SECURITY_COREDUMP_TIMEOUT_MS	1000
 	struct ADAPTER *prAdapter = NULL;
 	uint32_t aes_busy = 1;
-	uint8_t ret = TRUE;
+	uint32_t u4CurrTick = 0;
+	u_int8_t ret = TRUE, fgTimeout = FALSE;
 
 	if (!prGlueInfo)
 		return FALSE;
@@ -415,15 +417,22 @@ static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 		0x0, S2P_CMD_WR);
 	udelay(10);
 
-	while (aes_busy != 0) {
+	u4CurrTick = kalGetTimeTick();
+	while (aes_busy != 0 && !fgTimeout) {
 		/* read out busy bits */
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
 			(S2P_CMD_RD << 18) | (0x0 << 16) |
 			(S2P_CMD_AES_BUSY << 8) | 0x0);
 		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
 			&aes_busy);
+		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
+			SECURITY_COREDUMP_TIMEOUT_MS)
+			? TRUE : FALSE;
 	}
-	DBGLOG(INIT, LOUD, "aes done, aes_busy=%d\n", aes_busy);
+
+	if (fgTimeout)
+		DBGLOG(INIT, ERROR, "aes busy get timeout\n");
+
 	return ret;
 }
 #endif
