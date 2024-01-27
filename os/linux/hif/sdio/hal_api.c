@@ -2819,7 +2819,7 @@ void halPollDbgCr(struct ADAPTER *prAdapter, uint32_t u4LoopCount)
 #endif
 	struct CHIP_DBG_OPS *prChipDbg = prAdapter->chip_info->prDebugOps;
 
-	for (; i < sizeof(au4Value)/sizeof(uint32_t); i++)
+	for (; i < ARRAY_SIZE(au4Value); i++)
 		HAL_MCR_RD(prAdapter, au4Value[i], &au4Value[i]);
 	DBGLOG(REQ, WARN, "MCR_WCIR:0x%x, MCR_WHLPCR:0x%x\n",
 		au4Value[0], au4Value[1]);
@@ -2856,7 +2856,7 @@ void halPollDbgCr(struct ADAPTER *prAdapter, uint32_t u4LoopCount)
 		}
 
 		/* dump others */
-		for (i = 0; i < sizeof(au4Value1)/sizeof(uint32_t); i++)
+		for (i = 0; i < ARRAY_SIZE(au4Value1); i++)
 			HAL_MCR_RD(prAdapter, au4Value1[i], &au4Value1[i]);
 
 		DBGLOG(REQ, WARN,

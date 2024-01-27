@@ -39,16 +39,16 @@
 
 uint8_t g_aucRangingIEBuffer[NAN_IE_BUF_MAX_SIZE];
 
-static uint8_t *apucDebugRangingState[RANGING_STATE_NUM] = {
-	(uint8_t *)DISP_STRING("IDLE"),
-	(uint8_t *)DISP_STRING("INIT"),
-	(uint8_t *)DISP_STRING("SCHEDULE"),
-	(uint8_t *)DISP_STRING("REQUEST"),
-	(uint8_t *)DISP_STRING("REQUEST_IND"),
-	(uint8_t *)DISP_STRING("RESPONSE"),
-	(uint8_t *)DISP_STRING("ACTIVE"),
-	(uint8_t *)DISP_STRING("REPORT"),
-	(uint8_t *)DISP_STRING("TERMINATE"),
+static const char * const apucDebugRangingState[RANGING_STATE_NUM] = {
+	"IDLE",
+	"INIT",
+	"SCHEDULE",
+	"REQUEST",
+	"REQUEST_IND",
+	"RESPONSE",
+	"ACTIVE",
+	"REPORT",
+	"TERMINATE",
 };
 
 /*******************************************************************************

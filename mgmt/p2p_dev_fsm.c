@@ -8,14 +8,13 @@
 #if CFG_ENABLE_WIFI_DIRECT
 
 #if 1
-/*lint -save -e64 Type mismatch */
-static uint8_t *apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_IDLE"),
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_SCAN"),
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_REQING_CHANNEL"),
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_CHNL_ON_HAND"),
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_OFF_CHNL_TX"),
-	(uint8_t *) DISP_STRING("P2P_DEV_STATE_LISTEN_OFFLOAD")
+static const char * const apucDebugP2pDevState[P2P_DEV_STATE_NUM] = {
+	"P2P_DEV_STATE_IDLE",
+	"P2P_DEV_STATE_SCAN",
+	"P2P_DEV_STATE_REQING_CHANNEL",
+	"P2P_DEV_STATE_CHNL_ON_HAND",
+	"P2P_DEV_STATE_OFF_CHNL_TX",
+	"P2P_DEV_STATE_LISTEN_OFFLOAD",
 };
 
 /*lint -restore */

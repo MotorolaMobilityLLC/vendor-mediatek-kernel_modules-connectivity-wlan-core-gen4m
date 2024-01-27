@@ -280,13 +280,13 @@ static u_int32_t conn_infra_power_status_sel[] = {
 
 static struct DEBUG_SOP_INFO mt7961_debug_sop_info[] = {
 	{wfsys_status_sel,
-	sizeof(wfsys_status_sel)/sizeof(u_int32_t),
+	ARRAY_SIZE(wfsys_status_sel),
 	bgfsys_status_sel,
-	sizeof(bgfsys_status_sel)/sizeof(u_int32_t),
+	ARRAY_SIZE(bgfsys_status_sel),
 	0x9F1E0000,
 #if defined(_HIF_PCIE)
 	conn_infra_power_status_sel,
-	sizeof(conn_infra_power_status_sel)/sizeof(u_int32_t),
+	ARRAY_SIZE(conn_infra_power_status_sel),
 #endif
 	}
 };
@@ -776,7 +776,7 @@ void mt7961_show_pse_info(
 	       "\t\tThe tail/head page of free page list=0x%03x/0x%03x\n",
 	       fpg_tail, fpg_head);
 
-	group_cnt = sizeof(pse_group) / sizeof(struct pse_group_info);
+	group_cnt = ARRAY_SIZE(pse_group);
 	for (i = 0; i < group_cnt; i++) {
 		group = &pse_group[i];
 		HAL_MCR_RD(prAdapter, group->quota_addr, &group_quota);

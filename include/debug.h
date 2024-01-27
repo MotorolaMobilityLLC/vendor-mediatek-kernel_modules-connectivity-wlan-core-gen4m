@@ -813,7 +813,6 @@ enum WAIT_TO_PERIOD {
 	}
 #endif /* DBG_DISABLE_ALL_LOG */
 
-#define DISP_STRING(_str)       _str
 #undef ASSERT
 #undef ASSERT_REPORT
 #if (BUILD_QA_DBG || DBG)

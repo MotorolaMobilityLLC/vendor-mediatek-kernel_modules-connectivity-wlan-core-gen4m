@@ -1141,9 +1141,7 @@ struct GL_DETECT_REPLAY_INFO *
 	uint8_t ucBssIndex);
 #endif
 
-uint8_t *
-	aisGetFsmState(
-	enum ENUM_AIS_STATE);
+const char *aisGetFsmState(enum ENUM_AIS_STATE);
 
 struct FT_IES *
 	aisGetFtIe(

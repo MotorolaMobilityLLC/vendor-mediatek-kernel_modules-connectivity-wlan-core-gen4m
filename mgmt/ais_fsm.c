@@ -71,24 +71,24 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugAisState[AIS_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("IDLE"),
-	(uint8_t *) DISP_STRING("SEARCH"),
-	(uint8_t *) DISP_STRING("SCAN"),
-	(uint8_t *) DISP_STRING("ONLINE_SCAN"),
-	(uint8_t *) DISP_STRING("LOOKING_FOR"),
-	(uint8_t *) DISP_STRING("WAIT_FOR_NEXT_SCAN"),
-	(uint8_t *) DISP_STRING("REQ_CHANNEL_JOIN"),
-	(uint8_t *) DISP_STRING("JOIN"),
-	(uint8_t *) DISP_STRING("JOIN_FAILURE"),
-	(uint8_t *) DISP_STRING("IBSS_ALONE"),
-	(uint8_t *) DISP_STRING("IBSS_MERGE"),
-	(uint8_t *) DISP_STRING("NORMAL_TR"),
-	(uint8_t *) DISP_STRING("DISCONNECTING"),
-	(uint8_t *) DISP_STRING("REQ_REMAIN_ON_CHANNEL"),
-	(uint8_t *) DISP_STRING("REMAIN_ON_CHANNEL"),
-	(uint8_t *) DISP_STRING("OFF_CHNL_TX"),
-	(uint8_t *) DISP_STRING("ROAMING")
+static const char * const apucDebugAisState[AIS_STATE_NUM] = {
+	"IDLE",
+	"SEARCH",
+	"SCAN",
+	"ONLINE_SCAN",
+	"LOOKING_FOR",
+	"WAIT_FOR_NEXT_SCAN",
+	"REQ_CHANNEL_JOIN",
+	"JOIN",
+	"JOIN_FAILURE",
+	"IBSS_ALONE",
+	"IBSS_MERGE",
+	"NORMAL_TR",
+	"DISCONNECTING",
+	"REQ_REMAIN_ON_CHANNEL",
+	"REMAIN_ON_CHANNEL",
+	"OFF_CHNL_TX",
+	"ROAMING",
 };
 
 /*******************************************************************************
@@ -9693,8 +9693,8 @@ struct EAP_ERP_KEY *aisGetErpKey(
 }
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
-uint8_t *aisGetFsmState(
-	enum ENUM_AIS_STATE eCurrentState) {
+const char *aisGetFsmState(enum ENUM_AIS_STATE eCurrentState)
+{
 	uint32_t u4State = eCurrentState;
 
 	if (u4State < AIS_STATE_NUM)

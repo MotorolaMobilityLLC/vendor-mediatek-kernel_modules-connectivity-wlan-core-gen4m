@@ -61,8 +61,7 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
-#define	NUM_SUPPORTED_OIDS      (sizeof(arWlanOidReqTable) / \
-				sizeof(struct WLAN_REQ_ENTRY))
+#define	NUM_SUPPORTED_OIDS      ARRAY_SIZE(arWlanOidReqTable)
 #if CFG_SUPPORT_NAN
 #define CMD_OID_BUF_LENGTH 8000
 #else
@@ -149,7 +148,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	/* Ethernet Operational Characteristics */
 	{
 		OID_802_3_CURRENT_ADDRESS,
-		DISP_STRING("OID_802_3_CURRENT_ADDRESS"),
+		"OID_802_3_CURRENT_ADDRESS",
 		TRUE, TRUE, ENUM_OID_DRIVER_CORE, 6,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryCurrentAddr,
 		NULL
@@ -162,7 +161,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	/* NDIS 802.11 Wireless LAN OIDs */
 	{
 		OID_802_11_SUPPORTED_RATES,
-		DISP_STRING("OID_802_11_SUPPORTED_RATES"),
+		"OID_802_11_SUPPORTED_RATES",
 		TRUE, FALSE, ENUM_OID_DRIVER_CORE,
 		(sizeof(uint8_t) * PARAM_MAX_LEN_RATES_EX),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQuerySupportedRates,
@@ -171,7 +170,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	/*
 	 *  {OID_802_11_CONFIGURATION,
-	 *  DISP_STRING("OID_802_11_CONFIGURATION"),
+	 *  "OID_802_11_CONFIGURATION",
 	 *  TRUE, TRUE, ENUM_OID_GLUE_EXTENSION,
 	 *  sizeof(struct PARAM_802_11_CONFIG),
 	 *  (PFN_OID_HANDLER_FUNC_REQ)reqExtQueryConfiguration,
@@ -179,7 +178,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	 */
 	{
 		OID_PNP_SET_POWER,
-		DISP_STRING("OID_PNP_SET_POWER"),
+		"OID_PNP_SET_POWER",
 		TRUE, FALSE, ENUM_OID_GLUE_EXTENSION,
 		sizeof(enum PARAM_DEVICE_POWER_STATE),
 		NULL,
@@ -190,7 +189,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	/* Custom OIDs */
 	{
 		OID_CUSTOM_OID_INTERFACE_VERSION,
-		DISP_STRING("OID_CUSTOM_OID_INTERFACE_VERSION"),
+		"OID_CUSTOM_OID_INTERFACE_VERSION",
 		TRUE, FALSE, ENUM_OID_DRIVER_CORE, 4,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryOidInterfaceVersion,
 		NULL
@@ -198,7 +197,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_MCR_RW,
-		DISP_STRING("OID_CUSTOM_MCR_RW"),
+		"OID_CUSTOM_MCR_RW",
 		TRUE, TRUE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_CUSTOM_MCR_RW_STRUCT),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryMcrRead,
@@ -206,7 +205,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_EEPROM_RW,
-		DISP_STRING("OID_CUSTOM_EEPROM_RW"),
+		"OID_CUSTOM_EEPROM_RW",
 		TRUE, TRUE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_CUSTOM_EEPROM_RW_STRUCT),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryEepromRead,
@@ -215,7 +214,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_SW_CTRL,
-		DISP_STRING("OID_CUSTOM_SW_CTRL"),
+		"OID_CUSTOM_SW_CTRL",
 		TRUE, TRUE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_CUSTOM_SW_CTRL_STRUCT),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQuerySwCtrlRead,
@@ -225,7 +224,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 #if CFG_SUPPORT_QA_TOOL
 	{
 		OID_CUSTOM_TEST_MODE,
-		DISP_STRING("OID_CUSTOM_TEST_MODE"),
+		"OID_CUSTOM_TEST_MODE",
 		FALSE, FALSE, ENUM_OID_GLUE_EXTENSION, 0,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) glWextRfTestSetTestMode
@@ -233,7 +232,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_ABORT_TEST_MODE,
-		DISP_STRING("OID_CUSTOM_ABORT_TEST_MODE"),
+		"OID_CUSTOM_ABORT_TEST_MODE",
 		FALSE, FALSE, ENUM_OID_GLUE_EXTENSION, 0,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) glWextRfTestSetAbortTestMode
@@ -241,7 +240,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_MTK_WIFI_TEST,
-		DISP_STRING("OID_CUSTOM_MTK_WIFI_TEST"),
+		"OID_CUSTOM_MTK_WIFI_TEST",
 		/* PeiHsuan Temp Remove this check for workaround Gen2/Gen3 EM
 		 * Mode Modification
 		 */
@@ -255,7 +254,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_TEST_ICAP_MODE,
-		DISP_STRING("OID_CUSTOM_TEST_ICAP_MODE"),
+		"OID_CUSTOM_TEST_ICAP_MODE",
 		FALSE, FALSE, ENUM_OID_DRIVER_CORE, 0,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidRftestSetTestIcapMode
@@ -268,7 +267,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 #if CFG_SUPPORT_BCM && CFG_SUPPORT_BCM_BWCS
 	{
 		OID_CUSTOM_BWCS_CMD,
-		DISP_STRING("OID_CUSTOM_BWCS_CMD"),
+		"OID_CUSTOM_BWCS_CMD",
 		FALSE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(struct PTA_IPC),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryBT,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetBT
@@ -277,7 +276,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 #endif
 	{
 		OID_CUSTOM_MTK_NVRAM_RW,
-		DISP_STRING("OID_CUSTOM_MTK_NVRAM_RW"),
+		"OID_CUSTOM_MTK_NVRAM_RW",
 		TRUE, TRUE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_CUSTOM_EEPROM_RW_STRUCT),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryNvramRead,
@@ -285,7 +284,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_CFG_SRC_TYPE,
-		DISP_STRING("OID_CUSTOM_CFG_SRC_TYPE"),
+		"OID_CUSTOM_CFG_SRC_TYPE",
 		TRUE, FALSE, ENUM_OID_DRIVER_CORE,
 		sizeof(enum ENUM_CFG_SRC_TYPE),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryCfgSrcType,
@@ -294,7 +293,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_CUSTOM_EEPROM_TYPE,
-		DISP_STRING("OID_CUSTOM_EEPROM_TYPE"),
+		"OID_CUSTOM_EEPROM_TYPE",
 		TRUE, FALSE, ENUM_OID_DRIVER_CORE,
 		sizeof(enum ENUM_EEPROM_TYPE),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryEepromType,
@@ -304,7 +303,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 #if CFG_SUPPORT_WAPI
 	{
 		OID_802_11_WAPI_MODE,
-		DISP_STRING("OID_802_11_WAPI_MODE"),
+		"OID_802_11_WAPI_MODE",
 		FALSE, TRUE, ENUM_OID_DRIVER_CORE, 4,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetWapiMode
@@ -312,7 +311,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_802_11_WAPI_ASSOC_INFO,
-		DISP_STRING("OID_802_11_WAPI_ASSOC_INFO"),
+		"OID_802_11_WAPI_ASSOC_INFO",
 		FALSE, FALSE, ENUM_OID_DRIVER_CORE, 0,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetWapiAssocInfo
@@ -320,7 +319,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_802_11_SET_WAPI_KEY,
-		DISP_STRING("OID_802_11_SET_WAPI_KEY"),
+		"OID_802_11_SET_WAPI_KEY",
 		FALSE, FALSE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_WPI_KEY),
 		NULL,
@@ -332,7 +331,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	/* Note: we should put following code in order */
 	{
 		OID_CUSTOM_LOWLATENCY_MODE,	/* 0xFFA0CC00 */
-		DISP_STRING("OID_CUSTOM_LOWLATENCY_MODE"),
+		"OID_CUSTOM_LOWLATENCY_MODE",
 		FALSE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t) * 7,
 		NULL,
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidSetLowLatencyMode
@@ -341,7 +340,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 #endif /* CFG_SUPPORT_LOWLATENCY_MODE */
 	{
 		OID_IPC_WIFI_LOG_UI,
-		DISP_STRING("OID_IPC_WIFI_LOG_UI"),
+		"OID_IPC_WIFI_LOG_UI",
 		TRUE, FALSE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_WIFI_LOG_LEVEL_UI),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryWifiLogLevelSupport,
@@ -350,7 +349,7 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 	{
 		OID_IPC_WIFI_LOG_LEVEL,
-		DISP_STRING("OID_IPC_WIFI_LOG_LEVEL"),
+		"OID_IPC_WIFI_LOG_LEVEL",
 		TRUE, FALSE, ENUM_OID_DRIVER_CORE,
 		sizeof(struct PARAM_WIFI_LOG_LEVEL),
 		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryWifiLogLevel,
@@ -359,11 +358,11 @@ static struct WLAN_REQ_ENTRY arWlanOidReqTable[] = {
 	,
 #if CFG_SUPPORT_ANT_SWAP
 	{
-	OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY,	/* 0xFFA0CD00 */
-	DISP_STRING("OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY"),
-	TRUE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t),
-	(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryAntennaSwap,
-	NULL
+		OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY,	/* 0xFFA0CD00 */
+		"OID_CUSTOM_QUERY_ANT_SWAP_CAPABILITY",
+		TRUE, FALSE, ENUM_OID_DRIVER_CORE, sizeof(uint32_t),
+		(PFN_OID_HANDLER_FUNC_REQ) wlanoidQueryAntennaSwap,
+		NULL
 	}
 	,
 #endif
@@ -6549,8 +6548,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 		uint8_t ucBandIdx;
 		uint8_t ucFormat;
 
-		if ((sizeof(POWER_TYPE_STR)/sizeof(uint8_t *)) !=
-		    (sizeof(ucPwrIdxLen)/sizeof(uint8_t)))
+		if (ARRAY_SIZE(POWER_TYPE_STR) != ARRAY_SIZE(ucPwrIdxLen))
 			return i4BytesWritten;
 
 		ucBandIdx = prTxPowerInfo->ucBandIdx;
@@ -6594,8 +6592,7 @@ static int32_t priv_driver_dump_txpower_info(struct ADAPTER *prAdapter,
 				 "\n");
 		}
 
-		for (ucTxPwrType = 0;
-		     ucTxPwrType < sizeof(POWER_TYPE_STR)/sizeof(uint8_t *);
+		for (ucTxPwrType = 0; ucTxPwrType < ARRAY_SIZE(POWER_TYPE_STR);
 		     ucTxPwrType++) {
 
 			pucStr = POWER_TYPE_STR[ucTxPwrType];

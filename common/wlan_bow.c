@@ -180,7 +180,7 @@ uint32_t wlanbowHandleCommand(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-	for (i = 0; i < sizeof(arBowCmdTable) / sizeof(struct BOW_CMD); i++) {
+	for (i = 0; i < ARRAY_SIZE(arBowCmdTable); i++) {
 		if ((arBowCmdTable[i].uCmdID == prCmd->rHeader.ucCommandId) && arBowCmdTable[i].pfCmdHandle) {
 			retval = arBowCmdTable[i].pfCmdHandle(prAdapter, prCmd);
 			break;

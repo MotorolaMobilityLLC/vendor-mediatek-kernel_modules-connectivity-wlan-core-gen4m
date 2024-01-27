@@ -80,7 +80,7 @@ const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_a = {
 	"PSOP_9_1_A", "SectionA - cb_infra vlp",
-	67, sizeof(mt6653_cb_infra_a)/sizeof(struct wlan_dbg_command),
+	67, ARRAY_SIZE(mt6653_cb_infra_a),
 	mt6653_cb_infra_a
 };
 
@@ -129,7 +129,7 @@ const struct wlan_dbg_command mt6653_cb_infra_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_b = {
 	"PSOP_9_1_B", "SectionB - cb_infra vcore on",
-	39, sizeof(mt6653_cb_infra_b)/sizeof(struct wlan_dbg_command),
+	39, ARRAY_SIZE(mt6653_cb_infra_b),
 	mt6653_cb_infra_b
 };
 
@@ -183,7 +183,7 @@ const struct wlan_dbg_command mt6653_cb_infra_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_c = {
 	"PSOP_9_1_C", "SectionC - cb_infra off, read check ok",
-	44, sizeof(mt6653_cb_infra_c)/sizeof(struct wlan_dbg_command),
+	44, ARRAY_SIZE(mt6653_cb_infra_c),
 	mt6653_cb_infra_c
 };
 
@@ -203,7 +203,7 @@ const struct wlan_dbg_command mt6653_cb_infra_d[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_d = {
 	"PSOP_9_1_D", "SectionD - pcie",
-	9, sizeof(mt6653_cb_infra_d)/sizeof(struct wlan_dbg_command),
+	9, ARRAY_SIZE(mt6653_cb_infra_d),
 	mt6653_cb_infra_d
 };
 
@@ -223,7 +223,7 @@ const struct wlan_dbg_command mt6653_cb_infra_e[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_e = {
 	"PSOP_9_1_E", "SectionE - cbtop CR",
-	10, sizeof(mt6653_cb_infra_e)/sizeof(struct wlan_dbg_command),
+	10, ARRAY_SIZE(mt6653_cb_infra_e),
 	mt6653_cb_infra_e
 };
 
@@ -248,7 +248,7 @@ const struct wlan_dbg_command mt6653_cb_infra_g[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_g = {
 	"PSOP_9_1_G", "SectionG - dma dbg_ctl",
-	15, sizeof(mt6653_cb_infra_g)/sizeof(struct wlan_dbg_command),
+	15, ARRAY_SIZE(mt6653_cb_infra_g),
 	mt6653_cb_infra_g
 };
 
@@ -272,7 +272,7 @@ const struct wlan_dbg_command mt6653_wf_top_a[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_a = {
 	"PSOP_3_1_A", "SectionA - Dump wf_top_misc_on monflg",
-	13, sizeof(mt6653_wf_top_a)/sizeof(struct wlan_dbg_command),
+	13, ARRAY_SIZE(mt6653_wf_top_a),
 	mt6653_wf_top_a
 };
 
@@ -289,7 +289,7 @@ const struct wlan_dbg_command mt6653_wf_top_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_b = {
 	"PSOP_3_1_B", "SectionB - Dump wf_top_misc_von monflg",
-	6, sizeof(mt6653_wf_top_b)/sizeof(struct wlan_dbg_command),
+	6, ARRAY_SIZE(mt6653_wf_top_b),
 	mt6653_wf_top_b
 };
 
@@ -333,7 +333,7 @@ const struct wlan_dbg_command mt6653_wf_top_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_c = {
 	"PSOP_3_1_C", "SectionC - Dump wf_top_cfg_on debug CR",
-	34, sizeof(mt6653_wf_top_c)/sizeof(struct wlan_dbg_command),
+	34, ARRAY_SIZE(mt6653_wf_top_c),
 	mt6653_wf_top_c
 };
 
@@ -375,7 +375,7 @@ const struct wlan_dbg_command mt6653_wf_top_d[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_d = {
 	"PSOP_3_1_D", "SectionD - Dump wf_top_rgu_on debug CR",
-	32, sizeof(mt6653_wf_top_d)/sizeof(struct wlan_dbg_command),
+	32, ARRAY_SIZE(mt6653_wf_top_d),
 	mt6653_wf_top_d
 };
 
@@ -405,7 +405,7 @@ const struct wlan_dbg_command mt6653_wf_bus_a[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_a = {
 	"PSOP_4_1_A", "SectionA - Dump VDNR timeout host side info",
-	20, sizeof(mt6653_wf_bus_a)/sizeof(struct wlan_dbg_command),
+	20, ARRAY_SIZE(mt6653_wf_bus_a),
 	mt6653_wf_bus_a
 };
 
@@ -436,7 +436,7 @@ const struct wlan_dbg_command mt6653_wf_bus_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_b = {
 	"PSOP_4_1_B", "SectionB - Dump VDNR timeout wf side info",
-	20, sizeof(mt6653_wf_bus_b)/sizeof(struct wlan_dbg_command),
+	20, ARRAY_SIZE(mt6653_wf_bus_b),
 	mt6653_wf_bus_b
 };
 
@@ -452,7 +452,7 @@ const struct wlan_dbg_command mt6653_wf_bus_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_c = {
 	"PSOP_4_1_C", "SectionC - Dump AHB APB timeout info",
-	5, sizeof(mt6653_wf_bus_c)/sizeof(struct wlan_dbg_command),
+	5, ARRAY_SIZE(mt6653_wf_bus_c),
 	mt6653_wf_bus_c
 };
 

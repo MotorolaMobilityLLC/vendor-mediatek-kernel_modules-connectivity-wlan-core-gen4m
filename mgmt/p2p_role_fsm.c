@@ -10,29 +10,27 @@
 #if CFG_ENABLE_WIFI_DIRECT
 
 #if 1
-/*lint -save -e64 Type mismatch */
-static uint8_t *apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_IDLE"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_SCAN"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_REQING_CHANNEL"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_AP_CHNL_DETECTION"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_GC_JOIN"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_OFF_CHNL_TX"),
+static const char * const apucDebugP2pRoleState[P2P_ROLE_STATE_NUM] = {
+	"P2P_ROLE_STATE_IDLE",
+	"P2P_ROLE_STATE_SCAN",
+	"P2P_ROLE_STATE_REQING_CHANNEL",
+	"P2P_ROLE_STATE_AP_CHNL_DETECTION",
+	"P2P_ROLE_STATE_GC_JOIN",
+	"P2P_ROLE_STATE_OFF_CHNL_TX",
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_DFS_CAC"),
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_SWITCH_CHANNEL"),
+	"P2P_ROLE_STATE_DFS_CAC",
+	"P2P_ROLE_STATE_SWITCH_CHANNEL",
 #endif
-	(uint8_t *) DISP_STRING("P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL"),
+	"P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL",
 };
 
-uint8_t *
-	p2pRoleFsmGetFsmState(
-	enum ENUM_P2P_ROLE_STATE eCurrentState) {
+const char *p2pRoleFsmGetFsmState(enum ENUM_P2P_ROLE_STATE eCurrentState)
+{
 	if ((uint32_t)eCurrentState <
 		P2P_ROLE_STATE_NUM)
 		return apucDebugP2pRoleState[(uint32_t)eCurrentState];
 
-	return (uint8_t *) DISP_STRING("UNKNOWN");
+	return "UNKNOWN";
 }
 
 /*lint -restore */

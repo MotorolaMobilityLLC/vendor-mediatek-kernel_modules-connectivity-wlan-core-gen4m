@@ -675,12 +675,10 @@ u_int8_t wlanIsHandlerNeedHwAccess(PFN_OID_HANDLER_FUNC
 
 	if (fgSetInfo) {
 		apfnOidHandlerWOHwAccess = apfnOidSetHandlerWOHwAccess;
-		u4NumOfElem = sizeof(apfnOidSetHandlerWOHwAccess) / sizeof(
-				      PFN_OID_HANDLER_FUNC);
+		u4NumOfElem = ARRAY_SIZE(apfnOidSetHandlerWOHwAccess);
 	} else {
 		apfnOidHandlerWOHwAccess = apfnOidQueryHandlerWOHwAccess;
-		u4NumOfElem = sizeof(apfnOidQueryHandlerWOHwAccess) /
-			      sizeof(PFN_OID_HANDLER_FUNC);
+		u4NumOfElem = ARRAY_SIZE(apfnOidQueryHandlerWOHwAccess);
 	}
 
 	for (i = 0; i < u4NumOfElem; i++) {
@@ -3789,8 +3787,7 @@ u_int8_t wlanoidTimeoutCheck(struct ADAPTER *prAdapter,
 	uint32_t u4OidTimeout;
 
 	apfnOidHandlerWOTimeoutCheck = apfnOidWOTimeoutCheck;
-	u4NumOfElem = sizeof(apfnOidWOTimeoutCheck) / sizeof(
-			      PFN_OID_HANDLER_FUNC);
+	u4NumOfElem = ARRAY_SIZE(apfnOidWOTimeoutCheck);
 
 	for (i = 0; i < u4NumOfElem; i++) {
 		if (apfnOidHandlerWOTimeoutCheck[i] == pfnOidHandler)
@@ -6790,9 +6787,8 @@ void wlanSetNicResourceParameters(struct ADAPTER
 	for (idx = 0; idx < TC_NUM; idx++) {
 
 		/* construct prefix: Tc0Page, Tc1Page... */
-		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		kalSnprintf(string, sizeof(string) / sizeof(uint8_t),
-			 "Tc%xPage", idx);
+		memset(string, 0, sizeof(string));
+		kalSnprintf(string, sizeof(string), "Tc%xPage", idx);
 
 		/* update the final value */
 		prWifiVar->au4TcPageCount[idx] =
@@ -6804,11 +6800,9 @@ void wlanSetNicResourceParameters(struct ADAPTER
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 3 2. update for guaranteed page count */
 	for (idx = 0; idx < TC_NUM; idx++) {
-
 		/* construct prefix: Tc0Grt, Tc1Grt... */
-		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		kalSnprintf(string, sizeof(string) / sizeof(uint8_t),
-			 "Tc%xGrt", idx);
+		kalMemZero(string, sizeof(string));
+		kalSnprintf(string, sizeof(string), "Tc%xGrt", idx);
 
 		/* update the final value */
 		prQM->au4GuaranteedTcResource[idx] =
@@ -14277,8 +14271,7 @@ wlanLoadDefaultCustomerSetting(struct ADAPTER *
 	uint8_t ucItemNum, i;
 
 	/* default setting*/
-	ucItemNum = (sizeof(g_rDefaulteSetting) / sizeof(
-		struct PARAM_CUSTOM_KEY_CFG_STRUCT));
+	ucItemNum = ARRAY_SIZE(g_rDefaulteSetting);
 
 	DBGLOG(INIT, STATE, "Default firmware setting %d item\n",
 			ucItemNum);

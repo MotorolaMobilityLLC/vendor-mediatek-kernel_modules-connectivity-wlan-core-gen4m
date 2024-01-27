@@ -40,19 +40,19 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugAAState[AA_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("AA_IDLE"),
-	(uint8_t *) DISP_STRING("SAA_SEND_AUTH1"),
-	(uint8_t *) DISP_STRING("SAA_WAIT_AUTH2"),
-	(uint8_t *) DISP_STRING("SAA_SEND_AUTH3"),
-	(uint8_t *) DISP_STRING("SAA_WAIT_AUTH4"),
-	(uint8_t *) DISP_STRING("SAA_EXTERNAL_AUTH"),
-	(uint8_t *) DISP_STRING("SAA_SEND_ASSOC1"),
-	(uint8_t *) DISP_STRING("SAA_WAIT_ASSOC2"),
-	(uint8_t *) DISP_STRING("AAA_SEND_AUTH2"),
-	(uint8_t *) DISP_STRING("AAA_SEND_AUTH4"),
-	(uint8_t *) DISP_STRING("AAA_SEND_ASSOC2"),
-	(uint8_t *) DISP_STRING("AA_RESOURCE")
+static const char * const apucDebugAAState[AA_STATE_NUM] = {
+	"AA_IDLE",
+	"SAA_SEND_AUTH1",
+	"SAA_WAIT_AUTH2",
+	"SAA_SEND_AUTH3",
+	"SAA_WAIT_AUTH4",
+	"SAA_EXTERNAL_AUTH",
+	"SAA_SEND_ASSOC1",
+	"SAA_WAIT_ASSOC2",
+	"AAA_SEND_AUTH2",
+	"AAA_SEND_AUTH4",
+	"AAA_SEND_ASSOC2",
+	"AA_RESOURCE",
 };
 
 /*******************************************************************************

@@ -451,8 +451,7 @@ enum ENUM_PWR_LIMIT_DEFAULT_BASE {
 		pwr_limit = MAX_TX_POWER; \
 }
 
-#define PWR_LMT_TBL_REG(table) \
-	{(table), (sizeof((table))/sizeof(table[0]))}
+#define PWR_LMT_TBL_REG(table)	{(table), (ARRAY_SIZE((table)))}
 
 #define PWR_LMT_2G_INFO_REGISTER(limitType, ver, protocol_idx) \
 { \

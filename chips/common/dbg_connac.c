@@ -1183,12 +1183,11 @@ int32_t halShowStatInfo(struct ADAPTER *prAdapter,
 	int16_t i2Wf0AvgPwr = 0, i2Wf1AvgPwr = 0;
 	uint32_t u4BufLen = 0;
 #if (CFG_SUPPORT_RA_GEN == 1)
-	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
-	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
-	uint8_t ucRaLtModeNum = sizeof(LT_MODE_TBLE) / sizeof(char *);
-	uint8_t ucRaSgiUnSpStateNum = sizeof(SGI_UNSP_STATE_TBLE) /
-								sizeof(char *);
-	uint8_t ucRaBwStateNum = sizeof(BW_STATE_TBLE) / sizeof(char *);
+	uint8_t ucRaTableNum = ARRAY_SIZE(RATE_TBLE);
+	uint8_t ucRaStatusNum = ARRAY_SIZE(RA_STATUS_TBLE);
+	uint8_t ucRaLtModeNum = ARRAY_SIZE(LT_MODE_TBLE);
+	uint8_t ucRaSgiUnSpStateNum = ARRAY_SIZE(SGI_UNSP_STATE_TBLE);
+	uint8_t ucRaBwStateNum = ARRAY_SIZE(BW_STATE_TBLE);
 	uint8_t ucAggRange[AGG_RANGE_SEL_NUM] = {0};
 	uint32_t u4RangeCtrl_0, u4RangeCtrl_1;
 	enum AGG_RANGE_TYPE_T eRangeType = ENUM_AGG_RANGE_TYPE_TX;

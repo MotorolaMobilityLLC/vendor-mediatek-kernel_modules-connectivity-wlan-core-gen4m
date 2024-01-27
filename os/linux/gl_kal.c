@@ -588,7 +588,7 @@ kalFirmwareImageMapping(struct GLUE_INFO *prGlueInfo,
 		/* magic number 1: reservation for detection
 		 * of the end of the array
 		 */
-		max_idx = (sizeof(apucName) / sizeof(uint8_t *)) - 1;
+		max_idx = ARRAY_SIZE(apucName) - 1;
 
 		idx = 0;
 		apucName[idx] = (uint8_t *)(aucNameBody + idx);

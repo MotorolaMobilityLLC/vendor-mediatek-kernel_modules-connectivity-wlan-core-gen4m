@@ -108,7 +108,7 @@ uint32_t dvtSetupPhTput(struct net_device *prNetDev,
 	prAdapter = prGlueInfo->prAdapter;
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, 0);
 
-	ucPhTputMapSize = sizeof(g_rPhTputMap) / sizeof(*prPhtputSetting);
+	ucPhTputMapSize = ARRAY_SIZE(g_rPhTputMap);
 
 	for (ucMapIdx = 0; ucMapIdx < ucPhTputMapSize; ucMapIdx++) {
 		if (u4CaseIndex == g_rPhTputMap[ucMapIdx].u2CmdId)

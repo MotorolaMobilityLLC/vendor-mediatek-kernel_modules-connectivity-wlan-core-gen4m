@@ -121,44 +121,21 @@ static const struct TX_TC_TRAFFIC_SETTING
  *******************************************************************************
  */
 
-static uint8_t *apucTxResultStr[TX_RESULT_NUM] = {
-	(uint8_t *) DISP_STRING("SUCCESS"),		/* success */
-	(uint8_t *) DISP_STRING("LIFE_TO"),		/* life timeout */
-	(uint8_t *) DISP_STRING("RTS_ER"),		/* RTS error */
-	(uint8_t *) DISP_STRING("MPDU_ER"),		/* MPDU error */
-	(uint8_t *) DISP_STRING("AGE_TO"),		/* aging timeout */
-	(uint8_t *) DISP_STRING("FLUSHED"),		/* flushed */
-	(uint8_t *) DISP_STRING("BIP_ER"),		/* BIP error */
-	(uint8_t *) DISP_STRING("UNSPEC_ER"),		/* unspecified error */
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) NULL,
-	(uint8_t *) DISP_STRING("DP_IN_DRV"),		/* drop in driver */
-	(uint8_t *) DISP_STRING("DP_IN_FW"),		/* drop in FW */
-	(uint8_t *) DISP_STRING("QUE_CLR"),		/* queue clearance */
-	(uint8_t *) DISP_STRING("INACT_BSS"),		/* inactive BSS */
-	(uint8_t *) DISP_STRING("FLUSH_PENDING")	/* flush pending msdu */
+static const char * const apucTxResultStr[TX_RESULT_NUM] = {
+	[TX_RESULT_SUCCESS] = "SUCCESS",		/* success */
+	[TX_RESULT_LIFE_TIMEOUT] = "LIFE_TO",		/* life timeout */
+	[TX_RESULT_RTS_ERROR] = "RTS_ER",		/* RTS error */
+	[TX_RESULT_MPDU_ERROR] = "MPDU_ER",		/* MPDU error */
+	[TX_RESULT_AGING_TIMEOUT] = "AGE_TO",		/* aging timeout */
+	[TX_RESULT_FLUSHED] = "FLUSHED",		/* flushed */
+	[TX_RESULT_BIP_ERROR] = "BIP_ER",		/* BIP error */
+	[TX_RESULT_UNSPECIFIED_ERROR] = "UNSPEC_ER",	/* unspecified error */
+
+	[TX_RESULT_DROPPED_IN_DRIVER] = "DP_IN_DRV",	/* drop in driver */
+	[TX_RESULT_DROPPED_IN_FW] = "DP_IN_FW",		/* drop in FW */
+	[TX_RESULT_QUEUE_CLEARANCE] = "QUE_CLR",	/* queue clearance */
+	[TX_RESULT_INACTIVE_BSS] = "INACT_BSS",		/* inactive BSS */
+	[TX_RESULT_FLUSH_PENDING] = "FLUSH_PENDING",	/* flush pending msdu */
 };
 
 static const char * const apucBandwidth[] = {
@@ -178,25 +155,25 @@ static const uint8_t TXS_PID_MAX[TX_PACKET_TYPE_NUM] = {
 #endif
 
 const char *const TXS_PACKET_TYPE[ENUM_PKT_FLAG_NUM] = {
-	[ENUM_PKT_802_11] = DISP_STRING("802_11"),
-	[ENUM_PKT_802_3] = DISP_STRING("802_3"),
-	[ENUM_PKT_1X] = DISP_STRING("1X"),
-	[ENUM_PKT_NON_PROTECTED_1X] = DISP_STRING("NON_PROTECTED_1X"),
-	[ENUM_PKT_VLAN_EXIST] = DISP_STRING("VLAN_EXIST"),
-	[ENUM_PKT_DHCP] = DISP_STRING("DHCP"),
-	[ENUM_PKT_ARP] = DISP_STRING("ARP"),
-	[ENUM_PKT_ICMP] = DISP_STRING("ICMP"),
-	[ENUM_PKT_TDLS] = DISP_STRING("TDLS"),
-	[ENUM_PKT_DNS] = DISP_STRING("DNS"),
+	[ENUM_PKT_802_11] = "802_11",
+	[ENUM_PKT_802_3] = "802_3",
+	[ENUM_PKT_1X] = "1X",
+	[ENUM_PKT_NON_PROTECTED_1X] = "NON_PROTECTED_1X",
+	[ENUM_PKT_VLAN_EXIST] = "VLAN_EXIST",
+	[ENUM_PKT_DHCP] = "DHCP",
+	[ENUM_PKT_ARP] = "ARP",
+	[ENUM_PKT_ICMP] = "ICMP",
+	[ENUM_PKT_TDLS] = "TDLS",
+	[ENUM_PKT_DNS] = "DNS",
 #if CFG_SUPPORT_TPENHANCE_MODE
-	[ENUM_PKT_TCP_ACK] = DISP_STRING("TCP_ACK"),
+	[ENUM_PKT_TCP_ACK] = "TCP_ACK",
 #endif /* CFG_SUPPORT_TPENHANCE_MODE */
-	[ENUM_PKT_ICMPV6] = DISP_STRING("ICMPV6"),
+	[ENUM_PKT_ICMPV6] = "ICMPV6",
 #if (CFG_IP_FRAG_DISABLE_HW_CHECKSUM == 1)
-	[ENUM_PKT_IP_FRAG] = DISP_STRING("IP FRAG"),
+	[ENUM_PKT_IP_FRAG] = "IP FRAG",
 #endif
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
-	[ENUM_PKT_802_11_MGMT] = DISP_STRING("802_11_MGMT"),
+	[ENUM_PKT_802_11_MGMT] = "802_11_MGMT",
 #endif
 };
 
@@ -3699,7 +3676,7 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl = &prAdapter->rTxCtrl;
 	const char *prBw = "INVALID";
-	char *prTxResult = "UNDEFINED";
+	const char *prTxResult = "UNDEFINED";
 	uint8_t ucBssIndex;
 	u_int8_t fgStop;
 
@@ -6317,12 +6294,10 @@ void nicTxResourceUpdate_v1(struct ADAPTER *prAdapter)
 
 	/* 3 1. update for free page count */
 	for (idx = 0; idx < ucMaxTcNum; idx++) {
-
 		/* construct prefix: Tc0Page, Tc1Page... */
-		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		ret = snprintf(string, sizeof(string) / sizeof(uint8_t),
-			 "Tc%xPage", idx);
-		if (ret > (sizeof(string) / sizeof(uint8_t))) {
+		kalMemZero(string, sizeof(string));
+		ret = snprintf(string, sizeof(string), "Tc%xPage", idx);
+		if (ret > sizeof(string)) {
 			DBGLOG(NIC, INFO,
 			"sprintf failed of page count:%d\n", ret);
 		} else {
@@ -6337,12 +6312,10 @@ void nicTxResourceUpdate_v1(struct ADAPTER *prAdapter)
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 3 2. update for guaranteed page count */
 	for (idx = 0; idx < ucMaxTcNum; idx++) {
-
 		/* construct prefix: Tc0Grt, Tc1Grt... */
-		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		ret = snprintf(string, sizeof(string) / sizeof(uint8_t),
-			 "Tc%xGrt", idx);
-		if (ret > (sizeof(string) / sizeof(uint8_t))) {
+		kalMemZero(string, sizeof(string));
+		ret = snprintf(string, sizeof(string), "Tc%xGrt", idx);
+		if (ret > sizeof(string)) {
 			DBGLOG(NIC, INFO,
 			"sprintf failed of guaranteed page count:%d\n", ret);
 		} else {
@@ -6473,11 +6446,9 @@ void nicTxResourceUpdate_v2(struct ADAPTER *prAdapter)
 
 	/* 3 1. update for free page count */
 	for (idx = 0; idx < ucMaxTcNum; idx++) {
-
 		/* construct prefix: Tc0Page, Tc1Page... */
-		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		snprintf(string, sizeof(string) / sizeof(uint8_t),
-			 "Tc%dPage", idx);
+		kalMemZero(string, sizeof(string));
+		snprintf(string, sizeof(string), "Tc%dPage", idx);
 
 		/* update the final value */
 		prWifiVar->au4TcPageCount[idx] =
@@ -6488,11 +6459,9 @@ void nicTxResourceUpdate_v2(struct ADAPTER *prAdapter)
 #if QM_ADAPTIVE_TC_RESOURCE_CTRL
 	/* 3 2. update for guaranteed page count */
 	for (idx = 0; idx < ucMaxTcNum; idx++) {
-
 		/* construct prefix: Tc0Grt, Tc1Grt... */
-		memset(string, 0, sizeof(string) / sizeof(uint8_t));
-		snprintf(string, sizeof(string) / sizeof(uint8_t),
-			 "Tc%dGrt", idx);
+		kalMemZero(string, sizeof(string));
+		snprintf(string, sizeof(string), "Tc%dGrt", idx);
 
 		/* update the final value */
 		prQM->au4GuaranteedTcResource[idx] =

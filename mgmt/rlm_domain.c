@@ -1601,8 +1601,7 @@ struct PWR_LIMIT_HANDLER_INFO g_rRlmPwrLimitHandler[PWR_LIMIT_TYPE_NUM] = {
 /*----------------------------------------------------------------------------*/
 struct DOMAIN_INFO_ENTRY *rlmDomainGetDomainInfo(struct ADAPTER *prAdapter)
 {
-#define REG_DOMAIN_GROUP_NUM  \
-	(sizeof(arSupportedRegDomains) / sizeof(struct DOMAIN_INFO_ENTRY))
+#define REG_DOMAIN_GROUP_NUM	(ARRAY_SIZE(arSupportedRegDomains))
 #define REG_DOMAIN_DEF_IDX	(REG_DOMAIN_GROUP_NUM - 1)
 
 	struct DOMAIN_INFO_ENTRY *prDomainInfo = NULL;
@@ -2075,7 +2074,7 @@ static bool isEUCountry(struct ADAPTER *prAdapter, uint32_t u4CountryCode)
 		(((u4CountryCode & 0xff00) >> 8) - 'A'),
 		u2TargetCountryCode);
 
-	for (i = 0; i < (sizeof(g_u2CountryGroup4) / sizeof(uint16_t)); i++) {
+	for (i = 0; i < ARRAY_SIZE(g_u2CountryGroup4); i++) {
 		if (g_u2CountryGroup4[i] == u2TargetCountryCode)
 			return TRUE;
 	}
@@ -7323,9 +7322,7 @@ int32_t txPwrParseTag(char *pTagStart, char *pTagEnd,
 		return -1;
 	}
 
-	for (i = 0;
-		i < sizeof(g_auTxPwrTagTable)/sizeof(struct TX_PWR_TAG_TABLE);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(g_auTxPwrTagTable); i++) {
 
 		DBGLOG(RLM, TRACE,
 				"Parse tag name [%s] handler name[%s]\n", pNext,
@@ -8333,24 +8330,18 @@ static void txPwrCtrlSetAllRatePwrLimit(
 		power = value;
 
 	/* Legacy */
-	for (i = 0;
-		i < sizeof(prChnlSet->i8PwrLimit) / sizeof(uint8_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prChnlSet->i8PwrLimit); i++) {
 		prChnlSet->op[i] = op;
 		prChnlSet->i8PwrLimit[i] = power;
 	}
 	/* HE */
-	for (i = 0;
-		i < sizeof(prChnlSet->i8PwrLimitHE) / sizeof(uint8_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prChnlSet->i8PwrLimitHE); i++) {
 		prChnlSet->opHE[i] = op;
 		prChnlSet->i8PwrLimitHE[i] = power;
 	}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	/* EHT */
-	for (i = 0;
-		i < sizeof(prChnlSet->i8PwrLimitEHT) / sizeof(uint8_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prChnlSet->i8PwrLimitEHT); i++) {
 		prChnlSet->opEHT[i] = op;
 		prChnlSet->i8PwrLimitEHT[i] = power;
 	}
@@ -8358,24 +8349,18 @@ static void txPwrCtrlSetAllRatePwrLimit(
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* Legacy 6G*/
-	for (i = 0;
-		i < sizeof(prChnlSet->i8PwrLimitLegacy_6G) / sizeof(uint8_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prChnlSet->i8PwrLimitLegacy_6G); i++) {
 		prChnlSet->opLegacy_6G[i] = op;
 		prChnlSet->i8PwrLimitLegacy_6G[i] = power;
 	}
 	/* HE 6G*/
-	for (i = 0;
-		i < sizeof(prChnlSet->i8PwrLimit6E) / sizeof(uint8_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prChnlSet->i8PwrLimit6E); i++) {
 		prChnlSet->op6E[i] = op;
 		prChnlSet->i8PwrLimit6E[i] = power;
 	}
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	/* EHT 6G*/
-	for (i = 0;
-		i < sizeof(prChnlSet->i8PwrLimitEHT_6G) / sizeof(uint8_t);
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prChnlSet->i8PwrLimitEHT_6G); i++) {
 		prChnlSet->opEHT_6G[i] = op;
 		prChnlSet->i8PwrLimitEHT_6G[i] = power;
 	}

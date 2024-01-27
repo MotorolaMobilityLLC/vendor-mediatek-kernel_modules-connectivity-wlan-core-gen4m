@@ -163,8 +163,7 @@ rateGetRateSetFromIEs(
 			    prIeSupportedRate->aucSupportedRates[i] & RATE_MASK;
 
 			/* Search all valid data rates */
-			for (j = 0; j < sizeof(aucDataRate) / sizeof(uint8_t);
-			     j++) {
+			for (j = 0; j < ARRAY_SIZE(aucDataRate); j++) {
 				if (ucRate == aucDataRate[j]) {
 					u2OperationalRateSet |= BIT(j);
 
@@ -176,9 +175,9 @@ rateGetRateSetFromIEs(
 				}
 			}
 
-			if ((j == sizeof(aucDataRate) / sizeof(uint8_t)) &&
-			    (prIeSupportedRate->aucSupportedRates[i] &
-			     RATE_BASIC_BIT)) {
+			if (j == ARRAY_SIZE(aucDataRate) &&
+			    prIeSupportedRate->aucSupportedRates[i] &
+			     RATE_BASIC_BIT) {
 				fgIsUnknownBSSBasicRate = TRUE;
 				/* A data rate not list in the aucDataRate[] */
 			}
@@ -199,8 +198,7 @@ rateGetRateSetFromIEs(
 			    RATE_MASK;
 
 			/* Search all valid data rates */
-			for (j = 0; j < sizeof(aucDataRate) / sizeof(uint8_t);
-			     j++) {
+			for (j = 0; j < ARRAY_SIZE(aucDataRate); j++) {
 				if (ucRate == aucDataRate[j]) {
 					u2OperationalRateSet |= BIT(j);
 
@@ -213,9 +211,9 @@ rateGetRateSetFromIEs(
 				}
 			}
 
-			if ((j == sizeof(aucDataRate) / sizeof(uint8_t)) &&
-			    (prIeExtSupportedRate->aucExtSupportedRates[i] &
-			     RATE_BASIC_BIT)) {
+			if (j == ARRAY_SIZE(aucDataRate) &&
+			    prIeExtSupportedRate->aucExtSupportedRates[i] &
+			     RATE_BASIC_BIT) {
 				fgIsUnknownBSSBasicRate = TRUE;
 				/* A data rate not list in the aucDataRate[] */
 			}

@@ -138,7 +138,7 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 #endif
 
-uint8_t *bssOpBw2Str(struct BSS_INFO *prBssInfo);
+const char *bssOpBw2Str(struct BSS_INFO *prBssInfo);
 
 uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand, struct BSS_INFO **prBssList,

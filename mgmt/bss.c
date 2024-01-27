@@ -866,17 +866,17 @@ bssSendQoSNullFrame(struct ADAPTER *prAdapter,
 
 }				/* end of bssSendQoSNullFrame() */
 
-uint8_t *bssOpBw2Str(struct BSS_INFO *prBssInfo)
+const char *bssOpBw2Str(struct BSS_INFO *prBssInfo)
 {
-	uint8_t *apucDebug[] = {
-		(uint8_t *) DISP_STRING("20"),
-		(uint8_t *) DISP_STRING("40"),
-		(uint8_t *) DISP_STRING("80"),
-		(uint8_t *) DISP_STRING("160"),
-		(uint8_t *) DISP_STRING("80+80"),
-		(uint8_t *) DISP_STRING("320-1"),
-		(uint8_t *) DISP_STRING("320-2"),
-		(uint8_t *) DISP_STRING("UNKNOWN"),
+	static const char * const apucDebug[] = {
+		"20",
+		"40",
+		"80",
+		"160",
+		"80+80",
+		"320-1",
+		"320-2",
+		"UNKNOWN",
 	};
 	uint8_t ucBssOpBw =
 		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
@@ -884,7 +884,7 @@ uint8_t *bssOpBw2Str(struct BSS_INFO *prBssInfo)
 	if (ucBssOpBw < MAX_BW_UNKNOWN)
 		return apucDebug[ucBssOpBw];
 
-	return (uint8_t *) DISP_STRING("UNKNOWN");
+	return "UNKNOWN";
 }
 
 uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
@@ -1294,9 +1294,7 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 #endif
 
 	/* Append IE for Beacon */
-	for (i = 0;
-	     i < sizeof(txBcnIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
-	     i++) {
+	for (i = 0; i < ARRAY_SIZE(txBcnIETable); i++) {
 		if (txBcnIETable[i].pfnAppendIE)
 			txBcnIETable[i].pfnAppendIE(prAdapter, prMsduInfo);
 
@@ -1400,13 +1398,10 @@ bssSendBeaconProbeResponse(struct ADAPTER *prAdapter,
 
 	if (!pucDestAddr) {	/* For Beacon */
 		prIeArray = &txBcnIETable[0];
-		u4IeArraySize =
-		    sizeof(txBcnIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+		u4IeArraySize = ARRAY_SIZE(txBcnIETable);
 	} else {
 		prIeArray = &txProbRspIETable[0];
-		u4IeArraySize =
-		    sizeof(txProbRspIETable) /
-		    sizeof(struct APPEND_VAR_IE_ENTRY);
+		u4IeArraySize = ARRAY_SIZE(txProbRspIETable);
 	}
 
 	/* 4 <1> Allocate a PKT_INFO_T for Beacon /Probe Response Frame */

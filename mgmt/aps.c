@@ -149,16 +149,16 @@ enum ENUM_APS_REPLACE_REASON {
 };
 
 /* mapping with ENUM_APS_REPLACE_REASON */
-static const uint8_t *apucReplaceReasonStr[APS_REPLACE_REASON_NUM] = {
-	(uint8_t *) DISP_STRING("LOW SCORE"),
-	(uint8_t *) DISP_STRING("UNMATCH BSSID"),
-	(uint8_t *) DISP_STRING("UNMATCH BSSID_HINT"),
-	(uint8_t *) DISP_STRING("WORSE RSSI"),
-	(uint8_t *) DISP_STRING("FIRST CANDIDATE"),
-	(uint8_t *) DISP_STRING("HIGH SCORE"),
-	(uint8_t *) DISP_STRING("MATCH BSSID"),
-	(uint8_t *) DISP_STRING("MATCH BSSID_HINT"),
-	(uint8_t *) DISP_STRING("BETTER RSSI"),
+static const char * const apucReplaceReasonStr[APS_REPLACE_REASON_NUM] = {
+	"LOW SCORE",
+	"UNMATCH BSSID",
+	"UNMATCH BSSID_HINT",
+	"WORSE RSSI",
+	"FIRST CANDIDATE",
+	"HIGH SCORE",
+	"MATCH BSSID",
+	"MATCH BSSID_HINT",
+	"BETTER RSSI",
 };
 
 struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
@@ -200,12 +200,12 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 #endif
 };
 
-static uint8_t *apucBandStr[BAND_NUM] = {
-	(uint8_t *) DISP_STRING("NULL"),
-	(uint8_t *) DISP_STRING("2.4G"),
-	(uint8_t *) DISP_STRING("5G"),
+static const char * const apucBandStr[BAND_NUM] = {
+	"NULL",
+	"2.4G",
+	"5G",
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	(uint8_t *) DISP_STRING("6G")
+	"6G",
 #endif
 };
 
@@ -2501,7 +2501,7 @@ try_again:
 			MAC2STR(ap->aucAddr), ap->ucLinkNum, score,
 			replace_reason < APS_REPLACE_REASON_NUM ?
 			apucReplaceReasonStr[replace_reason] :
-			(const uint8_t *)"UNKNOWN");
+			"UNKNOWN");
 
 		/* early leave for specific reasons */
 		if (replace_reason == APS_MATCH_BSSID ||

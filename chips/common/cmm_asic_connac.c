@@ -802,7 +802,7 @@ void asicLowPowerOwnClearPCIe(struct ADAPTER *prAdapter,
 bool asicIsValidRegAccess(struct ADAPTER *prAdapter, uint32_t u4Register)
 {
 	uint32_t au4ExcludeRegs[] = { CONN_HIF_ON_LPCTL };
-	uint32_t u4Idx, u4Size = sizeof(au4ExcludeRegs) / sizeof(uint32_t);
+	uint32_t u4Idx;
 
 	if (wlanIsChipNoAck(prAdapter))
 		return false;
@@ -812,7 +812,7 @@ bool asicIsValidRegAccess(struct ADAPTER *prAdapter, uint32_t u4Register)
 		return true;
 
 	/* only own control register can be accessed on fw own */
-	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4ExcludeRegs); u4Idx++) {
 		if (u4Register == au4ExcludeRegs[u4Idx])
 			return true;
 	}

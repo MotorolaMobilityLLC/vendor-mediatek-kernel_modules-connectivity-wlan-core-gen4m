@@ -43,25 +43,25 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugRoamingState[ROAMING_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("IDLE"),
-	(uint8_t *) DISP_STRING("DECISION"),
-	(uint8_t *) DISP_STRING("DISCOVERY"),
-	(uint8_t *) DISP_STRING("ROAM"),
-	(uint8_t *) DISP_STRING("HANDLE_NEW_CANDIDATE"),
-	(uint8_t *) DISP_STRING("SEND_WNM_RESP"),
-	(uint8_t *) DISP_STRING("SEND_FT_REQUEST"),
-	(uint8_t *) DISP_STRING("WAIT_FT_RESPONSE"),
+static const char * const apucDebugRoamingState[ROAMING_STATE_NUM] = {
+	"IDLE",
+	"DECISION",
+	"DISCOVERY",
+	"ROAM",
+	"HANDLE_NEW_CANDIDATE",
+	"SEND_WNM_RESP",
+	"SEND_FT_REQUEST",
+	"WAIT_FT_RESPONSE",
 };
 
-static uint8_t *apucEvent[ROAMING_EVENT_NUM + 1] = {
-	(uint8_t *) DISP_STRING("START"),
-	(uint8_t *) DISP_STRING("DISCOVERY"),
-	(uint8_t *) DISP_STRING("ROAM"),
-	(uint8_t *) DISP_STRING("FAIL"),
-	(uint8_t *) DISP_STRING("ABORT"),
-	(uint8_t *) DISP_STRING("THRESHOLD_UPDATE"),
-	(uint8_t *) DISP_STRING("NUM"),
+static const char * const apucEvent[ROAMING_EVENT_NUM + 1] = {
+	"START",
+	"DISCOVERY",
+	"ROAM",
+	"FAIL",
+	"ABORT",
+	"THRESHOLD_UPDATE",
+	"NUM",
 };
 
 /*******************************************************************************

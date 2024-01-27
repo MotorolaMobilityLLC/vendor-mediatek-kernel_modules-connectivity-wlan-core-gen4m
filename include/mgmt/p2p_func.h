@@ -200,7 +200,7 @@ void p2pFuncSetDfsState(uint8_t ucDfsState);
 
 uint8_t p2pFuncGetDfsState(void);
 
-uint8_t *p2pFuncShowDfsState(void);
+const char *p2pFuncShowDfsState(void);
 
 void p2pFuncRecordCacStartBootTime(void);
 
