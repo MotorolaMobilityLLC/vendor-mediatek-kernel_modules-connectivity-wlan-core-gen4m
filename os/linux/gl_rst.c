@@ -1964,6 +1964,7 @@ void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 bool IsOverRstTimeThreshold(
 	struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
+#if (CFG_SUPPORT_CONNINFRA == 1)
 	struct timespec64 rTimeout, rTime = {0};
 	bool fgIsTimeout = FALSE;
 
@@ -1991,6 +1992,9 @@ bool IsOverRstTimeThreshold(
 			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime));
 	}
 	return fgIsTimeout;
+#else
+	return TRUE;
+#endif
 }
 
 void glResetWholeChipResetTrigger(char *pcReason)
