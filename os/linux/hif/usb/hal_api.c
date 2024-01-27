@@ -882,10 +882,23 @@ uint32_t halRxUSBEnqueueRFB(
 			if (HAL_IS_RX_DIRECT(prAdapter)) {
 				switch (prSwRfb->ucPacketType) {
 				case RX_PKT_TYPE_RX_DATA:
-					spin_lock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
-					nicRxProcessDataPacket(
+#if CFG_SUPPORT_RX_NAPI
+					if (prGlueInfo->prRxDirectNapi &&
+						KAL_FIFO_IN(&prGlueInfo
+							->rRxKfifoQ, prSwRfb)) {
+						kalNapiSchedule(prAdapter);
+					} else
+#endif
+					{
+						spin_lock_bh(&prGlueInfo
+							->rSpinLock
+							[SPIN_LOCK_RX_DIRECT]);
+						nicRxProcessDataPacket(
 							prAdapter, prSwRfb);
-					spin_unlock_bh(&prGlueInfo->rSpinLock[SPIN_LOCK_RX_DIRECT]);
+						spin_unlock_bh(&prGlueInfo
+							->rSpinLock
+							[SPIN_LOCK_RX_DIRECT]);
+					}
 					break;
 				default:
 					KAL_ACQUIRE_SPIN_LOCK(prAdapter,

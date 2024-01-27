@@ -234,6 +234,7 @@ static void kalRxGroTcCheck(struct GLUE_INFO *glue);
 #if CFG_SUPPORT_RX_WORK
 static void kalNapiWakeup(void);
 #endif /* CFG_SUPPORT_RX_WORK */
+void __kalNapiSchedule(struct ADAPTER *prAdapter);
 #endif /* CFG_SUPPORT_RX_NAPI */
 
 #if CFG_SUPPORT_TPUT_FACTOR
@@ -5727,6 +5728,14 @@ int rx_thread(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_RX_TO_OS_BIT,
 				       &prGlueInfo->ulFlag)) {
 			kalTraceBegin("RX_TO_OS");
+
+#if CFG_SUPPORT_RX_NAPI && CFG_SUPPORT_RX_NAPI_IN_RX_THREAD
+			if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter) &&
+				!KAL_FIFO_IS_EMPTY(&prGlueInfo->rRxKfifoQ)) {
+				__kalNapiSchedule(prGlueInfo->prAdapter);
+			}
+#endif
+
 			u4LoopCount =
 			    prGlueInfo->prAdapter->rWifiVar.u4Rx2OsLoopCount;
 
@@ -13656,7 +13665,10 @@ void __kalNapiSchedule(struct ADAPTER *prAdapter)
 
 void kalNapiSchedule(struct ADAPTER *prAdapter)
 {
-#if CFG_SUPPORT_RX_NAPI_WORK
+#if CFG_SUPPORT_RX_NAPI_IN_RX_THREAD
+	set_bit(GLUE_FLAG_RX_TO_OS_BIT, &prAdapter->prGlueInfo->ulFlag);
+	wake_up_interruptible(&prAdapter->prGlueInfo->waitq_rx);
+#elif CFG_SUPPORT_RX_NAPI_WORK
 	kalRxNapiWorkSchedule(prAdapter->prGlueInfo);
 #else /* CFG_SUPPORT_RX_NAPI_WORK */
 	__kalNapiSchedule(prAdapter);

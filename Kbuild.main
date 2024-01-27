@@ -1016,6 +1016,12 @@ else
     ccflags-y += -DCFG_SUPPORT_RX_NAPI_THREADED=0
 endif
 
+ifeq ($(CONFIG_RX_NAPI_IN_RX_THREAD), y)
+    ccflags-y += -DCFG_SUPPORT_RX_NAPI_IN_RX_THREAD=1
+else
+    ccflags-y += -DCFG_SUPPORT_RX_NAPI_IN_RX_THREAD=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_TX_FREE_MSDU_WORK), y)
     ccflags-y += -DCFG_SUPPORT_TX_FREE_MSDU_WORK=1
 else
