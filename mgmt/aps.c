@@ -639,7 +639,8 @@ void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
 				bss->fgIsSCC = FALSE;
 			} else {
 				bss->fgIsSCC = TRUE;
-				aps->fgIgnoreBssidHint = TRUE;
+				if (!ad->rWifiVar.fgDisForceSCC)
+					aps->fgIgnoreBssidHint = TRUE;
 				break;
 			}
 		}

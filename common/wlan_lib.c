@@ -8013,6 +8013,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisAgingLostDetection,
 		"DisAgingLostDetection", 0, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgDisForceSCC, "DisForceSCC", 0,
+		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisRoaming, "DisRoaming", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4RejectBtmReqReason, "RejectBtmReqReason", 0,

@@ -743,6 +743,7 @@ struct WIFI_VAR {
 	uint8_t uc6GBandwidthMode;	/* 20/40M or 20M only *//* Not used */
 	/* Support AP Selection */
 	struct LINK_MGMT rBlockList;
+	u_int8_t fgDisForceSCC;
 #if CFG_SUPPORT_MBO
 	struct PARAM_BSS_DISALLOWED_LIST rBssDisallowedList;
 #endif
