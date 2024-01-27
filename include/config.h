@@ -784,7 +784,7 @@
 
 #define CFG_DEFAULT_RX_RESPONSE_TIMEOUT         3000
 
-#define CFG_PRE_CAL_RX_RESPONSE_TIMEOUT         5000
+#define CFG_PRE_CAL_RX_RESPONSE_TIMEOUT         10000
 
 /*------------------------------------------------------------------------------
  * Flags and Parameters for Protocol Stack
