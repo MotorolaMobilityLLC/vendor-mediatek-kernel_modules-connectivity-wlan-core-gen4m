@@ -1927,6 +1927,15 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	if (buf)
 		kalMemZero(buf, BUF_SIZE);
 
+	/* During SER L0.5, the wlanOffAtReset function is executed first,
+	 * where glBusFreeIrq sets pdev->msi_enabled to 0. Then, wlanOnAtReset
+	 * is executed. Since pcie probe is not performed, it is necessary to
+	 * additionally execute mtk_pcie_setup_msi to set pdev->msi_enabled back
+	 * to 1, in order to prevent the failure of glBusSetMsiIrq.
+	 */
+	if (pdev->msi_enabled == 0)
+		mtk_pcie_setup_msi(pdev, prGlueInfo->prAdapter->chip_info);
+
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		struct pcie_msi_layout *prMsiLayout =
 			&prMsiInfo->prMsiLayout[i];
