@@ -3665,7 +3665,7 @@ nanSchedPeerUpdateAvailabilityAttr(struct ADAPTER *prAdapter,
 		kalMemZero(prNanAvailEntry->au4AvailMap,
 			   sizeof(prNanAvailEntry->au4AvailMap));
 
-		DBGLOG(NAN, LOUD,
+		DBGLOG(NAN, INFO,
 		       "[%d] Entry Control:0x04%x (Type:%u C:%u/p:%u/c:%u, Pref=%u, Util=%u, NSS=%u, TBITMAP=%u)\n",
 		       u4EntryListPos, u2EntryControl,
 		       NAN_AVAIL_ENTRY_CTRL_TYPE(u2EntryControl),
@@ -8153,28 +8153,14 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf)
 		NAN_BAND_CH_ENTRY_LIST_TYPE_CHNL) {
 		pucTmp = pucPos;
 
-		prAvailEntry =
-			(struct _NAN_AVAILABILITY_ENTRY_T *)
-			pucTmp;
+		prAvailEntry = (struct _NAN_AVAILABILITY_ENTRY_T *)pucTmp;
 
 		/* whsu */
-		u2EntryControl =
-			((prBssInfo->ucOpRxNss <<
-			NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET) &
-			NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
-			((1 <<
-			NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT_OFFSET) &
-			NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT) |
-			((3 <<
-			NAN_AVAIL_ENTRY_CTRL_USAGE_PREF_OFFSET) &
-			 NAN_AVAIL_ENTRY_CTRL_USAGE_PREF) |
-			((
-			NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN <<
-			NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_OFFSET) &
-			NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE);
+		prAvailEntry->u2EntryControl =
+			setEntryControl(NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN,
+					3, 0, prBssInfo->ucOpRxNss, 1);
 
-		prAvailEntry->u2EntryControl = u2EntryControl;
-		pucPos += 4 /* length(2)+entry control(2) */;
+		pucPos += 4 /* length(2) + entry control(2) */;
 
 		nanParserGenTimeBitmapField(
 			prAdapter, au4PotentialAvailMap,
@@ -8225,28 +8211,14 @@ nanSchedAddPotentialWindows(struct ADAPTER *prAdapter, uint8_t *pucBuf)
 		if (rPotentialBandInfo.rBand.u4BandIdMask != 0) {
 			pucTmp = pucPos;
 			prAvailEntry =
-				(struct _NAN_AVAILABILITY_ENTRY_T *)
-				pucTmp;
+				(struct _NAN_AVAILABILITY_ENTRY_T *)pucTmp;
 
-			u2EntryControl =
-				((prBssInfo->ucOpRxNss <<
-				NAN_AVAIL_ENTRY_CTRL_RX_NSS_OFFSET)
-				&
-				NAN_AVAIL_ENTRY_CTRL_RX_NSS) |
-				((1 <<
-				NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT_OFFSET)
-				&
-				NAN_AVAIL_ENTRY_CTRL_TBITMAP_PRESENT) |
-				((3 <<
-				NAN_AVAIL_ENTRY_CTRL_USAGE_PREF_OFFSET) &
-				NAN_AVAIL_ENTRY_CTRL_USAGE_PREF) |
-				((
-				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN <<
-				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_OFFSET) &
-				NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE);
+			prAvailEntry->u2EntryControl =
+				setEntryControl(
+					NAN_AVAIL_ENTRY_CTRL_AVAIL_TYPE_POTN,
+					3, 0, prBssInfo->ucOpRxNss, 1);
 
-			prAvailEntry->u2EntryControl = u2EntryControl;
-			/* length(2)+entry control(2) */
+			/* length(2 + entry control(2) */
 			pucPos += 4;
 
 			nanParserGenTimeBitmapField(
