@@ -1263,40 +1263,27 @@ static void wedSendCommand2WO(struct work_struct *work)
 	struct QUE *prTmpQue = &rTmpQue;
 	struct QUE *prWoCmdQueue = &rWoCmdQueue;
 	struct WED_WO_CMD *rCmdInfo;
-	struct CMD_STAREC_UPDATE_WO *prCmdContent;
 	int ret;
-	int retry;
 
 	mutex_lock(&rWoCmdMutex);
 	QUEUE_MOVE_ALL(prTmpQue, prWoCmdQueue);
 	mutex_unlock(&rWoCmdMutex);
 
 	while (QUEUE_IS_NOT_EMPTY(prTmpQue)) {
-		if (!IsWedAttached())
-			break;
 		QUEUE_REMOVE_HEAD(prTmpQue, rCmdInfo, struct WED_WO_CMD *);
 		if (!rCmdInfo)
-			break;
-
-		retry = 0;
-		do {
+			continue;
+		if (IsWedAttached()) {
 			ret = wedProxyHookCall(PROXY_WLAN_HOOK_SEND_CMD,
 						&rCmdInfo->prWoCmdInfo);
 			if (ret)
-				DBGLOG(HAL, INFO,
-					"send wo cmd(%d) timeout, retry %d\n",
-					rCmdInfo->prWoCmdInfo.wo_cmd_id, retry);
-		} while (ret && (++retry < 3));
+				DBGLOG(HAL, ERROR,
+					"send wo cmd(%d) timeout\n",
+					rCmdInfo->prWoCmdInfo.wo_cmd_id);
+		}
 
-		if (ret == 0)
-			continue;
-
-		prCmdContent = (struct CMD_STAREC_UPDATE_WO *)
-						(rCmdInfo->prWoCmdInfo.pMsg);
-		DBGLOG(HAL, ERROR,
-		 "send wo cmd(%d) timeout, retry %d, BssIndex %d, WlanIdx %d\n",
-			rCmdInfo->prWoCmdInfo.wo_cmd_id, retry,
-			prCmdContent->ucBssIndex, prCmdContent->ucWlanIdx);
+		cnmMemFree(grWedInfo.pAdAdapter, rCmdInfo->prWoCmdInfo.pMsg);
+		cnmMemFree(grWedInfo.pAdAdapter, rCmdInfo);
 	}
 }
 
