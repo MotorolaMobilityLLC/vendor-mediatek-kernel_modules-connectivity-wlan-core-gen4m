@@ -60,6 +60,14 @@
 #include <linux/workqueue.h>
 #endif
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+#if KERNEL_VERSION(6, 6, 0) > LINUX_VERSION_CODE
+#include <net/page_pool.h>
+#else
+#include <net/page_pool/helpers.h>
+#endif
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+
 /* for sched_clock() */
 #include <linux/sched/clock.h>
 
@@ -232,6 +240,14 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define MAWD_VER_NONE	0
 #define MAWD_VER_1_0	1
 #define MAWD_VER_1_1	2
+#endif
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+#define PAGE_POOL_MAX_MEM_SIZE		(0x8000000)
+#define PAGE_POOL_NUM_SHIFT		(2)
+#define PAGE_POOL_NUM			(1 << PAGE_POOL_NUM_SHIFT)
+#define PAGE_POOL_MAX_SIZE \
+	(PAGE_POOL_MAX_MEM_SIZE >> (PAGE_SHIFT + PAGE_POOL_NUM_SHIFT))
 #endif
 
 /*******************************************************************************
@@ -1661,6 +1677,11 @@ uint8_t *kal_skb_pull(void *pvPacket, uint32_t u4Length);
 uint32_t kalDuplicateSwRfbSanity(struct SW_RFB *prSwRfb);
 #if CFG_SUPPORT_RX_PAGE_POOL
 void kalSkbReuseCheck(struct SW_RFB *prSwRfb);
+void kalSkbMarkForRecycle(struct sk_buff *pkt);
+struct sk_buff *kalAllocRxSkbFromPp(
+	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData, int i4Idx);
+void kalCreatePagePool(struct GLUE_INFO *prGlueInfo);
+void kalReleasePagePool(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
 void kalOsTimerInitialize(struct GLUE_INFO *prGlueInfo,

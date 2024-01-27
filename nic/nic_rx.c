@@ -348,6 +348,10 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 	ASSERT(prAdapter);
 	prRxCtrl = &prAdapter->rRxCtrl;
 
+#if CFG_SUPPORT_RX_PAGE_POOL
+	kalCreatePagePool(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+
 	/* 4 <0> Clear allocated memory. */
 	kalMemZero(prRxCtrl->prRxCached,
 		   sizeof(struct SW_RFB[CFG_RX_MAX_PKT_NUM]));
@@ -443,6 +447,10 @@ void nicRxUninitialize(struct ADAPTER *prAdapter)
 			break;
 		}
 	} while (TRUE);
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+	kalReleasePagePool(prAdapter->prGlueInfo);
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
 }				/* end of nicRxUninitialize() */
 
@@ -2809,8 +2817,8 @@ uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
 #if CFG_SUPPORT_RX_PAGE_POOL
-		pvPacket = kalAllocRxSkb(
-			prAdapter->prGlueInfo, &pucRecvBuff);
+		pvPacket = kalAllocRxSkbFromPp(
+			prAdapter->prGlueInfo, &pucRecvBuff, -1);
 #else
 		pvPacket = kalPacketAlloc(
 			prAdapter->prGlueInfo, CFG_RX_MAX_MPDU_SIZE,

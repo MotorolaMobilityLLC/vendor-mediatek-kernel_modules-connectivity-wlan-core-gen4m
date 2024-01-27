@@ -1764,6 +1764,122 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			(uintptr_t)prSkb->data & 0xFFFF);
 	}
 }
+
+void kalSkbMarkForRecycle(struct sk_buff *pkt)
+{
+	skb_mark_for_recycle(pkt);
+}
+
+#if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 0)
+static struct page *kalAllocPagePoolPageByIdx(
+	struct GLUE_INFO *prGlueInfo, int i4Idx)
+{
+	struct page_pool *pool;
+
+	if (i4Idx >= PAGE_POOL_NUM || i4Idx < 0) {
+		DBGLOG(RX, ERROR, "index[%d] >= max num[%d]\n",
+		       i4Idx, PAGE_POOL_NUM);
+		return NULL;
+	}
+
+	pool = prGlueInfo->aprPagePool[i4Idx];
+	if (!pool) {
+		DBGLOG(RX, ERROR, "pool is null\n");
+		return NULL;
+	}
+
+	return page_pool_alloc_pages(pool, GFP_KERNEL);
+}
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
+
+struct sk_buff *kalAllocRxSkbFromPp(
+	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData, int i4Idx)
+{
+#if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 0)
+	struct page *page;
+	struct sk_buff *pkt = NULL;
+	uint32_t i;
+
+	if (i4Idx >= 0) {
+		page = kalAllocPagePoolPageByIdx(prGlueInfo, i4Idx);
+		goto alloc;
+	}
+
+	/* search free page */
+	for (i = 0; i < PAGE_POOL_NUM; i++) {
+		page = kalAllocPagePoolPageByIdx(prGlueInfo, i);
+		if (page)
+			goto alloc;
+	}
+
+alloc:
+	if (!page)
+		goto fail;
+
+	pkt = build_skb(page_to_virt(page), PAGE_SIZE); /* ptr to sk_buff */
+	if (!pkt) {
+		page_pool_recycle_direct(page->pp, page);
+		DBGLOG(RX, ERROR, "allocate skb fail\n");
+		goto fail;
+	}
+	kalSkbMarkForRecycle(pkt);
+
+#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	skb_reserve(pkt, CFG_RADIOTAP_HEADROOM);
+#endif
+
+	*ppucData = (uint8_t *) (pkt->data);
+
+fail:
+	if (!pkt) {
+		pkt = kalPacketAlloc(
+			prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
+			FALSE, ppucData);
+	}
+	return pkt;
+#else
+	return kalAllocRxSkbFromCmaPp(prGlueInfo, ppucData);
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
+}
+
+void kalCreatePagePool(struct GLUE_INFO *prGlueInfo)
+{
+	struct page_pool *pool;
+	struct page_pool_params pp = {0};
+	int i;
+
+	pp.max_len = PAGE_SIZE;
+	pp.flags = 0;
+	pp.pool_size = PAGE_POOL_MAX_SIZE;
+	pp.nid = dev_to_node(prGlueInfo->prDev);
+	pp.dev = prGlueInfo->prDev;
+	pp.dma_dir = DMA_FROM_DEVICE;
+
+	for (i = 0; i < PAGE_POOL_NUM; i++) {
+		pool = page_pool_create(&pp);
+		if (IS_ERR(pool)) {
+			int err = PTR_ERR(pool);
+
+			pr_info("%s: create page pool fail[%d]", __func__, err);
+			continue;
+		}
+		prGlueInfo->aprPagePool[i] = pool;
+	}
+}
+
+void kalReleasePagePool(struct GLUE_INFO *prGlueInfo)
+{
+	struct page_pool *pool;
+	int i;
+
+	for (i = 0; i < PAGE_POOL_NUM; i++) {
+		pool = prGlueInfo->aprPagePool[i];
+		if (!pool)
+			continue;
+		page_pool_destroy(pool);
+		prGlueInfo->aprPagePool[i] = NULL;
+	}
+}
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
 
 /*----------------------------------------------------------------------------*/

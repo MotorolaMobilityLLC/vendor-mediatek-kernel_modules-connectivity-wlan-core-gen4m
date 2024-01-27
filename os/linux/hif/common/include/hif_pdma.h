@@ -1486,14 +1486,12 @@ struct HIF_MEM *halGetWiFiMiscRsvEmi(
 	struct mt66xx_chip_info *prChipInfo,
 	enum WIFI_MISC_MEM_BLOCK_NAME u4idx);
 
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if CFG_SUPPORT_PAGE_POOL_USE_CMA
 void halZeroCopyPathFreePagePoolPacket(struct GL_HIF_INFO *prHifInfo,
 				       void *pvPacket, uint32_t u4Num);
 void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 					struct RTMP_DMABUF *prDmaBuf,
 					uint32_t u4Num, uint32_t u4Idx);
-
-void kalSkbMarkForRecycle(struct sk_buff *pkt);
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 void kalSetupPagePoolPageMaxMinNum(uint32_t u4Min, uint32_t u4Max);
 uint32_t kalGetPagePoolPageNum(void);
@@ -1502,7 +1500,8 @@ u_int8_t kalIncPagePoolPageNum(void);
 u_int8_t kalDecPagePoolPageNum(void);
 u_int8_t kalSetPagePoolPageNum(uint32_t u4Num);
 #endif
-struct sk_buff *kalAllocRxSkb(struct GLUE_INFO *prGlueInfo, uint8_t **ppucData);
+struct sk_buff *kalAllocRxSkbFromCmaPp(
+	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData);
 u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo);
 void kalReleaseHifSkbList(void);
 struct sk_buff *kalAllocHifSkb(void);
@@ -1512,7 +1511,8 @@ extern struct page *wifi_page_pool_alloc_page(void) __attribute__((weak));
 extern void wifi_page_pool_set_page_num(uint32_t num) __attribute__((weak));
 extern uint32_t wifi_page_pool_get_page_num(void) __attribute__((weak));
 extern uint32_t wifi_page_pool_get_max_page_num(void) __attribute__((weak));
-#endif
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
+
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)

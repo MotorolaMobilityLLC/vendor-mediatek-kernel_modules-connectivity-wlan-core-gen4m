@@ -162,7 +162,7 @@ static struct wifi_rsrv_mem wifi_rsrv_mems[WIFI_RSV_MEM_MAX_NUM][32];
 struct HIF_MEM g_rRsvEmiMem;
 #endif
 
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if CFG_SUPPORT_PAGE_POOL_USE_CMA
 static struct sk_buff_head g_rHifSkbList;
 
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
@@ -173,8 +173,8 @@ static uint32_t g_u4MaxPageNum;
 static unsigned long g_ulUpdatePagePoolPagePeriod;
 static u_int8_t g_fgPagePoolDelayAlloc;
 static struct mutex g_rPageLock;
-#endif
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 struct platform_device *g_prTxCmaPlatDev;
@@ -1639,7 +1639,7 @@ struct HIF_MEM *halGetWiFiMiscRsvEmi(
 	return &prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem;
 }
 
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if CFG_SUPPORT_PAGE_POOL_USE_CMA
 void *halZeroCopyPathAllocPagePoolRxBuf(struct GL_HIF_INFO *prHifInfo,
 					struct RTMP_DMABUF *prDmaBuf,
 					uint32_t u4Num, uint32_t u4Idx)
@@ -1687,11 +1687,6 @@ void halZeroCopyPathFreePagePoolPacket(struct GL_HIF_INFO *prHifInfo,
 				   void *pvPacket, uint32_t u4Num)
 {
 	kalFreeHifSkb((struct sk_buff *)pvPacket);
-}
-
-void kalSkbMarkForRecycle(struct sk_buff *pkt)
-{
-	skb_mark_for_recycle(pkt);
 }
 
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
@@ -1810,7 +1805,8 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 }
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 
-struct sk_buff *kalAllocRxSkb(struct GLUE_INFO *prGlueInfo, uint8_t **ppucData)
+struct sk_buff *kalAllocRxSkbFromCmaPp(
+	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData)
 {
 	struct page *page;
 	struct sk_buff *pkt = NULL;
@@ -1843,7 +1839,7 @@ struct sk_buff *kalAllocRxSkb(struct GLUE_INFO *prGlueInfo, uint8_t **ppucData)
 	*ppucData = (uint8_t *) (pkt->data);
 
 fail:
-#if (CFG_SUPPORT_HOST_OFFLOAD == 0) || (CFG_SUPPORT_PAGE_POOL_USE_CMA == 0)
+#if (CFG_SUPPORT_HOST_OFFLOAD == 0)
 	if (!pkt) {
 		pkt = kalPacketAlloc(
 			prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
@@ -1878,7 +1874,7 @@ u_int8_t kalCreateHifSkbList(struct mt66xx_chip_info *prChipInfo)
 #endif
 
 	for (u4Idx = 0; u4Idx < u4Num; u4Idx++) {
-		prSkb = kalAllocRxSkb(NULL, &pucRecvBuff);
+		prSkb = kalAllocRxSkbFromCmaPp(NULL, &pucRecvBuff);
 		if (!prSkb) {
 			DBGLOG(HAL, ERROR, "hif skb reserve fail[%u]!\n",
 			       u4Idx);
@@ -1927,7 +1923,7 @@ void kalFreeHifSkb(struct sk_buff *prSkb)
 {
 	skb_queue_tail(&g_rHifSkbList, prSkb);
 }
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 
 static int halSetMemOpsTrxDesc(
 	struct HIF_MEM_OPS *prMemOps,
@@ -2015,15 +2011,14 @@ static int halSetMemOpsRxData(
 		prMemOps->freePacket = NULL;
 		prMemOps->mapRxBuf = NULL;
 		prMemOps->unmapRxBuf = NULL;
-#if CFG_SUPPORT_RX_PAGE_POOL
-	} else if (op_sets ==
-		WF_MEM_OP_RX_DATA_ZERO_COPY_PATH_PAGE_POOL) {
+#if CFG_SUPPORT_PAGE_POOL_USE_CMA
+	} else if (op_sets == WF_MEM_OP_RX_DATA_ZERO_COPY_PATH_PAGE_POOL) {
 		prMemOps->allocRxDataBuf = halZeroCopyPathAllocPagePoolRxBuf;
 		prMemOps->copyRxData = halZeroCopyPathCopyRxData;
 		prMemOps->freePacket = halZeroCopyPathFreePagePoolPacket;
 		prMemOps->mapRxBuf = halZeroCopyPathMapRxBuf;
 		prMemOps->unmapRxBuf = halZeroCopyPathUnmapRxBuf;
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+#endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 	} else
 		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
 
@@ -2161,7 +2156,7 @@ static int halSetMemOpsAndroid(
 	halSetMemOpsTxDump(prMemOps, WF_MEM_OP_TX_DUMP_COPY_PATH);
 #endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
 
-#if CFG_SUPPORT_RX_PAGE_POOL
+#if CFG_SUPPORT_PAGE_POOL_USE_CMA
 	halSetMemOpsRxData(prMemOps,
 		WF_MEM_OP_RX_DATA_ZERO_COPY_PATH_PAGE_POOL);
 #elif (CFG_SUPPORT_RX_ZERO_COPY == 1)

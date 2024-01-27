@@ -1105,7 +1105,7 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 		goto exit;
 #endif
 
-#if (CFG_SUPPORT_RX_PAGE_POOL == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
+#if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
 	kalCreateHifSkbList(prChipInfo);
 #endif
 
@@ -1144,7 +1144,7 @@ static int mtk_wifi_remove(struct platform_device *pdev)
 #if (CFG_MTK_ANDROID_WMT == 1)
 	emi_mem_uninit(prChipInfo, pdev);
 #endif
-#if (CFG_SUPPORT_RX_PAGE_POOL == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
+#if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 1) && (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 0)
 	kalReleaseHifSkbList();
 #endif
 	platform_set_drvdata(pdev, NULL);
