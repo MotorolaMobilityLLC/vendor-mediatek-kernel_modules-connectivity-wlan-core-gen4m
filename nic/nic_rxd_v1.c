@@ -237,7 +237,7 @@ void nic_rxd_v1_fill_rfb(
 	ucHwChnlNum = HAL_RX_STATUS_GET_CHNL_NUM(prRxStatus);
 	prSwRfb->eRfBand = HAL_RX_STATUS_GET_RF_BAND(prRxStatus);
 	prSwRfb->ucChnlNum =
-		nicRxdChNumTranslate(pwSwRfb->eRfBand, ucHwChnlNum);
+		nicRxdChNumTranslate(prSwRfb->eRfBand, ucHwChnlNum);
 	prSwRfb->ucTcl = HAL_RX_STATUS_GET_TCL(prRxStatus);
 
 #if 0
