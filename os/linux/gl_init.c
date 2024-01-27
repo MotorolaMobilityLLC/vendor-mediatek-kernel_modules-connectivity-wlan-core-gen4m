@@ -767,6 +767,7 @@ static struct ieee80211_channel mtk_2ghz_channels[] = {
 #endif
 #endif
 
+#if (CFG_SUPPORT_SINGLE_SKU_DFS_PROTECT == 1)
 static struct ieee80211_channel mtk_5ghz_channels[] = {
 	/* UNII-1 */
 	CHAN5G(36, 0),
@@ -798,6 +799,39 @@ static struct ieee80211_channel mtk_5ghz_channels[] = {
 	CHAN5G(161, 0),
 	CHAN5G(165, 0)
 };
+#else
+static struct ieee80211_channel mtk_5ghz_channels[] = {
+	/* UNII-1 */
+	CHAN5G(36, 0),
+	CHAN5G(40, 0),
+	CHAN5G(44, 0),
+	CHAN5G(48, 0),
+	/* UNII-2 */
+	CHAN5G(52, 0),
+	CHAN5G(56, 0),
+	CHAN5G(60, 0),
+	CHAN5G(64, 0),
+	/* UNII-2e */
+	CHAN5G(100, 0),
+	CHAN5G(104, 0),
+	CHAN5G(108, 0),
+	CHAN5G(112, 0),
+	CHAN5G(116, 0),
+	CHAN5G(120, 0),
+	CHAN5G(124, 0),
+	CHAN5G(128, 0),
+	CHAN5G(132, 0),
+	CHAN5G(136, 0),
+	CHAN5G(140, 0),
+	CHAN5G(144, 0),
+	/* UNII-3 */
+	CHAN5G(149, 0),
+	CHAN5G(153, 0),
+	CHAN5G(157, 0),
+	CHAN5G(161, 0),
+	CHAN5G(165, 0)
+};
+#endif
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 static struct ieee80211_channel mtk_6ghz_channels[] = {
