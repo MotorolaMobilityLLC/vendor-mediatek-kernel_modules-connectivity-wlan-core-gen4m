@@ -1012,6 +1012,10 @@ struct GLUE_INFO {
 	wait_queue_head_t waitq_csi;
 #endif
 	unsigned long fgIsInSuspend;
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+	struct page_pool *aprPagePool[PAGE_POOL_MAX_SIZE];
+#endif
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
