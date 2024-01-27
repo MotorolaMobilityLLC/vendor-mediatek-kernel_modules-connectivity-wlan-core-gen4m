@@ -1996,16 +1996,15 @@ int32_t connac2x_show_stat_info(
 	int16_t i2Wf0AvgPwr = 0, i2Wf1AvgPwr = 0;
 #endif
 	uint32_t u4BufLen = 0;
-	uint8_t ucRaTableNum = sizeof(RATE_TBLE) / sizeof(char *);
-	uint8_t ucRaStatusNum = sizeof(RA_STATUS_TBLE) / sizeof(char *);
+	uint8_t ucRaTableNum = ARRAY_SIZE(RATE_TBLE);
+	uint8_t ucRaStatusNum = ARRAY_SIZE(RA_STATUS_TBLE);
 	uint8_t ucBssIndex;
 	struct PARAM_LINK_SPEED_EX rLinkSpeed = {0};
 
 #if 0
-	uint8_t ucRaLtModeNum = sizeof(LT_MODE_TBLE) / sizeof(char *);
-	uint8_t ucRaSgiUnSpStateNum = sizeof(SGI_UNSP_STATE_TBLE) /
-								sizeof(char *);
-	uint8_t ucRaBwStateNum = sizeof(BW_STATE_TBLE) / sizeof(char *);
+	uint8_t ucRaLtModeNum = ARRAY_SIZE(LT_MODE_TBLE);
+	uint8_t ucRaSgiUnSpStateNum = ARRAY_SIZE(SGI_UNSP_STATE_TBLE);
+	uint8_t ucRaBwStateNum = ARRAY_SIZE(BW_STATE_TBLE);
 #endif
 	uint8_t aucAggRange[AGG_RANGE_SEL_NUM];
 	uint32_t au4RangeCtrl[AGG_RANGE_SEL_4BYTE_NUM];

@@ -9264,7 +9264,7 @@ static int32_t hqa_ext_cmds(struct net_device *prNetDev,
 	DBGLOG(RFTEST, INFO, "QA_AGENT hqa_ext_cmds index : %d\n",
 	       u4Idx);
 
-	if (u4Idx < (sizeof(hqa_ext_cmd_set) / sizeof(HQA_CMD_HANDLER))) {
+	if (u4Idx < ARRAY_SIZE(hqa_ext_cmd_set)) {
 		if (hqa_ext_cmd_set[u4Idx] != NULL) {
 			/* valid command */
 			i4Ret = (*hqa_ext_cmd_set[u4Idx])(prNetDev,
@@ -9292,51 +9292,51 @@ static HQA_CMD_HANDLER HQA_CMD_SET6[] = {
 static struct HQA_CMD_TABLE HQA_CMD_TABLES[] = {
 	{
 		HQA_CMD_SET0,
-		sizeof(HQA_CMD_SET0) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET0),
 		0x1000,
 	}
 	,
 	{
 		HQA_CMD_SET1,
-		sizeof(HQA_CMD_SET1) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET1),
 		0x1100,
 	}
 	,
 	{
 		HQA_CMD_SET2,
-		sizeof(HQA_CMD_SET2) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET2),
 		0x1200,
 	}
 	,
 	{
 		HQA_CMD_SET3,
-		sizeof(HQA_CMD_SET3) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET3),
 		0x1300,
 	}
 	,
 	{
 		HQA_CMD_SET4,
-		sizeof(HQA_CMD_SET4) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET4),
 		0x1400,
 	}
 	,
 	{
 		HQA_CMD_SET5,
-		sizeof(HQA_CMD_SET5) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET5),
 		0x1500,
 	}
 	,
 #if CFG_SUPPORT_TX_BF
 	{
 		HQA_TXBF_CMDS,
-		sizeof(HQA_TXBF_CMDS) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_TXBF_CMDS),
 		0x1540,
 	}
 	,
 #if CFG_SUPPORT_MU_MIMO
 	{
 		HQA_TXMU_CMDS,
-		sizeof(HQA_TXMU_CMDS) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_TXMU_CMDS),
 		0x1560,
 	}
 	,
@@ -9344,25 +9344,25 @@ static struct HQA_CMD_TABLE HQA_CMD_TABLES[] = {
 #endif
 	{
 		HQA_ICAP_CMDS,
-		sizeof(HQA_ICAP_CMDS) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_ICAP_CMDS),
 		0x1580,
 	}
 	,
 	{
-	 HQA_ReCal_CMDS,
-	 sizeof(HQA_ReCal_CMDS) / sizeof(HQA_CMD_HANDLER),
-	 0x1581,
-	 }
+		HQA_ReCal_CMDS,
+		ARRAY_SIZE(HQA_ReCal_CMDS),
+		0x1581,
+	}
 	,
 	{
-	 HQA_RXV_CMDS,
-	 sizeof(HQA_RXV_CMDS) / sizeof(HQA_CMD_HANDLER),
-	 0x1582,
-	 }
+		HQA_RXV_CMDS,
+		ARRAY_SIZE(HQA_RXV_CMDS),
+		0x1582,
+	}
 	,
 	{
 		HQA_CMD_SET6,
-		sizeof(HQA_CMD_SET6) / sizeof(HQA_CMD_HANDLER),
+		ARRAY_SIZE(HQA_CMD_SET6),
 		0x1600,
 	}
 	,
@@ -9390,8 +9390,7 @@ int HQA_CMDHandler(struct net_device *prNetDev,
 
 	u4CmdId = ntohs(HqaCmdFrame->Id);
 
-	while (u4TableIndex < (sizeof(HQA_CMD_TABLES) / sizeof(
-				       struct HQA_CMD_TABLE))) {
+	while (u4TableIndex < ARRAY_SIZE(HQA_CMD_TABLES)) {
 		int CmdIndex = 0;
 
 		CmdIndex = u4CmdId - HQA_CMD_TABLES[u4TableIndex].CmdOffset;

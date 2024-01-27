@@ -511,48 +511,36 @@ OS_SYSTIME g_rLastCsaSysTime;
 #endif
 
 static struct CNM_OPMODE_BSS_CONTROL_T g_arBssOpControl[MAX_BSSID_NUM];
-static uint8_t *apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP+1] = {
-	[CNM_OPMODE_REQ_ANT_CTRL] =
-		(uint8_t *) DISP_STRING("ANT Ctrl"),
-	[CNM_OPMODE_REQ_DBDC] =
-		(uint8_t *) DISP_STRING("DBDC"),
-	[CNM_OPMODE_REQ_DBDC_SCAN] =
-		(uint8_t *) DISP_STRING("DBDC Scan"),
-	[CNM_OPMODE_REQ_COEX] =
-		(uint8_t *) DISP_STRING("COEX"),
-	[CNM_OPMODE_REQ_SMARTGEAR] =
-		(uint8_t *) DISP_STRING("SmartGear"),
-	[CNM_OPMODE_REQ_USER_CONFIG] =
-		(uint8_t *) DISP_STRING("User"),
-	[CNM_OPMODE_REQ_SMARTGEAR_1T2R] =
-		(uint8_t *) DISP_STRING("SmartGear_1T2R"),
-	[CNM_OPMODE_REQ_ANT_CTRL_1T2R] =
-		(uint8_t *) DISP_STRING("ANT Ctrl_1T2R"),
-	[CNM_OPMODE_REQ_COANT] =
-		(uint8_t *) DISP_STRING("CoAnt"),
-	[CNM_OPMODE_REQ_RDD_OPCHNG] =
-		(uint8_t *) DISP_STRING("RDD"),
-	[CNM_OPMODE_REQ_NUM] =
-		(uint8_t *) DISP_STRING("N/A"),
-	[CNM_OPMODE_REQ_MAX_CAP] =
-		(uint8_t *) DISP_STRING("MAX_CAP"),
-	[CNM_OPMODE_REQ_HW_CONSTRIAN_CAP] =
-		(uint8_t *) DISP_STRING("HW_CONSTRIAN_CAP")
+static const char * const apucCnmOpModeReq[CNM_OPMODE_REQ_MAX_CAP + 1] = {
+	[CNM_OPMODE_REQ_ANT_CTRL] = "ANT Ctrl",
+	[CNM_OPMODE_REQ_DBDC] = "DBDC",
+	[CNM_OPMODE_REQ_DBDC_SCAN] = "DBDC Scan",
+	[CNM_OPMODE_REQ_COEX] = "COEX",
+	[CNM_OPMODE_REQ_SMARTGEAR] = "SmartGear",
+	[CNM_OPMODE_REQ_USER_CONFIG] = "User",
+	[CNM_OPMODE_REQ_SMARTGEAR_1T2R] = "SmartGear_1T2R",
+	[CNM_OPMODE_REQ_ANT_CTRL_1T2R] = "ANT Ctrl_1T2R",
+	[CNM_OPMODE_REQ_COANT] = "CoAnt",
+	[CNM_OPMODE_REQ_RDD_OPCHNG] = "RDD",
+	[CNM_OPMODE_REQ_NUM] = "N/A",
+	[CNM_OPMODE_REQ_MAX_CAP] = "MAX_CAP",
+	[CNM_OPMODE_REQ_HW_CONSTRIAN_CAP] = "HW_CONSTRIAN_CAP",
 };
 
-static uint8_t *apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
-	(uint8_t *) DISP_STRING("Success"),
-	(uint8_t *) DISP_STRING("Invalid"),
-	(uint8_t *) DISP_STRING("Running"),
-	(uint8_t *) DISP_STRING("Defer"),
-	(uint8_t *) DISP_STRING("N/A")
+static const char * const
+		apucCnmOpModeReqStatus[CNM_OPMODE_REQ_STATUS_NUM+1] = {
+	"Success",
+	"Invalid",
+	"Running",
+	"Defer",
+	"N/A",
 };
 
 static struct CNM_WMM_QUOTA_CONTROL_T g_arWmmQuotaControl[MAX_BSSID_NUM];
-static uint8_t *apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT+1] = {
-	(uint8_t *) DISP_STRING("DBDC"),
-	(uint8_t *) DISP_STRING("N/A"),
-	(uint8_t *) DISP_STRING("Default")
+static const char * const apucCnmWmmQuotaReq[CNM_WMM_REQ_DEFAULT + 1] = {
+	"DBDC",
+	"N/A",
+	"Default",
 };
 
 /*******************************************************************************
@@ -3725,7 +3713,7 @@ cnmDbdcFsmSteps(
 
 	if (g_rDbdcInfo.eDbdcFsmPrevState < 0 ||
 		g_rDbdcInfo.eDbdcFsmPrevState >=
-		sizeof(arDdbcFsmActionTable) / sizeof(struct DBDC_FSM_T)) {
+			ARRAY_SIZE(arDdbcFsmActionTable)) {
 		log_dbg(CNM, INFO, "Invalid state[%d]\n",
 			g_rDbdcInfo.eDbdcFsmPrevState);
 		return;

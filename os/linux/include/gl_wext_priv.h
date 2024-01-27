@@ -316,7 +316,7 @@ enum ENUM_OID_METHOD {
 /* OID set/query processing entry */
 struct WLAN_REQ_ENTRY {
 	uint32_t rOid;		/* OID */
-	uint8_t *pucOidName;	/* OID name text */
+	const char *pucOidName;	/* OID name text */
 	u_int8_t fgQryBufLenChecking;
 	u_int8_t fgSetBufLenChecking;
 	enum ENUM_OID_METHOD eOidMethod;

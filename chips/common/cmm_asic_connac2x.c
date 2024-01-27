@@ -1767,8 +1767,7 @@ u_int8_t asicConnac2xUsbResume(struct ADAPTER *prAdapter,
 
 
 	for (u4Loop = 0; u4Loop < MAX_POLLING_LOOP; u4Loop++) {
-		for (u4Idx = 0;
-			u4Idx < sizeof(g_au4UsbPollAddrTbl)/sizeof(uint32_t);
+		for (u4Idx = 0; u4Idx < ARRAY_SIZE(g_au4UsbPollAddrTbl);
 			u4Idx++) {
 			HAL_MCR_RD(prAdapter,
 				g_au4UsbPollAddrTbl[u4Idx], &u4Value);

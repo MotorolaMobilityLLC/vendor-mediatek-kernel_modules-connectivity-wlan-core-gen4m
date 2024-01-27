@@ -439,7 +439,7 @@ static int32_t mtk_sdio_probe(unsigned long cltCtx, const struct MTK_WCN_HIF_SDI
 {
 	int32_t ret = HIF_SDIO_ERR_SUCCESS;
 	int32_t i = 0;
-	int32_t dd_table_len = sizeof(sdio_driver_data_mapping) / sizeof(struct MTK_WCN_SDIO_DRIVER_DATA_MAPPING);
+	int32_t dd_table_len = ARRAY_SIZE(sdio_driver_data_mapping);
 	struct mt66xx_hif_driver_data *sdio_driver_data = NULL;
 
 	prFunc = prFuncInfo;

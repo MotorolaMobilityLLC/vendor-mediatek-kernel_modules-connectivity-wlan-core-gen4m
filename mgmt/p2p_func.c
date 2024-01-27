@@ -89,31 +89,32 @@ uint8_t g_ucRadarDetectMode = FALSE;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
 uint8_t g_ucDfsState = DFS_STATE_INACTIVE;
 
-static uint8_t *apucDfsState[DFS_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("DFS_STATE_INACTIVE"),
-	(uint8_t *) DISP_STRING("DFS_STATE_CHECKING"),
-	(uint8_t *) DISP_STRING("DFS_STATE_ACTIVE"),
-	(uint8_t *) DISP_STRING("DFS_STATE_DETECTED")
+static const char * const apucDfsState[DFS_STATE_NUM] = {
+	"DFS_STATE_INACTIVE",
+	"DFS_STATE_CHECKING",
+	"DFS_STATE_ACTIVE",
+	"DFS_STATE_DETECTED",
 };
 
-uint8_t *apucW53RadarType[3] = {
-	(uint8_t *) DISP_STRING("Unknown Type"),
-	(uint8_t *) DISP_STRING("Type 1 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 2 (short pulse)")
+static const char * const apucW53RadarType[3] = {
+	"Unknown Type",
+	"Type 1 (short pulse)",
+	"Type 2 (short pulse)"
 };
-uint8_t *apucW56RadarType[12] = {
-	(uint8_t *) DISP_STRING("Unknown Type"),
-	(uint8_t *) DISP_STRING("Type 1 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 2 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 3 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 4 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 5 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 6 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 7 (long pulse)"),
-	(uint8_t *) DISP_STRING("Type 8 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 4 or Type 5 or Type 6 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 5 or Type 6 or Type 8 (short pulse)"),
-	(uint8_t *) DISP_STRING("Type 5 or Type 6 (short pulse)")
+
+static const char * const apucW56RadarType[12] = {
+	"Unknown Type",
+	"Type 1 (short pulse)",
+	"Type 2 (short pulse)",
+	"Type 3 (short pulse)",
+	"Type 4 (short pulse)",
+	"Type 5 (short pulse)",
+	"Type 6 (short pulse)",
+	"Type 7 (long pulse)",
+	"Type 8 (short pulse)",
+	"Type 4 or Type 5 or Type 6 (short pulse)",
+	"Type 5 or Type 6 or Type 8 (short pulse)",
+	"Type 5 or Type 6 (short pulse)",
 };
 #endif
 
@@ -2985,7 +2986,7 @@ uint8_t p2pFuncGetDfsState(void)
 	return g_ucDfsState;
 }
 
-uint8_t *p2pFuncShowDfsState(void)
+const char *p2pFuncShowDfsState(void)
 {
 	return apucDfsState[g_ucDfsState];
 }
@@ -3535,8 +3536,7 @@ p2pFuncProbeRespUpdate(struct ADAPTER *prAdapter,
 	bssBuildBeaconProbeRespFrameCommonIEs(prMsduInfo,
 		prP2pBssInfo, ProbeRespIE);
 
-	u4IeArraySize =
-		sizeof(txProbeRspIETable) / sizeof(struct APPEND_VAR_IE_ENTRY);
+	u4IeArraySize = ARRAY_SIZE(txProbeRspIETable);
 
 	for (u4Idx = 0; u4Idx < u4IeArraySize; u4Idx++) {
 		if (txProbeRspIETable[u4Idx].pfnAppendIE)

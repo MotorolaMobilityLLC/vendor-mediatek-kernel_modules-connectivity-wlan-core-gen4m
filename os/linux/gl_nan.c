@@ -1453,8 +1453,7 @@ mtk_nan_wext_get_priv(struct net_device *prDev,
 	u2BufferSize = prData->length;
 
 	/* update our private table size */
-	prData->length =
-		(__u16)sizeof(rNANIwPrivTable) / sizeof(struct iw_priv_args);
+	prData->length = (__u16)ARRAY_SIZE(rNANIwPrivTable);
 
 	if (u2BufferSize < prData->length)
 		return -E2BIG;

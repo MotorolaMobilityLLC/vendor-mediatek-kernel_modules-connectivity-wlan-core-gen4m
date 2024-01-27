@@ -170,13 +170,12 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 #endif
 };
 
-static uint8_t *apucBandStr[BAND_NUM] = {
-	(uint8_t *) DISP_STRING("NULL"),
-	(uint8_t *) DISP_STRING("2.4G"),
-	(uint8_t *) DISP_STRING("5G")
+static const char * const apucBandStr[BAND_NUM] = {
+	"NULL",
+	"2.4G",
+	"5G",
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	,
-	(uint8_t *) DISP_STRING("6G")
+	"6G",
 #endif
 };
 

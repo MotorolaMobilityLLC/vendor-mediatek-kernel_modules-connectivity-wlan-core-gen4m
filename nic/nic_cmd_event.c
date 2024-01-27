@@ -3419,8 +3419,7 @@ uint32_t nicEventQueryTxResource(struct ADAPTER
 	uint32_t i, i_max;
 	uint32_t version = *((uint32_t *)(pucEventBuf));
 
-	i_max = sizeof(nicTxRsrcEvtHdlrTbl) / sizeof(
-			struct nicTxRsrcEvtHdlr);
+	i_max = ARRAY_SIZE(nicTxRsrcEvtHdlrTbl);
 	for (i = 0; i < i_max; i++) {
 		if (version == nicTxRsrcEvtHdlrTbl[i].u4Version) {
 			/* assign callback to do the resource init. */
@@ -3489,9 +3488,7 @@ void nicParsingNicCapV2(struct ADAPTER *prAdapter,
 {
 	uint32_t table_idx;
 
-	for (table_idx = 0;
-	     table_idx < (sizeof(gNicCapabilityV2InfoTable) / sizeof(
-				  struct NIC_CAPABILITY_V2_REF_TABLE));
+	for (table_idx = 0; table_idx < ARRAY_SIZE(gNicCapabilityV2InfoTable);
 	     table_idx++) {
 
 		/* find the corresponding tag's handler */

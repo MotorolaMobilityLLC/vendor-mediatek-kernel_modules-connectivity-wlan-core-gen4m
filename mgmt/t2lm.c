@@ -39,13 +39,13 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugT2LMState[T2LM_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("T2LM_IDLE"),
-	(uint8_t *) DISP_STRING("T2LM_ADV_SWITCH"),
-	(uint8_t *) DISP_STRING("T2LM_ADV_DURATION"),
-	(uint8_t *) DISP_STRING("T2LM_REQ_PENDING"),
-	(uint8_t *) DISP_STRING("T2LM_REQ_SWITCH"),
-	(uint8_t *) DISP_STRING("T2LM_REQ_DURATION")
+static const char * const apucDebugT2LMState[T2LM_STATE_NUM] = {
+	"T2LM_IDLE",
+	"T2LM_ADV_SWITCH",
+	"T2LM_ADV_DURATION",
+	"T2LM_REQ_PENDING",
+	"T2LM_REQ_SWITCH",
+	"T2LM_REQ_DURATION",
 };
 
 /*******************************************************************************

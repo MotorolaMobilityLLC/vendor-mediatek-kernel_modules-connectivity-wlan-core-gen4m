@@ -2610,8 +2610,7 @@ PRIV_CMD_FUNCTION get_priv_cmd_handler(uint8_t *cmd, int32_t len)
 	int32_t i4CmdSize;
 	uint32_t cmdLen;
 
-	for (ucIdx = 0; ucIdx < sizeof(priv_cmd_handlers) / sizeof(struct
-				PRIV_CMD_HANDLER); ucIdx++) {
+	for (ucIdx = 0; ucIdx < ARRAY_SIZE(priv_cmd_handlers); ucIdx++) {
 		cmdLen = strlen(priv_cmd_handlers[ucIdx].pcCmdStr);
 		if (len >= cmdLen &&
 			strnicmp(cmd, priv_cmd_handlers[ucIdx].pcCmdStr,
@@ -2681,8 +2680,7 @@ STR_CMD_FUNCTION get_str_cmd_handler(uint8_t *cmd, int32_t len)
 	int32_t i4CmdSize;
 	uint32_t cmdLen;
 
-	for (ucIdx = 0; ucIdx < sizeof(str_cmd_handlers) / sizeof(struct
-				STR_CMD_HANDLER); ucIdx++) {
+	for (ucIdx = 0; ucIdx < ARRAY_SIZE(str_cmd_handlers); ucIdx++) {
 		cmdLen = strlen(str_cmd_handlers[ucIdx].pcCmdStr);
 		if (len >= cmdLen &&
 			strnicmp(cmd, str_cmd_handlers[ucIdx].pcCmdStr,

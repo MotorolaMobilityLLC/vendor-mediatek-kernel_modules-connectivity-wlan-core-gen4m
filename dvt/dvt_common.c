@@ -123,8 +123,7 @@ const struct _MDVT_MODULE_T arMdvtModuleTable[] = {
 	{MDVT_MODULE_MAX,                       "all"}
 };
 
-uint32_t u4MdvtTableSize =
-	sizeof(arMdvtModuleTable) / sizeof(struct _MDVT_MODULE_T);
+uint32_t u4MdvtTableSize = ARRAY_SIZE(arMdvtModuleTable);
 
 
 #endif /*CFG_SUPPORT_WIFI_SYSDVT*/

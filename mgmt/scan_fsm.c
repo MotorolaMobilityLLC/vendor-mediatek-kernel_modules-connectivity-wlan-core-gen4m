@@ -41,9 +41,9 @@
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
-static uint8_t *apucDebugScanState[SCAN_STATE_NUM] = {
-	(uint8_t *) DISP_STRING("IDLE"),
-	(uint8_t *) DISP_STRING("SCANNING"),
+static const char * const apucDebugScanState[SCAN_STATE_NUM] = {
+	"IDLE",
+	"SCANNING",
 };
 
 /*******************************************************************************
@@ -2252,10 +2252,10 @@ scnFsmNotifyEvent(struct ADAPTER *prAdapter,
 	uint8_t fgIsScanNormal = TRUE, fgIsDbdcScan = TRUE;
 	uint8_t i, ucReasonInd, ucWritten = 0, fgAnyConnection = FALSE;
 	uint8_t ucTotalLen = 200;
-	uint8_t *apucScnReason[3] = {
-		(uint8_t *) DISP_STRING("OK"),
-		(uint8_t *) DISP_STRING("TIMEOUT"),
-		(uint8_t *) DISP_STRING("DRIVER ABORT"),
+	static const char * const apucScnReason[3] = {
+		"OK",
+		"TIMEOUT",
+		"DRIVER ABORT",
 	};
 	uint32_t u4ScanTime = 0;
 

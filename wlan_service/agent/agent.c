@@ -6696,8 +6696,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 	u_int16 ret;
 	u_int8 parasize = 0;
 
-	for (i = 0; i < sizeof(priv_hqa_cmd_mapping) / sizeof(struct
-			priv_hqa_cmd_id_mapping); i++) {
+	for (i = 0; i < ARRAY_SIZE(priv_hqa_cmd_mapping); i++) {
 		if (strncasecmp(hqa_frame_string,
 			priv_hqa_cmd_mapping[i].cmd_str,
 			strlen(priv_hqa_cmd_mapping[i].cmd_str)) == 0) {
@@ -6775,7 +6774,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 
 		/*debug use*/
 		data = (u_char *)hqa_frame;
-		for (j = 0; j < sizeof(struct hqa_frame)/sizeof(u_char); j++) {
+		for (j = 0; j < sizeof(struct hqa_frame); j++) {
 			if (!(j % 16))
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 					("\n"));
@@ -6832,8 +6831,7 @@ s_int32 mt_agent_hqa_cmd_handler(
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 		("%s: command id=0x%02x\n", __func__, cmd_id));
 
-	while (table_idx <
-		(sizeof(CMD_TABLES) / sizeof(struct hqa_cmd_table))) {
+	while (table_idx < ARRAY_SIZE(CMD_TABLES)) {
 		if ((cmd_id & 0xff00) == CMD_TABLES[table_idx].cmd_offset) {
 			u_int32 cmd_loop = 0;
 			struct hqa_cmd_entry *cmd_set = NULL;

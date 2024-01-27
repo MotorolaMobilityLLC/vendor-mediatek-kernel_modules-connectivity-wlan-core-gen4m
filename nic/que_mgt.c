@@ -2933,7 +2933,7 @@ void qmAllocateResidualTcResource(struct ADAPTER *prAdapter,
 	uint32_t u4TcIdx;
 	uint8_t ucIdx;
 	uint32_t au4AdjTc[] = { TC3_INDEX, TC2_INDEX, TC1_INDEX, TC0_INDEX };
-	uint32_t u4AdjTcSize = (sizeof(au4AdjTc) / sizeof(uint32_t));
+	uint32_t u4AdjTcSize = ARRAY_SIZE(au4AdjTc);
 	uint32_t u4ResidualResource = *pu4ResidualResource;
 	uint32_t u4ShareCount = *pu4ShareCount;
 #if (CFG_TX_RSRC_WMM_ENHANCE == 1)

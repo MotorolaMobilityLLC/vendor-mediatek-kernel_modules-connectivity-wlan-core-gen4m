@@ -390,8 +390,7 @@ static struct cfm_default_data cfm_default[] = {
 #endif
 };
 
-static const unsigned int cfm_default_count =
-	(sizeof(cfm_default) / sizeof(struct cfm_default_data));
+static const unsigned int cfm_default_count = ARRAY_SIZE(cfm_default);
 
 /*******************************************************************************
  *			      F U N C T I O N S

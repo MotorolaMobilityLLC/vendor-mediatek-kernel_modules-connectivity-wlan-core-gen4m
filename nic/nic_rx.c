@@ -4265,20 +4265,20 @@ static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 }
 
 #if CFG_RFB_TRACK
-static uint8_t *apucRfbTrackStatusStr[RFB_TRACK_STATUS_NUM] = {
-	(uint8_t *) DISP_STRING("INIT"),
-	(uint8_t *) DISP_STRING("FREE"),
-	(uint8_t *) DISP_STRING("HIF"),
-	(uint8_t *) DISP_STRING("RX"),
-	(uint8_t *) DISP_STRING("MAIN"),
-	(uint8_t *) DISP_STRING("FIFO"),
-	(uint8_t *) DISP_STRING("NAPI"),
-	(uint8_t *) DISP_STRING("REORDERING_IN"),
-	(uint8_t *) DISP_STRING("REORDERING_OUT"),
-	(uint8_t *) DISP_STRING("INDICATED"),
-	(uint8_t *) DISP_STRING("PACKET_SETUP"),
-	(uint8_t *) DISP_STRING("MLO"),
-	(uint8_t *) DISP_STRING("FAIL"),
+static const char * const apucRfbTrackStatusStr[RFB_TRACK_STATUS_NUM] = {
+	"INIT",
+	"FREE",
+	"HIF",
+	"RX",
+	"MAIN",
+	"FIFO",
+	"NAPI",
+	"REORDERING_IN",
+	"REORDERING_OUT",
+	"INDICATED",
+	"PACKET_SETUP",
+	"MLO",
+	"FAIL",
 };
 
 void nicRxRfbTrackInit(struct ADAPTER *prAdapter,
