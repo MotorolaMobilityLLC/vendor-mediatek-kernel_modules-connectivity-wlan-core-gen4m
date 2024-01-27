@@ -116,8 +116,10 @@ static const char * const apucDebugMsg[] = {
 	"MID_MNY_P2P_WFD_CFG_UPDATE",
 #endif
 	"MID_MNY_P2P_UPDATE_DEV_BSS",
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	"MID_MNY_P2P_ADD_MLD_LINK",
 	"MID_MNY_P2P_DEL_MLD_LINK",
+#endif
 #endif
 
 #if CFG_SUPPORT_ADHOC
