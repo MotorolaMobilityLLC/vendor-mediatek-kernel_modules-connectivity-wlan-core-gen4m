@@ -184,6 +184,9 @@ enum MTK_WIFI_VENDOR_SUB_COMMAND {
 	MTK_SUBCMD_GET_USABLE_CHANNEL = 82,
 	MTK_SUBCMD_GET_CHIP_CAPABILITIES = 83,
 	MTK_SUBCMD_GET_CHIP_CONCURRENCY_MATRIX = 84,
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+	MTK_SUBCMD_SET_CHIP_DTIM_PERIOD = 85,
+#endif
 
 	MTK_SUBCMD_STRING_CMD = 0x2454,
 };
@@ -516,6 +519,13 @@ enum WIFI_SCAN_PARAMS_ATTRIBUTE {
 	WIFI_ATTR_SCAN_MAX
 };
 
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+enum WIFI_SET_DTIM_PARAMS_ATTRIBUTE {
+	WIFI_ATTR_SET_DTIM_PARAMS = 1,
+	WIFI_ATTR_SET_DTIM_MAX
+};
+#endif
+
 #if CFG_SUPPORT_DBDC
 enum WIFI_OP_MODE_CHANGE_ATTRIBUTE {
 	WIFI_ATTRIBUTE_OP_MODE_CHANGE = 0,
@@ -641,6 +651,10 @@ enum wifi_interface_type {
  */
 extern const struct nla_policy mtk_scan_param_policy[
 		WIFI_ATTR_SCAN_MAX + 1];
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+extern const struct nla_policy mtk_set_dtim_param_policy[
+		WIFI_ATTR_SET_DTIM_MAX + 1];
+#endif
 extern const struct nla_policy nla_parse_wifi_multista[
 		MULTISTA_ATTRIBUTE_MAX + 1];
 extern const struct nla_policy nla_parse_wifi_rssi_monitor[
@@ -1624,6 +1638,11 @@ int mtk_cfg80211_vendor_driver_memory_dump(struct wiphy *wiphy,
 
 int mtk_cfg80211_vendor_set_scan_param(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len);
+
+#if CFG_SUPPORT_WIFI_ADJUST_DTIM
+int mtk_cfg80211_vendor_set_dtim_param(struct wiphy *wiphy,
+		struct wireless_dev *wdev, const void *data, int data_len);
+#endif
 
 int mtk_cfg80211_vendor_string_cmd(struct wiphy *wiphy,
 	struct wireless_dev *wdev, const void *data, int data_len);
