@@ -1614,8 +1614,12 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		goto SUSPEND_FAIL;
 	}
 
+#if (CFG_SUPPORT_PCIE_ASPM == 1) && (CFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND == 1)
+	DBGLOG(HAL, STATE, "not switch D-state due to ASPM enable!\n");
+#else
 	pci_save_state(pdev);
 	pci_set_power_state(pdev, pci_choose_state(pdev, state));
+#endif
 
 	DBGLOG(HAL, STATE, "mtk_pci_suspend() done!\n");
 
@@ -1659,8 +1663,12 @@ int mtk_pci_resume(struct pci_dev *pdev)
 
 	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
 
+#if (CFG_SUPPORT_PCIE_ASPM == 1) && (CFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND == 1)
+	DBGLOG(HAL, STATE, "not switch D-state due to ASPM enable!\n");
+#else
 	pci_set_power_state(pdev, PCI_D0);
 	pci_restore_state(pdev);
+#endif
 
 	/* Driver own */
 	/* Include restore PDMA settings */
