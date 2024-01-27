@@ -48,12 +48,11 @@ void p2pMldBssUninit(struct ADAPTER *prAdapter,
 	}
 }
 
-void p2pLinkInitGCRole(struct ADAPTER *prAdapter,
+void p2pLinkInitGcOtherLinks(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkNum)
 {
 	struct MLD_BSS_INFO *prMldBssInfo;
-	struct BSS_INFO *prBssInfo;
 	uint8_t i;
 
 	if (!prAdapter || p2pGetMode() != RUNNING_P2P_DEV_MODE)
@@ -78,19 +77,13 @@ void p2pLinkInitGCRole(struct ADAPTER *prAdapter,
 				    prMldBssInfo->aucOwnMldAddr,
 				    aucLinkAddr,
 				    i);
-		prBssInfo = p2pRoleFsmInitLink(prAdapter, prP2pRoleFsmInfo,
-					       aucLinkAddr, i);
-		if (!prBssInfo)
-			break;
-
-		prBssInfo->ucLinkIndex = prMldBssInfo->rBssList.u4NumElem;
-		prBssInfo->eIftype = IFTYPE_P2P_CLIENT;
-		mldBssRegister(prAdapter, prMldBssInfo, prBssInfo);
-		p2pSetLinkBssInfo(prP2pRoleFsmInfo, i, prBssInfo);
+		p2pRoleFsmInitLink(prAdapter, prP2pRoleFsmInfo,
+				   aucLinkAddr, prMldBssInfo->ucGroupMldId,
+				   i);
 	}
 }
 
-void p2pLinkUninitGCRole(struct ADAPTER *prAdapter,
+void p2pLinkUninitGcOtherLinks(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 {
 	struct BSS_INFO *prP2pBssInfo;
