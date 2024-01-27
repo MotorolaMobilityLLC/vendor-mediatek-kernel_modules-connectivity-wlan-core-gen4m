@@ -3370,6 +3370,10 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucMaxSimuLinks =
 			prMldBssInfo->rBssList.u4NumElem - 1;
 
+	prMldBssInfo->ucMaxSimuLinks =
+		KAL_MIN(prWifiVar->ucMaxSimuLinksCap,
+			prMldBssInfo->ucMaxSimuLinks);
+
 	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
 				struct BSS_INFO, rLinkEntryMld);
 	if (!prBssInfo)
