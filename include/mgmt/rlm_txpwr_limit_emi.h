@@ -493,7 +493,7 @@ enum ENUM_PWR_LIMIT_DEFAULT_BASE {
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].ucVersion = ver; \
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].eStartSubBand = start_band; \
 	g_RlmPwrLimitInfo[rf_idx][protocol_idx].eEndSubBand = end_band; \
-	DBGLOG(RLM, INFO, \
+	DBGLOG(RLM, TRACE, \
 		"Patch R[%d]P[%d]T[%d]V[%d]Start[%d]End[%d]\n", \
 		rf_idx, \
 		protocol_idx, \

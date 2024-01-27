@@ -12095,7 +12095,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 	/* 2.This design is based on pwr limit cmd/event must appear in pairs*/
 	/*********************************************************************/
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"[In]TxPower wakelock ctrl : action :%s, counter[%d], ret:%d",
 		au1PwrLmtStatusAction[action],
 		prAdapter->u4PwrLmtLockCounter,
@@ -12849,7 +12849,7 @@ void rlmDomainSetPwrLimitHeader(
 			prPerPwrLimit->ucVersion =
 				rPerPwrLimitInfo.ucVersion;
 
-			DBGLOG(RLM, INFO,
+			DBGLOG(RLM, TRACE,
 				"rf[%d]protocol[%d]limit_type[%d]ver[%d]\n",
 				eRF, eProt,
 				prPerPwrLimit->ucLimitType,
