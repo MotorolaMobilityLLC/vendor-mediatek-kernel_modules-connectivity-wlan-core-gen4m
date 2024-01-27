@@ -2155,6 +2155,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
 	}
 	g_Coredump_source = COREDUMP_SOURCE_NUM;
+	g_Coredump_type = 0;
 	rst->force_dump = FALSE;
 }
 
