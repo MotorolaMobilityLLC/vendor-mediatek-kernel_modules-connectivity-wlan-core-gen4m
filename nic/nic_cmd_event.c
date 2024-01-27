@@ -3398,12 +3398,8 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 		wlanCfgSetUint32(prAdapter, "ApMldEML",
 			prAdapter->rWifiVar.ucApMldEMLSupport);
 	}
-	if (prAdapter->rWifiVar.ucMaxSimuLinks > cap->ucMaxSimuLinks) {
-		prAdapter->rWifiVar.ucMaxSimuLinks =
-			cap->ucMaxSimuLinks;
-		wlanCfgSetUint32(prAdapter, "MaxSimultaneousLinks",
-			prAdapter->rWifiVar.ucMaxSimuLinks);
-	}
+
+	prAdapter->rWifiVar.ucMaxSimuLinksCap = cap->ucMaxSimuLinks;
 	prAdapter->rWifiVar.u2NonApMldEMLCap = cap->u2NonApMldEMLCap;
 	prAdapter->rWifiVar.u2ApMldEMLCap = cap->u2ApMldEMLCap;
 	DBGLOG(INIT, INFO,
@@ -3412,7 +3408,7 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.u2NonApMldEMLCap,
 		prAdapter->rWifiVar.ucApMldEMLSupport,
 		prAdapter->rWifiVar.u2ApMldEMLCap,
-		prAdapter->rWifiVar.ucMaxSimuLinks);
+		prAdapter->rWifiVar.ucMaxSimuLinksCap);
 	return WLAN_STATUS_SUCCESS;
 }
 #endif

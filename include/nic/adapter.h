@@ -887,6 +887,7 @@ struct WIFI_VAR {
 	uint8_t ucEnableMlo;
 	u_int8_t fgMldSyncLinkAddr;
 	uint8_t ucMaxSimuLinks;
+	uint8_t ucMaxSimuLinksCap;
 	uint8_t ucT2LMNegotiationSupport;
 	uint32_t u4T2LMMarginMs;
 	uint8_t aucMloP2pPreferFreq[WLAN_CFG_VALUE_LEN_MAX];
