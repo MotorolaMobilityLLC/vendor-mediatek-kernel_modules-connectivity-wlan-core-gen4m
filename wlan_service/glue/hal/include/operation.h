@@ -11,10 +11,10 @@
 
 extern int8_t g_hqa_frame_ctrl;
 
-#define INC_RING_INDEX1(_idx, _RingSize)	\
-	{								\
-		(_idx) = (_idx+1) % (_RingSize);	   \
-	}
+#define INC_RING_INDEX1(_idx, _RingSize)		\
+{ \
+	(_idx) = (_idx+1) % (_RingSize); \
+}
 
 /*****************************************************************************
  *	Enum value definition

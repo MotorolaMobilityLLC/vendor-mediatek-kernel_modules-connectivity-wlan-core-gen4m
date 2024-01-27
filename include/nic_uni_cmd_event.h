@@ -8708,6 +8708,12 @@ void nicUniEventP2p(struct ADAPTER *ad,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void nicUniEventRDD(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
+static uint32_t MT_ATEInsertRDD(
+	struct _ATE_LOG_DUMP_ENTRY *entry,
+	uint8_t *data, uint32_t len);
+uint32_t MT_ATEInsertLog(
+	struct ADAPTER *prAdapter,
+	uint8_t *log, uint32_t len);
 #endif
 void nicUniEventCountdown(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);

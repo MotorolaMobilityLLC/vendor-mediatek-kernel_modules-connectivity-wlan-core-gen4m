@@ -4144,38 +4144,40 @@ err_out:
 	return ret;
 }
 
+u_int32 g_test_cnt = 0;
 static s_int32 hqa_get_dump_rdd(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret;
+	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 resp_len = 2;
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 rdd_cnt = 0, rdd_dw_num = 0;
-	u_int32 *content = NULL, *OriAddr = NULL;
-	u_int32 value = 0, i = 0, total_cnt = 0;
+	u_int32 *content = NULL;
+	u_int32 i = 0;
+	u_int32 *total_cnt = NULL;
+	u_int32 value = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
 	get_param_and_shift_buf(TRUE, sizeof(band_idx),
 				&data, (u_char *)&band_idx);
 
-	get_param_and_shift_buf(TRUE, sizeof(total_cnt),
-				&data, (u_char *)&total_cnt);
-
 	if (band_idx >= TEST_DBDC_BAND_NUM)
 		band_idx = 0;
 
 	serv_test->ctrl_band_idx = (u_char)band_idx;
 
+
 	ret = mt_serv_get_rdd_cnt(serv_test, &rdd_cnt, &rdd_dw_num);
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
-			("%s: total_cnt %d\n", __func__, total_cnt));
+		("%s: band_idx1: %d, pulse number1: %d, rdd buffer size1: %d\n",
+		__func__, band_idx, rdd_cnt, rdd_dw_num));
 
 	if (ret != SERV_STATUS_SUCCESS)
-		goto err_out;
+		goto error1;
 
-	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: band_idx: %d, pulse number: %d, rdd buffer size: %d\n",
 		__func__, band_idx, rdd_cnt, rdd_dw_num));
 
@@ -4184,52 +4186,58 @@ static s_int32 hqa_get_dump_rdd(
 	if (ret != SERV_STATUS_SUCCESS)
 		goto error1;
 
-	OriAddr = content;
+	sys_ad_zero_mem(content, sizeof(*content) * rdd_dw_num);
 
-	ret = mt_serv_get_rdd_content(serv_test, content, &total_cnt);
+	ret = sys_ad_alloc_mem((u_char **)&total_cnt,
+		sizeof(u_int32));
+	if (ret != SERV_STATUS_SUCCESS)
+		goto error1;
 
-	if (ret != SERV_STATUS_SUCCESS)	{
-		if (content)
-			sys_ad_free_mem(content);
+	sys_ad_zero_mem(total_cnt, sizeof(*total_cnt));
 
-		goto err_out;
+	ret = mt_serv_get_rdd_content(serv_test, content, total_cnt);
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("total_cnt %d, test_cnt %d\n",
+		*total_cnt, g_test_cnt));
+
+	for (i = 0; i < *total_cnt; i++) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("1content[%d]: 0x%08x\n", i, *(content+i)));
 	}
 
-	if (total_cnt > 0) {
-		/* Update hqa_frame with response: status (2 bytes) */
-		/* Response format:
-		 * cmd type + cmd ID + length + Sequence +
-		 * data:
-		 * status (2 bytes) +
-		 * [count (4 bytes)] + value1 (4 bytes) + value2 (4 bytes)
-		 */
-		/* Count = Total number of 4 bytes RDD values divided by 2 */
-		value = SERV_OS_HTONL(total_cnt);
+	if (ret != SERV_STATUS_SUCCESS)
+		goto error1;
+
+	if ((*total_cnt > 0) && (g_test_cnt == 0)) {
+		value = SERV_OS_HTONL(*total_cnt/2);
 		sys_ad_move_mem(hqa_frame->data + resp_len,
 			&value, sizeof(value));
 		resp_len += sizeof(value);
-
-		for (i = 0; i < total_cnt; i++, content++) {
+		for (i = 0; i < *total_cnt; i++, content++) {
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
-				("%s: content[%d]: 0x%08x\n",
-				__func__, i, *content));
+			("content[%d]: 0x%08x\n", i, *content));
 
 			value = SERV_OS_HTONL(*content);
 			sys_ad_move_mem(hqa_frame->data + resp_len,
 				&value, sizeof(value));
 			resp_len += sizeof(value);
 		}
-
+		g_test_cnt += 1;
+		*total_cnt = 0;
 	} else {
-		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_OFF,
-			("%s: total_cnt %d\n", __func__, total_cnt));
+		*total_cnt = 0;
+		g_test_cnt -= 1;
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("total_cnt %d\n", *total_cnt));
 		sys_ad_move_mem(hqa_frame->data + resp_len,
 			&total_cnt, sizeof(total_cnt));
 		resp_len += sizeof(total_cnt);
 	}
 
 	/* Free memory */
-	sys_ad_free_mem(OriAddr);
+	sys_ad_free_mem(content);
+	sys_ad_free_mem(total_cnt);
 
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
@@ -4238,12 +4246,18 @@ static s_int32 hqa_get_dump_rdd(
 error1:
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: dynamic memory allocate fail!!\n", __func__));
+	/* TODO: respond to application for error handle */
+
 	if (content)
 		sys_ad_free_mem(content);
-	/* TODO: respond to application for error handle */
+	if (total_cnt)
+		sys_ad_free_mem(total_cnt);
+
 	update_hqa_frame(hqa_frame, resp_len, ret);
 
-err_out:
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("%s: dynamic memory allocate fail!!\n", __func__));
+
 	return ret;
 }
 
