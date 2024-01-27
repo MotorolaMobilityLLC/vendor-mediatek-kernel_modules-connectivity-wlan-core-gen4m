@@ -4764,13 +4764,19 @@ u_int8_t p2pFuncIsDualGOMode(struct ADAPTER *prAdapter)
 
 u_int8_t p2pFuncIsDualAPMode(struct ADAPTER *prAdapter)
 {
-	if (prAdapter)
-		return p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[0]) &&
-			p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[1]);
+	if (!prAdapter)
+		return FALSE;
 
-	return FALSE;
+	if (!p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[0]) ||
+	    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[1]))
+		return FALSE;
+
+	/* use netdev to check whether mlo sap or dual sap */
+	if (prAdapter->prGlueInfo->prP2PInfo[0]->aprRoleHandler ==
+	    prAdapter->prGlueInfo->prP2PInfo[1]->aprRoleHandler)
+		return FALSE;
+
+	return TRUE;
 }
 
 u_int8_t p2pFuncIsDualAPActive(struct ADAPTER *prAdapter)
