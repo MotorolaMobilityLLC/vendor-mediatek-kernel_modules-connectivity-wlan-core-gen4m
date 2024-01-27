@@ -3310,12 +3310,25 @@ void mldBssUpdateOmacIdx(
 					struct BSS_INFO, rLinkEntryMld);
 
 		prMldBssInfo->ucOmacIdx = prMainBssInfo->ucOwnMacIndex;
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+		if (prMldBssInfo->ucHmloEnabled)
+			prMldBssInfo->ucOmRemapIdx = prMldBssInfo->ucOmacIdx;
+#endif
 	}
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
-		prMldBssInfo->ucOmacIdx);
-	prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	if (prMldBssInfo->ucHmloEnabled)
+		DBGLOG(ML, INFO, "Hybird MLO use BssInfo omac idx %d\n",
+			prBssInfo->ucOwnMacIndex);
+	else
+#else
+	{
+		DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
+			prMldBssInfo->ucOmacIdx);
+		prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
+	}
+#endif
 #endif
 }
 
@@ -3400,6 +3413,17 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 			prMldBssInfo->ucEmlEnabled = FALSE;
 			prMldBssInfo->u2EMLCap = 0;
 		}
+
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+		if (IS_BSS_AIS(prBssInfo) && IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+			IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
+			prMldBssInfo->ucHmloEnabled = TRUE;
+		} else {
+			prMldBssInfo->ucHmloEnabled = FALSE;
+		}
+#endif
 	}
 }
 
@@ -3433,8 +3457,8 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	prMldBssInfo->ucBssBitmap |= BIT(prBssInfo->ucBssIndex);
 	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
 
-	mldBssUpdateOmacIdx(prAdapter, prMldBssInfo, prBssInfo);
 	mldBssUpdateCap(prAdapter, prMldBssInfo);
+	mldBssUpdateOmacIdx(prAdapter, prMldBssInfo, prBssInfo);
 
 	return 0;
 }
@@ -3493,6 +3517,7 @@ struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter,
 		prMldBssInfo->ucMaxSimuLinks = 0;
 		prMldBssInfo->ucEmlEnabled = FALSE;
 		prMldBssInfo->u2EMLCap = 0;
+		prMldBssInfo->ucHmloEnabled = FALSE;
 
 		mldBssInitializeClientList(prAdapter, prMldBssInfo);
 
@@ -4675,7 +4700,7 @@ uint8_t mldHasSingleLinkBss(struct ADAPTER *prAdapter)
 /* Check the new connection type(As follow)
  * LEGACY_TYPE
  * STR_MLO_TYPE
-.* MLSR_MLO_TYPE
+ * MLSR_MLO_TYPE
  */
 enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
 	struct DBDC_DECISION_INFO *prDbdcDecisionInfo)
@@ -4831,6 +4856,33 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 			DBGLOG(ML, INFO, "Remain 5G,Pause 6G\n");
 		}
 	}
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	else if (mld_bssinfo->ucHmloEnabled &&
+		mld_bssinfo->rBssList.u4NumElem ==
+			MLD_HYBRID_MLO_LINK_NUM) {
+		/* if 5G band Rssi > TH,select 5G link,
+		 * otherwise select 2G Link.
+		 */
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+					ucMLSRBssIndex[BAND_5G]);
+		if (prBssDesc &&
+			(RCPI_TO_dBm(prBssDesc->ucRCPI) >
+			MLSR_REMAIN_RSSI_TH)) {
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_5G];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_2G4];
+			DBGLOG(ML, INFO, "Remain 5G,Pause 2G&6G\n");
+		} else {
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
+			DBGLOG(ML, INFO, "Remain 2G,Pause 5G&6G\n");
+		}
+		/*set 6G link pause flag*/
+		prPauseBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						ucMLSRBssIndex[BAND_6G]);
+		if (prPauseBssInfo)
+			prPauseBssInfo->ucMLSRPausedLink = TRUE;
+	}
+#endif
 
 	DBGLOG(ML, INFO, "Remain BssIndex: %d, Pause BssIndex: %d\n",
 				ucMLSRRemainBssIndex, ucMLSRPauseBssIndex);
@@ -4908,6 +4960,5 @@ uint32_t mldSetRemainMLSRBssIndex(struct ADAPTER *prAdapter,
 
 	return status;
 }
-
 #endif
 #endif /* CFG_SUPPORT_802_11BE_MLO == 1 */

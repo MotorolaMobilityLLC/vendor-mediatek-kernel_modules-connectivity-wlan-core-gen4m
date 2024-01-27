@@ -332,6 +332,9 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta;
 #endif
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+#endif
 	u_int32_t u4TxDescAndPaddingLength;
 	u_int8_t ucTarQueue;
 	uint8_t ucEtherTypeOffsetInWord;
@@ -431,9 +434,16 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	}
 
 	if (prBssInfo) {
-		/* Own MAC */
-		HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
-			prTxDesc, prBssInfo->ucOwnMacIndex);
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+		if (prMldBssInfo && prMldBssInfo->ucHmloEnabled) {
+			HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
+				prTxDesc, prMldBssInfo->ucOmRemapIdx);
+		} else
+#endif
+			/* Own MAC */
+			HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
+				prTxDesc, prBssInfo->ucOwnMacIndex);
 
 		/* TGID should align HW band idx */
 		HAL_MAC_CONNAC3X_TXD_SET_TGID(prTxDesc, prBssInfo->eHwBandIdx);
@@ -550,7 +560,10 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 #endif
 
 	/* OM MAP */
-	//HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	if (prMldBssInfo && prMldBssInfo->ucHmloEnabled)
+		HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
+#endif
 
 	/** DW3 **/
 	/* Tx count limit */

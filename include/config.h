@@ -1394,6 +1394,9 @@
 #define CFG_MLO_CONCURRENT_SINGLE_PHY     0
 #endif
 
+#ifndef CFG_SUPPORT_MLO_HYBRID
+#define CFG_SUPPORT_MLO_HYBRID     0
+#endif
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_802_11BE == 0)
 #error \
@@ -2314,6 +2317,8 @@
 #ifndef CFG_MTK_FPGA_PLATFORM
 #define CFG_MTK_FPGA_PLATFORM			0
 #endif
+
+#define MLD_HYBRID_MLO_LINK_NUM 3
 
 #ifdef CFG_MLD_LINK_MAX
 #define MLD_LINK_MAX (CFG_MLD_LINK_MAX)

@@ -1094,6 +1094,10 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_802_11BE_MLO=1
+	ifeq ($(CONFIG_SUPPORT_MLO_HYBRID), y)
+		CONFIG_MLD_LINK_MAX=3
+	endif
+
     ifneq ($(CONFIG_MLD_LINK_MAX),)
         ccflags-y += -DCFG_MLD_LINK_MAX=$(CONFIG_MLD_LINK_MAX)
     endif
@@ -1149,6 +1153,10 @@ endif
 
 ifeq ($(CONFIG_MLO_CONCURRENT_SINGLE_PHY), y)
 	ccflags-y += -DCFG_MLO_CONCURRENT_SINGLE_PHY=1
+endif
+
+ifeq ($(CONFIG_SUPPORT_MLO_HYBRID), y)
+	ccflags-y += -DCFG_SUPPORT_MLO_HYBRID=1
 endif
 
 ifeq ($(CONFIG_SUPPORT_BW320), y)

@@ -3399,13 +3399,22 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 			prAdapter->rWifiVar.ucApMldEMLSupport);
 	}
 
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	prAdapter->rWifiVar.ucNonApHyMloSupportCap =
+			cap->ucNonApHyMloSupport;
+	prAdapter->rWifiVar.ucLink3BandLimitBitmap =
+			cap->ucLink3BandLimitBitmap;
+#endif
+
 	prAdapter->rWifiVar.ucMaxSimuLinksCap = cap->ucMaxSimuLinks;
 	prAdapter->rWifiVar.u2NonApMldEMLCap = cap->u2NonApMldEMLCap;
 	prAdapter->rWifiVar.u2ApMldEMLCap = cap->u2ApMldEMLCap;
+
 	DBGLOG(INIT, INFO,
-		"EML cap - Non-AP=(%d, 0x%x), AP=(%d, 0x%x), MaxSimuLinks=%d\n",
+		"EML cap - Non-AP=(%d,0x%x,%d), AP=(%d, 0x%x), MaxSimuLinks=%d\n",
 		prAdapter->rWifiVar.ucNonApMldEMLSupport,
 		prAdapter->rWifiVar.u2NonApMldEMLCap,
+		prAdapter->rWifiVar.ucNonApHyMloSupportCap,
 		prAdapter->rWifiVar.ucApMldEMLSupport,
 		prAdapter->rWifiVar.u2ApMldEMLCap,
 		prAdapter->rWifiVar.ucMaxSimuLinksCap);

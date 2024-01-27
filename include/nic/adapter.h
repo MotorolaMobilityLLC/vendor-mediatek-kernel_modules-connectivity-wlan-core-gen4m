@@ -629,6 +629,7 @@ struct MLD_BSS_INFO {
 	uint8_t ucMaxSimuLinks;
 	uint8_t ucEmlEnabled;
 	uint16_t u2EMLCap;
+	uint8_t ucHmloEnabled;
 };
 #endif
 
@@ -903,6 +904,9 @@ struct WIFI_VAR {
 	uint8_t ucApMldEMLSupport;
 	uint16_t u2NonApMldEMLCap;
 	uint16_t u2ApMldEMLCap;
+	uint8_t ucLink3BandLimitBitmap;
+	uint8_t ucNonApHyMloSupport;
+	uint8_t ucNonApHyMloSupportCap;
 	uint32_t u4AisEHTNumber;
 	uint8_t fgForceRrmMloScan;
 	u_int8_t fgEnTuao;

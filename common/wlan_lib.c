@@ -7323,6 +7323,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgMldSyncLinkAddr,
 		"MldSyncLinkAddr", FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->ucNonApHyMloSupport,
+		"NonApHybridMlo", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUpdateCapAll(prAdapter);
