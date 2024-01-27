@@ -5004,7 +5004,8 @@ int priv_driver_phy_ctrl(struct net_device *prNetDev,
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 
 	prPhyCtrlList = kalMemAlloc(
-		sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP),
+		(sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP) +
+		sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR)),
 		VIR_MEM_TYPE);
 
 	if (!prPhyCtrlList)
@@ -5019,6 +5020,7 @@ int priv_driver_phy_ctrl(struct net_device *prNetDev,
 
 	memcpy(prPhyCtrlList->aucTlvBuffer, &rDumpList,
 		sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR));
+
 	DBGLOG(REQ, TRACE, "ucAction[%d]u2Tag[%d]u4Stamp[%d]\n",
 		prPhyCtrlList->ucAction,
 		rDumpList.u2Tag,
@@ -5026,11 +5028,13 @@ int priv_driver_phy_ctrl(struct net_device *prNetDev,
 
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetPhyCtrl,
 				prPhyCtrlList,
-				sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP),
+				(sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP) +
+				sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR)),
 				&u4BufLen);
 
 	kalMemFree(prPhyCtrlList, VIR_MEM_TYPE,
-			sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP));
+			(sizeof(struct UNI_CMD_PHY_CTRL_LIST_DUMP) +
+			sizeof(struct UNI_CMD_PHY_LIST_DUMP_CR)));
 
 	return 1;
 
