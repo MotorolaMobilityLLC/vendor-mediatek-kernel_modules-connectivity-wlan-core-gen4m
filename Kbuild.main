@@ -1332,6 +1332,11 @@ ifeq ($(CONFIG_SUPPORT_PCIE_ASPM), y)
 else
     ccflags-y += -DCFG_SUPPORT_PCIE_ASPM=0
 endif
+ifeq ($(CONFIG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND), y)
+    ccflags-y += -DCFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND=1
+else
+    ccflags-y += -DCFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND=0
+endif
 ifeq ($(CONFIG_SUPPORT_PCIE_PLAT_INT_FLOW), y)
     ccflags-y += -DCFG_SUPPORT_PCIE_PLAT_INT_FLOW=1
 else
