@@ -7338,6 +7338,9 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	prBssInfo->ucVhtChannelFrequencyS1 = prCSAParams->ucVhtS1;
 	prBssInfo->ucVhtChannelFrequencyS2 = prCSAParams->ucVhtS2;
 
+	prBssInfo->ucOpRxNssBeforeCsa = prBssInfo->ucOpRxNss;
+	prBssInfo->ucOpTxNssBeforeCsa = prBssInfo->ucOpTxNss;
+
 	if (HAS_WIDE_BAND_PARAMS(prCSAParams)) {
 		if (prBssInfo->fgIsOpChangeChannelWidth &&
 		    rlmGetVhtOpBwByBssOpBw(prBssInfo->ucOpChangeChannelWidth) <
@@ -9206,34 +9209,45 @@ void rlmChangeOperationModeAfterCSA(
 {
 	uint8_t ucVhtChannelWidthAfterCsa;
 	enum ENUM_CHNL_EXT eBssScoAfterCsa;
+	uint8_t ucOpRxNssAfterCsa;
+	uint8_t ucOpTxNssAfterCsa;
 
 	if (!prBssInfo)
 		return;
 
+	/* Keep new info and swap into old info */
 	ucVhtChannelWidthAfterCsa = prBssInfo->ucVhtChannelWidth;
-	prBssInfo->ucVhtChannelWidth = prBssInfo->ucVhtChannelWidthBeforeCsa;
-
 	eBssScoAfterCsa = prBssInfo->eBssSCO;
+	ucOpRxNssAfterCsa = prBssInfo->ucOpRxNss;
+	ucOpTxNssAfterCsa = prBssInfo->ucOpTxNss;
+
+	prBssInfo->ucVhtChannelWidth = prBssInfo->ucVhtChannelWidthBeforeCsa;
 	prBssInfo->eBssSCO = prBssInfo->eBssScoBeforeCsa;
+	prBssInfo->ucOpRxNss = prBssInfo->ucOpRxNssBeforeCsa;
+	prBssInfo->ucOpTxNss = prBssInfo->ucOpTxNssBeforeCsa;
 
 	DBGLOG(RLM, INFO,
-		"op mode change from BW[%d] to BW[%d]-RxNss[%d]-TxNss[%d]",
+		"op mode change from BW(vht)[%d]-RxNss[%d]-TxNss[%d] to BW(vht)[%d]-RxNss[%d]-TxNss[%d]",
 		prBssInfo->ucVhtChannelWidth,
-		ucVhtChannelWidthAfterCsa,
 		prBssInfo->ucOpRxNss,
-		prBssInfo->ucOpTxNss);
+		prBssInfo->ucOpTxNss,
+		ucVhtChannelWidthAfterCsa,
+		ucOpRxNssAfterCsa,
+		ucOpTxNssAfterCsa);
 	rlmChangeOperationMode(
 		prAdapter, prBssInfo->ucBssIndex,
 		rlmGetBssOpBwByChannelWidth(eBssScoAfterCsa,
 					    ucVhtChannelWidthAfterCsa),
-		prBssInfo->ucOpRxNss,
-		prBssInfo->ucOpTxNss,
+		ucOpRxNssAfterCsa,
+		ucOpTxNssAfterCsa,
 		TRUE,
 		rlmDummyChangeOpHandler);
 
-	/* Restore VHT channel width after CSA */
+	/* Restore info after op mode change */
 	prBssInfo->ucVhtChannelWidth = ucVhtChannelWidthAfterCsa;
 	prBssInfo->eBssSCO = eBssScoAfterCsa;
+	prBssInfo->ucOpRxNss = ucOpRxNssAfterCsa;
+	prBssInfo->ucOpTxNss = ucOpTxNssAfterCsa;
 }
 
 /*----------------------------------------------------------------------------*/
