@@ -987,7 +987,7 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 		tag->ucLinkId = bss->ucLinkIndex;
 		tag->ucEmlEnabled = prMldBssInfo->ucEmlEnabled;
 		tag->ucMaxSimuLinks = prMldBssInfo->ucMaxSimuLinks;
-
+		tag->ucHmloEnabled = prMldBssInfo->ucHmloEnabled;
 	} else
 #endif
 	{
@@ -998,11 +998,12 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 		tag->ucLinkId = MLD_LINK_ID_NONE;
 		tag->ucEmlEnabled = 0;
 		tag->ucMaxSimuLinks = 0;
+		tag->ucHmloEnabled = 0;
 	}
 
 	DBGLOG(INIT, INFO,
 		"Bss=%d, GroupMldId=%d, OwnMldId=%d, OmRemapIdx=%d, LinkId=%d, Eml=%d, MaxSimuLinks=%d, OwnMldAddr="
-		MACSTR "\n",
+		MACSTR "HyMlo=%d\n",
 		bss->ucBssIndex,
 		tag->ucGroupMldId,
 		tag->ucOwnMldId,
@@ -1010,7 +1011,8 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 		tag->ucLinkId,
 		tag->ucEmlEnabled,
 		tag->ucMaxSimuLinks,
-		MAC2STR(tag->aucOwnMldAddr));
+		MAC2STR(tag->aucOwnMldAddr),
+		tag->ucHmloEnabled);
 
 	return tag->u2Length;
 }

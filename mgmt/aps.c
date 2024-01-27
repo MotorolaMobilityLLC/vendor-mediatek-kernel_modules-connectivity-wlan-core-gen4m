@@ -2019,6 +2019,34 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
 		ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
 	}
+
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	/* swap link 3 to link 2 depend on fw capbility
+	 *(2g or 5g can't be the 3rd link)
+	 */
+	if (IS_FEATURE_ENABLED(ad->rWifiVar.ucNonApHyMloSupport) &&
+		IS_FEATURE_ENABLED(ad->rWifiVar.ucNonApHyMloSupportCap) &&
+		ap && ap->ucLinkNum == MLD_HYBRID_MLO_LINK_NUM) {
+		if ((ad->rWifiVar.ucLink3BandLimitBitmap &
+			CMD_BAND_5G) &&
+			ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+				BAND_5G) {
+			bss = ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 1];
+			ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 2];
+			ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 2] = bss;
+		} else if ((ad->rWifiVar.ucLink3BandLimitBitmap &
+			CMD_BAND_2G4) &&
+			(ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+				BAND_2G4)) {
+			bss = ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 1];
+			ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 2];
+			ap->aprTarget[MLD_HYBRID_MLO_LINK_NUM - 2] = bss;
+		}
+	}
+#endif
+
 }
 
 struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,

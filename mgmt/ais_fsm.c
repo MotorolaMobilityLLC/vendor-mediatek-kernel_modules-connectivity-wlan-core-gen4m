@@ -9945,8 +9945,12 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		if (prMldBssInfo &&
 			prMldBssInfo->ucMaxSimuLinks == 0)
 			tmpDBDCBand = ENUM_BAND_AUTO;
-
-		tmpReqCHType = cnmCheckMLSRReqCHType(prAdapter, prBss);
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+		if (ucReqChNum == MLD_HYBRID_MLO_LINK_NUM)
+			tmpReqCHType = CH_REQ_TYPE_HYBRID_MLO_MLSR_JOIN;
+		else
+#endif
+			tmpReqCHType = cnmCheckMLSRReqCHType(prAdapter, prBss);
 	}
 #endif
 

@@ -1622,10 +1622,18 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	enum ENUM_BAND aeLinkPlanAwithA[][APS_LINK_MAX] = {
 		{BAND_2G4, BAND_5G, BAND_NULL},
 #if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_6G, BAND_NULL},
+		{BAND_5G, BAND_6G, BAND_NULL},
+#endif
+	};
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	enum ENUM_BAND aeTriLinkPlan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
 		{BAND_2G4, BAND_5G, BAND_6G},
 #endif
 	};
-
+#endif
 	enum ENUM_BAND aeLinkPlanNoneMLD[][APS_LINK_MAX] = {
 		{BAND_2G4, BAND_NULL, BAND_NULL},
 		{BAND_5G, BAND_NULL, BAND_NULL},
@@ -1634,7 +1642,7 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 #endif
 	};
 
-	DBGLOG(HAL, INFO, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
+	DBGLOG_LIMITED(HAL, INFO, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
 		prAdapter->rWifiVar.ucMaxSimuLinks);
 
@@ -1675,15 +1683,29 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	if (ucHasActiveBss &&
 		!ucIsRoamingDiscovery &&
 		prAdapter->rWifiVar.ucMaxSimuLinks == 0) {
-	/*has active Bss, block EMLSR connection */
+	/*has active Bss, block MLSR connection */
 		tmpLinkPlan = aeLinkPlanNoneMLD;
 		ucArraySize = 3;
-	} else if (ucCanSupportDBDCAA) {
-		tmpLinkPlan = aeLinkPlanAwithA;
+		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlanNoneMLD\n");
+	}
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	else if (ucCanSupportDBDCAA && IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+		IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
+		tmpLinkPlan = aeTriLinkPlan;
 		ucArraySize = 2;
+		DBGLOG_LIMITED(HAL, INFO, "use aeTriLinkPlan\n");
+	}
+#endif
+	else if (ucCanSupportDBDCAA) {
+		tmpLinkPlan = aeLinkPlanAwithA;
+		ucArraySize = 3;
+		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlanAwithA\n");
 	} else {
 		tmpLinkPlan = aeLinkPlan;
 		ucArraySize = 2;
+		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlan\n");
 	}
 
 	/* select best link plan */
