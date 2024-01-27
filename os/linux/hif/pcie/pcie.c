@@ -2711,6 +2711,14 @@ uint32_t glWritePcieCfgSpace(int offset, uint32_t value)
 		WLAN_STATUS_SUCCESS : WLAN_STATUS_FAILURE;
 }
 
+void glNotifyPciePowerDown(void)
+{
+#if defined(CFG_MTK_WIFI_PCIE_SUPPORT) && CFG_MTK_ANDROID_WMT
+	DBGLOG(HAL, INFO, "notify PCIE PD\n");
+	mtk_pcie_pinmux_select(0, PCIE_PINMUX_PD);
+#endif
+}
+
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 int mtk_pcie_speed(struct pci_dev *dev, int speed)
 {

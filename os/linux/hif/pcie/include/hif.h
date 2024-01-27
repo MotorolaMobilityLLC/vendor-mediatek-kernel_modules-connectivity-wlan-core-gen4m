@@ -20,6 +20,10 @@
 #error "No HIF defined!"
 #endif
 
+
+#if defined(CFG_MTK_WIFI_PCIE_SUPPORT) && CFG_MTK_ANDROID_WMT
+#include "pcie-mediatek-gen3.h"
+#endif
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
  *******************************************************************************
@@ -619,6 +623,7 @@ int32_t glBusFuncOn(void);
 void glBusFuncOff(void);
 uint32_t glReadPcieCfgSpace(int offset, uint32_t *value);
 uint32_t glWritePcieCfgSpace(int offset, uint32_t value);
+void glNotifyPciePowerDown(void);
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
@@ -654,16 +659,6 @@ bool glBusConfigASPML1SS(struct pci_dev *dev, int enable);
 #endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-extern int mtk_pcie_probe_port(int port) __attribute__((weak));
-extern int mtk_pcie_remove_port(int port) __attribute__((weak));
-extern int mtk_pcie_mask_msi_to_ap(
-	int port, u32 msi_addr, u32 mask) __attribute__((weak));
-extern int mtk_msi_unmask_to_other_mcu(
-	struct irq_data *data, u32 group) __attribute__((weak));
-extern int mtk_pcie_hw_control_vote(
-	int port, bool hw_mode_en, u8 who) __attribute__((weak));
-extern u32 mtk_pcie_dump_link_info(int port) __attribute__((weak));
-extern u32 mtk_pcie_disable_data_trans(int port) __attribute__((weak));
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 int mtk_pcie_speed(struct pci_dev *dev, int speed);
 int mtk_pcie_retrain(struct pci_dev *dev);

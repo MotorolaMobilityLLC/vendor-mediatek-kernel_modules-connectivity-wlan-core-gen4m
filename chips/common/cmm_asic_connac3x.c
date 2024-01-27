@@ -2950,6 +2950,13 @@ static int wlan_pwr_on_notify(void)
 	return 0;
 }
 
+static int wlan_chip_power_down_notify(unsigned int notify)
+{
+	if (!get_wifi_powered_status())
+		glNotifyPciePowerDown();
+	return 0;
+}
+
 static void unregister_connv3_cbs(void)
 {
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
@@ -2976,6 +2983,7 @@ static void register_connv3_cbs(void)
 	kalMemZero(&cb, sizeof(cb));
 	cb.pwr_on_cb.pre_power_on = wlan_pre_pwr_on;
 	cb.pwr_on_cb.power_on_notify = wlan_pwr_on_notify;
+	cb.pwr_on_cb.chip_power_down_notify = wlan_chip_power_down_notify;
 
 	INIT_WORK(&pwr_on_notify_work, __wlan_pwr_on_notify);
 
