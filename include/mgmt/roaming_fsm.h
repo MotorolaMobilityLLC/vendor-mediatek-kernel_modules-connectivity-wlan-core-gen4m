@@ -42,6 +42,8 @@
 #define ROAMING_RECOVER_RLM_SYNC		0
 #define ROAMING_RECOVER_BSS_UPDATE		1
 
+#define ROAMING_SCAN_NON_DFS_CH_DWELL_TIME	(20)	/* Ms */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -137,6 +139,25 @@ struct ROAMING_SCAN_CADENCE {
 };
 #endif
 
+enum ENUM_ROAMING_SCAN_TYPE {
+	ROAMING_SCAN_TYPE_NORMAL = 0,
+	ROAMING_SCAN_TYPE_PARTIAL_ONLY,     /* Only perform partial scan */
+	ROAMING_SCAN_TYPE_FULL_ONLY,        /* Only perform full scan */
+	ROAMING_SCAN_TYPE_NUM
+};
+
+enum ENUM_ROAMING_SCAN_MODE {
+	ROAMING_SCAN_MODE_NORMAL = 0,
+	ROAMING_SCAN_MODE_LOW_LATENCY,
+	ROAMING_SCAN_MODE_NUM
+};
+
+struct ROAMING_SCAN_PARAMETER {
+	uint8_t ucScanType;
+	uint8_t ucScanCount;
+	uint8_t ucScanMode;
+};
+
 struct ROAMING_INFO {
 	enum ENUM_ROAMING_STATE eCurrentState;
 
@@ -161,6 +182,8 @@ struct ROAMING_INFO {
 	struct TIMER rTxReqDoneRxRespTimer;
 	struct BSS_DESC_SET *prRoamTarget;
 	uint8_t ucTxActionRetryCount;
+
+	struct ROAMING_SCAN_PARAMETER rRoamScanParam;
 };
 
 /*******************************************************************************

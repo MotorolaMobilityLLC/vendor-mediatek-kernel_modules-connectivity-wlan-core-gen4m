@@ -502,6 +502,9 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prRoamingFsmInfo->eCurrentState = ROAMING_STATE_IDLE;
 	prRoamingFsmInfo->rRoamingDiscoveryUpdateTime = 0;
 	prRoamingFsmInfo->u4BssIdxBmap = 0;
+	prRoamingFsmInfo->rRoamScanParam.ucScanType = ROAMING_SCAN_TYPE_NORMAL;
+	prRoamingFsmInfo->rRoamScanParam.ucScanCount = 0;
+	prRoamingFsmInfo->rRoamScanParam.ucScanMode = ROAMING_SCAN_MODE_NORMAL;
 
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		prRoamingFsmInfo->eCurrentEvent[i] = ROAMING_EVENT_NUM;
@@ -815,6 +818,11 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 		switch (prRoam->eCurrentState) {
 		case ROAMING_STATE_IDLE:
 			prRoam->prRoamTarget = NULL;
+			prRoam->rRoamScanParam.ucScanType =
+					ROAMING_SCAN_TYPE_NORMAL;
+			prRoam->rRoamScanParam.ucScanCount = 0;
+			prRoam->rRoamScanParam.ucScanMode =
+					ROAMING_SCAN_MODE_NORMAL;
 			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
 
 			break;
@@ -825,6 +833,11 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 #endif
 			prRoam->eReason = ROAMING_REASON_POOR_RCPI;
 			prRoam->prRoamTarget = NULL;
+			prRoam->rRoamScanParam.ucScanType =
+					ROAMING_SCAN_TYPE_NORMAL;
+			prRoam->rRoamScanParam.ucScanCount = 0;
+			prRoam->rRoamScanParam.ucScanMode =
+					ROAMING_SCAN_MODE_NORMAL;
 			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
 
 			break;

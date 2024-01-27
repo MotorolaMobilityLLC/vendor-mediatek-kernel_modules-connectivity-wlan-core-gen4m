@@ -2166,6 +2166,15 @@ uint8_t aisNeedTargetScan(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		bss->eConnectionState == MEDIA_STATE_CONNECTED &&
 		(roam->eCurrentState == ROAMING_STATE_DISCOVERY ||
 		roam->eCurrentState == ROAMING_STATE_ROAM);
+
+	if (discovering) {
+		if (roam->rRoamScanParam.ucScanType ==
+					ROAMING_SCAN_TYPE_PARTIAL_ONLY)
+			return TRUE;
+		else if (roam->rRoamScanParam.ucScanType ==
+					ROAMING_SCAN_TYPE_FULL_ONLY)
+			return FALSE;
+	}
 #endif
 	postponing = aisFsmIsInProcessPostpone(prAdapter, ucBssIndex);
 	trial = ais->ucConnTrialCount;
@@ -2391,6 +2400,32 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 		ais->fgTargetChnlScanIssued = FALSE;
 		state = AIS_STATE_LOOKING_FOR;
 		goto skip_roam_fail;
+	} else if (roam->rRoamScanParam.ucScanCount) {
+		if (roam->rRoamScanParam.ucScanCount &&
+		    ais->ucScanTrialCount >=
+				roam->rRoamScanParam.ucScanCount) {
+			DBGLOG(ROAMING, STATE,
+				"Roaming scan retry :%d fail!\n",
+				ais->ucScanTrialCount);
+			roamingFsmRunEventNewCandidate(prAdapter,
+				NULL, ucBssIndex);
+			roamingFsmRunEventFail(prAdapter,
+				ROAMING_FAIL_REASON_NOCANDIDATE,
+				ucBssIndex);
+
+			/* reset retry count */
+			ais->ucConnTrialCount = 0;
+			state = AIS_STATE_NORMAL_TR;
+			goto skip_roam_fail;
+		} else if (roam->rRoamScanParam.ucScanCount) {
+			DBGLOG(ROAMING, INFO,
+				"Didn't reach scan limit %d < %d, try to scan again\n",
+				ais->ucScanTrialCount,
+				roam->rRoamScanParam.ucScanCount);
+			ais->ucScanTrialCount++;
+			state = AIS_STATE_LOOKING_FOR;
+			goto skip_roam_fail;
+		}
 	} else if (ais->fgTargetChnlScanIssued) {
 		/* if target channel scan has issued, and no
 		 * roaming target is found, need to do full scan
@@ -2478,7 +2513,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 				prAisFsmInfo->ucMlProbeEnable = TRUE;
 				prAisFsmInfo->prMlProbeBssDesc =
 					prBssDescSet->aprBssDesc[0];
-				return AIS_STATE_LOOKING_FOR;
+				return AIS_STATE_SCAN;
 			}
 #endif
 
@@ -2998,7 +3033,6 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 		case AIS_STATE_SCAN:
 		case AIS_STATE_ONLINE_SCAN:
 		case AIS_STATE_LOOKING_FOR:
-
 			if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
 				/* sync with firmware */
 				nicActivateNetwork(prAdapter,
@@ -3054,6 +3088,7 @@ send_msg:
 			/* Support AP Selection */
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 			prAisFsmInfo->fgIsScanning = TRUE;
+
 			break;
 
 #if CFG_SUPPORT_ROAMING
@@ -6176,6 +6211,10 @@ void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	struct AIS_SPECIFIC_BSS_INFO *prAisSpecificBssInfo;
 #endif
+#if CFG_SUPPORT_ROAMING
+	struct ROAMING_INFO *prRoamingFsmInfo =
+			aisGetRoamingInfo(prAdapter, ucBssIndex);
+#endif
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
@@ -6198,7 +6237,29 @@ void aisFsmRunEventBGSleepTimeOut(struct ADAPTER *prAdapter,
 			prAisSpecificBssInfo->prTargetComebackBssDesc = NULL;
 		} else
 #endif /* CFG_SUPPORT_802_11W */
+		{
 			eNextState = AIS_STATE_LOOKING_FOR;
+#if CFG_SUPPORT_ROAMING
+			if (prRoamingFsmInfo->rRoamScanParam.ucScanCount &&
+			    prAisFsmInfo->ucScanTrialCount >=
+				prRoamingFsmInfo->rRoamScanParam.ucScanCount) {
+				DBGLOG(AIS, STATE,
+					"Roaming scan retry :%d fail!\n",
+					prAisFsmInfo->ucScanTrialCount);
+				roamingFsmRunEventNewCandidate(prAdapter,
+					NULL, ucBssIndex);
+				roamingFsmRunEventFail(prAdapter,
+					ROAMING_FAIL_REASON_NOCANDIDATE,
+					ucBssIndex);
+
+				/* reset retry count */
+				prAisFsmInfo->ucConnTrialCount = 0;
+				eNextState = AIS_STATE_NORMAL_TR;
+
+			} else if (prRoamingFsmInfo->rRoamScanParam.ucScanCount)
+				prAisFsmInfo->ucScanTrialCount++;
+#endif
+		}
 
 		SET_NET_PWR_STATE_ACTIVE(prAdapter,
 					 ucBssIndex);
@@ -7056,6 +7117,7 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 			eAisRequest = AIS_REQUEST_ROAMING_CONNECT;
 		} else {
 			eAisRequest = AIS_REQUEST_ROAMING_SEARCH;
+			prAisFsmInfo->ucScanTrialCount++;
 		}
 	}
 
@@ -10176,7 +10238,11 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct RADIO_MEASUREMENT_REQ_PARAMS *prRmReq;
+#if CFG_SUPPORT_ROAMING
+	struct ROAMING_INFO *prRoamingFsmInfo;
 
+	prRoamingFsmInfo = aisGetRoamingInfo(prAdapter, ucBssIndex);
+#endif
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prRmReq = aisGetRmReqParam(prAdapter, ucBssIndex);
@@ -10261,6 +10327,20 @@ static void aisScanProcessReqParam(struct ADAPTER *prAdapter,
 	prScanReqMsg->u2ChannelMinDwellTime =
 		prScanRequest->u2ChannelMinDwellTime;
 	prScanReqMsg->u2TimeoutValue = 0;
+
+#if CFG_SUPPORT_ROAMING
+	/* TODO: Add more variable parameters for different scan modes */
+	if (prRoamingFsmInfo->rRoamScanParam.ucScanMode ==
+			ROAMING_SCAN_MODE_LOW_LATENCY) {
+		prScanReqMsg->u2ChannelDwellTime =
+			ROAMING_SCAN_NON_DFS_CH_DWELL_TIME;
+		prScanReqMsg->u2ChannelMinDwellTime =
+			(prScanReqMsg->u2ChannelDwellTime <
+			SCAN_CHANNEL_DWELL_TIME_MIN_MSEC) ?
+			prScanReqMsg->u2ChannelDwellTime :
+			SCAN_CHANNEL_DWELL_TIME_MIN_MSEC;
+	}
+#endif
 
 #if CFG_SUPPORT_LLW_SCAN
 	/* using customized scan parameters */
