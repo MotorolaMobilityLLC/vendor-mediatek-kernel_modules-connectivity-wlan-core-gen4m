@@ -206,21 +206,14 @@ uint8_t p2pRoleFsmInit(struct ADAPTER *prAdapter,
 #endif
 
 		prP2pBssInfo = p2pRoleFsmInitLink(prAdapter, prP2pRoleFsmInfo,
-						  aucMacAddr, ucLinkIdx);
+						  aucMacAddr, ucGroupMldId,
+						  ucLinkIdx);
 		if (prP2pBssInfo == NULL) {
 			DBGLOG(P2P, ERROR,
 				"Error allocating bss\n");
 			u4Status = WLAN_STATUS_RESOURCES;
 			break;
 		}
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		prP2pBssInfo->ucLinkIndex = ucLinkIdx;
-		mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
-#endif
-		p2pSetLinkBssInfo(prP2pRoleFsmInfo,
-				  ucLinkIdx,
-				  prP2pBssInfo);
 
 		prP2pRoleFsmInfo->ucBssIndex = prP2pBssInfo->ucBssIndex;
 		ucBssIdx = prP2pBssInfo->ucBssIndex;
@@ -260,11 +253,10 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 		prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		p2pLinkUninitGCRole(prAdapter, prP2pRoleFsmInfo);
-#else
 		p2pRoleFsmUninitLink(prAdapter, prP2pRoleFsmInfo,
 			prP2pBssInfo);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		p2pLinkUninitGcOtherLinks(prAdapter, prP2pRoleFsmInfo);
 #endif
 
 		/* Function Dissolve should already enter IDLE state. */
@@ -307,8 +299,12 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx)
 struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t aucMacAddr[],
+	uint8_t ucGroupMldId,
 	uint8_t ucLinkIdx)
 {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo;
+#endif
 	struct BSS_INFO *prP2pBssInfo = NULL;
 	uint8_t ucRoleIdx = prP2pRoleFsmInfo->ucRoleIndex;
 
@@ -393,6 +389,7 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 		prP2pBssInfo->fgIsQBSS = TRUE;
 	else
 		prP2pBssInfo->fgIsQBSS = FALSE;
+	prP2pBssInfo->eIftype = IFTYPE_P2P_CLIENT;
 
 	cnmTimerInitTimer(prAdapter,
 		&(prP2pBssInfo->rP2pCsaDoneTimer),
@@ -400,6 +397,15 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 		(uintptr_t)prP2pBssInfo);
 
 	LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByIdx(prAdapter, ucGroupMldId);
+	prP2pBssInfo->ucLinkIndex = ucLinkIdx;
+	mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
+#endif
+	p2pSetLinkBssInfo(prP2pRoleFsmInfo,
+			  ucLinkIdx,
+			  prP2pBssInfo);
 
 	DBGLOG(P2P, INFO, "role=%u bss=%u mac="MACSTR"\n",
 		ucRoleIdx,
@@ -461,6 +467,10 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 
 	cnmTimerStopTimer(prAdapter,
 		&(prP2pBssInfo->rP2pCsaDoneTimer));
+
+	p2pSetLinkBssInfo(prP2pRoleFsmInfo,
+			  prP2pBssInfo->ucLinkIndex,
+			  NULL);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mldBssUnregister(prAdapter,
@@ -2713,7 +2723,7 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (set.ucLinkNum > 1)
-		p2pLinkInitGCRole(prAdapter, prP2pRoleFsmInfo,
+		p2pLinkInitGcOtherLinks(prAdapter, prP2pRoleFsmInfo,
 			set.ucLinkNum);
 #endif
 

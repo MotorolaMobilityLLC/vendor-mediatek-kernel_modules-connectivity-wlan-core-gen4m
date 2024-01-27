@@ -5454,7 +5454,7 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (set.ucLinkNum > 1)
-			p2pLinkInitGCRole(prAdapter, prP2pRoleFsmInfo,
+			p2pLinkInitGcOtherLinks(prAdapter, prP2pRoleFsmInfo,
 				set.ucLinkNum);
 #endif
 

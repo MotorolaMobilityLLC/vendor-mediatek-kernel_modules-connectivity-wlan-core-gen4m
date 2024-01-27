@@ -391,6 +391,7 @@ void p2pRoleFsmUninit(struct ADAPTER *prAdapter, uint8_t ucRoleIdx);
 struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t aucMacAddr[],
+	uint8_t ucGroupMldId,
 	uint8_t ucLinkIdx);
 
 void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,

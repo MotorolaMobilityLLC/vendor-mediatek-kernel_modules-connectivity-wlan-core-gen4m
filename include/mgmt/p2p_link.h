@@ -31,11 +31,11 @@ struct MLD_BSS_INFO *p2pMldBssInit(struct ADAPTER *prAdapter,
 void p2pMldBssUninit(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldbss);
 
-void p2pLinkInitGCRole(struct ADAPTER *prAdapter,
+void p2pLinkInitGcOtherLinks(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkNum);
 
-void p2pLinkUninitGCRole(struct ADAPTER *prAdapter,
+void p2pLinkUninitGcOtherLinks(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 #endif
 
