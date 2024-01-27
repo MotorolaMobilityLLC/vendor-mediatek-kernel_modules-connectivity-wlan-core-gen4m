@@ -441,7 +441,7 @@ struct BSS_DESC *p2pGetTargetBssDesc(
 	if (!prP2pRoleFsmInfo)
 		return NULL;
 
-	return p2pGetLinkBssDesc(prP2pRoleFsmInfo, P2P_MAIN_LINK_INDEX);
+	return p2pGetLinkBssDesc(prP2pRoleFsmInfo, prP2pBssInfo->ucLinkIndex);
 }
 
 void p2pFsmRunEventCsaDoneTimeOut(struct ADAPTER *prAdapter,
