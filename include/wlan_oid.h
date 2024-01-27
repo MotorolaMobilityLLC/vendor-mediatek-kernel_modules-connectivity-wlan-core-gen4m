@@ -2444,10 +2444,6 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct PARAM_MTK_WIFI_TEST_STRUCT {
 	uint32_t u4FuncIndex;
 	uint32_t u4FuncData;
-	union {
-		uint32_t u4FuncData;
-		struct CMD_RDD_ON_OFF_CTRL_T rRDDParam;
-	} Data;
 }__KAL_ATTRIB_PACKED__;
 
 struct _RBIST_IQ_DATA_T {
