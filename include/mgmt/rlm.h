@@ -181,6 +181,9 @@ extern uint8_t  g_ucHtSMPSCapValue;
 #define TX_PWR_ENV_PSD_TRANS_DBM_BW40    32 /* 10*log( 40) * 2  = 32, 0.5dBm */
 #define TX_PWR_ENV_PSD_TRANS_DBM_BW80    38 /* 10*log( 80) * 2  = 38, 0.5dBm */
 #define TX_PWR_ENV_PSD_TRANS_DBM_BW160   44 /* 10*log(160) * 2  = 44, 0.5dBm */
+
+#define TX_PWR_ENV_INT8_MIN             -128
+#define TX_PWR_ENV_INT8_MAX              127
 #endif
 
 #define TX_PWR_REG_LMT_MIN   5  /* LSB = 1 dBm */

@@ -11442,6 +11442,11 @@ void rlmTxPwrEnvMaxPwrUpdateArbi(
 
 			picTarget[eBwType] = icMinPwrLmt;
 		}
+
+		DBGLOG(RLM, TRACE, "Final TPE BW[%d]Lmt[%d]Change[%d]\n",
+				eBwType,
+				picTarget[eBwType],
+				*pfgIsChange);
 	}
 }
 /*----------------------------------------------------------------------------*/
@@ -11526,6 +11531,63 @@ void rlmTxPwrEnvMaxPwrSend(
 err:
 	cnmMemFree(prAdapter, prCmd);
 }
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This func is use to handle 6G power mode for TPE TxPower limit.
+ *        EX : Station should set power limit 6dBm below the standard power AP
+ *             transmit power authorized by AFC system.
+ *
+ * \param[in] prAdapter : Pointer of adapter.
+ * \param[in] e6GPwrMode : Enum of 6G power mode
+ * \param[in] ucNum : Indicate the quantity of TPE TxPower limit is valid.
+ * \param[in] picTpeLmt : Pointer of TPE Max TxPower limit.
+ *
+ * \return value : Success : WLAN_STATUS_SUCCESS
+ *                 Fail    : WLAN_STATUS_INVALID_DATA
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t rlmTxPwrEnv6GPwrModeHdler(
+	struct ADAPTER *prAdapter,
+	enum ENUM_PWR_MODE_6G_TYPE e6GPwrMode,
+	uint8_t ucNum,
+	int8_t *picTpeLmt)
+{
+	enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE eBw;
+
+	if (e6GPwrMode == PWR_MODE_6G_SP) {
+
+		if (prAdapter->rWifiVar.u2CountryCode != COUNTRY_CODE_US) {
+			/* So far only FCC need handle TPE limit for SP AP */
+			return WLAN_STATUS_SUCCESS;
+		}
+
+		/* 1. For Standard power mode AP, AFC system will send
+		 * the power limit to AP and AP will send this power
+		 * limit to station by Transmit Power Envelope.
+		 *
+		 * 2. Follow FCC regulation, Station should set power limit
+		 * 6dBm below the standard power AP transmit power authorized
+		 * by AFC system.
+		 */
+		for (eBw = TX_PWR_ENV_MAX_TXPWR_BW20; eBw < ucNum; eBw++) {
+
+			if (picTpeLmt[eBw] < TX_PWR_ENV_INT8_MIN + 12) {
+				/* To avoid over flow */
+				picTpeLmt[eBw] = TX_PWR_ENV_INT8_MIN;
+			} else {
+				picTpeLmt[eBw] =  picTpeLmt[eBw] - 12;
+			}
+
+			DBGLOG(RLM, INFO, "TPE handle for SP,BW[%d]Lmt[%d]\n",
+					eBw,
+					picTpeLmt[eBw]);
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This func is use to update TxPwr Envelope if need.
@@ -11627,6 +11689,17 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 	}
 
 	if (u4Status == WLAN_STATUS_SUCCESS) {
+
+		for (eBwType = TX_PWR_ENV_MAX_TXPWR_BW20;
+			eBwType < ucPwrLmtNum; eBwType++) {
+			DBGLOG(RLM, TRACE,
+				"Parse TPE,Band[%d]Itpt[%d]BW[%d]Lmt\n",
+				eHwBand,
+				ucTxPwrEnvIntrpt,
+				eBwType,
+				aicTxPwrEnvMaxTxPwr[eBwType]);
+		}
+
 		prBssDesc->fgIsTxPwrEnvPresent = TRUE;
 		/* Since there will receive the multiple Transmit Power Envelope
 		 * IE, different IE may content different size of TxPower Limit
@@ -11635,6 +11708,15 @@ uint32_t rlmTxPwrEnvMaxPwrUpdate(
 		if (ucPwrLmtNum > prBssDesc->ucTxPwrEnvPwrLmtNum)
 			prBssDesc->ucTxPwrEnvPwrLmtNum = ucPwrLmtNum;
 
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+		if (eHwBand == BAND_6G) {
+			rlmTxPwrEnv6GPwrModeHdler(
+				prAdapter,
+				prBssDesc->e6GPwrMode,
+				ucPwrLmtNum,
+				aicTxPwrEnvMaxTxPwr);
+		}
+#endif
 		/* Set minimum TxPower limit */
 		rlmTxPwrEnvMaxPwrUpdateArbi(
 			prAdapter,
