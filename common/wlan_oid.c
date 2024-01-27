@@ -14701,6 +14701,9 @@ wlanoidQueryRddLogContent(struct ADAPTER *prAdapter,
 	if (!log_cb || !log_cb->entry)
 		goto err0;
 
+	if (!log_cb->idx)
+		return WLAN_STATUS_INVALID_DATA;
+
 	if (log_cb->is_overwritten)
 		idx = log_cb->idx;
 
@@ -14711,8 +14714,7 @@ wlanoidQueryRddLogContent(struct ADAPTER *prAdapter,
 
 	log_cb->is_dumping = TRUE;
 
-	if (log_cb != 0 && log_cb_qa_a != 0)
-		kalMemCopy(log_cb_qa_a, log_cb, sizeof(*log_cb));
+	kalMemCopy(log_cb_qa_a, log_cb, sizeof(*log_cb));
 
 	if (!log_cb_qa_a
 	|| log_cb->entry[idx].un_dumped == 0

@@ -823,9 +823,7 @@ struct STAREC_COMMON {
 struct _ATE_RDD_LOG {
 	uint32_t u4Prefix;
 	uint32_t u4Count;
-	uint32_t u4FuncLength;
 	uint8_t byPass;
-	uint8_t ucRddIdx;
 	uint8_t aucBuffer[ATE_RDD_LOG_SIZE];
 };
 
