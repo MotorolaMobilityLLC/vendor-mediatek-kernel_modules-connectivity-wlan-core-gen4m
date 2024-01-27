@@ -1555,6 +1555,9 @@ void mt6653_dumpWfTopReg(struct ADAPTER *ad)
 
 	/* SectionD - Dump wf_top_rgu_on debug CR */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d);
+
+	/* SectionE - Dump wf_top_rgu_von monflg */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e);
 }
 
 void mt6653_dumpWfBusReg(struct ADAPTER *ad)
