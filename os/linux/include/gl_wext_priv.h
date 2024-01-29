@@ -649,6 +649,10 @@ int priv_driver_show_dfs_help(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_show_dfs_cac_time(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_dfs_cac_start(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_dfs_cac_stop(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_rddreport(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_radarmode(struct net_device *prNetDev,

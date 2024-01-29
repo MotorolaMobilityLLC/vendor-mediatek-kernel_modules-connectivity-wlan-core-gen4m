@@ -11631,7 +11631,147 @@ int priv_driver_show_dfs_cac_time(struct net_device *prNetDev,
 	}
 
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-	       "\nRemaining time of CAC: %dsec", p2pFuncGetCacRemainingTime());
+	       "\nRemaining time of CAC: %dsec, detect cnt: %d",
+	       p2pFuncGetCacRemainingTime(),
+	       p2pFuncGetRadarDetectCnt());
+
+	return	i4BytesWritten;
+}
+
+int priv_driver_dfs_cac_start(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4BytesWritten = 0;
+	uint32_t u4Ret = 0;
+	uint32_t ucBw = 0;
+	uint32_t ucBwVht = 0;
+	uint32_t ucCh = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+	struct MSG_P2P_DFS_CAC *prP2pStartCacMsg =
+		(struct MSG_P2P_DFS_CAC *) NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+			(struct P2P_ROLE_FSM_INFO *) NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+
+	if (i4Argc >= 3) {
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &ucBw);
+		u4Ret = kalkStrtou32(apcArgv[2], 0, &ucCh);
+	}
+	DBGLOG(REQ, INFO, "u4Ret is %d\n", u4Ret);
+
+	kalMemZero(&rRfChnlInfo, sizeof(struct RF_CHANNEL_INFO));
+
+	rRfChnlInfo.ucChannelNum = ucCh;
+	rRfChnlInfo.ucChnlBw = ucBw;
+	rRfChnlInfo.u2PriChnlFreq =
+		nicChannelNum2Freq(ucCh, BAND_5G) / 1000;
+	rRfChnlInfo.u4CenterFreq1 =
+		nicGetS1Freq(prGlueInfo->prAdapter,
+			BAND_5G, ucCh, ucBw);
+	rRfChnlInfo.u4CenterFreq2 = 0;
+
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+		prGlueInfo->prAdapter, ucRoleIdx);
+	if (prP2pRoleFsmInfo)
+		prP2pRoleFsmInfo->eDfsChnlBw =
+			ucBw;
+
+	p2pFuncSetChannel(prGlueInfo->prAdapter,
+		ucRoleIdx, &rRfChnlInfo);
+
+	if ((rRfChnlInfo.eBand == BAND_5G) &&
+		(p2pFuncGetDfsState() == DFS_STATE_DETECTED))
+		p2pFuncSetDfsState(DFS_STATE_INACTIVE);
+
+	p2pFuncSetRadarDetectMode(1);
+	p2pFuncResetRadarDetectCnt();
+
+	prP2pStartCacMsg = (struct MSG_P2P_DFS_CAC *)
+		cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_DFS_CAC));
+	if (prP2pStartCacMsg == NULL)
+		return	i4BytesWritten;
+
+	if (ucBw > 1)
+		ucBwVht = (enum ENUM_CHANNEL_WIDTH)ucBw-1;
+	else
+		ucBwVht = CW_20_40MHZ;
+	prP2pStartCacMsg->rMsgHdr.eMsgId = MID_MNY_P2P_START_CAC;
+	prP2pStartCacMsg->eChannelWidth = (ucBwVht);
+	prP2pStartCacMsg->ucRoleIdx = ucRoleIdx;
+
+	mboxSendMsg(prGlueInfo->prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prP2pStartCacMsg,
+		MSG_SEND_METHOD_BUF);
+
+	DBGLOG(P2P, INFO, "start cac with ch %d and bw %d\n",
+		ucCh, ucBw);
+
+	return	i4BytesWritten;
+}
+
+int priv_driver_dfs_cac_stop(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	int32_t i4BytesWritten = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	struct MSG_P2P_DFS_CAC *prP2pStopCacMsg =
+		(struct MSG_P2P_DFS_CAC *) NULL;
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
+		ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	prP2pStopCacMsg = (struct MSG_P2P_DFS_CAC *)
+		cnmMemAlloc(prGlueInfo->prAdapter,
+			RAM_TYPE_MSG, sizeof(struct MSG_P2P_DFS_CAC));
+	if (prP2pStopCacMsg == NULL)
+		return i4BytesWritten;
+
+	prP2pStopCacMsg->rMsgHdr.eMsgId = MID_MNY_P2P_STOP_CAC;
+	prP2pStopCacMsg->ucRoleIdx = ucRoleIdx;
+
+	mboxSendMsg(prGlueInfo->prAdapter,
+		MBOX_ID_0,
+		(struct MSG_HDR *) prP2pStopCacMsg,
+		MSG_SEND_METHOD_BUF);
 
 	return	i4BytesWritten;
 }

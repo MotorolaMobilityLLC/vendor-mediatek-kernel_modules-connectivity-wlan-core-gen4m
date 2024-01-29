@@ -86,6 +86,7 @@ u_int8_t g_fgManualCac = FALSE;
 uint32_t g_u4DriverCacTime;
 uint32_t g_u4CacStartBootTime;
 uint8_t g_ucRadarDetectMode = FALSE;
+uint8_t g_ucRadarDetectCnt;
 struct P2P_RADAR_INFO g_rP2pRadarInfo;
 uint8_t g_ucDfsState = DFS_STATE_INACTIVE;
 
@@ -2973,6 +2974,21 @@ void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode)
 uint8_t p2pFuncGetRadarDetectMode(void)
 {
 	return g_ucRadarDetectMode;
+}
+
+void p2pFuncAddRadarDetectCnt(void)
+{
+	g_ucRadarDetectCnt++;
+}
+
+void p2pFuncResetRadarDetectCnt(void)
+{
+	g_ucRadarDetectCnt = 0;
+}
+
+uint8_t p2pFuncGetRadarDetectCnt(void)
+{
+	return g_ucRadarDetectCnt;
 }
 
 void p2pFuncSetDfsState(uint8_t ucDfsState)

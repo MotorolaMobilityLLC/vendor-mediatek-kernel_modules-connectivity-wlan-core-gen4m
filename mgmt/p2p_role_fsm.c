@@ -745,20 +745,31 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 			break;
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		case P2P_ROLE_STATE_DFS_CAC:
-			p2pRoleFsmStateTransition(prAdapter,
-				prP2pRoleFsmInfo,
-				P2P_ROLE_STATE_IDLE);
-			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo,
-				prP2pRoleFsmInfo->ucRoleIndex);
-			p2pFuncSetDfsState(DFS_STATE_ACTIVE);
-			cnmTimerStartTimer(prAdapter,
-				&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-				5000);
-			/* start ap */
-			prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
-			p2pRoleFsmRunEventStartAP(prAdapter,
-				(struct MSG_HDR *)
-				&prP2pConnReqInfo->rMsgStartAp);
+			if (p2pFuncGetRadarDetectMode()) {
+				p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_IDLE);
+				cnmTimerStartTimer(prAdapter,
+					&(prP2pRoleFsmInfo->rDfsShutDownTimer),
+					5000);
+				p2pFuncSetRadarDetectMode(0);
+			} else {
+				p2pRoleFsmStateTransition(prAdapter,
+					prP2pRoleFsmInfo,
+					P2P_ROLE_STATE_IDLE);
+				kalP2PCacFinishedUpdate(prAdapter->prGlueInfo,
+					prP2pRoleFsmInfo->ucRoleIndex);
+				p2pFuncSetDfsState(DFS_STATE_ACTIVE);
+				cnmTimerStartTimer(prAdapter,
+					&(prP2pRoleFsmInfo->rDfsShutDownTimer),
+					5000);
+				/* start ap */
+				prP2pConnReqInfo =
+					&(prP2pRoleFsmInfo->rConnReqInfo);
+				p2pRoleFsmRunEventStartAP(prAdapter,
+					(struct MSG_HDR *)
+					&prP2pConnReqInfo->rMsgStartAp);
+			}
 			break;
 #endif
 		default:
@@ -2130,6 +2141,86 @@ error:
 }				/* p2pRoleFsmRunEventStopAP */
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
+void p2pRoleFsmRunEventStartCac(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
+		(struct MSG_P2P_DFS_CAC *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo =
+		(struct P2P_CONNECTION_REQ_INFO *) NULL;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo =
+		(struct P2P_SPECIFIC_BSS_INFO *) NULL;
+
+	prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *) prMsgHdr;
+
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pDfsCacMsg->ucRoleIdx);
+
+
+	DBGLOG(P2P, TRACE,
+		"with Role(%d)\n",
+		prP2pDfsCacMsg->ucRoleIdx);
+
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+			"Corresponding P2P Role FSM empty: %d.\n",
+			prP2pDfsCacMsg->ucRoleIdx);
+		cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
+
+	prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prP2pRoleFsmInfo->ucRoleIndex];
+	prP2pSpecificBssInfo->fgIsRddOpchng = FALSE;
+	prP2pSpecificBssInfo->fgAddPwrConstrIe = FALSE;
+
+	kalP2pPreStartRdd(prAdapter->prGlueInfo,
+		prP2pDfsCacMsg->ucRoleIdx,
+		prP2pConnReqInfo->rChannelInfo.ucChannelNum,
+		BAND_5G);
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
+void p2pRoleFsmRunEventStopCac(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr)
+{
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
+		(struct MSG_P2P_DFS_CAC *) NULL;
+
+	prP2pDfsCacMsg = (struct MSG_P2P_DFS_CAC *) prMsgHdr;
+
+	prP2pRoleFsmInfo =
+		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
+			prP2pDfsCacMsg->ucRoleIdx);
+
+
+	DBGLOG(P2P, TRACE,
+		"with Role(%d)\n",
+		prP2pDfsCacMsg->ucRoleIdx);
+
+	if (!prP2pRoleFsmInfo) {
+		DBGLOG(P2P, ERROR,
+			"Corresponding P2P Role FSM empty: %d.\n",
+			prP2pDfsCacMsg->ucRoleIdx);
+		cnmMemFree(prAdapter, prMsgHdr);
+		return;
+	}
+
+	p2pRoleFsmStateTransition(prAdapter,
+		prP2pRoleFsmInfo,
+		P2P_ROLE_STATE_IDLE);
+	cnmTimerStartTimer(prAdapter,
+		&(prP2pRoleFsmInfo->rDfsShutDownTimer),
+		5000);
+	cnmMemFree(prAdapter, prMsgHdr);
+}
+
 void p2pRoleFsmRunEventDfsCac(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -2292,6 +2383,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 	if (p2pFuncGetRadarDetectMode()) {
 		DBGLOG(P2P, INFO,
 			"p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
+		p2pFuncAddRadarDetectCnt();
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pFuncSetDfsState(DFS_STATE_CHECKING);
 		else
@@ -2408,7 +2500,7 @@ void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
 
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
-
+	p2pFuncResetRadarDetectCnt();
 }				/* p2pRoleFsmRunEventDfsShutDownTimeout */
 
 #endif
@@ -3629,9 +3721,9 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	uint32_t u4CacTimeMs;
+	struct LINK *prClientList;
 #endif
 	uint8_t ucTokenID = 0;
-	struct LINK *prClientList;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!\n");

@@ -161,6 +161,11 @@ struct CMD_VALIDATE_POLICY set_faw_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 struct CMD_VALIDATE_POLICY rddreport_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = 4}
 };
+
+struct CMD_VALIDATE_POLICY set_cac_config_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U32, .min = 0, .max = 5},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = 165}
+};
 #endif
 
 #if CFG_WOW_SUPPORT
@@ -430,6 +435,30 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+	{
+		.pcCmdStr  = CMD_SHOW_DFS_CAC_TIME,
+		.pfHandler = priv_driver_show_dfs_cac_time,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_DFS_CAC_START,
+		.pfHandler = priv_driver_dfs_cac_start,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = set_cac_config_policy,
+		.u4PolicySize = ARRAY_SIZE(set_cac_config_policy)
+	},
+	{
+		.pcCmdStr  = CMD_DFS_CAC_STOP,
+		.pfHandler = priv_driver_dfs_cac_stop,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
 	},
 #endif
 #if CFG_WOW_SUPPORT

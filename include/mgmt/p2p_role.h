@@ -354,6 +354,7 @@ struct P2P_ROLE_FSM_INFO {
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct TIMER rDfsShutDownTimer;
+	enum ENUM_MAX_BANDWIDTH_SETTING eDfsChnlBw;
 #endif
 
 	struct TIMER rWaitNextReqChnlTimer;
@@ -425,6 +426,12 @@ void p2pRoleFsmRunEventStopAP(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void p2pRoleFsmRunEventDfsCac(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
+
+void p2pRoleFsmRunEventStartCac(struct ADAPTER *prAdapter,
+		struct MSG_HDR *prMsgHdr);
+
+void p2pRoleFsmRunEventStopCac(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr);
 
 void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
