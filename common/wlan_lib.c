@@ -8729,6 +8729,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	wlanCfgSetUint32(prAdapter, "EnableRro", prWifiVar->fgEnableRro);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+	INIT_UINT(prWifiVar->u4WfdmaRxHangCnt, "WfdmaRxHangCnt", 3,
+		  FEATURE_DEBUG_ONLY);
+
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
 	for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
 		INIT_INT(prWifiVar->i4BssCount[u4Idx], "wfdSccBalanceBssCount",

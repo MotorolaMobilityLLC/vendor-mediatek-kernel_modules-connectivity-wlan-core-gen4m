@@ -830,6 +830,40 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
 }
 
+void halCheckWfdmaHang(struct ADAPTER *prAdapter)
+{
+#if CFG_MTK_WIFI_WFDMA_WB
+	struct GL_HIF_INFO *prHifInfo;
+	struct WIFI_VAR *prWifiVar;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t i, u4RxCnt = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prWifiVar = &prAdapter->rWifiVar;
+
+	for (i = 0; i < NUM_OF_RX_RING; i++) {
+		prRxRing = &prHifInfo->RxRing[i];
+		if (!prRxRing->fgEnEmiDidx)
+			continue;
+
+		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, i);
+		if (u4RxCnt > 0 && prRxRing->u4CidxRec == prRxRing->RxCpuIdx) {
+			prRxRing->u4CidxErrCnt++;
+			DBGLOG(HAL, WARN,
+			       "Ring[%u] RxCnt[%u] rec[%u] cidx[%u] err[%u]\n",
+			       i, u4RxCnt, prRxRing->u4CidxRec,
+			       prRxRing->RxCpuIdx, prRxRing->u4CidxErrCnt);
+		} else {
+			prRxRing->u4CidxRec = prRxRing->RxCpuIdx;
+			prRxRing->u4CidxErrCnt = 0;
+		}
+
+		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+	}
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+}
+
 void halShowPdmaInfo(struct ADAPTER *prAdapter)
 {
 #define BUF_SIZE 1024
