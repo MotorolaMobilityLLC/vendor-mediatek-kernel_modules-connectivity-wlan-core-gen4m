@@ -3803,12 +3803,29 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		{BAND_2G4, BAND_5G, BAND_6G},
 #endif
 	};
+	uint8_t ucArraySize = ARRAY_SIZE(aeLinkPlan);
+	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX] =
+		aeLinkPlan;
+#if CFG_SUPPORT_NAN && !CFG_MLO_CONCURRENT_NAN
+	enum ENUM_BAND aeLinkPlanWithNan[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_NULL, BAND_NULL},
+		{BAND_5G, BAND_NULL, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_6G, BAND_NULL, BAND_NULL},
+#endif
+	};
+
+	if (prAdapter->fgIsNANRegistered) {
+		tmpLinkPlan = aeLinkPlanWithNan;
+		ucArraySize = ARRAY_SIZE(aeLinkPlanWithNan);
+	}
+#endif
 
 	/* select best link plan */
-	for (i = 0; i < ARRAY_SIZE(aeLinkPlan); ++i) {
-		enum ENUM_BAND *link_plan = aeLinkPlan[i];
+	for (i = 0; i < ucArraySize; ++i) {
+		enum ENUM_BAND *link_plan = tmpLinkPlan[i];
 
-		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
+		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(tmpLinkPlan[0])))
 			return TRUE;
 	}
 
