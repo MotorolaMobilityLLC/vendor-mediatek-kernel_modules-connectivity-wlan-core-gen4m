@@ -110,6 +110,7 @@ static char * const apucRstReason[RST_REASON_MAX] = {
 	"RST_PCIE_NOT_READY",
 	"Chip reset by AER",
 	"RST_MMIO_READ",
+	"RST_WFDMA_RX_HANG",
 };
 
 static const char *const apucRstAction[] = {

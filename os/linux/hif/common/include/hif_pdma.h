@@ -722,6 +722,8 @@ struct RTMP_RX_RING {
 	void (*triggerCidx)(struct GLUE_INFO *prGlueInfo,
 			    struct RTMP_RX_RING *prRxRing);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
+	uint32_t u4CidxRec;
+	uint32_t u4CidxErrCnt;
 };
 
 struct PCIE_CHIP_CR_MAPPING {
@@ -1285,6 +1287,8 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 void halStartTxDelayTimer(struct ADAPTER *prAdapter);
 #endif
+
+void halCheckWfdmaHang(struct ADAPTER *prAdapter);
 
 /* Debug functions */
 void halShowPdmaInfo(struct ADAPTER *prAdapter);
