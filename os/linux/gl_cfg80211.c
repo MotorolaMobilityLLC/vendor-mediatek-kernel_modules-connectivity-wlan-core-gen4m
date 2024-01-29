@@ -5784,6 +5784,230 @@ int testmode_force_mrc(struct wiphy *wiphy,
 	return testmode_force_stbc_mrc(prGlueInfo, ucBssIndex, 1, cmd, len);
 }
 
+#if CFG_SUPPORT_LLW_SCAN
+uint32_t wlanoidSetScanParam(struct ADAPTER *prAdapter,
+			    void *pvSetBuffer,
+			    uint32_t u4SetBufferLen,
+			    uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_SCAN *param;
+	struct AIS_FSM_INFO *ais;
+	uint8_t ucBssIndex = 0;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pvSetBuffer) {
+		DBGLOG(REQ, ERROR, "pvGetBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	param = (struct PARAM_SCAN *) pvSetBuffer;
+
+	if (ais->ucLatencyCrtDataMode == 3) {
+		DBGLOG(OID, INFO,
+			"LATENCY_CRT_DATA = 3, not apply SET_DWELL_TIME\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
+	/* To mitigate switch ch overhead,
+	 * we reduce dwell time 20ms, MIN is 20ms
+	 */
+	if (param->ucDfsChDwellTimeMs != 0)
+		ais->ucDfsChDwellTimeMs = (param->ucDfsChDwellTimeMs >= 40)
+			? param->ucDfsChDwellTimeMs - 20 : 20;
+	else
+		ais->ucDfsChDwellTimeMs = 0;
+
+	if (param->ucNonDfsChDwellTimeMs != 0)
+		ais->ucNonDfsChDwellTimeMs =
+			(param->ucNonDfsChDwellTimeMs >= 40)
+			? param->ucNonDfsChDwellTimeMs - 20 : 20;
+	else
+		ais->ucNonDfsChDwellTimeMs = 0;
+
+	ais->u2OpChStayTimeMs = param->u2OpChStayTimeMs;
+
+	if (param->ucNonDfsChDwellTimeMs != 0) {
+		ais->ucPerScanChannelCnt =
+			param->u2OpChAwayTimeMs / param->ucNonDfsChDwellTimeMs;
+	} else
+		ais->ucPerScanChannelCnt = 0;
+
+	DBGLOG(OID, INFO,
+		"DFS(%d->%d), non-DFS(%d->%d), OpChTime(%d %d), PerScanCh(%d)\n",
+		param->ucDfsChDwellTimeMs,
+		ais->ucDfsChDwellTimeMs,
+		param->ucNonDfsChDwellTimeMs,
+		ais->ucNonDfsChDwellTimeMs,
+		ais->u2OpChStayTimeMs,
+		param->u2OpChAwayTimeMs,
+		ais->ucPerScanChannelCnt);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t wlanoidSetLatencyCrtData(struct ADAPTER *prAdapter,
+			    void *pvSetBuffer,
+			    uint32_t u4SetBufferLen,
+			    uint32_t *pu4SetInfoLen)
+{
+	uint32_t *pu4Mode;
+	struct AIS_FSM_INFO *ais;
+	uint8_t ucBssIndex = 0;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pvSetBuffer) {
+		DBGLOG(REQ, ERROR, "pvGetBuffer is NULL\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	pu4Mode = (uint32_t *) pvSetBuffer;
+
+	ais->ucLatencyCrtDataMode = 0;
+	/*
+	 * Mode 2: Restrict full roam scan triggered by Firmware
+	 *          due to low RSSI.
+	 * Mode 3: Restrict off channel time due to full scan to < 40ms
+	 */
+	ais->ucLatencyCrtDataMode = *pu4Mode;
+
+	if (ais->ucLatencyCrtDataMode == 3) {
+		ais->ucDfsChDwellTimeMs = 20;
+		ais->ucNonDfsChDwellTimeMs = 35;
+		ais->u2OpChStayTimeMs = 0;
+		ais->ucPerScanChannelCnt = 1;
+	} else if (ais->ucLatencyCrtDataMode == 0) {
+		ais->ucDfsChDwellTimeMs = 0;
+		ais->ucNonDfsChDwellTimeMs = 0;
+		ais->u2OpChStayTimeMs = 0;
+		ais->ucPerScanChannelCnt = 0;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+int testmode_set_scan_param(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t u4SetInfoLen = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct PARAM_SCAN param;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	/*ex: wpa_cli driver SET_DWELL_TIME W X Y Z*/
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	if (i4Argc != 5) {
+		DBGLOG(REQ, ERROR,
+			"Error input parameters(%d):%s\n", i4Argc, pcCommand);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	kalMemZero(&param, sizeof(struct PARAM_SCAN));
+
+	if (kalkStrtou8(apcArgv[1], 0, &param.ucDfsChDwellTimeMs)) {
+		DBGLOG(REQ, LOUD, "DfsDwellTime parse %s err\n", apcArgv[1]);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (kalkStrtou16(apcArgv[2], 0, &param.u2OpChStayTimeMs)) {
+		DBGLOG(REQ, LOUD, "OpChStayTimeMs parse %s err\n", apcArgv[2]);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (kalkStrtou8(apcArgv[3], 0, &param.ucNonDfsChDwellTimeMs)) {
+		DBGLOG(REQ, LOUD,
+			"NonDfsDwellTimeMs parse %s err\n", apcArgv[3]);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (kalkStrtou16(apcArgv[4], 0, &param.u2OpChAwayTimeMs)) {
+		DBGLOG(REQ, LOUD, "OpChAwayTimeMs parse %s err\n", apcArgv[4]);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	rStatus = kalIoctl(prGlueInfo, wlanoidSetScanParam,
+			&param, sizeof(struct PARAM_SCAN),
+			&u4SetInfoLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR,
+		       "SET_SCAN_PARAM fail 0x%x\n", rStatus);
+	else
+		DBGLOG(INIT, TRACE,
+		       "SET_SCAN_PARAM pass\n");
+
+	return rStatus;
+}
+
+int testmode_set_latency_crt_data(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0, i4Ret = -1;
+	uint32_t rStatus = WLAN_STATUS_FAILURE;
+	uint32_t u4SetInfoLen = 0, u4Mode = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	/*ex: wpa_cli driver SET_LATENCY_CRT_DATA X */
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	if (i4Argc != 2) {
+		DBGLOG(REQ, ERROR,
+			"Error input parameters(%d):%s\n", i4Argc, pcCommand);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	i4Ret = kalkStrtou32(apcArgv[1], 0, &u4Mode);
+	if (i4Ret) {
+		DBGLOG(REQ, ERROR, "Set Latency crt mode parse error %d\n",
+			i4Ret);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* Do further scan handling for mode 2 and mode 3,
+	 * reset if u4Mode == 0
+	 */
+	if (u4Mode >= 2 || u4Mode == 0) {
+		if (u4Mode == 0)
+			wlanChipConfigWithType(prGlueInfo->prAdapter,
+				pcCommand, 22, CHIP_CONFIG_TYPE_WO_RESPONSE);
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetLatencyCrtData,
+			&u4Mode, sizeof(uint32_t),
+			&u4SetInfoLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR,
+				"SET_CRT_DATA fail 0x%x\n", rStatus);
+		else
+			DBGLOG(INIT, TRACE,
+				"SET_CRT_DATA pass\n");
+	} else {
+		/* for mode 1 */
+		wlanChipConfigWithType(prGlueInfo->prAdapter,
+			pcCommand, 22, CHIP_CONFIG_TYPE_WO_RESPONSE);
+	}
+
+	return rStatus;
+}
+#endif
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	struct wiphy *wiphy, char *data, int len)
 {

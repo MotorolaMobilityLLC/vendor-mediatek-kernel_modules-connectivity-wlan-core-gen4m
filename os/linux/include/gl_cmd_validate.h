@@ -411,6 +411,13 @@
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 #define CMD_SET_MDDP_TEST "MDDP_TEST"
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
+#if CFG_SUPPORT_LLW_SCAN
+/* LLW Command */
+#define CMD_LATENCY_CRT_DATA_SET		"SET_LATENCY_CRT_DATA"
+#define CMD_DWELL_TIME_SET			"SET_DWELL_TIME"
+#endif
+
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

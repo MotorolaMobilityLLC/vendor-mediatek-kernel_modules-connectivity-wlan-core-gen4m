@@ -847,6 +847,12 @@ int testmode_force_stbc(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_force_mrc(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+#if CFG_SUPPORT_LLW_SCAN
+int testmode_set_scan_param(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_set_latency_crt_data(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S
