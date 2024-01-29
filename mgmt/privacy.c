@@ -1439,7 +1439,7 @@ enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
 		pucEthBody = secGetEthBody(pucPkt);
 		if (!pucEthBody)
 			break;
-		u2KeyInfo = *((uint16_t *) (&pucEthBody[5]));
+		WLAN_GET_FIELD_BE16(&pucEthBody[5], &u2KeyInfo);
 
 		if ((u2KeyInfo & 0x1100) == 0x0000 ||
 			(u2KeyInfo & 0x0008) == 0x0000)
@@ -1452,6 +1452,7 @@ enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
 			return EAPOL_KEY_4_OF_4;
 	} while (FALSE);
 
+	DBGLOG(RSN, WARN, "unknown EAPOL key type, u2KeyInfo:0x%x", u2KeyInfo);
 	return EAPOL_KEY_NOT_KEY;
 }
 

@@ -368,6 +368,18 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 		struct P2P_JOIN_INFO *prJoinInfo,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
+	struct BSS_INFO *prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					    prP2pRoleFsmInfo->ucBssIndex);
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR, "No BssInfo found");
+		return;
+	}
+
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+					prBssInfo->u4PrivateData];
+
 	if (prJoinInfo->fgIsJoinSuccess != TRUE) {
 		uint8_t i;
 
@@ -403,6 +415,23 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 		&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
 
 	prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
+
+	if (prJoinInfo->fgIsJoinSuccess == TRUE &&
+	    prP2pSpecificBssInfo->fgIsGcEapolDone) {
+#if (CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1)
+		struct BSS_INFO *bss;
+		struct MLD_BSS_INFO *prMldBss =
+			mldBssGetByBss(prAdapter, prBssInfo);
+
+		if (prMldBss) {
+			/* MLO GC only ch abort once */
+			LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
+					    rLinkEntryMld, struct BSS_INFO)
+				CCM_SWITCH_CH(prAdapter, bss);
+		} else
+#endif /* CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1 */
+			CCM_SWITCH_CH(prAdapter, prBssInfo);
+	}
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -459,11 +488,22 @@ p2pRoleStateAbort_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
-	do {
-		p2pFuncReleaseCh(prAdapter,
-			ucBssIdx,
-			prChnlReqInfo);
-	} while (FALSE);
+#if CFG_SUPPORT_CCM
+	struct BSS_INFO *prP2pRoleBssInfo;
+#endif
+
+	p2pFuncReleaseCh(prAdapter, ucBssIdx, prChnlReqInfo);
+
+#if CFG_SUPPORT_CCM
+	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+
+	DBGLOG(P2P, TRACE, "CSA done, re-trigger to notify other GO/SAP");
+	/* do not support CSA by upper layer within CCM */
+	if (LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList))
+		CCM_SWITCH_CH(prAdapter, prP2pRoleBssInfo);
+	else
+		ccmChannelSwitchConsumer(prAdapter);
+#endif /* CFG_SUPPORT_CCM */
 }				/* p2pRoleStateAbort_SWITCH_CHANNEL */
 #endif
 

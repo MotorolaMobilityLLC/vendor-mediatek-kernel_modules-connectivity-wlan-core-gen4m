@@ -8982,6 +8982,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 #if CFG_SUPPORT_WED_PROXY
 	INIT_UINT(prWifiVar->fgEnableWed, "EnableWed", FEATURE_ENABLED,
+		  FEAURE_DEBUG_ONLY);
+#endif
+
+#if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_CCM
+	INIT_UINT(prWifiVar->eP2pCcmMode, "P2pCcmMode", P2P_CCM_MODE_SCC,
 		  FEATURE_DEBUG_ONLY);
 #endif
 }

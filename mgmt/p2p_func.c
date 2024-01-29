@@ -1687,62 +1687,65 @@ drop:
 void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo)
 {
-	do {
-		ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
 
-		DBGLOG(P2P, INFO,
-			"p2pFuncStopComplete %d\n",
-			prP2pBssInfo->ucBssIndex);
+	ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
 
-		/* GO: It would stop Beacon TX.
-		 * GC: Stop all BSS related PS function.
-		 */
-		nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
-		/* Reset RLM related field of BSSINFO. */
-		rlmBssAborted(prAdapter, prP2pBssInfo);
+	DBGLOG(P2P, INFO,
+		"p2pFuncStopComplete %d\n",
+		prP2pBssInfo->ucBssIndex);
 
-		if (prP2pBssInfo->ucBMCWlanIndex != WTBL_RESERVED_ENTRY &&
-		    prP2pBssInfo->fgBcDefaultKeyExist) {
-			struct PARAM_REMOVE_KEY  pvSetBuffer;
-			uint32_t pu4SetInfoLen;
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prP2pBssInfo->u4PrivateData];
 
-			kalMemZero(&pvSetBuffer,
-				   sizeof(struct PARAM_REMOVE_KEY));
+	/* GO: It would stop Beacon TX.
+	 * GC: Stop all BSS related PS function.
+	 */
+	nicPmIndicateBssAbort(prAdapter, prP2pBssInfo->ucBssIndex);
+	/* Reset RLM related field of BSSINFO. */
+	rlmBssAborted(prAdapter, prP2pBssInfo);
+	prP2pSpecificBssInfo->fgIsGcEapolDone = FALSE;
 
-			pvSetBuffer.u4KeyIndex =
-				prP2pBssInfo->ucBcDefaultKeyIdx;
-			pvSetBuffer.ucBssIdx = prP2pBssInfo->ucBssIndex;
-			kalMemCopy(pvSetBuffer.arBSSID,
-				   prP2pBssInfo->aucBSSID, MAC_ADDR_LEN);
+	if (prP2pBssInfo->ucBMCWlanIndex != WTBL_RESERVED_ENTRY &&
+	    prP2pBssInfo->fgBcDefaultKeyExist) {
+		struct PARAM_REMOVE_KEY  pvSetBuffer;
+		uint32_t pu4SetInfoLen;
 
-			wlanSetRemoveKey(prAdapter,
-					&pvSetBuffer,
-					sizeof(struct PARAM_REMOVE_KEY),
-					&pu4SetInfoLen, FALSE);
-		}
+		kalMemZero(&pvSetBuffer,
+			   sizeof(struct PARAM_REMOVE_KEY));
 
-		nicDeactivateNetwork(prAdapter,
-			NETWORK_ID(prP2pBssInfo->ucBssIndex,
-				   prP2pBssInfo->ucLinkIndex));
-		/* Release CNM channel */
-		nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
+		pvSetBuffer.u4KeyIndex =
+			prP2pBssInfo->ucBcDefaultKeyIdx;
+		pvSetBuffer.ucBssIdx = prP2pBssInfo->ucBssIndex;
+		kalMemCopy(pvSetBuffer.arBSSID,
+			   prP2pBssInfo->aucBSSID, MAC_ADDR_LEN);
 
-		if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-			kalP2pNotifyStopApComplete(prAdapter,
-				prP2pBssInfo->u4PrivateData);
-		else
-			kalP2pNotifyDisconnComplete(prAdapter,
-				prP2pBssInfo->u4PrivateData);
+		wlanSetRemoveKey(prAdapter,
+				&pvSetBuffer,
+				sizeof(struct PARAM_REMOVE_KEY),
+				&pu4SetInfoLen, FALSE);
+	}
 
-		/* Reset current OPMode */
-		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
-		prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
-		prP2pBssInfo->u4RsnSelectedAKMSuite = 0;
+	nicDeactivateNetwork(prAdapter,
+		NETWORK_ID(prP2pBssInfo->ucBssIndex,
+			   prP2pBssInfo->ucLinkIndex));
+	/* Release CNM channel */
+	nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
-		/* Point StaRecOfAP to NULL when GC role stop Complete */
-		prP2pBssInfo->prStaRecOfAP = NULL;
-	} while (FALSE);
+	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+		kalP2pNotifyStopApComplete(prAdapter,
+			prP2pBssInfo->u4PrivateData);
+	else
+		kalP2pNotifyDisconnComplete(prAdapter,
+			prP2pBssInfo->u4PrivateData);
 
+	/* Reset current OPMode */
+	prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
+	prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
+	prP2pBssInfo->u4RsnSelectedAKMSuite = 0;
+
+	/* Point StaRecOfAP to NULL when GC role stop Complete */
+	prP2pBssInfo->prStaRecOfAP = NULL;
 }				/* p2pFuncStopComplete */
 
 /*---------------------------------------------------------------------------*/
@@ -7916,8 +7919,7 @@ void p2pFuncCrossBandChannelSwitchCheck(
 
 }
 
-void p2pFuncSwitchSapChannel(
-		struct ADAPTER *prAdapter)
+u_int8_t p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter)
 {
 	u_int8_t fgEnable = FALSE;
 	u_int8_t fgDbDcModeEn = FALSE;
@@ -8198,12 +8200,13 @@ void p2pFuncSwitchSapChannel(
 			&rRfChnlInfo,
 			prP2pBssInfo->u4PrivateData);
 
+		return TRUE;
 	}
 
 exit:
 
 	DBGLOG(P2P, TRACE, "Check done\n");
-	/* return; */
+	return FALSE;
 }
 
 /*---------------------------------------------------------------------------*/

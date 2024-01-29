@@ -703,6 +703,15 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 			if (prP2pChnlReqInfo->fgIsChannelRequested) {
 				p2pFuncReleaseCh(prAdapter, ucBssIndex,
 					prP2pChnlReqInfo);
+#if CFG_SUPPORT_CCM
+				/* GO/SAP notify other GO/SAP to CSA if MCC.
+				 * MLO GO/SAP ch abort twice.
+				 */
+				if (prP2pChnlReqInfo->eChnlReqType ==
+					CH_REQ_TYPE_GO_START_BSS)
+					CCM_SWITCH_CH(prAdapter,
+							   prP2pBssInfo);
+#endif /* CFG_SUPPORT_CCM */
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
 					ucBssIndex))
 					DBGLOG(P2P, ERROR,
@@ -2620,6 +2629,7 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
 
 	prP2pConnReqMsg = (struct MSG_P2P_CONNECTION_REQUEST *) prMsgHdr;
 
@@ -2648,6 +2658,8 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 
 	prConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prP2pRoleFsmInfo->ucRoleIndex];
 
 	DBGLOG(P2P, TRACE, "p2pFsmRunEventConnectionRequest\n");
 
@@ -2726,6 +2738,8 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 		p2pLinkInitGcOtherLinks(prAdapter, prP2pRoleFsmInfo,
 			set.ucLinkNum);
 #endif
+
+	prP2pSpecificBssInfo->fgIsGcEapolDone = FALSE;
 
 	if (prJoinInfo->prTargetBssDesc == NULL) {
 		p2pRoleFsmScanTargetBss(prAdapter,
@@ -4447,10 +4461,10 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 		enum ENUM_EAPOL_KEY_TYPE_T rEapolKeyType,
 		enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
-#if 0 /* finish GC join process when dhcp is done */
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
 
 	if (prAdapter == NULL)
 		return;
@@ -4471,14 +4485,12 @@ void p2pRoleFsmNotifyEapolTxStatus(struct ADAPTER *prAdapter,
 	if (prP2pRoleFsmInfo->eCurrentState != P2P_ROLE_STATE_GC_JOIN)
 		return;
 
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+			prP2pRoleFsmInfo->ucRoleIndex];
+
 	if (rEapolKeyType == EAPOL_KEY_4_OF_4 &&
-			rTxDoneStatus == TX_RESULT_SUCCESS) {
-		/* Finish GC connection process. */
-		p2pRoleFsmStateTransition(prAdapter,
-				prP2pRoleFsmInfo,
-				P2P_ROLE_STATE_IDLE);
-	}
-#endif
+			rTxDoneStatus == TX_RESULT_SUCCESS)
+		prP2pSpecificBssInfo->fgIsGcEapolDone = TRUE;
 }
 
 void p2pRoleFsmNotifyDhcpDone(struct ADAPTER *prAdapter,

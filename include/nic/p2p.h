@@ -401,6 +401,8 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgAddPwrConstrIe;
 
 	u_int8_t fgMlIeExist;
+	/* For CSA trigger when ch abort */
+	u_int8_t fgIsGcEapolDone;
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

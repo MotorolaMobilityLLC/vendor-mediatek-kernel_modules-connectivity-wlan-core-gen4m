@@ -6366,6 +6366,26 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 		/* 1. release channel */
 		aisFsmReleaseCh(prAdapter, ucBssIndex);
 
+#if CFG_ENABLE_WIFI_DIRECT
+		if (prAisFsmInfo->ucIsSapCsaPending == TRUE) {
+#if (CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1)
+			struct MLD_BSS_INFO *prMldBss =
+				mldBssGetByBss(prAdapter, prAisBssInfo);
+			struct BSS_INFO *bss = prAisBssInfo;
+
+			if (prMldBss) {
+				/* MLO STA only ch abort once */
+				LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
+					    rLinkEntryMld, struct BSS_INFO) {
+					CCM_SWITCH_CH(prAdapter, bss);
+				}
+			} else
+#endif /* CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1 */
+				CCM_SWITCH_CH(prAdapter, prAisBssInfo);
+			prAisFsmInfo->ucIsSapCsaPending = FALSE;
+		}
+#endif
+
 		eNextState = aisFsmHandleNextReq_NORMAL_TR(
 			prAdapter, prAisFsmInfo, ucBssIndex);
 
@@ -6687,13 +6707,6 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	    || prAisFsmInfo->fgIsChannelRequested == TRUE) {
 		prAisFsmInfo->fgIsChannelRequested = FALSE;
 		prAisFsmInfo->fgIsChannelGranted = FALSE;
-#if CFG_ENABLE_WIFI_DIRECT
-		if (prAisFsmInfo->ucIsSapCsaPending == TRUE) {
-			/* Check SAP channel */
-			p2pFuncSwitchSapChannel(prAdapter);
-			prAisFsmInfo->ucIsSapCsaPending = FALSE;
-		}
-#endif
 		/* 1. return channel privilege to CNM immediately */
 		prMsgChAbort =
 		    (struct MSG_CH_ABORT *)cnmMemAlloc(prAdapter, RAM_TYPE_MSG,

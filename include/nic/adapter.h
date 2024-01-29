@@ -1715,6 +1715,10 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_WED_PROXY
 	u_int8_t fgEnableWed;
 #endif
+
+#if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_CCM
+	enum ENUM_P2P_CCM_MODE eP2pCcmMode;
+#endif
 };
 
 /* cnm_timer module */
@@ -2891,6 +2895,8 @@ struct ADAPTER {
 	bool fgPwrLmtCacheExist;
 	u_int32_t u4PwrLmtLockCounter;
 #endif
+
+	struct LINK rCcmCheckCsList;
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	uint8_t ucNeedWaitFWMlsrSWDone;
