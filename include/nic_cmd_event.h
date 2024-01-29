@@ -1966,7 +1966,8 @@ struct CMD_RDD_ON_OFF_CTRL {
 	uint8_t ucRddIdx;
 	uint8_t ucRddRxSel;
 	uint8_t ucSetVal;
-	uint8_t aucReserve[4];
+	uint8_t ucBssIdx;
+	uint8_t aucReserve[3];
 };
 #endif
 

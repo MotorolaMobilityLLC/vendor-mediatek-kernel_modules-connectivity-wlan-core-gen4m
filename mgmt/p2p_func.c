@@ -1889,6 +1889,7 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 		 * the correct band from firmware.
 		 */
 		prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
+		prCmdRddOnOffCtrl->ucBssIdx = prBssInfo->ucBssIndex;
 
 		DBGLOG(P2P, INFO,
 			"Start TXQ - DFS ctrl: %d, RDD index: %d\n",
@@ -2523,6 +2524,7 @@ void p2pFuncStartRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	 * the correct band from firmware.
 	 */
 	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
+	prCmdRddOnOffCtrl->ucBssIdx = ucBssIdx;
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 	prCmdRddOnOffCtrl->ucSetVal = kalGetRdmVal(rlmDomainGetDfsRegion());
@@ -2582,6 +2584,7 @@ void p2pFuncStopRdd(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 	 * the correct band from firmware.
 	 */
 	prCmdRddOnOffCtrl->ucRddIdx = rlmDomainGetDfsDbdcBand();
+	prCmdRddOnOffCtrl->ucBssIdx = ucBssIdx;
 
 	if (prCmdRddOnOffCtrl->ucRddIdx)
 		prCmdRddOnOffCtrl->ucRddRxSel = RDD_IN_SEL_1;
@@ -2812,6 +2815,7 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	 * the correct band from firmware.
 	 */
 	prCmdRddOnOffCtrl->ucRddIdx = ENUM_BAND_0;
+	prCmdRddOnOffCtrl->ucBssIdx = prBssInfo->ucBssIndex;
 
 	DBGLOG(P2P, INFO,
 		"p2pFuncDfsSwitchCh: Start TXQ - DFS ctrl: %d, RDD index: %d\n",
