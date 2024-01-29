@@ -2152,8 +2152,7 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(CNM, WARN,
-			"%s, invalid,B[%d]\n",
-			__func__, ucBssIndex);
+			"invalid,B[%d]\n", ucBssIndex);
 		return ucMaxBw;
 	}
 
@@ -2166,10 +2165,10 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			prBssOpCtrl->rRunning.eReqIdx <=
 			CNM_OPMODE_REQ_MAX_CAP) {
 			DBGLOG(CNM, INFO,
-			"%s,use running %s from %s, BW=%d\n", __func__,
-			apucCnmOpModeReq[eCurrMaxIdx],
-			apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
-			prBssOpCtrl->rRunning.ucBandWidth);
+				"use running %s from %s, BW=%d\n",
+				apucCnmOpModeReq[eCurrMaxIdx],
+				apucCnmOpModeReq[prBssOpCtrl->rRunning.eReqIdx],
+				prBssOpCtrl->rRunning.ucBandWidth);
 			if (prBssOpCtrl->rRunning.ucBandWidth != MAX_BW_UNKNOWN)
 				ucMaxBw = prBssOpCtrl->rRunning.ucBandWidth;
 		}
@@ -5519,15 +5518,13 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 enum ENUM_CNM_OPMODE_REQ_STATUS
-cnmOpModeSetTRxNssBw(
-	struct ADAPTER *prAdapter,
+cnmOpModeSetTRxNssBw(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	enum ENUM_CNM_OPMODE_REQ_T eNewReq,
 	bool fgEnable,
 	uint8_t ucOpRxNss,
 	uint8_t ucOpTxNss,
-	enum ENUM_MAX_BANDWIDTH_SETTING ucBandWidth
-)
+	enum ENUM_MAX_BANDWIDTH_SETTING ucBandWidth)
 {
 	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
 	struct CNM_OPMODE_BSS_REQ *prReq;
@@ -5572,14 +5569,12 @@ cnmOpModeSetTRxNssBw(
  */
 /*----------------------------------------------------------------------------*/
 enum ENUM_CNM_OPMODE_REQ_STATUS
-cnmOpModeSetTRxNss(
-	struct ADAPTER *prAdapter,
+cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	enum ENUM_CNM_OPMODE_REQ_T eNewReq,
 	bool fgEnable,
 	uint8_t ucOpRxNss,
-	uint8_t ucOpTxNss
-)
+	uint8_t ucOpTxNss)
 {
 	struct BSS_INFO *prBssInfo;
 	struct CNM_OPMODE_BSS_CONTROL_T *prBssOpCtrl;
@@ -5639,6 +5634,8 @@ cnmOpModeSetTRxNss(
 		 */
 		if (ucOpBwFinal == MAX_BW_UNKNOWN)
 			ucOpBwFinal = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+		else if (ucOpBwFinal > cnmGetBssMaxBw(prAdapter, ucBssIndex))
+			ucOpBwFinal = cnmGetBssMaxBw(prAdapter, ucBssIndex);
 
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 		if ((eRunReq == CNM_OPMODE_REQ_DBDC ||

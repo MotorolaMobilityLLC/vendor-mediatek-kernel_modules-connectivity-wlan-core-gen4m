@@ -10601,8 +10601,9 @@ void nicUniEventChMngrHandleChEvent(struct ADAPTER *ad,
 			case UNI_CMD_CNM_CHANNEL_WIDTH_320MHZ:
 				/* TODO: AIS, GO:
 				 * MAX_BW_320_1MHZ, MAX_BW_320_2MHZ
+				 *
+				 * hardcode set to 320_2
 				 */
-				// hardcode set to 320_2
 				legacy.ucBandWidth = MAX_BW_320_2MHZ;
 				break;
 			default:
