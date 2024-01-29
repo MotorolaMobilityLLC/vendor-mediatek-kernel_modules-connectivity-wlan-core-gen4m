@@ -18544,6 +18544,12 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 		if (prMsg->u4LinkId > 0 &&
 		    prWifiVar->aprP2pRoleFsmInfo[ucRoleIdx] == NULL) {
 			struct MSG_P2P_SWITCH_OP_MODE *prSwitchModeMsg;
+			uint8_t ucLinkMax = 0;
+
+			if (prMsg->eIftype == IFTYPE_AP)
+				ucLinkMax = prWifiVar->ucApMldLinkMax;
+			else
+				ucLinkMax = prWifiVar->ucP2pMldLinkMax;
 
 			p2pFuncInitConnectionSettings(prAdapter,
 				prWifiVar->prP2PConnSettings[ucRoleIdx],
@@ -18556,6 +18562,12 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 					"Null prMldBss by idx(%u)\n",
 					prMsg->ucMldBssIdx);
 				r4Status = WLAN_STATUS_INVALID_DATA;
+				goto exit;
+			} else if (prMldBss->rBssList.u4NumElem >= ucLinkMax) {
+				DBGLOG(OID, ERROR,
+					"Exceeds max link num(%u)\n",
+					ucLinkMax);
+				r4Status = WLAN_STATUS_RESOURCES;
 				goto exit;
 			}
 
