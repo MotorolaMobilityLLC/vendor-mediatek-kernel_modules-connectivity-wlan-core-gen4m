@@ -1826,7 +1826,10 @@ static void p2pFuncStartGOBcn(struct ADAPTER *prAdapter,
 
 	if (prMldBssInfo) {
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
-			rLinkEntryMld, struct BSS_INFO) {
+				    rLinkEntryMld, struct BSS_INFO) {
+			if (bss->fgIsApGoGranted == FALSE)
+				continue;
+
 			p2pFuncStartGOBcnImpl(prAdapter, bss);
 		}
 	} else

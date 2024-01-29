@@ -612,6 +612,7 @@ struct BSS_INFO {
 	uint8_t ucMLSRPausedLink;
 #endif
 
+	u_int8_t fgIsApGoGranted;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
