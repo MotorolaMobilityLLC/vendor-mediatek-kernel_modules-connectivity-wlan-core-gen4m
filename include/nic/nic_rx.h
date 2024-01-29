@@ -1624,6 +1624,9 @@ void nicRxProcessMsduReport(struct ADAPTER *prAdapter,
 void nicRxProcessRxReport(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb);
 
+void *__nicRxPacketAlloc(struct GLUE_INFO *pr, uint8_t **ppucData,
+	int32_t i4Idx);
+
 uint32_t nicRxSetupRFB(struct ADAPTER *prAdapter, struct SW_RFB *prRfb);
 
 #if CFG_RFB_TRACK

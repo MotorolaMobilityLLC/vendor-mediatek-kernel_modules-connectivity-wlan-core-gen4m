@@ -1219,6 +1219,10 @@ struct WIFI_VAR {
 	uint32_t u4MccBoostPresentTime;
 	uint32_t u4MccBoostForAllTputLvTh;
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	u_int8_t fgSkbAllocWorkEn;
+	uint32_t u4SkbAllocScheduleTh;
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 	u_int8_t fgBoostCpuEn;
 	u_int8_t fgBoostCpuByPPSEn;
 	u_int8_t fgBoostCpuPolicyEn;

@@ -9875,6 +9875,9 @@ inline int32_t kalPerMonInit(struct GLUE_INFO
 #endif
 	/* enable rps on all cpu cores */
 	kalSetRpsMap(prGlueInfo, 0xff);
+
+	kalBoostCpuInit(prGlueInfo->prAdapter);
+
 	KAL_SET_BIT(PERF_MON_INIT_BIT, prPerMonitor->ulPerfMonFlag);
 	DBGLOG(SW4, TRACE, "exit %s\n", __func__);
 	return 0;
@@ -10103,6 +10106,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif
 
 	uint32_t ret = WLAN_STATUS_SUCCESS;
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &glue->rSkbAllocInfo;
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -10353,9 +10359,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define RX_WORK_CNT_TEMPLATE ""
 #endif /* CFG_SUPPORT_RX_WORK */
 
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+#define SKB_ALLOC_WORK_CNT_TEMPLATE \
+	" SkbAllocWork[%d]["FORMAT_INT_8"][%u][0x%x][%u]"
+#else /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#define SKB_ALLOC_WORK_CNT_TEMPLATE ""
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
 #define CPU_STAT_CNT_TEMPLATE \
 	" TxCpu["FORMAT_INT_8"]" TX_WORK_CNT_TEMPLATE \
-	" RxCpu["FORMAT_INT_8"]" RX_WORK_CNT_TEMPLATE
+	" RxCpu["FORMAT_INT_8"]" RX_WORK_CNT_TEMPLATE \
+	SKB_ALLOC_WORK_CNT_TEMPLATE
 #else /* CFG_SUPPORT_CPU_STAT */
 #define CPU_STAT_CNT_TEMPLATE ""
 #endif /* CFG_SUPPORT_CPU_STAT */
@@ -10455,6 +10469,20 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 6),
 		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 7),
 #endif /* CFG_SUPPORT_RX_WORK */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+		prSkbAllocInfo->eCoreType,
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 0),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 1),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 2),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 3),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 4),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 5),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 6),
+		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 7),
+		prSkbAllocInfo->u4ScheCnt,
+		prSkbAllocInfo->ulScheMask,
+		skb_queue_len(&prSkbAllocInfo->rFreeSkbQ),
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 #endif /* CFG_SUPPORT_CPU_STAT */
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
@@ -11191,6 +11219,10 @@ void __weak kalSetCpuBoost(struct ADAPTER *prAdapter,
 		struct BOOST_INFO *prBoostInfo)
 {
 	DBGLOG(SW4, INFO, "enter kalSetCpuBoost\n");
+}
+
+void __weak kalBoostCpuInit(struct ADAPTER *prAdapter)
+{
 }
 
 int32_t __weak kalBoostCpu(struct ADAPTER *prAdapter,
@@ -13798,7 +13830,14 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 #if !CFG_SUPPORT_RX_GRO_PEAK
 		work_done++;
 #endif /* !CFG_SUPPORT_RX_GRO_PEAK */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+		kalSkbAllocWorkSchedule(prGlueInfo, FALSE);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 	}
+
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	kalSkbAllocWorkSchedule(prGlueInfo, TRUE);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
 #if CFG_SUPPORT_RX_GRO_PEAK
 	work_done = budget / 2;
@@ -16313,6 +16352,28 @@ inline struct GL_WORK *kalGetWork(struct GLUE_INFO *pr,
 	return &pr->arGlWork[eWork];
 }
 
+inline struct workqueue_struct *__kalWorkQueueInit(uint8_t *WqName)
+{
+	struct workqueue_struct *prWorkQueue;
+
+	prWorkQueue = create_workqueue(WqName);
+	if (!prWorkQueue)
+		DBGLOG(INIT, ERROR, "wq[%s] init fail\n", WqName);
+	else
+		DBGLOG(INIT, TRACE, "wq[%s] init done\n", WqName);
+
+	return prWorkQueue;
+}
+
+inline void __kalWorkQueueUninit(struct workqueue_struct *prWq)
+{
+	if (!prWq)
+		return;
+
+	flush_workqueue(prWq);
+	destroy_workqueue(prWq);
+}
+
 /*
  * If the worker is running, it can only queue again on the same CPU,
  * it may become a issue when we would like to switch to another CPU when
@@ -16321,12 +16382,11 @@ inline struct GL_WORK *kalGetWork(struct GLUE_INFO *pr,
  * So, we introduce multiple worker and you need to protect single entrance
  * in your pfWorkFunc.
  *
- * If fgMultiWork is TRUE, multipler worker feature will be enabled.
+ * If ENUM_WORK_FLAG_MULTIWORK is set, multiple worker feature will be enabled.
  *
  */
 static void kalWorkInit(struct GLUE_INFO *pr,
-	enum ENUM_WORK eWork, uint8_t *WqName,
-	GL_WORK_FUNC pfWorkFunc, u_int8_t fgMultipleWork)
+	enum ENUM_WORK eWork, uint8_t *WqName, GL_WORK_FUNC pfWorkFunc)
 {
 	enum ENUM_WORK_INDEX eIdx;
 	struct GL_WORK *prWork;
@@ -16343,7 +16403,7 @@ static void kalWorkInit(struct GLUE_INFO *pr,
 	/* init cpu idx as free run */
 	prWork->i4WorkCpu = -1;
 	prWork->sWorkQueueName = WqName;
-	prWork->fgMultipleWork = fgMultipleWork;
+	WORK_SET_FLAG(prWork, ENUM_WORK_FLAG_NONE);
 	prWork->eWorkIdx = WORKER_0;
 
 	for (eIdx = WORKER_0; eIdx < WORKER_MAX; eIdx++) {
@@ -16354,13 +16414,19 @@ static void kalWorkInit(struct GLUE_INFO *pr,
 		INIT_WORK(&prWorkContainer->rWork, pfWorkFunc);
 	}
 
-	prWork->prWorkQueue = create_workqueue(WqName);
-	if (!prWork->prWorkQueue)
-		DBGLOG(INIT, ERROR, "%s init fail\n",
-			prWork->sWorkQueueName);
-	else
-		DBGLOG(INIT, TRACE, "%s init done\n",
-			prWork->sWorkQueueName);
+	prWork->prWorkQueue = __kalWorkQueueInit(WqName);
+}
+
+static void kalWorkSetFlag(struct GLUE_INFO *pr,
+	enum ENUM_WORK eWork, enum ENUM_WORK_FLAG eWorkFlag)
+{
+	struct GL_WORK *prWork;
+
+	if (!pr)
+		return;
+
+	prWork = kalGetWork(pr, eWork);
+	WORK_SET_FLAG(prWork, eWorkFlag);
 }
 
 static void kalWorkUninit(struct GLUE_INFO *pr,
@@ -16376,13 +16442,9 @@ static void kalWorkUninit(struct GLUE_INFO *pr,
 
 	prWq = prWork->prWorkQueue;
 	prWork->prWorkQueue = NULL;
-	if (prWq) {
-		flush_workqueue(prWq);
-		destroy_workqueue(prWq);
-	}
+	__kalWorkQueueUninit(prWq);
 
-	DBGLOG(INIT, TRACE, "%s uninit done\n",
-		prWork->sWorkQueueName);
+	DBGLOG(INIT, TRACE, "%s uninit done\n", prWork->sWorkQueueName);
 }
 
 static void kalWorkSetCpu(struct GLUE_INFO *pr,
@@ -16406,7 +16468,7 @@ static void kalWorkSetCpu(struct GLUE_INFO *pr,
 		goto end;
 
 	prWork->i4WorkCpu = i4CpuIdx;
-	if (prWork->fgMultipleWork == TRUE) {
+	if (WORK_IS_FLAG(prWork, ENUM_WORK_FLAG_MULTIWORK)) {
 		if (prWork->eWorkIdx == WORKER_0)
 			prWork->eWorkIdx = WORKER_1;
 		else
@@ -16441,28 +16503,25 @@ static uint32_t kalWorkSchedule(struct GLUE_INFO *pr,
 		goto end;
 
 	prWork = kalGetWork(pr, eWork);
-	if (prWork->fgMultipleWork == TRUE &&
-		prWork->eWorkIdx != WORKER_0)
+	if (WORK_IS_FLAG(prWork, ENUM_WORK_FLAG_MULTIWORK)
+		&& prWork->eWorkIdx != WORKER_0)
 		prWorkContainer = &prWork->rWorkContainer[WORKER_1];
 	else
 		prWorkContainer = &prWork->rWorkContainer[WORKER_0];
 
 	if (!prWork->prWorkQueue) {
-		DBGLOG_LIMITED(INIT, ERROR,
-			"Workqueue %s is NULL\n",
+		DBGLOG_LIMITED(INIT, ERROR, "Workqueue %s is NULL\n",
 			prWork->sWorkQueueName);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	i4Cpu = prWork->i4WorkCpu;
 	if (i4Cpu == -1) {
-		queue_work(prWork->prWorkQueue,
-			&prWorkContainer->rWork);
+		queue_work(prWork->prWorkQueue, &prWorkContainer->rWork);
 		goto end;
 	}
 
-	queue_work_on(i4Cpu, prWork->prWorkQueue,
-		&prWorkContainer->rWork);
+	queue_work_on(i4Cpu, prWork->prWorkQueue, &prWorkContainer->rWork);
 
 end:
 	return WLAN_STATUS_SUCCESS;
@@ -16499,13 +16558,126 @@ inline uint32_t kalWorkCheckState(struct work_struct *work)
 	prWork = kalGetWork(pr, prWorkContainer->eWork);
 	if (prWorkContainer->eIdx != prWork->eWorkIdx) {
 		DBGLOG(INIT, INFO, "[%s] eWorkIdx:%u->%u\n",
-			prWork->sWorkQueueName,
-			prWorkContainer->eIdx,
+			prWork->sWorkQueueName, prWorkContainer->eIdx,
 			prWork->eWorkIdx);
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+static void kalConWorkRun(struct work_struct *work)
+{
+	struct CON_WORK *prConWork =
+		CONTAINER_OF(work, struct CON_WORK, rWork);
+	struct GLUE_INFO *pr = prConWork->pr;
+	uint8_t ucIdx;
+
+	if (!pr)
+		return;
+
+	ucIdx = prConWork->ucIdx;
+	if (unlikely(ucIdx >= CON_WORK_MAX)) {
+		DBGLOG(INIT, INFO, "Invalid Idx %u\n", ucIdx);
+		return;
+	}
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK(pr->prAdapter, prConWork->wakelock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
+
+	if (prConWork->func)
+		prConWork->func(pr, ucIdx);
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_UNLOCK(pr->prAdapter, prConWork->wakelock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
+}
+
+inline void kalConWorkInit(struct GLUE_INFO *pr, struct CON_WORK *prConWork,
+	const char *name, uint8_t ucIdx, PFN_CON_WORK_FUNC func)
+{
+	uint8_t aucBuf[WORKER_NAME_STR_MAX] = {0};
+
+	prConWork->pr = pr;
+	prConWork->ucIdx = ucIdx;
+	kalSnprintf(aucBuf, sizeof(aucBuf), "%s/%u", name, ucIdx);
+	prConWork->func = func;
+	INIT_WORK(&prConWork->rWork, kalConWorkRun);
+	prConWork->prWorkQueue = __kalWorkQueueInit(aucBuf);
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_INIT(pr->prAdapter, prConWork->wakelock, aucBuf);
+#endif /* CFG_ENABLE_WAKE_LOCK */
+}
+
+inline void kalConWorkUninit(struct GLUE_INFO *pr, struct CON_WORK *prConWork)
+{
+	struct workqueue_struct *prWq;
+
+	/* set prWorkQueue to NULL to prevent more schedule */
+	prWq = prConWork->prWorkQueue;
+	prConWork->prWorkQueue = NULL;
+
+	/* cancel all wq */
+	__kalWorkQueueUninit(prWq);
+
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_DESTROY(pr->prAdapter, prConWork->wakelock);
+#endif /* CFG_ENABLE_WAKE_LOCK */
+}
+
+inline void kalConWorkSchedule(struct GLUE_INFO *pr, struct CON_WORK *prConWork,
+	enum CPU_CORE_TYPE eCoreType)
+{
+	int32_t cpu;
+
+	/* skip if workqueue is not inited */
+	if (!prConWork->prWorkQueue)
+		return;
+
+	if (eCoreType == CPU_CORE_BIG) {
+		/* use Big Core */
+		cpu = CPU_BIG_CORE_START_IDX + prConWork->ucIdx;
+	} else if (eCoreType == CPU_CORE_LITTLE) {
+		/* use Little Core */
+		cpu = prConWork->ucIdx;
+	} else {
+		/* use All Core */
+		cpu = -1;
+	}
+
+	if (cpu != -1) {
+		queue_work_on(cpu,
+			prConWork->prWorkQueue, &prConWork->rWork);
+	} else
+		queue_work(prConWork->prWorkQueue, &prConWork->rWork);
+}
+
+inline unsigned long kalConWorkDispatchJobs(uint32_t arJobs[],
+	uint32_t u4ReqNum)
+{
+	unsigned long ulMask = 0;
+	uint32_t q, r, u4Num;
+	uint8_t ucIdx;
+
+	q = u4ReqNum >> CON_WORK_SHIFT;
+	r = u4ReqNum & CON_WORK_MASK;
+
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
+		u4Num = q;
+		if ((ucIdx + 1) <= r)
+			u4Num++;
+
+		/* early break if no need to schedule */
+		if (u4Num == 0)
+			break;
+
+		arJobs[ucIdx] = u4Num;
+		set_bit(ucIdx, &ulMask);
+	}
+
+	return ulMask;
 }
 
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK
@@ -16521,8 +16693,7 @@ void kalTxFreeMsduWork(struct work_struct *work)
 
 inline void kalTxFreeMsduWorkInit(struct GLUE_INFO *pr)
 {
-	kalWorkInit(pr, TX_FREE_MSDU_WORK,
-		"TxFreeMsduWork", kalTxFreeMsduWork, FALSE);
+	kalWorkInit(pr, TX_FREE_MSDU_WORK, "TxFreeMsduWork", kalTxFreeMsduWork);
 }
 
 inline void kalTxFreeMsduWorkSetCpu(struct GLUE_INFO *pr,
@@ -16570,8 +16741,7 @@ inline void kalRxNapiWorkSetCpu(struct GLUE_INFO *pr,
 
 inline void kalRxNapiWorkInit(struct GLUE_INFO *pr)
 {
-	kalWorkInit(pr, RX_NAPI_WORK,
-		"RxNapiWork", kalRxNapiWork, FALSE);
+	kalWorkInit(pr, RX_NAPI_WORK, "RxNapiWork", kalRxNapiWork);
 }
 
 inline void kalRxNapiWorkUninit(struct GLUE_INFO *pr)
@@ -16630,8 +16800,8 @@ inline void kalRxWorkSetCpu(struct GLUE_INFO *pr,
 
 inline void kalRxWorkInit(struct GLUE_INFO *pr)
 {
-	kalWorkInit(pr, RX_WORK,
-		"RxWork", kalRxWork, TRUE);
+	kalWorkInit(pr, RX_WORK, "RxWork", kalRxWork);
+	kalWorkSetFlag(pr, RX_WORK, ENUM_WORK_FLAG_MULTIWORK);
 }
 
 inline void kalRxWorkUninit(struct GLUE_INFO *pr)
@@ -16669,8 +16839,7 @@ inline void kalTxWorkSetCpu(struct GLUE_INFO *pr,
 
 inline void kalTxWorkInit(struct GLUE_INFO *pr)
 {
-	kalWorkInit(pr, TX_WORK,
-		"TxWork", kalTxWork, FALSE);
+	kalWorkInit(pr, TX_WORK, "TxWork", kalTxWork);
 }
 
 inline void kalTxWorkUninit(struct GLUE_INFO *pr)
@@ -16774,7 +16943,7 @@ inline void kalRxRfbReturnWorkSetCpu(struct GLUE_INFO *pr,
 inline void kalRxRfbReturnWorkInit(struct GLUE_INFO *pr)
 {
 	kalWorkInit(pr, RX_RETURN_RFB_WORK,
-		"RxReturnRfbWork", kalRxRfbReturnWork, FALSE);
+		"RxReturnRfbWork", kalRxRfbReturnWork);
 }
 
 inline void kalRxRfbReturnWorkUninit(struct GLUE_INFO *pr)
@@ -16786,7 +16955,215 @@ inline void kalRxRfbReturnWorkSchedule(struct GLUE_INFO *pr)
 {
 	kalWorkSchedule(pr, RX_RETURN_RFB_WORK);
 }
-#endif /* CFG_SUPPORT_RETURN_WORK */\
+#endif /* CFG_SUPPORT_RETURN_WORK */
+
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+static void kalSkbAllocWorkDone(struct GLUE_INFO *pr, uint8_t ucIdx)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	uint32_t u4SkbNum = skb_queue_len(&prSkbAllocInfo->rFreeSkbQ);
+
+	if (ucIdx < CON_WORK_MAX)
+		clear_bit(ucIdx, &prSkbAllocInfo->ulScheMask);
+
+	if (prSkbAllocInfo->ulScheMask == 0 ||
+		u4SkbNum >= prSkbAllocInfo->u4TotalReqNum)
+		kalRxRfbReturnWorkSchedule(pr);
+}
+
+static void kalDoSkbAlloc(struct GLUE_INFO *pr, uint8_t ucIdx)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	uint32_t u4ReqNum;
+	struct sk_buff_head *prFreeSkbQ;
+	struct sk_buff_head rSkbQ;
+	struct sk_buff *prSkb;
+	uint8_t *pucData;
+	u_int8_t fgNoMem = FALSE;
+	unsigned long u4Flags;
+
+	u4ReqNum = prSkbAllocInfo->u4ReqNum[ucIdx];
+	if (!u4ReqNum)
+		return;
+
+	__skb_queue_head_init(&rSkbQ);
+
+	while (u4ReqNum--) {
+		prSkb = (struct sk_buff *)__nicRxPacketAlloc(pr, &pucData,
+				(int32_t)ucIdx);
+		if (!prSkb) {
+			fgNoMem = TRUE;
+			break;
+		}
+
+		__skb_queue_tail(&rSkbQ, prSkb);
+	}
+
+	if (fgNoMem)
+		set_bit(ucIdx, &prSkbAllocInfo->ulNoMemMask);
+	else
+		clear_bit(ucIdx, &prSkbAllocInfo->ulNoMemMask);
+
+	if (skb_queue_empty(&rSkbQ))
+		return;
+
+	prFreeSkbQ = &prSkbAllocInfo->rFreeSkbQ;
+	spin_lock_irqsave(&prFreeSkbQ->lock, u4Flags);
+	skb_queue_splice_init(&rSkbQ, prFreeSkbQ);
+	spin_unlock_irqrestore(&prFreeSkbQ->lock, u4Flags);
+
+	kalSkbAllocWorkDone(pr, ucIdx);
+
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(pr, CPU_SKB_ALLOC_DONE);
+#endif /* CFG_SUPPORT_CPU_STAT */
+}
+
+uint32_t kalSkbAllocDeqSkb(struct GLUE_INFO *pr, void **pvPacket,
+	uint8_t **ppucData)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	struct sk_buff *prSkb = NULL;
+
+	if (skb_queue_empty(&prSkbAllocInfo->rFreeSkbQ))
+		goto end;
+
+	prSkb = skb_dequeue(&prSkbAllocInfo->rFreeSkbQ);
+	*ppucData = prSkb->data;
+
+end:
+	*pvPacket = prSkb;
+
+	/*
+	 * return WLAN_STATUS_NOT_ACCEPTED
+	 * to let it go through legacy alloc mem alloc path
+	 */
+	if (prSkbAllocInfo->eCoreType == CPU_CORE_NONE)
+		return WLAN_STATUS_NOT_ACCEPTED;
+	else
+		return WLAN_STATUS_SUCCESS;
+}
+
+void kalSkbAllocWorkSetCpu(struct GLUE_INFO *pr, enum CPU_CORE_TYPE eCoreType)
+{
+	struct ADAPTER *ad;
+	struct WIFI_VAR *prWifiVar;
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+
+	ad = pr->prAdapter;
+	if (!ad)
+		return;
+
+	prWifiVar = &ad->rWifiVar;
+	if (IS_FEATURE_ENABLED(prWifiVar->fgSkbAllocWorkEn)) {
+		prSkbAllocInfo->eCoreType = eCoreType;
+		DBGLOG(INIT, INFO, "eCoreType:%u\n", eCoreType);
+	}
+}
+
+void kalSkbAllocWorkInit(struct GLUE_INFO *pr)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	struct CON_WORK *prConWork;
+	uint8_t ucIdx;
+
+	prSkbAllocInfo->eCoreType = CPU_CORE_NONE;
+	prSkbAllocInfo->ulScheMask = 0;
+	prSkbAllocInfo->ulNoMemMask = 0;
+	skb_queue_head_init(&prSkbAllocInfo->rFreeSkbQ);
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
+		prSkbAllocInfo->u4ReqNum[ucIdx] = 0;
+		prConWork = &prSkbAllocInfo->rConWork[ucIdx];
+		kalConWorkInit(pr, prConWork, "wifi_skb_alloc", ucIdx,
+			kalDoSkbAlloc);
+	}
+}
+
+void kalSkbAllocWorkUninit(struct GLUE_INFO *pr)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	struct CON_WORK *prConWork;
+	uint8_t ucIdx;
+	struct sk_buff *prSkb;
+
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
+		prConWork = &prSkbAllocInfo->rConWork[ucIdx];
+		kalConWorkUninit(pr, prConWork);
+	}
+
+	/* Free all skb */
+	if (skb_queue_empty(&prSkbAllocInfo->rFreeSkbQ))
+		return;
+
+	while ((prSkb = skb_dequeue(&prSkbAllocInfo->rFreeSkbQ)) != NULL)
+		kfree_skb(prSkb);
+}
+
+static void __kalSkbAllocWorkSchedule(struct GLUE_INFO *pr, uint32_t u4ReqNum)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	struct CON_WORK *prConWork;
+	uint8_t ucIdx;
+	uint32_t arJobs[CON_WORK_MAX] = { 0 };
+
+	prSkbAllocInfo->u4TotalReqNum = u4ReqNum;
+	prSkbAllocInfo->ulScheMask = kalConWorkDispatchJobs(arJobs, u4ReqNum);
+	DBGLOG(INIT, TEMP, "u4ReqNum:%u ulScheMask:0x%x\n",
+		prSkbAllocInfo->u4TotalReqNum, prSkbAllocInfo->ulScheMask);
+
+	/* wakeup all worker to alloc skb */
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
+		prSkbAllocInfo->u4ReqNum[ucIdx] = arJobs[ucIdx];
+		if (prSkbAllocInfo->u4ReqNum[ucIdx] == 0)
+			continue;
+		prConWork = &prSkbAllocInfo->rConWork[ucIdx];
+		kalConWorkSchedule(pr, prConWork, prSkbAllocInfo->eCoreType);
+	}
+}
+
+void kalSkbAllocWorkSchedule(struct GLUE_INFO *pr, u_int8_t fgForce)
+{
+	struct ADAPTER *ad;
+	struct WIFI_VAR *prWifiVar;
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+	uint32_t u4ReqNum, u4SkbNum;
+
+	ad = pr->prAdapter;
+	if (!ad)
+		return;
+
+	prWifiVar = &ad->rWifiVar;
+	/* check if feature disabled */
+	if (unlikely(prSkbAllocInfo->eCoreType == CPU_CORE_NONE)) {
+		kalRxRfbReturnWorkSchedule(pr);
+		return;
+	}
+
+	if (!fgForce && ++prSkbAllocInfo->u4ScheCnt <
+		prWifiVar->u4SkbAllocScheduleTh)
+		return;
+
+	u4ReqNum = RX_GET_INDICATED_RFB_CNT(&ad->rRxCtrl);
+	u4SkbNum = skb_queue_len(&prSkbAllocInfo->rFreeSkbQ);
+	/* We need to prevent alloc more memory than we actual need */
+	if (u4SkbNum >= u4ReqNum) {
+		kalRxRfbReturnWorkSchedule(pr);
+		goto end;
+	}
+
+	u4ReqNum -= u4SkbNum;
+	__kalSkbAllocWorkSchedule(pr, u4ReqNum);
+end:
+	prSkbAllocInfo->u4ScheCnt = 0;
+}
+
+u_int8_t kalSkbAllocIsNoOOM(struct GLUE_INFO *pr)
+{
+	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
+
+	return (prSkbAllocInfo->ulNoMemMask == 0);
+}
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
 void kalSetPcieGen(struct ADAPTER *prAdapter)

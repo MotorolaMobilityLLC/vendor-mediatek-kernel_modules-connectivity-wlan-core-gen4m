@@ -499,6 +499,22 @@ enum ENUM_WMM_UP {
 	WMM_UP_INDEX_NUM
 };
 
+#define WORKER_NAME_STR_MAX    32
+#define CON_WORK_MAX           4 /* must be power of 2 */
+#define CON_WORK_SHIFT         2 /* modify it when CON_WORK_MAX change */
+#define CON_WORK_MASK          BITS(0, (CON_WORK_SHIFT - 1))
+#define CPU_BIG_CORE_START_IDX 4
+typedef void(*PFN_CON_WORK_FUNC) (struct GLUE_INFO *pr, uint8_t ucIdx);
+/* concurrent worker */
+struct CON_WORK {
+	uint8_t ucIdx;
+	KAL_WAKE_LOCK_T *wakelock;
+	struct workqueue_struct *prWorkQueue;
+	struct work_struct rWork;
+	PFN_CON_WORK_FUNC func;
+	struct GLUE_INFO *pr;
+};
+
 #if CFG_SUPPORT_CPU_STAT
 enum ENUM_CPU_STAT_CNT {
 	CPU_TX_IN,
@@ -509,6 +525,9 @@ enum ENUM_CPU_STAT_CNT {
 #if CFG_SUPPORT_RX_WORK
 	CPU_RX_WORK_DONE,
 #endif /* CFG_SUPPORT_RX_WORK */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	CPU_SKB_ALLOC_DONE,
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 	CPU_STATISTICS_MAX
 };
 #endif /* CFG_SUPPORT_CPU_STAT */
@@ -545,16 +564,41 @@ struct WORK_CONTAINER {
 	enum ENUM_WORK_INDEX eIdx;
 };
 
+enum ENUM_WORK_FLAG {
+	ENUM_WORK_FLAG_NONE,
+	ENUM_WORK_FLAG_MULTIWORK,
+	ENUM_WORK_FLAG_MAX
+};
+
 struct GL_WORK {
 	int32_t i4WorkCpu; /* controlled by CPU Boost */
 	struct workqueue_struct *prWorkQueue;
 	uint8_t *sWorkQueueName;
 	struct WORK_CONTAINER rWorkContainer[WORKER_MAX];
-	u_int8_t fgMultipleWork;
+	enum ENUM_WORK_FLAG eWorkFlag;
 	enum ENUM_WORK_INDEX eWorkIdx;
 };
 
+#define WORK_SET_FLAG(_w, _eWorkflag) \
+	((_w)->eWorkFlag = _eWorkflag)
+
+#define WORK_IS_FLAG(_w, _eWorkflag) \
+	((_w)->eWorkFlag == _eWorkflag)
+
 typedef void (*GL_WORK_FUNC) (struct work_struct *work);
+
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+struct SKB_ALLOC_INFO {
+	struct CON_WORK rConWork[CON_WORK_MAX];
+	uint32_t u4ReqNum[CON_WORK_MAX];
+	struct sk_buff_head rFreeSkbQ;
+	uint32_t u4ScheCnt;
+	uint32_t u4TotalReqNum;
+	unsigned long ulScheMask;
+	enum CPU_CORE_TYPE eCoreType;
+	unsigned long ulNoMemMask;
+};
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
@@ -777,6 +821,9 @@ struct GLUE_INFO {
 	/* cpu statistics */
 	atomic_t aCpuStatCnt[CPU_STATISTICS_MAX][CPU_STAT_MAX_CPU];
 #endif /* CFG_SUPPORT_CPU_STAT */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	struct SKB_ALLOC_INFO rSkbAllocInfo;
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 	struct GL_WORK arGlWork[WORK_MAX];
 	struct tasklet_struct rRxTask;
 	uint8_t fgRxTaskReady;

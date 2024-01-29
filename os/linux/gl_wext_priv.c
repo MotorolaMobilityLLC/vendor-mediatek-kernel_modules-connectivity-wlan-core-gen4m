@@ -8876,6 +8876,7 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 	int32_t i4Recv = 0;
 	int8_t *this_char = NULL;
 	struct BOOST_INFO rBoostInfo;
+	uint32_t u4SkbAllocWorkCoreType = 0;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -8894,7 +8895,7 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 
 	kalMemZero(&rBoostInfo, sizeof(struct BOOST_INFO));
 	i4Recv = sscanf(this_char,
-		"%d-%d-%02x-%02x-%02x-%u-%u-%u-%x-%x-%d-%d-%d-%d-%d-%d-%u-%d-%u",
+		"%d-%d-%02x-%02x-%02x-%u-%u-%u-%x-%x-%d-%d-%d-%d-%d-%d-%u-%d-%u-%u",
 		&(rBoostInfo.rCpuInfo.i4LittleCpuFreq),
 		&(rBoostInfo.rCpuInfo.i4BigCpuFreq),
 		&(rBoostInfo.rHifThreadInfo.u4CpuMask),
@@ -8913,10 +8914,11 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 		&(rBoostInfo.fgKeepPcieWakeup),
 		&(rBoostInfo.u4WfdmaTh),
 		&(rBoostInfo.i4RxNapiWorkCpu),
-		&(rBoostInfo.fgWifiNappingForceDis)
+		&(rBoostInfo.fgWifiNappingForceDis),
+		&u4SkbAllocWorkCoreType
 		);
 
-	if (i4Recv == 19) {
+	if (i4Recv == 20) {
 		/* Disable BoostCpu by PerMon */
 		prAdapter->rWifiVar.fgBoostCpuEn = FEATURE_DISABLED;
 		prAdapter->rWifiVar.fgBoostCpuPolicyEn
@@ -8931,6 +8933,11 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 			rBoostInfo.rCpuInfo.i4BigCpuFreq *= 1000;
 		else
 			rBoostInfo.rCpuInfo.i4BigCpuFreq = -1;
+
+		if (u4SkbAllocWorkCoreType > CPU_CORE_BIG)
+			u4SkbAllocWorkCoreType = CPU_CORE_BIG;
+		rBoostInfo.eSkbAllocWorkCoreType = u4SkbAllocWorkCoreType;
+
 		kalSetCpuBoost(prAdapter, &rBoostInfo);
 	} else {
 		DBGLOG(REQ, ERROR,

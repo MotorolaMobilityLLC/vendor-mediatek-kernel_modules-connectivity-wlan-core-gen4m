@@ -1329,7 +1329,10 @@ void nicRxProcessPktWithoutReorder(struct ADAPTER
 #elif CFG_SUPPORT_RETURN_WORK
 	if (!prSwRfb->pvPacket) {
 		nicRxReturnRFB(prAdapter, prSwRfb);
+#if !CFG_SUPPORT_SKB_ALLOC_WORK
+		/* SkbAllocWork call it later in kalSkbAllocWorkDone */
 		kalRxRfbReturnWorkSchedule(prAdapter->prGlueInfo);
+#endif /* !CFG_SUPPORT_SKB_ALLOC_WORK */
 		return;
 	}
 #endif
@@ -2787,6 +2790,30 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 	}
 }				/* end of nicRxProcessRFBs() */
 
+void *__nicRxPacketAlloc(struct GLUE_INFO *pr, uint8_t **ppucData,
+	int32_t i4Idx)
+{
+#if CFG_SUPPORT_RX_PAGE_POOL
+	return kalAllocRxSkbFromPp(pr, ppucData, i4Idx);
+#else
+	return kalPacketAlloc(pr, CFG_RX_MAX_MPDU_SIZE, FALSE, ppucData);
+#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+}
+
+static void *nicRxPacketAlloc(struct GLUE_INFO *pr, uint8_t **ppucData)
+{
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	uint32_t ret;
+	void *pvPacket;
+
+	ret = kalSkbAllocDeqSkb(pr, &pvPacket, ppucData);
+	if (ret != WLAN_STATUS_NOT_ACCEPTED)
+		return pvPacket;
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
+	return __nicRxPacketAlloc(pr, ppucData, -1);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief Setup a RFB and allocate the os packet to the RFB
@@ -2798,8 +2825,8 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
  * @retval WLAN_STATUS_RESOURCES
  */
 /*----------------------------------------------------------------------------*/
-uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
-		       struct SW_RFB *prSwRfb)
+static uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
+	struct SW_RFB *prSwRfb)
 {
 	void *pvPacket;
 	uint8_t *pucRecvBuff = NULL;
@@ -2816,14 +2843,8 @@ uint32_t __nicRxSetupRFB(struct ADAPTER *prAdapter,
 #endif /* CFG_RFB_TRACK */
 	if (!prSwRfb->pvPacket) {
 		kalMemZero(prSwRfb, sizeof(struct SW_RFB));
-#if CFG_SUPPORT_RX_PAGE_POOL
-		pvPacket = kalAllocRxSkbFromPp(
-			prAdapter->prGlueInfo, &pucRecvBuff, -1);
-#else
-		pvPacket = kalPacketAlloc(
-			prAdapter->prGlueInfo, CFG_RX_MAX_MPDU_SIZE,
-			FALSE, &pucRecvBuff);
-#endif /* CFG_SUPPORT_RX_PAGE_POOL */
+		pvPacket = nicRxPacketAlloc(prAdapter->prGlueInfo,
+						&pucRecvBuff);
 		if (pvPacket == NULL)
 			return WLAN_STATUS_RESOURCES;
 
@@ -3149,11 +3170,15 @@ void __nicRxReturnRFB(struct ADAPTER *prAdapter,
 #if CFG_RFB_TRACK
 		RX_RFB_TRACK_UPDATE(prAdapter, prSwRfb, RFB_TRACK_FREE);
 #endif /* CFG_RFB_TRACK */
+
+#if !CFG_SUPPORT_SKB_ALLOC_WORK
+		/* SkbAllocWork call it later in wlanReturnPacketDelaySetup */
 		if (prAdapter->ulNoMoreRfb != 0) {
 			DBGLOG_LIMITED(RX, INFO,
 				"Free rfb and set IntEvent!!!!!\n");
 			kalSetDrvIntEvent(prGlueInfo);
 		}
+#endif /* !CFG_SUPPORT_SKB_ALLOC_WORK */
 	} else {
 		/* QUEUE_INSERT_TAIL */
 		QUEUE_INSERT_TAIL(&prRxCtrl->rIndicatedRfbList, prQueEntry);

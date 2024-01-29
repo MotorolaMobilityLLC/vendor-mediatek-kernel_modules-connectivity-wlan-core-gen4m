@@ -250,6 +250,10 @@
 #define CFG_SUPPORT_RETURN_TASK		0
 #endif /* LINUX */
 
+#ifndef CFG_SUPPORT_SKB_ALLOC_WORK
+#define CFG_SUPPORT_SKB_ALLOC_WORK 0
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
 /* Enable handling BA Request advance SSN before data in previous window */
 #define CFG_SUPPORT_RX_OOR_BAR	1
 
