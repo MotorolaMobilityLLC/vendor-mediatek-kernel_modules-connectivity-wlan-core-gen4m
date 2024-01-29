@@ -546,6 +546,7 @@ else
     CONFIG_IFACE_CONCURRENT_MODE=2
     CONFIG_AP_EHT_DEFAULT_VALUE=1
     CONFIG_MLD_AP_LINK_MAX=2
+    CONFIG_MTK_WIFI_SUPPORT_CCM=y
 endif
 ccflags-y += -DCONFIG_MTK_WIFI_BW320
 ccflags-y += -DCFG_USB_RX_PADDING_CSO_LEN=12
@@ -2352,6 +2353,12 @@ else
 ccflags-y += -DCFG_WFD_SCC_BALANCE_DEF_ENABLE=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_CCM), y)
+	ccflags-y += -DCFG_SUPPORT_CCM=1
+else
+	ccflags-y += -DCFG_SUPPORT_CCM=0
+endif
+
 ifeq ($(CONFIG_MTK_WIFI_WFD_SCC_BALANCE), y)
 ccflags-y += -DCFG_WFD_SCC_BALANCE_SUPPORT=1
 else
@@ -2619,7 +2626,8 @@ MGMT_OBJS := 	$(MGMT_DIR)ais_fsm.o \
 		$(MGMT_DIR)mlr.o \
 		$(MGMT_DIR)wlan_ring.o \
 		$(MGMT_DIR)gcm.o \
-		$(MGMT_DIR)arp_mon.o
+		$(MGMT_DIR)arp_mon.o \
+		$(MGMT_DIR)ccm.o
 
 ifeq ($(NEED_CRYPTO), y)
 ccflags-y += -DCFG_SUPPORT_CRYPTO=1

@@ -4459,6 +4459,11 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RTT
 	rttInit(prAdapter);
 #endif
+
+#if CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT
+	/* CCM Module - initialization */
+	ccmInit(prAdapter);
+#endif /* CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT */
 }
 
 /*----------------------------------------------------------------------------*/

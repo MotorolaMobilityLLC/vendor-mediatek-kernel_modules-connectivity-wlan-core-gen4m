@@ -196,6 +196,26 @@ do { \
 	    ((prLink)->u4NumElem)++; \
 	}
 
+/* Insert an entry after a speceified entry */
+#define LINK_INSERT_AFTER(prLink, prEntry, prNew) \
+	{ \
+		__linkAdd( \
+			(struct LINK_ENTRY *)prNew, \
+			(struct LINK_ENTRY *)prEntry, \
+			(struct LINK_ENTRY *)(prEntry)->prNext); \
+		((prLink)->u4NumElem)++; \
+	}
+
+/* Insert an entry before a speceified entry */
+#define LINK_INSERT_BEFORE(prLink, prEntry, prNew) \
+	{ \
+		__linkAdd( \
+			(struct LINK_ENTRY *)prNew, \
+			(struct LINK_ENTRY *)(prEntry)->prPrev,	\
+			(struct LINK_ENTRY *)prEntry); \
+		((prLink)->u4NumElem)++; \
+	}
+
 /* Peek head entry, but keep still in link list */
 #define LINK_PEEK_HEAD(prLink, _type, _member) \
 	( \

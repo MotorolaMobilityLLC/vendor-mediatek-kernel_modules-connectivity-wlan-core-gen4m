@@ -463,7 +463,7 @@ void p2pFunCleanQueuedMgmtFrame(struct ADAPTER *prAdapter,
 void p2pFuncSwitchGcChannel(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo);
 
-void p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter);
+u_int8_t p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter);
 
 uint8_t p2pFuncGetAllFreqList(struct ADAPTER *prAdapter,
 			      uint32_t *pau4WhiteFreqList);

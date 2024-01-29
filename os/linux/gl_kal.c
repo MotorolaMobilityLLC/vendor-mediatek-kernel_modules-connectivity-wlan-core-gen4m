@@ -3018,6 +3018,10 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 #endif
 #if CFG_ENABLE_WIFI_DIRECT
 	struct AIS_FSM_INFO *prAisFsmInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss = NULL;
+#endif
+	struct BSS_INFO *bss;
 #endif
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -3033,6 +3037,10 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 #if CFG_ENABLE_WIFI_DIRECT
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	bss = prBssInfo;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+#endif
 #endif
 	if (!prDevHandler || !prBssInfo) {
 		DBGLOG(INIT, ERROR,
@@ -3090,10 +3098,16 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				timerPendingTimer(
 				&prAisFsmInfo->rJoinTimeoutTimer))
 				prAisFsmInfo->ucIsSapCsaPending = TRUE;
+#if (CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1)
+			else if (prMldBss)
+				/* MLO STA only ch abort once */
+				LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
+					    rLinkEntryMld, struct BSS_INFO)
+					CCM_SWITCH_CH(prAdapter, bss);
+#endif /* CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1 */
 			else
-				/* Check SAP channel */
-				p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
-#endif
+				CCM_SWITCH_CH(prAdapter, bss);
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 		}
 #if (CFG_SUPPORT_802_11AX == 1)
 		if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableSR))

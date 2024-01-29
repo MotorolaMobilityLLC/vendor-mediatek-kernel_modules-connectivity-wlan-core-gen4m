@@ -2472,6 +2472,10 @@
 
 #define CFG_SUPPORT_ANDROID_DUAL_STA 0
 
+#ifndef CFG_SUPPORT_CCM
+#define CFG_SUPPORT_CCM 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Value of FWDL UMAC reserve size
  *------------------------------------------------------------------------------
