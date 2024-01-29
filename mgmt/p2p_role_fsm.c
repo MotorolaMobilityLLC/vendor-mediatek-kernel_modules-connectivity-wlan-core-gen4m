@@ -1816,6 +1816,7 @@ void p2pRoleFsmRunEventStartAP(struct ADAPTER *prAdapter,
 		 */
 #endif
 
+		prP2pBssInfo->fgIsApGoGranted = FALSE;
 		if (prP2pRoleFsmInfo->rConnReqInfo
 			.rChannelInfo.ucChannelNum != 0) {
 			DBGLOG(P2P, INFO,
@@ -3760,6 +3761,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				eNextState = P2P_ROLE_STATE_GC_JOIN;
 				break;
 			case CH_REQ_TYPE_GO_START_BSS:
+				prBssInfo->fgIsApGoGranted = TRUE;
 				eNextState = P2P_ROLE_STATE_IDLE;
 				break;
 			case CH_REQ_TYPE_OFFCHNL_TX:
