@@ -3043,6 +3043,13 @@ mtk_cfg80211_vendor_event_nan_schedule_config(
 {
 	g_deEvent++;
 
+#if !CFG_MLO_CONCURRENT_NAN
+	if (aisGetLinkNum(
+		aisGetDefaultAisInfo(prAdapter)) > 1)
+		aisBssBeaconTimeout(prAdapter,
+			aisGetDefaultLinkBssIndex(prAdapter));
+#endif
+
 	return WLAN_STATUS_SUCCESS;
 }
 

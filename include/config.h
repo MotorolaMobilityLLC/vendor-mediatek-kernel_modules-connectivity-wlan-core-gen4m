@@ -2305,6 +2305,10 @@
 #define CFG_SUPPORT_NAN_6G  (0)
 #endif
 
+#ifndef CFG_MLO_CONCURRENT_NAN
+#define CFG_MLO_CONCURRENT_NAN (0)
+#endif
+
 #ifdef SOC7_0
 #define CFG_SUPPORT_AVOID_DESENSE 1
 #else
