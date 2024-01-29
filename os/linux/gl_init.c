@@ -2840,6 +2840,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_RETURN_WORK
 	kalRxRfbReturnWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_RETURN_WORK */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	kalSkbAllocWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 }
 
 static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
@@ -2859,6 +2862,9 @@ static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_RETURN_WORK
 	kalRxRfbReturnWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RETURN_WORK */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	kalSkbAllocWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 	glTaskletUninit(prGlueInfo);
 #if CFG_SUPPORT_RX_GRO
 #if CFG_SUPPORT_RX_NAPI

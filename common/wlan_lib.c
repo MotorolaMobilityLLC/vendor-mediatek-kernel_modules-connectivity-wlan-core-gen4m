@@ -3301,6 +3301,21 @@ void wlanReturnPacketDelaySetup(struct ADAPTER *prAdapter)
 			break;
 	}
 
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	if (prAdapter->ulNoMoreRfb != 0 &&
+		RX_GET_FREE_RFB_CNT(prRxCtrl)) {
+		DBGLOG_LIMITED(RX, INFO, "Free rfb and set IntEvent!!!!!\n");
+		kalSetDrvIntEvent(prAdapter->prGlueInfo);
+	}
+
+	/* call SkbAllocWork again when there is no OOM Issue */
+	if (kalSkbAllocIsNoOOM(prAdapter->prGlueInfo) &&
+		RX_GET_INDICATED_RFB_CNT(prRxCtrl)) {
+		kalSkbAllocWorkSchedule(prAdapter->prGlueInfo, TRUE);
+		return;
+	}
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
 	if (status != WLAN_STATUS_SUCCESS) {
 		DBGLOG(RX, WARN,
 			"Restart ReturnIndicatedRfb Timer (%ums) I,F:%u,%u\n",
@@ -3326,7 +3341,9 @@ void wlanReturnPacketDelaySetupTasklet(uintptr_t data)
 void wlanReturnPacketDelaySetupTimeout(struct ADAPTER
 				       *prAdapter, uintptr_t ulParamPtr)
 {
-#if (CFG_SUPPORT_RETURN_TASK == 1)
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	kalSkbAllocWorkSchedule(prAdapter->prGlueInfo, TRUE);
+#elif CFG_SUPPORT_RETURN_TASK
 	kal_tasklet_hi_schedule(&prAdapter->prGlueInfo->rRxRfbRetTask);
 #elif CFG_SUPPORT_RETURN_WORK
 	kalRxRfbReturnWorkSchedule(prAdapter->prGlueInfo);
@@ -8103,6 +8120,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4MccBoostForAllTputLvTh, "MccBoostForAllTputLvTh",
 		  MCC_BOOST_FOR_ALL_LEVEL, FEATURE_DEBUG_ONLY);
 #endif /* CFG_SUPPORT_MCC_BOOST_CPU */
+
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	INIT_UINT(prWifiVar->fgSkbAllocWorkEn, "SkbAllocWorkEn",
+			FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4SkbAllocScheduleTh, "SkbAllocScheduleTh",
+		  256, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
 #if CFG_SUPPORT_LLS
 	INIT_UINT(prWifiVar->fgLinkStatsDump, "LinkStatsDump", 0,

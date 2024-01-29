@@ -145,7 +145,8 @@ struct BOOST_INFO rBoostInfo[] = {
 		.u4WfdmaTh = 0,
 		.i4TxFreeMsduWorkCpu = -1,
 		.fgWifiNappingForceDis = FALSE,
-		.fgDramBoost = FALSE
+		.fgDramBoost = FALSE,
+		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV1 */
@@ -179,7 +180,8 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = FALSE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = FALSE
+		.fgDramBoost = FALSE,
+		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV2 */
@@ -213,7 +215,8 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = TRUE
+		.fgDramBoost = TRUE,
+		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV3 */
@@ -247,7 +250,8 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = TRUE
+		.fgDramBoost = TRUE,
+		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 	}
 };
 
@@ -536,6 +540,11 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 			prBoostInfo->i4RxRfbRetWorkCpu);
 #endif /* CFG_SUPPORT_RETURN_WORK */
 
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	kalSkbAllocWorkSetCpu(prGlueInfo,
+			prBoostInfo->eSkbAllocWorkCoreType);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
 #if CFG_SUPPORT_TX_WORK
 	kalTxWorkSetCpu(prGlueInfo, prBoostInfo->i4TxWorkCpu);
 #endif /* CFG_SUPPORT_TX_WORK */
@@ -592,6 +601,12 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #define PLAT_THREAD_INFO "ThreadInfo:[%02x:%02x:%02x][%u:%u:%u] "
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+#define SKB_ALLOC_WORK_TEMPLATE " SkbAllocWork:[%u]"
+#else /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#define SKB_ALLOC_WORK_TEMPLATE ""
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
 #define TEMP_LOG_TEMPLATE \
 	"CPUInfo[%d:%d] " \
 	PLAT_THREAD_INFO \
@@ -601,6 +616,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	TX_WORK_TEMPLATE \
 	RX_WORK_TEMPLATE \
 	RX_NAPI_WORK_TEMPLATE \
+	SKB_ALLOC_WORK_TEMPLATE \
 	"\n"
 
 	DBGLOG(INIT, INFO,
@@ -638,6 +654,9 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RX_NAPI_WORK
 		, prBoostInfo->i4RxNapiWorkCpu
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+		, prBoostInfo->eSkbAllocWorkCoreType
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 		);
 #undef TEMP_LOG_TEMPLATE
 }
@@ -661,6 +680,22 @@ void kalUpdateBoostInfo(struct ADAPTER *prAdapter)
 	}
 }
 
+static void __kalBoostCpuInit(struct ADAPTER *prAdapter)
+{
+	/* initially enable RPS working at small cores */
+	if (eCurrBoost == ENUM_CPU_BOOST_STATUS_INIT) {
+		eCurrBoost = ENUM_CPU_BOOST_STATUS_LV0;
+		kalUpdateBoostInfo(prAdapter);
+		kalSetCpuBoost(prAdapter, &rBoostInfo[eCurrBoost]);
+	}
+}
+
+void kalBoostCpuInit(struct ADAPTER *prAdapter)
+{
+	eCurrBoost = ENUM_CPU_BOOST_STATUS_INIT;
+	__kalBoostCpuInit(prAdapter);
+}
+
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
 		    uint32_t u4BoostCpuTh)
@@ -670,12 +705,7 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 	if (prAdapter->rWifiVar.fgBoostCpuEn == FEATURE_DISABLED)
 		return 0;
 
-	/* initially enable RPS working at small cores */
-	if (eCurrBoost == ENUM_CPU_BOOST_STATUS_INIT) {
-		eCurrBoost = ENUM_CPU_BOOST_STATUS_LV0;
-		kalUpdateBoostInfo(prAdapter);
-		kalSetCpuBoost(prAdapter, &rBoostInfo[eCurrBoost]);
-	}
+	__kalBoostCpuInit(prAdapter);
 
 	if (u4TarPerfLevel >= BOOST_CPU_TABLE_NUM)
 		eNewBoost = eBoostCpuTable[BOOST_CPU_TABLE_NUM - 1];

@@ -265,6 +265,12 @@ struct THREAD_INFO {
 	uint32_t u4Priority;
 };
 
+enum CPU_CORE_TYPE {
+	CPU_CORE_NONE = 0,
+	CPU_CORE_LITTLE,
+	CPU_CORE_BIG
+};
+
 struct BOOST_INFO {
 	struct CPU_INFO rCpuInfo;
 	struct THREAD_INFO rHifThreadInfo;
@@ -282,6 +288,7 @@ struct BOOST_INFO {
 	u_int8_t fgKeepPcieWakeup;
 	uint32_t u4WfdmaTh;
 	u_int8_t fgWifiNappingForceDis;
+	enum CPU_CORE_TYPE eSkbAllocWorkCoreType;
 };
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
@@ -2336,6 +2343,7 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		struct BOOST_INFO *prBoostInfo);
+void kalBoostCpuInit(struct ADAPTER *prAdapter);
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
 		    uint32_t u4BoostCpuTh);
@@ -2716,6 +2724,16 @@ void kalVnfEventHandler(struct ADAPTER *prAdapter);
 uint8_t kalVnfGetEnInitStatus(void);
 uint32_t kalVnfGetVoltLowBnd(void);
 #endif /* CFG_VOLT_INFO */
+
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+uint32_t kalSkbAllocDeqSkb(struct GLUE_INFO *pr, void **pvPacket,
+	uint8_t **ppucData);
+void kalSkbAllocWorkSetCpu(struct GLUE_INFO *pr, enum CPU_CORE_TYPE eCoreType);
+void kalSkbAllocWorkInit(struct GLUE_INFO *pr);
+void kalSkbAllocWorkUninit(struct GLUE_INFO *pr);
+void kalSkbAllocWorkSchedule(struct GLUE_INFO *pr, u_int8_t fgForce);
+u_int8_t kalSkbAllocIsNoOOM(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
 #if CFG_SUPPORT_RETURN_WORK
 void kalRxRfbReturnWorkSetCpu(struct GLUE_INFO *pr, int32_t cpu);
