@@ -3656,12 +3656,12 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 
 static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter)
 {
-#if CFG_MTK_CCCI_SUPPORT
+#if CFG_MTK_CCCI_SUPPORT && CFG_MTK_MDDP_SUPPORT
 	uint32_t mcif_emi_base;
 	void *vir_addr = NULL;
 	int ret = 0;
 
-	mcif_emi_base =	get_smem_phy_start_addr(
+	mcif_emi_base = get_smem_phy_start_addr(
 		MD_SYS1, SMEM_USER_RAW_MD_CONSYS, &ret);
 	if (!mcif_emi_base) {
 		DBGLOG(INIT, ERROR, "share memory is NULL.\n");
