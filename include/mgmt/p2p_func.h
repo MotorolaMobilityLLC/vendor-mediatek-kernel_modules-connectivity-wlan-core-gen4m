@@ -196,6 +196,12 @@ void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode);
 
 uint8_t p2pFuncGetRadarDetectMode(void);
 
+void p2pFuncAddRadarDetectCnt(void);
+
+void p2pFuncResetRadarDetectCnt(void);
+
+uint8_t p2pFuncGetRadarDetectCnt(void);
+
 void p2pFuncSetDfsState(uint8_t ucDfsState);
 
 uint8_t p2pFuncGetDfsState(void);

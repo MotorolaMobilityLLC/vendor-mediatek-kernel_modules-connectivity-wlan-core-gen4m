@@ -192,6 +192,9 @@
 #define CMD_SET_DFS_RADARMODE		"RadarDetectMode"
 #define CMD_SET_DFS_RADAREVENT		"RadarEvent"
 #define CMD_SET_DFS_RDDOPCHNG		"RDDOpChng"
+#define CMD_DFS_CAC_START		"DFS_CAC_START"
+#define CMD_DFS_CAC_STOP		"DFS_CAC_STOP"
+
 #endif /* CFG_SUPPORT_DFS_MASTER */
 #if CFG_SUPPORT_IDC_CH_SWITCH
 #define CMD_SET_IDC_BMP			"SetIdcBmp"
