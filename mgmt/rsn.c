@@ -2098,17 +2098,14 @@ void rsnGenerateRSNIE(struct ADAPTER *prAdapter,
 			struct AIS_SPECIFIC_BSS_INFO *prAisSpecBssInfo =
 				aisGetAisSpecBssInfo(prAdapter, ucBssIndex);
 			struct GL_WPA_INFO *prWpaInfo;
-			struct BSS_DESC *prBssDesc;
 
 			prStaRec = cnmGetStaRecByIndex(prAdapter,
 						prMsduInfo->ucStaRecIndex);
 
 			prWpaInfo = aisGetWpaInfo(prAdapter, ucBssIndex);
-			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-			if (prBssDesc)
-				entry = aisSearchPmkidEntry(prAdapter,
-					prBssInfo, prBssDesc);
+			entry = aisSearchPmkidEntry(prAdapter,
+						prStaRec, ucBssIndex);
 
 			/* Fill PMKID Count and List field */
 			if (entry) {

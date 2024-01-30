@@ -944,8 +944,8 @@ void aisCheckPmkidCache(struct ADAPTER *prAdapter,
 			uint8_t ucAisIndex);
 
 struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
-			struct BSS_INFO *prAisBssInfo,
-			struct BSS_DESC *prBssDesc);
+			struct STA_RECORD *prStaRec,
+			uint8_t ucBssIndex);
 
 /*******************************************************************************
  *                              F U N C T I O N S

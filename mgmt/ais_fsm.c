@@ -1177,10 +1177,30 @@ bool aisFsmIsInProcessPostpone(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
-			struct BSS_INFO *prAisBssInfo,
-			struct BSS_DESC *prBssDesc)
+	struct STA_RECORD *prStaRec,
+	uint8_t ucBssIndex)
 {
 	struct PMKID_ENTRY *entry = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *prBssDesc = NULL;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetMainLinkBssInfo(prAisFsmInfo);
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+	if (!prAisBssInfo) {
+		DBGLOG(AIS, ERROR, "prAisBssInfo is NULL!");
+		return NULL;
+	}
+	if (!prStaRec) {
+		DBGLOG(AIS, ERROR, "prStaRec is NULL!");
+		return NULL;
+	}
+	if (!prBssDesc) {
+		DBGLOG(AIS, ERROR, "prBssDesc is NULL!");
+		return NULL;
+	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (mldIsMultiLinkFormed(prAdapter, prAisBssInfo->prStaRecOfAP)) {
@@ -1196,10 +1216,13 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	/* Do not use PMKID if
 	 * 1. it is invalid
 	 * 2. it's pmk is going to expire
+	 * 6. auth type is SAE
 	 */
 	if (entry &&
 	    (rsnApInvalidPMK(entry->u2StatusCode) ||
-	     rsnCheckPmkExpiration(prAdapter, entry, prAisBssInfo->ucBssIndex)))
+	     rsnCheckPmkExpiration(prAdapter,
+			entry, prAisBssInfo->ucBssIndex) ||
+	     prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_SAE))
 		entry = NULL;
 
 	return entry;
@@ -1421,7 +1444,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 		case AUTH_MODE_WPA3_SAE:
 			if (!aisSearchPmkidEntry(prAdapter,
-					prBssInfo, prBssDesc)) {
+					prStaRec, ucBssIndex)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_SAE;
 				DBGLOG(AIS, INFO,
@@ -1504,7 +1527,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 				    (uint8_t) AUTH_TYPE_FAST_BSS_TRANSITION;
 				DBGLOG(AIS, INFO, "FT: RSN FT roaming\n");
 			} else if (!aisSearchPmkidEntry(prAdapter,
-					prBssInfo, prBssDesc)) {
+					prStaRec, ucBssIndex)) {
 				prAisFsmInfo->ucAvailableAuthTypes =
 					(uint8_t) AUTH_TYPE_SAE;
 				DBGLOG(AIS, INFO,
@@ -4126,7 +4149,7 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	prPmkidEntry = aisSearchPmkidEntry(prAdapter, prAisBssInfo, prBssDesc);
+	prPmkidEntry = aisSearchPmkidEntry(prAdapter, prStaRec, ucBssIndex);
 	if (prPmkidEntry)
 		prPmkidEntry->u2StatusCode = prStaRec->u2StatusCode;
 
