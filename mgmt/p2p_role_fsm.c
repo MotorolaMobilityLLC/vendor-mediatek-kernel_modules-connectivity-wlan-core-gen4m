@@ -5221,6 +5221,10 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		if (prAisBssInfo &&
 			prAisBssInfo->eConnectionState ==
 			MEDIA_STATE_CONNECTED &&
+			// BEGIN MOTO IKSWT-58657
+			/* Only start AP in SCC mode when STA is not working in the 2GHz */
+			prAisBssInfo->eBand > BAND_2G4 &&
+			// END MOTO IKSWT-58657
 			(!p2pFuncIsDualAPMode(prAdapter) ||
 			(p2pFuncIsDualAPMode(prAdapter) &&
 			prAisBssInfo->eBand > BAND_2G4))) {
