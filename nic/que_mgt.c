@@ -3684,17 +3684,6 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		prCurrSwRfb = prNextSwRfb;
 		prNextSwRfb = QM_RX_GET_NEXT_SW_RFB(prCurrSwRfb);
 
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-		if (unlikely(fgIsHwRROSupport)) {
-			if (qmHandleRroPkt(prAdapter, prCurrSwRfb)) {
-				prCurrSwRfb->eDst =
-					RX_PKT_DESTINATION_NULL;
-				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
-				continue;
-			}
-		}
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
 		prRxStatus = prCurrSwRfb->prRxStatus;
 		if (prCurrSwRfb->u2RxByteCount > CFG_RX_MAX_PKT_SIZE) {
 			prCurrSwRfb->eDst = RX_PKT_DESTINATION_NULL;
@@ -3870,6 +3859,17 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 		 */
 		STATS_RX_PKT_INFO_DISPLAY(prCurrSwRfb);
 #endif
+
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+		if (likely(fgIsHwRROSupport)) {
+			if (qmHandleRroPkt(prAdapter, prCurrSwRfb)) {
+				prCurrSwRfb->eDst =
+					RX_PKT_DESTINATION_NULL;
+				QUEUE_INSERT_TAIL(prReturnedQue, prCurrSwRfb);
+				continue;
+			}
+		}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
 #if CFG_SUPPORT_FRAG_AGG_VALIDATION
 		if (prCurrSwRfb->fgDataFrame && prCurrSwRfb->prStaRec &&
