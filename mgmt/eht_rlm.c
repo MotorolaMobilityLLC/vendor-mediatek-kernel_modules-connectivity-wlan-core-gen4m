@@ -130,6 +130,7 @@ static void ehtRlmFillBW80MCSMap(
 	struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD *_prEhtSupportedMcsSet
 			= (struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD *)
 				prEhtSupportedMcsSet;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	kalMemZero((void *) prEhtSupportedMcsSet,
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
@@ -164,6 +165,19 @@ static void ehtRlmFillBW80MCSMap(
 			_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
 		if (map >= EHT_CAP_INFO_MCS_MAP_MCS13)
 			_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+	} else if (IS_BSS_AIS(prBssInfo) && prWifiVar->ucStaMaxMcsMap != 0xFF) {
+		if (prWifiVar->ucStaMaxMcsMap >= HE_CAP_INFO_MCS_MAP_MCS9)
+			_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
+		else
+			_prEhtSupportedMcsSet->eht_mcs_0_9 = 0;
+		if (prWifiVar->ucStaMaxMcsMap >= HE_CAP_INFO_MCS_MAP_MCS11)
+			_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
+		else
+			_prEhtSupportedMcsSet->eht_mcs_10_11 = 0;
+		if (prWifiVar->ucStaMaxMcsMap >= EHT_CAP_INFO_MCS_MAP_MCS13)
+			_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+		else
+			_prEhtSupportedMcsSet->eht_mcs_12_13 = 0;
 	} else {
 		_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
 #if CFG_ENABLE_WIFI_DIRECT
@@ -187,6 +201,11 @@ static void ehtRlmFillBW80MCSMap(
 	_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
 #endif
 	}
+
+	DBGLOG(RLM, TRACE, "EHT BW80 MCS Map: %x %x %x",
+		_prEhtSupportedMcsSet->eht_mcs_12_13,
+		_prEhtSupportedMcsSet->eht_mcs_10_11,
+		_prEhtSupportedMcsSet->eht_mcs_0_9);
 }
 
 static void ehtRlmFillBW20MCSMap(
@@ -197,12 +216,13 @@ static void ehtRlmFillBW20MCSMap(
 	uint8_t ucMcsMap, ucSupportedNss;
 	struct EHT_SUPPORTED_MCS_BW20_FIELD *_prEhtSupportedMcsSet =
 		(struct EHT_SUPPORTED_MCS_BW20_FIELD *) prEhtSupportedMcsSet;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	kalMemZero((void *) prEhtSupportedMcsSet,
 		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
 	ucSupportedNss = wlanGetSupportNss(prAdapter,
 		prBssInfo->ucBssIndex);
-		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
 
 	DBGLOG(RLM, INFO,
 		"eht uc20MNss: %d, op tx: %d, op rx: %d\n",
@@ -229,9 +249,23 @@ static void ehtRlmFillBW20MCSMap(
 		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
 		if (map >= HE_CAP_INFO_MCS_MAP_MCS9)
 			_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
+		else
+			_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = 0;
 		if (map >= HE_CAP_INFO_MCS_MAP_MCS11)
 			_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
+		else
+			_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = 0;
 		if (map >= EHT_CAP_INFO_MCS_MAP_MCS13)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
+		else
+			_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = 0;
+	} else if (IS_BSS_AIS(prBssInfo) && prWifiVar->ucStaMaxMcsMap != 0xFF) {
+		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
+		if (prWifiVar->ucStaMaxMcsMap >= HE_CAP_INFO_MCS_MAP_MCS9)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
+		if (prWifiVar->ucStaMaxMcsMap >= HE_CAP_INFO_MCS_MAP_MCS11)
+			_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
+		if (prWifiVar->ucStaMaxMcsMap >= EHT_CAP_INFO_MCS_MAP_MCS13)
 			_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
 	} else {
 		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
@@ -257,6 +291,12 @@ static void ehtRlmFillBW20MCSMap(
 		_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
 #endif
 	}
+
+	DBGLOG(RLM, TRACE, "EHT BW20 MCS Map: %x %x %x %x",
+		_prEhtSupportedMcsSet->eht_bw20_mcs_12_13,
+		_prEhtSupportedMcsSet->eht_bw20_mcs_10_11,
+		_prEhtSupportedMcsSet->eht_bw20_mcs_8_9,
+		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7);
 }
 
 void ehtRlmFillCapIE(

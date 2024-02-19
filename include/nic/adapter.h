@@ -846,6 +846,8 @@ struct WIFI_VAR {
 	uint8_t ucHeMaxMcsMap5g;
 	uint8_t ucHeMaxMcsMap6g;
 #endif
+	uint8_t ucStaMaxMcsMap;
+
 	uint8_t ucHtSmps2g4;
 	uint8_t ucHtSmps5g;
 	uint8_t ucHtSmps6g;
