@@ -1509,6 +1509,11 @@ static int p2pOpen(struct net_device *prDev)
 	netif_tx_start_all_queues(prDev);
 #endif
 
+	/* init acs information */
+	kalMemZero(&(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo),
+		sizeof(prGlueInfo->prAdapter->rWifiVar.rChnLoadInfo));
+	wlanInitChnLoadInfoChannelList(prGlueInfo->prAdapter);
+
 #ifdef CONFIG_WIRELESS_EXT
 	prDev->wireless_handlers = &wext_handler_def;
 #endif
