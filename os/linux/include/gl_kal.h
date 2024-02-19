@@ -251,6 +251,9 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define PAGE_POOL_LAST_IDX		(PAGE_POOL_MAX_SIZE - 1)
 #endif
 
+/* OID waiting time (in ms) */
+#define KAL_OID_WAIT_TIME		(WLAN_OID_TIMEOUT_THRESHOLD + 4000)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
