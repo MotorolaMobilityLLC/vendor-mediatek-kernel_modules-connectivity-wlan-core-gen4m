@@ -335,7 +335,7 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 	    (uint8_t *) ((uintptr_t)prMsduInfo->prPacket +
 			 (uintptr_t)prMsduInfo->u2FrameLength);
 
-	if (IS_STA_IN_AIS(prStaRec)) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		prConnSettings =
 			aisGetConnSettings(prAdapter, prStaRec->ucBssIndex);
 
@@ -356,7 +356,8 @@ static __KAL_INLINE__ void assocBuildReAssocReqFrameCommonIEs(
 
 	}
 #if CFG_ENABLE_WIFI_DIRECT
-	else if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec)))
+	else if ((prAdapter->fgIsP2PRegistered) &&
+		 (IS_STA_IN_P2P(prAdapter, prStaRec)))
 		pucBuffer =
 		    p2pBuildReAssocReqFrameCommonIEs(prAdapter, prMsduInfo,
 						     pucBuffer);
@@ -526,7 +527,7 @@ assocComposeReAssocReqFrameHeaderAndFF(struct ADAPTER *prAdapter,
 	 */
 	/* Fill the Current AP Address field. */
 	if (prStaRec->fgIsReAssoc) {
-		if (IS_STA_IN_AIS(prStaRec)) {
+		if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 			struct WLAN_REASSOC_REQ_FRAME *prReAssocFrame =
 			    (struct WLAN_REASSOC_REQ_FRAME *)prAssocFrame;
 
@@ -592,7 +593,7 @@ struct MSDU_INFO *assocComposeReAssocReqFrame(struct ADAPTER *prAdapter,
 			   sizeof(struct APPEND_VAR_IE_ENTRY);
 
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211 && CFG_ENABLE_WIFI_DIRECT
-	if (IS_STA_IN_P2P(prStaRec)) {
+	if (IS_STA_IN_P2P(prAdapter, prStaRec)) {
 		if ((prAdapter->fgIsP2PRegistered)) {
 			u2EstimatedExtraIELen =
 			    p2pCalculate_IEForAssocReq(prAdapter,
@@ -684,7 +685,7 @@ struct MSDU_INFO *assocComposeReAssocReqFrame(struct ADAPTER *prAdapter,
 
 	/* 4 <5> Compose IEs in MSDU_INFO_T */
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211 && CFG_ENABLE_WIFI_DIRECT
-	if (IS_STA_IN_P2P(prStaRec)) {
+	if (IS_STA_IN_P2P(prAdapter, prStaRec)) {
 		if ((prAdapter->fgIsP2PRegistered)) {
 			p2pGenerate_IEForAssocReq(prAdapter, prMsduInfo);
 		} else {
@@ -749,7 +750,7 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 	prAssocFrame = (struct WLAN_ASSOC_REQ_FRAME *)
 		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 
-	if (IS_STA_IN_AIS(prStaRec)) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		kalUpdateReAssocReqInfo(prAdapter->prGlueInfo,
 					(uint8_t *) &prAssocFrame->u2CapInfo,
 					prMsduInfo->u2FrameLength -
@@ -758,7 +759,8 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 					prStaRec->ucBssIndex);
 	}
 #if CFG_ENABLE_WIFI_DIRECT
-	if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
+	if ((prAdapter->fgIsP2PRegistered) &&
+	    (IS_STA_IN_P2P(prAdapter, prStaRec))) {
 		kalP2PUpdateAssocInfo(prAdapter->prGlueInfo,
 				      (uint8_t *) &prAssocFrame->u2CapInfo,
 				      prMsduInfo->u2FrameLength -
@@ -840,7 +842,8 @@ uint32_t assocCalculateConnIELen(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	ucBssIndex = prStaRec->ucBssIndex;
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
-	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec) &&
+	    prConnSettings->assocIeLen > 0) {
 		prConnSettings = aisGetConnSettings(prAdapter, ucBssIdx);
 		u2RetLen = prConnSettings->assocIeLen;
 
@@ -894,7 +897,8 @@ void assocGenerateConnIE(struct ADAPTER *prAdapter,
 	ucBssIndex = prStaRec->ucBssIndex;
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 
-	if (IS_STA_IN_AIS(prStaRec) && prConnSettings->assocIeLen > 0) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec) &&
+	    prConnSettings->assocIeLen > 0) {
 		kalMemCopy(cp, prConnSettings->pucAssocIEs,
 				   prConnSettings->assocIeLen);
 		cp += prConnSettings->assocIeLen;
@@ -1654,7 +1658,7 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
 			/* Check only SAP clients */
 			if (prAdapter->fgIsP2PRegistered &&
-				IS_STA_IN_P2P(prStaRec) &&
+				IS_STA_IN_P2P(prAdapter, prStaRec) &&
 				p2pFuncIsAPMode(
 					prAdapter->rWifiVar.prP2PConnSettings
 					[prBssInfo->u4PrivateData])) {
@@ -1832,7 +1836,8 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
 #if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_HOTSPOT_PRIVACY_CHECK
-		if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
+		if (prAdapter->fgIsP2PRegistered &&
+		    IS_STA_IN_P2P(prAdapter, prStaRec)) {
 			if (prIeRsn) {
 				if (!kalP2PGetCipher
 				    (prAdapter->prGlueInfo,
@@ -1858,7 +1863,8 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 	} while (FALSE);
 
 #if CFG_ENABLE_WIFI_DIRECT
-	if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
+	if (prAdapter->fgIsP2PRegistered &&
+	    IS_STA_IN_P2P(prAdapter, prStaRec)) {
 #if 1				/* ICS */
 		{
 			uint8_t *cp = (uint8_t *) &prAssocReqFrame->u2CapInfo;

@@ -576,8 +576,8 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 
 		/* 4 <2> Check P2P network conditions */
 #if CFG_ENABLE_WIFI_DIRECT
-		if ((prAdapter->fgIsP2PRegistered)
-			&& (IS_STA_IN_P2P(prStaRec))) {
+		if ((prAdapter->fgIsP2PRegistered) &&
+		    (IS_STA_IN_P2P(prAdapter, prStaRec))) {
 
 			prBssInfo =
 				GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -699,8 +699,8 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 		if (u2StatusCode == STATUS_CODE_SUCCESSFUL) {
 
 #if CFG_ENABLE_WIFI_DIRECT
-			if ((prAdapter->fgIsP2PRegistered)
-				&& (IS_STA_IN_P2P(prStaRec))) {
+			if ((prAdapter->fgIsP2PRegistered) &&
+			    (IS_STA_IN_P2P(prAdapter, prStaRec))) {
 				prBssInfo =
 					GET_BSS_INFO_BY_INDEX(prAdapter,
 						prStaRec->ucBssIndex);
@@ -796,7 +796,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				 */
 				if ((prStaRec->ucStaState > STA_STATE_1) &&
 				     prAdapter->fgIsP2PRegistered &&
-				     (IS_STA_IN_P2P(prStaRec))) {
+				     (IS_STA_IN_P2P(prAdapter, prStaRec))) {
 					struct BSS_INFO *prBssInfo = NULL;
 
 					prBssInfo = GET_BSS_INFO_BY_INDEX(
