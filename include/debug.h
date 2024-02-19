@@ -481,21 +481,6 @@ enum _ENUM_WFDMA_TYPE_T {
 	WFDMA_TYPE_WM
 };
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
-enum bt_dump_via_wf_op {
-	BT_DUMP_VIA_WF_READ = 0,
-	BT_DUMP_VIA_WF_WRITE,
-	BT_DUMP_VIA_WF_NUM
-};
-
-struct bt_dump_via_wf_str {
-	enum bt_dump_via_wf_op eOp;
-	uint8_t fgHifDone;
-	uint32_t u4Addr;
-	uint32_t u4Value;
-};
-#endif
-
 struct CHIP_DBG_OPS {
 	void (*showPdmaInfo)(struct ADAPTER *prAdapter);
 	void (*showPseInfo)(struct ADAPTER *prAdapter);
@@ -591,7 +576,6 @@ struct CHIP_DBG_OPS {
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	void (*dumpPcieCr)(void);
 	bool (*checkDumpViaBt)(void);
-	struct bt_dump_via_wf_str bt_dump_str;
 #endif
 	u_int8_t fgIsDebugSopOnGoing;
 #if CFG_MTK_WIFI_DEVAPC

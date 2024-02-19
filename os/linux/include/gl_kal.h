@@ -126,8 +126,7 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_HIF_MDDP | \
 	GLUE_FLAG_DRV_INT | \
 	GLUE_FLAG_MGMT_DIRECT_HIF_TX | \
-	GLUE_FLAG_SER_INT | \
-	GLUE_FLAG_BT_DUMP_VIA_WIFI)
+	GLUE_FLAG_SER_INT)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -253,6 +252,14 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 
 /* OID waiting time (in ms) */
 #define KAL_OID_WAIT_TIME		(WLAN_OID_TIMEOUT_THRESHOLD + 4000)
+
+#if CFG_SUPPORT_HIF_REG_WORK
+#define CFG_HIF_REG_MAX_REQ_NUM		100
+#define CFG_HIF_REG_WORK_TIMEOUT_TIME	1      /* 1ms */
+#define CFG_HIF_REG_WORK_TIMEOUT_CNT	5000   /* 5s */
+#define CFG_HIF_REG_REQ_TIMEOUT_TIME	1      /* 1ms */
+#define CFG_HIF_REG_REQ_TIMEOUT_CNT	5000   /* 5s */
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -2101,10 +2108,6 @@ void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetMddpEvent(struct GLUE_INFO *pr);
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
-void kalSetBtDumpViaWFEvent(struct GLUE_INFO *pr);
-#endif
-
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #if CFG_SUPPORT_MULTITHREAD
@@ -2790,6 +2793,13 @@ void kalSetPcieGen(struct ADAPTER *prAdapter);
 void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo,
 	enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+#if CFG_SUPPORT_HIF_REG_WORK
+void kalHifRegWork(struct work_struct *work);
+void kalHifRegWorkInit(struct GLUE_INFO *pr);
+void kalHifRegWorkUninit(struct GLUE_INFO *pr);
+void kalHifRegWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 
 #endif /* _GL_KAL_H */
 

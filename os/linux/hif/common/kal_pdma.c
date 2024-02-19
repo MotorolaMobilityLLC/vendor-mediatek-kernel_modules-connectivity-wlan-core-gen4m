@@ -2902,115 +2902,65 @@ int wf_ioremap_write(phys_addr_t addr, unsigned int val)
 	return 0;
 }
 
-
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
-int32_t wf_reg_via_hif_thread(
-	struct GLUE_INFO *glue,
-	struct CHIP_DBG_OPS *prDebugOps,
-	enum bt_dump_via_wf_op eOp,
-	uint32_t u4Addr, uint32_t *u4Value)
+#if CFG_SUPPORT_HIF_REG_WORK
+int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 {
 	int32_t ret = 0, i;
 
-	GLUE_SET_REF_CNT(0, prDebugOps->bt_dump_str.fgHifDone);
-	prDebugOps->bt_dump_str.eOp = eOp;
-	prDebugOps->bt_dump_str.u4Addr = u4Addr;
-	if (eOp == BT_DUMP_VIA_WF_WRITE)
-		prDebugOps->bt_dump_str.u4Value = *u4Value;
+	GLUE_INC_REF_CNT(glue->u4HifRegReqCnt);
 
-	if (current == glue->hif_thread)
-		halHandleBtDumpviaWF(glue->prAdapter);
-	else
-		kalSetBtDumpViaWFEvent(glue);
+	if (!glue->prHifRegFifoBuf) {
+		DBGLOG(HAL, ERROR, "fifo is free\n");
+		ret = -EFAULT;
+		goto exit;
+	}
 
-	for (i = 0; i < 1000; i++) {
-		if (GLUE_GET_REF_CNT(prDebugOps->bt_dump_str.fgHifDone) == 1) {
-			if (eOp == BT_DUMP_VIA_WF_READ)
-				*u4Value = prDebugOps->bt_dump_str.u4Value;
+	prReq->fgIsDone = 0;
+	if (KAL_FIFO_IN(&glue->rHifRegFifo, prReq)) {
+		kalHifRegWorkSchedule(glue);
+	} else {
+		DBGLOG_LIMITED(HAL, WARN,
+			"op: %d cr fifo full addr: %X, value: %X\n",
+			prReq->eOp, prReq->u4Addr, prReq->u4Val);
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	for (i = 0; i < HIF_REG_WORK_WAIT_CNT; i++) {
+		if (prReq->fgIsDone)
 			break;
-		}
-		kalUsleep(100);
+
+		kalUsleep(HIF_REG_WORK_WAIT_TIME);
 	}
 
-	if (GLUE_GET_REF_CNT(prDebugOps->bt_dump_str.fgHifDone) == 0) {
+	if (!prReq->fgIsDone) {
 		DBGLOG_LIMITED(HAL, WARN,
-			"op: %d cr timeout addr: %X, value: %X\n", eOp,
-			prDebugOps->bt_dump_str.u4Addr,
-			prDebugOps->bt_dump_str.u4Value);
-		ret = -EFAULT;
-	}
-
-	GLUE_SET_REF_CNT(0, prDebugOps->bt_dump_str.fgHifDone);
-
-	return ret;
-}
-
-int32_t wf_reg_read_wrapper(void *priv,
-	uint32_t addr, uint32_t *value)
-{
-	struct GLUE_INFO *glue = NULL;
-	struct ADAPTER *ad = NULL;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	bool dumpViaBt = FALSE;
-	int32_t ret = 0;
-
-	if (!priv) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");
+			"op: %d cr timeout addr: %X, value: %X\n",
+			prReq->eOp, prReq->u4Addr, prReq->u4Val);
 		ret = -EFAULT;
 		goto exit;
 	}
-	glue = priv;
-	ad = glue->prAdapter;
-
-	if (!ad) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	if (!wlanIsDriverReady(glue,
-			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"HIF is not ready.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	prDebugOps = ad->chip_info->prDebugOps;
-	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
-
-	if (dumpViaBt) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"PCIe AER.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	ret = wf_reg_via_hif_thread(glue, prDebugOps,
-		BT_DUMP_VIA_WF_READ, addr, value);
 
 exit:
+	GLUE_DEC_REF_CNT(glue->u4HifRegReqCnt);
+
 	return ret;
 }
 
-int32_t wf_reg_write_wrapper(void *priv,
-	uint32_t addr, uint32_t value)
+int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 {
-	struct GLUE_INFO *glue = NULL;
-	struct ADAPTER *ad = NULL;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
+	struct ADAPTER *ad;
+	struct CHIP_DBG_OPS *prDebugOps;
 	bool dumpViaBt = FALSE;
 	int32_t ret = 0;
 
-	if (!priv) {
+	if (!glue) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
-	glue = priv;
-	ad = glue->prAdapter;
 
+	ad = glue->prAdapter;
 	if (!ad) {
 		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
 		ret = -EFAULT;
@@ -3020,8 +2970,7 @@ int32_t wf_reg_write_wrapper(void *priv,
 	if (!wlanIsDriverReady(glue,
 			       WLAN_DRV_READY_CHECK_WLAN_ON |
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"HIF is not ready\n");
+		DBGLOG_LIMITED(HAL, WARN, "HIF is not ready.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -3031,200 +2980,146 @@ int32_t wf_reg_write_wrapper(void *priv,
 		dumpViaBt = prDebugOps->checkDumpViaBt();
 
 	if (dumpViaBt) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"PCIe AER.\n");
+		DBGLOG_LIMITED(HAL, WARN, "PCIe AER.\n");
 		ret = -EFAULT;
 		goto exit;
 	}
+exit:
+	return ret;
+}
 
-	ret = wf_reg_via_hif_thread(glue, prDebugOps,
-		BT_DUMP_VIA_WF_WRITE, addr, &value);
+int32_t wf_reg_read_wrapper(void *priv, uint32_t addr, uint32_t *value)
+{
+	struct GLUE_INFO *glue = priv;
+	struct WF_REG_REQ rReq, *prReq = &rReq;
+	int32_t ret = 0;
+
+	ret = wf_reg_sanity_check(glue);
+	if (ret)
+		goto exit;
+
+	prReq->eOp = WF_REG_READ;
+	prReq->u4Addr = addr;
+	ret = wf_reg_handle_req(glue, prReq);
+	*value = prReq->u4Val;
 
 exit:
 	return ret;
 }
 
-int32_t wf_reg_write_mask_wrapper(void *priv,
-	uint32_t addr, uint32_t mask, uint32_t value)
+int32_t wf_reg_write_wrapper(void *priv, uint32_t addr, uint32_t value)
 {
-	struct GLUE_INFO *glue = NULL;
-	struct ADAPTER *ad = NULL;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	bool dumpViaBt = FALSE;
-	uint32_t val = 0;
+	struct GLUE_INFO *glue = priv;
+	struct WF_REG_REQ rReq, *prReq = &rReq;
 	int32_t ret = 0;
 
-	if (!priv) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL GLUE.\n");
-		ret = -EFAULT;
+	ret = wf_reg_sanity_check(glue);
+	if (ret)
 		goto exit;
-	}
-	glue = priv;
-	ad = glue->prAdapter;
 
-	if (!ad) {
-		DBGLOG_LIMITED(HAL, WARN, "NULL ADAPTER.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	if (!wlanIsDriverReady(glue,
-			       WLAN_DRV_READY_CHECK_WLAN_ON |
-			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"HIF is not ready\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	prDebugOps = ad->chip_info->prDebugOps;
-	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
-
-	if (dumpViaBt) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"PCIe AER.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	ret = wf_reg_via_hif_thread(glue, prDebugOps,
-		BT_DUMP_VIA_WF_READ, addr, &val);
-	val &= ~mask;
-	val |= value;
-	ret = wf_reg_via_hif_thread(glue, prDebugOps,
-		BT_DUMP_VIA_WF_WRITE, addr, &val);
+	prReq->eOp = WF_REG_WRITE;
+	prReq->u4Addr = addr;
+	prReq->u4Val = value;
+	ret = wf_reg_handle_req(glue, prReq);
 
 exit:
 	return ret;
 }
 
-int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
-	void *priv_data)
+int32_t wf_reg_write_mask_wrapper(
+	void *priv, uint32_t addr, uint32_t mask, uint32_t value)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	bool dumpViaBt = FALSE;
+	struct GLUE_INFO *glue = priv;
+	struct WF_REG_REQ rReq, *prReq = &rReq;
 	int32_t ret = 0;
 
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	ret = wf_reg_sanity_check(glue);
+	if (ret)
+		goto exit;
+
+	prReq->eOp = WF_REG_READ;
+	prReq->u4Addr = addr;
+	ret = wf_reg_handle_req(glue, prReq);
+	if (ret)
+		goto exit;
+
+	prReq->eOp = WF_REG_WRITE;
+	prReq->u4Val &= ~mask;
+	prReq->u4Val |= value;
+	ret = wf_reg_handle_req(glue, prReq);
+
+exit:
+	return ret;
+}
+
+int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
+{
+	struct GLUE_INFO *prGlueInfo = priv_data;
+	int32_t ret = 0;
+
+	ret = wf_reg_sanity_check(prGlueInfo);
+	if (ret)
+		goto exit;
+
+	halSetDriverOwn(prGlueInfo->prAdapter);
+	if (prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
+		DBGLOG_LIMITED(HAL, WARN, "Driver own fail.\n");
+		ret = -EFAULT;
+	}
+
+	GLUE_INC_REF_CNT(prGlueInfo->u4HifRegStartCnt);
+	DBGLOG(HAL, INFO, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
+	       prGlueInfo->prAdapter->u4PwrCtrlBlockCnt,
+	       prGlueInfo->u4HifRegStartCnt);
+
+exit:
+	return ret;
+}
+
+int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv, void *priv_data)
+{
+	struct GLUE_INFO *prGlueInfo = priv_data;
+	int32_t ret = 0;
+
+	ret = wf_reg_sanity_check(prGlueInfo);
+	if (ret)
+		goto exit;
+
+	halSetFWOwn(prGlueInfo->prAdapter, FALSE);
+
+	GLUE_DEC_REF_CNT(prGlueInfo->u4HifRegStartCnt);
+	DBGLOG(HAL, INFO, "PwrCtrlBlockCnt[%u] HifRegStartCnt[%u]\n",
+	       prGlueInfo->prAdapter->u4PwrCtrlBlockCnt,
+	       prGlueInfo->u4HifRegStartCnt);
+
+exit:
+	return ret;
+}
+
+void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
+{
+	struct WF_REG_REQ *prReq = NULL;
+
 	if (prGlueInfo == NULL) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	if (kalIsHalted()) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"Driver in halted state.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	prDebugOps = prAdapter->chip_info->prDebugOps;
-	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
-
-	if (dumpViaBt) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"PCIe AER.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	halSetDriverOwn(prAdapter);
-	if (prAdapter->fgIsFwOwn == TRUE) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"Driver own fail.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
-			prAdapter->u4PwrCtrlBlockCnt);
-
-exit:
-	return ret;
-}
-
-int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
-	void *priv_data)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct ADAPTER *prAdapter = NULL;
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	bool dumpViaBt = FALSE;
-	int32_t ret = 0;
-
-	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-	if (prGlueInfo == NULL) {
-		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (prAdapter == NULL) {
-		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	if (kalIsHalted()) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"Driver in halted state.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	prDebugOps = prAdapter->chip_info->prDebugOps;
-	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
-
-	if (dumpViaBt) {
-		DBGLOG_LIMITED(HAL, WARN,
-			"PCIe AER.\n");
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	halSetFWOwn(prAdapter, FALSE);
-	DBGLOG(INIT, INFO, "prAdapter->u4PwrCtrlBlockCnt = %u\n",
-			prAdapter->u4PwrCtrlBlockCnt);
-
-exit:
-	return ret;
-}
-
-void halHandleBtDumpviaWF(struct ADAPTER *prAdapter)
-{
-	struct CHIP_DBG_OPS *prDebugOps = NULL;
-	uint32_t val = 0;
-
-	if (prAdapter == NULL) {
-		DBGLOG_LIMITED(HAL, WARN, "adapter is null\n");
+		DBGLOG_LIMITED(HAL, WARN, "glue is null\n");
 		return;
 	}
 
-	prDebugOps = prAdapter->chip_info->prDebugOps;
-	if (prDebugOps->bt_dump_str.eOp == BT_DUMP_VIA_WF_READ) {
-		HAL_RMCR_RD(HIF_BT_DBG, prAdapter,
-			prDebugOps->bt_dump_str.u4Addr, &val);
-		prDebugOps->bt_dump_str.u4Value = val;
-	} else if (prDebugOps->bt_dump_str.eOp == BT_DUMP_VIA_WF_WRITE) {
-		val = prDebugOps->bt_dump_str.u4Value;
-		HAL_MCR_WR(prAdapter, prDebugOps->bt_dump_str.u4Addr, val);
-	}
+	while (KAL_FIFO_OUT(&prGlueInfo->rHifRegFifo, prReq)) {
+		if (!prReq) {
+			DBGLOG(HAL, ERROR, "prReq is null\n");
+			break;
+		}
 
-	GLUE_SET_REF_CNT(1, prDebugOps->bt_dump_str.fgHifDone);
+		if (prReq->eOp == WF_REG_READ) {
+			HAL_RMCR_RD(HIF_BT_DBG, prGlueInfo->prAdapter,
+				    prReq->u4Addr, &prReq->u4Val);
+		} else if (prReq->eOp == WF_REG_WRITE) {
+			HAL_MCR_WR(prGlueInfo->prAdapter,
+				   prReq->u4Addr, prReq->u4Val);
+		}
+		prReq->fgIsDone = TRUE;
+	}
 }
-#endif
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 

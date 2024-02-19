@@ -2843,6 +2843,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	kalSkbAllocWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#if CFG_SUPPORT_HIF_REG_WORK
+	kalHifRegWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 }
 
 static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
@@ -2874,6 +2877,9 @@ static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 	kalNapiUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_GRO */
 	kalTxDirectUninit(prGlueInfo);
+#if CFG_SUPPORT_HIF_REG_WORK
+	kalHifRegWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 }
 
 static void wlanFreeNetDev(void)

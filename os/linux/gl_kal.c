@@ -5503,7 +5503,6 @@ int hif_thread(void *data)
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	int ret = 0;
 	bool fgEnInt;
-	u_int8_t fgIsDbgDump = FALSE;
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
@@ -5522,7 +5521,7 @@ int hif_thread(void *data)
 	while (TRUE) {
 
 		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag) ||
-		    (kalIsResetting() && !fgIsDbgDump)) {
+		    kalIsResetting()) {
 			DBGLOG(INIT, INFO, "hif_thread should stop now...\n");
 			break;
 		}
@@ -5545,11 +5544,6 @@ int hif_thread(void *data)
 		} while (ret != 0);
 
 		kalTraceBegin("hif_thread");
-
-		/* don't stop hif_thread when resetting dump debug log */
-		fgIsDbgDump = prGlueInfo->ulFlag &
-			(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO |
-			 GLUE_FLAG_BT_DUMP_VIA_WIFI);
 
 #if CFG_ENABLE_WAKE_LOCK
 		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
@@ -5629,12 +5623,6 @@ int hif_thread(void *data)
 		if (test_and_clear_bit(GLUE_FLAG_HIF_MDDP_BIT,
 				       &prGlueInfo->ulFlag))
 			mddpInHifThread(prAdapter);
-#endif
-
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
-		if (test_and_clear_bit(GLUE_FLAG_BT_DUMP_VIA_WIFI_BIT,
-					   &prGlueInfo->ulFlag))
-			halHandleBtDumpviaWF(prAdapter);
 #endif
 
 		/* Set FW own */
@@ -7000,16 +6988,6 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
 }
-
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
-void kalSetBtDumpViaWFEvent(struct GLUE_INFO *pr)
-{
-	set_bit(GLUE_FLAG_BT_DUMP_VIA_WIFI_BIT, &pr->ulFlag);
-#if CFG_SUPPORT_MULTITHREAD
-	wake_up_interruptible(&pr->waitq_hif);
-#endif
-}
-#endif
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr)
 {
@@ -17288,3 +17266,63 @@ void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 		rTxDoneStatus == TX_RESULT_SUCCESS, GFP_ATOMIC);
 #endif
 }
+
+#if CFG_SUPPORT_HIF_REG_WORK
+void kalHifRegWork(struct work_struct *work)
+{
+	halHandleHifRegReq(kalWorkGetGlueInfo(work));
+}
+
+inline void kalHifRegWorkInit(struct GLUE_INFO *pr)
+{
+	GLUE_SET_REF_CNT(0, pr->u4HifRegStartCnt);
+	GLUE_SET_REF_CNT(0, pr->u4HifRegReqCnt);
+	pr->u4HifRegFifoLen = CFG_HIF_REG_MAX_REQ_NUM * sizeof(void *);
+	pr->prHifRegFifoBuf = kalMemAlloc(pr->u4HifRegFifoLen, VIR_MEM_TYPE);
+	KAL_FIFO_INIT(&pr->rHifRegFifo,
+		      pr->prHifRegFifoBuf,
+		      pr->u4HifRegFifoLen);
+	kalWorkInit(pr, HIF_REG_WORK, "HifRegWork", kalHifRegWork);
+}
+
+inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
+{
+	uint32_t u4Idx;
+
+	for (u4Idx = 0; u4Idx < CFG_HIF_REG_WORK_TIMEOUT_CNT; u4Idx++) {
+		if (GLUE_GET_REF_CNT(pr->u4HifRegStartCnt) == 0)
+			break;
+
+		kalMsleep(CFG_HIF_REG_WORK_TIMEOUT_TIME);
+	}
+	if (u4Idx == CFG_HIF_REG_WORK_TIMEOUT_CNT) {
+		DBGLOG(HAL, ERROR, "work don't finish, StartCnt[%u]\n",
+		       GLUE_GET_REF_CNT(pr->u4HifRegStartCnt));
+	}
+
+	for (u4Idx = 0; u4Idx < CFG_HIF_REG_REQ_TIMEOUT_CNT; u4Idx++) {
+		if (GLUE_GET_REF_CNT(pr->u4HifRegReqCnt) == 0)
+			break;
+
+		kalMsleep(CFG_HIF_REG_REQ_TIMEOUT_TIME);
+	}
+	if (u4Idx == CFG_HIF_REG_REQ_TIMEOUT_CNT) {
+		DBGLOG(HAL, ERROR, "reg request don't finish, ReqCnt[%u]\n",
+		       GLUE_GET_REF_CNT(pr->u4HifRegReqCnt));
+	}
+
+	kalWorkUninit(pr, HIF_REG_WORK);
+	if (pr->prHifRegFifoBuf) {
+		kalMemFree(pr->prHifRegFifoBuf,
+			   VIR_MEM_TYPE,
+			   pr->u4HifRegFifoLen);
+		pr->prHifRegFifoBuf = NULL;
+		pr->u4HifRegFifoLen = 0;
+	}
+}
+
+inline void kalHifRegWorkSchedule(struct GLUE_INFO *pr)
+{
+	kalWorkSchedule(pr, HIF_REG_WORK);
+}
+#endif /* CFG_SUPPORT_HIF_REG_WORK */

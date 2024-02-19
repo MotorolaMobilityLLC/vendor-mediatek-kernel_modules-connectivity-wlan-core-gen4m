@@ -339,14 +339,11 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_TX_TIMEOUT_DUMP_BIT		(28)
 #define GLUE_FLAG_TX_TIMEOUT_DUMP		BIT(28)
 
-#define GLUE_FLAG_BT_DUMP_VIA_WIFI_BIT		(29)
-#define GLUE_FLAG_BT_DUMP_VIA_WIFI		BIT(29)
+#define GLUE_FLAG_RST_FW_NOTIFY_L0_BIT		(29)
+#define GLUE_FLAG_RST_FW_NOTIFY_L0		BIT(29)
 
-#define GLUE_FLAG_RST_FW_NOTIFY_L0_BIT		(30)
-#define GLUE_FLAG_RST_FW_NOTIFY_L0		BIT(30)
-
-#define GLUE_FLAG_RST_FW_NOTIFY_L05_BIT		(31)
-#define GLUE_FLAG_RST_FW_NOTIFY_L05		BIT(31)
+#define GLUE_FLAG_RST_FW_NOTIFY_L05_BIT		(30)
+#define GLUE_FLAG_RST_FW_NOTIFY_L05		BIT(30)
 
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */
@@ -551,6 +548,9 @@ enum ENUM_WORK {
 #if CFG_SUPPORT_RX_NAPI_WORK
 	RX_NAPI_WORK,
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
+#if CFG_SUPPORT_HIF_REG_WORK
+	HIF_REG_WORK,
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 	WORK_MAX
 };
 
@@ -1071,6 +1071,13 @@ struct GLUE_INFO {
 	bool fgTestFwDl;
 	wait_queue_head_t waitQTestFwDl;
 #endif
+#if CFG_SUPPORT_HIF_REG_WORK
+	struct kfifo rHifRegFifo;
+	uint8_t *prHifRegFifoBuf;
+	uint32_t u4HifRegFifoLen;
+	uint32_t u4HifRegStartCnt;
+	uint32_t u4HifRegReqCnt;
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
