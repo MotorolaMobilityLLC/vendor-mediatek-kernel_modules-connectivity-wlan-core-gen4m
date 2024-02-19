@@ -1831,6 +1831,24 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prHifInfo->rSerTimer.expires =
 		jiffies + HIF_SER_TIMEOUT * HZ / MSEC_PER_SEC;
 
+#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#if (KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE)
+	timer_setup(&prHifInfo->rGenSwitch4MddpTimer,
+		mddpGenSwitchMsgTimeout, 0);
+	prHifInfo->rGenSwitch4MddpTimerData =
+		(unsigned long)prAdapter->prGlueInfo;
+#else
+	init_timer(&prHifInfo->rGenSwitch4MddpTimer);
+	prHifInfo->rGenSwitch4MddpTimer.function = mddpGenSwitchMsgTimeout;
+	prHifInfo->rGenSwitch4MddpTimer.data =
+		(unsigned long)prAdapter->prGlueInfo;
+#endif
+	prHifInfo->rSerTimer.expires =
+		jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ / MSEC_PER_SEC;
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif /* CFG_MTK_MDDP_SUPPORT */
+
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 #if CFG_SUPPORT_HRTIMER
 	hrtimer_init(&prHifInfo->rTxDelayTimer, CLOCK_MONOTONIC,
@@ -1928,6 +1946,12 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	del_timer_sync(&prHifInfo->rTxDelayTimer);
 #endif /* CFG_SUPPORT_HRTIMER */
 #endif
+
+#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif /* CFG_MTK_MDDP_SUPPORT */
 
 	halUninitMsduTokenInfo(prGlueInfo->prAdapter);
 	halWpdmaFreeRing(prGlueInfo);

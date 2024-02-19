@@ -35,6 +35,10 @@
 #include "cnm_mem.h"
 #endif /* CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP */
 
+#if CFG_MTK_CCCI_SUPPORT
+#include "ccci_fsm.h"
+#endif
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -66,21 +70,32 @@ enum ENUM_MDDPW_MD_INFO {
 	MDDPW_MD_INFO_DRV_EXCEPTION = 2,
 	MDDPW_MD_EVENT_NOTIFY_MD_INFO_EMI = 3,
 	MDDPW_MD_EVENT_COMMUNICATION = 4,
+	MDDPW_MD_INFO_WIFI_OFF_CONFIRM = 5,
+	MDDPW_MD_INFO_DRVOWN_RELEASE = 6,
+	MDDPW_MD_INFO_PCIE_MMIO = 128,
+	MDDPW_MD_INFO_PCIE_GENSWITCH_START = 129,
+	MDDPW_MD_INFO_PCIE_GENSWITCH_END = 130,
+	MDDPW_MD_INFO_PCIE_GENSWITCH_BYPASS_START = 131,
+	MDDPW_MD_INFO_PCIE_GENSWITCH_BYPASS_END = 132,
 };
 
 enum wsvc_drv_info_id {
-	WSVC_DRVINFO_NONE                  = 0,
-	WSVC_DRVINFO_LOCAL_MAC             = 1,
-	WSVC_DRVINFO_WIFI_ONOFF            = 2,
-	WSVC_DRVINFO_TXD_TEMPLATE          = 3,
-	WSVC_DRVINFO_QUERY_MD_INFO         = 4,
-	WSVC_DRVINFO_DRVOWN_TIME_SET       = 5,
-	WSVC_DRVINFO_WIFI_UNIFIED_CMD_VER  = 6,
-	WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS   = 7,
-	WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS = 8,
-	WSVC_DRVINFO_CHECK_SER             = 9,
-	WSVC_DRVINFO_INVALID_ID            = 10,
-	WFPM_DRVINFO_PCIE_MMIO             = 128,
+	WSVC_DRVINFO_NONE                         = 0,
+	WSVC_DRVINFO_LOCAL_MAC                    = 1,
+	WSVC_DRVINFO_WIFI_ONOFF                   = 2,
+	WSVC_DRVINFO_TXD_TEMPLATE                 = 3,
+	WSVC_DRVINFO_QUERY_MD_INFO                = 4,
+	WSVC_DRVINFO_DRVOWN_TIME_SET              = 5,
+	WSVC_DRVINFO_WIFI_UNIFIED_CMD_VER         = 6,
+	WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS          = 7,
+	WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS        = 8,
+	WSVC_DRVINFO_CHECK_SER                    = 9,
+	WSVC_DRVINFO_INVALID_ID                   = 10,
+	WFPM_DRVINFO_PCIE_MMIO                    = 128,
+	WFPM_DRVINFO_PCIE_GENSWITCH_START         = 129,
+	WFPM_DRVINFO_PCIE_GENSWITCH_END           = 130,
+	WFPM_DRVINFO_PCIE_GENSWITCH_BYPASS_START  = 131,
+	WFPM_DRVINFO_PCIE_GENSWITCH_BYPASS_END    = 132,
 };
 
 /* MDDPW_MD_INFO_DRV_EXCEPTION */
@@ -1284,6 +1299,497 @@ exit:
 	return ret;
 }
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+int32_t mddpMdNotifyInfoHandleGenSwitchStart(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prMdInfo->buf_len >= 4) {
+		kalMemCopy((uint32_t *) &u4genSwitchSeq,
+					&prMdInfo->buf[0],
+					sizeof(uint32_t));
+	}
+	if (prMdInfo->buf_len >= 8) {
+		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
+					&prMdInfo->buf[4],
+					sizeof(uint32_t));
+	}
+
+	DBGLOG(HAL, INFO,
+		"mddp gen switch state [%d]->[%d] seq: %u, status: %u\n",
+		prHifInfo->u4GenSwitchState,
+		MDDP_GEN_SWITCH_START_END_STATE,
+		u4genSwitchSeq, u4GenSwitchStatus);
+	prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_END_STATE;
+	wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
+
+	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+
+	return 0;
+}
+
+int32_t mddpMdNotifyInfoHandleGenSwitchEnd(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prMdInfo->buf_len >= 4) {
+		kalMemCopy((uint32_t *) &u4genSwitchSeq,
+					&prMdInfo->buf[0],
+					sizeof(uint32_t));
+	}
+	if (prMdInfo->buf_len >= 8) {
+		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
+					&prMdInfo->buf[4],
+					sizeof(uint32_t));
+	}
+	DBGLOG(HAL, INFO,
+		"mddp gen switch state [%d]->[%d] seq: %u, status: %u\n",
+		prHifInfo->u4GenSwitchState,
+		MDDP_GEN_SWITCH_NORMAL_STATE,
+		u4genSwitchSeq, u4GenSwitchStatus);
+	prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+
+	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+
+	return 0;
+}
+
+int32_t mddpMdNotifyInfoHandleGenSwitchByPassStart(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prMdInfo->buf_len >= 4) {
+		kalMemCopy((uint32_t *) &u4genSwitchSeq,
+					&prMdInfo->buf[0],
+					sizeof(uint32_t));
+	}
+	if (prMdInfo->buf_len >= 8) {
+		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
+					&prMdInfo->buf[4],
+					sizeof(uint32_t));
+	}
+	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_NORMAL_STATE) {
+		/* set to bypass state only when GenSwitch in normal state */
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, status: %u\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_BYPASS_STATE,
+			u4genSwitchSeq, u4GenSwitchStatus);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_BYPASS_STATE;
+		wlandioStopPcieStatus(prAdapter,
+			PCIE_MD_BYPASS_GEN_SWITCH_START);
+	} else {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d] seq: %u, status: %u, ignore md bypass\n",
+			prHifInfo->u4GenSwitchState,
+			prHifInfo->u4GenSwitchState,
+			u4genSwitchSeq, u4GenSwitchStatus);
+	}
+
+	return 0;
+}
+
+int32_t mddpMdNotifyInfoHandleGenSwitchByPassEnd(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	uint32_t u4genSwitchSeq = 0, u4GenSwitchStatus = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prMdInfo->buf_len >= 4) {
+		kalMemCopy((uint32_t *) &u4genSwitchSeq,
+					&prMdInfo->buf[0],
+					sizeof(uint32_t));
+	}
+	if (prMdInfo->buf_len >= 8) {
+		kalMemCopy((uint32_t *) &u4GenSwitchStatus,
+					&prMdInfo->buf[4],
+					sizeof(uint32_t));
+	}
+	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
+		/* set to bypass state only when GenSwitch in normal state */
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_NORMAL_STATE;
+		wlandioStopPcieStatus(prAdapter,
+			PCIE_MD_BYPASS_GEN_SWITCH_END);
+	}
+
+	return 0;
+}
+
+int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
+{
+	struct mddpw_drv_notify_info_t *prNotifyInfo;
+	struct mddpw_drv_info_t *prDrvInfo;
+	int32_t ret = 0;
+	uint32_t u32BufSize = 0;
+	uint32_t u32InfoId = 0;
+	uint8_t *buff = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	DBGLOG(INIT, TRACE, "Notify GenSwitch u32Action %u\n", u32Action);
+
+	if (!gMddpWFunc.notify_drv_info) {
+		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
+		ret = -1;
+		goto exit;
+	}
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		goto exit;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto exit;
+	}
+
+	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
+			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
+
+	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
+		ret = -ENODEV;
+		goto exit;
+	}
+
+	if (u32Action == WFPM_DRVINFO_PCIE_GENSWITCH_START) {
+		/* GenSwitch Start */
+		u32InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_START;
+		GLUE_INC_REF_CNT(prAdapter->u4MddpGenSwitchSeqNum);
+	} else if (u32Action == WFPM_DRVINFO_PCIE_GENSWITCH_END) {
+		/* GenSwitch End */
+		u32InfoId = WFPM_DRVINFO_PCIE_GENSWITCH_END;
+	} else
+		goto exit;
+
+	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
+	prNotifyInfo->version = 0;
+	prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+			sizeof(uint32_t);
+	prNotifyInfo->info_num = 1;
+	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
+	prDrvInfo->info_id = u32InfoId;
+	prDrvInfo->info_len = sizeof(uint32_t);
+
+	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]),
+			&prAdapter->u4MddpGenSwitchSeqNum,
+			sizeof(uint32_t));
+
+	ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
+
+exit:
+	if (buff)
+		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+
+	if (prAdapter) {
+		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u32SeqNum:%u.\n",
+			ret, u32InfoId, prAdapter->u4MddpGenSwitchSeqNum);
+	}
+
+	return ret;
+}
+
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void mddpGenSwitchMsgTimeout(struct timer_list *timer)
+#else
+void mddpGenSwitchMsgTimeout(unsigned long arg)
+#endif
+{
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+	struct GL_HIF_INFO *prHif =
+		from_timer(prHif, timer, rGenSwitch4MddpTimer);
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)prHif->rSerTimerData;
+#else
+	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)arg;
+#endif
+	struct ADAPTER *prAdapter = NULL;
+	struct GL_HIF_INFO *prHifInfo;
+
+	ASSERT(prGlueInfo);
+	prAdapter = prGlueInfo->prAdapter;
+	ASSERT(prAdapter);
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	/* call API to notify Gen Switch module */
+	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d], msg timeout\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE;
+		mddpNotifyMDGenSwitchEnd(prAdapter);
+	} else if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_END_STATE) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d], msg timeout\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+	} else {
+		DBGLOG(HAL, ERROR, "invalid state [%d], msg timeout\n",
+			prHifInfo->u4GenSwitchState);
+	}
+}
+
+int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
+{
+	int32_t ret = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	int32_t md_state = 0;
+
+	if (!is_cal_flow_finished()) {
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+		goto end;
+	}
+
+#if CFG_MTK_ANDROID_WMT
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (is_pwr_on_notify_processing()) {
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+		goto end;
+	}
+#endif
+#endif
+
+	if (!mddpIsSupportMcifWifi()) {
+		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
+		goto end;
+	}
+
+#if CFG_MTK_CCCI_SUPPORT
+	md_state = ccci_fsm_get_md_state();
+#endif
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
+		/* no need to send msg to md in bypass state */
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_BYPASS_STATE);
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+	} else if (prHifInfo->fgMdResetInd == TRUE) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d], reset ind\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
+	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
+			MDDP_GEN_SWITCH_NORMAL_STATE) {
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_START_BEGIN_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_BEGIN_STATE;
+		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
+			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
+			  MSEC_PER_SEC);
+		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+
+		ret = mddpNotifyMDGenSwithAction(
+			WFPM_DRVINFO_PCIE_GENSWITCH_START);
+	} else if (md_state != READY) {
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
+	} else {
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			prHifInfo->u4GenSwitchState);
+	}
+end:
+	return ret;
+}
+
+int32_t mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
+{
+	int32_t ret = 0;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	int32_t md_state = 0;
+
+	if (!mddpIsSupportMcifWifi())
+		goto end;
+
+	if (!is_cal_flow_finished()) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d], cal not finished\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		goto end;
+	}
+
+#if CFG_MTK_ANDROID_WMT
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (is_pwr_on_notify_processing()) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d], pwr on processing\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		goto end;
+	}
+#endif
+#endif
+
+#if CFG_MTK_CCCI_SUPPORT
+	md_state = ccci_fsm_get_md_state();
+#endif
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
+		/* no need to send msg to md in bypass state */
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_BYPASS_STATE);
+	} else if (prHifInfo->fgMdResetInd == TRUE) {
+		DBGLOG(HAL, INFO,
+			"mddp gen switch state [%d]->[%d], reset ind\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
+			MDDP_GEN_SWITCH_START_END_STATE) {
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState, MDDP_GEN_SWITCH_END_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_END_STATE;
+		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
+			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
+			  MSEC_PER_SEC);
+		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+
+		ret = mddpNotifyMDGenSwithAction(
+			WFPM_DRVINFO_PCIE_GENSWITCH_END);
+	} else if (md_state == READY && prHifInfo->u4GenSwitchState ==
+			MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE) {
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState, MDDP_GEN_SWITCH_END_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_END_STATE;
+		mod_timer(&prHifInfo->rGenSwitch4MddpTimer,
+			  jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ /
+			  MSEC_PER_SEC);
+		DBGLOG(HAL, INFO, "Start GenSwitch timer\n");
+		ret = mddpNotifyMDGenSwithAction(
+			WFPM_DRVINFO_PCIE_GENSWITCH_END);
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+	} else {
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+	}
+end:
+	return ret;
+}
+
+void mddpHandleGenSwitchMdExp(int32_t md_state)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
+		return;
+	}
+	prHifInfo = &prGlueInfo->rHifInfo;
+	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+		del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE);
+		prHifInfo->u4GenSwitchState =
+			MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE;
+		wlandioStopPcieStatus(prGlueInfo->prAdapter,
+			PCIE_STOP_TRANSITION_END);
+	} else if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_END_STATE) {
+		del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
+		DBGLOG(HAL, INFO, "mddp gen switch state [%d]->[%d]\n",
+			prHifInfo->u4GenSwitchState,
+			MDDP_GEN_SWITCH_NORMAL_STATE);
+		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+	}
+}
+
+bool mddpWaitGenSwitchToNormalState(void)
+{
+	uint32_t u4StartTime, u4CurTime;
+	bool fgCompletion = true;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t u4GenSwithTimeoutTime = MDDP_GEN_SWITCH_MSG_TIMEOUT;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	u4StartTime = kalGetTimeTick();
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo) {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return false;
+	}
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	do {
+		u4CurTime = kalGetTimeTick();
+		if (CHECK_FOR_TIMEOUT(u4CurTime, u4StartTime,
+				u4GenSwithTimeoutTime)) {
+			DBGLOG(INIT, ERROR,
+				"wait for Gen Switch done timeout\n");
+			fgCompletion = false;
+			break;
+		}
+
+		kalMsleep(CFG_RESPONSE_POLLING_DELAY);
+	} while (prHifInfo->u4GenSwitchState != MDDP_GEN_SWITCH_NORMAL_STATE);
+
+	return fgCompletion;
+}
+
+uint32_t mddpGetGenSwitchState(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	return prHifInfo->u4GenSwitchState;
+}
+#endif /* CFG_PCIE_GEN_SWITCH */
 #endif
 
 
@@ -1606,6 +2112,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 	int32_t ret = 0;
 	u_int8_t fgHalted = kalIsHalted();
 	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	DBGLOG(INIT, TRACE, "MD notify mddpMdNotifyInfo.\n");
 
@@ -1660,11 +2167,19 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 		int32_t ret;
 
+		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+		prHifInfo->fgMdResetInd = TRUE;
+
 		DBGLOG(INIT, INFO, "MD resetting.\n");
 		save_mddp_stats();
 #if CFG_SUPPORT_LLS && CFG_SUPPORT_LLS_MDDP
 		save_mddp_lls_stats();
 		isMdResetSinceLastQuery = TRUE;
+#endif
+#if defined(_HIF_PCIE)
+#if (CFG_PCIE_GEN_SWITCH == 1)
+		mddpWaitGenSwitchToNormalState();
+#endif /* CFG_PCIE_GEN_SWITCH */
 #endif
 		mutex_lock(&rMddpLock);
 		__mddpNotifyWifiOnStart();
@@ -1676,6 +2191,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		}
 
 		g_fgIsMdCrash = FALSE;
+		prHifInfo->fgMdResetInd = FALSE;
 
 		/* Notify STA's TXD to MD */
 		for (i = 0; i < KAL_AIS_NUM; i++) {
@@ -1809,7 +2325,23 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				"MD event reason undefined reason:%d\n",
 					event->u4Reason);
 		}
-	} else {
+	}
+#if defined(_HIF_PCIE)
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	else if (prMdInfo->info_type == MDDPW_MD_INFO_PCIE_GENSWITCH_START) {
+		mddpMdNotifyInfoHandleGenSwitchStart(prAdapter, prMdInfo);
+	} else if (prMdInfo->info_type == MDDPW_MD_INFO_PCIE_GENSWITCH_END) {
+		mddpMdNotifyInfoHandleGenSwitchEnd(prAdapter, prMdInfo);
+	} else if (prMdInfo->info_type ==
+			MDDPW_MD_INFO_PCIE_GENSWITCH_BYPASS_START) {
+		mddpMdNotifyInfoHandleGenSwitchByPassStart(prAdapter, prMdInfo);
+	} else if (prMdInfo->info_type ==
+			MDDPW_MD_INFO_PCIE_GENSWITCH_BYPASS_END) {
+		mddpMdNotifyInfoHandleGenSwitchByPassEnd(prAdapter, prMdInfo);
+	}
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif
+	else {
 		DBGLOG(INIT, ERROR, "unknown MD info type: %d\n",
 			prMdInfo->info_type);
 		ret = -ENODEV;
@@ -2125,9 +2657,19 @@ void  mddpMdStateChangedCb(enum MD_STATE old_state,
 	switch (new_state) {
 	case GATED: /* MD off */
 		notifyMdCrash2FW();
+#if defined(_HIF_PCIE)
+#if (CFG_PCIE_GEN_SWITCH == 1)
+		mddpHandleGenSwitchMdExp(GATED);
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif
 		break;
 	case EXCEPTION: /* MD crash */
 		notifyMdCrash2FW();
+#if defined(_HIF_PCIE)
+#if (CFG_PCIE_GEN_SWITCH == 1)
+		mddpHandleGenSwitchMdExp(EXCEPTION);
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif
 		g_fgIsMdCrash = TRUE;
 		break;
 	default:

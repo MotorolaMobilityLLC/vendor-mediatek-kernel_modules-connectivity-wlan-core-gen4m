@@ -2356,6 +2356,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.u4PolicySize = ARRAY_SIZE(set_fw_param_policy)
 	},
 #endif /* CFG_SUPPORT_EASY_DEBUG */
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	{
+		.pcCmdStr  = CMD_MDDP_SET_GEN_SWITCH,
+		.pfHandler = priv_driver_set_genswitch,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(3),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_PCIE_GEN_SWITCH */
 	{
 		.pcCmdStr  = CMD_RM_IT,
 		.pfHandler = priv_driver_it_operation,

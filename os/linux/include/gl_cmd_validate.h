@@ -384,6 +384,9 @@
 #define CMD_DBG_SHOW_CSR_INFO			"show-csr"
 #define CMD_DBG_SHOW_DMASCH_INFO		"show-dmasch"
 #define CMD_DBG_SHOW_AHDBG			"show-ahdbg"
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#define CMD_MDDP_SET_GEN_SWITCH			"set-genswitch"
+#endif /* CFG_PCIE_GEN_SWITCH */
 /*------------------------------------------------------------------------------
  *  nl80211 vendor string command
  *------------------------------------------------------------------------------

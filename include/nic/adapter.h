@@ -2680,6 +2680,9 @@ struct ADAPTER {
 #if CFG_SUPPORT_PCIE_ASPM
 	uint32_t u4MddpPCIeL12SeqNum;
 #endif
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	uint32_t u4MddpGenSwitchSeqNum;
+#endif /* CFG_PCIE_GEN_SWITCH */
 #endif
 
 	struct WLAN_DEBUG_INFO rDebugInfo;

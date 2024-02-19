@@ -33,6 +33,10 @@
 #include <linux/soc/mediatek/devapc_public.h>
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+#include "mddp.h"
+#endif /* CFG_MTK_MDDP_SUPPORT */
+
 /*******************************************************************************
 *                              C O N S T A N T S
 ********************************************************************************
@@ -2523,6 +2527,12 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		glResetUpdateFlag(TRUE);
 
+#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_PCIE_GEN_SWITCH == 1)
+		mddpNotifyMDGenSwitchEnd(prAdapter);
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif /* CFG_MTK_MDDP_SUPPORT */
+
 		if (dbg_ops && dbg_ops->dumpBusHangCr)
 			dbg_ops->dumpBusHangCr(prAdapter);
 
@@ -2540,6 +2550,12 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 	wifi_coredump_set_enable(TRUE);
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
+
+#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	mddpNotifyMDGenSwitchEnd(prAdapter);
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif /* CFG_MTK_MDDP_SUPPORT */
 
 	if (dbg_ops && dbg_ops->dumpBusHangCr)
 		dbg_ops->dumpBusHangCr(prAdapter);

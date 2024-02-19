@@ -1086,6 +1086,10 @@ int priv_driver_show_dmasch_info(struct net_device *prNetDev,
 int priv_driver_fw_param(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif
+#if (CFG_PCIE_GEN_SWITCH == 1)
+int priv_driver_set_genswitch(struct net_device *prNetDev,
+			 char *pcCommand, int i4TotalLen);
+#endif /* CFG_PCIE_GEN_SWITCH */
 int priv_driver_tspec_operation(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_it_operation(struct net_device *prNetDev,
