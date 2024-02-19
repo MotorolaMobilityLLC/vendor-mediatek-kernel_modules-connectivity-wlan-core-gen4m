@@ -29,6 +29,7 @@
 #if CFG_SUPPORT_CSI
 #include "gl_csi.h"
 #endif
+#include "mddp.h"
 
 /******************************************************************************
  *                              C O N S T A N T S
@@ -16647,6 +16648,106 @@ wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+uint32_t
+wlanoidSetMddpGenSwitch(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen)
+{
+#if CFG_MTK_MDDP_SUPPORT
+	char *pucSavedPtr;
+	int32_t i4Argc = 0;
+	int32_t i4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4MsgType = 0;
+	struct mddpw_md_notify_info_t *prMdInfo;
+	uint32_t u4genSwitchBuf[2] = {0};
+	uint8_t *buff = NULL;
+	uint32_t u4seq = 1, u4status = 2;
+	uint32_t u4Cnt = 0, u4BufSize = 0;
+	uint32_t u4delayTime = 0;
+
+	if (!pvSetBuffer || !u4SetBufferLen) {
+		DBGLOG(OID, ERROR, "pvBuffer is NULL\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	pucSavedPtr = (int8_t *)pvSetBuffer;
+	DBGLOG(INIT, INFO, "mddp GenSwitchcommand is [%s]\n", pucSavedPtr);
+	wlanCfgParseArgument(pucSavedPtr, &i4Argc, apcArgv);
+	DBGLOG(INIT, INFO, "argc [%d]\n", i4Argc);
+
+	if (i4Argc != 3) {
+		DBGLOG(REQ, ERROR, "argc(%d) is error\n", i4Argc);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	i4Ret = kalkStrtou32(
+		apcArgv[1], 0, &u4MsgType);
+	DBGLOG(OID, INFO,
+		"parse u4MsgType %u i4Ret=%d\n",
+		u4MsgType, i4Ret);
+
+	i4Ret = kalkStrtou32(
+		apcArgv[2], 0, &u4delayTime);
+	DBGLOG(OID, INFO,
+		"parse u4delayTime %u i4Ret=%d\n",
+		u4delayTime, i4Ret);
+
+	u4BufSize = (sizeof(struct mddpw_md_notify_info_t) +
+		      sizeof(u4genSwitchBuf));
+
+	buff = kalMemAlloc(u4BufSize, PHY_MEM_TYPE);
+	if (buff == NULL) {
+		DBGLOG(NIC, ERROR, "Can't allocate buffer.\n");
+		goto exit;
+	}
+
+	prMdInfo = (struct mddpw_md_notify_info_t *) buff;
+
+
+	if (u4MsgType == 0) {
+		mddpNotifyMDGenSwitchStart(prAdapter);
+		while (mddpGetGenSwitchState(prAdapter) ==
+				MDDP_GEN_SWITCH_START_BEGIN_STATE) {
+			u4Cnt++;
+			kalMdelay(10);
+			if (u4Cnt > 150)
+				break;
+		}
+		kalMdelay(u4delayTime);
+		mddpNotifyMDGenSwitchEnd(prAdapter);
+	} else if (u4MsgType == 1)
+		mddpNotifyMDGenSwitchEnd(prAdapter);
+	else if (u4MsgType == 2) {
+		prMdInfo->buf_len = 8;
+		kalMemCopy(&prMdInfo->buf[0],
+					&u4seq,
+					sizeof(uint32_t));
+		kalMemCopy(&prMdInfo->buf[4],
+					&u4status,
+					sizeof(uint32_t));
+		mddpMdNotifyInfoHandleGenSwitchByPassStart(prAdapter, prMdInfo);
+	} else if (u4MsgType == 3) {
+		prMdInfo->buf_len = 8;
+		kalMemCopy(&prMdInfo->buf[0],
+					&u4seq,
+					sizeof(uint32_t));
+		kalMemCopy(&prMdInfo->buf[4],
+					&u4status,
+					sizeof(uint32_t));
+		mddpMdNotifyInfoHandleGenSwitchByPassEnd(prAdapter, prMdInfo);
+	}
+
+	if (buff)
+		kalMemFree(buff, PHY_MEM_TYPE, u4BufSize);
+
+exit:
+#endif /* CFG_MTK_MDDP_SUPPORT */
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_PCIE_GEN_SWITCH */
 
 
 #if CFG_SUPPORT_LOWLATENCY_MODE

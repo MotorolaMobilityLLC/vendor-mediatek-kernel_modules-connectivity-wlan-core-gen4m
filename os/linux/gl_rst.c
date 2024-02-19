@@ -689,6 +689,12 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	if (kalIsResetting())
 		goto exit;
 
+#if CFG_MTK_MDDP_SUPPORT
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	mddpNotifyMDGenSwitchEnd(prAdapter);
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif /* CFG_MTK_MDDP_SUPPORT */
+
 #if WLAN_INCLUDE_SYS
 	sysResetTrigger();
 #endif

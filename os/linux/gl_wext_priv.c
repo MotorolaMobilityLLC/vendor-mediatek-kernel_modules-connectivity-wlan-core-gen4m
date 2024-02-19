@@ -22580,6 +22580,28 @@ int priv_driver_fw_param(struct net_device *prNetDev,
 }
 #endif /* CFG_SUPPORT_EASY_DEBUG */
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+int priv_driver_set_genswitch(struct net_device *prNetDev,
+			 char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	int32_t i4BytesWritten = 0;
+
+	ASSERT(prNetDev);
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!netif_carrier_ok(prNetDev))
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	kalIoctl(prGlueInfo, wlanoidSetMddpGenSwitch, (void *) pcCommand,
+		 i4TotalLen, &i4BytesWritten);
+
+	return i4BytesWritten;
+}
+#endif /* CFG_PCIE_GEN_SWITCH */
+
 int priv_driver_tspec_operation(struct net_device *prNetDev,
 				char *pcCommand, int i4TotalLen)
 {

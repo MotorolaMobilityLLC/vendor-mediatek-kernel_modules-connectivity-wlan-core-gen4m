@@ -283,6 +283,14 @@ struct GL_HIF_INFO {
 	struct ERR_RECOVERY_CTRL_T rErrRecoveryCtl;
 	struct timer_list rSerTimer;
 	unsigned long rSerTimerData;
+#if CFG_MTK_MDDP_SUPPORT
+	uint8_t fgMdResetInd;
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	struct timer_list rGenSwitch4MddpTimer;
+	unsigned long rGenSwitch4MddpTimerData;
+	uint32_t u4GenSwitchState;
+#endif /* CFG_PCIE_GEN_SWITCH */
+#endif /* CFG_MTK_MDDP_SUPPORT */
 	struct list_head rTxCmdQ;
 	struct list_head rTxCmdFreeList;
 	spinlock_t rTxCmdQLock;

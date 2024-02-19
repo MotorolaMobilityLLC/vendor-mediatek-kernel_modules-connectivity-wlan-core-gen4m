@@ -5267,6 +5267,14 @@ wlanoidShowDmaschInfo(struct ADAPTER *prAdapter,
 		      void *pvSetBuffer, uint32_t u4SetBufferLen,
 		      uint32_t *pu4SetInfoLen);
 /* end Show Consys debug information*/
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+uint32_t
+wlanoidSetMddpGenSwitch(struct ADAPTER *prAdapter,
+		      void *pvSetBuffer, uint32_t u4SetBufferLen,
+		      uint32_t *pu4SetInfoLen);
+#endif /* CFG_PCIE_GEN_SWITCH */
+
 uint32_t
 wlanoidShowAhdbgInfo(struct ADAPTER *prAdapter,
 		   void *pvSetBuffer, uint32_t u4SetBufferLen,

@@ -69,6 +69,10 @@
 
 #define MDDP_LPCR_MD_SET_FW_OWN BIT(0)
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#define MDDP_GEN_SWITCH_MSG_TIMEOUT	100 /* msec */
+#endif /* CFG_PCIE_GET_SWITCH */
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -123,6 +127,18 @@ struct MDDP_SETTINGS {
 	uint8_t is_drv_own_acquired;
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 };
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+enum ENUM_MDDP_GEN_SWITCH_STATE {
+	MDDP_GEN_SWITCH_NORMAL_STATE = 0,
+	MDDP_GEN_SWITCH_START_BEGIN_STATE,
+	MDDP_GEN_SWITCH_START_END_STATE,
+	MDDP_GEN_SWITCH_START_END_SKIP_MD_STATE,
+	MDDP_GEN_SWITCH_END_STATE,
+	MDDP_GEN_SWITCH_BYPASS_STATE,
+	MDDP_GEN_SWITCH_START_ACK_TIMEOUT_STATE
+};
+#endif /* CFG_PCIE_GET_SWITCH */
 
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 /* copy from mddp */
@@ -420,6 +436,24 @@ void mddpEnableMddpSupport(void);
 void mddpDisableMddpSupport(void);
 bool mddpIsSupportMcifWifi(void);
 bool mddpIsSupportMddpWh(void);
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#if KERNEL_VERSION(4, 15, 0) <= LINUX_VERSION_CODE
+void mddpGenSwitchMsgTimeout(struct timer_list *timer);
+#else
+void mddpGenSwitchMsgTimeout(unsigned long arg);
+#endif
+int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter);
+int32_t mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter);
+int32_t mddpMdNotifyInfoHandleGenSwitchByPassStart(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo);
+int32_t mddpMdNotifyInfoHandleGenSwitchByPassEnd(
+	struct ADAPTER *prAdapter,
+	struct mddpw_md_notify_info_t *prMdInfo);
+uint32_t mddpGetGenSwitchState(struct ADAPTER *prAdapter);
+#endif /* CFG_PCIE_GEN_SWITCH */
+
 #if defined(_HIF_PCIE)
 #if CFG_SUPPORT_PCIE_ASPM
 int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable);
