@@ -4023,15 +4023,11 @@ static bool halWpdmaWriteData(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 void halWpdmaFreeMsduTasklet(unsigned long data)
 {
+#if !CFG_SUPPORT_TX_FREE_MSDU_WORK
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
 
-#if CFG_SUPPORT_TX_FREE_MSDU_WORK
-	/* do schedule work */
-	kalTxFreeMsduWorkSchedule(prGlueInfo);
-#else /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
-	/* just run it */
 	halWpdmaFreeMsduWork(prGlueInfo);
-#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+#endif /* !CFG_SUPPORT_TX_FREE_MSDU_WORK */
 }
 
 void halWpdmaFreeMsduWork(struct GLUE_INFO *prGlueInfo)
@@ -4094,7 +4090,9 @@ static inline uint32_t halEnqueueMsduInfo(struct GLUE_INFO *pr,
 		KAL_FIFO_IN(&pr->rTxMsduRetFifo,
 			prMsduInfo)) {
 #endif
+#if !CFG_SUPPORT_TX_FREE_MSDU_WORK
 		kalTxFreeMsduTaskSchedule(pr);
+#endif /* !CFG_SUPPORT_TX_FREE_MSDU_WORK */
 		return WLAN_STATUS_SUCCESS;
 	}
 
