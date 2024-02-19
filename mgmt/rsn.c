@@ -258,13 +258,20 @@ uint8_t rsnApOverload(uint16_t status, uint16_t reason)
 	return FALSE;
 }
 
-uint8_t rsnApInvalidPMK(uint16_t status)
+uint8_t rsnApInvalidPMK(uint16_t status,
+	enum ENUM_PARAM_AUTH_MODE AuthMode)
 {
 	switch (status) {
 	case STATUS_INVALID_PMKID:
 	case STATUS_CODE_INVALID_INFO_ELEMENT:
 	case STATUS_CODE_R0KH_UNREACHABLE:
 		return TRUE;
+	/* For IoT AP, don't use PMKID */
+	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
+		if (AuthMode == AUTH_MODE_WPA3_OWE ||
+			AuthMode == AUTH_MODE_WPA3_SAE)
+			return TRUE;
+		break;
 	}
 	return FALSE;
 }
