@@ -63,10 +63,16 @@ p2pDevStateInit_IDLE(struct ADAPTER *prAdapter,
 		}
 		/************************* End *************************/
 
-		if (fgIsShareInterface)
+		if (fgIsShareInterface ||
+			  prP2pDevFsmInfo->ucGoStartedBitmap == 0)
 			/* Stay in IDLE state. */
 			nicDeactivateNetwork(prAdapter,
 				prAdapter->ucP2PDevBssIdx);
+		else
+			DBGLOG(P2P, INFO,
+				"Keep P2P Device alive. isShareIface[%u] GoStartedBitmap[0x%x]\n",
+				fgIsShareInterface,
+				prP2pDevFsmInfo->ucGoStartedBitmap);
 
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
 		if (prP2pDevFsmInfo && prP2pDevFsmInfo->fgIsP2pListening

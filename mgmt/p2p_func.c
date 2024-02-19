@@ -1847,6 +1847,7 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	struct CMD_RDD_ON_OFF_CTRL *prCmdRddOnOffCtrl;
 #endif
+	uint8_t ucRoleIdx;
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prBssInfo != NULL));
@@ -1859,7 +1860,7 @@ p2pFuncStartGO(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(P2P, TRACE, "p2pFuncStartGO:\n");
-
+		ucRoleIdx = prBssInfo->u4PrivateData;
 #if CFG_AP_80211KVR_INTERFACE
 #if CFG_SUPPORT_TRAFFIC_REPORT && CFG_WIFI_SUPPORT_NOISE_HISTOGRAM
 		INIT_DELAYED_WORK(
@@ -2002,8 +2003,7 @@ SKIP_START_RDD:
 		} else {
 			ASSERT(prP2pConnReqInfo->eConnRequest
 				== P2P_CONNECTION_TYPE_PURE_AP);
-			if (kalP2PGetCipher(prAdapter->prGlueInfo,
-				(uint8_t) prBssInfo->u4PrivateData))
+			if (kalP2PGetCipher(prAdapter->prGlueInfo, ucRoleIdx))
 				prBssInfo->fgIsProtection = TRUE;
 		}
 
@@ -2061,7 +2061,6 @@ SKIP_START_RDD:
 		    p2pFuncGetDfsState() == DFS_STATE_DETECTED) {
 			struct GL_P2P_INFO *prP2PInfo;
 			struct GLUE_INFO *prGlueInfo;
-			uint8_t ucRoleIdx  = (uint8_t)prBssInfo->u4PrivateData;
 
 			prGlueInfo = prAdapter->prGlueInfo;
 			prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
@@ -2072,14 +2071,20 @@ SKIP_START_RDD:
 
 		if (prBssInfo &&
 			IS_BSS_P2P(prBssInfo) &&
-			p2pFuncIsAPMode(
-				prAdapter->rWifiVar.prP2PConnSettings
-				[prBssInfo->u4PrivateData]) &&
 			IS_NET_PWR_STATE_ACTIVE(
 				prAdapter,
-				prBssInfo->ucBssIndex))
-			prAdapter->aprSapBssInfo[prBssInfo->u4PrivateData]
-				= prBssInfo;
+				prBssInfo->ucBssIndex)) {
+			if (p2pFuncIsAPMode(
+				  prAdapter->rWifiVar.prP2PConnSettings
+				  [ucRoleIdx])) {
+				prAdapter->aprSapBssInfo[ucRoleIdx]
+					  = prBssInfo;
+			} else {
+				p2pDevFsmNotifyGoState(prAdapter,
+					prBssInfo->ucBssIndex,
+					TRUE);
+			}
+		}
 
 #if CFG_AP_80211KVR_INTERFACE
 		/* 5. BSS status notification */
@@ -2113,6 +2118,12 @@ void p2pFuncStopGO(struct ADAPTER *prAdapter,
 		u4ClientCount = bssGetClientCount(prAdapter, prP2pBssInfo);
 		prAdapter->aprSapBssInfo[prP2pBssInfo->u4PrivateData]
 			= NULL;
+
+		if (!p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings
+			  [prP2pBssInfo->u4PrivateData])) {
+			p2pDevFsmNotifyGoState(prAdapter,
+				prP2pBssInfo->ucBssIndex, FALSE);
+		}
 
 		if ((prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
 		    && (prP2pBssInfo->eIntendOPMode == OP_MODE_NUM)) {
