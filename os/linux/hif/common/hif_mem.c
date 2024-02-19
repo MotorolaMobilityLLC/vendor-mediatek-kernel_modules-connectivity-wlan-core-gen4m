@@ -560,8 +560,7 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 		struct mt66xx_hif_driver_data *prDriverData)
 {
 	struct mt66xx_chip_info *prChipInfo;
-	struct HIF_MEM *prMem = NULL;
-	uint32_t u4idx = 0, u4Size;
+	uint32_t u4idx = 0;
 
 	prChipInfo = prDriverData->chip_info;
 
@@ -576,13 +575,11 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 
 	/* alloc all memory blocks in wifi_misc */
 	for (u4idx = 0; u4idx < prChipInfo->rsvMemWiFiMiscSize; u4idx++) {
-		prMem = &prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem;
-		u4Size = prChipInfo->rsvMemWiFiMisc[u4idx].size;
-		if (!halAllocRsvMem(u4Size, prMem, WIFI_RSV_MEM_WIFI_MISC)) {
+		if (!halAllocRsvMem(
+				prChipInfo->rsvMemWiFiMisc[u4idx].size,
+				&prChipInfo->rsvMemWiFiMisc[u4idx].rRsvEmiMem,
+				WIFI_RSV_MEM_WIFI_MISC))
 			DBGLOG(INIT, ERROR, "RsvEmiMem alloc fail\n");
-			continue;
-		}
-		kalMemZero(prMem->va, u4Size);
 	}
 
 	DBGLOG(INIT, INFO,
