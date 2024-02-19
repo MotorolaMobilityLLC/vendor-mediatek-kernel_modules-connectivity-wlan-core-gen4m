@@ -64,13 +64,9 @@ scanP2pProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc,
 		struct WLAN_BEACON_FRAME *prWlanBeaconFrame);
 
-void scanRemoveAllP2pBssDesc(struct ADAPTER *prAdapter);
-
-void scanRemoveP2pBssDesc(struct ADAPTER *prAdapter,
-		struct BSS_DESC *prBssDesc);
-
 struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		struct BSS_DESC_SET *prBssDescSet);
+		struct BSS_DESC_SET *prBssDescSet,
+		u_int8_t *fgNeedMlScan);
 
 #endif
