@@ -457,7 +457,8 @@ void rsnAllowCrossAkm(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint32_t rsnCipherToBit(uint32_t cipher);
 uint32_t rsnKeyMgmtToBit(uint32_t akm);
 uint8_t rsnApOverload(uint16_t status, uint16_t reason);
-uint8_t rsnApInvalidPMK(uint16_t status);
+uint8_t rsnApInvalidPMK(uint16_t status,
+	enum ENUM_PARAM_AUTH_MODE AuthMode);
 uint8_t rsnIsFilsAuthAlg(uint8_t alg);
 uint8_t rsnKeyMgmtFils(uint32_t akm);
 uint8_t rsnIsKeyMgmtSha256(uint32_t akm);
