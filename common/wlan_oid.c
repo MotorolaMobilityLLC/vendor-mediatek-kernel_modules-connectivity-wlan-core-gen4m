@@ -18664,6 +18664,10 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 
 			prP2pInfo->aprRoleHandler = NULL;
 		}
+
+		p2pFuncInitConnectionSettings(prAdapter,
+			prWifiVar->prP2PConnSettings[ucRoleIdx],
+			FALSE);
 	}
 
 exit:
