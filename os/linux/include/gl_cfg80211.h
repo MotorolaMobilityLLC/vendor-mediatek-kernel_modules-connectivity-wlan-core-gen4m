@@ -767,9 +767,15 @@ int mtk_cfg_disassoc(struct wiphy *wiphy,
 int mtk_cfg_start_ap(struct wiphy *wiphy,
 		     struct net_device *dev,
 		     struct cfg80211_ap_settings *settings);
+#if KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_change_beacon(struct wiphy *wiphy,
+			  struct net_device *dev,
+			  struct cfg80211_ap_update *info);
+#else
 int mtk_cfg_change_beacon(struct wiphy *wiphy,
 			  struct net_device *dev,
 			  struct cfg80211_beacon_data *info);
+#endif
 #if (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 int mtk_cfg_stop_ap(struct wiphy *wiphy, struct net_device *dev,
