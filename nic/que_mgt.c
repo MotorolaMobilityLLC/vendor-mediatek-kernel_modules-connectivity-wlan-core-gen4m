@@ -147,14 +147,17 @@ static void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		uint8_t fgIsAmsduSubframe,
 		u_int8_t fgWinAdvanced);
 
-static void resetReorderEntryDrop(struct ADAPTER *prAdapter,
-		struct RX_BA_ENTRY *prReorderQueParm)
+static void resetRxRetryCount(struct ADAPTER *prAdapter,
+			      struct RX_BA_ENTRY *prReorderQueParm)
 {
+#if (CFG_SUPPORT_CONNAC3X == 1)
 	if (!prAdapter->chip_info->fgCheckRxDropThreshold)
 		return;
 
-	kalMemZero(&prReorderQueParm->rDrop, sizeof(prReorderQueParm->rDrop));
+	prReorderQueParm->u4RxRetryCount = 0;
+#endif
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Init Queue Management for TX
@@ -4271,8 +4274,8 @@ u_int8_t qmAmsduValidation(struct ADAPTER *prAdapter,
 		prStaRec->au2AmsduInvalidSN[ucTid] = u2SSN;
 	} else {
 		/* drop it if find an abnormal asmdu in station record */
-		if (prStaRec->afgIsAmsduInvalid[ucTid] == TRUE
-			&& prStaRec->au2AmsduInvalidSN[ucTid] == u2SSN) {
+		if (prStaRec->afgIsAmsduInvalid[ucTid] == TRUE &&
+		    prStaRec->au2AmsduInvalidSN[ucTid] == u2SSN) {
 			fgDrop = TRUE;
 			DBGLOG(QM, TRACE,
 				"QM: Abnormal AMSDU TID:%u SN:%u PF:%u",
@@ -4281,8 +4284,8 @@ u_int8_t qmAmsduValidation(struct ADAPTER *prAdapter,
 		}
 
 		/* reset flag when find last subframe */
-		if (prSwRfb->ucPayloadFormat
-			== RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU) {
+		if (prSwRfb->ucPayloadFormat ==
+		    RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU) {
 			prStaRec->afgIsAmsduInvalid[ucTid] = FALSE;
 			prStaRec->au2AmsduInvalidSN[ucTid] = 0XFFFF;
 		}
@@ -4409,15 +4412,15 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 		prReorderQueParm->u2WinEnd =
 			SEQ_ADD(prReorderQueParm->u2WinStart,
 				prReorderQueParm->u2WinSize - 1);
-		resetReorderEntryDrop(prAdapter, prReorderQueParm);
 		prReorderQueParm->fgFirstSnToWinStart = FALSE;
 	}
 #endif
+
 	if (prAdapter->chip_info->fgCheckRxDropThreshold &&
-	    (prSwRfb->ucRxMode != TX_RATE_MODE_EHT_ER &&
-	     prSwRfb->ucRxMode != TX_RATE_MODE_EHT_TRIG &&
-	     prSwRfb->ucRxMode != TX_RATE_MODE_EHT_MU))
-		resetReorderEntryDrop(prAdapter, prReorderQueParm);
+	    prSwRfb->ucRxMode != TX_RATE_MODE_EHT_ER &&
+	    prSwRfb->ucRxMode != TX_RATE_MODE_EHT_TRIG &&
+	    prSwRfb->ucRxMode != TX_RATE_MODE_EHT_MU)
+		resetRxRetryCount(prAdapter, prReorderQueParm);
 
 	/* Insert reorder packet */
 	qmInsertReorderPkt(prAdapter, prSwRfb, prReorderQueParm, prReturnedQue);
@@ -4467,23 +4470,56 @@ void qmProcessBarFrame(struct ADAPTER *prAdapter,
 		prSwRfb->ucTid, prSwRfb->u2SSN, prReturnedQue);
 }
 
+/**
+ * Log when RX stick on the same SN (count only MPDU begin) for a long time,
+ * in the case the sender has only one MPDU (AMSDU) and keep retrying.
+ */
+static void checkRxDuplicateSsn(struct ADAPTER *prAdapter,
+				struct RX_BA_ENTRY *prReorderQueParm,
+				struct SW_RFB *prSwRfb)
+{
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	uint32_t u4RxDropResetThreshold;
+
+	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU ||
+	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU)
+		return;
+
+	if (prSwRfb->u2SSN == prReorderQueParm->rDupDrop.u2SSN) {
+		prReorderQueParm->rDupDrop.u4Count++;
+	} else {
+		prReorderQueParm->rDupDrop.u4Count = 1;
+		prReorderQueParm->rDupDrop.u2SSN = prSwRfb->u2SSN;
+	}
+
+	u4RxDropResetThreshold = prAdapter->rWifiVar.u4RxDropResetThreshold;
+	if (prReorderQueParm->rDupDrop.u4Count % u4RxDropResetThreshold == 0) {
+		DBGLOG_LIMITED(QM, TRACE,
+			       "QM: sta %u TID %u duplicate %u drop SSN:%u\n",
+			       prReorderQueParm->ucStaRecIdx,
+			       prReorderQueParm->ucTid,
+			       prReorderQueParm->rDupDrop.u4Count,
+			       prReorderQueParm->rDupDrop.u2SSN);
+	}
+#endif
+}
+
 /* Increment drop counter and trigger TX reset if over threshold with
  * all the contitions matched:
  *  1. RX mode == EHT
- *  2. RX rate drops > 2
- *  3. WinStart freezed for over defined 1K drops
+ *  2. Peer retry over defined threshold
  * The counter is maintained in struct RX_BA_ENTRY, and will be reset
- * in the conditions which break rule 1 or 3.
+ * in the conditions which break rule 1.
  *  if (RX mode != EHT) in qmProcessPktWithReordering()
- *  if (WinStart updated) calls resetReorderEntryDrop in que_mgt.c
  */
-static void checkRxDuplicateThreshold(struct ADAPTER *prAdapter,
+static void checkRxDuplicateRetry(struct ADAPTER *prAdapter,
 		struct RX_BA_ENTRY *prReorderQueParm, struct SW_RFB *prSwRfb)
 {
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	uint8_t ucRxMode = prSwRfb->ucRxMode;
-	uint8_t ucCurrentMsc = prSwRfb->ucRxMcs;
+	uint8_t ucCurrentMcs = prSwRfb->ucRxMcs;
 	uint32_t u4RxDropResetThreshold;
+	uint16_t u2SeqNo = prSwRfb->u2SSN;
 
 	if (!prAdapter->chip_info->fgCheckRxDropThreshold)
 		return;
@@ -4493,20 +4529,41 @@ static void checkRxDuplicateThreshold(struct ADAPTER *prAdapter,
 	    ucRxMode != TX_RATE_MODE_EHT_MU)
 		return;
 
-	if (prReorderQueParm->rDrop.u4DropCount == 0) /* log the status */
-		prReorderQueParm->rDrop.ucRxMcs = ucCurrentMsc;
+	/**
+	 * If Last received == Last drop:
+	 *	SWRFB is the 1st SN of 2nd retry.
+	 * When retrying, if the first SN == Logged first SN:
+	 *	A new retry round
+	 */
+	if (prReorderQueParm->u4RxRetryCount == 0) {
+		if (prReorderQueParm->u2LastRcvdSN ==
+		    prReorderQueParm->u2LastFallBehindDropSN)
+			prReorderQueParm->u4RxRetryCount = 2;
+	} else {
+		if (prReorderQueParm->u2LoggedDropHeadSN == u2SeqNo)
+			prReorderQueParm->u4RxRetryCount++;
+		else
+			resetRxRetryCount(prAdapter, prReorderQueParm);
+	}
+	prReorderQueParm->u2LoggedDropHeadSN = u2SeqNo; /* compared next time */
+
+	if (prReorderQueParm->u4RxRetryCount) {
+		DBGLOG_LIMITED(QM, TRACE,
+			       "QM: duplicate RX: %u, mode:%u, MCS:%u, bn=%u, SSN:%u\n",
+			       prReorderQueParm->u4RxRetryCount, ucRxMode,
+			       ucCurrentMcs, prSwRfb->ucHwBandIdx, u2SeqNo);
+	}
 
 	u4RxDropResetThreshold = prAdapter->rWifiVar.u4RxDropResetThreshold;
-	if (++prReorderQueParm->rDrop.u4DropCount >= u4RxDropResetThreshold &&
-	    prReorderQueParm->rDrop.ucRxMcs >= ucCurrentMsc + 2) {
+	if (prReorderQueParm->u4RxRetryCount >= u4RxDropResetThreshold) {
 		DBGLOG(QM, WARN,
-			"QM: duplicate RX over threshold: %u, MCS:%u->%u, bn=%u\n",
-			prReorderQueParm->rDrop.u4DropCount,
-			prReorderQueParm->rDrop.ucRxMcs, ucCurrentMsc,
-			prSwRfb->ucHwBandIdx);
+		       "QM: duplicate RX over threshold: %u, MCS:%u, bn=%u, SSN:%u\n",
+		       prReorderQueParm->u4RxRetryCount, ucCurrentMcs,
+		       prSwRfb->ucHwBandIdx, u2SeqNo);
 		/* Send TX reset command */
 		wlanResetTxScrambleSeed(prAdapter, prSwRfb->ucHwBandIdx);
-		resetReorderEntryDrop(prAdapter, prReorderQueParm);
+		prReorderQueParm->u4ScrambleReset++;
+		resetRxRetryCount(prAdapter, prReorderQueParm);
 	}
 #endif
 }
@@ -4539,23 +4596,27 @@ static void qmLogDropFallBehind(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	checkRxDuplicateThreshold(prAdapter, prReorderQueParm, prSwRfb);
+	checkRxDuplicateSsn(prAdapter, prReorderQueParm, prSwRfb);
 
 	if (u2DropGap <= 1)
 		return;
 
+	checkRxDuplicateRetry(prAdapter, prReorderQueParm, prSwRfb);
+
 	if (IS_BAR_SSN_VALID(prReorderQueParm))
 		DBGLOG(RX, INFO,
-		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu",
+		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu reset:%u",
 		       prReorderQueParm->ucStaRecIdx, ucTid,
 		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
-		       u2WinStart, u2WinEnd, u2IpId, 1, u2BarSSN, u8Count);
+		       u2WinStart, u2WinEnd, u2IpId, 1, u2BarSSN, u8Count,
+		       prReorderQueParm->u4ScrambleReset);
 	else
 		DBGLOG(RX, TRACE,
-		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu",
+		       "QM:(D)[%u:%u]L:%u(~%u)(%u~){%u,%u} ipid:%u BAR SSN:%u/%u total:%lu reset:%u",
 		       prReorderQueParm->ucStaRecIdx, ucTid,
 		       prReorderQueParm->u2LastRcvdSN, u2LastDrop, u2SeqNo,
-		       u2WinStart, u2WinEnd, u2IpId, 0, u2BarSSN, u8Count);
+		       u2WinStart, u2WinEnd, u2IpId, 0, u2BarSSN, u8Count,
+		       prReorderQueParm->u4ScrambleReset);
 }
 
 static struct UDP_HEADER *qmGetUdpPkt(uint8_t *pucData, uint16_t u2PacketLen,
@@ -4799,7 +4860,6 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 			prReorderQueParm->u2WinEnd =
 				SEQ_ADD(prReorderQueParm->u2WinStart,
 					prReorderQueParm->u2WinSize - 1);
-			resetReorderEntryDrop(prAdapter, prReorderQueParm);
 			prReorderQueParm->fgIsWaitingForPktWithSsn = FALSE;
 #if CFG_SUPPORT_RX_AMSDU
 			/* RX reorder for one MSDU in AMSDU issue */
@@ -4834,7 +4894,6 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 		prReorderQueParm->u2WinStart =
 			SEQ_ADD(prReorderQueParm->u2WinEnd,
 				-(prReorderQueParm->u2WinSize - 1));
-		resetReorderEntryDrop(prAdapter, prReorderQueParm);
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
 		prReorderQueParm->u8LastAmsduSubIdx =
@@ -5227,8 +5286,6 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
 
 				SEQ_INC(prReorderQueParm->u2WinStart);
-				resetReorderEntryDrop(prAdapter,
-						prReorderQueParm);
 				prReorderQueParm->u8LastAmsduSubIdx =
 					RX_PAYLOAD_FORMAT_MSDU;
 			}
@@ -5262,8 +5319,6 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
 			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
 				SEQ_INC(prReorderQueParm->u2WinStart);
-				resetReorderEntryDrop(prAdapter,
-						prReorderQueParm);
 				fgWinAdvanced = TRUE;
 			}
 #if CFG_SUPPORT_RX_AMSDU
@@ -5306,8 +5361,6 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 				/* WinStart = curr.SN + 1 */
 				prReorderQueParm->u2WinStart =
 					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
-				resetReorderEntryDrop(prAdapter,
-						prReorderQueParm);
 #if CFG_SUPPORT_RX_AMSDU
 				/* RX reorder for one MSDU in AMSDU issue */
 				/* BA.LastType = MSDU */
@@ -5389,8 +5442,6 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
 
 				SEQ_INC(prReorderQueParm->u2WinStart);
-				resetReorderEntryDrop(prAdapter,
-						prReorderQueParm);
 				prReorderQueParm->u8LastAmsduSubIdx =
 					RX_PAYLOAD_FORMAT_MSDU;
 			}
@@ -5421,8 +5472,6 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
 				prReorderQueParm->u2WinStart =
 					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
-				resetReorderEntryDrop(prAdapter,
-						prReorderQueParm);
 				fgWinAdvanced = TRUE;
 			}
 #if CFG_SUPPORT_RX_AMSDU
@@ -5672,7 +5721,6 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 	prReorderQueParm->u2WinStart = SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 	prReorderQueParm->u2WinEnd = SEQ_ADD(prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinSize - 1);
-	resetReorderEntryDrop(prAdapter, prReorderQueParm);
 #if CFG_SUPPORT_RX_AMSDU
 	prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 #endif
@@ -5958,7 +6006,10 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 		prRxBaEntry->u2WinStart = u2WinStart;
 		prRxBaEntry->u2WinSize = u2WinSize;
 		prRxBaEntry->u2WinEnd = SEQ_ADD(u2WinStart, u2WinSize - 1);
-		resetReorderEntryDrop(prAdapter, prRxBaEntry);
+		prRxBaEntry->u4ScrambleReset = 0;
+		prRxBaEntry->rDupDrop.u4Count = 0;
+		prRxBaEntry->rDupDrop.u2SSN = MAX_SEQ_NO_COUNT;
+		resetRxRetryCount(prAdapter, prRxBaEntry);
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
 		prRxBaEntry->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
@@ -8746,7 +8797,6 @@ void qmHandleRxReorderWinShift(struct ADAPTER *prAdapter,
 		prReorderQueParm->u2WinEnd =
 			SEQ_ADD(prReorderQueParm->u2WinStart,
 				prReorderQueParm->u2WinSize - 1);
-		resetReorderEntryDrop(prAdapter, prReorderQueParm);
 
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */

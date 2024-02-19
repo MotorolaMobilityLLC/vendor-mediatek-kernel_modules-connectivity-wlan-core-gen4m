@@ -362,11 +362,16 @@ struct RX_BA_ENTRY {
 
 	u_int8_t fgFlushToHost; /* flush to host (1) or drop (0) */
 
-	/* Detecting RX drop over threshold to trigger TX reset */
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	/* Detecting Peer TX retry over threshold to trigger TX reset */
+	uint32_t u4RxRetryCount;
+	uint16_t u2LoggedDropHeadSN;
+#endif
+	uint32_t u4ScrambleReset;
 	struct {
-		uint32_t u4DropCount; /* incremental & reset */
-		uint8_t ucRxMcs; /* log at u4DropCount++ from 0 to 1 */
-	} rDrop;
+		uint32_t u4Count;
+		uint16_t u2SSN;
+	} rDupDrop;
 };
 
 struct RX_BA_QUE_ENTRY {

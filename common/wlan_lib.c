@@ -7211,7 +7211,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgMoveWinOnMissingLast, "MoveWinOnMissingLast",
 		  !RX_REORDER_WAIT_FOR_LAST_FRAG, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4RxDropResetThreshold,
-		"RxDropResetThreshold", 1024, FEATURE_TO_CUSTOMER);
+		"RxDropResetThreshold", 5, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u2BaExtSize,
 		"BaExtSize", WLAN_RX_BA_EXT_SIZE, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4AisEHTNumber,
