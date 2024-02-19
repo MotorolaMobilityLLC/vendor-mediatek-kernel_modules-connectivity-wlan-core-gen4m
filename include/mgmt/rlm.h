@@ -238,6 +238,7 @@ struct SWITCH_CH_AND_BAND_PARAMS {
 	enum ENUM_CHNL_EXT eSco;
 	uint8_t ucBssIndex;
 	uint8_t fgHasStopTx;
+	uint8_t fgIsCrossBand;
 	enum ENUM_CHNL_SWITCH_MODE ucCsaMode;
 	uint32_t u4MaxSwitchTime;
 };

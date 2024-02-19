@@ -11745,6 +11745,28 @@ void kalFbNotifierUnReg(void)
 }
 
 #if CFG_SUPPORT_DFS
+void kalIndicateAllQueueTxAllowed(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex, uint8_t fgIsTxAllowed)
+{
+	struct net_device *prDevHandler;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+
+	prDevHandler = wlanGetNetDev(prAdapter->prGlueInfo, ucBssIndex);
+	if (!prDevHandler) {
+		DBGLOG(REQ, ERROR,
+			"NetDev is null BssIndex[%d]!\n", ucBssIndex);
+		return;
+	}
+
+	if (fgIsTxAllowed) {
+		DBGLOG(REQ, INFO, "Kernel queue TxAllowed = TRUE");
+		netif_tx_start_all_queues(prDevHandler);
+	} else {
+		DBGLOG(REQ, INFO, "Kernel queue TxAllowed = FALSE");
+		netif_tx_stop_all_queues(prDevHandler);
+	}
+}
+
 void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 				enum ENUM_CHNL_EXT eSco,
 				uint8_t ucChannelNum,

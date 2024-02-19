@@ -1770,6 +1770,9 @@ kalRemainOnChannelExpired(struct GLUE_INFO *prGlueInfo,
 			  uint8_t ucBssIndex);
 
 #if CFG_SUPPORT_DFS
+void kalIndicateAllQueueTxAllowed(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucBssIndex, uint8_t fgIsTxAllowed);
+
 void
 kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,

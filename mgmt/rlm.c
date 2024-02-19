@@ -3327,6 +3327,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prCSAIE = (struct IE_CHANNEL_SWITCH *)pucIE;
 
+			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			if (prBssInfo->ucPrimaryChannel ==
 					prCSAIE->ucNewChannelNum) {
 				DBGLOG(RLM, WARN,
@@ -3346,7 +3347,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			       prBssInfo->ucBssIndex,
 			       prCSAIE->ucChannelSwitchCount,
 			       prCSAIE->ucChannelSwitchMode);
-			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prCSAIE->ucChannelSwitchCount;
 
 			if (prCSAIE->ucChannelSwitchMode == 1) {
@@ -3355,6 +3355,10 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				 */
 				if (!prCSAParams->fgHasStopTx) {
 					prCSAParams->fgHasStopTx = TRUE;
+					kalIndicateAllQueueTxAllowed(
+						prAdapter->prGlueInfo,
+						prBssInfo->ucBssIndex,
+						FALSE);
 					/* AP */
 					qmSetStaRecTxAllowed(prAdapter,
 						prStaRec,
@@ -3393,6 +3397,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prExCSAIE = (struct IE_EX_CHANNEL_SWITCH *)pucIE;
 
+			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
 			if (prBssInfo->ucPrimaryChannel ==
 					prExCSAIE->ucNewChannelNum) {
 				DBGLOG(RLM, WARN,
@@ -4001,7 +4006,14 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 		rlmUpdateParamsForCSA(prAdapter, prBssInfo);
 		rlmChangeOperationModeAfterCSA(prAdapter, prBssInfo);
 
+		if (IS_BSS_AIS(prBssInfo) && prCSAParams->fgIsCrossBand)
+			aisFunFlushTxQueue(prAdapter, prStaRec);
+
 		if (prCSAParams->fgHasStopTx) {
+			kalIndicateAllQueueTxAllowed(
+				    prAdapter->prGlueInfo,
+				    prBssInfo->ucBssIndex,
+				    TRUE);
 			qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
 			DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
 		}
@@ -6875,6 +6887,10 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 		/* Need to stop data transmission immediately */
 		if (!prCSAParams->fgHasStopTx) {
 			prCSAParams->fgHasStopTx = TRUE;
+			kalIndicateAllQueueTxAllowed(
+				prAdapter->prGlueInfo,
+				prStaRec->ucBssIndex,
+				FALSE);
 			/* AP */
 			qmSetStaRecTxAllowed(prAdapter,
 				   prStaRec,
@@ -7061,6 +7077,8 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prChannelSwitchAnnounceIE =
 					(struct IE_CHANNEL_SWITCH *)pucIE;
 
+				prCSAParams->ucCsaNewCh =
+				    prChannelSwitchAnnounceIE->ucNewChannelNum;
 				if (prBssInfo->ucPrimaryChannel ==
 						prChannelSwitchAnnounceIE->
 						ucNewChannelNum) {
@@ -7086,6 +7104,10 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					 */
 					if (!prCSAParams->fgHasStopTx) {
 						prCSAParams->fgHasStopTx = TRUE;
+						kalIndicateAllQueueTxAllowed(
+							prAdapter->prGlueInfo,
+							prStaRec->ucBssIndex,
+							FALSE);
 						/* AP */
 						qmSetStaRecTxAllowed(prAdapter,
 							   prStaRec,
@@ -7111,9 +7133,6 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					prChannelSwitchAnnounceIE
 						->ucNewChannelNum);
 
-				prCSAParams->ucCsaNewCh =
-					prChannelSwitchAnnounceIE->
-						ucNewChannelNum;
 				ucCurrentCsaCount =
 					prChannelSwitchAnnounceIE->
 						ucChannelSwitchCount;
@@ -7213,6 +7232,7 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 		(struct ACTION_EX_CHANNEL_SWITCH_FRAME *)prSwRfb->pvHeader;
 	pucIE = prEcsaActionFrame->aucInfoElem;
 
+	prCSAParams->ucCsaNewCh = prEcsaActionFrame->ucNewChannelNum;
 	if (prBssInfo->ucPrimaryChannel == prEcsaActionFrame->ucNewChannelNum)
 		DBGLOG(RLM, WARN,
 			"[ECSA Public] BSS: " MACSTR " already at channel %u\n",
@@ -7267,6 +7287,7 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll)
 	struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
 	uint8_t fgHasStopTx;
 	uint8_t ucCsaMode;
+	uint8_t fgIsCrossBand;
 
 	if (!prBssInfo) {
 		DBGLOG(RLM, ERROR, "Reset CSA params failed, Bssinfo null!");
@@ -7276,12 +7297,14 @@ void rlmResetCSAParams(struct BSS_INFO *prBssInfo, uint8_t fgClearAll)
 	prCSAParams = &(prBssInfo->CSAParams);
 	fgHasStopTx = prCSAParams->fgHasStopTx;
 	ucCsaMode = prCSAParams->ucCsaMode;
+	fgIsCrossBand = prCSAParams->fgIsCrossBand;
 	kalMemZero(prCSAParams, sizeof(struct SWITCH_CH_AND_BAND_PARAMS));
 	prCSAParams->ucCsaCount = MAX_CSA_COUNT;
 	prCSAParams->ucCsaMode = MODE_NUM;
 	if (!fgClearAll) {
 		prCSAParams->fgHasStopTx = fgHasStopTx;
 		prCSAParams->ucCsaMode = ucCsaMode;
+		prCSAParams->fgIsCrossBand = fgIsCrossBand;
 	}
 	DBGLOG(RLM, TRACE, "Reset CSA count to %u for BSS%d fgHasStopTx=%d",
 		prCSAParams->ucCsaCount, prBssInfo->ucBssIndex,
@@ -7297,6 +7320,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	struct PARAM_SSID rSsid;
 	struct BSS_DESC *prBssDesc;
 	struct STA_RECORD *prStaRec;
+	enum ENUM_BAND eNewBand;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
@@ -7317,6 +7341,10 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 			"BSS: " MACSTR " already at channel %u\n",
 			MAC2STR(prBssInfo->aucBSSID), prCSAParams->ucCsaNewCh);
 		if (prCSAParams->fgHasStopTx) {
+			kalIndicateAllQueueTxAllowed(
+				prAdapter->prGlueInfo,
+				prStaRec->ucBssIndex,
+				TRUE);
 			qmSetStaRecTxAllowed(prAdapter, prStaRec, TRUE);
 			DBGLOG(RLM, EVENT, "[CSA] TxAllowed = TRUE\n");
 		}
@@ -7325,10 +7353,15 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 	}
 	prBssInfo->ucPrimaryChannel = prCSAParams->ucCsaNewCh;
 	if (prCSAParams->eCsaBand != BAND_NULL)
-		prBssInfo->eBand = prCSAParams->eCsaBand;
+		eNewBand = prCSAParams->eCsaBand;
 	else
-		prBssInfo->eBand = (prCSAParams->ucCsaNewCh <= 14)
+		eNewBand = (prCSAParams->ucCsaNewCh <= 14)
 			? BAND_2G4 : BAND_5G;
+	if (cnmGet80211Band(prBssInfo->eBand) != cnmGet80211Band(eNewBand))
+		prCSAParams->fgIsCrossBand = TRUE;
+	else
+		prCSAParams->fgIsCrossBand = FALSE;
+	prBssInfo->eBand = eNewBand;
 
 	/* Store VHT Channel width for later op mode operation */
 	prBssInfo->ucVhtChannelWidthBeforeCsa = prBssInfo->ucVhtChannelWidth;
@@ -7379,17 +7412,12 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 		prBssDesc->ucCenterFreqS1 = prBssInfo->ucVhtChannelFrequencyS1;
 		prBssDesc->ucCenterFreqS2 = prBssInfo->ucVhtChannelFrequencyS2;
 
+		if (IS_BSS_AIS(prBssInfo))
+			aisFunSwitchChannel(prAdapter, prBssInfo);
 #if CFG_ENABLE_WIFI_DIRECT
-		if (IS_BSS_P2P(prBssInfo))
+		else if (IS_BSS_P2P(prBssInfo))
 			p2pFuncSwitchGcChannel(prAdapter, prBssInfo);
-		else
 #endif
-			kalIndicateChannelSwitch(
-				prAdapter->prGlueInfo,
-				prBssInfo->eBssSCO,
-				prBssDesc->ucChannelNum,
-				prBssInfo->eBand,
-				prBssInfo->ucBssIndex);
 	} else {
 		DBGLOG(RLM, INFO,
 		       "DFS: BSS: " MACSTR " Desc is not found\n ",
@@ -7431,25 +7459,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	if (IS_BSS_AIS(prBssInfo) &&
-		!prBssInfo->fgIsAisSwitchingChnl) {
-		struct AIS_FSM_INFO *prAisFsmInfo;
-
-		prAisFsmInfo = aisGetAisFsmInfo(
-			prAdapter, prBssInfo->ucBssIndex);
-
-		/* Indicate PM abort to sync BSS state with FW */
-		nicPmIndicateBssAbort(prAdapter, prBssInfo->ucBssIndex);
-		/* Defer ucDTIMPeriod updating to when beacon is received */
-		prBssInfo->ucDTIMPeriod = 0;
-		/* Release channel if CSA immediately before set authorized */
-		aisFsmReleaseCh(prAdapter, prBssInfo->ucBssIndex);
-
-		prBssInfo->fgIsAisSwitchingChnl = TRUE;
-		aisReqJoinChPrivilegeForCSA(prAdapter, prAisFsmInfo,
-			prBssInfo, &prAisFsmInfo->ucSeqNumOfChReq);
-	}
-
+	rlmSyncOperationParams(prAdapter, prBssInfo);
 	rlmResetCSAParams(prBssInfo, FALSE);
 }
 #endif /* CFG_SUPPORT_DFS */
