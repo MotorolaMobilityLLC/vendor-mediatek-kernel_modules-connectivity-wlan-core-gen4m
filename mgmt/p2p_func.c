@@ -8979,7 +8979,9 @@ void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if ((prAcsReqInfo->ucBand & BIT(BAND_6G)) &&
-			prAdapter->fgIsHwSupport6G) {
+			prAdapter->fgIsHwSupport6G &&
+			IS_FEATURE_DISABLED(
+				prAdapter->rWifiVar.ucDisallowAcs6G)) {
 			prAcsReqInfo->eBand = BAND_6G; /* Prefer 6G */
 		}
 #endif
