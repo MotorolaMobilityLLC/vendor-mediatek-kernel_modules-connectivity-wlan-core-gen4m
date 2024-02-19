@@ -252,6 +252,9 @@
 #include "nanScheduler.h"
 #include "nanReg.h"
 #include "nan_base.h"
+#if CFG_SUPPORT_NAN_EXT
+#include "nan_ext.h"
+#endif
 #include "nan_data_engine.h"
 #include "nan_dev.h"
 #include "nan_intf.h"

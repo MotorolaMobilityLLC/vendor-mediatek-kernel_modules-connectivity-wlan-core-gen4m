@@ -1680,7 +1680,7 @@
 #define WLAN_INCLUDE_PROC                   1
 #endif
 
-#if CFG_EXT_FEATURE
+#if (CFG_EXT_FEATURE || CFG_SUPPORT_NAN_EXT)
 #define WLAN_INCLUDE_SYS                   1
 #else
 #define WLAN_INCLUDE_SYS                   0
@@ -2959,7 +2959,7 @@
  *------------------------------------------------------------------------------
  */
 #if CFG_EXT_FEATURE
-#define CFG_SUPPORT_SA_LOG 1
+#define CFG_SUPPORT_SA_LOG 0
 #else
 #define CFG_SUPPORT_SA_LOG 0
 #endif

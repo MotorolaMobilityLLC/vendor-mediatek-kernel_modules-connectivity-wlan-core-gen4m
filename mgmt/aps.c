@@ -274,10 +274,6 @@ static uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 static uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	enum ENUM_ROAMING_REASON reason, uint8_t bidx);
 
-static uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc, enum ENUM_ROAMING_REASON eRoamReason,
-	uint8_t ucBssIndex);
-
 static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint8_t bidx);
 
@@ -2007,12 +2003,14 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			ap->ucLinkNum++;
 	}
 
+#if (CFG_SUPPORT_802_11BE == 1)
 	/* trim ap */
 	if (ap->ucLinkNum > ad->rWifiVar.ucStaMldLinkMax) {
 		DBGLOG(APS, INFO, "trim links %d => %d",
 			ap->ucLinkNum, ad->rWifiVar.ucStaMldLinkMax);
 		ap->ucLinkNum = ad->rWifiVar.ucStaMldLinkMax;
 	}
+#endif
 
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
 	/* swap link 3 to link 2 depend on fw capbility

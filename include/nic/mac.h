@@ -2242,6 +2242,9 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define VENDOR_IE_CISCO_TYPE                       0x2C
 #define VENDOR_IE_CISCO_TYPE_CCX                   0x03
 
+/* Customer Vendor Specific IE*/
+#define VENDOR_IE_SAMSUNG_OUI                      0x0000F0
+
 #if CFG_SUPPORT_PASSPOINT
 #define VENDOR_OUI_TYPE_HS20                        16
 #endif /* CFG_SUPPORT_PASSPOINT */

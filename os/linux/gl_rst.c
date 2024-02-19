@@ -74,7 +74,7 @@ u_int8_t g_fgRstRecover = FALSE;
 uint8_t g_WholeChipRstType;
 #endif
 
-static char * const apucRstReason[RST_REASON_MAX] = {
+char * const apucRstReason[RST_REASON_MAX] = {
 	"RST_UNKNOWN",
 	"RST_PROCESS_ABNORMAL_INT",
 	"RST_DRV_OWN_FAIL",
