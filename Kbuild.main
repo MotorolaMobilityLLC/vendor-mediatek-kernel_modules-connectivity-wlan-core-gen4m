@@ -1502,8 +1502,8 @@ endif
 
 ifneq ($(filter 6765, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_STA_NUM=1
-else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
-    ccflags-y += -DCFG_STA_NUM=1
+#else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
+#    ccflags-y += -DCFG_STA_NUM=1
 endif
 
 ifneq ($(filter 6779, $(WLAN_CHIP_ID)),)
@@ -1916,9 +1916,13 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_EXT), y)
     EXT_DIR     := ext/
-    ccflags-y += -DCFG_EXT_VERSION=2
-    ccflags-y += -DCFG_EXT_FEATURE=1
+    #EXT_DIR     := ../gen4m_ext/
+    CONFIG_MTK_WIFI_NAN=y
+    CONFIG_MTK_WIFI_NAN_EXT=y
+    CONFIG_MTK_WIFI_APS_SUPPORT=y
     ccflags-y += -DCFG_REUSE_RSN_IE=1
+    ccflags-y += -DCFG_EXT_VERSION=3
+    ccflags-y += -DCFG_EXT_FEATURE=1
     ccflags-y += -DCFG_EXT_SCAN=1
     ccflags-y += -DCFG_EXT_ROAMING=1
     ccflags-y += -DCFG_EXT_ROAMING_WTC=1
@@ -1936,6 +1940,9 @@ ifeq ($(CONFIG_MTK_WIFI_EXT), y)
         CONFIG_MTK_WIFI_RA_OFLD_SUPPORT=y
     endif
 else
+    EXT_DIR     := ext/
+    CONFIG_MTK_WIFI_NAN_EXT=n
+    ccflags-y += -DCFG_EXT_VERSION=3
     ccflags-y += -DCFG_EXT_FEATURE=0
     ccflags-y += -DCFG_EXT_SCAN=0
     ccflags-y += -DCFG_EXT_ROAMING=0
@@ -1965,6 +1972,12 @@ ccflags-y += -DCFG_SUPPORT_NAN=1
 NEED_CRYPTO=y
 else
 ccflags-y += -DCFG_SUPPORT_NAN=0
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_NAN_EXT), y)
+ccflags-y += -DCFG_SUPPORT_NAN_EXT=1
+else
+ccflags-y += -DCFG_SUPPORT_NAN_EXT=0
 endif
 
 ifneq ($(CFG_SYS_DVT_SUPPORT),)
@@ -2198,6 +2211,9 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_EXT), y)
 ccflags-y += -I$(KO_CODE_PATH)/$(EXT_DIR)include/
 ccflags-y += -I$(KO_CODE_PATH)/$(EXT_DIR)include/mgmt
+endif
+ifeq ($(CONFIG_MTK_WIFI_NAN_EXT), y)
+ccflags-y += -I$(KO_CODE_PATH)/$(EXT_DIR)include/nan
 endif
 ifeq ($(CFG_SUPPORT_WIFI_SYSDVT), 1)
 ccflags-y += -I$(KO_CODE_PATH)/include/dvt
@@ -2951,6 +2967,20 @@ NAN_OBJS := $(NAN_DIR)nan_dev.o \
             $(NAN_DIR)nan_data_engine_util.o\
             $(NAN_DIR)nan_ranging.o\
             $(NAN_DIR)nan_txm.o
+
+ifeq ($(CONFIG_MTK_WIFI_NAN_EXT), y)
+OS_OBJS +=  $(EXT_DIR)$(OS_DIR)gl_sys.o
+
+NAN_OBJS += $(EXT_DIR)$(NAN_DIR)nan_ext.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_ccm.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_pa.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_mdc.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_asc.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_amc.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_ascc.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_fr.o \
+            $(EXT_DIR)$(NAN_DIR)nan_ext_adsdc.o
+endif
 
 NAN_SEC_OBJS := $(NAN_DIR)nan_sec.o\
                 $(WPA_DIR)src/ap/wpa_auth.o\

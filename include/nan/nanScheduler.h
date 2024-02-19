@@ -62,6 +62,26 @@
 
 #define NAN_INVALID_MAP_ID 0xFF
 
+
+#define NAN_IS_AVAIL_MAP_SET(pu4AvailMap, u2SlotIdx)                           \
+	((pu4AvailMap[u2SlotIdx / NAN_SLOTS_PER_DW_INTERVAL] &                 \
+	  BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) != 0)
+
+#define NAN_TIMELINE_SET(pu4AvailMap, u2SlotIdx)                               \
+do {									       \
+	pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] |=		       \
+		BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL);		       \
+	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",		       \
+	       __func__, pu4AvailMap, u2SlotIdx,			       \
+	       pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL]);	       \
+} while (0)
+
+#define NAN_TIMELINE_UNSET(pu4AvailMap, u2SlotIdx)                             \
+	(pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] &=               \
+	 (~BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)))
+
+#define NAN_MAX_POTENTIAL_CHNL_LIST 10
+
 enum _NAN_CHNL_BW_MAP {
 	NAN_CHNL_BW_20 = 0,
 	NAN_CHNL_BW_40,

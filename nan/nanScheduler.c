@@ -55,25 +55,6 @@
 
 #define NAN_MAX_PREFER_CHNL_SEL			4
 
-#define NAN_IS_AVAIL_MAP_SET(pu4AvailMap, u2SlotIdx)                           \
-	((pu4AvailMap[u2SlotIdx / NAN_SLOTS_PER_DW_INTERVAL] &                 \
-	  BIT(u2SlotIdx % NAN_SLOTS_PER_DW_INTERVAL)) != 0)
-
-#define NAN_TIMELINE_SET(pu4AvailMap, u2SlotIdx)                               \
-do {									       \
-	pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] |=		       \
-		BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL);		       \
-	DBGLOG(NAN, TEMP, "SET in %s, %p, set %u, 0x%08x\n",		       \
-	       __func__, pu4AvailMap, u2SlotIdx,			       \
-	       pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL]);	       \
-} while (0)
-
-#define NAN_TIMELINE_UNSET(pu4AvailMap, u2SlotIdx)                             \
-	(pu4AvailMap[(u2SlotIdx) / NAN_SLOTS_PER_DW_INTERVAL] &=               \
-	 (~BIT((u2SlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)))
-
-#define NAN_MAX_POTENTIAL_CHNL_LIST 10
-
 #define NAN_MAX_NONNAN_TIMELINE_NUM		1
 	/* Non-Nan timeline number */
 
