@@ -2535,7 +2535,7 @@ enum ENUM_AIS_STATE aisSearchHandleBssDesc(struct ADAPTER *prAdapter,
 				prAisFsmInfo->ucMlProbeEnable = TRUE;
 				prAisFsmInfo->prMlProbeBssDesc =
 					prBssDescSet->aprBssDesc[0];
-				return AIS_STATE_SCAN;
+				return AIS_STATE_LOOKING_FOR;
 			}
 #endif
 
