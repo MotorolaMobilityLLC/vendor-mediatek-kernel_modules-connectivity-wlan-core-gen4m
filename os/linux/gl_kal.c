@@ -2679,7 +2679,8 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 		cfg80211_roamed(netdev, &rRoamInfo, GFP_KERNEL);
 #if KERNEL_VERSION(4, 15, 0) <= CFG80211_VERSION_CODE
 		if (ucAuthorized) {
-#if KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE
+#if (KERNEL_VERSION(6, 2, 0) <= CFG80211_VERSION_CODE) || \
+	(CFG_ADVANCED_80211_MLO == 1)
 			cfg80211_port_authorized(netdev,
 				links[0].bssid, NULL, 0, GFP_KERNEL);
 #else
@@ -11812,16 +11813,11 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx, 0);
 #elif (CFG_ADVANCED_80211_MLO == 1)
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx, 0);
-#else
-	cfg80211_ch_switch_notify(prDevHandler, &chandef,
-		linkIdx, 0);
-#endif
 #elif (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
-		linkIdx, 0);
+		linkIdx);
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
 #endif
@@ -13647,7 +13643,7 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	skb_queue_head_init(&prGlueInfo->rRxNapiSkbQ);
 	/* use dummy device to register napi */
 	init_dummy_netdev(&prGlueInfo->dummy_dev);
-#if (KERNEL_VERSION(6, 1, 0) <= LINUX_VERSION_CODE)
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
 			kalNapiPoll);
 #else
