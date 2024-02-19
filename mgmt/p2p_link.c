@@ -13,6 +13,7 @@
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 
 struct MLD_BSS_INFO *gprP2pMldBssInfo;
+uint8_t gucRemainMldBssLinkNum;
 
 struct MLD_BSS_INFO *p2pMldBssInit(struct ADAPTER *prAdapter,
 	const uint8_t aucIntfMac[],
@@ -20,6 +21,30 @@ struct MLD_BSS_INFO *p2pMldBssInit(struct ADAPTER *prAdapter,
 {
 	struct MLD_BSS_INFO *prMldbss = NULL;
 
+#if (CFG_SUPPORT_P2P_SET_ML_BSS_NUM == 1)
+	if (gucRemainMldBssLinkNum > 0) {
+		if (gprP2pMldBssInfo == NULL) {
+			DBGLOG(INIT, ERROR, "MldBss not allocated yet.\n");
+			return NULL;
+		}
+
+		prMldbss = gprP2pMldBssInfo;
+		gucRemainMldBssLinkNum--;
+		DBGLOG(INIT, TRACE, "Use global MldBss[%u]\n",
+			prMldbss->ucGroupMldId);
+	} else {
+		prMldbss = mldBssAlloc(prAdapter, aucIntfMac);
+		if (prMldbss == NULL) {
+			DBGLOG(INIT, WARN, "Allocate MldBss failed\n");
+			return NULL;
+		}
+		if (fgIsApMode == FALSE)
+			gprP2pMldBssInfo = prMldbss;
+		DBGLOG(INIT, TRACE, "Allocate MldBss[%u] for %s\n",
+			prMldbss->ucGroupMldId,
+			fgIsApMode ? "SAP" : "P2P");
+	}
+#else
 	if (fgIsApMode == FALSE &&
 	    mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, fgIsApMode)) {
 		if (gprP2pMldBssInfo == NULL) {
@@ -32,6 +57,7 @@ struct MLD_BSS_INFO *p2pMldBssInit(struct ADAPTER *prAdapter,
 	} else {
 		prMldbss = mldBssAlloc(prAdapter, aucIntfMac);
 	}
+#endif
 
 	return prMldbss;
 }

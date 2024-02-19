@@ -895,6 +895,8 @@ int priv_driver_preset_linkid(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_ml_bss_num(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_ml_prefer_freqlist(

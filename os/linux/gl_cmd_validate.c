@@ -700,6 +700,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 		.policy    = NULL
 	},
 	{
+		.pcCmdStr  = CMD_SET_ML_BSS_NUM,
+		.pfHandler = priv_driver_set_ml_bss_num,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = u8_policy,
+		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+	{
 		.pcCmdStr  = CMD_GET_ML_CAPA,
 		.pfHandler = priv_driver_get_ml_capa,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,

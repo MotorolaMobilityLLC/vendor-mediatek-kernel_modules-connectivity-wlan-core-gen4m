@@ -2583,6 +2583,12 @@ else
     ccflags-y += -DCFG_SUPPORT_PHY_ICS_V4=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_P2P_SET_ML_BSS_NUM), y)
+    ccflags-y += -DCFG_SUPPORT_P2P_SET_ML_BSS_NUM=1
+else
+    ccflags-y += -DCFG_SUPPORT_P2P_SET_ML_BSS_NUM=0
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
