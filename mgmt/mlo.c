@@ -3322,13 +3322,12 @@ void mldBssUpdateOmacIdx(
 		DBGLOG(ML, INFO, "Hybird MLO use BssInfo omac idx %d\n",
 			prBssInfo->ucOwnMacIndex);
 	else
-#else
+#endif
 	{
 		DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
 			prMldBssInfo->ucOmacIdx);
 		prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
 	}
-#endif
 #endif
 }
 
