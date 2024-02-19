@@ -431,6 +431,52 @@ void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo)
 	pci_disable_device(prGlueInfo->rHifInfo.pdev);
 }
 
+static void mtk_pci_msi_mask_irq(uint32_t u4IrqNum)
+{
+	struct irq_data *data;
+
+	data = irq_get_irq_data(u4IrqNum);
+	if (data)
+		pci_msi_mask_irq(data);
+}
+
+static void mtk_pci_msi_unmask_irq(uint32_t u4IrqNum)
+{
+	struct irq_data *data;
+
+	data = irq_get_irq_data(u4IrqNum);
+	if (data)
+		pci_msi_unmask_irq(data);
+}
+
+static void mtk_pci_msi_enable_irq(uint32_t u4Irq)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo;
+
+	glGetChipInfo((void **)&prChipInfo);
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
+		mtk_pci_msi_unmask_irq(u4Irq);
+	else
+		enable_irq(u4Irq);
+}
+
+static void mtk_pci_msi_disable_irq(uint32_t u4Irq)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo;
+
+	glGetChipInfo((void **)&prChipInfo);
+	prBusInfo = prChipInfo->bus_info;
+
+	if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
+		mtk_pci_msi_mask_irq(u4Irq);
+	else
+		disable_irq_nosync(u4Irq);
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE interrupt callback function
@@ -472,7 +518,7 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits))
 				return IRQ_NONE;
 
-			disable_irq_nosync(irq);
+			mtk_pci_msi_disable_irq(irq);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 			goto exit;
 		}
@@ -520,15 +566,6 @@ uint32_t mtk_pci_read_msi_mask(struct GLUE_INFO *prGlueInfo)
 	pci_read_config_dword(dev, pos, &mask);
 
 	return mask;
-}
-
-static void mtk_pci_msi_unmask_irq(uint32_t u4IrqNum)
-{
-	struct irq_data *data;
-
-	data = irq_get_irq_data(u4IrqNum);
-	if (data)
-		pci_msi_unmask_irq(data);
 }
 
 void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo)
@@ -596,12 +633,8 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits)) {
-			enable_irq(prMsiLayout->irq_num);
+			mtk_pci_msi_enable_irq(prMsiLayout->irq_num);
 			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
-#if CFG_MTK_WIFI_PCIE_SUPPORT
-			if (prBusInfo->is_en_drv_unmask_pci_msi_irq)
-				mtk_pci_msi_unmask_irq(prMsiLayout->irq_num);
-#endif
 		}
 	}
 }
@@ -648,7 +681,7 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (!KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
-			disable_irq_nosync(prMsiLayout->irq_num);
+			mtk_pci_msi_disable_irq(prMsiLayout->irq_num);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 		}
 	}

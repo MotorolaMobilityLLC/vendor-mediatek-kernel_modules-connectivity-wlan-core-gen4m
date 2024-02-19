@@ -440,7 +440,7 @@ struct BUS_INFO {
 	struct pse_group_info *prPseGroup;
 	const uint32_t u4PseGroupLen;
 	struct pcie_msi_info pcie_msi_info;
-	const u_int8_t is_en_drv_unmask_pci_msi_irq;
+	const u_int8_t is_en_drv_ctrl_pci_msi_irq;
 
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
