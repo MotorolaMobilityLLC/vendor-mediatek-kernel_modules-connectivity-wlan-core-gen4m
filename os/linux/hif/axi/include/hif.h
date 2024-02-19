@@ -157,6 +157,8 @@ struct GL_HIF_INFO {
 	u_int8_t fgIsUrgentCidxFetch;
 	u_int8_t fgIsNeeidxFetchFlag;
 	unsigned long ulCidxFetchTimeout;
+	uint32_t u4WbIntSta;
+	uint32_t u4WbMdIntSta;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 	uint32_t u4RxDataRingSize;
 	uint32_t u4RxEvtRingSize;

@@ -151,6 +151,7 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus);
 static void mt6653ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 				   u_int8_t enable);
+static void mt6653EnableInterruptViaPcieByEmi(struct ADAPTER *prAdapter);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
 static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter);
@@ -643,7 +644,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.pdmaSetup = mt6653WpdmaConfig,
 #if defined(_HIF_PCIE)
 #if CFG_MTK_WIFI_WFDMA_WB
-	.enableInterrupt = asicConnac3xEnablePlatformIRQ,
+	.enableInterrupt = mt6653EnableInterruptViaPcieByEmi,
 	.disableInterrupt = asicConnac3xDisablePlatformIRQ,
 #elif (CFG_SUPPORT_PCIE_PLAT_INT_FLOW == 1)
 	.enableInterrupt = mt6653EnableInterruptViaPcie,
@@ -2056,7 +2057,6 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 	u4RegValue = *((uint32_t *)prRingIntSta->AllocVa);
 	prHifInfo->u4IntStatus = u4RegValue & 0xFFFF;
 
-	u4Addr = WF_WFDMA_HOST_DMA0_HOST_TX_INT_WB_EN_ADDR;
 #if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
 	if (u4RegValue & BITS(0, 10)) {
 		*pu4IntStatus |= WHISR_TX_DONE_INT;
@@ -2079,11 +2079,10 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 
 	/* clear interrupt */
 	if (fgClrCr) {
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+		prHifInfo->u4WbIntSta = u4WrValue;
 		DBGLOG(HAL, LOUD,
-		       "EmiIntSta[0x%08x][0x%08x] CR[0x%08x]=[0x%08x]\n",
-		       prHifInfo->u4IntStatus, u4RegValue,
-		       u4Addr, u4WrValue);
+		       "EmiIntSta[0x%08x][0x%08x] WrValue[0x%08x]\n",
+		       prHifInfo->u4IntStatus, u4RegValue, u4WrValue);
 	}
 
 	if (prMemOps->getWifiMiscRsvEmi) {
@@ -2106,7 +2105,6 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 	u4RegValue = *((uint32_t *)prRingMdIntSta->AllocVa);
 	prHifInfo->u4IntStatus |= (u4RegValue << 16);
 
-	u4Addr = WF_WFDMA_HOST_DMA0_HOST_RX_INT_WB_EN_ADDR;
 	u4WrValue = 0;
 	if (u4RegValue & BITS(8, 12)) {
 		fgClrCr = TRUE;
@@ -2116,11 +2114,10 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 
 	/* clear interrupt */
 	if (fgClrCr) {
-		HAL_MCR_WR(prAdapter, u4Addr, u4WrValue);
+		prHifInfo->u4WbMdIntSta = u4WrValue;
 		DBGLOG(HAL, LOUD,
-		       "MdEmiIntSta[0x%08x][0x%08x] CR[0x%08x]=[0x%08x]\n",
-		       prHifInfo->u4IntStatus, u4RegValue,
-		       u4Addr, u4WrValue);
+		       "MdEmiIntSta[0x%08x][0x%08x] WrValue[0x%08x]\n",
+		       prHifInfo->u4IntStatus, u4RegValue, u4WrValue);
 	}
 #endif
 
@@ -2380,6 +2377,31 @@ static void mt6653ConfigEmiIntMask(struct GLUE_INFO *prGlueInfo,
 	HAL_MCR_WR(prAdapter, u4Addr, u4WrVal);
 
 	mt6653WfdmaConfigWriteBack(prGlueInfo, enable);
+}
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+#if CFG_MTK_WIFI_WFDMA_WB
+static void mt6653EnableInterruptViaPcieByEmi(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	uint32_t u4Addr;
+
+	asicConnac3xEnablePlatformIRQ(prAdapter);
+
+	/* enable wfdma writeback interrupt */
+	u4Addr = WF_WFDMA_HOST_DMA0_HOST_TX_INT_WB_EN_ADDR;
+	if (prHifInfo->u4WbIntSta) {
+		HAL_MCR_WR(prAdapter, u4Addr, prHifInfo->u4WbIntSta);
+		prHifInfo->u4WbIntSta = 0;
+	}
+
+#if CFG_ENABLE_MAWD_MD_RING
+	u4Addr = WF_WFDMA_HOST_DMA0_HOST_RX_INT_WB_EN_ADDR;
+	if (prHifInfo->u4WbMdIntSta) {
+		HAL_MCR_WR(prAdapter, u4Addr, prHifInfo->u4WbMdIntSta);
+		prHifInfo->u4WbMdIntSta = 0;
+	}
+#endif
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 
