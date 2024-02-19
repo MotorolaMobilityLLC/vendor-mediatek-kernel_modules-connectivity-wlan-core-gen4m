@@ -3444,7 +3444,8 @@ enum ENUM_AX_BLOCKLIST_TYPE {
 struct PARAM_MULTICAST_LIST {
 	uint8_t ucBssIdx;
 	uint8_t ucAddrNum;
-	uint8_t aucMcAddrList[MAX_NUM_GROUP_ADDR * MAC_ADDR_LEN];
+	uint8_t aucMcAddrList[MAX_NUM_GROUP_ADDR][MAC_ADDR_LEN];
+	u_int8_t fgIsOid;
 };
 
 #if (CFG_SUPPORT_PKT_OFLD == 1)

@@ -5866,13 +5866,6 @@ int main_thread(void *data)
 		testThreadBegin(prGlueInfo->prAdapter);
 #endif
 
-#if CFG_ENABLE_WIFI_DIRECT
-		/*run p2p multicast list work. */
-		if (test_and_clear_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT,
-				       &prGlueInfo->ulFlag))
-			p2pSetMulticastListWorkQueueWrapper(prGlueInfo);
-#endif
-
 		if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
 			|| kalIsResetting()
 			) {
