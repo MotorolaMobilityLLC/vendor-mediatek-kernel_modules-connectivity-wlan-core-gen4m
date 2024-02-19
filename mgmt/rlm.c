@@ -2037,7 +2037,6 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 				<< VHT_OP_MODE_RX_NSS_OFFSET) &
 			 VHT_OP_MODE_RX_NSS);
 	} else {
-
 		ucOpModeBw = rlmGetOpModeBwByVhtAndHtOpInfo(prBssInfo);
 		if (ucOpModeBw == VHT_OP_MODE_CHANNEL_WIDTH_160_80P80) {
 			ucOpModeBw = VHT_OP_MODE_CHANNEL_WIDTH_80;

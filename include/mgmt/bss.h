@@ -142,7 +142,7 @@ const char *bssOpBw2Str(struct BSS_INFO *prBssInfo);
 
 uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBand, struct BSS_INFO **prBssList,
-		uint8_t fgIsForPrefFreq);
+		u_int8_t fgIsForPrefFreq);
 
 const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *bss);
