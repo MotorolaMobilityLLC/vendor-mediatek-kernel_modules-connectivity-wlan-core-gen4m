@@ -482,6 +482,7 @@ static uint8_t coredump_aes_driver_control(struct GLUE_INFO *prGlueInfo,
 		HAL_MCR_WR(prAdapter, S2P_CMD_TX_BASE,
 			(S2P_CMD_RD << 18) | (0x0 << 16) |
 			(S2P_CMD_AES_BUSY << 8) | 0x0);
+		udelay(10);
 		HAL_RMCR_RD(COREDUMP_DBG, prAdapter, S2P_CMD_RX_BASE,
 			&aes_busy);
 		fgTimeout = ((kalGetTimeTick() - u4CurrTick) >
@@ -1759,10 +1760,6 @@ static int __coredump_start(struct coredump_ctx *ctx,
 	if (ret)
 		goto deinit;
 
-	/* To do:
-	 * 1. save DFD pre dump
-	 * 2. dump EMI
-	 */
 	ret = __coredump_handle_dump_buff(ctx, chip_info);
 	if (ret)
 		goto deinit;
