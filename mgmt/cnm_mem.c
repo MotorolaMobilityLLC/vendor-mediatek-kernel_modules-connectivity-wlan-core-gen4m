@@ -2115,115 +2115,111 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		}
 
 		prStaRec->u2OperationalRateSet = u2OperationalRateSet;
-		prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
+	}
 
-		/* 4     <5> PHY type setting */
+	prStaRec->u2BSSBasicRateSet = prBssInfo->u2BSSBasicRateSet;
+	/* 4     <5> PHY type setting */
 
-		prStaRec->ucPhyTypeSet = 0;
+	prStaRec->ucPhyTypeSet = 0;
+	if (prBssInfo->eBand == BAND_2G4) {
+		if (prCmd->fgIsSupHt)
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
-		if (prBssInfo->eBand == BAND_2G4) {
-			if (prCmd->fgIsSupHt)
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
+		/* if not 11n only */
+		if (!(prStaRec->u2BSSBasicRateSet
+			& RATE_SET_BIT_HT_PHY)) {
+			/* check if support 11g */
+			if ((prStaRec->u2OperationalRateSet
+				& RATE_SET_OFDM)) {
+				prStaRec->ucPhyTypeSet
+					|= PHY_TYPE_BIT_ERP;
+			}
 
-			/* if not 11n only */
+			/* if not 11g only */
 			if (!(prStaRec->u2BSSBasicRateSet
-				& RATE_SET_BIT_HT_PHY)) {
-				/* check if support 11g */
+				& RATE_SET_OFDM)) {
+				/* check if support 11b */
 				if ((prStaRec->u2OperationalRateSet
-					& RATE_SET_OFDM)) {
+					 & RATE_SET_HR_DSSS)) {
 					prStaRec->ucPhyTypeSet
-						|= PHY_TYPE_BIT_ERP;
-				}
-
-				/* if not 11g only */
-				if (!(prStaRec->u2BSSBasicRateSet
-					& RATE_SET_OFDM)) {
-					/* check if support 11b */
-					if ((prStaRec->u2OperationalRateSet
-						 & RATE_SET_HR_DSSS)) {
-						prStaRec->ucPhyTypeSet
-							|= PHY_TYPE_BIT_HR_DSSS;
-					}
+						|= PHY_TYPE_BIT_HR_DSSS;
 				}
 			}
-#if CFG_SUPPORT_TDLS_11AX
-			if (prCmd->fgIsSupHe)
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
-
-			if (prCmd->fgIsSupVht)
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-#endif
-		} else {
-#if CFG_SUPPORT_TDLS_11AX
-			if (prCmd->fgIsSupHe)
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
-#endif
-
-			if (prCmd->fgIsSupVht)
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
-
-			if (prCmd->fgIsSupHt)
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
-
-			/* if not 11n only */
-			if (!(prStaRec->u2BSSBasicRateSet
-				& RATE_SET_BIT_HT_PHY)) {
-				/* Support 11a definitely */
-				prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
-			}
 		}
+#if CFG_SUPPORT_TDLS_11AX
+		if (prCmd->fgIsSupHe)
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
 
-		if (IS_STA_IN_AIS(prStaRec)) {
-			struct CONNECTION_SETTINGS *prConnSettings;
-			enum ENUM_WEP_STATUS eEncStatus;
+		if (prCmd->fgIsSupVht)
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
+#endif
+	} else {
+#if CFG_SUPPORT_TDLS_11AX
+		if (prCmd->fgIsSupHe)
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HE;
+#endif
 
-			prConnSettings =
-				aisGetConnSettings(prAdapter,
-				prStaRec->ucBssIndex);
+		if (prCmd->fgIsSupVht)
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_VHT;
 
-			eEncStatus = prConnSettings->eEncStatus;
+		if (prCmd->fgIsSupHt)
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_HT;
 
-			if (!((eEncStatus == ENUM_ENCRYPTION3_ENABLED)
-				|| (eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT)
-				|| (eEncStatus == ENUM_ENCRYPTION_DISABLED)
-			    )) {
-
-				prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_HT;
-			}
+		/* if not 11n only */
+		if (!(prStaRec->u2BSSBasicRateSet
+			& RATE_SET_BIT_HT_PHY)) {
+			/* Support 11a definitely */
+			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 		}
+	}
+	if (IS_STA_IN_AIS(prStaRec)) {
+		struct CONNECTION_SETTINGS *prConnSettings;
+		enum ENUM_WEP_STATUS eEncStatus;
 
-		prStaRec->ucDesiredPhyTypeSet = prStaRec->ucPhyTypeSet
-			& prAdapter->rWifiVar.ucAvailablePhyTypeSet;
-		ucNonHTPhyTypeSet = prStaRec->ucDesiredPhyTypeSet
-			& PHY_TYPE_SET_802_11ABG;
+		prConnSettings =
+			aisGetConnSettings(prAdapter,
+			prStaRec->ucBssIndex);
 
-		/* Check for Target BSS's non HT Phy Types */
-		if (ucNonHTPhyTypeSet) {
-			if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_ERP)
-				prStaRec->ucNonHTBasicPhyType
-					= PHY_TYPE_ERP_INDEX;
-			else if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_OFDM)
-				prStaRec->ucNonHTBasicPhyType
-					= PHY_TYPE_OFDM_INDEX;
-			else
-				prStaRec->ucNonHTBasicPhyType
+		eEncStatus = prConnSettings->eEncStatus;
+
+		if (!((eEncStatus == ENUM_ENCRYPTION3_ENABLED)
+			|| (eEncStatus == ENUM_ENCRYPTION3_KEY_ABSENT)
+			|| (eEncStatus == ENUM_ENCRYPTION_DISABLED)
+		    )) {
+
+			prStaRec->ucPhyTypeSet &= ~PHY_TYPE_BIT_HT;
+		}
+	}
+	prStaRec->ucDesiredPhyTypeSet = prStaRec->ucPhyTypeSet
+		& prAdapter->rWifiVar.ucAvailablePhyTypeSet;
+	ucNonHTPhyTypeSet = prStaRec->ucDesiredPhyTypeSet
+		& PHY_TYPE_SET_802_11ABG;
+
+	/* Check for Target BSS's non HT Phy Types */
+	if (ucNonHTPhyTypeSet) {
+		if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_ERP)
+			prStaRec->ucNonHTBasicPhyType
+				= PHY_TYPE_ERP_INDEX;
+		else if (ucNonHTPhyTypeSet & PHY_TYPE_BIT_OFDM)
+			prStaRec->ucNonHTBasicPhyType
+				= PHY_TYPE_OFDM_INDEX;
+		else
+			prStaRec->ucNonHTBasicPhyType
+			= PHY_TYPE_HR_DSSS_INDEX;
+
+		prStaRec->fgHasBasicPhyType = TRUE;
+	} else {
+		/* Use mandatory for 11N only BSS */
+		ASSERT(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N);
+		{
+			/* TODO(Kevin): which value should we set
+			 * for 11n ? ERP ?
+			 */
+			prStaRec->ucNonHTBasicPhyType
 				= PHY_TYPE_HR_DSSS_INDEX;
-
-			prStaRec->fgHasBasicPhyType = TRUE;
-		} else {
-			/* Use mandatory for 11N only BSS */
-			ASSERT(prStaRec->ucPhyTypeSet & PHY_TYPE_SET_802_11N);
-			{
-				/* TODO(Kevin): which value should we set
-				 * for 11n ? ERP ?
-				 */
-				prStaRec->ucNonHTBasicPhyType
-					= PHY_TYPE_HR_DSSS_INDEX;
-			}
-
-			prStaRec->fgHasBasicPhyType = FALSE;
 		}
 
+		prStaRec->fgHasBasicPhyType = FALSE;
 	}
 
 	/* ++HT capability */
