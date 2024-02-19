@@ -274,12 +274,11 @@ p2pDevFsmStateTransition(struct ADAPTER *prAdapter,
 
 		if (!fgIsLeaveState) {
 			/* Print log with state changed */
-			if (prP2pDevFsmInfo->eCurrentState != eNextState)
-				DBGLOG(P2P, STATE,
-					"[P2P_DEV]TRANSITION: [%s] -> [%s]\n",
-					apucDebugP2pDevState
-					[prP2pDevFsmInfo->eCurrentState],
-					apucDebugP2pDevState[eNextState]);
+			DBGLOG(P2P, STATE,
+				"[P2P_DEV]TRANSITION: [%s] -> [%s]\n",
+				apucDebugP2pDevState
+				[prP2pDevFsmInfo->eCurrentState],
+				apucDebugP2pDevState[eNextState]);
 
 			/* Transition into current state. */
 			prP2pDevFsmInfo->eCurrentState = eNextState;
@@ -1459,4 +1458,35 @@ void p2pDevListenOffloadStopHandler(
 		lostop->u4Reason);
 }
 
+void p2pDevFsmNotifyGoState(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, u_int8_t fgIsGoStarted)
+{
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
+
+	DBGLOG(P2P, TRACE, "Update GO Bss[%u] isStart[%u]\n",
+		ucBssIndex, fgIsGoStarted);
+
+	prP2pDevFsmInfo =
+		prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+	/* Since P2P Device has to received PROVISION
+	 * DISCOVERY frame from GO's operating channel,
+	 * DEV need re-activate after GO started to
+	 * make sure DEV OMAC set on the same band with GO.
+	 */
+	if (fgIsGoStarted == TRUE) {
+		if (prP2pDevFsmInfo->eCurrentState !=
+			P2P_DEV_STATE_IDLE) {
+			p2pDevFsmRunEventAbort(prAdapter,
+				prP2pDevFsmInfo);
+		}
+
+		prP2pDevFsmInfo->ucGoStartedBitmap |= BIT(ucBssIndex);
+		p2pDevFsmStateTransition(prAdapter,
+			prP2pDevFsmInfo,
+			P2P_DEV_STATE_IDLE);
+	} else {
+		prP2pDevFsmInfo->ucGoStartedBitmap &= ~BIT(ucBssIndex);
+	}
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
