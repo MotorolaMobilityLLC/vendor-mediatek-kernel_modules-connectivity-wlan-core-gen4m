@@ -125,8 +125,6 @@ struct GL_P2P_INFO {
 
 	/*ENUM_PARAM_MEDIA_STATE_T eState;*//* TH3 multiple P2P */
 	/*UINT_32 u4PacketFilter;*//* TH3 multiple P2P */
-	/* TH3 multiple P2P */
-	/*PARAM_MAC_ADDRESS aucMCAddrList[MAX_NUM_GROUP_ADDR];*/
 
 	/* connection-requested peer information *//* TH3 multiple P2P */
 	/*UINT_8 aucConnReqDevName[32];*//* TH3 multiple P2P */
@@ -218,7 +216,6 @@ struct GL_P2P_DEV_INFO {
 	uint32_t u4OsMgmtFrameFilter;
 #endif
 	uint32_t u4PacketFilter;
-	uint8_t aucMCAddrList[MAX_NUM_GROUP_ADDR][PARAM_MAC_ADDR_LEN];
 	uint8_t ucWSCRunning;
 };
 

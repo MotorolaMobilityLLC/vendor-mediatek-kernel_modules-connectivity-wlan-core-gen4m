@@ -1672,7 +1672,6 @@ static void p2pSetMulticastList(struct net_device *prDev)
 	set_bit(GLUE_FLAG_SUB_MOD_MULTICAST_BIT, &prGlueInfo->ulFlag);
 	/* wake up main thread */
 	wake_up_interruptible(&prGlueInfo->waitq);
-
 }				/* p2pSetMulticastList */
 
 /*----------------------------------------------------------------------------*/
@@ -1686,14 +1685,17 @@ static void p2pSetMulticastList(struct net_device *prDev)
 /*----------------------------------------------------------------------------*/
 void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 {
+	struct net_device *prDev = NULL;
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPriv;
 	uint32_t u4SetInfoLen = 0;
 	uint32_t u4McCount;
-	struct net_device *prDev = NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	prDev = g_P2pPrDev;
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
 
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
@@ -1730,11 +1732,13 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	if (prGlueInfo->prP2PDevInfo->u4PacketFilter
 		& PARAM_PACKET_FILTER_MULTICAST) {
 		/* Prepare multicast address list */
+		struct PARAM_MULTICAST_LIST rMcAddrList;
 		struct netdev_hw_addr *ha;
 		uint32_t i = 0;
 
 		/* Avoid race condition with kernel net subsystem */
 		netif_addr_lock_bh(prDev);
+		kalMemZero(&rMcAddrList, sizeof(rMcAddrList));
 
 		netdev_for_each_mc_addr(ha, prDev) {
 			/* If ha is null, it will break the loop. */
@@ -1745,12 +1749,15 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 				break;
 			if (i < MAX_NUM_GROUP_ADDR) {
 				COPY_MAC_ADDR(
-					&(prGlueInfo->prP2PDevInfo
-						->aucMCAddrList[i]),
+					&rMcAddrList.aucMcAddrList[i],
 					GET_ADDR(ha));
 				i++;
 			}
 		}
+
+		rMcAddrList.ucBssIdx = prNetDevPriv->ucBssIdx;
+		rMcAddrList.ucAddrNum = i;
+		rMcAddrList.fgIsOid = FALSE;
 
 		netif_addr_unlock_bh(prDev);
 
@@ -1758,13 +1765,13 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 
 		if (i >= MAX_NUM_GROUP_ADDR)
 			return;
-		wlanoidSetP2PMulticastList(prGlueInfo->prAdapter,
-			&(prGlueInfo->prP2PDevInfo->aucMCAddrList[0]),
-			(i * ETH_ALEN), &u4SetInfoLen);
 
+		wlanoidSetMulticastList(prGlueInfo->prAdapter,
+					&rMcAddrList,
+					sizeof(rMcAddrList),
+					&u4SetInfoLen);
 	}
-
-}				/* end of p2pSetMulticastList() */
+}				/* end of mtk_p2p_wext_set_Multicastlist() */
 
 static netdev_tx_t __p2pHardStartXmit(struct GLUE_INFO *prGlueInfo,
 	struct sk_buff *prSkb,

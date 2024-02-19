@@ -8402,6 +8402,9 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 			uint32_t *pu4SetInfoLen) {
 	struct PARAM_MULTICAST_LIST *prMcAddrList;
 	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
+	uint8_t aucDbgBuf[256];
+	int32_t i4Written = 0;
+	uint8_t i;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -8430,28 +8433,32 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
+	kalMemZero(aucDbgBuf, sizeof(aucDbgBuf));
+
 	kalMemZero(&rCmdMacMcastAddr, sizeof(rCmdMacMcastAddr));
 	rCmdMacMcastAddr.u4NumOfGroupAddr = prMcAddrList->ucAddrNum;
 	rCmdMacMcastAddr.ucBssIndex = prMcAddrList->ucBssIdx;
 	kalMemCopy(rCmdMacMcastAddr.arAddress, prMcAddrList->aucMcAddrList,
 		   prMcAddrList->ucAddrNum * MAC_ADDR_LEN);
 
-	DBGLOG(OID, INFO,
-		"BssIdx %d allow list: total=%d MAC0="MACSTR" MAC1="MACSTR
-		" MAC2="MACSTR" MAC3="MACSTR" MAC4="MACSTR"\n",
-		rCmdMacMcastAddr.ucBssIndex,
-		rCmdMacMcastAddr.u4NumOfGroupAddr,
-		MAC2STR(rCmdMacMcastAddr.arAddress[0]),
-		MAC2STR(rCmdMacMcastAddr.arAddress[1]),
-		MAC2STR(rCmdMacMcastAddr.arAddress[2]),
-		MAC2STR(rCmdMacMcastAddr.arAddress[3]),
-		MAC2STR(rCmdMacMcastAddr.arAddress[4]));
+	i4Written += kalSnprintf(aucDbgBuf + i4Written,
+				 sizeof(aucDbgBuf) - i4Written,
+				 "BssIdx %d allow list: total=%d",
+				 rCmdMacMcastAddr.ucBssIndex,
+				 rCmdMacMcastAddr.u4NumOfGroupAddr);
+	for (i = 0; i < rCmdMacMcastAddr.u4NumOfGroupAddr; i++)
+		i4Written += kalSnprintf(aucDbgBuf + i4Written,
+					 sizeof(aucDbgBuf) - i4Written,
+					 "\nmac[%u]="MACSTR,
+					 i, MAC2STR(
+					 rCmdMacMcastAddr.arAddress[i]));
+	DBGLOG(OID, INFO, "%s\n", aucDbgBuf);
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_MAC_MCAST_ADDR,
 				   TRUE,
 				   FALSE,
-				   TRUE,
+				   prMcAddrList->fgIsOid,
 				   nicCmdEventSetCommon,
 				   nicOidCmdTimeoutCommon,
 				   sizeof(struct CMD_MAC_MCAST_ADDR),

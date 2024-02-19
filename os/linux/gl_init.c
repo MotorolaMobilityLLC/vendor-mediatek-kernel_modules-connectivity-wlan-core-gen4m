@@ -3238,10 +3238,9 @@ static void wlanSetMulticastListWorkQueue(
 
 		netdev_for_each_mc_addr(ha, prDev) {
 			if (i < MAX_NUM_GROUP_ADDR) {
-				kalMemCopy(
-					&rMcAddrList.aucMcAddrList[
-						i * MAC_ADDR_LEN],
-					GET_ADDR(ha), MAC_ADDR_LEN);
+				COPY_MAC_ADDR(
+					&rMcAddrList.aucMcAddrList[i],
+					GET_ADDR(ha));
 				DBGLOG(INIT, LOUD, "%u MAC: "MACSTR"\n",
 					i, MAC2STR(GET_ADDR(ha)));
 				i++;
@@ -3254,6 +3253,7 @@ static void wlanSetMulticastListWorkQueue(
 
 		rMcAddrList.ucBssIdx = ucBssIndex;
 		rMcAddrList.ucAddrNum = i;
+		rMcAddrList.fgIsOid = TRUE;
 
 		rStatus = kalIoctlByBssIdx(prGlueInfo,
 			wlanoidSetMulticastList,
@@ -3269,6 +3269,7 @@ static void wlanSetMulticastListWorkQueue(
 
 		rMcAddrList.ucBssIdx = ucBssIndex;
 		rMcAddrList.ucAddrNum = 0;
+		rMcAddrList.fgIsOid = TRUE;
 
 		DBGLOG(INIT, TRACE,
 			"Clear previous MAR settings to rx all mc pkt\n");
@@ -3330,18 +3331,16 @@ void wlanSchedScanStoppedWorkQueue(struct work_struct *work)
 void p2pSetMulticastListWorkQueueWrapper(struct GLUE_INFO
 		*prGlueInfo)
 {
-
-
 	if (!prGlueInfo) {
 		DBGLOG(INIT, WARN,
 		       "abnormal dev or skb: prGlueInfo(0x%p)\n", prGlueInfo);
 		return;
 	}
+
 #if CFG_ENABLE_WIFI_DIRECT
 	if (prGlueInfo->prAdapter->fgIsP2PRegistered)
 		mtk_p2p_wext_set_Multicastlist(prGlueInfo);
 #endif
-
 } /* end of p2pSetMulticastListWorkQueueWrapper() */
 
 /*----------------------------------------------------------------------------*/
@@ -5233,14 +5232,14 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 						&rMcAddrList.aucMcAddrList[0]);
 #endif
 			if (ucNum < MAX_NUM_GROUP_ADDR) {
-				kalMemCopy(
-					&rMcAddrList.aucMcAddrList[
-						ucNum * MAC_ADDR_LEN],
-					aucDefaultAddr, MAC_ADDR_LEN);
+				COPY_MAC_ADDR(
+					&rMcAddrList.aucMcAddrList[ucNum],
+					aucDefaultAddr);
 				ucNum++;
 			}
 			rMcAddrList.ucBssIdx = u4Idx;
 			rMcAddrList.ucAddrNum = ucNum;
+			rMcAddrList.fgIsOid = TRUE;
 			kalIoctl(prGlueInfo,
 				wlanoidSetMulticastList, &rMcAddrList,
 				sizeof(struct PARAM_MULTICAST_LIST),
@@ -5265,10 +5264,9 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 
 			netdev_for_each_mc_addr(ha, prDev) {
 				if (i < MAX_NUM_GROUP_ADDR) {
-					kalMemCopy(
-						&rMcAddrList.aucMcAddrList[
-							i * MAC_ADDR_LEN],
-						ha->addr, MAC_ADDR_LEN);
+					COPY_MAC_ADDR(
+						&rMcAddrList.aucMcAddrList[i],
+						ha->addr);
 					i++;
 				}
 			}
@@ -5279,6 +5277,7 @@ void wlanSetSuspendMode(struct GLUE_INFO *prGlueInfo,
 
 			rMcAddrList.ucBssIdx = u4Idx;
 			rMcAddrList.ucAddrNum = i;
+			rMcAddrList.fgIsOid = TRUE;
 			kalIoctl(prGlueInfo, wlanoidSetMulticastList,
 				&rMcAddrList,
 				sizeof(struct PARAM_MULTICAST_LIST),
