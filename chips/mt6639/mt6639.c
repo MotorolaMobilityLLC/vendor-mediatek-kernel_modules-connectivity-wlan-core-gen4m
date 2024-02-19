@@ -805,7 +805,7 @@ struct TX_DESC_OPS_T mt6639_TxDescOps = {
 };
 
 struct RX_DESC_OPS_T mt6639_RxDescOps = {
-	.getRxModeRcs = mt6639_get_rx_mode_mcs,
+	.getRxModeMcs = mt6639_get_rx_mode_mcs,
 };
 
 #if (DBG_DISABLE_ALL_INFO == 0)

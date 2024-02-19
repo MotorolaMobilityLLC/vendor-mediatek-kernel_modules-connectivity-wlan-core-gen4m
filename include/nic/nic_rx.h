@@ -1117,7 +1117,7 @@ struct RX_DESC_OPS_T {
 		struct SW_RFB *prSwRfb,
 		struct QUE *prFreeQueue);
 
-	void (*getRxModeRcs)(struct SW_RFB *prSwRfb);
+	void (*getRxModeMcs)(struct SW_RFB *prSwRfb);
 };
 
 struct ACTION_FRAME_SIZE_MAP {
