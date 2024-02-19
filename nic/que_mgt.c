@@ -908,7 +908,8 @@ struct QUE *qmDetermineStaTxQueue(struct ADAPTER *prAdapter,
 		} else {
 #if CFG_NON_QOS_ARP_USE_QOS_TXQ_MAPPING
 			if (GLUE_TEST_PKT_FLAG(prMsduInfo->prPacket,
-				ENUM_PKT_ARP)) {
+				ENUM_PKT_ARP) && (prMsduInfo->ucUserPriority <
+				TX_DESC_TID_NUM)) {
 				eAci = aucTid2ACI[prMsduInfo->ucUserPriority];
 				if (eAci < WMM_AC_INDEX_NUM) {
 					ucQueIdx = aucACI2TxQIdx[eAci];
