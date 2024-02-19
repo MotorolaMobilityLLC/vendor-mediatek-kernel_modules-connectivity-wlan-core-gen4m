@@ -50,6 +50,10 @@ static int file_ops_coredump_open(struct inode *inode, struct file *file);
 static int file_ops_coredump_release(struct inode *inode, struct file *file);
 static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos);
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+static ssize_t file_ops_coredump_write(struct file *filp,
+	const char __user *buf, size_t count, loff_t *f_pos);
+#endif
 
 #define PRINT_BYTES_PER_LOOP	512
 #define PRINT_LONG_STR_MSG(__msg, __size) \
@@ -83,8 +87,14 @@ const struct file_operations g_coredump_fops = {
 	.open = file_ops_coredump_open,
 	.release = file_ops_coredump_release,
 	.read = file_ops_coredump_read,
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+	.write = file_ops_coredump_write,
+#endif
 };
 
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+static uint8_t  fgIsCoredumpSkipped;
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -112,6 +122,20 @@ static int coredump_check_reg_readable(void)
 }
 #endif
 
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+static uint8_t get_coredump_skipped(void)
+{
+	DBGLOG(INIT, LOUD, "get skipped:%d\n", fgIsCoredumpSkipped);
+	return fgIsCoredumpSkipped;
+}
+
+static void update_coredump_skipped(uint8_t skipped)
+{
+	fgIsCoredumpSkipped = skipped;
+	DBGLOG(INIT, INFO, "set skipped:%d\n", fgIsCoredumpSkipped);
+}
+#endif
+
 static int file_ops_coredump_open(struct inode *inode, struct file *file)
 {
 	return 0;
@@ -121,6 +145,41 @@ static int file_ops_coredump_release(struct inode *inode, struct file *file)
 {
 	return 0;
 }
+
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+static ssize_t file_ops_coredump_write(struct file *filp,
+	const char __user *buf, size_t count, loff_t *f_pos)
+{
+	int8_t skip_buf[2] = { 0 };
+	uint32_t copy_size = 0;
+	ssize_t ret = 0;
+
+	if (count <= 0) {
+		DBGLOG(INIT, ERROR, "coredump_write invalid param\n");
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	copy_size = (sizeof(skip_buf) - 1) < (uint32_t) count ?
+		(sizeof(skip_buf) - 1) : (uint32_t) count;
+	if (copy_from_user(skip_buf, buf, copy_size)) {
+		ret = -EINVAL;
+		goto exit;
+	}
+
+	ret = copy_size;
+	if (skip_buf[0] == '1') {
+		DBGLOG(INIT, INFO, "enable coredump\n");
+		update_coredump_skipped(0);
+	} else if (skip_buf[0] == '0') {
+		DBGLOG(INIT, INFO, "disable coredump\n");
+		update_coredump_skipped(1);
+	}
+
+exit:
+	return ret;
+}
+#endif
 
 static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 	size_t count, loff_t *f_pos)
@@ -485,6 +544,9 @@ int wifi_coredump_init(void *priv)
 #endif
 
 	ctx->initialized = TRUE;
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+	fgIsCoredumpSkipped = 0;
+#endif
 	goto exit;
 
 free_cdev:
@@ -1775,6 +1837,14 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 			"Skip coredump due to NOT initialized.\n");
 		return;
 	}
+
+#if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
+	if (get_coredump_skipped()) {
+		DBGLOG(INIT, INFO,
+			"skip coredump due to skip enabled.\n");
+		return;
+	}
+#endif
 
 	DBGLOG(INIT, INFO, "source: %d, reason: %s, force_dump: %d\n",
 		source, reason, force_dump);
