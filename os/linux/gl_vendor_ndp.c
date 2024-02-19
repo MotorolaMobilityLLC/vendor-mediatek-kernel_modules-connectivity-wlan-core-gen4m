@@ -309,6 +309,7 @@ uint32_t
 nanNdiDeleteRspEvent(struct ADAPTER *prAdapter,
 		struct NdiIfaceDelete rNdiInterfaceDelete) {
 	struct sk_buff *skb = NULL;
+	struct net_device *prNetDevice = NULL;
 	struct wiphy *wiphy;
 	struct wireless_dev *wdev;
 	uint16_t u2CreateRspLen;
@@ -321,8 +322,17 @@ nanNdiDeleteRspEvent(struct ADAPTER *prAdapter,
 	DBGLOG(NAN, INFO, "Send NDI Delete Rsp event\n");
 
 	wiphy = wlanGetWiphy();
-	wdev = (wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX))
-		       ->ieee80211_ptr;
+	if (wiphy == NULL) {
+		DBGLOG(NAN, ERROR, "[%s] wiphy is NULL\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prNetDevice = wlanGetNetDev(prAdapter->prGlueInfo, NAN_DEFAULT_INDEX);
+	if (prNetDevice == NULL) {
+		DBGLOG(NAN, ERROR, "[%s] prNetDevice is NULL\n", __func__);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+	wdev = prNetDevice->ieee80211_ptr;
 	u2CreateRspLen = (3 * sizeof(uint32_t)) + sizeof(uint16_t) +
 			 (4 * NLA_HDRLEN) + NLMSG_HDRLEN;
 
