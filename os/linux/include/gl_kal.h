@@ -244,10 +244,10 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #if CFG_SUPPORT_RX_PAGE_POOL
 #define PAGE_POOL_MAX_MEM_SIZE		(0x8000000)
 #define PAGE_POOL_NUM_SHIFT		(2)
-#define PAGE_POOL_NUM			(1 << PAGE_POOL_NUM_SHIFT + 1)
+#define PAGE_POOL_NUM			((1 << PAGE_POOL_NUM_SHIFT) + 1)
 #define PAGE_POOL_MAX_SIZE \
 	(PAGE_POOL_MAX_MEM_SIZE >> (PAGE_SHIFT + PAGE_POOL_NUM_SHIFT))
-#define PAGE_POOL_LAST_IDX		(PAGE_POOL_MAX_SIZE - 1)
+#define PAGE_POOL_LAST_IDX		(PAGE_POOL_NUM - 1)
 #endif
 
 /* OID waiting time (in ms) */
