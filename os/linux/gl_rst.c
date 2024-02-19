@@ -2040,7 +2040,9 @@ void glResetWholeChipResetTrigger(char *pcReason)
 
 void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 	struct timespec64 *rNowTs,
-	struct timespec64 *rLastTs)
+	struct timespec64 *rLastTs,
+	enum COREDUMP_SOURCE_TYPE coredump_source,
+	enum _ENUM_CHIP_RESET_REASON_TYPE_T resetReason)
 {
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
@@ -2054,27 +2056,30 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 	}
 
 	fgIsTimeout = IsOverRstTimeThreshold(rNowTs, rLastTs);
-	if (g_IsWfsysBusHang == TRUE && prAdapter) {
-		struct CHIP_DBG_OPS *debug_ops = prAdapter->chip_info->prDebugOps;
+	if (g_IsWfsysBusHang == TRUE) {
+		if (prAdapter) {
+			struct CHIP_DBG_OPS *debug_ops =
+				prAdapter->chip_info->prDebugOps;
 
-		if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
-			/* dump host cr */
-			if (debug_ops && debug_ops->dumpBusHangCr)
-				debug_ops->dumpBusHangCr(prAdapter);
-			fgIsDrvTriggerWholeChipReset = TRUE;
-			glSetRstReasonString(
-				"fw detect bus hang");
-			glResetWholeChipResetTrigger(g_reason);
-		} else {
+			if (prGlueInfo && prGlueInfo->u4ReadyFlag) {
+				/* dump host cr */
+				if (debug_ops && debug_ops->dumpBusHangCr)
+					debug_ops->dumpBusHangCr(prAdapter);
+				fgIsDrvTriggerWholeChipReset = TRUE;
+				glSetRstReasonString(
+					"fw detect bus hang");
+				glResetWholeChipResetTrigger(g_reason);
+				return;
+			}
 #if (CFG_SUPPORT_CONNINFRA == 1)
 			if (conninfra_reg_readable_for_coredump() == 1 &&
 			    debug_ops &&
 			    debug_ops->dumpBusHangCr)
 				debug_ops->dumpBusHangCr(prAdapter);
 #endif
-			DBGLOG(INIT, INFO,
-				"Don't trigger whole chip reset due to driver is not ready\n");
 		}
+		DBGLOG(INIT, INFO,
+			"Don't trigger whole chip reset due to driver is not ready\n");
 		return;
 	}
 	if (g_SubsysRstCnt > 3) {
@@ -2083,16 +2088,16 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		 * g_SubsysRstCnt > 3, > 30 sec,
 		 * need to update rLastTs, still do wfsys reset
 		 */
-			if (eResetReason >= RST_REASON_MAX)
-				eResetReason = 0;
+			if (resetReason >= RST_REASON_MAX)
+				resetReason = 0;
 
 			if (g_fgRstRecover == TRUE)
 				g_fgRstRecover = FALSE;
 			else
 				wifi_coredump_start(
-					g_Coredump_source,
-					apucRstReason[eResetReason],
-					g_Coredump_type,
+					coredump_source,
+					apucRstReason[resetReason],
+					ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE,
 					rst->force_dump);
 
 			glSetIsNeedWaitCoredumpFlag(FALSE);
@@ -2125,15 +2130,15 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			glResetWholeChipResetTrigger(g_reason);
 		}
 	} else {
-		if (eResetReason >= RST_REASON_MAX)
-			eResetReason = 0;
+		if (resetReason >= RST_REASON_MAX)
+			resetReason = 0;
 
 		if (g_fgRstRecover == TRUE)
 			g_fgRstRecover = FALSE;
 		else
-			wifi_coredump_start(g_Coredump_source,
-				apucRstReason[eResetReason],
-				g_Coredump_type,
+			wifi_coredump_start(coredump_source,
+				apucRstReason[resetReason],
+				ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE,
 				rst->force_dump);
 
 		glSetIsNeedWaitCoredumpFlag(FALSE);
@@ -2167,7 +2172,6 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
 	}
 	g_Coredump_source = COREDUMP_SOURCE_NUM;
-	g_Coredump_type = 0;
 	rst->force_dump = FALSE;
 }
 
@@ -2241,6 +2245,8 @@ int wlan_reset_thread_main(void *data)
 					glResetUpdateFlag(FALSE);
 					glResetOnEndUpdateFlag(FALSE);
 				}
+				g_Coredump_type =
+					ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE;
 			} else {
 				/*wfsys reset start*/
 				g_IsWfsysRstDone = FALSE;
@@ -2250,7 +2256,9 @@ int wlan_reset_thread_main(void *data)
 					g_SubsysRstCnt);
 				glResetSubsysRstProcedure(rst,
 							 &rNowTs,
-							 &rLastTs);
+							 &rLastTs,
+							 g_Coredump_source,
+							 eResetReason);
 				/*wfsys reset done*/
 				g_IsWfsysRstDone = TRUE;
 			}
@@ -2260,7 +2268,7 @@ int wlan_reset_thread_main(void *data)
 				g_SubsysRstTotalCnt);
 		}
 
-		if (test_and_clear_bit(GLUE_FLAG_RST_FW_NOTIFY_BIT,
+		if (test_and_clear_bit(GLUE_FLAG_RST_FW_NOTIFY_L05_BIT,
 			&rst->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
@@ -2269,11 +2277,38 @@ int wlan_reset_thread_main(void *data)
 			/*wfsys reset start*/
 			g_IsWfsysRstDone = FALSE;
 			g_SubsysRstCnt++;
-				DBGLOG(INIT, INFO,
-					"WF reset count = %d.\n",
-					g_SubsysRstCnt);
+			DBGLOG(INIT, INFO,
+				"WF reset count = %d.\n",
+				g_SubsysRstCnt);
 			glResetSubsysRstProcedure(rst,
-							 &rNowTs, &rLastTs);
+				&rNowTs, &rLastTs,
+				COREDUMP_SOURCE_WF_FW,
+				RST_FW_ASSERT);
+			/*wfsys reset done*/
+			g_IsWfsysRstDone = TRUE;
+
+			DBGLOG(INIT, INFO,
+			"Whole Chip rst count /WF reset total count = (%d)/(%d).\n",
+				g_WholeChipRstTotalCnt,
+				g_SubsysRstTotalCnt);
+		}
+
+		if (test_and_clear_bit(GLUE_FLAG_RST_FW_NOTIFY_L0_BIT,
+			&rst->ulFlag)) {
+#if CFG_ENABLE_WAKE_LOCK
+			if (KAL_WAKE_LOCK_ACTIVE(NULL, g_IntrWakeLock))
+				KAL_WAKE_UNLOCK(NULL, g_IntrWakeLock);
+#endif
+			/*wfsys reset start*/
+			g_IsWfsysRstDone = FALSE;
+			g_SubsysRstCnt++;
+			DBGLOG(INIT, INFO,
+				"WF reset count = %d.\n",
+				g_SubsysRstCnt);
+			glResetSubsysRstProcedure(rst,
+				&rNowTs, &rLastTs,
+				COREDUMP_SOURCE_WF_FW,
+				0);
 			/*wfsys reset done*/
 			g_IsWfsysRstDone = TRUE;
 
@@ -2326,14 +2361,27 @@ void kalSetRstEvent(u_int8_t force_dump)
 	wake_up_interruptible(&g_waitq_rst);
 }
 
-void kalSetRstFwNotifyTriggerEvent(u_int8_t force_dump)
+void kalSetRstFwNotifyL05Event(u_int8_t force_dump)
 {
 	struct RESET_STRUCT *rst = &wifi_rst;
 
 	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
 
 	rst->force_dump = force_dump;
-	set_bit(GLUE_FLAG_RST_FW_NOTIFY_BIT, &rst->ulFlag);
+	set_bit(GLUE_FLAG_RST_FW_NOTIFY_L05_BIT, &rst->ulFlag);
+
+	/* when we got interrupt, we wake up servie thread */
+	wake_up_interruptible(&g_waitq_rst);
+}
+
+void kalSetRstFwNotifyTriggerL0Event(u_int8_t force_dump)
+{
+	struct RESET_STRUCT *rst = &wifi_rst;
+
+	KAL_WAKE_LOCK(NULL, g_IntrWakeLock);
+
+	rst->force_dump = force_dump;
+	set_bit(GLUE_FLAG_RST_FW_NOTIFY_L0_BIT, &rst->ulFlag);
 
 	/* when we got interrupt, we wake up servie thread */
 	wake_up_interruptible(&g_waitq_rst);

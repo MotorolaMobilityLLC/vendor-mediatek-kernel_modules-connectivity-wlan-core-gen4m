@@ -64,7 +64,8 @@
 #define GLUE_FLAG_RST_PROCESS (GLUE_FLAG_HALT |\
 				GLUE_FLAG_RST_START |\
 				GLUE_FLAG_RST_END |\
-				GLUE_FLAG_RST_FW_NOTIFY)
+				GLUE_FLAG_RST_FW_NOTIFY_L0 |\
+				GLUE_FLAG_RST_FW_NOTIFY_L05)
 #define RST_FLAG_WHOLE_RESET  (RST_FLAG_DO_CORE_DUMP | \
 			       RST_FLAG_PREVENT_POWER_OFF |\
 			       RST_FLAG_DO_WHOLE_RESET)
@@ -298,7 +299,8 @@ int wlan_post_reset_on_v3(unsigned int type);
 u_int8_t kalIsWholeChipResetting(void);
 void glSetRstReasonString(char *reason);
 void kalSetRstEvent(u_int8_t force_dump);
-void kalSetRstFwNotifyTriggerEvent(u_int8_t force_dump);
+void kalSetRstFwNotifyL05Event(u_int8_t force_dump);
+void kalSetRstFwNotifyTriggerL0Event(u_int8_t force_dump);
 void glRstSetRstEndEvent(void);
 int reset_wait_for_trigger_completion(void);
 void reset_done_trigger_completion(void);

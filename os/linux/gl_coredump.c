@@ -1207,6 +1207,13 @@ static void __coredump_to_userspace_aee_str(struct coredump_ctx *ctx,
 		}
 	}
 		break;
+	case CONNV3_ISSUE_FORCE_DUMP:
+	{
+		written += kalSnprintf(aee_str + written,
+			aee_str_len - written,
+			"FORCE DUMP");
+	}
+		break;
 	default:
 		written += kalSnprintf(aee_str + written,
 			aee_str_len - written,

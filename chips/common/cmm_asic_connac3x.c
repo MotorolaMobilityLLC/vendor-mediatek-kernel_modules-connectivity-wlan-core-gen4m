@@ -2526,7 +2526,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		if (dbg_ops && dbg_ops->dumpBusHangCr)
 			dbg_ops->dumpBusHangCr(prAdapter);
 
-		kalSetRstEvent(TRUE);
+		kalSetRstFwNotifyL05Event(TRUE);
 	}
 }
 
@@ -2538,14 +2538,13 @@ static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 		"FW trigger whole chip reset.\n");
 
 	wifi_coredump_set_enable(TRUE);
-	g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 	glResetUpdateFlag(TRUE);
 	g_IsWfsysBusHang = TRUE;
 
 	if (dbg_ops && dbg_ops->dumpBusHangCr)
 		dbg_ops->dumpBusHangCr(prAdapter);
 
-	kalSetRstFwNotifyTriggerEvent(TRUE);
+	kalSetRstFwNotifyTriggerL0Event(TRUE);
 }
 #endif
 
