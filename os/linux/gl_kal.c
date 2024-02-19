@@ -13688,9 +13688,11 @@ static void kalNapiWakeup(void)
 	 * run __do_softirq to prevent this pending softirq left in the cpu
 	 * and introduce latency for NET_RX_SOFTIRQ to call kalNapiPoll.
 	 */
+#if !CFG_SUPPORT_RX_NAPI_THREADED
 	kalTraceEvent("kalNapiWakeup");
 	local_bh_disable();
 	local_bh_enable();
+#endif /* !CFG_SUPPORT_RX_NAPI_THREADED */
 }
 #endif /* CFG_SUPPORT_RX_WORK */
 
