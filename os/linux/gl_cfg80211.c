@@ -8765,9 +8765,15 @@ int mtk_cfg_start_ap(struct wiphy *wiphy,
 	return mtk_p2p_cfg80211_start_ap(wiphy, dev, settings);
 }
 
+#if KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE
+int mtk_cfg_change_beacon(struct wiphy *wiphy,
+			  struct net_device *dev,
+			  struct cfg80211_ap_update *info)
+#else
 int mtk_cfg_change_beacon(struct wiphy *wiphy,
 			  struct net_device *dev,
 			  struct cfg80211_beacon_data *info)
+#endif
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
@@ -8784,7 +8790,11 @@ int mtk_cfg_change_beacon(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 #endif
+#if KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE
+	return mtk_p2p_cfg80211_change_beacon(wiphy, dev, &info->beacon);
+#else
 	return mtk_p2p_cfg80211_change_beacon(wiphy, dev, info);
+#endif
 }
 
 #if (KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE) || \
