@@ -200,6 +200,33 @@ static int halSetMemOpsTxData(
  *                              F U N C T I O N S
  *******************************************************************************
  */
+static bool halGetRsvMemSizeRsvedByKernel(struct platform_device *pdev,
+				enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
+{
+#if (defined CONFIG_OF) && CFG_SUPPORT_CONNAC1X
+	int ret = 0;
+	struct device_node *np;
+
+	np = of_parse_phandle(pdev->dev.of_node, "memory-region", 0);
+	if (!np) {
+		DBGLOG(INIT, ERROR, "can NOT find memory-region.\n");
+		return false;
+	}
+	ret = of_property_read_u64_array(np, "size",
+					 &gWifiRsvMemSize[u4RsvMemIdx], 1);
+	of_node_put(np);
+	if (ret != 0) {
+		DBGLOG(INIT, ERROR, "get rsrv mem size failed(%d).\n", ret);
+		return false;
+	}
+	DBGLOG(INIT, INFO, "gWifiRsvMemSize:0x%llx\n",
+	       gWifiRsvMemSize[u4RsvMemIdx]);
+	return true;
+#else
+	return false;
+#endif
+}
+
 int halInitResvMem(struct platform_device *pdev,
 		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
@@ -215,16 +242,19 @@ int halInitResvMem(struct platform_device *pdev,
 		return false;
 	}
 
-	ret = of_property_read_u32(node, "emi-size", &RsvMemSize);
-	if (ret != 0)
-		DBGLOG(INIT, ERROR,
-			"MPU-in-lk get rsrv mem size failed(%d).\n",
-			ret);
-	else {
-		gWifiRsvMemSize[u4RsvMemIdx] = (unsigned long long) RsvMemSize;
-		DBGLOG(INIT, INFO,
-		       "MPU-in-lk gWifiRsvMemSize[%u]: 0x%llx\n",
-		       u4RsvMemIdx, gWifiRsvMemSize[u4RsvMemIdx]);
+	if (halGetRsvMemSizeRsvedByKernel(pdev, u4RsvMemIdx) == false) {
+		ret = of_property_read_u32(node, "emi-size", &RsvMemSize);
+		if (ret != 0)
+			DBGLOG(INIT, ERROR,
+				"MPU-in-lk get rsrv mem size failed(%d).\n",
+				ret);
+		else {
+			gWifiRsvMemSize[u4RsvMemIdx] =
+				(unsigned long long) RsvMemSize;
+			DBGLOG(INIT, INFO,
+				"MPU-in-lk gWifiRsvMemSize[%u]: 0x%llx\n",
+				u4RsvMemIdx, gWifiRsvMemSize[u4RsvMemIdx]);
+		}
 	}
 
 	of_node_put(node);
@@ -332,6 +362,11 @@ static int halInitHifMem(struct platform_device *pdev,
 		"pucRsvMemBase[%u][%pa], pucRsvMemVirBase[%u][%pa]\n",
 		u4RsvMemIdx, &grMem.pucRsvMemBase[u4RsvMemIdx],
 		u4RsvMemIdx, &grMem.pucRsvMemVirBase[u4RsvMemIdx]);
+
+	if (halGetRsvMemSizeRsvedByKernel(pdev, u4RsvMemIdx) == true)
+		kalSetDrvEmiMpuProtection(grMem.pucRsvMemBase[u4RsvMemIdx],
+					  0, grMem.u4RsvMemSize[u4RsvMemIdx]);
+
 
 	return 0;
 }
