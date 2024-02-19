@@ -1051,7 +1051,8 @@ void nanDataEngineNDPEPORTAttrAppend(struct ADAPTER *prAdapter,
 				     struct _NAN_NDL_INSTANCE_T *prNDL,
 				     struct _NAN_NDP_INSTANCE_T *prNDP);
 void nanDataEngineDisconnectByStaIdx(struct ADAPTER *prAdapter,
-				     uint8_t ucStaIdx);
+				     uint8_t ucStaIdx,
+				     unsigned char fgTXNDPTermination);
 void nanDataEngingDisconnectEvt(struct ADAPTER *prAdapter,
 				uint8_t *pcuEvtBuf);
 
