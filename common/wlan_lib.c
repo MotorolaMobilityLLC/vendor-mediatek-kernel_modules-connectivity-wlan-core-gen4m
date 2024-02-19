@@ -7112,6 +7112,33 @@ void *wlanGetNetInterfaceByBssIdx(struct GLUE_INFO *prGlueInfo,
 	return prGlueInfo->arNetInterfaceInfo[ucBssIndex].pvNetInterface;
 }
 
+static void wlanParseMloFreqList(struct ADAPTER *prAdapter,
+	uint8_t *aucCfgValue, uint32_t *pu4FreqList, uint32_t u4MaxFreqListNum)
+{
+	const uint8_t acDelim[] = " ";
+	uint8_t *pucPtr = NULL;
+	uint32_t u4Freq = 0, u4Idx = 0;
+	int32_t i4Ret = 0;
+
+	while ((pucPtr = kalStrSep((char **)&aucCfgValue, acDelim)) != NULL) {
+		if (u4Idx >= u4MaxFreqListNum) {
+			DBGLOG(INIT, WARN,
+				"Exceeds max freq list num (%u)\n",
+				u4MaxFreqListNum);
+			break;
+		}
+
+		if (!kalStrCmp(pucPtr, ""))
+			continue;
+
+		i4Ret = kalkStrtou32(pucPtr, 0, &u4Freq);
+		if (i4Ret || !u4Freq)
+			continue;
+
+		pu4FreqList[u4Idx++] = u4Freq;
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function is to initialize WLAN feature options
@@ -7319,7 +7346,17 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucStaPreferMldAddr,
 		"StaPreferMldAddr", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_STR(prWifiVar->aucMloP2pPreferFreq,
-		"MloP2pPreferFreq", "2462 5180 5975", FEATURE_TO_CUSTOMER);
+		"MloP2pPreferFreq", "2462 5975 5180", FEATURE_TO_CUSTOMER);
+	wlanParseMloFreqList(prAdapter,
+			     prWifiVar->aucMloP2pPreferFreq,
+			     prWifiVar->au4MloP2p2ndLinkFreqs,
+			     ARRAY_SIZE(prWifiVar->au4MloP2p2ndLinkFreqs));
+	INIT_STR(prWifiVar->aucMloSapPreferFreq,
+		"MloSapPreferFreq", "2462 5975 5180", FEATURE_TO_CUSTOMER);
+	wlanParseMloFreqList(prAdapter,
+			     prWifiVar->aucMloSapPreferFreq,
+			     prWifiVar->au4MloSap2ndLinkFreqs,
+			     ARRAY_SIZE(prWifiVar->au4MloSap2ndLinkFreqs));
 	INIT_UINT(prWifiVar->ucMlProbeRetryLimit,
 		"MlProbeRetryLimit", ML_PROBE_RETRY_COUNT, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucEnableMlo, "EnableMlo", FEATURE_ENABLED,

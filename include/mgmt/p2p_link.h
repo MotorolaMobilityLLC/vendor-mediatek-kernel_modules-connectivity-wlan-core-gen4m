@@ -37,6 +37,11 @@ void p2pLinkInitGcOtherLinks(struct ADAPTER *prAdapter,
 
 void p2pLinkUninitGcOtherLinks(struct ADAPTER *prAdapter,
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
+
+void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
+	u_int8_t fgIsApMode,
+	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,
+	uint32_t u4PeerFreq, uint32_t *u4PreferFreq);
 #endif
 
 void p2pTargetBssDescResetConnecting(

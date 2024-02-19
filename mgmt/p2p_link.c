@@ -414,6 +414,277 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+static uint32_t p2pLinkGet2ndLinkFreqByOwnPref(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eMainLinkBand,
+	uint32_t u4MainLinkFreq,
+	uint32_t *u4PreferFreq)
+{
+	struct BSS_INFO *prBssList[MAX_BSSID_NUM] = { 0 };
+	struct RF_CHANNEL_INFO arChnlList[MAX_PER_BAND_CHN_NUM] = { { 0 } };
+	uint32_t *pu4FreqList = NULL, *pu4FreqWhiteList = NULL;
+	uint32_t u4FreqListNum = 0;
+	uint8_t ucFreqWhiteListNum = 0, ucNum2gBss, ucNum5gBss, ucNum6gBss = 0;
+	uint8_t i, ucChnlNum = 0;
+	uint32_t u4Status;
+
+	*u4PreferFreq = 0;
+
+	pu4FreqWhiteList = (uint32_t *)kalMemZAlloc(
+		MAX_CHN_NUM * sizeof(uint32_t),
+		VIR_MEM_TYPE);
+	if (!pu4FreqWhiteList) {
+		DBGLOG(P2P, ERROR, "alloc white freq list failed\n");
+		goto exit;
+	}
+
+	ucNum2gBss = bssGetAliveBssByBand(prAdapter, BAND_2G4, prBssList,
+					  FALSE);
+	ucNum5gBss = bssGetAliveBssByBand(prAdapter, BAND_5G, prBssList,
+					  FALSE);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	ucNum6gBss = bssGetAliveBssByBand(prAdapter, BAND_6G, prBssList,
+					  FALSE);
+#endif
+
+	if (eMainLinkBand == BAND_2G4 &&
+	    (ucNum5gBss > 0 || ucNum6gBss > 0)) {
+		rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE,
+				     MAX_5G_BAND_CHN_NUM,
+				     &ucChnlNum, arChnlList);
+		for (i = 0; i < ucChnlNum; i++) {
+			pu4FreqWhiteList[ucFreqWhiteListNum++] =
+				nicChannelNum2Freq(
+					arChnlList[i].ucChannelNum,
+					arChnlList[i].eBand) / 1000;
+		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE,
+				     MAX_6G_BAND_CHN_NUM,
+				     &ucChnlNum, arChnlList);
+		for (i = 0; i < ucChnlNum; i++) {
+			pu4FreqWhiteList[ucFreqWhiteListNum++] =
+				nicChannelNum2Freq(
+					arChnlList[i].ucChannelNum,
+					arChnlList[i].eBand) / 1000;
+		}
+#endif
+	} else if ((eMainLinkBand == BAND_5G || eMainLinkBand == BAND_6G) &&
+		   ucNum2gBss > 0) {
+		rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
+				     MAX_2G_BAND_CHN_NUM,
+				     &ucChnlNum, arChnlList);
+		for (i = 0; i < ucChnlNum; ++i) {
+			pu4FreqWhiteList[ucFreqWhiteListNum++] =
+				nicChannelNum2Freq(
+					arChnlList[i].ucChannelNum,
+					arChnlList[i].eBand) / 1000;
+		}
+	}
+
+	if (ucFreqWhiteListNum == 0)
+		goto exit;
+
+	pu4FreqList = (uint32_t *)kalMemZAlloc(MAX_CHN_NUM * sizeof(uint32_t),
+		VIR_MEM_TYPE);
+	if (!pu4FreqList) {
+		DBGLOG(P2P, ERROR, "alloc freq list failed\n");
+		goto exit;
+	}
+
+	u4Status = p2pFunGetPreferredFreqList(prAdapter,
+					      IFTYPE_NUM, /* don't care */
+					      pu4FreqList,
+					      &u4FreqListNum,
+					      pu4FreqWhiteList,
+					      ucFreqWhiteListNum);
+	if (u4Status == WLAN_STATUS_SUCCESS && u4FreqListNum > 0)
+		*u4PreferFreq = pu4FreqList[0];
+
+exit:
+	if (pu4FreqWhiteList)
+		kalMemFree(pu4FreqWhiteList, VIR_MEM_TYPE,
+			MAX_CHN_NUM * sizeof(uint32_t));
+
+	if (pu4FreqList)
+		kalMemFree(pu4FreqList, VIR_MEM_TYPE,
+			MAX_CHN_NUM * sizeof(uint32_t));
+
+	return *u4PreferFreq > 0 ?
+		WLAN_STATUS_SUCCESS : WLAN_STATUS_NOT_ACCEPTED;
+}
+
+static uint32_t p2pLinkGet2ndLinkFreqByPeerPref(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,
+	uint32_t u4PeerFreq, uint32_t *u4PreferFreq)
+{
+	enum ENUM_BAND eBand = cnmGetBandByFreq(u4PeerFreq);
+
+	*u4PreferFreq = 0;
+
+	if (u4PeerFreq <= 0)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	if (eMainLinkBand == BAND_2G4) {
+		if (eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		    || eBand == BAND_6G
+#endif
+		    )
+			*u4PreferFreq = u4PeerFreq;
+	} else if (eMainLinkBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		   || eMainLinkBand == BAND_6G
+#endif
+		   ) {
+		if (eBand == BAND_2G4)
+			*u4PreferFreq = u4PeerFreq;
+	}
+
+	return *u4PreferFreq > 0 ?
+		WLAN_STATUS_SUCCESS : WLAN_STATUS_NOT_ACCEPTED;
+}
+
+static uint32_t p2pLinkGet2ndLinkFreqByCfg(struct ADAPTER *prAdapter,
+	u_int8_t fgIsApMode,
+	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,
+	uint32_t *u4PreferFreq)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t *pu4Mlo2ndLinkFreqs = NULL;
+	uint8_t ucArrSize, i;
+
+	*u4PreferFreq = 0;
+
+	if (fgIsApMode) {
+		pu4Mlo2ndLinkFreqs = prWifiVar->au4MloSap2ndLinkFreqs;
+		ucArrSize = ARRAY_SIZE(prWifiVar->au4MloSap2ndLinkFreqs);
+	} else {
+		pu4Mlo2ndLinkFreqs = prWifiVar->au4MloP2p2ndLinkFreqs;
+		ucArrSize = ARRAY_SIZE(prWifiVar->au4MloP2p2ndLinkFreqs);
+	}
+
+	for (i = 0; i < ucArrSize && pu4Mlo2ndLinkFreqs[i]; i++) {
+		uint32_t u4Freq = pu4Mlo2ndLinkFreqs[i];
+		uint8_t ucChannelNum = nicFreq2ChannelNum(u4Freq * 1000);
+		enum ENUM_BAND eBand = cnmGetBandByFreq(u4Freq);
+		u_int8_t fgIsValid = rlmDomainIsLegalChannel(prAdapter,
+			eBand, ucChannelNum);
+
+		if (fgIsValid == FALSE)
+			continue;
+
+		switch (eMainLinkBand) {
+		case BAND_2G4:
+			if (eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			    || eBand == BAND_6G
+#endif
+			    ) {
+				*u4PreferFreq = u4Freq;
+			}
+			break;
+
+		case BAND_5G:
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		case BAND_6G:
+#endif
+			if (eBand == BAND_2G4) {
+				*u4PreferFreq = u4Freq;
+			} else if (prAdapter->rWifiFemCfg.u2WifiDBDCAwithA &&
+				   (eBand >= BAND_5G)) {
+				*u4PreferFreq = u4Freq;
+			}
+			break;
+
+		default:
+			break;
+		}
+
+		if (*u4PreferFreq)
+			break;
+	}
+
+	return *u4PreferFreq > 0 ?
+		WLAN_STATUS_SUCCESS : WLAN_STATUS_NOT_ACCEPTED;
+}
+
+void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
+	u_int8_t fgIsApMode,
+	enum ENUM_BAND eMainLinkBand, uint32_t u4MainLinkFreq,
+	uint32_t u4PeerFreq, uint32_t *u4PreferFreq)
+{
+	*u4PreferFreq = 0;
+
+	DBGLOG(P2P, INFO, "ap=%d, main band=%d freq=%u, peer freq=%u\n",
+		fgIsApMode, eMainLinkBand, u4MainLinkFreq, u4PeerFreq);
+
+	/* <1> by own preference */
+	if (p2pLinkGet2ndLinkFreqByOwnPref(prAdapter,
+					   eMainLinkBand,
+					   u4MainLinkFreq,
+					   u4PreferFreq) ==
+	    WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, INFO,
+			"freq[%u] by p2pLinkGet2ndLinkFreqByOwnPref\n",
+			*u4PreferFreq);
+		return;
+	}
+
+	/* <2> by peer's preference */
+	if (p2pLinkGet2ndLinkFreqByPeerPref(prAdapter,
+					    eMainLinkBand,
+					    u4MainLinkFreq,
+					    u4PeerFreq,
+					    u4PreferFreq) ==
+	    WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, INFO,
+			"freq[%u] by p2pLinkGet2ndLinkFreqByPeerPref\n",
+			*u4PreferFreq);
+		return;
+	}
+
+	/* <3> by wifi cfg */
+	if (p2pLinkGet2ndLinkFreqByCfg(prAdapter, fgIsApMode, eMainLinkBand,
+				       u4MainLinkFreq, u4PreferFreq) ==
+	    WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, INFO,
+			"freq[%u] by p2pLinkGet2ndLinkFreqByCfg\n",
+			*u4PreferFreq);
+		return;
+	}
+
+	/* <4> by default */
+	if (*u4PreferFreq == 0) {
+		if (eMainLinkBand != BAND_2G4) {
+			*u4PreferFreq = nicChannelNum2Freq(
+				AP_DEFAULT_CHANNEL_2G,
+				BAND_2G4) / 1000;
+		} else {
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			enum ENUM_BAND eBand;
+			u_int8_t fgIsValid;
+
+			eBand = cnmGetBandByFreq(AP_DEFAULT_CHANNEL_6G);
+			fgIsValid = rlmDomainIsLegalChannel(prAdapter,
+				eBand, AP_DEFAULT_CHANNEL_6G);
+			if (fgIsValid)
+				*u4PreferFreq = nicChannelNum2Freq(
+					AP_DEFAULT_CHANNEL_6G,
+					BAND_6G) / 1000;
+			else
+#endif
+				*u4PreferFreq = nicChannelNum2Freq(
+					AP_DEFAULT_CHANNEL_5G,
+					BAND_5G) / 1000;
+		}
+
+		DBGLOG(P2P, INFO,
+			"freq[%u] by default\n",
+			*u4PreferFreq);
+	}
+}
 #endif
 
 void p2pTargetBssDescResetConnecting(

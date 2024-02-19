@@ -889,25 +889,31 @@ const char *bssOpBw2Str(struct BSS_INFO *prBssInfo)
 
 uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 			      struct BSS_INFO **prBssList,
-			      uint8_t fgIsForPrefFreq)
+			      u_int8_t fgIsForPrefFreq)
 {
 	struct BSS_INFO *bss;
 	uint8_t i, ucNumAliveBss = 0, fgIsApGoExist = FALSE;
 
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
-		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+	if (fgIsForPrefFreq == TRUE) {
+		for (i = 0; i < MAX_BSSID_NUM; ++i) {
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!IS_BSS_ALIVE(prAdapter, bss) || bss->eBand != eBand)
-			continue;
+			if (!bss || !IS_BSS_ALIVE(prAdapter, bss) ||
+			    bss->eBand != eBand)
+				continue;
 
-		if (IS_BSS_APGO(bss))
-			fgIsApGoExist = TRUE;
+			if (IS_BSS_APGO(bss))
+				fgIsApGoExist = TRUE;
+		}
 	}
 
 	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!IS_BSS_ALIVE(prAdapter, bss) || bss->eBand != eBand)
+		if (!bss || !IS_BSS_ALIVE(prAdapter, bss))
+			continue;
+		else if (eBand != BAND_NULL && eBand != BAND_NUM &&
+			 bss->eBand != eBand)
 			continue;
 
 		/* only get AP/GO if AP/GO exist for pref freq selection */
@@ -923,6 +929,7 @@ uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 			       i);
 		}
 	}
+
 	return ucNumAliveBss;
 }
 
