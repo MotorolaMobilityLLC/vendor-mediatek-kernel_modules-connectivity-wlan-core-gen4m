@@ -2814,15 +2814,18 @@ void *__nicRxPacketAlloc(struct GLUE_INFO *pr, uint8_t **ppucData,
 static void *nicRxPacketAlloc(struct GLUE_INFO *pr, uint8_t **ppucData)
 {
 #if CFG_SUPPORT_SKB_ALLOC_WORK
-	uint32_t ret;
-	void *pvPacket;
+	void *pvPacket = NULL;
 
-	ret = kalSkbAllocDeqSkb(pr, &pvPacket, ppucData);
-	if (ret != WLAN_STATUS_NOT_ACCEPTED)
-		return pvPacket;
-#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+	kalSkbAllocDeqSkb(pr, &pvPacket, ppucData);
+	if (!pvPacket) {
+		pvPacket = kalAllocRxSkbFromPp(
+			pr, ppucData, PAGE_POOL_LAST_IDX);
+	}
 
+	return pvPacket;
+#else
 	return __nicRxPacketAlloc(pr, ppucData, -1);
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 }
 
 /*----------------------------------------------------------------------------*/

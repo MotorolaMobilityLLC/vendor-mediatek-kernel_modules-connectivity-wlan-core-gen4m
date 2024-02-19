@@ -1309,6 +1309,7 @@ struct WIFI_VAR {
 #if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
 	uint32_t u4TputThresholdMbps;
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+	uint32_t u4TxHighTputTh;
 	uint32_t u4RxHighTputTh;
 
 	uint32_t u4MsduReportTimeout;
