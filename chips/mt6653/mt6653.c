@@ -639,6 +639,10 @@ struct BUS_INFO mt6653_bus_info = {
 	.prPseTopCr = &rMt6653PseTopCr,
 	.prPpTopCr = &rMt6653PpTopCr,
 #endif
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	.wf_power_dump_start = mt6653PowerDumpStart,
+	.wf_power_dump_end = mt6653PowerDumpEnd,
+#endif
 	.prPseGroup = mt6653_pse_group,
 	.u4PseGroupLen = ARRAY_SIZE(mt6653_pse_group),
 	.pdmaSetup = mt6653WpdmaConfig,
@@ -3528,7 +3532,6 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 
 	if (ad->chip_info->coexpccifon)
 		ad->chip_info->coexpccifon(ad);
-
 dump:
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		WARN_ON_ONCE(TRUE);
@@ -3596,6 +3599,7 @@ static void mt6653_mcu_deinit(struct ADAPTER *ad)
 
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff(ad);
+
 }
 
 static int32_t mt6653_trigger_fw_assert(struct ADAPTER *prAdapter)
@@ -3971,4 +3975,75 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 #endif
 }
 
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+int mt6653PowerDumpStart(void *priv_data, unsigned int force_dump)
+{
+	struct GLUE_INFO *glue = priv_data;
+	struct ADAPTER *ad = glue->prAdapter;
+	uint32_t u4Val = 0;
+
+	if (ad == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL!\n");
+		return 1;
+	}
+
+	if (glue->u4ReadyFlag)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+		u4Val = mtk_pcie_dump_link_info(0);
+#else
+		return 1;
+#endif
+	else
+		return 1;
+
+	if (force_dump == TRUE) {
+		DBGLOG(REQ, INFO, "PowerDumpStart force_dump\n");
+
+		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+
+		if (ad->fgIsFwOwn == TRUE) {
+			DBGLOG(REQ, ERROR,
+				"PowerDumpStart end: driver own fail!\n");
+			return 1;
+		}
+
+		return 0;
+
+	} else {
+		u4Val = (u4Val & 0x0000001F);
+		DBGLOG(REQ, INFO,
+			"PowerDumpStart PCIE status: 0x%08x\n", u4Val);
+
+		if (u4Val == 0x10) {
+			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+
+			if (ad->fgIsFwOwn == TRUE) {
+				DBGLOG(REQ, ERROR,
+					"PowerDumpStart end: driver own fail!\n");
+				return 1;
+			}
+			return 0;
+		}
+
+		return 1;
+	}
+
+}
+
+int mt6653PowerDumpEnd(void *priv_data)
+{
+	struct GLUE_INFO *glue = priv_data;
+	struct ADAPTER *ad = glue->prAdapter;
+
+	if (ad == NULL) {
+		DBGLOG(REQ, ERROR, "prAdapter is NULL!\n");
+		return 0;
+	}
+
+	if (ad->fgIsFwOwn == FALSE && glue->u4ReadyFlag)
+		RECLAIM_POWER_CONTROL_TO_PM(ad, FALSE);
+
+	return 0;
+}
+#endif  /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
 #endif  /* MT6653 */
