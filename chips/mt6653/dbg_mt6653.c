@@ -1235,6 +1235,40 @@ struct PP_TOP_CR rMt6653PpTopCr = {
  *                           P R I V A T E   D A T A
  *******************************************************************************
  */
+#if CFG_MTK_WIFI_MBU
+static uint8_t fgIsMbuTimeout;
+static uint8_t g_uMbuTimeoutCnt;
+
+static uint8_t get_mbu_timeout_status(void)
+{
+	return fgIsMbuTimeout;
+}
+
+static void update_mbu_timeout(uint8_t is_timeout)
+{
+	if (!is_timeout)
+		g_uMbuTimeoutCnt = 0;
+
+	fgIsMbuTimeout = is_timeout;
+	DBGLOG(INIT, INFO, "set timeout:%d\n", fgIsMbuTimeout);
+}
+
+static void check_mbu_timeout(uint32_t u4Val)
+{
+#define MBU_TIMEOUT_PATTERN		0xFFFFDEAD
+#define MBU_TIMEOUT_THRESHOLD_CNT	3
+
+	if (u4Val == MBU_TIMEOUT_PATTERN)
+		g_uMbuTimeoutCnt++;
+	else
+		g_uMbuTimeoutCnt = 0;
+
+	if (!get_mbu_timeout_status() &&
+		g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
+		update_mbu_timeout(1);
+}
+#endif
+
 static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 	const struct wlan_dump_list *dump_list)
 {
@@ -1266,12 +1300,16 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 		if (pCmdList[i].write) {
 			if (pCmdList[i].mask) {
 #if CFG_MTK_WIFI_MBU
-				HAL_MCR_EMI_RD(prAdapter, pCmdList[i].w_addr,
-					&u4ReadVal, &fgRet);
-#else
-				HAL_RMCR_RD(PLAT_DBG, prAdapter,
-					pCmdList[i].w_addr, &u4ReadVal);
+				if (!get_mbu_timeout_status()) {
+					HAL_MCR_EMI_RD(prAdapter,
+						pCmdList[i].w_addr,
+						&u4ReadVal, &fgRet);
+					check_mbu_timeout(u4ReadVal);
+				} else
 #endif
+					HAL_RMCR_RD(PLAT_DBG, prAdapter,
+						pCmdList[i].w_addr, &u4ReadVal);
+
 				if (fgRet == TRUE)
 					HAL_MCR_WR(prAdapter,
 						pCmdList[i].w_addr,
@@ -1291,12 +1329,15 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 
 			u4ReadVal = 0x12345678;
 #if CFG_MTK_WIFI_MBU
-			HAL_MCR_EMI_RD(prAdapter, pCmdList[i].r_addr,
+			if (!get_mbu_timeout_status()) {
+				HAL_MCR_EMI_RD(prAdapter, pCmdList[i].r_addr,
 					&u4ReadVal, &fgRet);
-#else
-			HAL_RMCR_RD(PLAT_DBG, prAdapter, pCmdList[i].r_addr,
-				&u4ReadVal);
+				check_mbu_timeout(u4ReadVal);
+			} else
 #endif
+				HAL_RMCR_RD(PLAT_DBG, prAdapter,
+					pCmdList[i].r_addr, &u4ReadVal);
+
 			u4Offset += snprintf(dumpLineBuf + u4Offset,
 					u4TotalLen - u4Offset,
 					" %08X", u4ReadVal);
@@ -1586,6 +1627,9 @@ void mt6653_DumpBusHangCr(struct ADAPTER *ad)
 		return;
 	}
 
+#if CFG_MTK_WIFI_MBU
+	update_mbu_timeout(0);
+#endif
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	mt6653_dumpConninfraBus(ad);
 #endif
