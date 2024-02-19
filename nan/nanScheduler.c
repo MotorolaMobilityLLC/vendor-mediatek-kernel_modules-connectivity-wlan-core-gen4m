@@ -6037,18 +6037,20 @@ nanSchedNegoChkQosSpecForRspState(
 	 * when peer didn't bring commit 5G CH
 	 * (Not 5G concurrent case)
 	 */
-	if (!nanSchedIsRmtHasCommit5gCh(prAdapter)) {
-		/* Backup prNegoCtrl->u4QosMinSlots
-		 * since it's for common use,
-		 * not only for Resp state
-		 */
-		u4TpQosMinSlots = prNegoCtrl->u4QosMinSlots;
+	if (prAdapter->rWifiVar.fgDbDcModeEn) {
+		if (!nanSchedIsRmtHasCommit5gCh(prAdapter)) {
+			/* Backup prNegoCtrl->u4QosMinSlots
+			 * since it's for common use,
+			 * not only for Resp state
+			 */
+			u4TpQosMinSlots = prNegoCtrl->u4QosMinSlots;
 
-		DBGLOG(NAN, INFO,
-			"Nego QosMinSlots:%d->%d\n",
-			prNegoCtrl->u4QosMinSlots,
-			QOS_MIN_SLOTS_FOR_RESP);
-		prNegoCtrl->u4QosMinSlots = QOS_MIN_SLOTS_FOR_RESP;
+			DBGLOG(NAN, INFO,
+				"Nego QosMinSlots:%d->%d\n",
+				prNegoCtrl->u4QosMinSlots,
+				QOS_MIN_SLOTS_FOR_RESP);
+			prNegoCtrl->u4QosMinSlots = QOS_MIN_SLOTS_FOR_RESP;
+		}
 	}
 
 	if ((prNegoCtrl->u4QosMinSlots == NAN_INVALID_QOS_MIN_SLOTS) &&
@@ -10567,7 +10569,7 @@ uint32_t nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = NULL;
 	uint32_t u4Bw;
 	uint8_t i;
-	const uint32_t band_2G4_slots =  0xFF00FF00;
+	uint32_t band_2G4_slots =  0xFF00FF00;
 	uint32_t band_5G_slots = 0x00FF00FF;
 
 	if (!prAdapter || !prChnl || !pu4SlotBitmap)
@@ -10596,8 +10598,10 @@ uint32_t nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 	/* Todo: Temporarily use predefined bitmap
 	 * should change to get the bitmap from CNM
 	 */
-	if (!prAdapter->rWifiVar.fgDbDcModeEn)
+	if (!prAdapter->rWifiVar.fgDbDcModeEn) {
+		band_2G4_slots = 0x00FF00FC; /* skip slots for channel switch */
 		band_5G_slots = 0x00FF00FC; /* skip slots for channel switch */
+	}
 
 	if (prChnl->u4RawData) {
 		if (prBssInfo->eBand == BAND_2G4)
@@ -10678,30 +10682,32 @@ nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter) {
 			prChnlTimelineList[u4ChnlIdx].rChnlInfo);
 	}
 
-	/* If AIS & NAN are under different band
-	* won't affect current timeline
-	*/
-	if ((eNanBand != BAND_NULL) && (eNonNanBand != eNanBand)) {
-		DBGLOG(NAN, INFO, "Skip. NDP B%d != AIS B%d\n",
-			eNanBand, eNonNanBand);
-		return WLAN_STATUS_NOT_ACCEPTED;
-	}
-
-	/* Skip if NDP fix channel on 2.4G, and AIS operated under 5G */
-	if (nanRegGetNanChnlBand
-		(nanSchedGetFixedChnlInfo(prAdapter))
-		== BAND_2G4) {
-		if (eNonNanBand != BAND_2G4) {
-			DBGLOG(NAN, INFO,
-			"Skip. NDP fixed on 2.4G, AIS use 5G\n");
+	if (prAdapter->rWifiVar.fgDbDcModeEn) {
+		/* If AIS & NAN are under different band
+		 * won't affect current timeline
+		 */
+		if ((eNanBand != BAND_NULL) && (eNonNanBand != eNanBand)) {
+			DBGLOG(NAN, INFO, "Skip. NDP B%d != AIS B%d\n",
+				eNanBand, eNonNanBand);
 			return WLAN_STATUS_NOT_ACCEPTED;
 		}
-	} else if (eNonNanBand == BAND_2G4) {
-		/* Skip if NDP not fix channel at 2.4G
-		* but AIS operated under 2.4G
-		*/
-		DBGLOG(NAN, INFO, "Skip. NDP Null, AIS in 2G\n");
-		return WLAN_STATUS_NOT_ACCEPTED;
+
+		/* Skip if NDP fix channel on 2.4G, and AIS operated under 5G */
+		if (nanRegGetNanChnlBand
+			(nanSchedGetFixedChnlInfo(prAdapter))
+			== BAND_2G4) {
+			if (eNonNanBand != BAND_2G4) {
+				DBGLOG(NAN, INFO,
+				"Skip. NDP fixed on 2.4G, AIS use 5G\n");
+				return WLAN_STATUS_NOT_ACCEPTED;
+			}
+		} else if (eNonNanBand == BAND_2G4) {
+			/* Skip if NDP not fix channel at 2.4G
+			 * but AIS operated under 2.4G
+			 */
+			DBGLOG(NAN, INFO, "Skip. NDP Null, AIS in 2G\n");
+			return WLAN_STATUS_NOT_ACCEPTED;
+		}
 	}
 
 	for (u4SlotOffset = 0;
