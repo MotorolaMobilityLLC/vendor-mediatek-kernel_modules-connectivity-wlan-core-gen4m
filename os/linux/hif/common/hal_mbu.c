@@ -262,7 +262,9 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 
 	/* 5. Trigger events */
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
-	if (IS_CBTOP_PHY_ADDR(u4ReadAddr)) {
+	if (IS_CONN_INFRA_MCU_ADDR(u4ReadAddr)) {
+		u4Val = u4ReadAddr - CONN_INFRA_REMAPPING_OFFSET;
+	} else if (IS_CBTOP_PHY_ADDR(u4ReadAddr)) {
 		u4Val = u4ReadAddr;
 	} else {
 		/* set cb top remap */
@@ -283,7 +285,6 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 			DBGLOG(HAL, ERROR,
 			       "Read[0x%08x] timeout Sta[0x%08x]\n",
 			       u4ReadAddr, prMsiMirror->u4IntSta);
-			fgDbg = TRUE;
 			fgRet = FALSE;
 			*pu4Val = MBU_TIMEOUT_VALUE;
 			goto exit;
