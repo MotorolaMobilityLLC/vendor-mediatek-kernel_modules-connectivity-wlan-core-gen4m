@@ -2918,6 +2918,12 @@ struct ADAPTER {
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	uint8_t ucNeedWaitFWMlsrSWDone;
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	uint8_t ucGenSwitchStatus;
+	uint8_t ucStopMMIO;
+#endif
+
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

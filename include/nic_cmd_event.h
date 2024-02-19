@@ -3973,6 +3973,12 @@ struct CMD_LP_DBG_CTRL {
 	uint8_t aucReserved[3];
 };
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+struct CMD_UPDATA_LP_PARAM {
+	uint8_t ucPcieTransitionStatus	;/*0: Init, 1: Start, 2: End*/
+};
+#endif
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

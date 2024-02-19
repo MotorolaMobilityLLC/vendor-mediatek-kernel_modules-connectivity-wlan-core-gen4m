@@ -1062,6 +1062,7 @@ enum pcie_msi_int_type {
 	MDDP_INT,
 	CCIF_INT,
 	AP_DRV_OWN,
+	PCIE_GEN_SWITCH_INT,
 	NONE_INT
 };
 

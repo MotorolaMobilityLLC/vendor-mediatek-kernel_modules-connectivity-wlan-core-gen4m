@@ -934,6 +934,7 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4BusAddr = u4Register;
 
+
 	if (!pu4Value) {
 		DBGLOG(INIT, ERROR, "pu4Value is NULL.\n");
 		return FALSE;
@@ -947,6 +948,11 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 			return FALSE;
 		}
 	}
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	pcie_check_gen_switch_timeout(prAdapter);
+#endif
+
 
 	glGetChipInfo((void **)&prChipInfo);
 	if (!prChipInfo)
@@ -1114,6 +1120,10 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 			return FALSE;
 		}
 	}
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	pcie_check_gen_switch_timeout(prAdapter);
+#endif
 
 	glGetChipInfo((void **)&prChipInfo);
 	if (!prChipInfo)

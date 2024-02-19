@@ -5638,6 +5638,7 @@ wlanoidSet6GPwrMode(struct ADAPTER *prAdapter,
 		     uint32_t *pu4SetInfoLen);
 #endif /* CFG_SUPPORT_WIFI_6G_PWR_MODE */
 
+
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 uint32_t
 wlanoidSendPwrLimitToEmi(struct ADAPTER *prAdapter,
@@ -5684,6 +5685,12 @@ uint32_t
 wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 		void *pvSetBuffer, uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
+#endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+uint32_t
+wlandioStopPcieStatus(struct ADAPTER *prAdapter,
+		uint8_t ucPcieStatus);
 #endif
 
 #endif /* _WLAN_OID_H */
