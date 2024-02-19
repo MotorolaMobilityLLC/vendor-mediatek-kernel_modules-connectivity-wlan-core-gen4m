@@ -3120,7 +3120,7 @@ void kalSetP2pRoleMac(
 		uint8_t ucRoleIdx)
 {
 	COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
-		      prAdapter->rWifiVar.aucInterfaceAddress[ucRoleIdx]);
+		      prAdapter->rWifiVar.aucP2pInterfaceAddress[ucRoleIdx]);
 
 	DBGLOG(P2P, TRACE, "Set Bss[%d], macAddr: " MACSTR "\n",
 		prP2pBssInfo->ucBssIndex, prP2pBssInfo->aucOwnMacAddr);

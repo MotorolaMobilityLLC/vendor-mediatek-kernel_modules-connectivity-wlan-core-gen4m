@@ -2270,34 +2270,31 @@ p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
 #else
 				COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr,
 					prAdapter->rWifiVar
-						.aucInterfaceAddress[
+						.aucP2pInterfaceAddress[
 						prP2pBssInfo->u4PrivateData]);
 				COPY_MAC_ADDR(prP2pBssInfo->aucBSSID,
 					prAdapter->rWifiVar
-						.aucInterfaceAddress[
+						.aucP2pInterfaceAddress[
 						prP2pBssInfo->u4PrivateData]);
 #endif
 				break;
 			case OP_MODE_P2P_DEVICE:
-				{
-					/* Change device address. */
-					DBGLOG(P2P, TRACE,
-						"p2pFuncSwitchOPMode: Switch back to P2P Device.\n");
+				/* Change device address. */
+				DBGLOG(P2P, TRACE,
+					"Switch back to P2P Device.\n");
 
-					p2pChangeMediaState(prAdapter,
-						prP2pBssInfo,
-						MEDIA_STATE_DISCONNECTED);
+				p2pChangeMediaState(prAdapter,
+					prP2pBssInfo,
+					MEDIA_STATE_DISCONNECTED);
 
-					COPY_MAC_ADDR(
-						prP2pBssInfo->aucOwnMacAddr,
-						prAdapter->rWifiVar
-							.aucDeviceAddress);
-					COPY_MAC_ADDR(
-						prP2pBssInfo->aucBSSID,
-						prAdapter->rWifiVar
-							.aucDeviceAddress);
-
-				}
+				COPY_MAC_ADDR(
+					prP2pBssInfo->aucOwnMacAddr,
+					prAdapter->rWifiVar
+						.aucP2pDeviceAddress[0]);
+				COPY_MAC_ADDR(
+					prP2pBssInfo->aucBSSID,
+					prAdapter->rWifiVar
+						.aucP2pDeviceAddress[0]);
 				break;
 			default:
 				ASSERT(FALSE);

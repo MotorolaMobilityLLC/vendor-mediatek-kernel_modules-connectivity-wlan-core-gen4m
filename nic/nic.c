@@ -5880,9 +5880,7 @@ uint32_t nicUpdateRddTestMode(struct ADAPTER *prAdapter,
  * @return none
  */
 /*----------------------------------------------------------------------------*/
-
-uint32_t nicApplyNetworkAddress(struct ADAPTER
-				*prAdapter)
+uint32_t nicApplyNetworkAddress(struct ADAPTER *prAdapter)
 {
 	uint32_t i;
 
@@ -5900,35 +5898,39 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER
 	/* 4 <3> Update new MAC address to all 3 networks */
 	COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
 		      prAdapter->rMyMacAddr);
-	prAdapter->rWifiVar.aucDeviceAddress[0] ^=
-		MAC_ADDR_LOCAL_ADMIN;
+	prAdapter->rWifiVar.aucDeviceAddress[0] = MAC_ADDR_LOCAL_ADMIN;
 
 #if CFG_ENABLE_WIFI_DIRECT
 	for (i = 0; i < KAL_P2P_NUM; i++) {
+		uint8_t j;
 		uint8_t *aucMacAddr;
+		u_int8_t fgIsMacDuplicate;
 
-		aucMacAddr = prAdapter->rWifiVar.aucInterfaceAddress[i];
+		aucMacAddr = prAdapter->rWifiVar.aucP2pDeviceAddress[i];
 		COPY_MAC_ADDR(aucMacAddr, prAdapter->rMyMacAddr);
-		aucMacAddr[0] &= 0xfe;
-		aucMacAddr[0] |= 0x2;
-		kalRandomGetBytes(&aucMacAddr[3], 3);
+		aucMacAddr[0] = MAC_ADDR_LOCAL_ADMIN;
+		do {
+			kalRandomGetBytes(&aucMacAddr[3], 3);
 
-		DBGLOG(NIC, INFO, "P2P_INF[%u] mac: " MACSTR "\n",
-			i, MAC2STR(aucMacAddr));
-	}
+			fgIsMacDuplicate = FALSE;
+			if (EQUAL_MAC_ADDR(aucMacAddr,
+			    prAdapter->rWifiVar.aucDeviceAddress))
+				fgIsMacDuplicate = TRUE;
+			for (j = 0; j < i; j++)
+				if (EQUAL_MAC_ADDR(aucMacAddr,
+				    prAdapter->rWifiVar.aucP2pDeviceAddress[j]))
+					fgIsMacDuplicate = TRUE;
+		} while (fgIsMacDuplicate);
 
-	if (prAdapter->fgIsP2PRegistered) {
-		for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
-			if (prAdapter->rWifiVar.arBssInfoPool[i].eNetworkType ==
-			    NETWORK_TYPE_P2P) {
-				COPY_MAC_ADDR(
-					prAdapter->rWifiVar.arBssInfoPool[i].
-					aucOwnMacAddr,
-					prAdapter->rWifiVar.aucDeviceAddress);
-				DBGLOG(NIC, INFO, "P2P_DEV[%d] mac: " MACSTR "\n",
-					i, MAC2STR(prAdapter->rWifiVar.arBssInfoPool[i].aucOwnMacAddr));
-			}
-		}
+		/* Let p2p group interface MAC addr same as P2P Device */
+		aucMacAddr = prAdapter->rWifiVar.aucP2pInterfaceAddress[i];
+		COPY_MAC_ADDR(aucMacAddr, prAdapter->rWifiVar
+			.aucP2pDeviceAddress[i]);
+
+		DBGLOG(NIC, INFO,
+			"P2P[%u] DEV mac:" MACSTR " INF mac:" MACSTR "\n",
+			i, prAdapter->rWifiVar.aucP2pDeviceAddress[i],
+			prAdapter->rWifiVar.aucP2pInterfaceAddress[i]);
 	}
 #endif
 
