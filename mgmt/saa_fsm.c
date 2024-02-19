@@ -364,7 +364,8 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 
 	/* For wlan0 (AP) + p2p0, don't check the prAisBssInfo for the P2P. */
 #if CFG_ENABLE_WIFI_DIRECT
-	if ((prAdapter->fgIsP2PRegistered) && (IS_STA_IN_P2P(prStaRec))) {
+	if ((prAdapter->fgIsP2PRegistered) &&
+	    (IS_STA_IN_P2P(prAdapter, prStaRec))) {
 		struct MSG_SAA_FSM_COMP *prSaaFsmCompMsg;
 
 		prSaaFsmCompMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -390,7 +391,7 @@ saaFsmSendEventJoinComplete(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 
-	if (IS_STA_IN_AIS(prStaRec)) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		struct MSG_SAA_FSM_COMP *prSaaFsmCompMsg;
 
 		prSaaFsmCompMsg = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
@@ -1330,7 +1331,7 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	if (IS_STA_IN_AIS(prStaRec)) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		struct BSS_INFO *prAisBssInfo;
 		struct AIS_FSM_INFO *prAisFsmInfo;
 		struct BSS_DESC *prBssDesc;
@@ -1397,7 +1398,7 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 					ucWlanIdx,
 					prStaRec->fgIsTxAllowed);
 
-				if (IS_STA_IN_AIS(prStaRec) &&
+				if (IS_STA_IN_AIS(prAdapter, prStaRec) &&
 				    prStaRec->fgIsTxAllowed &&
 				    prAisSpecBssInfo->fgMgmtProtection
 				    && IS_INCORRECT_SEC_RX_FRAME(
@@ -1424,7 +1425,8 @@ uint32_t saaFsmRunEventRxDeauth(struct ADAPTER *prAdapter,
 		}
 	}
 #if CFG_ENABLE_WIFI_DIRECT
-	else if (prAdapter->fgIsP2PRegistered && IS_STA_IN_P2P(prStaRec)) {
+	else if (prAdapter->fgIsP2PRegistered &&
+		 IS_STA_IN_P2P(prAdapter, prStaRec)) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		struct MLD_STA_RECORD *mld_starec;
 #endif
@@ -1644,7 +1646,7 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	if (IS_STA_IN_AIS(prStaRec)) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		struct BSS_INFO *prAisBssInfo;
 		struct AIS_FSM_INFO *prAisFsmInfo;
 		struct BSS_DESC *prBssDesc;
@@ -1704,7 +1706,7 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 					ucWlanIdx,
 					prStaRec->fgIsTxAllowed);
 
-				if (IS_STA_IN_AIS(prStaRec) &&
+				if (IS_STA_IN_AIS(prAdapter, prStaRec) &&
 				    prStaRec->fgIsTxAllowed &&
 				    prAisSpecBssInfo->fgMgmtProtection
 				    && IS_INCORRECT_SEC_RX_FRAME(
@@ -1743,7 +1745,8 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 		}
 	}
 #if CFG_ENABLE_WIFI_DIRECT
-	else if (prAdapter->fgIsP2PRegistered && (IS_STA_IN_P2P(prStaRec))) {
+	else if (prAdapter->fgIsP2PRegistered &&
+		 (IS_STA_IN_P2P(prAdapter, prStaRec))) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		struct MLD_STA_RECORD *mld_starec;
 #endif

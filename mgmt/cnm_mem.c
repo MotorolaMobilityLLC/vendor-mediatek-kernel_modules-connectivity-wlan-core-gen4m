@@ -1036,7 +1036,8 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec
 	 * Update system operation parameters for AP mode
 	 */
 	if (IS_BSS_INDEX_VALID(prStaRec->ucBssIndex) &&
-		prAdapter->fgIsP2PRegistered && (IS_STA_IN_P2P(prStaRec))) {
+		prAdapter->fgIsP2PRegistered &&
+		(IS_STA_IN_P2P(prAdapter, prStaRec))) {
 		struct BSS_INFO *prBssInfo;
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
@@ -2172,7 +2173,7 @@ cnmPeerUpdate(struct ADAPTER *prAdapter, void *pvSetBuffer,
 			prStaRec->ucPhyTypeSet |= PHY_TYPE_BIT_OFDM;
 		}
 	}
-	if (IS_STA_IN_AIS(prStaRec)) {
+	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		struct CONNECTION_SETTINGS *prConnSettings;
 		enum ENUM_WEP_STATUS eEncStatus;
 

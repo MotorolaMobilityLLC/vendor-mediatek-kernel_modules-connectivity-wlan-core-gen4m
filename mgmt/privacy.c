@@ -369,7 +369,7 @@ secTxPortControlCheck(struct ADAPTER *prAdapter,
 		if (prAdapter->rWifiVar.rConnSettings.fgWapiMode)
 			return TRUE;
 #endif
-		if (IS_STA_IN_AIS(prStaRec)) {
+		if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 			if (!prAdapter->rWifiVar.
 			    rAisSpecificBssInfo.fgTransmitKeyExist
 			    && (prAdapter->rWifiVar.rConnSettings.eEncStatus ==

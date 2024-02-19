@@ -1258,11 +1258,11 @@ enum ENUM_PARAM_NAN_MODE_T {
  */
 #define IS_BSS_INFO_IN_AIS(prBssInfo) \
 	(prBssInfo->eNetworkType == NETWORK_TYPE_AIS)
-#define IS_STA_IN_AIS(_prStaRec) \
-	(prAdapter->aprBssInfo[(_prStaRec)->ucBssIndex]->eNetworkType \
+#define IS_STA_IN_AIS(_prAdapter, _prStaRec) \
+	(_prAdapter->aprBssInfo[(_prStaRec)->ucBssIndex]->eNetworkType \
 	== NETWORK_TYPE_AIS)
-#define IS_STA_IN_P2P(_prStaRec) \
-	(prAdapter->aprBssInfo[(_prStaRec)->ucBssIndex]->eNetworkType \
+#define IS_STA_IN_P2P(_prAdapter, _prStaRec) \
+	(_prAdapter->aprBssInfo[(_prStaRec)->ucBssIndex]->eNetworkType \
 	== NETWORK_TYPE_P2P)
 #define IS_STA_LEGACY_TYPE(_prStaRec) \
 	((_prStaRec->eStaType) & STA_TYPE_LEGACY_MASK)

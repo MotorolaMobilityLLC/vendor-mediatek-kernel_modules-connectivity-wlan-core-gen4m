@@ -4260,7 +4260,7 @@ p2pFuncValidateAuth(struct ADAPTER *prAdapter,
 #endif
 
 		if (prStaRec->ucStaState > STA_STATE_1 &&
-		    IS_STA_IN_P2P(prStaRec)) {
+		    IS_STA_IN_P2P(prAdapter, prStaRec)) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			struct MLD_STA_RECORD *prMldSta;
 			struct STA_RECORD *sta, *temp;
@@ -6807,7 +6807,7 @@ void p2pFuncGenerateP2p_IEForAssocRsp(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (IS_STA_IN_P2P(prStaRec)) {
+	if (IS_STA_IN_P2P(prAdapter, prStaRec)) {
 		DBGLOG(P2P, TRACE, "Generate NULL P2P IE for Assoc Rsp.\n");
 
 		p2pFuncGenerateP2P_IE(prAdapter,
