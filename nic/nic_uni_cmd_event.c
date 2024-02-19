@@ -1619,7 +1619,8 @@ uint32_t nicUniCmdSchedScanTagChnlInfo(struct ADAPTER *ad, uint8_t *buf,
 	uint8_t i;
 	uint8_t *pos = tag->aucChnlInfoBuffer;
 	uint8_t num = KAL_MIN((int)cmd->ucChnlNum, 64);
-	uint16_t len = sizeof(*tag) + num * sizeof(struct CHANNEL_INFO);
+	uint16_t len = sizeof(*tag) +
+			ALIGN_4(num * sizeof(struct CHANNEL_INFO));
 
 	if (num == 0)
 		return 0;
