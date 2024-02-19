@@ -671,7 +671,7 @@ struct BUS_INFO mt6653_bus_info = {
 		.u4MaxMsiNum = ARRAY_SIZE(mt6653_pcie_msi_layout),
 	},
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-	.is_en_drv_unmask_pci_msi_irq = TRUE,
+	.is_en_drv_ctrl_pci_msi_irq = TRUE,
 #endif
 	.showDebugInfo = mt6653ShowPcieDebugInfo,
 #endif /* _HIF_PCIE */
