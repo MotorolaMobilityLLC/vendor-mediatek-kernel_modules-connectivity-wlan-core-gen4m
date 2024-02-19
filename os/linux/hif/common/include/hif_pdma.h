@@ -315,6 +315,10 @@
 #define HIF_DEV_REG_HISTORY_SIZE    100
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+#if CFG_SUPPORT_HIF_REG_WORK
+#define HIF_REG_WORK_WAIT_TIME	100  /* 100us */
+#define HIF_REG_WORK_WAIT_CNT	1000
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 
 enum WIFI_MEM_OPER_SETS {
 	/* TRX DESC */
@@ -1146,6 +1150,21 @@ struct HIF_DEV_REG_RECORD {
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
+#if CFG_SUPPORT_HIF_REG_WORK
+enum WF_REG_REQ_OP {
+	WF_REG_READ = 0,
+	WF_REG_WRITE,
+	WF_REG_NUM
+};
+
+struct WF_REG_REQ {
+	enum WF_REG_REQ_OP eOp;
+	uint32_t u4Addr;
+	uint32_t u4Val;
+	u_int8_t fgIsDone;
+};
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
+
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
@@ -1524,17 +1543,15 @@ void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 		   struct mt66xx_hif_driver_data *prDriverData);
 #endif
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if CFG_SUPPORT_HIF_REG_WORK
 int32_t wf_reg_read_wrapper(void *priv,
 	uint32_t addr, uint32_t *value);
 int32_t wf_reg_write_wrapper(void *priv,
 	uint32_t addr, uint32_t value);
-int32_t wf_reg_write_mask_wrapper(void *priv,
-	uint32_t addr, uint32_t mask, uint32_t value);
-int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv,
-	void *priv_data);
-int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv,
-	void *priv_data);
-void halHandleBtDumpviaWF(struct ADAPTER *prAdapter);
-#endif
+int32_t wf_reg_write_mask_wrapper(
+	void *priv, uint32_t addr, uint32_t mask, uint32_t value);
+int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data);
+int32_t wf_reg_end_wrapper(enum connv3_drv_type from_drv, void *priv_data);
+void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo);
+#endif /* CFG_SUPPORT_HIF_REG_WORK */
 #endif /* HIF_PDMA_H__ */

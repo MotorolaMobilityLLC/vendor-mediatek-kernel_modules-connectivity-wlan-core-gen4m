@@ -3019,12 +3019,12 @@ static void register_connv3_cbs(void)
 #endif
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+
+#if CFG_SUPPORT_HIF_REG_WORK
 	cb.cr_cb.priv_data = prGlueInfo;
 	cb.cr_cb.read = wf_reg_read_wrapper;
 	cb.cr_cb.write = wf_reg_write_wrapper;
 	cb.cr_cb.write_mask = wf_reg_write_mask_wrapper;
-
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	cb.hif_dump_cb.hif_dump_start = wf_reg_start_wrapper;
 	cb.hif_dump_cb.hif_dump_end = wf_reg_end_wrapper;
 #endif
