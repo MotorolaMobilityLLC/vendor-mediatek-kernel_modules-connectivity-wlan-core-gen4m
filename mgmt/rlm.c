@@ -1342,9 +1342,20 @@ static void rlmFillHtCapIE(struct ADAPTER *prAdapter,
 
 	for (ucIdx = 0;
 	     ucIdx < wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
-	     ucIdx++)
-		prSupMcsSet->aucRxMcsBitmask[ucIdx] = BITS(0, 7);
+	     ucIdx++) {
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+			P2P_FORCE_TRX_CONFIG_NONE) {
+			if (prBssInfo->ucOpChangeRxNss > ucIdx)
+				prSupMcsSet->aucRxMcsBitmask[ucIdx] =
+				BITS(0, 7);
+		} else
+#endif
+#endif
+			prSupMcsSet->aucRxMcsBitmask[ucIdx] = BITS(0, 7);
 
+	}
 	/* prSupMcsSet->aucRxMcsBitmask[0] = BITS(0, 7); */
 
 	if (fg40mAllowed && IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucMCS32))
@@ -2053,7 +2064,60 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prVhtOpMode);
 }
+#if CFG_ENABLE_WIFI_DIRECT
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+static void rlmFillVhtCapIeMcs(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prBssInfo,
+				struct VHT_SUPPORTED_MCS_FIELD
+					*prVhtSupportedMcsSet,
+				uint8_t *ucOffset,
+				uint8_t *ucMcsMap,
+				uint8_t ucAntIdx)
+{
+	if (ucAntIdx < wlanGetSupportNss(prAdapter,
+		prBssInfo->ucBssIndex)) {
+		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+			P2P_FORCE_TRX_CONFIG_NONE) {
+			if (prBssInfo->ucOpChangeTxNss > ucAntIdx)
+				*ucMcsMap = VHT_CAP_INFO_MCS_MAP_MCS7;
+			else
+				*ucMcsMap =
+					VHT_CAP_INFO_MCS_NOT_SUPPORTED;
+			prVhtSupportedMcsSet->u2TxMcsMap |=
+				((*ucMcsMap) << (*ucOffset));
+			if (prBssInfo->ucOpChangeRxNss > ucAntIdx)
+				(*ucMcsMap) =
+					VHT_CAP_INFO_MCS_MAP_MCS7;
+			else
+				(*ucMcsMap) =
+					VHT_CAP_INFO_MCS_NOT_SUPPORTED;
+			prVhtSupportedMcsSet->u2RxMcsMap |=
+				((*ucMcsMap) << (*ucOffset));
+		} else {
+			(*ucMcsMap) = VHT_CAP_INFO_MCS_MAP_MCS9;
+			prVhtSupportedMcsSet->u2RxMcsMap |=
+				((*ucMcsMap) << (*ucOffset));
+			prVhtSupportedMcsSet->u2TxMcsMap |=
+				((*ucMcsMap) << (*ucOffset));
+		}
+	} else {
+		(*ucMcsMap) = VHT_CAP_INFO_MCS_NOT_SUPPORTED;
+		prVhtSupportedMcsSet->u2RxMcsMap |=
+			((*ucMcsMap) << (*ucOffset));
+		prVhtSupportedMcsSet->u2TxMcsMap |=
+			((*ucMcsMap) << (*ucOffset));
+	}
 
+}
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
@@ -2201,7 +2265,14 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 	for (i = 0; i < 8; i++) {
 		uint8_t ucOffset = i * 2;
 		uint8_t ucMcsMap;
-
+#if CFG_ENABLE_WIFI_DIRECT
+		rlmFillVhtCapIeMcs(prAdapter,
+						prBssInfo,
+						prVhtSupportedMcsSet,
+						&ucOffset,
+						&ucMcsMap,
+						i);
+#else
 		if (i < wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
 			ucMcsMap = VHT_CAP_INFO_MCS_MAP_MCS9;
 		else
@@ -2209,6 +2280,7 @@ VHT_CAP_INFO_COMPRESSED_STEERING_NUMBER_OF_BEAMFORMER_ANTENNAS_4_SUP;
 
 		prVhtSupportedMcsSet->u2RxMcsMap |= (ucMcsMap << ucOffset);
 		prVhtSupportedMcsSet->u2TxMcsMap |= (ucMcsMap << ucOffset);
+#endif
 	}
 
 #if 0

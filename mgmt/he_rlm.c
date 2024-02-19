@@ -239,9 +239,24 @@ static void heRlmFillMCSMap(
 		} else {
 			ucMcsMap = HE_CAP_INFO_MCS_NOT_SUPPORTED;
 		}
-
-		prHeSupportedMcsSet->u2RxMcsMap |= (ucMcsMap << ucOffset);
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+			P2P_FORCE_TRX_CONFIG_NONE &&
+			prBssInfo->ucOpChangeTxNss <= i)
+			ucMcsMap = VHT_CAP_INFO_MCS_NOT_SUPPORTED;
+#endif
+#endif
 		prHeSupportedMcsSet->u2TxMcsMap |= (ucMcsMap << ucOffset);
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+		if (p2pFuncGetForceTrxConfig(prAdapter) !=
+			P2P_FORCE_TRX_CONFIG_NONE &&
+			prBssInfo->ucOpChangeRxNss <= i)
+			ucMcsMap = VHT_CAP_INFO_MCS_NOT_SUPPORTED;
+#endif
+#endif
+		prHeSupportedMcsSet->u2RxMcsMap |= (ucMcsMap << ucOffset);
 	}
 
 	prHeSupportedMcsSet->u2RxMcsMap =

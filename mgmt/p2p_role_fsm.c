@@ -703,6 +703,18 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 			if (prP2pChnlReqInfo->fgIsChannelRequested) {
 				p2pFuncReleaseCh(prAdapter, ucBssIndex,
 					prP2pChnlReqInfo);
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+				if (p2pFuncGetForceTrxConfig(prAdapter) ==
+					P2P_FORCE_TRX_CONFIG_MCS7)
+					p2pFuncSetApNss(prAdapter,
+						prP2pRoleFsmInfo->ucBssIndex,
+						1, 1);
+				else if (p2pFuncGetForceTrxConfig(prAdapter) ==
+					P2P_FORCE_TRX_CONFIG_MCS9)
+					p2pFuncSetApNss(prAdapter,
+						prP2pRoleFsmInfo->ucBssIndex,
+						2, 1);
+#endif
 #if CFG_SUPPORT_CCM
 				/* GO/SAP notify other GO/SAP to CSA if MCC.
 				 * MLO GO/SAP ch abort twice.

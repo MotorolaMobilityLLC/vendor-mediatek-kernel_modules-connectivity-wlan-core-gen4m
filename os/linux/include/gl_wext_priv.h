@@ -808,6 +808,10 @@ int priv_driver_get_wifi_type(struct net_device *prNetDev,
 int priv_driver_set_power_control(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_DYNAMIC_PWR_LIMIT */
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+int priv_driver_set_force_trx_config(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif
 #if CFG_WMT_RESET_API_SUPPORT
 int priv_driver_trigger_whole_chip_reset(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

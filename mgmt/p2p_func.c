@@ -2486,7 +2486,115 @@ void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
 
 	} while (FALSE);
 }				/* p2pFuncAcquireCh */
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+void p2pFuncSetApNss(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		uint8_t ucOpTxNss,
+		uint8_t ucOpRxNss)
+{
+	struct WIFI_EVENT *pEvent;
+	struct EVENT_OPMODE_CHANGE *prEvtOpMode =
+		(struct EVENT_OPMODE_CHANGE *) NULL;
 
+	pEvent = (struct WIFI_EVENT *)
+		kalMemAlloc(sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_OPMODE_CHANGE),
+		VIR_MEM_TYPE);
+	if (!pEvent)
+		return;
+
+	prEvtOpMode = (struct EVENT_OPMODE_CHANGE *)
+		&(pEvent->aucBuffer[0]);
+
+	prEvtOpMode->ucBssBitmap = BIT(ucBssIdx);
+	prEvtOpMode->ucEnable = TRUE;
+	prEvtOpMode->ucOpTxNss = ucOpTxNss;
+	prEvtOpMode->ucOpRxNss = ucOpRxNss;
+	prEvtOpMode->ucReason =
+		EVENT_OPMODE_CHANGE_REASON_USER_CONFIG;
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	if (prEvtOpMode->ucEnable) {
+		prAdapter->fgANTCtrl = true;
+		prAdapter->ucANTCtrlReason =
+			EVENT_OPMODE_CHANGE_REASON_ANT_CTRL;
+		prAdapter->ucANTCtrlPendingCount = 0;
+	}
+#endif
+	cnmOpmodeEventHandler(
+		prAdapter,
+		(struct WIFI_EVENT *) pEvent);
+
+	kalMemFree(pEvent, VIR_MEM_TYPE,
+		sizeof(struct WIFI_EVENT)+
+		sizeof(struct EVENT_OPMODE_CHANGE));
+
+	DBGLOG(P2P, INFO,
+			"P2p Set AP Nss tx:%d rx:%d\n",
+			ucOpTxNss,
+			ucOpRxNss);
+
+}
+
+void p2pFuncSetForceTrxConfig(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		uint8_t ucScenarioConfig)
+{
+	prAdapter->rWifiVar.ucForceTrxConfig =
+		ucScenarioConfig;
+	if (ucScenarioConfig == 1) {
+		prAdapter->rWifiVar.ucAp2gBandwidth = 0;
+		prAdapter->rWifiVar.ucAp5gBandwidth = 0;
+		prAdapter->rWifiVar.ucAp6gBandwidth = 0;
+	} else if (ucScenarioConfig == 2) {
+		prAdapter->rWifiVar.ucAp2gBandwidth = 0;
+		prAdapter->rWifiVar.ucAp5gBandwidth = 1;
+		prAdapter->rWifiVar.ucAp6gBandwidth = 1;
+	}
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (ucScenarioConfig == 1) {
+		prAdapter->rWifiVar.ucHeMaxMcsMap2g =
+			HE_CAP_INFO_MCS_MAP_MCS7;
+		prAdapter->rWifiVar.ucHeMaxMcsMap5g =
+			HE_CAP_INFO_MCS_MAP_MCS7;
+		prAdapter->rWifiVar.ucHeMaxMcsMap6g =
+			HE_CAP_INFO_MCS_MAP_MCS7;
+	} else if (ucScenarioConfig == 2) {
+		prAdapter->rWifiVar.ucHeMaxMcsMap2g =
+			HE_CAP_INFO_MCS_MAP_MCS9;
+		prAdapter->rWifiVar.ucHeMaxMcsMap5g =
+			HE_CAP_INFO_MCS_MAP_MCS9;
+		prAdapter->rWifiVar.ucHeMaxMcsMap6g =
+			HE_CAP_INFO_MCS_MAP_MCS9;
+	} else {
+		prAdapter->rWifiVar.ucHeMaxMcsMap2g =
+			HE_CAP_INFO_MCS_MAP_MCS11;
+		prAdapter->rWifiVar.ucHeMaxMcsMap5g =
+			HE_CAP_INFO_MCS_MAP_MCS11;
+		prAdapter->rWifiVar.ucHeMaxMcsMap6g =
+			HE_CAP_INFO_MCS_MAP_MCS11;
+	}
+#endif
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (ucScenarioConfig == 1) {
+		prAdapter->rWifiVar.ucApEht =
+			FEATURE_DISABLED;
+	} else {
+		prAdapter->rWifiVar.ucApEht =
+			FEATURE_FORCE_ENABLED;
+	}
+#endif
+
+}
+#endif
+uint8_t
+p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter)
+{
+#if (CFG_SUPPORT_TRX_LIMITED_CONFIG == 1)
+	return prAdapter->rWifiVar.ucForceTrxConfig;
+#else
+	return 0;
+#endif
+}
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
 		uint8_t ucChannel, uint8_t ucAvailable)

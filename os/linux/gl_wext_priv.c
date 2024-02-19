@@ -11320,6 +11320,78 @@ int priv_driver_get_channels(struct net_device *prNetDev,
 
 	return i4BytesWritten;
 }
+#if (CFG_SUPPORT_TRX_LIMITED_CONFIG == 1)
+int priv_driver_set_force_trx_config(struct net_device *prNetDev,
+				char *pcCommand, int i4TotalLen)
+{
+	int32_t i4BytesWritten = 0;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucScenarioConfig;
+	uint32_t u4Ret = 0;
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
+	char arNameStr[] = "_SAR_PwrLevel";
+	char arSettingStr2G[] = "[2G4,20]";
+	char arSettingStr5G[] = "[5G,20]";
+	uint32_t u4SetInfoLen = 0;
+#endif
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (!prGlueInfo)
+		return -1;
+	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prNetDev, &ucRoleIdx) != 0)
+		return -1;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx, &ucBssIdx) !=
+		WLAN_STATUS_SUCCESS)
+		return -1;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucScenarioConfig);
+
+	p2pFuncSetForceTrxConfig(prGlueInfo->prAdapter,
+			ucBssIdx,
+			ucScenarioConfig);
+#if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
+	if (ucScenarioConfig ==
+		P2P_FORCE_TRX_CONFIG_MCS7) {
+		rPwrCtrlParam.fgApplied = TRUE;
+		rPwrCtrlParam.index = 1;
+		rPwrCtrlParam.name = arNameStr;
+		rPwrCtrlParam.newSetting = arSettingStr2G;
+
+		prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+		kalIoctl(prGlueInfo,
+			 wlanoidTxPowerControl,
+			 (void *)&rPwrCtrlParam,
+			 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			 &u4SetInfoLen);
+
+		rPwrCtrlParam.newSetting = arSettingStr5G;
+		kalIoctl(prGlueInfo,
+			 wlanoidTxPowerControl,
+			 (void *)&rPwrCtrlParam,
+			 sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+			 &u4SetInfoLen);
+	} else {
+		rPwrCtrlParam.fgApplied = FALSE;
+		rPwrCtrlParam.index = 0;
+		rPwrCtrlParam.name = arNameStr;
+		rPwrCtrlParam.newSetting = NULL;
+	}
+#endif
+
+	return i4BytesWritten;
+}
+#endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 int priv_driver_set_rdd_op_mode(struct net_device *prNetDev,

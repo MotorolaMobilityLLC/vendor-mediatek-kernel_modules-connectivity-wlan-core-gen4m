@@ -135,7 +135,22 @@ static void ehtRlmFillBW80MCSMap(
 		sizeof(struct EHT_SUPPORTED_MCS_BW80_160_320_FIELD));
 	ucSupportedNss = wlanGetSupportNss(prAdapter,
 		prBssInfo->ucBssIndex);
-	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+
+	DBGLOG(RLM, INFO,
+		"eht uc80MNss: %d, op tx: %d, op rx: %d\n",
+		ucSupportedNss,
+		prBssInfo->ucOpChangeTxNss,
+		prBssInfo->ucOpChangeRxNss);
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+	if (p2pFuncGetForceTrxConfig(prAdapter) ==
+		P2P_FORCE_TRX_CONFIG_MCS9)
+		ucMcsMap = prBssInfo->ucOpChangeRxNss +
+			(prBssInfo->ucOpChangeTxNss << 4);
+	else
+#endif
+#endif
+		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
 
 	if (prAdapter->fgMcsMapBeenSet & SET_EHT_BW80_MCS_MAP) {
 		WLAN_SET_FIELD_24(_prEhtSupportedMcsSet,
@@ -151,8 +166,26 @@ static void ehtRlmFillBW80MCSMap(
 			_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
 	} else {
 		_prEhtSupportedMcsSet->eht_mcs_0_9 = ucMcsMap;
-		_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
-		_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+		if (p2pFuncGetForceTrxConfig(prAdapter) ==
+			P2P_FORCE_TRX_CONFIG_MCS9) {
+			_prEhtSupportedMcsSet->eht_mcs_10_11 = 0;
+			_prEhtSupportedMcsSet->eht_mcs_12_13 = 0;
+		} else {
+			_prEhtSupportedMcsSet->eht_mcs_10_11 =
+				ucMcsMap;
+			_prEhtSupportedMcsSet->eht_mcs_12_13 =
+				ucMcsMap;
+		}
+#else
+	_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+#endif
+#else
+	_prEhtSupportedMcsSet->eht_mcs_10_11 = ucMcsMap;
+	_prEhtSupportedMcsSet->eht_mcs_12_13 = ucMcsMap;
+#endif
 	}
 }
 
@@ -169,7 +202,23 @@ static void ehtRlmFillBW20MCSMap(
 		sizeof(struct EHT_SUPPORTED_MCS_BW20_FIELD));
 	ucSupportedNss = wlanGetSupportNss(prAdapter,
 		prBssInfo->ucBssIndex);
-	ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
+
+	DBGLOG(RLM, INFO,
+		"eht uc20MNss: %d, op tx: %d, op rx: %d\n",
+		ucSupportedNss,
+		prBssInfo->ucOpChangeTxNss,
+		prBssInfo->ucOpChangeRxNss);
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+	if (p2pFuncGetForceTrxConfig(prAdapter) ==
+		P2P_FORCE_TRX_CONFIG_MCS9)
+		ucMcsMap = prBssInfo->ucOpChangeRxNss +
+			(prBssInfo->ucOpChangeTxNss << 4);
+	else
+#endif
+#endif
+		ucMcsMap = ucSupportedNss + (ucSupportedNss << 4);
 
 	if (prAdapter->fgMcsMapBeenSet & SET_EHT_BW20_MCS_MAP) {
 		WLAN_SET_FIELD_32(_prEhtSupportedMcsSet,
@@ -187,8 +236,26 @@ static void ehtRlmFillBW20MCSMap(
 	} else {
 		_prEhtSupportedMcsSet->eht_bw20_mcs_0_7 = ucMcsMap;
 		_prEhtSupportedMcsSet->eht_bw20_mcs_8_9 = ucMcsMap;
+#if CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+		if (p2pFuncGetForceTrxConfig(prAdapter) ==
+			P2P_FORCE_TRX_CONFIG_MCS9) {
+			_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = 0;
+			_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = 0;
+		} else {
+			_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 =
+				ucMcsMap;
+			_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 =
+				ucMcsMap;
+		}
+#else
 		_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
 		_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
+#endif
+#else
+		_prEhtSupportedMcsSet->eht_bw20_mcs_10_11 = ucMcsMap;
+		_prEhtSupportedMcsSet->eht_bw20_mcs_12_13 = ucMcsMap;
+#endif
 	}
 }
 
