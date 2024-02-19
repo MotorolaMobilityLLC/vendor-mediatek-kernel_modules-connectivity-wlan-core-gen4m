@@ -217,6 +217,7 @@ static void heRlmFillMCSMap(
 	struct _HE_SUPPORTED_MCS_FIELD *prHeSupportedMcsSet)
 {
 	uint8_t i, ucSupportedNss;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	kalMemZero((void *) prHeSupportedMcsSet,
 		sizeof(struct _HE_SUPPORTED_MCS_FIELD));
@@ -227,11 +228,17 @@ static void heRlmFillMCSMap(
 		uint8_t ucMcsMap;
 
 		if (i < ucSupportedNss) {
-			if (prAdapter->fgMcsMapBeenSet & SET_HE_MCS_MAP)
+			if (prAdapter->fgMcsMapBeenSet & SET_HE_MCS_MAP) {
 				ucMcsMap = kal_min_t(uint8_t,
 					prAdapter->ucMcsMapSetFromSigma,
 					HE_CAP_INFO_MCS_MAP_MCS11);
-			else
+			} else if (IS_BSS_AIS(prBssInfo) &&
+				 prWifiVar->ucStaMaxMcsMap != 0xFF) {
+				ucMcsMap = kal_min_t(uint8_t,
+					prWifiVar->ucStaMaxMcsMap,
+					heRlmGetHeSupportedMcs(prAdapter,
+								prBssInfo));
+			} else
 				ucMcsMap = heRlmGetHeSupportedMcs(prAdapter,
 								prBssInfo);
 
