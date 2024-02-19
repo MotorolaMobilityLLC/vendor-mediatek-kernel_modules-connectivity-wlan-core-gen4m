@@ -2149,6 +2149,17 @@ void nicRxProcessEventPacket(struct ADAPTER *prAdapter,
 	prChipInfo = prAdapter->chip_info;
 	prEvent = (struct WIFI_EVENT *)
 			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
+
+	if (prEvent->u2PacketLength > RX_GET_PACKET_MAX_SIZE(prAdapter)
+		|| prEvent->u2PacketLength < sizeof(struct WIFI_EVENT)) {
+		DBGLOG(NIC, ERROR,
+			"Invalid RX event: ID[0x%02X] SEQ[%u] LEN[%u]\n",
+			prEvent->ucEID, prEvent->ucSeqNum,
+			prEvent->u2PacketLength);
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		return;
+	}
+
 	if (prEvent->ucEID != EVENT_ID_DEBUG_MSG
 	    && prEvent->ucEID != EVENT_ID_ASSERT_DUMP) {
 		DBGLOG(NIC, TRACE,

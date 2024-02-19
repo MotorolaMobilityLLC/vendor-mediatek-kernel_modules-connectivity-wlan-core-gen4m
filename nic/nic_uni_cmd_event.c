@@ -8278,6 +8278,16 @@ void nicRxProcessUniEventPacket(struct ADAPTER *prAdapter,
 	prEvent = (struct WIFI_UNI_EVENT *)
 			(prSwRfb->pucRecvBuff + prChipInfo->rxd_size);
 
+	if (prEvent->u2PacketLength > RX_GET_PACKET_MAX_SIZE(prAdapter)
+		|| prEvent->u2PacketLength < sizeof(struct WIFI_UNI_EVENT)) {
+		DBGLOG(NIC, ERROR,
+			"Invalid RX uni event: ID[0x%02X] SEQ[%u] LEN[%u] OPT[0x%x]\n",
+			prEvent->ucEID, prEvent->ucSeqNum,
+			prEvent->u2PacketLength, prEvent->ucOption);
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		return;
+	}
+
 	if (prEvent->ucEID != UNI_EVENT_ID_FW_LOG_2_HOST) {
 		DBGLOG(NIC, TRACE,
 			"RX UNI EVENT: ID[0x%02X] SEQ[%u] LEN[%u] OPT[0x%x]\n",
