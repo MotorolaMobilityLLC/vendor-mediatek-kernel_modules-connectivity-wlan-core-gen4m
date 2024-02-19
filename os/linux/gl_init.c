@@ -8802,6 +8802,10 @@ static int initWlan(void)
 #endif
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+	mddpInit(bootmode);
+#endif
+
 	kalPlatOpsInit();
 
 	ret = ((glRegisterBus(wlanProbe,
@@ -8828,10 +8832,6 @@ static int initWlan(void)
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	wifi_fwlog_event_func_register(consys_log_event_notification);
-#endif
-
-#if CFG_MTK_MDDP_SUPPORT
-	mddpInit(bootmode);
 #endif
 
 #if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
