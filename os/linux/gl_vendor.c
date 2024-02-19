@@ -1703,18 +1703,18 @@ static void updateApRec(struct ADAPTER *prAdapter,
 /**
  * fill_peer_info() - Collect the associated peer info in the given BSS
  *
+ * @prAdapter: adapter pointer to look up required information
  * @dst: pointing to destination buffer to write STATS_LLS_PEER_INFO.
  * @src: pointer to EMI holding PEER_INFO_RATE_STAT[CFG_STA_REC_NUM]
  * @num_peers: num_peers in upper layer structure before STATS_LLS_PEER_INFO[],
  *	       indicating the number of STATS_LLS_PEER_INFO immediately
  *	       following at the structure.
- * @prAdapter: adapter pointer to look up required information
  * @bss_idx: BSS index of the queried link
  *
  * Traverse all reported starec in EMI and collect by matching the BSS index.
  */
-static uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
-		uint32_t *num_peers, struct ADAPTER *prAdapter, uint8_t bss_idx)
+static uint32_t fill_peer_info(struct ADAPTER *prAdapter, uint8_t *dst,
+			       uint32_t *num_peers, uint8_t bss_idx)
 {
 	struct STATS_LLS_PEER_INFO *dst_peer;
 	struct STATS_LLS_PEER_INFO *src_peer;
@@ -1729,10 +1729,11 @@ static uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 	int32_t cck_idx;
 	uint32_t rxMpduCount;
 	struct STATS_LLS_PEER_INFO peer_info = {0};
+	struct PEER_INFO_RATE_STAT *prPeer = prAdapter->prLinkStatsPeerInfo;
 
 	*num_peers = 0;
-	for (i = 0; i < CFG_STA_REC_NUM; i++, src++) {
-		src_peer = &src->peer;
+	for (i = 0; i < CFG_STA_REC_NUM; i++, prPeer++) {
+		src_peer = &prPeer->peer;
 		if (src_peer->type >= STATS_LLS_WIFI_PEER_INVALID)
 			continue;
 
@@ -1769,7 +1770,7 @@ static uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 
 		dst_peer->num_rate = 0;
 		dst_rate = (struct STATS_LLS_RATE_STAT *)dst;
-		src_rate = src->rate;
+		src_rate = prPeer->rate;
 		ofdm_idx = -1;
 		cck_idx = -1;
 		for (j = 0; j < STATS_LLS_RATE_NUM; j++, src_rate++) {
@@ -1791,9 +1792,9 @@ static uint32_t fill_peer_info(uint8_t *dst, struct PEER_INFO_RATE_STAT *src,
 					DBGLOG(REQ, TRACE,
 						"memcpy(dst_rate=(%td), src_rate=(%td))",
 						(uint8_t *)dst_rate -
-							(uint8_t *)dst,
+						     (uint8_t *)dst,
 						(uint8_t *)src_rate -
-							(uint8_t *)src->rate);
+						     (uint8_t *)prPeer->rate);
 				}
 				kalMemCopyFromIo(dst_rate, src_rate,
 					sizeof(struct STATS_LLS_RATE_STAT));
@@ -1833,7 +1834,7 @@ static void fill_iface_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
 
 	if (prAdapter->ucLinkStatsBssNum == 1) { /* legacy */
 		/* FW report only one record, all data are summed up into one */
-		for (i = 0; i < MAX_BSSID_NUM + 1; i++) {
+		for (i = 0; i < ARRAY_SIZE(prAdapter->aprBssInfo); i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 			if (!prBssInfo)
 				continue;
@@ -1859,8 +1860,8 @@ static void fill_iface_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
  *          num_rate
  *          STATS_LLS_RATE_STAT[] <- up to 200 () *rx_mpdu
  */
-static uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
-		struct ADAPTER *prAdapter, uint8_t bss_idx)
+static uint32_t fill_iface(struct ADAPTER *prAdapter, uint8_t *dst,
+			   uint8_t bss_idx)
 {
 	struct STATS_LLS_WIFI_IFACE_STAT *iface;
 	uint8_t *orig = dst;
@@ -1869,7 +1870,7 @@ static uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 
 	if (prAdapter->ucLinkStatsBssNum == 1)
 		iface_offset = 0;
-	kalMemCopyFromIo(dst, &src->iface[iface_offset],
+	kalMemCopyFromIo(dst, &prAdapter->prLinkStatsIface[iface_offset],
 			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
 	iface = (struct STATS_LLS_WIFI_IFACE_STAT *)dst;
 
@@ -1882,8 +1883,7 @@ static uint32_t fill_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 	}
 	dst += offsetof(struct STATS_LLS_WIFI_IFACE_STAT, peer_info);
 
-	dst += fill_peer_info(dst, src->peer_info,
-			&iface->num_peers, prAdapter, bss_idx);
+	dst += fill_peer_info(prAdapter, dst, &iface->num_peers, bss_idx);
 
 	DBGLOG(REQ, TRACE, "advanced %td bytes, %u peers",
 			dst - orig, iface->num_peers);
@@ -1903,7 +1903,7 @@ static void fill_ml_link_ac_mpdu(struct ADAPTER *prAdapter, uint8_t bss_idx,
 
 	if (prAdapter->ucLinkStatsBssNum == 1) {
 		/* FW report only one record, all data are summed up into one */
-		for (i = 0; i < MAX_BSSID_NUM + 1; i++) {
+		for (i = 0; i < ARRAY_SIZE(prAdapter->aprBssInfo); i++) {
 			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 			if (!prBssInfo)
 				continue;
@@ -1952,16 +1952,15 @@ static uint32_t find_bss_group(struct ADAPTER *prAdapter, uint8_t bss_idx)
 /**
  * fill_ml_link_stats() - Collect the associated link info with the bss_idx
  *
+ * @prAdapter: adapter pointer to look up required information
  * @dst: pointing to destination buffer to write STATS_LLS_WIFI_LINK_STAT
- * @src: pointer to EMI holding STATS_LLS_WIFI_IFACE_STAT[IFACE_NUM]
  * @num_links: num_links in upper layer structure before
  *	       STATS_LLS_WIFI_LINK_STAT[], indicating the number of
  *	       STATS_LLS_WIFI_LINK_STAT immediately following at the structure.
- * @prAdapter: adapter pointer to look up required information
  * @bbss_idx: the BSS index associated to the queried netdev
  */
-static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
-		int32_t *num_links, struct ADAPTER *prAdapter, uint8_t bss_idx)
+static uint32_t fill_ml_link_stats(struct ADAPTER *prAdapter, uint8_t *dst,
+				   int32_t *num_links, uint8_t bss_idx)
 {
 	int max_bss_idx = prAdapter->ucLinkStatsBssNum;
 	struct BSS_INFO *prBssInfo;
@@ -1982,7 +1981,9 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 	*num_links = 0;
 	bss_idx_bitmap = find_bss_group(prAdapter, bss_idx);
 
-	for (b = 0; b < max_bss_idx && b < IFACE_NUM; b++) {
+	for (b = 0; b < max_bss_idx && b < prAdapter->ucLinkStatsBssNum; b++) {
+		struct STATS_LLS_WIFI_IFACE_STAT *prLinkStatsIface;
+
 		if (!(bss_idx_bitmap & BIT(b)))
 			continue;
 
@@ -1992,6 +1993,7 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 			continue;
 		}
 
+		prLinkStatsIface = &prAdapter->prLinkStatsIface[b];
 		(*num_links)++;
 
 		link = (struct STATS_LLS_WIFI_LINK_STAT *)dst;
@@ -2014,7 +2016,7 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 		 *  3. ac[] followed by num_peers,
 		 */
 		/* 1. beacon_rx, special handling */
-		kalMemCopyFromIo(&link->beacon_rx, &src->iface[b].beacon_rx,
+		kalMemCopyFromIo(&link->beacon_rx, &prLinkStatsIface->beacon_rx,
 			sizeof(uint32_t));
 		if (prAdapter->rWifiVar.fgLinkStatsDump) {
 			DBGLOG(REQ, INFO,
@@ -2024,7 +2026,7 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 
 		/*  2. average_tsf_offset, ..., rssi_ack, before ac[] */
 		kalMemCopyFromIo(&link->average_tsf_offset,
-				&src->iface[b].average_tsf_offset,
+			&prLinkStatsIface->average_tsf_offset,
 			offsetof(struct STATS_LLS_WIFI_IFACE_STAT, ac) -
 			offsetof(struct STATS_LLS_WIFI_IFACE_STAT,
 				average_tsf_offset));
@@ -2038,7 +2040,7 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 		}
 
 		/*  3. ac[] followed by num_peers */
-		kalMemCopyFromIo(&link->ac, &src->iface[b].ac,
+		kalMemCopyFromIo(&link->ac, &prLinkStatsIface->ac,
 				sizeof(link->ac));
 		if (prAdapter->rWifiVar.fgLinkStatsDump) {
 			DBGLOG(REQ, INFO, "Copy ac of %zu bytes",
@@ -2047,7 +2049,7 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 
 		fill_ml_link_ac_mpdu(prAdapter, b, link);
 		link->time_slicing_duty_cycle_precent =
-			src->iface[b].info.time_slicing_duty_cycle_percent;
+			prLinkStatsIface->info.time_slicing_duty_cycle_percent;
 
 		if (prAdapter->rWifiVar.fgLinkStatsDump) {
 			int ac;
@@ -2062,8 +2064,8 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 		/* dst is pointing to STATS_LLS_WIFI_LINK_STAT.peer_info[0];
 		 * increment link->num_peers when appending peer_info records.
 		 */
-		dst += fill_peer_info(dst, src->peer_info,
-				&link->num_peers, prAdapter, bss_idx);
+		dst += fill_peer_info(prAdapter, dst, &link->num_peers,
+				      bss_idx);
 	}
 	DBGLOG(REQ, TRACE, "advanced %td bytes, %u links",
 			dst - orig, *num_links);
@@ -2088,8 +2090,7 @@ static uint32_t fill_ml_link_stats(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
  *
  * TODO: Sum up time_slicing_duty_cycle_percent from all BSSes?
  */
-uint32_t fill_ml_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
-		struct ADAPTER *prAdapter, uint8_t bss_idx)
+uint32_t fill_ml_iface(struct ADAPTER *prAdapter, uint8_t *dst, uint8_t bss_idx)
 {
 	struct STATS_LLS_WIFI_IFACE_ML_STAT *ml_iface;
 	uint8_t *orig = dst;
@@ -2109,7 +2110,7 @@ uint32_t fill_ml_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 	 * info->time_slicing_duty_cycle_percent, right before num_links
 	 */
 	ml_iface = (struct STATS_LLS_WIFI_IFACE_ML_STAT *)dst;
-	kalMemCopyFromIo(dst, &src->iface[bss_idx],
+	kalMemCopyFromIo(dst, &prAdapter->prLinkStatsIface[bss_idx],
 		offsetof(struct STATS_LLS_WIFI_IFACE_ML_STAT, num_links));
 	dst += offsetof(struct STATS_LLS_WIFI_IFACE_ML_STAT, num_links);
 	DBGLOG(REQ, INFO,
@@ -2126,8 +2127,8 @@ uint32_t fill_ml_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
 	ml_iface->num_links = 0;
 
 	dst = (uint8_t *)&ml_iface->links;
-	dst += fill_ml_link_stats(dst, src, &ml_iface->num_links,
-			prAdapter, bss_idx);
+	dst += fill_ml_link_stats(prAdapter, dst, &ml_iface->num_links,
+				  bss_idx);
 
 	return dst - orig;
 }
@@ -2138,8 +2139,8 @@ uint32_t fill_ml_iface(uint8_t *dst, struct HAL_LLS_FW_REPORT *src,
  *     num_channels
  *     STATS_LLS_CHANNEL_STAT[] <-- up to 46 (2.4 + 5G; 6G will be more)
  */
-static uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
-		uint32_t num_radio, struct ADAPTER *prAdapter, uint8_t band_map)
+static uint32_t fill_radio(struct ADAPTER *prAdapter, uint8_t *dst,
+			   uint32_t num_radio, uint8_t band_map)
 {
 	struct STATS_LLS_WIFI_RADIO_STAT *radio;
 	struct STATS_LLS_CHANNEL_STAT *src_ch;
@@ -2147,18 +2148,19 @@ static uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint8_t *orig = dst;
 	uint32_t i, j;
-
+	struct WIFI_RADIO_CHANNEL_STAT *prRadio;
 
 	*(uint32_t *)orig = 0;
 	dst += sizeof(uint32_t);
 
-	for (i = 0; i < num_radio; i++, src++) {
+	prRadio = prAdapter->prLinkStatsRadioInfo;
+	for (i = 0; i < num_radio; i++, prRadio++) {
 		if ((band_map & BIT(i)) == 0)
 			continue;
 
 		(*(uint32_t *)orig)++;
 
-		kalMemCopyFromIo(dst, src,
+		kalMemCopyFromIo(dst, prRadio,
 				sizeof(struct STATS_LLS_WIFI_RADIO_STAT));
 		radio = (struct STATS_LLS_WIFI_RADIO_STAT *)dst;
 		radio->num_tx_levels = TX_POWER_LEVELS;
@@ -2168,7 +2170,7 @@ static uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 			dumpLinkStatsRadio(radio, i);
 		radio->num_channels = 0;
 
-		src_ch = src->channel;
+		src_ch = prRadio->channel;
 		dst_ch = (struct STATS_LLS_CHANNEL_STAT *)dst;
 		for (j = 0; j < STATS_LLS_CH_NUM; j++, src_ch++) {
 			if (!src_ch->channel.center_freq ||
@@ -2195,12 +2197,13 @@ static uint32_t fill_radio(uint8_t *dst, struct WIFI_RADIO_CHANNEL_STAT *src,
 /**
  * Stored in pu4TxTimePerLevels in (uint32_t * size).
  */
-static uint32_t fill_power_levels(uint8_t *dst, struct ADAPTER *prAdapter,
+static uint32_t fill_power_levels(struct ADAPTER *prAdapter, uint8_t *dst,
 		uint32_t num_radio, uint8_t band_map,
-		uint32_t *pu4TxTimePerLevels, uint32_t u4TxTimePerLevelsSize)
+		uint32_t u4TxTimePerLevelsSize)
 {
 	uint8_t *orig = dst;
 	uint8_t i = 0;
+	uint32_t *pu4TxTimePerLevels = prAdapter->pu4TxTimePerLevels;
 
 	if (!pu4TxTimePerLevels)
 		return 0;
@@ -2224,8 +2227,7 @@ static uint32_t fill_power_levels(uint8_t *dst, struct ADAPTER *prAdapter,
 }
 
 /* Copy and dump source buffer data for debugging */
-static void dumpSourceBufferData(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
-			struct HAL_LLS_FW_REPORT *src)
+static void dumpSourceBufferData(struct ADAPTER *prAdapter, uint8_t ucBssIdx)
 {
 	int i;
 	struct PEER_INFO_RATE_STAT *peer = (struct PEER_INFO_RATE_STAT *)
@@ -2237,14 +2239,14 @@ static void dumpSourceBufferData(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	DBGLOG(REQ, INFO, "LLS iface[bssidx=%u]\n", ucBssIdx);
 
 	kalMemCopyFromIo(&prAdapter->rLinkStatsDestBuffer,
-			&src->iface[ucBssIdx],
+			&prAdapter->prLinkStatsIface[ucBssIdx],
 			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
 	DBGLOG_HEX(REQ, INFO, &prAdapter->rLinkStatsDestBuffer,
 			sizeof(struct STATS_LLS_WIFI_IFACE_STAT));
 
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
 		kalMemCopyFromIo(&prAdapter->rLinkStatsDestBuffer,
-				&src->peer_info[i],
+				&prAdapter->prLinkStatsPeerInfo[i],
 				sizeof(struct PEER_INFO_RATE_STAT));
 		if (peer->peer.type >= STATS_LLS_WIFI_PEER_INVALID) {
 			DBGLOG(REQ, INFO, "Peer[%u].type = %u\n",
@@ -2260,7 +2262,7 @@ static void dumpSourceBufferData(struct ADAPTER *prAdapter, uint8_t ucBssIdx,
 	for (i = 0; i < ENUM_BAND_NUM; i++) {
 		DBGLOG(REQ, INFO, "Dump radio[%u]\n", i);
 		kalMemCopyFromIo(&prAdapter->rLinkStatsDestBuffer,
-			&src->radio[i],
+			&prAdapter->prLinkStatsRadioInfo[i],
 			sizeof(struct WIFI_RADIO_CHANNEL_STAT));
 		DBGLOG_HEX(REQ, INFO, &prAdapter->rLinkStatsDestBuffer,
 				sizeof(struct WIFI_RADIO_CHANNEL_STAT));
@@ -2293,16 +2295,19 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 	struct sk_buff *skb = NULL;
 
 	uint8_t *ptr = NULL;
-	struct HAL_LLS_FW_REPORT *src;
 	uint8_t ucBssIdx;
 	uint8_t band_hint = 0xFF; /* report all band/radio info */
 	uint8_t band_map = 0;
 
 	_Static_assert(sizeof(struct HAL_LLS_FULL_REPORT) >=
-		       sizeof(struct HAL_LLS_FW_REPORT),
+		       sizeof(struct STATS_LLS_WIFI_IFACE_STAT) +
+		       sizeof(struct PEER_INFO_RATE_STAT[CFG_STA_REC_NUM]) +
+		       sizeof(struct WIFI_RADIO_CHANNEL_STAT[ENUM_BAND_NUM]),
 		       "HAL_LLS_FULL_REPORT too small");
 	_Static_assert(sizeof(struct HAL_LLS_FULL_REPORT_V2) >=
-		       sizeof(struct HAL_LLS_FW_REPORT),
+		       sizeof(struct STATS_LLS_WIFI_IFACE_STAT) +
+		       sizeof(struct PEER_INFO_RATE_STAT[CFG_STA_REC_NUM]) +
+		       sizeof(struct WIFI_RADIO_CHANNEL_STAT[ENUM_BAND_NUM]),
 		       "HAL_LLS_FULL_REPORT_V2 too small");
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -2315,21 +2320,21 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	ucBssIdx = wlanGetBssIdx(wdev->netdev);
-	if (ucBssIdx >= MAX_BSSID_NUM) {
-		DBGLOG(REQ, ERROR, "Invalid BSS Index ucBssIdx=%u\n", ucBssIdx);
+	if (ucBssIdx >= prAdapter->ucLinkStatsBssNum) {
+		DBGLOG(REQ, ERROR, "Invalid BSS Index ucBssIdx=%u (%u)\n",
+		       ucBssIdx, prAdapter->ucLinkStatsBssNum);
 		return -EFAULT;
 	}
 #else
 	ucBssIdx = 0; /* legacy FW only report 1 iface structure */
 #endif
 
-	src = prAdapter->pucLinkStatsSrcBufferAddr;
-	if (!src) {
+	if (!prAdapter->pucLinkStatsSrcBufAddr) {
 		DBGLOG(REQ, ERROR, "EMI mapping not done");
 		return -EFAULT;
 	}
 
-	dumpSourceBufferData(prAdapter, ucBssIdx, src);
+	dumpSourceBufferData(prAdapter, ucBssIdx);
 
 	do {
 		buf = (uint8_t *)&prAdapter->rLinkStatsDestBuffer;
@@ -2376,13 +2381,13 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 #endif
 
 		DBGLOG(REQ, INFO, "llstats_get_info(bss=%u)", ucBssIdx);
-		/* Fill returning buffer from shared EMI address(src) */
+		/* Fill returning buffer from shared EMI address */
 		ptr = buf;
 
 #if AOSP_LLS_V1_SINGLE_INTERFACE /* leave legecy code here, need to verify */
-		ptr += fill_iface(ptr, src, prAdapter, ucBssIdx);
+		ptr += fill_iface(prAdapter, ptr, ucBssIdx);
 #else /* multiple links, Android U goes here, support connac2/3 */
-		ptr += fill_ml_iface(ptr, src, prAdapter, ucBssIdx);
+		ptr += fill_ml_iface(prAdapter, ptr, ucBssIdx);
 #endif
 
 		/* Set band_hint = 0x00 here to collect band/radio
@@ -2404,12 +2409,10 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 			}
 		}
 
-		ptr += fill_radio(ptr, src->radio, ENUM_BAND_NUM,
-				prAdapter, band_map);
+		ptr += fill_radio(prAdapter, ptr, ENUM_BAND_NUM, band_map);
 
-		ptr += fill_power_levels(ptr, prAdapter, ENUM_BAND_NUM,
-				band_map, prAdapter->pu4TxTimePerLevels,
-				prAdapter->u4TxTimePerLevelsSize);
+		ptr += fill_power_levels(prAdapter, ptr, ENUM_BAND_NUM,
+				band_map, prAdapter->u4TxTimePerLevelsSize);
 		DBGLOG(REQ, TRACE, "Collected %td bytes for LLS", ptr - buf);
 
 		skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy, ptr - buf);

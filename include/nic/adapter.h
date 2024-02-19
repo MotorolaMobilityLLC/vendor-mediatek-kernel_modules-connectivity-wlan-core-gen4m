@@ -2385,7 +2385,10 @@ struct ADAPTER {
 		struct HAL_LLS_FULL_REPORT rLinkStatsDestBuffer_v1;
 		struct HAL_LLS_FULL_REPORT_V2 rLinkStatsDestBuffer_v2;
 	} rLinkStatsDestBuffer;
-	struct HAL_LLS_FW_REPORT *pucLinkStatsSrcBufferAddr;
+	uint8_t *pucLinkStatsSrcBufAddr;
+	struct STATS_LLS_WIFI_IFACE_STAT *prLinkStatsIface;
+	struct PEER_INFO_RATE_STAT *prLinkStatsPeerInfo;
+	struct WIFI_RADIO_CHANNEL_STAT *prLinkStatsRadioInfo;
 	/* Store in LLS order */
 	uint32_t *pu4TxTimePerLevels;
 	uint32_t u4TxTimePerLevelsSize; /* 256 * 4bytes (uint32_t) * 2 bands */

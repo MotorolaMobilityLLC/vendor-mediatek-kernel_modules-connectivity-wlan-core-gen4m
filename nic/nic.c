@@ -379,7 +379,7 @@ void nicReleaseAdapterMemory(struct ADAPTER *prAdapter)
 		nicTxFreeDescTemplate(prAdapter, &prAdapter->arStaRec[u4Idx]);
 
 #if CFG_SUPPORT_LLS
-	prAdapter->pucLinkStatsSrcBufferAddr = NULL;
+	prAdapter->pucLinkStatsSrcBufAddr = NULL;
 	prAdapter->pu4TxTimePerLevels = NULL;
 #endif
 	checkLeakMemory(prAdapter);
