@@ -1911,6 +1911,7 @@ uint32_t heRlmSendHtcNullFrame(
 	/* prMsduInfo->ucUserPriority = 0;*/
 	prMsduInfo->u4Option |= MSDU_OPT_NO_AGGREGATE;
 	prMsduInfo->u4Option |= MSDU_OPT_SW_HTC;
+	prMsduInfo->fgMgmtForceAutoRate = TRUE;
 	/* 4 <4> Inform TXM  to send this Null frame. */
 	nicTxEnqueueMsdu(prAdapter, prMsduInfo);
 

@@ -3656,7 +3656,8 @@ u_int8_t nicTxProcessMngPacket(struct ADAPTER *prAdapter,
 	{
 		prMsduInfo->ucTC = TC4_INDEX;
 
-		if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_AUTO)
+		if (prMsduInfo->ucRateMode == MSDU_RATE_MODE_AUTO
+			&& !prMsduInfo->fgMgmtForceAutoRate)
 			nicTxSetPktLowestFixedRate(prAdapter, prMsduInfo);
 	}
 
