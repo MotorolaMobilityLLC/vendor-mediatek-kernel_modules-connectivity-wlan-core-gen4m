@@ -523,7 +523,7 @@ struct XO_CFG_PARAM_STRUCT {
 		{switch (0) {case 0: case (expr): default:; } }
 #endif
 
-#define MAX_CFG_FILE_WIFI_REC_SIZE    (1024*8)
+#define MAX_CFG_FILE_WIFI_REC_SIZE    (1024*12)
 #define MAX_CFG_FILE_WIFI_RECAL_SIZE    512
 
 /*******************************************************************************
