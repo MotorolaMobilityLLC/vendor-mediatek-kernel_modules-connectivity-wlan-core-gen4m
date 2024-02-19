@@ -886,6 +886,7 @@ struct MSDU_INFO {
 	 * without SKB shared info size, used for kalBuildSkb().
 	 */
 	uint32_t u4MgmtLength;
+	u_int8_t fgMgmtForceAutoRate;
 
 #if CFG_SUPPORT_TX_MGMT_USE_DATAQ
 	uint64_t u8Cookie;
