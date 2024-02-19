@@ -108,18 +108,69 @@ static int32_t __mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 #endif
 
 		*pucRoleIdx = ucIdx;
-		i4Ret = 0;
+		i4Ret = WLAN_STATUS_SUCCESS;
 		break;
 	}
 
 	return i4Ret;
 }				/* mtk_Netdev_To_RoleIdx */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routines is called to find P2P Role index from net_device.
+ *
+ * \param[in] prGlueInfo
+ * \param[in] pvNdev Pointer to net_device.
+ * \param[out] pucRoleIdx P2P Role index.
+ *
+ * \return 0 P2P Role index found
+ *         -1 P2P Role index not found
+ */
+/*----------------------------------------------------------------------------*/
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 		void *pvNdev, uint8_t *pucRoleIdx)
 {
 	return __mtk_Netdev_To_RoleIdx(prGlueInfo, pvNdev, -1, pucRoleIdx);
 }				/* mtk_Netdev_To_RoleIdx */
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routines is called to find P2P Device index from net_device.
+ *
+ * \param[in] prGlueInfo
+ * \param[in] pvNdev Pointer to net_device.
+ * \param[out] pucDevIdx P2P Device index.
+ *
+ * \return 0 P2P Device index found
+ *         -1 P2P Device index not found
+ */
+/*----------------------------------------------------------------------------*/
+int32_t mtk_Netdev_To_DevIdx(struct GLUE_INFO *prGlueInfo,
+		void *pvNdev, uint8_t *pucDevIdx)
+{
+	int32_t i4Ret = -1;
+	uint8_t ucIdx = 0;
+	struct net_device *ndev = (struct net_device *)pvNdev;
+	struct GL_P2P_INFO *prP2PInfo = NULL;
+
+	if ((pucDevIdx == NULL) || (ndev == NULL))
+		return i4Ret;
+
+	for (ucIdx = 0; ucIdx < KAL_P2P_NUM; ucIdx++) {
+		prP2PInfo = prGlueInfo->prP2PInfo[ucIdx];
+		if (prP2PInfo == NULL)
+			continue;
+
+		if (prP2PInfo->prDevHandler != ndev)
+			continue;
+
+		*pucDevIdx = ucIdx;
+		i4Ret = WLAN_STATUS_SUCCESS;
+		break;
+	}
+
+	return i4Ret;
+}
 
 static void mtk_vif_destructor(struct net_device *dev)
 {
@@ -295,7 +346,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 		}
 
 		COPY_MAC_ADDR(rMacAddr,
-			prAdapter->rWifiVar.aucInterfaceAddress[u4Idx]);
+			prAdapter->rWifiVar.aucP2pInterfaceAddress[u4Idx]);
 		if (prGlueInfo->prAdapter->rWifiVar.ucP2pShareMacAddr &&
 		    (type == NL80211_IFTYPE_P2P_CLIENT ||
 		     type == NL80211_IFTYPE_P2P_GO)) {

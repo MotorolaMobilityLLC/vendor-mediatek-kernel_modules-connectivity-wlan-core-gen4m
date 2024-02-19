@@ -105,6 +105,8 @@ kalP2PUpdateAssocInfo(struct GLUE_INFO *prGlueInfo,
 
 /*UINT_32 kalP2PGetFreqInKHz(P_GLUE_INFO_T prGlueInfo);*/
 
+int32_t mtk_Netdev_To_DevIdx(struct GLUE_INFO *prGlueInfo,
+		void *pvNdev, uint8_t *pucDevIdx);
 int32_t mtk_Netdev_To_RoleIdx(struct GLUE_INFO *prGlueInfo,
 		void *pvNdev,
 		uint8_t *pucRoleIdx);

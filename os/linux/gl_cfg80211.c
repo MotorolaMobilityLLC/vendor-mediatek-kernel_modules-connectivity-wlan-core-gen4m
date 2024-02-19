@@ -6556,7 +6556,7 @@ int mtk_init_ap_role(struct GLUE_INFO *prGlueInfo,
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	COPY_MAC_ADDR(rMacAddr,
-		prAdapter->rWifiVar.aucInterfaceAddress[u4Idx]);
+		prAdapter->rWifiVar.aucP2pInterfaceAddress[u4Idx]);
 
 	/* reference from the glRegisterP2P() */
 	gprP2pRoleWdev[u4Idx] = ndev->ieee80211_ptr;

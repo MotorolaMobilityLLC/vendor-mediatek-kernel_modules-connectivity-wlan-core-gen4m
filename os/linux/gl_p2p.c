@@ -1242,11 +1242,16 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 			goto err_alloc_netdev;
 		}
 
-		COPY_MAC_ADDR(rMacAddr,
-				prAdapter->rWifiVar.aucInterfaceAddress[i]);
+		if (fgSkipRole == SKIP_ROLE_ALL ||
+		    (fgSkipRole == SKIP_ROLE_EXCEPT_MAIN && i != 0))
+			COPY_MAC_ADDR(rMacAddr, prAdapter->rWifiVar
+				.aucP2pDeviceAddress[i]);
+		else
+			COPY_MAC_ADDR(rMacAddr, prAdapter->rWifiVar
+				.aucP2pInterfaceAddress[i]);
 
 		DBGLOG(INIT, INFO,
-			"Set p2p role[%d] mac to " MACSTR " fgIsApMode(%d)\n",
+			"Set p2p[%d] mac to " MACSTR " fgIsApMode(%d)\n",
 			i, MAC2STR(rMacAddr), fgIsApMode);
 
 #if KERNEL_VERSION(4, 14, 0) <= CFG80211_VERSION_CODE
@@ -2142,8 +2147,8 @@ int p2pSetMACAddress(struct net_device *prDev, void *addr)
 	struct sockaddr *sa = NULL;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct BSS_INFO *prDevBssInfo = NULL;
-	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
-	struct GL_P2P_INFO *prP2pInfo = NULL;
+	uint8_t ucRoleIdx = 0, ucDevIdx = 0, ucBssIdx = 0;
+	u_int8_t fgIsNetDevFound = FALSE;
 #if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
 	u8 _addr[ETH_ALEN];
 #endif
@@ -2160,10 +2165,17 @@ int p2pSetMACAddress(struct net_device *prDev, void *addr)
 		return -EINVAL;
 	}
 
+	prDevBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+		prAdapter->ucP2PDevBssIdx);
+	if (!prDevBssInfo) {
+		DBGLOG(INIT, ERROR, "dev bss is not active\n");
+		return -EINVAL;
+	}
+
 	sa = (struct sockaddr *)addr;
 
 	if (mtk_Netdev_To_RoleIdx(prGlueInfo, prDev, &ucRoleIdx) != 0) {
-		DBGLOG(INIT, ERROR, "can't find the matched dev");
+		DBGLOG(INIT, WARN, "can't find the matched role");
 		goto skip_role;
 	}
 
@@ -2177,59 +2189,45 @@ int p2pSetMACAddress(struct net_device *prDev, void *addr)
 	if (!prBssInfo) {
 		DBGLOG(INIT, ERROR, "bss is not active\n");
 		goto skip_role;
-	} else {
-		COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr,
-			sa->sa_data);
-		COPY_MAC_ADDR(
-			prAdapter->rWifiVar.aucInterfaceAddress[ucRoleIdx],
-			sa->sa_data);
 	}
+
+	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, sa->sa_data);
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucP2pInterfaceAddress[ucRoleIdx],
+		sa->sa_data);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssUpdateMldAddrByMainBss(prAdapter,
+		mldBssGetByBss(prAdapter, prBssInfo));
+#endif
+	fgIsNetDevFound = TRUE;
+	DBGLOG(INIT, INFO,
+		"[%u][%u] Set random macaddr to " MACSTR ".\n",
+		ucBssIdx, ucRoleIdx,
+		MAC2STR(prBssInfo->aucOwnMacAddr));
 
 skip_role:
-
-	prDevBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-		prAdapter->ucP2PDevBssIdx);
-	if (!prDevBssInfo) {
-		DBGLOG(INIT, ERROR, "dev bss is not active\n");
-		return -EINVAL;
-	}
-
-	prP2pInfo = prGlueInfo->prP2PInfo[0];
-	if (!prP2pInfo) {
-		DBGLOG(INIT, ERROR, "p2p info is null\n");
-		return -EINVAL;
-	}
-
-#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
-	ether_addr_copy(_addr, sa->sa_data);
-	eth_hw_addr_set(prDev, _addr);
-#else
-	COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
-#endif
-
-	if ((prP2pInfo->prDevHandler == prDev)
-		&& mtk_IsP2PNetDevice(prGlueInfo, prDev)) {
-		COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
+	if (mtk_Netdev_To_DevIdx(prGlueInfo, prDev, &ucDevIdx) == 0) {
+		COPY_MAC_ADDR(prAdapter->rWifiVar.aucP2pDeviceAddress[ucDevIdx],
 			sa->sa_data);
 		COPY_MAC_ADDR(prDevBssInfo->aucOwnMacAddr, sa->sa_data);
+		fgIsNetDevFound = TRUE;
 		DBGLOG(INIT, INFO,
 			"[%d][%d] Set random macaddr to " MACSTR ".\n",
-			ucBssIdx,
-			prDevBssInfo->ucBssIndex,
+			ucBssIdx, ucDevIdx,
 			MAC2STR(prDevBssInfo->aucOwnMacAddr));
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldBssUpdateMldAddrByMainBss(prAdapter,
-			mldBssGetByBss(prAdapter, prBssInfo));
+	}
+
+	if (fgIsNetDevFound) {
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE)
+		ether_addr_copy(_addr, sa->sa_data);
+		eth_hw_addr_set(prDev, _addr);
+#else
+		COPY_MAC_ADDR(prDev->dev_addr, sa->sa_data);
 #endif
-	} else if (prBssInfo) {
-		DBGLOG(INIT, INFO,
-			"[%d][%d] Set random macaddr to " MACSTR ".\n",
-			ucBssIdx, ucRoleIdx,
-			MAC2STR(prBssInfo->aucOwnMacAddr));
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		mldBssUpdateMldAddrByMainBss(prAdapter,
-			mldBssGetByBss(prAdapter, prBssInfo));
-#endif
+	} else {
+		DBGLOG(INIT, WARN,
+			"Unmatch net_device %s, new " MACSTR " not set.\n",
+			prDev->name, sa->sa_data);
 	}
 
 	return WLAN_STATUS_SUCCESS;
