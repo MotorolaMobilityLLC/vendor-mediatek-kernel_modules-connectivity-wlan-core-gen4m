@@ -5760,6 +5760,59 @@ int priv_driver_set_ml_probereq(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to set p2p GO mlo link number except
+ *        the main link.
+ *
+ * \param[in] pcCommand Store ucMldBssLinkNum, which means the remaining
+ *                      mlo link number except the main link.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+int priv_driver_set_ml_bss_num(struct net_device *prNetDev,
+	char *pcCommand,
+	int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4Ret = -1;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	struct BSS_INFO *prBssInfo = NULL;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	uint8_t ucBssIdx = 0;
+	uint8_t ucRemainMldBssLinkNum;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	ucBssIdx = wlanGetBssIdx(prNetDev);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+	DBGLOG(INIT, INFO, "command is %s\n", pcCommand);
+
+	if (i4Argc == 2) {
+		DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc, apcArgv[1]);
+		i4Ret = kalkStrtou8(apcArgv[1], 0, &ucRemainMldBssLinkNum);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n", i4Ret);
+			i4Ret = -1;
+		} else {
+			gucRemainMldBssLinkNum = ucRemainMldBssLinkNum;
+			if (!mldIsMultiLinkEnabled(prAdapter,
+				NETWORK_TYPE_P2P, FALSE) ||
+			    !mldBssAllowReconfig(prAdapter, prMldBssInfo))
+				gucRemainMldBssLinkNum = 0;
+		}
+	} else {
+		DBGLOG(REQ, ERROR, "invalid data\n");
+	}
+
+	return i4Ret;
+}
+
 int priv_driver_get_ml_capa(struct net_device *prNetDev,
 	char *pcCommand,
 	int i4TotalLen)
