@@ -519,6 +519,9 @@ struct CON_WORK {
 enum ENUM_CPU_STAT_CNT {
 	CPU_TX_IN,
 	CPU_RX_IN,
+#if CFG_SUPPORT_PER_CPU_TX
+	CPU_TX_PER_CPU,
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 #if CFG_SUPPORT_TX_WORK
 	CPU_TX_WORK_DONE,
 #endif /* CFG_SUPPORT_TX_WORK */
@@ -528,6 +531,9 @@ enum ENUM_CPU_STAT_CNT {
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	CPU_SKB_ALLOC_DONE,
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	CPU_TX_FREE_SKB_DONE,
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 	CPU_STATISTICS_MAX
 };
 #endif /* CFG_SUPPORT_CPU_STAT */
@@ -602,6 +608,21 @@ struct SKB_ALLOC_INFO {
 	unsigned long ulNoMemMask;
 };
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+struct TX_FREE_QUEUE_INFO {
+	struct QUE rQue;
+	spinlock_t lock;
+	uint32_t u4TotalCnt;
+};
+
+struct TX_FREE_INFO {
+	struct CON_WORK rConWork[CON_WORK_MAX];
+	struct TX_FREE_QUEUE_INFO rQueInfo[CON_WORK_MAX];
+	int32_t i4QueIdxCnt;
+	enum CPU_CORE_TYPE eCoreType;
+};
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 
 struct GL_IO_REQ {
 	struct QUE_ENTRY rQueEntry;
@@ -685,6 +706,31 @@ struct FT_IES {
 	uint8_t *pucIEBuf;
 	uint32_t u4IeLength;
 };
+
+#if CFG_SUPPORT_PER_CPU_TX
+struct _PER_CPU_TX_INFO {
+	struct tasklet_struct rTask;
+	struct sk_buff_head rSkbQ;
+};
+
+struct PER_CPU_TX_INFO {
+	struct _PER_CPU_TX_INFO __percpu *prInfo;
+	u_int8_t fgReady;
+	unsigned long ulRunningMask;
+};
+
+#define PER_CPU_TX_WAITING_TIMEOUT 100 /* ms */
+#define PER_CPU_TX_SET_RUN(prPerCpuTxInfo, cpu, fgRunning) \
+	do { \
+		if (fgRunning) \
+			set_bit(cpu, &prPerCpuTxInfo->ulRunningMask); \
+		else \
+			clear_bit(cpu, &prPerCpuTxInfo->ulRunningMask); \
+	} while (0)
+
+#define PER_CPU_TX_IS_RUNNING(prPerCpuTxInfo) \
+	(READ_ONCE(prPerCpuTxInfo->ulRunningMask) != 0)
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 
 /*
  * type definition of pointer to p2p structure
@@ -829,6 +875,9 @@ struct GLUE_INFO {
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 	struct GL_WORK arGlWork[WORK_MAX];
 	struct tasklet_struct rRxTask;
+#if CFG_SUPPORT_PER_CPU_TX
+	struct PER_CPU_TX_INFO rPerCpuTxInfo;
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 	uint8_t fgRxTaskReady;
 	uint32_t u4RxTaskScheduleCnt;
 #if (CFG_SUPPORT_RETURN_TASK == 1)
@@ -937,6 +986,10 @@ struct GLUE_INFO {
 	uint8_t *prTxMsduRetFifoBuf;
 	uint32_t u4TxMsduRetFifoLen;
 #endif /* CFG_SUPPORT_TASKLET_FREE_MSDU */
+
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	struct TX_FREE_INFO rTxFreeInfo;
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 
 #if CFG_SUPPORT_RX_GRO
 	struct net_device dummy_dev;

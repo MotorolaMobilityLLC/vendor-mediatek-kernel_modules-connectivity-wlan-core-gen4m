@@ -1228,6 +1228,9 @@ struct WIFI_VAR {
 	u_int8_t fgSkbAllocWorkEn;
 	uint32_t u4SkbAllocScheduleTh;
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	u_int8_t fgTxFreeSkbWorkEn;
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 	u_int8_t fgBoostCpuEn;
 	u_int8_t fgBoostCpuByPPSEn;
 	u_int8_t fgBoostCpuPolicyEn;
