@@ -4975,7 +4975,6 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	struct ADAPTER *prAdapter;
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 	uint32_t waitRet = 0;
-	uint32_t waitCount = 0;
 	int r;
 	u_int8_t fgCmdDbgEn;
 
@@ -5114,12 +5113,8 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(OID, TRACE, "waiting, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
 			prIoReq->pfnOidHandler, prIoReq->u4InfoBufLen,
 			prIoReq->pu4QryInfoLen);
-	for (waitCount = 0; waitCount < 30; waitCount++) {
-		waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
-				MSEC_TO_JIFFIES(1000));
-		if ((waitRet > 0) || kalIsResetting())
-			break;
-	}
+	waitRet = wait_for_completion_timeout(&prGlueInfo->rPendComp,
+			MSEC_TO_JIFFIES(KAL_OID_WAIT_TIME));
 	DBGLOG(OID, TRACE, "wait=%u, pfnOidHandler=%ps, BufLen=%u, QryLen=%p",
 			waitRet, prIoReq->pfnOidHandler,
 			prIoReq->u4InfoBufLen, prIoReq->pu4QryInfoLen);
@@ -5148,6 +5143,7 @@ kalIoctlByBssIdx(struct GLUE_INFO *prGlueInfo,
 			"wait main_thread timeout, duration:%llums, sched(x%llu/r%llu/i%llu)\n",
 			schedstats.time, schedstats.exec,
 			schedstats.runnable, schedstats.iowait);
+		KAL_WARN_ON(TRUE);
 
 		ret = WLAN_STATUS_FAILURE;
 	}
