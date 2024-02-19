@@ -116,9 +116,11 @@ struct MDDP_SETTINGS {
 	struct task_struct *notify_md_thread;
 	struct mdfpm_ctrl_msg_t ctrl_msg;
 	atomic_t md_status;
-	uint8_t recv_seq;
+	uint32_t recv_seq;
 	uint8_t drv_own_seq;
 	uint8_t is_resp_drv_own;
+	uint8_t is_port_open;
+	uint8_t is_drv_own_acquired;
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 };
 

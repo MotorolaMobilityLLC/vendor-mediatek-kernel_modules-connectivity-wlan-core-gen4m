@@ -187,6 +187,7 @@ static void save_mddp_lls_stats(void);
 #endif
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 static void mddpRdCCCI(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val);
+static void mddpMdStateChangeReleaseDrvOwn(void);
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 static void mddpRdFunc(struct MDDP_SETTINGS *prSettings, uint32_t *pu4Val)
@@ -355,17 +356,20 @@ static int32_t mddpRegisterCb(void)
 	gMddpFunc.wifi_handle = &gMddpWFunc;
 
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-	if (g_rSettings.i4PortIdx > 0) {
+	if (g_rSettings.is_port_open) {
 		DBGLOG(INIT, ERROR, "port(%d) already opened!\n",
 			g_rSettings.i4PortIdx);
 		return ret;
 	}
 
 	g_rSettings.i4PortIdx = mtk_ccci_open_port(CCCI_PORT_NAME);
-	if (g_rSettings.i4PortIdx <= 0)
+	if (g_rSettings.i4PortIdx < 0) {
 		DBGLOG(INIT, ERROR, "open ccci port fail!\n");
+		return ret;
+	}
 
-	DBGLOG(INIT, LOUD, "port idx:%d\n", g_rSettings.i4PortIdx);
+	g_rSettings.is_port_open = TRUE;
+	DBGLOG(INIT, INFO, "port idx:%d\n", g_rSettings.i4PortIdx);
 
 	gMddpWFunc.notify_drv_info = mddpDrvNotifyInfo;
 #else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
@@ -390,15 +394,16 @@ static void mddpUnregisterCb(void)
 	DBGLOG(INIT, INFO, "mddp_drv_detach\n");
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	DBGLOG(INIT, INFO, "port idx:%d\n", g_rSettings.i4PortIdx);
-	if (g_rSettings.i4PortIdx < 0) {
+	if (!g_rSettings.is_port_open) {
 		DBGLOG(INIT, ERROR, "port didn't open!\n");
 		return;
 	}
 
 	if (mtk_ccci_close_port(g_rSettings.i4PortIdx) < 0)
 		DBGLOG(INIT, ERROR, "close ccci port fail!\n");
-	g_rSettings.i4PortIdx = -1;
 
+	g_rSettings.i4PortIdx = -1;
+	g_rSettings.is_port_open = FALSE;
 	gMddpWFunc.notify_drv_info = NULL;
 #else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mddp_drv_detach(&gMddpDrvConf, &gMddpFunc);
@@ -1040,14 +1045,17 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		prNotifyInfo->info_num = 1;
 		prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
 		prDrvInfo->info_id = WSVC_DRVINFO_WIFI_ONOFF;
-		prDrvInfo->info_len = WIFI_ONOFF_NOTIFICATION_LEN;
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+		prNotifyInfo->buf_len = sizeof(struct mddpw_drv_info_t) +
+				sizeof(struct mddpw_coex_intf_info_t);
+		prDrvInfo->info_len = sizeof(struct mddpw_coex_intf_info_t);
 		prCoexInfo = (struct mddpw_coex_intf_info_t *)
 				&(prDrvInfo->info[0]);
 		prCoexInfo->status = status;
 		prCoexInfo->ringNum = 0;
 		prCoexInfo->seq = GLUE_GET_REF_CNT(g_rSettings.seq);
 #else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+		prDrvInfo->info_len = WIFI_ONOFF_NOTIFICATION_LEN;
 		prDrvInfo->info[0] = status;
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
@@ -1346,20 +1354,20 @@ void __mddpNotifyWifiOnStart(void)
 #endif
 
 	mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_START);
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) && (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
 	mddpNotifyWifiPcieBarInfo();
 #endif
 }
 
 void mddpNotifyWifiOnStart(void)
 {
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (!mddpIsSupportCcci())
+		return;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mddpResetGlobalVariable();
 
-	if (!mddpIsSupportMcifWifi()
-#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-		&& !mddpIsSupportCcci()
-#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
-	)
+	if (!mddpIsSupportMcifWifi())
 		return;
 
 	if (!is_cal_flow_finished())
@@ -1369,9 +1377,9 @@ void mddpNotifyWifiOnStart(void)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
 		return;
-#endif
-#endif
-
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mutex_lock(&rMddpLock);
 	__mddpNotifyWifiOnStart();
 	mutex_unlock(&rMddpLock);
@@ -1386,6 +1394,7 @@ int32_t __mddpNotifyWifiOnEnd(void)
 		return ret;
 	}
 
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
 	/* Notify Driver own timeout time before Wi-Fi on end */
 	mddpNotifyDrvOwnTimeoutTime();
 
@@ -1402,6 +1411,7 @@ int32_t __mddpNotifyWifiOnEnd(void)
 			g_rSettings.rOps.clr(&g_rSettings,
 				g_rSettings.u4MdOnBit);
 	}
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP == 0 */
 
 #if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)
 	ret = mddpNotifyWifiStatus(MDDPW_DRV_INFO_STATUS_ON_END);
@@ -1419,11 +1429,11 @@ int32_t mddpNotifyWifiOnEnd(void)
 {
 	int32_t ret = 0;
 
-	if (!mddpIsSupportMcifWifi()
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-		&& !mddpIsSupportCcci()
-#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
-	)
+	if (!mddpIsSupportCcci())
+		return ret;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	if (!mddpIsSupportMcifWifi())
 		return ret;
 
 	if (!is_cal_flow_finished())
@@ -1433,9 +1443,9 @@ int32_t mddpNotifyWifiOnEnd(void)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
 		return ret;
-#endif
-#endif
-
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mutex_lock(&rMddpLock);
 	ret = __mddpNotifyWifiOnEnd();
 	mutex_unlock(&rMddpLock);
@@ -1458,21 +1468,27 @@ void __mddpNotifyWifiOffStart(void)
 	if (ret == 0)
 		wait_for_md_off_complete();
 
+
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	mddpMdStateChangeReleaseDrvOwn();
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	/* call fw own directly when wifi off */
 	mddpSetMDFwOwn();
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 }
 
 void mddpNotifyWifiOffStart(void)
 {
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (!mddpIsSupportCcci())
+		return;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
 #if defined(_HIF_PCIE)
 	struct GLUE_INFO *prGlueInfo = NULL;
-#endif
+#endif /* _HIF_PCIE */
 
-	if (!mddpIsSupportMcifWifi()
-#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-		&& !mddpIsSupportCcci()
-#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
-	)
+	if (!mddpIsSupportMcifWifi())
 		return;
 
 	if (!is_cal_flow_finished())
@@ -1482,14 +1498,14 @@ void mddpNotifyWifiOffStart(void)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
 		return;
-#endif
-#endif
-
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mutex_lock(&rMddpLock);
 	__mddpNotifyWifiOffStart();
 	mutex_unlock(&rMddpLock);
 
-#if defined(_HIF_PCIE)
+#if defined(_HIF_PCIE) && (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (prGlueInfo == NULL) {
 		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
@@ -1526,11 +1542,11 @@ void __mddpNotifyWifiOffEnd(void)
 
 void mddpNotifyWifiOffEnd(void)
 {
-	if (!mddpIsSupportMcifWifi()
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
-		&& !mddpIsSupportCcci()
-#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
-	)
+	if (!mddpIsSupportCcci())
+		return;
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	if (!mddpIsSupportMcifWifi())
 		return;
 
 	if (!is_cal_flow_finished())
@@ -1540,8 +1556,9 @@ void mddpNotifyWifiOffEnd(void)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (is_pwr_on_notify_processing())
 		return;
-#endif
-#endif
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	mutex_lock(&rMddpLock);
 	__mddpNotifyWifiOffEnd();
@@ -1550,6 +1567,7 @@ void mddpNotifyWifiOffEnd(void)
 
 void mddpUnregisterMdStateCB(void)
 {
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 0)
 	if (!mddpIsSupportMcifWifi())
 		return;
 
@@ -1560,8 +1578,9 @@ void mddpUnregisterMdStateCB(void)
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (is_pwr_on_notify_processing())
 		return;
-#endif
-#endif
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* CFG_MTK_ANDROID_WMT */
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP == 0 */
 
 #if CFG_MTK_CCCI_SUPPORT
 	mutex_lock(&rMddpLock);
@@ -2097,7 +2116,12 @@ void  mddpMdStateChangedCb(enum MD_STATE old_state,
 {
 	DBGLOG(INIT, TRACE, "old_state: %d, new_state: %d.\n",
 			old_state, new_state);
-
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (new_state == GATED || new_state == EXCEPTION) {
+		mddpMdStateChangeReleaseDrvOwn();
+		DBGLOG(INIT, INFO, "release drv own");
+	}
+#else /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	switch (new_state) {
 	case GATED: /* MD off */
 		notifyMdCrash2FW();
@@ -2109,8 +2133,9 @@ void  mddpMdStateChangedCb(enum MD_STATE old_state,
 	default:
 		break;
 	}
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 }
-#endif
+#endif /* CFG_MTK_CCCI_SUPPORT */
 
 static void save_mddp_stats(void)
 {
@@ -2264,7 +2289,7 @@ static int coex_read_data_from_md(int index, char *buf, size_t count)
 			DBGLOG(INIT, INFO,
 				"retry count = %d, recv data from MD success\n",
 				retry_cnt);
-			DBGLOG_MEM32(INIT, WARN, buf, ret);
+			DBGLOG_MEM32(INIT, INFO, buf, ret);
 			return ret;
 		}
 	} while (retry_cnt < CHECK_MD_STATUS_MAX_COUNT);
@@ -2325,10 +2350,14 @@ static void mddpMDDrvOwnReqHdlr(struct mddpw_md_notify_info_t *md_info)
 	g_rSettings.drv_own_seq = drv_own_info->seq_num;
 	g_rSettings.is_resp_drv_own = 1;
 
-	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+	if (g_rSettings.is_drv_own_acquired == TRUE) {
+		DBGLOG(INIT, WARN, "[MDDP] Drv own is already acquired.\n");
+		return;
+	}
 
+	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	if (prAdapter->fgIsFwOwn == FALSE) {
-		DBGLOG(INIT, INFO, "[MDDP] Already FW Owned.\n");
+		DBGLOG(INIT, INFO, "[MDDP] Already Drv Owned.\n");
 		mddpNotifyDrvOwn(STATUS_SUCCESS);
 	}
 }
@@ -2351,13 +2380,20 @@ static void mddpMDDrvOwnReleaseHdlr(
 		return;
 	}
 
+	if (g_rSettings.is_drv_own_acquired == FALSE) {
+		DBGLOG(INIT, WARN, "[MDDP] Drv own not acquired.\n");
+		return;
+	}
+
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	g_rSettings.is_drv_own_acquired = FALSE;
 }
 
 static void md_rx_msg_handle(struct MDDP_SETTINGS *pSt,
 		struct mdfpm_ctrl_msg_t *msg, unsigned long msg_len)
 {
 	struct mddpw_md_notify_info_t *md_info;
+	struct GLUE_INFO *prGlueInfo = NULL;
 
 	DBGLOG(INIT, INFO, "[MDDP] => user_id:%d, msg_id:%d\n",
 		msg->dest_user_id, msg->msg_id);
@@ -2372,6 +2408,11 @@ static void md_rx_msg_handle(struct MDDP_SETTINGS *pSt,
 	case CCCI_MSG_ID_RESET_IND:
 		DBGLOG(INIT, STATE, "received RESET IND\n");
 		mddpNotifyWifiOnStart();
+		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+		if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+			DBGLOG(INIT, ERROR, "Invalid drv state.\n");
+			return;
+		}
 		mddpNotifyWifiOnEnd();
 		break;
 	case CCCI_MSG_ID_MD_NOTIFY:
@@ -2379,7 +2420,8 @@ static void md_rx_msg_handle(struct MDDP_SETTINGS *pSt,
 		md_info = (struct mddpw_md_notify_info_t *) msg->buf;
 		switch (md_info->info_type) {
 		case MD_NOTIFY_INFO_ONOFF:
-			pSt->recv_seq = md_info->buf[0];
+			kalMemCopy(&pSt->recv_seq, md_info->buf,
+				sizeof(pSt->recv_seq));
 			DBGLOG(INIT, INFO, "get seq = %d from MD\n",
 				pSt->recv_seq);
 			GLUE_SET_REF_CNT(pSt->u4MdOffBit, pSt->md_status);
@@ -2438,8 +2480,8 @@ int md_rx_handler(void *data)
 		return STATUS_FAILURE;
 	}
 
-	if (pSt->i4PortIdx < 0) {
-		DBGLOG(INIT, ERROR, "open ccci port fail!!!\n");
+	if (!pSt->is_port_open) {
+		DBGLOG(INIT, ERROR, "ccci port not open!!!\n");
 		return STATUS_FAILURE;
 	}
 
@@ -2481,9 +2523,9 @@ int md_rx_handler(void *data)
 
 bool mddpIsSupportCcci(void)
 {
-	if (g_rSettings.i4PortIdx > 0)
+	if (g_rSettings.is_port_open)
 		return true;
-	DBGLOG(INIT, WARN, "[MDDP] => idx_port:%d\n", g_rSettings.i4PortIdx);
+	DBGLOG(INIT, WARN, "[MDDP] => ccci port not oepn\n");
 	return false;
 }
 
@@ -2529,6 +2571,17 @@ void mddpNotifyDrvOwn(uint32_t u4Status)
 		prDrvInfo->seq_num, u4Status, ret);
 
 	g_rSettings.is_resp_drv_own = 0;
+	if (u4Status == STATUS_SUCCESS)
+		g_rSettings.is_drv_own_acquired = TRUE;
+	else
+		DBGLOG(INIT, WARN, "[MDDP] drv own failed.\n");
+}
+
+void mddpMdStateChangeReleaseDrvOwn(void)
+{
+	struct mddpw_md_notify_info_t *md_info = NULL;
+
+	mddpMDDrvOwnReleaseHdlr(md_info);
 }
 
 void mddpStartMdRxThread(void)
