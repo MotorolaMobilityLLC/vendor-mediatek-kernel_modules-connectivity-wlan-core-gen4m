@@ -884,20 +884,6 @@ struct WIFI_RADIO_CHANNEL_STAT {
 	struct STATS_LLS_CHANNEL_STAT channel[STATS_LLS_CH_NUM];
 };
 
-/* IFACE_NUM as BSSID_NUM to retrived statistics by interface; or sum up else */
-#if (CFG_SUPPORT_CONNAC3X == 1)
-#define IFACE_NUM BSSID_NUM
-#else
-#define IFACE_NUM 1
-#endif
-
-/* Structure of FW reported data,  */
-struct HAL_LLS_FW_REPORT {
-	struct STATS_LLS_WIFI_IFACE_STAT iface[IFACE_NUM];
-	struct PEER_INFO_RATE_STAT peer_info[CFG_STA_REC_NUM];
-	struct WIFI_RADIO_CHANNEL_STAT radio[ENUM_BAND_NUM];
-};
-
 /* Buffer to hold collected data from FW reported EMI address */
 struct HAL_LLS_FULL_REPORT {
 	struct STATS_LLS_WIFI_IFACE_STAT iface;

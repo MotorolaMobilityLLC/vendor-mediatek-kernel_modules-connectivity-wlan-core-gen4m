@@ -1377,11 +1377,15 @@ struct CAP_MLO_CAP {
  * EMI shared memory and the offset of key structure fields.
  *
  * @u4DataEmiOffset: pointer to shared EMI memory, in the structure of
- *                   HAL_LLS_FW_REPORT
+ *			struct STATS_LLS_WIFI_IFACE_STAT x N +
+ *			struct PEER_INFO_RATE_STAT +
+ *			struct WIFI_RADIO_CHANNEL_STAT.
  * @u4OffsetInfo: info in STATS_LLS_WIFI_IFACE_STAT
  * @u4OffsetAc: ac in STATS_LLS_WIFI_IFACE_STAT
- * @u4OffsetPeerInfo: peer_info in HAL_LLS_FW_REPORT
- * @u4OffsetRadioStat: radio in HAL_LLS_FW_REPORT
+ * @u4OffsetPeerInfo: offset to struct PEER_INFO_RATE_STAT peer_info
+ *		      in LLS FW report
+ * @u4OffsetRadioStat: offset to struct WIFI_RADIO_CHANNEL_STAT radio
+ *		       in LLS FW report
  * @u4OffsetTxTimerPerLevels: tx_time_per_levels in STATS_LLS_WIFI_RADIO_STAT
  * @u4OffsetRxTime: rx_time in STATS_LLS_WIFI_RADIO_STAT
  * @u4OffsetChannel: channel in WIFI_RADIO_CHANNEL_STAT
