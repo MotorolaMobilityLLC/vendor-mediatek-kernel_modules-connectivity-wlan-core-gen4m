@@ -343,7 +343,7 @@ struct RX_BA_ENTRY {
 	/* RX reorder for one MSDU in AMSDU issue */
 	uint16_t u2SeqNo; /* for statistic */
 	u_int8_t fgAmsduNeedLastFrame; /* for statistic */
-	uint8_t u8LastAmsduSubIdx;
+	uint8_t ucLastAmsduSubIdx;
 	u_int8_t fgIsAmsduDuplicated;
 	u_int8_t fgNoDrop;
 	uint32_t u4SNOverlapCount;
