@@ -784,7 +784,8 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	/* roaming */
 	if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
 		DBGLOG(WNM, ERROR,
-			"Bss%d recv btm req but not in decision\n", ucBssIndex);
+		    "Bss[%d] Recv btm req but there's ongoing roaming/CSA\n",
+		    ucBssIndex);
 		ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
 		goto send_response;
 	}

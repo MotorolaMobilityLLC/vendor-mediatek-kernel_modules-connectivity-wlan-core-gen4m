@@ -1393,11 +1393,10 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 		roamingFsmSendCmd(prAdapter,
 			(struct CMD_ROAMING_TRANSIT *) &rTransit);
 
-		/* fail when roaming is ongoing */
-		if (prRoamingFsmInfo->eCurrentState > ROAMING_STATE_DECISION &&
-		    prRoamingFsmInfo->eCurrentState < ROAMING_STATE_NUM) {
+		/* fail when roaming is ongoing or during CSA*/
+		if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
 			DBGLOG(ROAMING, EVENT,
-				"There's ongoing roaming - ignore bssidx:%d\n",
+				"There's ongoing roaming/CSA - ignore bssidx:%d\n",
 				ucBssIndex);
 
 			rTransit.u2Event = ROAMING_EVENT_FAIL;
@@ -1427,13 +1426,20 @@ uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	struct ROAMING_INFO *roam;
 	enum ENUM_PARAM_CONNECTION_POLICY policy;
 	struct CONNECTION_SETTINGS *setting;
+#if CFG_SUPPORT_DFS
+	struct BSS_INFO *prBssInfo;
 
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+#endif
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	setting = aisGetConnSettings(prAdapter, ucBssIndex);
 	policy = setting->eConnectionPolicy;
 
 	return IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
 	       roam->eCurrentState == ROAMING_STATE_DECISION &&
+#if CFG_SUPPORT_DFS
+	       !timerPendingTimer(&prBssInfo->rCsaTimer) &&
+#endif
 	       !prAdapter->rWifiVar.fgDisRoaming &&
 	       policy != CONNECT_BY_BSSID ?
 	       TRUE : FALSE;
