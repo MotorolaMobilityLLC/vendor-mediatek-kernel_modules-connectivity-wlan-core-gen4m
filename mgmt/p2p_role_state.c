@@ -125,6 +125,9 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_ROLE_STATE eNextState)
 {
 	u_int8_t fgIsStartGO = FALSE;
+#if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
+	u_int8_t fgIsMloSap = FALSE;
+#endif
 
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
@@ -163,8 +166,14 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 	} while (FALSE);
 
 #if CFG_HOTSPOT_SUPPORT_ADJUST_SCC
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter,
+							 prP2pRoleBssInfo));
+#endif
+
 	if (fgIsStartGO && p2pFuncIsAPMode(prAdapter->rWifiVar.
-			prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIndex])) {
+			prP2PConnSettings[prP2pRoleFsmInfo->ucRoleIndex]) &&
+	    !fgIsMloSap) {
 		struct GL_P2P_INFO *prP2PInfo =	prAdapter->prGlueInfo
 			->prP2PInfo[prP2pRoleFsmInfo->ucRoleIndex];
 		struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
