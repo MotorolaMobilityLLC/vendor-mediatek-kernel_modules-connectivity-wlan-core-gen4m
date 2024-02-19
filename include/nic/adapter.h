@@ -1699,6 +1699,7 @@ struct WIFI_VAR {
 
 	uint32_t u4RecoveryMsiRxCnt;
 	uint32_t u4RecoveryMsiTime;
+	uint32_t u4RecoveryMsiShortTime;
 
 #if CFG_UPDATE_PACING_SHIFT_SUPPORT
 	uint32_t u4PacingShift;

@@ -8962,6 +8962,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4RecoveryMsiTime, "RecoveryMsiTime", 1000,
 		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4RecoveryMsiTime, "RecoveryMsiShortTime", 200,
+		  FEATURE_DEBUG_ONLY);
 
 #if CFG_UPDATE_PACING_SHIFT_SUPPORT
 	/* Default TCP Small queue budget is ~1 ms of data (1sec >> 10).
