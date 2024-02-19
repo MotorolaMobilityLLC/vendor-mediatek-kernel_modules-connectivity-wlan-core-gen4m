@@ -6858,10 +6858,6 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 		prCSAParams->eCsaBand = BAND_2G4;
 
 	prCSAParams->ucCsaNewCh = ucNewChannelNum;
-	prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand, ucNewChannelNum,
-					rlmGetVhtOpBwByBssOpBw(
-						rlmOpClassToBandwidth(
-						ucNewOperatingClass)));
 	switch (rlmOpClassToBandwidth(ucNewOperatingClass)) {
 	case BW_20:
 	case BW_40:
@@ -6882,6 +6878,9 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 	default:
 		break;
 	}
+	prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
+					ucNewChannelNum,
+					prCSAParams->ucVhtBw);
 
 	if (ucChannelSwitchMode == 1) {
 		/* Need to stop data transmission immediately */
