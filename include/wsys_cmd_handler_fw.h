@@ -420,6 +420,9 @@ enum ENUM_CMD_ID {
 	CMD_ID_SET_OSC              = 0xF2,
 	CMD_ID_HIF_CTRL             = 0xF6,
 	/* 0xF6 (Set) USB suspend/resume */
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	CMD_ID_UPDATE_LP             = 0xF7,
+#endif
 	CMD_ID_GET_BUILD_DATE_CODE = 0xF8,   /* 0xf8 (Query) */
 	CMD_ID_GET_BSS_INFO = 0xF9,          /* 0xF9 (Query) */
 	CMD_ID_SET_HOTSPOT_OPTIMIZATION = 0xFA,    /* 0xFA (Set) */

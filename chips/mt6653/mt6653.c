@@ -499,8 +499,21 @@ struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
 #else
 	{"reserved", NULL, NULL, NONE_INT, 0},
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	{"gen_switch_irq", pcie_gen_switch_top_handler,
+	pcie_gen_switch_thread_handler, PCIE_GEN_SWITCH_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	{"gen_switch_irq1", pcie_gen_switch_end_top_handler,
+	pcie_gen_switch_end_thread_handler, PCIE_GEN_SWITCH_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
+
 };
 #endif
 

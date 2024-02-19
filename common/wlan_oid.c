@@ -18799,3 +18799,45 @@ exit:
 	return r4Status;
 }
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+uint32_t
+wlandioStopPcieStatus(struct ADAPTER *prAdapter,
+			uint8_t ucPcieStatus
+)
+{
+	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
+	struct CMD_UPDATA_LP_PARAM *prCmdPcieStatus;
+
+	prCmdPcieStatus =
+		(struct CMD_UPDATA_LP_PARAM *)cnmMemAlloc(prAdapter,
+		RAM_TYPE_MSG,
+		sizeof(struct CMD_UPDATA_LP_PARAM));
+
+	if (!prCmdPcieStatus) {
+		DBGLOG(OID, ERROR,
+			"[Gen_Switch] prCmdPcieStatus fail!\n");
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	prCmdPcieStatus->ucPcieTransitionStatus = ucPcieStatus;
+
+	DBGLOG(OID, INFO,
+		"[Gen_Switch] cmd to fw ucPcieStatus = %d\n", ucPcieStatus);
+
+	wlanSendSetQueryCmd(prAdapter,
+			CMD_ID_UPDATE_LP,
+			TRUE,
+			FALSE,
+			FALSE,
+			NULL,
+			NULL,
+			sizeof(*prCmdPcieStatus),
+			(uint8_t *) prCmdPcieStatus, NULL, 0);
+
+	cnmMemFree(prAdapter, prCmdPcieStatus);
+	return rWlanStatus;
+
+}
+#endif //CFG_PCIE_GEN_SWITCH
+

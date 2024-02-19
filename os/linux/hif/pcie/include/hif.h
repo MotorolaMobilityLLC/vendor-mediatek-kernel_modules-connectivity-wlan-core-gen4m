@@ -92,6 +92,16 @@
 #define PCIE_CFGSPACE_FW_STATUS_SYNC_SHIFT	28
 #define PCIE_CFGSPACE_FW_STATUS_SYNC_MASK	0x3
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#define PCIE_STOP_TRANSITION_NOT_START  0
+#define PCIE_STOP_TRANSITION_ON_GOING   1
+#define PCIE_STOP_TRANSITION_END        2
+#define PCIE_RECOVER_TRANSITION_DONE    3
+#define PCIE_MD_REJECT_GEN_SWITCH       4
+#define PCIE_MD_BYPASS_GEN_SWITCH_START       5
+#define PCIE_MD_BYPASS_GEN_SWITCH_END         6
+#endif
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -680,6 +690,16 @@ void glUpdateRxCopyMemOps(
 int halSetMemOps(
 	struct platform_device *prPlatDev,
 	struct HIF_MEM_OPS *prMemOps);
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+irqreturn_t pcie_gen_switch_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance);
+
+irqreturn_t pcie_gen_switch_end_top_handler(int irq, void *dev_instance);
+irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance);
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter);
+
+#endif
 
 /*******************************************************************************
  *                              F U N C T I O N S

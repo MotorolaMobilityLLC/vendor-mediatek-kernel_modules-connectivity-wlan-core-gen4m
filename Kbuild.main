@@ -939,6 +939,16 @@ else
     ccflags-y += -DCFG_SUPPORT_TX_DATA_DELAY=0
 endif
 
+ifeq ($(CONFIG_PCIE_GEN_SWITCH), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_PCIE_GEN_SWITCH=1
+    else
+        ccflags-y += -DCFG_PCIE_GEN_SWITCH=0
+    endif
+else
+    ccflags-y += -DCFG_PCIE_GEN_SWITCH=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_STATS_ONE_CMD), y)
     ccflags-y += -DCFG_SUPPORT_STATS_ONE_CMD=1
 else

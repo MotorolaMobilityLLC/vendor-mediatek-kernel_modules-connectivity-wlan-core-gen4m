@@ -186,9 +186,15 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if CFG_SUPPORT_WIFI_POWER_METRICS
 	[CMD_ID_POWER_METRICS] = nicUniCmdPowerMetricsStatSetParam,
 #endif
+
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
 	[CMD_ID_SET_PWR_LIMIT_EMI_INFO] = nicUniCmdPowerLimitEmiInfo,
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	[CMD_ID_UPDATE_LP] = nicUniCmdUpdateLowPowerParam,
+#endif
+
 };
 
 static PROCESS_LEGACY_TO_UNI_FUNCTION arUniExtCmdTable[EXT_CMD_ID_END] = {
@@ -13180,6 +13186,23 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #endif
 		}
 			break;
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+		case UNI_EVENT_UPDATE_LP_GEN_SWITCH: {
+			struct UNI_EVENT_UPDATE_LP_GEN_SWITCH_T *info =
+				(struct UNI_EVENT_UPDATE_LP_GEN_SWITCH_T *) tag;
+
+			DBGLOG(NIC, INFO,
+				"[Gen Switch] event status [%d]\n",
+					info->ucGenSwitchStatus);
+			// 2: pcie stop transition done
+#if CFG_MTK_MDDP_SUPPORT
+			mddpNotifyMDGenSwitchStart(ad);
+#endif
+		}
+			break;
+#endif
+
 		default:
 			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
 			break;
@@ -13281,3 +13304,40 @@ void nicUniEventTxPower(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	}
 
 }
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_UPDATA_LP_PARAM *cmd;
+	struct UNI_CMD_UPDATE_LP *uni_cmd;
+	struct UNI_CMD_UPDATE_LP_GEN_SWITCH_PARAM *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_UPDATE_LP) +
+		sizeof(struct UNI_CMD_UPDATE_LP_GEN_SWITCH_PARAM);
+
+	if (info->ucCID != CMD_ID_UPDATE_LP ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_UPDATA_LP_PARAM *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_UPDATE_LP,
+		max_cmd_len, NULL, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_UPDATE_LP *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_UPDATE_LP_GEN_SWITCH_PARAM *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_UPDATE_LP_TAG_GEN_SWITCH_PARAM;
+	tag->u2Length = sizeof(*tag);
+	tag->ucPcieTransitionStatus = cmd->ucPcieTransitionStatus;
+	DBGLOG(NIC, WARN, "[Gen_Switch] cmd pcie status = %d\n",
+		cmd->ucPcieTransitionStatus);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+

@@ -60,6 +60,10 @@
 #include "connv3.h"
 #endif
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#include "mddp.h"
+#endif
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -238,6 +242,10 @@ const struct of_device_id mtk_wifi_tx_cma_of_ids[] = {
 #define HIF_MAWD_INT_BIT	1
 #define HIF_WED_INT_BIT		2
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#define GEN_SWITCH_TIMEOUT (1000*100)
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -336,6 +344,13 @@ static u32 g_u4CsrSize;
 #endif
 static u_int8_t g_fgDriverProbed = FALSE;
 static struct pci_dev *g_prDev;
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+static u_int8_t g_ucReceiveGenSwitch;
+static u_int8_t g_ucBypassException;
+
+#endif
+
 
 /*******************************************************************************
  *                                 M A C R O S
@@ -2822,3 +2837,95 @@ int mtk_pcie_retrain(struct pci_dev *dev)
 	return 0;
 }
 #endif
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+irqreturn_t pcie_gen_switch_top_handler(int irq, void *dev_instance)
+{
+	return IRQ_WAKE_THREAD;
+}
+irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
+	if (g_ucBypassException) {
+		DBGLOG(INIT, ERROR, "[Gen_Switch] g_u1BypassException\n");
+		g_ucBypassException = FALSE;
+		return IRQ_HANDLED;
+	}
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+
+	if (prGlueInfo) {
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return IRQ_HANDLED;
+		}
+	}
+
+	prAdapter->ucStopMMIO = TRUE;
+	g_ucReceiveGenSwitch = TRUE;
+	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO TRUE\n");
+
+	return IRQ_HANDLED;
+}
+
+irqreturn_t pcie_gen_switch_end_top_handler(int irq, void *dev_instance)
+{
+		return IRQ_WAKE_THREAD;
+}
+irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+
+	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
+
+	prGlueInfo = (struct GLUE_INFO *)dev_instance;
+
+	if (prGlueInfo) {
+		prAdapter = prGlueInfo->prAdapter;
+		if (!prAdapter) {
+			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+			return IRQ_HANDLED;
+		}
+	}
+
+	if (g_ucReceiveGenSwitch) {
+		g_ucReceiveGenSwitch = FALSE;
+	} else {
+		g_ucBypassException = TRUE;
+		DBGLOG(INIT, ERROR, "[Gen_Switch] g_ucBypassException\n");
+	}
+	prAdapter->ucStopMMIO = FALSE;
+	DBGLOG(INIT, ERROR, "[Gen_Switch] ucStopMMIO FALSE\n");
+#if CFG_MTK_MDDP_SUPPORT
+	mddpNotifyMDGenSwitchEnd(prAdapter);
+#endif
+
+	return IRQ_HANDLED;
+}
+
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+
+	if (prAdapter) {
+		if (prAdapter->ucStopMMIO) {
+			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going\n");
+			while (prAdapter->ucStopMMIO) {
+				udelay(1);
+				u4Val++;
+				if (u4Val > GEN_SWITCH_TIMEOUT) {
+					prAdapter->ucStopMMIO = FALSE;
+					break;
+				}
+			}
+			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going end\n");
+		}
+	}
+}
+
+#endif
+
