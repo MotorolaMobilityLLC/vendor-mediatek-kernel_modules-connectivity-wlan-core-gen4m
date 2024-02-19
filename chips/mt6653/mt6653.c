@@ -3147,8 +3147,21 @@ static uint32_t mt6653_ccif_get_fw_log_read_pointer(struct ADAPTER *ad,
 	return u4Value;
 }
 
+static void mt6653_force_conn_infra_on(struct ADAPTER *ad,
+	u_int8_t fgForceOn)
+{
+	uint32_t u4WriteValue = (fgForceOn == TRUE) ? 1 : 0;
+
+	HAL_MCR_WR(ad,
+		CONN_HOST_CSR_TOP_CONN_INFRA_WAKEPU_WF_ADDR,
+		u4WriteValue);
+}
+
 static int32_t mt6653_ccif_trigger_fw_assert(struct ADAPTER *ad)
 {
+	mt6653_force_conn_infra_on(ad, TRUE);
+	mdelay(5);
+
 	HAL_MCR_WR(ad,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_TCHNUM_ADDR,
 		SW_INT_SUBSYS_RESET);
@@ -3609,6 +3622,8 @@ static void mt6653_mcu_deinit(struct ADAPTER *ad)
 	}
 
 	wifi_coredump_set_enable(FALSE);
+
+	mt6653_force_conn_infra_on(ad, FALSE);
 
 	if (ad->chip_info->coexpccifoff)
 		ad->chip_info->coexpccifoff(ad);
