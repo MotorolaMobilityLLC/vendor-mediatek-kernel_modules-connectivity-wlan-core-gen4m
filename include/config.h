@@ -1084,6 +1084,9 @@
 #ifndef CFG_SUPPORT_DFS_MASTER
 #define CFG_SUPPORT_DFS_MASTER                  1
 #endif
+#ifndef CFG_SUPPORT_TRX_LIMITED_CONFIG
+#define CFG_SUPPORT_TRX_LIMITED_CONFIG          0
+#endif
 /* SoftAp Cross Band Channel Switch */
 #ifndef CFG_SUPPORT_IDC_CH_SWITCH
 #define CFG_SUPPORT_IDC_CH_SWITCH               1

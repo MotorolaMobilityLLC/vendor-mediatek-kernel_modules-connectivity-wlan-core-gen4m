@@ -835,6 +835,7 @@ struct WIFI_VAR {
 
 	uint8_t ucStaHt;
 	uint8_t ucStaVht;
+	uint8_t ucForceTrxConfig;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucStaHe;
 	uint8_t ucApHe;

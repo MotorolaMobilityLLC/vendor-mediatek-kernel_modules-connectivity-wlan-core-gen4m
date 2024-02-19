@@ -163,8 +163,16 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 	if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_VHT) {
 		for (i = 0; i < 8; i++)
 			prBssInfo->u2VhtBasicMcsSet |= BITS(2 * i, (2 * i + 1));
-		prBssInfo->u2VhtBasicMcsSet &=
-			(VHT_CAP_INFO_MCS_MAP_MCS9
+#if CFG_SUPPORT_TRX_LIMITED_CONFIG
+		if (p2pFuncGetForceTrxConfig(prAdapter) ==
+				P2P_FORCE_TRX_CONFIG_MCS7)
+			prBssInfo->u2VhtBasicMcsSet &=
+				(VHT_CAP_INFO_MCS_MAP_MCS7
+				<< VHT_CAP_INFO_MCS_1SS_OFFSET);
+		else
+#endif
+			prBssInfo->u2VhtBasicMcsSet &=
+				(VHT_CAP_INFO_MCS_MAP_MCS9
 				<< VHT_CAP_INFO_MCS_1SS_OFFSET);
 
 		ucMaxBw = cnmOpModeGetMaxBw(prAdapter,

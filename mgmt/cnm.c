@@ -5700,7 +5700,12 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 			}
 		}
 #endif /* (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1) */
-
+		if (eNewReq == CNM_OPMODE_REQ_USER_CONFIG) {
+			if (ucOpBwFinal > MAX_BW_20MHZ &&
+				prBssInfo->eBand == BAND_5G &&
+				prBssInfo->ucPrimaryChannel == 165)
+				ucOpBwFinal = MAX_BW_20MHZ;
+		}
 #if CFG_ENABLE_WIFI_DIRECT
 		if (eNewReq == CNM_OPMODE_REQ_RDD_OPCHNG &&
 			IS_BSS_APGO(prBssInfo))

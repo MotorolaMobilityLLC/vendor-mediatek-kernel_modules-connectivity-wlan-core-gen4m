@@ -28,6 +28,12 @@ enum ENUM_P2P_MGMT_TX_TYPE {
 	P2P_MGMT_TX_TYPE_NUM
 };
 
+enum ENUM_P2P_FORCE_TRX_CONFIG {
+	P2P_FORCE_TRX_CONFIG_NONE = 0,
+	P2P_FORCE_TRX_CONFIG_MCS7,
+	P2P_FORCE_TRX_CONFIG_MCS9
+};
+
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************
@@ -105,6 +111,18 @@ p2pFuncIsPendingTxMgmtNeedWait(struct ADAPTER *prAdapter, uint8_t ucRoleIndex,
 void p2pFuncAcquireCh(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo);
+
+void p2pFuncSetApNss(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		uint8_t ucOpTxNss,
+		uint8_t ucOpRxNss);
+
+void p2pFuncSetForceTrxConfig(struct ADAPTER *prAdapter,
+		uint8_t ucBssIdx,
+		uint8_t ucScenarioConfig);
+
+uint8_t
+p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter);
 
 void
 p2pFuncDisconnect(struct ADAPTER *prAdapter,

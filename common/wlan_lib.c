@@ -7221,7 +7221,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			  HE_CAP_INFO_MCS_MAP_MCS11, FEATURE_DEBUG_ONLY);
 	}
 #endif
-
+	INIT_UINT(prWifiVar->ucForceTrxConfig,
+		"ForceTrxConfig", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 #if (CFG_SUPPORT_802_11BE == 1)
 	INIT_UINT(prWifiVar->ucStaEht, "StaEHT", FEATURE_ENABLED,
 		  FEATURE_TO_CUSTOMER);
