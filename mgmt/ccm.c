@@ -72,6 +72,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	enum ENUM_MBMC_BN eTargetHwBandIdx;
 	enum ENUM_BAND eTargetBand;
 	u_int8_t fgIsSwitching = FALSE;
+	u_int8_t fgIsMloSap = FALSE;
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
 		DBGLOG(CCM, INFO, "skip due to CSA still in progress");
@@ -96,8 +97,13 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 		return;
 	}
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, bss));
+#endif
+
 	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-			bss->u4PrivateData]))
+			bss->u4PrivateData]) &&
+	    !fgIsMloSap)
 		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter);
 	else
 		fgIsSwitching = ccmGoSwitchChannel(prAdapter, bss,
