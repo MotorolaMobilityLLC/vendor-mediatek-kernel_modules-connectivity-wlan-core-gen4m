@@ -955,6 +955,12 @@ void aisCheckApRemoval(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* CSA Handler                                                                */
 /*----------------------------------------------------------------------------*/
+void aisFunFlushTxQueue(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+void aisFunSwitchChannel(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
+void aisFunSwitchChannelAbort(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo);
 void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBss,
