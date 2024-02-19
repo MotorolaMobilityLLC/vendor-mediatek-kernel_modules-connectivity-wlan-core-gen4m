@@ -12,10 +12,12 @@ ifneq ($(CONNECTIVITY_OUT_PATH),)
 	KERNEL_DIR=$(KERNEL_SRC)
 	MODULE_PWD=$(M)/../..
 	include $(KERNEL_SRC)/$(DEVICE_MODULES_REL_DIR)/Makefile.include
+ifneq ($(_CONNAC_VER), 1_0)
 	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/conninfra/Module.symvers)
 	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/Module.symvers)
 	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/wlan/adaptor/wlan_page_pool/Module.symvers)
-	EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/$(_CONNAC_DENPENDENCY_SYMBOLS))
+endif
+	EXTRA_SYMBOLS += $(foreach dep, $(_CONNAC_DENPENDENCY_SYMBOLS), $(abspath $(CONNECTIVITY_OUT_PATH)/$(dep)))
 else
 	KERNEL_DIR=/lib/modules/$(shell uname -r)/build
 	MODULE_PWD=$(PWD)

@@ -692,13 +692,13 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 #if WLAN_INCLUDE_SYS
 	sysResetTrigger();
 #endif
-
+#if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
 	/* Avoid doing reset triggered by CMD when WIFI write is processing */
 	if (get_wifi_process_status() == 1 &&
 	   (eResetReason == RST_CMD_TRIGGER ||
 	    eResetReason == RST_FWK_TRIGGER))
 		goto exit;
-
+#endif
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
 #endif

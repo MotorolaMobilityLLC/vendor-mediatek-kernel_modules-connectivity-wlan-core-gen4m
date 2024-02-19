@@ -184,6 +184,7 @@ static inline int wifi_coredump_init(void *priv)
 static inline void wifi_coredump_deinit(void) {}
 static inline void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 	char *reason,
+	enum ENUM_COREDUMP_BY_CHIP_RESET_TYPE_T type,
 	u_int8_t force_dump) {}
 static inline void coredump_register_bushang_chk_cb(bushang_chk_func_cb cb) {}
 static inline void wifi_coredump_set_enable(u_int8_t enable) {}

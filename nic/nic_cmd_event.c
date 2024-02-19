@@ -2768,7 +2768,8 @@ uint32_t nicCfgChipCapPhyCap(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
-uint8_t ehtMcsToMcsMap(uint8_t ucMcs)
+#if (CFG_SUPPORT_802_11AX == 1)
+uint8_t heMcsToMcsMap(uint8_t ucMcs)
 {
 	switch (ucMcs) {
 	case 7:
@@ -2781,6 +2782,7 @@ uint8_t ehtMcsToMcsMap(uint8_t ucMcs)
 		return HE_CAP_INFO_MCS_NOT_SUPPORTED;
 	}
 }
+#endif
 
 uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
 				 uint8_t *pucEventBuf)
@@ -2793,22 +2795,22 @@ uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
 		prCapLimited->ucLimitedMaxMcs2g,
 		prCapLimited->ucLimitedMaxMcs5g,
 		prCapLimited->ucLimitedMaxMcs6g);
-
+#if (CFG_SUPPORT_802_11AX == 1)
 	prAdapter->rWifiVar.ucHeMaxMcsMap2g = kal_min_t(uint8_t,
-				ehtMcsToMcsMap(prCapLimited->ucLimitedMaxMcs2g),
+				heMcsToMcsMap(prCapLimited->ucLimitedMaxMcs2g),
 				prAdapter->rWifiVar.ucHeMaxMcsMap2g);
 	prAdapter->rWifiVar.ucHeMaxMcsMap5g = kal_min_t(uint8_t,
-				ehtMcsToMcsMap(prCapLimited->ucLimitedMaxMcs5g),
+				heMcsToMcsMap(prCapLimited->ucLimitedMaxMcs5g),
 				prAdapter->rWifiVar.ucHeMaxMcsMap5g);
 	prAdapter->rWifiVar.ucHeMaxMcsMap6g = kal_min_t(uint8_t,
-				ehtMcsToMcsMap(prCapLimited->ucLimitedMaxMcs6g),
+				heMcsToMcsMap(prCapLimited->ucLimitedMaxMcs6g),
 				prAdapter->rWifiVar.ucHeMaxMcsMap6g);
 
 	DBGLOG(INIT, INFO, "Limited max MCS map: [2G][%u],[5G][%u],[6G][%u]\n",
 		prAdapter->rWifiVar.ucHeMaxMcsMap2g,
 		prAdapter->rWifiVar.ucHeMaxMcsMap5g,
 		prAdapter->rWifiVar.ucHeMaxMcsMap6g);
-
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 

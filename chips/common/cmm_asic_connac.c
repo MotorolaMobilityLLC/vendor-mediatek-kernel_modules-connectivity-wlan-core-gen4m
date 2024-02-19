@@ -442,7 +442,7 @@ void asicPdmaLoopBackConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable)
 	union WPDMA_GLO_CFG_STRUCT GloCfg;
 	uint32_t word = 1;
 
-	HAL_MCR_RD(prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
 
 	GloCfg.field_conn.bypass_dmashdl_txring3 = 1;
 	GloCfg.field_conn.pdma_addr_ext_en = 0;
@@ -466,7 +466,7 @@ static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 		return;
 
 	/* Config RX ring0 & ring1 */
-	HAL_MCR_RD(prAdapter, WPDMA_PAUSE_RX_Q_TH10, &u4OldVal);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_PAUSE_RX_Q_TH10, &u4OldVal);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH0 << WPDMA_PAUSE_RX_Q_TH0_SHFT);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH1 << WPDMA_PAUSE_RX_Q_TH1_SHFT);
 	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH10, u4NewVal);
@@ -475,7 +475,7 @@ static void configPdmaRxRingThreshold(struct GLUE_INFO *prGlueInfo)
 
 	/* Config RX ring2 & ring3 */
 	u4OldVal = u4NewVal = 0;
-	HAL_MCR_RD(prAdapter, WPDMA_PAUSE_RX_Q_TH32, &u4OldVal);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_PAUSE_RX_Q_TH32, &u4OldVal);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH2 << WPDMA_PAUSE_RX_Q_TH2_SHFT);
 	u4NewVal += (WPDMA_PAUSE_RX_Q_TH3 << WPDMA_PAUSE_RX_Q_TH3_SHFT);
 	kalDevRegWrite(prGlueInfo, WPDMA_PAUSE_RX_Q_TH32, u4NewVal);
@@ -491,7 +491,7 @@ void asicPdmaIntMaskConfig(struct GLUE_INFO *prGlueInfo,
 			prGlueInfo->prAdapter->chip_info->bus_info;
 	union WPDMA_INT_MASK IntMask = {0};
 
-	HAL_MCR_RD(prAdapter, WPDMA_INT_MSK, &IntMask.word);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_INT_MSK, &IntMask.word);
 
 	if (fgEnable == TRUE) {
 		if (ucType & BIT(DMA_INT_TYPE_MCU2HOST))
@@ -601,7 +601,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 	asicPdmaIntMaskConfig(prGlueInfo,
 		BIT(DMA_INT_TYPE_MCU2HOST) | BIT(DMA_INT_TYPE_TRX),
 		fgEnable);
-	HAL_MCR_RD(prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_GLO_CFG, &GloCfg.word);
 
 	if (fgEnable == TRUE) {
 		GloCfg.field_conn.tx_dma_en = 1;
@@ -624,7 +624,7 @@ void asicPdmaConfig(struct GLUE_INFO *prGlueInfo, u_int8_t fgEnable,
 		       ERROR_DETECT_MASK);
 
 	/* Set PDMA APSRC_ACK CR */
-	HAL_MCR_RD(prAdapter, WPDMA_APSRC_ACK_LOCK_SLPPROT, &u4Val);
+	HAL_MCR_RD(prGlueInfo->prAdapter, WPDMA_APSRC_ACK_LOCK_SLPPROT, &u4Val);
 	kalDevRegWrite(prGlueInfo, WPDMA_APSRC_ACK_LOCK_SLPPROT,
 		u4Val | BIT(4));
 

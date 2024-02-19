@@ -8431,7 +8431,7 @@ static void txPwrCtrlSetSingleRatePwrLimit(
 		prChnlSet->i8PwrLimitEHT[ofset] = pwr;
 		break;
 #endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
-
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	case PWR_CFG_RATE_TAG_HIT_LEGACY6G:
 #if ((CFG_SUPPORT_DYNA_TX_PWR_CTRL_11AC_V2_SETTING == 0) \
 	&& (CFG_SUPPORT_PWR_LMT_EMI == 1))
@@ -8459,7 +8459,7 @@ static void txPwrCtrlSetSingleRatePwrLimit(
 		prChnlSet->op6E[ofset] = op;
 		prChnlSet->i8PwrLimit6E[ofset] = pwr;
 		break;
-
+#endif
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	case PWR_CFG_RATE_TAG_HIT_EHT6G:
 		prChnlSet->opEHT_6G[ofset] = op;
