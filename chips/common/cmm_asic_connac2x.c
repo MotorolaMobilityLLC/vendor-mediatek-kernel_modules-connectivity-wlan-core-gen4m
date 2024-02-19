@@ -2785,7 +2785,7 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 
 		glResetUpdateFlag(TRUE);
 
-		if (get_wifi_process_status() == 1) {
+		if (get_wifi_process_status()) {
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 			fw_log_handler();
 #endif

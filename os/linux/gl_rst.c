@@ -700,7 +700,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 #if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
 	/* Avoid doing reset triggered by CMD when WIFI write is processing */
-	if (get_wifi_process_status() == 1 &&
+	if (get_wifi_process_status() &&
 	   (eResetReason == RST_CMD_TRIGGER ||
 	    eResetReason == RST_FWK_TRIGGER))
 		goto exit;
@@ -1654,7 +1654,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	DBGLOG(INIT, INFO,
 			"Enter glRstwlanPreWholeChipReset.\n");
-	while (get_wifi_process_status() == 1) {
+	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		msleep(100);
@@ -1719,7 +1719,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 int glRstwlanPostWholeChipReset(void)
 {
-	while (get_wifi_process_status() == 1) {
+	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		msleep(100);
@@ -1753,7 +1753,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		drv, reason, reset_type);
 
 #if CFG_MTK_ANDROID_WMT
-	while (get_wifi_process_status() == 1) {
+	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		kalMsleep(100);
@@ -1885,7 +1885,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	prAdapter = prGlueInfo->prAdapter;
 
 #if CFG_MTK_ANDROID_WMT
-	while (get_wifi_process_status() == 1) {
+	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		kalMsleep(100);
@@ -1932,7 +1932,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 int wlan_post_whole_chip_rst_v2(void)
 {
 #if CFG_MTK_ANDROID_WMT
-	while (get_wifi_process_status() == 1) {
+	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		msleep(100);

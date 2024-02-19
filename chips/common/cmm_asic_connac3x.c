@@ -2967,8 +2967,14 @@ static int wlan_pwr_on_notify(void)
 
 static int wlan_chip_power_down_notify(unsigned int notify)
 {
-	if (!get_wifi_powered_status())
+	while (get_wifi_process_status() == 2) {
+		DBGLOG(REQ, WARN,
+			"Wi-Fi off process is ongoing, wait here.\n");
+		msleep(50);
+	}
+	if (!get_wifi_process_status() && !get_wifi_powered_status())
 		glNotifyPciePowerDown();
+
 	return 0;
 }
 
