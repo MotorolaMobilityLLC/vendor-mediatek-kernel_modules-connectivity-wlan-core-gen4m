@@ -85,12 +85,13 @@ uint8_t g_au8RlmHeCfgContellIdx[4][4][2] = {
 };
 
 #if (CFG_SUPPORT_802_11AX == 1)
-uint8_t  g_ucHtSMPSCapValue = 5;
-uint8_t  g_ucHeSMPSCapValue = 5;
-uint8_t  g_ucHtSMPS6GCapValue = 5;
-uint8_t  g_fgSigmaCMDHt = 2;
-uint8_t  g_fgSigmaCMDHe = 2;
-uint8_t  g_fgSigmaCMD6g = 2;
+#define TESTMODE_FORCE_DISABLE 0xFE
+uint8_t  g_ucHtSMPSCapValue = TESTMODE_FORCE_DISABLE;
+uint8_t  g_ucHeSMPSCapValue = TESTMODE_FORCE_DISABLE;
+uint8_t  g_ucHtSMPS6GCapValue = TESTMODE_FORCE_DISABLE;
+uint8_t  g_fgSigmaCMDHt = TESTMODE_FORCE_DISABLE;
+uint8_t  g_fgSigmaCMDHe = TESTMODE_FORCE_DISABLE;
+uint8_t  g_fgSigmaCMD6g = TESTMODE_FORCE_DISABLE;
 #endif
 
 /*******************************************************************************
