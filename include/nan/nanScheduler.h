@@ -161,6 +161,12 @@ struct _NAN_SCHED_EVENT_NAN_ATTR_T {
 	uint8_t aucNanAttr[1000];
 };
 
+enum _ENUM_NAN_SCHED_NDL_DISCONNECT_REASON_T {
+	ENUM_NAN_NDL_DISCONNECT_BY_KEEP_ALIVE = 0,
+	ENUM_NAN_NDL_DISCONNECT_BY_AGING = 1,
+	ENUM_NAN_NDL_DISCONNECT_REASON_NUM
+};
+
 uint32_t nanSchedNegoApplyCustChnlList(struct ADAPTER *prAdapter);
 
 uint32_t nanSchedInit(struct ADAPTER *prAdapter);

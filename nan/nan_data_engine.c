@@ -6830,13 +6830,15 @@ nanDataEngineRemovePendingRequests(
 
 void
 nanDataEngineDisconnectByStaIdx(struct ADAPTER *prAdapter,
-		uint8_t ucStaIdx) {
+		uint8_t ucStaIdx,
+		unsigned char fgTXNDPTermination) {
 	struct STA_RECORD *prStaRec = NULL;
 	struct _NAN_NDL_INSTANCE_T *prNDL;
 	uint8_t i = 0;
 
 #if (ENABLE_NDP_UT_LOG == 1)
-	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
+	DBGLOG(NAN, INFO, "[%s] Enter, fgTXNDPTermination = %u\n",
+	       __func__, fgTXNDPTermination);
 #endif
 	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaIdx);
 	if (prStaRec == NULL) {
@@ -6848,7 +6850,8 @@ nanDataEngineDisconnectByStaIdx(struct ADAPTER *prAdapter,
 		for (i = 0; i < NAN_MAX_SUPPORT_NDP_NUM; i++) {
 			if (prNDL->arNDP[i].fgNDPValid == TRUE) {
 				if (prNDL->arNDP[i].eCurrentNDPProtocolState ==
-					NDP_NORMAL_TR) {
+					NDP_NORMAL_TR &&
+					fgTXNDPTermination == FALSE) {
 					nanDataPathProtocolFsmStep(
 						prAdapter, NDP_DISCONNECT,
 						&prNDL->arNDP[i]);
@@ -6888,8 +6891,13 @@ nanDataEngingDisconnectEvt(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	DBGLOG(NAN, INFO, "[%s] NDL Timeout, Sta:%d\n", __func__,
-	       prNDLDisconn->ucStaIdx);
-	nanDataEngineDisconnectByStaIdx(prAdapter, prNDLDisconn->ucStaIdx);
+	DBGLOG(NAN, INFO, "[%s] NDL Timeout, Reason:%u, Sta:%u\n", __func__,
+	       prNDLDisconn->ucReason, prNDLDisconn->ucStaIdx);
+	if (prNDLDisconn->ucReason == ENUM_NAN_NDL_DISCONNECT_BY_KEEP_ALIVE)
+		nanDataEngineDisconnectByStaIdx(prAdapter,
+						prNDLDisconn->ucStaIdx, FALSE);
+	else
+		nanDataEngineDisconnectByStaIdx(prAdapter,
+						prNDLDisconn->ucStaIdx, TRUE);
 }
 
