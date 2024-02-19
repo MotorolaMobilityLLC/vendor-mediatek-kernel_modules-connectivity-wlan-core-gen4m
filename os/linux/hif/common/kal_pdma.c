@@ -2413,6 +2413,10 @@ end:
 		GLUE_DEC_REF_CNT(ai4RingLock[u4Idx]);
 	}
 
+#if CFG_SUPPORT_TX_FREE_MSDU_WORK
+	kalTxFreeMsduWorkSchedule(prGlueInfo);
+#endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+
 #if !CFG_SUPPORT_RX_WORK
 	KAL_HIF_BH_ENABLE(prGlueInfo);
 #endif /* !CFG_SUPPORT_RX_WORK */

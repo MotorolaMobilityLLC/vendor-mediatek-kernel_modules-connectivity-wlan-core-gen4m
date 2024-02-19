@@ -5667,8 +5667,10 @@ uint32_t nicTxDirectToHif(struct ADAPTER *prAdapter,
 		KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_TX_PORT_QUE);
 		GLUE_INC_REF_CNT(prAdapter->rHifStats.u4DataInCount);
 
-		kalSetTxEvent2Hif(prGlueInfo);
 	}
+
+	kalSetTxEvent2Hif(prGlueInfo);
+
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_TX_DIRECT_VIA_HIF_THREAD */
