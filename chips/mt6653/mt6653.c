@@ -2033,13 +2033,24 @@ static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus)
 {
-	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	struct RTMP_DMABUF *prRingIntSta = &prHifInfo->rRingIntSta;
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct HIF_MEM *prMem;
+	struct RTMP_DMABUF *prRingIntSta;
 #if CFG_ENABLE_MAWD_MD_RING
-	struct RTMP_DMABUF *prRingMdIntSta = &prHifInfo->rRingMdIntSta;
+	struct RTMP_DMABUF *prRingMdIntSta;
 #endif
-	uint32_t u4RegValue = 0, u4WrValue = 0, u4Addr;
+	uint32_t u4Addr, u4RegValue = 0, u4WrValue = 0, u4SwIntSta = 0;
 	u_int8_t fgClrCr = FALSE;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prMemOps = &prHifInfo->rMemOps;
+	prRingIntSta = &prHifInfo->rRingIntSta;
+#if CFG_ENABLE_MAWD_MD_RING
+	prRingMdIntSta = &prHifInfo->rRingMdIntSta;
+#endif
 
 	*pu4IntStatus = 0;
 	u4RegValue = *((uint32_t *)prRingIntSta->AllocVa);
@@ -2075,8 +2086,15 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 		       u4Addr, u4WrValue);
 	}
 
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
+		if (prMem && prMem->va)
+			u4SwIntSta = *((uint32_t *)prMem->va);
+	}
+
 	/* clear err int */
-	if (u4RegValue & BIT(27)) {
+	if ((u4RegValue & BIT(27)) || u4SwIntSta) {
 		*pu4IntStatus |= WHISR_D2H_SW_INT;
 		u4Addr = WF_WFDMA_HOST_DMA0_HOST_INT_STA_ADDR;
 		u4WrValue = CONNAC_MCU_SW_INT | CONNAC_SUBSYS_INT;
