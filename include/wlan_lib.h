@@ -1465,7 +1465,7 @@ enum ENUM_WLAN_IOT_AP_FLAG_T {
 	WLAN_IOT_AP_FG_MAX
 };
 
-enum ENUM_WLAN_IOT_AP_HANDLE_ACTION {
+enum ENUM_WLAN_IOT_ACTION {
 	WLAN_IOT_AP_VOID = 0,
 	WLAN_IOT_AP_DBDC_1SS,
 	WLAN_IOT_AP_DIS_SG,
@@ -1493,7 +1493,9 @@ struct WLAN_IOT_AP_RULE_T {
 	uint8_t  ucNss;
 	uint8_t  ucHtType;
 	uint8_t  ucBand;
-	uint8_t  ucAction;
+	/* Byte Alignment*/
+	uint8_t  aReserved[1];
+	uint64_t u8Action;
 };
 #endif
 

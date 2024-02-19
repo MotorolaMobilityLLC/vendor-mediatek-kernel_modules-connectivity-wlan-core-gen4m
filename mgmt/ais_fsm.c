@@ -1199,8 +1199,8 @@ struct PMKID_ENTRY *aisSearchPmkidEntry(struct ADAPTER *prAdapter,
 	}
 
 	if (entry && prConnSettings->eAuthMode == AUTH_MODE_WPA3_OWE
-		&& bssGetIotApAction(prAdapter, prBssDesc) ==
-		WLAN_IOT_AP_OWE_PMK_REMOVE) {
+		&& bssIsIotAp(prAdapter, prBssDesc,
+			      WLAN_IOT_AP_OWE_PMK_REMOVE)) {
 		DBGLOG(RSN, INFO,
 			"IoT AP: Do not apply PMKID in RSNIE if auth type is OWE");
 		entry = NULL;
