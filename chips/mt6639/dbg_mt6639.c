@@ -2672,8 +2672,7 @@ void mt6639_get_rx_link_stats(struct ADAPTER *prAdapter,
 			RXV_GET_FR_MODE(pu4RxV[2]),
 			RXV_GET_RX_RATE(pu4RxV[0]));
 
-	if (!(prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-	      prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
+	if (!IS_RX_MPDU_BEGIN(prSwRfb->ucPayloadFormat))
 		return;
 
 	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(pu4RxV[2])];

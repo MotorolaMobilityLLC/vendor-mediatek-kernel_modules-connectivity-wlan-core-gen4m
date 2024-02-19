@@ -67,6 +67,14 @@
 #define RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU      2
 #define RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU        1
 
+#define IS_RX_MPDU_BEGIN(_amsduSubframeType) \
+	((_amsduSubframeType) == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU || \
+	 (_amsduSubframeType) == RX_PAYLOAD_FORMAT_MSDU)
+
+#define IS_RX_MPDU_FINAL(_amsduSubframeType) \
+	((_amsduSubframeType) == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU || \
+	 (_amsduSubframeType) == RX_PAYLOAD_FORMAT_MSDU)
+
 /* RX Report Definition */
 /* Unit: DW */
 #define RX_RPT_HDR_LEN			8

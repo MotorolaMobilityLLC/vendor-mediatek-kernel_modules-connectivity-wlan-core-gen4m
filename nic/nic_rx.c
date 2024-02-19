@@ -4269,37 +4269,36 @@ static void updateLinkStatsMpduAc(struct ADAPTER *prAdapter,
 		STATS_LLS_WIFI_AC_VO,
 		STATS_LLS_WIFI_AC_VO,
 	};
-	uint8_t ac;
+	uint8_t ac = Tid2LinkStatsAc[(uint8_t)(prSwRfb->ucTid & 0x7U)];
 	uint8_t ucBssIdx = GLUE_GET_PKT_BSS_IDX(prSwRfb->pvPacket);
 	struct BSS_INFO *prBssInfo;
 
-	ac = Tid2LinkStatsAc[(uint8_t)(prSwRfb->ucTid & 0x7U)];
-	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU) {
-		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-		if (!prBssInfo)
-			return;
+	if (!IS_RX_MPDU_BEGIN(prSwRfb->ucPayloadFormat))
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
+	if (!prBssInfo)
+		return;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (prBssInfo->eHwBandIdx != prSwRfb->ucHwBandIdx) {
-			uint8_t ucHwBandIdx = prSwRfb->ucHwBandIdx;
-			uint8_t i;
+	if (prBssInfo->eHwBandIdx != prSwRfb->ucHwBandIdx) {
+		uint8_t ucHwBandIdx = prSwRfb->ucHwBandIdx;
+		uint8_t i;
 
-			/* find the BSS by matching the band index */
-			/* TODO: performance? */
-			for (i = 0; i < MAX_BSSID_NUM; i++) {
-				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-				if (prBssInfo &&
-				    prBssInfo->eHwBandIdx == ucHwBandIdx)
-					break;
-			}
-
-			if (!prBssInfo)
-				return;
+		/* find the BSS by matching the band index */
+		/* TODO: performance? */
+		for (i = 0; i < MAX_BSSID_NUM; i++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (prBssInfo &&
+			    prBssInfo->eHwBandIdx == ucHwBandIdx)
+				break;
 		}
-#endif
-		prBssInfo->u4RxMpduAc[ac]++;
+
+		if (!prBssInfo)
+			return;
 	}
+#endif
+	prBssInfo->u4RxMpduAc[ac]++;
 #endif
 }
 

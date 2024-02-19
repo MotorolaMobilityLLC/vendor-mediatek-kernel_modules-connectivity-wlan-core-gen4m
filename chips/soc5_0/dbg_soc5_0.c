@@ -1135,8 +1135,7 @@ void soc5_0_get_rx_link_stats(struct ADAPTER *prAdapter,
 			RXV_GET_FR_MODE(u4RxV0),
 			RXV_GET_RX_RATE(u4RxV0));
 
-	if (!(prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MSDU ||
-	      prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU))
+	if (!IS_RX_MPDU_BEGIN(prSwRfb->ucPayloadFormat))
 		return;
 
 	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(u4RxV0)];

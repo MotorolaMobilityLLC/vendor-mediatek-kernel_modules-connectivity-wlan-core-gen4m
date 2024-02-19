@@ -200,7 +200,7 @@ void qmInit(struct ADAPTER *prAdapter,
 		prQM->arRxBaTable[u4Idx].fgHasBubble = FALSE;
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
-		prQM->arRxBaTable[u4Idx].u8LastAmsduSubIdx =
+		prQM->arRxBaTable[u4Idx].ucLastAmsduSubIdx =
 			RX_PAYLOAD_FORMAT_MSDU;
 		prQM->arRxBaTable[u4Idx].fgAmsduNeedLastFrame = FALSE;
 		prQM->arRxBaTable[u4Idx].fgIsAmsduDuplicated = FALSE;
@@ -4482,8 +4482,7 @@ static void checkRxDuplicateSsn(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_CONNAC3X == 1)
 	uint32_t u4RxDropResetThreshold;
 
-	if (prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU ||
-	    prSwRfb->ucPayloadFormat == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU)
+	if (!IS_RX_MPDU_BEGIN(prSwRfb->ucPayloadFormat))
 		return;
 
 	if (prSwRfb->u2SSN == prReorderQueParm->rDupDrop.u2SSN) {
@@ -4769,7 +4768,7 @@ void qmBaResetCheck(struct ADAPTER *prAdapter,
 		SEQ_ADD(prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinSize - 1);
 #if CFG_SUPPORT_RX_AMSDU
-	prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
+	prReorderQueParm->ucLastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 #endif
 
 	DBGLOG(QM, INFO, "BA Win Shift STA[%u] TID[%u] {%u,%u} => {%u,%u}\n",
@@ -4864,7 +4863,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 			prReorderQueParm->fgIsWaitingForPktWithSsn = FALSE;
 #if CFG_SUPPORT_RX_AMSDU
 			/* RX reorder for one MSDU in AMSDU issue */
-			prReorderQueParm->u8LastAmsduSubIdx =
+			prReorderQueParm->ucLastAmsduSubIdx =
 				RX_PAYLOAD_FORMAT_MSDU;
 #endif
 		}
@@ -4897,7 +4896,7 @@ void qmInsertReorderPkt(struct ADAPTER *prAdapter,
 				-(prReorderQueParm->u2WinSize - 1));
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
-		prReorderQueParm->u8LastAmsduSubIdx =
+		prReorderQueParm->ucLastAmsduSubIdx =
 			RX_PAYLOAD_FORMAT_MSDU;
 #endif
 		u4BeforeCount = prReorderQueParm->rReOrderQue.u4NumElem;
@@ -5042,7 +5041,7 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 {
 	struct SW_RFB *prExaminedQueuedSwRfb;
 	struct QUE *prReorderQue;
-	uint8_t u8AmsduSubframeIdx; /* RX reorder for one MSDU in AMSDU issue */
+	uint8_t ucAmsduSubframeIdx; /* RX reorder for one MSDU in AMSDU issue */
 
 	ASSERT(prSwRfb);
 	ASSERT(prReorderQueParm);
@@ -5054,7 +5053,7 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 		QUEUE_INSERT_HEAD(prReorderQue, prSwRfb);
 		setReorderingIndexCache(prReorderQueParm, prSwRfb);
 	} else {
-		u8AmsduSubframeIdx = prSwRfb->ucPayloadFormat;
+		ucAmsduSubframeIdx = prSwRfb->ucPayloadFormat;
 
 		/* Determine the insert position */
 		prExaminedQueuedSwRfb =
@@ -5068,11 +5067,7 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 				 * duplicated, not a duplicat packet
 				 */
 				if (!prReorderQueParm->fgIsAmsduDuplicated &&
-					(u8AmsduSubframeIdx ==
-					RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU ||
-					u8AmsduSubframeIdx ==
-					RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU)) {
-
+				    !IS_RX_MPDU_BEGIN(ucAmsduSubframeIdx)) {
 					prExaminedQueuedSwRfb =
 						(struct SW_RFB *)((
 						(struct QUE_ENTRY *)
@@ -5091,7 +5086,7 @@ void qmInsertFallWithinReorderPkt(struct ADAPTER *prAdapter,
 				/* if first is duplicated,
 				 * drop subsequent middle and last frames
 				 */
-				if (u8AmsduSubframeIdx ==
+				if (ucAmsduSubframeIdx ==
 					RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU)
 					prReorderQueParm->fgIsAmsduDuplicated =
 						TRUE;
@@ -5196,7 +5191,7 @@ void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		return;
 
 	DBGLOG(RX, INFO,
-		"[class,type,miss,plfmt,isSub,Sta,Tid,WinStart,cSN,rSN,Lsub,WinAdv,deq,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u,%u,%u(%s),%u,%u,%u.%u.%u,%u.%u\n",
+		"[class,type,miss,plfmt,isSub,Sta,Tid,WinStart,cSN,rSN,Lsub,WinAdv,deq,fin,inc1,inc2]:%u,%u,%u,%u,%u(%s),%u,%u,%u,%u,%u,%u(%s),%u,%u,%u,%u.%u,%u\n",
 		prReorderedSwRfb->ucRxClassify, /* class */
 		prReorderedSwRfb->ucPacketType, /* type */
 		fgMissing, /* miss */
@@ -5207,21 +5202,18 @@ void fallWithinVerboseLogging(struct ADAPTER *prAdapter,
 		prReorderQueParm->u2WinStart, /* WinStart */
 		prReorderedSwRfb->u2SSN, /* cSN */
 		prReorderQueParm->u2SeqNo, /* rSN */
-		prReorderQueParm->u8LastAmsduSubIdx, /* Lsub */
-		fmt[prReorderQueParm->u8LastAmsduSubIdx],
+		prReorderQueParm->ucLastAmsduSubIdx, /* Lsub */
+		fmt[prReorderQueParm->ucLastAmsduSubIdx],
 		fgWinAdvanced, /* WinAdv */
 		fgDequeuHead, /* deq */
+		/* fin */
+		IS_RX_MPDU_FINAL(prReorderQueParm->ucLastAmsduSubIdx),
+		/* inc1 */
 		SEQ_SMALLER(prReorderQueParm->u2WinStart,
-					prReorderedSwRfb->u2SSN), /* inc1 */
+					prReorderedSwRfb->u2SSN),
 		prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart,
-		prReorderQueParm->u8LastAmsduSubIdx ==
-			RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU ||
-		prReorderQueParm->u8LastAmsduSubIdx ==
-			RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU,
-		prReorderedSwRfb->u2SSN ==
-			prReorderQueParm->u2WinStart, /* inc2 */
-		fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
-			fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU);
+		/* inc2 */
+		prReorderedSwRfb->u2SSN == prReorderQueParm->u2WinStart);
 }
 
 void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
@@ -5281,13 +5273,12 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 				SEQ_SMALLER(prReorderQueParm->u2WinStart,
 				prReorderedSwRfb->u2SSN) &&
 		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
-			if (prReorderQueParm->u8LastAmsduSubIdx ==
-				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU ||
-			    prReorderQueParm->u8LastAmsduSubIdx ==
-				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
+			uint8_t ucLastAmsduSubIdx =
+					prReorderQueParm->ucLastAmsduSubIdx;
 
+			if (!IS_RX_MPDU_FINAL(ucLastAmsduSubIdx)) {
 				SEQ_INC(prReorderQueParm->u2WinStart);
-				prReorderQueParm->u8LastAmsduSubIdx =
+				prReorderQueParm->ucLastAmsduSubIdx =
 					RX_PAYLOAD_FORMAT_MSDU;
 			}
 		}
@@ -5316,16 +5307,14 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 			 * if (curr.frameType == Last || curr.frameType == MSDU)
 			 *     WinStart++
 			 */
-			if (fgIsAmsduSubframe ==
-				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
-			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
+			if (IS_RX_MPDU_FINAL(fgIsAmsduSubframe)) {
 				SEQ_INC(prReorderQueParm->u2WinStart);
 				fgWinAdvanced = TRUE;
 			}
 #if CFG_SUPPORT_RX_AMSDU
 			/* BA.LastType = curr.frameType */
 			if (fgMoveWinOnMissingLast)
-				prReorderQueParm->u8LastAmsduSubIdx =
+				prReorderQueParm->ucLastAmsduSubIdx =
 					fgIsAmsduSubframe;
 #endif
 		} else { /* SN > WinStart, break to update WinEnd */
@@ -5366,7 +5355,7 @@ void qmPopOutDueToFallWithin(struct ADAPTER *prAdapter,
 				/* RX reorder for one MSDU in AMSDU issue */
 				/* BA.LastType = MSDU */
 				if (fgMoveWinOnMissingLast)
-					prReorderQueParm->u8LastAmsduSubIdx =
+					prReorderQueParm->ucLastAmsduSubIdx =
 						RX_PAYLOAD_FORMAT_MSDU;
 #endif
 				fgMissing = FALSE;
@@ -5437,13 +5426,12 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 		if (SEQ_SMALLER(prReorderQueParm->u2WinStart,
 				prReorderedSwRfb->u2SSN) &&
 		    prReorderQueParm->u2SeqNo != prReorderQueParm->u2WinStart) {
-			if (prReorderQueParm->u8LastAmsduSubIdx ==
-				RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU ||
-			    prReorderQueParm->u8LastAmsduSubIdx ==
-				RX_PAYLOAD_FORMAT_MIDDLE_SUB_AMSDU) {
+			uint8_t ucLastAmsduSubIdx =
+					prReorderQueParm->ucLastAmsduSubIdx;
 
+			if (!IS_RX_MPDU_FINAL(ucLastAmsduSubIdx)) {
 				SEQ_INC(prReorderQueParm->u2WinStart);
-				prReorderQueParm->u8LastAmsduSubIdx =
+				prReorderQueParm->ucLastAmsduSubIdx =
 					RX_PAYLOAD_FORMAT_MSDU;
 			}
 		}
@@ -5468,15 +5456,13 @@ void qmPopOutDueToFallAhead(struct ADAPTER *prAdapter,
 			/* if last frame, winstart++.
 			 * Otherwise, keep winstart
 			 */
-			if (fgIsAmsduSubframe ==
-				RX_PAYLOAD_FORMAT_LAST_SUB_AMSDU ||
-			    fgIsAmsduSubframe == RX_PAYLOAD_FORMAT_MSDU) {
+			if (IS_RX_MPDU_FINAL(fgIsAmsduSubframe)) {
 				prReorderQueParm->u2WinStart =
 					SEQ_ADD(prReorderedSwRfb->u2SSN, 1);
 				fgWinAdvanced = TRUE;
 			}
 #if CFG_SUPPORT_RX_AMSDU
-			prReorderQueParm->u8LastAmsduSubIdx = fgIsAmsduSubframe;
+			prReorderQueParm->ucLastAmsduSubIdx = fgIsAmsduSubframe;
 #endif
 		} else if (SEQ_SMALLER(prReorderedSwRfb->u2SSN,
 					prReorderQueParm->u2WinStart)) {
@@ -5723,7 +5709,7 @@ void qmHandleEventCheckReorderBubble(struct ADAPTER *prAdapter,
 	prReorderQueParm->u2WinEnd = SEQ_ADD(prReorderQueParm->u2WinStart,
 			prReorderQueParm->u2WinSize - 1);
 #if CFG_SUPPORT_RX_AMSDU
-	prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
+	prReorderQueParm->ucLastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 #endif
 	qmPopOutDueToFallAhead(prAdapter, prReorderQueParm, prReturnedQue);
 
@@ -6013,7 +5999,7 @@ u_int8_t qmAddRxBaEntry(struct ADAPTER *prAdapter,
 		resetRxRetryCount(prAdapter, prRxBaEntry);
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
-		prRxBaEntry->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
+		prRxBaEntry->ucLastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 		prRxBaEntry->fgAmsduNeedLastFrame = FALSE;
 		prRxBaEntry->fgIsAmsduDuplicated = FALSE;
 #endif
@@ -8801,7 +8787,7 @@ void qmHandleRxReorderWinShift(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_RX_AMSDU
 		/* RX reorder for one MSDU in AMSDU issue */
-		prReorderQueParm->u8LastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
+		prReorderQueParm->ucLastAmsduSubIdx = RX_PAYLOAD_FORMAT_MSDU;
 #endif
 
 		DBGLOG(RX, TEMP,
