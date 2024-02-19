@@ -252,7 +252,7 @@ static bool halAllocRsvMemAlign(uint32_t u4Size,
 	}
 	u4Size += u4ExtSize;
 
-	if ((grMem.u4Offset[u4RsvMemIdx] + u4Size) >=
+	if ((grMem.u4Offset[u4RsvMemIdx] + u4Size) >
 			gWifiRsvMemSize[u4RsvMemIdx]) {
 		prMem->pa = 0;
 		prMem->va = NULL;
