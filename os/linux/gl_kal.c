@@ -4024,6 +4024,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 #if defined(_HIF_PCIE) && (HIF_TX_PREALLOC_DATA_BUFFER == 0)
 		/* To reduce L3 buffer usage, release original owner ASAP */
 		skb_orphan(prSkb);
+#elif CFG_SUPPORT_TX_SKB_ORPHAN
+		if (kalIsTxHighTput(prGlueInfo->prAdapter))
+			skb_orphan(prSkb);
 #endif
 #if CFG_SUPPORT_TX_WORK
 		return kalTxWorkSchedule(prSkb, prGlueInfo);
@@ -11183,6 +11186,16 @@ uint32_t kalGetTpMbps(struct ADAPTER *prAdapter,
 		u4TpMbps += kalGetTpMbpsByBssId(prAdapter, ePath, i);
 
 	return u4TpMbps;
+}
+
+u_int8_t kalIsTxHighTput(struct ADAPTER *prAdapter)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (kalGetTpMbps(prAdapter, PKT_PATH_TX) < prWifiVar->u4TxHighTputTh)
+		return FALSE;
+
+	return TRUE;
 }
 
 u_int8_t kalIsRxHighTput(struct ADAPTER *prAdapter)

@@ -106,7 +106,7 @@ enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM] = {
 	ENUM_CPU_BOOST_STATUS_LV1, /* 9: 2000Mbps */
 	ENUM_CPU_BOOST_STATUS_LV1, /* 10: 3000Mbps */
 	ENUM_CPU_BOOST_STATUS_LV2, /* 11: 4000Mbps*/
-	ENUM_CPU_BOOST_STATUS_LV3  /* 12: 5000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV2  /* 12: 5000Mbps */
 };
 
 struct BOOST_INFO rBoostInfo[] = {
@@ -187,7 +187,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		/* ENUM_CPU_BOOST_STATUS_LV2 */
 		.rCpuInfo = {
 			.i4LittleCpuFreq = MAX_CPU_FREQ,
-			.i4BigCpuFreq = MID_BIG_CPU_FREQ
+			.i4BigCpuFreq = MAX_CPU_FREQ
 		},
 		.rHifThreadInfo = {
 			.u4CpuMask = CPU_BIG_CORE,
@@ -209,7 +209,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.u4ISRMask = CPU_X_CORE,
 		.i4TxFreeMsduWorkCpu = 4,
 		.i4RxRfbRetWorkCpu = 2,
-		.i4TxWorkCpu = 2,
+		.i4TxWorkCpu = 6,
 		.i4RxWorkCpu = 3,
 		.i4RxNapiWorkCpu = 5,
 		.fgKeepPcieWakeup = TRUE,

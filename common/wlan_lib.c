@@ -8709,6 +8709,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
+	INIT_UINT(prWifiVar->u4TxHighTputTh, "TxHighTputTh", 4000,
+		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4RxHighTputTh, "RxHighTputTh", 2000,
 		  FEATURE_DEBUG_ONLY);
 
