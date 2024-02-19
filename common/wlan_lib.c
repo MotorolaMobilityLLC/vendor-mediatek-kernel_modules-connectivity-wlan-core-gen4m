@@ -2,7 +2,6 @@
 /*
  * Copyright (c) 2021 MediaTek Inc.
  */
-/* test test */
 
 /*! \file   wlan_lib.c
  *    \brief  Internal driver stack will export the required procedures here for
