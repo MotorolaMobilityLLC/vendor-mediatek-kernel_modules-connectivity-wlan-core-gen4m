@@ -684,6 +684,10 @@ int mtk_pcie_speed(struct pci_dev *dev, int speed);
 int mtk_pcie_retrain(struct pci_dev *dev);
 #endif
 #endif
+#if CFG_MTK_WIFI_PCIE_SR
+int mtk_pcie_enter_L2(struct pci_dev *dev);
+int mtk_pcie_exit_L2(struct pci_dev *dev);
+#endif
 u_int8_t mtk_get_aer_triggered(void);
 void glUpdateRxCopyMemOps(
 	struct HIF_MEM_OPS *prMemOps);

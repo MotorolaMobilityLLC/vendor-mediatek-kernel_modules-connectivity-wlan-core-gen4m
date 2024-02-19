@@ -3773,12 +3773,69 @@ exit:
 	return readable ? 0 : 1;
 }
 
+#if CFG_MTK_WIFI_PCIE_SR
+static uint32_t mt6653_EnterL2(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct pci_dev *dev = NULL;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	int ret;
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
+		goto exit;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	dev = prGlueInfo->rHifInfo.pdev;
+	ret = mtk_pcie_enter_L2(dev);
+	if (ret)
+		goto exit;
+
+	u4Status = WLAN_STATUS_SUCCESS;
+exit:
+	return u4Status;
+}
+
+static uint32_t mt6653_ExitL2(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct pci_dev *dev = NULL;
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
+	int ret;
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
+		goto exit;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	dev = prGlueInfo->rHifInfo.pdev;
+	ret = mtk_pcie_exit_L2(dev);
+	if (ret)
+		goto exit;
+
+	u4Status = WLAN_STATUS_SUCCESS;
+exit:
+	return u4Status;
+}
+#endif
+
 static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 {
 	uint32_t status  = wlanDownloadPatch(prAdapter);
 
 	if (status == WLAN_STATUS_SUCCESS)
 		wifi_coredump_set_enable(TRUE);
+
+#if CFG_MTK_WIFI_PCIE_SR
+	/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
+	mt6653_EnterL2(prAdapter);
+	mdelay(100);
+	status = mt6653_ExitL2(prAdapter);
+	if (status != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "Exit L2 failed\n");
+#endif
 
 	return status;
 }

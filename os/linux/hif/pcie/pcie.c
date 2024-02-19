@@ -2929,3 +2929,34 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 
 #endif
 
+#if CFG_MTK_WIFI_PCIE_SR
+int mtk_pcie_enter_L2(struct pci_dev *dev)
+{
+	int state = 0;
+
+	if (dev == NULL)
+		return -1;
+
+#if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
+	pci_save_state(dev);
+	state = mtk_pcie_soft_off(dev->bus);
+	DBGLOG(HAL, LOUD, "done\n");
+#endif
+	return state;
+}
+
+int mtk_pcie_exit_L2(struct pci_dev *dev)
+{
+	int state = 0;
+
+	if (dev == NULL)
+		return -1;
+
+#if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
+	state = mtk_pcie_soft_on(dev->bus);
+	pci_restore_state(dev);
+	DBGLOG(HAL, LOUD, "done\n");
+#endif
+	return state;
+}
+#endif /* CFG_MTK_WIFI_PCIE_SR */
