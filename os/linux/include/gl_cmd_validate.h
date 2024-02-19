@@ -398,6 +398,7 @@
 #define CMD_REASSOC				"REASSOC"
 #endif
 #define CMD_SET_AX_BLOCKLIST                    "SET_AX_BLOCKLIST"
+#define CMD_SET_CUS_BLOCKLIST			"SET_CUS_BLOCKLIST"
 #define CMD_REPORT_VENDOR_SPECIFIED		"EnVendorSpecifiedRpt"
 #define CMD_FORCE_STBC				"FORCE_STBC"
 #define CMD_FORCE_MRC				"FORCE_MRC"

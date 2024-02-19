@@ -170,15 +170,6 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 #endif
 };
 
-static const char * const apucBandStr[BAND_NUM] = {
-	"NULL",
-	"2.4G",
-	"5G",
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	"6G",
-#endif
-};
-
 struct NETWORK_SELECTION_POLICY_BY_BAND networkReplaceHandler[BAND_NUM] = {
 	[BAND_2G4] = {BAND_2G4, scanNetworkReplaceHandler2G4},
 	[BAND_5G]  = {BAND_5G,  scanNetworkReplaceHandler5G},
@@ -648,6 +639,9 @@ static u_int8_t scanSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 	}
+
+	if (aisQueryCusBlocklist(prAdapter, ucBssIndex, prBssDesc))
+		return FALSE;
 
 	if (prBssDesc->fgIsDisallowed) {
 		log_dbg(SCN, WARN, MACSTR" disallowed\n",
@@ -1476,6 +1470,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
 
 	aisRemoveTimeoutBlocklist(prAdapter);
+	aisClearCusBlocklist(prAdapter, ucBssIndex, FALSE);
 	apsUpdateEssApList(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_802_11K

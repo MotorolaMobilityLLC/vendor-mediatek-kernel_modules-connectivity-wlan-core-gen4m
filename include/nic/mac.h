@@ -2582,6 +2582,19 @@ enum TX_PWR_ENV_MAX_TXPWR_BW_TYPE {
 	TX_PWR_ENV_MAX_TXPWR_BW_NUM
 };
 #endif /* CFG_SUPPORT_TX_PWR_ENV */
+
+enum CUS_BLOCKLIST_TYPE {
+	CUS_BLOCKLIST_TYPE_SSID = 0,
+	CUS_BLOCKLIST_TYPE_BSSID,
+	CUS_BLOCKLIST_TYPE_FREQUENCY,
+	CUS_BLOCKLIST_TYPE_BAND
+};
+
+enum CUS_BLOCKLIST_LIMIT_TYPE {
+	LIMIT_FIRST_CONNECTION = 0,
+	LIMIT_ROAMING,
+};
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

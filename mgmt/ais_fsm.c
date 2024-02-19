@@ -980,6 +980,9 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	/* HE HTC blocklist*/
 	LINK_INITIALIZE(&prAisFsmInfo->rHeHtcBlocklist);
 
+	/* Customized blocklist */
+	LINK_INITIALIZE(&prAisFsmInfo->rCusBlocklist);
+
 	wmmInit(prAdapter, ucBssIndex);
 
 #if CFG_SUPPORT_802_11K
@@ -1091,6 +1094,8 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 	rrmParamInit(prAdapter, ucBssIndex);
 	clearAxBlocklist(prAdapter, ucBssIndex, BLOCKLIST_AX_TO_AC);
 	clearAxBlocklist(prAdapter, ucBssIndex, BLOCKLIST_DIS_HE_HTC);
+
+	aisClearCusBlocklist(prAdapter, ucBssIndex, TRUE);
 
 	wmmUnInit(prAdapter, ucBssIndex);
 
@@ -9911,6 +9916,167 @@ u_int8_t clearAxBlocklist(struct ADAPTER *prAdapter,
 					&prBlocklistItem->rLinkEntry);
 		cnmMemFree(prAdapter, prBlocklistItem);
 	}
+	return TRUE;
+}
+
+u_int8_t aisAddCusBlocklist(struct ADAPTER *prAdapter,
+	struct PARAM_CUS_BLOCKLIST *prCusBlocklist, uint8_t ucBssIndex)
+{
+	struct CUS_BLOCKLIST_ITEM *prCusBlkItem;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+
+	prCusBlkItem =
+	    (struct CUS_BLOCKLIST_ITEM *)cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+			sizeof(struct CUS_BLOCKLIST_ITEM));
+
+	if (!prCusBlkItem) {
+		DBGLOG(AIS, ERROR,
+			"Can't alloc new customized blocklist item.\n");
+		return FALSE;
+	}
+
+	prCusBlkItem->ucType = prCusBlocklist->ucType;
+
+	COPY_SSID(prCusBlkItem->rSSID.aucSsid,
+		  prCusBlkItem->rSSID.u4SsidLen,
+		  prCusBlocklist->rSSID.aucSsid,
+		  prCusBlocklist->rSSID.u4SsidLen);
+	COPY_MAC_ADDR(prCusBlkItem->aucBSSID, prCusBlocklist->aucBSSID);
+	prCusBlkItem->u4Frequency = prCusBlocklist->u4Frequency;
+	if (prCusBlocklist->eBand > BAND_NULL &&
+	    prCusBlocklist->eBand < BAND_NUM)
+		prCusBlkItem->eBand = prCusBlocklist->eBand;
+	else
+		prCusBlkItem->eBand = BAND_NULL;
+
+	prCusBlkItem->ucLimitReason = prCusBlocklist->ucLimitReason;
+	prCusBlkItem->ucLimitType = prCusBlocklist->ucLimitType;
+	prCusBlkItem->u4LimitTimeout = prCusBlocklist->u4LimitTimeout;
+
+	GET_CURRENT_SYSTIME(&prCusBlkItem->rAddTime);
+
+	LINK_INSERT_TAIL(&prAisFsmInfo->rCusBlocklist,
+				&prCusBlkItem->rLinkEntry);
+
+	DBGLOG(AIS, INFO, "Add [%s "MACSTR" %d %s] to customized blocklist!\n",
+		prCusBlkItem->rSSID.aucSsid,
+		MAC2STR(prCusBlkItem->aucBSSID),
+		prCusBlkItem->u4Frequency,
+		apucBandStr[prCusBlkItem->eBand]);
+
+	return TRUE;
+}
+
+u_int8_t aisQueryCusBlocklist(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct BSS_DESC *prBssDesc)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct LINK *prBlocklist;
+	struct CUS_BLOCKLIST_ITEM *prBlocklistItem = NULL;
+
+	if (!prBssDesc)
+		return FALSE;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prBlocklist = &prAisFsmInfo->rCusBlocklist;
+
+	/* traverse through customized blocklist */
+	LINK_FOR_EACH_ENTRY(prBlocklistItem, prBlocklist, rLinkEntry,
+			    struct CUS_BLOCKLIST_ITEM) {
+
+		if (prBlocklistItem->ucType == 0)
+			continue;
+
+		if (prBlocklistItem->ucType & BIT(CUS_BLOCKLIST_TYPE_SSID) &&
+		    UNEQUAL_SSID(prBlocklistItem->rSSID.aucSsid,
+				 prBlocklistItem->rSSID.u4SsidLen,
+				 prBssDesc->aucSSID,
+				 prBssDesc->ucSSIDLen))
+			continue;
+
+		if (prBlocklistItem->ucType & BIT(CUS_BLOCKLIST_TYPE_BSSID) &&
+		    UNEQUAL_MAC_ADDR(prBlocklistItem->aucBSSID,
+				     prBssDesc->aucBSSID))
+			continue;
+
+		if (prBlocklistItem->ucType &
+				BIT(CUS_BLOCKLIST_TYPE_FREQUENCY) &&
+		    nicFreq2ChannelNum(prBlocklistItem->u4Frequency * 1000) !=
+					prBssDesc->ucChannelNum)
+			continue;
+
+		if (prBlocklistItem->ucType & BIT(CUS_BLOCKLIST_TYPE_BAND) &&
+		    prBlocklistItem->eBand != prBssDesc->eBand)
+			continue;
+
+		/* If it is the 1st connection scenario */
+		if (
+#if CFG_SUPPORT_ROAMING
+		    !roamingFsmCheckIfRoaming(prAdapter, ucBssIndex) &&
+#endif
+		    !(prBlocklistItem->ucLimitType &
+						BIT(LIMIT_FIRST_CONNECTION)))
+			continue;
+
+#if CFG_SUPPORT_ROAMING
+		/* If it is the roaming scenario */
+		if (roamingFsmCheckIfRoaming(prAdapter, ucBssIndex) &&
+		    !(prBlocklistItem->ucLimitType & BIT(LIMIT_ROAMING)))
+			continue;
+#endif
+
+		DBGLOG(AIS, INFO, MACSTR
+			" match [%s "
+			MACSTR" %d %s] from customized blocklist!\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBlocklistItem->rSSID.aucSsid,
+			MAC2STR(prBlocklistItem->aucBSSID),
+			prBlocklistItem->u4Frequency,
+			apucBandStr[prBlocklistItem->eBand]);
+
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
+u_int8_t aisClearCusBlocklist(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, u_int8_t fgRemoveAll)
+{
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct LINK *prBlocklist;
+	struct CUS_BLOCKLIST_ITEM *prBlocklistItem = NULL,
+				  *prBlocklistItemNext = NULL;
+	OS_SYSTIME rCurrent;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prBlocklist = &prAisFsmInfo->rCusBlocklist;
+
+	GET_CURRENT_SYSTIME(&rCurrent);
+
+	/* traverse through blocklist */
+	LINK_FOR_EACH_ENTRY_SAFE(prBlocklistItem,
+				 prBlocklistItemNext,
+				 prBlocklist, rLinkEntry,
+				 struct CUS_BLOCKLIST_ITEM) {
+		if (fgRemoveAll ||
+		    CHECK_FOR_TIMEOUT(rCurrent, prBlocklistItem->rAddTime,
+				SEC_TO_MSEC(prBlocklistItem->u4LimitTimeout))) {
+			DBGLOG(AIS, INFO, "Remove [%s "
+				MACSTR" %d %s] from customized blocklist!\n",
+				prBlocklistItem->rSSID.aucSsid,
+				MAC2STR(prBlocklistItem->aucBSSID),
+				prBlocklistItem->u4Frequency,
+				apucBandStr[prBlocklistItem->eBand]);
+
+			LINK_REMOVE_KNOWN_ENTRY(prBlocklist,
+						&prBlocklistItem->rLinkEntry);
+			cnmMemFree(prAdapter, prBlocklistItem);
+		}
+	}
+
 	return TRUE;
 }
 

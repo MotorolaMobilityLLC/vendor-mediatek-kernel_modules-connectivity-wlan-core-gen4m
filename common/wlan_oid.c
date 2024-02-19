@@ -17076,6 +17076,23 @@ uint32_t wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t wlanoidSetCusBlocklist(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
+{
+	ASSERT(prAdapter);
+
+	if (u4SetBufferLen < sizeof(struct PARAM_CUS_BLOCKLIST))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	aisAddCusBlocklist(prAdapter,
+			   (struct PARAM_CUS_BLOCKLIST *) pvSetBuffer,
+			   GET_IOCTL_BSSIDX(prAdapter));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 uint32_t wlanoidForceStbcMrc(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,

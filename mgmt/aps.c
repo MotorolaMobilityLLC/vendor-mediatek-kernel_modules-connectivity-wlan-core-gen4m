@@ -200,15 +200,6 @@ struct WEIGHT_CONFIG gasMtkWeightConfig[ROAM_TYPE_NUM] = {
 #endif
 };
 
-static const char * const apucBandStr[BAND_NUM] = {
-	"NULL",
-	"2.4G",
-	"5G",
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	"6G",
-#endif
-};
-
 static uint8_t aucBaSizeTranslate[8] = {
 	[0] = 0,
 	[1] = 2,
@@ -1379,6 +1370,9 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
+
+	if (aisQueryCusBlocklist(prAdapter, ucBssIndex, prBssDesc))
+		return FALSE;
 
 #if CFG_SUPPORT_MBO
 	disallow = &prAdapter->rWifiVar.rBssDisallowedList;
@@ -2567,6 +2561,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 		conn->eConnectionPolicy, reason);
 
 	aisRemoveTimeoutBlocklist(ad);
+	aisClearCusBlocklist(ad, bidx, FALSE);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	aisRemoveTimeoutMldBlocklist(ad);
 #endif

@@ -288,6 +288,17 @@ struct CMD_VALIDATE_POLICY reassoc_policy[COMMON_CMD_SET_ARG_NUM(4)] = {
 	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_U16, .min = 0, .max = U16_MAX}
 };
 
+struct CMD_VALIDATE_POLICY set_cus_blK_policy[COMMON_CMD_SET_ARG_NUM(9)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_STRING, .max = 32},
+	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_STRING, .max = 17},
+	[COMMON_CMD_ATTR_IDX(4)] = {.type = NLA_U32, .min = 0, .max = U32_MAX},
+	[COMMON_CMD_ATTR_IDX(5)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(6)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(7)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(8)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
+};
+
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 struct CMD_VALIDATE_POLICY set_6g_pwr_mode_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING,
@@ -2451,6 +2462,14 @@ struct STR_CMD_HANDLER str_cmd_handlers[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+	{
+		.pcCmdStr  = CMD_SET_CUS_BLOCKLIST,
+		.pfHandler = testmode_set_cus_blocklist,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(9),
+		.policy    = set_cus_blK_policy,
+		.u4PolicySize = ARRAY_SIZE(set_cus_blK_policy)
 	},
 	{
 		.pcCmdStr  = CMD_REPORT_VENDOR_SPECIFIED,

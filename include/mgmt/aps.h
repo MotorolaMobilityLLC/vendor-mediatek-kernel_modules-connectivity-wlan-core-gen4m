@@ -72,6 +72,15 @@ extern const struct WFA_DESENSE_CHANNEL_LIST desenseChList[BAND_NUM];
 	(_ch <= desenseChList[_band].ucChUpperBound)))
 #endif
 
+static const char * const apucBandStr[BAND_NUM] = {
+	"NULL",
+	"2.4G",
+	"5G",
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	"6G",
+#endif
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
