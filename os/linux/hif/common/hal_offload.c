@@ -3139,52 +3139,23 @@ static void __halMawdSleep(void)
 
 u_int8_t halMawdCheckInfra(struct ADAPTER *prAdapter)
 {
+	u_int8_t fgRet = TRUE;
 #if (CFG_MTK_FPGA_PLATFORM == 0)
-	uint32_t u4Addr, u4Val = 0, u4Idx, u4PollingCnt = 4;
+	struct GL_HIF_INFO *prHifInfo =
+		&prAdapter->prGlueInfo->rHifInfo;
+	uint32_t u4Addr, u4Val = 0;
 
-	if (!in_interrupt()) {
-		u4Addr = 0x1002C004;
-		wf_ioremap_read(u4Addr, &u4Val);
-		if (u4Val & BIT(25)) {
-			DBGLOG(HAL, ERROR,
-			       "check failed. CR [0x%08x]=[0x%08x]",
-			       u4Addr, u4Val);
-			return FALSE;
-		}
-		u4Addr = 0x1002C00C;
-		wf_ioremap_read(u4Addr, &u4Val);
-		if (u4Val & BIT(25)) {
-			DBGLOG(HAL, ERROR,
-			       "check failed. CR [0x%08x]=[0x%08x]",
-			       u4Addr, u4Val);
-			return FALSE;
-		}
-	}
-	u4Addr = MAWD_CR_OFFSET + 0x23000;
-	HAL_MCR_WR(prAdapter, u4Addr, 1);
-	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
-	for (u4Idx = 0; u4Idx < u4PollingCnt; u4Idx++) {
-		if (u4Val & BITS(1, 2))
-			break;
-		HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
-		kalUdelay(1000);
-	}
-	if (u4Idx == u4PollingCnt) {
-		DBGLOG(HAL, ERROR, "check failed. CR [0x%08x]=[0x%08x]",
-		       u4Addr, u4Val);
+	if (prHifInfo->fgIsMawdSuspend)
 		return FALSE;
-	}
+
 	u4Addr = MAWD_CR_OFFSET + 0x11000;
 	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
-	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-	u4Addr = MAWD_CR_OFFSET + 0x23400;
-	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
-	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
-	u4Addr = MAWD_CR_OFFSET + 0x120A0;
-	HAL_RMCR_RD(OFFLOAD_HOST, prAdapter, u4Addr, &u4Val);
+	if (u4Val != kalGetConnInfraId())
+		fgRet = FALSE;
 	DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Addr, u4Val);
 #endif /* CFG_MTK_FPGA_PLATFORM == 0 */
-	return TRUE;
+
+	return fgRet;
 }
 
 int halMawdPwrOn(void)
