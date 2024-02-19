@@ -2705,6 +2705,48 @@ p2pRoleFsmScanTargetBss(struct ADAPTER *prAdapter,
 			P2P_ROLE_STATE_SCAN);
 }
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+uint32_t scanP2pTriggerMlScan(struct ADAPTER *prAdapter,
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+	uint8_t aucBssid[])
+{
+	struct P2P_SCAN_REQ_INFO *prScanReqInfo =
+		&(prP2pRoleFsmInfo->rScanReqInfo);
+	struct BSS_DESC *prBssDesc;
+
+	prBssDesc = scanSearchBssDescByBssid(prAdapter, aucBssid);
+	if (!prBssDesc) {
+		DBGLOG(P2P, WARN, "can NOT find prBssDesc by "MACSTR"\n",
+			MAC2STR(aucBssid));
+		return WLAN_STATUS_FAILURE;
+	}
+
+	kalMemZero(prScanReqInfo->aucIEBuf, sizeof(prScanReqInfo->aucIEBuf));
+	prScanReqInfo->u4BufLength = mldFillScanIE(prAdapter, prBssDesc,
+		prScanReqInfo->aucIEBuf, sizeof(prScanReqInfo->aucIEBuf),
+		FALSE, prBssDesc->rMlInfo.ucMldId);
+
+	prScanReqInfo->ucNumChannelList = 1;
+	prScanReqInfo->eScanType = SCAN_TYPE_ACTIVE_SCAN;
+	prScanReqInfo->eChannelSet = SCAN_CHANNEL_SPECIFIED;
+	prScanReqInfo->arScanChannelList[0].ucChannelNum =
+		prBssDesc->ucChannelNum;
+	prScanReqInfo->arScanChannelList[0].eBand = prBssDesc->eBand;
+	prScanReqInfo->ucSsidNum = 1;
+	kalMemCopy(prScanReqInfo->arSsidStruct[0].aucSsid,
+		   prBssDesc->aucSSID,
+		   sizeof(prScanReqInfo->arSsidStruct[0].aucSsid));
+	prScanReqInfo->arSsidStruct[0].ucSsidLen = prBssDesc->ucSSIDLen;
+	COPY_MAC_ADDR(prScanReqInfo->aucBSSID, prBssDesc->aucBSSID);
+
+	p2pRoleFsmStateTransition(prAdapter,
+			prP2pRoleFsmInfo,
+			P2P_ROLE_STATE_SCAN);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
 void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -2718,6 +2760,7 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 		(struct P2P_CONNECTION_REQ_INFO *) NULL;
 	struct P2P_JOIN_INFO *prJoinInfo = (struct P2P_JOIN_INFO *) NULL;
 	struct BSS_DESC_SET set;
+	u_int8_t fgNeedMlScan = FALSE;
 	uint8_t i;
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
@@ -2820,27 +2863,34 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 
 	prJoinInfo->u4ConnFlags = prP2pConnReqMsg->u4ConnFlags;
 	/* Find BSS Descriptor first. */
-	prJoinInfo->prTargetBssDesc =
-		scanP2pSearchDesc(prAdapter, prConnReqInfo,
-		&set);
-	p2pFillLinkBssDesc(prAdapter,
-		prP2pRoleFsmInfo, &set);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (set.ucLinkNum > 1)
-		p2pLinkInitGcOtherLinks(prAdapter, prP2pRoleFsmInfo,
-			set.ucLinkNum);
-#endif
+	prJoinInfo->prTargetBssDesc = scanP2pSearchDesc(prAdapter,
+		prConnReqInfo, &set, &fgNeedMlScan);
 
 	prP2pSpecificBssInfo->fgIsGcEapolDone = FALSE;
 
 	if (prJoinInfo->prTargetBssDesc == NULL) {
-		p2pRoleFsmScanTargetBss(prAdapter,
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (fgNeedMlScan) {
+			scanP2pTriggerMlScan(prAdapter,
+				prP2pRoleFsmInfo,
+				prP2pConnReqMsg->aucBssid);
+		} else
+#endif
+			p2pRoleFsmScanTargetBss(prAdapter,
 				prP2pRoleFsmInfo,
 				prP2pConnReqMsg->rChannelInfo.ucChannelNum,
 				prP2pConnReqMsg->rChannelInfo.eBand,
 				&(prP2pConnReqMsg->rSsid));
 	} else {
+		p2pFillLinkBssDesc(prAdapter, prP2pRoleFsmInfo, &set);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (set.ucLinkNum > 1)
+			p2pLinkInitGcOtherLinks(prAdapter,
+						prP2pRoleFsmInfo,
+						set.ucLinkNum);
+#endif
+
 		for (i = 0; i < MLD_LINK_MAX; i++) {
 			struct BSS_INFO *prP2pBssInfo =
 				p2pGetLinkBssInfo(prP2pRoleFsmInfo, i);

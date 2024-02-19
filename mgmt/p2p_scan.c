@@ -219,31 +219,37 @@ void scnEventReturnChannel(struct ADAPTER *prAdapter,
 			    (uint8_t *)&rCmdScanCancel, NULL, 0);
 }				/* scnEventReturnChannel */
 
-void scanRemoveAllP2pBssDesc(struct ADAPTER *prAdapter)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+static u_int8_t scanP2pNeedTriggerMlScan(struct ADAPTER *prAdapter,
+	struct BSS_DESC_SET *prBssDescSet,
+	struct BSS_DESC *prBssDesc)
 {
-	struct LINK *prBSSDescList;
-	struct BSS_DESC *prBssDesc;
-	struct BSS_DESC *prBSSDescNext;
+	/* mlo NOT enabled */
+	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE) ||
+	    prBssDesc->rMlInfo.fgMldType == MLD_TYPE_ICV_METHOD_V1)
+		return FALSE;
 
-	ASSERT(prAdapter);
+	/* peer is non-mlo */
+	if (prBssDesc->rMlInfo.fgValid == FALSE ||
+	    prBssDesc->rMlInfo.ucMaxSimuLinks <= 1)
+		return FALSE;
 
-	prBSSDescList = &(prAdapter->rWifiVar.rScanInfo.rBSSDescList);
+	/*
+	 * peer is mld with multi links and
+	 * peer's multi links scanned including main link
+	 */
+	if (prBssDescSet->ucLinkNum > 1 &&
+	    prBssDesc->rMlInfo.ucLinkIndex == 0)
+		return FALSE;
 
-	/* Search BSS Desc from current SCAN result list. */
-	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList,
-		rLinkEntry, struct BSS_DESC) {
-		scanRemoveP2pBssDesc(prAdapter, prBssDesc);
-	}
-}				/* scanRemoveAllP2pBssDesc */
-
-void scanRemoveP2pBssDesc(struct ADAPTER *prAdapter,
-		struct BSS_DESC *prBssDesc)
-{
-}				/* scanRemoveP2pBssDesc */
+	return TRUE;
+}
+#endif
 
 struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		struct BSS_DESC_SET *prBssDescSet)
+		struct BSS_DESC_SET *prBssDescSet,
+		u_int8_t *fgNeedMlScan)
 {
 	struct BSS_DESC *prCandidateBssDesc = (struct BSS_DESC *) NULL,
 		*prBssDesc = (struct BSS_DESC *) NULL;
@@ -336,6 +342,15 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 			if (prBssDescSet->ucLinkNum > 1)
 				prCandidateBssDesc =
 					prBssDescSet->prMainBssDesc;
+
+			if (scanP2pNeedTriggerMlScan(prAdapter,
+						     prBssDescSet,
+						     prCandidateBssDesc)) {
+				DBGLOG(P2P, INFO, "Enable ML probe\n");
+				prCandidateBssDesc = NULL;
+				kalMemZero(prBssDescSet, sizeof(*prBssDescSet));
+				*fgNeedMlScan = TRUE;
+			}
 #endif
 		} else {
 			prBssDescSet->ucLinkNum = 0;

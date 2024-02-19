@@ -1472,10 +1472,6 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				    prBssInfo->fgIsSwitchingChnl)) {
 				DBGLOG(P2P, INFO,
 					"Drop Tx probe response due to CSA\n");
-			} else if (p2pNeedSkipProbeResp(prAdapter,
-							prBssInfo)) {
-				fgDrop = TRUE;
-				break;
 			}
 
 			prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[
@@ -1496,8 +1492,13 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				sizeof(rProbeRspFrame));
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-			if (prP2PInfo->u2MlIELen != 0)
+			if (prP2PInfo->u2MlIELen != 0) {
 				fgHide = FALSE;
+			} else if (p2pNeedSkipProbeResp(prAdapter,
+							prBssInfo)) {
+				fgDrop = TRUE;
+				break;
+			}
 #endif
 
 			/* compose p2p probe rsp frame */
@@ -5466,6 +5467,7 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 	struct P2P_JOIN_INFO *prJoinInfo =
 		(struct P2P_JOIN_INFO *) NULL;
 	struct BSS_DESC_SET set;
+	u_int8_t fgNeedMlScan = FALSE;
 
 	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
 
@@ -5480,15 +5482,8 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 		ASSERT(prConnReqInfo->eConnRequest == P2P_CONNECTION_TYPE_GC);
 
 		/* Find BSS Descriptor first. */
-		prTargetBss = scanP2pSearchDesc(prAdapter, prConnReqInfo, &set);
-		p2pFillLinkBssDesc(prAdapter,
-			prP2pRoleFsmInfo, &set);
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (set.ucLinkNum > 1)
-			p2pLinkInitGcOtherLinks(prAdapter, prP2pRoleFsmInfo,
-				set.ucLinkNum);
-#endif
+		prTargetBss = scanP2pSearchDesc(prAdapter, prConnReqInfo, &set,
+						&fgNeedMlScan);
 
 		if (prTargetBss == NULL) {
 			/* Update scan parameter... to scan target device. */
@@ -5501,6 +5496,15 @@ p2pFuncKeepOnConnection(struct ADAPTER *prAdapter,
 			prScanReqInfo->fgIsAbort = TRUE;
 		} else {
 			uint8_t i;
+
+			p2pFillLinkBssDesc(prAdapter, prP2pRoleFsmInfo, &set);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (set.ucLinkNum > 1)
+				p2pLinkInitGcOtherLinks(prAdapter,
+							prP2pRoleFsmInfo,
+							set.ucLinkNum);
+#endif
 
 			prJoinInfo->ucAvailableAuthTypes =
 				(uint8_t) AUTH_TYPE_OPEN_SYSTEM;

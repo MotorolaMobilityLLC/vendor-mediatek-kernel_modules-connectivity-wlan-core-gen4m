@@ -622,9 +622,6 @@ u_int8_t p2PFreeInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdx)
 				(void **)&prWifiVar->prP2pDevFsmInfo,
 				sizeof(struct P2P_DEV_FSM_INFO));
 		}
-
-		/* Reomve p2p bss scan list */
-		scanRemoveAllP2pBssDesc(prAdapter);
 	}
 
 	return TRUE;

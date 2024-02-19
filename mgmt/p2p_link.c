@@ -888,7 +888,7 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 	struct BSS_DESC *prBssDesc = NULL;
 	struct BSS_DESC *prMainBssDesc = prBssDescSet->prMainBssDesc;
-	uint8_t i, j;
+	uint8_t i, j, ucMaxLinkNum;
 
 	if (!prMainBssDesc || !prMainBssDesc->rMlInfo.fgValid ||
 	    prMainBssDesc->rMlInfo.fgMldType == MLD_TYPE_ICV_METHOD_V1) {
@@ -899,12 +899,14 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	if (!mldIsMultiLinkEnabled(prAdapter, NETWORK_TYPE_P2P, FALSE))
 		return;
 
+	ucMaxLinkNum = prAdapter->rWifiVar.ucP2pMldLinkMax;
+
 	/* setup secondary link */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
 		struct BSS_DESC) {
 
 		/* break if reach the limit num of links */
-		if (prBssDescSet->ucLinkNum >= MLD_LINK_MAX)
+		if (prBssDescSet->ucLinkNum >= ucMaxLinkNum)
 			break;
 
 		if (!prBssDesc->rMlInfo.fgValid ||
