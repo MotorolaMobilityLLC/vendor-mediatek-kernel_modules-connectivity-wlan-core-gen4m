@@ -424,6 +424,22 @@ struct AX_BLOCKLIST_ITEM {
 	uint8_t aucBSSID[MAC_ADDR_LEN];
 };
 
+struct CUS_BLOCKLIST_ITEM {
+	struct LINK_ENTRY rLinkEntry;
+
+	uint8_t ucType;
+
+	struct PARAM_SSID rSSID;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint32_t u4Frequency;
+	enum ENUM_BAND eBand;
+
+	uint8_t ucLimitReason;
+	uint8_t ucLimitType;
+	uint32_t u4LimitTimeout;
+	OS_SYSTIME rAddTime;
+};
+
 struct AIS_BTO_INFO {
 	struct BSS_DESC *prBtoBssDesc;
 	uint8_t ucBcnTimeoutReason;
@@ -561,6 +577,9 @@ struct AIS_FSM_INFO {
 #endif
 	struct LINK rAxBlocklist;
 	struct LINK rHeHtcBlocklist;
+
+	struct LINK rCusBlocklist;
+
 	/* rssi monitor */
 	struct PARAM_RSSI_MONITOR_T rRSSIMonitor;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -1180,6 +1199,16 @@ u_int8_t queryAxBlocklist(struct ADAPTER *prAdapter,
 u_int8_t clearAxBlocklist(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex,
 	uint8_t ucType);
+
+u_int8_t aisAddCusBlocklist(struct ADAPTER *prAdapter,
+	struct PARAM_CUS_BLOCKLIST *prCusBlocklist,
+	uint8_t ucBssIndex);
+
+u_int8_t aisQueryCusBlocklist(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, struct BSS_DESC *prBssDesc);
+
+u_int8_t aisClearCusBlocklist(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, u_int8_t fgRemoveAll);
 
 void aisPreSuspendFlow(
 	struct ADAPTER *prAdapter);

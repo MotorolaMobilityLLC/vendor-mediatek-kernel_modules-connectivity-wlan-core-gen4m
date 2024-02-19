@@ -354,6 +354,7 @@
 #define MAX_MIB_TAG_CNT		74
 /* must >= UNI_CMD_MIB_CNT_MAX_NUM */
 #define MAX_UNI_CMD_MIB_NUM	212
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -3415,6 +3416,19 @@ struct PARAM_AX_BLOCKLIST {
 	uint8_t aucList[MAX_AX_BLOCKLIST_ENTRIES][MAC_ADDR_LEN];
 };
 
+struct PARAM_CUS_BLOCKLIST {
+	uint8_t ucType;
+
+	struct PARAM_SSID rSSID;
+	uint8_t aucBSSID[MAC_ADDR_LEN];
+	uint32_t u4Frequency;
+	enum ENUM_BAND eBand;
+
+	uint8_t ucLimitReason;
+	uint8_t ucLimitType;
+	uint32_t u4LimitTimeout;
+};
+
 struct PARAM_STBC_MRC {
 	uint8_t ucType; /* 0: STBC, 1: MRC */
 	uint8_t ucBssIndex;
@@ -5442,6 +5456,12 @@ wlanoidIndicateBssInfo(struct ADAPTER *prAdapter,
 
 uint32_t
 wlanoidSetAxBlocklist(struct ADAPTER *prAdapter,
+		void *pvSetBuffer,
+		uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetCusBlocklist(struct ADAPTER *prAdapter,
 		void *pvSetBuffer,
 		uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);

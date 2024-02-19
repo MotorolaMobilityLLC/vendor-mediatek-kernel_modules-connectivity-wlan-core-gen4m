@@ -5671,6 +5671,125 @@ int testmode_set_ax_blocklist(struct wiphy *wiphy,
 	return rStatus;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief For blocklist customization, Usage:
+ *        SET_CUS_BLOCKLIST "0xa" "SSID" "BSSID" "Freq""Band" "Reason"
+ *        "Type" "Timeout"
+ *
+ *        0xa: Limit rule, BIT(0): SSID, BIT(1): BSSID, BIT(2): Freq,
+ *             BIT(3): Band, the following four parameters should be
+ *             assigned individual values.
+ *        Reason: Reserved.
+ *        Type: Limit type, BIT(0): first connection, BIT(1): roaming.
+ *        Timeout: Remove timeout (Unit: s).
+ * @param
+ *
+ * @retval WLAN_STATUS_SUCCESS:  successful
+ *         others:  failure
+ */
+/*----------------------------------------------------------------------------*/
+
+int testmode_set_cus_blocklist(struct wiphy *wiphy,
+		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int32_t i4Argc = 0, i4Ret = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	struct GLUE_INFO *prGlueInfo = NULL;
+	uint32_t rStatus, u4BufLen;
+	uint8_t ucType, ucBand;
+	struct PARAM_CUS_BLOCKLIST rCusBlocklist = { 0 };
+
+	DBGLOG(INIT, TRACE, "command is %s\n", pcCommand);
+	WIPHY_PRIV(wiphy, prGlueInfo);
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+	if (i4Argc == 9) {
+		/* Parse customized blocklist type */
+		i4Ret = kalkStrtou8(apcArgv[1], 0, &ucType);
+		if (i4Ret) {
+			DBGLOG(REQ, ERROR, "Parse ucType fail! %d\n", i4Ret);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+		rCusBlocklist.ucType = ucType;
+
+		if (ucType & BIT(CUS_BLOCKLIST_TYPE_SSID)) {
+			COPY_SSID(rCusBlocklist.rSSID.aucSsid,
+				  rCusBlocklist.rSSID.u4SsidLen,
+				  apcArgv[2],
+				  kalStrLen(apcArgv[2]));
+		}
+
+		if (ucType & BIT(CUS_BLOCKLIST_TYPE_BSSID)) {
+			i4Ret = wlanHwAddrToBin(apcArgv[3],
+						rCusBlocklist.aucBSSID);
+			if (i4Ret != 17) {
+				DBGLOG(REQ, WARN,
+					"Parse BSSID fail! i4Ret=%d\n", i4Ret);
+				return WLAN_STATUS_INVALID_DATA;
+			}
+		}
+
+		if (ucType & BIT(CUS_BLOCKLIST_TYPE_FREQUENCY)) {
+			i4Ret = kalkStrtou32(apcArgv[4], 0,
+						&rCusBlocklist.u4Frequency);
+			if (i4Ret) {
+				DBGLOG(REQ, WARN,
+				    "Parse FREQUENCY fail! i4Ret=%d\n", i4Ret);
+				return WLAN_STATUS_INVALID_DATA;
+			}
+		}
+
+		if (ucType & BIT(CUS_BLOCKLIST_TYPE_BAND)) {
+			i4Ret = kalkStrtou8(apcArgv[5], 0, &ucBand);
+			if (i4Ret) {
+				DBGLOG(REQ, WARN,
+					"Parse BAND fail! i4Ret=%d\n", i4Ret);
+				return WLAN_STATUS_INVALID_DATA;
+			}
+			rCusBlocklist.eBand = ucBand < BAND_NUM ?
+							ucBand : BAND_NULL;
+		}
+
+		i4Ret = kalkStrtou8(apcArgv[6], 0,
+					&rCusBlocklist.ucLimitReason);
+		if (i4Ret) {
+			DBGLOG(REQ, WARN,
+				"Parse limitReason fail! i4Ret=%d\n", i4Ret);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		i4Ret = kalkStrtou8(apcArgv[7], 0, &rCusBlocklist.ucLimitType);
+		if (i4Ret) {
+			DBGLOG(REQ, WARN,
+				"Parse limitType fail! i4Ret=%d\n", i4Ret);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		i4Ret = kalkStrtou32(apcArgv[8], 0,
+					&rCusBlocklist.u4LimitTimeout);
+		if (i4Ret) {
+			DBGLOG(REQ, WARN,
+				"Parse limitTimeout fail! i4Ret=%d\n", i4Ret);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetCusBlocklist,
+			  &rCusBlocklist, sizeof(struct PARAM_CUS_BLOCKLIST),
+			  &u4BufLen);
+
+		if (rStatus != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR, "fail 0x%x\n", rStatus);
+
+	} else {
+		DBGLOG(REQ, ERROR, "fail invalid data\n");
+		rStatus = WLAN_STATUS_INVALID_DATA;
+	}
+
+	return rStatus;
+}
+
 int testmode_set_report_vendor_specified(struct wiphy *wiphy,
 		struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
 {

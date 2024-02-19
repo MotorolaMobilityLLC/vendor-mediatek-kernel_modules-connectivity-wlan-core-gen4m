@@ -839,6 +839,8 @@ int testmode_reassoc(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_set_ax_blocklist(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
+int testmode_set_cus_blocklist(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_rtt_test(struct wiphy *wiphy,
 	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen);
 int testmode_set_report_vendor_specified(struct wiphy *wiphy,
