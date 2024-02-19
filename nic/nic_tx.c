@@ -3017,17 +3017,38 @@ void nicTxFreeMsduInfoPacketEx(struct ADAPTER *prAdapter,
 {
 	struct MSDU_INFO *prMsduInfo = prMsduInfoListHead;
 	struct TX_CTRL *prTxCtrl;
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	struct QUE rQue[CON_WORK_MAX];
+	uint8_t ucIdx = 0;
+	uint8_t ucNextIdx = 0;
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfoListHead);
 
 	prTxCtrl = &prAdapter->rTxCtrl;
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++)
+		QUEUE_INITIALIZE(&rQue[ucIdx]);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 	while (prMsduInfo) {
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+		if (fgDrop == FALSE) {
+			/* skip kalSendComplete */
+			kalTxFreeSkbQueuePrepare(prAdapter->prGlueInfo,
+				prMsduInfo, &rQue[ucNextIdx], &ucNextIdx);
+		}
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 		nicTxFreePacket(prAdapter, prMsduInfo, fgDrop);
 		prMsduInfo = QUEUE_GET_NEXT_ENTRY(prMsduInfo);
 	}
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++)
+		kalTxFreeSkbQueueConcat(prAdapter->prGlueInfo, &rQue[ucIdx]);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 }
 
 /*----------------------------------------------------------------------------*/

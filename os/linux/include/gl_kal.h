@@ -300,6 +300,7 @@ struct BOOST_INFO {
 	uint32_t u4WfdmaTh;
 	u_int8_t fgWifiNappingForceDis;
 	enum CPU_CORE_TYPE eSkbAllocWorkCoreType;
+	enum CPU_CORE_TYPE eTxFreeSkbWorkCoreType;
 };
 
 enum ENUM_SPIN_LOCK_CATEGORY_E {
@@ -2762,6 +2763,15 @@ void kalTxFreeMsduWorkUninit(struct GLUE_INFO *pr);
 void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+void kalTxFreeSkbWorkSetCpu(struct GLUE_INFO *pr, enum CPU_CORE_TYPE eCoreType);
+void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr);
+void kalTxFreeSkbWorkUninit(struct GLUE_INFO *pr);
+uint32_t kalTxFreeSkbQueuePrepare(struct GLUE_INFO *pr,
+	struct MSDU_INFO *prMsduInfo, struct QUE *prQue, uint8_t *pucIdx);
+void kalTxFreeSkbQueueConcat(struct GLUE_INFO *pr, struct QUE *prQue);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #if CFG_SUPPORT_TX_WORK
 void kalTxWork(struct work_struct *work);
 void kalTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
@@ -2769,6 +2779,13 @@ void kalTxWorkInit(struct GLUE_INFO *pr);
 void kalTxWorkUninit(struct GLUE_INFO *pr);
 uint32_t kalTxWorkSchedule(struct sk_buff *prSkb, struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_TX_WORK */
+
+#if CFG_SUPPORT_PER_CPU_TX
+uint32_t kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr);
+void kalPerCpuTxInit(struct GLUE_INFO *pr);
+void kalPerCpuTxUninit(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_PER_CPU_TX */
+
 #if CFG_SUPPORT_RX_NAPI
 void kalNapiSchedule(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_RX_NAPI_WORK

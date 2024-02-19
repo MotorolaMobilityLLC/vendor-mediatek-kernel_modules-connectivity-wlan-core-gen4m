@@ -4028,7 +4028,9 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 		if (kalIsTxHighTput(prGlueInfo->prAdapter))
 			skb_orphan(prSkb);
 #endif
-#if CFG_SUPPORT_TX_WORK
+#if CFG_SUPPORT_PER_CPU_TX
+		return kalPerCpuTxXmit(prSkb, prGlueInfo);
+#elif CFG_SUPPORT_TX_WORK
 		return kalTxWorkSchedule(prSkb, prGlueInfo);
 #else /* CFG_SUPPORT_TX_WORK */
 		return kalTxDirectStartXmit(prSkb, prGlueInfo);
@@ -10075,6 +10077,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
 	char *head6;
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	char *head7;
+	struct TX_FREE_INFO *prTxFreeInfo;
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 	char *pos;
 	char *end;
 	uint32_t slen;
@@ -10216,6 +10222,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	 * 4. [%lu:%lu:%lu:%lu] rx reordering que cnt
 	 * 5. [%u:...:%u] tx mgmt packets categorized by 16 typesubtype
 	 * 6. [%lu:%lu:%lu:%lu] rx pending que cnt
+	 * 7. [%u/%u:...:%u/%u] TxFreeSkb current que cnt and total cnt
 	 */
 	slen = (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
 	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
@@ -10225,6 +10232,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
 	slen += (20 + 1) * MAX_BSSID_NUM + 1;
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	slen += ((20*1) * 2 * CON_WORK_MAX) + 1;
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 	pos = buf = kalMemZAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -10319,9 +10329,27 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	}
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	pos++;
+	head7 = pos;
+	prTxFreeInfo = &glue->rTxFreeInfo;
+	for (i = 0; i < CON_WORK_MAX; i++) {
+		pos += kalSnprintf(pos, end - pos,
+			(i == CON_WORK_MAX - 1) ? "%u/%u" : "%u/%u ",
+			QUEUE_LENGTH(&prTxFreeInfo->rQueInfo[i].rQue),
+			prTxFreeInfo->rQueInfo[i].u4TotalCnt);
+	}
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #if CFG_SUPPORT_CPU_STAT
 #define FORMAT_INT_8 \
 	"%d,%d,%d,%d,%d,%d,%d,%d"
+
+#if CFG_SUPPORT_PER_CPU_TX
+#define PER_CPU_TX_CNT_TEMPLATE " PerCpuTx["FORMAT_INT_8"]"
+#else /* CFG_SUPPORT_PER_CPU_TX */
+#define PER_CPU_TX_CNT_TEMPLATE ""
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 
 #if CFG_SUPPORT_TX_WORK
 #define TX_WORK_CNT_TEMPLATE \
@@ -10344,8 +10372,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define SKB_ALLOC_WORK_CNT_TEMPLATE ""
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+#define TX_FREE_SKB_WORK_CNT_TEMPLATE \
+	" TxFreeSkbWork[%d]["FORMAT_INT_8"]"
+#else /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+#define TX_FREE_SKB_WORK_CNT_TEMPLATE ""
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #define CPU_STAT_CNT_TEMPLATE \
-	" TxCpu["FORMAT_INT_8"]" TX_WORK_CNT_TEMPLATE \
+	" TxCpu["FORMAT_INT_8"]" PER_CPU_TX_CNT_TEMPLATE \
+	TX_WORK_CNT_TEMPLATE \
+	TX_FREE_SKB_WORK_CNT_TEMPLATE \
 	" RxCpu["FORMAT_INT_8"]" RX_WORK_CNT_TEMPLATE \
 	SKB_ALLOC_WORK_CNT_TEMPLATE
 #else /* CFG_SUPPORT_CPU_STAT */
@@ -10371,6 +10408,12 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define DYNAMIC_RFB_TEMPLATE ""
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+#define TX_FREE_SKBQ_TEMPLATE " TxFreeSkbQ[%s]"
+#else /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+#define TX_FREE_SKBQ_TEMPLATE ""
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #define TEMP_LOG_TEMPLATE \
 	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
 	RADIOTAP_LOG_TEMPLATE \
@@ -10381,6 +10424,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
 	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u" \
 	" MgmtSub[%s]" \
+	TX_FREE_SKBQ_TEMPLATE \
 	"\n"
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
@@ -10417,6 +10461,16 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 5),
 		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 6),
 		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 7),
+#if CFG_SUPPORT_PER_CPU_TX
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 0),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 1),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 2),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 3),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 4),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 5),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 6),
+		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 7),
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 #if CFG_SUPPORT_TX_WORK
 		kalWorkGetCpu(glue, TX_WORK),
 		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 0),
@@ -10428,6 +10482,17 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 6),
 		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 7),
 #endif /* CFG_SUPPORT_TX_WORK */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+		prTxFreeInfo->eCoreType,
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 0),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 1),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 2),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 3),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 4),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 5),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 6),
+		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 7),
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 0),
 		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 1),
 		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 2),
@@ -10473,12 +10538,19 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_DEQUEUE_COUNT),
 		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT),
 		head5
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+		, head7
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 		);
 #undef TEMP_LOG_TEMPLATE
 #undef LINK_QUALITY_MONITOR_TEMPLATE
 #if CFG_SUPPORT_CPU_STAT
+#undef PER_CPU_TX_CNT_TEMPLATE
 #undef TX_WORK_CNT_TEMPLATE
 #undef RX_WORK_CNT_TEMPLATE
+#undef SKB_ALLOC_WORK_CNT_TEMPLATE
+#undef TX_FREE_SKB_WORK_CNT_TEMPLATE
+#undef TX_FREE_SKBQ_TEMPLATE
 #endif /* CFG_SUPPORT_CPU_STAT */
 #undef CPU_STAT_CNT_TEMPLATE
 #undef DYNAMIC_RFB_TEMPLATE
@@ -16720,6 +16792,146 @@ inline void kalTxFreeMsduWorkSchedule(struct GLUE_INFO *pr)
 }
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+static void kalDoTxFreeSkb(struct GLUE_INFO *pr, uint8_t ucIdx)
+{
+	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
+	struct TX_FREE_QUEUE_INFO *prQueInfo = &prTxFreeInfo->rQueInfo[ucIdx];
+	struct QUE rQue;
+	struct QUE *prQue = &rQue;
+	struct QUE_ENTRY *prQueueEntry;
+	void *pvPacket;
+
+	spin_lock_bh(&prQueInfo->lock);
+	QUEUE_MOVE_ALL(prQue, &prQueInfo->rQue);
+	spin_unlock_bh(&prQueInfo->lock);
+
+	while (QUEUE_IS_NOT_EMPTY(prQue)) {
+		QUEUE_REMOVE_HEAD(prQue, prQueueEntry, struct QUE_ENTRY *);
+		if (!prQueueEntry)
+			break;
+
+		pvPacket = (void *)GLUE_GET_PKT_DESCRIPTOR(prQueueEntry);
+		kalSendComplete(pr, pvPacket, WLAN_STATUS_SUCCESS);
+	}
+
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(pr, CPU_TX_FREE_SKB_DONE);
+#endif /* CFG_SUPPORT_CPU_STAT */
+}
+
+void kalTxFreeSkbWorkSetCpu(struct GLUE_INFO *pr, enum CPU_CORE_TYPE eCoreType)
+{
+	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
+
+	prTxFreeInfo->eCoreType = eCoreType;
+}
+
+void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr)
+{
+	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
+	struct CON_WORK *prConWork;
+	struct TX_FREE_QUEUE_INFO *prQueInfo;
+	uint8_t ucIdx;
+
+	prTxFreeInfo->eCoreType = CPU_CORE_NONE;
+	GLUE_SET_REF_CNT(0, prTxFreeInfo->i4QueIdxCnt);
+
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
+		prQueInfo = &prTxFreeInfo->rQueInfo[ucIdx];
+		prQueInfo->u4TotalCnt = 0;
+		spin_lock_init(&prQueInfo->lock);
+		QUEUE_INITIALIZE(&prQueInfo->rQue);
+
+		prConWork = &prTxFreeInfo->rConWork[ucIdx];
+		kalConWorkInit(pr, prConWork, "wifi_tx_free_skb", ucIdx,
+			kalDoTxFreeSkb);
+	}
+}
+
+void kalTxFreeSkbWorkUninit(struct GLUE_INFO *pr)
+{
+	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
+	struct CON_WORK *prConWork;
+	uint8_t ucIdx;
+
+	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
+		prConWork = &prTxFreeInfo->rConWork[ucIdx];
+		kalConWorkUninit(pr, prConWork);
+
+		/* do last cleaning */
+		kalDoTxFreeSkb(pr, ucIdx);
+	}
+}
+
+inline void kalTxFreeSkbWorkSchedule(struct GLUE_INFO *pr,
+	struct TX_FREE_INFO *prTxFreeInfo, uint8_t ucIdx)
+{
+	struct CON_WORK *prConWork;
+
+	prConWork = &prTxFreeInfo->rConWork[ucIdx];
+	kalConWorkSchedule(pr, prConWork, prTxFreeInfo->eCoreType);
+}
+
+uint32_t kalTxFreeSkbQueuePrepare(struct GLUE_INFO *pr,
+	struct MSDU_INFO *prMsduInfo, struct QUE *prQue, uint8_t *pucIdx)
+{
+	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
+	struct ADAPTER *ad = pr->prAdapter;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+
+	if (unlikely(IS_FEATURE_DISABLED(prWifiVar->fgTxFreeSkbWorkEn)))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	if (unlikely(prTxFreeInfo->eCoreType == CPU_CORE_NONE))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	if (unlikely(prMsduInfo->prPacket == NULL))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	if (unlikely(prMsduInfo->eSrc != TX_PACKET_OS))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+#if CFG_SUPPORT_MLR
+	if (unlikely(prMsduInfo->eFragPos > MSDU_FRAG_POS_FIRST))
+		return WLAN_STATUS_NOT_ACCEPTED;
+#endif /* CFG_SUPPORT_MLR */
+
+	QUEUE_INSERT_TAIL(prQue,
+		GLUE_GET_PKT_QUEUE_ENTRY(prMsduInfo->prPacket));
+
+	prMsduInfo->prPacket = NULL;
+	(*pucIdx)++;
+	*pucIdx &= (CON_WORK_MAX - 1);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void kalTxFreeSkbQueueConcat(struct GLUE_INFO *pr, struct QUE *prQue)
+{
+	struct TX_FREE_INFO *prTxFreeInfo = &pr->rTxFreeInfo;
+	int32_t i4QueIdxCnt;
+	uint8_t ucIdx;
+	struct TX_FREE_QUEUE_INFO *prQueInfo;
+
+	if (QUEUE_LENGTH(prQue) == 0)
+		return;
+
+	i4QueIdxCnt = GLUE_INC_REF_CNT(prTxFreeInfo->i4QueIdxCnt);
+	/* use last n bit as the queue idx */
+	ucIdx = (uint8_t) i4QueIdxCnt & (CON_WORK_MAX - 1);
+
+	prQueInfo = &(prTxFreeInfo->rQueInfo[ucIdx]);
+
+	spin_lock_bh(&prQueInfo->lock);
+	prQueInfo->u4TotalCnt += QUEUE_LENGTH(prQue);
+	QUEUE_CONCATENATE_QUEUES(&prQueInfo->rQue, prQue);
+	spin_unlock_bh(&prQueInfo->lock);
+
+	kalTxFreeSkbWorkSchedule(pr, prTxFreeInfo, ucIdx);
+}
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #if CFG_SUPPORT_RX_NAPI_WORK
 void kalRxNapiWork(struct work_struct *work)
 {
@@ -16884,6 +17096,149 @@ uint32_t kalTxWorkSchedule(struct sk_buff *prSkb,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_SUPPORT_TX_WORK */
+
+#if CFG_SUPPORT_PER_CPU_TX
+static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
+{
+	struct PER_CPU_TX_INFO *prPerCpuTxInfo = &pr->rPerCpuTxInfo;
+	struct _PER_CPU_TX_INFO *prInfo;
+
+	if (!prPerCpuTxInfo->fgReady)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prInfo = get_cpu_ptr(prPerCpuTxInfo->prInfo);
+
+	__skb_queue_tail(&prInfo->rSkbQ, prSkb);
+
+#if (KERNEL_VERSION(5, 2, 0) <= CFG80211_VERSION_CODE)
+	if (!netdev_xmit_more())
+#else
+	if (!prSkb->xmit_more)
+#endif
+		tasklet_schedule(&prInfo->rTask);
+
+	put_cpu_ptr(prPerCpuTxInfo->prInfo);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
+{
+	if (__kalPerCpuTxXmit(prSkb, pr) != WLAN_STATUS_SUCCESS)
+		return kalTxDirectStartXmit(prSkb, pr);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+static void __kalPerCpuTxRun(struct GLUE_INFO *pr)
+{
+	struct PER_CPU_TX_INFO *prPerCpuTxInfo = &pr->rPerCpuTxInfo;
+	struct sk_buff_head *prTxDirectSkbQ = &pr->rTxDirectSkbQueue;
+	struct _PER_CPU_TX_INFO *prInfo;
+	unsigned long flag;
+	int cpu;
+
+	if (!prPerCpuTxInfo->fgReady)
+		return;
+
+	prInfo = get_cpu_ptr(prPerCpuTxInfo->prInfo);
+	if (skb_queue_empty(&prInfo->rSkbQ))
+		return;
+
+	cpu = get_cpu();
+	put_cpu();
+
+	PER_CPU_TX_SET_RUN(prPerCpuTxInfo, cpu, TRUE);
+
+	spin_lock_irqsave(&prTxDirectSkbQ->lock, flag);
+	/* join rSkbQ into prTxDirectSkbQ and reinit rSkbQ */
+	skb_queue_splice_init(&prInfo->rSkbQ, prTxDirectSkbQ);
+	spin_unlock_irqrestore(&prTxDirectSkbQ->lock, flag);
+	put_cpu_ptr(prPerCpuTxInfo->prInfo);
+
+	PER_CPU_TX_SET_RUN(prPerCpuTxInfo, cpu, FALSE);
+
+	/* trigger tx */
+#if CFG_SUPPORT_TX_WORK
+	kalTxWorkSchedule(NULL, pr);
+#else /* CFG_SUPPORT_TX_WORK */
+	kalTxDirectStartXmit(NULL, pr);
+#endif /* CFG_SUPPORT_TX_WORK */
+
+#if CFG_SUPPORT_CPU_STAT
+	CPU_STAT_INC_CNT(pr, CPU_TX_PER_CPU);
+#endif /* CFG_SUPPORT_CPU_STAT */
+}
+
+static void kalPerCpuTxRun(unsigned long data)
+{
+	struct GLUE_INFO *pr = (struct GLUE_INFO *)data;
+
+	__kalPerCpuTxRun(pr);
+}
+
+void kalPerCpuTxInit(struct GLUE_INFO *pr)
+{
+	struct PER_CPU_TX_INFO *prPerCpuTxInfo = &pr->rPerCpuTxInfo;
+	int cpu;
+	struct _PER_CPU_TX_INFO *prInfo;
+
+	prPerCpuTxInfo->prInfo = alloc_percpu_gfp(struct _PER_CPU_TX_INFO,
+					GFP_KERNEL | __GFP_ZERO);
+	if (!prPerCpuTxInfo->prInfo) {
+		DBGLOG(INIT, ERROR, "prPerCpuTxInfo->prInfo alloc fail.\n");
+		return;
+	}
+
+	for_each_possible_cpu(cpu) {
+		prInfo = per_cpu_ptr(prPerCpuTxInfo->prInfo, cpu);
+		skb_queue_head_init(&prInfo->rSkbQ);
+		tasklet_init(&prInfo->rTask, kalPerCpuTxRun, (unsigned long)pr);
+	}
+
+	prPerCpuTxInfo->fgReady = TRUE;
+}
+
+void kalPerCpuTxUninit(struct GLUE_INFO *pr)
+{
+	struct PER_CPU_TX_INFO *prPerCpuTxInfo = &pr->rPerCpuTxInfo;
+	int cpu;
+	struct _PER_CPU_TX_INFO *prInfo;
+	struct sk_buff *prSkb;
+	uint32_t u4Cnt = 0;
+
+	prPerCpuTxInfo->fgReady = FALSE;
+
+	/* just use to ensure all tasklet is not running */
+	while (PER_CPU_TX_IS_RUNNING(prPerCpuTxInfo)) {
+		DBGLOG_LIMITED(INIT, INFO,
+			"Waiting for running tasklet u4Cnt:%u\n", u4Cnt);
+		kalMsleep(1);
+		if (++u4Cnt == PER_CPU_TX_WAITING_TIMEOUT) {
+			DBGLOG(INIT, ERROR, "Waiting timeout\n");
+			break;
+		}
+	}
+
+	if (!prPerCpuTxInfo->prInfo)
+		return;
+
+	for_each_possible_cpu(cpu) {
+		prInfo = per_cpu_ptr(prPerCpuTxInfo->prInfo, cpu);
+		tasklet_kill(&prInfo->rTask);
+
+		while (TRUE) {
+			prSkb = __skb_dequeue(&prInfo->rSkbQ);
+			if (!prSkb)
+				break;
+
+			kalSendComplete(pr, prSkb, WLAN_STATUS_NOT_ACCEPTED);
+		}
+	}
+
+	free_percpu(prPerCpuTxInfo->prInfo);
+}
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 
 #if CFG_SUPPORT_RETURN_WORK
 void kalRxRfbReturnWork(struct work_struct *work)

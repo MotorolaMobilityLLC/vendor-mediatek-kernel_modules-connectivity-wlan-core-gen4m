@@ -443,6 +443,10 @@
 #define CFG_SUPPORT_TX_WORK                     0
 #endif /* CFG_SUPPORT_TX_WORK */
 
+#ifndef CFG_SUPPORT_PER_CPU_TX
+#define CFG_SUPPORT_PER_CPU_TX                  0
+#endif /* CFG_SUPPORT_PER_CPU_TX */
+
 /*
  * CPU Statistics is a feature to know the cpu scheduling behavior on
  * smartphone
@@ -2531,6 +2535,10 @@
 #if (CFG_SUPPORT_TASKLET_FREE_MSDU == 0) && (CFG_SUPPORT_TX_FREE_MSDU_WORK == 1)
 #error "TX_FREE_MSDU_WORK is based on TASKLET_FREE_MSDU."
 #endif
+
+#ifndef CFG_SUPPORT_TX_FREE_SKB_WORK
+#define CFG_SUPPORT_TX_FREE_SKB_WORK 0
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 
 #ifndef CFG_ADJUST_NETIF_TH_BY_BAND
 #define CFG_ADJUST_NETIF_TH_BY_BAND 0

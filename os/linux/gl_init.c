@@ -2817,6 +2817,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_CPU_STAT
 	CPU_STAT_RESET_ALL_CNTS(prGlueInfo);
 #endif /* CFG_SUPPORT_CPU_STAT */
+#if CFG_SUPPORT_PER_CPU_TX
+	kalPerCpuTxInit(prGlueInfo);
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 #if CFG_SUPPORT_TX_WORK
 	kalTxWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_WORK */
@@ -2837,6 +2840,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK
 	kalTxFreeMsduWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	kalTxFreeSkbWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 #if CFG_SUPPORT_RETURN_WORK
 	kalRxRfbReturnWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_RETURN_WORK */
@@ -2850,6 +2856,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 
 static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_SUPPORT_PER_CPU_TX
+	kalPerCpuTxUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 #if CFG_SUPPORT_TX_WORK
 	kalTxWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_WORK */
@@ -2862,6 +2871,9 @@ static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK
 	kalTxFreeMsduWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	kalTxFreeSkbWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 #if CFG_SUPPORT_RETURN_WORK
 	kalRxRfbReturnWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RETURN_WORK */

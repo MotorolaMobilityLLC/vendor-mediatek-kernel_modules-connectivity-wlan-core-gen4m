@@ -8168,6 +8168,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  256, FEATURE_DEBUG_ONLY);
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	INIT_UINT(prWifiVar->fgTxFreeSkbWorkEn, "TxFreeSkbWorkEn",
+			FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #if CFG_SUPPORT_LLS
 	INIT_UINT(prWifiVar->fgLinkStatsDump, "LinkStatsDump", 0,
 		  FEATURE_DEBUG_ONLY);

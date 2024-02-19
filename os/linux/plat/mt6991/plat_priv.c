@@ -147,6 +147,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgWifiNappingForceDis = FALSE,
 		.fgDramBoost = FALSE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV1 */
@@ -182,6 +183,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgWifiNappingForceDis = TRUE,
 		.fgDramBoost = FALSE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV2 */
@@ -217,6 +219,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgWifiNappingForceDis = TRUE,
 		.fgDramBoost = TRUE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV3 */
@@ -252,6 +255,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgWifiNappingForceDis = TRUE,
 		.fgDramBoost = TRUE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	}
 };
 
@@ -535,6 +539,11 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 			prBoostInfo->i4TxFreeMsduWorkCpu);
 #endif /* CFG_SUPPORT_TX_FREE_MSDU_WORK */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	kalTxFreeSkbWorkSetCpu(prGlueInfo,
+			prBoostInfo->eTxFreeSkbWorkCoreType);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #if CFG_SUPPORT_RETURN_WORK
 	kalRxRfbReturnWorkSetCpu(prGlueInfo,
 			prBoostInfo->i4RxRfbRetWorkCpu);
@@ -607,6 +616,12 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #define SKB_ALLOC_WORK_TEMPLATE ""
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+#define TX_FREE_SKB_WORK_TEMPLATE " TxFreeSkbWork:[%u]"
+#else /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+#define TX_FREE_SKB_WORK_TEMPLATE ""
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
 #define TEMP_LOG_TEMPLATE \
 	"CPUInfo[%d:%d] " \
 	PLAT_THREAD_INFO \
@@ -617,6 +632,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	RX_WORK_TEMPLATE \
 	RX_NAPI_WORK_TEMPLATE \
 	SKB_ALLOC_WORK_TEMPLATE \
+	TX_FREE_SKB_WORK_TEMPLATE \
 	"\n"
 
 	DBGLOG(INIT, INFO,
@@ -657,6 +673,9 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 		, prBoostInfo->eSkbAllocWorkCoreType
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+		, prBoostInfo->eTxFreeSkbWorkCoreType
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 		);
 #undef TEMP_LOG_TEMPLATE
 }
