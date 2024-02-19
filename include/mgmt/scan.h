@@ -487,7 +487,8 @@ struct BSS_DESC {
 	u_int8_t fgIsSCC;
 	uint32_t u4UpdateIdx;
 	uint8_t fgIotApActionValid;
-	uint8_t ucIotApAct;
+	uint8_t ucIotVer;
+	uint64_t u8IotApAct;
 	uint16_t u2MaximumMpdu;
 	/* end Support AP Selection */
 	int8_t cPowerLimit;

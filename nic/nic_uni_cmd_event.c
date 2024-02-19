@@ -2682,7 +2682,8 @@ uint32_t nicUniCmdBssInfoTagStaIot(struct ADAPTER *ad,
 	tag->u2Tag = UNI_CMD_BSSINFO_TAG_STA_IOT;
 	tag->u2Length = sizeof(*tag);
 	tag->ucIotApAct = cmd->ucIotApAct;
-
+	tag->u8IotApBmp = cmd->u8IotApAct;
+	DBGLOG(NIC, INFO, "v0:v1 %u:%u\n", tag->ucIotApAct, tag->u8IotApBmp);
 	return tag->u2Length;
 }
 #endif

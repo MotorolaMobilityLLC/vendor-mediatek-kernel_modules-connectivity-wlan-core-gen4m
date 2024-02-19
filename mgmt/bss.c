@@ -2821,7 +2821,7 @@ void bssProcessErTxModeEvent(struct ADAPTER *prAdapter,
  *
  * @param[in] prBssDesc
  *
- * @return ENUM_WLAN_IOT_AP_HANDLE_ACTION
+ * @return ENUM_WLAN_IOT_ACTION
  */
 /*----------------------------------------------------------------------------*/
 uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
@@ -2841,11 +2841,12 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 	}
 	/*To make sure one Bss only parse once*/
 	if (prBssDesc->fgIotApActionValid)
-		return prBssDesc->ucIotApAct;
+		return prBssDesc->u8IotApAct;
 
 
 	prBssDesc->fgIotApActionValid = TRUE;
-	prBssDesc->ucIotApAct = WLAN_IOT_AP_VOID;
+	prBssDesc->u8IotApAct = 0;
+	prBssDesc->ucIotVer = 0;
 
 	pucIes = prBssDesc->pucIeBuf;
 	for (ucCnt = 0; ucCnt < CFG_IOT_AP_RULE_MAX_CNT; ucCnt++) {
@@ -2940,9 +2941,26 @@ uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
 				continue;
 			/*Matched, Fall through*/
 		}
-		/*All match, set the actions*/
-		prBssDesc->ucIotApAct = prIotApRule->ucAction;
+		/*All match, set the actions and version*/
+		prBssDesc->u8IotApAct = prIotApRule->u8Action;
+		prBssDesc->ucIotVer = prIotApRule->ucVersion;
 	}
-	return prBssDesc->ucIotApAct;
+	return prBssDesc->u8IotApAct;
 }
+
+bool bssIsIotAp(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ENUM_WLAN_IOT_ACTION eAction)
+{
+	uint64_t u8IotApAct;
+
+	u8IotApAct = bssGetIotApAction(prAdapter, prBssDesc);
+	if (prBssDesc && prBssDesc->fgIotApActionValid) {
+		if (prBssDesc->ucIotVer == 1)
+			return u8IotApAct & BIT(eAction);
+		else
+			return u8IotApAct == eAction;
+	}
+	return FALSE;
+}
+
 #endif

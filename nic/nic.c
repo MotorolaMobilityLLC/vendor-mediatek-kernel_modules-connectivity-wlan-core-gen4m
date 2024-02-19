@@ -2795,16 +2795,18 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	if (IS_BSS_AIS(prBssInfo) &&
 	    (prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) &&
 	    (prBssInfo->prStaRecOfAP != NULL)) {
-		struct BSS_DESC *prBssDesc;
-		struct AIS_FSM_INFO *prAisFsmInfo;
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
+		struct BSS_DESC *prBssDesc = aisGetTargetBssDesc(prAdapter,
+								 ucBssIndex);
 
+		if (prBssDesc != NULL && prBssDesc->ucIotVer == 1)
+			rCmdSetBssInfo.u8IotApAct = prBssDesc->u8IotApAct;
+		else if (prBssDesc != NULL && prBssDesc->ucIotVer == 0)
+			rCmdSetBssInfo.ucIotApAct = prBssDesc->u8IotApAct;
+#endif
 		rCmdSetBssInfo.ucStaRecIdxOfAP =
 			prBssInfo->prStaRecOfAP->ucIndex;
 		cnmAisInfraConnectNotify(prAdapter);
-		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-		prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-		if (prBssDesc != NULL)
-			rCmdSetBssInfo.ucIotApAct = prBssDesc->ucIotApAct;
 #if CFG_SUPPORT_SMART_GEAR
 		DBGLOG(SW4, INFO, "[SG]cnmAisInfraConnectNotify,%d\n",
 		       prBssInfo->eConnectionState);
@@ -2890,7 +2892,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 
 #define TEMP_LOG_TEMPLATE \
 	"Update Bss[%u] OMAC[%u] WMM[%u] ConnState[%u] OPmode[%u] " \
-	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u] " \
+	"BSSID[" MACSTR "] AuthMode[%u] EncStatus[%u] IotAct[%u:%u] " \
 	"eBand[%u] Bw[%u] NetIfTh[%u:%u]\n"
 
 	DBGLOG(BSS, INFO,
@@ -2904,6 +2906,7 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 	       rCmdSetBssInfo.ucAuthMode,
 	       rCmdSetBssInfo.ucEncStatus,
 	       rCmdSetBssInfo.ucIotApAct,
+	       rCmdSetBssInfo.u8IotApAct,
 	       prBssInfo->eBand,
 	       cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex),
 	       prBssInfo->u4TxStopTh,

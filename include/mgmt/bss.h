@@ -134,8 +134,8 @@ int8_t bssGetEhtRxNss(struct BSS_DESC *prBssDesc);
 int8_t bssGetRxNss(struct BSS_DESC *prBssDesc);
 
 #if CFG_SUPPORT_IOT_AP_BLOCKLIST
-uint32_t bssGetIotApAction(struct ADAPTER *prAdapter,
-	struct BSS_DESC *prBssDesc);
+bool bssIsIotAp(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, enum ENUM_WLAN_IOT_ACTION eAction);
 #endif
 
 const char *bssOpBw2Str(struct BSS_INFO *prBssInfo);

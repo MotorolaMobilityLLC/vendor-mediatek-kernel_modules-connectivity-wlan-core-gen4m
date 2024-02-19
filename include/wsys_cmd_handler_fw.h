@@ -960,7 +960,8 @@ struct CMD_SET_BSS_INFO {
 	uint16_t u2HeBasicMcsSet;
 	uint8_t  ucMaxBSSIDIndicator;
 	uint8_t  ucMBSSIDIndex;
-	uint8_t  aucPadding[12];
+	uint64_t u8IotApAct;
+	uint8_t  aucPadding[4];
 };
 
 struct CMD_HTVHT_BA_SIZE {
