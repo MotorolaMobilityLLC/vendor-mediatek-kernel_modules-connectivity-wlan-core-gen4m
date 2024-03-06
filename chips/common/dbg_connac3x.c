@@ -3913,6 +3913,30 @@ void connac3x_show_pse_info(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "\t\tThe used/reserved pages of MDP3 group=0x%03x/0x%03x\n", used_pg, rsv_pg);
 #endif
 
+#if defined(MT6653)
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    WF_PSE_TOP_PG_CPU1_GROUP_ADDR, &cpu_grp);
+	HAL_RMCR_RD(HIF_DBG, prAdapter,
+		    WF_PSE_TOP_CPU1_PG_INFO_ADDR, &cpu_grp_info);
+	DBGLOG(HAL, INFO, "\tReserved page counter of CPU1 group: 0x%08x\n",
+	       cpu_grp);
+	DBGLOG(HAL, INFO, "\tCPU1 group page status: 0x%08x\n", cpu_grp_info);
+	min_q = (cpu_grp & WF_PSE_TOP_PG_CPU1_GROUP_CPU1_MIN_QUOTA_MASK) >>
+		WF_PSE_TOP_PG_CPU1_GROUP_CPU1_MIN_QUOTA_SHFT;
+	max_q = (cpu_grp & WF_PSE_TOP_PG_CPU1_GROUP_CPU1_MAX_QUOTA_MASK) >>
+		WF_PSE_TOP_PG_CPU1_GROUP_CPU1_MAX_QUOTA_SHFT;
+	DBGLOG(HAL, INFO,
+	       "\t\tThe max/min quota pages of CPU1 group=0x%03x/0x%03x\n",
+	       max_q, min_q);
+	rsv_pg = (cpu_grp_info & WF_PSE_TOP_CPU1_PG_INFO_CPU1_RSV_CNT_MASK) >>
+		WF_PSE_TOP_CPU1_PG_INFO_CPU1_RSV_CNT_SHFT;
+	used_pg = (cpu_grp_info & WF_PSE_TOP_CPU1_PG_INFO_CPU1_SRC_CNT_MASK) >>
+		WF_PSE_TOP_CPU1_PG_INFO_CPU1_SRC_CNT_SHFT;
+	DBGLOG(HAL, INFO,
+	       "\t\tThe used/reserved pages of CPU1 group=0x%03x/0x%03x\n",
+	       used_pg, rsv_pg);
+#endif
+
 	/* Queue Empty Status */
 	DBGLOG(HAL, INFO, "PSE Queue Empty Status:\n");
 	DBGLOG(HAL, INFO, "\tQUEUE_EMPTY: 0x%08x, QUEUE_EMPTY1: 0x%08x, QUEUE_EMPTY_MASK: 0x%08x\n",
