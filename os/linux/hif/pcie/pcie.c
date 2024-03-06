@@ -790,6 +790,18 @@ irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 }
 #endif
 
+static u_int8_t pcie_check_status_is_linked(struct pci_dev *pdev)
+{
+	uint16_t vnd_id = 0;
+
+	pci_read_config_word(pdev, PCI_VENDOR_ID, &vnd_id);
+	if (vnd_id == 0 || vnd_id == 0xffff) {
+		DBGLOG(HAL, WARN, "PCIE link down\n");
+		return FALSE;
+	}
+	return TRUE;
+}
+
 #if CFG_MTK_WIFI_AER_RESET
 static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	pci_channel_state_t state)
@@ -816,14 +828,15 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		goto exit;
 
 	if (state == pci_channel_io_normal) {
-		uint16_t vnd_id = 0;
-
 		/* bit[6]: Completion timeout status */
 		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
-			pci_read_config_word(pdev, PCI_VENDOR_ID, &vnd_id);
-			if (vnd_id == 0) {
+			if (pcie_check_status_is_linked(pdev) == FALSE) {
 				DBGLOG(HAL, WARN, "PCIE link down\n");
+				/* block PCIe access */
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+				mtk_pcie_disable_data_trans(0);
+#endif
 				fgIsBusAccessFailed = TRUE;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 				fgTriggerDebugSop = TRUE;

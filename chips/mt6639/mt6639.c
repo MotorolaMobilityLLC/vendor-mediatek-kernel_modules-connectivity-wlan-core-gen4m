@@ -2638,7 +2638,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 
 	if (pci_dev) {
 		pci_read_config_dword(pci_dev, 0x0, &u4RegVal[0]);
-		if (u4RegVal[0] == 0) {
+		if (u4RegVal[0] == 0 || u4RegVal[0] == 0xffff) {
 			DBGLOG(HAL, INFO,
 				"PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
 			/* block pcie to prevent access */
