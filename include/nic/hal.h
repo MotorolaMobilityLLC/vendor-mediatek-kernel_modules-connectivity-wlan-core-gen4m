@@ -1595,9 +1595,7 @@ void halTxReturnFreeResource_v1(struct ADAPTER *prAdapter,
 uint8_t halTxRingDataSelect(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 void halUpdateTxMaxQuota(struct ADAPTER *prAdapter);
-#if CFG_MTK_MDDP_SUPPORT
-void halNotifyMdCrash(struct ADAPTER *prAdapter);
-#endif
+void halTriggerSwInterrupt(struct ADAPTER *prAdapter, uint32_t u4Bit);
 u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 void halUpdateBssTokenCnt(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)

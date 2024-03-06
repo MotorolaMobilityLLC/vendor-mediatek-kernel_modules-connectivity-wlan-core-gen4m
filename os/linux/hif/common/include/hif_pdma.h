@@ -269,7 +269,7 @@
 #define INDCMD_MAGIC_CNT_NUM     8
 #define RX_BLK_MAGIC_CNT_NUM     4
 #define MAWD_ENABLE_WAKEUP_SLEEP 1
-#define MAWD_POWER_UP_RETRY_CNT  10000
+#define MAWD_POWER_UP_RETRY_CNT  50000
 #define MAWD_POWER_UP_WAIT_TIME  10
 #define MAWD_MAX_PATCH_NUM       19
 #define MAWD_MD_TX_RING_NUM      3
@@ -1385,8 +1385,7 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 		       struct MSDU_TOKEN_ENTRY *prToken);
 uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
 u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo);
-u_int8_t halMawdSleepBeforeFwOwn(struct GLUE_INFO *prGlueInfo);
-u_int8_t halMawdSleepAfterFwOwn(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 			union mawd_l2tbl rL2Tbl, uint32_t u4Set);

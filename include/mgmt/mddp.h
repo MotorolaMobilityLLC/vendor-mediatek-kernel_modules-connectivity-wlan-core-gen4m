@@ -402,6 +402,7 @@ enum ccci_msg_id {
  */
 void mddpInit(int bootmode);
 void mddpUninit(void);
+void mddpNotifyMdCrash(struct ADAPTER *prAdapter);
 void mddpInHifThread(struct ADAPTER *prAdapter);
 void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter);
 void mddpTriggerMdSerRecovery(struct ADAPTER *prAdapter);
