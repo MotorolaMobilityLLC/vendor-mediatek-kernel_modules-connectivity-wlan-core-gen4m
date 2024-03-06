@@ -5180,6 +5180,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_HW_DETECT_REPORT = 0x76,
 	UNI_EVENT_ID_UPDATE_LP       = 0x77,
 	UNI_EVENT_ID_PHY_LIST_DUMP   = 0x7f,
+	UNI_EVENT_ID_OMI	    = 0x84,
 	UNI_EVENT_ID_NUM
 };
 
@@ -8097,6 +8098,87 @@ struct UNI_EVENT_MLSR_CONCURRENT_PRECONNECT {
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
 
+/** This structure is used for UNI_EVENT_ID_OMI event (0x84)
+ * to do OMI's related synchronization with Driver.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] aucPadding        aucPadding
+ * @param[in] aucTlvBuffer      TLVs
+ */
+/* Update OMI event */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_UPDATE_OMI {
+	/* fixed field */
+	uint8_t aucPadding[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[];
+} __KAL_ATTRIB_PACKED__;
+
+/* Update LP event tags */
+enum ENUM_UNI_EVENT_UPDATE_OMI_TAG {
+	UNI_EVENT_NOTIFY_OMI_RX = 0,
+	UNI_EVENT_OMI_MAX_NUM
+};
+
+/**
+ * This structure is used for UNI_EVENT_NOTIFY_OMI_RX(0x00)
+ * of UNI_EVENT_ID_OMI event (0x84)
+ * to Notify Driver Do Channel Selection
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag
+ *	should be 0x00
+ * @param[in] u2Length
+ *	the length of this TLV, sizeof(UNI_EVENT_NOTIFY_OMI_RX_T)
+ * @param[in] u2StaRecIndex
+ *	index of StaRec that receive this OMI.
+ * @param[in] ucRxNss
+ *	Parsed RxNSS from OMI.
+ * @param[in] ucTxNss
+ *	Parsed TxNSS from OMI. (STA Should Ignore this parameter.)
+ * @param[in] ucBW
+ *	Parsed BW from OMI. Type:
+ *		typedef enum _WH_ENUM_PHY_BW
+ *		{
+ *			WH_PHY_BW_20 = 0,
+ *			WH_PHY_BW_40,
+ *			WH_PHY_BW_80,
+ *			WH_PHY_BW_160,
+ *			WH_PHY_BW_10,
+ *			WH_PHY_BW_5,
+ *			WH_PHY_BW_8080,
+ *			WH_PHY_BW_320,
+ *			WH_PHY_BW_NUM
+ *		} WH_ENUM_PHY_BW, *P_WH_ENUM_PHY_BW;
+ *
+ * @param[in] fgDisMuUL
+ * @param[in] fgDisMuULData
+ * @param[in] ucRxNssExt
+ * @param[in] ucBWExt
+ * @param[in] ucTxNstsExt
+
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_NOTIFY_OMI_RX_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2StaRecIndex;
+	uint8_t ucRxNss;
+	uint8_t ucTxNsts;
+	uint8_t ucBW;
+	uint8_t fgDisMuUL;
+	uint8_t fgDisMuULData;
+#if (CFG_SUPPORT_802_11BE == 1)
+	uint8_t ucRxNssExt;
+	uint8_t ucBWExt;
+	uint8_t ucTxNstsExt;
+	uint8_t ucReserved[2];
+#else
+	uint8_t ucReserved[5];
+#endif
+} __KAL_ATTRIB_PACKED__;
+
 /**
  * This structure is used for UNI_EVENT_UPDATE_LP_GEN_SWITCH tag(0x01)
  * of UNI_EVENT_UPDATE_LP event (0x77) to identify Tx delay status
@@ -8840,6 +8922,8 @@ uint32_t nicUniCmdRxHdrTransUpdate(struct ADAPTER *ad,
 #if CFG_MTK_MDDP_SUPPORT
 void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt);
 	#endif
+void nicUniEventOmi(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

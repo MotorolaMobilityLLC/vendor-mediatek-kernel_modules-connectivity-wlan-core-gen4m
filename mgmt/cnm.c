@@ -2103,11 +2103,12 @@ uint8_t cnmGetBssMaxBw(struct ADAPTER *prAdapter,
 	}
 #endif
 	if (IS_BSS_AIS(prBssInfo) && prBssDesc) {
-		DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
-			prBssDesc->ucChannelNum, ucMaxBandwidth);
+		DBGLOG(CNM, TRACE, "Idx=%u, pCH=%d, BW=%d\n",
+			ucBssIndex, prBssDesc->ucChannelNum, ucMaxBandwidth);
 	} else {
-		DBGLOG(CNM, TRACE, "pCH=%d, BW=%d\n",
-			prBssInfo->ucPrimaryChannel, ucMaxBandwidth);
+		DBGLOG(CNM, TRACE, "Idx=%u, pCH=%d, BW=%d\n",
+			ucBssIndex, prBssInfo->ucPrimaryChannel,
+			ucMaxBandwidth);
 	}
 
 	return ucMaxBandwidth;
