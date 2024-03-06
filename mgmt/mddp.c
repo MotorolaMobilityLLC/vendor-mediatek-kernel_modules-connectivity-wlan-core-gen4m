@@ -2591,6 +2591,12 @@ static void notifyMdCrash2FW(void)
 	kalSetMddpEvent(prGlueInfo);
 }
 
+void mddpNotifyMdCrash(struct ADAPTER *prAdapter)
+{
+	DBGLOG(HAL, INFO, "halNotifyMdCrash.\n");
+	halTriggerSwInterrupt(prAdapter, MCU_INT_NOTIFY_MD_CRASH);
+}
+
 void mddpInHifThread(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
@@ -2598,7 +2604,7 @@ void mddpInHifThread(struct ADAPTER *prAdapter)
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    MDDP_HIF_NOTIFY_MD_CRASH_2_FW,
 		    g_ulMddpActionFlag))
-		halNotifyMdCrash(prAdapter);
+		mddpNotifyMdCrash(prAdapter);
 
 	if (KAL_TEST_AND_CLEAR_BIT(
 		    MDDP_HIF_MD_FW_OWN,

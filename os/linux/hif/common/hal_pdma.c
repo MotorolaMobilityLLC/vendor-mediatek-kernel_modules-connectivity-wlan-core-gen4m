@@ -880,7 +880,7 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd)) {
-		if (!halMawdSleepBeforeFwOwn(prAdapter->prGlueInfo)) {
+		if (!halMawdSleep(prAdapter->prGlueInfo)) {
 			DBGLOG(INIT, STATE,
 			       "Skip FW OWN due to Mawd pending INT\n");
 			goto unlock;
@@ -920,11 +920,6 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 			DBGLOG(INIT, INFO, "FW OWN:%u, IntSta:0x%08x\n",
 			fgResult, prHifInfo->u4WakeupIntSta);
 		prHifInfo->u4WakeupIntSta = 0;
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-		if (IS_FEATURE_ENABLED(prWifiVar->fgEnableMawd))
-			halMawdSleepAfterFwOwn(prAdapter->prGlueInfo);
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 	}
 
 unlock:
@@ -2599,7 +2594,7 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 			RX_GET_INDICATED_RFB_CNT(prRxCtrl));
 	}
 
-	prHifStats->u4RxDataRegCnt++;
+	GLUE_INC_REF_CNT(prHifStats->u4RxDataRegCnt);
 
 	u4RxLoopCnt = u4RxCnt;
 	while (u4RxLoopCnt--) {
@@ -4627,15 +4622,11 @@ void halHwRecoveryTimeout(unsigned long arg)
 
 void halSetDrvSer(struct ADAPTER *prAdapter)
 {
-	struct BUS_INFO *prBusInfo = NULL;
-	struct mt66xx_chip_info *prChipInfo;
 	struct GL_HIF_INFO *prHifInfo;
 
 	ASSERT(prAdapter);
 	ASSERT(prAdapter->prGlueInfo);
 
-	prChipInfo = prAdapter->chip_info;
-	prBusInfo = prAdapter->chip_info->bus_info;
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
@@ -4647,12 +4638,7 @@ void halSetDrvSer(struct ADAPTER *prAdapter)
 	halSerRecovery(prAdapter);
 
 	DBGLOG(HAL, INFO, "Set Driver Ser\n");
-	if (prBusInfo->softwareInterruptMcu)
-		prBusInfo->softwareInterruptMcu(prAdapter,
-				MCU_INT_DRIVER_SER);
-	else
-		kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
-				MCU_INT_DRIVER_SER);
+	halTriggerSwInterrupt(prAdapter, MCU_INT_DRIVER_SER);
 }
 
 static void halStartSerTimer(struct ADAPTER *prAdapter)
@@ -4740,14 +4726,8 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 			DBGLOG(HAL, INFO,
 				"SER(F) Host ACK PDMA tx/rx ring stop operation\n");
-
-			if (prBusInfo->softwareInterruptMcu) {
-				prBusInfo->softwareInterruptMcu(prAdapter,
-					MCU_INT_PDMA0_STOP_DONE);
-			} else {
-				kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
-					MCU_INT_PDMA0_STOP_DONE);
-			}
+			halTriggerSwInterrupt(
+				prAdapter, MCU_INT_PDMA0_STOP_DONE);
 
 			/* re-call for change status to stop dma0 */
 			prErrRecoveryCtrl->eErrRecovState =
@@ -4828,13 +4808,8 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_RESET_PDMA0;
-			if (prBusInfo->softwareInterruptMcu) {
-				prBusInfo->softwareInterruptMcu(prAdapter,
-					MCU_INT_PDMA0_INIT_DONE);
-			} else {
-				kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
-					MCU_INT_PDMA0_INIT_DONE);
-			}
+			halTriggerSwInterrupt(
+				prAdapter, MCU_INT_PDMA0_INIT_DONE);
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -4847,13 +4822,8 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				"SER(Q) Host interrupt MCU SER handle done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_WAIT_MCU_NORMAL;
-			if (prBusInfo->softwareInterruptMcu) {
-				prBusInfo->softwareInterruptMcu(prAdapter,
-					MCU_INT_PDMA0_RECOVERY_DONE);
-			} else {
-				kalDevRegWrite(prGlueInfo, HOST2MCU_SW_INT_SET,
-					MCU_INT_PDMA0_RECOVERY_DONE);
-			}
+			halTriggerSwInterrupt(
+				prAdapter, MCU_INT_PDMA0_RECOVERY_DONE);
 		} else {
 			DBGLOG(HAL, ERROR, "SER CurStat=%u Event=%x\n",
 			       prErrRecoveryCtrl->eErrRecovState, u4Status);
@@ -5028,7 +4998,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 #if CFG_MTK_MDDP_SUPPORT
 	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
 	    ERR_RECOV_STOP_IDLE)
-		halNotifyMdCrash(prAdapter);
+		mddpNotifyMdCrash(prAdapter);
 #endif
 
 	while (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
@@ -5203,8 +5173,7 @@ void halUpdateTxMaxQuota(struct ADAPTER *prAdapter)
 	}
 }
 
-#if CFG_MTK_MDDP_SUPPORT
-void halNotifyMdCrash(struct ADAPTER *prAdapter)
+void halTriggerSwInterrupt(struct ADAPTER *prAdapter, uint32_t u4Bit)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -5217,17 +5186,11 @@ void halNotifyMdCrash(struct ADAPTER *prAdapter)
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
-	DBGLOG(HAL, INFO, "halNotifyMdCrash.\n");
-
-	if (prBusInfo->softwareInterruptMcu) {
-		prBusInfo->softwareInterruptMcu(
-			prAdapter, MCU_INT_NOTIFY_MD_CRASH);
-	} else {
-		kalDevRegWrite(prAdapter->prGlueInfo, HOST2MCU_SW_INT_SET,
-			       MCU_INT_NOTIFY_MD_CRASH);
-	}
+	if (prBusInfo->softwareInterruptMcu)
+		prBusInfo->softwareInterruptMcu(prAdapter, u4Bit);
+	else
+		HAL_MCR_WR(prAdapter, HOST2MCU_SW_INT_SET, u4Bit);
 }
-#endif
 
 #if (CFG_TX_HIF_CREDIT_FEATURE == 1)
 uint32_t halGetBssTxCredit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
@@ -6453,7 +6416,8 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				KAL_TEST_BIT(i, prAdapter->ulNoMoreRfb),
 				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
 	}
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1) && (CFG_ENABLE_MAWD_MD_RING == 1)
+#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+#if (CFG_ENABLE_MAWD_MD_RING == 1)
 	for (i = 0; i < MAWD_MD_TX_RING_NUM; ++i) {
 		prTxRing = &prHifInfo->MawdTxRing[i];
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u:%u%s",
@@ -6461,7 +6425,19 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 				prTxRing->u4UsedCnt,
 				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
 	}
-#endif
+#endif /* CFG_ENABLE_MAWD_MD_RING */
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnableRro)) {
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, " RRO[");
+		for (i = 0; i < NUM_OF_RX_RING; i++) {
+			if (!halIsDataRing(RX_RING, i))
+				continue;
+			pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+				"%u/", prHifInfo->u4RcbUsedListCnt[i]);
+		}
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+				   "%u]", prHifInfo->u4RcbFreeListCnt);
+	}
+#endif /* CFG_SUPPORT_HOST_OFFLOAD */
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" Msdu[%u/%u] Tok[%u/%u/%u] Rfb[%u/%u/%u/%u]",
 			prTxCtrl->rFreeMsduInfoList.u4NumElem,
@@ -6480,7 +6456,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			);
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" txreg[%u] rxreg[%u]",
+			" reg[%u/%u]",
 			GLUE_GET_REF_CNT(prHifStats->u4TxDataRegCnt),
 			GLUE_GET_REF_CNT(prHifStats->u4RxDataRegCnt)
 			);

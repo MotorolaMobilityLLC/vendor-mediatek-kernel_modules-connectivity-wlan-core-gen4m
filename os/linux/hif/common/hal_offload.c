@@ -216,7 +216,7 @@ static u_int8_t halMawdWakeUpVer1_0(struct GLUE_INFO *prGlueInfo)
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxRing = &prHifInfo->RxBlkRing[0];
 
-	u4Addr = MAWD_AP_WAKE_UP;
+	u4Addr = MAWD_DUMMY_REG_RW;
 	u4Val = BIT(0);
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
 
@@ -388,7 +388,7 @@ static u_int8_t halMawdSleepVer1_0(struct GLUE_INFO *prGlueInfo)
 	prWifiVar = &prAdapter->rWifiVar;
 	prRxRing = &prHifInfo->RxBlkRing[0];
 
-	u4Addr = MAWD_AP_WAKE_UP;
+	u4Addr = MAWD_DUMMY_REG_RW;
 	u4Val = BIT(1);
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
 
@@ -426,11 +426,38 @@ mawd_sleep:
 	prHifInfo->u4RxBlkMagicCnt = (u4Val & BITS(30, 31)) >> 30;
 
 done:
-	u4Addr = MAWD_AP_WAKE_UP;
+	u4Addr = MAWD_DUMMY_REG_RW;
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
 
 exit:
 	return fgRet;
+}
+
+static u_int8_t halMawdDisableRro(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	uint32_t u4Addr, u4Val = 0, u4Idx = 0;
+
+	prAdapter = prGlueInfo->prAdapter;
+
+	/* notify fw disable rro */
+	halTriggerSwInterrupt(prAdapter, MCU_INT_DISABLE_RRO);
+
+	/* dummy CR for disable RRO */
+	u4Addr = MAWD_DUMMY_REG_RW;
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		HAL_MAWD_MCR_RD(prAdapter, u4Addr, &u4Val);
+		if ((u4Val & BIT(0))) {
+			HAL_MAWD_MCR_WR(prAdapter, u4Addr, 0);
+			return TRUE;
+		}
+
+		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
+	}
+
+	DBGLOG(HAL, ERROR, "Polling timeout [0x%08x]=[0x%08x]\n",
+	       u4Addr, u4Val);
+	return FALSE;
 }
 
 static u_int8_t halMawdSleepVer1_1(struct GLUE_INFO *prGlueInfo)
@@ -465,11 +492,13 @@ static u_int8_t halMawdSleepVer1_1(struct GLUE_INFO *prGlueInfo)
 		goto exit;
 	}
 
+	fgRet = halMawdDisableRro(prGlueInfo);
+
 exit:
 	return fgRet;
 }
 
-u_int8_t halMawdSleepBeforeFwOwn(struct GLUE_INFO *prGlueInfo)
+u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 {
 #if MAWD_ENABLE_WAKEUP_SLEEP
 	struct GL_HIF_INFO *prHifInfo;
@@ -495,74 +524,16 @@ u_int8_t halMawdSleepBeforeFwOwn(struct GLUE_INFO *prGlueInfo)
 		goto exit;
 	}
 
-	if (kalGetMawdVer() == MAWD_VER_1_0) {
+	if (kalGetMawdVer() == MAWD_VER_1_0)
 		fgRet = halMawdSleepVer1_0(prGlueInfo);
-		if (!fgRet)
-			goto exit;
-
-#if (CFG_MTK_FPGA_PLATFORM == 0)
-		__halMawdSleep();
-#endif
-	}
-
-exit:
-	return fgRet;
-#else /* MAWD_ENABLE_WAKEUP_SLEEP == 0 */
-	return TRUE;
-#endif /* MAWD_ENABLE_WAKEUP_SLEEP */
-}
-
-static u_int8_t halMawdIsRroDisableDone(struct GLUE_INFO *prGlueInfo)
-{
-	struct mt66xx_chip_info *prChipInfo;
-	uint32_t u4Val = 0, u4Idx = 0;
-
-	prChipInfo = prGlueInfo->prAdapter->chip_info;
-
-	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
-		if (emi_mem_read(prChipInfo, RRO_DISABLE_EMI_OFFSET,
-				 &u4Val, sizeof(uint32_t))) {
-			DBGLOG(HAL, ERROR, "EMI read fail[0x%08x]\n", u4Val);
-			return FALSE;
-		}
-		if ((u4Val & BIT(0)))
-			return TRUE;
-
-		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
-	}
-
-	DBGLOG(HAL, ERROR, "Polling EMI[0x%08x] timeout\n", u4Val);
-	return FALSE;
-}
-
-u_int8_t halMawdSleepAfterFwOwn(struct GLUE_INFO *prGlueInfo)
-{
-#if MAWD_ENABLE_WAKEUP_SLEEP
-	struct GL_HIF_INFO *prHifInfo;
-	struct ADAPTER *prAdapter;
-	u_int8_t fgRet = TRUE;
-
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prAdapter = prGlueInfo->prAdapter;
-
-#if CFG_MTK_ANDROID_WMT
-	if (!is_cal_flow_finished())
-		goto exit;
-#endif
-
-	if (kalGetMawdVer() == MAWD_VER_1_1) {
+	else
 		fgRet = halMawdSleepVer1_1(prGlueInfo);
-		if (!fgRet)
-			goto exit;
-
-		fgRet = halMawdIsRroDisableDone(prGlueInfo);
-		if (!fgRet)
-			goto exit;
+	if (!fgRet)
+		goto exit;
 
 #if (CFG_MTK_FPGA_PLATFORM == 0)
-		__halMawdSleep();
+	__halMawdSleep();
 #endif
-	}
 
 	prHifInfo->fgIsMawdSuspend = TRUE;
 	DBGLOG(HAL, LOUD, "Mawd sleep done\n");
@@ -880,7 +851,7 @@ void halRroMawdInit(struct GLUE_INFO *prGlueInfo)
 	u4MawdRroAddrOffset -=
 		(uint32_t)(prChipInfo->u8CsrOffset & BITS(0, 31));
 
-	prHifInfo->fgIsMawdSuspend = FALSE;
+	prHifInfo->fgIsMawdSuspend = TRUE;
 
 	/* speed up the PLL after power up */
 	u4Addr = MAWD_POWER_UP;
@@ -3188,8 +3159,6 @@ static void __halMawdSleep(void)
 	HAL_MAWD_MCR_WR(NULL, u4Addr, 0);
 
 	/* sequence 2 */
-	u4Addr = MAWD_CR_OFFSET + 0x120A8;
-	HAL_MCR_WR(NULL, u4Addr, BIT(0));
 
 	/* sequence 1 */
 	u4Addr = MAWD_CR_OFFSET + 0x601A4;
