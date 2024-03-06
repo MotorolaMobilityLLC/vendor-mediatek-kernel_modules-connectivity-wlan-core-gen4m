@@ -4497,18 +4497,6 @@ uint8_t mldIsMultiLinkFormed(struct ADAPTER *prAdapter,
 		mld_starec->rStarecList.u4NumElem >= 1);
 }
 
-uint8_t mldGetMloLinkNum(struct ADAPTER *prAdapter,
-	struct STA_RECORD *prStaRec)
-{
-	struct MLD_STA_RECORD *mld_starec;
-
-	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-	if (mld_starec == NULL)
-		return 0;
-
-	return mld_starec->rStarecList.u4NumElem;
-}
-
 uint8_t mldIsMultiLinkEnabled(
 	struct ADAPTER *prAdapter,
 	enum ENUM_NETWORK_TYPE eNetworkType,
