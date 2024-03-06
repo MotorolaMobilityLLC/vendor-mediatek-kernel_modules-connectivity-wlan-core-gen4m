@@ -1948,6 +1948,10 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	/* reduce rxv processing */
+	if (!IS_RX_MPDU_BEGIN(prRetSwRfb->ucPayloadFormat))
+		return;
+
 	if (prRetSwRfb->ucGroupVLD & BIT(RX_GROUP_VLD_3)) {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prStaRec = mldGetStaRecByBandIdx(prAdapter,

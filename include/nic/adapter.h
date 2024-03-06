@@ -2401,6 +2401,7 @@ struct ADAPTER {
 	uint32_t *pu4TxTimePerLevels;
 	uint32_t u4TxTimePerLevelsSize; /* 256 * 4bytes (uint32_t) * 2 bands */
 	struct STATS_LLS_PEER_AP_REC rPeerApRec[KAL_AIS_NUM][MLD_LINK_MAX];
+	OS_SYSTIME rLastInvalidRxRateTime;
 #endif
 #if CFG_SUPPORT_REG_STAT_FROM_EMI
 	struct timespec64 rRegStatSyncFwTs;

@@ -4030,5 +4030,37 @@ int connac3x_get_rx_rate_info(const uint32_t *prRxV,
 	return 0;
 }
 #endif
+
+#if CFG_SUPPORT_LLS
+void connac3x_dbg_invalid_rx_rate(struct ADAPTER *ad,
+	struct SW_RFB *prSwRfb, struct STATS_LLS_WIFI_RATE *rate)
+{
+	OS_SYSTIME now, last;
+
+	GET_BOOT_SYSTIME(&now);
+	last = ad->rLastInvalidRxRateTime;
+
+	if (!CHECK_FOR_TIMEOUT(now, last,
+		MSEC_TO_SYSTIME(INVALID_RX_RATE_TIMEOUT)))
+		return;
+
+	ad->rLastInvalidRxRateTime = now;
+
+	DBGLOG(RX, WARN, "Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u\n",
+		rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx);
+
+	DBGLOG(RX, INFO, "Dump RXD:\n");
+	DBGLOG_MEM8(RX, INFO, prSwRfb->prRxStatus, ad->chip_info->rxd_size);
+
+	DBGLOG(RX, INFO, "****** RXD GROUP 3 ******\n");
+	DBGLOG_MEM8(RX, INFO, prSwRfb->prRxStatusGroup3,
+			sizeof(struct HW_MAC_RX_STS_GROUP_3_V2));
+
+	kalSendAeeWarning("Invalid Rx Rate",
+		"Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+		rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx);
+}
+#endif /* CFG_SUPPORT_LLS */
+
 #endif /* DBG_DISABLE_ALL_INFO */
 #endif /* CFG_SUPPORT_CONNAC3X */
