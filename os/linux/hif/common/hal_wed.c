@@ -160,7 +160,7 @@ static void wedNetDevStashRemove(struct net_device *prNetDev)
 
 void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
 {
-	int i, j;
+	int i, j, ret;
 	struct net_device *prNetDev;
 	struct STA_RECORD *prStaRec;
 
@@ -195,11 +195,21 @@ void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
 		/* wed hif init */
 		wedRxTokenInfoRelease(prAdapter);
 		if (wedRxTokenInfoSetup(prAdapter) < 0) {
-			DBGLOG(HAL, INFO, "SER(E) fail: wedRxTokenInfoSetup\n");
+			DBGLOG(HAL, ERROR, "SER(E) wedRxTokenInfoSetup fail\n");
 			goto end;
 		}
-		wedProxyHookCall(PROXY_WLAN_HOOK_HIF_INIT, &grWedInfo);
-		wedProxyHookCall(PROXY_WLAN_HOOK_DMA_SET, &grWedInfo);
+		ret = wedProxyHookCall(PROXY_WLAN_HOOK_HIF_INIT, &grWedInfo);
+		if (ret) {
+			DBGLOG(HAL, ERROR, "SER(E) HIF_INIT fail\n");
+			wedRxTokenInfoRelease(prAdapter);
+			goto end;
+		}
+		ret = wedProxyHookCall(PROXY_WLAN_HOOK_DMA_SET, &grWedInfo);
+		if (ret) {
+			DBGLOG(HAL, ERROR, "SER(E) DMA_SET fail\n");
+			wedRxTokenInfoRelease(prAdapter);
+			goto end;
+		}
 		kalDevRegWrite(prAdapter->prGlueInfo,
 			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
 			grWedInfo.int_enable_mask);
@@ -704,7 +714,7 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	/* step.2 fill all necessary information for warp proxy driver */
 	ret = wedInfoSetup(prAdapter);
 	if (ret < 0)
-		goto error;
+		goto error_release_token;
 
 	/* step.3 Ask WARP driver to perform basic WED HW initialization
 	 * with diff flow between interface up and resume
@@ -715,7 +725,7 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 		ret = wedProxyHookCall(PROXY_WLAN_HOOK_RESUME, &grWedInfo);
 
 	if (ret < 0)
-		goto error;
+		goto error_release_token;
 
 	grWedInfo.fgMirrorEnable = 1;
 	disable_irq_nosync(prwedinfo->u4IrqId);
@@ -744,14 +754,17 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 		WF_WFDMA_HOST_DMA0_WPDMA_GLO_CFG_EXT0_ADDR, val);
 
 	/* step.7  trigger warp driver to take control on WFDMA */
-	if (prwedinfo->wed_ver > 0) {
-		wedProxyHookCall(PROXY_WLAN_HOOK_HIF_INIT, &grWedInfo);
-		wedProxyHookCall(PROXY_WLAN_HOOK_DMA_SET, &grWedInfo);
-	} else {
+	if (prwedinfo->wed_ver <= 0) {
 		DBGLOG(HAL, WARN, "WED attach failed by system kernel %d\n");
 		ret = -1;
-		goto error;
+		goto error_release_token;
 	}
+	ret = wedProxyHookCall(PROXY_WLAN_HOOK_HIF_INIT, &grWedInfo);
+	if (ret < 0)
+		goto error_release_token;
+	ret = wedProxyHookCall(PROXY_WLAN_HOOK_DMA_SET, &grWedInfo);
+	if (ret < 0)
+		goto error_release_token;
 
 	/* step.8 Enable INT again(mapping to warp) Read from gen4m, and write
 	 * to WED. Direct use halEnableInterrupt may cause Kernel warnning
@@ -770,7 +783,11 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	enable_irq(prwedinfo->u4IrqId);
 	DBGLOG(HAL, STATE, "enable irq for %d\n", prwedinfo->u4IrqId);
 
-	ret = 0;
+	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	return 0;
+
+error_release_token:
+	wedRxTokenInfoRelease(prAdapter);
 error:
 	RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
 	return ret;
@@ -843,6 +860,7 @@ static int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	 * Reallocate the Ring Buffer to avoid buffer free error when rmmod
 	 */
 	if (!halWpdmaAllocRing(prAdapter->prGlueInfo, true)) {
+		DBGLOG(HAL, ERROR, "halWpdmaAllocRing fail\n");
 		ret = -1;
 		goto error;
 	}
@@ -1009,15 +1027,18 @@ static uint32_t wedRxInfoGet(struct RXD_STRUCT *pRxD, struct SW_RFB *prSwRfb)
 	uint32_t DW1 = *(uint32_t *)((uint32_t *)pRxD + 1);
 	uint32_t DW3 = *(uint32_t *)((uint32_t *)pRxD + 3);
 	uint8_t fgDrop = FALSE;
-
 	struct sk_buff *prSkb = (struct sk_buff *)prSwRfb->pvPacket;
 
-	if (DW3 & BIT(RXDMAD_PPE_VLD)) {
+	if (prSwRfb->prWedRxInfo) {
+		DBGLOG(HAL, ERROR, "prWedRxInfo memory not released!!\n");
+		return 0;
+	}
 
-		prWedRxInfo = kmalloc(sizeof(struct WED_RX_INFO), GFP_ATOMIC);
+	if (DW3 & BIT(RXDMAD_PPE_VLD)) {
+		prWedRxInfo = kalMemAlloc(sizeof(struct WED_RX_INFO),
+					  PHY_MEM_TYPE);
 		if (!prWedRxInfo) {
 			DBGLOG(HAL, WARN, "Failed to alloc WED RX INFO!!\n");
-			kfree(prWedRxInfo);
 			return 0;
 		}
 
@@ -1044,29 +1065,46 @@ static uint32_t wedRxInfoGet(struct RXD_STRUCT *pRxD, struct SW_RFB *prSwRfb)
 	return fgDrop;
 }
 
+void wedHwRxInfoFree(struct SW_RFB *prSwRfb)
+{
+	if (!prSwRfb)
+		return;
+
+	if (prSwRfb->prWedRxInfo) {
+		kalMemFree(prSwRfb->prWedRxInfo, PHY_MEM_TYPE,
+			   sizeof(struct WED_RX_INFO));
+		prSwRfb->prWedRxInfo = NULL;
+	}
+}
+
 uint32_t wedHwRxInfoWrapper(struct SW_RFB *prSwRfb)
 {
 	struct WED_RX_INFO *prWedRxInfo = NULL;
 	struct sk_buff *prSkb = NULL;
 
-	if (!IsWedAttached())
+	if ((prSwRfb == NULL) || (prSwRfb->prWedRxInfo == NULL))
 		return 0;
+	prWedRxInfo = (struct WED_RX_INFO *)prSwRfb->prWedRxInfo;
+
+	if (!IsWedAttached())
+		goto FREE_WED_RX_INFO;
 
 	if (WED_GET_PPE_TYPE(prSwRfb->pvPacket) != RX_PPE_VALID)
-		return 0;
+		goto FREE_WED_RX_INFO;
 
-	prWedRxInfo = (struct WED_RX_INFO *)prSwRfb->prWedRxInfo;
 	prSkb = (struct sk_buff *)prWedRxInfo->pPacket;
 
 	if (skb_headroom(prSkb) < FOE_INFO_LEN) {
 		DBGLOG(HAL, WARN,
 			"SKB has no enough headroom (%d -> %d) bytes!\n",
 			skb_headroom(prSkb), FOE_INFO_LEN);
-		return -1;
+		goto FREE_WED_RX_INFO;
 	}
 
 	wedProxyHookCall(PROXY_WLAN_HOOK_RX, prWedRxInfo);
-	kfree(prWedRxInfo);
+
+FREE_WED_RX_INFO:
+	wedHwRxInfoFree(prSwRfb);
 
 	return 0;
 }
@@ -1205,7 +1243,7 @@ bool wedDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	u4tokeID = pRxD->SDPtr1 >> RXDMAD_TOKEN_ID_SHIFT;
 	prWedDmaBuf = wedRxtokenGet(NULL, u4tokeID);
 	if (!prWedDmaBuf)
-		return NULL;
+		return FALSE;
 
 	prDmaBuf = &pRxCell->DmaBuf;
 	wedRxBufferSwap(prGlueInfo, u4tokeID,
@@ -1315,11 +1353,10 @@ uint32_t wedHwTxRequest(struct ADAPTER *prAdapter,
 	if (!IsWedAttached())
 		return 0;
 
-	prWedTxInfo = kmalloc(sizeof(struct WED_MSDU_INFO), GFP_ATOMIC);
-
+	prWedTxInfo = kalMemAlloc(sizeof(struct WED_MSDU_INFO),
+				  PHY_MEM_TYPE);
 	if (!prWedTxInfo) {
 		DBGLOG(HAL, WARN, "Failed to alloc WED Tx Info!!\n");
-		kfree(prWedTxInfo);
 		return -1;
 	}
 
@@ -1345,7 +1382,8 @@ uint32_t wedHwTxRequest(struct ADAPTER *prAdapter,
 	prWedTxInfo->ringIdx = u2Port;
 
 	ret = wedProxyHookCall(PROXY_WLAN_HOOK_TX, prWedTxInfo);
-	kfree(prWedTxInfo);
+
+	kalMemFree(prWedTxInfo, PHY_MEM_TYPE, sizeof(struct WED_MSDU_INFO));
 
 	return ret;
 }
@@ -1408,7 +1446,6 @@ uint32_t wedStaRecUpdate(struct ADAPTER *prAdapter,
 	prCmdContent = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, size);
 	if (!prCmdContent) {
 		DBGLOG(HAL, WARN, "command allocation failed!\n");
-		cnmMemFree(prAdapter, prCmdContent);
 		return WLAN_STATUS_RESOURCES;
 	}
 
@@ -1502,9 +1539,7 @@ uint32_t wedStaRecRxAddBaUpdate(struct ADAPTER *prAdapter, void *ba)
 	prCmdContent = cnmMemAlloc(prAdapter, RAM_TYPE_BUF, size);
 
 	if (!prCmdContent) {
-		DBGLOG(HAL, WARN,
-			"command allocation failed!\n");
-		cnmMemFree(prAdapter, prCmdContent);
+		DBGLOG(HAL, WARN, "command allocation failed!\n");
 		return WLAN_STATUS_RESOURCES;
 	}
 

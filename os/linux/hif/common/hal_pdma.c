@@ -2652,10 +2652,16 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		if (prSwRfb->ucPacketType == RX_PKT_TYPE_MSDU_REPORT) {
 			nicRxProcessMsduReport(prAdapter, prSwRfb);
 			u4MsduReportCnt++;
+#if CFG_SUPPORT_WED_PROXY
+			wedHwRxInfoFree(prSwRfb);
+#endif
 			QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
 			continue;
 		} else if (prSwRfb->ucPacketType == RX_PKT_TYPE_RX_REPORT) {
 			nicRxProcessRxReport(prAdapter, prSwRfb);
+#if CFG_SUPPORT_WED_PROXY
+			wedHwRxInfoFree(prSwRfb);
+#endif
 			QUEUE_INSERT_TAIL(prFreeSwRfbList, &prSwRfb->rQueEntry);
 			continue;
 		}
