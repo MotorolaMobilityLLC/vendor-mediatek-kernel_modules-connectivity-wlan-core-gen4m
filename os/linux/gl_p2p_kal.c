@@ -2732,7 +2732,8 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct RF_CHANNEL_INFO *prRfChnlInfo,
 	uint8_t ucCsaCount,
-	u_int8_t fgQuiet)
+	u_int8_t fgQuiet,
+	u_int8_t fgLockHeld)
 {
 	struct GL_P2P_INFO *prP2PInfo;
 	struct net_device *prNetdevice;
@@ -2741,21 +2742,20 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	enum nl80211_channel_type rChannelType;
 	enum ENUM_CHNL_EXT eChnlSco;
 	uint8_t ucRoleIdx;
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
-	(CFG_ADVANCED_80211_MLO == 1)
 	uint8_t ucLinkIdx = 0;
-#endif
 
 	if (!prAdapter || !prBssInfo || !prRfChnlInfo)
 		return;
 
+	ucRoleIdx = prBssInfo->u4PrivateData;
 #if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	ucLinkIdx = prBssInfo->ucLinkIndex;
+	if (!IS_BSS_APGO(prBssInfo) ||
+	    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]))
+		ucLinkIdx = prBssInfo->ucLinkIndex;
 #endif
 #endif
-	ucRoleIdx = prBssInfo->u4PrivateData;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
 
 	if (prP2PInfo->aprRoleHandler != NULL &&
@@ -2798,8 +2798,10 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	chandef.center_freq2 = prRfChnlInfo->u4CenterFreq2;
 
 	DBGLOG(P2P, INFO,
-		"name(%s) b=%d f=%d w=%d s1=%d s2=%d\n",
+		"name=%s role=%u link=%u b=%d f=%d w=%d s1=%d s2=%d\n",
 		prNetdevice->name,
+		ucRoleIdx,
+		ucLinkIdx,
 		chandef.chan->band,
 		chandef.chan->center_freq,
 		chandef.width,
@@ -2811,6 +2813,9 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	 */
 	if (prP2PInfo->prWdev->iftype != NL80211_IFTYPE_AP)
 		goto queue_ctrl;
+
+	if (!fgLockHeld)
+		mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
@@ -2829,6 +2834,9 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 #elif KERNEL_VERSION(3, 19, 0) <= CFG80211_VERSION_CODE
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef, ucCsaCount);
 #endif
+
+	if (!fgLockHeld)
+		mutex_unlock(&prNetdevice->ieee80211_ptr->mtx);
 
 queue_ctrl:
 	if (fgQuiet)
@@ -2849,8 +2857,10 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	if (!prAdapter || !prBssInfo)
 		return;
 
-	linkIdx = prBssInfo->ucLinkIndex;
 	role_idx = prBssInfo->u4PrivateData;
+	if (!IS_BSS_APGO(prBssInfo) ||
+	    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[role_idx]))
+		linkIdx = prBssInfo->ucLinkIndex;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[role_idx];
 
 	if (!prP2PInfo) {
@@ -2967,14 +2977,18 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(P2P, INFO,
-		"role(%d) b=%d f=%d w=%d s1=%d s2=%d dfs=%d\n",
+		"name=%s role=%u link=%u b=%d f=%d w=%d s1=%d s2=%d dfs=%d\n",
+		prNetdevice->name,
 		role_idx,
+		linkIdx,
 		chandef.chan->band,
 		chandef.chan->center_freq,
 		chandef.width,
 		chandef.center_freq1,
 		chandef.center_freq2,
 		chandef.chan->dfs_state);
+
+	mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
@@ -2988,6 +3002,8 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 #else
 	cfg80211_ch_switch_notify(prNetdevice, &chandef);
 #endif
+
+	mutex_unlock(&prNetdevice->ieee80211_ptr->mtx);
 
 	netif_carrier_on(prNetdevice);
 	netif_tx_start_all_queues(prNetdevice);

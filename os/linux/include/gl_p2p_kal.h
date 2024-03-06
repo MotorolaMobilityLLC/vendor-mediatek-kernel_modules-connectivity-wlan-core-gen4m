@@ -371,7 +371,8 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct RF_CHANNEL_INFO *prRfChnlInfo,
 	uint8_t ucCsaCount,
-	u_int8_t fgQuiet);
+	u_int8_t fgQuiet,
+	u_int8_t fgLockHeld);
 
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);

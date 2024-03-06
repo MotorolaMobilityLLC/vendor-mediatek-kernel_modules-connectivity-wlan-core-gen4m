@@ -470,7 +470,7 @@ u_int8_t kalP2PMaxClients(struct GLUE_INFO *prGlueInfo,
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalP2pIndicateChnlSwitchStarted(_prAdapter, __prBssInfo, \
-	__prRfChnlInfo, __ucCsaCount, __fgQuiet) \
+	__prRfChnlInfo, __ucCsaCount, __fgQuiet, __fgLockHeld) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalP2pIndicateChnlSwitch(_prAdapter, _prBssInfo) \
@@ -527,7 +527,8 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct RF_CHANNEL_INFO *prRfChnlInfo,
 	uint8_t ucCsaCount,
-	u_int8_t fgQuiet);
+	u_int8_t fgQuiet,
+	u_int8_t fgLockHeld);
 
 void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
