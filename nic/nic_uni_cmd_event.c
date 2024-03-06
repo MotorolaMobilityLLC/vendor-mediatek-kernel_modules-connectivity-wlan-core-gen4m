@@ -11093,7 +11093,7 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 }
 
-void nicUniEventBaOffloadTxAggLimit(struct ADAPTER
+void nicUniSolicitEventBaOffload(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 	uint8_t *tag;
@@ -11110,6 +11110,15 @@ void nicUniEventBaOffloadTxAggLimit(struct ADAPTER
 		case UNI_EVENT_BA_OFFLOAD_TAG_TX_AGG_LIMIT: {
 			struct UNI_EVENT_TX_AGG_LIMIT *ba =
 				(struct UNI_EVENT_TX_AGG_LIMIT *) tag;
+			DBGLOG(NIC, INFO, "Tag(%d) bss:%u status:%u\n",
+				TAG_ID(tag), ba->ucBssIdx, ba->ucStatus);
+			if (ba->ucStatus)
+				u4Status = WLAN_STATUS_FAILURE;
+			break;
+		}
+		case UNI_EVENT_BA_OFFLOAD_TAG_TX_AMSDU_NUM_LIMIT: {
+			struct UNI_EVENT_TX_AMSDU_NUM_LIMIT *ba =
+				(struct UNI_EVENT_TX_AMSDU_NUM_LIMIT *) tag;
 			DBGLOG(NIC, INFO, "Tag(%d) bss:%u status:%u\n",
 				TAG_ID(tag), ba->ucBssIdx, ba->ucStatus);
 			if (ba->ucStatus)
