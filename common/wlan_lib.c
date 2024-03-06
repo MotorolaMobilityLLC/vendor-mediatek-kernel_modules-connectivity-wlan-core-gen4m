@@ -7341,13 +7341,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucStaPreferMldAddr,
 		"StaPreferMldAddr", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_STR(prWifiVar->aucMloP2pPreferFreq,
-		"MloP2pPreferFreq", "2462 5975 5180", FEATURE_TO_CUSTOMER);
+		"MloP2pPreferFreq", "", FEATURE_TO_CUSTOMER);
 	wlanParseMloFreqList(prAdapter,
 			     prWifiVar->aucMloP2pPreferFreq,
 			     prWifiVar->au4MloP2p2ndLinkFreqs,
 			     ARRAY_SIZE(prWifiVar->au4MloP2p2ndLinkFreqs));
 	INIT_STR(prWifiVar->aucMloSapPreferFreq,
-		"MloSapPreferFreq", "2462 5975 5180", FEATURE_TO_CUSTOMER);
+		"MloSapPreferFreq", "", FEATURE_TO_CUSTOMER);
 	wlanParseMloFreqList(prAdapter,
 			     prWifiVar->aucMloSapPreferFreq,
 			     prWifiVar->au4MloSap2ndLinkFreqs,
