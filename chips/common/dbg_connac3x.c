@@ -4079,10 +4079,6 @@ void connac3x_dbg_invalid_rx_rate(struct ADAPTER *ad,
 	DBGLOG(RX, INFO, "****** RXD GROUP 3 ******\n");
 	DBGLOG_MEM8(RX, INFO, prSwRfb->prRxStatusGroup3,
 			sizeof(struct HW_MAC_RX_STS_GROUP_3_V2));
-
-	kalSendAeeWarning("Invalid Rx Rate",
-		"Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
-		rate->preamble, rate->nss, rate->bw, rate->rateMcsIdx);
 }
 #endif /* CFG_SUPPORT_LLS */
 
