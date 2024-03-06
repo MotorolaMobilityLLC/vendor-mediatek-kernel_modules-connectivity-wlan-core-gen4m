@@ -499,7 +499,11 @@ int halAllocHifMem(struct platform_device *pdev,
 				continue;
 
 			/* copy path using prealloc rx data size */
+#if (CFG_SUPPORT_WED_PROXY == 1) && (CFG_SUPPORT_RX_ZERO_COPY == 0)
+			u4Size = prBusInfo->rx_data_ring_size;
+#else
 			u4Size = prBusInfo->rx_data_ring_prealloc_size;
+#endif
 			u4PktSize = CFG_RX_MAX_PKT_SIZE;
 			u4DataNum--;
 		} else {
