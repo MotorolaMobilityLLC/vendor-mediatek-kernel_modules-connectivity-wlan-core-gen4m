@@ -3216,6 +3216,10 @@ void nicRxReturnRFB(struct ADAPTER *prAdapter,
 	if (!prSwRfb)
 		return;
 
+#if CFG_SUPPORT_WED_PROXY
+	wedHwRxInfoFree(prSwRfb);
+#endif
+
 	if (isRfbFromSpared(prRxCtrl, prSwRfb)) {
 		if (prSwRfb->pvPacket)
 			kalPacketFree(prAdapter->prGlueInfo,

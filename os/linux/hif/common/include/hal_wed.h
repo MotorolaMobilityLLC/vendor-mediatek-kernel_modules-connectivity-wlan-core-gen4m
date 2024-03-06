@@ -476,6 +476,7 @@ uint32_t wedHwTxRequest(struct ADAPTER *prAdapter,
 uint32_t wedStaRecUpdate(struct ADAPTER *prAdapter,
 	struct STA_RECORD *pStaRecCfg);
 uint32_t wedStaRecRxAddBaUpdate(struct ADAPTER *prAdapter, void *ba);
+void wedHwRxInfoFree(struct SW_RFB *prSwRfb);
 uint32_t wedHwRxInfoWrapper(struct SW_RFB *prSwRfb);
 uint32_t wedHwRxRequest(void *prSkb);
 void wedSuspendTrigger(void);

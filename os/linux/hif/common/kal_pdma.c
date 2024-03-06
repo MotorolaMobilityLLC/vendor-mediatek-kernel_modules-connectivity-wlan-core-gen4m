@@ -1004,10 +1004,13 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	/* Static mapping */
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 #if CFG_SUPPORT_WED_PROXY
-		WARP_PROXY_IO_READ32(prGlueInfo, u4BusAddr, pu4Value);
-#else
-		RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+		if (wedMirrorAddrCheck(u4BusAddr)) {
+			WARP_PROXY_IO_READ32(prGlueInfo, u4BusAddr, pu4Value);
+		} else
 #endif
+		{
+			RTMP_IO_READ32(prChipInfo, u4BusAddr, pu4Value);
+		}
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
 			kalDevRegL1Read(prGlueInfo, prChipInfo, u4Register,
@@ -1187,10 +1190,13 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 #else
 	if (halChipToStaticMapBusAddr(prChipInfo, u4Register, &u4BusAddr)) {
 #if CFG_SUPPORT_WED_PROXY
-		WARP_PROXY_IO_WRITE32(prGlueInfo, u4BusAddr, u4Value);
-#else
-		RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
+		if (wedMirrorAddrCheck(u4BusAddr)) {
+			WARP_PROXY_IO_WRITE32(prGlueInfo, u4BusAddr, u4Value);
+		} else
 #endif
+		{
+			RTMP_IO_WRITE32(prChipInfo, u4BusAddr, u4Value);
+		}
 	} else {
 		if (kalDevRegL1Remap(&u4Register))
 			kalDevRegL1Write(prGlueInfo, prChipInfo, u4Register,
