@@ -4712,6 +4712,7 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 			aisRemoveDeauthBlocklist(prAdapter);
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
+			rlmReqGenerateOMIIE(prAdapter, prAisBssInfo);
 			/* 4 <1.7> Set the Next State of AIS FSM */
 			eNextState = AIS_STATE_NORMAL_TR;
 		}

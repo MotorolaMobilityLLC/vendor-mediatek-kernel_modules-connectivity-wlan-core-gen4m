@@ -505,6 +505,9 @@ rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 		uint8_t ucOpRxNss,
 		uint8_t ucOpTxNss);
 
+void rlmReqGenerateOMIIE(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo);
+
 void
 rlmSendChannelSwitchFrame(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
