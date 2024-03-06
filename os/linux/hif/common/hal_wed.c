@@ -485,8 +485,10 @@ static void wedRxTokenInfoRelease(struct ADAPTER *prAdapter)
 	/* Release the RxBM + WiFi buffer by the individual way */
 	for (u4token_id = 0; u4token_id < grWedToken.u4MaxSize; u4token_id++) {
 		prWedDmaBuf = &grWedToken.pkt_token[u4token_id];
-		if (!prWedDmaBuf->fgIsSKB && prWedDmaBuf->pkt != NULL)
+		if (!prWedDmaBuf->fgIsSKB && prWedDmaBuf->pkt != NULL) {
 			page_frag_free(prWedDmaBuf->pkt);
+			prWedDmaBuf->pkt = NULL;
+		}
 
 		/* skb would be freed by kernel, no need to free it again */
 	}
@@ -568,11 +570,15 @@ int wedRxTokenInfoSetup(struct ADAPTER *prAdapter)
 		prRxCell = &pRxRing->Cell[u4Idx];
 		pDmaBuf = &prRxCell->DmaBuf;
 		pRxD = (struct RXD_STRUCT *) prRxCell->AllocVa;
-
+#if CFG_SUPPORT_RX_ZERO_COPY
 		u4token_id = wedRxTokenInit(NULL, TRUE,
 			prRxCell->pPacket, pDmaBuf->AllocSize,
 			pDmaBuf->AllocVa, pDmaBuf->AllocPa);
-
+#else
+		u4token_id = wedRxTokenInit(NULL, FALSE,
+			NULL, pDmaBuf->AllocSize,
+			pDmaBuf->AllocVa, pDmaBuf->AllocPa);
+#endif
 		pRxD->SDPtr1 = (u4token_id << RXDMAD_TOKEN_ID_SHIFT);
 		pRxD->SDLen1 = BIT(8);
 	}
@@ -583,11 +589,15 @@ int wedRxTokenInfoSetup(struct ADAPTER *prAdapter)
 		prRxCell = &pRxRing->Cell[u4Idx];
 		pDmaBuf = &prRxCell->DmaBuf;
 		pRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
-
+#if CFG_SUPPORT_RX_ZERO_COPY
 		u4token_id = wedRxTokenInit(NULL, TRUE,
 			prRxCell->pPacket, pDmaBuf->AllocSize,
 			pDmaBuf->AllocVa, pDmaBuf->AllocPa);
-
+#else
+		u4token_id = wedRxTokenInit(NULL, FALSE,
+			NULL, pDmaBuf->AllocSize,
+			pDmaBuf->AllocVa, pDmaBuf->AllocPa);
+#endif
 		pRxD->SDPtr1 = (u4token_id << RXDMAD_TOKEN_ID_SHIFT);
 		pRxD->SDLen1 = BIT(8);
 	}
@@ -1109,6 +1119,7 @@ bool wedRxBufferSwap(struct GLUE_INFO *prGlueInfo, uint32_t u4tokeID,
 	struct WED_DMABUF *prWedDmaBuf, struct RXD_STRUCT *pRxD,
 	struct RTMP_DMABUF *prDmaBuf, struct SW_RFB *prSwRfb)
 {
+#if CFG_SUPPORT_RX_ZERO_COPY
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	dma_addr_t rAddr;
 	void *prPacket;
@@ -1127,6 +1138,8 @@ bool wedRxBufferSwap(struct GLUE_INFO *prGlueInfo, uint32_t u4tokeID,
 	prWedDmaBuf->fgIsSKB = TRUE;
 	prWedDmaBuf->pkt = prSwRfb->pvPacket;
 	prWedDmaBuf->AllocVa = ((struct sk_buff *)prSwRfb->pvPacket)->data;
+	prSwRfb->pvPacket = prPacket;
+
 	rAddr = KAL_DMA_MAP_SINGLE_ATTRS(prHifInfo->prDmaDev,
 		prWedDmaBuf->AllocVa, prWedDmaBuf->AllocSize,
 		KAL_DMA_FROM_DEVICE);
@@ -1136,6 +1149,11 @@ bool wedRxBufferSwap(struct GLUE_INFO *prGlueInfo, uint32_t u4tokeID,
 		return FALSE;
 	}
 	prWedDmaBuf->AllocPa = rAddr;
+#else
+	kalMemCopy(((struct sk_buff *)prSwRfb->pvPacket)->data,
+		   prWedDmaBuf->AllocVa,
+		   pRxD->SDLen0);
+#endif
 
 	/* Align information to gen4m's DmaBuf & DMAD content */
 	prDmaBuf->AllocPa = prWedDmaBuf->AllocPa;
@@ -1148,8 +1166,6 @@ bool wedRxBufferSwap(struct GLUE_INFO *prGlueInfo, uint32_t u4tokeID,
 	pRxD->SDPtr1 = (u4tokeID << RXDMAD_TOKEN_ID_SHIFT);
 	pRxD->SDLen1 = BIT(8);
 
-	/* assign RX packet to SwRfb */
-	prSwRfb->pvPacket = prPacket;
 	prSwRfb->pucRecvBuff = ((struct sk_buff *) prSwRfb->pvPacket)->data;
 	prSwRfb->prRxStatus = (void *) prSwRfb->pucRecvBuff;
 
@@ -1191,11 +1207,11 @@ bool wedDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	if (!prWedDmaBuf)
 		return NULL;
 
-	pRxCell->pPacket = prSwRfb->pvPacket;
-
 	prDmaBuf = &pRxCell->DmaBuf;
 	wedRxBufferSwap(prGlueInfo, u4tokeID,
 		prWedDmaBuf, pRxD, prDmaBuf, prSwRfb);
+
+	pRxCell->pPacket = prWedDmaBuf->pkt;
 
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	prRxRing->fgIsDumpLog = false;
