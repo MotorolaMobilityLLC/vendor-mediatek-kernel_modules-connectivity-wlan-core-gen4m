@@ -4784,8 +4784,38 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 		}
 	}
 
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	if (mld_bssinfo->ucHmloEnabled &&
+		mld_bssinfo->rBssList.u4NumElem ==
+			MLD_HYBRID_MLO_LINK_NUM) {
+		/* if 5G band Rssi > TH,select 5G link,
+		 * otherwise select 2G Link.
+		 */
+		prBssDesc = aisGetTargetBssDesc(prAdapter,
+					ucMLSRBssIndex[BAND_5G]);
+		if (prBssDesc &&
+			(RCPI_TO_dBm(prBssDesc->ucRCPI) >
+			MLSR_REMAIN_RSSI_TH)) {
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_5G];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_2G4];
+			DBGLOG(ML, INFO, "Remain 5G,Pause 2G&6G\n");
+		} else {
+			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
+			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
+			DBGLOG(ML, INFO, "Remain 2G,Pause 5G&6G\n");
+		}
+		/*set 6G link pause flag*/
+		prPauseBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						ucMLSRBssIndex[BAND_6G]);
+		if (prPauseBssInfo)
+			prPauseBssInfo->ucMLSRPausedLink = TRUE;
+	} else if (ucMLSRBandCount[BAND_2G4] > 0 &&
+		ucMLSRBandCount[BAND_5G] > 0)
+#else
 	if (ucMLSRBandCount[BAND_2G4] > 0 &&
-		ucMLSRBandCount[BAND_5G] > 0) {
+		ucMLSRBandCount[BAND_5G] > 0)
+#endif
+	{
 		if (ucLegacyBssBand == BAND_6G) {
 		/*EMLSR remain 2G Link*/
 			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
@@ -4837,33 +4867,6 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 			DBGLOG(ML, INFO, "Remain 5G,Pause 6G\n");
 		}
 	}
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
-	else if (mld_bssinfo->ucHmloEnabled &&
-		mld_bssinfo->rBssList.u4NumElem ==
-			MLD_HYBRID_MLO_LINK_NUM) {
-		/* if 5G band Rssi > TH,select 5G link,
-		 * otherwise select 2G Link.
-		 */
-		prBssDesc = aisGetTargetBssDesc(prAdapter,
-					ucMLSRBssIndex[BAND_5G]);
-		if (prBssDesc &&
-			(RCPI_TO_dBm(prBssDesc->ucRCPI) >
-			MLSR_REMAIN_RSSI_TH)) {
-			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_5G];
-			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_2G4];
-			DBGLOG(ML, INFO, "Remain 5G,Pause 2G&6G\n");
-		} else {
-			ucMLSRRemainBssIndex = ucMLSRBssIndex[BAND_2G4];
-			ucMLSRPauseBssIndex = ucMLSRBssIndex[BAND_5G];
-			DBGLOG(ML, INFO, "Remain 2G,Pause 5G&6G\n");
-		}
-		/*set 6G link pause flag*/
-		prPauseBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
-						ucMLSRBssIndex[BAND_6G]);
-		if (prPauseBssInfo)
-			prPauseBssInfo->ucMLSRPausedLink = TRUE;
-	}
-#endif
 
 	DBGLOG(ML, INFO, "Remain BssIndex: %d, Pause BssIndex: %d\n",
 				ucMLSRRemainBssIndex, ucMLSRPauseBssIndex);
