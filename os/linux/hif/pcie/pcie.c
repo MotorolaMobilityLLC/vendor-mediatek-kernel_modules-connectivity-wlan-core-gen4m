@@ -1577,10 +1577,6 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 
 	wlanSuspendPmHandle(prGlueInfo);
 
-#if CFG_SUPPORT_WED_PROXY
-	kalIoctl(prGlueInfo, wlanoidWedSuspend, NULL, 0, &ret);
-#endif
-
 #if !CFG_ENABLE_WAKE_LOCK
 	prGlueInfo->rHifInfo.eSuspendtate = PCIE_STATE_PRE_SUSPEND_WAITING;
 #endif
@@ -1592,7 +1588,7 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		if (count > 500) {
 			DBGLOG(HAL, ERROR, "pcie pre_suspend timeout\n");
 			ret = -EAGAIN;
-			goto SUSPEND_FAIL;
+			goto SUSPEND_PRESUSPEND_FAIL;
 		}
 		kalMsleep(2);
 		count++;
@@ -1606,10 +1602,14 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	if (prBusInfo->pdmaPollingIdle) {
 		if (prBusInfo->pdmaPollingIdle(prGlueInfo) != TRUE) {
 			ret = -EAGAIN;
-			goto SUSPEND_FAIL;
+			goto SUSPEND_POLL_IDLE_FAIL;
 		}
 	} else
 		DBGLOG(HAL, ERROR, "PDMA polling idle API didn't register\n");
+
+#if CFG_SUPPORT_WED_PROXY
+	kalIoctl(prGlueInfo, wlanoidWedSuspend, NULL, 0, &ret);
+#endif
 
 	/* Disable HIF side PDMA TX/RX */
 	if (prBusInfo->pdmaStop)
@@ -1659,7 +1659,7 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	if (wait >= 500) {
 		DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
 		ret = -EAGAIN;
-		goto SUSPEND_FAIL;
+		goto SUSPEND_FW_OWN_FAIL;
 	}
 
 #if (CFG_SUPPORT_PCIE_ASPM == 1) && (CFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND == 1)
@@ -1678,10 +1678,24 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		wlanReleaseAllTxCmdQueue(prGlueInfo->prAdapter);
 
 	return 0;
-SUSPEND_FAIL:
+
+SUSPEND_FW_OWN_FAIL:
+	halEnableInterrupt(prGlueInfo->prAdapter);
+
+	/* Enable HIF side PDMA TX/RX */
+	if (prBusInfo->pdmaStop)
+		prBusInfo->pdmaStop(prGlueInfo, FALSE);
+	else
+		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
+
 #if CFG_SUPPORT_WED_PROXY
 	kalIoctl(prGlueInfo, wlanoidWedResume, NULL, 0, &ret);
 #endif
+
+SUSPEND_POLL_IDLE_FAIL:
+SUSPEND_PRESUSPEND_FAIL:
+	halPcieResumeCmd(prGlueInfo->prAdapter);
+
 	return ret;
 #endif
 }
@@ -1733,11 +1747,11 @@ int mtk_pci_resume(struct pci_dev *pdev)
 	else
 		DBGLOG(HAL, ERROR, "PDMA config API didn't register\n");
 
-	halPcieResumeCmd(prGlueInfo->prAdapter);
-
 #if CFG_SUPPORT_WED_PROXY
 	kalIoctl(prGlueInfo, wlanoidWedResume, NULL, 0, &ret);
 #endif
+
+	halPcieResumeCmd(prGlueInfo->prAdapter);
 
 	wlanResumePmHandle(prGlueInfo);
 
