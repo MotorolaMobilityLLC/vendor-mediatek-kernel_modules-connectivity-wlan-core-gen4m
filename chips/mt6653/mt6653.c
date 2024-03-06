@@ -3450,6 +3450,11 @@ static uint32_t mt6653_mcu_reset(struct ADAPTER *ad)
 
 	DBGLOG(INIT, INFO, "mt6653_mcu_reset..\n");
 
+	/* set driver own */
+	HAL_MCR_WR(ad,
+		CONN_HOST_CSR_TOP_WF_BAND0_LPCTL_ADDR, PCIE_LPCR_HOST_CLR_OWN);
+	kalMdelay(10);
+
 	HAL_RMCR_RD(RESET_READ, ad,
 		CB_INFRA_RGU_WF_SUBSYS_RST_ADDR,
 		&u4Value);
@@ -3591,6 +3596,8 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 		goto exit;
 	}
 
+	HAL_MCR_WR(ad,
+		CB_INFRA_SLP_CTRL_CB_INFRA_SLP_PROT_SW_CTRL_ADDR, 0x0);
 #if (CFG_MTK_ANDROID_WMT == 0) && (CFG_MTK_FPGA_PLATFORM == 0)
 	rStatus = mt6653_mcu_reset(ad);
 	if (rStatus != WLAN_STATUS_SUCCESS)
