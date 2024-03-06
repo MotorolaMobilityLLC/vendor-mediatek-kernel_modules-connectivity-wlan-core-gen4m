@@ -2614,6 +2614,244 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 		&rDbdcDecisionInfo);
 #endif /*CFG_SUPPORT_DBDC*/
 }
+
+#if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1) && \
+	(CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
+static void p2pCsaAdjustStarecCap(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec,
+	enum ENUM_BAND eOrigBand,
+	enum ENUM_BAND eTargetBand)
+{
+	u_int8_t fgIsCapChanged = FALSE;
+	uint8_t aucDbgBuf[256];
+	int32_t i4Written = 0;
+
+	kalMemZero(aucDbgBuf, sizeof(aucDbgBuf));
+
+	i4Written += kalSnprintf(aucDbgBuf + i4Written,
+				 sizeof(aucDbgBuf) - i4Written,
+				 "band: %d->%d type=0x%x he6gcap:vhtcap:htcap:ht_ampdu [0x%x:0x%x:0x%x:0x%x]",
+				 eOrigBand,
+				 eTargetBand,
+				 prStaRec->ucPhyTypeSet,
+				 prStaRec->u2He6gBandCapInfo,
+				 prStaRec->u4VhtCapInfo,
+				 prStaRec->u2HtCapInfo,
+				 prStaRec->ucAmpduParam);
+
+	/*
+	 * For cross band csa with 6g <-> 2g/5g , ht cap may NOT be filled due
+	 * to associated at 6g or he 6g cap may be NOT filled due to associated
+	 * at 2g/5g. Sap driver appends starec's ht/vht cap or he 6g cap
+	 * automatically referred from he 6g's cap or ht/vht cap during cross
+	 * band csa.
+	 */
+
+	if (eOrigBand == BAND_6G &&
+	    (eTargetBand == BAND_2G4 || eTargetBand == BAND_5G)) {
+		if (prStaRec->u2He6gBandCapInfo == 0)
+			goto check_done;
+
+		/* re-assemble ht cap smps from he 6g cap smps */
+		if (prStaRec->u2HtCapInfo == 0 &&
+		    (prStaRec->u2He6gBandCapInfo &
+		     HE_6G_CAP_INFO_SM_POWER_SAVE)) {
+			prStaRec->u2HtCapInfo |= HT_CAP_INFO_SM_POWER_SAVE;
+			fgIsCapChanged = TRUE;
+		}
+
+		/* re-assemble vht's ampdu len from he 6g cap ampdu len */
+		if (prStaRec->u4VhtCapInfo == 0) {
+			switch (prStaRec->u2He6gBandCapInfo & BITS(3, 5)) {
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_1024K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_1024K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_512K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_512K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_256K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_256K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_128K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_128K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_64K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_64K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_32K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_32K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_16K:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_16K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_8K:
+			default:
+				prStaRec->u4VhtCapInfo |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_8K <<
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET);
+				break;
+			}
+			fgIsCapChanged = TRUE;
+		}
+
+		/* re-assemble ht's ampdu len from he 6g cap ampdu len */
+		if (prStaRec->ucAmpduParam == 0) {
+			switch (prStaRec->u2He6gBandCapInfo & BITS(3, 5)) {
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_1024K:
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_512K:
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_256K:
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_128K:
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_64K:
+				prStaRec->ucAmpduParam |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_64K);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_32K:
+				prStaRec->ucAmpduParam |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_32K);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_16K:
+				prStaRec->ucAmpduParam |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_16K);
+				break;
+			case HE_6G_CAP_INFO_MAX_AMPDU_LEN_8K:
+			default:
+				prStaRec->ucAmpduParam |=
+					(AMPDU_PARAM_MAX_AMPDU_LEN_8K);
+				break;
+			}
+			fgIsCapChanged = TRUE;
+		}
+	} else if ((eOrigBand == BAND_2G4 || eOrigBand == BAND_5G) &&
+		   (eTargetBand == BAND_6G)) {
+		if (prStaRec->u2HtCapInfo == 0 &&
+		    prStaRec->ucAmpduParam == 0 &&
+		    prStaRec->u4VhtCapInfo == 0)
+			goto check_done;
+
+		/* re-assemble he 6g cap smps from ht cap smps */
+		if (prStaRec->u2HtCapInfo & HT_CAP_INFO_SM_POWER_SAVE) {
+			uint16_t u2OrigHe6gBandCapInfo =
+				prStaRec->u2He6gBandCapInfo;
+
+			prStaRec->u2He6gBandCapInfo |=
+				HE_6G_CAP_INFO_SM_POWER_SAVE;
+			if (u2OrigHe6gBandCapInfo !=
+			    prStaRec->u2He6gBandCapInfo)
+				fgIsCapChanged = TRUE;
+		}
+
+		/* re-assemble he 6g cap ampdu len from ht's ampdu len */
+		if (prStaRec->ucAmpduParam != 0) {
+			uint16_t u2OrigHe6gBandCapInfo =
+				prStaRec->u2He6gBandCapInfo;
+
+			switch (prStaRec->ucAmpduParam) {
+			case AMPDU_PARAM_MAX_AMPDU_LEN_64K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_64K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_32K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_32K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_16K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_16K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_8K:
+			default:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_8K;
+				break;
+			}
+
+			if (u2OrigHe6gBandCapInfo !=
+			    prStaRec->u2He6gBandCapInfo)
+				fgIsCapChanged = TRUE;
+		}
+
+		/* re-assemble he 6g cap ampdu len from vht's ampdu len */
+		if (prStaRec->u4VhtCapInfo &
+		    VHT_CAP_INFO_MAX_AMPDU_LENGTH_MASK) {
+			uint8_t ucVhtAmpduLen = (prStaRec->u4VhtCapInfo &
+					VHT_CAP_INFO_MAX_AMPDU_LENGTH_MASK) >>
+				VHT_CAP_INFO_MAX_AMPDU_LENGTH_OFFSET;
+			uint16_t u2OrigHe6gBandCapInfo =
+				prStaRec->u2He6gBandCapInfo;
+
+			switch (ucVhtAmpduLen) {
+			case AMPDU_PARAM_MAX_AMPDU_LEN_1024K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_1024K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_512K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_512K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_256K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_256K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_128K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_128K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_64K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_64K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_32K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_32K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_16K:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_16K;
+				break;
+			case AMPDU_PARAM_MAX_AMPDU_LEN_8K:
+			default:
+				prStaRec->u2He6gBandCapInfo |=
+					HE_6G_CAP_INFO_MAX_AMPDU_LEN_8K;
+				break;
+			}
+
+			if (u2OrigHe6gBandCapInfo !=
+			    prStaRec->u2He6gBandCapInfo)
+				fgIsCapChanged = TRUE;
+		}
+	}
+
+check_done:
+	i4Written += kalSnprintf(aucDbgBuf + i4Written,
+				 sizeof(aucDbgBuf) - i4Written,
+				 "-> [0x%x:0x%x:0x%x:0x%x]",
+				 prStaRec->u2He6gBandCapInfo,
+				 prStaRec->u4VhtCapInfo,
+				 prStaRec->u2HtCapInfo,
+				 prStaRec->ucAmpduParam);
+
+	if (!fgIsCapChanged)
+		return;
+
+	DBGLOG(P2P, INFO, "%s\n", aucDbgBuf);
+	cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+}
+#endif
+
 void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
@@ -2621,7 +2859,6 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 		(struct P2P_ROLE_FSM_INFO *) NULL;
 	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
 	struct MSG_P2P_CSA_DONE *prMsgP2pCsaDoneMsg;
-	struct BSS_INFO *prAisBssInfo;
 	struct GL_P2P_INFO *prP2PInfo = (struct GL_P2P_INFO *) NULL;
 	struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
 		(struct P2P_CHNL_REQ_INFO *) NULL;
@@ -2634,7 +2871,12 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prMsgP2pCsaDoneMsg->ucBssIndex);
-	prAisBssInfo = aisGetConnectedBssInfo(prAdapter);
+	if (!prP2pBssInfo) {
+		DBGLOG(P2P, ERROR,
+			"Invalid bss idx(%u)\n",
+			prMsgP2pCsaDoneMsg->ucBssIndex);
+		goto exit;
+	}
 
 	prP2pRoleFsmInfo =
 		P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
@@ -2654,12 +2896,18 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prP2pBssInfo)))
 #endif
 	{
-		if (prClientList && prClientList->u4NumElem > 0) {
-			LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
-					rLinkEntry, struct STA_RECORD) {
-				qmSetStaRecTxAllowed(prAdapter,
-					prCurrStaRec, FALSE);
-			}
+		LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+				    rLinkEntry, struct STA_RECORD) {
+			qmSetStaRecTxAllowed(prAdapter,
+				prCurrStaRec, FALSE);
+
+#if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1) && \
+(CFG_SUPPORT_802_11AX == 1) && (CFG_SUPPORT_WIFI_6G == 1)
+			p2pCsaAdjustStarecCap(prAdapter,
+					      prCurrStaRec,
+					      prP2pBssInfo->eBand,
+					      prChnlReqInfo->eBand);
+#endif
 		}
 		p2pCsaControlFlow(prAdapter,
 				prP2pBssInfo,
@@ -2673,6 +2921,7 @@ void p2pRoleFsmRunEventCsaDone(struct ADAPTER *prAdapter,
 
 	cnmTimerStopTimer(prAdapter, &prP2pBssInfo->rP2pCsaDoneTimer);
 
+exit:
 	cnmMemFree(prAdapter, prMsgHdr);
 }				/*p2pRoleFsmRunEventCsaDone*/
 
