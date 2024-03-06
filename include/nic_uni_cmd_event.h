@@ -6908,7 +6908,7 @@ struct UNI_EVENT_UPDATE_COEX_PHYRATE
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint32_t u4Flags;
-	uint32_t au4PhyRateLimit[UNI_BSS_INFO_NUM];
+	uint32_t au4PhyRateLimit[MAX_BSSID_NUM + 1];
 } __KAL_ATTRIB_PACKED__;
 
 /** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
