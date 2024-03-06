@@ -1579,6 +1579,12 @@ void heRlmRecHeOperation(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	prBssInfo->ucBssColorInfo = prHeOp->ucBssColorInfo;
 	prBssInfo->u2HeBasicMcsSet = prHeOp->u2HeBasicMcsSet;
 
+	/* BssColor Disabled bit == False && Color == 0 -> AP ERROR*/
+	if ((((prBssInfo->ucBssColorInfo) & (HE_OP_BSSCOLOR_BSS_COLOR_DISABLE))
+		>> HE_OP_BSSCOLOR_BSS_COLOR_DISABLE_SHFT == 0) &&
+		((prBssInfo->ucBssColorInfo)
+			& (HE_OP_BSSCOLOR_BSS_COLOR_MASK) == 0))
+		log_dbg(RLM, ERROR, "BssColor Enable but Color = 0\n");
 
 	log_dbg(RLM, LOUD, "RlmHeOpInfo-0x:%x,%x,%x,%x,%x\n",
 		prBssInfo->ucHeOpParams[0],
