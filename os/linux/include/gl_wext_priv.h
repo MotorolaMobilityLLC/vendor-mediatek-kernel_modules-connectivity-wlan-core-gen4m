@@ -513,6 +513,8 @@ int priv_driver_get_linkspeed(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_disablepartial(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_band(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_country(struct net_device *prNetDev,

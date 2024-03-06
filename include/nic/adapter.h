@@ -820,6 +820,7 @@ struct WIFI_VAR {
 	/* User desired setting, but will honor the capability of AP */
 
 	u_int8_t fgEnableJoinToHiddenSSID;
+	u_int8_t fgDisablePartialScan;
 	u_int8_t fgSupportWZCDisassociation;
 
 #if CFG_SUPPORT_WFD

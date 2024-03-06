@@ -1088,6 +1088,9 @@ void wlanOnPostFirmwareReady(struct ADAPTER *prAdapter,
 	/* Disable skip dfs during scan*/
 	prAdapter->rWifiVar.rScanInfo.fgSkipDFS = 0;
 
+	/* Determine whether to disable Partial Scan */
+	prAdapter->rWifiVar.fgDisablePartialScan = 0;
+
 	/* configure available PHY type set */
 	nicSetAvailablePhyTypeSet(prAdapter);
 

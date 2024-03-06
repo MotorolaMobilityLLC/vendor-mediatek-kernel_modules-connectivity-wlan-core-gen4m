@@ -13676,6 +13676,52 @@ int priv_driver_set_mdtim(struct net_device *prNetDev,
 
 }
 
+int priv_driver_set_disablepartial(struct net_device *prNetDev,
+				 char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	u_int8_t fgDisable = 0;
+	int32_t i4Ret = 0;
+
+	if (!prNetDev) {
+		DBGLOG(REQ, ERROR, "prNetDev is NULL\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	if (i4Argc >= 2) {
+		i4Ret = kalkStrtou8(apcArgv[1], 0, &fgDisable);
+		if (i4Ret) {
+			DBGLOG(REQ, LOUD, "parse fgDisable error i4Ret=%d\n",
+			       i4Ret);
+			return -1;
+		}
+		if (fgDisable == 0 || fgDisable == 1)
+			prAdapter->rWifiVar.fgDisablePartialScan = fgDisable;
+		else {
+			DBGLOG(REQ, ERROR,
+				"Invalid Value for DisablePartialScan[%u]\n",
+				fgDisable);
+			return -1;
+		}
+		DBGLOG(REQ, INFO, "Set DisablePartialScan mode [%u]\n",
+			prAdapter->rWifiVar.fgDisablePartialScan);
+	}
+
+	return 0;
+}
+
 int priv_driver_set_suspend_mode(struct net_device *prNetDev,
 				 char *pcCommand, int i4TotalLen)
 {

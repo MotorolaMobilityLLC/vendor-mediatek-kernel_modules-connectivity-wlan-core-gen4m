@@ -444,7 +444,8 @@ void scanSetRequestChannel(struct ADAPTER *prAdapter,
 	 * larger than SCAN_FULL2PARTIAL_CHANNEL_NUM
 	 */
 	if (fgIsOnlineScan && (u4ScanChannelNum == 0 ||
-		u4ScanChannelNum > SCAN_FULL2PARTIAL_CHANNEL_NUM)) {
+		u4ScanChannelNum > SCAN_FULL2PARTIAL_CHANNEL_NUM) &&
+		(!prAdapter->rWifiVar.fgDisablePartialScan)) {
 
 		/* Do full scan when
 		 * 1. did not do full scan yet OR
