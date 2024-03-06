@@ -11892,6 +11892,12 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 
 	cfg80211_chandef_create(&chandef, prChannel, rChannelType);
 
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+	wiphy_lock(prDevHandler->ieee80211_ptr->wiphy);
+#else
+	mutex_lock(&prDevHandler->ieee80211_ptr->mtx);
+#endif
+
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx, 0);
@@ -11903,6 +11909,12 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 		linkIdx);
 #else
 	cfg80211_ch_switch_notify(prDevHandler, &chandef);
+#endif
+
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+	wiphy_unlock(prDevHandler->ieee80211_ptr->wiphy);
+#else
+	mutex_unlock(&prDevHandler->ieee80211_ptr->mtx);
 #endif
 
 	/* Check SAP channel */
