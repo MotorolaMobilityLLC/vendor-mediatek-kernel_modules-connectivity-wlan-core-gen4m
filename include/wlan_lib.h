@@ -2268,11 +2268,6 @@ uint32_t wlanDecimalStr2Hexadecimals(uint8_t *pucDecimalStr, uint16_t *pu2Out);
 
 uint64_t wlanGetSupportedFeatureSet(struct GLUE_INFO *prGlueInfo);
 
-#if CFG_ENABLE_WIFI_DIRECT
-uint32_t
-wlanQueryLteSafeChannel(struct ADAPTER *prAdapter,
-		uint8_t ucRoleIndex);
-#endif
 uint32_t
 wlanCalculateAllChannelDirtiness(struct ADAPTER *prAdapter);
 

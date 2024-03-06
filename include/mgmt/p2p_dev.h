@@ -194,6 +194,7 @@ struct MSG_P2P_ACS_REQUEST {
 	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
 	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
 	uint32_t u4NumChannel;
+	uint32_t au4SafeChnl[ENUM_SAFE_CH_MASK_MAX_NUM];
 	struct RF_CHANNEL_INFO arChannelListInfo[];
 };
 

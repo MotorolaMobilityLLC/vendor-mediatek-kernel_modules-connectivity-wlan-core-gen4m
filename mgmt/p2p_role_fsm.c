@@ -3992,16 +3992,9 @@ p2pRoleFsmRunEventScanDone(struct ADAPTER *prAdapter,
 			prAcsReqInfo = &prP2pRoleFsmInfo->rAcsReqInfo;
 			prScanInfo->eScanReason = SCAN_REASON_UNKNOWN;
 			p2pFunCalAcsChnScores(prAdapter);
-			if (wlanQueryLteSafeChannel(prAdapter,
-					prP2pRoleFsmInfo->ucRoleIndex) ==
-					WLAN_STATUS_SUCCESS) {
-				/* do nothing & wait for FW event */
-			} else {
-				p2pFunProcessAcsReport(prAdapter,
-						prP2pRoleFsmInfo->ucRoleIndex,
-						NULL,
-						prAcsReqInfo);
-			}
+			p2pFunProcessAcsReport(prAdapter,
+					       prP2pRoleFsmInfo->ucRoleIndex,
+					       prAcsReqInfo);
 			eNextState = P2P_ROLE_STATE_IDLE;
 		} else {
 			eNextState = P2P_ROLE_STATE_IDLE;
@@ -5374,7 +5367,8 @@ static void indicateAcsResultByAliveCh(struct ADAPTER *prAdapter,
 static void trimAcsScanList(struct ADAPTER *prAdapter,
 		struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo,
-		uint8_t ucDesiredBand)
+		uint8_t ucDesiredBand,
+		uint32_t *pau4SafeChnl)
 {
 	uint32_t u4NumChannel = 0;
 	uint8_t i;
@@ -5392,9 +5386,9 @@ static void trimAcsScanList(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		/* Keep only PSC channels */
 		if (prRfChannelInfo1->eBand == BAND_6G &&
-			!(prRfChannelInfo1->ucChannelNum >= 5 &&
-			  prRfChannelInfo1->ucChannelNum <= 225 &&
-			  ((prRfChannelInfo1->ucChannelNum - 5) % 16 == 0)))
+		    !(prRfChannelInfo1->ucChannelNum >= 5 &&
+		      prRfChannelInfo1->ucChannelNum <= 225 &&
+		      IS_6G_PSC_CHANNEL(prRfChannelInfo1->ucChannelNum)))
 			continue;
 #endif
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
@@ -5403,6 +5397,16 @@ static void trimAcsScanList(struct ADAPTER *prAdapter,
 			prRfChannelInfo1->eBand))
 			continue;
 #endif
+		/* trim by safe chnl info */
+		if (!p2pFuncIsLteSafeChnl(prRfChannelInfo1->eBand,
+					     prRfChannelInfo1->ucChannelNum,
+					     pau4SafeChnl)) {
+			DBGLOG(P2P, INFO, "skip lte unsafe ch=%u, B=%u",
+			       prRfChannelInfo1->ucChannelNum,
+			       prRfChannelInfo1->eBand);
+			continue;
+		}
+
 		DBGLOG(P2P, INFO, "acs trim scan list, [%d]=%d %d\n",
 				u4NumChannel,
 				prRfChannelInfo1->eBand,
@@ -5423,51 +5427,6 @@ static void trimAcsScanList(struct ADAPTER *prAdapter,
 		prRfChannelInfo1++;
 	}
 	prMsgAcsRequest->u4NumChannel = u4NumChannel;
-}
-
-static void initAcsChnlMask(struct ADAPTER *prAdapter,
-		struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest,
-		struct P2P_ACS_REQ_INFO *prAcsReqInfo)
-{
-	uint8_t i;
-	struct RF_CHANNEL_INFO *prRfChannelInfo;
-
-	prAcsReqInfo->u4LteSafeChnMask_2G = 0;
-	prAcsReqInfo->u4LteSafeChnMask_5G_1 = 0;
-	prAcsReqInfo->u4LteSafeChnMask_5G_2 = 0;
-	prAcsReqInfo->u4LteSafeChnMask_6G = 0;
-
-	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
-		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
-		if (prRfChannelInfo->eBand == BAND_2G4) {
-			prAcsReqInfo->u4LteSafeChnMask_2G |= BIT(
-				prRfChannelInfo->ucChannelNum);
-		} else if (prRfChannelInfo->eBand == BAND_5G &&
-				prRfChannelInfo->ucChannelNum >= 36 &&
-				prRfChannelInfo->ucChannelNum <= 144) {
-			prAcsReqInfo->u4LteSafeChnMask_5G_1 |= BIT(
-				(prRfChannelInfo->ucChannelNum - 36) / 4);
-		} else if (prRfChannelInfo->eBand == BAND_5G &&
-				prRfChannelInfo->ucChannelNum >= 149 &&
-				prRfChannelInfo->ucChannelNum <= 181) {
-			prAcsReqInfo->u4LteSafeChnMask_5G_2 |= BIT(
-				(prRfChannelInfo->ucChannelNum - 149) / 4);
-		}
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prRfChannelInfo->eBand == BAND_6G &&
-				prRfChannelInfo->ucChannelNum >= 7 &&
-				prRfChannelInfo->ucChannelNum <= 215) {
-			prAcsReqInfo->u4LteSafeChnMask_6G |= BIT(
-				(prRfChannelInfo->ucChannelNum - 7) / 16);
-		}
-#endif
-	}
-
-	DBGLOG(P2P, INFO, "acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x]\n",
-			prAcsReqInfo->u4LteSafeChnMask_2G,
-			prAcsReqInfo->u4LteSafeChnMask_5G_1,
-			prAcsReqInfo->u4LteSafeChnMask_5G_2,
-			prAcsReqInfo->u4LteSafeChnMask_6G);
 }
 
 u_int8_t indicateApAcsOverwrite(
@@ -5564,7 +5523,8 @@ u_int8_t p2pIsBssInScanScope(
 void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
 {
-	struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest;
+	struct MSG_P2P_ACS_REQUEST *prMsgAcsRequest =
+		(struct MSG_P2P_ACS_REQUEST *) prMsgHdr;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo;
 	struct MSG_P2P_SCAN_REQUEST *prP2pScanReqMsg;
 	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
@@ -5577,13 +5537,27 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO *parChnlListInput = NULL;
 	struct BSS_INFO *aliveNonSapBss[MAX_BSSID_NUM] = { 0 };
 	uint8_t ucNumAliveNonSapBss;
+	struct RF_CHANNEL_INFO *prRfChannelInfo;
+	u_int8_t fgIsSafeChExist = TRUE;
+	uint32_t *pu4SafeChInfo_2g;
+	uint32_t *pu4SafeChInfo_5g_0;
+	uint32_t *pu4SafeChInfo_5g_1;
+	uint32_t *pu4SafeChInfo_6g;
 
 	if (!prAdapter || !prMsgHdr)
-		return;
+		goto exit;
 
-	prMsgAcsRequest = (struct MSG_P2P_ACS_REQUEST *) prMsgHdr;
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 			prMsgAcsRequest->ucRoleIdx);
+	pu4SafeChInfo_2g = &prMsgAcsRequest->au4SafeChnl[
+		ENUM_SAFE_CH_MASK_BAND_2G4];
+	pu4SafeChInfo_5g_0 = &prMsgAcsRequest->au4SafeChnl[
+		ENUM_SAFE_CH_MASK_BAND_5G_0];
+	pu4SafeChInfo_5g_1 = &prMsgAcsRequest->au4SafeChnl[
+		ENUM_SAFE_CH_MASK_BAND_5G_1];
+	pu4SafeChInfo_6g = &prMsgAcsRequest->au4SafeChnl[
+		ENUM_SAFE_CH_MASK_BAND_6G];
+
 
 	if (!prP2pRoleFsmInfo)
 		goto exit;
@@ -5703,17 +5677,17 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			->rWifiVar.ucDisallowAcs6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
+			      prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G), NULL);
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 #endif
 		} else if (prAdapter->fgEnable5GBand) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_5G));
+				prAcsReqInfo, BIT(BAND_5G), NULL);
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11A;
 		} else {
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_2G4));
+				prAcsReqInfo, BIT(BAND_2G4), NULL);
 			prAcsReqInfo->eHwMode = P2P_VENDOR_ACS_HW_MODE_11G;
 		}
 	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11A) {
@@ -5729,12 +5703,12 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			->rWifiVar.ucDisallowAcs6G)) {
 			/* Trim 5G + 6G PSC channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G));
+			      prAcsReqInfo, BIT(BAND_6G) | BIT(BAND_5G), NULL);
 #endif
 		} else if (prAdapter->fgEnable5GBand) {
 			/* Trim 5G channels */
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_5G));
+				prAcsReqInfo, BIT(BAND_5G), NULL);
 		}
 	} else if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
 		if (ucNumAliveNonSapBss &&
@@ -5745,11 +5719,65 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			goto exit;
 		} else {
 			trimAcsScanList(prAdapter, prMsgAcsRequest,
-				prAcsReqInfo, BIT(BAND_2G4));
+				prAcsReqInfo, BIT(BAND_2G4), NULL);
 		}
 	}
 
-	initAcsChnlMask(prAdapter, prMsgAcsRequest, prAcsReqInfo);
+	/* custimized mask */
+	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
+			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
+		prAcsReqInfo->eBand = BAND_2G4;
+	} else {
+		prAcsReqInfo->eBand = BAND_5G;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if ((prAcsReqInfo->ucBand & BIT(BAND_6G)) &&
+			prAdapter->fgIsHwSupport6G) {
+			prAcsReqInfo->eBand = BAND_6G; /* Prefer 6G */
+		}
+#endif
+	}
+
+	if (prAcsReqInfo->ucBand & BIT(BAND_2G4)) {
+#if CFG_TC1_FEATURE
+		/* Restrict 2.4G band channel selection range
+		 * to 1/6/11 per customer's request
+		 */
+		*pu4SafeChInfo_2g &= 0x0842;
+#elif CFG_TC10_FEATURE
+		/* Restrict 2.4G band channel selection range
+		 * to 1~11 per customer's request
+		 */
+		*pu4SafeChInfo_2g &= 0x0FFE;
+#endif
+	}
+
+	/* prevent modem IDC safe chnl not cover requesting chnl */
+	for (i = 0; i < prMsgAcsRequest->u4NumChannel; i++) {
+		prRfChannelInfo = &(prMsgAcsRequest->arChannelListInfo[i]);
+
+		if (p2pFuncIsLteSafeChnl(prRfChannelInfo->eBand,
+					  prRfChannelInfo->ucChannelNum,
+					  prMsgAcsRequest->au4SafeChnl))
+			break;
+		fgIsSafeChExist = FALSE;
+	}
+
+	DBGLOG(P2P, INFO,
+	       "acs chnl mask=[0x%08x][0x%08x][0x%08x][0x%08x], isSafeChExist=%u",
+		*pu4SafeChInfo_2g, *pu4SafeChInfo_5g_0,
+		*pu4SafeChInfo_5g_1, *pu4SafeChInfo_6g, fgIsSafeChExist);
+
+	if (fgIsSafeChExist) {
+		/* trim by modem IDC safe channel */
+		trimAcsScanList(prAdapter, prMsgAcsRequest, prAcsReqInfo,
+#if (CFG_SUPPORT_WIFI_6G == 1)
+				BIT(BAND_2G4) | BIT(BAND_5G) | BIT(BAND_6G),
+#else
+				BIT(BAND_2G4) | BIT(BAND_5G),
+#endif
+				prMsgAcsRequest->au4SafeChnl);
+	}
 
 	u4MsgSize = sizeof(struct MSG_P2P_SCAN_REQUEST) + (
 			prMsgAcsRequest->u4NumChannel *

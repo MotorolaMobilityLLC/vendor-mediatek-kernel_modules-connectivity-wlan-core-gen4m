@@ -18952,3 +18952,69 @@ wlandioStopPcieStatus(struct ADAPTER *prAdapter,
 }
 #endif //CFG_PCIE_GEN_SWITCH
 
+#if CFG_ENABLE_WIFI_DIRECT
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is called to query LTE safe channels.
+ *
+ * \param[in]  pvAdapter        Pointer to the Adapter structure.
+ * \param[out] pvQueryBuffer    A pointer to the buffer that holds the result of
+ *                              the query.
+ * \param[in]  u4QueryBufferLen The length of the query buffer.
+ * \param[out] pu4QueryInfoLen  If the call is successful, returns the number of
+ *                              bytes written into the query buffer. If the call
+ *                              failed due to invalid length of the query
+ *                              buffer, returns the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_PENDING
+ * \retval WLAN_STATUS_FAILURE
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidQueryLteSafeChannel(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen)
+{
+#if CFG_SUPPORT_GET_LTE_SAFE_CHANNEL
+	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN = { 0 };
+
+	DBGLOG(P2P, TRACE, "query Lte safe channel bitmap");
+
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "no adapter found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!pu4QueryInfoLen) {
+		DBGLOG(P2P, ERROR, "zero query info len");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (u4QueryBufferLen && !pvQueryBuffer) {
+		DBGLOG(P2P, ERROR, "null query buffer with buffer len");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_GET_CHN_INFO);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_GET_CHN_INFO))
+		return WLAN_STATUS_BUFFER_TOO_SHORT;
+
+	return wlanSendSetQueryCmd(prAdapter,
+				CMD_ID_GET_LTE_CHN,
+				FALSE,
+				TRUE,
+				TRUE,
+				nicCmdEventQueryLteSafeChn,
+				nicOidCmdTimeoutCommon,
+				sizeof(struct CMD_GET_LTE_SAFE_CHN),
+				(uint8_t *)&rQuery_LTE_SAFE_CHN,
+				(struct PARAM_GET_CHN_INFO *)pvQueryBuffer,
+				u4QueryBufferLen);
+
+#else
+	DBGLOG(P2P, TRACE, "[ACS] Not Support Get safe LTE Channels\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif /* CFG_SUPPORT_GET_LTE_SAFE_CHANNEL */
+}
+#endif /* CFG_ENABLE_WIFI_DIRECT */

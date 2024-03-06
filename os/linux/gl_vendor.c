@@ -3584,8 +3584,8 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 	enum CONN_MODE_IFACE_TYPE type;
 	enum ENUM_IFTYPE eIftype;
 	uint32_t i;
-	uint32_t au4FreqWhiteList[MAX_CHN_NUM] = { 0 };
-	uint8_t ucWhiteFreqNum;
+	uint32_t au4FreqAllowList[MAX_CHN_NUM] = { 0 };
+	uint8_t ucAllowFreqNum;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -3639,11 +3639,11 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 		return -EINVAL;
 	}
 
-	ucWhiteFreqNum = p2pFuncGetAllFreqList(prGlueInfo->prAdapter,
-					       au4FreqWhiteList);
+	ucAllowFreqNum = p2pFuncGetFreqAllowList(prGlueInfo->prAdapter,
+					       au4FreqAllowList);
 	rStatus = p2pFunGetPreferredFreqList(prGlueInfo->prAdapter, eIftype,
-			freq_list, &num_freq_list, au4FreqWhiteList,
-			ucWhiteFreqNum);
+			freq_list, &num_freq_list, au4FreqAllowList,
+			ucAllowFreqNum);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "get preferred freq list failed.\n");
 		return -EINVAL;
@@ -3695,7 +3695,7 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	bool ht_enabled, ht40_enabled, vht_enabled, eht_enabled = false;
 	uint16_t ch_width = 0;
 	enum P2P_VENDOR_ACS_HW_MODE hw_mode;
-	uint32_t *ch_list = NULL;
+	uint32_t *freq_list = NULL;
 	uint8_t ch_list_count = 0;
 	uint8_t i;
 	uint32_t msg_size;
@@ -3703,6 +3703,10 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 	struct RF_CHANNEL_INFO *prRfChannelInfo;
 	struct sk_buff *reply_skb;
 	uint8_t role_idx;
+	struct PARAM_GET_CHN_INFO *prLteSafeChn = NULL;
+#if CFG_SUPPORT_GET_LTE_SAFE_CHANNEL
+	uint32_t u4BufLen;
+#endif
 
 	if (!wiphy || !wdev || !data || !data_len) {
 		DBGLOG(REQ, ERROR, "input data null.\n");
@@ -3784,17 +3788,17 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 				rStatus = -EINVAL;
 				goto exit;
 			}
-			ch_list = kalMemAlloc(
+			freq_list = kalMemAlloc(
 				sizeof(uint32_t) * ch_list_count,
 				VIR_MEM_TYPE);
-			if (ch_list == NULL) {
-				DBGLOG(REQ, ERROR, "allocate ch_list fail.\n");
+			if (freq_list == NULL) {
+				DBGLOG(REQ, ERROR, "allocate freq_list fail.");
 				rStatus = -ENOMEM;
 				goto exit;
 			}
 
 			for (i = 0; i < ch_list_count; i++)
-				ch_list[i] = freq[i];
+				freq_list[i] = freq[i];
 		}
 	}
 
@@ -3853,25 +3857,48 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 			&(prMsgAcsRequest->arChannelListInfo[i]);
 
 		prRfChannelInfo->ucChannelNum =
-			nicFreq2ChannelNum(ch_list[i] * 1000);
+			nicFreq2ChannelNum(freq_list[i] * 1000);
 
-		if ((ch_list[i] >= 2412) && (ch_list[i] <= 2484))
+		if ((freq_list[i] >= 2412) && (freq_list[i] <= 2484))
 			prRfChannelInfo->eBand = BAND_2G4;
-		else if ((ch_list[i] >= 5180) && (ch_list[i] <= 5900))
+		else if ((freq_list[i] >= 5180) && (freq_list[i] <= 5900))
 			prRfChannelInfo->eBand = BAND_5G;
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if ((ch_list[i] >= 5955) && (ch_list[i] <= 7115))
+		else if ((freq_list[i] >= 5955) && (freq_list[i] <= 7115))
 			prRfChannelInfo->eBand = BAND_6G;
 #endif
 
 		DBGLOG(REQ, TRACE, "acs channel, band[%d] ch[%d] freq[%d]\n",
 			prRfChannelInfo->eBand,
 			prRfChannelInfo->ucChannelNum,
-			ch_list[i]);
+			freq_list[i]);
 
 		/* Iteration. */
 		prRfChannelInfo++;
 	}
+
+	/* Get Lte Safe Chnl, free in p2pRoleFsmRunEventAcs */
+	prLteSafeChn = kalMemZAlloc(sizeof(struct PARAM_GET_CHN_INFO),
+			VIR_MEM_TYPE);
+	if (!prLteSafeChn)
+		goto exit;
+
+#if CFG_SUPPORT_GET_LTE_SAFE_CHANNEL
+	rStatus = kalIoctl(prGlueInfo, wlanoidQueryLteSafeChannel,
+		   prLteSafeChn, sizeof(struct PARAM_GET_CHN_INFO), &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(P2P, ERROR, "get safe chnl failed");
+#else
+	for (i = 0; i < ENUM_SAFE_CH_MASK_MAX_NUM; ++i) {
+		prLteSafeChn->rLteSafeChnList.au4SafeChannelBitmask[i] =
+			BITS(0, 31);
+	}
+#endif
+
+	kalMemCopy(&prMsgAcsRequest->au4SafeChnl,
+		   prLteSafeChn->rLteSafeChnList.au4SafeChannelBitmask,
+		   ENUM_SAFE_CH_MASK_MAX_NUM * sizeof(uint32_t));
 
 	mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
@@ -3879,9 +3906,12 @@ int mtk_cfg80211_vendor_acs(struct wiphy *wiphy,
 			MSG_SEND_METHOD_BUF);
 
 exit:
-	if (ch_list)
-		kalMemFree(ch_list, VIR_MEM_TYPE,
-				sizeof(uint8_t) * ch_list_count);
+	if (freq_list)
+		kalMemFree(freq_list, VIR_MEM_TYPE,
+				sizeof(uint32_t) * ch_list_count);
+	if (prLteSafeChn)
+		kalMemFree(prLteSafeChn, VIR_MEM_TYPE,
+				sizeof(struct PARAM_GET_CHN_INFO));
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 		reply_skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 				NLMSG_HDRLEN);

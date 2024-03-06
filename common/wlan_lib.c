@@ -11743,71 +11743,7 @@ wlanGetStaIdxByWlanIdx(struct ADAPTER *prAdapter,
 	}
 	return WLAN_STATUS_FAILURE;
 }
-#if CFG_ENABLE_WIFI_DIRECT
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief This routine is called to query LTE safe channels.
- *
- * \param[in]  pvAdapter        Pointer to the Adapter structure.
- * \param[out] pvQueryBuffer    A pointer to the buffer that holds the result of
- *                              the query.
- * \param[in]  u4QueryBufferLen The length of the query buffer.
- * \param[out] pu4QueryInfoLen  If the call is successful, returns the number of
- *                              bytes written into the query buffer. If the call
- *                              failed due to invalid length of the query
- *                              buffer, returns the amount of storage needed.
- *
- * \retval WLAN_STATUS_PENDING
- * \retval WLAN_STATUS_FAILURE
- */
-/*----------------------------------------------------------------------------*/
-uint32_t
-wlanQueryLteSafeChannel(struct ADAPTER *prAdapter,
-		uint8_t ucRoleIndex)
-{
-#if CFG_SUPPORT_GET_LTE_SAFE_CHANNEL
-	uint32_t rResult = WLAN_STATUS_FAILURE;
-	struct CMD_GET_LTE_SAFE_CHN rQuery_LTE_SAFE_CHN = {0};
-	struct PARAM_GET_CHN_INFO *prQueryLteChn;
-
-	DBGLOG(P2P, TRACE, "[ACS] Get safe LTE Channels\n");
-
-	do {
-		if (!prAdapter)
-			break;
-
-		prQueryLteChn = kalMemAlloc(sizeof(struct PARAM_GET_CHN_INFO),
-				VIR_MEM_TYPE);
-		if (!prQueryLteChn)
-			break;
-
-		kalMemZero(prQueryLteChn, sizeof(struct PARAM_GET_CHN_INFO));
-		prQueryLteChn->ucRoleIndex = ucRoleIndex;
-
-		/* Get LTE safe channel list */
-		wlanSendSetQueryCmd(prAdapter,
-			CMD_ID_GET_LTE_CHN,
-			FALSE,
-			TRUE,
-			FALSE, /* Query ID */
-			nicCmdEventQueryLteSafeChn, /* The handler to receive
-						     * firmware notification
-						     */
-			nicOidCmdTimeoutCommon,
-			sizeof(struct CMD_GET_LTE_SAFE_CHN),
-			(uint8_t *)&rQuery_LTE_SAFE_CHN,
-			prQueryLteChn,
-			0);
-		rResult = WLAN_STATUS_SUCCESS;
-	} while (FALSE);
-	return rResult;
-#else
-	DBGLOG(P2P, TRACE, "[ACS] Not Support Get safe LTE Channels\n");
-	return WLAN_STATUS_NOT_SUPPORTED;
-#endif /* CFG_SUPPORT_GET_LTE_SAFE_CHANNEL */
-}				/* wlanoidQueryLteSafeChannel */
-#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add dirtiness to neighbor channels of a BSS to estimate channel

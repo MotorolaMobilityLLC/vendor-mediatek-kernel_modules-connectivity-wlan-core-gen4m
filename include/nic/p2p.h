@@ -257,10 +257,6 @@ struct P2P_ACS_REQ_INFO {
 	u_int8_t fgIsEhtEnable;
 	enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw;
 	enum P2P_VENDOR_ACS_HW_MODE eHwMode;
-	uint32_t u4LteSafeChnMask_2G;
-	uint32_t u4LteSafeChnMask_5G_1;
-	uint32_t u4LteSafeChnMask_5G_2;
-	uint32_t u4LteSafeChnMask_6G;
 	u_int8_t fgIsAis;
 
 	/* output only */
