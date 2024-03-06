@@ -35,6 +35,7 @@
  *******************************************************************************
  */
 #include "gl_typedef.h"
+#include "gl_vendor.h"
 
 extern u_int8_t wlan_fb_power_down;
 extern uint8_t aucDebugModule[];
@@ -1179,6 +1180,11 @@ int connac3x_get_rx_rate_info(
 	const uint32_t *prRxV,
 	struct RxRateInfo *prRxRateInfo);
 #endif
+#if CFG_SUPPORT_LLS
+#define INVALID_RX_RATE_TIMEOUT 1000 /* ms */
+void connac3x_dbg_invalid_rx_rate(struct ADAPTER *ad,
+	struct SW_RFB *prSwRfb, struct STATS_LLS_WIFI_RATE *rate);
+#endif /* CFG_SUPPORT_LLS */
 int32_t connac3x_get_tx_info_from_txv(
 	char *pcCommand, int i4TotalLen,
 	struct TX_VECTOR_BBP_LATCH *prTxV);

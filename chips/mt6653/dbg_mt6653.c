@@ -1734,8 +1734,21 @@ void mt6653_get_rx_link_stats(struct ADAPTER *prAdapter,
 			RXV_GET_FR_MODE(pu4RxV[2]),
 			RXV_GET_RX_RATE(pu4RxV[0]));
 
-	if (!IS_RX_MPDU_BEGIN(prSwRfb->ucPayloadFormat))
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/**
+	 * For MLO, it should read prSwRfb->ucHwBandIdx to match the RX link.
+	 * Locate a starec in same MLD by matching eHwBandIdx.
+	 */
+	prStaRec = mldGetStaRecByBandIdx(prAdapter, prStaRec,
+					prSwRfb->ucHwBandIdx);
+#endif
+	if (!prStaRec) {
+		DBGLOG(RX, WARN, "StaRec %u band=%u not found",
+				prSwRfb->ucStaRecIdx,
+				prSwRfb->ucHwBandIdx);
 		return;
+	}
 
 	rate.preamble = TX_MODE_2_LLS_MODE[RXV_GET_TXMODE(pu4RxV[2])];
 
@@ -1758,12 +1771,6 @@ void mt6653_get_rx_link_stats(struct ADAPTER *prAdapter,
 
 	if (rate.nss >= STATS_LLS_MAX_NSS_NUM)
 		goto wrong_rate;
-
-	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
-	if (!prStaRec) {
-		DBGLOG(RX, WARN, "StaRec %u not found", prSwRfb->ucStaRecIdx);
-		goto wrong_rate;
-	}
 
 	if (rate.preamble == LLS_MODE_OFDM) {
 		if (mcsIdx >= STATS_LLS_OFDM_NUM)
@@ -1801,9 +1808,7 @@ void mt6653_get_rx_link_stats(struct ADAPTER *prAdapter,
 	return;
 
 wrong_rate:
-	DBGLOG_LIMITED(RX, WARN,
-			"Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
-			rate.preamble, rate.nss, rate.bw, mcsIdx);
+	connac3x_dbg_invalid_rx_rate(prAdapter, prSwRfb, &rate);
 #endif
 }
 
