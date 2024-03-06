@@ -613,6 +613,8 @@ struct BSS_INFO {
 #endif
 
 	u_int8_t fgIsApGoGranted;
+
+	uint8_t ucOmiWaitingCount;
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
