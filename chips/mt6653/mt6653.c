@@ -3079,8 +3079,18 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 
 static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 {
+#define SETUP_MCU_EMI2_BASE_ADDRESS (0x7C05B2EC)
+#define SETUP_MCU_EMI2_SIZE_ADDRESS (0x7C05B2E4)
+
 	phys_addr_t base = emi_mem_get_phy_base(prAdapter->chip_info);
 	uint32_t size = emi_mem_get_size(prAdapter->chip_info);
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
+	struct HIF_MEM *prMem = NULL;
+	uint8_t uIdx = 0;
+#endif
 
 	if (!base)
 		return;
@@ -3094,6 +3104,30 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	HAL_MCR_WR(prAdapter,
 		   MT6653_EMI_SIZE_ADDR,
 		   size);
+
+	/* Get EMI2 Info */
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+	size = 0;
+	if (prMemOps->getWifiMiscRsvEmi &&
+		prAdapter->chip_info->rsvMemWiFiMisc) {
+		prMem = prMemOps->getWifiMiscRsvEmi(prAdapter->chip_info, 0);
+		if (prMem == NULL) {
+			DBGLOG(NIC, INFO, "not support EMI2\n");
+			return;
+		}
+		base = prMem->pa;
+
+		for (uIdx = 0; uIdx <
+			prAdapter->chip_info->rsvMemWiFiMiscSize; uIdx++)
+			size += prAdapter->chip_info->rsvMemWiFiMisc[uIdx].size;
+	}
+	DBGLOG(HAL, INFO, "emi2 base: 0x%llx, size: 0x%x\n", base, size);
+
+	HAL_MCR_WR(prAdapter, SETUP_MCU_EMI2_BASE_ADDRESS,
+		   ((uint32_t)base >> 16));
+	HAL_MCR_WR(prAdapter, SETUP_MCU_EMI2_SIZE_ADDRESS,
+		   size);
+#endif
 }
 
 static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,

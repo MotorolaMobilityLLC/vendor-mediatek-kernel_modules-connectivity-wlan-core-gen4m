@@ -249,6 +249,11 @@ static ssize_t file_ops_coredump_read(struct file *filp, char __user *buf,
 				uIdx, chip_info->rsvMemWiFiMisc[uIdx].size);
 
 			prMem = prMemOps->getWifiMiscRsvEmi(chip_info, uIdx);
+			if (prMem == NULL) {
+				DBGLOG(NIC, INFO, "not support EMI2\n");
+				goto copy_to_user;
+			}
+
 			prEmi2Address = (uint8_t *)prMem->va;
 			if (prEmi2Address == NULL) {
 				DBGLOG(NIC, INFO,
