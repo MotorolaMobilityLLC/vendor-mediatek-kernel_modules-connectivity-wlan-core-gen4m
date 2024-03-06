@@ -9283,7 +9283,7 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucCsaDeauthClient))
 		return ePolicy;
 
-#if defined(CFG_SAP_CROSS_BAND_CSA)
+#if (CFG_SUPPORT_APGO_CROSS_BAND_CSA == 1)
 	DBGLOG(P2P, INFO, "cross band csa enable\n");
 
 	if (prNewChannelInfo->eBand == BAND_6G &&
@@ -9307,7 +9307,7 @@ p2pFunDetermineChnlSwitchPolicy(struct ADAPTER *prAdapter,
 		(prBssInfo && prBssInfo->eBand != prNewChannelInfo->eBand))
 		ePolicy = CHNL_SWITCH_POLICY_DEAUTH;
 #endif /* CFG_SEND_DEAUTH_DURING_CHNL_SWITCH */
-#endif /* defined(CFG_SAP_CROSS_BAND_CSA) */
+#endif /* CFG_SUPPORT_APGO_CROSS_BAND_CSA */
 
 	return ePolicy;
 }
