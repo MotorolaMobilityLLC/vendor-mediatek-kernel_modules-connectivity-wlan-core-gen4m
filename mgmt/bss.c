@@ -933,6 +933,27 @@ uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 	return ucNumAliveBss;
 }
 
+uint32_t bssGetAliveBss(struct ADAPTER *prAdapter,
+			      struct BSS_INFO **prBssList)
+{
+	struct BSS_INFO *bss;
+	uint8_t i, ucNumAliveBss = 0;
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!IS_BSS_ALIVE(prAdapter, bss))
+			continue;
+
+		prBssList[ucNumAliveBss++] = bss;
+		DBGLOG(BSS, TRACE, "[%s] BSS%u, band:%u, ch:%u, bw:%s",
+			       bssGetRoleTypeString(prAdapter, bss),
+			       i, bss->eBand, bss->ucPrimaryChannel,
+			       bssOpBw2Str(bss));
+	}
+	return ucNumAliveBss;
+}
+
 const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *bss)
 {

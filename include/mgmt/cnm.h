@@ -369,6 +369,16 @@ struct BSS_INFO *
 cnmGetOtherSapBssInfo(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prSapBssInfo);
+
+uint8_t
+cnmGetAliveSapBssInfo(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO **prNonSapBssInfo);
+
+uint8_t
+cnmGetAliveNonSapBssInfo(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO **prNonSapBssInfo);
 #endif
 
 void cnmOpModeGetTRxNss(

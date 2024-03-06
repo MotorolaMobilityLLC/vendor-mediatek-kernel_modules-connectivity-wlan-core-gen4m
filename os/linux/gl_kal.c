@@ -3331,7 +3331,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
+		p2pFuncSwitchSapChannel(prAdapter,
+			P2P_DEFAULT_SCENARIO);
 #endif
 
 		if (prBssDesc) {
@@ -3518,7 +3519,8 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 
 #if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
+		p2pFuncSwitchSapChannel(prAdapter,
+			P2P_DEFAULT_SCENARIO);
 #endif
 
 		if (prBssDesc) {
@@ -11887,7 +11889,8 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 #endif
 
 	/* Check SAP channel */
-	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter);
+	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter,
+		P2P_DEFAULT_SCENARIO);
 }
 #endif
 

@@ -4980,6 +4980,66 @@ cnmGetOtherSapBssInfo(
 	return NULL;
 }
 
+uint8_t
+cnmGetAliveSapBssInfo(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO **prSapBssInfo)
+{
+	struct BSS_INFO *prBssInfo;
+
+	uint8_t i, j = 0;
+
+	if (!prAdapter)
+		return 0;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (IS_BSS_P2P(prBssInfo) &&
+			p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]) &&
+			IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prBssInfo->ucBssIndex)) {
+			prSapBssInfo[j] = prBssInfo;
+			j++;
+		}
+	}
+
+	return j;
+}
+
+uint8_t
+cnmGetAliveNonSapBssInfo(
+	struct ADAPTER *prAdapter,
+	struct BSS_INFO **prNonSapBssInfo)
+{
+	struct BSS_INFO *prBssInfo;
+
+	uint8_t i, j = 0;
+
+	if (!prAdapter)
+		return 0;
+
+	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
+		prBssInfo = prAdapter->aprBssInfo[i];
+		if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
+			!(IS_BSS_P2P(prBssInfo) &&
+			p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData]) &&
+			IS_NET_PWR_STATE_ACTIVE(
+			prAdapter,
+			prBssInfo->ucBssIndex))) {
+			prNonSapBssInfo[j] = prBssInfo;
+			j++;
+		}
+	}
+
+	return j;
+
+}
+
 uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO *prRfChannelInfo,
 	uint8_t ucRoleIdx)
@@ -4995,11 +5055,12 @@ uint8_t cnmSapChannelSwitchReq(struct ADAPTER *prAdapter,
 	uint8_t ucBssIdx = 0;
 
 	DBGLOG(P2P, INFO,
-		"role(%d) c=%d b=%d opw=%d\n",
+		"role(%d) c=%d b=%d opw=%d s1:%u\n",
 		ucRoleIdx,
 		prRfChannelInfo->ucChannelNum,
 		prRfChannelInfo->eBand,
-		prRfChannelInfo->ucChnlBw);
+		prRfChannelInfo->ucChnlBw,
+		prRfChannelInfo->u4CenterFreq1);
 
 	/* Free chandef buffer */
 	if (!prGlueInfo) {

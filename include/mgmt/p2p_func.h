@@ -28,6 +28,29 @@ enum ENUM_P2P_MGMT_TX_TYPE {
 	P2P_MGMT_TX_TYPE_NUM
 };
 
+enum ENUM_P2P_CH_FILTER_TYPE {
+	P2P_CROSS_BAND_STA_SCC_FILTER,
+	P2P_REMOVE_DFS_CH_FILTER,
+	P2P_BT_DESENSE_CH_FILTER,
+	P2P_SKIP_BT_DESENSE_FILTER,
+	P2P_ALIVE_BSS_SYNC_FILTER,
+	P2P_RFBAND_CHECK_FILTER,
+	P2P_DUAL_AP_CH_FILTER,
+	P2P_DUAL_A_BAND_FILTER,
+	P2P_USER_PREF_CH_FILTER,
+	P2P_SET_DEFAULT_CH_FILTER,
+	P2P_MAX_CH_FILTER_NUM
+};
+
+enum ENUM_P2P_FILTER_SCENARIO_TYPE {
+	P2P_DEFAULT_SCENARIO,
+	P2P_BT_COEX_SCENARIO,
+	P2P_STA_SCC_ONLY_SCENARIO,
+	P2P_MCC_SINGLE_SAP_SCENARIO,
+	P2P_MCC_DUAL_SAP_SCENARIO,
+	P2P_MAX_FILTER_SCENARIO_NUM
+};
+
 enum ENUM_P2P_FORCE_TRX_CONFIG {
 	P2P_FORCE_TRX_CONFIG_NONE = 0,
 	P2P_FORCE_TRX_CONFIG_MCS7,
@@ -467,6 +490,60 @@ void p2pGenerateVendorIE(struct ADAPTER *p2pGenerateVendorIE,
 		struct MSDU_INFO *prMsduInfo);
 #endif
 
+void p2pCrossBandStaSccFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pRemoveDfsChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pUserPrefChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pMccAliveBssSyncFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pSetDefaultFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pBtDesenseChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pDualABandFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pRfBandCheckFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+void p2pDualApChFilter(struct ADAPTER *prAdapter,
+		uint8_t *ucChSwithCandNum,
+		struct P2P_CH_SWITCH_CANDIDATE *prSapSwitchCand,
+		struct BSS_INFO *prP2pBssInfo,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
 #if CFG_SUPPORT_WFD
 uint32_t wfdFuncCalculateWfdIELenForAssocRsp(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
@@ -487,10 +564,38 @@ void p2pFunCleanQueuedMgmtFrame(struct ADAPTER *prAdapter,
 void p2pFuncSwitchGcChannel(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo);
 
-u_int8_t p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter);
+void p2pFuncSwitchChannelHelper(struct ADAPTER *prAdapter);
+
+void p2pFuncSwitchChannel(struct ADAPTER *prAdapter,
+			  struct BSS_INFO *prTargetBss, const char *pucSrcFunc);
+
+u_int8_t p2pFuncSwitchGoChannel(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo,
+			    uint32_t u4TargetCh,
+			    enum ENUM_MBMC_BN eTargetHwBandIdx,
+			    enum ENUM_BAND eTargetBand);
+
+bool p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
+
+uint8_t p2pFuncSapFilteredChListGen(
+		struct ADAPTER *prAdapter,
+		struct RF_CHANNEL_INFO *prChnlList,
+		uint8_t *prForbiddenListLen,
+		struct P2P_A_A_FOBIDEN_REGION_UNIT *prRegionOutput,
+		uint16_t *prTargetBw);
+
+void p2pFuncGetChBwBitmap(
+		struct ADAPTER *prAdapter,
+		struct P2P_CH_BW_RANGE *prP2pChBwRange);
 
 uint8_t p2pFuncGetAllFreqList(struct ADAPTER *prAdapter,
 			      uint32_t *pau4WhiteFreqList);
+
+uint8_t p2pFuncGetAllAcsFreqList(struct ADAPTER *prAdapter,
+					uint32_t *ucChnlNum,
+					struct RF_CHANNEL_INFO *arChnlList,
+					uint32_t *pau4SafeFreqList);
 
 uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 	uint8_t ucNumOfAliveBss, uint32_t *prFreqList);
@@ -608,3 +713,13 @@ uint32_t p2pFuncCalculateP2p_IELenForOwe(struct ADAPTER *prAdapter,
 void p2pFuncGenerateP2p_IEForOwe(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo);
 
+typedef void(*PFN_P2P_CH_CANDIDATE_FILETER_FUNC) (struct ADAPTER *,
+		uint8_t *,
+		struct P2P_CH_SWITCH_CANDIDATE *,
+		struct BSS_INFO *,
+		enum ENUM_P2P_FILTER_SCENARIO_TYPE);
+
+struct P2P_CH_CANDIDATE_FILETER_ENTRY {
+		enum ENUM_P2P_CH_FILTER_TYPE eP2pChFilterType;
+		PFN_P2P_CH_CANDIDATE_FILETER_FUNC pfnChCandFilter;
+};

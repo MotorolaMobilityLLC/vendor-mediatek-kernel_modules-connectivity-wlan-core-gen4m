@@ -5742,7 +5742,7 @@ void nicEventUpdateCoexStatus(struct ADAPTER *prAdapter,
 	}
 
 #if CFG_ENABLE_WIFI_DIRECT && (CFG_SUPPORT_AVOID_DESENSE == 1)
-	p2pFuncSwitchSapChannel(prAdapter);
+	p2pFuncSwitchSapChannel(prAdapter, P2P_BT_COEX_SCENARIO);
 #endif
 }
 

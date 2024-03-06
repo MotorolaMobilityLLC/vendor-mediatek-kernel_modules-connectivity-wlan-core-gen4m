@@ -102,9 +102,10 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 #endif
 
 	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-			bss->u4PrivateData]) &&
-	    !fgIsMloSap)
-		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter);
+		bss->u4PrivateData]) &&
+		!fgIsMloSap)
+		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
+					P2P_DEFAULT_SCENARIO);
 	else
 		fgIsSwitching = ccmGoSwitchChannel(prAdapter, bss,
 			       u4TargetCh, eTargetHwBandIdx, eTargetBand);

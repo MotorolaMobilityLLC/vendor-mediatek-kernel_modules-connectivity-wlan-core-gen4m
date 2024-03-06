@@ -180,7 +180,8 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 			&(prP2pRoleFsmInfo->rChnlReqInfo[0]);
 
 		prP2PInfo->eChnlSwitchPolicy = CHNL_SWITCH_POLICY_NONE;
-		p2pFuncSwitchSapChannel(prAdapter);
+		p2pFuncSwitchSapChannel(prAdapter,
+			P2P_DEFAULT_SCENARIO);
 		if (prP2PInfo->eChnlSwitchPolicy != CHNL_SWITCH_POLICY_NONE) {
 			if (prP2pChnlReqInfo->fgIsChannelRequested) {
 				p2pFuncReleaseCh(prAdapter,

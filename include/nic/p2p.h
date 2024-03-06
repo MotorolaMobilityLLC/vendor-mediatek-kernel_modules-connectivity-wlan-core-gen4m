@@ -77,9 +77,22 @@
 #define AP_NONINDOOR_CHANNEL_5G   149
 #define AP_DEFAULT_CHANNEL_2G     6
 #define AP_DEFAULT_CHANNEL_5G     36
+#define AP_DEFAULT_CHANNEL_5GL    36
+#define AP_DEFAULT_CHANNEL_5GH     149
 #if (CFG_SUPPORT_WIFI_6G == 1)
 #define AP_DEFAULT_CHANNEL_6G     5
+#define AP_DEFAULT_CHANNEL_6G_1     97
+#define AP_DEFAULT_CHANNEL_6G_2     37
 #endif
+#define P2P_5G_L_H_ISOLATION_WIDTH 160
+#define P2P_5G_6G_ISOLATION_WIDTH  190
+#define P2P_5G_L_LOWER_BOUND       5170
+#define P2P_5G_L_UPPER_BOUND       5330
+#define P2P_5G_H_LOWER_BOUND       5490
+#define P2P_5G_H_UPPER_BOUND       5895
+#define P2P_6G_LOWER_BOUND         5945
+#define P2P_6G_UPPER_BOUND         6425
+#define AP_A_BAND_CHANNEL_INTERVAL     4
 
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 #define DEFAULT_P2P_PROBERESP_RETRY_LIMIT (2)
@@ -227,6 +240,12 @@ enum P2P_VENDOR_ACS_HW_MODE {
 	P2P_VENDOR_ACS_HW_MODE_11A,
 	P2P_VENDOR_ACS_HW_MODE_11AD,
 	P2P_VENDOR_ACS_HW_MODE_11ANY
+};
+
+enum P2P_FOBIDDEN_REGION_TYPE {
+	P2P_FOBIDDEN_REGION_ISOLATION = 0,
+	P2P_FOBIDDEN_REGION_ALIASING = 1,
+	P2P_FOBIDDEN_REGION_NUM = 2
 };
 
 struct P2P_ACS_REQ_INFO {
@@ -436,6 +455,51 @@ struct P2P_LISTEN_OFFLOAD_INFO {
 	uint32_t u2DevLen;
 	uint8_t aucIE[MAX_IE_LENGTH];
 	uint16_t u2IELen;
+};
+
+struct P2P_CH_SWITCH_CANDIDATE {
+	uint8_t ucBssIndex;
+	enum ENUM_BAND eRfBand;
+	enum ENUM_MBMC_BN eHwBand;
+	uint8_t ucChUpperBound;
+	uint8_t ucChLowerBound;
+};
+
+struct P2P_HW_BAND_UNIT {
+	uint8_t ucBssIndex;
+	enum ENUM_BAND eRfBand;
+	uint8_t ucCh;
+};
+
+struct P2P_A_A_FOBIDEN_REGION_UNIT {
+	uint32_t u4BoundForward1;
+	uint32_t u4BoundForward2;
+	uint32_t u4BoundInverse1;
+	uint32_t u4BoundInverse2;
+	uint32_t u4BoundIsolate;
+};
+
+struct P2P_CH_BW_RANGE {
+	enum ENUM_BAND eRfBand;
+	uint8_t ucCh;
+	uint8_t ucBwBitmap;
+	u_int8_t fgIsDfsSupport;
+	uint32_t u4CenterFreq[MAX_BW_NUM];
+	uint32_t u4UpperBound[MAX_BW_NUM];
+	uint32_t u4LowerBound[MAX_BW_NUM];
+};
+
+struct P2P_HW_BAND_GROUP {
+	enum ENUM_MBMC_BN eHwBand;
+	uint8_t ucUnitNum;
+	struct P2P_HW_BAND_UNIT
+		arP2pHwBandUnit[MAX_BSSID_NUM];
+	u_int8_t fgIsMcc;
+};
+
+struct P2P_CH_SWITCH_INTERFACE {
+	struct P2P_CH_SWITCH_CANDIDATE *prP2pChInterface;
+	uint8_t *ucInterfaceLen;
 };
 
 /******************************************************************************

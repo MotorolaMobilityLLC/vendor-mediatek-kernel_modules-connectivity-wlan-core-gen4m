@@ -21,7 +21,8 @@ enum ENUM_P2P_CCM_MODE {
 #if CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT
 #define CCM_SWITCH_CH(_a, _b) ccmChannelSwitchProducer(_a, _b, __func__)
 #else
-#define CCM_SWITCH_CH(_a, _b) p2pFuncSwitchSapChannel(_a)
+#define CCM_SWITCH_CH(_a, _b) p2pFuncSwitchSapChannel(_a, \
+	P2P_DEFAULT_SCENARIO)
 #endif /* CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT */
 
 /******************************************************************************

@@ -7596,7 +7596,8 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 			~(HT_OP_INFO1_SCO | HT_OP_INFO1_STA_CHNL_WIDTH);
 #if CFG_ENABLE_WIFI_DIRECT
 		/* Check SAP channel */
-		p2pFuncSwitchSapChannel(prAdapter);
+		p2pFuncSwitchSapChannel(prAdapter,
+			P2P_DEFAULT_SCENARIO);
 #endif
 	}
 
