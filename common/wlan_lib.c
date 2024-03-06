@@ -8442,6 +8442,21 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  REPORT_EVENT_INTERVAL, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4TrafficThreshold,
 		"TrafficThreshold", TRAFFIC_RHRESHOLD, FEATURE_DEBUG_ONLY);
+
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	INIT_UINT(prWifiVar->fgLowRateUevtEn, "LowRateEn",
+		  FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4LowRateUevtIntv, "LowRateInterval",
+		  LOW_RATE_MONITOR_INTERVAL, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4LowRateUevtTh, "LowRateTh",
+		  LOW_RATE_MONITOR_THRESHOLD, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4LowRateUevtTputTh, "LowRateTputTh",
+		  LOW_RATE_MONITOR_TPUT_THRESHOLD, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u8LowRateUevtMpduTh, "LowRateMpduTh",
+		  LOW_RATE_MONITOR_MPDU_THRESHOLD, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4LowRateUevtReptIntv, "LowRateReptInterval",
+		  LOW_RATE_MONITOR_EVENT_REPORT_INTERVAL, FEATURE_TO_CUSTOMER);
+#endif
 #endif
 
 #if CFG_SUPPORT_HE_ER
@@ -14172,10 +14187,6 @@ uint32_t wlanLinkQualityMonitor(struct GLUE_INFO *prGlueInfo, bool bFgIsOid)
 
 	prLinkQualityInfo = &(prAdapter->rLinkQualityInfo);
 
-#if (CFG_SUPPORT_DATA_STALL && CFG_SUPPORT_LINK_QUALITY_MONITOR)
-	wlanCustomMonitorFunction(prAdapter, prLinkQualityInfo, ucBssIndex);
-#endif
-
 	DBGLOG(SW4, INFO,
 	       "Link Quality: Tx(rate:%u, total:%lu, retry:%lu, fail:%lu, RTS fail:%lu, ACK fail:%lu), Rx(rate:%u, total:%lu, dup:%u, error:%lu), PER(%u), Congestion(idle slot:%lu, diff:%lu, AwakeDur:%u)\n",
 	       prLinkQualityInfo->u4CurTxRate, /* current tx link speed */
@@ -14204,6 +14215,7 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo = NULL;
 	uint32_t u4CurRxRate, u4MaxRxRate;
 	uint64_t u8TxFailCntDif, u8TxTotalCntDif;
+	uint8_t ucBssIndex;
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter == NULL) {
@@ -14239,13 +14251,18 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 			prLinkQualityInfo->u8IdleSlotCount -
 			prLinkQualityInfo->u8LastIdleSlotCount;
 
+	ucBssIndex = aisGetDefaultLinkBssIndex(prAdapter);
 	/* get current rx rate */
 	if (wlanGetRxRateByBssid(prGlueInfo,
-			aisGetDefaultLinkBssIndex(prAdapter),
+			ucBssIndex,
 			&u4CurRxRate, &u4MaxRxRate, NULL) < 0)
 		prLinkQualityInfo->u4CurRxRate = 0;
 	else
 		prLinkQualityInfo->u4CurRxRate = u4CurRxRate;
+
+#if (CFG_SUPPORT_DATA_STALL && CFG_SUPPORT_LINK_QUALITY_MONITOR)
+	wlanCustomMonitorFunction(prAdapter, prLinkQualityInfo, ucBssIndex);
+#endif
 
 	prLinkQualityInfo->u8LastTxTotalCount =
 					prLinkQualityInfo->u8TxTotalCount;
@@ -14253,13 +14270,124 @@ void wlanFinishCollectingLinkQuality(struct GLUE_INFO *prGlueInfo)
 					prLinkQualityInfo->u8TxFailCount;
 	prLinkQualityInfo->u8LastIdleSlotCount =
 					prLinkQualityInfo->u8IdleSlotCount;
+	prLinkQualityInfo->u8LastRxTotalCount =
+					prLinkQualityInfo->u8RxTotalCount;
 }
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
 #if (CFG_SUPPORT_DATA_STALL && CFG_SUPPORT_LINK_QUALITY_MONITOR)
+
+void wlanLowDataRateMonitor(struct ADAPTER *prAdapter,
+	 struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx)
+{
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4TxRateMbps, u4RxRateMbps, u4TxTput, u4RxTput;
+	uint64_t u8TxTotalCntDif, u8RxTotalCntDif;
+	uint32_t u4CurTick;
+	char uevent[300];
+
+	GET_CURRENT_SYSTIME(&u4CurTick);
+
+	u4TxTput = kalGetTpMbpsByBssId(prAdapter, PKT_PATH_TX, ucBssIdx);
+	u4RxTput = kalGetTpMbpsByBssId(prAdapter, PKT_PATH_RX, ucBssIdx);
+
+	u8TxTotalCntDif = (prLinkQualityInfo->u8TxTotalCount >
+			   prLinkQualityInfo->u8LastTxTotalCount) ?
+			  (prLinkQualityInfo->u8TxTotalCount -
+			   prLinkQualityInfo->u8LastTxTotalCount) : 0;
+
+	u8RxTotalCntDif = (prLinkQualityInfo->u8RxTotalCount >
+			   prLinkQualityInfo->u8LastRxTotalCount) ?
+			  (prLinkQualityInfo->u8RxTotalCount -
+			   prLinkQualityInfo->u8LastRxTotalCount) : 0;
+
+	/* change unit from 100kbps to mbps */
+	u4TxRateMbps = prLinkQualityInfo->u4CurTxRate / 10;
+	u4RxRateMbps = prLinkQualityInfo->u4CurRxRate / 10;
+
+	DBGLOG_LIMITED(SW4, TRACE,
+		"Tput:%u/%u mpdu:%llu/%llu dur:%u/%u rate:%u/%u",
+		u4TxTput, u4RxTput,
+		u8TxTotalCntDif, u8RxTotalCntDif,
+		prAdapter->u4LowTxRateDur,
+		prAdapter->u4LowRxRateDur,
+		prLinkQualityInfo->u4CurTxRate,
+		prLinkQualityInfo->u4CurRxRate);
+
+	if (u4TxRateMbps >= prWifiVar->u4LowRateUevtTh ||
+		u4TxTput < prWifiVar->u4LowRateUevtTputTh &&
+		u8TxTotalCntDif < prWifiVar->u8LowRateUevtMpduTh) {
+		prAdapter->u4LowTxRateDur = 0;
+		prAdapter->fgSendTxUevt = FALSE;
+	} else if (u4TxRateMbps < prWifiVar->u4LowRateUevtTh)
+		prAdapter->u4LowTxRateDur++;
+
+	if (u4RxRateMbps >= prWifiVar->u4LowRateUevtTh ||
+		u4RxTput < prWifiVar->u4LowRateUevtTputTh &&
+		u8RxTotalCntDif < prWifiVar->u8LowRateUevtMpduTh) {
+		prAdapter->u4LowRxRateDur = 0;
+		prAdapter->fgSendRxUevt = FALSE;
+	} else if (u4RxRateMbps < prWifiVar->u4LowRateUevtTh)
+		prAdapter->u4LowRxRateDur++;
+
+	/* send uevent if keep low rate for u4LowRateUevtIntv seconds
+	 * and uevent has not been sent during this low rate period.
+	 * If the data rate fluctuates around the threshold,
+	 * we won't send uevent within u4LowRateUevtReptIntv seconds.
+	 */
+	if (prAdapter->u4LowTxRateDur >= prWifiVar->u4LowRateUevtIntv &&
+		!prAdapter->fgSendTxUevt) {
+		DBGLOG_LIMITED(SW4, TRACE,
+			"now:%u lastTxUevt:%u ReptIntv:%u\n", u4CurTick,
+			prAdapter->u4LastLowTxRateUevt,
+			prWifiVar->u4LowRateUevtReptIntv);
+		if (!CHECK_FOR_TIMEOUT(u4CurTick,
+			prAdapter->u4LastLowTxRateUevt,
+			MSEC_TO_SYSTIME(SEC_TO_MSEC(
+				prWifiVar->u4LowRateUevtReptIntv))))
+			return;
+
+		DBGLOG(SW4, INFO,
+			"Send uevent %s Rate:%u,Tput:%u,Count:%llu",
+			"abnormaltrx=DIR:TX,Event:LowRate",
+			u4TxRateMbps, u4TxTput, u8TxTotalCntDif);
+		kalSnprintf(uevent, sizeof(uevent),
+			"abnormaltrx=DIR:TX,Event:LowRate Rate:%u,Tput:%u,Count:%llu",
+			u4TxRateMbps, u4TxTput, u8TxTotalCntDif);
+		kalSendUevent(uevent);
+		prAdapter->fgSendTxUevt = TRUE;
+		prAdapter->u4LastLowTxRateUevt = u4CurTick;
+	}
+
+	if (prAdapter->u4LowRxRateDur >= prWifiVar->u4LowRateUevtIntv &&
+		!prAdapter->fgSendRxUevt) {
+		DBGLOG_LIMITED(SW4, TRACE,
+			"now:%u lastRxUevt:%u ReptIntv:%u\n", u4CurTick,
+			prAdapter->u4LastLowRxRateUevt,
+			prWifiVar->u4LowRateUevtReptIntv);
+		if (!CHECK_FOR_TIMEOUT(u4CurTick,
+			prAdapter->u4LastLowRxRateUevt,
+			MSEC_TO_SYSTIME(SEC_TO_MSEC(
+				prWifiVar->u4LowRateUevtReptIntv))))
+			return;
+
+		DBGLOG(SW4, INFO,
+			"Send uevent %s Rate:%u,Tput:%u,Count:%llu",
+			"abnormaltrx=DIR:RX,Event:LowRate",
+			u4RxRateMbps, u4RxTput, u8RxTotalCntDif);
+		kalSnprintf(uevent, sizeof(uevent),
+			"abnormaltrx=DIR:RX,Event:LowRate Rate:%u,Tput:%u,Count:%llu",
+			u4RxRateMbps, u4RxTput, u8RxTotalCntDif);
+		kalSendUevent(uevent);
+		prAdapter->fgSendRxUevt = TRUE;
+		prAdapter->u4LastLowRxRateUevt = u4CurTick;
+	}
+}
+
 void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 	 struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo, uint8_t ucBssIdx)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint64_t u8TxTotalCntDif;
 
 	u8TxTotalCntDif = (prLinkQualityInfo->u8TxTotalCount >
@@ -14268,29 +14396,32 @@ void wlanCustomMonitorFunction(struct ADAPTER *prAdapter,
 			   prLinkQualityInfo->u8LastTxTotalCount) : 0;
 
 	/* Add custom monitor here */
-	if (u8TxTotalCntDif >= prAdapter->rWifiVar.u4TrafficThreshold) {
+	if (u8TxTotalCntDif >= prWifiVar->u4TrafficThreshold) {
 		if (prLinkQualityInfo->u4CurTxRate <
-			prAdapter->rWifiVar.u4TxLowRateThreshole)
+			prWifiVar->u4TxLowRateThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_TX_LOW_RATE,
 				(uint16_t)sizeof(uint32_t),
 				ucBssIdx,
 				FALSE);
 		else if (prLinkQualityInfo->u4CurRxRate <
-			prAdapter->rWifiVar.u4RxLowRateThreshole)
+			prWifiVar->u4RxLowRateThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_RX_LOW_RATE,
 				(uint16_t)sizeof(uint32_t),
 				ucBssIdx,
 				FALSE);
 		else if (prLinkQualityInfo->u4CurTxPer >
-			prAdapter->rWifiVar.u4PerHighThreshole)
+			prWifiVar->u4PerHighThreshole)
 			KAL_REPORT_ERROR_EVENT(prAdapter,
 				EVENT_PER_HIGH,
 				(uint16_t)sizeof(uint32_t),
 				ucBssIdx,
 				FALSE);
 	}
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgLowRateUevtEn))
+		wlanLowDataRateMonitor(prAdapter, prLinkQualityInfo, ucBssIdx);
 }
 #endif
 
