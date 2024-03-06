@@ -8538,7 +8538,7 @@ static void wlanRemove(void)
 #endif
 
 	/* 4 <6> Unregister the card */
-	wlanNetUnregister(prDev->ieee80211_ptr);
+	wlanNetUnregister(gprWdev[0]);
 
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	if (prAdapter->chip_info->coexpccifoff)
@@ -8549,7 +8549,7 @@ static void wlanRemove(void)
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 	/* 4 <7> Destroy the device */
-	wlanNetDestroy(prDev->ieee80211_ptr);
+	wlanNetDestroy(gprWdev[0]);
 	prDev = NULL;
 
 	/* 4 <8> Unregister early suspend callback */
