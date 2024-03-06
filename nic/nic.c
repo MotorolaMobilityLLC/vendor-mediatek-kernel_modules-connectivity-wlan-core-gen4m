@@ -784,8 +784,8 @@ void nicProcessFwOwnBackInterrupt(struct ADAPTER
 void nicProcessSoftwareInterruptEx(struct ADAPTER
 				 *prAdapter)
 {
-	if (HAL_IS_RX_DIRECT(prAdapter) &&
-	    !KAL_TEST_BIT(GLUE_FLAG_HALT_BIT, prAdapter->prGlueInfo->ulFlag))
+	/* Only hif_thread and power off can process sw int */
+	if (HAL_IS_RX_DIRECT(prAdapter) && !prAdapter->fgIsPwrOffProcIST)
 		kalSetSerIntEvent(prAdapter->prGlueInfo);
 	else
 		nicProcessSoftwareInterrupt(prAdapter);
