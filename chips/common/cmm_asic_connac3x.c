@@ -1181,8 +1181,10 @@ void asicConnac3xProcessSoftwareInterrupt(
 	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
+	struct HIF_MEM_OPS *prMemOps;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
-	uint32_t u4Status = 0, u4Addr = 0;
+	struct HIF_MEM *prMem = NULL;
+	uint32_t u4Status = 0, u4Addr = 0, *pu4EmiSta = NULL;
 	uint32_t u4HostWpdamBase = 0;
 	u_int8_t fgRet = FALSE;
 
@@ -1193,6 +1195,7 @@ void asicConnac3xProcessSoftwareInterrupt(
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
 	prChipInfo = prAdapter->chip_info;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 	u4HostWpdamBase = prChipInfo->u4HostWfdmaBaseAddr;
@@ -1201,10 +1204,20 @@ void asicConnac3xProcessSoftwareInterrupt(
 		return;
 	}
 
-	u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
-	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
-	if (!fgRet)
-		HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
+	}
+
+	if (prMem && prMem->va) {
+		pu4EmiSta = (uint32_t *)prMem->va;
+		u4Status = *pu4EmiSta;
+	} else {
+		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
+		HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
+		if (!fgRet)
+			HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
+	}
 
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
 	if (u4Status & ERROR_DETECT_SUBSYS_BUS_TIMEOUT) {
@@ -1215,9 +1228,14 @@ void asicConnac3xProcessSoftwareInterrupt(
 		halHwRecoveryFromError(prAdapter);
 	} else
 		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
-	kalDevRegWrite(prGlueInfo,
-			CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase),
-			u4Status);
+
+	if (u4Status) {
+		if (pu4EmiSta)
+			*pu4EmiSta = *pu4EmiSta & ~u4Status;
+
+		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
+		kalDevRegWrite(prGlueInfo, u4Addr, u4Status);
+	}
 }
 
 void asicConnac3xSoftwareInterruptMcu(
