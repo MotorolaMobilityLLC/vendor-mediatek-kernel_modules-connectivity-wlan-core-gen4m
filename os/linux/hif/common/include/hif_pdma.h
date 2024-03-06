@@ -1379,7 +1379,8 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 		       struct MSDU_TOKEN_ENTRY *prToken);
 uint32_t halMawdGetRxBlkDoneCnt(struct GLUE_INFO *prGlueInfo, uint32_t u4Num);
 u_int8_t halMawdWakeup(struct GLUE_INFO *prGlueInfo);
-u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdSleepBeforeFwOwn(struct GLUE_INFO *prGlueInfo);
+u_int8_t halMawdSleepAfterFwOwn(struct GLUE_INFO *prGlueInfo);
 void halMawdReset(struct GLUE_INFO *prGlueInfo);
 void halMawdUpdateL2Tbl(struct GLUE_INFO *prGlueInfo,
 			union mawd_l2tbl rL2Tbl, uint32_t u4Set);

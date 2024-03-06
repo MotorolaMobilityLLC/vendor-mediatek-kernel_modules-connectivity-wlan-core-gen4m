@@ -73,6 +73,7 @@
 
 #define RRO_STA_EMI_BASE		0x78000000
 #define RRO_STA_EMI_OFFSET		0x255B80
+#define RRO_DISABLE_EMI_OFFSET		0x255B88
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -281,6 +282,7 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 	struct mt66xx_chip_info *prChipInfo;
 	struct ADAPTER *prAdapter;
 	struct WIFI_VAR *prWifiVar;
+	struct RTMP_RX_RING *prRxRing;
 	uint32_t u4Addr = 0, u4Val = 0, u4Idx = 0;
 	u_int8_t fgRet = TRUE;
 
@@ -288,6 +290,7 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 	prAdapter = prGlueInfo->prAdapter;
 	prChipInfo = prAdapter->chip_info;
 	prWifiVar = &prAdapter->rWifiVar;
+	prRxRing = &prHifInfo->RxBlkRing[0];
 
 	/* mawd speed up */
 	u4Addr = MAWD_POWER_UP;
@@ -307,6 +310,13 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
 		goto done;
 
+	HAL_SET_MAWD_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
+
+	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
+	u4Val = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK |
+		MAWD_WFDMA_HIGH_ADDR;
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
 	/* BKRS index from RRO */
 	if (emi_mem_read(prChipInfo, RRO_STA_EMI_OFFSET,
 			 &u4Val, sizeof(uint32_t))) {
@@ -317,11 +327,6 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 	}
 	u4Addr = MAWD_IND_CMD_SIGNATURE1;
 	HAL_MAWD_MCR_WR(prAdapter, u4Addr, u4Val);
-
-	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
-	u4Val = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_EN_MASK |
-		MAWD_WFDMA_HIGH_ADDR;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
 done:
 	return fgRet;
@@ -460,16 +465,11 @@ static u_int8_t halMawdSleepVer1_1(struct GLUE_INFO *prGlueInfo)
 		goto exit;
 	}
 
-	/* disable rro IND_CMD writeback */
-	u4Addr = WF_RRO_TOP_IND_CMD_SIGNATURE_BASE_1_ADDR;
-	u4Val = MAWD_WFDMA_HIGH_ADDR;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-
 exit:
 	return fgRet;
 }
 
-u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
+u_int8_t halMawdSleepBeforeFwOwn(struct GLUE_INFO *prGlueInfo)
 {
 #if MAWD_ENABLE_WAKEUP_SLEEP
 	struct GL_HIF_INFO *prHifInfo;
@@ -495,16 +495,75 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 		goto exit;
 	}
 
-	if (kalGetMawdVer() == MAWD_VER_1_0)
+	if (kalGetMawdVer() == MAWD_VER_1_0) {
 		fgRet = halMawdSleepVer1_0(prGlueInfo);
-	else
-		fgRet = halMawdSleepVer1_1(prGlueInfo);
-	if (!fgRet)
-		goto exit;
+		if (!fgRet)
+			goto exit;
 
 #if (CFG_MTK_FPGA_PLATFORM == 0)
-	__halMawdSleep();
+		__halMawdSleep();
 #endif
+	}
+
+exit:
+	return fgRet;
+#else /* MAWD_ENABLE_WAKEUP_SLEEP == 0 */
+	return TRUE;
+#endif /* MAWD_ENABLE_WAKEUP_SLEEP */
+}
+
+static u_int8_t halMawdIsRroDisableDone(struct GLUE_INFO *prGlueInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4Val = 0, u4Idx = 0;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+
+	for (u4Idx = 0; u4Idx < MAWD_POWER_UP_RETRY_CNT; u4Idx++) {
+		if (emi_mem_read(prChipInfo, RRO_DISABLE_EMI_OFFSET,
+				 &u4Val, sizeof(uint32_t))) {
+			DBGLOG(HAL, ERROR, "EMI read fail[0x%08x]\n", u4Val);
+			return FALSE;
+		}
+		if ((u4Val & BIT(0)))
+			return TRUE;
+
+		kalUdelay(MAWD_POWER_UP_WAIT_TIME);
+	}
+
+	DBGLOG(HAL, ERROR, "Polling EMI[0x%08x] timeout\n", u4Val);
+	return FALSE;
+}
+
+u_int8_t halMawdSleepAfterFwOwn(struct GLUE_INFO *prGlueInfo)
+{
+#if MAWD_ENABLE_WAKEUP_SLEEP
+	struct GL_HIF_INFO *prHifInfo;
+	struct ADAPTER *prAdapter;
+	u_int8_t fgRet = TRUE;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prAdapter = prGlueInfo->prAdapter;
+
+#if CFG_MTK_ANDROID_WMT
+	if (!is_cal_flow_finished())
+		goto exit;
+#endif
+
+	if (kalGetMawdVer() == MAWD_VER_1_1) {
+		fgRet = halMawdSleepVer1_1(prGlueInfo);
+		if (!fgRet)
+			goto exit;
+
+		fgRet = halMawdIsRroDisableDone(prGlueInfo);
+		if (!fgRet)
+			goto exit;
+
+#if (CFG_MTK_FPGA_PLATFORM == 0)
+		__halMawdSleep();
+#endif
+	}
+
 	prHifInfo->fgIsMawdSuspend = TRUE;
 	DBGLOG(HAL, LOUD, "Mawd sleep done\n");
 

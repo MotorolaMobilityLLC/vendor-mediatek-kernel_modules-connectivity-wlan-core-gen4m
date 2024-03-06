@@ -1153,7 +1153,7 @@ u_int8_t kalIsSupportSdo(void)
 
 u_int8_t kalIsSupportRro(void)
 {
-	return FALSE;
+	return TRUE;
 }
 
 uint32_t kalGetMawdVer(void)
