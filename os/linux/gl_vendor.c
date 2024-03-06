@@ -4395,13 +4395,13 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct nlattr *attr;
-	struct PARAM_OFLD_INFO rInfo;
+	struct PARAM_OFLD_INFO *prInfo = NULL;
 
 	uint8_t *prProg = NULL;
 	uint32_t u4ProgLen = 0, u4SentLen = 0, u4RemainLen = 0;
 	uint32_t u4SetInfoLen = 0;
 
-	uint8_t ucFragNum = 0, ucFragSeq = 0;
+	uint8_t ucFragNum = 0, ucFragSeq = 0, ret = 0;
 
 	ASSERT(wiphy);
 	ASSERT(wdev);
@@ -4436,45 +4436,53 @@ int mtk_cfg80211_vendor_set_packet_filter(struct wiphy *wiphy,
 		ucFragNum++;
 
 	prProg = (uint8_t *) nla_data(attr);
-
-	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
+	prInfo = kalMemZAlloc(sizeof(struct PARAM_OFLD_INFO), VIR_MEM_TYPE);
+	if (prInfo == NULL) {
+		DBGLOG(AIS, WARN, "alloc PARAM_OFLD_INFO failed\n");
+		ret = -ENOMEM;
+		goto exit;
+	}
 
 	/* Init OFLD description */
-	rInfo.ucType = PKT_OFLD_TYPE_APF;
-	rInfo.ucOp = PKT_OFLD_OP_INSTALL;
-	rInfo.u4TotalLen = u4ProgLen;
-	rInfo.ucFragNum = ucFragNum;
+	prInfo->ucType = PKT_OFLD_TYPE_APF;
+	prInfo->ucOp = PKT_OFLD_OP_INSTALL;
+	prInfo->u4TotalLen = u4ProgLen;
+	prInfo->ucFragNum = ucFragNum;
 
 	u4RemainLen = u4ProgLen;
 	do {
-		rInfo.ucFragSeq = ucFragSeq;
-		rInfo.u4BufLen = u4RemainLen > PKT_OFLD_BUF_SIZE ?
+		prInfo->ucFragSeq = ucFragSeq;
+		prInfo->u4BufLen = u4RemainLen > PKT_OFLD_BUF_SIZE ?
 					PKT_OFLD_BUF_SIZE : u4RemainLen;
-		kalMemCopy(rInfo.aucBuf, (prProg + u4SentLen),
-				rInfo.u4BufLen);
+		kalMemCopy(prInfo->aucBuf, (prProg + u4SentLen),
+				prInfo->u4BufLen);
 
-		u4SentLen += rInfo.u4BufLen;
+		u4SentLen += prInfo->u4BufLen;
 
 		if (u4SentLen == u4ProgLen) {
-			rInfo.ucOp = PKT_OFLD_OP_ENABLE_W_TPUT_DETECT;
+			prInfo->ucOp = PKT_OFLD_OP_ENABLE_W_TPUT_DETECT;
 		}
 
 		DBGLOG(REQ, TRACE, "Set APF size(%d, %d) frag(%d, %d).\n",
 				u4ProgLen, u4SentLen,
 				ucFragNum, ucFragSeq);
 
-		rStatus = kalIoctl(prGlueInfo, wlanoidSetOffloadInfo, &rInfo,
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetOffloadInfo, prInfo,
 				sizeof(struct PARAM_OFLD_INFO), &u4SetInfoLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
 			DBGLOG(REQ, ERROR, "APF install fail:0x%x\n", rStatus);
-			return -EFAULT;
+			ret = -EFAULT;
+			goto exit;
 		}
 		ucFragSeq++;
 		u4RemainLen -= u4SentLen;
 	} while (ucFragSeq < ucFragNum);
-
-	return 0;
+exit:
+	if (prInfo)
+		kalMemFree(prInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_OFLD_INFO));
+	return ret;
 }
 
 
@@ -4484,7 +4492,7 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
-	struct PARAM_OFLD_INFO rInfo;
+	struct PARAM_OFLD_INFO *prInfo = NULL;
 	uint32_t u4SetInfoLen = 0;
 	struct sk_buff *skb = NULL;
 
@@ -4507,31 +4515,22 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 		return -EFAULT;
 	}
 
-	prProg = kalMemAlloc(APF_MAX_PROGRAM_LEN, VIR_MEM_TYPE);
-
-	if (prProg == NULL) {
-		DBGLOG(REQ, ERROR, "Can not allocate memory.\n");
-		 goto query_apf_failure;
-	}
-
+	prProg = kalMemZAlloc(APF_MAX_PROGRAM_LEN, VIR_MEM_TYPE);
+	prInfo = kalMemZAlloc(sizeof(struct PARAM_OFLD_INFO), VIR_MEM_TYPE);
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 		APF_MAX_PROGRAM_LEN);
-
-	if (skb == NULL) {
-		DBGLOG(REQ, ERROR, "Allocate skb failed\n");
+	if (prProg == NULL || prInfo == NULL || skb == NULL) {
+		DBGLOG(REQ, ERROR, "Can not allocate memory.\n");
 		goto query_apf_failure;
 	}
 
-	kalMemZero(&rInfo, sizeof(struct PARAM_OFLD_INFO));
-	kalMemZero(prProg, APF_MAX_PROGRAM_LEN);
-
 	/* Init OFLD description */
-	rInfo.ucType = PKT_OFLD_TYPE_APF;
-	rInfo.ucOp = PKT_OFLD_OP_QUERY;
-	rInfo.u4BufLen = PKT_OFLD_BUF_SIZE;
+	prInfo->ucType = PKT_OFLD_TYPE_APF;
+	prInfo->ucOp = PKT_OFLD_OP_QUERY;
+	prInfo->u4BufLen = PKT_OFLD_BUF_SIZE;
 
 	do {
-		rStatus = kalIoctl(prGlueInfo, wlanoidQueryOffloadInfo, &rInfo,
+		rStatus = kalIoctl(prGlueInfo, wlanoidQueryOffloadInfo, prInfo,
 				sizeof(struct PARAM_OFLD_INFO), &u4SetInfoLen);
 
 		if (rStatus != WLAN_STATUS_SUCCESS) {
@@ -4540,35 +4539,35 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 		}
 
 		if (ucCurrSeq == 0) {
-			ucFragNum = rInfo.ucFragNum;
-			u4ProgLen = rInfo.u4TotalLen;
+			ucFragNum = prInfo->ucFragNum;
+			u4ProgLen = prInfo->u4TotalLen;
 			if (u4ProgLen == 0) {
 				DBGLOG(REQ, ERROR,
 					"Failed to query APF from firmware.\n");
 				 goto query_apf_failure;
 			}
-		} else if (rInfo.ucFragSeq != ucCurrSeq) {
+		} else if (prInfo->ucFragSeq != ucCurrSeq) {
 			DBGLOG(REQ, ERROR, "Wrong frag seq (%d, %d)\n",
-				ucCurrSeq, rInfo.ucFragSeq);
+				ucCurrSeq, prInfo->ucFragSeq);
 			goto query_apf_failure;
-		} else if (rInfo.u4BufLen > PKT_OFLD_BUF_SIZE ||
-				(u4RecvLen + rInfo.u4BufLen) > u4ProgLen) {
+		} else if (prInfo->u4BufLen > PKT_OFLD_BUF_SIZE ||
+				(u4RecvLen + prInfo->u4BufLen) > u4ProgLen) {
 			DBGLOG(REQ, ERROR,
 				"Buffer overflow, got wrong size %d\n",
-				(u4RecvLen + rInfo.u4BufLen));
+				(u4RecvLen + prInfo->u4BufLen));
 			goto query_apf_failure;
 		}
 
-		kalMemCopy((prProg + u4RecvLen), &rInfo.aucBuf[0],
-					rInfo.u4BufLen);
+		kalMemCopy((prProg + u4RecvLen), &prInfo->aucBuf[0],
+					prInfo->u4BufLen);
 
-		u4RecvLen += rInfo.u4BufLen;
+		u4RecvLen += prInfo->u4BufLen;
 		DBGLOG(REQ, INFO, "Get APF size(%d, %d) frag(%d, %d).\n",
 					u4ProgLen, u4RecvLen,
-					ucFragNum, rInfo.ucFragSeq);
+					ucFragNum, prInfo->ucFragSeq);
 		ucCurrSeq++;
-		rInfo.ucFragSeq = ucCurrSeq;
-	} while (rInfo.ucFragSeq < ucFragNum);
+		prInfo->ucFragSeq = ucCurrSeq;
+	} while (prInfo->ucFragSeq < ucFragNum);
 
 	if (unlikely(nla_put(skb, APF_ATTRIBUTE_PROGRAM,
 				u4ProgLen, prProg) < 0))
@@ -4576,6 +4575,9 @@ int mtk_cfg80211_vendor_read_packet_filter(struct wiphy *wiphy,
 
 	if (prProg != NULL)
 		kalMemFree(prProg, VIR_MEM_TYPE, APF_MAX_PROGRAM_LEN);
+	if (prInfo != NULL)
+		kalMemFree(prInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_OFLD_INFO));
 
 	return cfg80211_vendor_cmd_reply(skb);
 
@@ -4585,6 +4587,9 @@ query_apf_failure:
 
 	if (prProg != NULL)
 		kalMemFree(prProg, VIR_MEM_TYPE, APF_MAX_PROGRAM_LEN);
+	if (prInfo != NULL)
+		kalMemFree(prInfo, VIR_MEM_TYPE,
+			   sizeof(struct PARAM_OFLD_INFO));
 
 	return -EFAULT;
 }
