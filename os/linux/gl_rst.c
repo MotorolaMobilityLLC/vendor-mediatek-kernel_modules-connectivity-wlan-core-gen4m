@@ -2089,6 +2089,8 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		}
 		DBGLOG(INIT, INFO,
 			"Don't trigger whole chip reset due to driver is not ready\n");
+		glResetUpdateFlag(FALSE);
+		glResetOnEndUpdateFlag(FALSE);
 		return;
 	}
 	if (g_SubsysRstCnt > 3) {
