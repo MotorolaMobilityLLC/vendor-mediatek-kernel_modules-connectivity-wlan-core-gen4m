@@ -2512,6 +2512,14 @@
 #define CFG_FIX_INCONSISTENT_RFB_POINTER 0
 #endif
 
+#ifndef CFG_DEBUG_RX_SEGMENT
+#define CFG_DEBUG_RX_SEGMENT 0
+#endif /* CFG_DEBUG_SEGMENT */
+
+#if CFG_DEBUG_RX_SEGMENT
+#define RX_SEGMENT_DEBUG_TIMEOUT 10 /* unit: second */
+#endif /* CFG_DEBUG_RX_SEGMENT */
+
 /*------------------------------------------------------------------------------
  * Support FreeMsdu tasklet.
  * Linux version only. Force remove for other platform
