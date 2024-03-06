@@ -3530,12 +3530,6 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 				"prAssocRspSwRfb or prAssocRspSwRfb->pvHeader is NULL!\n");
 		}
 
-		/* 4 <1.4> Activate current AP's STA_RECORD_T
-		 * in Driver.
-		 */
-		cnmStaRecChangeState(prAdapter,
-			prStaRec, STA_STATE_3);
-
 #if CFG_SUPPORT_TDLS_AUTO
 		/* fire the update jiffies */
 		prP2pLinkBssInfo->ulLastUpdate = kalGetJiffies();
@@ -3561,6 +3555,18 @@ void p2pRoleFsmUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 			scanReportBss2Cfg80211(prAdapter,
 				BSS_TYPE_P2P_DEVICE,
 				prTargetBssDesc);
+	}
+
+	/* update starec */
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct STA_RECORD *prStaRec =
+			p2pGetLinkStaRec(prP2pRoleFsmInfo, i);
+
+		if (!prStaRec)
+			continue;
+
+		/* Activate current AP's STA_RECORD_T in Driver. */
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 	}
 }
 
