@@ -646,6 +646,8 @@ uint32_t glWritePcieCfgSpace(int offset, uint32_t value);
 void glNotifyPciePowerDown(void);
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
+void mtk_pci_msi_enable_irq(uint32_t u4Irq);
+void mtk_pci_msi_disable_irq(uint32_t u4Irq);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
