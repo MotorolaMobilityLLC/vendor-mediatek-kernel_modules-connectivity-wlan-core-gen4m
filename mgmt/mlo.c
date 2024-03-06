@@ -985,19 +985,15 @@ uint32_t mldProfileCopyIe(struct MSDU_INFO *prMsduInfo,
 {
 	uint8_t *ie = *prContainer, *sta = *prSta, *frag = *prFragment;
 	uint8_t *cp = *prPos, *pos, *buf = prTarget;
+	uint16_t ie_len_sum = 0, sta_len_sum = 0;
+
+	ie_len_sum = IE_LEN(ie) + IE_SIZE(buf);
+	sta_len_sum = IE_LEN(sta) + IE_SIZE(buf);
 
 	pos = cp;
-	/* check before copy */
-	if (checkAddOverflow(IE_LEN(ie), IE_SIZE(buf)) ||
-	    checkAddOverflow(IE_LEN(sta), IE_SIZE(buf))) {
-		DBGLOG(ML, ERROR,
-			"Sum of ie len or sta len is overflow, ie len=%d, sta len=%d, buf size\n",
-			IE_LEN(ie), IE_LEN(sta), IE_SIZE(buf));
-		return WLAN_STATUS_INVALID_LENGTH;
-	}
 
-	if (IE_LEN(ie) + IE_SIZE(buf) > 255 &&
-	    IE_LEN(sta) + IE_SIZE(buf) > 255) {
+	if (ie_len_sum > 255 &&
+	    sta_len_sum > 255) {
 		if (IE_ID(ie) == ELEM_ID_FRAGMENT) {
 			DBGLOG(ML, WARN, "no space");
 			return WLAN_STATUS_RESOURCES;
@@ -1023,7 +1019,7 @@ uint32_t mldProfileCopyIe(struct MSDU_INFO *prMsduInfo,
 		/* if frag hdr ahead sta, offset sta */
 		if (frag <= sta)
 			sta += ELEM_HDR_LEN;
-	} else if (IE_LEN(ie) + IE_SIZE(buf) > 255) {
+	} else if (ie_len_sum > 255) {
 		if (IE_ID(ie) == ELEM_ID_FRAGMENT) {
 			DBGLOG(ML, WARN, "no space");
 			return WLAN_STATUS_RESOURCES;
@@ -1042,7 +1038,7 @@ uint32_t mldProfileCopyIe(struct MSDU_INFO *prMsduInfo,
 
 		/* sta len exclude fragment hdr */
 		IE_LEN(sta) += cp - pos - ELEM_HDR_LEN;
-	} else if (IE_LEN(sta) + IE_SIZE(buf) > 255) {
+	} else if (sta_len_sum > 255) {
 		DBGLOG(ML, WARN, "impossible");
 	} else {
 		/* primary not found, copy it */
