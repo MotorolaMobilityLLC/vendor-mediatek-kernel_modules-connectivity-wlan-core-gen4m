@@ -10060,42 +10060,109 @@ p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 	return i;
 }
 
-uint8_t p2pFuncGetAllFreqList(struct ADAPTER *prAdapter,
-			      uint32_t *pau4WhiteFreqList)
+uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
+			      uint32_t *pau4AllowFreqList)
 {
-	struct RF_CHANNEL_INFO arChnlList[MAX_PER_BAND_CHN_NUM] = { { 0 } };
-	uint8_t i, ucChnlNum, rAllChnlNum = 0;
+	struct RF_CHANNEL_INFO *prChnlList = NULL;
+	uint8_t i, ucChnlNum = 0, ucCandidateChnlNum;
+	struct PARAM_GET_CHN_INFO *prLteSafeChn = NULL;
+	uint32_t u4BufLen;
+	uint32_t *pau4SafeChnl;
+	uint32_t u4SafeChnlInfo_2g;
+	uint32_t u4SafeChnlInfo_5g_0;
+	uint32_t u4SafeChnlInfo_5g_1;
+	uint32_t u4SafeChnlInfo_6g;
+	uint32_t rStatus;
 
-	rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE, MAX_2G_BAND_CHN_NUM,
-		&ucChnlNum, arChnlList);
-	for (i = 0; i < ucChnlNum; ++i) {
-		pau4WhiteFreqList[i] = nicChannelNum2Freq(
-			arChnlList[i].ucChannelNum,
-			arChnlList[i].eBand) / 1000;
-	}
-	rAllChnlNum += ucChnlNum;
+	/* Get Lte Safe Chnl */
+	prLteSafeChn = kalMemZAlloc(sizeof(struct PARAM_GET_CHN_INFO),
+			VIR_MEM_TYPE);
+	if (!prLteSafeChn)
+		goto exit;
 
-	rlmDomainGetChnlList(prAdapter, BAND_5G, TRUE, MAX_5G_BAND_CHN_NUM,
-		&ucChnlNum, arChnlList);
-	for (i = 0; i < ucChnlNum; ++i) {
-		pau4WhiteFreqList[rAllChnlNum + i] = nicChannelNum2Freq(
-			arChnlList[i].ucChannelNum,
-			arChnlList[i].eBand) / 1000;
+	rStatus = kalIoctl(prAdapter->prGlueInfo, wlanoidQueryLteSafeChannel,
+		   prLteSafeChn, sizeof(struct PARAM_GET_CHN_INFO), &u4BufLen);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(P2P, ERROR, "get safe chnl failed");
+
+	pau4SafeChnl = prLteSafeChn->rLteSafeChnList.au4SafeChannelBitmask;
+	u4SafeChnlInfo_2g = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_2G4];
+	u4SafeChnlInfo_5g_0 = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_0];
+	u4SafeChnlInfo_5g_1 = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_1];
+	u4SafeChnlInfo_6g = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G];
+
+	if (!u4SafeChnlInfo_2g && !u4SafeChnlInfo_5g_0 && !u4SafeChnlInfo_5g_1
+	    && !u4SafeChnlInfo_6g) {
+		DBGLOG(P2P, WARN, "No safe chnl, reset safe chnl bitmap");
+		u4SafeChnlInfo_2g = BITS(0, 31);
+		u4SafeChnlInfo_5g_0 = BITS(0, 31);
+		u4SafeChnlInfo_5g_1 = BITS(0, 31);
+		u4SafeChnlInfo_6g = BITS(0, 31);
 	}
-	rAllChnlNum += ucChnlNum;
+
+	DBGLOG(P2P, INFO,
+	       "safe chnl bitmask: 2G=0x%x, 5G_0=0x%x, 5G_1=0x%x, 6G=0x%x",
+	       u4SafeChnlInfo_2g, u4SafeChnlInfo_5g_0, u4SafeChnlInfo_5g_1,
+	       u4SafeChnlInfo_6g);
+
+	/* Get channel allow list */
+	prChnlList = kalMemZAlloc(sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM,
+			VIR_MEM_TYPE);
+	if (!prChnlList)
+		goto exit;
+
+	rlmDomainGetChnlList(prAdapter, BAND_NULL, TRUE, MAX_CHN_NUM,
+		&ucCandidateChnlNum, prChnlList);
+
+	for (i = 0; i < ucCandidateChnlNum; ++i) {
+		if (prChnlList[i].eBand == BAND_2G4) {
+			if (!(u4SafeChnlInfo_2g &
+			      BIT(prChnlList[i].ucChannelNum)))
+				continue;
+		} else if (prChnlList[i].eBand == BAND_5G &&
+				(prChnlList[i].ucChannelNum >= 36) &&
+				(prChnlList[i].ucChannelNum <= 144)) {
+			if (!(u4SafeChnlInfo_5g_0 &
+			      BIT((prChnlList[i].ucChannelNum - 36) / 4)))
+				continue;
+		} else if (prChnlList[i].eBand == BAND_5G &&
+				(prChnlList[i].ucChannelNum >= 149) &&
+				(prChnlList[i].ucChannelNum <= 181)) {
+			if (!(u4SafeChnlInfo_5g_1 &
+			      BIT((prChnlList[i].ucChannelNum - 149) / 4)))
+				continue;
+		}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	rlmDomainGetChnlList(prAdapter, BAND_6G, TRUE, MAX_6G_BAND_CHN_NUM,
-		&ucChnlNum, arChnlList);
-	for (i = 0; i < ucChnlNum; ++i) {
-		pau4WhiteFreqList[rAllChnlNum + i] = nicChannelNum2Freq(
-			arChnlList[i].ucChannelNum,
-			arChnlList[i].eBand) / 1000;
-	}
-	rAllChnlNum += ucChnlNum;
-#endif
+		else if (prChnlList[i].eBand == BAND_6G) {
+			/* Keep only PSC channels */
+			if (!(prChnlList[i].ucChannelNum >= 5 &&
+			      prChnlList[i].ucChannelNum <= 225 &&
+			      ((prChnlList[i].ucChannelNum - 5) % 16 == 0)))
+				continue;
 
-	return rAllChnlNum;
+			if ((prChnlList[i].ucChannelNum >= 5) &&
+			    (prChnlList[i].ucChannelNum <= 225) &&
+			    !(u4SafeChnlInfo_6g &
+			      BIT((prChnlList[i].ucChannelNum - 5) / 16)))
+				continue;
+		}
+#endif
+		DBGLOG(P2P, LOUD, "safe chnl: %u", prChnlList[i].ucChannelNum);
+		pau4AllowFreqList[ucChnlNum++] = nicChannelNum2Freq(
+			prChnlList[i].ucChannelNum,
+			prChnlList[i].eBand) / 1000;
+	}
+exit:
+	if (prChnlList)
+		kalMemFree(prChnlList, VIR_MEM_TYPE,
+				sizeof(struct RF_CHANNEL_INFO) * MAX_CHN_NUM);
+	if (prLteSafeChn)
+		kalMemFree(prLteSafeChn, VIR_MEM_TYPE,
+				sizeof(struct PARAM_GET_CHN_INFO));
+
+	return ucChnlNum;
 }
 
 uint8_t p2pFuncGetAllAcsFreqList(struct ADAPTER *prAdapter,
@@ -10182,17 +10249,17 @@ uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
  */
 /*---------------------------------------------------------------------------*/
 void p2pFuncGetSafeFreq(uint32_t *targetFreqList, uint32_t *targetFreqListNum,
-			uint32_t *pau4FreqWhiteList, uint8_t ucWhiteFreqNum)
+			uint32_t *pau4FreqAllowList, uint8_t ucAllowFreqNum)
 {
 	uint32_t rIntersectionFreq[MAX_CHN_NUM] = { 0 };
 	uint8_t i, j, ucFreqNum = 0;
 
 	/* intersection of targetFreqList and rIntersectionFreq */
 	for (i = 0; i < *targetFreqListNum; ++i) {
-		for (j = 0; j < ucWhiteFreqNum; ++j)
-			if (targetFreqList[i] == pau4FreqWhiteList[j])
+		for (j = 0; j < ucAllowFreqNum; ++j)
+			if (targetFreqList[i] == pau4FreqAllowList[j])
 				break;
-		if (j < ucWhiteFreqNum) {
+		if (j < ucAllowFreqNum) {
 			rIntersectionFreq[ucFreqNum++] = targetFreqList[i];
 		} else {
 			DBGLOG(P2P, TRACE, "ignore unsafe freq: %u, ch: %u",
@@ -10220,8 +10287,8 @@ void p2pFuncGetSafeFreq(uint32_t *targetFreqList, uint32_t *targetFreqListNum,
 /*---------------------------------------------------------------------------*/
 uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
-		uint32_t *pu4FreqListNum, uint32_t *pau4FreqWhiteList,
-		uint8_t ucWhiteFreqNum)
+		uint32_t *pu4FreqListNum, uint32_t *pau4FreqAllowList,
+		uint8_t ucAllowFreqNum)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct BSS_INFO *alive2gBss[MAX_BSSID_NUM] = { 0 };
@@ -10282,7 +10349,7 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	}
 
 	p2pFuncGetSafeFreq(pau4FreqList, pu4FreqListNum,
-			   pau4FreqWhiteList, ucWhiteFreqNum);
+			   pau4FreqAllowList, ucAllowFreqNum);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -10633,117 +10700,15 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex,
-		struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo)
 {
-	uint32_t u4LteSafeChnMask_2G;
-
 	if (!prAdapter || !prAcsReqInfo)
 		return;
 
-	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11B ||
-			prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11G) {
-		prAcsReqInfo->eBand = BAND_2G4;
-	} else {
-		prAcsReqInfo->eBand = BAND_5G;
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		if ((prAcsReqInfo->ucBand & BIT(BAND_6G)) &&
-			prAdapter->fgIsHwSupport6G &&
-			IS_FEATURE_DISABLED(
-				prAdapter->rWifiVar.ucDisallowAcs6G)) {
-			prAcsReqInfo->eBand = BAND_6G; /* Prefer 6G */
-		}
-#endif
-	}
-
-	if (!prLteSafeChnInfo)
-		goto error;
-
-	if (prAcsReqInfo->ucBand & BIT(BAND_2G4)) {
-		struct LTE_SAFE_CHN_INFO *prLteSafeChnList;
-		struct RF_CHANNEL_INFO aucChannelList[MAX_2G_BAND_CHN_NUM];
-		uint8_t ucNumOfChannel;
-		uint8_t i;
-		u_int8_t fgIsMaskValid = FALSE;
-
-		kalMemZero(aucChannelList,
-			sizeof(struct RF_CHANNEL_INFO) * MAX_2G_BAND_CHN_NUM);
-
-		rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
-			MAX_2G_BAND_CHN_NUM, &ucNumOfChannel, aucChannelList);
-
-		prLteSafeChnList = &prLteSafeChnInfo->rLteSafeChnList;
-		u4LteSafeChnMask_2G = prLteSafeChnList->au4SafeChannelBitmask[
-			ENUM_SAFE_CH_MASK_BAND_2G4];
-
-		for (i = 0; i < ucNumOfChannel; i++) {
-			if ((prAcsReqInfo->u4LteSafeChnMask_2G &
-					u4LteSafeChnMask_2G &
-					BIT(aucChannelList[i].ucChannelNum)))
-				fgIsMaskValid = TRUE;
-		}
-		if (!fgIsMaskValid) {
-			DBGLOG(P2P, WARN,
-				"All mask invalid, mark all as valid\n");
-			prAcsReqInfo->u4LteSafeChnMask_2G = BITS(1, 14);
-		}
-
-		prAcsReqInfo->u4LteSafeChnMask_2G &= u4LteSafeChnMask_2G;
-
-#if CFG_TC1_FEATURE
-		/* Restrict 2.4G band channel selection range
-		 * to 1/6/11 per customer's request
-		 */
-		prAcsReqInfo->u4LteSafeChnMask_2G &= 0x0842;
-#elif CFG_TC10_FEATURE
-		/* Restrict 2.4G band channel selection range
-		 * to 1~11 per customer's request
-		 */
-		prAcsReqInfo->u4LteSafeChnMask_2G &= 0x0FFE;
-#endif
-	}
-
-	if (prAcsReqInfo->ucBand & BIT(BAND_5G)) {
-		/* Add support for 5G FW mask */
-		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
-			&prLteSafeChnInfo->rLteSafeChnList;
-		uint32_t u4LteSafeChnMask_5G_1 =
-			prLteSafeChnList->au4SafeChannelBitmask
-			[ENUM_SAFE_CH_MASK_BAND_5G_0];
-		uint32_t u4LteSafeChnMask_5G_2 =
-			prLteSafeChnList->au4SafeChannelBitmask
-			[ENUM_SAFE_CH_MASK_BAND_5G_1];
-
-		prAcsReqInfo->u4LteSafeChnMask_5G_1 &= u4LteSafeChnMask_5G_1;
-		prAcsReqInfo->u4LteSafeChnMask_5G_1 &= u4LteSafeChnMask_5G_2;
-	}
-
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (prAcsReqInfo->ucBand & BIT(BAND_6G)) {
-		/* Add support for 6G FW mask */
-		struct LTE_SAFE_CHN_INFO *prLteSafeChnList =
-			&prLteSafeChnInfo->rLteSafeChnList;
-		uint32_t u4LteSafeChnMask_6G =
-			prLteSafeChnList->au4SafeChannelBitmask
-			[ENUM_SAFE_CH_MASK_BAND_6G];
-
-		if (u4LteSafeChnMask_6G != 0)
-			prAcsReqInfo->u4LteSafeChnMask_6G &=
-				u4LteSafeChnMask_6G;
-		else
-			DBGLOG(P2P, WARN, "All 6G channels are unsafe!?\n");
-	}
-#endif
-
-error:
 	prAcsReqInfo->ucPrimaryCh = p2pFunGetAcsBestCh(prAdapter,
 			prAcsReqInfo->eBand,
 			prAcsReqInfo->eChnlBw,
-			prAcsReqInfo->u4LteSafeChnMask_2G,
-			prAcsReqInfo->u4LteSafeChnMask_5G_1,
-			prAcsReqInfo->u4LteSafeChnMask_5G_2,
-			prAcsReqInfo->u4LteSafeChnMask_6G);
+			BITS(0, 31), BITS(0, 31), BITS(0, 31), BITS(0, 31));
 
 	p2pFunIndicateAcsResult(prAdapter->prGlueInfo,
 			prAcsReqInfo);
@@ -11596,5 +11561,39 @@ void p2pFuncGenerateP2p_IEForOwe(struct ADAPTER *prAdapter,
 		   prP2pSpecBssInfo->pucDHIEBuf,
 		   prP2pSpecBssInfo->ucDHIELen);
 	prMsduInfo->u2FrameLength += prP2pSpecBssInfo->ucDHIELen;
+}
+
+u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
+				 uint32_t *pau4SafeChnl)
+{
+	uint32_t u4SafeChInfo_2g = BITS(0, 31);
+	uint32_t u4SafeChInfo_5g_0 = BITS(0, 31);
+	uint32_t u4SafeChInfo_5g_1 = BITS(0, 31);
+	uint32_t u4SafeChInfo_6g = BITS(0, 31);
+
+	if (pau4SafeChnl) {
+		u4SafeChInfo_2g = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_2G4];
+		u4SafeChInfo_5g_0 = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_0];
+		u4SafeChInfo_5g_1 = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_5G_1];
+		u4SafeChInfo_6g = pau4SafeChnl[ENUM_SAFE_CH_MASK_BAND_6G];
+	}
+
+	if (eBand == BAND_2G4) {
+		if (u4SafeChInfo_2g & BIT(ucChnlNum))
+			return TRUE;
+	} else if (eBand == BAND_5G && ucChnlNum >= 36 && ucChnlNum <= 144) {
+		if (u4SafeChInfo_5g_0 & BIT((ucChnlNum - 36) / 4))
+			return TRUE;
+	} else if (eBand == BAND_5G && ucChnlNum >= 149 && ucChnlNum <= 181) {
+		if (u4SafeChInfo_5g_1 & BIT((ucChnlNum - 149) / 4))
+			return TRUE;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	} else if (eBand == BAND_6G) {
+		if (u4SafeChInfo_6g & BIT((ucChnlNum - 5) / 16))
+			return TRUE;
+#endif
+	}
+
+	return FALSE;
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */

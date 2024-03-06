@@ -589,8 +589,8 @@ void p2pFuncGetChBwBitmap(
 		struct ADAPTER *prAdapter,
 		struct P2P_CH_BW_RANGE *prP2pChBwRange);
 
-uint8_t p2pFuncGetAllFreqList(struct ADAPTER *prAdapter,
-			      uint32_t *pau4WhiteFreqList);
+uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
+			      uint32_t *pau4AllowFreqList);
 
 uint8_t p2pFuncGetAllAcsFreqList(struct ADAPTER *prAdapter,
 					uint32_t *ucChnlNum,
@@ -602,8 +602,8 @@ uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 
 uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
-		uint32_t *pu4FreqListNum, uint32_t *pau4FreqWhiteList,
-		uint8_t ucWhiteFreqNum);
+		uint32_t *pu4FreqListNum, uint32_t *pau4FreqAllowList,
+		uint8_t ucAllowFreqNum);
 
 enum ENUM_P2P_CONNECT_STATE
 p2pFuncGetP2pActionFrameType(struct MSDU_INFO *prMgmtMsdu);
@@ -644,7 +644,6 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 #endif
 void p2pFunProcessAcsReport(struct ADAPTER *prAdapter,
 		uint8_t ucRoleIndex,
-		struct PARAM_GET_CHN_INFO *prLteSafeChnInfo,
 		struct P2P_ACS_REQ_INFO *prAcsReqInfo);
 
 void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
@@ -723,3 +722,5 @@ struct P2P_CH_CANDIDATE_FILETER_ENTRY {
 		enum ENUM_P2P_CH_FILTER_TYPE eP2pChFilterType;
 		PFN_P2P_CH_CANDIDATE_FILETER_FUNC pfnChCandFilter;
 };
+u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
+				 uint32_t *pau4SafeChnl);

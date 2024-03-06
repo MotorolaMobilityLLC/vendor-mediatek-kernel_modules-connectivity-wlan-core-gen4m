@@ -3244,7 +3244,6 @@ struct PARAM_CHN_RANK_INFO {
 };
 
 struct PARAM_GET_CHN_INFO {
-	uint8_t ucRoleIndex;
 	struct LTE_SAFE_CHN_INFO rLteSafeChnList;
 	struct PARAM_CHN_LOAD_INFO rEachChnLoad[MAX_CHN_NUM];
 	struct PARAM_CHN_RANK_INFO rChnRankList[MAX_CHN_NUM];
@@ -5705,6 +5704,10 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 		void *pvSetBuffer, uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
 #endif
+uint32_t
+wlanoidQueryLteSafeChannel(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
 uint32_t
