@@ -111,6 +111,7 @@ char * const apucRstReason[RST_REASON_MAX] = {
 	"Chip reset by AER",
 	"RST_MMIO_READ",
 	"RST_WFDMA_RX_HANG",
+	"RST_MAWD_WAKEUP_FAIL",
 };
 
 static const char *const apucRstAction[] = {
