@@ -2477,6 +2477,11 @@ uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prMldBssInfo = prAisFsmInfo->prMldBssInfo;
 
+#if CFG_SUPPORT_NAN && !CFG_MLO_CONCURRENT_NAN
+	if (prAdapter->fgIsNANRegistered)
+		return FALSE;
+#endif
+
 	return mldBssAllowReconfig(prAdapter, prMldBssInfo);
 }
 
@@ -4485,6 +4490,32 @@ uint8_t aisHandleJoinFailure(struct ADAPTER *prAdapter,
 	return eNextState;
 }
 
+#if CFG_SUPPORT_ROAMING
+void aisFsmEnableRssiMonitor(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucEnable)
+{
+	struct PARAM_RSSI_MONITOR_T rRssi;
+	uint32_t rStatus;
+
+	kalMemCopy(&rRssi, &prAisFsmInfo->rRSSIMonitor,
+		sizeof(struct PARAM_RSSI_MONITOR_T));
+
+	rRssi.enable = ucEnable;
+	if (!ucEnable)
+		rRssi.max_rssi_value = rRssi.min_rssi_value = 0;
+
+	rStatus = wlanSendSetQueryCmd(prAdapter,
+			   CMD_ID_RSSI_MONITOR,
+			   TRUE,
+			   FALSE,
+			   FALSE,
+			   NULL,
+			   NULL,
+			   sizeof(struct PARAM_RSSI_MONITOR_T),
+			   (uint8_t *)&rRssi, NULL, 0);
+}
+#endif
+
 void aisChangeAllMediaState(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo)
 {
@@ -4650,6 +4681,13 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 					roamingFsmNotifyEvent(
 					   prAdapter, ucBssIndex, FALSE,
 					   aisGetMainLinkBssDesc(prAisFsmInfo));
+
+					/* Enable rssi monitor */
+					if (prAisFsmInfo->rRSSIMonitor.enable)
+						aisFsmEnableRssiMonitor(
+								prAdapter,
+								prAisFsmInfo,
+								TRUE);
 				}
 #endif /* CFG_SUPPORT_ROAMING */
 
@@ -7094,31 +7132,6 @@ aisDeauthXmitComplete(struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_ROAMING
-
-void aisFsmEnableRssiMonitor(struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucEnable)
-{
-	struct PARAM_RSSI_MONITOR_T rRssi;
-	uint32_t rStatus;
-
-	kalMemCopy(&rRssi, &prAisFsmInfo->rRSSIMonitor,
-		sizeof(struct PARAM_RSSI_MONITOR_T));
-
-	rRssi.enable = ucEnable;
-	if (!ucEnable)
-		rRssi.max_rssi_value = rRssi.min_rssi_value = 0;
-
-	rStatus = wlanSendSetQueryCmd(prAdapter,
-			   CMD_ID_RSSI_MONITOR,
-			   TRUE,
-			   FALSE,
-			   FALSE,
-			   NULL,
-			   NULL,
-			   sizeof(struct PARAM_RSSI_MONITOR_T),
-			   (uint8_t *)&rRssi, NULL, 0);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief This function will indicate an Event of "Looking for a candidate

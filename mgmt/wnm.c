@@ -677,6 +677,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	uint8_t fgNeedResponse = FALSE;
 	uint8_t ucStatus = 0;
 	struct BSS_DESC *prBssDesc;
+	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 	prRxFrame = (struct ACTION_BTM_REQ_FRAME *) prSwRfb->pvHeader;
 	if (!prRxFrame)
@@ -823,6 +824,13 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 			ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
 			goto send_response;
 		}
+	}
+
+	if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+		DBGLOG(WNM, INFO, "WNM: [wlan%d] not support btm roaming\n",
+			ais->ucAisIndex);
+		ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
+		goto send_response;
 	}
 
 	if (prAdapter->rWifiVar.u4RejectBtmReqReason) {

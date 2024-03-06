@@ -1340,8 +1340,6 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	uint32_t bmap;
-	uint8_t connected;
 	struct BSS_INFO *prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct CONNECTION_SETTINGS *conn =
@@ -1354,18 +1352,6 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 	if (ais == NULL) {
 		DBGLOG(APS, WARN, "ais is NULL\n");
-		return FALSE;
-	}
-
-	bmap = aisGetBssIndexBmap(ais);
-	connected = !!(prBssDesc->fgIsConnected & bmap);
-
-	/* Don't skip connected AP if reassociation or btm */
-	if (eRoamReason != ROAMING_REASON_UPPER_LAYER_TRIGGER &&
-	    eRoamReason != ROAMING_REASON_BTM &&
-	    connected) {
-		DBGLOG(APS, WARN, MACSTR" connected\n",
-				MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
 
@@ -1538,35 +1524,58 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			return FALSE;
 		}
 #endif
-		/* onle limited for wlan1 */
-		if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
-			struct AIS_FSM_INFO *mainAis =
-				aisFsmGetInstance(prAdapter, AIS_DEFAULT_INDEX);
-			struct BSS_DESC *mainBssDesc =
-				aisGetMainLinkBssDesc(mainAis);
-			uint32_t mainBmap = aisGetBssIndexBmap(mainAis);
-			uint8_t mainConnected =
-				prBssDesc->fgIsConnected & mainBmap;
+	}
 
-			/* Disallow to pick a bss that already connected */
-			if (mainConnected) {
+	/* Restrict STAs other than wlan0 */
+	if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
+		struct AIS_FSM_INFO *tempAis;
+		struct BSS_DESC *tempBssDesc;
+		uint32_t bmap;
+		uint8_t i, j;
+		uint8_t ucExistALinks = 0, ucExistGLinks = 0;
+
+		bmap = aisGetBssIndexBmap(ais);
+
+		/* Disallow to pick a bss that already connected */
+		if (prBssDesc->fgIsConnected & !bmap) {
+			DBGLOG(APS, INFO,
+				MACSTR " already connected by wlan0",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
+
+		for (i = 0; i < KAL_AIS_NUM; i++) {
+			if (i == ais->ucAisIndex)
+				continue;
+
+			tempAis = aisFsmGetInstance(prAdapter, i);
+			for (j = 0; j < MLD_LINK_MAX; j++) {
+				tempBssDesc = aisGetLinkBssDesc(tempAis, j);
+				if (tempBssDesc) {
+					if (tempBssDesc->eBand == BAND_2G4)
+						ucExistGLinks++;
+					else
+						ucExistALinks++;
+				}
+			}
+		}
+
+		/* If band not fully used */
+		if (ucExistGLinks < 1 || ucExistALinks < ENUM_BAND_NUM - 1) {
+			/* G band used, skip 2.4G */
+			if (ucExistGLinks >= 1 &&
+			    prBssDesc->eBand == BAND_2G4) {
 				DBGLOG(APS, INFO,
-					MACSTR " already connected by wlan0",
+					MACSTR " can't use G band",
 					MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
 			}
 
-			/* Disallow wlan1 to use same band with wlan0 */
-			if (
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-			    /* When mainAis is MLO, always DBDC */
-			    mldGetMloLinkNum(prAdapter,
-				aisGetMainLinkStaRec(mainAis)) <= 1 &&
-#endif
-			    mainBssDesc &&
-			    prBssDesc->eBand == mainBssDesc->eBand) {
+			/* A band is fully used, only allow 2.4G */
+			if (ucExistALinks >= ENUM_BAND_NUM - 1 &&
+			    prBssDesc->eBand != BAND_2G4) {
 				DBGLOG(APS, INFO,
-					MACSTR " same band with wlan0",
+					MACSTR " can't use A band",
 					MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
 			}
@@ -1750,7 +1759,7 @@ uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 struct BSS_DESC *apsIntraUpdateCandi(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, enum ENUM_BAND eBand, uint16_t min_score,
-	enum ENUM_ROAMING_REASON reason, uint8_t bidx)
+	enum ENUM_ROAMING_REASON reason, uint8_t search_blk, uint8_t bidx)
 {
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(ais);
@@ -1758,12 +1767,24 @@ struct BSS_DESC *apsIntraUpdateCandi(struct ADAPTER *ad,
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	struct BSS_DESC *bss, *cand = NULL;
 	uint16_t score, goal_score = 0;
-	uint8_t search_blk = FALSE;
 
 try_again:
 	LINK_FOR_EACH_ENTRY(bss, link, rLinkEntryEss[aidx], struct BSS_DESC) {
 		if (bss->fgPicked)
 			continue;
+
+		if (!search_blk) {
+			/* Skip connected AP */
+			uint8_t connected = !!(bss->fgIsConnected & bmap);
+
+			if (reason != ROAMING_REASON_UPPER_LAYER_TRIGGER &&
+			    reason != ROAMING_REASON_BTM &&
+			    connected) {
+				DBGLOG(APS, WARN, MACSTR" connected\n",
+					MAC2STR(bss->aucBSSID));
+				continue;
+			}
+		}
 
 		if (!search_blk && link->u4NumElem > 1 && bss->prBlock)
 			continue;
@@ -1939,7 +1960,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				continue;
 
 			candi[j] = bss = apsIntraUpdateCandi(ad, ap,
-			       link_plan[j], min_score, reason, bidx);
+			       link_plan[j], min_score, reason, FALSE, bidx);
 
 			if (!bss)
 				continue;
@@ -1965,7 +1986,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 			if (!bss)
 				bss = apsIntraUpdateCandi(ad, ap,
-				       link_plan[j], 0, reason, bidx);
+				       link_plan[j], 0, reason, TRUE, bidx);
 
 			if (bss && bss->u4RsnSelectedAKMSuite != akm) {
 				DBGLOG(APS, INFO,
@@ -2064,6 +2085,9 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 
 		bss->u2Score = apsCalculateApScore(ad, bss, reason, bidx);
 		bss->u4Tput = apsGetEstimatedTput(ad, bss, bidx);
+
+		if (min_score == 0 || bss->u2Score < min_score)
+			min_score = bss->u2Score;
 
 		DBGLOG(APS, INFO,
 			"CURR[" MACSTR "] score[%d] tput[%d]\n",
