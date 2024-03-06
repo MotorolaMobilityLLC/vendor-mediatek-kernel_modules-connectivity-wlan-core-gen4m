@@ -2814,8 +2814,13 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	if (prP2PInfo->prWdev->iftype != NL80211_IFTYPE_AP)
 		goto queue_ctrl;
 
-	if (!fgLockHeld)
+	if (!fgLockHeld) {
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+		wiphy_lock(prNetdevice->ieee80211_ptr->wiphy);
+#else
 		mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
+#endif
+	}
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
@@ -2835,8 +2840,13 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef, ucCsaCount);
 #endif
 
-	if (!fgLockHeld)
+	if (!fgLockHeld) {
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+		wiphy_unlock(prNetdevice->ieee80211_ptr->wiphy);
+#else
 		mutex_unlock(&prNetdevice->ieee80211_ptr->mtx);
+#endif
+	}
 
 queue_ctrl:
 	if (fgQuiet)
@@ -2988,7 +2998,11 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		chandef.center_freq2,
 		chandef.chan->dfs_state);
 
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+	wiphy_lock(prNetdevice->ieee80211_ptr->wiphy);
+#else
 	mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
+#endif
 
 #if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
@@ -3003,7 +3017,11 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	cfg80211_ch_switch_notify(prNetdevice, &chandef);
 #endif
 
+#if (KERNEL_VERSION(6, 7, 0) <= CFG80211_VERSION_CODE)
+	wiphy_unlock(prNetdevice->ieee80211_ptr->wiphy);
+#else
 	mutex_unlock(&prNetdevice->ieee80211_ptr->mtx);
+#endif
 
 	netif_carrier_on(prNetdevice);
 	netif_tx_start_all_queues(prNetdevice);
