@@ -658,9 +658,9 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 		&prAdapter->prGlueInfo->rLastMsduRptChangedTime;
 
 	rTimeout.tv_sec = prWifiVar->u4MsduReportTimeout;
-	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
+	rTimeout.tv_nsec = 0;
 	rLongest.tv_sec = 0;
-	KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) = 0;
+	rLongest.tv_nsec = 0;
 	ktime_get_ts64(&rNowTs);
 
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
@@ -677,9 +677,7 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 
 		/* rTime > rLongest */
 		if (kalTimeCompare(&rTime, &rLongest) > 0) {
-			rLongest.tv_sec = rTime.tv_sec;
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rLongest) =
-				KAL_GET_TIME_OF_USEC_OR_NSEC(rTime);
+			rLongest = rTime;
 			u4TokenId = u4Idx;
 		}
 	}

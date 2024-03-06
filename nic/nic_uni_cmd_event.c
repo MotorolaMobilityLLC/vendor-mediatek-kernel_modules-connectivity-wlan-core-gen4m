@@ -9584,16 +9584,12 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 
 	KAL_SET_MSEC_TO_TIME(prAdapter->rRegStatSyncFwTs, u4EmiUpdateMs);
 	ktime_get_ts64(&prAdapter->rRegStatSyncDrvTs);
-#define TEMP_LOG_TEMPLATE\
-	"sync time drv:%ld.%ld fw:%u(%ld.%ld)\n"
-
-	DBGLOG(REQ, TRACE, TEMP_LOG_TEMPLATE,
+	DBGLOG(REQ, TRACE, "sync time drv:%ld.%09ld fw:%u(%ld.%09ld)\n",
 		prAdapter->rRegStatSyncDrvTs.tv_sec,
-		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncDrvTs),
+		prAdapter->rRegStatSyncDrvTs.tv_nsec,
 		u4EmiUpdateMs,
 		prAdapter->rRegStatSyncFwTs.tv_sec,
-		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncFwTs));
-#undef TEMP_LOG_TEMPLATE
+		prAdapter->rRegStatSyncFwTs.tv_nsec);
 #endif
 
 	if (prCmdInfo->fgIsOid)
