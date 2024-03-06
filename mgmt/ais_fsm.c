@@ -4168,6 +4168,9 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	eRfChannelWidth = prBssDesc->eChannelWidth;
 	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
 		eRfChannelWidth);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+#endif
 
 	prBssInfo->ucGrantTxNss = prBssInfo->ucBackupGrantTxNss;
 	prBssInfo->ucGrantRxNss = prBssInfo->ucBackupGrantRxNss;
@@ -5959,6 +5962,7 @@ void aisFsmDisconnectAllBss(struct ADAPTER *prAdapter,
 		/* 4 <4.1> sync. with firmware */
 		nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
 		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
+		prAisBssInfo->ucLinkIndex = 0;
 	}
 }
 
