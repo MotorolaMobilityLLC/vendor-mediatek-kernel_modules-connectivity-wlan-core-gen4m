@@ -1889,6 +1889,8 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 		if (!fgEqualMacAddr)
 			return WLAN_STATUS_NOT_SUPPORTED;
 
+		rlmReqGenerateOMIIE(prAdapter, prAisBssInfo);
+
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 			DBGLOG(QM, ERROR, "No channel occupation\n");

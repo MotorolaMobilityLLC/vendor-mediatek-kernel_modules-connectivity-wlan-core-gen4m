@@ -349,6 +349,8 @@ static uint16_t scanCalculateScoreByBandwidth(struct ADAPTER *prAdapter,
 		case CW_320_2MHZ:
 			u2Score = BSS_FULL_SCORE;
 			break;
+		default:
+			break;
 		}
 	} else if (prBssDesc->fgIsHTPresent) {
 		if (prBssDesc->eBand == BAND_2G4) {

@@ -63,6 +63,27 @@ uint8_t Rxsmm_Iot_Allowlist[]
 };
 #endif
 
+static const char * const apucOpBw[MAX_BW_UNKNOWN+1] = {
+	[MAX_BW_20MHZ] = "MAX_BW_20MHZ",
+	[MAX_BW_40MHZ] = "MAX_BW_40MHZ",
+	[MAX_BW_80MHZ] = "MAX_BW_80MHZ",
+	[MAX_BW_160MHZ] = "MAX_BW_160MHZ",
+	[MAX_BW_80_80_MHZ] = "MAX_BW_80_80_MHZ",
+	[MAX_BW_320_1MHZ] = "MAX_BW_320_1MHZ",
+	[MAX_BW_320_2MHZ] = "MAX_BW_320_2MHZ",
+	[MAX_BW_UNKNOWN] = "MAX_BW_UNKNOWN",
+};
+
+static const char * const apucVhtOpBw[CW_NUM+1] = {
+	[CW_20_40MHZ] = "CW_20_40MHZ",
+	[CW_80MHZ] = "CW_80MHZ",
+	[CW_160MHZ] = "CW_160MHZ",
+	[CW_80P80MHZ] = "CW_80P80MHZ",
+	[CW_320_1MHZ] = "CW_320_1MHZ",
+	[CW_320_2MHZ] = "CW_320_2MHZ",
+};
+
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -2505,6 +2526,54 @@ rlmGetSupportRxNssInVhtCap(struct IE_VHT_CAP *prVhtCap)
 }
 
 #endif
+
+void rlmReqGenerateOMIIE(struct ADAPTER *prAdapter,
+			struct BSS_INFO *prBssInfo)
+{
+	struct STA_RECORD *prStaRec;
+
+	if (!prBssInfo || !prAdapter)
+		return;
+
+#if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
+	if (!prAdapter->rWifiVar.fgDbDcModeEn) {
+		DBGLOG(RLM, WARN, "DBDC disable, return\n");
+		return;
+	}
+#else
+	if (prBssInfo->ucOpRxNss ==
+		wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex)) {
+		DBGLOG(RLM, WARN, "Op NSS == Max NSS %d\n",
+			prBssInfo->ucOpRxNss);
+		return;
+	}
+#endif
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (!prStaRec) {
+		DBGLOG(RLM, WARN, "prStaRecOfAP null\n");
+		return;
+	}
+
+	DBGLOG(RLM, TRACE, "try send OMI frame if possible\n");
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (((RLM_NET_IS_11AX(prBssInfo) &&
+		(prStaRec->ucDesiredPhyTypeSet &
+		PHY_TYPE_SET_802_11AX))
+#if (CFG_SUPPORT_802_11BE == 1)
+		|| (RLM_NET_IS_11BE(prBssInfo) &&
+		(prStaRec->ucDesiredPhyTypeSet &
+		PHY_TYPE_SET_802_11BE))
+#endif /* CFG_SUPPORT_802_11BE  */
+		) && HE_IS_MAC_CAP_OM_CTRL(prStaRec->ucHeMacCapInfo)
+		&& (prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMI)) {
+		rlmSendOMIDataFrame(prAdapter, prStaRec,
+				rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+				prBssInfo->ucOpRxNss,
+				prBssInfo->ucOpTxNss);
+	}
+#endif /* CFG_SUPPORT_802_11AX */
+}
 
 #if CFG_SUPPORT_802_11D
 /*----------------------------------------------------------------------------*/
@@ -5708,13 +5777,14 @@ void rlmFillSyncCmdParam(struct CMD_SET_BSS_RLM_PARAM *prCmdBody,
 
 	if (RLM_NET_PARAM_VALID(prBssInfo)) {
 		DBGLOG(RLM, INFO,
-		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w(vht)=%d s1=%d s2=%d RxN=%d, TxN=%d\n",
+		       "N=%d b=%d c=%d s=%d e=%d h=%d I=0x%02x l=%d p=%d w(vht)=%d %s s1=%d s2=%d RxN=%d, TxN=%d\n",
 		       prCmdBody->ucBssIndex, prCmdBody->ucRfBand,
 		       prCmdBody->ucPrimaryChannel, prCmdBody->ucRfSco,
 		       prCmdBody->ucErpProtectMode, prCmdBody->ucHtProtectMode,
 		       prCmdBody->ucHtOpInfo1, prCmdBody->ucUseShortSlotTime,
 		       prCmdBody->ucUseShortPreamble,
 		       prCmdBody->ucVhtChannelWidth,
+		       apucVhtOpBw[prCmdBody->ucVhtChannelWidth],
 		       prCmdBody->ucVhtChannelFrequencyS1,
 		       prCmdBody->ucVhtChannelFrequencyS2,
 		       prCmdBody->ucRxNss,
@@ -8063,6 +8133,7 @@ uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 	uint32_t u4Status;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBw;
+	uint8_t ucEht = FALSE;
 	PFN_TX_DONE_HANDLER pfTxDoneHandler =
 		(PFN_TX_DONE_HANDLER)rlmDummyOmiOpModeTxDone;
 
@@ -8092,10 +8163,67 @@ uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 	if (ucOpTxNss == 0)
 		ucOpTxNss = 1;
 
-	heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
-	HE_SET_HTC_HE_OM_CH_WIDTH(prAdapter->u4HeHtcOM, ucChannelWidth);
-	HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, ucOpRxNss - 1);
-	HE_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, ucOpTxNss - 1);
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (RLM_NET_IS_11BE(prBssInfo) &&
+		(prStaRec->ucDesiredPhyTypeSet &
+		PHY_TYPE_SET_802_11BE)) {
+		ucEht = TRUE;
+		ehtRlmInitHtcACtrlOM(prAdapter);
+		if (ucChannelWidth == MAX_BW_320_1MHZ ||
+			ucChannelWidth == MAX_BW_320_2MHZ) {
+			/* BW320: CH_WIDTH EXT 1 and CH_WIDTH 0 */
+			/* For NSS 0-7, Ext Nss is 0 */
+			/* EHT OM */
+			EHT_SET_HTC_EHT_OM_RX_NSS_EXT(prAdapter->u4HeHtcOM,
+				0);
+			EHT_SET_HTC_EHT_OM_TX_NSTS_EXT(prAdapter->u4HeHtcOM,
+				0);
+			EHT_SET_HTC_EHT_OM_CH_WIDTH_EXT(prAdapter->u4HeHtcOM,
+				EHT_OM_CH_WIDTH_EXT_BW320);
+			/* HE OM */
+			EHT_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM,
+				ucOpRxNss - 1);
+			EHT_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM,
+				ucOpRxNss - 1);
+			EHT_SET_HTC_HE_OM_CH_WIDTH(prAdapter->u4HeHtcOM,
+				EHT_OM_CH_WIDTH_BW320);
+		} else {
+			/* EHT OM */
+			EHT_SET_HTC_EHT_OM_RX_NSS_EXT(prAdapter->u4HeHtcOM,
+				0);
+			EHT_SET_HTC_EHT_OM_TX_NSTS_EXT(prAdapter->u4HeHtcOM,
+				0);
+			EHT_SET_HTC_EHT_OM_CH_WIDTH_EXT(prAdapter->u4HeHtcOM,
+				EHT_OM_CH_WIDTH_EXT_LT_BW320);
+			/* HE OM */
+			EHT_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM,
+				ucOpRxNss - 1);
+			EHT_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM,
+				ucOpRxNss - 1);
+			EHT_SET_HTC_HE_OM_CH_WIDTH(prAdapter->u4HeHtcOM,
+				ucChannelWidth)
+
+		}
+		DBGLOG(RLM, TRACE,
+			"Ready to send Htc null frame with EHT OM\n");
+	}
+#endif /* CFG_SUPPORT_802_11BE  */
+
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (!ucEht && RLM_NET_IS_11AX(prBssInfo) &&
+		(prStaRec->ucDesiredPhyTypeSet &
+		PHY_TYPE_SET_802_11AX)) {
+		heRlmInitHeHtcACtrlOMAndUPH(prAdapter);
+		HE_SET_HTC_HE_OM_CH_WIDTH(prAdapter->u4HeHtcOM,
+			ucChannelWidth);
+		HE_SET_HTC_HE_OM_RX_NSS(prAdapter->u4HeHtcOM, ucOpRxNss - 1);
+		HE_SET_HTC_HE_OM_TX_NSTS(prAdapter->u4HeHtcOM, ucOpTxNss - 1);
+		DBGLOG(RLM, TRACE,
+			"Ready to send Htc null frame with HE OM\n");
+	}
+#endif /* CFG_SUPPORT_802_11AX  */
+
+
 	u4Status =
 		heRlmSendHtcNullFrame(
 		prAdapter, prStaRec, 7,
@@ -8982,9 +9110,10 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 	}
 
 	DBGLOG(RLM, INFO,
-		"Complete BSS[%d] OP Mode change to BW[%d] RxNss[%d] TxNss[%d]",
+		"Complete BSS[%d] OP Mode change to BW[%d, %s] RxNss[%d] TxNss[%d]",
 		prBssInfo->ucBssIndex,
 		rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
+		apucOpBw[rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)],
 		prBssInfo->ucOpRxNss,
 		prBssInfo->ucOpTxNss);
 
@@ -9081,8 +9210,9 @@ rlmChangeOperationMode(
 #endif
 
 	DBGLOG(RLM, INFO,
-		"Intend to change BSS[%d] OP Mode to BW[%d] RxNss[%d] TxNss[%d]\n",
-		ucBssIndex, ucChannelWidth, ucOpRxNss, ucOpTxNss);
+		"Intend to change BSS[%d] OP Mode to BW[%d,%s] RxNss[%d] TxNss[%d]\n",
+		ucBssIndex, ucChannelWidth, apucOpBw[ucChannelWidth],
+		ucOpRxNss, ucOpTxNss);
 
 	/* <4> Fill OP Change Info into BssInfo*/
 
@@ -9152,8 +9282,9 @@ rlmChangeOperationMode(
 					[OP_NOTIFY_TYPE_OMI_NSS_BW] =
 					OP_NOTIFY_STATE_SENDING;
 			DBGLOG(RLM, INFO,
-				"Send OMI frame: BSS[%d] BW[%d] RxNss[%d]\n",
-				ucBssIndex, ucChannelWidth, ucOpRxNss);
+				"Send OMI frame: BSS[%d] BW[%d, %s] RxNss[%d]\n",
+				ucBssIndex, ucChannelWidth,
+				apucOpBw[ucChannelWidth], ucOpRxNss);
 
 			u4Status = rlmSendOMIDataFrame(prAdapter,
 				prStaRec, ucChannelWidth,
@@ -9172,8 +9303,9 @@ rlmChangeOperationMode(
 					[OP_NOTIFY_TYPE_VHT_NSS_BW] =
 					OP_NOTIFY_STATE_SENDING;
 			DBGLOG(RLM, INFO,
-				"Send VHT OP notification frame: BSS[%d] BW[%d] RxNss[%d]\n",
-				ucBssIndex, ucChannelWidth, ucOpRxNss);
+				"Send VHT OP notification frame: BSS[%d] BW[%d, %s] RxNss[%d]\n",
+				ucBssIndex, ucChannelWidth,
+				apucOpBw[ucChannelWidth], ucOpRxNss);
 			u4Status = rlmSendOpModeNotificationFrame(
 				prAdapter, prStaRec,
 				ucChannelWidth, ucOpRxNss);
@@ -9204,8 +9336,9 @@ rlmChangeOperationMode(
 					prAdapter, prStaRec, ucChannelWidth);
 				DBGLOG(RLM, INFO,
 					"Send HT Notify Channel Width frame: ");
-				DBGLOG(RLM, INFO, "BSS[%d] BW[%d]\n",
-					ucBssIndex, ucChannelWidth);
+				DBGLOG(RLM, INFO, "BSS[%d] BW[%d, %s]\n",
+					ucBssIndex, ucChannelWidth,
+					apucOpBw[ucChannelWidth]);
 			}
 		}
 
@@ -9424,6 +9557,25 @@ static u_int8_t rlmCheckOpChangeParamForClient(struct BSS_INFO *prBssInfo,
 	if (RLM_NET_IS_11AX(prBssInfo)) { /* HE */
 		/* Check peer OP Channel Width */
 		switch (ucChannelWidth) {
+		/* Check peer OP Channel Width */
+#if (CFG_SUPPORT_802_11BE == 1)
+		case MAX_BW_320_1MHZ:
+		case MAX_BW_320_2MHZ:
+			if (!RLM_NET_IS_11BE(prBssInfo)) { /* BE */
+				DBGLOG(RLM, WARN,
+					"BSS[%d] target OP BW:%d is invalid for EHT OpMode change\n",
+				prBssInfo->ucBssIndex, ucChannelWidth);
+				return FALSE;
+			}
+			if (!(*prStaRec->ucEhtPhyCapInfo
+				& DOT11BE_PHY_CAP_320M_6G)) {
+				DBGLOG(RLM, WARN,
+					"Can't change BSS[%d] OP BW to:%d for peer EHT doesn't support BW320\n",
+				prBssInfo->ucBssIndex, ucChannelWidth);
+				return FALSE;
+			}
+			break;
+#endif /* #if (CFG_SUPPORT_802_11BE == 1) */
 		case MAX_BW_80_80_MHZ:
 			if (!HE_IS_PHY_CAP_CHAN_WIDTH_SET_BW80P80_5G(
 				prStaRec->ucHePhyCapInfo)) {

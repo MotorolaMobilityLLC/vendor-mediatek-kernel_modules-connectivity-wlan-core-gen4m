@@ -181,6 +181,9 @@ struct EHT_OP_INFO {
 #define HTC_EHT_OM_TX_NSTS_EXT_SHFT		8
 #define HTC_EHT_OM_RESERVED			BITS(9, 11)
 #define HTC_EHT_OM_RESERVED_SHFT		9
+#define EHT_OM_CH_WIDTH_BW320			0
+#define EHT_OM_CH_WIDTH_EXT_LT_BW320		0
+#define EHT_OM_CH_WIDTH_EXT_BW320		1
 
 /* 11ax_D3.0 9.2.4.6a.2 OM Control */
 #define EHT_HTC_HE_OM_RX_NSS                               BITS(16, 18)

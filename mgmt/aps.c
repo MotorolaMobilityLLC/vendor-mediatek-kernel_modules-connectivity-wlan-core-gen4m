@@ -911,6 +911,8 @@ static uint16_t apsCalculateScoreByBW(struct ADAPTER *prAdapter,
 	case CW_320_2MHZ:
 		u2Score = 100;
 		break;
+	default:
+		break;
 	}
 
 	return u2Score * gasMtkWeightConfig[eRoamType].ucBandWidthWeight;
