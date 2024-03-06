@@ -4117,6 +4117,7 @@ struct UNI_CMD_TESTMODE {
 	*   UNI_CMD_TESTMODE_TAG_CTRL      | 0x0 | UNI_CMD_TESTMODE_CTRL
 	*   UNI_CMD_TESTMODE_TAG_LISTMODE  | 0x1 | UNI_CMD_TESTMODE_LISTMODE
 	*   UNI_CMD_TESTMODE_TAG_XO_CAL    | 0x2 | UNI_CMD_TESTMODE_XO_CAL
+	*   UNI_CMD_TESTMODE_TAG_PL_CAL    | 0x3 | UNI_CMD_TESTMODE_PL_CAL
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -4125,6 +4126,7 @@ enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
 	UNI_CMD_TESTMODE_TAG_CTRL = 0x0,
 	UNI_CMD_TESTMODE_TAG_LISTMODE = 0x1,
 	UNI_CMD_TESTMODE_TAG_XO_CAL = 0x2,
+	UNI_CMD_TESTMODE_TAG_PL_CAL = 0x3,
 	UNI_CMD_TESTMODE_TAG_NUM
 };
 
@@ -4140,8 +4142,6 @@ enum ENUM_UNI_CMD_TESTMODE_CTRL_TAG {
  * @param[in] u2Tag         should be 0x00
  * @param[in] u2Length      the length of this TLV, should be 8
  * @param[in] ucAction      set action of testmode
- * @param[in] aucReserved   Reserved
- * @param[in] ucIcapLen     Icap data length
  * @param[in] aucReserved   Reserved
  * @param[in] u4OpMode      Operation mode
  * @param[in] u4ChannelFreq Frequency of channel
@@ -4161,6 +4161,7 @@ struct UNI_CMD_TESTMODE_CTRL {
 		struct PARAM_MTK_WIFI_TEST_STRUCT_EXT_T rRfATInfo;
 	}u;
 }__KAL_ATTRIB_PACKED__;
+/** @} */
 
 #define TESTMODE_LISTMODE_DATA_LEN	780
 
@@ -4184,6 +4185,31 @@ struct UNI_CMD_TESTMODE_LISTMODE {
 	uint16_t u2Length;
 	uint8_t aucData[TESTMODE_LISTMODE_DATA_LEN];
 } __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_XO_CAL
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_TAG_XO_CAL(0x02)
+ * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * Xtal calibration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u4CalType     the type of calibration
+ * @param[in] u4ClkSrc      the clock source for calibration
+ * @param[in] u4Mode        the mode for calibration
+ * @param[in] u4TargetReq   the target frequency for calibration
+ */
+/* Set testmode XO calibratrion cmd struct (Tag 0x02) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TESTMODE_XO_CAL_REQ {
+	uint32_t u4CalType;
+	uint32_t u4ClkSrc;
+	uint32_t u4Mode;
+	uint32_t u4TargetReq;
+} __KAL_ATTRIB_PACKED__;
+/** @} */
 
 /** @addtogroup UNI_CMD_ID_TESTMODE_XO_CAL
  * @{
@@ -4200,19 +4226,62 @@ struct UNI_CMD_TESTMODE_LISTMODE {
  */
 /* Set testmode XO calibratrion cmd struct (Tag 0x02) */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_TESTMODE_XO_CAL_REQ {
-	uint32_t u4CalType;
-	uint32_t u4ClkSrc;
-	uint32_t u4Mode;
-	uint32_t u4TargetReq;
-} __KAL_ATTRIB_PACKED__;
-
-__KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_XO_CAL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	struct UNI_CMD_TESTMODE_XO_CAL_REQ rXoReq;
 } __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_PL_CAL
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_TAG_PL_CAL(0x03)
+ * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * production line calibration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u4BandIdx		dbdc band index
+ * @param[in] u4PLCalId		production line calibration id
+ * @param[in] u4Action		calibration action
+ * @param[in] u4Flags		reserved field
+ * @param[in] u4InCnt		input parameter count
+ * @param[in] u4InData		input parameter data
+ */
+/* Set testmode PL calibratrion cmd struct (Tag 0x03) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TESTMODE_PL_CAL_REQ {
+	uint32_t u4BandIdx;
+	uint32_t u4PLCalId;
+	uint32_t u4Action;
+	uint32_t u4Flags;
+	uint32_t u4InCnt;
+	uint32_t u4InData[PLCAL_MAX_CNT];
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_CMD_ID_TESTMODE_PL_CAL
+ * @{
+ */
+/**
+ * This structure is used for UNI_CMD_TESTMODE_TAG_PL_CAL(0x03)
+ * of UNI_CMD_ID_TESTMODE_CTRL command (0x46)
+ * to do testmode production line calibration.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag         should be 0x03
+ * @param[in] u2Length      the length of this TLV
+ * @param[in] rPlReq        PL request parameters
+ */
+/* Set testmode PL calibratrion cmd struct (Tag 0x03) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TESTMODE_PL_CAL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_CMD_TESTMODE_PL_CAL_REQ rPlReq;
+} __KAL_ATTRIB_PACKED__;
+/** @} */
 
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_TESTMODE_RX_STAT {
@@ -6962,6 +7031,7 @@ struct UNI_EVENT_TESTMODE_CTRL {
 	*   ------------------------------|-----|--------------
 	*   UNI_EVENT_TESTMODE_TAG_RESULT | 0x0 | UNI_EVENT_TESTMODE_RESULT_TLV
 	*   UNI_EVENT_TESTMODE_TAG_XO_CAL | 0x1 | UNI_EVENT_TESTMODE_XO_CAL
+	*   UNI_EVENT_TESTMODE_TAG_PL_CAL | 0x2 | UNI_EVENT_TESTMODE_PL_CAL
 	*/
 } __KAL_ATTRIB_PACKED__;
 /** @} */
@@ -6970,6 +7040,7 @@ struct UNI_EVENT_TESTMODE_CTRL {
 enum UNI_EVENT_TESTMODE_TAG {
 	UNI_EVENT_TESTMODE_TAG_RESULT = 0x0,
 	UNI_EVENT_TESTMODE_TAG_XO_CAL = 0x1,
+	UNI_EVENT_TESTMODE_TAG_PL_CAL = 0x2,
 	UNI_EVENT_TESTMODE_TAG_NUM
 };
 
@@ -7011,9 +7082,16 @@ struct UNI_EVENT_TESTMODE_RESULT {
  * to report testmode XO calibration data.
  * @version Supported from ver:1.0.0.0
  *
- * @param[in] u2Tag                should be 0x01
- * @param[in] u2Length             the length of this TLV
- * @param[in] rXoCal              the XO calibration data
+ * @param[in] u4AxmFreq     XO AXM mode measured frequency
+ * @param[in] u4AxmC1Freq   XO AXM mode C1 frequency value
+ * @param[in] u4AxmC2Freq   XO AXM mode C2 frequency value
+ * @param[in] u4AxmC1Comp   XO AXM mode C1 compensation value
+ * @param[in] u4AxmC2Comp   XO AXM mode C2 compensation value
+ * @param[in] u4BtmFreq     XO BTM mode measured frequency
+ * @param[in] u4BtmC1Freq   XO BTM mode C1 frequency value
+ * @param[in] u4BtmC2Freq   XO BTM mode C2 frequency value
+ * @param[in] u4BtmC1Comp   XO BTM mode C1 compensation value
+ * @param[in] u4BtmC2Comp   XO BTM mode C2 compensation value
  */
 /* Testmode XO calibration data (Tag1) */
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7030,12 +7108,69 @@ struct UNI_EVENT_TESTMODE_XO_CAL_DATA {
 	uint32_t u4BtmC1Comp;
 	uint32_t u4BtmC2Comp;
 } __KAL_ATTRIB_PACKED__;
+/** @} */
 
+/** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_TESTMODE_TAG_XO_CAL (0x1) of
+ * UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * to report testmode XO calibration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag      should be 0x01
+ * @param[in] u2Length   the length of this TLV
+ * @param[in] rXoCal     the XO calibration data
+ */
+/* Testmode XO calibration data (Tag1) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_TESTMODE_XO_CAL {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	struct UNI_EVENT_TESTMODE_XO_CAL_DATA	rXoCal;
+	struct UNI_EVENT_TESTMODE_XO_CAL_DATA rXoCal;
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_TESTMODE_TAG_PL_CAL (0x2) of
+ * UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * to report testmode PL calibration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u4OutCnt    the number of output data
+ * @param[in] u4OutData   the output data
+ */
+/* Testmode PL calibration data (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_TESTMODE_PL_CAL_DATA {
+	uint32_t u4OutCnt;
+	uint32_t u4OutData[PLCAL_MAX_CNT];
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
+/** @addtogroup UNI_EVENT_ID_TESTMODE_CTRL
+ * @{
+ */
+/**
+ * This structure is used for UNI_EVENT_TESTMODE_TAG_PL_CAL (0x2) of
+ * UNI_EVENT_ID_TESTMODE_CTRL event (0x46)
+ * to report testmode PL calibration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag                should be 0x02
+ * @param[in] u2Length             the length of this TLV
+ * @param[in] rPlCal               the PL calibration data
+ */
+/* Testmode PL calibration data (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_TESTMODE_PL_CAL {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_EVENT_TESTMODE_PL_CAL_DATA rPlCal;
 } __KAL_ATTRIB_PACKED__;
 /** @} */
 
@@ -8567,6 +8702,11 @@ uint32_t nicUniCmdTestmodeXOCal(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
 #endif /* CFG_SUPPORT_XONVRAM */
+#if CFG_SUPPORT_PLCAL
+uint32_t nicUniCmdTestmodePlCal(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen);
+#endif /* CFG_SUPPORT_PLCAL */
 #if CFG_SUPPORT_QA_TOOL
 uint32_t nicUniExtCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
@@ -8766,6 +8906,10 @@ void nicUniEventQueryRfTestATInfo(struct ADAPTER
 void nicUniEventRfTestXoCal(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
 #endif /* CFG_SUPPORT_XONVRAM */
+#if CFG_SUPPORT_PLCAL
+void nicUniEventRfTestPlCal(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event);
+#endif /* CFG_SUPPORT_PLCAL */
 void nicUniEventQueryRxStatAll(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventQueryRxStatAllCon3(struct ADAPTER

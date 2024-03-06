@@ -1654,6 +1654,12 @@ else
 ccflags-y += -DCFG_SUPPORT_XONVRAM=0
 endif
 
+ifeq ($(CONFIG_MTK_WIFI_SUPPORT_PLCAL), y)
+ccflags-y += -DCFG_SUPPORT_PLCAL=1
+else
+ccflags-y += -DCFG_SUPPORT_PLCAL=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_GET_LTE_SAFE_CHANNEL), y)
 ccflags-y += -DCFG_SUPPORT_GET_LTE_SAFE_CHANNEL=1
 else

@@ -6610,6 +6610,54 @@ uint32_t nicUniCmdTestmodeXOCal(struct ADAPTER *ad,
 }
 #endif /* CFG_SUPPORT_XONVRAM */
 
+#if CFG_SUPPORT_PLCAL
+uint32_t nicUniCmdTestmodePlCal(struct ADAPTER *ad,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen)
+{
+	struct TEST_MODE_PL_CAL *data = pvQueryBuffer;
+	struct UNI_CMD_TESTMODE *uni_cmd;
+	struct UNI_CMD_TESTMODE_PL_CAL *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_TESTMODE_CTRL) +
+		sizeof(struct UNI_CMD_TESTMODE_PL_CAL);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	uni_cmd = (struct UNI_CMD_TESTMODE *) cnmMemAlloc(ad,
+		RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(RFTEST, ERROR,
+			"Allocate UNI_CMD_TESTMODE_CTRL ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	tag = (struct UNI_CMD_TESTMODE_PL_CAL *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_TESTMODE_TAG_PL_CAL;
+	tag->u2Length = sizeof(*tag);
+
+	tag->rPlReq.u4BandIdx = data->u4BandIdx;
+	tag->rPlReq.u4PLCalId = data->u4PLCalId;
+	tag->rPlReq.u4Action = data->u4Action;
+	tag->rPlReq.u4Flags = data->u4Flags;
+	tag->rPlReq.u4InCnt = data->u4InCnt;
+	memcpy(tag->rPlReq.u4InData, data->u4InData, sizeof(data->u4InData));
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_TESTMODE_CTRL,
+					FALSE,
+					TRUE,
+					TRUE,
+					nicUniEventRfTestPlCal,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					pvQueryBuffer,
+					u4QueryBufferLen);
+
+	cnmMemFree(ad, uni_cmd);
+	return status;
+}
+#endif /* CFG_SUPPORT_PLCAL */
+
 #if CFG_SUPPORT_QA_TOOL
 #if (CONFIG_WLAN_SERVICE == 1)
 uint32_t nicUniCmdTestmodeListmode(struct ADAPTER *ad,
@@ -9708,6 +9756,37 @@ void nicUniEventRfTestXoCal(struct ADAPTER *ad,
 		WLAN_STATUS_SUCCESS);
 }
 #endif /* CFG_SUPPORT_XONVRAM */
+
+#if CFG_SUPPORT_PLCAL
+void nicUniEventRfTestPlCal(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_TESTMODE_CTRL *evt;
+	struct UNI_EVENT_TESTMODE_PL_CAL *tag;
+	struct TEST_MODE_PL_CAL *response;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_TESTMODE_CTRL)
+		return;
+
+	evt = (struct UNI_EVENT_TESTMODE_CTRL *)uni_evt->aucBuffer;
+
+	tag = (struct UNI_EVENT_TESTMODE_PL_CAL *)evt->aucTlvBuffer;
+	if (tag->u2Tag != UNI_EVENT_TESTMODE_TAG_PL_CAL)
+		return;
+
+	if (cmd->pvInformationBuffer) {
+		response = cmd->pvInformationBuffer;
+		response->u4OutCnt = tag->rPlCal.u4OutCnt;
+		memcpy(response->u4OutData, tag->rPlCal.u4OutData,
+			sizeof(tag->rPlCal.u4OutData));
+	}
+
+	kalOidComplete(ad->prGlueInfo, cmd, cmd->u4InformationBufferLength,
+		WLAN_STATUS_SUCCESS);
+}
+#endif /* CFG_SUPPORT_PLCAL */
 
 #if CFG_SUPPORT_QA_TOOL
 #if (CFG_SUPPORT_CONNAC3X == 0)

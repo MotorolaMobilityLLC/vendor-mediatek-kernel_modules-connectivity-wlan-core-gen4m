@@ -1692,6 +1692,19 @@ struct TEST_MODE_XO_CAL {
 	uint32_t u4BtmC2Comp;
 };
 
+/* Align multiate tool */
+#define PLCAL_MAX_CNT	100
+struct TEST_MODE_PL_CAL {
+	uint32_t u4BandIdx;
+	uint32_t u4PLCalId;
+	uint32_t u4Action;
+	uint32_t u4Flags;
+	uint32_t u4InCnt;
+	uint32_t u4InData[PLCAL_MAX_CNT];
+	uint32_t u4OutCnt;
+	uint32_t u4OutData[PLCAL_MAX_CNT];
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -2386,5 +2399,10 @@ int wlanChipConfigWithType(struct ADAPTER *prAdapter,
 uint32_t wlanTestModeXoCal(struct ADAPTER *ad,
 	struct TEST_MODE_XO_CAL *data);
 #endif /* CFG_SUPPORT_XONVRAM */
+
+#if CFG_SUPPORT_PLCAL
+uint32_t wlanTestModePlCal(struct ADAPTER *ad,
+	struct TEST_MODE_PL_CAL *data);
+#endif /* CFG_SUPPORT_PLCAL */
 
 #endif /* _WLAN_LIB_H */

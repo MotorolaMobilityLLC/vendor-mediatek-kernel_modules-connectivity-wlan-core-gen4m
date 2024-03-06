@@ -4943,6 +4943,101 @@ static s_int32 hqa_set_ru_info_v3(
 
 #endif
 
+static s_int32 hqa_pl_calibration(
+	struct service_test *serv_test, struct hqa_frame *hqa_frame)
+{
+#if (CFG_SUPPORT_PLCAL == 0)
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, 2, SERV_STATUS_SUCCESS);
+	return SERV_STATUS_SUCCESS;
+#else
+	s_int32 ret = SERV_STATUS_SUCCESS;
+	u_int32 resp_len = 2; /* 2 bytes for status */
+	u_int32 i = 0, rsp_cnt = 0, in_ofs = 0, out_data = 0;
+	u_int32 *p_idx;
+	u_char *data = hqa_frame->data;
+	u_char *rsp_data = NULL;
+	size_t sz_u32 = sizeof(u_int32);
+	struct TEST_MODE_PL_CAL plcal = {0};
+	struct GLUE_INFO *glue = wlanGetGlueInfo();
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
+
+	if (glue == NULL) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: glue info is null\n", __func__));
+
+		ret = SERV_STATUS_AGENT_INVALID_NULL_POINTER;
+		goto err_out;
+	}
+
+	/* Parse input parameter
+	 * [0] band index (4 bytes), [1] plcal id (4 bytes)
+	 * [2] action id  (4 bytes), [3] flags    (4 bytes)
+	 * [4] In counter (4 bytes), [5] In data  (4 x 100 bytes)
+	 */
+	in_ofs = offsetof(struct TEST_MODE_PL_CAL, u4InData) / sz_u32;
+	for (i = 0; i < in_ofs; i++) {
+		p_idx = (&plcal.u4BandIdx) + i;
+		get_param_and_shift_buf(TRUE, sz_u32, &data, (u_char *)p_idx);
+	}
+
+	if (plcal.u4InCnt >= PLCAL_MAX_CNT) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: in cnt overflow(%d)\n", __func__, plcal.u4InCnt));
+
+		ret = SERV_STATUS_ENGINE_INVALID_LEN;
+		goto err_out;
+	}
+
+	/* Parse input data buffer */
+	for (i = 0; i < plcal.u4InCnt; i++) {
+		p_idx = plcal.u4InData + i;
+		get_param_and_shift_buf(TRUE, sz_u32, &data, (u_char *)p_idx);
+	}
+
+	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+		("%s, dbdc(%d) id(%d) act(%d) flags(%d) InCnt(%d)\n"
+		, __func__, plcal.u4BandIdx, plcal.u4PLCalId
+		, plcal.u4Action, plcal.u4Flags, plcal.u4InCnt));
+
+	/* Send unify command to firmware */
+	if (wlanTestModePlCal(glue->prAdapter, &plcal) != WLAN_STATUS_SUCCESS) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+		("%s: plcal fail\n", __func__));
+
+		ret = SERV_STATUS_ENGINE_FAIL;
+		goto err_out;
+	}
+
+	/* Check output counter */
+	if (plcal.u4OutCnt >= PLCAL_MAX_CNT) {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+			("%s: out cnt err(%d)\n", __func__, plcal.u4OutCnt));
+
+		ret = SERV_STATUS_ENGINE_INVALID_LEN;
+		goto err_out;
+	}
+
+	rsp_cnt = SERV_OS_HTONL(plcal.u4OutCnt);
+	rsp_data = hqa_frame->data + resp_len;
+	sys_ad_move_mem(rsp_data, (u_char *)&rsp_cnt, sz_u32);
+	resp_len += sz_u32;
+
+	for (i = 0; i < plcal.u4OutCnt; i++) {
+		out_data = SERV_OS_HTONL(*(plcal.u4OutData + i));
+		rsp_data = hqa_frame->data + resp_len;
+		sys_ad_move_mem(rsp_data, (u_char *)&out_data, sz_u32);
+		resp_len += sz_u32;
+	}
+
+err_out:
+	/* Update hqa_frame with response: status (2 bytes) */
+	update_hqa_frame(hqa_frame, resp_len, ret);
+	return ret;
+#endif /* CFG_SUPPORT_PL_CAL */
+}
+
 static s_int32 hqa_set_efem_mode(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
@@ -5141,6 +5236,7 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x90,  hqa_set_max_pac_ext},
 	{0x96,	hqa_set_ru_info_v2},
 #endif
+	{0x97,	hqa_pl_calibration},
 	{0x9a,	hqa_set_efem_mode},
 	{0x9b,	hqa_set_tx_gain},
 	{0x9c,	hqa_set_etssi_gain},
