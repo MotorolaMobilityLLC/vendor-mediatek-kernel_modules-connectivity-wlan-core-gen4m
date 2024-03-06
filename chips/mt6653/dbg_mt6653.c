@@ -1611,6 +1611,12 @@ void mt6653_dumpWfBusReg(struct ADAPTER *ad)
 
 	/* SectionC - Dump AHB APB timeout info */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_c);
+
+	/* SectionD - Dump WF2AP bus status */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_d);
+
+	/* SectionE - Dump WF2AP access detect info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_e);
 }
 
 static void mt6653_dumpConninfraBus(struct ADAPTER *ad)
