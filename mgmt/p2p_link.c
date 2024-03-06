@@ -646,7 +646,17 @@ void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, INFO, "ap=%d, main band=%d freq=%u, peer freq=%u\n",
 		fgIsApMode, eMainLinkBand, u4MainLinkFreq, u4PeerFreq);
 
-	/* <1> by own preference */
+	/* <1> by wifi cfg */
+	if (p2pLinkGet2ndLinkFreqByCfg(prAdapter, fgIsApMode, eMainLinkBand,
+				       u4MainLinkFreq, u4PreferFreq) ==
+	    WLAN_STATUS_SUCCESS) {
+		DBGLOG(P2P, INFO,
+			"freq[%u] by p2pLinkGet2ndLinkFreqByCfg\n",
+			*u4PreferFreq);
+		return;
+	}
+
+	/* <2> by own preference */
 	if (p2pLinkGet2ndLinkFreqByOwnPref(prAdapter,
 					   eMainLinkBand,
 					   u4MainLinkFreq,
@@ -658,7 +668,7 @@ void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/* <2> by peer's preference */
+	/* <3> by peer's preference */
 	if (p2pLinkGet2ndLinkFreqByPeerPref(prAdapter,
 					    eMainLinkBand,
 					    u4MainLinkFreq,
@@ -667,16 +677,6 @@ void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
 	    WLAN_STATUS_SUCCESS) {
 		DBGLOG(P2P, INFO,
 			"freq[%u] by p2pLinkGet2ndLinkFreqByPeerPref\n",
-			*u4PreferFreq);
-		return;
-	}
-
-	/* <3> by wifi cfg */
-	if (p2pLinkGet2ndLinkFreqByCfg(prAdapter, fgIsApMode, eMainLinkBand,
-				       u4MainLinkFreq, u4PreferFreq) ==
-	    WLAN_STATUS_SUCCESS) {
-		DBGLOG(P2P, INFO,
-			"freq[%u] by p2pLinkGet2ndLinkFreqByCfg\n",
 			*u4PreferFreq);
 		return;
 	}
