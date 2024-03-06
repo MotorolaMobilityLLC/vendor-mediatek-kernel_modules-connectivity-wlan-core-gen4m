@@ -473,6 +473,7 @@ extern int mtk_ccci_close_port(int index);
 extern enum MD_STATE ccci_fsm_get_md_state(int md_id);
 int md_rx_handler(void *data);
 void mddpNotifyDrvOwn(uint32_t u4Status);
+bool mddpIsMdDrvOwnAcquired(void);
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 #endif /* CFG_MTK_MDDP_SUPPORT */
 

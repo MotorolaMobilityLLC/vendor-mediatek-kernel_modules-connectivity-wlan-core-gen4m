@@ -60,7 +60,7 @@
 #include "connv3.h"
 #endif
 
-#if (CFG_PCIE_GEN_SWITCH == 1)
+#if (CFG_PCIE_GEN_SWITCH == 1 || CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 #include "mddp.h"
 #endif
 
@@ -1656,11 +1656,16 @@ static int mtk_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 		wait++;
 	}
 
-	if (wait >= 500) {
-		DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
-		ret = -EAGAIN;
-		goto SUSPEND_FW_OWN_FAIL;
-	}
+#if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+	if (mddpIsMdDrvOwnAcquired())
+		DBGLOG(HAL, STATE, "MD acqurie DrvOwn, Skip Check.\n");
+	else
+#endif /* CFG_MTK_SUPPORT_LIGHT_MDDP == 1 */
+		if (wait >= 500) {
+			DBGLOG(HAL, ERROR, "Set FW Own Timeout !!\n");
+			ret = -EAGAIN;
+			goto SUSPEND_FW_OWN_FAIL;
+		}
 
 #if (CFG_SUPPORT_PCIE_ASPM == 1) && (CFG_SUPPORT_ASPM_IN_CE_PCI_SUSPEND == 1)
 	DBGLOG(HAL, STATE, "not switch D-state due to ASPM enable!\n");

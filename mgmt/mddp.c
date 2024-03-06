@@ -3143,6 +3143,15 @@ void mddpStopMdRxThread(void)
 		g_rSettings.notify_md_thread = NULL;
 	}
 }
+
+bool mddpIsMdDrvOwnAcquired(void)
+{
+	if (g_rSettings.is_drv_own_acquired == FALSE) {
+		DBGLOG(INIT, WARN, "[MDDP] Drv own not acquired.\n");
+		return FALSE;
+	}
+	return TRUE;
+}
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 #endif /* CFG_MTK_MDDP_SUPPORT */
