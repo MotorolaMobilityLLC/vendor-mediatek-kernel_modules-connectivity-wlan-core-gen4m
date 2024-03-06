@@ -656,8 +656,14 @@ ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), usb)
     ccflags-y += -DCFG_SUPPORT_RX_NAPI=0
     ccflags-y += -DCFG_SUPPORT_RX_GRO=0
 endif
-ccflags-y += -DCFG_P2P_NUM=3
-ccflags-y += -DCFG_STA_NUM=3
+
+ifneq ($(CONFIG_WIFI_LIBER_2G2A), y)
+    CONFIG_BAND_NUM=3
+    CONFIG_IFACE_CONCURRENT_MODE=2
+    CONFIG_MTK_WIFI_11BE_EMLSR=y
+    ccflags-y += -DCFG_P2P_NUM=3
+    ccflags-y += -DCFG_STA_NUM=3
+endif
 
 ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
     CONFIG_SUPPORT_PRE_ON_PHY_ACTION=y
@@ -671,7 +677,6 @@ ifeq ($(filter 1 2 y,$(CONFIG_MTK_FPGA_PLATFORM)),)
         endif
     endif
 endif
-CONFIG_IFACE_CONCURRENT_MODE=2
 
 # ===== project override =====
 ifeq ($(CONFIG_MTK_EAP), y)
