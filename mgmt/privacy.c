@@ -1452,7 +1452,6 @@ enum ENUM_EAPOL_KEY_TYPE_T secGetEapolKeyType(uint8_t *pucPkt)
 			return EAPOL_KEY_4_OF_4;
 	} while (FALSE);
 
-	DBGLOG(RSN, WARN, "unknown EAPOL key type, u2KeyInfo:0x%x", u2KeyInfo);
 	return EAPOL_KEY_NOT_KEY;
 }
 
