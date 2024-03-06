@@ -10230,6 +10230,7 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t fail_cnt = 0;
+	uint8_t fgIsValidScanDone = TRUE;
 	int i;
 	struct UNI_EVENT_SCAN_DONE *scan_done;
 	struct EVENT_SCAN_DONE legacy = {0};
@@ -10325,7 +10326,26 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	if (tags_len != offset)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 
-	scnEventScanDone(ad, &legacy, TRUE);
+	/* Check whether FW Event State and
+	 * Complete Channel Number are correct.
+	 */
+	if (legacy.ucCurrentState != FW_SCAN_STATE_SCAN_DONE) {
+		DBGLOG(NIC, ERROR, "ucCurrentState(%d) is Invalid!\n",
+			legacy.ucCurrentState);
+		fgIsValidScanDone = FALSE;
+	}
+	if (legacy.ucSparseChannelValid == 1 &&
+		(legacy.ucCompleteChanCount !=
+			legacy.ucSparseChannelArrayValidNum)){
+		DBGLOG(NIC, ERROR,
+			"CompleteChnlCnt(%d) and ChnlArrNum(%d) are mismatched!\n"
+			, legacy.ucCompleteChanCount,
+			legacy.ucSparseChannelArrayValidNum);
+		fgIsValidScanDone = FALSE;
+	}
+
+	if (fgIsValidScanDone == TRUE)
+		scnEventScanDone(ad, &legacy, TRUE);
 }
 
 uint32_t nicUniUpdateStaRecFastAll(
