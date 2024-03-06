@@ -302,7 +302,9 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	[UNI_EVENT_ID_MLO] = nicUniEventMLSRSwitchDone,
 #endif
-
+#if (CFG_SUPPORT_802_11AX == 1)
+	[UNI_EVENT_ID_OMI] = nicUniEventOmi,
+#endif
 };
 
 extern struct RX_EVENT_HANDLER arEventTable[];
@@ -13302,6 +13304,206 @@ void nicUniEventTxPower(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 }
 
+#if (CFG_SUPPORT_802_11AX == 1)
+static void nicEventHandleOmi(struct ADAPTER *prAdapter,
+	struct UNI_EVENT_NOTIFY_OMI_RX_T *prOmiEvent)
+{
+	struct STA_RECORD *prStaRec;
+	struct BSS_INFO *prBssInfo;
+	uint16_t u2HeRxMcsMapAssoc;
+	uint8_t ucMaxBwAllowed;
+	uint8_t ucStaRecIdx;
+	uint8_t ucMacRxNss;
+
+	if (!prAdapter || !prOmiEvent)
+		return;
+
+	ucStaRecIdx =
+		secGetStaIdxByWlanIdx(prAdapter, prOmiEvent->u2StaRecIndex);
+	prStaRec = cnmGetStaRecByIndex(prAdapter, ucStaRecIdx);
+	if (!prStaRec) {
+		DBGLOG(NIC, WARN, "Can not find prStaRec\n");
+		return;
+	}
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(NIC, WARN, "Can not find prBssInfo\n");
+		return;
+	}
+
+	u2HeRxMcsMapAssoc = prStaRec->u2HeRxMcsMapBW80Assoc;
+	ucMaxBwAllowed =
+		cnmGetBssMaxBw(prAdapter, prBssInfo->ucBssIndex);
+
+	if (prOmiEvent->ucRxNss == VHT_OP_MODE_NSS_2) {
+		/* CFG_SUPPORT_802_11AX */
+		prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
+			(~(VHT_CAP_INFO_MCS_1SS_MASK |
+			VHT_CAP_INFO_MCS_2SS_MASK));
+
+		prStaRec->u2VhtRxMcsMap |=
+			(prStaRec->u2VhtRxMcsMapAssoc &
+			(VHT_CAP_INFO_MCS_1SS_MASK |
+			VHT_CAP_INFO_MCS_2SS_MASK));
+
+		prStaRec->u2HeRxMcsMapBW80 = BITS(0, 15) &
+			(~(HE_CAP_INFO_MCS_1SS_MASK |
+			HE_CAP_INFO_MCS_2SS_MASK));
+
+		prStaRec->u2HeRxMcsMapBW80 |=
+			(u2HeRxMcsMapAssoc &
+			(HE_CAP_INFO_MCS_1SS_MASK |
+			HE_CAP_INFO_MCS_2SS_MASK));
+
+		if (ucMaxBwAllowed >= MAX_BW_160MHZ)
+			u2HeRxMcsMapAssoc = prStaRec->u2HeRxMcsMapBW160Assoc;
+
+		if (ucMaxBwAllowed >= MAX_BW_160MHZ) {
+			prStaRec->u2HeRxMcsMapBW160 =
+				BITS(0, 15) &
+				(~(HE_CAP_INFO_MCS_1SS_MASK |
+				HE_CAP_INFO_MCS_2SS_MASK));
+
+			prStaRec->u2HeRxMcsMapBW160 |=
+				(u2HeRxMcsMapAssoc &
+				(HE_CAP_INFO_MCS_1SS_MASK |
+				HE_CAP_INFO_MCS_2SS_MASK));
+		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		prStaRec->u2He6gBandCapInfo |=
+			HE_6G_CAP_INFO_SM_POWER_SAVE;
+#endif
+
+	} else {
+		/* CFG_SUPPORT_802_11AX */
+		prStaRec->u2VhtRxMcsMap = BITS(0, 15) &
+			(~VHT_CAP_INFO_MCS_1SS_MASK);
+
+		prStaRec->u2VhtRxMcsMap |=
+			(prStaRec->u2VhtRxMcsMapAssoc &
+			VHT_CAP_INFO_MCS_1SS_MASK);
+
+		prStaRec->u2HeRxMcsMapBW80 = BITS(0, 15) &
+			(~HE_CAP_INFO_MCS_1SS_MASK);
+
+		prStaRec->u2HeRxMcsMapBW80 |=
+			(u2HeRxMcsMapAssoc &
+			HE_CAP_INFO_MCS_1SS_MASK);
+
+		if (ucMaxBwAllowed >= MAX_BW_160MHZ)
+			u2HeRxMcsMapAssoc = prStaRec->u2HeRxMcsMapBW160Assoc;
+
+		if (ucMaxBwAllowed >= MAX_BW_160MHZ) {
+			prStaRec->u2HeRxMcsMapBW160 =
+				BITS(0, 15) &
+				(~HE_CAP_INFO_MCS_1SS_MASK);
+
+			prStaRec->u2HeRxMcsMapBW160 |=
+				(u2HeRxMcsMapAssoc &
+				HE_CAP_INFO_MCS_1SS_MASK);
+		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		prStaRec->u2He6gBandCapInfo &=
+			~HE_6G_CAP_INFO_SM_POWER_SAVE;
+#endif
+	}
+
+	DBGLOG(NIC, STATE,
+		"RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+		prStaRec->u2VhtRxMcsMap,
+		prStaRec->u2VhtRxMcsMapAssoc);
+	DBGLOG(NIC, STATE,
+		"HeBw80 RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+		prStaRec->u2HeRxMcsMapBW80,
+		prStaRec->u2HeRxMcsMapBW80Assoc);
+	DBGLOG(NIC, STATE,
+		", HeBW160 RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+		prStaRec->u2HeRxMcsMapBW160,
+		prStaRec->u2HeRxMcsMapBW160Assoc);
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	DBGLOG(NIC, STATE,
+		"He6gBandCapInfo:0x%x\n",
+		prStaRec->u2He6gBandCapInfo);
+#endif
+
+	ucMacRxNss = prOmiEvent->ucRxNss + 1;
+	if (ucMacRxNss > wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex))
+		ucMacRxNss =
+			wlanGetSupportNss(prAdapter, prBssInfo->ucBssIndex);
+
+#if (CFG_SUPPORT_802_11BE == 1)
+	if (prOmiEvent->ucBWExt > 0 && prOmiEvent->ucBW == 0) {
+		STAREC_SET_EHT_RX_320MHZ_MCS0_9_NSS(prStaRec, ucMacRxNss);
+		STAREC_SET_EHT_RX_320MHZ_MCS10_11_NSS(prStaRec, ucMacRxNss);
+		STAREC_SET_EHT_RX_320MHZ_MCS12_13_NSS(prStaRec, ucMacRxNss);
+	}
+	DBGLOG(NIC, STATE,
+		"McsMap320MHz[0]: %u, McsMap320MHz[1]: %u, McsMap320MHz[2]: %u\n",
+		prStaRec->aucMcsMap320MHz[0],
+		prStaRec->aucMcsMap320MHz[1],
+		prStaRec->aucMcsMap320MHz[2]);
+
+	if (prOmiEvent->ucBW >= VHT_OP_MODE_CHANNEL_WIDTH_160_80P80
+		|| prOmiEvent->ucBWExt > 0) {
+		STAREC_SET_EHT_RX_160MHZ_MCS0_9_NSS(prStaRec, ucMacRxNss);
+		STAREC_SET_EHT_RX_160MHZ_MCS10_11_NSS(prStaRec, ucMacRxNss);
+		STAREC_SET_EHT_RX_160MHZ_MCS12_13_NSS(prStaRec, ucMacRxNss);
+	}
+#endif
+
+	DBGLOG(NIC, STATE,
+		"McsMap160MHz[0]: %u, McsMap160MHz[1]: %u, McsMap160MHz[2]: %u\n",
+		prStaRec->aucMcsMap160MHz[0],
+		prStaRec->aucMcsMap160MHz[1],
+		prStaRec->aucMcsMap160MHz[2]);
+
+	cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
+	cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
+}
+#endif
+
+#if (CFG_SUPPORT_802_11AX == 1)
+void nicUniEventOmi(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_UPDATE_OMI);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_NOTIFY_OMI_RX: {
+			struct UNI_EVENT_NOTIFY_OMI_RX_T *omi_rx =
+				(struct UNI_EVENT_NOTIFY_OMI_RX_T *) tag;
+			DBGLOG(NIC, STATE,
+				"omi_rx tag[%u] len[%u] Idx[%u] Rx[%u] Tx[%u] Bw[%u]\n",
+				omi_rx->u2Tag, omi_rx->u2Length,
+				omi_rx->u2StaRecIndex, omi_rx->ucRxNss,
+				omi_rx->ucTxNsts, omi_rx->ucBW);
+#if (CFG_SUPPORT_802_11BE == 1)
+			DBGLOG(NIC, STATE,
+				"RxNssExt[%u] BWExt[%u] TxNstsExt[%u]\n",
+				omi_rx->ucRxNssExt, omi_rx->ucBWExt,
+				omi_rx->ucTxNstsExt);
+#endif
+			nicEventHandleOmi(ad, omi_rx);
+		}
+			break;
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+}
+#endif
+
 #if (CFG_PCIE_GEN_SWITCH == 1)
 uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -13337,4 +13539,3 @@ uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 #endif
-

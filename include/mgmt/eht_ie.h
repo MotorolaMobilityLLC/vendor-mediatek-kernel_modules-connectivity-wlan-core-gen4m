@@ -201,6 +201,21 @@ struct EHT_OP_INFO {
 #define EHT_HTC_HE_OM_UL_MU_DATA_DISABLE                   BIT(27)
 #define EHT_HTC_HE_OM_UL_MU_DATA_DISABLE_SHFT              27
 
+/* MCS-NSS map (except 20MHz only sta) byte0 */
+#define EHT_MCS_MAP_RX_MCS0_9_NSS_SHIFT              0
+#define EHT_MCS_MAP_RX_MCS0_9_NSS_MASK               BITS(0, 3)
+#define EHT_MCS_MAP_TX_MCS0_9_NSS_SHIFT              4
+#define EHT_MCS_MAP_TX_MCS0_9_NSS_MASK               BITS(4, 7)
+/* MCS-NSS map (except 20MHz only sta) byte1 */
+#define EHT_MCS_MAP_RX_MCS10_11_NSS_SHIFT            0
+#define EHT_MCS_MAP_RX_MCS10_11_NSS_MASK             BITS(0, 3)
+#define EHT_MCS_MAP_TX_MCS10_11_NSS_SHIFT            4
+#define EHT_MCS_MAP_TX_MCS10_11_NSS_MASK             BITS(4, 7)
+/* MCS-NSS map (except 20MHz only sta) byte2 */
+#define EHT_MCS_MAP_RX_MCS12_13_NSS_SHIFT            0
+#define EHT_MCS_MAP_RX_MCS12_13_NSS_MASK             BITS(0, 3)
+#define EHT_MCS_MAP_TX_MCS12_13_NSS_SHIFT            4
+#define EHT_MCS_MAP_TX_MCS12_13_NSS_MASK             BITS(4, 7)
 
 #define EHT_SET_HTC_HE_VARIANT(_u4HTC) \
 	(_u4HTC |= EHT_HTC_HE_VARIANT)
@@ -282,6 +297,60 @@ struct EHT_OP_INFO {
 (_u4HTC) |= (((_tx_nsts) << (HTC_EHT_OM_TX_NSTS_EXT_SHFT)) \
 	& (HTC_EHT_OM_TX_NSTS_EXT)); \
 }
+
+#define STAREC_SET_EHT_RX_160MHZ_MCS0_9_NSS(_prStaRec, _ucNss) \
+	do { \
+		(_prStaRec)->aucMcsMap160MHz[0] &= \
+		(~(EHT_MCS_MAP_RX_MCS0_9_NSS_MASK)); \
+		(_prStaRec)->aucMcsMap160MHz[0] |= \
+		((uint32_t)(_ucNss << EHT_MCS_MAP_RX_MCS0_9_NSS_SHIFT) & \
+		EHT_MCS_MAP_RX_MCS0_9_NSS_MASK); \
+	} while (0)
+
+#define STAREC_SET_EHT_RX_160MHZ_MCS10_11_NSS(_prStaRec, _ucNss) \
+	do { \
+		(_prStaRec)->aucMcsMap160MHz[1] &= \
+		(~(EHT_MCS_MAP_RX_MCS10_11_NSS_MASK)); \
+		(_prStaRec)->aucMcsMap160MHz[1] |= \
+		((uint32_t)(_ucNss << EHT_MCS_MAP_RX_MCS10_11_NSS_SHIFT) & \
+		EHT_MCS_MAP_RX_MCS10_11_NSS_MASK); \
+	} while (0)
+
+#define STAREC_SET_EHT_RX_160MHZ_MCS12_13_NSS(_prStaRec, _ucNss) \
+	do { \
+		(_prStaRec)->aucMcsMap160MHz[2] &= \
+		(~(EHT_MCS_MAP_RX_MCS12_13_NSS_MASK)); \
+		(_prStaRec)->aucMcsMap160MHz[2] |= \
+		((uint32_t)(_ucNss << EHT_MCS_MAP_RX_MCS12_13_NSS_SHIFT) & \
+		EHT_MCS_MAP_RX_MCS12_13_NSS_MASK); \
+	} while (0)
+
+#define STAREC_SET_EHT_RX_320MHZ_MCS0_9_NSS(_prStaRec, _ucNss) \
+	do { \
+		(_prStaRec)->aucMcsMap320MHz[0] &= \
+		(~(EHT_MCS_MAP_RX_MCS0_9_NSS_MASK)); \
+		(_prStaRec)->aucMcsMap320MHz[0] |= \
+		((uint32_t)(_ucNss << EHT_MCS_MAP_RX_MCS0_9_NSS_SHIFT) & \
+		EHT_MCS_MAP_RX_MCS0_9_NSS_MASK); \
+	} while (0)
+
+#define STAREC_SET_EHT_RX_320MHZ_MCS10_11_NSS(_prStaRec, _ucNss) \
+	do { \
+		(_prStaRec)->aucMcsMap320MHz[1] &= \
+		(~(EHT_MCS_MAP_RX_MCS10_11_NSS_MASK)); \
+		(_prStaRec)->aucMcsMap320MHz[1] |= \
+		((uint32_t)(_ucNss << EHT_MCS_MAP_RX_MCS10_11_NSS_SHIFT) & \
+		EHT_MCS_MAP_RX_MCS10_11_NSS_MASK); \
+	} while (0)
+
+#define STAREC_SET_EHT_RX_320MHZ_MCS12_13_NSS(_prStaRec, _ucNss) \
+	do { \
+		(_prStaRec)->aucMcsMap320MHz[2] &= \
+		(~(EHT_MCS_MAP_RX_MCS12_13_NSS_MASK)); \
+		(_prStaRec)->aucMcsMap320MHz[2] |= \
+		((uint32_t)(_ucNss << EHT_MCS_MAP_RX_MCS12_13_NSS_SHIFT) & \
+		EHT_MCS_MAP_RX_MCS12_13_NSS_MASK); \
+	} while (0)
 
 /* EHT PHY Capabilities Information field */
 
