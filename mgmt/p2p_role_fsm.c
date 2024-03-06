@@ -1568,8 +1568,16 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 				   &prP2pStartAPMsg->rUnsolProbe,
 				   prP2pRoleFsmInfo->ucBssIndex);
 
-	if (bSkipRdd || bSkipCac)
+	if (bSkipRdd || bSkipCac) {
 		p2pRoleFsmRunEventStartAP(prAdapter, prMsgHdr);
+		if (bSkipCac) {
+			kalP2PCacStartedUpdate(prAdapter->prGlueInfo,
+				prP2pRoleFsmInfo->ucRoleIndex);
+
+			kalP2PCacFinishedUpdate(prAdapter->prGlueInfo,
+				prP2pRoleFsmInfo->ucRoleIndex);
+		}
+	}
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	else {
 		prP2pSpecificBssInfo->fgAddPwrConstrIe = TRUE;

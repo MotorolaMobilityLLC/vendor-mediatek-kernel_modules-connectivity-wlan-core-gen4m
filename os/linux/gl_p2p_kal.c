@@ -1905,13 +1905,18 @@ void kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct net_device *prNetdevice = (struct net_device *) NULL;
-
-	DBGLOG(INIT, INFO, "CAC Started event\n");
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
 
 	do {
 		if (prGlueInfo == NULL)
 			break;
 
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+			prGlueInfo->prAdapter, ucRoleIndex);
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
+		DBGLOG(INIT, INFO, "CAC Started event\n");
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
 		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
@@ -1940,7 +1945,13 @@ void kalP2PCacStartedUpdate(struct GLUE_INFO *prGlueInfo,
 			kalP2pIndicateRadarEvent(prGlueInfo,
 				ucRoleIndex,
 				WIFI_EVENT_DFS_OFFLOAD_CAC_STARTED,
-			prGlueP2pInfo->chandefCsa.chan->center_freq);
+				prGlueP2pInfo->chandefCsa.chan->center_freq);
+		else {
+			kalP2pIndicateRadarEvent(prGlueInfo,
+				ucRoleIndex,
+				WIFI_EVENT_DFS_OFFLOAD_CAC_STARTED,
+				prP2pConnReqInfo->u2PriChnlFreq);
+		}
 	} while (FALSE);
 
 }
@@ -1950,13 +1961,18 @@ void kalP2PCacFinishedUpdate(struct GLUE_INFO *prGlueInfo,
 {
 	struct GL_P2P_INFO *prGlueP2pInfo = (struct GL_P2P_INFO *) NULL;
 	struct net_device *prNetdevice = (struct net_device *) NULL;
-
-	DBGLOG(INIT, INFO, "CAC Finished event\n");
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
+		(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct P2P_CONNECTION_REQ_INFO *prP2pConnReqInfo;
 
 	do {
 		if (prGlueInfo == NULL)
 			break;
+		prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(
+			prGlueInfo->prAdapter, ucRoleIndex);
+		prP2pConnReqInfo = &(prP2pRoleFsmInfo->rConnReqInfo);
 
+		DBGLOG(INIT, INFO, "CAC Finished event\n");
 		prGlueP2pInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
 
 		if ((prGlueP2pInfo->aprRoleHandler != NULL) &&
@@ -1987,6 +2003,12 @@ void kalP2PCacFinishedUpdate(struct GLUE_INFO *prGlueInfo,
 				ucRoleIndex,
 				WIFI_EVENT_DFS_OFFLOAD_CAC_FINISHED,
 				prGlueP2pInfo->chandefCsa.chan->center_freq);
+		else {
+			kalP2pIndicateRadarEvent(prGlueInfo,
+				ucRoleIndex,
+				WIFI_EVENT_DFS_OFFLOAD_CAC_FINISHED,
+				prP2pConnReqInfo->u2PriChnlFreq);
+		}
 	} while (FALSE);
 
 }				/* kalP2PRddDetectUpdate */
@@ -3028,7 +3050,6 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
-
 int32_t kalP2pFuncPreStartRdd(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucRoleIdx,
@@ -3040,7 +3061,6 @@ int32_t kalP2pFuncPreStartRdd(
 	struct MSG_P2P_DFS_CAC *prP2pDfsCacMsg =
 		(struct MSG_P2P_DFS_CAC *) NULL;
 	struct RF_CHANNEL_INFO rRfChnlInfo;
-
 
 	if ((prGlueInfo == NULL) || (chandef == NULL))
 		goto out;
@@ -3066,6 +3086,7 @@ int32_t kalP2pFuncPreStartRdd(
 	kalMemCopy(prGlueInfo->prP2PInfo[ucRoleIdx]->chandefCsa.chan,
 		chandef->chan, sizeof(struct ieee80211_channel));
 	prGlueInfo->prP2PInfo[ucRoleIdx]->cac_time_ms = cac_time_ms;
+
 
 	if (chandef) {
 		kalChannelFormatSwitch(chandef, chandef->chan,
