@@ -10836,6 +10836,11 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, prNANSpecInfo->ucBssIndex);
 
+	if (!prBssInfo) {
+		DBGLOG(REQ, ERROR, "NAN Invalid BSS_INFO\n");
+		return -1;
+	}
+
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
@@ -10843,7 +10848,7 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
 		"\n[NAN Info]\n");
 	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-		"Cluster["MACSTR"] [NSS:%d] %s %s %s\n",
+		"Cluster["MACSTR"] [NSS:%d] %s %s\n",
 		MAC2STR(prNANSpecInfo->aucClusterId),
 		prAdapter->rWifiVar.ucNSS,
 		prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT ? "[HT]" : "",
@@ -10898,17 +10903,18 @@ int priv_driver_get_nan_stat(struct net_device *prNetDev, char *pcCommand,
 	ranging_list = &prAdapter->rRangingInfo.ranging_list;
 	dl_list_for_each(prRng, ranging_list,
 			struct _NAN_RANGING_INSTANCE_T, list) {
-		if (prRng) {
-			prRngCtrl = &prRng->ranging_ctrl;
-			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
-				"\nPeer[" MACSTR "] %s State:[%u] Range: %u cm\n",
-				MAC2STR(prRng->ranging_ctrl.aucPeerAddr),
-				prRngCtrl->ucRole == NAN_PROTOCOL_INITIATOR ?
-					"[INITIATOR]" : "[RESPONDER]",
-				prRngCtrl->eCurrentState,
-				prRngCtrl->range_measurement_cm ?
-					prRngCtrl->range_measurement_cm : 0);
-		}
+		if (prRng == NULL)
+			return -1;
+
+		prRngCtrl = &prRng->ranging_ctrl;
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\nPeer[" MACSTR "] %s State:[%u] Range: %u cm\n",
+			MAC2STR(prRng->ranging_ctrl.aucPeerAddr),
+			prRngCtrl->ucRole == NAN_PROTOCOL_INITIATOR ?
+				"[INITIATOR]" : "[RESPONDER]",
+			prRngCtrl->eCurrentState,
+			prRngCtrl->range_measurement_cm ?
+				prRngCtrl->range_measurement_cm : 0);
 	}
 
 	return i4BytesWritten;
@@ -19962,13 +19968,12 @@ int priv_driver_epcs_send(struct net_device *prNetDev, char *pcCommand,
 	uint8_t *pucType = NULL;
 	uint8_t ucBssIndex = 0;
 
-	if (kalStrnLen(pcCommand, i4TotalLen) > kalStrLen(CMD_EPCS_SEND)) {
-		if (strnicmp(pcCommand + kalStrLen(CMD_EPCS_SEND),
-				" type=", 6) == 0) {
-			pucType = pcCommand + kalStrLen(CMD_EPCS_SEND) + 6;
-			DBGLOG(REQ, INFO,
-				"SEND_EPCS, type=%s\r\n", pucType);
-		}
+	if ((kalStrnLen(pcCommand, i4TotalLen) > kalStrLen(CMD_EPCS_SEND))
+		&& (strnicmp(pcCommand + kalStrLen(CMD_EPCS_SEND),
+		" type=", 6) == 0)) {
+		pucType = pcCommand + kalStrLen(CMD_EPCS_SEND) + 6;
+		DBGLOG(REQ, INFO,
+			"SEND_EPCS, type=%s\r\n", pucType);
 	} else {
 		DBGLOG(REQ, INFO,
 			"wrong format! expected foramt: EPCS_SEND type=3");
