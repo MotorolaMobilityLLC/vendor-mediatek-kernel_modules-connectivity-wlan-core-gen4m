@@ -297,6 +297,14 @@ enum ENUM_CMD_TX_RESULT {
 	CMD_TX_RESULT_NUM
 };
 
+#if CFG_SUPPORT_DISABLE_DATA_DDONE_INTR
+enum ENUM_PKT_PATH {
+	PKT_PATH_TX = 0,
+	PKT_PATH_RX,
+	PKT_PATH_ALL
+};
+#endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -422,6 +430,12 @@ enum ENUM_CMD_TX_RESULT {
 #define EVENT_TX_LOW_RATE_THRESHOLD	20
 #define EVENT_RX_LOW_RATE_THRESHOLD	20
 #define TRAFFIC_RHRESHOLD	150
+
+#define LOW_RATE_MONITOR_INTERVAL	5
+#define LOW_RATE_MONITOR_THRESHOLD	20
+#define LOW_RATE_MONITOR_TPUT_THRESHOLD	10
+#define LOW_RATE_MONITOR_MPDU_THRESHOLD	16
+#define LOW_RATE_MONITOR_EVENT_REPORT_INTERVAL	5
 
 enum ENUM_VENDOR_DRIVER_EVENT {
 	EVENT_TEST_MODE,
@@ -2124,6 +2138,9 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 			       _fgForceReport) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 #endif
+
+#define kalGetTpMbpsByBssId(prAdapter, ePath, ucBssIdx) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalVendorEvtRssiBeyondRange(_prAdapter, _ucBssIdx, _i4Rssi) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)

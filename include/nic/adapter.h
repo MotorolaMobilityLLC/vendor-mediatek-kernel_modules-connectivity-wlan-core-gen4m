@@ -1331,6 +1331,15 @@ struct WIFI_VAR {
 	uint32_t u4RxLowRateThreshole;
 	uint32_t u4ReportEventInterval;
 	uint32_t u4TrafficThreshold;
+
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	uint8_t fgLowRateUevtEn;
+	uint32_t u4LowRateUevtIntv;
+	uint32_t u4LowRateUevtTh;
+	uint32_t u4LowRateUevtTputTh;
+	uint64_t u8LowRateUevtMpduTh;
+	uint32_t u4LowRateUevtReptIntv;
+#endif
 #endif
 
 #if CFG_SUPPORT_HE_ER
@@ -2724,6 +2733,15 @@ struct ADAPTER {
 
 #if CFG_SUPPORT_DATA_STALL
 	OS_SYSTIME tmReportinterval;
+
+#if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	bool fgSendTxUevt;
+	bool fgSendRxUevt;
+	uint32_t u4LowTxRateDur;
+	uint32_t u4LowRxRateDur;
+	uint32_t u4LastLowTxRateUevt;
+	uint32_t u4LastLowRxRateUevt;
+#endif
 #endif
 
 #if CFG_SUPPORT_BIGDATA_PIP

@@ -1448,6 +1448,7 @@ struct WIFI_LINK_QUALITY_INFO {
 	uint64_t u8LastTxTotalCount;
 	uint64_t u8LastTxFailCount;
 	uint64_t u8LastIdleSlotCount;
+	uint64_t u8LastRxTotalCount;
 };
 #endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
 
