@@ -9395,7 +9395,8 @@ p2pFunNotifyChnlSwitch(struct ADAPTER *prAdapter,
 			prBssInfo,
 			prNewChannelInfo,
 			prAdapter->rWifiVar.ucChannelSwitchCount,
-			(prAdapter->rWifiVar.ucChannelSwitchMode == 1));
+			(prAdapter->rWifiVar.ucChannelSwitchMode == 1),
+			FALSE);
 #if CFG_ENABLE_CSA_BLOCK_SCAN
 		u4TimeoutMs = DEFAULT_P2P_CSA_TIMEOUT_MS;
 		u4TimeoutMs += TU_TO_MSEC(prBssInfo->u2BeaconInterval) *

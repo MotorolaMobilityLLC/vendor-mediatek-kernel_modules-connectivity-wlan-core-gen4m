@@ -2509,7 +2509,8 @@ int mtk_p2p_cfg80211_channel_switch(struct wiphy *wiphy,
 			prBssInfo,
 			&rRfChnlInfo,
 			params->count,
-			params->block_tx);
+			params->block_tx,
+			TRUE);
 
 		i4Rslt = 0; /* Return Success */
 	} while (FALSE);
