@@ -353,6 +353,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = set_cas_ex_policy,
 		.u4PolicySize = ARRAY_SIZE(set_cas_ex_policy)
 	},
+	{
+		.pcCmdStr  = CMD_DISABLEPARTIALSCAN,
+		.pfHandler = priv_driver_set_disablepartial,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = set_flag_policy,
+		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
+	},
 #if (CFG_SUPPORT_WFD == 1)
 	{
 		.pcCmdStr  = CMD_MIRACAST,
