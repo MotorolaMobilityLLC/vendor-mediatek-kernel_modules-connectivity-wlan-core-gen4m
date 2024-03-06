@@ -1477,10 +1477,19 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 
 	kalMemSet(prMlInfo, 0, sizeof(struct MULTI_LINK_INFO));
 
+	if (IE_SIZE(pucIE) > u2Left) {
+		DBGLOG(ML, INFO, "invalid IE_SIZE=%d, left=%d\n",
+			IE_SIZE(pucIE), u2Left);
+		return;
+	}
+
 	end = pucIE + IE_SIZE(pucIE);
 
 	if (BE_IS_ML_CTRL_TYPE(pucIE, ML_CTRL_TYPE_BASIC)) {
 		struct IE_MULTI_LINK_CONTROL *prMlInfoIe;
+
+		if (u2Left < sizeof(struct IE_MULTI_LINK_CONTROL))
+			return;
 
 		prMlInfoIe = (struct IE_MULTI_LINK_CONTROL *)pucIE;
 		u2Ctrl = prMlInfoIe->u2Ctrl;
@@ -1488,6 +1497,9 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos = prMlInfoIe->aucCommonInfo;
 	} else if (IE_ID(pucIE) == ELEM_ID_NR_BASIC_MULTI_LINK) {
 		struct SUB_IE_MULTI_LINK_CONTROL *prMlInfoIe;
+
+		if (u2Left < sizeof(struct SUB_IE_MULTI_LINK_CONTROL))
+			return;
 
 		prMlInfoIe = (struct SUB_IE_MULTI_LINK_CONTROL *)pucIE;
 		u2Ctrl = prMlInfoIe->u2Ctrl;
@@ -1499,6 +1511,10 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		DBGLOG_MEM8(ML, INFO, (uint8_t *)pucIE, IE_SIZE(pucIE));
 		return;
 	}
+
+	/* common info len:1 + mld mac:6 */
+	if (pos + 7 > end)
+		return;
 
 	/* ML control bits[4,15] is presence bitmap */
 	ucMlCtrlPreBmp = (u2Ctrl & ML_CTRL_PRE_BMP_MASK)
@@ -1521,6 +1537,14 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		DBGLOG(ML, INFO, "\tML common Info Len = %d\n",
 			prMlInfo->ucCommonInfoLength);
 
+	if (aucCommonInfo + prMlInfo->ucCommonInfoLength > end) {
+		DBGLOG(ML, WARN,
+			"invalid common info len=%d, IE len=%d\n",
+			prMlInfo->ucCommonInfoLength,
+			IE_LEN(pucIE));
+		return;
+	}
+
 	/* Check ML control that which common info exist */
 	COPY_MAC_ADDR(prMlInfo->aucMldAddr, pos);
 	if (show_info)
@@ -1530,6 +1554,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 	pos += MAC_ADDR_LEN;
 
 	if (ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT) {
+		if (pos + 1 > end) {
+			DBGLOG(ML, WARN, "invalid pos=%p end=%p\n", pos, end);
+			return;
+		}
+
 		prMlInfo->ucLinkId = (*pos & BITS(0, 3));
 		prMlInfo->u2ValidLinks |= BIT(prMlInfo->ucLinkId);
 		if (show_info)
@@ -1538,6 +1567,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos += 1;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT) {
+		if (pos + 1 > end) {
+			DBGLOG(ML, WARN, "invalid pos=%p end=%p\n", pos, end);
+			return;
+		}
+
 		prMlInfo->ucBssParaChangeCount = *pos;
 		if (show_info)
 			DBGLOG(ML, INFO,
@@ -1546,6 +1580,9 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos += 1;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_MEDIUM_SYN_DELAY_INFO_PRESENT) {
+		if (pos + 2 > end)
+			return;
+
 		/* todo: handle 2byte MEDIUM_SYN_DELAY_INFO_PRESENT */
 		kalMemCopy(&prMlInfo->u2MediumSynDelayInfo, pos, 2);
 		if (show_info)
@@ -1555,6 +1592,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos += 2;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT) {
+		if (pos + 2 > end) {
+			DBGLOG(ML, WARN, "invalid pos=%p end=%p\n", pos, end);
+			return;
+		}
+
 		kalMemCopy(&prMlInfo->u2EmlCap, pos, 2);
 		if (show_info)
 			DBGLOG(ML, INFO, "\tML common Info EML capa = 0x%x\n",
@@ -1562,6 +1604,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos += 2;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_MLD_CAPA_PRESENT) {
+		if (pos + 2 > end) {
+			DBGLOG(ML, WARN, "invalid pos=%p end=%p\n", pos, end);
+			return;
+		}
+
 		kalMemCopy(&prMlInfo->u2MldCap, pos, 2);
 		if (show_info)
 			DBGLOG(ML, INFO, "\tML common Info MLD capa = 0x%x\n",
@@ -1569,6 +1616,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos += 2;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_MLD_ID_PRESENT) {
+		if (pos + 1 > end) {
+			DBGLOG(ML, WARN, "invalid pos=%p end=%p\n", pos, end);
+			return;
+		}
+
 		prMlInfo->ucMldId = *pos;
 		if (show_info)
 			DBGLOG(ML, INFO, "\tML common Info MLD ID = %d\n",
@@ -1576,6 +1628,11 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		pos += 1;
 	}
 	if (ucMlCtrlPreBmp & ML_CTRL_EXT_MLD_CAP_OP_PRESENT) {
+		if (pos + 2 > end) {
+			DBGLOG(ML, WARN, "invalid pos=%p end=%p\n", pos, end);
+			return;
+		}
+
 		prMlInfo->u2ExtMldCap = *pos;
 		if (show_info)
 			DBGLOG(ML, INFO, "\tML common Info MLD ID = 0x%x\n",
@@ -1703,6 +1760,12 @@ link_info:
 
 		DBGLOG(ML, LOUD, "Found sub fragment\n");
 		DBGLOG_MEM8(ML, LOUD, pos, tail - pos);
+
+		if (IE_SIZE(pos) < sizeof(struct IE_ML_STA_CONTROL)) {
+			DBGLOG(ML, WARN, "invalid sta control len=%d\n",
+			       IE_SIZE(pos));
+			goto next;
+		}
 sta:
 		u2StaControl = prIeSta->u2StaCtrl;
 		ucLinkId = (u2StaControl & ML_STA_CTRL_LINK_ID_MASK);
@@ -1728,9 +1791,31 @@ sta:
 				prMlInfo->ucProfNum);
 
 		pos = prIeSta->aucStaInfo;
+		if (pos + 1 > tail) {
+			DBGLOG(ML, WARN,
+				"invalid STA profile len=%td\n", tail - pos);
+			prMlInfo->ucProfNum--;
+			goto next;
+		}
+
 		ucStaInfoLen = *pos++;
 
+		if (prIeSta->aucStaInfo + ucStaInfoLen > tail) {
+			DBGLOG(ML, WARN,
+				"invalid STA profile len=%td\n", ucStaInfoLen);
+			prMlInfo->ucProfNum--;
+			goto next;
+		}
+
 		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
+			if (pos + MAC_ADDR_LEN > tail) {
+				DBGLOG(ML, WARN,
+					"invalid STA profile len=%td\n",
+					tail - pos);
+				prMlInfo->ucProfNum--;
+				goto next;
+			}
+
 			COPY_MAC_ADDR(prStaProfile->aucLinkAddr, pos);
 			if (show_info)
 				DBGLOG(ML, INFO,
@@ -1740,6 +1825,14 @@ sta:
 			pos += MAC_ADDR_LEN;
 		}
 		if (u2StaControl & ML_STA_CTRL_BCN_INTV_PRESENT) {
+			if (pos + 2 > tail) {
+				DBGLOG(ML, WARN,
+					"invalid STA profile len=%td\n",
+					tail - pos);
+				prMlInfo->ucProfNum--;
+				goto next;
+			}
+
 			kalMemCopy(&prStaProfile->u2BcnIntv, pos, 2);
 			if (show_info)
 				DBGLOG(ML, INFO,
@@ -1748,6 +1841,14 @@ sta:
 			pos += 2;
 		}
 		if (u2StaControl & ML_STA_CTRL_TSF_OFFSET_PRESENT) {
+			if (pos + 8 > tail) {
+				DBGLOG(ML, WARN,
+					"invalid STA profile len=%td\n",
+					tail - pos);
+				prMlInfo->ucProfNum--;
+				goto next;
+			}
+
 			kalMemCopy(&prStaProfile->u8TsfOffset, pos, 8);
 			if (show_info)
 				DBGLOG(ML, INFO,
@@ -1756,6 +1857,14 @@ sta:
 			pos += 8;
 		}
 		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
+			if (pos + 2 > tail) {
+				DBGLOG(ML, WARN,
+					"invalid STA profile len=%td\n",
+					tail - pos);
+				prMlInfo->ucProfNum--;
+				goto next;
+			}
+
 			kalMemCopy(&prStaProfile->u2DtimInfo, pos, 2);
 			if (show_info)
 				DBGLOG(ML, INFO,
@@ -1774,6 +1883,14 @@ sta:
 			(u2StaControl & ML_STA_CTRL_NSTR_LINK_PAIR_PRESENT)) {
 			if (((u2StaControl & ML_STA_CTRL_NSTR_BMP_SIZE) >>
 				ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT) == 0) {
+				if (pos + 1 > tail) {
+					DBGLOG(ML, WARN,
+						"invalid STA profile len=%td\n",
+						tail - pos);
+					prMlInfo->ucProfNum--;
+					goto next;
+				}
+
 				prStaProfile->u2NstrBmp = *pos;
 				if (show_info)
 					DBGLOG(ML, INFO,
@@ -1781,6 +1898,14 @@ sta:
 					     ucLinkId, prStaProfile->u2NstrBmp);
 				pos += 1;
 			} else {
+				if (pos + 2 > tail) {
+					DBGLOG(ML, WARN,
+						"invalid STA profile len=%td\n",
+						tail - pos);
+					prMlInfo->ucProfNum--;
+					goto next;
+				}
+
 				kalMemCopy(&prStaProfile->u2NstrBmp, pos, 2);
 				if (show_info)
 					DBGLOG(ML, INFO,
@@ -1791,6 +1916,14 @@ sta:
 		}
 
 		if (u2StaControl & ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT) {
+			if (pos + 1 > tail) {
+				DBGLOG(ML, WARN,
+					"invalid STA profile len=%td\n",
+					tail - pos);
+				prMlInfo->ucProfNum--;
+				goto next;
+			}
+
 			prStaProfile->ucBssParaChangeCount = *pos++;
 			if (show_info)
 				DBGLOG(ML, INFO,
@@ -1824,6 +1957,12 @@ sta:
 			goto next;
 		}
 
+		if (pos + 2 > tail) {
+			DBGLOG(ML, WARN,
+				"invalid STA profile len=%td\n", tail - pos);
+			prMlInfo->ucProfNum--;
+			goto next;
+		}
 		WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
 		if (show_info)
 			DBGLOG(ML, INFO,
@@ -1833,6 +1972,14 @@ sta:
 
 		if (u2FrameCtrl == MAC_FRAME_ASSOC_RSP ||
 		    u2FrameCtrl == MAC_FRAME_REASSOC_RSP) {
+			if (pos + 2 > tail) {
+				DBGLOG(ML, WARN,
+					"invalid STA profile len=%td\n",
+					tail - pos);
+				prMlInfo->ucProfNum--;
+				goto next;
+			}
+
 			WLAN_GET_FIELD_16(pos,
 				&prStaProfile->u2StatusCode);
 			if (show_info)
@@ -1845,6 +1992,7 @@ sta:
 		if (pos > tail) {
 			DBGLOG(ML, WARN,
 				"invalid STA profile len=%td\n", tail - pos);
+			prMlInfo->ucProfNum--;
 			goto next;
 		}
 
