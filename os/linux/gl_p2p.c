@@ -742,6 +742,34 @@ fail:
 	return ret;
 }
 
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+static void p2pNetUnregisterMldLinks(struct GLUE_INFO *prGlueInfo,
+	struct net_device *prRoleDev,
+	uint8_t ucRoleIdx)
+{
+	uint32_t u4LinkId = 0;
+
+	/* Only mlo sap is supported by kernel add intf link API */
+	if (prRoleDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP)
+		return;
+
+	for_each_valid_link(prRoleDev->ieee80211_ptr, u4LinkId) {
+		uint8_t ucIdx = 0;
+
+		for (ucIdx = ucRoleIdx + 1; ucIdx < KAL_P2P_NUM; ucIdx++) {
+			struct GL_P2P_INFO *prP2PInfo;
+
+			prP2PInfo = prGlueInfo->prP2PInfo[ucIdx];
+			if (prP2PInfo->u4LinkId == u4LinkId &&
+			    prRoleDev == prP2PInfo->aprRoleHandler) {
+				prP2PInfo->aprRoleHandler = NULL;
+			}
+		}
+	}
+}
+#endif
+
 u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		uint8_t fgIsRtnlLockAcquired)
 {
@@ -840,6 +868,13 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 		/* Here are the functions which need rtnl_lock */
 		if ((prRoleDev) && (prP2PInfo->prDevHandler != prRoleDev)) {
 			DBGLOG(INIT, INFO, "unregister p2p[%d]\n", ucRoleIdx);
+
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+	(CFG_SUPPORT_802_11BE_MLO == 1)
+			p2pNetUnregisterMldLinks(prGlueInfo, prRoleDev,
+						 ucRoleIdx);
+#endif
+
 			if (prRoleDev->reg_state == NETREG_REGISTERED) {
 				if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
