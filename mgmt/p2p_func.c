@@ -8828,11 +8828,21 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 			nicGetVhtS1(aucChannelList[i].ucChannelNum,
 				VHT_OP_CHANNEL_WIDTH_80) == 0)
 			continue;
+		else if (eBand == BAND_5G && eChnlBw >= MAX_BW_40MHZ &&
+			 nicGetSco(prAdapter, eBand,
+				   aucChannelList[i].ucChannelNum) ==
+		    CHNL_EXT_SCN)
+			continue;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (eBand == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
 			nicGetHe6gS1(aucChannelList[i].ucChannelNum,
 				CW_80MHZ) == 0)
+			continue;
+		else if (eBand == BAND_6G && eChnlBw >= MAX_BW_40MHZ &&
+			 nicGetSco(prAdapter, eBand,
+				   aucChannelList[i].ucChannelNum) ==
+		    CHNL_EXT_SCN)
 			continue;
 #endif
 		if (rPreferChannel.u4Dirtiness >
