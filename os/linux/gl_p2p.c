@@ -813,6 +813,11 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 			continue;
 		}
 
+		if (prP2PInfo->prDevHandler == NULL) {
+			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
+			continue;
+		}
+
 		/* don't unregister the dev that share with the AIS */
 		if (wlanIsAisDev(prP2PInfo->prDevHandler)) {
 			GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
@@ -1169,12 +1174,26 @@ exit:
 
 static void mtk_p2p_vif_destructor(struct net_device *dev)
 {
-	if (dev) {
-		DBGLOG(P2P, INFO, "free %s[%p]\n", dev->name, dev);
-		free_netdev(dev);
-	} else {
+	struct GLUE_INFO *prGlueInfo;
+	uint8_t ucRoleIdx;
+
+	if (!dev) {
 		DBGLOG(P2P, WARN, "dev is NULL\n");
+		return;
 	}
+
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(dev));
+
+	if (mtk_Netdev_To_DevIdx(prGlueInfo, dev,
+				 &ucRoleIdx) == WLAN_STATUS_SUCCESS) {
+		if (prGlueInfo->prP2PInfo[ucRoleIdx]->aprRoleHandler ==
+		    dev)
+			prGlueInfo->prP2PInfo[ucRoleIdx]->aprRoleHandler =
+			    NULL;
+		prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler = NULL;
+	}
+	DBGLOG(P2P, INFO, "free %s[%p]\n", dev->name, dev);
+	free_netdev(dev);
 }
 
 /*---------------------------------------------------------------------------*/
