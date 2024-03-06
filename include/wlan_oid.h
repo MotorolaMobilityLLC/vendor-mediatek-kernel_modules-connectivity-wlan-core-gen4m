@@ -4769,6 +4769,14 @@ wlanoidRftestDoXOCal(struct ADAPTER *prAdapter,
 	uint32_t *pu4QueryInfoLen);
 #endif /* CFG_SUPPORT_XONVRAM */
 
+#if CFG_SUPPORT_PLCAL
+uint32_t
+wlanoidRftestDoPlCal(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen);
+#endif /* CFG_SUPPORT_PLCAL */
+
 uint32_t
 wlanoidRftestSetTestIcapMode(struct ADAPTER *prAdapter,
 			     void *pvSetBuffer,

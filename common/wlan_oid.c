@@ -10329,6 +10329,24 @@ wlanoidRftestDoXOCal(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_XONVRAM */
 
+#if CFG_SUPPORT_PLCAL
+uint32_t
+wlanoidRftestDoPlCal(struct ADAPTER *prAdapter,
+	void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen,
+	uint32_t *pu4QueryInfoLen)
+{
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return nicUniCmdTestmodePlCal(prAdapter,
+		pvQueryBuffer,
+		u4QueryBufferLen);
+#else
+	DBGLOG(OID, WARN, "NOT supported.\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+#endif /* CFG_SUPPORT_PLCAL */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Set driver to switch into RF test ICAP mode

@@ -15150,3 +15150,24 @@ uint32_t wlanTestModeXoCal(struct ADAPTER *ad,
 	return status;
 }
 #endif /* CFG_SUPPORT_XONVRAM */
+
+#if CFG_SUPPORT_PLCAL
+uint32_t wlanTestModePlCal(struct ADAPTER *ad,
+	struct TEST_MODE_PL_CAL *data)
+{
+	struct GLUE_INFO *glue = ad->prGlueInfo;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	uint32_t len = 0;
+
+	if (!data)
+		return WLAN_STATUS_FAILURE;
+
+	status = kalIoctl(glue,
+				wlanoidRftestDoPlCal,
+				data,
+				sizeof(*data),
+				&len);
+
+	return status;
+}
+#endif /* CFG_SUPPORT_PLCAL */
