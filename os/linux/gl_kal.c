@@ -11450,7 +11450,11 @@ u_int8_t __weak kalIsSupportMawd(void)
 
 u_int8_t __weak kalIsSupportSdo(void)
 {
+#if CFG_SUPPORT_WED_PROXY
+	return TRUE;
+#else
 	return FALSE;
+#endif
 }
 
 u_int8_t __weak kalIsSupportRro(void)
