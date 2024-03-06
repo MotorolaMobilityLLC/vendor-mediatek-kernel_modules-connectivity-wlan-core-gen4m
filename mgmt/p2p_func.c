@@ -9127,7 +9127,9 @@ void p2pFuncSapAvailibilityCheck(
 {
 	struct BSS_INFO *aliveBss[MAX_BSSID_NUM] = { 0 };
 	uint8_t ucNumAliveNonSapBss;
+#if CFG_SUPPORT_SAP_DFS_CHANNEL
 	uint8_t i = 0;
+#endif
 
 	ucNumAliveNonSapBss =
 		cnmGetAliveNonSapBssInfo(prAdapter, aliveBss);
