@@ -323,6 +323,9 @@ enum ENUM_RF_AT_FUNCID {
 	/* Get EEPROM/NVRAM/Bufferbin default power */
 	RF_AT_FUNCID_GET_DEFAULT_TX_POWER = 224,
 
+	/* TMR Toae Cal and Restore */
+	RF_AT_FUNCID_SET_TMR_TOAE_CAL_RESOTRE = 225,
+
 	RF_AT_FUNCID_NULL = 0xFF
 };
 
@@ -2131,6 +2134,18 @@ s_int32 mt_op_set_tmr(
 		if (ret != SERV_STATUS_SUCCESS) {
 			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
 				("%s RF_AT_FUNCID_SET_TMR_ITER ret=%d\n",
+				__func__, ret));
+
+			break;
+		}
+
+		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_TMR_TOAE_CAL_RESOTRE,
+			tmr_info->toae_cal);
+
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, (
+				"%s RF_AT_FUNCID_SET_TMR_TOAE_CAL_RESOTRE ret=%d\n",
 				__func__, ret));
 
 			break;
