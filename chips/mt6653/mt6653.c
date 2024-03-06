@@ -197,6 +197,8 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter);
 static void mt6653WiFiNappingCtrl(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 #endif
 
+static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter);
+
 #if (CFG_SUPPORT_APS == 1)
 static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
@@ -1144,6 +1146,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 	.queryDFDInfo = asicConnac3xQueryDFDInfo,
 #endif
+	.isUpgradeWholeChipReset = mt6653_isUpgradeWholeChipReset,
 
 	.prTxPwrLimitFile = "TxPwrLimit_MT66x9.dat",
 #if (CFG_SUPPORT_SINGLE_SKU_6G == 1)
@@ -3931,6 +3934,44 @@ static void mt6653WiFiNappingCtrl(
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		   CONN_HOST_CSR_TOP_ADDR_CR_CONN_AON_TOP_RESERVE_ADDR,
 		   u4value);
+}
+
+static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
+{
+#if defined(_HIF_PCIE)
+	uint32_t u4Value = 0;
+
+	/* 1. value get 0 or 0xFFFFFFFF means PCIE is not link up status */
+	/* 2. value[0][4][10~13] == 5'b11111 means cb_infra status abnormal */
+	glReadPcieCfgSpace(0x488, &u4Value);
+	if (u4Value == 0x0 || u4Value == 0xFFFFFFFF ||
+	   (u4Value & 0x3C11 == 0x3C11)) {
+		DBGLOG(INIT, ERROR,
+			"get abnormal PCIE or cb_infra bus status, val=0x%x\n",
+			u4Value);
+		return TRUE;
+	}
+
+	glReadPcieCfgSpace(0x48c, &u4Value);
+	if (u4Value == 0x0 || u4Value == 0xFFFFFFFF ||
+	   (u4Value & 0x3C11 == 0x3C11)) {
+		DBGLOG(INIT, ERROR,
+			"get abnormal PCIE or cb_infra bus status, val=0x%x\n",
+			u4Value);
+		return TRUE;
+	}
+#endif
+
+	if (prAdapter->chip_info->checkbushang) {
+		if (prAdapter->chip_info->checkbushang(
+		   (void *) prAdapter, FALSE)) {
+			DBGLOG(INIT, ERROR,
+				"check bus hang failed\n");
+			return TRUE;
+		}
+	}
+
+	return FALSE;
 }
 
 #if (CFG_SUPPORT_APS == 1)
