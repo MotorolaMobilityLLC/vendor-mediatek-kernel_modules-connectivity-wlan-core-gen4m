@@ -2461,6 +2461,7 @@ struct UNI_CMD_BA_OFFLOAD {
 	*   ---------------------------------|-----|--------------
 	*   UNI_CMD_TX_AMPDU                 | 0x0 | UNI_CMD_TX_AMPDU_T
 	*   UNI_CMD_RX_AMPDU                 | 0x1 | UNI_CMD_RX_AMPDU_T
+	*   UNI_CMD_TX_AGG_LIMIT             | 0x2 | UNI_CMD_TX_AGG_LIMIT_T
 	*/
 } __KAL_ATTRIB_PACKED__;
 
@@ -2468,6 +2469,7 @@ struct UNI_CMD_BA_OFFLOAD {
 enum UNI_CMD_BA_OFFLOAD_TAG {
 	UNI_CMD_BA_OFFLOAD_TAG_TX_AMPDU = 0,
 	UNI_CMD_BA_OFFLOAD_TAG_RX_AMPDU = 1,
+	UNI_CMD_BA_OFFLOAD_TAG_TX_AGG_LIMIT = 2,
 	UNI_CMD_BA_OFFLOAD_TAG_NUM
 };
 
@@ -2487,6 +2489,16 @@ struct UNI_CMD_RX_AMPDU_PARAM {
 	uint16_t u2Length;
 	uint8_t  fgEnable;
 	uint8_t  aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+/* TX AMPDU SIZE (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_TX_AGG_LIMIT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint16_t u2TxAmpduNum;
+	uint8_t ucBssIdx;
+	uint8_t ucSet;
 } __KAL_ATTRIB_PACKED__;
 
 /* P2P command (0x20) */
@@ -6602,6 +6614,7 @@ enum ENUM_UNI_EVENT_BA_OFFLOAD_TAG {
 	UNI_EVENT_BA_OFFLOAD_TAG_RX_ADDBA  = 0,
 	UNI_EVENT_BA_OFFLOAD_TAG_RX_DELBA  = 1,
 	UNI_EVENT_BA_OFFLOAD_TAG_TX_ADDBA  = 2,
+	UNI_EVENT_BA_OFFLOAD_TAG_TX_AGG_LIMIT  = 3,
 	UNI_EVENT_BA_OFFLOAD_TAG_NUM
 };
 
@@ -6654,6 +6667,17 @@ struct UNI_EVENT_TX_ADDBA {
 	uint8_t	ucMaxMpduCount;
 	uint8_t	aucReserved[15];
 } __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_TX_AGG_LIMIT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBssIdx;
+	/* 0: success, others: fail */
+	uint8_t ucStatus;
+	uint8_t aucReserved[2];
+} __KAL_ATTRIB_PACKED__;
+
 
 /* status to host event tag */
 enum ENUM_UNI_EVENT_STATUS_TO_HOST_TAG {
@@ -8724,6 +8748,9 @@ void nicUniEventStaStatistics(struct ADAPTER
 void nicUniEventStatistics(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 void nicUniEventLinkQuality(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+
+void nicUniEventBaOffloadTxAggLimit(struct ADAPTER
 	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)

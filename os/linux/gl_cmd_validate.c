@@ -769,6 +769,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers[] = {
 	},
 #endif
 	{
+		.pcCmdStr  = CMD_SET_TX_AMPDU_NUM,
+		.pfHandler = priv_driver_set_tx_ampdu_num,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(3),
+		.policy    = set_flag_policy,
+		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
+	},
+	{
 		.pcCmdStr  = CMD_DUMP_TS,
 		.pfHandler = priv_driver_tspec_operation,
 		.argPolicy = VERIFY_MIN_ARG_NUM,

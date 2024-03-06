@@ -6060,7 +6060,6 @@ uint32_t nicUniCmdSetRxAmpdu(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-
 uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
@@ -10891,6 +10890,43 @@ void nicUniEventBaOffload(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 
 	if (tags_len != offset)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+}
+
+void nicUniEventBaOffloadTxAggLimit(struct ADAPTER
+	*prAdapter, struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	uint8_t *tag;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_BA_OFFLOAD);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
+	uint16_t tags_len = data_len - fixed_len;
+	uint16_t offset = 0;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_BA_OFFLOAD_TAG_TX_AGG_LIMIT: {
+			struct UNI_EVENT_TX_AGG_LIMIT *ba =
+				(struct UNI_EVENT_TX_AGG_LIMIT *) tag;
+			DBGLOG(NIC, INFO, "Tag(%d) bss:%u status:%u\n",
+				TAG_ID(tag), ba->ucBssIdx, ba->ucStatus);
+			if (ba->ucStatus)
+				u4Status = WLAN_STATUS_FAILURE;
+			break;
+		}
+		default:
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
+	if (tags_len != offset)
+		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			0, u4Status);
 }
 
 void nicUniEventSleepNotify(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)

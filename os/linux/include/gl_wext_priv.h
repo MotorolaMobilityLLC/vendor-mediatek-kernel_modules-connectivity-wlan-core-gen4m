@@ -960,6 +960,8 @@ int priv_driver_set_ampdu_tx(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_ampdu_rx(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_tx_ampdu_num(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_set_qos(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #if CFG_SUPPORT_CSI
