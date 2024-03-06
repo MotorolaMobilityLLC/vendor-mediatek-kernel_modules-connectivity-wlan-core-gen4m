@@ -1914,6 +1914,11 @@ u_int8_t nicTxIsTXDTemplateAllowed(struct ADAPTER
 		if (prMsduInfo->pfTxDoneHandler)
 			return FALSE;
 
+#if CFG_SUPPORT_MLR
+		if (MLR_CHECK_IF_MSDU_IS_FRAG(prMsduInfo))
+			return FALSE;
+#endif
+
 		if (prAdapter->rWifiVar.ucDataTxRateMode)
 			return FALSE;
 
