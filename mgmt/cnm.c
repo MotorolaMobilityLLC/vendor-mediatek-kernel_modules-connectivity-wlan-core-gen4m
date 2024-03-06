@@ -5648,8 +5648,10 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
 	uint8_t ucSendAct = TRUE;
 #if CFG_ENABLE_WIFI_DIRECT
+	struct GL_P2P_INFO *prP2PInfo;
 	uint8_t ucRoleIndex = 0;
 #endif
+	u_int8_t fgIsBssAlive = FALSE;
 
 	ASSERT(prAdapter);
 	if (ucBssIndex > prAdapter->ucSwBssIdNum ||
@@ -5659,6 +5661,9 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 	}
 
 	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+#if CFG_ENABLE_WIFI_DIRECT
+	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[prBssInfo->u4PrivateData];
+#endif
 	prBssOpCtrl = &g_arBssOpControl[ucBssIndex];
 	prReq = &(prBssOpCtrl->arReqPool[eNewReq]);
 
@@ -5683,7 +5688,29 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		ucOpBwFinal = prReq->ucBandWidth;
 	}
 
-	if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
+	fgIsBssAlive = IS_BSS_ALIVE(prAdapter, prBssInfo);
+#if CFG_ENABLE_WIFI_DIRECT
+	if (fgIsBssAlive && IS_BSS_APGO(prBssInfo)) {
+		/*
+		 * For ap or p2p go, need to check other flags to ensure the
+		 * bss is ready for handling the op mode change.
+		 *
+		 * 1. For csa flow, postpone the rlm update by op mode change
+		 * event until the csa flow is done, since the new channel info
+		 * may NOT be initialized done.
+		 *
+		 * 2. For bss starting flow, bss's initialization will be done
+		 * until op channel is granted, and rlm update command will be
+		 * updated at the end of the bss's starting flow.
+		 */
+		if (prP2PInfo && prP2PInfo->fgChannelSwitchReq)
+			fgIsBssAlive = FALSE;
+		else if (!prBssInfo->fgIsApGoGranted)
+			fgIsBssAlive = FALSE;
+	}
+#endif
+
+	if (fgIsBssAlive) {
 #if CFG_SUPPORT_ROAMING
 		if (roamingFsmCheckIfRoaming(prAdapter, ucBssIndex) &&
 			prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
@@ -5840,7 +5867,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		&& eNewReq >= 0 && eNewReq <= CNM_OPMODE_REQ_MAX_CAP)
 		DBGLOG(CNM, INFO,
 		"SetOpMode Bss[%d] alive[%d] NewReq:%s %s RunReq:%s,%s\n",
-		ucBssIndex, IS_BSS_ALIVE(prAdapter, prBssInfo),
+		ucBssIndex, fgIsBssAlive,
 		apucCnmOpModeReq[eNewReq],
 		fgEnable ? "En" : "Dis",
 		apucCnmOpModeReq[eRunReq],
