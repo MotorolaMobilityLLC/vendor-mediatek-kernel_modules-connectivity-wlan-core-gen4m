@@ -8716,20 +8716,10 @@ nla_put_failure:
 
 uint64_t kalGetBootTime(void)
 {
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 	struct timespec64 ts;
-#else
-	struct timespec ts;
-#endif
 	uint64_t bootTime = 0;
 
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 	ktime_get_boottime_ts64(&ts);
-#elif KERNEL_VERSION(2, 6, 39) <= LINUX_VERSION_CODE
-	get_monotonic_boottime(&ts);
-#else
-	ts = ktime_to_timespec(ktime_get());
-#endif
 
 	bootTime = ts.tv_sec;
 	bootTime *= USEC_PER_SEC;
@@ -12631,11 +12621,9 @@ int kalTimeCompare(struct timespec64 *prTs1, struct timespec64 *prTs2)
 	else if (prTs1->tv_sec < prTs2->tv_sec)
 		return -1;
 	/* sec part is equal */
-	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) >
-		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
+	else if (prTs1->tv_nsec > prTs2->tv_nsec)
 		return 1;
-	else if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1) <
-		 KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2))
+	else if (prTs1->tv_nsec < prTs2->tv_nsec)
 		return -1;
 	return 0;
 }
@@ -12648,19 +12636,12 @@ u_int8_t kalGetDeltaTime(struct timespec64 *prTs1, struct timespec64 *prTs2,
 		return FALSE;
 
 	prTsRst->tv_sec = prTs1->tv_sec - prTs2->tv_sec;
-	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) =
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1);
-	if (KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2) >
-	    KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs1)) {
+	prTsRst->tv_nsec = prTs1->tv_nsec;
+	if (prTs2->tv_nsec > prTs1->tv_nsec) {
 		prTsRst->tv_sec -= 1;
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_NSEC(1);
-#else
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) += SEC_TO_USEC(1);
-#endif
+		prTsRst->tv_nsec += SEC_TO_NSEC(1);
 	}
-	KAL_GET_PTIME_OF_USEC_OR_NSEC(prTsRst) -=
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(prTs2);
+	prTsRst->tv_nsec -= prTs2->tv_nsec;
 	return TRUE;
 }
 
@@ -12744,11 +12725,7 @@ kalSyncTimeToFW(struct ADAPTER *prAdapter, u_int8_t fgInitCmd)
 	ktime_get_real_ts64(&rTime);
 
 	u4Sec = rTime.tv_sec;
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
 	u4Usec = NSEC_TO_USEC(rTime.tv_nsec);
-#else
-	u4Usec = rTime.tv_usec;
-#endif
 
 	if ((prChipInfo->chip_capability &
 	    BIT(CHIP_CAPA_FW_LOG_TIME_SYNC)) == 0)
@@ -14192,11 +14169,7 @@ uint64_t kalGetUIntRealTime(void)
 void kalGetRealTime(struct REAL_TIME *prRealTime)
 {
 	struct rtc_time tm;
-#if KERNEL_VERSION(5, 0, 0) <= LINUX_VERSION_CODE
 	struct timespec64 tv = { 0 };
-#else
-	struct timeval tv;
-#endif
 
 	ktime_get_real_ts64(&tv);
 	rtc_time64_to_tm(tv.tv_sec, &tm);

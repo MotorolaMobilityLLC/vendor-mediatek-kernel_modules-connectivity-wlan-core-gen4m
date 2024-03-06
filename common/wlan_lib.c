@@ -6432,14 +6432,13 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		goto send_cmd;
 
 	DBGLOG(REQ, TRACE,
-		"update:%u drvCur=%ld.%ld drvSync=%ld.%ld fwSync=%ld.%ld\n",
+		"update:%u drvCur=%ld.%09ld drvSync=%ld.%09ld fwSync=%ld.%09ld\n",
 		u4EmiUpdateMs,
-		rNow.tv_sec,
-		KAL_GET_TIME_OF_USEC_OR_NSEC(rNow),
+		rNow.tv_sec, rNow.tv_nsec,
 		prAdapter->rRegStatSyncDrvTs.tv_sec,
-		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncDrvTs),
+		prAdapter->rRegStatSyncDrvTs.tv_nsec,
 		prAdapter->rRegStatSyncFwTs.tv_sec,
-		KAL_GET_TIME_OF_USEC_OR_NSEC(prAdapter->rRegStatSyncFwTs));
+		prAdapter->rRegStatSyncFwTs.tv_nsec);
 
 	KAL_SET_MSEC_TO_TIME(rUpdate, u4EmiUpdateMs);
 	KAL_SET_MSEC_TO_TIME(rPeriod, prParam->u4Period);
@@ -6451,21 +6450,12 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		kalTimeCompare(&rTimeout, &rPeriod) <= 0)
 		nicCollectRegStatFromEmi(prAdapter);
 	else {
-#define TEMP_LOG_TEMPLATE\
-	"drvDiff=%ld.%ld fwDiff=%ld.%ld"\
-	" to=%ld.%ld per=%ld.%ld\n"
-
-		DBGLOG(REQ, TRACE, TEMP_LOG_TEMPLATE,
-			rDrvDiff.tv_sec,
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rDrvDiff),
-			rFwDiff.tv_sec,
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rFwDiff),
-			rTimeout.tv_sec,
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout),
-			rPeriod.tv_sec,
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rPeriod));
-#undef TEMP_LOG_TEMPLATE
-
+		DBGLOG(REQ, TRACE,
+			"drvDiff=%ld.%09ld fwDiff=%ld.%09ld to=%ld.%09ld per=%ld.%09ld\n",
+			rDrvDiff.tv_sec, rDrvDiff.tv_nsec,
+			rFwDiff.tv_sec, rFwDiff.tv_nsec,
+			rTimeout.tv_sec, rTimeout.tv_nsec,
+			rPeriod.tv_sec, rPeriod.tv_nsec);
 #else
 	{
 #endif

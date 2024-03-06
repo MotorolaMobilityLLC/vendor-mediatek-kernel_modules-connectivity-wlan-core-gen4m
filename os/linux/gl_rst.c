@@ -1963,9 +1963,9 @@ u_int8_t kalIsWholeChipResetting(void)
 void glReset_timeinit(struct timespec64 *rNowTs, struct timespec64 *rLastTs)
 {
 	rNowTs->tv_sec = 0;
-	KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs) = 0;
+	rNowTs->tv_nsec = 0;
 	rLastTs->tv_sec = 0;
-	KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) = 0;
+	rLastTs->tv_nsec = 0;
 }
 
 bool IsOverRstTimeThreshold(
@@ -1976,14 +1976,12 @@ bool IsOverRstTimeThreshold(
 	bool fgIsTimeout = FALSE;
 
 	rTimeout.tv_sec = 30;
-	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
+	rTimeout.tv_nsec = 0;
 	ktime_get_ts64(rNowTs);
 	DBGLOG(INIT, INFO,
-		"Reset happen time :%ld.%ld, last happen time :%ld.%ld\n",
-		rNowTs->tv_sec,
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs),
-		rLastTs->tv_sec,
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs));
+		"Reset happen time :%ld.%09ld, last happen time :%ld.%09ld\n",
+		rNowTs->tv_sec, rNowTs->tv_nsec,
+		rLastTs->tv_sec, rLastTs->tv_nsec);
 	if (rLastTs->tv_sec != 0) {
 		if (kalGetDeltaTime(rNowTs, rLastTs, &rTime)) {
 			if (kalTimeCompare(&rTime, &rTimeout) >= 0)
@@ -1994,9 +1992,9 @@ bool IsOverRstTimeThreshold(
 		DBGLOG(INIT, INFO,
 			"Reset rTimeout :%ld.%ld, calculate time :%ld.%ld\n",
 			rTimeout.tv_sec,
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout),
+			rTimeout.tv_nsec,
 			rTime.tv_sec,
-			KAL_GET_TIME_OF_USEC_OR_NSEC(rTime));
+			rTime.tv_nsec);
 	}
 	return fgIsTimeout;
 #else
@@ -2172,11 +2170,9 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			g_SubsysRstCnt = 1;
 	}
 
-	if (g_SubsysRstCnt == 1) {
-		rLastTs->tv_sec = rNowTs->tv_sec;
-		KAL_GET_PTIME_OF_USEC_OR_NSEC(rLastTs) =
-			KAL_GET_PTIME_OF_USEC_OR_NSEC(rNowTs);
-	}
+	if (g_SubsysRstCnt == 1)
+		rLastTs = rNowTs;
+
 	g_Coredump_source = COREDUMP_SOURCE_NUM;
 	rst->force_dump = FALSE;
 }

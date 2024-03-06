@@ -1630,8 +1630,7 @@ void halReturnOneTimeoutMsduToken(
 	if (kalTimeCompare(&rTime, &rTimeout) >= 0) {
 		DBGLOG(HAL, INFO,
 			   "Free TokenId[%u] timeout[sec:%ld, nsec:%ld]\n",
-			   u4TokenNum, rTime.tv_sec,
-			   KAL_GET_TIME_OF_USEC_OR_NSEC(rTime));
+			   u4TokenNum, rTime.tv_sec, rTime.tv_nsec);
 		halReturnMsduToken(prAdapter, u4TokenNum);
 	}
 }
@@ -1659,7 +1658,7 @@ void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter)
 	prTokenInfo = &prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
 
 	rTimeout.tv_sec = HIF_MSDU_REPORT_RETURN_TIMEOUT;
-	KAL_GET_TIME_OF_USEC_OR_NSEC(rTimeout) = 0;
+	rTimeout.tv_nsec = 0;
 	ktime_get_ts64(&rNowTs);
 
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
@@ -2196,7 +2195,7 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	 */
 
 	ktime_get_ts64(&rNowTs);
-#if KERNEL_VERSION(5, 4, 0) <= LINUX_VERSION_CODE
+
 	if (rNowTs.tv_nsec < prTokenEntry->rTs.tv_nsec) {
 		rNowTs.tv_sec -= 1;
 		rNowTs.tv_nsec += NSEC_PER_SEC;
@@ -2204,15 +2203,6 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	u4ConnsysLatency =
 		(rNowTs.tv_sec - prTokenEntry->rTs.tv_sec) * MSEC_PER_SEC +
 		(rNowTs.tv_nsec - prTokenEntry->rTs.tv_nsec) / NSEC_PER_MSEC;
-#else
-	if (rNowTs.tv_usec < prTokenEntry->rTs.tv_usec) {
-		rNowTs.tv_sec -= 1;
-		rNowTs.tv_usec += USEC_PER_SEC;
-	}
-	u4ConnsysLatency =
-		(rNowTs.tv_sec - prTokenEntry->rTs.tv_sec) * MSEC_PER_SEC +
-		(rNowTs.tv_usec - prTokenEntry->rTs.tv_usec) / USEC_PER_MSEC;
-#endif
 
 	halAddMacLatencyCount(prAdapter, ucBssIndex, u4MacLatency);
 	if (u4AirLatency != INVALID_TX_DELAY)
