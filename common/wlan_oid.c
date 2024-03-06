@@ -12079,6 +12079,90 @@ wlanoidSetTxAmpdu(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This routine is called to configure TX A-MPDU size.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pvQueryBuffer Pointer to the buffer that holds the data to be set.
+ * \param[in] u4QueryBufferLen The length of the set buffer.
+ * \param[out] pu4QueryInfoLen If the call is successful, returns the number of
+ *                           bytes read from the set buffer. If the call failed
+ *                           due to invalid length of the set buffer, returns
+ *                           the amount of storage needed.
+ *
+ * \retval WLAN_STATUS_SUCCESS
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidSetTxAggLimit(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen)
+{
+	uint32_t rStatus = WLAN_STATUS_NOT_SUPPORTED;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint8_t ucBssIndex;
+	struct UNI_CMD_BA_OFFLOAD *uni_cmd;
+	struct UNI_CMD_TX_AGG_LIMIT *prLimit;
+	uint32_t cmd_len;
+	struct PARAM_SET_TX_AGG_LIMIT_INFO *prParam;
+#endif
+
+	if (!prAdapter || !pvQueryBuffer || !pu4QueryInfoLen)
+		return rStatus;
+
+	*pu4QueryInfoLen = sizeof(struct PARAM_SET_TX_AGG_LIMIT_INFO);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_SET_TX_AGG_LIMIT_INFO)) {
+		DBGLOG(REQ, ERROR, "Invalid length %u\n", u4QueryBufferLen);
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
+		return WLAN_STATUS_INVALID_DATA;
+
+	prParam = (struct PARAM_SET_TX_AGG_LIMIT_INFO *)pvQueryBuffer;
+
+	/* prepare staStats driver stuff */
+	cmd_len = sizeof(struct UNI_CMD_BA_OFFLOAD) +
+		sizeof(struct UNI_CMD_TX_AGG_LIMIT);
+
+	uni_cmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR,
+		       "Allocate UNI_CMD_BA_OFFLOAD ==> FAILED.\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* prepare unified cmd tags */
+	prLimit = (struct UNI_CMD_TX_AGG_LIMIT *)uni_cmd->aucTlvBuffer;
+	prLimit->u2Tag = UNI_CMD_BA_OFFLOAD_TAG_TX_AGG_LIMIT;
+	prLimit->u2Length = sizeof(*prLimit);
+	prLimit->ucBssIdx = ucBssIndex;
+	prLimit->u2TxAmpduNum = prParam->u2TxAmpduNum;
+	prLimit->ucSet = prParam->ucSet;
+
+	/* return value of wlanSendSetQueryCmd is WLAN_STATUS_PENDING */
+	rStatus = wlanSendSetQueryUniCmd(prAdapter,
+			UNI_CMD_ID_BA_OFFLOAD,
+			FALSE,
+			TRUE,
+			TRUE,
+			nicUniEventBaOffloadTxAggLimit,
+			nicUniCmdTimeoutCommon,
+			cmd_len,
+			(void *)uni_cmd,
+			pvQueryBuffer, u4QueryBufferLen);
+	DBGLOG(REQ, TRACE, "rStatus=%u, pvQueryBuffer=%p",
+			rStatus, pvQueryBuffer);
+	cnmMemFree(prAdapter, uni_cmd);
+
+#endif
+	return rStatus;
+}				/* wlanoidSetTxAggLimit */
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This routine is called to configure reject/accept ADDBA Request.
  *
  * \param[in] prAdapter Pointer to the Adapter structure.

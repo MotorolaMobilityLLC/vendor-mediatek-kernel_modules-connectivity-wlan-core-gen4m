@@ -2334,6 +2334,10 @@ uint32_t wlanSetRxBaSize(struct GLUE_INFO *prGlueInfo,
 uint32_t wlanSetTxBaSize(struct GLUE_INFO *prGlueInfo,
 	int8_t i4Type, uint16_t u2BaSize);
 
+uint32_t wlanSetTxAggLimit(struct ADAPTER *prAdapter,
+		void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+		uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
+
 void
 wlanGetTRXInfo(struct ADAPTER *prAdapter,
 	struct TRX_INFO *prTRxInfo);

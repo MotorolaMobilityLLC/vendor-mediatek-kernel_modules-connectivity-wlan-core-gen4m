@@ -2993,6 +2993,11 @@ struct PARAM_HW_MIB_INFO {
 #endif
 #endif
 
+struct PARAM_SET_TX_AGG_LIMIT_INFO {
+	uint16_t u2TxAmpduNum;
+	uint8_t ucSet;
+};
+
 #if CFG_WIFI_TXPWR_TBL_DUMP
 struct PARAM_CMD_GET_TXPWR_TBL {
 	uint8_t ucDbdcIdx;
@@ -4874,6 +4879,11 @@ wlanoidSetTxAmpdu(struct ADAPTER *prAdapter,
 		  void *pvSetBuffer,
 		  uint32_t u4SetBufferLen,
 		  uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetTxAggLimit(struct ADAPTER *prAdapter,
+			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
+			uint32_t *pu4QueryInfoLen);
 
 uint32_t
 wlanoidSetAddbaReject(struct ADAPTER *prAdapter,
