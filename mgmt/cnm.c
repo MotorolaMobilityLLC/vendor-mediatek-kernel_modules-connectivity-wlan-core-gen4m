@@ -5623,6 +5623,14 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 	}
 
 	if (IS_BSS_ALIVE(prAdapter, prBssInfo)) {
+#if CFG_SUPPORT_ROAMING
+		if (roamingFsmCheckIfRoaming(prAdapter, ucBssIndex) &&
+			prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+			DBGLOG(CNM, INFO,
+				"Bss[%d] is in roaming state\n", ucBssIndex);
+			return CNM_OPMODE_REQ_STATUS_DEFER;
+		}
+#endif
 		/* Step 3. Special rule for BW change (DBDC)
 		 * We only bound OpBw @ BW80 for DBDC.
 		 * This function colud not restore to current peer's
