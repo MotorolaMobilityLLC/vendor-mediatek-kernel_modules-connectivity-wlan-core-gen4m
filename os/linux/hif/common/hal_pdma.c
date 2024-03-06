@@ -4990,10 +4990,17 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
+	prAdapter->fgIsPwrOffProcIST = TRUE;
+
 	if (nicProcessISTWithSpecifiedCount(prAdapter, 5) !=
 		WLAN_STATUS_NOT_INDICATING)
 		DBGLOG(INIT, INFO,
 		       "Handle pending interrupt\n");
+
+	/* check hif_thread remaining SER bit */
+	if (KAL_TEST_AND_CLEAR_BIT(GLUE_FLAG_SER_INT_BIT,
+				   prAdapter->prGlueInfo->ulFlag))
+		nicProcessSoftwareInterrupt(prAdapter);
 
 #if CFG_MTK_MDDP_SUPPORT
 	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
@@ -5010,6 +5017,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
 		DBGLOG(INIT, INFO, "process SER...\n");
 	}
+	prAdapter->fgIsPwrOffProcIST = FALSE;
 
 #if CFG_MTK_MDDP_SUPPORT
 	mddpUnregisterMdStateCB();

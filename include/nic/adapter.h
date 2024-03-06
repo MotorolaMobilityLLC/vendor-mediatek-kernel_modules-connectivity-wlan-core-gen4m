@@ -2930,6 +2930,8 @@ struct ADAPTER {
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 #endif /* CFG_MTK_MDDP_SUPPORT */
 
+	u_int8_t fgIsPwrOffProcIST;
+
 #if CFG_STAINFO_FEATURE
 	struct QUERY_STA_INFO rQueryStaInfo;
 	struct STA_RECORD rSapLastStaRec;
