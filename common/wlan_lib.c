@@ -8332,8 +8332,23 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	 * TXP_FULL(0x08),       TXP(0x04), TXDMAD(0x02), TXD(0x01),
 	 * RXEvent(0x80), RXDSEGMENT(0x40), RXDMAD(0x20), RXD(0x10).
 	 */
-	INIT_UINT(prWifiVar->u4TxRxDescDump, "TRXDescDump", 0x40,
+	INIT_UINT(prWifiVar->u4TxRxDescDump, "TRXDescDump", 0x0,
 		  FEATURE_DEBUG_ONLY);
+
+#if CFG_DEBUG_RX_SEGMENT
+	INIT_UINT(prWifiVar->fgRxSegmentDebugEn, "RxSegmentDebugEn",
+		FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+
+	INIT_UINT(prWifiVar->u4RxSegmentDebugTimeout,
+		"RxSegmentDebugTimeout", RX_SEGMENT_DEBUG_TIMEOUT,
+		FEATURE_DEBUG_ONLY);
+
+	if (IS_FEATURE_ENABLED(prWifiVar->fgRxSegmentDebugEn)) {
+		/* force enable it for better debugging */
+		prWifiVar->fgDumpRxDsegment = 0x1;
+		DBGLOG(INIT, TRACE, "Force Enable fgDumpRxDsegment\n");
+	}
+#endif /* CFG_DEBUG_RX_SEGMENT */
 
 	DBGLOG(INIT, TRACE,
 		"TxPfull,TxP,TxDmad,TxD/RxDsegment,RxDmad,RxD,RxEvt=%u,%u,%u,%u/%u,%u,%u,%u",
