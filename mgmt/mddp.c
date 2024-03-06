@@ -1473,7 +1473,7 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
 
-	buff = kalMemAlloc(u32BufSize, VIR_MEM_TYPE);
+	buff = kalMemAlloc(u32BufSize, PHY_MEM_TYPE);
 
 	if (buff == NULL) {
 		DBGLOG(NIC, ERROR, "buffer allocation failed.\n");
@@ -1508,7 +1508,7 @@ int32_t mddpNotifyMDGenSwithAction(uint32_t u32Action)
 
 exit:
 	if (buff)
-		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
+		kalMemFree(buff, PHY_MEM_TYPE, u32BufSize);
 
 	if (prAdapter) {
 		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u32SeqNum:%u.\n",
