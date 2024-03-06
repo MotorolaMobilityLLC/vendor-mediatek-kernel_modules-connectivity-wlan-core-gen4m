@@ -13685,6 +13685,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			DBGLOG_LIMITED(SW4, ERROR, "nsts error: %u\n", nsts);
 			return -1;
 		}
+		if (gi >= 2) {
+			DBGLOG_LIMITED(SW4, ERROR,
+			       "gi error for 11N: %u\n", gi);
+			return -1;
+		}
 
 		ucMaxSize = 8;
 		if (rate > 23) {
@@ -13715,6 +13720,12 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 			return -1;
 		}
 
+		if (gi >= 2) {
+			DBGLOG_LIMITED(SW4, ERROR,
+			       "gi error for 11AC: %u\n", gi);
+			return -1;
+		}
+
 		ucMaxSize = ARRAY_SIZE(g_rDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].sgi[gi].rate);
 		if (rate >= ucMaxSize) {
@@ -13739,6 +13750,11 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		if (frmode > 3) {
 			DBGLOG_LIMITED(SW4, ERROR,
 			       "frmode error for 11AX: %u\n", frmode);
+			return -1;
+		}
+		if (gi >= 3) {
+			DBGLOG_LIMITED(SW4, ERROR,
+			       "gi error for 11AX: %u\n", gi);
 			return -1;
 		}
 
@@ -13780,6 +13796,12 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		}
 		if (frmode == 5) /* Both 4, 5 are 320MHz, look up by index 4 */
 			frmode--;
+
+		if (gi >= 3) {
+			DBGLOG_LIMITED(SW4, ERROR,
+			       "gi error for 11BE: %u\n", gi);
+			return -1;
+		}
 
 		/* DCM = MCS15, bit 5: RU106 */
 		rate = rate & BITS(0, 3);
