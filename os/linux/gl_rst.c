@@ -660,6 +660,11 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 		break;
 	}
 
+	if (prChipInfo->isUpgradeWholeChipReset) {
+		if (prChipInfo->isUpgradeWholeChipReset(prAdapter))
+			u4RstFlag = RST_FLAG_WHOLE_RESET;
+	}
+
 	return u4RstFlag;
 }
 

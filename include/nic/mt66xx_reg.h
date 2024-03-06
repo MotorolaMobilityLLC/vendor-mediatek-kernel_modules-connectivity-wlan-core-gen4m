@@ -1700,6 +1700,7 @@ struct mt66xx_chip_info {
 	uint32_t (*queryPmicInfo)(struct ADAPTER *prAdapter);
 	uint32_t (*queryDFDInfo)(struct ADAPTER *prAdapter, uint32_t u4InfoIdx,
 		uint32_t u4Offset, uint32_t u4Length, uint8_t *pBuf);
+	u_int8_t (*isUpgradeWholeChipReset)(struct ADAPTER *prAdapter);
 	struct CCIF_OPS *ccif_ops;
 	struct WLAN_PINCTRL_OPS *pinctrl_ops;
 	struct EMI_MEM_INFO rEmiInfo;
