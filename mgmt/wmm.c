@@ -1610,7 +1610,7 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	if (!prAcmCtrl->u4AdmittedTime)
 		return FALSE;
 
-	u4CurTime = (uint32_t)(kalGetBootTime() / USEC_PER_SEC);
+	u4CurTime = (uint32_t)kal_div64_u64(kalGetBootTime(), USEC_PER_SEC);
 
 	if (!TIME_BEFORE(u4CurTime, prAcmCtrl->u4IntervalEndSec)) {
 		u4CurTime++;
@@ -1661,7 +1661,8 @@ u_int8_t wmmAcmCanDequeue(struct ADAPTER *prAdapter, uint8_t ucAc,
 	if (!timerPendingTimer(&prWmmInfo->rAcmDeqTimer)) {
 		uint32_t u4EndMsec = prAcmCtrl->u4IntervalEndSec * 1000;
 
-		u4CurTime = (uint32_t)(kalGetBootTime() / USEC_PER_MSEC);
+		u4CurTime = (uint32_t)kal_div64_u64(kalGetBootTime(),
+					USEC_PER_MSEC);
 
 		/* It is impossible that u4EndMsec is less than u4CurTime */
 		u4EndMsec = u4EndMsec - u4CurTime +

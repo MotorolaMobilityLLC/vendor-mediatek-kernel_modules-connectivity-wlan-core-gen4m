@@ -6052,13 +6052,15 @@ static void updateAverageTx(struct ADAPTER *prAdapter,
 			all_bss_tx_count += one_bss_tx_count;
 			if (one_bss_tx_count) {
 				au4TxAverage[t][b] =
-					acc_delay[t][b] / one_bss_tx_count;
+					kal_div64_u64(acc_delay[t][b],
+						      one_bss_tx_count);
 			}
 		}
 		/* LAST element (b=MAX_BSSID_NUM) stores the all BSS average */
 		if (all_bss_tx_count) {
 			au4TxAverage[t][MAX_BSSID_NUM] =
-				all_bss_acc_delay / all_bss_tx_count;
+				kal_div64_u64(all_bss_acc_delay,
+					      all_bss_tx_count);
 		}
 	}
 
@@ -6184,16 +6186,19 @@ static void checkTxDelayOverLimit(struct ADAPTER *prAdapter)
 		return;
 
 	for (i = 0; i < MAX_TX_OVER_LIMIT_TYPE; i++) {
+		uint32_t avg_delay;
+
 		if (stats->u4DelayNum[i] == 0)
 			continue;
 
 		DBGLOG(HAL, INFO, "Delay[i]=%u, DelayNum[i]=%u, DelayLimit=%u",
 			stats->u4Delay[i], stats->u4DelayNum[i],
 			stats->u4DelayLimit[i]);
-		if (stats->u4Delay[i] / stats->u4DelayNum[i] >
-			stats->u4DelayLimit[i])
-			wlanReportTxDelayOverLimit(prAdapter, i,
-				stats->u4Delay[i] / stats->u4DelayNum[i]);
+
+		avg_delay = kal_div64_u64(stats->u4Delay[i],
+					  stats->u4DelayNum[i]);
+		if (avg_delay > stats->u4DelayLimit[i])
+			wlanReportTxDelayOverLimit(prAdapter, i, avg_delay);
 
 		stats->u4Delay[i] = 0;
 		stats->u4DelayNum[i] = 0;
