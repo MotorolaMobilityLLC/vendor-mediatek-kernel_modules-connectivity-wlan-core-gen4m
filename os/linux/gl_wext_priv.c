@@ -14097,6 +14097,63 @@ int priv_driver_set_tx_ampdu_num(struct net_device *prNetDev, char *pcCommand,
 	return i4BytesWritten;
 }
 
+int priv_driver_set_tx_amsdu_num(struct net_device *prNetDev, char *pcCommand,
+			 int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	int32_t i4BytesWritten = -1;
+	int32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint32_t u4Ret, u4Parse = 0;
+	uint8_t ucBssIndex;
+	struct PARAM_SET_TX_AMSDU_NUM_LIMIT_INFO rParam;
+	uint32_t u4BufLen = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+
+	if (!prNetDev || GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+
+
+	if (i4Argc != 3) {
+		DBGLOG(INIT, ERROR,
+			"iwpriv wlan0 driver SET_TX_AMSDU_NUM <set> <num>\n");
+		DBGLOG(INIT, ERROR,
+			"<set> 1: set amsdu num. 0: reset to default value.\n");
+		DBGLOG(INIT, ERROR, "<num> AMSDU num.\n");
+		return -1;
+	}
+
+	u4Ret = kalkStrtou32(apcArgv[1], 0, &u4Parse);
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+		return -1;
+	}
+
+	rParam.ucSet = (uint8_t) u4Parse;
+	u4Ret = kalkStrtou32(apcArgv[2], 0, &u4Parse);
+	if (u4Ret) {
+		DBGLOG(REQ, LOUD, "parse apcArgv error u4Ret=%d\n",
+				u4Ret);
+		return -1;
+	}
+
+	rParam.ucTxAmsduNum = (uint8_t) u4Parse;
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetTxAmsduNumLimit,
+		&rParam, sizeof(rParam), &u4BufLen, ucBssIndex);
+	if (rStatus == WLAN_STATUS_SUCCESS)
+		i4BytesWritten = 0;
+
+	return i4BytesWritten;
+}
+
 int priv_driver_set_qos(struct net_device *prNetDev, char *pcCommand,
 			 int i4TotalLen)
 {
