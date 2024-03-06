@@ -3940,7 +3940,7 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 	prMldStarec->u2ValidLinks &= ~BIT(prStarec->ucLinkIndex);
 
 	if (LINK_IS_EMPTY(prStarecList))
-		mldStarecFree(prAdapter, prMldStarec);
+		mldStarecFree(prAdapter, prMldStarec, prStarec);
 }
 
 struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
@@ -4001,36 +4001,18 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 }
 
 void mldStarecFree(struct ADAPTER *prAdapter,
-	struct MLD_STA_RECORD *prMldStarec)
+	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStarec)
 {
 	struct MLD_BSS_INFO *prMldBssInfo;
-	struct LINK *prStarecList;
 
 	DBGLOG(ML, INFO, "MldStarec=%d, ucGroupMldId=%d\n",
 		prMldStarec->ucIdx, prMldStarec->ucGroupMldId);
 
 	prMldBssInfo = mldBssGetByIdx(prAdapter, prMldStarec->ucGroupMldId);
-	prStarecList = &prMldStarec->rStarecList;
 
-	if (!LINK_IS_EMPTY(prStarecList)) {
-		struct STA_RECORD *prCurrStarec, *prNextStarec;
-
-		DBGLOG(ML, WARN,
-			"MldStarec%d ucGroupMldId=%d not empty, clear all sta\n",
-			prMldStarec->ucIdx, prMldStarec->ucGroupMldId);
-
-		/* sync with FW */
-		nicUniCmdMldStaTeardown(prAdapter,
-			LINK_PEEK_HEAD(prStarecList,
-			struct STA_RECORD, rLinkEntryMld));
-
-		LINK_FOR_EACH_ENTRY_SAFE(prCurrStarec, prNextStarec,
-			prStarecList, rLinkEntryMld, struct STA_RECORD) {
-			prCurrStarec->ucMldStaIndex = MLD_GROUP_NONE;
-			LINK_REMOVE_KNOWN_ENTRY(prStarecList,
-				&prCurrStarec->rLinkEntryMld);
-		}
-	}
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	nicUniCmdMldStaTeardown(prAdapter, prStarec);
+#endif
 
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
 	cnmTimerStopTimer(prAdapter, &prMldStarec->rT2LMTimer);

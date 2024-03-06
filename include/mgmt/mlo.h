@@ -420,7 +420,7 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 	uint16_t u2EmlCap, uint16_t u2MldCap);
 
 void mldStarecFree(struct ADAPTER *prAdapter,
-	struct MLD_STA_RECORD *prMldStarec);
+	struct MLD_STA_RECORD *prMldStarec, struct STA_RECORD *prStarec);
 
 struct MLD_STA_RECORD *mldStarecGetByStarec(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);

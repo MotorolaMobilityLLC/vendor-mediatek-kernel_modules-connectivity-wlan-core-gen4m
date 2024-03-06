@@ -859,11 +859,6 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		eAction,
 		ucStaRecIndexExcluded, ucBssIndex);
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mldBssTeardownAllClients(prAdapter,
-		mldBssGetByBss(prAdapter, prBssInfo));
-#endif
-
 	for (i = 0; i < CFG_STA_REC_NUM; i++) {
 		prStaRec = (struct STA_RECORD *) &prAdapter->arStaRec[i];
 
