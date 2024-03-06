@@ -145,6 +145,8 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 				   struct MSDU_INFO *prMsduInfo,
 				   uint8_t ucOpChangeType,
 				   u_int8_t fgIsSuccess);
+static void rlmApGoOmiOpModeDoneHandler(struct ADAPTER *prAdapter,
+					struct MSDU_INFO *prMsduInfo);
 static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 			       struct BSS_INFO *prBssInfo);
 static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
@@ -2570,7 +2572,8 @@ void rlmReqGenerateOMIIE(struct ADAPTER *prAdapter,
 		rlmSendOMIDataFrame(prAdapter, prStaRec,
 				rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
 				prBssInfo->ucOpRxNss,
-				prBssInfo->ucOpTxNss);
+				prBssInfo->ucOpTxNss,
+				rlmNotifyOMIOpModeTxDone);
 	}
 #endif /* CFG_SUPPORT_802_11AX */
 }
@@ -7930,7 +7933,8 @@ rlmSendOpModeFrameByType(struct ADAPTER *prAdapter,
 	case OP_NOTIFY_TYPE_OMI_NSS_BW:
 		return rlmSendOMIDataFrame(prAdapter,
 			prStaRec, ucChannelWidth,
-			ucRxNss, ucTxNss);
+			ucRxNss, ucTxNss,
+			rlmNotifyOMIOpModeTxDone);
 #endif /* CFG_SUPPORT_802_11AX || CFG_SUPPORT_802_11BE == 1 */
 	default:
 		DBGLOG(RLM, WARN,
@@ -8124,17 +8128,19 @@ uint32_t rlmSendSmPowerSaveFrame(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 #if (CFG_SUPPORT_802_11AX == 1) || (CFG_SUPPORT_802_11BE == 1)
-uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
-				    struct STA_RECORD *prStaRec,
-					uint8_t ucChannelWidth,
-					uint8_t ucOpRxNss,
-					uint8_t ucOpTxNss)
+uint32_t
+rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
+		    struct STA_RECORD *prStaRec,
+		    uint8_t ucChannelWidth,
+		    uint8_t ucOpRxNss,
+		    uint8_t ucOpTxNss,
+		    PFN_TX_DONE_HANDLER pfTxDoneHandler)
 {
 	uint32_t u4Status;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucMaxBw;
 	uint8_t ucEht = FALSE;
-	PFN_TX_DONE_HANDLER pfTxDoneHandler =
+	PFN_TX_DONE_HANDLER __pfTxDoneHandler =
 		(PFN_TX_DONE_HANDLER)rlmDummyOmiOpModeTxDone;
 
 	/* Sanity Check */
@@ -8149,7 +8155,7 @@ uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 		prBssInfo->aucOpModeChangeState
 			[OP_NOTIFY_TYPE_OMI_NSS_BW] =
 			OP_NOTIFY_STATE_SENDING;
-		pfTxDoneHandler = rlmNotifyOMIOpModeTxDone;
+		__pfTxDoneHandler = pfTxDoneHandler;
 		DBGLOG(RLM, INFO,
 			"OMI Fill pfTxDoneHandler\n");
 	}
@@ -8227,7 +8233,7 @@ uint32_t rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
 	u4Status =
 		heRlmSendHtcNullFrame(
 		prAdapter, prStaRec, 7,
-		pfTxDoneHandler);
+		__pfTxDoneHandler);
 
 	return u4Status;
 
@@ -8359,6 +8365,33 @@ uint32_t rlmNotifyOMIOpModeTxDone(struct ADAPTER *prAdapter,
 
 	rlmOpModeTxDoneHandler(prAdapter, prMsduInfo, OP_NOTIFY_TYPE_OMI_NSS_BW,
 		fgIsSuccess);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t
+rlmNotifyApGoOmiOpModeTxDone(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsduInfo,
+			     enum ENUM_TX_RESULT_CODE rTxDoneStatus)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+
+	do {
+		ASSERT((prAdapter != NULL) && (prMsduInfo != NULL));
+
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						  prMsduInfo->ucBssIndex);
+		if (!prBssInfo)
+			break;
+
+		DBGLOG(RLM, INFO,
+			"bss[%u] sta[%u] success=%d\n",
+			prMsduInfo->ucBssIndex,
+			prMsduInfo->ucStaRecIndex,
+			rTxDoneStatus);
+
+		rlmApGoOmiOpModeDoneHandler(prAdapter, prMsduInfo);
+	} while (FALSE);
 
 	return WLAN_STATUS_SUCCESS;
 }
@@ -8598,6 +8631,66 @@ static void rlmOpModeTxDoneHandler(struct ADAPTER *prAdapter,
 		if (prAdapter->ucANTCtrlPendingCount == 0)
 			rlmSyncAntCtrl(prAdapter,
 				prBssInfo->ucOpTxNss, prBssInfo->ucOpRxNss);
+	}
+#endif
+}
+
+static void rlmApGoOmiOpModeDoneHandler(struct ADAPTER *prAdapter,
+					struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo = NULL;
+	uint8_t ucOpChangeType = (uint8_t)OP_NOTIFY_TYPE_OMI_NSS_BW;
+
+	/* Sanity check */
+	if (!prAdapter || !prMsduInfo) {
+		DBGLOG(RLM, WARN,
+		       "prAdapter=0x%p prMsduInfo=0x%p\n",
+		       prAdapter, prMsduInfo);
+		return;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prBssInfo || prBssInfo->eCurrentOPMode != OP_MODE_ACCESS_POINT) {
+		DBGLOG(RLM, WARN,
+		       "prBssInfo=0x%p mode=%d\n",
+		       prBssInfo,
+		       prBssInfo != NULL ? prBssInfo->eCurrentOPMode : -1);
+		return;
+	}
+
+	DBGLOG(RLM, INFO,
+	       "OP notification done: BSS[%d] State[%d] WaitCnt[%d]\n",
+	       prBssInfo->ucBssIndex,
+	       prBssInfo->aucOpModeChangeState[ucOpChangeType],
+	       prBssInfo->ucOmiWaitingCount);
+
+	if (prBssInfo->aucOpModeChangeState[ucOpChangeType] !=
+	    OP_NOTIFY_STATE_SENDING)
+		return;
+
+	if (prBssInfo->ucOmiWaitingCount > 0)
+		prBssInfo->ucOmiWaitingCount--;
+
+	if (prBssInfo->ucOmiWaitingCount > 0)
+		return;
+
+	prBssInfo->aucOpModeChangeState[ucOpChangeType] =
+		OP_NOTIFY_STATE_SUCCESS;
+
+	rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
+
+	/* notify FW if no active BSS or no pending action frame */
+#if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
+	if (prAdapter->fgANTCtrl) {
+		DBGLOG(RLM, INFO,
+			"ANT Control [Enable:%d], Pending count = %d\n",
+			prAdapter->fgANTCtrl,
+			prAdapter->ucANTCtrlPendingCount);
+		if (prAdapter->ucANTCtrlPendingCount > 0)
+			prAdapter->ucANTCtrlPendingCount--;
+		if (prAdapter->ucANTCtrlPendingCount == 0)
+			rlmSyncAntCtrl(prAdapter, prBssInfo->ucOpTxNss,
+				       prBssInfo->ucOpRxNss);
 	}
 #endif
 }
@@ -9127,6 +9220,92 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 					     fgIsSuccess);
 }
 
+static enum ENUM_OP_CHANGE_STATUS_T
+rlmChangeOperationModeApGo(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo,
+	uint8_t ucChannelWidth,
+	uint8_t ucOpRxNss,
+	uint8_t ucOpTxNss,
+	u_int8_t fgIsChangeBw,
+	u_int8_t fgIsChangeRxNss,
+	u_int8_t fgIsChangeTxNss)
+{
+	struct LINK *prClientList;
+#if (CFG_SUPPORT_WIFI_6G == 1) && \
+	((CFG_SUPPORT_802_11AX == 1) || (CFG_SUPPORT_802_11BE == 1))
+	struct STA_RECORD *prCurrStaRec;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+#endif
+
+	prClientList = &prBssInfo->rStaRecOfClientList;
+	if (prClientList->u4NumElem == 0)
+		goto op_mode_done;
+	else if (!fgIsChangeBw && !fgIsChangeRxNss)
+		goto op_mode_done;
+#if (CFG_SUPPORT_WIFI_6G == 1) && \
+	((CFG_SUPPORT_802_11AX == 1) || (CFG_SUPPORT_802_11BE == 1))
+	else if (prBssInfo->eBand != BAND_6G)
+		goto op_mode_done;
+	else if (!RLM_NET_IS_11AX(prBssInfo)
+#if (CFG_SUPPORT_802_11BE == 1)
+		&& !RLM_NET_IS_11BE(prBssInfo)
+#endif /* CFG_SUPPORT_802_11BE  */
+	)
+		goto op_mode_done;
+	else if (!(prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMI))
+		goto op_mode_done;
+
+	/* reset status */
+	prBssInfo->ucOmiWaitingCount = 0;
+
+	LINK_FOR_EACH_ENTRY(prCurrStaRec, prClientList,
+			    rLinkEntry,
+			    struct STA_RECORD) {
+		if (!prCurrStaRec)
+			break;
+
+		DBGLOG(RLM, INFO,
+			"bss[%u] sta[%u] type=0x%x om_ctrl=%d\n",
+			prBssInfo->ucBssIndex,
+			prCurrStaRec->ucIndex,
+			prCurrStaRec->ucDesiredPhyTypeSet,
+			HE_IS_MAC_CAP_OM_CTRL(
+				prCurrStaRec->ucHeMacCapInfo));
+
+		if ((prCurrStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11AX) == 0 ||
+#if (CFG_SUPPORT_802_11BE == 1)
+		    (prCurrStaRec->ucDesiredPhyTypeSet &
+			PHY_TYPE_SET_802_11BE) == 0 ||
+#endif /* CFG_SUPPORT_802_11BE  */
+		    !HE_IS_MAC_CAP_OM_CTRL(
+			prCurrStaRec->ucHeMacCapInfo))
+			continue;
+
+		u4Status = rlmSendOMIDataFrame(prAdapter,
+					       prCurrStaRec,
+					       ucChannelWidth,
+					       ucOpRxNss,
+					       ucOpTxNss,
+					       rlmNotifyApGoOmiOpModeTxDone);
+		if (u4Status == WLAN_STATUS_SUCCESS)
+			prBssInfo->ucOmiWaitingCount++;
+	}
+
+	DBGLOG(RLM, INFO,
+		"ucOmiWaitingCount=%u\n",
+		prBssInfo->ucOmiWaitingCount);
+
+	if (prBssInfo->ucOmiWaitingCount > 0)
+		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_WAIT;
+#endif
+
+op_mode_done:
+	/* Complete OP Info change after notifying client by beacon */
+	rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
+	return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Change OpMode Nss/Channel Width
@@ -9277,10 +9456,6 @@ rlmChangeOperationMode(
 		) && HE_IS_MAC_CAP_OM_CTRL(prStaRec->ucHeMacCapInfo)
 		&& (prAdapter->rWifiVar.ucDbdcOMFrame & ENABLE_OMI)
 		&& (fgIsChangeBw || fgIsChangeRxNss)) {
-			if (prBssInfo->pfOpChangeHandler)
-				prBssInfo->aucOpModeChangeState
-					[OP_NOTIFY_TYPE_OMI_NSS_BW] =
-					OP_NOTIFY_STATE_SENDING;
 			DBGLOG(RLM, INFO,
 				"Send OMI frame: BSS[%d] BW[%d, %s] RxNss[%d]\n",
 				ucBssIndex, ucChannelWidth,
@@ -9288,7 +9463,8 @@ rlmChangeOperationMode(
 
 			u4Status = rlmSendOMIDataFrame(prAdapter,
 				prStaRec, ucChannelWidth,
-				ucOpRxNss, ucOpTxNss);
+				ucOpRxNss, ucOpTxNss,
+				rlmNotifyOMIOpModeTxDone);
 
 		}
 #endif /* CFG_SUPPORT_802_11AX */
@@ -9360,9 +9536,11 @@ rlmChangeOperationMode(
 	}
 	/* <6>Handling OP Info change for AP/GO */
 	else if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
-		/* Complete OP Info change after notifying client by beacon */
-		rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
-		return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
+		return rlmChangeOperationModeApGo(prAdapter, prBssInfo,
+						  ucChannelWidth, ucOpRxNss,
+						  ucOpTxNss, fgIsChangeBw,
+						  fgIsChangeRxNss,
+						  fgIsChangeTxNss);
 	}
 
 	/* Complete OP mode change if no sending action frames */

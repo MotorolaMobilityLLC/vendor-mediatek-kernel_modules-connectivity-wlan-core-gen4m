@@ -498,12 +498,15 @@ rlmSendNotifyChannelWidthFrame(
 		struct STA_RECORD *prStaRec,
 		uint8_t ucChannelWidth);
 
+#if (CFG_SUPPORT_802_11AX == 1) || (CFG_SUPPORT_802_11BE == 1)
 uint32_t
 rlmSendOMIDataFrame(struct ADAPTER *prAdapter,
-		struct STA_RECORD *prStaRec,
-		uint8_t ucChannelWidth,
-		uint8_t ucOpRxNss,
-		uint8_t ucOpTxNss);
+		    struct STA_RECORD *prStaRec,
+		    uint8_t ucChannelWidth,
+		    uint8_t ucOpRxNss,
+		    uint8_t ucOpTxNss,
+		    PFN_TX_DONE_HANDLER pfTxDoneHandler);
+#endif
 
 void rlmReqGenerateOMIIE(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo);
@@ -524,6 +527,11 @@ uint32_t
 rlmNotifyOMIOpModeTxDone(struct ADAPTER *prAdapter,
 			 struct MSDU_INFO *prMsduInfo,
 			 enum ENUM_TX_RESULT_CODE rTxDoneStatus);
+
+uint32_t
+rlmNotifyApGoOmiOpModeTxDone(struct ADAPTER *prAdapter,
+			     struct MSDU_INFO *prMsduInfo,
+			     enum ENUM_TX_RESULT_CODE rTxDoneStatus);
 
 uint32_t
 rlmSmPowerSaveTxDone(struct ADAPTER *prAdapter,
