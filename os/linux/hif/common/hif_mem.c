@@ -784,7 +784,6 @@ static bool alloc_wifi_tx_cma_mem(
 {
 	struct tx_cma_mem_group *group = NULL;
 	uint32_t alloc_num = 0, req_num = 0, alloc_cnt = 0;
-	uint32_t u4Idx = 0;
 	struct MSDU_TOKEN_ENTRY *prToken = NULL;
 	struct MSDU_TOKEN_INFO *prTokenInfo = NULL;
 	unsigned long flags = 0;
@@ -831,7 +830,7 @@ static bool alloc_wifi_tx_cma_mem(
 			prToken = list_entry(listptr,
 				struct MSDU_TOKEN_ENTRY, msdu_list);
 
-			halCopyPathAllocTxCmaTxDataBuf(prToken, u4Idx);
+			halCopyPathAllocTxCmaTxDataBuf(prToken, 0);
 
 			list_del(&prToken->msdu_list);
 			list_add_tail(&prToken->msdu_list,

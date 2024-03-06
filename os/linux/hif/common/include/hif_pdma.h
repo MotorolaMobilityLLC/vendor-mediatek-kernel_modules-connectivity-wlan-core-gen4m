@@ -164,7 +164,7 @@
 #define HIF_TX_BUFF_COUNT_TC5				4096
 
 /* enable/disable TX resource control */
-#define HIF_TX_RESOURCE_CTRL                1
+#define HIF_TX_RESOURCE_CTRL                CFG_SUPPORT_HIF_TX_RESOURCE_CTRL
 /* enable/disable TX resource control PLE */
 #define HIF_TX_RESOURCE_CTRL_PLE            0
 
@@ -796,10 +796,17 @@ struct MSDU_TOKEN_INFO {
 	spinlock_t rTokenLock;
 	struct MSDU_TOKEN_ENTRY arToken[HIF_TX_MSDU_TOKEN_NUM];
 	uint32_t u4TokenNum;
-	struct list_head init_msdu_list; /* msdu w/o data */
-	struct list_head free_msdu_list; /* msdu w/ data */
+	uint32_t u4FifoErrCnt;
+#if CFG_SUPPORT_HIF_FIFO_TOKEN
+	struct kfifo rTokenFifo;
+	void **aucTokenFifoBuf;
+	uint32_t u4TokenFifoLen;
+#else
 	struct list_head used_msdu_list; /* msdu wait tx done */
 	struct hlist_head used_msdu_htbl[HIF_TX_MSDU_TOKEN_NUM];
+#endif
+	struct list_head init_msdu_list; /* msdu w/o data */
+	struct list_head free_msdu_list; /* msdu w/ data */
 
 	/* control bss index packet number */
 	uint32_t u4TxBssCnt[MAX_BSSID_NUM];
@@ -1202,7 +1209,6 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 					     uint8_t ucBssIdx);
 void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum);
-void halReturnTimeoutMsduToken(struct ADAPTER *prAdapter);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,
 			       struct MSDU_TOKEN_ENTRY *prFillToken,

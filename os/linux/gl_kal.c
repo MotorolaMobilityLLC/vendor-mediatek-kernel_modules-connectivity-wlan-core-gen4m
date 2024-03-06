@@ -271,6 +271,23 @@ static uint8_t *apucCr4FwName[] = {
 	NULL
 };
 
+inline uint32_t kalRoundUpPowerOf2(uint32_t v)
+{
+	/* v is already a power of 2, or v is 0 */
+	if (v && !(v & (v - 1)))
+		return v;
+
+	v--;
+	v |= v >> 1;
+	v |= v >> 2;
+	v |= v >> 4;
+	v |= v >> 8;
+	v |= v >> 16;
+	v++;
+
+	return v;
+}
+
 #if (CONFIG_WLAN_DRV_BUILD_IN == 0) && (BUILD_QA_DBG == 1)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -13783,7 +13800,8 @@ uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo)
 	 * The max size of FIFO queue should be
 	 *     MaxPktCnt * "size of data obj pointer"
 	 */
-	prGlueInfo->u4RxKfifoBufLen = CFG_RX_MAX_PKT_NUM * sizeof(void *);
+	prGlueInfo->u4RxKfifoBufLen =
+		kalRoundUpPowerOf2(CFG_RX_MAX_PKT_NUM) * sizeof(void *);
 	prGlueInfo->prRxKfifoBuf = kalMemAlloc(
 		prGlueInfo->u4RxKfifoBufLen,
 		VIR_MEM_TYPE);
@@ -13835,7 +13853,7 @@ uint8_t kalNapiRxDirectUninit(struct GLUE_INFO *prGlueInfo)
 
 	if (prGlueInfo->prRxKfifoBuf) {
 		kalMemFree(prGlueInfo->prRxKfifoBuf,
-			PHY_MEM_TYPE,
+			VIR_MEM_TYPE,
 			prGlueInfo->u4RxKfifoBufLen);
 		prGlueInfo->prRxKfifoBuf = NULL;
 	}
@@ -17601,7 +17619,8 @@ inline void kalHifRegWorkInit(struct GLUE_INFO *pr)
 {
 	GLUE_SET_REF_CNT(0, pr->u4HifRegStartCnt);
 	GLUE_SET_REF_CNT(0, pr->u4HifRegReqCnt);
-	pr->u4HifRegFifoLen = CFG_HIF_REG_MAX_REQ_NUM * sizeof(void *);
+	pr->u4HifRegFifoLen =
+		kalRoundUpPowerOf2(CFG_HIF_REG_MAX_REQ_NUM) * sizeof(void *);
 	pr->prHifRegFifoBuf = kalMemAlloc(pr->u4HifRegFifoLen, VIR_MEM_TYPE);
 	KAL_FIFO_INIT(&pr->rHifRegFifo,
 		      pr->prHifRegFifoBuf,

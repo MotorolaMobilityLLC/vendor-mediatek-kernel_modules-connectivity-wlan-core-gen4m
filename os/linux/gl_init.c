@@ -2725,7 +2725,8 @@ static void glLoadNvram(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_TASKLET_FREE_MSDU
 static void glTaskletResInit(struct GLUE_INFO *prGlueInfo)
 {
-	prGlueInfo->u4TxMsduRetFifoLen = CFG_TX_MAX_PKT_NUM * sizeof(void *);
+	prGlueInfo->u4TxMsduRetFifoLen =
+		kalRoundUpPowerOf2(CFG_TX_MAX_PKT_NUM) * sizeof(void *);
 	prGlueInfo->prTxMsduRetFifoBuf = kalMemAlloc(
 		prGlueInfo->u4TxMsduRetFifoLen, VIR_MEM_TYPE);
 
