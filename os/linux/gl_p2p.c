@@ -898,6 +898,11 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 			prDev = prP2PInfo->prDevHandler;
 			prP2PInfo->prDevHandler = NULL;
+			if (prDev == prRoleDev) {
+				DBGLOG(INIT, INFO,
+					"set p2p role as NULL too\n");
+				prP2PInfo->aprRoleHandler = NULL;
+			}
 
 			if (fgIsRtnlLockAcquired) {
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
