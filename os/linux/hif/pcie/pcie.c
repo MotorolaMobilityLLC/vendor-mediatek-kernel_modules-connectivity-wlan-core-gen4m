@@ -464,7 +464,7 @@ static void mtk_pci_msi_unmask_irq(uint32_t u4IrqNum)
 		pci_msi_unmask_irq(data);
 }
 
-static void mtk_pci_msi_enable_irq(uint32_t u4Irq)
+void mtk_pci_msi_enable_irq(uint32_t u4Irq)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
@@ -478,7 +478,7 @@ static void mtk_pci_msi_enable_irq(uint32_t u4Irq)
 		enable_irq(u4Irq);
 }
 
-static void mtk_pci_msi_disable_irq(uint32_t u4Irq)
+void mtk_pci_msi_disable_irq(uint32_t u4Irq)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
