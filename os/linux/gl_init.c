@@ -6726,11 +6726,15 @@ static void consys_log_event_notification(int cmd, int value)
 
 	switch (cmd) {
 	case FW_LOG_CMD_ON_OFF:
+		if (value < 0 || value > 1)
+			return;
 		u4LogOnOffCache = value;
 		if (u4LogOnOffCache == 0)
 			fgRetrieveLog = TRUE;
 		break;
 	case FW_LOG_CMD_SET_LEVEL:
+		if (value < 0 || value > 2)
+			return;
 		u4LogLevelCache = value;
 		break;
 	default:
