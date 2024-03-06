@@ -2506,10 +2506,10 @@ static void mt6653WpdmaMsiConfig(struct ADAPTER *prAdapter)
 	if (!prMsiInfo->fgMsiEnabled)
 		return;
 
-#if (WFDMA_AP_MSI_NUM == 8)
-	/* No need to read int status if msi num is 8 */
+	/* MSI only need to read int status once */
 	prAdapter->rWifiVar.u4HifIstLoopCount = 1;
 
+#if (WFDMA_AP_MSI_NUM == 8)
 	/* enable msi 2~5 auto clear feature */
 	u4Value = 0x3C;
 	/* enable deassert timer */
