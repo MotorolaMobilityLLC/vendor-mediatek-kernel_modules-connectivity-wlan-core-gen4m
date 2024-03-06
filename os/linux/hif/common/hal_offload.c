@@ -200,6 +200,8 @@ static void halMawdWakeupSleepDebugDump(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "WR 100=[%x], RD 104=[0x%08x]\n",
 		       u4Idx, u4Val);
 	}
+
+	halMawdDumpSram(prAdapter->prGlueInfo);
 }
 
 static u_int8_t halMawdWakeUpVer1_0(struct GLUE_INFO *prGlueInfo)
@@ -305,6 +307,8 @@ static u_int8_t halMawdWakeUpVer1_1(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, ERROR, "Mawd wakeup polling failed[0x%08x]\n",
 		       u4Val);
 		halMawdWakeupSleepDebugDump(prAdapter);
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_MAWD_WAKEUP_FAIL);
+		goto done;
 	}
 
 	if (!IS_FEATURE_ENABLED(prWifiVar->fgEnableRro))
@@ -514,7 +518,6 @@ u_int8_t halMawdSleep(struct GLUE_INFO *prGlueInfo)
 #endif
 
 	if (!prAdapter->fgIsFwDownloaded ||
-	    p2pFuncNeedForceSleep(prAdapter) ||
 	    prHifInfo->fgIsMawdSuspend ||
 	    prAdapter->ucSerState != SER_IDLE_DONE)
 		goto exit;
