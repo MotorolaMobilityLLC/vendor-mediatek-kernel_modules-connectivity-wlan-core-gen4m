@@ -5602,8 +5602,8 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 				pau4FreqList);
 
 		if (ucFreqListLen == 0) {
-			DBGLOG(REQ, ERROR, "no scan candidate\n");
-			goto exit;
+			DBGLOG(REQ, INFO, "no scan candidate\n");
+			goto scan_start;
 		}
 
 		parChnlListInput =
@@ -5626,6 +5626,7 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 			ucFreqListLen * sizeof(struct RF_CHANNEL_INFO));
 		prMsgAcsRequest->u4NumChannel = ucFreqListLen;
 	}
+scan_start:
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
