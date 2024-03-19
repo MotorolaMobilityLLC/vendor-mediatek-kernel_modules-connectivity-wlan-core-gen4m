@@ -3468,7 +3468,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prCSAIE = (struct IE_CHANNEL_SWITCH *)pucIE;
 
-			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			if (prBssInfo->ucPrimaryChannel ==
 					prCSAIE->ucNewChannelNum) {
 				DBGLOG(RLM, WARN,
@@ -3488,6 +3487,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 			       prBssInfo->ucBssIndex,
 			       prCSAIE->ucChannelSwitchCount,
 			       prCSAIE->ucChannelSwitchMode);
+			prCSAParams->ucCsaNewCh = prCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prCSAIE->ucChannelSwitchCount;
 
 			if (prCSAIE->ucChannelSwitchMode == 1) {
@@ -3538,7 +3538,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 			prExCSAIE = (struct IE_EX_CHANNEL_SWITCH *)pucIE;
 
-			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
 			if (prBssInfo->ucPrimaryChannel ==
 					prExCSAIE->ucNewChannelNum) {
 				DBGLOG(RLM, WARN,
@@ -3549,6 +3548,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				break;
 			}
 
+			prCSAParams->ucCsaNewCh = prExCSAIE->ucNewChannelNum;
 			ucCurrentCsaCount = prExCSAIE->ucChannelSwitchCount;
 			rlmProcessExCsaIE(prAdapter, prStaRec,
 				prCSAParams,
@@ -4128,7 +4128,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 	/* Receive new beacon after channel switch */
 	if (!HAS_CH_SWITCH_PARAMS(prCSAParams) &&
-			prCSAParams->ucCsaMode < MODE_NUM) {
+	    prCSAParams->ucCsaMode < MODE_NUM &&
+	    (!IS_BSS_AIS(prBssInfo) || !prBssInfo->fgIsAisSwitchingChnl)) {
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 		struct BSS_DESC *prBssDesc = NULL;
 
@@ -7236,8 +7237,6 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prChannelSwitchAnnounceIE =
 					(struct IE_CHANNEL_SWITCH *)pucIE;
 
-				prCSAParams->ucCsaNewCh =
-				    prChannelSwitchAnnounceIE->ucNewChannelNum;
 				if (prBssInfo->ucPrimaryChannel ==
 						prChannelSwitchAnnounceIE->
 						ucNewChannelNum) {
@@ -7276,6 +7275,8 @@ void rlmProcessSpecMgtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					}
 				}
 
+				prCSAParams->ucCsaNewCh =
+				    prChannelSwitchAnnounceIE->ucNewChannelNum;
 				prCSAParams->ucCsaMode =
 				 prChannelSwitchAnnounceIE->ucChannelSwitchMode;
 
@@ -7391,7 +7392,6 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 		(struct ACTION_EX_CHANNEL_SWITCH_FRAME *)prSwRfb->pvHeader;
 	pucIE = prEcsaActionFrame->aucInfoElem;
 
-	prCSAParams->ucCsaNewCh = prEcsaActionFrame->ucNewChannelNum;
 	if (prBssInfo->ucPrimaryChannel == prEcsaActionFrame->ucNewChannelNum)
 		DBGLOG(RLM, WARN,
 			"[ECSA Public] BSS: " MACSTR " already at channel %u\n",
@@ -7405,6 +7405,7 @@ void rlmProcessPublicActionExCsa(struct ADAPTER *prAdapter,
 			prEcsaActionFrame->ucNewChannelNum,
 			prEcsaActionFrame->ucChannelSwitchCount);
 
+	prCSAParams->ucCsaNewCh = prEcsaActionFrame->ucNewChannelNum;
 	ucCurrentCsaCount = prEcsaActionFrame->ucChannelSwitchCount;
 
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset)
