@@ -3880,32 +3880,7 @@ static uint32_t mt6653_mcu_check_idle(struct ADAPTER *ad)
 	uint32_t u4Value = 0, u4PollingCnt = 0;
 
 #if (CFG_MTK_WIFI_ON_READ_BY_CFG_SPACE == 1) && defined(_HIF_PCIE)
-	/* 1. check config space */
-	while (TRUE) {
-		if (u4PollingCnt >= 1000) {
-			DBGLOG(INIT, ERROR, "read cfg space timeout: 0x%08x\n",
-				u4Value);
-			break;
-		}
-
-		/* read mcu ilde from pcie config space: 0x490 */
-		glReadPcieCfgSpace(PCIE_CFGSPACE_MCU_IDLE_OFFSET, &u4Value);
-
-		if ((u4Value == MCU_IDLE)
-#if (CFG_MTK_ANDROID_WMT == 0)
-			|| (u4Value == MCU_ON_RDY)
-#endif
-		) {
-			DBGLOG(INIT, TRACE, "read 0x%08x by cfg space\n",
-				u4Value);
-			rStatus = WLAN_STATUS_SUCCESS;
-			goto exit;
-		}
-		u4PollingCnt++;
-		kalUdelay(1000);
-	}
-
-	/* 2. check sram */
+	/* check sram */
 	u4PollingCnt = 0;
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
@@ -3930,7 +3905,7 @@ static uint32_t mt6653_mcu_check_idle(struct ADAPTER *ad)
 	}
 #endif
 
-	/* 3. check CR */
+	/* check CR */
 	u4PollingCnt = 0;
 	while (TRUE) {
 		if (u4PollingCnt >= 1000) {
