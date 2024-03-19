@@ -254,6 +254,8 @@ struct BSS_INFO {
 	 */
 	u_int8_t fgIsIBSSMaster;
 
+	u_int8_t fgFirstArp;
+
 	/* From Capability Info. of AssocResp Frame
 	 * AND of Beacon/ProbeResp Frame
 	 */

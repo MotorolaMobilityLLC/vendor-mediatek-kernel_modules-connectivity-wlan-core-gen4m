@@ -426,6 +426,8 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 	prAisBssInfo->rPmProfSetupInfo.ucUapsdSp =
 	    (uint8_t) prAdapter->u4MaxSpLen;
 
+	prAisBssInfo->fgFirstArp = FALSE;
+
 	/* For BSS_INFO back trace to AIS FSM. */
 	prAisBssInfo->u4PrivateData = prAisFsmInfo->ucAisIndex;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

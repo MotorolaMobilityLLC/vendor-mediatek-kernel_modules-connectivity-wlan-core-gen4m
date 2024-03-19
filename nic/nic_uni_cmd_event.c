@@ -7107,6 +7107,50 @@ uint32_t nicUniCmdEfuseFreeBlock(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+uint32_t nicUniCmdSetCoexStopConnProtect(struct ADAPTER *ad, uint8_t ucBssIdx)
+{
+	uint32_t status = WLAN_STATUS_SUCCESS;
+	struct BSS_INFO *prBssInfo;
+	struct UNI_CMD_COEX_T *uni_cmd;
+	struct UNI_CMD_COEX_STOP_CONNECT_PROTECT_T *tag;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_COEX_T) +
+			sizeof(struct UNI_CMD_COEX_STOP_CONNECT_PROTECT_T);
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(ad, ucBssIdx);
+	ASSERT(prBssInfo);
+
+	uni_cmd = (struct UNI_CMD_COEX_T *) cnmMemAlloc(ad,
+				RAM_TYPE_MSG, max_cmd_len);
+
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR, "Allocate UNI_CMD_COEX_T failed.\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	tag = (struct UNI_CMD_COEX_STOP_CONNECT_PROTECT_T *)
+		uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_COEX_STOP_CONNECT_PROTECT;
+	tag->ucBssInfoIdx = ucBssIdx;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(ad,
+			UNI_CMD_ID_COEX,
+			TRUE,
+			FALSE,
+			FALSE,
+			nicUniCmdEventSetCommon,
+			nicUniCmdTimeoutCommon,
+			max_cmd_len,
+			(void *)uni_cmd, NULL, 0);
+	cnmMemFree(ad, uni_cmd);
+
+	/* convert WLAN_STATUS_PENDING to success */
+	if (status == WLAN_STATUS_PENDING)
+		status = WLAN_STATUS_SUCCESS;
+
+	return status;
+}
+
 #if (CFG_SUPPORT_RTT == 1)
 uint32_t nicUniCmdRttGetCapabilities(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
