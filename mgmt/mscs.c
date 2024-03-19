@@ -328,9 +328,12 @@ uint8_t fpIsPortAuthorized(struct ADAPTER *prAdapter)
 	return TRUE;
 }
 
-uint8_t mscsIsFpSupport(struct ADAPTER *prAdapter)
+u_int8_t mscsIsFpSupport(struct ADAPTER *prAdapter)
 {
 	struct MSCS_CAP_FAST_PATH *prFastPathCap = &prAdapter->rFastPathCap;
+
+	if (prAdapter->rWifiVar.ucEnableFastPath != FEATURE_ENABLED)
+		return FALSE;
 
 	DBGLOG(TX, TRACE,
 		"Fast path version(%d) support(%d) vendor key(0x%x) group key(0x%x)\n",
