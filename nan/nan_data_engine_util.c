@@ -90,9 +90,11 @@ nanGetFeatureIsSigma(struct ADAPTER *prAdapter)
 }
 
 static uint32_t
-nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter, uint8_t *pucNanAttrList,
+nanNdpBufferNanAttrLists(struct ADAPTER *prAdapter,
+			 uint8_t *pucNanAttrList,
 			 uint16_t u2NanAttrListLength,
-			 struct _NAN_NDP_INSTANCE_T *prNDP) {
+			 struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -621,12 +623,12 @@ nanNdpAttrUpdateNdp(struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
  *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
+uint32_t nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
 		     enum _NAN_ACTION_T eNanAction,
 		     struct _NAN_ATTR_NDPE_T *prAttrNDPE,
 		     struct _NAN_NDL_INSTANCE_T *prNDL,
-		     struct _NAN_NDP_INSTANCE_T *prNDP) {
+		     struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint16_t u2ContentLen;
 	uint8_t *pucPivot;
 	uint16_t u2CountLen;
@@ -982,8 +984,7 @@ nanNdpeAttrUpdateNdp(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_802_11AX == 1)
-void nanNdpeAttrVendorSpecificHandler(
-		struct ADAPTER *prAdapter,
+void nanNdpeAttrVendorSpecificHandler(struct ADAPTER *prAdapter,
 		struct _NAN_ATTR_VENDOR_SPECIFIC_T *prAttrVendorSpecific,
 		struct _NAN_NDL_INSTANCE_T *prNDL)
 {
@@ -1094,12 +1095,10 @@ nanNdlParseAttributes(struct ADAPTER *prAdapter,
 			break;
 
 		case NAN_ATTR_ID_NAN_AVAILABILITY:
-			rStatus = nanAvailabilityAttrHandler(
-				prAdapter, eNanAction,
-				(struct _NAN_ATTR_NAN_AVAILABILITY_T *)
-					prNanAttr,
-				prNDL);
-
+			rStatus = nanAvailabilityAttrHandler(prAdapter,
+					eNanAction,
+					(struct _NAN_ATTR_NAN_AVAILABILITY_T *)
+					prNanAttr, prNDL);
 			break;
 
 		case NAN_ATTR_ID_NDC:
@@ -1405,10 +1404,11 @@ nanNdlQosAttrUpdateNdl(struct ADAPTER *prAdapter,
  */
 /*----------------------------------------------------------------------------*/
 uint32_t
-nanDeviceCapabilityAttrHandler(
-	struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
-	struct _NAN_ATTR_DEVICE_CAPABILITY_T *prDeviceCapabilityAttr,
-	struct _NAN_NDL_INSTANCE_T *prNDL) {
+nanDeviceCapabilityAttrHandler(struct ADAPTER *prAdapter,
+	       enum _NAN_ACTION_T eNanAction,
+	       struct _NAN_ATTR_DEVICE_CAPABILITY_T *prDeviceCapabilityAttr,
+	       struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 #if (ENABLE_NDP_UT_LOG == 1)
 	DBGLOG(NAN, INFO, "[%s] Enter\n", __func__);
 #endif
@@ -1433,11 +1433,11 @@ nanDeviceCapabilityAttrHandler(
  *           WLAN_STATUS_FAILURE: Mismatch and/or parameter not acceptable
  */
 /*----------------------------------------------------------------------------*/
-uint32_t
-nanAvailabilityAttrHandler(
-	struct ADAPTER *prAdapter, enum _NAN_ACTION_T eNanAction,
-	struct _NAN_ATTR_NAN_AVAILABILITY_T *prAvailabilityAttr,
-	struct _NAN_NDL_INSTANCE_T *prNDL) {
+uint32_t nanAvailabilityAttrHandler(struct ADAPTER *prAdapter,
+			enum _NAN_ACTION_T eNanAction,
+			struct _NAN_ATTR_NAN_AVAILABILITY_T *prAvailabilityAttr,
+			struct _NAN_NDL_INSTANCE_T *prNDL)
+{
 	uint32_t rStatus;
 
 #if (ENABLE_NDP_UT_LOG == 1)
@@ -1759,7 +1759,8 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 		enum _NAN_ACTION_T eNanAction,
 		uint8_t *pucNanAttrList, uint16_t u2NanAttrListLength,
 		struct _NAN_NDL_INSTANCE_T *prNDL,
-		struct _NAN_NDP_INSTANCE_T *prNDP) {
+		struct _NAN_NDP_INSTANCE_T *prNDP)
+{
 	uint8_t *pucOffset, *pucEnd;
 	struct _NAN_ATTR_HDR_T *prNanAttr;
 	/* struct _NAN_ATTR_SHARED_KEY_DESCRIPTOR_T*
@@ -1823,6 +1824,9 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 			break;
 		}
 
+		DBGLOG(NAN, TRACE,
+		       "prNanAttr->ucAttrId=%u, prNanAttr->u2Length=%u\n",
+		       prNanAttr->ucAttrId, prNanAttr->u2Length);
 		/* move to next Attr */
 		pucOffset += (OFFSET_OF(struct _NAN_ATTR_HDR_T, aucAttrBody) +
 			      prNanAttr->u2Length);
@@ -1929,9 +1933,8 @@ nanNdpParseAttributes(struct ADAPTER *prAdapter,
 			/* only parse NDPE if option is turned on */
 
 			DBGLOG(NAN, INFO, "[%s] NDPE exist, fgExistNDP = %d\n",
-			__func__, fgExistNDP);
-			rStatus = nanNdpeAttrUpdateNdp(
-				prAdapter, eNanAction,
+			       __func__, fgExistNDP);
+			rStatus = nanNdpeAttrUpdateNdp(prAdapter, eNanAction,
 				(struct _NAN_ATTR_NDPE_T *)prNanAttr,
 				prNDL, prNDP);
 			break;

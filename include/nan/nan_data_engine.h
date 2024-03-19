@@ -780,8 +780,7 @@ uint32_t nanSharedKeyAttrHandler(
 
 
 #if (CFG_SUPPORT_802_11AX == 1)
-void nanNdpeAttrVendorSpecificHandler(
-	struct ADAPTER *prAdapter,
+void nanNdpeAttrVendorSpecificHandler(struct ADAPTER *prAdapter,
 	struct _NAN_ATTR_VENDOR_SPECIFIC_T *prAttrVendorSpecific,
 	struct _NAN_NDL_INSTANCE_T *prNDL);
 #endif

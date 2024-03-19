@@ -1804,10 +1804,11 @@ nanNdpProcessDataRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 			prNDP->pucRxMsgBuf = (uint8_t *)(&prNaf->ucCategory);
 
 			/* update parameters through attribute parsing */
-			if (nanNdpParseAttributes(
-				    prAdapter, NAN_ACTION_DATA_PATH_REQUEST,
-				    pucAttrList, u2AttrListLength, prNDL,
-				    prNDP) == WLAN_STATUS_SUCCESS) {
+			if (nanNdpParseAttributes(prAdapter,
+						  NAN_ACTION_DATA_PATH_REQUEST,
+						  pucAttrList, u2AttrListLength,
+						  prNDL, prNDP) ==
+						    WLAN_STATUS_SUCCESS) {
 				if ((nanDataEngineNDPECheck(
 					     prAdapter, prNDP->fgSupportNDPE) ==
 					     TRUE &&
@@ -2199,7 +2200,6 @@ nanNdpProcessDataConfirm(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb) {
 					  NAN_ACTION_DATA_PATH_CONFIRM,
 					  pucAttrList, u2AttrListLength, prNDL,
 					  prNDP) == WLAN_STATUS_SUCCESS) {
-
 			if ((prAttrNDP != NULL && prAttrNDPE != NULL) ||
 			    (nanDataEngineNDPECheck(
 				     prAdapter, prNDP->fgSupportNDPE) == TRUE &&

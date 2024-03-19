@@ -924,10 +924,8 @@ extern const char aucScanLogPrefix[][SCAN_LOG_PREFIX_MAX_LEN];
 	} while (0)
 #endif /* DBG_DISABLE_ALL_LOG */
 
-#define IS_6G_PSC_CHANNEL(_ch) \
-	(((_ch - 5) % 16) == 0)
-#define IS_6G_OP_CLASS(_opClass) \
-	((_opClass >= 131) && (_opClass <= 137))
+#define IS_6G_PSC_CHANNEL(_ch)		(((_ch - 5) % 16) == 0)
+#define IS_6G_OP_CLASS(_opClass)	((_opClass >= 131) && (_opClass <= 137))
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S

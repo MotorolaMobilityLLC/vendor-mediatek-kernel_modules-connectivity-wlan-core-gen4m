@@ -1715,8 +1715,7 @@ void cnmAisInfraConnectNotify(struct ADAPTER *prAdapter)
 	}
 #endif
 #if (CFG_SUPPORT_NAN == 1) && (CFG_NAN_SCHEDULER_VERSION == 1)
-	if (nanSchedUpdateNonNanTimelineByAis(prAdapter)
-		== WLAN_STATUS_SUCCESS)
+	if (nanSchedUpdateNonNanTimelineByAis(prAdapter) == WLAN_STATUS_SUCCESS)
 		nanSchedSyncNonNanChnlToNan(prAdapter);
 #endif
 

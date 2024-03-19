@@ -751,7 +751,7 @@ struct _NAN_CHNL_ENTRY_T {
 	uint8_t ucOperatingClass;
 	uint16_t u2ChannelBitmap;
 	uint8_t ucPrimaryChnlBitmap;
-	uint16_t u2AuxChannelBitmap;
+	uint16_t u2AuxChannelBitmap; /* optional, present if ucNonContiguous */
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
