@@ -104,9 +104,9 @@ enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM] = {
 	ENUM_CPU_BOOST_STATUS_LV0, /* 7 */
 	ENUM_CPU_BOOST_STATUS_LV1, /* 8: 1200Mbps */
 	ENUM_CPU_BOOST_STATUS_LV1, /* 9: 2000Mbps */
-	ENUM_CPU_BOOST_STATUS_LV1, /* 10: 3000Mbps */
-	ENUM_CPU_BOOST_STATUS_LV2, /* 11: 4000Mbps*/
-	ENUM_CPU_BOOST_STATUS_LV2  /* 12: 5000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV2, /* 10: 3000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 11: 4000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3  /* 12: 5000Mbps */
 };
 
 struct BOOST_INFO rBoostInfo[] = {
@@ -173,7 +173,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
-		.i4TxFreeMsduWorkCpu = 4,
+		.i4TxFreeMsduWorkCpu = 2,
 		.i4RxRfbRetWorkCpu = 2,
 		.i4TxWorkCpu = 2,
 		.i4RxWorkCpu = 3,
@@ -183,41 +183,41 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgWifiNappingForceDis = TRUE,
 		.fgDramBoost = FALSE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
-		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_LITTLE,
 	},
 	{
 		/* ENUM_CPU_BOOST_STATUS_LV2 */
 		.rCpuInfo = {
-			.i4LittleCpuFreq = MAX_CPU_FREQ,
-			.i4BigCpuFreq = MAX_CPU_FREQ
+			.i4LittleCpuFreq = MID_LITTLE_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_BIG_CORE,
-			.u4Priority = HIGH_PRIORITY
+			.u4CpuMask = CPU_MID_CORE,
+			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_BIG_CORE,
-			.u4Priority = HIGH_PRIORITY
+			.u4CpuMask = CPU_MID_CORE,
+			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_BIG_CORE,
-			.u4Priority = HIGH_PRIORITY
+			.u4CpuMask = CPU_MID_CORE,
+			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
-			.u4CpuMask = CPU_BIG_CORE,
-			.u4Priority = HIGH_PRIORITY
+			.u4CpuMask = CPU_MID_CORE,
+			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
-		.u4ISRMask = CPU_X_CORE,
+		.u4ISRMask = CPU_BIG_CORE,
 		.i4TxFreeMsduWorkCpu = 4,
 		.i4RxRfbRetWorkCpu = 2,
-		.i4TxWorkCpu = 6,
+		.i4TxWorkCpu = 2,
 		.i4RxWorkCpu = 3,
-		.i4RxNapiWorkCpu = 5,
-		.fgKeepPcieWakeup = TRUE,
-		.u4WfdmaTh = 2,
+		.i4RxNapiWorkCpu = 1,
+		.fgKeepPcieWakeup = FALSE,
+		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = TRUE,
+		.fgDramBoost = FALSE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	},
@@ -246,10 +246,10 @@ struct BOOST_INFO rBoostInfo[] = {
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_X_CORE,
 		.i4TxFreeMsduWorkCpu = 4,
-		.i4RxRfbRetWorkCpu = 6,
+		.i4RxRfbRetWorkCpu = 2,
 		.i4TxWorkCpu = 6,
-		.i4RxWorkCpu = 5,
-		.i4RxNapiWorkCpu = 7,
+		.i4RxWorkCpu = 3,
+		.i4RxNapiWorkCpu = 5,
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
