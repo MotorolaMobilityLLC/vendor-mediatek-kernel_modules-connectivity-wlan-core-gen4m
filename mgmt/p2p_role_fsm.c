@@ -711,13 +711,10 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 						2, 1);
 #endif
 #if CFG_SUPPORT_CCM
-				/* GO/SAP notify other GO/SAP to CSA if MCC.
-				 * MLO GO/SAP ch abort twice.
-				 */
 				if (prP2pChnlReqInfo->eChnlReqType ==
-					CH_REQ_TYPE_GO_START_BSS)
-					CCM_SWITCH_CH(prAdapter,
-							   prP2pBssInfo);
+						CH_REQ_TYPE_GO_START_BSS)
+					ccmChannelSwitchProducer(prAdapter,
+						prP2pBssInfo, __func__);
 #endif /* CFG_SUPPORT_CCM */
 				if (IS_NET_PWR_STATE_IDLE(prAdapter,
 					ucBssIndex))

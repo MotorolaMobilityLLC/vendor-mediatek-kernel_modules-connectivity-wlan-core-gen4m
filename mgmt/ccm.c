@@ -5,7 +5,7 @@
 #include "precomp.h"
 
 
-#if CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT
+#if CFG_SUPPORT_CCM
 struct P2P_CCM_CSA_ENTRY {
 	struct LINK_ENTRY rLinkEntry;
 	struct BSS_INFO *prBssInfo;
@@ -13,6 +13,11 @@ struct P2P_CCM_CSA_ENTRY {
 	enum ENUM_MBMC_BN eTargetHwBandIdx;
 	enum ENUM_BAND eTargetBand;
 };
+
+static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
+				       struct BSS_INFO *prTargetBss,
+				       const char *pucSrcFunc);
+
 
 void ccmInit(struct ADAPTER *prAdapter)
 {
@@ -34,6 +39,30 @@ void ccmGetOtherAliveBssHwBitmap(struct ADAPTER *prAdapter,
 
 		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
 	}
+}
+
+void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prTargetBss,
+			      const char *pucSrcFunc)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (IS_BSS_GC(prTargetBss) || IS_BSS_AIS(prTargetBss)) {
+		struct BSS_INFO *bss;
+		struct MLD_BSS_INFO *prMldBss = mldBssGetByBss(prAdapter,
+							       prTargetBss);
+
+		if (prMldBss) {
+			/* MLO GC/STA only ch abort once */
+			LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
+					    rLinkEntryMld, struct BSS_INFO)
+				__ccmChannelSwitchProducer(prAdapter, bss,
+							   pucSrcFunc);
+		} else
+			__ccmChannelSwitchProducer(prAdapter, prTargetBss,
+						   pucSrcFunc);
+	} else if (IS_BSS_APGO(prTargetBss))
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
+		__ccmChannelSwitchProducer(prAdapter, prTargetBss, pucSrcFunc);
 }
 
 u_int8_t ccmGoSwitchChannel(struct ADAPTER *prAdapter,
@@ -96,7 +125,7 @@ u_int8_t ccmGoSwitchChannel(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Each time consume one entry in queue to check whether it needs to CS.
- *        Only trigger by ccmChannelSwitchProducer,
+ *        Only trigger by __ccmChannelSwitchProducer,
  *        p2pRoleStateAbort_SWITCH_CHANNEL and itself.
  *
  * \param[in] pvAdapter Pointer to the adapter descriptor.
@@ -114,10 +143,29 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	enum ENUM_BAND eTargetBand;
 	u_int8_t fgIsSwitching = FALSE;
 	u_int8_t fgIsMloSap = FALSE;
+	int8_t i;
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
+		/* csa start countdown till csadone */
 		DBGLOG(CCM, INFO, "skip due to CSA still in progress\n");
 		return;
+	} else {
+		/* start switching channel till ch granted */
+		for (i = 0; i < MAX_BSSID_NUM; ++i) {
+			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+			if (IS_BSS_P2P(bss) && bss->fgIsSwitchingChnl)
+				break;
+			else if (IS_BSS_AIS(bss) && bss->fgIsAisSwitchingChnl)
+				break;
+		}
+
+		if (i < MAX_BSSID_NUM) {
+			DBGLOG(CCM, INFO,
+			       "skip due to Bss%u channel switch still in progress",
+			       i);
+			return;
+		}
 	}
 
 	if (!LINK_IS_EMPTY(prCcmCheckCsList)) {
@@ -167,9 +215,9 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
  * \return status
  */
 /*----------------------------------------------------------------------------*/
-void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
-			      struct BSS_INFO *prTargetBss,
-			      const char *pucSrcFunc)
+void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
+				struct BSS_INFO *prTargetBss,
+				const char *pucSrcFunc)
 {
 	struct BSS_INFO *bss;
 	uint8_t i;
@@ -294,5 +342,4 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 
 	ccmChannelSwitchConsumer(prAdapter);
 }
-
-#endif /* CFG_SUPPORT_CCM && CFG_ENABLE_WIFI_DIRECT */
+#endif /* CFG_SUPPORT_CCM */

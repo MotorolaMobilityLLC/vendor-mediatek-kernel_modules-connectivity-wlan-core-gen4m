@@ -133,8 +133,6 @@
  * .\include\mgmt
  *------------------------------------------------------------------------------
  */
-#include "ccm.h"
-
 #if (CFG_SUPPORT_TWT == 1)
 #include "twt.h"
 #endif /* CFG_SUPPORT_802_11AX */
@@ -284,6 +282,8 @@
 #include "fw_log.h"
 
 #include "mscs.h"
+
+#include "ccm.h"
 
 #include "adapter.h"
 #include "ccif.h"
