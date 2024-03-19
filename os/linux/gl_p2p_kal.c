@@ -2844,17 +2844,10 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 #endif
 	}
 
-#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
-	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
-				  ucLinkIdx, ucCsaCount, fgQuiet, 0);
-#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) && \
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
-				  ucLinkIdx, ucCsaCount, fgQuiet, 0);
-#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
-	(CFG_ADVANCED_80211_MLO == 1)
-	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
-					  ucLinkIdx, ucCsaCount, fgQuiet);
+					  ucLinkIdx, ucCsaCount, fgQuiet, 0);
 #elif KERNEL_VERSION(5, 11, 0) <= CFG80211_VERSION_CODE
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef, ucCsaCount,
 					  fgQuiet);

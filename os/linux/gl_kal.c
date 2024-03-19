@@ -4811,6 +4811,7 @@ static int32_t kalThreadSchedRetrieve(struct task_struct *pThread,
 {
 #ifdef CONFIG_SCHEDSTATS
 	struct sched_entity se;
+	struct sched_statistics *stats;
 	unsigned long long sec;
 	unsigned long usec;
 
@@ -4826,15 +4827,18 @@ static int32_t kalThreadSchedRetrieve(struct task_struct *pThread,
 	memcpy(&se, &pThread->se, sizeof(struct sched_entity));
 	kalGetLocalTime(&sec, &usec);
 
+#if (KERNEL_VERSION(5, 16, 0) <= LINUX_VERSION_CODE) || \
+	((CFG_KERNEL_AN14_515 == 1) && \
+	KERNEL_VERSION(5, 15, 110) <= LINUX_VERSION_CODE)
+	stats = &pThread->stats;
+#else
+	stats = &pThread->se.statistics;
+#endif
+
 	pSched->time = sec*1000 + usec/1000;
 	pSched->exec = se.sum_exec_runtime;
-#if (KERNEL_VERSION(5, 15, 111) <= LINUX_VERSION_CODE)
-	pSched->runnable = pThread->stats.wait_sum;
-	pSched->iowait = pThread->stats.iowait_sum;
-#else
-	pSched->runnable = se.statistics.wait_sum;
-	pSched->iowait = se.statistics.iowait_sum;
-#endif
+	pSched->runnable = stats->wait_sum;
+	pSched->iowait = stats->iowait_sum;
 
 	return 0;
 #else
