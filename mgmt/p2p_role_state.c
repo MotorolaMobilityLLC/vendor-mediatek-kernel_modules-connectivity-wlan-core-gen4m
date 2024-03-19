@@ -426,22 +426,11 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 
 	prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
 
+#if CFG_SUPPORT_CCM
 	if (prJoinInfo->fgIsJoinSuccess == TRUE &&
-	    prP2pSpecificBssInfo->fgIsGcEapolDone) {
-#if (CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1)
-		struct BSS_INFO *bss;
-		struct MLD_BSS_INFO *prMldBss =
-			mldBssGetByBss(prAdapter, prBssInfo);
-
-		if (prMldBss) {
-			/* MLO GC only ch abort once */
-			LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
-					    rLinkEntryMld, struct BSS_INFO)
-				CCM_SWITCH_CH(prAdapter, bss);
-		} else
-#endif /* CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1 */
-			CCM_SWITCH_CH(prAdapter, prBssInfo);
-	}
+	    prP2pSpecificBssInfo->fgIsGcEapolDone)
+		ccmChannelSwitchProducer(prAdapter, prBssInfo, __func__);
+#endif /* CFG_SUPPORT_CCM */
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -510,7 +499,8 @@ p2pRoleStateAbort_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, TRACE, "CSA done, re-trigger to notify other GO/SAP");
 	/* do not support CSA by upper layer within CCM */
 	if (LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList))
-		CCM_SWITCH_CH(prAdapter, prP2pRoleBssInfo);
+		ccmChannelSwitchProducer(prAdapter, prP2pRoleBssInfo,
+					   __func__);
 	else
 		ccmChannelSwitchConsumer(prAdapter);
 #endif /* CFG_SUPPORT_CCM */

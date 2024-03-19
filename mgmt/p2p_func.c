@@ -1712,11 +1712,10 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 {
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
 
-	ASSERT_BREAK((prAdapter != NULL) && (prP2pBssInfo != NULL));
+	if (prAdapter == NULL || prP2pBssInfo == NULL)
+		return;
 
-	DBGLOG(P2P, INFO,
-		"p2pFuncStopComplete %d\n",
-		prP2pBssInfo->ucBssIndex);
+	DBGLOG(P2P, INFO, "bss=%d", prP2pBssInfo->ucBssIndex);
 
 	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
 		prP2pBssInfo->u4PrivateData];
@@ -1734,11 +1733,9 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		struct PARAM_REMOVE_KEY  pvSetBuffer;
 		uint32_t pu4SetInfoLen;
 
-		kalMemZero(&pvSetBuffer,
-			   sizeof(struct PARAM_REMOVE_KEY));
+		kalMemZero(&pvSetBuffer, sizeof(struct PARAM_REMOVE_KEY));
 
-		pvSetBuffer.u4KeyIndex =
-			prP2pBssInfo->ucBcDefaultKeyIdx;
+		pvSetBuffer.u4KeyIndex = prP2pBssInfo->ucBcDefaultKeyIdx;
 		pvSetBuffer.ucBssIdx = prP2pBssInfo->ucBssIndex;
 		kalMemCopy(pvSetBuffer.arBSSID,
 			   prP2pBssInfo->aucBSSID, MAC_ADDR_LEN);

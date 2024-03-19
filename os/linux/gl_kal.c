@@ -3116,15 +3116,9 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				timerPendingTimer(
 				&prAisFsmInfo->rJoinTimeoutTimer))
 				prAisFsmInfo->ucIsSapCsaPending = TRUE;
-#if (CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1)
-			else if (prMldBss)
-				/* MLO STA only ch abort once */
-				LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
-					    rLinkEntryMld, struct BSS_INFO)
-					CCM_SWITCH_CH(prAdapter, bss);
-#endif /* CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1 */
 			else
-				CCM_SWITCH_CH(prAdapter, bss);
+				ccmChannelSwitchProducer(prAdapter, prBssInfo,
+							 __func__);
 #endif /* CFG_ENABLE_WIFI_DIRECT */
 		}
 #if (CFG_SUPPORT_802_11AX == 1)

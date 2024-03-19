@@ -6438,20 +6438,8 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 
 #if CFG_ENABLE_WIFI_DIRECT
 		if (prAisFsmInfo->ucIsSapCsaPending == TRUE) {
-#if (CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1)
-			struct MLD_BSS_INFO *prMldBss =
-				mldBssGetByBss(prAdapter, prAisBssInfo);
-			struct BSS_INFO *bss = prAisBssInfo;
-
-			if (prMldBss) {
-				/* MLO STA only ch abort once */
-				LINK_FOR_EACH_ENTRY(bss, &prMldBss->rBssList,
-					    rLinkEntryMld, struct BSS_INFO) {
-					CCM_SWITCH_CH(prAdapter, bss);
-				}
-			} else
-#endif /* CFG_SUPPORT_CCM && CFG_SUPPORT_802_11BE_MLO == 1 */
-				CCM_SWITCH_CH(prAdapter, prAisBssInfo);
+			ccmChannelSwitchProducer(prAdapter, prAisBssInfo,
+						 __func__);
 			prAisFsmInfo->ucIsSapCsaPending = FALSE;
 		}
 #endif
@@ -6691,6 +6679,10 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			prAisBssInfo->ucPrimaryChannel,
 			prAisBssInfo->eBand,
 			prAisBssInfo->ucBssIndex);
+
+#if CFG_SUPPORT_CCM
+		ccmChannelSwitchProducer(prAdapter, prAisBssInfo, __func__);
+#endif /* CFG_SUPPORT_CCM */
 	} else if (prAisFsmInfo->eCurrentState == AIS_STATE_REQ_CHANNEL_JOIN
 	    && prAisFsmInfo->ucSeqNumOfChReq == ucTokenID) {
 		/* 2. channel privilege has been approved */
