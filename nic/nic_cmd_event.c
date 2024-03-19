@@ -7070,22 +7070,29 @@ void nicCmdEventRttCapabilities(struct ADAPTER *prAdapter,
 		prRttCapa = (struct EVENT_RTT_CAPABILITIES *) pucEventBuf;
 		u4QueryInfoLen = sizeof(struct RTT_CAPABILITIES);
 
-		kalMemCopy(prCapaBuf, &prRttCapa->rCapabilities,
-			u4QueryInfoLen);
+		if (prCmdInfo->u2InfoBufLen >= u4QueryInfoLen) {
+			kalMemCopy(prCapaBuf, &prRttCapa->rCapabilities,
+				u4QueryInfoLen);
+
+			DBGLOG(RTT, INFO,
+				"one_sided=%hhu, ftm=%hhu, lci=%hhu, lcr=%hhu, preamble=%hhu, bw=%hhu, responder=%hhu, ver=%hhu",
+				prCapaBuf->fgRttOneSidedSupported,
+				prCapaBuf->fgRttFtmSupported,
+				prCapaBuf->fgLciSupported,
+				prCapaBuf->fgLcrSupported,
+				prCapaBuf->ucPreambleSupport,
+				prCapaBuf->ucBwSupport,
+				prCapaBuf->fgResponderSupported,
+				prCapaBuf->fgMcVersion);
+		} else {
+			DBGLOG(RTT, ERROR,
+				"invalid CMD buffer, length=%d",
+				prCmdInfo->u2InfoBufLen);
+		}
 
 		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
-	DBGLOG(RTT, INFO,
-			"one_sided=%hhu, ftm=%hhu, lci=%hhu, lcr=%hhu, preamble=%hhu, bw=%hhu, responder=%hhu, ver=%hhu",
-			prCapaBuf->fgRttOneSidedSupported,
-			prCapaBuf->fgRttFtmSupported,
-			prCapaBuf->fgLciSupported,
-			prCapaBuf->fgLcrSupported,
-			prCapaBuf->ucPreambleSupport,
-			prCapaBuf->ucBwSupport,
-			prCapaBuf->fgResponderSupported,
-			prCapaBuf->fgMcVersion);
 }
 
 void nicEventRttDone(struct ADAPTER *prAdapter,
