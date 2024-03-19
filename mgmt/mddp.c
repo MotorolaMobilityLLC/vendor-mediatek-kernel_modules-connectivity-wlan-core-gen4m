@@ -1223,18 +1223,18 @@ exit:
 
 #if defined(_HIF_PCIE)
 #if CFG_SUPPORT_PCIE_ASPM
-int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
+int32_t mddpNotifyMDPCIeL12Status(uint8_t fgEnable)
 {
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
 	uint32_t u32BufSize = 0;
-	uint32_t u32InfoId = 7; /* TODO: use define */
+	uint8_t ucInfoId = WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS;
 	uint8_t *buff = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-	DBGLOG(INIT, TRACE, "Notify PCIe L1.2 Status %u\n", u32Enable);
+	DBGLOG(INIT, TRACE, "Notify PCIe L1.2 Status %u\n", fgEnable);
 
 	if (!gMddpWFunc.notify_drv_info) {
 		DBGLOG(NIC, ERROR, "notify_drv_info callback NOT exist.\n");
@@ -1265,13 +1265,13 @@ int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
 		goto exit;
 	}
 
-	if (!u32Enable) {
+	if (!fgEnable) {
 		/* Disable L1ss */
-		u32InfoId = WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS;
+		ucInfoId = WSVC_DRVINFO_PCIE_L_LOCK_SUCCESS;
 		GLUE_INC_REF_CNT(prAdapter->u4MddpPCIeL12SeqNum);
 	} else
 		/* Enable L1ss */
-		u32InfoId = WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS;
+		ucInfoId = WSVC_DRVINFO_PCIE_L_UNLOCK_SUCCESS;
 
 	prNotifyInfo = (struct mddpw_drv_notify_info_t *) buff;
 	prNotifyInfo->version = 0;
@@ -1279,7 +1279,7 @@ int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable)
 			sizeof(uint32_t);
 	prNotifyInfo->info_num = 1;
 	prDrvInfo = (struct mddpw_drv_info_t *) &(prNotifyInfo->buf[0]);
-	prDrvInfo->info_id = u32InfoId;
+	prDrvInfo->info_id = ucInfoId;
 	prDrvInfo->info_len = sizeof(uint32_t);
 
 	kalMemCopy((uint32_t *) &(prDrvInfo->info[0]),
@@ -1294,7 +1294,7 @@ exit:
 
 	if (prAdapter) {
 		DBGLOG(INIT, TRACE, "ret: %d, info_id: %u, u32SeqNum:%u.\n",
-			ret, u32InfoId, prAdapter->u4MddpPCIeL12SeqNum);
+			ret, ucInfoId, prAdapter->u4MddpPCIeL12SeqNum);
 	}
 
 	return ret;
