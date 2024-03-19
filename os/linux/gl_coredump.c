@@ -95,6 +95,10 @@ const struct file_operations g_coredump_fops = {
 #if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
 static uint8_t  fgIsCoredumpSkipped;
 #endif
+
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+static enum COREDUMP_DFD_FSM_STATE g_DfdCoredumpState;
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -550,6 +554,9 @@ int wifi_coredump_init(void *priv)
 #endif
 
 	ctx->initialized = TRUE;
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	g_DfdCoredumpState = COREDUMP_FSM_NOT_START;
+#endif
 #if CFG_WIFI_COREDUMP_SKIP_BY_REQUEST
 	fgIsCoredumpSkipped = 0;
 #endif
@@ -920,6 +927,10 @@ static void __coredump_deinit(struct coredump_ctx *ctx)
 			mem->print_buff_len);
 		mem->print_buff = NULL;
 	}
+
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	g_DfdCoredumpState = COREDUMP_FSM_NOT_START;
+#endif
 }
 
 static int __coredump_init(struct coredump_ctx *ctx,
@@ -1678,6 +1689,10 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 		goto exit;
 	}
 
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	g_DfdCoredumpState = COREDUMP_FSM_TRIGGER_CONNV3_DONE;
+#endif
+
 	__coredump_to_userspace_cr_region(ctx);
 
 	__coredump_to_userspace_issue_info(ctx,
@@ -1761,6 +1776,10 @@ static int __coredump_start(struct coredump_ctx *ctx,
 	if (ret)
 		goto exit;
 
+#if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
+	g_DfdCoredumpState = COREDUMP_FSM_INIT_DONE;
+#endif
+
 	ret = __coredump_handle_print_buff(ctx, chip_info);
 	if (ret)
 		goto deinit;
@@ -1802,25 +1821,38 @@ int wifi_coredump_post_start(void)
 	struct mt66xx_chip_info *chip_info;
 	int ret = 0;
 
+	if (!g_DfdCoredumpState) {
+		DBGLOG(INIT, WARN,
+			"Skip coredump due to coredump NOT started.\n");
+		return ret;
+	}
+
+	if (g_DfdCoredumpState == COREDUMP_FSM_INIT_DONE) {
+		DBGLOG(INIT, WARN,
+			"Skip coredump due to connv3 trigger NOT started\n");
+		goto deinit;
+	}
+
 	if (!ctx->initialized) {
 		DBGLOG(INIT, WARN,
 			"Skip coredump due to NOT initialized.\n");
-		goto deinit;
+		goto coredump_end;
 	}
 
 	glGetChipInfo((void **)&chip_info);
 	if (!chip_info) {
 		DBGLOG(INIT, ERROR, "chip info is NULL\n");
-		goto deinit;
+		goto coredump_end;
 	}
 
 	ctx->processing = TRUE;
 
 	__coredump_to_userspace_dfd_dump(ctx, chip_info);
 
-deinit:
+coredump_end:
 	DBGLOG(INIT, INFO, "do coredump end\n");
 	connv3_coredump_end(ctx->handler, mem->aee_str_buff);
+deinit:
 	__coredump_deinit(ctx);
 	ctx->processing = FALSE;
 	return ret;
