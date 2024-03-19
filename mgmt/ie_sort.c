@@ -1051,7 +1051,7 @@ void sortIE(struct ADAPTER *prAdapter,
 	    uint16_t *apu2OrderTable,
 	    const char *pucIeDesc)
 {
-	uint16_t u2Offset = 0, u2IEsBufLen;
+	uint16_t u2Offset = 0, u2IEsBufLen, u2LastLen;
 	uint8_t *pucBuf, *pucDst;
 	struct IE_ORDER_TABLE_INFO *info = NULL;
 	uint8_t num = 0, i;
@@ -1111,11 +1111,31 @@ void sortIE(struct ADAPTER *prAdapter,
 
 		/* start from next ie to find fragments */
 		pos = pucBuf + IE_SIZE(pucBuf);
-		while (end - pos >= 2 &&
-		       IE_ID(pos) == ELEM_ID_FRAGMENT &&
-		       IE_SIZE(pos) <= end - pos) {
-			info[num].size += IE_SIZE(pos); /* include hdr */
-			pos += IE_SIZE(pos);
+		u2LastLen = IE_SIZE(pucBuf);
+		if (IE_ID(pucBuf) == ELEM_ID_VENDOR) {
+			/* Teate all vendor/fragment IE as one element
+			 * to avoid IOT problem.
+			 */
+			while (end - pos >= 2 &&
+			       (IE_ID(pos) == ELEM_ID_VENDOR ||
+				IE_ID(pos) == ELEM_ID_FRAGMENT) &&
+			       IE_SIZE(pos) <= end - pos) {
+				info[num].size += IE_SIZE(pos);
+				u2LastLen = IE_SIZE(pos);
+				pucBuf = (uint8_t *)pos;
+				pos += IE_SIZE(pos);
+			}
+			u2Offset += info[num].size - u2LastLen;
+		} else {
+			while (end - pos >= 2 &&
+			       IE_ID(pos) == ELEM_ID_FRAGMENT &&
+			       IE_SIZE(pos) <= end - pos) {
+				info[num].size += IE_SIZE(pos);
+				u2LastLen = IE_SIZE(pos);
+				pucBuf = (uint8_t *)pos;
+				pos += IE_SIZE(pos);
+			}
+			u2Offset += info[num].size - u2LastLen;
 		}
 
 		num++;
