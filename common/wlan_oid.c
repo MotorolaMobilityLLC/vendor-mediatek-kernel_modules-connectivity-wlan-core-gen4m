@@ -8170,6 +8170,10 @@ wlanoidSetKeyCfg(struct ADAPTER *prAdapter,
 			MAX_CMD_NAME_MAX_LENGTH);
 		pucKey = &aucKey[0];
 		wlanInitFeatureOptionImpl(prAdapter, prKeyCfgInfo->aucKey);
+#if CFG_SUPPORT_IOT_AP_BLOCKLIST
+		if (kalMemCmp(prKeyCfgInfo->aucKey, "IOTAP", 5) == 0)
+			wlanCfgLoadIotApRule(prAdapter);
+#endif
 	}
 
 #if CFG_SUPPORT_EASY_DEBUG
