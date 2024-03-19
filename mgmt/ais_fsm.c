@@ -5635,13 +5635,12 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 {
 	uint8_t i;
 
+	/* update bssinfo */
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
-		struct BSS_INFO *prAisBssInfo =
-			aisGetLinkBssInfo(prAisFsmInfo, i);
 
-		if (!prAisBssInfo || !prStaRec)
+		if (!prStaRec)
 			continue;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -5669,15 +5668,29 @@ void aisUpdateAllBssInfoForJOIN(struct ADAPTER *prAdapter,
 			prStaRec, prAssocRspSwRfb);
 #endif
 
-		/* 4 <1.3> Activate current AP's STA_RECORD_T
-		 * in Driver.
-		 */
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		/* Activate current AP's STA_RECORD_T in Driver. */
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
+#endif
 
-		/* 4 <1.5> Update RSSI if necessary */
-		nicUpdateRSSI(prAdapter, prAisBssInfo->ucBssIndex,
+		/* Update RSSI if necessary */
+		nicUpdateRSSI(prAdapter, prStaRec->ucBssIndex,
 			      (int8_t) (RCPI_TO_dBm(prStaRec->ucRCPI)), 0);
 	}
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 0)
+	/* update starec */
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct STA_RECORD *prStaRec =
+			aisGetLinkStaRec(prAisFsmInfo, i);
+
+		if (!prStaRec)
+			continue;
+
+		/* Activate current AP's STA_RECORD_T in Driver. */
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
+	}
+#endif
 }
 
 #if CFG_SUPPORT_ADHOC
@@ -7574,10 +7587,10 @@ void aisUpdateBssInfoForRoamingAP(struct ADAPTER *prAdapter,
 
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
-	/* 4 <1.1> Change FW's Media State immediately. */
+	/* Change FW's Media State immediately. */
 	aisChangeMediaState(prAisBssInfo, MEDIA_STATE_CONNECTED);
 
-	/* 4 <1.2> Deactivate previous AP's STA_RECORD_T in Driver if have. */
+	/* Deactivate previous AP's STA_RECORD_T in Driver if have. */
 	if ((prAisBssInfo->prStaRecOfAP) &&
 	    (prAisBssInfo->prStaRecOfAP != prStaRec)
 	    && (prAisBssInfo->prStaRecOfAP->fgIsInUse)) {
@@ -7591,11 +7604,13 @@ void aisUpdateBssInfoForRoamingAP(struct ADAPTER *prAdapter,
 		cnmStaRecFree(prAdapter, prAisBssInfo->prStaRecOfAP);
 	}
 
-	/* 4 <1.4> Update BSS_INFO_T */
+	/* Update BSS_INFO_T */
 	aisUpdateBssInfoForJOIN(prAdapter, prStaRec, prAssocRspSwRfb);
 
-	/* 4 <1.3> Activate current AP's STA_RECORD_T in Driver. */
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	/* Activate current AP's STA_RECORD_T in Driver. */
 	cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
+#endif
 }				/* end of aisFsmRoamingUpdateBss() */
 
 void aisUpdateBssInfoForRoamingAllAP(struct ADAPTER *prAdapter,
@@ -7612,6 +7627,7 @@ void aisUpdateBssInfoForRoamingAllAP(struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->rRSSIMonitor.enable)
 		aisFsmEnableRssiMonitor(prAdapter, prAisFsmInfo, TRUE);
 
+	/* update bssinfo */
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct STA_RECORD *prStaRec =
 			aisGetLinkStaRec(prAisFsmInfo, i);
@@ -7638,6 +7654,20 @@ void aisUpdateBssInfoForRoamingAllAP(struct ADAPTER *prAdapter,
 #endif
 
 	}
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 0)
+	/* update starec */
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct STA_RECORD *prStaRec =
+			aisGetLinkStaRec(prAisFsmInfo, i);
+
+		if (!prStaRec)
+			continue;
+
+		/* Activate current AP's STA_RECORD_T in Driver. */
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
+	}
+#endif
 }
 
 #endif /* CFG_SUPPORT_ROAMING */
