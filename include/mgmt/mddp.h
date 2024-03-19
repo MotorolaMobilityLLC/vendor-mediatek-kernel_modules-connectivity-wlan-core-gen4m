@@ -458,7 +458,7 @@ uint32_t mddpGetGenSwitchState(struct ADAPTER *prAdapter);
 
 #if defined(_HIF_PCIE)
 #if CFG_SUPPORT_PCIE_ASPM
-int32_t mddpNotifyMDPCIeL12Status(uint32_t u32Enable);
+int32_t mddpNotifyMDPCIeL12Status(uint8_t fgEnable);
 #endif
 #endif
 

@@ -174,6 +174,11 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter);
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
+static void mt6653PcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser);
+
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 #endif
@@ -718,6 +723,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.configWfdmaRxRingTh = mt6653ConfigWfdmaRxRingThreshold,
 #if defined(_HIF_PCIE)
 	.initPcieInt = mt6653InitPcieInt,
+	.hwControlVote = mt6653PcieHwControlVote,
 	.pdmaStop = asicConnac3xWfdmaStop,
 	.pdmaPollingIdle = asicConnac3xWfdmaPollingAllIdle,
 	.pcie_msi_info = {
@@ -3202,6 +3208,14 @@ static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	}
 }
 
+static void mt6653PcieHwControlVote(
+	struct ADAPTER *prAdapter,
+	uint8_t enable,
+	uint32_t u4WifiUser)
+{
+	halPcieHwControlVote(prAdapter, enable, u4WifiUser);
+}
+
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6653SetL1ssEnable(struct ADAPTER *prAdapter,
 				u_int role, u_int8_t fgEn)
@@ -3384,6 +3398,7 @@ static void mt6653KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
 	}
 }
 #endif //CFG_SUPPORT_PCIE_ASPM
+
 static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
