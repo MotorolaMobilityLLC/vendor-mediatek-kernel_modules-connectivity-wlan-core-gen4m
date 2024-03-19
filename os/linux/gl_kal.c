@@ -11823,13 +11823,13 @@ void kalIndicateAllQueueTxAllowed(struct GLUE_INFO *prGlueInfo,
 		return;
 	}
 
-	if (fgIsTxAllowed) {
-		DBGLOG(REQ, INFO, "Kernel queue TxAllowed = TRUE");
-		netif_tx_start_all_queues(prDevHandler);
-	} else {
-		DBGLOG(REQ, INFO, "Kernel queue TxAllowed = FALSE");
+	DBGLOG(REQ, INFO, "[%s] Kernel queue TxAllowed = %d\n",
+		prDevHandler->name, fgIsTxAllowed);
+
+	if (fgIsTxAllowed)
+		netif_tx_wake_all_queues(prDevHandler);
+	else
 		netif_tx_stop_all_queues(prDevHandler);
-	}
 }
 
 void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,

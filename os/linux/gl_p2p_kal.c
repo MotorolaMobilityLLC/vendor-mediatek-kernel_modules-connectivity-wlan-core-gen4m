@@ -3046,7 +3046,7 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 #endif
 
 	netif_carrier_on(prNetdevice);
-	netif_tx_start_all_queues(prNetdevice);
+	netif_tx_wake_all_queues(prNetdevice);
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
