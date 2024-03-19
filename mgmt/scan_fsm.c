@@ -1397,14 +1397,6 @@ void scnEventScanDone(struct ADAPTER *prAdapter,
 		(prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ ||
 		prScanParam->eMsgId == MID_AIS_SCN_SCAN_REQ_V2)) {
 		scnDoZeroChRecoveryCheck(prAdapter, prScanInfo);
-		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
-			prScanInfo, prScanParam->ucBssIndex);
-	}
-#else
-	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucScanNoApRecover) &&
-		IS_BSS_INDEX_AIS(prAdapter, prScanParam->ucBssIndex)) {
-		scnDoZeroMdrdyRecoveryCheck(prAdapter, prScanDone,
-				prScanInfo, prScanParam->ucBssIndex);
 	}
 #endif /* CFG_EXT_SCAN */
 
