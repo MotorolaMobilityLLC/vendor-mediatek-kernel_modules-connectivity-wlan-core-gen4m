@@ -1192,6 +1192,8 @@ static void mtk_p2p_vif_destructor(struct net_device *dev)
 			    NULL;
 		prGlueInfo->prP2PInfo[ucRoleIdx]->prDevHandler = NULL;
 	}
+	if (g_P2pPrDev == dev)
+		g_P2pPrDev = NULL;
 	DBGLOG(P2P, INFO, "free %s[%p]\n", dev->name, dev);
 	free_netdev(dev);
 }
@@ -1758,8 +1760,6 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
 	prDev = g_P2pPrDev;
-	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
-		netdev_priv(prDev);
 
 	GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 
@@ -1773,6 +1773,9 @@ void mtk_p2p_wext_set_Multicastlist(struct GLUE_INFO *prGlueInfo)
 			prDev, prGlueInfo);
 		return;
 	}
+
+	prNetDevPriv = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(prDev);
 
 	if (prDev->flags & IFF_PROMISC)
 		prGlueInfo->prP2PDevInfo->u4PacketFilter
