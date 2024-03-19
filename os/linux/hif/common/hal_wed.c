@@ -158,16 +158,56 @@ static void wedNetDevStashRemove(struct net_device *prNetDev)
 	}
 }
 
-void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
+static void wedUpdateStaRecAndBa(struct ADAPTER *prAdapter)
 {
-	int i, j, ret;
+	int i, j, k;
 	struct net_device *prNetDev;
 	struct STA_RECORD *prStaRec;
+	struct RX_BA_ENTRY *prRxBaEntry;
+	struct UNI_EVENT_RX_ADDBA ba;
+
+	/* update sta record */
+	for (i = 0; i < CFG_STA_REC_NUM; i++) {
+		prStaRec = cnmGetStaRecByIndex(prAdapter, i);
+		if (!prStaRec)
+			continue;
+		prNetDev = wlanGetNetDev(prAdapter->prGlueInfo,
+					 prStaRec->ucBssIndex);
+		if (!prNetDev)
+			continue;
+		for (j = 0; j < MAX_BSSID_NUM; j++) {
+			if (prNetDev != grNetList[j])
+				continue;
+			wedStaRecUpdate(prAdapter, prStaRec);
+			for (k = 0; k < CFG_RX_MAX_BA_TID_NUM; k++) {
+				prRxBaEntry = qmLookupRxBaEntry(prAdapter,
+							  prStaRec->ucIndex, k);
+				if (prRxBaEntry == NULL)
+					continue;
+				ba.u2WlanIdx = prStaRec->ucWlanIndex;
+				ba.u2WinSize = prRxBaEntry->u2WinSize -
+					       prAdapter->rWifiVar.u2BaExtSize;
+				ba.u2BAStartSeqCtrl =
+					(uint16_t)(prRxBaEntry->u2WinStart
+							  << OFFSET_BAR_SSC_SN);
+				ba.ucTid = prRxBaEntry->ucTid;
+
+				wedStaRecRxAddBaUpdate(prAdapter, &ba);
+			}
+			break;
+		}
+	}
+}
+
+void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
+{
+	int i, ret;
+	struct net_device *prNetDev;
 
 	DBGLOG(HAL, INFO, "SER(E) hook to warp : %d\n", status);
 
 	mutex_lock(&rWedMutex);
-	if (status == WIFI_ERR_RECOV_L0P5_BEGIN) {
+	if (status == WIFI_ERR_RECOV_DETACH) {
 		if (fgIsWedInSer == TRUE)
 			return;
 
@@ -180,7 +220,7 @@ void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
 			wedDetachWarp(prAdapter, prNetDev, WED_DETACH_IFDOWN);
 		}
 		fgIsWedInSer = TRUE;
-	} else if (status == WIFI_ERR_RECOV_L0P5_END) {
+	} else if (status == WIFI_ERR_RECOV_ATTACH) {
 		if (fgIsWedInSer == FALSE)
 			return;
 		fgIsWedInSer = FALSE;
@@ -191,6 +231,8 @@ void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
 			DBGLOG(HAL, STATE, "ser attach %s!\n", prNetDev->name);
 			wedAttachWarp(prAdapter, prNetDev, WED_ATTACH_IFON);
 		}
+		/* update sta record and ba */
+		wedUpdateStaRecAndBa(prAdapter);
 	} else if (status == WIFI_ERR_RECOV_HIF_INIT) {
 		/* wed hif init */
 		wedRxTokenInfoRelease(prAdapter);
@@ -214,22 +256,8 @@ void wedHwRecoveryFromError(struct ADAPTER *prAdapter, uint32_t status)
 			WF_WFDMA_HOST_DMA0_HOST_INT_ENA_ADDR,
 			grWedInfo.int_enable_mask);
 
-		/* update sta record */
-		for (i = 0; i < CFG_STA_REC_NUM; i++) {
-			prStaRec = cnmGetStaRecByIndex(prAdapter, i);
-			if (!prStaRec)
-				continue;
-			prNetDev = wlanGetNetDev(prAdapter->prGlueInfo,
-						 prStaRec->ucBssIndex);
-			if (!prNetDev)
-				continue;
-			for (j = 0; j < MAX_BSSID_NUM; j++) {
-				if (prNetDev != grNetList[j])
-					continue;
-				wedStaRecUpdate(prAdapter, prStaRec);
-				break;
-			}
-		}
+		/* update sta record and ba */
+		wedUpdateStaRecAndBa(prAdapter);
 	} else {
 		wedProxyHookCall(PROXY_WLAN_HOOK_SER, &status);
 	}
@@ -506,6 +534,7 @@ static void wedRxTokenInfoRelease(struct ADAPTER *prAdapter)
 	/* free all memory allocated at WARP attach phase */
 	kalMemFree(grWedToken.pkt_token, VIR_MEM_TYPE,
 		grWedToken.u4MaxSize*sizeof(struct WED_DMABUF));
+	grWedToken.pkt_token = NULL;
 
 	grWedToken.u4FreeIdx = 0;
 	grWedToken.u4MaxSize = 0;
@@ -563,7 +592,7 @@ int wedRxTokenInfoSetup(struct ADAPTER *prAdapter)
 	grWedToken.u4MaxSize = u4MaxSize;
 	grWedToken.u4FreeIdx = 0;
 
-	grWedToken.pkt_token = kalMemAlloc(
+	grWedToken.pkt_token = kalMemZAlloc(
 		u4MaxSize * sizeof(struct WED_DMABUF), VIR_MEM_TYPE);
 	if (grWedToken.pkt_token == NULL) {
 		DBGLOG(HAL, ERROR, "WED RX token[%d] allocate fail\n",
@@ -1298,6 +1327,10 @@ struct WED_DMABUF *wedRxtokenGet(void *priv, uint32_t u4token_id)
 			u4token_id);
 		return NULL;
 	}
+	if (grWedToken.pkt_token == NULL) {
+		DBGLOG(HAL, STATE, "wed rx token not ready\n");
+		return NULL;
+	}
 	prDmaBuf = &grWedToken.pkt_token[u4token_id];
 
 	return prDmaBuf;
@@ -1667,5 +1700,6 @@ void wedResumeTrigger(void)
 			DBGLOG(HAL, STATE, "%s is down ???\n", prNetDev->name);
 	}
 	INC_CNT(g_u4ResumeCnt);
+	wedUpdateStaRecAndBa(prAdapter);
 	DBGLOG(HAL, STATE, "WED Resume Done! CNT: %u\n", g_u4ResumeCnt);
 }
