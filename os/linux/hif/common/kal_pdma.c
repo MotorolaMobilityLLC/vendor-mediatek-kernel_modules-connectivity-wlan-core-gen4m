@@ -2988,7 +2988,8 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 	}
 
 	prReq->fgIsDone = 0;
-	if (KAL_FIFO_IN(&glue->rHifRegFifo, prReq)) {
+	if (KAL_FIFO_IN_LOCKED(&glue->rHifRegFifo, prReq,
+			       &glue->rHifRegFifoLock)) {
 		kalHifRegWorkSchedule(glue);
 	} else {
 		DBGLOG_LIMITED(HAL, WARN,
@@ -3171,16 +3172,25 @@ exit:
 void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 {
 	struct WF_REG_REQ *prReq = NULL;
+	struct kfifo *prHifRegFifo = NULL;
+	spinlock_t *prHifRegFifoLock;
 
-	if (prGlueInfo == NULL) {
+	if (!prGlueInfo) {
 		DBGLOG_LIMITED(HAL, WARN, "glue is null\n");
 		return;
 	}
+	prHifRegFifo = &prGlueInfo->rHifRegFifo;
+	prHifRegFifoLock = &prGlueInfo->rHifRegFifoLock;
 
-	while (KAL_FIFO_OUT(&prGlueInfo->rHifRegFifo, prReq)) {
+	while (KAL_FIFO_OUT_LOCKED(prHifRegFifo, prReq, prHifRegFifoLock)) {
 		if (!prReq) {
 			DBGLOG(HAL, ERROR, "prReq is null\n");
 			break;
+		}
+
+		if (!prGlueInfo) {
+			DBGLOG_LIMITED(HAL, WARN, "glue is null\n");
+			return;
 		}
 
 		if (prReq->eOp == WF_REG_READ) {

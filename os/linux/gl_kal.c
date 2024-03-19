@@ -17642,6 +17642,7 @@ inline void kalHifRegWorkInit(struct GLUE_INFO *pr)
 		      pr->prHifRegFifoBuf,
 		      pr->u4HifRegFifoLen);
 	kalWorkInit(pr, HIF_REG_WORK, "HifRegWork", kalHifRegWork);
+	spin_lock_init(&pr->rHifRegFifoLock);
 }
 
 inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
