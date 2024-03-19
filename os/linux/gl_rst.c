@@ -512,14 +512,12 @@ static uint32_t reset_handle_pending_req(void)
 	struct reset_pending_req *req = rst->pending_req;
 
 	if (!req) {
-		glResetCleanResetFlag();
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
 	if (rst->is_suspend) {
 		DBGLOG(INIT, ERROR,
 			"Pending reset request only handled in resume mode.\n");
-		glResetCleanResetFlag();
 		return WLAN_STATUS_NOT_ACCEPTED;
 	}
 
