@@ -8999,12 +8999,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgDynamicIcs, "DynamicIcsEn", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
 #endif
+#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 #if (CFG_HW_DETECT_REPORT == 1)
 	INIT_UINT(prWifiVar->fgHwDetectReportEn, "HwDetectReportEnable",
 		  2, FEATURE_TO_CUSTOMER);
 #endif /* CFG_HW_DETECT_REPORT  */
-
-#endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 	INIT_INT(prWifiVar->icTxPwrEnvLmtMin, "TxPwrEnvLmtMin",
 		TX_PWR_ENV_LMT_MIN, FEATURE_TO_CUSTOMER);
