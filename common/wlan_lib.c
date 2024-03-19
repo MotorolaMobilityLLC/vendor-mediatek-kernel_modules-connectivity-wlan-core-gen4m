@@ -6872,6 +6872,9 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 	uint8_t  aucCfgKey[WLAN_CFG_KEY_LEN_MAX];
 	uint8_t  aucCfgVal[WLAN_CFG_VALUE_LEN_MAX];
 	struct WLAN_IOT_AP_RULE_T *prIotApRule = NULL;
+	struct BSS_DESC *prBssDesc = NULL;
+	struct LINK *prBSSDescList =
+		&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
 	int8_t  aucEleSize[] = {
 		sizeof(prIotApRule->ucVersion),
 		sizeof(prIotApRule->aVendorOui),
@@ -6960,6 +6963,10 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 			DBGLOG(INIT, INFO, "Invalid Rule IOTAP%d\n", ucCnt);
 	}
 
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+			    struct BSS_DESC) {
+		prBssDesc->fgIotApActionValid = FALSE;
+	}
 }
 #endif
 
