@@ -5160,6 +5160,8 @@ uint32_t glSetRFTestMode(struct GLUE_INFO *prGlueInfo, bool fgEn)
 	u4Status = glRFTestSwitchMode(prGlueInfo, fgEn);
 #elif CFG_TESTMODE_L0P5_FWDL_SUPPORT
 	u4Status = glRFTestL0P5(prGlueInfo, fgEn);
+#else
+	u4Status = wlanSetRFTestModeCMD(prGlueInfo, fgEn);
 #endif /*CFG_TESTMODE_FWDL_SUPPORT*/
 
 	return u4Status;
