@@ -3104,26 +3104,19 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nApMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\nStaMldEMLCap:%d\nApMldEMLCap:%d\n",
+		"\nMldLinkMax:%d\nStaMldLinkMax:%d\nApMldLinkMax:%d\nP2pMldLinkMax:%d\nEnableMlo:%d\nStaMldEMLCap:0x%x\nApMldEMLCap:0x%x\nEmlsrLinkWeight:%d\n",
 		prAdapter->rWifiVar.ucMldLinkMax,
 		prAdapter->rWifiVar.ucStaMldLinkMax,
 		prAdapter->rWifiVar.ucApMldLinkMax,
 		prAdapter->rWifiVar.ucP2pMldLinkMax,
 		prAdapter->rWifiVar.ucEnableMlo,
 		prAdapter->rWifiVar.u2NonApMldEMLCap,
-		prAdapter->rWifiVar.u2ApMldEMLCap);
+		prAdapter->rWifiVar.u2ApMldEMLCap,
+		prAdapter->rWifiVar.ucEmlsrLinkWeight);
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"ForceRrmMloScan:%d\n",
-		prAdapter->rWifiVar.fgForceRrmMloScan);
-
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"StaPreferMldAddr:%d\nStaMldMainLinkIdx:%d\nApMldMainLinkIdx:%d\nStaEHT:%d\nApEHT:%d\nP2pGoEHT:%d\nP2pGcEHT:%d\n",
-		prAdapter->rWifiVar.ucStaPreferMldAddr,
-		prAdapter->rWifiVar.ucStaMldMainLinkIdx,
-		prAdapter->rWifiVar.ucApMldMainLinkIdx,
+		"StaEHT:%d\nApEHT:%d\nP2pGoEHT:%d\nP2pGcEHT:%d\n",
 		prAdapter->rWifiVar.ucStaEht,
 		prAdapter->rWifiVar.ucApEht,
 		prAdapter->rWifiVar.ucP2pGoEht,
@@ -3131,24 +3124,22 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"T2LMNegotiationSupport:%d\nT2LMMarginMs:%d\nApRemovalByT2LM:%d\nApRemovalMarginMs:%d\n",
-		prAdapter->rWifiVar.ucT2LMNegotiationSupport,
-		prAdapter->rWifiVar.u4T2LMMarginMs,
-		prAdapter->rWifiVar.fgApRemovalByT2LM,
-		prAdapter->rWifiVar.u4ApRemovalMarginMs);
+		"BSS:");
 
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"BSS:%d,%d,%d,%d,%d\n\n",
-		prAdapter->aprBssInfo[0]->fgIsInUse,
-		prAdapter->aprBssInfo[1]->fgIsInUse,
-		prAdapter->aprBssInfo[2]->fgIsInUse,
-		prAdapter->aprBssInfo[3]->fgIsInUse,
-		prAdapter->aprBssInfo[4]->fgIsInUse);
-
-	/* log only */
-	for (i = 0; i <= MAX_BSSID_NUM; i++)
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (i != MAX_BSSID_NUM - 1)
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%d,", prAdapter->aprBssInfo[i]->fgIsInUse);
+		else
+			i4BytesWritten += kalSnprintf(
+				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
+				"%d\n\n", prAdapter->aprBssInfo[i]->fgIsInUse);
+		/* log only */
 		cnmDumpBssInfo(prAdapter, i);
+	}
 
 	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++) {
 		struct MLD_BSS_INFO *prMldBssInfo;
@@ -3169,10 +3160,13 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"OMAC_ID/GRP_MLD_ID/OM_REMAP_ID:%u/%u/%u\n",
+			"OMAC_ID/GRP_MLD_ID/MAX_SIMU/OWN_EML_CAP/OM_REMAP_ID:%u/%u/%u/0x%x/%u\n",
 			prMldBssInfo->ucOmacIdx,
 			prMldBssInfo->ucGroupMldId,
+			prMldBssInfo->ucMaxSimuLinks,
+			prMldBssInfo->ucEmlEnabled ? prMldBssInfo->u2EMLCap : 0,
 			prMldBssInfo->ucOmRemapIdx);
+
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
 			"BSS_BITMAP/OWN_MLD_ADDR:0x%02x/" MACSTR "\n{\n",
@@ -3232,7 +3226,7 @@ int mldDump(struct ADAPTER *prAdapter, uint8_t ucIndex,
 			MAC2STR(prMldStarec->aucPeerMldAddr));
 		i4BytesWritten += kalSnprintf(
 			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-			"EML/STR/TYPE:0x%04x/0x%02x%04x/%d\n",
+			"EML_CAP/STR/TYPE:0x%04x/0x%02x%04x/%d\n",
 			prMldStarec->u2EmlCap,
 			*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
 			*(uint16_t *)(prMldStarec->aucStrBitmap),
@@ -3356,6 +3350,19 @@ uint8_t mldBssRemoveClient(struct ADAPTER *prAdapter,
 	return FALSE;
 }
 
+struct MLD_STA_RECORD *mldBssGetPeekClient(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
+{
+	struct LINK *prClientList;
+
+	if (!prMldBssInfo)
+		return NULL;
+
+	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
+
+	return LINK_PEEK_HEAD(prClientList, struct MLD_STA_RECORD, rLinkEntry);
+}
+
 void mldBssDump(struct ADAPTER *prAdapter)
 {
 	struct MLD_BSS_INFO *prMldBssInfo;
@@ -3420,23 +3427,14 @@ void mldBssUpdateMldAddrByMainBss(
 	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
 					struct BSS_INFO,
 					rLinkEntryMld);
-	if (IS_BSS_APGO(prBssInfo) &&
-	    prAdapter->rWifiVar.ucApMldMainLinkIdx != MLD_LINK_ID_NONE) {
-		prBssInfo = mldGetBssInfoByLinkID(
-				prAdapter,
-				prMldBssInfo,
-				prAdapter->rWifiVar.ucApMldMainLinkIdx,
-				FALSE);
-	}
 
 	if (prBssInfo)
 		mldBssUpdateMldAddr(prAdapter,
 			prMldBssInfo, prBssInfo->aucOwnMacAddr);
 	else
 		DBGLOG(ML, ERROR,
-			"bssinfo not found with NumElem=%d, LinkId=%d\n",
-			prMldBssInfo->rBssList.u4NumElem,
-			prAdapter->rWifiVar.ucApMldMainLinkIdx);
+			"bssinfo not found with NumElem=%d\n",
+			prMldBssInfo->rBssList.u4NumElem);
 }
 
 void mldBssUpdateOmacIdx(
@@ -3454,25 +3452,19 @@ void mldBssUpdateOmacIdx(
 					struct BSS_INFO, rLinkEntryMld);
 
 		prMldBssInfo->ucOmacIdx = prMainBssInfo->ucOwnMacIndex;
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
-		if (prMldBssInfo->ucHmloEnabled)
-			prMldBssInfo->ucOmRemapIdx = prMldBssInfo->ucOmacIdx;
-#endif
 	}
 
-#if (CFG_SUPPORT_CONNAC3X == 1)
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
-	if (prMldBssInfo->ucHmloEnabled)
+	if (prMldBssInfo->ucHmloEnabled) {
 		DBGLOG(ML, INFO, "Hybird MLO use BssInfo omac idx %d\n",
 			prBssInfo->ucOwnMacIndex);
-	else
-#endif
-	{
-		DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
-			prMldBssInfo->ucOmacIdx);
-		prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
+		return;
 	}
 #endif
+
+	DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
+		prMldBssInfo->ucOmacIdx);
+	prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
 }
 
 /**
@@ -3511,7 +3503,8 @@ void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 }
 
 void mldBssUpdateCap(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo)
+	struct MLD_BSS_INFO *prMldBssInfo,
+	void *pvParam)
 {
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct BSS_INFO *prBssInfo = NULL;
@@ -3519,34 +3512,44 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 	if (!prMldBssInfo || !prMldBssInfo->fgIsInUse)
 		return;
 
-	if (prWifiVar->ucMaxSimuLinks != 0xff)
-		prMldBssInfo->ucMaxSimuLinks = prWifiVar->ucMaxSimuLinks;
-	else if (prMldBssInfo->rBssList.u4NumElem == 0)
-		prMldBssInfo->ucMaxSimuLinks = 0;
-	else
-		prMldBssInfo->ucMaxSimuLinks =
-			prMldBssInfo->rBssList.u4NumElem - 1;
-
-	prMldBssInfo->ucMaxSimuLinks =
-		KAL_MIN(prWifiVar->ucMaxSimuLinksCap,
-			prMldBssInfo->ucMaxSimuLinks);
-
 	prBssInfo = LINK_PEEK_HEAD(&(prMldBssInfo->rBssList),
 				struct BSS_INFO, rLinkEntryMld);
 	if (!prBssInfo)
-		return;
+		goto done;
 
-	if (IS_BSS_APGO(prBssInfo)) {
-		if (IS_FEATURE_ENABLED(
-				prAdapter->rWifiVar.ucApMldEMLSupport)) {
+	if (!IS_BSS_AIS(prBssInfo)) {
+		/* update max simu links num */
+		if (prMldBssInfo->rBssList.u4NumElem == 0)
+			prMldBssInfo->ucMaxSimuLinks = 0;
+		else
+			prMldBssInfo->ucMaxSimuLinks =
+				prMldBssInfo->rBssList.u4NumElem - 1;
+
+		/* update eml cap */
+		prMldBssInfo->ucEmlEnabled = FALSE;
+		prMldBssInfo->u2EMLCap = 0;
+	} else {
+		struct BSS_DESC_SET *prBssDescSet =
+			(struct BSS_DESC_SET *)pvParam;
+
+		if (!prBssDescSet)
+			goto done;
+
+		/* update max simu links num */
+		prMldBssInfo->ucMaxSimuLinks =
+			prBssDescSet->ucMaxSimuLinks;
+
+		/* update eml cap */
+		if (prBssDescSet->eMloMode == MLO_MODE_EMLSR) {
 			prMldBssInfo->ucEmlEnabled = TRUE;
 			prMldBssInfo->u2EMLCap =
-				prAdapter->rWifiVar.u2ApMldEMLCap;
+				prAdapter->rWifiVar.u2NonApMldEMLCap;
 		} else {
 			prMldBssInfo->ucEmlEnabled = FALSE;
 			prMldBssInfo->u2EMLCap = 0;
 		}
-	} else {
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 		if (IS_FEATURE_ENABLED(
 				prAdapter->rWifiVar.ucNonApMldEMLSupport)) {
 			prMldBssInfo->ucEmlEnabled = TRUE;
@@ -3556,26 +3559,52 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 			prMldBssInfo->ucEmlEnabled = FALSE;
 			prMldBssInfo->u2EMLCap = 0;
 		}
+#endif
 
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
-		if (IS_BSS_AIS(prBssInfo) && IS_FEATURE_ENABLED(
+		if (IS_FEATURE_ENABLED(
 			prAdapter->rWifiVar.ucNonApHyMloSupport) &&
-			IS_FEATURE_ENABLED(
+		    IS_FEATURE_ENABLED(
 			prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
 			prMldBssInfo->ucHmloEnabled = TRUE;
+			prMldBssInfo->ucOmRemapIdx = prMldBssInfo->ucOmacIdx;
 		} else {
 			prMldBssInfo->ucHmloEnabled = FALSE;
 		}
 #endif
 	}
+
+done:
+	/* set by config strictly */
+	if (prWifiVar->ucMaxSimuLinks != 0xff)
+		prMldBssInfo->ucMaxSimuLinks = prWifiVar->ucMaxSimuLinks;
+
+	prMldBssInfo->ucMaxSimuLinks =
+		KAL_MIN(prWifiVar->ucMaxSimuLinksCap,
+			prMldBssInfo->ucMaxSimuLinks);
 }
 
-void mldBssUpdateCapAll(struct ADAPTER *prAdapter)
+void mldBssRestoreCap(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo)
 {
-	uint8_t i = 0;
+	struct MLD_STA_RECORD *prMldStaRec =
+		mldBssGetPeekClient(prAdapter, prMldBssInfo);
 
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aprMldBssInfo); i++)
-		mldBssUpdateCap(prAdapter, &prAdapter->aprMldBssInfo[i]);
+	if (!prMldStaRec)
+		return;
+
+	/* update max simu links num */
+	prMldBssInfo->ucMaxSimuLinks = prMldStaRec->ucMaxSimuLinks;
+
+	/* update eml cap */
+	if (prMldStaRec->ucEmlEnabled) {
+		prMldBssInfo->ucEmlEnabled = TRUE;
+		prMldBssInfo->u2EMLCap =
+			prAdapter->rWifiVar.u2NonApMldEMLCap;
+	} else {
+		prMldBssInfo->ucEmlEnabled = FALSE;
+		prMldBssInfo->u2EMLCap = 0;
+	}
 }
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
@@ -3600,7 +3629,7 @@ int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	prMldBssInfo->ucBssBitmap |= BIT(prBssInfo->ucBssIndex);
 	LINK_INSERT_TAIL(prBssList, &prBssInfo->rLinkEntryMld);
 
-	mldBssUpdateCap(prAdapter, prMldBssInfo);
+	mldBssUpdateCap(prAdapter, prMldBssInfo, NULL);
 	mldBssUpdateOmacIdx(prAdapter, prMldBssInfo, prBssInfo);
 
 	return 0;
@@ -3636,7 +3665,7 @@ void mldBssUnregister(struct ADAPTER *prAdapter,
 			&prCurrBssInfo->rLinkEntryMld);
 	}
 
-	mldBssUpdateCap(prAdapter, prMldBssInfo);
+	mldBssUpdateCap(prAdapter, prMldBssInfo, NULL);
 }
 
 struct MLD_BSS_INFO *mldBssAlloc(struct ADAPTER *prAdapter,
@@ -4112,10 +4141,11 @@ struct MLD_STA_RECORD *mldStarecAlloc(struct ADAPTER *prAdapter,
 		prMldStarec->fgMldType = fgMldType;
 		prMldStarec->ucGroupMldId = prMldBssInfo->ucGroupMldId;
 
-		/* TODO */
 		prMldStarec->fgEPCS = FALSE;
 		prMldStarec->u2EmlCap = u2EmlCap;
 		prMldStarec->u2MldCap = u2MldCap;
+		prMldStarec->ucEmlEnabled = prMldBssInfo->ucEmlEnabled;
+		prMldStarec->ucMaxSimuLinks = prMldBssInfo->ucMaxSimuLinks;
 		COPY_MAC_ADDR(prMldStarec->aucPeerMldAddr, aucMacAddr);
 
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
@@ -4810,12 +4840,8 @@ uint8_t mldHasSingleLinkBss(struct ADAPTER *prAdapter)
 	return FALSE;
 }
 
-/* Check the new connection type(As follow)
- * LEGACY_TYPE
- * STR_MLO_TYPE
- * MLSR_MLO_TYPE
- */
-enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
+/* Check the new connection type(As follow) */
+enum ENUM_MLO_MODE mldNewConnectionType(struct ADAPTER *prAdapter,
 	struct DBDC_DECISION_INFO *prDbdcDecisionInfo)
 {
 	struct BSS_INFO *prBssInfo = NULL;
@@ -4824,10 +4850,10 @@ enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
 	uint8_t i;
 
 	if (!prDbdcDecisionInfo)
-		return MAX_TYPE_NUM;
+		return MLO_MODE_NUM;
 
 	if (prDbdcDecisionInfo->ucLinkNum <= 1)
-		return LEGACY_TYPE;
+		return MLO_MODE_LEGACY;
 
 	for (i = 0; i < prDbdcDecisionInfo->ucLinkNum; i++) {
 
@@ -4837,14 +4863,14 @@ enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
 				prAdapter, prBssInfo);
 		if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
 			mld_bssinfo->ucMaxSimuLinks == 0)
-			return MLSR_MLO_TYPE;
+			return MLO_MODE_MLSR;
 		else if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
 				mld_bssinfo->ucMaxSimuLinks >= 1)
-			return STR_MLO_TYPE;
+			return MLO_MODE_STR;
 
 	}
 
-	return MAX_TYPE_NUM;
+	return MLO_MODE_NUM;
 }
 
 void mldClearMLSRPausedLinkFlag(struct ADAPTER *prAdapter)

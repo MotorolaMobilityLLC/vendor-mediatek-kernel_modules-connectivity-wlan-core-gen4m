@@ -892,6 +892,8 @@ struct BSS_DESC_SET {
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlockList;
 	uint8_t fgIsAllLinkConnected;
+	enum ENUM_MLO_MODE eMloMode;
+	uint8_t ucMaxSimuLinks;
 	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
 };
 

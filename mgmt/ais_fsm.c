@@ -2249,6 +2249,11 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 	prMainBss = aisGetMainLinkBssInfo(prAisFsmInfo);
 	cnmWmmIndexDecision(prAdapter, prMainBss);
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	/* update cap again in case bssinfo is already registered */
+	mldBssUpdateCap(prAdapter, prAisFsmInfo->prMldBssInfo, prBssDescSet);
+#endif
+
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct BSS_INFO *prAisBssInfo =
 			aisGetLinkBssInfo(prAisFsmInfo, i);
@@ -2485,6 +2490,21 @@ uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #endif
 
 	return mldBssAllowReconfig(prAdapter, prMldBssInfo);
+}
+
+struct MLD_BSS_INFO *aisGetMldBssInfo(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	return aisGetAisFsmInfo(prAdapter, ucBssIndex)->prMldBssInfo;
+}
+
+struct MLD_STA_RECORD *aisGetMldStaRec(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex)
+{
+	struct MLD_BSS_INFO *prMldBssInfo =
+		aisGetMldBssInfo(prAdapter, ucBssIndex);
+
+	return mldBssGetPeekClient(prAdapter, prMldBssInfo);
 }
 
 uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
@@ -4260,6 +4280,10 @@ void aisRestoreAllLink(struct ADAPTER *ad, struct AIS_FSM_INFO *ais)
 					prBssDesc, i);
 		}
 	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	mldBssRestoreCap(ad, ais->prMldBssInfo);
+#endif
 }
 
 u_int8_t aisHandleTemporaryReject(struct ADAPTER *prAdapter,

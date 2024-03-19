@@ -694,7 +694,6 @@ endif
 ifneq ($(CONFIG_WIFI_LIBER_2G2A), y)
     CONFIG_BAND_NUM=3
     CONFIG_IFACE_CONCURRENT_MODE=2
-    CONFIG_MTK_WIFI_11BE_EMLSR=y
     ccflags-y += -DCFG_P2P_NUM=3
     ccflags-y += -DCFG_STA_NUM=3
 endif
@@ -1277,6 +1276,11 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
         ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=1
     else
         ccflags-y += -DCFG_SUPPORT_ML_RECONFIG=0
+    endif
+    ifeq ($(CONFIG_MTK_WIFI_11BE_EMLSR), y)
+        ccflags-y += -DCFG_DEFAULT_ENABLE_EMLSR=1
+    else
+        ccflags-y += -DCFG_DEFAULT_ENABLE_EMLSR=0
     endif
     # Setup MLD info before auth/assoc only for STA
     ifeq ($(CONFIG_MLD_INFO_PRESETUP), y)

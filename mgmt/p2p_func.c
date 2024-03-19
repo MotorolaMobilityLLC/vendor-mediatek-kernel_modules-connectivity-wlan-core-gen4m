@@ -2345,7 +2345,8 @@ p2pFuncSwitchOPMode(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			mldBssUpdateCap(prAdapter,
-				mldBssGetByBss(prAdapter, prP2pBssInfo));
+				mldBssGetByBss(prAdapter, prP2pBssInfo),
+				NULL);
 #endif
 
 			/* Update BSS INFO to FW. */

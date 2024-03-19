@@ -52,6 +52,8 @@ struct AP_COLLECTION {
 	uint8_t fgIsMatchBssidHint;
 	uint8_t fgIsAllLinkInBlockList;
 	uint8_t fgIsAllLinkConnected;
+	enum ENUM_MLO_MODE eMloMode;
+	uint8_t ucMaxSimuLinks;
 	uint32_t u4TotalTput;
 	uint32_t u4TotalScore;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
