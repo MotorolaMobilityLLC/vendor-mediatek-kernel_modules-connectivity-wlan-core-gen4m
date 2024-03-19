@@ -1612,11 +1612,16 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 {
 #define AEE_STR_LEN		256
 #define FW_VER_LEN		256
+#define PACKAGE_MODE_LEN	24
 
 	struct coredump_mem *mem = &ctx->mem;
 	struct GLUE_INFO *glue = ctx->priv;
 	enum connv3_drv_type drv_type;
 	uint8_t *fw_version = NULL;
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	uint8_t *package_mode = NULL;
+	uint8_t package_mode_str[PACKAGE_MODE_LEN] = {0};
+#endif
 	uint32_t u4Len = 0;
 	int32_t ret = 0;
 
@@ -1656,6 +1661,23 @@ static int __coredump_to_userspace(struct coredump_ctx *ctx,
 				    prVerInfo->rCommonTailer.aucRamBuiltDate);
 		}
 	}
+
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	u4Len = kalStrLen(fw_version);
+	package_mode = fw_version + u4Len;
+
+	kalScnprintf(package_mode_str,
+		PACKAGE_MODE_LEN,
+		(fgIsCurrentInTestMode) ?
+		"Package:TestMode" : "Package:NormalMode");
+
+	kalSnprintf(package_mode,
+		FW_VER_LEN-u4Len,
+		"\n%s",
+		package_mode_str);
+
+	DBGLOG(INIT, LOUD, "fw_version:%s", fw_version);
+#endif
 
 	drv_type = coredump_src_to_connv3_type(source);
 	if (!state_ready) {
