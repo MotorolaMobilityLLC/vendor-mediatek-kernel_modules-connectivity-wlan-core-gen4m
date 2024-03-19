@@ -867,7 +867,12 @@ ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig),)
     include $(CFG_DIR)/${MTK_COMBO_CHIP}/defconfig
 endif
 
-ifeq ($(WM_RAM),ce)
+ifeq ($(WM_RAM),ce_sqc)
+    ccflags-y += -DCONFIG_WM_RAM_TYPE=1
+    ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/ce_sqc/defconfig),)
+        include $(CFG_DIR)/${MTK_COMBO_CHIP}/ce_sqc/defconfig
+    endif
+else ifeq ($(WM_RAM),ce)
     ccflags-y += -DCONFIG_WM_RAM_TYPE=1
     ifneq ($(wildcard $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig),)
         include $(CFG_DIR)/${MTK_COMBO_CHIP}/ce/defconfig
