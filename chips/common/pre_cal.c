@@ -216,19 +216,54 @@ struct PHYACT_CONN_FEM_SPDT_V2_T {
 
 #endif /* #if(CONNFEM_API_VERSION >= 2) */
 
+void wlanDebugDumpCalibrationEMI(
+	uint8_t *pucEmiStartAddr,
+	uint32_t u4EmiSize)
+{
+#if CFG_MTK_ANDROID_EMI
+
+	uint32_t i, index = 0, u4ArrSize = 0;
+	uint32_t *p4ucSum = NULL;
+
+	u4ArrSize = (u4EmiSize/1000 + 1) * sizeof(uint32_t);
+
+	p4ucSum = kalMemAlloc(u4ArrSize, VIR_MEM_TYPE);
+
+	if (p4ucSum == NULL) {
+		DBGLOG(INIT, ERROR,
+			"puSum kalMemAlloc NULL\n");
+		return;
+	}
+
+	kalMemSet(p4ucSum, 0, u4ArrSize);
+
+	for (i = 0; i < u4EmiSize; i++) {
+		index = i/1000;
+		*(p4ucSum + index) += *(pucEmiStartAddr + i);
+	}
+
+	for (i = 0; i < (u4EmiSize/1000 + 1); i++)
+		DBGLOG(INIT, INFO, "Sum[%d]=0x%08x\n", i, *(p4ucSum + i));
+#endif
+}
 
 uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 	struct INIT_EVENT_PHY_ACTION_RSP *pCalEvent,
 	uint8_t backupEMI)
 {
-#ifdef MT6653
-	#define TURN_ON_EMI_BACKUP 0
-#else
-	#define TURN_ON_EMI_BACKUP 1
-#endif
 	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 #if CFG_MTK_ANDROID_EMI
+	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
+	struct HIF_MEM *prMem = NULL;
+	uint8_t *prEmi2Address = NULL;
+
+	#define TURN_ON_EMI_BACKUP 1
+	#define DUMP_PRE_CAL_RESULT 0
+
 	do {
 		if (backupEMI == TRUE) {
 			if (!pCalEvent) {
@@ -278,38 +313,125 @@ uint32_t wlanAccessCalibrationEMI(struct ADAPTER *prAdapter,
 					gEmiCalNoUseEmiData, backupEMI);
 
 #if (TURN_ON_EMI_BACKUP == 1)
-			emi_mem_read(prAdapter->chip_info,
+			if (prMemOps->getWifiMiscRsvEmi) {
+				prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
+					WIFI_MISC_MEM_BLOCK_PRECAL);
+				if (prMem != 0) {
+					prEmi2Address =
+						(uint8_t *)prMem->va;
+					if (prEmi2Address == NULL) {
+						DBGLOG(INIT, ERROR,
+							"PreCal EMI2 Address is NULL(1)\n");
+						break;
+					}
+
+					/* backup force cal result data of emi2
+					 * to driver buffer
+					 */
+					kalMemCopyFromIo(gEmiCalResult,
+						prEmi2Address, gEmiCalSize);
+
+					/* dump cal result for debug */
+#if (DUMP_PRE_CAL_RESULT == 1)
+					wlanDebugDumpCalibrationEMI(
+						gEmiCalResult,
+						gEmiCalSize);
+#endif
+				} else {
+					DBGLOG(INIT, INFO,
+						"precal prMem(1) = 0x%x\n",
+						prMem);
+
+					emi_mem_read(prAdapter->chip_info,
+					gEmiCalOffset, gEmiCalResult,
+					gEmiCalSize);
+				}
+			} else {
+				DBGLOG(INIT, ERROR,
+					"getWifiMiscRsvEmi is null(1)\n");
+
+				emi_mem_read(prAdapter->chip_info,
 				gEmiCalOffset, gEmiCalResult,
 				gEmiCalSize);
+			}
 #endif
+
 			u4Status = WLAN_STATUS_SUCCESS;
 		} else {
 			if (gEmiCalNoUseEmiData == TRUE) {
 				DBGLOG(INIT, INFO, "No EMI restore.\n");
 				u4Status = WLAN_STATUS_SUCCESS;
+				break;
 			}
-			else if (gEmiCalOffset == 0 || gEmiCalSize == 0)
-				DBGLOG(INIT, INFO, "No EMI restore data.\n");
-			else {
-				if (gEmiCalResult == NULL) {
-					DBGLOG(INIT, ERROR,
-						"gEmiCalResult NULL\n");
-					break;
-				}
 
-				DBGLOG(INIT, INFO,
-					"Offset(0x%x), Size(0x%x), NoUse(%d), backup(%d)\n",
-					gEmiCalOffset, gEmiCalSize,
-					gEmiCalNoUseEmiData, backupEMI);
+			if (gEmiCalOffset == 0 || gEmiCalSize == 0) {
+				DBGLOG(INIT, INFO, "No EMI restore data.\n");
+				break;
+			}
+
+			if (gEmiCalResult == NULL) {
+				DBGLOG(INIT, ERROR,
+					"gEmiCalResult NULL\n");
+				break;
+			}
+
+			DBGLOG(INIT, INFO,
+				"Offset(0x%x), Size(0x%x), NoUse(%d), backup(%d)\n",
+				gEmiCalOffset, gEmiCalSize,
+				gEmiCalNoUseEmiData, backupEMI);
 
 #if (TURN_ON_EMI_BACKUP == 1)
-				/*** restore calibration result ******/
-				emi_mem_write(prAdapter->chip_info,
-					gEmiCalOffset, gEmiCalResult,
-					gEmiCalSize);
+			/*** restore calibration result ******/
+			if (prMemOps->getWifiMiscRsvEmi) {
+				prMem = prMemOps->getWifiMiscRsvEmi(
+					prChipInfo,
+					WIFI_MISC_MEM_BLOCK_PRECAL);
+				if (prMem != 0) {
+					prEmi2Address =
+						(uint8_t *)prMem->va;
+					if (prEmi2Address == NULL) {
+						DBGLOG(INIT, ERROR,
+							"PreCal EMI2 Address is NULL(2)\n");
+						break;
+					}
+
+					/* Restore force cal result data of
+					 * driver buffer overwrite to emi2
+					 */
+					kalMemCopyToIo(prEmi2Address,
+						gEmiCalResult,
+						gEmiCalSize);
+
+					/* dump cal result for debug */
+#if (DUMP_PRE_CAL_RESULT == 1)
+					wlanDebugDumpCalibrationEMI(
+						prEmi2Address,
+						gEmiCalSize);
 #endif
-				u4Status = WLAN_STATUS_SUCCESS;
+				} else {
+					DBGLOG(INIT, INFO,
+					"precal prMem(2) = 0x%x\n",
+					prMem);
+
+					emi_mem_write(
+						prAdapter->chip_info,
+						gEmiCalOffset,
+						gEmiCalResult,
+						gEmiCalSize);
+				}
+			} else {
+				DBGLOG(INIT, ERROR,
+					"getWifiMiscRsvEmi is null(2)\n");
+
+				emi_mem_write(
+					prAdapter->chip_info,
+					gEmiCalOffset,
+					gEmiCalResult,
+					gEmiCalSize);
 			}
+#endif
+
+			u4Status = WLAN_STATUS_SUCCESS;
 		}
 	} while (FALSE);
 #endif /* CFG_MTK_ANDROID_EMI */
