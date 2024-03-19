@@ -3356,7 +3356,7 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 
 		/*1. read pcie cfg.space 0x488 // Readable check*/
 		pci_read_config_dword(pci_dev, 0x488, &u4RegVal[1]);
-		if ((u4RegVal[1] & 0x3c11) != 0x3c11) {
+		if ((u4RegVal[1] & 0x3811) != 0x3811) {
 			pci_read_config_dword(pci_dev, 0x48C, &u4RegVal[2]);
 			DBGLOG(HAL, INFO,
 				"Cb_infra bus fatal error and un-readble 0x488=0x%08x 0x48C=0x%08x\n",
