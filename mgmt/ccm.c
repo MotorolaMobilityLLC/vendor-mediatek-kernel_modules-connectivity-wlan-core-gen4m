@@ -19,33 +19,74 @@ void ccmInit(struct ADAPTER *prAdapter)
 	LINK_INITIALIZE(&prAdapter->rCcmCheckCsList);
 }
 
+void ccmGetOtherAliveBssHwBitmap(struct ADAPTER *prAdapter,
+				 uint32_t *pau4Bitmap,
+				 struct BSS_INFO *prBssInfo)
+{
+	struct BSS_INFO *bss;
+	uint8_t i;
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!IS_BSS_ALIVE(prAdapter, bss) || bss == prBssInfo)
+			continue;
+
+		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
+	}
+}
+
 u_int8_t ccmGoSwitchChannel(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
 			    uint32_t u4TargetCh,
 			    enum ENUM_MBMC_BN eTargetHwBandIdx,
 			    enum ENUM_BAND eTargetBand)
 {
+	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
+	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
+	uint32_t u4FreqListNum;
 	u_int8_t fgIsDfs = rlmDomainIsDfsChnls(prAdapter, u4TargetCh);
 
+	/* pass for MCC only */
 	if (fgIsDfs ||
-	    /* only allow MCC, this will skip MLO 2nd link, either. */
 	    prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
 	    prBssInfo->ucPrimaryChannel == u4TargetCh) {
 		DBGLOG(CCM, INFO,
-		       "do not need CSA, isDfs=%u [BSS%u] ch=%u, hwBand=%u [Target] ch=%u, hwBand=%u, rfBand=%u",
+		       "do not need CSA, isDfs=%u [BSS%u] ch=%u, hwBand=%u [Target] ch=%u, hwBand=%u, rfBand=%u\n",
 		       fgIsDfs, prBssInfo->ucBssIndex,
 		       prBssInfo->ucPrimaryChannel, prBssInfo->eHwBandIdx,
 		       u4TargetCh, eTargetHwBandIdx, eTargetBand);
 		return FALSE;
 	}
 
+	ccmGetOtherAliveBssHwBitmap(prAdapter, au4AliveBssBitmap, prBssInfo);
+	DBGLOG(P2P, INFO,
+	       "alive BSS hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
+	       au4AliveBssBitmap[AA_HW_BAND_0], au4AliveBssBitmap[AA_HW_BAND_1],
+	       au4AliveBssBitmap[AA_HW_BAND_2]);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
+	if ((prBssInfo->eBand == BAND_5G || prBssInfo->eBand == BAND_6G) &&
+	    p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap)) {
+		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
+						     freqList);
+		if (u4FreqListNum > 0) {
+			u4TargetCh = nicFreq2ChannelNum(freqList[0] * 1000);
+			if (freqList[0] >= 2412 && freqList[0] <= 2484)
+				eTargetBand = BAND_2G4;
+			else if (freqList[0] >= 5180 && freqList[0] <= 5900)
+				eTargetBand = BAND_5G;
+			else if (freqList[0] >= 5955 && freqList[0] <= 7115)
+				eTargetBand = BAND_6G;
+		}
+	}
+
 	if (eTargetBand == BAND_6G &&
 	    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
-		DBGLOG(CCM, INFO, "Skip CSA to 6G if auth type not SAE");
+		DBGLOG(CCM, WARN, "Skip CSA to 6G if auth type not SAE\n");
 		return FALSE;
 	}
-#endif
+#endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
 	cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
 			     prBssInfo->u4PrivateData);
@@ -75,7 +116,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	u_int8_t fgIsMloSap = FALSE;
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
-		DBGLOG(CCM, INFO, "skip due to CSA still in progress");
+		DBGLOG(CCM, INFO, "skip due to CSA still in progress\n");
 		return;
 	}
 
@@ -93,7 +134,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 		cnmMemFree(prAdapter, prCcmCsaEntry);
 	} else {
 		DBGLOG(CCM, INFO,
-		       "all BSS align new connection or CSA chnl done");
+		       "all BSS align new connection or CSA chnl done\n");
 		return;
 	}
 
@@ -139,7 +180,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 
 	if (!prTargetBss) {
-		DBGLOG(CCM, INFO, "null target Bss");
+		DBGLOG(CCM, INFO, "null target Bss\n");
 		return;
 	}
 
@@ -147,7 +188,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		return;
 
 	if (prWifiVar->eP2pCcmMode == P2P_CCM_MODE_DISABLE) {
-		DBGLOG(CCM, WARN, "CCM is disabled");
+		DBGLOG(CCM, WARN, "CCM is disabled\n");
 		return;
 	}
 
@@ -157,7 +198,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 #endif
 
 	DBGLOG(CCM, INFO,
-	       "%s: bss=%u, role=%s, is_mlo=%u notify other GO/SAP to CSA",
+	       "%s: bss=%u, role=%s, is_mlo=%u notify other GO/SAP to CSA\n",
 	       pucSrcFunc, prTargetBss->ucBssIndex,
 	       bssGetRoleTypeString(prAdapter, prTargetBss), fgIsTargetMlo);
 
@@ -167,7 +208,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
 				prCcmCsaEntry->prBssInfo->u4PrivateData])) {
 			prFirstSap = prCcmCsaEntry;
-			DBGLOG(CCM, TRACE, "first SAP in list is bss=%u",
+			DBGLOG(CCM, TRACE, "first SAP in list is bss=%u\n",
 			       prFirstSap->prBssInfo->ucBssIndex);
 			break;
 		}
@@ -193,7 +234,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		prCcmCsaEntry = cnmMemAlloc(prAdapter,
 			RAM_TYPE_MSG, sizeof(struct P2P_CCM_CSA_ENTRY));
 		if (!prCcmCsaEntry) {
-			DBGLOG(CCM, ERROR, "Alloc mem fail");
+			DBGLOG(CCM, ERROR, "Alloc mem fail\n");
 			return;
 		}
 
@@ -212,7 +253,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(CCM, INFO,
-		       "insert GO bss=%u waiting for CSA, Target: ch=%u, hwBand=%u, rfBand=%u",
+		       "insert GO bss=%u waiting for CSA, Target: ch=%u, hwBand=%u, rfBand=%u\n",
 		       bss->ucBssIndex, prTargetBss->ucPrimaryChannel,
 		       prTargetBss->eHwBandIdx, prTargetBss->eBand);
 	}
@@ -246,7 +287,7 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 				 &prCcmCsaEntry->rLinkEntry);
 
 		DBGLOG(CCM, INFO,
-		       "insert GO bss=%u waiting for CSA, Target: ch=%u, hwBand=%u, rfBand=%u",
+		       "insert SAP bss=%u waiting for CSA, Target: ch=%u, hwBand=%u, rfBand=%u\n",
 		       bss->ucBssIndex, prTargetBss->ucPrimaryChannel,
 		       prTargetBss->eHwBandIdx, prTargetBss->eBand);
 	}

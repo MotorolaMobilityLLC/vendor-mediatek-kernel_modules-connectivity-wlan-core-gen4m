@@ -69,6 +69,10 @@
 
 #include "gl_coredump.h"
 
+#if (CFG_SUPPORT_CONNFEM == 1)
+#include "connfem_api.h"
+#endif
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -215,6 +219,9 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 				 u_int8_t *pfgResult);
 static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult);
+#if (CFG_SUPPORT_CONNFEM == 1)
+u_int8_t mt6653_is_AA_DBDC_enable(void);
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -3735,6 +3742,11 @@ dump:
 		kalMemSet(prChipInfo->sw_sync_emi_info, 0x0,
 		sizeof(struct sw_sync_emi_info) * SW_SYNC_TAG_NUM);
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
+
+#if (CFG_SUPPORT_CONNFEM == 1)
+	prChipInfo->isAaDbdcEnable = mt6653_is_AA_DBDC_enable();
+#endif
+
 exit:
 	return rStatus;
 }
@@ -4303,4 +4315,27 @@ int mt6653PowerDumpEnd(void *priv_data)
 	return 0;
 }
 #endif  /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
+#if (CFG_SUPPORT_CONNFEM == 1)
+/*----------------------------------------------------------------------------*/
+/*!
+ * Get sku Version from EFUSE
+ * Band1 Need Switch to SISO Mode for Skyhawk Sku2 A+A DBDC Scenario
+ * FE_SPDT_5 BIT(3) for WF Band2 Support
+ * FE_SPDT_6 BIT(4) for WF Band1 2x2 when Band2 is support (sku1)
+ */
+/*----------------------------------------------------------------------------*/
+u_int8_t mt6653_is_AA_DBDC_enable(void)
+{
+	uint8_t fe_bt_wf_usage;
+	uint32_t rStarus;
+
+	rStarus = connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-bt-wf-usage",
+			    &fe_bt_wf_usage);
+	if (rStarus != 0)
+		return FALSE;
+
+	return !!((fe_bt_wf_usage & BIT(3)) && (fe_bt_wf_usage & BIT(4)));
+}
+#endif /* CFG_SUPPORT_CONNFEM == 1 */
+
 #endif  /* MT6653 */
