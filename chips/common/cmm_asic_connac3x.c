@@ -2402,22 +2402,14 @@ uint32_t asicConnac3xDynamicDmashdlGetInUsedMaxQuota(
 	uint32_t u4GroupIdx,
 	uint32_t u4DefMaxQuota)
 {
-	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WMM_QUOTA_STATUS *prWmmStatus;
-	enum ENUM_MBMC_BN eHwBand = ENUM_BAND_AUTO;
 	uint8_t ucWmmIdx = u4GroupIdx / 4, ucAc = u4GroupIdx % 4;
-	u_int8_t fgIsMldMulti = FALSE;
 
 	prWmmStatus = &prAdapter->rWmmQuotaStatus[ucWmmIdx];
 	if (ucAc == WMM_AC_VO_INDEX || !prWmmStatus->fgIsUsed)
 		return u4DefMaxQuota;
 
-	eHwBand = cnmGetMaxQuotaHwBandByWmmIndex(
-		prAdapter, ucWmmIdx, &fgIsMldMulti);
-	if (eHwBand >= ENUM_BAND_NUM)
-		return u4DefMaxQuota;
-
-	return prChipInfo->au4DmaMaxQuotaBand[eHwBand];
+	return prWmmStatus->u4Quota;
 }
 
 uint32_t asicConnac3xUpdateDynamicDmashdlQuota(
@@ -2430,7 +2422,7 @@ uint32_t asicConnac3xUpdateDynamicDmashdlQuota(
 	struct DMASHDL_CFG *prCfg;
 	uint8_t ucGroupIdx, ucAcIdx;
 	uint32_t u4Idx;
-	uint16_t u2MaxQuotaFinal;
+	uint16_t u2MaxQuotaFinal, u2MinQuota = 0;
 	u_int8_t fgIsMaxQuotaInvalid = FALSE;
 	uint32_t u4BufSize = 512, u4Pos = 0;
 	char *aucBuf;
@@ -2442,6 +2434,7 @@ uint32_t asicConnac3xUpdateDynamicDmashdlQuota(
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prCfg = prBusInfo->prDmashdlCfg;
+	u2MinQuota = prChipInfo->u4DefaultMinQuota;
 
 	if (u4MaxQuota > (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET))
 		fgIsMaxQuotaInvalid = TRUE;
@@ -2461,11 +2454,14 @@ uint32_t asicConnac3xUpdateDynamicDmashdlQuota(
 		    (prCfg->au2MaxQuota[ucGroupIdx] == u2MaxQuotaFinal))
 			continue;
 
+		if (u2MaxQuotaFinal < u2MinQuota)
+			u2MaxQuotaFinal = u2MinQuota;
+
 		prCfg->au2MaxQuota[ucGroupIdx] = u2MaxQuotaFinal;
 		asicConnac3xDmashdlSetMinMaxQuota(
 			prAdapter,
 			ucGroupIdx,
-			prCfg->au2MinQuota[ucGroupIdx],
+			u2MinQuota,
 			u2MaxQuotaFinal);
 
 		if (aucBuf) {
@@ -2491,35 +2487,32 @@ uint32_t asicConnac3xDynamicDmashdlQuotaDecision(
 	uint8_t ucWmmIndex)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
-	struct WMM_QUOTA_STATUS *prWmmStatus;
 	enum ENUM_MBMC_BN eHwBand = ENUM_BAND_AUTO;
-	uint16_t u4Quota = 0;
-	uint32_t u4Idx = 0;
+	enum ENUM_BAND eBand = BAND_NULL;
+	uint32_t u4Band = 0, u4Quota = 0;
 
 	if (ucWmmIndex >= HW_WMM_NUM)
 		return 0;
 
 	eHwBand = prAdapter->rWmmQuotaReqCS[ucWmmIndex].eHwBand;
+	eBand = prAdapter->rWmmQuotaReqCS[ucWmmIndex].eBand;
 	if (eHwBand >= ENUM_BAND_NUM)
 		return 0;
 
-	u4Quota = prChipInfo->au4DmaMaxQuotaBand[eHwBand];
+	/* MLO use Hw band */
+	if (prAdapter->rWmmQuotaReqCS[ucWmmIndex].fgIsMldMulti)
+		return prChipInfo->au4DmaMaxQuotaBand[eHwBand];
 
-	/* search max quota is allocated */
-	for (u4Idx = 0; u4Idx < HW_WMM_NUM; u4Idx++) {
-		if (u4Idx == ucWmmIndex)
-			continue;
+	if (eBand == BAND_NULL || eBand >= BAND_NUM)
+		return prChipInfo->u4DefaultMaxQuota;
 
-		prWmmStatus = &prAdapter->rWmmQuotaStatus[u4Idx];
-		if ((prWmmStatus->eHwBand == eHwBand) &&
-		    (prWmmStatus->u4Quota == u4Quota)) {
-			u4Quota = prChipInfo->u4DefaultMinQuota;
-			break;
-		}
-	}
+	u4Band = (uint32_t)eBand - 1;
+	u4Quota = prChipInfo->au4DmaMaxQuotaRfBand[u4Band];
+	if (u4Quota > prChipInfo->au4DmaMaxQuotaBand[eHwBand])
+		u4Quota = prChipInfo->au4DmaMaxQuotaBand[eHwBand];
 
-	DBGLOG(HAL, TRACE, "WmmIdx[%u] HwBand[%u] MaxQuota[0x%x]\n",
-	       ucWmmIndex, eHwBand, u4Quota);
+	DBGLOG(HAL, TRACE, "WmmIdx[%u] HwBand[%u] Band[%u] MaxQuota[0x%x]\n",
+	       ucWmmIndex, eHwBand, eBand, u4Quota);
 
 	return u4Quota;
 }
