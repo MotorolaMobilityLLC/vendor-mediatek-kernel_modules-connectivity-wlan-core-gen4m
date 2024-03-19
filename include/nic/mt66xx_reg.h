@@ -1528,6 +1528,7 @@ struct mt66xx_chip_info {
 	const bool isSupportMddpAOR;
 	const bool isSupportMddpSHM;
 	const unsigned int u4MdLpctlAddr;
+	const uint32_t u4MdDrvOwnTimeoutTime;
 
 	const uint32_t u4HostWfdmaBaseAddr;
 	const uint32_t u4HostWfdmaWrapBaseAddr;
