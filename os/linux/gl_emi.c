@@ -214,6 +214,10 @@ int32_t emi_mem_init(struct mt66xx_chip_info *chip, void *dev)
 
 	emi->initialized = TRUE;
 
+#if (CFG_SUPPORT_WIFI_PPB == 1)
+	kalSetWifiPpbAddr(emi->pa);
+#endif
+
 exit:
 	return ret;
 }

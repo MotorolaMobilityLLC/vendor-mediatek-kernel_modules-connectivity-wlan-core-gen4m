@@ -63,6 +63,11 @@
 #include "dvfsrc-exp.h"
 #include <linux/interconnect.h>
 
+/* for wifi peak power budget */
+#if (CFG_SUPPORT_WIFI_PPB == 1)
+#include "mtk_peak_power_budget.h"
+#endif
+
 static uint32_t u4EmiMetOffset = 0x98000;
 static uint32_t u4ProjectId = 6991;
 
@@ -1183,3 +1188,15 @@ uint32_t kalVnfGetVoltLowBnd(void)
 	return VOLT_INFO_LOW_BOUND;
 }
 #endif /* #if (CFG_VOLT_INFO == 1) */
+
+#if (CFG_SUPPORT_WIFI_PPB == 1)
+void kalSetWifiPpbAddr(phys_addr_t emiPhyBase)
+{
+	unsigned int wlan_ppb_address = (unsigned int)(0xFFFFFFFF &
+		((uint64_t)emiPhyBase + 0x01605800));
+
+	DBGLOG(INIT, INFO, "wlan_ppb_address: 0x%x\n", wlan_ppb_address);
+
+	ppb_set_wifi_pwr_addr(wlan_ppb_address);
+}
+#endif /* #if (CFG_SUPPORT_WIFI_PPB == 1) */
