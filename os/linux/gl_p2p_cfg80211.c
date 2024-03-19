@@ -179,6 +179,9 @@ static void mtk_vif_destructor(struct net_device *dev)
 	if (dev) {
 		DBGLOG(P2P, TRACE, "mtk_vif_destructor\n");
 		prWdev = dev->ieee80211_ptr;
+		if (g_P2pPrDev == dev)
+			g_P2pPrDev = NULL;
+
 		free_netdev(dev);
 		/* Expect that the gprP2pWdev isn't freed here */
 		if (prWdev) {
