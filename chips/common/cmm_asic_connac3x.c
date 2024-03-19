@@ -1212,11 +1212,17 @@ void asicConnac3xProcessSoftwareInterrupt(
 	if (prMem && prMem->va) {
 		pu4EmiSta = (uint32_t *)prMem->va;
 		u4Status = *pu4EmiSta;
+		*pu4EmiSta = *pu4EmiSta & ~u4Status;
 	} else {
 		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
 		HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);
 		if (!fgRet)
 			HAL_RMCR_RD(SER_READ, prAdapter, u4Addr, &u4Status);
+	}
+
+	if (u4Status) {
+		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
+		HAL_MCR_WR(prAdapter, u4Addr, u4Status);
 	}
 
 	prErrRecoveryCtrl->u4BackupStatus = u4Status;
@@ -1228,14 +1234,6 @@ void asicConnac3xProcessSoftwareInterrupt(
 		halHwRecoveryFromError(prAdapter);
 	} else
 		DBGLOG(HAL, TRACE, "undefined SER status[0x%x].\n", u4Status);
-
-	if (u4Status) {
-		if (pu4EmiSta)
-			*pu4EmiSta = *pu4EmiSta & ~u4Status;
-
-		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
-		kalDevRegWrite(prGlueInfo, u4Addr, u4Status);
-	}
 }
 
 void asicConnac3xSoftwareInterruptMcu(
