@@ -4771,6 +4771,78 @@ static void p2pFunBufferP2pActionFrame(struct ADAPTER *prAdapter,
 	kalMemCopy(prFrame->prHeader, prSwRfb->pvHeader, prSwRfb->u2PacketLen);
 }
 
+uint32_t
+p2pFuncValidateP2pDevRxActionFrame(struct ADAPTER *prAdapter,
+	u_int8_t fgIsDevInterface, uint8_t ucSwRfbChannel, uint8_t ucCategory)
+{
+	uint8_t i;
+	uint32_t u4Ret = WLAN_STATUS_SUCCESS;
+	struct BSS_INFO *prP2pBssInfo = NULL;
+	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
+	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
+	enum ENUM_P2P_DEV_STATE eCurrentState;
+
+	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
+
+	/* not P2P Device's frame, keep it valid */
+	if (!fgIsDevInterface || !prP2pDevFsmInfo)
+		goto exit;
+
+	/* P2P Device should receive provision discovery on role channel */
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		prP2pRoleFsmInfo =
+			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, i);
+		if (!prP2pRoleFsmInfo)
+			continue;
+
+		prP2pBssInfo = prAdapter->aprBssInfo[
+			prP2pRoleFsmInfo->ucBssIndex];
+		if (!prP2pBssInfo ||
+		    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[i]))
+			continue;
+
+		if (prP2pBssInfo->ucPrimaryChannel == ucSwRfbChannel) {
+			DBGLOG(P2P, INFO,
+				"rx action frame %d on state:%d, Bss:%d, Chnl:%d\n",
+				ucCategory,
+				prP2pDevFsmInfo->eCurrentState,
+				prP2pRoleFsmInfo->ucBssIndex,
+				prP2pBssInfo->ucPrimaryChannel);
+			goto exit;
+		}
+	}
+
+	/* Ignore frames received from wrong state */
+	eCurrentState = prP2pDevFsmInfo->eCurrentState;
+	if (eCurrentState != P2P_DEV_STATE_OFF_CHNL_TX &&
+	    eCurrentState != P2P_DEV_STATE_CHNL_ON_HAND &&
+	    eCurrentState != P2P_DEV_STATE_REQING_CHANNEL) {
+		u4Ret = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	if (eCurrentState == P2P_DEV_STATE_REQING_CHANNEL &&
+	    prP2pDevFsmInfo->rChnlReqInfo.eChnlReqType != CH_REQ_TYPE_ROC) {
+		u4Ret = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	if (prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum != ucSwRfbChannel) {
+		u4Ret = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+exit:
+	if (u4Ret == WLAN_STATUS_FAILURE)
+		DBGLOG(P2P, INFO,
+			"ignore rx action frame %d on state:%d, ReqChnl:%d, RxChnl:%d\n",
+			ucCategory,
+			prP2pDevFsmInfo->eCurrentState,
+			prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum,
+			ucSwRfbChannel);
+	return u4Ret;
+}
+
 /*---------------------------------------------------------------------------*/
 /*!
  * @brief This function will validate the Rx Probe Request Frame and then return
@@ -4795,11 +4867,6 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 	u_int32_t u4Oui;
 	u_int8_t ucOuiType;
 	u_int8_t fgBufferFrame = FALSE;
-	uint8_t fgIsRoleChannel = FALSE;
-	uint8_t i;
-	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo = NULL;
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo = NULL;
-	struct BSS_INFO *prP2pBssInfo = NULL;
 
 	if (prAdapter == NULL || prSwRfb == NULL) {
 		DBGLOG(P2P, ERROR, "Invalid parameter.\n");
@@ -4807,46 +4874,13 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 	}
 	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
 
-	prP2pDevFsmInfo = prAdapter->rWifiVar.prP2pDevFsmInfo;
-
-	for (i = 0; i < KAL_P2P_NUM; i++) {
-		prP2pRoleFsmInfo =
-			P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter, i);
-		if (!prP2pRoleFsmInfo)
-			continue;
-
-		prP2pBssInfo = prAdapter->aprBssInfo[
-			prP2pRoleFsmInfo->ucBssIndex];
-		if (!prP2pBssInfo ||
-		    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[i]))
-			continue;
-
-		if (prP2pBssInfo->ucPrimaryChannel == prSwRfb->ucChnlNum) {
-			fgIsRoleChannel = TRUE;
-			break;
-		}
-	}
-
-	/* In case channel is not granted yet, we should ignore action
-	  * frames which may come from unexpected channels.
-	  */
-	if (fgIsDevInterface && prP2pDevFsmInfo && !fgIsRoleChannel &&
-		((prP2pDevFsmInfo->eCurrentState !=
-			P2P_DEV_STATE_OFF_CHNL_TX &&
-		prP2pDevFsmInfo->eCurrentState !=
-			P2P_DEV_STATE_CHNL_ON_HAND &&
-		prP2pDevFsmInfo->eCurrentState !=
-			P2P_DEV_STATE_REQING_CHANNEL) ||
-		prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum !=
-			prSwRfb->ucChnlNum)) {
-		DBGLOG(P2P, INFO,
-			"ignore rx action frame %d on state:%d, ReqChnl:%d, RxChnl:%d\n",
-			prActFrame->ucCategory,
-			prP2pDevFsmInfo->eCurrentState,
-			prP2pDevFsmInfo->rChnlReqInfo.ucReqChnlNum,
-			prSwRfb->ucChnlNum);
+	/* Check if P2P Device can receive frames or not.
+	 * If indicate RX frames in wrong P2P Device state, the next response
+	 * frame may TX fail.
+	 */
+	if (p2pFuncValidateP2pDevRxActionFrame(prAdapter, fgIsDevInterface,
+	    prSwRfb->ucChnlNum, prActFrame->ucCategory) != WLAN_STATUS_SUCCESS)
 		return;
-	}
 
 	switch (prActFrame->ucCategory) {
 	case CATEGORY_PUBLIC_ACTION:
