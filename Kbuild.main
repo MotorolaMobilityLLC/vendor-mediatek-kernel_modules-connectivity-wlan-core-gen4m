@@ -658,6 +658,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_SUPPORT_PHY_ICS_V4=y
     CONFIG_AP_EHT_DEFAULT_VALUE=1
     CONFIG_MLD_AP_LINK_MAX=2
+    ifeq ($(call kver_ge,6,6),1)
+        CONFIG_MTK_WIFI_PPB_SUPPORT=y
+    endif
 endif
 ifneq ($(CONFIG_MTK_COMBO_WIFI_HIF), none)
     CONFIG_MTK_WIFI_NAN=y
@@ -706,6 +709,7 @@ endif
 ifeq ($(CONFIG_MTK_EAP), y)
 CONFIG_MTK_MDDP_SUPPORT=
 CONFIG_MTK_HOST_OFFLOAD_SUPPORT=n
+CONFIG_MTK_WIFI_PPB_SUPPORT=n
 endif
 
 endif
@@ -3286,4 +3290,11 @@ ifeq ($(WMT_SUPPORT), y)
     endif
 else
     ccflags-y += -Wframe-larger-than=2048
+endif
+
+ifeq ($(CONFIG_MTK_WIFI_PPB_SUPPORT), y)
+    ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/pbm/
+    ccflags-y += -DCFG_SUPPORT_WIFI_PPB=1
+else
+    ccflags-y += -DCFG_SUPPORT_WIFI_PPB=0
 endif

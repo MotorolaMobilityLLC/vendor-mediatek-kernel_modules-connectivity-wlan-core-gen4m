@@ -2829,5 +2829,9 @@ void kalHifRegWorkUninit(struct GLUE_INFO *pr);
 void kalHifRegWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 
+#if (CFG_SUPPORT_WIFI_PPB == 1)
+void kalSetWifiPpbAddr(phys_addr_t emiPhyBase);
+#endif /* #if (CFG_SUPPORT_WIFI_PPB == 1) */
+
 #endif /* _GL_KAL_H */
 
