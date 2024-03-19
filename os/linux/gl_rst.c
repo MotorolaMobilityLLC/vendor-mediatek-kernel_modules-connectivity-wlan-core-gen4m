@@ -664,11 +664,14 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 		break;
 	}
 
-	if (prChipInfo->isUpgradeWholeChipReset) {
-		if (prChipInfo->isUpgradeWholeChipReset(prAdapter))
+	if (g_IsWholeChipRst == FALSE &&
+	    g_IsWfsysBusHang == FALSE &&
+	    prChipInfo->isUpgradeWholeChipReset) {
+		if (prChipInfo->isUpgradeWholeChipReset(prAdapter)) {
 			u4RstFlag = RST_FLAG_WHOLE_RESET;
+			glSetRstReasonString(apucRstReason[eResetReason]);
+		}
 	}
-
 	return u4RstFlag;
 }
 
@@ -763,12 +766,6 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		g_fgRstRecover = FALSE;
 	else
 		g_fgRstRecover = TRUE;
-
-	/* check if whole chip reset is triggered */
-	if (g_IsWfsysBusHang) {
-		glResetCleanResetFlag();
-		goto exit;
-	}
 
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
 		glResetWholeChipResetTrigger(g_reason);
@@ -1778,7 +1775,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		glResetOnEndUpdateFlag(TRUE);
 		wfsys_unlock();
-		return 0;
+		goto exit;
 	}
 	wfsys_unlock();
 #endif
@@ -1786,7 +1783,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	prAdapter = prGlueInfo->prAdapter;
 	if (!prAdapter) {
 		DBGLOG(REQ, WARN, "adapter null, return\n");
-		return 0;
+		goto exit;
 	}
 
 	prBusInfo = prAdapter->chip_info->bus_info;

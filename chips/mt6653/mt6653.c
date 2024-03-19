@@ -4306,25 +4306,20 @@ static void mt6653WiFiNappingCtrl(
 static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_PCIE)
-	uint32_t u4Value = 0;
+	uint32_t u4Val1, u4Val2;
 
-	/* 1. value get 0 or 0xFFFFFFFF means PCIE is not link up status */
-	/* 2. value[0][4][10~13] == 5'b11111 means cb_infra status abnormal */
-	glReadPcieCfgSpace(0x488, &u4Value);
-	if (u4Value == 0x0 || u4Value == 0xFFFFFFFF ||
-	   (u4Value & 0x3C11 == 0x3C11)) {
-		DBGLOG(INIT, ERROR,
-			"get abnormal PCIE or cb_infra bus status, val=0x%x\n",
-			u4Value);
-		return TRUE;
-	}
+	glReadPcieCfgSpace(0x488, &u4Val1);
+	glReadPcieCfgSpace(0x48c, &u4Val2);
+	DBGLOG(INIT, INFO,
+		"0x488=0x%08x, 0x48c=0x%08x\n",
+		u4Val1, u4Val2);
 
-	glReadPcieCfgSpace(0x48c, &u4Value);
-	if (u4Value == 0x0 || u4Value == 0xFFFFFFFF ||
-	   (u4Value & 0x3C11 == 0x3C11)) {
+	/* 1. Cfg_Rd[0x488] == 0 or 0xFFFFFFFF: PCIE is not at link up status */
+	/* 2. Bit 0/4/11~13 of Cfg_Rd[0x488] is not set: cb_infra is abnormal */
+	if (u4Val1 == 0x0 || u4Val1 == 0xFFFFFFFF ||
+	   ((u4Val1 & 0x3811) != 0x3811)) {
 		DBGLOG(INIT, ERROR,
-			"get abnormal PCIE or cb_infra bus status, val=0x%x\n",
-			u4Value);
+			"Get abnormal PCIE or cb_infra bus status\n");
 		return TRUE;
 	}
 #endif
@@ -4333,7 +4328,7 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 		if (prAdapter->chip_info->checkbushang(
 		   (void *) prAdapter, FALSE)) {
 			DBGLOG(INIT, ERROR,
-				"check bus hang failed\n");
+				"Check bus hang failed\n");
 			return TRUE;
 		}
 	}
