@@ -103,7 +103,7 @@ union _NAN_BAND_CHNL_CTRL {
 	struct {
 		uint32_t u4Type : 1;
 		uint32_t u4Rsvd : 31;
-	} rInfo;
+	}; /* u4Type to distinguish band or channel */
 
 	struct _NanBandCtrl {
 		uint32_t u4Type : 1;
@@ -400,8 +400,7 @@ nanSchedUpdateNonNanTimelineByAis(struct ADAPTER *prAdapter);
 uint32_t
 nanSchedSyncNonNanChnlToNan(struct ADAPTER *prAdapter);
 
-uint32_t
-nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter);
+uint32_t nanSchedCommitNonNanChnlList(struct ADAPTER *prAdapter);
 
 #endif/* (CFG_NAN_SCHEDULER_VERSION == 1) */
 
