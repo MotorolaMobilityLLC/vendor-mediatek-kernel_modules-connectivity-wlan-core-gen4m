@@ -1172,7 +1172,7 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	struct mddpw_drv_info_t *prDrvInfo;
 	int32_t ret = 0;
 	uint32_t u32BufSize = 0;
-	uint32_t u32DrvOwnTimeoutTime = LP_OWN_BACK_TOTAL_DELAY_MD_MS;
+	uint32_t u32DrvOwnTimeoutTime = g_rSettings.u4MdDrvOwnTimeoutTime;
 	uint8_t *buff = NULL;
 
 	DBGLOG(INIT, INFO, "Wi-Fi Notify MD Drv Own Timeout time.\n");
@@ -1186,8 +1186,6 @@ int32_t mddpNotifyDrvOwnTimeoutTime(void)
 	/* align AP/MD drv own timeout */
 	if (mddpIsCasanFWload() == TRUE)
 		u32DrvOwnTimeoutTime = LP_OWN_BACK_TOTAL_DELAY_CASAN_MS;
-	else
-		goto exit;
 
 	u32BufSize = (sizeof(struct mddpw_drv_notify_info_t) +
 			sizeof(struct mddpw_drv_info_t) + sizeof(uint32_t));
@@ -2565,6 +2563,12 @@ void setMddpSupportRegister(struct ADAPTER *prAdapter)
 		g_rSettings.u4MdOffBit = MD_STATUS_OFF_SYNC_BIT;
 		g_rSettings.u4MDDPSupportMode = MDDP_SUPPORT_AOP;
 	}
+	if (prChipInfo->u4MdDrvOwnTimeoutTime)
+		g_rSettings.u4MdDrvOwnTimeoutTime =
+			prChipInfo->u4MdDrvOwnTimeoutTime;
+	else
+		g_rSettings.u4MdDrvOwnTimeoutTime =
+			LP_OWN_BACK_TOTAL_DELAY_MD_MS;
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 #if (CFG_SUPPORT_CONNAC2X == 0 && CFG_SUPPORT_CONNAC3X == 0)

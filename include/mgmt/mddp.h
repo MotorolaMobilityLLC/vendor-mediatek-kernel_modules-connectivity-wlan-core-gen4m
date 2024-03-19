@@ -114,6 +114,7 @@ struct MDDP_SETTINGS {
 	uint32_t u4MdOffBit;
 	uint32_t u4WifiOnBit;
 	enum ENUM_MDDP_SUPPORT_MODE u4MDDPSupportMode;
+	uint32_t u4MdDrvOwnTimeoutTime;
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	atomic_t seq;
 	int i4PortIdx;
