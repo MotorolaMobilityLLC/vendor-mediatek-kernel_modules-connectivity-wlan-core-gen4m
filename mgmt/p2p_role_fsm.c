@@ -380,11 +380,6 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 		(uint8_t) prAdapter->u4P2pUapsdAcBmp;
 	prP2pBssInfo->rPmProfSetupInfo.ucUapsdSp =
 		(uint8_t) prAdapter->u4P2pMaxSpLen;
-	prP2pBssInfo->ucPrimaryChannel = P2P_DEFAULT_LISTEN_CHANNEL;
-	prP2pBssInfo->eBand = BAND_2G4;
-	prP2pBssInfo->eBssSCO = CHNL_EXT_SCN;
-	prP2pBssInfo->ucOpRxNss = prP2pBssInfo->ucOpTxNss =
-		wlanGetSupportNss(prAdapter, prP2pBssInfo->ucBssIndex);
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucQoS))
 		prP2pBssInfo->fgIsQBSS = TRUE;
 	else
