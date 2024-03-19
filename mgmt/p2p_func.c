@@ -1531,8 +1531,10 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 			if (prNewMgmtTxMsdu) {
 				cnmMgtPktFree(prAdapter, prMgmtTxMsdu);
 				prMgmtTxMsdu = prNewMgmtTxMsdu;
+			}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
+			if (prNewMgmtTxMsdu && prP2PInfo->u2MlIELen != 0) {
 				/* temp solution, supplicant only build ml
 				 * common info for ml probe resp, so we have to
 				 * fill complete per-sta profile when ml ie len
@@ -1541,8 +1543,8 @@ p2pFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 				mldGenerateProbeRspIE(prAdapter, prMgmtTxMsdu,
 					ucBssIndex, &rProbeRspFrame,
 					p2pFuncProcessP2pProbeRsp);
-#endif
 			}
+#endif
 
 			/* Modifiy Lie time to 100 mS due
 			 * to the STA only wait 30-50mS
