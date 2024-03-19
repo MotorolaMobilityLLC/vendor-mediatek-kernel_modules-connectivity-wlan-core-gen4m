@@ -665,6 +665,7 @@ struct RTMP_TX_RING {
 	uint32_t u4RingIdx;
 	uint32_t TxSwUsedIdx;
 	uint32_t u4UsedCnt;
+	uint32_t u4TotalCnt;
 	uint32_t hw_desc_base;
 	uint32_t hw_desc_base_ext;
 	uint32_t hw_cidx_addr;
@@ -713,6 +714,7 @@ struct RTMP_RX_RING {
 	bool fgIsWaitRxDmaDoneTimeout;
 	uint32_t u4LastRxEventWaitDmaDoneCnt;
 	uint32_t u4PendingCnt;
+	uint32_t u4TotalCnt;
 	void *pvPacket;
 	uint32_t u4PacketLen;
 	uint32_t u4MagicCnt;

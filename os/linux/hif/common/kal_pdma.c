@@ -1844,6 +1844,7 @@ skip:
 	prRxRing->fgIsDumpLog = false;
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4EventRxCount);
+	prRxRing->u4TotalCnt++;
 
 	return fgRet;
 }
@@ -1951,6 +1952,7 @@ kalDevPortWrite(struct GLUE_INFO *prGlueInfo,
 	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
 
 	prTxRing->u4UsedCnt++;
+	prTxRing->u4TotalCnt++;
 
 	HAL_SET_RING_CIDX(prGlueInfo->prAdapter, prTxRing, prTxRing->TxCpuIdx);
 
@@ -2916,6 +2918,7 @@ skip:
 	prRxRing->RxCpuIdx = u4CpuIdx;
 	prRxRing->fgIsDumpLog = false;
 
+	prRxRing->u4TotalCnt++;
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataRxCount);
 
 #if CFG_TCP_IP_CHKSUM_OFFLOAD

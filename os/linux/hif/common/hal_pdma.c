@@ -3866,6 +3866,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	INC_RING_INDEX(prTxRing->TxCpuIdx, prTxRing->u4RingSize);
 
 	prTxRing->u4UsedCnt++;
+	prTxRing->u4TotalCnt++;
 
 	DBGLOG(HAL, TRACE,
 	       "%s: CmdInfo[0x%p], TxD[0x%p/%u] TxP[0x%p/%u] CPU idx[%u] Used[%u]\n",
@@ -3979,6 +3980,7 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 
 	/* Update HW Tx DMA ring */
 	prTxRing->u4UsedCnt++;
+	prTxRing->u4TotalCnt++;
 
 	DBGLOG_LIMITED(HAL, TRACE,
 		"Tx Data:Ring%d CPU idx[0x%x] Used[%u]\n",
@@ -6421,27 +6423,25 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prHifStats->u4EventRxCount));
 	for (i = 0; i < NUM_OF_TX_RING; ++i) {
 		prTxRing = &prHifInfo->TxRing[i];
-		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u:%u%s",
-				(i == 0) ? " T_Q:T_R[" : "",
-				prHifInfo->u4TxDataQLen[i],
-				prTxRing->u4UsedCnt,
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " T_R[" : "",
+				prTxRing->u4TotalCnt,
 				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
 	}
 	for (i = 0; i < NUM_OF_RX_RING; ++i) {
 		prRxRing = &prHifInfo->RxRing[i];
-		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u:%u%s",
-				(i == 0) ? " R_R:R_N[" : "",
-				prRxRing->u4PendingCnt,
-				KAL_TEST_BIT(i, prAdapter->ulNoMoreRfb),
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " R_R[" : "",
+				prRxRing->u4TotalCnt,
 				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
 	}
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 #if (CFG_ENABLE_MAWD_MD_RING == 1)
 	for (i = 0; i < MAWD_MD_TX_RING_NUM; ++i) {
 		prTxRing = &prHifInfo->MawdTxRing[i];
-		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u:%u%s",
-				(i == 0) ? " MawdTxT_Q:T_R[" : "",
-				prTxRing->u4UsedCnt,
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " MawdTxT_R[" : "",
+				prTxRing->u4TotalCnt,
 				(i == NUM_OF_TX_RING - 1) ? "] " : " ");
 	}
 #endif /* CFG_ENABLE_MAWD_MD_RING */

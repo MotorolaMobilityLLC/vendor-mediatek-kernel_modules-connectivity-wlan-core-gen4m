@@ -2455,6 +2455,7 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	struct QUE *prFreeSwRfbList = NULL, *prRecvRfbList = NULL;
 	uint32_t au4RingCnt[NUM_OF_RX_RING] = {0};
 	uint32_t u4Idx, u4TotalCnt = 0;
+	struct RTMP_RX_RING *prRxRing;
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
@@ -2484,8 +2485,12 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	if (prRecvRfbList->u4NumElem)
 		nicRxConcatRxQue(prAdapter, prRecvRfbList);
 
-	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++)
+	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
+		prRxRing = &prHifInfo->RxRing[u4Idx];
+
+		prRxRing->u4TotalCnt += au4RingCnt[u4Idx];
 		u4TotalCnt += au4RingCnt[u4Idx];
+	}
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		uint32_t u4Res = au4RingCnt[u4Idx];
@@ -2984,6 +2989,7 @@ u_int8_t halMawdFillTxRing(struct GLUE_INFO *prGlueInfo,
 
 	/* Update HW Tx DMA ring */
 	prTxRing->u4UsedCnt++;
+	prTxRing->u4TotalCnt++;
 	prWfdmaTxRing->u4UsedCnt += 2;
 	HAL_SET_MAWD_RING_CIDX(prGlueInfo->prAdapter,
 			       prTxRing, prTxRing->TxCpuIdx);
