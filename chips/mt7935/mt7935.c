@@ -1387,7 +1387,6 @@ static uint32_t mt7935IPCFirmwareDownload(struct ADAPTER *prAdapter)
 			}
 		}
 
-
 		/* <5-1> Load FW image and write the doorbell
 		 * <5-2> Polling Image Response = Success (Security check pass)
 		 * <5-3> Polling Boot Stage = OS (Wi-Fi RAM code init done)
@@ -3275,7 +3274,8 @@ static uint32_t mt7935_mcu_reset(struct ADAPTER *ad)
 
 static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 {
-	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS, u4Val = 0;
+
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
@@ -3293,8 +3293,26 @@ static uint32_t mt7935_mcu_init(struct ADAPTER *ad)
 		goto exit;
 	}
 #endif /* CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI */
-
-
+	switch (MT7935_WIFI_PWR_ON_OFF_MODE) {
+	case 0:
+		break;
+	/* FLR */
+	case 1:
+		glReadPcieCfgSpace(0x4BC, &u4Val);
+		u4Val |= BIT(28);
+		glWritePcieCfgSpace(0x4BC, u4Val);
+		break;
+	/* Config Space */
+	case 2:
+		glReadPcieCfgSpace(0x4BC, &u4Val);
+		u4Val |= BIT(28);
+		glWritePcieCfgSpace(0x4BC, u4Val);
+		break;
+	default:
+		DBGLOG(INIT, ERROR, "%d not supported.\n",
+			MT7935_WIFI_PWR_ON_OFF_MODE);
+		break;
+	}
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	kalMemZero(prChipInfo->sw_sync_emi_info,
 		sizeof(struct sw_sync_emi_info) * SW_SYNC_TAG_NUM);
@@ -3311,6 +3329,7 @@ static void mt7935_mcu_deinit(struct ADAPTER *ad)
 #define MAX_WAIT_COREDUMP_COUNT 10
 
 	int retry = 0;
+	uint32_t u4Val = 0;
 
 	while (is_wifi_coredump_processing()) {
 		if (retry >= MAX_WAIT_COREDUMP_COUNT) {
@@ -3322,6 +3341,27 @@ static void mt7935_mcu_deinit(struct ADAPTER *ad)
 		retry++;
 	}
 
+	pci_save_state(ad->prGlueInfo->rHifInfo.pdev);
+	switch (MT7935_WIFI_PWR_ON_OFF_MODE) {
+	case 0:
+		break;
+	/* FLR */
+	case 1:
+		glReadPcieCfgSpace(0x88, &u4Val);
+		u4Val |= BIT(15);
+		glWritePcieCfgSpace(0x88, u4Val);
+		break;
+	/* Config Space */
+	case 2:
+		glReadPcieCfgSpace(0x4BC, &u4Val);
+		u4Val |= BIT(29);
+		glWritePcieCfgSpace(0x4BC, u4Val);
+		break;
+	default:
+		DBGLOG(INIT, ERROR, "%d not supported.\n",
+			MT7935_WIFI_PWR_ON_OFF_MODE);
+	}
+	pci_restore_state(ad->prGlueInfo->rHifInfo.pdev);
 	wifi_coredump_set_enable(FALSE);
 }
 
