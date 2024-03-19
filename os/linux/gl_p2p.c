@@ -748,24 +748,18 @@ static void p2pNetUnregisterMldLinks(struct GLUE_INFO *prGlueInfo,
 	struct net_device *prRoleDev,
 	uint8_t ucRoleIdx)
 {
-	uint32_t u4LinkId = 0;
+	uint8_t ucIdx = 0;
 
 	/* Only mlo sap is supported by kernel add intf link API */
 	if (prRoleDev->ieee80211_ptr->iftype != NL80211_IFTYPE_AP)
 		return;
 
-	for_each_valid_link(prRoleDev->ieee80211_ptr, u4LinkId) {
-		uint8_t ucIdx = 0;
+	for (ucIdx = ucRoleIdx + 1; ucIdx < KAL_P2P_NUM; ucIdx++) {
+		struct GL_P2P_INFO *prP2PInfo;
 
-		for (ucIdx = ucRoleIdx + 1; ucIdx < KAL_P2P_NUM; ucIdx++) {
-			struct GL_P2P_INFO *prP2PInfo;
-
-			prP2PInfo = prGlueInfo->prP2PInfo[ucIdx];
-			if (prP2PInfo->u4LinkId == u4LinkId &&
-			    prRoleDev == prP2PInfo->aprRoleHandler) {
-				prP2PInfo->aprRoleHandler = NULL;
-			}
-		}
+		prP2PInfo = prGlueInfo->prP2PInfo[ucIdx];
+		if (prRoleDev == prP2PInfo->aprRoleHandler)
+			prP2PInfo->aprRoleHandler = NULL;
 	}
 }
 #endif
