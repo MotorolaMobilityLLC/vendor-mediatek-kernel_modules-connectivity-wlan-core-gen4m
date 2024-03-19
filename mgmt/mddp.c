@@ -47,6 +47,9 @@
 #define MDDP_HIF_MD_FW_OWN		1
 #define MDDP_HIF_SER_RECOVERY		2
 #define MDDP_HIF_TRIGGER_RESET		3
+#if (CFG_PCIE_GEN_SWITCH == 1)
+#define MDDP_HIF_GEN_SWITCH_END		4
+#endif /* CFG_PCIE_GEN_SWITCH */
 
 /*******************************************************************************
 *                   F U N C T I O N   D E C L A R A T I O N S
@@ -1567,6 +1570,11 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	int32_t md_state = 0;
 
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto end;
+	}
+
 	if (!is_cal_flow_finished()) {
 		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 		goto end;
@@ -1638,9 +1646,30 @@ end:
 
 int32_t mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 {
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
+		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
+		return -1;
+	}
+
+	KAL_SET_BIT(MDDP_HIF_GEN_SWITCH_END, g_ulMddpActionFlag);
+	kalSetMddpEvent(prGlueInfo);
+
+	return 0;
+}
+
+int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
+{
 	int32_t ret = 0;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	int32_t md_state = 0;
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		goto end;
+	}
 
 	if (!mddpIsSupportMcifWifi())
 		goto end;
@@ -2625,6 +2654,14 @@ void mddpInHifThread(struct ADAPTER *prAdapter)
 			RST_MDDP_MD_TRIGGER_EXCEPTION,
 			g_u4MddpRstFlag | RST_FLAG_DO_CORE_DUMP);
 	}
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    MDDP_HIF_GEN_SWITCH_END,
+		    g_ulMddpActionFlag)) {
+		__mddpNotifyMDGenSwitchEnd(prAdapter);
+	}
+#endif /* CFG_PCIE_GEN_SWITCH */
 }
 
 void mddpTriggerMdFwOwnByFw(struct ADAPTER *prAdapter)
