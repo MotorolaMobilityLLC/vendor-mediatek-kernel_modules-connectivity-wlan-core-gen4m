@@ -2720,8 +2720,6 @@ static void kalDevDebugSegment(struct ADAPTER *ad, struct SW_RFB *prSwRfb,
 
 #if CFG_DEBUG_RX_SEGMENT
 	if (eType == RX_SEGMENT_LAST) {
-		kalSendAeeWarning("Unexpected Rx Segment",
-			"Unexpected Rx Segment\n");
 		ad->fgDumpRxSegment = FALSE;
 	}
 #endif /* CFG_DEBUG_RX_SEGMENT */
