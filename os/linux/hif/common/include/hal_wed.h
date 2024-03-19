@@ -167,8 +167,8 @@
 #define WIFI_ERR_RECOV_RESET_PDMA0		0x02
 #define WIFI_ERR_RECOV_STOP_IDLE_DONE		0x03
 #define WIFI_ERR_RECOV_HIF_INIT			0x04
-#define WIFI_ERR_RECOV_L0P5_BEGIN		0x10
-#define WIFI_ERR_RECOV_L0P5_END			0x11
+#define WIFI_ERR_RECOV_DETACH			0x10
+#define WIFI_ERR_RECOV_ATTACH			0x11
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

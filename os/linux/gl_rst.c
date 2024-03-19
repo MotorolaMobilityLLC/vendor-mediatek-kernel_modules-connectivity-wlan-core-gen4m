@@ -1176,7 +1176,7 @@ void WfsysResetHdlr(struct work_struct *work)
 
 		glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_RESET);
 #if CFG_SUPPORT_WED_PROXY
-		wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_L0P5_BEGIN);
+		wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_DETACH);
 #endif
 		HAL_CANCEL_TX_RX(prAdapter);
 
@@ -1202,7 +1202,7 @@ void WfsysResetHdlr(struct work_struct *work)
 	if (wlanOnAtReset() != WLAN_STATUS_SUCCESS)
 		goto FAIL;
 #if CFG_SUPPORT_WED_PROXY
-	wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_L0P5_END);
+	wedHwRecoveryFromError(prAdapter, WIFI_ERR_RECOV_ATTACH);
 #endif
 	glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_IDLE);
 
