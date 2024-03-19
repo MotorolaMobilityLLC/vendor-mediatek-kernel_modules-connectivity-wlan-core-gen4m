@@ -141,11 +141,7 @@ bool bssIsIotAp(struct ADAPTER *prAdapter,
 const char *bssOpBw2Str(struct BSS_INFO *prBssInfo);
 
 uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter,
-		enum ENUM_BAND eBand, struct BSS_INFO **prBssList,
-		u_int8_t fgIsForPrefFreq);
-
-uint32_t bssGetAliveBss(struct ADAPTER *prAdapter,
-		struct BSS_INFO **prBssList);
+		enum ENUM_BAND eBand, struct BSS_INFO **prBssList);
 
 const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *bss);

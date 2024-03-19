@@ -10320,6 +10320,7 @@ void p2pFuncGetSafeFreq(enum ENUM_IFTYPE eIftype,
 			   ucAllowFreqNum * sizeof(uint32_t));
 		*targetFreqListNum = ucAllowFreqNum;
 	}
+	/* P2P return original targetFreqList */
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -10410,6 +10411,53 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 
+uint32_t p2pFuncGetAliveBssByHwBand(struct ADAPTER *prAdapter,
+				    enum ENUM_MBMC_BN eHwBand,
+				    struct BSS_INFO **prBssList)
+{
+	struct BSS_INFO *bss;
+	uint8_t i, ucNumAliveBss = 0, fgIsStaGcExist = FALSE;
+
+	for (i = 0; i < MAX_BSSID_NUM && !fgIsStaGcExist; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!bss || !IS_BSS_ALIVE(prAdapter, bss) ||
+		    bss->eHwBandIdx != eHwBand)
+			continue;
+
+		if (IS_BSS_AIS(bss) || IS_BSS_GC(bss))
+			fgIsStaGcExist = TRUE;
+	}
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!bss || !IS_BSS_ALIVE(prAdapter, bss))
+			continue;
+		else if (bss->eHwBandIdx != eHwBand)
+			continue;
+
+		/* only get STA/GC if STA/GC exist for pref freq selection,
+		 * then prevent MCC by CCM.
+		 */
+		if (!fgIsStaGcExist || IS_BSS_AIS(bss) || IS_BSS_GC(bss)) {
+			prBssList[ucNumAliveBss++] = bss;
+			DBGLOG(BSS, INFO,
+			       "bss%u (%s), b:%u, ch:%u, bw:%s, hw_band:%u\n",
+			       i, bssGetRoleTypeString(prAdapter, bss),
+			       bss->eBand, bss->ucPrimaryChannel,
+			       bssOpBw2Str(bss), bss->eHwBandIdx);
+		} else {
+			DBGLOG(BSS, TRACE,
+			       "ignore bss%u (%s) and prevent MCC by CCM\n",
+			       i, bssGetRoleTypeString(prAdapter, bss));
+		}
+	}
+
+	return ucNumAliveBss;
+}
+
+
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief Get the pref freq list with BSS based algo.
@@ -10427,47 +10475,54 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		uint32_t *pu4FreqListNum, uint32_t *pau4FreqAllowList,
 		uint8_t ucAllowFreqNum)
 {
-	struct BSS_INFO *alive2gBss[MAX_BSSID_NUM] = { 0 };
-	struct BSS_INFO *alive5gBss[MAX_BSSID_NUM] = { 0 };
+	struct BSS_INFO *aliveBssBn0[MAX_BSSID_NUM] = { 0 };
+	struct BSS_INFO *aliveBssBn1[MAX_BSSID_NUM] = { 0 };
+	struct BSS_INFO *aliveBssBn2[MAX_BSSID_NUM] = { 0 };
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	struct BSS_INFO *alive6gBss[MAX_BSSID_NUM] = { 0 };
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 #endif
-	uint8_t ucNumAlive2gBss, ucNumAlive5gBss, ucNumAlive6gBss = 0;
+	uint8_t ucNumAliveBssBn0, ucNumAliveBssBn1, ucNumAliveBssBn2 = 0;
 	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
 
 	/* prepare alive bss info for SCC */
-	ucNumAlive2gBss = bssGetAliveBssByBand(prAdapter, BAND_2G4, alive2gBss,
-					       TRUE);
-	ucNumAlive5gBss = bssGetAliveBssByBand(prAdapter, BAND_5G, alive5gBss,
-					       TRUE);
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	ucNumAlive6gBss = bssGetAliveBssByBand(prAdapter, BAND_6G, alive6gBss,
-					       TRUE);
+	ucNumAliveBssBn0 = p2pFuncGetAliveBssByHwBand(
+					prAdapter, ENUM_BAND_0, aliveBssBn0);
+	ucNumAliveBssBn1 = p2pFuncGetAliveBssByHwBand(
+					prAdapter, ENUM_BAND_1, aliveBssBn1);
+#if (CFG_SUPPORT_CONNAC3X == 1)
+	ucNumAliveBssBn2 = p2pFuncGetAliveBssByHwBand(
+					prAdapter, ENUM_BAND_2, aliveBssBn2);
 #endif
+
 	bssGetAliveBssHwBitmap(prAdapter, au4AliveBssBitmap);
 
 	DBGLOG(P2P, INFO,
-	       "alive BSS num [2G:5G:6G]=[%u:%u:%u] hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
-	       ucNumAlive2gBss, ucNumAlive5gBss, ucNumAlive6gBss,
+	       "[bn0:bn1:bn2] alive Bss num=[%u:%u:%u], bitmap=[0x%x:0x%x:0x%x]\n",
+	       ucNumAliveBssBn0, ucNumAliveBssBn1, ucNumAliveBssBn2,
 	       au4AliveBssBitmap[AA_HW_BAND_0], au4AliveBssBitmap[AA_HW_BAND_1],
 	       au4AliveBssBitmap[AA_HW_BAND_2]);
 
-	/* append 5G/6G channels */
-	if (au4AliveBssBitmap[AA_HW_BAND_2] != 0) {
+	/* Append 5G/6G channels first */
+	if (au4AliveBssBitmap[AA_HW_BAND_1] != 0 &&
+	    au4AliveBssBitmap[AA_HW_BAND_2] != 0) {
+		 /* No idle band, prefer SCC bn1 > bn2 for RF capab */
+		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBssBn1,
+		    ucNumAliveBssBn1, &pau4FreqList[*pu4FreqListNum]);
+		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBssBn2,
+		    ucNumAliveBssBn2, &pau4FreqList[*pu4FreqListNum]);
+	} else if (au4AliveBssBitmap[AA_HW_BAND_1] != 0 &&
+		   au4AliveBssBitmap[AA_HW_BAND_2] == 0) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
-			*pu4FreqListNum += p2pFuncAppendPrefFreq(alive6gBss,
-			    ucNumAlive6gBss, &pau4FreqList[*pu4FreqListNum]);
+		if (p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap))
+			/* Prefer A+A for Skyhawk Sku1 2G+2A+1A */
+			*pu4FreqListNum += p2pFuncAppendAaFreq(prAdapter, NULL,
+				&pau4FreqList[*pu4FreqListNum]);
 #endif
-		*pu4FreqListNum += p2pFuncAppendPrefFreq(alive5gBss,
-		    ucNumAlive5gBss, &pau4FreqList[*pu4FreqListNum]);
-	} else if (p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap)) {
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		*pu4FreqListNum += p2pFuncAppendAaFreq(prAdapter, NULL,
-				    &pau4FreqList[*pu4FreqListNum]);
-#endif
+		/* Prefer bn1 SCC */
+		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBssBn1,
+			ucNumAliveBssBn1, &pau4FreqList[*pu4FreqListNum]);
 	} else {
+		/* bn1 & bn2 idle, prefer 6G > 5G for BW */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (IS_FEATURE_DISABLED(prWifiVar->ucDisallowAcs6G))
 			*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
@@ -10481,11 +10536,13 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 			&pau4FreqList[*pu4FreqListNum]);
 	}
 
-	/* append 2G channels */
+	/* Append 2G channels */
 	if (au4AliveBssBitmap[AA_HW_BAND_0] != 0) {
-		*pu4FreqListNum += p2pFuncAppendPrefFreq(alive2gBss,
-			ucNumAlive2gBss, &pau4FreqList[*pu4FreqListNum]);
+		/* Prefer SCC */
+		*pu4FreqListNum += p2pFuncAppendPrefFreq(aliveBssBn0,
+			ucNumAliveBssBn0, &pau4FreqList[*pu4FreqListNum]);
 	} else {
+		/* Band is idle, append whole 2G */
 		*pu4FreqListNum += p2pFunGetTopPreferFreqByBand(
 			prAdapter,
 			BAND_2G4,
