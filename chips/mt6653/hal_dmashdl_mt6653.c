@@ -289,8 +289,12 @@ struct DMASHDL_CFG rMt6653DmashdlCfg = {
 
 void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 {
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+#endif
 	uint32_t idx, u4DefVal;
-	uint32_t u4MaxQuota = 0;
+	uint32_t u4MinQuota = 0, u4MaxQuota = 0;
+	u_int8_t fgSetQuota = TRUE;
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Val = 0, u4Addr = 0;
@@ -306,15 +310,22 @@ void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 			prAdapter, idx,
 			rMt6653DmashdlCfg.afgRefillEn[idx]);
 
-		u4MaxQuota = rMt6653DmashdlCfg.au2MaxQuota[idx];
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
+		u4MinQuota = prAdapter->chip_info->u4DefaultMinQuota;
 		u4MaxQuota = asicConnac3xDynamicDmashdlGetInUsedMaxQuota(
-			prAdapter, idx, u4MaxQuota);
+			prAdapter, idx, rMt6653DmashdlCfg.au2MaxQuota[idx]);
+		/* don't set quota on SER */
+		if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+		    ERR_RECOV_STOP_IDLE)
+			fgSetQuota = FALSE;
+#else
+		u4MinQuota = rMt6653DmashdlCfg.au2MinQuota[idx];
+		u4MaxQuota = rMt6653DmashdlCfg.au2MaxQuota[idx];
 #endif
-		asicConnac3xDmashdlSetMinMaxQuota(
-			prAdapter, idx,
-			rMt6653DmashdlCfg.au2MinQuota[idx],
-			u4MaxQuota);
+		if (fgSetQuota) {
+			asicConnac3xDmashdlSetMinMaxQuota(
+				prAdapter, idx, u4MinQuota, u4MaxQuota);
+		}
 	}
 
 	for (idx = 0; idx < 32; idx++)

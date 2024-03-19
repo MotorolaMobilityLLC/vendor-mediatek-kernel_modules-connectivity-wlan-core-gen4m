@@ -9071,8 +9071,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		uint8_t aucBuf[WLAN_CFG_VALUE_LEN_MAX];
 		uint32_t u4Pos = 0;
 
+		kalMemZero(aucBuf, WLAN_CFG_VALUE_LEN_MAX);
 		for (u4Idx = 0; u4Idx < ENUM_BAND_NUM; u4Idx++) {
-			kalMemZero(aucBuf, WLAN_CFG_VALUE_LEN_MAX);
 			u4Pos += kalSnprintf(
 				aucBuf + u4Pos,
 				WLAN_CFG_VALUE_LEN_MAX - u4Pos,
@@ -9080,8 +9080,18 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 				(u4Idx == 0) ? "" : " ",
 				prChipInfo->au4DmaMaxQuotaBand[u4Idx]);
 		}
+
+		for (u4Idx = 0; u4Idx < BAND_NUM; u4Idx++) {
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				WLAN_CFG_VALUE_LEN_MAX - u4Pos,
+				" 0x%x",
+				prChipInfo->au4DmaMaxQuotaRfBand[u4Idx]);
+		}
 		INIT_STR(prWifiVar->aucDmaMaxQuota, "DmaMaxQuota", aucBuf,
 			 FEATURE_DEBUG_ONLY);
+		wlanCfgSet(prAdapter, "DmaMaxQuota",
+			   prWifiVar->aucDmaMaxQuota, WLAN_CFG_DEFAULT);
 	}
 #endif
 #if CFG_SUPPORT_WED_PROXY

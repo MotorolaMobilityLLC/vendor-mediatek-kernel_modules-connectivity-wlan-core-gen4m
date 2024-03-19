@@ -3247,7 +3247,8 @@ void cnmUpdateStaticDbdcQuota(
 
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
 enum ENUM_MBMC_BN cnmGetMaxQuotaHwBandByWmmIndex(
-	struct ADAPTER *prAdapter, uint8_t ucWmmIndex, u_int8_t *fgIsMldMulti)
+	struct ADAPTER *prAdapter, uint8_t ucWmmIndex,
+	enum ENUM_BAND *eBand, u_int8_t *fgIsMldMulti)
 {
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct BSS_INFO *prBssInfo;
@@ -3285,8 +3286,10 @@ enum ENUM_MBMC_BN cnmGetMaxQuotaHwBandByWmmIndex(
 		/* select band with largest max quota */
 		if (eTargetHwBand == ENUM_BAND_AUTO ||
 		    prChipInfo->au4DmaMaxQuotaBand[prBssInfo->eHwBandIdx] >
-		    prChipInfo->au4DmaMaxQuotaBand[eTargetHwBand])
+		    prChipInfo->au4DmaMaxQuotaBand[eTargetHwBand]) {
 			eTargetHwBand = prBssInfo->eHwBandIdx;
+			*eBand = prBssInfo->eBand;
+		}
 	}
 
 	return eTargetHwBand;
@@ -3298,6 +3301,7 @@ static void cnmUpdateDynamicMaxQuotaByWmmIdx(
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WMM_QUOTA_STATUS *prWmmStatus;
 	enum ENUM_MBMC_BN eHwBand = ENUM_BAND_AUTO;
+	enum ENUM_BAND eBand = BAND_NULL;
 	uint32_t u4ReqQuota = 0;
 	u_int8_t fgEn = TRUE, fgIsNeedUpdate = FALSE, fgIsMldMulti = FALSE;
 
@@ -3307,7 +3311,7 @@ static void cnmUpdateDynamicMaxQuotaByWmmIdx(
 
 	prWmmStatus = &prAdapter->rWmmQuotaStatus[ucWmmIdx];
 	eHwBand = cnmGetMaxQuotaHwBandByWmmIndex(
-		prAdapter, ucWmmIdx, &fgIsMldMulti);
+		prAdapter, ucWmmIdx, &eBand, &fgIsMldMulti);
 	if (prWmmStatus->eHwBand == eHwBand)
 		return;
 
@@ -3318,7 +3322,9 @@ static void cnmUpdateDynamicMaxQuotaByWmmIdx(
 	}
 
 	/* set req band for quota decision */
+	prAdapter->rWmmQuotaReqCS[ucWmmIdx].fgIsMldMulti = fgIsMldMulti;
 	prAdapter->rWmmQuotaReqCS[ucWmmIdx].eHwBand = eHwBand;
+	prAdapter->rWmmQuotaReqCS[ucWmmIdx].eBand = eBand;
 	u4ReqQuota = prChipInfo->dmashdlQuotaDecision(prAdapter, ucWmmIdx);
 	if (u4ReqQuota == 0) {
 		DBGLOG(CNM, TRACE,

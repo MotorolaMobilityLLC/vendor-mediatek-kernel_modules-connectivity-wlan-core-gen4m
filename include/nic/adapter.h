@@ -2690,7 +2690,9 @@ struct ADAPTER {
 	struct {
 		bool fgRun;
 		uint32_t u4Quota;
+		u_int8_t fgIsMldMulti;
 		enum ENUM_MBMC_BN eHwBand;
+		enum ENUM_BAND eBand;
 	} rWmmQuotaReqCS[MAX_BSSID_NUM];
 
 	struct WMM_QUOTA_STATUS rWmmQuotaStatus[MAX_BSSID_NUM];
