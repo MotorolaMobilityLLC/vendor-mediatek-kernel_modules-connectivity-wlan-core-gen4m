@@ -13939,13 +13939,13 @@ static void nicEventHandleOmi(struct ADAPTER *prAdapter,
 		STAREC_SET_EHT_RX_160MHZ_MCS10_11_NSS(prStaRec, ucMacRxNss);
 		STAREC_SET_EHT_RX_160MHZ_MCS12_13_NSS(prStaRec, ucMacRxNss);
 	}
-#endif
 
 	DBGLOG(NIC, STATE,
 		"McsMap160MHz[0]: %u, McsMap160MHz[1]: %u, McsMap160MHz[2]: %u\n",
 		prStaRec->aucMcsMap160MHz[0],
 		prStaRec->aucMcsMap160MHz[1],
 		prStaRec->aucMcsMap160MHz[2]);
+#endif /* CFG_SUPPORT_802_11BE */
 
 	cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
 	cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
