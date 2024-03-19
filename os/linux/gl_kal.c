@@ -185,9 +185,11 @@ static int wlan_fb_notifier_callback(struct notifier_block
 				*self, unsigned long event, void *data);
 
 void *wlan_fb_notifier_priv_data;
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK_V2)
 static struct notifier_block wlan_fb_notifier = {
 	.notifier_call = wlan_fb_notifier_callback
 };
+#endif
 
 static struct miscdevice wlan_object;
 
@@ -11777,16 +11779,18 @@ end:
 
 int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo)
 {
-	int32_t i4Ret;
+	int32_t i4Ret = -1;
 
 	wlan_fb_notifier_priv_data = prGlueInfo;
 
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK_V2)
 #if CFG_MTK_ANDROID_WMT && \
 	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	i4Ret = mtk_disp_notifier_register("wlan_fb_notifier",
 			&wlan_fb_notifier);
 #else
 	i4Ret = fb_register_client(&wlan_fb_notifier);
+#endif
 #endif
 	if (i4Ret)
 		DBGLOG(SW4, WARN, "Register wlan_fb_notifier failed:%d\n",
@@ -11798,11 +11802,13 @@ int32_t kalFbNotifierReg(struct GLUE_INFO *prGlueInfo)
 
 void kalFbNotifierUnReg(void)
 {
+#if IS_ENABLED(CONFIG_DRM_MEDIATEK_V2)
 #if CFG_MTK_ANDROID_WMT && \
 	KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	mtk_disp_notifier_unregister(&wlan_fb_notifier);
 #else
 	fb_unregister_client(&wlan_fb_notifier);
+#endif
 #endif
 	wlan_fb_notifier_priv_data = NULL;
 }

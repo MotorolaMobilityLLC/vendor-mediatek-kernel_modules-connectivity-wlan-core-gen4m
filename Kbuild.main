@@ -501,7 +501,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
         CONFIG_MTK_WIFI_POWER_THROTTLING=y
         CONFIG_MTK_WIFI_PCIE_SUPPORT=y
         ifeq ($(call kver_ge,5,15),1)
-            CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+            ifneq ($(filter y m,$(CONFIG_PMIC_LBAT_SERVICE)),)
+                CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+            endif
         endif
     endif
     CONFIG_MTK_WIFI_SUPPORT_TXPWR_ENV=y
@@ -520,7 +522,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_FW_LOG_EMI=y
     CONFIG_MTK_WIFI_MET_LOG_EMI=y
     ifeq ($(call kver_ge,5,15),1)
-        CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+        ifneq ($(filter y m,$(CONFIG_PMIC_LBAT_SERVICE)),)
+            CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+        endif
     endif
     CONFIG_PERF_MON_FAST=y
     CONFIG_WIFI_COREDUMP_SUPPORT=y
@@ -621,7 +625,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
     CONFIG_MTK_WIFI_FW_LOG_EMI=y
     CONFIG_MTK_WIFI_MET_LOG_EMI=y
     ifeq ($(call kver_ge,5,15),1)
-        CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+        ifneq ($(filter y m,$(CONFIG_PMIC_LBAT_SERVICE)),)
+            CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
+        endif
     endif
     CONFIG_PERF_MON_FAST=y
     CONFIG_WIFI_COREDUMP_SUPPORT=y
@@ -1636,7 +1642,9 @@ endif
 
 ifeq ($(WMT_SUPPORT), y)
     ifeq ($(CONFIG_ARCH_MEDIATEK),y)
-        CONFIG_MODIFY_TX_POWER_BY_BAT_VOLT=y
+        ifneq ($(filter y m,$(CONFIG_PMIC_LBAT_SERVICE)),)
+            CONFIG_MODIFY_TX_POWER_BY_BAT_VOLT=y
+        endif
     endif
     ccflags-y += -DCFG_ENABLE_WAKE_LOCK=1
     ccflags-y += -DCFG_SUPPORT_MET_LOG=1
