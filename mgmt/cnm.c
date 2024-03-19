@@ -4604,6 +4604,9 @@ static bool IsLastDisconnectBssInMlo(
 
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucOtherBssIndex);
 
+		if (!prBssInfo)
+			continue;
+
 		if (IS_BSS_NOT_ALIVE(prAdapter, prBssInfo))
 			continue;
 
