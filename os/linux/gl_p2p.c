@@ -170,7 +170,7 @@ static const struct ieee80211_iface_limit mtk_p2p_sta_go_limits[] = {
 	},
 
 	{
-		.max = 1,
+		.max = 3,
 		.types = BIT(NL80211_IFTYPE_P2P_GO)
 				| BIT(NL80211_IFTYPE_P2P_CLIENT),
 	},
@@ -181,7 +181,7 @@ static const struct ieee80211_iface_limit mtk_p2p_sta_go_limits[] = {
 
 static const struct ieee80211_iface_limit mtk_ap_limits[] = {
 	{
-		.max = 1,
+		.max = 2,
 		.types = BIT(NL80211_IFTYPE_AP),
 	},
 };
@@ -209,9 +209,9 @@ mtk_iface_combinations_p2p[] = {
 #if defined(CFG_NUM_DIFFERENT_CHANNELS_P2P)
 		.num_different_channels = CFG_NUM_DIFFERENT_CHANNELS_P2P,
 #else
-		.num_different_channels = 2,
+		.num_different_channels = 4,
 #endif /* CFG_NUM_DIFFERENT_CHANNELS_P2P */
-		.max_interfaces = 3,
+		.max_interfaces = 4,
 		/*.beacon_int_infra_match = true,*/
 		.limits = mtk_p2p_sta_go_limits,
 		.n_limits = ARRAY_SIZE(mtk_p2p_sta_go_limits), /* include p2p */
@@ -222,8 +222,8 @@ mtk_iface_combinations_p2p[] = {
 	 * before linux-3.17.0
 	 */
 	{
-		.num_different_channels = 1,
-		.max_interfaces = 1,
+		.num_different_channels = 2,
+		.max_interfaces = 2,
 		.limits = mtk_ap_limits,
 		.n_limits = ARRAY_SIZE(mtk_ap_limits),
 		.radar_detect_widths = BIT(NL80211_CHAN_WIDTH_20_NOHT) |
