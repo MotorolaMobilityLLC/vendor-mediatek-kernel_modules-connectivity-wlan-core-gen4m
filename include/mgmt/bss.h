@@ -150,6 +150,8 @@ uint32_t bssGetAliveBss(struct ADAPTER *prAdapter,
 const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *bss);
 
+void bssGetAliveBssHwBitmap(struct ADAPTER *prAdapter, uint32_t *pau4Bitmap);
+
 #if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
 
 /*----------------------------------------------------------------------------*/

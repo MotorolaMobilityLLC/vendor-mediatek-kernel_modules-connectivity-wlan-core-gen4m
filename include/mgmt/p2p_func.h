@@ -10,6 +10,18 @@
 #define GO_CSA_ACTION_FRAME_LIFE_TIME_MARGIN_MS		     50
 #define GO_CSA_ACTION_FRAME_MINIMUM_LIFE_TIME_MS	     100
 
+enum ENUM_AA_HW_BAND {
+	AA_HW_BAND_0 = 0,
+	AA_HW_BAND_1,
+	AA_HW_BAND_2,
+	AA_HW_BAND_3,
+#if (CONFIG_BAND_NUM > 2)
+	AA_HW_BAND_NUM = CONFIG_BAND_NUM
+#else
+	AA_HW_BAND_NUM = 3
+#endif
+};
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 extern struct P2P_RADAR_INFO g_rP2pRadarInfo;
 
@@ -600,6 +612,12 @@ uint8_t p2pFuncGetAllAcsFreqList(struct ADAPTER *prAdapter,
 uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 	uint8_t ucNumOfAliveBss, uint32_t *prFreqList);
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
+uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
+			     struct BSS_INFO *prBssInfo,
+			     uint32_t *apu4FreqList);
+#endif
+
 uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
 		uint32_t *pu4FreqListNum, uint32_t *pau4FreqAllowList,
@@ -634,7 +652,6 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 
 void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		uint8_t eBand,
-		enum ENUM_MAX_BANDWIDTH_SETTING eChnlBw,
 		uint32_t u4LteSafeChnMask_2G,
 		uint32_t u4LteSafeChnMask_5G_1,
 		uint32_t u4LteSafeChnMask_5G_2,
@@ -724,3 +741,6 @@ struct P2P_CH_CANDIDATE_FILETER_ENTRY {
 };
 u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 				 uint32_t *pau4SafeChnl);
+
+u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
+			      uint32_t *pau4AliveBssBitmap);

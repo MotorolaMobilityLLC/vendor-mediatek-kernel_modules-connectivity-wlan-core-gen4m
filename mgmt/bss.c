@@ -2985,3 +2985,28 @@ bool bssIsIotAp(struct ADAPTER *prAdapter,
 }
 
 #endif
+
+/*---------------------------------------------------------------------------*/
+/*!
+ * \brief Get the alive bss HW band bitmap. Each bit indicate the bss
+ *        of that index number is alive or not.
+ *
+ * \param[in] prAdapter Pointer to the Adapter structure.
+ * \param[in] pau4Bitmap The output bitmap.
+ * \param[in] ucBandNum Number of HW band of the chip.
+ */
+/*---------------------------------------------------------------------------*/
+void bssGetAliveBssHwBitmap(struct ADAPTER *prAdapter, uint32_t *pau4Bitmap)
+{
+	struct BSS_INFO *bss;
+	uint8_t i;
+
+	for (i = 0; i < MAX_BSSID_NUM; ++i) {
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		if (!IS_BSS_ALIVE(prAdapter, bss))
+			continue;
+
+		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
+	}
+}
