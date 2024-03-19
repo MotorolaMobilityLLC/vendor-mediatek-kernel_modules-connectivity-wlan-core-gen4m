@@ -1184,7 +1184,7 @@ void asicConnac3xProcessSoftwareInterrupt(
 	struct HIF_MEM_OPS *prMemOps;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	struct HIF_MEM *prMem = NULL;
-	uint32_t u4Status = 0, u4Addr = 0, *pu4EmiSta = NULL;
+	uint32_t u4Status = 0, u4Addr = 0, u4Idx;
 	uint32_t u4HostWpdamBase = 0;
 	u_int8_t fgRet = FALSE;
 
@@ -1210,9 +1210,18 @@ void asicConnac3xProcessSoftwareInterrupt(
 	}
 
 	if (prMem && prMem->va) {
-		pu4EmiSta = (uint32_t *)prMem->va;
-		u4Status = *pu4EmiSta;
-		*pu4EmiSta = *pu4EmiSta & ~u4Status;
+		struct SER_EMI_STATUS *prEmiSta =
+			(struct SER_EMI_STATUS *)prMem->va;
+
+		for (u4Idx = 0; u4Idx < HIF_EMI_SER_STATUS_SIZE; u4Idx++) {
+			if (prEmiSta->ucStatus[u4Idx]) {
+				u4Status |= BIT(u4Idx);
+				prEmiSta->ucStatus[u4Idx] = 0;
+			}
+		}
+
+		if (u4Status)
+			DBGLOG(HAL, INFO, "STA[0x%08x]\n", u4Status);
 	} else {
 		u4Addr = CONNAC3X_WPDMA_MCU2HOST_SW_INT_STA(u4HostWpdamBase);
 		HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Status, &fgRet);

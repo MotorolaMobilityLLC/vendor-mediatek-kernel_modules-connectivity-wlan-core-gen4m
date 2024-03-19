@@ -4598,6 +4598,8 @@ void halHwRecoveryTimeout(unsigned long arg)
 #endif
 	struct ADAPTER *prAdapter = NULL;
 	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct HIF_MEM_OPS *prMemOps;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 
 	ASSERT(prGlueInfo);
@@ -4605,6 +4607,8 @@ void halHwRecoveryTimeout(unsigned long arg)
 	ASSERT(prAdapter);
 
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
+	prChipInfo = prAdapter->chip_info;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
 
 	halSerRecovery(prAdapter);
@@ -4615,6 +4619,15 @@ void halHwRecoveryTimeout(unsigned long arg)
 	       prErrRecoveryCtrl->u4Status,
 	       prErrRecoveryCtrl->u4BackupStatus,
 	       prErrRecoveryCtrl->u4TimeoutCnt);
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		struct HIF_MEM *prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
+
+		if (prMem && prMem->va)
+			DBGLOG_MEM8(HAL, INFO, prMem->va,
+				    sizeof(struct SER_EMI_STATUS));
+	}
 
 	prErrRecoveryCtrl->u4TimeoutCnt++;
 	if (prErrRecoveryCtrl->u4TimeoutCnt > HIF_SER_MAX_TIMEOUT_CNT) {
