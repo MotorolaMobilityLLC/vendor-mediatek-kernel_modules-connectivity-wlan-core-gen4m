@@ -689,12 +689,10 @@ void p2pLinkGet2ndLinkFreq(struct ADAPTER *prAdapter,
 				BAND_2G4) / 1000;
 		} else {
 #if (CFG_SUPPORT_WIFI_6G == 1)
-			enum ENUM_BAND eBand;
 			u_int8_t fgIsValid;
 
-			eBand = cnmGetBandByFreq(AP_DEFAULT_CHANNEL_6G);
 			fgIsValid = rlmDomainIsLegalChannel(prAdapter,
-				eBand, AP_DEFAULT_CHANNEL_6G);
+				BAND_6G, AP_DEFAULT_CHANNEL_6G);
 			if (fgIsValid)
 				*u4PreferFreq = nicChannelNum2Freq(
 					AP_DEFAULT_CHANNEL_6G,
