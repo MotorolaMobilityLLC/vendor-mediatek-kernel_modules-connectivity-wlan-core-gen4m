@@ -513,9 +513,11 @@ uint8_t apsIsBssQualify(struct ADAPTER *ad, struct BSS_DESC *bss,
 }
 #endif
 
-uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
+uint16_t apsGetAmsduByte(struct ADAPTER *ad,
+	struct BSS_DESC *bss, uint8_t bidx)
 {
 	uint16_t bssAmsduLen = 0, amsduLen = 0;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (bss->eBand == BAND_6G) {
@@ -537,7 +539,9 @@ uint16_t apsGetAmsduByte(struct BSS_DESC *bss)
 	}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
-	if (bss->fgIsEHTPresent == TRUE) {
+	if (bss->fgIsEHTPresent == TRUE &&
+	    (prWifiVar->fgDisSecurityCheck ||
+	     rsnIsKeyMgmtForEht(ad, bss, bidx))) {
 		bssAmsduLen = (bss->u2MaximumMpdu &
 			EHT_MAC_CAP_MAX_MPDU_LEN_MASK) & 0xffff;
 
@@ -657,7 +661,7 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
 	uint8_t fgIsGBandCoex = aps->fgIsGBandCoex;
 	uint8_t rcpi = 0, ppduDuration = 5, ucChannelCuInfo = 0;
-	uint16_t amsduByte = apsGetAmsduByte(bss);
+	uint16_t amsduByte = apsGetAmsduByte(ad, bss, bidx);
 	uint16_t baSize = mpduLen[bss->eChannelWidth];
 	uint16_t slot = 0;
 	uint32_t airTime = 0, idle = 0, ideal = 0, tput = 0, est = 0;

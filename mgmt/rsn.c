@@ -1098,8 +1098,7 @@ uint8_t rsnAuthModeRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode)
 	       eAuthMode == AUTH_MODE_FILS;
 }
 
-uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
-	enum ENUM_PARAM_AUTH_MODE eAuthMode,
+uint8_t rsnIsKeyMgmtForWpa3(struct ADAPTER *ad,
 	uint32_t u4AkmSuite,
 	uint8_t bssidx,
 	struct BSS_DESC *prBss)
@@ -1107,21 +1106,29 @@ uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
 	struct GL_WPA_INFO *prWpaInfo;
 	u_int8_t fgIsOWE, fgIsSAE, fgIsSAEH2E;
 
+	prWpaInfo = aisGetWpaInfo(ad, bssidx);
+	fgIsOWE = u4AkmSuite == RSN_AKM_SUITE_OWE;
+	fgIsSAE = rsnKeyMgmtSae(u4AkmSuite);
+
+	fgIsSAEH2E = fgIsSAE &&
+		(prWpaInfo->u2RSNXCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) &&
+		(prBss->fgIERSNX &&
+			prBss->u2RsnxCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
+
+	return (fgIsOWE || fgIsSAEH2E);
+}
+
+uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
+	uint32_t u4AkmSuite,
+	uint8_t bssidx,
+	struct BSS_DESC *prBss)
+{
 	if (rsnIsKeyMgmtIeee8021x(u4AkmSuite)) {
 		DBGLOG(RSN, INFO,
 			"AKM %d is allowed for 6G enterprise AP\n",
 			u4AkmSuite);
 		return TRUE;
 	}
-
-	prWpaInfo = aisGetWpaInfo(ad, bssidx);
-	fgIsOWE = eAuthMode == AUTH_MODE_WPA3_OWE;
-	fgIsSAE = eAuthMode == AUTH_MODE_WPA3_SAE;
-
-	fgIsSAEH2E = fgIsSAE &&
-		(prWpaInfo->u2RSNXCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) &&
-		(prBss->fgIERSNX &&
-			prBss->u2RsnxCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
 
 #if WLAN_INCLUDE_SYS
 #if (CFG_SUPPORT_WIFI_6G == 1)
@@ -1139,7 +1146,23 @@ uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
 #endif
 #endif
 
-	return (fgIsOWE || fgIsSAEH2E);
+	if (rsnIsKeyMgmtForWpa3(ad, u4AkmSuite, bssidx, prBss))
+		return TRUE;
+
+	return FALSE;
+}
+
+uint8_t rsnIsKeyMgmtForEht(struct ADAPTER *ad,
+	struct BSS_DESC *prBss, uint8_t bssidx)
+{
+	if (rsnIsKeyMgmtIeee8021x(prBss->u4RsnSelectedAKMSuite))
+		return TRUE;
+
+	if (rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
+				bssidx, prBss))
+		return TRUE;
+
+	return FALSE;
 }
 
 void rsnMatchCipherSuite(struct RSN_INFO *prBssRsnInfo,
@@ -1355,17 +1378,6 @@ u_int8_t rsnPerformPolicySelection(
 
 	u4PairwiseCipher = prMib->dot11RSNAConfigPairwiseCipher;
 	u4GroupCipher = prMib->dot11RSNAConfigGroupCipher;
-
-#if defined(MLD_SECURITY_RESTRICTIONS) && (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prBss->rMlInfo.fgValid) {
-		if (!prBss->fgIERSN || !(prBss->u2RsnCap & ELEM_WPA_CAP_MFPC)) {
-			DBGLOG(RSN, INFO,
-				"Invalid rsne security mode: RSNE=%d, RsnCap=0x%x\n",
-				prBss->fgIERSN, prBss->u2RsnCap);
-			return FALSE;
-		}
-	}
-#endif
 
 #if CFG_SUPPORT_WPS
 	fgIsWpsActive = aisGetConnSettings(prAdapter, ucBssIndex)->fgWpsActive;
@@ -1675,7 +1687,7 @@ selected:
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (prBss->eBand == BAND_6G) {
 		if (!rsnIsKeyMgmtFor6g(prAdapter,
-				eAuthMode, u4AkmSuite, ucBssIndex, prBss)) {
+				u4AkmSuite, ucBssIndex, prBss)) {
 #if CFG_SUPPORT_WPA3_LOG
 			wpa3Log6gPolicyFail(prAdapter,
 				ucBssIndex,

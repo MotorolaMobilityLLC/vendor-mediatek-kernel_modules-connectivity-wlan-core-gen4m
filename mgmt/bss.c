@@ -247,7 +247,8 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE == 1)
 	uint8_t ucEhtOption = FEATURE_ENABLED;
 #endif
-	uint32_t u4Cipher;
+	uint32_t u4PTKCipher;
+	uint32_t u4GTKCipher;
 #if (CFG_SUPPORT_802_11AX == 1)
 	uint8_t ucHeOption = FEATURE_ENABLED;
 
@@ -274,14 +275,20 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 	if (prStaRec->eStaType == STA_TYPE_LEGACY_AP) {
 		if (prBssInfo == NULL)
 			goto BYPASS_SEC_CHECK;
+		u4PTKCipher = prBssInfo->u4RsnSelectedPairwiseCipher;
+		u4GTKCipher = prBssInfo->u4RsnSelectedGroupCipher;
 
-		u4Cipher = prBssInfo->u4RsnSelectedPairwiseCipher;
-
-		if (GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_TKIP ||
-		    GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP40 ||
-		    GET_SELECTOR_TYPE(u4Cipher) == CIPHER_SUITE_WEP104) {
+		if (GET_SELECTOR_TYPE(u4PTKCipher) == CIPHER_SUITE_TKIP ||
+		    GET_SELECTOR_TYPE(u4PTKCipher) == CIPHER_SUITE_WEP40 ||
+		    GET_SELECTOR_TYPE(u4PTKCipher) == CIPHER_SUITE_WEP104 ||
+		    (!prWifiVar->fgDisGTKCipherCheck &&
+		    (GET_SELECTOR_TYPE(u4GTKCipher) == CIPHER_SUITE_TKIP ||
+		     GET_SELECTOR_TYPE(u4GTKCipher) == CIPHER_SUITE_WEP40 ||
+		     GET_SELECTOR_TYPE(u4GTKCipher) == CIPHER_SUITE_WEP104))) {
 			DBGLOG(BSS, INFO,
-			       "Ignore the HT/VHT Bit for TKIP as pairwise cipher configed!\n");
+			       "Ignore the HT/VHT or higher Bit for pairwise/group cipher (0x%08x/0x%08x) as key cipher configed!\n",
+			       u4PTKCipher, u4GTKCipher);
+
 			prStaRec->ucPhyTypeSet &=
 			    ~(PHY_TYPE_BIT_HT | PHY_TYPE_BIT_VHT);
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -291,6 +298,18 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 			prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_EHT);
 #endif
 		}
+
+#if (CFG_SUPPORT_802_11BE == 1)
+		if ((prStaRec->ucPhyTypeSet & PHY_TYPE_BIT_EHT) &&
+		    !prWifiVar->fgDisSecurityCheck &&
+		    !rsnIsKeyMgmtForEht(prAdapter, prBssDesc,
+					prStaRec->ucBssIndex)) {
+			DBGLOG(BSS, INFO,
+			       "Ignore the EHT Bit for AKM suite (0x%x) configed!\n",
+			       SWAP32(prBssDesc->u4RsnSelectedAKMSuite));
+			prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_EHT);
+		}
+#endif
 
 BYPASS_SEC_CHECK:
 		ucHtOption = prWifiVar->ucStaHt;
