@@ -9771,7 +9771,8 @@ uint8_t p2pFuncSapSwichCandidatGen(
 		prSapSwitchCand[i].eRfBand = arChnlList[0].eBand;
 		prSapSwitchCand[i].ucChLowerBound = arChnlList[0].ucChannelNum;
 		prSapSwitchCand[i].ucChUpperBound =
-				UNII1_UPPER_BOUND;
+			UNII2A_UPPER_BOUND;
+
 		/* subband boundary definition is decribed with freq/ ch edge */
 		/* may be larger than primary channel */
 		prSapSwitchCand[i].ucBssIndex =
@@ -9781,10 +9782,10 @@ uint8_t p2pFuncSapSwichCandidatGen(
 
 		i++;
 		if (arChnlList[ucChnlNum-1].ucChannelNum >=
-			UNII3_LOWER_BOUND) {
+			UNII2C_LOWER_BOUND) {
 			prSapSwitchCand[i].eRfBand = arChnlList[0].eBand;
 			prSapSwitchCand[i].ucChLowerBound =
-				UNII3_LOWER_BOUND;
+				UNII2C_LOWER_BOUND;
 			prSapSwitchCand[i].ucChUpperBound =
 				arChnlList[ucChnlNum-1].ucChannelNum;
 			prSapSwitchCand[i].ucBssIndex =
