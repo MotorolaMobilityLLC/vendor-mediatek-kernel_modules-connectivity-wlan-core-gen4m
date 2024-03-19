@@ -2269,9 +2269,10 @@ skip_role:
 		COPY_MAC_ADDR(prAdapter->rWifiVar.aucP2pDeviceAddress[ucDevIdx],
 			sa->sa_data);
 		COPY_MAC_ADDR(prDevBssInfo->aucOwnMacAddr, sa->sa_data);
+		COPY_MAC_ADDR(prDevBssInfo->aucBSSID, sa->sa_data);
 		fgIsNetDevFound = TRUE;
 		DBGLOG(INIT, INFO,
-			"[%d][%d] Set random macaddr to " MACSTR ".\n",
+			"[%d][%d] Set dev random macaddr to " MACSTR ".\n",
 			ucBssIdx, ucDevIdx,
 			MAC2STR(prDevBssInfo->aucOwnMacAddr));
 	}

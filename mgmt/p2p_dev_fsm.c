@@ -67,6 +67,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter, uint8_t aucIntfMac[])
 		if (prP2pBssInfo != NULL) {
 			BSS_INFO_INIT(prAdapter, prP2pBssInfo);
 			COPY_MAC_ADDR(prP2pBssInfo->aucOwnMacAddr, aucIntfMac);
+			COPY_MAC_ADDR(prP2pBssInfo->aucBSSID, aucIntfMac);
 			DBGLOG(INIT, TRACE, "Set p2p dev mac to " MACSTR "\n",
 					MAC2STR(prP2pBssInfo->aucOwnMacAddr));
 
