@@ -317,11 +317,6 @@ struct CMD_VALIDATE_POLICY set_fw_param_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 };
 #endif
 
-struct CMD_VALIDATE_POLICY tspec_operation_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
-	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_STRING, .min = 12, .max = 20},
-	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
-};
-
 struct CMD_VALIDATE_POLICY it_operation_policy[COMMON_CMD_SET_ARG_NUM(5)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
 	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
@@ -797,25 +792,25 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.pcCmdStr  = CMD_DUMP_TS,
 		.pfHandler = priv_driver_tspec_operation,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(3),
-		.policy    = tspec_operation_policy,
-		.u4PolicySize = ARRAY_SIZE(tspec_operation_policy)
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
 	},
 	{
 		.pcCmdStr  = CMD_ADD_TS,
 		.pfHandler = priv_driver_tspec_operation,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(3),
-		.policy    = tspec_operation_policy,
-		.u4PolicySize = ARRAY_SIZE(tspec_operation_policy)
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
 	},
 	{
 		.pcCmdStr  = CMD_DEL_TS,
 		.pfHandler = priv_driver_tspec_operation,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(3),
-		.policy    = tspec_operation_policy,
-		.u4PolicySize = ARRAY_SIZE(tspec_operation_policy)
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
 	},
 	{
 		.pcCmdStr  = CMD_SET_CFG,
@@ -2624,6 +2619,7 @@ uint32_t cmd_validate(int8_t *pcCmd, enum ARG_NUM_POLICY argPolicy,
 	int32_t i4Argc = 0;
 
 	wlanCfgParseArgument(pcCmd, &i4Argc, pcArgv);
+	DBGLOG(REQ, TRACE, "i4Argc=%d", i4Argc);
 
 	/* 1. validate argument count */
 	if (argPolicy == VERIFY_EXACT_ARG_NUM &&

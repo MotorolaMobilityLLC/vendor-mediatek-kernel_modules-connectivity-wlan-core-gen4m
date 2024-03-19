@@ -10017,8 +10017,11 @@ void wlanCfgParseArgument(int8_t *cmdLine,
 		case STATE_NEWLINE:
 			goto exit;
 		case STATE_TEXT:
-			if (nargs < WLAN_CFG_ARGV_MAX)
+			if (nargs < WLAN_CFG_ARGV_MAX) {
+				DBGLOG(REQ, LOUD, "arg%u=%s",
+				       nargs, state.text);
 				args[nargs++] = state.text;
+			}
 			break;
 		}
 	}
