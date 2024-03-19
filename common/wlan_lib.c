@@ -7361,12 +7361,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prWifiVar->ucP2pMldLinkMax = prWifiVar->ucMldLinkMax;
 	}
 
-	INIT_UINT(prWifiVar->ucApMldMainLinkIdx,
-		"ApMldMainLinkIdx", MLD_LINK_ID_NONE, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucStaMldMainLinkIdx,
 		"StaMldMainLinkIdx", MLD_LINK_ID_NONE, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucStaPreferMldAddr,
-		"StaPreferMldAddr", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucEmlsrLinkWeight,
+		"EmlsrLinkWeight", 50, FEATURE_TO_CUSTOMER);
 	INIT_STR(prWifiVar->aucMloP2pPreferFreq,
 		"MloP2pPreferFreq", "", FEATURE_TO_CUSTOMER);
 	wlanParseMloFreqList(prAdapter,
@@ -7392,7 +7390,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4ApRemovalMarginMs,
 		"ApRemovalMarginMs", 250, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucNonApMldEMLSupport,
-		"NonApMldEML", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
+		"NonApMldEML", CFG_DEFAULT_ENABLE_EMLSR, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucApMldEMLSupport,
 		"ApMldEML", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgEnTuao, "EnableTuao", FEATURE_ENABLED,
@@ -7403,7 +7401,6 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"NonApHybridMlo", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	mldBssUpdateCapAll(prAdapter);
 	INIT_UINT(prWifiVar->ucT2LMNegotiationSupport, "T2LMNegotiationSupport",
 		  T2LM_ALL_TIDS_SAME_LINK, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4T2LMMarginMs, "T2LMMarginMs", 250,

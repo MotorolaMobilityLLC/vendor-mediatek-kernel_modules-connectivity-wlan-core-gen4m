@@ -28,6 +28,8 @@
  */
 
 #if (CFG_SUPPORT_APS == 1)
+struct BSS_DESC;
+struct BSS_DESC_SET;
 struct AP_COLLECTION;
 #endif
 
@@ -1683,6 +1685,12 @@ struct mt66xx_chip_info {
 #if (CFG_SUPPORT_APS == 1)
 	uint8_t (*apsLinkPlanDecision)(struct ADAPTER *prAdapter,
 		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+		uint8_t ucBssidx);
+	void (*apsUpdateTotalScore)(struct ADAPTER *prAdapter,
+		struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+		struct AP_COLLECTION *prAp, uint8_t ucBssidx);
+	void (*apsFillBssDescSet)(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *prSet,
 		uint8_t ucBssidx);
 #endif
 

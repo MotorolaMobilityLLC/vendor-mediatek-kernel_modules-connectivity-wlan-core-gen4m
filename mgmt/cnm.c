@@ -2620,7 +2620,7 @@ static u_int8_t cnmMLSRDbdcIsConcurrent(
 	/*EMLSR ONLY case, Driver DBDC disable*/
 	if (prDbdcDecisionInfo &&
 		(mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
-		== MLSR_MLO_TYPE) &&
+		== MLO_MODE_MLSR) &&
 		!mldHasSingleLinkBss(prAdapter)) {
 		log_dbg(CNM, INFO, "[DBDC] ONLY MLSR case, DBDC disable\n");
 		return FALSE;
@@ -2847,7 +2847,7 @@ static u_int8_t cnmDbdcIsConcurrent(
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	if (mldHasMLSRMLOBss(prAdapter) ||
 		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
-		== MLSR_MLO_TYPE) {
+		== MLO_MODE_MLSR) {
 		log_dbg(CNM, INFO, "[DBDC] entry MLSR dbdc decision flow\n");
 		return cnmMLSRDbdcIsConcurrent(prAdapter, prDbdcDecisionInfo);
 	}
@@ -4504,7 +4504,7 @@ void cnmDbdcPreConnectionEnableDecision(
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	if (mldHasMLSRMLOBss(prAdapter) &&
 		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
-		== LEGACY_TYPE) {
+		== MLO_MODE_LEGACY) {
 		log_dbg(CNM, INFO,
 			"[DBDC] MLSR 1st connected,Legacy Bss will connect now\n");
 		mldMLSRDecisionLinkRemain(prAdapter, prDbdcDecisionInfo);

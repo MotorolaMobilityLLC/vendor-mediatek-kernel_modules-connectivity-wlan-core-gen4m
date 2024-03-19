@@ -12,13 +12,6 @@
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 #define MLSR_REMAIN_RSSI_TH                -50 /*dbm*/
-
-enum NEW_CONNECION_TYPE {
-	LEGACY_TYPE,
-	STR_MLO_TYPE,
-	MLSR_MLO_TYPE, /*This type include MLSR/EMLSR/HYBRID*/
-	MAX_TYPE_NUM
-};
 #endif
 
 #define IS_MLD_BSSINFO_MULTI(__prMldBssInfo) \
@@ -365,9 +358,11 @@ void mldBssUpdateBandIdxBitmap(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
 void mldBssUpdateCap(struct ADAPTER *prAdapter,
-	struct MLD_BSS_INFO *prMldBssInfo);
+	struct MLD_BSS_INFO *prMldBssInfo,
+	void *pvParam);
 
-void mldBssUpdateCapAll(struct ADAPTER *prAdapter);
+void mldBssRestoreCap(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
 
 int8_t mldBssRegister(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo,
@@ -396,9 +391,10 @@ int8_t mldBssInit(struct ADAPTER *prAdapter);
 
 void mldBssUninit(struct ADAPTER *prAdapter);
 
-void mldStarecDump(struct ADAPTER *prAdapter);
+struct MLD_STA_RECORD *mldBssGetPeekClient(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo);
 
-uint8_t mldStarecExternalMldExist(struct ADAPTER *prAdapter);
+void mldStarecDump(struct ADAPTER *prAdapter);
 
 void mldBssTeardownAllClients(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo);
@@ -491,7 +487,7 @@ uint8_t mldHasMLSRMLOBss(struct ADAPTER *prAdapter);
 
 uint8_t mldHasSingleLinkBss(struct ADAPTER *prAdapter);
 
-enum NEW_CONNECION_TYPE mldNewConnectionType(struct ADAPTER *prAdapter,
+enum ENUM_MLO_MODE mldNewConnectionType(struct ADAPTER *prAdapter,
 	struct DBDC_DECISION_INFO *prDbdcDecisionInfo);
 
 void mldClearMLSRPausedLinkFlag(struct ADAPTER *prAdapter);

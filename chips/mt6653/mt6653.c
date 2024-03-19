@@ -220,6 +220,12 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter);
 static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
 		uint8_t ucBssIndex);
+static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	struct AP_COLLECTION *prAp, uint8_t ucBssidx);
+static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *prSet,
+		uint8_t ucBssidx);
 #endif
 
 static void mt6653LowPowerOwnInit(struct ADAPTER *prAdapter);
@@ -1182,6 +1188,8 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.cmd_max_pkt_size = CFG_TX_MAX_PKT_SIZE, /* size 1600 */
 #if (CFG_SUPPORT_APS == 1)
 	.apsLinkPlanDecision = mt6653_apsLinkPlanDecision,
+	.apsUpdateTotalScore = mt6653_apsUpdateTotalScore,
+	.apsFillBssDescSet = mt6653_apsFillBssDescSet,
 #endif
 #if defined(CFG_MTK_WIFI_PMIC_QUERY)
 	.queryPmicInfo = asicConnac3xQueryPmicInfo,
@@ -4399,29 +4407,44 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		uint8_t ucBssIndex)
 {
 	uint16_t i;
-	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
+	uint8_t ucArraySize;
+	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX];
+	enum ENUM_BAND aeLinkPlanAG[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_6G, BAND_NULL},
+#endif
+	};
+	enum ENUM_BAND aeLinkPlanAA[][APS_LINK_MAX] = {
+		{BAND_2G4, BAND_5G, BAND_NULL},
+		{BAND_5G, BAND_5G, BAND_NULL},
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		{BAND_2G4, BAND_6G, BAND_NULL},
+		{BAND_5G, BAND_6G, BAND_NULL},
+#endif
+	};
+	enum ENUM_BAND aeLinkPlan3[][APS_LINK_MAX] = {
 		{BAND_2G4, BAND_5G, BAND_5G},
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		{BAND_2G4, BAND_5G, BAND_6G},
 #endif
 	};
-	uint8_t ucArraySize = ARRAY_SIZE(aeLinkPlan);
-	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX] =
-		aeLinkPlan;
-#if CFG_SUPPORT_NAN && !CFG_MLO_CONCURRENT_NAN
-	enum ENUM_BAND aeLinkPlanWithNan[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_NULL, BAND_NULL},
-		{BAND_5G, BAND_NULL, BAND_NULL},
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_6G, BAND_NULL, BAND_NULL},
-#endif
-	};
 
-	if (prAdapter->fgIsNANRegistered) {
-		tmpLinkPlan = aeLinkPlanWithNan;
-		ucArraySize = ARRAY_SIZE(aeLinkPlanWithNan);
+	/* Eable A+A when support TBTC and EMLSR */
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
+	    BE_IS_EML_CAP_SUPPORT_EMLSR(prAdapter->rWifiVar.u2NonApMldEMLCap)) {
+		if (prAdapter->rWifiVar.ucStaMldLinkMax == 3 &&
+		    ENUM_BAND_NUM == 3) {
+			tmpLinkPlan = aeLinkPlan3;
+			ucArraySize = ARRAY_SIZE(aeLinkPlan3);
+		} else {
+			tmpLinkPlan = aeLinkPlanAA;
+			ucArraySize = ARRAY_SIZE(aeLinkPlanAA);
+		}
+	} else {
+		tmpLinkPlan = aeLinkPlanAG;
+		ucArraySize = ARRAY_SIZE(aeLinkPlanAG);
 	}
-#endif
 
 	/* select best link plan */
 	for (i = 0; i < ucArraySize; ++i) {
@@ -4433,6 +4456,113 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 	return FALSE;
 }
+
+static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	struct AP_COLLECTION *prAp, uint8_t ucBssidx)
+{
+	uint32_t u4TotalScore = 0;
+	uint32_t u4TotalTput = 0;
+	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
+	uint8_t ucEmlsrLinkWeight = prAdapter->rWifiVar.ucEmlsrLinkWeight;
+
+	uint8_t i;
+	uint8_t ucRfBandBmap = 0;
+	enum ENUM_MLO_MODE eMloMode;
+	uint8_t ucMaxSimuLinks = 0;
+
+	for (i = 0; i < ucLinkNum; i++) {
+		u4TotalScore += arLinks[i]->u2Score;
+		u4TotalTput += arLinks[i]->u4Tput;
+		ucRfBandBmap |= BIT(arLinks[i]->eBand);
+	}
+
+	switch (ucLinkNum) {
+	case 2:
+		/* STR: 2+5, 2+6
+		 * EMLSR: 5+5, 5+6
+		 */
+		if (ucRfBandBmap & BIT(BAND_2G4)) {
+			ucMaxSimuLinks = 1;
+			eMloMode = MLO_MODE_STR;
+		} else {
+			if (BE_IS_EML_CAP_SUPPORT_EMLSR(
+				best_bss->rMlInfo.u2EmlCap)) {
+				u4TotalScore = best_bss->u2Score +
+					(u4TotalScore - best_bss->u2Score) *
+					 ucEmlsrLinkWeight / 100;
+				u4TotalTput = best_bss->u4Tput +
+					(u4TotalTput - best_bss->u4Tput) *
+					 ucEmlsrLinkWeight / 100;
+				ucMaxSimuLinks = 0;
+				eMloMode = MLO_MODE_EMLSR;
+			} else {
+				/* fallback to single link if ap no emlsr */
+				u4TotalScore = best_bss->u2Score;
+				u4TotalTput = best_bss->u4Tput;
+				ucMaxSimuLinks = 0;
+				eMloMode = MLO_MODE_LEGACY;
+				ucLinkNum = 1;
+			}
+		}
+		break;
+	case 3:
+		/* TODO: HYEMLSR: 2+5+5, 2+5+6 */
+		DBGLOG(APS, WARN, "not full support 3 links yet\n");
+		kal_fallthrough;
+	default:
+		eMloMode = MLO_MODE_STR;
+		ucMaxSimuLinks = ucLinkNum - 1;
+		break;
+	}
+
+	if (u4TotalScore > prAp->u4TotalScore) {
+		kalMemCopy(prAp->aprTarget, arLinks, sizeof(prAp->aprTarget));
+		prAp->ucLinkNum = ucLinkNum;
+		prAp->u4TotalScore = u4TotalScore;
+		prAp->u4TotalTput = u4TotalTput;
+		prAp->eMloMode = eMloMode;
+		prAp->ucMaxSimuLinks = ucMaxSimuLinks;
+
+		DBGLOG(APS, TRACE,
+			"CAND[%d] RfBandBmap[0x%x] num[%d] score[%d] tput[%d] mode[%d] simu[%d]\n",
+			prAp->u4Index, ucRfBandBmap, prAp->ucLinkNum,
+			prAp->u4TotalScore, prAp->u4TotalTput,
+			prAp->eMloMode, prAp->ucMaxSimuLinks);
+	}
+}
+
+static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *prSet,
+		uint8_t ucBssidx)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_WIFI_6G == 1)
+	uint8_t i, bss5G = MLD_LINK_MAX, bss6G = MLD_LINK_MAX;
+
+	for (i = 0; i < prSet->ucLinkNum; i++) {
+		if (prSet->aprBssDesc[i]->eBand == BAND_5G)
+			bss5G = i;
+		if (prSet->aprBssDesc[i]->eBand == BAND_6G &&
+		    prSet->aprBssDesc[i]->eChannelWidth >= CW_320_1MHZ)
+			bss6G = i;
+	}
+
+	if (bss5G != MLD_LINK_MAX && bss6G != MLD_LINK_MAX) {
+		struct BSS_DESC *prBssDesc;
+
+		prBssDesc = prSet->aprBssDesc[bss6G];
+		prSet->aprBssDesc[bss6G] = prSet->aprBssDesc[0];
+		prSet->aprBssDesc[0] = prBssDesc;
+
+		DBGLOG(APS, INFO, MACSTR
+			" link_id=%d max_links=%d Setup for 6G BW320\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.ucMaxSimuLinks);
+	}
+#endif
+}
+
 #endif /* CFG_SUPPORT_APS */
 
 static void mt6653LowPowerOwnInit(struct ADAPTER *prAdapter)

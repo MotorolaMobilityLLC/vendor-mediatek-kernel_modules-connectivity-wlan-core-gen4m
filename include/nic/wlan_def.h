@@ -1015,6 +1015,16 @@ enum ENUM_MBMC_BN {
 };
 #endif
 
+enum ENUM_MLO_MODE {
+	MLO_MODE_LEGACY,
+	MLO_MODE_STR,
+	MLO_MODE_MLSR,
+	MLO_MODE_EMLSR,
+	MLO_MODE_HYMLO, /* Hybrid MLO */
+	MLO_MODE_HYEMLSR, /* Hybrid EMLSR */
+	MLO_MODE_NUM
+};
+
 /* Provide supported channel list to other components in array format */
 struct RF_CHANNEL_INFO {
 	enum ENUM_BAND eBand;

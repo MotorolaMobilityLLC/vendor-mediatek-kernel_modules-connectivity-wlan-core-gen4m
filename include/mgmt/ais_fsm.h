@@ -1063,6 +1063,12 @@ void aisDeactivateAllLink(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint8_t aisSecondLinkAvailable(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+struct MLD_BSS_INFO *aisGetMldBssInfo(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
+struct MLD_STA_RECORD *aisGetMldStaRec(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 #endif
 
 void aisTargetBssSetConnected(struct ADAPTER *prAdapter,

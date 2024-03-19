@@ -130,6 +130,8 @@ static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 static uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
 		uint8_t ucBssIndex);
+static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *set, uint8_t ucBssIndex);
 #endif
 
 
@@ -758,6 +760,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 
 #if (CFG_SUPPORT_APS == 1)
 	.apsLinkPlanDecision = mt7925_apsLinkPlanDecision,
+	.apsFillBssDescSet = mt7925_apsFillBssDescSet,
 #endif
 
 #if defined(_HIF_USB)
@@ -1733,6 +1736,40 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 	return FALSE;
 }
+
+static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
+		struct BSS_DESC_SET *set, uint8_t ucBssIndex)
+{
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	uint8_t ucL3BnlimitBmap = prAdapter->rWifiVar.ucLink3BandLimitBitmap;
+
+	/* swap link 3 to link 2 depend on fw capbility
+	 *(2g or 5g can't be the 3rd link)
+	 */
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+	    IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApHyMloSupportCap) &&
+		set && set->ucLinkNum == MLD_HYBRID_MLO_LINK_NUM) {
+		struct BSS_DESC *bss;
+
+		if ((ucL3BnlimitBmap & BAND_5G) &&
+		     set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+				BAND_5G) {
+			bss = set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1];
+			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2];
+			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2] = bss;
+		} else if ((ucL3BnlimitBmap & BAND_2G4) &&
+		     set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1]->eBand ==
+				BAND_2G4) {
+			bss = set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1];
+			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 1] =
+				set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2];
+			set->aprBssDesc[MLD_HYBRID_MLO_LINK_NUM - 2] = bss;
+		}
+	}
+#endif
+}
+
 #endif /* CFG_SUPPORT_APS */
 
 #endif  /* MT7925 */
