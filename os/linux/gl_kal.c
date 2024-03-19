@@ -17690,9 +17690,3 @@ inline void kalHifRegWorkSchedule(struct GLUE_INFO *pr)
 	kalWorkSchedule(pr, HIF_REG_WORK);
 }
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
-
-#if (CFG_SUPPORT_WIFI_PPB == 1)
-void __weak kalSetWifiPpbAddr(phys_addr_t emiPhyBase)
-{
-}
-#endif /* #if (CFG_SUPPORT_WIFI_PPB == 1) */
