@@ -1047,9 +1047,6 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter, uint32_t u4RstFlag,
 		(uint16_t)(u2FwPeerVersion >> 8),
 		(uint16_t)(u2FwPeerVersion & BITS(0, 7)));
 
-	prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-	halPrintHifDbgInfo(prAdapter);
-
 	if (prChipDbg->show_mcu_debug_info) {
 		HAL_LP_OWN_RD(prAdapter, &fgDrvOwn);
 		if (fgDrvOwn)
@@ -1173,6 +1170,9 @@ void WfsysResetHdlr(struct work_struct *work)
 
 		if (prAdapter->u2WfsysResetCnt < 0xFFFF)
 			prAdapter->u2WfsysResetCnt++;
+
+		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
+		halPrintHifDbgInfo(prAdapter);
 
 		glSetWfsysResetState(prAdapter, WFSYS_RESET_STATE_RESET);
 #if CFG_SUPPORT_WED_PROXY

@@ -390,6 +390,14 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			prDbgOps->dumpMacInfo(prAdapter);
 	}
 
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLATFORM_DBG)) {
+		if (prDbgOps && prDbgOps->show_debug_sop_info)
+			prDbgOps->show_debug_sop_info(prAdapter,
+				SLAVENORESP);
+	}
+#endif
+
 	prHifInfo->fgIsDumpLog = false;
 	prAdapter->u4HifDbgFlag = 0;
 }
