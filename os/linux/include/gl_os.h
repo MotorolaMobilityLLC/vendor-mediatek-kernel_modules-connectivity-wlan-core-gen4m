@@ -1126,6 +1126,7 @@ struct GLUE_INFO {
 #endif
 #if CFG_SUPPORT_HIF_REG_WORK
 	struct kfifo rHifRegFifo;
+	spinlock_t rHifRegFifoLock;
 	uint8_t *prHifRegFifoBuf;
 	uint32_t u4HifRegFifoLen;
 	uint32_t u4HifRegStartCnt;
