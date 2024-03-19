@@ -2614,6 +2614,11 @@ int mtk_cfg80211_set_rekey_data(struct wiphy *wiphy,
 #endif
 
 	prGtkData->ucBssIndex = ucBssIndex;
+#if (CFG_REKEY_OFFLOAD == 0)
+	prGtkData->ucRekeyMode = GTK_REKEY_CMD_MODE_OFLOAD_OFF;
+#else
+	prGtkData->ucRekeyMode = GTK_REKEY_CMD_MODE_OFFLOAD_ON;
+#endif
 
 	prWpaInfo = aisGetWpaInfo(prGlueInfo->prAdapter,
 		ucBssIndex);
