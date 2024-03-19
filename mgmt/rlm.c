@@ -9611,6 +9611,67 @@ void rlmUpdateParamsForCSA(struct ADAPTER *prAdapter,
 	cnmDumpStaRec(prAdapter, prStaRec->ucIndex);
 }				/* end of aisUpdateParamsForCSA() */
 
+#if (CFG_SUPPORT_802_11AX == 1)
+static uint8_t rlmGetPeerNssbyHeMcsMap(uint8_t ucVhtChannelWidth,
+	struct STA_RECORD *prStaRec)
+{
+	uint8_t ucNss = 1;
+
+	if (ucVhtChannelWidth == VHT_OP_CHANNEL_WIDTH_160) {
+		if (((prStaRec->u2HeRxMcsMapBW160 &
+			HE_CAP_INFO_MCS_1SS_MASK) >>
+			HE_CAP_INFO_MCS_1SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 1;
+		}
+		if (((prStaRec->u2HeRxMcsMapBW160 &
+			HE_CAP_INFO_MCS_2SS_MASK) >>
+			HE_CAP_INFO_MCS_2SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 2;
+		}
+		if (((prStaRec->u2HeRxMcsMapBW160 &
+			HE_CAP_INFO_MCS_3SS_MASK) >>
+			HE_CAP_INFO_MCS_3SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 3;
+		}
+		if (((prStaRec->u2HeRxMcsMapBW160 &
+			HE_CAP_INFO_MCS_4SS_MASK) >>
+			HE_CAP_INFO_MCS_4SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 4;
+		}
+	} else { /* <= VHT_OP_CHANNEL_WIDTH_80 */
+		if (((prStaRec->u2HeRxMcsMapBW80 &
+			HE_CAP_INFO_MCS_1SS_MASK) >>
+			HE_CAP_INFO_MCS_1SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 1;
+		}
+		if (((prStaRec->u2HeRxMcsMapBW80 &
+			HE_CAP_INFO_MCS_2SS_MASK) >>
+			HE_CAP_INFO_MCS_2SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 2;
+		}
+		if (((prStaRec->u2HeRxMcsMapBW80 &
+			HE_CAP_INFO_MCS_3SS_MASK) >>
+			HE_CAP_INFO_MCS_3SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 3;
+		}
+		if (((prStaRec->u2HeRxMcsMapBW80 &
+			HE_CAP_INFO_MCS_4SS_MASK) >>
+			HE_CAP_INFO_MCS_4SS_OFFSET) !=
+			HE_CAP_INFO_MCS_NOT_SUPPORTED) {
+			ucNss = 4;
+		}
+	}
+	return ucNss;
+}
+#endif
+
 void rlmChangeOperationModeAfterCSA(
 	struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
@@ -9632,7 +9693,17 @@ void rlmChangeOperationModeAfterCSA(
 	prBssInfo->eBssSCO = prBssInfo->eBssScoBeforeCsa;
 	prBssInfo->ucOpRxNss = prBssInfo->ucOpRxNssBeforeCsa;
 	prBssInfo->ucOpTxNss = prBssInfo->ucOpTxNssBeforeCsa;
-
+	/* change ucOpRxNssBeforeCsa by peer's cap */
+#if (CFG_SUPPORT_802_11AX == 1)
+	if (RLM_NET_IS_11AX(prBssInfo)) { /* HE */
+		ucOpRxNssAfterCsa =
+			rlmGetPeerNssbyHeMcsMap(ucVhtChannelWidthAfterCsa,
+				prBssInfo->prStaRecOfAP);
+		ucOpTxNssAfterCsa =
+			rlmGetPeerNssbyHeMcsMap(ucVhtChannelWidthAfterCsa,
+				prBssInfo->prStaRecOfAP);
+	}
+#endif
 	DBGLOG(RLM, INFO,
 		"op mode change from BW(vht)[%d]-RxNss[%d]-TxNss[%d] to BW(vht)[%d]-RxNss[%d]-TxNss[%d]",
 		prBssInfo->ucVhtChannelWidth,
