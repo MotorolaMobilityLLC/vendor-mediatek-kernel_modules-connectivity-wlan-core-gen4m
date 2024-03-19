@@ -884,12 +884,17 @@ exit:
 
 static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 {
-#define AER_RST_STR		"Whole chip reset by AER"
-#define AER_RSN_SIZE		50
+#define AER_RST_STR			"Whole chip reset by AER"
+#define AER_RST_STR_MALFTLP		"Whole chip reset by AER - MalfTLP"
+#define AER_RST_STR_SDES		"Whole chip reset by AER - SDES"
+#define AER_RST_STR_RXERR		"Whole chip reset by AER - RxErr"
+#define AER_RSN_SIZE			50
 
 	struct GLUE_INFO *prGlueInfo = g_prGlueInfo;
 	static char aucAerRsn[AER_RSN_SIZE];
 	uint32_t pos = 0;
+	char *reason = NULL;
+	enum _ENUM_CHIP_RESET_REASON_TYPE_T eReason;
 
 	DBGLOG(HAL, INFO, "mtk_pci_error_slot_reset, L05_rst: %d\n",
 		g_AERL05Rst);
@@ -899,12 +904,26 @@ static pci_ers_result_t mtk_pci_error_slot_reset(struct pci_dev *pdev)
 	pos += kalScnprintf(aucAerRsn + pos, AER_RSN_SIZE - pos,
 			    " [0x%x]", g_u4AERDumpInfo);
 
+	if (g_u4AERDumpInfo & BIT(7)) {
+		reason = AER_RST_STR_RXERR;
+		eReason = RST_AER_RXERR;
+	} else if (g_u4AERDumpInfo & BIT(8)) {
+		reason = AER_RST_STR_MALFTLP;
+		eReason = RST_AER_MALFTLP;
+	} else if (g_u4AERDumpInfo & BIT(10)) {
+		reason = AER_RST_STR_SDES;
+		eReason = RST_AER_SDES;
+	} else {
+		reason = AER_RST_STR;
+		eReason = RST_AER;
+	}
+
 	if (g_AERL05Rst) {
 		GL_USER_DEFINE_RESET_TRIGGER(prGlueInfo->prAdapter,
-			RST_AER, RST_FLAG_WF_RESET);
+			eReason, RST_FLAG_WF_RESET);
 	} else {
-		glSetRstReasonString(AER_RST_STR);
-		glResetWholeChipResetTrigger(AER_RST_STR);
+		glSetRstReasonString(reason);
+		glResetWholeChipResetTrigger(reason);
 	}
 
 	DBGLOG(HAL, INFO, "%s\n", aucAerRsn);
