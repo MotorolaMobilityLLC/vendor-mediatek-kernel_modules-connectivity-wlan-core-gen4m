@@ -474,7 +474,7 @@ uint32_t halToggleWfsysRst(struct ADAPTER *prAdapter)
 		prChipInfo->asicWfsysRst(prAdapter, TRUE);
 
 	/* wait 2 ticks of 32K */
-	kalMdelay(1);
+	kalMsleep(20);
 
 	/* de-assert WF L0.5 reset */
 	if (prChipInfo->asicWfsysRst)
@@ -2268,6 +2268,13 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 		if (prDbgOps && prDbgOps->dumpMacInfo)
 			prDbgOps->dumpMacInfo(prAdapter);
 
+#if (CFG_SUPPORT_DEBUG_SOP == 1)
+	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLATFORM_DBG)) {
+		if (prDbgOps && prDbgOps->show_debug_sop_info)
+			prDbgOps->show_debug_sop_info(prAdapter,
+				SLAVENORESP);
+	}
+#endif
 	prAdapter->u4HifDbgFlag = 0;
 }
 

@@ -89,10 +89,11 @@ extern uint32_t get_wifi_standalone_log_mode(void);
 #define DEG_HIF_PSE             BIT(4)
 #define DEG_HIF_PLE             BIT(5)
 #define DEG_HIF_MAC             BIT(6)
+#define DEG_HIF_PLATFORM_DBG    BIT(7)
 
 #define DEG_HIF_DEFAULT_DUMP					\
 	(DEG_HIF_HOST_CSR | DEG_HIF_PDMA | DEG_HIF_DMASCH |	\
-	 DEG_HIF_PSE | DEG_HIF_PLE)
+	 DEG_HIF_PSE | DEG_HIF_PLE | DEG_HIF_PLATFORM_DBG)
 
 #define HIF_CHK_TX_HANG         BIT(1)
 #define HIF_DRV_SER             BIT(2)
