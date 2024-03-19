@@ -138,6 +138,32 @@ ccflags-y += -DCFG_SUPPORT_PASSPOINT=1
 ccflags-y += -DCFG_HS20_DEBUG=1
 endif
 
+# Google ANU and ANT kernel-5.15 have many differences in cfg80211 API
+# So, we need configurations to distinguish between them
+# IMB use $(BRANCH)
+#	T: android13-5.15
+#	U: android14-5.15
+# DTV use CONFIG_MTK_KERNEL_ANDROID_14 to identify android14 Kernel-5.15
+# DTV use CONFIG_MTK_KERNEL_ANDROID_13 to identify android13 Kernel-5.15
+ifeq ($(BRANCH), android13-5.15)
+    CFG_KERNEL_AN13_515=1
+    CFG_KERNEL_AN14_515=0
+else ifeq ($(BRANCH), android14-5.15)
+    CFG_KERNEL_AN13_515=0
+    CFG_KERNEL_AN14_515=1
+else ifeq ($(CONFIG_MTK_KERNEL_ANDROID_13), y)
+    CFG_KERNEL_AN13_515=1
+    CFG_KERNEL_AN14_515=0
+else ifeq ($(CONFIG_MTK_KERNEL_ANDROID_14), y)
+    CFG_KERNEL_AN13_515=0
+    CFG_KERNEL_AN14_515=1
+else
+    CFG_KERNEL_AN13_515=0
+    CFG_KERNEL_AN14_515=0
+endif
+ccflags-y += -DCFG_KERNEL_AN13_515=$(CFG_KERNEL_AN13_515)
+ccflags-y += -DCFG_KERNEL_AN14_515=$(CFG_KERNEL_AN14_515)
+
 ccflags-y += -Werror $(call cc-disable-warning, unused-but-set-variable)
 ccflags-y += $(call cc-disable-warning, attribute-warning)
 #ccflags-y:=$(filter-out -U$(WLAN_CHIP_ID),$(ccflags-y))

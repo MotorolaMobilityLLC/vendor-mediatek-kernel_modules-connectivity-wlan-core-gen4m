@@ -4428,7 +4428,8 @@ mtk_cfg80211_change_station(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter;
 	struct BSS_INFO *prBssInfo;
 	uint8_t ucBssIndex = 0;
-#if KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE
+#if (CFG_ADVANCED_80211_MLO == 1) || \
+	KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE
 	struct link_station_parameters *prLinkParams =
 			&(params->link_sta_params);
 #else
