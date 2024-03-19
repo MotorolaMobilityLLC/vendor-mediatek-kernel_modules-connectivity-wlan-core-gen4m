@@ -2109,12 +2109,12 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct HIF_MEM_OPS *prMemOps;
-	struct HIF_MEM *prMem;
+	struct HIF_MEM *prMem = NULL;
 	struct RTMP_DMABUF *prRingIntSta;
 #if CFG_ENABLE_MAWD_MD_RING
 	struct RTMP_DMABUF *prRingMdIntSta;
 #endif
-	uint32_t u4Addr, u4RegValue = 0, u4WrValue = 0, u4SwIntSta = 0;
+	uint32_t u4Addr, u4RegValue = 0, u4WrValue = 0, u4SwIntSta = 0, u4Idx;
 	u_int8_t fgClrCr = FALSE;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -2160,8 +2160,15 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 	if (prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(
 			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
-		if (prMem && prMem->va)
-			u4SwIntSta = *((uint32_t *)prMem->va);
+	}
+	if (prMem && prMem->va) {
+		struct SER_EMI_STATUS *prEmiSta =
+			(struct SER_EMI_STATUS *)prMem->va;
+
+		for (u4Idx = 0; u4Idx < HIF_EMI_SER_STATUS_SIZE; u4Idx++) {
+			if (prEmiSta->ucStatus[u4Idx])
+				u4SwIntSta |= BIT(u4Idx);
+		}
 	}
 
 	/* clear err int */

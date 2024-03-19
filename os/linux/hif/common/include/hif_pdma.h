@@ -320,6 +320,8 @@
 #define HIF_REG_WORK_WAIT_CNT	1000
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 
+#define HIF_EMI_SER_STATUS_SIZE		16
+
 enum WIFI_MEM_OPER_SETS {
 	/* TRX DESC */
 	WF_MEM_OP_TRX_DESC_ZERO_COPY_PATH = 0,
@@ -865,6 +867,10 @@ struct ERR_RECOVERY_CTRL_T {
 	uint32_t u4Status;
 	uint32_t u4BackupStatus;
 	uint32_t u4TimeoutCnt;
+};
+
+struct SER_EMI_STATUS {
+	uint8_t ucStatus[HIF_EMI_SER_STATUS_SIZE];
 };
 
 struct SW_WFDMA_INFO;
