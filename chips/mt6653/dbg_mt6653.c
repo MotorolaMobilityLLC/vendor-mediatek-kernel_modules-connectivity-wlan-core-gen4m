@@ -1242,7 +1242,7 @@ struct PP_TOP_CR rMt6653PpTopCr = {
 static uint8_t fgIsMbuTimeout;
 static uint8_t g_uMbuTimeoutCnt;
 
-static uint8_t get_mbu_timeout_status(void)
+uint8_t mt6653_get_mbu_timeout_status(void)
 {
 	return fgIsMbuTimeout;
 }
@@ -1256,7 +1256,7 @@ static void update_mbu_timeout(uint8_t is_timeout)
 	DBGLOG(INIT, INFO, "set timeout:%d\n", fgIsMbuTimeout);
 }
 
-static void check_mbu_timeout(uint32_t u4Val)
+static uint8_t check_mbu_timeout(uint32_t u4Val)
 {
 #define MBU_TIMEOUT_PATTERN		0xFFFFDEAD
 #define MBU_TIMEOUT_THRESHOLD_CNT	3
@@ -1266,9 +1266,11 @@ static void check_mbu_timeout(uint32_t u4Val)
 	else
 		g_uMbuTimeoutCnt = 0;
 
-	if (!get_mbu_timeout_status() &&
+	if (!mt6653_get_mbu_timeout_status() &&
 		g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
 		update_mbu_timeout(1);
+
+	return g_uMbuTimeoutCnt;
 }
 #endif
 
@@ -1298,12 +1300,12 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 
 	/* Reg Dump */
 	pCmdList = dump_list->cmd_list;
-	for (i = 0; i < dump_list->dump_size; i++) {
-
+	i = 0;
+	while (i < dump_list->dump_size) {
 		if (pCmdList[i].write) {
 			if (pCmdList[i].mask) {
 #if CFG_MTK_WIFI_MBU
-				if (!get_mbu_timeout_status() &&
+				if (!mt6653_get_mbu_timeout_status() &&
 						!fgIsDumpViaBt) {
 					HAL_MCR_EMI_RD(prAdapter,
 						pCmdList[i].w_addr,
@@ -1323,6 +1325,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 				HAL_MCR_WR(prAdapter, pCmdList[i].w_addr,
 					pCmdList[i].value);
 		}
+
 		if (pCmdList[i].read) {
 			if (u4ReadCount % MAX_REG_DUMP_NUM == 0) {
 				u4Offset += snprintf(dumpLineBuf + u4Offset,
@@ -1333,7 +1336,8 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 
 			u4ReadVal = 0x12345678;
 #if CFG_MTK_WIFI_MBU
-			if (!get_mbu_timeout_status() && !fgIsDumpViaBt) {
+			if (!mt6653_get_mbu_timeout_status() &&
+				!fgIsDumpViaBt) {
 				HAL_MCR_EMI_RD(prAdapter, pCmdList[i].r_addr,
 					&u4ReadVal, &fgRet);
 				check_mbu_timeout(u4ReadVal);
@@ -1354,6 +1358,12 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 				u4Offset = 0;
 			}
 		}
+
+#if CFG_MTK_WIFI_MBU
+		/* keep dump same reg if mcu timeout */
+		if (!g_uMbuTimeoutCnt || mt6653_get_mbu_timeout_status())
+#endif
+			i++;
 	}
 }
 
@@ -2149,6 +2159,15 @@ void mt6653_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 		/* SectionC - Dump AHB APB timeout info */
 		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_c,
 			fgIsDumpViaBt);
+
+		/* SectionD - Dump WF2AP bus status */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_d,
+			fgIsDumpViaBt);
+
+		/* SectionE - Dump WF2AP access detect info */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_e,
+			fgIsDumpViaBt);
+
 	} else {
 		/* SectionA - Dump VDNR timeout host side info */
 		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_a,
@@ -2160,6 +2179,14 @@ void mt6653_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 
 		/* SectionC - Dump AHB APB timeout info */
 		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_c,
+			fgIsDumpViaBt);
+
+		/* SectionD - Dump WF2AP bus status */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_d,
+			fgIsDumpViaBt);
+
+		/* SectionE - Dump WF2AP access detect info */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_e,
 			fgIsDumpViaBt);
 	}
 }

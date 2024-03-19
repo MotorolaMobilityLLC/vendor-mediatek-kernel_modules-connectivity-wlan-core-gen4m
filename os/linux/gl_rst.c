@@ -662,14 +662,6 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 		break;
 	}
 
-	if (g_IsWholeChipRst == FALSE &&
-	    g_IsWfsysBusHang == FALSE &&
-	    prChipInfo->isUpgradeWholeChipReset) {
-		if (prChipInfo->isUpgradeWholeChipReset(prAdapter)) {
-			u4RstFlag = RST_FLAG_WHOLE_RESET;
-			glSetRstReasonString(apucRstReason[eResetReason]);
-		}
-	}
 	return u4RstFlag;
 }
 
@@ -698,6 +690,21 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 
 	if (kalIsResetting())
 		goto exit;
+
+	if (prAdapter) {
+		prChipInfo = prAdapter->chip_info;
+
+		/* L0.5 upgrade to L0 */
+		if (g_IsWholeChipRst == FALSE &&
+			g_IsWfsysBusHang == FALSE &&
+			prChipInfo->isUpgradeWholeChipReset) {
+			if (prChipInfo->isUpgradeWholeChipReset(prAdapter)) {
+				u4RstFlag |= RST_FLAG_WHOLE_RESET;
+				glSetRstReasonString(
+					apucRstReason[eResetReason]);
+			}
+		}
+	}
 
 #if CFG_MTK_MDDP_SUPPORT
 #if (CFG_PCIE_GEN_SWITCH == 1)
@@ -746,7 +753,6 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		apucRstReason[eResetReason]);
 
 	if (prAdapter) {
-		prChipInfo = prAdapter->chip_info;
 		prDbgOps = prChipInfo->prDebugOps;
 
 		if (prDbgOps && prDbgOps->dumpBusHangCr)

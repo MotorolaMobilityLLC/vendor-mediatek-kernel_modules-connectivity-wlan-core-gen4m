@@ -182,6 +182,9 @@ void mt6653_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
 void mt6653_dumpCbInfraReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
 u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad);
 u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad);
+#if CFG_MTK_WIFI_MBU
+uint8_t mt6653_get_mbu_timeout_status(void);
+#endif
 #endif
 
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT

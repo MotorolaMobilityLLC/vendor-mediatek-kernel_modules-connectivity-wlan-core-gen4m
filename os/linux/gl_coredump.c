@@ -1033,11 +1033,19 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	uint32_t i = 0, j = 0;
 	int ret = 0;
 #if CFG_MTK_WIFI_MBU
+	struct CHIP_DBG_OPS *debug_ops = NULL;
+	uint8_t uCurMbuTimeout;
 	u_int8_t fgRet = FALSE;
 #endif
 
 	if (mem->cr_region_num == 0)
 		goto exit;
+
+#if CFG_MTK_WIFI_MBU
+	debug_ops = glue->prAdapter->chip_info->prDebugOps;
+	if (debug_ops && debug_ops->getMbuTimeoutStatus)
+		uCurMbuTimeout = debug_ops->getMbuTimeoutStatus();
+#endif
 
 	for (i = 0, region = mem->cr_regions;
 	     i < mem->cr_region_num;
@@ -1047,13 +1055,15 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 
 		for (j = 0; j < region->size; j += 4) {
 #if CFG_MTK_WIFI_MBU
-			HAL_MCR_EMI_RD(glue->prAdapter, region->base + j,
+			if (!uCurMbuTimeout) {
+				HAL_MCR_EMI_RD(glue->prAdapter,
+					region->base + j,
 					(uint32_t *)&region->buf[j], &fgRet);
-#else
-			HAL_RMCR_RD(COREDUMP_DBG, glue->prAdapter,
+			} else
+#endif
+				HAL_RMCR_RD(COREDUMP_DBG, glue->prAdapter,
 				    region->base + j,
 				    (uint32_t *)&region->buf[j]);
-#endif
 		}
 		region->ready = TRUE;
 	}
