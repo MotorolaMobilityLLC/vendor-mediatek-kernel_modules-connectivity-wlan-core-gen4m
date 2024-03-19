@@ -373,6 +373,10 @@ struct ROM_EMI_HEADER {
 	uint32_t u4CRC[4];
 };
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+extern u_int8_t fgIsCurrentInTestMode;
+#endif
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************

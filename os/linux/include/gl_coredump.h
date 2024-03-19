@@ -166,6 +166,10 @@ struct coredump_ctx {
 	struct device *class_dev;
 };
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+extern u_int8_t fgIsCurrentInTestMode;
+#endif
+
 #if CFG_WIFI_COREDUMP_SUPPORT
 int wifi_coredump_init(void *priv);
 void wifi_coredump_deinit(void);

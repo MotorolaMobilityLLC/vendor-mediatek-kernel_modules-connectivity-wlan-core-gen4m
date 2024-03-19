@@ -1955,6 +1955,11 @@ uint32_t wlanConnacFormatDownload(struct ADAPTER
 	}
 #endif
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+	if (get_wifi_test_mode_fwdl() == 1)
+		fgIsCurrentInTestMode = TRUE;
+#endif
+
 	ucRegionNum = prAdapter->rVerInfo.rCommonTailer.ucRegionNum;
 	ucPDA = (eDlIdx == IMG_DL_IDX_N9_FW) ? PDA_N9 : PDA_CR4;
 

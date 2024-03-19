@@ -209,6 +209,10 @@ module_param_named(connfemid, gu4ConnfemId, uint, 0000);
 uint8_t aucDebugModule[DBG_MODULE_NUM];
 uint32_t au4LogLevel[ENUM_WIFI_LOG_MODULE_NUM] = {ENUM_WIFI_LOG_LEVEL_DEFAULT};
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+u_int8_t fgIsCurrentInTestMode;
+#endif
+
 /* 4 2007/06/26, mikewu, now we don't use this, we just fix the number of wlan
  *               device to 1
  */
@@ -7863,6 +7867,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		 */
 		DBGLOG(INIT, INFO, "enter wlanProbe\n");
 
+#if (CFG_TESTMODE_FWDL_SUPPORT == 1)
+		fgIsCurrentInTestMode = FALSE;
+#endif
 		bRet = glBusInit(pvData);
 
 #if (CFG_SUPPORT_TRACE_TC4 == 1)
