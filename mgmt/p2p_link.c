@@ -464,13 +464,10 @@ static uint32_t p2pLinkGet2ndLinkFreqByOwnPref(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	ucNum2gBss = bssGetAliveBssByBand(prAdapter, BAND_2G4, prBssList,
-					  FALSE);
-	ucNum5gBss = bssGetAliveBssByBand(prAdapter, BAND_5G, prBssList,
-					  FALSE);
+	ucNum2gBss = bssGetAliveBssByBand(prAdapter, BAND_2G4, prBssList);
+	ucNum5gBss = bssGetAliveBssByBand(prAdapter, BAND_5G, prBssList);
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	ucNum6gBss = bssGetAliveBssByBand(prAdapter, BAND_6G, prBssList,
-					  FALSE);
+	ucNum6gBss = bssGetAliveBssByBand(prAdapter, BAND_6G, prBssList);
 #endif
 
 	if (eMainLinkBand == BAND_2G4 &&

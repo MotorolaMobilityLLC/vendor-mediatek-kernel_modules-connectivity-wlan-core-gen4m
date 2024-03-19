@@ -907,24 +907,10 @@ const char *bssOpBw2Str(struct BSS_INFO *prBssInfo)
 }
 
 uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
-			      struct BSS_INFO **prBssList,
-			      u_int8_t fgIsForPrefFreq)
+			      struct BSS_INFO **prBssList)
 {
 	struct BSS_INFO *bss;
-	uint8_t i, ucNumAliveBss = 0, fgIsApGoExist = FALSE;
-
-	if (fgIsForPrefFreq == TRUE) {
-		for (i = 0; i < MAX_BSSID_NUM; ++i) {
-			bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-
-			if (!bss || !IS_BSS_ALIVE(prAdapter, bss) ||
-			    bss->eBand != eBand)
-				continue;
-
-			if (IS_BSS_APGO(bss))
-				fgIsApGoExist = TRUE;
-		}
-	}
+	uint8_t i, ucNumAliveBss = 0;
 
 	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -935,41 +921,14 @@ uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 			 bss->eBand != eBand)
 			continue;
 
-		/* only get AP/GO if AP/GO exist for pref freq selection */
-		if (!fgIsForPrefFreq || !fgIsApGoExist || IS_BSS_APGO(bss)) {
-			prBssList[ucNumAliveBss++] = bss;
-			DBGLOG(BSS, TRACE, "[%s] BSS%u, band:%u, ch:%u, bw:%s",
-			       bssGetRoleTypeString(prAdapter, bss),
-			       i, bss->eBand, bss->ucPrimaryChannel,
-			       bssOpBw2Str(bss));
-		} else {
-			DBGLOG(BSS, TRACE,
-			       "AP/GO exist in band, ignore BSS[%u] to prevent MCC for pref freq selection",
-			       i);
-		}
-	}
-
-	return ucNumAliveBss;
-}
-
-uint32_t bssGetAliveBss(struct ADAPTER *prAdapter,
-			      struct BSS_INFO **prBssList)
-{
-	struct BSS_INFO *bss;
-	uint8_t i, ucNumAliveBss = 0;
-
-	for (i = 0; i < MAX_BSSID_NUM; ++i) {
-		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
-
-		if (!IS_BSS_ALIVE(prAdapter, bss))
-			continue;
-
 		prBssList[ucNumAliveBss++] = bss;
-		DBGLOG(BSS, TRACE, "[%s] BSS%u, band:%u, ch:%u, bw:%s",
-			       bssGetRoleTypeString(prAdapter, bss),
-			       i, bss->eBand, bss->ucPrimaryChannel,
-			       bssOpBw2Str(bss));
+		DBGLOG(BSS, INFO,
+		       "bss%u (%s), band:%u, ch:%u, bw:%s, hw_band:%u\n",
+		       i, bssGetRoleTypeString(prAdapter, bss),
+		       bss->eBand, bss->ucPrimaryChannel,
+		       bssOpBw2Str(bss), bss->eHwBandIdx);
 	}
+
 	return ucNumAliveBss;
 }
 
