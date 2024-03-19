@@ -834,20 +834,30 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_WIFI_WFDMA_WB
+	struct GLUE_INFO *prGlueInfo;
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_RX_RING *prRxRing;
 	uint32_t i, u4RxCnt = 0;
 
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
+
+	/* skip SER */
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState != ERR_RECOV_STOP_IDLE)
+		return;
+
+	/* skip rx work is ready */
+	if (GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt) > 0)
+		return;
 
 	for (i = 0; i < NUM_OF_RX_RING; i++) {
 		prRxRing = &prHifInfo->RxRing[i];
 		if (!prRxRing->fgEnEmiDidx)
 			continue;
 
-		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, i);
+		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prGlueInfo, i);
 		if (u4RxCnt > 0 && prRxRing->u4CidxRec == prRxRing->RxCpuIdx) {
 			prRxRing->u4CidxErrCnt++;
 			DBGLOG(HAL, WARN,
