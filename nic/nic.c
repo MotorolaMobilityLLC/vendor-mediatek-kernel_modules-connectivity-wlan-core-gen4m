@@ -2242,6 +2242,7 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 
 	prBssInfo->u4PresentTime = 0;
 	prBssInfo->tmLastPresent = 0;
+	prBssInfo->fgFirstArp = TRUE;
 
 	SET_NET_ACTIVE(prAdapter, ucBssIndex);
 #if CFG_SAP_RPS_SUPPORT
@@ -2386,6 +2387,8 @@ uint32_t nicDeactivateNetworkEx(struct ADAPTER *prAdapter,
 				       (uint8_t *)&rCmdActivateCtrl, NULL, 0);
 
 	prBssInfo->ucGrantBW = MAX_BW_UNKNOWN;
+	prBssInfo->fgFirstArp = FALSE;
+
 	if (fgClearStaRec) {
 		prBssInfo->ucGrantTxNss = 0;
 		prBssInfo->ucGrantRxNss = 0;

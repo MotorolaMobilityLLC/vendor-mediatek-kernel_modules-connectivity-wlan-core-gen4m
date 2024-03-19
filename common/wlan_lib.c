@@ -4040,8 +4040,25 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter, void *prPacket)
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_DHCP))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_DHCP);
 
-			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ARP))
+			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ARP)) {
+				struct BSS_INFO *prBssInfo;
+				uint8_t ucBssIndex =
+					GLUE_GET_PKT_BSS_IDX(prPacket);
+
+				prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+					ucBssIndex);
+				if (prBssInfo && prBssInfo->fgFirstArp) {
+					DBGLOG(TX, INFO,
+						"FirstARP from OS, stop connect protect\n");
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					nicUniCmdSetCoexStopConnProtect(
+						prAdapter, ucBssIndex);
+#endif
+					prBssInfo->fgFirstArp = FALSE;
+				}
+
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ARP);
+			}
 
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_ICMP))
 				GLUE_SET_PKT_FLAG(prPacket, ENUM_PKT_ICMP);

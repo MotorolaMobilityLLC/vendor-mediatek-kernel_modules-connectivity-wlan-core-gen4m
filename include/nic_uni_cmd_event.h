@@ -266,6 +266,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x7E, /* TX RESET SCRAMBLE */
 	UNI_CMD_ID_PHY_LIST_DUMP	= 0x7F, /* Get Phy CR */
 	UNI_CMD_ID_UPDATE_LP	= 0x84, /*Update LP Parameter*/
+	UNI_CMD_ID_COEX	= 0x87, /*notify FW coex cmd*/
 };
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -5162,6 +5163,46 @@ struct UNI_CMD_SET_SAP_SUS_SET_T {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+
+/* COEX command (0x87) */
+struct UNI_CMD_COEX_T {
+	uint8_t ucReserved[4];
+
+/* tlv */
+	uint8_t aucTlvBuffer[0];
+/**< the TLVs included in this field:
+ *   TAG                        | ID  | structure
+ *   ---------------------------|-----|--------------
+ *    UNI_CMD_COEX_STOP_CONNECT_PROTECT | 0x00 |
+ *    UNI_CMD_STOP_CONNECT_PROTECT
+ */
+} __KAL_ATTRIB_PACKED__;
+
+/* COEX config Tag */
+enum UNI_CMD_COEX_TAG_T {
+	UNI_CMD_COEX_STOP_CONNECT_PROTECT = 0,
+	UNI_CMD_COEX_MAX_NUM
+} __KAL_ATTRIB_PACKED__;
+
+/** @addtogroup UNI_CMD_ID_COEX
+ * @{
+ */
+/**
+ * This structure is used for
+ * UNI_CMD_COEX_STOP_CONNECT_PROTECT (0x00)
+ * of UNI_CMD_ID_COEX command (0x87) to stop connect protect
+ *
+ * @param[in] ucBssInfoIdx            the BSS info index
+ */
+/* COEX Setting (Tag0) */
+struct UNI_CMD_COEX_STOP_CONNECT_PROTECT_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucBssInfoIdx;
+	uint8_t aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+/** @} */
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -8742,6 +8783,9 @@ uint32_t nicUniCmdSetRxAmpdu(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetMultiAddr(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+
+uint32_t nicUniCmdSetCoexStopConnProtect(struct ADAPTER *ad, uint8_t ucBssIdx);
+
 uint32_t nicUniCmdSetRssiMonitor(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetIcsSniffer(struct ADAPTER *ad,
