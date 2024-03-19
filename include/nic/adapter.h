@@ -1140,6 +1140,7 @@ struct WIFI_VAR {
 	uint8_t ucArpTxDone;
 
 	uint8_t ucMacAddrOverride;
+	uint8_t ucP2pMacAddrOverride;
 	uint8_t aucMacAddrStr[WLAN_CFG_VALUE_LEN_MAX];
 
 	uint8_t ucCtiaMode;

@@ -5869,43 +5869,14 @@ uint32_t nicUpdateRddTestMode(struct ADAPTER *prAdapter,
 				   (uint8_t *) prRddChParam, NULL, 0);
 }
 #endif
-
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief This function is called to apply network address setting to
- *        both OS side and firmware domain
- *
- * @param prAdapter      Pointer of Adapter Data Structure
- *
- * @return none
- */
-/*----------------------------------------------------------------------------*/
-uint32_t nicApplyNetworkAddress(struct ADAPTER *prAdapter)
-{
-	uint32_t i;
-
-	_Static_assert(KAL_AIS_NUM < 8,
-		"Large KAL_AIS_NUM would cause out-of-range bit XOR");
-
-	ASSERT(prAdapter);
-
-	/* copy to adapter */
-	COPY_MAC_ADDR(prAdapter->rMyMacAddr,
-		      prAdapter->rWifiVar.aucMacAddress);
-	DBGLOG(NIC, INFO, "WLAN0 mac: " MACSTR "\n",
-		MAC2STR(prAdapter->rMyMacAddr));
-
-	/* 4 <3> Update new MAC address to all 3 networks */
-	COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
-		      prAdapter->rMyMacAddr);
-	prAdapter->rWifiVar.aucDeviceAddress[0] = MAC_ADDR_LOCAL_ADMIN;
-
 #if CFG_ENABLE_WIFI_DIRECT
-	for (i = 0; i < KAL_P2P_NUM; i++) {
-		uint8_t j;
-		uint8_t *aucMacAddr;
-		u_int8_t fgIsMacDuplicate;
+void nicApplyP2pNetworkAddress(struct ADAPTER *prAdapter)
+{
+	uint8_t i, j;
+	u_int8_t fgIsMacDuplicate;
+	uint8_t *aucMacAddr;
 
+	for (i = 0; i < KAL_P2P_NUM; i++) {
 		aucMacAddr = prAdapter->rWifiVar.aucP2pDeviceAddress[i];
 		COPY_MAC_ADDR(aucMacAddr, prAdapter->rMyMacAddr);
 		aucMacAddr[0] = MAC_ADDR_LOCAL_ADMIN;
@@ -5932,6 +5903,69 @@ uint32_t nicApplyNetworkAddress(struct ADAPTER *prAdapter)
 			i, prAdapter->rWifiVar.aucP2pDeviceAddress[i],
 			prAdapter->rWifiVar.aucP2pInterfaceAddress[i]);
 	}
+
+}
+
+void nicApplyP2pNetworkFixAddress(struct ADAPTER *prAdapter)
+{
+	uint8_t i;
+	uint8_t *aucMacAddr;
+
+	for (i = 0; i < KAL_P2P_NUM; i++) {
+		aucMacAddr = prAdapter->rWifiVar.aucP2pDeviceAddress[i];
+		COPY_MAC_ADDR(aucMacAddr, prAdapter->rMyMacAddr);
+
+		aucMacAddr[0] |= 0x2;
+		aucMacAddr[0] ^=
+			i << MAC_ADDR_LOCAL_ADMIN;
+
+		/* Let p2p group interface MAC addr same as P2P Device */
+		aucMacAddr = prAdapter->rWifiVar.aucP2pInterfaceAddress[i];
+		COPY_MAC_ADDR(aucMacAddr, prAdapter->rWifiVar
+			.aucP2pDeviceAddress[i]);
+
+		DBGLOG(NIC, INFO,
+			"P2P[%u] DEV mac:" MACSTR " INF mac:" MACSTR "\n",
+			i, prAdapter->rWifiVar.aucP2pDeviceAddress[i],
+			prAdapter->rWifiVar.aucP2pInterfaceAddress[i]);
+	}
+}
+#endif
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief This function is called to apply network address setting to
+ *        both OS side and firmware domain
+ *
+ * @param prAdapter      Pointer of Adapter Data Structure
+ *
+ * @return none
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t nicApplyNetworkAddress(struct ADAPTER *prAdapter)
+{
+	uint8_t i;
+
+	_Static_assert(KAL_AIS_NUM < 8,
+		"Large KAL_AIS_NUM would cause out-of-range bit XOR");
+
+	ASSERT(prAdapter);
+
+	/* copy to adapter */
+	COPY_MAC_ADDR(prAdapter->rMyMacAddr,
+		      prAdapter->rWifiVar.aucMacAddress);
+	DBGLOG(NIC, INFO, "WLAN0 mac: " MACSTR "\n",
+		MAC2STR(prAdapter->rMyMacAddr));
+
+	/* 4 <3> Update new MAC address to all 3 networks */
+	COPY_MAC_ADDR(prAdapter->rWifiVar.aucDeviceAddress,
+		      prAdapter->rMyMacAddr);
+	prAdapter->rWifiVar.aucDeviceAddress[0] = MAC_ADDR_LOCAL_ADMIN;
+
+#if CFG_ENABLE_WIFI_DIRECT
+	if (prAdapter->rWifiVar.ucP2pMacAddrOverride == FALSE)
+		nicApplyP2pNetworkAddress(prAdapter);
+	else
+		nicApplyP2pNetworkFixAddress(prAdapter);
 #endif
 
 #if CFG_ENABLE_BT_OVER_WIFI

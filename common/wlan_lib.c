@@ -7941,6 +7941,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->ucMacAddrOverride, "MacOverride", 0,
 		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->ucP2pMacAddrOverride, "P2pMacOverride", 0,
+		  FEATURE_DEBUG_ONLY);
 	INIT_STR(prWifiVar->aucMacAddrStr, "MacAddr", "00:0c:e7:66:32:e1",
 		 FEATURE_TO_CUSTOMER);
 
