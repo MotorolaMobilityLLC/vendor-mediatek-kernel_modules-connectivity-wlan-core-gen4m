@@ -161,23 +161,23 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
-		.u4RpsMap = RPS_BIG_CORE,
-		.u4ISRMask = CPU_BIG_CORE,
+		.u4RpsMap = RPS_LITTLE_CORE,
+		.u4ISRMask = CPU_LITTLE_CORE,
 		.i4TxFreeMsduWorkCpu = 2,
 		.i4RxRfbRetWorkCpu = 2,
 		.i4TxWorkCpu = 2,
