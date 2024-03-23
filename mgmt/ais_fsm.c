@@ -2239,6 +2239,8 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prMainBss;
 	struct CONNECTION_SETTINGS *prConnSettings;
 	struct GL_WPA_INFO *prWpaInfo;
+	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *prBssDesc;
 #if CFG_SUPPORT_DBDC
 	struct DBDC_DECISION_INFO rDbdcDecisionInfo = {0};
 #endif
@@ -2255,10 +2257,8 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 #endif
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
-		struct BSS_INFO *prAisBssInfo =
-			aisGetLinkBssInfo(prAisFsmInfo, i);
-		struct BSS_DESC *prBssDesc =
-			prBssDescSet->aprBssDesc[i];
+		prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
+		prBssDesc = prBssDescSet->aprBssDesc[i];
 
 		/* prBssDesc can be null if roam from mld to legacy */
 		aisSetLinkBssDesc(prAisFsmInfo, prBssDesc, i);
@@ -2305,7 +2305,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			sizeof(struct GL_DETECT_REPLAY_INFO));
 #endif
 
-#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_CONNAC3X == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		/* connac3 MLO all bss use the same wmm index as main bss use */
 		prAisBssInfo->fgIsWmmInited = TRUE;
 		prAisBssInfo->ucWmmQueSet = prMainBss->ucWmmQueSet;
@@ -10268,9 +10268,6 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	enum ENUM_MBMC_BN tmpDBDCBand = ENUM_BAND_ALL;
 	struct BSS_INFO *prBss = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
-#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-#endif
 
 	ucReqChNum = aisGetLinkNum(prAisFsmInfo);
 
@@ -10288,20 +10285,18 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucChReqNum = ucReqChNum;
 	prMsgChReq->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
 
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	tmpReqCHType = mldDecideCnmReqCHType(prAdapter,
+			prAisFsmInfo->prMldBssInfo);
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	if (ucReqChNum >= 2) {
-		prBss = aisGetLinkBssInfo(prAisFsmInfo, 0);
-		prMldBssInfo = mldBssGetByBss(prAdapter, prBss);
+		struct MLD_BSS_INFO *prMldBssInfo = prAisFsmInfo->prMldBssInfo;
+
 		/*need set BAND AUTO in EMLSR MLO*/
-		if (prMldBssInfo &&
-			prMldBssInfo->ucMaxSimuLinks == 0)
+		if (prMldBssInfo && prMldBssInfo->ucMaxSimuLinks == 0)
 			tmpDBDCBand = ENUM_BAND_AUTO;
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
-		if (ucReqChNum == MLD_HYBRID_MLO_LINK_NUM)
-			tmpReqCHType = CH_REQ_TYPE_HYBRID_MLO_MLSR_JOIN;
-		else
-#endif
-			tmpReqCHType = cnmCheckMLSRReqCHType(prAdapter, prBss);
 	}
 #endif
 

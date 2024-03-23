@@ -920,7 +920,24 @@ struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * @brief Get STA_RECORD_T by Peer MAC Address(Usually TA) with BSS index.
+ * @brief Get STA_RECORD_T by Peer Wlan Index
+ * \brief
+ *
+ * \param[in]
+ *
+ * \return none
+ */
+/*----------------------------------------------------------------------------*/
+struct STA_RECORD *cnmGetStaRecByWlanIndex(struct ADAPTER *prAdapter,
+	uint8_t ucWlanIndex)
+{
+	return cnmGetStaRecByIndex(prAdapter,
+		secGetStaIdxByWlanIdx(prAdapter, ucWlanIndex));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Get STA_RECORD_T by Peer MAC Address(Usually TA).
  *
  * @param[in] ucBssIndex	  Given BSS index, or
  *				  ANY_BSS_INDEX if don't need to match BSS index

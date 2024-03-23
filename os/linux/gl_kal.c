@@ -3857,6 +3857,27 @@ kalHardStartXmit(struct sk_buff *prOrgSkb,
 	}
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+	if (prBssInfo) {
+		struct MLD_STA_RECORD *prMldStaRec;
+
+		prMldStaRec = mldStarecGetByStarec(prAdapter,
+			prBssInfo->prStaRecOfAP);
+		if (prMldStaRec && prMldStaRec->fgIsSbMlsr) {
+			struct STA_RECORD *prStaRec = cnmGetStaRecByWlanIndex(
+				prAdapter, prMldStaRec->u2SecondMldId);
+
+			/* only second link is active, change bssinfo */
+			if (prMldStaRec->u4ActiveStaBitmap ==
+			    BIT(prStaRec->ucIndex)) {
+				ucBssIndex = prStaRec->ucBssIndex;
+				prBssInfo = GET_BSS_INFO_BY_INDEX(
+					prAdapter, ucBssIndex);
+			}
+		}
+	}
+#endif /* CFG_SINGLE_BAND_MLSR_56 */
+
 	if (!prBssInfo) {
 		DBGLOG(INIT, INFO, "prBssInfo NULL for ucBssIndex:%u\n",
 			ucBssIndex);

@@ -1421,6 +1421,10 @@
 #define CFG_SUPPORT_MLO_HYBRID     0
 #endif
 
+#ifndef CFG_SINGLE_BAND_MLSR_56
+#define CFG_SINGLE_BAND_MLSR_56                  0
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_SUPPORT_802_11BE == 0)
 #error \
 "CFG_SUPPORT_802_11BE should be 1 once CFG_SUPPORT_802_11BE_MLO equals to 1"

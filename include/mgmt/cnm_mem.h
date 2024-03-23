@@ -884,6 +884,10 @@ struct MLD_STA_RECORD {
 	struct LINK rStarecList;
 	uint64_t aucRxPktCnt[ENUM_BAND_NUM];
 	uint32_t u4StaBitmap;
+	uint32_t u4ActiveStaBitmap;
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+	uint8_t fgIsSbMlsr; /* single band MLSR 5+6 */
+#endif /* CFG_SINGLE_BAND_MLSR_56 */
 	uint16_t u2ValidLinks; /* bitmap of valid MLO link IDs */
 	struct TIMER rEpcsTimer;
 #if (CFG_SUPPORT_802_11BE_T2LM == 1)
@@ -1164,6 +1168,9 @@ void cnmStaFreeAllStaByNetwork(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 struct STA_RECORD *cnmGetStaRecByIndex(struct ADAPTER *prAdapter,
 	uint8_t ucIndex);
+
+struct STA_RECORD *cnmGetStaRecByWlanIndex(struct ADAPTER *prAdapter,
+	uint8_t ucWlanIndex);
 
 struct STA_RECORD *cnmGetStaRecByIndexWithoutInUseCheck(
 	struct ADAPTER *prAdapter,
