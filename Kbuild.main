@@ -2705,6 +2705,16 @@ else
     ccflags-y += -DCFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP=0
 endif
 
+ifneq ($(CONFIG_STA_REC_MAXIMUM),)
+    ccflags-y += -DCFG_STA_REC_MAXIMUM=$(CONFIG_STA_REC_MAXIMUM)
+endif
+ifneq ($(CONFIG_P2P_MAXIMUM_CLIENT_COUNT),)
+    ccflags-y += -DCFG_P2P_MAXIMUM_CLIENT_COUNT=$(CONFIG_P2P_MAXIMUM_CLIENT_COUNT)
+endif
+ifneq ($(CONFIG_WTBL_MAXSIZE),)
+    ccflags-y += -DCFG_WTBL_MAXSIZE=$(CONFIG_WTBL_MAXSIZE)
+endif
+
 # ---------------------------------------------------
 # Directory List
 # ---------------------------------------------------
