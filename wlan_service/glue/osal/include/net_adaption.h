@@ -1085,6 +1085,7 @@ struct test_txpwr_param {
 	u_int32 channel;
 	u_int32 band_idx;
 	u_int32 ch_band;
+	u_int32 powertype;
 };
 
 /* Test off channel scan parameters */
@@ -1672,6 +1673,9 @@ struct test_operation {
 		u_char channel,
 		u_char ant_idx,
 		u_int32 *power);
+	s_int32 (*op_set_get_pwr_type)(
+		struct test_wlan_info *winfos,
+		u_int32_t powertype);
 	s_int32 (*op_set_tx_pwr)(
 		struct test_wlan_info *winfos,
 		struct test_configuration *configs,

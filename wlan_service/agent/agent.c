@@ -1566,13 +1566,14 @@ static s_int32 hqa_get_free_efuse_block(
 	return ret;
 }
 
-static s_int32 hqa_get_tx_power(
+static s_int32 hqa_get_tx_power_v2(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char *data = hqa_frame->data;
 	u_int32 power = 0, band_idx = 0, channel = 0;
 	u_int32 ch_band = 0, ant_idx = 0, efuse_offset = 0;
+	u_int32 powertype = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1590,6 +1591,20 @@ static s_int32 hqa_get_tx_power(
 	get_param_and_shift_buf(TRUE, sizeof(ant_idx),
 				&data, (u_char *)&ant_idx);
 
+	if (hqa_frame->length == 20) {
+		/* for QA tool get ui power*/
+		get_param_and_shift_buf(TRUE, sizeof(powertype),
+				&data, (u_char *)&powertype);
+
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: (QA tool) pwrtype=%u, len=%u\n",
+			__func__, powertype, hqa_frame->length));
+	} else {
+		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+			("%s: (EM mode) pwrtype=%u, len=%u\n",
+			__func__, powertype, hqa_frame->length));
+	}
+
 	/* set parameters */
 	SERV_SET_PARAM(serv_test, ctrl_band_idx, (u_char)band_idx);
 	CONFIG_SET_PARAM(serv_test, pwr_param.ant_idx,
@@ -1600,6 +1615,22 @@ static s_int32 hqa_get_tx_power(
 			(u_int32)band_idx, band_idx);
 	CONFIG_SET_PARAM(serv_test, pwr_param.ch_band,
 			(u_int32)ch_band, band_idx);
+
+	if (hqa_frame->length == 20) {
+		/* for QA tool get ui power*/
+		CONFIG_SET_PARAM(serv_test, pwr_param.powertype,
+				(u_int32)powertype, band_idx);
+
+		ret = mt_serv_tx_power_operation(
+			serv_test, SERV_TEST_TXPWR_SET_GET_PWR_TYPE);
+
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
+				("%s: SERV_TEST_TXPWR_SET_GET_PWR_TYPE fail\n",
+				 __func__));
+			return ret;
+		}
+	}
 
 	ret = mt_serv_tx_power_operation(serv_test, SERV_TEST_TXPWR_GET_PWR);
 
@@ -2198,7 +2229,7 @@ static struct hqa_cmd_entry CMD_SET3[] = {
 	{0x8,	hqa_write_bulk_eeprom},
 	{0x9,	hqa_check_efuse_mode},
 	{0xa,	hqa_get_free_efuse_block},
-	{0xd,	hqa_get_tx_power},
+	{0xd,	hqa_get_tx_power_v2},
 	{0xe,	hqa_set_cfg_on_off},
 	{0xf,	hqa_get_freq_offset},
 	{0x10,	hqa_dbdc_tx_tone},

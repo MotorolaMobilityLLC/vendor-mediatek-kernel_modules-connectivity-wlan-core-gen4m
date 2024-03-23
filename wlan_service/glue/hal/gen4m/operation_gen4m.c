@@ -326,6 +326,9 @@ enum ENUM_RF_AT_FUNCID {
 	/* TMR Toae Cal and Restore */
 	RF_AT_FUNCID_SET_TMR_TOAE_CAL_RESOTRE = 225,
 
+	/* Set & get power type. 0:NVRAM, 1:UI*/
+	RF_AT_CMD_SET_GET_POWER_TYPE = 227,
+
 	RF_AT_FUNCID_NULL = 0xFF
 };
 
@@ -3139,6 +3142,18 @@ s_int32 mt_op_get_tx_default_pwr(
 			("%s:  fail!\n",
 			__func__));
 	}
+
+	return ret;
+}
+
+s_int32 mt_op_set_get_pwr_type(
+	struct test_wlan_info *winfos,
+	u_int32_t powertype)
+{
+	s_int32 ret = SERV_STATUS_SUCCESS;
+
+	ret = tm_rftest_set_auto_test(winfos,
+		RF_AT_CMD_SET_GET_POWER_TYPE, powertype);
 
 	return ret;
 }
