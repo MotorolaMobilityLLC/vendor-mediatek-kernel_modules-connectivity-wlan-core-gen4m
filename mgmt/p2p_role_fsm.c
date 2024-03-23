@@ -5912,6 +5912,11 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 	struct P2P_DEV_FSM_INFO *prP2pDevFsmInfo =
 		(struct P2P_DEV_FSM_INFO *) NULL;
 	enum ENUM_OP_MODE eOPMode;
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+	uint8_t fgIsApMode = FALSE;
+	struct GL_P2P_INFO *prP2PInfo;
+	uint8_t ucRoleIndex;
+#endif
 
 	if (prAdapter == NULL)
 		return;
@@ -5945,10 +5950,21 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 		}
 		/* P2P network type */
 		eOPMode = prBssInfo->eCurrentOPMode;
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+		ucRoleIndex = prBssInfo->u4PrivateData;
+		fgIsApMode = p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings[ucRoleIndex]
+			);
+#endif
 
 		/* Deactive GO/AP bss to let TOP sleep */
 		if (eOPMode == OP_MODE_ACCESS_POINT) {
 			/* Force to deactivate Network of GO case */
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+			if (!fgIsApMode)
+				p2pDevFsmNotifyGoState(prAdapter,
+					prBssInfo->ucBssIndex, FALSE);
+#endif
 			u4ClientCount = bssGetClientCount(prAdapter, prBssInfo);
 			if (u4ClientCount != 0) {
 				prClientList = &prBssInfo->rStaRecOfClientList;
@@ -5968,6 +5984,18 @@ void p2pRoleProcessPreSuspendFlow(struct ADAPTER *prAdapter)
 			p2pChangeMediaState(prAdapter, prBssInfo,
 				MEDIA_STATE_DISCONNECTED);
 			p2pFuncStopComplete(prAdapter, prBssInfo);
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+			prP2PInfo =
+				prAdapter->prGlueInfo->prP2PInfo[ucRoleIndex];
+			if (prP2PInfo) {
+				reinit_completion(
+					&prP2PInfo->rSuspendStopApComp);
+				KAL_SET_BIT(
+					SUSPEND_STOP_APGO_WAITING_0,
+					prP2PInfo->ulSuspendStopAp);
+			}
+			kalP2pStopApInterface(prAdapter, prBssInfo);
+#endif
 		} else if (eOPMode == OP_MODE_INFRASTRUCTURE) {
 			/* Deactive GC bss to let TOP sleep */
 			if (prBssInfo->prStaRecOfAP == NULL)

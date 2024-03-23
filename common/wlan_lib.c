@@ -14902,6 +14902,12 @@ void
 wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
 {
 	uint8_t u1Count = 0;
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+	uint32_t u4Ret = 0;
+	uint8_t fgWaitCompletion = FALSE;
+	struct GL_P2P_INFO *prP2PInfo;
+	uint8_t ucRoleIndex;
+#endif
 
 	if (prGlueInfo->prAdapter == NULL)
 		return;
@@ -14922,6 +14928,29 @@ wlanWaitCfg80211SuspendDone(struct GLUE_INFO *prGlueInfo)
 		u1Count++;
 		DBGLOG(HAL, TRACE, "wait cfg80211 suspend %d\n", u1Count);
 	}
+
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+	for (ucRoleIndex = 0; ucRoleIndex < BSS_P2P_NUM; ucRoleIndex++) {
+		prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIndex];
+		if (prP2PInfo &&
+			KAL_TEST_BIT(SUSPEND_STOP_APGO_WAITING_0,
+				prP2PInfo->ulSuspendStopAp)) {
+			fgWaitCompletion = TRUE;
+			break;
+		}
+	}
+	if (fgWaitCompletion) {
+		u4Ret = wait_for_completion_timeout(
+			&prP2PInfo->rSuspendStopApComp,
+			MSEC_TO_JIFFIES(P2P_DEAUTH_TIMEOUT_TIME_MS));
+		if (!u4Ret)
+			DBGLOG(P2P, WARN, "timeout\n");
+		else
+			DBGLOG(P2P, INFO, "complete\n");
+		KAL_CLR_BIT(SUSPEND_STOP_APGO_WAITING_0,
+			prP2PInfo->ulSuspendStopAp);
+	}
+#endif
 }
 #endif /* #if (CFG_WOW_SUPPORT == 1) */
 

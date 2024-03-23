@@ -450,6 +450,12 @@ u_int8_t p2PAllocInfo(struct GLUE_INFO *prGlueInfo, uint8_t ucIdex)
 		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rStopApComp);
 		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rDisconnComp);
 		init_completion(&prGlueInfo->prP2PInfo[ucIdex]->rDelStaComp);
+
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+		init_completion(
+			&prGlueInfo->prP2PInfo[ucIdex]->rSuspendStopApComp);
+		prGlueInfo->prP2PInfo[ucIdex]->ulSuspendStopAp = 0;
+#endif
 	} while (FALSE);
 
 	if (!prGlueInfo->prP2PDevInfo)
