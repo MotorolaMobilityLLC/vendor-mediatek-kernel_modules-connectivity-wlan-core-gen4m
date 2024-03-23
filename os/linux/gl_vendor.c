@@ -536,8 +536,30 @@ int mtk_cfg80211_vendor_set_country_code(struct wiphy
 		return -EFAULT;
 	}
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+	if (regd_is_single_sku_en()) {
+		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
+
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		wiphy_unlock(wiphy);
+#endif
+		prCountrySetting.aucCountryCode[0] = country[0];
+		prCountrySetting.aucCountryCode[1] = country[1];
+		prCountrySetting.ucCountryLength = 2;
+		prCountrySetting.fgNeedHoldRtnlLock = 1;
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidSetCountryCode,
+					&prCountrySetting,
+					sizeof(struct COUNTRY_CODE_SETTING),
+					&u4BufLen);
+
+#if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
+		wiphy_lock(wiphy);
+#endif
+	} else {
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 			country, 2, &u4BufLen);
+	}
+
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "Set country code error: %x\n", rStatus);
 		return -EFAULT;

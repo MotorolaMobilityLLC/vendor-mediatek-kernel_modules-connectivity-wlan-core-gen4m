@@ -94,7 +94,8 @@ void kalRemoveProbe(struct GLUE_INFO *prGlueInfo)
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void
-kalApplyCustomRegulatory(const void *pRegdom) { }
+kalApplyCustomRegulatory(const void *pRegdom,
+	uint8_t fgNeedHoldRtnlLock) { }
 
 const void *kalGetDefaultRegWW(void)
 {

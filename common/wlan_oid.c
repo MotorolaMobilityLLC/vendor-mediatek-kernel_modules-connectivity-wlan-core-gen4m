@@ -12985,8 +12985,21 @@ wlanoidSetCountryCode(struct ADAPTER *prAdapter,
 	ASSERT(pvSetBuffer);
 
 	if (regd_is_single_sku_en()) {
-		rlmDomainOidSetCountry(prAdapter, pvSetBuffer,
-				       u4SetBufferLen);
+		struct COUNTRY_CODE_SETTING *prCountrySetting = NULL;
+
+		if (sizeof(struct COUNTRY_CODE_SETTING) != u4SetBufferLen) {
+			DBGLOG(REQ, ERROR, "Invalid length %u != %u\n",
+				sizeof(struct COUNTRY_CODE_SETTING),
+				u4SetBufferLen);
+			return WLAN_STATUS_INVALID_LENGTH;
+		}
+
+		prCountrySetting = (struct COUNTRY_CODE_SETTING *) pvSetBuffer;
+		rlmDomainOidSetCountry(prAdapter,
+					prCountrySetting->aucCountryCode,
+					prCountrySetting->ucCountryLength,
+					prCountrySetting->fgNeedHoldRtnlLock);
+
 		*pu4SetInfoLen = u4SetBufferLen;
 		return WLAN_STATUS_SUCCESS;
 	}

@@ -4365,10 +4365,7 @@ static void wlanCreateWirelessDevice(void)
 	prWiphy->flags |= WIPHY_FLAG_SUPPORTS_MLO;
 #endif
 
-#if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
-	prWiphy->flags |= WIPHY_FLAG_CUSTOM_REGULATORY;
-#else
-	prWiphy->regulatory_flags |= REGULATORY_CUSTOM_REG;
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	prWiphy->flags |= WIPHY_FLAG_HAS_CHANNEL_SWITCH;
 #if KERNEL_VERSION(3, 16, 0) <= CFG80211_VERSION_CODE
@@ -4376,6 +4373,7 @@ static void wlanCreateWirelessDevice(void)
 #endif
 #endif /* CFG_SUPPORT_DFS_MASTER */
 #endif
+
 #if CFG_ENABLE_WIFI_DIRECT
 #if KERNEL_VERSION(3, 14, 0) < CFG80211_VERSION_CODE
 	prWiphy->max_ap_assoc_sta = P2P_MAXIMUM_CLIENT_COUNT;

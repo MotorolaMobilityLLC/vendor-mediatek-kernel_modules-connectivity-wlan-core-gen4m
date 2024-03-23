@@ -13413,8 +13413,8 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer)
 #endif
 
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-void
-kalApplyCustomRegulatory(const void *pRegdom)
+void kalApplyCustomRegulatory(const void *pRegdom,
+	uint8_t fgNeedHoldRtnlLock)
 {
 	struct wiphy *pWiphy;
 	u32 band_idx, ch_idx;
@@ -13423,6 +13423,11 @@ kalApplyCustomRegulatory(const void *pRegdom)
 	pWiphy = wlanGetWiphy();
 
 	DBGLOG(RLM, INFO, "%s()\n", __func__);
+
+	if (!pWiphy) {
+		DBGLOG(RLM, ERROR, "pWiphy = NULL\n");
+		return;
+	}
 
 	/* to reset chan->flags */
 	for (band_idx = 0; band_idx < KAL_NUM_BANDS; band_idx++) {
@@ -13439,9 +13444,58 @@ kalApplyCustomRegulatory(const void *pRegdom)
 
 	}
 
+	kalUpdateCustomRegulatoryByWiphy(pWiphy,
+		pRegdom, fgNeedHoldRtnlLock);
+}
+
+void kalUpdateCustomRegulatoryByWiphy(struct wiphy *pWiphy,
+	const void *pRegdom,
+	uint8_t fgNeedHoldRtnlLock)
+{
+#if (KERNEL_VERSION(5, 5, 0) > CFG80211_VERSION_CODE) || \
+	(CFG_SUPPORT_SINGLE_SKU_FORCE_CUSTOM_REG == 1)
 	/* update to kernel */
 	wiphy_apply_custom_regulatory(pWiphy,
 		(const struct ieee80211_regdomain *)pRegdom);
+#elif KERNEL_VERSION(5, 12, 0) > CFG80211_VERSION_CODE
+	/* update regulatory domain to kernel */
+	DBGLOG(RLM, INFO,
+		"regulatory_flags=0x%x, lock=[%d], fgHoldLock=[%d]\n",
+		pWiphy->regulatory_flags, rtnl_is_locked(),
+		fgNeedHoldRtnlLock);
+
+	if (fgNeedHoldRtnlLock)
+		rtnl_lock();
+
+	if (!rtnl_is_locked())
+		DBGLOG(RLM, ERROR, "rtnl lock is not held\n");
+
+	regulatory_set_wiphy_regd_sync_rtnl(pWiphy,
+		(struct ieee80211_regdomain *)pRegdom);
+
+	if (fgNeedHoldRtnlLock)
+		rtnl_unlock();
+#else /* KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE */
+	/* update regulatory domain to kernel */
+	DBGLOG(RLM, INFO,
+		"regulatory_flags=0x%x, lock=[%d %d], fgHoldLock=[%d]\n",
+		pWiphy->regulatory_flags, rtnl_is_locked(),
+		mutex_is_locked(&pWiphy->mtx), fgNeedHoldRtnlLock);
+
+	if (fgNeedHoldRtnlLock)
+		rtnl_lock();
+	wiphy_lock(pWiphy);
+
+	if (!rtnl_is_locked() || !mutex_is_locked(&pWiphy->mtx))
+		DBGLOG(RLM, ERROR, "rtnl or wiphy lock is not held\n");
+
+	regulatory_set_wiphy_regd_sync(pWiphy,
+		(struct ieee80211_regdomain *)pRegdom);
+
+	wiphy_unlock(pWiphy);
+	if (fgNeedHoldRtnlLock)
+		rtnl_unlock();
+#endif /* CFG80211_VERSION_CODE */
 }
 #endif
 

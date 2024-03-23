@@ -5286,7 +5286,7 @@ mtk_reg_notify(struct wiphy *pWiphy,
 
 	u4CountryCode = rlmDomainAlpha2ToU32(pRequest->alpha2, 2);
 
-	rlmDomainCountryCodeUpdate(prAdapter, u4CountryCode);
+	rlmDomainCountryCodeUpdate(prAdapter, u4CountryCode, 0);
 
 	rlmDomainSetDfsRegion((u8)pRequest->dfs_region);
 }
@@ -5299,43 +5299,57 @@ cfg80211_regd_set_wiphy(struct wiphy *prWiphy)
 	 */
 	prWiphy->reg_notifier = mtk_reg_notify;
 
-
 	/*
 	 * clear REGULATORY_CUSTOM_REG flag
 	 */
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	/*tells kernel that assign WW as default*/
 	prWiphy->flags &= ~(WIPHY_FLAG_CUSTOM_REGULATORY);
-#else
+#elif (KERNEL_VERSION(5, 5, 0) > CFG80211_VERSION_CODE) || \
+	(CFG_SUPPORT_SINGLE_SKU_FORCE_CUSTOM_REG == 1)
 	prWiphy->regulatory_flags &= ~(REGULATORY_CUSTOM_REG);
+#else /* KERNEL_VERSION(5, 5, 0) <= CFG80211_VERSION_CODE */
+	prWiphy->regulatory_flags &= ~(REGULATORY_WIPHY_SELF_MANAGED);
+#endif /* CFG80211_VERSION_CODE */
 
+	/*
+	 * set other regulatory_flags
+	 */
+#if KERNEL_VERSION(3, 14, 0) <= CFG80211_VERSION_CODE
 	/*ignore the hint from IE*/
 	prWiphy->regulatory_flags |= REGULATORY_COUNTRY_IE_IGNORE;
-
 #ifdef CFG_SUPPORT_DISABLE_BCN_HINTS
 	/*disable beacon hint to avoid channel flag be changed*/
 	prWiphy->regulatory_flags |= REGULATORY_DISABLE_BEACON_HINTS;
-#endif
-#endif
-
+#endif /* CFG_SUPPORT_DISABLE_BCN_HINTS */
+#endif /* CFG80211_VERSION_CODE */
 
 	/*
 	 * set REGULATORY_CUSTOM_REG flag
 	 */
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
+
 #if KERNEL_VERSION(3, 14, 0) > CFG80211_VERSION_CODE
 	/*tells kernel that assign WW as default*/
 	prWiphy->flags |= (WIPHY_FLAG_CUSTOM_REGULATORY);
-#else
+#elif (KERNEL_VERSION(5, 5, 0) > CFG80211_VERSION_CODE) || \
+	(CFG_SUPPORT_SINGLE_SKU_FORCE_CUSTOM_REG == 1)
 	prWiphy->regulatory_flags |= (REGULATORY_CUSTOM_REG);
-#endif
 	/* assigned a defautl one */
 	if (rlmDomainGetLocalDefaultRegd())
 		wiphy_apply_custom_regulatory(prWiphy,
 		(const struct ieee80211_regdomain *)
 			rlmDomainGetLocalDefaultRegd());
-#endif
+#else /* KERNEL_VERSION(5, 5, 0) <= CFG80211_VERSION_CODE */
+	prWiphy->regulatory_flags |= (REGULATORY_WIPHY_SELF_MANAGED);
+	/* To prevent wiphy registration failure, and kernel would set
+	 * these flags for self managed wiphy when registration.
+	 */
+	prWiphy->regulatory_flags &= ~(REGULATORY_COUNTRY_IE_IGNORE);
+	prWiphy->regulatory_flags &= ~(REGULATORY_DISABLE_BEACON_HINTS);
+#endif /* CFG80211_VERSION_CODE */
 
+#endif /* CFG_SUPPORT_SINGLE_SKU_LOCAL_DB */
 
 	/*
 	 * Initialize regd control information
