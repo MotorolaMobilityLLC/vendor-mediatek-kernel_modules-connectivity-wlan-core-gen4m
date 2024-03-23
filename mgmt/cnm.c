@@ -2150,7 +2150,7 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	enum ENUM_CNM_OPMODE_REQ_T eCurrMaxIdx = CNM_OPMODE_REQ_MAX_CAP;
 
 	if (prBssInfo && prBssInfo->ucGrantBW != MAX_BW_UNKNOWN) {
-		DBGLOG(CNM, TRACE, "BW = %d\n", prBssInfo->ucGrantBW);
+		DBGLOG(CNM, TRACE, "GrantBW = %d\n", prBssInfo->ucGrantBW);
 		return prBssInfo->ucGrantBW;
 	}
 
@@ -5576,6 +5576,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 		ucOpMaxBw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 	}
 
+	DBGLOG(CNM, TRACE, "ucOpMaxBw = %d\n", ucOpMaxBw);
 	return ucOpMaxBw;
 }
 
@@ -5662,7 +5663,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 	enum ENUM_OP_CHANGE_STATUS_T eRlmStatus;
 	enum ENUM_CNM_OPMODE_REQ_STATUS eStatus
 		= CNM_OPMODE_REQ_STATUS_SUCCESS;
-	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal;
+	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal, ucOpMaxBw;
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
 	uint8_t ucSendAct = TRUE;
 #if CFG_ENABLE_WIFI_DIRECT
@@ -5747,10 +5748,9 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		 * If you want to change OpBw in the future, please
 		 * make sure you can restore to current peer's OpBw.
 		 */
-		if (ucOpBwFinal == MAX_BW_UNKNOWN)
-			ucOpBwFinal = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
-		else if (ucOpBwFinal > cnmGetBssMaxBw(prAdapter, ucBssIndex))
-			ucOpBwFinal = cnmGetBssMaxBw(prAdapter, ucBssIndex);
+		ucOpMaxBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+		ucOpBwFinal =
+			((ucOpBwFinal > ucOpMaxBw) ? ucOpMaxBw : ucOpBwFinal);
 
 #if (CFG_SUPPORT_DBDC_DOWNGRADE_BW == 1)
 		if ((eRunReq == CNM_OPMODE_REQ_DBDC ||
