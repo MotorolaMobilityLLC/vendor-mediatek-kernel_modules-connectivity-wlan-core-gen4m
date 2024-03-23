@@ -1479,7 +1479,6 @@ void scanParsingMBSSIDSubelement(struct ADAPTER *prAdapter,
 }
 #endif
 
-#if (CFG_SUPPORT_WIFI_RNR == 1)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1561,6 +1560,7 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 }
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 void scanHandleRnrSsid(struct NEIGHBOR_AP_PARAM *prScanParam,
 	struct SCAN_PARAM *prAdapterScanParam,
 	struct BSS_DESC *prBssDesc, uint8_t ucBssidNum)

@@ -1144,6 +1144,7 @@ cleanup:
 }
 #endif
 
+#if (CFG_SUPPORT_WIFI_RNR == 1)
 void scnCopyRnrScanParam(struct SCAN_PARAM *prScanParam,
 	struct NEIGHBOR_AP_PARAM *prNeighborParam)
 {
@@ -1228,7 +1229,7 @@ void scnCopyRnrScanParam(struct SCAN_PARAM *prScanParam,
 			prRfChnlInfo->ucChannelNum;
 	}
 }
-
+#endif
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief
