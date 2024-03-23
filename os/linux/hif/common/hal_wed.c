@@ -388,6 +388,11 @@ void wedInterruptSwap(int irq, void *dev_instance)
 	pdev->irq = irq;
 }
 
+void wedUpdateIntMask(uint32_t mask)
+{
+	grWedInfo.int_enable_mask = mask;
+}
+
 /* chip dependency */
 int wedInfoSetup(struct ADAPTER *prAdapter)
 {
@@ -703,6 +708,7 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	uint32_t val = 0;
 	int ret = 0;
 	struct WED_INFO *prwedinfo;
+	uint32_t u4Tick;
 
 	if (IS_FEATURE_DISABLED(prAdapter->rWifiVar.fgEnableWed)) {
 		DBGLOG(HAL, WARN, "WED disabled by wifi.cfg\n");
@@ -755,6 +761,17 @@ static int wedAttachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 
 	if (ret < 0)
 		goto error_release_token;
+
+	/* Wait warp driver porbe done */
+	u4Tick = kalGetTimeTick();
+	while (!grWedInfo.fgAttached) {
+		kalUsleep_range(900, 1000);
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), u4Tick,
+				      MSEC_TO_SYSTIME(100))) {
+			DBGLOG(HAL, ERROR, "wait warp probe timeout\n");
+			break;
+		}
+	}
 
 	grWedInfo.fgMirrorEnable = 1;
 	disable_irq_nosync(prwedinfo->u4IrqId);
@@ -874,8 +891,8 @@ static int wedDetachWarp(struct ADAPTER *prAdapter, struct net_device *prNetDev,
 	prChipInfo = prAdapter->chip_info;
 
 	/* step.3 Release the ring control on WED and CR mirror*/
-	wedProxyHookCall(PROXY_WLAN_HOOK_HIF_EXIT, &grWedInfo);
 	prwedinfo->fgMirrorEnable = FALSE;
+	wedProxyHookCall(PROXY_WLAN_HOOK_HIF_EXIT, &grWedInfo);
 
 	/* step.4 Release the RXBM buffer which is allocated by WARP Nothing
 	 * but WiFi host know the status of this buffer Also release the
