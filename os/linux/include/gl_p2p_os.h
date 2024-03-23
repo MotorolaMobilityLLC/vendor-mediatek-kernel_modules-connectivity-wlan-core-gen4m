@@ -58,6 +58,10 @@ extern const struct net_device_ops p2p_netdev_ops;
 
 #define P2P_DEFAULT_CLIENT_COUNT 4
 
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+#define SUSPEND_STOP_APGO_WAITING_0 (0)
+#endif
+
 /******************************************************************************
  *                             D A T A   T Y P E S
  ******************************************************************************
@@ -196,6 +200,11 @@ struct GL_P2P_INFO {
 	struct completion rDisconnComp;
 	/* indicate caller thread for delete sta complete */
 	struct completion rDelStaComp;
+
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+	struct completion rSuspendStopApComp;
+	unsigned long ulSuspendStopAp;
+#endif
 
 	struct LINK rWaitTxDoneLink;
 

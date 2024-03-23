@@ -1714,6 +1714,10 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prP2pBssInfo)
 {
 	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+	struct GL_P2P_INFO *prP2pInfo;
+	uint8_t ucSuspendStopAPGO = 0;
+#endif
 
 	if (prAdapter == NULL || prP2pBssInfo == NULL)
 		return;
@@ -1755,7 +1759,25 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 	/* Release CNM channel */
 	nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
-	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+	prP2pInfo =
+		prAdapter->prGlueInfo->prP2PInfo[prP2pBssInfo->u4PrivateData];
+	if (prP2pInfo) {
+		ucSuspendStopAPGO =
+			KAL_TEST_BIT(SUSPEND_STOP_APGO_WAITING_0,
+			prP2pInfo->ulSuspendStopAp);
+
+		if (!completion_done(&prP2pInfo->rSuspendStopApComp) &&
+			ucSuspendStopAPGO == TRUE)
+			complete(&prP2pInfo->rSuspendStopApComp);
+	}
+#endif
+
+	if (prP2pBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT
+#if (CFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP == 1)
+		|| ucSuspendStopAPGO
+#endif
+		)
 		kalP2pNotifyStopApComplete(prAdapter,
 			prP2pBssInfo->u4PrivateData);
 	else
