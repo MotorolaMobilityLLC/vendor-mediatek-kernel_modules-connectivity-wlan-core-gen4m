@@ -2378,6 +2378,10 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rObssScanTimer);
 
 	prBssInfo->fgIsInUse = FALSE;
+
+#if CFG_SUPPORT_CCM
+	ccmRemoveBssPendingEntry(prAdapter, prBssInfo);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/

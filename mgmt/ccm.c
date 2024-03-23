@@ -24,6 +24,22 @@ void ccmInit(struct ADAPTER *prAdapter)
 	LINK_INITIALIZE(&prAdapter->rCcmCheckCsList);
 }
 
+void ccmRemoveBssPendingEntry(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prBssInfo)
+{
+	struct LINK *prCcmCheckCsList = &prAdapter->rCcmCheckCsList;
+	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntry;
+
+	LINK_FOR_EACH_ENTRY(prCcmCsaEntry, prCcmCheckCsList, rLinkEntry,
+			    struct P2P_CCM_CSA_ENTRY) {
+		if (prCcmCsaEntry->prBssInfo != prBssInfo)
+			continue;
+		DBGLOG(CCM, INFO, "bss=%u free, remove pending entry");
+		LINK_REMOVE_KNOWN_ENTRY(prCcmCheckCsList, prCcmCsaEntry);
+		cnmMemFree(prAdapter, prCcmCsaEntry);
+	}
+}
+
 void ccmGetOtherAliveBssHwBitmap(struct ADAPTER *prAdapter,
 				 uint32_t *pau4Bitmap,
 				 struct BSS_INFO *prBssInfo)
@@ -71,30 +87,28 @@ u_int8_t ccmGoSwitchChannel(struct ADAPTER *prAdapter,
 			    enum ENUM_MBMC_BN eTargetHwBandIdx,
 			    enum ENUM_BAND eTargetBand)
 {
+	u_int8_t fgIsDfs = rlmDomainIsDfsChnls(prAdapter, u4TargetCh);
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
 	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
 	uint32_t u4FreqListNum;
-	u_int8_t fgIsDfs = rlmDomainIsDfsChnls(prAdapter, u4TargetCh);
+#endif
 
 	/* pass for MCC only */
 	if (fgIsDfs ||
 	    prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
 	    prBssInfo->ucPrimaryChannel == u4TargetCh) {
-		DBGLOG(CCM, INFO,
-		       "do not need CSA, isDfs=%u [BSS%u] ch=%u, hwBand=%u [Target] ch=%u, hwBand=%u, rfBand=%u\n",
-		       fgIsDfs, prBssInfo->ucBssIndex,
-		       prBssInfo->ucPrimaryChannel, prBssInfo->eHwBandIdx,
-		       u4TargetCh, eTargetHwBandIdx, eTargetBand);
+		DBGLOG(CCM, INFO, "do not need CSA, isDfs=%u\n", fgIsDfs);
 		return FALSE;
 	}
 
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	ccmGetOtherAliveBssHwBitmap(prAdapter, au4AliveBssBitmap, prBssInfo);
 	DBGLOG(P2P, INFO,
 	       "alive BSS hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
 	       au4AliveBssBitmap[AA_HW_BAND_0], au4AliveBssBitmap[AA_HW_BAND_1],
 	       au4AliveBssBitmap[AA_HW_BAND_2]);
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
 	if ((prBssInfo->eBand == BAND_5G || prBssInfo->eBand == BAND_6G) &&
 	    p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap)) {
 		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
@@ -142,7 +156,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	enum ENUM_MBMC_BN eTargetHwBandIdx;
 	enum ENUM_BAND eTargetBand;
 	u_int8_t fgIsSwitching = FALSE;
-	u_int8_t fgIsMloSap = FALSE;
+	u_int8_t fgIsMlo = FALSE;
 	int8_t i;
 
 	if (prAdapter->rWifiVar.fgCsaInProgress) {
@@ -162,7 +176,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 
 		if (i < MAX_BSSID_NUM) {
 			DBGLOG(CCM, INFO,
-			       "skip due to Bss%u channel switch still in progress",
+			       "skip due to Bss%u channel switch still in progress\n",
 			       i);
 			return;
 		}
@@ -187,12 +201,18 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	fgIsMloSap = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, bss));
+	fgIsMlo = IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, bss));
 #endif
 
+	DBGLOG(CCM, INFO,
+	       "checking [%s] bss=%u ch=%u, hwBand=%u, rfBand=%u, is_mlo=%u, [Target] ch=%u, hwBand=%u, rfBand=%u\n",
+	       bssGetRoleTypeString(prAdapter, bss),
+	       bss->ucBssIndex, bss->ucPrimaryChannel,
+	       bss->eHwBandIdx, bss->eBand, fgIsMlo,
+	       u4TargetCh, eTargetHwBandIdx, eTargetBand);
+
 	if (p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-		bss->u4PrivateData]) &&
-		!fgIsMloSap)
+		bss->u4PrivateData]) && !fgIsMlo)
 		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
 					P2P_DEFAULT_SCENARIO);
 	else
@@ -300,10 +320,8 @@ void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 					 &prCcmCsaEntry->rLinkEntry);
 		}
 
-		DBGLOG(CCM, INFO,
-		       "insert GO bss=%u waiting for CSA, Target: ch=%u, hwBand=%u, rfBand=%u\n",
-		       bss->ucBssIndex, prTargetBss->ucPrimaryChannel,
-		       prTargetBss->eHwBandIdx, prTargetBss->eBand);
+		DBGLOG(CCM, INFO, "insert GO bss=%u waiting to check\n",
+		       bss->ucBssIndex);
 	}
 
 	/* SAP must do CSA last, enqueue SAP at the end */
@@ -334,10 +352,8 @@ void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		LINK_INSERT_TAIL(prCcmCheckCsList,
 				 &prCcmCsaEntry->rLinkEntry);
 
-		DBGLOG(CCM, INFO,
-		       "insert SAP bss=%u waiting for CSA, Target: ch=%u, hwBand=%u, rfBand=%u\n",
-		       bss->ucBssIndex, prTargetBss->ucPrimaryChannel,
-		       prTargetBss->eHwBandIdx, prTargetBss->eBand);
+		DBGLOG(CCM, INFO, "insert SAP bss=%u waiting to check\n",
+		       bss->ucBssIndex);
 	}
 
 	ccmChannelSwitchConsumer(prAdapter);

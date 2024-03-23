@@ -11812,7 +11812,7 @@ u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
 			      uint32_t *pau4AliveBssBitmap)
 {
-#if (CONFIG_BAND_NUM > 3 && CFG_SUPPORT_WIFI_6G == 1)
+#if (CONFIG_BAND_NUM > 2 && CFG_SUPPORT_WIFI_6G == 1)
 	struct mt66xx_chip_info *prChipInfo = prAdapter->chip_info;
 	struct WFD_CFG_SETTINGS *prWfdCfgSettings =
 		&(prAdapter->rWifiVar.rWfdConfigureSettings);
