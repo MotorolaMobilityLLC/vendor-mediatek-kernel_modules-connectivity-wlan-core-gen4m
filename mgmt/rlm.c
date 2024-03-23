@@ -3787,10 +3787,14 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 	 * When connect, BssColorInfo change from 0x00 to New value.
 	 * So, filter this case.
 	 */
-	if (prBssInfo->ucColorAnnouncement == FALSE &&
-		((prBssInfo->ucBssColorInfo & (~HE_OP_BSSCOLOR_BSS_COLOR_MASK))
-		== (ucOldBssColorInfo & (~HE_OP_BSSCOLOR_BSS_COLOR_MASK))) &&
-		(ucOldBssColorInfo & (HE_OP_BSSCOLOR_BSS_COLOR_MASK) != 0))
+	if ((prBssInfo->ucColorAnnouncement == FALSE) &&
+		((prBssInfo->ucBssColorInfo &
+		(HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR |
+			HE_OP_BSSCOLOR_BSS_COLOR_DISABLE))
+		== (ucOldBssColorInfo &
+		(HE_OP_BSSCOLOR_PARTIAL_BSS_COLOR |
+			HE_OP_BSSCOLOR_BSS_COLOR_DISABLE))) &&
+		((ucOldBssColorInfo & HE_OP_BSSCOLOR_BSS_COLOR_MASK) != 0))
 		prBssInfo->ucBssColorInfo = ucOldBssColorInfo;
 #endif /* CFG_SUPPORT_UPDATE_HE_BSS_COLOR_FROM_BEACON */
 
