@@ -831,6 +831,23 @@ void kalDumpRxRing(struct GLUE_INFO *prGlueInfo,
 		prMemOps->dumpRx(prHifInfo, prRxRing, u4Num, u4DumpLen);
 }
 
+u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	struct RTMP_RX_RING *prRxRing;
+
+	if (u4Idx >= NUM_OF_RX_RING)
+		return FALSE;
+
+	prRxRing = &prHifInfo->RxRing[u4Idx];
+	if (GLUE_GET_REF_CNT(prRxRing->u4CidxRec) != prRxRing->RxCpuIdx) {
+		GLUE_SET_REF_CNT(prRxRing->RxCpuIdx, prRxRing->u4CidxRec);
+		return TRUE;
+	}
+
+	return FALSE;
+}
+
 void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_WIFI_WFDMA_WB
@@ -858,14 +875,13 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 			continue;
 
 		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prGlueInfo, i);
-		if (u4RxCnt > 0 && prRxRing->u4CidxRec == prRxRing->RxCpuIdx) {
+		if (u4RxCnt > 0 && !halIsWfdmaRxCidxChanged(prAdapter, i)) {
 			prRxRing->u4CidxErrCnt++;
 			DBGLOG(HAL, WARN,
 			       "Ring[%u] RxCnt[%u] rec[%u] cidx[%u] err[%u]\n",
 			       i, u4RxCnt, prRxRing->u4CidxRec,
 			       prRxRing->RxCpuIdx, prRxRing->u4CidxErrCnt);
 		} else {
-			prRxRing->u4CidxRec = prRxRing->RxCpuIdx;
 			prRxRing->u4CidxErrCnt = 0;
 		}
 
