@@ -542,8 +542,23 @@ static ssize_t procCountryWrite(struct file *file, const char __user *buffer,
 	}
 	pucProcBuf[u4CopySize] = '\0';
 
-	rStatus = kalIoctl(g_prGlueInfo_proc, wlanoidSetCountryCode,
+	if (regd_is_single_sku_en()) {
+		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
+
+		prCountrySetting.aucCountryCode[0] = pucProcBuf[0];
+		prCountrySetting.aucCountryCode[1] = pucProcBuf[1];
+		prCountrySetting.ucCountryLength = 2;
+		prCountrySetting.fgNeedHoldRtnlLock = 1;
+		rStatus = kalIoctl(g_prGlueInfo_proc,
+					wlanoidSetCountryCode,
+					&prCountrySetting,
+					sizeof(struct COUNTRY_CODE_SETTING),
+					&u4BufLen);
+	} else {
+		rStatus = kalIoctl(g_prGlueInfo_proc, wlanoidSetCountryCode,
 			   pucProcBuf, 2, &u4BufLen);
+	}
+
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, INFO, "failed set country code: %s\n",
 			pucProcBuf);

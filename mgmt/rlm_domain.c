@@ -2919,7 +2919,7 @@ uint32_t rlmDomainAlpha2ToU32(char *pcAlpha2, uint8_t ucAlpha2Size)
 
 uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-	uint32_t u4CountryCode)
+	uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock)
 {
 	const void *pRegdom = NULL;
 	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
@@ -2936,14 +2936,14 @@ rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
 		u4FinalCountryCode = COUNTRY_CODE_WW;
 	}
 
-	kalApplyCustomRegulatory(pRegdom);
+	kalApplyCustomRegulatory(pRegdom, fgNeedHoldRtnlLock);
 
 	return u4FinalCountryCode;
 }
 #else
 uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-	uint32_t u4CountryCode)
+	uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock)
 {
 	return 0;
 }
@@ -2979,7 +2979,8 @@ rlmDomainCountryCodeUpdateSanity(
 
 void rlmDomainCountryCodeUpdate(
 	struct ADAPTER *prAdapter,
-	uint32_t u4CountryCode)
+	uint32_t u4CountryCode,
+	uint8_t fgNeedHoldRtnlLock)
 {
 	uint32_t u4FinalCountryCode = u4CountryCode;
 	char acCountryCodeStr[MAX_COUNTRY_CODE_LEN + 1] = {0};
@@ -2993,7 +2994,7 @@ void rlmDomainCountryCodeUpdate(
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 		u4FinalCountryCode =
 			rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-				u4CountryCode);
+				u4CountryCode, fgNeedHoldRtnlLock);
 	}
 
 	rlmDomainU32ToAlpha(u4FinalCountryCode, acCountryCodeStr);
@@ -3033,7 +3034,7 @@ void rlmDomainCountryCodeUpdate(
 
 }
 void
-rlmDomainSetCountry(struct ADAPTER *prAdapter)
+rlmDomainSetCountry(struct ADAPTER *prAdapter, uint8_t fgNeedHoldRtnlLock)
 {
 	struct GLUE_INFO *prGlueInfo = rlmDomainGetGlueInfo();
 	struct ADAPTER *prBaseAdapter;
@@ -3046,7 +3047,8 @@ rlmDomainSetCountry(struct ADAPTER *prAdapter)
 
 	rlmDomainCountryCodeUpdate(
 		prBaseAdapter,
-		rlmDomainGetCountryCode());
+		rlmDomainGetCountryCode(),
+		fgNeedHoldRtnlLock);
 }
 
 uint8_t rlmDomainTxPwrLimitGetTableVersion(
@@ -11854,7 +11856,7 @@ void rlmDomainSendInfoToFirmware(struct ADAPTER *prAdapter)
 		return; /*not support single sku*/
 
 	g_mtk_regd_control.pGlueInfo = prAdapter->prGlueInfo;
-	rlmDomainSetCountry(prAdapter);
+	rlmDomainSetCountry(prAdapter, 1);
 #endif
 }
 
@@ -11916,10 +11918,17 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(struct ADAPTER *prAdapter,
 	return eSCO;
 }
 
-void rlmDomainOidSetCountry(struct ADAPTER *prAdapter, char *country,
-			    u8 size_of_country)
+void rlmDomainOidSetCountry(struct ADAPTER *prAdapter,
+	char *country,
+	uint8_t size_of_country,
+	uint8_t fgNeedHoldRtnlLock)
 {
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
+
+	if (!regd_is_single_sku_en()) {
+		DBGLOG(RLM, ERROR, "regd control is not enabled\n");
+		return;
+	}
 
 	if (rlmDomainIsUsingLocalRegDomainDataBase()) {
 
@@ -11934,7 +11943,7 @@ void rlmDomainOidSetCountry(struct ADAPTER *prAdapter, char *country,
 			return;
 		}
 		rlmDomainSetCountryCode(country, size_of_country);
-		rlmDomainSetCountry(prAdapter);
+		rlmDomainSetCountry(prAdapter, fgNeedHoldRtnlLock);
 	} else {
 		DBGLOG(RLM, INFO,
 		       "%s(): Using driver hint to query CRDA getting regd.\n",

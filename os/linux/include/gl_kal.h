@@ -2539,7 +2539,10 @@ uint32_t kalDumpPwrLevel(struct ADAPTER *prAdapter);
 #endif
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
-void kalApplyCustomRegulatory(const void *pRegdom);
+void kalApplyCustomRegulatory(const void *pRegdom, uint8_t fgNeedHoldRtnlLock);
+void
+kalUpdateCustomRegulatoryByWiphy(struct wiphy *pWiphy, const void *pRegdom,
+	uint8_t fgNeedHoldRtnlLock);
 const void *kalGetDefaultRegWW(void);
 #endif
 uint8_t kalGetRdmVal(uint8_t dfs_region);

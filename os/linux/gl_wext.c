@@ -3465,8 +3465,25 @@ static int wext_set_country(struct net_device *prNetDev,
 			   COUNTRY_CODE_LEN))
 		return -EFAULT;
 
-	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
+	if (regd_is_single_sku_en()) {
+		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
+
+		prCountrySetting.aucCountryCode[0]
+			= aucCountry[COUNTRY_CODE_LEN - 2];
+		prCountrySetting.aucCountryCode[1]
+			= aucCountry[COUNTRY_CODE_LEN - 1];
+		prCountrySetting.ucCountryLength = 2;
+		prCountrySetting.fgNeedHoldRtnlLock = 0;
+		rStatus = kalIoctl(prGlueInfo,
+					wlanoidSetCountryCode,
+					&prCountrySetting,
+					sizeof(struct COUNTRY_CODE_SETTING),
+					&u4BufLen);
+	} else {
+		rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 			   &aucCountry[COUNTRY_CODE_LEN - 2], 2, &u4BufLen);
+	}
+
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "Set country code error: %x\n", rStatus);
 		return -EFAULT;

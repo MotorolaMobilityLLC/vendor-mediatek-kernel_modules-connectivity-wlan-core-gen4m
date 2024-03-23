@@ -9320,7 +9320,7 @@ void wlanCfgSetCountryCode(struct ADAPTER *prAdapter)
 		       prAdapter->rWifiVar.u2CountryCode);
 
 		if (regd_is_single_sku_en()) {
-			rlmDomainOidSetCountry(prAdapter, aucValue, 2);
+			rlmDomainOidSetCountry(prAdapter, aucValue, 2, 1);
 			return;
 		}
 

@@ -699,6 +699,12 @@ struct COUNTRY_STRING_ENTRY {
 	uint8_t aucEnvironmentCode[2];
 };
 
+struct COUNTRY_CODE_SETTING {
+	uint8_t aucCountryCode[4];
+	uint8_t ucCountryLength;
+	uint8_t fgNeedHoldRtnlLock;
+};
+
 /* Power management related definition and enumerations */
 #define UAPSD_NONE	0
 #define UAPSD_AC0	(BIT(0) | BIT(4))

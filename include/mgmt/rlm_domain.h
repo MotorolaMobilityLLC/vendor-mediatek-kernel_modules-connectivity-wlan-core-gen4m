@@ -1401,7 +1401,7 @@ enum ENUM_CHNL_EXT rlmSelectSecondaryChannelType(
 	struct ADAPTER *prAdapter, enum ENUM_BAND band,
 	u8 primary_ch);
 void rlmDomainOidSetCountry(struct ADAPTER *prAdapter,
-			    char *country, u8 size_of_country);
+	char *country, uint8_t size_of_country, uint8_t fgNeedHoldRtnlLock);
 u32 rlmDomainGetCountryCode(void);
 void rlmDomainAssert(u_int8_t cond);
 void rlmDomainU32ToAlpha(uint32_t u4CountryCode, char *pcAlpha);
@@ -1411,12 +1411,13 @@ uint8_t rlmDomainCountryCodeUpdateSanity(
 	struct ADAPTER **prAdapter);
 
 void rlmDomainCountryCodeUpdate(struct ADAPTER *prAdapter,
-		uint32_t u4CountryCode);
-void rlmDomainSetCountry(struct ADAPTER *prAdapter);
+		uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock);
+void rlmDomainSetCountry(struct ADAPTER *prAdapter,
+	uint8_t fgNeedHoldRtnlLock);
 
 uint32_t
 rlmDomainUpdateRegdomainFromaLocalDataBaseByCountryCode(
-	uint32_t u4CountryCode);
+	uint32_t u4CountryCode, uint8_t fgNeedHoldRtnlLock);
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */
