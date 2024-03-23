@@ -1720,6 +1720,9 @@ void mt6653_dumpPcieReg(void)
 		0x7403109C, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x7403109C] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
+		0x740310A8, &u4Value);
+	DBGLOG(HAL, INFO, "CR[0x740310A8] value[0x%08x]\n", u4Value);
+	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
 		0x740310E0, &u4Value);
 	DBGLOG(HAL, INFO, "CR[0x740310E0] value[0x%08x]\n", u4Value);
 	connv3_hif_dbg_read(CONNV3_DRV_TYPE_WIFI, CONNV3_DRV_TYPE_BT,
