@@ -32,6 +32,9 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 
 void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter);
 
+void ccmRemoveBssPendingEntry(struct ADAPTER *prAdapter,
+			      struct BSS_INFO *prBssInfo);
+
 #else
 static inline void ccmInit(struct ADAPTER *prAdapter) {}
 

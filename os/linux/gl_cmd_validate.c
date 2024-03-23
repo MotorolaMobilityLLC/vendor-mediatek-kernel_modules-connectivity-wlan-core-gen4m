@@ -792,7 +792,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.pcCmdStr  = CMD_DUMP_TS,
 		.pfHandler = priv_driver_tspec_operation,
 		.argPolicy = VERIFY_MIN_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
