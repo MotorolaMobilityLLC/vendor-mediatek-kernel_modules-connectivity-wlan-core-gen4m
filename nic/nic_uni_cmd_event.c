@@ -12066,6 +12066,39 @@ void nicUniEventStaRec(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			// TODO: uni cmd
 		}
 			break;
+
+		case UNI_EVENT_STAREC_TAG_MLO_LINK_STATE: {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+			struct UNI_EVENT_STAREC_MLO_LINK_STATE *state =
+			    (struct UNI_EVENT_STAREC_MLO_LINK_STATE *)tag;
+			struct STA_RECORD *prStaRec;
+			struct MLD_STA_RECORD *prMldStaRec;
+
+			DBGLOG(ML, INFO,
+				"widx=%d state=%d reason=%d\n",
+				common->u2WlanIdx, state->ucLinkState,
+				state->ucReason);
+
+			prStaRec = cnmGetStaRecByWlanIndex(ad,
+				common->u2WlanIdx);
+			prMldStaRec = mldStarecGetByStarec(ad, prStaRec);
+			if (prStaRec && prMldStaRec) {
+				if (state->ucLinkState == MLO_LINK_STATE_ACTIVE)
+					prMldStaRec->u4ActiveStaBitmap |=
+						BIT(prStaRec->ucIndex);
+				else
+					prMldStaRec->u4ActiveStaBitmap &=
+						~BIT(prStaRec->ucIndex);
+				DBGLOG(ML, INFO,
+					"bss=%d sta=%d widx=%d ActiveStaBitmap=0x%x\n",
+					prStaRec->ucBssIndex, prStaRec->ucIndex,
+					prStaRec->ucWlanIndex,
+					prMldStaRec->u4ActiveStaBitmap);
+			}
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+		}
+			break;
+
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)

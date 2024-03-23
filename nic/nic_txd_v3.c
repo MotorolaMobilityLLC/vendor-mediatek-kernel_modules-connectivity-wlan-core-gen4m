@@ -349,6 +349,10 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+	if (prMldSta && prMldSta->fgIsSbMlsr)
+		prMldSta = NULL;
+#endif /* CFG_SINGLE_BAND_MLSR_56*/
 #endif
 
 	u4TxDescAndPaddingLength = u4TxDescLength + NIC_TX_DESC_PADDING_LENGTH;

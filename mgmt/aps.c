@@ -1712,9 +1712,8 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	return FALSE;
 }
 
-#if (CFG_MLO_LINK_PLAN_MODE == 0)
 /* 2+5/6 */
-uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
+uint8_t apsLinkPlanDecisionDualBand(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
 	uint8_t ucBssIndex)
 {
@@ -1736,9 +1735,9 @@ uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 	return FALSE;
 }
-#else /* CFG_MLO_LINK_PLAN_MODE */
+
 /* 2+5+6 */
-uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
+uint8_t apsLinkPlanDecisionTriBand(struct ADAPTER *prAdapter,
 	struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
 	uint8_t ucBssIndex)
 {
@@ -1760,7 +1759,6 @@ uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
 
 	return FALSE;
 }
-#endif /* CFG_MLO_LINK_PLAN_MODE */
 
 struct BSS_DESC *apsIntraUpdateCandi(struct ADAPTER *ad,
 	struct AP_COLLECTION *ap, enum ENUM_BAND eBand, uint16_t min_score,
@@ -1871,10 +1869,12 @@ void apsUpdateTotalScore(struct ADAPTER *ad,
 	uint32_t total_score = 0;
 	uint32_t total_tput = 0;
 	uint8_t i;
+	uint8_t ucRfBandBmap = 0;
 
 	for (i = 0; i < link_num; i++) {
 		total_score += links[i]->u2Score;
 		total_tput += links[i]->u4Tput;
+		ucRfBandBmap |= BIT(links[i]->eBand);
 	}
 
 	if (total_score > ap->u4TotalScore) {
@@ -1882,8 +1882,17 @@ void apsUpdateTotalScore(struct ADAPTER *ad,
 		ap->ucLinkNum = link_num;
 		ap->u4TotalScore = total_score;
 		ap->u4TotalTput = total_tput;
-		ap->eMloMode = MLO_MODE_STR;
-		ap->ucMaxSimuLinks = link_num - 1;
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+		if (mldNeedSingleBandMlsr56(ad) &&
+		    ucRfBandBmap == (BIT(BAND_5G) | BIT(BAND_6G))) {
+			ap->eMloMode = MLO_MODE_SB_MLSR;
+			ap->ucMaxSimuLinks = 0;
+		} else
+#endif
+		{
+			ap->eMloMode = MLO_MODE_STR;
+			ap->ucMaxSimuLinks = link_num - 1;
+		}
 	}
 }
 
@@ -2010,12 +2019,25 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				bss->fgPicked = FALSE;
 		}
 
-		if (prChipInfo->apsLinkPlanDecision)
-			allow = prChipInfo->apsLinkPlanDecision(ad, ap,
-				link_plan, bidx);
-		else
-			allow = apsLinkPlanDecision(ad, ap,
-				link_plan, bidx);
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+		if (mldNeedSingleBandMlsr56(ad)) {
+			allow = apsLinkPlanDecisionTriBand(ad, ap,
+					link_plan, bidx);
+		} else
+#endif
+		{
+			if (prChipInfo->apsLinkPlanDecision)
+				allow = prChipInfo->apsLinkPlanDecision(ad, ap,
+					link_plan, bidx);
+			else
+#if (CFG_MLO_LINK_PLAN_MODE == 0)
+				allow = apsLinkPlanDecisionDualBand(ad, ap,
+					link_plan, bidx);
+#else
+				allow = apsLinkPlanDecisionTriBand(ad, ap,
+					link_plan, bidx);
+#endif
+		}
 
 		/* skip if not found matched mlo mode */
 		if (!allow)
@@ -2065,12 +2087,19 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 
 		link_num = apsSortCandiByScore(ad, candi);
 
-		if (prChipInfo->apsUpdateTotalScore)
-			prChipInfo->apsUpdateTotalScore(ad,
-				candi, link_num, ap, bidx);
-		else
-			apsUpdateTotalScore(ad,
-				candi, link_num, ap, bidx);
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+		if (mldNeedSingleBandMlsr56(ad)) {
+			apsUpdateTotalScore(ad, candi, link_num, ap, bidx);
+		} else
+#endif
+		{
+			if (prChipInfo->apsUpdateTotalScore)
+				prChipInfo->apsUpdateTotalScore(ad,
+					candi, link_num, ap, bidx);
+			else
+				apsUpdateTotalScore(ad,
+					candi, link_num, ap, bidx);
+		}
 	}
 }
 
@@ -2460,6 +2489,7 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 			continue;
 
 		set->aprBssDesc[set->ucLinkNum++] = ap->aprTarget[i];
+		set->ucRfBandBmap |= BIT(ap->aprTarget[i]->eBand);
 	}
 
 	if (policy == CONNECT_BY_BSSID)
@@ -2484,6 +2514,11 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
 			found = "bad_main_link";
+		} else if (IS_FEATURE_ENABLED(ad->rWifiVar.ucStaPreferMldAddr)
+			   && EQUAL_MAC_ADDR(bss->aucBSSID, ap->aucAddr)) {
+			set->aprBssDesc[i] = set->aprBssDesc[0];
+			set->aprBssDesc[0] = bss;
+			found = "mld_addr";
 		} else if (bss->rMlInfo.ucLinkIndex ==
 			   ad->rWifiVar.ucStaMldMainLinkIdx) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];

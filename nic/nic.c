@@ -3128,6 +3128,9 @@ uint32_t nicPmIndicateBssAbort(struct ADAPTER *prAdapter,
 
 	rCmdIndicatePmBssAbort.ucBssIndex = ucBssIndex;
 
+	DBGLOG(INIT, INFO, "Bss%d aborted\n",
+		rCmdIndicatePmBssAbort.ucBssIndex);
+
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_INDICATE_PM_BSS_ABORT,
 				   TRUE,

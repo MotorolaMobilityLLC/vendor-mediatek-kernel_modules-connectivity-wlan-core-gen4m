@@ -631,6 +631,9 @@ struct MLD_BSS_INFO {
 	uint8_t aucOwnMldAddr[MAC_ADDR_LEN];
 	uint8_t ucBssBitmap;
 	uint8_t ucHwBandBitmap; /* BIT(i), i = prBssInfo->eBandIdx */
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+	uint8_t fgIsSbMlsr; /* single band MLSR 5+6 */
+#endif /* CFG_SINGLE_BAND_MLSR_56 */
 	uint8_t ucMaxSimuLinks;
 	uint8_t ucEmlEnabled;
 	uint16_t u2EMLCap;
@@ -896,6 +899,7 @@ struct WIFI_VAR {
 	uint8_t ucApMldLinkMax;
 	uint8_t ucP2pMldLinkMax;
 	uint8_t ucStaMldMainLinkIdx;
+	uint8_t ucStaPreferMldAddr;
 	uint8_t ucEmlsrLinkWeight;
 	uint8_t ucEnableMlo;
 	u_int8_t fgMldSyncLinkAddr;

@@ -273,11 +273,16 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 	uint8_t fgValidLinkSet = FALSE;
 	uint8_t fgSwitchTimeChanged = FALSE;
 	uint32_t u4Margin = prAdapter->rWifiVar.u4T2LMMarginMs;
+	uint8_t ucDisabledNum = 0;
 	int i;
 
 	if (prAdapter->rWifiVar.ucT2LMNegotiationSupport == T2LM_NO_SUPPORT) {
 		DBGLOG(ML, WARN,
 			"Parse T2LM IE Fail, NegotiationSupport set to 0\n");
+		return;
+	} else if (prStaRec->ucStaState != STA_STATE_3) {
+		DBGLOG(ML, ERROR,
+			"Parse T2LM IE Fail, prStaRec is not in state 3\n");
 		return;
 	}
 
@@ -460,12 +465,26 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 			break;
 		}
 
+		if (!ucDLTidBitmap && !ucULTidBitmap)
+			ucDisabledNum++;
+
 		pos = tid_profile_pos;
 	}
 
 	if (!fgValidLinkSet) {
 		DBGLOG(ML, WARN,
 			"Link set is invalid, no Tids are mapped to link\n");
+		return;
+	}
+
+	/* all links are disabled, must leave current mld */
+	if (ucDisabledNum == prStarecList->u4NumElem) {
+		DBGLOG(ML, INFO,
+			"Bss%d trigger BTO, mldstarec[" MACSTR
+			"] all links disabled\n",
+			prStaRec->ucBssIndex,
+			MAC2STR(prMldStaRec->aucPeerMldAddr));
+		aisBssBeaconTimeout(prAdapter, prStaRec->ucBssIndex);
 		return;
 	}
 

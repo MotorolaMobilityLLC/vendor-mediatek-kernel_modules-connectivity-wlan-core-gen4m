@@ -4483,7 +4483,6 @@ static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	uint32_t u4TotalTput = 0;
 	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
 	uint8_t ucEmlsrLinkWeight = prAdapter->rWifiVar.ucEmlsrLinkWeight;
-
 	uint8_t i;
 	uint8_t ucRfBandBmap = 0;
 	enum ENUM_MLO_MODE eMloMode;
@@ -4519,7 +4518,7 @@ static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 				u4TotalScore = best_bss->u2Score;
 				u4TotalTput = best_bss->u4Tput;
 				ucMaxSimuLinks = 0;
-				eMloMode = MLO_MODE_LEGACY;
+				eMloMode = MLO_MODE_SLSR;
 				ucLinkNum = 1;
 			}
 		}

@@ -4247,10 +4247,7 @@ uint8_t getPrimaryWlanIdx(struct ADAPTER *prAdapter,
 		uint8_t ucTid, uint8_t ucWlanIdx)
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (likely((ucTid & 0x1) == 0))
-		return ucWlanIdx;
-	else
-		return mldGetPrimaryWlanIdx(prAdapter, ucWlanIdx);
+	return mldGetPrimaryWlanIdx(prAdapter, ucWlanIdx);
 #else
 	return ucWlanIdx;
 #endif

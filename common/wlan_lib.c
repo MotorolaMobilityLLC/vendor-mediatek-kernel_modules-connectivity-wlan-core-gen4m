@@ -7363,6 +7363,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->ucStaMldMainLinkIdx,
 		"StaMldMainLinkIdx", MLD_LINK_ID_NONE, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucStaPreferMldAddr,
+		"StaPreferMldAddr", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucEmlsrLinkWeight,
 		"EmlsrLinkWeight", 50, FEATURE_TO_CUSTOMER);
 	INIT_STR(prWifiVar->aucMloP2pPreferFreq,

@@ -4508,7 +4508,7 @@ void cnmDbdcPreConnectionEnableDecision(
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	if (mldHasMLSRMLOBss(prAdapter) &&
 		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
-		== MLO_MODE_LEGACY) {
+		== MLO_MODE_SLSR) {
 		log_dbg(CNM, INFO,
 			"[DBDC] MLSR 1st connected,Legacy Bss will connect now\n");
 		mldMLSRDecisionLinkRemain(prAdapter, prDbdcDecisionInfo);
@@ -6998,48 +6998,4 @@ void cnmPeerGcCsaHandler(struct ADAPTER *prAdapter,
 }
 
 #endif /* CFG_ENABLE_WIFI_DIRECT */
-
-#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-/* Req CH Type:
- * single link/STR MLO: CH_REQ_TYPE_JOIN
- * EMLSR:CH_REQ_TYPE_MLO_MLSR_AG_JOIN
- * or CH_REQ_TYPE_MLO_MLSR_AA_JOIN
- */
-enum ENUM_CH_REQ_TYPE cnmCheckMLSRReqCHType(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssinfo)
-{
-	struct BSS_DESC *prBssDesc = NULL;
-	uint8_t ucBssIndex = 0xff;
-	uint8_t ucHas2GBand = FALSE;
-	struct MLD_BSS_INFO *mld_bssinfo = NULL;
-
-	mld_bssinfo = mldBssGetByBss(prAdapter, prBssinfo);
-
-	if (!mld_bssinfo) {
-		DBGLOG(ML, INFO, "mld_bssinfo is NULL\n");
-		return CH_REQ_TYPE_JOIN;
-	}
-
-	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) ||
-	    (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
-	     mld_bssinfo->ucMaxSimuLinks >= 1))
-		return CH_REQ_TYPE_JOIN;
-
-	for (ucBssIndex = 0;
-		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
-		if (mld_bssinfo->ucBssBitmap & BIT(ucBssIndex)) {
-			prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIndex);
-			if (prBssDesc && prBssDesc->eBand == BAND_2G4)
-				ucHas2GBand = TRUE;
-		}
-	}
-	DBGLOG(ML, INFO, "MLSR case, ucHas2GBand = %d\n", ucHas2GBand);
-
-	if (ucHas2GBand)
-		return CH_REQ_TYPE_MLO_MLSR_AG_JOIN;
-	else
-		return CH_REQ_TYPE_MLO_MLSR_AA_JOIN;
-
-}
-#endif
 
