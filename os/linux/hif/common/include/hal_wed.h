@@ -497,6 +497,7 @@ bool wedRxBufferSwap(struct GLUE_INFO *prGlueInfo, uint32_t u4tokeID,
 	struct RTMP_DMABUF *prDmaBuf, struct SW_RFB *prSwRfb);
 bool wedRxSkbGen(struct GLUE_INFO *prGlueInfo,
 	struct WED_DMABUF *prWedDmaBuf, void **prPacket);
+void wedUpdateIntMask(uint32_t mask);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

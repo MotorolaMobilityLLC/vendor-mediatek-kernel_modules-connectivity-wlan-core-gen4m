@@ -1972,6 +1972,8 @@ static void mt6639ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_WED_PROXY
 	if (!enable)
 		u4WrVal = 0;
+
+	wedUpdateIntMask(u4WrVal);
 #endif
 
 	HAL_MCR_WR(prGlueInfo->prAdapter, u4Addr, u4WrVal);
