@@ -17159,7 +17159,7 @@ static void __kalPerCpuTxRun(struct GLUE_INFO *pr)
 
 	spin_lock_irqsave(&prTxDirectSkbQ->lock, flag);
 	/* join rSkbQ into prTxDirectSkbQ and reinit rSkbQ */
-	skb_queue_splice_init(&prInfo->rSkbQ, prTxDirectSkbQ);
+	skb_queue_splice_tail_init(&prInfo->rSkbQ, prTxDirectSkbQ);
 	spin_unlock_irqrestore(&prTxDirectSkbQ->lock, flag);
 	put_cpu_ptr(prPerCpuTxInfo->prInfo);
 
