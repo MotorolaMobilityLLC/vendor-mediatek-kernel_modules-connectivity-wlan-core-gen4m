@@ -1329,6 +1329,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter);
 void halStartTxDelayTimer(struct ADAPTER *prAdapter);
 #endif
 
+u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx);
 void halCheckWfdmaHang(struct ADAPTER *prAdapter);
 
 /* Debug functions */

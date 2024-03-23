@@ -3137,7 +3137,7 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct pcie_msi_info *prMsiInfo = &prBusInfo->pcie_msi_info;
-	uint32_t u4Val = 0, u4Cnt = 0;
+	uint32_t u4Val = 0, u4Cnt = 0, u4RxCnt, i;
 #if (WFDMA_AP_MSI_NUM == 1)
 	uint32_t u4IntMask = BIT(0);
 #else
@@ -3162,6 +3162,17 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
 
 	u4Cnt = halGetWfdmaRxCnt(prAdapter);
 	if (u4Cnt < prWifiVar->u4RecoveryMsiRxCnt)
+		return;
+
+	for (i = 0; i < NUM_OF_RX_RING; i++) {
+		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prAdapter->prGlueInfo, i);
+		if (u4RxCnt == 0)
+			continue;
+
+		if (halIsWfdmaRxCidxChanged(prAdapter, i))
+			fgRet = TRUE;
+	}
+	if (fgRet)
 		return;
 
 	/* read PCIe EP MSI status */
