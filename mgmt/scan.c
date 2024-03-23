@@ -21,8 +21,6 @@
  */
 #define REPLICATED_BEACON_STRENGTH_THRESHOLD    (32)
 #define ROAMING_NO_SWING_RCPI_STEP              (10)
-#define REPLICATED_BEACON_FRESH_PERIOD          (10000)
-#define REPLICATED_BEACON_TIME_THRESHOLD        (3000)
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -1844,12 +1842,8 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 	if (ucRnrChNum == 0)
 		return FALSE;
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	if (eRfBand == BAND_6G &&
-		!rlmDomainIsLegalChannel(prAdapter, eRfBand, ucRnrChNum)) {
+	if (!rlmDomainIsLegalChannel(prAdapter, eRfBand, ucRnrChNum))
 		return FALSE;
-	}
-#endif
 
 	/* Check RNR scan channel is in current scan list or not,
 	 * if RNR scan channel is 2.4G or 5G, ignore it. 6G needs
@@ -2879,35 +2873,6 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 #endif
 		if (prBssDesc->eBSSType != eBSSType) {
 			prBssDesc->eBSSType = eBSSType;
-		} else if (ucChnlNum !=
-			prBssDesc->ucChannelNum
-			&& prBssDesc->ucRCPI
-			> nicRxGetRcpiValueFromRxv(
-				prAdapter, RCPI_MODE_MAX, prSwRfb)) {
-			uint8_t ucRcpi = 0;
-
-			/* for signal strength is too much weaker and
-			 * previous beacon is not stale
-			 */
-			ASSERT(prSwRfb->prRxStatusGroup3);
-			ucRcpi = nicRxGetRcpiValueFromRxv(prAdapter,
-				RCPI_MODE_MAX,
-				prSwRfb);
-			if ((prBssDesc->ucRCPI - ucRcpi)
-			    >= REPLICATED_BEACON_STRENGTH_THRESHOLD
-			    && rCurrentTime - prBssDesc->rUpdateTime
-			    <= REPLICATED_BEACON_FRESH_PERIOD) {
-				log_dbg(SCN, TRACE, "rssi(%u) is too much weaker and previous one(%u) is fresh\n",
-					ucRcpi, prBssDesc->ucRCPI);
-				return prBssDesc;
-			}
-			/* for received beacons too close in time domain */
-			else if (rCurrentTime - prBssDesc->rUpdateTime
-				<= REPLICATED_BEACON_TIME_THRESHOLD) {
-				log_dbg(SCN, TRACE, "receive beacon/probe responses too soon(%u:%u)\n",
-					prBssDesc->rUpdateTime, rCurrentTime);
-				return prBssDesc;
-			}
 		}
 
 		/* if Timestamp has been reset, re-generate BSS
