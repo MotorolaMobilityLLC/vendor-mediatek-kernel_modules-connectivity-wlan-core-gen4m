@@ -1531,7 +1531,7 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 			    && eRfBand != BAND_6G
 #endif
 			) {
-				log_dbg(SCN, INFO,
+				log_dbg(SCN, TRACE,
 					"[ch:%d][band:%d] already in scan chnl list\n",
 						ucRnrChNum, eRfBand);
 				return FALSE;
@@ -1572,7 +1572,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 
 	if (prScanInfo->eCurrentState != SCAN_STATE_SCANNING
 		|| !prScanInfo->rScanParam.fgOobRnrParseEn) {
-		DBGLOG(SCN, INFO, "Skip oob scan Rnr parsing\n");
+		DBGLOG(SCN, TRACE, "Skip oob scan Rnr parsing\n");
 		return;
 	}
 
