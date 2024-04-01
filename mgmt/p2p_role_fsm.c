@@ -5539,11 +5539,8 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 	struct P2P_ACS_REQ_INFO *prAcsReqInfo;
 	struct BSS_INFO *prPreferBssInfo =  NULL;
 	uint32_t u4MsgSize = 0;
-	uint32_t *pau4FreqList = NULL;
-	uint8_t ucFreqListLen = 0;
-	uint8_t i, j;
+	uint8_t i;
 	struct RF_CHANNEL_INFO *arChnlListTemp = NULL;
-	struct RF_CHANNEL_INFO *parChnlListInput = NULL;
 	struct BSS_INFO *aliveNonSapBss[MAX_BSSID_NUM] = { 0 };
 	uint8_t ucNumAliveNonSapBss;
 	struct RF_CHANNEL_INFO *prRfChannelInfo;
@@ -5590,57 +5587,17 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	pau4FreqList = kalMemAlloc(
-		sizeof(uint32_t) * prMsgAcsRequest->u4NumChannel,
-		VIR_MEM_TYPE);
-
 	arChnlListTemp = kalMemAlloc(
 		sizeof(struct RF_CHANNEL_INFO) *
 			prMsgAcsRequest->u4NumChannel,
 		VIR_MEM_TYPE);
 
-	if (pau4FreqList == NULL ||
-		arChnlListTemp == NULL) {
+	if (arChnlListTemp == NULL) {
 		DBGLOG(REQ, ERROR, "allocate FreqList fail.\n");
 		goto exit;
 	}
 
-	if (p2pIsBssInScanScope(prAdapter,
-		prMsgAcsRequest,
-		ucNumAliveNonSapBss,
-		aliveNonSapBss)) {
-		ucFreqListLen =
-			p2pFuncGetAllAcsFreqList(prAdapter,
-				&prMsgAcsRequest->u4NumChannel,
-				&prMsgAcsRequest->arChannelListInfo[0],
-				pau4FreqList);
 
-		if (ucFreqListLen == 0) {
-			DBGLOG(REQ, INFO, "no scan candidate\n");
-			goto scan_start;
-		}
-
-		parChnlListInput =
-			&(prMsgAcsRequest->arChannelListInfo[0]);
-
-		for (i = 0; i < ucFreqListLen; i++) {
-			for (j = 0; j < prMsgAcsRequest->u4NumChannel; j++) {
-				if (nicFreq2ChannelNum(
-					pau4FreqList[i] * 1000) ==
-					parChnlListInput[j].ucChannelNum) {
-					arChnlListTemp[i] =
-						prMsgAcsRequest
-							->arChannelListInfo[j];
-				}
-			}
-		}
-
-		kalMemCopy(&prMsgAcsRequest->arChannelListInfo[0],
-			arChnlListTemp,
-			ucFreqListLen * sizeof(struct RF_CHANNEL_INFO));
-		prMsgAcsRequest->u4NumChannel = ucFreqListLen;
-	}
-scan_start:
 	initAcsParams(prAdapter, prMsgAcsRequest, prAcsReqInfo);
 
 	if (prAdapter->rWifiVar.eDbdcMode == ENUM_DBDC_MODE_DISABLED) {
@@ -5815,9 +5772,6 @@ scan_start:
 exit:
 	if (prMsgHdr)
 		cnmMemFree(prAdapter, prMsgHdr);
-	if (pau4FreqList)
-		kalMemFree(pau4FreqList, VIR_MEM_TYPE,
-			sizeof(uint32_t) * prMsgAcsRequest->u4NumChannel);
 	if (arChnlListTemp)
 		kalMemFree(arChnlListTemp, VIR_MEM_TYPE,
 				sizeof(struct RF_CHANNEL_INFO) *
