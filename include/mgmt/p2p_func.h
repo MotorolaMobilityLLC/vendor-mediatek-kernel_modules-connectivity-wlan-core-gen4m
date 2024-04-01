@@ -621,7 +621,7 @@ uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 		enum ENUM_IFTYPE eIftype, uint32_t *pau4FreqList,
 		uint32_t *pu4FreqListNum, uint32_t *pau4FreqAllowList,
-		uint8_t ucAllowFreqNum);
+		uint8_t ucAllowFreqNum, u_int8_t fgIsSkipDfs);
 
 enum ENUM_P2P_CONNECT_STATE
 p2pFuncGetP2pActionFrameType(struct MSDU_INFO *prMgmtMsdu);

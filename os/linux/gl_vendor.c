@@ -3665,7 +3665,7 @@ int mtk_cfg80211_vendor_get_preferred_freq_list(struct wiphy
 					       au4FreqAllowList);
 	rStatus = p2pFunGetPreferredFreqList(prGlueInfo->prAdapter, eIftype,
 			freq_list, &num_freq_list, au4FreqAllowList,
-			ucAllowFreqNum);
+			ucAllowFreqNum, TRUE);
 	if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, ERROR, "get preferred freq list failed.\n");
 		return -EINVAL;

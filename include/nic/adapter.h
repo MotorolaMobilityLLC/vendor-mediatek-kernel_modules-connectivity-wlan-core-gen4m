@@ -2969,7 +2969,11 @@ struct ADAPTER {
 	u_int32_t u4PwrLmtLockCounter;
 #endif
 
+#if CFG_SUPPORT_CCM
 	struct LINK rCcmCheckCsList;
+	u_int8_t fgIsCcmPending;
+	struct TIMER rCcmPendingTimer;
+#endif
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	uint8_t ucNeedWaitFWMlsrSWDone;
