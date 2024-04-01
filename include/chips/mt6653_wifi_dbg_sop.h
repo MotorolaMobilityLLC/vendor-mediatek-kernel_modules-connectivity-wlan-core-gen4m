@@ -3,7 +3,7 @@
  * Copyright (c) 2023 MediaTek Inc.
  */
 
-#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20240220"
+#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20240327"
 
 const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -12,6 +12,8 @@ const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	{FALSE, 0, 0, 0, TRUE, 0x70025008},
 	{FALSE, 0, 0, 0, TRUE, 0x7002500c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025010},
+	{FALSE, 0, 0, 0, TRUE, 0x70025090},
+	{FALSE, 0, 0, 0, TRUE, 0x70025094},
 	{FALSE, 0, 0, 0, TRUE, 0x70025014},
 	{FALSE, 0, 0, 0, TRUE, 0x70025018},
 	{FALSE, 0, 0, 0, TRUE, 0x7002501c},
@@ -20,25 +22,15 @@ const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	{FALSE, 0, 0, 0, TRUE, 0x70025028},
 	{FALSE, 0, 0, 0, TRUE, 0x7002502c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025030},
-	{FALSE, 0, 0, 0, TRUE, 0x70025034},
-	{FALSE, 0, 0, 0, TRUE, 0x70025038},
-	{FALSE, 0, 0, 0, TRUE, 0x7002503c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025040},
 	{FALSE, 0, 0, 0, TRUE, 0x70025044},
-	{FALSE, 0, 0, 0, TRUE, 0x70025048},
-	{FALSE, 0, 0, 0, TRUE, 0x7002504c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025050},
 	{FALSE, 0, 0, 0, TRUE, 0x70025054},
-	{FALSE, 0, 0, 0, TRUE, 0x70025058},
 	{FALSE, 0, 0, 0, TRUE, 0x7002505c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025060},
 	{FALSE, 0, 0, 0, TRUE, 0x70025064},
-	{FALSE, 0, 0, 0, TRUE, 0x70025068},
-	{FALSE, 0, 0, 0, TRUE, 0x7002506c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025070},
 	{FALSE, 0, 0, 0, TRUE, 0x70025074},
-	{FALSE, 0, 0, 0, TRUE, 0x70025078},
-	{FALSE, 0, 0, 0, TRUE, 0x7002507c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025080},
 	{FALSE, 0, 0, 0, TRUE, 0x70025084},
 	{FALSE, 0, 0, 0, TRUE, 0x700250f0},
@@ -49,18 +41,31 @@ const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	{FALSE, 0, 0, 0, TRUE, 0x70025110},
 	{FALSE, 0, 0, 0, TRUE, 0x70025114},
 	{FALSE, 0, 0, 0, TRUE, 0x70025118},
-	{FALSE, 0, 0, 0, TRUE, 0x7002511c},
+	{FALSE, 0, 0, 0, TRUE, 0x70025160},
+	{FALSE, 0, 0, 0, TRUE, 0x70025164},
+	{FALSE, 0, 0, 0, TRUE, 0x70025168},
 	{FALSE, 0, 0, 0, TRUE, 0x70025120},
 	{FALSE, 0, 0, 0, TRUE, 0x70025130},
 	{FALSE, 0, 0, 0, TRUE, 0x70025140},
 	{FALSE, 0, 0, 0, TRUE, 0x70025180},
+	{FALSE, 0, 0, 0, TRUE, 0x70025184},
+	{FALSE, 0, 0, 0, TRUE, 0x70025200},
 	{FALSE, 0, 0, 0, TRUE, 0x70025210},
+	{FALSE, 0, 0, 0, TRUE, 0x70025214},
 	{FALSE, 0, 0, 0, TRUE, 0x70025400},
 	{FALSE, 0, 0, 0, TRUE, 0x70025404},
 	{FALSE, 0, 0, 0, TRUE, 0x70025408},
 	{FALSE, 0, 0, 0, TRUE, 0x7002540c},
 	{FALSE, 0, 0, 0, TRUE, 0x70025410},
 	{FALSE, 0, 0, 0, TRUE, 0x70025414},
+	{FALSE, 0, 0, 0, TRUE, 0x70025418},
+	{FALSE, 0, 0, 0, TRUE, 0x70025500},
+	{FALSE, 0, 0, 0, TRUE, 0x70025504},
+	{FALSE, 0, 0, 0, TRUE, 0x70025600},
+	{FALSE, 0, 0, 0, TRUE, 0x70025800},
+	{FALSE, 0, 0, 0, TRUE, 0x70025900},
+	{FALSE, 0, 0, 0, TRUE, 0x70025904},
+	{FALSE, 0, 0, 0, TRUE, 0x70025910},
 	{TRUE, 0x70025300, 0, 0x10001, TRUE, 0x70025304},
 	{TRUE, 0x70025300, 0, 0x10203, TRUE, 0x70025304},
 	{TRUE, 0x70025300, 0, 0x10405, TRUE, 0x70025304},
@@ -74,18 +79,35 @@ const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	{TRUE, 0x70025300, 0, 0x11415, TRUE, 0x70025304},
 	{TRUE, 0x70025300, 0, 0x11617, TRUE, 0x70025304},
 	{TRUE, 0x70025300, 0, 0x11819, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11a1b, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11c1d, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x11e1f, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x12021, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x12223, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x12425, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x12627, TRUE, 0x70025304},
+	{TRUE, 0x70025300, 0, 0x12829, TRUE, 0x70025304},
 };
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_a = {
 	"PSOP_9_1_A", "SectionA - cb_infra vlp",
-	67, ARRAY_SIZE(mt6653_cb_infra_a), mt6653_cb_infra_a
+	80, ARRAY_SIZE(mt6653_cb_infra_a),
+	mt6653_cb_infra_a
 };
 
 const struct wlan_dbg_command mt6653_cb_infra_b[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x70028018},
 	{FALSE, 0, 0, 0, TRUE, 0x7002801c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028024},
 	{FALSE, 0, 0, 0, TRUE, 0x7002802c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028034},
+	{FALSE, 0, 0, 0, TRUE, 0x70028350},
 	{FALSE, 0, 0, 0, TRUE, 0x700283c0},
+	{FALSE, 0, 0, 0, TRUE, 0x70028400},
+	{FALSE, 0, 0, 0, TRUE, 0x70028408},
+	{FALSE, 0, 0, 0, TRUE, 0x70028410},
+	{FALSE, 0, 0, 0, TRUE, 0x70028420},
 	{FALSE, 0, 0, 0, TRUE, 0x70028424},
 	{FALSE, 0, 0, 0, TRUE, 0x70028428},
 	{FALSE, 0, 0, 0, TRUE, 0x7002842c},
@@ -94,28 +116,46 @@ const struct wlan_dbg_command mt6653_cb_infra_b[] = {
 	{FALSE, 0, 0, 0, TRUE, 0x70028438},
 	{FALSE, 0, 0, 0, TRUE, 0x7002843c},
 	{FALSE, 0, 0, 0, TRUE, 0x70028440},
-	{FALSE, 0, 0, 0, TRUE, 0x70028444},
 	{FALSE, 0, 0, 0, TRUE, 0x70028448},
 	{FALSE, 0, 0, 0, TRUE, 0x7002844c},
 	{FALSE, 0, 0, 0, TRUE, 0x70028458},
 	{FALSE, 0, 0, 0, TRUE, 0x7002845c},
 	{FALSE, 0, 0, 0, TRUE, 0x70028460},
 	{FALSE, 0, 0, 0, TRUE, 0x70028464},
+	{FALSE, 0, 0, 0, TRUE, 0x70028468},
+	{FALSE, 0, 0, 0, TRUE, 0x7002846c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028500},
+	{FALSE, 0, 0, 0, TRUE, 0x70028504},
+	{FALSE, 0, 0, 0, TRUE, 0x70028508},
+	{FALSE, 0, 0, 0, TRUE, 0x70028510},
+	{FALSE, 0, 0, 0, TRUE, 0x70028514},
+	{FALSE, 0, 0, 0, TRUE, 0x70028518},
 	{FALSE, 0, 0, 0, TRUE, 0x70028520},
 	{FALSE, 0, 0, 0, TRUE, 0x70028524},
 	{FALSE, 0, 0, 0, TRUE, 0x70028528},
-	{FALSE, 0, 0, 0, TRUE, 0x7002852c},
 	{FALSE, 0, 0, 0, TRUE, 0x70028530},
 	{FALSE, 0, 0, 0, TRUE, 0x70028534},
 	{FALSE, 0, 0, 0, TRUE, 0x70028538},
 	{FALSE, 0, 0, 0, TRUE, 0x70028540},
 	{FALSE, 0, 0, 0, TRUE, 0x70028544},
 	{FALSE, 0, 0, 0, TRUE, 0x70028548},
+	{FALSE, 0, 0, 0, TRUE, 0x70028550},
+	{FALSE, 0, 0, 0, TRUE, 0x70028554},
+	{FALSE, 0, 0, 0, TRUE, 0x70028600},
+	{FALSE, 0, 0, 0, TRUE, 0x70028604},
+	{FALSE, 0, 0, 0, TRUE, 0x70028610},
+	{FALSE, 0, 0, 0, TRUE, 0x70028614},
+	{FALSE, 0, 0, 0, TRUE, 0x70028620},
 	{FALSE, 0, 0, 0, TRUE, 0x70028730},
 	{FALSE, 0, 0, 0, TRUE, 0x70028734},
 	{FALSE, 0, 0, 0, TRUE, 0x70028738},
-	{FALSE, 0, 0, 0, TRUE, 0x7002873c},
 	{FALSE, 0, 0, 0, TRUE, 0x70028900},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a00},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a04},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a08},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a0c},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a20},
+	{FALSE, 0, 0, 0, TRUE, 0x70028a24},
 	{FALSE, 0, 0, 0, TRUE, 0x70028a60},
 	{FALSE, 0, 0, 0, TRUE, 0x70028a64},
 	{FALSE, 0, 0, 0, TRUE, 0x70028a68},
@@ -126,7 +166,8 @@ const struct wlan_dbg_command mt6653_cb_infra_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_b = {
 	"PSOP_9_1_B", "SectionB - cb_infra vcore on",
-	39, ARRAY_SIZE(mt6653_cb_infra_b), mt6653_cb_infra_b
+	65, ARRAY_SIZE(mt6653_cb_infra_b),
+	mt6653_cb_infra_b
 };
 
 const struct wlan_dbg_command mt6653_cb_infra_c[] = {
@@ -135,16 +176,23 @@ const struct wlan_dbg_command mt6653_cb_infra_c[] = {
 	{FALSE, 0, 0, 0, TRUE, 0x70026004},
 	{FALSE, 0, 0, 0, TRUE, 0x70026008},
 	{FALSE, 0, 0, 0, TRUE, 0x7002600c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026014},
+	{FALSE, 0, 0, 0, TRUE, 0x70026018},
+	{FALSE, 0, 0, 0, TRUE, 0x70026090},
+	{FALSE, 0, 0, 0, TRUE, 0x70026094},
 	{FALSE, 0, 0, 0, TRUE, 0x70026100},
 	{FALSE, 0, 0, 0, TRUE, 0x70026104},
-	{FALSE, 0, 0, 0, TRUE, 0x70026550},
+	{FALSE, 0, 0, 0, TRUE, 0x70026110},
 	{FALSE, 0, 0, 0, TRUE, 0x70026554},
 	{FALSE, 0, 0, 0, TRUE, 0x70026558},
 	{FALSE, 0, 0, 0, TRUE, 0x7002655c},
-	{FALSE, 0, 0, 0, TRUE, 0x70026a0c},
-	{FALSE, 0, 0, 0, TRUE, 0x70026a10},
-	{FALSE, 0, 0, 0, TRUE, 0x70026a14},
-	{FALSE, 0, 0, 0, TRUE, 0x70026a18},
+	{FALSE, 0, 0, 0, TRUE, 0x70026704},
+	{FALSE, 0, 0, 0, TRUE, 0x70026708},
+	{FALSE, 0, 0, 0, TRUE, 0x7002670c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a00},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a04},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a1c},
+	{FALSE, 0, 0, 0, TRUE, 0x70026a20},
 	{FALSE, 0, 0, 0, TRUE, 0x70026a50},
 	{FALSE, 0, 0, 0, TRUE, 0x70026a54},
 	{FALSE, 0, 0, 0, TRUE, 0x70026a58},
@@ -179,7 +227,8 @@ const struct wlan_dbg_command mt6653_cb_infra_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_c = {
 	"PSOP_9_1_C", "SectionC - cb_infra off, read check ok",
-	44, ARRAY_SIZE(mt6653_cb_infra_c), mt6653_cb_infra_c
+	51, ARRAY_SIZE(mt6653_cb_infra_c),
+	mt6653_cb_infra_c
 };
 
 const struct wlan_dbg_command mt6653_cb_infra_d[] = {
@@ -194,11 +243,103 @@ const struct wlan_dbg_command mt6653_cb_infra_d[] = {
 	{FALSE, 0, 0, 0, TRUE, 0x74031210},
 	{FALSE, 0, 0, 0, TRUE, 0x74030184},
 	{FALSE, 0, 0, 0, TRUE, 0x740331c0},
+	{FALSE, 0, 0, 0, TRUE, 0x74030018},
+	{FALSE, 0, 0, 0, TRUE, 0x74030028},
+	{FALSE, 0, 0, 0, TRUE, 0x740300c0},
+	{FALSE, 0, 0, 0, TRUE, 0x740300c8},
+	{FALSE, 0, 0, 0, TRUE, 0x74030194},
+	{FALSE, 0, 0, 0, TRUE, 0x74030198},
+	{FALSE, 0, 0, 0, TRUE, 0x7403019c},
+	{FALSE, 0, 0, 0, TRUE, 0x740301a4},
+	{FALSE, 0, 0, 0, TRUE, 0x740301a8},
+	{FALSE, 0, 0, 0, TRUE, 0x740301ac},
+	{FALSE, 0, 0, 0, TRUE, 0x740301d4},
+	{FALSE, 0, 0, 0, TRUE, 0x74030d38},
+	{FALSE, 0, 0, 0, TRUE, 0x74030d3c},
+	{FALSE, 0, 0, 0, TRUE, 0x74030d40},
+	{FALSE, 0, 0, 0, TRUE, 0x74030e00},
+	{FALSE, 0, 0, 0, TRUE, 0x74030e04},
+	{FALSE, 0, 0, 0, TRUE, 0x74030e08},
+	{FALSE, 0, 0, 0, TRUE, 0x74030e40},
+	{FALSE, 0, 0, 0, TRUE, 0x74030e44},
+	{FALSE, 0, 0, 0, TRUE, 0x74030e48},
+	{FALSE, 0, 0, 0, TRUE, 0x74031004},
+	{FALSE, 0, 0, 0, TRUE, 0x74031008},
+	{FALSE, 0, 0, 0, TRUE, 0x7403100c},
+	{FALSE, 0, 0, 0, TRUE, 0x74031010},
+	{FALSE, 0, 0, 0, TRUE, 0x74031014},
+	{FALSE, 0, 0, 0, TRUE, 0x74031018},
+	{FALSE, 0, 0, 0, TRUE, 0x7403101c},
+	{FALSE, 0, 0, 0, TRUE, 0x74031020},
+	{FALSE, 0, 0, 0, TRUE, 0x74031024},
+	{FALSE, 0, 0, 0, TRUE, 0x74031080},
+	{FALSE, 0, 0, 0, TRUE, 0x74031084},
+	{FALSE, 0, 0, 0, TRUE, 0x74031088},
+	{FALSE, 0, 0, 0, TRUE, 0x7403108c},
+	{FALSE, 0, 0, 0, TRUE, 0x74031090},
+	{FALSE, 0, 0, 0, TRUE, 0x74031094},
+	{FALSE, 0, 0, 0, TRUE, 0x74031098},
+	{FALSE, 0, 0, 0, TRUE, 0x740310a8},
+	{FALSE, 0, 0, 0, TRUE, 0x7403109c},
+	{FALSE, 0, 0, 0, TRUE, 0x740310e0},
+	{FALSE, 0, 0, 0, TRUE, 0x740310e4},
+	{FALSE, 0, 0, 0, TRUE, 0x740310e8},
+	{FALSE, 0, 0, 0, TRUE, 0x740310ec},
+	{FALSE, 0, 0, 0, TRUE, 0x740310f0},
+	{FALSE, 0, 0, 0, TRUE, 0x740310f4},
+	{FALSE, 0, 0, 0, TRUE, 0x74031108},
+	{FALSE, 0, 0, 0, TRUE, 0x74031110},
+	{FALSE, 0, 0, 0, TRUE, 0x74031114},
+	{FALSE, 0, 0, 0, TRUE, 0x74031118},
+	{FALSE, 0, 0, 0, TRUE, 0x7403111c},
+	{FALSE, 0, 0, 0, TRUE, 0x74031200},
+	{FALSE, 0, 0, 0, TRUE, 0x74031204},
+	{FALSE, 0, 0, 0, TRUE, 0x74031208},
+	{FALSE, 0, 0, 0, TRUE, 0x7403120c},
+	{FALSE, 0, 0, 0, TRUE, 0x74031210},
+	{FALSE, 0, 0, 0, TRUE, 0x74031214},
+	{FALSE, 0, 0, 0, TRUE, 0x74031218},
+	{FALSE, 0, 0, 0, TRUE, 0x7403121c},
+	{TRUE, 0x74030168, 0, 0xcccc0100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x45474849, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0xcccc0100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x4a4b4c4d, TRUE, 0x7403002c},
+	{FALSE, 0, 0, 0, TRUE, 0x7403002c},
+	{FALSE, 0, 0, 0, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0xa0b1516, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0xc0d0e0f, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x22220100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x4050607, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x22220100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x80818287, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x33330100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x10716, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x33330100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x51525455, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x33330100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x51525455, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x44440100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0xc9cacbcd, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x55550100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x8090a0b, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0xcccc0100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x4c4d4e4f, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x88880100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x47484a4d, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x4143494b, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x33330100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x10e1a, TRUE, 0x7403002c},
+	{FALSE, 0, 0, 0, TRUE, 0x7403002c},
+	{FALSE, 0, 0, 0, TRUE, 0x7403002c},
 };
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_d = {
 	"PSOP_9_1_D", "SectionD - pcie",
-	9, ARRAY_SIZE(mt6653_cb_infra_d), mt6653_cb_infra_d
+	85, ARRAY_SIZE(mt6653_cb_infra_d),
+	mt6653_cb_infra_d
 };
 
 const struct wlan_dbg_command mt6653_cb_infra_e[] = {
@@ -217,18 +358,15 @@ const struct wlan_dbg_command mt6653_cb_infra_e[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_e = {
 	"PSOP_9_1_E", "SectionE - cbtop CR",
-	10, ARRAY_SIZE(mt6653_cb_infra_e), mt6653_cb_infra_e
+	10, ARRAY_SIZE(mt6653_cb_infra_e),
+	mt6653_cb_infra_e
 };
 
 const struct wlan_dbg_command mt6653_cb_infra_g[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
 	{FALSE, 0, 0, 0, TRUE, 0x70070000},
-	{FALSE, 0, 0, 0, TRUE, 0x70070004},
-	{FALSE, 0, 0, 0, TRUE, 0x70070008},
 	{FALSE, 0, 0, 0, TRUE, 0x7007000c},
 	{FALSE, 0, 0, 0, TRUE, 0x70070010},
-	{FALSE, 0, 0, 0, TRUE, 0x70070400},
-	{FALSE, 0, 0, 0, TRUE, 0x70070404},
 	{FALSE, 0, 0, 0, TRUE, 0x70070408},
 	{FALSE, 0, 0, 0, TRUE, 0x7007040c},
 	{FALSE, 0, 0, 0, TRUE, 0x70070410},
@@ -241,7 +379,73 @@ const struct wlan_dbg_command mt6653_cb_infra_g[] = {
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_g = {
 	"PSOP_9_1_G", "SectionG - dma dbg_ctl",
-	15, ARRAY_SIZE(mt6653_cb_infra_g), mt6653_cb_infra_g
+	11, ARRAY_SIZE(mt6653_cb_infra_g),
+	mt6653_cb_infra_g
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_h[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x74130200},
+	{FALSE, 0, 0, 0, TRUE, 0x74130204},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_h = {
+	"PSOP_9_1_H", "SectionH - cb_infra_mbu",
+	2, ARRAY_SIZE(mt6653_cb_infra_h),
+	mt6653_cb_infra_h
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_i[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x75010010},
+	{FALSE, 0, 0, 0, TRUE, 0x75010014},
+	{FALSE, 0, 0, 0, TRUE, 0x7501001c},
+	{FALSE, 0, 0, 0, TRUE, 0x7501003c},
+	{FALSE, 0, 0, 0, TRUE, 0x7501004c},
+	{FALSE, 0, 0, 0, TRUE, 0x7501005c},
+	{FALSE, 0, 0, 0, TRUE, 0x75010060},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_i = {
+	"PSOP_9_1_I", "SectionI - cb_infra_bus (cb_infra_off_dma_bcrm)",
+	7, ARRAY_SIZE(mt6653_cb_infra_i),
+	mt6653_cb_infra_i
+};
+
+const struct wlan_dbg_command mt6653_cb_infra_j[] = {
+	/* write, w_addr, mask, value, read, r_addr*/
+	{FALSE, 0, 0, 0, TRUE, 0x740700b0},
+	{FALSE, 0, 0, 0, TRUE, 0x740700c0},
+	{TRUE, 0x74070000, 0, 0x101, FALSE, 0},
+	{TRUE, 0x74070008, 0, 0x80004, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x0, FALSE, 0},
+	{TRUE, 0x74070004, 0, 0x1d, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x0, FALSE, 0},
+	{TRUE, 0x74070008, 0, 0x10, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0x920091, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0x940093, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0x960095, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0xae00ad, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0xb500ad, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0xb700b6, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0xd300d2, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0xd500d4, TRUE, 0x740700d0},
+	{TRUE, 0x74070000, 0, 0x404, FALSE, 0},
+	{TRUE, 0x74070010, 0, 0xd700d6, TRUE, 0x740700d0},
+};
+
+const struct wlan_dump_list mt6653_dump_list_cb_infra_j = {
+	"PSOP_9_1_J", "SectionJ - pcie phy",
+	14, ARRAY_SIZE(mt6653_cb_infra_j),
+	mt6653_cb_infra_j
 };
 
 const struct wlan_dbg_command mt6653_wf_top_a[] = {
@@ -264,7 +468,8 @@ const struct wlan_dbg_command mt6653_wf_top_a[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_a = {
 	"PSOP_3_1_A", "SectionA - Dump wf_top_misc_on monflg",
-	13, ARRAY_SIZE(mt6653_wf_top_a), mt6653_wf_top_a
+	13, ARRAY_SIZE(mt6653_wf_top_a),
+	mt6653_wf_top_a
 };
 
 const struct wlan_dbg_command mt6653_wf_top_b[] = {
@@ -280,7 +485,8 @@ const struct wlan_dbg_command mt6653_wf_top_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_b = {
 	"PSOP_3_1_B", "SectionB - Dump wf_top_misc_von monflg",
-	6, ARRAY_SIZE(mt6653_wf_top_b), mt6653_wf_top_b
+	6, ARRAY_SIZE(mt6653_wf_top_b),
+	mt6653_wf_top_b
 };
 
 const struct wlan_dbg_command mt6653_wf_top_c[] = {
@@ -323,7 +529,8 @@ const struct wlan_dbg_command mt6653_wf_top_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_c = {
 	"PSOP_3_1_C", "SectionC - Dump wf_top_cfg_on debug CR",
-	34, ARRAY_SIZE(mt6653_wf_top_c), mt6653_wf_top_c
+	34, ARRAY_SIZE(mt6653_wf_top_c),
+	mt6653_wf_top_c
 };
 
 const struct wlan_dbg_command mt6653_wf_top_d[] = {
@@ -364,7 +571,8 @@ const struct wlan_dbg_command mt6653_wf_top_d[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_d = {
 	"PSOP_3_1_D", "SectionD - Dump wf_top_rgu_on debug CR",
-	32, ARRAY_SIZE(mt6653_wf_top_d), mt6653_wf_top_d
+	32, ARRAY_SIZE(mt6653_wf_top_d),
+	mt6653_wf_top_d
 };
 
 const struct wlan_dbg_command mt6653_wf_top_e[] = {
@@ -390,7 +598,8 @@ const struct wlan_dbg_command mt6653_wf_top_e[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_e = {
 	"PSOP_3_1_E", "SectionE - Dump wf_top_rgu_von monflg",
-	16, ARRAY_SIZE(mt6653_wf_top_e), mt6653_wf_top_e
+	16, ARRAY_SIZE(mt6653_wf_top_e),
+	mt6653_wf_top_e
 };
 
 const struct wlan_dbg_command mt6653_wf_bus_a[] = {
@@ -419,7 +628,8 @@ const struct wlan_dbg_command mt6653_wf_bus_a[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_a = {
 	"PSOP_4_1_A", "SectionA - Dump VDNR timeout host side info",
-	20, ARRAY_SIZE(mt6653_wf_bus_a), mt6653_wf_bus_a
+	20, ARRAY_SIZE(mt6653_wf_bus_a),
+	mt6653_wf_bus_a
 };
 
 const struct wlan_dbg_command mt6653_wf_bus_b[] = {
@@ -449,7 +659,8 @@ const struct wlan_dbg_command mt6653_wf_bus_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_b = {
 	"PSOP_4_1_B", "SectionB - Dump VDNR timeout wf side info",
-	20, ARRAY_SIZE(mt6653_wf_bus_b), mt6653_wf_bus_b
+	20, ARRAY_SIZE(mt6653_wf_bus_b),
+	mt6653_wf_bus_b
 };
 
 const struct wlan_dbg_command mt6653_wf_bus_c[] = {
@@ -464,7 +675,8 @@ const struct wlan_dbg_command mt6653_wf_bus_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_c = {
 	"PSOP_4_1_C", "SectionC - Dump AHB APB timeout info",
-	5, ARRAY_SIZE(mt6653_wf_bus_c), mt6653_wf_bus_c
+	5, ARRAY_SIZE(mt6653_wf_bus_c),
+	mt6653_wf_bus_c
 };
 
 const struct wlan_dbg_command mt6653_wf_bus_d[] = {
@@ -484,7 +696,8 @@ const struct wlan_dbg_command mt6653_wf_bus_d[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_d = {
 	"PSOP_4_1_D", "SectionD - Dump WF2AP bus status",
-	10, ARRAY_SIZE(mt6653_wf_bus_d), mt6653_wf_bus_d
+	10, ARRAY_SIZE(mt6653_wf_bus_d),
+	mt6653_wf_bus_d
 };
 
 const struct wlan_dbg_command mt6653_wf_bus_e[] = {
@@ -594,7 +807,8 @@ const struct wlan_dbg_command mt6653_wf_bus_e[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_bus_e = {
 	"PSOP_4_1_E", "SectionE - Dump WF2AP access detect info",
-	100, ARRAY_SIZE(mt6653_wf_bus_e), mt6653_wf_bus_e
+	100, ARRAY_SIZE(mt6653_wf_bus_e),
+	mt6653_wf_bus_e
 };
 
 const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_a[] = {
@@ -639,7 +853,8 @@ const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_a[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_mcu_hostcsr_a = {
 	"PSOP_4_2_A", "SectionA - Dump WFMCU PC_log",
-	35, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_a), mt6653_wf_mcu_hostcsr_a
+	35, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_a),
+	mt6653_wf_mcu_hostcsr_a
 };
 
 const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_b[] = {
@@ -684,7 +899,8 @@ const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_b[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_mcu_hostcsr_b = {
 	"PSOP_4_2_B", "SectionB - Dump WFMCU GPR_log",
-	35, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_b), mt6653_wf_mcu_hostcsr_b
+	35, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_b),
+	mt6653_wf_mcu_hostcsr_b
 };
 
 const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_c[] = {
@@ -727,7 +943,8 @@ const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_c[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_mcu_hostcsr_c = {
 	"PSOP_4_2_C", "SectionC - Dump WFMCU GPR",
-	32, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_c), mt6653_wf_mcu_hostcsr_c
+	32, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_c),
+	mt6653_wf_mcu_hostcsr_c
 };
 
 const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_d[] = {
@@ -753,5 +970,6 @@ const struct wlan_dbg_command mt6653_wf_mcu_hostcsr_d[] = {
 
 const struct wlan_dump_list mt6653_dump_list_wf_mcu_hostcsr_d = {
 	"PSOP_4_2_D", "SectionD - Dump WFMCU CSR",
-	16, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_d), mt6653_wf_mcu_hostcsr_d
+	16, ARRAY_SIZE(mt6653_wf_mcu_hostcsr_d),
+	mt6653_wf_mcu_hostcsr_d
 };
