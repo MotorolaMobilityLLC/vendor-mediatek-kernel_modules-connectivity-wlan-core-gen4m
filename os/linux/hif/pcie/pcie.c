@@ -236,6 +236,13 @@ const struct of_device_id mtk_wifi_tx_cma_of_ids[] = {
 	{}
 };
 #endif
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
+	{.compatible = "mediatek,wifi_tx_cma",},
+	{}
+};
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 #endif
 
 #define HIF_WFDMA_INT_BIT	0
@@ -316,6 +323,22 @@ static struct platform_driver mtk_wifi_tx_cma_driver = {
 	.remove = NULL,
 };
 #endif
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+static struct platform_driver mtk_wifi_tx_cma_non_cache_driver = {
+	.driver = {
+		.name = "wifi_tx_cma",
+		.owner = THIS_MODULE,
+#ifdef CONFIG_OF
+		.of_match_table = mtk_wifi_tx_cma_non_cache_of_ids,
+#endif
+		.probe_type = PROBE_FORCE_SYNCHRONOUS,
+	},
+	.id_table = mtk_wifi_ids,
+	.probe = NULL,
+	.remove = NULL,
+};
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
 #if CFG_MTK_WIFI_AER_RESET
 static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
@@ -1434,6 +1457,87 @@ static int mtk_wifi_tx_cma_remove(struct platform_device *pdev)
 
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+static int wifiTxCmaNonCacheSetup(
+		struct platform_device *pdev,
+		struct mt66xx_hif_driver_data *prDriverData)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	u64 dma_mask;
+	int ret = 0;
+
+	prChipInfo = prDriverData->chip_info;
+
+	ret = halInitTxCmaNonCacheMem(pdev);
+
+	dma_mask = DMA_BIT_MASK(prChipInfo->bus_info->u4DmaMask);
+	ret = dma_set_mask_and_coherent(&pdev->dev, dma_mask);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "dma_set_mask_and_coherent failed(%d)\n",
+			ret);
+		goto exit;
+	}
+
+	ret = halInitResvMem(pdev, WIFI_RSV_MEM_WIFI_CMA_NON_CACHE);
+	if (ret)
+		goto exit;
+
+	ret = of_reserved_mem_device_init_by_idx(&pdev->dev,
+		pdev->dev.of_node, 0);
+
+	if (pdev->dev.cma_area == NULL) {
+		DBGLOG(INIT, ERROR,
+			"Failed to set cma, user Kernel mem dma_coherent: %u\n",
+			pdev->dev.dma_coherent);
+		goto exit;
+	}
+
+exit:
+	return ret;
+}
+static int mtk_wifi_tx_cma_non_cache_probe(
+	struct platform_device *pdev)
+{
+	struct mt66xx_hif_driver_data *prDriverData;
+	struct mt66xx_chip_info *prChipInfo;
+	struct device_node *node = NULL;
+	int ret = 0;
+
+	prDriverData = (struct mt66xx_hif_driver_data *)
+			mtk_wifi_ids[0].driver_data;
+	prChipInfo = prDriverData->chip_info;
+
+	node = of_find_compatible_node(NULL, NULL,
+		"mediatek,wifi_tx_cma");
+
+	if (!node) {
+		DBGLOG(INIT, ERROR,
+		       "WIFI-OF: get wifi_tx_cma_non_cache device node fail\n");
+		return false;
+	}
+	of_node_put(node);
+
+	ret = wifiTxCmaNonCacheSetup(pdev, prDriverData);
+	if (ret)
+		goto exit;
+
+exit:
+	DBGLOG(INIT, INFO, "%s() done, ret: %d\n", __func__, ret);
+
+	return 0;
+}
+
+static int mtk_wifi_tx_cma_non_cache_remove(
+	struct platform_device *pdev)
+{
+#if (CFG_MTK_ANDROID_WMT == 1)
+	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_CMA_NON_CACHE);
+#endif
+	platform_set_drvdata(pdev, NULL);
+	return 0;
+}
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE probe function
@@ -1857,6 +1961,18 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 			"Wi-Fi tx cma platform_driver_register fail\n");
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	DBGLOG(HAL, ERROR, "CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE\n");
+	mtk_wifi_tx_cma_non_cache_driver.probe =
+		mtk_wifi_tx_cma_non_cache_probe;
+	mtk_wifi_tx_cma_non_cache_driver.remove =
+		mtk_wifi_tx_cma_non_cache_remove;
+
+	if (platform_driver_register(&mtk_wifi_tx_cma_non_cache_driver))
+		DBGLOG(HAL, ERROR,
+			"tx cma non cache platform_driver_register fail\n");
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
+
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_remove_port(0);
 #endif
@@ -1886,6 +2002,9 @@ void glUnregisterBus(remove_card pfRemove)
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 	platform_driver_unregister(&mtk_wifi_tx_cma_driver);
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	platform_driver_unregister(&mtk_wifi_tx_cma_non_cache_driver);
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 }
 
 static void glPopulateMemOps(struct mt66xx_chip_info *prChipInfo,

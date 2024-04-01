@@ -161,7 +161,8 @@ struct HIF_MEM_OPS {
 			 struct RTMP_DMABUF *prDescRing);
 	void (*freeExtBuf)(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing);
-	void (*freeDataBuf)(void *pucSrc, uint32_t u4Len);
+	void (*freeDataBuf)(void *pucSrc, uint32_t u4Len,
+				phys_addr_t rDmaAddr, uint32_t u4Idx);
 	void (*freeCmdBuf)(void *pucSrc, uint32_t u4Len);
 	void (*freePacket)(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
