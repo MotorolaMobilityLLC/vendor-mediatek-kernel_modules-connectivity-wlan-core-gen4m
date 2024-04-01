@@ -609,9 +609,9 @@ void apsRecordCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss,
 void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint8_t bidx)
 {
-	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
 	struct BSS_INFO *prConcurrentBssInfo;
 	uint32_t bmap = aisGetBssIndexBmap(aisGetAisFsmInfo(ad, bidx));
+	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	uint8_t i;
 
 	bss->fgIsSCC = TRUE;
@@ -631,7 +631,8 @@ void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
 			} else {
 				bss->fgIsSCC = TRUE;
 				if (!ad->rWifiVar.fgDisForceSCC)
-					aps->fgIgnoreBssidHint = TRUE;
+					conn->eConnectionPolicy =
+						CONNECT_BY_SSID_BEST_RSSI;
 				break;
 			}
 		}
@@ -778,7 +779,6 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 
 	kalMemZero(aps->arCuInfo, sizeof(aps->arCuInfo));
 	aps->ucConsiderEsp = TRUE;
-	aps->fgIgnoreBssidHint = FALSE;
 
 	LINK_FOR_EACH_ENTRY(bss, scan_result, rLinkEntry,
 		struct BSS_DESC) {
@@ -822,10 +822,10 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 	}
 
 	DBGLOG(APS, INFO,
-		"Find %s in %d BSSes, result %d, Using %s estimated tput, Ignore BssidHint %d\n",
+		"Find %s in %d BSSes, result %d, Using %s estimated tput, policy %d\n",
 		conn->aucSSID, scan_result->u4NumElem, count,
 		aps->ucConsiderEsp ? "ESP" : "LEGACY",
-		aps->fgIgnoreBssidHint ? 1 : 0);
+		conn->eConnectionPolicy);
 	return count;
 }
 
@@ -1939,7 +1939,6 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 {
 	struct mt66xx_chip_info *prChipInfo = ad->chip_info;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
-	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
 	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	uint8_t aidx = AIS_INDEX(ad, bidx);
 	struct BSS_DESC *bss;
@@ -1983,16 +1982,16 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				if (!oce && EQUAL_MAC_ADDR(bss->aucBSSID,
 					conn->aucBSSIDHint) &&
 				    (chnl == 0 || chnl == bss->ucChannelNum)) {
-					if (aps->fgIgnoreBssidHint) {
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
-					} else if (IS_CHANNEL_IN_DESENSE_RANGE(
+					if (IS_CHANNEL_IN_DESENSE_RANGE(
 						ad,
 						bss->ucChannelNum,
 						bss->eBand)) {
 						DBGLOG(APS, INFO,
 							"Do network selection even match bssid_hint\n");
+					} else
 #endif
-					} else {
+					{
 						bss->u2Score =
 						     BSS_MATCH_BSSID_HINT_SCORE;
 					}
@@ -2074,7 +2073,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			bss = candi[j];
 
 			if (!bss)
-				bss = apsIntraUpdateCandi(ad, ap,
+				candi[j] = bss = apsIntraUpdateCandi(ad, ap,
 				       link_plan[j], 0, reason, TRUE, bidx);
 
 			if (bss && bss->u4RsnSelectedAKMSuite != akm) {
