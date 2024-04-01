@@ -792,20 +792,19 @@ irqreturn_t pcie_fw_log_thread_handler(int irq, void *dev_instance)
 
 irqreturn_t pcie_drv_own_top_handler(int irq, void *dev_instance)
 {
-	return IRQ_WAKE_THREAD;
-}
-
-irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance)
-{
 	struct GLUE_INFO *prGlueInfo = NULL;
-
-	DBGLOG(HAL, TRACE, "driver own INT\n");
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
 	if (prGlueInfo)
 		set_bit(GLUE_FLAG_DRV_OWN_INT_BIT, &prGlueInfo->ulFlag);
 
+	return IRQ_WAKE_THREAD;
+}
+
+irqreturn_t pcie_drv_own_thread_handler(int irq, void *dev_instance)
+{
+	DBGLOG(HAL, TRACE, "driver own IRQ handled.\n");
 	return IRQ_HANDLED;
 }
 
