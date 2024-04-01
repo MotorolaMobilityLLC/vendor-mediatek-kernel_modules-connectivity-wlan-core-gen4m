@@ -2721,6 +2721,12 @@ else
     ccflags-y += -DCFG_SUPPORT_P2P_SET_ML_BSS_NUM=0
 endif
 
+ifeq ($(CONFIG_WOW_SUPPORT), n)
+    ccflags-y += -DCFG_WOW_SUPPORT=0
+else
+    ccflags-y += -DCFG_WOW_SUPPORT=1
+endif
+
 ifeq ($(CONFIG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP), y)
     ccflags-y += -DCFG_SUPPORT_SUSPEND_NOTIFY_APGO_STOP=1
 else
