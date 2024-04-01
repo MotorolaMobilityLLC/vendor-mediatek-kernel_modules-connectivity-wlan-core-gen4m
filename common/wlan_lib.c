@@ -864,6 +864,9 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 	prAdapter->ucCmdSeqNum = 0;
 	prAdapter->u4PwrCtrlBlockCnt = 0;
 	prAdapter->fgIsPostponeTxEAPOLM3 = FALSE;
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	prAdapter->fgIsPowerDumpDrvOwn = FALSE;
+#endif
 
 	if (bAtResetFlow) {
 		for (i = 0; i < (prAdapter->ucSwBssIdNum + 1); i++)

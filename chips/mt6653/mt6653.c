@@ -4739,6 +4739,12 @@ int mt6653PowerDumpStart(void *priv_data, unsigned int force_dump)
 		return 1;
 	}
 
+	if (wlanIsChipNoAck(ad)) {
+		DBGLOG(REQ, ERROR,
+			"Chip reset and chip no response.\n");
+		return 1;
+	}
+
 	if (glue->u4ReadyFlag)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 		u4Val = mtk_pcie_dump_link_info(0);
@@ -4751,7 +4757,9 @@ int mt6653PowerDumpStart(void *priv_data, unsigned int force_dump)
 	if (force_dump == TRUE) {
 		DBGLOG(REQ, INFO, "PowerDumpStart force_dump\n");
 
+		ad->fgIsPowerDumpDrvOwn = TRUE;
 		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+		ad->fgIsPowerDumpDrvOwn = FALSE;
 
 		if (ad->fgIsFwOwn == TRUE) {
 			DBGLOG(REQ, ERROR,
