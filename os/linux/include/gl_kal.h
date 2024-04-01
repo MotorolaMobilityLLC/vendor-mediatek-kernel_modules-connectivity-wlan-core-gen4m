@@ -2838,6 +2838,6 @@ void kalHifRegWorkInit(struct GLUE_INFO *pr);
 void kalHifRegWorkUninit(struct GLUE_INFO *pr);
 void kalHifRegWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
-
+void kalPmicCtrl(u_int8_t fgIsEnabled);
 #endif /* _GL_KAL_H */
 

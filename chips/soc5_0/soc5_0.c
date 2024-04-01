@@ -21,8 +21,6 @@
 #include "coda/soc5_0/wf_wfdma_mcu_dma0.h"
 #include "coda/soc5_0/wf_pse_top.h"
 #include "hal_dmashdl_soc5_0.h"
-#include <linux/mfd/mt6359p/registers.h>
-#include <linux/regmap.h>
 
 #define CFG_SUPPORT_VCODE_VDFS 0
 
@@ -1773,6 +1771,7 @@ void wlanCoAntVFE28En(struct ADAPTER *prAdapter)
 
 	if (fgCoAnt) {
 		if (gCoAntVFE28En == FALSE) {
+			kalPmicCtrl(TRUE);
 			DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Enable\n");
 			gCoAntVFE28En = TRUE;
 		} else {
@@ -1786,6 +1785,7 @@ void wlanCoAntVFE28En(struct ADAPTER *prAdapter)
 void wlanCoAntVFE28Dis(void)
 {
 	if (gCoAntVFE28En == TRUE) {
+		kalPmicCtrl(FALSE);
 		DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Disable\n");
 		gCoAntVFE28En = FALSE;
 	} else {
