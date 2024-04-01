@@ -6222,19 +6222,21 @@ static void checkTxDelayOverLimit(struct ADAPTER *prAdapter)
 
 void halUpdateHifConfig(struct ADAPTER *prAdapter)
 {
+	struct GLUE_INFO *prGlueInfo;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 
 	if (!prAdapter)
 		return;
 
+	prGlueInfo = prAdapter->prGlueInfo;
 	prChipInfo = prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
 #if CFG_MTK_WIFI_WFDMA_WB
 	if (prChipInfo->is_support_wfdma_cidx_fetch &&
 	    prChipInfo->runWfdmaCidxFetch)
-		prChipInfo->runWfdmaCidxFetch(prAdapter->prGlueInfo);
+		prChipInfo->runWfdmaCidxFetch(prGlueInfo);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
 
 	if (prBusInfo->fgUpdateWfdmaTh) {
@@ -6244,6 +6246,9 @@ void halUpdateHifConfig(struct ADAPTER *prAdapter)
 				prAdapter, prBusInfo->u4WfdmaTh, TRUE);
 		}
 	}
+
+	if (prChipInfo->updatePrdcInt)
+		prChipInfo->updatePrdcInt(prGlueInfo);
 }
 
 #if CFG_SUPPORT_LLS

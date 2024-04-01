@@ -1692,6 +1692,7 @@ struct WIFI_VAR {
 #endif
 
 	uint32_t u4PrdcIntTime;
+	uint32_t u4SuspendPrdcIntTime;
 	u_int8_t fgEnDlyInt;
 	uint32_t u4DlyIntTime;
 	uint32_t u4DlyIntCnt;
@@ -2983,6 +2984,7 @@ struct ADAPTER {
 	uint8_t ucGenSwitchStatus;
 	uint8_t ucStopMMIO;
 #endif
+	uint32_t u4CurPrdcIntTime;
 
 };				/* end of _ADAPTER_T */
 /*******************************************************************************

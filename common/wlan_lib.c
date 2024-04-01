@@ -9015,6 +9015,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->u4PrdcIntTime, "PrdcIntTime", 5,
 		FEATURE_TO_CUSTOMER); /* unit: 20us */
+	INIT_UINT(prWifiVar->u4SuspendPrdcIntTime, "SuspendPrdcIntTime", 50,
+		FEATURE_TO_CUSTOMER); /* unit: 20us */
 	INIT_UINT(prWifiVar->fgEnDlyInt, "EnDlyInt", 1, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4DlyIntTime, "DlyIntTime", 2,
 		FEATURE_TO_CUSTOMER); /* unit: 20us */
