@@ -3331,9 +3331,9 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			}
 #if CFG_SUPPORT_PCIE_ASPM_EP
 			HAL_MCR_WR(prGlueInfo->prAdapter,
-				PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, 0xf);
-			HAL_MCR_RD(prGlueInfo->prAdapter,
-				PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, &value);
+				0x74030194, 0xf);
+			HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
+				0x74030194, &value);
 #endif
 			writel(0xf, (pcie_vir_addr + 0x194));
 
@@ -3379,9 +3379,9 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 		}
 #if CFG_SUPPORT_PCIE_ASPM_EP
 		HAL_MCR_WR(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, 0xc0f);
-		HAL_MCR_RD(prGlueInfo->prAdapter,
-			PCIE_MAC_IREG_PCIE_LOW_POWER_CTRL_ADDR, &value);
+			0x74030194, 0xc0f);
+		HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
+			0x74030194, &value);
 #endif
 		writel(0xc0f, (pcie_vir_addr + 0x194));
 
