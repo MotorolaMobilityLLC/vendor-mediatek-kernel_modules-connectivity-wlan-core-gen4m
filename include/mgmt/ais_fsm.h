@@ -100,6 +100,7 @@
 #define AIS_BTM_DIS_IMMI_STATE_1	    1
 #define AIS_BTM_DIS_IMMI_STATE_2	    2
 #define AIS_BTM_DIS_IMMI_STATE_3	    3
+#define AIS_BTM_TIMER_THRESHOLD		    10000 /* MSEC */
 
 #define AIS_FT_R0		0
 #define AIS_FT_R1		1
@@ -269,6 +270,7 @@ struct AIS_SPECIFIC_BSS_INFO {
 	/* end Support AP Selection */
 
 	struct BSS_TRANSITION_MGT_PARAM rBTMParam;
+	struct TIMER rBTMDisassocTimer;
 	struct LINK_MGMT  rNeighborApList;
 	OS_SYSTIME rNeiApRcvTime;
 	uint32_t u4NeiApValidInterval;
@@ -1088,6 +1090,10 @@ struct TIMER *aisGetSecModeChangeTimer(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 #endif
+
+struct TIMER *aisGetBTMDisassocTimer(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
 
 struct TIMER *aisGetScanDoneTimer(
 	struct ADAPTER *prAdapter,

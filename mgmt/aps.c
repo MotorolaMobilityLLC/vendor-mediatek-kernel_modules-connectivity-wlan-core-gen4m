@@ -1541,7 +1541,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		bmap = aisGetBssIndexBmap(ais);
 
 		/* Disallow to pick a bss that already connected */
-		if (prBssDesc->fgIsConnected & !bmap) {
+		if (prBssDesc->fgIsConnected & ~bmap) {
 			DBGLOG(APS, INFO,
 				MACSTR " already connected by wlan0",
 				MAC2STR(prBssDesc->aucBSSID));
