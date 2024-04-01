@@ -9684,6 +9684,8 @@ void rlmChangeOperationModeAfterCSA(
 	enum ENUM_CHNL_EXT eBssScoAfterCsa;
 	uint8_t ucOpRxNssAfterCsa;
 	uint8_t ucOpTxNssAfterCsa;
+	uint8_t ucGetOpRxNss = 0;
+	uint8_t ucGetOpTxNss = 0;
 
 	if (!prBssInfo)
 		return;
@@ -9709,6 +9711,17 @@ void rlmChangeOperationModeAfterCSA(
 				prBssInfo->prStaRecOfAP);
 	}
 #endif
+
+	cnmOpModeGetTRxNss(prAdapter,
+		prBssInfo->ucBssIndex,
+		&ucGetOpRxNss,
+		&ucGetOpTxNss);
+
+	if (ucGetOpRxNss < ucOpRxNssAfterCsa)
+		ucOpRxNssAfterCsa = ucGetOpRxNss;
+	if (ucGetOpTxNss < ucOpTxNssAfterCsa)
+		ucOpTxNssAfterCsa = ucGetOpTxNss;
+
 	DBGLOG(RLM, INFO,
 		"op mode change from BW(vht)[%d]-RxNss[%d]-TxNss[%d] to BW(vht)[%d]-RxNss[%d]-TxNss[%d]",
 		prBssInfo->ucVhtChannelWidth,
