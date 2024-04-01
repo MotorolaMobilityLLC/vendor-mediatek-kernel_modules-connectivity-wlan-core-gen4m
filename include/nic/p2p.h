@@ -103,6 +103,7 @@
 #define DEFAULT_P2P_PROBERESP_LIFE_TIME 500
 
 #define DEFAULT_P2P_CSA_TIMEOUT_MS	7000
+#define P2P_MAX_AID_VALUE	2007
 
 /******************************************************************************
  *                                 M A C R O S

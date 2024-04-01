@@ -111,7 +111,8 @@ struct BSS_INFO *p2pGetDefaultLinkBssInfo(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
-uint16_t bssAssignAssocID(struct STA_RECORD *prStaRec);
+uint16_t bssAssignAssocID(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
