@@ -41,7 +41,7 @@ static void cfm_sku_dump(const struct connfem_sku *sku);
  *			   P R I V A T E   D A T A
  ******************************************************************************/
 static struct connfem_epaelna_flag_pair cfm_data_flags_cm_sku1[] = {
-	{"fe-ant-cnt",		0x82},
+	{"fe-ant-cnt",		0x96},
 	{"fe-conn-dpdt-sp3t",	0x80},
 	{"fe-conn-spdt",	0x98},
 	{"fe-bt-wf-usage",	0x98},
@@ -95,7 +95,7 @@ static struct connfem_sku cfm_data_sku1 = {
 					{
 						.id = 0x00,
 						.op_count = 1,
-						.op = {0x00}
+						.op = {0x10}
 					},
 					{
 						.id = 0x01,
@@ -247,7 +247,7 @@ static struct connfem_sku cfm_data_sku1 = {
 
 #ifdef CFG_COMBO_SLT_DUT
 static struct connfem_epaelna_flag_pair cfm_data_flags_cm_slt2[] = {
-	{"fe-ant-cnt",		0x82},
+	{"fe-ant-cnt",		0x96},
 	{"fe-conn-dpdt-sp3t",	0x80},
 	{"fe-conn-spdt",	0x88},
 	{"fe-bt-wf-usage",	0x98},
