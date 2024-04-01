@@ -243,7 +243,10 @@ const struct of_device_id mtk_wifi_tx_cma_of_ids[] = {
 #define HIF_WED_INT_BIT		2
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
+#define CHECK_RX_TIMEOUT (1000*50)
 #define GEN_SWITCH_TIMEOUT (1000*100)
+#define WF_RX_IDLE	1
+#define FW_RX_IDLE	2
 #endif
 
 /*******************************************************************************
@@ -2890,6 +2893,58 @@ int mtk_pcie_retrain(struct pci_dev *dev)
 #endif
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
+void pcie_gen_switch_recover(struct ADAPTER *prAdapter)
+{
+	//mtk_pcie_disable_cfg_dump(0);
+	if (prAdapter)
+		prAdapter->ucStopMMIO = FALSE;
+
+	DBGLOG(OID, ERROR, "[Gen_Switch] gen switch recover\n");
+}
+void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct pcie_msi_info *prMsiInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct HIF_MEM *prMem;
+	uint32_t *pu4RxDone = NULL;
+	uint32_t u4Val = 0;
+
+	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
+
+	DBGLOG(OID, INFO,
+		"[Gen_Switch] check rx idle start\n");
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prMemOps = &prHifInfo->rMemOps;
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_WF_M_BRAIN);
+		if (prMem && prMem->va)
+			pu4RxDone = (uint32_t *)prMem->va;
+	}
+	if (pu4RxDone == NULL) {
+		DBGLOG(OID, ERROR, "[Gen_Switch] pu4RxDone is null\n");
+		return;
+	}
+
+	while (prMsiInfo->ulEnBits != 0 && pu4RxDone[0] != WF_RX_IDLE) {
+		udelay(1);
+		u4Val++;
+		if (u4Val > CHECK_RX_TIMEOUT) {
+			DBGLOG(OID, ERROR, "[Gen_Switch] check timeout\n");
+			break;
+		}
+	}
+
+	pu4RxDone[1] = FW_RX_IDLE;
+
+	DBGLOG(OID, INFO, "[Gen_Switch] check rx idle end pu4RxDone=%d\n",
+		*pu4RxDone);
+
+}
 irqreturn_t pcie_gen_switch_top_handler(int irq, void *dev_instance)
 {
 	return IRQ_WAKE_THREAD;
@@ -2899,12 +2954,6 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 
-	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
-	if (g_ucBypassException) {
-		DBGLOG(INIT, ERROR, "[Gen_Switch] g_u1BypassException\n");
-		g_ucBypassException = FALSE;
-		return IRQ_HANDLED;
-	}
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
 	if (prGlueInfo) {
@@ -2915,8 +2964,18 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 		}
 	}
 
+	pcie_gen_switch_polling_rx_done(prAdapter);
+
+	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
+	if (g_ucBypassException) {
+		DBGLOG(INIT, ERROR, "[Gen_Switch] g_u1BypassException\n");
+		g_ucBypassException = FALSE;
+		return IRQ_HANDLED;
+	}
+
 	prAdapter->ucStopMMIO = TRUE;
 	g_ucReceiveGenSwitch = TRUE;
+	//mtk_pcie_enable_cfg_dump(0);
 	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO TRUE\n");
 
 	return IRQ_HANDLED;
@@ -2951,6 +3010,9 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	}
 	prAdapter->ucStopMMIO = FALSE;
 	DBGLOG(INIT, ERROR, "[Gen_Switch] ucStopMMIO FALSE\n");
+
+	//mtk_pcie_disable_cfg_dump(0);
+
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyMDGenSwitchEnd(prAdapter);
 #endif
@@ -2970,6 +3032,9 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 				u4Val++;
 				if (u4Val > GEN_SWITCH_TIMEOUT) {
 					prAdapter->ucStopMMIO = FALSE;
+					//mtk_pcie_disable_cfg_dump(0);
+					DBGLOG(INIT, ERROR,
+						"[Gen Switch] timeout\n");
 					break;
 				}
 			}
@@ -2977,7 +3042,6 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 		}
 	}
 }
-
 #endif
 
 #if CFG_MTK_WIFI_PCIE_SR

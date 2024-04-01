@@ -13745,7 +13745,7 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			DBGLOG(NIC, INFO,
 				"[Gen Switch] event status [%d]\n",
 					info->ucGenSwitchStatus);
-			// 2: pcie stop transition done
+
 #if CFG_MTK_MDDP_SUPPORT
 			mddpNotifyMDGenSwitchStart(ad);
 #endif
