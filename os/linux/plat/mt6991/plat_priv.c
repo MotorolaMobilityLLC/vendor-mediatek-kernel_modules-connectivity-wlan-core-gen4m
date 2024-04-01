@@ -135,6 +135,10 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
+		.rHifNapiThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
 		.u4RpsMap = RPS_LITTLE_CORE,
 		.u4ISRMask = CPU_LITTLE_CORE,
 		.i4RxRfbRetWorkCpu = -1,
@@ -168,6 +172,10 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rHifNapiThreadInfo = {
 			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
@@ -207,6 +215,10 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4CpuMask = CPU_MID_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
+		.rHifNapiThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
 		.i4TxFreeMsduWorkCpu = 4,
@@ -241,6 +253,10 @@ struct BOOST_INFO rBoostInfo[] = {
 		},
 		.rRxNapiThreadInfo = {
 			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = HIGH_PRIORITY
+		},
+		.rHifNapiThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
@@ -531,6 +547,15 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	}
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 
+#if CFG_SUPPORT_HIF_RX_NAPI
+	if (prGlueInfo->rHifInfo.rNapiDev.napi_thread) {
+		kalSetCpuMask(prGlueInfo->rHifInfo.rNapiDev.napi_thread,
+			      prBoostInfo->rRxNapiThreadInfo.u4CpuMask);
+		kalSetTaskUtilMinPct(prGlueInfo->rHifInfo.rNapiDev.u4ThreadPid,
+				     prBoostInfo->rRxNapiThreadInfo.u4Priority);
+	}
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
 	kalSetRpsMap(prGlueInfo, prBoostInfo->u4RpsMap);
 	kalSetISRMask(prAdapter, prBoostInfo->u4ISRMask);
 
@@ -605,9 +630,17 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
 
 #if CFG_SUPPORT_RX_NAPI_THREADED
+#if CFG_SUPPORT_HIF_RX_NAPI
+#define PLAT_THREAD_INFO "ThreadInfo:[%02x:%02x:%02x:%02x:%02x][%u:%u:%u:%u:%u] "
+#else
 #define PLAT_THREAD_INFO "ThreadInfo:[%02x:%02x:%02x:%02x][%u:%u:%u:%u] "
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 #else /* CFG_SUPPORT_RX_NAPI_THREADED */
+#if CFG_SUPPORT_HIF_RX_NAPI
+#define PLAT_THREAD_INFO "ThreadInfo:[%02x:%02x:%02x:%02x][%u:%u:%u:%u] "
+#else
 #define PLAT_THREAD_INFO "ThreadInfo:[%02x:%02x:%02x][%u:%u:%u] "
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 
 #if CFG_SUPPORT_SKB_ALLOC_WORK
@@ -633,7 +666,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	RX_NAPI_WORK_TEMPLATE \
 	SKB_ALLOC_WORK_TEMPLATE \
 	TX_FREE_SKB_WORK_TEMPLATE \
-	"\n"
+	"%s\n"
 
 	DBGLOG(INIT, INFO,
 		TEMP_LOG_TEMPLATE,
@@ -645,12 +678,18 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RX_NAPI_THREADED
 		prBoostInfo->rRxNapiThreadInfo.u4CpuMask,
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+#if CFG_SUPPORT_HIF_RX_NAPI
+		prBoostInfo->rHifNapiThreadInfo.u4CpuMask,
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 		prBoostInfo->rHifThreadInfo.u4Priority,
 		prBoostInfo->rMainThreadInfo.u4Priority,
 		prBoostInfo->rRxThreadInfo.u4Priority,
 #if CFG_SUPPORT_RX_NAPI_THREADED
 		prBoostInfo->rRxNapiThreadInfo.u4Priority,
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+#if CFG_SUPPORT_HIF_RX_NAPI
+		prBoostInfo->rHifNapiThreadInfo.u4Priority,
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 		prBoostInfo->u4RpsMap,
 		prBoostInfo->u4ISRMask,
 		prBoostInfo->fgDramBoost,
@@ -665,18 +704,18 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		prBoostInfo->i4TxWorkCpu,
 #endif /* CFG_SUPPORT_TX_WORK */
 #if CFG_SUPPORT_RX_WORK
-		prBoostInfo->i4RxWorkCpu
+		prBoostInfo->i4RxWorkCpu,
 #endif /* CFG_SUPPORT_RX_WORK */
 #if CFG_SUPPORT_RX_NAPI_WORK
-		, prBoostInfo->i4RxNapiWorkCpu
+		prBoostInfo->i4RxNapiWorkCpu,
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
 #if CFG_SUPPORT_SKB_ALLOC_WORK
-		, prBoostInfo->eSkbAllocWorkCoreType
+		prBoostInfo->eSkbAllocWorkCoreType,
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
 #if CFG_SUPPORT_TX_FREE_SKB_WORK
-		, prBoostInfo->eTxFreeSkbWorkCoreType
+		prBoostInfo->eTxFreeSkbWorkCoreType,
 #endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-		);
+		"");
 #undef TEMP_LOG_TEMPLATE
 }
 

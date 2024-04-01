@@ -4579,6 +4579,28 @@ void nicRxAdjustUnUseRFB(struct ADAPTER *prAdapter)
 	}
 }
 
+void nicAcquireDynamicRfbLock(struct ADAPTER *prAdapter)
+{
+#if !CFG_SUPPORT_RX_WORK
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[
+				SPIN_LOCK_DYNAMIC_RFB]);
+	else
+#endif
+		KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+}
+
+void nicReleaseDynamicRfbLock(struct ADAPTER *prAdapter)
+{
+#if !CFG_SUPPORT_RX_WORK
+	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
+		spin_unlock_bh(&prAdapter->prGlueInfo->rSpinLock[
+				SPIN_LOCK_DYNAMIC_RFB]);
+	else
+#endif
+		KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+}
+
 u_int8_t nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv)
 {
 	uint32_t u4RfbCnt;
@@ -4587,7 +4609,7 @@ u_int8_t nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv)
 	if (u4Lv >= PERF_MON_RFB_MAX_THRESHOLD)
 		u4Lv = PERF_MON_RFB_MAX_THRESHOLD - 1;
 
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+	nicAcquireDynamicRfbLock(prAdapter);
 
 	if (prAdapter->u4RfbUnUseCntLv == u4Lv) {
 		fgRet = FALSE;
@@ -4601,7 +4623,7 @@ u_int8_t nicRxSetRfbCntByLevel(struct ADAPTER *prAdapter, uint32_t u4Lv)
 	prAdapter->ulUpdateRxRfbCntPeriod = jiffies +
 		prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 unlock:
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+	nicReleaseDynamicRfbLock(prAdapter);
 	return fgRet;
 }
 
@@ -4610,7 +4632,7 @@ u_int8_t nicRxIncRfbCnt(struct ADAPTER *prAdapter)
 	uint32_t u4Lv, u4RfbCnt;
 	u_int8_t fgRet = TRUE;
 
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+	nicAcquireDynamicRfbLock(prAdapter);
 
 	if ((prAdapter->u4RfbUnUseCntLv + 1) == PERF_MON_RFB_MAX_THRESHOLD) {
 		fgRet = FALSE;
@@ -4626,7 +4648,7 @@ u_int8_t nicRxIncRfbCnt(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 
 unlock:
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+	nicReleaseDynamicRfbLock(prAdapter);
 	return fgRet;
 }
 
@@ -4635,7 +4657,7 @@ u_int8_t nicRxDecRfbCnt(struct ADAPTER *prAdapter)
 	uint32_t u4Lv, u4RfbCnt;
 	u_int8_t fgRet = TRUE;
 
-	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+	nicAcquireDynamicRfbLock(prAdapter);
 
 	if (prAdapter->u4RfbUnUseCntLv == 0) {
 		fgRet = FALSE;
@@ -4656,7 +4678,7 @@ u_int8_t nicRxDecRfbCnt(struct ADAPTER *prAdapter)
 		prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
 
 unlock:
-	KAL_RELEASE_MUTEX(prAdapter, MUTEX_DYNAMIC_RFB);
+	nicReleaseDynamicRfbLock(prAdapter);
 	return fgRet;
 }
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */

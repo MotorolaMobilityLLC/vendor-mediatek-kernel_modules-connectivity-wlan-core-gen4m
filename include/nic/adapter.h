@@ -2021,6 +2021,9 @@ struct HIF_STATS {
 	uint32_t u4CidxFetchByNewTx;
 	uint32_t u4CidxFetchByTimeout;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+#if CFG_SUPPORT_HIF_RX_NAPI
+	uint32_t u4HifNapiCount;
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 };
 
 struct OID_HANDLER_RECORD {
