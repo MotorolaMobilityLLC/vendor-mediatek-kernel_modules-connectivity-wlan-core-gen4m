@@ -4678,6 +4678,13 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 
 	*pfgResult = (u4RegValue &
 		PCIE_LPCR_AP_HOST_OWNER_STATE_SYNC) == 0x4;
+
+#if defined(_HIF_PCIE)
+	if (prChipInfo->bus_info->hwControlVote)
+		prChipInfo->bus_info->hwControlVote(prAdapter,
+			TRUE, PCIE_VOTE_USER_DRVOWN);
+#endif
+
 #else
 	*pfgResult = TRUE;
 #endif
@@ -4696,6 +4703,12 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 		*pfgResult = TRUE;
 		return;
 	}
+
+#if defined(_HIF_PCIE)
+	if (prChipInfo->bus_info->hwControlVote)
+		prChipInfo->bus_info->hwControlVote(prAdapter,
+			FALSE, PCIE_VOTE_USER_DRVOWN);
+#endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_dump_link_info(0);
