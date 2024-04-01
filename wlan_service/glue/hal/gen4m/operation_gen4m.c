@@ -2099,6 +2099,16 @@ s_int32 mt_op_set_tmr(
 
 	do {
 		ret = tm_rftest_set_auto_test(winfos,
+			RF_AT_FUNCID_SET_DBDC_BAND_IDX, tmr_info->band_idx);
+		if (ret != SERV_STATUS_SUCCESS) {
+			SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE,
+				("%s RF_AT_FUNCID_SET_DBDC_BAND_IDX ret=%d\n",
+				__func__, ret));
+
+			break;
+		}
+
+		ret = tm_rftest_set_auto_test(winfos,
 			RF_AT_FUNCID_SET_TMR_ROLE, tmr_info->setting);
 
 		if (ret != SERV_STATUS_SUCCESS) {

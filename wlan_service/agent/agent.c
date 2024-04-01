@@ -2986,11 +2986,14 @@ static s_int32 hqa_tmr_setting(
 				&data, (u_char *)&tmr_info->iter);
 	get_param_and_shift_buf(TRUE, sizeof(tmr_info->toae_cal),
 				&data, (u_char *)&tmr_info->toae_cal);
+	get_param_and_shift_buf(TRUE, sizeof(tmr_info->band_idx),
+				&data, (u_char *)&tmr_info->band_idx);
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, (
-		"%s: setting=%d, version=%d, through_hold=%d, iter=%d, toae_cal=%d\n",
+		"%s: setting=%d, version=%d, through_hold=%d, iter=%d, toae_cal=%d, band_idx=%d\n",
 		__func__, tmr_info->setting, tmr_info->version,
-		tmr_info->through_hold, tmr_info->iter, tmr_info->toae_cal));
+		tmr_info->through_hold, tmr_info->iter,
+		tmr_info->toae_cal, tmr_info->band_idx));
 
 	ret = mt_serv_set_tmr(serv_test);
 
