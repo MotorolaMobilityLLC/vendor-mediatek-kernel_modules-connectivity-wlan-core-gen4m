@@ -3282,7 +3282,6 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	struct BUS_INFO *prBusInfo;
 	u_int8_t enableL1ss = FALSE;
 	u_int8_t isL0Status = FALSE;
-	unsigned long flags = 0;
 
 	if (pcie_vir_addr == NULL)
 		return;
@@ -3290,7 +3289,7 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
-	spin_lock_irqsave(&rPCIELock, flags);
+	spin_lock_bh(&rPCIELock);
 	enableL1ss =
 		mt6653SetL1ssEnable(prGlueInfo->prAdapter, enable_role, fgEn);
 
@@ -3394,7 +3393,7 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	}
 
 exit:
-	spin_unlock_irqrestore(&rPCIELock, flags);
+	spin_unlock_bh(&rPCIELock);
 }
 
 static void mt6653UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
