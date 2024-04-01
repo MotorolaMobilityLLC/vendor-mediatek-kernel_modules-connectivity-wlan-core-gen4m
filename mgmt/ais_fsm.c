@@ -3307,7 +3307,7 @@ send_msg:
 #endif
 			mboxSendMsg(prAdapter, MBOX_ID_0,
 				    (struct MSG_HDR *)prMsgChReq,
-				    MSG_SEND_METHOD_BUF);
+				    MSG_SEND_METHOD_UNBUF);
 
 			prAisFsmInfo->ucChReqNum = 1;
 			prAisFsmInfo->fgIsChannelRequested = TRUE;
