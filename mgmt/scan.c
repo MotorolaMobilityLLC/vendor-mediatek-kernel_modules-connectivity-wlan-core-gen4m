@@ -2277,7 +2277,6 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 					&prNeighborAPInfo->rLinkEntry);
 				ucNewLink = FALSE;
 			}
-			ucHasSameCh = FALSE;
 
 			log_dbg
 			(SCN, TRACE, "RnR ch[%d,%d,%d,%d,%d,%d,%d,%d]\n",
@@ -2330,7 +2329,6 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 					MAC2STR(prScanParam->aucBSSID[2]),
 					MAC2STR(prScanParam->aucBSSID[3]));
 		}
-		fgHasBssid = FALSE;
 		fgScanEnable = FALSE;
 
 		if (ucNewLink)
