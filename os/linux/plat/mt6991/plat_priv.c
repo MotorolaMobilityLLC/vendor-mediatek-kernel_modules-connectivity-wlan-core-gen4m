@@ -63,7 +63,7 @@
 #include "dvfsrc-exp.h"
 #include <linux/interconnect.h>
 
-static uint32_t u4EmiMetOffset = 0x98000;
+static uint32_t u4EmiMetOffset = 0x18000;
 static uint32_t u4ProjectId = 6991;
 
 #if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
