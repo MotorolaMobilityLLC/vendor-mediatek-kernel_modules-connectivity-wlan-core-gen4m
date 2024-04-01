@@ -1072,9 +1072,11 @@ p2pRoleFsmRunEventAAAComplete(
 {
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *mld_starec;
+#endif
 
+	bssAssignAssocID(prAdapter, prStaRec);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mld_starec = mldStarecGetByStarec(prAdapter, prStaRec);
-
 	if (mld_starec) {
 		struct LINK *links;
 		struct STA_RECORD *starec;
@@ -1163,14 +1165,46 @@ void p2pRoleFsmRunEventAAATxFail(
 		prP2pBssInfo);
 }
 
-uint16_t bssAssignAssocID(struct STA_RECORD *prStaRec)
+uint16_t bssAssignAssocID(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
 {
+	uint8_t u2AssocId = 0;
+	struct BSS_INFO *prBssInfo = NULL;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	if (prStaRec->ucMldStaIndex != MLD_GROUP_NONE)
-		return prStaRec->ucMldStaIndex + 1;
+	struct BSS_INFO *prBssInfoNext = NULL;
+	struct MLD_BSS_INFO *prBssInfoMld = NULL;
+	struct LINK *prBssList;
 #endif
 
-	return prStaRec->ucIndex + 1;
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter,
+			prStaRec->ucBssIndex);
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR, "Invalid BssInfo.");
+		goto exit;
+	}
+	prBssInfo->u2P2pAssocIdCounter++;
+	if (prBssInfo->u2P2pAssocIdCounter == 0 ||
+		prBssInfo->u2P2pAssocIdCounter > P2P_MAX_AID_VALUE ||
+		prBssInfo->u2P2pAssocIdCounter > CFG_STA_REC_NUM)
+		prBssInfo->u2P2pAssocIdCounter = 1;
+
+	u2AssocId =
+		prBssInfo->u2P2pAssocIdCounter;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prBssInfoMld = mldBssGetByBss(prAdapter, prBssInfo);
+	if (prBssInfoMld) {
+		prBssList = &prBssInfoMld->rBssList;
+		LINK_FOR_EACH_ENTRY(prBssInfoNext, prBssList,
+			rLinkEntryMld, struct BSS_INFO) {
+				prBssInfoNext->u2P2pAssocIdCounter =
+					prBssInfo->u2P2pAssocIdCounter;
+		}
+	}
+#endif
+
+exit:
+	return u2AssocId;
 }
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

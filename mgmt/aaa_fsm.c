@@ -708,7 +708,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 					prStaRec, prBssInfo)
 					== WLAN_STATUS_SUCCESS) {
 					prStaRec->u2AssocId =
-						bssAssignAssocID(prStaRec);
+						prBssInfo->u2P2pAssocIdCounter;
 					/* prStaRec->eAuthAssocState
 					 * = AA_STATE_IDLE;
 					 */
@@ -753,7 +753,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				 * prStaRec) == WLAN_STATUS_SUCCESS) {
 				 */
 				prStaRec->u2AssocId =
-					bssAssignAssocID(prStaRec);
+					prBssInfo->u2P2pAssocIdCounter;
 
 				/* NOTE(Kevin): for TX done */
 				prStaRec->eAuthAssocState =

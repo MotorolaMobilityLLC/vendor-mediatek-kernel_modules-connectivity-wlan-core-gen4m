@@ -215,7 +215,9 @@ struct BSS_INFO {
 
 	/* For Infra Mode, it is the Assoc ID assigned by AP. */
 	uint16_t u2AssocId;
-
+#if CFG_ENABLE_WIFI_DIRECT
+	uint16_t u2P2pAssocIdCounter;
+#endif
 	uint8_t ucDTIMPeriod;	/* For Infra/AP Mode */
 	u_int8_t fgTIMPresent;
 
