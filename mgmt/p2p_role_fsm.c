@@ -4134,6 +4134,9 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 					prBssInfo->ucBssIndex,
 					&prBssInfo->ucOpRxNss,
 					&prBssInfo->ucOpTxNss);
+				prBssInfo->ucVhtChannelWidth =
+					cnmGetDbdcBwCapability(prAdapter,
+						       prBssInfo->ucBssIndex);
 
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 				/* Indicate channel switch to kernel */
