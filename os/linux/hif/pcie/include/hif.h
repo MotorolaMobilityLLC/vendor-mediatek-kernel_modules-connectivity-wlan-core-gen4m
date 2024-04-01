@@ -704,7 +704,10 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance);
 irqreturn_t pcie_gen_switch_end_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance);
 void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter);
-
+//extern int mtk_pcie_enable_cfg_dump(int port);
+//extern int mtk_pcie_disable_cfg_dump(int port);
+void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter);
+void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
 #endif
 
 /*******************************************************************************

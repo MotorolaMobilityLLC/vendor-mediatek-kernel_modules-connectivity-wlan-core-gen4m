@@ -708,6 +708,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 
 #if CFG_MTK_MDDP_SUPPORT
 #if (CFG_PCIE_GEN_SWITCH == 1)
+	pcie_gen_switch_recover(prAdapter);
 	mddpNotifyMDGenSwitchEnd(prAdapter);
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif /* CFG_MTK_MDDP_SUPPORT */
