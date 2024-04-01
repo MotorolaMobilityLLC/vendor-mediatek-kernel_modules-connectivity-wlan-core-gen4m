@@ -1505,30 +1505,36 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 	eBand = prP2pConnReqInfo->rChannelInfo.eBand;
 	ucChannelNum = prP2pConnReqInfo->rChannelInfo.ucChannelNum;
 
-	if ((eBand == BAND_5G) &&
-		rlmDomainIsLegalDfsChannel(
-		prAdapter,
-		eBand,
-		ucChannelNum))
-		bSkipRdd = FALSE;
-	else if ((eBand == BAND_5G) &&
-		(prAdapter->rWifiVar.ucAp5gBandwidth >=
-		MAX_BW_160MHZ)) {
-		uint8_t ucRfBw =
-			prAdapter->rWifiVar.ucAp5gBandwidth;
-
-		/* Downgrade */
-		if (p2pFuncIsDualAPMode(prAdapter) &&
-			(ucRfBw >= MAX_BW_160MHZ))
-			ucRfBw = MAX_BW_80MHZ;
-
-		/* Revise to VHT OP BW */
-		ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-		if (nicGetVhtS1(
-			ucChannelNum,
-			ucRfBw) &&
-			(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
+#if (CFG_MTK_ANDROID_WMT == 1)
+	if (p2pFuncIsAPMode(prAdapter->rWifiVar
+	    .prP2PConnSettings[prP2pStartAPMsg->ucRoleIdx]))
+#endif
+	{
+		if ((eBand == BAND_5G) &&
+			rlmDomainIsLegalDfsChannel(
+			prAdapter,
+			eBand,
+			ucChannelNum))
 			bSkipRdd = FALSE;
+		else if ((eBand == BAND_5G) &&
+			(prAdapter->rWifiVar.ucAp5gBandwidth >=
+			MAX_BW_160MHZ)) {
+			uint8_t ucRfBw =
+				prAdapter->rWifiVar.ucAp5gBandwidth;
+
+			/* Downgrade */
+			if (p2pFuncIsDualAPMode(prAdapter) &&
+				(ucRfBw >= MAX_BW_160MHZ))
+				ucRfBw = MAX_BW_80MHZ;
+
+			/* Revise to VHT OP BW */
+			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
+			if (nicGetVhtS1(
+				ucChannelNum,
+				ucRfBw) &&
+				(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
+				bSkipRdd = FALSE;
+		}
 	}
 
 	/* STA+SAP will follow STA BW */
