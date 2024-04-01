@@ -6737,6 +6737,10 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 		aisFsmSteps(prAdapter, AIS_STATE_JOIN, ucBssIndex);
 
 		prAisFsmInfo->fgIsChannelGranted = TRUE;
+
+#if CFG_SUPPORT_CCM
+		ccmPendingCheck(prAdapter, prAisBssInfo, u4GrantInterval);
+#endif
 	} else if (prAisFsmInfo->eCurrentState ==
 		   AIS_STATE_REQ_REMAIN_ON_CHANNEL
 		   && prAisFsmInfo->ucSeqNumOfChReq == ucTokenID) {

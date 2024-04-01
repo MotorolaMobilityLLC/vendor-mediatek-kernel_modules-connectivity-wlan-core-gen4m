@@ -521,7 +521,8 @@ static uint32_t p2pLinkGet2ndLinkFreqByOwnPref(struct ADAPTER *prAdapter,
 					      pu4FreqList,
 					      &u4FreqListNum,
 					      pu4FreqWhiteList,
-					      ucFreqWhiteListNum);
+					      ucFreqWhiteListNum,
+					      TRUE);
 	if (u4Status == WLAN_STATUS_SUCCESS && u4FreqListNum > 0)
 		*u4PreferFreq = pu4FreqList[0];
 

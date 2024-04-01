@@ -4086,6 +4086,14 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 				break;
 			}
 
+#if CFG_SUPPORT_CCM
+			if (prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_JOIN ||
+			    prChnlReqInfo->eChnlReqType ==
+					CH_REQ_TYPE_GO_START_BSS)
+				ccmPendingCheck(prAdapter, prBssInfo,
+						prMsgChGrant->u4GrantInterval);
+#endif
+
 			p2pRoleFsmStateTransition(prAdapter,
 				prP2pRoleFsmInfo, eNextState);
 			break;
