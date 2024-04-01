@@ -772,8 +772,15 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		g_fgRstRecover = TRUE;
 
 	if (u4RstFlag & RST_FLAG_DO_WHOLE_RESET) {
-		glResetWholeChipResetTrigger(g_reason);
-		glResetCleanResetFlag();
+		ret = glResetWholeChipResetTrigger(g_reason);
+		/* If ret == 0, the pre L0 reset will be executed afterwards.
+		 * Thus, the reset flag should be kept as TRUE and reset_on_end
+		 * should be cleared to prevent from reset locked.
+		 */
+		if (ret != 0)
+			glResetCleanResetFlag();
+		else
+			glResetOnEndUpdateFlag(FALSE);
 		goto exit;
 	}
 
@@ -2012,7 +2019,7 @@ bool IsOverRstTimeThreshold(
 #endif
 }
 
-void glResetWholeChipResetTrigger(char *pcReason)
+int glResetWholeChipResetTrigger(char *pcReason)
 {
 	int ret = -ENOTSUPP;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -2050,6 +2057,7 @@ void glResetWholeChipResetTrigger(char *pcReason)
 		dump_stack();
 		fgIsDrvTriggerWholeChipReset = TRUE;
 	}
+	return ret;
 }
 
 void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
