@@ -1107,13 +1107,16 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 					       AUTH_TRANSACTION_SEQ_2,
 					       &u2StatusCode) ==
 					       WLAN_STATUS_SUCCESS) {
-			/* Record join fail status code only*/
-			if (u2StatusCode != STATUS_CODE_SUCCESSFUL) {
+			if (u2StatusCode == WLAN_STATUS_SAE_HASH_TO_ELEMENT)
+				DBGLOG(SAA, INFO,
+					"SAE auth uses the hash-to-element method, instead of looping\n");
+			else if (u2StatusCode != STATUS_CODE_SUCCESSFUL) {
 				DBGLOG(SAA, INFO,
 				       "Auth Req was rejected by [" MACSTR
 				       "], Status Code = %d\n",
 				       MAC2STR(prStaRec->aucMacAddr),
 				       u2StatusCode);
+				/* Record join fail status code only*/
 				prStaRec->u2StatusCode = u2StatusCode;
 			}
 		}
