@@ -203,7 +203,7 @@ static int halSetMemOpsTxData(
 static bool halGetRsvMemSizeRsvedByKernel(struct platform_device *pdev,
 				enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
-#if (defined CONFIG_OF) && CFG_SUPPORT_CONNAC1X
+#if defined(CONFIG_OF)
 	int ret = 0;
 	struct device_node *np;
 
