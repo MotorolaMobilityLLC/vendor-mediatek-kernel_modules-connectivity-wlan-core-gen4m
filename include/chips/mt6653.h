@@ -189,7 +189,7 @@ uint8_t mt6653_get_mbu_timeout_status(void);
 
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 void mt6653_dumpPcieReg(void);
-bool mt6653_CheckDumpViaBt(void);
+bool mt6653_CheckDumpViaBt(struct ADAPTER *prAdapter);
 #endif
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR

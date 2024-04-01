@@ -3048,7 +3048,7 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 
 	prDebugOps = ad->chip_info->prDebugOps;
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
+		dumpViaBt = prDebugOps->checkDumpViaBt(ad);
 
 	if (dumpViaBt) {
 		DBGLOG_LIMITED(HAL, WARN, "PCIe AER.\n");

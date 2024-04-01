@@ -2288,6 +2288,9 @@ struct ADAPTER {
 	u_int8_t fgIsFwOwn;
 	u_int8_t fgIsWiFiOnDrvOwn;
 	u_int8_t fgWiFiInSleepyState;
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+	u_int8_t fgIsPowerDumpDrvOwn;
+#endif
 
 	/* Set by callback to make sure WOW done before system suspend */
 	u_int8_t fgSetPfCapabilityDone;

@@ -1890,9 +1890,14 @@ void mt6653_dumpPcieRegWithScanDump(void)
 	}
 }
 
-bool mt6653_CheckDumpViaBt(void)
+bool mt6653_CheckDumpViaBt(struct ADAPTER *prAdapter)
 {
-	return (fgIsBusAccessFailed || fgIsMcuOff) && fgTriggerDebugSop;
+	return (fgTriggerDebugSop
+		&& (fgIsBusAccessFailed || fgIsMcuOff)
+#if CFG_SUPPORT_WIFI_SLEEP_COUNT
+		&& (prAdapter->fgIsPowerDumpDrvOwn == FALSE)
+#endif
+		);
 }
 #endif
 
@@ -2223,7 +2228,7 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad)
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	prDebugOps = ad->chip_info->prDebugOps;
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
+		dumpViaBt = prDebugOps->checkDumpViaBt(ad);
 
 	connv3_conninfra_bus_dump(dumpViaBt ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
@@ -2301,7 +2306,7 @@ start_dump_via_pcie:
 
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 	if (debug_ops && debug_ops->checkDumpViaBt)
-		dumpViaBt = debug_ops->checkDumpViaBt();
+		dumpViaBt = debug_ops->checkDumpViaBt(ad);
 	if (readable == FALSE || dumpViaBt)
 		goto start_dump_via_bt;
 #else

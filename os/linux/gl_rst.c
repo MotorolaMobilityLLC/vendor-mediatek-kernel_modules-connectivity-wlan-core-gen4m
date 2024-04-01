@@ -2037,7 +2037,7 @@ int glResetWholeChipResetTrigger(char *pcReason)
 		prDebugOps = prAdapter->chip_info->prDebugOps;
 
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
-		dumpViaBt = prDebugOps->checkDumpViaBt();
+		dumpViaBt = prDebugOps->checkDumpViaBt(prAdapter);
 
 	if (prGlueInfo->u4ReadyFlag && dumpViaBt) {
 		if (prDebugOps && prDebugOps->dumpBusHangCr)

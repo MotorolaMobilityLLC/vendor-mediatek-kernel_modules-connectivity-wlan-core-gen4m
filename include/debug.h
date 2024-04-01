@@ -577,7 +577,7 @@ struct CHIP_DBG_OPS {
 	u_int8_t (*dumpPcieStatus)(struct GLUE_INFO *prGlueInfo);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	void (*dumpPcieCr)(void);
-	bool (*checkDumpViaBt)(void);
+	bool (*checkDumpViaBt)(struct ADAPTER *prAdapter);
 #endif
 #if CFG_MTK_WIFI_MBU
 	uint8_t (*getMbuTimeoutStatus)(void);

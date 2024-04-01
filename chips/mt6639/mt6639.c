@@ -3846,6 +3846,12 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 		return 1;
 	}
 
+	if (wlanIsChipNoAck(ad)) {
+		DBGLOG(REQ, ERROR,
+			"Chip reset and chip no response.\n");
+		return 1;
+	}
+
 	if (pcie_vir_addr && glue->u4ReadyFlag)
 		u4Val = readl(pcie_vir_addr + 0x150);
 	else
@@ -3854,7 +3860,9 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 	if (force_dump == TRUE) {
 		DBGLOG(REQ, INFO, "wlan_power_dump_start force_dump\n");
 
+		ad->fgIsPowerDumpDrvOwn = TRUE;
 		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+		ad->fgIsPowerDumpDrvOwn = FALSE;
 
 		if (ad->fgIsFwOwn == TRUE) {
 			DBGLOG(REQ, ERROR,
