@@ -7238,6 +7238,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 			  HE_CAP_INFO_MCS_MAP_MCS11, FEATURE_DEBUG_ONLY);
 		INIT_UINT(prWifiVar->ucHeMaxMcsMap6g, "HeMaxMcsMap6g",
 			  HE_CAP_INFO_MCS_MAP_MCS11, FEATURE_DEBUG_ONLY);
+		if (prWifiVar->ucHeMaxMcsMap2g >= HE_CAP_INFO_MCS_NOT_SUPPORTED)
+			prWifiVar->ucHeMaxMcsMap2g = HE_CAP_INFO_MCS_MAP_MCS11;
+		if (prWifiVar->ucHeMaxMcsMap5g >= HE_CAP_INFO_MCS_NOT_SUPPORTED)
+			prWifiVar->ucHeMaxMcsMap5g = HE_CAP_INFO_MCS_MAP_MCS11;
+		if (prWifiVar->ucHeMaxMcsMap6g >= HE_CAP_INFO_MCS_NOT_SUPPORTED)
+			prWifiVar->ucHeMaxMcsMap6g = HE_CAP_INFO_MCS_MAP_MCS11;
 	}
 #endif
 	INIT_UINT(prWifiVar->ucStaMaxMcsMap, "StaMaxMcsMap", 0xFF,

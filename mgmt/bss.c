@@ -285,7 +285,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 		    (GET_SELECTOR_TYPE(u4GTKCipher) == CIPHER_SUITE_TKIP ||
 		     GET_SELECTOR_TYPE(u4GTKCipher) == CIPHER_SUITE_WEP40 ||
 		     GET_SELECTOR_TYPE(u4GTKCipher) == CIPHER_SUITE_WEP104))) {
-			DBGLOG(BSS, INFO,
+			DBGLOG(BSS, STATE,
 			       "Ignore the HT/VHT or higher Bit for pairwise/group cipher (0x%08x/0x%08x) as key cipher configed!\n",
 			       u4PTKCipher, u4GTKCipher);
 
@@ -304,7 +304,7 @@ void bssDetermineStaRecPhyTypeSet(struct ADAPTER *prAdapter,
 		    !prWifiVar->fgDisSecurityCheck &&
 		    !rsnIsKeyMgmtForEht(prAdapter, prBssDesc,
 					prStaRec->ucBssIndex)) {
-			DBGLOG(BSS, INFO,
+			DBGLOG(BSS, STATE,
 			       "Ignore the EHT Bit for AKM suite (0x%x) configed!\n",
 			       SWAP32(prBssDesc->u4RsnSelectedAKMSuite));
 			prStaRec->ucPhyTypeSet &= ~(PHY_TYPE_BIT_EHT);
