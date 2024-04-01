@@ -1773,8 +1773,6 @@ void wlanCoAntVFE28En(struct ADAPTER *prAdapter)
 
 	if (fgCoAnt) {
 		if (gCoAntVFE28En == FALSE) {
-			KERNEL_pmic_ldo_vfe28_lp(8, 0, 1, 0);
-
 			DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Enable\n");
 			gCoAntVFE28En = TRUE;
 		} else {
@@ -1788,8 +1786,6 @@ void wlanCoAntVFE28En(struct ADAPTER *prAdapter)
 void wlanCoAntVFE28Dis(void)
 {
 	if (gCoAntVFE28En == TRUE) {
-		KERNEL_pmic_ldo_vfe28_lp(8, 0, 0, 0);
-
 		DBGLOG(INIT, INFO, "CoAntVFE28 PMIC Disable\n");
 		gCoAntVFE28En = FALSE;
 	} else {
