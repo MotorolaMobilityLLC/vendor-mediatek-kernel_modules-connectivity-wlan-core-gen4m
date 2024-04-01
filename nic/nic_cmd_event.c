@@ -2781,22 +2781,27 @@ uint32_t nicCfgChipCapLimited(struct ADAPTER *prAdapter,
 
 	prCapLimited = (struct CAP_LIMITED *)pucEventBuf;
 
-	DBGLOG(INIT, INFO, "Limited max MCS: [2G][%u],[5G][%u],[6G][%u]\n",
-		prCapLimited->ucLimitedMaxMcs2g,
-		prCapLimited->ucLimitedMaxMcs5g,
-		prCapLimited->ucLimitedMaxMcs6g);
+	DBGLOG(INIT, INFO,
+		"Limited max MCS map from FW: [2G][%u],[5G][%u],[6G][%u]\n",
+		prCapLimited->ucLimitedMaxMcsMap2g,
+		prCapLimited->ucLimitedMaxMcsMap5g,
+		prCapLimited->ucLimitedMaxMcsMap6g);
+
 #if (CFG_SUPPORT_802_11AX == 1)
 	prAdapter->rWifiVar.ucHeMaxMcsMap2g = kal_min_t(uint8_t,
-				heMcsToMcsMap(prCapLimited->ucLimitedMaxMcs2g),
-				prAdapter->rWifiVar.ucHeMaxMcsMap2g);
-	prAdapter->rWifiVar.ucHeMaxMcsMap5g = kal_min_t(uint8_t,
-				heMcsToMcsMap(prCapLimited->ucLimitedMaxMcs5g),
-				prAdapter->rWifiVar.ucHeMaxMcsMap5g);
-	prAdapter->rWifiVar.ucHeMaxMcsMap6g = kal_min_t(uint8_t,
-				heMcsToMcsMap(prCapLimited->ucLimitedMaxMcs6g),
-				prAdapter->rWifiVar.ucHeMaxMcsMap6g);
+			prCapLimited->ucLimitedMaxMcsMap2g,
+			prAdapter->rWifiVar.ucHeMaxMcsMap2g);
 
-	DBGLOG(INIT, INFO, "Limited max MCS map: [2G][%u],[5G][%u],[6G][%u]\n",
+	prAdapter->rWifiVar.ucHeMaxMcsMap5g = kal_min_t(uint8_t,
+			prCapLimited->ucLimitedMaxMcsMap5g,
+			prAdapter->rWifiVar.ucHeMaxMcsMap5g);
+
+	prAdapter->rWifiVar.ucHeMaxMcsMap6g = kal_min_t(uint8_t,
+			prCapLimited->ucLimitedMaxMcsMap6g,
+			prAdapter->rWifiVar.ucHeMaxMcsMap6g);
+
+	DBGLOG(INIT, INFO,
+		"Limited max MCS map: [2G][%u],[5G][%u],[6G][%u]\n",
 		prAdapter->rWifiVar.ucHeMaxMcsMap2g,
 		prAdapter->rWifiVar.ucHeMaxMcsMap5g,
 		prAdapter->rWifiVar.ucHeMaxMcsMap6g);

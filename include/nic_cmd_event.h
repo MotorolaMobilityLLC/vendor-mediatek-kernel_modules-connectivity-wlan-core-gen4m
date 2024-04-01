@@ -1135,10 +1135,10 @@ enum NIC_CAPABILITY_V2_TAG {
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
 	TAG_CAP_STATS_REG_MONTR_EMI_OFFSET = 0x23,
 #endif
-	TAG_CAP_LIMITED = 0x24,
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	TAG_CAP_SW_SYNC_BY_EMI = 0x25,
 #endif
+	TAG_CAP_LIMITED = 0x27,
 	TAG_CAP_TOTAL
 };
 
@@ -1265,9 +1265,9 @@ struct CAP_PHY_CAP {
 };
 
 struct CAP_LIMITED {
-	uint8_t ucLimitedMaxMcs2g; /* Limited 2G Max MCS index */
-	uint8_t ucLimitedMaxMcs5g; /* Limited 5G Max MCS index */
-	uint8_t ucLimitedMaxMcs6g; /* Limited 6G Max MCS index */
+	uint8_t ucLimitedMaxMcsMap2g; /* Limited 2G Max MCS map */
+	uint8_t ucLimitedMaxMcsMap5g; /* Limited 5G Max MCS map */
+	uint8_t ucLimitedMaxMcsMap6g; /* Limited 6G Max MCS map */
 	uint8_t ucReserved[1];
 };
 
