@@ -4017,7 +4017,7 @@ u_int8_t wlanProcessTxFrame(struct ADAPTER *prAdapter, void *prPacket)
 			if (rTxPacketInfo.u2Flag & BIT(ENUM_PKT_1X)) {
 				struct STA_RECORD *prStaRec;
 
-				DBGLOG(RSN, INFO, "T1X len=%d\n",
+				DBGLOG(RSN, TRACE, "T1X len=%d\n",
 				       rTxPacketInfo.u4PacketLen);
 
 				prStaRec = cnmGetStaRecByAddress(prAdapter,
