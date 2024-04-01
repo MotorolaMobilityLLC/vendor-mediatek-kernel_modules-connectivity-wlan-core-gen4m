@@ -1443,6 +1443,7 @@ struct test_tmr_info {
 	u_int32 through_hold;
 	u_int32 iter;
 	u_int32 toae_cal;
+	u_int32 band_idx;
 };
 
 /* Test operation hook handlers for service */
