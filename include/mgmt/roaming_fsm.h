@@ -267,4 +267,6 @@ void roamingFsmTxReqDoneOrRxRespTimeout(
 u_int8_t roamingFsmCheckIfRoaming(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+void roamingFsmBTMTimeout(struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr);
 #endif /* _ROAMING_FSM_H */

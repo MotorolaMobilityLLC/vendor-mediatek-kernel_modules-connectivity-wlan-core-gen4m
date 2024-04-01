@@ -1797,12 +1797,7 @@ void rrmCollectBeaconReport(struct ADAPTER *prAdapter,
 	}
 
 	/* Fixed length field */
-	rep.ucRegulatoryClass =
-			rlmGetOpClassForChannel(prBssDesc->ucChannelNum,
-						prBssDesc->eBand,
-						prBssDesc->eSco,
-						prBssDesc->eChannelWidth,
-						prBssDesc->u2CurrCountryCode);
+	rep.ucRegulatoryClass = bcnReq->ucRegulatoryClass;
 
 	rep.ucChannel = prBssDesc->ucChannelNum;
 	rep.u2Duration = bcnReq->u2Duration;

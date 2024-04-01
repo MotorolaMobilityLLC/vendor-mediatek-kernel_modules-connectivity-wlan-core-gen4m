@@ -8679,8 +8679,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  ROAMING_INACTIVE_TIMEOUT_SEC, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4BtmDelta, "BtmDelta", ROAMING_BTM_DELTA,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->u4BtmDisTimerThreshold, "BtmDisTimerThreshold",
+	INIT_UINT(prWifiVar->u4BtmDisThreshold, "BtmDisThreshold",
 		  AIS_BTM_DIS_IMMI_TIMEOUT, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4BtmTimerThreshold, "BtmTimerThreshold",
+		  AIS_BTM_TIMER_THRESHOLD, FEATURE_TO_CUSTOMER);
 #endif
 
 #if ARP_MONITER_ENABLE
