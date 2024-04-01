@@ -37,7 +37,6 @@ struct APS_INFO {
 #endif
 	uint8_t ucConsiderEsp;
 	uint8_t fgIsGBandCoex;
-	u_int8_t fgIgnoreBssidHint;
 };
 
 struct AP_COLLECTION {
