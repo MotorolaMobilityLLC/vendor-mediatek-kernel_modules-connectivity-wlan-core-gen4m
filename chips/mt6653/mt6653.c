@@ -145,6 +145,8 @@ static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 static void mt6653ConfigWfdmaRxRingThreshold(
 	struct ADAPTER *prAdapter, uint32_t u4Num, u_int8_t fgIsData);
 
+static void mt6653UpdateWfdmaPrdcInt(struct GLUE_INFO *prGlueInfo);
+
 static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
 
@@ -1152,6 +1154,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.allocWfdmaWbBuffer = asicConnac3xAllocWfdmaWbBuffer,
 	.freeWfdmaWbBuffer = asicConnac3xFreeWfdmaWbBuffer,
 #endif
+#if CFG_SUPPORT_WFDMA_RX_DELAY_INT
+	.updatePrdcInt = mt6653UpdateWfdmaPrdcInt,
+#endif /* CFG_SUPPORT_WFDMA_RX_DELAY_INT */
 	.txd_append_size = MT6653_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT6653_HIF_TX_DESC_APPEND_LENGTH,
 	.rxd_size = MT6653_RX_DESC_LENGTH,
@@ -2673,21 +2678,41 @@ exit:
 	       fgIsData, u4Val);
 }
 
+static void mt6653UpdateWfdmaPrdcInt(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4Addr, u4Val, u4Time;
+
+	u4Time = prGlueInfo->fgIsInSuspendMode ?
+		prWifiVar->u4SuspendPrdcIntTime : prWifiVar->u4PrdcIntTime;
+
+	if (u4Time == prAdapter->u4CurPrdcIntTime)
+		return;
+
+	prAdapter->u4CurPrdcIntTime = u4Time;
+
+	/* clear before set */
+	u4Addr = WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR;
+	HAL_MCR_WR(prAdapter, u4Addr, 0);
+
+	/* Enable RX periodic delayed interrupt (unit: 20us) */
+	u4Val = 0x1F00000 | u4Time;
+#if CFG_MTK_MDDP_SUPPORT
+	u4Val |= 0x3E000000;
+#endif
+	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
+
+	DBGLOG(HAL, INFO, "prdc int: %uus", u4Time * 20);
+}
+
 static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_SUPPORT_WFDMA_RX_DELAY_INT
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	uint32_t u4Addr, u4Val;
 
-	/* Enable RX periodic delayed interrupt (unit: 20us) */
-	u4Val = 0x1F00000 | prWifiVar->u4PrdcIntTime;
-#if CFG_MTK_MDDP_SUPPORT
-	u4Val |= 0x3E000000;
-#endif
-	u4Addr = WF_WFDMA_HOST_DMA0_HOST_PER_DLY_INT_CFG_ADDR;
-	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
-
-#if CFG_SUPPORT_WFDMA_RX_DELAY_INT
 	/* setup ring 4-8 delay interrupt */
 	u4Addr = WF_WFDMA_EXT_WRAP_CSR_WFDMA_DLY_IDX_CFG_0_ADDR;
 	u4Val = (4 <<
@@ -2754,14 +2779,13 @@ static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 		WF_WFDMA_HOST_DMA0_WPDMA_PRI_DLY_INT_CFG2_PRI0_DLY_INT_EN_SHFT;
 	HAL_MCR_WR(prAdapter, u4Addr, u4Val);
 
-	DBGLOG(HAL, INFO, "prdc int: %uus, dly int[%u]: %uus, cnt=%u",
-	       prWifiVar->u4PrdcIntTime * 20,
+	DBGLOG(HAL, INFO, "dly int[%u]: %uus, cnt=%u",
 	       prWifiVar->fgEnDlyInt,
 	       prWifiVar->u4DlyIntTime * 20,
 	       prWifiVar->u4DlyIntCnt);
-#else
-	DBGLOG(HAL, INFO, "prdc int: %uus", prWifiVar->u4PrdcIntTime * 20);
 #endif /* CFG_SUPPORT_WFDMA_RX_DELAY_INT */
+
+	mt6653UpdateWfdmaPrdcInt(prGlueInfo);
 }
 
 static void mt6653WpdmaConfigExt0(struct ADAPTER *prAdapter)

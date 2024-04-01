@@ -1506,6 +1506,7 @@ struct mt66xx_chip_info {
 	void (*enableWfdmaWb)(struct GLUE_INFO *prGlueInfo);
 	void (*runWfdmaCidxFetch)(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_ENABLE_MAWD_MD_RING */
+	void (*updatePrdcInt)(struct GLUE_INFO *prGlueInfo);
 #if CFG_MTK_WIFI_SW_EMI_RING
 	const u_int8_t is_en_sw_emi_read;
 #endif
