@@ -16247,15 +16247,13 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 	int32_t i4Argc = 0;
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	struct PARAM_GET_CNM_T *prCnmInfo = NULL;
+	u_int8_t fgIsApMode = false;
 
 	enum ENUM_MBMC_BN	eDbdcIdx, eDbdcIdxMax;
 	uint8_t ucBssIdx;
 	struct BSS_INFO *prBssInfo;
 	enum ENUM_CNM_NETWORK_TYPE_T eNetworkType;
 	uint8_t ucOpRxNss, ucOpTxNss;
-#if (CFG_SUPPORT_802_11AX == 1)
-	struct STA_RECORD *prStaRec = NULL;
-#endif
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -16292,7 +16290,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 				   "\n[CNM Info]\n");
 	i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 				   i4TotalLen - i4BytesWritten,
-				   "DBDC Mode : %s\n\n",
+				   "MBMC Mode : %s\n\n",
 				   (prCnmInfo->fgIsDbdcEnable) ?
 				   "Enable" : "Disable");
 
@@ -16382,18 +16380,60 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"BSS%u Inuse%u Act%u ConnStat%u [NetType%u][CH%3u][DBDC b%u][WMM%u b%u][OMAC%u b%u][BW%s][TxNSS%u][RxNss%u]\n",
+			"BSS%u Inuse%u Act%u ConnStat%u",
 			ucBssIdx,
 			prCnmInfo->ucBssInuse[ucBssIdx],
 			prCnmInfo->ucBssActive[ucBssIdx],
-			prCnmInfo->ucBssConnectState[ucBssIdx],
-			eNetworkType,
+			prCnmInfo->ucBssConnectState[ucBssIdx]);
+
+		if (eNetworkType == ENUM_CNM_NETWORK_TYPE_P2P_GO)
+			fgIsApMode =
+			  prGlueInfo->prAdapter->rWifiVar.prP2PConnSettings[
+			  prBssInfo->u4PrivateData]->fgIsApMode;
+
+		switch (eNetworkType) {
+		case ENUM_CNM_NETWORK_TYPE_OTHER:
+			i4BytesWritten +=
+			    kalSnprintf(pcCommand + i4BytesWritten,
+			    i4TotalLen - i4BytesWritten, " [NetType Other]");
+			break;
+		case ENUM_CNM_NETWORK_TYPE_AIS:
+			i4BytesWritten +=
+			    kalSnprintf(pcCommand + i4BytesWritten,
+			    i4TotalLen - i4BytesWritten, " [NetType STA]");
+			break;
+		case ENUM_CNM_NETWORK_TYPE_P2P_GC:
+			i4BytesWritten +=
+			    kalSnprintf(pcCommand + i4BytesWritten,
+			    i4TotalLen - i4BytesWritten, " [NetType GC]");
+			break;
+		case ENUM_CNM_NETWORK_TYPE_P2P_GO:
+			if (fgIsApMode) {
+				i4BytesWritten +=
+				    kalSnprintf(pcCommand + i4BytesWritten,
+				    i4TotalLen - i4BytesWritten,
+				    " [NetType SAP]");
+			} else {
+				i4BytesWritten +=
+				    kalSnprintf(pcCommand + i4BytesWritten,
+				    i4TotalLen - i4BytesWritten,
+				    " [NetType GO]");
+			}
+			break;
+		case ENUM_CNM_NETWORK_TYPE_NAN:
+			i4BytesWritten +=
+			    kalSnprintf(pcCommand + i4BytesWritten,
+			    i4TotalLen - i4BytesWritten, " [NetType NAN]");
+			break;
+		default:
+			break;
+		}
+
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"[CH%3u][Band b%u][BW%s][TxNSS%u][RxNss%u]",
 			prCnmInfo->ucBssCh[ucBssIdx],
 			prCnmInfo->ucBssDBDCBand[ucBssIdx],
-			prCnmInfo->ucBssWmmSet[ucBssIdx],
-			prCnmInfo->ucBssWmmDBDCBand[ucBssIdx],
-			prCnmInfo->ucBssOMACSet[ucBssIdx],
-			prCnmInfo->ucBssOMACDBDCBand[ucBssIdx],
 			bssOpBw2Str(prBssInfo),
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 			prCnmInfo->ucBssOpTxNss[ucBssIdx],
@@ -16403,21 +16443,22 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 			ucOpRxNss);
 #endif
 
-#if (CFG_SUPPORT_802_11AX == 1)
-		prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
-			ucBssIdx, prBssInfo->aucBSSID);
-
-		if (prStaRec == NULL)
-			continue;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten,
+			"[MLD Group %d][MLO LinkId %d]",
+		prBssInfo->ucGroupMldId, prCnmInfo->ucBssLinkIdx[ucBssIdx]);
+#endif
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "Mcs1=%u\n",
-			(prStaRec->u2HeRxMcsMapBW80) & 0x3);
+			i4TotalLen - i4BytesWritten, "\n");
 
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
-			i4TotalLen - i4BytesWritten, "Mcs2=%u\n",
-			((prStaRec->u2HeRxMcsMapBW80) >> 2) & 0x3);
-#endif /* CFG_SUPPORT_802_11AX */
+			i4TotalLen - i4BytesWritten, "[OMAC_ADDR "MACSTR"]\n",
+			MAC2STR(prBssInfo->aucOwnMacAddr));
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			i4TotalLen - i4BytesWritten, "[BSSID "MACSTR"]\n\n",
+			MAC2STR(prBssInfo->aucBSSID));
 	}
 
 	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));

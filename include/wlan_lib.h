@@ -1416,6 +1416,7 @@ struct PARAM_GET_CNM_T {
 	uint8_t	ucBssOMACDBDCBand[MAX_BSSID_NUM + 1];
 	uint8_t	ucBssOpTxNss[MAX_BSSID_NUM + 1];
 	uint8_t	ucBssOpRxNss[MAX_BSSID_NUM + 1];
+	uint8_t	ucBssLinkIdx[MAX_BSSID_NUM + 1];
 
 	/* Reserved fields */
 	uint8_t	au4Reserved[54]; /*Total 160 byte*/

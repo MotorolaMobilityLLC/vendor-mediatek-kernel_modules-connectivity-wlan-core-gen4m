@@ -6599,7 +6599,8 @@ struct UNI_EVENT_CNM_BSS_INFO {
 	uint8_t      ucBssOMACDBDCBand;
 	uint8_t      ucBssOpTxNss;
 	uint8_t      ucBssOpRxNss;
-	uint8_t      aucReserved[2];
+	uint8_t      ucBssLinkIdx;
+	uint8_t      aucReserved[1];
 }__KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
