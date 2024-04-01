@@ -1858,7 +1858,7 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 			    && eRfBand != BAND_6G
 #endif
 			) {
-				log_dbg(SCN, INFO,
+				log_dbg(SCN, TRACE,
 					"[ch:%d][band:%d] already in scan chnl list\n",
 						ucRnrChNum, eRfBand);
 				return FALSE;
@@ -1869,7 +1869,7 @@ uint8_t scanRnrChnlIsNeedScan(struct ADAPTER *prAdapter,
 		if (eRfBand != BAND_6G)
 #endif
 		{
-			log_dbg(SCN, INFO,
+			log_dbg(SCN, TRACE,
 					"[ch:%d][band:%d] already in scan chnl list\n",
 						ucRnrChNum, eRfBand);
 			return FALSE;

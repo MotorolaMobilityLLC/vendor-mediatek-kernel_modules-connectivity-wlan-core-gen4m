@@ -2169,7 +2169,7 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 
 			DBGLOG(APS, INFO,
 				"CAND[%d] BSS[" MACSTR " %s mld=" MACSTR
-				"] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d]\n",
+				"] score[%d] tput[%d] conn[%d] bssid[%d] bssid_hint[%d] blk[%d] mode[%d] simu[%d]\n",
 				ap->u4Index,
 				MAC2STR(cand->aucBSSID),
 				apucBandStr[cand->eBand],
@@ -2178,7 +2178,8 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 				ap->aprTarget[i]->fgIsConnected,
 				cand->u2Score == BSS_MATCH_BSSID_SCORE,
 				cand->u2Score == BSS_MATCH_BSSID_HINT_SCORE,
-				cand->prBlock != NULL);
+				cand->prBlock != NULL,
+				ap->eMloMode, ap->ucMaxSimuLinks);
 		}
 
 		if (j == ap->ucLinkNum)
@@ -2188,16 +2189,6 @@ struct AP_COLLECTION *apsIntraApSelection(struct ADAPTER *ad,
 			ap->fgIsAllLinkConnected = TRUE;
 			current_ap = ap;
 		}
-
-		DBGLOG(APS, INFO,
-			"CAND[%d] num[%d] score[%d] tput[%d] mode[%d] simu[%d] %s%s%s%s\n",
-			ap->u4Index, ap->ucLinkNum,
-			ap->u4TotalScore, ap->u4TotalTput,
-			ap->eMloMode, ap->ucMaxSimuLinks,
-			ap->fgIsMatchBssid ? "(match_bssid)" : "",
-			ap->fgIsMatchBssidHint ? "(match_bssid_hint)" : "",
-			ap->fgIsAllLinkConnected ? "(connected)" : "",
-			ap->fgIsAllLinkInBlockList ? "(in blocklist)" : "");
 	}
 
 	return current_ap;

@@ -17842,7 +17842,7 @@ void kalIndicateControlPortTxStatus(struct ADAPTER *prAdapter,
 	pucData += u4TxHeadRoomSize;
 	u4Len = kalQueryPacketLength(prMsduInfo->prPacket) - u4TxHeadRoomSize;
 
-	DBGLOG(TX, INFO, "%s: cookie=0x%llx len=%zu status=%d\n",
+	DBGLOG(TX, TRACE, "%s: cookie=0x%llx len=%zu status=%d\n",
 		prNetDev->name, u8Cookie, u4Len, rTxDoneStatus);
 
 	cfg80211_control_port_tx_status(prWdev, u8Cookie, pucData, u4Len,

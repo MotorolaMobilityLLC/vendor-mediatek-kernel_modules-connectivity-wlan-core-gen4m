@@ -6591,6 +6591,9 @@ void mqmUpdateEdcaParams(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	struct AC_QUE_PARMS *prAcQueParams, *arAcQueParams;
 	enum ENUM_WMM_ACI eAci;
 	uint8_t *pucWmmParamSetCount;
+	uint8_t arBuf[256];
+	uint8_t *pos = arBuf;
+	uint8_t *end = arBuf + sizeof(arBuf);
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	struct MLD_STA_RECORD *prMldStaRec;
 #endif
@@ -6614,14 +6617,16 @@ void mqmUpdateEdcaParams(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		prAcQueParams = &arAcQueParams[eAci];
 		prAcParam = &arAcParam[eAci];
 		mqmFillAcQueParam(prAcParam, prAcQueParams);
-		DBGLOG(QM, INFO,
-			"BSS[%u]: eAci[%d] ACM[%d] Aifsn[%d] CWmin/max[%d/%d] TxopLimit[%d] Cnt[%d]\n",
-			prBssInfo->ucBssIndex, eAci,
-			prAcQueParams->ucIsACMSet,
+		pos += kalSnprintf(pos, end - pos,
+			"[%d/%d/%d/%d/%d/%d] ",
+			eAci, prAcQueParams->ucIsACMSet,
 			prAcQueParams->u2Aifsn, prAcQueParams->u2CWmin,
 			prAcQueParams->u2CWmax,
-			prAcQueParams->u2TxopLimit, *pucWmmParamSetCount);
+			prAcQueParams->u2TxopLimit);
 	}
+	DBGLOG(QM, INFO,
+	       "BSS[%u] [AC/ACM/Aifsn/CWmin/CWmax/TxopLimit] %sCnt[%d]\n",
+	       prBssInfo->ucBssIndex, arBuf, *pucWmmParamSetCount);
 }
 
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -6710,6 +6715,9 @@ u_int8_t mqmUpdateMUEdcaParams(struct ADAPTER *prAdapter,
 	enum ENUM_WMM_ACI eAci;
 	uint8_t fgNewParameter = FALSE;
 	uint8_t *pucMUEdcaUpdateCnt;
+	uint8_t arBuf[256];
+	uint8_t *pos = arBuf;
+	uint8_t *end = arBuf + sizeof(arBuf);
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	struct MLD_STA_RECORD *prMldStaRec;
 #endif
@@ -6767,16 +6775,19 @@ u_int8_t mqmUpdateMUEdcaParams(struct ADAPTER *prAdapter,
 			prBSSMUEdca->ucMUEdcaTimer =
 				prMUAcParamInIE->ucMUEdcaTimer;
 
-			DBGLOG(QM, INFO,
-				"BSS[%u]: eAci[%d] ACM[%d] Aifsn[%d] ECWmin/max[%d/%d] Timer[%d] NewParameter[%d] Cnt[%d]\n",
-				prBssInfo->ucBssIndex, eAci,
-				prBSSMUEdca->ucIsACMSet, prBSSMUEdca->ucAifsn,
-				prBSSMUEdca->ucECWmin, prBSSMUEdca->ucECWmax,
-				prBSSMUEdca->ucMUEdcaTimer, fgNewParameter,
-				*pucMUEdcaUpdateCnt);
-
+			pos += kalSnprintf(pos, end - pos,
+				"[%d/%d/%d/%d/%d/%d] ",
+				eAci, prBSSMUEdca->ucIsACMSet,
+				prBSSMUEdca->ucAifsn, prBSSMUEdca->ucECWmin,
+				prBSSMUEdca->ucECWmax,
+				prBSSMUEdca->ucMUEdcaTimer);
 		}
+		DBGLOG(QM, INFO,
+		       "BSS[%u] [AC/ACM/Aifsn/ECWmin/ECWmax/Timer] %sForceOverride[%d] NewParameter[%d] Cnt[%d]\n",
+		       prBssInfo->ucBssIndex, arBuf, fgForceOverride,
+		       fgNewParameter, *pucMUEdcaUpdateCnt);
 	} while (FALSE);
+
 
 	return fgNewParameter;
 }
