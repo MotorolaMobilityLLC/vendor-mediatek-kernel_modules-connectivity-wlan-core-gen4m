@@ -17911,3 +17911,8 @@ inline void kalHifRegWorkSchedule(struct GLUE_INFO *pr)
 	kalWorkSchedule(pr, HIF_REG_WORK);
 }
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+
+void __weak kalPmicCtrl(u_int8_t fgIsEnabled)
+{
+	DBGLOG(SW4, WARN, "PMIC control is not defined\n");
+}

@@ -19,9 +19,17 @@
 #else
 #include <memory/mediatek/emi.h>
 #endif
+
 #define DOMAIN_AP	0
 #define DOMAIN_CONN	2
 #endif
+
+#include <linux/mfd/mt6359/registers.h>
+#include <linux/regmap.h>
+#include <linux/regulator/consumer.h>
+#include <linux/mfd/mt6397/core.h>
+#include <linux/of.h>
+#include <linux/of_platform.h>
 
 #define DEFAULT_CPU_FREQ (0)
 #define CPU_ALL_CORE (0xff)
@@ -37,6 +45,11 @@
 /* Used to get address of saving fw version offset.               */
 /* EMI_base + MCU_EMI_LOG offset(0xB00000) + fw ver offset(0x24). */
 #define FW_VERSION_OFFSET_ADDRESS	0xB00024
+
+#define MT6359_PMIC_REG_BASE		((unsigned int)(0x0))
+#define MT6359_LDO_VFE28_OP_EN_SET	(MT6359_PMIC_REG_BASE+0x1b90)
+#define MT6359_LDO_VFE28_OP_EN_CLR	(MT6359_PMIC_REG_BASE+0x1b92)
+#define MT6359_LDO_VFE28_OP_CFG_CLR	(MT6359_PMIC_REG_BASE+0x1b98)
 
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
 #include <linux/regulator/consumer.h>
@@ -56,6 +69,7 @@ enum ENUM_CPU_BOOST_STATUS {
 };
 
 static uint32_t u4EmiMetOffset = 0x45D400;
+static struct regmap *g_regmap;
 
 #if CFG_SUPPORT_LITTLE_CPU_BOOST
 uint32_t kalGetLittleCpuBoostThreshold(void)
@@ -364,7 +378,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
-#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
 	struct emimpu_region_t region;
 	unsigned long long start = emiPhyBase + offset;
 	unsigned long long end = emiPhyBase + offset + size - 1;
@@ -444,3 +458,63 @@ int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter,
 	return FALSE;
 #endif
 }
+
+void kalPmicCtrl(u_int8_t fgIsEnabled)
+{
+#ifdef CONFIG_OF
+	struct device_node *pmic_node;
+	struct platform_device *pmic_pdev;
+	struct mt6397_chip *chip;
+	struct GLUE_INFO *prGlueInfo;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL)
+		return;
+
+	if (g_regmap != NULL)
+		goto skip_parse_phandle;
+
+	pmic_node = of_parse_phandle(prGlueInfo->rHifInfo.pdev->dev.of_node,
+					"pmic", 0);
+	if (!pmic_node) {
+		DBGLOG(INIT, ERROR, "Get pmic_node fail\n");
+		return;
+	}
+
+	pmic_pdev = of_find_device_by_node(pmic_node);
+	if (!pmic_pdev) {
+		DBGLOG(INIT, ERROR, "Get pmic_pdev fail\n");
+		return;
+	}
+
+	chip = dev_get_drvdata(&(pmic_pdev->dev));
+	if (!chip) {
+		DBGLOG(INIT, ERROR, "Get chip fail\n");
+		return;
+	}
+
+	g_regmap = chip->regmap;
+	if (IS_ERR_VALUE(g_regmap)) {
+		g_regmap = NULL;
+		DBGLOG(INIT, ERROR, "Get regmap fail\n");
+	}
+skip_parse_phandle:
+#else
+	DBGLOG(INIT, WARN, "CONFIG_OF not enabled.\n");
+	return;
+#endif
+	if (fgIsEnabled) {
+		regmap_write(g_regmap,
+			MT6359_LDO_VFE28_OP_EN_SET, 0x1 << 8);
+		regmap_write(g_regmap,
+			MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+	} else {
+		regmap_write(g_regmap,
+			MT6359_LDO_VFE28_OP_EN_CLR, 0x1 << 8);
+		regmap_write(g_regmap,
+			MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+		regmap_write(g_regmap,
+			MT6359_LDO_VFE28_OP_CFG_CLR, 0x1 << 8);
+	}
+}
+
