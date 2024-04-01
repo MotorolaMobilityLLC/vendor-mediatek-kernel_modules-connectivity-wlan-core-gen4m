@@ -971,6 +971,8 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	kfifo_out_locked((_prFiFoQ), &(_rObj), sizeof(_rObj), (_lock))
 #define KAL_FIFO_LEN(_prFiFoQ) \
 	kfifo_len((_prFiFoQ))
+#define KAL_FIFO_CNT(_prFiFoQ) \
+	(KAL_FIFO_LEN(_prFiFoQ) / sizeof(void *))
 #define KAL_FIFO_AVAIL(_prFiFoQ) \
 	kfifo_avail((_prFiFoQ))
 #define KAL_FIFO_IS_EMPTY(_prFiFoQ) \

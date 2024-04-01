@@ -236,7 +236,11 @@ static void kalRxGroTcCheck(struct GLUE_INFO *glue);
 #if CFG_SUPPORT_RX_WORK
 static void kalNapiWakeup(void);
 #endif /* CFG_SUPPORT_RX_WORK */
-void __kalNapiSchedule(struct ADAPTER *prAdapter);
+#if CFG_NAPI_DELAY
+static void kalNapiDelayTimerInit(struct GLUE_INFO *pr);
+static void kalNapiDelayTimerUninit(struct GLUE_INFO *pr);
+static void kalNapiDelayCheck(struct GLUE_INFO *pr);
+#endif /* CFG_NAPI_DELAY */
 #endif /* CFG_SUPPORT_RX_NAPI */
 
 #if CFG_SUPPORT_TPUT_FACTOR
@@ -10211,6 +10215,10 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		throughputInPPS += txDiffPkts[i] + rxDiffPkts[i];
 	}
 
+#if CFG_NAPI_DELAY
+	kalNapiDelayCheck(glue);
+#endif /* CFG_NAPI_DELAY */
+
 #if CFG_SUPPORT_RETURN_WORK
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	if (throughput == 0 && prAdapter->u4RfbUnUseCntLv != 0)
@@ -10605,9 +10613,16 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #define NAPI_TEMPLATE "NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
 #endif
 
+#if CFG_NAPI_DELAY
+#define NAPI_DELAY_TEMPLATE "NapiDelay[%u,%u,%u,0x%x,%u] "
+#else /* CFG_NAPI_DELAY */
+#define NAPI_DELAY_TEMPLATE ""
+#endif /* CFG_NAPI_DELAY */
+
 #define TEMP_LOG_TEMPLATE \
 	"ndevdrp:%s " \
 	NAPI_TEMPLATE \
+	NAPI_DELAY_TEMPLATE \
 	RRO_LOG_TEMPLATE \
 	"RxReorder[%s] " \
 	RX_PENDING_TEMPLATE \
@@ -10636,6 +10651,13 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_RX_GRO
 		skb_queue_len(&glue->rRxNapiSkbQ),
 #endif
+#if CFG_NAPI_DELAY
+		prAdapter->rWifiVar.u4NapiDelayTputTh,
+		prAdapter->rWifiVar.u4NapiDelayCntTh,
+		prAdapter->rWifiVar.u4NapiDelayTimeout,
+		glue->ulNapiDelayFlag,
+		KAL_FIFO_CNT(&glue->rRxKfifoQ),
+#endif /* CFG_NAPI_DELAY */
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		prAdapter->rWifiVar.fgEnableRro,
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_STEP_ONE),
@@ -10719,6 +10741,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #undef RRO_LOG_TEMPLATE
 #undef RADIOTAP_LOG_TEMPLATE
 #undef RX_PENDING_TEMPLATE
+#undef NAPI_DELAY_TEMPLATE
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),
@@ -13819,6 +13842,9 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_RX_NAPI_THREADED
 	kalNapiThreadedInit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+#if CFG_NAPI_DELAY
+	kalNapiDelayTimerInit(prGlueInfo);
+#endif /* CFG_NAPI_DELAY */
 	DBGLOG(INIT, TRACE, "Napi Init Done\n");
 	return 0;
 }
@@ -13829,6 +13855,9 @@ uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_RX_NAPI_THREADED
 	kalNapiThreadedUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+#if CFG_NAPI_DELAY
+	kalNapiDelayTimerUninit(prGlueInfo);
+#endif /* CFG_NAPI_DELAY */
 	DBGLOG(INIT, TRACE, "Napi Uninit Done\n");
 	return 0;
 }
@@ -13858,7 +13887,7 @@ static void kalNapiWakeup(void)
 }
 #endif /* CFG_SUPPORT_RX_WORK */
 
-void __kalNapiSchedule(struct ADAPTER *prAdapter)
+static inline void __kalNapiSchedule(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct RX_CTRL *prRxCtrl;
@@ -13873,7 +13902,7 @@ void __kalNapiSchedule(struct ADAPTER *prAdapter)
 	kal_napi_schedule(prGlueInfo->prRxDirectNapi);
 }
 
-void kalNapiSchedule(struct ADAPTER *prAdapter)
+static inline void _kalNapiSchedule(struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_RX_NAPI_IN_RX_THREAD
 	set_bit(GLUE_FLAG_RX_TO_OS_BIT, &prAdapter->prGlueInfo->ulFlag);
@@ -13883,6 +13912,110 @@ void kalNapiSchedule(struct ADAPTER *prAdapter)
 #else /* CFG_SUPPORT_RX_NAPI_WORK */
 	__kalNapiSchedule(prAdapter);
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
+}
+
+#if CFG_NAPI_DELAY
+enum hrtimer_restart kalNapiDelayTimeout(struct hrtimer *timer)
+{
+	struct GLUE_INFO *pr = container_of(timer, struct GLUE_INFO,
+						rNapiDelayTimer);
+
+	DBGLOG(INIT, TEMP, "NapiDelayTimeout\n");
+
+	_kalNapiSchedule(pr->prAdapter);
+
+	clear_bit(NAPI_DELAY_START_BIT, &pr->ulNapiDelayFlag);
+	return HRTIMER_NORESTART;
+}
+
+static inline void kalNapiDelayTimerStop(struct GLUE_INFO *pr)
+{
+	/* skip if timer is not started */
+	if (test_and_clear_bit(NAPI_DELAY_START_BIT, &pr->ulNapiDelayFlag) == 0)
+		return;
+
+	hrtimer_cancel(&pr->rNapiDelayTimer);
+	DBGLOG(INIT, TEMP, "NapiDelayTimerStop\n");
+}
+
+static inline void kalNapiDelayTimerStart(struct GLUE_INFO *pr,
+	uint32_t u4Timeout)
+{
+	unsigned long nsecs;
+	ktime_t delay;
+
+	/* skip if timer is started */
+	if (test_and_set_bit(NAPI_DELAY_START_BIT, &pr->ulNapiDelayFlag) == 1)
+		return;
+
+	DBGLOG(INIT, TEMP, "NapiDelayTimerStart u4Timeout:%u\n", u4Timeout);
+	nsecs = u4Timeout * 1E6L;
+	delay = ktime_set(0, nsecs);
+	hrtimer_start(&pr->rNapiDelayTimer, delay, HRTIMER_MODE_REL);
+}
+
+static void kalNapiDelayTimerInit(struct GLUE_INFO *pr)
+{
+	hrtimer_init(&pr->rNapiDelayTimer, CLOCK_MONOTONIC,
+			HRTIMER_MODE_REL);
+	pr->rNapiDelayTimer.function = kalNapiDelayTimeout;
+	pr->ulNapiDelayFlag = 0;
+}
+
+static void kalNapiDelayTimerUninit(struct GLUE_INFO *pr)
+{
+	kalNapiDelayTimerStop(pr);
+}
+
+static void kalNapiDelayCheck(struct GLUE_INFO *pr)
+{
+	struct ADAPTER *ad = pr->prAdapter;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+
+	if (kalGetTpMbps(ad, PKT_PATH_RX) < prWifiVar->u4NapiDelayTputTh) {
+		if (test_and_clear_bit(NAPI_DELAY_ENABLE_BIT,
+			&pr->ulNapiDelayFlag) == 1)
+			DBGLOG(INIT, INFO, "Disable NAPI Delay\n");
+	} else {
+		if (test_and_set_bit(NAPI_DELAY_ENABLE_BIT,
+			&pr->ulNapiDelayFlag) == 0)
+			DBGLOG(INIT, INFO, "Enable NAPI Delay\n");
+	}
+}
+
+static u_int8_t kalIsNapiDelay(struct GLUE_INFO *pr)
+{
+	struct ADAPTER *ad = pr->prAdapter;
+	struct WIFI_VAR *prWifiVar = &ad->rWifiVar;
+
+	if (test_bit(NAPI_DELAY_ENABLE_BIT, &pr->ulNapiDelayFlag) == 0)
+		goto end;
+
+	/* already call napi_schedule, just skip schedule */
+	if (test_bit(NAPI_DELAY_SCHEDULE_BIT, &pr->ulNapiDelayFlag) == 1)
+		return TRUE;
+
+	/* start timer when delay napi, skip schedule */
+	if (KAL_FIFO_CNT(&pr->rRxKfifoQ) < prWifiVar->u4NapiDelayCntTh) {
+		kalNapiDelayTimerStart(pr, prWifiVar->u4NapiDelayTimeout);
+		return TRUE;
+	}
+
+	set_bit(NAPI_DELAY_SCHEDULE_BIT, &pr->ulNapiDelayFlag);
+end:
+	kalNapiDelayTimerStop(pr);
+	return FALSE;
+}
+#endif /* CFG_NAPI_DELAY */
+
+void kalNapiSchedule(struct ADAPTER *ad)
+{
+#if CFG_NAPI_DELAY
+	if (kalIsNapiDelay(ad->prGlueInfo))
+		return;
+#endif /* CFG_NAPI_DELAY */
+
+	_kalNapiSchedule(ad);
 }
 
 uint8_t kalNapiRxDirectInit(struct GLUE_INFO *prGlueInfo)
@@ -13980,6 +14113,10 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	 */
 	nicRxIndicateRfbMainToNapi(prAdapter);
 
+#if CFG_NAPI_DELAY
+	DBGLOG(RX, TEMP, "FIFO_CNT:%u\n", KAL_FIFO_CNT(&prGlueInfo->rRxKfifoQ));
+#endif /* CFG_NAPI_DELAY */
+
 	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {
 			DBGLOG(RX, ERROR, "prSwRfb null\n");
@@ -14003,6 +14140,9 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	kalSkbAllocWorkSchedule(prGlueInfo, TRUE);
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+#if CFG_NAPI_DELAY
+	clear_bit(NAPI_DELAY_SCHEDULE_BIT, &prGlueInfo->ulNapiDelayFlag);
+#endif /* CFG_NAPI_DELAY */
 
 #if CFG_SUPPORT_RX_GRO_PEAK
 	work_done = budget / 2;

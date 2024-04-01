@@ -1229,6 +1229,11 @@ struct WIFI_VAR {
 
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
+#if CFG_NAPI_DELAY
+	uint32_t u4NapiDelayTputTh;
+	uint32_t u4NapiDelayCntTh;
+	uint32_t u4NapiDelayTimeout;
+#endif /* CFG_NAPI_DELAY */
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	uint32_t u4RfbBoostTpTh[PERF_MON_RFB_MAX_THRESHOLD];
 	uint32_t u4RfbUnUseCnt[PERF_MON_RFB_MAX_THRESHOLD];
