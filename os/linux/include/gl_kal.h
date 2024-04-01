@@ -294,6 +294,7 @@ struct BOOST_INFO {
 	struct THREAD_INFO rMainThreadInfo;
 	struct THREAD_INFO rRxThreadInfo;
 	struct THREAD_INFO rRxNapiThreadInfo;
+	struct THREAD_INFO rHifNapiThreadInfo;
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	int32_t i4RxRfbRetWorkCpu;
@@ -394,6 +395,7 @@ enum ENUM_SPIN_LOCK_CATEGORY_E {
 	SPIN_LOCK_HIF_REMAP,
 	SPIN_LOCK_PMKID,
 	SPIN_LOCK_MSDUIFO,
+	SPIN_LOCK_DYNAMIC_RFB,
 	SPIN_LOCK_NUM
 };
 
@@ -2453,6 +2455,9 @@ u_int8_t
 kalChannelFormatSwitch(struct cfg80211_chan_def *channel_def,
 		struct ieee80211_channel *channel,
 		struct RF_CHANNEL_INFO *prRfChnlInfo);
+
+void kal_napi_complete_done(struct napi_struct *n, int work_done);
+void kal_napi_schedule(struct napi_struct *n);
 
 #if CFG_SUPPORT_RX_GRO
 uint8_t kalRxGroInit(struct net_device *prDev);

@@ -8852,17 +8852,19 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 
 	kalMemZero(&rBoostInfo, sizeof(struct BOOST_INFO));
 	i4Recv = sscanf(this_char,
-		"%d-%d-%02x-%02x-%02x-%02x-%u-%u-%u-%u-%x-%x-%d-%d-%d-%d-%d-%d-%u-%d-%u-%u-%u",
+		"%d-%d-%02x-%02x-%02x-%02x-%02x-%u-%u-%u-%u-%u-%x-%x-%d-%d-%d-%d-%d-%d-%u-%d-%u-%u-%u",
 		&(rBoostInfo.rCpuInfo.i4LittleCpuFreq),
 		&(rBoostInfo.rCpuInfo.i4BigCpuFreq),
 		&(rBoostInfo.rHifThreadInfo.u4CpuMask),
 		&(rBoostInfo.rMainThreadInfo.u4CpuMask),
 		&(rBoostInfo.rRxThreadInfo.u4CpuMask),
 		&(rBoostInfo.rRxNapiThreadInfo.u4CpuMask),
+		&(rBoostInfo.rHifNapiThreadInfo.u4CpuMask),
 		&(rBoostInfo.rHifThreadInfo.u4Priority),
 		&(rBoostInfo.rMainThreadInfo.u4Priority),
 		&(rBoostInfo.rRxThreadInfo.u4Priority),
 		&(rBoostInfo.rRxNapiThreadInfo.u4Priority),
+		&(rBoostInfo.rHifNapiThreadInfo.u4Priority),
 		&(rBoostInfo.u4RpsMap),
 		&(rBoostInfo.u4ISRMask),
 		&(rBoostInfo.fgDramBoost),
@@ -8878,7 +8880,7 @@ int priv_driver_boostcpu(struct net_device *prNetDev,
 		&u4TxFreeSkbWorkCoreType
 		);
 
-	if (i4Recv == 23) {
+	if (i4Recv == 25) {
 		/* Disable BoostCpu by PerMon */
 		prAdapter->rWifiVar.fgBoostCpuEn = FEATURE_DISABLED;
 		prAdapter->rWifiVar.fgBoostCpuPolicyEn

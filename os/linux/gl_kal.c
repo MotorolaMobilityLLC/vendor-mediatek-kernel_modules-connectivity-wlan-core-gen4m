@@ -6900,7 +6900,9 @@ void kalRxTaskletSchedule(struct GLUE_INFO *pr)
 
 void kalRxTaskSchedule(struct GLUE_INFO *pr)
 {
+#if !CFG_SUPPORT_HIF_RX_NAPI
 	uint32_t u4Cnt;
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
 	if (!HAL_IS_RX_DIRECT(pr->prAdapter)) {
 		DBGLOG(INIT, ERROR,
@@ -6916,6 +6918,9 @@ void kalRxTaskSchedule(struct GLUE_INFO *pr)
 	CPU_STAT_INC_CNT(pr, CPU_RX_IN);
 #endif /* CFG_SUPPORT_CPU_STAT */
 
+#if CFG_SUPPORT_HIF_RX_NAPI
+	kal_napi_schedule(&pr->rHifInfo.rNapiDev.napi);
+#else
 	/* prevent multiple tasklet schedule in ISR */
 	u4Cnt = GLUE_INC_REF_CNT(pr->u4RxTaskScheduleCnt);
 	if (u4Cnt > 2) {
@@ -6932,6 +6937,7 @@ void kalRxTaskSchedule(struct GLUE_INFO *pr)
 #else /* CFG_SUPPORT_RX_WORK */
 	kalRxTaskletSchedule(pr);
 #endif /* CFG_SUPPORT_RX_WORK */
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 }
 
 uint32_t kalRxTaskWorkDone(struct GLUE_INFO *pr, u_int8_t fgIsInt)
@@ -13760,7 +13766,6 @@ void kalSetThreadSchPolicyPriority(struct GLUE_INFO *prGlueInfo)
 MODULE_IMPORT_NS(VFS_internal_I_am_really_a_filesystem_and_am_NOT_a_driver);
 #endif
 
-#if CFG_SUPPORT_RX_GRO
 /* For Linux kernel version wrapper */
 void kal_napi_complete_done(struct napi_struct *n, int work_done)
 {
@@ -13785,6 +13790,7 @@ void kal_napi_schedule(struct napi_struct *n)
 		napi_schedule(n);
 }
 
+#if CFG_SUPPORT_RX_GRO
 uint8_t kalRxGroInit(struct net_device *prDev)
 {
 	/* Register GRO function to kernel */

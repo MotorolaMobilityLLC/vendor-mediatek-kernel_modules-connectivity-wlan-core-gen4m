@@ -202,6 +202,20 @@ enum pcie_aspm_state {
 };
 #endif
 
+#if CFG_SUPPORT_HIF_RX_NAPI
+struct HIF_NAPI_DEVICE {
+	struct net_device dev;
+	struct napi_struct napi;
+	struct GLUE_INFO *prGlueInfo;
+	struct task_struct *napi_thread;
+	uint32_t u4ThreadPid;
+	u_int8_t fgIsRun;
+#if CFG_ENABLE_WAKE_LOCK
+	KAL_WAKE_LOCK_T * prHifNapiWakeLock;
+#endif
+};
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
 /* host interface's private data structure, which is attached to os glue
  ** layer info structure.
  */
@@ -345,6 +359,10 @@ struct GL_HIF_INFO {
 	irq_handler_t irq_handler;
 	irq_handler_t irq_handler_thread;
 #endif
+
+#if CFG_SUPPORT_HIF_RX_NAPI
+	struct HIF_NAPI_DEVICE rNapiDev;
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 };
 
 struct BUS_INFO {
