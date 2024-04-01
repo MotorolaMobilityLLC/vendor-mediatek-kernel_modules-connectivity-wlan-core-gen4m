@@ -827,6 +827,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(2),
 		.policy    = get_cfg_policy,
 		.u4PolicySize = ARRAY_SIZE(get_cfg_policy)
+	},
+	{
+		.pcCmdStr  = CMD_SETSUSPENDMODE,
+		.pfHandler = priv_driver_set_suspend_mode,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = set_flag_policy,
+		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
 	}
 };
 
@@ -864,14 +872,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
 		.policy    = NULL,
 		.u4PolicySize = 0
-	},
-	{
-		.pcCmdStr  = CMD_SETSUSPENDMODE,
-		.pfHandler = priv_driver_set_suspend_mode,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
-		.policy    = set_flag_policy,
-		.u4PolicySize = ARRAY_SIZE(set_flag_policy)
 	},
 	{
 		.pcCmdStr  = CMD_SETBAND,
