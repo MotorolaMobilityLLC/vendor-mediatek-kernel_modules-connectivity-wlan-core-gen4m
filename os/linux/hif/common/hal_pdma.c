@@ -1237,6 +1237,10 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, INFO, "Msdu Token Init: Tot[%u] Used[%u]\n",
 		prTokenInfo->u4TokenNum, prTokenInfo->u4UsedCnt);
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	halGetTxCmaNonCacheMemUsage();
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
+
 }
 
 void halUninitOneMsduTokenInfo(struct ADAPTER *prAdapter,
@@ -1273,7 +1277,8 @@ void halUninitOneMsduTokenInfo(struct ADAPTER *prAdapter,
 #if HIF_TX_PREALLOC_DATA_BUFFER
 	if (prMemOps->freeDataBuf)
 		prMemOps->freeDataBuf(prToken->prPacket,
-				  prToken->u4DmaLength);
+				  prToken->u4DmaLength, prToken->rDmaAddr,
+				  prToken->u4Token);
 	prToken->prPacket = NULL;
 #endif
 	prTokenInfo = &prHifInfo->rTokenInfo;
@@ -1285,22 +1290,23 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	uint32_t u4Idx;
+	uint32_t u4Idx, u4TokenNum;
 #if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	unsigned long flags = 0;
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTokenInfo = &prHifInfo->rTokenInfo;
+	u4TokenNum = prTokenInfo->u4TokenNum;
 
 #if CFG_SUPPORT_HIF_FIFO_TOKEN
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < u4TokenNum; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
 		halUninitOneMsduTokenInfo(prAdapter, prToken);
 	}
 #else
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < u4TokenNum; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
 		list_del(&prToken->msdu_list);
 		hash_del_rcu(&prToken->node);
@@ -3112,6 +3118,7 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	struct RTMP_DMACB *prRxCell;
 	void *pPacket, *pBuffer;
 	uint32_t i, j;
+	uint32_t u4Idx;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -3131,9 +3138,12 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 					prMemOps->unmapTxDataBuf(prHifInfo,
 						pTxRing->Cell[j].PacketPa,
 						pTxD->SDLen0);
+				u4Idx = pTxRing->Cell[j].prToken->u4Token;
 				if (prMemOps->freeDataBuf && pBuffer)
 					prMemOps->freeDataBuf(pBuffer,
-						pTxD->SDLen0);
+						pTxD->SDLen0,
+						pTxRing->Cell[j].PacketPa,
+						u4Idx);
 			} else {
 				if (prMemOps->unmapTxCmdBuf && pPacket)
 					prMemOps->unmapTxCmdBuf(prHifInfo,

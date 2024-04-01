@@ -176,9 +176,9 @@ static struct mutex g_rPageLock;
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
 #endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 
-#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
 struct platform_device *g_prTxCmaPlatDev;
-#endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+#endif /* CFG_MTK_WIFI_TX_MEM_SLIM */
 
 
 /*******************************************************************************
@@ -321,7 +321,8 @@ static bool halFreeRsvMem(uint32_t u4Size,
 
 static int halInitHifMem(struct platform_device *pdev,
 		  struct mt66xx_chip_info *prChipInfo,
-		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
+		  enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx,
+		  gfp_t gfp)
 {
 	uint32_t i = sizeof(wifi_rsrv_mems[u4RsvMemIdx]) /
 		sizeof(struct wifi_rsrv_mem);
@@ -337,7 +338,7 @@ static int halInitHifMem(struct platform_device *pdev,
 			dma_alloc_coherent(&pdev->dev,
 				wifi_rsrv_mems[u4RsvMemIdx][i].size,
 				&wifi_rsrv_mems[u4RsvMemIdx][i].phy_base,
-				GFP_DMA);
+				gfp);
 		if (!wifi_rsrv_mems[u4RsvMemIdx][i].vir_base) {
 			DBGLOG(INIT, ERROR,
 				"[%u][%d] DMA_ALLOC_COHERENT failed, size: 0x%llx\n",
@@ -377,6 +378,9 @@ int halAllocHifMem(struct platform_device *pdev,
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	uint32_t u4Idx, u4Size, u4EvtNum, u4DataNum;
+#if HIF_TX_PREALLOC_DATA_BUFFER
+	uint32_t u4AllocTokNum = 0;
+#endif
 #if CFG_MTK_WIFI_SW_EMI_RING
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 	struct device_node *node = NULL;
@@ -386,7 +390,7 @@ int halAllocHifMem(struct platform_device *pdev,
 	prChipInfo = prDriverData->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 
-	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WFDMA) == -1)
+	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WFDMA, GFP_DMA) == -1)
 		return -1;
 
 #if CFG_MTK_WIFI_SW_EMI_RING
@@ -526,16 +530,23 @@ int halAllocHifMem(struct platform_device *pdev,
 	}
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
-#if (CFG_MTK_WIFI_TX_MEM_SLIM == 0)
-	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	u4AllocTokNum = HIF_TX_MSDU_TOKEN_NUM_MIN;
+#else /* !CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
+	u4AllocTokNum = 0;
+#endif /* !CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
+#else /* !CFG_MTK_WIFI_TX_MEM_SLIM */
+	u4AllocTokNum = HIF_TX_MSDU_TOKEN_NUM;
+#endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
+	for (u4Idx = 0; u4Idx < u4AllocTokNum; u4Idx++) {
 		if (!halAllocRsvMem(HAL_TX_MAX_SIZE_PER_FRAME +
 				prChipInfo->txd_append_size,
 				&grMem.rMsduBuf[u4Idx],
 				WIFI_RSV_MEM_WFDMA))
 			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);
 	}
-#endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */
-#endif
+#endif /* HIF_TX_PREALLOC_DATA_BUFFER */
 
 	DBGLOG(INIT, INFO, "grMem.u4Offset[WIFI_RSV_MEM_WFDMA]=[0x%x]\n",
 		grMem.u4Offset[WIFI_RSV_MEM_WFDMA]);
@@ -604,7 +615,8 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 
 	prChipInfo = prDriverData->chip_info;
 
-	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WIFI_MISC) == -1)
+	if (halInitHifMem(pdev, prChipInfo, WIFI_RSV_MEM_WIFI_MISC,
+			GFP_DMA) == -1)
 		return -1;
 
 
@@ -633,19 +645,20 @@ int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 }
 #endif
 
-#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
 static void halSetTxCmaDataPlatDev(
 	struct platform_device *pdev)
 {
 	g_prTxCmaPlatDev = pdev;
 }
 
-
 static struct platform_device *halGetTxCmaDataPlatDev(void)
 {
 	return g_prTxCmaPlatDev;
 }
+#endif /* CFG_MTK_WIFI_TX_MEM_SLIM */
 
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 static inline uint64_t txCmaAddr2key(void *kaddr)
 {
 	return ((uint64_t)virt_to_phys(kaddr)) &
@@ -1139,11 +1152,104 @@ void halCopyPathUnmapTxCmaTxBuf(struct GL_HIF_INFO *prHifInfo,
 			     u4Len, KAL_DMA_TO_DEVICE);
 }
 
-void halCopyPathFreeTxCmaBuf(void *pucSrc, uint32_t u4Len)
+void halCopyPathFreeTxCmaBuf(void *pucSrc, uint32_t u4Len,
+	phys_addr_t rDmaAddr, uint32_t u4Idx)
 {
 	free_tx_data_to_mem_group((struct tx_cma_data *)pucSrc);
 }
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+void halCopyPathAllocNonCacheTxDataBuf(
+	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx)
+{
+	struct platform_device *pdev = halGetTxCmaDataPlatDev();
+
+	if (u4Idx < HIF_TX_MSDU_TOKEN_NUM_MIN) {
+		prToken->prPacket = grMem.rMsduBuf[u4Idx].va;
+		prToken->rDmaAddr = grMem.rMsduBuf[u4Idx].pa;
+	} else {
+		prToken->prPacket =
+			dma_alloc_coherent(&pdev->dev,
+				prToken->u4DmaLength,
+				&prToken->rDmaAddr, GFP_KERNEL);
+	}
+	if (prToken->prPacket) {
+		memset(prToken->prPacket, 0, prToken->u4DmaLength);
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
+			+= prToken->u4DmaLength;
+	} else
+		DBGLOG(INIT, ERROR,
+			"alloc tx buf fail u4Idx: %u\n", u4Idx);
+}
+
+bool halCopyPathCopyNonCacheTxData(struct MSDU_TOKEN_ENTRY *prToken,
+			  void *pucSrc, uint32_t u4Len)
+{
+	memcpy(prToken->prPacket, pucSrc, u4Len);
+	return true;
+}
+
+void halCopyPathFreeNonCacheTxBuf(void *pucSrc, uint32_t u4Len,
+	phys_addr_t rDmaAddr, uint32_t u4Idx)
+{
+	struct platform_device *pdev = halGetTxCmaDataPlatDev();
+
+	if (u4Idx >= HIF_TX_MSDU_TOKEN_NUM_MIN) {
+		dma_free_coherent(&pdev->dev, u4Len, pucSrc,
+			(dma_addr_t)rDmaAddr);
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
+			-= u4Len;
+	}
+}
+
+
+int halInitTxCmaNonCacheMem(struct platform_device *pdev)
+{
+	halSetTxCmaDataPlatDev(pdev);
+	pdev->dev.dma_coherent = false;
+
+	return 0;
+}
+
+int halAllocHifMemForTxCmaNonCache(
+	struct platform_device *pdev,
+	struct mt66xx_hif_driver_data *prDriverData)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	uint32_t u4Idx = 0;
+
+	prChipInfo = prDriverData->chip_info;
+
+	if (halInitHifMem(pdev, prChipInfo,
+			WIFI_RSV_MEM_WIFI_CMA_NON_CACHE, GFP_KERNEL) == -1)
+		return -1;
+
+	for (u4Idx = HIF_TX_MSDU_TOKEN_NUM_MIN;
+			u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
+		if (!halAllocRsvMem(HAL_TX_MAX_SIZE_PER_FRAME +
+				prChipInfo->txd_append_size,
+				&grMem.rMsduBuf[u4Idx],
+				WIFI_RSV_MEM_WIFI_CMA_NON_CACHE))
+			DBGLOG(INIT, ERROR, "MsduBuf[%u] alloc fail\n", u4Idx);
+	}
+
+	DBGLOG(INIT, INFO,
+		"grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE] = [0x%x]\n",
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]);
+
+	return 0;
+}
+
+
+void halGetTxCmaNonCacheMemUsage(void)
+{
+	DBGLOG(INIT, INFO,
+		"grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE] = [0x%x]\n",
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]);
+}
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
+
 
 void halCopyPathAllocTxDesc(struct GL_HIF_INFO *prHifInfo,
 			   struct RTMP_DMABUF *prDescRing,
@@ -1617,7 +1723,8 @@ void halZeroCopyPathFreeDesc(struct GL_HIF_INFO *prHifInfo,
 	memset(prDescRing, 0, sizeof(struct RTMP_DMABUF));
 }
 
-void halZeroCopyPathFreeDataBuf(void *pucSrc, uint32_t u4Len)
+void halZeroCopyPathFreeDataBuf(void *pucSrc, uint32_t u4Len,
+	phys_addr_t rDmaAddr, uint32_t u4Idx)
 {
 	kalMemFree(pucSrc, PHY_MEM_TYPE, u4Len);
 }
@@ -2026,6 +2133,14 @@ static int halSetMemOpsTxData(
 		prMemOps->mapTxDataBuf = halCopyPathMapTxCmaTxBuf;
 		prMemOps->unmapTxDataBuf = halCopyPathUnmapTxCmaTxBuf;
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH_TX_NON_CACHE) {
+		prMemOps->allocTxDataBuf = halCopyPathAllocNonCacheTxDataBuf;
+		prMemOps->copyTxData = halCopyPathCopyNonCacheTxData;
+		prMemOps->freeDataBuf = halCopyPathFreeNonCacheTxBuf;
+		prMemOps->mapTxDataBuf = NULL;
+		prMemOps->unmapTxDataBuf = NULL;
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 	} else
 		DBGLOG(INIT, ERROR, "Operation Set undefined\n");
 
@@ -2192,7 +2307,7 @@ static int halSetMemOpsAndroid(
 
 #if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
-	prTxCmaCtx = platform_get_drvdata(halGetTxCmaDataPlatDev());
+	prTxCmaCtx = platform_get_drvdata(pdev);
 	if (prTxCmaCtx->is_cma_mem) {
 		halSetMemOpsTxData(prMemOps,
 		WF_MEM_OP_TX_DATA_COPY_PATH_TX_DYN_CMA);
@@ -2200,6 +2315,9 @@ static int halSetMemOpsAndroid(
 		halSetMemOpsTxData(prMemOps,
 			WF_MEM_OP_TX_DATA_ZERO_COPY_PATH);
 	}
+#elif (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	halSetMemOpsTxData(prMemOps,
+		WF_MEM_OP_TX_DATA_COPY_PATH_TX_NON_CACHE);
 #else /* !CFG_MTK_WIFI_TX_CMA_MEM */
 	halSetMemOpsTxData(prMemOps, WF_MEM_OP_TX_DATA_ZERO_COPY_PATH);
 #endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
@@ -2210,7 +2328,11 @@ static int halSetMemOpsAndroid(
 	halSetMemOpsTxCmd(prMemOps, WF_MEM_OP_TX_CMD_COPY_PATH);
 
 #if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 	halSetMemOpsTxDump(prMemOps, WF_MEM_OP_TX_DUMP_NULL);
+#else /* !CFG_MTK_WIFI_TX_CMA_MEM */
+	halSetMemOpsTxDump(prMemOps, WF_MEM_OP_TX_DUMP_COPY_PATH);
+#endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
 #else /* !CFG_MTK_WIFI_TX_MEM_SLIM */
 	halSetMemOpsTxDump(prMemOps, WF_MEM_OP_TX_DUMP_COPY_PATH);
 #endif /* !CFG_MTK_WIFI_TX_MEM_SLIM */

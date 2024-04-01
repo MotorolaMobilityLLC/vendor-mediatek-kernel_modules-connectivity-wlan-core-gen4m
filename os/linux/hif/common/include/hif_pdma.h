@@ -88,7 +88,7 @@
 #define HIF_TX_MSDU_TOKEN_NUM \
 	(HIF_PLE_PAGE_SIZE * HIF_AMSDU_COUNT)
 #endif
-#define HIF_TX_MSDU_TOKEN_NUM_MIN	(1024 * 4)
+#define HIF_TX_MSDU_TOKEN_NUM_MIN	(1024 * 7)
 /* ToDo fine tune for owl EHT160 */
 #elif defined(CONFIG_MTK_WIFI_HE160) || defined(CONFIG_MTK_WIFI_EHT160)
 #define TX_RING_SIZE				1024
@@ -331,6 +331,7 @@ enum WIFI_MEM_OPER_SETS {
 	WF_MEM_OP_TX_DATA_ZERO_COPY_PATH,
 	WF_MEM_OP_TX_DATA_COPY_PATH,
 	WF_MEM_OP_TX_DATA_COPY_PATH_TX_DYN_CMA,
+	WF_MEM_OP_TX_DATA_COPY_PATH_TX_NON_CACHE,
 
 	/* TX CMD */
 	WF_MEM_OP_TX_CMD_ZERO_COPY_PATH,
@@ -521,6 +522,9 @@ struct GL_HIF_INFO;
 enum ENUM_WIFI_RSV_MEM_IDX {
 	WIFI_RSV_MEM_WFDMA = 0,
 	WIFI_RSV_MEM_WIFI_MISC,
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	WIFI_RSV_MEM_WIFI_CMA_NON_CACHE,
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 	WIFI_RSV_MEM_MAX_NUM
 };
 
@@ -1520,7 +1524,6 @@ void halZeroCopyPathUnmapRxBuf(struct GL_HIF_INFO *prHifInfo,
 			   phys_addr_t rDmaAddr, uint32_t u4Len);
 void halZeroCopyPathFreeDesc(struct GL_HIF_INFO *prHifInfo,
 			 struct RTMP_DMABUF *prDescRing);
-void halZeroCopyPathFreeDataBuf(void *pucSrc, uint32_t u4Len);
 void halZeroCopyPathFreeCmdBuf(void *pucSrc, uint32_t u4Len);
 void halZeroCopyPathFreePacket(struct GL_HIF_INFO *prHifInfo,
 			   void *pvPacket, uint32_t u4Num);
@@ -1563,6 +1566,13 @@ extern uint32_t wifi_page_pool_get_max_page_num(void) __attribute__((weak));
 
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+int halInitTxCmaNonCacheMem(struct platform_device *pdev);
+int halAllocHifMemForTxCmaNonCache(
+	struct platform_device *pdev,
+	struct mt66xx_hif_driver_data *prDriverData);
+void halGetTxCmaNonCacheMemUsage(void);
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 int halAllocHifMemForWiFiMisc(struct platform_device *pdev,
 		   struct mt66xx_hif_driver_data *prDriverData);
