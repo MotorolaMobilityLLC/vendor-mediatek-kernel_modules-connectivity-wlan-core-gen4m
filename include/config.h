@@ -515,6 +515,13 @@
 #error "Cannot enable more than one NAPI feature"
 #endif
 
+#ifndef CFG_NAPI_DELAY
+#define CFG_NAPI_DELAY 0
+#endif /* CFG_NAPI_DELAY */
+#if (CFG_SUPPORT_RX_NAPI == 0) && (CFG_NAPI_DELAY == 1)
+#error "NAPI Delay cannot enabled without NAPI"
+#endif
+
 /* There is a "budget" concept in original NAPI design. However,
  * the default budget in Linux is 64 and it's hard to aggreate a 64K packet
  * within 64-packets in throughput test.

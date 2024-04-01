@@ -8159,6 +8159,17 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[11], "PerfMonLv12", 5000,
 		  FEATURE_TO_CUSTOMER);
 
+#if CFG_NAPI_DELAY
+	/* unit: Mbps */
+	INIT_UINT(prWifiVar->u4NapiDelayTputTh, "NapiDelayTputTh", 200,
+		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4NapiDelayCntTh, "NapiDelayCntTh",
+		NAPI_POLL_WEIGHT, FEATURE_TO_CUSTOMER);
+	/* unit: ms */
+	INIT_UINT(prWifiVar->u4NapiDelayTimeout, "NapiDelayTimeout", 1,
+		  FEATURE_TO_CUSTOMER);
+#endif /* CFG_NAPI_DELAY */
+
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
 	INIT_UINT(prWifiVar->u4RfbBoostTpTh[0], "RfbBoostTpTh0", 50,
 		  FEATURE_TO_CUSTOMER);

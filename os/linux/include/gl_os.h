@@ -732,6 +732,12 @@ struct PER_CPU_TX_INFO {
 	(READ_ONCE(prPerCpuTxInfo->ulRunningMask) != 0)
 #endif /* CFG_SUPPORT_PER_CPU_TX */
 
+#if CFG_NAPI_DELAY
+#define NAPI_DELAY_ENABLE_BIT    (0)
+#define NAPI_DELAY_START_BIT     (1)
+#define NAPI_DELAY_SCHEDULE_BIT  (2)
+#endif /* CFG_NAPI_DELAY */
+
 /*
  * type definition of pointer to p2p structure
  */
@@ -1004,6 +1010,10 @@ struct GLUE_INFO {
 	struct kfifo rRxKfifoQ;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
+#if CFG_NAPI_DELAY
+	struct hrtimer rNapiDelayTimer;
+	unsigned long ulNapiDelayFlag;
+#endif /* CFG_NAPI_DELAY */
 #endif /* CFG_SUPPORT_RX_NAPI */
 
 	uint8_t fgIsEnableMon;

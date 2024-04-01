@@ -2564,7 +2564,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		nicRxIncRfbCnt(prAdapter);
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
-	DBGLOG(RX, TEMP, "halRxReceiveRFBs: u4RxCnt:%d\n", u4RxCnt);
+	DBGLOG(RX, TEMP, "fgRxData:%u u4Port:%u u4RxCnt:%d\n",
+		fgRxData, u4Port, u4RxCnt);
 
 	if (!u4RxCnt) {
 		/* No data in DMA, return directly */
