@@ -145,7 +145,8 @@ static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 static void mt6653ConfigWfdmaRxRingThreshold(
 	struct ADAPTER *prAdapter, uint32_t u4Num, u_int8_t fgIsData);
 
-static void mt6653UpdateWfdmaPrdcInt(struct GLUE_INFO *prGlueInfo);
+static void mt6653UpdateWfdmaPrdcInt(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgForceEn);
 
 static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
@@ -2676,7 +2677,8 @@ exit:
 	       fgIsData, u4Val);
 }
 
-static void mt6653UpdateWfdmaPrdcInt(struct GLUE_INFO *prGlueInfo)
+static void mt6653UpdateWfdmaPrdcInt(
+	struct GLUE_INFO *prGlueInfo, u_int8_t fgForceEn)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -2685,7 +2687,7 @@ static void mt6653UpdateWfdmaPrdcInt(struct GLUE_INFO *prGlueInfo)
 	u4Time = prGlueInfo->fgIsInSuspendMode ?
 		prWifiVar->u4SuspendPrdcIntTime : prWifiVar->u4PrdcIntTime;
 
-	if (u4Time == prAdapter->u4CurPrdcIntTime)
+	if (!fgForceEn && u4Time == prAdapter->u4CurPrdcIntTime)
 		return;
 
 	prAdapter->u4CurPrdcIntTime = u4Time;
@@ -2783,7 +2785,7 @@ static void mt6653WpdmaDlyInt(struct GLUE_INFO *prGlueInfo)
 	       prWifiVar->u4DlyIntCnt);
 #endif /* CFG_SUPPORT_WFDMA_RX_DELAY_INT */
 
-	mt6653UpdateWfdmaPrdcInt(prGlueInfo);
+	mt6653UpdateWfdmaPrdcInt(prGlueInfo, TRUE);
 }
 
 static void mt6653WpdmaConfigExt0(struct ADAPTER *prAdapter)

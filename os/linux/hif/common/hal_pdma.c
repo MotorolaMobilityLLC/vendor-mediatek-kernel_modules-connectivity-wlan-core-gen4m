@@ -6258,7 +6258,7 @@ void halUpdateHifConfig(struct ADAPTER *prAdapter)
 	}
 
 	if (prChipInfo->updatePrdcInt)
-		prChipInfo->updatePrdcInt(prGlueInfo);
+		prChipInfo->updatePrdcInt(prGlueInfo, FALSE);
 }
 
 #if CFG_SUPPORT_LLS

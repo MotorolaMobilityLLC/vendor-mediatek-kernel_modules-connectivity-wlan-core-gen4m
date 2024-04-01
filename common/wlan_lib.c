@@ -9015,7 +9015,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		prWifiVar->fgEnSwEmiRead = FEATURE_DISABLED;
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
-	INIT_UINT(prWifiVar->u4PrdcIntTime, "PrdcIntTime", 5,
+	INIT_UINT(prWifiVar->u4PrdcIntTime, "PrdcIntTime", 25,
 		FEATURE_TO_CUSTOMER); /* unit: 20us */
 	INIT_UINT(prWifiVar->u4SuspendPrdcIntTime, "SuspendPrdcIntTime", 50,
 		FEATURE_TO_CUSTOMER); /* unit: 20us */
