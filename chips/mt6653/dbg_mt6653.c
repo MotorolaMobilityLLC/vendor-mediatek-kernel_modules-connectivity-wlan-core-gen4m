@@ -1927,6 +1927,18 @@ void mt6653_dumpCbInfraReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 		/* SectionG - dma dbg_ctl */
 		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_g,
 			fgIsDumpViaBt);
+
+		/* SectionH - cb_infra_mbu */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_h,
+			fgIsDumpViaBt);
+
+		/* SectionI - cb_infra_bus (cb_infra_off_dma_bcrm) */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_i,
+			fgIsDumpViaBt);
+
+		/* SectionJ - pcie phy */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_j,
+			fgIsDumpViaBt);
 	} else {
 		/* SectionA - cb_infra vlp */
 		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_a,
@@ -1950,6 +1962,18 @@ void mt6653_dumpCbInfraReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 
 		/* SectionG - dma dbg_ctl */
 		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_g,
+			fgIsDumpViaBt);
+
+		/* SectionH - cb_infra_mbu */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_h,
+			fgIsDumpViaBt);
+
+		/* SectionI - cb_infra_bus (cb_infra_off_dma_bcrm) */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_i,
+			fgIsDumpViaBt);
+
+		/* SectionJ - pcie phy */
+		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_j,
 			fgIsDumpViaBt);
 	}
 }
