@@ -1258,10 +1258,23 @@ static void update_mbu_timeout(uint8_t is_timeout)
 
 static uint8_t check_mbu_timeout(uint32_t u4Val)
 {
-#define MBU_TIMEOUT_PATTERN		0xFFFFDEAD
 #define MBU_TIMEOUT_THRESHOLD_CNT	3
 
-	if (u4Val == MBU_TIMEOUT_PATTERN)
+	u_int8_t fgCurTimeout = FALSE;
+	uint32_t u4Idx, u4Pattern;
+	uint32_t au4MbuTimeoutFilterList[] = {
+		0xFFFFDEAD, 0xDEAD0A2C
+	};
+
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4MbuTimeoutFilterList); u4Idx++) {
+		u4Pattern = au4MbuTimeoutFilterList[u4Idx];
+		if (u4Val == u4Pattern) {
+			fgCurTimeout = TRUE;
+			break;
+		}
+	}
+
+	if (fgCurTimeout)
 		g_uMbuTimeoutCnt++;
 	else
 		g_uMbuTimeoutCnt = 0;
