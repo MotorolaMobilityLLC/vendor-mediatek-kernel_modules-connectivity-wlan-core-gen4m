@@ -11720,7 +11720,7 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 		 * IEEE80211_CHAN_NO_HT40
 		 */
 		if (ch_idx >= rlmDomainGetActiveChannelCount(KAL_BAND_2GHZ)) {
-			uint16_t u2ChnlSeq;
+			uint32_t u4ChnlSeq;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			/* For example,
 			 * 5G chnl 116、6G chnl 33 -> case 1
@@ -11730,22 +11730,22 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			 * For 6G band : +1 is to align the cases with 5G band
 			 */
 			if (eChBand == BAND_6G)
-				u2ChnlSeq = ((pCh->u2ChNum >> 2) + 1) & 0x3;
+				u4ChnlSeq = ((pCh->u2ChNum >> 2) + 1) & 0x3;
 			else
 #endif
 			{
-				u2ChnlSeq = (pCh->u2ChNum >> 2) & 0x3;
+				u4ChnlSeq = (pCh->u2ChNum >> 2) & 0x3;
 			}
 
 			/* Limit MAX_BW_40MHz and above to MAX_BW_20MHZ */
 			if (channelBw > MAX_BW_20MHZ) {
 				/* Check flag for 5G chnl 116 or 124 */
-				if ((u2ChnlSeq & 0x1) &&
+				if ((u4ChnlSeq & 0x1) &&
 					kalIsChFlagMatch(pCh->eFlags,
 					CHAN_NO_HT40PLUS))
 					channelBw = MAX_BW_20MHZ;
 				/* Check flag for 5G chnl 120 or 128 */
-				else if ((!(u2ChnlSeq & 0x1)) &&
+				else if ((!(u4ChnlSeq & 0x1)) &&
 					kalIsChFlagMatch(pCh->eFlags,
 					CHAN_NO_HT40MINUS))
 					channelBw = MAX_BW_20MHZ;
@@ -11755,9 +11755,9 @@ uint8_t rlmDomainGetChannelBw(enum ENUM_BAND eBand, uint8_t channelNum)
 			if (channelBw > MAX_BW_40MHZ) {
 				struct CMD_DOMAIN_CHANNEL *pAdj20Chnl = NULL;
 				struct CMD_DOMAIN_CHANNEL *pAdj40Chnl = NULL;
-				uint32_t ch_idx_offset = 0;
+				int32_t ch_idx_offset = 0;
 
-				switch (u2ChnlSeq) {
+				switch (u4ChnlSeq) {
 				case 1:
 					/* 5G chnl 116 to check chnl 120 flag */
 					ch_idx_offset = 1;
