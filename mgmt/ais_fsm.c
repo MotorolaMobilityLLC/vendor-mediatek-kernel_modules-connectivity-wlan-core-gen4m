@@ -2370,9 +2370,14 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 		state = AIS_STATE_WAIT_FOR_NEXT_SCAN;
 		goto skip_roam_fail;
 	} else if (btm->ucDisImmiState == AIS_BTM_DIS_IMMI_STATE_3) {
-		ais->fgTargetChnlScanIssued = FALSE;
-		state = AIS_STATE_LOOKING_FOR;
-		goto skip_roam_fail;
+		if (ais->fgTargetChnlScanIssued) {
+			ais->fgTargetChnlScanIssued = FALSE;
+			state = AIS_STATE_LOOKING_FOR;
+			goto skip_roam_fail;
+		}
+
+		DBGLOG(AIS, INFO,
+		       "[Roaming] No target found in BTM state 3.\n");
 	} else if (ais->fgTargetChnlScanIssued) {
 		/* if target channel scan has issued, and no
 		 * roaming target is found, need to do full scan
