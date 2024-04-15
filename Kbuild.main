@@ -631,6 +631,9 @@ ifeq ($(MTK_ANDROID_WMT), y)
             CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
         endif
     endif
+    ifeq ($(call kver_ge,6,6),1)
+        CONFIG_SUPPORT_MBRAIN=y
+    endif
     CONFIG_PERF_MON_FAST=y
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     CONFIG_WIFI_SECURITY_COREDUMP=y
@@ -2518,6 +2521,10 @@ else
     ccflags-y += -DCFG_SUPPORT_LLS_MDDP=0
 endif
 
+ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
+ccflags-y += -DCFG_SUPPORT_MBRAIN=1
+ccflags-y += -I$(DEVICE_MODULES_PATH)/drivers/misc/mediatek/mbraink
+endif
 
 ifeq ($(CONFIG_MTK_WIFI_ON_READ_BY_CFG_SPACE), y)
     ccflags-y += -DCFG_MTK_WIFI_ON_READ_BY_CFG_SPACE=1
@@ -2856,6 +2863,9 @@ OS_OBJS := 	$(OS_DIR)gl_init.o \
     endif
     ifeq ($(CONFIG_SUPPORT_FW_IDX_LOG_SAVE), y)
         OS_OBJS += $(OS_DIR)gl_fw_dev.o
+    endif
+    ifeq ($(CONFIG_SUPPORT_MBRAIN), y)
+        OS_OBJS += $(OS_DIR)gl_mbrain.o
     endif
 endif
 
