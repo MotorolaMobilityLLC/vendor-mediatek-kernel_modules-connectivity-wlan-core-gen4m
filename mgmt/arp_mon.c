@@ -172,24 +172,25 @@ static void getSrcMac(uint8_t *pucData, uint16_t u2PacketLen,
 	COPY_MAC_ADDR(prMacAddr, pucSaAddr);
 }
 
-static uint8_t *getArpPkt(uint8_t *pucData, uint16_t u2PacketLen)
+static struct ARP_HEADER *getArpPkt(uint8_t *pucData, uint16_t u2PacketLen)
 {
-	uint16_t u2EtherType = 0;
-	uint8_t *pucEthBody = NULL;
+	struct ETH_FRAME *prEth = (struct ETH_FRAME *)pucData;
+	struct ARP_HEADER *prArp = NULL;
 
-	if (u2PacketLen < (ETHER_HEADER_LEN + ARP_PKT_LEN) ||
-		u2PacketLen > ETHER_MAX_PKT_SZ)
+	if (u2PacketLen > ETHER_MAX_PKT_SZ ||
+	    u2PacketLen < sizeof(struct ETH_FRAME) + sizeof(struct ARP_HEADER))
 		goto end;
 
-	u2EtherType = (pucData[ETH_TYPE_LEN_OFFSET] << 8) |
-		(pucData[ETH_TYPE_LEN_OFFSET + 1]);
-	if (u2EtherType != ETH_P_ARP)
+	if (unlikely(NTOHS(prEth->u2TypeLen) != ETH_P_ARP)) {
+		DBGLOG(TX, ERROR, "wrong ARP type %04x\n",
+		       NTOHS(prEth->u2TypeLen));
 		goto end;
+	}
 
-	pucEthBody = &pucData[ETHER_HEADER_LEN];
+	prArp = (struct ARP_HEADER *)prEth->aucData;
 
 end:
-	return pucEthBody;
+	return prArp;
 }
 
 static u_int8_t arpMonIsIOTIssue(struct ADAPTER *ad, uint32_t ucBssIdx)
@@ -263,8 +264,7 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct RX_CTRL	*prRxCtrl = NULL;
 	struct BSS_INFO *prAisBssInfo = NULL;
-	uint8_t *pucArpPkt = NULL;
-	int arpOpCode = 0;
+	struct ARP_HEADER *prArp = NULL;
 	uint8_t ucBssIdx = prArpMonPktInfo->ucBssIdx;
 	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
 	uint8_t *pucData = prArpMonPktInfo->pucData;
@@ -294,18 +294,15 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 	if (!prAisBssInfo)
 		return;
 
-	pucArpPkt = getArpPkt(pucData, u2PacketLen);
-	if (!pucArpPkt)
+	prArp = getArpPkt(pucData, u2PacketLen);
+	if (!prArp)
 		return;
 
-	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
-			pucArpPkt[ARP_OPERATION_OFFSET + 1];
-	if (arpOpCode != ARP_PRO_REQ)
+	if (NTOHS(prArp->u2OpCode) != ARP_PRO_REQ)
 		return;
 
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
-	if (arpMonNotApIpAndGatewayIp(ad, ucBssIdx,
-		&pucArpPkt[ARP_TARGET_IP_OFFSET]))
+	if (arpMonNotApIpAndGatewayIp(ad, ucBssIdx, prArp->aucTargetIPaddr))
 		return;
 
 	arpMonIncTxCnt(ad, ucBssIdx);
@@ -385,8 +382,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 	struct ARP_MON_PKT_INFO *prArpMonPktInfo)
 {
 	struct BSS_INFO *prAisBssInfo = NULL;
-	uint8_t *pucArpPkt = NULL;
-	int arpOpCode = 0;
+	struct ARP_HEADER *prArp = NULL;
 	uint8_t ucBssIdx = prArpMonPktInfo->ucBssIdx;
 	uint16_t u2PacketLen = prArpMonPktInfo->u2PacketLen;
 	uint8_t *pucData = prArpMonPktInfo->pucData;
@@ -401,38 +397,33 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 	if (!prAisBssInfo)
 		return;
 
-	pucArpPkt = getArpPkt(pucData, u2PacketLen);
-	if (!pucArpPkt)
+	prArp = getArpPkt(pucData, u2PacketLen);
+	if (!prArp)
 		return;
 
-	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
-			pucArpPkt[ARP_OPERATION_OFFSET + 1];
-	if (arpOpCode != ARP_PRO_RSP)
+	if (NTOHS(prArp->u2OpCode) != ARP_PRO_RSP)
 		return;
 	fgIsFromApIpOrGatewayIp = !arpMonNotApIpAndGatewayIp(ad, ucBssIdx,
-					&pucArpPkt[ARP_SENDER_IP_OFFSET]);
+					prArp->aucSenderIPaddr);
 
 	DBGLOG(AM, LOUD,
 		"ArpSrcMac:" MACSTR " ArpSrcIp:" IPV4STR " ArpTaMac:" MACSTR
 		" isFromAp/gatewayIP [%d]\n",
-		MAC2STR(&pucArpPkt[ARP_SENDER_MAC_OFFSET]),
-		IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]),
+		MAC2STR(prArp->aucSenderMACaddr),
+		IPV4TOSTR(prArp->aucSenderIPaddr),
 		MAC2STR(prArpMonPktInfo->aucTaAddr),
 		fgIsFromApIpOrGatewayIp);
 
 	if (prAisBssInfo && prAisBssInfo->prStaRecOfAP) {
-		if (EQUAL_MAC_ADDR(
-			&(pucArpPkt[ARP_SENDER_MAC_OFFSET]),
-			/* source hardware address */
-			prAisBssInfo->prStaRecOfAP->aucMacAddr)) {
+		if (EQUAL_MAC_ADDR(prArp->aucSenderMACaddr,
+				   prAisBssInfo->prStaRecOfAP->aucMacAddr)) {
 			arpMonResetTxCnt(ad, ucBssIdx);
-			arpMonSetApIp(ad, ucBssIdx,
-				&(pucArpPkt[ARP_SENDER_IP_OFFSET]));
+			arpMonSetApIp(ad, ucBssIdx, prArp->aucSenderIPaddr);
 			DBGLOG(AM, TRACE,
 				"get arp response from AP " IPV4STR "(SA:"
 				MACSTR ")\n",
 				IPV4TOSTR(arpMonGetApIpPtr(ad, ucBssIdx)),
-				MAC2STR(&pucArpPkt[ARP_SENDER_MAC_OFFSET]));
+				MAC2STR(prArp->aucSenderMACaddr));
 		} else if (EQUAL_MAC_ADDR((prArpMonPktInfo->aucTaAddr),
 			prAisBssInfo->prStaRecOfAP->aucMacAddr) &&
 			fgIsFromApIpOrGatewayIp) {
@@ -440,7 +431,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 			DBGLOG(AM, TRACE,
 				"get arp response from AP " IPV4STR "(TA:"
 				MACSTR ")\n",
-				IPV4TOSTR(&pucArpPkt[ARP_SENDER_IP_OFFSET]),
+				IPV4TOSTR(prArp->aucSenderIPaddr),
 				MAC2STR(prArpMonPktInfo->aucTaAddr));
 		}
 
@@ -636,8 +627,7 @@ static void arpMonDetectNoResponse(struct ADAPTER *ad,
 	uint8_t ucBssIdx;
 	struct BSS_INFO *prBssInfo;
 	uint8_t *pucData = NULL;
-	uint8_t *pucArpPkt = NULL;
-	int arpOpCode = 0;
+	struct ARP_HEADER *prArp = NULL;
 	struct WIFI_VAR *prWifiVar = NULL;
 	struct ARP_MON_PKT_INFO rArpMonPktInfo = {0};
 
@@ -695,25 +685,21 @@ static void arpMonDetectNoResponse(struct ADAPTER *ad,
 	if (!pucData)
 		return;
 
-	pucArpPkt = getArpPkt(pucData,
-			kalQueryPacketLength(prMsduInfo->prPacket));
-	if (!pucArpPkt)
+	prArp = getArpPkt(pucData, kalQueryPacketLength(prMsduInfo->prPacket));
+	if (!prArp)
 		return;
 
-	arpOpCode = (pucArpPkt[ARP_OPERATION_OFFSET] << 8) |
-			pucArpPkt[ARP_OPERATION_OFFSET + 1];
-	if (arpOpCode != ARP_PRO_REQ)
+	if (NTOHS(prArp->u2OpCode) != ARP_PRO_REQ)
 		return;
 
 	DBGLOG(AM, LOUD,
 		"apIp:" IPV4STR " gatewayIp:" IPV4STR " TarIp:" IPV4STR "\n",
 		IPV4TOSTR(arpMonGetApIpPtr(ad, ucBssIdx)),
 		IPV4TOSTR(arpMonGetGatewayIpPtr(ad, ucBssIdx)),
-		IPV4TOSTR(&pucArpPkt[ARP_TARGET_IP_OFFSET]));
+		IPV4TOSTR(prArp->aucTargetIPaddr));
 
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
-	if (arpMonNotApIpAndGatewayIp(ad, ucBssIdx,
-		&pucArpPkt[ARP_TARGET_IP_OFFSET]))
+	if (arpMonNotApIpAndGatewayIp(ad, ucBssIdx, prArp->aucTargetIPaddr))
 		return;
 
 	rArpMonPktInfo.ucBssIdx = ucBssIdx;
@@ -730,22 +716,22 @@ static void arpMonDetectNoResponse(struct ADAPTER *ad,
 static void arpMonHandleRxArpPacket(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 {
 	uint8_t *pucData;
-	uint8_t *pucArpPkt = NULL;
-	int arpOpCode = 0;
+	struct ARP_HEADER *prArp = NULL;
 	uint8_t ucBssIdx;
 	struct ARP_MON_PKT_INFO rArpMonPktInfo = {0};
+
+	if (!GLUE_TEST_PKT_FLAG(prSwRfb->pvPacket, ENUM_PKT_ARP))
+		return;
 
 	pucData = prSwRfb->pvHeader;
 	if (!pucData)
 		return;
 
-	pucArpPkt = getArpPkt(pucData, prSwRfb->u2PacketLen);
-	if (!pucArpPkt)
+	prArp = getArpPkt(pucData, prSwRfb->u2PacketLen);
+	if (!prArp)
 		return;
 
-	arpOpCode = pucArpPkt[ARP_OPERATION_OFFSET] << 8 |
-		    pucArpPkt[ARP_OPERATION_OFFSET + 1];
-	if (arpOpCode != ARP_PRO_RSP)
+	if (NTOHS(prArp->u2OpCode) != ARP_PRO_RSP)
 		return;
 
 	ucBssIdx = secGetBssIdxByRfb(ad, prSwRfb);
@@ -777,6 +763,9 @@ static void arpMonHandleRxDhcpPacket(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 	uint16_t dhcpLen = 0;
 	uint8_t ucBssIdx;
 	struct ARP_MON_PKT_INFO rArpMonPktInfo = {0};
+
+	if (!GLUE_TEST_PKT_FLAG(prSwRfb->pvPacket, ENUM_PKT_DHCP))
+		return;
 
 	pucData = prSwRfb->pvHeader;
 	if (!pucData)
@@ -862,6 +851,53 @@ static void arpMonGetUnicastPktTime(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 		prRxCtrl->u4LastUnicastRxTime[ucBssIdx]);
 }
 
+/**
+ * To avoid massive TXS for test applications that send ARP request to whole
+ * subnet
+ *
+ * If CFG_ONLY_CRITICAL_ARP_SET_TXS_LOWRATE == 1 &&
+ * ARP_MONITER_ENABLE == 1 (since it needs to check the IP address)
+ * Target IP |	To AP/GW  |  To others
+ * ----------+------------+----------------
+ * Request   |	Critical  |  Non-critical
+ * Reply     |	Critical  |  Critical
+ *
+ * If CFG_ONLY_CRITICAL_ARP_SET_TXS_LOWRATE == 0 ||
+ * ARP_MONITER_ENABLE == 0,
+ * the default design sets all ARP message with TXS and send at low rate
+ * Target IP |	To AP/GW  |  To others
+ * ----------+------------+----------------
+ * Request   |	Critical  |  Critical
+ * Reply     |	Critical  |  Critical
+ */
+u_int8_t arpMonIpIsCritical(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo)
+{
+	uint8_t *pucData = NULL;
+	struct ARP_HEADER *prArp;
+
+	kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
+	if (!pucData)
+		return FALSE;
+
+	prArp = getArpPkt(pucData, kalQueryPacketLength(prMsduInfo->prPacket));
+	if (!prArp)
+		return FALSE;
+
+	if (NTOHS(prArp->u2OpCode) == ARP_OPERATION_REQUEST &&
+	    arpMonNotApIpAndGatewayIp(ad, prMsduInfo->ucBssIndex,
+				      prArp->aucTargetIPaddr)) {
+
+		DBGLOG(TX, TRACE, "ARP to " IPV4STR " is non-critical\n",
+		       prArp->aucTargetIPaddr);
+		return FALSE;
+	}
+
+	DBGLOG(TX, TRACE, "ARP to " IPV4STR " is critical\n",
+	       prArp->aucTargetIPaddr);
+	return TRUE;
+}
+
+
 u_int8_t arpMonIsCritical(struct ADAPTER *ad, uint8_t ucBssIdx)
 {
 	if (!ad) {
@@ -918,6 +954,9 @@ void arpMonProcessRxPacket(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 
 void arpMonProcessTxPacket(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo)
 {
+	if (prMsduInfo->ucPktType != ENUM_PKT_ARP)
+		return;
+
 	arpMonDetectNoResponse(ad, prMsduInfo);
 }
 #endif /* ARP_MONITER_ENABLE */

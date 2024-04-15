@@ -2740,6 +2740,15 @@
 #endif
 
 /*------------------------------------------------------------------------------
+ * By default, all ARP will be set as TXS and low rate
+ * Set this option to limit the scope in critical ARP messages only
+ *------------------------------------------------------------------------------
+ */
+#ifndef CFG_ONLY_CRITICAL_ARP_SET_TXS_LOWRATE
+#define CFG_ONLY_CRITICAL_ARP_SET_TXS_LOWRATE 0
+#endif
+
+/*------------------------------------------------------------------------------
 * Flags for supported not free pending Tx msduInfo in nicDeactivateNetworkEx()
 * Prevent clear msdu which is still Tx(Host -> Device)
 *------------------------------------------------------------------------------
