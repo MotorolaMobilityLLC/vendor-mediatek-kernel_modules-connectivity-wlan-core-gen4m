@@ -3151,6 +3151,16 @@ static inline bool nicTxPktPIDIsLimited(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
 
+static u_int8_t nicIsArpNeedTxsAndLowRate(struct ADAPTER *prAdapter,
+					  struct MSDU_INFO *prMsduInfo)
+{
+#if CFG_ONLY_CRITICAL_ARP_SET_TXS_LOWRATE
+	return arpMonIpIsCritical(prAdapter, prMsduInfo);
+#else
+	return TRUE;
+#endif
+}
+
 static u_int8_t txsRequired(struct ADAPTER *prAdapter,
 			struct MSDU_INFO *prMsduInfo)
 {
@@ -3181,6 +3191,11 @@ static u_int8_t txsRequired(struct ADAPTER *prAdapter,
 	 */
 	if (prMsduInfo->ucPktType == ENUM_PKT_ICMP &&
 	    !prAdapter->rWifiVar.fgIcmpTxDone)
+		return FALSE;
+
+	/* Do not mark TXS for non-critical ARP */
+	if (prMsduInfo->ucPktType == ENUM_PKT_ARP &&
+	    !nicIsArpNeedTxsAndLowRate(prAdapter, prMsduInfo))
 		return FALSE;
 
 #if CFG_SUPPORT_LIMITED_PKT_PID
@@ -3328,10 +3343,13 @@ u_int8_t nicTxFillMsduInfo(struct ADAPTER *prAdapter,
 #endif
 
 		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_DHCP) ||
-		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) ||
 		    GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_1X)) {
 			fgIsLowestRate = TRUE;
 		}
+
+		if (GLUE_TEST_PKT_FLAG(prPacket, ENUM_PKT_ARP) &&
+		    nicIsArpNeedTxsAndLowRate(prAdapter, prMsduInfo))
+			fgIsLowestRate = TRUE;
 
 		if (fgIsLowestRate)
 			/* Set BSS/STA lowest basic rate */
