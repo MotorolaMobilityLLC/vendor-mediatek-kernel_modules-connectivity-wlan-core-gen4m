@@ -1347,6 +1347,9 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 			   prTokenInfo->u4TokenFifoLen);
 	}
 #endif
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	halUninitTxCmaNonCacheMem();
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
 	DBGLOG(HAL, INFO, "Msdu Token Uninit: Tot[%u] Used[%u]\n",
 		prTokenInfo->u4TokenNum, prTokenInfo->u4UsedCnt);

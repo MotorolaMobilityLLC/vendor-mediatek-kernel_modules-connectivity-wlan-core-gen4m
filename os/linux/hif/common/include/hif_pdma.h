@@ -68,6 +68,8 @@
 #endif
 #define TX_RING_DATA_SIZE			TX_RING_SIZE
 
+#define CMA_MEM_MAX_SIZE			128
+
 /*
  * MT7925 (Owl) does not need to do Redownload.
  * The FWDL binary size becomes larger, so the
@@ -1568,6 +1570,7 @@ void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
 #if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
 int halInitTxCmaNonCacheMem(struct platform_device *pdev);
+int halUninitTxCmaNonCacheMem(void);
 int halAllocHifMemForTxCmaNonCache(
 	struct platform_device *pdev,
 	struct mt66xx_hif_driver_data *prDriverData);

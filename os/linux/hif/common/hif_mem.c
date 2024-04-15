@@ -65,8 +65,11 @@
 #define HAL_PAGE_POOL_PAGE_UPDATE_MIN_INTERVAL  500
 #endif
 
+#if (CFG_MTK_WIFI_TX_MEM_SLIM == 1)
+#define TX_CMA_GROUP_SIZE			(SZ_1M)
+#define TX_CMA_ALLOC_RETRY_TIME_TH	10
+#endif /* CFG_MTK_WIFI_TX_MEM_SLIM */
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
-#define TX_CMA_GROUP_SIZE		(SZ_1M)
 #define TX_CMA_TOK_SIZE			(SZ_2K)
 #define TX_CMA_GROUP_TOK_NUM	(TX_CMA_GROUP_SIZE / TX_CMA_TOK_SIZE)
 #define TX_CMA_GROUP_NUM		\
@@ -106,6 +109,12 @@ struct HIF_PREALLOC_MEM {
 	uint64_t u4RsvMemSize[WIFI_RSV_MEM_MAX_NUM];
 	uint32_t u4Offset[WIFI_RSV_MEM_MAX_NUM];
 #endif
+#if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+	struct HIF_MEM rTxCmaMemGroup[CMA_MEM_MAX_SIZE];
+	uint32_t u4TxMemGroupIdx;
+	uint32_t u4TxMemTokIdx;
+	uint32_t u4TxMemGroupRetryTime;
+#endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 };
 
 struct tx_cma_data {
@@ -1160,6 +1169,57 @@ void halCopyPathFreeTxCmaBuf(void *pucSrc, uint32_t u4Len,
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
 #if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
+void halAllocNonCacheCmaFromMemGroup(
+	struct MSDU_TOKEN_ENTRY *prToken, struct platform_device *pdev)
+{
+	uint32_t u4GroupIdx = grMem.u4TxMemGroupIdx;
+	uint32_t u4GroupTokNum = 0;
+
+	if (u4GroupIdx == CMA_MEM_MAX_SIZE) {
+		prToken = NULL;
+		goto end;
+	}
+
+	if (grMem.u4TxMemGroupRetryTime >=
+		TX_CMA_ALLOC_RETRY_TIME_TH) {
+		prToken = NULL;
+		goto end;
+	}
+
+	if (grMem.u4TxMemTokIdx == 0) {
+		grMem.rTxCmaMemGroup[u4GroupIdx].va =
+			dma_alloc_coherent(&pdev->dev,
+				TX_CMA_GROUP_SIZE,
+				&grMem.rTxCmaMemGroup[u4GroupIdx].pa,
+				GFP_KERNEL);
+		if (!grMem.rTxCmaMemGroup[u4GroupIdx].va) {
+			grMem.u4TxMemGroupRetryTime++;
+			prToken = NULL;
+			goto end;
+		}
+		memset(grMem.rTxCmaMemGroup[u4GroupIdx].va,
+			0, TX_CMA_GROUP_SIZE);
+		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
+			+= TX_CMA_GROUP_SIZE;
+	}
+
+	prToken->prPacket =
+		grMem.rTxCmaMemGroup[u4GroupIdx].va +
+		prToken->u4DmaLength * grMem.u4TxMemTokIdx;
+	prToken->rDmaAddr =
+		grMem.rTxCmaMemGroup[u4GroupIdx].pa +
+		prToken->u4DmaLength * grMem.u4TxMemTokIdx;
+
+	u4GroupTokNum = TX_CMA_GROUP_SIZE / prToken->u4DmaLength;
+	grMem.u4TxMemTokIdx = (grMem.u4TxMemTokIdx + 1) %
+		u4GroupTokNum;
+	if (grMem.u4TxMemTokIdx == 0)
+		grMem.u4TxMemGroupIdx++;
+
+end:
+	return;
+}
+
 void halCopyPathAllocNonCacheTxDataBuf(
 	struct MSDU_TOKEN_ENTRY *prToken, uint32_t u4Idx)
 {
@@ -1168,19 +1228,11 @@ void halCopyPathAllocNonCacheTxDataBuf(
 	if (u4Idx < HIF_TX_MSDU_TOKEN_NUM_MIN) {
 		prToken->prPacket = grMem.rMsduBuf[u4Idx].va;
 		prToken->rDmaAddr = grMem.rMsduBuf[u4Idx].pa;
-	} else {
-		prToken->prPacket =
-			dma_alloc_coherent(&pdev->dev,
-				prToken->u4DmaLength,
-				&prToken->rDmaAddr, GFP_KERNEL);
-	}
-	if (prToken->prPacket) {
-		memset(prToken->prPacket, 0, prToken->u4DmaLength);
-		if (u4Idx >= HIF_TX_MSDU_TOKEN_NUM_MIN)
-			grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
-				+= prToken->u4DmaLength;
 	} else
-		DBGLOG(INIT, ERROR,
+		halAllocNonCacheCmaFromMemGroup(prToken, pdev);
+
+	if (!prToken->prPacket)
+		DBGLOG_LIMITED(INIT, ERROR,
 			"alloc tx buf fail u4Idx: %u\n", u4Idx);
 }
 
@@ -1191,22 +1243,6 @@ bool halCopyPathCopyNonCacheTxData(struct MSDU_TOKEN_ENTRY *prToken,
 	return true;
 }
 
-void halCopyPathFreeNonCacheTxBuf(void *pucSrc, uint32_t u4Len,
-	phys_addr_t rDmaAddr, uint32_t u4Idx)
-{
-	struct platform_device *pdev = halGetTxCmaDataPlatDev();
-
-	if (u4Idx >= HIF_TX_MSDU_TOKEN_NUM_MIN) {
-		if (pucSrc) {
-			dma_free_coherent(&pdev->dev, u4Len, pucSrc,
-				(dma_addr_t)rDmaAddr);
-			grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
-				-= u4Len;
-		}
-	}
-}
-
-
 int halInitTxCmaNonCacheMem(struct platform_device *pdev)
 {
 	halSetTxCmaDataPlatDev(pdev);
@@ -1214,6 +1250,30 @@ int halInitTxCmaNonCacheMem(struct platform_device *pdev)
 
 	return 0;
 }
+
+
+int halUninitTxCmaNonCacheMem(void)
+{
+	struct platform_device *pdev = halGetTxCmaDataPlatDev();
+	uint32_t u4Idx = 0;
+
+	grMem.u4TxMemGroupRetryTime = 0;
+	grMem.u4TxMemTokIdx = 0;
+	grMem.u4TxMemGroupIdx = 0;
+
+	for (u4Idx = 0; u4Idx < CMA_MEM_MAX_SIZE; u4Idx++) {
+		if (grMem.rTxCmaMemGroup[u4Idx].va) {
+			dma_free_coherent(&pdev->dev,
+				TX_CMA_GROUP_SIZE,
+				grMem.rTxCmaMemGroup[u4Idx].va,
+				(dma_addr_t)grMem.rTxCmaMemGroup[u4Idx].pa);
+			grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
+				-= TX_CMA_GROUP_SIZE;
+		}
+	}
+	return 0;
+}
+
 
 int halAllocHifMemForTxCmaNonCache(
 	struct platform_device *pdev,
@@ -2140,7 +2200,7 @@ static int halSetMemOpsTxData(
 	} else if (op_sets == WF_MEM_OP_TX_DATA_COPY_PATH_TX_NON_CACHE) {
 		prMemOps->allocTxDataBuf = halCopyPathAllocNonCacheTxDataBuf;
 		prMemOps->copyTxData = halCopyPathCopyNonCacheTxData;
-		prMemOps->freeDataBuf = halCopyPathFreeNonCacheTxBuf;
+		prMemOps->freeDataBuf = NULL;
 		prMemOps->mapTxDataBuf = NULL;
 		prMemOps->unmapTxDataBuf = NULL;
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
