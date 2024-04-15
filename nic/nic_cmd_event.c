@@ -4049,6 +4049,13 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 	prICapEvent = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)
 		    pucEventBuf;
 
+	if (prICapEvent->u4DataLength
+		> sizeof(struct EXT_EVENT_RBIST_DUMP_DATA_T)) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			prICapEvent->u4DataLength);
+		return;
+	}
+
 	prIcapInfo = &prAdapter->rIcapInfo;
 	prIQArray = prIcapInfo->prIQArray;
 	ASSERT(prIQArray);
