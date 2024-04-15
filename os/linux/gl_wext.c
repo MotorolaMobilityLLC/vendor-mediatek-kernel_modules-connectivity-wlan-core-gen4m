@@ -69,6 +69,25 @@ const long channel_freq[] = {
 static const struct iw_priv_args rIwPrivTable[] = {
 	{IOCTL_GET_DRIVER, IW_PRIV_TYPE_CHAR | IW_PRIV_SET_BUF_SIZE,
 		IW_PRIV_TYPE_CHAR | IW_PRIV_GET_BUF_SIZE, "driver"},
+
+	/* For production meta tool RF test */
+	/* SET STRUCT */
+	{IOCTL_SET_STRUCT, 256, 0, ""},
+	{PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		2, 0, "set_sw_ctrl"},
+#if CFG_SUPPORT_BCM && CFG_SUPPORT_BCM_BWCS
+	{PRIV_CUSTOM_BWCS_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
+		1, 0, "set_bwcs"},
+#endif
+	{PRIV_CMD_OID, 256, 0, "set_oid"},
+
+	/* GET_STRUCT */
+	{IOCTL_GET_STRUCT, 0, 256, ""},
+	{PRIV_CMD_OID, 0, 256, "get_oid"},
+	{
+		PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
+		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_sw_ctrl"
+	},
 /*---------------------------------------------------------------------------
  *  debug only
  *---------------------------------------------------------------------------
@@ -99,8 +118,6 @@ static const struct iw_priv_args rIwPrivTable[] = {
 		1, 0, "set_test_mode"},
 	{PRIV_CMD_TEST_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
 		2, 0, "set_test_cmd"},
-	/* added for set_oid and get_oid */
-	{IOCTL_SET_STRUCT, 256, 0, ""},
 #if CFG_SUPPORT_PRIV_MCR_RW
 	{PRIV_CMD_ACCESS_MCR, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
 		2, 0, "set_mcr"},
@@ -149,22 +166,6 @@ static const struct iw_priv_args rIwPrivTable[] = {
 #if CFG_SUPPORT_EXCEPTION_STATISTICS
 	{PRIV_CMD_EXCEPTION_STAT, 0, IW_PRIV_TYPE_CHAR | 2000, "get_exp_stat" },
 #endif
-	/* SET STRUCT */
-	{PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		2, 0, "set_sw_ctrl"},
-#if CFG_SUPPORT_BCM && CFG_SUPPORT_BCM_BWCS
-	{PRIV_CUSTOM_BWCS_CMD, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED |
-		1, 0, "set_bwcs"},
-#endif
-	{PRIV_CMD_OID, 256, 0, "set_oid"},
-
-	/* GET_STRUCT */
-	{IOCTL_GET_STRUCT, 0, 256, ""},
-	{PRIV_CMD_OID, 0, 256, "get_oid"},
-	{
-		PRIV_CMD_SW_CTRL, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1,
-		IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_sw_ctrl"
-	},
 
 	/* SET_AP */
 	{IOC_AP_SET_CFG, IW_PRIV_TYPE_CHAR | 256,
@@ -203,6 +204,13 @@ static const iw_handler rIwPrivHandler[] = {
 #if CFG_SUPPORT_NAN_PRIV
 	[IOCTL_NAN_STRUCT - SIOCIWFIRSTPRIV] = priv_nan_struct,
 #endif
+	/* For production meta tool RF test */
+	[IOCTL_GET_STRUCT - SIOCIWFIRSTPRIV] = priv_get_struct,
+	[IOCTL_SET_STRUCT - SIOCIWFIRSTPRIV] = priv_set_struct,
+	[IOCTL_SET_STRUCT_FOR_EM - SIOCIWFIRSTPRIV] = priv_set_struct,
+#if CFG_SUPPORT_QA_TOOL
+	[IOCTL_QA_TOOL_DAEMON - SIOCIWFIRSTPRIV] = priv_qa_agent,
+#endif
 
 /*---------------------------------------------------------------------------
  *  debug only
@@ -217,10 +225,7 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOCTL_GET_KEY - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_SET_INTS - SIOCIWFIRSTPRIV] = NULL,
 	[IOCTL_GET_STR - SIOCIWFIRSTPRIV] = priv_get_string,
-	[IOCTL_GET_STRUCT - SIOCIWFIRSTPRIV] = priv_get_struct,
 	[IOCTL_GET_INTS - SIOCIWFIRSTPRIV] = priv_get_ints,
-	[IOCTL_SET_STRUCT - SIOCIWFIRSTPRIV] = priv_set_struct,
-	[IOCTL_SET_STRUCT_FOR_EM - SIOCIWFIRSTPRIV] = priv_set_struct,
 #if CFG_ENABLE_WIFI_DIRECT
 	[IOC_AP_GET_STA_LIST - SIOCIWFIRSTPRIV] = priv_set_ap,
 	[IOC_AP_SET_MAC_FLTR - SIOCIWFIRSTPRIV] = priv_set_ap,
@@ -230,7 +235,6 @@ static const iw_handler rIwPrivHandler[] = {
 	[IOC_AP_SET_BW - SIOCIWFIRSTPRIV] = priv_set_ap,
 #endif
 #if CFG_SUPPORT_QA_TOOL
-	[IOCTL_QA_TOOL_DAEMON - SIOCIWFIRSTPRIV] = priv_qa_agent,
 	[IOCTL_IWPRIV_ATE - SIOCIWFIRSTPRIV] = priv_ate_set,
 #endif
 };

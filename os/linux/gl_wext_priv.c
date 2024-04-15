@@ -1373,7 +1373,6 @@ priv_set_struct(struct net_device *prNetDev,
 	     struct iw_request_info *prIwReqInfo,
 	     union iwreq_data *prIwReqData, char *pcExtra)
 {
-#if BUILD_QA_DBG
 	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
 	     prIwReqInfo->cmd, prIwReqInfo->flags);
 	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
@@ -1381,10 +1380,6 @@ priv_set_struct(struct net_device *prNetDev,
 
 	return compat_priv(prNetDev, prIwReqInfo,
 	     prIwReqData, pcExtra, __priv_set_struct);
-#else
-	DBGLOG(REQ, WARN, "not support in user load");
-	return 0;
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1540,7 +1535,6 @@ priv_get_struct(struct net_device *prNetDev,
 	     struct iw_request_info *prIwReqInfo,
 	     union iwreq_data *prIwReqData, char *pcExtra)
 {
-#if BUILD_QA_DBG
 	DBGLOG(REQ, LOUD, "cmd=%x, flags=%x\n",
 	     prIwReqInfo->cmd, prIwReqInfo->flags);
 	DBGLOG(REQ, LOUD, "mode=%x, flags=%x\n",
@@ -1548,10 +1542,6 @@ priv_get_struct(struct net_device *prNetDev,
 
 	return compat_priv(prNetDev, prIwReqInfo,
 	     prIwReqData, pcExtra, __priv_get_struct);
-#else
-	DBGLOG(REQ, WARN, "not support in user load");
-	return 0;
-#endif
 }
 
 #if CFG_SUPPORT_NAN_PRIV
