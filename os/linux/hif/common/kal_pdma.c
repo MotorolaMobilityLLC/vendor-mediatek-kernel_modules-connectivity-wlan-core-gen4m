@@ -1816,17 +1816,30 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (isPollMode) {
-		struct WIFI_EVENT *prEvent = (struct WIFI_EVENT *)
-			(pucBuf + prAdapter->chip_info->rxd_size);
+		uint32_t u4Count;
+		struct WIFI_EVENT *prEvent;
 
-		if ((prEvent->u2PacketLength == 0) &&
-		    (pRxD->SDLen0 != prEvent->u2PacketLength)) {
-			DBGLOG(RX, ERROR, "Dump RX Event payload len[%d]\n",
-			       pRxD->SDLen0);
-			DBGLOG_MEM8(RX, ERROR, pucBuf, pRxD->SDLen0);
-			return FALSE;
+		for (u4Count = 0; u4Count < 100; u4Count++) {
+			prEvent = (struct WIFI_EVENT *)
+				(pucBuf + prAdapter->chip_info->rxd_size);
+
+			if ((prEvent->u2PacketLength > 0) ||
+			    (pRxD->SDLen0 == prEvent->u2PacketLength))
+				goto end;
+
+			kalUdelay(DMA_DONE_WAITING_TIME);
+
+			if (prMemOps->copyEvent &&
+			    !prMemOps->copyEvent(prHifInfo, pRxCell, pRxD,
+						 prDmaBuf, pucBuf, u4Len))
+				return FALSE;
 		}
+		DBGLOG(RX, ERROR, "Dump RX Event payload len[%d]\n",
+		       pRxD->SDLen0);
+		DBGLOG_MEM32(RX, ERROR, pucBuf, pRxD->SDLen0);
 	}
+
+end:
 
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
