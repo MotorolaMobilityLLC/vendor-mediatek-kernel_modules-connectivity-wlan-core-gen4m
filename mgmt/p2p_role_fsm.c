@@ -4041,6 +4041,7 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 	struct LINK *prClientList;
 #endif
 	uint8_t ucTokenID = 0;
+	enum ENUM_MAX_BANDWIDTH_SETTING eNewBw;
 
 	if (!prP2pRoleFsmInfo) {
 		DBGLOG(P2P, ERROR, "prP2pRoleFsmInfo is NULL!\n");
@@ -4140,9 +4141,14 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 					prBssInfo->ucBssIndex,
 					&prBssInfo->ucOpRxNss,
 					&prBssInfo->ucOpTxNss);
+				/* Renew BW */
+				eNewBw = cnmGetDbdcBwCapability(prAdapter,
+						prBssInfo->ucBssIndex);
+				if (prBssInfo->ucPrimaryChannel == 165 &&
+				    eNewBw > MAX_BW_20MHZ)
+					eNewBw = MAX_BW_20MHZ;
 				prBssInfo->ucVhtChannelWidth =
-					cnmGetDbdcBwCapability(prAdapter,
-						       prBssInfo->ucBssIndex);
+					rlmGetVhtOpBwByBssOpBw(eNewBw);
 
 				nicUpdateBss(prAdapter, prBssInfo->ucBssIndex);
 				/* Indicate channel switch to kernel */
