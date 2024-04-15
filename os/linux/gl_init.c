@@ -81,6 +81,10 @@
 #include "rlm_domain.h"
 #endif
 
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
+
 #if CFG_MTK_ANDROID_WMT
 #include <linux/of_reserved_mem.h>
 #include <linux/platform_device.h>
@@ -8054,6 +8058,10 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		wlanOpenIdxLogBin(prAdapter);
 #endif
 
+#if CFG_SUPPORT_MBRAIN
+		glRegCbsToMbraink(prAdapter);
+#endif
+
 		/* Configure 5G band for registered wiphy */
 		if (prAdapter->fgEnable5GBand)
 			prWdev->wiphy->bands[KAL_BAND_5GHZ] = &mtk_band_5ghz;
@@ -8123,6 +8131,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       eFailReason);
 		switch (eFailReason) {
 		case FAIL_BY_RESET:
+#if CFG_SUPPORT_MBRAIN
+			glUnregCbsToMbraink();
+#endif
 			procRemoveProcfs();
 			kal_fallthrough;
 			/* fallthrough */
@@ -8363,6 +8374,10 @@ static void wlanRemove(void)
 	/* Have tried to do scan done here, but the exception occurs for */
 	/* the P2P scan. Keep the original design that scan done in the	 */
 	/* p2pStop/wlanStop.						 */
+
+#if CFG_SUPPORT_MBRAIN
+	glUnregCbsToMbraink();
+#endif
 
 #if WLAN_INCLUDE_PROC
 	procRemoveProcfs();
