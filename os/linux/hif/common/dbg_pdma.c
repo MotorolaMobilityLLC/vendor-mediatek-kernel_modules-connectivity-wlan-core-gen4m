@@ -852,12 +852,18 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 {
 #if CFG_MTK_WIFI_WFDMA_WB
 	struct GLUE_INFO *prGlueInfo;
+#if defined(_HIF_PCIE)
+	struct BUS_INFO *prBusInfo;
+#endif
 	struct GL_HIF_INFO *prHifInfo;
 	struct WIFI_VAR *prWifiVar;
 	struct RTMP_RX_RING *prRxRing;
 	uint32_t i, u4RxCnt = 0;
 
 	prGlueInfo = prAdapter->prGlueInfo;
+#if defined(_HIF_PCIE)
+	prBusInfo = prAdapter->chip_info->bus_info;
+#endif
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prWifiVar = &prAdapter->rWifiVar;
 
@@ -884,6 +890,13 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 		} else {
 			prRxRing->u4CidxErrCnt = 0;
 		}
+
+#if defined(_HIF_PCIE)
+		if (prRxRing->u4CidxErrCnt >=
+		    prWifiVar->u4WfdmaRxHangRecoveryCnt &&
+		    prBusInfo->recoveryMsiStatus)
+			prBusInfo->recoveryMsiStatus(prAdapter);
+#endif
 
 		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);

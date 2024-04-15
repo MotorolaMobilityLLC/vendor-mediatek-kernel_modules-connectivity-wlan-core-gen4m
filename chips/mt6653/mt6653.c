@@ -679,6 +679,7 @@ struct BUS_INFO mt6653_bus_info = {
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.checkFwOwnMsiStatus = mt6653CheckFwOwnMsiStatus,
+	.recoveryMsiStatus = mt6653RecoveryMsiStatus,
 #endif
 #if (CFG_MTK_ANDROID_WMT == 1)
 	.u4DmaMask = 36,
