@@ -1947,10 +1947,9 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-#if CFG_ENABLE_WAKE_LOCK
-	KAL_WAKE_LOCK_INIT(NULL, prNapiDev->prHifNapiWakeLock, "HIF Napi");
-#endif
 	prNapiDev->prGlueInfo = prAdapter->prGlueInfo;
+	prNapiDev->ulFlag = 0;
+	prNapiDev->u4DrvOwnCnt = 0;
 	init_dummy_netdev(&prNapiDev->dev);
 #if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 	netif_napi_add(&prNapiDev->dev, &prNapiDev->napi,
@@ -2051,11 +2050,6 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-#if CFG_ENABLE_WAKE_LOCK
-	if (KAL_WAKE_LOCK_ACTIVE(NULL, prNapiDev->prHifNapiWakeLock))
-		KAL_WAKE_UNLOCK(NULL, prNapiDev->prHifNapiWakeLock);
-	KAL_WAKE_LOCK_DESTROY(NULL, prNapiDev->prHifNapiWakeLock);
-#endif
 	napi_synchronize(&prNapiDev->napi);
 	napi_disable(&prNapiDev->napi);
 	netif_napi_del(&prNapiDev->napi);
@@ -4969,17 +4963,18 @@ int halHifNapiPoll(struct napi_struct *napi, int budget)
 		goto enint;
 	}
 
+	if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt) == 0) {
+		fgIsDone = TRUE;
+		set_bit(HIF_NAPI_SET_DRV_OWN_BIT, &prNapiDev->ulFlag);
+		kalRxTaskSchedule(prGlueInfo);
+		goto exit;
+	}
+
 	GLUE_INC_REF_CNT(prHifStats->u4HifNapiCount);
 
 	if (!prNapiDev->fgIsRun) {
 		prNapiDev->fgIsRun = TRUE;
 		GLUE_INC_REF_CNT(prHifStats->u4HifNapiRunCount);
-#if CFG_ENABLE_WAKE_LOCK
-		if (!KAL_WAKE_LOCK_ACTIVE(
-			    prAdapter, prNapiDev->prHifNapiWakeLock))
-			KAL_WAKE_LOCK(prAdapter, prNapiDev->prHifNapiWakeLock);
-#endif
-		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 	}
 
 	wlanIST(prAdapter, FALSE);
@@ -5001,14 +4996,9 @@ enint:
 			nicEnableInterrupt(prAdapter);
 
 		if (prNapiDev->fgIsRun) {
-			RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
-#if CFG_ENABLE_WAKE_LOCK
-			if (KAL_WAKE_LOCK_ACTIVE(
-				    prAdapter, prNapiDev->prHifNapiWakeLock))
-				KAL_WAKE_UNLOCK(prAdapter,
-						prNapiDev->prHifNapiWakeLock);
-#endif
 			prNapiDev->fgIsRun = FALSE;
+			set_bit(HIF_NAPI_SET_FW_OWN_BIT, &prNapiDev->ulFlag);
+			kalRxTaskSchedule(prGlueInfo);
 		}
 
 		fgIsDone = TRUE;
@@ -5033,24 +5023,13 @@ void halRxTasklet(unsigned long data)
 	halRxWork(prGlueInfo);
 }
 
-void halRxWork(struct GLUE_INFO *prGlueInfo)
+static u_int8_t halCheckRxTaskReady(struct GLUE_INFO *prGlueInfo)
 {
-	struct ADAPTER *prAdapter;
-	bool fgEnInt = FALSE;
-
-	prAdapter = prGlueInfo->prAdapter;
-	if (!HAL_IS_RX_DIRECT(prAdapter)) {
+	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		DBGLOG(INIT, ERROR,
 		       "Valid in RX-direct mode only\n");
-		return;
+		return FALSE;
 	}
-
-#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
-	if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
-				  prGlueInfo->rRxWorkerLock))
-		KAL_WAKE_LOCK(prGlueInfo->prAdapter,
-				  prGlueInfo->rRxWorkerLock);
-#endif
 
 	/* do nothing if wifi is not ready */
 	if (prGlueInfo->fgRxTaskReady == FALSE) {
@@ -5063,7 +5042,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 				prGlueInfo->u4RxTaskScheduleCnt));
 		DBGLOG_LIMITED(INIT, INFO,
 		       "Not ready yet, ignore pending interrupt\n");
-		return;
+		return FALSE;
 	}
 
 	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
@@ -5072,8 +5051,73 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 		/* Should stop now... skip pending interrupt */
 		DBGLOG_LIMITED(INIT, INFO,
 		       "ignore pending interrupt\n");
-		return;
+		return FALSE;
 	}
+
+	return TRUE;
+}
+
+#if CFG_SUPPORT_HIF_RX_NAPI
+void halRxWork(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct HIF_NAPI_DEVICE *prNapiDev = &prHifInfo->rNapiDev;
+
+	if (!halCheckRxTaskReady(prGlueInfo))
+		return;
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_NAPI_SET_DRV_OWN_BIT, prNapiDev->ulFlag)) {
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+		if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, prGlueInfo->rRxWorkerLock))
+			KAL_WAKE_LOCK(prAdapter, prGlueInfo->rRxWorkerLock);
+#endif
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		GLUE_INC_REF_CNT(prNapiDev->u4DrvOwnCnt);
+		kal_napi_schedule(&prNapiDev->napi);
+	}
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_NAPI_SET_FW_OWN_BIT, prNapiDev->ulFlag) &&
+	    GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
+		GLUE_DEC_REF_CNT(prNapiDev->u4DrvOwnCnt);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+		if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
+			kal_napi_schedule(&prNapiDev->napi);
+		} else {
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+			if (KAL_WAKE_LOCK_ACTIVE(
+				    prAdapter, prGlueInfo->rRxWorkerLock))
+				KAL_WAKE_UNLOCK(prAdapter,
+						prGlueInfo->rRxWorkerLock);
+#endif
+		}
+	}
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag))
+		kal_napi_schedule(&prNapiDev->napi);
+
+	kalRxTaskWorkDone(prGlueInfo, FALSE);
+}
+#else /* !CFG_SUPPORT_HIF_RX_NAPI */
+void halRxWork(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	bool fgEnInt = FALSE;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (!halCheckRxTaskReady(prGlueInfo))
+		return;
+
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+	if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
+				  prGlueInfo->rRxWorkerLock))
+		KAL_WAKE_LOCK(prGlueInfo->prAdapter,
+				  prGlueInfo->rRxWorkerLock);
+#endif
 
 	ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
 
@@ -5115,6 +5159,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 				prGlueInfo->rRxWorkerLock);
 #endif
 }
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
 void halTxCompleteTasklet(unsigned long data)
 {
@@ -6682,10 +6727,12 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" Napi[%u/%u/%u]",
+		" Napi[%u/%u/%u/0x%x/%u]",
 		GLUE_GET_REF_CNT(prHifStats->u4HifNapiCount),
 		GLUE_GET_REF_CNT(prHifStats->u4HifNapiRunCount),
-		prHifInfo->rNapiDev.fgIsRun);
+		prHifInfo->rNapiDev.fgIsRun,
+		prHifInfo->rNapiDev.ulFlag,
+		GLUE_GET_REF_CNT(prHifInfo->rNapiDev.u4DrvOwnCnt));
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
 	DBGLOG(HAL, INFO, "%s\n", buf);

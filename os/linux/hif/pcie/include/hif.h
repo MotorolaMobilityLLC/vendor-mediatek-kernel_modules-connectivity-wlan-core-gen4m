@@ -210,9 +210,8 @@ struct HIF_NAPI_DEVICE {
 	struct task_struct *napi_thread;
 	uint32_t u4ThreadPid;
 	u_int8_t fgIsRun;
-#if CFG_ENABLE_WAKE_LOCK
-	KAL_WAKE_LOCK_T * prHifNapiWakeLock;
-#endif
+	unsigned long ulFlag;
+	uint32_t u4DrvOwnCnt;
 };
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
