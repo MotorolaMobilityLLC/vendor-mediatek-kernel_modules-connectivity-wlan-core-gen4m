@@ -5221,6 +5221,12 @@ void nicEventStaAgingTimeout(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	if (!IS_NET_PWR_STATE_ACTIVE(prAdapter,
+		prStaRec->ucBssIndex)) {
+		DBGLOG(NIC, ERROR, "bss is not active\n");
+		return;
+	}
+
 	p2pRoleFsmRunEventAgingTimeout(prAdapter, prStaRec);
 }
 
