@@ -141,6 +141,11 @@ enum ENUM_MDDP_GEN_SWITCH_STATE {
 };
 #endif /* CFG_PCIE_GET_SWITCH */
 
+#if CFG_SUPPORT_LLS
+#define MDDP_LLS_BSS_NUM_V1		4
+#define MDDP_LLS_BSS_NUM_V2		6
+#endif /* CFG_SUPPORT_LLS */
+
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 /* copy from mddp */
 enum mddpw_drv_info_id {

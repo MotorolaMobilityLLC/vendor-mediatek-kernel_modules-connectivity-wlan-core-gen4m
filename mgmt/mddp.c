@@ -500,6 +500,7 @@ int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter)
 	struct net_device *prDev;
 	uint8_t i, j, k, l;
 	int32_t ret;
+	uint32_t bss_num = MDDP_LLS_BSS_NUM_V1;
 
 	if (!mddpIsSupportMcifWifi() || !mddpIsSupportMddpWh()) {
 		DBGLOG(INIT, ERROR, "mddp is not supported.\n");
@@ -544,9 +545,14 @@ int32_t mddpGetMdLlsStats(struct ADAPTER *prAdapter)
 	if (cur_lls_stats.version == 0) {
 		DBGLOG(INIT, ERROR, "MD is resetting.\n");
 		return 0;
-	}
+	} else if (cur_lls_stats.version == 1)
+		bss_num = MDDP_LLS_BSS_NUM_V1;
+	else if (cur_lls_stats.version == 2)
+		bss_num = MDDP_LLS_BSS_NUM_V2;
+	DBGLOG(INIT, INFO, "cur_lls_stats version: %u\n",
+		cur_lls_stats.version);
 
-	for (i = 0; i < BSS_NUM; ++i) {
+	for (i = 0; i < bss_num; ++i) {
 		for (j = 0; j < AC_NUM; ++j) {
 			prAdapter->aprBssInfo[i]->u4RxMpduAc[j] +=
 				isMdResetSinceLastQuery ?
@@ -663,6 +669,7 @@ static void save_mddp_lls_stats(void)
 {
 	uint8_t i, j, k, l;
 	int32_t ret;
+	uint32_t bss_num = MDDP_LLS_BSS_NUM_V1;
 
 	if (!mddpIsSupportMcifWifi() || !mddpIsSupportMddpWh()) {
 		DBGLOG(INIT, ERROR, "mddp is not supported.\n");
@@ -685,9 +692,12 @@ static void save_mddp_lls_stats(void)
 	if (cur_lls_stats.version == 0) {
 		DBGLOG(INIT, ERROR, "MD is resetting.\n");
 		return;
-	}
+	} else if (cur_lls_stats.version == 1)
+		bss_num = MDDP_LLS_BSS_NUM_V1;
+	else if (cur_lls_stats.version == 2)
+		bss_num = MDDP_LLS_BSS_NUM_V2;
 
-	for (i = 0; i < BSS_NUM; ++i) {
+	for (i = 0; i < bss_num; ++i) {
 		for (j = 0; j < AC_NUM; ++j) {
 			todo_lls_stats.wmm_ac_stat_rx_mpdu[i][j] +=
 				isMdResetSinceLastQuery ?
