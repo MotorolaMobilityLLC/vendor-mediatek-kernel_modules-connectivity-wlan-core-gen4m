@@ -4163,12 +4163,14 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 
-	/* 4 <0> Ignore invalid Beacon Frame */
+	/* 4 <0> Ignore invalid Beacon and Probe Response*/
 	if (prSwRfb->u2PacketLen < prSwRfb->u2HeaderLen ||
 		(prSwRfb->u2PacketLen - prSwRfb->u2HeaderLen) <
 		(TIMESTAMP_FIELD_LEN + BEACON_INTERVAL_FIELD_LEN
-		+ CAP_INFO_FIELD_LEN) || prSwRfb->u2HeaderLen == 0) {
-		log_dbg(SCN, ERROR, "Ignore invalid Beacon Frame\n");
+		+ CAP_INFO_FIELD_LEN) ||
+		prSwRfb->u2HeaderLen != sizeof(struct WLAN_MAC_HEADER)) {
+		log_dbg(SCN, ERROR,
+			"Ignore invalid Beacon or Probe Response\n");
 		return rStatus;
 	}
 
