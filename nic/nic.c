@@ -1304,27 +1304,14 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 				aisGetCurrBssId(prAdapter, ucBssIndex);
 			uint8_t ucAuthorized = FALSE;
 
-			/* DISCONNECT_REASON_CODE_ROAMING is triggered by
-			 * supplicant, must indicate the connection status,
-			 */
-			if (prAisFsmInfo->ucReasonOfDisconnect ==
-			    DISCONNECT_REASON_CODE_ROAMING &&
-			    EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
+			if (EQUAL_SSID(prCurrBssid->rSsid.aucSsid,
 			    prCurrBssid->rSsid.u4SsidLen,
 			    prConnectionStatus->aucSsid,
 			    prConnectionStatus->ucSsidLen) &&
 			    EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
 			    prConnectionStatus->aucBssid)) {
-				struct BSS_DESC *prBssDesc;
-
-				prBssDesc = scanSearchBssDescByBssidAndSsid(
-					prAdapter, prCurrBssid->arMacAddress,
-					TRUE, &prCurrBssid->rSsid);
-				if (prBssDesc && prBssDesc->fgIsConnected) {
-					ucAuthorized = TRUE;
-					DBGLOG(TX, INFO,
-						"pre-authorized\n");
-				}
+				ucAuthorized = TRUE;
+				DBGLOG(TX, INFO, "pre-authorized\n");
 			}
 
 			prWlanInfo->u4SysTime = kalGetTimeTick();

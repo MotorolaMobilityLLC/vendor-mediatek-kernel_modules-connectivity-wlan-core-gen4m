@@ -1426,6 +1426,7 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 
 uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
+	struct AIS_FSM_INFO *ais;
 	struct ROAMING_INFO *roam;
 	enum ENUM_PARAM_CONNECTION_POLICY policy;
 	struct CONNECTION_SETTINGS *setting;
@@ -1436,12 +1437,13 @@ uint8_t roamingFsmInDecision(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 #endif
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
 	setting = aisGetConnSettings(prAdapter, ucBssIndex);
+	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	policy = setting->eConnectionPolicy;
 
 	return IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
 	       roam->eCurrentState == ROAMING_STATE_DECISION &&
 #if CFG_SUPPORT_DFS
-	       !timerPendingTimer(&prBssInfo->rCsaTimer) &&
+	       !aisFsmIsSwitchChannel(prAdapter, ais) &&
 #endif
 	       !prAdapter->rWifiVar.fgDisRoaming &&
 	       policy != CONNECT_BY_BSSID ?
