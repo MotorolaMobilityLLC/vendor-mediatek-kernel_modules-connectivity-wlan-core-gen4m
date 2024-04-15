@@ -1138,6 +1138,9 @@ enum NIC_CAPABILITY_V2_TAG {
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	TAG_CAP_SW_SYNC_BY_EMI = 0x25,
 #endif
+#if CFG_SUPPORT_MBRAIN
+	TAG_CAP_MBRAIN_EMI_INFO = 0x26,
+#endif
 	TAG_CAP_LIMITED = 0x27,
 	TAG_CAP_TOTAL
 };
@@ -1416,6 +1419,28 @@ struct CAP_STATS_REG_MONTR_EMI_OFFSET {
 	uint32_t u4OffsetOfStaStats;
 	uint32_t u4OffsetOfLlsStatus;
 	uint32_t u4OffsetOfLastTxRateInfo;
+};
+#endif
+
+#if CFG_SUPPORT_MBRAIN
+enum MBRAIN_EMI_OFFSET_TYPE {
+    /* modules should add offset define here */
+	/*
+	 * example.
+	 * MBRAIN_EMI_OFFSET_TEST,
+	 * MBRAIN_EMI_OFFSET_TEST2,
+	 */
+	MBRAIN_EMI_OFFSET_NUM
+};
+
+struct MBRAIN_OFFSET_INFO {
+	uint32_t u4Tag;
+	uint32_t u4EmiOffset;
+};
+
+struct CAP_MBRAIN_EMI_INFO {
+	uint32_t u4PcieGenSwRsvd;
+	uint32_t u4OffsetNum;
 };
 #endif
 
@@ -4284,6 +4309,12 @@ uint32_t nicCfgChipCapStatsRegMontrEmiOffset(
 uint32_t nicCfgGetSwSyncEMIOffset(
 	struct ADAPTER *prAdapter,
 	uint8_t *pucEventBuf);
+#endif
+
+#if CFG_SUPPORT_MBRAIN
+uint32_t nicCfgChipMbrEmiInfo(
+		struct ADAPTER *prAdapter,
+		uint8_t *pucEventBuf);
 #endif
 
 uint32_t nicCmdEventHostSuspendInfo(struct ADAPTER *prAdapter,

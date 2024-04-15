@@ -1408,6 +1408,10 @@ do { \
 			* NSEC_PER_USEC; \
 	} while (0)
 
+#define KAL_TIME_TO_MSEC(_Time) (\
+	(uint64_t)(_Time.tv_sec * MSEC_PER_SEC + \
+	USEC_TO_MSEC(NSEC_TO_USEC(_Time.tv_nsec))))
+
 #define KAL_TIME_INTERVAL_DECLARATION()     struct timespec64 __rTs, __rTe
 #define KAL_REC_TIME_START()                ktime_get_ts64(&__rTs)
 #define KAL_REC_TIME_END()                  ktime_get_ts64(&__rTe)
