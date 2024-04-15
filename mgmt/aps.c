@@ -1540,6 +1540,14 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 		bmap = aisGetBssIndexBmap(ais);
 
+		/* Disallow to pick a bss that is connecting */
+		if (prBssDesc->fgIsConnecting) {
+			DBGLOG(APS, INFO,
+				MACSTR " is connecting by other WLAN",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
+
 		/* Disallow to pick a bss that already connected */
 		if (prBssDesc->fgIsConnected & ~bmap) {
 			DBGLOG(APS, INFO,
