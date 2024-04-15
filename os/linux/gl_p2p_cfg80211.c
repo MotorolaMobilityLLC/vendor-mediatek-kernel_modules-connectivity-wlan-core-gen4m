@@ -877,11 +877,15 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 		 struct key_params *params)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct MLD_BSS_INFO *prMldBss = NULL;
+#endif
 	int32_t i4Rslt = -EINVAL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	uint32_t u4BufLen = 0;
 	struct P2P_PARAM_KEY rKey;
-	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	uint8_t ucRoleIdx = 0, ucBssIdx = MAX_BSSID_NUM;
 	const uint8_t aucBCAddr[] = BC_MAC_ADDR;
 	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 
@@ -895,19 +899,52 @@ int mtk_p2p_cfg80211_add_key(struct wiphy *wiphy,
 		return -EINVAL;
 	}
 
-	if (__mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, link_id,
-				    &ucRoleIdx)) {
-		DBGLOG(RSN, ERROR,
-			"can NOT find role by dev(%s) link_id(%d)\n",
-			ndev->name, link_id);
-		return -EINVAL;
-	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(ndev);
+	prMldBss = mldBssGetByIdx(prGlueInfo->prAdapter,
+				  prNetDevPrivate->ucMldBssIdx);
+	if (link_id == -1 && pairwise && IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
 
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx,
-				&ucBssIdx) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(RSN, ERROR, "Get bss failed by role=%u\n",
-			ucRoleIdx);
-		return -EINVAL;
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			struct STA_RECORD *prStaRec;
+
+			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
+							 prTempBss->ucBssIndex,
+							 mac_addr);
+			if (prStaRec) {
+				ucBssIdx = prStaRec->ucBssIndex;
+				break;
+			}
+		}
+
+		if (ucBssIdx == MAX_BSSID_NUM) {
+			DBGLOG(RSN, WARN,
+				"cat not find sta by mac="MACSTR"\n",
+				MAC2STR(mac_addr));
+			return -EINVAL;
+		}
+	} else
+#endif
+	{
+		if (__mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, link_id,
+					    &ucRoleIdx)) {
+			DBGLOG(RSN, ERROR,
+				"can NOT find role by dev(%s) link_id(%d)\n",
+				ndev->name, link_id);
+			return -EINVAL;
+		}
+
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx,
+					&ucBssIdx) != WLAN_STATUS_SUCCESS) {
+			DBGLOG(RSN, ERROR, "Get bss failed by role=%u\n",
+				ucRoleIdx);
+			return -EINVAL;
+		}
 	}
 
 	DBGLOG(RSN, TRACE,
@@ -1026,6 +1063,10 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 		u8 key_index, bool pairwise, const u8 *mac_addr)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct MLD_BSS_INFO *prMldBss = NULL;
+#endif
 	struct PARAM_REMOVE_KEY rRemoveKey;
 	int32_t i4Rslt = -EINVAL;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
@@ -1037,19 +1078,52 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if (__mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, link_id,
-				    &ucRoleIdx)) {
-		DBGLOG(RSN, ERROR,
-			"can NOT find role by dev(%s) link_id(%d)\n",
-			ndev->name, link_id);
-		return -EINVAL;
-	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(ndev);
+	prMldBss = mldBssGetByIdx(prGlueInfo->prAdapter,
+				  prNetDevPrivate->ucMldBssIdx);
+	if (link_id == -1 && pairwise && IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
 
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx,
-				&ucBssIdx) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(RSN, ERROR, "Get bss failed by role=%u\n",
-			ucRoleIdx);
-		return -EINVAL;
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			struct STA_RECORD *prStaRec;
+
+			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
+							 prTempBss->ucBssIndex,
+							 mac_addr);
+			if (prStaRec) {
+				ucBssIdx = prStaRec->ucBssIndex;
+				break;
+			}
+		}
+
+		if (ucBssIdx == MAX_BSSID_NUM) {
+			DBGLOG(RSN, WARN,
+				"cat not find sta by mac="MACSTR"\n",
+				MAC2STR(mac_addr));
+			return 0;
+		}
+	} else
+#endif
+	{
+		if (__mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, link_id,
+					    &ucRoleIdx)) {
+			DBGLOG(RSN, ERROR,
+				"can NOT find role by dev(%s) link_id(%d)\n",
+				ndev->name, link_id);
+			return -EINVAL;
+		}
+
+		if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx,
+					&ucBssIdx) != WLAN_STATUS_SUCCESS) {
+			DBGLOG(RSN, ERROR, "Get bss failed by role=%u\n",
+				ucRoleIdx);
+			return -EINVAL;
+		}
 	}
 
 	DBGLOG(RSN, TRACE,
