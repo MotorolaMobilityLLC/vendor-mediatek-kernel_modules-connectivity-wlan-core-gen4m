@@ -270,7 +270,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = FALSE,
+		.fgDramBoost = TRUE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	}
