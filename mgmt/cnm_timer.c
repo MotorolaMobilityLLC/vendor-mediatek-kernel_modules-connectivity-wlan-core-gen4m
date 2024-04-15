@@ -169,6 +169,10 @@ static u_int8_t cnmTimerSetTimer(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
+	/* CNM timeout is 20s, we use 19s as threshold */
+	if ((uint32_t)(rTimeout) > (uint32_t)(19 * MSEC_PER_SEC))
+		DBGLOG_LIMITED(CNM, INFO, "timer > 19s\n");
+
 	prRootTimer = &prAdapter->rRootTimer;
 
 	kalSetTimer(prAdapter->prGlueInfo, rTimeout);
@@ -450,6 +454,10 @@ void cnmTimerStartTimer(struct ADAPTER *prAdapter, struct TIMER *prTimer,
 			prTimer, prTimer->pfMgmtTimeOutFunc,
 			u4TimeoutMs, prTimerList->u4NumElem);
 	}
+
+	if (u4TimeoutMs > (19 * MSEC_PER_SEC))
+		DBGLOG_LIMITED(CNM, INFO,
+			"start timer > 19s, timer %d ms\n", u4TimeoutMs);
 
 	/* If timeout interval is larger than 1 minute, the mod value is set
 	 * to the timeout value first, then per minutue.
