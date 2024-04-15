@@ -1845,6 +1845,9 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
 
+		if (drv != CONNV3_DRV_TYPE_WIFI)
+			glSetRstReason(RST_WHOLE_CHIP_TRIGGER);
+
 		kalSetRstEvent(TRUE);
 	}
 
