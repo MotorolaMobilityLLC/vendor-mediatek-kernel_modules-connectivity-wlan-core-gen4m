@@ -4969,9 +4969,11 @@ int halHifNapiPoll(struct napi_struct *napi, int budget)
 		goto enint;
 	}
 
+	GLUE_INC_REF_CNT(prHifStats->u4HifNapiCount);
+
 	if (!prNapiDev->fgIsRun) {
 		prNapiDev->fgIsRun = TRUE;
-		GLUE_INC_REF_CNT(prHifStats->u4HifNapiCount);
+		GLUE_INC_REF_CNT(prHifStats->u4HifNapiRunCount);
 #if CFG_ENABLE_WAKE_LOCK
 		if (!KAL_WAKE_LOCK_ACTIVE(
 			    prAdapter, prNapiDev->prHifNapiWakeLock))
@@ -6680,8 +6682,10 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" Napi[%u]",
-		GLUE_GET_REF_CNT(prHifStats->u4HifNapiCount));
+		" Napi[%u/%u/%u]",
+		GLUE_GET_REF_CNT(prHifStats->u4HifNapiCount),
+		GLUE_GET_REF_CNT(prHifStats->u4HifNapiRunCount),
+		prHifInfo->rNapiDev.fgIsRun);
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
 	DBGLOG(HAL, INFO, "%s\n", buf);

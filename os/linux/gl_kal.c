@@ -7007,6 +7007,11 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 	if (!HAL_IS_RX_DIRECT(pr->prAdapter))
 		set_bit(GLUE_FLAG_DRV_INT_BIT, &pr->ulFlag);
 
+#if CFG_SUPPORT_HIF_RX_NAPI
+	/* set int bit to enable interrupt */
+	set_bit(GLUE_FLAG_RX_DIRECT_INT_BIT, &pr->ulFlag);
+#endif
+
 	/* when we got interrupt, we wake up servie thread */
 #if CFG_SUPPORT_MULTITHREAD
 	if (HAL_IS_RX_DIRECT(pr->prAdapter))

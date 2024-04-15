@@ -1626,6 +1626,7 @@ struct WIFI_VAR {
 	u_int8_t fgEnableMawdSramDump;
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
+	uint32_t u4WfdmaRxHangRecoveryCnt;
 	uint32_t u4WfdmaRxHangCnt;
 
 	u_int8_t fgIcmpTxDone;
@@ -2028,6 +2029,7 @@ struct HIF_STATS {
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 #if CFG_SUPPORT_HIF_RX_NAPI
 	uint32_t u4HifNapiCount;
+	uint32_t u4HifNapiRunCount;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 };
 

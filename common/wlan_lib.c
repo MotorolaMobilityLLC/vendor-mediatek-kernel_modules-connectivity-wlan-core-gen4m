@@ -8878,7 +8878,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	wlanCfgSetUint32(prAdapter, "EnableRro", prWifiVar->fgEnableRro);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
 
-	INIT_UINT(prWifiVar->u4WfdmaRxHangCnt, "WfdmaRxHangCnt", 3,
+	INIT_UINT(prWifiVar->u4WfdmaRxHangRecoveryCnt,
+		  "WfdmaRxHangRecoveryCnt", 3,
+		  FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->u4WfdmaRxHangCnt, "WfdmaRxHangCnt", 5,
 		  FEATURE_DEBUG_ONLY);
 
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)
