@@ -1680,8 +1680,13 @@ static int p2pStop(struct net_device *prDev)
 #endif
 
 #if CFG_SUPPORT_WED_PROXY
-	kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
-		sizeof(struct net_device *), &u4BufLen, wlanGetBssIdx(prDev));
+	if (kalIsHalted() == FALSE)
+		kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
+			sizeof(struct net_device *), &u4BufLen,
+			wlanGetBssIdx(prDev));
+	else
+		wlanoidWedDetachWarp(prGlueInfo->prAdapter, prDev,
+			sizeof(struct net_device *), &u4BufLen);
 #endif
 
 	return 0;
