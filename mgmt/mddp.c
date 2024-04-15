@@ -1597,6 +1597,15 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 #endif
 #endif
 
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState !=
+			   ERR_RECOV_STOP_IDLE) {
+		DBGLOG(INIT, ERROR, "SER on-going\n");
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+		goto end;
+	}
+
 	if (!mddpIsSupportMcifWifi()) {
 		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 		goto end;
@@ -1605,8 +1614,6 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 #if CFG_MTK_CCCI_SUPPORT
 	md_state = ccci_fsm_get_md_state();
 #endif
-
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
 		/* no need to send msg to md in bypass state */
