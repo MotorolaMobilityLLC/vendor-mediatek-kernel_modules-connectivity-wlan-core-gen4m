@@ -1490,7 +1490,20 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 		return;
 
 	for (i = cnmGetIdcBssIdx(prAdapter); i < prAdapter->ucSwBssIdNum; i++) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		struct MLD_BSS_INFO *prMldBss;
+		u_int8_t fgIsMloSap = FALSE;
+#endif
+
 		prBssInfo = prAdapter->aprBssInfo[i];
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
+		fgIsMloSap = IS_MLD_BSSINFO_MULTI(prMldBss) &&
+			p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+				prBssInfo->u4PrivateData]);
+		if (fgIsMloSap)
+			continue;
+#endif
 
 		if (prBssInfo &&
 			IS_BSS_P2P(prBssInfo) &&
