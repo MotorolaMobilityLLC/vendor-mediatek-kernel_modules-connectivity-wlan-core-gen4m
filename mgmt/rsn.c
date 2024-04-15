@@ -1101,7 +1101,8 @@ uint8_t rsnAuthModeRsn(enum ENUM_PARAM_AUTH_MODE eAuthMode)
 uint8_t rsnIsKeyMgmtForWpa3(struct ADAPTER *ad,
 	uint32_t u4AkmSuite,
 	uint8_t bssidx,
-	struct BSS_DESC *prBss)
+	struct BSS_DESC *prBss,
+	uint8_t fgCheckH2E)
 {
 	struct GL_WPA_INFO *prWpaInfo;
 	u_int8_t fgIsOWE, fgIsSAE, fgIsSAEH2E;
@@ -1114,8 +1115,10 @@ uint8_t rsnIsKeyMgmtForWpa3(struct ADAPTER *ad,
 		(prWpaInfo->u2RSNXCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E)) &&
 		(prBss->fgIERSNX &&
 			prBss->u2RsnxCap & BIT(WLAN_RSNX_CAPAB_SAE_H2E));
-
-	return (fgIsOWE || fgIsSAEH2E);
+	if (fgCheckH2E)
+		return (fgIsOWE || fgIsSAEH2E);
+	else
+		return (fgIsOWE || fgIsSAE);
 }
 
 uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
@@ -1146,7 +1149,7 @@ uint8_t rsnIsKeyMgmtFor6g(struct ADAPTER *ad,
 #endif
 #endif
 
-	if (rsnIsKeyMgmtForWpa3(ad, u4AkmSuite, bssidx, prBss))
+	if (rsnIsKeyMgmtForWpa3(ad, u4AkmSuite, bssidx, prBss, TRUE))
 		return TRUE;
 
 	return FALSE;
@@ -1159,7 +1162,11 @@ uint8_t rsnIsKeyMgmtForEht(struct ADAPTER *ad,
 		return TRUE;
 
 	if (rsnIsKeyMgmtForWpa3(ad, prBss->u4RsnSelectedAKMSuite,
-				bssidx, prBss))
+#if (CFG_WIFI_EHT_H2E_CHK == 1)
+				bssidx, prBss, TRUE))
+#else
+				bssidx, prBss, FALSE))
+#endif
 		return TRUE;
 
 	return FALSE;
