@@ -10184,39 +10184,21 @@ uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 		&ucCandidateChnlNum, prChnlList);
 
 	for (i = 0; i < ucCandidateChnlNum; ++i) {
-		if (prChnlList[i].eBand == BAND_2G4) {
-			if (!(u4SafeChnlInfo_2g &
-			      BIT(prChnlList[i].ucChannelNum)))
-				continue;
-		} else if (prChnlList[i].eBand == BAND_5G &&
-				(prChnlList[i].ucChannelNum >= 36) &&
-				(prChnlList[i].ucChannelNum <= 144)) {
-			if (!(u4SafeChnlInfo_5g_0 &
-			      BIT((prChnlList[i].ucChannelNum - 36) / 4)))
-				continue;
-		} else if (prChnlList[i].eBand == BAND_5G &&
-				(prChnlList[i].ucChannelNum >= 149) &&
-				(prChnlList[i].ucChannelNum <= 181)) {
-			if (!(u4SafeChnlInfo_5g_1 &
-			      BIT((prChnlList[i].ucChannelNum - 149) / 4)))
-				continue;
-		}
-
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		else if (prChnlList[i].eBand == BAND_6G) {
+		if (prChnlList[i].eBand == BAND_6G) {
 			/* Keep only PSC channels */
 			if (!(prChnlList[i].ucChannelNum >= 5 &&
 			      prChnlList[i].ucChannelNum <= 225 &&
 			      ((prChnlList[i].ucChannelNum - 5) % 16 == 0)))
 				continue;
-
-			if ((prChnlList[i].ucChannelNum >= 5) &&
-			    (prChnlList[i].ucChannelNum <= 225) &&
-			    !(u4SafeChnlInfo_6g &
-			      BIT((prChnlList[i].ucChannelNum - 5) / 16)))
-				continue;
 		}
 #endif
+
+		if (!p2pFuncIsLteSafeChnl(prChnlList[i].eBand,
+					  prChnlList[i].ucChannelNum,
+					  pau4SafeChnl))
+			continue;
+
 		DBGLOG(P2P, LOUD, "safe chnl: %u", prChnlList[i].ucChannelNum);
 		pau4AllowFreqList[ucChnlNum++] = nicChannelNum2Freq(
 			prChnlList[i].ucChannelNum,
@@ -10533,14 +10515,11 @@ uint32_t p2pFunGetPreferredFreqList(struct ADAPTER *prAdapter,
 	ucNumAliveBss6g = p2pFuncGetPreferAliveBssByBand(
 			prAdapter, BAND_6G, aliveBss6g, fgIsSkipDfs);
 #endif
+	DBGLOG(P2P, INFO,
+	       "alive Bss num [bn0:bn1:bn2]=[%u:%u:%u]\n",
+	       ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g);
 
 	bssGetAliveBssHwBitmap(prAdapter, au4AliveBssBitmap);
-
-	DBGLOG(P2P, INFO,
-	       "[bn0:bn1:bn2] alive Bss num=[%u:%u:%u], bitmap=[0x%x:0x%x:0x%x]\n",
-	       ucNumAliveBss2g, ucNumAliveBss5g, ucNumAliveBss6g,
-	       au4AliveBssBitmap[AA_HW_BAND_0], au4AliveBssBitmap[AA_HW_BAND_1],
-	       au4AliveBssBitmap[AA_HW_BAND_2]);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	/* Prefer A+A for SP Skyhawk Sku1 2G+2A+1A */
@@ -11845,5 +11824,200 @@ u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
 		return TRUE;
 #endif
 	return FALSE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if all client support Spectrum Management.
+ *        Client support CSA only if it support Spectrum Management.
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t
+p2pFuncIsAllClientSupportSpecMgmt(struct ADAPTER *prAdapter,
+				  struct BSS_INFO *prBssInfo)
+{
+	struct LINK *prClientList;
+	struct STA_RECORD *prStaRec;
+
+	prClientList = &prBssInfo->rStaRecOfClientList;
+	LINK_FOR_EACH_ENTRY(prStaRec, prClientList,
+			    rLinkEntry, struct STA_RECORD) {
+		if (!prStaRec)
+			break;
+
+		if (!prStaRec->fgIsInUse)
+			continue;
+
+		if (!(prStaRec->u2CapInfo & CAP_INFO_SPEC_MGT)) {
+			DBGLOG(P2P, TRACE,
+			       "peer not support Spec Mgmt, starec idx:%u, mac:"
+			       MACSTR ", cap:0x%x\n",
+			       prStaRec->ucIndex,
+			       MAC2STR(prStaRec->aucMacAddr),
+			       prStaRec->u2CapInfo);
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if all client support Spectrum Management.
+ *        Client support CSA only if it support Spectrum Management.
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t
+p2pFuncIsAllClientSupportOpClass(struct ADAPTER *prAdapter,
+				 struct BSS_INFO *prBssInfo,
+				 uint8_t ucOpClass)
+{
+	struct LINK *prClientList;
+	struct STA_RECORD *prStaRec;
+	uint32_t u4OpClassBits;
+
+	prClientList = &prBssInfo->rStaRecOfClientList;
+	LINK_FOR_EACH_ENTRY(prStaRec, prClientList,
+			    rLinkEntry, struct STA_RECORD) {
+		if (!prStaRec)
+			break;
+
+		if (!prStaRec->fgIsInUse)
+			continue;
+
+		u4OpClassBits = prStaRec->u4SupportedOpClassBits;
+
+		if (ucOpClass >= 81 && ucOpClass <= 84 &&
+		    (u4OpClassBits & BIT(ucOpClass - 81)))
+			continue;
+		if (ucOpClass >= 115 && ucOpClass <= 136 &&
+		    (u4OpClassBits & BIT(ucOpClass - 115 + 4)))
+			continue;
+		if (ucOpClass >= 180 && ucOpClass <= 183 &&
+		    (u4OpClassBits & BIT(ucOpClass - 180 + 4 + 22)))
+			continue;
+
+		DBGLOG(P2P, TRACE,
+		       "peer not support op class %u, starec idx:%u, mac:"
+		       MACSTR ", opClassBit:0x%x\n",
+		       ucOpClass, prStaRec->ucIndex,
+		       MAC2STR(prStaRec->aucMacAddr), u4OpClassBits);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if all client support target channel.
+ *        For 6G channel should use supported op class IE instead of this.
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t
+p2pFuncIsAllClientSupportCh(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo,
+			    enum ENUM_BAND eBand, uint32_t u4Ch)
+{
+	struct LINK *prClientList;
+	struct STA_RECORD *prStaRec;
+	uint16_t u2SupCh_2g = 0;
+	uint32_t u4SupCh_5g_0 = 0;
+	uint16_t u2SupCh_5g_1 = 0;
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	if (eBand == BAND_6G) {
+		DBGLOG(P2P, WARN,
+		       "6G should use sup op class instead of sup ch\n");
+		return FALSE;
+	}
+#endif
+
+	prClientList = &prBssInfo->rStaRecOfClientList;
+	LINK_FOR_EACH_ENTRY(prStaRec, prClientList,
+			    rLinkEntry, struct STA_RECORD) {
+		if (!prStaRec)
+			break;
+
+		if (!prStaRec->fgIsInUse)
+			continue;
+
+		u2SupCh_2g = prStaRec->u2SupportedChnlBits_2g;
+		u4SupCh_5g_0 = prStaRec->u4SupportedChnlBits_5g_0;
+		u2SupCh_5g_1 = prStaRec->u2SupportedChnlBits_5g_1;
+
+		if (eBand == BAND_2G4 && (u2SupCh_2g & BIT(u4Ch)))
+			continue;
+		if (eBand == BAND_5G) {
+			if (u4SupCh_5g_0 & BIT((u4Ch - 36) / 4))
+				continue;
+			if (u2SupCh_5g_1 & BIT((u4Ch - 149) / 4))
+				continue;
+		}
+
+		DBGLOG(P2P, TRACE,
+		       "peer not support ch:%u, starec idx:%u, mac:" MACSTR
+		       ", 2gChBit:0x%x, 5gChBit_0:0x%x, 5gChBit_1:0x%x\n",
+		       u4Ch, prStaRec->ucIndex,
+		       MAC2STR(prStaRec->aucMacAddr),
+		       u2SupCh_2g, u4SupCh_5g_0, u2SupCh_5g_1);
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
+			       struct BSS_INFO *prBssInfo,
+			       uint32_t u4TargetCh,
+			       enum ENUM_BAND eTargetBand)
+{
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+	uint8_t ucTargetOpClass;
+	enum ENUM_CSA_STATUS rStatus = CSA_STATUS_SUCCESS;
+
+	if (rlmDomainIsDfsChnls(prAdapter, u4TargetCh))
+		rStatus = CSA_STATUS_DFS_NOT_SUP;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	else if (eTargetBand == BAND_6G && !IS_6G_PSC_CHANNEL(u4TargetCh))
+		rStatus = CSA_STATUS_NON_PSC_NOT_SUP;
+	else if (eTargetBand == BAND_6G &&
+	    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
+		DBGLOG(CCM, WARN, "Skip CSA to 6G if auth type not SAE\n");
+		rStatus = CSA_STATUS_NON_SAE_NOT_SUP;
+	}
+#endif
+	/* SAP should not consider the capability of peers */
+	else if (IS_BSS_APGO(prBssInfo) &&
+	    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+				    prBssInfo->u4PrivateData])) {
+		/* prepare chnl info
+		 * TODO: re-design nicGetS1Freq
+		 */
+		rRfChnlInfo.ucChannelNum = u4TargetCh;
+		rRfChnlInfo.eBand = eTargetBand;
+		/* always use BW20 to check the minimum capability of peer */
+		rRfChnlInfo.ucChnlBw = MAX_BW_20MHZ;
+		rRfChnlInfo.u2PriChnlFreq =
+			nicChannelNum2Freq(u4TargetCh, eTargetBand) / 1000;
+		rRfChnlInfo.u4CenterFreq1 = rRfChnlInfo.u2PriChnlFreq;
+		rRfChnlInfo.u4CenterFreq2 = 0;
+		rRfChnlInfo.fgDFS = FALSE;
+
+		ucTargetOpClass = nicChannelInfo2OpClass(&rRfChnlInfo);
+		if (!p2pFuncIsAllClientSupportSpecMgmt(prAdapter, prBssInfo))
+			rStatus = CSA_STATUS_PEER_NOT_SUP_CSA;
+		else if (!p2pFuncIsAllClientSupportOpClass(prAdapter,
+					prBssInfo, ucTargetOpClass) &&
+			 !p2pFuncIsAllClientSupportCh(prAdapter, prBssInfo,
+					eTargetBand, u4TargetCh))
+			rStatus = CSA_STATUS_PEER_NOT_SUP_CH;
+	}
+
+	DBGLOG(P2P, INFO, "Csa %s, status=%u",
+	       (rStatus == CSA_STATUS_SUCCESS) ? "allowed" : "not allowed",
+	       rStatus);
+	return rStatus;
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */

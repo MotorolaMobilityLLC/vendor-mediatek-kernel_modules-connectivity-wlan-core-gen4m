@@ -18,9 +18,9 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 				       struct BSS_INFO *prTargetBss,
 				       const char *pucSrcFunc);
 
-static u_int8_t ccmIsSwitchChannelNeeded(struct ADAPTER *prAdapter,
+static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
-			    uint32_t u4TargetCh,
+			    uint32_t *u4TargetCh,
 			    enum ENUM_MBMC_BN eTargetHwBandIdx,
 			    enum ENUM_BAND *eTargetBand);
 
@@ -78,6 +78,8 @@ void ccmPendingCheck(struct ADAPTER *prAdapter,
 {
 	uint8_t i;
 	struct BSS_INFO *bss;
+	/* copy for ccmCheckAndPrepareChannelSwitch to prevent modified by it */
+	uint32_t u4TargetCh = prTargetBss->ucPrimaryChannel;
 	enum ENUM_BAND eTargetBand = prTargetBss->eBand;
 	u_int8_t fgIsTargetMlo = FALSE;
 
@@ -107,8 +109,8 @@ void ccmPendingCheck(struct ADAPTER *prAdapter,
 		if (IS_BSS_APGO(bss) && IS_BSS_ALIVE(prAdapter, bss) &&
 		    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
 				     bss->u4PrivateData]) &&
-		    ccmIsSwitchChannelNeeded(prAdapter, bss,
-					 prTargetBss->ucPrimaryChannel,
+		    ccmCheckAndPrepareChannelSwitch(prAdapter, bss,
+					 &u4TargetCh,
 					 prTargetBss->eHwBandIdx,
 					 &eTargetBand))
 			prAdapter->fgIsCcmPending = TRUE;
@@ -139,17 +141,42 @@ static void ccmGetOtherAliveBssHwBitmap(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!IS_BSS_ALIVE(prAdapter, bss) || bss == prBssInfo)
+		if (!IS_BSS_ALIVE(prAdapter, bss) || bss == prBssInfo ||
+		    bss->eHwBandIdx >= AA_HW_BAND_NUM)
 			continue;
 
 		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
 	}
+	DBGLOG(P2P, INFO,
+	       "alive BSS hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
+	       pau4Bitmap[AA_HW_BAND_0], pau4Bitmap[AA_HW_BAND_1],
+	       pau4Bitmap[AA_HW_BAND_2]);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Entry Point of CCM, other modules should call this.
+ */
+/*----------------------------------------------------------------------------*/
 void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 			      struct BSS_INFO *prTargetBss,
 			      const char *pucSrcFunc)
 {
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	if (!prAdapter->fgIsP2PRegistered)
+		return;
+
+	if (!prTargetBss) {
+		DBGLOG(CCM, INFO, "null target Bss\n");
+		return;
+	}
+
+	if (prWifiVar->eP2pCcmMode == P2P_CCM_MODE_DISABLE) {
+		DBGLOG(CCM, WARN, "CCM is disabled\n");
+		return;
+	}
+
 	if (prAdapter->fgIsCcmPending) {
 		DBGLOG(CCM, INFO, "skip CCM due to pending");
 		return;
@@ -175,66 +202,79 @@ void ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 		__ccmChannelSwitchProducer(prAdapter, prTargetBss, pucSrcFunc);
 }
 
-static u_int8_t ccmIsSwitchChannelNeeded(struct ADAPTER *prAdapter,
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if channel switch allowed and prepare to switchh to A+A channel
+ *        or original input target channel.
+ *
+ * \param[in] u4TargetCh  Point to target channel we want to switch to,
+ *                        may be modified for A+A.
+ *            eTargetBand Point to target band we want to switch to,
+ *                        may be modified for A+A.
+ *
+ * \return TRUE, ready to channel switch.
+ *         FALSE, not alloed to channel switch.
+ */
+/*----------------------------------------------------------------------------*/
+static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
-			    uint32_t u4TargetCh,
+			    uint32_t *u4TargetCh,
 			    enum ENUM_MBMC_BN eTargetHwBandIdx,
 			    enum ENUM_BAND *eTargetBand)
 {
-	u_int8_t fgIsDfs = rlmDomainIsDfsChnls(prAdapter, u4TargetCh);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint32_t au4AliveBssBitmap[AA_HW_BAND_NUM] = { 0 };
 	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
 	uint32_t u4FreqListNum;
-	u_int8_t fgIs6gPscCh = IS_6G_PSC_CHANNEL(u4TargetCh);
+	uint32_t u4Idx;
+	uint32_t u4ChForAa;
+	enum ENUM_BAND eBandForAa;
+	uint32_t u4Freq;
 #endif
 
 	/* pass for MCC only */
-	if (fgIsDfs ||
-#if (CFG_SUPPORT_WIFI_6G == 1)
-	    (*eTargetBand == BAND_6G && !fgIs6gPscCh) ||
-#endif
-	    prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
-	    prBssInfo->ucPrimaryChannel == u4TargetCh) {
+	if (prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
+	    prBssInfo->ucPrimaryChannel == *u4TargetCh) {
 		DBGLOG(CCM, INFO,
 		       "do not trigger CSA, [%s]Bss%u, ch=%u, hwBand=%u, rfBand=%u [Target]ch=%u, hwBand=%u, rfBand=%u\n",
 		       bssGetRoleTypeString(prAdapter, prBssInfo),
 		       prBssInfo->ucBssIndex, prBssInfo->ucPrimaryChannel,
 		       prBssInfo->eHwBandIdx, prBssInfo->eBand,
-		       u4TargetCh, eTargetHwBandIdx, *eTargetBand);
+		       *u4TargetCh, eTargetHwBandIdx, *eTargetBand);
 		return FALSE;
 	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	ccmGetOtherAliveBssHwBitmap(prAdapter, au4AliveBssBitmap, prBssInfo);
-	DBGLOG(P2P, INFO,
-	       "alive BSS hw bitmap [bn0:bn1:bn2]=[0x%x:0x%x:0x%x]\n",
-	       au4AliveBssBitmap[AA_HW_BAND_0], au4AliveBssBitmap[AA_HW_BAND_1],
-	       au4AliveBssBitmap[AA_HW_BAND_2]);
 
 	if ((prBssInfo->eBand == BAND_5G || prBssInfo->eBand == BAND_6G) &&
 	    p2pFuncIsPreferWfdAa(prAdapter, au4AliveBssBitmap)) {
 		u4FreqListNum = p2pFuncAppendAaFreq(prAdapter, prBssInfo,
 						     freqList);
-		if (u4FreqListNum > 0) {
-			u4TargetCh = nicFreq2ChannelNum(freqList[0] * 1000);
-			if (freqList[0] >= 2412 && freqList[0] <= 2484)
-				*eTargetBand = BAND_2G4;
-			else if (freqList[0] >= 5180 && freqList[0] <= 5900)
-				*eTargetBand = BAND_5G;
-			else if (freqList[0] >= 5955 && freqList[0] <= 7115)
-				*eTargetBand = BAND_6G;
+		for (u4Idx = 0; u4Idx < u4FreqListNum; u4Idx++) {
+			u4Freq = freqList[u4Idx];
+			u4ChForAa = nicFreq2ChannelNum(u4Freq * 1000);
+			if (u4Freq >= 2412 && u4Freq <= 2484)
+				eBandForAa = BAND_2G4;
+			else if (u4Freq >= 5180 && u4Freq <= 5900)
+				eBandForAa = BAND_5G;
+			else if (u4Freq >= 5955 && u4Freq <= 7115)
+				eBandForAa = BAND_6G;
+			if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo,
+				u4ChForAa, eBandForAa) == CSA_STATUS_SUCCESS) {
+				/* modify the input ch and band! */
+				*u4TargetCh = u4ChForAa;
+				*eTargetBand = eBandForAa;
+				return TRUE;
+			}
 		}
 	}
-
-	if (*eTargetBand == BAND_6G &&
-	    !rsnKeyMgmtSae(prBssInfo->u4RsnSelectedAKMSuite)) {
-		DBGLOG(CCM, WARN, "Skip CSA to 6G if auth type not SAE\n");
-		return FALSE;
-	}
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
+	else if (p2pFuncIsCsaAllowed(prAdapter, prBssInfo, *u4TargetCh,
+				 *eTargetBand) == CSA_STATUS_SUCCESS)
+		return TRUE;
 
-	return TRUE;
+	return FALSE;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -316,7 +356,7 @@ void ccmChannelSwitchConsumer(struct ADAPTER *prAdapter)
 		bss->u4PrivateData]) && !fgIsMlo)
 		fgIsSwitching = p2pFuncSwitchSapChannel(prAdapter,
 					P2P_DEFAULT_SCENARIO);
-	else if (ccmIsSwitchChannelNeeded(prAdapter, bss, u4TargetCh,
+	else if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss, &u4TargetCh,
 				      eTargetHwBandIdx, &eTargetBand)) {
 		cnmIdcCsaReq(prAdapter, eTargetBand, u4TargetCh,
 				     bss->u4PrivateData);
@@ -349,20 +389,6 @@ static void __ccmChannelSwitchProducer(struct ADAPTER *prAdapter,
 	u_int8_t fgIsTargetMlo = FALSE;
 	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntry;
 	struct P2P_CCM_CSA_ENTRY *prFirstSap = NULL;
-	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
-
-	if (!prTargetBss) {
-		DBGLOG(CCM, INFO, "null target Bss\n");
-		return;
-	}
-
-	if (!prAdapter->fgIsP2PRegistered)
-		return;
-
-	if (prWifiVar->eP2pCcmMode == P2P_CCM_MODE_DISABLE) {
-		DBGLOG(CCM, WARN, "CCM is disabled\n");
-		return;
-	}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	fgIsTargetMlo = IS_MLD_BSSINFO_MULTI(

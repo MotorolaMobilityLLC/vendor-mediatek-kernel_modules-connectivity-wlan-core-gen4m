@@ -1497,6 +1497,18 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 	u_int8_t fgIsTKIP = FALSE;
 	enum ENUM_BAND eBand = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
+	uint8_t ucIdx;
+	uint8_t ucOpClass;
+	uint32_t u4OpClassBits = 0;
+	uint16_t u2SupCh_2g = 0;
+	uint32_t u4SupCh_5g_0 = 0;
+	uint16_t u2SupCh_5g_1 = 0;
+	uint8_t idx;
+	uint8_t ucStartCh;
+	uint8_t ucChNum;
+	uint8_t ucCurrCh;
+	uint8_t ucChIdx;
+
 
 	prWifiVar = &(prAdapter->rWifiVar);
 	prRxDescOps = prAdapter->chip_info->prRxDescOps;
@@ -1613,34 +1625,78 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 
 			break;
 
-#if CFG_STAINFO_FEATURE
 		case ELEM_ID_SUP_OPERATING_CLASS:
-			if (IE_LEN(pucIE) >= 2 &&
-				IE_LEN(pucIE) <= 256) {
-				uint8_t ucIdx;
-				uint8_t ucIs2gSupport = 0;
-				uint8_t ucIs5gSupport = 0;
-				uint8_t ucIs6gSupport = 0;
-
-				for (ucIdx = 0;
-					ucIdx < (IE_LEN(pucIE)-1);
-					ucIdx++) {
-					if (SUP_OPERATING_CLASS_IE(pucIE)->
-						ucSup[ucIdx] <= 87)
-						ucIs2gSupport = 1;
-					else if (SUP_OPERATING_CLASS_IE(pucIE)->
-						ucSup[ucIdx] <= 130)
-						ucIs5gSupport = 2;
-					else if (SUP_OPERATING_CLASS_IE(pucIE)->
-						ucSup[ucIdx] <= 179)
-						ucIs6gSupport = 4;
-					}
-				prStaRec->ucSupportedBand =
-					ucIs2gSupport + ucIs5gSupport +
-					ucIs6gSupport;
-			}
-			break;
+			if (IE_LEN(pucIE) < 2)
+				break;
+#if CFG_STAINFO_FEATURE
+			uint8_t ucIs2gSupport = 0;
+			uint8_t ucIs5gSupport = 0;
+			uint8_t ucIs6gSupport = 0;
 #endif
+
+			for (ucIdx = 0; ucIdx < (IE_LEN(pucIE)-1); ucIdx++) {
+				ucOpClass = SUP_OPERATING_CLASS_IE(pucIE)->
+						ucSup[ucIdx];
+#if CFG_STAINFO_FEATURE
+				if (ucOpClass <= 87)
+					ucIs2gSupport = 1;
+				else if (ucOpClass <= 130)
+					ucIs5gSupport = 2;
+				else if (ucOpClass <= 179)
+					ucIs6gSupport = 4;
+#endif
+				if (ucOpClass >= 81 && ucOpClass <= 84)
+					u4OpClassBits |= BIT(ucOpClass - 81);
+				else if (ucOpClass >= 115 && ucOpClass <= 136)
+					u4OpClassBits |=
+						BIT(ucOpClass - 115 + 4);
+				else if (ucOpClass >= 180 && ucOpClass <= 183)
+					u4OpClassBits |=
+						BIT(ucOpClass - 180 + 4 + 22);
+			}
+#if CFG_STAINFO_FEATURE
+			prStaRec->ucSupportedBand =
+				ucIs2gSupport + ucIs5gSupport +
+				ucIs6gSupport;
+#endif
+			prStaRec->u4SupportedOpClassBits =
+				u4OpClassBits;
+			break;
+
+		case ELEM_ID_SUP_CHS:
+			if (IE_LEN(pucIE) < 2)
+				break;
+
+			for (idx = 0; idx < IE_LEN(pucIE); idx += 2) {
+				ucStartCh = SUP_CH_IE(pucIE)->
+						ucChannelNum[idx];
+				ucChNum = SUP_CH_IE(pucIE)->
+						ucChannelNum[idx + 1];
+				for (ucChIdx = 0; ucChIdx < ucChNum;
+				     ucChIdx++) {
+					if (ucStartCh <= 14) {
+						ucCurrCh = ucStartCh + ucChIdx;
+						u2SupCh_2g |= BIT(ucCurrCh);
+					} else if (ucStartCh >= 36 &&
+						 ucStartCh <= 144) {
+						ucCurrCh = ucStartCh +
+							(ucChIdx * 4);
+						u4SupCh_5g_0 |=
+						      BIT((ucCurrCh - 36) / 4);
+					} else if (ucStartCh >= 149 &&
+						 ucStartCh <= 181) {
+						ucCurrCh = ucStartCh +
+							(ucChIdx * 4);
+						u2SupCh_5g_1 |=
+						      BIT((ucCurrCh - 149) / 4);
+					}
+					/* 6G should use sup op class IE */
+				}
+			}
+			prStaRec->u2SupportedChnlBits_2g = u2SupCh_2g;
+			prStaRec->u4SupportedChnlBits_5g_0 = u4SupCh_5g_0;
+			prStaRec->u2SupportedChnlBits_5g_1 = u2SupCh_5g_1;
+			break;
 
 		case ELEM_ID_EXTENDED_SUP_RATES:
 			if (!prIeExtSupportedRate)
