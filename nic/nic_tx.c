@@ -2703,6 +2703,7 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 	struct MSDU_INFO *prMsduInfo;
 	struct TX_CTRL *prTxCtrl;
 	struct TX_DESC_OPS_T *prTxDescOps;
+	char SN[5] = " "; /* 0~4095, blank if not set */
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -2747,11 +2748,19 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 
 		nicUpdateMgmtSubtypeCounter(prAdapter, prMsduInfo);
 
+		if ((prMsduInfo->u4Option & MSDU_OPT_MANUAL_SN) &&
+		    snprintf(SN, sizeof(SN), "%u", prMsduInfo->u2SwSN) < 0) {
+			/* Copy SN as string if MANUAL_SN,
+			 * if snprintf failed, make SN empty string
+			 */
+			SN[0] = '\0';
+		}
+
 		DBGLOG(INIT, TRACE,
-			"TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] STA[%u] RSP[%u]\n",
+			"TX MGMT Frame: BSS[%u] WIDX:PID[%u:%u] SEQ[%u] SN[%s] STA[%u] RSP[%u]\n",
 			prMsduInfo->ucBssIndex, prMsduInfo->ucWlanIndex,
-			prMsduInfo->ucPID,
-			prMsduInfo->ucTxSeqNum, prMsduInfo->ucStaRecIndex,
+			prMsduInfo->ucPID, prMsduInfo->ucTxSeqNum, SN,
+			prMsduInfo->ucStaRecIndex,
 			prMsduInfo->pfTxDoneHandler ? TRUE : FALSE);
 
 #if CFG_TX_CMD_SMART_SEQUENCE
@@ -3870,16 +3879,8 @@ void nicTxProcessTxDoneEvent(struct ADAPTER *prAdapter,
 	}
 
 	if (prTxDone->ucPacketSeq == NIC_TX_DESC_PID_RESERVED ||
-	    prTxDone->ucPacketSeq > NIC_TX_DESC_DRIVER_PID_MAX) {
-		DBGLOG_LIMITED(NIC, WARN,
-			"EVENT_ID_TX_DONE WIDX:PID:TID[%u:%u:%u] Status[%u:%s] SN[%u]\n",
-			prTxDone->ucWlanIndex, prTxDone->ucPacketSeq,
-			prTxDone->ucTid,
-			prTxDone->ucStatus,
-			prTxResult,
-			prTxDone->u2SequenceNumber);
+	    prTxDone->ucPacketSeq > NIC_TX_DESC_DRIVER_PID_MAX)
 		return;
-	}
 
 	fgStop = FALSE;
 	do {
