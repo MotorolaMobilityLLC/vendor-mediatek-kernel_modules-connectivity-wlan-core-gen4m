@@ -733,9 +733,28 @@ int mtk_p2p_cfg80211_del_iface_impl(
 	}
 
 	/* Wait for kalSendComplete() complete */
-	if (p2pGetMode() == RUNNING_P2P_DEV_MODE)
-		prP2pInfo->aprRoleHandler = NULL;
-	else if (p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&
+	if (p2pGetMode() == RUNNING_P2P_DEV_MODE) {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/* reset mlo sap's links */
+		if (wdev->iftype == NL80211_IFTYPE_AP) {
+			struct GL_P2P_INFO *prTempP2pInfo;
+			uint8_t ucIdx;
+
+			for (ucIdx = 0; ucIdx < KAL_P2P_NUM; ucIdx++) {
+				prTempP2pInfo = prGlueInfo->prP2PInfo[ucIdx];
+				if (prTempP2pInfo == NULL ||
+				    prTempP2pInfo->aprRoleHandler !=
+				    UnregRoleHander)
+					continue;
+
+				prTempP2pInfo->aprRoleHandler = NULL;
+			}
+		} else
+#endif
+		{
+			prP2pInfo->aprRoleHandler = NULL;
+		}
+	} else if (p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&
 		u4Idx == 1)
 		prP2pInfo->aprRoleHandler = NULL;
 	else
