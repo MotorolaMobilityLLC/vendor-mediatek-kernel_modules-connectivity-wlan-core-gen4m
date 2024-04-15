@@ -3869,10 +3869,6 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 		aisFsmAddBlockList(prAdapter, prAisFsmInfo,
 			u2DeauthReason);
 
-#if CFG_SUPPORT_DFS
-	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, FALSE);
-#endif
-
 	/* to support user space triggered roaming */
 	if ((ucReasonOfDisconnect == DISCONNECT_REASON_CODE_ROAMING ||
 	     ucReasonOfDisconnect == DISCONNECT_REASON_CODE_TEST_MODE) &&
@@ -3883,6 +3879,22 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 		struct CMD_ROAMING_TRANSIT rRoamingData = {0};
 		struct BSS_DESC *prBssDesc =
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
+
+		if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
+			DBGLOG(AIS, STATE,
+				"Ignore roaming request if unable to roam\n");
+
+			/* DISCONNECT_REASON_CODE_ROAMING is triggered by
+			 * supplicant, must indicate the connection status,
+			 */
+			if (ucReasonOfDisconnect ==
+			    DISCONNECT_REASON_CODE_ROAMING)
+				aisIndicationOfMediaStateToHost(prAdapter,
+					MEDIA_STATE_CONNECTED,
+					FALSE,
+					ucBssIndex);
+			return;
+		}
 
 #if CFG_SUPPORT_DETECT_SECURITY_MODE_CHANGE
 		cnmTimerStopTimer(prAdapter,
@@ -3971,6 +3983,10 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 		"[%d] aisFsmStateAbort DiscReason[%d], CurState[%d], delayIndi[%d]\n",
 		ucBssIndex, ucReasonOfDisconnect,
 		prAisFsmInfo->eCurrentState, fgDelayIndication);
+
+#if CFG_SUPPORT_DFS
+	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, FALSE);
+#endif
 
 	/* 4 <1> Save information of Abort Message and then free memory. */
 	prAisFsmInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
@@ -4083,10 +4099,6 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	default:
 		break;
 	}
-
-#if CFG_SUPPORT_DFS
-	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, FALSE);
-#endif
 
 #if CFG_SUPPORT_ROAMING
 	if (prAisFsmInfo->ucIsStaRoaming) {
@@ -4690,12 +4702,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 #endif /* ARP_MONITER_ENABLE */
 
 			aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
-#if CFG_SUPPORT_DFS
-			/* connect to new AP, abort old AP's CSA */
-			aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, TRUE);
-			kalIndicateAllQueueTxAllowed(prAdapter->prGlueInfo,
-					ucBssIndex, TRUE);
-#endif
 
 #if CFG_SUPPORT_ROAMING
 			prAisFsmInfo->ucIsStaRoaming = FALSE;
@@ -11097,4 +11103,22 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 			(struct MSG_HDR *)prMsgChReq,
 			MSG_SEND_METHOD_UNBUF);
-}				/* end of aisReqJoinChPrivilegeForCSA() */
+} /* end of aisReqJoinChPrivilegeForCSA() */
+
+u_int8_t aisFsmIsSwitchChannel(struct ADAPTER *ad,
+	struct AIS_FSM_INFO *ais)
+{
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
+
+		if (!prAisBssInfo)
+			continue;
+
+		if (timerPendingTimer(&prAisBssInfo->rCsaTimer) ||
+		    IS_AIS_CH_SWITCH(prAisBssInfo))
+			return TRUE;
+	}
+	return FALSE;
+}

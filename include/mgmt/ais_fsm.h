@@ -991,13 +991,15 @@ void aisFunFlushTxQueue(struct ADAPTER *prAdapter,
 void aisFunSwitchChannel(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 void aisFunSwitchChannelImpl(struct ADAPTER *prAdapter,
-				uint8_t ucBssIndex);
+	uint8_t ucBssIndex);
 void aisFunSwitchChannelAbort(struct ADAPTER *ad,
-			struct AIS_FSM_INFO *ais, uint8_t fgResetAll);
+	struct AIS_FSM_INFO *ais, uint8_t fgResetAll);
 void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBss,
 	uint8_t *ucChTokenId);
+u_int8_t aisFsmIsSwitchChannel(struct ADAPTER *ad,
+	struct AIS_FSM_INFO *ais);
 
 /*******************************************************************************
  *                              F U N C T I O N S
