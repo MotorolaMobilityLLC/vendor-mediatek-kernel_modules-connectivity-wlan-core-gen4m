@@ -4581,7 +4581,7 @@ void nicRxAdjustUnUseRFB(struct ADAPTER *prAdapter)
 
 void nicAcquireDynamicRfbLock(struct ADAPTER *prAdapter)
 {
-#if !CFG_SUPPORT_RX_WORK
+#if !CFG_SUPPORT_RX_WORK || CFG_SUPPORT_HIF_RX_NAPI
 	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
 		spin_lock_bh(&prAdapter->prGlueInfo->rSpinLock[
 				SPIN_LOCK_DYNAMIC_RFB]);
@@ -4592,7 +4592,7 @@ void nicAcquireDynamicRfbLock(struct ADAPTER *prAdapter)
 
 void nicReleaseDynamicRfbLock(struct ADAPTER *prAdapter)
 {
-#if !CFG_SUPPORT_RX_WORK
+#if !CFG_SUPPORT_RX_WORK || CFG_SUPPORT_HIF_RX_NAPI
 	if (HAL_IS_TX_DIRECT(prAdapter) || HAL_IS_RX_DIRECT(prAdapter))
 		spin_unlock_bh(&prAdapter->prGlueInfo->rSpinLock[
 				SPIN_LOCK_DYNAMIC_RFB]);
