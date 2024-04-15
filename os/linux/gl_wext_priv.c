@@ -11103,12 +11103,12 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 		if (bss == NULL)
 			return -1;
 
+		u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
+		eBand = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
+
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			    i4TotalLen - i4BytesWritten,
 			    "\n[WARNING] This command only support CSA to 2G/5G, and will be deprecated in the future.\n\n");
-
-		u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
-		eBand = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
 
 		if (IS_BSS_APGO(bss)) {
 #if CFG_SUPPORT_IDC_CH_SWITCH
@@ -11162,7 +11162,7 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 		DBGLOG(REQ, INFO, "Input insufficent\n");
 	}
 
-	return 0;
+	return i4BytesWritten;
 }
 
 int priv_driver_set_csa_ex(struct net_device *prNetDev,
