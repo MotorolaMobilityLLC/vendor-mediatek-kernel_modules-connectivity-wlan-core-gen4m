@@ -269,7 +269,7 @@ void glReseProbeRemoveDone(struct GLUE_INFO *prGlueInfo, int32_t i4Status,
 
 void glSendResetRequest(void);
 
-int glResetWholeChipResetTrigger(char *pcReason);
+void glResetWholeChipResetTrigger(char *pcReason);
 
 uint32_t glResetSelectAction(struct ADAPTER *prAdapter);
 
