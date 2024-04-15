@@ -54,6 +54,9 @@
 *                   F U N C T I O N   D E C L A R A T I O N S
 ********************************************************************************
 */
+#if CFG_MTK_WIFI_PCIE_SR
+extern u_int8_t fgIsL2Finished;
+#endif
 
 /*******************************************************************************
  *                            P U B L I C   D A T A
@@ -1893,7 +1896,11 @@ void mt6653_dumpPcieRegWithScanDump(void)
 bool mt6653_CheckDumpViaBt(struct ADAPTER *prAdapter)
 {
 	return (fgTriggerDebugSop
-		&& (fgIsBusAccessFailed || fgIsMcuOff)
+		&& (fgIsBusAccessFailed || fgIsMcuOff
+#if CFG_MTK_WIFI_PCIE_SR
+		|| !fgIsL2Finished
+#endif
+		)
 #if CFG_SUPPORT_WIFI_SLEEP_COUNT
 		&& (prAdapter->fgIsPowerDumpDrvOwn == FALSE)
 #endif
