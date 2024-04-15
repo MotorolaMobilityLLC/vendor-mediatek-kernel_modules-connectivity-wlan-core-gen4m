@@ -89,6 +89,10 @@
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucIsStaRoaming)
 #endif
 
+#define IS_AIS_CH_SWITCH(_bss_info) \
+	(IS_BSS_AIS(_bss_info) && \
+	(_bss_info->fgIsAisCsaPending || _bss_info->fgIsAisSwitchingChnl))
+
 #if (CFG_TC10_FEATURE == 1)
 #define RCPI_FOR_DONT_ROAM                      80 /*-70dbm*/
 #else
@@ -156,6 +160,7 @@ enum ENUM_AIS_REQUEST_TYPE {
 	AIS_REQUEST_ROAMING_CONNECT,
 	AIS_REQUEST_REMAIN_ON_CHANNEL,
 	AIS_REQUEST_BTO,
+	AIS_REQUEST_CSA,
 	AIS_REQUEST_NUM
 };
 
@@ -167,6 +172,11 @@ struct AIS_REQ_HDR {
 struct AIS_SCAN_REQ {
 	struct AIS_REQ_HDR rReqHdr;
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
+};
+
+struct AIS_CSA_REQ {
+	struct AIS_REQ_HDR rReqHdr;
+	u_int8_t ucBssIndex;
 };
 
 struct AIS_REQ_CHNL_INFO {
@@ -980,8 +990,10 @@ void aisFunFlushTxQueue(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 void aisFunSwitchChannel(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
-void aisFunSwitchChannelAbort(struct ADAPTER *prAdapter,
-	struct BSS_INFO *prBssInfo);
+void aisFunSwitchChannelImpl(struct ADAPTER *prAdapter,
+				uint8_t ucBssIndex);
+void aisFunSwitchChannelAbort(struct ADAPTER *ad,
+			struct AIS_FSM_INFO *ais, uint8_t fgResetAll);
 void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	struct BSS_INFO *prBss,

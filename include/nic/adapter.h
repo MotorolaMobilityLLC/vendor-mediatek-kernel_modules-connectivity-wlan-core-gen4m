@@ -588,12 +588,14 @@ struct BSS_INFO {
 
 #if CFG_SUPPORT_DFS
 	struct TIMER rCsaTimer;
+	struct TIMER rCsaDoneTimer;
 	struct SWITCH_CH_AND_BAND_PARAMS CSAParams;
 	uint8_t ucVhtChannelWidthBeforeCsa;
 	enum ENUM_CHNL_EXT eBssScoBeforeCsa;
 	uint8_t ucOpRxNssBeforeCsa;
 	uint8_t ucOpTxNssBeforeCsa;
 	uint8_t fgIsAisSwitchingChnl;
+	uint8_t fgIsAisCsaPending;
 #endif
 
 	u_int8_t fgEnableH2E;
@@ -1584,6 +1586,7 @@ struct WIFI_VAR {
 	u_int8_t fgEnOnlyScan6g;
 #endif
 	uint8_t ucCsaDeauthClient;
+	uint8_t ucCsaDoneTimeout;
 
 #define LATENCY_STATS_MAX_SLOTS 5
 #define INVALID_TX_DELAY 0xFFFFFFFF

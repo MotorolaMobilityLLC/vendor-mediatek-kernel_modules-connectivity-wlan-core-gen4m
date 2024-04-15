@@ -2342,8 +2342,14 @@ omac_choosed:
 				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaTimeout,
 				(uintptr_t)ucBssIndex);
 
+			cnmTimerInitTimer(prAdapter,
+				&prBssInfo->rCsaDoneTimer,
+				(PFN_MGMT_TIMEOUT_FUNC) rlmCsaDoneTimeout,
+				(uintptr_t)ucBssIndex);
+
 			rlmResetCSAParams(prBssInfo, TRUE);
 			prBssInfo->fgIsAisSwitchingChnl = FALSE;
+			prBssInfo->fgIsAisCsaPending = FALSE;
 #endif
 			cnmTimerInitTimer(prAdapter,
 				&prBssInfo->rObssScanTimer,
@@ -2387,6 +2393,7 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 
 #if CFG_SUPPORT_DFS
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaTimer);
+	cnmTimerStopTimer(prAdapter, &prBssInfo->rCsaDoneTimer);
 #endif
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rObssScanTimer);
 

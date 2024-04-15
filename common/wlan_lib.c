@@ -8009,6 +8009,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 	INIT_UINT(prWifiVar->ucCsaDeauthClient,
 		"CsaDeauthClient", FEATURE_ENABLED, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->ucCsaDoneTimeout,
+		"CsaDoneTimeout", 10, FEATURE_DEBUG_ONLY);
 
 #if (CFG_EFUSE_BUFFER_MODE_DELAY_CAL == 1)
 	INIT_UINT(prWifiVar->ucEfuseBufferModeCal, "EfuseBufferModeCal", 0,

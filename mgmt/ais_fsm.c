@@ -2862,11 +2862,11 @@ enum ENUM_AIS_STATE aisFsmHandleNextReq_NORMAL_TR(struct ADAPTER *prAdapter,
 	enum ENUM_AIS_STATE eNextState = prAisFsmInfo->eCurrentState;
 	struct AIS_REQ_HDR *prAisReq = NULL;
 	struct AIS_SCAN_REQ *prAisScanReq;
+	struct AIS_CSA_REQ *prAisCsaReq;
 
 	if (aisFsmIsRequestPending(prAdapter,
 		AIS_REQUEST_BTO, TRUE, &prAisReq, ucBssIndex)) {
 		aisHandleBeaconTimeout(prAdapter, ucBssIndex, TRUE);
-		eNextState = AIS_STATE_NORMAL_TR;
 		cnmMemFree(prAdapter, prAisReq);
 	} else if (aisFsmIsRequestPending(prAdapter,
 		AIS_REQUEST_ROAMING_SEARCH, TRUE, &prAisReq, ucBssIndex)) {
@@ -2886,6 +2886,11 @@ enum ENUM_AIS_STATE aisFsmHandleNextReq_NORMAL_TR(struct ADAPTER *prAdapter,
 	} else if (aisFsmIsRequestPending(prAdapter,
 		AIS_REQUEST_REMAIN_ON_CHANNEL, TRUE, &prAisReq, ucBssIndex)) {
 		eNextState = AIS_STATE_REQ_REMAIN_ON_CHANNEL;
+		cnmMemFree(prAdapter, prAisReq);
+	} else if (aisFsmIsRequestPending(prAdapter,
+		AIS_REQUEST_CSA, TRUE, &prAisReq, ucBssIndex)) {
+		prAisCsaReq = (struct AIS_CSA_REQ *)prAisReq;
+		aisFunSwitchChannelImpl(prAdapter, prAisCsaReq->ucBssIndex);
 		cnmMemFree(prAdapter, prAisReq);
 	}
 
@@ -3017,7 +3022,9 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 				   || prAisReq->eReqType ==
 				   AIS_REQUEST_ROAMING_SEARCH
 				   || prAisReq->eReqType ==
-				   AIS_REQUEST_BTO) {
+				   AIS_REQUEST_BTO
+				   || prAisReq->eReqType ==
+				   AIS_REQUEST_CSA) {
 				fgIsTransition = TRUE;
 				/* ignore */
 				/* free the message */
@@ -3241,14 +3248,6 @@ send_msg:
 				aisRestoreBandIdx(prAdapter, prAisBssInfo);
 			}
 
-			eNewState = aisFsmHandleNextReq_NORMAL_TR(prAdapter,
-				prAisFsmInfo, ucBssIndex);
-
-			if (eNewState != eNextState) {
-				eNextState = eNewState;
-				fgIsTransition = TRUE;
-			}
-
 			/* for WMM-AC cert 5.2.5 */
 			/* after reassoc, update PS flag to FW again */
 			if (prAisFsmInfo->ucReasonOfDisconnect ==
@@ -3263,6 +3262,14 @@ send_msg:
 				DISCONNECT_REASON_CODE_RESERVED;
 
 			prConnSettings->u2LinkIdBitmap = 0xFFFF;
+
+			eNewState = aisFsmHandleNextReq_NORMAL_TR(prAdapter,
+				prAisFsmInfo, ucBssIndex);
+
+			if (eNewState != eNextState) {
+				eNextState = eNewState;
+				fgIsTransition = TRUE;
+			}
 
 			break;
 
@@ -3863,8 +3870,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 			u2DeauthReason);
 
 #if CFG_SUPPORT_DFS
-	if (prBssInfo->fgIsAisSwitchingChnl)
-		aisFunSwitchChannelAbort(prAdapter, prBssInfo);
+	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, FALSE);
 #endif
 
 	/* to support user space triggered roaming */
@@ -4077,6 +4083,10 @@ void aisFsmStateAbort(struct ADAPTER *prAdapter,
 	default:
 		break;
 	}
+
+#if CFG_SUPPORT_DFS
+	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, FALSE);
+#endif
 
 #if CFG_SUPPORT_ROAMING
 	if (prAisFsmInfo->ucIsStaRoaming) {
@@ -4680,6 +4690,12 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 #endif /* ARP_MONITER_ENABLE */
 
 			aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
+#if CFG_SUPPORT_DFS
+			/* connect to new AP, abort old AP's CSA */
+			aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, TRUE);
+			kalIndicateAllQueueTxAllowed(prAdapter->prGlueInfo,
+					ucBssIndex, TRUE);
+#endif
 
 #if CFG_SUPPORT_ROAMING
 			prAisFsmInfo->ucIsStaRoaming = FALSE;
@@ -6167,7 +6183,7 @@ void aisFsmDisconnect(struct ADAPTER *prAdapter,
 		aisGetSecModeChangeTimer(prAdapter, ucBssIndex));
 #endif
 #if CFG_SUPPORT_DFS
-	cnmTimerStopTimer(prAdapter, &prAisBssInfo->rCsaTimer);
+	aisFunSwitchChannelAbort(prAdapter, prAisFsmInfo, TRUE);
 #endif
 	cnmTimerStopTimer(prAdapter, &prAisBssInfo->rObssScanTimer);
 
@@ -6480,6 +6496,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prAisBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	enum ENUM_AIS_STATE eNextState;
+	enum ENUM_AIS_STATE eNewState;
 	OS_SYSTIME rCurrentTime;
 	uint8_t ucBssIndex = (uint8_t) ulParamPtr;
 	struct BSS_DESC *prBssDesc;
@@ -6499,7 +6516,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 
 		prStaRec = aisGetTargetStaRec(prAdapter, ucBssIndex);
 		prStaRec->u2StatusCode = STATUS_CODE_AUTH_TIMEOUT;
-		eNextState = aisHandleJoinFailure(prAdapter,
+		eNewState = aisHandleJoinFailure(prAdapter,
 				prStaRec,
 				NULL, ucBssIndex);
 		break;
@@ -6516,7 +6533,7 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 		}
 #endif
 
-		eNextState = aisFsmHandleNextReq_NORMAL_TR(
+		eNewState = aisFsmHandleNextReq_NORMAL_TR(
 			prAdapter, prAisFsmInfo, ucBssIndex);
 
 #if CFG_SUPPORT_LOWLATENCY_MODE
@@ -6529,13 +6546,14 @@ void aisFsmRunEventJoinTimeout(struct ADAPTER *prAdapter,
 	default:
 		/* release channel */
 		aisFsmReleaseCh(prAdapter, ucBssIndex);
+		eNewState = prAisFsmInfo->eCurrentState;
 		break;
 
 	}
 
 	/* Call aisFsmSteps() when we are going to change AIS STATE */
-	if (eNextState != prAisFsmInfo->eCurrentState)
-		aisFsmSteps(prAdapter, eNextState, ucBssIndex);
+	if (eNewState != eNextState)
+		aisFsmSteps(prAdapter, eNewState, ucBssIndex);
 }				/* end of aisFsmRunEventJoinTimeout() */
 
 void aisFsmRunEventDeauthTimeout(struct ADAPTER *prAdapter,
@@ -6736,6 +6754,8 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 
 	if (prAisBssInfo->prStaRecOfAP &&
 		prAisBssInfo->fgIsAisSwitchingChnl == TRUE) {
+		struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
 		/* 2. channel privilege has been approved */
 		aisChangeMediaState(prAisBssInfo, MEDIA_STATE_CONNECTED);
 		nicUpdateBss(prAdapter, ucBssIndex);
@@ -6751,6 +6771,10 @@ void aisFsmRunEventChGrant(struct ADAPTER *prAdapter,
 			prAisBssInfo->ucPrimaryChannel,
 			prAisBssInfo->eBand,
 			prAisBssInfo->ucBssIndex);
+
+		cnmTimerStartTimer(prAdapter,
+				&prAisBssInfo->rCsaDoneTimer,
+				SEC_TO_MSEC(prWifiVar->ucCsaDoneTimeout));
 
 #if CFG_SUPPORT_CCM
 		ccmChannelSwitchProducer(prAdapter, prAisBssInfo, __func__);
@@ -10914,43 +10938,113 @@ void aisFunSwitchChannel(struct ADAPTER *prAdapter,
 				struct BSS_INFO *prBssInfo)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct AIS_CSA_REQ *prAisReq;
 
-	if (prBssInfo->fgIsAisSwitchingChnl) {
-		DBGLOG(AIS, WARN, "Channel switch is ongoing\n");
+	if (!prBssInfo)
+		return;
+
+	if (IS_AIS_CH_SWITCH(prBssInfo)) {
+		DBGLOG(AIS, WARN,
+			"[%d] Channel switch is pending[%d] or ongoing[%d].\n",
+			prBssInfo->ucBssIndex,
+			prBssInfo->fgIsAisCsaPending,
+			prBssInfo->fgIsAisSwitchingChnl);
 		return;
 	}
-
-	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
 
 	/* Indicate PM abort to sync BSS state with FW */
 	nicPmIndicateBssAbort(prAdapter, prBssInfo->ucBssIndex);
 	prBssInfo->ucDTIMPeriod = 0;
 
-	/* Update BSS with temp. disconnect state to FW */
-	if (IS_NET_ACTIVE(prAdapter, prBssInfo->ucBssIndex))
-		nicDeactivateNetworkEx(prAdapter,
-			NETWORK_ID(prBssInfo->ucBssIndex,
-			  aisGetLinkIndex(prAdapter, prBssInfo->ucBssIndex)),
-			  FALSE);
-	aisChangeMediaState(prBssInfo, MEDIA_STATE_DISCONNECTED);
-	nicUpdateBssEx(prAdapter,
-		prBssInfo->ucBssIndex,
-		FALSE);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
+		aisFunSwitchChannelImpl(prAdapter, prBssInfo->ucBssIndex);
+		return;
+	}
 
-	prBssInfo->fgIsAisSwitchingChnl = TRUE;
+	prAisReq = (struct AIS_CSA_REQ *) cnmMemAlloc(
+						prAdapter, RAM_TYPE_MSG,
+						sizeof(struct AIS_CSA_REQ));
+	if (!prAisReq) {
+		DBGLOG(AIS, ERROR,
+			"[%d] Can't generate new csa req\n",
+			prBssInfo->ucBssIndex);
+		return;
+	}
 
-	/* Release channel if CSA immediately before set authorized */
-	aisFsmReleaseCh(prAdapter, prBssInfo->ucBssIndex);
-	aisReqJoinChPrivilegeForCSA(prAdapter, prAisFsmInfo,
-		prBssInfo, &prAisFsmInfo->ucSeqNumOfChReq);
+	prAisReq->rReqHdr.eReqType = AIS_REQUEST_CSA;
+	prAisReq->ucBssIndex = prBssInfo->ucBssIndex;
+	prBssInfo->fgIsAisCsaPending = TRUE;
+
+	aisFsmClearRequest(prAdapter,
+			    AIS_REQUEST_CSA,
+			    prBssInfo->ucBssIndex);
+	aisFsmInsertRequestImpl(prAdapter,
+			    (struct AIS_REQ_HDR *)prAisReq,
+			    TRUE,
+			    prBssInfo->ucBssIndex);
 }
 
-void aisFunSwitchChannelAbort(struct ADAPTER *prAdapter,
-				struct BSS_INFO *prBssInfo)
+void aisFunSwitchChannelImpl(struct ADAPTER *prAdapter,
+				uint8_t ucBssIndex)
 {
-	prBssInfo->fgIsAisSwitchingChnl = FALSE;
-	aisFsmReleaseCh(prAdapter, prBssInfo->ucBssIndex);
-	aisChangeMediaState(prBssInfo, MEDIA_STATE_CONNECTED);
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
+	/* Update BSS with temp. disconnect state to FW */
+	if (IS_NET_ACTIVE(prAdapter, ucBssIndex))
+		nicDeactivateNetworkEx(prAdapter,
+			NETWORK_ID(ucBssIndex,
+			  aisGetLinkIndex(prAdapter, ucBssIndex)),
+			  FALSE);
+	aisChangeMediaState(prAisBssInfo, MEDIA_STATE_DISCONNECTED);
+	nicUpdateBssEx(prAdapter,
+		ucBssIndex,
+		FALSE);
+
+	prAisBssInfo->fgIsAisCsaPending = FALSE;
+	prAisBssInfo->fgIsAisSwitchingChnl = TRUE;
+
+	/* Release channel if CSA immediately before set authorized */
+	aisFsmReleaseCh(prAdapter, ucBssIndex);
+	aisReqJoinChPrivilegeForCSA(prAdapter, prAisFsmInfo,
+		prAisBssInfo, &prAisFsmInfo->ucSeqNumOfChReq);
+}
+
+void aisFunSwitchChannelAbort(struct ADAPTER *ad,
+				struct AIS_FSM_INFO *ais, uint8_t fgResetAll)
+{
+	uint8_t i;
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
+		uint8_t ucBssIndex;
+
+		if (!prAisBssInfo)
+			continue;
+		ucBssIndex = prAisBssInfo->ucBssIndex;
+
+		/* CSA is in requet list, clear all  */
+		if (prAisBssInfo->fgIsAisCsaPending) {
+			aisFsmClearRequest(ad, AIS_REQUEST_CSA, ucBssIndex);
+			prAisBssInfo->fgIsAisCsaPending = FALSE;
+		}
+		/* CSA is waiting channel grant, release it */
+		if (prAisBssInfo->fgIsAisSwitchingChnl) {
+			prAisBssInfo->fgIsAisSwitchingChnl = FALSE;
+			aisFsmReleaseCh(ad, ucBssIndex);
+			aisChangeMediaState(prAisBssInfo,
+				MEDIA_STATE_CONNECTED);
+		}
+
+		if (fgResetAll) {
+			cnmTimerStopTimer(ad, &prAisBssInfo->rCsaTimer);
+			cnmTimerStopTimer(ad, &prAisBssInfo->rCsaDoneTimer);
+		}
+	}
 }
 
 /*----------------------------------------------------------------------------*/
