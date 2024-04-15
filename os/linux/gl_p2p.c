@@ -1857,12 +1857,11 @@ static netdev_tx_t __p2pHardStartXmit(struct GLUE_INFO *prGlueInfo,
 	kalHardStartXmit(prSkb, prDev, prGlueInfo, ucBssIndex);
 
 	prP2pBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIndex);
-	if (!prP2pBssInfo)
-		return NETDEV_TX_BUSY;
-
-	if (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
-	    prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0)
+	if (prP2pBssInfo &&
+	    (prP2pBssInfo->eConnectionState == MEDIA_STATE_CONNECTED ||
+	     prP2pBssInfo->rStaRecOfClientList.u4NumElem > 0)) {
 		kalPerMonStart(prGlueInfo);
+	}
 
 	return NETDEV_TX_OK;
 }
@@ -1936,7 +1935,8 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(P2P, ERROR,
 				"get sta failed by wlan idx(%u).\n",
 				prMldSta->u2SetupWlanId);
-			status = NETDEV_TX_BUSY;
+			status = NETDEV_TX_OK;
+			kfree_skb(prSkb);
 			goto exit;
 		}
 
@@ -1966,10 +1966,11 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 			break;
 		}
 
-		if (!fgMatched)
-			DBGLOG_LIMITED(P2P, WARN,
-				"No mached starec for addr"MACSTR"\n",
-				MAC2STR(prEthFrame->aucDestAddr));
+		if (!fgMatched) {
+			status = NETDEV_TX_OK;
+			kfree_skb(prSkb);
+			goto exit;
+		}
 	}
 
 exit:
