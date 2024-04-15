@@ -1639,6 +1639,15 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 				prMlInfo->u2ExtMldCap);
 		pos += 2;
 	}
+
+	if (prMlInfo->ucCommonInfoLength < (pos - aucCommonInfo)) {
+		DBGLOG(ML, ERROR,
+			"abnormal ML control len: expected %d < real %ld\n",
+			prMlInfo->ucCommonInfoLength,
+			pos - aucCommonInfo);
+		return;
+	}
+
 	if (pos - aucCommonInfo != prMlInfo->ucCommonInfoLength) {
 		DBGLOG(ML, WARN,
 			"invalid ML control len: real %ld != expected %d\n",
@@ -1929,6 +1938,15 @@ sta:
 				DBGLOG(ML, INFO,
 				  "\tLinkID=%d, BSS_PARA_CHANGE_COUNT=0x%x\n",
 				  ucLinkId, prStaProfile->ucBssParaChangeCount);
+		}
+
+		if (ucStaInfoLen < (pos - prIeSta->aucStaInfo)) {
+			DBGLOG(ML, ERROR,
+				"abnormal STA info len: expected %d < real %ld\n",
+				ucStaInfoLen,
+				pos - prIeSta->aucStaInfo);
+			prMlInfo->ucProfNum--;
+			goto next;
 		}
 
 		if (ucStaInfoLen != pos - prIeSta->aucStaInfo) {
