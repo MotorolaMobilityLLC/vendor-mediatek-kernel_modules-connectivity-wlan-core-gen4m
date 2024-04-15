@@ -2632,7 +2632,8 @@ static u_int8_t cnmMLSRDbdcIsConcurrent(
 #endif
 	u_int8_t fgDbdcP2pListening = FALSE;
 	u_int8_t i;
-
+	uint8_t ucNewConnectionType = MLO_MODE_NUM;
+	uint8_t ucMloType = MLO_MODE_NUM;
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
 	if (prAdapter->fgPowerForceOneNss) {
@@ -2641,17 +2642,22 @@ static u_int8_t cnmMLSRDbdcIsConcurrent(
 	}
 #endif
 
-	/*EMLSR ONLY case, Driver DBDC disable*/
+	/*EMLSR/Hybrid ONLY case, Driver DBDC disable*/
+	ucNewConnectionType = mldNewConnectionType(prAdapter,
+							prDbdcDecisionInfo);
+	ucMloType = mldCheckMLSRType(prAdapter);
+
 	if (prDbdcDecisionInfo &&
-		(mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
-		== MLO_MODE_MLSR) &&
+		(ucNewConnectionType == MLO_MODE_EMLSR ||
+		 ucNewConnectionType == MLO_MODE_HYMLO) &&
 		!mldHasSingleLinkBss(prAdapter)) {
-		log_dbg(CNM, INFO, "[DBDC] ONLY MLSR case, DBDC disable\n");
+		log_dbg(CNM, INFO, "[DBDC]ONLY EMLSR/Hybrid case, DBDC disable\n");
 		return FALSE;
 	} else if (!prDbdcDecisionInfo &&
 			    !mldHasSingleLinkBss(prAdapter) &&
-			    mldHasMLSRMLOBss(prAdapter)) {
-		log_dbg(CNM, INFO, "[DBDC] ONLY MLSR case, DBDC disable\n");
+			    (ucMloType == MLO_MODE_EMLSR ||
+			     ucMloType == MLO_MODE_HYMLO)) {
+		log_dbg(CNM, INFO, "[DBDC]ONLY EMLSR/Hybrid case, DBDC disable\n");
 		return FALSE;
 	}
 
@@ -2781,8 +2787,12 @@ next:
 		/* Check DBDC A+A when HW support */
 		if (ucBandCount[BAND_5G] > 0 && uc5gCH > 0 &&
 			ucBandCount[BAND_6G] > 0 && uc6gCH > 0 &&
-			cnmDbdcDecideIsAAConcurrent(prAdapter,
-			uc5gCH, uc6gCH)) {
+			(cnmDbdcDecideIsAAConcurrent(prAdapter,
+			uc5gCH, uc6gCH) ||
+			((ucNewConnectionType == MLO_MODE_MLSR ||
+			  ucMloType == MLO_MODE_MLSR) &&
+			  !mldHasSingleLinkBss(prAdapter)))) {
+			/*MLSR only case can support A+A*/
 			fgDBDCConcurrent = TRUE;
 			g_rDbdcInfo.fgIsDBDCAAMode = 1;
 		} else {
@@ -2860,6 +2870,10 @@ static u_int8_t cnmDbdcIsConcurrent(
 	struct MLD_BSS_INFO *mld_bssinfo;
 	uint8_t ucConcurrentBssCnt = 0;
 #endif
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucNewConnectionType = MLO_MODE_NUM;
+	uint8_t ucMloType = MLO_MODE_NUM;
+#endif
 
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1 && CFG_SUPPORT_CNM_POWER_CTRL == 1)
@@ -2869,9 +2883,14 @@ static u_int8_t cnmDbdcIsConcurrent(
 	}
 #endif
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-	if (mldHasMLSRMLOBss(prAdapter) ||
-		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
-		== MLO_MODE_MLSR) {
+	ucNewConnectionType = mldNewConnectionType(prAdapter,
+							prDbdcDecisionInfo);
+	ucMloType = mldCheckMLSRType(prAdapter);
+
+	if ((ucMloType >= MLO_MODE_MLSR &&
+		 ucMloType <= MLO_MODE_HYMLO) ||
+		(ucNewConnectionType >= MLO_MODE_MLSR &&
+		 ucNewConnectionType <= MLO_MODE_HYMLO)) {
 		log_dbg(CNM, INFO, "[DBDC] entry MLSR dbdc decision flow\n");
 		return cnmMLSRDbdcIsConcurrent(prAdapter, prDbdcDecisionInfo);
 	}
@@ -4507,7 +4526,9 @@ void cnmDbdcPreConnectionEnableDecision(
 {
 
 	uint8_t i;
-
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucMloType = MLO_MODE_NUM;
+#endif
 	if (!prDbdcDecisionInfo)
 		return;
 
@@ -4526,7 +4547,10 @@ void cnmDbdcPreConnectionEnableDecision(
 
 	/*MLSR MLO connected, Legacy Bss will connect now*/
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-	if (mldHasMLSRMLOBss(prAdapter) &&
+	ucMloType = mldCheckMLSRType(prAdapter);
+
+	if ((ucMloType == MLO_MODE_EMLSR ||
+		ucMloType == MLO_MODE_HYMLO) &&
 		mldNewConnectionType(prAdapter, prDbdcDecisionInfo)
 		== MLO_MODE_SLSR) {
 		log_dbg(CNM, INFO,
@@ -4670,6 +4694,7 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 {
 	bool fgIsAgConcurrent, fgIsWmmConcurrent;
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucMloType = MLO_MODE_NUM;
 	bool fgLastBss = IsLastDisconnectBssInMlo(prAdapter, ucChangedBssIndex);
 #endif
 #if (CFG_DBDC_SW_FOR_P2P_LISTEN == 1)
@@ -4695,8 +4720,11 @@ void cnmDbdcRuntimeCheckDecision(struct ADAPTER
 		prAdapter->rWifiVar.fgDbDcModeEn) {
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+		ucMloType = mldCheckMLSRType(prAdapter);
+
 		if (!mldHasSingleLinkBss(prAdapter) &&
-			mldHasMLSRMLOBss(prAdapter)) {
+			(ucMloType == MLO_MODE_EMLSR ||
+			ucMloType == MLO_MODE_HYMLO)) {
 			log_dbg(CNM, INFO,
 				"mld Clear MLSR Paused Link Flag");
 			mldClearMLSRPausedLinkFlag(prAdapter);
@@ -4881,6 +4909,9 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER
 			      struct WIFI_EVENT *prEvent)
 {
 	u_int8_t fgDbdcEn;
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	uint8_t ucMloType = MLO_MODE_NUM;
+#endif
 
 	/* Check DBDC state by FSM */
 	if (g_rDbdcInfo.eDbdcFsmCurrState ==
@@ -4909,8 +4940,11 @@ void cnmDbdcEventHwSwitchDone(struct ADAPTER
 	}
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	ucMloType = mldCheckMLSRType(prAdapter);
+
 	if (!mldHasSingleLinkBss(prAdapter) &&
-		mldHasMLSRMLOBss(prAdapter) &&
+		(ucMloType == MLO_MODE_EMLSR ||
+		ucMloType == MLO_MODE_HYMLO) &&
 		prAdapter->rWifiVar.fgDbDcModeEn &&
 		!fgDbdcEn) {
 		log_dbg(CNM, INFO,
