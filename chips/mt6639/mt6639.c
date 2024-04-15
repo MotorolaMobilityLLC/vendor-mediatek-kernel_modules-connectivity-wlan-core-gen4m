@@ -246,8 +246,8 @@ static void mt6639PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 
 #if (CFG_SUPPORT_APS == 1)
 static uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssIndex);
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex);
 #endif
 
 /*******************************************************************************
@@ -3911,48 +3911,34 @@ int mt6639PowerDumpEnd(void *priv_data)
 #endif  /* CFG_SUPPORT_WIFI_SLEEP_COUNT */
 #if (CFG_SUPPORT_APS == 1)
 uint8_t mt6639_apsLinkPlanDecision(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssIndex)
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex)
 {
-	uint16_t i, ucNumLinkPlan;
-	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX];
-	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
+	uint32_t u4TmpLinkPlanBmap;
+	uint32_t u4LinkPlanBmap =
+		BIT(MLO_LINK_PLAN_2_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_6G, BAND_NULL},
+		| BIT(MLO_LINK_PLAN_2_6)
 #endif
-	};
+	;
+#if (CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO == 1)
+	uint32_t u4LinkPlanBmapSingleLink =
+		BIT(MLO_LINK_PLAN_2)
+		| BIT(MLO_LINK_PLAN_5)
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		| BIT(MLO_LINK_PLAN_6)
+#endif
+	;
+#endif
+
+	u4TmpLinkPlanBmap = u4LinkPlanBmap;
 
 #if (CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO == 1)
-	enum ENUM_BAND aeLinkPlanSingleLink[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_NULL, BAND_NULL},
-		{BAND_5G, BAND_NULL, BAND_NULL},
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_6G, BAND_NULL, BAND_NULL},
-#endif
-		};
+	if (p2pFuncIsDualAPActive(prAdapter))
+		u4TmpLinkPlanBmap = u4LinkPlanBmapSingleLink;
 #endif
 
-
-	tmpLinkPlan = aeLinkPlan;
-	ucNumLinkPlan = ARRAY_SIZE(aeLinkPlan);
-
-#if (CFG_SUPPORT_DUAL_SAP_SINGLE_LINK_MLO == 1)
-	if (p2pFuncIsDualAPActive(prAdapter)) {
-		tmpLinkPlan = aeLinkPlanSingleLink;
-		ucNumLinkPlan = ARRAY_SIZE(aeLinkPlanSingleLink);
-	}
-#endif
-
-	/* select best link plan */
-	for (i = 0; i < ucNumLinkPlan; ++i) {
-		enum ENUM_BAND *link_plan = tmpLinkPlan[i];
-
-		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
-			return TRUE;
-	}
-
-	return FALSE;
+	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
 }
 #endif /* CFG_SUPPORT_APS */
 #endif  /* MT6639 */

@@ -111,5 +111,8 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
 
+enum ENUM_MLO_LINK_PLAN apsSearchLinkPlan(struct ADAPTER *prAdapter,
+	uint8_t ucRfBandBmap, uint8_t ucLinkNum);
+
 #endif
 

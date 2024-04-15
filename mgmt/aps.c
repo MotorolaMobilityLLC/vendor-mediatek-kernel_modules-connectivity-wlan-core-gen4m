@@ -231,7 +231,7 @@ const uint16_t mpduLen[CW_320_2MHZ + 1] = {
 
 #define PERCENTAGE(_val, _base) (_val * 100 / _base)
 
-enum ENUM_BAND g_aeLinkPlan[][APS_LINK_MAX] = {
+enum ENUM_BAND g_aeLinkPlan[MLO_LINK_PLAN_NUM][APS_LINK_MAX] = {
 	{BAND_2G4, BAND_NULL, BAND_NULL},
 	{BAND_5G, BAND_NULL, BAND_NULL},
 	{BAND_2G4, BAND_5G, BAND_NULL},
@@ -1712,52 +1712,21 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 	return FALSE;
 }
 
-/* 2+5/6 */
-uint8_t apsLinkPlanDecisionDualBand(struct ADAPTER *prAdapter,
-	struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
+uint8_t apsLinkPlanDecision(struct ADAPTER *prAdapter,
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
 	uint8_t ucBssIndex)
 {
-	uint16_t i;
-	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
+	uint32_t u4LinkPlanBmap = BIT(MLO_LINK_PLAN_2_5);
+
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_6G, BAND_NULL},
+#if (CFG_MLO_LINK_PLAN_MODE == 0)
+	u4LinkPlanBmap |= BIT(MLO_LINK_PLAN_2_6); /* 2+5/6 */
+#else
+	u4LinkPlanBmap |= BIT(MLO_LINK_PLAN_2_5_6); /* 2+5+6 */
 #endif
-	};
-
-	/* select best link plan */
-	for (i = 0; i < ARRAY_SIZE(aeLinkPlan); ++i) {
-		enum ENUM_BAND *link_plan = aeLinkPlan[i];
-
-		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
-			return TRUE;
-	}
-
-	return FALSE;
-}
-
-/* 2+5+6 */
-uint8_t apsLinkPlanDecisionTriBand(struct ADAPTER *prAdapter,
-	struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-	uint8_t ucBssIndex)
-{
-	uint16_t i;
-	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
-#if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_5G, BAND_6G},
 #endif
-	};
 
-	/* select best link plan */
-	for (i = 0; i < ARRAY_SIZE(aeLinkPlan); ++i) {
-		enum ENUM_BAND *link_plan = aeLinkPlan[i];
-
-		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
-			return TRUE;
-	}
-
-	return FALSE;
+	return !!(u4LinkPlanBmap & BIT(eLinkPlan));
 }
 
 struct BSS_DESC *apsIntraUpdateCandi(struct ADAPTER *ad,
@@ -1864,17 +1833,16 @@ static uint8_t apsIsValidBssDesc(struct ADAPTER *ad, struct BSS_DESC *bss,
 
 void apsUpdateTotalScore(struct ADAPTER *ad,
 	struct BSS_DESC *links[], uint8_t link_num,
+	enum ENUM_MLO_LINK_PLAN curr_plan,
 	struct AP_COLLECTION *ap, uint8_t bidx)
 {
 	uint32_t total_score = 0;
 	uint32_t total_tput = 0;
 	uint8_t i;
-	uint8_t ucRfBandBmap = 0;
 
 	for (i = 0; i < link_num; i++) {
 		total_score += links[i]->u2Score;
 		total_tput += links[i]->u4Tput;
-		ucRfBandBmap |= BIT(links[i]->eBand);
 	}
 
 	if (total_score > ap->u4TotalScore) {
@@ -1882,25 +1850,17 @@ void apsUpdateTotalScore(struct ADAPTER *ad,
 		ap->ucLinkNum = link_num;
 		ap->u4TotalScore = total_score;
 		ap->u4TotalTput = total_tput;
-#if (CFG_SINGLE_BAND_MLSR_56 == 1)
-		if (mldNeedSingleBandMlsr56(ad) &&
-		    ucRfBandBmap == (BIT(BAND_5G) | BIT(BAND_6G))) {
-			ap->eMloMode = MLO_MODE_SB_MLSR;
-			ap->ucMaxSimuLinks = 0;
-		} else
-#endif
-		{
-			ap->eMloMode = MLO_MODE_STR;
-			ap->ucMaxSimuLinks = link_num - 1;
-		}
+		ap->eMloMode = MLO_MODE_STR;
+		ap->ucMaxSimuLinks = link_num - 1;
 	}
 }
 
-uint8_t apsSortCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[])
+uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
+	enum ENUM_MLO_LINK_PLAN *curr_plan)
 {
 	struct BSS_DESC *bss;
 	int i, j;
-	uint8_t link_num = 0;
+	uint8_t link_num = 0, band_bmap = 0;
 
 	/* insertion sort by score */
 	for (i = 1; i < APS_LINK_MAX; i++) {
@@ -1931,7 +1891,61 @@ uint8_t apsSortCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[])
 	}
 #endif
 
+	/* find matched link plan by final link combination */
+	for (i = 0; i < link_num; i++)
+		band_bmap |= BIT(candi[i]->eBand);
+	*curr_plan = apsSearchLinkPlan(ad, band_bmap, link_num);
+
 	return link_num;
+}
+
+enum ENUM_MLO_LINK_PLAN apsSearchLinkPlan(struct ADAPTER *prAdapter,
+	uint8_t ucRfBandBmap, uint8_t ucLinkNum)
+{
+	switch (ucRfBandBmap) {
+	case BIT(BAND_2G4):
+		if (ucLinkNum == 1)
+			return MLO_LINK_PLAN_2;
+		break;
+	case BIT(BAND_5G): /* 5 or 5+5 */
+		if (ucLinkNum == 1)
+			return MLO_LINK_PLAN_5;
+		else if (ucLinkNum == 2)
+			return MLO_LINK_PLAN_5_5;
+		break;
+	case BIT(BAND_2G4) | BIT(BAND_5G): /* 2+5 or 2+5+5 */
+		if (ucLinkNum == 2)
+			return MLO_LINK_PLAN_2_5;
+		else if (ucLinkNum == 3)
+			return MLO_LINK_PLAN_2_5_5;
+		break;
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	case BIT(BAND_6G): /* 6 or 6+6 */
+		if (ucLinkNum == 1)
+			return MLO_LINK_PLAN_6;
+		else if (ucLinkNum == 2)
+			return MLO_LINK_PLAN_6_6;
+		break;
+	case BIT(BAND_2G4) | BIT(BAND_6G): /* 2+6 or 2+6+6 */
+		if (ucLinkNum == 2)
+			return MLO_LINK_PLAN_2_6;
+		else if (ucLinkNum == 3)
+			return MLO_LINK_PLAN_2_6_6;
+		break;
+	case BIT(BAND_5G) | BIT(BAND_6G):
+		if (ucLinkNum == 2)
+			return MLO_LINK_PLAN_5_6;
+		break;
+	case BIT(BAND_2G4) | BIT(BAND_5G) | BIT(BAND_6G):
+		if (ucLinkNum == 3)
+			return MLO_LINK_PLAN_2_5_6;
+		break;
+#endif
+	default:
+		break;
+	}
+
+	return MLO_LINK_PLAN_NUM;
 }
 
 void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
@@ -1941,6 +1955,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	enum ENUM_PARAM_CONNECTION_POLICY policy = conn->eConnectionPolicy;
 	uint8_t aidx = AIS_INDEX(ad, bidx);
+	enum ENUM_MLO_LINK_PLAN curr_plan;
 	struct BSS_DESC *bss;
 	int i, j;
 
@@ -2001,7 +2016,7 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 	}
 
 	/* select highest score link plan */
-	for (i = 0; i < ARRAY_SIZE(g_aeLinkPlan); i++) {
+	for (i = 0; i < MLO_LINK_PLAN_NUM; i++) {
 		struct BSS_DESC *candi[APS_LINK_MAX] = {0};
 		uint8_t found = FALSE;
 		uint32_t akm = 0;
@@ -2018,27 +2033,19 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				bss->fgPicked = FALSE;
 		}
 
-#if (CFG_SINGLE_BAND_MLSR_56 == 1)
-		if (mldNeedSingleBandMlsr56(ad)) {
-			allow = apsLinkPlanDecisionTriBand(ad, ap,
-					link_plan, bidx);
-		} else
-#endif
-		{
-			if (prChipInfo->apsLinkPlanDecision)
-				allow = prChipInfo->apsLinkPlanDecision(ad, ap,
-					link_plan, bidx);
-			else
-#if (CFG_MLO_LINK_PLAN_MODE == 0)
-				allow = apsLinkPlanDecisionDualBand(ad, ap,
-					link_plan, bidx);
-#else
-				allow = apsLinkPlanDecisionTriBand(ad, ap,
-					link_plan, bidx);
-#endif
-		}
+		if (prChipInfo->apsLinkPlanDecision)
+			allow = prChipInfo->apsLinkPlanDecision(ad, ap,
+				i, bidx);
+		else
+			allow = apsLinkPlanDecision(ad, ap,
+				i, bidx);
 
-		/* skip if not found matched mlo mode */
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+		if (mldNeedSingleBandMlsr56(ad, i))
+			allow = TRUE;
+#endif
+
+		/* skip if not found matched link plan */
 		if (!allow)
 			continue;
 
@@ -2084,21 +2091,22 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 			}
 		}
 
-		link_num = apsSortCandiByScore(ad, candi);
+		link_num = apsSortTrimCandiByScore(ad, candi, &curr_plan);
+
+		if (prChipInfo->apsUpdateTotalScore)
+			prChipInfo->apsUpdateTotalScore(ad,
+				candi, link_num, curr_plan, ap, bidx);
+		else
+			apsUpdateTotalScore(ad,
+				candi, link_num, curr_plan, ap, bidx);
 
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
-		if (mldNeedSingleBandMlsr56(ad)) {
-			apsUpdateTotalScore(ad, candi, link_num, ap, bidx);
-		} else
-#endif
-		{
-			if (prChipInfo->apsUpdateTotalScore)
-				prChipInfo->apsUpdateTotalScore(ad,
-					candi, link_num, ap, bidx);
-			else
-				apsUpdateTotalScore(ad,
-					candi, link_num, ap, bidx);
+		if (mldNeedSingleBandMlsr56(ad, curr_plan)) {
+			ap->ucLinkNum = 2;
+			ap->eMloMode = MLO_MODE_SB_MLSR;
+			ap->ucMaxSimuLinks = 0;
 		}
+#endif
 	}
 }
 
