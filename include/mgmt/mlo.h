@@ -491,7 +491,7 @@ uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter,
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-uint8_t mldHasMLSRMLOBss(struct ADAPTER *prAdapter);
+enum ENUM_MLO_MODE mldCheckMLSRType(struct ADAPTER *prAdapter);
 
 uint8_t mldHasSingleLinkBss(struct ADAPTER *prAdapter);
 

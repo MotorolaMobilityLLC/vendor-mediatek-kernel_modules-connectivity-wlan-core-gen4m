@@ -4845,9 +4845,16 @@ enum ENUM_CH_REQ_TYPE mldDecideCnmReqCHType(struct ADAPTER *prAdapter,
 		return CH_REQ_TYPE_HYBRID_MLO_MLSR_JOIN;
 #endif /* CFG_SUPPORT_MLO_HYBRID */
 
+	/*The CH Req type need set CH_REQ_TYPE_JOIN
+	 *in the case of single link/STR/MLSR
+	 */
 	if (!IS_MLD_BSSINFO_MULTI(mld_bssinfo) ||
 	    (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
-	     mld_bssinfo->ucMaxSimuLinks >= 1))
+	    (mld_bssinfo->ucMaxSimuLinks >= 1 ||
+	    (mld_bssinfo->ucMaxSimuLinks == 0 &&
+		 mld_bssinfo->ucEmlEnabled == FALSE &&
+		 mld_bssinfo->ucHmloEnabled == FALSE)
+		 )))
 		return CH_REQ_TYPE_JOIN;
 
 	for (ucBssIndex = 0;
@@ -4882,14 +4889,15 @@ uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter,
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-uint8_t mldHasMLSRMLOBss(struct ADAPTER *prAdapter)
+enum ENUM_MLO_MODE mldCheckMLSRType(struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIndex = 0xff;
 	struct BSS_INFO *prBssInfo = NULL;
 	struct MLD_BSS_INFO *mld_bssinfo = NULL;
+	enum ENUM_MLO_MODE eMloType = MLO_MODE_NUM;
 
 	if (prAdapter == NULL)
-		return FALSE;
+		return MLO_MODE_NUM;
 
 	for (ucBssIndex = 0;
 		ucBssIndex < prAdapter->ucSwBssIdNum; ucBssIndex++) {
@@ -4900,12 +4908,17 @@ uint8_t mldHasMLSRMLOBss(struct ADAPTER *prAdapter)
 		mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
 		if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
 			mld_bssinfo->ucMaxSimuLinks == 0) {
-			DBGLOG(ML, INFO, "has MLSR MLO bss\n");
-			return TRUE;
+			if (mld_bssinfo->ucHmloEnabled)
+				eMloType = MLO_MODE_HYMLO;
+			else if (mld_bssinfo->ucEmlEnabled)
+				eMloType = MLO_MODE_EMLSR;
+			else
+				eMloType = MLO_MODE_MLSR;
 		}
 	}
-	DBGLOG(ML, INFO, "has none MLSR MLO bss\n");
-	return FALSE;
+
+	DBGLOG(ML, INFO, "MLSR Type %d\n", eMloType);
+	return eMloType;
 }
 
 /*none MLO Bss or Single link MLO Bss*/
@@ -4941,7 +4954,6 @@ enum ENUM_MLO_MODE mldNewConnectionType(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo = NULL;
 	uint8_t ucBssIndex = 0xff;
 	struct MLD_BSS_INFO *mld_bssinfo = NULL;
-	uint8_t i;
 
 	if (!prDbdcDecisionInfo)
 		return MLO_MODE_NUM;
@@ -4949,20 +4961,23 @@ enum ENUM_MLO_MODE mldNewConnectionType(struct ADAPTER *prAdapter,
 	if (prDbdcDecisionInfo->ucLinkNum <= 1)
 		return MLO_MODE_SLSR;
 
-	for (i = 0; i < prDbdcDecisionInfo->ucLinkNum; i++) {
-
-		ucBssIndex = prDbdcDecisionInfo->dbdcElem[i].ucBssIndex;
-		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
-		mld_bssinfo = mldBssGetByBss(
-				prAdapter, prBssInfo);
-		if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
-			mld_bssinfo->ucMaxSimuLinks == 0)
-			return MLO_MODE_MLSR;
-		else if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
-				mld_bssinfo->ucMaxSimuLinks >= 1)
-			return MLO_MODE_STR;
-
-	}
+	ucBssIndex = prDbdcDecisionInfo->dbdcElem[0].ucBssIndex;
+	prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
+	if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+		mld_bssinfo->ucMaxSimuLinks == 0 &&
+		mld_bssinfo->ucHmloEnabled == TRUE)
+		return MLO_MODE_HYMLO;
+	else if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+		mld_bssinfo->ucMaxSimuLinks == 0 &&
+		mld_bssinfo->ucEmlEnabled == TRUE)
+		return MLO_MODE_EMLSR;
+	else if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+		mld_bssinfo->ucMaxSimuLinks == 0)
+		return MLO_MODE_MLSR;
+	else if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
+			mld_bssinfo->ucMaxSimuLinks >= 1)
+		return MLO_MODE_STR;
 
 	return MLO_MODE_NUM;
 }

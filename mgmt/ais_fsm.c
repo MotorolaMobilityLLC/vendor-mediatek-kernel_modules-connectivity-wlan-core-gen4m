@@ -6903,13 +6903,16 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		prMsgChAbort->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
 		prMsgChAbort->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
 #if CFG_SUPPORT_DBDC
-		/* STR mode the DBDC band is ENUM_BAND_ALL;
+		/* STR/MLSR mode the DBDC band is ENUM_BAND_ALL;
 		 * EMLSR/Hybird mode the DBDC band is ENUM_BAND_AUTO
 		 */
 		if (prMsgChAbort->ucExtraChReqNum >= 1
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-			&& prMldBssInfo &&
-			prMldBssInfo->ucMaxSimuLinks >= 1
+			&& prMldBssInfo && (
+			prMldBssInfo->ucMaxSimuLinks >= 1 ||
+			(prMldBssInfo->ucMaxSimuLinks == 0 &&
+			prMldBssInfo->ucEmlEnabled  == FALSE &&
+			prMldBssInfo->ucHmloEnabled ==  FALSE))
 #endif
 		)
 			prMsgChAbort->eDBDCBand = ENUM_BAND_ALL;
@@ -10371,8 +10374,10 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	if (ucReqChNum >= 2) {
 		struct MLD_BSS_INFO *prMldBssInfo = prAisFsmInfo->prMldBssInfo;
 
-		/*need set BAND AUTO in EMLSR MLO*/
-		if (prMldBssInfo && prMldBssInfo->ucMaxSimuLinks == 0)
+		/*need set BAND AUTO in the case of EMLSR/Hybrid*/
+		if (prMldBssInfo && prMldBssInfo->ucMaxSimuLinks == 0 &&
+			(prMldBssInfo->ucEmlEnabled == TRUE ||
+			prMldBssInfo->ucHmloEnabled == TRUE))
 			tmpDBDCBand = ENUM_BAND_AUTO;
 	}
 #endif
