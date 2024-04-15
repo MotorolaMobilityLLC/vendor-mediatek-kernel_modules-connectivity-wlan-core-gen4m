@@ -4402,7 +4402,7 @@ p2pRoleFsmRunEventAAACompleteImpl(struct ADAPTER *prAdapter,
 		bssAddClient(prAdapter, prP2pBssInfo, prStaRec);
 
 		prStaRec->u2AssocId =
-			prP2pBssInfo->u2AssocId;
+			prP2pBssInfo->u2P2pAssocIdCounter;
 
 		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_3);
 
