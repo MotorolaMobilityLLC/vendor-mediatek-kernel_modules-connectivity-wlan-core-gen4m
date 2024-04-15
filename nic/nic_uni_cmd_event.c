@@ -10299,7 +10299,12 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SCAN_DONE_TAG_BASIC: {
 			struct UNI_EVENT_SCAN_DONE_BASIC *basic =
 				(struct UNI_EVENT_SCAN_DONE_BASIC *) tag;
-
+			/* Event Type TAG_BASIC should have 12 bytes contents.*/
+			if (basic->u2Length !=
+				sizeof(struct UNI_EVENT_SCAN_DONE_BASIC)) {
+				fgIsValidScanDone = FALSE;
+				break;
+			}
 			legacy.ucCompleteChanCount = basic->ucCompleteChanCount;
 			legacy.ucCurrentState = basic->ucCurrentState;
 			legacy.ucScanDoneVersion = basic->ucScanDoneVersion;
@@ -10310,7 +10315,14 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SCAN_DONE_TAG_SPARSECHNL: {
 			struct UNI_EVENT_SCAN_DONE_SPARSECHNL *sparse =
 				(struct UNI_EVENT_SCAN_DONE_SPARSECHNL *) tag;
-
+			/* Event Type TAG_SPARSECHNL should
+			 * have 8 bytes contents.
+			 */
+			if (sparse->u2Length !=
+				sizeof(struct UNI_EVENT_SCAN_DONE_SPARSECHNL)) {
+				fgIsValidScanDone = FALSE;
+				break;
+			}
 			legacy.ucSparseChannelValid =
 				sparse->ucSparseChannelValid;
 			legacy.rSparseChannel.ucBand = sparse->ucBand;
@@ -10351,7 +10363,12 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			struct UNI_EVENT_SCAN_DONE_NLO *nlo =
 				(struct UNI_EVENT_SCAN_DONE_NLO *) tag;
 			struct EVENT_SCHED_SCAN_DONE sched;
-
+			/* Event Type NLO should have 8 bytes contents. */
+			if (nlo->u2Length
+				!= sizeof(struct UNI_EVENT_SCAN_DONE_NLO)) {
+				fgIsValidScanDone = FALSE;
+				break;
+			}
 			sched.ucStatus = nlo->ucStatus;
 			sched.ucSeqNum = legacy.ucSeqNum;
 
