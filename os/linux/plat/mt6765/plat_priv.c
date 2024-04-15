@@ -3,56 +3,90 @@
  * Copyright (c) 2021 MediaTek Inc.
  */
 
-#include <cpu_ctrl.h>
-#include <topo_ctrl.h>
-#include "gl_os.h"
-
-#if KERNEL_VERSION(4, 19, 0) <= CFG80211_VERSION_CODE
-#include <linux/soc/mediatek/mtk-pm-qos.h>
-#define pm_qos_add_request(_req, _class, _value) \
-		mtk_pm_qos_add_request(_req, _class, _value)
-#define pm_qos_update_request(_req, _value) \
-		mtk_pm_qos_update_request(_req, _value)
-#define pm_qos_remove_request(_req) \
-		mtk_pm_qos_remove_request(_req)
-#define pm_qos_request mtk_pm_qos_request
-#define PM_QOS_DDR_OPP MTK_PM_QOS_DDR_OPP
-#define ppm_limit_data cpu_ctrl_data
-#else
-#include <linux/pm_qos.h>
-#include <helio-dvfsrc-opp.h>
-#endif
+#include <uapi/linux/sched/types.h>
+#include <linux/sched/task.h>
+#include <linux/cpufreq.h>
 
 #include "precomp.h"
 
 #ifdef CONFIG_WLAN_MTK_EMI
-#include <mt_emi_api.h>
-#define WIFI_EMI_MEM_OFFSET    0x140000
-#define WIFI_EMI_MEM_SIZE      0x130000
+#include <soc/mediatek/emi.h>
+#define DOMAIN_AP	0
+#define DOMAIN_CONN	2
 #endif
 
+#define DEFAULT_CPU_FREQ (0)
+#define CPU_ALL_CORE (0xff)
 #define MAX_CPU_FREQ (3 * 1024 * 1024) /* in kHZ */
 #define MAX_CLUSTER_NUM  3
+
+static LIST_HEAD(wlan_policy_list);
+struct wlan_policy {
+	struct freq_qos_request	qos_req;
+	struct list_head	list;
+	int cpu;
+};
+
+void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
+{
+	int cpu, ret;
+	struct cpufreq_policy *policy;
+	struct wlan_policy *wReq;
+
+	if (list_empty(&wlan_policy_list)) {
+		for_each_possible_cpu(cpu) {
+			policy = cpufreq_cpu_get(cpu);
+			if (!policy)
+				continue;
+
+			wReq = kzalloc(sizeof(struct wlan_policy), GFP_KERNEL);
+			if (!wReq)
+				break;
+			wReq->cpu = cpu;
+
+			ret = freq_qos_add_request(&policy->constraints,
+				&wReq->qos_req, FREQ_QOS_MIN, DEFAULT_CPU_FREQ);
+			if (ret < 0) {
+				DBGLOG(INIT, INFO,
+					"freq_qos_add_request fail cpu%d ret=%d\n",
+					wReq->cpu, ret);
+				kfree(wReq);
+				break;
+			}
+
+			list_add_tail(&wReq->list, &wlan_policy_list);
+			cpufreq_cpu_put(policy);
+		}
+	}
+
+	list_for_each_entry(wReq, &wlan_policy_list, list) {
+		if (!((0x1 << wReq->cpu) & set_mask))
+			continue;
+
+		ret = freq_qos_update_request(&wReq->qos_req, freq);
+		if (ret < 0) {
+			DBGLOG(INIT, INFO,
+				"freq_qos_update_request fail cpu%d freq=%d ret=%d\n",
+				wReq->cpu, freq, ret);
+		}
+	}
+}
 
 int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		    uint32_t u4TarPerfLevel,
 		    uint32_t u4BoostCpuTh)
 {
-	struct ppm_limit_data freq_to_set[MAX_CLUSTER_NUM];
-	int32_t i = 0, i4Freq = -1;
+	int32_t i4Freq = -1;
+#ifdef WLAN_FORCE_DDR_OPP
 	static struct pm_qos_request wifi_qos_request;
 	static u_int8_t fgRequested;
-	uint32_t u4ClusterNum = topo_ctrl_get_nr_clusters();
+#endif
 
 	/* ACAO, we dont have to set core number */
 	i4Freq = (u4TarPerfLevel >= u4BoostCpuTh) ? MAX_CPU_FREQ : -1;
-	for (i = 0; i < u4ClusterNum && i < MAX_CLUSTER_NUM; i++) {
-		freq_to_set[i].min = i4Freq;
-		freq_to_set[i].max = i4Freq;
-	}
+	kalSetCpuFreq(i4Freq, CPU_ALL_CORE);
 
-	update_userlimit_cpu_freq(CPU_KIR_WIFI, u4ClusterNum, freq_to_set);
-
+#ifdef WLAN_FORCE_DDR_OPP
 	if (u4TarPerfLevel >= u4BoostCpuTh) {
 		if (!fgRequested) {
 			fgRequested = 1;
@@ -66,6 +100,7 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 		pm_qos_remove_request(&wifi_qos_request);
 		fgRequested = 0;
 	}
+#endif
 	return 0;
 }
 
@@ -77,22 +112,31 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
-#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
-	struct emi_region_info_t region_info;
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
+	struct emimpu_region_t region;
+	unsigned long long start = emiPhyBase + offset;
+	unsigned long long end = emiPhyBase + offset + size - 1;
+	int ret;
 
-	DBGLOG(INIT, INFO, "emiPhyBase: 0x%x, offset: %u, size: %u\n",
-			emiPhyBase, offset, size);
+	DBGLOG(INIT, INFO, "emiPhyBase: 0x%p, offset: %d, size: %d\n",
+				emiPhyBase, offset, size);
 
-	/*set MPU for EMI share Memory */
-	region_info.start = emiPhyBase + offset;
-	region_info.end = emiPhyBase + offset + size - 1;
-	region_info.region = 29;
-	SET_ACCESS_PERMISSION(region_info.apc, LOCK, FORBIDDEN, FORBIDDEN,
-			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
-			      FORBIDDEN, FORBIDDEN, FORBIDDEN, FORBIDDEN,
-			      FORBIDDEN, FORBIDDEN, FORBIDDEN, NO_PROTECTION,
-			      FORBIDDEN, NO_PROTECTION);
-	emi_mpu_set_protection(&region_info);
+	ret = mtk_emimpu_init_region(&region, 24);
+	if (ret) {
+		DBGLOG(INIT, ERROR, "mtk_emimpu_init_region failed, ret: %d\n",
+				ret);
+		return;
+	}
+	mtk_emimpu_set_addr(&region, start, end);
+	mtk_emimpu_set_apc(&region, DOMAIN_AP, MTK_EMIMPU_NO_PROTECTION);
+	mtk_emimpu_set_apc(&region, DOMAIN_CONN, MTK_EMIMPU_NO_PROTECTION);
+	mtk_emimpu_lock_region(&region, MTK_EMIMPU_LOCK);
+	ret = mtk_emimpu_set_protection(&region);
+	if (ret)
+		DBGLOG(INIT, ERROR,
+			"mtk_emimpu_set_protection failed, ret: %d\n",
+			ret);
+	mtk_emimpu_free_region(&region);
 #endif
 }
 #endif
