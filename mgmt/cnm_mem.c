@@ -1837,6 +1837,13 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 		prStaRec->aucRxMcsBitmask[0],
 		prStaRec->aucRxMcsBitmask[1]);
 
+	log_dbg(SW4, INFO, "[CapInfo][0x%x],[SupOpClass][0x%x],[SupChnl2g][0x%x],[SupChnl5g_0][0x%x],[SupChnl5g_1][0x%x]\n",
+		prStaRec->u2CapInfo,
+		prStaRec->u4SupportedOpClassBits,
+		prStaRec->u2SupportedChnlBits_2g,
+		prStaRec->u4SupportedChnlBits_5g_0,
+		prStaRec->u2SupportedChnlBits_5g_1);
+
 #if (CFG_SUPPORT_802_11AX == 1)
 	log_dbg(SW4, INFO, "[HeMacCap][0x%04x%08x],[HePhyCap][0x%02x%04x%016llx]\n",
 		*(uint16_t *)(prStaRec->ucHeMacCapInfo + 4),

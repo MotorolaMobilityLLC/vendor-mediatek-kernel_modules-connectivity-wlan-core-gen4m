@@ -23,6 +23,15 @@ enum ENUM_AA_HW_BAND {
 	AA_HW_BAND_3,
 };
 
+enum ENUM_CSA_STATUS {
+	CSA_STATUS_SUCCESS = 0,
+	CSA_STATUS_DFS_NOT_SUP,
+	CSA_STATUS_NON_PSC_NOT_SUP,
+	CSA_STATUS_NON_SAE_NOT_SUP,
+	CSA_STATUS_PEER_NOT_SUP_CSA,
+	CSA_STATUS_PEER_NOT_SUP_CH
+};
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 extern struct P2P_RADAR_INFO g_rP2pRadarInfo;
 
@@ -745,3 +754,8 @@ u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 
 u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
 			      uint32_t *pau4AliveBssBitmap);
+
+enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
+			    struct BSS_INFO *prBssInfo,
+			    uint32_t u4TargetCh,
+			    enum ENUM_BAND eTargetBand);

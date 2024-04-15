@@ -11085,6 +11085,8 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 	uint32_t ch_num = 0;
 	uint32_t u4Ret = 0;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	int32_t i4BytesWritten = 0;
+	enum ENUM_CSA_STATUS rStatus;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -11111,17 +11113,55 @@ int priv_driver_set_csa(struct net_device *prNetDev,
 		if (bss == NULL)
 			return -1;
 
+		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
+			    i4TotalLen - i4BytesWritten,
+			    "\n[WARNING] This command only support CSA to 2G/5G, and will be deprecated in the future.\n\n");
+
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &ch_num);
 		eBand = (ch_num <= 14) ? BAND_2G4 : BAND_5G;
 
-		if (IS_BSS_APGO(bss))
+		if (IS_BSS_APGO(bss)) {
 #if CFG_SUPPORT_IDC_CH_SWITCH
+			rStatus = p2pFuncIsCsaAllowed(prGlueInfo->prAdapter,
+						      bss, ch_num, eBand);
+			if (rStatus == CSA_STATUS_DFS_NOT_SUP)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nNOT support DFS CH.\n");
+			else if (rStatus == CSA_STATUS_NON_PSC_NOT_SUP)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nNOT support 6G non-PSC CH.\n");
+			else if (rStatus == CSA_STATUS_NON_SAE_NOT_SUP)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nNOT support 6G non SAE Authentication.\n");
+			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CSA)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nPeer NOT support CSA.\n");
+			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CH)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nPeer NOT support CH.\n");
+
+			if (rStatus != CSA_STATUS_SUCCESS)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nRunning CSA, but NOT RECOMMENDED, which may cause to disconnect.\n");
+
 			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
 #else
 			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
 #endif
-		else if (IS_BSS_GC(bss))
+		} else if (IS_BSS_GC(bss))
 			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
 		else
@@ -11145,6 +11185,8 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 	uint32_t u4Ret = 0;
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	enum ENUM_BAND eBand = BAND_NULL;
+	int32_t i4BytesWritten = 0;
+	enum ENUM_CSA_STATUS rStatus;
 
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
@@ -11173,15 +11215,48 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 		u4Ret = kalkStrtou32(apcArgv[1], 0, &eBand);
 		u4Ret = kalkStrtou32(apcArgv[2], 0, &ch_num);
 
-		if (IS_BSS_APGO(bss))
+		if (IS_BSS_APGO(bss)) {
 #if CFG_SUPPORT_IDC_CH_SWITCH
+			rStatus = p2pFuncIsCsaAllowed(prGlueInfo->prAdapter,
+						      bss, ch_num, eBand);
+			if (rStatus == CSA_STATUS_DFS_NOT_SUP)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nNOT support DFS CH.\n");
+			else if (rStatus == CSA_STATUS_NON_PSC_NOT_SUP)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nNOT support 6G non-PSC CH.\n");
+			else if (rStatus == CSA_STATUS_NON_SAE_NOT_SUP)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nNOT support 6G non SAE Authentication.\n");
+			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CSA)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nPeer NOT support CSA.\n");
+			else if (rStatus == CSA_STATUS_PEER_NOT_SUP_CH)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "\nPeer NOT support CH.\n");
+
+			if (rStatus != CSA_STATUS_SUCCESS)
+				i4BytesWritten +=
+					kalSnprintf(pcCommand + i4BytesWritten,
+					    i4TotalLen - i4BytesWritten,
+					    "Running CSA, but NOT RECOMMENDED, which may cause to disconnect.\n");
+
 			u4Ret = cnmIdcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
 #else
 			DBGLOG(REQ, WARN, "Not support SAP/GO, do nothing!\n");
 #endif
-
-		else if (IS_BSS_GC(bss))
+		} else if (IS_BSS_GC(bss))
 			u4Ret = cnmOwnGcCsaReq(prGlueInfo->prAdapter,
 				eBand, ch_num, ucRoleIdx);
 		else
@@ -11192,7 +11267,7 @@ int priv_driver_set_csa_ex(struct net_device *prNetDev,
 		DBGLOG(REQ, INFO, "Input insufficent\n");
 	}
 
-	return 0;
+	return i4BytesWritten;
 }
 
 int priv_driver_set_csa_ex_event(

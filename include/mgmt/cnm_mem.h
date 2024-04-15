@@ -789,6 +789,10 @@ struct STA_RECORD {
 	u_int8_t fgSupportDMS;
 	u_int8_t ucSupportedBand;
 #endif
+	uint32_t u4SupportedOpClassBits;
+	uint16_t u2SupportedChnlBits_2g;
+	uint32_t u4SupportedChnlBits_5g_0;
+	uint16_t u2SupportedChnlBits_5g_1;
 
 	/*
 	 * Flag used to record the connected status of upper layer.
