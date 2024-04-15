@@ -40,6 +40,7 @@
 #define CPU_X_CORE (0x80)
 #define CPU_HP_CORE (CPU_BIG_CORE - CPU_X_CORE)
 #define CPU_LITTLE_CORE (CPU_ALL_CORE - CPU_BIG_CORE)
+#define CPU_MID_LITTLE_CORE (CPU_ALL_CORE - CPU_X_CORE)
 #define AUTO_PRIORITY 0
 #define HIGH_PRIORITY 100
 
@@ -172,11 +173,11 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rHifNapiThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_LITTLE_CORE,
@@ -216,7 +217,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rHifNapiThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
@@ -256,7 +257,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = HIGH_PRIORITY
 		},
 		.rHifNapiThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
@@ -269,7 +270,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = TRUE,
+		.fgDramBoost = FALSE,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	}
@@ -550,9 +551,9 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_HIF_RX_NAPI
 	if (prGlueInfo->rHifInfo.rNapiDev.napi_thread) {
 		kalSetCpuMask(prGlueInfo->rHifInfo.rNapiDev.napi_thread,
-			      prBoostInfo->rRxNapiThreadInfo.u4CpuMask);
+			prBoostInfo->rHifNapiThreadInfo.u4CpuMask);
 		kalSetTaskUtilMinPct(prGlueInfo->rHifInfo.rNapiDev.u4ThreadPid,
-				     prBoostInfo->rRxNapiThreadInfo.u4Priority);
+			prBoostInfo->rHifNapiThreadInfo.u4Priority);
 	}
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
