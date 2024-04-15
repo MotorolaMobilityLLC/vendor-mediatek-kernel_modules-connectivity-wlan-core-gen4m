@@ -2461,6 +2461,10 @@ struct ADAPTER {
 #endif
 #endif
 
+#if CFG_SUPPORT_MBRAIN
+	struct mbrain_emi_data *prMbrEmiData;
+#endif
+
 #if CFG_SUPPORT_MSP
 	struct EVENT_WLAN_INFO rEventWlanInfo;
 

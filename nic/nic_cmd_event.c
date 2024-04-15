@@ -34,6 +34,10 @@
 #include "gl_ics.h"
 #endif
 
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
+
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -137,6 +141,10 @@ const struct NIC_CAPABILITY_V2_REF_TABLE
 #if (CFG_MTK_WIFI_SUPPORT_SW_SYNC_BY_EMI == 1)
 	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_SW_SYNC_BY_EMI,
 				nicCfgGetSwSyncEMIOffset),
+#endif
+#if CFG_SUPPORT_MBRAIN
+	NIC_FILL_CAP_V2_REF_TBL(TAG_CAP_MBRAIN_EMI_INFO,
+				nicCfgChipMbrEmiInfo),
 #endif
 };
 
@@ -3150,6 +3158,104 @@ uint32_t nicCfgGetSwSyncEMIOffset(struct ADAPTER *prAdapter,
 			break;
 		}
 	}
+	return WLAN_STATUS_SUCCESS;
+}
+#endif
+
+#if CFG_SUPPORT_MBRAIN
+uint32_t checkMbrOffset(uint32_t num,
+	struct MBRAIN_OFFSET_INFO *prOffsetInfo)
+{
+	uint32_t i;
+	uint32_t *pu4OffsetMap = NULL;
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	if (!prOffsetInfo || MBRAIN_EMI_OFFSET_NUM == 0)
+		return WLAN_STATUS_FAILURE;
+
+	pu4OffsetMap = kalMemAlloc(
+		MBRAIN_EMI_OFFSET_NUM * sizeof(uint32_t),
+		VIR_MEM_TYPE);
+
+	if (!pu4OffsetMap)
+		return WLAN_STATUS_FAILURE;
+
+	kalMemZero(pu4OffsetMap, MBRAIN_EMI_OFFSET_NUM * sizeof(uint32_t));
+
+	/* init offset mapping here */
+	/* example:
+	 * pu4OffsetMap[MBRAIN_EMI_OFFSET_TEST] =
+	 *	OFFSET_OF(struct mbrain_emi_data, u4Mbr_test),
+	 * pu4OffsetMap[MBRAIN_EMI_OFFSET_TEST] =
+	 *	OFFSET_OF(struct mbrain_emi_data, u4Mbr_test2),
+	 */
+
+	for (i = 0; i < num; i++, prOffsetInfo++) {
+		if (prOffsetInfo->u4Tag >= MBRAIN_EMI_OFFSET_NUM) {
+			DBGLOG(INIT, WARN, "invalid tag:%u offset:%u\n",
+				prOffsetInfo->u4Tag,
+				prOffsetInfo->u4EmiOffset);
+			status = WLAN_STATUS_FAILURE;
+			goto end;
+		}
+		if (prOffsetInfo->u4EmiOffset !=
+				*(pu4OffsetMap + prOffsetInfo->u4Tag)) {
+			DBGLOG(INIT, WARN, "Offset mismatch [%u]=%u/%u\n",
+				prOffsetInfo->u4Tag,
+				*(pu4OffsetMap + prOffsetInfo->u4Tag),
+				prOffsetInfo->u4EmiOffset);
+			status = WLAN_STATUS_FAILURE;
+			goto end;
+		}
+	}
+
+end:
+	kalMemFree(pu4OffsetMap, VIR_MEM_TYPE,
+		MBRAIN_EMI_OFFSET_NUM * sizeof(uint32_t))
+	return status;
+}
+
+uint32_t nicCfgChipMbrEmiInfo(struct ADAPTER *prAdapter,
+					uint8_t *pucEventBuf)
+{
+#if CFG_MTK_ANDROID_EMI
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct HIF_MEM *prMem;
+	struct CAP_MBRAIN_EMI_INFO *prInfo =
+		(struct CAP_MBRAIN_EMI_INFO *)pucEventBuf;
+	uint32_t mbrOffset = prInfo->u4PcieGenSwRsvd;
+	uint32_t num = prInfo->u4OffsetNum;
+
+	struct MBRAIN_OFFSET_INFO *prOffsetInfo;
+
+	++prInfo;
+	prOffsetInfo = (struct MBRAIN_OFFSET_INFO *)(prInfo);
+	if (!prOffsetInfo)
+		return WLAN_STATUS_FAILURE;
+
+	if (checkMbrOffset(num, prOffsetInfo) != WLAN_STATUS_SUCCESS)
+		return WLAN_STATUS_FAILURE;
+
+	/* Update offset */
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prMemOps = &prHifInfo->rMemOps;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_WF_M_BRAIN);
+		if (!prMem && prMem->va)
+			return WLAN_STATUS_FAILURE;
+
+		prAdapter->prMbrEmiData = (struct mbrain_emi_data *)(
+			(uint32_t *)prMem->va + mbrOffset);
+		DBGLOG(INIT, INFO, "addr=%p offsetNum=%u",
+			prAdapter->prMbrEmiData, num);
+	}
+
+#endif
 	return WLAN_STATUS_SUCCESS;
 }
 #endif

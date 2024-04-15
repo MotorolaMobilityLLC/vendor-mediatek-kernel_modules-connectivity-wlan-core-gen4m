@@ -1492,6 +1492,18 @@ int mtk_cfg80211_vendor_cancel_rtt_config(
 	struct wiphy *wiphy, struct wireless_dev *wdev,
 	const void *data, int data_len);
 
+#if CFG_SUPPORT_LLS
+uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats,
+	uint32_t ofdm_idx, uint32_t cck_idx);
+
+uint32_t receivedMpduCount(struct STA_RECORD *sta_rec,
+		struct STATS_LLS_RATE_STAT *rate_stats,
+		uint32_t ofdm_idx, uint32_t cck_idx);
+
+struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
+		struct STATS_LLS_PEER_INFO *peer_info);
+#endif
+
 int mtk_cfg80211_vendor_llstats_get_info(struct wiphy
 		*wiphy, struct wireless_dev *wdev,
 		const void *data, int data_len);

@@ -1563,7 +1563,7 @@ static void dumpLinkStatsChannel(struct STATS_LLS_CHANNEL_STAT *channel,
 /**
  * find_peer_starec() - return a station record by matching peer's MAC address
  */
-static struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
+struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 		struct STATS_LLS_PEER_INFO *peer_info)
 {
 	struct STA_RECORD *prStaRec;
@@ -1589,7 +1589,7 @@ static struct STA_RECORD *find_peer_starec(struct ADAPTER *prAdapter,
 /**
  * Return the accumulated MPDU count of the given rate parameters.
  */
-static uint32_t receivedMpduCount(struct STA_RECORD *sta_rec,
+uint32_t receivedMpduCount(struct STA_RECORD *sta_rec,
 		struct STATS_LLS_RATE_STAT *rate_stats,
 		uint32_t ofdm_idx, uint32_t cck_idx)
 {
@@ -1616,7 +1616,7 @@ static uint32_t receivedMpduCount(struct STA_RECORD *sta_rec,
 	return n;
 }
 
-static uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats,
+uint8_t isValidRate(struct STATS_LLS_RATE_STAT *rate_stats,
 	uint32_t ofdm_idx, uint32_t cck_idx)
 {
 	struct STATS_LLS_WIFI_RATE *rate = &rate_stats->rate;
