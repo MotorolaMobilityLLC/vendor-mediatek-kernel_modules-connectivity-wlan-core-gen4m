@@ -3163,33 +3163,48 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 #endif
 
 #if CFG_MTK_WIFI_PCIE_SR
-int mtk_pcie_enter_L2(struct pci_dev *dev)
+int mtk_pcie_L2_is_supported(struct pci_dev *pdev)
+{
+	u16 u2DdeviceId = 0;
+
+	pci_bus_read_config_word(pdev->bus->parent, 0, 0x2, &u2DdeviceId);
+	if (u2DdeviceId == 0x6899) {
+		DBGLOG(HAL, INFO, "L2 unsupported\n");
+		return -1;
+	}
+	return 0;
+}
+
+int mtk_pcie_enter_L2(struct pci_dev *pdev)
 {
 	int state = 0;
 
-	if (dev == NULL)
+	if (pdev == NULL)
 		return -1;
 
-#if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
-	pci_save_state(dev);
-	state = mtk_pcie_soft_off(dev->bus);
+	pci_save_state(pdev);
+	state = mtk_pcie_soft_off(pdev->bus);
 	DBGLOG(HAL, LOUD, "done\n");
-#endif
 	return state;
 }
 
-int mtk_pcie_exit_L2(struct pci_dev *dev)
+int mtk_pcie_exit_L2(struct pci_dev *pdev)
 {
 	int state = 0;
 
-	if (dev == NULL)
+	if (pdev == NULL)
 		return -1;
 
-#if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
-	state = mtk_pcie_soft_on(dev->bus);
-	pci_restore_state(dev);
+	state = mtk_pcie_soft_on(pdev->bus);
+	pci_restore_state(pdev);
 	DBGLOG(HAL, LOUD, "done\n");
+
+	if (!pcie_check_status_is_linked(pdev)) {
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+		mtk_pcie_dump_link_info(0);
 #endif
+		return -1;
+	}
 	return state;
 }
 #endif /* CFG_MTK_WIFI_PCIE_SR */

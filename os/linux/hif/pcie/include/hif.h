@@ -706,6 +706,7 @@ int mtk_pcie_retrain(struct pci_dev *dev);
 #endif
 #endif
 #if CFG_MTK_WIFI_PCIE_SR
+int mtk_pcie_L2_is_supported(struct pci_dev *dev);
 int mtk_pcie_enter_L2(struct pci_dev *dev);
 int mtk_pcie_exit_L2(struct pci_dev *dev);
 #endif

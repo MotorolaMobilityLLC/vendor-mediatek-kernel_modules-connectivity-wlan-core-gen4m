@@ -4273,6 +4273,25 @@ exit:
 }
 
 #if CFG_MTK_WIFI_PCIE_SR
+static int mt6653_L2IsSupported(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct pci_dev *dev = NULL;
+	u_int8_t supported = TRUE;
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL\n");
+		supported = FALSE;
+	}
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	dev = prGlueInfo->rHifInfo.pdev;
+	if (mtk_pcie_L2_is_supported(dev))
+		supported = FALSE;
+
+	return supported ? 0 : 1;
+}
+
 static uint32_t mt6653_EnterL2(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
@@ -4329,11 +4348,13 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 
 #if CFG_MTK_WIFI_PCIE_SR
 	/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
-	mt6653_EnterL2(prAdapter);
-	mdelay(100);
-	status = mt6653_ExitL2(prAdapter);
-	if (status != WLAN_STATUS_SUCCESS)
-		DBGLOG(INIT, ERROR, "Exit L2 failed\n");
+	if (!mt6653_L2IsSupported(prAdapter)) {
+		mt6653_EnterL2(prAdapter);
+		msleep(100);
+		status = mt6653_ExitL2(prAdapter);
+		if (status != WLAN_STATUS_SUCCESS)
+			DBGLOG(INIT, ERROR, "Exit L2 failed\n");
+	}
 #endif
 
 	return status;
