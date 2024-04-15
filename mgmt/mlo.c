@@ -4852,12 +4852,14 @@ enum ENUM_CH_REQ_TYPE mldDecideCnmReqCHType(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
-uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter)
+uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter,
+	enum ENUM_MLO_LINK_PLAN eLinkPlan)
 {
 	/* cert & no str & no emlsr */
 	return prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_BE &&
 	    IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
-	    prAdapter->rWifiVar.ucMaxSimuLinks == 0;
+	    prAdapter->rWifiVar.ucMaxSimuLinks == 0 &&
+	    eLinkPlan == MLO_LINK_PLAN_5_6;
 }
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 

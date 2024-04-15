@@ -486,7 +486,8 @@ enum ENUM_CH_REQ_TYPE mldDecideCnmReqCHType(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *mld_bssinfo);
 
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
-uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter);
+uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter,
+	enum ENUM_MLO_LINK_PLAN eLinkPlan);
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)

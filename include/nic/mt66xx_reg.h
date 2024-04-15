@@ -1685,11 +1685,12 @@ struct mt66xx_chip_info {
 
 #if (CFG_SUPPORT_APS == 1)
 	uint8_t (*apsLinkPlanDecision)(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssidx);
+		struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+		uint8_t ucBssIndex);
 	void (*apsUpdateTotalScore)(struct ADAPTER *prAdapter,
 		struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-		struct AP_COLLECTION *prAp, uint8_t ucBssidx);
+		enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
+		uint8_t ucBssidx);
 	void (*apsFillBssDescSet)(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *prSet,
 		uint8_t ucBssidx);

@@ -225,11 +225,12 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_APS == 1)
 static uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssIndex);
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex);
 static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-	struct AP_COLLECTION *prAp, uint8_t ucBssidx);
+	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
+	uint8_t ucBssidx);
 static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *prSet,
 		uint8_t ucBssidx);
@@ -4470,63 +4471,50 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_APS == 1)
 uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssIndex)
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex)
 {
-	uint16_t i;
-	uint8_t ucArraySize;
-	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX];
-	enum ENUM_BAND aeLinkPlanAG[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
+	uint32_t u4TmpLinkPlanBmap;
+	uint32_t u4LinkPlanAGBmap =
+		BIT(MLO_LINK_PLAN_2_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_6G, BAND_NULL},
+		| BIT(MLO_LINK_PLAN_2_6)
 #endif
-	};
-	enum ENUM_BAND aeLinkPlanAA[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
-		{BAND_5G, BAND_5G, BAND_NULL},
+	;
+	uint32_t u4LinkPlanAABmap =
+		BIT(MLO_LINK_PLAN_2_5)
+		| BIT(MLO_LINK_PLAN_5_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_6G, BAND_NULL},
-		{BAND_5G, BAND_6G, BAND_NULL},
+		| BIT(MLO_LINK_PLAN_2_6)
+		| BIT(MLO_LINK_PLAN_5_6)
 #endif
-	};
-	enum ENUM_BAND aeLinkPlan3[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_5G},
+	;
+	uint32_t u4LinkPlan3Bmap =
+		BIT(MLO_LINK_PLAN_2_5_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_5G, BAND_6G},
+		| BIT(MLO_LINK_PLAN_2_5_6)
 #endif
-	};
+	;
 
 	/* Eable A+A when support TBTC and EMLSR */
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
 	    BE_IS_EML_CAP_SUPPORT_EMLSR(prAdapter->rWifiVar.u2NonApMldEMLCap)) {
 		if (prAdapter->rWifiVar.ucStaMldLinkMax == 3 &&
-		    ENUM_BAND_NUM == 3) {
-			tmpLinkPlan = aeLinkPlan3;
-			ucArraySize = ARRAY_SIZE(aeLinkPlan3);
-		} else {
-			tmpLinkPlan = aeLinkPlanAA;
-			ucArraySize = ARRAY_SIZE(aeLinkPlanAA);
-		}
+		    ENUM_BAND_NUM == 3)
+			u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
+		else
+			u4TmpLinkPlanBmap = u4LinkPlanAABmap;
 	} else {
-		tmpLinkPlan = aeLinkPlanAG;
-		ucArraySize = ARRAY_SIZE(aeLinkPlanAG);
+		u4TmpLinkPlanBmap = u4LinkPlanAGBmap;
 	}
 
-	/* select best link plan */
-	for (i = 0; i < ucArraySize; ++i) {
-		enum ENUM_BAND *link_plan = tmpLinkPlan[i];
-
-		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(tmpLinkPlan[0])))
-			return TRUE;
-	}
-
-	return FALSE;
+	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
 }
 
 static void mt6653_apsUpdateTotalScore(struct ADAPTER *prAdapter,
 	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
-	struct AP_COLLECTION *prAp, uint8_t ucBssidx)
+	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
+	uint8_t ucBssidx)
 {
 	uint32_t u4TotalScore = 0;
 	uint32_t u4TotalTput = 0;

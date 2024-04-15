@@ -1028,6 +1028,24 @@ enum ENUM_MLO_MODE {
 	MLO_MODE_NUM
 };
 
+/* must sync with g_aeLinkPlan */
+enum ENUM_MLO_LINK_PLAN {
+	MLO_LINK_PLAN_2,
+	MLO_LINK_PLAN_5,
+	MLO_LINK_PLAN_2_5,
+	MLO_LINK_PLAN_5_5,
+	MLO_LINK_PLAN_2_5_5,
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	MLO_LINK_PLAN_6,
+	MLO_LINK_PLAN_2_6,
+	MLO_LINK_PLAN_5_6,
+	MLO_LINK_PLAN_6_6,
+	MLO_LINK_PLAN_2_5_6,
+	MLO_LINK_PLAN_2_6_6,
+#endif
+	MLO_LINK_PLAN_NUM,
+};
+
 /* Provide supported channel list to other components in array format */
 struct RF_CHANNEL_INFO {
 	enum ENUM_BAND eBand;

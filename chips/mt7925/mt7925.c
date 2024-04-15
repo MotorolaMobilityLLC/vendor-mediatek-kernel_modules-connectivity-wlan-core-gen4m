@@ -128,8 +128,8 @@ static void mt7925PcieLTRValue(struct ADAPTER *prAdapter, uint8_t ucState);
 
 #if (CFG_SUPPORT_APS == 1)
 static uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssIndex);
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex);
 static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *set, uint8_t ucBssIndex);
 #endif
@@ -1615,12 +1615,10 @@ static uint32_t mt7925GetFlavorVer(struct GLUE_INFO *prGlueInfo,
 
 #if (CFG_SUPPORT_APS == 1)
 uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
-		struct AP_COLLECTION *prAp, enum ENUM_BAND *paeLinkPlan,
-		uint8_t ucBssIndex)
+	struct AP_COLLECTION *prAp, enum ENUM_MLO_LINK_PLAN eLinkPlan,
+	uint8_t ucBssIndex)
 {
-	uint16_t i;
 	uint8_t ucCanSupportDBDCAA = 0;
-	uint8_t ucArraySize = 0;
 	uint8_t ucTmpBssIndex;
 	uint8_t ucHasActiveBss = FALSE;
 	struct BSS_INFO *prBssInfo;
@@ -1628,37 +1626,35 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	uint8_t ucIsRoamingDiscovery = FALSE;
 	struct ROAMING_INFO *roam = NULL;
 #endif
-
-	enum ENUM_BAND (*tmpLinkPlan)[APS_LINK_MAX];
-	enum ENUM_BAND aeLinkPlan[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
+	uint32_t u4TmpLinkPlanBmap;
+	uint32_t u4LinkPlanBmap =
+		BIT(MLO_LINK_PLAN_2_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_6G, BAND_NULL},
+		| BIT(MLO_LINK_PLAN_2_6)
 #endif
-	};
-
-	enum ENUM_BAND aeLinkPlanAwithA[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
+	;
+	uint32_t u4LinkPlanAABmap =
+		BIT(MLO_LINK_PLAN_2_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_6G, BAND_NULL},
-		{BAND_5G, BAND_6G, BAND_NULL},
+		| BIT(MLO_LINK_PLAN_2_6)
+		| BIT(MLO_LINK_PLAN_5_6)
 #endif
-	};
+	;
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
-	enum ENUM_BAND aeTriLinkPlan[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_5G, BAND_NULL},
+	uint32_t u4LinkPlan3Bmap =
+		BIT(MLO_LINK_PLAN_2_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_2G4, BAND_5G, BAND_6G},
+		| BIT(MLO_LINK_PLAN_2_5_6)
 #endif
-	};
+	;
 #endif
-	enum ENUM_BAND aeLinkPlanNoneMLD[][APS_LINK_MAX] = {
-		{BAND_2G4, BAND_NULL, BAND_NULL},
-		{BAND_5G, BAND_NULL, BAND_NULL},
+	uint32_t u4LinkPlanNoneMLDBmap =
+		BIT(MLO_LINK_PLAN_2)
+		| BIT(MLO_LINK_PLAN_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		{BAND_6G, BAND_NULL, BAND_NULL},
+		| BIT(MLO_LINK_PLAN_6)
 #endif
-	};
+	;
 
 	DBGLOG_LIMITED(HAL, INFO, "WifiDBDCAwithA: %d, MaxSimuLinks: %d\n",
 		prAdapter->rWifiFemCfg.u2WifiDBDCAwithA,
@@ -1702,8 +1698,7 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		!ucIsRoamingDiscovery &&
 		prAdapter->rWifiVar.ucMaxSimuLinks == 0) {
 	/*has active Bss, block MLSR connection */
-		tmpLinkPlan = aeLinkPlanNoneMLD;
-		ucArraySize = 3;
+		u4TmpLinkPlanBmap = u4LinkPlanNoneMLDBmap;
 		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlanNoneMLD\n");
 	}
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
@@ -1711,30 +1706,19 @@ uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		prAdapter->rWifiVar.ucNonApHyMloSupport) &&
 		IS_FEATURE_ENABLED(
 		prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
-		tmpLinkPlan = aeTriLinkPlan;
-		ucArraySize = 2;
+		u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
 		DBGLOG_LIMITED(HAL, INFO, "use aeTriLinkPlan\n");
 	}
 #endif
 	else if (ucCanSupportDBDCAA) {
-		tmpLinkPlan = aeLinkPlanAwithA;
-		ucArraySize = 3;
+		u4TmpLinkPlanBmap = u4LinkPlanAABmap;
 		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlanAwithA\n");
 	} else {
-		tmpLinkPlan = aeLinkPlan;
-		ucArraySize = 2;
+		u4TmpLinkPlanBmap = u4LinkPlanBmap;
 		DBGLOG_LIMITED(HAL, INFO, "use aeLinkPlan\n");
 	}
 
-	/* select best link plan */
-	for (i = 0; i < ucArraySize; ++i) {
-		enum ENUM_BAND *link_plan = tmpLinkPlan[i];
-
-		if (!kalMemCmp(paeLinkPlan, link_plan, sizeof(aeLinkPlan[0])))
-			return TRUE;
-	}
-
-	return FALSE;
+	return !!(u4TmpLinkPlanBmap & BIT(eLinkPlan));
 }
 
 static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
