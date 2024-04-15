@@ -1176,8 +1176,9 @@ void halCopyPathAllocNonCacheTxDataBuf(
 	}
 	if (prToken->prPacket) {
 		memset(prToken->prPacket, 0, prToken->u4DmaLength);
-		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
-			+= prToken->u4DmaLength;
+		if (u4Idx >= HIF_TX_MSDU_TOKEN_NUM_MIN)
+			grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
+				+= prToken->u4DmaLength;
 	} else
 		DBGLOG(INIT, ERROR,
 			"alloc tx buf fail u4Idx: %u\n", u4Idx);
@@ -1196,10 +1197,12 @@ void halCopyPathFreeNonCacheTxBuf(void *pucSrc, uint32_t u4Len,
 	struct platform_device *pdev = halGetTxCmaDataPlatDev();
 
 	if (u4Idx >= HIF_TX_MSDU_TOKEN_NUM_MIN) {
-		dma_free_coherent(&pdev->dev, u4Len, pucSrc,
-			(dma_addr_t)rDmaAddr);
-		grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
-			-= u4Len;
+		if (pucSrc) {
+			dma_free_coherent(&pdev->dev, u4Len, pucSrc,
+				(dma_addr_t)rDmaAddr);
+			grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
+				-= u4Len;
+		}
 	}
 }
 

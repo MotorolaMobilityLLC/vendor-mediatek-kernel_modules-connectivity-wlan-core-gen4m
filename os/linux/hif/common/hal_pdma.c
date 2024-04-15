@@ -3168,7 +3168,6 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 	struct RTMP_DMACB *prRxCell;
 	void *pPacket, *pBuffer;
 	uint32_t i, j;
-	uint32_t u4Idx;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -3188,12 +3187,11 @@ void halWpdmaFreeRing(struct GLUE_INFO *prGlueInfo)
 					prMemOps->unmapTxDataBuf(prHifInfo,
 						pTxRing->Cell[j].PacketPa,
 						pTxD->SDLen0);
-				u4Idx = pTxRing->Cell[j].prToken->u4Token;
 				if (prMemOps->freeDataBuf && pBuffer)
 					prMemOps->freeDataBuf(pBuffer,
 						pTxD->SDLen0,
 						pTxRing->Cell[j].PacketPa,
-						u4Idx);
+						0);
 			} else {
 				if (prMemOps->unmapTxCmdBuf && pPacket)
 					prMemOps->unmapTxCmdBuf(prHifInfo,
