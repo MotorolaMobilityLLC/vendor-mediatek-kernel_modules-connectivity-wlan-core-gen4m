@@ -39,12 +39,15 @@ void ccmRemoveBssPendingEntry(struct ADAPTER *prAdapter,
 {
 	struct LINK *prCcmCheckCsList = &prAdapter->rCcmCheckCsList;
 	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntry;
+	struct P2P_CCM_CSA_ENTRY *prCcmCsaEntryNext;
 
-	LINK_FOR_EACH_ENTRY(prCcmCsaEntry, prCcmCheckCsList, rLinkEntry,
-			    struct P2P_CCM_CSA_ENTRY) {
+	LINK_FOR_EACH_ENTRY_SAFE(prCcmCsaEntry, prCcmCsaEntryNext,
+				 prCcmCheckCsList, rLinkEntry,
+				 struct P2P_CCM_CSA_ENTRY) {
 		if (prCcmCsaEntry->prBssInfo != prBssInfo)
 			continue;
-		DBGLOG(CCM, INFO, "bss=%u free, remove pending entry");
+		DBGLOG(CCM, INFO, "bss=%u free, remove pending entry",
+		       prBssInfo->ucBssIndex);
 		LINK_REMOVE_KNOWN_ENTRY(prCcmCheckCsList, prCcmCsaEntry);
 		cnmMemFree(prAdapter, prCcmCsaEntry);
 	}
