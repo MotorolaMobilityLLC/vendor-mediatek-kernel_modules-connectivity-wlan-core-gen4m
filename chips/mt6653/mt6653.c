@@ -246,6 +246,9 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
 #endif
+#if CFG_MTK_WIFI_PCIE_SR
+u_int8_t fgIsL2Finished = FALSE;
+#endif
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -3505,6 +3508,13 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 				u4RegVal[1], u4RegVal[2]);
 			return FALSE;
 		}
+
+#if CFG_MTK_WIFI_PCIE_SR
+		if (!fgIsL2Finished) {
+			DBGLOG(HAL, INFO, "L2 not finished\n");
+			return FALSE;
+		}
+#endif
 	}
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
@@ -4344,19 +4354,21 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 {
 	uint32_t status  = wlanDownloadPatch(prAdapter);
 
-	if (status == WLAN_STATUS_SUCCESS)
+	if (status == WLAN_STATUS_SUCCESS) {
 		wifi_coredump_set_enable(TRUE);
 
 #if CFG_MTK_WIFI_PCIE_SR
-	/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
-	if (!mt6653_L2IsSupported(prAdapter)) {
-		mt6653_EnterL2(prAdapter);
-		msleep(100);
-		status = mt6653_ExitL2(prAdapter);
-		if (status != WLAN_STATUS_SUCCESS)
-			DBGLOG(INIT, ERROR, "Exit L2 failed\n");
-	}
+		/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
+		if (!mt6653_L2IsSupported(prAdapter)) {
+			mt6653_EnterL2(prAdapter);
+			msleep(100);
+			status = mt6653_ExitL2(prAdapter);
+			if (status != WLAN_STATUS_SUCCESS)
+				DBGLOG(INIT, ERROR, "Exit L2 failed\n");
+		}
+		fgIsL2Finished = TRUE;
 #endif
+	}
 
 	return status;
 }
