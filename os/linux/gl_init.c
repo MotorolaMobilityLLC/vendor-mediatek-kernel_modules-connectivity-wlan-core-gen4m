@@ -3723,8 +3723,13 @@ static int wlanStop(struct net_device *prDev)
 
 	netif_tx_stop_all_queues(prDev);
 #if CFG_SUPPORT_WED_PROXY
-	kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
-	      sizeof(struct net_device *), &u4SetInfoLen, wlanGetBssIdx(prDev));
+	if (kalIsHalted() == FALSE)
+		kalIoctlByBssIdx(prGlueInfo, wlanoidWedDetachWarp, prDev,
+			sizeof(struct net_device *), &u4SetInfoLen,
+			wlanGetBssIdx(prDev));
+	else
+		wlanoidWedDetachWarp(prGlueInfo->prAdapter, prDev,
+			sizeof(struct net_device *), &u4SetInfoLen);
 #endif
 
 	return 0;		/* success */
