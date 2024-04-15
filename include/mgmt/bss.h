@@ -146,7 +146,9 @@ uint32_t bssGetAliveBssByBand(struct ADAPTER *prAdapter,
 const char *bssGetRoleTypeString(struct ADAPTER *prAdapter,
 				 struct BSS_INFO *bss);
 
+#if CFG_ENABLE_WIFI_DIRECT
 void bssGetAliveBssHwBitmap(struct ADAPTER *prAdapter, uint32_t *pau4Bitmap);
+#endif
 
 #if CFG_SUPPORT_ADHOC || CFG_ENABLE_WIFI_DIRECT
 

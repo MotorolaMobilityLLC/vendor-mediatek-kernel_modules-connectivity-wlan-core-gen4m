@@ -2964,6 +2964,7 @@ bool bssIsIotAp(struct ADAPTER *prAdapter,
 
 #endif
 
+#if CFG_ENABLE_WIFI_DIRECT
 /*---------------------------------------------------------------------------*/
 /*!
  * \brief Get the alive bss HW band bitmap. Each bit indicate the bss
@@ -2982,9 +2983,11 @@ void bssGetAliveBssHwBitmap(struct ADAPTER *prAdapter, uint32_t *pau4Bitmap)
 	for (i = 0; i < MAX_BSSID_NUM; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (!IS_BSS_ALIVE(prAdapter, bss))
+		if (!IS_BSS_ALIVE(prAdapter, bss) ||
+		    bss->eHwBandIdx >= AA_HW_BAND_NUM)
 			continue;
 
 		pau4Bitmap[bss->eHwBandIdx] |= BIT(i);
 	}
 }
+#endif
