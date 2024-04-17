@@ -798,9 +798,11 @@ static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 		/* skip rsnxe if target ap doesn't support rsnxe */
-		if (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FT &&
-		    prTargetBss && !prTargetBss->fgIERSNX)
+		if (prTargetBss && !prTargetBss->fgIERSNX) {
+			DBGLOG(SAA, LOUD,
+				"Skip RSNXE if AP unsupported");
 			return TRUE;
+		}
 	}
 
 	return FALSE;
