@@ -841,11 +841,11 @@ static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 		/* skip rsnxe if target ap doesn't support rsnxe */
-		if (prTargetBss && !prTargetBss->fgIERSNX &&
-		   (prStaRec->ucAuthAlgNum ==
-			AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION ||
-		    prTargetBss->eRsnSelectedAuthMode == AUTH_MODE_WPA2_PSK))
+		if (prTargetBss && !prTargetBss->fgIERSNX) {
+			DBGLOG(SAA, LOUD,
+				"Skip RSNXE if AP unsupported");
 			return TRUE;
+		}
 	}
 
 	return FALSE;
