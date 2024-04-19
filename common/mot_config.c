@@ -12,8 +12,10 @@ typedef struct moto_product {
 } moto_product;
 
 static moto_product products_list[] = {
-		{"aito",    "NA", "wifi",     "txpowerctrl_na"},
-		{"aito",    "all", "wifi",     "txpowerctrl"},
+		{"aito",   "NA",     "wifi",   "txpowerctrl_na"},
+                {"aito",   "JP",     "wifi",   "txpowerctrl_JP"},
+                {"aito",   "DOCOMO", "wifi",   "txpowerctrl_DOCOMO"},
+		{"aito",   "all",    "wifi",   "txpowerctrl"},
 		{{0},        {0},   {0},	{0}},
 };
 
