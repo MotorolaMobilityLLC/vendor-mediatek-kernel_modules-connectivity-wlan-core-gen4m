@@ -2233,7 +2233,8 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 /*----------------------------------------------------------------------------*/
 struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 				      enum ENUM_NETWORK_TYPE eNetworkType,
-				      u_int8_t fgIsP2pDevice)
+				      u_int8_t fgIsP2pDevice,
+				      uint8_t ucTargetOwnMacIdx)
 {
 	struct WIFI_VAR *prWifiVar;
 	struct BSS_INFO *prBssInfo = NULL, *prOutBssInfo = NULL;
@@ -2273,6 +2274,12 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->eCurrentOPMode = OP_MODE_P2P_DEVICE;
 
 		return prBssInfo;
+	}
+
+	if (ucTargetOwnMacIdx != INVALID_OMAC_IDX &&
+	    ucTargetOwnMacIdx < prAdapter->ucHwBssIdNum) {
+		ucOwnMacIdx = ucTargetOwnMacIdx;
+		goto omac_choosed;
 	}
 
 	/* Find available HW set  with the order 1,2,..*/

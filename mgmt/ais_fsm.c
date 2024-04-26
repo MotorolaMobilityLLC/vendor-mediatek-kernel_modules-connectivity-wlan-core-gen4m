@@ -445,7 +445,8 @@ struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *bss = NULL;
 
-	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS, FALSE);
+	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS, FALSE,
+				   INVALID_OMAC_IDX);
 	if (!bss) {
 		DBGLOG(AIS, ERROR,
 			"prAisBssInfo is NULL for link%d\n", ucLinkIdx);

@@ -33,7 +33,7 @@ nanDevInit(struct ADAPTER *prAdapter, uint8_t ucIdx) {
 	}
 
 	prnanBssInfo = cnmGetBssInfoAndInit(prAdapter,
-		NETWORK_TYPE_NAN, FALSE);
+		NETWORK_TYPE_NAN, FALSE, INVALID_OMAC_IDX);
 	if (prnanBssInfo == NULL) {
 		DBGLOG(NAN, INFO, "No enough BSS INDEX\n");
 		return MAX_BSSID_NUM;
