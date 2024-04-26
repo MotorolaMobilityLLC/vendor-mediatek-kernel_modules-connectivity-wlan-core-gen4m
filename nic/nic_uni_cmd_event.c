@@ -194,6 +194,9 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #if (CFG_PCIE_GEN_SWITCH == 1)
 	[CMD_ID_UPDATE_LP] = nicUniCmdUpdateLowPowerParam,
 #endif
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+	[CMD_ID_BEACON_TSF_SYNC] = nicUniCmdUpdateTsfSyncParam,
+#endif
 
 };
 
@@ -14121,4 +14124,68 @@ uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 
 	return WLAN_STATUS_SUCCESS;
 }
+#endif
+
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+void nicUniCmdEventTsfSyncDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt;
+	struct UNI_EVENT_MAC_IFNO *evt;
+	struct UNI_EVENT_MAC_INFO_TSF_SYNC *tag;
+	struct CMD_TSF_SYNC legacy = {0};
+
+	uni_evt = (struct WIFI_UNI_EVENT *)pucEventBuf;
+	if (!uni_evt)
+		return;
+	evt = (struct UNI_EVENT_MAC_IFNO *)uni_evt->aucBuffer;
+	if (!evt)
+		return;
+	tag = (struct UNI_EVENT_MAC_INFO_TSF_SYNC *) evt->aucTlvBuffer;
+	if (!tag)
+		return;
+
+	if (tag->u2Tag != UNI_EVENT_MAC_INFO_TAG_TSF_SYNC ||
+	    tag->u2Length != sizeof(struct UNI_EVENT_MAC_INFO_TSF_SYNC))
+		return;
+
+	legacy.u8TsfValue = tag->u8TsfValue;
+	legacy.ucBssIndex = tag->ucBssIndex;
+
+	nicCmdEventLatchTSF(prAdapter, prCmdInfo, (uint8_t *)(&legacy));
+}
+
+uint32_t nicUniCmdUpdateTsfSyncParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_TSF_SYNC *cmd;
+	struct UNI_CMD_GET_MAC_INFO *uni_cmd;
+	struct UNI_CMD_MAC_INFO_TSF_SYNC *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_GET_MAC_INFO) +
+				sizeof(struct UNI_CMD_MAC_INFO_TSF_SYNC);
+
+	if (info == NULL ||
+	    info->ucCID != CMD_ID_BEACON_TSF_SYNC ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_TSF_SYNC *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_GET_MAC_INFO, max_cmd_len,
+			nicUniCmdEventTsfSyncDone, NULL);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_GET_MAC_INFO *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MAC_INFO_TSF_SYNC *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MAC_INFO_TAG_TSF_SYNC;
+	tag->u2Length = sizeof(*tag);
+	tag->fgIsLatch = cmd->fgIsLatch;
+	tag->ucBssIndex = cmd->ucBssIndex;
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 #endif

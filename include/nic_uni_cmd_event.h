@@ -2382,17 +2382,19 @@ struct UNI_CMD_GET_MAC_INFO {
 
 	/* tlv */
 	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
-        *
-        *   TAG                      | ID  | structure
-        *   -------------------------|-----|--------------
-        *   UNI_CMD_MAC_INFO_TSF     | 0x0 | UNI_CMD_MAC_INFO_TSF_T
-        */
+	* TAG                             | ID  | structure
+	* --------------------------------|-----|--------------
+	* UNI_CMD_MAC_INFO_TAG_TSF        | 0x0 | UNI_CMD_MAC_INFO_TSF
+	* UNI_CMD_MAC_INFO_TAG_TWT_STA_CNM| 0x1 | UNI_CMD_MAC_INFO_TWT_STA_CNM
+	* UNI_CMD_MAC_INFO_TAG_TSF_SYNC   | 0x3 | UNI_CMD_MAC_INFO_TSF_SYNC
+	*/
 } __KAL_ATTRIB_PACKED__;
 
 /* Get mac info command TLV List */
 enum ENUM_UNI_CMD_MAC_INFO_TAG {
 	UNI_CMD_MAC_INFO_TAG_TSF = 0,
 	UNI_CMD_MAC_INFO_TAG_TWT_STA_CNM = 1,
+	UNI_CMD_MAC_INFO_TAG_TSF_SYNC = 3,
 	UNI_CMD_MAC_INFO_TAG_NUM
 };
 
@@ -2417,6 +2419,16 @@ struct UNI_CMD_MAC_INFO_TWT_STA_CNM {
 	uint8_t ucBssIndex;
 	uint8_t fgTwtEn;
 	uint32_t u4TwtCnmAbortTimeoutMs;
+} __KAL_ATTRIB_PACKED__;
+
+/* Get tsf_sync time (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MAC_INFO_TSF_SYNC {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t fgIsLatch;
+	uint8_t ucBssIndex;
+	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* TDLS command (0x1B) */
@@ -6058,12 +6070,21 @@ struct UNI_EVENT_MAC_IFNO {
 
 	/* tlv */
 	uint8_t aucTlvBuffer[];
+	/* the TLVs included in this field:
+	 * TAG                               | ID  | structure
+	 * ----------------------------------|-----|--------------
+	 * UNI_EVENT_MAC_INFO_TAG_TSF        | 0x0 | UNI_EVENT_MAC_INFO_TSF
+	 * UNI_EVENT_MAC_INFO_TAG_TWT_STA_CNM| 0x1 |
+	 *                                        UNI_EVENT_MAC_INFO_TWT_STA_CNM
+	 * UNI_EVENT_MAC_INFO_TAG_TSF_SYNC   | 0x3 | UNI_EVENT_MAC_INFO_TSF_SYNC
+	 */
 } __KAL_ATTRIB_PACKED__;
 
 /* Mac info event Tag */
 enum ENUM_UNI_EVENT_MAC_INFO_TAG {
 	UNI_EVENT_MAC_INFO_TAG_TSF  = 0,
 	UNI_EVENT_MAC_INFO_TAG_TWT_STA_CNM = 1,
+	UNI_EVENT_MAC_INFO_TAG_TSF_SYNC  = 3,
 	UNI_EVENT_MAC_INFO_TAG_NUM
 };
 
@@ -6088,6 +6109,16 @@ struct UNI_EVENT_MAC_INFO_TWT_STA_CNM {
 	uint8_t ucHwBssidIndex;
 	uint8_t ucBssIndex;
 	uint8_t fgCnmGranted;
+} __KAL_ATTRIB_PACKED__;
+
+/* Uni event for TSF_SYNC (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MAC_INFO_TSF_SYNC {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucBssIndex;
+	uint8_t  aucPadding[3];
+	uint64_t u8TsfValue;
 } __KAL_ATTRIB_PACKED__;
 
 #if CFG_SUPPORT_WIFI_POWER_METRICS
@@ -8925,6 +8956,10 @@ uint32_t nicUniCmdUpdateLowPowerParam(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 #endif
 
+#if (CFG_SUPPORT_TSF_SYNC == 1)
+uint32_t nicUniCmdUpdateTsfSyncParam(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
