@@ -2276,6 +2276,10 @@
 #define CFG_SUPPORT_SCREENON_OFLD 0
 #endif
 
+#ifndef CFG_SUPPORT_MDNS_WHITELIST
+#define CFG_SUPPORT_MDNS_WHITELIST 0
+#endif
+
 /*------------------------------------------------------------------------------
  * Flag used for RA offload support.
  * Value 0: Do not enable RA offload.
