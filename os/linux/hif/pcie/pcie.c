@@ -492,7 +492,7 @@ static void mtk_pci_msi_unmask_irq(uint32_t u4IrqNum)
 		pci_msi_unmask_irq(data);
 }
 
-void mtk_pci_msi_enable_irq(uint32_t u4Irq)
+void mtk_pci_msi_enable_irq(uint32_t u4Irq, uint32_t u4Bit)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
@@ -500,13 +500,15 @@ void mtk_pci_msi_enable_irq(uint32_t u4Irq)
 	glGetChipInfo((void **)&prChipInfo);
 	prBusInfo = prChipInfo->bus_info;
 
-	if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
+	if (prBusInfo->pcieMsiUnmaskIrq)
+		prBusInfo->pcieMsiUnmaskIrq(u4Irq, u4Bit);
+	else if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
 		mtk_pci_msi_unmask_irq(u4Irq);
 	else
 		enable_irq(u4Irq);
 }
 
-void mtk_pci_msi_disable_irq(uint32_t u4Irq)
+void mtk_pci_msi_disable_irq(uint32_t u4Irq, uint32_t u4Bit)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct BUS_INFO *prBusInfo;
@@ -514,7 +516,9 @@ void mtk_pci_msi_disable_irq(uint32_t u4Irq)
 	glGetChipInfo((void **)&prChipInfo);
 	prBusInfo = prChipInfo->bus_info;
 
-	if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
+	if (prBusInfo->pcieMsiMaskIrq)
+		prBusInfo->pcieMsiMaskIrq(u4Irq, u4Bit);
+	else if (prBusInfo->is_en_drv_ctrl_pci_msi_irq)
 		mtk_pci_msi_mask_irq(u4Irq);
 	else
 		disable_irq_nosync(u4Irq);
@@ -575,7 +579,7 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits))
 				return IRQ_NONE;
 
-			mtk_pci_msi_disable_irq(irq);
+			mtk_pci_msi_disable_irq(irq, i);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 			goto exit;
 		}
@@ -645,7 +649,7 @@ void mtk_pci_msi_unmask_all_irq(struct GLUE_INFO *prGlueInfo)
 		    prMsiLayout->type != AP_INT)
 			continue;
 
-		mtk_pci_msi_unmask_irq(prMsiLayout->irq_num);
+		mtk_pci_msi_enable_irq(prMsiLayout->irq_num, i);
 	}
 }
 
@@ -690,7 +694,7 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (KAL_TEST_AND_CLEAR_BIT(i, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_enable_irq(prMsiLayout->irq_num);
+			mtk_pci_msi_enable_irq(prMsiLayout->irq_num, i);
 			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
 		}
 	}
@@ -738,7 +742,7 @@ void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
 			continue;
 
 		if (!KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
-			mtk_pci_msi_disable_irq(prMsiLayout->irq_num);
+			mtk_pci_msi_disable_irq(prMsiLayout->irq_num, i);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
 		}
 	}
