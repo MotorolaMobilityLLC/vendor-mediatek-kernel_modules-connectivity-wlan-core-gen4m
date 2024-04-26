@@ -2925,6 +2925,17 @@ int mtk_p2p_cfg80211_remain_on_channel(struct wiphy *wiphy,
 		kalChannelScoSwitch(NL80211_CHAN_NO_HT,
 			&prMsgChnlReq->eChnlSco);
 
+		prGlueP2pDevInfo->rP2pRocRequest.wdev = wdev;
+		prGlueP2pDevInfo->rP2pRocRequest.u8Cookie = *cookie;
+		prGlueP2pDevInfo->rP2pRocRequest.ucReqChnlNum =
+			prMsgChnlReq->rChannelInfo.ucChannelNum;
+		prGlueP2pDevInfo->rP2pRocRequest.eBand =
+			prMsgChnlReq->rChannelInfo.eBand;
+		prGlueP2pDevInfo->rP2pRocRequest.eChnlSco =
+			prMsgChnlReq->eChnlSco;
+		prGlueP2pDevInfo->rP2pRocRequest.u4MaxInterval =
+			prMsgChnlReq->u4Duration;
+
 		mboxSendMsg(prGlueInfo->prAdapter,
 			MBOX_ID_0,
 			(struct MSG_HDR *) prMsgChnlReq,
@@ -2948,6 +2959,8 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	struct MSG_P2P_CHNL_ABORT *prMsgChnlAbort =
 		(struct MSG_P2P_CHNL_ABORT *) NULL;
+	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
 
 	do {
 		if (wiphy == NULL /* || (dev == NULL) */)
@@ -2972,6 +2985,13 @@ int mtk_p2p_cfg80211_cancel_remain_on_channel(struct wiphy *wiphy,
 
 		DBGLOG(P2P, INFO,
 			"Cancel remain on channel, cookie: 0x%llx\n", cookie);
+
+		prGlueP2pDevInfo = prGlueInfo->prP2PDevInfo;
+		if (prGlueP2pDevInfo &&
+		    prGlueP2pDevInfo->rP2pRocRequest.wdev &&
+		    prGlueP2pDevInfo->rP2pRocRequest.u8Cookie ==
+		    cookie)
+			prGlueP2pDevInfo->rP2pRocRequest.wdev = NULL;
 
 		while (p2pFuncIsPendingTxMgmtNeedWait(prGlueInfo->prAdapter,
 			ucRoleIdx, P2P_MGMT_REMAIN_ON_CH_TX) &&

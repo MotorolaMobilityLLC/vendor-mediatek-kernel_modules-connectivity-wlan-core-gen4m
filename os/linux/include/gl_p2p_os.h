@@ -214,10 +214,22 @@ struct GL_P2P_INFO {
 	uint32_t u4LinkId;
 };
 
+#if CFG_ENABLE_WIFI_DIRECT_CFG_80211
+struct cfg80211_p2p_roc_request {
+	struct wireless_dev *wdev;
+	uint64_t u8Cookie;
+	uint8_t ucReqChnlNum;
+	enum ENUM_BAND eBand;
+	enum ENUM_CHNL_EXT eChnlSco;
+	uint32_t u4MaxInterval;
+};
+#endif
+
 struct GL_P2P_DEV_INFO {
 #if CFG_ENABLE_WIFI_DIRECT_CFG_80211
 	struct cfg80211_scan_request *prScanRequest;
 	uint8_t fgScanSpecificSSID;
+	struct cfg80211_p2p_roc_request rP2pRocRequest;
 #if 0
 	struct cfg80211_scan_request rBackupScanRequest;
 #endif
