@@ -1878,13 +1878,15 @@ void kalP2PRddDetectUpdate(struct GLUE_INFO *prGlueInfo,
 		 */
 		prGlueP2pInfo->prWdev->cac_started = FALSE;
 		DBGLOG(INIT, INFO,
-			"kalP2PRddDetectUpdate: Update to OS\n");
-		cfg80211_radar_event(
-			prGlueP2pInfo->prWdev->wiphy,
-			&prGlueP2pInfo->chandefCsa,
-			GFP_KERNEL);
-		DBGLOG(INIT, INFO,
-			"kalP2PRddDetectUpdate: Update to OS Done\n");
+			"Update to OS\n");
+		if (prGlueP2pInfo->chandefCsa.chan) {
+			cfg80211_radar_event(
+				prGlueP2pInfo->prWdev->wiphy,
+				&prGlueP2pInfo->chandefCsa,
+				GFP_KERNEL);
+			DBGLOG(INIT, INFO,
+				"Update to OS Done\n");
+		}
 #endif
 #endif
 

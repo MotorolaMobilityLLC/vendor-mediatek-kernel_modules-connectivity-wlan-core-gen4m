@@ -2139,7 +2139,7 @@ wext_get_scan(struct net_device *prNetDev,
 
 			pcCur += (IW_EV_POINT_LEN);
 
-			pcCur += sprintf(pcCur, "wapi_ie=");
+			pcCur += snprintf(pcCur, pcEnd - pcCur, "wapi_ie=");
 
 			snprintf_hex(pcCur, pcEnd - pcCur,
 				     (uint8_t *) prDesiredIE,

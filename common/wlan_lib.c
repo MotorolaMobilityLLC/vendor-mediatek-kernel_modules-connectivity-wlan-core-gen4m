@@ -6921,7 +6921,7 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 			OFFSET_OF(struct WLAN_IOT_AP_RULE_T, ucVersion);
 		pCurTok = &aucCfgVal[0];
 		pNexTok = &aucCfgVal[0];
-		kalSprintf(aucCfgKey, "IOTAP%d", ucCnt);
+		kalSnprintf(aucCfgKey, WLAN_CFG_KEY_LEN_MAX, "IOTAP%d", ucCnt);
 		ucStatus = wlanCfgGet(prAdapter, aucCfgKey, aucCfgVal, NULL, 0,
 				      FEATURE_DEBUG_ONLY);
 		/*Skip empty rule*/
@@ -9176,7 +9176,7 @@ void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
 	for (i = 0; i < WLAN_CFG_SET_SW_CTRL_LEN_MAX; i++) {
 		kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 		kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
-		kalSprintf(aucKey, "SwCtrl%d", i);
+		kalSnprintf(aucKey, WLAN_CFG_VALUE_LEN_MAX, "SwCtrl%d", i);
 
 		/* get nothing */
 		if (wlanCfgGet(prAdapter, aucKey, aucValue, NULL,
@@ -9277,7 +9277,7 @@ void wlanCfgSetDebugLevel(struct ADAPTER *prAdapter)
 	for (i = 0; i < WLAN_CFG_SET_DEBUG_LEVEL_LEN_MAX; i++) {
 		kalMemZero(aucValue, WLAN_CFG_VALUE_LEN_MAX);
 		kalMemZero(aucKey, WLAN_CFG_VALUE_LEN_MAX);
-		kalSprintf(aucKey, "DbgLevel%d", i);
+		kalSnprintf(aucKey, WLAN_CFG_VALUE_LEN_MAX, "DbgLevel%d", i);
 
 		/* get nothing */
 		if (wlanCfgGet(prAdapter, aucKey, aucValue, NULL,

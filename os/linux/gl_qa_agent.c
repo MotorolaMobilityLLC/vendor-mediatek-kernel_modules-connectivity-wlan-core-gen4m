@@ -5701,7 +5701,7 @@ static int32_t HQA_BssInfoUpdate(struct net_device
 	       ucAddr1[5]);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   OwnMacIdx, BssIdx, ucAddr1[0], ucAddr1[1], ucAddr1[2],
 		   ucAddr1[3], ucAddr1[4], ucAddr1[5]);
@@ -5754,7 +5754,7 @@ static int32_t HQA_DevInfoUpdate(struct net_device
 			ucAddr1[3], ucAddr1[4], ucAddr1[5]);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   OwnMacIdx, ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3],
 		   ucAddr1[4], ucAddr1[5], Band);
@@ -6008,9 +6008,14 @@ static int32_t HQA_TxBfProfileTagInValid(struct net_device
 
 	memcpy(&invalid, HqaCmdFrame->Data, 4);
 	invalid = ntohl(invalid);
+	if (invalid > 1) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(invalid));
-	kalSprintf(prInBuf, "%u", invalid);
+	kalSnprintf(prInBuf, sizeof(invalid), "%u", invalid);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6039,9 +6044,14 @@ static int32_t HQA_TxBfProfileTagPfmuIdx(struct net_device
 
 	memcpy(&pfmuidx, HqaCmdFrame->Data, 4);
 	pfmuidx = ntohl(pfmuidx);
+	if (pfmuidx >= 0x400) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(pfmuidx));
-	kalSprintf(prInBuf, "%u", pfmuidx);
+	kalSnprintf(prInBuf, sizeof(pfmuidx), "%u", pfmuidx);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6069,9 +6079,14 @@ static int32_t HQA_TxBfProfileTagBfType(struct net_device
 
 	memcpy(&bftype, HqaCmdFrame->Data, 4);
 	bftype = ntohl(bftype);
+	if (bftype > 1) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(bftype));
-	kalSprintf(prInBuf, "%u", bftype);
+	kalSnprintf(prInBuf, sizeof(bftype), "%u", bftype);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6099,9 +6114,14 @@ static int32_t HQA_TxBfProfileTagBw(struct net_device
 
 	memcpy(&tag_bw, HqaCmdFrame->Data, 4);
 	tag_bw = ntohl(tag_bw);
+	if (tag_bw > 4) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(tag_bw));
-	kalSprintf(prInBuf, "%u", tag_bw);
+	kalSnprintf(prInBuf, sizeof(tag_bw), "%u", tag_bw);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6129,9 +6149,14 @@ static int32_t HQA_TxBfProfileTagSuMu(struct net_device
 
 	memcpy(&su_mu, HqaCmdFrame->Data, 4);
 	su_mu = ntohl(su_mu);
+	if (su_mu > 1) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(su_mu));
-	kalSprintf(prInBuf, "%u", su_mu);
+	kalSnprintf(prInBuf, sizeof(su_mu), "%u", su_mu);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6178,7 +6203,7 @@ static int32_t HQA_TxBfProfileTagMemAlloc(
 	row_idx3 = ntohl(row_idx3);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   col_idx0, row_idx0, col_idx1, row_idx1, col_idx2, row_idx2,
 		   col_idx3, row_idx3);
@@ -6222,8 +6247,9 @@ static int32_t HQA_TxBfProfileTagMatrix(struct net_device
 	htc_exist = ntohl(htc_exist);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x", nrow,
-		   ncol, ngroup, LM, code_book, htc_exist);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x:%02x:%02x:%02x:%02x:%02x",
+		nrow, ncol, ngroup, LM, code_book, htc_exist);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6260,8 +6286,9 @@ static int32_t HQA_TxBfProfileTagSnr(struct net_device
 	snr_sts3 = ntohl(snr_sts3);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x", snr_sts0,
-		   snr_sts1, snr_sts2, snr_sts3);
+	kalSnprintf(prInBuf, "%02x:%02x:%02x:%02x",
+		sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		snr_sts0, snr_sts1, snr_sts2, snr_sts3);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6289,9 +6316,14 @@ static int32_t HQA_TxBfProfileTagSmtAnt(struct net_device
 
 	memcpy(&smt_ant, HqaCmdFrame->Data + 4 * 0, 4);
 	smt_ant = ntohl(smt_ant);
+	if (smt_ant > 0xffffff) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(smt_ant));
-	kalSprintf(prInBuf, "%u", smt_ant);
+	kalSnprintf(prInBuf, sizeof(smt_ant), "%u", smt_ant);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6319,9 +6351,14 @@ static int32_t HQA_TxBfProfileTagSeIdx(struct net_device
 
 	memcpy(&se_idx, HqaCmdFrame->Data + 4 * 0, 4);
 	se_idx = ntohl(se_idx);
+	if (se_idx > 0x1f) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(se_idx));
-	kalSprintf(prInBuf, "%u", se_idx);
+	kalSnprintf(prInBuf, sizeof(se_idx), "%u", se_idx);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6350,9 +6387,14 @@ static int32_t HQA_TxBfProfileTagRmsdThrd(
 
 	memcpy(&rmsd_thrd, HqaCmdFrame->Data + 4 * 0, 4);
 	rmsd_thrd = ntohl(rmsd_thrd);
+	if (rmsd_thrd > 0x7) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(rmsd_thrd));
-	kalSprintf(prInBuf, "%u", rmsd_thrd);
+	kalSnprintf(prInBuf, sizeof(rmsd_thrd), "%u", rmsd_thrd);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6395,9 +6437,10 @@ static int32_t HQA_TxBfProfileTagMcsThrd(struct net_device
 	mcs_sss2 = ntohl(mcs_sss2);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x",
-		   mcs_lss0, mcs_sss0, mcs_lss1, mcs_sss1, mcs_lss2,
-		   mcs_sss2);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x:%02x:%02x:%02x:%02x:%02x",
+		mcs_lss0, mcs_sss0, mcs_lss1, mcs_sss1, mcs_lss2,
+		mcs_sss2);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6426,9 +6469,14 @@ static int32_t HQA_TxBfProfileTagTimeOut(struct net_device
 
 	memcpy(&bf_tout, HqaCmdFrame->Data + 4 * 0, 4);
 	bf_tout = ntohl(bf_tout);
+	if (bf_tout > 0xff) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(bf_tout));
-	kalSprintf(prInBuf, "%x", bf_tout);
+	kalSnprintf(prInBuf, sizeof(bf_tout), "%x", bf_tout);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6457,9 +6505,14 @@ static int32_t HQA_TxBfProfileTagDesiredBw(
 
 	memcpy(&desire_bw, HqaCmdFrame->Data + 4 * 0, 4);
 	desire_bw = ntohl(desire_bw);
+	if (desire_bw > 4) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(desire_bw));
-	kalSprintf(prInBuf, "%u", desire_bw);
+	kalSnprintf(prInBuf, sizeof(desire_bw), "%u", desire_bw);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6488,9 +6541,14 @@ static int32_t HQA_TxBfProfileTagDesiredNc(
 
 	memcpy(&desire_nc, HqaCmdFrame->Data + 4 * 0, 4);
 	desire_nc = ntohl(desire_nc);
+	if (desire_nc >= 8) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(desire_nc));
-	kalSprintf(prInBuf, "%u", desire_nc);
+	kalSnprintf(prInBuf, "%u", sizeof(desire_nc), desire_nc);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6519,9 +6577,14 @@ static int32_t HQA_TxBfProfileTagDesiredNr(
 
 	memcpy(&desire_nr, HqaCmdFrame->Data + 4 * 0, 4);
 	desire_nr = ntohl(desire_nr);
+	if (desire_nr >= 8) {
+		DBGLOG(RFTEST, ERROR, "input value is invalid!\n");
+		kfree(prInBuf);
+		return -EINVAL;
+	}
 
 	kalMemSet(prInBuf, 0, sizeof(desire_nr));
-	kalSprintf(prInBuf, "%u", desire_nr);
+	kalSnprintf(prInBuf, sizeof(desire_nr), "%u", desire_nr);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6551,7 +6614,7 @@ static int32_t HQA_TxBfProfileTagWrite(struct net_device
 	idx = ntohl(idx);
 
 	kalMemSet(prInBuf, 0, sizeof(idx));
-	kalSprintf(prInBuf, "%u", idx);
+	kalSnprintf(prInBuf, sizeof(idx), "%u", idx);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6586,7 +6649,9 @@ static int32_t HQA_TxBfProfileTagRead(struct net_device
 	isBFer = ntohl(isBFer);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x", idx, isBFer);
+	kalSnprintf(prInBuf,
+		sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x:%02x", idx, isBFer);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6641,10 +6706,11 @@ static int32_t HQA_StaRecCmmUpdate(struct net_device
 	memcpy(mac, HqaCmdFrame->Data + 4 * 3, 6);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
-		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-		   wlan_idx, bss_idx, aid, mac[0], mac[1], mac[2], mac[3],
-		   mac[4], mac[5]);
+	kalSnprintf(prInBuf,
+			sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+			"%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+			wlan_idx, bss_idx, aid, mac[0], mac[1], mac[2], mac[3],
+			mac[4], mac[5]);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6746,7 +6812,7 @@ static int32_t HQA_StaRecBfUpdate(struct net_device
 	}
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02d:%02d:%02d:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   wlan_idx, bss_idx, PfmuId, su_mu, etxbf_cap, ndpa_rate,
 		   ndp_rate, report_poll_rate, tx_mode, nc, nr,
@@ -6810,8 +6876,9 @@ static int32_t HQA_BFProfileDataRead(struct net_device
 		SubIdx = (uint8_t *) &subcarrIdx;
 
 		kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-		kalSprintf(prInBuf, "%02x:%02x:%02x:%02x", idx, fgBFer,
-			   SubIdx[1], SubIdx[0]);
+		kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+			"%02x:%02x:%02x:%02x", idx, fgBFer,
+			SubIdx[1], SubIdx[0]);
 
 		DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -6891,7 +6958,7 @@ static int32_t HQA_BFProfileDataWrite(struct net_device
 	snr03 = ntohl(snr03);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%03x:%03x:%02x:%03x:%02x:%03x:%02x:%03x:%02x:%03x:%02x:%03x:%02x:%02x:%02x:%02x:%02x",
 		   pfmuid, subcarrier, phi11, psi21, phi21, psi31, phi31,
 		   psi41,
@@ -6941,9 +7008,10 @@ static int32_t HQA_BFSounding(struct net_device *prNetDev,
 	band_idx = ntohl(band_idx);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-		   su_mu, mu_num, snd_interval, wlan_id0, wlan_id1, wlan_id2,
-		   wlan_id3);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+		su_mu, mu_num, snd_interval, wlan_id0, wlan_id1, wlan_id2,
+		wlan_id3);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7010,8 +7078,9 @@ static int32_t HQA_TxBfTxApply(struct net_device *prNetDev,
 	MuTx_enable = ntohl(MuTx_enable);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x", wlan_id,
-		   eBF_enable, iBF_enable, MuTx_enable);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x:%02x:%02x:%02x", wlan_id,
+		eBF_enable, iBF_enable, MuTx_enable);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7071,7 +7140,7 @@ static int32_t HQA_ManualAssoc(struct net_device *prNetDev,
 	memcpy(ucAddr1, HqaCmdFrame->Data + 4 * 10, 6);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   ucAddr1[0], ucAddr1[1], ucAddr1[2], ucAddr1[3], ucAddr1[4],
 		   ucAddr1[5], type, wtbl_idx, ownmac_idx,
@@ -7141,7 +7210,7 @@ static int32_t HQA_MUGetInitMCS(struct net_device *prNetDev,
 	u4Gid = ntohl(u4Gid);
 
 	kalMemSet(prInBuf, 0, sizeof(u4Gid));
-	kalSprintf(prInBuf, "%u", u4Gid);
+	kalSnprintf(prInBuf, sizeof(u4Gid), "%u", u4Gid);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7221,7 +7290,7 @@ static int32_t HQA_MUCalInitMCS(struct net_device *prNetDev,
 	u4Group_index = ntohl(u4Group_index);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   u4Num_of_user, u4Bandwidth, u4Nss_of_user0, u4Nss_of_user1,
 		   u4Pf_mu_id_of_user0, u4Pf_mu_id_of_user1,
@@ -7294,7 +7363,7 @@ static int32_t HQA_MUCalLQ(struct net_device *prNetDev,
 	u4Group_index = ntohl(u4Group_index);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   u4Num_of_user, u4Bandwidth, u4Nss_of_user0, u4Nss_of_user1,
 		   u4Pf_mu_id_of_user0, u4Pf_mu_id_of_user1,
@@ -7361,7 +7430,8 @@ static int32_t HQA_MUSetSNROffset(struct net_device
 	u4Offset = ntohl(u4Offset);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x", u4Offset);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x", u4Offset);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7391,7 +7461,8 @@ static int32_t HQA_MUSetZeroNss(struct net_device *prNetDev,
 	u4Zero_nss = ntohl(u4Zero_nss);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x", u4Zero_nss);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x", u4Zero_nss);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7422,7 +7493,8 @@ static int32_t HQA_MUSetSpeedUpLQ(struct net_device
 	u4SpeedUpLq = ntohl(u4SpeedUpLq);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x", u4SpeedUpLq);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x", u4SpeedUpLq);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7555,7 +7627,7 @@ static int32_t HQA_MUSetGroup(struct net_device *prNetDev,
 	memcpy(ucAddr4, HqaCmdFrame->Data + 4 * 25 + 6 * 3, 6);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   u4GroupIndex, u4NumOfUser, u4User0Ldpc, u4User1Ldpc,
 		   u4ShortGI, u4Bw, u4User0Nss, u4User1Nss,
@@ -7600,7 +7672,7 @@ static int32_t HQA_MUGetQD(struct net_device *prNetDev,
 	u4SubIdx = ntohl(u4SubIdx);
 
 	kalMemSet(prInBuf, 0, sizeof(u4SubIdx));
-	kalSprintf(prInBuf, "%u", u4SubIdx);
+	kalSnprintf(prInBuf, sizeof(u4SubIdx), "%u", u4SubIdx);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7645,7 +7717,8 @@ static int32_t HQA_MUSetEnable(struct net_device *prNetDev,
 	u4Enable = ntohl(u4Enable);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x", u4Enable);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x", u4Enable);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7686,9 +7759,10 @@ static int32_t HQA_MUSetGID_UP(struct net_device *prNetDev,
 	au4Up[3] = ntohl(au4Up[3]);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf, "%02x:%02x:%02x:%02x:%02x:%02x",
-		   au4Gid[0], au4Gid[1], au4Up[0], au4Up[1], au4Up[2],
-		   au4Up[3]);
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
+		"%02x:%02x:%02x:%02x:%02x:%02x",
+		au4Gid[0], au4Gid[1], au4Up[0], au4Up[1], au4Up[2],
+		au4Up[3]);
 
 	DBGLOG(RFTEST, ERROR, "prInBuf = %s\n", prInBuf);
 
@@ -7741,7 +7815,7 @@ static int32_t HQA_MUTriggerTx(struct net_device *prNetDev,
 	memcpy(ucAddr4, HqaCmdFrame->Data + 4 * 8 + 6 * 3, 6);
 
 	kalMemSet(prInBuf, 0, sizeof(uint8_t) * (HQA_BF_STR_SIZE));
-	kalSprintf(prInBuf,
+	kalSnprintf(prInBuf, sizeof(uint8_t) * (HQA_BF_STR_SIZE),
 		   "%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
 		   u4IsRandomPattern, u4MsduPayloadLength0,
 		   u4MsduPayloadLength1, u4MuPacketCount, u4NumOfSTAs,

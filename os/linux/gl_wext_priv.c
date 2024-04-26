@@ -16596,8 +16596,9 @@ int priv_driver_get_ch_dirtiness(struct net_device *prNetDev,
 				aucChannelList[i].eBand,
 				aucChannelList[i].ucChannelNum);
 
-			u4Offset = kalSprintf(
+			u4Offset = kalSnprintf(
 				pcCommand + i4BytesWritten,
+				i4TotalLen - i4BytesWritten,
 				"\nband %u ch %03u -> dirtiness %u",
 				prChnLoadInfo->rChnRankList[ucChnIdx].eBand,
 				prChnLoadInfo->rChnRankList[ucChnIdx].ucChannel,
