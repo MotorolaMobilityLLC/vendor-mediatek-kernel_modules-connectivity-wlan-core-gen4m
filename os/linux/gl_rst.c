@@ -310,8 +310,7 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 	INIT_WORK(&(wifi_rst.rst_work), mtk_wifi_reset);
 	fgSimplifyResetFlow = FALSE;
 	fgIsDrvTriggerWholeChipReset = FALSE;
-	glResetUpdateFlag(FALSE);
-	glResetOnEndUpdateFlag(FALSE);
+	glResetCleanResetFlag();
 
 	fgIsRstPreventFwOwn = FALSE;
 	wifi_rst.prGlueInfo = prGlueInfo;
@@ -2087,6 +2086,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 				glSetRstReasonString(
 					"fw detect bus hang");
 				glResetWholeChipResetTrigger(g_reason);
+				glResetCleanResetFlag();
 				return;
 			}
 #if (CFG_SUPPORT_CONNINFRA == 1)
@@ -2098,8 +2098,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 		}
 		DBGLOG(INIT, INFO,
 			"Don't trigger whole chip reset due to driver is not ready\n");
-		glResetUpdateFlag(FALSE);
-		glResetOnEndUpdateFlag(FALSE);
+		glResetCleanResetFlag();
 		return;
 	}
 	if (g_SubsysRstCnt > 3) {
@@ -2133,8 +2132,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 				glResetMsgHandler(ENUM_RST_MSG_L04_START);
 				glResetMsgHandler(ENUM_RST_MSG_L04_END);
 			} else {
-				glResetUpdateFlag(FALSE);
-				glResetOnEndUpdateFlag(FALSE);
+				glResetCleanResetFlag();
 				DBGLOG(INIT, INFO,
 					"Don't trigger subsys reset due to driver is not ready\n");
 			}
@@ -2148,6 +2146,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			glSetRstReasonString(
 				"subsys reset more than 3 times");
 			glResetWholeChipResetTrigger(g_reason);
+			glResetCleanResetFlag();
 		}
 	} else {
 		if (resetReason >= RST_REASON_MAX)
@@ -2174,8 +2173,7 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			glResetMsgHandler(ENUM_RST_MSG_L04_START);
 			glResetMsgHandler(ENUM_RST_MSG_L04_END);
 		} else {
-			glResetUpdateFlag(FALSE);
-			glResetOnEndUpdateFlag(FALSE);
+			glResetCleanResetFlag();
 			g_IsWfsysBusHang = FALSE;
 			DBGLOG(INIT, INFO,
 				"Don't trigger subsys reset due to driver is not ready\n");
@@ -2260,8 +2258,7 @@ int wlan_reset_thread_main(void *data)
 						complete(&g_RstOffComp);
 					DBGLOG(INIT, INFO,
 						"Don't trigger whole chip reset due to driver is not ready\n");
-					glResetUpdateFlag(FALSE);
-					glResetOnEndUpdateFlag(FALSE);
+					glResetCleanResetFlag();
 				}
 				g_Coredump_type =
 					ENUM_COREDUMP_BY_CHIP_RST_LEGACY_MODE;
