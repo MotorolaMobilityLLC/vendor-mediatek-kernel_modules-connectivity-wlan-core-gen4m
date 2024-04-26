@@ -10220,7 +10220,7 @@ uint32_t rlmRegTxPwrLimitUpdate(
 	while (ucRemainLen >= ucSubBandSize) {
 		ucStartCh = prSubBand->ucFirstChnlNum;
 		ucEndCh = ucStartCh + (prSubBand->ucNumOfChnl - 1) * ucChnlOfst;
-		DBGLOG(RLM, TRACE,
+		DBGLOG(RLM, LOUD,
 			"Country IE B[%d]ofst[%d]PriCh[%d]StartCh[%d]ChNum[%d]EndCh[%d]Lmt[%d]\n",
 			eHwBand,
 			ucChnlOfst,
@@ -10261,8 +10261,10 @@ uint32_t rlmRegTxPwrLimitUpdate(
 		if (prBssDesc->cPowerLimit != icNewPwrLimit) {
 
 			DBGLOG(RLM, TRACE,
-			"Update Regulatory PwrLmt SSID:%s BSSID["MACSTR
+			"Update Regulatory PwrLmt(%c%c)SSID:%s BSSID["MACSTR
 			"]Old PwrLmt[%d]New PwrLmt[%d]Constrant[%d]DFS[%d]\n",
+			((prBssDesc->u2CurrCountryCode & 0xff00) >> 8),
+			(prBssDesc->u2CurrCountryCode & 0x00ff),
 			prBssDesc->aucSSID,
 			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->cPowerLimit,

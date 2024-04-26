@@ -3591,7 +3591,7 @@ void halWpdmaProcessCmdDmaDone(struct GLUE_INFO *prGlueInfo,
 		if (pTxD->DMADONE == 0)
 			break;
 
-		log_dbg(HAL, TRACE, "DMA done: port[%u] dma[%u] idx[%u] done[%u] pkt[0x%p] used[%u]\n",
+		log_dbg(HAL, LOUD, "DMA done: port[%u] dma[%u] idx[%u] done[%u] pkt[0x%p] used[%u]\n",
 			u2Port, u4DmaIdx, u4SwIdx, pTxD->DMADONE,
 			prTxRing->Cell[u4SwIdx].pPacket, prTxRing->u4UsedCnt);
 
