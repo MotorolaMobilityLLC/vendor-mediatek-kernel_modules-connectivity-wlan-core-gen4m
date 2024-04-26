@@ -1919,10 +1919,6 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 						    prDupSkb,
 						    prDev,
 						    prTempBss->ucBssIndex);
-			if (status != NETDEV_TX_OK) {
-				kfree_skb(prDupSkb);
-				break;
-			}
 		}
 		kfree_skb(prSkb);
 	} else if (prMldSta) {

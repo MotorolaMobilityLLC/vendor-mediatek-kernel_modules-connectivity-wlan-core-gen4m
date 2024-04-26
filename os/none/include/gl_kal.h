@@ -685,7 +685,6 @@ enum ENUM_VENDOR_DRIVER_EVENT {
 	snprintf(buf, size, fmt, ##__VA_ARGS__)
 #define kalScnprintf(buf, size, fmt, ...)  \
 	kal_scnprintf(buf, size, fmt, ##__VA_ARGS__)
-#define kalSprintf(buf, fmt, ...)          sprintf(buf, fmt, __VA_ARGS__)
 #define kalVsnprintf(buf, size, fmt, args)          \
 	vsnprintf(buf, size, fmt, args)
 /* remove for AOSP */

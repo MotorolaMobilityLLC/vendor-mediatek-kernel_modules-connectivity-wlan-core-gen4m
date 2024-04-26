@@ -5916,8 +5916,9 @@ u_int8_t halTxIsBssCntFull(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	if (u4DebugLevel & DBG_CLASS_TRACE) {
 		kalMemZero(aucStrBuf, MAX_BSSID_NUM * 20);
 		for (u4Idx = 0; u4Idx < MAX_BSSID_NUM; u4Idx++) {
-			u4Offset += kalSprintf(
+			u4Offset += kalSnprintf(
 				aucStrBuf + u4Offset,
+				MAX_BSSID_NUM * 20 - u4Offset,
 				u4Idx == 0 ? "%u" : ":%u",
 				prTokenInfo->u4TxBssCnt[u4Idx]);
 		}
