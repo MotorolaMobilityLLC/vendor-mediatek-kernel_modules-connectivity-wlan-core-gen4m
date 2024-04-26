@@ -81,10 +81,14 @@ void ccmPendingCheck(struct ADAPTER *prAdapter,
 {
 	uint8_t i;
 	struct BSS_INFO *bss;
-	/* copy for ccmCheckAndPrepareChannelSwitch to prevent modified by it */
-	uint32_t u4TargetCh = prTargetBss->ucPrimaryChannel;
-	enum ENUM_BAND eTargetBand = prTargetBss->eBand;
+	uint32_t u4TargetCh;
+	enum ENUM_BAND eTargetBand;
 	u_int8_t fgIsTargetMlo = FALSE;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBss = mldBssGetByBss(prAdapter, prTargetBss);
+
+	fgIsTargetMlo = IS_MLD_BSSINFO_MULTI(prMldBss);
+#endif
 
 	if (prAdapter->fgIsCcmPending) {
 		DBGLOG(CCM, WARN,
@@ -92,11 +96,6 @@ void ccmPendingCheck(struct ADAPTER *prAdapter,
 		return;
 	}
 	prAdapter->fgIsCcmPending = FALSE;
-
-#if (CFG_SUPPORT_802_11BE_MLO == 1)
-	fgIsTargetMlo = IS_MLD_BSSINFO_MULTI(
-				mldBssGetByBss(prAdapter, prTargetBss));
-#endif
 
 	for (i = 0; i < MAX_BSSID_NUM && !prAdapter->fgIsCcmPending; ++i) {
 		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
@@ -109,14 +108,62 @@ void ccmPendingCheck(struct ADAPTER *prAdapter,
 			continue;
 #endif
 
-		if (IS_BSS_APGO(bss) && IS_BSS_ALIVE(prAdapter, bss) &&
-		    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
-				     bss->u4PrivateData]) &&
-		    ccmCheckAndPrepareChannelSwitch(prAdapter, bss,
-					 &u4TargetCh,
-					 prTargetBss->eHwBandIdx,
+		/* Only check GO, because only GO has NoA */
+		if (!IS_BSS_APGO(bss) || !IS_BSS_ALIVE(prAdapter, bss) ||
+		    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+				    bss->u4PrivateData]))
+			continue;
+
+		/* Must copy, because
+		 * ccmCheckAndPrepareChannelSwitch may modify it.
+		 */
+		u4TargetCh = prTargetBss->ucPrimaryChannel;
+		eTargetBand = prTargetBss->eBand;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		/* MLO GC/STA only ch req once */
+		if (IS_BSS_GC(prTargetBss) || IS_BSS_AIS(prTargetBss)) {
+			struct BSS_INFO *mldTargetbss;
+
+			if (prMldBss) {
+				LINK_FOR_EACH_ENTRY(mldTargetbss,
+						    &prMldBss->rBssList,
+						    rLinkEntryMld,
+						    struct BSS_INFO) {
+					u4TargetCh =
+						mldTargetbss->ucPrimaryChannel;
+					eTargetBand = mldTargetbss->eBand;
+
+					DBGLOG(CCM, INFO,
+					       "checking [%s]bss=%u ch=%u, hwBand=%u, rfBand=%u [Target]ch=%u, hwBand=%u, rfBand=%u\n",
+					       bssGetRoleTypeString(prAdapter,
+								    bss),
+					       bss->ucBssIndex,
+					       bss->ucPrimaryChannel,
+					       bss->eHwBandIdx, bss->eBand,
+					       u4TargetCh,
+					       mldTargetbss->eHwBandIdx,
+					       eTargetBand);
+
+					if (!ccmCheckAndPrepareChannelSwitch(
+						prAdapter, bss, &u4TargetCh,
+						mldTargetbss->eHwBandIdx,
+						&eTargetBand))
+						continue;
+
+					prAdapter->fgIsCcmPending = TRUE;
+					break;
+				}
+			} else if (ccmCheckAndPrepareChannelSwitch(prAdapter,
+					bss, &u4TargetCh,
+					prTargetBss->eHwBandIdx, &eTargetBand))
+				prAdapter->fgIsCcmPending = TRUE;
+		} else if (IS_BSS_APGO(prTargetBss))
+#endif /* CFG_SUPPORT_802_11BE_MLO == 1 */
+			if (ccmCheckAndPrepareChannelSwitch(prAdapter, bss,
+					 &u4TargetCh, prTargetBss->eHwBandIdx,
 					 &eTargetBand))
-			prAdapter->fgIsCcmPending = TRUE;
+				prAdapter->fgIsCcmPending = TRUE;
 	}
 
 	if (prAdapter->fgIsCcmPending) {
