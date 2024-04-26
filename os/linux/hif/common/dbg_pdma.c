@@ -892,6 +892,9 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 		}
 
 #if defined(_HIF_PCIE)
+		if (prBusInfo->recoverSerStatus)
+			prBusInfo->recoverSerStatus(prAdapter);
+
 		if (prRxRing->u4CidxErrCnt >=
 		    prWifiVar->u4WfdmaRxHangRecoveryCnt &&
 		    prBusInfo->recoveryMsiStatus)
