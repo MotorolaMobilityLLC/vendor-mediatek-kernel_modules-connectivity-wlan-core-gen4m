@@ -12117,7 +12117,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 		if (prAdapter->u4PwrLmtLockCounter == 1) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
-				DBGLOG(RLM, INFO, "Start wake lock!");
+				DBGLOG(RLM, TRACE, "Start wake lock!");
 				KAL_WAKE_LOCK(prAdapter, rTxWakeLock);
 			}
 #endif
@@ -12129,7 +12129,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 		if (prAdapter->u4PwrLmtLockCounter == 0) {
 #if CFG_ENABLE_WAKE_LOCK
 			if (KAL_WAKE_LOCK_ACTIVE(prAdapter, rTxWakeLock)) {
-				DBGLOG(RLM, INFO, "Stop wake lock!");
+				DBGLOG(RLM, TRACE, "Stop wake lock!");
 				KAL_WAKE_UNLOCK(prAdapter, rTxWakeLock);
 			}
 #endif
@@ -12146,7 +12146,7 @@ bool rlmDomainPwrLmtEmiStatusCtrl(struct ADAPTER *prAdapter,
 		break;
 	}
 
-	DBGLOG(RLM, INFO,
+	DBGLOG(RLM, TRACE,
 		"[Out]TxPower wakelock ctrl : action :%s, counter[%d], ret:%d",
 		au1PwrLmtStatusAction[action],
 		prAdapter->u4PwrLmtLockCounter,
