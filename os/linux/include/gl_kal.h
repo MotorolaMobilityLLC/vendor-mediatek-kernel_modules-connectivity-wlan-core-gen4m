@@ -2501,8 +2501,8 @@ void kalBatNotifierUnReg(void);
 void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer);
 #endif
 
-int kalWlanUeventInit(void);
-void kalWlanUeventDeinit(void);
+void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo);
+void kalWlanUeventDeinit(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalSendUevent(const char *src);
 
 int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);

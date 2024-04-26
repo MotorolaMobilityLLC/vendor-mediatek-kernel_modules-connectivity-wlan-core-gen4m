@@ -8016,8 +8016,8 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 
 		mddpNotifyWifiOnStart();
 #endif
-
-		kalWlanUeventInit(); /* FW might send Uevent on start running */
+		/* FW might send Uevent on start running */
+		kalWlanUeventInit(prGlueInfo);
 
 		if (wlanOnPreNetRegister(prGlueInfo, prAdapter, prChipInfo,
 					 prWifiVar, FALSE)) {
@@ -8581,7 +8581,7 @@ static void wlanRemove(void)
 #endif
 
 	wlanAdapterStop(prAdapter, FALSE);
-	kalWlanUeventDeinit();
+	kalWlanUeventDeinit(prGlueInfo);
 
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	glBusFreeIrq(prDev, prGlueInfo);

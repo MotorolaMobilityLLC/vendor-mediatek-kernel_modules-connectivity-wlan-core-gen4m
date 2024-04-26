@@ -8575,9 +8575,12 @@ u_int8_t kalSendUevent(const char *src)
 	return TRUE;
 }
 
-int kalWlanUeventInit(void)
+void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo)
 {
 	int ret = 0;
+
+	if (!prGlueInfo || prGlueInfo->fgWlanUevent)
+		return;
 
 	/* dev init */
 #ifdef CFG_COMBO_SLT_GOLDEN
@@ -8589,7 +8592,7 @@ int kalWlanUeventInit(void)
 	ret = misc_register(&wlan_object);
 	if (ret) {
 		DBGLOG(INIT, WARN, "misc_register error:%d\n", ret);
-		return ret;
+		return;
 	}
 
 	ret = kobject_uevent(
@@ -8598,15 +8601,19 @@ int kalWlanUeventInit(void)
 	if (ret) {
 		misc_deregister(&wlan_object);
 		DBGLOG(INIT, WARN, "uevent creat fail:%d\n", ret);
-		return ret;
+		return;
 	}
 
-	return ret;
+	prGlueInfo->fgWlanUevent = TRUE;
 }
 
-void kalWlanUeventDeinit(void)
+void kalWlanUeventDeinit(struct GLUE_INFO *prGlueInfo)
 {
+	if (!prGlueInfo || !prGlueInfo->fgWlanUevent)
+		return;
+
 	misc_deregister(&wlan_object);
+	prGlueInfo->fgWlanUevent = FALSE;
 }
 
 #if CFG_SUPPORT_DATA_STALL

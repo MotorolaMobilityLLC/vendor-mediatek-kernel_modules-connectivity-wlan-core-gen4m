@@ -1151,6 +1151,7 @@ struct GLUE_INFO {
 	uint32_t u4HifRegStartCnt;
 	uint32_t u4HifRegReqCnt;
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+	u_int8_t fgWlanUevent;
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
