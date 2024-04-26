@@ -179,6 +179,7 @@ static void mt6653WfdmaRxRingExtCtrl(
 
 static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
 static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter);
+static void mt6653RecoverSerStatus(struct ADAPTER *prAdapter);
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo);
 
@@ -691,6 +692,7 @@ struct BUS_INFO mt6653_bus_info = {
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.checkFwOwnMsiStatus = mt6653CheckFwOwnMsiStatus,
 	.recoveryMsiStatus = mt6653RecoveryMsiStatus,
+	.recoverSerStatus = mt6653RecoverSerStatus,
 #endif
 #if (CFG_MTK_ANDROID_WMT == 1)
 	.u4DmaMask = 36,
@@ -3275,6 +3277,38 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
 		"Emi=[0x%08x] WbIntSta=[0x%08x] [0x%08x]=[0x%08x]->[0x%08x]",
 	       u4IntSta, prHifInfo->u4WbIntSta, u4Addr, u4Val, u4AfterVal);
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+}
+
+static void mt6653RecoverSerStatus(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct HIF_MEM *prMem = NULL;
+	uint32_t u4Idx;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMemOps = &prHifInfo->rMemOps;
+	prChipInfo = prAdapter->chip_info;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
+	}
+
+	if (prMem && prMem->va) {
+		struct SER_EMI_STATUS *prEmiSta =
+			(struct SER_EMI_STATUS *)prMem->va;
+
+		for (u4Idx = 0; u4Idx < HIF_EMI_SER_STATUS_SIZE; u4Idx++) {
+			if (prEmiSta->ucStatus[u4Idx]) {
+				nicProcessSoftwareInterruptEx(prAdapter);
+				break;
+			}
+		}
+	}
 }
 
 static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)
