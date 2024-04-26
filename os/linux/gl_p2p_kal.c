@@ -1137,6 +1137,8 @@ kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
 		(struct ieee80211_channel *)NULL;
 	enum nl80211_channel_type eChnlType = NL80211_CHAN_NO_HT;
 	struct RF_CHANNEL_INFO rRfChannelInfo;
+	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
 
 	do {
 		if (prGlueInfo == NULL || prGlueInfo->prAdapter == NULL) {
@@ -1178,6 +1180,13 @@ kalP2PIndicateChannelExpired(struct GLUE_INFO *prGlueInfo,
 			DBGLOG(P2P, WARN, "prIEEE80211ChnlStruct is NULL\n");
 			break;
 		}
+
+		prGlueP2pDevInfo = prGlueInfo->prP2PDevInfo;
+		if (prGlueP2pDevInfo &&
+		    prGlueP2pDevInfo->rP2pRocRequest.wdev &&
+		    prGlueP2pDevInfo->rP2pRocRequest.u8Cookie ==
+		    u8SeqNum)
+			prGlueP2pDevInfo->rP2pRocRequest.wdev = NULL;
 
 		/* struct wireless_dev, */
 		cfg80211_remain_on_channel_expired(

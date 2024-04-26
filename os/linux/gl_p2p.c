@@ -781,6 +781,10 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 	struct BSS_INFO *prP2pBssInfo = NULL;
 	int iftype = 0;
 	struct net_device *prRoleDev = NULL;
+	struct GL_P2P_DEV_INFO *prGlueP2pDevInfo =
+		(struct GL_P2P_DEV_INFO *) NULL;
+	struct cfg80211_p2p_roc_request *prP2pRocRequest =
+		(struct cfg80211_p2p_roc_request *) NULL;
 
 	GLUE_SPIN_LOCK_DECLARATION();
 
@@ -788,6 +792,30 @@ u_int8_t p2pNetUnregister(struct GLUE_INFO *prGlueInfo,
 
 	ASSERT(prGlueInfo);
 	ASSERT(prAdapter);
+
+	prGlueP2pDevInfo = prGlueInfo->prP2PDevInfo;
+	if (prGlueP2pDevInfo) {
+		prP2pRocRequest = &(prGlueP2pDevInfo->rP2pRocRequest);
+		if (prP2pRocRequest->wdev) {
+			kalP2PIndicateChannelReady(
+				prAdapter->prGlueInfo,
+				prP2pRocRequest->u8Cookie,
+				prP2pRocRequest->ucReqChnlNum,
+				prP2pRocRequest->eBand,
+				prP2pRocRequest->eChnlSco,
+				prP2pRocRequest->u4MaxInterval);
+			kalP2PIndicateChannelExpired(
+				prAdapter->prGlueInfo,
+				prP2pRocRequest->u8Cookie,
+				prP2pRocRequest->ucReqChnlNum,
+				prP2pRocRequest->eBand,
+				prP2pRocRequest->eChnlSco);
+			/* sleep 10 ms to wait for supplicant cancel
+			 * ungoing radio work before freeing netdev
+			 */
+			kalMsleep(10);
+		}
+	}
 
 	GLUE_ACQUIRE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 	if (prAdapter->rP2PNetRegState == ENUM_NET_REG_STATE_REGISTERED &&
