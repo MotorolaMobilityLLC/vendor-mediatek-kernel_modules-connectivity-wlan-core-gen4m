@@ -237,12 +237,10 @@ uint16_t assocBuildCapabilityInfo(struct ADAPTER *prAdapter,
 {
 	uint32_t u4NonHTPhyType;
 	uint16_t u2CapInfo;
-	struct BSS_INFO *prBssInfo;
 
 	if (!prStaRec)
 		return 0;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prStaRec->ucBssIndex);
 
 	/* Set up our requested capabilities. */
 	u2CapInfo = CAP_INFO_ESS;
@@ -279,13 +277,9 @@ uint16_t assocBuildCapabilityInfo(struct ADAPTER *prAdapter,
 		 * now we only enable spectrum management bit for 5G case.
 		 * In TGn 5.2.22, spectrum management bit should set to 1
 		 * to pass the UCC's check.
+		 * To support 2G CSA, we need to enable in 2G, too.
 		 */
-		if (prBssInfo && (prBssInfo->eBand == BAND_5G
-#if (CFG_SUPPORT_WIFI_6G == 1)
-			|| prBssInfo->eBand == BAND_6G
-#endif
-		))
-			u2CapInfo |= CAP_INFO_SPEC_MGT;
+		u2CapInfo |= CAP_INFO_SPEC_MGT;
 #endif
 
 		if (rNonHTPhyAttributes
