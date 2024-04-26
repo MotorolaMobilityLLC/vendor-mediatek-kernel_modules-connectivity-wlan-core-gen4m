@@ -427,6 +427,8 @@
 #define CMD_DWELL_TIME_SET			"SET_DWELL_TIME"
 #endif
 
+#define CMD_DBG_DUMP_WFSYS_CPUPCR		"dumpwfsyscpupcr"
+
 /*****************************************************************************
 *                             D A T A   T Y P E S
 ******************************************************************************

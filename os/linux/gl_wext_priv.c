@@ -23184,3 +23184,37 @@ int priv_driver_set_mddp_test(struct net_device *prNetDev,
 	return 0;
 }
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
+int priv_driver_dump_wfsys_cpupcr(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct ADAPTER *prAdapter;
+	struct mt66xx_chip_info *chip_info;
+	struct CHIP_DBG_OPS *debug_ops;
+	int32_t i4BytesWritten = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+	if (prGlueInfo->u4ReadyFlag == 0 || kalIsResetting()) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -1;
+	}
+
+	prAdapter = prGlueInfo->prAdapter;
+	chip_info = prAdapter->chip_info;
+	debug_ops = chip_info->prDebugOps;
+
+	wlanAcquirePowerControl(prAdapter);
+	if (!prAdapter->fgIsFwOwn) {
+		if (debug_ops && debug_ops->dumpwfsyscpupcr)
+			debug_ops->dumpwfsyscpupcr(prAdapter);
+		else
+			DBGLOG(REQ, WARN,
+				"dumpwfsyscpupcr cb is NOT supported.\n");
+	} else {
+		DBGLOG(REQ, WARN, "driver own failed.\n");
+	}
+	wlanReleasePowerControl(prAdapter);
+
+	return i4BytesWritten;
+}

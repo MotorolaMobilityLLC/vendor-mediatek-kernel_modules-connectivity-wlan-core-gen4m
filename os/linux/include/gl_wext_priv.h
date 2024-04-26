@@ -1113,6 +1113,9 @@ int priv_driver_show_ahdbg(struct net_device *prNetDev,
 int priv_driver_set_mddp_test(struct net_device *prNetDev,
 		char *pcCommand, int i4TotalLen);
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
+int priv_driver_dump_wfsys_cpupcr(struct net_device *prNetDev,
+				  char *pcCommand, int i4TotalLen);
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
