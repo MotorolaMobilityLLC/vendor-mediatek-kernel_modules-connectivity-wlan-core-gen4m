@@ -480,6 +480,8 @@ struct BUS_INFO {
 	struct pcie_msi_info pcie_msi_info;
 	const u_int8_t is_en_drv_ctrl_pci_msi_irq;
 
+	void (*pcieMsiMaskIrq)(uint32_t u4Irq, uint32_t u4Bit);
+	void (*pcieMsiUnmaskIrq)(uint32_t u4Irq, uint32_t u4Bit);
 	void (*pdmaSetup)(struct GLUE_INFO *prGlueInfo, u_int8_t enable,
 		bool fgResetHif);
 	uint32_t (*updateTxRingMaxQuota)(struct ADAPTER *prAdapter,
@@ -668,8 +670,8 @@ uint32_t glWritePcieCfgSpace(int offset, uint32_t value);
 void glNotifyPciePowerDown(void);
 
 void mtk_pci_disable_device(struct GLUE_INFO *prGlueInfo);
-void mtk_pci_msi_enable_irq(uint32_t u4Irq);
-void mtk_pci_msi_disable_irq(uint32_t u4Irq);
+void mtk_pci_msi_enable_irq(uint32_t u4Irq, uint32_t u4Bit);
+void mtk_pci_msi_disable_irq(uint32_t u4Irq, uint32_t u4Bit);
 struct GLUE_INFO *get_glue_info_isr(void *dev_instance, int irq, int idx);
 irqreturn_t mtk_pci_isr(int irq, void *dev_instance);
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance);
