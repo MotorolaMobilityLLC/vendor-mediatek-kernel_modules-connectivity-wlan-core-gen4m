@@ -31,9 +31,7 @@
 #include "connv3.h"
 #endif
 
-#include "wlan_hw_dbg.h"
 #include "mt6653_wifi_dbg_sop.h"
-#include "mt6653_wfviabt_dbg_sop.h"
 
 /*******************************************************************************
  *                         C O M P I L E R   F L A G S
@@ -1910,79 +1908,41 @@ bool mt6653_CheckDumpViaBt(struct ADAPTER *prAdapter)
 
 void mt6653_dumpCbInfraReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 {
-	if (fgIsDumpViaBt == TRUE) {
-		/* SectionA - cb_infra vlp */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_a,
-			fgIsDumpViaBt);
+	/* SectionA - cb_infra vlp */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_a,
+		fgIsDumpViaBt);
 
-		/* SectionB - cb_infra vcore on */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_b,
-			fgIsDumpViaBt);
+	/* SectionB - cb_infra vcore on */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_b,
+		fgIsDumpViaBt);
 
-		/* SectionC - cb_infra off, read check ok */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_c,
-			fgIsDumpViaBt);
+	/* SectionC - cb_infra off, read check ok */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_c,
+		fgIsDumpViaBt);
 
-		/* SectionD - pcie */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_d,
-			fgIsDumpViaBt);
+	/* SectionD - pcie */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_d,
+		fgIsDumpViaBt);
 
-		/* SectionE - cbtop CR */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_e,
-			fgIsDumpViaBt);
+	/* SectionE - cbtop CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_e,
+		fgIsDumpViaBt);
 
-		/* SectionG - dma dbg_ctl */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_g,
-			fgIsDumpViaBt);
+	/* SectionG - dma dbg_ctl */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_g,
+		fgIsDumpViaBt);
 
-		/* SectionH - cb_infra_mbu */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_h,
-			fgIsDumpViaBt);
+	/* SectionH - cb_infra_mbu */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_h,
+		fgIsDumpViaBt);
 
-		/* SectionI - cb_infra_bus (cb_infra_off_dma_bcrm) */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_i,
-			fgIsDumpViaBt);
+	/* SectionI - cb_infra_bus (cb_infra_off_dma_bcrm) */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_i,
+		fgIsDumpViaBt);
 
-		/* SectionJ - pcie phy */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_cb_infra_j,
-			fgIsDumpViaBt);
-	} else {
-		/* SectionA - cb_infra vlp */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_a,
-			fgIsDumpViaBt);
-
-		/* SectionB - cb_infra vcore on */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_b,
-			fgIsDumpViaBt);
-
-		/* SectionC - cb_infra off, read check ok */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_c,
-			fgIsDumpViaBt);
-
-		/* SectionD - pcie */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_d,
-			fgIsDumpViaBt);
-
-		/* SectionE - cbtop CR */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_e,
-			fgIsDumpViaBt);
-
-		/* SectionG - dma dbg_ctl */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_g,
-			fgIsDumpViaBt);
-
-		/* SectionH - cb_infra_mbu */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_h,
-			fgIsDumpViaBt);
-
-		/* SectionI - cb_infra_bus (cb_infra_off_dma_bcrm) */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_i,
-			fgIsDumpViaBt);
-
-		/* SectionJ - pcie phy */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_j,
-			fgIsDumpViaBt);
-	}
+	/* SectionJ - pcie phy */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_cb_infra_j,
+		fgIsDumpViaBt);
 }
 
 void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad)
@@ -2056,47 +2016,21 @@ void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad)
 
 void mt6653_dumpPcGprLog(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 {
-	if (fgIsDumpViaBt == TRUE) {
-		/* SectionA - Dump WFMCU PC_log */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_viaBT_wf_mcu_hostcsr_a,
-			fgIsDumpViaBt);
+	/* SectionA - Dump WFMCU PC_log */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_a,
+		fgIsDumpViaBt);
 
-		/* SectionB - Dump WFMCU GPR_log */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_viaBT_wf_mcu_hostcsr_b,
-			fgIsDumpViaBt);
+	/* SectionB - Dump WFMCU GPR_log */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_b,
+		fgIsDumpViaBt);
 
-		/* SectionC - Dump WFMCU GPR */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_viaBT_wf_mcu_hostcsr_c,
-			fgIsDumpViaBt);
+	/* SectionC - Dump WFMCU GPR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_c,
+		fgIsDumpViaBt);
 
-		/* SectionD - Dump WFMCU CSR */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_viaBT_wf_mcu_hostcsr_d,
-			fgIsDumpViaBt);
-	} else {
-		/* SectionA - Dump WFMCU PC_log */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_wf_mcu_hostcsr_a,
-			fgIsDumpViaBt);
-
-		/* SectionB - Dump WFMCU GPR_log */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_wf_mcu_hostcsr_b,
-			fgIsDumpViaBt);
-
-		/* SectionC - Dump WFMCU GPR */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_wf_mcu_hostcsr_c,
-			fgIsDumpViaBt);
-
-		/* SectionD - Dump WFMCU CSR */
-		mt6653_dump_debug_sop(ad,
-			&mt6653_dump_list_wf_mcu_hostcsr_d,
-			fgIsDumpViaBt);
-	}
+	/* SectionD - Dump WFMCU CSR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_mcu_hostcsr_d,
+		fgIsDumpViaBt);
 }
 
 void mt6653_dumpRV55CoreReg(struct ADAPTER *ad)
@@ -2154,93 +2088,52 @@ void mt6653_dumpRV55CoreReg(struct ADAPTER *ad)
 
 void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 {
-	if (fgIsDumpViaBt == TRUE) {
-		/* SectionA - Dump wf_top_misc_on monflg */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_top_a,
-			fgIsDumpViaBt);
+	/* SectionA - Dump wf_top_misc_on monflg */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_a,
+		fgIsDumpViaBt);
 
-		/* SectionB - Dump wf_top_misc_von monflg */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_top_b,
-			fgIsDumpViaBt);
+	/* SectionB - Dump wf_top_misc_von monflg */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_b,
+		fgIsDumpViaBt);
 
-		/* SectionC - Dump wf_top_cfg_on debug CR */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_top_c,
-			fgIsDumpViaBt);
+	/* SectionC - Dump wf_top_cfg_on debug CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_c,
+		fgIsDumpViaBt);
 
-		/* SectionD - Dump wf_top_rgu_on debug CR */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_top_d,
-			fgIsDumpViaBt);
+	/* SectionD - Dump wf_top_rgu_on debug CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d,
+		fgIsDumpViaBt);
 
-		/* SectionE - Dump wf_top_rgu_von monflg */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_top_e,
-			fgIsDumpViaBt);
-	} else {
-		/* SectionA - Dump wf_top_misc_on monflg */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_a,
-			fgIsDumpViaBt);
+	/* SectionE - Dump wf_top_rgu_von monflg */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e,
+		fgIsDumpViaBt);
 
-		/* SectionB - Dump wf_top_misc_von monflg */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_b,
-			fgIsDumpViaBt);
-
-		/* SectionC - Dump wf_top_cfg_on debug CR */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_c,
-			fgIsDumpViaBt);
-
-		/* SectionD - Dump wf_top_rgu_on debug CR */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d,
-			fgIsDumpViaBt);
-
-		/* SectionE - Dump wf_top_rgu_von monflg */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e,
-			fgIsDumpViaBt);
-	}
+	/* SectionF - Dump wf_top_slpprot_on debug CR */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_f,
+		fgIsDumpViaBt);
 }
 
 void mt6653_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 {
-	if (fgIsDumpViaBt == TRUE) {
-		/* SectionA - Dump VDNR timeout host side info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_a,
-			fgIsDumpViaBt);
+	/* SectionA - Dump VDNR timeout host side info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_a,
+		fgIsDumpViaBt);
 
-		/* SectionB - Dump VDNR timeout wf side info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_b,
-			fgIsDumpViaBt);
+	/* SectionB - Dump VDNR timeout wf side info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_b,
+		fgIsDumpViaBt);
 
-		/* SectionC - Dump AHB APB timeout info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_c,
-			fgIsDumpViaBt);
+	/* SectionC - Dump AHB APB timeout info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_c,
+		fgIsDumpViaBt);
 
-		/* SectionD - Dump WF2AP bus status */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_d,
-			fgIsDumpViaBt);
+	/* SectionD - Dump WF2AP bus status */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_d,
+		fgIsDumpViaBt);
 
-		/* SectionE - Dump WF2AP access detect info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_viaBT_wf_bus_e,
-			fgIsDumpViaBt);
-
-	} else {
-		/* SectionA - Dump VDNR timeout host side info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_a,
-			fgIsDumpViaBt);
-
-		/* SectionB - Dump VDNR timeout wf side info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_b,
-			fgIsDumpViaBt);
-
-		/* SectionC - Dump AHB APB timeout info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_c,
-			fgIsDumpViaBt);
-
-		/* SectionD - Dump WF2AP bus status */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_d,
-			fgIsDumpViaBt);
-
-		/* SectionE - Dump WF2AP access detect info */
-		mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_e,
-			fgIsDumpViaBt);
-	}
+	/* SectionE - Dump WF2AP access detect info */
+	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_bus_e,
+		fgIsDumpViaBt);
 }
 
 static void mt6653_dumpConninfraBus(struct ADAPTER *ad)
@@ -2384,7 +2277,7 @@ start_dump_via_bt:
 	mt6653_dumpConninfraBus(ad);
 	mt6653_dumpPcieReg();
 	DBGLOG(HAL, INFO, "[PSOP_9_1] version=%s\n",
-			MT6653_WFVIABT_DEBUGSOP_DUMP_VERSION);
+			MT6653_WIFI_DEBUGSOP_DUMP_VERSION);
 	mt6653_dumpCbInfraReg(ad, TRUE);
 	mt6653_dumpWfTopReg(ad, TRUE);
 	mt6653_dumpWfBusReg(ad, TRUE);
