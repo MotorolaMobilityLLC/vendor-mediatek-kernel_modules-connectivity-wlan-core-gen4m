@@ -622,6 +622,9 @@ struct BUS_INFO {
  *                   F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
  */
+#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+uint32_t glRegisterShutdownCB(remove_card pfShutdown);
+#endif
 
 uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove);
 

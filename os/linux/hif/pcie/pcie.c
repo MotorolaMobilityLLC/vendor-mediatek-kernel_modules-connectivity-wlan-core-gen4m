@@ -272,6 +272,7 @@ const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
  */
 static probe_card pfWlanProbe;
 static remove_card pfWlanRemove;
+static remove_card pfWlanShutdown;
 #if CFG_MTK_WIFI_AER_RESET
 static u_int8_t g_AERRstTriggered;
 static u_int8_t g_AERL05Rst;
@@ -290,6 +291,7 @@ static struct platform_driver mtk_wifi_driver = {
 	.id_table = mtk_wifi_ids,
 	.probe = NULL,
 	.remove = NULL,
+	.shutdown = NULL,
 };
 
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
@@ -1269,6 +1271,15 @@ static int mtk_wifi_remove(struct platform_device *pdev)
 	return 0;
 }
 
+static void mtk_wifi_shutdown(struct platform_device *pdev)
+{
+	if (g_fgDriverProbed && pfWlanShutdown) {
+		DBGLOG(INIT, INFO, "do shutdown\n");
+		pfWlanShutdown();
+		g_fgDriverProbed = FALSE;
+	}
+}
+
 #if (CFG_MTK_WIFI_MISC_RSV_MEM == 1)
 static int wifiMiscDmaSetup(struct platform_device *pdev,
 		struct mt66xx_hif_driver_data *prDriverData)
@@ -1919,6 +1930,26 @@ int mtk_pci_resume(struct pci_dev *pdev)
 
 	return 0;
 #endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function will register shutdownCB
+ *
+ * \param[in] pfProbe    Function pointer to remove card when shutdown
+ *
+ * \return The result of registering pci bus
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t glRegisterShutdownCB(remove_card pfShutdown)
+{
+	int ret = 0;
+
+	ASSERT(pfShutdown);
+	pfWlanShutdown = pfShutdown;
+
+	mtk_wifi_driver.shutdown = mtk_wifi_shutdown;
+	return ret;
 }
 
 /*----------------------------------------------------------------------------*/
