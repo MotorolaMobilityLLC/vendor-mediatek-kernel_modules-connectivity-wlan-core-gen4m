@@ -3236,6 +3236,15 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 }
 #endif
 
+
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
+uint8_t halPcieIsPcieProbed(void)
+{
+	return g_fgDriverProbed;
+}
+#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
+
+
 #if CFG_MTK_WIFI_PCIE_SR
 int mtk_pcie_L2_is_supported(struct pci_dev *pdev)
 {

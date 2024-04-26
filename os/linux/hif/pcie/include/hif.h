@@ -362,6 +362,9 @@ struct GL_HIF_INFO {
 #if CFG_SUPPORT_HIF_RX_NAPI
 	struct HIF_NAPI_DEVICE rNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
+	bool fgEnablePcieCfgDump;
+#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 };
 
 struct BUS_INFO {
@@ -715,6 +718,11 @@ int mtk_pcie_L2_is_supported(struct pci_dev *dev);
 int mtk_pcie_enter_L2(struct pci_dev *dev);
 int mtk_pcie_exit_L2(struct pci_dev *dev);
 #endif
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
+extern int mtk_pcie_enable_cfg_dump(int port);
+extern int mtk_pcie_disable_cfg_dump(int port);
+uint8_t halPcieIsPcieProbed(void);
+#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 u_int8_t mtk_get_aer_triggered(void);
 void glUpdateRxCopyMemOps(
 	struct HIF_MEM_OPS *prMemOps);
@@ -729,8 +737,6 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance);
 irqreturn_t pcie_gen_switch_end_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance);
 void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter);
-//extern int mtk_pcie_enable_cfg_dump(int port);
-//extern int mtk_pcie_disable_cfg_dump(int port);
 void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter);
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
 #endif
