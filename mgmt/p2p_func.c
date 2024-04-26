@@ -354,6 +354,10 @@ void p2pFuncRequestScan(struct ADAPTER *prAdapter,
 			prScanReqV2->ucScnFuncMask |=
 				ENUM_SCN_USE_PADDING_AS_BSSID;
 			prScanReqV2->u4ScnFuncMaskExtend |= ENUM_SCN_ML_PROBE;
+			prScanReqV2->u2ChannelMinDwellTime =
+				P2P_MLD_SCAN_DEFAULT_MIN_DWELL_TIME;
+			prScanReqV2->u2ChannelDwellTime =
+				P2P_MLD_SCAN_DEFAULT_DWELL_TIME;
 		}
 #endif
 		prScanReqV2->fgOobRnrParseEn = FALSE;
