@@ -2522,13 +2522,6 @@ void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	if (!prExtCap)
 		return;
 
-	DBGLOG(SCN, TRACE,
-		"Extented capabilities IE present,BSSID[" MACSTR "] SSID:%s\n",
-		MAC2STR(prBssDesc->aucBSSID),
-		prBssDesc->aucSSID);
-
-	DBGLOG_MEM8(SCN, TRACE, prExtCap, IE_SIZE(prExtCap));
-
 #if CFG_SUPPORT_802_11V_BSS_TRANSITION_MGT
 	GET_EXT_CAP(prExtCap->aucCapabilities, prExtCap->ucLength,
 		ELEM_EXT_CAP_BSS_TRANSITION_BIT, prBssDesc->fgSupportBTM);
@@ -2545,6 +2538,14 @@ void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 		MAC2STR(prBssDesc->aucBSSID),
 		prBssDesc->aucSSID,
 		prBssDesc->fgExtSpecMgmtCap);
+#else
+	DBGLOG(SCN, TRACE,
+		"Extented capabilities IE present,BSSID[" MACSTR "] SSID:%s\n",
+		MAC2STR(prBssDesc->aucBSSID),
+		prBssDesc->aucSSID);
+
+	DBGLOG_MEM8(SCN, LOUD, prExtCap, IE_SIZE(prExtCap));
+
 #endif
 }
 
@@ -3705,13 +3706,13 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11K
 	if (prCountryIE) {
 		prBssDesc->u2CurrCountryCode = u2CurrCountryCode;
-		DBGLOG(SCN, TRACE,
+		DBGLOG(SCN, LOUD,
 			"Country IE present,BSSID[" MACSTR "] SSID:%s(%c%c)\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->aucSSID,
 			((u2CurrCountryCode & 0xff00) >> 8),
 			(u2CurrCountryCode & 0x00ff));
-		DBGLOG_MEM8(SCN, TRACE, prCountryIE, IE_SIZE(prCountryIE));
+		DBGLOG_MEM8(SCN, LOUD, prCountryIE, IE_SIZE(prCountryIE));
 		/* Update TxPower limit for Country IE & Power Constraint IE */
 		rlmRegTxPwrLimitUpdate(prAdapter,
 			prBssDesc,
