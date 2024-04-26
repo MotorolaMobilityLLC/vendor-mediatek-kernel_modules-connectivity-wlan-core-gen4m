@@ -98,6 +98,20 @@ struct wifi2mbr_handler {
 	PFN_WIFI2MBR_DATA_NUM pfnGetDataNum;
 };
 
+#if CFG_SUPPORT_WIFI_ICCM
+struct ICCM_POWER_STATE_T {
+	uint32_t u4TxTime;
+	uint32_t u4RxTime;
+	uint32_t u4RxListenTime;
+	uint32_t u4SleepTime;
+};
+
+struct ICCM_T {
+	uint32_t u4TotalTime;
+	struct ICCM_POWER_STATE_T u4BandRatio[5];
+};
+#endif /* CFG_SUPPORT_WIFI_ICCM */
+
 struct mbrain_emi_data {
 	/*
 	 * this struct should be the same as the struct defined in fw
@@ -105,6 +119,9 @@ struct mbrain_emi_data {
 	 * uint32_t u4Mbr_test;
 	 * uint32_t u4Mbr_test2;
 	 */
+#if CFG_SUPPORT_WIFI_ICCM
+	struct ICCM_T rMbrIccmData;
+#endif /* CFG_SUPPORT_WIFI_ICCM */
 };
 
 /*******************************************************************************
@@ -126,8 +143,15 @@ enum wifi2mbr_status mbr_wifi_lls_handler(struct ADAPTER *prAdapter,
 	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
 	void *buf, uint16_t *pu2Len);
 
+enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len);
+
 /* get tag total data num */
 uint16_t mbr_wifi_lls_get_total_data_num(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
+
+uint16_t mbr_wifi_lp_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
 
 #endif /* CFG_SUPPORT_MBRAIN */
