@@ -2906,8 +2906,12 @@ static int wlan_pre_pwr_on(void)
 static int wlan_efuse_on(void)
 {
 	int32_t ret = 0;
+	struct task_struct *cutTask = current;
 
 	DBGLOG(INIT, INFO, "wlan_efuse_on.\n");
+
+	/*Setup sub_wifi_thrd run on non X core */
+	kalSetRunOnNonXCore(cutTask);
 
 	/* expect unlock wfsys at the end of do_cal_cb */
 	wfsys_lock();

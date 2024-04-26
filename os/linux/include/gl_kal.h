@@ -2368,6 +2368,7 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 	enum ENUM_PKT_PATH ePath,
 	uint8_t ucBssIdx);
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
+void kalSetRunOnNonXCore(struct task_struct *task);
 void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		struct BOOST_INFO *prBoostInfo);
 void kalBoostCpuInit(struct ADAPTER *prAdapter);

@@ -11331,6 +11331,10 @@ u_int8_t kalIsTputMode(struct ADAPTER *prAdapter,
 }
 #endif /* CFG_SUPPORT_DISABLE_DATA_DDONE_INTR */
 
+void __weak kalSetRunOnNonXCore(struct task_struct *task)
+{
+}
+
 void __weak kalSetCpuBoost(struct ADAPTER *prAdapter,
 		struct BOOST_INFO *prBoostInfo)
 {
