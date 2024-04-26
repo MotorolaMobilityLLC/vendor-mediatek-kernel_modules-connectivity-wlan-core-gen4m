@@ -4698,6 +4698,9 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 /*----------------------------------------------------------------------------*/
 static struct lock_class_key rSpinKey[SPIN_LOCK_NUM];
 static struct lock_class_key rMutexKey[MUTEX_NUM];
+#if CFG_SUPPORT_RX_PAGE_POOL
+static struct lock_class_key rMutexPagePoolKey[PAGE_POOL_NUM];
+#endif
 struct wireless_dev *wlanNetCreate(void *pvData,
 		void *pvDriverData)
 {
@@ -4915,6 +4918,14 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 		mutex_init(&prGlueInfo->arMutex[i]);
 		lockdep_set_class(&prGlueInfo->arMutex[i], &rMutexKey[i]);
 	}
+
+#if CFG_SUPPORT_RX_PAGE_POOL
+	for (i = 0; i < PAGE_POOL_NUM; i++) {
+		mutex_init(&prGlueInfo->arMutexPagePool[i]);
+		lockdep_set_class(&prGlueInfo->arMutexPagePool[i],
+			&rMutexPagePoolKey[i]);
+	}
+#endif
 
 	/* initialize semaphore for ioctl */
 	sema_init(&prGlueInfo->ioctl_sem, 1);
