@@ -1533,8 +1533,10 @@ enum BOOTMODE {
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u4PpeType)
 #endif
 
-#define GLUE_GET_PKT_ETHER_DEST_ADDR(_p)    \
-	    ((uint8_t *)&(((struct sk_buff *)(_p))->data))
+#define GLUE_GET_TX_PKT_ETHER_DEST_ADDR(_p)    \
+		(((struct sk_buff *)(_p))->data)
+#define GLUE_GET_TX_PKT_ETHER_SRC_ADDR(_p)    \
+		(&((struct sk_buff *)(_p))->data[MAC_ADDR_LEN])
 
 #define GLUE_COPY_PRIV_DATA(_pDst, _pSrc) \
 	(kalMemCopy(GLUE_GET_PKT_PRIVATE_DATA(_pDst), \

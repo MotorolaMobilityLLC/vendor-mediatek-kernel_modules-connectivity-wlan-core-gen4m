@@ -212,9 +212,6 @@
 #define ARP_OPERATION_REQUEST                   0x0001
 #define ARP_OPERATION_RESPONSE                  0x0002
 
-#define ARP_PRO_REQ				1
-#define ARP_PRO_RSP				2
-
 #define TDLS_ACTION_CODE_OFFSET                 2
 
 /* LLC(3) + SNAP(3) + EtherType(2) */

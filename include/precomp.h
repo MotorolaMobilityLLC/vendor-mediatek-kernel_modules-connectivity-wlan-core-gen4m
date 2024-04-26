@@ -204,9 +204,7 @@
 
 #include "pwr_mgt.h"
 
-#if (CFG_SUPPORT_STATISTICS == 1)
 #include "stats.h"
-#endif /* CFG_SUPPORT_STATISTICS */
 
 #include "cnm.h"
 /* Dependency:  aa_fsm.h (ENUM_AA_STATE_T), p2p_fsm.h
