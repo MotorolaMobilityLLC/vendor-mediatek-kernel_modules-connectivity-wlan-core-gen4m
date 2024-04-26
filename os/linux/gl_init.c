@@ -8664,7 +8664,7 @@ static void wlanShutdown(void)
 	DBGLOG(INIT, INFO, "do wifi off\n");
 	uIsShutdown = TRUE;
 	wfsys_lock();
-	wlanFuncOffImpl();
+	wlanFuncOff();
 	wfsys_unlock();
 }
 #endif
