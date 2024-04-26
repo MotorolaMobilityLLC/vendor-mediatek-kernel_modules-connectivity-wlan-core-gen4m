@@ -1201,7 +1201,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = true,
 	.u4MdLpctlAddr = CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
-	.u4MdDrvOwnTimeoutTime = 2000,
+	.u4MdDrvOwnTimeoutTime = 1500,
 #else
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
