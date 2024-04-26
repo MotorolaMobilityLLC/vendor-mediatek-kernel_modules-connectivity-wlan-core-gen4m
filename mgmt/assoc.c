@@ -1662,6 +1662,10 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 		case ELEM_ID_SUP_CHS:
 			if (IE_LEN(pucIE) < 2)
 				break;
+			if ((IE_LEN(pucIE) >
+				ELEM_MAX_LEN_SUPPORTED_CHANNELS)
+				|| (IE_LEN(pucIE) & 0x01))
+				return WLAN_STATUS_FAILURE;
 
 			for (idx = 0; idx < IE_LEN(pucIE); idx += 2) {
 				ucStartCh = SUP_CH_IE(pucIE)->
@@ -1693,7 +1697,10 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 			prStaRec->u4SupportedChnlBits_5g_0 = u4SupCh_5g_0;
 			prStaRec->u2SupportedChnlBits_5g_1 = u2SupCh_5g_1;
 			break;
-
+		case ELEM_ID_PWR_CAP:
+			if (IE_LEN(pucIE) != ELEM_MAX_LEN_POWER_CAP)
+				return WLAN_STATUS_FAILURE;
+			break;
 		case ELEM_ID_EXTENDED_SUP_RATES:
 			if (!prIeExtSupportedRate)
 				prIeExtSupportedRate = EXT_SUP_RATES_IE(pucIE);
