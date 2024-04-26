@@ -6178,6 +6178,9 @@ void rlmBssInitForAPandIbss(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 void rlmBssAborted(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 {
+	PFN_OPMODE_NOTIFY_DONE_FUNC pfnCallback;
+	u_int8_t fgIsSuccess = FALSE;
+
 	ASSERT(prAdapter);
 	ASSERT(prBssInfo);
 
@@ -6185,6 +6188,13 @@ void rlmBssAborted(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 
 	prBssInfo->fg40mBwAllowed = FALSE;
 	prBssInfo->fgAssoc40mBwAllowed = FALSE;
+
+	/* <4> Tell OpMode change caller the change result fail
+	 */
+	pfnCallback = prBssInfo->pfOpChangeHandler;
+	prBssInfo->pfOpChangeHandler = NULL;
+	if (pfnCallback)
+		pfnCallback(prAdapter, prBssInfo->ucBssIndex, fgIsSuccess);
 
 	/* Assume FW state is updated by CMD_ID_SET_BSS_INFO, so
 	 * the sync CMD is not needed here.
