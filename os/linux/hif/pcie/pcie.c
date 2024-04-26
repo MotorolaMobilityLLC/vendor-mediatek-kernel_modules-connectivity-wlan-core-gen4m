@@ -527,10 +527,14 @@ void mtk_pci_msi_disable_irq(uint32_t u4Irq, uint32_t u4Bit)
 u_int8_t mtk_pci_is_wfdma_ready(struct GLUE_INFO *prGlueInfo)
 {
 	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct HIF_STATS *prHifStats = &prGlueInfo->prAdapter->rHifStats;
 
 	glGetChipInfo((void **)&prChipInfo);
-	if (prChipInfo->isWfdmaRxReady)
-		return prChipInfo->isWfdmaRxReady(prGlueInfo->prAdapter);
+	if (prChipInfo->isWfdmaRxReady &&
+	    !prChipInfo->isWfdmaRxReady(prGlueInfo->prAdapter)) {
+		GLUE_INC_REF_CNT(prHifStats->u4EmptyIntCount);
+		return FALSE;
+	}
 
 	return TRUE;
 }
