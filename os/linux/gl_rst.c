@@ -1862,6 +1862,9 @@ int wlan_post_whole_chip_rst_v3(void)
 	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v3\n");
 
 	fgIsBusAccessFailed = FALSE;
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	fgIsPcieDataTransDisabled = FALSE;
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 	glRstSetRstEndEvent();
 
 	return 0;
