@@ -307,9 +307,16 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 #endif
 	struct BSS_INFO *prP2pBssInfo = NULL;
 	uint8_t ucRoleIdx = prP2pRoleFsmInfo->ucRoleIndex;
+	uint8_t ucTargetOwnMacIdx = INVALID_OMAC_IDX;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = mldBssGetByIdx(prAdapter, ucGroupMldId);
+	if (prMldBssInfo && ucLinkIdx != P2P_MAIN_LINK_INDEX)
+		ucTargetOwnMacIdx = prMldBssInfo->ucOmacIdx;
+#endif
 
 	prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_P2P,
-		FALSE);
+		FALSE, ucTargetOwnMacIdx);
 	if (!prP2pBssInfo) {
 		DBGLOG(P2P, ERROR,
 			"Error allocating BSS Info Structure\n");
@@ -394,7 +401,6 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 	LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prMldBssInfo = mldBssGetByIdx(prAdapter, ucGroupMldId);
 	prP2pBssInfo->ucLinkIndex = ucLinkIdx;
 	mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
 #endif

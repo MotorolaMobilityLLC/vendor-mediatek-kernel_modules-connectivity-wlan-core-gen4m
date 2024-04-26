@@ -62,7 +62,7 @@ uint8_t p2pDevFsmInit(struct ADAPTER *prAdapter, uint8_t aucIntfMac[])
 			(uintptr_t) prP2pDevFsmInfo);
 #endif
 		prP2pBssInfo = cnmGetBssInfoAndInit(prAdapter,
-			NETWORK_TYPE_P2P, TRUE);
+			NETWORK_TYPE_P2P, TRUE, INVALID_OMAC_IDX);
 
 		if (prP2pBssInfo != NULL) {
 			BSS_INFO_INIT(prAdapter, prP2pBssInfo);
