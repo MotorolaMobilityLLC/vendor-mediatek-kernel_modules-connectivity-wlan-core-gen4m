@@ -610,6 +610,7 @@ void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
 	uint8_t bidx)
 {
 	struct BSS_INFO *prConcurrentBssInfo;
+	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(aisGetAisFsmInfo(ad, bidx));
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	uint8_t i;
@@ -630,7 +631,10 @@ void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
 				bss->fgIsSCC = FALSE;
 			} else {
 				bss->fgIsSCC = TRUE;
-				if (!ad->rWifiVar.fgDisForceSCC)
+				if (!ad->rWifiVar.fgDisForceSCC &&
+				    ais->ucReasonOfDisconnect !=
+					DISCONNECT_REASON_CODE_TEST_MODE &&
+				    conn->eConnectionPolicy != CONNECT_BY_BSSID)
 					conn->eConnectionPolicy =
 						CONNECT_BY_SSID_BEST_RSSI;
 				break;
@@ -1475,7 +1479,12 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 #if (CFG_EXT_ROAMING == 1)
 		int32_t r1, r2;
 		struct BSS_DESC *target = NULL;
+#endif
 
+		if (prBssDesc->fgDriverGen)
+			goto skip_rcpi_check;
+
+#if (CFG_EXT_ROAMING == 1)
 		target = aisGetTargetBssDesc(prAdapter, ucBssIndex);
 		r1 = RCPI_TO_dBm(target ? target->ucRCPI : RCPI_LOW_BOUND);
 		r2 = RCPI_TO_dBm(prBssDesc->ucRCPI);
@@ -1530,6 +1539,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 #endif
 	}
 
+skip_rcpi_check:
 	/* Restrict STAs other than wlan0 */
 	if (ais->ucAisIndex != AIS_DEFAULT_INDEX) {
 		struct AIS_FSM_INFO *tempAis;
@@ -1875,7 +1885,7 @@ uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
 		uint16_t score = 0;
 
 		bss = candi[i];
-		score = bss ? bss->u2Score : 0;
+		score = (bss && !bss->fgDriverGen) ? bss->u2Score : 0;
 
 		for (j = i - 1; j >= 0 && (candi[j] ?
 			candi[j]->u2Score : 0) < score; j--)
@@ -2513,6 +2523,9 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 		struct BSS_DESC *bss;
 
 		bss = set->aprBssDesc[i];
+		if (bss->fgDriverGen)
+			continue;
+
 		if (set->aprBssDesc[0]->ucJoinFailureCount >=
 		    AIS_ROAMING_CONNECTION_TRIAL_LIMIT &&
 		    bss->ucJoinFailureCount <

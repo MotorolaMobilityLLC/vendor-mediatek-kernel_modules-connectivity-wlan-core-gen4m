@@ -3004,6 +3004,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 		ret = mldDupByMlStaProfile(prAdapter, rfb, prSrc, ml,
 			sta, prBssDesc, NULL, __func__);
 		if (ret == WLAN_STATUS_SUCCESS) {
+			rfb->fgDriverGen = TRUE;
 			QUEUE_INSERT_TAIL(que, &rfb->rQueEntry);
 		} else {
 			nicRxReturnRFB(prAdapter, rfb);
