@@ -5554,6 +5554,7 @@ int hif_thread(void *data)
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	int ret = 0;
 	bool fgEnInt;
+	struct RX_CTRL *prRxCtrl;
 #if CFG_ENABLE_WAKE_LOCK
 	KAL_WAKE_LOCK_T *prHifThreadWakeLock;
 
@@ -5568,6 +5569,7 @@ int hif_thread(void *data)
 	prGlueInfo->u4HifThreadPid = KAL_GET_CURRENT_THREAD_ID();
 
 	kalSetThreadSchPolicyPriority(prGlueInfo);
+	prRxCtrl = &prAdapter->rRxCtrl;
 
 	while (TRUE) {
 
@@ -5596,6 +5598,13 @@ int hif_thread(void *data)
 
 		kalTraceBegin("hif_thread");
 
+		if (test_bit(GLUE_FLAG_HIF_TX_BIT,
+					&prGlueInfo->ulFlag))
+			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_TX);
+		if (test_bit(GLUE_FLAG_HIF_TX_CMD_BIT,
+					&prGlueInfo->ulFlag))
+			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_TX_CMD);
+
 #if CFG_ENABLE_WAKE_LOCK
 		if (!KAL_WAKE_LOCK_ACTIVE(prGlueInfo->prAdapter,
 					  prHifThreadWakeLock))
@@ -5619,9 +5628,15 @@ int hif_thread(void *data)
 		    test_and_clear_bit(GLUE_FLAG_DRV_INT_BIT,
 				       &prGlueInfo->ulFlag)) {
 			kalTraceBegin("INT");
+			if (fgEnInt)
+				RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_INT);
+			else
+				RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_DRV_INT);
+
 			if (test_bit(GLUE_FLAG_HALT_BIT, &prGlueInfo->ulFlag)
-				|| kalIsResetting()
-				) {
+				|| kalIsResetting()) {
+				if (!kalIsResetting())
+					RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HALT);
 				/* Should stop now... skip pending interrupt */
 				DBGLOG(INIT, INFO,
 				       "ignore pending interrupt\n");
@@ -5635,6 +5650,7 @@ int hif_thread(void *data)
 
 		if (test_and_clear_bit(GLUE_FLAG_SER_INT_BIT,
 				       &prGlueInfo->ulFlag)) {
+			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_SER_INT);
 			TRACE(nicProcessSoftwareInterrupt(prAdapter),
 				"SER-INT");
 		}
@@ -5648,9 +5664,12 @@ int hif_thread(void *data)
 				TRACE(wlanTxCmdMthread(prAdapter), "TX_CMD");
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 			if (test_and_clear_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT,
-					       &prGlueInfo->ulFlag))
+				&prGlueInfo->ulFlag)) {
+				RX_INC_HIF_CNT(prRxCtrl,
+					HIF_FLAG_MGMT_DIRECT_HIF_TX);
 				TRACE(nicTxMgmtDirectTxMsduMthread(prAdapter),
 					"Mgmt-DirectTx");
+			}
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
 			/* Process TX data packet to HIF */
@@ -5661,26 +5680,33 @@ int hif_thread(void *data)
 
 		/* Read chip status when chip no response */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_PRT_HIF_DBG_INFO_BIT,
-				       &prGlueInfo->ulFlag))
+				       &prGlueInfo->ulFlag)) {
+			RX_INC_HIF_CNT(prRxCtrl,
+					HIF_FLAG_HIF_PRT_HIF_DBG_INFO);
 			TRACE(halPrintHifDbgInfo(prAdapter), "DBG_INFO");
+		}
 
 		/* Update Tx Quota */
 		if (test_and_clear_bit(GLUE_FLAG_UPDATE_WMM_QUOTA_BIT,
-					&prGlueInfo->ulFlag))
+					&prGlueInfo->ulFlag)) {
+			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_UPDATE_WMM_QUOTA);
 			TRACE(halUpdateTxMaxQuota(prAdapter), "UPDATE_WMM");
-
+		}
 #if CFG_MTK_MDDP_SUPPORT
 		/* Notify MD crash to FW */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_MDDP_BIT,
-				       &prGlueInfo->ulFlag))
+				       &prGlueInfo->ulFlag)) {
+			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_MDDP);
 			mddpInHifThread(prAdapter);
+		}
 #endif
 
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
-				       &prGlueInfo->ulFlag))
+				       &prGlueInfo->ulFlag)) {
+			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_FW_OWN);
 			prAdapter->fgWiFiInSleepyState = TRUE;
-
+		}
 		halUpdateHifConfig(prAdapter);
 		halDumpHifStats(prAdapter);
 

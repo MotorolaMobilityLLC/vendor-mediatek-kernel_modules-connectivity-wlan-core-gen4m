@@ -2697,6 +2697,47 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 		prSwRfb->ucPacketType =
 			prRxDescOps->nic_rxd_get_pkt_type(prRxStatus);
+
+		switch (prSwRfb->ucPacketType) {
+		case RX_PKT_TYPE_TX_STATUS:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_TX_STATUS);
+			break;
+		case RX_PKT_TYPE_RX_VECTOR:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_RX_VECTOR);
+			break;
+		case RX_PKT_TYPE_RX_DATA:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_RX_DATA);
+			break;
+		case RX_PKT_TYPE_DUP_RFB:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_DUP_RFB);
+			break;
+		case RX_PKT_TYPE_TM_REPORT:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_TM_REPORT);
+			break;
+		case RX_PKT_TYPE_MSDU_REPORT:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_MSDU_REPORT);
+			break;
+		case RX_PKT_TYPE_SW_DEFINED:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_SW_DEFINED);
+			break;
+		case RX_PKT_TYPE_RX_REPORT:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_RX_REPORT);
+			break;
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+		case RX_PKT_TYPE_ICS:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_ICS);
+			break;
+#endif
+#if (CFG_SUPPORT_PHY_ICS == 1)
+		case RX_PKT_TYPE_PHY_ICS:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_PHY_ICS);
+			break;
+#endif
+		default:
+			RX_INC_PKT_CNT(prRxCtrl, PKT_TYPE_UNKOWN);
+			break;
+		}
+
 #if DBG
 		DBGLOG_LIMITED(RX, LOUD, "ucPacketType = %u, ucSecMode = %u\n",
 				  prSwRfb->ucPacketType,
@@ -6599,7 +6640,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prHifStats->u4MsiIsrCount[i]));
 	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			"/ %u %u %u %u %u 0x%lx 0x%lx %u]",
+			"/ %u %u %u %u %d %lu %lu %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4HwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4SwIsrCount),
 			GLUE_GET_REF_CNT(prHifStats->u4EnIrqCount),
@@ -6607,7 +6648,8 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prAdapter->fgIsIntEnable),
 			prHifInfo->ulHifIntEnBits,
 			ulMsiIntEn,
-			GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt));
+			GLUE_GET_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt),
+			prGlueInfo->TaskIsrCnt);
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" T[%u %u %u / %u %u %u %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4CmdInCount),
@@ -6621,6 +6663,56 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			" R[%u / %u]",
 			GLUE_GET_REF_CNT(prHifStats->u4DataRxCount),
 			GLUE_GET_REF_CNT(prHifStats->u4EventRxCount));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" R2[%llu %llu %llu %llu %llu",
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_TX_STATUS),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_RX_VECTOR),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_RX_DATA),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_DUP_RFB),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_TM_REPORT));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" %llu %llu %llu %llu",
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_MSDU_REPORT),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_SW_DEFINED),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_RX_REPORT),
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_UNKOWN));
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" %llu",
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_ICS));
+#endif
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" %llu",
+			RX_GET_PKT_CNT(prRxCtrl, PKT_TYPE_PHY_ICS));
+#endif
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "]");
+
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" H[%llu %llu %llu %llu %llu %llu ",
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_HALT),
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_INT),
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_TX),
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_TX_CMD),
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_FW_OWN),
+			RX_GET_HIF_CNT(prRxCtrl,
+					HIF_FLAG_HIF_PRT_HIF_DBG_INFO));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			"%llu %llu %llu",
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_UPDATE_WMM_QUOTA),
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_DRV_INT),
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_SER_INT));
+#if CFG_MTK_MDDP_SUPPORT
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" %llu",
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_MDDP));
+#endif
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" %llu",
+			RX_GET_HIF_CNT(prRxCtrl, HIF_FLAG_MGMT_DIRECT_HIF_TX));
+#endif
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "]");
 	for (i = 0; i < NUM_OF_TX_RING; ++i) {
 		prTxRing = &prHifInfo->TxRing[i];
 		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
