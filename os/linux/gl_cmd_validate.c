@@ -2451,6 +2451,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.u4PolicySize = 0
 	},
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+	{
+		.pcCmdStr  = CMD_DBG_DUMP_WFSYS_CPUPCR,
+		.pfHandler = priv_driver_dump_wfsys_cpupcr,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
 /*
  *	{
  *		.pcCmdStr  = <command string>,
