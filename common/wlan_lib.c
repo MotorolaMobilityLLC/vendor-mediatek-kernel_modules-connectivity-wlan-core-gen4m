@@ -10488,10 +10488,6 @@ uint32_t wlanCfgParse(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, ERROR, "pucConfigBuf is NULL\n");
 		return WLAN_STATUS_FAILURE;
 	}
-	if (kalStrnLen(pucConfigBuf, 4000) >= 4000) {
-		DBGLOG(INIT, ERROR, "pucConfigBuf >= 4000\n");
-		return WLAN_STATUS_FAILURE;
-	}
 	if (u4ConfigBufLen == 0)
 		return WLAN_STATUS_FAILURE;
 
