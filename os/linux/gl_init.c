@@ -4005,6 +4005,12 @@ static void mtk_vif_destructor(struct net_device *dev)
 		prWdev = dev->ieee80211_ptr;
 		if (prWdev)
 			prWdev->netdev = NULL;
+
+		if (u4WlanDevNum > 0 &&
+		    u4WlanDevNum <= ARRAY_SIZE(arWlanDevInfo) &&
+		    arWlanDevInfo[u4WlanDevNum - 1].prDev == dev)
+			arWlanDevInfo[u4WlanDevNum - 1].prDev = NULL;
+
 		free_netdev(dev);
 		DBGLOG(AIS, INFO, "free_netdev done\n");
 	}
