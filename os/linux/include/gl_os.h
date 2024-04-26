@@ -241,6 +241,9 @@ extern struct ADAPTER *g_prAdapter;
 
 extern u_int8_t fgIsMcuOff;
 extern u_int8_t fgIsBusAccessFailed;
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+extern u_int8_t fgIsPcieDataTransDisabled;
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 extern u_int8_t fgTriggerDebugSop;
 #endif

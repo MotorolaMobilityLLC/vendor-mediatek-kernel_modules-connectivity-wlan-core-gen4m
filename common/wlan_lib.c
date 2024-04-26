@@ -87,6 +87,9 @@ struct NVRAM_FRAGMENT_RANGE {
  */
 u_int8_t fgIsMcuOff;
 u_int8_t fgIsBusAccessFailed = FALSE;
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+u_int8_t fgIsPcieDataTransDisabled = FALSE;
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 u_int8_t fgTriggerDebugSop = FALSE;
 #endif
@@ -908,6 +911,9 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsMcuOff = FALSE;
 	fgIsBusAccessFailed = FALSE;
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	fgIsPcieDataTransDisabled = FALSE;
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	fgTriggerDebugSop = FALSE;
 #endif
@@ -1764,6 +1770,9 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 
 	fgIsMcuOff = FALSE;
 	fgIsBusAccessFailed = FALSE;
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	fgIsPcieDataTransDisabled = FALSE;
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	fgTriggerDebugSop = FALSE;
 #endif
