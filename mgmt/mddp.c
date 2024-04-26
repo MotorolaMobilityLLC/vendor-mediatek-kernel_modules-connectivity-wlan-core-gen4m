@@ -1577,6 +1577,7 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 	int32_t ret = 0;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	int32_t md_state = 0;
+	struct CHIP_DBG_OPS *debug_ops = NULL;
 
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
@@ -1609,6 +1610,17 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 	if (!mddpIsSupportMcifWifi()) {
 		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 		goto end;
+	}
+
+	debug_ops = prAdapter->chip_info->prDebugOps;
+
+	if (debug_ops) {
+		if (GLUE_GET_REF_CNT(debug_ops->fgIsDebugSopOnGoing)) {
+			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
+			wlandioStopPcieStatus(prAdapter,
+				PCIE_MD_REJECT_GEN_SWITCH);
+			goto end;
+		}
 	}
 
 #if CFG_MTK_CCCI_SUPPORT
@@ -1662,11 +1674,27 @@ end:
 int32_t mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct CHIP_DBG_OPS *debug_ops = NULL;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 		DBGLOG(INIT, ERROR, "Invalid drv state.\n");
 		return -1;
+	}
+
+
+	if (prAdapter == NULL) {
+		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
+		return -1;
+	}
+
+	debug_ops = prAdapter->chip_info->prDebugOps;
+
+	if (debug_ops) {
+		if (GLUE_GET_REF_CNT(debug_ops->fgIsDebugSopOnGoing)) {
+			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
+			return -1;
+		}
 	}
 
 	KAL_SET_BIT(MDDP_HIF_GEN_SWITCH_END, g_ulMddpActionFlag);
