@@ -528,7 +528,14 @@ struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
 	{"reserved", NULL, NULL, NONE_INT, 0},
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	{"gen_switch_irq1", pcie_gen_switch_end_top_handler,
+	pcie_gen_switch_end_thread_handler, PCIE_GEN_SWITCH_INT, 0},
+#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
+#endif
+
 #if defined(CFG_MTK_WIFI_DRV_OWN_INT_MODE)
 	{"drv_own_host_timeout_irq", pcie_drv_own_top_handler,
 	pcie_drv_own_thread_handler, AP_DRV_OWN, 0},
@@ -555,12 +562,7 @@ struct pcie_msi_layout mt6653_pcie_msi_layout[] = {
 	{"reserved", NULL, NULL, NONE_INT, 0},
 #endif
 
-#if (CFG_PCIE_GEN_SWITCH == 1)
-	{"gen_switch_irq1", pcie_gen_switch_end_top_handler,
-	pcie_gen_switch_end_thread_handler, PCIE_GEN_SWITCH_INT, 0},
-#else
 	{"reserved", NULL, NULL, NONE_INT, 0},
-#endif
 
 };
 #endif
