@@ -9475,8 +9475,6 @@ struct WLAN_CFG_ENTRY *wlanCfgGetEntryByIndex(
 		return prWlanCfgEntry;
 	}
 
-	DBGLOG(INIT, TRACE,
-	       "wifi config there is no entry at index(%d)\n", ucIdx);
 	return NULL;
 
 }
