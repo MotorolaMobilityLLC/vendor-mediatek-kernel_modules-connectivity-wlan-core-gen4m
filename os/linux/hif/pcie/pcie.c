@@ -520,6 +520,17 @@ void mtk_pci_msi_disable_irq(uint32_t u4Irq)
 		disable_irq_nosync(u4Irq);
 }
 
+u_int8_t mtk_pci_is_wfdma_ready(struct GLUE_INFO *prGlueInfo)
+{
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo->isWfdmaRxReady)
+		return prChipInfo->isWfdmaRxReady(prGlueInfo->prAdapter);
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE interrupt callback function
@@ -554,6 +565,9 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 		KAL_SET_BIT(HIF_WFDMA_INT_BIT, prHifInfo->ulHifIntEnBits);
 		goto exit;
 	}
+
+	if (!mtk_pci_is_wfdma_ready(prGlueInfo))
+		return IRQ_HANDLED;
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];

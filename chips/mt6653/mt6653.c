@@ -152,6 +152,7 @@ static void mt6653WpdmaConfig(struct GLUE_INFO *prGlueInfo,
 		u_int8_t enable, bool fgResetHif);
 
 #if CFG_MTK_WIFI_WFDMA_WB
+static u_int8_t mt6653IsWfdmaRxReady(struct ADAPTER *prAdapter);
 static void mt6653ProcessTxInterruptByEmi(struct ADAPTER *prAdapter);
 static void mt6653ProcessRxInterruptByEmi(struct ADAPTER *prAdapter);
 static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
@@ -1158,6 +1159,9 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.wb_md_didx_size = sizeof(struct WFDMA_EMI_RING_IDX_1),
 	.allocWfdmaWbBuffer = asicConnac3xAllocWfdmaWbBuffer,
 	.freeWfdmaWbBuffer = asicConnac3xFreeWfdmaWbBuffer,
+#if defined(_HIF_PCIE)
+	.isWfdmaRxReady = mt6653IsWfdmaRxReady,
+#endif /* _HIF_PCIE */
 #endif
 #if CFG_SUPPORT_WFDMA_RX_DELAY_INT
 	.updatePrdcInt = mt6653UpdateWfdmaPrdcInt,
@@ -2131,6 +2135,37 @@ static void mt6653ConfigIntMask(struct GLUE_INFO *prGlueInfo,
 }
 
 #if CFG_MTK_WIFI_WFDMA_WB
+static u_int8_t mt6653IsWfdmaRxReady(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct HIF_MEM_OPS *prMemOps;
+	struct HIF_MEM *prMem = NULL;
+	uint32_t u4Idx;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prMemOps = &prHifInfo->rMemOps;
+
+	if (!halIsWfdmaRxRingsEmpty(prAdapter->prGlueInfo))
+		return TRUE;
+
+	if (prMemOps->getWifiMiscRsvEmi) {
+		prMem = prMemOps->getWifiMiscRsvEmi(
+			prChipInfo, WIFI_MISC_MEM_BLOCK_SER_STATUS);
+	}
+	if (prMem && prMem->va) {
+		struct SER_EMI_STATUS *prEmiSta =
+			(struct SER_EMI_STATUS *)prMem->va;
+
+		for (u4Idx = 0; u4Idx < HIF_EMI_SER_STATUS_SIZE; u4Idx++) {
+			if (prEmiSta->ucStatus[u4Idx])
+				return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 				     uint32_t *pu4IntStatus)
 {

@@ -3727,7 +3727,7 @@ u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
 	return halIsWfdmaRxReady(prRxRing, u4CpuIdx);
 }
 
-static u_int8_t halIsWfdmaRxRingsEmpty(struct GLUE_INFO *prGlueInfo)
+u_int8_t halIsWfdmaRxRingsEmpty(struct GLUE_INFO *prGlueInfo)
 {
 	u_int8_t fgIsReady = FALSE;
 	uint32_t u4Idx;

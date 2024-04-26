@@ -1671,6 +1671,7 @@ struct mt66xx_chip_info {
 #endif
 	void (*asicSerInit)(struct ADAPTER *prAdapter,
 			    const u_int8_t fgAtResetFlow);
+	u_int8_t (*isWfdmaRxReady)(struct ADAPTER *prAdapter);
 #if CFG_NEW_HIF_DEV_REG_IF
 	const enum HIF_DEV_REG_REASON *prValidMmioReadReason;
 	const uint32_t u4ValidMmioReadReasonSize;
