@@ -3906,7 +3906,8 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 
 		prAisFsmInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
 		rRoamingData.eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
-		rRoamingData.u2Data = prBssDesc->ucRCPI;
+		rRoamingData.u2Data = prBssDesc ?
+			prBssDesc->ucRCPI : RCPI_FOR_DONT_ROAM;
 		rRoamingData.u2RcpiLowThreshold =
 			prRoamingFsmInfo->ucThreshold;
 		rRoamingData.ucBssidx = ucBssIndex;

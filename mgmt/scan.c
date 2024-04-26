@@ -2501,6 +2501,15 @@ void scanSetChannelAndRCPI(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 		    prBssDesc->ucRCPI = ucRxRCPI;
 	}
 #endif
+
+	/* set low RCPI if this swrfb is duplicated by driver */
+	if (prBssDesc->fgDriverGen) {
+		prBssDesc->ucRCPI = RCPI_FOR_DONT_ROAM;
+		log_dbg(SCN, INFO,
+			MACSTR" is driver gen, set rssi %d\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			RCPI_TO_dBm(prBssDesc->ucRCPI));
+	}
 }
 
 void scanParseExtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
@@ -2959,6 +2968,10 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 		prBssDesc->u2IELength = prBssDesc->u2RawLength - iPayloadOffset;
 		u2IELength = prBssDesc->u2IELength;
 	}
+
+	/* update driver gen if bss is undiscoverd before or really found */
+	if (fgIsNewBssDesc || !prSwRfb->fgDriverGen)
+		prBssDesc->fgDriverGen = prSwRfb->fgDriverGen;
 
 	/* NOTE: Keep consistency of Scan Record during JOIN process */
 	if (fgIsNewBssDesc == FALSE && prBssDesc->fgIsConnecting) {
