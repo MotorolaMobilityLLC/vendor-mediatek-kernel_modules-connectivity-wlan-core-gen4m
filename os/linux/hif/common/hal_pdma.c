@@ -3930,7 +3930,7 @@ enum ENUM_CMD_TX_RESULT halWpdmaWriteCmd(struct GLUE_INFO *prGlueInfo,
 	       __func__, prCmdInfo, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen,
 	       prCmdInfo->pucTxp, prCmdInfo->u4TxpLen,
 	       prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
-	DBGLOG_MEM32(HAL, TRACE, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
+	DBGLOG_MEM32(HAL, LOUD, prCmdInfo->pucTxd, prCmdInfo->u4TxdLen);
 
 	if (prSwWfdmaInfo->fgIsEnSwWfdma) {
 		if (prSwWfdmaInfo->rOps.setCidx)

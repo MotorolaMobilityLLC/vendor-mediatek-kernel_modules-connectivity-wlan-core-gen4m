@@ -3268,7 +3268,7 @@ static u_int8_t mt6653SetL1ssEnable(struct ADAPTER *prAdapter,
 	else if (role == MD_ROLE)
 		prChipInfo->bus_info->fgMDEnL1_2 = fgEn;
 
-	DBGLOG(HAL, TRACE, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
+	DBGLOG(HAL, LOUD, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
 		prChipInfo->bus_info->fgWifiEnL1_2,
 		prChipInfo->bus_info->fgMDEnL1_2);
 
@@ -3344,9 +3344,9 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			writel(0xf, (pcie_vir_addr + 0x194));
 
 
-			DBGLOG(HAL, TRACE, "Enable aspm L1.1/L1.2..\n");
+			DBGLOG(HAL, LOUD, "Enable aspm L1.1/L1.2..\n");
 		} else {
-			DBGLOG(HAL, TRACE, "Not to enable aspm L1.1/L1.2..\n");
+			DBGLOG(HAL, LOUD, "Not to enable aspm L1.1/L1.2..\n");
 		}
 	} else {
 		value = readl(pcie_vir_addr + 0x194);
@@ -3392,9 +3392,9 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 		writel(0xc0f, (pcie_vir_addr + 0x194));
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
-			DBGLOG(HAL, TRACE, "Disable aspm L1..\n");
+			DBGLOG(HAL, LOUD, "Disable aspm L1..\n");
 		else
-			DBGLOG(HAL, TRACE, "Disable aspm L1.1/L1.2..\n");
+			DBGLOG(HAL, LOUD, "Disable aspm L1.1/L1.2..\n");
 	}
 
 exit:
