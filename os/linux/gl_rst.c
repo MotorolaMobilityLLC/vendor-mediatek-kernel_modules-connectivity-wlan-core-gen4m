@@ -1783,6 +1783,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		glResetOnEndUpdateFlag(TRUE);
+		g_IsWholeChipRst = TRUE;
 		wfsys_unlock();
 		goto exit;
 	}
@@ -1802,6 +1803,8 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		    kalStrnCmp(reason, "PMIC Fault", 10) == 0) {
 			fgIsBusAccessFailed = TRUE;
 			g_IsWfsysBusHang = TRUE;
+			DBGLOG(REQ, INFO,
+				"Get PMIC Fault\n");
 #if defined(_HIF_PCIE)
 			if (prBusInfo->disableDevice)
 				prBusInfo->disableDevice(prGlueInfo);
@@ -2056,7 +2059,7 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	DBGLOG(INIT, WARN, "whole chip reset NOT support\n");
 #endif
 
-	DBGLOG(INIT, INFO, "ret: %d\n", ret);
+	DBGLOG(INIT, INFO, "ret:%d, reason:%s\n", ret, pcReason);
 	if (ret == 0) {
 		dump_stack();
 		fgIsDrvTriggerWholeChipReset = TRUE;
