@@ -14117,6 +14117,7 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	struct ADAPTER *prAdapter;
 	static int32_t i4UserCnt;
 	struct SW_RFB *prSwRfb;
+	uint32_t u4Cnt;
 
 	/* Allow one user only */
 	if (GLUE_INC_REF_CNT(i4UserCnt) > 1)
@@ -14135,7 +14136,9 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 	DBGLOG(RX, TEMP, "FIFO_CNT:%u\n", KAL_FIFO_CNT(&prGlueInfo->rRxKfifoQ));
 #endif /* CFG_NAPI_DELAY */
 
-	while (KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
+	u4Cnt = KAL_FIFO_CNT(&prGlueInfo->rRxKfifoQ);
+	while ((work_done <= u4Cnt) &&
+	       KAL_FIFO_OUT(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 		if (!prSwRfb) {
 			DBGLOG(RX, ERROR, "prSwRfb null\n");
 			break;
@@ -14147,9 +14150,7 @@ static int kalNapiPollSwRfb(struct napi_struct *napi, int budget)
 		RX_INC_CNT(&prAdapter->rRxCtrl,
 			RX_NAPI_FIFO_OUT_COUNT);
 		nicRxProcessPacketType(prAdapter, prSwRfb);
-#if !CFG_SUPPORT_RX_GRO_PEAK
 		work_done++;
-#endif /* !CFG_SUPPORT_RX_GRO_PEAK */
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 		kalSkbAllocWorkSchedule(prGlueInfo, FALSE);
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
