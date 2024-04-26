@@ -722,6 +722,16 @@ done:
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 		mddpNotifyDrvOwn(STATUS_SUCCESS);
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
+
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	if (prHifInfo && prHifInfo->fgEnablePcieCfgDump) {
+		mtk_pcie_disable_cfg_dump(0);
+		prHifInfo->fgEnablePcieCfgDump = FALSE;
+	}
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
+#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
+
 	} else
 		DBGLOG(INIT, INFO, DUMP_DRV_OWN_FAIL,
 			u4DrvOwnElapsed, u4Send);
@@ -915,6 +925,16 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 
 		prAdapter->fgIsFwOwn = TRUE;
 		prHifInfo->fgIsBackupIntSta = false;
+
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+		if (prHifInfo->fgEnablePcieCfgDump == FALSE &&
+			halPcieIsPcieProbed() == TRUE) {
+			mtk_pcie_enable_cfg_dump(0);
+			prHifInfo->fgEnablePcieCfgDump = TRUE;
+		}
+#endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
+#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 
 		/* call from ICS log not print in default */
 		if (prHifInfo->u4WakeupIntSta & BIT(15))
