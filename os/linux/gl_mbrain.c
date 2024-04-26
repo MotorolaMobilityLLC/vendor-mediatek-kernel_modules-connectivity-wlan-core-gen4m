@@ -546,11 +546,6 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 		return WIFI2MBR_END;
 	}
 
-	if (!prAdapter->prMbrEmiData) {
-		DBGLOG(REQ, WARN, "EMI mapping not done");
-		return WIFI2MBR_END;
-	}
-
 	dest->hdr.tag = WIFI2MBR_TAG_LP_RATIO;
 	dest->hdr.ver = 1;
 	ktime_get_ts64(&tv);
@@ -597,7 +592,7 @@ uint16_t mbr_wifi_lp_get_total_data_num(
 		return 0;
 	}
 
-	if (!prAdapter->pucLinkStatsSrcBufAddr) {
+	if (!prAdapter->prMbrEmiData) {
 		DBGLOG(REQ, WARN, "EMI mapping not done");
 		return 0;
 	}
