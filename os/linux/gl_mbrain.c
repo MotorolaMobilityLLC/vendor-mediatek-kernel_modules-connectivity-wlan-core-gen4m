@@ -39,6 +39,15 @@
  */
 
 #define WIFI2MBR_TAG_RETRY_LIMIT 3
+#if CFG_SUPPORT_WIFI_ICCM
+#if defined(MT6653)
+#define WIFI_ICCM_LIMIT (5)
+#else
+#define WIFI_ICCM_LIMIT (0)
+#endif /* MT6653 */
+#else
+#define WIFI_ICCM_LIMIT (0)
+#endif /* CFG_SUPPORT_WIFI_ICCM */
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -57,11 +66,14 @@ struct wifi2mbr_handler g_arMbrHdlr[] = {
 		mbr_wifi_lls_handler, mbr_wifi_lls_get_total_data_num},
 	{WIFI2MBR_TAG_LLS_AC, sizeof(struct wifi2mbr_llsAcInfo),
 		mbr_wifi_lls_handler, mbr_wifi_lls_get_total_data_num},
+	{WIFI2MBR_TAG_LP_RATIO, sizeof(struct wifi2mbr_lpRatioInfo),
+		mbr_wifi_lp_handler, mbr_wifi_lp_get_total_data_num},
 };
 
 int32_t g_i4CurTag = -1;
 uint16_t g_u2LeftLoopNum;
 uint16_t g_u2LoopNum;
+struct ICCM_T g_rMbrIccm = {0};
 
 /*******************************************************************************
  *                   F U N C T I O N   D E C L A R A T I O N S
@@ -513,6 +525,86 @@ uint16_t mbr_wifi_lls_get_total_data_num(
 		break;
 	}
 #endif /* CFG_SUPPORT_LLS */
+
+	return num;
+}
+
+enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len)
+{
+	enum wifi2mbr_status status = WIFI2MBR_FAILURE;
+
+#if CFG_SUPPORT_WIFI_ICCM
+	struct wifi2mbr_lpRatioInfo *dest = (struct wifi2mbr_lpRatioInfo *)buf;
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct timespec64 tv;
+	uint32_t u4Ret = WLAN_STATUS_FAILURE;
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return WIFI2MBR_END;
+	}
+
+	if (!prAdapter->prMbrEmiData) {
+		DBGLOG(REQ, WARN, "EMI mapping not done");
+		return WIFI2MBR_END;
+	}
+
+	dest->hdr.tag = WIFI2MBR_TAG_LP_RATIO;
+	dest->hdr.ver = 1;
+	ktime_get_ts64(&tv);
+	dest->timestamp = KAL_TIME_TO_MSEC(tv);
+	dest->radio = u2CurLoopIdx;
+
+	if (u2CurLoopIdx == 0) {
+		GET_MBR_EMI_FIELD(prAdapter, u4Ret, rMbrIccmData, g_rMbrIccm);
+
+		if (u4Ret != WLAN_STATUS_SUCCESS) {
+			DBGLOG(REQ, WARN, "GET_MBR_EMI fail: 0x%x\n", u4Ret);
+			return status;
+		}
+	}
+
+	dest->tx_time =
+		g_rMbrIccm.u4BandRatio[u2CurLoopIdx].u4TxTime;
+	dest->rx_time =
+		g_rMbrIccm.u4BandRatio[u2CurLoopIdx].u4RxTime;
+	dest->rx_listen_time =
+		g_rMbrIccm.u4BandRatio[u2CurLoopIdx].u4RxListenTime;
+	dest->sleep_time =
+		g_rMbrIccm.u4BandRatio[u2CurLoopIdx].u4SleepTime;
+	dest->total_time = g_rMbrIccm.u4TotalTime;
+
+	*pu2Len = sizeof(*dest);
+
+	status = WIFI2MBR_SUCCESS;
+
+#endif /* CFG_SUPPORT_WIFI_ICCM */
+	return status;
+}
+
+uint16_t mbr_wifi_lp_get_total_data_num(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag)
+{
+	uint16_t num = 0;
+
+#if CFG_SUPPORT_WIFI_ICCM
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	if (!prGlueInfo || prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return 0;
+	}
+
+	if (!prAdapter->pucLinkStatsSrcBufAddr) {
+		DBGLOG(REQ, WARN, "EMI mapping not done");
+		return 0;
+	}
+
+	num = WIFI_ICCM_LIMIT;
+
+#endif /* CFG_SUPPORT_WIFI_ICCM */
 
 	return num;
 }

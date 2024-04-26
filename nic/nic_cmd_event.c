@@ -3190,6 +3190,11 @@ uint32_t checkMbrOffset(uint32_t num,
 	 *	OFFSET_OF(struct mbrain_emi_data, u4Mbr_test2),
 	 */
 
+#if CFG_SUPPORT_WIFI_ICCM
+	pu4OffsetMap[MBRAIN_EMI_OFFSET_ICCM] =
+		OFFSET_OF(struct mbrain_emi_data, rMbrIccmData);
+#endif
+
 	for (i = 0; i < num; i++, prOffsetInfo++) {
 		if (prOffsetInfo->u4Tag >= MBRAIN_EMI_OFFSET_NUM) {
 			DBGLOG(INIT, WARN, "invalid tag:%u offset:%u\n",
