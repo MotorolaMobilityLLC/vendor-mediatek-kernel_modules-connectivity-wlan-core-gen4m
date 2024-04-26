@@ -3046,6 +3046,10 @@ void twtPlannerRxNegoResult(
 		twtSendTeardownFrame(
 			prAdapter, prStaRec, ucTWTFlowId,
 			twtReqFsmRunEventRejectTxDone);
+#else
+		twtSendTeardownFrame(
+			prAdapter, prStaRec, ucTWTFlowId,
+			NULL);
 #endif
 
 		break;
