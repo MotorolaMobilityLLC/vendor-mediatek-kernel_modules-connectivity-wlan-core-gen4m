@@ -32,12 +32,8 @@
 
 #include "precomp.h"
 
-#ifdef CONFIG_WLAN_MTK_EMI
-#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
 #include <soc/mediatek/emi.h>
-#else
-#include <memory/mediatek/emi.h>
-#endif
 #define	REGION_WIFI	26
 #define WIFI_EMI_MEM_SIZE      0x140000
 #define WIFI_EMI_MEM_OFFSET    0x2B0000
@@ -292,7 +288,7 @@ void kalSetEmiMetOffset(uint32_t newEmiMetOffset)
 	u4EmiMetOffset = newEmiMetOffset;
 }
 
-#ifdef CONFIG_WLAN_MTK_EMI
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
 void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 {
 }
@@ -300,7 +296,6 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
-#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
 	struct emimpu_region_t region;
 	unsigned long long start = emiPhyBase + offset;
 	unsigned long long end = emiPhyBase + offset + size - 1;
@@ -325,9 +320,7 @@ void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			"mtk_emimpu_set_protection failed, ret: %d\n",
 			ret);
 	mtk_emimpu_free_region(&region);
-#endif
 }
-
 #endif
 
 int32_t kalGetFwFlavorByPlat(uint8_t *flavor)
