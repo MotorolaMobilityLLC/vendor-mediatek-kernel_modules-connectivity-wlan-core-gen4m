@@ -6451,6 +6451,7 @@ void kalWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 	uint32_t u4QueryBufLen =
 		sizeof(struct WFD_LLS_TX_BIT_RATE);
 	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+	struct UNI_EVENT_PRED_TX_BITRATE rUniEvt = {0};
 
 	prGlueInfo = prAdapter->prGlueInfo;
 	if (!prGlueInfo) {
@@ -6474,17 +6475,19 @@ void kalWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 			    nicOidCmdTimeoutCommon, /* pfCmdTimeoutHandler */
 			    u4QueryInfoLen,    /* u4SetQueryInfoLen */
 			    (uint8_t *)&query.cmd,  /* pucInfoBuffer */
-			    (void *)outBitrate,       /* pvSetQueryBuffer */
+			    (void *)&rUniEvt,       /* pvSetQueryBuffer */
 			    u4QueryBufLen);   /* u4SetQueryBufferLen */
 
 	if ((rStatus != WLAN_STATUS_SUCCESS &&
 		rStatus != WLAN_STATUS_PENDING) ||
 		(u4QueryInfoLen !=
-		sizeof(struct WFD_LLS_TX_BIT_RATE))) {
+		sizeof(struct UNI_EVENT_PRED_TX_BITRATE))) {
 		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryBufLen);
 		rStatus = -EFAULT;
-	}
+	} else
+		kalMemCopy(outBitrate, &rUniEvt.bitrate,
+			sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE));
 }
 
 static void kalWFDBssBalanceGetLatencyStats(

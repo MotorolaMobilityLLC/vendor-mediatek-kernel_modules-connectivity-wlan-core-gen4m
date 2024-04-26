@@ -2157,9 +2157,11 @@ u_int8_t wlanIsChipAssert(struct ADAPTER *prAdapter);
 
 void wlanChipRstPreAct(struct ADAPTER *prAdapter);
 
+#if CFG_SUPPORT_TX_LATENCY_STATS
 void wlanCountTxDelayOverLimit(struct ADAPTER *prAdapter,
 		enum ENUM_TX_OVER_LIMIT_DELAY_TYPE type,
 		uint32_t u4Latency);
+#endif
 
 void wlanReportTxDelayOverLimit(struct ADAPTER *prAdapter,
 	enum ENUM_TX_OVER_LIMIT_DELAY_TYPE type, uint32_t delay);

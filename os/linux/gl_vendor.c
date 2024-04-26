@@ -2305,7 +2305,11 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 #if (CFG_SUPPORT_STATS_ONE_CMD == 0)
 	union {
 		struct CMD_GET_STATS_LLS cmd;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		struct UNI_EVENT_LINK_LAYER_STATS rtlv;
+#else
 		struct EVENT_STATS_LLS_DATA data;
+#endif
 	} query = {0};
 
 	uint32_t u4QueryBufLen = sizeof(query);
@@ -2370,18 +2374,31 @@ int mtk_cfg80211_vendor_llstats_get_info(struct wiphy *wiphy,
 			   &query, /* pvInfoBuf */
 			   u4QueryBufLen, /* u4InfoBufLen */
 			   &u4QueryInfoLen); /* pu4QryInfoLen */
-		DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes, status=%u",
-					rStatus, u4QueryInfoLen,
-					query.data.eUpdateStatus);
 
 		if (rStatus != WLAN_STATUS_SUCCESS ||
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			u4QueryInfoLen !=
+				sizeof(struct UNI_EVENT_LINK_LAYER_STATS) ||
+			query.rtlv.u2Tag !=
+				UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS ||
+			query.rtlv.u2Length !=
+				sizeof(struct UNI_EVENT_LINK_LAYER_STATS) ||
+			query.rtlv.data.eUpdateStatus !=
+				STATS_LLS_UPDATE_STATUS_SUCCESS)
+#else
 			u4QueryInfoLen !=
 				sizeof(struct EVENT_STATS_LLS_DATA) ||
 			query.data.eUpdateStatus !=
-				STATS_LLS_UPDATE_STATUS_SUCCESS) {
+				STATS_LLS_UPDATE_STATUS_SUCCESS
+#endif
+			) {
 			DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes, status=%u",
 					rStatus, u4QueryInfoLen,
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+					query.rtlv.data.eUpdateStatus);
+#else
 					query.data.eUpdateStatus);
+#endif
 			rStatus = -EFAULT;
 			break;
 		}
@@ -2471,9 +2488,13 @@ int mtk_cfg80211_vendor_set_wfd_tx_br_montr(struct wiphy *wiphy,
 	uint8_t uEnabled;
 	union {
 		struct CMD_GET_STATS_LLS cmd;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		struct UNI_EVENT_LINK_LAYER_STATS rtlv;
+#else
 		struct EVENT_STATS_LLS_DATA data;
+#endif
 	} query = {0};
-	uint32_t u4QueryBufLen = sizeof(query.data);
+	uint32_t u4QueryBufLen = sizeof(query);
 	uint32_t u4QueryInfoLen = sizeof(query.cmd);
 #endif
 
@@ -2523,23 +2544,134 @@ int mtk_cfg80211_vendor_set_wfd_tx_br_montr(struct wiphy *wiphy,
 			&query,
 			u4QueryBufLen,
 			&u4QueryInfoLen);
-	DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes, status=%u",
-				rStatus, u4QueryInfoLen,
-				query.data.eUpdateStatus);
 
 	if (rStatus != WLAN_STATUS_SUCCESS ||
-		u4QueryBufLen !=
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		u4QueryInfoLen !=
+			sizeof(struct UNI_EVENT_LINK_LAYER_STATS) ||
+		query.rtlv.u2Tag !=
+			UNI_EVENT_STATISTICS_TAG_SET_WFD_TX_BITRATE_MONTR
+			||
+		query.rtlv.u2Length !=
+			sizeof(struct UNI_EVENT_LINK_LAYER_STATS) ||
+		query.rtlv.data.eUpdateStatus !=
+			STATS_LLS_UPDATE_STATUS_SUCCESS
+#else
+		u4QueryInfoLen !=
 			sizeof(struct EVENT_STATS_LLS_DATA) ||
 		query.data.eUpdateStatus !=
-			STATS_LLS_UPDATE_STATUS_SUCCESS) {
+			STATS_LLS_UPDATE_STATUS_SUCCESS
+#endif
+		) {
 		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes, status=%u",
-				rStatus, u4QueryBufLen,
-				query.data.eUpdateStatus);
+			rStatus, u4QueryBufLen,
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+			query.rtlv.data.eUpdateStatus
+#else
+			query.data.eUpdateStatus
+#endif
+			);
 		rStatus = -EFAULT;
 	}
 #endif
 	return rStatus;
 }
+
+#if CFG_SUPPORT_LLS
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+void forcePredBrIdx(
+	struct ADAPTER *prAdapter,
+	struct UNI_EVENT_BSS_PRED_TX_BR *src,
+	struct EVENT_STATS_LLS_TX_BIT_RATE *dest,
+	uint8_t *pucAisIdx
+)
+{
+#define P2P_IDX 2
+#define SAP_IDX 3
+	struct BSS_INFO *prBssInfo;
+
+	if (!prAdapter)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, src->ucBssIdx);
+
+	if (!prBssInfo)
+		return;
+
+	if (IS_BSS_AIS(prBssInfo)) {
+		dest->au4CurrentBitrate[*pucAisIdx] =
+			src->rBitRate.u4CurrentBitrate;
+		dest->au4PredictBitrate[*pucAisIdx] =
+			src->rBitRate.u4PredictBitrate;
+		(*pucAisIdx)++;
+	} else if (IS_BSS_P2P(prBssInfo)) {
+		if (p2pFuncIsAPMode(
+			prAdapter->rWifiVar.prP2PConnSettings
+			[prBssInfo->u4PrivateData])) {
+
+			dest->au4CurrentBitrate[SAP_IDX] =
+				src->rBitRate.u4CurrentBitrate;
+			dest->au4PredictBitrate[SAP_IDX] =
+				src->rBitRate.u4PredictBitrate;
+		} else {
+			/* gc/go */
+			dest->au4CurrentBitrate[P2P_IDX] =
+				src->rBitRate.u4CurrentBitrate;
+			dest->au4PredictBitrate[P2P_IDX] =
+				src->rBitRate.u4PredictBitrate;
+		}
+	}
+}
+#else
+void forcePredBrIdx(
+	struct ADAPTER *prAdapter,
+	struct EVENT_STATS_LLS_TX_BIT_RATE *src,
+	struct EVENT_STATS_LLS_TX_BIT_RATE *dest
+)
+{
+#define P2P_IDX 2
+#define SAP_IDX 3
+	uint8_t i, aisIdx = 0;
+	struct BSS_INFO *prBssInfo;
+
+	for (i = 0; i < MAX_BSSID_NUM &&
+			i < ARRAY_SIZE(src->au4CurrentBitrate); i++) {
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+		if (!prBssInfo)
+			continue;
+		if (IS_BSS_AIS(prBssInfo)) {
+			kalMemCopy(&dest->au4CurrentBitrate[aisIdx],
+				&src->au4CurrentBitrate[i],
+				sizeof(src->au4CurrentBitrate[i]));
+			kalMemCopy(&dest->au4PredictBitrate[aisIdx],
+				&src->au4PredictBitrate[i],
+				sizeof(src->au4CurrentBitrate[i]));
+			aisIdx++;
+		} else if (IS_BSS_P2P(prBssInfo)) {
+			if (p2pFuncIsAPMode(
+				prAdapter->rWifiVar.prP2PConnSettings
+				[prBssInfo->u4PrivateData])) {
+				/* sap */
+				kalMemCopy(&dest->au4CurrentBitrate[SAP_IDX],
+					&src->au4CurrentBitrate[i],
+					sizeof(src->au4CurrentBitrate[i]));
+				kalMemCopy(&dest->au4PredictBitrate[SAP_IDX],
+					&src->au4PredictBitrate[i],
+					sizeof(src->au4CurrentBitrate[i]));
+			} else {
+				/* gc/go */
+				kalMemCopy(&dest->au4CurrentBitrate[P2P_IDX],
+					&src->au4CurrentBitrate[i],
+					sizeof(src->au4CurrentBitrate[i]));
+				kalMemCopy(&dest->au4PredictBitrate[P2P_IDX],
+					&src->au4PredictBitrate[i],
+					sizeof(src->au4CurrentBitrate[i]));
+			}
+		}
+	}
+}
+#endif /* CFG_SUPPORT_UNIFIED_COMMAND */
+#endif /* CFG_SUPPORT_LLS */
 
 int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 		struct wireless_dev *wdev, const void *data, int data_len)
@@ -2549,12 +2681,23 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 	struct ADAPTER *prAdapter;
 #if CFG_SUPPORT_LLS
 	struct sk_buff *skb;
+
 	union {
 		struct CMD_GET_STATS_LLS cmd;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		struct UNI_EVENT_BSS_PRED_TX_BR arTlv[MAX_BSSID_NUM];
+#else
 		struct EVENT_STATS_LLS_TX_BIT_RATE bitrate;
+#endif /* CFG_SUPPORT_UNIFIED_COMMAND */
 	} query = {0};
 	uint32_t u4QueryBufLen = sizeof(query);
 	uint32_t u4QueryInfoLen = sizeof(query.cmd);
+	struct EVENT_STATS_LLS_TX_BIT_RATE res;
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	uint16_t offset = 0;
+	uint8_t *tag = NULL;
+	uint8_t ucAisIdx = 0;
+#endif
 #endif
 
 	if ((wiphy == NULL) || (wdev == NULL))
@@ -2568,7 +2711,11 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 		return -EFAULT;
 
 #if CFG_SUPPORT_LLS
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	query.cmd.u4Tag = STATS_LLS_TAG_GET_WFD_BSS_PRED_TX_BITRATE;
+#else
 	query.cmd.u4Tag = STATS_LLS_TAG_GET_WFD_PRED_TX_BITRATE;
+#endif
 	rStatus = kalIoctl(prGlueInfo,
 			wlanQueryLinkStats,
 			&query,
@@ -2577,21 +2724,48 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 	DBGLOG(REQ, TRACE, "kalIoctl=%x, %u bytes", rStatus, u4QueryInfoLen);
 
 	if (rStatus != WLAN_STATUS_SUCCESS ||
-		u4QueryInfoLen != sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE)) {
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		u4QueryInfoLen > (sizeof(struct UNI_EVENT_BSS_PRED_TX_BR)
+			* MAX_BSSID_NUM)
+#else
+		u4QueryInfoLen != sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE)
+#endif
+		) {
 		DBGLOG(REQ, WARN, "kalIoctl=%x, %u bytes",
 				rStatus, u4QueryBufLen);
 		return -EFAULT;
 	}
 
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	tag = (uint8_t *) query.arTlv;
+	TAG_FOR_EACH(tag, u4QueryInfoLen, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_STATISTICS_TAG_GET_BSS_PRED_TX_BITRATE: {
+			uint8_t ucBssIdx;
+			struct UNI_EVENT_BSS_PRED_TX_BR *tlv =
+				(struct UNI_EVENT_BSS_PRED_TX_BR *)tag;
+
+			ucBssIdx = tlv->ucBssIdx;
+			if (unlikely(ucBssIdx >= prAdapter->ucSwBssIdNum))
+				break;
+
+			forcePredBrIdx(prAdapter, tlv, &res, &ucAisIdx);
+			break;
+		}
+		default:
+			DBGLOG(REQ, WARN, "invalid tag:%u", TAG_ID(tag));
+			break;
+		}
+	}
+#else
+	forcePredBrIdx(prAdapter, &query.bitrate, &res);
+#endif
+
 	DBGLOG(REQ, TRACE, "CurBitRate=%u/%u/%u/%u PredBitRate=%u/%u/%u/%u",
-		query.bitrate.au4CurrentBitrate[0],
-		query.bitrate.au4CurrentBitrate[1],
-		query.bitrate.au4CurrentBitrate[2],
-		query.bitrate.au4CurrentBitrate[3],
-		query.bitrate.au4PredictBitrate[0],
-		query.bitrate.au4PredictBitrate[1],
-		query.bitrate.au4PredictBitrate[2],
-		query.bitrate.au4PredictBitrate[3]);
+		res.au4CurrentBitrate[0], res.au4CurrentBitrate[1],
+		res.au4CurrentBitrate[2], res.au4CurrentBitrate[3],
+		res.au4PredictBitrate[0], res.au4PredictBitrate[1],
+		res.au4PredictBitrate[2], res.au4PredictBitrate[3]);
 
 	skb = cfg80211_vendor_cmd_alloc_reply_skb(wiphy,
 			sizeof(struct EVENT_STATS_LLS_TX_BIT_RATE));
@@ -2600,12 +2774,12 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 		return -ENOMEM;
 	}
 	if (unlikely(nla_put(skb, WIFI_ATTR_WFD_CUR_TX_BR,
-			     sizeof(query.bitrate.au4CurrentBitrate),
-			     query.bitrate.au4CurrentBitrate)))
+			     sizeof(res.au4CurrentBitrate),
+			     res.au4CurrentBitrate)))
 		goto nla_put_failure;
 	if (unlikely(nla_put(skb, WIFI_ATTR_WFD_PRED_TX_BR,
-			     sizeof(query.bitrate.au4PredictBitrate),
-			     query.bitrate.au4PredictBitrate)))
+			     sizeof(res.au4PredictBitrate),
+			     res.au4PredictBitrate)))
 		goto nla_put_failure;
 	return cfg80211_vendor_cmd_reply(skb);
 

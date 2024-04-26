@@ -1145,6 +1145,11 @@ int32_t connac3x_show_stat_info(
 	static uint32_t au4RxFifoCnt[ENUM_BAND_NUM] = {0};
 	static uint32_t au4AmpduTxSfCnt[ENUM_BAND_NUM] = {0};
 	static uint32_t au4AmpduTxAckSfCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4LastRxMpduCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4LastFcsError[ENUM_BAND_NUM] = {0};
+	static uint32_t au4LastRxFifoCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4LastAmpduTxSfCnt[ENUM_BAND_NUM] = {0};
+	static uint32_t au4LastAmpduTxAckSfCnt[ENUM_BAND_NUM] = {0};
 	struct RX_CTRL *prRxCtrl;
 	uint32_t u4InstantRxPer[ENUM_BAND_NUM];
 	uint32_t u4InstantTxMpduPer[ENUM_BAND_NUM];
@@ -1227,13 +1232,21 @@ int32_t connac3x_show_stat_info(
 	}
 
 	for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
-		au4RxMpduCnt[ucDbdcIdx] += g_arMibInfo[ucDbdcIdx].u4RxMpduCnt;
-		au4FcsError[ucDbdcIdx] += g_arMibInfo[ucDbdcIdx].u4FcsError;
-		au4RxFifoCnt[ucDbdcIdx] += g_arMibInfo[ucDbdcIdx].u4RxFifoFull;
+		au4RxMpduCnt[ucDbdcIdx] += (
+			g_arMibInfo[ucDbdcIdx].u4RxMpduCnt -
+			au4LastRxMpduCnt[ucDbdcIdx]);
+		au4FcsError[ucDbdcIdx] += (
+			g_arMibInfo[ucDbdcIdx].u4FcsError -
+			au4LastFcsError[ucDbdcIdx]);
+		au4RxFifoCnt[ucDbdcIdx] += (
+			g_arMibInfo[ucDbdcIdx].u4RxFifoFull -
+			au4LastRxFifoCnt[ucDbdcIdx]);
 		au4AmpduTxSfCnt[ucDbdcIdx] +=
-			g_arMibInfo[ucDbdcIdx].u4AmpduTxSfCnt;
+			(g_arMibInfo[ucDbdcIdx].u4AmpduTxSfCnt -
+			au4LastAmpduTxSfCnt[ucDbdcIdx]);
 		au4AmpduTxAckSfCnt[ucDbdcIdx] +=
-			g_arMibInfo[ucDbdcIdx].u4AmpduTxAckSfCnt;
+			(g_arMibInfo[ucDbdcIdx].u4AmpduTxAckSfCnt -
+			au4LastAmpduTxAckSfCnt[ucDbdcIdx]);
 
 		u4RxPer[ucDbdcIdx] =
 		    ((au4RxMpduCnt[ucDbdcIdx] + au4FcsError[ucDbdcIdx]) == 0) ?
@@ -1267,6 +1280,17 @@ int32_t connac3x_show_stat_info(
 				u4AmpduTxAckSfCnt) /
 				prQueryStaStatistics->rMibInfo[ucDbdcIdx].
 				u4AmpduTxSfCnt);
+
+		au4LastRxMpduCnt[ucDbdcIdx] =
+			g_arMibInfo[ucDbdcIdx].u4RxMpduCnt;
+		au4LastFcsError[ucDbdcIdx] =
+			g_arMibInfo[ucDbdcIdx].u4FcsError;
+		au4LastRxFifoCnt[ucDbdcIdx] =
+			g_arMibInfo[ucDbdcIdx].u4RxFifoFull;
+		au4LastAmpduTxSfCnt[ucDbdcIdx] =
+			g_arMibInfo[ucDbdcIdx].u4AmpduTxSfCnt;
+		au4LastAmpduTxAckSfCnt[ucDbdcIdx] =
+			g_arMibInfo[ucDbdcIdx].u4AmpduTxAckSfCnt;
 	}
 
 	rRssi = RCPI_TO_dBm(prQueryStaStatistics->ucRcpi);
@@ -1324,7 +1348,7 @@ int32_t connac3x_show_stat_info(
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-20s%s%u, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"%-20s%s%u, PER = %u.%1u%%, instant PER = %u.%1u%%\n",
 				"Rate1 Fail Cnt", " = ",
 				u4Rate1FailCnt[u2Idx], u4Per/10, u4Per%10,
 				u4InstantPer/10, u4InstantPer%10);
@@ -1332,7 +1356,7 @@ int32_t connac3x_show_stat_info(
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-20s%s%u, PER = %d.%1d%%, instant PER = %d%%\n",
+				"%-20s%s%u, PER = %u.%1u%%, instant PER = %u%%\n",
 				"Rate1 Fail Cnt", " = ",
 				prQueryStaStatistics->u4Rate1FailCnt,
 				u4Per/10, u4Per%10, u4InstantPer);
@@ -1361,13 +1385,13 @@ int32_t connac3x_show_stat_info(
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "RX Success", " = ",
+				"%-20s%s%u\n", "RX Success", " = ",
 				au4RxMpduCnt[ucBand]);
 
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-20s%s%d, PER = %d.%1d%%, instant PER = %d.%1d%%\n",
+				"%-20s%s%u, PER = %u.%1u%%, instant PER = %u.%1u%%\n",
 				"RX with CRC", " = ", au4FcsError[ucBand],
 				u4RxPer[ucBand]/10, u4RxPer[ucBand]%10,
 				u4InstantRxPer[ucBand]/10,
@@ -1376,7 +1400,7 @@ int32_t connac3x_show_stat_info(
 			i4BytesWritten += kalScnprintf(
 				pcCommand + i4BytesWritten,
 				i4TotalLen - i4BytesWritten,
-				"%-20s%s%d\n", "RX drop FIFO full", " = ",
+				"%-20s%s%u\n", "RX drop FIFO full", " = ",
 				au4RxFifoCnt[ucBand]);
 		} else {
 			i4BytesWritten += kalScnprintf(
@@ -1398,10 +1422,11 @@ int32_t connac3x_show_stat_info(
 
 		if (fgResetCnt) {
 			kalMemZero(au4RxMpduCnt, sizeof(au4RxMpduCnt));
-			kalMemZero(au4FcsError, sizeof(au4RxMpduCnt));
-			kalMemZero(au4RxFifoCnt, sizeof(au4RxMpduCnt));
-			kalMemZero(au4AmpduTxSfCnt, sizeof(au4RxMpduCnt));
-			kalMemZero(au4AmpduTxAckSfCnt, sizeof(au4RxMpduCnt));
+			kalMemZero(au4FcsError, sizeof(au4FcsError));
+			kalMemZero(au4RxFifoCnt, sizeof(au4RxFifoCnt));
+			kalMemZero(au4AmpduTxSfCnt, sizeof(au4AmpduTxSfCnt));
+			kalMemZero(au4AmpduTxAckSfCnt,
+				sizeof(au4AmpduTxAckSfCnt));
 		}
 	}
 
@@ -1954,7 +1979,6 @@ int32_t connac3x_show_stat_info(
 		}
 	}
 
-	kalMemZero(g_arMibInfo, sizeof(g_arMibInfo));
 	kalMemFree(wtbl_raw_dw, VIR_MEM_TYPE,
 			sizeof(struct bwtbl_lmac_struct));
 

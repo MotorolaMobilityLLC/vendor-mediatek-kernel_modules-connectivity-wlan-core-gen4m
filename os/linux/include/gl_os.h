@@ -1048,7 +1048,6 @@ struct GLUE_INFO {
 	uint32_t u4RxLinkSpeedCache[MAX_BSSID_NUM];
 	uint32_t u4TxBwCache[MAX_BSSID_NUM];
 	uint32_t u4RxBwCache[MAX_BSSID_NUM];
-	uint32_t u4FcsErrorCache;
 
 #if CFG_AP_80211KVR_INTERFACE
 	struct delayed_work rChanNoiseControlWork;

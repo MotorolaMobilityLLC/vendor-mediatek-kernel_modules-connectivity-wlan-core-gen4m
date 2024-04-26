@@ -6121,8 +6121,6 @@ wlanQueryStaStatistics(struct ADAPTER *prAdapter,
 		rQueryCmdStaStatistics.ucIndex = prStaRec->ucIndex;
 		COPY_MAC_ADDR(rQueryCmdStaStatistics.aucMacAddr,
 			      prQueryStaStatistics->aucMacAddr);
-		rQueryCmdStaStatistics.ucReadClear =
-			prQueryStaStatistics->ucReadClear;
 		rQueryCmdStaStatistics.ucLlsReadClear =
 			prQueryStaStatistics->ucLlsReadClear;
 		rQueryCmdStaStatistics.ucResetCounter =
@@ -6262,7 +6260,10 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	struct UNI_CMD_REGULAR_STATS *regStats;
 #else
 	struct UNI_CMD_BASIC_STATISTICS *basicStatsTag;
-	struct UNI_CMD_LINK_QUALITY *lQTag;
+	struct UNI_CMD_BSS_LINK_QUALITY *lQTag;
+#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
+	struct UNI_CMD_BSS_CURRENT_TX_RATE *txRateTag;
+#endif /* CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS */
 	struct UNI_CMD_STA_STATISTICS *staStatsTag;
 	struct UNI_CMD_LINK_LAYER_STATS *llsTag;
 
@@ -6271,9 +6272,6 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	uint8_t i;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 
-#if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-	struct UNI_CMD_CURRENT_TX_RATE *txRateTag;
-#endif
 #endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
 
 	uni_cmd = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, cmd_len);
@@ -6296,9 +6294,9 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	basicStatsTag->u2Length = sizeof(*basicStatsTag);
 	buf += sizeof(*basicStatsTag);
 
-	/* UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY */
-	lQTag = (struct UNI_CMD_LINK_QUALITY *) buf;
-	lQTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_QUALITY;
+	/* UNI_CMD_GET_STATISTICS_TAG_BSS_LINK_QUALITY */
+	lQTag = (struct UNI_CMD_BSS_LINK_QUALITY *) buf;
+	lQTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BSS_LINK_QUALITY;
 	lQTag->u2Length = sizeof(*lQTag);
 	buf += sizeof(*lQTag);
 
@@ -6322,8 +6320,6 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 		staStatsTag->u2Length = sizeof(*staStatsTag);
 		/* FW starec idx is WTBL idx */
 		staStatsTag->u1Index = prStaRec->ucWlanIndex;
-		staStatsTag->ucReadClear =
-			prQueryStaStatistics->ucReadClear;
 		staStatsTag->ucLlsReadClear =
 			prQueryStaStatistics->ucLlsReadClear;
 		staStatsTag->ucResetCounter =
@@ -6336,11 +6332,11 @@ static uint32_t sendStatsUniCmd(struct ADAPTER *prAdapter,
 	llsTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_LINK_LAYER_STATS;
 	llsTag->u2Length = sizeof(*llsTag);
 
-	/* UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE */
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	buf += sizeof(*llsTag);
-	txRateTag = (struct UNI_CMD_CURRENT_TX_RATE *) buf;
-	txRateTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_CURRENT_TX_RATE;
+	/* UNI_CMD_GET_STATISTICS_TAG_BSS_CURRENT_TX_RATE */
+	txRateTag = (struct UNI_CMD_BSS_CURRENT_TX_RATE *) buf;
+	txRateTag->u2Tag = UNI_CMD_GET_STATISTICS_TAG_BSS_CURRENT_TX_RATE;
 	txRateTag->u2Length = sizeof(*txRateTag);
 #endif
 #endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
@@ -6379,7 +6375,6 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 	struct timespec64 rNow, rDrvDiff, rFwDiff, rUpdate, rTimeout, rPeriod;
 #endif
 
-
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	if (unlikely(ucBssIndex >= MAX_BSSID_NUM))
 		return WLAN_STATUS_INVALID_DATA;
@@ -6416,9 +6411,9 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		sizeof(struct UNI_CMD_REGULAR_STATS);
 #else
 		sizeof(struct UNI_CMD_BASIC_STATISTICS) +
-		sizeof(struct UNI_CMD_LINK_QUALITY) +
+		sizeof(struct UNI_CMD_BSS_LINK_QUALITY) +
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-		sizeof(struct UNI_CMD_CURRENT_TX_RATE) +
+		sizeof(struct UNI_CMD_BSS_CURRENT_TX_RATE) +
 #endif
 		sizeof(struct UNI_CMD_LINK_LAYER_STATS);
 #endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
@@ -6488,10 +6483,10 @@ uint32_t wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 			rFwDiff.tv_sec, rFwDiff.tv_nsec,
 			rTimeout.tv_sec, rTimeout.tv_nsec,
 			rPeriod.tv_sec, rPeriod.tv_nsec);
+send_cmd:
 #else
 	{
 #endif
-send_cmd:
 		rResult = sendStatsUniCmd(prAdapter, pvQueryBuffer,
 			u4QueryBufferLen, pu4QueryInfoLen,
 			fgIsOid, max_cmd_len);

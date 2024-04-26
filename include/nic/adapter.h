@@ -2154,20 +2154,20 @@ struct MIB_STATS {
 	uint64_t u4Mac2PHYTxTime;
 	uint64_t u4MacRxFcsOkCnt;
 	uint64_t u4RxOutOfRangeCnt;
-	uint64_t au4RtsTxCnt[BSSID_NUM];
-	uint64_t au4RtsRetryCnt[BSSID_NUM];
-	uint64_t au4BaMissedCnt[BSSID_NUM];
-	uint64_t au4AckFailedCnt[BSSID_NUM];
-	uint64_t au4FrameRetryCnt[BSSID_NUM];
-	uint64_t au4FrameRetry2Cnt[BSSID_NUM];
-	uint64_t au4FrameRetry3Cnt[BSSID_NUM];
+	uint64_t au4RtsTxCnt[HW_BSSID_NUM];
+	uint64_t au4RtsRetryCnt[HW_BSSID_NUM];
+	uint64_t au4BaMissedCnt[HW_BSSID_NUM];
+	uint64_t au4AckFailedCnt[HW_BSSID_NUM];
+	uint64_t au4FrameRetryCnt[HW_BSSID_NUM];
+	uint64_t au4FrameRetry2Cnt[HW_BSSID_NUM];
+	uint64_t au4FrameRetry3Cnt[HW_BSSID_NUM];
 	uint64_t au4TxDdlmtRng[5];
-	uint64_t au4TxCnt[BSSID_NUM];
-	uint64_t au4TxData[BSSID_NUM];
-	uint64_t au4TxByte[BSSID_NUM];
-	uint64_t au4RxOk[BSSID_NUM];
-	uint64_t au4RxData[BSSID_NUM];
-	uint64_t au4RxByte[BSSID_NUM];
+	uint64_t au4TxCnt[HW_BSSID_NUM];
+	uint64_t au4TxData[HW_BSSID_NUM];
+	uint64_t au4TxByte[HW_BSSID_NUM];
+	uint64_t au4RxOk[HW_BSSID_NUM];
+	uint64_t au4RxData[HW_BSSID_NUM];
+	uint64_t au4RxByte[HW_BSSID_NUM];
 	uint64_t au4MbssTxOk[16];
 	uint64_t au4MbssTxByte[16];
 	uint64_t au4MbssRxOk[16];
@@ -2180,17 +2180,28 @@ struct MIB_STATS {
 #endif
 
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+__KAL_ATTRIB_PACKED_FRONT__
+struct EMI_LINK_QUALITY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	struct UNI_LINK_QUALITY rLq[MAX_BSSID_NUM];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct EMI_TX_RATE_INFO {
+	struct _STATS_LLS_TX_RATE_INFO arTxRateInfo[MAX_BSSID_NUM];
+} __KAL_ATTRIB_PACKED__;
 
 struct STATS_REG_STAT_FW_REPORT {
 	struct UNI_EVENT_BASIC_STATISTICS rBasicStatistics;
-	struct UNI_EVENT_LINK_QUALITY rLq;
+	struct EMI_LINK_QUALITY rLq;
 	/* UNI_EVENT_STA_STATISTICS */
 	struct EVENT_STA_STATISTICS rStaStats[REG_STATS_STA_MAX_NUM];
 	/* UNI_EVENT_ID_STATISTICS_LINK_LAYER_STATS */
 	uint32_t u4LastUpdateTime;
 	uint32_t u4Padding;
 	enum ENUM_STATS_LLS_UPDATE_STATUS llsUpdateStatus;
-	struct EVENT_STATS_LLS_TX_RATE_INFO rLlsRateInfo;
+	struct EMI_TX_RATE_INFO rLlsRateInfo;
 };
 
 #endif
