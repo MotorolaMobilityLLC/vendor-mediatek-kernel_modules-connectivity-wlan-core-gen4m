@@ -501,6 +501,11 @@ static int kalSetCpuMask(struct task_struct *task, uint32_t set_mask)
 	return r;
 }
 
+void kalSetRunOnNonXCore(struct task_struct *task)
+{
+	kalSetCpuMask(task, CPU_HP_CORE | CPU_LITTLE_CORE);
+}
+
 /**
  * kalSetCpuBoost() - Set CPU boost parameters
  * @prAdapter: pointer to Adapter
