@@ -13851,7 +13851,8 @@ int wlanQueryRateByTable(uint32_t txmode, uint32_t rate,
 		ucMaxSize = ARRAY_SIZE(g_rAxDataRateMappingTable.nsts[nsts - 1]
 				.bw[frmode].gi[gi].rate);
 		if (rate >= ucMaxSize) {
-			DBGLOG(SW4, ERROR, "rate error for 11BE: %u\n", rate);
+			DBGLOG_LIMITED(SW4, ERROR,
+				       "rate error for 11BE: %u\n", rate);
 			return -1;
 		}
 
