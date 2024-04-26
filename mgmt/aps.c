@@ -1877,6 +1877,7 @@ uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
 	enum ENUM_MLO_LINK_PLAN *curr_plan)
 {
 	struct BSS_DESC *bss;
+	struct BSS_DESC *bssTemp[APS_LINK_MAX] = {0};
 	int i, j;
 	uint8_t link_num = 0, band_bmap = 0;
 
@@ -1895,10 +1896,17 @@ uint8_t apsSortTrimCandiByScore(struct ADAPTER *ad, struct BSS_DESC *candi[],
 	}
 
 	/* ensure no null target */
-	for (i = 0; i < APS_LINK_MAX; i++) {
-		if (candi[i])
+	for (i = 0, j = 0; i < APS_LINK_MAX; i++) {
+		if (candi[i]) {
 			link_num++;
+			/* bssTemp will not be null */
+			bssTemp[j] = candi[i];
+			j++;
+		}
 	}
+	/* Make sure candi[0] ~ candi[link_num - 1] will not be null */
+	for (i = 0; i < link_num; i++)
+		candi[i] = bssTemp[i];
 
 #if (CFG_SUPPORT_802_11BE == 1)
 	/* trim ap */
