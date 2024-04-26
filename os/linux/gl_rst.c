@@ -690,6 +690,11 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	if (kalIsResetting())
 		goto exit;
 
+#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+	if (kalIsShutdown())
+		goto exit;
+#endif
+
 	if (prAdapter) {
 		prChipInfo = prAdapter->chip_info;
 

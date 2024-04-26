@@ -226,6 +226,10 @@ static struct WLANDEV_INFO
 static uint32_t
 u4WlanDevNum;	/* How many NICs coexist now */
 
+#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+static u_int8_t uIsShutdown = FALSE;
+#endif
+
 /* 20150205 added work queue for sched_scan to avoid cfg80211 stop schedule scan
  *          dead loack
  */
@@ -8604,6 +8608,34 @@ WLAN_REMOVE_RETURN:
 	GLUE_SET_REF_CNT(0, g_wlanRemoving);
 }				/* end of wlanRemove() */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief A method to stop driver operation and release all resources. Following
+ *        this call, no frame should go up or down through this interface.
+ *
+ * \return (none)
+ */
+/*----------------------------------------------------------------------------*/
+#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+u_int8_t kalIsShutdown(void)
+{
+	return uIsShutdown;
+}
+
+static void wlanShutdown(void)
+{
+	/* wifi is off */
+	if (!get_wifi_powered_status() && get_wifi_process_status() == 0)
+		return;
+
+	DBGLOG(INIT, INFO, "do wifi off\n");
+	uIsShutdown = TRUE;
+	wfsys_lock();
+	wlanFuncOffImpl();
+	wfsys_unlock();
+}
+#endif
+
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 int wlanFuncPreOnImpl(void)
 {
@@ -8854,6 +8886,13 @@ static int initWlan(void)
 #endif
 
 	kalPlatOpsInit();
+
+#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+	ret = ((glRegisterShutdownCB(wlanShutdown)
+		== WLAN_STATUS_SUCCESS) ? 0 : -EIO);
+	if (ret == -EIO)
+		goto INIT_WLAN_RETURN;
+#endif
 
 	ret = ((glRegisterBus(wlanProbe,
 			      wlanRemove) == WLAN_STATUS_SUCCESS) ? 0 : -EIO);
