@@ -774,6 +774,9 @@ struct GLUE_INFO {
 
 	/* Mutex to protect interruptible section */
 	struct mutex arMutex[MUTEX_NUM];
+#if CFG_SUPPORT_RX_PAGE_POOL
+	struct mutex arMutexPagePool[PAGE_POOL_NUM];
+#endif
 
 	/* semaphore for ioctl */
 	struct semaphore ioctl_sem;

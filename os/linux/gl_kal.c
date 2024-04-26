@@ -1799,6 +1799,7 @@ static struct page *kalAllocPagePoolPageByIdx(
 	struct GLUE_INFO *prGlueInfo, int i4Idx)
 {
 	struct page_pool *pool;
+	struct page *prPage;
 
 	if (i4Idx >= PAGE_POOL_NUM || i4Idx < 0) {
 		DBGLOG(RX, ERROR, "index[%d] >= max num[%d]\n",
@@ -1811,8 +1812,11 @@ static struct page *kalAllocPagePoolPageByIdx(
 		DBGLOG(RX, ERROR, "pool is null\n");
 		return NULL;
 	}
+	mutex_lock(&prGlueInfo->arMutexPagePool[i4Idx]);
+	prPage = page_pool_alloc_pages(pool, GFP_KERNEL);
+	mutex_unlock(&prGlueInfo->arMutexPagePool[i4Idx]);
 
-	return page_pool_alloc_pages(pool, GFP_KERNEL);
+	return prPage;
 }
 #endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 
