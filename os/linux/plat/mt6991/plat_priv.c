@@ -53,6 +53,8 @@
 
 #define BOOST_CPU_TABLE_NUM (PERF_MON_TP_MAX_THRESHOLD + 1)
 
+#define OPP_BW_MAX_NUM 9
+
 #if (KERNEL_VERSION(5, 10, 0) <= CFG80211_VERSION_CODE)
 #include <linux/regulator/consumer.h>
 #endif
@@ -436,8 +438,8 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 	struct device_node *node;
 	static struct icc_path *bw_path;
 #endif /* CONFIG_OF */
-	static unsigned int peak_bw, current_bw;
-	unsigned int prev_bw = 0;
+	static unsigned int peak_bw[OPP_BW_MAX_NUM], current_bw;
+	unsigned int prev_bw = 0, i;
 
 	kalGetPlatDev(&pdev);
 	if (!pdev) {
@@ -457,8 +459,8 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 		}
 
 #if IS_ENABLED(CONFIG_MTK_DVFSRC)
-		peak_bw = dvfsrc_get_required_opp_peak_bw(
-			node, iLv == -1 ? 0 : iLv);
+		for (i = 0; i < OPP_BW_MAX_NUM; i++)
+			peak_bw[i] = dvfsrc_get_required_opp_peak_bw(node, i);
 #endif /* CONFIG_MTK_DVFSRC */
 #endif /* CONFIG_OF */
 	}
@@ -466,8 +468,8 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 	if (!IS_ERR(bw_path)) {
 		prev_bw = current_bw;
 
-		if (iLv != -1)
-			current_bw = peak_bw;
+		if (iLv != -1 && iLv < OPP_BW_MAX_NUM)
+			current_bw = peak_bw[iLv];
 		else
 			current_bw = 0;
 
