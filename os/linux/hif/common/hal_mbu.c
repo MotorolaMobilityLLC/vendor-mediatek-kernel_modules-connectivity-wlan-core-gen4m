@@ -264,6 +264,8 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	u4Addr = CB_DMA_TOP_CB_INFRA_MBU_MAILBOX_0_CMD_H_ADDR;
 	if (IS_CONN_INFRA_MCU_ADDR(u4ReadAddr)) {
 		u4Val = u4ReadAddr - CONN_INFRA_REMAPPING_OFFSET;
+	} else if (IS_CONN_INFRA_ON_ADDR(u4ReadAddr)) {
+		u4Val = u4ReadAddr - CONN_INFRA_ON_REMAPPING_OFFSET;
 	} else if (IS_CBTOP_PHY_ADDR(u4ReadAddr)) {
 		u4Val = u4ReadAddr;
 	} else {
