@@ -1008,8 +1008,9 @@ void soc7_0_get_rx_link_stats(struct ADAPTER *prAdapter,
 	return;
 
 wrong_rate:
-	DBGLOG(RX, WARN, "Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
-			rate.preamble, rate.nss, rate.bw, mcsIdx);
+	DBGLOG_LIMITED(RX, WARN,
+		       "Invalid rate preamble=%u, nss=%u, bw=%u, mcsIdx=%u",
+		       rate.preamble, rate.nss, rate.bw, mcsIdx);
 #endif
 }
 
