@@ -6829,7 +6829,8 @@ int priv_driver_get_sta_stat(struct net_device *prNetDev,
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	prAdapter->u4LastLinkQuality =
-		kalGetTimeTick() - SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY);
+		kalGetTimeTick() -
+		MSEC_TO_SYSTIME(SEC_TO_MSEC(CFG_LQ_MONITOR_FREQUENCY));
 #endif
 
 	prAisBssInfo = aisGetAisBssInfo(

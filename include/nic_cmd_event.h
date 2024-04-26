@@ -4169,7 +4169,7 @@ void nicCmdEventBuildDateCode(struct ADAPTER *prAdapter,
 void nicUpdateStaStats(struct ADAPTER *prAdapter,
 	struct EVENT_STA_STATISTICS *prEvent,
 	struct PARAM_GET_STA_STATISTICS *prStaStatistics,
-	uint8_t ucStaRecIdx);
+	uint8_t ucStaRecIdx, bool fgIsMibDiff);
 
 void nicCmdEventQueryStaStatistics(struct ADAPTER
 				   *prAdapter, struct CMD_INFO *prCmdInfo,

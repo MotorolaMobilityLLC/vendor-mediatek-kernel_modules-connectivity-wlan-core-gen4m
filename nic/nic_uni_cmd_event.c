@@ -9464,23 +9464,23 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 	struct UNI_EVENT_BASIC_STATISTICS *prBasicUniEvt;
 	struct PARAM_802_11_STATISTICS_STRUCT *prStat;
 	struct EVENT_STATISTICS legacy = {0};
-	struct UNI_EVENT_LINK_QUALITY rUniEvtLQ;
-	struct EVENT_LINK_QUALITY lqLegacy = {0};
-	struct EVENT_STA_STATISTICS rStaStatsLegacy;
+	struct EMI_LINK_QUALITY *prEmiLQ;
+	struct UNI_LINK_QUALITY *prUlq;
+	struct EVENT_STA_STATISTICS *prStaStatsLegacy;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
-	struct EVENT_STATS_LLS_TX_RATE_INFO rLlsRateInfo = {0};
+	struct EMI_TX_RATE_INFO rLlsRateInfo = {0};
 #endif
 	struct STA_RECORD *prStaRec = NULL;
 	uint8_t i, ucBssIdx;
 
+	/* basic statistics */
 	prBasicUniEvt = kalMemAlloc(
 		sizeof(struct UNI_EVENT_BASIC_STATISTICS),
 		VIR_MEM_TYPE);
 
 	if (!prBasicUniEvt)
 		goto exit;
-	/* basic statistics */
 	prStat = &(prAdapter->rStat);
 	kalMemCopyFromIo(prBasicUniEvt,
 		&prAdapter->prStatsAllRegStat->rBasicStatistics,
@@ -9493,9 +9493,14 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		sizeof(struct UNI_EVENT_BASIC_STATISTICS));
 
 	/* link quality */
-	kalMemCopyFromIo(&rUniEvtLQ,
+	prEmiLQ = kalMemAlloc(
+		sizeof(struct EMI_LINK_QUALITY),
+		VIR_MEM_TYPE);
+	if (!prEmiLQ)
+		goto exit;
+	kalMemCopyFromIo(prEmiLQ,
 		&prAdapter->prStatsAllRegStat->rLq,
-		sizeof(rUniEvtLQ));
+		sizeof(*prEmiLQ));
 
 #define TEMP_LOG_TEMPLATE \
 	"rLq[%u] cRssi(0x%px):%d cLinkQuality(0x%px):%d"\
@@ -9503,35 +9508,32 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 	" ucIsLQ0Rdy(0x%px):%d\n"
 
 	for (i = 0;
-		i < MAX_BSSID_NUM && i < ARRAY_SIZE(rUniEvtLQ.rLq); i++) {
+		i < MAX_BSSID_NUM && i < ARRAY_SIZE(prEmiLQ->rLq); i++) {
 		struct LINK_SPEED_EX_ *prLq;
 
 		DBGLOG(NIC, TRACE,
 			TEMP_LOG_TEMPLATE, i,
-			&rUniEvtLQ.rLq[i].cRssi,
-				rUniEvtLQ.rLq[i].cRssi,
-			&rUniEvtLQ.rLq[i].cLinkQuality,
-				rUniEvtLQ.rLq[i].cLinkQuality,
-			&rUniEvtLQ.rLq[i].u2LinkSpeed,
-				rUniEvtLQ.rLq[i].u2LinkSpeed,
-			&rUniEvtLQ.rLq[i].ucMediumBusyPercentage,
-				rUniEvtLQ.rLq[i].ucMediumBusyPercentage,
-			&rUniEvtLQ.rLq[i].ucIsLQ0Rdy,
-				rUniEvtLQ.rLq[i].ucIsLQ0Rdy);
+			prEmiLQ->rLq[i].cRssi,
+				prEmiLQ->rLq[i].cRssi,
+			prEmiLQ->rLq[i].cLinkQuality,
+				prEmiLQ->rLq[i].cLinkQuality,
+			prEmiLQ->rLq[i].u2LinkSpeed,
+				prEmiLQ->rLq[i].u2LinkSpeed,
+			prEmiLQ->rLq[i].ucMediumBusyPercentage,
+				prEmiLQ->rLq[i].ucMediumBusyPercentage,
+			prEmiLQ->rLq[i].ucIsLQ0Rdy,
+				prEmiLQ->rLq[i].ucIsLQ0Rdy);
+
 #undef TEMP_LOG_TEMPLATE
-		if (!rUniEvtLQ.rLq[i].ucIsLQ0Rdy)
+		if (!prEmiLQ->rLq[i].ucIsLQ0Rdy)
 			continue;
-		lqLegacy.rLq[i].cRssi = rUniEvtLQ.rLq[i].cRssi;
-		lqLegacy.rLq[i].cLinkQuality =
-			rUniEvtLQ.rLq[i].cLinkQuality;
-		lqLegacy.rLq[i].u2LinkSpeed =
-			rUniEvtLQ.rLq[i].u2LinkSpeed;
-		lqLegacy.rLq[i].ucMediumBusyPercentage =
-			rUniEvtLQ.rLq[i].ucMediumBusyPercentage;
-		lqLegacy.rLq[i].ucIsLQ0Rdy =
-			rUniEvtLQ.rLq[i].ucIsLQ0Rdy;
-		nicUpdateLinkQuality(prAdapter, i, &lqLegacy);
+		prUlq = &prEmiLQ->rLq[i];
 		prLq = &prAdapter->rLinkQuality.rLq[i];
+
+		nicUpdateLinkQuality(prAdapter, i, prUlq->cRssi,
+				prUlq->cLinkQuality, prUlq->u2LinkSpeed,
+				prUlq->ucMediumBusyPercentage,
+				prUlq->ucIsLQ0Rdy);
 
 		DBGLOG(NIC, INFO,
 			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
@@ -9540,29 +9542,40 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 			prLq->u2RxLinkSpeed,
 			prLq->cRssi);
 	}
+	kalMemFree(prEmiLQ, VIR_MEM_TYPE,
+		sizeof(struct EMI_LINK_QUALITY));
 
 	/* sta Stats */
+	prStaStatsLegacy = kalMemAlloc(
+		sizeof(struct EVENT_STA_STATISTICS),
+		VIR_MEM_TYPE);
+	if (!prStaStatsLegacy)
+		goto exit;
+
 	for (i = 0; i < REG_STATS_STA_MAX_NUM; i++) {
-		kalMemCopyFromIo(&rStaStatsLegacy,
+		kalMemCopyFromIo(prStaStatsLegacy,
 			&prAdapter->prStatsAllRegStat->rStaStats[i],
-			sizeof(rStaStatsLegacy));
-		if (rStaStatsLegacy.ucVersion != 1)
+			sizeof(*prStaStatsLegacy));
+		if (prStaStatsLegacy->ucVersion != 1)
 			continue;
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
 					secGetStaIdxByWlanIdx(
 						prAdapter,
-						rStaStatsLegacy.ucStaRecIdx));
+						prStaStatsLegacy->ucStaRecIdx));
 		if (!prStaRec)
 			continue;
 		ucBssIdx = prStaRec->ucBssIndex;
 		prQueryStaStatistics =
 			&prAdapter->rQueryStaStatistics[ucBssIdx];
 		nicUpdateStaStats(prAdapter,
-			&rStaStatsLegacy, prQueryStaStatistics,
-			prStaRec->ucIndex);
+			prStaStatsLegacy, prQueryStaStatistics,
+			prStaRec->ucIndex, FALSE);
 		DBGLOG(REQ, TRACE, "update staStats[%u] wlanIdx(%u)\n",
-			i, rStaStatsLegacy.ucStaRecIdx);
+			i, prStaStatsLegacy->ucStaRecIdx);
 	}
+	kalMemFree(prStaStatsLegacy, VIR_MEM_TYPE,
+		sizeof(struct EVENT_STA_STATISTICS));
+
 	/* get bw from emi */
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	if (prAdapter->fgTxRateOffsetMapped) {
@@ -9634,7 +9647,7 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 		case UNI_EVENT_STATISTICS_TAG_LINK_QUALITY: {
 			struct UNI_EVENT_LINK_QUALITY *tlv =
 				(struct UNI_EVENT_LINK_QUALITY *) tag;
-			struct EVENT_LINK_QUALITY legacy = {0};
+			struct UNI_LINK_QUALITY *prUlq;
 			uint8_t i;
 
 			for (i = 0;
@@ -9644,18 +9657,15 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 
 				if (!tlv->rLq[i].ucIsLQ0Rdy)
 					continue;
-				legacy.rLq[i].cRssi = tlv->rLq[i].cRssi;
-				legacy.rLq[i].cLinkQuality =
-					tlv->rLq[i].cLinkQuality;
-				legacy.rLq[i].u2LinkSpeed =
-					tlv->rLq[i].u2LinkSpeed;
-				legacy.rLq[i].ucMediumBusyPercentage =
-					tlv->rLq[i].ucMediumBusyPercentage;
-				legacy.rLq[i].ucIsLQ0Rdy =
-					tlv->rLq[i].ucIsLQ0Rdy;
-				nicUpdateLinkQuality(prAdapter, i, &legacy);
-				prLq = &prAdapter->rLinkQuality.rLq[i];
 
+				prUlq = &tlv->rLq[i];
+
+				nicUpdateLinkQuality(prAdapter, i, prUlq->cRssi,
+					prUlq->cLinkQuality, prUlq->u2LinkSpeed,
+					prUlq->ucMediumBusyPercentage,
+					prUlq->ucIsLQ0Rdy);
+
+				prLq = &prAdapter->rLinkQuality.rLq[i];
 				DBGLOG(NIC, TRACE,
 					"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
 					i,
@@ -9688,7 +9698,35 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 				&prAdapter->rQueryStaStatistics[ucBssIdx];
 			nicUpdateStaStats(prAdapter,
 				prStaStatsLegacy, prQueryStaStatistics,
-				prStaRec->ucIndex);
+				prStaRec->ucIndex, TRUE);
+			break;
+		}
+		case UNI_EVENT_STATISTICS_TAG_BSS_LINK_QUALITY: {
+			struct UNI_EVENT_BSS_LINK_QUALITY *tlv =
+				(struct UNI_EVENT_BSS_LINK_QUALITY *) tag;
+			struct LINK_SPEED_EX_ *prLq;
+			struct UNI_LINK_QUALITY *prUlq;
+			uint8_t ucBssIdx;
+
+			ucBssIdx = tlv->ucBssIdx;
+
+			if (!tlv->rLq.ucIsLQ0Rdy || ucBssIdx >= MAX_BSSID_NUM)
+				continue;
+
+			prUlq = &tlv->rLq;
+			prLq = &prAdapter->rLinkQuality.rLq[ucBssIdx];
+
+			nicUpdateLinkQuality(prAdapter, ucBssIdx, prUlq->cRssi,
+				prUlq->cLinkQuality, prUlq->u2LinkSpeed,
+				prUlq->ucMediumBusyPercentage,
+				prUlq->ucIsLQ0Rdy);
+
+			DBGLOG(NIC, TRACE,
+				"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
+				ucBssIdx,
+				prLq->u2TxLinkSpeed,
+				prLq->u2RxLinkSpeed,
+				prLq->cRssi);
 			break;
 		}
 		case UNI_EVENT_STATISTICS_TAG_LINK_LAYER_STATS: {
@@ -9705,27 +9743,38 @@ void nicUniEventAllStatsOneCmd(struct ADAPTER
 			break;
 		}
 		case UNI_EVENT_STATISTICS_TAG_CURRENT_TX_RATE: {
-			/* do nothing, caller can read emi directly. */
 			struct UNI_EVENT_CURRENT_TX_RATE *tlv =
 				(struct UNI_EVENT_CURRENT_TX_RATE *) tag;
 			struct EVENT_STATS_LLS_TX_RATE_INFO *prTxRate;
 			uint8_t i = 0;
 
 			prTxRate = (struct EVENT_STATS_LLS_TX_RATE_INFO *)
-				   tlv->aucBuffer;
-			for (i = 0; i < MAX_BSSID_NUM; i++) {
+				   &tlv->rate_info;
+			for (i = 0; i < BSSID_NUM; i++) {
 				prAdapter->prGlueInfo->u4TxBwCache[i] =
-					rLlsRateInfo.arTxRateInfo[i].bw;
+					prTxRate->arTxRateInfo[i].bw;
 			}
 			break;
+		}
+		case UNI_EVENT_STATISTICS_TAG_BSS_CURRENT_TX_RATE: {
+			struct UNI_EVENT_BSS_TX_RATE *tlv =
+				(struct UNI_EVENT_BSS_TX_RATE *) tag;
+			uint8_t ucBssIdx;
 
+			ucBssIdx = tlv->ucBssIdx;
+			if (ucBssIdx >= MAX_BSSID_NUM)
+				continue;
+
+			prAdapter->prGlueInfo->u4TxBwCache[ucBssIdx] =
+				tlv->rTxRateInfo.bw;
+
+			break;
 		}
 		default:
 			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
 			break;
 		}
 	}
-
 	if (tags_len != offset)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 #else
@@ -10006,21 +10055,18 @@ void nicUniEventLinkStats(struct ADAPTER *prAdapter,
 		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
 {
 #if CFG_SUPPORT_LLS
-	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
-	struct UNI_EVENT_STATISTICS *evt =
-		(struct UNI_EVENT_STATISTICS *)uni_evt->aucBuffer;
-	struct UNI_EVENT_LINK_STATS *tag =
-		(struct UNI_EVENT_LINK_STATS *)evt->aucTlvBuffer;
-	uint32_t resultSize;
+	uint16_t fixed_len = sizeof(struct UNI_EVENT_STATISTICS);
+	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(pucEventBuf);
+	uint8_t *data = GET_UNI_EVENT_DATA(pucEventBuf);
+	uint16_t resultSize = data_len - fixed_len;
 
-	DBGLOG(RX, TRACE, "tag=%u, tag->u2Length=%u, BufLen=%u",
-			tag->u2Tag, tag->u2Length,
+	DBGLOG(RX, TRACE, "resultSize=%u BufLen=%u",
+			resultSize,
 			prCmdInfo->u4InformationBufferLength);
 
-	resultSize = tag->u2Length - sizeof(struct UNI_EVENT_LINK_STATS);
 	if (prCmdInfo->u4InformationBufferLength < resultSize) {
-		DBGLOG(RX, WARN, "Overflow tag=%u, resultSize=%u, BufLen=%u",
-			tag->u2Tag, resultSize,
+		DBGLOG(RX, WARN, "Overflow resultSize=%u, BufLen=%u",
+			 resultSize,
 			prCmdInfo->u4InformationBufferLength);
 		if (prCmdInfo->fgIsOid)
 			kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, 0,
@@ -10034,7 +10080,12 @@ void nicUniEventLinkStats(struct ADAPTER *prAdapter,
 	kalMemZero(prCmdInfo->pvInformationBuffer,
 		prCmdInfo->u4InformationBufferLength);
 
-	nicCmdEventQueryLinkStats(prAdapter, prCmdInfo, tag->aucBuffer);
+	memcpy((uint8_t *)prCmdInfo->pvInformationBuffer,
+		data + fixed_len, resultSize);
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, resultSize,
+			WLAN_STATUS_SUCCESS);
 #endif
 }
 

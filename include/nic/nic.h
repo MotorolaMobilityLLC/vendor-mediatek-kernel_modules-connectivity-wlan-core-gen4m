@@ -634,10 +634,10 @@ nicRlmArUpdateParms(struct ADAPTER *prAdapter,
 /*----------------------------------------------------------------------------*/
 /* Link Quality Updating                                                      */
 /*----------------------------------------------------------------------------*/
-void
-nicUpdateLinkQuality(struct ADAPTER *prAdapter,
-		     uint8_t ucBssIndex,
-		     struct EVENT_LINK_QUALITY *prEventLinkQuality);
+void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex, int8_t cRssi, int8_t cLinkQuality,
+			uint16_t u2LinkSpeed, uint8_t ucMediumBusyPercentage,
+			uint8_t ucIsLQ0Rdy);
 
 void nicUpdateRSSI(struct ADAPTER *prAdapter,
 		   uint8_t ucBssIndex, int8_t cRssi,

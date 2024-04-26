@@ -1482,11 +1482,17 @@ statsCgsAirLatHdlr(uint8_t ucBssIdx,
 #if CFG_SUPPORT_LLS
 	union {
 		struct CMD_GET_STATS_LLS cmd;
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		struct UNI_EVENT_PPDU_LATENCY rTlv;
+#else
 		struct EVENT_STATS_LLS_TX_LATENCY latency;
+#endif
 	} query = {0};
 	uint32_t u4QueryBufLen;
 	uint32_t u4QueryInfoLen;
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
+	struct EVENT_STATS_LLS_TX_LATENCY *prLatency;
 #endif
 
 	prAirLat = (struct STATS_CGS_LAT_STAT_T *)(&prStatTlv->aucBuffer[0]);
@@ -1509,22 +1515,34 @@ statsCgsAirLatHdlr(uint8_t ucBssIdx,
 				rStatus, u4QueryInfoLen);
 
 	if (rStatus == WLAN_STATUS_SUCCESS &&
-		u4QueryInfoLen == sizeof(struct EVENT_STATS_LLS_TX_LATENCY)) {
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		u4QueryInfoLen == sizeof(struct UNI_EVENT_PPDU_LATENCY) &&
+		query.rTlv.u2Tag == UNI_EVENT_STATISTICS_TAG_PPDU_LATENCY &&
+		query.rTlv.u2Length == sizeof(struct UNI_EVENT_PPDU_LATENCY)
+#else
+		u4QueryInfoLen == sizeof(struct EVENT_STATS_LLS_TX_LATENCY)
+#endif
+		) {
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+		prLatency = &query.rTlv.latency;
+#else
+		prLatency = &query.latency;
+#endif
 		DBGLOG(REQ, INFO, "query.lat=%u/%u/%u/%u; %u/%u/%u/%u/%u",
-			query.latency.arLatencyLevel[0],
-			query.latency.arLatencyLevel[1],
-			query.latency.arLatencyLevel[2],
-			query.latency.arLatencyLevel[3],
-			query.latency.arLatencyMpduCntPerLevel[0],
-			query.latency.arLatencyMpduCntPerLevel[1],
-			query.latency.arLatencyMpduCntPerLevel[2],
-			query.latency.arLatencyMpduCntPerLevel[3],
-			query.latency.arLatencyMpduCntPerLevel[4]);
+			prLatency->arLatencyLevel[0],
+			prLatency->arLatencyLevel[1],
+			prLatency->arLatencyLevel[2],
+			prLatency->arLatencyLevel[3],
+			prLatency->arLatencyMpduCntPerLevel[0],
+			prLatency->arLatencyMpduCntPerLevel[1],
+			prLatency->arLatencyMpduCntPerLevel[2],
+			prLatency->arLatencyMpduCntPerLevel[3],
+			prLatency->arLatencyMpduCntPerLevel[4]);
 		kalMemCopy(prAirLat->au4AirLatLvl,
-			query.latency.arLatencyLevel,
+			prLatency->arLatencyLevel,
 			sizeof(uint32_t) * AIR_LAT_LVL_NUM);
 		kalMemCopy(prAirLat->au4AirLatMpdu,
-			query.latency.arLatencyMpduCntPerLevel,
+			prLatency->arLatencyMpduCntPerLevel,
 			sizeof(uint32_t) * AIR_LAT_CAT_NUM);
 	} else if (rStatus != WLAN_STATUS_SUCCESS) {
 		DBGLOG(REQ, WARN, "wlanQueryLinkStats return fail\n");

@@ -886,6 +886,7 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 {
 	struct EVENT_LINK_QUALITY *prLinkQuality;
 	struct PARAM_LINK_SPEED_EX *prLinkSpeed;
+	struct LINK_QUALITY *prBaseLq;
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t u4QueryInfoLen;
 	uint32_t i;
@@ -910,8 +911,13 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 		if (!prLinkQuality->rLq[i].ucIsLQ0Rdy)
 			continue;
 
-		nicUpdateLinkQuality(prAdapter, i, prLinkQuality);
+		prBaseLq = &prLinkQuality->rLq[i];
 		prLq = &prAdapter->rLinkQuality.rLq[i];
+
+		nicUpdateLinkQuality(prAdapter, i, prBaseLq->cRssi,
+				prBaseLq->cLinkQuality, prBaseLq->u2LinkSpeed,
+				prBaseLq->ucMediumBusyPercentage,
+				prBaseLq->ucIsLQ0Rdy);
 
 		prLinkSpeed->rLq[i].u2TxLinkSpeed = prLq->u2TxLinkSpeed;
 		prLinkSpeed->rLq[i].u2RxLinkSpeed = prLq->u2RxLinkSpeed;
@@ -989,7 +995,7 @@ void nicUpdateStatistics(struct ADAPTER *prAdapter,
 	prLinkQualityInfo->u8RxTotalCount =
 		prStatistics->rReceivedFragmentCount.QuadPart;
 	/* FW report is diff, driver count total */
-	prLinkQualityInfo->u8RxErrCount +=
+	prLinkQualityInfo->u8RxErrCount =
 		prStatistics->rFCSErrorCount.QuadPart;
 	prLinkQualityInfo->u8MdrdyCount =
 		prStatistics->rMdrdyCnt.QuadPart;
@@ -1777,7 +1783,7 @@ void nicCmdEventBuildDateCode(struct ADAPTER *prAdapter,
 void nicUpdateStaStats(struct ADAPTER *prAdapter,
 	struct EVENT_STA_STATISTICS *prEvent,
 	struct PARAM_GET_STA_STATISTICS *prStaStatistics,
-	uint8_t ucStaRecIdx)
+	uint8_t ucStaRecIdx, bool fgIsMibDiff)
 {
 	enum ENUM_WMM_ACI eAci;
 	struct STA_RECORD *prStaRec;
@@ -1785,6 +1791,8 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *prLinkQualityInfo;
 #endif
+	struct MIB_INFO_STAT *prEvtMib;
+	struct MIB_INFO_STAT *prMibInfo;
 
 	/* Statistics from FW is valid */
 	if (prEvent->u4Flags & BIT(0)) {
@@ -1865,33 +1873,64 @@ void nicUpdateStaStats(struct ADAPTER *prAdapter,
 			&prEvent->rMibInfo,
 			sizeof(prEvent->rMibInfo));
 		for (ucDbdcIdx = 0; ucDbdcIdx < ENUM_BAND_NUM; ucDbdcIdx++) {
-			g_arMibInfo[ucDbdcIdx].u4RxMpduCnt +=
-				prStaStatistics->rMibInfo[ucDbdcIdx].
-				u4RxMpduCnt;
-			g_arMibInfo[ucDbdcIdx].u4FcsError +=
-				prStaStatistics->rMibInfo[ucDbdcIdx].
-				u4FcsError;
-			g_arMibInfo[ucDbdcIdx].u4RxFifoFull +=
-				prStaStatistics->rMibInfo[ucDbdcIdx].
-				u4RxFifoFull;
-			g_arMibInfo[ucDbdcIdx].u4AmpduTxSfCnt +=
-				prStaStatistics->rMibInfo[ucDbdcIdx].
-				u4AmpduTxSfCnt;
-			g_arMibInfo[ucDbdcIdx].u4AmpduTxAckSfCnt +=
-				prStaStatistics->rMibInfo[ucDbdcIdx].
-				u4AmpduTxAckSfCnt;
-
+			prMibInfo = &g_arMibInfo[ucDbdcIdx];
+			prEvtMib = &prStaStatistics->rMibInfo[ucDbdcIdx];
+			if (fgIsMibDiff) {
+				prMibInfo->u4RxMpduCnt += prEvtMib->u4RxMpduCnt;
+				prMibInfo->u4FcsError += prEvtMib->u4FcsError;
+				prMibInfo->u4RxFifoFull +=
+					prEvtMib->u4RxFifoFull;
+				prMibInfo->u4AmpduTxSfCnt +=
+					prEvtMib->u4AmpduTxSfCnt;
+				prMibInfo->u4AmpduTxAckSfCnt +=
+					prEvtMib->u4AmpduTxAckSfCnt;
 #if (CFG_SUPPORT_CONNAC3X == 1)
-			for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM; ucIdx++)
-				g_arMibInfo[ucDbdcIdx].au4TxRangeAmpduCnt[ucIdx]
-					+= prStaStatistics->rMibInfo[ucDbdcIdx].
-					au4TxRangeAmpduCnt[ucIdx];
+				for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM;
+					ucIdx++)
+					prMibInfo->au4TxRangeAmpduCnt[ucIdx] +=
+						prEvtMib->au4TxRangeAmpduCnt[
+								ucIdx];
 #else
-			for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM; ucIdx++)
-				g_arMibInfo[ucDbdcIdx].au2TxRangeAmpduCnt[ucIdx]
-					+= prStaStatistics->rMibInfo[ucDbdcIdx].
-					au2TxRangeAmpduCnt[ucIdx];
+				for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM;
+					ucIdx++)
+					prMibInfo->au2TxRangeAmpduCnt[ucIdx] +=
+						prEvtMib->au2TxRangeAmpduCnt[
+								ucIdx];
 #endif
+			} else {
+				prMibInfo->u4RxMpduCnt = prEvtMib->u4RxMpduCnt;
+				prMibInfo->u4FcsError =
+					prEvtMib->u4FcsError;
+				prMibInfo->u4RxFifoFull =
+					prEvtMib->u4RxFifoFull;
+				prMibInfo->u4AmpduTxSfCnt =
+					prEvtMib->u4AmpduTxSfCnt;
+				prMibInfo->u4AmpduTxAckSfCnt =
+					prEvtMib->u4AmpduTxAckSfCnt;
+#if (CFG_SUPPORT_CONNAC3X == 1)
+				for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM;
+					ucIdx++)
+					prMibInfo->au4TxRangeAmpduCnt[ucIdx] =
+						prEvtMib->au4TxRangeAmpduCnt[
+								ucIdx];
+#else
+				for (ucIdx = 0; ucIdx <= AGG_RANGE_SEL_NUM;
+					ucIdx++)
+					prMibInfo->au2TxRangeAmpduCnt[ucIdx] =
+						prEvtMib->au2TxRangeAmpduCnt[
+								ucIdx];
+#endif
+			}
+			DBGLOG_LIMITED(NIC, TRACE,
+				"updateSta B%u diff:%u mpdu:%u/%u fcsE:%u/%u fifo:%u/%u\n",
+				ucDbdcIdx,
+				fgIsMibDiff,
+				prMibInfo->u4RxMpduCnt,
+				prEvtMib->u4RxMpduCnt,
+				prMibInfo->u4FcsError,
+				prEvtMib->u4FcsError,
+				prMibInfo->u4RxFifoFull,
+				prEvtMib->u4RxFifoFull);
 		}
 
 		prStaStatistics->fgIsForceTxStream =
@@ -2094,7 +2133,7 @@ void nicCmdEventQueryStaStatistics(struct ADAPTER
 #endif
 	if (ucStaRecIdx < CFG_STA_REC_NUM)
 		nicUpdateStaStats(prAdapter, prEvent, prStaStatistics,
-			ucStaRecIdx);
+			ucStaRecIdx, TRUE);
 
 	if (prCmdInfo->fgIsOid)
 		kalOidComplete(prGlueInfo,

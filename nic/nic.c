@@ -5653,23 +5653,27 @@ void nicUpdateLinkQualityForTwt(struct ADAPTER *prAdapter,
  *
  * @param prAdapter      Pointer of Adapter Data Structure
  *        ucBssIndex
- *        prEventLinkQuality
  *        cRssi
  *        cLinkQuality
- *
+ *		  u2LinkSpeed
+ *		  ucMediumBusyPercentage,
+ *		  ucIsLQ0Rdy
  * @return none
  */
 /*----------------------------------------------------------------------------*/
 void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 			  uint8_t ucBssIndex,
-			  struct EVENT_LINK_QUALITY *prEventLinkQuality)
+			  int8_t cRssi,
+			  int8_t cLinkQuality,
+			  uint16_t u2LinkSpeed,
+			  uint8_t ucMediumBusyPercentage,
+			  uint8_t ucIsLQ0Rdy)
 {
 	struct BSS_INFO *prBssInfo;
 	struct LINK_SPEED_EX_ *prLq;
 
 	ASSERT(prAdapter);
 	ASSERT(ucBssIndex <= prAdapter->ucSwBssIdNum);
-	ASSERT(prEventLinkQuality);
 
 	if (ucBssIndex >= MAX_BSSID_NUM) {
 		DBGLOG(NIC, ERROR, "ucBssIndex out of range!\n");
@@ -5695,21 +5699,16 @@ void nicUpdateLinkQuality(struct ADAPTER *prAdapter,
 	switch (prBssInfo->eNetworkType) {
 	case NETWORK_TYPE_AIS:
 #if (CFG_TWT_SMART_STA == 1)
-		nicUpdateLinkQualityForTwt(prAdapter, ucBssIndex,
-			prEventLinkQuality->rLq[ucBssIndex].cRssi);
+		nicUpdateLinkQualityForTwt(prAdapter, ucBssIndex, cRssi);
 #endif
 		/*
 		 * fallthrough
 		 * update RSSI/LinkSpeed for both STA and P2P
 		 */
 	case NETWORK_TYPE_P2P:
-		nicUpdateRSSI(prAdapter, ucBssIndex,
-			prEventLinkQuality->rLq[ucBssIndex].cRssi,
-			prEventLinkQuality->rLq[ucBssIndex].cLinkQuality);
+		nicUpdateRSSI(prAdapter, ucBssIndex, cRssi, cLinkQuality);
 
-		nicUpdateLinkSpeed(prAdapter, ucBssIndex,
-			prEventLinkQuality->rLq[ucBssIndex].
-			u2LinkSpeed);
+		nicUpdateLinkSpeed(prAdapter, ucBssIndex, u2LinkSpeed);
 		break;
 
 	default:
