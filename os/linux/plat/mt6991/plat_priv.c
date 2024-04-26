@@ -25,7 +25,7 @@
 
 #define CONN_INFRA_ID	0x02050601
 
-#define MAX_CPU_FREQ (3050 * 1000)
+#define MAX_CPU_FREQ (2500 * 1000)
 #define MID_BIG_CPU_FREQ (2000 * 1000)
 #define MID_LITTLE_CPU_FREQ (1000 * 1000)
 #define AUTO_CPU_FREQ (0)
@@ -150,7 +150,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.u4WfdmaTh = 0,
 		.i4TxFreeMsduWorkCpu = -1,
 		.fgWifiNappingForceDis = FALSE,
-		.fgDramBoost = FALSE,
+		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_NONE,
 	},
@@ -190,7 +190,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = FALSE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = FALSE,
+		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_LITTLE,
 	},
@@ -205,7 +205,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
@@ -230,7 +230,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = FALSE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = FALSE,
+		.i4DramBoostLv = -1,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	},
@@ -241,11 +241,11 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = MAX_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_BIG_CORE,
+			.u4CpuMask = CPU_MID_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_BIG_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
 		.rRxThreadInfo = {
@@ -270,7 +270,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
-		.fgDramBoost = TRUE,
+		.i4DramBoostLv = 3,
 		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	}
@@ -429,7 +429,7 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 	}
 }
 
-void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
+void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 {
 	struct platform_device *pdev;
 #ifdef CONFIG_OF
@@ -457,7 +457,8 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
 		}
 
 #if IS_ENABLED(CONFIG_MTK_DVFSRC)
-		peak_bw = dvfsrc_get_required_opp_peak_bw(node, 0);
+		peak_bw = dvfsrc_get_required_opp_peak_bw(
+			node, iLv == -1 ? 0 : iLv);
 #endif /* CONFIG_MTK_DVFSRC */
 #endif /* CONFIG_OF */
 	}
@@ -465,14 +466,14 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
 	if (!IS_ERR(bw_path)) {
 		prev_bw = current_bw;
 
-		if (onoff)
+		if (iLv != -1)
 			current_bw = peak_bw;
 		else
 			current_bw = 0;
 
 		icc_set_bw(bw_path, 0, current_bw);
 		DBGLOG(INIT, INFO, "[%d] bw %u => %u\n",
-			onoff, prev_bw, current_bw);
+			iLv, prev_bw, current_bw);
 	}
 }
 
@@ -597,7 +598,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 	kalConfigWfdmaTh(prGlueInfo, prBoostInfo->u4WfdmaTh);
 #endif
 
-	kalSetDramBoost(prAdapter, prBoostInfo->fgDramBoost);
+	kalSetDramBoost(prAdapter, prBoostInfo->i4DramBoostLv);
 
 
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK
@@ -659,7 +660,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #define TEMP_LOG_TEMPLATE \
 	"CPUInfo[%d:%d] " \
 	PLAT_THREAD_INFO \
-	"Rps:[%02x] ISR:[%02x] D:[%u] Pcie:[%u]" \
+	"Rps:[%02x] ISR:[%02x] D:[%d] Pcie:[%u]" \
 	TX_FREE_MSDU_WORK_TEMPLATE \
 	RETURN_WORK_TEMPLATE \
 	TX_WORK_TEMPLATE \
@@ -693,7 +694,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 		prBoostInfo->u4RpsMap,
 		prBoostInfo->u4ISRMask,
-		prBoostInfo->fgDramBoost,
+		prBoostInfo->i4DramBoostLv,
 		prBoostInfo->fgKeepPcieWakeup,
 #if CFG_SUPPORT_TX_FREE_MSDU_WORK
 		prBoostInfo->i4TxFreeMsduWorkCpu,
