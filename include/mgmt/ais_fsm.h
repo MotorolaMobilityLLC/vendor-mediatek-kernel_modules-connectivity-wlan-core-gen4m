@@ -1046,6 +1046,7 @@ struct AIS_FSM_INFO *aisFsmGetInstance(
 struct AIS_FSM_INFO *aisGetDefaultAisInfo(struct ADAPTER *prAdapter);
 struct AIS_LINK_INFO *aisGetDefaultLink(struct ADAPTER *prAdapter);
 struct BSS_INFO *aisGetDefaultLinkBssInfo(struct ADAPTER *prAdapter);
+uint8_t aisGetLinkIndex(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint8_t aisGetDefaultLinkBssIndex(struct ADAPTER *prAdapter);
 struct STA_RECORD *aisGetDefaultStaRecOfAP(struct ADAPTER *prAdapter);
 struct AIS_LINK_INFO *aisGetLink(struct ADAPTER *prAdapter,

@@ -716,11 +716,19 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		return;
 	}
 
-	if (!IS_BSS_ACTIVE(prBssInfo))
-		nicActivateNetworkEx(prAdapter,
+	if (!IS_BSS_ACTIVE(prBssInfo)) {
+		if (prBssInfo->fgIsAisSwitchingChnl)
+			nicActivateNetworkEx(prAdapter,
+				     NETWORK_ID(prBssInfo->ucBssIndex,
+						aisGetLinkIndex(prAdapter,
+						prBssInfo->ucBssIndex)),
+				     FALSE);
+		else
+			nicActivateNetworkEx(prAdapter,
 				     NETWORK_ID(prBssInfo->ucBssIndex,
 						prBssInfo->ucLinkIndex),
 				     FALSE);
+	}
 
 	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
