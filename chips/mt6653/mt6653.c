@@ -2153,13 +2153,20 @@ static u_int8_t mt6653IsWfdmaRxReady(struct ADAPTER *prAdapter)
 {
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo;
+	struct RTMP_DMABUF *prRingIntSta;
 	struct HIF_MEM_OPS *prMemOps;
 	struct HIF_MEM *prMem = NULL;
-	uint32_t u4Idx;
+	uint32_t u4Idx, u4IntSta;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prMemOps = &prHifInfo->rMemOps;
+	prRingIntSta = &prHifInfo->rRingIntSta;
+	u4IntSta = *((uint32_t *)prRingIntSta->AllocVa);
+
+	/* rx int & sw int */
+	if (u4IntSta & (BITS(11, 15) | BIT(27)))
+		return TRUE;
 
 	if (!halIsWfdmaRxRingsEmpty(prAdapter->prGlueInfo))
 		return TRUE;
