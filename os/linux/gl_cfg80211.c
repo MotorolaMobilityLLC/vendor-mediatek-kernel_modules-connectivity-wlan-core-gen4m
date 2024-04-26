@@ -7082,7 +7082,7 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	struct wireless_dev *prWdev = NULL;
 	uint32_t u4DisconnectReason = DISCONNECT_REASON_CODE_DEL_IFACE;
 	uint32_t rStatus;
-	uint8_t ucBssIndex = 0;
+	uint8_t ucBssIndex = 0, ucIdx;
 	uint8_t ucAisIndex = 0;
 	uint32_t u4SetInfoLen;
 
@@ -7100,6 +7100,19 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	if (!wlanGetAisNetDev(prGlueInfo, ucAisIndex)) {
 		DBGLOG(REQ, INFO, "bss = %d, ais=%d no netdev\n",
 			ucBssIndex, ucAisIndex);
+		return -EINVAL;
+	}
+
+	/* exclude wlan0 (index 0) since its netdev is NOT created by
+	 * cfg80211, and wlan0's netdev life cycle must be the same
+	 * as driver on/off
+	 */
+	for (ucIdx = 1; ucIdx < KAL_AIS_NUM; ucIdx++) {
+		if (gprWdev[ucIdx] == wdev)
+			break;
+	}
+	if (ucIdx >= KAL_AIS_NUM) {
+		DBGLOG(REQ, WARN, "can NOT find matching wireless dev.\n");
 		return -EINVAL;
 	}
 

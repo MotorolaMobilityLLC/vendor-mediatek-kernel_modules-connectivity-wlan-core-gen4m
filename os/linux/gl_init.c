@@ -7866,7 +7866,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		FAIL_BY_RESET,
 		FAIL_REASON_NUM
 	} eFailReason;
-	struct WLANDEV_INFO *prWlandevInfo = NULL;
 	int32_t i4DevIdx = 0;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
@@ -7952,7 +7951,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		gPrDev = prGlueInfo->prDevHandler;
 
 		/* 4 <4> Setup IRQ */
-		prWlandevInfo = &arWlanDevInfo[i4DevIdx];
 		prGlueInfo->i4DevIdx = i4DevIdx;
 		prAdapter = prGlueInfo->prAdapter;
 		prWifiVar = &prAdapter->rWifiVar;
@@ -8303,7 +8301,6 @@ static void wlanRemove(void)
 {
 	struct net_device *prDev = NULL;
 	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
-	struct WLANDEV_INFO *prWlandevInfo = NULL;
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
 	u_int8_t fgResult = FALSE;
@@ -8352,11 +8349,9 @@ static void wlanRemove(void)
 #if (CFG_ENABLE_WIFI_DIRECT && CFG_MTK_ANDROID_WMT)
 	register_set_p2p_mode_handler(NULL);
 #endif
-	if (u4WlanDevNum > 0
-	    && u4WlanDevNum <= CFG_MAX_WLAN_DEVICES) {
+	if (u4WlanDevNum > 0 &&
+	    u4WlanDevNum <= CFG_MAX_WLAN_DEVICES)
 		prDev = arWlanDevInfo[u4WlanDevNum - 1].prDev;
-		prWlandevInfo = &arWlanDevInfo[u4WlanDevNum - 1];
-	}
 
 	ASSERT(prDev);
 	if (prDev == NULL) {
