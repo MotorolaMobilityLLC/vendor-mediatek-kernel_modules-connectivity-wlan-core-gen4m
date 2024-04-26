@@ -286,8 +286,6 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_HIF_TX_CMD			BIT(13)
 #define GLUE_FLAG_RX_TO_OS			BIT(14)
 #define GLUE_FLAG_HIF_FW_OWN			BIT(15)
-#define GLUE_FLAG_HIF_PRT_HIF_DBG_INFO		BIT(16)
-#define GLUE_FLAG_UPDATE_WMM_QUOTA		BIT(17)
 #define GLUE_FLAG_HIF_MDDP			BIT(18)
 #define GLUE_FLAG_DRV_INT			BIT(19)
 
@@ -307,37 +305,37 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define GLUE_FLAG_HIF_MDDP_BIT			(18)
 #define GLUE_FLAG_DRV_INT_BIT			(19)
 
-#define GLUE_FLAG_RST_START BIT(18)
-#define GLUE_FLAG_RST_START_BIT 18
-#define GLUE_FLAG_RST_END BIT(19)
-#define GLUE_FLAG_RST_END_BIT 19
+#define GLUE_FLAG_RST_START			BIT(18)
+#define GLUE_FLAG_RST_START_BIT			(18)
+#define GLUE_FLAG_RST_END			BIT(19)
+#define GLUE_FLAG_RST_END_BIT			(19)
 
 #if CFG_SUPPORT_NAN /* notice the bit differnet with 7668 */
-#define GLUE_FLAG_NAN_MULTICAST_BIT (20)
-#define GLUE_FLAG_NAN_MULTICAST BIT(20)
+#define GLUE_FLAG_NAN_MULTICAST			BIT(20)
+#define GLUE_FLAG_NAN_MULTICAST_BIT		(20)
 #endif
 
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 #define GLUE_FLAG_CNS_PWR_LEVEL_BIT		(21)
-#define GLUE_FLAG_CNS_PWR_TEMP_BIT		(22)
 #define GLUE_FLAG_CNS_PWR_LEVEL			BIT(21)
+#define GLUE_FLAG_CNS_PWR_TEMP_BIT		(22)
 #define GLUE_FLAG_CNS_PWR_TEMP			BIT(22)
 #endif
 
-#define GLUE_FLAG_RX_DIRECT_INT_BIT             (23)
-#define GLUE_FLAG_RX_DIRECT_INT                 BIT(23)
+#define GLUE_FLAG_RX_DIRECT_INT_BIT		(23)
+#define GLUE_FLAG_RX_DIRECT_INT			BIT(23)
 
-#define GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT        (24)
-#define GLUE_FLAG_MGMT_DIRECT_HIF_TX            BIT(24)
+#define GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT	(24)
+#define GLUE_FLAG_MGMT_DIRECT_HIF_TX		BIT(24)
 
-#define GLUE_FLAG_SER_INT_BIT                   (25)
-#define GLUE_FLAG_SER_INT                       BIT(25)
+#define GLUE_FLAG_SER_INT_BIT			(25)
+#define GLUE_FLAG_SER_INT			BIT(25)
 
 #define GLUE_FLAG_DRV_OWN_INT_BIT		(26)
 #define GLUE_FLAG_DRV_OWN_INT			BIT(26)
 
-#define GLUE_FLAG_DISABLE_PERF_BIT              (27)
-#define GLUE_FLAG_DISABLE_PERF                  BIT(27)
+#define GLUE_FLAG_DISABLE_PERF_BIT		(27)
+#define GLUE_FLAG_DISABLE_PERF			BIT(27)
 
 #define GLUE_FLAG_TX_TIMEOUT_DUMP_BIT		(28)
 #define GLUE_FLAG_TX_TIMEOUT_DUMP		BIT(28)

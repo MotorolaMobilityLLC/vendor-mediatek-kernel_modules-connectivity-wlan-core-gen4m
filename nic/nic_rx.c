@@ -388,6 +388,7 @@ void nicRxInitialize(struct ADAPTER *prAdapter)
 
 	/* 4 <2> Clear all RX counters */
 	RX_RESET_ALL_CNTS(prRxCtrl);
+	RX_RESET_ALL_PKT_CNTS(prRxCtrl);
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 	RX_RRO_RESET_ALL_CNTS(prRxCtrl);
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */

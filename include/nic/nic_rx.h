@@ -620,6 +620,45 @@ enum ENUM_MAC_RX_PKT_TYPE {
 #endif /* CFG_SUPPORT_ICS_TIMESYNC */
 };
 
+enum ENUM_PKT_TYPE {
+	PKT_TYPE_TX_STATUS = 0,
+	PKT_TYPE_RX_VECTOR,
+	PKT_TYPE_RX_DATA,
+	PKT_TYPE_DUP_RFB,
+	PKT_TYPE_TM_REPORT,
+	PKT_TYPE_MSDU_REPORT,
+	PKT_TYPE_SW_DEFINED,
+	PKT_TYPE_RX_REPORT,
+#if ((CFG_SUPPORT_ICS == 1) || (CFG_SUPPORT_PHY_ICS == 1))
+	PKT_TYPE_ICS,
+#endif
+#if (CFG_SUPPORT_PHY_ICS == 1)
+	PKT_TYPE_PHY_ICS,
+#endif
+	PKT_TYPE_UNKOWN,
+	PKT_TYPE_NUM
+};
+
+/* Used for HIF Wakeup */
+enum ENUM_HIF_WAKEUP {
+	HIF_FLAG_HALT = 0,
+	HIF_FLAG_INT,
+	HIF_FLAG_HIF_TX,
+	HIF_FLAG_HIF_TX_CMD,
+	HIF_FLAG_HIF_FW_OWN,
+	HIF_FLAG_HIF_PRT_HIF_DBG_INFO,
+	HIF_FLAG_UPDATE_WMM_QUOTA,
+#if CFG_MTK_MDDP_SUPPORT
+	HIF_FLAG_HIF_MDDP,
+#endif
+	HIF_FLAG_DRV_INT,
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	HIF_FLAG_MGMT_DIRECT_HIF_TX,
+#endif
+	HIF_FLAG_SER_INT,
+	HIF_WAKEUP_NUM,
+};
+
 enum ENUM_MAC_RX_GROUP_VLD {
 	RX_GROUP_VLD_1 = 0,
 	RX_GROUP_VLD_2,
@@ -1063,6 +1102,9 @@ struct RX_CTRL {
 
 	/* Store SysTime of Last unicast Rx */
 	uint32_t u4LastUnicastRxTime[MAX_BSSID_NUM];
+
+	uint64_t au8PktTypeCnt[PKT_TYPE_NUM];
+	uint64_t au8HifWakeupCnt[HIF_WAKEUP_NUM];
 };
 
 struct RX_MAILBOX {
@@ -1158,6 +1200,34 @@ struct ACTION_FRAME_SIZE_MAP {
 	.u4PhyRate[RX_VT_FR_MODE_160][MAC_GI_NORMAL]      = (_Bw160), \
 	.u4PhyRate[RX_VT_FR_MODE_160][MAC_GI_SHORT]       = (_Bw160SGI), \
 	}
+
+#define RX_INC_HIF_CNT(prRxCtrl, eCounter)              \
+	(((struct RX_CTRL *)prRxCtrl)->au8HifWakeupCnt[eCounter]++) \
+
+#define RX_ADD_HIF_CNT(prRxCtrl, eCounter, u8Amount)    \
+	(((struct RX_CTRL *)prRxCtrl)->au8HifWakeupCnt[eCounter] += \
+	(uint64_t)u8Amount)
+
+#define RX_GET_HIF_CNT(prRxCtrl, eCounter)              \
+	(((struct RX_CTRL *)prRxCtrl)->au8HifWakeupCnt[eCounter])
+
+#define RX_RESET_ALL_HIF_CNTS(prRxCtrl)                 \
+	(kalMemZero(&prRxCtrl->au8HifWakeupCnt[0], \
+		sizeof(prRxCtrl->au8HifWakeupCnt)))
+
+#define RX_INC_PKT_CNT(prRxCtrl, eCounter)              \
+	(((struct RX_CTRL *)prRxCtrl)->au8PktTypeCnt[eCounter]++)
+
+#define RX_ADD_PKT_CNT(prRxCtrl, eCounter, u8Amount)    \
+	(((struct RX_CTRL *)prRxCtrl)->au8PktTypeCnt[eCounter] += \
+	(uint64_t)u8Amount)
+
+#define RX_GET_PKT_CNT(prRxCtrl, eCounter)              \
+	(((struct RX_CTRL *)prRxCtrl)->au8PktTypeCnt[eCounter])
+
+#define RX_RESET_ALL_PKT_CNTS(prRxCtrl)                 \
+	(kalMemZero(&prRxCtrl->au8PktTypeCnt[0], \
+		sizeof(prRxCtrl->au8PktTypeCnt)))
 
 #define RX_INC_CNT(prRxCtrl, eCounter)              \
 	{((struct RX_CTRL *)prRxCtrl)->au8Statistics[eCounter]++; }
