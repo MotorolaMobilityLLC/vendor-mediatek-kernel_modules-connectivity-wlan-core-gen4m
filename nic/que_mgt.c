@@ -3850,13 +3850,11 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 						prWlanHeader);
 		}
 
-#if CFG_SUPPORT_STATISTICS
 		/*
 		 * Independent pkt is marked in stats,
 		 * so it should be placed before rx reordering
 		 */
-		STATS_RX_PKT_INFO_DISPLAY(prCurrSwRfb);
-#endif
+		StatsRxPktInfoDisplay(prCurrSwRfb);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		if (likely(fgIsHwRROSupport)) {
@@ -4045,10 +4043,7 @@ struct SW_RFB *qmHandleRxPackets(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(prReturnedQue);
 
 #else
-
-#if CFG_SUPPORT_STATISTICS
-	STATS_RX_PKT_INFO_DISPLAY(prSwRfbListHead);
-#endif
+	StatsRxPktInfoDisplay(prSwRfbListHead);
 
 	/* DbgPrint("QM: Enter qmHandleRxPackets()\n"); */
 	return prSwRfbListHead;

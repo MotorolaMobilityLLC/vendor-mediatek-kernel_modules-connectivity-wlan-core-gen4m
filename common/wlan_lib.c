@@ -11654,25 +11654,29 @@ uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_MLR
 	if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter))
 		DBGLOG(TX, INFO,
-			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d %s\n",
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], MAC: "
+			MACSTR " SeqNo: %d %s\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->u4TxDoneTag,
 			prMsduInfo->ucWlanIndex,
 			prMsduInfo->ucPID,
 			prTxDone ? prTxDone->u2SequenceNumber : -1,
 			rTxDoneStatus,
+			MAC2STR(prMsduInfo->aucEthDestAddr),
 			prMsduInfo->ucTxSeqNum,
 			aucDelayInfo);
 	else
 #endif
 		DBGLOG_LIMITED(TX, INFO,
-			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], SeqNo: %d %s\n",
+			"TX DONE, Type[%s] Tag[0x%08x] WIDX:PID[%u:%u] SN[%d] Status[%u], MAC: "
+			MACSTR " SeqNo: %d %s\n",
 			TXS_PACKET_TYPE[prMsduInfo->ucPktType],
 			prMsduInfo->u4TxDoneTag,
 			prMsduInfo->ucWlanIndex,
 			prMsduInfo->ucPID,
 			prTxDone ? prTxDone->u2SequenceNumber : -1,
 			rTxDoneStatus,
+			MAC2STR(prMsduInfo->aucEthDestAddr),
 			prMsduInfo->ucTxSeqNum,
 			aucDelayInfo);
 

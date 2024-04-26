@@ -121,13 +121,6 @@ struct STATS_TLV_MAP_T {
  *******************************************************************************
  */
 
-#if (CFG_SUPPORT_STATISTICS == 1)
-#define STATS_RX_PKT_INFO_DISPLAY			StatsRxPktInfoDisplay
-#define STATS_TX_PKT_INFO_DISPLAY			StatsTxPktInfoDisplay
-#else
-#define STATS_RX_PKT_INFO_DISPLAY
-#define STATS_TX_PKT_INFO_DISPLAY
-#endif /* CFG_SUPPORT_STATISTICS */
 
 /*******************************************************************************
  *            F U N C T I O N   D E C L A R A T I O N S
@@ -205,9 +198,13 @@ void StatsEnvTxTime2Hif(struct ADAPTER *prAdapter,
 
 void StatsEnvRxTime2Host(struct ADAPTER *prAdapter, void *pvPacket);
 
+#if (CFG_SUPPORT_STATISTICS == 1)
 void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb);
-
 void StatsTxPktInfoDisplay(void *pvPacket);
+#else
+static inline void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb) { };
+static inline void StatsTxPktInfoDisplay(void *pvPacket) { };
+#endif
 
 void StatsResetTxRx(void);
 

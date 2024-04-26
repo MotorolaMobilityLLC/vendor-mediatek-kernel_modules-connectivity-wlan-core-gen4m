@@ -298,7 +298,7 @@ void arpMonHandleTxArpPkt(struct ADAPTER *ad,
 	if (!prArp)
 		return;
 
-	if (NTOHS(prArp->u2OpCode) != ARP_PRO_REQ)
+	if (NTOHS(prArp->u2OpCode) != ARP_OPERATION_REQUEST)
 		return;
 
 	/* If ARP req is neither to apIp nor to gatewayIp, ignore detection */
@@ -401,7 +401,7 @@ void arpMonHandleRxArpPkt(struct ADAPTER *ad,
 	if (!prArp)
 		return;
 
-	if (NTOHS(prArp->u2OpCode) != ARP_PRO_RSP)
+	if (NTOHS(prArp->u2OpCode) != ARP_OPERATION_RESPONSE)
 		return;
 	fgIsFromApIpOrGatewayIp = !arpMonNotApIpAndGatewayIp(ad, ucBssIdx,
 					prArp->aucSenderIPaddr);
@@ -689,7 +689,7 @@ static void arpMonDetectNoResponse(struct ADAPTER *ad,
 	if (!prArp)
 		return;
 
-	if (NTOHS(prArp->u2OpCode) != ARP_PRO_REQ)
+	if (NTOHS(prArp->u2OpCode) != ARP_OPERATION_REQUEST)
 		return;
 
 	DBGLOG(AM, LOUD,
@@ -731,7 +731,7 @@ static void arpMonHandleRxArpPacket(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 	if (!prArp)
 		return;
 
-	if (NTOHS(prArp->u2OpCode) != ARP_PRO_RSP)
+	if (NTOHS(prArp->u2OpCode) != ARP_OPERATION_RESPONSE)
 		return;
 
 	ucBssIdx = secGetBssIdxByRfb(ad, prSwRfb);

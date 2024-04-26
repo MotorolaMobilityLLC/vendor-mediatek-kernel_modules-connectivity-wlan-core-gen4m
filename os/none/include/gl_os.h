@@ -814,7 +814,8 @@ enum nl80211_wpa_versions {
 	(GLUE_GET_PKT_PRIVATE_RX_DATA(_p)->u8RxTime)
 
 /* TODO: os-related implementation */
-#define GLUE_GET_PKT_ETHER_DEST_ADDR(_p)
+#define GLUE_GET_TX_PKT_ETHER_DEST_ADDR(_p)
+#define GLUE_GET_TX_PKT_ETHER_SRC_ADDR(_p)
 
 /* Check validity of prDev, private data, and pointers */
 /* TODO: os-related implementation */

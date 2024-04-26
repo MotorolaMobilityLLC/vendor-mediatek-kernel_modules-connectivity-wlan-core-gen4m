@@ -1981,9 +1981,8 @@ void nicRxParseDropPkt(struct SW_RFB *prSwRfb)
 		prSwRfb->ucSecMode,
 		prSwRfb->ucWlanIdx, prSwRfb->ucStaRecIdx
 	);
-#if (CFG_SUPPORT_STATISTICS == 1)
-	STATS_RX_PKT_INFO_DISPLAY(prSwRfb);
-#endif
+
+	StatsRxPktInfoDisplay(prSwRfb);
 }
 
 /*----------------------------------------------------------------------------*/

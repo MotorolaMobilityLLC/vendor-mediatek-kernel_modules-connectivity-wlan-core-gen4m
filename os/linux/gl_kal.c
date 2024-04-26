@@ -4653,9 +4653,9 @@ kalQoSFrameClassifierAndPacketInfo(struct GLUE_INFO *prGlueInfo,
 			prTxPktInfo->u2Flag |= BIT(ENUM_PKT_802_3);
 		break;
 	}
-#if (CFG_SUPPORT_STATISTICS == 1)
-	STATS_TX_PKT_INFO_DISPLAY(prSkb);
-#endif
+
+	StatsTxPktInfoDisplay(prSkb);
+
 	/* 4 <4.1> Check for PAL (BT over Wi-Fi) */
 	/* Move to kalBowFrameClassifier */
 

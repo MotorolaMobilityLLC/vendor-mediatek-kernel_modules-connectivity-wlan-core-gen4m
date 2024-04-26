@@ -311,24 +311,41 @@ static void statsParseARPInfo(void *pvPacket, uint8_t *pucArp,
 {
 	struct ARP_HEADER *prArp = (struct ARP_HEADER *)pucArp;
 	uint16_t u2OpCode = NTOHS(prArp->u2OpCode);
+	struct ETH_FRAME *prEth =
+		CONTAINER_OF((uint8_t (*)[])pucArp, struct ETH_FRAME, aucData);
 
 	if (eventType == EVENT_RX) {
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ARP);
-		if (u2OpCode == ARP_PRO_REQ)
-			DBGLOG_LIMITED(RX, INFO,
-				"<RX> Arp Req From IP: " IPV4STR " SSN:%u\n",
-				IPV4TOSTR(prArp->aucSenderIPaddr), u2SSN);
-		else if (u2OpCode == ARP_PRO_RSP)
+		if (u2OpCode == ARP_OPERATION_REQUEST)
 			DBGLOG(RX, INFO,
-				"<RX> Arp Rsp From IP: " IPV4STR " SSN:%u\n",
-				IPV4TOSTR(prArp->aucSenderIPaddr), u2SSN);
+			   "<RX> ARP Req DA=" MACSTR
+			   " SRC MAC/IP[" MACSTR "]/[" IPV4STR
+			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR "], SeqNo: %d",
+			   MAC2STR(prEth->aucDestAddr),
+			   MAC2STR(prArp->aucSenderMACaddr),
+			   IPV4TOSTR(prArp->aucSenderIPaddr),
+			   MAC2STR(prArp->aucTargetMACaddr),
+			   IPV4TOSTR(prArp->aucTargetIPaddr),
+			   u2SSN);
+		else if (u2OpCode == ARP_OPERATION_RESPONSE)
+			DBGLOG(RX, INFO,
+			   "<RX> ARP Rsp DA=" MACSTR
+			   " SRC MAC/IP[" MACSTR "]/[" IPV4STR
+			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR "], SeqNo: %d",
+			   MAC2STR(prEth->aucDestAddr),
+			   MAC2STR(prArp->aucSenderMACaddr),
+			   IPV4TOSTR(prArp->aucSenderIPaddr),
+			   MAC2STR(prArp->aucTargetMACaddr),
+			   IPV4TOSTR(prArp->aucTargetIPaddr),
+			   u2SSN);
 	} else { /* EVENT_TX */
 		DBGLOG(TX, INFO,
-			"ARP %s SRC MAC/IP["
-			MACSTR "]/[" IPV4STR "], TAR MAC/IP["
-			MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
-			u2OpCode == ARP_OPERATION_REQUEST ? "REQ" : "RSP",
+			"<TX> ARP %s DA=" MACSTR
+			" SRC MAC/IP[" MACSTR "]/[" IPV4STR
+			"], TAR MAC/IP[" MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
+			u2OpCode == ARP_OPERATION_REQUEST ? "Req" : "Rsp",
+			MAC2STR(prEth->aucDestAddr),
 			MAC2STR(prArp->aucSenderMACaddr),
 			IPV4TOSTR(prArp->aucSenderIPaddr),
 			MAC2STR(prArp->aucTargetMACaddr),
@@ -370,6 +387,10 @@ void statsParseICMPInfo(void *pvPacket, uint8_t *pucIcmp, uint8_t eventType,
 	uint8_t ucIcmpType;
 	uint16_t u2IcmpId;
 	uint16_t u2IcmpSeq;
+	struct IPV4_HEADER *prIPv4 =
+		CONTAINER_OF((uint8_t (*)[])pucIcmp, struct IPV4_HEADER, aucL4);
+	struct ETH_FRAME *prEth =
+		CONTAINER_OF((uint8_t (*)[])prIPv4, struct ETH_FRAME, aucData);
 
 	/* the number of ICMP packets is seldom so we print log here */
 
@@ -386,12 +407,16 @@ void statsParseICMPInfo(void *pvPacket, uint8_t *pucIcmp, uint8_t eventType,
 		GLUE_SET_INDEPENDENT_PKT(pvPacket, TRUE);
 		GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMP);
 		DBGLOG_LIMITED(RX, INFO,
-			       "<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, SSN:%u\n",
-			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq, u2SSN);
+			       "<RX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
+			       MACSTR " SSN:%u\n",
+			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
+			       MAC2STR(prEth->aucSrcAddr), u2SSN);
 	} else { /* EVENT_TX */
 		DBGLOG_LIMITED(TX, INFO,
-			       "<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d\n",
+			       "<TX> ICMP: IPID[0x%04x] Type %u, Id 0x%04x, Seq BE 0x%04x, MAC:"
+			       MACSTR " SeqNo: %d\n",
 			       u2IpId, ucIcmpType, u2IcmpId, u2IcmpSeq,
+			       MAC2STR(prEth->aucDestAddr),
 			       GLUE_GET_PKT_SEQ_NO(pvPacket));
 	}
 }
@@ -657,12 +682,14 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 	char aucLinkAddr[MAC_ADDR_STR_BUF_SIZE] = {0};
 	uint16_t ucIpv6UDPSrcPort;
 	uint16_t ucIpv6UDPDstPort;
+	struct ETH_FRAME *prEth;
 
 	if (ucIpVersion != IP_VERSION_6)
 		return;
 
 	ucIpv6Proto = prIPv6->ucNextHeader;
 
+	prEth = CONTAINER_OF((uint8_t (*)[])pucIPv6, struct ETH_FRAME, aucData);
 	switch (ucIpv6Proto) {
 	case IP_PRO_TCP:
 		if (eventType == EVENT_RX) {
@@ -763,8 +790,10 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
 				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
 				DBGLOG_LIMITED(RX, INFO,
-					       "<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x SSN:%u",
+					       "<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x, MAC:"
+					       MACSTR " SSN:%u",
 					       icmp6msg, u2IcmpId, u2IcmpSeq,
+					       MAC2STR(prEth->aucSrcAddr),
 					       u2SSN);
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
@@ -794,9 +823,11 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
 				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
 				DBGLOG_LIMITED(TX, INFO,
-					       "<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, SeqNo: %d",
-					       icmp6msg, u2IcmpId, u2IcmpSeq,
-					       GLUE_GET_PKT_SEQ_NO(pvPacket));
+						"<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, MAC:"
+						MACSTR " SeqNo: %d",
+						icmp6msg, u2IcmpId, u2IcmpSeq,
+						MAC2STR(prEth->aucDestAddr),
+						GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
 				DBGLOG_LIMITED(TX, INFO,
@@ -1026,6 +1057,7 @@ static void statsParsePktInfo(uint8_t *pucData, void *pvPacket, uint8_t status,
 /*----------------------------------------------------------------------------*/
 void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 {
+#if (CFG_SUPPORT_STATISTICS == 1)
 	uint8_t *pPkt = NULL;
 
 	if (prSwRfb->u2PacketLen <= ETHER_HEADER_LEN)
@@ -1044,6 +1076,7 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 		prSwRfb, GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket));
 	kalTraceEvent("RxPkt p=%p ipid=0x%04x",
 		prSwRfb, GLUE_GET_PKT_IP_ID(prSwRfb->pvPacket));
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1057,11 +1090,13 @@ void StatsRxPktInfoDisplay(struct SW_RFB *prSwRfb)
 /*----------------------------------------------------------------------------*/
 void StatsTxPktInfoDisplay(void *pvPacket)
 {
+#if (CFG_SUPPORT_STATISTICS == 1)
 	uint8_t *pPktBuf;
 
 	kalGetPacketBuf(pvPacket, &pPktBuf);
 	/* No SSN for Tx Pkt, so we just assign 0 */
 	statsParsePktInfo(pPktBuf, pvPacket, 0, EVENT_TX, 0);
+#endif
 }
 
 uint32_t
