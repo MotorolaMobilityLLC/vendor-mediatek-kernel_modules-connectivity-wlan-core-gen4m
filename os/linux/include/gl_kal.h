@@ -302,7 +302,7 @@ struct BOOST_INFO {
 	int32_t i4RxWorkCpu;
 	int32_t i4RxNapiWorkCpu;
 	int32_t i4TxFreeMsduWorkCpu;
-	u_int8_t fgDramBoost;
+	int32_t i4DramBoostLv;
 	u_int8_t fgKeepPcieWakeup;
 	uint32_t u4WfdmaTh;
 	u_int8_t fgWifiNappingForceDis;

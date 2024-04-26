@@ -199,7 +199,7 @@ void kalSetCpuFreq(int32_t freq, uint32_t set_mask)
 	}
 }
 
-void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
+void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 {
 	/* TODO */
 }

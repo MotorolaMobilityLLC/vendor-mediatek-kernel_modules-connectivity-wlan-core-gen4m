@@ -210,7 +210,7 @@ void kalSetCpuFreq(int32_t freq)
 #endif
 }
 
-void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
+void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 {
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
 	/* TODO */
@@ -218,7 +218,7 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, u_int8_t onoff)
 	static struct pm_qos_request wifi_qos_request;
 
 	KAL_ACQUIRE_MUTEX(prAdapter, MUTEX_BOOST_CPU);
-	if (onoff == TRUE) {
+	if (iLv != -1) {
 		pr_info("Max Dram Freq start\n");
 		pm_qos_add_request(&wifi_qos_request,
 				   PM_QOS_DDR_OPP,
