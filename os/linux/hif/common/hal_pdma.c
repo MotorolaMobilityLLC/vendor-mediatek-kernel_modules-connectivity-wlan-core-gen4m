@@ -836,10 +836,6 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		goto unlock;
 	}
 #endif
-#if defined(_HIF_PCIE)
-	if (prBusInfo->checkFwOwnMsiStatus)
-		prBusInfo->checkFwOwnMsiStatus(prAdapter);
-#endif
 
 	if (p2pFuncNeedForceSleep(prAdapter))
 		DBGLOG(INIT, TRACE, "SAP: Skip fgWiFiInSleepyState check\n");
@@ -868,6 +864,11 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 		/* pending interrupts */
 		goto unlock;
 	}
+
+#if defined(_HIF_PCIE)
+	if (prBusInfo->checkFwOwnMsiStatus)
+		prBusInfo->checkFwOwnMsiStatus(prAdapter);
+#endif
 
 	/*
 	 * fw may reset data dma done counter when fw own
