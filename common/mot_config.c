@@ -14,6 +14,7 @@ typedef struct moto_product {
 static moto_product products_list[] = {
 		{"aito",   "NA",     "wifi",   "txpowerctrl_na"},
                 {"aito",   "JP",     "wifi",   "txpowerctrl_JP"},
+                {"aito",   "ROW",    "wifi",   "txpowerctrl_ROW"},
                 {"aito",   "DOCOMO", "wifi",   "txpowerctrl_DOCOMO"},
 		{"aito",   "all",    "wifi",   "txpowerctrl"},
 		{{0},        {0},   {0},	{0}},
