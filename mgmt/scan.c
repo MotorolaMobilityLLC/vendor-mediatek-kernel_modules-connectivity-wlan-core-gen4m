@@ -5138,7 +5138,6 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 		(uint16_t) OFFSET_OF(struct IE_VENDOR_EPIGRAM_IE, pucData[0]);
 	WLAN_GET_FIELD_BE24(prEpiIE->aucOui, &u4EpigramOui);
 	WLAN_GET_FIELD_BE16(prEpiIE->aucVendorType, &u2EpigramVendorType);
-	DBGLOG(SCN, INFO, "(u4EpigramOui,u2EpigramVendorType)=(0x%x,0x%x)\n", u4EpigramOui, u2EpigramVendorType);
 	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI)
 		return;
 	if (u2EpigramVendorType != VENDOR_IE_EPIGRAM_VHTTYPE1 &&
@@ -5149,7 +5148,6 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	pucIE = prEpiIE->pucData;
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		switch (IE_ID(pucIE)) {
-		DBGLOG(SCN, INFO, "IE_ID(pucIE)=%d\n", IE_ID(pucIE));
 		case ELEM_ID_VHT_CAP:
 			scanParseVHTCapIE(pucIE, prBssDesc);
 			break;
@@ -5171,7 +5169,6 @@ void scanParseVHTCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 
 	prVhtCap = (struct IE_VHT_CAP *) pucIE;
 	/* Error handling */
-	DBGLOG(SCN, INFO, "IE_LEN(prVhtCap)=%d_(%d)\n", IE_LEN(prVhtCap), sizeof(struct IE_VHT_CAP) - 2);
 	if (IE_LEN(prVhtCap) != (sizeof(struct IE_VHT_CAP) - 2)) {
 		DBGLOG(SCN, WARN,
 			"VhtCap wrong length!(%lu)->(%d)\n",
@@ -5216,12 +5213,6 @@ void scanParseVHTOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	prVhtOp = (struct IE_VHT_OP *) pucIE;
 	if (IE_LEN(prVhtOp) != (sizeof(struct IE_VHT_OP) - 2))
 		return;
-
-	DBGLOG(SCN, INFO, "prVhtOp->ucVhtOperation[0][1][2]=(%d,%d,%d)\n",
-		(enum ENUM_CHANNEL_WIDTH)(prVhtOp->ucVhtOperation[0]),
-		(enum ENUM_CHANNEL_WIDTH)(prVhtOp->ucVhtOperation[1]),
-		(enum ENUM_CHANNEL_WIDTH)(prVhtOp->ucVhtOperation[2]));
-
 	prBssDesc->eChannelWidth = (enum ENUM_CHANNEL_WIDTH)
 		(prVhtOp->ucVhtOperation[0]);
 	prBssDesc->ucCenterFreqS1 = (enum ENUM_CHANNEL_WIDTH)
