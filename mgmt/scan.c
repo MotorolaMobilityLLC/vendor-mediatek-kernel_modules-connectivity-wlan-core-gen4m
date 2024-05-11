@@ -5136,6 +5136,11 @@ void scanCheckEpigramVhtIE(uint8_t *pucBuf, struct BSS_DESC *prBssDesc)
 	prEpiIE = (struct IE_VENDOR_EPIGRAM_IE *) pucBuf;
 	u2IELength = prEpiIE->ucLength -
 		(uint16_t) OFFSET_OF(struct IE_VENDOR_EPIGRAM_IE, pucData[0]);
+	if (u2IELength > prEpiIE->ucLength) {
+		DBGLOG(RLM, WARN, "[Epigram] IE len abnormal, skip!\n");
+		return;
+	}
+
 	WLAN_GET_FIELD_BE24(prEpiIE->aucOui, &u4EpigramOui);
 	WLAN_GET_FIELD_BE16(prEpiIE->aucVendorType, &u2EpigramVendorType);
 	if (u4EpigramOui != VENDOR_IE_EPIGRAM_OUI)
