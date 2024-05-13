@@ -934,6 +934,13 @@ reset:
 
 	return 0;
 }
+
+#if CFG_SUPPORT_MCC_BOOST_CPU
+u_int8_t kalIsMccBoost(struct ADAPTER *prAdapter)
+{
+	return FALSE;
+}
+#endif /* CFG_SUPPORT_MCC_BOOST_CPU */
 #endif
 
 uint32_t kalGetEmiMetOffset(void)
