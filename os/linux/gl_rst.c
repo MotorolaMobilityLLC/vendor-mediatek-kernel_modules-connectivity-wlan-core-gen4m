@@ -812,8 +812,10 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 						 pucFile,
 						 u4Line,
 						 ret != -ETIMEDOUT);
-		if (status == WLAN_STATUS_SUCCESS)
+		if (status == WLAN_STATUS_SUCCESS) {
+			rst_evt_send = WLAN_STATUS_SUCCESS;
 			goto exit;
+		}
 	}
 
 	if (ret == -ETIMEDOUT)
