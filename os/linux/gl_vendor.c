@@ -1168,6 +1168,7 @@ int mtk_cfg80211_vendor_set_rtt_config(
 		return -EINVAL;
 	}
 
+	kalMemZero(&request, sizeof(struct PARAM_RTT_REQUEST));
 	request.fgEnable = true;
 
 	if (attrs[RTT_ATTRIBUTE_TARGET_CNT]) {
@@ -1220,11 +1221,11 @@ int mtk_cfg80211_vendor_set_rtt_config(
 				sizeof(config->rChannel));
 		}
 		if (tb[RTT_ATTRIBUTE_TARGET_PERIOD]) {
-			config->ucBurstPeriod =
+			config->u2BurstPeriod =
 				nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_PERIOD]);
 		}
 		if (tb[RTT_ATTRIBUTE_TARGET_NUM_BURST]) {
-			config->ucNumBurst =
+			config->u2NumBurstExponent =
 				nla_get_u32(tb[RTT_ATTRIBUTE_TARGET_NUM_BURST]);
 		}
 		if (tb[RTT_ATTRIBUTE_TARGET_NUM_FTM_BURST]) {
@@ -1259,13 +1260,18 @@ int mtk_cfg80211_vendor_set_rtt_config(
 		if (tb[RTT_ATTRIBUTE_TARGET_BW])
 			config->eBw = nla_get_u8(tb[RTT_ATTRIBUTE_TARGET_BW]);
 
+		config->u2PreferencePartialTsfTimer = 0;
+		config->eEventType = 0;
+		config->ucASAP = 1;
+		config->ucFtmMinDeltaTime = 40;
+
 		DBGLOG(RTT, INFO,
 			"#%d: MAC=" MACSTR
 			" TYPE=%hhu,PEER=%hhu, PRD=%hhu,CHL=(%d,%d),BRST=%hhu,NFTM=%hhu,RFTM=%hhu, RFTMR=%hhu,LCI=%hhu,LCR=%hhu,DUR=%hhu,PRB=%hhu,BW=%hhu\n",
 			i - 1, MAC2STR(config->aucAddr), config->eType,
-			config->ePeer, config->ucBurstPeriod,
+			config->ePeer, config->u2BurstPeriod,
 			config->rChannel.width, config->rChannel.center_freq,
-			config->ucNumBurst, config->ucNumFramesPerBurst,
+			config->u2NumBurstExponent, config->ucNumFramesPerBurst,
 			config->ucNumRetriesPerRttFrame,
 			config->ucNumRetriesPerFtmr, config->ucLciRequest,
 			config->ucLcrRequest, config->ucBurstDuration,

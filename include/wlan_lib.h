@@ -1772,7 +1772,6 @@ struct WIFI_RATE {
 	uint32_t bitrate;
 };
 
-
 /* RTT Capabilities */
 struct RTT_CAPABILITIES {
 	/* if 1-sided rtt data collection is supported */
@@ -1801,8 +1800,9 @@ struct RTT_CONFIG {
 	uint8_t eType; /* enum ENUM_RTT_TYPE */
 	uint8_t ePeer; /* enum ENUM_RTT_PEER_TYPE */
 	struct WIFI_CHANNEL_INFO rChannel;
-	uint8_t ucBurstPeriod;
-	uint8_t ucNumBurst;
+	uint16_t u2BurstPeriod;
+	uint16_t u2NumBurstExponent;
+	uint16_t u2PreferencePartialTsfTimer;
 	uint8_t ucNumFramesPerBurst;
 	uint8_t ucNumRetriesPerRttFrame;
 	uint8_t ucNumRetriesPerFtmr;
@@ -1819,6 +1819,10 @@ struct RTT_CONFIG {
 	uint8_t ucS2;
 	uint8_t eChannelWidth; /* enum ENUM_CHANNEL_WIDTH */
 	uint8_t ucBssIndex;
+	uint8_t eEventType;  /* enum ENUM_LOC_EVENT_TYPE_T*/
+	uint8_t ucASAP;
+	uint8_t ucFtmMinDeltaTime; //mc: UNIT:100us
+	uint8_t ucReserved; // 4 byte align
 };
 
 struct RTT_RESULT {

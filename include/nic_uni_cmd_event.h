@@ -4633,16 +4633,17 @@ struct UNI_CMD_RTT {
 	/* tlv */
 	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
-	*   TAG                          |  ID  | structure
-	*   -----------------------------|------|--------------
-	*   UNI_CMD_RTT_TAG_GET_CAPA     | 0x00 | UNI_CMD_RTT_GET_CAPA_T
-	*   UNI_CMD_RTT_TAG_RANGE_REQ    | 0x01 | UNI_CMD_RTT_RANGE_REQ_T
+	*   TAG                            |  ID  | structure
+	*   -------------------------------|------|--------------
+	*   UNI_CMD_RTT_TAG_GET_CAPA       | 0x00 | UNI_CMD_RTT_GET_CAPA_T
+	*   UNI_CMD_RTT_TAG_RANGE_REQ_MC   | 0x01 | UNI_CMD_RTT_RANGE_REQ_MC_T
 	*/
 } __KAL_ATTRIB_PACKED__;
+
 /* RTT command TLV List */
 enum ENUM_UNI_CMD_RTT_TAG {
 	UNI_CMD_RTT_TAG_GET_CAPA = 0,
-	UNI_CMD_RTT_TAG_RANGE_REQ = 1,
+	UNI_CMD_RTT_TAG_RANGE_REQ_MC = 1,      /* 11MC */
 	UNI_CMD_RTT_TAG_NUM
 };
 /* Get RTT Capabilities (Tag0) */
@@ -4651,9 +4652,10 @@ struct UNI_CMD_RTT_GET_CAPA_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 } __KAL_ATTRIB_PACKED__;
-/* Range request (Tag1) */
+
+/* 11mc ranging request (Tag1) */
 __KAL_ATTRIB_PACKED_FRONT__
-struct UNI_CMD_RTT_RANGE_REQ_T {
+struct UNI_CMD_RTT_RANGE_REQ_MC_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucSeqNum;
@@ -7787,12 +7789,27 @@ enum ENUM_UNI_EVENT_RTT_TAG {
 	UNI_EVENT_RTT_TAG_RTT_DONE = 2,
 	UNI_EVENT_RTT_TAG_NUM
 };
+
+/* Location capabilities (CMD_GET_LOC_CAP_T) retrieved from FW */
+__KAL_ATTRIB_PACKED_FRONT__
+struct LOC_CAPABILITIES_T {
+	uint16_t u2LocInitSupported;
+	uint16_t u2LocResSupported;
+	uint8_t ucLciSupport;
+	uint8_t ucLcrSupport;
+	uint16_t u2PreambleSupport;
+	uint16_t u2BwSupport;
+	uint16_t u2AzBwSupport;
+	uint32_t u4MinDeltaTimePerPacket;
+	uint32_t u4Reserved;
+} __KAL_ATTRIB_PACKED__;
+
 /* RTT capabilities (Tag0) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_RTT_CAPA_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
-	struct RTT_CAPABILITIES rCapabilities;
+	struct LOC_CAPABILITIES_T rCapabilities;
 } __KAL_ATTRIB_PACKED__;
 /* RTT result (Tag1) */
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7831,6 +7848,7 @@ struct UNI_EVENT_RTT_DONE_T {
 	uint16_t u2Tag;
 	uint16_t u2Length;
 	uint8_t ucSeqNum;
+	uint8_t aucMacAddr[MAC_ADDR_LEN];
 } __KAL_ATTRIB_PACKED__;
 #endif /* CFG_SUPPORT_RTT */
 

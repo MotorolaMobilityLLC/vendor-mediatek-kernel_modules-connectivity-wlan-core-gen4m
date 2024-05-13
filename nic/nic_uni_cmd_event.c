@@ -7204,17 +7204,26 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 {
 	struct CMD_RTT_REQUEST *cmd;
 	struct UNI_CMD_RTT *uni_cmd;
-	struct UNI_CMD_RTT_RANGE_REQ_T *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_RTT) +
-		sizeof(struct UNI_CMD_RTT_RANGE_REQ_T);
+	uint32_t max_cmd_len = 0;
+	uint8_t i;
 
 	if (info->ucCID != CMD_ID_RTT_RANGE_REQUEST ||
 	    info->u4SetQueryInfoLen != sizeof(*cmd))
 		return WLAN_STATUS_NOT_ACCEPTED;
 
-	cmd = (struct CMD_RTT_REQUEST *)
-		info->pucInfoBuffer;
+	cmd = (struct CMD_RTT_REQUEST *) info->pucInfoBuffer;
+	if (!cmd ||
+		cmd->ucConfigNum == 0 ||
+		cmd->ucConfigNum > CFG_RTT_MAX_CANDIDATES)
+		return WLAN_STATUS_INVALID_DATA;
+
+	max_cmd_len = sizeof(struct UNI_CMD_RTT);
+	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC)
+		max_cmd_len += sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
+	else
+		return WLAN_STATUS_INVALID_DATA;
+
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_RTT,
 		max_cmd_len, nicUniCmdEventSetCommon,
 		nicUniCmdTimeoutCommon);
@@ -7222,22 +7231,30 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_RTT *) entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_RTT_RANGE_REQ_T *)
-		uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ;
-	tag->u2Length = sizeof(*tag);
-	tag->ucSeqNum = cmd->ucSeqNum;
-	tag->fgEnable = cmd->fgEnable;
-	tag->ucConfigNum = cmd->ucConfigNum;
-	kalMemCopy(tag->ucPaddings, cmd->ucPaddings, 5);
-	kalMemCopy(tag->arRttConfigs, cmd->arRttConfigs,
-		sizeof(struct RTT_CONFIG) * CFG_RTT_MAX_CANDIDATES);
 
-	dumpMemory32((uint32_t *)tag->arRttConfigs,
-		sizeof(struct RTT_CONFIG) * CFG_RTT_MAX_CANDIDATES);
+	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC) {
+		struct UNI_CMD_RTT_RANGE_REQ_MC_T *tag;
 
-	DBGLOG(REQ, INFO, "rtt request, seq:%d, enable:%d\n",
-		tag->ucSeqNum, tag->fgEnable);
+		tag = (struct UNI_CMD_RTT_RANGE_REQ_MC_T *)
+			uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ_MC;
+		tag->u2Length = sizeof(*tag);
+		tag->ucSeqNum = cmd->ucSeqNum;
+		tag->fgEnable = cmd->fgEnable;
+		tag->ucConfigNum = cmd->ucConfigNum;
+
+		for (i = 0; i < cmd->ucConfigNum; i++) {
+			kalMemCopy(&tag->arRttConfigs[i],
+				&cmd->arRttConfigs[i],
+				sizeof(struct RTT_CONFIG));
+		}
+
+		dumpMemory32((uint32_t *)tag->arRttConfigs,
+			sizeof(struct RTT_CONFIG) * CFG_RTT_MAX_CANDIDATES);
+
+		DBGLOG(REQ, INFO, "rtt request, seq:%d, enable:%d\n",
+			tag->ucSeqNum, tag->fgEnable);
+	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
@@ -12527,10 +12544,21 @@ void nicUniEventRttCapabilities(struct ADAPTER
 		(struct UNI_EVENT_RTT *)uni_evt->aucBuffer;
 	struct UNI_EVENT_RTT_CAPA_T *tag =
 		(struct UNI_EVENT_RTT_CAPA_T *) evt->aucTlvBuffer;
+	struct LOC_CAPABILITIES_T *prLocCapa =
+		(struct LOC_CAPABILITIES_T *) &tag->rCapabilities;
 	struct EVENT_RTT_CAPABILITIES legacy = {0};
+	struct RTT_CAPABILITIES *prRttCapa =
+		(struct RTT_CAPABILITIES *) &legacy.rCapabilities;
 
-	kalMemCopy(&legacy.rCapabilities, &tag->rCapabilities,
-		sizeof(struct RTT_CAPABILITIES));
+	prRttCapa->fgRttOneSidedSupported =
+		prLocCapa->u2LocInitSupported & BIT(0) ? TRUE : FALSE;
+	prRttCapa->fgRttFtmSupported =
+		prLocCapa->u2LocInitSupported & BIT(1) ? TRUE : FALSE;
+	prRttCapa->fgLciSupported = prLocCapa->ucLciSupport;
+	prRttCapa->fgLcrSupported = prLocCapa->ucLcrSupport;
+	prRttCapa->ucPreambleSupport = (uint8_t)(prLocCapa->u2PreambleSupport);
+	prRttCapa->ucBwSupport = (uint8_t)(prLocCapa->u2BwSupport);
+	prRttCapa->fgMcVersion = 80;
 
 	nicCmdEventRttCapabilities(prAdapter, prCmdInfo, (uint8_t *)&legacy);
 }
