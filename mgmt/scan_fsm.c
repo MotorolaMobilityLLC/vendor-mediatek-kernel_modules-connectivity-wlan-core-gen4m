@@ -2059,16 +2059,14 @@ scnSetSchedScanPlan(struct ADAPTER *prAdapter,
 
 	ASSERT(prAdapter);
 
-#if CFG_EXT_SCAN
+
 	if (u2ScanInterval != 0) {
 		uint8_t i;
 
 		prSchedScanCmd->ucMspEntryNum = 10;
 		for (i = 0; i < 10; i++)
 			prSchedScanCmd->au2MspList[i] = u2ScanInterval;
-	} else
-#endif
-	{
+	} else {
 		prSchedScanCmd->ucMspEntryNum = 0;
 		kalMemZero(prSchedScanCmd->au2MspList,
 				sizeof(prSchedScanCmd->au2MspList));
