@@ -2292,6 +2292,8 @@ void rlmDomainSendDomainInfoCmd(struct ADAPTER *prAdapter)
 						= prSubBand->ucFirstChannelNum;
 			prCmd->rSubBand[i].ucNumChannels
 						= prSubBand->ucNumChannels;
+			prCmd->rSubBand[i].fgDfs
+						= prSubBand->fgDfs;
 		}
 	}
 

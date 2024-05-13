@@ -2070,7 +2070,8 @@ struct CMD_SUBBAND_INFO {
 	uint8_t ucChannelSpan;
 	uint8_t ucFirstChannelNum;
 	uint8_t ucNumChannels;
-	uint8_t aucReserved[3];
+	uint8_t fgDfs;         /* Type: BOOLEAN (fgDfsNeeded) */
+	uint8_t aucReserved[2];
 };
 
 /* CMD_SET_DOMAIN_INFO */
