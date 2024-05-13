@@ -131,7 +131,7 @@ uint32_t wlanIPCAccessPciCfgSpace(
 		i4Offset += 4;
 	}
 
-	DBGLOG(INIT, INFO,
+	DBGLOG(INIT, TRACE,
 		"offset:[0x%08x], bit offset:[%u]\n",
 		i4Offset, u4BitOffset);
 	switch (eType) {
@@ -140,20 +140,17 @@ uint32_t wlanIPCAccessPciCfgSpace(
 		break;
 	}
 	case WLAN_IPC_WRITE: {
-		DBGLOG(HAL, INFO, "Before: value:[%u]\n", *pu4Value);
 		ret = glWritePcieCfgSpace(i4Offset, *pu4Value);
 		break;
 	}
 	case WLAN_IPC_SET: {
 		ret = glReadPcieCfgSpace(i4Offset, pu4Value);
-		DBGLOG(HAL, INFO, "Before: value:[%u]\n", *pu4Value);
 		*pu4Value |= (1 << u4BitOffset);
 		ret = glWritePcieCfgSpace(i4Offset, *pu4Value);
 		break;
 	}
 	case WLAN_IPC_CLR: {
 		ret = glReadPcieCfgSpace(i4Offset, pu4Value);
-		DBGLOG(HAL, INFO, "Before: value:[%u]\n", *pu4Value);
 		*pu4Value &= ~(1 << u4BitOffset);
 		ret = glWritePcieCfgSpace(i4Offset, *pu4Value);
 		break;
@@ -164,7 +161,6 @@ uint32_t wlanIPCAccessPciCfgSpace(
 	}
 	}
 
-	DBGLOG(INIT, INFO, "After: value:[%u]\n", *pu4Value);
 	return ret;
 }
 
@@ -172,7 +168,7 @@ uint32_t wlanIPCCheckStatus(struct GLUE_INFO *prGlueInfo,
 	enum ENUM_IPC_POLLING_TYPE eType,
 	uint8_t fgIsBitCheck,
 	uint8_t u1BitShift,
-	uint32_t       *pu4Val,
+	uint32_t *pu4Val,
 	uint32_t u4ExpVal,
 	uint32_t u4Offset,
 	uint32_t u4Range,
@@ -269,13 +265,16 @@ uint32_t wlanGetUniFwHeaderInfo(const void *pvFwBuffer)
 {
 	struct UNI_FW_HDR_FORMAT_T *prUniFwHdr =
 		(struct UNI_FW_HDR_FORMAT_T *)pvFwBuffer;
+	uint8_t aucFwBuildDate[UNI_FW_HDR_BUILD_DATE_LENGTH + 1] = {0};
 
 	if (pvFwBuffer == NULL)
 		return WLAN_STATUS_INVALID_DATA;
 
-	prUniFwHdr->aucBuildDate[sizeof(prUniFwHdr->aucBuildDate) - 1] = '\0';
-	DBGLOG(INIT, INFO, "FW build date:[%s]\n", prUniFwHdr->aucBuildDate);
+	kalMemCopy(aucFwBuildDate, prUniFwHdr->aucBuildDate,
+		UNI_FW_HDR_BUILD_DATE_LENGTH);
+	DBGLOG(INIT, INFO, "FW build date:[%s]\n", aucFwBuildDate);
 
 	return WLAN_STATUS_SUCCESS;
 }
 #endif /* CFG_MTK_WIFI_SUPPORT_IPC */
+
