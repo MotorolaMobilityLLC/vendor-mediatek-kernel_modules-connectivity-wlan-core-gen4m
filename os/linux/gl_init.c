@@ -6854,6 +6854,11 @@ int connsys_power_event_notification(
 		return ret;
 	}
 
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(INIT, INFO, "driver is not ready\n");
+		return ret;
+	}
+
 	prAdapter = prGlueInfo->prAdapter;
 	DBGLOG(INIT, TRACE, "prAdapter=%p\n", prAdapter);
 	if (!prAdapter) {
