@@ -2248,7 +2248,7 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 			prMsiLayout->irq_num,
 			prMsiLayout->top_handler,
 			prMsiLayout->thread_handler,
-			IRQF_SHARED,
+			IRQF_SHARED | IRQF_NO_SUSPEND,
 			KBUILD_MODNAME,
 			prGlueInfo);
 
