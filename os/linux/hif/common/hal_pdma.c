@@ -2307,7 +2307,7 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 			kalSnprintf(uevent, sizeof(uevent),
 				"abnormaltrx=DIR:TX,event:AbDrop,Count:%u",
 				report->u4ContinuousTxFail);
-			kalSendUevent(uevent);
+			kalSendUevent(prAdapter, uevent);
 		}
 	} else {
 		halAddConnsysLatencyCount(prAdapter, ucBssIndex,

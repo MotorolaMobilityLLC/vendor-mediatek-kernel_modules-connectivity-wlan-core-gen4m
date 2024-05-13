@@ -5988,7 +5988,7 @@ void nicEventReportUEvent(struct ADAPTER *prAdapter,
 	if (prEventData != NULL) {
 		DBGLOG(NIC, TRACE, "UEvent: %s\n",
 		prEventData->aucData);
-		kalSendUevent(prEventData->aucData);
+		kalSendUevent(prAdapter, prEventData->aucData);
 	}
 }
 

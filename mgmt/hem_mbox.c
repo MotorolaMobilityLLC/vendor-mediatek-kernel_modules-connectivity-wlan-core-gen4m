@@ -24,6 +24,9 @@
 #include "he_rlm.h"
 #endif
 
+extern void kalSendUeventHandler(struct ADAPTER *prAdapter,
+				 struct MSG_HDR *prMsgHdr);
+
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -351,6 +354,7 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #endif /* ARP_MONITER_ENABLE */
 	{MID_RSN_FW_DUMP, rsnTriggerDumpWTBL},
 	{MID_RSN_MIC_FAIL, rsnMicErrorHandleMsg},
+	{MID_UEVENT_REQ, kalSendUeventHandler},
 };
 
 /*******************************************************************************

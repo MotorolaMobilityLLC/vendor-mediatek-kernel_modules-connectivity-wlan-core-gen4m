@@ -12915,7 +12915,7 @@ void nicUniEventCsiData(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #endif
 }
 
-static void nicUniEventUevent(uint8_t *pucBuf)
+static void nicUniEventUevent(struct ADAPTER *prAdapter, uint8_t *pucBuf)
 {
 	struct EVENT_REPORT_U_EVENT *prEventData;
 
@@ -12923,7 +12923,7 @@ static void nicUniEventUevent(uint8_t *pucBuf)
 	if (prEventData != NULL) {
 		DBGLOG(NIC, TRACE, "UEvent: %s\n",
 		prEventData->aucData);
-		kalSendUevent(prEventData->aucData);
+		kalSendUevent(prAdapter, prEventData->aucData);
 	}
 }
 
@@ -12950,7 +12950,7 @@ void nicUniUnsolicitStatsEvt(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_STATISTICS_TAG_UEVENT: {
 			struct UNI_EVENT_UEVENT *tlv =
 				(struct UNI_EVENT_UEVENT *) tag;
-			nicUniEventUevent(tlv->aucBuffer);
+			nicUniEventUevent(ad, tlv->aucBuffer);
 		}
 			break;
 		default:
