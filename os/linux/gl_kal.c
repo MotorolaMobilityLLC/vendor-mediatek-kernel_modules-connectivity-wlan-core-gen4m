@@ -11844,7 +11844,7 @@ u_int8_t kalIsMccStateChange(struct ADAPTER *prAdapter)
 	return prAdapter->fgMccStateChange;
 }
 
-u_int8_t kalIsMccBoost(struct ADAPTER *prAdapter)
+u_int8_t __weak kalIsMccBoost(struct ADAPTER *prAdapter)
 {
 	return prAdapter->fgMccBoost;
 }
