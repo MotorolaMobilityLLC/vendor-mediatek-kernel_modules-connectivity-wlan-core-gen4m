@@ -3473,15 +3473,17 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 		struct net_device *dev,
 		struct station_del_parameters *params)
 {
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate;
+	struct MLD_BSS_INFO *prMldBss;
+#endif
 	const u8 *mac = params->mac ? params->mac : bcast_addr;
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *) NULL;
 	int32_t i4Rslt = 0;
 	struct MSG_P2P_CONNECTION_ABORT *prDisconnectMsg =
 		(struct MSG_P2P_CONNECTION_ABORT *) NULL;
-	uint8_t ucRoleIdx = 0;
-	uint8_t ucBssIdx = 0;
+	uint8_t ucRoleIdx = KAL_P2P_NUM;
 	uint32_t waitRet = 0;
-	struct BSS_INFO *prBssInfo = NULL;
 	struct GL_P2P_INFO *prP2PInfo;
 	u_int8_t wait = FALSE;
 
@@ -3494,15 +3496,37 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-	if (mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
-		DBGLOG(P2P, ERROR, "can NOT find role idx.\n");
-		i4Rslt = -EINVAL;
-		goto exit;
-	}
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+		netdev_priv(dev);
+	prMldBss = mldBssGetByIdx(prGlueInfo->prAdapter,
+				  prNetDevPrivate->ucMldBssIdx);
+	if (params->mac &&
+	    dev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP &&
+	    IS_MLD_BSSINFO_MULTI(prMldBss)) {
+		struct LINK *prBssList;
+		struct BSS_INFO *prTempBss;
 
-	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter,
-				ucRoleIdx, &ucBssIdx) != WLAN_STATUS_SUCCESS) {
-		DBGLOG(P2P, ERROR, "can NOT find bss idx.\n");
+		prBssList = &prMldBss->rBssList;
+		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
+				    struct BSS_INFO) {
+			struct STA_RECORD *prStaRec;
+
+			prStaRec = cnmGetStaRecByAddress(prGlueInfo->prAdapter,
+							 prTempBss->ucBssIndex,
+							 params->mac);
+			if (!prStaRec)
+				continue;
+
+			ucRoleIdx = (uint8_t)prTempBss->u4PrivateData;
+			break;
+		}
+	}
+#endif
+
+	if (ucRoleIdx >= KAL_P2P_NUM &&
+	    mtk_Netdev_To_RoleIdx(prGlueInfo, dev, &ucRoleIdx) < 0) {
+		DBGLOG(P2P, ERROR, "can NOT find role idx.\n");
 		i4Rslt = -EINVAL;
 		goto exit;
 	}
@@ -3525,11 +3549,14 @@ int mtk_p2p_cfg80211_del_station(struct wiphy *wiphy,
 	wait = UNEQUAL_MAC_ADDR(mac, bcast_addr) ? TRUE : FALSE;
 
 	DBGLOG(P2P, INFO,
-		"mac: " MACSTR " type: %d reason: %d wait: %d\n",
-		MAC2STR(mac), params->subtype, params->reason_code, wait);
+		"role: %d mac: " MACSTR " type: %d reason: %d wait: %d\n",
+		ucRoleIdx,
+		MAC2STR(mac),
+		params->subtype,
+		params->reason_code,
+		wait);
 
 	prP2PInfo = prGlueInfo->prP2PInfo[ucRoleIdx];
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
 
 	if (wait) {
 #if KERNEL_VERSION(3, 13, 0) <= CFG80211_VERSION_CODE
