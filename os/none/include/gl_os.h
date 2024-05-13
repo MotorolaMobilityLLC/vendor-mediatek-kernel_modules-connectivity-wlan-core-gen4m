@@ -383,6 +383,10 @@ struct GL_PERF_IND_INFO {
 };
 #endif /* CFG_SUPPORT_SCAN_CACHE_RESULT */
 
+struct GL_CH_SWITCH_WORK {
+
+};
+
 struct FT_IES {
 	uint16_t u2MDID;
 	struct IE_MOBILITY_DOMAIN *prMDIE;

@@ -12796,7 +12796,7 @@ void kalIndicateAllQueueTxAllowed(struct GLUE_INFO *prGlueInfo,
 		netif_tx_stop_all_queues(prDevHandler);
 }
 
-void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
+void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 				enum ENUM_CHNL_EXT eSco,
 				uint8_t ucChannelNum,
 				enum ENUM_BAND eBand,
@@ -12889,6 +12889,89 @@ void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	p2pFuncSwitchSapChannel(prGlueInfo->prAdapter,
 		P2P_DEFAULT_SCENARIO);
 }
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+void kalAisChnlSwitchNotifyWork(struct work_struct *work)
+{
+	struct GL_CH_SWITCH_WORK *prWorkContainer =
+		CONTAINER_OF(work, struct GL_CH_SWITCH_WORK,
+			rChSwitchNotifyWork);
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct ADAPTER *prAdapter;
+	struct BSS_INFO *prBssInfo;
+
+	if (!prGlueInfo ||
+		prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	prBssInfo =
+		CONTAINER_OF(prWorkContainer, struct BSS_INFO, rGlChSwitchWork);
+
+	__kalIndicateChannelSwitch(prAdapter->prGlueInfo,
+				prBssInfo->eBssSCO,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBand,
+				prBssInfo->ucBssIndex);
+}
+#endif
+
+void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex)
+{
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
+		kalAisChnlSwitchNotifyWork);
+#endif
+}
+
+void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex)
+{
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo =
+		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo)
+		return;
+	cancel_work_sync(
+		&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
+#endif
+}
+
+
+
+void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
+			enum ENUM_CHNL_EXT eSco,
+			uint8_t ucChannelNum, enum ENUM_BAND eBand,
+			uint8_t ucBssIndex)
+{
+
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct ADAPTER *prAdapter;
+	struct BSS_INFO *prBssInfo;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBssInfo =
+		prAdapter->aprBssInfo[ucBssIndex];
+	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
+#else
+	__kalIndicateChannelSwitch(prGlueInfo,
+				eSco,
+				ucChannelNum,
+				eBand,
+				ucBssIndex);
+#endif
+
+}
+
 #endif
 
 void kalInitDevWakeup(struct ADAPTER *prAdapter, struct device *prDev)

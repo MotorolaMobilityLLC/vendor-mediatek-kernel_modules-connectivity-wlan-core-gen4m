@@ -2070,7 +2070,6 @@ void kalRemoveProbe(struct GLUE_INFO *prGlueInfo);
 u_int8_t kalCheckWfsysResetPostpone(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_REMIND_IMPLEMENT */
 #endif
-
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 #if (CFG_SUPPORT_SINGLE_SKU_LOCAL_DB == 1)
 void kalApplyCustomRegulatory(const void *pRegdom,
@@ -2111,6 +2110,10 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalSendUevent(_adapter, _src) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalCsaNotifyWorkDeinit(_prAdapter, _ucBssIdx) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
+#define kalAisCsaNotifyWorkInit(_prAdapter, _ucBssIdx) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalIsHalted() \

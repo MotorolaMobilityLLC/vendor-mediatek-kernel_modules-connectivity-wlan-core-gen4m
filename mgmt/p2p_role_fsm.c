@@ -397,6 +397,7 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 		&(prP2pBssInfo->rP2pCsaDoneTimer),
 		(PFN_MGMT_TIMEOUT_FUNC) p2pFsmRunEventCsaDoneTimeOut,
 		(uintptr_t)prP2pBssInfo);
+	kalP2pCsaNotifyWorkInit(prP2pBssInfo);
 
 	LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 

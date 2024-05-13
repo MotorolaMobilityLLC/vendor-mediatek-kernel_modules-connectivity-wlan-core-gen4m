@@ -714,6 +714,12 @@ struct FT_IES {
 	uint32_t u4IeLength;
 };
 
+struct GL_CH_SWITCH_WORK {
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct work_struct rChSwitchNotifyWork;
+#endif
+};
+
 #if CFG_SUPPORT_PER_CPU_TX
 struct _PER_CPU_TX_INFO {
 	struct tasklet_struct rTask;

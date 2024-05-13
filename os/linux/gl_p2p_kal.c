@@ -2879,7 +2879,7 @@ queue_ctrl:
 		netif_tx_stop_all_queues(prNetdevice);
 }
 
-void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
+void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 		struct BSS_INFO *prBssInfo)
 {
 	struct GL_P2P_INFO *prP2PInfo;
@@ -3051,6 +3051,47 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 
 	netif_carrier_on(prNetdevice);
 	netif_tx_wake_all_queues(prNetdevice);
+}
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+void kalP2pChnlSwitchNotifyWork(struct work_struct *work)
+{
+	struct GL_CH_SWITCH_WORK *prWorkContainer =
+		CONTAINER_OF(work, struct GL_CH_SWITCH_WORK,
+			rChSwitchNotifyWork);
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct ADAPTER *prAdapter;
+	struct BSS_INFO *prBssInfo;
+
+	if (!prGlueInfo ||
+		prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+	prAdapter = prGlueInfo->prAdapter;
+	prBssInfo =
+		CONTAINER_OF(prWorkContainer, struct BSS_INFO, rGlChSwitchWork);
+
+	__kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+}
+#endif
+void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo)
+{
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
+		kalP2pChnlSwitchNotifyWork);
+#endif
+}
+
+
+void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo)
+{
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
+#else
+	__kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+#endif
+
 }
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
