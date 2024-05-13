@@ -622,6 +622,10 @@ struct BSS_INFO {
 	u_int8_t fgIsApGoGranted;
 
 	uint8_t ucOmiWaitingCount;
+
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+	struct TIMER rP2pApGoCarrierOnTimer;
+#endif
 };
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)

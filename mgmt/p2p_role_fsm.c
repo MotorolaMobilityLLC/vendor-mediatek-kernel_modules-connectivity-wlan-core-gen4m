@@ -399,6 +399,13 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 		(uintptr_t)prP2pBssInfo);
 	kalP2pCsaNotifyWorkInit(prP2pBssInfo);
 
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+	cnmTimerInitTimer(prAdapter,
+			  &(prP2pBssInfo->rP2pApGoCarrierOnTimer),
+			  p2pRoleFsmRunEventCarrierOnHandler,
+			  (uintptr_t)prP2pBssInfo);
+#endif
+
 	LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -466,6 +473,11 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 		cnmMgtPktFree(prAdapter, prP2pBssInfo->prBeacon);
 		prP2pBssInfo->prBeacon = NULL;
 	}
+
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+	cnmTimerStopTimer(prAdapter,
+			  &(prP2pBssInfo->rP2pApGoCarrierOnTimer));
+#endif
 
 	cnmTimerStopTimer(prAdapter,
 		&(prP2pBssInfo->rP2pCsaDoneTimer));
@@ -6184,6 +6196,20 @@ void p2pRoleFsmRunEventDelMldLink(struct ADAPTER *prAdapter,
 
 exit:
 	cnmMemFree(prAdapter, prMsgHdr);
+}
+#endif
+
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+void p2pRoleFsmRunEventCarrierOnHandler(struct ADAPTER *prAdapter,
+	uintptr_t ulParamPtr)
+{
+	struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *)ulParamPtr;
+
+	if (!prAdapter || !prP2pBssInfo)
+		return;
+
+	DBGLOG(P2P, INFO, "bss idx=%u\n", prP2pBssInfo->ucBssIndex);
+	kalP2PTxCarrierOn(prAdapter->prGlueInfo, prP2pBssInfo);
 }
 #endif
 
