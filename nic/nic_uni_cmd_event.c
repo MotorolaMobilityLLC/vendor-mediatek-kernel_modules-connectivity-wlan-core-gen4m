@@ -4416,6 +4416,7 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 	for (i = 0; i < msg->ucExtraChReqNum + 1; i++, tag++) {
 		struct MSG_CH_REQ *sub_req = NULL;
 		enum ENUM_UNI_CMD_CNM_CHANNEL_WIDTH eWidth;
+		uint8_t extra = 0;
 
 		if (i == 0) {
 			sub_req = (struct MSG_CH_REQ *)msg;
@@ -4466,10 +4467,17 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucRfCenterFreqSeg2FromAP = sub_req->ucRfCenterFreqSeg2;
 		tag->ucDBDCBand = nicUniCmdChReqBandType(sub_req->eDBDCBand);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		if (IS_MLD_BSSINFO_MULTI(mld_bss))
-			tag->ucExtraInfo |= BIT(
+		if (IS_BSS_APGO(bss)) {
+			if (IS_MLD_BSSINFO_MULTI(mld_bss))
+				extra |= BIT(
 				CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_MULTI_LINK);
+		} else {
+			if (msg->ucExtraChReqNum >= 1)
+				extra |= BIT(
+				CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_MULTI_LINK);
+		}
 #endif
+		tag->ucExtraInfo = extra;
 
 		DBGLOG(INIT, INFO,
 			"bss=%d,token=%d,type=%d,interval=%d,ch[%d %d %d %d %d %d],dbdc=%d,extra=%u\n",
