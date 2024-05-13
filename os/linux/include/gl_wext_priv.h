@@ -475,11 +475,12 @@ int android_private_support_driver_cmd(struct net_device *prDev,
 struct ifreq *prReq, int i4Cmd);
 #endif /* CFG_ANDROID_AOSP_PRIV_CMD */
 
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
 int priv_support_mdns_offload(struct net_device *prDev,
 				struct ifreq *prReq, int i4Cmd);
 #endif
-
+#endif
 int32_t priv_driver_cmds(struct net_device *prNetDev,
 			 int8_t *pcCommand, int32_t i4TotalLen);
 
@@ -691,6 +692,10 @@ int priv_driver_enable_mdns_offload(struct net_device *prNetDev,
 int priv_driver_disable_mdns_offload(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_set_mdns_wake_flag(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_get_hitcounter(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+int priv_driver_get_misscounter(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #if TEST_CODE_FOR_MDNS
 int priv_driver_send_mdns_record(struct net_device *prNetDev,

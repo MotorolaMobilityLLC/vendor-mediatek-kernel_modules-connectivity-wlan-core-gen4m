@@ -17638,7 +17638,7 @@ wlanoidSetMdvt(struct ADAPTER *prAdapter,
 				   (uint8_t *) &rCmdMdvtCfg,
 				   pvSetBuffer, u4SetBufferLen);
 }	/* wlanoidSetMdvt */
-
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
 uint32_t
 wlanoidSetMdnsCmdToFw(
@@ -17691,7 +17691,56 @@ wlanoidSetMdnsCmdToFw(
 			NULL,
 			0);
 }
-#endif
+
+uint32_t wlanoidGetMdnsHitMiss(struct ADAPTER *prAdapter,
+	 void *pvSetBuffer,
+	 uint32_t u4SetBufferLen,
+	 uint32_t *pu4SetInfoLen)
+{
+
+	struct CMD_MDNS_PARAM_T *cmdMdnsParam;
+	struct EVENT_ID_MDNS_RECORD_T *prMdnsRecordEvent;
+	uint32_t u4QueryBufLen = sizeof(struct EVENT_ID_MDNS_RECORD_T);
+	uint32_t u4QueryInfoLen = sizeof(struct CMD_MDNS_PARAM_T);
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return WLAN_STATUS_ADAPTER_NOT_READY;
+	}
+
+	if (!pu4SetInfoLen) {
+		DBGLOG(NIC, ERROR, "NULL pu4SetInfoLen!\n");
+		return WLAN_STATUS_INVALID_LENGTH;
+	}
+
+	if (!pvSetBuffer) {
+		DBGLOG(NIC, ERROR, "NULL pvSetBuffer!\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prMdnsRecordEvent = &prAdapter->rMdnsInfo.rMdnsRecordEvent;
+	*pu4SetInfoLen = sizeof(struct CMD_MDNS_PARAM_T);
+
+	cmdMdnsParam = (struct CMD_MDNS_PARAM_T *)pvSetBuffer;
+
+	DBGLOG(SW4, STATE, "set cmd %u.\n", cmdMdnsParam->ucCmd);
+
+	return wlanSendSetQueryCmd(prAdapter,	/* prAdapter */
+			    CMD_ID_SET_MDNS_RECORD,	/* ucCID */
+			    TRUE,	/* fgSetQuery */
+			    TRUE,	/* fgNeedResp */
+			    TRUE,	/* fgIsOid */
+			    nicCmdEventQueryMdnsStats,    /* pfCmdDoneHandler */
+			    nicOidCmdTimeoutCommon, /* pfCmdTimeoutHandler */
+			    u4QueryInfoLen,    /* u4SetQueryInfoLen */
+			    (uint8_t *)cmdMdnsParam,  /* pucInfoBuffer */
+			    (void *)prMdnsRecordEvent, /* pvSetQueryBuffer */
+			    u4QueryBufLen);   /* u4SetQueryBufferLen */
+}
+
+#endif /* #if CFG_SUPPORT_MDNS_OFFLOAD */
+
+#endif /* #if CFG_WOW_SUPPORT */
 
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 uint32_t

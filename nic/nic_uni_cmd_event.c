@@ -176,8 +176,10 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 	[CMD_ID_PKT_OFLD] = nicUniCmdPktOfldOp,
 #endif
 	[CMD_ID_WFC_KEEP_ALIVE] = nicUniCmdKeepAlive,
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
 	[CMD_ID_SET_MDNS_RECORD] = nicUniCmdMdnsRecorde,
+#endif
 #endif
 	[CMD_ID_LP_DBG_CTRL] = nicUniCmdLpDbgCtrl,
 #if CFG_SUPPORT_WIFI_ICCM
@@ -284,6 +286,11 @@ static PROCESS_RX_UNI_EVENT_FUNCTION arUniEventTable[UNI_EVENT_ID_NUM] = {
 #if CFG_SUPPORT_FW_DROP_SSN
 	[UNI_EVENT_ID_FW_DROP_SSN] = nicUniEventFwDropSSN,
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
+#if CFG_WOW_SUPPORT
+#if CFG_SUPPORT_MDNS_OFFLOAD
+	[UNI_EVENT_ID_MDNS_REOCRD] = nicUniEventMdnsStats,
+#endif
+#endif
 	[UNI_EVENT_ID_FAST_PATH] = nicUniEventFastPath,
 	[UNI_EVENT_ID_THERMAL] = nicUniEventThermalProtect,
 #if (CFG_CE_ASSERT_DUMP == 1)
@@ -8090,20 +8097,15 @@ uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
-uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
-		struct WIFI_UNI_SETQUERY_INFO *info)
+uint32_t nicUniCmdMdnsRecordeEnable(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info, uint32_t max_cmd_len)
 {
 	struct CMD_MDNS_PARAM_T *cmd;
 	struct UNI_CMD_MDNS_RECORDE *uni_cmd;
-	struct UNI_CMD_MDNS_RECORDE_SET *tag;
+	struct UNI_CMD_MDNS_RECORDE_ENABLE *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MDNS_RECORDE) +
-		sizeof(struct UNI_CMD_MDNS_RECORDE_SET);
-
-	if (info->ucCID != CMD_ID_SET_MDNS_RECORD ||
-	    info->u4SetQueryInfoLen != sizeof(*cmd))
-		return WLAN_STATUS_NOT_ACCEPTED;
 
 	cmd = (struct CMD_MDNS_PARAM_T *) info->pucInfoBuffer;
 	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_MDNS_RECORD,
@@ -8112,31 +8114,150 @@ uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
 		return WLAN_STATUS_RESOURCES;
 
 	uni_cmd = (struct UNI_CMD_MDNS_RECORDE *) entry->pucInfoBuffer;
-	tag = (struct UNI_CMD_MDNS_RECORDE_SET *) uni_cmd->aucTlvBuffer;
-	tag->u2Tag = UNI_CMD_MDNS_RECORDE_TAG_SET;
+	tag = (struct UNI_CMD_MDNS_RECORDE_ENABLE *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MDNS_RECORDE_TAG_ENABLE;
 	tag->u2Length = sizeof(*tag);
+	if (cmd->ucCmd == MDNS_CMD_DISABLE)
+		tag->EnableFlag = FALSE;
+	else if (cmd->ucCmd == MDNS_CMD_ENABLE) {
+		tag->EnableFlag = TRUE;
 
-	tag->ucCmd = cmd->ucCmd;
-	kalMemCopy(&(tag->mdns_param),
-			&(cmd->mdns_param),
-			sizeof(tag->mdns_param));
-	tag->u4RecordId = cmd->u4RecordId;
-	tag->ucWakeFlag = cmd->ucWakeFlag;
+		tag->ucWakeFlag = cmd->ucWakeFlag;
+	    kalMemCopy(&(tag->aucMdnsMacHdr),
+				&(cmd->aucMdnsMacHdr),
+				sizeof(tag->aucMdnsMacHdr));
+		kalMemCopy(tag->aucMdnsIPHdr,
+				cmd->aucMdnsIPHdr,
+				sizeof(tag->aucMdnsIPHdr));
+		kalMemCopy(tag->aucMdnsUdpHdr,
+				cmd->aucMdnsUdpHdr,
+				sizeof(tag->aucMdnsUdpHdr));
+	}
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
-	kalMemCopy(&(tag->aucMdnsMacHdr),
-			&(cmd->aucMdnsMacHdr),
-			sizeof(tag->aucMdnsMacHdr));
-	kalMemCopy(tag->aucMdnsIPHdr,
-			cmd->aucMdnsIPHdr,
-			sizeof(tag->aucMdnsIPHdr));
-	kalMemCopy(tag->aucMdnsUdpHdr,
-			cmd->aucMdnsUdpHdr,
-			sizeof(tag->aucMdnsUdpHdr));
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdMdnsRecordeGetHit(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info, uint32_t max_cmd_len)
+{
+	struct CMD_MDNS_PARAM_T *cmd;
+	struct UNI_CMD_MDNS_RECORDE *uni_cmd;
+	struct UNI_CMD_MDNS_RECORDE_GET_HIT *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+
+	cmd = (struct CMD_MDNS_PARAM_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_MDNS_RECORD,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_MDNS_RECORDE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MDNS_RECORDE_GET_HIT *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MDNS_RECORDE_TAG_GET_HIT;
+	tag->u2Length = sizeof(*tag);
+	tag->ucRecordId = cmd->ucRecordId;
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
 
 	return WLAN_STATUS_SUCCESS;
 }
+
+uint32_t nicUniCmdMdnsRecordeGetMiss(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info, uint32_t max_cmd_len)
+{
+	struct CMD_MDNS_PARAM_T *cmd;
+	struct UNI_CMD_MDNS_RECORDE *uni_cmd;
+	struct UNI_CMD_MDNS_RECORDE_GET_MISS *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+
+	cmd = (struct CMD_MDNS_PARAM_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_MDNS_RECORD,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_MDNS_RECORDE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MDNS_RECORDE_GET_MISS *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MDNS_RECORDE_TAG_GET_MISS;
+	tag->u2Length = sizeof(*tag);
+
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdMdnsRecordeIpv6WakeUp(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info, uint32_t max_cmd_len)
+{
+	struct CMD_MDNS_PARAM_T *cmd;
+	struct UNI_CMD_MDNS_RECORDE *uni_cmd;
+	struct UNI_CMD_MDNS_RECORDE_IPV6_WAKEUP *tag;
+	struct WIFI_UNI_CMD_ENTRY *entry;
+
+	cmd = (struct CMD_MDNS_PARAM_T *) info->pucInfoBuffer;
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_MDNS_RECORD,
+		max_cmd_len, nicUniCmdEventSetCommon, nicUniCmdTimeoutCommon);
+	if (!entry)
+		return WLAN_STATUS_RESOURCES;
+
+	uni_cmd = (struct UNI_CMD_MDNS_RECORDE *) entry->pucInfoBuffer;
+	tag = (struct UNI_CMD_MDNS_RECORDE_IPV6_WAKEUP *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MDNS_RECORDE_TAG_IPV6_WAKEUP;
+	tag->u2Length = sizeof(*tag);
+	tag->ucWakeFlag = cmd->ucWakeFlag;
+	tag->ucPassthroughBehavior = cmd->ucPassthroughBehavior;
+	tag->ucIPV6WakeupFlag = cmd->ucIPV6WakeupFlag;
+	tag->ucPayloadOrder = cmd->ucPayloadOrder;
+	tag->u2PayloadTotallength = cmd->u2PayloadTotallength;
+	kalMemCopy(tag->ucPayload,
+			cmd->ucPayload,
+			sizeof(tag->ucPayload));
+	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
+		struct WIFI_UNI_SETQUERY_INFO *info)
+{
+	struct CMD_MDNS_PARAM_T *cmd;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MDNS_RECORDE);
+	uint32_t u4status = WLAN_STATUS_SUCCESS;
+
+	if (info->ucCID != CMD_ID_SET_MDNS_RECORD ||
+	    info->u4SetQueryInfoLen != sizeof(*cmd))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	cmd = (struct CMD_MDNS_PARAM_T *) info->pucInfoBuffer;
+	switch (cmd->ucCmd) {
+	case MDNS_CMD_ENABLE:
+		max_cmd_len += sizeof(struct UNI_CMD_MDNS_RECORDE_ENABLE);
+		u4status = nicUniCmdMdnsRecordeEnable(ad, info, max_cmd_len);
+		break;
+	case MDNS_CMD_DISABLE:
+		max_cmd_len += sizeof(struct UNI_CMD_MDNS_RECORDE_ENABLE);
+		u4status = nicUniCmdMdnsRecordeEnable(ad, info, max_cmd_len);
+		break;
+	case MDNS_CMD_GET_HITCOUNTER:
+		max_cmd_len += sizeof(struct UNI_CMD_MDNS_RECORDE_GET_HIT);
+		u4status = nicUniCmdMdnsRecordeGetHit(ad, info, max_cmd_len);
+		break;
+	case MDNS_CMD_GET_MISSCOUNTER:
+		max_cmd_len += sizeof(struct UNI_CMD_MDNS_RECORDE_GET_MISS);
+		u4status = nicUniCmdMdnsRecordeGetMiss(ad, info, max_cmd_len);
+		break;
+	case MDNS_CMD_SET_IPV6_WAKEUP_FLAG:
+		max_cmd_len += sizeof(struct UNI_CMD_MDNS_RECORDE_IPV6_WAKEUP);
+		u4status =
+			nicUniCmdMdnsRecordeIpv6WakeUp(ad, info, max_cmd_len);
+		break;
+	default:
+		break;
+	}
+	return u4status;
+}
+#endif
 #endif
 
 uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
@@ -13768,6 +13889,20 @@ void nicUniEventFwDropSSN(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 }
 
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
+
+#if CFG_WOW_SUPPORT
+#if CFG_SUPPORT_MDNS_OFFLOAD
+void nicUniEventMdnsStats(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	struct UNI_EVENT_MDNS_RECORD *mdns_record;
+
+	mdns_record = (struct UNI_EVENT_MDNS_RECORD *)data;
+	RUN_RX_EVENT_HANDLER(EVENT_ID_MDNS_RECORD, mdns_record);
+}
+
+#endif /* CFG_SUPPORT_MDNS_OFFLOAD */
+#endif
 
 void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {

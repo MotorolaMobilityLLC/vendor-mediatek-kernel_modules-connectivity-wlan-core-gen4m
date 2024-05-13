@@ -694,32 +694,159 @@ struct WOW_CTRL {
 	uint8_t aucReserved2[3];
 };
 
+#if CFG_DC_USB_WOW_CALLBACK
+enum ENUM_WOW_SCENARIO {
+	WOW_NORMAL = 0,
+	WOW_HOST_STANDBY = 1
+};
+#endif
+
 #if CFG_SUPPORT_MDNS_OFFLOAD
-#define MDNS_RESPONSE_RECORD_MAX_LEN	500
-#define MDNS_QUESTION_NAME_MAX_LEN	102
-#define MAX_MDNS_CACHE_NUM		4
 
-#define MDNS_CMD_ENABLE			1
-#define MDNS_CMD_DISABLE		2
-#define MDNS_CMD_ADD_RECORD		3
-#define MDNS_CMD_CLEAR_RECORD		4
-#define MDNS_CMD_DEL_RECORD		5
+/* Maximum size of the data array is defined as 4KB */
+#define MAX_MDNS_USE_SIZE 4096
+/* Maximum size of the transfer size is  as 1KB */
+#define MAX_MDNS_TRANSFER_SIZE 1024
 
-#define MDNS_PAYLOAD_TYPE_LEN		2
-#define MDNS_PAYLOAD_CLASS_LEN		2
-#define MDNS_PAYLOAD_TTL_LEN		4
-#define MDNS_PAYLOAD_DATALEN_LEN	2
+/* fail of mdns data struct oversize */
+#define FAIL_MDNS_OVERSIZE 65535
+
+/* mdns record max number */
+#define MAX_MDNS_CACHE_NUM	10
+/* mdns passthrough max number */
+#define MAX_MDNS_PASSTHTOUGH_NUM 20
+
+/*
+ * DataBlock structure to hold the actual data.
+ * The data in 'data' array is organized in a way
+ * that it holds a two-byte length and then the data,
+ * following this pattern: LENGTH HIGH_BYTE LENGTH LOW_BYTE DATA[LENGTH].
+ *
+ DataBlock Design
++----------------------------------------------------------------------------+
+|                                   DataBlock                                |
+| +------------------------------------------------------------------------+ |
+| | length1 H-byte | length1 L-byte | data1[1] | data1[2] |  | data1[length1]|
+| | length2 H-byte | length2 L-byte | data2[1] | data2[2] |  | data2[length2]|
+| |                             ............................               | |
+| | lengthN H-byte | lengthN L-byte | dataN[1] | dataN[2] |  | dataN[lengthN]|
+| +------------------------------------------------------------------------+ |
+| |                                     index                                |
++----------------------------------------------------------------------------+
+ */
+struct MDNS_DATABLOCK_T  {
+    /* An array to mdns record and passthrough payload */
+	uint8_t data[MAX_MDNS_USE_SIZE];
+	/*the used size in data ,max 4096 */
+	uint16_t index;
+};
+
+/*
+ * Index structure to hold the indices pointing to locations of specific data
+ * (response and name) in the data array within a DataBlock structure.
+ *
+ * Index Design
+ *    +-------------------+     +-------------------+     +-------------------+
+ *     |       Index       |     |       Index       |     |       Index       |
+ *     | +---------------+ |     | +---------------+ |     | +---------------+ |
+ *     | |      type     | |     | |      type     | |     | |      type     | |
+ *     | +---------------+ |     | +---------------+ |     | +---------------+ |
+ *     | | responseIndex | |     | | responseIndex | |     | | responseIndex | |
+ *     | +---------------+ |     | +---------------+ |     | +---------------+ |
+ *     | |   nameIndex   | |     | |  nameIndex    | |     | |  nameIndex    | |
+ *     | +---------------+ |     | +---------------+ |     | +---------------+ |
+ *     +-------------------+     +-------------------+     +-------------------+
+ */
+
+struct MDNS_RECORD_T {
+/*
+ * Type variable structure:
+	ucquerynumber: 1-4
+	u2querytype: 1 - A, 12 - PTR, 16 - TXT, 33 – SRV and others
+ */
+	uint8_t ucquerynumber;
+	uint16_t u2querytype[4];
+/* index of the 'response' data in the data array */
+/* The first two are the length, and the rest is the valid data */
+/*|length1 H-byte | length1 L-byte | data1[1] | data1[2] || data1[length1]*/
+	uint16_t u2responseIndex;
+/* index of the 'name' data in the data array */
+/* The first two are the length, and the rest is the valid data */
+/*|length1 H-byte | length1 L-byte | data1[1] | data1[2] || data1[length1]*/
+	uint16_t u2nameIndex[4];
+};
+
+
+/*
+ * Name Index Array structure to hold indices of specific
+ * names in the data array
+ * It can store up to MAX_MDNS_PASSTHTOUGH_NUM indices
+ * For passrthrough
+ * Passrthrough
+ * +------------------------------------+
+ * |            Passrthrough            |
+ * | +-------------------------------+  |
+ * | |nameIndices[MAX_MDNS_PASSTHTOUGH_NUM]
+ * | +-------------------------------+  |
+ * | |             count             |  |
+ * | +-------------------------------+  |
+ * +------------------------------------+
+ */
+struct MDNS_PASSTHROUGH_T {
+/* Current number of passthrough stored name indices */
+/*  passthrough number max to MAX_MDNS_PASSTHTOUGH_NUM */
+	uint8_t count;
+/* index of the 'passthroughname' data in the data array */
+/* The first two are the length, and the rest is the valid data */
+/*|length1 H-byte | length1 L-byte | data1[1] | data1[2] || data1[length1]*/
+	uint16_t nameIndices[MAX_MDNS_PASSTHTOUGH_NUM];
+};
+
+/* mdns record max response length */
+#define MDNS_RESPONSE_RECORD_MAX_LEN	1024
+/* mdns record max name length */
+#define MDNS_QUESTION_NAME_MAX_LEN	256
+#define MDNS_QURTRY_NUMBER	4
+
+/* mdns and mdns record cmd */
+#define MDNS_CMD_ENABLE		1
+#define MDNS_CMD_DISABLE	2
+#define MDNS_CMD_ADD_RECORD	3
+#define MDNS_CMD_CLEAR_RECORD	4
+#define MDNS_CMD_DEL_RECORD	5
+
+/* mdns and mdns passthrough cmd */
+#define MDNS_CMD_SET_PASSTHTOUGH	6
+#define MDNS_CMD_ADD_PASSTHTOUGH	7
+#define MDNS_CMD_DEL_PASSTHTOUGH	8
+#define MDNS_CMD_GET_HITCOUNTER		9
+#define MDNS_CMD_GET_MISSCOUNTER	10
+#define MDNS_CMD_RESETALL	11
+#define MDNS_CMD_CLEAR_PASSTHTOUGH	12
+/* IPV6 wake up host*/
+#define MDNS_CMD_SET_IPV6_WAKEUP_FLAG	13
+#define MDNS_CMD_SET_WAKEUP_FLAG	14
+
+/* ucCmd passthrouth Behavior  */
+enum MDNS_PassthroughBehavior {
+	MDNS_PASSTHROUGH_FORWARD_ALL = 1,
+	MDNS_PASSTHROUGH_DROP_ALL = 2,
+	MDNS_PASSTHROUGH_LIST = 3
+};
+
+#define MDNS_PAYLOAD_TYPE_LEN				2
+#define MDNS_PAYLOAD_CLASS_LEN				2
+#define MDNS_PAYLOAD_TTL_LEN				4
+#define MDNS_PAYLOAD_DATALEN_LEN			2
 
 #define MDNS_ELEM_TYPE_PTR		12
 #define MDNS_ELEM_TYPE_SRV		33
 #define MDNS_ELEM_TYPE_TXT		16
 #define MDNS_ELEM_TYPE_A		1
 
-#define MDNS_WAKEUP_BY_NO_MATCH_RECORD	BIT(0)
-#define MDNS_WAKEUP_BY_SUB_REQ		BIT(1)
 
-#define UDP_HEADER_LENGTH		8
-#define IPV4_HEADER_LENGTH		20
+#define MDNS_WAKEUP_BY_NO_MATCH_RECORD BIT(0)
+#define MDNS_WAKEUP_BY_SUB_REQ	BIT(1)
 
 struct WLAN_MAC_HEADER_QoS_T {
 	uint16_t u2FrameCtrl;
@@ -740,49 +867,124 @@ struct WLAN_MDNS_HDR_T {
 	uint16_t usAddtionCnt;
 };
 
+#define UDP_HEADER_LENGTH 8
+#define IPV4_HEADER_LENGTH 20
+
 struct MDNS_TEMPLATE_T {
 	uint8_t name[MDNS_QUESTION_NAME_MAX_LEN];
 	uint8_t name_length;
+	uint8_t ucPadding0; /*padding*/
 	uint16_t class;
 	uint16_t type;
 };
 
 struct MDNS_PARAM_T {
-	struct MDNS_TEMPLATE_T query_ptr;
-	struct MDNS_TEMPLATE_T query_srv;
-	struct MDNS_TEMPLATE_T query_txt;
-	struct MDNS_TEMPLATE_T query_a;
+	struct MDNS_TEMPLATE_T query[MDNS_QURTRY_NUMBER];
 	uint16_t response_len;
+	uint8_t ucPadding0[2]; /*padding*/
 	uint8_t response[MDNS_RESPONSE_RECORD_MAX_LEN];
+};
+
+struct MDNS_PASSTHROUGHLIST_T {
+	uint8_t name[MDNS_QUESTION_NAME_MAX_LEN];
+	uint16_t u2PassthroghLength;
 };
 
 struct MDNS_INFO_UPLAYER_T {
 	uint8_t ucCmd;
 	struct MDNS_PARAM_T mdns_param;
+	uint8_t recordKey;
+	uint8_t name[MDNS_QUESTION_NAME_MAX_LEN];
+	uint8_t passthroughBehavior;
+	uint8_t ucIPV6WakeupFlag;
 };
 
 struct MDNS_PARAM_ENTRY_T {
 	struct LINK_ENTRY rLinkEntry;
 	struct MDNS_PARAM_T mdns_param;
+	uint8_t recordKey;
+};
+
+struct MDNS_PASSTHROUGH_ENTRY_T {
+	struct LINK_ENTRY rLinkEntry;
+	struct MDNS_PASSTHROUGHLIST_T mdns_passthrough;
 };
 
 struct CMD_MDNS_PARAM_T {
+    /* 1 Byte fields, total 8 bytes */
 	uint8_t ucCmd;
-	struct MDNS_PARAM_T mdns_param;
-	uint32_t u4RecordId;
+	uint8_t ucRecordId;
 	uint8_t ucWakeFlag;
+	uint8_t ucPassthrouthId;
+
+	uint8_t ucPassthroughBehavior;
+	uint8_t ucIPV6WakeupFlag;
+	/* mdns total transfer length 0 - 4096 */
+	uint8_t ucPayloadOrder;
+	uint8_t ucPadding;
+
+	/* 26 bytes */
 	struct WLAN_MAC_HEADER_QoS_T aucMdnsMacHdr;
+
+	/* 2 bytes */
+	/* mdns total transfer length 0 - 4096 */
+	uint16_t u2PayloadTotallength;
+
+	/* 20 bytes */
 	uint8_t aucMdnsIPHdr[IPV4_HEADER_LENGTH];
+
+	/* 8 bytes */
 	uint8_t aucMdnsUdpHdr[UDP_HEADER_LENGTH];
+
+	/* 1024 bytes */
+	/* mdns of 1024 per transmission*/
+	uint8_t ucPayload[MAX_MDNS_TRANSFER_SIZE];
+};
+
+struct EVENT_ID_MDNS_RECORD_T {
+/* DWORD_0 */
+	uint8_t ucVersion;
+	uint8_t ucType; /* 0: invalid, 1: Hit 2: Miss */
+	uint16_t u2ControlFlag;
+/* DWORD_1 */
+	uint32_t u4MdnsHitMiss;
+/* DWORD_2 */
+	uint8_t aucReserved2[64];
+};
+
+struct MDNS_SETTING_FLAGS_T {
+/* DWORD_0 */
+	uint8_t ucSetPortFlag;
+	uint8_t ucPassthroughBehavior;
+	uint8_t ucIPV6WakeupFlag;
+	uint8_t ucPadding1[1]; /*padding*/
 };
 
 struct MDNS_INFO_T {
 	struct LINK rMdnsRecordList;
 	struct LINK rMdnsRecordFreeList;
 	struct MDNS_PARAM_ENTRY_T rMdnsEntry[MAX_MDNS_CACHE_NUM];
+	int rMdnsRecordCout;
+	int rMdnsPassthroughCout;
+
+	struct LINK rMdnsPassthroughList;
+	struct LINK rMdnsPassthroughFreeList;
+	struct MDNS_PASSTHROUGH_ENTRY_T
+		rMdnsPassthroughEntry[MAX_MDNS_PASSTHTOUGH_NUM];
+	struct EVENT_ID_MDNS_RECORD_T rMdnsRecordEvent;
+	struct MDNS_SETTING_FLAGS_T rMdnsSaveFlags;
+
+	struct MDNS_RECORD_T rMdnsRecordIndices[MAX_MDNS_CACHE_NUM];
+	uint16_t currentIndex;
+
+	struct MDNS_PASSTHROUGH_T passrthrough;
+	struct MDNS_DATABLOCK_T  dataBlock;
+
 };
-#endif /* CFG_SUPPORT_MDNS_OFFLOAD */
-#endif
+
+#endif /* #if CFG_SUPPORT_MDNS_OFFLOAD */
+
+#endif /* #if CFG_WOW_SUPPORT */
 
 #if (CFG_SUPPORT_TWT == 1)
 enum _ENUM_TWT_TYPE_T {

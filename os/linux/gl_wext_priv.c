@@ -13378,7 +13378,53 @@ int priv_driver_get_wow_reason(struct net_device *prNetDev,
 	return i4BytesWritten;
 }
 
+
+#if (CFG_SUPPORT_MDNS_OFFLOAD && CFG_SUPPORT_MDNS_OFFLOAD_TV)
+int priv_support_mdns_offload(struct net_device *prNetDev,
+		 struct ifreq *prReq,  int i4Cmd)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+	int ret = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	if (!prReq->ifr_data) {
+		DBGLOG(REQ, ERROR, "%s: prReq->ifr_data is NULL.\n", __func__);
+		return -EINVAL;
+	}
+
+	prMdnsUplayerInfo = kzalloc(sizeof(struct MDNS_INFO_UPLAYER_T),
+				GFP_KERNEL);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	if (copy_from_user(prMdnsUplayerInfo,
+		prReq->ifr_data, sizeof(struct MDNS_INFO_UPLAYER_T))) {
+		DBGLOG(REQ, ERROR, "%s: copy_from_user fail\n", __func__);
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	prMdnsUplayerInfo->name[MDNS_QUESTION_NAME_MAX_LEN - 1] = '\0';
+
+	ret = kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	if (ret == WLAN_STATUS_SUCCESS)
+		ret = 0;
+	else if (ret == WLAN_STATUS_FAILURE)
+		ret = -1;
+exit:
+	kfree(prMdnsUplayerInfo);
+	return ret;
+}
+#endif
+
+
 #if CFG_SUPPORT_MDNS_OFFLOAD
+
 #if TEST_CODE_FOR_MDNS
 /* test code for mdns offload */
 
@@ -13435,8 +13481,66 @@ uint8_t response2[500] = {
 		0xc0, 0xab, 0x00, 0x01, 0x80, 0x01, 0x00, 0x00, 0x00, 0x78,
 		0x00, 0x04, 0xc0, 0xab, 0x1f, 0x44};
 
+uint8_t response3[500] = {
+		0x03, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+		0x00, 0x03, 0x0b, 0x5f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+		0x7a, 0x6f, 0x6e, 0x65, 0x04, 0x5f, 0x74, 0x63, 0x70, 0x05,
+		0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01,
+		0x00, 0x00, 0x00, 0x78, 0x00, 0x27, 0x24, 0x61, 0x31, 0x33,
+		0x39, 0x36, 0x63, 0x32, 0x66, 0x2d, 0x38, 0x66, 0x30, 0x32,
+		0x2d, 0x39, 0x35, 0x33, 0x65, 0x2d, 0x30, 0x31, 0x61, 0x64,
+		0x2d, 0x30, 0x61, 0x64, 0x31, 0x33, 0x31, 0x30, 0x64, 0x65,
+		0x63, 0x65, 0x32, 0xc0, 0x0c, 0xc0, 0x2e, 0x00, 0x10, 0x80,
+		0x01, 0x00, 0x00, 0x11, 0x94, 0x00, 0x38, 0x23, 0x69, 0x64,
+		0x3d, 0x35, 0x31, 0x31, 0x32, 0x32, 0x43, 0x34, 0x38, 0x41,
+		0x39, 0x38, 0x33, 0x30, 0x33, 0x30, 0x38, 0x30, 0x46, 0x32,
+		0x46, 0x44, 0x32, 0x44, 0x43, 0x30, 0x36, 0x34, 0x36, 0x35,
+		0x35, 0x37, 0x46, 0x13, 0x5f, 0x5f, 0x63, 0x6f, 0x6d, 0x6d,
+		0x6f, 0x6e, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x5f, 0x3d,
+		0x30, 0x7c, 0x30, 0xc0, 0x2e, 0x00, 0x21, 0x80, 0x01, 0x00,
+		0x00, 0x00, 0x78, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x27,
+		0x11, 0x24, 0x61, 0x31, 0x33, 0x39, 0x36, 0x63, 0x32, 0x66,
+		0x2d, 0x38, 0x66, 0x30, 0x32, 0x2d, 0x39, 0x35, 0x33, 0x65,
+		0x2d, 0x30, 0x31, 0x61, 0x64, 0x2d, 0x30, 0x61, 0x64, 0x31,
+		0x33, 0x31, 0x30, 0x64, 0x65, 0x63, 0x65, 0x32, 0xc0, 0x1d,
+		0xc0, 0xab, 0x00, 0x01, 0x80, 0x01, 0x00, 0x00, 0x00, 0x78,
+		0x00, 0x04, 0xc0, 0xab, 0x1f, 0x03};
+
+uint8_t response4[500] = {
+		0x04, 0x00, 0x84, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00,
+		0x00, 0x03, 0x0b, 0x5f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65,
+		0x7a, 0x6f, 0x6e, 0x65, 0x04, 0x5f, 0x74, 0x63, 0x70, 0x05,
+		0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01,
+		0x00, 0x00, 0x00, 0x78, 0x00, 0x27, 0x24, 0x61, 0x31, 0x33,
+		0x39, 0x36, 0x63, 0x32, 0x66, 0x2d, 0x38, 0x66, 0x30, 0x32,
+		0x2d, 0x39, 0x35, 0x33, 0x65, 0x2d, 0x30, 0x31, 0x61, 0x64,
+		0x2d, 0x30, 0x61, 0x64, 0x31, 0x33, 0x31, 0x30, 0x64, 0x65,
+		0x63, 0x65, 0x32, 0xc0, 0x0c, 0xc0, 0x2e, 0x00, 0x10, 0x80,
+		0x01, 0x00, 0x00, 0x11, 0x94, 0x00, 0x38, 0x23, 0x69, 0x64,
+		0x3d, 0x35, 0x31, 0x31, 0x32, 0x32, 0x43, 0x34, 0x38, 0x41,
+		0x39, 0x38, 0x33, 0x30, 0x33, 0x30, 0x38, 0x30, 0x46, 0x32,
+		0x46, 0x44, 0x32, 0x44, 0x43, 0x30, 0x36, 0x34, 0x36, 0x35,
+		0x35, 0x37, 0x46, 0x13, 0x5f, 0x5f, 0x63, 0x6f, 0x6d, 0x6d,
+		0x6f, 0x6e, 0x5f, 0x74, 0x69, 0x6d, 0x65, 0x5f, 0x5f, 0x3d,
+		0x30, 0x7c, 0x30, 0xc0, 0x2e, 0x00, 0x21, 0x80, 0x01, 0x00,
+		0x00, 0x00, 0x78, 0x00, 0x2d, 0x00, 0x00, 0x00, 0x00, 0x27,
+		0x11, 0x24, 0x61, 0x31, 0x33, 0x39, 0x36, 0x63, 0x32, 0x66,
+		0x2d, 0x38, 0x66, 0x30, 0x32, 0x2d, 0x39, 0x35, 0x33, 0x65,
+		0x2d, 0x30, 0x31, 0x61, 0x64, 0x2d, 0x30, 0x61, 0x64, 0x31,
+		0x33, 0x31, 0x30, 0x64, 0x65, 0x63, 0x65, 0x32, 0xc0, 0x1d,
+		0xc0, 0xab, 0x00, 0x01, 0x80, 0x01, 0x00, 0x00, 0x00, 0x78,
+		0x00, 0x04, 0xc0, 0xab, 0x1f, 0x04};
+
+uint8_t test_passthrough[5][100] = {
+		"_googlecast.tcp.local  1",
+		"_googlecast.tcp.local  2",
+		"_googlecast.tcp.local  3",
+		"_googlezone._tcp.local 4",
+		"_googlezone._tcp.local 5"
+		};
+
 int priv_driver_test_add_mdns_record(struct net_device *prNetDev,
-		char *pcCommand, int i4TotalLen)
+		 char *pcCommand,  int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
@@ -13463,21 +13567,17 @@ int priv_driver_test_add_mdns_record(struct net_device *prNetDev,
 
 	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucIndex);
 
-	/*ucIndex == 0, ptr_name is _googlecast.tcp.local*/
-	/*ucIndex == 1, ptr_name is _googlecast.tcp.loca1*/
-	/*ucIndex == 2, ptr_name is _googlecast.tcp.loca2*/
+	/*ucIndex == 0, ptr_name is _googlecast.tcp.local  */
 	if (ucIndex > 0)
 		ptr_name[22] = ucIndex + '0';
 
 	/* add record 1 */
 	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_RECORD;
-	prMdnsUplayerInfo->mdns_param.query_ptr.type = 12;
-	prMdnsUplayerInfo->mdns_param.query_ptr.class = 1;
-	prMdnsUplayerInfo->mdns_param.query_ptr.name_length = 23;
-	kalMemCopy(prMdnsUplayerInfo->mdns_param.query_ptr.name,
+	prMdnsUplayerInfo->mdns_param.query[0].type = 12;
+	prMdnsUplayerInfo->mdns_param.query[0].class = 1;
+	prMdnsUplayerInfo->mdns_param.query[0].name_length = 23;
+	kalMemCopy(prMdnsUplayerInfo->mdns_param.query[0].name,
 		ptr_name, sizeof(ptr_name));
-	prMdnsUplayerInfo->
-		mdns_param.query_ptr.name[strlen(ptr_name) + 1] = '\0';
 	prMdnsUplayerInfo->mdns_param.response_len = 133;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.response,
 		response, 133);
@@ -13508,50 +13608,56 @@ int priv_driver_add_mdns_record(struct net_device *prNetDev,
 	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
 
 	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_RECORD;
-	prMdnsUplayerInfo->mdns_param.query_ptr.type = 12;
-	prMdnsUplayerInfo->mdns_param.query_ptr.class = 1;
-	prMdnsUplayerInfo->mdns_param.query_ptr.name_length = 23;
-	kalMemCopy(prMdnsUplayerInfo->mdns_param.query_ptr.name,
+	prMdnsUplayerInfo->mdns_param.query[0].type = 12;
+	prMdnsUplayerInfo->mdns_param.query[0].class = 1;
+	prMdnsUplayerInfo->mdns_param.query[0].name_length = 23;
+	kalMemCopy(prMdnsUplayerInfo->mdns_param.query[0].name,
 		ptr_name2, sizeof(ptr_name2));
 	prMdnsUplayerInfo->mdns_param.response_len = 226;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.response,
 		response2, 226);
 	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
 
 	/* add record 1 */
 	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_RECORD;
-	prMdnsUplayerInfo->mdns_param.query_ptr.type = 12;
-	prMdnsUplayerInfo->mdns_param.query_ptr.class = 1;
-	prMdnsUplayerInfo->mdns_param.query_ptr.name_length = 23;
-	kalMemCopy(prMdnsUplayerInfo->mdns_param.query_ptr.name,
+	prMdnsUplayerInfo->mdns_param.query[0].type = 12;
+	prMdnsUplayerInfo->mdns_param.query[0].class = 1;
+	prMdnsUplayerInfo->mdns_param.query[0].name_length = 23;
+	kalMemCopy(prMdnsUplayerInfo->mdns_param.query[0].name,
 		ptr_name, sizeof(ptr_name));
 	prMdnsUplayerInfo->mdns_param.response_len = 133;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.response,
 		response, 133);
 	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
 
 	/* add record 3 */
 	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_RECORD;
-	prMdnsUplayerInfo->mdns_param.query_ptr.type = 12;
-	prMdnsUplayerInfo->mdns_param.query_ptr.class = 1;
-	prMdnsUplayerInfo->mdns_param.query_ptr.name_length = 23;
-	kalMemCopy(prMdnsUplayerInfo->mdns_param.query_ptr.name,
+	prMdnsUplayerInfo->mdns_param.query[0].type = 12;
+	prMdnsUplayerInfo->mdns_param.query[0].class = 1;
+	prMdnsUplayerInfo->mdns_param.query[0].name_length = 23;
+	kalMemCopy(prMdnsUplayerInfo->mdns_param.query[0].name,
 		ptr_name2, sizeof(ptr_name2));
-	prMdnsUplayerInfo->mdns_param.response_len = 133;
+	prMdnsUplayerInfo->mdns_param.response_len = 226;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.response,
-		response, 133);
+		response3, 226);
 	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
 
 	/* add record 4 */
 	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_RECORD;
-	prMdnsUplayerInfo->mdns_param.query_ptr.type = 12;
-	prMdnsUplayerInfo->mdns_param.query_ptr.class = 1;
-	prMdnsUplayerInfo->mdns_param.query_ptr.name_length = 23;
-	kalMemCopy(prMdnsUplayerInfo->mdns_param.query_ptr.name,
+	prMdnsUplayerInfo->mdns_param.query[0].type = 12;
+	prMdnsUplayerInfo->mdns_param.query[0].class = 1;
+	prMdnsUplayerInfo->mdns_param.query[0].name_length = 23;
+	kalMemCopy(prMdnsUplayerInfo->mdns_param.query[0].name,
 		ptr_name, sizeof(ptr_name));
 	prMdnsUplayerInfo->mdns_param.response_len = 226;
 	kalMemCopy(prMdnsUplayerInfo->mdns_param.response,
-		response2, 226);
+		response4, 226);
 	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
 
 	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
@@ -13560,15 +13666,255 @@ int priv_driver_add_mdns_record(struct net_device *prNetDev,
 	return 0;
 }
 
-int priv_driver_send_mdns_record(struct net_device *prNetDev,
-		char *pcCommand, int i4TotalLen)
+static int priv_driver_set_passthtough_forward_all(
+	 struct net_device *prNetDev,
+	 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* reset to zero */
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_SET_PASSTHTOUGH;
+	prMdnsUplayerInfo->passthroughBehavior = MDNS_PASSTHROUGH_FORWARD_ALL;
+	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+}
+
+static int priv_driver_set_passthtough_drop_all(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* reset to zero */
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_SET_PASSTHTOUGH;
+	prMdnsUplayerInfo->passthroughBehavior = MDNS_PASSTHROUGH_DROP_ALL;
+	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+}
+
+static int priv_driver_set_passthtough_list(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* reset to zero */
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_SET_PASSTHTOUGH;
+	prMdnsUplayerInfo->passthroughBehavior = MDNS_PASSTHROUGH_LIST;
+	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+}
+
+static int priv_driver_add_passthtough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+	int i;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_ADD_PASSTHTOUGH;
+
+	for (i = 0; i < 3; i++) {
+		kalMemCopy(prMdnsUplayerInfo->name, test_passthrough[i],
+			sizeof(test_passthrough[i]));
+		prMdnsUplayerInfo->name[MDNS_QUESTION_NAME_MAX_LEN - 1] = 0;
+		kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+	}
+
+	kalMemCopy(prMdnsUplayerInfo->name, ptr_name, sizeof(ptr_name));
+	prMdnsUplayerInfo->name[MDNS_QUESTION_NAME_MAX_LEN - 1] = 0;
+	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+}
+
+static int priv_driver_del_passthtough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+	int i;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_DEL_PASSTHTOUGH;
+
+	for (i = 0; i < 3; i++) {
+		kalMemCopy(prMdnsUplayerInfo->name, test_passthrough[i],
+			sizeof(test_passthrough[i]));
+		kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+	}
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+}
+
+int priv_driver_get_hitcounter(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+	int hit = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* reset to zero */
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_GET_HITCOUNTER;
+	prMdnsUplayerInfo->recordKey = 255;
+	hit = kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	DBGLOG(REQ, WARN, "%s, hit= %d\n", __func__, hit);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return hit;
+}
+
+int priv_driver_get_misscounter(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+	int miss = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* reset to zero */
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_GET_MISSCOUNTER;
+	miss = kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	DBGLOG(REQ, WARN, "%s, miss= %d\n", __func__, miss);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return miss;
+}
+
+static int priv_driver_resetall_passthrough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	/* reset to zero */
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_RESETALL;
+	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+}
+
+static int priv_driver_show_mdns_passthrough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	kalSendClearRecordToFw(prGlueInfo);
-	kalSendMdnsRecordToFw(prGlueInfo);
+	kalShowMdnsPassthrough(prGlueInfo);
 
 	return 0;
 }
@@ -13667,8 +14013,51 @@ int priv_driver_set_mdns_wake_flag(struct net_device *prNetDev,
 
 	return 0;
 }
-#endif
-#endif
+
+static int priv_driver_enable_mdns_ipv6_wakeup(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo;
+	uint32_t i4Argc = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	uint32_t u4Ret = 0;
+	uint8_t ucWakeFlag = 0;
+
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+
+	prMdnsUplayerInfo =
+		kalMemAlloc(sizeof(struct MDNS_INFO_UPLAYER_T), PHY_MEM_TYPE);
+	if (!prMdnsUplayerInfo) {
+		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
+		return -ENOMEM;
+	}
+
+	kalMemZero(prMdnsUplayerInfo, sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	u4Ret = kalkStrtou8(apcArgv[1], 0, &ucWakeFlag);
+
+	if (u4Ret)
+		DBGLOG(REQ, LOUD, "ipv6 ucWakeFlag error u4Ret=%u\n", u4Ret);
+
+	prMdnsUplayerInfo->ucCmd = MDNS_CMD_SET_IPV6_WAKEUP_FLAG;
+	prMdnsUplayerInfo->ucIPV6WakeupFlag = ucWakeFlag;
+
+	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
+
+	kalMemFree(prMdnsUplayerInfo, PHY_MEM_TYPE,
+		sizeof(struct MDNS_INFO_UPLAYER_T));
+
+	return 0;
+
+}
+
+#endif /* #if CFG_SUPPORT_MDNS_OFFLOAD */
+#endif /* #if CFG_WOW_SUPPORT */
 
 int priv_driver_set_adv_pws(struct net_device *prNetDev,
 				   char *pcCommand, int i4TotalLen)
@@ -21862,44 +22251,6 @@ exit:
 
 	return ret;
 }				/* priv_support_driver_cmd */
-
-#if (CFG_SUPPORT_MDNS_OFFLOAD && CFG_SUPPORT_MDNS_OFFLOAD_TV)
-int priv_support_mdns_offload(struct net_device *prNetDev,
-	struct ifreq *prReq, int i4Cmd)
-{
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo = NULL;
-	int ret = 0;
-
-	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
-
-	if (!prReq->ifr_data) {
-		DBGLOG(REQ, ERROR, "%s: prReq->ifr_data is NULL.\n", __func__);
-		return -EINVAL;
-	}
-
-	prMdnsUplayerInfo = kzalloc(sizeof(struct MDNS_INFO_UPLAYER_T),
-					GFP_KERNEL);
-	if (!prMdnsUplayerInfo) {
-		DBGLOG(REQ, WARN, "%s, alloc mem failed\n", __func__);
-		return -ENOMEM;
-	}
-
-	if (copy_from_user(prMdnsUplayerInfo,
-		prReq->ifr_data, sizeof(struct MDNS_INFO_UPLAYER_T))) {
-		DBGLOG(REQ, ERROR, "%s: copy_from_user fail\n", __func__);
-		ret = -EFAULT;
-		goto exit;
-	}
-
-	kalMdnsProcess(prGlueInfo, prMdnsUplayerInfo);
-
-exit:
-	kfree(prMdnsUplayerInfo);
-	return ret;
-}
-#endif
-
 
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */
