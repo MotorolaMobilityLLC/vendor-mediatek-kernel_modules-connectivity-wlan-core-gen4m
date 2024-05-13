@@ -1440,7 +1440,7 @@ uint32_t nicUniCmdSetDomainV1(struct ADAPTER *ad,
 		sub->ucChannelSpan = cmd->rSubBand[i].ucChannelSpan;
 		sub->ucFirstChannelNum = cmd->rSubBand[i].ucFirstChannelNum;
 		sub->ucNumChannels = cmd->rSubBand[i].ucNumChannels;
-		sub->fgDfs = FALSE; /* unused */
+		sub->fgDfs = cmd->rSubBand[i].fgDfs;
 		sub++;
 	}
 
