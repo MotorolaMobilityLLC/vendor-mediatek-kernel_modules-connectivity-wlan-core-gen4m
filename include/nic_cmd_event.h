@@ -125,6 +125,10 @@
 #define CH_MAX_NUM                    128
 #endif
 
+#if (CFG_SUPPORT_PHY_ICS == 1)
+#define MAX_PHY_ICS_DUMP_DATA_CNT	256
+#endif /* CFG_SUPPORT_PHY_ICS */
+
 /*
  * Definitions for extension CMD_ID
  */
@@ -3322,7 +3326,7 @@ struct EXT_EVENT_PHY_ICS_DUMP_DATA_T {
 	uint32_t u4PhyTimestamp;
 	uint32_t u4DataLen;
 	uint32_t u4Reserved[5];
-	uint32_t u4Data[256];
+	uint32_t u4Data[MAX_PHY_ICS_DUMP_DATA_CNT];
 };
 #endif /* #if (CFG_SUPPORT_PHY_ICS == 1) */
 
