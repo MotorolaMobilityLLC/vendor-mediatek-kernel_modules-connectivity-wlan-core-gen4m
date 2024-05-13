@@ -3707,7 +3707,7 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 
 	HAL_MCR_WR(prAdapter,
 		   CONNAC3X_CONN_CFG_ON_CONN_ON_EMI_ADDR,
-		   ((uint32_t)base >> 16));
+		   ((uint32_t)(base >> 16)));
 
 	HAL_MCR_WR(prAdapter,
 		   MT6653_EMI_SIZE_ADDR,
@@ -3732,7 +3732,7 @@ static void mt6653SetupMcuEmiAddr(struct ADAPTER *prAdapter)
 	DBGLOG(HAL, INFO, "emi2 base: 0x%llx, size: 0x%x\n", base, size);
 
 	HAL_MCR_WR(prAdapter, SETUP_MCU_EMI2_BASE_ADDRESS,
-		   ((uint32_t)base >> 16));
+		   ((uint32_t)(base >> 16)));
 	HAL_MCR_WR(prAdapter, SETUP_MCU_EMI2_SIZE_ADDRESS,
 		   size);
 #endif
