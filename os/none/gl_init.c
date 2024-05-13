@@ -77,6 +77,15 @@ uint32_t wlanDownloadBufferBin(struct ADAPTER *prAdapter)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
+uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter)
+{
+	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
 
 uint32_t wlanConnacDownloadBufferBin(struct ADAPTER *prAdapter)
 {
