@@ -561,6 +561,7 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 	*   }
 	*/
 	{"AdapScan", "0x0", WLAN_CFG_DEFAULT},
+	{"EnableALPL", "0", WLAN_CFG_DEFAULT},
 #if CFG_SUPPORT_IOT_AP_BLOCKLIST
 	/*Fill Iot AP blocklist here*/
 	/*AS AX89X, OUI=0x8CFDF0, NSS=8, PHY=WiFi6, Action=2:Disable SG*/
