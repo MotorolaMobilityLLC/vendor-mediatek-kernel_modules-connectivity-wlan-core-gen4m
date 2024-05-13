@@ -2367,18 +2367,28 @@ static bool need_manipulate_priority_for_udp(
 	uint8_t *pucUserPriority)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
 	uint16_t u2EtherType = 0;
 	struct iphdr *iph = NULL;
 	struct ipv6hdr *ipv6h = NULL;
+	static const uint32_t WLAN_DRV_READY =
+		WLAN_DRV_READY_CHECK_WLAN_ON |
+		WLAN_DRV_READY_CHECK_HIF_SUSPEND |
+		WLAN_DRV_READY_CHECK_RESET;
 
 	if (!skb)
 		return FALSE;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(skb->dev));
 
-	if (!prGlueInfo ||
-		!prGlueInfo->prAdapter->
-		rManipulateTidInfo.fgManipulateTidEnabled)
+	if (unlikely(!prGlueInfo ||
+		     !wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY)))
+		return FALSE;
+
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (unlikely(!prAdapter) ||
+	    !prAdapter->rManipulateTidInfo.fgManipulateTidEnabled)
 		return FALSE;
 
 	u2EtherType = NTOHS(skb_eth_hdr(skb)->h_proto);
@@ -2392,8 +2402,7 @@ static bool need_manipulate_priority_for_udp(
 
 		if (iph->protocol == IPPROTO_UDP) {
 			*pucUserPriority =
-				prGlueInfo->prAdapter->
-				rManipulateTidInfo.ucUserPriority;
+				prAdapter->rManipulateTidInfo.ucUserPriority;
 			return TRUE;
 		}
 	} else if (u2EtherType == ETH_P_IPV6) {
@@ -2403,8 +2412,7 @@ static bool need_manipulate_priority_for_udp(
 
 		if (ipv6h->nexthdr == IPPROTO_UDP) {
 			*pucUserPriority =
-				prGlueInfo->prAdapter->
-				rManipulateTidInfo.ucUserPriority;
+				prAdapter->rManipulateTidInfo.ucUserPriority;
 			return TRUE;
 		}
 	}
