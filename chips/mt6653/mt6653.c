@@ -2988,7 +2988,9 @@ static void mt6653WfdmaTxRingWbExtCtrl(
 	struct WFDMA_EMI_RING_IDX_0 *prRingDidx;
 	struct WFDMA_EMI_RING_IDX_1 *prRingMdDidx;
 	int i4EmiRingIdx = -1;
+#if CFG_ENABLE_MAWD_MD_RING
 	u_int8_t fgIsSet1 = FALSE;
+#endif
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -3044,9 +3046,11 @@ static void mt6653WfdmaTxRingWbExtCtrl(
 		return;
 	}
 
+#if CFG_ENABLE_MAWD_MD_RING
 	if (fgIsSet1)
 		prTxRing->pu2EmiDidx = &prRingMdDidx->u2TxRing[i4EmiRingIdx];
 	else
+#endif
 		prTxRing->pu2EmiDidx = &prRingDidx->u2TxRing[i4EmiRingIdx];
 
 	prTxRing->fgEnEmiDidx = TRUE;
@@ -3063,7 +3067,9 @@ static void mt6653WfdmaRxRingWbExtCtrl(
 	struct WFDMA_EMI_RING_IDX_0 *prRingDidx;
 	struct WFDMA_EMI_RING_IDX_1 *prRingMdDidx;
 	int i4EmiRingIdx = -1;
+#if CFG_ENABLE_MAWD_MD_RING
 	u_int8_t fgIsSet1 = FALSE;
+#endif
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
@@ -3117,9 +3123,11 @@ static void mt6653WfdmaRxRingWbExtCtrl(
 		return;
 	}
 
+#if CFG_ENABLE_MAWD_MD_RING
 	if (fgIsSet1)
 		prRxRing->pu2EmiDidx = &prRingMdDidx->u2RxRing[i4EmiRingIdx];
 	else
+#endif
 		prRxRing->pu2EmiDidx = &prRingDidx->u2RxRing[i4EmiRingIdx];
 
 	prRxRing->fgEnEmiDidx = TRUE;

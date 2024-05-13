@@ -3800,6 +3800,9 @@ u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
 	struct RTMP_RX_RING *prRxRing;
 	uint32_t u4CpuIdx = 0;
 
+	if (ucRingNum >= NUM_OF_RX_RING)
+		return FALSE;
+
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prRxRing = &prHifInfo->RxRing[ucRingNum];
 	if (prRxRing->u4RingSize == 0)
@@ -3835,6 +3838,9 @@ uint32_t halWpdmaGetRxDmaDoneCnt(struct GLUE_INFO *prGlueInfo,
 	struct RTMP_RX_RING *prRxRing;
 	struct GL_HIF_INFO *prHifInfo;
 	uint32_t u4MaxCnt = 0, u4CpuIdx = 0, u4DmaIdx = 0, u4RxPktCnt = 0;
+
+	if (ucRingNum >= NUM_OF_RX_RING)
+		return 0;
 
 	prAdapter = prGlueInfo->prAdapter;
 	prHifInfo = &prGlueInfo->rHifInfo;
