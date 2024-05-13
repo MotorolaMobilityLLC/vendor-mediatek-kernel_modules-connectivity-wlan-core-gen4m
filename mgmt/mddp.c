@@ -1600,6 +1600,12 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 		goto end;
 	}
 #endif
+	if (get_wifi_process_status()) {
+		DBGLOG(REQ, ERROR,
+			"Wi-Fi on/off process is ongoing\n");
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
+		goto end;
+	}
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
