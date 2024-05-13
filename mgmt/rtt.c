@@ -486,7 +486,10 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			COPY_MAC_ADDR(tc->aucAddr, rc->aucAddr);
 			tc->eType = rc->eType;
 			tc->rChannel = rc->rChannel;
-			tc->ucBurstPeriod = rc->ucBurstPeriod;
+			tc->u2BurstPeriod = rc->u2BurstPeriod;
+			tc->u2NumBurstExponent = rc->u2NumBurstExponent;
+			tc->u2PreferencePartialTsfTimer =
+				rc->u2PreferencePartialTsfTimer;
 			tc->ucNumFramesPerBurst = rc->ucNumFramesPerBurst;
 			tc->ucNumRetriesPerFtmr = rc->ucNumRetriesPerFtmr;
 			tc->ucLciRequest = rc->ucLciRequest;
@@ -506,6 +509,9 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			tc->ucS2 = nicGetS2(tc->eBand, tc->ucPrimaryChannel,
 				tc->eChannelWidth, tc->ucS1);
 			tc->ucBssIndex = ucBssIndex;
+			tc->eEventType = rc->eEventType;
+			tc->ucASAP = rc->ucASAP;
+			tc->ucFtmMinDeltaTime = rc->ucFtmMinDeltaTime;
 		} else {
 			DBGLOG(RTT, ERROR,
 				"Bssid " MACSTR " is not in scan result\n",

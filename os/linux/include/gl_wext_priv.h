@@ -977,6 +977,10 @@ int priv_driver_set_qos(struct net_device *prNetDev,
 int priv_driver_set_csi(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #endif /* CFG_SUPPORT_CSI */
+#if CFG_SUPPORT_RTT
+int priv_driver_set_rtt(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
+#endif /* CFG_SUPPORT_RTT */
 #if (CFG_SUPPORT_802_11AX == 1)
 int priv_driver_muedca_override(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);

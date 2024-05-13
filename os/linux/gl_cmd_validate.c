@@ -157,6 +157,14 @@ struct CMD_VALIDATE_POLICY set_faw_policy[COMMON_CMD_SET_ARG_NUM(3)] = {
 };
 #endif
 
+#if CFG_SUPPORT_RTT
+struct CMD_VALIDATE_POLICY set_rtt_policy[COMMON_CMD_SET_ARG_NUM(4)] = {
+	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = U8_MAX},
+	[COMMON_CMD_ATTR_IDX(2)] = {.type = NLA_STRING, .len = 17},
+	[COMMON_CMD_ATTR_IDX(3)] = {.type = NLA_U32, .min = 0, .max = U32_MAX}
+};
+#endif
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 struct CMD_VALIDATE_POLICY rddreport_policy[COMMON_CMD_SET_ARG_NUM(2)] = {
 	[COMMON_CMD_ATTR_IDX(1)] = {.type = NLA_U8, .min = 0, .max = 4}
@@ -744,6 +752,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = NULL,
 		.u4PolicySize = 0
+	},
+#endif
+#if CFG_SUPPORT_RTT
+	{
+		.pcCmdStr  = CMD_SET_RTT,
+		.pfHandler = priv_driver_set_rtt,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(4),
+		.policy    = set_rtt_policy,
+		.u4PolicySize = ARRAY_SIZE(set_rtt_policy)
 	},
 #endif
 #if (CFG_SUPPORT_802_11AX == 1)
