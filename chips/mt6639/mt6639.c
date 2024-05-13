@@ -667,7 +667,7 @@ struct BUS_INFO mt6639_bus_info = {
 		.u4MaxMsiNum = ARRAY_SIZE(mt6639_pcie_msi_layout),
 	},
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-	.is_en_drv_ctrl_pci_msi_irq = TRUE,
+	.is_en_drv_ctrl_pci_msi_irq = FALSE,
 #endif
 	.showDebugInfo = mt6639ShowPcieDebugInfo,
 	.disableDevice = mtk_pci_disable_device,
