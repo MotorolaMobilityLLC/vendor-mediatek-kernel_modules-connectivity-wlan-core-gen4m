@@ -6609,7 +6609,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	uint8_t i = 0, u4HwIntNum = 1;
 	unsigned long ulMsiIntEn = 0;
-	uint32_t u4BufferSize = 512, pos = 0;
+	uint32_t u4BufferSize = 1024, pos = 0;
 	char *buf;
 #if defined(_HIF_PCIE)
 	struct pcie_msi_info *prMsiInfo;
