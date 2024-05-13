@@ -9,6 +9,9 @@
  *                              M A C R O S
  *******************************************************************************
  */
+#define UNI_FW_HDR_BUILD_DATE_LENGTH		20
+#define UNI_FW_HDR_CHIP_ID_ECO_VER_LENGTH	8
+#define UNI_FW_HDR_PATCH_VER_LENGTH		4
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -49,9 +52,9 @@ enum ENUM_IMG_RESP {
 };
 
 struct UNI_FW_HDR_FORMAT_T {
-	uint8_t aucBuildDate[20];
-	uint8_t aucChipIDEcoVer[8];
-	uint8_t aucPatchVer[4];
+	uint8_t aucBuildDate[UNI_FW_HDR_BUILD_DATE_LENGTH];
+	uint8_t aucChipIDEcoVer[UNI_FW_HDR_CHIP_ID_ECO_VER_LENGTH];
+	uint8_t aucPatchVer[UNI_FW_HDR_PATCH_VER_LENGTH];
 };
 
 struct WLAN_IPC_INFO {
