@@ -536,4 +536,5 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 void kalP2pStopApInterface(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 #endif
+void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo);
 #endif /* _GL_P2P_KAL_H */

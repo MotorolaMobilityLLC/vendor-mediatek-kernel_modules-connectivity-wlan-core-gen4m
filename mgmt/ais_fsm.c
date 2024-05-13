@@ -436,7 +436,8 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prAisBssInfo->ucLinkIndex = ucLinkIdx;
 #endif
-
+	kalAisCsaNotifyWorkInit(prAdapter,
+		prAisBssInfo->ucBssIndex);
 	LINK_INITIALIZE(&prAisBssInfo->rPmkidCache);
 }
 

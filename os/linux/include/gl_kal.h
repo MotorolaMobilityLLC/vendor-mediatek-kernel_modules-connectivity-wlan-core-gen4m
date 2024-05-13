@@ -2879,5 +2879,9 @@ void kalHifRegWorkUninit(struct GLUE_INFO *pr);
 void kalHifRegWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 void kalPmicCtrl(u_int8_t fgIsEnabled);
+void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
+void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex);
 #endif /* _GL_KAL_H */
 

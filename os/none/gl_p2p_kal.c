@@ -102,5 +102,8 @@ void kalIdcGetRilInfo(void)
 {
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
-
+void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
 #endif /* CFG_ENABLE_WIFI_DIRECT */

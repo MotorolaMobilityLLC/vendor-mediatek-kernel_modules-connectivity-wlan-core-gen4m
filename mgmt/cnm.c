@@ -2413,7 +2413,8 @@ void cnmFreeBssInfo(struct ADAPTER *prAdapter,
 	cnmTimerStopTimer(prAdapter, &prBssInfo->rObssScanTimer);
 
 	prBssInfo->fgIsInUse = FALSE;
-
+	kalCsaNotifyWorkDeinit(prAdapter,
+				prBssInfo->ucBssIndex);
 #if CFG_SUPPORT_CCM
 	ccmRemoveBssPendingEntry(prAdapter, prBssInfo);
 #endif

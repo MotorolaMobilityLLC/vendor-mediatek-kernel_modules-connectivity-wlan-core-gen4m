@@ -614,6 +614,7 @@ struct BSS_INFO {
 #endif
 
 	struct TIMER rP2pCsaDoneTimer;
+	struct GL_CH_SWITCH_WORK rGlChSwitchWork;
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 	uint8_t ucMLSRPausedLink;
 #endif
