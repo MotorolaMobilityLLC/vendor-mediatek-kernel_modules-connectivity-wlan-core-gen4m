@@ -12632,8 +12632,11 @@ wlanGetSupportNss(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	mld_bssinfo = mldBssGetByBss(prAdapter, prBssInfo);
 	if (IS_MLD_BSSINFO_MULTI(mld_bssinfo) &&
-		mld_bssinfo->ucMaxSimuLinks >= 1 &&
-		prAdapter->rWifiVar.fgDbDcModeEn == TRUE) {
+		(mld_bssinfo->ucMaxSimuLinks >= 1 ||
+		(mld_bssinfo->ucMaxSimuLinks == 0 &&
+		 mld_bssinfo->ucEmlEnabled == FALSE &&
+		 mld_bssinfo->ucHmloEnabled == FALSE)) &&
+		 prAdapter->rWifiVar.fgDbDcModeEn == TRUE) {
 		DBGLOG(CNM, INFO, "STR mode work in 1SS\n");
 		return 1;
 	}
