@@ -2110,7 +2110,7 @@ u_int8_t kalIsChFlagMatch(uint32_t uFlags, enum CHAN_FLAGS matchFlag);
 #define kalSetDrvIntEvent(_prGlueInfo) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
-#define kalSendUevent(_src) \
+#define kalSendUevent(_adapter, _src) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__)
 
 #define kalIsHalted() \

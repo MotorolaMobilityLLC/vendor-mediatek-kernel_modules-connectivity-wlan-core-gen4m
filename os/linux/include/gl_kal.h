@@ -2503,7 +2503,7 @@ void kalNanHandleVendorEvent(struct ADAPTER *prAdapter, uint8_t *prBuffer);
 
 void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo);
 void kalWlanUeventDeinit(struct GLUE_INFO *prGlueInfo);
-u_int8_t kalSendUevent(const char *src);
+u_int8_t kalSendUevent(struct ADAPTER *prAdapter, const char *src);
 
 int _kalSnprintf(char *buf, size_t size, const char *fmt, ...);
 int _kalSprintf(char *buf, const char *fmt, ...);

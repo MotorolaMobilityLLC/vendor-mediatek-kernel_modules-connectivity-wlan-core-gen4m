@@ -131,6 +131,11 @@ void kalGetRealTime(struct REAL_TIME *prRealTime)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
+{
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
+}
+
 void kalVendorEventRssiBeyondRange(
 	struct GLUE_INFO *prGlueInfo,
 	uint8_t ucBssIdx, int rssi)

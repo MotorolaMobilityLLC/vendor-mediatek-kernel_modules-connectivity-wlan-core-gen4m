@@ -11539,7 +11539,7 @@ void wlanReportTxDelayOverLimit(struct ADAPTER *prAdapter,
 	kalSnprintf(uevent, sizeof(uevent),
 			"abnormaltrx=DIR:TX,event:Ab%sDelay:%u",
 			type == DRIVER_DELAY ? "Driver" : "Mac", delay);
-	kalSendUevent(uevent);
+	kalSendUevent(prAdapter, uevent);
 #endif
 }
 
@@ -14384,7 +14384,7 @@ void wlanLowDataRateMonitor(struct ADAPTER *prAdapter,
 		kalSnprintf(uevent, sizeof(uevent),
 			"abnormaltrx=DIR:TX,Event:LowRate Rate:%u,Tput:%u,Count:%llu",
 			u4TxRateMbps, u4TxTput, u8TxTotalCntDif);
-		kalSendUevent(uevent);
+		kalSendUevent(prAdapter, uevent);
 		prAdapter->fgSendTxUevt = TRUE;
 		prAdapter->u4LastLowTxRateUevt = u4CurTick;
 	}
@@ -14408,7 +14408,7 @@ void wlanLowDataRateMonitor(struct ADAPTER *prAdapter,
 		kalSnprintf(uevent, sizeof(uevent),
 			"abnormaltrx=DIR:RX,Event:LowRate Rate:%u,Tput:%u,Count:%llu",
 			u4RxRateMbps, u4RxTput, u8RxTotalCntDif);
-		kalSendUevent(uevent);
+		kalSendUevent(prAdapter, uevent);
 		prAdapter->fgSendRxUevt = TRUE;
 		prAdapter->u4LastLowRxRateUevt = u4CurTick;
 	}

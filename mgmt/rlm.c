@@ -7764,11 +7764,13 @@ uint32_t rlmUpdateStbcSetting(struct ADAPTER *prAdapter,
 	if (enable) {
 		prBssInfo->eForceStbc = STBC_MRC_STATE_ENABLED;
 		if (notify)
-			kalSendUevent("forcestbc=status:Success,enable=True");
+			kalSendUevent(prAdapter,
+				      "forcestbc=status:Success,enable=True");
 	} else {
 		prBssInfo->eForceStbc = STBC_MRC_STATE_DISABLED;
 		if (notify)
-			kalSendUevent("forcestbc=status:Success,enable=False");
+			kalSendUevent(prAdapter,
+				      "forcestbc=status:Success,enable=False");
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -7815,7 +7817,8 @@ uint32_t rlmUpdateMrcSetting(struct ADAPTER *prAdapter,
 	if (prBssInfo->ucOpRxNss == 1) {
 		DBGLOG(RLM, ERROR, "Skip BSS[%d] if already 1x1\n",
 				ucBssIndex);
-		kalSendUevent("forcemrc=status:Fail,reason=Already1x1");
+		kalSendUevent(prAdapter,
+			      "forcemrc=status:Fail,reason=Already1x1");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -7823,7 +7826,8 @@ uint32_t rlmUpdateMrcSetting(struct ADAPTER *prAdapter,
 	if (prBssInfo->pfOpChangeHandler) {
 		DBGLOG(RLM, ERROR, "Skip ongoing op mode change: BSS[%d]\n",
 				ucBssIndex);
-		kalSendUevent("forcemrc=status:Fail,reason=OngoingOpMode");
+		kalSendUevent(prAdapter,
+			      "forcemrc=status:Fail,reason=OngoingOpMode");
 		return WLAN_STATUS_FAILURE;
 	}
 
@@ -7867,7 +7871,8 @@ uint32_t rlmUpdateMrcSetting(struct ADAPTER *prAdapter,
 			"Updating BSS[%d] MRC setting to %d, state = %d.\n",
 			ucBssIndex, enable, prBssInfo->eForceMrc);
 	} else {
-		kalSendUevent("forcemrc=status:Fail,reason=SendActionFail");
+		kalSendUevent(prAdapter,
+			      "forcemrc=status:Fail,reason=SendActionFail");
 	}
 
 	return u4Status;
@@ -7886,7 +7891,8 @@ static void rlmResetMrc(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 
 	if (prBssInfo->eForceMrc != STBC_MRC_STATE_DISABLED) {
 		prBssInfo->eForceMrc = STBC_MRC_STATE_DISABLED;
-		kalSendUevent("forcemrc=status:Fail,reason=MrcIsReset");
+		kalSendUevent(prAdapter,
+			      "forcemrc=status:Fail,reason=MrcIsReset");
 	}
 }
 
@@ -7910,10 +7916,11 @@ static void rlmUpdateMrcTxDone(struct ADAPTER *prAdapter,
 			"TxDone [Status: %d] BSS[%d] MRC state = %d.\n",
 			fgIsSuccess, ucBssIndex, prBssInfo->eForceMrc);
 		if (fgIsSuccess)
-			kalSendUevent("forcemrc=status:Success,enable=True");
+			kalSendUevent(prAdapter,
+				      "forcemrc=status:Success,enable=True");
 		else
-			kalSendUevent(
-				"forcemrc=status:Fail,reason=SendActionFail");
+			kalSendUevent(prAdapter,
+				      "forcemrc=status:Fail,reason=SendActionFail");
 		break;
 
 	case STBC_MRC_STATE_DISABLING:
@@ -7923,10 +7930,11 @@ static void rlmUpdateMrcTxDone(struct ADAPTER *prAdapter,
 			"TxDone [Status: %d] BSS[%d] MRC state = %d.\n",
 			fgIsSuccess, ucBssIndex, prBssInfo->eForceMrc);
 		if (fgIsSuccess)
-			kalSendUevent("forcemrc=status:Success,enable=False");
+			kalSendUevent(prAdapter,
+				      "forcemrc=status:Success,enable=False");
 		else
-			kalSendUevent(
-				"forcemrc=status:Fail,reason=SendActionFail");
+			kalSendUevent(prAdapter,
+				      "forcemrc=status:Fail,reason=SendActionFail");
 		break;
 
 	default:

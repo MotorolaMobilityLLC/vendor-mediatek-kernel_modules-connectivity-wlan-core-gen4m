@@ -1205,7 +1205,7 @@ void roamingFsmNotifyEvent(
 		prEventInfo->ucPrevRcpi, prEventInfo->ucCurrRcpi,
 		prEventInfo->ucBw,
 		(prEventInfo->ucSupportStbc == TRUE ? "TRUE" : " FALSE"));
-	kalSendUevent(uevent);
+	kalSendUevent(adapter, uevent);
 }
 
 /*----------------------------------------------------------------------------*/

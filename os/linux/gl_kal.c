@@ -213,6 +213,12 @@ static struct VOLT_INFO_T _rVnfInfo = {
 uint32_t pcie_monitor_count;
 #endif
 
+/* kalSendUevent */
+struct MSG_UEVENT_REQ {
+	struct MSG_HDR rMsgHdr; /* Must be the first member */
+	char event_string[300];
+};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -8548,31 +8554,51 @@ void kalMetInit(struct GLUE_INFO *prGlueInfo)
 }
 #endif
 
-u_int8_t kalSendUevent(const char *src)
+u_int8_t kalSendUevent(struct ADAPTER *prAdapter, const char *src)
 {
+	struct MSG_UEVENT_REQ *prUeventReq;
+
+	prUeventReq = cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
+				  sizeof(struct MSG_UEVENT_REQ));
+	if (!prUeventReq)
+		return FALSE;
+
+	DBGLOG(INIT, TRACE, "Send UEvent: %s", src);
+	prUeventReq->rMsgHdr.eMsgId = MID_UEVENT_REQ;
+	strscpy(prUeventReq->event_string, src,
+		sizeof(prUeventReq->event_string));
+
+	mboxSendMsg(prAdapter, MBOX_ID_0, (struct MSG_HDR *)prUeventReq,
+		    MSG_SEND_METHOD_BUF);
+
+	return TRUE;
+}
+
+void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
+{
+	struct MSG_UEVENT_REQ *prUevnetReq;
+	const char *src;
 	int ret;
 	char *envp[2];
 	char event_string[300];
 
+	prUevnetReq = (struct MSG_UEVENT_REQ *)prMsgHdr;
+	src = prUevnetReq->event_string;
 	envp[0] = event_string;
 	envp[1] = NULL;
 
-	DBGLOG(INIT, INFO, "Send UEvent = %s", src);
+	DBGLOG(INIT, INFO, "Send UEvent: %s", src);
 
-	/*send uevent*/
-	strlcpy(event_string, src, sizeof(event_string));
-	if (event_string[0] == '\0') { /*string is null*/
-		return FALSE;
-	}
-	ret = kobject_uevent_env(
-			&wlan_object.this_device->kobj,
-			KOBJ_CHANGE, envp);
-	if (ret != 0) {
+	/* send uevent */
+	strscpy(event_string, src, sizeof(event_string));
+	if (event_string[0] == '\0') /* string is null */
+		return;
+
+	ret = kobject_uevent_env(&wlan_object.this_device->kobj,
+				 KOBJ_CHANGE, envp);
+
+	if (ret != 0)
 		DBGLOG(INIT, WARN, "uevent failed\n");
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo)
@@ -8650,7 +8676,7 @@ u_int8_t kalIndicateDriverEvent(struct ADAPTER *prAdapter,
 	}
 
 	kalSnprintf(uevent, sizeof(uevent), "code=%d", event);
-	kalSendUevent(uevent);
+	kalSendUevent(prAdapter, uevent);
 
 	skb = kalCfg80211VendorEventAlloc(wiphy, wdev,
 		dataLen,

@@ -535,7 +535,7 @@ static void halNotifyTxHangEvent(struct ADAPTER *prAdapter,
 		u4CurIdx = u4NextIdx;
 	}
 
-	kalSendUevent("abnormaltrx=DIR:TX,Event:Hang");
+	kalSendUevent(prAdapter, "abnormaltrx=DIR:TX,Event:Hang");
 }
 
 static void halCalcTxTimeoutParams(struct ADAPTER *prAdapter,

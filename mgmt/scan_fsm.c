@@ -2303,5 +2303,5 @@ scnFsmNotifyEvent(struct ADAPTER *prAdapter,
 	DBGLOG(SCN, LOUD, "request uevent:%s\n", uEvent);
 	/* Only send Uevent if BSS is AIS */
 	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
-		kalSendUevent(uEvent);
+		kalSendUevent(prAdapter, uEvent);
 }
