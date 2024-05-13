@@ -7601,13 +7601,18 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 		COPY_MAC_ADDR(prAisBssInfo->aucBSSID, prNewBssDesc->aucBSSID);
 	nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
 
-	secRemoveBssBcEntry(prAdapter, prAisBssInfo, TRUE);
-	if (prTargetStaRec)
+	if (prTargetStaRec) {
+		/* if there's no target, postpone removing bc entry to
+		 * deactivate otherwise deactivate won't sync with fw because
+		 * ucBMCWlanIndex == WTBL_RESERVED_ENTRY
+		 */
+		secRemoveBssBcEntry(prAdapter, prAisBssInfo, TRUE);
 		prTargetStaRec->ucBssIndex = prAisBssInfo->ucBssIndex;
+	}
 	/* before deactivate previous AP, should move its pending MSDUs
 	 ** to the new AP
 	 */
-	if (prAisBssInfo->prStaRecOfAP)
+	if (prAisBssInfo->prStaRecOfAP) {
 		if (prAisBssInfo->prStaRecOfAP != prTargetStaRec &&
 		    prAisBssInfo->prStaRecOfAP->fgIsInUse) {
 			qmMoveStaTxQueue(prAisBssInfo->prStaRecOfAP,
@@ -7623,12 +7628,17 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 #endif
 			cnmStaRecFree(prAdapter, prAisBssInfo->prStaRecOfAP);
 			prAisBssInfo->prStaRecOfAP = NULL;
-		} else
+		} else {
 			DBGLOG(AIS, WARN, "prStaRecOfAP is in use %d\n",
 			       prAisBssInfo->prStaRecOfAP->fgIsInUse);
-	else
+			/* starec is already freed in nicUpdateBss */
+			if (!prAisBssInfo->prStaRecOfAP->fgIsInUse)
+				prAisBssInfo->prStaRecOfAP = NULL;
+		}
+	} else {
 		DBGLOG(AIS, WARN,
 		       "NULL pointer of prAisBssInfo->prStaRecOfAP\n");
+	}
 }				/* end of aisFsmRoamingDisconnectPrevAP() */
 
 void aisFsmRoamingDisconnectPrevAllAP(struct ADAPTER *prAdapter,
