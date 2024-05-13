@@ -379,6 +379,7 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 static spinlock_t rPCIELock;
 #define WIFI_ROLE	(1)
 #define MD_ROLE		(2)
+#define WIFI_RST_ROLE	(3)
 #define POLLING_TIMEOUT		(200)
 #endif //CFG_SUPPORT_PCIE_ASPM
 
@@ -758,6 +759,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.keepPcieWakeup = mt6653KeepPcieWakeup,
 	.fgWifiEnL1_2 = TRUE,
 	.fgMDEnL1_2 = TRUE,
+	.fgWifiRstEnL1_2 = TRUE,
 #endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
@@ -3420,13 +3422,18 @@ static u_int8_t mt6653SetL1ssEnable(struct ADAPTER *prAdapter,
 		prChipInfo->bus_info->fgWifiEnL1_2 = fgEn;
 	else if (role == MD_ROLE)
 		prChipInfo->bus_info->fgMDEnL1_2 = fgEn;
+	else if (role == WIFI_RST_ROLE)
+		prChipInfo->bus_info->fgWifiRstEnL1_2 = fgEn;
 
-	DBGLOG(HAL, LOUD, "fgWifiEnL1_2 = %d, fgMDEnL1_2=%d\n",
+	DBGLOG(HAL, LOUD,
+		"fgWifiEnL1_2 = %d, fgMDEnL1_2=%d, fgWifiRstEnL1_2=%d\n",
 		prChipInfo->bus_info->fgWifiEnL1_2,
-		prChipInfo->bus_info->fgMDEnL1_2);
+		prChipInfo->bus_info->fgMDEnL1_2,
+		prChipInfo->bus_info->fgWifiRstEnL1_2);
 
-	if (prChipInfo->bus_info->fgWifiEnL1_2
-		&& prChipInfo->bus_info->fgMDEnL1_2)
+	if (prChipInfo->bus_info->fgWifiEnL1_2 &&
+	    prChipInfo->bus_info->fgMDEnL1_2 &&
+	    prChipInfo->bus_info->fgWifiRstEnL1_2)
 		return TRUE;
 	else
 		return FALSE;
@@ -4601,12 +4608,22 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 {
 #if defined(_HIF_PCIE)
 	uint32_t u4Val1, u4Val2;
+#if CFG_SUPPORT_PCIE_ASPM
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+
+	/* Keep L1 */
+	mt6653ConfigPcieAspm(prGlueInfo, FALSE, WIFI_RST_ROLE);
+#endif
 
 	glReadPcieCfgSpace(0x488, &u4Val1);
 	glReadPcieCfgSpace(0x48c, &u4Val2);
 	DBGLOG(INIT, INFO,
 		"0x488=0x%08x, 0x48c=0x%08x\n",
 		u4Val1, u4Val2);
+
+#if CFG_SUPPORT_PCIE_ASPM
+	mt6653ConfigPcieAspm(prGlueInfo, TRUE, WIFI_RST_ROLE);
+#endif
 
 	/* 1. Cfg_Rd[0x488] == 0 or 0xFFFFFFFF: PCIE is not at link up status */
 	/* 2. Bit 0/4/11~13 of Cfg_Rd[0x488] is not set: cb_infra is abnormal */
