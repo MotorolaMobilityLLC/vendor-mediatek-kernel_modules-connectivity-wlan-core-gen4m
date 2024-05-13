@@ -376,7 +376,6 @@ static struct pci_dev *g_prDev;
 #if (CFG_PCIE_GEN_SWITCH == 1)
 static u_int8_t g_ucReceiveGenSwitch;
 static u_int8_t g_ucBypassException;
-
 #endif
 
 
@@ -3147,7 +3146,7 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 			return IRQ_HANDLED;
 		}
 	}
-
+	prAdapter->fgIsGenSwitchProcessing = TRUE;
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prMemOps = &prHifInfo->rMemOps;
@@ -3170,7 +3169,8 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	prAdapter->ucStopMMIO = TRUE;
 	g_ucReceiveGenSwitch = TRUE;
 	//mtk_pcie_enable_cfg_dump(0);
-	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO TRUE\n");
+	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO:%u, isProcessing:%u\n",
+		prAdapter->ucStopMMIO, prAdapter->fgIsGenSwitchProcessing);
 
 	pu4RxDone[1] = FW_RX_IDLE;
 
@@ -3204,8 +3204,10 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 		g_ucBypassException = TRUE;
 		DBGLOG(INIT, ERROR, "[Gen_Switch] g_ucBypassException\n");
 	}
+	prAdapter->fgIsGenSwitchProcessing = FALSE;
 	prAdapter->ucStopMMIO = FALSE;
-	DBGLOG(INIT, ERROR, "[Gen_Switch] ucStopMMIO FALSE\n");
+	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO:%u, isProcessing:%u\n",
+		prAdapter->ucStopMMIO, prAdapter->fgIsGenSwitchProcessing);
 
 	//mtk_pcie_disable_cfg_dump(0);
 

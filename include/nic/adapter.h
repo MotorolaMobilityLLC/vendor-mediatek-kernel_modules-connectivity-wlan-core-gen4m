@@ -2762,6 +2762,7 @@ struct ADAPTER {
 #endif
 #if (CFG_PCIE_GEN_SWITCH == 1)
 	uint32_t u4MddpGenSwitchSeqNum;
+	u_int8_t fgIsGenSwitchProcessing;
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif
 
