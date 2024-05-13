@@ -539,6 +539,7 @@ struct BUS_INFO {
 	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
 	u_int8_t fgWifiEnL1_2;
 	u_int8_t fgMDEnL1_2;
+	u_int8_t fgWifiRstEnL1_2;
 #endif
 	void (*devReadIntStatus)(struct ADAPTER *prAdapter,
 		uint32_t *pu4IntStatus);
