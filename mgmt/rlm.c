@@ -2883,13 +2883,6 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 				*pucPrimaryCh,
 				*peChannelWidth);
 		}
-
-		if (eChBwOrigin != *peChannelWidth) {
-			DBGLOG(RLM, INFO,
-				"Change BW(VHT)[%d->%d], S1[%d->%d]\n",
-				eChBwOrigin, *peChannelWidth,
-				ucS1Origin, *pucS1);
-		}
 	}
 
 	/* Revise SCO */
@@ -2902,6 +2895,18 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 
 		DBGLOG(RLM, INFO, "Change SCO[%d->%d]\n",
 			eScoOrigin, eScoModify);
+	}
+
+	/* Revise S1 */
+	if (*peExtend == 0 &&
+	    *peChannelWidth == CW_20_40MHZ)
+		*pucS1 = *pucPrimaryCh;
+
+	if (eChBwOrigin != *peChannelWidth ||
+	    ucS1Origin != *pucS1) {
+		DBGLOG(RLM, INFO, "Change BW[%d->%d], S1[%d->%d]\n",
+			eChBwOrigin, *peChannelWidth,
+			ucS1Origin, *pucS1);
 	}
 }
 
