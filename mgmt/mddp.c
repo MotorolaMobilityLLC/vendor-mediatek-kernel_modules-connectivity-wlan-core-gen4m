@@ -1714,6 +1714,8 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 		goto end;
 	}
 
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
 	if (!mddpIsSupportMcifWifi())
 		goto end;
 
@@ -1742,8 +1744,6 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 #if CFG_MTK_CCCI_SUPPORT
 	md_state = ccci_fsm_get_md_state();
 #endif
-
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (prHifInfo->u4GenSwitchState == MDDP_GEN_SWITCH_BYPASS_STATE) {
 		/* no need to send msg to md in bypass state */
