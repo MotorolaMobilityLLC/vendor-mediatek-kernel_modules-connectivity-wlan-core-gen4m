@@ -4102,7 +4102,8 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 	if (prPhyIcsEvent->u4DataLen >
 		(RX_GET_PACKET_MAX_SIZE(prAdapter)
 			- sizeof(struct WIFI_EVENT)
-			- u4PhyIcsEventSize)) {
+			- u4PhyIcsEventSize) ||
+	    prPhyIcsEvent->u4DataLen > MAX_PHY_ICS_DUMP_DATA_CNT) {
 		DBGLOG(RFTEST, ERROR,
 			"u4DataLen %d out of valid event length!\n",
 			prPhyIcsEvent->u4DataLen);
@@ -4144,7 +4145,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 #endif
 
     /* endian swap */
-	for (Idxi = 0; Idxi < 256; Idxi++) {
+	for (Idxi = 0; Idxi < MAX_PHY_ICS_DUMP_DATA_CNT; Idxi++) {
 		prPhyIcsEvent->u4Data[Idxi] =
 			((prPhyIcsEvent->u4Data[Idxi] & 0x000000FF) << 24)
 			| ((prPhyIcsEvent->u4Data[Idxi] & 0x0000FF00) << 8)
