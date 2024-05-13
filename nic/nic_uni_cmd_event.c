@@ -4454,7 +4454,7 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 		tag->ucRfSco = sub_req->eRfSco;
 		tag->ucRfCenterFreqSeg1 = sub_req->ucRfCenterFreqSeg1;
 		tag->ucRfCenterFreqSeg2 = sub_req->ucRfCenterFreqSeg2;
-		tag->ucRfChannelWidthFromAP = sub_req->eRfChannelWidth;
+		tag->ucRfChannelWidthFromAP = (uint8_t)eWidth;
 		tag->ucRfCenterFreqSeg1FromAP = sub_req->ucRfCenterFreqSeg1;
 		tag->ucRfCenterFreqSeg2FromAP = sub_req->ucRfCenterFreqSeg2;
 		tag->ucDBDCBand = nicUniCmdChReqBandType(sub_req->eDBDCBand);
