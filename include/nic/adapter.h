@@ -2309,6 +2309,10 @@ struct ADAPTER {
 	u_int8_t fgIsPowerDumpDrvOwn;
 #endif
 
+#if CFG_WMT_RESET_API_SUPPORT
+	u_int8_t fgIsSkipFWL05;
+#endif
+
 	/* Set by callback to make sure WOW done before system suspend */
 	u_int8_t fgSetPfCapabilityDone;
 	u_int8_t fgSetWowDone;

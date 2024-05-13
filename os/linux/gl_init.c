@@ -7969,6 +7969,9 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			break;
 		}
 
+#if CFG_WMT_RESET_API_SUPPORT
+		prAdapter->fgIsSkipFWL05 = TRUE;
+#endif
 		/*
 		 * interrupt may come in after setup irq
 		 * we need to make sure that rx is ready before it

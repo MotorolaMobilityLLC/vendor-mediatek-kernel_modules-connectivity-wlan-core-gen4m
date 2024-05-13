@@ -1457,6 +1457,9 @@ uint32_t wlanAdapterStart(struct ADAPTER *prAdapter,
 		/* 2. Initialize Tx Resource to fw download state */
 		nicTxInitResetResource(prAdapter);
 
+#if CFG_WMT_RESET_API_SUPPORT
+		prAdapter->fgIsSkipFWL05 = FALSE;
+#endif
 		u4Status = wlanDownloadFW(prAdapter);
 		if (u4Status != WLAN_STATUS_SUCCESS) {
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
