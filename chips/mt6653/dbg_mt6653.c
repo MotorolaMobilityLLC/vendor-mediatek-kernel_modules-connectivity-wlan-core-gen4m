@@ -1290,10 +1290,9 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 #define MAX_REG_DUMP_NUM		48
 #define REG_DUMP_ARRAY_SIZE		(MAX_REG_DUMP_NUM*9+16)
 
-	uint32_t u4ReadSize = dump_list->read_cmd_size;
 	const struct wlan_dbg_command *pCmdList = NULL;
 	char dumpLineBuf[REG_DUMP_ARRAY_SIZE] = {0};
-	uint32_t u4Line = 0, u4ReadCount = 0, u4ReadVal;
+	uint32_t u4Line = 0, u4ReadCount = 0, u4ReadSize, u4ReadVal;
 	uint32_t u4Offset = 0, u4TotalLen = REG_DUMP_ARRAY_SIZE;
 	uint32_t i;
 	uint8_t uTimeout = 0;
@@ -1305,6 +1304,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 	if (!dump_list)
 		return;
 
+	u4ReadSize = dump_list->read_cmd_size;
 	/* Header */
 #if CFG_MTK_WIFI_MBU
 	uTimeout = mt6653_get_mbu_timeout_status();
@@ -1327,6 +1327,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 		if (pCmdList[i].write) {
 			if (pCmdList[i].mask) {
 				uTimeout = 0;
+				u4ReadVal = 0x12345678;
 #if CFG_MTK_WIFI_MBU
 				if (!mt6653_get_mbu_timeout_status() &&
 				    !fgIsDumpViaBt) {
