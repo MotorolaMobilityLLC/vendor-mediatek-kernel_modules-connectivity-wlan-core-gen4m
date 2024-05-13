@@ -8595,13 +8595,16 @@ void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 	/* send uevent */
 	strscpy(event_string, src, sizeof(event_string));
 	if (event_string[0] == '\0') /* string is null */
-		return;
+		goto end;
 
 	ret = kobject_uevent_env(&wlan_object.this_device->kobj,
 				 KOBJ_CHANGE, envp);
 
 	if (ret != 0)
 		DBGLOG(INIT, WARN, "uevent failed\n");
+
+end:
+	cnmMemFree(prAdapter, prMsgHdr);
 }
 
 void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo)
