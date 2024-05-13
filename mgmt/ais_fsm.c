@@ -11034,10 +11034,12 @@ void aisFunSwitchChannelAbort(struct ADAPTER *ad,
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		struct BSS_INFO *prAisBssInfo = aisGetLinkBssInfo(ais, i);
+		struct SWITCH_CH_AND_BAND_PARAMS *prCSAParams;
 		uint8_t ucBssIndex;
 
 		if (!prAisBssInfo)
 			continue;
+		prCSAParams = &prAisBssInfo->CSAParams;
 		ucBssIndex = prAisBssInfo->ucBssIndex;
 
 		/* CSA is in requet list, clear all  */
@@ -11053,10 +11055,16 @@ void aisFunSwitchChannelAbort(struct ADAPTER *ad,
 				MEDIA_STATE_CONNECTED);
 		}
 
+		if (prCSAParams->fgHasStopTx)
+			kalIndicateAllQueueTxAllowed(ad->prGlueInfo,
+				ucBssIndex, TRUE);
+
 		if (fgResetAll) {
 			cnmTimerStopTimer(ad, &prAisBssInfo->rCsaTimer);
 			cnmTimerStopTimer(ad, &prAisBssInfo->rCsaDoneTimer);
 		}
+
+		rlmResetCSAParams(prAisBssInfo, TRUE);
 	}
 }
 
