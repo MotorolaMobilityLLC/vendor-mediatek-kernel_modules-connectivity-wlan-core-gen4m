@@ -132,8 +132,11 @@ static uint8_t mt7925_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *set, uint8_t ucBssIndex);
+static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
+	uint8_t ucBssidx);
 #endif
-
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -761,6 +764,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt7925 = {
 #if (CFG_SUPPORT_APS == 1)
 	.apsLinkPlanDecision = mt7925_apsLinkPlanDecision,
 	.apsFillBssDescSet = mt7925_apsFillBssDescSet,
+	.apsUpdateTotalScore = mt7925_apsUpdateTotalScore,
 #endif
 
 #if defined(_HIF_USB)
@@ -1752,6 +1756,70 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		}
 	}
 #endif
+}
+
+static void mt7925_apsUpdateTotalScore(struct ADAPTER *prAdapter,
+	struct BSS_DESC *arLinks[], uint8_t ucLinkNum,
+	enum ENUM_MLO_LINK_PLAN eCurrPlan, struct AP_COLLECTION *prAp,
+	uint8_t ucBssidx)
+{
+	uint32_t u4TotalScore = 0;
+	uint32_t u4TotalTput = 0;
+	struct BSS_DESC *best_bss = arLinks[0]; /* links is sorted by score */
+	uint8_t i;
+	uint8_t ucRfBandBmap = 0;
+	enum ENUM_MLO_MODE eMloMode = MLO_MODE_NUM;
+	uint8_t ucMaxSimuLinks = 0;
+
+	for (i = 0; i < ucLinkNum; i++) {
+		u4TotalScore += arLinks[i]->u2Score;
+		u4TotalTput += arLinks[i]->u4Tput;
+		ucRfBandBmap |= BIT(arLinks[i]->eBand);
+	}
+
+	if (ucLinkNum > 1) {
+		ucMaxSimuLinks = prAdapter->rWifiVar.ucMaxSimuLinksCap;
+		eMloMode = MLO_MODE_STR;
+	}
+
+#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
+	if (IS_FEATURE_ENABLED(
+			prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
+			BE_IS_EML_CAP_SUPPORT_EMLSR(
+				best_bss->rMlInfo.u2EmlCap)) {
+		eMloMode = MLO_MODE_EMLSR;
+		ucMaxSimuLinks = 0;
+	}
+#endif
+
+#if (CFG_SUPPORT_MLO_HYBRID == 1)
+	if (IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupport) &&
+		IS_FEATURE_ENABLED(
+		prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
+		if (eMloMode == MLO_MODE_EMLSR)
+			eMloMode = MLO_MODE_HYEMLSR;
+		else
+			eMloMode = MLO_MODE_HYMLO;
+		ucMaxSimuLinks = 0;
+	}
+#endif
+
+
+	if (u4TotalScore > prAp->u4TotalScore) {
+		kalMemCopy(prAp->aprTarget, arLinks, sizeof(prAp->aprTarget));
+		prAp->ucLinkNum = ucLinkNum;
+		prAp->u4TotalScore = u4TotalScore;
+		prAp->u4TotalTput = u4TotalTput;
+		prAp->eMloMode = eMloMode;
+		prAp->ucMaxSimuLinks = ucMaxSimuLinks;
+
+		DBGLOG(APS, INFO,
+			"CAND[%d] RfBandBmap[0x%x] num[%d] score[%d] tput[%d] mode[%d] simu[%d]\n",
+			prAp->u4Index, ucRfBandBmap, prAp->ucLinkNum,
+			prAp->u4TotalScore, prAp->u4TotalTput,
+			prAp->eMloMode, prAp->ucMaxSimuLinks);
+	}
 }
 
 #endif /* CFG_SUPPORT_APS */
