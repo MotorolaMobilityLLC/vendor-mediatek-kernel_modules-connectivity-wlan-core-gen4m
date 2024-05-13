@@ -4172,6 +4172,12 @@ static void wlanNvramUpdateOnTestMode(void)
 	struct ADAPTER *prAdapter = NULL;
 
 	/* <1> Sanity Check */
+
+	if (kalIsHalted()) {
+		DBGLOG(INIT, WARN, "device not ready return");
+		return;
+	}
+
 	if (u4WlanDevNum == 0) {
 		DBGLOG(INIT, ERROR,
 			   "wlanNvramUpdateOnTestMode invalid!!\n");
