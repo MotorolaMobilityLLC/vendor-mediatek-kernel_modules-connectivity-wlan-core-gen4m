@@ -2127,7 +2127,8 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 				candi, link_num, curr_plan, ap, bidx);
 
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
-		if (mldNeedSingleBandMlsr56(ad, curr_plan)) {
+		if (mldNeedSingleBandMlsr56(ad, curr_plan) && link_num == 2) {
+			kalMemCopy(ap->aprTarget, candi, sizeof(ap->aprTarget));
 			ap->ucLinkNum = 2;
 			ap->eMloMode = MLO_MODE_SB_MLSR;
 			ap->ucMaxSimuLinks = 0;
