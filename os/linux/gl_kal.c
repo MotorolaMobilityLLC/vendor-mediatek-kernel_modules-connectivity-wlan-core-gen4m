@@ -8634,12 +8634,18 @@ void kalWlanUeventInit(struct GLUE_INFO *prGlueInfo)
 	}
 
 	prGlueInfo->fgWlanUevent = TRUE;
+
+	DBGLOG(INIT, TRACE, "Uevent init success, flag:%u\n",
+		prGlueInfo->fgWlanUevent);
 }
 
 void kalWlanUeventDeinit(struct GLUE_INFO *prGlueInfo)
 {
 	if (!prGlueInfo || !prGlueInfo->fgWlanUevent)
 		return;
+
+	DBGLOG(INIT, TRACE, "Uevent deinit, flag:%u\n",
+		prGlueInfo->fgWlanUevent);
 
 	misc_deregister(&wlan_object);
 	prGlueInfo->fgWlanUevent = FALSE;

@@ -7580,6 +7580,8 @@ int32_t wlanOffAtReset(void)
 
 	wlanAdapterStop(prAdapter, TRUE);
 
+	kalWlanUeventDeinit(prGlueInfo);
+
 	/* 4 <x> Stopping handling interrupt and free IRQ */
 	prBusInfo = prAdapter->chip_info->bus_info;
 	nicDisableInterrupt(prAdapter);
@@ -7749,6 +7751,8 @@ int32_t wlanOnAtReset(void)
 			eFailReason = ADAPTER_START_FAIL;
 			break;
 		}
+
+		kalWlanUeventInit(prGlueInfo);
 
 		if (wlanOnPreNetRegister(prGlueInfo, prAdapter,
 					 prAdapter->chip_info,
@@ -8218,6 +8222,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 			wait_for_completion_interruptible(
 							&prGlueInfo->rHaltComp);
 			wlanAdapterStop(prAdapter, FALSE);
+			kalWlanUeventDeinit(prGlueInfo);
 		kal_fallthrough;
 		case ADAPTER_START_FAIL:
 			/*reset NVRAM State to ready for the next wifi-on*/
