@@ -11539,13 +11539,13 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	"RxReorder[%s] " \
 	RX_PENDING_TEMPLATE \
 	RRB_TRACK_TEMPLATE \
-	"drv[RM,IL,RI,PA,PF,DU,DA,RT,RM,RW,RA,RB,DT,NS," \
-	"IB,HS,LS,DD,ME,BD,NI,DR,TE,PE," \
-	"CE,DN,FE,DE,IE,TME,CM,FB,ID,FD," \
-	"NL]:" \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
+	"drv[RM,IL,RI,PA,PF|DU,DA,RT,RM,RW#" \
+	"RA,RB,DT,NS,IB|HS,LS,DD,ME,BD_" \
+	"NI,DR,TE,PE,CE|DN,FE,DE,IE,TME^" \
+	"CM,FB,ID,FD,NL]:" \
+	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#" \
+	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_" \
+	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^" \
 	"%lu,%lu,%lu,%lu,%lu\n" \
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
@@ -18239,8 +18239,15 @@ uint32_t kalTxWorkSchedule(struct sk_buff *prSkb,
 #if CFG_SUPPORT_PER_CPU_TX
 static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 {
+	static uint32_t counter;
+	struct net_device *prDev;
 	struct PER_CPU_TX_INFO *prPerCpuTxInfo = &pr->rPerCpuTxInfo;
 	struct _PER_CPU_TX_INFO *prInfo;
+	uint32_t xmit_more;
+	uint32_t stopped;
+	uint8_t ucBssIndex;
+	uint16_t u2QueueIdx;
+	int32_t *prPendingNum;
 
 	if (!prPerCpuTxInfo->fgReady)
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -18248,13 +18255,46 @@ static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 	prInfo = get_cpu_ptr(prPerCpuTxInfo->prInfo);
 
 	__skb_queue_tail(&prInfo->rSkbQ, prSkb);
+	counter++;
 
 #if (KERNEL_VERSION(5, 2, 0) <= CFG80211_VERSION_CODE)
-	if (!netdev_xmit_more())
+	xmit_more = netdev_xmit_more();
 #else
-	if (!prSkb->xmit_more)
+	xmit_more = prSkb->xmit_more;
 #endif
+	if (!xmit_more) {
+		uint32_t u4DebugLevel;
+
+		wlanGetDriverDbgLevel(DBG_TX_IDX, &u4DebugLevel);
+		if (u4DebugLevel & DBG_CLASS_TEMP) {
+			ucBssIndex = GLUE_GET_PKT_BSS_IDX(prSkb);
+			prPendingNum =
+				pr->ai4TxPendingFrameNumPerQueue[ucBssIndex];
+			DBGLOG(TX, TEMP,
+			       "xmit_more=%u, count=%u, bss=%u, [%d,%d,%d,%d]",
+			       xmit_more, counter, ucBssIndex,
+			       prPendingNum[0], prPendingNum[1],
+			       prPendingNum[2], prPendingNum[3]);
+		}
 		tasklet_schedule(&prInfo->rTask);
+	} else {
+		ucBssIndex = GLUE_GET_PKT_BSS_IDX(prSkb);
+		prDev = wlanGetNetDev(pr, ucBssIndex);
+		stopped = netif_subqueue_stopped(prDev, prSkb);
+		if (unlikely(stopped)) {
+			u2QueueIdx = skb_get_queue_mapping(prSkb);
+			prPendingNum =
+				pr->ai4TxPendingFrameNumPerQueue[ucBssIndex];
+			DBGLOG(TX, TRACE,
+			       "xmit_more=%u, stopped=%u, count=%u, bss=%u, Pending=%d [%d,%d,%d,%d]",
+			       xmit_more, stopped, counter, ucBssIndex,
+			       prPendingNum[u2QueueIdx],
+			       prPendingNum[0], prPendingNum[1],
+			       prPendingNum[2], prPendingNum[3]);
+
+			tasklet_schedule(&prInfo->rTask);
+		}
+	}
 
 	put_cpu_ptr(prPerCpuTxInfo->prInfo);
 
