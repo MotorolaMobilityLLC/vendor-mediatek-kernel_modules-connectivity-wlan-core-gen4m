@@ -120,6 +120,8 @@ extern struct PP_TOP_CR rMt6653PpTopCr;
 #define MT6653_RX_VT_RX_RATE_OFFSET       0
 #define MT6653_RX_VT_NSTS_MASK            BITS(7, 10)
 #define MT6653_RX_VT_NSTS_OFFSET          7
+#define MT6653_RX_VT_MUMIMO_MASK          BIT(21)
+#define MT6653_RX_VT_MUMIMO_OFFSET        21
 
 /* Group3[2] */
 #define MT6653_RX_VT_FR_MODE_MASK         BITS(0, 2) /* Group3[2] */
@@ -140,6 +142,10 @@ extern struct PP_TOP_CR rMt6653PpTopCr;
 #define RXV_GET_RX_NSTS(_prRxVector)				\
 		(((_prRxVector) & MT6653_RX_VT_NSTS_MASK)	\
 			 >> MT6653_RX_VT_NSTS_OFFSET)
+
+#define RXV_GET_RX_MUMIMO(_prRxVector)				\
+		(((_prRxVector) & MT6653_RX_VT_MUMIMO_MASK)	\
+			 >> MT6653_RX_VT_MUMIMO_OFFSET)
 
 #define RXV_GET_FR_MODE(_prRxVector)				\
 		(((_prRxVector) & MT6653_RX_VT_FR_MODE_MASK)	\
