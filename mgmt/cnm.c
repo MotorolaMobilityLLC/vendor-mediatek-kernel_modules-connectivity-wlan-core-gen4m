@@ -5566,6 +5566,8 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 {
 	uint8_t ucOpMaxBw;
 	uint8_t ucS1 = 0;
+	u_int8_t fgSupportEHT = FALSE;
+	u_int8_t fgSupportHE = FALSE;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
 #if CFG_SUPPORT_P2P_ECSA
@@ -5641,6 +5643,20 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 				ucOpMaxBw = MAX_BW_20MHZ;
 			}
 		}
+
+#if (CFG_SUPPORT_802_11BE == 1)
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT)
+			fgSupportEHT = TRUE;
+#endif
+#if (CFG_SUPPORT_802_11AX == 1)
+		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HE)
+			fgSupportHE = TRUE;
+#endif
+		if (fgSupportEHT == FALSE && ucOpMaxBw >= MAX_BW_320_1MHZ)
+			ucOpMaxBw = MAX_BW_160MHZ;
+		if (fgSupportEHT == FALSE && fgSupportHE == FALSE &&
+		    ucOpMaxBw >= MAX_BW_160MHZ)
+			ucOpMaxBw = MAX_BW_80MHZ;
 	} else { /* STA, GC */
 		ucOpMaxBw = rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo);
 	}
