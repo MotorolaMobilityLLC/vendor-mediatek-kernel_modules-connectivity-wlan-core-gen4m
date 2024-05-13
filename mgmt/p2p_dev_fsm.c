@@ -1151,7 +1151,8 @@ p2pDevNeedOffchnlTx(struct ADAPTER *prAdapter,
 	if ((prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) == MAC_FRAME_PROBE_RSP)
 		return FALSE;
 
-	if (prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_CHNL_ON_HAND &&
+	if ((prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_CHNL_ON_HAND ||
+	     prP2pDevFsmInfo->eCurrentState == P2P_DEV_STATE_OFF_CHNL_TX) &&
 			p2pFuncCheckOnRocChnl(&(prMgmtTxMsg->rChannelInfo),
 					prChnlReqInfo))
 		return FALSE;
