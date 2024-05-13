@@ -3286,12 +3286,11 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 	if (state)
 		goto error_return;
 
-	pci_restore_state(pdev);
-	DBGLOG(HAL, LOUD, "done\n");
-
 	if (!pcie_check_status_is_linked(pdev))
 		goto error_return;
 
+	pci_restore_state(pdev);
+	DBGLOG(HAL, LOUD, "done\n");
 	return state;
 error_return:
 	fgIsBusAccessFailed = TRUE;

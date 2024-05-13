@@ -1264,7 +1264,7 @@ static uint8_t check_mbu_timeout(uint32_t u4Val)
 	u_int8_t fgCurTimeout = FALSE;
 	uint32_t u4Idx, u4Pattern;
 	uint32_t au4MbuTimeoutFilterList[] = {
-		0xFFFFDEAD, 0xDEAD0A2C
+		0xFFFFDEAD, 0xDEAD0A2C, 0x12345678
 	};
 
 	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4MbuTimeoutFilterList); u4Idx++) {
@@ -1280,11 +1280,16 @@ static uint8_t check_mbu_timeout(uint32_t u4Val)
 	else
 		g_uMbuTimeoutCnt = 0;
 
-	if (!mt6653_get_mbu_timeout_status() &&
-		g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
-		update_mbu_timeout(1);
-
 	return g_uMbuTimeoutCnt;
+}
+
+static u_int8_t allow_read_next(void)
+{
+	/* read next index if no mbu timeout or read by mmio case */
+	if (!g_uMbuTimeoutCnt || mt6653_get_mbu_timeout_status())
+		return TRUE;
+
+	return FALSE;
 }
 #endif
 
@@ -1340,7 +1345,11 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 					pCmdList[i].value);
 		}
 
-		if (pCmdList[i].read) {
+		if (pCmdList[i].read
+#if CFG_MTK_WIFI_MBU
+			&& allow_read_next()
+#endif
+		) {
 			if (u4ReadCount % MAX_REG_DUMP_NUM == 0) {
 				u4Offset += snprintf(dumpLineBuf + u4Offset,
 					u4TotalLen - u4Offset,
@@ -1374,10 +1383,15 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 		}
 
 #if CFG_MTK_WIFI_MBU
-		/* keep dump same reg if mcu timeout */
-		if (!g_uMbuTimeoutCnt || mt6653_get_mbu_timeout_status())
+		/* keep dump same reg if mbu timeout */
+		if (allow_read_next())
 #endif
 			i++;
+#if CFG_MTK_WIFI_MBU
+		if (!mt6653_get_mbu_timeout_status() &&
+			g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
+			update_mbu_timeout(1);
+#endif
 	}
 }
 
