@@ -1463,6 +1463,13 @@ void rlmGetChnlInfoForCSA(struct ADAPTER *prAdapter,
 	eBandOrig = prBssInfo->eBand;
 	prBssInfo->eBand = eBandCsa;
 	prRfChnlInfo->ucChnlBw = cnmGetBssMaxBw(prAdapter, ucBssIdx);
+#if (CFG_SUPPORT_802_11BE == 1)
+	if ((!(prBssInfo->ucPhyTypeSet &
+		PHY_TYPE_BIT_EHT)) &&
+		(prRfChnlInfo->ucChnlBw >=
+		MAX_BW_320_1MHZ))
+		prRfChnlInfo->ucChnlBw = MAX_BW_160MHZ;
+#endif
 	prBssInfo->eBand = eBandOrig; /* Restore BSS eBand */
 
 	prRfChnlInfo->u2PriChnlFreq =
