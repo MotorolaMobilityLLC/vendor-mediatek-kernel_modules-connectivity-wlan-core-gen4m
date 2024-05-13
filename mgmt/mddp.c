@@ -1091,7 +1091,11 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
 		       status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
-		g_eMddpStatus = status;
+		if (!ret)
+			g_eMddpStatus = status;
+		else
+			DBGLOG(INIT, WARN, "notify failed. mddp status:%d\n",
+			       g_eMddpStatus);
 	} else {
 		DBGLOG(INIT, ERROR, "notify_drv_info is NULL.\n");
 		ret = -1;
