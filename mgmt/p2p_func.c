@@ -2102,7 +2102,14 @@ SKIP_START_RDD:
 		}
 #endif
 
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+		cnmTimerStartTimer(prAdapter,
+				   &(prBssInfo->rP2pApGoCarrierOnTimer),
+				   AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS);
+#else
 		kalP2PTxCarrierOn(prAdapter->prGlueInfo, prBssInfo);
+#endif
+
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 		if (prP2pChnlReqInfo->eBand == BAND_5G &&
