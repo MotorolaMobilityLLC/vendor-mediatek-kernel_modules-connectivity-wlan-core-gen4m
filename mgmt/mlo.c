@@ -5159,7 +5159,7 @@ void mldMLSRDecisionLinkRemain(struct ADAPTER *prAdapter,
 			break;
 		}
 		nicRxProcessRFBs(prAdapter);
-		usleep_range(1000, 2000);
+		kalUsleep_range(1000, 2000);
 	}
 	DBGLOG(ML, STATE, "Wait MLSR Ready\n");
 

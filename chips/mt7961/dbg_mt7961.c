@@ -254,6 +254,8 @@ static u_int32_t wfsys_status_sel[] =
 	{0x80000010, 0x80000017, 0x80000018, 0x8000001C, 0x8000001D};
 #elif defined(_HIF_PCIE)
 	{0x00100010, 0x00100017, 0x00100018, 0x0010001C, 0x0010001D};
+#else
+	{0, 0, 0, 0, 0};
 #endif
 
 static u_int32_t bgfsys_status_sel[] = {

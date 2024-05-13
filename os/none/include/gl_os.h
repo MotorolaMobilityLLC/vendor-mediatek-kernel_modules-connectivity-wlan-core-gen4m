@@ -518,6 +518,10 @@ struct GLUE_INFO {
 	struct CHANNEL_TIMING_T  rChanTimeRecord[CH_MAX_NUM];
 	uint8_t u1NoiseLevel;
 #endif
+
+#if CFG_TESTMODE_L0P5_FWDL_SUPPORT
+	bool fgTestFwDl;
+#endif
 };
 
 #if 0  /* irq & time in Linux */
@@ -967,6 +971,8 @@ uint32_t wlanConnacDownloadBufferBin(struct ADAPTER
 				     *prAdapter);
 
 uint32_t wlanConnac2XDownloadBufferBin(struct ADAPTER *prAdapter);
+
+uint32_t wlanConnac3XDownloadBufferBin(struct ADAPTER *prAdapter);
 
 void *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucAisIndex);
