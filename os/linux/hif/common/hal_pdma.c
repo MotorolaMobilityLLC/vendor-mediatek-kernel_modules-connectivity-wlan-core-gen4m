@@ -5042,17 +5042,15 @@ int halHifNapiPoll(struct napi_struct *napi, int budget)
 	wlanIST(prAdapter, FALSE);
 
 	while (processed < budget && !halIsWfdmaRxRingsEmpty(prGlueInfo)) {
-		if (prAdapter->ulNoMoreRfb) {
-			fgIsDone = TRUE;
-			goto exit;
-		}
+		if (prAdapter->ulNoMoreRfb)
+			break;
 
 		wlanIST(prAdapter, FALSE);
 		processed++;
 	}
 
 enint:
-	if (processed < budget) {
+	if (processed < budget || prAdapter->ulNoMoreRfb) {
 		if (KAL_TEST_AND_CLEAR_BIT(
 			    GLUE_FLAG_RX_DIRECT_INT_BIT, prGlueInfo->ulFlag))
 			nicEnableInterrupt(prAdapter);
