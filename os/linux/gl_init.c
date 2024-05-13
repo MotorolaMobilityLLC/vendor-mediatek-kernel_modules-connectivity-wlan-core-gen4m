@@ -8661,13 +8661,15 @@ u_int8_t kalIsShutdown(void)
 
 static void wlanShutdown(void)
 {
+	wfsys_lock();
 	/* wifi is off */
-	if (!get_wifi_powered_status() && get_wifi_process_status() == 0)
+	if (!get_wifi_powered_status() && get_wifi_process_status() == 0) {
+		wfsys_unlock();
 		return;
+	}
 
 	DBGLOG(INIT, INFO, "do wifi off\n");
 	uIsShutdown = TRUE;
-	wfsys_lock();
 	wlanFuncOff();
 	wfsys_unlock();
 }
