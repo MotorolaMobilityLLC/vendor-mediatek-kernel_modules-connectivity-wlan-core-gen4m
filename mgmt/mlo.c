@@ -3558,7 +3558,8 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 			prBssDescSet->ucMaxSimuLinks;
 
 		/* update eml cap */
-		if (prBssDescSet->eMloMode == MLO_MODE_EMLSR) {
+		if (prBssDescSet->eMloMode == MLO_MODE_EMLSR ||
+			prBssDescSet->eMloMode == MLO_MODE_HYEMLSR) {
 			prMldBssInfo->ucEmlEnabled = TRUE;
 			prMldBssInfo->u2EMLCap =
 				prAdapter->rWifiVar.u2NonApMldEMLCap;
@@ -3574,23 +3575,9 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 			prMldBssInfo->fgIsSbMlsr = FALSE;
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 
-#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-		if (IS_FEATURE_ENABLED(
-				prAdapter->rWifiVar.ucNonApMldEMLSupport)) {
-			prMldBssInfo->ucEmlEnabled = TRUE;
-			prMldBssInfo->u2EMLCap =
-				prAdapter->rWifiVar.u2NonApMldEMLCap;
-		} else {
-			prMldBssInfo->ucEmlEnabled = FALSE;
-			prMldBssInfo->u2EMLCap = 0;
-		}
-#endif
-
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
-		if (IS_FEATURE_ENABLED(
-			prAdapter->rWifiVar.ucNonApHyMloSupport) &&
-		    IS_FEATURE_ENABLED(
-			prAdapter->rWifiVar.ucNonApHyMloSupportCap)) {
+		if (prBssDescSet->eMloMode == MLO_MODE_HYMLO ||
+			prBssDescSet->eMloMode == MLO_MODE_HYEMLSR) {
 			prMldBssInfo->ucHmloEnabled = TRUE;
 			prMldBssInfo->ucOmRemapIdx = prMldBssInfo->ucOmacIdx;
 		} else {
@@ -3607,6 +3594,11 @@ done:
 	prMldBssInfo->ucMaxSimuLinks =
 		KAL_MIN(prWifiVar->ucMaxSimuLinksCap,
 			prMldBssInfo->ucMaxSimuLinks);
+
+	DBGLOG(ML, INFO, "EmlEnable: %d, Hybird Enable:%d,MaxSimuLinks:%d\n",
+		prMldBssInfo->ucEmlEnabled,
+		prMldBssInfo->ucHmloEnabled,
+		prMldBssInfo->ucMaxSimuLinks);
 }
 
 void mldBssRestoreCap(struct ADAPTER *prAdapter,
