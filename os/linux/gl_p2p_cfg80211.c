@@ -424,6 +424,7 @@ struct wireless_dev *mtk_p2p_cfg80211_add_iface(struct wiphy *wiphy,
 				type, name, prNewNetDevice);
 
 		prP2pInfo->aprRoleHandler = prNewNetDevice;
+		prP2pInfo->u4LinkId = 0;
 		*((struct GLUE_INFO **) netdev_priv(prNewNetDevice)) =
 			prGlueInfo;
 		prNewNetDevice->needed_headroom =
