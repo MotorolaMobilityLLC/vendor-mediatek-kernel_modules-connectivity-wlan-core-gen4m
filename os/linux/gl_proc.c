@@ -1993,6 +1993,7 @@ int32_t procInitFs(void)
 #endif
 #endif /* (BUILD_QA_DBG) */
 
+	DBGLOG(INIT, INFO, "init proc fs done\n");
 	return 0;
 }				/* end of procInitProcfs() */
 
@@ -2033,6 +2034,7 @@ int32_t procUninitProcFs(void)
 	remove_proc_entry(PROC_ROOT_NAME, init_net.proc_net);
 #endif
 
+	DBGLOG(INIT, INFO, "uninit proc fs done\n");
 	return 0;
 }
 
@@ -2080,6 +2082,7 @@ int32_t procRemoveProcfs(void)
 	remove_proc_entry(PROC_CFG, gprProcRoot);
 #endif /* (BUILD_QA_DBG) */
 
+	DBGLOG(INIT, INFO, "remove proc fs done\n");
 	return 0;
 } /* end of procRemoveProcfs() */
 
@@ -2181,6 +2184,7 @@ int32_t procCreateFsEntry(struct GLUE_INFO *prGlueInfo)
 #endif
 #endif /* ((BUILD_QA_DBG) */
 
+	DBGLOG(INIT, INFO, "create proc fs done\n");
 	return 0;
 }
 
@@ -2303,6 +2307,7 @@ static const struct file_operations fwcfg_ops = {
 int32_t cfgRemoveProcEntry(void)
 {
 	remove_proc_entry(PROC_CFG_NAME, gprProcRoot);
+	DBGLOG(INIT, INFO, "cfg remove done\n", __func__);
 	return 0;
 }
 
@@ -2321,6 +2326,7 @@ int32_t cfgCreateProcEntry(struct GLUE_INFO *prGlueInfo)
 	proc_set_user(prEntry, KUIDT_INIT(PROC_UID_SHELL),
 		KGIDT_INIT(PROC_GID_WIFI));
 
+	DBGLOG(INIT, INFO, "cfg create done\n", __func__);
 	return 0;
 }
 #endif
