@@ -5654,10 +5654,10 @@ void p2pRoleFsmRunEventAcs(struct ADAPTER *prAdapter,
 
 	if (prAcsReqInfo->eHwMode == P2P_VENDOR_ACS_HW_MODE_11ANY) {
 		if (ucNumAliveNonSapBss &&
+		    prPreferBssInfo &&
 		    (!p2pFuncIsDualAPMode(prAdapter) ||
 		     (p2pFuncIsDualAPMode(prAdapter) &&
-		      (prPreferBssInfo &&
-		       prPreferBssInfo->eBand > BAND_2G4)))) {
+		      prPreferBssInfo->eBand > BAND_2G4))) {
 			/* Force SCC, indicate channel directly */
 			indicateAcsResultByAliveCh(prAdapter, prAcsReqInfo,
 						   prPreferBssInfo);
