@@ -2884,6 +2884,13 @@ static void connac3x_show_wfdma_wb_info(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
 	}
 
+	for (u4Idx = WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_MD_CTRL0_ADDR;
+	     u4Idx <= WF_WFDMA_HOST_DMA0_WPDMA_TRINFO_WB_MD_CTRL2_ADDR;
+	     u4Idx += 4) {
+		HAL_RMCR_RD(HIF_DBG, prAdapter, u4Idx, &u4Val);
+		DBGLOG(HAL, INFO, "CR [0x%08x]=[0x%08x]", u4Idx, u4Val);
+	}
+
 	if (prRingDidx->AllocVa) {
 		DBGLOG(HAL, INFO, "Dump RingDidx\n");
 		DBGLOG_MEM32(HAL, INFO, prRingDidx->AllocVa,
