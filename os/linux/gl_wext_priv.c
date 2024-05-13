@@ -15557,6 +15557,8 @@ int priv_driver_set_tx_om_packet(
 	struct ADAPTER *prAdapter = NULL;
 	int32_t index;
 	struct STA_RECORD *prStaRec = NULL;
+	uint8_t ucBssIndex;
+	struct BSS_INFO *prBssInfo;
 
 	ASSERT(prNetDev);
 
@@ -15565,6 +15567,8 @@ int priv_driver_set_tx_om_packet(
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
 	prAdapter = prGlueInfo->prAdapter;
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -15582,7 +15586,9 @@ int priv_driver_set_tx_om_packet(
 			"tx om packet:: Send %d htc null frame\n",
 			u4Parse);
 		if (u4Parse) {
-			prStaRec = cnmGetStaRecByIndex(prAdapter, 0);
+			if (prBssInfo && IS_BSS_AIS(prBssInfo)
+				&& prBssInfo->prStaRecOfAP)
+				prStaRec = prBssInfo->prStaRecOfAP;
 			if (prStaRec != NULL) {
 				for (index = 0; index < u4Parse; index++)
 					heRlmSendHtcNullFrame(prAdapter,
