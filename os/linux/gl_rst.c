@@ -679,6 +679,8 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
+#define UPGRATE_TO_L0_PATTERN " - Upgrade to L0"
+
 	struct RESET_STRUCT *rst = &wifi_rst;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
@@ -703,9 +705,13 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 			g_IsWfsysBusHang == FALSE &&
 			prChipInfo->isUpgradeWholeChipReset) {
 			if (prChipInfo->isUpgradeWholeChipReset(prAdapter)) {
+				char reason[64] = {0};
+
 				u4RstFlag |= RST_FLAG_WHOLE_RESET;
-				glSetRstReasonString(
-					apucRstReason[eResetReason]);
+				kalSnprintf(&reason, sizeof(reason), "%s%s",
+					apucRstReason[eResetReason],
+					UPGRATE_TO_L0_PATTERN);
+				glSetRstReasonString(reason);
 			}
 		}
 	}
