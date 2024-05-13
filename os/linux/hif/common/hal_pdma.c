@@ -549,6 +549,9 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	u_int8_t fgIsDriverOwnTimeout = FALSE;
 	uint32_t i = 0, u4CurrTick = 0, u4chkTick = 0;
 	uint32_t u4DrvOwnElapsed = 0, u4Send = 0;
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	uint32_t u4PollingCnt = 0;
+#endif
 
 	KAL_TIME_INTERVAL_DECLARATION();
 
@@ -567,6 +570,23 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 		goto end;
 
 	DBGLOG(INIT, TRACE, "DRIVER OWN Start\n");
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	/* Wait until PCIE gen switch is done */
+	while (prAdapter->fgIsGenSwitchProcessing) {
+		u4PollingCnt++;
+		if (u4PollingCnt > 1000) {
+			DBGLOG(HAL, WARN,
+				"Polling gen switch status timeout.\n");
+			break;
+		}
+#if CFG_SUPPORT_RX_WORK
+		kalUsleep(100);
+#else /* !CFG_SUPPORT_RX_WORK */
+		kalUdelay(100);
+#endif /* !CFG_SUPPORT_RX_WORK */
+	}
+#endif /* CFG_PCIE_GEN_SWITCH */
 
 	/* PCIE/AXI need to do clear own, then could start polling status */
 	KAL_REC_TIME_START();
