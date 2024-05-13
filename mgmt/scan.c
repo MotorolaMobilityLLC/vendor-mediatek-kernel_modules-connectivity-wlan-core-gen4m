@@ -5532,7 +5532,14 @@ void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 		prBssDesc->ucCenterFreqS2 =
 			pr6gOperInfor->ucChannelCenterFreqSeg1;
 
-		prBssDesc->eSco = CHNL_EXT_SCN;
+		/* central channel is above primary channel */
+		if (prBssDesc->ucCenterFreqS1 > prBssDesc->ucChannelNum)
+			prBssDesc->eSco = CHNL_EXT_SCA;
+		/* central channel is below primary channel */
+		else if (prBssDesc->ucCenterFreqS1 < prBssDesc->ucChannelNum)
+			prBssDesc->eSco = CHNL_EXT_SCB;
+		else if (prBssDesc->ucCenterFreqS1 == prBssDesc->ucChannelNum)
+			prBssDesc->eSco = CHNL_EXT_SCN;
 
 		prBssDesc->He6gRegInfo =
 			pr6gOperInfor->rControl.bits.RegulatoryInfo;
@@ -5589,6 +5596,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 	struct IE_EHT_OP *prEhtOp;
 	struct EHT_OP_INFO *prEhtOpInfo;
 	uint8_t ucVhtOpBw = 0;
+	uint8_t ucBssOpBw = 0;
 
 	prEhtOp = (struct IE_EHT_OP *) pucIE;
 
@@ -5607,9 +5615,23 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 			prBssDesc->eChannelWidth);
 		prBssDesc->ucCenterFreqS2 = 0;
 
+		ucBssOpBw = prEhtOpInfo->ucControl & BITS(0, 2);
+
+		if (ucBssOpBw == EHT_MAX_BW_20)
+			prBssDesc->eSco = CHNL_EXT_SCN;
+		else if (ucBssOpBw == EHT_MAX_BW_40)
+			/* central channel is above primary channel */
+			if (prBssDesc->ucCenterFreqS1 >
+			    prBssDesc->ucChannelNum)
+				prBssDesc->eSco = CHNL_EXT_SCA;
+			/* central channel is below primary channel */
+			else if (prBssDesc->ucCenterFreqS1 <
+				 prBssDesc->ucChannelNum)
+				prBssDesc->eSco = CHNL_EXT_SCB;
+
 		DBGLOG(SCN, TRACE,
 			"[EHT OP IE] BSSID:" MACSTR
-			" SSID:%s CH: %u, BW: %u S1: %u S2: %u fixed s1: %u fixed s2: %u\n",
+			" SSID:%s CH: %u, BW: %u S1: %u S2: %u fixed s1: %u fixed s2: %u Sco: %u\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			prBssDesc->aucSSID,
 			prBssDesc->ucChannelNum,
@@ -5617,7 +5639,8 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 			prEhtOpInfo->ucCCFS0,
 			prEhtOpInfo->ucCCFS1,
 			prBssDesc->ucCenterFreqS1,
-			prBssDesc->ucCenterFreqS2);
+			prBssDesc->ucCenterFreqS2,
+			prBssDesc->eSco);
 	}
 	DBGLOG_MEM8(SCN, LOUD, pucIE, IE_SIZE(pucIE));
 }
