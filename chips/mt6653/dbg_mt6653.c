@@ -1282,15 +1282,6 @@ static uint8_t check_mbu_timeout(uint32_t u4Val)
 
 	return g_uMbuTimeoutCnt;
 }
-
-static u_int8_t allow_read_next(void)
-{
-	/* read next index if no mbu timeout or read by mmio case */
-	if (!g_uMbuTimeoutCnt || mt6653_get_mbu_timeout_status())
-		return TRUE;
-
-	return FALSE;
-}
 #endif
 
 static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
@@ -1305,6 +1296,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 	uint32_t u4Line = 0, u4ReadCount = 0, u4ReadVal;
 	uint32_t u4Offset = 0, u4TotalLen = REG_DUMP_ARRAY_SIZE;
 	uint32_t i;
+	uint8_t uTimeout = 0;
 	u_int8_t fgRet = TRUE;
 
 	if (!prAdapter)
@@ -1314,26 +1306,42 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 		return;
 
 	/* Header */
-	DBGLOG(HAL, INFO, "[%s][H] [%s][Count: %d]\n",
-			dump_list->tag, dump_list->description, u4ReadSize);
+#if CFG_MTK_WIFI_MBU
+	uTimeout = mt6653_get_mbu_timeout_status();
+#endif
+	DBGLOG(HAL, INFO, "[%s][H] [%s][Count: %d][MBUTO:%d]\n",
+			dump_list->tag, dump_list->description, u4ReadSize,
+			uTimeout);
 
 	/* Reg Dump */
 	pCmdList = dump_list->cmd_list;
 	i = 0;
 	while (i < dump_list->dump_size) {
+
+#if CFG_MTK_WIFI_MBU
+		if (!mt6653_get_mbu_timeout_status() &&
+		    g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
+			update_mbu_timeout(1);
+#endif
+
 		if (pCmdList[i].write) {
 			if (pCmdList[i].mask) {
+				uTimeout = 0;
 #if CFG_MTK_WIFI_MBU
 				if (!mt6653_get_mbu_timeout_status() &&
-						!fgIsDumpViaBt) {
+				    !fgIsDumpViaBt) {
 					HAL_MCR_EMI_RD(prAdapter,
 						pCmdList[i].w_addr,
 						&u4ReadVal, &fgRet);
-					check_mbu_timeout(u4ReadVal);
+					uTimeout = check_mbu_timeout(u4ReadVal);
+
 				} else
 #endif
 					HAL_RMCR_RD(PLAT_DBG, prAdapter,
 						pCmdList[i].w_addr, &u4ReadVal);
+
+				if (uTimeout)
+					continue;
 
 				if (fgRet == TRUE)
 					HAL_MCR_WR(prAdapter,
@@ -1345,29 +1353,31 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 					pCmdList[i].value);
 		}
 
-		if (pCmdList[i].read
+		if (pCmdList[i].read) {
+			uTimeout = 0;
+			u4ReadVal = 0x12345678;
 #if CFG_MTK_WIFI_MBU
-			&& allow_read_next()
+			if (!mt6653_get_mbu_timeout_status() &&
+			    !fgIsDumpViaBt) {
+				HAL_MCR_EMI_RD(prAdapter, pCmdList[i].r_addr,
+					&u4ReadVal, &fgRet);
+				uTimeout = check_mbu_timeout(u4ReadVal);
+
+			} else
 #endif
-		) {
+				HAL_RMCR_RD(PLAT_DBG, prAdapter,
+					pCmdList[i].r_addr, &u4ReadVal);
+
+			if (uTimeout)
+				continue;
+
 			if (u4ReadCount % MAX_REG_DUMP_NUM == 0) {
+				u4Offset = 0;
 				u4Offset += snprintf(dumpLineBuf + u4Offset,
 					u4TotalLen - u4Offset,
 					"[%s][%d]", dump_list->tag, u4Line);
 				u4Line++;
 			}
-
-			u4ReadVal = 0x12345678;
-#if CFG_MTK_WIFI_MBU
-			if (!mt6653_get_mbu_timeout_status() &&
-				!fgIsDumpViaBt) {
-				HAL_MCR_EMI_RD(prAdapter, pCmdList[i].r_addr,
-					&u4ReadVal, &fgRet);
-				check_mbu_timeout(u4ReadVal);
-			} else
-#endif
-				HAL_RMCR_RD(PLAT_DBG, prAdapter,
-					pCmdList[i].r_addr, &u4ReadVal);
 
 			u4Offset += snprintf(dumpLineBuf + u4Offset,
 					u4TotalLen - u4Offset,
@@ -1379,19 +1389,11 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 				DBGLOG(HAL, INFO, "%s\n", dumpLineBuf);
 				memset(dumpLineBuf, 0, REG_DUMP_ARRAY_SIZE);
 				u4Offset = 0;
+				DBGLOG(HAL, LOUD, "[%s] u4ReadCount:%d\n",
+					dump_list->tag, u4ReadCount);
 			}
 		}
-
-#if CFG_MTK_WIFI_MBU
-		/* keep dump same reg if mbu timeout */
-		if (allow_read_next())
-#endif
-			i++;
-#if CFG_MTK_WIFI_MBU
-		if (!mt6653_get_mbu_timeout_status() &&
-			g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
-			update_mbu_timeout(1);
-#endif
+		i++;
 	}
 }
 
