@@ -898,7 +898,7 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 		if (prRxRing->u4CidxErrCnt >=
 		    prWifiVar->u4WfdmaRxHangRecoveryCnt &&
 		    prBusInfo->recoveryMsiStatus)
-			prBusInfo->recoveryMsiStatus(prAdapter);
+			prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 #endif
 
 		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)

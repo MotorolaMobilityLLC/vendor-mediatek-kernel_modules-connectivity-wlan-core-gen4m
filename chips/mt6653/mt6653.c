@@ -178,7 +178,8 @@ static void mt6653WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
-static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter);
+static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter,
+				    u_int8_t fgForce);
 static void mt6653RecoverSerStatus(struct ADAPTER *prAdapter);
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo);
@@ -3231,7 +3232,7 @@ static void mt6653WfdmaRxRingExtCtrl(
 }
 
 #if defined(_HIF_PCIE)
-static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
+static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter, u_int8_t fgForce)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
@@ -3248,6 +3249,9 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
 	uint32_t u4Addr = 0, u4IntSta = 0, u4AfterVal;
 	u_int8_t fgRet = FALSE;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+	if (fgForce)
+		goto recovery;
 
 	/* check wfdma bits(0-7) */
 	if (prMsiInfo->ulEnBits & 0xff)
@@ -3274,6 +3278,7 @@ static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter)
 	if (fgRet)
 		return;
 
+recovery:
 	/* read PCIe EP MSI status */
 	u4Val = mtk_pci_read_msi_mask(prAdapter->prGlueInfo);
 	if (u4Val & u4IntMask) {
@@ -3331,7 +3336,7 @@ static void mt6653RecoverSerStatus(struct ADAPTER *prAdapter)
 
 static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)
 {
-	mt6653RecoveryMsiStatus(prAdapter);
+	mt6653RecoveryMsiStatus(prAdapter, FALSE);
 }
 
 #if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
