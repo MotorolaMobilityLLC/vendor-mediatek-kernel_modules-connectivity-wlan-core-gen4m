@@ -1893,7 +1893,7 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prHifInfo->rGenSwitch4MddpTimer.data =
 		(unsigned long)prAdapter->prGlueInfo;
 #endif
-	prHifInfo->rSerTimer.expires =
+	prHifInfo->rGenSwitch4MddpTimer.expires =
 		jiffies + MDDP_GEN_SWITCH_MSG_TIMEOUT * HZ / MSEC_PER_SEC;
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif /* CFG_MTK_MDDP_SUPPORT */
@@ -4719,6 +4719,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 	struct mt66xx_chip_info *prChipInfo;
 	struct HIF_MEM_OPS *prMemOps;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
+	uint32_t u4MaxSerTimeoutCnt = HIF_SER_MAX_TIMEOUT_CNT;
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
@@ -4747,8 +4748,11 @@ void halHwRecoveryTimeout(unsigned long arg)
 				    sizeof(struct SER_EMI_STATUS));
 	}
 
+	if (prAdapter->u4CasanLoadType == 1)
+		u4MaxSerTimeoutCnt *= 2;
+
 	prErrRecoveryCtrl->u4TimeoutCnt++;
-	if (prErrRecoveryCtrl->u4TimeoutCnt > HIF_SER_MAX_TIMEOUT_CNT) {
+	if (prErrRecoveryCtrl->u4TimeoutCnt > u4MaxSerTimeoutCnt) {
 #if CFG_CHIP_RESET_SUPPORT
 		kalSetSerTimeoutEvent(prGlueInfo);
 #endif
