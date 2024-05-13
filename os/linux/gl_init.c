@@ -3057,8 +3057,10 @@ int wlanDoIOCTL(struct net_device *prDev,
 		ret = priv_support_ioctl(prDev, prIfReq, i4Cmd);
 	} else if (i4Cmd == SIOCDEVPRIVATE + 3) {
 		/* For mDNS offload template. */
+#if CFG_WOW_SUPPORT
 #if (CFG_SUPPORT_MDNS_OFFLOAD && CFG_SUPPORT_MDNS_OFFLOAD_TV)
 		ret = priv_support_mdns_offload(prDev, prIfReq, i4Cmd);
+#endif
 #endif
 	} else {
 		DBGLOG(INIT, WARN, "Unexpected ioctl command: 0x%04x\n",

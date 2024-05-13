@@ -1585,6 +1585,87 @@ void nicOidCmdEnterRFTestTimeout(struct ADAPTER
 	kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
 		       0, WLAN_STATUS_FAILURE);
 }
+#if CFG_WOW_SUPPORT
+#if CFG_SUPPORT_MDNS_OFFLOAD
+void nicCmdEventQueryMdnsStats(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct GLUE_INFO *prGlueInfo;
+	uint16_t len;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	len = prCmdInfo->u4InformationBufferLength;
+	prGlueInfo = prAdapter->prGlueInfo;
+
+	DBGLOG(NIC, TRACE, "Glue=%p, Pend=%p, Cmd=%p, oid=%u, Buf=%p, len=%u",
+			prGlueInfo, &prGlueInfo->rPendComp, prCmdInfo,
+			prCmdInfo->fgIsOid, prCmdInfo->pvInformationBuffer,
+			len);
+
+	memcpy((uint8_t *)prCmdInfo->pvInformationBuffer, pucEventBuf, len);
+
+	DBGLOG(RX, TRACE, "kalOidComplete: infoLen=%u", len);
+
+	if (prCmdInfo->fgIsOid)
+		kalOidComplete(prGlueInfo, prCmdInfo,
+						len, WLAN_STATUS_SUCCESS);
+}
+
+void nicEventMdnsStats(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent)
+{
+	struct CMD_INFO *prCmdInfo;
+
+	if (!prAdapter) {
+		DBGLOG(NIC, ERROR, "NULL prAdapter!\n");
+		return;
+	}
+
+	prCmdInfo = nicGetPendingCmdInfo(prAdapter, prEvent->ucSeqNum);
+
+	if (!prCmdInfo) {
+		DBGLOG(NIC, ERROR, "NULL prCmdInfo!\n");
+		return;
+	}
+
+	if (unlikely(prEvent->u2PacketLength - sizeof(struct WIFI_EVENT) >
+					prCmdInfo->u4InformationBufferLength)) {
+		DBGLOG(RX, WARN, "prEventLen=%u-%u, BufLen=%u",
+				prEvent->u2PacketLength,
+				sizeof(struct WIFI_EVENT),
+				prCmdInfo->u4InformationBufferLength);
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo, 0,
+				WLAN_STATUS_FAILURE);
+	} else if (prCmdInfo->pfCmdDoneHandler) {
+		/* The destination buffer length has been checked sufficient */
+		kalMemZero(prCmdInfo->pvInformationBuffer,
+				prCmdInfo->u4InformationBufferLength);
+		prCmdInfo->u4InformationBufferLength =
+			prEvent->u2PacketLength - sizeof(struct WIFI_EVENT);
+		DBGLOG(RX, TRACE, "Calling prCmdInfo->pfCmdDoneHandler=%ps",
+				prCmdInfo->pfCmdDoneHandler);
+		prCmdInfo->pfCmdDoneHandler(prAdapter, prCmdInfo,
+					    prEvent->aucBuffer);
+	} else if (prCmdInfo->fgIsOid)
+		kalOidComplete(prAdapter->prGlueInfo,
+			prCmdInfo,
+			prEvent->u2PacketLength - sizeof(struct WIFI_EVENT),
+			WLAN_STATUS_SUCCESS);
+
+	/* return prCmdInfo */
+	cmdBufFreeCmdInfo(prAdapter, prCmdInfo);
+}
+#endif
+#endif
 
 #if CFG_SUPPORT_BATCH_SCAN
 /*----------------------------------------------------------------------------*/

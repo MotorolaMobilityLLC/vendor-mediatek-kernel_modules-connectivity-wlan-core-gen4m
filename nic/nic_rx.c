@@ -218,6 +218,11 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{EVENT_ID_CHANNEL_TIME, nicEventChannelTime}
 #endif
 
+#if CFG_WOW_SUPPORT
+#if CFG_SUPPORT_MDNS_OFFLOAD
+	{ EVENT_ID_MDNS_RECORD, nicEventMdnsStats},
+#endif
+#endif
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);

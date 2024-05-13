@@ -5540,13 +5540,19 @@ wlanoidSetMdvt(struct ADAPTER *prAdapter,
 			void *pvSetBuffer, uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen);
 
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
 uint32_t wlanoidSetMdnsCmdToFw(struct ADAPTER *prAdapter,
 				void *pvSetBuffer,
 				uint32_t u4SetBufferLen,
 				uint32_t *pu4SetInfoLen);
-#endif
 
+uint32_t wlanoidGetMdnsHitMiss(struct ADAPTER *prAdapter,
+				void *pvSetBuffer,
+				uint32_t u4SetBufferLen,
+				uint32_t *pu4SetInfoLen);
+#endif
+#endif
 #if (CFG_SUPPORT_TSF_SYNC == 1)
 uint32_t
 wlanoidLatchTSF(struct ADAPTER *prAdapter,

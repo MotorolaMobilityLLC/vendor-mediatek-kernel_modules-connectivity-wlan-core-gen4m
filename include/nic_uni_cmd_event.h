@@ -4937,7 +4937,7 @@ struct UNI_CMD_KEEP_ALIVE_SET {
 	uint32_t u4PeriodMsec;
 } __KAL_ATTRIB_PACKED__;
 
-
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
 struct UNI_CMD_MDNS_RECORDE {
 	/* fixed field */
@@ -4953,25 +4953,63 @@ struct UNI_CMD_MDNS_RECORDE {
 
 
 enum UNI_CMD_MDNS_RECORDE_TAG {
-	UNI_CMD_MDNS_RECORDE_TAG_SET = 0x0,
+	UNI_CMD_MDNS_RECORDE_TAG_ENABLE = 0x0,
+	UNI_CMD_MDNS_RECORDE_TAG_GET_HIT,
+	UNI_CMD_MDNS_RECORDE_TAG_GET_MISS,
+	UNI_CMD_MDNS_RECORDE_TAG_IPV6_WAKEUP,
 	UNI_CMD_MDNS_RECORDE_TAG_MAX_NUM
 };
 
-
-struct UNI_CMD_MDNS_RECORDE_SET {
+struct UNI_CMD_MDNS_RECORDE_ENABLE {
 	uint16_t u2Tag;
+	/* tlv */
 	uint16_t u2Length;
-	/* Tag specific part */
-	uint8_t ucCmd;
-	struct MDNS_PARAM_T mdns_param;
-	uint32_t u4RecordId;
 	uint8_t ucWakeFlag;
+	uint8_t EnableFlag;
+	uint8_t aucReserved[2];
+	/* 26 bytes */
 	struct WLAN_MAC_HEADER_QoS_T aucMdnsMacHdr;
-	uint8_t aucMdnsIPHdr[IPV4_HEADER_LENGTH];
+	uint8_t aucReserved2[2];
+	/* 8 bytes */
 	uint8_t aucMdnsUdpHdr[UDP_HEADER_LENGTH];
-
+	/* 20 bytes */
+	uint8_t aucMdnsIPHdr[IPV4_HEADER_LENGTH];
 };
-#endif
+
+struct UNI_CMD_MDNS_RECORDE_GET_HIT {
+	uint16_t u2Tag;
+	/* tlv */
+	uint16_t u2Length;
+	uint8_t ucRecordId;
+	uint8_t aucReserved[3];
+};
+
+struct UNI_CMD_MDNS_RECORDE_GET_MISS {
+	uint16_t u2Tag;
+	/* tlv */
+	uint16_t u2Length;
+};
+
+struct UNI_CMD_MDNS_RECORDE_IPV6_WAKEUP {
+	uint16_t u2Tag;
+	/* tlv */
+	uint16_t u2Length;
+
+	uint8_t ucWakeFlag;
+	uint8_t ucPassthroughBehavior;
+	uint8_t ucIPV6WakeupFlag;
+	uint8_t ucPayloadOrder;
+
+	/* 2 bytes */
+	uint16_t u2PayloadTotallength;
+	uint8_t aucReserved[2];
+
+	/* 1024 bytes */
+	uint8_t ucPayload[MAX_MDNS_TRANSFER_SIZE];
+};
+
+#endif /* #if CFG_SUPPORT_MDNS_OFFLOAD */
+#endif /* #if CFG_WOW_SUPPORT */
 
 /* Reset Tx Scramble Seed (0x73) */
 struct UNI_CMD_RESET_TX_SCRAMBLE {
@@ -5343,6 +5381,7 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_PKT_OFLD	     = 0x60,
 	UNI_EVENT_ID_DELAY_BAR       = 0x61,
 	UNI_EVENT_ID_FW_DROP_SSN     = 0x62,
+	UNI_EVENT_ID_MDNS_REOCRD     = 0x64,
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_HW_DETECT_REPORT = 0x76,
 	UNI_EVENT_ID_UPDATE_LP       = 0x77,
@@ -5470,6 +5509,17 @@ struct UNI_EVENT_ROAMING {
 	/* tlv */
 	uint8_t aucTlvBuffer[];
 } __KAL_ATTRIB_PACKED__;
+
+struct UNI_EVENT_MDNS_RECORD {
+	/* DWORD_0 */
+	uint8_t ucVersion;
+	uint8_t ucType; /* 0: invalid, 1: Hit 2: Miss */
+	uint16_t u2ControlFlag;
+	/* DWORD_1 */
+	uint32_t u4MdnsHitMiss;
+	/* DWORD_2 */
+	uint8_t aucReserved2[64];
+};
 
 enum ENUM_UNI_EVENT_ROAMING_TAG {
 	UNI_EVENT_ROAMING_TAG_STATUS  = 0,
@@ -8981,9 +9031,11 @@ uint32_t nicUniCmdPktOfldOp(struct ADAPTER *ad,
 uint32_t nicUniCmdKeepAlive(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 
+#if CFG_WOW_SUPPORT
 #if CFG_SUPPORT_MDNS_OFFLOAD
 uint32_t nicUniCmdMdnsRecorde(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
+#endif
 #endif
 uint32_t nicUniCmdLpDbgCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
@@ -9280,7 +9332,12 @@ void nicUniEventHwDetectReport(struct ADAPTER *ad,
 void nicUniEventFwDropSSN(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif /* CFG_SUPPORT_FW_DROP_SSN */
-
+#if CFG_WOW_SUPPORT
+#if CFG_SUPPORT_MDNS_OFFLOAD
+void nicUniEventMdnsStats(struct ADAPTER *ad,
+	struct WIFI_UNI_EVENT *evt);
+#endif /* CFG_SUPPORT_MDNS_OFFLOAD */
+#endif
 #if CFG_SUPPORT_RTT
 void nicUniEventRtt(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);

@@ -2305,16 +2305,53 @@ void kalWowInit(struct GLUE_INFO *prGlueInfo);
 void kalWowProcess(struct GLUE_INFO *prGlueInfo,
 		   uint8_t enable);
 #if CFG_SUPPORT_MDNS_OFFLOAD
-void kalMdnsProcess(struct GLUE_INFO *prGlueInfo,
-		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+uint32_t kalMdnsProcess(struct GLUE_INFO *prGlueInfo,
+		 struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
 void kalMdnsOffloadInit(struct ADAPTER *prAdapter);
 struct MDNS_PARAM_ENTRY_T *mdnsAllocateParamEntry(struct ADAPTER *prAdapter);
-void kalSendClearRecordToFw(struct GLUE_INFO *prGlueInfo);
-void kalSendMdnsRecordToFw(struct GLUE_INFO *prGlueInfo);
+
 void kalSendMdnsEnableToFw(struct GLUE_INFO *prGlueInfo);
-void kalAddMdnsRecord(struct GLUE_INFO *prGlueInfo,
+void kalSendMdnsDisableToFw(struct GLUE_INFO *prGlueInfo);
+uint32_t kalAddMdnsRecord(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+void kalDelMdnsRecord(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+void kalDelMdnsRecordWithRecordKey(struct GLUE_INFO *prGlueInfo,
 		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
 void kalShowMdnsRecord(struct GLUE_INFO *prGlueInfo);
+struct MDNS_PASSTHROUGH_ENTRY_T *mdnsAllocatePassthroughEntry(
+	 struct ADAPTER *prAdapter);
+uint32_t kalAddMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerPassthroughInfo);
+void kalDelMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerPassthroughInfo);
+void kalDelMdnsPassthroughWithRecordKey(struct GLUE_INFO *prGlueInfo,
+		struct MDNS_INFO_UPLAYER_T *prMdnsUplayerPassthroughInfo);
+void kalShowMdnsPassthrough(struct GLUE_INFO *prGlueInfo);
+uint32_t kalGetAndResetHitCounterToFw(struct GLUE_INFO *prGlueInfo,
+		int recordKey);
+uint32_t kalGetAndResetMissCounterToFw(struct GLUE_INFO *prGlueInfo);
+void kalClearMdnsRecord(struct GLUE_INFO *prGlueInfo);
+void kalClearMdnsPassthrough(struct GLUE_INFO *prGlueInfo);
+void kalSendMdnsFlagsToFw(struct GLUE_INFO *prGlueInfo);
+
+uint16_t kalGetMdnsUsedSize(struct GLUE_INFO *prGlueInfo);
+uint16_t kalGetMaxAvailMdnsSize(void);
+
+uint16_t kalGetMdnsUplRecSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+uint16_t kalGetMdnsUplPTSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo);
+
+uint16_t kalMdnsConvettoDataBlock(struct GLUE_INFO *prGlueInfo);
+uint16_t kalMdnsAddToDataBlock(struct MDNS_DATABLOCK_T  *dataBlock,
+	uint8_t *data, uint16_t dataLength);
+uint16_t kalMdnsCopyPassToPayload(struct MDNS_PASSTHROUGH_T *passrthrough,
+	uint8_t *payload, uint16_t start);
+uint16_t kalMdnsCopyRecordToPayload(struct MDNS_RECORD_T *prMdnsRecordIndices,
+	uint16_t indexCount, uint8_t *payload, uint16_t start);
+uint16_t kalMdnsCopyDataToPayload(struct MDNS_DATABLOCK_T  *dataBlock,
+	uint8_t *payload, uint16_t start);
+uint8_t KalMdnsIncreTopHalf(uint8_t value);
+
 #if CFG_SUPPORT_MDNS_OFFLOAD_GVA
 void kalProcessMdnsRespPkt(struct GLUE_INFO *prGlueInfo, uint8_t *pucMdnsHdr);
 #endif

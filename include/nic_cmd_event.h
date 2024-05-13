@@ -4400,6 +4400,17 @@ void nicEventDumpMem(struct ADAPTER *prAdapter,
 void nicEventAssertDump(struct ADAPTER *prAdapter,
 			struct WIFI_EVENT *prEvent);
 #endif
+#if CFG_WOW_SUPPORT
+#if CFG_SUPPORT_MDNS_OFFLOAD
+void nicCmdEventQueryMdnsStats(struct ADAPTER *prAdapter,
+		struct CMD_INFO *prCmdInfo,
+		uint8_t *pucEventBuf);
+
+void nicEventMdnsStats(struct ADAPTER *prAdapter,
+		struct WIFI_EVENT *prEvent);
+#endif
+#endif
+
 void nicEventHifCtrl(struct ADAPTER *prAdapter,
 		     struct WIFI_EVENT *prEvent);
 void nicEventRddSendPulse(struct ADAPTER *prAdapter,

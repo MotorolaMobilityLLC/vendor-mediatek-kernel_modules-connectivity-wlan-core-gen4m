@@ -562,7 +562,7 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.pcCmdStr  = CMD_MDNS_SET_WAKE_FLAG,
 		.pfHandler = priv_driver_set_mdns_wake_flag,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
@@ -1301,14 +1301,6 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 #endif
 #if (CFG_WOW_SUPPORT && CFG_SUPPORT_MDNS_OFFLOAD && TEST_CODE_FOR_MDNS)
 	{
-		.pcCmdStr  = CMD_SEND_MDNS_RECORD,
-		.pfHandler = priv_driver_send_mdns_record,
-		.argPolicy = VERIFY_EXACT_ARG_NUM,
-		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
-		.policy    = NULL,
-		.u4PolicySize = 0
-	},
-	{
 		.pcCmdStr  = CMD_ADD_MDNS_RECORD,
 		.pfHandler = priv_driver_add_mdns_record,
 		.argPolicy = VERIFY_EXACT_ARG_NUM,
@@ -1323,6 +1315,22 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
 		.policy    = u8_policy,
 		.u4PolicySize = ARRAY_SIZE(u8_policy)
+	},
+	{
+		.pcCmdStr  = CMD_GET_HITCOUNTER,
+		.pfHandler = priv_driver_get_hitcounter,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_GET_MISSCOUNTER,
+		.pfHandler = priv_driver_get_misscounter,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
 	},
 #endif
 	{
