@@ -202,7 +202,7 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 	const struct ap2wf_remap *prAp2wf;
 	struct SW_EMI_RING_INFO *prMbuInfo;
 	struct MBU_EMI_CTX *prEmi;
-	struct MBU_MSI_MIRROR *prMsiMirror;
+	struct MBU_MSI_MIRROR *prMsiMirror = NULL;
 	uint32_t u4Addr = 0, u4Val = 0, u4Cnt = 0, u4ReadBlockCnt = 0;
 	u_int8_t fgRet = TRUE, fgDbg = FALSE;
 
@@ -305,7 +305,7 @@ u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 exit:
 	GLUE_DEC_REF_CNT(prMbuInfo->u4ReadBlockCnt);
 
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg)) {
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnSwEmiDbg) && prMsiMirror) {
 		KAL_REC_TIME_END();
 		fgDbg = TRUE;
 		DBGLOG(HAL, INFO,
