@@ -526,15 +526,28 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	/* Remaining TX time */
 	if (!(prMsduInfo->u4Option & MSDU_OPT_MANUAL_LIFE_TIME)) {
+		uint32_t u4RemainingLifetime = 0;
+
+		if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST)
+			/* BMC packet would be enqueued to BMC_TC_INDEX,
+			 * which currently is TC1_INDEX.
+			 * Force BMC packets set remaining tx time to
+			 * NIC_TX_BMC_REMAINING_TX_TIME to avoid packets cannot
+			 * be released when MAC is in abnormal status.
+			 */
+			u4RemainingLifetime = NIC_TX_BMC_REMAINING_TX_TIME;
+		else
+			u4RemainingLifetime =
+				nicTxGetRemainingTxTimeByTc(prMsduInfo->ucTC);
+
 #if CFG_TX_CUSTOMIZE_LTO
 		if (IS_FEATURE_ENABLED(prWifiVar->ucEnableConfigLTO) &&
 			nicTxEnableLTO(prAdapter, prMsduInfo, prBssInfo))
-			prMsduInfo->u4RemainingLifetime =
-				prWifiVar->u4LTOValue;
-		else
+			u4RemainingLifetime = prWifiVar->u4LTOValue;
 #endif /* CFG_TX_CUSTOMIZE_LTO */
-			prMsduInfo->u4RemainingLifetime =
-				nicTxGetRemainingTxTimeByTc(prMsduInfo->ucTC);
+
+		prMsduInfo->u4RemainingLifetime = u4RemainingLifetime;
+
 	}
 
 	HAL_MAC_CONNAC3X_TXD_SET_REMAINING_LIFE_TIME_IN_MS(
