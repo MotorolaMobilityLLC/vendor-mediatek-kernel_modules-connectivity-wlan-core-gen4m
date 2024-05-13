@@ -53,6 +53,7 @@ struct APPEND_VAR_IE_ENTRY txProbeRspIETable[] = {
 #endif
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	, {0, mldCalculateRnrIELen, mldGenerateRnrIE}
+	, {0, mldCalculateMlIELen, mldGenerateMlIE}
 	, {0, ehtRlmCalculateCapIELen, ehtRlmRspGenerateCapIE}
 	, {0, ehtRlmCalculateOpIELen, ehtRlmRspGenerateOpIE}
 #endif
