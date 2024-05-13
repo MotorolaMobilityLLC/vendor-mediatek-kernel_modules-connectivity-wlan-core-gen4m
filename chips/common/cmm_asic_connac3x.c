@@ -2539,6 +2539,12 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 		DBGLOG(HAL, INFO,
 			"Ignore fw assert due to whole chip reset ongoing.\n");
 	} else {
+		if (prAdapter->fgIsSkipFWL05) {
+			DBGLOG(HAL, ERROR,
+				"Ignore fw assert due to before rom patch dl\n");
+			/* To do: send msg to do dfd dump by rom cmd */
+			return;
+		}
 		DBGLOG(HAL, ERROR, "FW trigger assert.\n");
 		g_Coredump_source = COREDUMP_SOURCE_WF_FW;
 
