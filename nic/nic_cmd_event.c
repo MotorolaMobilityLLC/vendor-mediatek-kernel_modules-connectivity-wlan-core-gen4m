@@ -6851,11 +6851,9 @@ void nicEventHandleFwDropSSN(struct ADAPTER *prAdapter,
 	struct SW_RFB *prSwRfb;
 
 	QUEUE_INITIALIZE(prQue);
-#if CFG_RFB_TRACK
-	nicRxDequeueFreeQue(prAdapter, 1, prQue, RFB_TRACK_FW_DROP_SSN);
-#else /* CFG_RFB_TRACK */
-	nicRxDequeueFreeQue(prAdapter, 1, prQue);
-#endif /* CFG_RFB_TRACK */
+
+	NIC_RX_DEQUEUE_FREE_QUE(prAdapter, 1, prQue, RFB_TRACK_FW_DROP_SSN);
+
 	QUEUE_REMOVE_HEAD(prQue, prSwRfb, struct SW_RFB *);
 	if (!prSwRfb) {
 		DBGLOG_LIMITED(QM, WARN, "No More RFB\n");

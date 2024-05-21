@@ -2224,12 +2224,8 @@ static void halRroGetFreeSwRfbList(struct ADAPTER *prAdapter,
 		nicRxIncRfbCnt(prAdapter);
 #endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
 
-#if CFG_RFB_TRACK
-	nicRxDequeueFreeQue(prAdapter, u4MaxRfbCnt,
-			    prFreeSwRfbList, RFB_TRACK_HIF);
-#else
-	nicRxDequeueFreeQue(prAdapter, u4MaxRfbCnt, prFreeSwRfbList);
-#endif /* CFG_RFB_TRACK */
+	NIC_RX_DEQUEUE_FREE_QUE(prAdapter, u4MaxRfbCnt, prFreeSwRfbList,
+		RFB_TRACK_HIF);
 
 	if (prFreeSwRfbList->u4NumElem < u4MaxRfbCnt) {
 		DBGLOG_LIMITED(
@@ -2481,9 +2477,9 @@ void halRroReadRxData(struct ADAPTER *prAdapter)
 	}
 
 	if (prFreeSwRfbList->u4NumElem)
-		nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
+		NIC_RX_CONCAT_FREE_QUE(prAdapter, prFreeSwRfbList);
 	if (prRecvRfbList->u4NumElem)
-		nicRxConcatRxQue(prAdapter, prRecvRfbList);
+		NIC_RX_CONCAT_RX_QUE(prAdapter, prRecvRfbList);
 
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		prRxRing = &prHifInfo->RxRing[u4Idx];
