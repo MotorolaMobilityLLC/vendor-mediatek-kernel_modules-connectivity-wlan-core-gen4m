@@ -21,6 +21,9 @@
 
 #if CFG_SUPPORT_TDLS
 #include "tdls.h"
+#if CFG_SUPPORT_TDLS_AUTO
+#include "tdls_auto.h"
+#endif
 #include "queue.h"
 
 /*******************************************************************************
@@ -158,10 +161,6 @@ TdlsApStaForEach(struct ADAPTER *pAd,
 		GET_BSS_INFO_BY_INDEX(
 		pAd, bss);
 
-	KAL_SPIN_LOCK_DECLARATION();
-
-	KAL_ACQUIRE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
-
 	for (i = 0; i < STA_TDLS_HASH_SIZE; i++) {
 		r = b->prTdlsHash[i];
 		while (r) {
@@ -222,8 +221,6 @@ TdlsApStaForEach(struct ADAPTER *pAd,
 			}
 		}
 	}
-
-	KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
 }
 
 uint8_t TdlsAllowedBss(
@@ -549,19 +546,14 @@ TdlsUpdateTxRxStat(
 {
 	struct sta_tdls_info *sta;
 
-	KAL_SPIN_LOCK_DECLARATION();
-
 	if (!pAd->rWifiVar.u4TdlsAuto)
 		return;
-
-	KAL_ACQUIRE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
 
 	sta = TdlsGetSta(pAd, bss, prAddr);
 
 	if (!sta)
 		sta = TdlsStaAdd(pAd, bss, prAddr);
 	if (!sta) {
-		KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
 		DBGLOG(TDLS, WARN, "Add sta info failed\n");
 		return;
 	}
@@ -570,8 +562,6 @@ TdlsUpdateTxRxStat(
 		sta->ulTxBytes += tx_bytes;
 	else
 		sta->ulRxBytes += rx_bytes;
-
-	KAL_RELEASE_SPIN_LOCK(pAd, SPIN_LOCK_STA_REC);
 
 #if CFG_SUPPORT_TDLS_LOG
 	DBGLOG(TDLS, INFO,
@@ -582,7 +572,41 @@ TdlsUpdateTxRxStat(
 #endif
 }
 
-int32_t TdlsAuto(
+void TdlsAuto(
+	struct ADAPTER *pAd,
+	struct MSG_HDR *prMsgHdr)
+{
+	uint32_t u4PacketLen = 0;
+	uint8_t bss = 0;
+	uint8_t *pucData = NULL;
+	struct MSG_AUTO_TDLS_INFO *prAutoTdlsInfo =
+		(struct MSG_AUTO_TDLS_INFO *) NULL;
+	int32_t rtn_val = 0;
+
+	if (!pAd) {
+		DBGLOG(TDLS, ERROR, "no adapter found");
+		return;
+	}
+
+	if (!prMsgHdr) {
+		DBGLOG(TDLS, ERROR, "prMsgHdr is null");
+		return;
+	}
+
+	prAutoTdlsInfo =
+		(struct MSG_AUTO_TDLS_INFO *) prMsgHdr;
+
+	bss = prAutoTdlsInfo->ucBssIndex;
+	u4PacketLen = prAutoTdlsInfo->u2FrameLength;
+	pucData = prAutoTdlsInfo->aucEthDestAddr;
+
+	rtn_val =
+		TdlsAutoImpl(pAd, bss, u4PacketLen, 0, pucData);
+	/* DBGLOG(TDLS, TRACE, "TdlsAutoImpl:%d\n", rtn_val); */
+	cnmMemFree(pAd, prMsgHdr);
+}
+
+int32_t TdlsAutoImpl(
 	struct ADAPTER *pAd,
 	uint8_t bss,
 	uint64_t tx_bytes,
