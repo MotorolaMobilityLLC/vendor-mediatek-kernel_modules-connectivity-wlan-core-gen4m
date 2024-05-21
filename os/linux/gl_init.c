@@ -7435,17 +7435,40 @@ void wlanOffWaitWlanThreads(struct completion *prComp,
 		struct task_struct *prThread)
 {
 	uint32_t waitRet = 0;
+	struct timespec64 rEntryTs = {0};
+	struct timespec64 rNowTs = {0};
+	struct timespec64 rTimeout, rTime = {0};
+	u_int8_t fgIsTimeout = FALSE;
 
 	if (!prThread)
 		return;
+
+	rTimeout.tv_sec = 10;
+	rTimeout.tv_nsec = 0;
+	ktime_get_ts64(&rEntryTs);
+
 	while (TRUE) {
 		waitRet = wait_for_completion_interruptible_timeout(
 			prComp, MSEC_TO_JIFFIES(1000));
 		if (waitRet > 0)
 			return;
 		DBGLOG(INIT, WARN,
-			"WlanThread not complete for 1 second.\n");
+			"WlanThread not complete for 1 second:%s[%d]\n",
+			prThread->comm, prThread->pid);
 		kal_show_stack(NULL, prThread, NULL);
+
+		if (fgIsTimeout)
+			continue;
+
+		ktime_get_ts64(&rNowTs);
+		if (kalGetDeltaTime(&rNowTs, &rEntryTs, &rTime)) {
+			if (kalTimeCompare(&rTime, &rTimeout) >= 0) {
+				kalSendAeeWarning("WLAN",
+					"off wait threads from %ld.%ld\n",
+					rEntryTs.tv_sec, rEntryTs.tv_nsec);
+				fgIsTimeout = TRUE;
+			}
+		}
 	}
 }
 
