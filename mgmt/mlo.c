@@ -1661,6 +1661,10 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		uint8_t *p;
 		uint8_t found = FALSE;
 
+		/* fragement no need */
+		if (IE_LEN(pucIE) != 0xff)
+			goto link_info;
+
 		tmp_pos = end; /* traverse original buffer */
 		tmp_end = pucIE + u2Left;
 		while (tmp_end - tmp_pos >= 2 &&
@@ -1721,11 +1725,18 @@ link_info:
 
 		if (prIeSta->ucSubID != SUB_IE_MLD_PER_STA_PROFILE ||
 		    IE_SIZE(prIeSta) < sizeof(struct IE_ML_STA_CONTROL) ||
+		    IE_LEN(prIeSta) == 0 ||
+		    tail > end ||
 		    prMlInfo->ucProfNum >= MLD_LINK_MAX)
 			goto next;
 
 		tmp_pos = tail; /* traverse original buffer */
 		tmp_end = end;
+
+		/* fragement no need */
+		if (IE_LEN(pucIE) != 0xff)
+			goto sta;
+
 		while (tmp_end - tmp_pos >= 2 &&
 		       IE_ID(tmp_pos) == SUB_IE_MLD_FRAGMENT &&
 		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
