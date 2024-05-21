@@ -3926,14 +3926,7 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 		DBGLOG(HAL, WARN,
 			"WF mcusys bus hang irq status: 0x%08x\n",
 			value);
-		HAL_RMCR_RD(PLAT_DBG, ad,
-			   CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR,
-			   &value);
-		if (value == 0x100)
-			DBGLOG(HAL, INFO,
-				"Skip conn_infra_vdnr timeout irq.\n");
-		else
-			return FALSE;
+		return FALSE;
 	}
 
 	return TRUE;
@@ -4643,13 +4636,23 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 	}
 #endif
 
-	if (prAdapter->chip_info->checkbushang) {
-		if (prAdapter->chip_info->checkbushang(
-		   (void *) prAdapter, FALSE)) {
-			DBGLOG(INIT, ERROR,
-				"Check bus hang failed\n");
-			return TRUE;
-		}
+	HAL_RMCR_RD(PLAT_DBG, prAdapter,
+		CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR, &u4Val1);
+	if ((u4Val1 & BITS(0, 9)) == 0x3FF) {
+		DBGLOG(HAL, WARN,
+			"Conninfra timeout status: 0x%08x\n",
+			u4Val1);
+		return TRUE;
+	}
+
+	HAL_RMCR_RD(PLAT_DBG, prAdapter,
+		CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR,
+		&u4Val1);
+	if ((u4Val1 & BIT(0)) != 0x0) {
+		DBGLOG(HAL, WARN,
+			"WF mcusys bus status: 0x%08x\n",
+			u4Val1);
+		return TRUE;
 	}
 
 	return FALSE;
