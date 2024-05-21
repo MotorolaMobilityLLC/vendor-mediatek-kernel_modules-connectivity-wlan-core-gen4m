@@ -2956,7 +2956,6 @@ struct ADAPTER {
 	uint8_t ucEnVendorSpecifiedRpt;
 
 #if CFG_SUPPORT_MLR
-	uint8_t ucMlrIsSupport;
 	uint8_t ucMlrVersion;
 	uint32_t u4MlrSupportBitmap;
 	uint32_t u4MlrCapSupportBitmap;

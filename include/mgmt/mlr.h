@@ -91,56 +91,53 @@ enum ENUM_MLR_STATE {
 	(((u4MlrBitmap & (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) \
 	== (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2)) ? TRUE : FALSE)
 
-#define MLR_BIT_MLRP_SUPPORT(u4MlrBitmap) \
-	((u4MlrBitmap & MLR_MODE_MLR_PLUS) ? TRUE : FALSE)
-
-#define MLR_BIT_ALR_SUPPORT(u4MlrBitmap) \
-	((u4MlrBitmap & MLR_MODE_ALR) ? TRUE : FALSE)
-
-#define MLR_BIT_INTERSECTION(u4MlrBitmapA, ucMlrBitmapB) \
+#define MLR_BIT_INTERSECT(u4MlrBitmapA, ucMlrBitmapB) \
 	(u4MlrBitmapA & ucMlrBitmapB)
 
-#define MLR_STATE_IN_START(ucMlrState) \
-	(ucMlrState == MLR_STATE_START)
+#define MLR_STATE_IN_START(prStaRec) \
+	(prStaRec->ucMlrState == MLR_STATE_START)
 
 /* Check if DUT supports at least one MLR */
 #define MLR_IS_SUPPORT(prAdapter) \
-	(prAdapter->ucMlrIsSupport \
-	&& (prAdapter->u4MlrSupportBitmap != MLR_MODE_NOT_SUPPORT)) \
+	(prAdapter->u4MlrSupportBitmap != MLR_MODE_NOT_SUPPORT)
 
 /* Check if Peer supports at least one MLR */
 #define MLR_IS_PEER_SUPPORT(prStaRec) \
-	(prStaRec->fgIsMlrSupported \
-	&& (prStaRec->ucMlrSupportBitmap != MLR_MODE_NOT_SUPPORT))
+	(prStaRec->ucMlrSupportBitmap != MLR_MODE_NOT_SUPPORT)
 
 /* Check if both DUT and Peer support at least one MLR */
 #define MLR_IS_BOTH_SUPPORT(prAdapter, prStaRec) \
-	(prAdapter->ucMlrIsSupport \
-	&& (prAdapter->u4MlrSupportBitmap != MLR_MODE_NOT_SUPPORT) \
-	&& prStaRec->fgIsMlrSupported \
+	((prAdapter->u4MlrSupportBitmap != MLR_MODE_NOT_SUPPORT) \
 	&& (prStaRec->ucMlrSupportBitmap != MLR_MODE_NOT_SUPPORT))
 
-/* Check if interaction of both support at least MLRv1, MLRv2 or MLRv1+MLRv2 */
-#define MLR_IS_BOTH_INTERACTION_AT_LEAST_V1_V2(prAdapter, prStaRec) \
-	(MLR_BIT_V1_SUPPORT(MLR_BIT_INTERSECTION( \
-	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)) \
-	|| MLR_BIT_V2_SUPPORT(MLR_BIT_INTERSECTION( \
-	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)) \
-	|| MLR_BIT_V1_V2_SUPPORT(MLR_BIT_INTERSECTION( \
-	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)))
+#define MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec) \
+	((prAdapter->u4MlrSupportBitmap \
+	& prStaRec->ucMlrSupportBitmap) == MLR_MODE_MLR_V1)
 
-/* Check if interaction of both support MLRv1 or above */
-#define MLR_IS_BOTH_INTERACTION_V1_OR_ABOVE(prAdapter, prStaRec) \
-	(MLR_BIT_SUPPORT(MLR_BIT_INTERSECTION( \
-	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)))
+#define MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec) \
+	((prAdapter->u4MlrSupportBitmap \
+	& prStaRec->ucMlrSupportBitmap) == MLR_MODE_MLR_V2)
 
-/* Check if interaction of both support MLRv2 or above */
-#define MLR_IS_BOTH_INTERACTION_V2_OR_ABOVE(prAdapter, prStaRec) \
-	(MLR_V2_OR_ABOVE_SUPPORT(MLR_BIT_INTERSECTION( \
+#define MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec) \
+	((prAdapter->u4MlrSupportBitmap \
+	& prStaRec->ucMlrSupportBitmap) \
+	== (MLR_MODE_MLR_V1 | MLR_MODE_MLR_V2))
+
+#define MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec) \
+	((prAdapter->u4MlrSupportBitmap \
+	& prStaRec->ucMlrSupportBitmap) == MLR_MODE_MLR_PLUS)
+
+#define MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec) \
+	((prAdapter->u4MlrSupportBitmap \
+	& prStaRec->ucMlrSupportBitmap) == MLR_MODE_ALR)
+
+/* Check if intersection of both support MLRv1 or above */
+#define MLR_IS_V1_OR_ABOVE_AFTER_INTERSECT(prAdapter, prStaRec) \
+	(MLR_BIT_SUPPORT(MLR_BIT_INTERSECT( \
 	prAdapter->u4MlrSupportBitmap, prStaRec->ucMlrSupportBitmap)))
 
 #define MLR_BAND_IS_SUPPORT(eBand) \
-	(eBand != BAND_2G4 && eBand != BAND_NULL)
+	(eBand == BAND_5G)
 
 #define MLR_GET_BAND(prAdapter, prStaRec) \
 	((prAdapter->aprBssInfo[prStaRec->ucBssIndex] != NULL) ? \

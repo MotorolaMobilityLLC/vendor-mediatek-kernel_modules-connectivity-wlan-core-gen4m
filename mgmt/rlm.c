@@ -731,6 +731,11 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 	struct WLAN_MAC_MGMT_HEADER *mgmt;
 	uint16_t frame_ctrl;
 	struct BSS_INFO *prBssInfo;
+#if (CFG_SUPPORT_MLR == 1)
+	struct STA_RECORD *prStaRec;
+	u_int8_t fgMlrBandCheck = FALSE;
+	u_int8_t fgMlrCapCheck = FALSE;
+#endif
 	uint8_t *pucBuffer;
 	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
 	uint16_t len;
@@ -837,7 +842,28 @@ void rlmGenerateMTKOuiIE(struct ADAPTER *prAdapter,
 #endif
 
 #if (CFG_SUPPORT_MLR == 1)
-	if (MLR_BAND_IS_SUPPORT(prBssInfo->eBand) &&
+	prStaRec = cnmGetStaRecByIndex(prAdapter, prMsduInfo->ucStaRecIndex);
+	if (prStaRec) {
+		if (MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec)
+			&& MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) {
+			/* MLRv1 doesn't need to gen MTK OUI - MLRIE */
+			fgMlrCapCheck = FALSE;
+			fgMlrBandCheck = TRUE;
+		} else if ((MLR_IS_MLRP_AFTER_INTERSECT(prAdapter, prStaRec)
+			|| MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec))
+			&& MLR_BAND_IS_SUPPORT(prBssInfo->eBand)) {
+			fgMlrCapCheck = TRUE;
+			fgMlrBandCheck = TRUE;
+		} else if (MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec)
+			|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) {
+			fgMlrCapCheck = TRUE;
+			fgMlrBandCheck = TRUE;
+		}
+	} else
+		DBGLOG(RLM, WARN,
+			"MLR assoc - gen MTK OUI - MLRIE but prStaRec is NULL");
+
+	if (fgMlrCapCheck && fgMlrBandCheck &&
 		(FALSE
 #if (CFG_SUPPORT_BALANCE_MLR == 1)
 		|| frame_ctrl == MAC_FRAME_BEACON
@@ -3046,11 +3072,12 @@ void rlmParseMtkOui(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
 
 			MLR_DBGLOG(prAdapter, RLM, INFO,
-				"MLR beacon or assoc resp - MLR IE[0x%02x, 0x%02x, 0x%02x] StaRec[%d, 0x%02x]",
+				"MLR beacon or assoc resp - BSSID:" MACSTR
+				" ,MLRIE[0x%02x, 0x%02x, 0x%02x] StaRec[0x%02x]",
+					MAC2STR(prBssInfo->aucBSSID),
 					prMLR->ucId,
 					prMLR->ucLength,
 					prMLR->ucLRBitMap,
-					prStaRec->fgIsMlrSupported,
 					prStaRec->ucMlrSupportBitmap
 				);
 		}
@@ -3084,32 +3111,33 @@ void rlmParseMtkOuiForAssocResp(struct ADAPTER *prAdapter,
 #if ((CFG_SUPPORT_MLR_V2 == 1) || (CFG_SUPPORT_BALANCE_MLR == 1))
 		if (IE_ID(ie) == MTK_OUI_ID_MLR) {
 			struct IE_MTK_MLR *prMLR = (struct IE_MTK_MLR *)ie;
-			uint8_t ucTempLRBitMap;
+			uint8_t ucBcnBitmap = prStaRec->ucMlrSupportBitmap;
 
-			MLR_DBGLOG(prAdapter, RLM, INFO,
-				"MLR assoc resp - MLR IE[0x%02x, 0x%02x, 0x%02x]",
-					prMLR->ucId,
-					prMLR->ucLength,
-					prMLR->ucLRBitMap);
-
-			/* For 2.4G AP foolproof */
-			ucTempLRBitMap = prMLR->ucLRBitMap &
-				(!MLR_BAND_IS_SUPPORT(prBssInfo->eBand)
-				? MLR_MODE_NOT_SUPPORT : ~0);
-
-			if (ucTempLRBitMap != prStaRec->ucMlrSupportBitmap) {
-				DBGLOG(RLM, WARN,
-					"MLR assoc resp - MLR IE LRBitmap[0x%02x] ucTempLRBitMap[0x%02x] StaRec[%d, 0x%02x]",
-						prMLR->ucLRBitMap,
-						ucTempLRBitMap,
-						prStaRec->fgIsMlrSupported,
-						prStaRec->ucMlrSupportBitmap);
-
-				prStaRec->ucMlrSupportBitmap = ucTempLRBitMap;
-				prStaRec->fgIsMlrSupported =
-					MLR_BIT_SUPPORT(
-					prStaRec->ucMlrSupportBitmap);
+			if (prAdapter->u4MlrSupportBitmap == MLR_MODE_MLR_V1) {
+				DBGLOG(RLM, INFO,
+					"MLR assoc resp - Skip because DUT Cap is MLR_V1\n");
+				continue;
 			}
+
+			if (((prMLR->ucLRBitMap & prAdapter->u4MlrSupportBitmap)
+				== MLR_MODE_MLR_V1)
+				&& !MLR_BAND_IS_SUPPORT(prBssInfo->eBand))
+				prStaRec->ucMlrSupportBitmap =
+					MLR_MODE_NOT_SUPPORT;
+			else
+				prStaRec->ucMlrSupportBitmap =
+					prMLR->ucLRBitMap;
+
+		DBGLOG(RLM, INFO,
+			"MLR assoc resp - BSSID:" MACSTR
+			" MLRIE LRBitmap[0x%02x], Band[%d], Peer's Beacon[0x%02x], DUT Cap[0x%02x], Final Nego[0x%02x]",
+			MAC2STR(prBssInfo->aucBSSID),
+			prMLR->ucLRBitMap,
+			prBssInfo->eBand,
+			ucBcnBitmap,
+			prAdapter->u4MlrSupportBitmap,
+			prStaRec->ucMlrSupportBitmap);
+
 		}
 #endif
 	}

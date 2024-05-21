@@ -4280,12 +4280,12 @@ uint32_t nicUniCmdStaRecTagMlrInfo(struct ADAPTER *ad,
 	tag->ucMlrState = cmd->ucMlrState;
 
 	DBGLOG(REQ, INFO,
-		"MLR unicmd - StaRec[%u] WIDX[%u] ucStaState[%u] MLR[%d,0x%04x,%d,0x%02x] ucMlrMode[0x%02x] ucMlrState[%u] RCPI=%d(RSSI=%d)\n",
+		"MLR unicmd - StaRec[%u] WIDX[%u] ucStaState[%u] MLR[0x%02x, 0x%02x] ucMlrMode[0x%02x] ucMlrState[%u] RCPI=%d(RSSI=%d)\n",
 		cmd->ucStaIndex,
 		cmd->ucWlanIndex,
 		prStaRec->ucStaState,
-		ad->ucMlrIsSupport, ad->u4MlrSupportBitmap,
-		prStaRec->fgIsMlrSupported, prStaRec->ucMlrSupportBitmap,
+		ad->u4MlrSupportBitmap,
+		prStaRec->ucMlrSupportBitmap,
 		tag->ucMlrMode,
 		tag->ucMlrState,
 		prStaRec->ucRCPI,
@@ -12420,11 +12420,12 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #if (CFG_SUPPORT_MLR == 1)
 			struct UNI_EVENT_MLR_FSM_UPDATE *fsm =
 				(struct UNI_EVENT_MLR_FSM_UPDATE *)tag;
-			struct EVENT_MLR_FSM_UPDATE legacy;
+			struct EVENT_MLR_FSM_UPDATE legacy = {0};
 
 			legacy.u2WlanIdx = fsm->u2WlanIdx;
 			legacy.ucMlrMode = fsm->ucMlrMode;
 			legacy.ucMlrState = fsm->ucMlrState;
+			legacy.ucMlrTxdFrIdx = fsm->ucMlrTxdFrIdx;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_MLR_FSM_UPDATE, &legacy);
 #endif

@@ -504,7 +504,6 @@ struct BSS_DESC {
 	uint8_t ucMlrType;
 	uint8_t ucMlrLength;
 	uint8_t ucMlrSupportBitmap;
-	uint8_t fsIsMlrSupport;
 #endif
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 	uint8_t fgIsTxPwrEnvPresent;
