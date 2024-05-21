@@ -1032,8 +1032,10 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	struct cr_region *region;
 	uint32_t i = 0, j = 0;
 	int ret = 0;
-#if CFG_MTK_WIFI_MBU
+#if CFG_MTK_WIFI_MBU || defined(_HIF_PCIE)
 	struct CHIP_DBG_OPS *debug_ops = NULL;
+#endif
+#if CFG_MTK_WIFI_MBU
 	uint8_t uCurMbuTimeout;
 	u_int8_t fgRet = FALSE;
 #endif
@@ -1041,8 +1043,15 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	if (mem->cr_region_num == 0)
 		goto exit;
 
-#if CFG_MTK_WIFI_MBU
+#if defined(_HIF_PCIE)
 	debug_ops = glue->prAdapter->chip_info->prDebugOps;
+	if (debug_ops && debug_ops->dumpPcieStatus) {
+		if (debug_ops->dumpPcieStatus(glue) == FALSE)
+			goto exit;
+	}
+#endif
+
+#if CFG_MTK_WIFI_MBU
 	if (debug_ops && debug_ops->getMbuTimeoutStatus)
 		uCurMbuTimeout = debug_ops->getMbuTimeoutStatus();
 #endif
