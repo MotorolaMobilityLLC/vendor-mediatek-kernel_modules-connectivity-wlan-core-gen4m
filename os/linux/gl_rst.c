@@ -2082,10 +2082,12 @@ void glResetWholeChipResetTrigger(char *pcReason)
 #endif
 
 	DBGLOG(INIT, INFO, "ret:%d, reason:%s\n", ret, pcReason);
+#if (CFG_SUPPORT_CONNINFRA == 1) || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 	if (ret == 0) {
 		dump_stack();
 		fgIsDrvTriggerWholeChipReset = TRUE;
 	}
+#endif
 }
 
 void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
