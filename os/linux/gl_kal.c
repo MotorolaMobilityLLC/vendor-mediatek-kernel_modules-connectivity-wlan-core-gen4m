@@ -18970,7 +18970,7 @@ inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
 		if (GLUE_GET_REF_CNT(pr->u4HifRegStartCnt) == 0)
 			break;
 
-		kalMsleep(CFG_HIF_REG_WORK_TIMEOUT_TIME);
+		kalUsleep(CFG_HIF_REG_WORK_TIMEOUT_TIME);
 	}
 	if (u4Idx == CFG_HIF_REG_WORK_TIMEOUT_CNT) {
 		DBGLOG(HAL, ERROR, "work don't finish, StartCnt[%u]\n",
@@ -18981,7 +18981,7 @@ inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
 		if (GLUE_GET_REF_CNT(pr->u4HifRegReqCnt) == 0)
 			break;
 
-		kalMsleep(CFG_HIF_REG_REQ_TIMEOUT_TIME);
+		kalUsleep(CFG_HIF_REG_REQ_TIMEOUT_TIME);
 	}
 	if (u4Idx == CFG_HIF_REG_REQ_TIMEOUT_CNT) {
 		DBGLOG(HAL, ERROR, "reg request don't finish, ReqCnt[%u]\n",

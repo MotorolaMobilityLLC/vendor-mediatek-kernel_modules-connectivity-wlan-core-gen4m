@@ -261,9 +261,9 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 
 #if CFG_SUPPORT_HIF_REG_WORK
 #define CFG_HIF_REG_MAX_REQ_NUM		100
-#define CFG_HIF_REG_WORK_TIMEOUT_TIME	1      /* 1ms */
+#define CFG_HIF_REG_WORK_TIMEOUT_TIME	1000   /* 1ms */
 #define CFG_HIF_REG_WORK_TIMEOUT_CNT	5000   /* 5s */
-#define CFG_HIF_REG_REQ_TIMEOUT_TIME	1      /* 1ms */
+#define CFG_HIF_REG_REQ_TIMEOUT_TIME	1000   /* 1ms */
 #define CFG_HIF_REG_REQ_TIMEOUT_CNT	5000   /* 5s */
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 
