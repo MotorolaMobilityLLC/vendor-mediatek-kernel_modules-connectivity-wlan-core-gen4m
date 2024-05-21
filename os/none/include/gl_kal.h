@@ -2326,6 +2326,9 @@ int kalRegulatoryHint(char *country);
 
 bool kal_is_err(void *ptr);
 
+#if CFG_MTK_WIFI_PCIE_SR
+u_int8_t kalIsSupportPcieL2(void);
+#endif
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t kalIsSupportMawd(void);
 u_int8_t kalIsSupportSdo(void);

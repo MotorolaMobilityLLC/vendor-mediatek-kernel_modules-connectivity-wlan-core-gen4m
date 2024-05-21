@@ -12453,6 +12453,13 @@ int32_t __weak kalGetScpDumpInfo(u64 *addr, unsigned int *size)
 	return 0;
 }
 
+#if CFG_MTK_WIFI_PCIE_SR
+u_int8_t __weak kalIsSupportPcieL2(void)
+{
+	return FALSE;
+}
+#endif
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t __weak kalIsSupportMawd(void)
 {
