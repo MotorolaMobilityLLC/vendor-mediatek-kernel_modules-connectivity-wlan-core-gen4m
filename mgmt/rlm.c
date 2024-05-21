@@ -177,6 +177,11 @@ static void rlmRecHtOpForClient(struct ADAPTER *prAdapter,
 			struct BSS_INFO *prBssInfo,
 			uint8_t *pucPrimaryChannel);
 
+#if CFG_SUPPORT_802_11K
+static uint32_t rlmRegTxPwrLimitGet(struct ADAPTER *prAdapter,
+					uint8_t ucBssIdx,
+					int8_t *picPwrLmt);
+#endif
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************
@@ -240,6 +245,7 @@ void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 			      struct MSDU_INFO *prMsduInfo)
 {
 	uint8_t *pucBuffer;
+	int8_t icPwrMin = 0, icPwrMax = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prMsduInfo);
@@ -248,10 +254,24 @@ void rlmReqGeneratePowerCapIE(struct ADAPTER *prAdapter,
 		(uint8_t *)((uintptr_t)prMsduInfo->prPacket +
 			prMsduInfo->u2FrameLength);
 
+	if (prAdapter->rWifiVar.icRegPwrLmtMin < TX_PWR_MIN)
+		icPwrMin = TX_PWR_MIN;
+	else
+		icPwrMin = prAdapter->rWifiVar.icRegPwrLmtMin;
+
+	if (prAdapter->rWifiVar.icRegPwrLmtMax > TX_PWR_MAX)
+		icPwrMax = TX_PWR_MAX;
+	else
+		icPwrMax = prAdapter->rWifiVar.icRegPwrLmtMax;
+
 	POWER_CAP_IE(pucBuffer)->ucId = ELEM_ID_PWR_CAP;
 	POWER_CAP_IE(pucBuffer)->ucLength = ELEM_MAX_LEN_POWER_CAP;
-	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = RLM_MIN_TX_PWR;
-	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = RLM_MAX_TX_PWR;
+	POWER_CAP_IE(pucBuffer)->cMinTxPowerCap = icPwrMin;
+	POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap = icPwrMax;
+
+	DBGLOG(RLM, INFO, "PwrCap Min[%d]Max[%d]\n"
+			, POWER_CAP_IE(pucBuffer)->cMinTxPowerCap
+			, POWER_CAP_IE(pucBuffer)->cMaxTxPowerCap);
 
 	prMsduInfo->u2FrameLength += IE_SIZE(pucBuffer);
 }
@@ -6856,7 +6876,42 @@ uint32_t rlmFillHtCapIEByAdapter(struct ADAPTER *prAdapter,
 }
 
 #endif
+static uint32_t tpcGetCurrentTxPwr(struct ADAPTER *prAdapter,
+				uint8_t ucBssIdx,
+				int8_t *picTxPwr)
+{
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+	struct BSS_DESC *prBssDesc = NULL;
+	int8_t icPwrLmt = RLM_INVALID_POWER_LIMIT;
 
+	if (!prAdapter || (ucBssIdx >= MAX_BSSID_NUM))
+		return WLAN_STATUS_INVALID_DATA;
+
+	*picTxPwr = prAdapter->u4GetTxPower;
+
+#if CFG_SUPPORT_802_11K
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIdx);
+	/* only consider regulatory power limit when connected */
+	if (prBssDesc != NULL && prBssDesc->fgIsConnected) {
+		u4Status = rlmRegTxPwrLimitGet(prAdapter, ucBssIdx, &icPwrLmt);
+		if ((u4Status == WLAN_STATUS_SUCCESS) &&
+			(icPwrLmt != RLM_INVALID_POWER_LIMIT) &&
+			(*picTxPwr > icPwrLmt)) {
+			/* Choose min value between current target power
+			 * and regulatory power limit
+			 */
+			*picTxPwr = icPwrLmt;
+		}
+	}
+#endif
+
+	DBGLOG(RLM, INFO, "Get txpower curr[%d]Lmt[%d]Final[%d]\n",
+	       prAdapter->u4GetTxPower,
+	       icPwrLmt,
+	       *picTxPwr);
+
+	return WLAN_STATUS_SUCCESS;
+}
 #if CFG_SUPPORT_DFS
 /*----------------------------------------------------------------------------*/
 /*!
@@ -6876,6 +6931,7 @@ static void tpcComposeReportFrame(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 	struct ACTION_TPC_REPORT_FRAME *prTxFrame;
 	uint16_t u2PayloadLen;
+	int8_t icTxPwr = 0;
 
 	ASSERT(prAdapter);
 	ASSERT(prStaRec);
@@ -6909,7 +6965,8 @@ static void tpcComposeReportFrame(struct ADAPTER *prAdapter,
 	prTxFrame->ucElemId = ELEM_ID_TPC_REPORT;
 	prTxFrame->ucLength =
 		sizeof(prTxFrame->ucLinkMargin) + sizeof(prTxFrame->ucTransPwr);
-	prTxFrame->ucTransPwr = prAdapter->u4GetTxPower;
+	tpcGetCurrentTxPwr(prAdapter, prStaRec->ucBssIndex, &icTxPwr);
+	prTxFrame->ucTransPwr = icTxPwr;
 	prTxFrame->ucLinkMargin =
 		prAdapter->rLinkQuality.rLq[prStaRec->ucBssIndex].
 		cRssi - (0 - MIN_RCV_PWR);
@@ -6922,7 +6979,7 @@ static void tpcComposeReportFrame(struct ADAPTER *prAdapter,
 		     WLAN_MAC_MGMT_HEADER_LEN + u2PayloadLen, pfTxDoneHandler,
 		     MSDU_RATE_MODE_AUTO);
 
-	DBGLOG(RLM, TRACE, "ucDialogToken %d ucTransPwr %d ucLinkMargin %d\n",
+	DBGLOG(RLM, INFO, "ucDialogToken %d ucTransPwr %d ucLinkMargin %d\n",
 	       prTxFrame->ucDialogToken, prTxFrame->ucTransPwr,
 	       prTxFrame->ucLinkMargin);
 
@@ -10190,6 +10247,41 @@ void rlmDummyChangeOpHandler(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	       ucBssIndex, fgIsChangeSuccess);
 }
 #if CFG_SUPPORT_802_11K
+static uint32_t rlmRegTxPwrLimitGet(struct ADAPTER *prAdapter,
+					uint8_t ucBssIdx,
+					int8_t *picPwrLmt)
+{
+	struct BSS_DESC *prBssDesc = NULL;
+	int8_t icMaxPwrLmt = 0, icMinPwrLmt = 0;
+
+	if (!prAdapter || (ucBssIdx >= MAX_BSSID_NUM))
+		return WLAN_STATUS_INVALID_DATA;
+
+	if (prAdapter->rWifiVar.icRegPwrLmtMax > TX_PWR_MAX)
+		icMaxPwrLmt = TX_PWR_MAX;
+	else
+		icMaxPwrLmt = prAdapter->rWifiVar.icRegPwrLmtMax;
+
+	if (prAdapter->rWifiVar.icRegPwrLmtMin < TX_PWR_MIN)
+		icMinPwrLmt = TX_PWR_MIN;
+	else
+		icMinPwrLmt = prAdapter->rWifiVar.icRegPwrLmtMin;
+
+	prBssDesc = aisGetTargetBssDesc(prAdapter, ucBssIdx);
+
+	if (!prBssDesc)
+		return WLAN_STATUS_INVALID_DATA;
+
+	*picPwrLmt = prBssDesc->cPowerLimit;
+
+	if (*picPwrLmt > icMaxPwrLmt)
+		*picPwrLmt = icMaxPwrLmt;
+
+	if (*picPwrLmt < icMinPwrLmt)
+		*picPwrLmt = icMinPwrLmt;
+
+	return WLAN_STATUS_SUCCESS;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This func is use to update Regulatory TxPower limit if need.
