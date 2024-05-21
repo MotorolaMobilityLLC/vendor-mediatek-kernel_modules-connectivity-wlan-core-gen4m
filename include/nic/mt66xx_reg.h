@@ -1415,7 +1415,7 @@ union WPDMA_GLO_CFG_STRUCT {
 };
 
 #define MIN_TEMP_QUERY_TIME		(5 * 60 * 1000) /* ms */
-#define MAX_TEMP_THRESHOLD		(60 * 1000)
+#define MAX_TEMP_THRESHOLD		(70 * 1000)
 
 struct sw_sync_emi_info {
 	uint32_t tag;
