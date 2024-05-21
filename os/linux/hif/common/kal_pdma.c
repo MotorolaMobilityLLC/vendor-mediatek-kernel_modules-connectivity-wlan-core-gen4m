@@ -3052,7 +3052,6 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 	}
 
 	if (!wlanIsDriverReady(glue,
-			       WLAN_DRV_READY_CHECK_WLAN_ON |
 			       WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
 		DBGLOG_LIMITED(HAL, WARN, "HIF is not ready.\n");
 		ret = -EFAULT;
