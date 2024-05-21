@@ -358,7 +358,7 @@ uint32_t roamingFsmCheckRxFtActionFrameStatus(struct ADAPTER *prAdapter,
 	if (UNEQUAL_MAC_ADDR(prRxFrame->aucStaAddr, aucStaAddr)) {
 		DBGLOG(ROAMING, WARN,
 		       "FT: wrong sta addr " MACSTR " expected " MACSTR "\n",
-		       prRxFrame->aucStaAddr, aucStaAddr);
+		       MAC2STR(prRxFrame->aucStaAddr), MAC2STR(aucStaAddr));
 		*pu2StatusCode = STATUS_CODE_UNSPECIFIED_FAILURE;
 		return WLAN_STATUS_SUCCESS;
 	}
@@ -366,7 +366,8 @@ uint32_t roamingFsmCheckRxFtActionFrameStatus(struct ADAPTER *prAdapter,
 	if (UNEQUAL_MAC_ADDR(prRxFrame->aucTargetApAddr, aucTargetApAddr)) {
 		DBGLOG(ROAMING, WARN,
 		       "FT: wrong ap addr " MACSTR " expected " MACSTR "\n",
-		       prRxFrame->aucTargetApAddr, aucTargetApAddr);
+		       MAC2STR(prRxFrame->aucTargetApAddr),
+		       MAC2STR(aucTargetApAddr));
 		*pu2StatusCode = STATUS_CODE_UNSPECIFIED_FAILURE;
 		return WLAN_STATUS_SUCCESS;
 	}

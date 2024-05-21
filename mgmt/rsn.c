@@ -3216,8 +3216,8 @@ void rsnStartSaQueryTimer(struct ADAPTER *prAdapter,
 		DBGLOG(RSN, INFO,
 			"MFP: Sa Query AP[" MACSTR
 			"] associated AP[" MACSTR "]!\n",
-			prBssSpecInfo->aucSaQueryBSSID,
-			prBssInfo->aucBSSID);
+			MAC2STR(prBssSpecInfo->aucSaQueryBSSID),
+			MAC2STR(prBssInfo->aucBSSID));
 		rsnStopSaQuery(prAdapter, ucBssIndex);
 		return;
 	}

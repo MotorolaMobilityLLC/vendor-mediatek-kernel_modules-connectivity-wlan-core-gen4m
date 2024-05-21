@@ -6126,8 +6126,8 @@ void p2pRoleFsmRunEventAddMldLink(struct ADAPTER *prAdapter,
 		"role=%d, link=%d, mld_addr="MACSTR", link_addr="MACSTR"\n",
 		prMsg->ucRoleIdx,
 		prMsg->ucLinkIdx,
-		prMsg->aucMldAddr,
-		prMsg->aucLinkAddr);
+		MAC2STR(prMsg->aucMldAddr),
+		MAC2STR(prMsg->aucLinkAddr));
 
 	prP2pRoleFsmInfo = P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 		prMsg->ucRoleIdx);
