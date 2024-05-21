@@ -2382,9 +2382,11 @@ int wlan_reset_thread_main(void *data)
 	}
 
 #if CFG_ENABLE_WAKE_LOCK
+#if (KERNEL_VERSION(4, 9, 0) > CFG80211_VERSION_CODE)
 	if (KAL_WAKE_LOCK_ACTIVE(NULL,
 				 prWlanRstThreadWakeLock))
 		KAL_WAKE_UNLOCK(NULL, prWlanRstThreadWakeLock);
+#endif
 	KAL_WAKE_LOCK_DESTROY(NULL,
 			      prWlanRstThreadWakeLock);
 #endif
