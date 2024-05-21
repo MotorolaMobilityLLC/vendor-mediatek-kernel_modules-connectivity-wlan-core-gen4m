@@ -5890,8 +5890,8 @@ void nicApplyP2pNetworkAddress(struct ADAPTER *prAdapter)
 
 		DBGLOG(NIC, INFO,
 			"P2P[%u] DEV mac:" MACSTR " INF mac:" MACSTR "\n",
-			i, prAdapter->rWifiVar.aucP2pDeviceAddress[i],
-			prAdapter->rWifiVar.aucP2pInterfaceAddress[i]);
+			i, MAC2STR(prAdapter->rWifiVar.aucP2pDeviceAddress[i]),
+			MAC2STR(prAdapter->rWifiVar.aucP2pInterfaceAddress[i]));
 	}
 
 }
@@ -5916,8 +5916,8 @@ void nicApplyP2pNetworkFixAddress(struct ADAPTER *prAdapter)
 
 		DBGLOG(NIC, INFO,
 			"P2P[%u] DEV mac:" MACSTR " INF mac:" MACSTR "\n",
-			i, prAdapter->rWifiVar.aucP2pDeviceAddress[i],
-			prAdapter->rWifiVar.aucP2pInterfaceAddress[i]);
+			i, MAC2STR(prAdapter->rWifiVar.aucP2pDeviceAddress[i]),
+			MAC2STR(prAdapter->rWifiVar.aucP2pInterfaceAddress[i]));
 	}
 }
 #endif

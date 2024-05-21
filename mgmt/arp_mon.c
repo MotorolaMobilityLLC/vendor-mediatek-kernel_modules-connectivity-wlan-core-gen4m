@@ -837,7 +837,7 @@ static void arpMonGetUnicastPktTime(struct ADAPTER *ad, struct SW_RFB *prSwRfb)
 	getSrcMac(prSwRfb->pvHeader, prSwRfb->u2PacketLen, rSrcMacAddr);
 	DBGLOG(AM, LOUD, "RX GatewayMac:" MACSTR " SrcMac:" MACSTR "\n",
 		MAC2STR(arpMonGetGatewayMacPtr(ad, ucBssIdx)),
-		rSrcMacAddr);
+		MAC2STR(rSrcMacAddr));
 
 	u4LastUnicastRxTime = prRxCtrl->u4LastUnicastRxTime[ucBssIdx];
 	if (!arpMonEqualGatewayMac(ad, ucBssIdx, rSrcMacAddr))
@@ -888,12 +888,12 @@ u_int8_t arpMonIpIsCritical(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo)
 				      prArp->aucTargetIPaddr)) {
 
 		DBGLOG(TX, TRACE, "ARP to " IPV4STR " is non-critical\n",
-		       prArp->aucTargetIPaddr);
+		       IPV4TOSTR(prArp->aucTargetIPaddr));
 		return FALSE;
 	}
 
 	DBGLOG(TX, TRACE, "ARP to " IPV4STR " is critical\n",
-	       prArp->aucTargetIPaddr);
+	       IPV4TOSTR(prArp->aucTargetIPaddr));
 	return TRUE;
 }
 

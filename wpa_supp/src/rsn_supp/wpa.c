@@ -535,7 +535,7 @@ static int wpa_supplicant_install_ptk(struct wpa_sm *sm,
 					   sm->ptk.tk, keylen) < 0) {
 		/*wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,
 		*		"WPA: Failed to set PTK to the
-		*		driver (alg=%d keylen=%d bssid=)",
+		*		driver (alg=%d keylen=%d bssid=" MACSTR ")",
 		*		alg, keylen, MAC2STR(sm->bssid));
 		*/
 		return -1;
@@ -733,8 +733,7 @@ wpa_supplicant_install_igtk(struct wpa_sm *sm,
 	}
 
 	wpa_dbg(sm->ctx->msg_ctx, MSG_DEBUG,
-		"WPA: IGTK keyid %d pn %02x%02x%02x%02x%02x%02x", keyidx,
-		MAC2STR(igtk->pn));
+		"WPA: IGTK keyid %d pn " MACSTR, keyidx, MAC2STR(igtk->pn));
 	wpa_hexdump_key(MSG_DEBUG, "WPA: IGTK", igtk->igtk, len);
 	if (keyidx > 4095) {
 		wpa_msg(sm->ctx->msg_ctx, MSG_WARNING,

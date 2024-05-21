@@ -11712,11 +11712,13 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 		"[SAP_Test] u2Duration = %u\n", prRxFrame->u2Duration);
 	DBGLOG(RLM, INFO,
 		"[SAP_Test] aucDestAddr = " MACSTR "\n",
-		prRxFrame->aucDestAddr);
+		MAC2STR(prRxFrame->aucDestAddr));
 	DBGLOG(RLM, INFO,
-		"[SAP_Test] aucSrcAddr = " MACSTR "\n", prRxFrame->aucSrcAddr);
+		"[SAP_Test] aucSrcAddr = " MACSTR "\n",
+		MAC2STR(prRxFrame->aucSrcAddr));
 	DBGLOG(RLM, INFO,
-		"[SAP_Test] aucBSSID = " MACSTR "\n", prRxFrame->aucBSSID);
+		"[SAP_Test] aucBSSID = " MACSTR "\n",
+		MAC2STR(prRxFrame->aucBSSID));
 	DBGLOG(RLM, INFO,
 		"[SAP_Test] u2SeqCtrl = %u\n", prRxFrame->u2SeqCtrl);
 	DBGLOG(RLM, INFO,
@@ -11771,7 +11773,7 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 				prBeaconReportIE->ucRSNI);
 			DBGLOG(RLM, INFO,
 				"[SAP_Test] aucBSSID = " MACSTR "\n",
-				prBeaconReportIE->aucBSSID);
+				MAC2STR(prBeaconReportIE->aucBSSID));
 			DBGLOG(RLM, INFO,
 				"[SAP_Test] ucAntennaID = %d\n",
 				prBeaconReportIE->ucAntennaID);
@@ -11801,7 +11803,7 @@ void rlmMulAPAgentProcessRadioMeasurementResponse(
 
 	DBGLOG(RLM, INFO,
 		"[SAP_Test] mStaMac = " MACSTR "\n",
-		prRxFrame->aucSrcAddr);
+		MAC2STR(prRxFrame->aucSrcAddr));
 	DBGLOG(RLM, INFO,
 		"[SAP_Test] u8ElemNum = %u\n",
 		prBcnMeasureReport->u8ElemNum);
