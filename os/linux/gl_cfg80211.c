@@ -7122,6 +7122,9 @@ int mtk_cfg80211_del_iface(struct wiphy *wiphy, struct wireless_dev *wdev)
 	/* make sure netdev is disconnected */
 	DBGLOG(REQ, INFO, "ucBssIndex = %d\n", ucBssIndex);
 	if (!kalIsResetting()) {
+		/* Clear pending request (AIS). */
+		aisFsmFlushRequest(prAdapter, ucBssIndex);
+
 		rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetDisassociate,
 				&u4DisconnectReason, sizeof(u4DisconnectReason),
 				&u4SetInfoLen, ucBssIndex);
