@@ -1195,6 +1195,13 @@ int32_t kalGetScpDumpInfo(u64 *addr, unsigned int *size)
 	return 0;
 }
 
+#if CFG_MTK_WIFI_PCIE_SR
+u_int8_t kalIsSupportPcieL2(void)
+{
+	return TRUE;
+}
+#endif
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t kalIsSupportMawd(void)
 {

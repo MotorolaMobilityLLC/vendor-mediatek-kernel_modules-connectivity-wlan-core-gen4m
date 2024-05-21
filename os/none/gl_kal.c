@@ -761,6 +761,13 @@ bool kal_is_err(void *ptr)
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__);
 }
 
+#if CFG_MTK_WIFI_PCIE_SR
+u_int8_t __weak kalIsSupportPcieL2(void)
+{
+	return FALSE;
+}
+#endif
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 u_int8_t __weak kalIsSupportMawd(void)
 {
