@@ -2368,28 +2368,24 @@ static bool need_manipulate_priority_for_udp(
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	uint8_t ucUserPriority;
 	uint16_t u2EtherType = 0;
 	struct iphdr *iph = NULL;
 	struct ipv6hdr *ipv6h = NULL;
-	static const uint32_t WLAN_DRV_READY =
-		WLAN_DRV_READY_CHECK_WLAN_ON |
-		WLAN_DRV_READY_CHECK_HIF_SUSPEND |
-		WLAN_DRV_READY_CHECK_RESET;
-
 	if (!skb)
 		return FALSE;
 
 	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(skb->dev));
 
-	if (unlikely(!prGlueInfo ||
-		     !wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY)))
+	if (unlikely(!prGlueInfo || kalIsHalted()))
 		return FALSE;
-
 
 	prAdapter = prGlueInfo->prAdapter;
 	if (unlikely(!prAdapter) ||
 	    !prAdapter->rManipulateTidInfo.fgManipulateTidEnabled)
 		return FALSE;
+
+	ucUserPriority = prAdapter->rManipulateTidInfo.ucUserPriority;
 
 	u2EtherType = NTOHS(skb_eth_hdr(skb)->h_proto);
 
@@ -2401,8 +2397,7 @@ static bool need_manipulate_priority_for_udp(
 		DBGLOG(TX, TEMP, "IPv4 protocol = [%d]\n", iph->protocol);
 
 		if (iph->protocol == IPPROTO_UDP) {
-			*pucUserPriority =
-				prAdapter->rManipulateTidInfo.ucUserPriority;
+			*pucUserPriority = ucUserPriority;
 			return TRUE;
 		}
 	} else if (u2EtherType == ETH_P_IPV6) {
@@ -2411,8 +2406,7 @@ static bool need_manipulate_priority_for_udp(
 		DBGLOG(TX, TEMP, "IPv6 protocol = [%d]\n", ipv6h->nexthdr);
 
 		if (ipv6h->nexthdr == IPPROTO_UDP) {
-			*pucUserPriority =
-				prAdapter->rManipulateTidInfo.ucUserPriority;
+			*pucUserPriority = ucUserPriority;
 			return TRUE;
 		}
 	}
@@ -2430,10 +2424,6 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 	struct BSS_INFO *prBssInfo;
 	struct STA_RECORD *prStaRec = NULL;
 	uint8_t ucBssIdx;
-	static const uint32_t WLAN_DRV_READY =
-		WLAN_DRV_READY_CHECK_WLAN_ON |
-		WLAN_DRV_READY_CHECK_HIF_SUSPEND |
-		WLAN_DRV_READY_CHECK_RESET;
 
 	_Static_assert(sizeof(struct cfg80211_qos_map) ==
 			sizeof(struct QOS_MAP),
@@ -2453,7 +2443,7 @@ static struct cfg80211_qos_map *get_qos_map(struct net_device *dev)
 		if (unlikely(!prGlueInfo))
 			break;
 
-		if (unlikely(!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY))) {
+		if (unlikely(kalIsHalted())) {
 			DBGLOG(TX, WARN, "Driver is not ready\n");
 			break;
 		}
@@ -4118,6 +4108,7 @@ static void wlanNetUnregister(struct wireless_dev *prWdev)
 	if (netif_carrier_ok(prGlueInfo->prDevHandler))
 		netif_carrier_off(prGlueInfo->prDevHandler);
 	netif_tx_stop_all_queues(prGlueInfo->prDevHandler);
+	netif_tx_disable(prGlueInfo->prDevHandler);
 
 #if !CFG_SUPPORT_PERSIST_NETDEV
 	{
