@@ -2650,6 +2650,9 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	if (!RX_GET_FREE_RFB_CNT(prRxCtrl)) {
 		DBGLOG_LIMITED(RX, WARN, "No More RFB for P[%u], Ind=%u\n",
 				u4Port, RX_GET_INDICATED_RFB_CNT(prRxCtrl));
+#if CFG_RFB_RECOVERY
+		kalRxRFBFailRecoveryCheck(prGlueInfo);
+#endif
 		KAL_SET_BIT(u4Port, prAdapter->ulNoMoreRfb);
 		goto end;
 	}
@@ -2679,11 +2682,11 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 	QUEUE_INITIALIZE(prFreeSwRfbList);
 	QUEUE_INITIALIZE(prReceivedRfbList);
 
-#if CFG_RFB_TRACK
-	nicRxDequeueFreeQue(prAdapter, u4RxCnt, prFreeSwRfbList, RFB_TRACK_HIF);
-#else /* CFG_RFB_TRACK */
-	nicRxDequeueFreeQue(prAdapter, u4RxCnt, prFreeSwRfbList);
-#endif /* CFG_RFB_TRACK */
+	NIC_RX_DEQUEUE_FREE_QUE(prAdapter, u4RxCnt, prFreeSwRfbList,
+			RFB_TRACK_HIF);
+
+	RX_ADD_CNT(prRxCtrl, RX_PDMA_RECEIVE_RFB_COUNT,
+		prFreeSwRfbList->u4NumElem);
 	if (prFreeSwRfbList->u4NumElem < u4RxCnt) {
 		DBGLOG_LIMITED(RX, WARN,
 			"No More RFB for P[%u], RxCnt:%u, RfbCnt:%u, Ind:%u\n",
@@ -2828,8 +2831,10 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	HAL_SET_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
-	nicRxConcatFreeQue(prAdapter, prFreeSwRfbList);
-	nicRxConcatRxQue(prAdapter, prReceivedRfbList);
+	NIC_RX_CONCAT_FREE_QUE(prAdapter, prFreeSwRfbList);
+	NIC_RX_CONCAT_RX_QUE(prAdapter, prReceivedRfbList);
+
+	RX_RESET_CNT(prRxCtrl, RX_PDMA_RECEIVE_RFB_COUNT);
 
 	prRxRing->u4PendingCnt = u4RxCnt - u4RxSuccessCnt;
 
@@ -6802,15 +6807,22 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	}
 #endif /* CFG_SUPPORT_HOST_OFFLOAD */
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" Msdu[%u/%u] Tok[%u/%u/%u] Rfb[%u/%u/%u/%u]",
+			" Msdu[%u/%u] Tok[%u/%u/%u]",
 			prTxCtrl->rFreeMsduInfoList.u4NumElem,
 			CFG_TX_MAX_PKT_NUM,
 			GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt),
 			GLUE_GET_REF_CNT(prTokenInfo->u4TokenNum),
-			GLUE_GET_REF_CNT(prTokenInfo->u4FifoErrCnt),
+			GLUE_GET_REF_CNT(prTokenInfo->u4FifoErrCnt));
+	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
+			" Rfb[%u/%u/%u/%u/%u/%u/%u/%u/%u]",
 			RX_GET_FREE_RFB_CNT(prRxCtrl),
+			RX_GET_HIF_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_RECEIVED_RFB_CNT(prRxCtrl),
+			RX_GET_REORDERING_TOTAL_CNT(prAdapter),
+			RX_GET_PENDING_RFB_CNT(prAdapter),
 			RX_GET_INDICATED_RFB_CNT(prRxCtrl),
 			RX_GET_UNUSE_RFB_CNT(prRxCtrl),
+			KAL_GET_FIFO_CNT(prGlueInfo),
 			CFG_RX_MAX_PKT_NUM);
 #if CFG_SUPPORT_DYNAMIC_PAGE_POOL
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,

@@ -973,14 +973,20 @@ static inline void kalCfg80211VendorEvent(void *pvPacket)
 	kfifo_out_locked((_prFiFoQ), &(_rObj), sizeof(_rObj), (_lock))
 #define KAL_FIFO_LEN(_prFiFoQ) \
 	kfifo_len((_prFiFoQ))
-#define KAL_FIFO_CNT(_prFiFoQ) \
-	(KAL_FIFO_LEN(_prFiFoQ) / sizeof(void *))
 #define KAL_FIFO_AVAIL(_prFiFoQ) \
 	kfifo_avail((_prFiFoQ))
 #define KAL_FIFO_IS_EMPTY(_prFiFoQ) \
 	kfifo_is_empty((_prFiFoQ))
 #define KAL_FIFO_IS_FULL(_prFiFoQ) \
 	kfifo_is_full((_prFiFoQ))
+#if CFG_SUPPORT_RX_NAPI
+#define KAL_GET_FIFO_CNT(_prGlueInfo) \
+	((unsigned int) (KAL_FIFO_LEN((&_prGlueInfo->rRxKfifoQ)) \
+		/ sizeof(void *)))
+#else
+#define KAL_GET_FIFO_CNT(_prGlueInfo) (0)
+#endif
+
 
 #define KAL_MB_RW() \
 ({ \
@@ -1736,6 +1742,9 @@ uint32_t kalRxIndicatePkts(struct GLUE_INFO *prGlueInfo,
 
 uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			     *prGlueInfo, void *pvPkt);
+#if CFG_RFB_RECOVERY
+void kalRxRFBFailRecoveryCheck(struct GLUE_INFO *prGlueInfo);
+#endif
 
 #if CFG_SUPPORT_NAN
 int kalIndicateNetlink2User(struct GLUE_INFO *prGlueInfo, void *pvBuf,

@@ -732,6 +732,9 @@
 						CFG_NUM_OF_RX1_HIF_DESC) * 3 \
 						+ CFG_NUM_OF_QM_RX_PKT_NUM)
 
+#define CFG_RX_RFB_MEM_LEAK_THRESHOLD		(CFG_RX_MAX_PKT_NUM / 10)
+#define CFG_RX_RFB_MEM_LEAK_INTERVAL		(1000)
+
 #define CFG_RX_REORDER_Q_THRESHOLD              8
 
 #ifndef LINUX
@@ -2545,6 +2548,10 @@
 #ifndef CFG_RFB_TRACK
 #define CFG_RFB_TRACK 0
 #endif /* CFG_RFB_TRACK */
+
+#ifndef CFG_RFB_RECOVERY
+#define CFG_RFB_RECOVERY 0
+#endif /* CFG_RFB_RECOVERY */
 
 /* Check the buffer pointer in SWRFB, and attempt to correct from skb->data
  * if the skb->head recognized as a valid address.
