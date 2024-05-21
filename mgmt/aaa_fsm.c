@@ -331,9 +331,6 @@ bow_proc:
 		} else if (ucRxMode == TX_RATE_MODE_MLRP) {
 			prStaRec->ucMlrSupportBitmap |= MLR_MODE_MLR_PLUS;
 		}
-
-		prStaRec->fgIsMlrSupported =
-			MLR_BIT_SUPPORT(prStaRec->ucMlrSupportBitmap);
 #endif
 		/* update RCPI */
 		ASSERT(prSwRfb->prRxStatusGroup3);

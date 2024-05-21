@@ -852,7 +852,6 @@ struct STA_RECORD {
 
 #if CFG_SUPPORT_MLR
 	/* Peer MLR capability */
-	u_int8_t fgIsMlrSupported;
 	uint8_t ucMlrSupportBitmap;
 	/* Peer MLR status */
 	uint8_t ucMlrMode;
