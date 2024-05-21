@@ -2300,7 +2300,6 @@ start_dump_via_bt:
 	mt6653_dumpWfBusReg(ad, TRUE);
 	mt6653_dumpPcGprLog(ad, TRUE);
 	mt6653_dumpWfsyscpupcr(ad);
-	mt6653_dumpRV55CoreReg(ad);
 
 	fgIsBusAccessFailed = fgIsBusAccessFailedBak;
 
