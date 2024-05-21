@@ -14,7 +14,8 @@ extern unsigned long long gConEmiSize;
 #endif
 
 #define EMI_NAME		"WIFI-EMI"
-#define WIFI_EMI_ADDR_MASK	0xFFFFFF
+/* connsys hw maximum capability: 64MB */
+#define WIFI_EMI_ADDR_MASK	0x3FFFFFF
 
 enum EMI_ALLOC_TYPE {
 	EMI_ALLOC_TYPE_NONE,
