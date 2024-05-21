@@ -3916,10 +3916,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					(prStaRec->u2VhtRxMcsMapAssoc &
 					VHT_CAP_INFO_MCS_1SS_MASK);
 			}
-			DBGLOG(RLM, INFO,
-				"[OP Mode IE] NSS=%x RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
-				ucVhtOpModeRxNss, prStaRec->u2VhtRxMcsMap,
-				prStaRec->u2VhtRxMcsMapAssoc);
 
 #if (CFG_SUPPORT_802_11AX == 1)
 			u2HeRxMcsMapAssoc = prStaRec->u2HeRxMcsMapBW80Assoc;
@@ -3943,12 +3939,6 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					HE_CAP_INFO_MCS_1SS_MASK);
 			}
 
-			DBGLOG(RLM, INFO,
-				"[OP Mode IE] HeBW80, NSS=%d, RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
-				ucVhtOpModeRxNss,
-				prStaRec->u2HeRxMcsMapBW80,
-				prStaRec->u2HeRxMcsMapBW80Assoc);
-
 			if (ucMaxBwAllowed >= MAX_BW_160MHZ) {
 				u2HeRxMcsMapAssoc =
 					prStaRec->u2HeRxMcsMapBW160Assoc;
@@ -3971,13 +3961,16 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						(u2HeRxMcsMapAssoc &
 						HE_CAP_INFO_MCS_1SS_MASK);
 				}
-
-				DBGLOG(RLM, INFO,
-					"[OP Mode IE] HeBW160, NSS=%d, RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
-					ucVhtOpModeRxNss,
-					prStaRec->u2HeRxMcsMapBW160,
-					prStaRec->u2HeRxMcsMapBW160Assoc);
 			}
+			DBGLOG(RLM, INFO,
+				"[OP Mode IE] NSS=%d,MaxBW=%d,(RxMcsMap,McsMapAssoc):(0x%x,0x%x)BW80(0x%x,0x%x)BW160(0x%x,0x%x)\n",
+				ucVhtOpModeRxNss, ucMaxBwAllowed,
+				prStaRec->u2VhtRxMcsMap,
+				prStaRec->u2VhtRxMcsMapAssoc,
+				prStaRec->u2HeRxMcsMapBW80,
+				prStaRec->u2HeRxMcsMapBW80Assoc,
+				prStaRec->u2HeRxMcsMapBW160,
+				prStaRec->u2HeRxMcsMapBW160Assoc);
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			if (fgIsRx1ss)
 				prStaRec->u2He6gBandCapInfo &=
@@ -3986,6 +3979,11 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				prStaRec->u2He6gBandCapInfo |=
 					HE_6G_CAP_INFO_SM_POWER_SAVE;
 #endif
+#else
+			DBGLOG(RLM, INFO,
+				"[OP Mode IE] NSS=%x RxMcsMap:0x%x, McsMapAssoc:0x%x\n",
+				ucVhtOpModeRxNss, prStaRec->u2VhtRxMcsMap,
+				prStaRec->u2VhtRxMcsMapAssoc);
 #endif /* CFG_SUPPORT_802_11AX == 1 */
 			break;
 		default:
