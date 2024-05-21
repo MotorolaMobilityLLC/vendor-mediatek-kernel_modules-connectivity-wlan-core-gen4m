@@ -419,6 +419,9 @@ uint32_t TdlsAutoTeardown(
 			bss,
 			sta->aucAddr);
 
+		if (!s)
+			return TDLS_STATUS_FAIL;
+
 		kalTdlsOpReq(
 			ad->prGlueInfo,
 			s->ucBssIndex,
