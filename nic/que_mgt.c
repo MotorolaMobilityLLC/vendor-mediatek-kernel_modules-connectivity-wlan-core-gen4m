@@ -8713,8 +8713,7 @@ void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 	kalSetEvent(prAdapter->prGlueInfo);
 }
 
-void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
-			uint8_t ucBssIndex)
+void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct BSS_INFO *prBssInfo;
 	struct AIS_FSM_INFO *prAisFsmInfo = (struct AIS_FSM_INFO *) NULL;
@@ -8723,10 +8722,11 @@ void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,
 		return;
 
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+
 	if (prBssInfo == NULL)
 		return;
 
-	if (IS_BSS_AIS(prBssInfo)) { /* STA */
+	if (IS_BSS_AIS(prBssInfo) && ucBssIndex < MAX_BSSID_NUM) { /* STA */
 		prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 
 		if (!timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
