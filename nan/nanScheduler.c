@@ -4271,7 +4271,8 @@ nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx) {
 
 				/* Update used band to peer schedule record */
 				eBand = nanRegGetNanChnlBand(rLocalChnlInfo);
-				i4SlotNum[eBand - 1]++;
+				if (unlikely(eBand != BAND_NULL))
+					i4SlotNum[eBand - 1]++;
 				break;
 			}
 		}
