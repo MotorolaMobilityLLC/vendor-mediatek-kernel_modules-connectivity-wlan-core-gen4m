@@ -215,7 +215,8 @@ void p2pFuncReleaseCh(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
-		uint8_t ucChannel, uint8_t ucAvailable);
+	uint8_t ucAvailable, uint8_t ucChannel,
+	enum ENUM_MAX_BANDWIDTH_SETTING eBw);
 
 void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 		uint16_t ucFilteredCh, uint8_t ucFilteredBw,
@@ -610,6 +611,11 @@ uint8_t p2pFuncSapFilteredChListGen(
 void p2pFuncGetChBwBitmap(
 		struct ADAPTER *prAdapter,
 		struct P2P_CH_BW_RANGE *prP2pChBwRange);
+
+uint8_t
+p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
+			     enum ENUM_BAND eBandPrefer,
+			     uint8_t ucTopPreferNum, uint32_t *pu4Freq);
 
 uint8_t p2pFuncGetFreqAllowList(struct ADAPTER *prAdapter,
 			      uint32_t *pau4AllowFreqList);

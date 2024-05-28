@@ -1367,6 +1367,19 @@ enum BOOTMODE {
 	UNKNOWN_BOOT
 };
 
+enum DFS_CHANNEL_CTRL_SOURCE {
+	DFS_CHANNEL_CTRL_SOURCE_STA,
+	DFS_CHANNEL_CTRL_SOURCE_SAP,
+	DFS_CHANNEL_CTRL_SOURCE_DBG,
+	DFS_CHANNEL_CTRL_SOURCE_NUM
+};
+
+struct WLAN_DFS_CHANNEL_REQ_ENTRY {
+	enum DFS_CHANNEL_CTRL_SOURCE eSource;
+	u_int8_t fgValid;
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -1846,12 +1859,29 @@ void kalMetInit(struct GLUE_INFO *prGlueInfo);
 
 void wlanUpdateChannelTable(struct GLUE_INFO *prGlueInfo);
 
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-void wlanUpdateDfsChannelTable(struct GLUE_INFO *prGlueInfo,
-		uint8_t ucRoleIdx, uint8_t ucChannel, uint8_t ucBandWidth,
-		enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
-		enum ENUM_BAND eBand);
-#endif
+uint32_t wlanDfsChannelsReqInit(struct ADAPTER *prAdapter);
+
+void wlanDfsChannelsReqDeInit(struct ADAPTER *prAdapter);
+
+void wlanDfsChannelsReqDump(struct ADAPTER *prAdapter);
+
+uint32_t wlanDfsChannelsReqAdd(struct ADAPTER *prAdapter,
+	enum DFS_CHANNEL_CTRL_SOURCE eSource,
+	uint8_t ucChannel, uint8_t ucBandWidth,
+	enum ENUM_CHNL_EXT eBssSCO, uint32_t u4CenterFreq,
+	enum ENUM_BAND eBand);
+
+void wlanDfsChannelsReqDel(struct ADAPTER *prAdapter,
+	enum DFS_CHANNEL_CTRL_SOURCE eSource);
+
+uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex);
+
+void wlanDfsChannelsNotifyStaDisconnected(struct ADAPTER *prAdapter,
+	uint8_t ucAisIndex);
+
+u_int8_t wlanDfsChannelsAllowdBySta(struct ADAPTER *prAdapter,
+	struct RF_CHANNEL_INFO *prRfChnlInfo);
 
 #if (CFG_MTK_ANDROID_WMT || WLAN_INCLUDE_PROC) && CFG_ENABLE_WIFI_DIRECT
 int set_p2p_mode_handler(struct net_device *netdev,

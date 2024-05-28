@@ -3036,6 +3036,10 @@ struct ADAPTER {
 #endif
 	uint32_t u4CurPrdcIntTime;
 
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY
+		aucDfsAisChnlReqEntries[KAL_AIS_NUM];
+	struct WLAN_DFS_CHANNEL_REQ_ENTRY
+		aucDfsChnlReqEntries[DFS_CHANNEL_CTRL_SOURCE_NUM];
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A
