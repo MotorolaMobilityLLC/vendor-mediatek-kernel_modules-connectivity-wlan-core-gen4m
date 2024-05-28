@@ -11664,7 +11664,7 @@ uint32_t wlanPktTxDone(struct ADAPTER *prAdapter,
 
 	/* Unit: TU (1024 micro seconds, 1.024 milliseconds) */
 	kalSnprintf(aucDelayInfo, sizeof(aucDelayInfo),
-		    "Xmit~Hif:%lu.%lu Hif~Done:%lu.%lu",
+		    "Xmit~Hif:%u.%03u Hif~Done:%u.%03u",
 		    u4DelayXmitToHif >> 10, u4DelayXmitToHif & BITS(0, 9),
 		    u4DelayHifToDone >> 10, u4DelayHifToDone & BITS(0, 9));
 #endif
