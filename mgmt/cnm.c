@@ -5839,7 +5839,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 			prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 			DBGLOG(CNM, INFO,
 				"Bss[%d] is in roaming state\n", ucBssIndex);
-			return CNM_OPMODE_REQ_STATUS_DEFER;
+			ucSendAct = FALSE;
 		}
 #endif
 		/* Step 3. Special rule for BW change (DBDC)
