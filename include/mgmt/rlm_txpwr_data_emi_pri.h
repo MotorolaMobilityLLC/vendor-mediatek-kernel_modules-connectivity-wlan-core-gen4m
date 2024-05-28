@@ -9097,6 +9097,7 @@ struct COUNTRY_POWER_LIMIT_TABLE_CONFIGURATION_EHT
 			77, 77, 77,  /* EHT996X3 L,H,U*/
 			78, 78, 78}  /* EHT996X3_484 L,H,U*/
 	}
+	,
 	{	{'U', 'S'}
 		, 137,
 			{40, 40, 40, /* EHT26 L,H,U */
