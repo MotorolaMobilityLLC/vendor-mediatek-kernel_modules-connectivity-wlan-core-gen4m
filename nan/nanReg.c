@@ -618,12 +618,13 @@ union _NAN_BAND_CHNL_CTRL nanRegGenNanChnlInfoByPriChannel(uint8_t ucPriChannel,
 			break;
 		}
 	}
-	DBGLOG(NAN, INFO, "fgFound=%u, check idx=%u, oc=%u, ucCenterChnl=%u\n",
-	       fgFound, u4Idx, g_rNanRegInfo[u4Idx].ucOperatingClass,
-	       ucCenterChnl);
 
 	if (!fgFound)
 		return g_rNullChnl;
+
+	DBGLOG(NAN, INFO, "fgFound=%u, check idx=%u, oc=%u, ucCenterChnl=%u\n",
+	       fgFound, u4Idx, g_rNanRegInfo[u4Idx].ucOperatingClass,
+	       ucCenterChnl);
 
 	eSco = nanRegGetSco(g_rNanRegInfo[u4Idx].ucOperatingClass);
 
