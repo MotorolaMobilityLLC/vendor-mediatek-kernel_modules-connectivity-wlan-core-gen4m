@@ -2121,10 +2121,6 @@ void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_d,
 		fgIsDumpViaBt);
 
-	/* SectionE - Dump wf_top_rgu_von monflg */
-	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_e,
-		fgIsDumpViaBt);
-
 	/* SectionF - Dump wf_top_slpprot_on debug CR */
 	mt6653_dump_debug_sop(ad, &mt6653_dump_list_wf_top_f,
 		fgIsDumpViaBt);
