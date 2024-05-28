@@ -843,11 +843,15 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 #endif
 exit:
 #if CFG_SUPPORT_PCIE_ASPM
-	prGlueInfo = prAdapter->prGlueInfo;
-	if (prChipInfo && prChipInfo->bus_info && prGlueInfo) {
-		prBusInfo = prChipInfo->bus_info;
-		if (prBusInfo->configPcieAspm)
-			prBusInfo->configPcieAspm(prGlueInfo, TRUE, 3);
+	if (prAdapter) {
+		prGlueInfo = prAdapter->prGlueInfo;
+		if (prGlueInfo && prChipInfo &&
+			prChipInfo->bus_info) {
+			prBusInfo = prChipInfo->bus_info;
+			if (prBusInfo->configPcieAspm)
+				prBusInfo->configPcieAspm(prGlueInfo,
+					TRUE, 3);
+		}
 	}
 #endif
 	fgIsMcuOff = FALSE;
