@@ -3079,6 +3079,7 @@ void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo)
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalP2pChnlSwitchNotifyWork);
+	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
 #endif
 }
 
