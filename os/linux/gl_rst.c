@@ -714,10 +714,15 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 				char reason[64] = {0};
 
 				u4RstFlag |= RST_FLAG_WHOLE_RESET;
-				kalSnprintf(&reason, sizeof(reason), "%s%s",
-					apucRstReason[eResetReason],
-					UPGRATE_TO_L0_PATTERN);
-				glSetRstReasonString(reason);
+				if (eResetReason == RST_CMD_TRIGGER) {
+					kalSnprintf(&reason, sizeof(reason),
+						"%s%s",
+						apucRstReason[eResetReason],
+						UPGRATE_TO_L0_PATTERN);
+					glSetRstReasonString(reason);
+				} else
+					glSetRstReasonString(
+						apucRstReason[eResetReason]);
 			}
 		}
 	}

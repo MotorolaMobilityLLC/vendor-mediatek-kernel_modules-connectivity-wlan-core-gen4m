@@ -533,7 +533,7 @@ struct BUS_INFO {
 	int (*wf_power_dump_end)(void *priv_data);
 #endif
 #if CFG_SUPPORT_PCIE_ASPM
-	void (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
+	uint32_t (*configPcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
 		u_int enable_role);
 	void (*updatePcieAspm)(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 	void (*keepPcieWakeup)(struct GLUE_INFO *prGlueInfo, u_int8_t fgWakeup);
