@@ -5566,7 +5566,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo)
 {
 
-	uint8_t ucOpMaxBw, ucLimitedBw = MAX_BW_20MHZ;
+	uint8_t ucOpMaxBw, ucLimitedBw = MAX_BW_NUM;
 	uint8_t ucS1 = 0;
 
 	if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT) {
@@ -5610,44 +5610,40 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			/* Try if there is valid S1 for BW160 if we failed to
 			 * get S1 for BW320.
 			 */
-			if (ucS1 == 0 &&
-			   (ucOpMaxBw == MAX_BW_320_1MHZ ||
-			    ucOpMaxBw == MAX_BW_320_2MHZ)) {
+			if (ucS1 == 0 && ucOpMaxBw >= MAX_BW_320_1MHZ) {
+				ucLimitedBw = MAX_BW_160MHZ;
 				ucS1 = nicGetS1(prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
-					rlmGetVhtOpBwByBssOpBw(MAX_BW_160MHZ));
-
-				if (ucS1) /* Fallback to BW80 */
-					ucOpMaxBw = MAX_BW_160MHZ;
+					rlmGetVhtOpBwByBssOpBw(ucLimitedBw));
 			}
 
 			/* Try if there is valid S1 for BW80 if we failed to
 			 * get S1 for BW160.
 			 */
-			if (ucS1 == 0 && ucOpMaxBw == MAX_BW_160MHZ) {
+			if (ucS1 == 0 && ucOpMaxBw >= MAX_BW_160MHZ) {
+				ucLimitedBw = MAX_BW_80MHZ;
 				ucS1 = nicGetS1(prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
-					rlmGetVhtOpBwByBssOpBw(MAX_BW_80MHZ));
-
-				if (ucS1) /* Fallback to BW80 */
-					ucOpMaxBw = MAX_BW_80MHZ;
+					rlmGetVhtOpBwByBssOpBw(ucLimitedBw));
 			}
 
-			if (ucS1 == 0) { /* Invalid S1 */
-				DBGLOG(CNM, INFO,
-					"fallback to BW20, BssIdx[%d], CH[%d], MaxBw[%d]\n",
-					prBssInfo->ucBssIndex,
-					prBssInfo->ucPrimaryChannel,
-					ucOpMaxBw);
+			if (ucS1 == 0)
+				ucLimitedBw = MAX_BW_20MHZ;
 
-				ucOpMaxBw = MAX_BW_20MHZ;
+			if (ucOpMaxBw > ucLimitedBw) {
+				DBGLOG(CNM, INFO,
+					"Downgrade Bss[%d] bw from %u to %u, Due to CH=%u\n",
+					prBssInfo->ucBssIndex,
+					ucOpMaxBw, ucLimitedBw,
+					prBssInfo->ucPrimaryChannel);
+				ucOpMaxBw = ucLimitedBw;
 			}
 		}
 
 		/* The limited BW is decided by DRV/FW capability.
-		 * It should be modified if someday BW_80_80 or
-		 * BW_320_2 supported.
+		 * It should be modified if someday BW_80_80 supported.
 		 */
+		ucLimitedBw = MAX_BW_20MHZ;
 		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_HT)
 			ucLimitedBw = MAX_BW_40MHZ;
 
@@ -5663,12 +5659,12 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE == 1)
 		if (prBssInfo->ucPhyTypeSet & PHY_TYPE_BIT_EHT)
-			ucLimitedBw = MAX_BW_320_1MHZ;
+			ucLimitedBw = MAX_BW_320_2MHZ;
 #endif
 
 		if (ucOpMaxBw > ucLimitedBw) {
 			DBGLOG(CNM, INFO,
-				"Downgrade Bss[%d] bw from %u to %u, PhyType=0x%x\n",
+				"Downgrade Bss[%d] bw from %u to %u, Due to PhyType=0x%x\n",
 				prBssInfo->ucBssIndex,
 				ucOpMaxBw, ucLimitedBw,
 				prBssInfo->ucPhyTypeSet);
