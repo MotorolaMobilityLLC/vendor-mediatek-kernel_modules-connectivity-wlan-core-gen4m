@@ -4427,6 +4427,8 @@ void nicInitMGMT(struct ADAPTER *prAdapter,
 	/* SCN Module - initialization */
 	scnInit(prAdapter);
 
+	wlanDfsChannelsReqInit(prAdapter);
+
 	if (prAdapter->u4UapsdAcBmp == 0) {
 		prAdapter->u4UapsdAcBmp = CFG_INIT_UAPSD_AC_BMP;
 	}
@@ -4494,6 +4496,8 @@ void nicUninitMGMT(struct ADAPTER *prAdapter)
 
 	/* SCN Module - unintiailization */
 	scnUninit(prAdapter);
+
+	wlanDfsChannelsReqDeInit(prAdapter);
 
 	/* RLM Module - uninitialization */
 	rlmFsmEventUninit(prAdapter);

@@ -2621,8 +2621,8 @@ void kalP2pIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 			ch_width = 20;
 			ucSecondCh = 0;
 		}
-		wlanUpdateDfsChannelTable(prGlueInfo,
-			ucRoleIndex,
+		wlanDfsChannelsReqAdd(prGlueInfo->prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_SAP,
 			ucPrimaryCh,
 			rlmGetVhtOpBwByBssOpBw(eChnlBw),
 			0,

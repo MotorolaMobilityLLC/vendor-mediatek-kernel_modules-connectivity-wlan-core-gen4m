@@ -12580,3 +12580,38 @@ void rlmGenerateTpeIE(struct ADAPTER *prAdapter,
 		prP2pSpecificBssInfo->u2TpeIeLen;
 #endif
 }
+
+enum ENUM_MAX_BANDWIDTH_SETTING
+rlmVhtBw2Bw(uint8_t ucVhtBw, enum ENUM_CHNL_EXT eSco)
+{
+	enum ENUM_MAX_BANDWIDTH_SETTING eBw;
+
+	switch (ucVhtBw) {
+	case VHT_OP_CHANNEL_WIDTH_320_1:
+		eBw = MAX_BW_320_1MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_320_2:
+		eBw = MAX_BW_320_2MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80P80:
+		eBw = MAX_BW_80_80_MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_160:
+		eBw = MAX_BW_160MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_80:
+		eBw = MAX_BW_80MHZ;
+		break;
+	case VHT_OP_CHANNEL_WIDTH_20_40:
+		if (eSco == CHNL_EXT_SCN)
+			eBw = MAX_BW_20MHZ;
+		else
+			eBw = MAX_BW_40MHZ;
+		break;
+	default:
+		eBw = MAX_BW_20MHZ;
+		break;
+	}
+
+	return eBw;
+}

@@ -2639,6 +2639,7 @@ void p2pFuncSetForceTrxConfig(struct ADAPTER *prAdapter,
 
 }
 #endif
+
 uint8_t
 p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter)
 {
@@ -2648,22 +2649,38 @@ p2pFuncGetForceTrxConfig(struct ADAPTER *prAdapter)
 	return 0;
 #endif
 }
+
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 void p2pFuncSetDfsChannelAvailable(struct ADAPTER *prAdapter,
-		uint8_t ucChannel, uint8_t ucAvailable)
+	uint8_t ucAvailable, uint8_t ucChannel,
+	enum ENUM_MAX_BANDWIDTH_SETTING eBw)
 {
+	enum ENUM_CHNL_EXT eBssSCO;
+	uint32_t u4CenterFreq;
+
 	DBGLOG(P2P, INFO,
-		"p2pFuncSetDfsChannelAvailable: channel %d %s\n", ucChannel,
-		ucAvailable == 1 ? "available" : "unavailable");
+		"%s dfs channel, channel=%d, bw=%d\n",
+		ucAvailable == 1 ? "Set" : "Unset",
+		ucChannel,
+		eBw);
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
-	wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-		-1, /* p2p role index */
-		ucAvailable == 1 ? ucChannel : 0, /* primary channel */
-		0, /* bandwidth */
-		0, /* sco */
-		0, /* center frequency */
-		0 /* eBand */);
+	if (ucAvailable == 1) {
+		eBssSCO = nicGetSco(prAdapter, BAND_5G, ucChannel);
+		u4CenterFreq = nicGetS1Freq(prAdapter, BAND_5G, ucChannel,
+			eBw);
+
+		wlanDfsChannelsReqAdd(prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_DBG,
+			ucChannel,
+			eBw, /* bandwidth */
+			eBssSCO, /* sco */
+			u4CenterFreq, /* center frequency */
+			BAND_5G /* eBand */);
+	} else {
+		wlanDfsChannelsReqDel(prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_DBG);
+	}
 #endif
 }
 
@@ -3018,16 +3035,16 @@ void p2pFuncDfsSwitchCh(struct ADAPTER *prAdapter,
 	prGlueInfo = prAdapter->prGlueInfo;
 
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
-	wlanUpdateDfsChannelTable(prGlueInfo,
-		ucRoleIdx,
-		prBssInfo->ucPrimaryChannel,
-		prBssInfo->ucVhtChannelWidth,
-		prBssInfo->eBssSCO,
-		nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000,
-		prBssInfo->eBand
-		);
+	if (fgIsPureAp)
+		wlanDfsChannelsReqAdd(prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_SAP,
+			prBssInfo->ucPrimaryChannel,
+			prBssInfo->ucVhtChannelWidth,
+			prBssInfo->eBssSCO,
+			nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000,
+			prBssInfo->eBand);
 #endif
 
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
@@ -3983,13 +4000,8 @@ p2pFuncDisconnect(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_DFS_MASTER == 1) && CFG_SUPPORT_SAP_DFS_CHANNEL
 			if (!aisGetConnectedBssInfo(prAdapter)) {
 				/* restore DFS channels table */
-				wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-					-1, /* p2p role index */
-					0, /* primary channel */
-					0, /* bandwidth */
-					0, /* sco */
-					0, /* center frequency */
-					0 /* eBand */);
+				wlanDfsChannelsReqDel(prAdapter,
+					DFS_CHANNEL_CTRL_SOURCE_SAP);
 			}
 #endif
 		} else {
@@ -8028,48 +8040,6 @@ struct BSS_INFO *p2pGetAisConnectedBss(
 		return aisGetConnectedBssInfo(ad);
 }
 
-u_int8_t p2pFuncSapOnlyCsaCheck(
-	struct ADAPTER *prAdapter,
-	uint8_t *ucStaChannelNum,
-	uint8_t *ucSapChannelNum,
-	enum ENUM_BAND *eStaBand,
-	enum ENUM_BAND *eSapBand,
-	u_int8_t fgIsSapDesense,
-	u_int8_t fgIsSapDfs)
-{
-	if (fgIsSapDfs || fgIsSapDesense) {
-		/* Choose one 2G channel */
-		*ucStaChannelNum = AP_DEFAULT_CHANNEL_2G;
-		*eStaBand = BAND_2G4;
-
-		DBGLOG(P2P, INFO,
-			"[SCC] Dfs: %d, Desense %d, Choose a channel\n",
-			fgIsSapDfs,
-			fgIsSapDesense);
-#if CFG_SUPPORT_SAP_DFS_CHANNEL
-		/* restore DFS channels table */
-		wlanUpdateDfsChannelTable(
-			prAdapter->prGlueInfo,
-			-1, /* p2p role index */
-			0, /* primary channel */
-			0, /* bandwidth */
-			0, /* sco */
-			0, /* center frequency */
-			0 /* eBand */);
-#endif
-#if CFG_CH_SELECT_ENHANCEMENT
-		return TRUE;
-	} else if (*eSapBand == BAND_5G &&
-		rlmDomainIsIndoorChannel(prAdapter,
-		 *eSapBand, *ucSapChannelNum)) {
-		/* Choose one 5G channel */
-		*ucStaChannelNum = AP_NONINDOOR_CHANNEL_5G;
-		*eStaBand = BAND_5G;
-#endif
-		return TRUE;
-	}
-	return FALSE;
-}
 void p2pFuncCrossBandChannelSwitchCheck(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prP2pBssInfo,
@@ -9209,8 +9179,8 @@ void p2pFuncSapAvailibilityCheck(
 #if CFG_SUPPORT_SAP_DFS_CHANNEL
 	for (i = 0; i < ucNumAliveNonSapBss; ++i) {
 		/* restore DFS channels table */
-		wlanUpdateDfsChannelTable(prAdapter->prGlueInfo,
-			-1, /* p2p role index */
+		wlanDfsChannelsReqAdd(prAdapter,
+			DFS_CHANNEL_CTRL_SOURCE_SAP,
 			aliveBss[i]->ucPrimaryChannel,
 			aliveBss[i]->ucVhtChannelWidth,
 			aliveBss[i]->eBssSCO,
@@ -10077,7 +10047,7 @@ exit:
  * \retval The number of the preferred freq obtained.
  */
 /*---------------------------------------------------------------------------*/
-static uint8_t
+uint8_t
 p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
 		enum ENUM_BAND eBandPrefer,
 		uint8_t ucTopPreferNum, uint32_t *pu4Freq)
@@ -11984,8 +11954,38 @@ enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 	struct RF_CHANNEL_INFO rRfChnlInfo;
 	uint8_t ucTargetOpClass;
 	enum ENUM_CSA_STATUS rStatus = CSA_STATUS_SUCCESS;
+	u_int8_t fgDfsChannel = rlmDomainIsDfsChnls(prAdapter, u4TargetCh);
+	u_int8_t fgDfsDisAllowed = TRUE;
 
-	if (rlmDomainIsDfsChnls(prAdapter, u4TargetCh))
+	/*
+	 * Allow dfs channel for p2p GO:
+	 *     1. sta connected on dfs channel
+	 *     2. p2p GO connected with clients
+	 */
+	if (fgDfsChannel && IS_BSS_APGO(prBssInfo) &&
+	    !p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[
+			     prBssInfo->u4PrivateData]) &&
+	    prBssInfo->rStaRecOfClientList.u4NumElem > 0) {
+		kalMemZero(&rRfChnlInfo, sizeof(rRfChnlInfo));
+		rRfChnlInfo.ucChannelNum = u4TargetCh;
+		rRfChnlInfo.eBand = eTargetBand;
+		rRfChnlInfo.ucChnlBw = prAdapter->rWifiVar.ucP2p5gBandwidth;
+		rRfChnlInfo.u2PriChnlFreq =
+			nicChannelNum2Freq(u4TargetCh,
+					   eTargetBand) / 1000;
+		rRfChnlInfo.u4CenterFreq1 =
+			nicGetS1Freq(prAdapter,
+				     eTargetBand,
+				     u4TargetCh,
+				     rRfChnlInfo.ucChnlBw);
+		rRfChnlInfo.u4CenterFreq2 = 0;
+
+		if (wlanDfsChannelsAllowdBySta(prAdapter,
+					       &rRfChnlInfo))
+			fgDfsDisAllowed = FALSE;
+	}
+
+	if (fgDfsChannel && fgDfsDisAllowed)
 		rStatus = CSA_STATUS_DFS_NOT_SUP;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eTargetBand == BAND_6G && !IS_6G_PSC_CHANNEL(u4TargetCh))
