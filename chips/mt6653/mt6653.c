@@ -2161,13 +2161,15 @@ static u_int8_t mt6653IsWfdmaRxReady(struct ADAPTER *prAdapter)
 	struct RTMP_DMABUF *prRingIntSta;
 	struct HIF_MEM_OPS *prMemOps;
 	struct HIF_MEM *prMem = NULL;
-	uint32_t u4Idx, u4IntSta;
+	uint32_t u4Idx, u4IntSta = 0;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prMemOps = &prHifInfo->rMemOps;
 	prRingIntSta = &prHifInfo->rRingIntSta;
-	u4IntSta = *((uint32_t *)prRingIntSta->AllocVa);
+
+	if (prRingIntSta->AllocVa)
+		u4IntSta = *((uint32_t *)prRingIntSta->AllocVa);
 
 	/* rx int & sw int */
 	if (u4IntSta & (BITS(11, 15) | BIT(27)))
@@ -2215,7 +2217,8 @@ static void mt6653ReadIntStatusByEmi(struct ADAPTER *prAdapter,
 #endif
 
 	*pu4IntStatus = 0;
-	u4RegValue = *((uint32_t *)prRingIntSta->AllocVa);
+	if (prRingIntSta->AllocVa)
+		u4RegValue = *((uint32_t *)prRingIntSta->AllocVa);
 	prHifInfo->u4IntStatus = u4RegValue & 0xFFFF;
 
 #if (CFG_SUPPORT_DISABLE_DATA_DDONE_INTR == 0)
@@ -3299,7 +3302,8 @@ recovery:
 	}
 
 #if CFG_MTK_WIFI_WFDMA_WB
-	u4IntSta = *((uint32_t *)prRingIntSta->AllocVa);
+	if (prRingIntSta->AllocVa)
+		u4IntSta = *((uint32_t *)prRingIntSta->AllocVa);
 	/* enable wfdma writeback interrupt */
 	u4Addr = WF_WFDMA_HOST_DMA0_HOST_TX_INT_WB_EN_ADDR;
 	HAL_MCR_EMI_RD(prAdapter, u4Addr, &u4Val, &fgRet);
