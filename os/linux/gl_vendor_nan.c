@@ -930,7 +930,9 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		prAdapter->fgIsNANfromHAL);
 
 	dumpMemory8((uint8_t *)data, data_len);
-	DBGLOG(INIT, INFO, "DATA len from user %d\n", data_len);
+	DBGLOG(INIT, INFO, "DATA len from user %d, lock(%d)\n",
+		data_len,
+		rtnl_is_locked());
 
 	memcpy(&nanMsgHdr, (struct _NanMsgHeader *)data,
 		sizeof(struct _NanMsgHeader));
@@ -970,7 +972,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		DBGLOG(REQ, TRACE,
 			"[DBG] NAN enable enter set_nan_handler, lock(%d)\n",
 			rtnl_is_locked());
-		set_nan_handler(wdev->netdev, 1, rtnl_is_locked());
+		set_nan_handler(wdev->netdev, 1, FALSE);
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 		wiphy_lock(wiphy);
 #else
@@ -1126,7 +1128,7 @@ int mtk_cfg80211_vendor_nan(struct wiphy *wiphy,
 		DBGLOG(REQ, TRACE,
 			"[DBG] NAN disable, enter set_nan_handler, lock(%d)\n",
 			rtnl_is_locked());
-		set_nan_handler(wdev->netdev, 0, rtnl_is_locked());
+		set_nan_handler(wdev->netdev, 0, FALSE);
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 		wiphy_lock(wiphy);
 #else
