@@ -9419,7 +9419,7 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 		}
 		GLUE_RELEASE_SPIN_LOCK(prGlueInfo, SPIN_LOCK_NET_DEV);
 #endif
-	} else if (IS_BSS_NAN(prBssInfo)) {
+	} else if (IS_BSS_NAN(prBssInfo) && ucBssIndex < MAX_BSSID_NUM) {
 #if CFG_SUPPORT_NAN
 		prNetDevice = wlanGetNetInterfaceByBssIdx(prGlueInfo,
 							  ucBssIndex);
