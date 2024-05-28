@@ -2759,6 +2759,7 @@ static s_int32 hqa_get_capability(
 	struct test_capability capability;
 	u_int32 convert, i, *cast = NULL;
 	u_int32 item_num = sizeof(struct test_capability) / 4;
+	struct GLUE_INFO *glue = wlanGetGlueInfo();
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -2774,6 +2775,12 @@ static s_int32 hqa_get_capability(
 
 	/* get content */
 	ret = mt_serv_get_capability(serv_test, &capability);
+
+	/* ext_cap.feature1: BIT0: AntSwap */
+#if CFG_SUPPORT_ANT_SWAP
+	if (glue->prAdapter->fgIsSupportAntSwp)
+		capability.ext_cap.feature1 |= BIT(0);
+#endif /* CFG_SUPPORT_ANT_SWAP */
 
 	cast = (u_int32 *)&capability;
 
