@@ -17,6 +17,10 @@ struct NETWORK_SELECTION_POLICY_BY_BAND {
 	PFN_SELECTION_POLICY_FUNC pfnNetworkSelection;
 };
 
+struct APS_INFO {
+	uint16_t u4EssApNum;
+};
+
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
 struct WFA_DESENSE_CHANNEL_LIST {
 	int8_t ucChLowerBound;

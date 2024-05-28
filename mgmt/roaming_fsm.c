@@ -1510,6 +1510,7 @@ void roamingFsmBTMTimeout(struct ADAPTER *prAdapter,
 		rRoamingData.eReason = ROAMING_REASON_BTM;
 		rRoamingData.u2Data = prBssDesc->ucRCPI;
 		rRoamingData.ucBssidx = ucBssIndex;
+		prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
 		roamingFsmRunEventDiscovery(prAdapter, &rRoamingData);
 	} else {
 		DBGLOG(ROAMING, ERROR, "[%d] Invalid BssDesc\n", ucBssIndex);

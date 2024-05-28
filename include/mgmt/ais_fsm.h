@@ -62,7 +62,9 @@
 
 /* Support AP Selection*/
 #define AIS_BLOCKLIST_TIMEOUT               15 /* seconds */
-#define AIS_AUTORN_MIN_INTERVAL		    20
+#define AIS_BLOCKLIST_TIMEOUT_DEAUTH        3600 /* seconds */
+#define AIS_DEAUTH_THRESHOLD                5
+#define AIS_AUTORN_MIN_INTERVAL             20
 
 #define AP_HASH_SIZE	256	/* Size of hash tab must be power of 2. */
 
@@ -404,6 +406,7 @@ struct AIS_BLOCKLIST_ITEM {
 	uint16_t u2DeauthReason;
 	uint16_t u2AuthStatus;
 	uint8_t ucCount;
+	uint8_t ucDeauthCount;
 	uint8_t ucSSIDLen;
 	uint8_t aucSSID[32];
 	OS_SYSTIME rAddTime;
@@ -480,9 +483,7 @@ struct AIS_FSM_INFO {
 	struct ROAMING_INFO rRoamingInfo;
 #endif	/* CFG_SUPPORT_ROAMING */
 
-#if (CFG_SUPPORT_APS == 1)
 	struct APS_INFO rApsInfo;
-#endif
 
 	struct AIS_SPECIFIC_BSS_INFO rAisSpecificBssInfo;
 
@@ -1149,11 +1150,9 @@ struct ROAMING_INFO *aisGetRoamingInfo(
 	uint8_t ucBssIndex);
 #endif
 
-#if (CFG_SUPPORT_APS == 1)
 struct APS_INFO *aisGetApsInfo(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
-#endif
 
 struct PARAM_BSSID_EX *aisGetCurrBssId(
 	struct ADAPTER *prAdapter,
