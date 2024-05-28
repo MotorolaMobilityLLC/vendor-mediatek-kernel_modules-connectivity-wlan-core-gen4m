@@ -244,6 +244,8 @@ void wlanDebugDumpCalibrationEMI(
 
 	for (i = 0; i < (u4EmiSize/1000 + 1); i++)
 		DBGLOG(INIT, INFO, "Sum[%d]=0x%08x\n", i, *(p4ucSum + i));
+
+	kalMemFree(p4ucSum, VIR_MEM_TYPE, u4ArrSize);
 #endif
 }
 
