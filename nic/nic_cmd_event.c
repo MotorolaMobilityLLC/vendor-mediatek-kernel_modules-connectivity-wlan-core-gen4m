@@ -439,6 +439,7 @@ void nicCmdEventQueryRxStatistics(struct ADAPTER
 	struct GLUE_INFO *prGlueInfo;
 	uint32_t *prElement;
 	uint32_t u4Temp;
+	uint32_t u4LoopCount;
 	/* P_CMD_ACCESS_RX_STAT                  prCmdRxStat, prRxStat; */
 
 	ASSERT(prAdapter);
@@ -459,15 +460,21 @@ void nicCmdEventQueryRxStatistics(struct ADAPTER
 
 		u4QueryInfoLen = sizeof(struct CMD_ACCESS_RX_STAT);
 
+		if (prEventAccessRxStat->u4TotalNum < HQA_RX_STATISTIC_NUM)
+			DBGLOG(INIT, WARN, "u4TotalNum=%u too small",
+			       prEventAccessRxStat->u4TotalNum);
+
+		u4LoopCount = kal_min_t(uint32_t,
+					prEventAccessRxStat->u4TotalNum,
+					HQA_RX_STATISTIC_NUM);
 		if (prRxStatistics->u4SeqNum == u4RxStatSeqNum) {
 			prElement = &g_HqaRxStat.MAC_FCS_Err;
-			for (i = 0; i < HQA_RX_STATISTIC_NUM; i++) {
+			for (i = 0; i < u4LoopCount; i++) {
 				u4Temp = NTOHL(
 					prEventAccessRxStat->au4Buffer[i]);
 				kalMemCopy(prElement, &u4Temp, 4);
 
-				if (i < (HQA_RX_STATISTIC_NUM - 1))
-					prElement++;
+				prElement++;
 			}
 
 #if 0	/* copy in for-loop */
@@ -488,16 +495,16 @@ void nicCmdEventQueryRxStatistics(struct ADAPTER
 		}
 
 		DBGLOG(INIT, ERROR,
-		       "MT6632 : RX Statistics Test SeqNum = %d, TotalNum = %d\n",
-		       (unsigned int)prEventAccessRxStat->u4SeqNum,
-		       (unsigned int)prEventAccessRxStat->u4TotalNum);
+		       "MT6632 : RX Statistics Test SeqNum = %u, TotalNum = %u\n",
+		       prEventAccessRxStat->u4SeqNum,
+		       prEventAccessRxStat->u4TotalNum);
 
 		DBGLOG(INIT, ERROR,
-		       "MAC_FCS_ERR = %d, MAC_MDRDY = %d, MU_RX_CNT = %d, RX_FIFO_FULL = %d\n",
-		       (unsigned int)prEventAccessRxStat->au4Buffer[0],
-		       (unsigned int)prEventAccessRxStat->au4Buffer[1],
-		       (unsigned int)prEventAccessRxStat->au4Buffer[65],
-		       (unsigned int)prEventAccessRxStat->au4Buffer[22]);
+		       "MAC_FCS_ERR = %u, MAC_MDRDY = %u, MU_RX_CNT = %u, RX_FIFO_FULL = %u\n",
+		       g_HqaRxStat.MAC_FCS_Err,
+		       g_HqaRxStat.MAC_Mdrdy,
+		       g_HqaRxStat.MRURxCount,
+		       g_HqaRxStat.OutOfResource);
 
 		kalOidComplete(prGlueInfo, prCmdInfo,
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
