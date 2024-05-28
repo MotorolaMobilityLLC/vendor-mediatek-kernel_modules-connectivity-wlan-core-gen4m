@@ -2855,7 +2855,10 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 #endif
 	}
 
-#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
+#if (KERNEL_VERSION(6, 8, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
+					  ucLinkIdx, ucCsaCount, fgQuiet);
+#elif (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE) || \
 	(CFG_ADVANCED_80211_MLO == 1)
 	cfg80211_ch_switch_started_notify(prNetdevice, &chandef,
 					  ucLinkIdx, ucCsaCount, fgQuiet, 0);
@@ -3030,7 +3033,10 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	mutex_lock(&prNetdevice->ieee80211_ptr->mtx);
 #endif
 
-#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(6, 8, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prNetdevice, &chandef,
+		linkIdx);
+#elif (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prNetdevice, &chandef,
 		linkIdx, 0);
 #elif (CFG_ADVANCED_80211_MLO == 1)
