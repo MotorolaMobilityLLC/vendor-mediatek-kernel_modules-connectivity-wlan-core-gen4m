@@ -12986,6 +12986,7 @@ void kalAisCsaNotifyWorkInit(struct ADAPTER *prAdapter,
 		return;
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalAisChnlSwitchNotifyWork);
+	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
 #endif
 }
 
@@ -12997,10 +12998,12 @@ void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo)
+	if (!prBssInfo ||
+		prBssInfo->rGlChSwitchWork.fgWorkInit == FALSE)
 		return;
 	cancel_work_sync(
 		&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
+	prBssInfo->rGlChSwitchWork.fgWorkInit = FALSE;
 #endif
 }
 
