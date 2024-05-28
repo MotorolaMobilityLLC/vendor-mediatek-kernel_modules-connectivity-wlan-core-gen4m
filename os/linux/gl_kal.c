@@ -39,6 +39,9 @@
 
 /* for rps */
 #include <linux/netdevice.h>
+#if KERNEL_VERSION(6, 8, 0) <= CFG80211_VERSION_CODE
+#include <net/rps.h>
+#endif
 #if KERNEL_VERSION(6, 6, 0) <= LINUX_VERSION_CODE
 #include <net/netdev_rx_queue.h>
 #endif
@@ -12924,7 +12927,10 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	mutex_lock(&prDevHandler->ieee80211_ptr->mtx);
 #endif
 
-#if (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
+#if (KERNEL_VERSION(6, 8, 0) <= CFG80211_VERSION_CODE)
+	cfg80211_ch_switch_notify(prDevHandler, &chandef,
+		linkIdx);
+#elif (KERNEL_VERSION(6, 3, 0) <= CFG80211_VERSION_CODE)
 	cfg80211_ch_switch_notify(prDevHandler, &chandef,
 		linkIdx, 0);
 #elif (CFG_ADVANCED_80211_MLO == 1)
