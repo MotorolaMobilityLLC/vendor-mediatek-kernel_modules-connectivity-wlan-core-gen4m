@@ -1884,6 +1884,8 @@ ifeq ($(CONFIG_SUPPORT_BTM_OFFLOAD), y)
     ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
 else ifeq ($(CONFIG_MTK_TC10_FEATURE), y)
     ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
+else ifeq ($(MTK_ANDROID_WMT), y)
+    ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=1
 else
     ccflags-y += -DCFG_SUPPORT_BTM_OFFLOAD=0
 endif
