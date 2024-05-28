@@ -3083,6 +3083,7 @@ int32_t wf_reg_read_wrapper(void *priv, uint32_t addr, uint32_t *value)
 
 	prReq->eOp = WF_REG_READ;
 	prReq->u4Addr = addr;
+	prReq->u4Val = 0;
 	ret = wf_reg_handle_req(glue, prReq);
 	*value = prReq->u4Val;
 
