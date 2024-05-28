@@ -37,6 +37,7 @@ struct APS_INFO {
 #endif
 	uint8_t ucConsiderEsp;
 	uint8_t fgIsGBandCoex;
+	uint16_t u4EssApNum;
 };
 
 struct AP_COLLECTION {
@@ -53,6 +54,7 @@ struct AP_COLLECTION {
 	uint8_t fgIsAllLinkConnected;
 	enum ENUM_MLO_MODE eMloMode;
 	uint8_t ucMaxSimuLinks;
+	uint8_t fgIsLastDeauth;
 	uint32_t u4TotalTput;
 	uint32_t u4TotalScore;
 	uint8_t aucAddr[MAC_ADDR_LEN]; /* mld addr or bssid */
