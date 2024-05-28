@@ -668,7 +668,8 @@ uint8_t *mldGenerateBasicCommonInfo(
 }
 
 void mldHandleRnrMlParam(struct IE_RNR *rnr,
-	struct MULTI_LINK_INFO *prMlInfo, uint8_t fgOverride)
+	struct MULTI_LINK_INFO *prMlInfo, uint8_t fgOverride,
+	uint16_t u2PayloadLength)
 {
 	uint8_t i, j, band;
 	uint8_t *pos = NULL;
@@ -693,6 +694,20 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 					>> TBTT_INFO_HDR_LENGTH_OFFSET;
 
 		DBGLOG(ML, LOUD, "dump RNR AP info field\n");
+
+		/* [FUZZ] TBTT information length should
+		 *        smaller than SW_RFB payload.
+		 */
+		if (u2PayloadLength != 0
+			&& ((4 + u2TbttInfoCount * u2TbttInfoLength)
+			> u2PayloadLength)) {
+			DBGLOG(ML, WARN,
+				"TBTT information(%u), RNR IE(%u)\n",
+				(4 + u2TbttInfoCount * u2TbttInfoLength),
+				IE_SIZE(rnr));
+			goto Next_NeighborAPInfoFileds;
+		}
+
 		DBGLOG_MEM8(ML, LOUD, pos,
 				4 + u2TbttInfoCount * u2TbttInfoLength);
 
@@ -782,7 +797,7 @@ void mldHandleRnrMlParam(struct IE_RNR *rnr,
 				prProfile->rChnlInfo.u4CenterFreq1,
 				prProfile->rChnlInfo.u4CenterFreq2);
 		}
-
+Next_NeighborAPInfoFileds:
 		pos += (4 + (u2TbttInfoCount * u2TbttInfoLength));
 	} while (pos < ((uint8_t *)rnr) + IE_SIZE(rnr));
 }
@@ -812,7 +827,7 @@ uint32_t mldGenerateMlProbeReqIE(struct BSS_DESC *prBssDesc, uint8_t *pucIE,
 
 			rnr = (struct IE_RNR *)ie;
 
-			mldHandleRnrMlParam(rnr, info, TRUE);
+			mldHandleRnrMlParam(rnr, info, TRUE, ie_len);
 		}
 	}
 
@@ -2970,7 +2985,7 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 			continue;
 
 		rnr = (struct IE_RNR *)ie;
-		mldHandleRnrMlParam(rnr, info, FALSE);
+		mldHandleRnrMlParam(rnr, info, FALSE, prSrc->u2PayloadLength);
 	}
 
 	kalMemZero(&rSsid, sizeof(rSsid));
