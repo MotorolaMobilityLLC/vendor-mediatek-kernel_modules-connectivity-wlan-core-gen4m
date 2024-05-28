@@ -178,24 +178,6 @@ os_get_time(struct os_time *t) {
 	return 0;
 }
 
-int
-os_snprintf(char *str, size_t size, const char *format, ...) {
-	va_list ap;
-	int ret = 0;
-
-	/* See http://www.ijs.si/software/snprintf/ for portable
-	 * implementation of snprintf.
-	 */
-
-	va_start(ap, format);
-	ret = vsnprintf(str, size, format, ap);
-	/*ret = rpl_vsnprintf(str, size, format, ap);*/
-	va_end(ap);
-	if (size > 0)
-		str[size - 1] = '\0';
-	return ret;
-}
-
 size_t
 os_strlen(const char *s) {
 	const char *p = s;
