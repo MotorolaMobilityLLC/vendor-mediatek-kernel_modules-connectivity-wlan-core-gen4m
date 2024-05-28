@@ -307,6 +307,13 @@ const struct nla_policy mtk_usable_channel_policy[
 	[WIFI_ATTRIBUTE_USABLE_CHANNEL_MAX_SIZE] = {.type = NLA_U32},
 };
 
+const struct nla_policy mtk_enable_sta_channel_for_peer_network_policy[
+	WIFI_ATTRIBUTE_ENABLE_STA_CHANNEL_FOR_P2P_MAX + 1] = {
+	[WIFI_ATTRIBUTE_ENABLE_STA_CHANNEL_FOR_P2P_ENABLE_FLAG] = {
+		.type = NLA_U32
+	},
+};
+
 #if CFG_SUPPORT_WIFI_ADJUST_DTIM
 const struct nla_policy mtk_set_dtim_param_policy[
 		WIFI_ATTR_SET_DTIM_MAX + 1] = {
@@ -5227,6 +5234,55 @@ int mtk_cfg80211_vendor_trigger_reset(
 	DBGLOG(REQ, INFO, "Framework trigger reset\n");
 
 	GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter, RST_FWK_TRIGGER);
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This routine is for P2P GO to add DFS channel that
+ * being used by connected AP to perfer channel list.
+ *
+ * \param[in] wiphy wiphy
+ * \param[in] wdev wireless_dev
+ * \param[in] data (not used here)
+ * \param[in] data_len (not used here)
+ *
+ * \retval 0 Success.
+ */
+/*----------------------------------------------------------------------------*/
+int mtk_cfg80211_vendor_enable_sta_channel_for_peer_network(
+	struct wiphy *wiphy, struct wireless_dev *wdev,
+	const void *data, int data_len)
+{
+	struct GLUE_INFO *prGlueInfo = wlanGetGlueInfo();
+	struct nlattr *attr;
+	uint32_t  sta_channel_for_peer_network_enable;
+
+	if (data == NULL || data_len <= 0) {
+		log_dbg(REQ, ERROR, "data error(len=%d)\n", data_len);
+		return -EINVAL;
+	}
+
+	if (!prGlueInfo) {
+		DBGLOG(REQ, WARN, "Invalid glue info\n");
+		return -EFAULT;
+	}
+	if (prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
+	attr = (struct nlattr *)data;
+
+	sta_channel_for_peer_network_enable = nla_get_u32(attr);
+
+	prGlueInfo->prAdapter->fgEnableStaDfsChannel =
+		sta_channel_for_peer_network_enable & INDOOR_CHANNEL;
+	prGlueInfo->prAdapter->fgEnableStaIndoorChannel =
+		sta_channel_for_peer_network_enable & DFS_CHANNEL;
+
+	DBGLOG(REQ, INFO, "STA_CHANNEL_FOR_P2P. (0x%x)\n",
+			sta_channel_for_peer_network_enable);
 
 	return 0;
 }

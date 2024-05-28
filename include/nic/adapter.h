@@ -44,6 +44,12 @@
 
 #define MAX_STA_INFO_MCS_NUM 32
 
+#define IS_STA_DFS_CHANNEL_ENABLED(_ad) \
+	((_ad) && (_ad)->fgEnableStaDfsChannel)
+
+#define IS_STA_INDOOR_CHANNEL_ENABLED(_ad) \
+	((_ad) && (_ad)->fgEnableStaIndoorChannel)
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -2432,6 +2438,8 @@ struct ADAPTER {
 	struct LINK_QUALITY rP2pLinkQuality;
 #endif
 #endif
+	u_int8_t fgEnableStaDfsChannel;
+	u_int8_t fgEnableStaIndoorChannel;
 
 	/* Online Scan Option */
 	u_int8_t fgEnOnlineScan;

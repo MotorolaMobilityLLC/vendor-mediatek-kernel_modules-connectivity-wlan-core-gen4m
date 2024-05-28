@@ -1898,6 +1898,24 @@ static const struct wiphy_vendor_command
 		.policy = VENDOR_CMD_RAW_DATA
 #endif
 	},
+	/* P2P GO Set DFS channel */
+#if CFG_MTK_WIFI_SUPPORT_STA_DFS_CHANNEL
+	{
+		{
+			.vendor_id = GOOGLE_OUI,
+			.subcmd = WIFI_SUBCMD_CHANNEL_POLICY
+		},
+		.flags = WIPHY_VENDOR_CMD_NEED_WDEV |
+				WIPHY_VENDOR_CMD_NEED_NETDEV |
+				WIPHY_VENDOR_CMD_NEED_RUNNING,
+		.doit = mtk_cfg80211_vendor_enable_sta_channel_for_peer_network
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		,
+		.policy = mtk_enable_sta_channel_for_peer_network_policy,
+		.maxattr = WIFI_ATTRIBUTE_ENABLE_STA_CHANNEL_FOR_P2P_MAX
+#endif
+	},
+#endif /* CFG_MTK_WIFI_SUPPORT_STA_DFS_CHANNEL */
 #if CFG_SUPPORT_CSI
 	{
 		{
