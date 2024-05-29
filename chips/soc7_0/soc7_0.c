@@ -2262,7 +2262,7 @@ static void soc7_0CheckHostCsrIrqEnable(struct ADAPTER *prAdapter)
 	uint32_t u4RegStore = 0;
 
 	HAL_MCR_RD(prAdapter, 0x7c001600, &u4RegValue);
-	DBGLOG(HAL, INFO, "RD 0x7c001600 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "RD 0x7c001600 = %08x\n", u4RegValue);
 	u4RegStore = u4RegValue;
 
 	/* Check bit 1, 4, 8 is 0 */
@@ -2276,12 +2276,12 @@ static void soc7_0CheckHostCsrIrqEnable(struct ADAPTER *prAdapter)
 		u4RegValue |= BIT(8);
 
 	if (u4RegStore != u4RegValue) {
-		DBGLOG(HAL, INFO, "WR 0x7c001600 = %08x\n", u4RegValue);
+		DBGLOG(HAL, TRACE, "WR 0x7c001600 = %08x\n", u4RegValue);
 		HAL_MCR_WR(prAdapter, 0x7c001600, u4RegValue);
 	}
 
 	HAL_MCR_RD(prAdapter, 0x7c001600, &u4RegValue);
-	DBGLOG(HAL, INFO, "RD 0x7c001600 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "RD 0x7c001600 = %08x\n", u4RegValue);
 }
 #endif
 
@@ -2293,9 +2293,9 @@ static void soc7_0ForceEnableHostCsrIrq(struct ADAPTER *prAdapter)
 
 	/* wake up conn_infra */
 	HAL_MCR_RD(prAdapter, 0x7c0601a4, &u4RegValue);
-	DBGLOG(HAL, INFO, "RD 0x7c0601a4 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "RD 0x7c0601a4 = %08x\n", u4RegValue);
 	u4RegValue |= BIT(0);
-	DBGLOG(HAL, INFO, "WR 0x7c0601a4 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "WR 0x7c0601a4 = %08x\n", u4RegValue);
 	HAL_MCR_WR(prAdapter, 0x7c0601a4, u4RegValue);
 	kalUdelay(200);
 
@@ -2303,7 +2303,7 @@ static void soc7_0ForceEnableHostCsrIrq(struct ADAPTER *prAdapter)
 	while (1) {
 		kalMdelay(1);
 		HAL_MCR_RD(prAdapter, 0x7c011000, &u4RegValue);
-		DBGLOG(HAL, INFO, "RD 0x7c011000 = %08x\n", u4RegValue);
+		DBGLOG(HAL, TRACE, "RD 0x7c011000 = %08x\n", u4RegValue);
 		if (u4RegValue == 0x02050401)
 			break;
 		if (ucPollingCnt >= 10) {
@@ -2319,7 +2319,7 @@ static void soc7_0ForceEnableHostCsrIrq(struct ADAPTER *prAdapter)
 	while (1) {
 		kalUdelay(500);
 		HAL_MCR_RD(prAdapter, 0x7c001210, &u4RegValue);
-		DBGLOG(HAL, INFO, "RD 0x7c001210 = %08x\n", u4RegValue);
+		DBGLOG(HAL, TRACE, "RD 0x7c001210 = %08x\n", u4RegValue);
 		if ((u4RegValue & BIT(16)) == BIT(16))
 			break;
 		if (ucPollingCnt >= 10) {
@@ -2332,17 +2332,17 @@ static void soc7_0ForceEnableHostCsrIrq(struct ADAPTER *prAdapter)
 
 	/* force enable HOST_CSR_IRQ_EN */
 	HAL_MCR_RD(prAdapter, 0x7c001600, &u4RegValue);
-	DBGLOG(HAL, INFO, "RD 0x7c001600 = %08x\n", u4RegValue);
-	DBGLOG(HAL, INFO, "WR 0x7c001600 = 0x3FF\n");
+	DBGLOG(HAL, TRACE, "RD 0x7c001600 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "WR 0x7c001600 = 0x3FF\n");
 	HAL_MCR_WR(prAdapter, 0x7c001600, 0x3FF);
 	HAL_MCR_RD(prAdapter, 0x7c001600, &u4RegValue);
-	DBGLOG(HAL, INFO, "RD 0x7c001600 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "RD 0x7c001600 = %08x\n", u4RegValue);
 
 	/* let conn_infra sleep */
 	HAL_MCR_RD(prAdapter, 0x7c0601a4, &u4RegValue);
-	DBGLOG(HAL, INFO, "RD 0x7c0601a4 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "RD 0x7c0601a4 = %08x\n", u4RegValue);
 	u4RegValue &= ~0x1;
-	DBGLOG(HAL, INFO, "WR 0x7c0601a4 = %08x\n", u4RegValue);
+	DBGLOG(HAL, TRACE, "WR 0x7c0601a4 = %08x\n", u4RegValue);
 	HAL_MCR_WR(prAdapter, 0x7c0601a4, u4RegValue);
 }
 #endif
