@@ -861,6 +861,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
 	uint8_t fgActivate)
 {
+	struct BUS_INFO *prBusInfo;
 	struct mddpw_drv_notify_info_t *prNotifyInfo;
 	struct mddpw_drv_info_t *prDrvInfo;
 	struct mddp_txd_t *prMddpTxd;
@@ -895,6 +896,7 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
+	prBusInfo = prAdapter->chip_info->bus_info;
 	prBssInfo = prAdapter->aprBssInfo[prStaRec->ucBssIndex];
 	prNetdev = wlanGetNetDev(prAdapter->prGlueInfo, prStaRec->ucBssIndex);
 	if (prNetdev) {
@@ -937,7 +939,10 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	prMddpTxd->sta_mode = prStaRec->eStaType;
 	prMddpTxd->bss_id = prStaRec->ucBssIndex;
 	/* TODO: Create a new msg for DMASHDL BMP */
-	prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
+	if (prBusInfo->tx_ring0_data_idx != prBusInfo->tx_ring1_data_idx)
+		prMddpTxd->wmmset = prBssInfo->ucWmmQueSet % 2;
+	else
+		prMddpTxd->wmmset = 0;
 	if (prNetdev) {
 		kalMemCopy(prMddpTxd->nw_if_name, prNetdev->name,
 			   sizeof(prMddpTxd->nw_if_name));

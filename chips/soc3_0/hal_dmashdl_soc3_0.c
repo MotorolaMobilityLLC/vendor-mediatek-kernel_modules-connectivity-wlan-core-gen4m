@@ -291,6 +291,10 @@ struct DMASHDL_CFG rMT6885DmashdlCfg = {
 void mt6885DmashdlInit(struct ADAPTER *prAdapter)
 {
 	uint32_t idx;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	asicConnac2xDmashdlSetPlePktMaxPage(
 		prAdapter, rMT6885DmashdlCfg.u2PktPleMaxPage);
@@ -309,10 +313,17 @@ void mt6885DmashdlInit(struct ADAPTER *prAdapter)
 			rMT6885DmashdlCfg.au2MinQuota[idx]);
 	}
 
-	for (idx = 0; idx < 32; idx++)
-		asicConnac2xDmashdlSetQueueMapping(
-			prAdapter, idx,
-			rMT6885DmashdlCfg.aucQueue2Group[idx]);
+	if (prWifiVar->fgUseOneTxRing) {
+		prBusInfo->tx_ring1_data_idx = 0;
+		for (idx = 0; idx < 32; idx++)
+			asicConnac2xDmashdlSetQueueMapping(
+				prAdapter, idx, 0);
+	} else {
+		for (idx = 0; idx < 32; idx++)
+			asicConnac2xDmashdlSetQueueMapping(
+				prAdapter, idx,
+				rMT6885DmashdlCfg.aucQueue2Group[idx]);
+	}
 
 	for (idx = 0; idx < 16; idx++)
 		asicConnac2xDmashdlSetUserDefinedPriority(
