@@ -4024,7 +4024,7 @@ uint32_t wlanDfsChannelsReqInit(struct ADAPTER *prAdapter)
 	struct WLAN_DFS_CHANNEL_REQ_ENTRY *prEntry;
 	uint8_t i = 0;
 
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries) - 1;
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries);
 		i++){
 		prEntry = &prAdapter->aucDfsAisChnlReqEntries[i];
 
@@ -4034,7 +4034,7 @@ uint32_t wlanDfsChannelsReqInit(struct ADAPTER *prAdapter)
 			   sizeof(prEntry->rRfChnlInfo));
 	}
 
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries) - 1; i++) {
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries); i++) {
 		prEntry = &prAdapter->aucDfsChnlReqEntries[i];
 
 		prEntry->fgValid = FALSE;
@@ -4062,32 +4062,33 @@ void wlanDfsChannelsReqDump(struct ADAPTER *prAdapter)
 	uint8_t i = 0;
 
 	DBGLOG(INIT, TRACE, "Dump for ais entries\n");
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries) - 1;
-		i++) {
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries); i++) {
 		prEntry = &prAdapter->aucDfsAisChnlReqEntries[i];
 
 		DBGLOG(INIT, TRACE,
-			"\t[%u] valid=%d, source=%d, channel=[%u %u %u %u %u]\n",
+			"\t[%u] valid=%d, source=%d, channel=[%u %u %u %u %u %u]\n",
 			i, prEntry->fgValid, prEntry->eSource,
 			prEntry->rRfChnlInfo.eBand,
 			prEntry->rRfChnlInfo.ucChannelNum,
 			prEntry->rRfChnlInfo.u2PriChnlFreq,
 			prEntry->rRfChnlInfo.u4CenterFreq1,
-			prEntry->rRfChnlInfo.u4CenterFreq2);
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
 	}
 
-	DBGLOG(INIT, INFO, "Dump for other entries\n");
-	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries) - 1; i++) {
+	DBGLOG(INIT, TRACE, "Dump for other entries\n");
+	for (i = 0; i < ARRAY_SIZE(prAdapter->aucDfsChnlReqEntries); i++) {
 		prEntry = &prAdapter->aucDfsChnlReqEntries[i];
 
 		DBGLOG(INIT, TRACE,
-			"\t[%u] valid=%d, source=%d, channel=[%u %u %u %u %u]\n",
+			"\t[%u] valid=%d, source=%d, channel=[%u %u %u %u %u %u]\n",
 			i, prEntry->fgValid, prEntry->eSource,
 			prEntry->rRfChnlInfo.eBand,
 			prEntry->rRfChnlInfo.ucChannelNum,
 			prEntry->rRfChnlInfo.u2PriChnlFreq,
 			prEntry->rRfChnlInfo.u4CenterFreq1,
-			prEntry->rRfChnlInfo.u4CenterFreq2);
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
 	}
 }
 
@@ -4284,7 +4285,7 @@ u_int8_t wlanDfsChannelsAllowdBySta(struct ADAPTER *prAdapter,
 	}
 
 	for (i = 0;
-	     i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries) - 1;
+	     i < ARRAY_SIZE(prAdapter->aucDfsAisChnlReqEntries);
 	     i++) {
 		uint32_t u4StaStartFreq, u4StaEndFreq, u4StaBw;
 
@@ -4392,6 +4393,16 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 			prBssInfo->ucPrimaryChannel;
 		prEntry->fgValid = TRUE;
 
+		DBGLOG(INIT, TRACE,
+			"[%u] channel=[%u %u %u %u %u %u]\n",
+			prBssInfo->ucBssIndex,
+			prEntry->rRfChnlInfo.eBand,
+			prEntry->rRfChnlInfo.ucChannelNum,
+			prEntry->rRfChnlInfo.u2PriChnlFreq,
+			prEntry->rRfChnlInfo.u4CenterFreq1,
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
+
 		break;
 	}
 #else
@@ -4418,6 +4429,16 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 		prEntry->rRfChnlInfo.ucChannelNum =
 			prBssInfo->ucPrimaryChannel;
 		prEntry->fgValid = TRUE;
+
+		DBGLOG(INIT, TRACE,
+			"[%u] channel=[%u %u %u %u %u %u]\n",
+			prBssInfo->ucBssIndex,
+			prEntry->rRfChnlInfo.eBand,
+			prEntry->rRfChnlInfo.ucChannelNum,
+			prEntry->rRfChnlInfo.u2PriChnlFreq,
+			prEntry->rRfChnlInfo.u4CenterFreq1,
+			prEntry->rRfChnlInfo.u4CenterFreq2,
+			prEntry->rRfChnlInfo.ucChnlBw);
 	}
 #endif
 
