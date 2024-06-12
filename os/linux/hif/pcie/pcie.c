@@ -252,6 +252,7 @@ const struct of_device_id mtk_wifi_tx_cma_non_cache_of_ids[] = {
 #if (CFG_PCIE_GEN_SWITCH == 1)
 #define CHECK_RX_TIMEOUT (1000*50)
 #define GEN_SWITCH_TIMEOUT (1000*100)
+#define DEFAULT_IDLE	0
 #define WF_RX_IDLE	1
 #define FW_RX_IDLE	2
 #endif
@@ -3096,22 +3097,17 @@ void pcie_gen_switch_recover(struct ADAPTER *prAdapter)
 
 	DBGLOG(OID, ERROR, "[Gen_Switch] gen switch recover\n");
 }
-void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
+uint32_t *pcie_gen_switch_get_emi_add(struct ADAPTER *prAdapter)
 {
-	struct GL_HIF_INFO *prHifInfo;
-	struct mt66xx_chip_info *prChipInfo;
-	struct pcie_msi_info *prMsiInfo;
-	struct HIF_MEM_OPS *prMemOps;
-	struct HIF_MEM *prMem;
+	struct HIF_MEM *prMem = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct HIF_MEM_OPS *prMemOps = NULL;
 	uint32_t *pu4RxDone = NULL;
-	uint32_t u4Val = 0;
 
-	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
-
-	DBGLOG(OID, INFO,
-		"[Gen_Switch] check rx idle start\n");
-
-	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
 	prChipInfo = prAdapter->chip_info;
 	prMemOps = &prHifInfo->rMemOps;
 	if (prMemOps->getWifiMiscRsvEmi) {
@@ -3120,12 +3116,30 @@ void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
 		if (prMem && prMem->va)
 			pu4RxDone = (uint32_t *)prMem->va;
 	}
-	if (pu4RxDone == NULL) {
-		DBGLOG(OID, ERROR, "[Gen_Switch] pu4RxDone is null\n");
+
+	return pu4RxDone;
+
+}
+void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
+{
+	struct pcie_msi_info *prMsiInfo;
+	uint32_t u4Val = 0;
+	struct RX_IDLE_STATE *prRxIdleState;
+
+	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
+
+	DBGLOG(OID, INFO,
+		"[Gen_Switch] check rx idle start\n");
+
+	prRxIdleState =
+		(struct RX_IDLE_STATE *)pcie_gen_switch_get_emi_add(prAdapter);
+	if (prRxIdleState == NULL) {
+		DBGLOG(OID, ERROR, "[Gen_Switch] g_pu4RxDone is null\n");
 		return;
 	}
 
-	while (prMsiInfo->ulEnBits != 0 && pu4RxDone[0] != WF_RX_IDLE) {
+	while (prMsiInfo->ulEnBits != 0 &&
+		prRxIdleState->u4WFIdle != WF_RX_IDLE) {
 		udelay(1);
 		u4Val++;
 		if (u4Val > CHECK_RX_TIMEOUT) {
@@ -3134,8 +3148,8 @@ void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
 		}
 	}
 
-	DBGLOG(OID, INFO, "[Gen_Switch] check rx idle end pu4RxDone=%d\n",
-		*pu4RxDone);
+	DBGLOG(OID, INFO, "[Gen_Switch] check rx idle end u4WFIdle=%d\n",
+		prRxIdleState->u4WFIdle);
 
 }
 irqreturn_t pcie_gen_switch_top_handler(int irq, void *dev_instance)
@@ -3146,11 +3160,7 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
-	struct HIF_MEM *prMem = NULL;
-	struct mt66xx_chip_info *prChipInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	struct HIF_MEM_OPS *prMemOps = NULL;
-	uint32_t *pu4RxDone = NULL;
+	struct RX_IDLE_STATE *prRxIdleState;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
@@ -3162,15 +3172,6 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 		}
 	}
 	prAdapter->fgIsGenSwitchProcessing = TRUE;
-	prHifInfo = &prGlueInfo->rHifInfo;
-	prChipInfo = prAdapter->chip_info;
-	prMemOps = &prHifInfo->rMemOps;
-	if (prMemOps->getWifiMiscRsvEmi) {
-		prMem = prMemOps->getWifiMiscRsvEmi(
-			prChipInfo, WIFI_MISC_MEM_BLOCK_WF_M_BRAIN);
-		if (prMem && prMem->va)
-			pu4RxDone = (uint32_t *)prMem->va;
-	}
 
 	pcie_gen_switch_polling_rx_done(prAdapter);
 
@@ -3187,7 +3188,15 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO:%u, isProcessing:%u\n",
 		prAdapter->ucStopMMIO, prAdapter->fgIsGenSwitchProcessing);
 
-	pu4RxDone[1] = FW_RX_IDLE;
+	prRxIdleState =
+		(struct RX_IDLE_STATE *)pcie_gen_switch_get_emi_add(prAdapter);
+
+	if (prRxIdleState == NULL) {
+		DBGLOG(OID, ERROR, "[Gen_Switch] g_pu4RxDone is null\n");
+		return IRQ_HANDLED;
+	}
+
+	prRxIdleState->u4FWIdle = FW_RX_IDLE;
 
 	return IRQ_HANDLED;
 }
@@ -3200,6 +3209,7 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct ADAPTER *prAdapter = NULL;
+	struct RX_IDLE_STATE *prRxIdleState;
 
 	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
 
@@ -3229,22 +3239,41 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyMDGenSwitchEnd(prAdapter);
 #endif
+	prRxIdleState =
+		(struct RX_IDLE_STATE *)pcie_gen_switch_get_emi_add(prAdapter);
 
+	if (prRxIdleState == NULL) {
+		DBGLOG(OID, ERROR, "[Gen_Switch] prRxIdleState is null\n");
+		return IRQ_HANDLED;
+	}
+
+	prRxIdleState->u4WFIdle = DEFAULT_IDLE;
+	prRxIdleState->u4FWIdle = DEFAULT_IDLE;
 	return IRQ_HANDLED;
 }
 
 void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 {
 	uint32_t u4Val = 0;
+	struct RX_IDLE_STATE *prRxIdleState;
 
 	if (prAdapter) {
 		if (prAdapter->ucStopMMIO) {
 			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going\n");
+			prRxIdleState = (struct RX_IDLE_STATE *)
+				pcie_gen_switch_get_emi_add(prAdapter);
+
+			if (prRxIdleState == NULL) {
+				DBGLOG(OID, ERROR, "g_pu4RxDone is null\n");
+				return;
+			}
 			while (prAdapter->ucStopMMIO) {
 				udelay(1);
 				u4Val++;
 				if (u4Val > GEN_SWITCH_TIMEOUT) {
 					prAdapter->ucStopMMIO = FALSE;
+					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
+					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
 					//mtk_pcie_disable_cfg_dump(0);
 					DBGLOG(INIT, ERROR,
 						"[Gen Switch] timeout\n");
