@@ -27,7 +27,7 @@
  */
 int
 sha512_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac) {
-	struct nan_rdf_sha512_state ctx;
+	struct nan_rdf_sha512_state ctx = {0};
 	size_t i;
 
 	sha512_init(&ctx);
