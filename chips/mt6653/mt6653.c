@@ -4657,10 +4657,6 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 		"0x488=0x%08x, 0x48c=0x%08x\n",
 		u4Val1, u4Val2);
 
-#if CFG_SUPPORT_PCIE_ASPM
-	mt6653ConfigPcieAspm(prGlueInfo, TRUE, WIFI_RST_ROLE);
-#endif
-
 	/* 1. Cfg_Rd[0x488] == 0 or 0xFFFFFFFF: PCIE is not at link up status */
 	/* 2. Bit 0/4/11~13 of Cfg_Rd[0x488] is not set: cb_infra is abnormal */
 	if (u4Val1 == 0x0 || u4Val1 == 0xFFFFFFFF ||
