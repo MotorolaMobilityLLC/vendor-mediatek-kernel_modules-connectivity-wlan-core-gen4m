@@ -1557,7 +1557,7 @@ void connac2x_get_rssi_from_wtbl(
 	prChipInfo = prAdapter->chip_info;
 	DBGLOG(REQ, INFO, "WTBL : index = %d\n", u4Index);
 
-	if (WTBL_VER < 3 && wlanGetEcoVersion(prAdapter) < ECO_VER_2)
+	if (wlanGetEcoVersion(prAdapter) < ECO_VER_2)
 		u1Dw30Rssi = 0;
 
 	if (u1Dw30Rssi > 0) {
