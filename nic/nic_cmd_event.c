@@ -4275,6 +4275,7 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 {
 	struct EXT_EVENT_RBIST_DUMP_DATA_T *prICapEvent;
 	uint32_t Idxi = 0, Idxj = 0, Idxk = 0;
+	uint32_t u4MaxWFCnt = 0;
 	struct _RBIST_IQ_DATA_T *prIQArray = NULL;
 	struct ICAP_INFO_T *prIcapInfo = NULL;
 
@@ -4328,6 +4329,15 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 					 NUM_OF_CAP_TYPE;
 		DBGLOG(RFTEST, WARN,
 		       "u4SmplCnt is larger than buffer size\n");
+	}
+
+	/* Check the max count of WFCnt*/
+	u4MaxWFCnt = ARRAY_SIZE(prIQArray[0].u4IQArray);
+	if (prICapEvent->u4WFCnt > u4MaxWFCnt) {
+		DBGLOG(RFTEST, ERROR,
+		       "Too many WFCnt[%u > %u] from FW, skip rest of them\n",
+		       prICapEvent->u4WFCnt, u4MaxWFCnt);
+		return;
 	}
 
 	if (prIcapInfo->u4IQArrayIndex + prICapEvent->u4SmplCnt >
