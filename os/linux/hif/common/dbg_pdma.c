@@ -91,7 +91,7 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (!kalIsResetting() &&
-			prHifInfo->rErrRecoveryCtl.eErrRecovState ==
+			prHifInfo->rErrRecoveryCtl.eErrRecovState !=
 			ERR_RECOV_STOP_IDLE) {
 		DBGLOG(HAL, ERROR,
 			"SER on-going. ser state: %d reset: %d\n",
