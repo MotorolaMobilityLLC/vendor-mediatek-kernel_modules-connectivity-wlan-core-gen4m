@@ -3935,7 +3935,9 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 			"wlan_power_dump_start PCIE status: 0x%08x\n", u4Val);
 
 		if (u4Val == 0x10) {
+			ad->fgIsPowerDumpDrvOwn = TRUE;
 			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+			ad->fgIsPowerDumpDrvOwn = FALSE;
 
 			if (ad->fgIsFwOwn == TRUE) {
 				DBGLOG(REQ, ERROR,
