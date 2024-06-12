@@ -3170,6 +3170,9 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 			DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
 			return IRQ_HANDLED;
 		}
+	} else {
+		DBGLOG(INIT, ERROR, "prGlueInfo is NULL.\n");
+		return IRQ_HANDLED;
 	}
 	prAdapter->fgIsGenSwitchProcessing = TRUE;
 
