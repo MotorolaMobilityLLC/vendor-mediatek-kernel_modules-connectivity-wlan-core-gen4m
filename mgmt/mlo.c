@@ -1844,7 +1844,7 @@ sta:
 
 		if (prIeSta->aucStaInfo + ucStaInfoLen > tail) {
 			DBGLOG(ML, WARN,
-				"invalid STA profile len=%td\n", ucStaInfoLen);
+				"invalid STA profile len=%d\n", ucStaInfoLen);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
