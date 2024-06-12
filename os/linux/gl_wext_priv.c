@@ -11644,24 +11644,7 @@ int priv_driver_set_dfs_channel_available(
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
 
-	if (i4Argc >= 3) {
-		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucChannel);
-		if (u4Ret) {
-			DBGLOG(REQ, ERROR, "parse argc[1] error u4Ret=%d\n",
-			       u4Ret);
-			return -1;
-		}
-
-		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucAvailable);
-		if (u4Ret) {
-			DBGLOG(REQ, ERROR, "parse argc[2] error u4Ret=%d\n",
-			       u4Ret);
-			return -1;
-		}
-
-		p2pFuncSetDfsChannelAvailable(prGlueInfo->prAdapter,
-			ucAvailable, ucChannel, MAX_BW_20MHZ);
-	} else if (i4Argc >= 4) {
+	if (i4Argc >= 4) {
 		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucAvailable);
 		if (u4Ret) {
 			DBGLOG(REQ, ERROR, "parse argc[1] error u4Ret=%d\n",
@@ -11685,6 +11668,23 @@ int priv_driver_set_dfs_channel_available(
 
 		p2pFuncSetDfsChannelAvailable(prGlueInfo->prAdapter,
 			ucAvailable, ucChannel, ucBw);
+	} else if (i4Argc >= 3) {
+		u4Ret = kalkStrtou8(apcArgv[1], 0, &ucChannel);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse argc[1] error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		u4Ret = kalkStrtou8(apcArgv[2], 0, &ucAvailable);
+		if (u4Ret) {
+			DBGLOG(REQ, ERROR, "parse argc[2] error u4Ret=%d\n",
+			       u4Ret);
+			return -1;
+		}
+
+		p2pFuncSetDfsChannelAvailable(prGlueInfo->prAdapter,
+			ucAvailable, ucChannel, MAX_BW_20MHZ);
 	}
 
 	return	i4BytesWritten;
