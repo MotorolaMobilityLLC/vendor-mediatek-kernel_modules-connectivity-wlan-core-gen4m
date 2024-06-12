@@ -140,7 +140,7 @@ hmac_sha256(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
 void caculate_pmkid(u8 *key, u8 *IMAC, u8 *RMAC, u8 *serviceName, u8 *pmkid)
 {
 	char *pmkName = "NAN PMK Name";
-	struct nan_rdf_sha256_state r_SHA_256_state;
+	struct nan_rdf_sha256_state r_SHA_256_state = {0};
 	u8  auc_tk[32];
 	u8 aucServiceID[6];
 	int pmkIdSrcLen = strlen(pmkName) + 6+6+6;
