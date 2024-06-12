@@ -247,6 +247,7 @@ extern u_int8_t fgIsPcieDataTransDisabled;
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 extern u_int8_t fgTriggerDebugSop;
 #endif
+extern u_int32_t u4SdesDetectTime;
 extern const struct ieee80211_iface_combination
 	*p_mtk_iface_combinations_sta;
 extern const int32_t mtk_iface_combinations_sta_num;
@@ -345,6 +346,9 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 
 #define GLUE_FLAG_RST_FW_NOTIFY_L05_BIT		(30)
 #define GLUE_FLAG_RST_FW_NOTIFY_L05		BIT(30)
+
+#define HIF_FLAG_AER_RESET		BIT(0)
+#define HIF_FLAG_AER_RESET_BIT	(0)
 
 #if CFG_SUPPORT_HIF_RX_NAPI
 #define HIF_NAPI_SET_DRV_OWN_BIT		(0)
@@ -789,6 +793,7 @@ struct GLUE_INFO {
 	uint64_t u8Cookie;
 
 	unsigned long ulFlag;		/* GLUE_FLAG_XXX */
+	unsigned long ulHifFlag;	/* HIF_FLAG_XXX */
 	uint32_t u4PendFlag;
 	/* UINT_32 u4TimeoutFlag; */
 	u_int8_t fgOidWaiting; /* TRUE: waiter enters ioctl, FALSE: completed */
