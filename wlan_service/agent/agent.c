@@ -5045,7 +5045,7 @@ static s_int32 hqa_pl_calibration(
 		get_param_and_shift_buf(TRUE, sz_u32, &data, (u_char *)p_idx);
 	}
 
-	if (plcal.u4InCnt >= PLCAL_MAX_CNT) {
+	if (plcal.u4InCnt > PLCAL_MAX_CNT) {
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: in cnt overflow(%d)\n", __func__, plcal.u4InCnt));
 
@@ -5074,7 +5074,7 @@ static s_int32 hqa_pl_calibration(
 	}
 
 	/* Check output counter */
-	if (plcal.u4OutCnt >= PLCAL_MAX_CNT) {
+	if (plcal.u4OutCnt > PLCAL_MAX_CNT) {
 		SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 			("%s: out cnt err(%d)\n", __func__, plcal.u4OutCnt));
 
