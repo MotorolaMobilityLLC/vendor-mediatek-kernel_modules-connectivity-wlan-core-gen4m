@@ -5,7 +5,7 @@
 
 #include "wlan_hw_dbg.h"
 
-#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20240522"
+#define MT6653_WIFI_DEBUGSOP_DUMP_VERSION "20240524"
 
 const struct wlan_dbg_command mt6653_cb_infra_a[] = {
 	/* write, w_addr, mask, value, read, r_addr*/
@@ -336,11 +336,27 @@ const struct wlan_dbg_command mt6653_cb_infra_d[] = {
 	{TRUE, 0x74030164, 0, 0x10e1a, TRUE, 0x7403002c},
 	{FALSE, 0, 0, 0, TRUE, 0x7403002c},
 	{FALSE, 0, 0, 0, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x88880100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x1030c, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x24252627, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x50515253, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x54555657, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0xb0b1b2b3, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0xb4b5b6b7, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x98999a9b, TRUE, 0x7403002c},
+	{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+	{TRUE, 0x74030164, 0, 0x9c9d9e9f, TRUE, 0x7403002c},
 };
 
 const struct wlan_dump_list mt6653_dump_list_cb_infra_d = {
 	"PSOP_9_1_D", "SectionD - pcie",
-	85, ARRAY_SIZE(mt6653_cb_infra_d),
+	93, ARRAY_SIZE(mt6653_cb_infra_d),
 	mt6653_cb_infra_d
 };
 
@@ -483,11 +499,26 @@ const struct wlan_dbg_command mt6653_wf_top_b[] = {
 	{TRUE, 0x20060b1c, 0, 0x3, TRUE, 0x20023638},
 	{TRUE, 0x20060b1c, 0, 0x4, TRUE, 0x20023638},
 	{TRUE, 0x20060b1c, 0, 0x8, TRUE, 0x20023638},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0000},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0004},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0008},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b000c},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0010},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0014},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0018},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b001c},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0020},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0024},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0028},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b002c},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0030},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0034},
+	{FALSE, 0, 0, 0, TRUE, 0x7c0b0038},
 };
 
 const struct wlan_dump_list mt6653_dump_list_wf_top_b = {
 	"PSOP_3_1_B", "SectionB - Dump wf_top_misc_von monflg",
-	6, ARRAY_SIZE(mt6653_wf_top_b),
+	21, ARRAY_SIZE(mt6653_wf_top_b),
 	mt6653_wf_top_b
 };
 

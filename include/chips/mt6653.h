@@ -181,11 +181,13 @@ void mt6653_icapDownVcoreClockRate(void);
 #if defined(_HIF_PCIE)
 void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad);
 void mt6653_DumpBusHangCr(struct ADAPTER *ad);
-void mt6653_dumpPcGprLog(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
+void mt6653_dumpPcGprLog(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt);
 void mt6653_dumpRV55CoreReg(struct ADAPTER *ad);
-void mt6653_dumpWfTopReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
-void mt6653_dumpWfBusReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
-void mt6653_dumpCbInfraReg(struct ADAPTER *ad, uint8_t fgIsDumpViaBt);
+void mt6653_dumpWfTopReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
+	u_int8_t fgIsReadable);
+void mt6653_dumpWfBusReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
+	u_int8_t fgIsReadable);
+void mt6653_dumpCbInfraReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt);
 u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad);
 u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad);
 #if CFG_MTK_WIFI_MBU
