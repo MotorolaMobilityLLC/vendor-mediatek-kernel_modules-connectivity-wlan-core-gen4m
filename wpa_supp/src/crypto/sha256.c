@@ -49,6 +49,11 @@ hmac_sha256_vector(const u8 *key, size_t key_len, size_t num_elem,
 	}
 	tk = os_zalloc(32);
 
+	if (!tk) {
+		DBGLOG(NAN, ERROR, "tk is null!\n");
+		return -1;
+	}
+
 	if (num_elem > 5) {
 		/*
 		 * Fixed limit on the number of fragments to avoid having to
