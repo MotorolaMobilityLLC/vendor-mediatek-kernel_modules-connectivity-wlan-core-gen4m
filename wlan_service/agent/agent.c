@@ -803,7 +803,7 @@ static s_int32 hqa_low_power(
 static s_int32 hqa_get_antswap_capability(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 antswap_support = 0;
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
@@ -1089,7 +1089,7 @@ static s_int32 hqa_mac_bbp_reg_bulk_read(
 	u_int16 cr_seq = 0;
 	struct test_register *test_regs = &serv_test->test_reg;
 	u_char *data = hqa_frame->data;
-	u_int32 cr_total_len, cr_value = 0;
+	u_int32 cr_total_len, cr_value;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1159,7 +1159,7 @@ static s_int32 hqa_rf_reg_bulk_read(
 	u_int16 cr_seq = 0;
 	struct test_register *test_regs = &serv_test->test_reg;
 	u_char *data = hqa_frame->data;
-	u_int32 cr_total_len, cr_value = 0;
+	u_int32 cr_total_len, cr_value;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
 
@@ -1529,7 +1529,7 @@ static s_int32 hqa_check_efuse_mode(
 static s_int32 hqa_get_free_efuse_block(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	u_int32 free_block, total_block;
 	u_int16 idx = 0;
@@ -1658,7 +1658,7 @@ static s_int32 hqa_get_tx_power_v2(
 static s_int32 hqa_get_default_power(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	u_int32 ext_id = 0, channel = 0, band_idx = 0;
 	u_int32 ch_band = 0, ant_idx = 0, preamble = 0, mcs_rate = 0;
@@ -1772,7 +1772,7 @@ static s_int32 hqa_set_cfg_on_off(
 static s_int32 hqa_get_freq_offset(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 freq_offset = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -1986,7 +1986,7 @@ static s_int32 hqa_set_rx_filter_pkt_len(
 static s_int32 hqa_get_tx_info(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 tx_cnt0 = 0, tx_cnt1 = 0, tx_cnt2 = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -2025,7 +2025,7 @@ static s_int32 hqa_get_tx_info(
 static s_int32 hqa_get_cfg_on_off(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	s_int32 type = 0, band_idx = 0, ch_band = 0;
 	u_int32 result = 0;
@@ -2154,7 +2154,7 @@ static s_int32 hqa_ca53_reg_write(
 static s_int32 hqa_get_tx_tone_pwr(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	u_int32 power = 0, ant_idx = 0;
 
@@ -2197,7 +2197,7 @@ static s_int32 hqa_write_bulk_eeprom_v2(
 static s_int32 hqa_get_freq_offset_c2(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 freq_offset = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -2561,12 +2561,12 @@ static s_int32 hqa_set_tssi_onoff(
 static s_int32 hqa_get_rx_statistics_leg(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	struct hqa_rx_stat_leg rx_stat;
 	struct test_rx_stat_leg test_rx_stat;
 	u_char dw_cnt = 0, dw_idx = 0;
-	u_char *ptr2 = NULL;
-	u_int32 *ptr = NULL;
+	u_char *ptr2;
+	u_int32 *ptr;
 	u_int32 buf;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -2601,7 +2601,7 @@ static s_int32 hqa_get_rx_statistics_all(
 	boolean dbdc_mode = FALSE;
 	u_int8 path[TEST_ANT_NUM] = {0};
 	u_int8 path_len = 0;
-	u_int8 *ptr = NULL;
+	u_int8 *ptr;
 	u_char *data = hqa_frame->data;
 #if (CFG_SUPPORT_CONNAC3X == 0)
 	u_int8 band_info_ver = 0, path_info_ver = 0,
@@ -2754,10 +2754,10 @@ error1:
 static s_int32 hqa_get_capability(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int8 *ptr = hqa_frame->data + 2;
 	struct test_capability capability;
-	u_int32 convert, i, *cast = NULL;
+	u_int32 convert, i, *cast;
 	u_int32 item_num = sizeof(struct test_capability) / 4;
 	struct GLUE_INFO *glue = wlanGetGlueInfo();
 
@@ -2778,8 +2778,9 @@ static s_int32 hqa_get_capability(
 
 	/* ext_cap.feature1: BIT0: AntSwap */
 #if CFG_SUPPORT_ANT_SWAP
-	if (glue->prAdapter->fgIsSupportAntSwp)
-		capability.ext_cap.feature1 |= BIT(0);
+	if (glue && glue->prAdapter)
+		if (glue->prAdapter->fgIsSupportAntSwp)
+			capability.ext_cap.feature1 |= BIT(0);
 #endif /* CFG_SUPPORT_ANT_SWAP */
 
 	cast = (u_int32 *)&capability;
@@ -2836,12 +2837,11 @@ static s_int32 hqa_get_rf_type_capability(
 
 	switch (band_idx) {
 	case TEST_DBDC_BAND0:
-		convert =
-		SERV_OS_HTONL(
-			capability.ph_cap.band_0_1_wf_path_num&0xF);
-		convert_rx =
-		SERV_OS_HTONL(
-			(capability.ph_cap.band_0_1_wf_path_num>>8)&0xF);
+		convert = capability.ph_cap.band_0_1_wf_path_num & 0xF;
+		convert = SERV_OS_HTONL(convert);
+
+		convert_rx = (capability.ph_cap.band_0_1_wf_path_num>>8) & 0xF;
+		convert_rx = SERV_OS_HTONL(convert_rx);
 
 		/* DBDC mode and support MIMO/DBDC_switch */
 		if (IS_TEST_DBDC(serv_test->test_winfo) &&
@@ -2852,12 +2852,11 @@ static s_int32 hqa_get_rf_type_capability(
 		break;
 
 	case TEST_DBDC_BAND1:
-		convert =
-		SERV_OS_HTONL(
-			(capability.ph_cap.band_0_1_wf_path_num>>16)&0xF);
-		convert_rx =
-		SERV_OS_HTONL(
-			(capability.ph_cap.band_0_1_wf_path_num>>24)&0xF);
+		convert = (capability.ph_cap.band_0_1_wf_path_num>>16) & 0xF;
+		convert = SERV_OS_HTONL(convert);
+
+		convert_rx = (capability.ph_cap.band_0_1_wf_path_num>>24) & 0xF;
+		convert_rx = SERV_OS_HTONL(convert_rx);
 
 		/* DBDC mode and support MIMO/DBDC_switch */
 		if (IS_TEST_DBDC(serv_test->test_winfo) &&
@@ -2868,21 +2867,20 @@ static s_int32 hqa_get_rf_type_capability(
 		break;
 
 	case TEST_DBDC_BAND2:
-		convert =
-		SERV_OS_HTONL(
-			capability.ph_cap.band_2_3_wf_path_num&0xF);
-		convert_rx =
-		SERV_OS_HTONL(
-			(capability.ph_cap.band_2_3_wf_path_num>>8)&0xF);
+		convert = capability.ph_cap.band_2_3_wf_path_num & 0xF;
+		convert = SERV_OS_HTONL(convert);
+
+		convert_rx = (capability.ph_cap.band_2_3_wf_path_num>>8) & 0xF;
+		convert_rx = SERV_OS_HTONL(convert_rx);
 		break;
 
 	case TEST_DBDC_BAND3:
-		convert =
-		SERV_OS_HTONL(
-			(capability.ph_cap.band_2_3_wf_path_num>>16)&0xF);
-		convert_rx =
-		SERV_OS_HTONL(
-			(capability.ph_cap.band_2_3_wf_path_num>>24)&0xF);
+		convert = (capability.ph_cap.band_2_3_wf_path_num>>16) & 0xF;
+		convert = SERV_OS_HTONL(convert);
+
+		convert_rx = (capability.ph_cap.band_2_3_wf_path_num>>24) & 0xF;
+		convert_rx = SERV_OS_HTONL(convert_rx);
+
 		break;
 
 	default:
@@ -3013,7 +3011,7 @@ static s_int32 hqa_tmr_setting(
 static s_int32 hqa_get_chipid(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_int32 chip_id;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -4022,7 +4020,7 @@ static s_int32 hqa_get_dump_recal(
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 recal_cnt = 0, recal_dw_num = 0;
-	u_int32 *content = NULL, *OriAddr = NULL;
+	u_int32 *content = NULL, *OriAddr;
 	u_int32 value = 0, dw_cnt = 0, i = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -4112,7 +4110,7 @@ static s_int32 hqa_get_dump_rxv(
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 rxv_cnt = 0, rxv_dw_num = 0;
-	u_int32 *content = NULL, *OriAddr = NULL;
+	u_int32 *content = NULL, *OriAddr;
 	u_int32 value = 0, dw_cnt = 0, i = 0;
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_TRACE, ("%s\n", __func__));
@@ -4336,8 +4334,8 @@ static s_int32 hqa_get_hetb_info(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 resp_len = 2;
 	u_char band_idx = serv_test->ctrl_band_idx;
-	u_int32 afactor = 0, ldpc_str_sym = 0, pe_disamb = 0;
-	u_int32 tx_pe = 0, l_sig_len = 0, value = 0;
+	u_int32 afactor, ldpc_str_sym, pe_disamb;
+	u_int32 tx_pe, l_sig_len, value = 0;
 	u_int8 dmnt_ru_idx = 0;
 	struct test_ru_info *ru_info = NULL;
 
@@ -4589,6 +4587,8 @@ static s_int32 hqa_set_ru_info(
 	return ret;
 }
 
+#define RU_SEG_STA_CNT_MAX	4
+
 #if (CFG_SUPPORT_CONNAC3X == 1)
 static s_int32 hqa_set_ru_info_v2(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
@@ -4596,7 +4596,8 @@ static s_int32 hqa_set_ru_info_v2(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 resp_len = 2;
 	u_int32 band_idx = (u_int32)(serv_test->ctrl_band_idx);
-	u_int32 len = 0, seg_sta_cnt[4] = {0}, sta_seq = 0, value = 0;
+	u_int32 len = 0, sta_seq = 0, value = 0;
+	u_int32 seg_sta_cnt[RU_SEG_STA_CNT_MAX] = {0};
 	u_int32 u4SegCount = 0;
 	u_char param_cnt = 0, segment_idx = 0, param_loop = 0;
 	u_int32 mpdu_length = 0;
@@ -4613,14 +4614,24 @@ static s_int32 hqa_set_ru_info_v2(
 				   &data,
 				   (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM)
-		band_idx = 0;
+	if (band_idx >= TEST_DBDC_BAND_NUM) {
+		/* Update hqa_frame with response: status (2 bytes) */
+		update_hqa_frame(hqa_frame, 2,
+			SERV_STATUS_AGENT_INVALID_BANDIDX);
+		return SERV_STATUS_SUCCESS;
+	}
 
 	/*seg count*/
 	get_param_and_shift_buf(TRUE,
 				   sizeof(u_int32),
 				   &data,
 				   (u_char *)&u4SegCount);
+
+	if (u4SegCount >= RU_SEG_STA_CNT_MAX) {
+		/* Update hqa_frame with response: status (2 bytes) */
+		update_hqa_frame(hqa_frame, 2, SERV_STATUS_AGENT_INVALID_PARAM);
+		return SERV_STATUS_SUCCESS;
+	}
 
 	/* param count */
 	param_cnt = sizeof(struct test_ru_info_host) / sizeof(u_int32);
@@ -4783,8 +4794,9 @@ static s_int32 hqa_set_ru_info_v3(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_int32 resp_len = 2;
 	u_int32 band_idx = (u_int32)(serv_test->ctrl_band_idx);
-	u_int32 len = 0, seg_sta_cnt[4] = {0}, sta_seq = 0, value = 0;
-	u_int32 seg_dru_en[4] = {0};
+	u_int32 len = 0, sta_seq = 0, value = 0;
+	u_int32 seg_sta_cnt[RU_SEG_STA_CNT_MAX] = {0};
+	u_int32 seg_dru_en[RU_SEG_STA_CNT_MAX] = {0};
 	u_int32 u4SegCount = 0;
 	u_char param_cnt = 0, segment_idx = 0, param_loop = 0;
 	u_int32 mpdu_length = 0;
@@ -4801,14 +4813,24 @@ static s_int32 hqa_set_ru_info_v3(
 				   &data,
 				   (u_char *)&band_idx);
 
-	if (band_idx >= TEST_DBDC_BAND_NUM)
-		band_idx = 0;
+	if (band_idx >= TEST_DBDC_BAND_NUM) {
+		/* Update hqa_frame with response: status (2 bytes) */
+		update_hqa_frame(hqa_frame, 2,
+			SERV_STATUS_AGENT_INVALID_BANDIDX);
+		return SERV_STATUS_SUCCESS;
+	}
 
 	/*seg count*/
 	get_param_and_shift_buf(TRUE,
 				   sizeof(u_int32),
 				   &data,
 				   (u_char *)&u4SegCount);
+
+	if (u4SegCount >= RU_SEG_STA_CNT_MAX) {
+		/* Update hqa_frame with response: status (2 bytes) */
+		update_hqa_frame(hqa_frame, 2, SERV_STATUS_AGENT_INVALID_PARAM);
+		return SERV_STATUS_SUCCESS;
+	}
 
 	/* param count */
 	param_cnt = sizeof(struct test_ru_info_host) / sizeof(u_int32);
@@ -5192,7 +5214,7 @@ static s_int32 hqa_set_etssi_gain(
 static s_int32 hqa_get_tssi_meas_dbv(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
 {
-	s_int32 ret = SERV_STATUS_SUCCESS;
+	s_int32 ret;
 	u_char *data = hqa_frame->data;
 	u_int32 band_idx = 0;
 	u_int32 wf_path = 0;
@@ -6339,7 +6361,7 @@ static s_int32 hqa_listmode_rx_get_status(
 	u_int32 rsp_len = 0;
 	u_char *pevent = NULL;
 	struct list_mode_rx_get_status *pget_status = NULL;
-	struct list_mode_event *prx_event = NULL;
+	struct list_mode_event *prx_event;
 	u_int8 *ptr = hqa_frame->data + 2;
 	u_int32 total_frame, item_num, convert, i, *cast = NULL;
 	u_int32 seg_num_start = 0;
@@ -6953,7 +6975,7 @@ s_int32 mt_agent_hqa_cmd_handler(
 	u_int16 cmd_id;
 	u_int32 table_idx = 0, ext_cmd_id = 0;
 	u_int32 magic_no = 0;
-	struct hqa_frame *hqa_frame = NULL;
+	struct hqa_frame *hqa_frame;
 
 	if (hqa_frame_ctrl == NULL)
 		return SERV_STATUS_AGENT_INVALID_NULL_POINTER;
@@ -6992,7 +7014,7 @@ s_int32 mt_agent_hqa_cmd_handler(
 	while (table_idx < ARRAY_SIZE(CMD_TABLES)) {
 		if ((cmd_id & 0xff00) == CMD_TABLES[table_idx].cmd_offset) {
 			u_int32 cmd_loop = 0;
-			struct hqa_cmd_entry *cmd_set = NULL;
+			struct hqa_cmd_entry *cmd_set;
 
 			cmd_set = CMD_TABLES[table_idx].cmd_set;
 			/* Fix me, should align with other command set */
