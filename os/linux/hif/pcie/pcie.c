@@ -3091,7 +3091,7 @@ int mtk_pcie_retrain(struct pci_dev *dev)
 #if (CFG_PCIE_GEN_SWITCH == 1)
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter)
 {
-	//mtk_pcie_disable_cfg_dump(0);
+	mtk_pcie_disable_cfg_dump(0);
 	if (prAdapter)
 		prAdapter->ucStopMMIO = FALSE;
 
@@ -3162,6 +3162,7 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	struct ADAPTER *prAdapter = NULL;
 	struct RX_IDLE_STATE *prRxIdleState;
 
+
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
 	if (prGlueInfo) {
@@ -3177,8 +3178,9 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	prAdapter->fgIsGenSwitchProcessing = TRUE;
 
 	pcie_gen_switch_polling_rx_done(prAdapter);
+	mtk_pcie_enable_cfg_dump(0);
 
-	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
+	DBGLOG(HAL, TRACE, "[Gen_Switch] start\n");
 	if (g_ucBypassException) {
 		DBGLOG(INIT, ERROR, "[Gen_Switch] g_u1BypassException\n");
 		g_ucBypassException = FALSE;
@@ -3187,7 +3189,7 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 
 	prAdapter->ucStopMMIO = TRUE;
 	g_ucReceiveGenSwitch = TRUE;
-	//mtk_pcie_enable_cfg_dump(0);
+
 	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO:%u, isProcessing:%u\n",
 		prAdapter->ucStopMMIO, prAdapter->fgIsGenSwitchProcessing);
 
@@ -3214,7 +3216,8 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	struct ADAPTER *prAdapter = NULL;
 	struct RX_IDLE_STATE *prRxIdleState;
 
-	DBGLOG(HAL, TRACE, "[Gen_Switch] INT\n");
+	DBGLOG(HAL, TRACE, "[Gen_Switch] end\n");
+	mtk_pcie_disable_cfg_dump(0);
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
@@ -3239,8 +3242,6 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	prAdapter->ucStopMMIO = FALSE;
 	DBGLOG(INIT, ERROR, "[Gen_Switch] u1StopMMIO:%u, isProcessing:%u\n",
 		prAdapter->ucStopMMIO, prAdapter->fgIsGenSwitchProcessing);
-
-	//mtk_pcie_disable_cfg_dump(0);
 
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyMDGenSwitchEnd(prAdapter);
@@ -3280,7 +3281,7 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
 					prAdapter->ucStopMMIO = FALSE;
 					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
 					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
-					//mtk_pcie_disable_cfg_dump(0);
+					mtk_pcie_disable_cfg_dump(0);
 					DBGLOG(INIT, ERROR,
 						"[Gen Switch] timeout\n");
 					break;
