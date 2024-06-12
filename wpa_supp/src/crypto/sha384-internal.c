@@ -27,7 +27,7 @@
  */
 int
 sha384_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac) {
-	struct sha384_state ctx;
+	struct sha384_state ctx = {0};
 	size_t i;
 
 	sha384_init(&ctx);
