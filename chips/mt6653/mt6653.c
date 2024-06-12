@@ -4687,20 +4687,23 @@ uint8_t mt6653_apsLinkPlanDecision(struct ADAPTER *prAdapter,
 		| BIT(MLO_LINK_PLAN_5_6)
 #endif
 	;
+#if (CONFIG_BAND_NUM == 3)
 	uint32_t u4LinkPlan3Bmap =
 		BIT(MLO_LINK_PLAN_2_5_5)
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		| BIT(MLO_LINK_PLAN_2_5_6)
 #endif
 	;
+#endif
 
 	/* Eable A+A when support TBTC and EMLSR */
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
 	    BE_IS_EML_CAP_SUPPORT_EMLSR(prAdapter->rWifiVar.u2NonApMldEMLCap)) {
-		if (prAdapter->rWifiVar.ucStaMldLinkMax == 3 &&
-		    ENUM_BAND_NUM == 3)
+#if (CONFIG_BAND_NUM == 3)
+		if (prAdapter->rWifiVar.ucStaMldLinkMax == 3)
 			u4TmpLinkPlanBmap = u4LinkPlan3Bmap;
 		else
+#endif
 			u4TmpLinkPlanBmap = u4LinkPlanAABmap;
 	} else {
 		u4TmpLinkPlanBmap = u4LinkPlanAGBmap;

@@ -1465,7 +1465,7 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 
 		if (prBssDesc->prBlock->fgDeauthLastTime &&
 		    (apsCanFormMultiLink(prAdapter, prBssDesc, ucBssIndex) ||
-		     prApsInfo->u4EssApNum == 1 ||
+		     prApsInfo->u4EssApNum <= 1 ||
 		     prBssDesc->prBlock->ucDeauthCount >= 2)) {
 			DBGLOG(APS, WARN, MACSTR " is sending deauth [%d].\n",
 				MAC2STR(prBssDesc->aucBSSID),

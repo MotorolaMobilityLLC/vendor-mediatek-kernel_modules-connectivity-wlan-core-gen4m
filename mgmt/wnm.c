@@ -782,6 +782,16 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	aisResetNeighborApList(prAdapter, ucBssIndex);
 #endif
 
+	if (prAdapter->rWifiVar.ucAllowBtmReqMode != 0xff &&
+	    !(prAdapter->rWifiVar.ucAllowBtmReqMode & ucRequestMode)) {
+		DBGLOG(WNM, INFO,
+			"Disallow request mode[%d][%d], reject btm req\n",
+			prAdapter->rWifiVar.ucAllowBtmReqMode,
+			ucRequestMode);
+		ucStatus = WNM_BSS_TM_REJECT_UNSPECIFIED;
+		goto send_response;
+	}
+
 	/* roaming */
 	if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
 		DBGLOG(WNM, ERROR,
