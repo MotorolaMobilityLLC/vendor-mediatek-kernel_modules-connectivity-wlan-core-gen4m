@@ -1162,6 +1162,9 @@ struct GLUE_INFO {
 	uint32_t u4HifRegFifoLen;
 	uint32_t u4HifRegStartCnt;
 	uint32_t u4HifRegReqCnt;
+#if CFG_MTK_WIFI_MBU
+	uint32_t u4MbuTimeoutCnt;
+#endif
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 	u_int8_t fgWlanUevent;
 };
