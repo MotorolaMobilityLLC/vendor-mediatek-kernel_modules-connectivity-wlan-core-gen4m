@@ -1893,9 +1893,14 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		kalSetRstEvent(TRUE);
 	}
 
+	DBGLOG(INIT, INFO, "g_RstOffComp.done= %d\n",
+		g_RstOffComp.done);
+	if (g_RstOffComp.done != 0)
+		kalSendAeeWarning("WLAN", "reset off failed\n");
+
 	wait_for_completion(&g_RstOffComp);
 exit:
-	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+	DBGLOG(INIT, INFO, "Wi-Fi is off successfully\n");
 
 	if (reset_type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
 		glGetChipInfo((void **)&chip);
