@@ -377,13 +377,7 @@ void asicConnac2xWfdmaDummyCrRead(
 		CONNAC2X_WFDMA_DUMMY_CR,
 		&u4RegValue);
 
-	*pfgResult = (u4RegValue & CONNAC2X_WFDMA_NEED_REINIT_BIT) == 0 ?
-		TRUE : FALSE;
-
 #if defined(_HIF_AXI)
-	if (*pfgResult)
-		return;
-
 	*pfgResult = TRUE;
 	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++) {
 		prTxRing = &prHifInfo->TxRing[u4Idx];
@@ -397,7 +391,10 @@ void asicConnac2xWfdmaDummyCrRead(
 
 	if (*pfgResult)
 		DBGLOG(HAL, INFO, "CpuIdx == 0, DummyCr[0x%08x]", u4RegValue);
-#endif
+#else /* !_HIF_AXI */
+	*pfgResult = (u4RegValue & CONNAC2X_WFDMA_NEED_REINIT_BIT) == 0 ?
+		TRUE : FALSE;
+#endif /* !_HIF_AXI */
 }
 
 void asicConnac2xWfdmaDummyCrWrite(
