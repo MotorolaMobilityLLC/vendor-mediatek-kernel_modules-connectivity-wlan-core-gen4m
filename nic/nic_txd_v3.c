@@ -269,7 +269,8 @@ static uint8_t nicConnac3TxGetTxDestQueue(struct ADAPTER *prAdapter,
 				  struct BSS_INFO *prBssInfo)
 {
 	uint8_t ucTarPort;
-	uint8_t ucTarQueue;
+	uint8_t ucTarQueueMcu;
+	uint8_t ucTarQueueLmac;
 	uint8_t ucWmmQueSet = 0;
 	uint8_t ucControlFlag = prMsduInfo->ucControlFlag;
 
@@ -282,9 +283,9 @@ static uint8_t nicConnac3TxGetTxDestQueue(struct ADAPTER *prAdapter,
 
 	if (ucTarPort == PORT_INDEX_MCU) {
 		if (ucControlFlag & MSDU_CONTROL_FLAG_MGNT_2_CMD_QUE)
-			ucTarQueue = MCU_Q0_INDEX;
+			ucTarQueueMcu = MCU_Q0_INDEX;
 		else
-			ucTarQueue = MCU_Q1_INDEX;
+			ucTarQueueMcu = MCU_Q1_INDEX;
 #if (CFG_SUPPORT_FORCE_ALTX == 1)
 		/* All Connac3 projects have enabled this option, makes FW
 		 * accept value 17 (MCU_Q1_INDEX | MAC_TXQ_ALTX_0_INDEX)
@@ -294,18 +295,22 @@ static uint8_t nicConnac3TxGetTxDestQueue(struct ADAPTER *prAdapter,
 		 * disable always TX in the future.
 		 */
 		if (ucControlFlag & MSDU_CONTROL_FLAG_FORCE_TX)
-			ucTarQueue |= (uint8_t)MAC_TXQ_ALTX_0_INDEX;
+			ucTarQueueMcu |= (uint8_t)MAC_TXQ_ALTX_0_INDEX;
 #endif /* CFG_SUPPORT_FORCE_ALTX == 1 */
+
+		return ucTarQueueMcu;
 	} else { /* ucTarPort == PORT_INDEX_LMAC */
 		if (isMgmtFrameByDataQueue(prMsduInfo)) {
-			ucTarQueue = MAC_TXQ_ALTX_0_INDEX;
+			ucTarQueueLmac = MAC_TXQ_ALTX_0_INDEX;
 		} else {
-			ucTarQueue = nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
-			ucTarQueue += ucWmmQueSet * WMM_AC_INDEX_NUM;
+			ucTarQueueLmac =
+				nicTxGetTxDestQIdxByTc(prMsduInfo->ucTC);
+			ucTarQueueLmac += ucWmmQueSet * WMM_AC_INDEX_NUM;
 		}
+
+		return ucTarQueueLmac;
 	}
 
-	return ucTarQueue;
 }
 
 /*----------------------------------------------------------------------------*/
