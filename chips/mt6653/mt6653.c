@@ -368,9 +368,6 @@ struct PCIE_CHIP_CR_MAPPING mt6653_bus2chip_cr_mapping[] = {
 	{0x70000000, 0x1e0000, 0x10000}, /* CB TOP */
 	{0x70020000, 0x1f0000, 0x10000}, /* CB Infra2 (RO) */
 #endif
-#if CFG_MTK_WIFI_MBU
-	{0x74130000, 0x1e0000, 0x10000}, /* CB_INFRA_MBU (dynamic)*/
-#endif
 	{0x7c500000, MT6653_PCIE2AP_REMAP_BASE_ADDR, 0x200000}, /* remap */
 	{0x00000000, 0x000000, 0x00000}, /* END */
 };
@@ -394,6 +391,13 @@ struct pcie2ap_remap mt6653_pcie2ap_remap = {
 	.base_addr = MT6653_PCIE2AP_REMAP_BASE_ADDR
 };
 
+struct pcie2ap_remap mt6653_pcie2ap_remap_cbtop = {
+	.reg_base = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg0_ADDR,
+	.reg_mask = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg0_MASK,
+	.reg_shift = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_pcie_remap_wf_rg0_SHFT,
+	.base_addr = MT6653_PCIE2AP_REMAP_CBTOP_BASE_ADDR
+};
+
 struct ap2wf_remap mt6653_ap2wf_remap = {
 	.reg_base = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_ADDR,
 	.reg_mask = CONN_MCU_BUS_CR_AP2WF_REMAP_1_R_AP2WF_PUBLIC_REMAPPING_0_START_ADDRESS_MASK,
@@ -401,9 +405,18 @@ struct ap2wf_remap mt6653_ap2wf_remap = {
 	.base_addr = MT6653_REMAP_BASE_ADDR
 };
 
+struct remap_range mt6653_cbtop_remap_ranges[] = {
+	{0x70000000, 0x70ffffff},
+	{0x74000000, 0x74ffffff},
+	{0x75010000, 0x7501ffff},
+	{0, 0}, /* END */
+};
+
 struct PCIE_CHIP_CR_REMAPPING mt6653_bus2chip_cr_remapping = {
 	.pcie2ap = &mt6653_pcie2ap_remap,
+	.pcie2ap_cbtop = &mt6653_pcie2ap_remap_cbtop,
 	.ap2wf = &mt6653_ap2wf_remap,
+	.cbtop_ranges = mt6653_cbtop_remap_ranges,
 };
 
 struct wfdma_group_info mt6653_wfmda_host_tx_group[] = {
@@ -815,6 +828,8 @@ struct BUS_INFO mt6653_bus_info = {
 		.u4RemapAddr = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
 		.u4RemapVal = 0x70027413,
 		.u4RemapDefVal = 0x70027000,
+		.u4RemapRegAddr = 0x74130000,
+		.u4RemapBusAddr = 0x1e0000,
 
 	},
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */

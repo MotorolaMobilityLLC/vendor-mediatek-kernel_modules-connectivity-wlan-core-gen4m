@@ -762,9 +762,16 @@ struct ap2wf_remap {
 	uint32_t base_addr;
 };
 
+struct remap_range {
+	const uint32_t start;
+	const uint32_t end;
+};
+
 struct PCIE_CHIP_CR_REMAPPING {
 	const struct pcie2ap_remap *pcie2ap;
+	const struct pcie2ap_remap *pcie2ap_cbtop;
 	const struct ap2wf_remap *ap2wf;
+	const struct remap_range *cbtop_ranges;
 };
 
 struct MSDU_TOKEN_ENTRY {
@@ -972,6 +979,8 @@ struct SW_EMI_RING_INFO {
 	uint32_t u4RemapAddr;
 	uint32_t u4RemapVal;
 	uint32_t u4RemapDefVal;
+	uint32_t u4RemapRegAddr;
+	uint32_t u4RemapBusAddr;
 #endif
 };
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
