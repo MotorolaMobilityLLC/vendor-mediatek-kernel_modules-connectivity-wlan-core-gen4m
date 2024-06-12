@@ -202,6 +202,14 @@ enum pcie_aspm_state {
 };
 #endif
 
+#if CFG_PCIE_GEN_SWITCH
+struct RX_IDLE_STATE {
+	uint32_t u4WFIdle;
+	uint32_t u4FWIdle;
+};
+#endif /*CFG_SUPPORT_PCIE_GEN_SWITCH*/
+
+
 #if CFG_SUPPORT_HIF_RX_NAPI
 struct HIF_NAPI_DEVICE {
 	struct net_device dev;
@@ -741,6 +749,7 @@ irqreturn_t pcie_gen_switch_end_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance);
 void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter);
 void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter);
+uint32_t *pcie_gen_switch_get_emi_add(struct ADAPTER *prAdapter);
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
 #endif
 
