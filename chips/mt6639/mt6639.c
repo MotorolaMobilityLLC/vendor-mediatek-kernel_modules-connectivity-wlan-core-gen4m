@@ -1074,6 +1074,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 #if CFG_MTK_WIFI_SW_EMI_RING
 	.is_en_sw_emi_read = TRUE,
 #endif
+	.fgDumpViaBtOnlyForDbgSOP = FALSE,
 #endif /* _HIF_PCIE */
 	.txd_append_size = MT6639_TX_DESC_APPEND_LENGTH,
 	.hif_txd_append_size = MT6639_HIF_TX_DESC_APPEND_LENGTH,
