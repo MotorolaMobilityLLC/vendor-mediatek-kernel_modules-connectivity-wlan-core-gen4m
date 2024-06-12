@@ -1510,6 +1510,7 @@ struct mt66xx_chip_info {
 #if CFG_MTK_WIFI_SW_EMI_RING
 	const u_int8_t is_en_sw_emi_read;
 #endif
+	const u_int8_t fgDumpViaBtOnlyForDbgSOP;
 	unsigned int txd_append_size;	/* hw mac txd append */
 	const unsigned int hif_txd_append_size; /* hif txd append size */
 	const unsigned int rxd_size;	        /* hw mac rxd size */
