@@ -695,12 +695,16 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	int ret = 0;
 #endif
 
-	if (kalIsResetting())
+	if (kalIsResetting()) {
+		DBGLOG(INIT, INFO, "already in reset\n");
 		goto exit;
+	}
 
 #if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-	if (kalIsShutdown())
+	if (kalIsShutdown()) {
+		DBGLOG(INIT, INFO, "skip in shutdown\n");
 		goto exit;
+	}
 #endif
 
 	if (prAdapter) {
@@ -741,8 +745,10 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	/* Avoid doing reset triggered by CMD when WIFI write is processing */
 	if (get_wifi_process_status() &&
 	   (eResetReason == RST_CMD_TRIGGER ||
-	    eResetReason == RST_FWK_TRIGGER))
+	    eResetReason == RST_FWK_TRIGGER)) {
+		DBGLOG(INIT, INFO, "cmd trigger in write processing\n");
 		goto exit;
+	}
 #endif
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
