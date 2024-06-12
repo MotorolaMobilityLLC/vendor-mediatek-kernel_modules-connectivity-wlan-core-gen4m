@@ -3899,18 +3899,29 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 			value);
 		return FALSE;
 	}
+	return TRUE;
+}
+
+u_int8_t mt6653_is_conninfra_bus_timeout(struct ADAPTER *ad)
+{
+	uint32_t value = 0;
 
 	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR,
 		   &value);
-	if ((value & BITS(0, 9)) != 0)
+	if ((value & BITS(0, 9)) != 0) {
 		DBGLOG(HAL, ERROR,
-			"Conninfra bus hang irq status: 0x%08x\n",
+			"Conninfra bus timeout irq status: 0x%08x\n",
 			value);
+		return TRUE;
+	}
 
-	return TRUE;
+	return FALSE;
 }
 
+/* Please do ap2conn_off_readable check before execute
+ * conn2wf_readable check
+ */
 u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 {
 	uint32_t value = 0;
@@ -3935,6 +3946,13 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 		return FALSE;
 	}
 
+	return TRUE;
+}
+
+u_int8_t mt6653_is_mcusys_bus_timeout(struct ADAPTER *ad)
+{
+	uint32_t value = 0;
+
 	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR,
 		   &value);
@@ -3942,10 +3960,10 @@ u_int8_t mt6653_is_conn2wf_readable(struct ADAPTER *ad)
 		DBGLOG(HAL, WARN,
 			"WF mcusys bus hang irq status: 0x%08x\n",
 			value);
-		return FALSE;
+		return TRUE;
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
 static u_int8_t mt6653_check_recovery_needed(struct ADAPTER *ad)
@@ -4448,17 +4466,25 @@ static int mt6653ConnacPccifOff(struct ADAPTER *prAdapter)
 static int mt6653_CheckBusHang(void *priv, uint8_t rst_enable)
 {
 	struct ADAPTER *ad = priv;
-	u_int8_t readable = FALSE;
+	u_int8_t readable = TRUE;
 
 	if (fgIsBusAccessFailed) {
 		readable = FALSE;
 		goto exit;
 	}
 
-	if (mt6653_is_ap2conn_off_readable(ad) &&
-	    mt6653_is_conn2wf_readable(ad))
-		readable = TRUE;
-	else
+	if (!mt6653_is_ap2conn_off_readable(ad) ||
+	    !mt6653_is_conn2wf_readable(ad)) {
+		readable = FALSE;
+		goto exit;
+	}
+
+	if (mt6653_is_conninfra_bus_timeout(ad)) {
+		readable = FALSE;
+		goto exit;
+	}
+
+	if (mt6653_is_mcusys_bus_timeout(ad))
 		readable = FALSE;
 
 exit:
@@ -4645,24 +4671,11 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 	}
 #endif
 
-	HAL_RMCR_RD(PLAT_DBG, prAdapter,
-		CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR, &u4Val1);
-	if ((u4Val1 & BITS(0, 9)) != 0x0) {
-		DBGLOG(HAL, WARN,
-			"Conninfra timeout status: 0x%08x\n",
-			u4Val1);
+	if (mt6653_is_conninfra_bus_timeout(prAdapter))
 		return TRUE;
-	}
 
-	HAL_RMCR_RD(PLAT_DBG, prAdapter,
-		CONN_DBG_CTL_WF_MCUSYS_INFRA_VDNR_GEN_DEBUG_CTRL_AO_BUS_TIMEOUT_IRQ_ADDR,
-		&u4Val1);
-	if ((u4Val1 & BIT(0)) != 0x0) {
-		DBGLOG(HAL, WARN,
-			"WF mcusys bus status: 0x%08x\n",
-			u4Val1);
+	if (mt6653_is_mcusys_bus_timeout(prAdapter))
 		return TRUE;
-	}
 
 	return FALSE;
 }
