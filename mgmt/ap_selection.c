@@ -1096,9 +1096,10 @@ uint16_t scanCalculateScoreByBlockList(struct ADAPTER *prAdapter,
 	    struct BSS_DESC *prBssDesc, enum ROAM_TYPE eRoamType)
 {
 	uint16_t u2Score = 0;
+	uint8_t ucRoamType = (uint8_t) eRoamType;
 
-	if (eRoamType < 0 || eRoamType >= ROAM_TYPE_NUM) {
-		log_dbg(SCN, WARN, "Invalid roam type %d!\n", eRoamType);
+	if (ucRoamType >= ROAM_TYPE_NUM) {
+		log_dbg(SCN, WARN, "Invalid roam type %d!\n", ucRoamType);
 		return 0;
 	}
 	if (!prBssDesc->prBlock)
@@ -1110,7 +1111,7 @@ uint16_t scanCalculateScoreByBlockList(struct ADAPTER *prAdapter,
 	else
 		u2Score = 100 - prBssDesc->prBlock->ucCount * 10;
 
-	return u2Score * gasMtkWeightConfig[eRoamType].ucBlockListWeight;
+	return u2Score * gasMtkWeightConfig[ucRoamType].ucBlockListWeight;
 }
 
 uint16_t scanCalculateScoreByTput(struct ADAPTER *prAdapter,

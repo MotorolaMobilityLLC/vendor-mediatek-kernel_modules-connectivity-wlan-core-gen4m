@@ -8116,6 +8116,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisSecurityCheck, "DisSecurityCheck", 0,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucAllowBtmReqMode, "AllowBtmReqMode", 0xff,
+		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4RejectBtmReqReason, "RejectBtmReqReason", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgRoamByBTO, "RoamByBTO", 0, FEATURE_DEBUG_ONLY);
