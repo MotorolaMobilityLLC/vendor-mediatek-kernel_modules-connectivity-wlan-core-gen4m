@@ -38,8 +38,7 @@
 #else
 #include <memory/mediatek/emi.h>
 #endif
-#define WIFI_EMI_MEM_OFFSET    0x2A0000
-#define WIFI_EMI_MEM_SIZE      0x160000
+
 #define DOMAIN_AP	0
 #define DOMAIN_CONN	2
 #endif
@@ -285,7 +284,7 @@ void kalSetEmiMpuProtection(phys_addr_t emiPhyBase, bool enable)
 void kalSetDrvEmiMpuProtection(phys_addr_t emiPhyBase, uint32_t offset,
 			       uint32_t size)
 {
-#if KERNEL_VERSION(6, 0, 0) >= LINUX_VERSION_CODE
+#if IS_ENABLED(CONFIG_MTK_EMI_LEGACY)
 	struct emimpu_region_t region;
 	unsigned long long start = emiPhyBase + offset;
 	unsigned long long end = emiPhyBase + offset + size - 1;
