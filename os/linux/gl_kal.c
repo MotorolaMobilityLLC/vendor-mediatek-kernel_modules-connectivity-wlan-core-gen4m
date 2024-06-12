@@ -18991,6 +18991,9 @@ inline void kalHifRegWorkInit(struct GLUE_INFO *pr)
 		      pr->u4HifRegFifoLen);
 	kalWorkInit(pr, HIF_REG_WORK, "HifRegWork", kalHifRegWork);
 	spin_lock_init(&pr->rHifRegFifoLock);
+#if CFG_MTK_WIFI_MBU
+	pr->u4MbuTimeoutCnt = 0;
+#endif
 }
 
 inline void kalHifRegWorkUninit(struct GLUE_INFO *pr)
