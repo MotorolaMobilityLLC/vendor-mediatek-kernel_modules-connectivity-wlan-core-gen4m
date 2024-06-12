@@ -127,22 +127,22 @@ enum wifi2mbr_status mbraink2wifi_get_data(void *priv,
 		}
 
 get_data_retry:
-		tmpBuf = kalMemAlloc(g_arMbrHdlr[i].ucExpdLen, VIR_MEM_TYPE);
+		tmpBuf = kalMemAlloc(g_arMbrHdlr[i].u4ExpdLen, VIR_MEM_TYPE);
 		if (!tmpBuf) {
 			DBGLOG(REQ, WARN,
 				"Can not alloc memory for tag:%u\n", tag);
 			return WIFI2MBR_FAILURE;
 		}
 
-		kalMemZero(tmpBuf, g_arMbrHdlr[i].ucExpdLen);
+		kalMemZero(tmpBuf, g_arMbrHdlr[i].u4ExpdLen);
 
 		eStatus = g_arMbrHdlr[i].pfnHandler(prAdapter, tag,
 			g_u2LoopNum - g_u2LeftLoopNum,
 			tmpBuf, pu2Len);
 
 		if (eStatus == WIFI2MBR_SUCCESS &&
-			*pu2Len <= g_arMbrHdlr[i].ucExpdLen) {
-			kalMemCopy(buf, tmpBuf, g_arMbrHdlr[i].ucExpdLen);
+			*pu2Len <= g_arMbrHdlr[i].u4ExpdLen) {
+			kalMemCopy(buf, tmpBuf, *pu2Len);
 		}
 
 		DBGLOG_LIMITED(REQ, TRACE,
@@ -150,7 +150,7 @@ get_data_retry:
 			reason, tag, eStatus, g_u2LeftLoopNum,
 			g_u2LoopNum - g_u2LeftLoopNum, u2CurTagRetryCnt);
 
-		kalMemFree(tmpBuf, VIR_MEM_TYPE, g_arMbrHdlr[i].ucExpdLen);
+		kalMemFree(tmpBuf, VIR_MEM_TYPE, g_arMbrHdlr[i].u4ExpdLen);
 
 		if (eStatus == WIFI2MBR_FAILURE) {
 			if (u2CurTagRetryCnt < WIFI2MBR_TAG_RETRY_LIMIT) {
