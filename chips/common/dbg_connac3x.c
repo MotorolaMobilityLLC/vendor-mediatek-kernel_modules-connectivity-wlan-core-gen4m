@@ -2439,7 +2439,7 @@ void connac3x_show_wfdma_desc(struct ADAPTER *prAdapter)
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	for (i = 0; i < prBusInfo->wfmda_host_tx_group_len; i++) {
-		if (i >= TX_RING_MAX)
+		if (i >= NUM_OF_TX_RING)
 			break;
 
 		prGroup = &prBusInfo->wfmda_host_tx_group[i];
@@ -2458,7 +2458,7 @@ void connac3x_show_wfdma_desc(struct ADAPTER *prAdapter)
 	}
 
 	for (i = 0; i < prBusInfo->wfmda_host_rx_group_len; i++) {
-		if (i >= RX_RING_MAX)
+		if (i >= NUM_OF_RX_RING)
 			break;
 
 		prGroup = &prBusInfo->wfmda_host_rx_group[i];
