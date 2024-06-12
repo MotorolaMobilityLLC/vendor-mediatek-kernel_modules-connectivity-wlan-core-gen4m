@@ -86,14 +86,14 @@ typedef uint16_t (*PFN_WIFI2MBR_DATA_NUM) (struct ADAPTER*,
 
 /*
  * eTag: data tag
- * ucExpdLen: expected data length
+ * u4ExpdLen: expected data length
  * pfnHandler: pointer to the function which should copy to the buffer
  * pfnGetDataNum: pointer to the function which should
  *                specify the amount of valid data
  */
 struct wifi2mbr_handler {
 	enum wifi2mbr_tag eTag;
-	uint8_t ucExpdLen;
+	uint32_t u4ExpdLen;
 	PFN_WIFI2MBR_HANDLER pfnHandler;
 	PFN_WIFI2MBR_DATA_NUM pfnGetDataNum;
 };
