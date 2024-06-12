@@ -1219,6 +1219,9 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 	struct MSDU_TOKEN_ENTRY *prToken;
 	uint32_t u4Idx, u4FailCnt = 0;
 	uint32_t u4loopCnt = HIF_TX_MSDU_TOKEN_NUM;
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+	unsigned long ulAllocTimeoutTime = 0;
+#endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTokenInfo = &prHifInfo->rTokenInfo;
@@ -1245,9 +1248,22 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 	u4loopCnt = wifi_tx_cma_get_mem_data_num();
 	if (u4loopCnt > HIF_TX_MSDU_TOKEN_NUM)
 		u4loopCnt = HIF_TX_MSDU_TOKEN_NUM;
+
+	ulAllocTimeoutTime = jiffies +
+		TX_MSDU_MEM_ALLOC_MAX_TIME * HZ / MSEC_PER_SEC;
 #endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
 
 	for (u4Idx = 0; u4Idx < u4loopCnt; u4Idx++) {
+#if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
+		if (u4Idx >= HIF_TX_MSDU_TOKEN_NUM_MIN &&
+			!time_before(jiffies, ulAllocTimeoutTime)) {
+			DBGLOG(HAL, ERROR, "alloc timeout [%d] idx: %u\n",
+			       TX_MSDU_MEM_ALLOC_MAX_TIME, u4Idx);
+			u4FailCnt += u4loopCnt - u4Idx;
+			break;
+		}
+#endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
+
 		prToken = &prTokenInfo->arToken[u4Idx];
 		if (!halInitOneMsduTokenInfo(prAdapter, prToken, u4Idx))
 			u4FailCnt++;
