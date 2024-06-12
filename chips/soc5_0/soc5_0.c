@@ -93,6 +93,9 @@ static int wf_pwr_on_consys_mcu(struct ADAPTER *prAdapter);
 static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter);
 static uint32_t soc5_0_McuInit(struct ADAPTER *prAdapter);
 static void soc5_0_McuDeInit(struct ADAPTER *prAdapter);
+static void soc5_0clearEvtRingTillCmdRingEmpty(
+	struct ADAPTER *prAdapter);
+
 
 /*******************************************************************************
 *                              F U N C T I O N S
@@ -433,6 +436,8 @@ struct BUS_INFO soc5_0_bus_info = {
 	.DmaShdlReInit = NULL,
 	.setRxRingHwAddr = soc5_0SetRxRingHwAddr,
 	.wfdmaAllocRxRing = soc5_0WfdmaAllocRxRing,
+	.clearEvtRingTillCmdRingEmpty =
+		soc5_0clearEvtRingTillCmdRingEmpty,
 
 #if CFG_MTK_WIFI_SW_WFDMA
 	.rSwWfdmaInfo = {
@@ -1086,6 +1091,36 @@ static void configWfdmaRxRingThreshold(struct ADAPTER *prAdapter)
 			WF_WFDMA_HOST_DMA0_WPDMA_PAUSE_RX_Q_TH10_ADDR,
 			u4OldVal,
 			u4NewVal);
+}
+
+static void soc5_0clearEvtRingTillCmdRingEmpty(
+	struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct BUS_INFO *prBusInfo = NULL;
+	uint32_t u4Retry = 0;
+	struct RTMP_TX_RING *prTxRing;
+	uint32_t u4CpuIdx = 0, u4DmaIdx = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prBusInfo = prAdapter->chip_info->bus_info;
+
+	u4Retry = 0;
+	prTxRing = &prHifInfo->TxRing[TX_RING_CMD];
+	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_cidx_addr, &u4CpuIdx);
+	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
+	while (u4CpuIdx != u4DmaIdx) {
+		if (u4Retry >= HIF_CMD_POWER_OFF_RETRY_COUNT)
+			break;
+		kalMsleep(HIF_CMD_POWER_OFF_RETRY_TIME);
+		u4Retry++;
+		nicProcessISTWithSpecifiedCount(prAdapter, 1);
+		DBGLOG_LIMITED(INIT, INFO,
+		       "cmd ring cidx[%lu] != didx[%lu] try to clear event ring, retry: %lu\n",
+		       u4CpuIdx, u4DmaIdx, u4Retry);
+		kalDevRegRead(prAdapter->prGlueInfo,
+			      prTxRing->hw_didx_addr, &u4DmaIdx);
+	}
 }
 
 static void soc5_0asicConnac2xWpdmaConfig(struct GLUE_INFO *prGlueInfo,
