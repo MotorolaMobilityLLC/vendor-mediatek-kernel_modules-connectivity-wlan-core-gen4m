@@ -179,6 +179,7 @@ struct ap2wf_remap {
 
 struct PCIE_CHIP_CR_REMAPPING {
 	const struct pcie2ap_remap *pcie2ap;
+	const struct pcie2ap_remap *pcie2ap_cbtop;
 	const struct ap2wf_remap *ap2wf;
 };
 
