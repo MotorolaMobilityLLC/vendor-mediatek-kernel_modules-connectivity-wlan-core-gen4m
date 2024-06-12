@@ -582,7 +582,6 @@ struct CHIP_DBG_OPS {
 #if CFG_MTK_WIFI_MBU
 	uint8_t (*getMbuTimeoutStatus)(void);
 #endif
-	u_int8_t fgIsDebugSopOnGoing;
 #if CFG_MTK_WIFI_DEVAPC
 	void (*showDevapcDebugInfo)(void);
 #endif

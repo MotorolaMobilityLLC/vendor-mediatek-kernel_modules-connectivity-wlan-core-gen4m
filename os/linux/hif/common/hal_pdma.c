@@ -748,7 +748,7 @@ done:
 
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-	if (prHifInfo && prHifInfo->fgEnablePcieCfgDump) {
+	if (prHifInfo->fgEnablePcieCfgDump) {
 		mtk_pcie_disable_cfg_dump(0);
 		prHifInfo->fgEnablePcieCfgDump = FALSE;
 	}

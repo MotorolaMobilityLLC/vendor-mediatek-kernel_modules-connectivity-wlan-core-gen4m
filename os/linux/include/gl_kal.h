@@ -128,6 +128,9 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_MGMT_DIRECT_HIF_TX | \
 	GLUE_FLAG_SER_INT)
 
+#define HIF_FLAG \
+	(HIF_FLAG_AER_RESET)
+
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
 /* All flags for single thread driver */
@@ -2132,6 +2135,8 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr);
 void kalSetWmmUpdateEvent(struct GLUE_INFO *pr);
 
 void kalSetMddpEvent(struct GLUE_INFO *pr);
+
+void kalSetHifAerResetEvent(struct GLUE_INFO *pr);
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 

@@ -1581,7 +1581,6 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 	int32_t ret = 0;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	int32_t md_state = 0;
-	struct CHIP_DBG_OPS *debug_ops = NULL;
 
 	if (prAdapter == NULL) {
 		DBGLOG(INIT, ERROR, "prAdapter is NULL.\n");
@@ -1622,10 +1621,8 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 		goto end;
 	}
 
-	debug_ops = prAdapter->chip_info->prDebugOps;
-
-	if (debug_ops) {
-		if (GLUE_GET_REF_CNT(debug_ops->fgIsDebugSopOnGoing)) {
+	if (prHifInfo) {
+		if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
 			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
 			wlandioStopPcieStatus(prAdapter,
 				PCIE_MD_REJECT_GEN_SWITCH);
@@ -1684,7 +1681,7 @@ end:
 int32_t mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
-	struct CHIP_DBG_OPS *debug_ops = NULL;
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 	if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
@@ -1698,10 +1695,10 @@ int32_t mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 		return -1;
 	}
 
-	debug_ops = prAdapter->chip_info->prDebugOps;
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
-	if (debug_ops) {
-		if (GLUE_GET_REF_CNT(debug_ops->fgIsDebugSopOnGoing)) {
+	if (prHifInfo) {
+		if (GLUE_GET_REF_CNT(prHifInfo->fgIsDebugSopOnGoing)) {
 			DBGLOG(HAL, ERROR, "Debug SOP On-going\n");
 			return -1;
 		}
