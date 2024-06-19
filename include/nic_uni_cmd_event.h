@@ -5259,6 +5259,7 @@ struct UNI_EVENT_SPECTRUM_DATA {
 	int32_t i4Data[256];
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_PHY_ICS == 1)
 /* PHY_ICS_DATA (Tag2) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA {
@@ -5270,8 +5271,9 @@ struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA {
 	uint32_t u4PhyTimestamp;
 	uint32_t u4DataLen;
 	uint32_t u4Reserved[5];
-	uint32_t u4Data[256];
+	uint32_t u4Data[MAX_PHY_ICS_DUMP_DATA_CNT];
 } __KAL_ATTRIB_PACKED__;
+#endif /* #if (CFG_SUPPORT_ICS == 1) */
 
 enum ENUM_UNI_BCN_TIMEOUT_REASON {
 	UNI_ENUM_BCN_LOSS_STA = 0x00,

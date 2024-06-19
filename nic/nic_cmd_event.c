@@ -2173,7 +2173,7 @@ void nicCmdEventQueryLteSafeChn(struct ADAPTER *prAdapter,
 void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 			  uint8_t *pucEventBuf)
 {
-	uint16_t u2Idx, u2PulseCnt;
+	uint16_t u2Idx, u2PulseCnt = 0;
 	struct EVENT_WIFI_RDD_TEST *prRddPulseEvent;
 
 	ASSERT(prAdapter);
@@ -2182,8 +2182,21 @@ void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 	prRddPulseEvent = (struct EVENT_WIFI_RDD_TEST *) (
 				  pucEventBuf);
 
-	u2PulseCnt = (prRddPulseEvent->u4FuncLength -
-		      RDD_EVENT_HDR_SIZE) / RDD_ONEPLUSE_SIZE;
+	if (prRddPulseEvent->u4FuncLength >
+		(RX_GET_PACKET_MAX_SIZE(prAdapter)
+			- sizeof(struct WIFI_EVENT)
+			- sizeof(struct EVENT_WIFI_RDD_TEST))) {
+		DBGLOG(INIT, ERROR,
+			"u4FuncLength %d out of valid event length!\n",
+			prRddPulseEvent->u4FuncLength);
+		return;
+	}
+
+	/* underflow check */
+	if (prRddPulseEvent->u4FuncLength >= RDD_EVENT_HDR_SIZE) {
+		u2PulseCnt = (prRddPulseEvent->u4FuncLength -
+			RDD_EVENT_HDR_SIZE) / RDD_ONEPLUSE_SIZE;
+	}
 
 	DBGLOG(INIT, INFO, "[RDD]0x%08x %08d[RDD%d]\n",
 	       prRddPulseEvent->u4Prefix
@@ -3604,8 +3617,12 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *prPhyIcsEvent;
+	uint32_t u4PhyIcsEventSize =
+		sizeof(struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA);
 #else
 	struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *prPhyIcsEvent;
+	uint32_t u4PhyIcsEventSize =
+		sizeof(struct EXT_EVENT_PHY_ICS_DUMP_DATA_T);
 #endif
 
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
@@ -3632,6 +3649,17 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 				pucEventBuf;
 #endif
 
+	if (prPhyIcsEvent->u4DataLen >
+		(RX_GET_PACKET_MAX_SIZE(prAdapter)
+			- sizeof(struct WIFI_EVENT)
+			- u4PhyIcsEventSize) ||
+	    prPhyIcsEvent->u4DataLen > MAX_PHY_ICS_DUMP_DATA_CNT) {
+		DBGLOG(RFTEST, ERROR,
+			"u4DataLen %d out of valid event length!\n",
+			prPhyIcsEvent->u4DataLen);
+		return;
+	}
+
 	DBGLOG(RFTEST, INFO,
 	       "u4FuncIndex = %d, u4PktNum = [%d], u4PhyTimestamp = [0x%08x], u4DataLen = [%d]\n",
 	       prPhyIcsEvent->u4FuncIndex,
@@ -3653,7 +3681,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 #endif
 
     /* endian swap */
-	for (Idxi = 0; Idxi < 256; Idxi++) {
+	for (Idxi = 0; Idxi < MAX_PHY_ICS_DUMP_DATA_CNT; Idxi++) {
 		prPhyIcsEvent->u4Data[Idxi] =
 			((prPhyIcsEvent->u4Data[Idxi] & 0x000000FF) << 24)
 			| ((prPhyIcsEvent->u4Data[Idxi] & 0x0000FF00) << 8)
@@ -3707,6 +3735,13 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 
 	prICapEvent = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)
 		    pucEventBuf;
+
+	if (prICapEvent->u4DataLength
+		> sizeof(struct EXT_EVENT_RBIST_DUMP_DATA_T)) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			prICapEvent->u4DataLength);
+		return;
+	}
 
 	prIcapInfo = &prAdapter->rIcapInfo;
 	prIQArray = prIcapInfo->prIQArray;

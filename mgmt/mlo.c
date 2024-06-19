@@ -2709,7 +2709,7 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 	uint8_t ret;
 	int offset = sortGetPayloadOffset(prAdapter, prSrc->pvHeader);
 
-	if (offset < 0)
+	if (offset < 0 || prSrc->u2PacketLen < offset)
 		return NULL;
 
 	QUEUE_INITIALIZE(que);
@@ -2721,6 +2721,10 @@ struct SW_RFB *mldDupMbssNonTxProfile(struct ADAPTER *prAdapter,
 
 		mbss = (struct IE_MBSSID *)pucIE;
 		pucSubIE = mbss->ucSubelements;
+
+		if (IE_SIZE(mbss) < sizeof(struct IE_MBSSID))
+			continue;
+
 		u2SubIElen = IE_SIZE(mbss) - sizeof(struct IE_MBSSID);
 		IE_FOR_EACH(pucSubIE, u2SubIElen, u2SubOffset) {
 			if (IE_ID(pucSubIE) != NON_TX_BSSID_PROFILE)
