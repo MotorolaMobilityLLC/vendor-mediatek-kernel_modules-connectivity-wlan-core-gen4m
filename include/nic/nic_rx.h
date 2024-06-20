@@ -1209,6 +1209,9 @@ struct ACTION_FRAME_SIZE_MAP {
 #define RX_GET_INUSE_RFB_CNT(prRxCtrl) \
 	((prRxCtrl)->rInUseRfbList.u4NumElem)
 
+#define RX_GET_PACKET_MAX_SIZE(prAdapter) \
+	(CFG_RX_MAX_MPDU_SIZE - prAdapter->chip_info->rxd_size)
+
 #define FILE_AND_LINE_NUMBER \
 	(__FILE__ ":" STRLINE(__LINE__))
 
