@@ -25,6 +25,9 @@
  *******************************************************************************
  */
 
+#define MBR_TXTIMEOUT_QUE_CNT_MAX	50
+#define MBR_TXTIMEOUT_INTERVAL		20000 /* 20s*/
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -124,6 +127,11 @@ struct mbrain_emi_data {
 #endif /* CFG_SUPPORT_WIFI_ICCM */
 };
 
+struct MBRAIN_TXTIMEOUT_ENTRY {
+	struct QUE_ENTRY rQueEntry;
+	struct wifi2mbr_TxTimeoutInfo rTxTimeoutInfo;
+};
+
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
  *******************************************************************************
@@ -147,12 +155,29 @@ enum wifi2mbr_status mbr_wifi_lp_handler(struct ADAPTER *prAdapter,
 	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
 	void *buf, uint16_t *pu2Len);
 
+enum wifi2mbr_status mbrWifiTxTimeoutHandler(struct ADAPTER *prAdapter,
+	enum wifi2mbr_tag eTag, uint16_t u2CurLoopIdx,
+	void *buf, uint16_t *pu2Len);
+
+
 /* get tag total data num */
 uint16_t mbr_wifi_lls_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
 
 uint16_t mbr_wifi_lp_get_total_data_num(
 	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
+
+uint16_t mbrWifiTxTimeoutGetTotalDataNum(
+	struct ADAPTER *prAdapter, enum wifi2mbr_tag eTag);
+
+void mmbrTxTimeoutEnqueue(struct ADAPTER *prAdapter,
+	uint32_t u4TokenId, struct timespec64 rTimeoutTs,
+	uint32_t u4AvgIdleSlot);
+
+struct MBRAIN_TXTIMEOUT_ENTRY *mbrTxTimeoutDequeue(struct ADAPTER *prAdapter);
+
+void mbrIsTxTimeout(struct ADAPTER *prAdapter,
+	uint32_t u4TokenId, uint32_t u4TxTimeoutDuration);
 
 #endif /* CFG_SUPPORT_MBRAIN */
 #endif /* _GL_MBRAIN_H */
