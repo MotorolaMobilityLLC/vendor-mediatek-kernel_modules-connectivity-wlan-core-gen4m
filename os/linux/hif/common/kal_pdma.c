@@ -3184,10 +3184,17 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 	if (ret)
 		goto exit;
 
+	if (kalIsResetting() && glGetRstReason() == RST_DRV_OWN_FAIL) {
+		DBGLOG_LIMITED(HAL, WARN, "Reset Reason: RST_DRV_OWN_FAIL\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
 	halSetDriverOwn(prGlueInfo->prAdapter);
 	if (prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
 		DBGLOG_LIMITED(HAL, WARN, "Driver own fail.\n");
 		ret = -EFAULT;
+		goto exit;
 	}
 
 	GLUE_INC_REF_CNT(prGlueInfo->u4HifRegStartCnt);
