@@ -3701,7 +3701,9 @@ struct EVENT_MLR_FSM_UPDATE {
 	uint8_t ucMlrState;
 	/* MLR TXD fixed rate index (only used for REBB segment) */
 	uint8_t ucMlrTxdFrIdx;
-	uint8_t aucReserved[3];
+	/* MLR enable Tx fragment or not */
+	uint8_t ucTxFragEn;
+	uint8_t aucReserved[2];
 };
 #endif
 
