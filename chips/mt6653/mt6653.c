@@ -4566,6 +4566,7 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 		wifi_coredump_set_enable(TRUE);
 
 #if CFG_MTK_WIFI_PCIE_SR
+		fgIsL2Finished = FALSE;
 		/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
 		if (kalIsSupportPcieL2()) {
 			HAL_MCR_WR(prAdapter,
