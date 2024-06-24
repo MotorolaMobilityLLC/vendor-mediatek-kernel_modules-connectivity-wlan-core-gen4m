@@ -1491,6 +1491,7 @@ struct mt66xx_chip_info {
 #if CFG_MTK_WIFI_WFDMA_WB
 	const u_int8_t is_support_wfdma_write_back;
 	const u_int8_t is_support_wfdma_cidx_fetch;
+	const uint32_t wb_dmy_dbg_size;
 	const uint32_t wb_int_sta_size;
 	const uint32_t wb_didx_size;
 	const uint32_t wb_cidx_size;
