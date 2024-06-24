@@ -1752,10 +1752,8 @@ uint32_t assocProcessRxAssocReqFrameImpl(struct ADAPTER *prAdapter,
 					}
 				}
 			}
-#if CFG_SUPPORT_BALANCE_MLR
 			p2pFuncParseMTKOuiInfoElem(prAdapter,
 				prStaRec, pucIE);
-#endif /* CFG_SUPPORT_BALANCE_MLR */
 #endif /* CFG_EANBLE_WIFI_DIRECT */
 			break;
 		case ELEM_ID_IBSS_PARAM_SET:
