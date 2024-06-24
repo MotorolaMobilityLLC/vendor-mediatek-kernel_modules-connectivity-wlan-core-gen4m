@@ -480,14 +480,6 @@ struct P2P_HW_BAND_UNIT {
 	uint8_t ucCh;
 };
 
-struct P2P_A_A_FOBIDEN_REGION_UNIT {
-	uint32_t u4BoundForward1;
-	uint32_t u4BoundForward2;
-	uint32_t u4BoundInverse1;
-	uint32_t u4BoundInverse2;
-	uint32_t u4BoundIsolate;
-};
-
 struct P2P_CH_BW_RANGE {
 	enum ENUM_BAND eRfBand;
 	uint8_t ucCh;
