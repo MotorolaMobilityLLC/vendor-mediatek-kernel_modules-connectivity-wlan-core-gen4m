@@ -224,6 +224,7 @@ struct GL_HIF_INFO {
 	bool fgIsBackupIntSta;
 
 	unsigned long ulHifIntEnBits;
+	uint32_t u4IntBitSetCnt;
 
 #if CFG_SUPPORT_HIF_RX_NAPI
 	struct HIF_NAPI_DEVICE rNapiDev;

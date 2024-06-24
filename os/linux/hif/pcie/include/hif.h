@@ -356,6 +356,7 @@ struct GL_HIF_INFO {
 #endif
 
 	unsigned long ulHifIntEnBits;
+	uint32_t u4IntBitSetCnt;
 
 #if CFG_NEW_HIF_DEV_REG_IF
 	struct HIF_DEV_REG_RECORD arMmioReadHistory[HIF_DEV_REG_HISTORY_SIZE];
