@@ -4227,6 +4227,10 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
 
+#if CFG_MTK_WIFI_PCIE_SR
+	fgIsL2Finished = FALSE;
+#endif
+
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
 		rStatus = WLAN_STATUS_FAILURE;
@@ -4566,7 +4570,6 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 		wifi_coredump_set_enable(TRUE);
 
 #if CFG_MTK_WIFI_PCIE_SR
-		fgIsL2Finished = FALSE;
 		/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
 		if (kalIsSupportPcieL2()) {
 			HAL_MCR_WR(prAdapter,
