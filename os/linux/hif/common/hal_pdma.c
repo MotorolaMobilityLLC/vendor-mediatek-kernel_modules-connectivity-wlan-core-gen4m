@@ -1353,24 +1353,27 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	uint32_t u4Idx, u4TokenNum;
+	uint32_t u4Idx;
 #if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	unsigned long flags = 0;
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTokenInfo = &prHifInfo->rTokenInfo;
-	u4TokenNum = prTokenInfo->u4TokenNum;
 
 #if CFG_SUPPORT_HIF_FIFO_TOKEN
-	for (u4Idx = 0; u4Idx < u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+		if (!prToken->prPacket)
+			continue;
 		halUninitOneMsduTokenInfo(prAdapter, prToken);
 	}
 #else
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
-	for (u4Idx = 0; u4Idx < u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+		if (!prToken->prPacket)
+			continue;
 		list_del(&prToken->msdu_list);
 		hash_del_rcu(&prToken->node);
 		halUninitOneMsduTokenInfo(prAdapter, prToken);
@@ -1639,8 +1642,12 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 		      prTokenInfo->aucTokenFifoBuf,
 		      prTokenInfo->u4TokenFifoLen);
 
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+
+		if (!prToken->prPacket)
+			continue;
+
 		halResetOneMsduToken(prAdapter, prToken);
 		if (!KAL_FIFO_IN(&prTokenInfo->rTokenFifo, prToken)) {
 			DBGLOG_LIMITED(HAL, ERROR, "fifo full token[%u/%u]\n",
