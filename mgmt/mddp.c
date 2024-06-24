@@ -1091,9 +1091,8 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
 		       status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u32BufSize);
-		if (!ret)
-			g_eMddpStatus = status;
-		else
+		g_eMddpStatus = status;
+		if (ret)
 			DBGLOG(INIT, WARN, "notify failed. mddp status:%d\n",
 			       g_eMddpStatus);
 	} else {
@@ -1946,11 +1945,10 @@ static void mddpResetGlobalVariable(void)
 	g_u4MddpRstFlag = 0;
 }
 
-void __mddpNotifyWifiOnStart(void)
+void __mddpNotifyWifiOnStart(u_int8_t fgIsForce)
 {
-	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_END &&
-	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_END &&
-	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_END_QOS) {
+	if (!fgIsForce &&
+	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_OFF_END) {
 		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
 		return;
 	}
@@ -1965,7 +1963,7 @@ void __mddpNotifyWifiOnStart(void)
 #endif
 }
 
-void mddpNotifyWifiOnStart(void)
+void mddpNotifyWifiOnStart(u_int8_t fgIsForce)
 {
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	if (!mddpIsSupportCcci())
@@ -1987,15 +1985,16 @@ void mddpNotifyWifiOnStart(void)
 #endif /* CFG_MTK_ANDROID_WMT */
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mutex_lock(&rMddpLock);
-	__mddpNotifyWifiOnStart();
+	__mddpNotifyWifiOnStart(fgIsForce);
 	mutex_unlock(&rMddpLock);
 }
 
-int32_t __mddpNotifyWifiOnEnd(void)
+int32_t __mddpNotifyWifiOnEnd(u_int8_t fgIsForce)
 {
 	int32_t ret = 0;
 
-	if (g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_START) {
+	if (!fgIsForce &&
+	    g_eMddpStatus != MDDPW_DRV_INFO_STATUS_ON_START) {
 		DBGLOG(NIC, ERROR, "mddp status mismatch[%u]\n", g_eMddpStatus);
 		return ret;
 	}
@@ -2031,7 +2030,7 @@ int32_t __mddpNotifyWifiOnEnd(void)
 	return ret;
 }
 
-int32_t mddpNotifyWifiOnEnd(void)
+int32_t mddpNotifyWifiOnEnd(u_int8_t fgIsForce)
 {
 	int32_t ret = 0;
 
@@ -2053,7 +2052,7 @@ int32_t mddpNotifyWifiOnEnd(void)
 #endif /* CFG_MTK_ANDROID_WMT */
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 	mutex_lock(&rMddpLock);
-	ret = __mddpNotifyWifiOnEnd();
+	ret = __mddpNotifyWifiOnEnd(fgIsForce);
 	mutex_unlock(&rMddpLock);
 
 	return ret;
@@ -2271,6 +2270,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		uint32_t i;
 		struct BSS_INFO *prSapBssInfo = (struct BSS_INFO *) NULL;
 		struct BSS_INFO *prP2pBssInfo = (struct BSS_INFO *) NULL;
+		u_int8_t fgIsForceNotify = TRUE;
 		int32_t ret;
 
 		prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -2287,9 +2287,12 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 		mddpWaitGenSwitchToNormalState();
 #endif /* CFG_PCIE_GEN_SWITCH */
 #endif
+		/* don't notify md when wifi off */
+		if (g_eMddpStatus == MDDPW_DRV_INFO_STATUS_OFF_START)
+			fgIsForceNotify = FALSE;
 		mutex_lock(&rMddpLock);
-		__mddpNotifyWifiOnStart();
-		ret = __mddpNotifyWifiOnEnd();
+		__mddpNotifyWifiOnStart(fgIsForceNotify);
+		ret = __mddpNotifyWifiOnEnd(fgIsForceNotify);
 		mutex_unlock(&rMddpLock);
 		if (ret != WLAN_STATUS_SUCCESS) {
 			DBGLOG(INIT, INFO, "mddpNotifyWifiOnEnd failed.\n");
@@ -3062,6 +3065,7 @@ static void md_rx_msg_handle(struct MDDP_SETTINGS *pSt,
 {
 	struct mddpw_md_notify_info_t *md_info;
 	struct GLUE_INFO *prGlueInfo = NULL;
+	u_int8_t fgIsForceNotify = TRUE;
 
 	DBGLOG(INIT, INFO, "[MDDP] => user_id:%d, msg_id:%d\n",
 		msg->dest_user_id, msg->msg_id);
@@ -3074,14 +3078,17 @@ static void md_rx_msg_handle(struct MDDP_SETTINGS *pSt,
 
 	switch (msg->msg_id) {
 	case CCCI_MSG_ID_RESET_IND:
-		DBGLOG(INIT, STATE, "received RESET IND\n");
-		mddpNotifyWifiOnStart();
+		/* don't notify md when wifi off */
+		if (g_eMddpStatus == MDDPW_DRV_INFO_STATUS_OFF_START)
+			fgIsForceNotify = FALSE;
+		DBGLOG(INIT, STATE, "received RESET IND %u\n", fgIsForceNotify);
+		mddpNotifyWifiOnStart(fgIsForceNotify);
 		WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
 		if (!prGlueInfo || !prGlueInfo->u4ReadyFlag) {
 			DBGLOG(INIT, ERROR, "Invalid drv state.\n");
 			return;
 		}
-		mddpNotifyWifiOnEnd();
+		mddpNotifyWifiOnEnd(fgIsForceNotify);
 		break;
 	case CCCI_MSG_ID_MD_NOTIFY:
 		DBGLOG(INIT, INFO, "received MD NOTIFY\n");

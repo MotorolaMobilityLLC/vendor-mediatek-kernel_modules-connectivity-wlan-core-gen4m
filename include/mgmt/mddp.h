@@ -433,8 +433,8 @@ int32_t mddpNotifyDrvTxd(struct ADAPTER *prAdapter,
 	uint8_t fgActivate);
 int32_t mddpNotifyCheckSer(uint32_t u4Status);
 int32_t mddpNotifyStaTxd(struct ADAPTER *prAdapter);
-void mddpNotifyWifiOnStart(void);
-int32_t mddpNotifyWifiOnEnd(void);
+void mddpNotifyWifiOnStart(u_int8_t fgIsForce);
+int32_t mddpNotifyWifiOnEnd(u_int8_t fgIsForce);
 void mddpNotifyWifiOffStart(void);
 void mddpNotifyWifiOffEnd(void);
 void mddpUnregisterMdStateCB(void);

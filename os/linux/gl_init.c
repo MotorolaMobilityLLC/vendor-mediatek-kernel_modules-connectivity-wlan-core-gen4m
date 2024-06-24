@@ -8416,7 +8416,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		i4Status = wlanOnAtReset();
 #if CFG_MTK_MDDP_SUPPORT
 		if (i4Status == WLAN_STATUS_SUCCESS)
-			mddpNotifyWifiOnEnd();
+			mddpNotifyWifiOnEnd(FALSE);
 #endif
 		goto WLAN_PROBE_RETURN;
 	}
@@ -8532,7 +8532,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		else
 			mddpDisableMddpSupport();
 
-		mddpNotifyWifiOnStart();
+		mddpNotifyWifiOnStart(FALSE);
 #endif
 		/* FW might send Uevent on start running */
 		kalWlanUeventInit(prGlueInfo);
@@ -8685,7 +8685,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       wlanGetSupportedFeatureSet(prGlueInfo),
 		       CFG_SUPPORT_PERSIST_NETDEV);
 #if CFG_MTK_MDDP_SUPPORT
-		mddpNotifyWifiOnEnd();
+		mddpNotifyWifiOnEnd(FALSE);
 #endif
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
