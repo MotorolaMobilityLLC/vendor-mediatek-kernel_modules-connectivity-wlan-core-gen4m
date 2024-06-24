@@ -11815,6 +11815,7 @@ int priv_driver_dfs_cac_start(struct net_device *prNetDev,
 		(struct MSG_P2P_DFS_CAC *) NULL;
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo =
 			(struct P2P_ROLE_FSM_INFO *) NULL;
+	struct WIFI_VAR *prWifiVar;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
@@ -11827,6 +11828,7 @@ int priv_driver_dfs_cac_start(struct net_device *prNetDev,
 		ucRoleIdx, &ucBssIdx) !=
 		WLAN_STATUS_SUCCESS)
 		return -1;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -11885,6 +11887,17 @@ int priv_driver_dfs_cac_start(struct net_device *prNetDev,
 		MBOX_ID_0,
 		(struct MSG_HDR *) prP2pStartCacMsg,
 		MSG_SEND_METHOD_BUF);
+	prWifiVar->u4ByPassCacTimeBackup =
+		prWifiVar->u4ByPassCacTime;
+	prWifiVar->u4ByPassCacTime = 0;
+
+	if (prWifiVar->u4ByPassCacTime) {
+		p2pFuncEnableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	} else {
+		p2pFuncDisableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	}
 
 	DBGLOG(P2P, INFO, "start cac with ch %d and bw %d\n",
 		ucCh, ucBw);
@@ -11902,6 +11915,7 @@ int priv_driver_dfs_cac_stop(struct net_device *prNetDev,
 	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
 	struct MSG_P2P_DFS_CAC *prP2pStopCacMsg =
 		(struct MSG_P2P_DFS_CAC *) NULL;
+	struct WIFI_VAR *prWifiVar;
 
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
@@ -11914,6 +11928,7 @@ int priv_driver_dfs_cac_stop(struct net_device *prNetDev,
 		ucRoleIdx, &ucBssIdx) !=
 		WLAN_STATUS_SUCCESS)
 		return -1;
+	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
 	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
 	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
@@ -11932,6 +11947,17 @@ int priv_driver_dfs_cac_stop(struct net_device *prNetDev,
 		MBOX_ID_0,
 		(struct MSG_HDR *) prP2pStopCacMsg,
 		MSG_SEND_METHOD_BUF);
+
+	prWifiVar->u4ByPassCacTime =
+		prWifiVar->u4ByPassCacTimeBackup;
+
+	if (prWifiVar->u4ByPassCacTime) {
+		p2pFuncEnableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	} else {
+		p2pFuncDisableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	}
 
 	return	i4BytesWritten;
 }
