@@ -701,7 +701,7 @@ uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 	}
 
 #if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-	if (kalIsShutdown()) {
+	if (kalGetShutdownState()) {
 		DBGLOG(INIT, INFO, "skip in shutdown\n");
 		goto exit;
 	}
