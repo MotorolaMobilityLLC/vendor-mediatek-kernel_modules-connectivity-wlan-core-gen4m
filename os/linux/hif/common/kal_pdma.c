@@ -1662,6 +1662,34 @@ u_int8_t kalDevRegReadByEmi(struct GLUE_INFO *prGlueInfo,
 }
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
+#if CFG_MTK_WIFI_WFDMA_WB
+static void kalWfdmaWriteBackRecovery(
+	struct GLUE_INFO *prGlueInfo, struct RTMP_RX_RING *prRxRing,
+	uint16_t u2Port)
+{
+	struct ADAPTER *prAdapter;
+	struct CHIP_DBG_OPS *prDbgOps;
+	uint32_t u4RxDmaIdx = 0, u4RxEmiDmaIdx = 0;
+
+	if (!prRxRing->fgEnEmiDidx)
+		return;
+
+	prAdapter = prGlueInfo->prAdapter;
+	prDbgOps = prAdapter->chip_info->prDebugOps;
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter, prRxRing->hw_didx_addr, &u4RxDmaIdx);
+	HAL_GET_RING_DIDX(HIF_RING, prAdapter, prRxRing, &u4RxEmiDmaIdx);
+
+	if (u4RxDmaIdx != u4RxEmiDmaIdx) {
+		DBGLOG(HAL, INFO, "P[%u] DMA[%u] EMI[%u]\n",
+		       u2Port, u4RxDmaIdx, u4RxEmiDmaIdx);
+		if (prDbgOps && prDbgOps->show_wfdma_wb_info)
+			prDbgOps->show_wfdma_wb_info(prAdapter);
+		*prRxRing->pu2EmiDidx = (uint16_t)u4RxDmaIdx;
+	}
+}
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+
 static void kalWaitRxDmaDoneDebug(
 	struct GLUE_INFO *prGlueInfo, struct RTMP_RX_RING *prRxRing,
 	struct RXD_STRUCT *pRxD, uint16_t u2Port)
@@ -1696,6 +1724,10 @@ static void kalWaitRxDmaDoneDebug(
 			DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, u4Size);
 		}
 	}
+
+#if CFG_MTK_WIFI_WFDMA_WB
+	kalWfdmaWriteBackRecovery(prGlueInfo, prRxRing, u2Port);
+#endif
 }
 
 static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
