@@ -4598,7 +4598,7 @@ int mtk_cfg80211_vendor_get_apf_capabilities(struct wiphy *wiphy,
 
 	if (prGlueInfo->u4ReadyFlag == 0) {
 		DBGLOG(REQ, WARN, "driver is not ready\n");
-		return -EFAULT;
+		goto nla_put_failure;
 	}
 
 	if (!prGlueInfo->prAdapter) {
