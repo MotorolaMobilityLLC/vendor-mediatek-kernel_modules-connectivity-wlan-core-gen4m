@@ -776,6 +776,23 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
 		halPrintHifDbgInfo(prAdapter);
+
+		/* fix AER in debug sop dump, need upgrade to L0 */
+		if (g_IsWholeChipRst == FALSE &&
+		    fgIsBusAccessFailed == TRUE) {
+			u4RstFlag |= RST_FLAG_WHOLE_RESET;
+			if (eResetReason == RST_CMD_TRIGGER) {
+				char reason[64] = {0};
+
+				kalSnprintf(&reason, sizeof(reason),
+					"%s%s",
+					apucRstReason[eResetReason],
+					UPGRATE_TO_L0_PATTERN);
+				glSetRstReasonString(reason);
+			} else
+				glSetRstReasonString(
+					apucRstReason[eResetReason]);
+		}
 	}
 
 #if CFG_SUPPORT_CONNAC1X
