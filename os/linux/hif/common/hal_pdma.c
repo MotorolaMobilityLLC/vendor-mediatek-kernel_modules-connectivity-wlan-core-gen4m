@@ -268,10 +268,10 @@ static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
 		       u4StartTime, u4Timeout, u4Cnt);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-		halPrintHifDbgInfo(prAdapter);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 		mtk_pcie_dump_link_info(0);
 #endif
+		halPrintHifDbgInfo(prAdapter);
 	}
 }
 
