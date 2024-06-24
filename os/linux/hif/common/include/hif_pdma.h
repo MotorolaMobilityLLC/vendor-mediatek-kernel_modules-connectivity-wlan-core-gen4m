@@ -1198,11 +1198,18 @@ enum WF_REG_REQ_OP {
 	WF_REG_NUM
 };
 
+enum WF_REG_REQ_STATUS {
+	WF_REG_PENDING = 0,
+	WF_REG_SUCCESS,
+	WF_REG_FAILURE,
+	WF_REG_STATUS_NUM
+};
+
 struct WF_REG_REQ {
 	enum WF_REG_REQ_OP eOp;
 	uint32_t u4Addr;
 	uint32_t u4Val;
-	u_int8_t fgIsDone;
+	enum WF_REG_REQ_STATUS eStatus;
 };
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 
