@@ -331,6 +331,12 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps;
+#if defined(_HIF_PCIE)
+	u_int8_t readable = TRUE;
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	u_int8_t dumpViaBt = 0;
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* _HIF_PCIE */
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -387,6 +393,26 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			return;
 		}
 	}
+
+#if defined(_HIF_PCIE)
+	if (prDbgOps && prDbgOps->dumpPcieStatus)
+		readable = prDbgOps->dumpPcieStatus(prAdapter->prGlueInfo);
+
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (prDbgOps && prDbgOps->checkDumpViaBt)
+		dumpViaBt = prDbgOps->checkDumpViaBt(prAdapter);
+	if (readable == FALSE || dumpViaBt) {
+		DBGLOG(HAL, ERROR, "PCIe not readable\n");
+		return;
+	}
+#else /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
+	if (readable == FALSE) {
+		DBGLOG(HAL, ERROR, "PCIe not readable\n");
+		return;
+	}
+#endif /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* _HIF_PCIE */
+
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
 		if (prDbgOps && prDbgOps->showPleInfo)
