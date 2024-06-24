@@ -4627,7 +4627,7 @@ static s_int32 hqa_set_ru_info_v2(
 				   &data,
 				   (u_char *)&u4SegCount);
 
-	if (u4SegCount >= RU_SEG_STA_CNT_MAX) {
+	if (u4SegCount > RU_SEG_STA_CNT_MAX) {
 		/* Update hqa_frame with response: status (2 bytes) */
 		update_hqa_frame(hqa_frame, 2, SERV_STATUS_AGENT_INVALID_PARAM);
 		return SERV_STATUS_SUCCESS;
@@ -4826,7 +4826,7 @@ static s_int32 hqa_set_ru_info_v3(
 				   &data,
 				   (u_char *)&u4SegCount);
 
-	if (u4SegCount >= RU_SEG_STA_CNT_MAX) {
+	if (u4SegCount > RU_SEG_STA_CNT_MAX) {
 		/* Update hqa_frame with response: status (2 bytes) */
 		update_hqa_frame(hqa_frame, 2, SERV_STATUS_AGENT_INVALID_PARAM);
 		return SERV_STATUS_SUCCESS;
