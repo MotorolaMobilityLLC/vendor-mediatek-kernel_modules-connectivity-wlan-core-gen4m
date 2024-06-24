@@ -666,19 +666,7 @@ uint32_t glResetSelectAction(struct ADAPTER *prAdapter)
 	return u4RstFlag;
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * @brief Reset trigger entry point.
- *
- * @param   prAddapter
- *          u4RstFlag  specify reset option
- *          pucFile  reset is triggered at which file
- *          u4Line  reset is triggered at which line
- *
- * @retval  none
- */
-/*----------------------------------------------------------------------------*/
-uint32_t glResetTrigger(struct ADAPTER *prAdapter,
+uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
 #define UPGRATE_TO_L0_PATTERN " - Upgrade to L0"
@@ -862,6 +850,30 @@ exit:
 #endif
 	fgIsMcuOff = FALSE;
 	return rst_evt_send;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * @brief Reset trigger entry point.
+ *
+ * @param   prAddapter
+ *          u4RstFlag  specify reset option
+ *          pucFile  reset is triggered at which file
+ *          u4Line  reset is triggered at which line
+ *
+ * @retval  none
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t glResetTrigger(struct ADAPTER *prAdapter,
+		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
+{
+	if (g_IsWholeChipRst) {
+		DBGLOG(INIT, INFO, "whole chip rst on-going, skip %s\n",
+			apucRstReason[eResetReason]);
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	return glResetTriggerImpl(prAdapter, u4RstFlag, pucFile, u4Line);
 }
 #else
 /* The following definition is of ce. */
@@ -1871,8 +1883,11 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			goto exit;
 		}
 
-		if (GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
-				RST_WHOLE_CHIP_TRIGGER) != WLAN_STATUS_SUCCESS)
+		glSetRstReason(RST_WHOLE_CHIP_TRIGGER);
+		if (glResetTriggerImpl(prGlueInfo->prAdapter,
+			glResetSelectAction(prGlueInfo->prAdapter),
+			(const uint8_t *)__FILE__, __LINE__) !=
+			WLAN_STATUS_SUCCESS)
 			goto exit;
 	} else {
 		while (kalIsResetOnEnd() &&
