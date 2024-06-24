@@ -922,7 +922,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 #endif
 	}
 
-	if (g_AERRstTriggered || kalIsResetting())
+	if (g_AERRstTriggered)
 		goto exit;
 
 	if (state == pci_channel_io_normal) {
