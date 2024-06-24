@@ -2166,6 +2166,7 @@ int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 		ret = -ENOMEM;
 		goto exit;
 	}
+	kmemleak_not_leak(prSkb); /* Omit memleak check */
 
 	kalResetPacket(prGlueInfo, prSkb);
 	skb_reserve(prSkb, u4TxHeadRoomSize + sizeof(struct ethhdr));
