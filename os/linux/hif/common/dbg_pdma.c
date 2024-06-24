@@ -91,21 +91,31 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (!kalIsResetting() &&
-			prHifInfo->rErrRecoveryCtl.eErrRecovState !=
-			ERR_RECOV_STOP_IDLE) {
+	    prHifInfo->rErrRecoveryCtl.eErrRecovState != ERR_RECOV_STOP_IDLE) {
 		DBGLOG(HAL, ERROR,
 			"SER on-going. ser state: %d reset: %d\n",
 			prHifInfo->rErrRecoveryCtl.eErrRecovState,
 			kalIsResetting());
-	} else if (!prAdapter->fgIsFwOwn) {
-		halCheckHifState(prAdapter);
-		halDumpHifDebugLog(prAdapter);
-
-		if (debug_ops && debug_ops->dumpwfsyscpupcr)
-			debug_ops->dumpwfsyscpupcr(prAdapter);
-	} else {
-		DBGLOG(HAL, ERROR, "Skip due to FW own.\n");
+		return;
 	}
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	if (prAdapter->ucStopMMIO) {
+		DBGLOG(HAL, ERROR, "Skip due to stop mmio.\n");
+		return;
+	}
+#endif
+
+	if (prAdapter->fgIsFwOwn) {
+		DBGLOG(HAL, ERROR, "Skip due to FW own.\n");
+		return;
+	}
+
+	halCheckHifState(prAdapter);
+	halDumpHifDebugLog(prAdapter);
+
+	if (debug_ops && debug_ops->dumpwfsyscpupcr)
+		debug_ops->dumpwfsyscpupcr(prAdapter);
 }
 
 static bool halIsFwReadyDump(struct ADAPTER *prAdapter)
