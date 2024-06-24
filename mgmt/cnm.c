@@ -2192,8 +2192,7 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
 	if (prBssOpCtrl->rRunning.fgIsRunning) {
 		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
-		if (eCurrMaxIdx >= 0 &&
-			eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP &&
+		if (eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP &&
 			prBssOpCtrl->rRunning.eReqIdx <=
 			CNM_OPMODE_REQ_MAX_CAP) {
 			DBGLOG(CNM, INFO,
