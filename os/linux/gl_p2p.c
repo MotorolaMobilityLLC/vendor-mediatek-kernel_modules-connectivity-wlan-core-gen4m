@@ -1936,6 +1936,9 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 
 		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
 				    struct BSS_INFO) {
+			if (!prTempBss->fgIsApGoStarted)
+				continue;
+
 			prDupSkb = skb_copy(prSkb, GFP_ATOMIC);
 			if (!prDupSkb) {
 				DBGLOG(P2P, ERROR,

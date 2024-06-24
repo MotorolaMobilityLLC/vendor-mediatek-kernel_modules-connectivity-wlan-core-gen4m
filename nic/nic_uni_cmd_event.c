@@ -11750,6 +11750,30 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 								&legacy);
 		}
 			break;
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+		case UNI_EVENT_SAP_TAG_NOTIFY_AP_GO_STARTED: {
+			struct UNI_EVENT_NOTIFY_AP_GO_STARTED *started =
+				(struct UNI_EVENT_NOTIFY_AP_GO_STARTED *) tag;
+			struct MSG_P2P_NOTIFY_APGO_STARTED *prNotifyMsg = NULL;
+
+			prNotifyMsg = (struct MSG_P2P_NOTIFY_APGO_STARTED *)
+				cnmMemAlloc(ad, RAM_TYPE_MSG,
+					    sizeof(*prNotifyMsg));
+			if (!prNotifyMsg) {
+				DBGLOG(NIC, ERROR, "Alloc mem(%zu) failed\n",
+					sizeof(*prNotifyMsg));
+				break;
+			}
+
+			prNotifyMsg->rMsgHdr.eMsgId =
+				MID_MNY_P2P_NOTIFY_APGO_STARTED;
+			prNotifyMsg->ucBssIdx = started->ucBssIdx;
+			mboxSendMsg(ad, MBOX_ID_0,
+				    (struct MSG_HDR *)prNotifyMsg,
+				    MSG_SEND_METHOD_BUF);
+		}
+			break;
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
