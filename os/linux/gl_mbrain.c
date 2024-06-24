@@ -173,33 +173,18 @@ get_data_retry:
 /* function to register callback to Mbraink when wifi on */
 void glRegCbsToMbraink(struct ADAPTER *prAdapter)
 {
-	void (*pfn)(struct mbraink2wifi_ops *ops);
 	struct mbraink2wifi_ops wifi2mbraink_ops = {
 		.get_data = mbraink2wifi_get_data,
 		.priv = (void *)prAdapter,
 	};
 
-	pfn = symbol_get(register_wifi2mbraink_ops);
-	if (pfn == NULL) {
-		DBGLOG(INIT, WARN, "symbol_get failed\n");
-		return;
-	}
-
-	pfn(&wifi2mbraink_ops);
+	register_wifi2mbraink_ops(&wifi2mbraink_ops);
 }
 
 /* function to unregister callback to Mbraink when wifi off */
 void glUnregCbsToMbraink(void)
 {
-	void (*pfn)(void);
-
-	pfn = symbol_get(unregister_wifi2mbraink_ops);
-	if (pfn == NULL) {
-		DBGLOG(INIT, WARN, "symbol_get failed\n");
-		return;
-	}
-
-	pfn();
+	unregister_wifi2mbraink_ops();
 }
 
 #if CFG_SUPPORT_LLS
