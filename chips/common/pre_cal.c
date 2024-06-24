@@ -653,7 +653,7 @@ uint8_t _AddConnfemSkuTag(struct ADAPTER *prAdapter,
 	uint32_t u4TagLen = 0, u4TagLenBk;
 	const struct connfem_sku *pSku = NULL;
 	uint8_t cnt1, cnt2, cnt3;
-	uint8_t u1SpdtInfo;
+	uint8_t u1SpdtInfo = 0;
 
 	struct PHYACT_CONN_FEM_HEADER_T *pPlvHeader;
 	struct PHYACT_FEM_INFOS_T *pFemInfos;
