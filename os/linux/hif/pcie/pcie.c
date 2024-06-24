@@ -2977,9 +2977,53 @@ void glBusFuncOff(void)
 #endif
 }
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+	struct RX_IDLE_STATE *prRxIdleState;
+
+	if (prAdapter) {
+		if (prAdapter->ucStopMMIO) {
+			DBGLOG(INIT, ERROR, "[Gen Switch] check start\n");
+			prRxIdleState = (struct RX_IDLE_STATE *)
+				pcie_gen_switch_get_emi_add(prAdapter);
+
+			if (prRxIdleState == NULL) {
+				DBGLOG(OID, ERROR, "g_pu4RxDone is null\n");
+				return;
+			}
+			while (prAdapter->ucStopMMIO) {
+				udelay(1);
+				u4Val++;
+				if (u4Val > GEN_SWITCH_TIMEOUT) {
+					prAdapter->ucStopMMIO = FALSE;
+					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
+					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
+					mtk_pcie_disable_cfg_dump(0);
+					DBGLOG(INIT, ERROR,
+						"[Gen Switch] timeout\n");
+					break;
+				}
+			}
+			DBGLOG(INIT, ERROR, "[Gen Switch] check timeout end\n");
+		}
+	}
+}
+#endif /*CFG_PCIE_GEN_SWITCH */
+
 uint32_t glReadPcieCfgSpace(int offset, uint32_t *value)
 {
 	int ret = 0;
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	struct ADAPTER *prAdapter = NULL;
+
+	if (g_prGlueInfo) {
+		prAdapter = g_prGlueInfo->prAdapter;
+		if (prAdapter)
+			pcie_check_gen_switch_timeout(prAdapter);
+	}
+#endif /*CFG_PCIE_GEN_SWITCH*/
 
 	ret = pci_read_config_dword(g_prDev, offset, value);
 	if (unlikely(ret))
@@ -3257,39 +3301,6 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	prRxIdleState->u4WFIdle = DEFAULT_IDLE;
 	prRxIdleState->u4FWIdle = DEFAULT_IDLE;
 	return IRQ_HANDLED;
-}
-
-void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
-{
-	uint32_t u4Val = 0;
-	struct RX_IDLE_STATE *prRxIdleState;
-
-	if (prAdapter) {
-		if (prAdapter->ucStopMMIO) {
-			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going\n");
-			prRxIdleState = (struct RX_IDLE_STATE *)
-				pcie_gen_switch_get_emi_add(prAdapter);
-
-			if (prRxIdleState == NULL) {
-				DBGLOG(OID, ERROR, "g_pu4RxDone is null\n");
-				return;
-			}
-			while (prAdapter->ucStopMMIO) {
-				udelay(1);
-				u4Val++;
-				if (u4Val > GEN_SWITCH_TIMEOUT) {
-					prAdapter->ucStopMMIO = FALSE;
-					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
-					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
-					mtk_pcie_disable_cfg_dump(0);
-					DBGLOG(INIT, ERROR,
-						"[Gen Switch] timeout\n");
-					break;
-				}
-			}
-			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going end\n");
-		}
-	}
 }
 #endif
 
