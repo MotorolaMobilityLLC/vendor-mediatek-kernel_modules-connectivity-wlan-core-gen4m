@@ -1036,7 +1036,7 @@ static int __coredump_handle_cr_region(struct coredump_ctx *ctx,
 	struct CHIP_DBG_OPS *debug_ops = NULL;
 #endif
 #if CFG_MTK_WIFI_MBU
-	uint8_t uCurMbuTimeout;
+	uint8_t uCurMbuTimeout = 0;
 	u_int8_t fgRet = FALSE;
 #endif
 
@@ -1863,7 +1863,7 @@ int wifi_coredump_post_start(void)
 	struct mt66xx_chip_info *chip_info;
 	int ret = 0;
 
-	if (!g_DfdCoredumpState) {
+	if (g_DfdCoredumpState == COREDUMP_FSM_NOT_START) {
 		DBGLOG(INIT, WARN,
 			"Skip coredump due to coredump NOT started.\n");
 		return ret;
