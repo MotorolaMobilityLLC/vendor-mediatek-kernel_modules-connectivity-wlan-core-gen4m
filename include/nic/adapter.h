@@ -1448,6 +1448,7 @@ struct WIFI_VAR {
 	uint8_t fgSkipP2pProbeResp;
 	uint8_t ucDfsRegion;
 	uint32_t u4ByPassCacTime;
+	uint32_t u4ByPassCacTimeBackup;
 	uint32_t u4CC2Region;
 #if CFG_SUPPORT_TDLS_AUTO
 	uint32_t u4TdlsAuto;

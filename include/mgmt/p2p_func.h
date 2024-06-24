@@ -244,6 +244,8 @@ int32_t p2pFuncSetDriverCacTime(uint32_t u4CacTime);
 
 void p2pFuncEnableManualCac(void);
 
+void p2pFuncDisableManualCac(void);
+
 uint32_t p2pFuncGetDriverCacTime(void);
 
 u_int8_t p2pFuncIsManualCac(void);
@@ -263,6 +265,10 @@ void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode);
 uint8_t p2pFuncGetRadarDetectMode(void);
 
 void p2pFuncAddRadarDetectCnt(void);
+
+void p2pFuncRadarDetectCntUevent(struct ADAPTER *prAdapter);
+
+void p2pFuncRadarDetectDoneUevent(struct ADAPTER *prAdapter);
 
 void p2pFuncResetRadarDetectCnt(void);
 

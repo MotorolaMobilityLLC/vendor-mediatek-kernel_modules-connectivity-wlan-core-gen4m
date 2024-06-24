@@ -774,7 +774,7 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 					P2P_ROLE_STATE_IDLE);
 				cnmTimerStartTimer(prAdapter,
 					&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-					5000);
+					1000);
 				p2pFuncSetRadarDetectMode(0);
 			} else {
 				p2pRoleFsmStateTransition(prAdapter,
@@ -1929,7 +1929,7 @@ void p2pRoleFsmDelIfaceDone(
 
 	if (p2pGetMode() == RUNNING_P2P_DEV_MODE ||
 	    (p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&
-	     ucRoleIdx == 1)) {
+	     ucRoleIdx != 0)) {
 		p2pRoleFsmUninit(prAdapter, ucRoleIdx);
 	}
 }
@@ -2254,7 +2254,7 @@ void p2pRoleFsmRunEventStopCac(struct ADAPTER *prAdapter,
 		P2P_ROLE_STATE_IDLE);
 	cnmTimerStartTimer(prAdapter,
 		&(prP2pRoleFsmInfo->rDfsShutDownTimer),
-		5000);
+		1000);
 	cnmMemFree(prAdapter, prMsgHdr);
 }
 
@@ -2421,6 +2421,7 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 		DBGLOG(P2P, INFO,
 			"p2pRoleFsmRunEventRadarDet: Ignore radar event\n");
 		p2pFuncAddRadarDetectCnt();
+		p2pFuncRadarDetectCntUevent(prAdapter);
 		if (prP2pRoleFsmInfo->eCurrentState == P2P_ROLE_STATE_DFS_CAC)
 			p2pFuncSetDfsState(DFS_STATE_CHECKING);
 		else
@@ -2538,6 +2539,7 @@ void p2pRoleFsmRunEventDfsShutDownTimeout(struct ADAPTER *prAdapter,
 	p2pFuncSetDfsState(DFS_STATE_INACTIVE);
 	p2pFuncStopRdd(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 	p2pFuncResetRadarDetectCnt();
+	p2pFuncRadarDetectDoneUevent(prAdapter);
 }				/* p2pRoleFsmRunEventDfsShutDownTimeout */
 
 #endif
@@ -4085,7 +4087,6 @@ p2pRoleFsmRunEventChnlGrant(struct ADAPTER *prAdapter,
 			prP2pRoleFsmInfo->ucRoleIndex,
 			prChnlReqInfo->u4MaxInterval,
 			prMsgChGrant->u4GrantInterval);
-		prChnlReqInfo->u4MaxInterval = prMsgChGrant->u4GrantInterval;
 	}
 
 	if (ucTokenID == prChnlReqInfo->ucSeqNumOfChReq) {

@@ -729,6 +729,12 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 						prBssInfo->ucLinkIndex),
 				     FALSE);
 	}
+#if CFG_ENABLE_WIFI_DIRECT
+	if (prMsgChReq->u4MaxInterval >=
+		P2P_AP_CAC_MIN_CAC_TIME_MS)
+		prMsgChReq->u4MaxInterval =
+			prMsgChReq->u4MaxInterval + P2P_AP_CAC_TIMER_MARGIN;
+#endif
 
 	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",

@@ -8764,9 +8764,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	INIT_UINT(prWifiVar->u4ByPassCacTime, "ByPassCacTime", 0,
-		  FEATURE_DEBUG_ONLY);
+		  FEATURE_TO_CUSTOMER);
 	if (prWifiVar->u4ByPassCacTime) {
 		p2pFuncEnableManualCac();
+		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
+	} else {
+		p2pFuncDisableManualCac();
 		p2pFuncSetDriverCacTime(prWifiVar->u4ByPassCacTime);
 	}
 #endif
