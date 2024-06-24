@@ -793,7 +793,7 @@ void wnmRecvBTMRequest(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	}
 
 	/* roaming */
-	if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
+	if (!roamingFsmInDecision(prAdapter, FALSE, ucBssIndex)) {
 		DBGLOG(WNM, ERROR,
 		    "Bss[%d] Recv btm req but there's ongoing roaming/CSA\n",
 		    ucBssIndex);
