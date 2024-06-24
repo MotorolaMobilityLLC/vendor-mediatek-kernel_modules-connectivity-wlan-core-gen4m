@@ -5439,7 +5439,9 @@ int mtk_cfg80211_vendor_get_usable_channel(
 	uint8_t i, j;
 	uint32_t channels_2g[MAX_CHN_NUM];
 	uint32_t channels_5g[MAX_CHN_NUM];
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	uint32_t channels_6g[MAX_CHN_NUM];
+#endif /* CFG_SUPPORT_WIFI_6G */
 	uint16_t u2CountryCode;
 	uint8_t ucNumOfChannel = 0;
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
@@ -5648,6 +5650,7 @@ int mtk_cfg80211_vendor_get_usable_channel(
 		pr_channel_array->channel_array
 			[j+num_channels_2g].iface_mode_mask = 0xff;
 	}
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	for (j = 0; j < num_channels_6g; j++) {
 		/* We need to report frequency list to HAL */
 		if (iface_type == 0x2 &&
@@ -5679,6 +5682,7 @@ int mtk_cfg80211_vendor_get_usable_channel(
 				.iface_mode_mask
 				= 0xfd;
 	}
+#endif /* CFG_SUPPORT_WIFI_6G */
 
 	if (unlikely(nla_put(skb,
 		WIFI_ATTRIBUTE_USABLE_CHANNEL_ARRAY,
