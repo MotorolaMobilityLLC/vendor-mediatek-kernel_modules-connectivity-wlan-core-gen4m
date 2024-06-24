@@ -1192,6 +1192,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.is_support_wfdma_write_back = TRUE,
+	.wb_dmy_dbg_size = sizeof(struct WFDMA_EMI_RING_IDX_0) * 2,
 	.wb_int_sta_size = sizeof(uint32_t),
 	.wb_didx_size = sizeof(struct WFDMA_EMI_RING_IDX_0),
 	.wb_md_int_sta_size = sizeof(uint32_t),

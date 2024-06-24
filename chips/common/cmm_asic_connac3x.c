@@ -873,6 +873,16 @@ void asicConnac3xAllocWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo,
 	kalMemZero(prRingDmyRd->AllocVa, prRingDmyRd->AllocSize);
 	kalMemZero(prRingDmyWr->AllocVa, prRingDmyWr->AllocSize);
 
+	/* add debug dummy memory */
+	if (prChipInfo->wb_dmy_dbg_size) {
+		prBuf = &prHifInfo->rRingDmyDbg;
+		prBuf->AllocSize = prChipInfo->wb_dmy_dbg_size;
+		if (fgAllocMem)
+			prMemOps->allocExtBuf(prHifInfo, prBuf,
+					      WFDMA_WB_MEMORY_ALIGNMENT);
+		kalMemZero(prBuf->AllocVa, prBuf->AllocSize);
+	}
+
 	if (prChipInfo->wb_int_sta_size) {
 		prBuf = &prHifInfo->rRingIntSta;
 		prBuf->AllocSize = prChipInfo->wb_int_sta_size;
