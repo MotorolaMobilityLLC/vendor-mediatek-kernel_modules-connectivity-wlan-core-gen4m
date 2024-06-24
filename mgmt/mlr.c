@@ -990,13 +990,6 @@ static u_int8_t mlrMlrCapVerCheck(struct ADAPTER *prAdapter,
 				prBssInfo->eBand);
 			return fgMlrCapVerCheck;
 		}
-	} else if (MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec)
-		|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) {
-		/* V2 or V1+V2 doesn't need to do TxFrag */
-		MLR_DBGLOG(prAdapter, TX, INFO,
-			"MLR check - Doesn't need to TxFrag @V2|V1+V2",
-			prBssInfo->eBand);
-		return FALSE;
 	}
 
 	/* check if MLR FSM is in START */
@@ -1449,21 +1442,29 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 		ucBitmapAnd = prStaRec->ucMlrMode
 			& prStaRec->ucMlrSupportBitmap;
 		if (MLR_STATE_IN_START(prStaRec)
-			/* V2 doesn't need to TxFrag due to 3M */
-			&& (ucBitmapAnd == MLR_MODE_MLR_V1
-				|| ucBitmapAnd == MLR_MODE_MLR_PLUS
-				|| ucBitmapAnd == MLR_MODE_ALR))
+			/* V2 doesn't need to TxFrag due to 3M
+			 * && (ucBitmapAnd == MLR_MODE_MLR_V1
+			 * || ucBitmapAnd == MLR_MODE_MLR_PLUS
+			 * || ucBitmapAnd == MLR_MODE_ALR))
+			 */
+			/* Under MLR 2.0, when only the single link is left,
+			 * RA may use MLR 1.5 rate, so the driver will need
+			 * to do tx fragment. Instead, FW decides
+			 * whether to do tx fragment.
+			 */
+			&& prEvtMlrFsmUpdate->ucTxFragEn)
 			MLR_ENABLE_TX_FRAG(prStaRec);
 		else
 			MLR_DISABLE_TX_FRAG(prStaRec);
 
 		DBGLOG(NIC, INFO,
-		       "MLR event - BSSIDX[%d]WIDX[%d]STARECIDX[%d] ucMlrMode=[0x%02x], ucMlrState=[%d], Bitmap[0x%02x](0x%02x & 0x%02x), EnTxFrag=%d\n",
+		       "MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] M:S:F[0x%02x, %d, %d], Bitmap[0x%02x](0x%02x & 0x%02x), EnTxFrag=%d\n",
 		       prBssInfo->ucBssIndex,
 		       prEvtMlrFsmUpdate->u2WlanIdx,
 		       ucStaIdx,
 		       prEvtMlrFsmUpdate->ucMlrMode,
 		       prEvtMlrFsmUpdate->ucMlrState,
+		       prEvtMlrFsmUpdate->ucTxFragEn,
 		       ucBitmapAnd,
 		       prStaRec->ucMlrMode,
 		       prStaRec->ucMlrSupportBitmap,
@@ -1471,14 +1472,15 @@ void mlrEventMlrFsmUpdateHandler(struct ADAPTER *prAdapter,
 	}
 
 	MLR_DBGLOG(prAdapter, NIC, INFO,
-		"MLR event - BSSIDX[%d]WIDX[%d]STARECIDX[%d] CONNECTED[%d] ucMlrMode=%d, ucMlrState=%d\n",
+		"MLR event - BssIdx[%d]WlanIdx[%d]StaRecIdx[%d] Connected[%d] M:S:F[0x%02x, %d, %d]\n",
 		prBssInfo->ucBssIndex,
 		prEvtMlrFsmUpdate->u2WlanIdx,
 		ucStaIdx,
 		kalGetMediaStateIndicated(prAdapter->prGlueInfo,
 		prBssInfo->ucBssIndex) == MEDIA_STATE_CONNECTED,
 	    prEvtMlrFsmUpdate->ucMlrMode,
-	    prEvtMlrFsmUpdate->ucMlrState);
+	    prEvtMlrFsmUpdate->ucMlrState,
+	    prEvtMlrFsmUpdate->ucTxFragEn);
 }
 
 /*----------------------------------------------------------------------------*/
