@@ -582,6 +582,7 @@ p2pRoleStatePrepare_To_REQING_CHANNEL_STATE(struct ADAPTER *prAdapter,
 
 		/* TODO: BW80+80 support */
 		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
+			prAdapter,
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
 			prChnlReqInfo->eChannelWidth);
@@ -672,6 +673,7 @@ p2pRoleStatePrepare_To_DFS_CAC_STATE(struct ADAPTER *prAdapter,
 
 			/* TODO: BW80+80 support */
 		prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
+			prAdapter,
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
 			prChnlReqInfo->eChannelWidth);

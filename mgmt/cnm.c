@@ -5608,7 +5608,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {
 			/* Verify if there is valid S1 */
-			ucS1 = nicGetS1(prBssInfo->eBand,
+			ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
 				rlmGetVhtOpBwByBssOpBw(ucOpMaxBw));
 
@@ -5617,7 +5617,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			 */
 			if (ucS1 == 0 && ucOpMaxBw >= MAX_BW_320_1MHZ) {
 				ucLimitedBw = MAX_BW_160MHZ;
-				ucS1 = nicGetS1(prBssInfo->eBand,
+				ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
 					rlmGetVhtOpBwByBssOpBw(ucLimitedBw));
 			}
@@ -5627,7 +5627,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			 */
 			if (ucS1 == 0 && ucOpMaxBw >= MAX_BW_160MHZ) {
 				ucLimitedBw = MAX_BW_80MHZ;
-				ucS1 = nicGetS1(prBssInfo->eBand,
+				ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
 					rlmGetVhtOpBwByBssOpBw(ucLimitedBw));
 			}

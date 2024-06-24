@@ -3242,19 +3242,20 @@ void p2pFuncChannelListFiltering(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	rddS1 = nicGetS1(BAND_5G, ucFilteredCh, ucFilteredBw);
+	rddS1 = nicGetS1(prAdapter, BAND_5G, ucFilteredCh, ucFilteredBw);
 	if (rddS1 == 0)
 		return;
 
 	j = 0;
 	for (i = 0; i < pucNumOfChannel; i++) {
-		if (nicGetS1(BAND_5G, paucChannelList[i].ucChannelNum,
+		if (nicGetS1(prAdapter, BAND_5G,
+			paucChannelList[i].ucChannelNum,
 			ucFilteredBw) != rddS1) {
 			paucOutChannelList[j] = paucChannelList[i];
 			DBGLOG(RLM, TRACE,
 				"ch: %d, s1: %d, is_dfs: %d, rdds1: %d\n",
 				paucOutChannelList[j].ucChannelNum,
-				nicGetS1(BAND_5G,
+				nicGetS1(prAdapter, BAND_5G,
 				paucOutChannelList[j].ucChannelNum,
 				ucFilteredBw),
 				paucOutChannelList[j].fgDFS,
@@ -7861,7 +7862,7 @@ void p2pFuncSwitchGcChannel(
 	rRfChnlInfo.eBand = prP2pBssInfo->eBand;
 	ucMaxBw = cnmGetBssMaxBw(prAdapter, prP2pBssInfo->ucBssIndex);
 	if (ucMaxBw < rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo))
-		rlmFillVhtOpInfoByBssOpBw(prP2pBssInfo, ucMaxBw);
+		rlmFillVhtOpInfoByBssOpBw(prAdapter, prP2pBssInfo, ucMaxBw);
 	rRfChnlInfo.ucChnlBw = kal_min_t(uint8_t,
 		rlmGetBssOpBwByVhtAndHtOpInfo(prP2pBssInfo),
 		ucMaxBw);
@@ -10375,11 +10376,13 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 			continue;
 
 		if (eBand == BAND_5G && eChnlBw >= MAX_BW_160MHZ &&
-		    nicGetVhtS1(aucChannelList[i].ucChannelNum,
+		    nicGetVhtS1(prAdapter, eBand,
+				aucChannelList[i].ucChannelNum,
 				VHT_OP_CHANNEL_WIDTH_160) == 0)
 			continue;
 		else if (eBand == BAND_5G && eChnlBw >= MAX_BW_80MHZ &&
-			 nicGetVhtS1(aucChannelList[i].ucChannelNum,
+			 nicGetVhtS1(prAdapter, eBand,
+				     aucChannelList[i].ucChannelNum,
 				     VHT_OP_CHANNEL_WIDTH_80) == 0)
 			continue;
 		else if (eBand == BAND_5G && eChnlBw >= MAX_BW_40MHZ &&
@@ -10390,19 +10393,19 @@ uint8_t p2pFunGetAcsBestCh(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (eBand == BAND_6G && eChnlBw >= MAX_BW_320_2MHZ &&
-		    nicGetHe6gS1(aucChannelList[i].ucChannelNum,
+		    nicGetHe6gS1(prAdapter, aucChannelList[i].ucChannelNum,
 				 CW_320_2MHZ) == 0)
 			continue;
 		else if (eBand == BAND_6G && eChnlBw >= MAX_BW_320_1MHZ &&
-			 nicGetHe6gS1(aucChannelList[i].ucChannelNum,
+			 nicGetHe6gS1(prAdapter, aucChannelList[i].ucChannelNum,
 				      CW_320_1MHZ) == 0)
 			continue;
 		else if (eBand == BAND_6G && eChnlBw >= MAX_BW_160MHZ &&
-			 nicGetHe6gS1(aucChannelList[i].ucChannelNum,
+			 nicGetHe6gS1(prAdapter, aucChannelList[i].ucChannelNum,
 				      CW_160MHZ) == 0)
 			continue;
 		else if (eBand == BAND_6G && eChnlBw >= MAX_BW_80MHZ &&
-			 nicGetHe6gS1(aucChannelList[i].ucChannelNum,
+			 nicGetHe6gS1(prAdapter, aucChannelList[i].ucChannelNum,
 				      CW_80MHZ) == 0)
 			continue;
 		else if (eBand == BAND_6G && eChnlBw >= MAX_BW_40MHZ &&
@@ -10485,7 +10488,7 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 
 		if (prChnRank->eBand == BAND_5G &&
 		    prWifiVar->ucP2p5gBandwidth >= MAX_BW_80MHZ &&
-			nicGetVhtS1(prChnRank->ucChannel,
+			nicGetVhtS1(prAdapter, BAND_5G, prChnRank->ucChannel,
 				rlmGetVhtOpBwByBssOpBw(
 					prWifiVar->ucP2p5gBandwidth)) == 0)
 			continue;
@@ -10494,7 +10497,7 @@ void p2pFunGetAcsBestChList(struct ADAPTER *prAdapter,
 		/* If eChnlBw == MAX_BW_320MHZ, it will skip 160BW channel */
 		if (prChnRank->eBand == BAND_6G &&
 		    prWifiVar->ucP2p6gBandwidth >= MAX_BW_80MHZ &&
-			nicGetHe6gS1(prChnRank->ucChannel,
+			nicGetHe6gS1(prAdapter, prChnRank->ucChannel,
 				rlmGetVhtOpBwByBssOpBw(
 					prWifiVar->ucP2p6gBandwidth)) == 0)
 			continue;
@@ -10581,7 +10584,8 @@ void p2pFunIndicateAcsResult(struct GLUE_INFO *prGlueInfo,
 	    ucMaxBandwidth != prAcsReqInfo->eChnlBw) {
 		uint8_t ucS1;
 
-		ucS1 = nicGetS1(prAcsReqInfo->eBand,
+		ucS1 = nicGetS1(prGlueInfo->prAdapter,
+				prAcsReqInfo->eBand,
 				prAcsReqInfo->ucPrimaryCh,
 				rlmGetVhtOpBwByBssOpBw(ucMaxBandwidth));
 
@@ -10618,43 +10622,50 @@ skip_bw_overwrite:
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		if (prAcsReqInfo->eBand == BAND_6G)
 			prAcsReqInfo->ucVhtSeg0 =
-				nicGetS1(prAcsReqInfo->eBand,
+				nicGetS1(prGlueInfo->prAdapter,
+					 prAcsReqInfo->eBand,
 					 prAcsReqInfo->ucPrimaryCh,
 					 VHT_OP_CHANNEL_WIDTH_20_40);
 #endif /* CFG_SUPPORT_WIFI_6G */
 		break;
 	case MAX_BW_80MHZ:
 		prAcsReqInfo->ucVhtSeg0 =
-			nicGetS1(prAcsReqInfo->eBand,
+			nicGetS1(prGlueInfo->prAdapter,
+				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh,
 				 VHT_OP_CHANNEL_WIDTH_80);
 		break;
 	case MAX_BW_160MHZ:
 		prAcsReqInfo->ucVhtSeg1 =
-			nicGetS1(prAcsReqInfo->eBand,
+			nicGetS1(prGlueInfo->prAdapter,
+				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh,
 				 VHT_OP_CHANNEL_WIDTH_160);
 		break;
 	case MAX_BW_80_80_MHZ:
 		prAcsReqInfo->ucVhtSeg0 =
-			nicGetS1(prAcsReqInfo->eBand,
+			nicGetS1(prGlueInfo->prAdapter,
+				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh,
 				 VHT_OP_CHANNEL_WIDTH_80);
 		prAcsReqInfo->ucVhtSeg1 =
-			nicGetS1(prAcsReqInfo->eBand,
+			nicGetS1(prGlueInfo->prAdapter,
+				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh,
 				 VHT_OP_CHANNEL_WIDTH_80P80);
 		break;
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	case MAX_BW_320_1MHZ:
 		prAcsReqInfo->ucVhtSeg1 =
-			nicGetS1(prAcsReqInfo->eBand,
+			nicGetS1(prGlueInfo->prAdapter,
+				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh,
 				 VHT_OP_CHANNEL_WIDTH_320_1);
 		break;
 	case MAX_BW_320_2MHZ:
 		prAcsReqInfo->ucVhtSeg1 =
-			nicGetS1(prAcsReqInfo->eBand,
+			nicGetS1(prGlueInfo->prAdapter,
+				 prAcsReqInfo->eBand,
 				 prAcsReqInfo->ucPrimaryCh,
 				 VHT_OP_CHANNEL_WIDTH_320_2);
 		break;

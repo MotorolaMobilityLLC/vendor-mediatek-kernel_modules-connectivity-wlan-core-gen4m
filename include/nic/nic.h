@@ -411,35 +411,38 @@ uint32_t nicGetS1Freq(struct ADAPTER *prAdapter,
 	uint8_t ucBandwidth);
 
 #if (CFG_SUPPORT_802_11BE == 1)
-uint8_t nicGetEhtS1(enum ENUM_BAND eBand,
+uint8_t nicGetEhtS1(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth);
-uint8_t nicGetEht6gS1(uint8_t ucPrimaryChannel,
+uint8_t nicGetEht6gS1(struct ADAPTER *prAdapter, uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth);
-uint8_t nicGetEhtS2(enum ENUM_BAND eBand,
+uint8_t nicGetEhtS2(struct ADAPTER *prAdapter, enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth);
-uint8_t nicGetEht6gS2(uint8_t ucPrimaryChannel,
+uint8_t nicGetEht6gS2(struct ADAPTER *prAdapter, uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth);
 #endif
 
 /* Utility to get S1, S2 */
-uint8_t nicGetS1(enum ENUM_BAND eBand,
+uint8_t nicGetS1(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
 		uint8_t ucPrimaryChannel,
 		uint8_t ucBandwidth);
 uint8_t nicGetS2(enum ENUM_BAND eBand,
 		uint8_t ucPrimaryChannel,
 		uint8_t ucBandwidth,
 		uint8_t ucS1);
-uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
+uint8_t nicGetVhtS1(struct ADAPTER *prAdapter,
+		enum ENUM_BAND eBand,
+		uint8_t ucPrimaryChannel,
 		uint8_t ucBandwidth);
 #if (CFG_SUPPORT_WIFI_6G == 1)
-uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
+uint8_t nicGetHe6gS1(struct ADAPTER *prAdapter,
+		uint8_t ucPrimaryChannel,
 		uint8_t ucBandwidth);
 uint8_t nicGetHe6gS2(uint8_t ucPrimaryChannel,
 		uint8_t ucBandwidth,
 		uint8_t ucS1);
-uint8_t nicGetHe6gS1BW40(uint8_t ucPrimaryChannel);
 #endif
 
 /* firmware command wrapper */

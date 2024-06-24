@@ -723,9 +723,9 @@ static void ehtRlmFillOpIE(
 
 	/* fixed field in operation info */
 	prEhtOpInfo->ucControl = ehtRlmGetEhtOpBwByBssOpBw(eht_bw);
-	prEhtOpInfo->ucCCFS0 = nicGetEhtS1(prBssInfo->eBand,
+	prEhtOpInfo->ucCCFS0 = nicGetEhtS1(prAdapter, prBssInfo->eBand,
 		prBssInfo->ucPrimaryChannel, rlmGetVhtOpBwByBssOpBw(eht_bw));
-	prEhtOpInfo->ucCCFS1 = nicGetEhtS2(prBssInfo->eBand,
+	prEhtOpInfo->ucCCFS1 = nicGetEhtS2(prAdapter, prBssInfo->eBand,
 		prBssInfo->ucPrimaryChannel, rlmGetVhtOpBwByBssOpBw(eht_bw));
 	u4OverallLen += 3;
 
@@ -914,7 +914,7 @@ void ehtRlmRecOperation(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		}
 
 		prBssInfo->ucVhtChannelWidth = ucVhtOpBw;
-		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
+		prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(prAdapter,
 			prBssInfo->eBand, prBssInfo->ucPrimaryChannel,
 			prBssInfo->ucVhtChannelWidth);
 		prBssInfo->ucVhtChannelFrequencyS2 = 0;

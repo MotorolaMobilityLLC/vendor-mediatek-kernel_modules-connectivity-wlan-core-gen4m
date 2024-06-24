@@ -77,7 +77,7 @@ void rlmUpdate6GOpInfo(struct ADAPTER *prAdapter,
 			rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo),
 			MAX_BW_160MHZ);
 
-		ucS1 = nicGetS1(prBssInfo->eBand,
+		ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
 				ucVhtChannelWidth);
 
@@ -178,7 +178,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		ucMaxBw = cnmOpModeGetMaxBw(prAdapter,
 			prBssInfo);
 
-		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
+		rlmFillVhtOpInfoByBssOpBw(prAdapter, prBssInfo, ucMaxBw);
 
 		/* If the S1 is invalid, force to change bandwidth */
 		if (prBssInfo->ucVhtChannelFrequencyS1 == 0) {
@@ -187,7 +187,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 			 */
 			if (prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT &&
 				ucMaxBw == MAX_BW_160MHZ) {
-				rlmFillVhtOpInfoByBssOpBw(prBssInfo,
+				rlmFillVhtOpInfoByBssOpBw(prAdapter, prBssInfo,
 					MAX_BW_80MHZ);
 			}
 
@@ -201,7 +201,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 		ucMaxBw = cnmOpModeGetMaxBw(prAdapter,
 			prBssInfo);
 
-		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
+		rlmFillVhtOpInfoByBssOpBw(prAdapter, prBssInfo, ucMaxBw);
 	}
 
 #if (CFG_SUPPORT_802_11AX == 1)
@@ -237,7 +237,7 @@ void rlmBssUpdateChannelParams(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 		ucMaxBw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
-		rlmFillVhtOpInfoByBssOpBw(prBssInfo, ucMaxBw);
+		rlmFillVhtOpInfoByBssOpBw(prAdapter, prBssInfo, ucMaxBw);
 		rlmUpdate6GOpInfo(prAdapter, prBssInfo);
 #endif
 	} else {
@@ -1435,6 +1435,7 @@ uint8_t rlmGetVhtS1ForAP(struct ADAPTER *prAdapter,
 				prP2pConnReqInfo->u4CenterFreq1 * 1000);
 	} else {
 		ucFreq1Channel = nicGetS1(
+			prAdapter,
 			prBssInfo->eBand,
 			prBssInfo->ucPrimaryChannel,
 			prBssInfo->ucVhtChannelWidth);
