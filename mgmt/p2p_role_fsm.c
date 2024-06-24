@@ -1548,9 +1548,8 @@ void p2pRoleFsmRunEventPreStartAP(struct ADAPTER *prAdapter,
 
 			/* Revise to VHT OP BW */
 			ucRfBw = rlmGetVhtOpBwByBssOpBw(ucRfBw);
-			if (nicGetVhtS1(
-				ucChannelNum,
-				ucRfBw) &&
+			if (nicGetVhtS1(prAdapter, eBand,
+					ucChannelNum, ucRfBw) &&
 				(ucRfBw >= VHT_OP_CHANNEL_WIDTH_160))
 				bSkipRdd = FALSE;
 		}
@@ -2595,6 +2594,7 @@ void p2pRoleFsmRunEventSetNewChannel(struct ADAPTER *prAdapter,
 	prChnlReqInfo->eChnlSco =
 		rlmGetScoByChnInfo(prAdapter, prRfChannelInfo);
 	prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
+		prAdapter,
 		prChnlReqInfo->eBand,
 		prChnlReqInfo->ucReqChnlNum,
 		prChnlReqInfo->eChannelWidth);
@@ -3225,6 +3225,7 @@ void p2pRoleFsmRunEventConnectionRequest(struct ADAPTER *prAdapter,
 			prChnlReqInfo->eChannelWidth = prBssDesc->eChannelWidth;
 			/* TODO: BW80+80 support */
 			prChnlReqInfo->ucCenterFreqS1 = nicGetS1(
+				prAdapter,
 				prChnlReqInfo->eBand,
 				prChnlReqInfo->ucReqChnlNum,
 				prChnlReqInfo->eChannelWidth);

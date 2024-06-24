@@ -2074,8 +2074,9 @@ static void rlmFillVhtOpNotificationIE(struct ADAPTER *prAdapter,
 			ucPrimaryChannel = prBssDesc->ucChannelNum;
 			eRfSco = prBssDesc->eSco;
 			eRfChannelWidth = prBssDesc->eChannelWidth;
-			ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand,
-				ucPrimaryChannel, eRfChannelWidth);
+			ucRfCenterFreqSeg1 = nicGetS1(prAdapter,
+				prBssDesc->eBand, ucPrimaryChannel,
+				eRfChannelWidth);
 
 			/* Fix the IOT issue of low DL t-put of VHT40 and HE40.
 			 * The root cause is that the channel width of operation
@@ -2726,7 +2727,8 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
+void rlmTransferHe6gOpInfor(struct ADAPTER *prAdapter,
+	uint8_t ucChannelNum,
 	uint8_t ucChannelWidth,
 	uint8_t *pucChannelWidth,
 	uint8_t *pucCenterFreqS1,
@@ -2750,7 +2752,8 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 	}
 
 	/* Covert S1, S2 to VHT format */
-	rlmModifyHE6GBwPara(*pucChannelWidth,
+	rlmModifyHE6GBwPara(prAdapter,
+		*pucChannelWidth,
 		ucChannelNum,
 		pucCenterFreqS1,
 		pucCenterFreqS2);
@@ -2767,7 +2770,8 @@ void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
 	}
 }
 
-void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+void rlmModifyHE6GBwPara(struct ADAPTER *prAdapter,
+	uint8_t ucHe6gChannelWidth,
 	uint8_t ucHe6gPrimaryChannel,
 	uint8_t *pucHe6gChannelFrequencyS1,
 	uint8_t *pucHe6gChannelFrequencyS2)
@@ -2801,8 +2805,8 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 		}
 
 		if (ucS1Modify == 0) {
-			ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
-				ucHe6gChannelWidth);
+			ucS1Modify = nicGetHe6gS1(prAdapter,
+				ucHe6gPrimaryChannel, ucHe6gChannelWidth);
 
 			DBGLOG(RLM, WARN,
 				"S1/S2 for 6G BW160 is out of spec, S1[%d->%d] S2[%d->0]\n",
@@ -2812,7 +2816,7 @@ void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
 		*pucHe6gChannelFrequencyS1 = ucS1Modify;
 		*pucHe6gChannelFrequencyS2 = 0;
 	} else if (ucHe6gChannelWidth == CW_80MHZ) {
-		ucS1Modify = nicGetHe6gS1(ucHe6gPrimaryChannel,
+		ucS1Modify = nicGetHe6gS1(prAdapter, ucHe6gPrimaryChannel,
 			ucHe6gChannelWidth);
 
 		if (ucS1Modify != ucS1Origin) {
@@ -2925,7 +2929,7 @@ void rlmReviseMaxBw(struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 		} else { /* BW80, BW160, BW80P80, BW320 */
 			*peChannelWidth = (ucMaxBandwidth - ucOffset);
 
-			*pucS1 = nicGetS1(prBssInfo->eBand,
+			*pucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 				*pucPrimaryCh,
 				*peChannelWidth);
 		}
@@ -2992,7 +2996,8 @@ enum ENUM_CHNL_EXT rlmReviseSco(
  * \return none
  */
 /*----------------------------------------------------------------------------*/
-void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
+void rlmFillVhtOpInfoByBssOpBw(struct ADAPTER *prAdapter,
+			       struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 {
 	if (!prBssInfo) {
 		DBGLOG(RLM, WARN, "no bssinfo\n");
@@ -3002,6 +3007,7 @@ void rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo, uint8_t ucBssOpBw)
 	prBssInfo->ucVhtChannelWidth =
 		rlmGetVhtOpBwByBssOpBw(ucBssOpBw);
 	prBssInfo->ucVhtChannelFrequencyS1 = nicGetS1(
+		prAdapter,
 		prBssInfo->eBand,
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->ucVhtChannelWidth);
@@ -3460,7 +3466,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 				     prBssInfo->ucOpChangeChannelWidth) <
 			     prBssInfo->ucVhtChannelWidth)) {
 				rlmFillVhtOpInfoByBssOpBw(
-					prBssInfo,
+					prAdapter, prBssInfo,
 					prBssInfo->ucOpChangeChannelWidth);
 			}
 
@@ -3769,7 +3775,8 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 
 					prBssInfo->eBssSCO = CHNL_EXT_SCN;
 
-					rlmTransferHe6gOpInfor(ucPrimaryChannel,
+					rlmTransferHe6gOpInfor(prAdapter,
+						ucPrimaryChannel,
 						(uint8_t)pr6gOperInfor->
 						rControl.bits.ChannelWidth,
 						&prBssInfo->
@@ -4129,6 +4136,7 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 					    prBssInfo->ucOpChangeChannelWidth) <
 				    prBssInfo->ucVhtChannelWidth)
 					rlmFillVhtOpInfoByBssOpBw(
+					prAdapter,
 					prBssInfo,
 					prBssInfo
 					->ucOpChangeChannelWidth);
@@ -5773,6 +5781,7 @@ void rlmProcessVhtAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 					->ucOpChangeChannelWidth) <
 						prBssInfo->ucVhtChannelWidth)
 						rlmFillVhtOpInfoByBssOpBw(
+						prAdapter,
 						prBssInfo,
 						prBssInfo
 						->ucOpChangeChannelWidth);
@@ -7164,7 +7173,7 @@ void rlmProcessExCsaIE(struct ADAPTER *prAdapter,
 	default:
 		break;
 	}
-	prCSAParams->ucVhtS1 = nicGetS1(prCSAParams->eCsaBand,
+	prCSAParams->ucVhtS1 = nicGetS1(prAdapter, prCSAParams->eCsaBand,
 					ucNewChannelNum,
 					prCSAParams->ucVhtBw);
 
@@ -7697,7 +7706,7 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 			       prBssInfo->ucVhtChannelWidth,
 			       prBssInfo->ucVhtChannelFrequencyS1,
 			       prBssInfo->ucVhtChannelFrequencyS2);
-			rlmFillVhtOpInfoByBssOpBw(
+			rlmFillVhtOpInfoByBssOpBw(prAdapter,
 				prBssInfo, prBssInfo->ucOpChangeChannelWidth);
 		}
 	}
@@ -9282,6 +9291,7 @@ static void rlmChangeOwnOpInfo(struct ADAPTER *prAdapter,
 #endif
 		) {
 			rlmFillVhtOpInfoByBssOpBw(
+				prAdapter,
 				prBssInfo,
 				prBssInfo->ucOpChangeChannelWidth);
 

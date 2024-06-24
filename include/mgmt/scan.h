@@ -1211,14 +1211,14 @@ void scnFsmDumpScanDoneInfo(struct ADAPTER *prAdapter,
 	struct EVENT_SCAN_DONE *prScanDone);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
-	enum ENUM_BAND eHwBand);
+void scanParseHEOpIE(struct ADAPTER *prAdapter, uint8_t *pucIE,
+		     struct BSS_DESC *prBssDesc, enum ENUM_BAND eHwBand);
 #endif
 
 #if (CFG_SUPPORT_802_11BE == 1)
 void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc);
-void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
-	enum ENUM_BAND eHwBand);
+void scanParseEhtOpIE(struct ADAPTER *prAdapter, uint8_t *pucIE,
+		      struct BSS_DESC *prBssDesc, enum ENUM_BAND eHwBand);
 #endif
 
 void scanOpClassToBand(uint8_t ucOpClass, uint8_t *band);

@@ -4262,7 +4262,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	ucPrimaryChannel = prBssDesc->ucChannelNum;
 	eRfSco = prBssDesc->eSco;
 	eRfChannelWidth = prBssDesc->eChannelWidth;
-	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
+	ucRfCenterFreqSeg1 = nicGetS1(ad, prBssDesc->eBand, ucPrimaryChannel,
 		eRfChannelWidth);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
@@ -10475,7 +10475,8 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->eRfSco = prBssDesc->eSco;
 		prSubReq->eRfBand = prBssDesc->eBand;
 		prSubReq->eRfChannelWidth = prBssDesc->eChannelWidth;
-		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prSubReq->eRfBand,
+		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prAdapter,
+			prSubReq->eRfBand,
 			prSubReq->ucPrimaryChannel,
 			prSubReq->eRfChannelWidth);
 		prSubReq->ucRfCenterFreqSeg2 = 0;
