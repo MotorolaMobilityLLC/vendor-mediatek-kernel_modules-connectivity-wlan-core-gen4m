@@ -4331,7 +4331,7 @@ static void mt6653_mcu_deinit(struct ADAPTER *ad)
 
 	while (is_wifi_coredump_processing()
 #if CFG_MTK_ANDROID_WMT
-		&& !kalIsShutdown()
+		&& !kalGetShutdownState()
 #endif
 		) {
 		if (retry >= MAX_WAIT_COREDUMP_COUNT) {
