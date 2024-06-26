@@ -395,6 +395,16 @@ enum AGG_RANGE_TYPE_T {
 	ENUM_AGG_RANGE_TYPE_RX = 2
 };
 
+//TN Start modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
+                 uint16_t u2CountryCode);
+uint32_t country_code_is_in_fcc_group(uint16_t country_code);
+uint32_t country_code_is_in_ce_group(uint16_t country_code);
+extern uint16_t priCountryCode;
+#endif
+//TN End modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+
 /*******************************************************************************
  *			P U B L I C   D A T A
  *******************************************************************************

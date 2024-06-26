@@ -11028,6 +11028,11 @@ int priv_driver_set_country(struct net_device *prNetDev,
 	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
 	uint8_t aucCountry[2];
 
+//TN Start modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+    uint16_t u2CountryCode = 0;
+#endif
+//TN End modified by dong.zhang countrycode power Do not delete when resolving conflicts please
 	ASSERT(prNetDev);
 	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
 		return -1;
@@ -11049,7 +11054,15 @@ int priv_driver_set_country(struct net_device *prNetDev,
 
 		for (i = 0; i < count; i++)
 			prCountrySetting.aucCountryCode[i] = apcArgv[1][i];
+//TN Start modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+        u2CountryCode = (((uint16_t) prCountrySetting.aucCountryCode[0]) << 8) |
+            ((uint16_t) prCountrySetting.aucCountryCode[1]);
 
+        rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo,
+            u2CountryCode);
+#endif
+//TN End modified by dong.zhang countrycode power Do not delete when resolving conflicts please
 		prCountrySetting.ucCountryLength = count;
 		prCountrySetting.fgNeedHoldRtnlLock = 0;
 		rStatus = kalIoctl(prGlueInfo,
@@ -11068,6 +11081,16 @@ int priv_driver_set_country(struct net_device *prNetDev,
 	aucCountry[0] = apcArgv[1][0];
 	aucCountry[1] = apcArgv[1][1];
 
+//TN Start modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+    u2CountryCode = (((uint16_t) aucCountry[0]) << 8) |
+        ((uint16_t) aucCountry[1]);
+        DBGLOG(REQ, INFO, "i4Argc >= 2 enters aucCountry[0]=%u,aucCountry[1]=%u\n",
+            aucCountry[0], aucCountry[1]);
+        rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo,
+            u2CountryCode);
+#endif
+//TN End modified by dong.zhang countrycode power Do not delete when resolving conflicts please
 	rStatus = kalIoctl(prGlueInfo, wlanoidSetCountryCode,
 			   &aucCountry[0], 2, &u4BufLen);
 
@@ -22293,6 +22316,244 @@ exit:
 	return ret;
 }				/* priv_support_driver_cmd */
 
+//TN Begin modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is fcc  or not
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *  country domain.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t country_code_is_in_fcc_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_fcc[] = {
+		COUNTRY_CODE_US,
+		COUNTRY_CODE_CA,
+		COUNTRY_CODE_PA,
+		COUNTRY_CODE_GT,
+		COUNTRY_CODE_CR,
+		COUNTRY_CODE_SV,
+		COUNTRY_CODE_VE,
+		COUNTRY_CODE_PE,
+		COUNTRY_CODE_UY,
+		COUNTRY_CODE_EC,
+		COUNTRY_CODE_CO,
+		COUNTRY_CODE_MX,
+		COUNTRY_CODE_CL,
+		COUNTRY_CODE_AR,
+		COUNTRY_CODE_IN,
+		COUNTRY_CODE_BR,
+		COUNTRY_CODE_DO,
+		COUNTRY_CODE_PY,
+		COUNTRY_CODE_BO
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_fcc); i++) {
+		if (country_code == country_code_fcc[i])
+			return 1;
+	}
+
+	return 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief check country code is ce  or not
+ *
+ * \param[in] country_code country code  requested.
+ *
+ * \retval 0 For success.
+ * \retval -EEFAULT For fail.
+ *
+ * \note Country code is stored and channel list is updated based on current
+ *  country domain.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t country_code_is_in_ce_group(uint16_t country_code)
+{
+	uint32_t i;
+	uint16_t country_code_ce[] = {
+		COUNTRY_CODE_GB,
+		COUNTRY_CODE_RU,
+		COUNTRY_CODE_UA,
+		COUNTRY_CODE_TR,
+		COUNTRY_CODE_PL,
+		COUNTRY_CODE_HU,
+		COUNTRY_CODE_BG,
+		COUNTRY_CODE_GR,
+		COUNTRY_CODE_SI,
+		COUNTRY_CODE_CY,
+		COUNTRY_CODE_CZ,
+		COUNTRY_CODE_SK,
+		COUNTRY_CODE_DE,
+		COUNTRY_CODE_IT,
+		COUNTRY_CODE_AT,
+		COUNTRY_CODE_FR,
+		COUNTRY_CODE_ES,
+		COUNTRY_CODE_PT,
+		COUNTRY_CODE_NL,
+		COUNTRY_CODE_BE,
+		COUNTRY_CODE_SE,
+		COUNTRY_CODE_DK,
+		COUNTRY_CODE_NO,
+		COUNTRY_CODE_FI,
+		COUNTRY_CODE_EE,
+		COUNTRY_CODE_LV,
+		COUNTRY_CODE_LT,
+		COUNTRY_CODE_IS,
+		COUNTRY_CODE_CH,
+		COUNTRY_CODE_EG,
+		COUNTRY_CODE_LB,
+		COUNTRY_CODE_MA,
+		COUNTRY_CODE_ZA,
+		COUNTRY_CODE_MU,
+		COUNTRY_CODE_MZ,
+		COUNTRY_CODE_TN,
+		COUNTRY_CODE_SA,
+		COUNTRY_CODE_AE,
+		COUNTRY_CODE_PK,
+		COUNTRY_CODE_JO,
+		COUNTRY_CODE_KE,
+		COUNTRY_CODE_NG,
+		COUNTRY_CODE_UG,
+		COUNTRY_CODE_GH,
+		COUNTRY_CODE_OM,
+		COUNTRY_CODE_TZ,
+		COUNTRY_CODE_NA,
+		COUNTRY_CODE_BH,
+		COUNTRY_CODE_AU,
+		COUNTRY_CODE_NZ,
+		COUNTRY_CODE_ID,
+		COUNTRY_CODE_MY,
+		COUNTRY_CODE_TH,
+		COUNTRY_CODE_PH,
+		COUNTRY_CODE_SG,
+		COUNTRY_CODE_HK,
+		COUNTRY_CODE_KR,
+		COUNTRY_CODE_IQ,
+		COUNTRY_CODE_IE,
+		COUNTRY_CODE_RO,
+		COUNTRY_CODE_RS,
+		COUNTRY_CODE_MD,
+		COUNTRY_CODE_KZ,
+		COUNTRY_CODE_AZ,
+		COUNTRY_CODE_JP,
+		COUNTRY_CODE_BD,
+		COUNTRY_CODE_LK,
+		COUNTRY_CODE_NP,
+		COUNTRY_CODE_QA,
+		COUNTRY_CODE_KW
+	};
+
+	for (i = 0; i < ARRAY_SIZE(country_code_ce); i++) {
+		if (country_code == country_code_ce[i])
+			return 1;
+	}
+
+	return 0;
+}
+
+uint16_t priCountryCode = COUNTRY_CODE_CN;
+
+int priv_driver_set_ce_or_fcc_country(struct GLUE_INFO *prGlueInfo,
+        uint16_t u2CountryCode)
+{
+    uint8_t index = 0;
+    char name[] = { "_G_Scenario" };
+    struct PARAM_TX_PWR_CTRL_IOCTL rPwrCtrlParam = { 0 };
+    uint32_t u4SetInfoLen = 0;
+    uint32_t rStatus = WLAN_STATUS_SUCCESS;
+    DBGLOG(REQ, WARN, "priCountryCode=%d, countryCode = %u\n",
+            priCountryCode, u2CountryCode);
+    DBGLOG(REQ, WARN, "1=%d, 2=%d,3 = %u\n  ",
+            (country_code_is_in_fcc_group(priCountryCode) &&
+            !country_code_is_in_fcc_group(u2CountryCode)), (country_code_is_in_ce_group(priCountryCode) &&
+            !country_code_is_in_ce_group(u2CountryCode)),(!country_code_is_in_ce_group(priCountryCode) &&
+            !country_code_is_in_fcc_group(priCountryCode)));
+    if ((country_code_is_in_fcc_group(priCountryCode) &&
+            !country_code_is_in_fcc_group(u2CountryCode)) ||
+            (country_code_is_in_ce_group(priCountryCode) &&
+            !country_code_is_in_ce_group(u2CountryCode)) ||
+            (!country_code_is_in_ce_group(priCountryCode) &&
+            !country_code_is_in_fcc_group(priCountryCode))) {
+            DBGLOG(REQ, WARN, "set index 0,priCountryCode=%d, countryCode = %u\n",
+            priCountryCode, u2CountryCode);
+        if (country_code_is_in_fcc_group(priCountryCode)) {
+            kalStrnCpy(name, "FScenario",
+                strlen("FScenario") + 1);
+            index = 0;
+            rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+            rPwrCtrlParam.name = name;
+            rPwrCtrlParam.index = index;
+            DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+                    rPwrCtrlParam.fgApplied,
+                    rPwrCtrlParam.name,
+                    rPwrCtrlParam.index);
+            rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+                    wlanoidTxPowerControl,
+                    (void *)&rPwrCtrlParam,
+                    sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+                    &u4SetInfoLen);
+        }else if (country_code_is_in_ce_group(priCountryCode)) {
+            kalStrnCpy(name, "CScenario",
+                strlen("CScenario") + 1);
+            index = 0;
+            rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+            rPwrCtrlParam.name = name;
+            rPwrCtrlParam.index = index;
+            DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+                    rPwrCtrlParam.fgApplied,
+                    rPwrCtrlParam.name,
+                    rPwrCtrlParam.index);
+            rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+                    wlanoidTxPowerControl,
+                    (void *)&rPwrCtrlParam,
+                    sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+                    &u4SetInfoLen);
+        }
+        priCountryCode = u2CountryCode;
+    }
+    if (country_code_is_in_ce_group(u2CountryCode)) {
+        kalStrnCpy(name, "CScenario", strlen("CScenario") + 1);
+        index = 10;
+    }
+    else if (country_code_is_in_fcc_group(u2CountryCode)) {
+        kalStrnCpy(name, "FScenario", strlen("FScenario") + 1);
+        index = 10;
+    } else {
+        return 0;
+    }
+
+    rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
+    rPwrCtrlParam.name = name;
+    rPwrCtrlParam.index = index;
+    DBGLOG(REQ, INFO, "applied=[%d],name=[%s], index=[%u]\n",
+            rPwrCtrlParam.fgApplied,
+            rPwrCtrlParam.name,
+            rPwrCtrlParam.index);
+    rStatus = kalIoctl(prGlueInfo->prAdapter->prGlueInfo,
+            wlanoidTxPowerControl,
+            (void *)&rPwrCtrlParam,
+            sizeof(struct PARAM_TX_PWR_CTRL_IOCTL),
+            &u4SetInfoLen);
+    DBGLOG(REQ, INFO, " priv_driver_set_ce_fcc command end\n");
+
+    if (rStatus != WLAN_STATUS_SUCCESS)
+        return -1;
+
+    return 0;
+}
+#endif
+//TN End modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
+
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT
 /* dynamic tx power control */
 int priv_driver_set_power_control(struct net_device *prNetDev,
@@ -22305,6 +22566,11 @@ int priv_driver_set_power_control(struct net_device *prNetDev,
 	char *str = NULL, *cmd = NULL, *name = NULL, *setting = NULL;
 	uint8_t index = 0;
 	uint32_t u4SetInfoLen = 0;
+//TN Begin modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+	uint32_t u4CountryCode = 0;
+#endif
+//TN End modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
 
 	while ((str = strsep(&ptr, " ")) != NULL) {
 		if (kalStrLen(str) <= 0)
@@ -22332,6 +22598,16 @@ int priv_driver_set_power_control(struct net_device *prNetDev,
 		       name, fgIndex);
 		return -1;
 	}
+//TN Begin modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
+	prGlueInfo = *((struct GLUE_INFO **) netdev_priv(prNetDev));
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+	u4CountryCode = prGlueInfo->prAdapter->rWifiVar.u2CountryCode;
+    if(country_code_is_in_fcc_group((uint32_t)u4CountryCode) == 1)
+    {
+	   kalStrnCpy(name, "FCCScenario", strlen("FCCScenario") + 1);
+    }
+#endif
+//TN End modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
 
 	rPwrCtrlParam.fgApplied = (index == 0) ? FALSE : TRUE;
 	rPwrCtrlParam.name = name;

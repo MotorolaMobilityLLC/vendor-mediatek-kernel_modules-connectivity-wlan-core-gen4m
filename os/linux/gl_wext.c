@@ -3454,6 +3454,12 @@ static int wext_set_country(struct net_device *prNetDev,
 	uint32_t u4BufLen;
 	uint8_t aucCountry[COUNTRY_CODE_LEN];
 
+//TN Start modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+    uint16_t u2CountryCode = 0;
+#endif
+//TN End modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+
 	ASSERT(prNetDev);
 
 	/* prData->pointer should be like "COUNTRY US", "COUNTRY EU"
@@ -3468,7 +3474,15 @@ static int wext_set_country(struct net_device *prNetDev,
 	if (copy_from_user(aucCountry, prData->pointer,
 			   COUNTRY_CODE_LEN))
 		return -EFAULT;
-
+//TN Start modified by dong.zhang countrycode power Do not delete when resolving conflicts please
+    DBGLOG(REQ, ERROR, "wext_set_country: %c%c\n",
+        aucCountry[COUNTRY_CODE_LEN - 2], aucCountry[COUNTRY_CODE_LEN - 1]);
+#if CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER
+    u2CountryCode = (((uint16_t) aucCountry[COUNTRY_CODE_LEN - 2]) << 8) |
+        ((uint16_t) aucCountry[COUNTRY_CODE_LEN - 1]);
+     rStatus = priv_driver_set_ce_or_fcc_country(prGlueInfo, u2CountryCode);
+#endif
+//TN End modified by dong.zhang countrycode power Do not delete when resolving conflicts please
 	if (regd_is_single_sku_en()) {
 		struct COUNTRY_CODE_SETTING prCountrySetting = {0};
 
