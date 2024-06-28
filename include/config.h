@@ -2545,10 +2545,6 @@
 
 #define CFG_SUPPORT_LIMITED_PKT_PID  1
 
-//TN Begin modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
-#define CFG_SUPPORT_CE_FCC_DYNAMIC_TXPOWER 1
-//TN End modified by dong.zhang  EKFOGO4G-1008 Do not delete when resolving conflicts please
-
 #ifndef CFG_RFB_TRACK
 #define CFG_RFB_TRACK 0
 #endif /* CFG_RFB_TRACK */
