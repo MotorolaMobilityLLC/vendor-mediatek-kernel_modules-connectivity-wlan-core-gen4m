@@ -1219,7 +1219,7 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 				/*CH_SET_UNII_UPPER_149_165 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			,
-			{131, BAND_6G, CHNL_SPAN_20, 1, 24, FALSE}
+			{131, BAND_6G, CHNL_SPAN_20, 1, 24, TRUE}
 				/* 6G_CH_1_93 */
 #endif
 		},
