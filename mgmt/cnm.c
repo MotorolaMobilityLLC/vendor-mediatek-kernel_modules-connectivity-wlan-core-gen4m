@@ -1494,6 +1494,28 @@ SKIP_COOL_DOWN:
 	cnmIdcSwitchSapChannel(prAdapter);
 }
 
+uint8_t cnmIsBssCoBand(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	struct BSS_INFO *aliveNonSapBss[MAX_BSSID_NUM];
+	uint8_t ucNumAliveNonSapBss;
+	uint8_t u4Idx = 0;
+
+	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
+		prAdapter, aliveNonSapBss);
+
+	for (u4Idx = 0;
+		u4Idx < ucNumAliveNonSapBss;
+		u4Idx++) {
+		if (aliveNonSapBss[u4Idx]->eBand ==
+			prBssInfo->eBand) {
+			DBGLOG(P2P, WARN, "Alive bss/ SAP co band\n");
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1533,6 +1555,8 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 				prAdapter->prGlueInfo,
 				prBssInfo);
 			if (ucNewChannel) {
+				if (cnmIsBssCoBand(prAdapter, prBssInfo))
+					continue;
 				cnmIdcCsaReq(prAdapter,
 					prBssInfo->eBand,
 					ucNewChannel,
