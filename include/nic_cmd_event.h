@@ -4218,7 +4218,7 @@ void nicCmdEventQueryMibInfo(struct ADAPTER *prAdapter,
 void nicCmdEventQueryNicCapabilityV2(struct ADAPTER
 				     *prAdapter, uint8_t *pucEventBuf);
 
-void nicParsingNicCapV2(struct ADAPTER *prAdapter,
+uint32_t nicParsingNicCapV2(struct ADAPTER *prAdapter,
 	uint32_t u4Type, uint8_t *pucEventBuf);
 
 uint32_t nicCmdEventQueryNicTxResource(struct ADAPTER
