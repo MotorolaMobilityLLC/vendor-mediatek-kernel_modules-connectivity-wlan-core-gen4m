@@ -3697,6 +3697,13 @@ static uint8_t rlmRecIeInfoForClient(struct ADAPTER *prAdapter,
 						prWBC->ucChannelS1;
 					prCSAParams->ucVhtS2 =
 						prWBC->ucChannelS2;
+
+					rlmModifyVhtBwPara(
+						&prCSAParams->ucVhtS1,
+						&prCSAParams->ucVhtS2,
+						0,
+						&prCSAParams->ucVhtBw);
+
 					DBGLOG(RLM, INFO,
 					       "[CSA] BW=%d, s1=%d, s2=%d\n",
 					       prCSAParams->ucVhtBw,
@@ -7781,7 +7788,6 @@ void rlmCsaTimeout(struct ADAPTER *prAdapter,
 #endif
 	}
 
-	rlmSyncOperationParams(prAdapter, prBssInfo);
 	rlmResetCSAParams(prBssInfo, FALSE);
 
 	if (IS_BSS_AIS(prBssInfo))
