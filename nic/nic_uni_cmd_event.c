@@ -2012,6 +2012,7 @@ uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 	uint16_t fixed_len = sizeof(struct UNI_EVENT_CHIP_CAPABILITY);
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 	/* underflow check */
 	if (data_len < fixed_len) {
@@ -2025,7 +2026,10 @@ uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-		nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
+		u4Status = nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			DBGLOG_MEM8(NIC, ERROR, tag,
+				TAG_HDR_LEN + TAG_LEN(tag));
 	}
 
 	if (tags_len != offset) {
