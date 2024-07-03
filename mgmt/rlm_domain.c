@@ -5310,6 +5310,12 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 		else if (eType == PWR_LIMIT_TYPE_COMP_11BE_1 ||
 					eType == PWR_LIMIT_TYPE_COMP_11BE_2) {
+
+			if (k >= MAX_CMD_EHT_SUPPORT_CHANNEL_NUM) {
+				DBGLOG(RLM, ERROR, "EHT out of MAX CH Num\n");
+				return;
+			}
+
 			prCmdPwrLimtEHT = &prCmd->u.rChPwrLimtEHT[k];
 			ucCentCh = prCmdPwrLimtEHT->ucCentralCh;
 
@@ -5455,6 +5461,12 @@ void rlmDomainBuildCmdByConfigTable(struct ADAPTER *prAdapter,
 					PWR_LIMIT_TYPE_COMP_11BE_6G_1 &&
 					eType <=
 					PWR_LIMIT_TYPE_COMP_11BE_6G_6) {
+
+			if (k >= MAX_CMD_EHT_6G_SUPPORT_CHANNEL_NUM) {
+				DBGLOG(RLM, ERROR, "EHT6G out of MAX CH Num\n");
+				return;
+			}
+
 			prCmdPwrLimtEHT_6G = &prCmd->u.rChPwrLimtEHT_6G[k];
 			ucCentCh = prCmdPwrLimtEHT_6G->ucCentralCh;
 
