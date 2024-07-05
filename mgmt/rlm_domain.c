@@ -8776,6 +8776,12 @@ skipLabel:
 		return NULL;
 	}
 
+	if (ucSettingCount >= MAX_TX_PWR_CTRL_ELEMENT_CHL_SETTING) {
+		DBGLOG(RLM, ERROR,
+		       "power ctrl setting out of bound[%d]\n", ucSettingCount);
+		return NULL;
+	}
+
 	/* allocate memory for control element */
 	u4MemSize += (ucSettingCount == 1) ? 0 : (ucSettingCount - 1) *
 			sizeof(struct TX_PWR_CTRL_CHANNEL_SETTING);
