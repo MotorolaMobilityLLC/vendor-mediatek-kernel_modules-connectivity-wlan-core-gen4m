@@ -268,10 +268,10 @@ static void halCheckRxPollingMode(struct ADAPTER *prAdapter,
 		DBGLOG(INIT, INFO, "Time:%u, Timeout:%u, Cnt:%u\n",
 		       u4StartTime, u4Timeout, u4Cnt);
 		prAdapter->u4HifDbgFlag |= DEG_HIF_DEFAULT_DUMP;
-		halPrintHifDbgInfo(prAdapter);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 		mtk_pcie_dump_link_info(0);
 #endif
+		halPrintHifDbgInfo(prAdapter);
 	}
 }
 
@@ -1353,24 +1353,27 @@ void halUninitMsduTokenInfo(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	uint32_t u4Idx, u4TokenNum;
+	uint32_t u4Idx;
 #if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	unsigned long flags = 0;
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prTokenInfo = &prHifInfo->rTokenInfo;
-	u4TokenNum = prTokenInfo->u4TokenNum;
 
 #if CFG_SUPPORT_HIF_FIFO_TOKEN
-	for (u4Idx = 0; u4Idx < u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+		if (!prToken->prPacket)
+			continue;
 		halUninitOneMsduTokenInfo(prAdapter, prToken);
 	}
 #else
 	spin_lock_irqsave(&prTokenInfo->rTokenLock, flags);
-	for (u4Idx = 0; u4Idx < u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+		if (!prToken->prPacket)
+			continue;
 		list_del(&prToken->msdu_list);
 		hash_del_rcu(&prToken->node);
 		halUninitOneMsduTokenInfo(prAdapter, prToken);
@@ -1639,8 +1642,12 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 		      prTokenInfo->aucTokenFifoBuf,
 		      prTokenInfo->u4TokenFifoLen);
 
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+
+		if (!prToken->prPacket)
+			continue;
+
 		halResetOneMsduToken(prAdapter, prToken);
 		if (!KAL_FIFO_IN(&prTokenInfo->rTokenFifo, prToken)) {
 			DBGLOG_LIMITED(HAL, ERROR, "fifo full token[%u/%u]\n",
@@ -2851,6 +2858,12 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		if (!fgRet)
 			break;
 
+#if (CFG_RX_SW_PROCESS_DBG == 1)
+		/* Recognize RX packet process in SW*/
+		HAL_MAC_CONNAC3X_RX_STATUS_SET_SWRFB_PROCESS(prRxStatus);
+		HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_TO_HOST(prRxStatus);
+		HAL_MAC_CONNAC3X_RX_STATUS_UNSET_SWRFB_FREE(prRxStatus);
+#endif
 		RX_INC_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT);
 		DBGLOG(RX, TEMP, "Recv p=%p total:%lu\n",
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));

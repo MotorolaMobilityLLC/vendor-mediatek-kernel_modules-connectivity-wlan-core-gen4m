@@ -482,6 +482,13 @@ enum ENUM_PKT_FLAG {
 	ENUM_PKT_FLAG_NUM
 };
 
+enum ENUM_SHUTDOWN_STATE {
+	SHUTDOWN_STATE_INIT, /*wifi on*/
+	SHUTDOWN_STATE_ONGOING,
+	SHUTDOWN_STATE_DONE,
+	SHUTDOWN_STATE_NUM
+};
+
 enum ENUM_WLAN_DRV_BUF_TYPE_T {
 	ENUM_BUF_TYPE_NVRAM,
 	ENUM_BUF_TYPE_DRV_CFG,
@@ -1993,9 +2000,10 @@ void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 struct net_device *prDev, u_int8_t fgSuspend);
 
 #if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-u_int8_t kalIsShutdown(void);
+uint8_t kalGetShutdownState(void);
 #endif
 
+void wlanShutdown(void);
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 int wlanFuncPreOnImpl(void);
 #endif

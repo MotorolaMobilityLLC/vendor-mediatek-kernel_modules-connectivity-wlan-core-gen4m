@@ -1806,7 +1806,7 @@ struct CMD_ACCESS_RX_STAT {
 struct EVENT_ACCESS_RX_STAT {
 	uint32_t u4SeqNum;
 	uint32_t u4TotalNum;
-	uint32_t au4Buffer[];
+	uint32_t au4Buffer[66];	 /* #define HQA_RX_STATISTIC_NUM 66 */
 };
 
 #else
@@ -3701,7 +3701,9 @@ struct EVENT_MLR_FSM_UPDATE {
 	uint8_t ucMlrState;
 	/* MLR TXD fixed rate index (only used for REBB segment) */
 	uint8_t ucMlrTxdFrIdx;
-	uint8_t aucReserved[3];
+	/* MLR enable Tx fragment or not */
+	uint8_t ucTxFragEn;
+	uint8_t aucReserved[2];
 };
 #endif
 
@@ -4216,7 +4218,7 @@ void nicCmdEventQueryMibInfo(struct ADAPTER *prAdapter,
 void nicCmdEventQueryNicCapabilityV2(struct ADAPTER
 				     *prAdapter, uint8_t *pucEventBuf);
 
-void nicParsingNicCapV2(struct ADAPTER *prAdapter,
+uint32_t nicParsingNicCapV2(struct ADAPTER *prAdapter,
 	uint32_t u4Type, uint8_t *pucEventBuf);
 
 uint32_t nicCmdEventQueryNicTxResource(struct ADAPTER

@@ -1866,18 +1866,17 @@ uint32_t nicGetS1Freq(struct ADAPTER *prAdapter,
 	enum ENUM_CHNL_EXT eSCO;
 	uint8_t ucVhtBw;
 
-	if (eBand == BAND_2G4) {
-		if (ucBandwidth == MAX_BW_20MHZ) {
-			ucS1Channel = ucPrimaryChannel;
-		} else {
-			eSCO = nicGetSco(prAdapter, eBand, ucPrimaryChannel);
-			ucSecChannel = nicGetSecCh(prAdapter, eBand, eSCO,
-						      ucPrimaryChannel);
-			ucS1Channel = (ucPrimaryChannel + ucSecChannel) / 2;
-		}
+	if (ucBandwidth == MAX_BW_20MHZ) {
+		ucS1Channel = ucPrimaryChannel;
+	} else if (ucBandwidth == MAX_BW_40MHZ) {
+		eSCO = nicGetSco(prAdapter, eBand, ucPrimaryChannel);
+		ucSecChannel = nicGetSecCh(prAdapter, eBand, eSCO,
+					      ucPrimaryChannel);
+		ucS1Channel = (ucPrimaryChannel + ucSecChannel) / 2;
 	} else {
 		ucVhtBw = rlmGetVhtOpBwByBssOpBw(ucBandwidth);
-		ucS1Channel = nicGetS1(eBand, ucPrimaryChannel, ucVhtBw);
+		ucS1Channel = nicGetS1(prAdapter, eBand, ucPrimaryChannel,
+				       ucVhtBw);
 	}
 
 	return nicChannelNum2Freq(ucS1Channel, eBand) / 1000;
@@ -1915,17 +1914,18 @@ uint8_t nicGetHe6gS2(uint8_t ucPrimaryChannel,
 /* In EHT mode S2 (CCFS1) apply central CH for BW160 and BW320,
  * apply 0 for the rest (e.g. BW20/40/80)
  */
-uint8_t nicGetEhtS2(enum ENUM_BAND eBand,
+uint8_t nicGetEhtS2(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth)
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G)
-		return nicGetEht6gS2(ucPrimaryChannel, ucBandwidth);
+		return nicGetEht6gS2(prAdapter, ucPrimaryChannel, ucBandwidth);
 #endif
 	/* 2.4G/5G case: only BW160 to be considered */
 	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
-		return nicGetVhtS1(ucPrimaryChannel,
+		return nicGetVhtS1(prAdapter, eBand, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_160);
 	} else {
 		return 0;
@@ -1933,17 +1933,17 @@ uint8_t nicGetEhtS2(enum ENUM_BAND eBand,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-uint8_t nicGetEht6gS2(uint8_t ucPrimaryChannel,
+uint8_t nicGetEht6gS2(struct ADAPTER *prAdapter, uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth)
 {
 	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
-		return nicGetHe6gS1(ucPrimaryChannel,
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_160);
 	} else if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_320_1) {
-		return nicGetHe6gS1(ucPrimaryChannel,
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_320_1);
 	} else if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_320_2) {
-		return nicGetHe6gS1(ucPrimaryChannel,
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_320_2);
 	} else {
 		return 0;
@@ -1955,37 +1955,38 @@ uint8_t nicGetEht6gS2(uint8_t ucPrimaryChannel,
  * central CH of BW160 for BW320 respectively,
  * apply central CH of each for the rest (e.g. BW20/40/80)
  */
-uint8_t nicGetEhtS1(enum ENUM_BAND eBand,
+uint8_t nicGetEhtS1(struct ADAPTER *prAdapter,
+	enum ENUM_BAND eBand,
 	uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth)
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G)
-		return nicGetEht6gS1(ucPrimaryChannel, ucBandwidth);
+		return nicGetEht6gS1(prAdapter, ucPrimaryChannel, ucBandwidth);
 #endif
 	/*2.4G/5G case: only BW160 to be considered */
 	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
-		return nicGetVhtS1(ucPrimaryChannel,
+		return nicGetVhtS1(prAdapter, eBand, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_80);
 	} else {
-		return nicGetVhtS1(ucPrimaryChannel,
+		return nicGetVhtS1(prAdapter, eBand, ucPrimaryChannel,
 			ucBandwidth);
 	}
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-uint8_t nicGetEht6gS1(uint8_t ucPrimaryChannel,
+uint8_t nicGetEht6gS1(struct ADAPTER *prAdapter, uint8_t ucPrimaryChannel,
 	uint8_t ucBandwidth)
 {
 	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_160) {
-		return nicGetHe6gS1(ucPrimaryChannel,
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_80);
 	} else if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_320_1 ||
 		   ucBandwidth == VHT_OP_CHANNEL_WIDTH_320_2) {
-		return nicGetHe6gS1(ucPrimaryChannel,
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel,
 			VHT_OP_CHANNEL_WIDTH_160);
 	} else {
-		return nicGetHe6gS1(ucPrimaryChannel,
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel,
 			ucBandwidth);
 	}
 }
@@ -1993,23 +1994,37 @@ uint8_t nicGetEht6gS1(uint8_t ucPrimaryChannel,
 
 #endif /* CFG_SUPPORT_802_11BE */
 
-uint8_t nicGetS1(enum ENUM_BAND eBand,
-	uint8_t ucPrimaryChannel,
-	uint8_t ucBandwidth)
+uint8_t nicGetS1(struct ADAPTER *prAdapter,
+		 enum ENUM_BAND eBand,
+		 uint8_t ucPrimaryChannel,
+		 uint8_t ucBandwidth)
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (eBand == BAND_6G)
-		return nicGetHe6gS1(ucPrimaryChannel, ucBandwidth);
+		return nicGetHe6gS1(prAdapter, ucPrimaryChannel, ucBandwidth);
 #endif
-	return nicGetVhtS1(ucPrimaryChannel, ucBandwidth);
+	return nicGetVhtS1(prAdapter, eBand, ucPrimaryChannel, ucBandwidth);
 }
 
-uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
+uint8_t nicGetVhtS1(struct ADAPTER *prAdapter,
+		    enum ENUM_BAND eBand,
+		    uint8_t ucPrimaryChannel,
 		    uint8_t ucBandwidth)
 {
-	/* find S1 (central channel 42, 58, 106, 122, and 155) */
+	enum ENUM_CHNL_EXT eSCO;
+	uint8_t ucSecChannel;
 
-	if ((ucBandwidth == VHT_OP_CHANNEL_WIDTH_80)
+	if (ucBandwidth == VHT_OP_CHANNEL_WIDTH_20_40) {
+		eSCO = nicGetSco(prAdapter, eBand, ucPrimaryChannel);
+
+		if (eSCO == CHNL_EXT_SCN)
+			return ucPrimaryChannel;
+		else if (eSCO == CHNL_EXT_SCA || eSCO == CHNL_EXT_SCB) {
+			ucSecChannel = nicGetSecCh(prAdapter, eBand, eSCO,
+						   ucPrimaryChannel);
+			return (ucPrimaryChannel + ucSecChannel) / 2;
+		}
+	} else if ((ucBandwidth == VHT_OP_CHANNEL_WIDTH_80)
 	    || (ucBandwidth == VHT_OP_CHANNEL_WIDTH_80P80)) {
 
 		if (ucPrimaryChannel >= 36 && ucPrimaryChannel <= 48)
@@ -2031,7 +2046,6 @@ uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
 			return 50;
 		else if (ucPrimaryChannel >= 100 && ucPrimaryChannel <= 128)
 			return 114;
-
 	} else {
 
 		return 0;
@@ -2042,12 +2056,23 @@ uint8_t nicGetVhtS1(uint8_t ucPrimaryChannel,
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
-		    uint8_t ucBandwidth)
+uint8_t nicGetHe6gS1(struct ADAPTER *prAdapter,
+		     uint8_t ucPrimaryChannel,
+		     uint8_t ucBandwidth)
 {
+	enum ENUM_CHNL_EXT eSCO;
+	uint8_t ucSecChannel;
+
 	if (ucBandwidth == CW_20_40MHZ) {
-		/* S1 is no need for BW20*/
-		return nicGetHe6gS1BW40(ucPrimaryChannel);
+		eSCO = nicGetSco(prAdapter, BAND_6G, ucPrimaryChannel);
+
+		if (eSCO == CHNL_EXT_SCN)
+			return ucPrimaryChannel;
+		else if (eSCO == CHNL_EXT_SCA || eSCO == CHNL_EXT_SCB) {
+			ucSecChannel = nicGetSecCh(prAdapter, BAND_6G, eSCO,
+						   ucPrimaryChannel);
+			return (ucPrimaryChannel + ucSecChannel) / 2;
+		}
 	} else if ((ucBandwidth == CW_80MHZ)
 	    || (ucBandwidth == CW_80P80MHZ)) {
 
@@ -2118,73 +2143,6 @@ uint8_t nicGetHe6gS1(uint8_t ucPrimaryChannel,
 	}
 	return 0;
 }
-
-uint8_t nicGetHe6gS1BW40(uint8_t ucPrimaryChannel)
-{
-	if (ucPrimaryChannel >= 1 && ucPrimaryChannel <= 5)
-		return 3;
-	else if (ucPrimaryChannel >= 9 && ucPrimaryChannel <= 13)
-		return 11;
-	else if (ucPrimaryChannel >= 17 && ucPrimaryChannel <= 21)
-		return 19;
-	else if (ucPrimaryChannel >= 25 && ucPrimaryChannel <= 29)
-		return 27;
-	else if (ucPrimaryChannel >= 33 && ucPrimaryChannel <= 37)
-		return 35;
-	else if (ucPrimaryChannel >= 41 && ucPrimaryChannel <= 45)
-		return 43;
-	else if (ucPrimaryChannel >= 49 && ucPrimaryChannel <= 53)
-		return 51;
-	else if (ucPrimaryChannel >= 57 && ucPrimaryChannel <= 61)
-		return 59;
-	else if (ucPrimaryChannel >= 65 && ucPrimaryChannel <= 69)
-		return 67;
-	else if (ucPrimaryChannel >= 73 && ucPrimaryChannel <= 77)
-		return 75;
-	else if (ucPrimaryChannel >= 81 && ucPrimaryChannel <= 85)
-		return 83;
-	else if (ucPrimaryChannel >= 89 && ucPrimaryChannel <= 93)
-		return 91;
-	else if (ucPrimaryChannel >= 97 && ucPrimaryChannel <= 101)
-		return 99;
-	else if (ucPrimaryChannel >= 105 && ucPrimaryChannel <= 109)
-		return 107;
-	else if (ucPrimaryChannel >= 113 && ucPrimaryChannel <= 117)
-		return 115;
-	else if (ucPrimaryChannel >= 121 && ucPrimaryChannel <= 125)
-		return 123;
-	else if (ucPrimaryChannel >= 129 && ucPrimaryChannel <= 133)
-		return 131;
-	else if (ucPrimaryChannel >= 137 && ucPrimaryChannel <= 141)
-		return 139;
-	else if (ucPrimaryChannel >= 145 && ucPrimaryChannel <= 149)
-		return 147;
-	else if (ucPrimaryChannel >= 153 && ucPrimaryChannel <= 157)
-		return 155;
-	else if (ucPrimaryChannel >= 161 && ucPrimaryChannel <= 165)
-		return 163;
-	else if (ucPrimaryChannel >= 169 && ucPrimaryChannel <= 173)
-		return 171;
-	else if (ucPrimaryChannel >= 177 && ucPrimaryChannel <= 181)
-		return 179;
-	else if (ucPrimaryChannel >= 185 && ucPrimaryChannel <= 189)
-		return 187;
-	else if (ucPrimaryChannel >= 193 && ucPrimaryChannel <= 197)
-		return 195;
-	else if (ucPrimaryChannel >= 201 && ucPrimaryChannel <= 205)
-		return 203;
-	else if (ucPrimaryChannel >= 209 && ucPrimaryChannel <= 213)
-		return 211;
-	else if (ucPrimaryChannel >= 217 && ucPrimaryChannel <= 221)
-		return 219;
-	else if (ucPrimaryChannel >= 225 && ucPrimaryChannel <= 229)
-		return 227;
-	else
-		return 0;
-
-	return 0;
-}
-
 #endif /* (CFG_SUPPORT_WIFI_6G == 1) */
 
 /* firmware command wrapper */

@@ -3483,7 +3483,8 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 				scanParseEhtCapIE(pucIE, prBssDesc);
 
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_EHT_OP)
-				scanParseEhtOpIE(pucIE, prBssDesc, eHwBand);
+				scanParseEhtOpIE(prAdapter, pucIE, prBssDesc,
+						 eHwBand);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_MLD)
@@ -3546,7 +3547,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 				if (IE_ID_EXT(pucIE) == ELEM_EXT_ID_HE_OP)
-					scanParseHEOpIE(pucIE,
+					scanParseHEOpIE(prAdapter, pucIE,
 						prBssDesc, eHwBand);
 #endif /* CFG_SUPPORT_WIFI_6G == 1 */
 			}
@@ -4172,6 +4173,7 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 #endif
 	uint32_t u4Idx = 0;
 	struct WLAN_INFO *prWlanInfo;
+	struct BSS_INFO *prBssInfo = NULL;
 
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
@@ -4186,6 +4188,20 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 		prSwRfb->u2HeaderLen != sizeof(struct WLAN_MAC_HEADER)) {
 		log_dbg(SCN, ERROR,
 			"Ignore invalid Beacon or Probe Response\n");
+		return rStatus;
+	}
+
+	if (prSwRfb->prStaRec)
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+			prSwRfb->prStaRec->ucBssIndex);
+	if (prBssInfo &&
+	    ((IS_BSS_P2P(prBssInfo) && prBssInfo->fgIsSwitchingChnl) ||
+	     IS_AIS_CH_SWITCH(prBssInfo))) {
+		log_dbg(SCN, TRACE,
+			"drop GO/AP beaon during CSA [" MACSTR
+			"],BssIdx = %d\n",
+			MAC2STR(prBssInfo->prStaRecOfAP->aucMacAddr),
+			prBssInfo->ucBssIndex);
 		return rStatus;
 	}
 
@@ -5337,8 +5353,8 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 					scanParseEhtCapIE(sub, prBssDesc);
 
 				if (IE_ID_EXT(sub) == ELEM_EXT_ID_EHT_OP)
-					scanParseEhtOpIE(sub, prBssDesc,
-						eHwBand);
+					scanParseEhtOpIE(prAdapter, sub,
+						prBssDesc, eHwBand);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 				if (IE_ID_EXT(sub) == ELEM_EXT_ID_MLD)
@@ -5500,8 +5516,8 @@ uint8_t	*scanGetFilsCacheIdFromBssDesc(struct BSS_DESC *bss)
 }
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
-	enum ENUM_BAND eHwBand)
+void scanParseHEOpIE(struct ADAPTER *prAdapter, uint8_t *pucIE,
+		     struct BSS_DESC *prBssDesc, enum ENUM_BAND eHwBand)
 {
 	struct _IE_HE_OP_T *prHeOp = (struct _IE_HE_OP_T *) pucIE;
 	uint32_t u4Offset = OFFSET_OF(struct _IE_HE_OP_T, aucVarInfo[0]);
@@ -5553,7 +5569,7 @@ void scanParseHEOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 		prBssDesc->He6gRegInfo =
 			pr6gOperInfor->rControl.bits.RegulatoryInfo;
 
-		rlmTransferHe6gOpInfor(prBssDesc->ucChannelNum,
+		rlmTransferHe6gOpInfor(prAdapter, prBssDesc->ucChannelNum,
 			(uint8_t)pr6gOperInfor->rControl.bits.ChannelWidth,
 			(uint8_t *)&prBssDesc->eChannelWidth,
 			&prBssDesc->ucCenterFreqS1,
@@ -5599,8 +5615,8 @@ void scanParseEhtCapIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc)
 	DBGLOG_MEM8(SCN, LOUD, pucIE, IE_SIZE(pucIE));
 }
 
-void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
-	enum ENUM_BAND eHwBand)
+void scanParseEhtOpIE(struct ADAPTER *prAdapter, uint8_t *pucIE,
+		      struct BSS_DESC *prBssDesc, enum ENUM_BAND eHwBand)
 {
 	struct IE_EHT_OP *prEhtOp;
 	struct EHT_OP_INFO *prEhtOpInfo;
@@ -5619,7 +5635,7 @@ void scanParseEhtOpIE(uint8_t *pucIE, struct BSS_DESC *prBssDesc,
 		}
 
 		prBssDesc->eChannelWidth = ucVhtOpBw;
-		prBssDesc->ucCenterFreqS1 = nicGetS1(
+		prBssDesc->ucCenterFreqS1 = nicGetS1(prAdapter,
 			prBssDesc->eBand, prBssDesc->ucChannelNum,
 			prBssDesc->eChannelWidth);
 		prBssDesc->ucCenterFreqS2 = 0;

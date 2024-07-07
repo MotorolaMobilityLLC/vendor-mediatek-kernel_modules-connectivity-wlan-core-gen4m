@@ -3900,7 +3900,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 		struct BSS_DESC *prBssDesc =
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
-		if (!roamingFsmInDecision(prAdapter, ucBssIndex)) {
+		if (!roamingFsmInDecision(prAdapter, TRUE, ucBssIndex)) {
 			DBGLOG(AIS, STATE,
 				"Ignore roaming request if unable to roam\n");
 
@@ -4262,7 +4262,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	ucPrimaryChannel = prBssDesc->ucChannelNum;
 	eRfSco = prBssDesc->eSco;
 	eRfChannelWidth = prBssDesc->eChannelWidth;
-	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
+	ucRfCenterFreqSeg1 = nicGetS1(ad, prBssDesc->eBand, ucPrimaryChannel,
 		eRfChannelWidth);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
@@ -7107,9 +7107,9 @@ uint8_t aisBeaconTimeoutFilterPolicy(struct ADAPTER *prAdapter,
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	rssi = prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi;
 #if (CFG_EXT_ROAMING == 1)
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -83)
+	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) && rssi > -83)
 #else
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) && rssi > -70)
+	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) && rssi > -70)
 #endif
 	{
 		/* Good rssi but beacon timeout happened => PER */
@@ -7467,7 +7467,7 @@ uint8_t aisCheckNeedDriverRoaming(
 	/*
 	 * try to select AP only when roaming is enabled and rssi is bad
 	 */
-	if (roamingFsmInDecision(prAdapter, ucBssIndex) &&
+	if (roamingFsmInDecision(prAdapter, FALSE, ucBssIndex) &&
 	    ais->eCurrentState == AIS_STATE_ONLINE_SCAN &&
 	    CHECK_FOR_TIMEOUT(roam->rRoamingDiscoveryUpdateTime,
 		      roam->rRoamingLastDecisionTime,
@@ -10475,7 +10475,8 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		prSubReq->eRfSco = prBssDesc->eSco;
 		prSubReq->eRfBand = prBssDesc->eBand;
 		prSubReq->eRfChannelWidth = prBssDesc->eChannelWidth;
-		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prSubReq->eRfBand,
+		prSubReq->ucRfCenterFreqSeg1 = nicGetS1(prAdapter,
+			prSubReq->eRfBand,
 			prSubReq->ucPrimaryChannel,
 			prSubReq->eRfChannelWidth);
 		prSubReq->ucRfCenterFreqSeg2 = 0;
@@ -11013,10 +11014,6 @@ void aisFunSwitchChannel(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/* Indicate PM abort to sync BSS state with FW */
-	nicPmIndicateBssAbort(prAdapter, prBssInfo->ucBssIndex);
-	prBssInfo->ucDTIMPeriod = 0;
-
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, prBssInfo->ucBssIndex);
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR) {
 		aisFunSwitchChannelImpl(prAdapter, prBssInfo->ucBssIndex);
@@ -11055,16 +11052,26 @@ void aisFunSwitchChannelImpl(struct ADAPTER *prAdapter,
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 
-	/* Update BSS with temp. disconnect state to FW */
-	if (IS_NET_ACTIVE(prAdapter, ucBssIndex))
-		nicDeactivateNetworkEx(prAdapter,
-			NETWORK_ID(ucBssIndex,
-			  aisGetLinkIndex(prAdapter, ucBssIndex)),
-			  FALSE);
-	aisChangeMediaState(prAisBssInfo, MEDIA_STATE_DISCONNECTED);
-	nicUpdateBssEx(prAdapter,
-		ucBssIndex,
-		FALSE);
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (!IS_MLD_BSSINFO_MULTI(mldBssGetByBss(prAdapter, prAisBssInfo)))
+#endif
+	{
+		/* Indicate PM abort to sync BSS state with FW */
+		nicPmIndicateBssAbort(prAdapter, prAisBssInfo->ucBssIndex);
+		prAisBssInfo->ucDTIMPeriod = 0;
+
+		/* Update BSS with temp. disconnect state to FW */
+		if (IS_NET_ACTIVE(prAdapter, ucBssIndex))
+			nicDeactivateNetworkEx(prAdapter,
+				NETWORK_ID(ucBssIndex,
+				aisGetLinkIndex(prAdapter, ucBssIndex)),
+				FALSE);
+		aisChangeMediaState(prAisBssInfo,
+			MEDIA_STATE_DISCONNECTED);
+		nicUpdateBssEx(prAdapter,
+			ucBssIndex,
+			FALSE);
+	}
 
 	prAisBssInfo->fgIsAisCsaPending = FALSE;
 	prAisBssInfo->fgIsAisSwitchingChnl = TRUE;

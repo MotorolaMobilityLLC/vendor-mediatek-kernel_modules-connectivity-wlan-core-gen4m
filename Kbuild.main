@@ -190,10 +190,8 @@ endif
 ifneq ($(filter CONNAC,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UCONNAC,$(ccflags-y))
 ccflags-y += -DCONNAC
-ifneq ($(filter 6768, $(WLAN_CHIP_ID)),)
 CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
 CONFIG_MTK_WIFI_APF_SUPPORT=y
-endif
 endif
 
 ifneq ($(filter SOC2_1X1,$(MTK_COMBO_CHIP)),)
@@ -277,6 +275,7 @@ CONFIG_MTK_WIFI_APS_SUPPORT=y
 CONFIG_MLD_LINK_MAX=2
 CONFIG_MTK_WIFI_6G_SUPPORT=y
 CONFIG_DBDC_MODE=1
+CONFIG_RX_SW_PROCESS_DBG=y
 endif
 endif
 
@@ -433,7 +432,7 @@ else
         ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
         ccflags-y += -DCFG_WLAN_ATF_SUPPORT=1
     endif
-    ifneq ($(filter 6897 6878, $(WLAN_CHIP_ID)),)
+    ifneq ($(filter 6897 6878 6899, $(WLAN_CHIP_ID)),)
         ccflags-y += -DCFG_WLAN_LK_FWDL_SUPPORT=1
         ccflags-y += -DCFG_WLAN_ATF_SUPPORT=0
     endif
@@ -634,8 +633,10 @@ ifeq ($(MTK_ANDROID_WMT), y)
             CONFIG_MTK_WIFI_SUPPORT_VOLT_INFO=y
         endif
     endif
-    ifeq ($(call kver_ge,6,6),1)
+    ifeq ($(CONFIG_MTK_MBRAINK_BRIDGE), m)
         CONFIG_SUPPORT_MBRAIN=y
+    endif
+    ifeq ($(call kver_ge,6,6),1)
         CONFIG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG=y
     endif
     CONFIG_PERF_MON_FAST=y
@@ -2672,6 +2673,12 @@ ifeq ($(CONFIG_DEBUG_RX_SEGMENT), y)
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=1
 else
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=0
+endif
+
+ifeq ($(CONFIG_RX_SW_PROCESS_DBG), y)
+    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=1
+else
+    ccflags-y += -DCFG_RX_SW_PROCESS_DBG=0
 endif
 
 ifeq ($(CONFIG_PERF_MON_FAST), y)

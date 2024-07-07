@@ -1749,8 +1749,8 @@ static int wf_pwr_off_consys_mcu(struct ADAPTER *prAdapter)
 	/* Release WFSYS semaphore */
 	u4ChipID = kalGetChipID();
 
-	if (u4ChipID == 0x6897 || u4ChipID == 0x6878) {
-		/* for mt6897 and mt6878
+	if (u4ChipID == 0x6897 || u4ChipID == 0x6878 || u4ChipID == 0x6899) {
+		/* for mt6897, mt6878, mt6899
 		 * 0x18000158[0]=1'b0
 		 * Action: write
 		 */
@@ -1912,6 +1912,14 @@ release_wfsys_sem_done:
 	value |= 0x000000FF;
 	HAL_MCR_WR(prAdapter,
 		AP2WF_CONN_INFRA_ON_CCIF4_AP2WF_PCCIF_ACK_ADDR, value);
+
+	/* Read A-die top_ck_en_1
+	 * Address: 0x18003124
+	 * Action: read
+	 */
+	wf_ioremap_read(CONN_WT_SLP_CTL_REG_WB_SLP_TOP_CK_1_ADDR, &value);
+	DBGLOG(INIT, INFO, "Read A-die top_ck_en_1 (0x%x)\n", value);
+	udelay(50);
 
 	/* Disable A-die top_ck_en_1
 	 * Address: 0x18003124[0]

@@ -67,7 +67,8 @@
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 #define P2P_AP_CAC_WEATHER_CHNL_HOLD_TIME_MS (600*1000)
-#define P2P_AP_CAC_MIN_CAC_TIME_MS (60*1000)
+#define P2P_AP_CAC_MIN_CAC_TIME_MS (59*1000)
+#define P2P_AP_CAC_TIMER_MARGIN (2000)
 #endif
 
 #define P2P_DEAUTH_TIMEOUT_TIME_MS 1000
@@ -249,6 +250,18 @@ enum P2P_FOBIDDEN_REGION_TYPE {
 	P2P_FOBIDDEN_REGION_NUM = 2
 };
 
+/**
+ * @ucVhtSeg0: VHT mode Segment0 center channel
+ *	The value is the index of the channel center frequency for
+ *	20 MHz, 40 MHz, and 80 MHz channels. The value is the center
+ *	frequency index of the primary 80 MHz segment for 160 MHz and
+ *	80+80 MHz channels.
+ * @ucVhtSeg1: VHT mode Segment1 center channel
+ *	The value is zero for 20 MHz, 40 MHz, and 80 MHz channels. The
+ *	value is the index of the channel center frequency for 160 MHz
+ *	channels and the center frequency index of the secondary 80 MHz
+ *	segment for 80+80 MHz channels.
+ */
 struct P2P_ACS_REQ_INFO {
 	uint8_t ucRoleIdx;
 	u_int8_t fgIsProcessing;
@@ -265,8 +278,8 @@ struct P2P_ACS_REQ_INFO {
 	enum ENUM_BAND eBand;
 	uint8_t ucPrimaryCh;
 	uint8_t ucSecondCh;
-	uint8_t ucCenterFreqS1;
-	uint8_t ucCenterFreqS2;
+	uint8_t ucVhtSeg0;
+	uint8_t ucVhtSeg1;
 };
 
 struct P2P_CHNL_REQ_INFO {
@@ -466,14 +479,6 @@ struct P2P_HW_BAND_UNIT {
 	uint8_t ucBssIndex;
 	enum ENUM_BAND eRfBand;
 	uint8_t ucCh;
-};
-
-struct P2P_A_A_FOBIDEN_REGION_UNIT {
-	uint32_t u4BoundForward1;
-	uint32_t u4BoundForward2;
-	uint32_t u4BoundInverse1;
-	uint32_t u4BoundInverse2;
-	uint32_t u4BoundIsolate;
 };
 
 struct P2P_CH_BW_RANGE {

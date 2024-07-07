@@ -937,6 +937,9 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 	.dumpPcieCr = mt6653_dumpPcieReg,
 	.checkDumpViaBt = mt6653_CheckDumpViaBt,
 #endif
+#if CFG_MTK_WIFI_WFDMA_WB
+	.show_wfdma_wb_info = connac3x_show_wfdma_wb_info,
+#endif
 #if CFG_MTK_WIFI_MBU
 	.getMbuTimeoutStatus = mt6653_get_mbu_timeout_status,
 #endif
@@ -1189,6 +1192,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #endif /* _HIF_PCIE */
 #if CFG_MTK_WIFI_WFDMA_WB
 	.is_support_wfdma_write_back = TRUE,
+	.wb_dmy_dbg_size = sizeof(struct WFDMA_EMI_RING_IDX_0) * 2,
 	.wb_int_sta_size = sizeof(uint32_t),
 	.wb_didx_size = sizeof(struct WFDMA_EMI_RING_IDX_0),
 	.wb_md_int_sta_size = sizeof(uint32_t),
@@ -4224,6 +4228,10 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
 
+#if CFG_MTK_WIFI_PCIE_SR
+	fgIsL2Finished = FALSE;
+#endif
+
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
 		rStatus = WLAN_STATUS_FAILURE;
@@ -4331,7 +4339,7 @@ static void mt6653_mcu_deinit(struct ADAPTER *ad)
 
 	while (is_wifi_coredump_processing()
 #if CFG_MTK_ANDROID_WMT
-		&& !kalIsShutdown()
+		&& !kalGetShutdownState()
 #endif
 		) {
 		if (retry >= MAX_WAIT_COREDUMP_COUNT) {

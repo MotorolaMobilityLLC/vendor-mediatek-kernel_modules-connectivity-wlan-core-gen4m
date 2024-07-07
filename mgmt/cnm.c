@@ -729,6 +729,12 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 						prBssInfo->ucLinkIndex),
 				     FALSE);
 	}
+#if CFG_ENABLE_WIFI_DIRECT
+	if (prMsgChReq->u4MaxInterval >=
+		P2P_AP_CAC_MIN_CAC_TIME_MS)
+		prMsgChReq->u4MaxInterval =
+			prMsgChReq->u4MaxInterval + P2P_AP_CAC_TIMER_MARGIN;
+#endif
 
 	log_dbg(CNM, INFO,
 	       "ChReq net=%d token=%d b=%d c=%d s=%d w(vht)=%d s1=%d s2=%d d=%d t=%d\n",
@@ -1488,6 +1494,28 @@ SKIP_COOL_DOWN:
 	cnmIdcSwitchSapChannel(prAdapter);
 }
 
+uint8_t cnmIsBssCoBand(struct ADAPTER *prAdapter,
+	struct BSS_INFO *prBssInfo)
+{
+	struct BSS_INFO *aliveNonSapBss[MAX_BSSID_NUM];
+	uint8_t ucNumAliveNonSapBss;
+	uint8_t u4Idx = 0;
+
+	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
+		prAdapter, aliveNonSapBss);
+
+	for (u4Idx = 0;
+		u4Idx < ucNumAliveNonSapBss;
+		u4Idx++) {
+		if (aliveNonSapBss[u4Idx]->eBand ==
+			prBssInfo->eBand) {
+			DBGLOG(P2P, WARN, "Alive bss/ SAP co band\n");
+			return TRUE;
+		}
+	}
+	return FALSE;
+}
+
 void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 {
 	struct BSS_INFO *prBssInfo;
@@ -1527,6 +1555,8 @@ void cnmIdcSwitchSapChannel(struct ADAPTER *prAdapter)
 				prAdapter->prGlueInfo,
 				prBssInfo);
 			if (ucNewChannel) {
+				if (cnmIsBssCoBand(prAdapter, prBssInfo))
+					continue;
 				cnmIdcCsaReq(prAdapter,
 					prBssInfo->eBand,
 					ucNewChannel,
@@ -2186,8 +2216,7 @@ uint8_t cnmGetDbdcBwCapability(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prBssOpCtrl = &(g_arBssOpControl[ucBssIndex]);
 	if (prBssOpCtrl->rRunning.fgIsRunning) {
 		eCurrMaxIdx = prBssOpCtrl->rRunning.eRunReq;
-		if (eCurrMaxIdx >= 0 &&
-			eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP &&
+		if (eCurrMaxIdx <= CNM_OPMODE_REQ_MAX_CAP &&
 			prBssOpCtrl->rRunning.eReqIdx <=
 			CNM_OPMODE_REQ_MAX_CAP) {
 			DBGLOG(CNM, INFO,
@@ -5608,7 +5637,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 
 		if (ucOpMaxBw >= MAX_BW_80MHZ) {
 			/* Verify if there is valid S1 */
-			ucS1 = nicGetS1(prBssInfo->eBand,
+			ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 				prBssInfo->ucPrimaryChannel,
 				rlmGetVhtOpBwByBssOpBw(ucOpMaxBw));
 
@@ -5617,7 +5646,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			 */
 			if (ucS1 == 0 && ucOpMaxBw >= MAX_BW_320_1MHZ) {
 				ucLimitedBw = MAX_BW_160MHZ;
-				ucS1 = nicGetS1(prBssInfo->eBand,
+				ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
 					rlmGetVhtOpBwByBssOpBw(ucLimitedBw));
 			}
@@ -5627,7 +5656,7 @@ uint8_t cnmOpModeGetMaxBw(struct ADAPTER *prAdapter,
 			 */
 			if (ucS1 == 0 && ucOpMaxBw >= MAX_BW_160MHZ) {
 				ucLimitedBw = MAX_BW_80MHZ;
-				ucS1 = nicGetS1(prBssInfo->eBand,
+				ucS1 = nicGetS1(prAdapter, prBssInfo->eBand,
 					prBssInfo->ucPrimaryChannel,
 					rlmGetVhtOpBwByBssOpBw(ucLimitedBw));
 			}

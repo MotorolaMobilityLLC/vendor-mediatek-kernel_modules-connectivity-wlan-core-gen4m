@@ -200,6 +200,9 @@ static const char * const apucDebugMsg[] = {
 #if CFG_SUPPORT_TDLS_AUTO
 	"MID_TDLS_AUTO",
 #endif
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+	"MID_MNY_P2P_NOTIFY_APGO_STARTED",
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 };
 
 /*lint -restore */
@@ -401,6 +404,9 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 #if CFG_SUPPORT_TDLS_AUTO
 	{MID_TDLS_AUTO, TdlsAuto},
 #endif
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+	{MID_MNY_P2P_NOTIFY_APGO_STARTED, p2pRoleFsmRunEventApGoStarted},
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 };
 
 /*******************************************************************************

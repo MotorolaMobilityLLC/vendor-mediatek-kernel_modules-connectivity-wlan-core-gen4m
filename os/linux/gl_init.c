@@ -227,7 +227,8 @@ static uint32_t
 u4WlanDevNum;	/* How many NICs coexist now */
 
 #if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-static u_int8_t uIsShutdown = FALSE;
+/* 0: off, 1: on-going, 2: done */
+static enum ENUM_SHUTDOWN_STATE uShutdownState;
 #endif
 
 /* 20150205 added work queue for sched_scan to avoid cfg80211 stop schedule scan
@@ -8415,7 +8416,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		i4Status = wlanOnAtReset();
 #if CFG_MTK_MDDP_SUPPORT
 		if (i4Status == WLAN_STATUS_SUCCESS)
-			mddpNotifyWifiOnEnd();
+			mddpNotifyWifiOnEnd(FALSE);
 #endif
 		goto WLAN_PROBE_RETURN;
 	}
@@ -8531,7 +8532,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		else
 			mddpDisableMddpSupport();
 
-		mddpNotifyWifiOnStart();
+		mddpNotifyWifiOnStart(FALSE);
 #endif
 		/* FW might send Uevent on start running */
 		kalWlanUeventInit(prGlueInfo);
@@ -8684,7 +8685,7 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		       wlanGetSupportedFeatureSet(prGlueInfo),
 		       CFG_SUPPORT_PERSIST_NETDEV);
 #if CFG_MTK_MDDP_SUPPORT
-		mddpNotifyWifiOnEnd();
+		mddpNotifyWifiOnEnd(FALSE);
 #endif
 	} else {
 		DBGLOG(INIT, ERROR, "wlanProbe: probe failed, reason:%d\n",
@@ -9171,24 +9172,27 @@ WLAN_REMOVE_RETURN:
  */
 /*----------------------------------------------------------------------------*/
 #if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-u_int8_t kalIsShutdown(void)
+uint8_t kalGetShutdownState(void)
 {
-	return uIsShutdown;
+	return uShutdownState;
 }
 
-static void wlanShutdown(void)
+void wlanShutdown(void)
 {
 	wfsys_lock();
 	/* wifi is off */
-	if (!get_wifi_powered_status() && get_wifi_process_status() == 0) {
+	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0) ||
+	    kalGetShutdownState()) {
 		wfsys_unlock();
 		return;
 	}
 
+	uShutdownState = SHUTDOWN_STATE_ONGOING;
 	DBGLOG(INIT, INFO, "do wifi off\n");
-	uIsShutdown = TRUE;
 	wlanFuncOff();
 	wfsys_unlock();
+
+	uShutdownState = SHUTDOWN_STATE_DONE;
 }
 #endif
 

@@ -30,6 +30,9 @@
 #include "host_csr.h"
 #include "dma_sch.h"
 #include "mt_dmac.h"
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -91,21 +94,31 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 
 	if (!kalIsResetting() &&
-			prHifInfo->rErrRecoveryCtl.eErrRecovState !=
-			ERR_RECOV_STOP_IDLE) {
+	    prHifInfo->rErrRecoveryCtl.eErrRecovState != ERR_RECOV_STOP_IDLE) {
 		DBGLOG(HAL, ERROR,
 			"SER on-going. ser state: %d reset: %d\n",
 			prHifInfo->rErrRecoveryCtl.eErrRecovState,
 			kalIsResetting());
-	} else if (!prAdapter->fgIsFwOwn) {
-		halCheckHifState(prAdapter);
-		halDumpHifDebugLog(prAdapter);
-
-		if (debug_ops && debug_ops->dumpwfsyscpupcr)
-			debug_ops->dumpwfsyscpupcr(prAdapter);
-	} else {
-		DBGLOG(HAL, ERROR, "Skip due to FW own.\n");
+		return;
 	}
+
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	if (prAdapter->ucStopMMIO) {
+		DBGLOG(HAL, ERROR, "Skip due to stop mmio.\n");
+		return;
+	}
+#endif
+
+	if (prAdapter->fgIsFwOwn) {
+		DBGLOG(HAL, ERROR, "Skip due to FW own.\n");
+		return;
+	}
+
+	halCheckHifState(prAdapter);
+	halDumpHifDebugLog(prAdapter);
+
+	if (debug_ops && debug_ops->dumpwfsyscpupcr)
+		debug_ops->dumpwfsyscpupcr(prAdapter);
 }
 
 static bool halIsFwReadyDump(struct ADAPTER *prAdapter)
@@ -318,6 +331,12 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps;
+#if defined(_HIF_PCIE)
+	u_int8_t readable = TRUE;
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	u_int8_t dumpViaBt = 0;
+#endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* _HIF_PCIE */
 
 	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
@@ -374,6 +393,26 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			return;
 		}
 	}
+
+#if defined(_HIF_PCIE)
+	if (prDbgOps && prDbgOps->dumpPcieStatus)
+		readable = prDbgOps->dumpPcieStatus(prAdapter->prGlueInfo);
+
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+	if (prDbgOps && prDbgOps->checkDumpViaBt)
+		dumpViaBt = prDbgOps->checkDumpViaBt(prAdapter);
+	if (readable == FALSE || dumpViaBt) {
+		DBGLOG(HAL, ERROR, "PCIe not readable\n");
+		return;
+	}
+#else /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
+	if (readable == FALSE) {
+		DBGLOG(HAL, ERROR, "PCIe not readable\n");
+		return;
+	}
+#endif /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
+#endif /* _HIF_PCIE */
+
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
 		if (prDbgOps && prDbgOps->showPleInfo)
@@ -680,8 +719,11 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	rLongest.tv_nsec = 0;
 	ktime_get_ts64(&rNowTs);
 
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+
+		if (!prToken->prPacket)
+			continue;
 
 		if (prToken->fgInUsed &&
 		    kalGetDeltaTime(&rNowTs, &prToken->rTs, &rTime)) {
@@ -747,6 +789,9 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	}
 
 	halWarningTxTimeout(prAdapter, rLongest.tv_sec);
+#if CFG_SUPPORT_MBRAIN
+	mbrIsTxTimeout(prAdapter, u4TokenId, rLongest.tv_sec);
+#endif
 
 	/* Trigger SER */
 	if (u4TimeoutSerTime == NIC_MSDU_REPORT_DISABLE_SER_TIME) {

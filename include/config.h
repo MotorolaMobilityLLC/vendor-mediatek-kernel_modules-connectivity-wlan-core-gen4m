@@ -2530,11 +2530,6 @@
 
 #define CFG_SUPPORT_ANDROID_DUAL_STA 0
 
-#if (CFG_ENABLE_WIFI_DIRECT == 0)
-#undef CFG_SUPPORT_CCM
-#define CFG_SUPPORT_CCM 0
-#endif
-
 /*------------------------------------------------------------------------------
  * Value of FWDL UMAC reserve size
  *------------------------------------------------------------------------------
@@ -2571,6 +2566,10 @@
 #if CFG_DEBUG_RX_SEGMENT
 #define RX_SEGMENT_DEBUG_TIMEOUT 10 /* unit: second */
 #endif /* CFG_DEBUG_RX_SEGMENT */
+
+#ifndef CFG_RX_SW_PROCESS_DBG
+#define CFG_RX_SW_PROCESS_DBG 0
+#endif /* CFG_RX_SW_PROCESS_DBG */
 
 /*------------------------------------------------------------------------------
  * Support FreeMsdu tasklet.

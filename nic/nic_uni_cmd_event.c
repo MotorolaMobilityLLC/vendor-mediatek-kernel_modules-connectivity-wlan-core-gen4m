@@ -2012,6 +2012,7 @@ uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 	uint16_t fixed_len = sizeof(struct UNI_EVENT_CHIP_CAPABILITY);
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t u4Status = WLAN_STATUS_FAILURE;
 
 	/* underflow check */
 	if (data_len < fixed_len) {
@@ -2025,7 +2026,10 @@ uint32_t nicUniCmdEventQueryNicCapabilityV2(struct ADAPTER *ad,
 	tag = data + fixed_len;
 	TAG_FOR_EACH(tag, tags_len, offset) {
 		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-		nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
+		u4Status = nicParsingNicCapV2(ad, TAG_ID(tag), TAG_DATA(tag));
+		if (u4Status != WLAN_STATUS_SUCCESS)
+			DBGLOG_MEM8(NIC, ERROR, tag,
+				TAG_HDR_LEN + TAG_LEN(tag));
 	}
 
 	if (tags_len != offset) {
@@ -11750,6 +11754,30 @@ void nicUniEventSap(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 								&legacy);
 		}
 			break;
+#ifdef CFG_AP_GO_DELAY_CARRIER_ON
+		case UNI_EVENT_SAP_TAG_NOTIFY_AP_GO_STARTED: {
+			struct UNI_EVENT_NOTIFY_AP_GO_STARTED *started =
+				(struct UNI_EVENT_NOTIFY_AP_GO_STARTED *) tag;
+			struct MSG_P2P_NOTIFY_APGO_STARTED *prNotifyMsg = NULL;
+
+			prNotifyMsg = (struct MSG_P2P_NOTIFY_APGO_STARTED *)
+				cnmMemAlloc(ad, RAM_TYPE_MSG,
+					    sizeof(*prNotifyMsg));
+			if (!prNotifyMsg) {
+				DBGLOG(NIC, ERROR, "Alloc mem(%zu) failed\n",
+					sizeof(*prNotifyMsg));
+				break;
+			}
+
+			prNotifyMsg->rMsgHdr.eMsgId =
+				MID_MNY_P2P_NOTIFY_APGO_STARTED;
+			prNotifyMsg->ucBssIdx = started->ucBssIdx;
+			mboxSendMsg(ad, MBOX_ID_0,
+				    (struct MSG_HDR *)prNotifyMsg,
+				    MSG_SEND_METHOD_BUF);
+		}
+			break;
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 		default:
 			fail_cnt++;
 			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
@@ -12426,6 +12454,7 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucMlrMode = fsm->ucMlrMode;
 			legacy.ucMlrState = fsm->ucMlrState;
 			legacy.ucMlrTxdFrIdx = fsm->ucMlrTxdFrIdx;
+			legacy.ucTxFragEn = fsm->ucTxFragEn;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_MLR_FSM_UPDATE, &legacy);
 #endif

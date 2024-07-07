@@ -756,7 +756,7 @@ int mtk_p2p_cfg80211_del_iface_impl(
 			prP2pInfo->aprRoleHandler = NULL;
 		}
 	} else if (p2pGetMode() == RUNNING_P2P_NO_GROUP_MODE &&
-		u4Idx == 1)
+		u4Idx != 0)
 		prP2pInfo->aprRoleHandler = NULL;
 	else
 		prP2pInfo->aprRoleHandler = prP2pInfo->prDevHandler;

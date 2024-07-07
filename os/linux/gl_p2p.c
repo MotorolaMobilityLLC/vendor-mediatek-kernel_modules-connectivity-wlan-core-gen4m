@@ -1297,15 +1297,15 @@ u_int8_t glRegisterP2P(struct GLUE_INFO *prGlueInfo, const char *prDevName,
 				fgIsApMode = TRUE;
 		}
 
-		if (!gprP2pRoleWdev[i])
+		if (!gprP2pWdev[i])
 			glP2pCreateWirelessDevice(prGlueInfo);
 
-		if (!gprP2pRoleWdev[i]) {
-			DBGLOG(P2P, ERROR, "gprP2pRoleWdev[%d] is NULL\n", i);
+		if (!gprP2pWdev[i]) {
+			DBGLOG(P2P, ERROR, "gprP2pWdev[%d] is NULL\n", i);
 			return FALSE;
 		}
 
-		prP2pWdev = gprP2pRoleWdev[i];
+		prP2pWdev = gprP2pWdev[i];
 
 		/* Reset prP2pWdev for the issue that the prP2pWdev doesn't
 		 * reset when the usb unplug/plug.
@@ -1936,6 +1936,9 @@ static netdev_tx_t __p2pMloHardStartXmit(struct GLUE_INFO *prGlueInfo,
 
 		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
 				    struct BSS_INFO) {
+			if (!prTempBss->fgIsApGoStarted)
+				continue;
+
 			prDupSkb = skb_copy(prSkb, GFP_ATOMIC);
 			if (!prDupSkb) {
 				DBGLOG(P2P, ERROR,

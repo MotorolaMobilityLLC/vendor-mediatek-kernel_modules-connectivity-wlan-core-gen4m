@@ -562,7 +562,8 @@ rlmGetVhtOpBwByBssOpBw(uint8_t ucBssOpBw);
 uint8_t rlmGetVhtOpBw320ByS1(uint8_t ucS1);
 
 void
-rlmFillVhtOpInfoByBssOpBw(struct BSS_INFO *prBssInfo,
+rlmFillVhtOpInfoByBssOpBw(struct ADAPTER *prAdapter,
+			  struct BSS_INFO *prBssInfo,
 			  uint8_t ucChannelWidth);
 
 enum ENUM_OP_CHANGE_STATUS_T
@@ -603,14 +604,16 @@ void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,
 			uint8_t *pucVhtChannelWidth);
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-void rlmTransferHe6gOpInfor(uint8_t ucChannelNum,
+void rlmTransferHe6gOpInfor(struct ADAPTER *prAdapter,
+	uint8_t ucChannelNum,
 	uint8_t ucChannelWidth,
 	uint8_t *pucChannelWidth,
 	uint8_t *pucCenterFreqS1,
 	uint8_t *pucCenterFreqS2,
 	enum ENUM_CHNL_EXT *peSco);
 
-void rlmModifyHE6GBwPara(uint8_t ucHe6gChannelWidth,
+void rlmModifyHE6GBwPara(struct ADAPTER *prAdapter,
+	uint8_t ucHe6gChannelWidth,
 	uint8_t ucHe6gPrimaryChannel,
 	uint8_t *pucHe6gChannelFrequencyS1,
 	uint8_t *pucHe6gChannelFrequencyS2);

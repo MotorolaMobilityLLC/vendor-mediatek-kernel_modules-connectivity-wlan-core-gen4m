@@ -504,8 +504,8 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			tc->eBand = (uint8_t) eBand;
 			tc->eChannelWidth = rttChannelWidthToCnmChBw(
 				tc->rChannel.width);
-			tc->ucS1 = nicGetS1(tc->eBand, tc->ucPrimaryChannel,
-				tc->eChannelWidth);
+			tc->ucS1 = nicGetS1(prAdapter, tc->eBand,
+				tc->ucPrimaryChannel, tc->eChannelWidth);
 			tc->ucS2 = nicGetS2(tc->eBand, tc->ucPrimaryChannel,
 				tc->eChannelWidth, tc->ucS1);
 			tc->ucBssIndex = ucBssIndex;

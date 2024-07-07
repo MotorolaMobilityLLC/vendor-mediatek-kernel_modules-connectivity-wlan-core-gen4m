@@ -79,6 +79,8 @@ enum ENUM_P2P_FORCE_TRX_CONFIG {
 	P2P_FORCE_TRX_CONFIG_MCS9
 };
 
+struct CCM_AA_FOBIDEN_REGION_UNIT;
+
 /******************************************************************************
  *                                 M A C R O S
  ******************************************************************************
@@ -242,6 +244,8 @@ int32_t p2pFuncSetDriverCacTime(uint32_t u4CacTime);
 
 void p2pFuncEnableManualCac(void);
 
+void p2pFuncDisableManualCac(void);
+
 uint32_t p2pFuncGetDriverCacTime(void);
 
 u_int8_t p2pFuncIsManualCac(void);
@@ -261,6 +265,10 @@ void p2pFuncSetRadarDetectMode(uint8_t ucRadarDetectMode);
 uint8_t p2pFuncGetRadarDetectMode(void);
 
 void p2pFuncAddRadarDetectCnt(void);
+
+void p2pFuncRadarDetectCntUevent(struct ADAPTER *prAdapter);
+
+void p2pFuncRadarDetectDoneUevent(struct ADAPTER *prAdapter);
 
 void p2pFuncResetRadarDetectCnt(void);
 
@@ -338,11 +346,9 @@ u_int8_t p2pFuncParseCheckForP2PInfoElem(struct ADAPTER *prAdapter,
 
 u_int8_t p2pFuncParseCheckForTKIPInfoElem(uint8_t *pucBuf);
 
-#if CFG_SUPPORT_BALANCE_MLR
 void p2pFuncParseMTKOuiInfoElem(struct ADAPTER *prAdapter,
 		struct STA_RECORD *prStaRec,
 		uint8_t *pucIE);
-#endif /* CFG_SUPPORT_BALANCE_MLR */
 u_int8_t
 p2pFuncValidateProbeReq(struct ADAPTER *prAdapter,
 		struct SW_RFB *prSwRfb, uint32_t *pu4ControlFlags,
@@ -601,16 +607,17 @@ u_int8_t p2pFuncSwitchGoChannel(struct ADAPTER *prAdapter,
 bool p2pFuncSwitchSapChannel(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario);
 
+void p2pFuncNotifySapStarted(struct ADAPTER *prAdapter,
+	uint8_t ucBssIdx);
+
+#if CFG_SUPPORT_CCM
 uint8_t p2pFuncSapFilteredChListGen(
 		struct ADAPTER *prAdapter,
 		struct RF_CHANNEL_INFO *prChnlList,
 		uint8_t *prForbiddenListLen,
-		struct P2P_A_A_FOBIDEN_REGION_UNIT *prRegionOutput,
+		struct CCM_AA_FOBIDEN_REGION_UNIT *prRegionOutput,
 		uint16_t *prTargetBw);
-
-void p2pFuncGetChBwBitmap(
-		struct ADAPTER *prAdapter,
-		struct P2P_CH_BW_RANGE *prP2pChBwRange);
+#endif
 
 uint8_t
 p2pFunGetTopPreferFreqByBand(struct ADAPTER *prAdapter,
@@ -628,7 +635,7 @@ uint8_t p2pFuncGetAllAcsFreqList(struct ADAPTER *prAdapter,
 uint8_t p2pFuncAppendPrefFreq(struct BSS_INFO **prBssList,
 	uint8_t ucNumOfAliveBss, uint32_t *prFreqList);
 
-#if (CFG_SUPPORT_WIFI_6G == 1)
+#if CFG_SUPPORT_CCM
 uint32_t p2pFuncAppendAaFreq(struct ADAPTER *prAdapter,
 			     struct BSS_INFO *prBssInfo,
 			     uint32_t *apu4FreqList);
@@ -758,8 +765,10 @@ struct P2P_CH_CANDIDATE_FILETER_ENTRY {
 u_int8_t p2pFuncIsLteSafeChnl(enum ENUM_BAND eBand, uint8_t ucChnlNum,
 				 uint32_t *pau4SafeChnl);
 
+#if CFG_SUPPORT_CCM
 u_int8_t p2pFuncIsPreferWfdAa(struct ADAPTER *prAdapter,
-			      uint32_t *pau4AliveBssBitmap);
+			      struct BSS_INFO *prCsaBss);
+#endif
 
 enum ENUM_CSA_STATUS p2pFuncIsCsaAllowed(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,

@@ -9,8 +9,8 @@
 #define P2P_ROLE_GET_STATISTICS_TIME	    5000
 
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
-#define AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS		50
-#endif
+#define AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS	50
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
 enum ENUM_BUFFER_TYPE {
 	ENUM_FRAME_TYPE_EXTRA_IE_BEACON,
@@ -598,8 +598,11 @@ void p2pRoleFsmRunEventDelMldLink(struct ADAPTER *prAdapter,
 #endif
 
 #ifdef CFG_AP_GO_DELAY_CARRIER_ON
-void p2pRoleFsmRunEventCarrierOnHandler(struct ADAPTER *prAdapter,
-	uintptr_t ulParamPtr);
-#endif
+void p2pRoleFsmCarrierOnTimeoutHandler(struct ADAPTER *prAdapter,
+				       uintptr_t ulParamPtr);
+
+void p2pRoleFsmRunEventApGoStarted(struct ADAPTER *prAdapter,
+				   struct MSG_HDR *prMsgHdr);
+#endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
 #endif

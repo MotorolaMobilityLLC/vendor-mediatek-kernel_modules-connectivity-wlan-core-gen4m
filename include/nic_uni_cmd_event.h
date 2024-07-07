@@ -6525,6 +6525,7 @@ struct UNI_EVENT_SAP {
 enum ENUM_UNI_EVENT_SAP_TAG {
 	UNI_EVENT_SAP_TAG_AGING_TIMEOUT = 0,
 	UNI_EVENT_SAP_TAG_UPDATE_STA_FREE_QUOTA = 1,
+	UNI_EVENT_SAP_TAG_NOTIFY_AP_GO_STARTED = 2,
 	UNI_EVENT_SAP_TAG_NUM
 };
 
@@ -6543,6 +6544,14 @@ struct UNI_EVENT_UPDATE_STA_FREE_QUOTA {
 	uint16_t u2WlanIdx;
 	uint8_t  ucUpdateMode;
 	uint8_t  ucFreeQuota;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_NOTIFY_AP_GO_STARTED {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t  ucBssIdx;
+	uint8_t  aucReserved[3];
 } __KAL_ATTRIB_PACKED__;
 
 __KAL_ATTRIB_PACKED_FRONT__
@@ -7654,7 +7663,9 @@ struct UNI_EVENT_MLR_FSM_UPDATE {
 	uint8_t ucMlrState; /* ENUM_MLR_STATE */
 	/* MLR TXD fixed rate index (only used for REBB segment) */
 	uint8_t ucMlrTxdFrIdx;
-	uint8_t aucReserved[3];
+	/* MLR enable Tx fragment or not */
+	uint8_t ucTxFragEn;
+	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* EFUSE event Tag */

@@ -539,6 +539,18 @@ u_int8_t mtk_pci_is_wfdma_ready(struct GLUE_INFO *prGlueInfo)
 	return TRUE;
 }
 
+u_int8_t mtk_pci_is_int_ready(struct GLUE_INFO *prGlueInfo)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct pcie_msi_info *prMsiInfo;
+
+	prHifInfo = &prGlueInfo->rHifInfo;
+	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
+
+	return prMsiInfo->ulEnBits == 0 &&
+		GLUE_GET_REF_CNT(prHifInfo->u4IntBitSetCnt) == 0;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief This function is a PCIE interrupt callback function
@@ -554,34 +566,44 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	struct GL_HIF_INFO *prHifInfo;
 	struct pcie_msi_info *prMsiInfo;
 	struct pcie_msi_layout *prMsiLayout;
+	irqreturn_t irqret = IRQ_WAKE_THREAD;
 	int i;
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 	if (!prGlueInfo) {
 		DBGLOG_LIMITED(HAL, INFO, "No glue info(%d)\n", irq);
 		disable_irq_nosync(irq);
-		goto exit;
+		return IRQ_NONE;
 	}
 
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prMsiInfo = &prGlueInfo->prAdapter->chip_info->bus_info->pcie_msi_info;
+
+	GLUE_INC_REF_CNT(prHifInfo->u4IntBitSetCnt);
 	if (!prMsiInfo || !prMsiInfo->fgMsiEnabled) {
-		if (KAL_TEST_BIT(HIF_WFDMA_INT_BIT, prHifInfo->ulHifIntEnBits))
-			return IRQ_NONE;
+		if (KAL_TEST_BIT(HIF_WFDMA_INT_BIT,
+				 prHifInfo->ulHifIntEnBits)) {
+			irqret = IRQ_NONE;
+			goto exit;
+		}
 
 		disable_irq_nosync(irq);
 		KAL_SET_BIT(HIF_WFDMA_INT_BIT, prHifInfo->ulHifIntEnBits);
 		goto exit;
 	}
 
-	if (!mtk_pci_is_wfdma_ready(prGlueInfo))
-		return IRQ_HANDLED;
+	if (!mtk_pci_is_wfdma_ready(prGlueInfo)) {
+		irqret = IRQ_HANDLED;
+		goto exit;
+	}
 
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
 		prMsiLayout = &prMsiInfo->prMsiLayout[i];
 		if (prMsiLayout->irq_num == irq) {
-			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits))
-				return IRQ_NONE;
+			if (KAL_TEST_BIT(i, prMsiInfo->ulEnBits)) {
+				irqret = IRQ_NONE;
+				goto exit;
+			}
 
 			mtk_pci_msi_disable_irq(irq, i);
 			KAL_SET_BIT(i, prMsiInfo->ulEnBits);
@@ -590,15 +612,20 @@ irqreturn_t mtk_pci_isr(int irq, void *dev_instance)
 	}
 #if CFG_SUPPORT_WED_PROXY
 	if (IsWedAttached()) {
-		if (KAL_TEST_BIT(HIF_WED_INT_BIT, prHifInfo->ulHifIntEnBits))
-			return IRQ_NONE;
+		if (KAL_TEST_BIT(HIF_WED_INT_BIT,
+				 prHifInfo->ulHifIntEnBits)) {
+			irqret = IRQ_NONE;
+			goto exit;
+		}
 		disable_irq_nosync(irq);
 		KAL_SET_BIT(HIF_WED_INT_BIT, prHifInfo->ulHifIntEnBits);
 	}
 #endif
 
 exit:
-	return IRQ_WAKE_THREAD;
+	GLUE_DEC_REF_CNT(prHifInfo->u4IntBitSetCnt);
+
+	return irqret;
 }
 
 irqreturn_t mtk_pci_isr_thread(int irq, void *dev_instance)
@@ -673,13 +700,15 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 	prBusInfo = prChipInfo->bus_info;
 	prMsiInfo = &prBusInfo->pcie_msi_info;
 
+	GLUE_INC_REF_CNT(prHifInfo->u4IntBitSetCnt);
+
 	if (!prMsiInfo->fgMsiEnabled) {
 		if (KAL_TEST_AND_CLEAR_BIT(HIF_WFDMA_INT_BIT,
 					   prHifInfo->ulHifIntEnBits)) {
 			enable_irq(prHifInfo->u4IrqId);
 			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
 		}
-		return;
+		goto exit;
 	}
 #if CFG_SUPPORT_WED_PROXY
 	if (IsWedAttached()) {
@@ -688,7 +717,7 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 			enable_irq(prHifInfo->u4IrqId);
 			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
 		}
-		return;
+		goto exit;
 	}
 #endif
 	for (i = 0; i < prMsiInfo->u4MsiNum; i++) {
@@ -702,6 +731,9 @@ void mtk_pci_enable_irq(struct GLUE_INFO *prGlueInfo)
 			GLUE_INC_REF_CNT(prAdapter->rHifStats.u4EnIrqCount);
 		}
 	}
+
+exit:
+	GLUE_DEC_REF_CNT(prHifInfo->u4IntBitSetCnt);
 }
 
 void mtk_pci_disable_irq(struct GLUE_INFO *prGlueInfo)
@@ -890,13 +922,14 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 #endif
 	}
 
-	if (g_AERRstTriggered || kalIsResetting())
+	if (g_AERRstTriggered)
 		goto exit;
 
 	if (state == pci_channel_io_normal) {
 		/* bit[6]: Completion timeout status */
 		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
+			fgIsBusAccessFailed = TRUE;
 			if (pcie_check_status_is_linked(pdev) == TRUE) {
 #if CFG_MTK_WIFI_AER_L05_RESET
 				g_AERL05Rst = TRUE;
@@ -2977,9 +3010,53 @@ void glBusFuncOff(void)
 #endif
 }
 
+#if (CFG_PCIE_GEN_SWITCH == 1)
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Val = 0;
+	struct RX_IDLE_STATE *prRxIdleState;
+
+	if (prAdapter) {
+		if (prAdapter->ucStopMMIO) {
+			DBGLOG(INIT, ERROR, "[Gen Switch] check start\n");
+			prRxIdleState = (struct RX_IDLE_STATE *)
+				pcie_gen_switch_get_emi_add(prAdapter);
+
+			if (prRxIdleState == NULL) {
+				DBGLOG(OID, ERROR, "g_pu4RxDone is null\n");
+				return;
+			}
+			while (prAdapter->ucStopMMIO) {
+				udelay(1);
+				u4Val++;
+				if (u4Val > GEN_SWITCH_TIMEOUT) {
+					prAdapter->ucStopMMIO = FALSE;
+					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
+					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
+					mtk_pcie_disable_cfg_dump(0);
+					DBGLOG(INIT, ERROR,
+						"[Gen Switch] timeout\n");
+					break;
+				}
+			}
+			DBGLOG(INIT, ERROR, "[Gen Switch] check timeout end\n");
+		}
+	}
+}
+#endif /*CFG_PCIE_GEN_SWITCH */
+
 uint32_t glReadPcieCfgSpace(int offset, uint32_t *value)
 {
 	int ret = 0;
+#if (CFG_PCIE_GEN_SWITCH == 1)
+	struct ADAPTER *prAdapter = NULL;
+
+	if (g_prGlueInfo) {
+		prAdapter = g_prGlueInfo->prAdapter;
+		if (prAdapter)
+			pcie_check_gen_switch_timeout(prAdapter);
+	}
+#endif /*CFG_PCIE_GEN_SWITCH*/
 
 	ret = pci_read_config_dword(g_prDev, offset, value);
 	if (unlikely(ret))
@@ -3138,7 +3215,7 @@ void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter)
 		return;
 	}
 
-	while (prMsiInfo->ulEnBits != 0 &&
+	while (!mtk_pci_is_int_ready(prAdapter->prGlueInfo) &&
 		prRxIdleState->u4WFIdle != WF_RX_IDLE) {
 		udelay(1);
 		u4Val++;
@@ -3257,39 +3334,6 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	prRxIdleState->u4WFIdle = DEFAULT_IDLE;
 	prRxIdleState->u4FWIdle = DEFAULT_IDLE;
 	return IRQ_HANDLED;
-}
-
-void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
-{
-	uint32_t u4Val = 0;
-	struct RX_IDLE_STATE *prRxIdleState;
-
-	if (prAdapter) {
-		if (prAdapter->ucStopMMIO) {
-			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going\n");
-			prRxIdleState = (struct RX_IDLE_STATE *)
-				pcie_gen_switch_get_emi_add(prAdapter);
-
-			if (prRxIdleState == NULL) {
-				DBGLOG(OID, ERROR, "g_pu4RxDone is null\n");
-				return;
-			}
-			while (prAdapter->ucStopMMIO) {
-				udelay(1);
-				u4Val++;
-				if (u4Val > GEN_SWITCH_TIMEOUT) {
-					prAdapter->ucStopMMIO = FALSE;
-					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
-					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
-					mtk_pcie_disable_cfg_dump(0);
-					DBGLOG(INIT, ERROR,
-						"[Gen Switch] timeout\n");
-					break;
-				}
-			}
-			DBGLOG(INIT, ERROR, "[Gen Switch] is on-going end\n");
-		}
-	}
 }
 #endif
 
