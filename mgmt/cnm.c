@@ -5797,7 +5797,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		= CNM_OPMODE_REQ_STATUS_SUCCESS;
 	uint8_t ucOpRxNssFinal, ucOpTxNssFinal, ucOpBwFinal, ucOpMaxBw;
 	enum ENUM_CNM_OPMODE_REQ_T eRunReq;
-	uint8_t ucSendAct = TRUE;
+	enum ENUM_OP_CHANGE_SEND_ACT_T ucSendAct = OP_CHANGE_SEND_ACT_DEFAULT;
 #if CFG_ENABLE_WIFI_DIRECT
 	struct GL_P2P_INFO *prP2PInfo;
 	uint8_t ucRoleIndex = 0;
@@ -5867,7 +5867,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 			prBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 			DBGLOG(CNM, INFO,
 				"Bss[%d] is in roaming state\n", ucBssIndex);
-			ucSendAct = FALSE;
+			ucSendAct = OP_CHANGE_SEND_ACT_DISABLE;
 		}
 #endif
 		/* Step 3. Special rule for BW change (DBDC)
@@ -5936,6 +5936,7 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 					DBGLOG(CNM, INFO,
 						"COEX HT20 activated\n");
 				}
+				ucSendAct = OP_CHANGE_SEND_ACT_FORCE;
 			} else {
 				if (prBssInfo->ucVhtChannelWidthBackup) {
 					ucOpBwFinal =
@@ -5963,13 +5964,13 @@ cnmOpModeSetTRxNss(struct ADAPTER *prAdapter,
 		/* Step 4. Execute OpMode change function for alive BSS */
 		if (eNewReq == CNM_OPMODE_REQ_SMARTGEAR_1T2R ||
 			eNewReq == CNM_OPMODE_REQ_ANT_CTRL_1T2R)
-			ucSendAct = FALSE;
+			ucSendAct = OP_CHANGE_SEND_ACT_DISABLE;
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 		if (prBssInfo->ucMLSRPausedLink) {
 			DBGLOG(CNM, INFO,
 				"MLSR Pause link, no need send action Frame\n");
-			ucSendAct = FALSE;
+			ucSendAct = OP_CHANGE_SEND_ACT_DISABLE;
 		}
 #endif
 

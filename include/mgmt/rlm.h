@@ -216,6 +216,16 @@ enum ENUM_OP_CHANGE_STATUS_T {
 	OP_CHANGE_STATUS_NUM
 };
 
+enum ENUM_OP_CHANGE_SEND_ACT_T {
+	/* Do not send action frame */
+	OP_CHANGE_SEND_ACT_DISABLE = 0,
+	/* Send action frame if change */
+	OP_CHANGE_SEND_ACT_DEFAULT = 1,
+	/* Send action frame w/wo change */
+	OP_CHANGE_SEND_ACT_FORCE = 2,
+	OP_CHANGE_SEND_ACT_NUM
+};
+
 struct SUB_ELEMENT_LIST {
 	struct SUB_ELEMENT_LIST *prNext;
 	struct SUB_ELEMENT rSubIE;
@@ -573,7 +583,7 @@ rlmChangeOperationMode(
 	uint8_t ucChannelWidth,
 	uint8_t ucOpRxNss,
 	uint8_t ucOpTxNss,
-	uint8_t ucSendAct,
+	enum ENUM_OP_CHANGE_SEND_ACT_T ucSendAct,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
 );
 
