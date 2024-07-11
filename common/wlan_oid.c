@@ -13656,7 +13656,7 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 		  void *pvSetBuffer, uint32_t u4SetBufferLen,
 		  uint32_t *pu4SetInfoLen) {
 	uint32_t status = WLAN_STATUS_SUCCESS;
-	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT *prSetP2P = NULL;
+	struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT rSetP2P;
 
 	ASSERT(prAdapter);
 	ASSERT(pu4SetInfoLen);
@@ -13668,11 +13668,10 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_LENGTH;
 	}
 
-	prSetP2P = (struct PARAM_CUSTOM_P2P_SET_WITH_LOCK_STRUCT *)
-		   pvSetBuffer;
+	memcpy(&rSetP2P, pvSetBuffer, *pu4SetInfoLen);
 
 	DBGLOG(P2P, TRACE, "Set P2P enable[%d] mode[%d]\n",
-	       prSetP2P->u4Enable, prSetP2P->u4Mode);
+	       rSetP2P.u4Enable, rSetP2P.u4Mode);
 
 	/*
 	 *    enable = 1, mode = 0  => init P2P network
@@ -13686,25 +13685,25 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 	DBGLOG(P2P, TRACE, "P2P Compile as (%d)p2p-like interface\n",
 	       KAL_P2P_NUM);
 
-	if (prSetP2P->u4Mode >= RUNNING_P2P_MODE_NUM) {
+	if (rSetP2P.u4Mode >= RUNNING_P2P_MODE_NUM) {
 		DBGLOG(P2P, ERROR, "P2P interface mode(%d) is wrong\n",
-		       prSetP2P->u4Mode);
+		       rSetP2P.u4Mode);
 		ASSERT(0);
 	}
 
-	if (prSetP2P->u4Enable) {
-		p2pSetMode(prSetP2P->u4Mode);
+	if (rSetP2P.u4Enable) {
+		p2pSetMode(rSetP2P.u4Mode);
 
 		if (p2pLaunch(prAdapter->prGlueInfo)) {
 			/* ToDo:: ASSERT */
 			ASSERT(prAdapter->fgIsP2PRegistered);
 			if (prAdapter->rWifiVar.ucApUapsd
-			    && (prSetP2P->u4Mode != RUNNING_P2P_MODE)) {
+			    && (rSetP2P.u4Mode != RUNNING_P2P_MODE)) {
 				DBGLOG(OID, INFO,
 				       "wlanoidSetP2pMode Default enable ApUapsd\n");
 				setApUapsdEnable(prAdapter, TRUE);
 			}
-			prAdapter->u4P2pMode = prSetP2P->u4Mode;
+			prAdapter->u4P2pMode = rSetP2P.u4Mode;
 		} else {
 			DBGLOG(P2P, ERROR, "P2P Launch Failed\n");
 			status = WLAN_STATUS_FAILURE;
@@ -13713,7 +13712,7 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 	} else {
 		if (prAdapter->fgIsP2PRegistered)
 			p2pRemove(prAdapter->prGlueInfo,
-				prSetP2P->fgIsRtnlLockAcquired);
+				rSetP2P.fgIsRtnlLockAcquired);
 
 	}
 
