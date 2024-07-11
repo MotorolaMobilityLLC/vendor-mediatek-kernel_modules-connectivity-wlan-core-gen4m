@@ -695,6 +695,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	ucBandIdx = prBssInfo->eHwBandIdx;
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	prGetStaStats = &prAdapter->rQueryStaStatistics[ucBssIndex];
+	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	/* no need to COPY_MAC_ADDR here
 	 * because main thread will traverse all BSS index
 	 */
@@ -749,7 +750,6 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	if (rStatus == WLAN_STATUS_SUCCESS) {
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
-		prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 		u4TxRate = prLq->u2TxLinkSpeed;
 		u4RxRate = prLq->u2RxLinkSpeed;
 		i4Rssi = prLq->cRssi;
@@ -782,7 +782,12 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	 *    driver and fw should change u2TxLinkSpeed to u4
 	 *    because it will overflow in wifi7
 	 */
-	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0)) {
+	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4TxRate == 0) ||
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+		!prLq->fgIsLinkRateValid) {
+#else
+		!rLinkSpeed.rLq[ucBssIndex].fgIsLinkRateValid) {
+#endif
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Tx link speed\n");
 	} else {
@@ -790,7 +795,12 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->u4TxLinkSpeedCache[ucBssIndex] = u4TxRate / 1000;
 	}
 
-	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0)) {
+	if ((rStatus != WLAN_STATUS_SUCCESS) || (u4RxRate == 0) ||
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+		!prLq->fgIsLinkRateValid) {
+#else
+		!rLinkSpeed.rLq[ucBssIndex].fgIsLinkRateValid) {
+#endif
 		/* unable to retrieve link speed */
 		DBGLOG(REQ, WARN, "last Rx link speed\n");
 	} else {
@@ -798,6 +808,26 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		prGlueInfo->u4RxLinkSpeedCache[ucBssIndex] = u4RxRate / 1000;
 		prGlueInfo->u4RxBwCache[ucBssIndex] =
 			arBwCfg80211Table[u4RxBw];
+	}
+
+	/* if there is no valid RSSI from fw when we
+	 * query the RSSI for the first time after
+	 * connection, use the scan result
+	 */
+#if (CFG_SUPPORT_STATS_ONE_CMD == 1)
+	if (!prLq->fgIsLinkRateValid) {
+#else
+	if (!rLinkSpeed.rLq[ucBssIndex].fgIsLinkRateValid) {
+#endif
+		/* use the scan RSSI */
+		struct BSS_DESC *prBssDesc =
+			scanSearchBssDescByBssid(prAdapter, (uint8_t *)mac);
+
+		if (prBssDesc) {
+			i4Rssi = RCPI_TO_dBm(prBssDesc->ucRCPI);
+			DBGLOG(REQ, WARN,
+				"LR invalid, use scan result:%d\n", i4Rssi);
+		}
 	}
 
 	if (rStatus != WLAN_STATUS_SUCCESS) {

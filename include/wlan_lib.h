@@ -2229,7 +2229,8 @@ void wlanDumpBssStatistics(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 uint32_t
 wlanQueryStatsOneCmd(struct ADAPTER *prAdapter,
 		       void *pvQueryBuffer, uint32_t u4QueryBufferLen,
-		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid);
+		       uint32_t *pu4QueryInfoLen, uint8_t fgIsOid,
+			   uint8_t ucBssIndex);
 #endif
 
 void wlanDumpAllBssStatistics(struct ADAPTER *prAdapter);
