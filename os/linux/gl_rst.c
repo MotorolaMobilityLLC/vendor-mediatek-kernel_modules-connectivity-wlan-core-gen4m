@@ -884,7 +884,8 @@ exit:
 uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
-	if (g_IsWholeChipRst) {
+	if (g_IsWholeChipRst &&
+		eResetReason != RST_WHOLE_CHIP_TRIGGER) {
 		DBGLOG(INIT, INFO, "whole chip rst on-going, skip %s\n",
 			apucRstReason[eResetReason]);
 		return WLAN_STATUS_NOT_ACCEPTED;
