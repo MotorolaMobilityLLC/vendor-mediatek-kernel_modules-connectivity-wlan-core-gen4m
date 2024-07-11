@@ -316,6 +316,10 @@ void ccmChannelSwitchProducerDfs(struct ADAPTER *prAdapter,
 			continue;
 
 		entry = cnmMemAlloc(prAdapter, RAM_TYPE_MSG, sizeof(*entry));
+		if (!entry) {
+			DBGLOG(CCM, ERROR, "Alloc mem fail\n");
+			return;
+		}
 
 		entry->prBssInfo = bss;
 		entry->u4TargetCh = nicFreq2ChannelNum(au4FreqList[0] * 1000);
