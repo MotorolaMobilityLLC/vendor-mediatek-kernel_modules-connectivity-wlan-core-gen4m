@@ -7676,7 +7676,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 
 	/* GC,GO */
-	INIT_UINT(prWifiVar->ucP2p2gBandwidth, "P2p2gBw", MAX_BW_20MHZ,
+	INIT_UINT(prWifiVar->ucP2p2gBandwidth, "P2p2gBw", DEFAULT_P2P_2G_BW,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucP2p5gBandwidth, "P2p5gBw", MAX_BW_80MHZ,
 		  FEATURE_TO_CUSTOMER);
@@ -7684,7 +7684,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucApBandwidth, "ApBw", MAX_BW_320_2MHZ,
 		  FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucAp2gBandwidth, "Ap2gBw", MAX_BW_20MHZ,
+	INIT_UINT(prWifiVar->ucAp2gBandwidth, "Ap2gBw", DEFAULT_SAP_2G_BW,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucAp5gBandwidth, "Ap5gBw", MAX_BW_80MHZ,
 		  FEATURE_TO_CUSTOMER);
