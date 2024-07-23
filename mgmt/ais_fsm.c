@@ -8613,9 +8613,16 @@ aisFuncTxMgmtFrame(struct ADAPTER *prAdapter,
 		prMgmtTxReqInfo->prMgmtTxMsdu = prMgmtTxMsdu;
 		prMgmtTxReqInfo->fgIsMgmtTxRequested = TRUE;
 
-
-		nicTxConfigPktControlFlag(prMgmtTxMsdu,
+#if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE) && \
+				(CFG_SUPPORT_802_11BE_MLO == 1)
+		/* don't use force tx to enable HW MAT for MLO AP */
+		if ((prStaRec && prStaRec->ucStaState != STA_STATE_3) ||
+		    !prMldStarec)
+#endif
+		{
+			nicTxConfigPktControlFlag(prMgmtTxMsdu,
 					  MSDU_CONTROL_FLAG_FORCE_TX, TRUE);
+		}
 
 		/* send to TX queue */
 		nicTxEnqueueMsdu(prAdapter, prMgmtTxMsdu);
