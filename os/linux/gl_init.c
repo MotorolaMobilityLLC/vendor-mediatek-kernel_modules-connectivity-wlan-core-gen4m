@@ -686,6 +686,34 @@ int CFG80211_Resume(struct wiphy *wiphy)
  *******************************************************************************
  */
 
+uint32_t mtk_akm_suites[] = {
+	SWAP32(RSN_AKM_SUITE_802_1X),
+	SWAP32(RSN_AKM_SUITE_PSK),
+#if CFG_SUPPORT_802_11R
+	SWAP32(RSN_AKM_SUITE_FT_802_1X),
+	SWAP32(RSN_AKM_SUITE_FT_PSK),
+#endif
+#if CFG_SUPPORT_WPA3
+	SWAP32(RSN_AKM_SUITE_SAE),
+	SWAP32(RSN_AKM_SUITE_OWE),
+	SWAP32(RSN_AKM_SUITE_SAE_EXT_KEY),
+#if CFG_SUPPORT_802_11R
+	SWAP32(RSN_AKM_SUITE_FT_OVER_SAE),
+	SWAP32(RSN_AKM_SUITE_FT_SAE_EXT_KEY),
+#endif
+#endif
+	SWAP32(RSN_AKM_SUITE_8021X_SUITE_B),
+	SWAP32(RSN_AKM_SUITE_8021X_SUITE_B_192),
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	SWAP32(RSN_AKM_SUITE_FILS_SHA256),
+	SWAP32(RSN_AKM_SUITE_FILS_SHA384),
+#endif
+	SWAP32(RSN_AKM_SUITE_OSEN),
+#if CFG_SUPPORT_DPP
+	SWAP32(RSN_AKM_SUITE_DPP),
+#endif
+};
+
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 	#define CHAN2G(_channel, _freq, _flags)		\
 	{						\
@@ -5003,6 +5031,9 @@ static void wlanCreateWirelessDevice(void)
 	wiphy_ext_feature_set(prWiphy,
 		NL80211_EXT_FEATURE_CONTROL_PORT_OVER_NL80211_TX_STATUS);
 #endif
+
+	prWiphy->n_akm_suites = ARRAY_SIZE(mtk_akm_suites);
+	prWiphy->akm_suites = mtk_akm_suites;
 
 	if (wiphy_register(prWiphy) < 0) {
 		DBGLOG(INIT, ERROR, "wiphy_register error\n");
