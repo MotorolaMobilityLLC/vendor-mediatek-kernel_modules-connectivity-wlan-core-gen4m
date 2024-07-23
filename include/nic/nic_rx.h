@@ -142,7 +142,8 @@
 #define RX_STATUS_HTC                   BIT(0)
 #define RX_STATUS_UC2ME                 BIT(1)
 #define RX_STATUS_MC_FRAME              BIT(2)
-#define RX_STATUS_BC_FRAME              BIT(3)
+#define RX_STATUS_BC_FRAME              BITS(1, 2)
+#define RX_STATUS_FLAG_BF_RPT           BIT(3)
 #define RX_STATUS_BCN_WITH_BMC          BIT(4)
 #define RX_STATUS_BCN_WITH_UC           BIT(5)
 #define RX_STATUS_KEYID_MASK            BITS(6, 7)
@@ -1473,12 +1474,14 @@ struct ACTION_FRAME_SIZE_MAP {
 #define HAL_RX_STATUS_IS_HTC_EXIST(_prHwMacRxDesc) \
 	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_HTC)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_UC2ME(_prHwMacRxDesc) \
-	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_UC2ME) \
-	? TRUE : FALSE)
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BC_FRAME) \
+			== RX_STATUS_UC2ME)
 #define HAL_RX_STATUS_IS_MC(_prHwMacRxDesc) \
-	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_MC_FRAME)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BC_FRAME) \
+			== RX_STATUS_MC_FRAME)
 #define HAL_RX_STATUS_IS_BC(_prHwMacRxDesc) \
-	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BC_FRAME)?TRUE:FALSE)
+	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BC_FRAME) \
+			== RX_STATUS_BC_FRAME)
 #define HAL_RX_STATUS_IS_BCN_WITH_BMC(_prHwMacRxDesc)	\
 	(((_prHwMacRxDesc)->ucMatchPacket & RX_STATUS_BCN_WITH_BMC)?TRUE:FALSE)
 #define HAL_RX_STATUS_IS_BCN_WITH_UC(_prHwMacRxDesc)	\
