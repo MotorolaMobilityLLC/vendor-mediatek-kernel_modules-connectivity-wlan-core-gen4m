@@ -15029,17 +15029,9 @@ void wlanSetConnsysFwLog(struct ADAPTER *prAdapter)
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	struct CMD_CONNSYS_FW_LOG rFwLogCmd;
 	uint32_t u4BufLen;
-#endif
+#else
 	int32_t u4LogLevel = ENUM_WIFI_LOG_LEVEL_DEFAULT;
-
-	/* Enable FW log */
-	wlanDbgGetGlobalLogLevel(
-		ENUM_WIFI_LOG_MODULE_FW, &u4LogLevel);
-	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
-		wlanDbgSetLogLevel(prAdapter,
-			ENUM_WIFI_LOG_LEVEL_VERSION_V1,
-			ENUM_WIFI_LOG_MODULE_FW,
-			u4LogLevel, TRUE);
+#endif
 
 #ifdef CFG_MTK_CONNSYS_DEDICATED_LOG_PATH
 	kalMemZero(&rFwLogCmd, sizeof(rFwLogCmd));
@@ -15064,6 +15056,15 @@ void wlanSetConnsysFwLog(struct ADAPTER *prAdapter)
 		sizeof(struct CMD_CONNSYS_FW_LOG),
 		&u4BufLen);
 	}
+#else
+	/* Enable FW log */
+	wlanDbgGetGlobalLogLevel(
+		ENUM_WIFI_LOG_MODULE_FW, &u4LogLevel);
+	if (u4LogLevel > ENUM_WIFI_LOG_LEVEL_DEFAULT)
+		wlanDbgSetLogLevel(prAdapter,
+			ENUM_WIFI_LOG_LEVEL_VERSION_V1,
+			ENUM_WIFI_LOG_MODULE_FW,
+			u4LogLevel, TRUE);
 #endif
 }
 
