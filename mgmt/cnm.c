@@ -1600,17 +1600,27 @@ cnmPreferredChannel(struct ADAPTER *prAdapter,
 	for (i = 0; i < prAdapter->ucSwBssIdNum; i++) {
 		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		if (prBssInfo) {
-			if (IS_BSS_AIS(prBssInfo)
-			    && RLM_NET_PARAM_VALID(prBssInfo)) {
-				*prBand = prBssInfo->eBand;
-				*pucPrimaryChannel
-					= prBssInfo->ucPrimaryChannel;
-				*prBssSCO = prBssInfo->eBssSCO;
+		if (!prBssInfo || !IS_BSS_AIS(prBssInfo) ||
+			!RLM_NET_PARAM_VALID(prBssInfo))
+			continue;
 
-				return TRUE;
-			}
+		if ((prBssInfo->eBssSCO != CHNL_EXT_SCN) &&
+			nicGetSecCh(prAdapter,
+				    prBssInfo->eBand,
+				    prBssInfo->eBssSCO,
+				    prBssInfo->ucPrimaryChannel) == 0) {
+			DBGLOG(P2P, WARN,
+				"invalid sco %d, channel:%d, band: %d\n",
+				prBssInfo->eBssSCO,
+				prBssInfo->ucPrimaryChannel,
+				prBssInfo->eBand);
+			continue;
 		}
+		*prBand = prBssInfo->eBand;
+		*pucPrimaryChannel
+			= prBssInfo->ucPrimaryChannel;
+		*prBssSCO = prBssInfo->eBssSCO;
+		return TRUE;
 	}
 
 	return FALSE;
