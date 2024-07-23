@@ -17041,6 +17041,9 @@ static void kalVnfSendCmd(struct VOLT_INFO_T *prVnfInfo, unsigned int u4volt)
 			"prVnfInfo or prVnfInfo->prAdapter is NULL\n");
 		return;
 	}
+
+	kalMemZero(&rVnf, sizeof(rVnf));
+
 	/* fill in CMD buffer */
 	rVnf.u2Volt = (uint16_t)u4volt;
 
