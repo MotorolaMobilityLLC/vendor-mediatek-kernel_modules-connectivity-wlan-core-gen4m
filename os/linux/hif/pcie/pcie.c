@@ -2083,7 +2083,7 @@ uint32_t glRegisterBus(probe_card pfProbe, remove_card pfRemove)
 			"tx cma non cache platform_driver_register fail\n");
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
-#if CFG_MTK_WIFI_PCIE_SUPPORT
+#if (CFG_MTK_WIFI_PCIE_SUPPORT) && (CFG_PRELOADER_PMIC_EN_PU == 1)
 	mtk_pcie_remove_port(0);
 #endif
 
