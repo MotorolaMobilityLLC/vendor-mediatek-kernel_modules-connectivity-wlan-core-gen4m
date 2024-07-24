@@ -841,9 +841,10 @@ static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 		/* skip rsnxe if target ap doesn't support rsnxe */
-		if (prStaRec->ucAuthAlgNum ==
-			AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION
-			 && prTargetBss && !prTargetBss->fgIERSNX)
+		if ((prStaRec->ucAuthAlgNum ==
+			AUTH_ALGORITHM_NUM_FAST_BSS_TRANSITION ||
+		    prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_OPEN_SYSTEM)
+		    && prTargetBss && !prTargetBss->fgIERSNX)
 			return TRUE;
 	}
 
