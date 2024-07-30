@@ -2304,8 +2304,7 @@ void nicEventRddPulseDump(struct ADAPTER *prAdapter,
 
 	if (prRddPulseEvent->u4FuncLength >
 		(RX_GET_PACKET_MAX_SIZE(prAdapter)
-			- sizeof(struct WIFI_EVENT)
-			- sizeof(struct EVENT_WIFI_RDD_TEST))) {
+			- sizeof(struct WIFI_EVENT))) {
 		DBGLOG(INIT, ERROR,
 			"u4FuncLength %d out of valid event length!\n",
 			prRddPulseEvent->u4FuncLength);
@@ -4161,12 +4160,8 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA *prPhyIcsEvent;
-	uint32_t u4PhyIcsEventSize =
-		sizeof(struct UNI_EVENT_PHY_ICS_DUMP_RAW_DATA);
 #else
 	struct EXT_EVENT_PHY_ICS_DUMP_DATA_T *prPhyIcsEvent;
-	uint32_t u4PhyIcsEventSize =
-		sizeof(struct EXT_EVENT_PHY_ICS_DUMP_DATA_T);
 #endif
 
 	struct ICS_BIN_LOG_HDR *prIcsBinLogHeader;
@@ -4193,11 +4188,7 @@ void nicExtEventPhyIcsRawData(struct ADAPTER *prAdapter,
 				pucEventBuf;
 #endif
 
-	if (prPhyIcsEvent->u4DataLen >
-		(RX_GET_PACKET_MAX_SIZE(prAdapter)
-			- sizeof(struct WIFI_EVENT)
-			- u4PhyIcsEventSize) ||
-	    prPhyIcsEvent->u4DataLen > MAX_PHY_ICS_DUMP_DATA_CNT) {
+	if (prPhyIcsEvent->u4DataLen > MAX_PHY_ICS_DUMP_DATA_CNT) {
 		DBGLOG(RFTEST, ERROR,
 			"u4DataLen %d out of valid event length!\n",
 			prPhyIcsEvent->u4DataLen);
@@ -4294,13 +4285,6 @@ void nicExtEventICapIQData(struct ADAPTER *prAdapter,
 
 	prICapEvent = (struct EXT_EVENT_RBIST_DUMP_DATA_T *)
 		    pucEventBuf;
-
-	if (prICapEvent->u4DataLength
-		> sizeof(struct EXT_EVENT_RBIST_DUMP_DATA_T)) {
-		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
-			prICapEvent->u4DataLength);
-		return;
-	}
 
 	prIcapInfo = &prAdapter->rIcapInfo;
 	prIQArray = prIcapInfo->prIQArray;
