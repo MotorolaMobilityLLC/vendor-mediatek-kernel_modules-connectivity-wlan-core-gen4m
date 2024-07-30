@@ -55,6 +55,7 @@
 #include <linux/debugfs.h>
 #if CFG_SUPPORT_THERMAL_QUERY
 #include <linux/thermal.h>
+#include "thermal_core.h"
 #endif
 
 #include <linux/platform_device.h>
