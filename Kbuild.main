@@ -1891,6 +1891,7 @@ endif
 
 ifeq ($(CONFIG_SUPPORT_THERMAL_QUERY), y)
     ccflags-y += -DCFG_SUPPORT_THERMAL_QUERY=1
+    ccflags-y += -I$(srctree)/drivers/thermal
 else
     ccflags-y += -DCFG_SUPPORT_THERMAL_QUERY=0
 endif
