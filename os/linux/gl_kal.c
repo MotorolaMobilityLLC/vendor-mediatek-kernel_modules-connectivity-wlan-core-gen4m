@@ -11769,6 +11769,9 @@ void kalTputFactorUpdate(struct ADAPTER *prAdapter)
 	static OS_SYSTIME lv1_last, lv2_last;
 	OS_SYSTIME now;
 
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prAdapter->prGlueInfo->ulFlag))
+		return;
+
 	if (IS_FEATURE_DISABLED(prWifiVar->fgTputFactorDump))
 		return;
 
@@ -17038,6 +17041,9 @@ static void kalVnfSendCmd(struct VOLT_INFO_T *prVnfInfo, unsigned int u4volt)
 			"prVnfInfo or prVnfInfo->prAdapter is NULL\n");
 		return;
 	}
+
+	kalMemZero(&rVnf, sizeof(rVnf));
+
 	/* fill in CMD buffer */
 	rVnf.u2Volt = (uint16_t)u4volt;
 

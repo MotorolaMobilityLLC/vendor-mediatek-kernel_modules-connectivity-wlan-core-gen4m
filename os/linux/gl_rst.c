@@ -299,6 +299,10 @@ void glResetCleanResetFlag(void)
 /*----------------------------------------------------------------------------*/
 void glResetInit(struct GLUE_INFO *prGlueInfo)
 {
+#if CFG_WMT_RESET_API_SUPPORT && defined(CONFIG_PM)
+	int ret = 0;
+#endif
+
 #if CFG_WMT_RESET_API_SUPPORT
 #if CFG_SUPPORT_CONNAC1X
 	/* 1. Register reset callback */
@@ -337,7 +341,10 @@ void glResetInit(struct GLUE_INFO *prGlueInfo)
 					"wlan_rst_thread");
 #ifdef CONFIG_PM
 	wifi_rst.pm_nb.notifier_call = wlan_pm_notifier_call;
-	register_pm_notifier(&wifi_rst.pm_nb);
+	ret = register_pm_notifier(&wifi_rst.pm_nb);
+	if (ret)
+		DBGLOG(INIT, WARN,
+			"register pm notifier failed\n");
 #endif
 #endif
 	wifi_coredump_init(prGlueInfo);
@@ -884,7 +891,8 @@ exit:
 uint32_t glResetTrigger(struct ADAPTER *prAdapter,
 		uint32_t u4RstFlag, const uint8_t *pucFile, uint32_t u4Line)
 {
-	if (g_IsWholeChipRst) {
+	if (g_IsWholeChipRst &&
+		eResetReason != RST_WHOLE_CHIP_TRIGGER) {
 		DBGLOG(INIT, INFO, "whole chip rst on-going, skip %s\n",
 			apucRstReason[eResetReason]);
 		return WLAN_STATUS_NOT_ACCEPTED;
@@ -1740,10 +1748,13 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			"Wi-Fi on/off process is ongoing, wait here.\n");
 		msleep(100);
 	}
+	wfsys_lock();
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		wfsys_unlock();
 		return bRet;
 	}
+	wfsys_unlock();
 
 	triggerHifDumpIfNeed();
 

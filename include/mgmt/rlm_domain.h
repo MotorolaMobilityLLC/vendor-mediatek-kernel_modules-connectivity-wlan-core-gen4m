@@ -867,7 +867,7 @@ struct TX_PWR_CTRL_ELEMENT {
 #if CFG_SUPPORT_DYNAMIC_PWR_LIMIT_ANT_TAG
 	struct TX_PWR_CTRL_ANT_SETTING aiPwrAnt[POWER_ANT_TAG_NUM];
 #endif
-	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[MAX_TX_PWR_CTRL_ELEMENT_CHL_SETTING];
+	struct TX_PWR_CTRL_CHANNEL_SETTING rChlSettingList[];
 	/* always keep it the last one. */
 };
 

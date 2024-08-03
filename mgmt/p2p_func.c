@@ -1789,6 +1789,9 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 		kalP2pNotifyDisconnComplete(prAdapter,
 			prP2pBssInfo->u4PrivateData);
 
+	if (IS_BSS_APGO(prP2pBssInfo))
+		prP2pBssInfo->fgIsApGoStarted = FALSE;
+
 	/* Reset current OPMode */
 	prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 	prP2pBssInfo->fgBcDefaultKeyExist = FALSE;
@@ -8323,7 +8326,22 @@ void p2pUserPrefChFilter(struct ADAPTER *prAdapter,
 
 	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
 						prAdapter, aliveNonSapBss);
-
+#if (CFG_SUPPORT_CONNAC1X || CFG_SUPPORT_CONNAC2X)
+	/*same hw index scc*/
+	for (i = *ucChSwitchCandNum; i > 0 ; i--) {
+		for (j = 0; j < ucNumAliveNonSapBss ; j++) {
+			if (prSapSwitchCand[i-1].eRfBand ==
+				prP2pBssInfo->eBand &&
+				prSapSwitchCand[i-1].eRfBand ==
+				aliveNonSapBss[j]->eBand) {
+				*ucChSwitchCandNum = 1;
+				prSapSwitchCand[0] =
+					prSapSwitchCand[i-1];
+				break;
+			}
+		}
+	}
+#else
 	/*same hw index scc*/
 	for (i = *ucChSwitchCandNum; i > 0 ; i--) {
 		for (j = 0; j < ucNumAliveNonSapBss ; j++) {
@@ -8340,6 +8358,7 @@ void p2pUserPrefChFilter(struct ADAPTER *prAdapter,
 			}
 		}
 	}
+#endif
 }
 
 void p2pMccAliveBssSyncFilter(struct ADAPTER *prAdapter,

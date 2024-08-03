@@ -7887,7 +7887,8 @@ void nicUniEventHwDetectReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 					str_buf);
 
 			if (ad->rWifiVar.fgHwDetectReportEn == 2)
-				kalSendAeeWarning("WLAN",
+				kalSendAeeWarning(
+					"CRDISPATCH_KEY:HW DETECT WLAN",
 					"HW Detect Report: %s\n", str_buf);
 		}
 			break;

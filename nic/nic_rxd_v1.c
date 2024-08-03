@@ -355,7 +355,9 @@ u_int8_t nic_rxd_v1_sanity_check(
 			if (prSwRfb->ucPayloadFormat
 				== RX_PAYLOAD_FORMAT_FIRST_SUB_AMSDU) {
 				fgDrop = FALSE;
-				prSwRfb->fgIsFirstSubAMSDULLCMS = TRUE;
+				prSwRfb->fgIsFirstSubAMSDULLCMS = FALSE;
+				DBGLOG(RX, WARN,
+					"First sub Amsdu LLC MIS but not drop\n");
 			}
 #endif /* CFG_SUPPORT_FRAG_AGG_VALIDATION */
 		}
