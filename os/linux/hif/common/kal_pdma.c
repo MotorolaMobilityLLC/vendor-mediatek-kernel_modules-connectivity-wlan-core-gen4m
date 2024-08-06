@@ -3272,7 +3272,8 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 	prHifRegFifo = &prGlueInfo->rHifRegFifo;
 	prHifRegFifoLock = &prGlueInfo->rHifRegFifoLock;
 
-	while (KAL_FIFO_OUT_LOCKED(prHifRegFifo, prReq, prHifRegFifoLock)) {
+	while (KAL_FIFO_OUT_LOCKED(prHifRegFifo, prReq, prHifRegFifoLock) ==
+		sizeof(prReq)) {
 		if (!prReq) {
 			DBGLOG(HAL, ERROR, "prReq is null\n");
 			break;
