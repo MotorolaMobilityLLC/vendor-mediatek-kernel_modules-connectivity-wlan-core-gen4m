@@ -4898,8 +4898,11 @@ uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter,
 	/* cert & no str & no emlsr */
 	return prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_BE &&
 	    IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
-	    prAdapter->rWifiVar.ucMaxSimuLinks == 0 &&
-	    eLinkPlan == MLO_LINK_PLAN_5_6;
+	    prAdapter->rWifiVar.ucMaxSimuLinks == 0
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	&& eLinkPlan == MLO_LINK_PLAN_5_6;
+#endif
+	;
 }
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 

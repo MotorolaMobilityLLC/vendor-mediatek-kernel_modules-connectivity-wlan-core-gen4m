@@ -8519,13 +8519,13 @@ static void txPwrCtrlSetSingleRatePwrLimit(
 		prChnlSet->op6E[ofset] = op;
 		prChnlSet->i8PwrLimit6E[ofset] = pwr;
 		break;
-#endif
+
 #if (CFG_SUPPORT_PWR_LIMIT_EHT == 1)
 	case PWR_CFG_RATE_TAG_HIT_EHT6G:
 		prChnlSet->opEHT_6G[ofset] = op;
 		prChnlSet->i8PwrLimitEHT_6G[ofset] = pwr;
 		break;
-
+#endif
 #endif /*CFG_SUPPORT_PWR_LIMIT_EHT*/
 	default:
 		break;
@@ -12393,21 +12393,17 @@ static enum ENUM_PWR_LIMIT_CONFIG_BASE rlmDomainPwrLmtGetConfigBase(
 		PWR_LIMIT_CONFIG_BASE_2G4_5G;
 #if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 	enum ENUM_PWR_MODE_6G_TYPE e6GPwrModeType = PWR_MODE_6G_VLP;
-#endif
 
 	if (eRfBandIndex == PWR_LIMIT_RF_BAND_6G) {
 		eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G;
 
-#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
 		e6GPwrModeType = rlmDomainPwrLmt6GPwrModeGet(prAdapter);
 		if (e6GPwrModeType == PWR_MODE_6G_VLP)
 			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_VLP;
 		else if (e6GPwrModeType == PWR_MODE_6G_SP)
 			eConfigPwrLmtBase = PWR_LIMIT_CONFIG_BASE_6G_SP;
-#endif
-
 	}
-
+#endif
 	return eConfigPwrLmtBase;
 }
 
@@ -12418,8 +12414,10 @@ static enum ENUM_BAND rlmDomainConvertRFBandEnum(
 		return BAND_2G4;
 	else if (eRFBandIndex == PWR_LIMIT_RF_BAND_5G)
 		return BAND_5G;
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eRFBandIndex == PWR_LIMIT_RF_BAND_6G)
 		return BAND_6G;
+#endif
 	else
 		return BAND_NULL;
 }
