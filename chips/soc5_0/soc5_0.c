@@ -883,6 +883,15 @@ static void soc5_0asicConnac2xProcessTxInterrupt(
 	}
 }
 
+static uint8_t soc5_0acisConnac2xIsRxRingNotEmpty(
+	struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
+{
+	if (halWpdmaGetRxDmaDoneCnt(prGlueInfo, ucRingNum) > 0)
+		return TRUE;
+	else
+		return FALSE;
+}
+
 static void soc5_0asicConnac2xProcessRxInterrupt(
 	struct ADAPTER *prAdapter)
 {
@@ -891,23 +900,33 @@ static void soc5_0asicConnac2xProcessRxInterrupt(
 
 	rIntrStatus = (union WPDMA_INT_STA_STRUCT)prHifInfo->u4IntStatus;
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_0 ||
-	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)))
+	    (KAL_TEST_BIT(RX_RING_EVT, prAdapter->ulNoMoreRfb)) ||
+	    soc5_0acisConnac2xIsRxRingNotEmpty(prAdapter->prGlueInfo,
+			RX_RING_EVT))
 		halRxReceiveRFBs(prAdapter, RX_RING_EVT, FALSE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_2 ||
-	    (KAL_TEST_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb)))
+	    (KAL_TEST_BIT(RX_RING_DATA0, prAdapter->ulNoMoreRfb)) ||
+	    soc5_0acisConnac2xIsRxRingNotEmpty(prAdapter->prGlueInfo,
+			RX_RING_DATA0))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_3 ||
-	    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)))
+	    (KAL_TEST_BIT(RX_RING_DATA1, prAdapter->ulNoMoreRfb)) ||
+	    soc5_0acisConnac2xIsRxRingNotEmpty(prAdapter->prGlueInfo,
+			RX_RING_DATA1))
 		halRxReceiveRFBs(prAdapter, RX_RING_DATA1, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_4 ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE0, prAdapter->ulNoMoreRfb)) ||
+	    soc5_0acisConnac2xIsRxRingNotEmpty(prAdapter->prGlueInfo,
+			RX_RING_TXDONE0))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE0, TRUE);
 
 	if (rIntrStatus.field_conn2x_single.wfdma0_rx_done_5 ||
-	    (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)))
+	    (KAL_TEST_BIT(RX_RING_TXDONE1, prAdapter->ulNoMoreRfb)) ||
+	    soc5_0acisConnac2xIsRxRingNotEmpty(prAdapter->prGlueInfo,
+			RX_RING_TXDONE1))
 		halRxReceiveRFBs(prAdapter, RX_RING_TXDONE1, TRUE);
 }
 
