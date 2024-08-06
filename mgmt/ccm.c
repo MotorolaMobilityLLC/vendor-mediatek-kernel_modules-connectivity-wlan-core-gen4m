@@ -354,12 +354,14 @@ static u_int8_t ccmCheckAndPrepareChannelSwitch(struct ADAPTER *prAdapter,
 {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	uint32_t freqList[MAX_5G_BAND_CHN_NUM + MAX_6G_BAND_CHN_NUM] = {};
+#else
+	uint32_t freqList[MAX_5G_BAND_CHN_NUM] = {};
+#endif
 	uint32_t u4FreqListNum;
 	uint32_t u4Idx;
 	uint32_t u4ChForAa;
 	enum ENUM_BAND eBandForAa;
 	uint32_t u4Freq;
-#endif
 
 	/* pass for MCC only */
 	if (prBssInfo->eHwBandIdx != eTargetHwBandIdx ||
