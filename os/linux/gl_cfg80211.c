@@ -896,7 +896,11 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		sinfo->filled |= NL80211_STA_INFO_TX_BYTES64;
 #endif
 
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+		sinfo->tx_packets = prGetStaStats->u4TxDataCount;
+#else
 		sinfo->tx_packets = prDevStats->tx_packets;
+#endif
 		sinfo->tx_bytes = prDevStats->tx_bytes;
 
 		/* 6. fill TX_FAILED */

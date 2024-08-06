@@ -9617,7 +9617,7 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 	struct EVENT_STATISTICS legacy = {0};
 	struct EMI_LINK_QUALITY *prEmiLQ;
 	struct UNI_LINK_QUALITY *prUlq;
-	struct EVENT_STA_STATISTICS *prStaStatsLegacy;
+	struct EMI_STA_STATISTICS *prEmiStaStats;
 	struct PARAM_GET_STA_STATISTICS *prQueryStaStatistics;
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
 	struct EMI_TX_RATE_INFO rLlsRateInfo = {0};
@@ -9697,34 +9697,35 @@ void nicCollectRegStatFromEmi(struct ADAPTER
 		sizeof(struct EMI_LINK_QUALITY));
 
 	/* sta Stats */
-	prStaStatsLegacy = kalMemAlloc(
-		sizeof(struct EVENT_STA_STATISTICS),
+	prEmiStaStats = kalMemAlloc(
+		sizeof(struct EMI_STA_STATISTICS),
 		VIR_MEM_TYPE);
-	if (!prStaStatsLegacy)
+	if (!prEmiStaStats)
 		goto exit;
 
 	for (i = 0; i < REG_STATS_STA_MAX_NUM; i++) {
-		kalMemCopyFromIo(prStaStatsLegacy,
+		kalMemCopyFromIo(prEmiStaStats,
 			&prAdapter->prStatsAllRegStat->rStaStats[i],
-			sizeof(*prStaStatsLegacy));
-		if (prStaStatsLegacy->ucVersion != 1)
+			sizeof(*prEmiStaStats));
+		if (prEmiStaStats->rStaStats.ucVersion != 1)
 			continue;
 		prStaRec = cnmGetStaRecByIndex(prAdapter,
-					secGetStaIdxByWlanIdx(
-						prAdapter,
-						prStaStatsLegacy->ucStaRecIdx));
+					secGetStaIdxByWlanIdx(prAdapter,
+					prEmiStaStats->rStaStats.ucStaRecIdx));
 		if (!prStaRec)
 			continue;
 		ucBssIdx = prStaRec->ucBssIndex;
 		prQueryStaStatistics =
 			&prAdapter->rQueryStaStatistics[ucBssIdx];
 		nicUpdateStaStats(prAdapter,
-			prStaStatsLegacy, prQueryStaStatistics,
+			&prEmiStaStats->rStaStats, prQueryStaStatistics,
 			prStaRec->ucIndex, FALSE);
+		prQueryStaStatistics->u4TxDataCount =
+			prEmiStaStats->u4TxDataCount;
 		DBGLOG(REQ, TRACE, "update staStats[%u] wlanIdx(%u)\n",
-			i, prStaStatsLegacy->ucStaRecIdx);
+			i, prEmiStaStats->rStaStats.ucStaRecIdx);
 	}
-	kalMemFree(prStaStatsLegacy, VIR_MEM_TYPE,
+	kalMemFree(prEmiStaStats, VIR_MEM_TYPE,
 		sizeof(struct EVENT_STA_STATISTICS));
 
 	/* get bw from emi */
