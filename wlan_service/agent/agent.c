@@ -2783,6 +2783,12 @@ static s_int32 hqa_get_capability(
 			capability.ext_cap.feature1 |= BIT(0);
 #endif /* CFG_SUPPORT_ANT_SWAP */
 
+	/* DBDC mode and support MIMO/DBDC_switch */
+	if (IS_TEST_DBDC(serv_test->test_winfo) &&
+			(capability.ext_cap.feature1&BIT(4))) {
+		capability.ph_cap.band_0_1_wf_path_num /= 2;
+	}
+
 	cast = (u_int32 *)&capability;
 
 	/* convert and put data */
@@ -2796,8 +2802,6 @@ static s_int32 hqa_get_capability(
 	update_hqa_frame(hqa_frame, (item_num*4) + 2, ret);
 	return ret;
 }
-
-#if (CFG_SUPPORT_CONNAC3X == 1)
 
 static s_int32 hqa_get_rf_type_capability(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
@@ -2900,8 +2904,6 @@ static s_int32 hqa_get_rf_type_capability(
 	update_hqa_frame(hqa_frame, 10, ret);
 	return ret;
 }
-
-#endif /* (CFG_SUPPORT_CONNAC3X == 1) */
 
 static s_int32 hqa_calibration_test_mode(
 	struct service_test *serv_test, struct hqa_frame *hqa_frame)
@@ -5268,6 +5270,7 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x1a,	hqa_mps_stop},
 	{0x1c,	hqa_get_rx_statistics_all},
 	{0x1d,	hqa_get_capability},
+	{0x1e,	hqa_get_rf_type_capability},
 	{0x21,	legacy_function},
 	{0x22,	hqa_check_efuse_mode_type},
 	{0x23,	hqa_check_efuse_nativemode_type},
@@ -5295,7 +5298,6 @@ static struct hqa_cmd_entry CMD_SET5[] = {
 	{0x91,	hqa_get_hetb_info},
 	{0x94,	hqa_set_ru_info},
 #if (CFG_SUPPORT_CONNAC3X == 1)
-	{0x1e,	hqa_get_rf_type_capability},
 	{0x90,  hqa_set_max_pac_ext},
 	{0x96,	hqa_set_ru_info_v2},
 #endif
