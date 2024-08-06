@@ -2692,7 +2692,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *ad,
 	DBGLOG(APS, INFO, "ConnectionPolicy = %d, reason = %d\n",
 		conn->eConnectionPolicy, reason);
 
-	aisRemoveTimeoutBlocklist(ad);
+	aisRemoveTimeoutBlocklist(ad, AIS_BLOCKLIST_TIMEOUT);
 	aisClearCusBlocklist(ad, bidx, FALSE);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	aisRemoveTimeoutMldBlocklist(ad);

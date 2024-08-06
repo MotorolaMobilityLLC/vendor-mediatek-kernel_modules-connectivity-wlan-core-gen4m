@@ -1472,7 +1472,7 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 #endif
 	ucAisIdx = AIS_INDEX(prAdapter, ucBssIndex);
 
-	aisRemoveTimeoutBlocklist(prAdapter);
+	aisRemoveTimeoutBlocklist(prAdapter, AIS_BLOCKLIST_TIMEOUT);
 	aisClearCusBlocklist(prAdapter, ucBssIndex, FALSE);
 	apsUpdateEssApList(prAdapter, ucBssIndex);
 
