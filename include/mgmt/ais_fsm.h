@@ -936,7 +936,7 @@ void aisRefreshFWKBlocklist(struct ADAPTER *prAdapter);
 struct AIS_BLOCKLIST_ITEM *aisAddBlocklist(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisRemoveBlockList(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc);
-void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter);
+void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec);
 struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc);
 void aisBssTmpDisallow(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,

@@ -5260,6 +5260,8 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	aisRemoveDeauthBlocklist(prAdapter, TRUE);
 	aisClearAllLink(prAisFsmInfo);
 
+	aisRemoveTimeoutBlocklist(prAdapter, 0);
+
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);
 #endif
@@ -8798,7 +8800,7 @@ struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
+void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 {
 	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
 	struct AIS_BLOCKLIST_ITEM *prNextEntry = NULL;
@@ -8811,13 +8813,16 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct AIS_BLOCKLIST_ITEM) {
-		uint16_t sec = AIS_BLOCKLIST_TIMEOUT;
+		uint16_t sec = u2Sec;
 
 		if (prEntry->fgIsInFWKBlocklist == TRUE)
 			continue;
 
-		/* Remove from blocklist for one hour if deauth is received. */
-		if (prEntry->ucDeauthCount > 0)
+		/* For deauth blocklist
+		 * 1. If u2Sec = 0, set timeout = 0.
+		 * 2. Else, set timeout = AIS_BLOCKLIST_TIMEOUT_DEAUTH
+		 */
+		if (prEntry->ucDeauthCount > 0 && u2Sec != 0)
 			sec = AIS_BLOCKLIST_TIMEOUT_DEAUTH;
 
 #if CFG_SUPPORT_MBO
