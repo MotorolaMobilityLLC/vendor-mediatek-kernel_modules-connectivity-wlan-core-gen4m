@@ -1774,6 +1774,13 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 
 	prSkb = (struct sk_buff *)prSwRfb->pvPacket;
 
+	/* sanity check */
+	if (prSwRfb->pucRecvBuff != prSkb->data) {
+		DBGLOG(NIC, ERROR, "RX buffer not match, %04X != %04X\n",
+			(uintptr_t)prSwRfb->pucRecvBuff & 0xFFFF,
+			(uintptr_t)prSkb->data & 0xFFFF);
+	}
+
 	/*
 	 * if skb headroom is not zero, then it may not 4 byte alignment,
 	 * so we should not reuse it.
@@ -1790,13 +1797,6 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			skb_headroom(prSkb));
 		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
 		prSwRfb->pvPacket = NULL;
-	}
-
-	/* sanity check */
-	if (prSwRfb->pucRecvBuff != prSkb->data) {
-		DBGLOG(NIC, ERROR, "RX buffer not match, %04X != %04X\n",
-			(uintptr_t)prSwRfb->pucRecvBuff & 0xFFFF,
-			(uintptr_t)prSkb->data & 0xFFFF);
 	}
 }
 
@@ -18157,8 +18157,10 @@ void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr)
 
 	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
 		prQueInfo = &prTxFreeInfo->rQueInfo[ucIdx];
-		prQueInfo->u4TotalCnt = 0;
 		spin_lock_init(&prQueInfo->lock);
+		spin_lock_bh(&prQueInfo->lock);
+		prQueInfo->u4TotalCnt = 0;
+		spin_unlock_bh(&prQueInfo->lock);
 		QUEUE_INITIALIZE(&prQueInfo->rQue);
 
 		prConWork = &prTxFreeInfo->rConWork[ucIdx];
@@ -18745,13 +18747,11 @@ uint32_t kalSkbAllocDeqSkb(struct GLUE_INFO *pr, void **pvPacket,
 	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
 	struct sk_buff *prSkb = NULL;
 
-	if (skb_queue_empty(&prSkbAllocInfo->rFreeSkbQ))
-		goto end;
-
-	prSkb = skb_dequeue(&prSkbAllocInfo->rFreeSkbQ);
-	*ppucData = prSkb->data;
-
-end:
+	if (!skb_queue_empty(&prSkbAllocInfo->rFreeSkbQ)) {
+		prSkb = skb_dequeue(&prSkbAllocInfo->rFreeSkbQ);
+		if (prSkb != NULL)
+			*ppucData = prSkb->data;
+	}
 	*pvPacket = prSkb;
 
 	/*
