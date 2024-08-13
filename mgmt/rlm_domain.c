@@ -9655,16 +9655,36 @@ void txPwrCtrlGlobalVariableToList(struct ADAPTER *prAdapter)
 			  "config list, after loadding global variables");
 }
 
+//TN Start modified by dong.zhang  Do not delete when resolving conflicts please
+unsigned int oem_hw_sku(void);
+static int getSku(void) {
+	int value = 0;
+	value = oem_hw_sku();
+	DBGLOG(RLM, ERROR, "sku===: %d\n", value);
+	return value;
+}
+//TN End modified by dong.zhang Do not delete when resolving conflicts please
+
 void txPwrCtrlCfgFileToList(struct ADAPTER *prAdapter)
 {
 	uint8_t *pucConfigBuf = NULL;
 	uint32_t u4ConfigReadLen = 0;
 
-	if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
-	    &u4ConfigReadLen, TRUE,
-	    kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
-		/* ToDo:: Nothing */
+	//TN Start modified by dong.zhang  Do not delete when resolving conflicts please
+	if(getSku() > 10) {
+		if (kalRequestFirmware("txpowerctrl.cfg", &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+			/* ToDo:: Nothing */
+		}
+	}else {
+		if (kalRequestFirmware("txpowerctrllite.cfg", &pucConfigBuf,
+			&u4ConfigReadLen, TRUE,
+			kalGetGlueDevHdl(prAdapter->prGlueInfo)) == 0) {
+			/* ToDo:: Nothing */
+		}
 	}
+	//TN End modified by dong.zhang Do not delete when resolving conflicts please
 
 	if (pucConfigBuf) {
 		txPwrCtrlFileBufToList(prAdapter, pucConfigBuf);
