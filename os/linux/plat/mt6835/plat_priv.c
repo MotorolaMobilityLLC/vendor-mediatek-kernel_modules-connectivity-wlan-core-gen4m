@@ -195,6 +195,10 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 100);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 100);
+#if CFG_SUPPORT_RX_NAPI_THREADED
+			kalSetTaskUtilMinPct(prGlueInfo->u4RxNapiThreadPid,
+				100);
+#endif
 			kalSetRpsMap(prGlueInfo, CPU_BIG_CORE);
 			kalSetCpuFreq(i4Freq);
 			kalSetDramBoost(prAdapter, TRUE);
@@ -208,6 +212,9 @@ int32_t kalBoostCpu(struct ADAPTER *prAdapter,
 			kalSetTaskUtilMinPct(prGlueInfo->u4TxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4RxThreadPid, 0);
 			kalSetTaskUtilMinPct(prGlueInfo->u4HifThreadPid, 0);
+#if CFG_SUPPORT_RX_NAPI_THREADED
+			kalSetTaskUtilMinPct(prGlueInfo->u4RxNapiThreadPid, 0);
+#endif
 			kalSetRpsMap(prGlueInfo, CPU_LITTLE_CORE);
 			kalSetCpuFreq(i4Freq);
 			kalSetDramBoost(prAdapter, FALSE);

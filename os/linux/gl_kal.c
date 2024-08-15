@@ -9913,7 +9913,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 #endif /* CFG_RFB_TRACK */
 
 #define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] " \
+	"ndevdrp:%s NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] " \
 	RRO_LOG_TEMPLATE \
 	"RxReorder[%s] " \
 	RRB_TRACK_TEMPLATE \
@@ -9933,6 +9933,7 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT),
+		skb_queue_len(&glue->rRxNapiSkbQ),
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
 		prAdapter->rWifiVar.fgEnableRro,
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_STEP_ONE),
@@ -12454,6 +12455,29 @@ uint8_t kalRxGroInit(struct net_device *prDev)
 	return 0;
 }
 
+#if CFG_SUPPORT_RX_NAPI_THREADED
+void kalNapiThreadedInit(struct GLUE_INFO *prGlueInfo)
+{
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	if (dev_set_threaded(&prGlueInfo->dummy_dev, TRUE) != 0) {
+		prGlueInfo->napi_thread = NULL;
+		DBGLOG(INIT, ERROR, "Napi Threaded Init Fail\n");
+	} else {
+		prGlueInfo->napi_thread = prGlueInfo->napi.thread;
+		prGlueInfo->u4RxNapiThreadPid =
+			task_pid_nr(prGlueInfo->napi_thread);
+		DBGLOG(INIT, TRACE, "Napi Threaded Init Done\n");
+	}
+#endif
+}
+
+void kalNapiThreadedUninit(struct GLUE_INFO *prGlueInfo)
+{
+	prGlueInfo->napi_thread = NULL;
+	DBGLOG(INIT, TRACE, "Napi Threaded Uninit Done\n");
+}
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+
 uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 {
 	spin_lock_init(&prGlueInfo->napi_spinlock);
@@ -12462,7 +12486,20 @@ uint8_t kalNapiInit(struct GLUE_INFO *prGlueInfo)
 	init_dummy_netdev(&prGlueInfo->dummy_dev);
 	netif_napi_add(&prGlueInfo->dummy_dev, &prGlueInfo->napi,
 		kalNapiPoll, NAPI_POLL_WEIGHT);
+#if CFG_SUPPORT_RX_NAPI_THREADED
+		kalNapiThreadedInit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 	DBGLOG(INIT, INFO, "Napi Init Done\n");
+	return 0;
+}
+
+uint8_t kalNapiUninit(struct GLUE_INFO *prGlueInfo)
+{
+	netif_napi_del(&prGlueInfo->napi);
+#if CFG_SUPPORT_RX_NAPI_THREADED
+	kalNapiThreadedUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_RX_NAPI_THREADED */
+	DBGLOG(INIT, INFO, "Napi Uninit Done\n");
 	return 0;
 }
 
