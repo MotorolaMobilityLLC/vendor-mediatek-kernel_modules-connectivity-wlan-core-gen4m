@@ -2504,15 +2504,18 @@ void p2pRoleFsmRunEventRadarDet(struct ADAPTER *prAdapter,
 			prP2pBssInfo->ucBssIndex)) {
 			prAdapter->rWifiVar.ucAp5gBandwidth =
 				MAX_BW_80MHZ;
-
 			rlmGetChnlInfoForCSA(prAdapter,
 				BAND_5G, ucChannelNum,
 				prP2pBssInfo->ucBssIndex,
 				&prP2pConnReqInfo->rChannelInfo);
-
+			prAdapter->rWifiVar.ucCsaDeauthClient =
+				FEATURE_DISABLED;
 			cnmSapChannelSwitchReq(prAdapter,
 				&prP2pConnReqInfo->rChannelInfo,
 				prP2pBssInfo->u4PrivateData);
+			prAdapter->rWifiVar.ucCsaDeauthClient =
+				FEATURE_ENABLED;
+
 			kalP2PTxCarrierOn(prAdapter->prGlueInfo,
 					prP2pBssInfo);
 		} else {
