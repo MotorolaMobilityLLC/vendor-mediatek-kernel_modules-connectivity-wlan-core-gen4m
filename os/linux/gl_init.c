@@ -4394,45 +4394,50 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 	prBssInfo = AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
-	LINK_FOR_EACH_ENTRY(prBssInfo, &prMldBss->rBssList,
-			    rLinkEntryMld, struct BSS_INFO) {
-		u4CenterFreq = nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000;
-		if (wlanIsChannelInDfsRange(prAdapter,
-					    prBssInfo->ucPrimaryChannel,
-					    prBssInfo->ucVhtChannelWidth,
-					    prBssInfo->eBssSCO,
-					    u4CenterFreq,
-					    prBssInfo->eBand) ==
-		    FALSE)
-			continue;
+	if (prMldBss) {
+		LINK_FOR_EACH_ENTRY(prBssInfo, &prMldBss->rBssList,
+				    rLinkEntryMld, struct BSS_INFO) {
+			u4CenterFreq = nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000;
+			if (wlanIsChannelInDfsRange(prAdapter,
+						    prBssInfo->
+							ucPrimaryChannel,
+						    prBssInfo->
+							ucVhtChannelWidth,
+						    prBssInfo->eBssSCO,
+						    u4CenterFreq,
+						    prBssInfo->eBand) ==
+			    FALSE)
+				continue;
 
-		prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
-		prEntry->rRfChnlInfo.eBand = prBssInfo->eBand;
-		prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
-		prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
-		prEntry->rRfChnlInfo.u2PriChnlFreq =
-			nicChannelNum2Freq(prBssInfo->ucPrimaryChannel,
-					   prBssInfo->eBand) / 1000;
-		prEntry->rRfChnlInfo.ucChnlBw =
-			rlmVhtBw2Bw(prBssInfo->ucVhtChannelWidth,
-				    prBssInfo->eBssSCO);
-		prEntry->rRfChnlInfo.ucChannelNum =
-			prBssInfo->ucPrimaryChannel;
-		prEntry->fgValid = TRUE;
+			prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
+			prEntry->rRfChnlInfo.eBand = prBssInfo->eBand;
+			prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
+			prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
+			prEntry->rRfChnlInfo.u2PriChnlFreq =
+				nicChannelNum2Freq(prBssInfo->
+							ucPrimaryChannel,
+						   prBssInfo->eBand) / 1000;
+			prEntry->rRfChnlInfo.ucChnlBw =
+				rlmVhtBw2Bw(prBssInfo->ucVhtChannelWidth,
+					    prBssInfo->eBssSCO);
+			prEntry->rRfChnlInfo.ucChannelNum =
+				prBssInfo->ucPrimaryChannel;
+			prEntry->fgValid = TRUE;
 
-		DBGLOG(INIT, TRACE,
-			"[%u] channel=[%u %u %u %u %u %u]\n",
-			prBssInfo->ucBssIndex,
-			prEntry->rRfChnlInfo.eBand,
-			prEntry->rRfChnlInfo.ucChannelNum,
-			prEntry->rRfChnlInfo.u2PriChnlFreq,
-			prEntry->rRfChnlInfo.u4CenterFreq1,
-			prEntry->rRfChnlInfo.u4CenterFreq2,
-			prEntry->rRfChnlInfo.ucChnlBw);
+			DBGLOG(INIT, TRACE,
+				"[%u] channel=[%u %u %u %u %u %u]\n",
+				prBssInfo->ucBssIndex,
+				prEntry->rRfChnlInfo.eBand,
+				prEntry->rRfChnlInfo.ucChannelNum,
+				prEntry->rRfChnlInfo.u2PriChnlFreq,
+				prEntry->rRfChnlInfo.u4CenterFreq1,
+				prEntry->rRfChnlInfo.u4CenterFreq2,
+				prEntry->rRfChnlInfo.ucChnlBw);
 
-		break;
+			break;
+		}
 	}
 #else
 	u4CenterFreq = nicChannelNum2Freq(
