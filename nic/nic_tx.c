@@ -2704,6 +2704,7 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 	struct TX_CTRL *prTxCtrl;
 	struct TX_DESC_OPS_T *prTxDescOps;
 	char SN[5] = " "; /* 0~4095, blank if not set */
+	u_int8_t fgTxDoneHandler = FALSE;
 
 	ASSERT(prAdapter);
 	ASSERT(prCmdInfo);
@@ -2741,6 +2742,13 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		prCmdInfo->pucTxp = prMsduInfo->prPacket;
 		prCmdInfo->u4TxpLen = prMsduInfo->u2FrameLength;
 
+		/* Store Msdu TxDoneHandler status to avoid main_thread
+		  * call nicFreePendingTxMsduInfo to reset msdu in
+		  * rTxMgmtTxingQueue.
+		*/
+		if (prMsduInfo->pfTxDoneHandler)
+			fgTxDoneHandler = TRUE;
+
 #if !CFG_TX_CMD_SMART_SEQUENCE
 		if (prMsduInfo->pfHifTxMsduDoneCb)
 			prMsduInfo->pfHifTxMsduDoneCb(prAdapter, prMsduInfo);
@@ -2772,9 +2780,8 @@ uint32_t nicTxCmd(struct ADAPTER *prAdapter,
 		/* <4> Management Frame Post-Processing */
 		GLUE_DEC_REF_CNT(prTxCtrl->i4TxMgmtPendingNum);
 
-		if (prMsduInfo->pfTxDoneHandler == NULL)
+		if (!fgTxDoneHandler)
 			cnmMgtPktFree(prAdapter, prMsduInfo);
-
 
 	} else {
 		prCmdInfo->pucTxd = prCmdInfo->pucInfoBuffer;
