@@ -7027,7 +7027,7 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 		prAisBtoInfo->ucBcnTimeoutReason = ucBcnTimeoutReason;
 		prAisBtoInfo->ucDisconnectReason = ucDisconnectReason;
 
-		if (roam && join) {
+		if (roam || join) {
 			struct PARAM_SSID rSsid;
 
 			DBGLOG(AIS, EVENT,
