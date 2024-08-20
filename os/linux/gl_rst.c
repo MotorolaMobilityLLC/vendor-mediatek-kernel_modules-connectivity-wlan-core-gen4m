@@ -283,6 +283,9 @@ void glResetCleanResetFlag(void)
 {
 	glResetUpdateFlag(FALSE);
 	glResetOnEndUpdateFlag(FALSE);
+#if CFG_WMT_RESET_API_SUPPORT
+	g_IsWfsysBusHang = FALSE;
+#endif
 }
 
 #if CFG_CHIP_RESET_SUPPORT
@@ -695,13 +698,6 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-	if (kalGetShutdownState()) {
-		DBGLOG(INIT, INFO, "skip in shutdown\n");
-		goto exit;
-	}
-#endif
-
 	if (prAdapter) {
 		prChipInfo = prAdapter->chip_info;
 
@@ -751,6 +747,12 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 
 	glResetUpdateFlag(TRUE);
 	glResetOnEndUpdateFlag(TRUE);
+
+	if (kalGetShutdownState()) {
+		DBGLOG(INIT, INFO, "skip in shutdown\n");
+		glResetCleanResetFlag();
+		goto exit;
+	}
 
 #if CFG_SUPPORT_CONNAC1X
 	if (eResetReason != RST_BT_TRIGGER)
@@ -1363,9 +1365,9 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 		ret = wlanFuncOn();
 #endif
 #if !CFG_SUPPORT_CONNAC1X
+	g_IsWfsysBusHang = FALSE;
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
-		g_IsWfsysBusHang = FALSE;
 		complete(&g_RstOnComp);
 	}
 #endif
@@ -1975,7 +1977,10 @@ int wlan_post_reset_on_v3(unsigned int type)
 
 	DBGLOG(INIT, INFO, "type: %d\n", type);
 
-	if (type != CONNV3_CHIP_RST_POST_ACTION_NOTHING)
+	/* 0: CONNV3_CHIP_RST_POST_ACTION_NOTHING
+	 * 1: CONNV3_CHIP_RST_POST_ACTION_PMIC_SHUTDOWN
+	 */
+	if (type > 1)
 		goto exit;
 
 	ret = wlanFuncPreOnImpl();

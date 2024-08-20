@@ -7,6 +7,10 @@
 *    \brief This file contains the info of cmm_asic_connac3x
 */
 
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#include "connv3.h"
+#endif
+
 #ifndef _CMM_ASIC_CONNAC3X_H
 #define _CMM_ASIC_CONNAC3X_H
 
