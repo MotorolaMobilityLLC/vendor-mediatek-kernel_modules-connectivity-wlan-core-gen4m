@@ -468,6 +468,8 @@ struct AIS_FSM_INFO {
 	u_int8_t fgIsChannelRequested;
 	u_int8_t fgIsChannelGranted;
 
+	u_int8_t fgIsDelIface;
+
 	uint8_t ucChReqNum;
 
 	uint8_t ucAvailableAuthTypes; /* Used for AUTH_MODE_AUTO_SWITCH */
