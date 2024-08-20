@@ -610,41 +610,111 @@ void apsRecordCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss,
 	aps->arCuInfo[u2CuOffset].ucTotalCu += bss->ucChnlUtilization;
 }
 
-void apsCheckIsScc(struct ADAPTER *ad, struct BSS_DESC *bss,
-	uint8_t bidx)
+struct RF_CHANNEL_INFO apsGetRfChannelInfo(struct ADAPTER *prAdapter,
+	struct BSS_DESC *prBssDesc, struct BSS_INFO *prBssInfo)
 {
-	struct BSS_INFO *prConcurrentBssInfo;
+	struct RF_CHANNEL_INFO rRfChnlInfo = {0};
+
+	if (!prBssDesc && !prBssInfo)
+		return rRfChnlInfo;
+
+	if (prBssDesc) {
+		rRfChnlInfo.eBand = prBssDesc->eBand;
+		rRfChnlInfo.ucChannelNum = prBssDesc->ucChannelNum;
+		rRfChnlInfo.ucChnlBw = rlmGetBssOpBwByChannelWidth(
+						prBssDesc->eSco,
+						prBssDesc->eChannelWidth);
+	} else {
+		rRfChnlInfo.eBand = prBssInfo->eBand;
+		rRfChnlInfo.ucChannelNum = prBssInfo->ucPrimaryChannel;
+		rRfChnlInfo.ucChnlBw = rlmGetBssOpBwByChannelWidth(
+						prBssInfo->eBssSCO,
+						prBssInfo->ucVhtChannelWidth);
+	}
+
+	rRfChnlInfo.u4CenterFreq1 = nicGetS1Freq(prAdapter,
+						 rRfChnlInfo.eBand,
+						 rRfChnlInfo.ucChannelNum,
+						 rRfChnlInfo.ucChnlBw);
+
+	return rRfChnlInfo;
+}
+
+void apsCheckConcurrent(struct ADAPTER *ad, struct BSS_DESC *bss,
+	struct BSS_DESC *hint, uint8_t bidx)
+{
+	struct BSS_INFO *bssinfo;
 	struct AIS_FSM_INFO *ais = aisGetAisFsmInfo(ad, bidx);
 	uint32_t bmap = aisGetBssIndexBmap(aisGetAisFsmInfo(ad, bidx));
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	uint8_t i;
+#if CFG_SUPPORT_CCM
+	struct RF_CHANNEL_INFO rExist, rCurr;
 
-	bss->fgIsSCC = TRUE;
+	rCurr = apsGetRfChannelInfo(ad, bss, NULL);
+#endif
+
+	/* SCC */
 	for (i = 0; i < MAX_BSSID_NUM; i++) {
 		/* Is connected BssInfo */
 		if (BIT(i) & bmap)
 			continue;
 
-		prConcurrentBssInfo = GET_BSS_INFO_BY_INDEX(ad, i);
-		if (!prConcurrentBssInfo || !prConcurrentBssInfo->fgIsInUse)
+		bssinfo = GET_BSS_INFO_BY_INDEX(ad, i);
+		if (!bssinfo || !IS_BSS_ALIVE(ad, bssinfo))
 			continue;
 
-		if (bss->eBand == prConcurrentBssInfo->eBand) {
-			if (bss->ucChannelNum !=
-				prConcurrentBssInfo->ucPrimaryChannel) {
-				bss->fgIsSCC = FALSE;
-			} else {
-				bss->fgIsSCC = TRUE;
-				if (!ad->rWifiVar.fgDisForceSCC &&
-				    ais->ucReasonOfDisconnect !=
-					DISCONNECT_REASON_CODE_TEST_MODE &&
-				    conn->eConnectionPolicy != CONNECT_BY_BSSID)
-					conn->eConnectionPolicy =
-						CONNECT_BY_SSID_BEST_RSSI;
-				break;
-			}
+		if (bss->eBand == bssinfo->eBand &&
+		    bss->ucChannelNum == bssinfo->ucPrimaryChannel) {
+			/* prefer higher band scc */
+			if (hint && bss->eBand >= hint->eBand &&
+			    !ad->rWifiVar.fgDisForceSCC &&
+			    ais->ucReasonOfDisconnect !=
+			    DISCONNECT_REASON_CODE_TEST_MODE)
+				conn->eConnectionPolicy =
+					CONNECT_BY_SSID_BEST_RSSI;
+			bss->fgIsMCC = FALSE;
+			return;
 		}
 	}
+
+	/* MCC */
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		/* Is connected BssInfo */
+		if (BIT(i) & bmap)
+			continue;
+
+		bssinfo = GET_BSS_INFO_BY_INDEX(ad, i);
+		if (!bssinfo || !IS_BSS_ALIVE(ad, bssinfo))
+			continue;
+
+		/* G band */
+		if (bss->eBand == BAND_2G4 && bssinfo->eBand == BAND_2G4) {
+			if (bss->ucChannelNum != bssinfo->ucPrimaryChannel) {
+				bss->fgIsMCC = TRUE;
+				return;
+			}
+		}
+
+		/* A band */
+		if (bss->eBand != BAND_2G4 && bssinfo->eBand != BAND_2G4) {
+#if CFG_SUPPORT_CCM
+			rExist = apsGetRfChannelInfo(ad, NULL, bssinfo);
+			if (!ccmAAAvailableCheck(ad, &rCurr, &rExist)) {
+				bss->fgIsMCC = TRUE;
+				return;
+			}
+#else
+			if (bss->eBand != bssinfo->eBand ||
+			    bss->ucChannelNum != bssinfo->ucPrimaryChannel) {
+				bss->fgIsMCC = TRUE;
+				return;
+			}
+#endif
+		}
+	}
+
+	bss->fgIsMCC = FALSE;
 }
 
 uint8_t apsGetCuInfo(struct ADAPTER *ad, struct BSS_DESC *bss, uint8_t bidx)
@@ -763,14 +833,14 @@ static uint32_t apsGetEstimatedTput(struct ADAPTER *ad, struct BSS_DESC *bss,
 		est = (est * WEIGHT_GBAND_COEX_DOWNGRADE / 100);
 #endif
 
-	if (!bss->fgIsSCC)
+	if (bss->fgIsMCC)
 		est = (est * WEIGHT_MCC_DOWNGRADE / 100);
 
 	DBGLOG(APS, TRACE, "BSS["MACSTR
-		"] EST:%d ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d] SCC[%d] TxPwr[%d]\n",
+		"] EST:%d ideal[%d] ba[%d] amsdu[%d] a[%d] b[%d] rcpi[%d] tput[%d] airTime[%d] slot[%d] coex[%d] MCC[%d] TxPwr[%d]\n",
 		MAC2STR(bss->aucBSSID), est, ideal, baSize, amsduByte,
 		a, b, rcpi, tput, airTime, slot,
-		fgIsGBandCoex, bss->fgIsSCC, bss->cTransmitPwr);
+		fgIsGBandCoex, bss->fgIsMCC, bss->cTransmitPwr);
 
 	return est;
 }
@@ -780,13 +850,22 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 {
 	struct APS_INFO *aps = aisGetApsInfo(ad, bidx);
 	struct AP_COLLECTION *ap;
-	struct BSS_DESC *bss = NULL;
+	struct BSS_DESC *bss = NULL, *hint = NULL;
 	struct LINK *scan_result = &ad->rWifiVar.rScanInfo.rBSSDescList;
 	struct CONNECTION_SETTINGS *conn = aisGetConnSettings(ad, bidx);
 	uint16_t count = 0;
 
 	kalMemZero(aps->arCuInfo, sizeof(aps->arCuInfo));
 	aps->ucConsiderEsp = TRUE;
+
+	if (conn->eConnectionPolicy == CONNECT_BY_BSSID_HINT) {
+		struct PARAM_SSID ssid = {0};
+
+		COPY_SSID(ssid.aucSsid, ssid.u4SsidLen,
+			  conn->aucSSID, conn->ucSSIDLen);
+		hint = scanSearchBssDescByBssidAndSsid(ad,
+			conn->aucBSSIDHint, TRUE, &ssid);
+	}
 
 	LINK_FOR_EACH_ENTRY(bss, scan_result, rLinkEntry,
 		struct BSS_DESC) {
@@ -826,7 +905,7 @@ uint16_t apsUpdateEssApList(struct ADAPTER *ad,
 		if (!bss->fgExistEspIE)
 			aps->ucConsiderEsp = FALSE;
 
-		apsCheckIsScc(ad, bss, bidx);
+		apsCheckConcurrent(ad, bss, hint, bidx);
 	}
 
 	DBGLOG(APS, INFO,
@@ -1313,7 +1392,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 	if (prBssDesc->eBand == BAND_2G4 && fgIsGBandCoex)
 		u2ScoreTotal = u2ScoreTotal * WEIGHT_GBAND_COEX_DOWNGRADE / 100;
 
-	if (!prBssDesc->fgIsSCC)
+	if (prBssDesc->fgIsMCC)
 		u2ScoreTotal = (u2ScoreTotal * WEIGHT_MCC_DOWNGRADE / 100);
 
 #if (CFG_SUPPORT_AVOID_DESENSE == 1)
@@ -1324,7 +1403,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 
 #define TEMP_LOG_TEMPLATE\
 		"BSS["MACSTR"] Score:%d Band[%s],cRSSI[%d],GBandCoex[%d]"\
-		",SCC[%d],DE[%d],RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
+		",MCC[%d],DE[%d],RSSI[%d],BD[%d],BL[%d],SAA[%d]"\
 		",BW[%d],SC[%d],ST[%d],CI[%d],IT[%d],CU[%d,%d],PF[%d]"\
 		",TPUT[%d]%s\n"
 
@@ -1332,7 +1411,7 @@ uint16_t apsCalculateApScore(struct ADAPTER *prAdapter,
 		TEMP_LOG_TEMPLATE,
 		MAC2STR(prBssDesc->aucBSSID),
 		u2ScoreTotal, apucBandStr[prBssDesc->eBand],
-		cRssi, fgIsGBandCoex, prBssDesc->fgIsSCC, u2ScoreDeauth,
+		cRssi, fgIsGBandCoex, prBssDesc->fgIsMCC, u2ScoreDeauth,
 		u2ScoreSnrRssi, u2ScoreBand, u2BlockListScore,
 		u2ScoreSaa, u2ScoreBandwidth, u2ScoreStaCnt,
 		u2ScoreSTBC, u2ScoreChnlInfo, u2ScoreIdleTime,
@@ -1563,6 +1642,7 @@ skip_rcpi_check:
 		uint32_t bmap;
 		uint8_t i, j;
 		uint8_t ucExistALinks = 0, ucExistGLinks = 0;
+		struct RF_CHANNEL_INFO rCurrRfChnlInfo, rExistRfChnlInfo;
 
 		bmap = aisGetBssIndexBmap(ais);
 
@@ -1590,13 +1670,22 @@ skip_rcpi_check:
 			for (j = 0; j < MLD_LINK_MAX; j++) {
 				tempBssDesc = aisGetLinkBssDesc(tempAis, j);
 				if (tempBssDesc) {
-					if (tempBssDesc->eBand == BAND_2G4)
+					if (tempBssDesc->eBand == BAND_2G4) {
 						ucExistGLinks++;
-					else
+					} else {
 						ucExistALinks++;
+						rExistRfChnlInfo =
+							apsGetRfChannelInfo(
+								prAdapter,
+								tempBssDesc,
+								NULL);
+					}
 				}
 			}
 		}
+
+		rCurrRfChnlInfo =
+			apsGetRfChannelInfo(prAdapter, prBssDesc, NULL);
 
 		/* If band not fully used */
 		if (ucExistGLinks < 1 || ucExistALinks < ENUM_BAND_NUM - 1) {
@@ -1617,6 +1706,28 @@ skip_rcpi_check:
 					MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
 			}
+
+#if CFG_SUPPORT_CCM
+			/* A+A */
+			if (prBssDesc->eBand != BAND_2G4 &&
+			    ucExistALinks == 1 &&
+			    !ccmAAAvailableCheck(prAdapter,
+						 &rCurrRfChnlInfo,
+						 &rExistRfChnlInfo)) {
+				DBGLOG(APS, INFO, MACSTR
+					" Band[%d] Chnl[%d] ChnlBw[%d] Freq[%d] can't form A+A DBDC with Band[%d] Chnl[%d] ChnlBw[%d] Freq[%d]",
+					MAC2STR(prBssDesc->aucBSSID),
+					rCurrRfChnlInfo.eBand,
+					rCurrRfChnlInfo.ucChannelNum,
+					rCurrRfChnlInfo.ucChnlBw,
+					rCurrRfChnlInfo.u4CenterFreq1,
+					rExistRfChnlInfo.eBand,
+					rExistRfChnlInfo.ucChannelNum,
+					rExistRfChnlInfo.ucChnlBw,
+					rExistRfChnlInfo.u4CenterFreq1);
+				return FALSE;
+			}
+#endif
 		}
 	}
 
