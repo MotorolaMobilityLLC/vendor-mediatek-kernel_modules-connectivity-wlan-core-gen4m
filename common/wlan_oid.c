@@ -4457,7 +4457,6 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen)
 {
-	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	uint8_t ucBssIndex;
 	OS_SYSTIME rUpdateDeltaTime;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
@@ -4480,11 +4479,9 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	rUpdateDeltaTime = kalGetTimeTick() - prLq->rLinkRateUpdateTime;
-	if (perf->fgIdle ||
-		(IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
 		prLq->fgIsLinkRateValid == TRUE &&
-		rUpdateDeltaTime <= CFG_LQ_MONITOR_FREQUENCY)
-	) {
+		rUpdateDeltaTime <= CFG_LQ_MONITOR_FREQUENCY) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
 		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
 		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed =

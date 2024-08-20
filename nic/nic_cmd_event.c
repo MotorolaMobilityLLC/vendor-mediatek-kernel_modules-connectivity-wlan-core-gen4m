@@ -929,6 +929,7 @@ void nicCmdEventQueryLinkQuality(struct ADAPTER *prAdapter,
 		prLinkSpeed->rLq[i].u2TxLinkSpeed = prLq->u2TxLinkSpeed;
 		prLinkSpeed->rLq[i].u2RxLinkSpeed = prLq->u2RxLinkSpeed;
 		prLinkSpeed->rLq[i].cRssi = prLq->cRssi;
+		prLinkSpeed->rLq[i].fgIsLinkRateValid = TRUE;
 
 		DBGLOG(NIC, TRACE,
 			"ucBssIdx=%d, TxRate=%u, RxRate=%u signal=%d\n",
