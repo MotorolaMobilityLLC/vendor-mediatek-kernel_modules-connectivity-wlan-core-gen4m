@@ -12127,10 +12127,10 @@ uint32_t rlmTxPwrEnvMaxTxPwrCalcByPsd(
 			eBwType < TX_PWR_ENV_MAX_TXPWR_BW_NUM; eBwType++) {
 			rlmTxPwrEnvGetPwrDelta(eBwType, &ucTxPwrDelta);
 
-			/* convert icMaxTxPwrPsd to LSB = 0.5dBm since
+			/* Note the icMaxTxPwrPsd is LSB = 0.5dBm and
 			 * ucTxPwrDelta is already convert to LSB = 0.5dBm
 			 */
-			picMaxTxPwr[eBwType] = icMaxTxPwrPsd * 2 + ucTxPwrDelta;
+			picMaxTxPwr[eBwType] = icMaxTxPwrPsd + ucTxPwrDelta;
 		}
 	}
 	return u4Status;
