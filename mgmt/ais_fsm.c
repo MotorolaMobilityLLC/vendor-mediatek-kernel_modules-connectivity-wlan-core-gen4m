@@ -7443,8 +7443,6 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		return;
 	}
 
-	aisFillBssInfoFromBssDesc(prAdapter, ais, set);
-
 	ais->ucConnTrialCount++;
 	ais->fgTargetChnlScanIssued = FALSE;
 	ais->ucIsStaRoaming = TRUE;
@@ -7454,6 +7452,8 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	ais->ucMlProbeEnable = FALSE;
 	ais->prMlProbeBssDesc = NULL;
 #endif
+
+	aisFillBssInfoFromBssDesc(prAdapter, ais, set);
 
 #if CFG_EXT_ROAMING_WTC
 	aisWtcSearchHandleBssDesc(
