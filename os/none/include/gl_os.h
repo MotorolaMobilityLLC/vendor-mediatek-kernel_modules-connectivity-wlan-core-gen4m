@@ -647,6 +647,7 @@ struct NETDEV_PRIVATE_GLUE_INFO {
 	u_int8_t ucIsP2p;
 	u_int8_t ucMddpSupport;
 	uint8_t ucMldBssIdx;
+	uint32_t u4OsMgmtFrameFilter;
 };
 
 struct PACKET_PRIVATE_DATA {
