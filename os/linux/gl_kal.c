@@ -1945,6 +1945,12 @@ kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
 
+	if (!skb || !pucPacketStart) {
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_NULL_PACKET_COUNT);
+		return WLAN_STATUS_FAILURE;
+	}
+
 	skb->data = (unsigned char *)pucPacketStart;
 
 	/* Reset skb */
