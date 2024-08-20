@@ -2000,11 +2000,12 @@ u_int8_t wlanIsAisDev(struct net_device *prDev);
 void wlanNotifyFwSuspend(struct GLUE_INFO *prGlueInfo,
 			 struct net_device *prDev, u_int8_t fgSuspend);
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+#if CFG_MTK_ANDROID_WMT
 uint8_t kalGetShutdownState(void);
 #endif
-
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 void wlanShutdown(void);
+#endif
 #if CFG_MTK_WIFI_DFD_DUMP_SUPPORT
 int wlanFuncPreOnImpl(void);
 #endif

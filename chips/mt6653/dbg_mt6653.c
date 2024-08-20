@@ -1395,6 +1395,13 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 		    g_uMbuTimeoutCnt >= MBU_TIMEOUT_THRESHOLD_CNT)
 			update_mbu_timeout(1);
 #endif
+#if CFG_MTK_WIFI_PCIE_SR
+		if (!fgIsL2Finished) {
+			DBGLOG(HAL, INFO,
+				"Skip dump due to L2 Not finished\n");
+			break;
+		}
+#endif
 
 		if (pCmdList[i].write) {
 			if (pCmdList[i].mask) {
