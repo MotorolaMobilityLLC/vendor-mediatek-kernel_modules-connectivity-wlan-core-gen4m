@@ -8327,7 +8327,7 @@ void p2pUserPrefChFilter(struct ADAPTER *prAdapter,
 	ucNumAliveNonSapBss = cnmGetAliveNonSapBssInfo(
 						prAdapter, aliveNonSapBss);
 #if (CFG_SUPPORT_CONNAC1X || CFG_SUPPORT_CONNAC2X)
-	/*same hw index scc*/
+	/*same rf band scc*/
 	for (i = *ucChSwitchCandNum; i > 0 ; i--) {
 		for (j = 0; j < ucNumAliveNonSapBss ; j++) {
 			if (prSapSwitchCand[i-1].eRfBand ==
@@ -8413,7 +8413,24 @@ void p2pSetDefaultFilter(struct ADAPTER *prAdapter,
 		enum ENUM_P2P_FILTER_SCENARIO_TYPE eFilterScnario)
 {
 	uint8_t j;
-
+#if (CFG_SUPPORT_CONNAC1X || CFG_SUPPORT_CONNAC2X)
+	for (j = 0; j < *ucChSwithCandNum; j++) {
+		if ((prSapSwitchCand[j].ucChLowerBound <=
+			prP2pBssInfo->ucPrimaryChannel &&
+			prSapSwitchCand[j].ucChUpperBound >=
+			prP2pBssInfo->ucPrimaryChannel) &&
+			prSapSwitchCand[j].eRfBand ==
+			prP2pBssInfo->eBand) {
+			prSapSwitchCand[j].ucChLowerBound =
+				prP2pBssInfo->ucPrimaryChannel;
+			prSapSwitchCand[j].ucChUpperBound =
+				prP2pBssInfo->ucPrimaryChannel;
+			*ucChSwithCandNum = 1;
+			prSapSwitchCand[0] =
+				prSapSwitchCand[j];
+		}
+	}
+#else
 	for (j = 0; j < *ucChSwithCandNum; j++) {
 		if ((prSapSwitchCand[j].ucChLowerBound <=
 			prP2pBssInfo->ucPrimaryChannel &&
@@ -8432,7 +8449,7 @@ void p2pSetDefaultFilter(struct ADAPTER *prAdapter,
 				prSapSwitchCand[j];
 		}
 	}
-
+#endif
 	for (j = 0; j < *ucChSwithCandNum; j++) {
 		if ((prSapSwitchCand[j].ucChLowerBound !=
 			prSapSwitchCand[j].ucChUpperBound) &&
