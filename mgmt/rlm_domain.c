@@ -615,6 +615,9 @@ static const uint16_t g_u2CountryGroup29[] = {
 static const uint16_t g_u2CountryGroup30[] = {
 	COUNTRY_CODE_PK
 };
+static const uint16_t g_u2CountryGroup31[] = {
+	COUNTRY_CODE_XJ
+};
 
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -1498,6 +1501,20 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{131, BAND_6G, CHNL_SPAN_20, 1, 24, FALSE}
 				/* 6G_CH_1_93 */
 #endif
+		}
+	}
+	,
+	{
+		(uint16_t *) g_u2CountryGroup31, sizeof(g_u2CountryGroup31) / 2,
+		{
+			{81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
+			,	/*CH_SET_2G4_1_11 */
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, TRUE}
+			,	/*CH_SET_UNII_LOW_36_48 */
+			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
+			,	/*CH_SET_UNII_MID_52_64 */
+			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
+				/*CH_SET_UNII_MID_100_144 */
 		}
 	}
 	,
