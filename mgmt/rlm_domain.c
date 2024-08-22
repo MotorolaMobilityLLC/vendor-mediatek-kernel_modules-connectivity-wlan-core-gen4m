@@ -432,6 +432,10 @@ static const uint16_t g_u2CountryGroup27[] = {
 	COUNTRY_CODE_NZ, COUNTRY_CODE_TL
 };
 
+static const uint16_t g_u2CountryGroup28[] = {
+	COUNTRY_CODE_XJ
+};
+
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
 struct mtk_regd_control g_mtk_regd_control = {
 	.en = FALSE,
@@ -1191,6 +1195,20 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
 				/* 6G_CH_2 */
 #endif
+		}
+	}
+	,
+	{
+		(uint16_t *) g_u2CountryGroup28, sizeof(g_u2CountryGroup28) / 2,
+		{
+			{81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
+			,	/*CH_SET_2G4_1_11 */
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, TRUE}
+			,	/*CH_SET_UNII_LOW_36_48 */
+			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
+			,	/*CH_SET_UNII_MID_52_64 */
+			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
+				/*CH_SET_UNII_MID_100_144 */
 		}
 	}
 	,
