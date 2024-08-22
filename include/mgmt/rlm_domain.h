@@ -547,6 +547,9 @@
 #define COUNTRY_CODE_WW (((uint16_t) '0' << 8) | (uint16_t) '0')
 
 
+#define COUNTRY_CODE_XJ (((uint16_t) 'X' << 8) | (uint16_t) 'J')
+
+
 /* dot11RegDomainsSupportValue */
 #define MIB_REG_DOMAIN_FCC     0x10	/* FCC (US) */
 #define MIB_REG_DOMAIN_IC      0x20	/* IC or DOC (Canada) */
