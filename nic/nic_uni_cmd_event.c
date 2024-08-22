@@ -8383,6 +8383,7 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	uint16_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
 	uint8_t *data = GET_UNI_EVENT_DATA(evt);
 	uint8_t fail_cnt = 0;
+	u_int8_t fgIsValidScanDone = TRUE;
 	int i;
 	struct UNI_EVENT_SCAN_DONE *scan_done;
 	struct EVENT_SCAN_DONE legacy = {0};
@@ -8406,7 +8407,12 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SCAN_DONE_TAG_BASIC: {
 			struct UNI_EVENT_SCAN_DONE_BASIC *basic =
 				(struct UNI_EVENT_SCAN_DONE_BASIC *) tag;
-
+			/* Event Type TAG_BASIC should have 12 bytes contents.*/
+			if (basic->u2Length !=
+				sizeof(struct UNI_EVENT_SCAN_DONE_BASIC)) {
+				fgIsValidScanDone = FALSE;
+				break;
+			}
 			legacy.ucCompleteChanCount = basic->ucCompleteChanCount;
 			legacy.ucCurrentState = basic->ucCurrentState;
 			legacy.ucScanDoneVersion = basic->ucScanDoneVersion;
@@ -8417,7 +8423,14 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		case UNI_EVENT_SCAN_DONE_TAG_SPARSECHNL: {
 			struct UNI_EVENT_SCAN_DONE_SPARSECHNL *sparse =
 				(struct UNI_EVENT_SCAN_DONE_SPARSECHNL *) tag;
-
+			/* Event Type TAG_SPARSECHNL should
+			 * have 8 bytes contents.
+			 */
+			if (sparse->u2Length !=
+				sizeof(struct UNI_EVENT_SCAN_DONE_SPARSECHNL)) {
+				fgIsValidScanDone = FALSE;
+				break;
+			}
 			legacy.ucSparseChannelValid =
 				sparse->ucSparseChannelValid;
 			legacy.rSparseChannel.ucBand = sparse->ucBand;
@@ -8456,7 +8469,12 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			struct UNI_EVENT_SCAN_DONE_NLO *nlo =
 				(struct UNI_EVENT_SCAN_DONE_NLO *) tag;
 			struct EVENT_SCHED_SCAN_DONE sched;
-
+			/* Event Type NLO should have 8 bytes contents. */
+			if (nlo->u2Length
+				!= sizeof(struct UNI_EVENT_SCAN_DONE_NLO)) {
+				fgIsValidScanDone = FALSE;
+				break;
+			}
 			sched.ucStatus = nlo->ucStatus;
 			sched.ucSeqNum = legacy.ucSeqNum;
 
@@ -8473,7 +8491,30 @@ void nicUniEventScanDone(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 		}
 	}
 
-	scnEventScanDone(ad, &legacy, TRUE);
+	if (tags_len != offset)
+		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+
+	/* Check whether FW Event State and
+	 * Complete Channel Number are correct.
+	 */
+	if (legacy.ucCurrentState != FW_SCAN_STATE_SCAN_DONE) {
+		DBGLOG(NIC, ERROR, "ucCurrentState(%d) is Invalid!\n",
+			legacy.ucCurrentState);
+		fgIsValidScanDone = FALSE;
+	}
+	if (legacy.ucSparseChannelValid == 1 &&
+		(legacy.ucCompleteChanCount !=
+			legacy.ucSparseChannelArrayValidNum)){
+		DBGLOG(NIC, ERROR,
+			"CompleteChnlCnt(%d) and ChnlArrNum(%d) are mismatched!\n"
+			, legacy.ucCompleteChanCount,
+			legacy.ucSparseChannelArrayValidNum);
+		fgIsValidScanDone = FALSE;
+	}
+
+	if (fgIsValidScanDone == TRUE)
+		scnEventScanDone(ad, &legacy, TRUE);
+
 }
 
 uint32_t nicUniUpdateStaRecFastAll(
