@@ -807,7 +807,7 @@ void soc5_0_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 	if (enum_wfdma_type == WFDMA_TYPE_HOST) {
 		u4DmaCfgCr = 0x7c027044;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_HIF_BUSY(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, INFO, "WFDMA_HIF_MISC(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 
@@ -817,9 +817,90 @@ void soc5_0_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 				u4DmaCfgCr,
 				u4RegValue);
 
+		u4DmaCfgCr = 0x7c027074;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO, "WFDMA_DCM_CTRL(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
 		u4DmaCfgCr = 0x7c027078;
 		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
-		DBGLOG(INIT, INFO, "WFDMA_AXI_SLPPROT0_CTRL(0x%08x): 0x%08x\n",
+		DBGLOG(INIT, INFO, "WFDMA_SLPPROT_DBG0(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c02707C;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO, "WFDMA_SLPPROT_DBG1(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c02750C;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO, "WFDMA_AXI0_R2A_STS(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027510;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_DMAWR_PROBE(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027514;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_DMAWD_PROBE(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027518;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_WR_DBG_AXIM_OUT0(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c02751C;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_WR_DBG_AXIM_OUT1(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027520;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_AXI_SLP_STS(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027524;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_RD_DBG_AXIM_OUT0(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027528;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_RD_DBG_AXIM_OUT1(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c02752C;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_FSM_CMD_ST(0x%08x): 0x%08x\n",
+				u4DmaCfgCr,
+				u4RegValue);
+
+		u4DmaCfgCr = 0x7c027530;
+		HAL_MCR_RD(prAdapter, u4DmaCfgCr, &u4RegValue);
+		DBGLOG(INIT, INFO,
+			"WFDMA_AXI0_R2A_FSM_DAT_ST(0x%08x): 0x%08x\n",
 				u4DmaCfgCr,
 				u4RegValue);
 	} else {

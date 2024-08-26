@@ -468,23 +468,7 @@ p2pRoleStateAbort_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
-#if CFG_SUPPORT_CCM
-	struct BSS_INFO *prP2pRoleBssInfo;
-#endif
-
 	p2pFuncReleaseCh(prAdapter, ucBssIdx, prChnlReqInfo);
-
-#if CFG_SUPPORT_CCM
-	prP2pRoleBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-
-	DBGLOG(P2P, TRACE, "CSA done, re-trigger to notify other GO/SAP");
-	/* do not support CSA by upper layer within CCM */
-	if (LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList))
-		ccmChannelSwitchProducer(prAdapter, prP2pRoleBssInfo,
-					   __func__);
-	else
-		ccmChannelSwitchConsumer(prAdapter);
-#endif /* CFG_SUPPORT_CCM */
 }				/* p2pRoleStateAbort_SWITCH_CHANNEL */
 #endif
 

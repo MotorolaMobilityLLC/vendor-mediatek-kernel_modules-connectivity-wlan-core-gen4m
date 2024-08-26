@@ -4457,7 +4457,6 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen)
 {
-	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	uint8_t ucBssIndex;
 	OS_SYSTIME rUpdateDeltaTime;
 	struct PARAM_LINK_SPEED_EX *pu4LinkSpeed;
@@ -4480,11 +4479,9 @@ wlanoidQueryLinkSpeed(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_INVALID_DATA;
 	prLq = &prAdapter->rLinkQuality.rLq[ucBssIndex];
 	rUpdateDeltaTime = kalGetTimeTick() - prLq->rLinkRateUpdateTime;
-	if (perf->fgIdle ||
-		(IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
+	if (IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) &&
 		prLq->fgIsLinkRateValid == TRUE &&
-		rUpdateDeltaTime <= CFG_LQ_MONITOR_FREQUENCY)
-	) {
+		rUpdateDeltaTime <= CFG_LQ_MONITOR_FREQUENCY) {
 		pu4LinkSpeed = (struct PARAM_LINK_SPEED_EX *) (pvQueryBuffer);
 		pu4LinkSpeed->rLq[ucBssIndex].cRssi = prLq->cRssi;
 		pu4LinkSpeed->rLq[ucBssIndex].u2TxLinkSpeed =
@@ -9179,6 +9176,8 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_SCAN ||
 			prAisFsmInfo->eCurrentState == AIS_STATE_ONLINE_SCAN)
 		prAisFsmInfo->fgIsScanOidAborted = TRUE;
+	if (u4DisconnectReason == DISCONNECT_REASON_CODE_DEL_IFACE)
+		prAisFsmInfo->fgIsDelIface = TRUE;
 
 	prAisAbortMsg->fgDelayIndication = FALSE;
 	prAisAbortMsg->ucBssIndex = ucBssIndex;
@@ -11696,7 +11695,11 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 	     rCmdKey.aucPeerAddr[5]) == 0xFF) {
 		prStaRec = cnmGetStaRecByAddress(prAdapter,
 				prBssInfo->ucBssIndex, prBssInfo->aucBSSID);
-		ASSERT(prStaRec);	/* AIS RSN Group key, addr is BC addr */
+		if (prStaRec == NULL) {
+			DBGLOG(REQ, WARN, "Can't find station.\n");
+			return WLAN_STATUS_FAILURE;
+		}
+		/* AIS RSN Group key, addr is BC addr */
 		kalMemCopy(rCmdKey.aucPeerAddr, prStaRec->aucMacAddr,
 			   MAC_ADDR_LEN);
 	} else {
@@ -11728,7 +11731,8 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 				prStaRec->fgTransmitKeyExist =
 					TRUE;	/* wait for CMD Done ? */
 			} else {
-				ASSERT(FALSE);
+				DBGLOG(REQ, WARN, "Key type is invalid.\n");
+				return WLAN_STATUS_INVALID_DATA;
 			}
 		}
 #if 0
@@ -11783,7 +11787,9 @@ wlanoidSetWapiKey(struct ADAPTER *prAdapter,
 							rCmdKey.ucKeyId);
 				prStaRec->ucWlanIndex = rCmdKey.ucWlanIndex;
 			} else {	/* Exist this case ? */
-				ASSERT(FALSE);
+				DBGLOG(REQ, WARN, "Can't find station.\n");
+				return WLAN_STATUS_FAILURE;
+
 				/* prCmdKey->ucWlanIndex = */
 				/* secPrivacySeekForBcEntry(prAdapter, */
 				/* prBssInfo->ucBssIndex, */
@@ -19182,3 +19188,36 @@ wlanoidQueryLteSafeChannel(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_GET_LTE_SAFE_CHANNEL */
 }
 #endif /* CFG_ENABLE_WIFI_DIRECT */
+
+
+#if CFG_SUPPORT_CCM
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Re-trigger CCM when CSA finished.
+ */
+/*----------------------------------------------------------------------------*/
+uint32_t
+wlanoidCcmRetrigger(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+		    uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	struct BSS_INFO *prBssInfo = (struct BSS_INFO *)pvQueryBuffer;
+
+	if (!prAdapter) {
+		DBGLOG(P2P, ERROR, "no adapter found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	if (!prBssInfo) {
+		DBGLOG(P2P, ERROR, "no BssInfo found");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	/* do not support CSA by upper layer within CCM */
+	if (LINK_IS_EMPTY(&prAdapter->rCcmCheckCsList))
+		ccmChannelSwitchProducer(prAdapter, prBssInfo, __func__);
+	else
+		ccmChannelSwitchConsumer(prAdapter);
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_CCM */

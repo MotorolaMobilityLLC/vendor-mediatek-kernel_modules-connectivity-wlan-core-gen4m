@@ -2008,12 +2008,16 @@ sta:
 			goto next;
 		}
 
+		if (pos == tail)
+			goto next;
+
 		if (pos + 2 > tail) {
 			DBGLOG(ML, WARN,
 				"invalid STA profile len=%td\n", tail - pos);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
+
 		WLAN_GET_FIELD_16(pos, &prStaProfile->u2CapInfo);
 		if (show_info)
 			DBGLOG(ML, INFO,
@@ -4898,8 +4902,11 @@ uint8_t mldNeedSingleBandMlsr56(struct ADAPTER *prAdapter,
 	/* cert & no str & no emlsr */
 	return prAdapter->rWifiVar.u4SwTestMode == ENUM_SW_TEST_MODE_SIGMA_BE &&
 	    IS_FEATURE_DISABLED(prAdapter->rWifiVar.ucNonApMldEMLSupport) &&
-	    prAdapter->rWifiVar.ucMaxSimuLinks == 0 &&
-	    eLinkPlan == MLO_LINK_PLAN_5_6;
+	    prAdapter->rWifiVar.ucMaxSimuLinks == 0
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	&& eLinkPlan == MLO_LINK_PLAN_5_6;
+#endif
+	;
 }
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
 

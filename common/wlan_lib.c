@@ -1252,6 +1252,11 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 	}
 
 #if CFG_SUPPORT_XONVRAM
+	if (prRegInfo->prXonvCfg == NULL) {
+		DBGLOG(INIT, TRACE, "Unsupport xo nvram\n");
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	if (wlanCopyXonvramToSysram(prGlueInfo, prRegInfo->prXonvCfg, prPlatCfg)
 		!= WLAN_STATUS_SUCCESS) {
 		DBGLOG(INIT, TRACE, "Fail to copy xo nvram\n");
@@ -7807,10 +7812,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->au4NetifStartTh[BAND_5G], "5gNetifStartTh",
 		  CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD, FEATURE_DEBUG_ONLY);
+#if (CFG_SUPPORT_WIFI_6G == 1)
 	INIT_UINT(prWifiVar->au4NetifStopTh[BAND_6G], "6gNetifStopTh",
 		  CFG_TX_STOP_NETIF_PER_QUEUE_THRESHOLD, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->au4NetifStartTh[BAND_6G], "6gNetifStartTh",
 		  CFG_TX_START_NETIF_PER_QUEUE_THRESHOLD, FEATURE_DEBUG_ONLY);
+#endif
 #endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
 
 	INIT_UINT(prWifiVar->ucTxBaSize, "TxBaSize", WLAN_LEGACY_MAX_BA_SIZE,

@@ -898,6 +898,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucSeqNumOfScanReq = 0;
 	prAisFsmInfo->fgIsChannelRequested = FALSE;
 	prAisFsmInfo->fgIsChannelGranted = FALSE;
+	prAisFsmInfo->fgIsDelIface = FALSE;
 	prAisFsmInfo->u4PostponeIndStartTime = 0;
 	/* Support AP Selection */
 	prAisFsmInfo->ucJoinFailCntAfterScan = 0;
@@ -3955,7 +3956,8 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 	    ucReasonOfDisconnect == DISCONNECT_REASON_CODE_LOCALLY)
 		prBssInfo->u2DeauthReason = REASON_CODE_DEAUTH_LEAVING_BSS;
 
-	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING) {
+	if (prAisFsmInfo->eCurrentState != AIS_STATE_DISCONNECTING ||
+	    prAisFsmInfo->fgIsDelIface) {
 		/* 4 <3> invoke abort handler */
 		aisFsmStateAbort(prAdapter, ucReasonOfDisconnect,
 			fgDelayIndication, ucBssIndex);
@@ -5259,6 +5261,8 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 #endif
 	aisRemoveDeauthBlocklist(prAdapter, TRUE);
 	aisClearAllLink(prAisFsmInfo);
+
+	aisRemoveTimeoutBlocklist(prAdapter, 0);
 
 #if CFG_SUPPORT_NCHO
 	wlanNchoInit(prAdapter, TRUE);
@@ -7023,7 +7027,7 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 		prAisBtoInfo->ucBcnTimeoutReason = ucBcnTimeoutReason;
 		prAisBtoInfo->ucDisconnectReason = ucDisconnectReason;
 
-		if (roam && join) {
+		if (roam || join) {
 			struct PARAM_SSID rSsid;
 
 			DBGLOG(AIS, EVENT,
@@ -7209,11 +7213,17 @@ aisDeauthXmitCompleteBss(struct ADAPTER *prAdapter,
 		      enum ENUM_TX_RESULT_CODE rTxDoneStatus)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
-	struct BSS_INFO *prAisBssInfo;
 	u_int8_t fgIsReset = FALSE;
 
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
+		DBGLOG(AIS, WARN,
+		       "Invalid index=%d, DEAUTH frame transmitted without further handling\n",
+		       ucBssIndex);
+		return WLAN_STATUS_SUCCESS;
+	}
+
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+
 #if CFG_SUPPORT_802_11W
 	/* Notify completion after encrypted deauth frame tx done */
 	if (prAisFsmInfo->encryptedDeauthIsInProcess == TRUE) {
@@ -7250,7 +7260,7 @@ aisDeauthXmitCompleteBss(struct ADAPTER *prAdapter,
 					 FALSE, ucBssIndex);
 	} else {
 		DBGLOG(AIS, WARN,
-		       "DEAUTH frame transmitted without further handling");
+		       "DEAUTH frame transmitted without further handling\n");
 	}
 
 	return WLAN_STATUS_SUCCESS;
@@ -7291,7 +7301,7 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 	/* TODO: Stop roaming event in FW */
 #if CFG_SUPPORT_WFD
 #if CFG_ENABLE_WIFI_DIRECT
-	{
+	if (prRoamingInfo->eReason != ROAMING_REASON_POOR_RCPI) {
 		/* Check WFD is running */
 		struct WFD_CFG_SETTINGS *prWfdCfgSettings =
 		    (struct WFD_CFG_SETTINGS *)NULL;
@@ -7433,8 +7443,6 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 		return;
 	}
 
-	aisFillBssInfoFromBssDesc(prAdapter, ais, set);
-
 	ais->ucConnTrialCount++;
 	ais->fgTargetChnlScanIssued = FALSE;
 	ais->ucIsStaRoaming = TRUE;
@@ -7444,6 +7452,8 @@ void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	ais->ucMlProbeEnable = FALSE;
 	ais->prMlProbeBssDesc = NULL;
 #endif
+
+	aisFillBssInfoFromBssDesc(prAdapter, ais, set);
 
 #if CFG_EXT_ROAMING_WTC
 	aisWtcSearchHandleBssDesc(
@@ -8798,7 +8808,7 @@ struct AIS_BLOCKLIST_ITEM *aisQueryBlockList(struct ADAPTER *prAdapter,
 	return NULL;
 }
 
-void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
+void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 {
 	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
 	struct AIS_BLOCKLIST_ITEM *prNextEntry = NULL;
@@ -8811,13 +8821,16 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter)
 
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct AIS_BLOCKLIST_ITEM) {
-		uint16_t sec = AIS_BLOCKLIST_TIMEOUT;
+		uint16_t sec = u2Sec;
 
 		if (prEntry->fgIsInFWKBlocklist == TRUE)
 			continue;
 
-		/* Remove from blocklist for one hour if deauth is received. */
-		if (prEntry->ucDeauthCount > 0)
+		/* For deauth blocklist
+		 * 1. If u2Sec = 0, set timeout = 0.
+		 * 2. Else, set timeout = AIS_BLOCKLIST_TIMEOUT_DEAUTH
+		 */
+		if (prEntry->ucDeauthCount > 0 && u2Sec != 0)
 			sec = AIS_BLOCKLIST_TIMEOUT_DEAUTH;
 
 #if CFG_SUPPORT_MBO

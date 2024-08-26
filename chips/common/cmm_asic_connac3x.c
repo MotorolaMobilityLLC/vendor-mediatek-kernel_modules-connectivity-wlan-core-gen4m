@@ -2548,6 +2548,9 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 	} else if (fgIsDrvTriggerWholeChipReset) {
 		DBGLOG(HAL, INFO,
 			"Ignore fw assert due to whole chip reset ongoing.\n");
+	} else if (kalGetShutdownState()) {
+		DBGLOG(HAL, INFO,
+			"Ignore fw assert due to device shutdown.\n");
 	} else {
 		if (prAdapter->fgIsSkipFWL05) {
 			DBGLOG(HAL, ERROR,
@@ -2581,6 +2584,12 @@ static void handle_wfsys_reset(struct ADAPTER *prAdapter)
 static void handle_whole_chip_reset(struct ADAPTER *prAdapter)
 {
 	struct CHIP_DBG_OPS *dbg_ops = prAdapter->chip_info->prDebugOps;
+
+	if (kalGetShutdownState()) {
+		DBGLOG(HAL, INFO,
+			"Ignore fw assert due to device shutdown.\n");
+		return;
+	}
 
 	DBGLOG(HAL, ERROR,
 		"FW trigger whole chip reset.\n");
@@ -2647,6 +2656,12 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 
 	if (u4Status & BIT(SW_INT_WHOLE_RESET))
 		handle_whole_chip_reset(prAdapter);
+
+#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+	if (u4Status & BIT(SW_INT_PMIC_RESET))
+		connv3_trigger_pmic_irq(CONNV3_DRV_TYPE_WIFI,
+			"fw trigger PMIC reset");
+#endif
 #endif
 
 #if defined(_HIF_PCIE)
@@ -3026,6 +3041,7 @@ static int wlan_chip_power_down_notify(unsigned int notify)
 	return 0;
 }
 
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 static int wlan_pre_fmd(void)
 {
 #define MAX_WAIT_OFF_DONE 10
@@ -3053,6 +3069,7 @@ static int wlan_post_fmd(void)
 {
 	return wlan_chip_power_down_notify(0);
 }
+#endif
 
 static void unregister_connv3_cbs(void)
 {
@@ -3092,8 +3109,10 @@ static void register_connv3_cbs(void)
 	cb.pre_cal_cb.pre_cal_error = wlan_precal_err;
 #endif
 
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 	cb.fmd_cb.pre_fmd_cb = wlan_pre_fmd;
 	cb.fmd_cb.post_fmd_cb = wlan_post_fmd;
+#endif
 
 #if CFG_CHIP_RESET_SUPPORT
 	cb.rst_cb.pre_whole_chip_rst = wlan_pre_whole_chip_rst_v3;

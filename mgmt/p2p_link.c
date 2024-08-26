@@ -493,8 +493,11 @@ static uint32_t p2pLinkGet2ndLinkFreqByOwnPref(struct ADAPTER *prAdapter,
 					arChnlList[i].eBand) / 1000;
 		}
 #endif
-	} else if ((eMainLinkBand == BAND_5G || eMainLinkBand == BAND_6G) &&
-		   ucNum2gBss > 0) {
+	} else if ((eMainLinkBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	|| eMainLinkBand == BAND_6G
+#endif
+	) && ucNum2gBss > 0) {
 		rlmDomainGetChnlList(prAdapter, BAND_2G4, TRUE,
 				     MAX_2G_BAND_CHN_NUM,
 				     &ucChnlNum, arChnlList);

@@ -3136,6 +3136,7 @@ void connac2x_show_wfdma_desc(struct ADAPTER *prAdapter)
 	struct RTMP_RX_RING *prRxRing;
 	struct wfdma_group_info *prGroup;
 	uint32_t i, j, k, u4SwIdx, u4Didx[WFDMA_DUMP_RX_RING_CNT];
+	uint32_t u4Cidx[WFDMA_DUMP_RX_RING_CNT];
 	u_int8_t fgSkip = FALSE;
 
 	if (!prAdapter)
@@ -3191,7 +3192,23 @@ void connac2x_show_wfdma_desc(struct ADAPTER *prAdapter)
 			if (!fgSkip)
 				kalDumpRxRing(prAdapter->prGlueInfo,
 					      prRxRing, u4SwIdx, true);
+			u4Cidx[j] = u4SwIdx;
 			INC_RING_INDEX(u4SwIdx, prGroup->cnt);
+		}
+
+		/* dump idx (0, 1) */
+		for (j = 0; j < WFDMA_DUMP_RX_RING_CNT; j++) {
+			/* skip dumped cell */
+			fgSkip = FALSE;
+			for (k = 0; k < WFDMA_DUMP_RX_RING_CNT; k++) {
+				if (j == u4Didx[k] || j == u4Cidx[k]) {
+					fgSkip = TRUE;
+					break;
+				}
+			}
+			if (!fgSkip)
+				kalDumpRxRing(prAdapter->prGlueInfo,
+					      prRxRing, j, true);
 		}
 	}
 }

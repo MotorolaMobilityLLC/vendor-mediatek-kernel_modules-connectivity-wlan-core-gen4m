@@ -137,6 +137,7 @@ static enum _ENUM_CHIP_RESET_REASON_TYPE_T eResetReason;
 #if CFG_CHIP_RESET_SUPPORT
 static struct RESET_STRUCT wifi_rst;
 u_int8_t fgIsResetting;
+u_int8_t fgIsL0Resetting;
 u_int8_t fgIsResetOnEnd;
 u_int8_t fgIsDrvTriggerWholeChipReset;
 enum COREDUMP_SOURCE_TYPE g_Coredump_source;
@@ -283,6 +284,27 @@ void glResetCleanResetFlag(void)
 {
 	glResetUpdateFlag(FALSE);
 	glResetOnEndUpdateFlag(FALSE);
+#if CFG_WMT_RESET_API_SUPPORT
+	g_IsWfsysBusHang = FALSE;
+#endif
+}
+
+u_int8_t glIsL0Resetting(void)
+{
+#if CFG_CHIP_RESET_SUPPORT
+	return fgIsL0Resetting;
+#else
+	return FALSE;
+#endif
+}
+
+void glResetUpdateL0Flag(u_int8_t status)
+{
+	DBGLOG(INIT, TRACE, "L0 reset flag: %d\n", status);
+	fgIsL0Resetting = status;
+#if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
+	update_whole_chip_rst_status(fgIsL0Resetting);
+#endif
 }
 
 #if CFG_CHIP_RESET_SUPPORT
@@ -690,17 +712,10 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 	int ret = 0;
 #endif
 
-	if (kalIsResetting()) {
+	if (kalIsResetting() || kalIsResetOnEnd()) {
 		DBGLOG(INIT, INFO, "already in reset\n");
 		goto exit;
 	}
-
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
-	if (kalGetShutdownState()) {
-		DBGLOG(INIT, INFO, "skip in shutdown\n");
-		goto exit;
-	}
-#endif
 
 	if (prAdapter) {
 		prChipInfo = prAdapter->chip_info;
@@ -737,20 +752,30 @@ uint32_t glResetTriggerImpl(struct ADAPTER *prAdapter,
 	sysResetTrigger();
 #endif
 #if CFG_MTK_ANDROID_WMT && !CFG_SUPPORT_CONNAC1X
+
+	glResetUpdateFlag(TRUE);
+	glResetOnEndUpdateFlag(TRUE);
+
 	/* Avoid doing reset triggered by CMD when WIFI write is processing */
 	if (get_wifi_process_status() &&
 	   (eResetReason == RST_CMD_TRIGGER ||
 	    eResetReason == RST_FWK_TRIGGER)) {
 		DBGLOG(INIT, INFO, "cmd trigger in write processing\n");
+		glResetUpdateFlag(FALSE);
+		glResetCleanResetFlag();
 		goto exit;
 	}
 #endif
+
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyWifiReset();
 #endif
 
-	glResetUpdateFlag(TRUE);
-	glResetOnEndUpdateFlag(TRUE);
+	if (kalGetShutdownState()) {
+		DBGLOG(INIT, INFO, "skip in shutdown\n");
+		glResetCleanResetFlag();
+		goto exit;
+	}
 
 #if CFG_SUPPORT_CONNAC1X
 	if (eResetReason != RST_BT_TRIGGER)
@@ -1363,9 +1388,10 @@ static void mtk_wifi_reset_main(struct RESET_STRUCT *rst,
 		ret = wlanFuncOn();
 #endif
 #if !CFG_SUPPORT_CONNAC1X
+	g_IsWfsysBusHang = FALSE;
 	if (g_IsWholeChipRst == TRUE) {
 		g_IsWholeChipRst = FALSE;
-		g_IsWfsysBusHang = FALSE;
+		glResetUpdateL0Flag(FALSE);
 		complete(&g_RstOnComp);
 	}
 #endif
@@ -1752,7 +1778,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		wfsys_unlock();
-		return bRet;
+		goto exit;
 	}
 	wfsys_unlock();
 
@@ -1775,7 +1801,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 				DBGLOG(REQ, WARN,
 					"wifi driver reset fail, need whole chip reset.\n");
 				g_IsWholeChipRst = TRUE;
-				return bRet;
+				goto exit;
 			}
 			msleep(100);
 		}
@@ -1795,7 +1821,6 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			msleep(100);
 		}
-		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
 
 		if (!prGlueInfo->u4ReadyFlag)
@@ -1805,6 +1830,9 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 	}
 	wait_for_completion(&g_RstOffComp);
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
+
+exit:
+	fgIsDrvTriggerWholeChipReset = FALSE;
 
 	return bRet;
 }
@@ -1818,6 +1846,7 @@ int glRstwlanPostWholeChipReset(void)
 	}
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		glResetUpdateL0Flag(FALSE);
 		return 0;
 	}
 	glRstSetRstEndEvent();
@@ -1857,11 +1886,13 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		kalMsleep(100);
 	}
 
+	g_IsWholeChipRst = TRUE;
+	glResetUpdateL0Flag(TRUE);
+
 	wfsys_lock();
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
 		glResetOnEndUpdateFlag(TRUE);
-		g_IsWholeChipRst = TRUE;
 		wfsys_unlock();
 		goto exit;
 	}
@@ -1902,7 +1933,6 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			kalMsleep(100);
 		}
-		g_IsWholeChipRst = TRUE;
 
 		/* If wifi is off, skip off flow after previous reset end */
 		if (!get_wifi_powered_status()) {
@@ -1924,7 +1954,6 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 			kalMsleep(100);
 		}
 		fgIsDrvTriggerWholeChipReset = FALSE;
-		g_IsWholeChipRst = TRUE;
 
 		dbg_ops = prAdapter->chip_info->prDebugOps;
 		if (dbg_ops && dbg_ops->dumpBusHangCr)
@@ -1944,6 +1973,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	wait_for_completion(&g_RstOffComp);
 exit:
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully\n");
+	fgIsDrvTriggerWholeChipReset = FALSE;
 
 	if (reset_type == ENUM_COREDUMP_BY_CHIP_RST_DFD_DUMP) {
 		glGetChipInfo((void **)&chip);
@@ -1975,7 +2005,10 @@ int wlan_post_reset_on_v3(unsigned int type)
 
 	DBGLOG(INIT, INFO, "type: %d\n", type);
 
-	if (type != CONNV3_CHIP_RST_POST_ACTION_NOTHING)
+	/* 0: CONNV3_CHIP_RST_POST_ACTION_NOTHING
+	 * 1: CONNV3_CHIP_RST_POST_ACTION_PMIC_SHUTDOWN
+	 */
+	if (type > 1)
 		goto exit;
 
 	ret = wlanFuncPreOnImpl();
@@ -2007,7 +2040,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
-		return 0;
+		goto exit;
 	}
 #endif
 	triggerHifDumpIfNeed();
@@ -2022,6 +2055,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		}
 
 		g_IsWholeChipRst = TRUE;
+		glResetUpdateL0Flag(TRUE);
 
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 					 RST_WHOLE_CHIP_TRIGGER);
@@ -2031,13 +2065,16 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 			DBGLOG(REQ, WARN, "Wi-Fi driver is resetting\n");
 			kalMsleep(100);
 		}
-		fgIsDrvTriggerWholeChipReset = FALSE;
 		g_IsWholeChipRst = TRUE;
+		glResetUpdateL0Flag(TRUE);
 
 		kalSetRstEvent(TRUE);
 	}
 
 	wait_for_completion(&g_RstOffComp);
+exit:
+	fgIsDrvTriggerWholeChipReset = FALSE;
+
 	DBGLOG(INIT, INFO, "Wi-Fi is off successfully.\n");
 
 	return 0;
@@ -2053,6 +2090,7 @@ int wlan_post_whole_chip_rst_v2(void)
 	}
 	if (!get_wifi_powered_status()) {
 		DBGLOG(REQ, WARN, "wifi driver is off now\n");
+		glResetUpdateL0Flag(FALSE);
 		return 0;
 	}
 #endif
@@ -2087,7 +2125,7 @@ bool IsOverRstTimeThreshold(
 {
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	struct timespec64 rTimeout, rTime = {0};
-	bool fgIsTimeout = FALSE;
+	bool fgIsTimeout = TRUE;
 
 	rTimeout.tv_sec = 30;
 	rTimeout.tv_nsec = 0;
@@ -2141,6 +2179,8 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	}
 #endif
 
+	glResetUpdateL0Flag(TRUE);
+
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason);
 #elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
@@ -2154,6 +2194,8 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	if (ret == 0) {
 		dump_stack();
 		fgIsDrvTriggerWholeChipReset = TRUE;
+	} else {
+		glResetUpdateL0Flag(FALSE);
 	}
 #endif
 }
@@ -2285,8 +2327,10 @@ void glResetSubsysRstProcedure(struct RESET_STRUCT *rst,
 			g_SubsysRstCnt = 1;
 	}
 
-	if (g_SubsysRstCnt == 1)
-		rLastTs = rNowTs;
+	if (g_SubsysRstCnt == 1) {
+		rLastTs->tv_nsec = rNowTs->tv_nsec;
+		rLastTs->tv_sec = rNowTs->tv_sec;
+	}
 
 	g_Coredump_source = COREDUMP_SOURCE_NUM;
 	rst->force_dump = FALSE;

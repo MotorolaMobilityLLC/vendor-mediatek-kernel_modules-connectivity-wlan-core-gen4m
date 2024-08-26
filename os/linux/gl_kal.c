@@ -55,6 +55,7 @@
 #include <linux/debugfs.h>
 #if CFG_SUPPORT_THERMAL_QUERY
 #include <linux/thermal.h>
+#include "thermal_core.h"
 #endif
 
 #include <linux/platform_device.h>
@@ -1773,6 +1774,13 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 
 	prSkb = (struct sk_buff *)prSwRfb->pvPacket;
 
+	/* sanity check */
+	if (prSwRfb->pucRecvBuff != prSkb->data) {
+		DBGLOG(NIC, ERROR, "RX buffer not match, %04X != %04X\n",
+			(uintptr_t)prSwRfb->pucRecvBuff & 0xFFFF,
+			(uintptr_t)prSkb->data & 0xFFFF);
+	}
+
 	/*
 	 * if skb headroom is not zero, then it may not 4 byte alignment,
 	 * so we should not reuse it.
@@ -1789,13 +1797,6 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb)
 			skb_headroom(prSkb));
 		kalKfreeSkb(prSwRfb->pvPacket, TRUE);
 		prSwRfb->pvPacket = NULL;
-	}
-
-	/* sanity check */
-	if (prSwRfb->pucRecvBuff != prSkb->data) {
-		DBGLOG(NIC, ERROR, "RX buffer not match, %04X != %04X\n",
-			(uintptr_t)prSwRfb->pucRecvBuff & 0xFFFF,
-			(uintptr_t)prSkb->data & 0xFFFF);
 	}
 }
 
@@ -1943,6 +1944,12 @@ kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
 {
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
+
+	if (!skb || !pucPacketStart) {
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_NULL_PACKET_COUNT);
+		return WLAN_STATUS_FAILURE;
+	}
 
 	skb->data = (unsigned char *)pucPacketStart;
 
@@ -6070,24 +6077,6 @@ int main_thread(void *data)
 		}
 #endif
 
-		if (test_and_clear_bit(GLUE_FLAG_FRAME_FILTER_AIS_BIT,
-				       &prGlueInfo->ulFlag)) {
-			uint32_t i;
-
-			kalTraceBegin("FRAME_FILTER_AIS");
-			for (i = 0; i < KAL_AIS_NUM; i++) {
-				struct AIS_FSM_INFO *prAisFsmInfo =
-				    aisFsmGetInstance(prGlueInfo->prAdapter, i);
-
-				if (!prAisFsmInfo)
-					continue;
-
-				prAisFsmInfo->u4AisPacketFilter =
-					prGlueInfo->u4OsMgmtFrameFilter;
-			}
-			kalTraceEnd();
-		}
-
 #if CFG_SUPPORT_NAN
 		if (test_and_clear_bit(GLUE_FLAG_NAN_MULTICAST_BIT,
 				       &prGlueInfo->ulFlag))
@@ -7936,9 +7925,11 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 	uint8_t ucChnlNum = 0;
 	struct RX_DESC_OPS_T *prRxDescOps;
 	enum ENUM_BAND eBand;
+	u_int8_t fgIsP2pNetDevice = FALSE;
 
 	do {
 		struct net_device *prDevHandler;
+		struct NETDEV_PRIVATE_GLUE_INFO *prNetDevPrivate = NULL;
 
 		if ((prGlueInfo == NULL) || (prSwRfb == NULL)) {
 			ASSERT(FALSE);
@@ -7959,15 +7950,22 @@ void kalIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 			break;
 		}
 
-		if (prGlueInfo->u4OsMgmtFrameFilter == 0) {
+		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
+		if (!prDevHandler)
+			return;
+
+#if CFG_ENABLE_WIFI_DIRECT && CFG_ENABLE_WIFI_DIRECT_CFG_80211
+		fgIsP2pNetDevice = mtk_IsP2PNetDevice(prGlueInfo, prDevHandler);
+#endif
+		prNetDevPrivate = (struct NETDEV_PRIVATE_GLUE_INFO *)
+			netdev_priv(prDevHandler);
+
+		if (!fgIsP2pNetDevice &&
+		    prNetDevPrivate->u4OsMgmtFrameFilter == 0) {
 			DBGLOG(AIS, WARN,
 				"The cfg80211 hasn't do mgmt register!\n");
 			break;
 		}
-
-		prDevHandler = wlanGetNetDev(prGlueInfo, ucBssIndex);
-		if (!prDevHandler)
-			return;
 
 #if (KERNEL_VERSION(6, 0, 0) <= CFG80211_VERSION_CODE)
 		kalMemZero(&rRxInfo, sizeof(rRxInfo));
@@ -18156,8 +18154,10 @@ void kalTxFreeSkbWorkInit(struct GLUE_INFO *pr)
 
 	for (ucIdx = 0; ucIdx < CON_WORK_MAX; ucIdx++) {
 		prQueInfo = &prTxFreeInfo->rQueInfo[ucIdx];
-		prQueInfo->u4TotalCnt = 0;
 		spin_lock_init(&prQueInfo->lock);
+		spin_lock_bh(&prQueInfo->lock);
+		prQueInfo->u4TotalCnt = 0;
+		spin_unlock_bh(&prQueInfo->lock);
 		QUEUE_INITIALIZE(&prQueInfo->rQue);
 
 		prConWork = &prTxFreeInfo->rConWork[ucIdx];
@@ -18744,13 +18744,11 @@ uint32_t kalSkbAllocDeqSkb(struct GLUE_INFO *pr, void **pvPacket,
 	struct SKB_ALLOC_INFO *prSkbAllocInfo = &pr->rSkbAllocInfo;
 	struct sk_buff *prSkb = NULL;
 
-	if (skb_queue_empty(&prSkbAllocInfo->rFreeSkbQ))
-		goto end;
-
-	prSkb = skb_dequeue(&prSkbAllocInfo->rFreeSkbQ);
-	*ppucData = prSkb->data;
-
-end:
+	if (!skb_queue_empty(&prSkbAllocInfo->rFreeSkbQ)) {
+		prSkb = skb_dequeue(&prSkbAllocInfo->rFreeSkbQ);
+		if (prSkb != NULL)
+			*ppucData = prSkb->data;
+	}
 	*pvPacket = prSkb;
 
 	/*

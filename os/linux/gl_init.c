@@ -226,7 +226,7 @@ static struct WLANDEV_INFO
 static uint32_t
 u4WlanDevNum;	/* How many NICs coexist now */
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+#if CFG_MTK_ANDROID_WMT
 /* 0: off, 1: on-going, 2: done */
 static enum ENUM_SHUTDOWN_STATE uShutdownState;
 #endif
@@ -4394,45 +4394,50 @@ uint32_t wlanDfsChannelsNotifyStaConnected(struct ADAPTER *prAdapter,
 	prBssInfo = AIS_MAIN_BSS_INFO(prAdapter, ucAisIndex);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBss = mldBssGetByBss(prAdapter, prBssInfo);
-	LINK_FOR_EACH_ENTRY(prBssInfo, &prMldBss->rBssList,
-			    rLinkEntryMld, struct BSS_INFO) {
-		u4CenterFreq = nicChannelNum2Freq(
-			prBssInfo->ucVhtChannelFrequencyS1,
-			prBssInfo->eBand) / 1000;
-		if (wlanIsChannelInDfsRange(prAdapter,
-					    prBssInfo->ucPrimaryChannel,
-					    prBssInfo->ucVhtChannelWidth,
-					    prBssInfo->eBssSCO,
-					    u4CenterFreq,
-					    prBssInfo->eBand) ==
-		    FALSE)
-			continue;
+	if (prMldBss) {
+		LINK_FOR_EACH_ENTRY(prBssInfo, &prMldBss->rBssList,
+				    rLinkEntryMld, struct BSS_INFO) {
+			u4CenterFreq = nicChannelNum2Freq(
+				prBssInfo->ucVhtChannelFrequencyS1,
+				prBssInfo->eBand) / 1000;
+			if (wlanIsChannelInDfsRange(prAdapter,
+						    prBssInfo->
+							ucPrimaryChannel,
+						    prBssInfo->
+							ucVhtChannelWidth,
+						    prBssInfo->eBssSCO,
+						    u4CenterFreq,
+						    prBssInfo->eBand) ==
+			    FALSE)
+				continue;
 
-		prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
-		prEntry->rRfChnlInfo.eBand = prBssInfo->eBand;
-		prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
-		prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
-		prEntry->rRfChnlInfo.u2PriChnlFreq =
-			nicChannelNum2Freq(prBssInfo->ucPrimaryChannel,
-					   prBssInfo->eBand) / 1000;
-		prEntry->rRfChnlInfo.ucChnlBw =
-			rlmVhtBw2Bw(prBssInfo->ucVhtChannelWidth,
-				    prBssInfo->eBssSCO);
-		prEntry->rRfChnlInfo.ucChannelNum =
-			prBssInfo->ucPrimaryChannel;
-		prEntry->fgValid = TRUE;
+			prEntry->eSource = DFS_CHANNEL_CTRL_SOURCE_STA;
+			prEntry->rRfChnlInfo.eBand = prBssInfo->eBand;
+			prEntry->rRfChnlInfo.u4CenterFreq1 = u4CenterFreq;
+			prEntry->rRfChnlInfo.u4CenterFreq2 = 0;
+			prEntry->rRfChnlInfo.u2PriChnlFreq =
+				nicChannelNum2Freq(prBssInfo->
+							ucPrimaryChannel,
+						   prBssInfo->eBand) / 1000;
+			prEntry->rRfChnlInfo.ucChnlBw =
+				rlmVhtBw2Bw(prBssInfo->ucVhtChannelWidth,
+					    prBssInfo->eBssSCO);
+			prEntry->rRfChnlInfo.ucChannelNum =
+				prBssInfo->ucPrimaryChannel;
+			prEntry->fgValid = TRUE;
 
-		DBGLOG(INIT, TRACE,
-			"[%u] channel=[%u %u %u %u %u %u]\n",
-			prBssInfo->ucBssIndex,
-			prEntry->rRfChnlInfo.eBand,
-			prEntry->rRfChnlInfo.ucChannelNum,
-			prEntry->rRfChnlInfo.u2PriChnlFreq,
-			prEntry->rRfChnlInfo.u4CenterFreq1,
-			prEntry->rRfChnlInfo.u4CenterFreq2,
-			prEntry->rRfChnlInfo.ucChnlBw);
+			DBGLOG(INIT, TRACE,
+				"[%u] channel=[%u %u %u %u %u %u]\n",
+				prBssInfo->ucBssIndex,
+				prEntry->rRfChnlInfo.eBand,
+				prEntry->rRfChnlInfo.ucChannelNum,
+				prEntry->rRfChnlInfo.u2PriChnlFreq,
+				prEntry->rRfChnlInfo.u4CenterFreq1,
+				prEntry->rRfChnlInfo.u4CenterFreq2,
+				prEntry->rRfChnlInfo.ucChnlBw);
 
-		break;
+			break;
+		}
 	}
 #else
 	u4CenterFreq = nicChannelNum2Freq(
@@ -9202,14 +9207,21 @@ WLAN_REMOVE_RETURN:
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+#if CFG_MTK_ANDROID_WMT
 uint8_t kalGetShutdownState(void)
 {
 	return uShutdownState;
 }
-
+#endif
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 void wlanShutdown(void)
 {
+	uShutdownState = SHUTDOWN_STATE_ONGOING;
+	while (kalIsResetOnEnd()) {
+		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
+		kalMsleep(100);
+	}
+
 	wfsys_lock();
 	/* wifi is off */
 	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0) ||
@@ -9218,7 +9230,6 @@ void wlanShutdown(void)
 		return;
 	}
 
-	uShutdownState = SHUTDOWN_STATE_ONGOING;
 	DBGLOG(INIT, INFO, "do wifi off\n");
 	wlanFuncOff();
 	wfsys_unlock();
@@ -9478,7 +9489,7 @@ static int initWlan(void)
 
 	kalPlatOpsInit();
 
-#if CFG_MTK_ANDROID_WMT && CFG_SUPPORT_CONNAC3X
+#if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 	ret = ((glRegisterShutdownCB(wlanShutdown)
 		== WLAN_STATUS_SUCCESS) ? 0 : -EIO);
 	if (ret == -EIO)

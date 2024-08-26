@@ -4304,7 +4304,7 @@ uint32_t nanSchedConfigGetAllowedBw(struct ADAPTER *prAdapter,
 
 	if (eBand == BAND_5G)
 		eBwMap = prAdapter->rWifiVar.ucNan5gBandwidth;
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 1)
+#if (CFG_SUPPORT_NAN_6G == 1)
 	else if (eBand == BAND_6G)
 		eBwMap = prAdapter->rWifiVar.ucNan6gBandwidth;
 #endif
@@ -10649,9 +10649,8 @@ uint32_t nanSchedGetAisChnlUsage(struct ADAPTER *prAdapter,
 		case BAND_5G:
 			*pu4SlotBitmap = band_5G_slots;
 			break;
-
+#if (CFG_SUPPORT_NAN_6G == 1)
 		case BAND_6G:
-#if (CFG_SUPPORT_WIFI_6G == 1) && (CFG_SUPPORT_NAN_6G == 0)
 			*pu4SlotBitmap = band_6G_slots;
 #endif
 			break;

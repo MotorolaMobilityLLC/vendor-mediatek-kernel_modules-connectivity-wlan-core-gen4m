@@ -1806,10 +1806,15 @@ s_int32 mt_serv_get_band_mode(
 	s_int32 ret = SERV_STATUS_SUCCESS;
 	u_char ctrl_band_idx = serv_test->ctrl_band_idx;
 	u_int32 band_type = TEST_BAND_TYPE_UNUSE;
-
-#if (CFG_SUPPORT_CONNAC3X == 1)
 	struct test_capability capability;
 	u_int32 band_mode = BSTATE_GET_PARAM(serv_test, band_mode);
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	/* set FW to sync status */
+	mt_op_set_band_mode(
+		serv_test->test_winfo,
+		&serv_test->test_bstat);
+#endif
 
 	/* get content */
 	ret = mt_serv_get_capability(serv_test, &capability);
@@ -1821,7 +1826,8 @@ s_int32 mt_serv_get_band_mode(
 				(capability.ph_cap.channel_band_dbdc & 0xFF);
 
 			/* check if single band */
-			if (band_mode == TEST_BAND_MODE_SINGLE_BAND0)
+			if ((band_mode == TEST_BAND_MODE_SINGLE_BAND0) ||
+				(band_mode == TEST_BAND_MODE_SINGLE))
 				band_type |=
 				((capability.ph_cap.channel_band_dbdc >> 16) &
 				0xFF);
@@ -1835,7 +1841,8 @@ s_int32 mt_serv_get_band_mode(
 			0xFF);
 
 			/* check if single band */
-			if (band_mode == TEST_BAND_MODE_SINGLE_BAND0)
+			if ((band_mode == TEST_BAND_MODE_SINGLE_BAND0) ||
+				(band_mode == TEST_BAND_MODE_SINGLE))
 				band_type = TEST_BAND_TYPE_UNUSE;
 			else if (band_mode == TEST_BAND_MODE_SINGLE_BAND1)
 				band_type |=
@@ -1858,55 +1865,6 @@ s_int32 mt_serv_get_band_mode(
 			break;
 		}
 	}
-#else
-
-	struct test_operation *ops;
-
-	ops = serv_test->test_op;
-
-	if (!serv_test->engine_offload) {
-		/*
-		 * DLL will query two times per band0/band1 if DBDC chip set.
-		 * 0: no this band
-		 * 1: 2.4G
-		 * 2: 5G
-		 * 3. 2.4G+5G
-		 */
-		if (IS_TEST_DBDC(serv_test->test_winfo))
-			band_type = (ctrl_band_idx == TEST_DBDC_BAND0)
-				? TEST_BAND_TYPE_2_4G : TEST_BAND_TYPE_5G;
-		else {
-			/* Always report 2.4+5G */
-			band_type = TEST_BAND_TYPE_2_4G_5G;
-
-			/*
-			 * If IS_TEST_DBDC=0,
-			 * band_idx should not be 1 so return band_mode=0
-			 */
-			if (ctrl_band_idx == TEST_DBDC_BAND1)
-				band_type = TEST_BAND_TYPE_UNUSE;
-		}
-	} else {
-		ret = ops->op_set_band_mode(
-			serv_test->test_winfo,
-			&serv_test->test_bstat);
-
-		if (ctrl_band_idx == TEST_DBDC_BAND0)
-			band_type = TEST_BAND_TYPE_2_4G_5G;
-		else {
-			if (serv_test->test_bstat.band_mode ==
-				TEST_BAND_MODE_DUAL)
-				band_type = TEST_BAND_TYPE_2_4G_5G;
-			else
-				band_type = TEST_BAND_TYPE_UNUSE;
-		}
-	}
-
-	if ((band_type != TEST_BAND_TYPE_UNUSE) &&
-		serv_test->test_winfo->chip_cap.support_6g)
-		band_type |= TEST_BAND_TYPE_6G;
-
-#endif /*(CFG_SUPPORT_CONNAC3X == 1)*/
 
 	SERV_LOG(SERV_DBG_CAT_TEST, SERV_DBG_LVL_ERROR,
 		("%s: band_idx=%d, band_type=%u\n",
@@ -1915,7 +1873,6 @@ s_int32 mt_serv_get_band_mode(
 			band_type));
 
 	BSTATE_SET_PARAM(serv_test, band_type, band_type);
-
 	return ret;
 }
 
@@ -2802,5 +2759,3 @@ s_int32 mt_serv_get_tssi_meas_dbv(
 
 	return ret;
 }
-
-

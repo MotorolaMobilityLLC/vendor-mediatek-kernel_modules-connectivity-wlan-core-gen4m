@@ -2114,7 +2114,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 				}
 				prScanParam->ucSSIDType =
 					prAdapterScanParam->ucSSIDType;
-				DBGLOG(SCN, STATE,
+				DBGLOG(SCN, TRACE,
 					"OOB scan specific SSIDNum %d\n",
 					prScanParam->ucSSIDNum);
 			} else {
@@ -3032,7 +3032,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	/* Support AP Selection */
 	prBssDesc->fgExistBssLoadIE = FALSE;
 	prBssDesc->fgMultiAnttenaAndSTBC = FALSE;
-	prBssDesc->fgIsSCC = TRUE;
+	prBssDesc->fgIsMCC = FALSE;
 	prBssDesc->u2MaximumMpdu = 0;
 	prBssDesc->fgExistTxPwr = FALSE;
 	prBssDesc->cTransmitPwr = 0;

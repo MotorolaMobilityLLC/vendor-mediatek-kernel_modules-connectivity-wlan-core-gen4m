@@ -4228,10 +4228,6 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct CHIP_DBG_OPS *prDbgOps = NULL;
 
-#if CFG_MTK_WIFI_PCIE_SR
-	fgIsL2Finished = FALSE;
-#endif
-
 	if (!ad) {
 		DBGLOG(INIT, ERROR, "NULL ADAPTER.\n");
 		rStatus = WLAN_STATUS_FAILURE;

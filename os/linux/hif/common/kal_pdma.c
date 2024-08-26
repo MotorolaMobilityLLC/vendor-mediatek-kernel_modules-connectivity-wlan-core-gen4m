@@ -3217,6 +3217,14 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 	if (ret)
 		goto exit;
 
+#if CFG_MTK_WIFI_PCIE_SR
+	if (!fgIsL2Finished) {
+		DBGLOG_LIMITED(HAL, WARN, "L2 Not finished.\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+#endif
+
 	if (kalIsResetting() && glGetRstReason() == RST_DRV_OWN_FAIL) {
 		DBGLOG_LIMITED(HAL, WARN, "Reset Reason: RST_DRV_OWN_FAIL\n");
 		ret = -EFAULT;
@@ -3272,7 +3280,8 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 	prHifRegFifo = &prGlueInfo->rHifRegFifo;
 	prHifRegFifoLock = &prGlueInfo->rHifRegFifoLock;
 
-	while (KAL_FIFO_OUT_LOCKED(prHifRegFifo, prReq, prHifRegFifoLock)) {
+	while (KAL_FIFO_OUT_LOCKED(prHifRegFifo, prReq, prHifRegFifoLock) ==
+		sizeof(prReq)) {
 		if (!prReq) {
 			DBGLOG(HAL, ERROR, "prReq is null\n");
 			break;

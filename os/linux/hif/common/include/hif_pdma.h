@@ -1585,6 +1585,10 @@ extern uint32_t wifi_page_pool_get_page_num(void) __attribute__((weak));
 extern uint32_t wifi_page_pool_get_max_page_num(void) __attribute__((weak));
 #endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
 
+#if CFG_MTK_WIFI_PCIE_SR
+extern u_int8_t fgIsL2Finished;
+#endif
+
 void halWpdmaStopRecycleDmad(struct GLUE_INFO *prGlueInfo,
 				       uint16_t u2Port);
 #if (CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE == 1)
