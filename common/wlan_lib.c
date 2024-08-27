@@ -9180,6 +9180,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->eP2pCcmMode, "P2pCcmMode", P2P_CCM_MODE_SCC,
 		  FEATURE_DEBUG_ONLY);
 #endif
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	INIT_UINT(prWifiVar->fgSpPwrLmtBackoff,
+		  "SpPwrLmtBackoff", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
+#endif
 }
 
 void wlanCfgSetSwCtrl(struct ADAPTER *prAdapter)
