@@ -79,11 +79,6 @@
 #define BUFFER_MODE_CONTENT_MAX 1024
 #define BUFFER_ACCESS_CONTENT_MAX 16
 
-#if (CFG_HW_DETECT_REPORT == 1)
-/* UNI_EVENT_HW_DETECT_REPORT usage */
-#define HW_DETECT_REPORT_STR_MAX_LEN 64
-#endif
-
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************

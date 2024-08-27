@@ -7838,73 +7838,6 @@ uint32_t nicUniCmdSendVnf(struct ADAPTER *ad,
 }
 #endif /* CFG_VOLT_INFO */
 
-#if (CFG_HW_DETECT_REPORT == 1)
-void nicUniEventHwDetectReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
-{
-#define HW_DETECT_REPORT_STR_TO_NODE_MAX_LEN	(HW_DETECT_REPORT_STR_MAX_LEN+7)
-	int32_t tags_len;
-	uint8_t *tag;
-	uint16_t offset = 0;
-	uint32_t fixed_len = sizeof(struct UNI_EVENT_HW_DETECT_REPORT);
-	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
-	uint8_t *data = GET_UNI_EVENT_DATA(evt);
-	uint32_t fail_cnt = 0;
-	uint8_t	str_buf[HW_DETECT_REPORT_STR_TO_NODE_MAX_LEN];
-
-	if (!ad->rWifiVar.fgHwDetectReportEn)
-		return;
-
-	/* underflow check */
-	if (data_len < fixed_len) {
-		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
-			data_len);
-		return;
-	}
-
-	tags_len = data_len - fixed_len;
-	tag = data + fixed_len;
-	TAG_FOR_EACH(tag, tags_len, offset) {
-		switch (TAG_ID(tag)) {
-		case UNI_EVENT_HW_DETECT_REPORT_BASIC: {
-			struct UNI_EVENT_HW_DETECT_REPORT_PARAM
-				*hw_detect_report =
-				(struct UNI_EVENT_HW_DETECT_REPORT_PARAM *)tag;
-
-			if (snprintf(str_buf,
-				HW_DETECT_REPORT_STR_TO_NODE_MAX_LEN,
-				"[wlan]%s\n",
-				hw_detect_report->aucStrBuffer) < 0) {
-				DBGLOG(NIC, ERROR,
-			       "HW Detect Report: %s copy failure\n", str_buf);
-				return;
-			}
-
-			DBGLOG(NIC, INFO,
-				"HW Detect Report: %s\n", str_buf);
-
-			if (hw_detect_report->fgIsReportNode)
-				conn_dbg_add_log(CONN_DBG_LOG_TYPE_HW_ERR,
-					str_buf);
-
-			if (ad->rWifiVar.fgHwDetectReportEn == 2)
-				kalSendAeeWarning(
-					"CRDISPATCH_KEY:HW DETECT WLAN",
-					"HW Detect Report: %s\n", str_buf);
-		}
-			break;
-		default:
-			fail_cnt++;
-			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
-			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
-			break;
-		}
-	}
-
-	if (tags_len != offset)
-		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
-}
-#endif /* CFG_HW_DETECT_REPORT */
-
 #if CFG_FAST_PATH_SUPPORT
 uint32_t nicUniCmdFastPath(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -13767,6 +13700,67 @@ void nicUniEventEfuseFreeBlock(struct ADAPTER
 			       u4QueryInfoLen, WLAN_STATUS_SUCCESS);
 	}
 }
+
+#if (CFG_HW_DETECT_REPORT == 1)
+void nicUniEventHwDetectReport(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
+{
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_HW_DETECT_REPORT);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(evt);
+	uint32_t fail_cnt = 0;
+
+	if (!ad->rWifiVar.fgHwDetectReportEn)
+		return;
+
+	/* underflow check */
+	if (data_len < fixed_len) {
+		DBGLOG(NIC, ERROR, "Invalid event data length:%d\n",
+			data_len);
+		return;
+	}
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_HW_DETECT_REPORT_BASIC: {
+			struct UNI_EVENT_HW_DETECT_REPORT_PARAM
+				*hw_detect_report =
+				(struct UNI_EVENT_HW_DETECT_REPORT_PARAM *)tag;
+
+			struct EVENT_HW_DETECT_REPORT legacy;
+
+			legacy.fgIsReportNode =
+				hw_detect_report->fgIsReportNode;
+			legacy.aucReserved[0] =
+				hw_detect_report->aucReserved[0];
+			legacy.aucReserved[1] =
+				hw_detect_report->aucReserved[1];
+			legacy.aucReserved[2] =
+				hw_detect_report->aucReserved[2];
+			kalMemCopy(legacy.aucStrBuffer,
+				hw_detect_report->aucStrBuffer,
+				HW_DETECT_REPORT_STR_MAX_LEN);
+
+			RUN_RX_EVENT_HANDLER(EVENT_ID_HW_DETECT_REPROT,
+				&legacy);
+		}
+			break;
+		default:
+			fail_cnt++;
+			ASSERT(fail_cnt < MAX_UNI_EVENT_FAIL_TAG_COUNT)
+			DBGLOG(NIC, WARN, "invalid tag = %d\n", TAG_ID(tag));
+			break;
+		}
+	}
+
+	if (tags_len != offset)
+		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+}
+#endif /* CFG_HW_DETECT_REPORT */
 
 /*
  * \. Descrption : UNI_CMD UNI_CMD_ID_RX_HDR_TRAN
