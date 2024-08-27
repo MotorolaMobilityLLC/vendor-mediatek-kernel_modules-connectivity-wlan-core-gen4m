@@ -1275,6 +1275,8 @@ int halUninitTxCmaNonCacheMem(void)
 				TX_CMA_GROUP_SIZE,
 				grMem.rTxCmaMemGroup[u4Idx].va,
 				(dma_addr_t)grMem.rTxCmaMemGroup[u4Idx].pa);
+			grMem.rTxCmaMemGroup[u4Idx].va = NULL;
+			grMem.rTxCmaMemGroup[u4Idx].pa = 0;
 			grMem.u4Offset[WIFI_RSV_MEM_WIFI_CMA_NON_CACHE]
 				-= TX_CMA_GROUP_SIZE;
 		}
