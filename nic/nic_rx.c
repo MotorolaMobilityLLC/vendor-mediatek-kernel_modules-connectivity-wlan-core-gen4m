@@ -223,6 +223,9 @@ struct RX_EVENT_HANDLER arEventTable[] = {
 	{ EVENT_ID_MDNS_RECORD, nicEventMdnsStats},
 #endif
 #endif
+#if (CFG_HW_DETECT_REPORT == 1)
+	{EVENT_ID_HW_DETECT_REPROT, nicEventHwDetectReport},
+#endif /* CFG_HW_DETECT_REPORT */
 };
 
 uint32_t arEventTableSize = ARRAY_SIZE(arEventTable);
