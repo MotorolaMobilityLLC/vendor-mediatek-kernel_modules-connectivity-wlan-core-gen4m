@@ -258,10 +258,15 @@ end:
 
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint32_t u4TokenId = 0;
 	bool fgHifTxHangFullDump = FALSE;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint32_t ret = 0;
+#endif /* CFG_SUPPORT_CONNAC2X */
 
+	prChipInfo = prAdapter->chip_info;
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
@@ -280,6 +285,16 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 				prAdapter->u4HifTxHangDumpBitmap |=
 					BIT(prAdapter->u4HifTxHangDumpIdx);
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+				/* for bus hang debug purpose */
+				if (prChipInfo->checkbushang) {
+					ret = prChipInfo->checkbushang(
+						(void *) prAdapter, TRUE);
+					if (ret != 0)
+						goto end_dump;
+				}
+#endif /* CFG_SUPPORT_CONNAC2X */
 
 				if (prDbgOps && prDbgOps->dumpWfBusSectionA)
 					prDbgOps->dumpWfBusSectionA(prAdapter);
@@ -308,6 +323,11 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 		halTriggerTxHangFwDebugSop(prAdapter, prAdapter->u4HifDbgMod,
 					   prAdapter->u4HifDbgBss,
 					   prAdapter->u4HifDbgReason);
+
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+end_dump:
+#endif /* CFG_SUPPORT_CONNAC2X */
 
 	prAdapter->u4HifChkFlag = 0;
 	prAdapter->u4HifDbgMod = 0;
