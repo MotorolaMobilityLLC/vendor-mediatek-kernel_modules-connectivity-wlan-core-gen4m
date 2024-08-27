@@ -6887,7 +6887,7 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 			cmd_len) == 0 &&
 			(hqa_frame_string[cmd_len] == '\0' ||
 			hqa_frame_string[cmd_len] == '=' ||
-			isspace(hqa_frame_string[cmd_len]))) {
+			hqa_frame_string[cmd_len] == ' ')) {
 
 			/*Command Found in table*/
 			pattern_found = 1;
