@@ -2139,10 +2139,10 @@ void mt6653_dumpWfsyscpupcr(struct ADAPTER *ad)
 	for (i = 0; i < CPUPCR_LOG_NUM; i++) {
 		log_sec = kalGetTimeTickNs();
 		log_nsec = do_div(log_sec, 1000000000)/1000;
-		HAL_RMCR_RD(PLAT_DBG, ad,
+		HAL_RMCR_RD(NOMMIO_DBG, ad,
 			   CONN_DBG_CTL_WF_MCU_DBG_PC_LOG_ADDR,
 			   &var_pc);
-		HAL_RMCR_RD(PLAT_DBG, ad,
+		HAL_RMCR_RD(NOMMIO_DBG, ad,
 			   CONN_DBG_CTL_WF_MCU_GPR_BUS_DBGOUT_LOG_ADDR,
 			   &var_lp);
 
