@@ -254,6 +254,10 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 				 u_int8_t *pfgResult);
 static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult);
+#if CFG_MTK_WIFI_MBU
+static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
 #endif
@@ -823,6 +827,7 @@ struct BUS_INFO mt6653_bus_info = {
 			.init = halMbuInit,
 			.read = halMbuRead,
 			.debug = halMbuDebug,
+			.dumpDebugCr = mt6653MbuDumpDebugCr,
 		},
 		.fgIsSupport = TRUE,
 		.u4RemapAddr = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
@@ -5085,4 +5090,58 @@ u_int8_t mt6653_is_AA_DBDC_enable(void)
 }
 #endif /* CFG_SUPPORT_CONNFEM == 1 */
 
+#if CFG_MTK_WIFI_MBU
+static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prMbuInfo;
+	struct MBU_EMI_CTX *prEmi;
+	char *aucBuf;
+	uint32_t u4BufferSize = 1024, u4Pos = 0, u4Idx, u4Val = 0;
+	uint32_t au4DbgCr[] = {
+		0x7002500C, 0x70025014, 0x70025024, 0x7002502C,
+		0x70028730, 0x70026100,
+		0x74130200, 0x74130204, 0x7413A004, 0x74138018,
+		0x7413B000, 0x70028800, 0x74138020, 0x74138064,
+		0x7413811C, 0x74138160, 0x7413D008, 0x7413B008,
+		0x7413B00C,
+		0x74030150, 0x74030154, 0x74030184, 0x74031010,
+		0x74031204, 0x74031210,
+		0x740700B0, 0x740700C0
+	};
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prMbuInfo = &prBusInfo->rSwEmiRingInfo;
+	prEmi = prMbuInfo->prMbuEmiData;
+
+	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi)
+		return;
+
+	aucBuf = kalMemAlloc(u4BufferSize, PHY_MEM_TYPE);
+	if (aucBuf == NULL)
+		return;
+
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr); u4Idx++) {
+		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr[u4Idx], &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos,
+			u4BufferSize - u4Pos,
+			"[0x%08x]=[0x%08x] ",
+			au4DbgCr[u4Idx],
+			u4Val);
+	}
+
+	kalMdelay(3);
+	HAL_RMCR_RD(PLAT_DBG, prAdapter, 0x74130200, &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos, u4BufferSize - u4Pos,
+			" delay[0x%08x]=[0x%08x]",
+			0x74130200, u4Val);
+	DBGLOG(HAL, INFO, "%s", aucBuf);
+	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
+}
+#endif /* CFG_MTK_WIFI_MBU */
 #endif  /* MT6653 */
