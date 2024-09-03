@@ -750,6 +750,7 @@ struct PKT_PROFILE {
 	uint64_t u8EnqTime;
 	uint64_t u8DeqTime;
 	uint64_t u8HifTxTime;
+	uint64_t u8HifAcqrMsduTime;
 #endif
 };
 #endif
