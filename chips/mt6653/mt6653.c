@@ -3609,13 +3609,17 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			delay += 10;
 			udelay(10);
 		}
+
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+			value1 = 0xe0f;
+		else
+			value1 = 0xc0f;
 #if CFG_SUPPORT_PCIE_ASPM_EP
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			0x74030194, 0xc0f);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, value1);
 		HAL_RMCR_RD(PCIEASPM_READ, prGlueInfo->prAdapter,
-			0x74030194, &value);
+			    0x74030194, &value);
 #endif
-		writel(0xc0f, (pcie_vir_addr + 0x194));
+		writel(value1, (pcie_vir_addr + 0x194));
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
 			DBGLOG(HAL, LOUD, "Disable aspm L1..\n");
