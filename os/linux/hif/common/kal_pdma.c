@@ -3323,6 +3323,12 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 			continue;
 		}
 
+		if (prReq->eStatus == WF_REG_DROP) {
+			prReq->eStatus = WF_REG_FAILURE;
+			DBGLOG_LIMITED(HAL, WARN, "req drop\n");
+			continue;
+		}
+
 		if (prReq->eOp == WF_REG_READ) {
 #if CFG_MTK_WIFI_MBU
 			u_int8_t fgRet = TRUE;
