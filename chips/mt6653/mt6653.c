@@ -3434,16 +3434,21 @@ void *pcie_vir_addr;
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
+	uint32_t u4WrVal = 0x08021000, u4Val = 0;
+
 #if CFG_SUPPORT_PCIE_ASPM_EP
-	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
+	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
 #endif
-	if (pcie_vir_addr) {
-		writel(0x08021000, (pcie_vir_addr + 0x74));
-		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%llx\n",
-			   (uint64_t)pcie_vir_addr);
-	} else {
+	if (!pcie_vir_addr) {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
+		return;
 	}
+
+	writel(u4WrVal, (pcie_vir_addr + 0x74));
+	u4Val = readl(pcie_vir_addr + 0x74);
+	DBGLOG(HAL, INFO,
+	       "pcie_addr=0x%llx, write 0x74=[0x%08x], read 0x74=[0x%08x]\n",
+	       (uint64_t)pcie_vir_addr, u4WrVal, u4Val);
 }
 
 static void mt6653PcieHwControlVote(
