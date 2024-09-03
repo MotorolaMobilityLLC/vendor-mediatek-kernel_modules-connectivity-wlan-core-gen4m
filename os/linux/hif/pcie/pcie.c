@@ -3368,10 +3368,15 @@ int mtk_pcie_enter_L2(struct pci_dev *pdev)
 
 int mtk_pcie_exit_L2(struct pci_dev *pdev)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo;
 	int state = 0;
 
 	if (pdev == NULL)
 		return -1;
+
+	glGetChipInfo((void **)&prChipInfo);
+	prBusInfo = prChipInfo->bus_info;
 
 	state = mtk_pcie_soft_on(pdev->bus);
 	if (state)
@@ -3381,6 +3386,10 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 		goto error_return;
 
 	pci_restore_state(pdev);
+
+	if (g_prGlueInfo && prBusInfo->initPcieInt)
+		prBusInfo->initPcieInt(g_prGlueInfo);
+
 	DBGLOG(HAL, LOUD, "done\n");
 	return state;
 error_return:
