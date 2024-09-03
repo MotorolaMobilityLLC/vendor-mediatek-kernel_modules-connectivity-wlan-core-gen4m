@@ -895,6 +895,8 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
 		state, g_AERRstTriggered, kalIsResetting());
 
+	kalDumpPlatGPIOStat();
+
 	if (!pci_is_enabled(pdev)) {
 		DBGLOG(HAL, INFO, "pcie is disable\n");
 		goto exit;
@@ -1737,6 +1739,8 @@ err_free_iomap:
 
 out:
 	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
+
+	kalDumpPlatGPIOStat();
 
 	return ret;
 }
