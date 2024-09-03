@@ -93,6 +93,7 @@ enum ENUM_CPU_BOOST_STATUS {
 	ENUM_CPU_BOOST_STATUS_LV1,
 	ENUM_CPU_BOOST_STATUS_LV2,
 	ENUM_CPU_BOOST_STATUS_LV3,
+	ENUM_CPU_BOOST_STATUS_LV4,
 	ENUM_CPU_BOOST_STATUS_NUM
 };
 static enum ENUM_CPU_BOOST_STATUS eCurrBoost;
@@ -107,10 +108,10 @@ enum ENUM_CPU_BOOST_STATUS eBoostCpuTable[BOOST_CPU_TABLE_NUM] = {
 	ENUM_CPU_BOOST_STATUS_LV0, /* 6 */
 	ENUM_CPU_BOOST_STATUS_LV0, /* 7 */
 	ENUM_CPU_BOOST_STATUS_LV1, /* 8: 1200Mbps */
-	ENUM_CPU_BOOST_STATUS_LV1, /* 9: 2000Mbps */
-	ENUM_CPU_BOOST_STATUS_LV2, /* 10: 3000Mbps */
-	ENUM_CPU_BOOST_STATUS_LV3, /* 11: 4000Mbps */
-	ENUM_CPU_BOOST_STATUS_LV3  /* 12: 5000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV2, /* 9: 2000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV3, /* 10: 3000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV4, /* 11: 4000Mbps */
+	ENUM_CPU_BOOST_STATUS_LV4  /* 12: 5000Mbps */
 };
 
 struct BOOST_INFO rBoostInfo[] = {
@@ -204,6 +205,46 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rMainThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxThreadInfo = {
+			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rRxNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rHifNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.u4RpsMap = RPS_LITTLE_CORE,
+		.u4ISRMask = CPU_LITTLE_CORE,
+		.i4TxFreeMsduWorkCpu = 2,
+		.i4RxRfbRetWorkCpu = 2,
+		.i4TxWorkCpu = 2,
+		.i4RxWorkCpu = 3,
+		.i4RxNapiWorkCpu = 1,
+		.fgKeepPcieWakeup = TRUE,
+		.u4WfdmaTh = 1,
+		.fgWifiNappingForceDis = TRUE,
+		.i4DramBoostLv = -1,
+		.eSkbAllocWorkCoreType = CPU_CORE_LITTLE,
+		.eTxFreeSkbWorkCoreType = CPU_CORE_LITTLE,
+	},
+	{
+		/* ENUM_CPU_BOOST_STATUS_LV3 */
+		.rCpuInfo = {
+			.i4LittleCpuFreq = MID_LITTLE_CPU_FREQ,
+			.i4BigCpuFreq = AUTO_CPU_FREQ
+		},
+		.rHifThreadInfo = {
 			.u4CpuMask = CPU_MID_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
@@ -230,7 +271,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxWorkCpu = 2,
 		.i4RxWorkCpu = 3,
 		.i4RxNapiWorkCpu = 1,
-		.fgKeepPcieWakeup = FALSE,
+		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
 		.i4DramBoostLv = -1,
@@ -238,7 +279,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.eTxFreeSkbWorkCoreType = CPU_CORE_BIG,
 	},
 	{
-		/* ENUM_CPU_BOOST_STATUS_LV3 */
+		/* ENUM_CPU_BOOST_STATUS_LV4 */
 		.rCpuInfo = {
 			.i4LittleCpuFreq = MAX_CPU_FREQ,
 			.i4BigCpuFreq = MAX_CPU_FREQ
