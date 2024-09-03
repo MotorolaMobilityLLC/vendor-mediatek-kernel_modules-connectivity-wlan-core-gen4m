@@ -1617,6 +1617,7 @@ struct WIFI_VAR {
 	uint32_t au4AirTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4MacTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4DriverTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
+	uint32_t au4DriverHifTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4ConnsysTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 	uint32_t au4ConnsysTxFailDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
@@ -2062,6 +2063,7 @@ struct OID_HANDLER_RECORD {
 /**
  * struct TX_LATENCY_STATS - TX latency statistics counters
  * @au4DriverLatency: Counter distribution of TX delay in Driver
+ * @au4DriverHifLatency: Counter distribution of TX delay in DriverH
  * @au4ConnsysLatency: Counter distribution of TX delay in Connsys
  * @au4MacLatency: Counter distribution of TX delay logged in MSDU report
  * @au4AirLatency: Counter distribution of Air delay logged in MSDU report
@@ -2073,6 +2075,7 @@ struct OID_HANDLER_RECORD {
  */
 struct TX_LATENCY_STATS {
 	uint32_t au4DriverLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t au4DriverHifLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4ConnsysLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4MacLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 	uint32_t au4AirLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
