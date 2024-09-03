@@ -966,6 +966,7 @@ struct SW_EMI_RING_OPS {
 			 uint32_t *pu4Val);
 	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
 	void (*debug)(struct GLUE_INFO *prGlueInfo);
+	void (*dumpDebugCr)(struct GLUE_INFO *prGlueInfo);
 };
 
 struct SW_EMI_RING_INFO {
@@ -983,6 +984,8 @@ struct SW_EMI_RING_INFO {
 	uint32_t u4RemapDefVal;
 	uint32_t u4RemapRegAddr;
 	uint32_t u4RemapBusAddr;
+	uint32_t u4TimeoutCnt;
+	u_int8_t fgIsDumpDebugCr;
 #endif
 };
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
