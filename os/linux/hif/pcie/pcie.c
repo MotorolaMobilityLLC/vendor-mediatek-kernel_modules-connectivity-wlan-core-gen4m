@@ -3017,14 +3017,16 @@ void glBusFuncOff(void)
 }
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 {
 	uint32_t u4Val = 0;
 	struct RX_IDLE_STATE *prRxIdleState;
 
 	if (prAdapter) {
 		if (prAdapter->ucStopMMIO) {
-			DBGLOG(INIT, ERROR, "[Gen Switch] check start\n");
+			DBGLOG(INIT, ERROR,
+			       "[Gen Switch] check start. reg[0x%08x]\n",
+			       u4Reg);
 			prRxIdleState = (struct RX_IDLE_STATE *)
 				pcie_gen_switch_get_emi_add(prAdapter);
 
@@ -3060,7 +3062,7 @@ uint32_t glReadPcieCfgSpace(int offset, uint32_t *value)
 	if (g_prGlueInfo) {
 		prAdapter = g_prGlueInfo->prAdapter;
 		if (prAdapter)
-			pcie_check_gen_switch_timeout(prAdapter);
+			pcie_check_gen_switch_timeout(prAdapter, offset);
 	}
 #endif /*CFG_PCIE_GEN_SWITCH*/
 
@@ -3329,6 +3331,8 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyMDGenSwitchEnd(prAdapter);
 #endif
+	kalSetHifMsiRecoveryEvent(prGlueInfo);
+
 	prRxIdleState =
 		(struct RX_IDLE_STATE *)pcie_gen_switch_get_emi_add(prAdapter);
 

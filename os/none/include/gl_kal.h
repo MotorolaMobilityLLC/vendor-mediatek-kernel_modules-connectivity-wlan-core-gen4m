@@ -68,7 +68,7 @@ extern int g_u4WlanInitFlag;
 	GLUE_FLAG_BT_DUMP_VIA_WIFI)
 
 #define HIF_FLAG \
-	(HIF_FLAG_AER_RESET)
+	(HIF_FLAG_AER_RESET | HIF_FLAG_MSI_RECOVERY)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -1584,6 +1584,9 @@ void kalTimeoutHandler(unsigned long arg);
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 
 #define kalSetHifAerResetEvent(_pr) \
+	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
+
+#define kalSetHifMsiRecoveryEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT

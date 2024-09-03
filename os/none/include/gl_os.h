@@ -211,6 +211,9 @@ extern u_int32_t u4SdesDetectTime;
 #define HIF_FLAG_AER_RESET		BIT(0)
 #define HIF_FLAG_AER_RESET_BIT	(0)
 
+#define HIF_FLAG_MSI_RECOVERY		BIT(1)
+#define HIF_FLAG_MSI_RECOVERY_BIT	(1)
+
 #if CFG_ENABLE_BT_OVER_WIFI
 #define GLUE_BOW_KFIFO_DEPTH        (1024)
 /* #define GLUE_BOW_DEVICE_NAME        "MT6620 802.11 AMP" */

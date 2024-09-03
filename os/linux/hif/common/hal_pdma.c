@@ -5369,7 +5369,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 	prAdapter->fgIsPwrOffProcIST = FALSE;
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	pcie_check_gen_switch_timeout(prAdapter);
+	pcie_check_gen_switch_timeout(prAdapter, 0);
 #endif
 
 #if CFG_MTK_MDDP_SUPPORT

@@ -5783,6 +5783,16 @@ int hif_thread(void *data)
 		if (test_and_clear_bit(HIF_FLAG_AER_RESET_BIT,
 				       &prGlueInfo->ulHifFlag))
 			mtk_trigger_aer_slot_reset();
+
+		/* Recovery MSI status */
+		if (test_and_clear_bit(HIF_FLAG_MSI_RECOVERY_BIT,
+				       &prGlueInfo->ulHifFlag)) {
+			struct BUS_INFO *prBusInfo =
+				prAdapter->chip_info->bus_info;
+
+			if (prBusInfo->recoveryMsiStatus)
+				prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
+		}
 #endif
 
 		/* Set FW own */
@@ -7138,6 +7148,14 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 void kalSetHifAerResetEvent(struct GLUE_INFO *pr)
 {
 	set_bit(HIF_FLAG_AER_RESET_BIT, &pr->ulHifFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr)
+{
+	set_bit(HIF_FLAG_MSI_RECOVERY_BIT, &pr->ulHifFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
