@@ -984,7 +984,7 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	}
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	pcie_check_gen_switch_timeout(prAdapter);
+	pcie_check_gen_switch_timeout(prAdapter, u4Register);
 #endif
 
 
@@ -1161,7 +1161,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	}
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	pcie_check_gen_switch_timeout(prAdapter);
+	pcie_check_gen_switch_timeout(prAdapter, u4Register);
 #endif
 
 	glGetChipInfo((void **)&prChipInfo);
