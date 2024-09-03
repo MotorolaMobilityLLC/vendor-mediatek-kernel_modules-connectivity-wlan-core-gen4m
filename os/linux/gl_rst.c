@@ -68,7 +68,6 @@ u_int8_t g_IsSubsysRstOverThreshold = FALSE;
 u_int8_t g_IsWfsysBusHang = FALSE;
 char *g_reason;
 char *g_WholeChipRstReason;
-u_int8_t g_IsWfsysResetOnFail = FALSE;
 u_int8_t g_IsWfsysRstDone = TRUE;
 u_int8_t g_fgRstRecover = FALSE;
 uint8_t g_WholeChipRstType;
@@ -1792,18 +1791,9 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 			DBGLOG(REQ, WARN, "wifi driver is resetting\n");
 			msleep(100);
 		}
-		while ((!prGlueInfo) ||
-			(prGlueInfo->u4ReadyFlag == 0) ||
-			(g_IsWfsysRstDone == FALSE)) {
-			WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
-			DBGLOG(REQ, WARN, "wifi driver is not ready\n");
-			if (g_IsWfsysResetOnFail == TRUE) {
-				DBGLOG(REQ, WARN,
-					"wifi driver reset fail, need whole chip reset.\n");
-				g_IsWholeChipRst = TRUE;
-				goto exit;
-			}
-			msleep(100);
+		if (!get_wifi_powered_status()) {
+			DBGLOG(REQ, INFO, "wifi driver is off, skip reset\n");
+			goto exit;
 		}
 		g_IsWholeChipRst = TRUE;
 		DBGLOG(INIT, INFO,
