@@ -2304,6 +2304,11 @@ static void halMawdReadRxBlkRing(
 				       RX_BLK_MAGIC_CNT_NUM);
 	}
 
+#if CFG_SUPPORT_RX_NAPI_THREADED
+	if (prGlueInfo->prRxDirectNapi &&
+	    !KAL_FIFO_IS_EMPTY(&prGlueInfo->rRxKfifoQ))
+		kalNapiSchedule(prAdapter);
+#endif
 	HAL_SET_MAWD_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
 end:
