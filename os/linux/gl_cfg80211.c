@@ -4287,8 +4287,6 @@ int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	scanlog_dbg(LOG_SCHED_SCAN_REQ_STOP_K2D, INFO, "--> %s()\n", __func__);
-
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prSchedScanRequest == NULL)
 		return -EPERM; /* Operation not permitted */

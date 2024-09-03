@@ -14030,6 +14030,7 @@ wlanoidSetStopSchedScan(struct ADAPTER *prAdapter,
 	struct PARAM_SCHED_SCAN_REQUEST *prSchedScanRequest =
 		prAdapter->prGlueInfo->prSchedScanRequest;
 
+	DBGLOG(REQ, INFO, "--> wlanoidSetStopSchedScan()\n");
 	ASSERT(prAdapter);
 
 	/* ask SCN module to stop scan request */
