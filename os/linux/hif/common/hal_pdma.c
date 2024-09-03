@@ -934,6 +934,9 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 			prBusInfo->setDummyReg(prAdapter->prGlueInfo);
 #endif /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 
+		if (prBusInfo->recordWFDMAIdx)
+			prBusInfo->recordWFDMAIdx(prAdapter);
+
 #if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
 		glBusConfigASPML1SS(prHifInfo->pdev,
