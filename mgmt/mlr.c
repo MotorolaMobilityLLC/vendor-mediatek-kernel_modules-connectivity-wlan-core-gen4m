@@ -1537,9 +1537,10 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	/* only MLR V1 need to consider Tx frag */
-	if (MLR_IS_V1_AFTER_INTERSECT(prAdapter,
-			prStaRec)) {
+	/* MLR V1/V2/V1+V2, ALR and MLRP need to consider Tx frag */
+	if (MLR_IS_V1_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_V2_AFTER_INTERSECT(prAdapter, prStaRec)
+		|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter, prStaRec)) {
 		u2TempSplitThreshold = 1000;
 		u2TempSplitSize = 1000;
 	} else if (MLR_IS_ALR_AFTER_INTERSECT(prAdapter, prStaRec)) {
@@ -1550,8 +1551,12 @@ void mlrGetTxFragParameter(struct ADAPTER *prAdapter,
 		u2TempSplitSize = 150; /* 250 */
 	}
 
-	/* MLR V1, ALR and MLRP need to consider Tx frag */
+	/* MLR V1/V2/V1+V2, ALR and MLRP need to consider Tx frag */
 	if (MLR_IS_V1_AFTER_INTERSECT(prAdapter,
+		prStaRec)
+		|| MLR_IS_V2_AFTER_INTERSECT(prAdapter,
+		prStaRec)
+		|| MLR_IS_V1V2_AFTER_INTERSECT(prAdapter,
 		prStaRec)
 		|| MLR_IS_ALR_AFTER_INTERSECT(prAdapter,
 		prStaRec)
