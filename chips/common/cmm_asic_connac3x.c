@@ -3228,7 +3228,13 @@ static void connac3xInitValidMmioReadReasonAry(
 
 	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
 		u4Num = prChipInfo->prValidMmioReadReason[u4Idx];
-		prChipInfo->u4ValidMmioReadAry[u4Num] = TRUE;
+		prChipInfo->aucValidMmioReadAry[u4Num] = TRUE;
+	}
+
+	u4Size = prChipInfo->u4NoMmioReadReasonSize;
+	for (u4Idx = 0; u4Idx < u4Size; u4Idx++) {
+		u4Num = prChipInfo->prNoMmioReadReason[u4Idx];
+		prChipInfo->aucNoMmioReadReasonAry[u4Num] = TRUE;
 	}
 
 	prChipInfo->fgIsInitValidMmioReadAry = TRUE;
@@ -3242,7 +3248,16 @@ u_int8_t connac3xIsValidMmioReadReason(
 	if (eReason >= HIF_DEV_REG_MAX)
 		return FALSE;
 
-	return prChipInfo->u4ValidMmioReadAry[eReason];
+	return prChipInfo->aucValidMmioReadAry[eReason];
+}
+
+u_int8_t connac3xIsNoMmioReadReason(
+	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason)
+{
+	if (eReason >= HIF_DEV_REG_MAX)
+		return FALSE;
+
+	return prChipInfo->aucNoMmioReadReasonAry[eReason];
 }
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 

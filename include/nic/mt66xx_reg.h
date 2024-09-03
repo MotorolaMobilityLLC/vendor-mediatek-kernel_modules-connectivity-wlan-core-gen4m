@@ -1677,11 +1677,18 @@ struct mt66xx_chip_info {
 #if CFG_NEW_HIF_DEV_REG_IF
 	const enum HIF_DEV_REG_REASON *prValidMmioReadReason;
 	const uint32_t u4ValidMmioReadReasonSize;
-	u_int8_t u4ValidMmioReadAry[HIF_DEV_REG_MAX];
+	u_int8_t aucValidMmioReadAry[HIF_DEV_REG_MAX];
 	const u_int8_t fgIsWarnInvalidMmioRead;
 	const u_int8_t fgIsResetInvalidMmioRead;
 	u_int8_t fgIsInitValidMmioReadAry;
+	const enum HIF_DEV_REG_REASON *prNoMmioReadReason;
+	const uint32_t u4NoMmioReadReasonSize;
+	u_int8_t aucNoMmioReadReasonAry[HIF_DEV_REG_MAX];
+
 	u_int8_t (*isValidMmioReadReason)(
+		struct mt66xx_chip_info *prChipInfo,
+		enum HIF_DEV_REG_REASON eReason);
+	u_int8_t (*isNoMmioReadReason)(
 		struct mt66xx_chip_info *prChipInfo,
 		enum HIF_DEV_REG_REASON eReason);
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
