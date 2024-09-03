@@ -1433,12 +1433,34 @@ check:
 	return TRUE;
 }
 
+static u_int8_t kalIsNoMmioReadReason(enum HIF_DEV_REG_REASON eReason,
+		       struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register, uint32_t *pu4Value)
+{
+#if CFG_MTK_WIFI_SW_EMI_RING
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo && prChipInfo->bus_info &&
+	    prChipInfo->bus_info->rSwEmiRingInfo.fgIsEnable &&
+	    prChipInfo->isNoMmioReadReason &&
+	    prChipInfo->isNoMmioReadReason(prChipInfo, eReason)) {
+		kalDevRegReadByEmi(prGlueInfo, u4Register, pu4Value);
+		return TRUE;
+	}
+#endif
+	return FALSE;
+}
+
 u_int8_t kalDevRegRead(enum HIF_DEV_REG_REASON eReason,
 		       struct GLUE_INFO *prGlueInfo,
 		       uint32_t u4Register, uint32_t *pu4Value)
 {
 	if (!kalIsValidRead(eReason, prGlueInfo, u4Register, 0))
 		return FALSE;
+
+	if (kalIsNoMmioReadReason(eReason, prGlueInfo, u4Register, pu4Value))
+		return TRUE;
 
 	return _kalDevRegRead(prGlueInfo, u4Register, pu4Value);
 }
