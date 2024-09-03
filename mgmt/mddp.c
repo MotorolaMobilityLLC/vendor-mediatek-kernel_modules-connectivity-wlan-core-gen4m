@@ -1353,16 +1353,16 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_END_STATE,
 			u2genSwitchSeq, u2GenSwitchRsp);
-		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_END_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 	} else {
 		DBGLOG(HAL, INFO,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE,
 			u2genSwitchSeq, u2GenSwitchRsp);
-		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	}
 
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
