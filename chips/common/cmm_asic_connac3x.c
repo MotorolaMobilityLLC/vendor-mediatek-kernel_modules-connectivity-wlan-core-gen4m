@@ -961,6 +961,8 @@ void asicConnac3xFreeWfdmaWbBuffer(struct GLUE_INFO *prGlueInfo)
 	prMemOps->freeExtBuf(prHifInfo, &prHifInfo->rRingDmyRd);
 	prMemOps->freeExtBuf(prHifInfo, &prHifInfo->rRingDmyWr);
 
+	if (prChipInfo->wb_dmy_dbg_size)
+		prMemOps->freeExtBuf(prHifInfo, &prHifInfo->rRingDmyDbg);
 	if (prChipInfo->wb_int_sta_size)
 		prMemOps->freeExtBuf(prHifInfo, &prHifInfo->rRingIntSta);
 	if (prChipInfo->wb_didx_size)
