@@ -1574,7 +1574,7 @@ int mtk_cfg80211_connect(struct wiphy *wiphy,
 	uint32_t rStatus;
 	uint32_t u4BufLen;
 	enum ENUM_WEP_STATUS eEncStatus;
-	enum ENUM_PARAM_AUTH_MODE eAuthMode;
+	enum ENUM_PARAM_AUTH_MODE eAuthMode = AUTH_MODE_OPEN;
 	uint32_t cipher;
 	struct PARAM_CONNECT rNewSsid;
 	struct PARAM_OP_MODE rOpMode;
@@ -4287,8 +4287,6 @@ int mtk_cfg80211_sched_scan_stop(struct wiphy *wiphy,
 	WIPHY_PRIV(wiphy, prGlueInfo);
 	ASSERT(prGlueInfo);
 
-	scanlog_dbg(LOG_SCHED_SCAN_REQ_STOP_K2D, INFO, "--> %s()\n", __func__);
-
 	/* check if there is any pending scan/sched_scan not yet finished */
 	if (prGlueInfo->prSchedScanRequest == NULL)
 		return -EPERM; /* Operation not permitted */
@@ -6235,14 +6233,23 @@ int32_t mtk_cfg80211_process_str_cmd(struct wiphy *wiphy,
 	struct GLUE_INFO *prGlueInfo = NULL;
 	STR_CMD_FUNCTION pfHandler = NULL;
 
-	WIPHY_PRIV(wiphy, prGlueInfo);
-
 	if (data == NULL || len == 0) {
 		DBGLOG(INIT, TRACE, "%s data or len is invalid\n", __func__);
 		return -EINVAL;
 	}
 
 	DBGLOG(REQ, INFO, "cmd: %s, len: %d\n", cmd, len);
+	if (kalIsResetOnEnd() == TRUE) {
+		DBGLOG(INIT, WARN, "WiFi is resetting\n");
+		return -EBUSY;
+	}
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (!wlanIsDriverReady(prGlueInfo, WLAN_DRV_READY_CHECK_WLAN_ON |
+	    WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return -EFAULT;
+	}
 
 	pfHandler = get_str_cmd_handler(cmd, len);
 	if (pfHandler != NULL) {

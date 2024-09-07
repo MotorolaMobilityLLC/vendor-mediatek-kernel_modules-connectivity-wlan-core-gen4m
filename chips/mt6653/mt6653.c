@@ -254,6 +254,10 @@ static void mt6653LowPowerOwnSet(struct ADAPTER *prAdapter,
 				 u_int8_t *pfgResult);
 static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult);
+#if CFG_MTK_WIFI_MBU
+static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
 #endif
@@ -823,6 +827,7 @@ struct BUS_INFO mt6653_bus_info = {
 			.init = halMbuInit,
 			.read = halMbuRead,
 			.debug = halMbuDebug,
+			.dumpDebugCr = mt6653MbuDumpDebugCr,
 		},
 		.fgIsSupport = TRUE,
 		.u4RemapAddr = CB_INFRA_MISC0_CBTOP_PCIE_REMAP_WF_BT_ADDR,
@@ -1130,11 +1135,20 @@ enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_PLAT_DBG,
 	HIF_DEV_REG_WTBL_DBG,
 	HIF_DEV_REG_OID_DBG,
+	HIF_DEV_REG_PCIEASPM_READ,
+	HIF_DEV_REG_NOMMIO_DBG,
 #if (CFG_MTK_WIFI_WFDMA_WB == 0)
 	HIF_DEV_REG_HIF_READ,
 	HIF_DEV_REG_HIF_RING,
 #endif
 };
+
+#if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
+enum HIF_DEV_REG_REASON mt6653NoMmioReadReason[] = {
+	HIF_DEV_REG_HIF_DBG,
+	HIF_DEV_REG_NOMMIO_DBG,
+};
+#endif
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1337,6 +1351,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
 	.prValidMmioReadReason = mt6653ValidMmioReadReason,
 	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt6653ValidMmioReadReason),
+#if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
+	.isNoMmioReadReason = connac3xIsNoMmioReadReason,
+	.prNoMmioReadReason = mt6653NoMmioReadReason,
+	.u4NoMmioReadReasonSize = ARRAY_SIZE(mt6653NoMmioReadReason),
+#endif
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.rsvMemWiFiMisc = mt6653_wifi_misc_rsv_mem_info,
@@ -3422,16 +3441,21 @@ void *pcie_vir_addr;
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 {
+	uint32_t u4WrVal = 0x08021000, u4Val = 0;
+
 #if CFG_SUPPORT_PCIE_ASPM_EP
-	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, 0x08021000);
+	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
 #endif
-	if (pcie_vir_addr) {
-		writel(0x08021000, (pcie_vir_addr + 0x74));
-		DBGLOG(HAL, INFO, "pcie_vir_addr=0x%llx\n",
-			   (uint64_t)pcie_vir_addr);
-	} else {
+	if (!pcie_vir_addr) {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
+		return;
 	}
+
+	writel(u4WrVal, (pcie_vir_addr + 0x74));
+	u4Val = readl(pcie_vir_addr + 0x74);
+	DBGLOG(HAL, INFO,
+	       "pcie_addr=0x%llx, write 0x74=[0x%08x], read 0x74=[0x%08x]\n",
+	       (uint64_t)pcie_vir_addr, u4WrVal, u4Val);
 }
 
 static void mt6653PcieHwControlVote(
@@ -3539,7 +3563,7 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_PCIE_ASPM_EP
 			HAL_MCR_WR(prGlueInfo->prAdapter,
 				0x74030194, 0xf);
-			HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
+			HAL_RMCR_RD(PCIEASPM_READ, prGlueInfo->prAdapter,
 				0x74030194, &value);
 #endif
 			writel(0xf, (pcie_vir_addr + 0x194));
@@ -3585,13 +3609,17 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			delay += 10;
 			udelay(10);
 		}
+
+		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
+			value1 = 0xe0f;
+		else
+			value1 = 0xc0f;
 #if CFG_SUPPORT_PCIE_ASPM_EP
-		HAL_MCR_WR(prGlueInfo->prAdapter,
-			0x74030194, 0xc0f);
-		HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
-			0x74030194, &value);
+		HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030194, value1);
+		HAL_RMCR_RD(PCIEASPM_READ, prGlueInfo->prAdapter,
+			    0x74030194, &value);
 #endif
-		writel(0xc0f, (pcie_vir_addr + 0x194));
+		writel(value1, (pcie_vir_addr + 0x194));
 
 		if (prHifInfo->eCurPcieState == PCIE_STATE_L0)
 			DBGLOG(HAL, LOUD, "Disable aspm L1..\n");
@@ -5068,4 +5096,58 @@ u_int8_t mt6653_is_AA_DBDC_enable(void)
 }
 #endif /* CFG_SUPPORT_CONNFEM == 1 */
 
+#if CFG_MTK_WIFI_MBU
+static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prMbuInfo;
+	struct MBU_EMI_CTX *prEmi;
+	char *aucBuf;
+	uint32_t u4BufferSize = 1024, u4Pos = 0, u4Idx, u4Val = 0;
+	uint32_t au4DbgCr[] = {
+		0x7002500C, 0x70025014, 0x70025024, 0x7002502C,
+		0x70028730, 0x70026100,
+		0x74130200, 0x74130204, 0x7413A004, 0x74138018,
+		0x7413B000, 0x70028800, 0x74138020, 0x74138064,
+		0x7413811C, 0x74138160, 0x7413D008, 0x7413B008,
+		0x7413B00C,
+		0x74030150, 0x74030154, 0x74030184, 0x74031010,
+		0x74031204, 0x74031210,
+		0x740700B0, 0x740700C0
+	};
+
+	prAdapter = prGlueInfo->prAdapter;
+	prBusInfo = prAdapter->chip_info->bus_info;
+	prMbuInfo = &prBusInfo->rSwEmiRingInfo;
+	prEmi = prMbuInfo->prMbuEmiData;
+
+	if (!prMbuInfo->fgIsSupport || !prMbuInfo->fgIsEnable || !prEmi)
+		return;
+
+	aucBuf = kalMemAlloc(u4BufferSize, PHY_MEM_TYPE);
+	if (aucBuf == NULL)
+		return;
+
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr); u4Idx++) {
+		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr[u4Idx], &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos,
+			u4BufferSize - u4Pos,
+			"[0x%08x]=[0x%08x] ",
+			au4DbgCr[u4Idx],
+			u4Val);
+	}
+
+	kalMdelay(3);
+	HAL_RMCR_RD(PLAT_DBG, prAdapter, 0x74130200, &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos, u4BufferSize - u4Pos,
+			" delay[0x%08x]=[0x%08x]",
+			0x74130200, u4Val);
+	DBGLOG(HAL, INFO, "%s", aucBuf);
+	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
+}
+#endif /* CFG_MTK_WIFI_MBU */
 #endif  /* MT6653 */

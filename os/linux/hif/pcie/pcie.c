@@ -895,6 +895,8 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		"mtk_pci_error_detected state: %d, resetting: %d %d\n",
 		state, g_AERRstTriggered, kalIsResetting());
 
+	kalDumpPlatGPIOStat();
+
 	if (!pci_is_enabled(pdev)) {
 		DBGLOG(HAL, INFO, "pcie is disable\n");
 		goto exit;
@@ -1737,6 +1739,8 @@ err_free_iomap:
 
 out:
 	DBGLOG(INIT, INFO, "mtk_pci_probe() done(%d)\n", ret);
+
+	kalDumpPlatGPIOStat();
 
 	return ret;
 }
@@ -3013,14 +3017,16 @@ void glBusFuncOff(void)
 }
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter)
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 {
 	uint32_t u4Val = 0;
 	struct RX_IDLE_STATE *prRxIdleState;
 
 	if (prAdapter) {
 		if (prAdapter->ucStopMMIO) {
-			DBGLOG(INIT, ERROR, "[Gen Switch] check start\n");
+			DBGLOG(INIT, ERROR,
+			       "[Gen Switch] check start. reg[0x%08x]\n",
+			       u4Reg);
 			prRxIdleState = (struct RX_IDLE_STATE *)
 				pcie_gen_switch_get_emi_add(prAdapter);
 
@@ -3056,7 +3062,7 @@ uint32_t glReadPcieCfgSpace(int offset, uint32_t *value)
 	if (g_prGlueInfo) {
 		prAdapter = g_prGlueInfo->prAdapter;
 		if (prAdapter)
-			pcie_check_gen_switch_timeout(prAdapter);
+			pcie_check_gen_switch_timeout(prAdapter, offset);
 	}
 #endif /*CFG_PCIE_GEN_SWITCH*/
 
@@ -3325,6 +3331,8 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 #if CFG_MTK_MDDP_SUPPORT
 	mddpNotifyMDGenSwitchEnd(prAdapter);
 #endif
+	kalSetHifMsiRecoveryEvent(prGlueInfo);
+
 	prRxIdleState =
 		(struct RX_IDLE_STATE *)pcie_gen_switch_get_emi_add(prAdapter);
 
@@ -3364,10 +3372,15 @@ int mtk_pcie_enter_L2(struct pci_dev *pdev)
 
 int mtk_pcie_exit_L2(struct pci_dev *pdev)
 {
+	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct BUS_INFO *prBusInfo;
 	int state = 0;
 
 	if (pdev == NULL)
 		return -1;
+
+	glGetChipInfo((void **)&prChipInfo);
+	prBusInfo = prChipInfo->bus_info;
 
 	state = mtk_pcie_soft_on(pdev->bus);
 	if (state)
@@ -3377,6 +3390,10 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 		goto error_return;
 
 	pci_restore_state(pdev);
+
+	if (g_prGlueInfo && prBusInfo->initPcieInt)
+		prBusInfo->initPcieInt(g_prGlueInfo);
+
 	DBGLOG(HAL, LOUD, "done\n");
 	return state;
 error_return:

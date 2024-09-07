@@ -118,6 +118,8 @@ enum EMUM_MD_NOTIFY_REASON_TYPE_T {
 	MD_TX_CMD_FAIL,
 	MD_L12_DISABLE, /* 7 */
 	MD_L12_ENABLE, /* 8 */
+	MD_RST_WIFI_OFF, /* 9 */
+	MD_SER_NO_RSP, /* 10 */
 	MD_ENUM_MAX,
 };
 
@@ -1351,16 +1353,16 @@ int32_t mddpMdNotifyInfoHandleGenSwitchStart(
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_START_END_STATE,
 			u2genSwitchSeq, u2GenSwitchRsp);
-		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_START_END_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_STOP_TRANSITION_END);
 	} else {
 		DBGLOG(HAL, INFO,
 			"mddp gen switch state [%d]->[%d] seq: %u, rsp: %u\n",
 			prHifInfo->u4GenSwitchState,
 			MDDP_GEN_SWITCH_NORMAL_STATE,
 			u2genSwitchSeq, u2GenSwitchRsp);
-		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 		prHifInfo->u4GenSwitchState = MDDP_GEN_SWITCH_NORMAL_STATE;
+		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 	}
 
 	del_timer_sync(&prHifInfo->rGenSwitch4MddpTimer);
@@ -2427,6 +2429,7 @@ int32_t mddpMdNotifyInfo(struct mddpw_md_notify_info_t *prMdInfo)
 				event->u4Reason == MD_DRV_OWN_FAIL ||
 				event->u4Reason == MD_INIT_FAIL ||
 				event->u4Reason == MD_STATE_ABNORMAL ||
+				event->u4Reason == MD_SER_NO_RSP ||
 				event->u4Reason == MD_TX_CMD_FAIL) {
 			mddpTriggerReset(prAdapter, event->u4RstFlag);
 		} else {

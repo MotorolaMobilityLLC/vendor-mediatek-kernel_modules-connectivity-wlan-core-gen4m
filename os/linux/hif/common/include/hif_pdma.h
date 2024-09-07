@@ -321,7 +321,7 @@
 
 #if CFG_SUPPORT_HIF_REG_WORK
 #define HIF_REG_WORK_WAIT_TIME	100  /* 100us */
-#define HIF_REG_WORK_WAIT_CNT	1000
+#define HIF_REG_WORK_WAIT_CNT	10000
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 
 #define HIF_EMI_SER_STATUS_SIZE		16
@@ -672,6 +672,8 @@ struct RTMP_TX_RING {
 	struct RTMP_DMACB Cell[TX_RING_SIZE];
 	uint32_t TxCpuIdx;
 	uint32_t TxDmaIdx;
+	uint32_t TxCpuIdxRec;
+	uint32_t TxDmaIdxRec;
 	uint32_t u4BufSize;
 	uint32_t u4RingSize;
 	uint32_t u4RingIdx;
@@ -966,6 +968,7 @@ struct SW_EMI_RING_OPS {
 			 uint32_t *pu4Val);
 	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
 	void (*debug)(struct GLUE_INFO *prGlueInfo);
+	void (*dumpDebugCr)(struct GLUE_INFO *prGlueInfo);
 };
 
 struct SW_EMI_RING_INFO {
@@ -983,6 +986,8 @@ struct SW_EMI_RING_INFO {
 	uint32_t u4RemapDefVal;
 	uint32_t u4RemapRegAddr;
 	uint32_t u4RemapBusAddr;
+	uint32_t u4TimeoutCnt;
+	u_int8_t fgIsDumpDebugCr;
 #endif
 };
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
@@ -1202,6 +1207,7 @@ enum WF_REG_REQ_STATUS {
 	WF_REG_PENDING = 0,
 	WF_REG_SUCCESS,
 	WF_REG_FAILURE,
+	WF_REG_DROP,
 	WF_REG_STATUS_NUM
 };
 
@@ -1249,7 +1255,7 @@ uint32_t halGetMsduTokenFreeCnt(struct ADAPTER *prAdapter);
 struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 					      uint32_t u4TokenNum);
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
-					     uint8_t ucBssIdx);
+		uint8_t ucBssIdx, struct MSDU_INFO *prMsduInfo);
 void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,

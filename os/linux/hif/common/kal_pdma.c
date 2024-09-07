@@ -984,7 +984,7 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 	}
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	pcie_check_gen_switch_timeout(prAdapter);
+	pcie_check_gen_switch_timeout(prAdapter, u4Register);
 #endif
 
 
@@ -1161,7 +1161,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 	}
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	pcie_check_gen_switch_timeout(prAdapter);
+	pcie_check_gen_switch_timeout(prAdapter, u4Register);
 #endif
 
 	glGetChipInfo((void **)&prChipInfo);
@@ -1433,12 +1433,34 @@ check:
 	return TRUE;
 }
 
+static u_int8_t kalIsNoMmioReadReason(enum HIF_DEV_REG_REASON eReason,
+		       struct GLUE_INFO *prGlueInfo,
+		       uint32_t u4Register, uint32_t *pu4Value)
+{
+#if CFG_MTK_WIFI_SW_EMI_RING
+	struct mt66xx_chip_info *prChipInfo = NULL;
+
+	glGetChipInfo((void **)&prChipInfo);
+	if (prChipInfo && prChipInfo->bus_info &&
+	    prChipInfo->bus_info->rSwEmiRingInfo.fgIsEnable &&
+	    prChipInfo->isNoMmioReadReason &&
+	    prChipInfo->isNoMmioReadReason(prChipInfo, eReason)) {
+		kalDevRegReadByEmi(prGlueInfo, u4Register, pu4Value);
+		return TRUE;
+	}
+#endif
+	return FALSE;
+}
+
 u_int8_t kalDevRegRead(enum HIF_DEV_REG_REASON eReason,
 		       struct GLUE_INFO *prGlueInfo,
 		       uint32_t u4Register, uint32_t *pu4Value)
 {
 	if (!kalIsValidRead(eReason, prGlueInfo, u4Register, 0))
 		return FALSE;
+
+	if (kalIsNoMmioReadReason(eReason, prGlueInfo, u4Register, pu4Value))
+		return TRUE;
 
 	return _kalDevRegRead(prGlueInfo, u4Register, pu4Value);
 }
@@ -2957,6 +2979,8 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 
 	if (prMemOps->copyRxData &&
 	    !prMemOps->copyRxData(prHifInfo, pRxCell, prDmaBuf, prSwRfb)) {
+		/* If it encounter copy Rx data Fail, it will trigger KE */
+		ASSERT(0);
 		fgRet = false;
 		goto skip;
 	}
@@ -2971,11 +2995,6 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 	NIC_DUMP_RXDMAD_HEADER(prAdapter, "Dump RXDMAD:\n");
 	NIC_DUMP_RXDMAD(prAdapter, (uint8_t *)pRxD, sizeof(struct RXD_STRUCT));
 
-	if (fgDebugSegment) {
-		kalDevDebugSegment(prAdapter, prSwRfb, eType, pRxD->SDLen0);
-		goto skip;
-	}
-
 	pRxD->SDPtr0 = (uint64_t)prDmaBuf->AllocPa & DMA_LOWER_32BITS_MASK;
 #ifdef CONFIG_PHYS_ADDR_T_64BIT
 	pRxD->SDPtr1 = ((uint64_t)prDmaBuf->AllocPa >>
@@ -2983,6 +3002,11 @@ bool kalDevReadData(struct GLUE_INFO *prGlueInfo, uint16_t u2Port,
 #else
 	pRxD->SDPtr1 = 0;
 #endif
+
+	if (fgDebugSegment) {
+		kalDevDebugSegment(prAdapter, prSwRfb, eType, pRxD->SDLen0);
+		goto skip;
+	}
 
 #ifdef CFG_SUPPORT_PDMA_SCATTER
 	if (prGlueInfo->fgIsEnableMon && fgRet == FALSE) {
@@ -3296,6 +3320,12 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 		if (fgIsBusAccessFailed) {
 			prReq->eStatus = WF_REG_FAILURE;
 			DBGLOG_LIMITED(HAL, WARN, "BusAccessFailed\n");
+			continue;
+		}
+
+		if (prReq->eStatus == WF_REG_DROP) {
+			prReq->eStatus = WF_REG_FAILURE;
+			DBGLOG_LIMITED(HAL, WARN, "req drop\n");
 			continue;
 		}
 

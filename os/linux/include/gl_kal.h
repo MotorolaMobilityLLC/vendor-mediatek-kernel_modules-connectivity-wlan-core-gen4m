@@ -129,7 +129,7 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_SER_INT)
 
 #define HIF_FLAG \
-	(HIF_FLAG_AER_RESET)
+	(HIF_FLAG_AER_RESET | HIF_FLAG_MSI_RECOVERY)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -160,6 +160,11 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 #define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L2 (5)
 #define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L3 (10)
 #define TX_LATENCY_STATS_MAX_DRIVER_DELAY_L4 (20)
+
+#define TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L1 (1)
+#define TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L2 (5)
+#define TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L3 (10)
+#define TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L4 (20)
 
 #define TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L1 (10)
 #define TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L2 (20)
@@ -617,6 +622,8 @@ enum HIF_DEV_REG_REASON {
 	HIF_DEV_REG_PLAT_DBG,
 	HIF_DEV_REG_WTBL_DBG,
 	HIF_DEV_REG_OID_DBG,
+	HIF_DEV_REG_PCIEASPM_READ,
+	HIF_DEV_REG_NOMMIO_DBG,
 	HIF_DEV_REG_MAX
 };
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
@@ -2141,6 +2148,8 @@ void kalSetMddpEvent(struct GLUE_INFO *pr);
 
 void kalSetHifAerResetEvent(struct GLUE_INFO *pr);
 
+void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr);
+
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #if CFG_SUPPORT_MULTITHREAD
@@ -2447,6 +2456,7 @@ uint32_t kalGetWfIpVersion(void);
 uint32_t kalGetFwVerOffset(void);
 uint32_t kalGetEmiMetOffset(void);
 uint32_t kalGetProjectId(void);
+void kalDumpPlatGPIOStat(void);
 void kalSetEmiMetOffset(uint32_t newEmiMetOffset);
 void kalSetRpsMap(struct GLUE_INFO *glue, unsigned long value);
 extern int set_task_util_min_pct(pid_t pid, unsigned int min);

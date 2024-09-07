@@ -46,7 +46,7 @@
  */
 
 /* Consistent order with enum ENUM_AVERAGE_TX_DELAY_TYPE */
-static const char delayTypeChar[] = {'D', 'C', 'M', 'A', 'F'};
+static const char delayTypeChar[] = {'D', 'H', 'C', 'M', 'A', 'F'};
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -934,6 +934,9 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 			prBusInfo->setDummyReg(prAdapter->prGlueInfo);
 #endif /* CFG_MTK_WIFI_WFDMA_TX_RING_BK_RS */
 
+		if (prBusInfo->recordWFDMAIdx)
+			prBusInfo->recordWFDMAIdx(prAdapter);
+
 #if !CFG_CONTROL_ASPM_BY_FW
 #if CFG_SUPPORT_PCIE_ASPM
 		glBusConfigASPML1SS(prHifInfo->pdev,
@@ -1490,7 +1493,7 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 }
 
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
-					     uint8_t ucBssIndex)
+	uint8_t ucBssIndex, struct MSDU_INFO *prMsduInfo)
 {
 #if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	struct BUS_INFO *prBusInfo = NULL;
@@ -1532,6 +1535,11 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 
 	ktime_get_ts64(&prToken->rTs);
 	prToken->fgInUsed = TRUE;
+
+#if CFG_ENABLE_PKT_LIFETIME_PROFILE
+	wlanTxLifetimeTagPacket(prAdapter, prMsduInfo,
+		TX_PROF_TAG_ACQR_MSDU_TOK);
+#endif
 
 #if CFG_SUPPORT_PCIE_ASPM
 	if (prBusInfo->updatePcieAspm)
@@ -2593,7 +2601,9 @@ u_int8_t halRxInsertRecvRfbList(
 #endif /* CFG_RFB_TRACK */
 			if (KAL_FIFO_IN(&prGlueInfo->rRxKfifoQ, prSwRfb)) {
 				RX_INC_CNT(prRxCtrl, RX_NAPI_FIFO_IN_COUNT);
+#if !CFG_SUPPORT_RX_NAPI_THREADED
 				kalNapiSchedule(prAdapter);
+#endif
 			} else {
 				/* should not enter here */
 				RX_INC_CNT(prRxCtrl,
@@ -2870,6 +2880,12 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 		kalTraceEvent("Recv p=%p total:%lu",
 			prSwRfb, RX_GET_CNT(prRxCtrl, RX_MPDU_TOTAL_COUNT));
 	}
+
+#if CFG_SUPPORT_RX_NAPI_THREADED
+	if (prGlueInfo->prRxDirectNapi &&
+	    !KAL_FIFO_IS_EMPTY(&prGlueInfo->rRxKfifoQ))
+		kalNapiSchedule(prAdapter);
+#endif
 
 	HAL_SET_RING_CIDX(prAdapter, prRxRing, prRxRing->RxCpuIdx);
 
@@ -4420,7 +4436,8 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 
 		/* Acquire MSDU token */
 		prToken = halAcquireMsduToken(prAdapter,
-					      prMsduInfo->ucBssIndex);
+					      prMsduInfo->ucBssIndex,
+					      prMsduInfo);
 		if (!prToken) {
 			DBGLOG(HAL, ERROR, "Write MSDU acquire token fail\n");
 			return false;
@@ -4524,7 +4541,8 @@ bool halWpdmaWriteAmsdu(struct GLUE_INFO *prGlueInfo,
 
 		/* Acquire MSDU token */
 		prToken = halAcquireMsduToken(prGlueInfo->prAdapter,
-					      prMsduInfo->ucBssIndex);
+					      prMsduInfo->ucBssIndex,
+					      prMsduInfo);
 		if (!prToken) {
 			DBGLOG(HAL, ERROR, "Write AMSDU acquire token fail\n");
 			return false;
@@ -5354,7 +5372,7 @@ uint32_t halHifPowerOffWifi(struct ADAPTER *prAdapter)
 	prAdapter->fgIsPwrOffProcIST = FALSE;
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
-	pcie_check_gen_switch_timeout(prAdapter);
+	pcie_check_gen_switch_timeout(prAdapter, 0);
 #endif
 
 #if CFG_MTK_MDDP_SUPPORT
@@ -6305,6 +6323,10 @@ static void diffTxDelayCounts(struct TX_LATENCY_STATS *prDiff,
 		   prCounting->au4DriverLatency[0],
 		   prReported->au4DriverLatency[0]);
 	diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
+		   prDiff->au4DriverHifLatency[0],
+		   prCounting->au4DriverHifLatency[0],
+		   prReported->au4DriverHifLatency[0]);
+	diffTxDelayCounter(BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
 		   prDiff->au4ConnsysLatency[0],
 		   prCounting->au4ConnsysLatency[0],
 		   prReported->au4ConnsysLatency[0]);
@@ -6479,6 +6501,10 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 			DRIVER_TX_DELAY, prWifiVar->au4DriverTxDelayMax,
 			report->au4DriverLatency[0],
 			pAverage[DRIVER_TX_DELAY], report_num);
+	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
+			DRIVER_HIF_TX_DELAY, prWifiVar->au4DriverHifTxDelayMax,
+			report->au4DriverHifLatency[0],
+			pAverage[DRIVER_HIF_TX_DELAY], report_num);
 	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
 			CONNSYS_TX_DELAY, prWifiVar->au4ConnsysTxDelayMax,
 			report->au4ConnsysLatency[0],
@@ -6696,11 +6722,13 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	struct TX_LATENCY_REPORT_STATS *prStats = &prAdapter->rMsduReportStats;
 	struct TX_LATENCY_STATS *prLatencyReport;
 #endif
+	struct WIFI_VAR *prWifiVar = NULL;
 
 	if (!prAdapter)
 		return;
 
 	prGlueInfo = prAdapter->prGlueInfo;
+	prWifiVar = &prAdapter->rWifiVar;
 
 	checkTxDelayOverLimit(prAdapter);
 
@@ -6879,8 +6907,10 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
-			" txdelay[0x%lx]",
-			prHifInfo->ulTxDataTimeout);
+			" txdelay[0x%lx/%u/%u]",
+			prHifInfo->ulTxDataTimeout,
+			prWifiVar->u4TxDataDelayTimeout,
+			prWifiVar->u4TxDataDelayCnt);
 #endif /* CFG_SUPPORT_TX_DATA_DELAY == 1 */
 #if CFG_NEW_HIF_DEV_REG_IF
 	for (i = 0; i < HIF_DEV_REG_MAX; ++i) {

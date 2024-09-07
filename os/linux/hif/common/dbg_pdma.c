@@ -258,10 +258,15 @@ end:
 
 static void halCheckHifState(struct ADAPTER *prAdapter)
 {
+	struct mt66xx_chip_info *prChipInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
 	uint32_t u4TokenId = 0;
 	bool fgHifTxHangFullDump = FALSE;
+#if (CFG_SUPPORT_CONNAC2X == 1)
+	uint32_t ret = 0;
+#endif /* CFG_SUPPORT_CONNAC2X */
 
+	prChipInfo = prAdapter->chip_info;
 	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
@@ -280,6 +285,16 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 
 				prAdapter->u4HifTxHangDumpBitmap |=
 					BIT(prAdapter->u4HifTxHangDumpIdx);
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+				/* for bus hang debug purpose */
+				if (prChipInfo->checkbushang) {
+					ret = prChipInfo->checkbushang(
+						(void *) prAdapter, TRUE);
+					if (ret != 0)
+						goto end_dump;
+				}
+#endif /* CFG_SUPPORT_CONNAC2X */
 
 				if (prDbgOps && prDbgOps->dumpWfBusSectionA)
 					prDbgOps->dumpWfBusSectionA(prAdapter);
@@ -308,6 +323,11 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 		halTriggerTxHangFwDebugSop(prAdapter, prAdapter->u4HifDbgMod,
 					   prAdapter->u4HifDbgBss,
 					   prAdapter->u4HifDbgReason);
+
+
+#if (CFG_SUPPORT_CONNAC2X == 1)
+end_dump:
+#endif /* CFG_SUPPORT_CONNAC2X */
 
 	prAdapter->u4HifChkFlag = 0;
 	prAdapter->u4HifDbgMod = 0;
@@ -903,9 +923,9 @@ u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx)
 	return FALSE;
 }
 
-void halCheckWfdmaHang(struct ADAPTER *prAdapter)
-{
 #if CFG_MTK_WIFI_WFDMA_WB
+void halCheckWfdmaHangForWB(struct ADAPTER *prAdapter)
+{
 	struct GLUE_INFO *prGlueInfo;
 #if defined(_HIF_PCIE)
 	struct BUS_INFO *prBusInfo;
@@ -959,8 +979,50 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
 			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
 	}
-#endif /* CFG_MTK_WIFI_WFDMA_WB */
 }
+#endif /* CFG_MTK_WIFI_WFDMA_WB */
+
+#if (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
+void halCheckWfdmaHangForceRecvRx(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t i, u4RxCnt = 0;
+
+	prGlueInfo = prAdapter->prGlueInfo;
+	prHifInfo = &prGlueInfo->rHifInfo;
+
+	/* skip SER */
+	if (prHifInfo->rErrRecoveryCtl.eErrRecovState != ERR_RECOV_STOP_IDLE)
+		return;
+
+	for (i = 0; i < NUM_OF_RX_RING; i++) {
+		prRxRing = &prHifInfo->RxRing[i];
+
+		u4RxCnt = halWpdmaGetRxDmaDoneCnt(prGlueInfo, i);
+
+		if (prRxRing->u4RingSize - 1 == u4RxCnt) {
+			KAL_SET_BIT(i, prAdapter->ulNoMoreRfb);
+			DBGLOG(HAL, WARN,
+			       "Ring[%u] RxCnt[%u] cidx[%u]\n",
+			       i, u4RxCnt, prRxRing->RxCpuIdx);
+			kalSetDrvIntEvent(prGlueInfo);
+			break;
+		}
+	}
+}
+#endif /* CFG_MTK_WIFI_FORCE_RECV_RX */
+
+void halCheckWfdmaHang(struct ADAPTER *prAdapter)
+{
+#if CFG_MTK_WIFI_WFDMA_WB
+	halCheckWfdmaHangForWB(prAdapter);
+#elif (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
+	halCheckWfdmaHangForceRecvRx(prAdapter);
+#endif
+}
+
 
 void halShowPdmaInfo(struct ADAPTER *prAdapter)
 {

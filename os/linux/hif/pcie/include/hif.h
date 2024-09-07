@@ -521,6 +521,9 @@ struct BUS_INFO {
 				 uint32_t u4Register);
 	void (*getMailboxStatus)(struct ADAPTER *prAdapter, uint32_t *pu4Val);
 	void (*setDummyReg)(struct GLUE_INFO *prGlueInfo);
+	void (*recordWFDMAIdx)(struct ADAPTER *prAdapter);
+	void (*checkIdxMismatch)(u_int32_t u4Idx,
+		struct RTMP_TX_RING *prTxRing);
 	void (*checkDummyReg)(struct GLUE_INFO *prGlueInfo);
 	void (*tx_ring_ext_ctrl)(struct GLUE_INFO *prGlueInfo,
 		struct RTMP_TX_RING *tx_ring, uint32_t index);
@@ -749,7 +752,7 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance);
 
 irqreturn_t pcie_gen_switch_end_top_handler(int irq, void *dev_instance);
 irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance);
-void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter);
+void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg);
 void pcie_gen_switch_polling_rx_done(struct ADAPTER *prAdapter);
 uint32_t *pcie_gen_switch_get_emi_add(struct ADAPTER *prAdapter);
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter);
