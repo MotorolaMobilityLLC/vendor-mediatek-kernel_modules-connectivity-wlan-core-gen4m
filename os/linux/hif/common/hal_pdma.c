@@ -4423,6 +4423,42 @@ void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		kalSetEvent(prGlueInfo);
 }
 
+u_int8_t halIsValidDataFormat(
+	struct GLUE_INFO *prGlueInfo,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct TX_DESC_OPS_T *prTxDescOps;
+	struct sk_buff *prSkb;
+	void *prTxDesc;
+	uint32_t u4TxDumpSize;
+	uint8_t ucFormat = 0;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prTxDescOps = prChipInfo->prTxDescOps;
+	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	prTxDesc = prSkb->data;
+	u4TxDumpSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
+
+	if (prMsduInfo->u2FrameLength == 0)
+		return FALSE;
+
+	if (prTxDescOps->nic_txd_pkt_format_op) {
+		ucFormat = prTxDescOps->nic_txd_pkt_format_op(
+			prTxDesc, 0, FALSE);
+		if (ucFormat != TXD_PKT_FORMAT_TXD &&
+		    ucFormat != TXD_PKT_FORMAT_TXD_PAYLOAD) {
+			DBGLOG(TX, WARN, "invalid pkt format[%u]\n", ucFormat);
+			DBGLOG_MEM8(TX, WARN, prTxDesc, u4TxDumpSize);
+			kalSendAeeWarning("WLAN", "invalid pkt format");
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		       struct MSDU_INFO *prMsduInfo,
 		       struct list_head *prCurList)
@@ -4453,7 +4489,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (pucSrc == NULL || u4TotalLen == 0 ||
-	    prMsduInfo->u2FrameLength == 0) {
+	    !halIsValidDataFormat(prGlueInfo, prMsduInfo)) {
 		DBGLOG(HAL, ERROR, "prSkb=0x%p, frameLen=%d\n",
 		       prSkb, prMsduInfo->u2FrameLength);
 

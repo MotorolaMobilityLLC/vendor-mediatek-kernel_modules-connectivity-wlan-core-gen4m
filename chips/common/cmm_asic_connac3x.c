@@ -1881,6 +1881,7 @@ void asicConnac3xInitTxdHook(
 
 	prTxDescOps->nic_txd_long_format_op = nic_txd_v3_long_format_op;
 	prTxDescOps->nic_txd_tid_op = nic_txd_v3_tid_op;
+	prTxDescOps->nic_txd_pkt_format_op = nic_txd_v3_pkt_format_op;
 	prTxDescOps->nic_txd_queue_idx_op = nic_txd_v3_queue_idx_op;
 #if (CFG_TCP_IP_CHKSUM_OFFLOAD == 1)
 	prTxDescOps->nic_txd_chksum_op = nic_txd_v3_chksum_op;
