@@ -9685,22 +9685,46 @@ void txPwrCtrlLoadConfig(struct ADAPTER *prAdapter)
 void txPwrCtrlInit(struct ADAPTER *prAdapter)
 {
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
-	uint32_t i;
+	uint32_t i, j, u4PwrLimitSize;
 #endif
 
 #if (CFG_SUPPORT_PWR_LMT_EMI == 1)
+	u4PwrLimitSize = sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT);
+
 	prAdapter->prPwrLimit =
 		(struct SET_COUNTRY_CHANNEL_POWER_LIMIT **) kalMemAlloc(
 			sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT *)
 			* PWR_LIMIT_RF_BAND_NUM,
 			VIR_MEM_TYPE);
 
+	if (prAdapter->prPwrLimit == NULL) {
+		DBGLOG(RLM, INFO,
+			"prAdapter->prPwrLimit alloc fail in txPwrCtrlInit\n");
+
+		return;
+	}
+
 	for (i = 0; i < PWR_LIMIT_RF_BAND_NUM; i++) {
 		prAdapter->prPwrLimit[i] =
 			(struct SET_COUNTRY_CHANNEL_POWER_LIMIT *) kalMemAlloc(
-				sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT)
-				* PWR_LIMIT_PROTOCOL_NUM,
+				u4PwrLimitSize * PWR_LIMIT_PROTOCOL_NUM,
 				VIR_MEM_TYPE);
+
+		if (prAdapter->prPwrLimit[i] == NULL) {
+			for (j = 0; j < i; j++) {
+				kalMemFree(prAdapter->prPwrLimit[j],
+					VIR_MEM_TYPE,
+					u4PwrLimitSize
+					* PWR_LIMIT_PROTOCOL_NUM);
+				prAdapter->prPwrLimit[j] = NULL;
+			}
+			kalMemFree(prAdapter->prPwrLimit,
+				VIR_MEM_TYPE,
+				sizeof(struct SET_COUNTRY_CHANNEL_POWER_LIMIT *)
+				* PWR_LIMIT_RF_BAND_NUM);
+			prAdapter->prPwrLimit = NULL;
+			return;
+		}
 	}
 #endif
 
@@ -12554,10 +12578,15 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	struct HIF_MEM_OPS *prMemOps = &prHifInfo->rMemOps;
 
-	if (prMemOps->getWifiMiscRsvEmi) {
+	if (prMemOps && prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(prChipInfo,
 			WIFI_MISC_MEM_BLOCK_TX_POWER_LIMIT);
-		prTxPowrEmiAddress = (uint8_t *)prMem->va;
+		if (prMem) {
+			prTxPowrEmiAddress = (uint8_t *)prMem->va;
+		} else {
+			DBGLOG(NIC, INFO, "Failed to obtain prMem\n");
+			return;
+		}
 	}
 #endif
 
@@ -12614,6 +12643,11 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 	prEmiFormat = (struct CMD_EMI_POWER_LIMIT_FORMAT *) kalMemAlloc(
 		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT), VIR_MEM_TYPE);
 
+	if (prEmiFormat == NULL) {
+		DBGLOG(NIC, INFO, "TXP alloc prEmiFormat fail\n");
+		return;
+	}
+
 	prEmiFormat->u1RFBandNum = PWR_LIMIT_RF_BAND_NUM;
 	prEmiFormat->u1ProtocolNum = PWR_LIMIT_PROTOCOL_NUM;
 	prEmiFormat->u1ApplyMethod = rlmDomainPwrLmtGetChannelDefine();
@@ -12634,6 +12668,12 @@ void rlmDomainWritePwrLimitToEmi(struct ADAPTER *prAdapter)
 	}
 
 	rlmDomainSendPwrLimitEmiInfo(prAdapter, prEmiFormat);
+
+	kalMemFree(
+		prEmiFormat,
+		VIR_MEM_TYPE,
+		sizeof(struct CMD_EMI_POWER_LIMIT_FORMAT));
+	prEmiFormat = NULL;
 }
 
 static void rlmDomainDumpPwrLimitEmiPayload(
