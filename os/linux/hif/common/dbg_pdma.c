@@ -267,7 +267,7 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 #endif /* CFG_SUPPORT_CONNAC2X */
 
 	prChipInfo = prAdapter->chip_info;
-	prDbgOps = prAdapter->chip_info->prDebugOps;
+	prDbgOps = prChipInfo->prDebugOps;
 
 	if (prAdapter->u4HifChkFlag & HIF_CHK_TX_HANG) {
 		if (halIsTxTimeout(prAdapter, &u4TokenId)) {
@@ -324,6 +324,12 @@ static void halCheckHifState(struct ADAPTER *prAdapter)
 					   prAdapter->u4HifDbgBss,
 					   prAdapter->u4HifDbgReason);
 
+#if CFG_MTK_MDDP_SUPPORT
+	if (prAdapter->u4HifChkFlag & HIF_CHK_MD_RX_HANG) {
+		if (prChipInfo->checkMdRxHang)
+			prChipInfo->checkMdRxHang(prAdapter);
+	}
+#endif
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 end_dump:

@@ -1530,6 +1530,9 @@ struct mt66xx_chip_info {
 	const unsigned int custom_oid_interface_version;
 	const unsigned int em_interface_version;
 	const unsigned int cmd_max_pkt_size;
+#if CFG_MTK_MDDP_SUPPORT
+	void (*checkMdRxHang)(struct ADAPTER *prAdapter);
+#endif
 	const bool isSupportMddpAOR;
 	const bool isSupportMddpSHM;
 	const unsigned int u4MdLpctlAddr;
