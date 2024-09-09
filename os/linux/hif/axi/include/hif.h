@@ -137,6 +137,7 @@ struct HIF_NAPI_DEVICE {
 struct GL_HIF_INFO {
 	struct platform_device *pdev;
 	struct device *prDmaDev;
+	struct GLUE_INFO *prGlueInfo;
 	struct HIF_MEM_OPS rMemOps;
 
 	uint32_t u4IrqId;
