@@ -258,6 +258,10 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
 #endif
 
+#if CFG_MTK_MDDP_SUPPORT
+static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter);
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
 #endif
@@ -1256,6 +1260,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isSupportMddpSHM = true,
 	.u4MdLpctlAddr = CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
 	.u4MdDrvOwnTimeoutTime = 2000,
+	.checkMdRxHang = mt6653CheckMdRxHang,
 #else
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
@@ -5150,4 +5155,33 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
 }
 #endif /* CFG_MTK_WIFI_MBU */
+
+#if CFG_MTK_MDDP_SUPPORT
+static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Base = 0, u4Cnt = 0, u4Cidx = 0, u4Didx = 0, u4Addr;
+
+	/* check md rx event ring */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING12_CTRL0_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Base);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr + 0x04, &u4Cnt);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr + 0x08, &u4Cidx);
+	HAL_RMCR_RD(HIF_DBG, prAdapter,	u4Addr + 0x0c, &u4Didx);
+
+	u4Cnt &= MT_RING_CNT_MASK;
+	u4Cidx &= MT_RING_CIDX_MASK;
+	u4Didx &= MT_RING_DIDX_MASK;
+
+	if (u4Base == 0 || u4Cnt == 0 || u4Cidx >= u4Cnt || u4Didx >= u4Cnt)
+		return;
+
+	if (u4Cidx != u4Didx)
+		return;
+
+	DBGLOG(HAL, ERROR, "md rx ring full, cidx[%u] didx[%u]\n",
+	       u4Cidx, u4Didx);
+	GL_USER_DEFINE_RESET_TRIGGER(
+		prAdapter, RST_MDDP_MD_RX_HANG, RST_FLAG_WF_RESET);
+}
+#endif
 #endif  /* MT6653 */
