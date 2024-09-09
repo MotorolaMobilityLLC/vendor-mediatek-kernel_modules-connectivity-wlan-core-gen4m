@@ -829,6 +829,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.rSwEmiRingInfo = {
 		.rOps = {
 			.init = halMbuInit,
+			.uninit = halMbuUninit,
 			.read = halMbuRead,
 			.debug = halMbuDebug,
 			.dumpDebugCr = mt6653MbuDumpDebugCr,

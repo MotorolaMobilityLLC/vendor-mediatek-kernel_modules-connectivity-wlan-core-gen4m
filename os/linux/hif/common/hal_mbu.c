@@ -43,7 +43,7 @@
 #define MBU_MSI_MIRROR_IDX	7
 #define MBU_TIMEOUT_VALUE	0xffffdead
 #define MBU_REG_MASK		0xffff0000
-#define MBU_TIMEOUT_DBG_CNT	3
+#define MBU_TIMEOUT_DBG_CNT	1
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -204,6 +204,18 @@ void halMbuInit(struct GLUE_INFO *prGlueInfo)
 		HAL_MCR_WR(prAdapter, prMbuInfo->u4RemapAddr,
 			   prMbuInfo->u4RemapDefVal);
 	}
+}
+
+void halMbuUninit(struct GLUE_INFO *prGlueInfo)
+{
+	struct BUS_INFO *prBusInfo;
+	struct SW_EMI_RING_INFO *prMbuInfo;
+
+	prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
+	prMbuInfo = &prBusInfo->rSwEmiRingInfo;
+
+	prMbuInfo->fgIsEnable = FALSE;
+	prMbuInfo->prMbuEmiData = NULL;
 }
 
 u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
