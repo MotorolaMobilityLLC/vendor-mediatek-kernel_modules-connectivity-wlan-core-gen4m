@@ -2673,7 +2673,8 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 				conninfra_reset = TRUE;
 
 				DBGLOG(HAL, ERROR,
-					"conninfra_is_bus_hang, Chip reset\n");
+					"conninfra_is_bus_hang(%d), Reset\n",
+					conninfra_hang_ret);
 			} else {
 				/*
 				* not readable, but no_hang or rst_ongoing
