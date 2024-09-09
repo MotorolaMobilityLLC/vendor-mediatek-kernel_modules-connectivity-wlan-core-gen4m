@@ -5668,6 +5668,11 @@ int hif_thread(void *data)
 
 	kalSetThreadSchPolicyPriority(prGlueInfo);
 	prRxCtrl = &prAdapter->rRxCtrl;
+#if CFG_SUPPORT_TPUT_FACTOR
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	prGlueInfo->hif_cpu_mask = current->cpus_mask;
+#endif
+#endif /* CFG_SUPPORT_TPUT_FACTOR */
 
 	while (TRUE) {
 
@@ -5697,6 +5702,11 @@ int hif_thread(void *data)
 		} while (ret != 0);
 
 		kalTraceBegin("hif_thread");
+#if CFG_SUPPORT_TPUT_FACTOR
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+		prGlueInfo->hif_cpu_mask = current->cpus_mask;
+#endif
+#endif /* CFG_SUPPORT_TPUT_FACTOR */
 
 		if (test_bit(GLUE_FLAG_HIF_TX_BIT,
 					&prGlueInfo->ulFlag))
@@ -11886,7 +11896,7 @@ void kalTputFactorUpdate(struct ADAPTER *prAdapter)
 		"freq %s mask:hif %x, rx %x, main %x, ApFS=%d",
 		buf,
 #if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
-		prAdapter->prGlueInfo->hif_thread->cpus_mask,
+		prAdapter->prGlueInfo->hif_cpu_mask,
 		prAdapter->prGlueInfo->rx_thread->cpus_mask,
 		prAdapter->prGlueInfo->main_thread->cpus_mask,
 #else

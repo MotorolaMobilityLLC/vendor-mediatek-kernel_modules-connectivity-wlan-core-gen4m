@@ -1181,6 +1181,11 @@ struct GLUE_INFO {
 #endif
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 	u_int8_t fgWlanUevent;
+#if CFG_SUPPORT_TPUT_FACTOR
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	cpumask_t hif_cpu_mask;
+#endif
+#endif /* CFG_SUPPORT_TPUT_FACTOR */
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,
