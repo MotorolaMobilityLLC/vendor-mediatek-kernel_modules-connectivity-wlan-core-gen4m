@@ -274,12 +274,12 @@ struct P2P_ACS_REQ_INFO {
 	u_int8_t fgIsAis;
 
 	/* output only */
-	uint8_t ucBand;
 	enum ENUM_BAND eBand;
 	uint8_t ucPrimaryCh;
 	uint8_t ucSecondCh;
 	uint8_t ucVhtSeg0;
 	uint8_t ucVhtSeg1;
+	uint32_t au4SafeChnl[ENUM_SAFE_CH_MASK_MAX_NUM];
 };
 
 struct P2P_CHNL_REQ_INFO {
