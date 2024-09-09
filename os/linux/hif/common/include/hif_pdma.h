@@ -1257,6 +1257,8 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx, struct MSDU_INFO *prMsduInfo);
 void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+u_int8_t halHandleAllTokensUnused(
+	struct ADAPTER *prAdapter, u_int8_t fgIsCheck);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,
 			       struct MSDU_TOKEN_ENTRY *prFillToken,
