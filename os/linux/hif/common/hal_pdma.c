@@ -7002,7 +7002,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" Napi[%u/%u/%u/0x%x/%u]",
+		" Napi[%u/%u/%u/0x%lx/%u]",
 		GLUE_GET_REF_CNT(prHifStats->u4HifNapiCount),
 		GLUE_GET_REF_CNT(prHifStats->u4HifNapiRunCount),
 		prHifInfo->rNapiDev.fgIsRun,
