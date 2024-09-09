@@ -3112,6 +3112,9 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 		kalUsleep(HIF_REG_WORK_WAIT_TIME);
 	}
 
+	if (i >= HIF_REG_WORK_WAIT_CNT)
+		prReq->eStatus = WF_REG_DROP;
+
 	if (prReq->eStatus != WF_REG_SUCCESS) {
 		DBGLOG_LIMITED(HAL, WARN,
 			"op: %d cr timeout addr: %X, value: %X, status: %d\n",
