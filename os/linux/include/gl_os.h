@@ -353,6 +353,9 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define HIF_FLAG_MSI_RECOVERY		BIT(1)
 #define HIF_FLAG_MSI_RECOVERY_BIT	(1)
 
+#define HIF_FLAG_ALL_TOKENS_UNUSED	BIT(2)
+#define HIF_FLAG_ALL_TOKENS_UNUSED_BIT	(2)
+
 #if CFG_SUPPORT_HIF_RX_NAPI
 #define HIF_NAPI_SET_DRV_OWN_BIT		(0)
 #define HIF_NAPI_SET_FW_OWN_BIT			(1)

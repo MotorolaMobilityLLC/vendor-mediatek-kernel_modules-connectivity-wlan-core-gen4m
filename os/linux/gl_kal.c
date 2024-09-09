@@ -5794,6 +5794,11 @@ int hif_thread(void *data)
 				prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 		}
 #endif
+#if defined(_HIF_PCIE) || defined(_HIF_AXI)
+		if (test_and_clear_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT,
+				       &prGlueInfo->ulHifFlag))
+			halHandleAllTokensUnused(prAdapter, FALSE);
+#endif
 
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
@@ -7156,6 +7161,14 @@ void kalSetHifAerResetEvent(struct GLUE_INFO *pr)
 void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr)
 {
 	set_bit(HIF_FLAG_MSI_RECOVERY_BIT, &pr->ulHifFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr)
+{
+	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
