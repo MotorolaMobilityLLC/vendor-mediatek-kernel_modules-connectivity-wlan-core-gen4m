@@ -1837,19 +1837,23 @@ struct sk_buff *kalAllocRxSkbFromPp(
 #if (CFG_SUPPORT_PAGE_POOL_USE_CMA == 0)
 	struct page *page;
 	struct sk_buff *pkt = NULL;
-	uint32_t i;
+
+	if (!prGlueInfo)
+		goto fail;
 
 	if (i4Idx >= 0) {
 		page = kalAllocPagePoolPageByIdx(prGlueInfo, i4Idx);
 		goto alloc;
 	}
 
-	/* search free page */
-	for (i = 0; i < PAGE_POOL_NUM; i++) {
-		page = kalAllocPagePoolPageByIdx(prGlueInfo, i);
-		if (page)
-			goto alloc;
-	}
+	if (prGlueInfo->u4LastAllocIdx >= PAGE_POOL_NUM)
+		prGlueInfo->u4LastAllocIdx = 0;
+
+	page = kalAllocPagePoolPageByIdx(
+		prGlueInfo, prGlueInfo->u4LastAllocIdx);
+
+	prGlueInfo->u4LastAllocIdx =
+		(prGlueInfo->u4LastAllocIdx + 1) % PAGE_POOL_NUM;
 
 alloc:
 	if (!page)
@@ -1879,6 +1883,25 @@ fail:
 #else
 	return kalAllocRxSkbFromCmaPp(prGlueInfo, ppucData);
 #endif /* CFG_SUPPORT_PAGE_POOL_USE_CMA */
+}
+
+int kalPtrRingCnt(struct ptr_ring *ring)
+{
+	int count;
+
+	/* Check if the ring is full */
+	if (__ptr_ring_full(ring)) {
+		count = ring->size;
+	} else if (__ptr_ring_empty(ring)) {
+		count = 0;
+	} else {
+		/* Calculate the number of items in the ring */
+		count = ring->producer - ring->consumer_head;
+		if (count < 0)
+			count += ring->size;
+	}
+
+	return count;
 }
 
 void kalCreatePagePool(struct GLUE_INFO *prGlueInfo)
