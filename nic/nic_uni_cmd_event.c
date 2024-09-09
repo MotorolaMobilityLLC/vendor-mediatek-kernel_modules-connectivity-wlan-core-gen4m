@@ -14035,8 +14035,6 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 #if CFG_MTK_MDDP_SUPPORT
 void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 {
-#define MDDP_EXP_RST_STR	"RST_MDDP_EXCEPTION:%u"
-#define MDDP_EXP_RSN_SIZE	50
 	int32_t tags_len;
 	uint8_t *tag;
 	uint16_t offset = 0;
