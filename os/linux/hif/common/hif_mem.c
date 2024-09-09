@@ -78,6 +78,13 @@
 #define TX_CMA_MAX_DATA_NUM		(TX_CMA_MAX_SIZE / TX_CMA_TOK_SIZE)
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM */
 
+#if (CFG_SUPPORT_RX_PAGE_POOL == 0) || (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 1)
+#define RX_DATA_USE_RSV_MEM		1
+#else
+#define RX_DATA_USE_RSV_MEM		0
+#endif
+
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -496,11 +503,10 @@ int halAllocHifMem(struct platform_device *pdev,
 				u4Idx);
 	}
 
-#if (CFG_SUPPORT_RX_PAGE_POOL == 0) || (CFG_SUPPORT_DYNAMIC_PAGE_POOL == 1)
+
+#if (RX_DATA_USE_RSV_MEM == 1)
 	u4DataNum = prBusInfo->rx_data_ring_num;
-#else
-	u4DataNum = 0;
-#endif /* CFG_SUPPORT_RX_PAGE_POOL == 0 || CFG_SUPPORT_DYNAMIC_PAGE_POOL == 1 */
+#endif /* RX_DATA_USE_RSV_MEM */
 	u4EvtNum = prBusInfo->rx_evt_ring_num;
 	for (u4Idx = 0; u4Idx < NUM_OF_RX_RING; u4Idx++) {
 		uint32_t u4Cnt, u4PktSize;
@@ -508,9 +514,7 @@ int halAllocHifMem(struct platform_device *pdev,
 		if (u4Idx == RX_RING_DATA0 || u4Idx == RX_RING_DATA1 ||
 		    u4Idx == RX_RING_DATA2 || u4Idx == RX_RING_DATA3 ||
 		    u4Idx == RX_RING_DATA4 || u4Idx == RX_RING_DATA5) {
-			if (u4DataNum == 0)
-				continue;
-
+#if (RX_DATA_USE_RSV_MEM == 1)
 			/* copy path using prealloc rx data size */
 #if (CFG_SUPPORT_WED_PROXY == 1) && (CFG_SUPPORT_RX_ZERO_COPY == 0)
 			u4Size = prBusInfo->rx_data_ring_size;
@@ -519,6 +523,9 @@ int halAllocHifMem(struct platform_device *pdev,
 #endif
 			u4PktSize = CFG_RX_MAX_PKT_SIZE;
 			u4DataNum--;
+#else /* !RX_DATA_USE_RSV_MEM */
+			continue;
+#endif /* !RX_DATA_USE_RSV_MEM */
 		} else {
 			if (u4EvtNum == 0)
 				continue;
@@ -1213,10 +1220,10 @@ void halAllocNonCacheCmaFromMemGroup(
 
 	prToken->prPacket =
 		grMem.rTxCmaMemGroup[u4GroupIdx].va +
-		prToken->u4DmaLength * grMem.u4TxMemTokIdx;
+		(uint64_t)prToken->u4DmaLength * grMem.u4TxMemTokIdx;
 	prToken->rDmaAddr =
 		grMem.rTxCmaMemGroup[u4GroupIdx].pa +
-		prToken->u4DmaLength * grMem.u4TxMemTokIdx;
+		(uint64_t)prToken->u4DmaLength * grMem.u4TxMemTokIdx;
 
 	u4GroupTokNum = TX_CMA_GROUP_SIZE / prToken->u4DmaLength;
 	grMem.u4TxMemTokIdx = (grMem.u4TxMemTokIdx + 1) %
