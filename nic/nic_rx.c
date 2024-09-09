@@ -2752,6 +2752,13 @@ void nicRxProcessRFBs(struct ADAPTER *prAdapter)
 	while (u4RxLoopCount--) {
 		while (QUEUE_IS_NOT_EMPTY(&prRxCtrl->rReceivedRfbList)) {
 
+			if (test_bit(GLUE_FLAG_HALT_BIT,
+				&prAdapter->prGlueInfo->ulFlag) ||
+				kalIsResetting()) {
+				DBGLOG(RX, INFO, "GLUE_FLAG_HALT skip Rx\n");
+				break;
+			}
+
 			/* check process RFB timeout */
 			if ((kalGetTimeTick() - u4Tick) > RX_PROCESS_TIMEOUT) {
 				DBGLOG(RX, WARN,
