@@ -5160,6 +5160,7 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 #if CFG_MTK_MDDP_SUPPORT
 static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter)
 {
+	char aucRsn[MDDP_EXP_RSN_SIZE];
 	uint32_t u4Base = 0, u4Cnt = 0, u4Cidx = 0, u4Didx = 0, u4Addr;
 
 	/* check md rx event ring */
@@ -5181,8 +5182,16 @@ static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter)
 
 	DBGLOG(HAL, ERROR, "md rx ring full, cidx[%u] didx[%u]\n",
 	       u4Cidx, u4Didx);
-	GL_USER_DEFINE_RESET_TRIGGER(
-		prAdapter, RST_MDDP_MD_RX_HANG, RST_FLAG_WF_RESET);
+
+	kalMemZero(aucRsn, MDDP_EXP_RSN_SIZE);
+	kalScnprintf(aucRsn,
+		     MDDP_EXP_RSN_SIZE,
+		     MDDP_EXP_RST_STR,
+		     MDDP_EXP_RX_HANG);
+#if CFG_WMT_RESET_API_SUPPORT
+	glSetRstReasonString(aucRsn);
+	glResetWholeChipResetTrigger(aucRsn);
+#endif /* CFG_WMT_RESET_API_SUPPORT */
 }
 #endif
 #endif  /* MT6653 */
