@@ -964,6 +964,7 @@ struct MBU_EMI_CTX {
 #if CFG_MTK_WIFI_SW_EMI_RING
 struct SW_EMI_RING_OPS {
 	void (*init)(struct GLUE_INFO *prGlueInfo);
+	void (*uninit)(struct GLUE_INFO *prGlueInfo);
 	u_int8_t (*read)(struct GLUE_INFO *prGlueInfo, uint32_t u4Addr,
 			 uint32_t *pu4Val);
 	void (*triggerInt)(struct GLUE_INFO *prGlueInfo);
@@ -1257,6 +1258,8 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 		uint8_t ucBssIdx, struct MSDU_INFO *prMsduInfo);
 void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum);
+u_int8_t halHandleAllTokensUnused(
+	struct ADAPTER *prAdapter, u_int8_t fgIsCheck);
 void halTxUpdateCutThroughDesc(struct GLUE_INFO *prGlueInfo,
 			       struct MSDU_INFO *prMsduInfo,
 			       struct MSDU_TOKEN_ENTRY *prFillToken,
@@ -1397,6 +1400,7 @@ void halSwEmiDebug(struct GLUE_INFO *prGlueInfo);
 #endif
 #if CFG_MTK_WIFI_MBU
 void halMbuInit(struct GLUE_INFO *prGlueInfo);
+void halMbuUninit(struct GLUE_INFO *prGlueInfo);
 u_int8_t halMbuRead(struct GLUE_INFO *prGlueInfo, uint32_t u4ReadAddr,
 		    uint32_t *pu4Val);
 void halMbuDebug(struct GLUE_INFO *prGlueInfo);

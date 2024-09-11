@@ -129,7 +129,8 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 	GLUE_FLAG_SER_INT)
 
 #define HIF_FLAG \
-	(HIF_FLAG_AER_RESET | HIF_FLAG_MSI_RECOVERY)
+	(HIF_FLAG_AER_RESET | HIF_FLAG_MSI_RECOVERY | \
+	HIF_FLAG_ALL_TOKENS_UNUSED)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -1733,6 +1734,7 @@ void kalSkbReuseCheck(struct SW_RFB *prSwRfb);
 void kalSkbMarkForRecycle(struct sk_buff *pkt);
 struct sk_buff *kalAllocRxSkbFromPp(
 	struct GLUE_INFO *prGlueInfo, uint8_t **ppucData, int i4Idx);
+int kalPtrRingCnt(struct ptr_ring *ring);
 void kalCreatePagePool(struct GLUE_INFO *prGlueInfo);
 void kalReleasePagePool(struct GLUE_INFO *prGlueInfo);
 #endif /* CFG_SUPPORT_RX_PAGE_POOL */
@@ -2149,6 +2151,8 @@ void kalSetMddpEvent(struct GLUE_INFO *pr);
 void kalSetHifAerResetEvent(struct GLUE_INFO *pr);
 
 void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr);
+
+void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr);
 
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 

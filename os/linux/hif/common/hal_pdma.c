@@ -1687,13 +1687,54 @@ static void halResetMsduToken(struct ADAPTER *prAdapter)
 #endif
 }
 
-void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
+u_int8_t halHandleAllTokensUnused(struct ADAPTER *prAdapter, u_int8_t fgIsCheck)
 {
-	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo = NULL;
 #if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
 	struct BUS_INFO *prBusInfo = NULL;
 #endif
-	struct mt66xx_chip_info *prChipInfo = NULL;
+	struct MSDU_TOKEN_INFO *prTokenInfo =
+		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
+	u_int8_t fgRet = FALSE;
+
+	prChipInfo = prAdapter->chip_info;
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
+	prBusInfo = prChipInfo->bus_info;
+#endif
+
+	if (GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt) != 0)
+		return FALSE;
+
+#if CFG_SUPPORT_PCIE_ASPM
+	if (prBusInfo->updatePcieAspm) {
+		if (!fgIsCheck)
+			prBusInfo->updatePcieAspm(
+				prAdapter->prGlueInfo, TRUE);
+		fgRet = TRUE;
+	}
+#endif
+#if CFG_PCIE_LTR_UPDATE
+	/* set pcie LTR high latency */
+	if (prBusInfo->pcieLTRValue) {
+		if (!fgIsCheck)
+			prBusInfo->pcieLTRValue(
+				prAdapter, PCIE_LTR_STATE_TX_END);
+		fgRet = TRUE;
+	}
+#endif
+	if (prChipInfo->wifiNappingCtrl) {
+		if (!fgIsCheck)
+			prChipInfo->wifiNappingCtrl(
+				prAdapter->prGlueInfo, TRUE);
+		fgRet = TRUE;
+	}
+
+	return fgRet;
+}
+
+void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
+{
+	struct GL_HIF_INFO *prHifInfo = NULL;
 
 	struct MSDU_TOKEN_INFO *prTokenInfo =
 		&prAdapter->prGlueInfo->rHifInfo.rTokenInfo;
@@ -1702,12 +1743,7 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 #if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	unsigned long flags = 0;
 #endif
-
-#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
-	prBusInfo = prAdapter->chip_info->bus_info;
-#endif
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-	prChipInfo = prAdapter->chip_info;
 
 	u4UsedCnt = GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt);
 	if (!u4UsedCnt) {
@@ -1743,30 +1779,15 @@ void halReturnMsduToken(struct ADAPTER *prAdapter, uint32_t u4TokenNum)
 		DBGLOG(HAL, ERROR, "fifo full token[%u]\n", u4TokenNum);
 		GLUE_INC_REF_CNT(prTokenInfo->u4FifoErrCnt);
 	}
+
+	if (halHandleAllTokensUnused(prAdapter, TRUE))
+		kalSetHifHandleAllTokensUnusedEvent(prAdapter->prGlueInfo);
 #else
 	halReturnMsduTokenToFreeList(prAdapter, prToken);
-#endif /* CFG_SUPPORT_HIF_FIFO_TOKEN */
+	halHandleAllTokensUnused(prAdapter, FALSE);
 
-	if (GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt) == 0) {
-#if CFG_SUPPORT_PCIE_ASPM
-		if (prBusInfo->updatePcieAspm)
-			prBusInfo->updatePcieAspm(
-				prAdapter->prGlueInfo, TRUE);
-#endif
-#if CFG_PCIE_LTR_UPDATE
-	/* set pcie LTR high latency */
-		if (prBusInfo->pcieLTRValue)
-			prBusInfo->pcieLTRValue(
-				prAdapter, PCIE_LTR_STATE_TX_END);
-#endif
-		if (prChipInfo->wifiNappingCtrl)
-			prChipInfo->wifiNappingCtrl(
-				prAdapter->prGlueInfo, TRUE);
-	}
-
-#if !CFG_SUPPORT_HIF_FIFO_TOKEN
 	spin_unlock_irqrestore(&prTokenInfo->rTokenLock, flags);
-#endif
+#endif /* CFG_SUPPORT_HIF_FIFO_TOKEN */
 }
 
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
@@ -1880,6 +1901,8 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	prNapiDev = &prHifInfo->rNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+	prHifInfo->prGlueInfo = prAdapter->prGlueInfo;
 
 	if (prBusInfo->DmaShdlInit)
 		prBusInfo->DmaShdlInit(prAdapter);
@@ -2055,6 +2078,9 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	struct BUS_INFO *prBusInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	struct SW_WFDMA_INFO *prSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
+	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 	struct list_head *prCur, *prNext;
 	struct TX_CMD_REQ *prTxCmdReq;
 	struct TX_DATA_REQ *prTxDataReq;
@@ -2068,6 +2094,9 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
 	prSwWfdmaInfo = &prBusInfo->rSwWfdmaInfo;
+#if CFG_MTK_WIFI_SW_EMI_RING
+	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 	del_timer_sync(&prHifInfo->rSerTimer);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
@@ -2123,6 +2152,11 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 
 	if (prSwWfdmaInfo->rOps.uninit)
 		prSwWfdmaInfo->rOps.uninit(prGlueInfo);
+
+#if CFG_MTK_WIFI_SW_EMI_RING
+	if (prSwEmiRingInfo->rOps.uninit)
+		prSwEmiRingInfo->rOps.uninit(prGlueInfo);
+#endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_HIF_RX_NAPI
 	napi_synchronize(&prNapiDev->napi);
@@ -4389,6 +4423,42 @@ void halWpdmaFreeMsdu(struct GLUE_INFO *prGlueInfo,
 		kalSetEvent(prGlueInfo);
 }
 
+u_int8_t halIsValidDataFormat(
+	struct GLUE_INFO *prGlueInfo,
+	struct MSDU_INFO *prMsduInfo)
+{
+	struct mt66xx_chip_info *prChipInfo;
+	struct TX_DESC_OPS_T *prTxDescOps;
+	struct sk_buff *prSkb;
+	void *prTxDesc;
+	uint32_t u4TxDumpSize;
+	uint8_t ucFormat = 0;
+
+	prChipInfo = prGlueInfo->prAdapter->chip_info;
+	prTxDescOps = prChipInfo->prTxDescOps;
+	prSkb = (struct sk_buff *)prMsduInfo->prPacket;
+	prTxDesc = prSkb->data;
+	u4TxDumpSize = NIC_TX_DESC_AND_PADDING_LENGTH +
+		prChipInfo->txd_append_size;
+
+	if (prMsduInfo->u2FrameLength == 0)
+		return FALSE;
+
+	if (prTxDescOps->nic_txd_pkt_format_op) {
+		ucFormat = prTxDescOps->nic_txd_pkt_format_op(
+			prTxDesc, 0, FALSE);
+		if (ucFormat != TXD_PKT_FORMAT_TXD &&
+		    ucFormat != TXD_PKT_FORMAT_TXD_PAYLOAD) {
+			DBGLOG(TX, WARN, "invalid pkt format[%u]\n", ucFormat);
+			DBGLOG_MEM8(TX, WARN, prTxDesc, u4TxDumpSize);
+			kalSendAeeWarning("WLAN", "invalid pkt format");
+			return FALSE;
+		}
+	}
+
+	return TRUE;
+}
+
 bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		       struct MSDU_INFO *prMsduInfo,
 		       struct list_head *prCurList)
@@ -4419,7 +4489,7 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 	}
 
 	if (pucSrc == NULL || u4TotalLen == 0 ||
-	    prMsduInfo->u2FrameLength == 0) {
+	    !halIsValidDataFormat(prGlueInfo, prMsduInfo)) {
 		DBGLOG(HAL, ERROR, "prSkb=0x%p, frameLen=%d\n",
 		       prSkb, prMsduInfo->u2FrameLength);
 
@@ -6900,6 +6970,17 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			kalGetPagePoolPageNum()
 			);
 #endif /* CFG_SUPPORT_DYNAMIC_PAGE_POOL */
+#if (CFG_SUPPORT_RX_PAGE_POOL && !CFG_SUPPORT_PAGE_POOL_USE_CMA)
+	for (i = 0; i < PAGE_POOL_NUM; i++) {
+		pos += kalSnprintf(
+			buf + pos, u4BufferSize - pos,
+			"%s%u:%u%s",
+			(i == 0) ? " PP[" : "",
+			kalPtrRingCnt(&prGlueInfo->aprPagePool[i]->ring),
+			prGlueInfo->aprPagePool[i]->alloc.count,
+			(i == PAGE_POOL_NUM - 1) ? "]" : ",");
+	}
+#endif
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos,
 			" reg[%u/%u]",
 			GLUE_GET_REF_CNT(prHifStats->u4TxDataRegCnt),
@@ -6968,7 +7049,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" Napi[%u/%u/%u/0x%x/%u]",
+		" Napi[%u/%u/%u/0x%lx/%u]",
 		GLUE_GET_REF_CNT(prHifStats->u4HifNapiCount),
 		GLUE_GET_REF_CNT(prHifStats->u4HifNapiRunCount),
 		prHifInfo->rNapiDev.fgIsRun,

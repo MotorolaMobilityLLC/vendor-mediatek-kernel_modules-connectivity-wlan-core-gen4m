@@ -77,6 +77,8 @@
 #include <linux/msi.h>
 #endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 
+#include "wlan_hw_dbg.h"
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -256,6 +258,10 @@ static void mt6653LowPowerOwnClear(struct ADAPTER *prAdapter,
 				   u_int8_t *pfgResult);
 #if CFG_MTK_WIFI_MBU
 static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
+#endif
+
+#if CFG_MTK_MDDP_SUPPORT
+static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter);
 #endif
 
 #if (CFG_SUPPORT_CONNFEM == 1)
@@ -825,6 +831,7 @@ struct BUS_INFO mt6653_bus_info = {
 	.rSwEmiRingInfo = {
 		.rOps = {
 			.init = halMbuInit,
+			.uninit = halMbuUninit,
 			.read = halMbuRead,
 			.debug = halMbuDebug,
 			.dumpDebugCr = mt6653MbuDumpDebugCr,
@@ -1256,6 +1263,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isSupportMddpSHM = true,
 	.u4MdLpctlAddr = CONN_HOST_CSR_TOP_WF_MD_LPCTL_ADDR,
 	.u4MdDrvOwnTimeoutTime = 2000,
+	.checkMdRxHang = mt6653CheckMdRxHang,
 #else
 	.isSupportMddpAOR = false,
 	.isSupportMddpSHM = false,
@@ -5105,16 +5113,51 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 	struct MBU_EMI_CTX *prEmi;
 	char *aucBuf;
 	uint32_t u4BufferSize = 1024, u4Pos = 0, u4Idx, u4Val = 0;
-	uint32_t au4DbgCr[] = {
+	const uint32_t au4DbgCr1[] = {
+		/* cb_infra */
 		0x7002500C, 0x70025014, 0x70025024, 0x7002502C,
 		0x70028730, 0x70026100,
+		/* mbu */
 		0x74130200, 0x74130204, 0x7413A004, 0x74138018,
-		0x7413B000, 0x70028800, 0x74138020, 0x74138064,
-		0x7413811C, 0x74138160, 0x7413D008, 0x7413B008,
-		0x7413B00C,
+		0x7413B000, 0x70028800, 0x74130040, 0x74130044,
+		0x74130048, 0x7413004C, 0x74130050, 0x74130054,
+		0x74130058, 0x7413005C, 0x74138000, 0x74138004,
+		0x74138008, 0x7413800C, 0x74138010, 0x74138014,
+		0x74138018, 0x7413801C, 0x74138020, 0x74138060,
+		0x74138064, 0x74138100, 0x74138104, 0x74138108
+	};
+	const uint32_t au4DbgCr2[] = {
+		/* mbu */
+		0x7413810C, 0x74138110, 0x74138114, 0x74138118,
+		0x7413811C, 0x74138120, 0x74138160, 0x74138164,
+		0x7413D008, 0x7413B008, 0x7413B00C,
+		/* pcie mac */
 		0x74030150, 0x74030154, 0x74030184, 0x74031010,
-		0x74031204, 0x74031210,
+		0x74031204, 0x74031210, 0x740301A8, 0x740301D4,
+		0x74030D40, 0x740310A8,
+		/* pcie phy */
 		0x740700B0, 0x740700C0
+	};
+	const struct wlan_dbg_command arMbuDbg[] = {
+		/* write, w_addr, mask, value, read, r_addr*/
+		/* pcie mac */
+		{TRUE, 0x74030168, 0, 0xCCCC0100, FALSE, 0},
+		{TRUE, 0x74030164, 0, 0x4C4D4E4F, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x50515253, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x54555657, TRUE, 0x7403002C},
+		{TRUE, 0x74030168, 0, 0x88880100, FALSE, 0},
+		{TRUE, 0x74030164, 0, 0x0001030C, TRUE, 0x7403002C},
+		{TRUE, 0x74030168, 0, 0x99990100, FALSE, 0},
+		{TRUE, 0x74030164, 0, 0x24252627, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x50515253, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x54555657, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0xB0B1B2B3, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0xB4B5B6B7, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x98999A9B, TRUE, 0x7403002C},
+		{TRUE, 0x74030164, 0, 0x9C9D9E9F, TRUE, 0x7403002C},
+		/* cb_infra */
+		{TRUE, 0x70025300, 0, 0x00010E0F, TRUE, 0x70025304},
+		{TRUE, 0x70025300, 0, 0x00011011, TRUE, 0x70025304},
 	};
 
 	prAdapter = prGlueInfo->prAdapter;
@@ -5126,17 +5169,32 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 		return;
 
 	aucBuf = kalMemAlloc(u4BufferSize, PHY_MEM_TYPE);
-	if (aucBuf == NULL)
+	if (aucBuf == NULL) {
+		DBGLOG(HAL, WARN, "buffer alloc fail\n");
 		return;
+	}
 
 	kalMemZero(aucBuf, u4BufferSize);
-	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr); u4Idx++) {
-		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr[u4Idx], &u4Val);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr1); u4Idx++) {
+		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr1[u4Idx], &u4Val);
 		u4Pos += kalSnprintf(
 			aucBuf + u4Pos,
 			u4BufferSize - u4Pos,
 			"[0x%08x]=[0x%08x] ",
-			au4DbgCr[u4Idx],
+			au4DbgCr1[u4Idx],
+			u4Val);
+	}
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+
+	u4Pos = 0;
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(au4DbgCr2); u4Idx++) {
+		HAL_RMCR_RD(PLAT_DBG, prAdapter, au4DbgCr2[u4Idx], &u4Val);
+		u4Pos += kalSnprintf(
+			aucBuf + u4Pos,
+			u4BufferSize - u4Pos,
+			"[0x%08x]=[0x%08x] ",
+			au4DbgCr2[u4Idx],
 			u4Val);
 	}
 
@@ -5144,10 +5202,76 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo)
 	HAL_RMCR_RD(PLAT_DBG, prAdapter, 0x74130200, &u4Val);
 		u4Pos += kalSnprintf(
 			aucBuf + u4Pos, u4BufferSize - u4Pos,
-			" delay[0x%08x]=[0x%08x]",
+			"delay[0x%08x]=[0x%08x]",
 			0x74130200, u4Val);
-	DBGLOG(HAL, INFO, "%s", aucBuf);
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+
+	u4Pos = 0;
+	kalMemZero(aucBuf, u4BufferSize);
+	for (u4Idx = 0; u4Idx < ARRAY_SIZE(arMbuDbg); u4Idx++) {
+		if (arMbuDbg[u4Idx].write) {
+			HAL_MCR_WR(prAdapter,
+				   arMbuDbg[u4Idx].w_addr,
+				   arMbuDbg[u4Idx].value);
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				u4BufferSize - u4Pos,
+				"W[0x%08x]=[0x%08x] ",
+				arMbuDbg[u4Idx].w_addr,
+				arMbuDbg[u4Idx].value);
+		}
+		if (arMbuDbg[u4Idx].read) {
+			HAL_RMCR_RD(PLAT_DBG, prAdapter,
+				    arMbuDbg[u4Idx].r_addr, &u4Val);
+			u4Pos += kalSnprintf(
+				aucBuf + u4Pos,
+				u4BufferSize - u4Pos,
+				"R[0x%08x]=[0x%08x] ",
+				arMbuDbg[u4Idx].r_addr,
+				u4Val);
+		}
+	}
+	DBGLOG(HAL, INFO, "%s\n", aucBuf);
+
 	kalMemFree(aucBuf, PHY_MEM_TYPE, u4BufferSize);
 }
 #endif /* CFG_MTK_WIFI_MBU */
+
+#if CFG_MTK_MDDP_SUPPORT
+static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter)
+{
+	char aucRsn[MDDP_EXP_RSN_SIZE];
+	uint32_t u4Base = 0, u4Cnt = 0, u4Cidx = 0, u4Didx = 0, u4Addr;
+
+	/* check md rx event ring */
+	u4Addr = WF_WFDMA_HOST_DMA0_WPDMA_RX_RING12_CTRL0_ADDR;
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr, &u4Base);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr + 0x04, &u4Cnt);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, u4Addr + 0x08, &u4Cidx);
+	HAL_RMCR_RD(HIF_DBG, prAdapter,	u4Addr + 0x0c, &u4Didx);
+
+	u4Cnt &= MT_RING_CNT_MASK;
+	u4Cidx &= MT_RING_CIDX_MASK;
+	u4Didx &= MT_RING_DIDX_MASK;
+
+	if (u4Base == 0 || u4Cnt == 0 || u4Cidx >= u4Cnt || u4Didx >= u4Cnt)
+		return;
+
+	if (u4Cidx != u4Didx)
+		return;
+
+	DBGLOG(HAL, ERROR, "md rx ring full, cidx[%u] didx[%u]\n",
+	       u4Cidx, u4Didx);
+
+	kalMemZero(aucRsn, MDDP_EXP_RSN_SIZE);
+	kalScnprintf(aucRsn,
+		     MDDP_EXP_RSN_SIZE,
+		     MDDP_EXP_RST_STR,
+		     MDDP_EXP_RX_HANG);
+#if CFG_WMT_RESET_API_SUPPORT
+	glSetRstReasonString(aucRsn);
+	glResetWholeChipResetTrigger(aucRsn);
+#endif /* CFG_WMT_RESET_API_SUPPORT */
+}
+#endif
 #endif  /* MT6653 */

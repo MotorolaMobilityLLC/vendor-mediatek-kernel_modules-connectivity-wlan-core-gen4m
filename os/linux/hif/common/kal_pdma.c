@@ -1422,7 +1422,7 @@ check:
 		if (prChipInfo->fgIsWarnInvalidMmioRead)
 			WARN_ON_ONCE(TRUE);
 
-		if (prChipInfo->fgIsResetInvalidMmioRead) {
+		if (prGlueInfo && prChipInfo->fgIsResetInvalidMmioRead) {
 			GL_USER_DEFINE_RESET_TRIGGER(
 				prGlueInfo->prAdapter,
 				RST_MMIO_READ, RST_FLAG_WF_RESET);
@@ -3111,6 +3111,9 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 
 		kalUsleep(HIF_REG_WORK_WAIT_TIME);
 	}
+
+	if (i >= HIF_REG_WORK_WAIT_CNT)
+		prReq->eStatus = WF_REG_DROP;
 
 	if (prReq->eStatus != WF_REG_SUCCESS) {
 		DBGLOG_LIMITED(HAL, WARN,

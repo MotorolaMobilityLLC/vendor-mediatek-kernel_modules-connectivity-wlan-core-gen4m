@@ -353,6 +353,9 @@ extern uint8_t g_aucNvram_OnlyPreCal[];
 #define HIF_FLAG_MSI_RECOVERY		BIT(1)
 #define HIF_FLAG_MSI_RECOVERY_BIT	(1)
 
+#define HIF_FLAG_ALL_TOKENS_UNUSED	BIT(2)
+#define HIF_FLAG_ALL_TOKENS_UNUSED_BIT	(2)
+
 #if CFG_SUPPORT_HIF_RX_NAPI
 #define HIF_NAPI_SET_DRV_OWN_BIT		(0)
 #define HIF_NAPI_SET_FW_OWN_BIT			(1)
@@ -1042,6 +1045,9 @@ struct GLUE_INFO {
 	struct kfifo rRxKfifoQ;
 	uint8_t *prRxKfifoBuf;
 	uint32_t u4RxKfifoBufLen;
+	u_int8_t fgNapiScheduled;
+	uint32_t u4LastScheduleCnt;
+	uint32_t u4LastNapiPollCnt;
 #if CFG_NAPI_DELAY
 	struct hrtimer rNapiDelayTimer;
 	unsigned long ulNapiDelayFlag;
@@ -1158,7 +1164,8 @@ struct GLUE_INFO {
 	unsigned long fgIsInSuspend;
 
 #if CFG_SUPPORT_RX_PAGE_POOL
-	struct page_pool *aprPagePool[PAGE_POOL_MAX_SIZE];
+	struct page_pool *aprPagePool[PAGE_POOL_NUM];
+	uint32_t u4LastAllocIdx;
 #endif
 
 #if CFG_TESTMODE_L0P5_FWDL_SUPPORT
@@ -1177,6 +1184,11 @@ struct GLUE_INFO {
 #endif
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
 	u_int8_t fgWlanUevent;
+#if CFG_SUPPORT_TPUT_FACTOR
+#if KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE
+	cpumask_t hif_cpu_mask;
+#endif
+#endif /* CFG_SUPPORT_TPUT_FACTOR */
 };
 
 typedef irqreturn_t(*PFN_WLANISR) (int irq, void *dev_id,

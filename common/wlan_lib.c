@@ -3137,6 +3137,9 @@ void wlanReleasePendingOid(struct ADAPTER *prAdapter,
 			}
 
 			prAdapter->u4HifDbgFlag |= DEG_HIF_ALL;
+#if CFG_MTK_MDDP_SUPPORT
+			prAdapter->u4HifDbgFlag |= HIF_CHK_MD_RX_HANG;
+#endif
 			kalSetHifDbgEvent(prAdapter->prGlueInfo);
 		}
 	} while (FALSE);
@@ -8192,6 +8195,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[11], "PerfMonLv12", 5000,
 		  FEATURE_TO_CUSTOMER);
+
+#if CFG_SUPPORT_RX_NAPI
+	/* unit: s */
+	INIT_UINT(prWifiVar->u4NapiScheduleTimeout, "NapiScheduleTimeout", 60,
+		  FEATURE_TO_CUSTOMER);
+#endif
 
 #if CFG_NAPI_DELAY
 	/* unit: Mbps */
