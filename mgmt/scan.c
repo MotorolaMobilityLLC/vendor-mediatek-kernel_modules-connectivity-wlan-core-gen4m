@@ -624,6 +624,15 @@ scanSearchBssDescByBssidAndSsid(struct ADAPTER *prAdapter,
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 		rLinkEntry, struct BSS_DESC) {
 
+		if (prBssDesc == NULL) {
+			DBGLOG(SCN, WARN,
+				"NULL prBssDesc from list %u elem,%p,%p\n",
+				prBSSDescList->u4NumElem,
+				prBSSDescList->prPrev,
+				prBSSDescList->prNext);
+			return prBssDesc;
+		}
+
 		if (!(EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)))
 			continue;
 		if (fgCheckSsid == FALSE || prSsid == NULL)
@@ -701,6 +710,15 @@ scanSearchBssDescByTAAndSsid(struct ADAPTER *prAdapter,
 	/* Search BSS Desc from current SCAN result list. */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 		rLinkEntry, struct BSS_DESC) {
+
+		if (prBssDesc == NULL) {
+			DBGLOG(SCN, WARN,
+				"NULL prBssDesc from list %u elem,%p,%p\n",
+				prBSSDescList->u4NumElem,
+				prBSSDescList->prPrev,
+				prBSSDescList->prNext);
+			return prBssDesc;
+		}
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucSrcAddr, aucSrcAddr)) {
 			if (fgCheckSsid == FALSE || prSsid == NULL)
@@ -873,9 +891,24 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 
 		GET_CURRENT_SYSTIME(&rCurrentTime);
 
+		if (LINK_IS_INVALID(prBSSDescList)) {
+			DBGLOG(SCN, WARN,
+				"prBSSDescList is invalid\n");
+			return;
+		}
+
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
+
+			if (prBssDesc == NULL) {
+				DBGLOG(SCN, WARN,
+					"NULL prBssDesc from list %u elem,%p,%p\n",
+					prBSSDescList->u4NumElem,
+					prBSSDescList->prPrev,
+					prBSSDescList->prNext);
+				return;
+			}
 
 			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
 				&& (prBssDesc->fgIsConnected
@@ -911,6 +944,15 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
+
+			if (prBssDesc == NULL) {
+				DBGLOG(SCN, WARN,
+					"NULL prBssDesc from list %u elem,%p,%p\n",
+					prBSSDescList->u4NumElem,
+					prBSSDescList->prPrev,
+					prBSSDescList->prNext);
+				return;
+			}
 
 			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
 				&& (prBssDesc->fgIsConnected
@@ -957,6 +999,15 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
+
+			if (prBssDesc == NULL) {
+				DBGLOG(SCN, WARN,
+					"NULL prBssDesc from list %u elem,%p,%p\n",
+					prBSSDescList->u4NumElem,
+					prBSSDescList->prPrev,
+					prBSSDescList->prNext);
+				return;
+			}
 
 			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
 				&& (prBssDesc->fgIsConnected
@@ -1036,8 +1087,23 @@ void scanRemoveBssDescsByPolicy(struct ADAPTER *prAdapter,
 	if (u4RemovePolicy & SCN_RM_POLICY_ENTIRE) {
 		struct BSS_DESC *prBSSDescNext;
 
+		if (LINK_IS_INVALID(prBSSDescList)) {
+			DBGLOG(SCN, WARN,
+				"prBSSDescList is invalid\n");
+			return;
+		}
+
 		LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext,
 			prBSSDescList, rLinkEntry, struct BSS_DESC) {
+
+			if (prBssDesc == NULL) {
+				DBGLOG(SCN, WARN,
+					"NULL prBssDesc from list %u elem,%p,%p\n",
+					prBSSDescList->u4NumElem,
+					prBSSDescList->prPrev,
+					prBSSDescList->prNext);
+				return;
+			}
 
 			if ((u4RemovePolicy & SCN_RM_POLICY_EXCLUDE_CONNECTED)
 				&& (prBssDesc->fgIsConnected
@@ -1079,6 +1145,12 @@ void scanRemoveBssDescByBssid(struct ADAPTER *prAdapter,
 
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
 	prBSSDescList = &prScanInfo->rBSSDescList;
+
+	if (LINK_IS_INVALID(prBSSDescList)) {
+		DBGLOG(SCN, WARN,
+			"prBSSDescList is invalid\n");
+		return;
+	}
 
 	/* Check if such BSS Descriptor exists in a valid list */
 	LINK_FOR_EACH_ENTRY_SAFE(prBssDesc, prBSSDescNext, prBSSDescList,
@@ -1140,6 +1212,12 @@ void scanRemoveBssDescByBandAndNetwork(struct ADAPTER *prAdapter,
 
 	if (eBand == BAND_NULL) {
 		/* no need to do anything, keep all scan result */
+		return;
+	}
+
+	if (LINK_IS_INVALID(prBSSDescList)) {
+		DBGLOG(SCN, WARN,
+			"prBSSDescList is invalid\n");
 		return;
 	}
 
@@ -1206,6 +1284,15 @@ void scanRemoveConnFlagOfBssDescByBssid(struct ADAPTER *prAdapter,
 	/* Search BSS Desc from current SCAN result list. */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 		rLinkEntry, struct BSS_DESC) {
+
+		if (prBssDesc == NULL) {
+			DBGLOG(SCN, WARN,
+				"NULL prBssDesc from list %u elem,%p,%p\n",
+				prBSSDescList->u4NumElem,
+				prBSSDescList->prPrev,
+				prBSSDescList->prNext);
+			return;
+		}
 
 		if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID, aucBSSID)) {
 			prBssDesc->fgIsConnected &= ~BIT(ucBssIndex);
@@ -2206,6 +2293,7 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 	    (uint16_t) OFFSET_OF(struct WLAN_BEACON_FRAME_BODY, aucInfoElem[0]);
 
 	kalMemZero(&rSsid, sizeof(rSsid));
+	rSsid.aucSsid[ELEM_MAX_LEN_SSID-1] = '\0';
 	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
 		/* Error handling for disorder IE that IE length is 0 */
 		if (IE_ID(pucIE) != ELEM_ID_SSID && IE_LEN(pucIE) == 0)
@@ -2628,6 +2716,11 @@ struct BSS_DESC *scanAddToBssDesc(struct ADAPTER *prAdapter,
 						  prBssDesc->ucSSIDLen,
 						  SSID_IE(pucIE)->aucSSID,
 						  SSID_IE(pucIE)->ucLength);
+					if (rSsid.u4SsidLen <
+							ELEM_MAX_LEN_SSID) {
+						rSsid.aucSsid[rSsid.u4SsidLen]
+							= '\0';
+					}
 				} else if (fgIsProbeResp) {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 			/* Don't clear SSID for 6G, 6G AP may send unsolicited
@@ -3865,6 +3958,16 @@ void scanReportBss2Cfg80211(struct ADAPTER *prAdapter,
 		/* Search BSS Desc from current SCAN result list. */
 		LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList,
 			rLinkEntry, struct BSS_DESC) {
+
+			if (prBssDesc == NULL) {
+				DBGLOG(SCN, WARN,
+					"NULL prBssDesc from list %u elem,%p,%p\n",
+					prBSSDescList->u4NumElem,
+					prBSSDescList->prPrev,
+					prBSSDescList->prNext);
+				return;
+			}
+
 			/* check BSSID is legal channel */
 			if (!scanCheckBssIsLegal(prAdapter, prBssDesc)) {
 				log_dbg(SCN, TRACE, "Remove SSID[%s %d]\n",
