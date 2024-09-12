@@ -7661,6 +7661,13 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 
 	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
 		prEvent->aucBuffer);
+
+	if (!IS_BSS_INDEX_VALID(prEventBssStatus->ucBssIndex)) {
+		DBGLOG(QM, WARN, "NAF:BSS IDX is invalid: %u\n",
+			prEventBssStatus->ucBssIndex);
+		return;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prEventBssStatus->ucBssIndex);
 	if (!prBssInfo) {
