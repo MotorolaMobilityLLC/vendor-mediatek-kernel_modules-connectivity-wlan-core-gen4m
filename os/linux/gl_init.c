@@ -9261,6 +9261,15 @@ int wlanFuncOnImpl(void)
 	struct mt66xx_chip_info *chip = NULL;
 	int ret = 0;
 
+#if CFG_MTK_ANDROID_WMT
+	/*
+	 * Initialize shutdown status to resolve reset-triggered failures
+	 * if no shutdown occurs after pre_fmd callback is done.
+	 */
+	if (uShutdownState == SHUTDOWN_STATE_DONE)
+		uShutdownState = SHUTDOWN_STATE_INIT;
+#endif
+
 #if (CFG_SUPPORT_POWER_THROTTLING == 1)
 	power_throttling_pre_start();
 #endif
