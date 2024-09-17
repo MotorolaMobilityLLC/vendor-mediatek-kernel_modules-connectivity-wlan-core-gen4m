@@ -3213,7 +3213,7 @@ void connac2x_show_wfdma_desc(struct ADAPTER *prAdapter)
 	}
 }
 
-static void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
+void connac2xDumpPPDebugCr(struct ADAPTER *prAdapter)
 {
 	struct BUS_INFO *prBusInfo;
 	struct PP_TOP_CR *prCr;
