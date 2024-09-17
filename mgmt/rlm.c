@@ -5243,14 +5243,14 @@ void rlmProcessBcn(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 					continue;
 				}
 
-#if CFG_SUPPORT_ROAMING
 				if (IS_AIS_ROAMING(prAdapter,
+					prBssInfo->ucBssIndex) ||
+				    IS_AIS_OFF_CHNL(prAdapter,
 					prBssInfo->ucBssIndex)) {
 					DBGLOG(RLM, INFO,
-						"Ignore rlm update when roaming\n");
+						"Ignore rlm update when roaming/offchnl\n");
 					continue;
 				}
-#endif
 
 				if (EQUAL_MAC_ADDR(
 					    prBssInfo->aucBSSID,
@@ -9390,13 +9390,12 @@ static void rlmCompleteOpModeChange(struct ADAPTER *prAdapter,
 			fgSkipRlmSync = TRUE;
 		}
 
-#if CFG_SUPPORT_ROAMING
-		if (IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex)) {
+		if (IS_AIS_ROAMING(prAdapter, prBssInfo->ucBssIndex) ||
+		    IS_AIS_OFF_CHNL(prAdapter, prBssInfo->ucBssIndex)) {
 			DBGLOG(RLM, INFO,
-				"Ignore rlm update when roaming\n");
+				"Ignore rlm update when roaming/offchnl\n");
 			fgSkipRlmSync = TRUE;
 		}
-#endif
 
 		/* <1> Update own OP BW/Nss */
 		rlmChangeOwnOpInfo(prAdapter, prBssInfo);

@@ -55,9 +55,11 @@
 #if CFG_MTK_FPGA_PLATFORM
 #define AIS_SCN_DONE_TIMEOUT_SEC            30 /* 30 for 2.4G + 5G */	/* 5 */
 #define AIS_JOIN_CH_REQUEST_INTERVAL        40000
+#define AIS_ACTION_FRAME_TX_LIFE_TIME_MS    0 /* 0 for no limit */
 #else
 #define AIS_SCN_DONE_TIMEOUT_SEC            15 /* 15 for 2.4G + 5G */	/* 5 */
 #define AIS_JOIN_CH_REQUEST_INTERVAL        4000
+#define AIS_ACTION_FRAME_TX_LIFE_TIME_MS    100
 #endif
 
 /* Support AP Selection*/
@@ -89,11 +91,22 @@
 #define IS_AIS_ROAMING(_adapter, _bss_idx) \
 	(IS_BSS_INDEX_AIS(_adapter, _bss_idx) && \
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucIsStaRoaming)
+#else
+#define IS_AIS_ROAMING(_adapter, _bss_idx) (FALSE)
 #endif
 
 #define IS_AIS_CH_SWITCH(_bss_info) \
 	(IS_BSS_AIS(_bss_info) && \
 	(_bss_info->fgIsAisCsaPending || _bss_info->fgIsAisSwitchingChnl))
+
+#define IS_AIS_OFF_CHNL(_adapter, _bss_idx) \
+	(IS_BSS_INDEX_AIS(_adapter, _bss_idx) && \
+	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
+	AIS_STATE_REQ_REMAIN_ON_CHANNEL || \
+	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
+	AIS_STATE_REMAIN_ON_CHANNEL || \
+	aisGetAisFsmInfo(_adapter, _bss_idx)->eCurrentState == \
+	AIS_STATE_OFF_CHNL_TX)
 
 #define RCPI_FOR_DONT_ROAM                      60 /*-80dbm*/
 
@@ -511,6 +524,7 @@ struct AIS_FSM_INFO {
 
 	uint8_t ucSeqNumOfReqMsg;
 	uint8_t ucSeqNumOfChReq;
+	uint8_t ucBssIndexOfChReq;
 	uint8_t ucSeqNumOfScanReq;
 
 	uint32_t u4ChGrantedInterval;
