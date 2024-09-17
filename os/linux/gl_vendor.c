@@ -2705,7 +2705,7 @@ int mtk_cfg80211_vendor_get_wfd_pred_tx_br(struct wiphy *wiphy,
 	} query = {0};
 	uint32_t u4QueryBufLen = sizeof(query);
 	uint32_t u4QueryInfoLen = sizeof(query.cmd);
-	struct EVENT_STATS_LLS_TX_BIT_RATE res;
+	struct EVENT_STATS_LLS_TX_BIT_RATE res = {0};
 #ifdef CFG_SUPPORT_UNIFIED_COMMAND
 	uint16_t offset = 0;
 	uint8_t *tag = NULL;
