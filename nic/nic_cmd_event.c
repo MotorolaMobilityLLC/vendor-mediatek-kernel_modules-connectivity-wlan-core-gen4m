@@ -3368,8 +3368,6 @@ uint32_t nicCfgChipMbrEmiInfo(struct ADAPTER *prAdapter,
 
 	++prInfo;
 	prOffsetInfo = (struct MBRAIN_OFFSET_INFO *)(prInfo);
-	if (!prOffsetInfo)
-		return WLAN_STATUS_FAILURE;
 
 	if (checkMbrOffset(num, prOffsetInfo) != WLAN_STATUS_SUCCESS)
 		return WLAN_STATUS_FAILURE;
@@ -3382,7 +3380,7 @@ uint32_t nicCfgChipMbrEmiInfo(struct ADAPTER *prAdapter,
 	if (prMemOps->getWifiMiscRsvEmi) {
 		prMem = prMemOps->getWifiMiscRsvEmi(
 			prChipInfo, WIFI_MISC_MEM_BLOCK_WF_M_BRAIN);
-		if (!prMem && prMem->va)
+		if (!prMem || !prMem->va)
 			return WLAN_STATUS_FAILURE;
 
 		prAdapter->prMbrEmiData = (struct mbrain_emi_data *)(
