@@ -9216,6 +9216,14 @@ uint8_t kalGetShutdownState(void)
 #if CFG_MTK_ANDROID_WMT && CFG_WIFI_PLAT_SHUTDOWN_SUPPORT
 void wlanShutdown(void)
 {
+	/* there are two shutdown entry,
+	 * one is pre_fmd and another is platform
+	 */
+	if (kalGetShutdownState()) {
+		DBGLOG(REQ, INFO, "shutdown is ongoing\n");
+		return;
+	}
+
 	uShutdownState = SHUTDOWN_STATE_ONGOING;
 	while (kalIsResetOnEnd()) {
 		DBGLOG(REQ, WARN, "wifi driver is resetting\n");
@@ -9224,8 +9232,7 @@ void wlanShutdown(void)
 
 	wfsys_lock();
 	/* wifi is off */
-	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0) ||
-	    kalGetShutdownState()) {
+	if ((!get_wifi_powered_status() && get_wifi_process_status() == 0)) {
 		wfsys_unlock();
 		return;
 	}
