@@ -1067,6 +1067,13 @@ u_int8_t wmmParseQosAction(struct ADAPTER *prAdapter,
 			break;
 		}
 
+		/* underflow check */
+		if (prSwRfb->u2PacketLen <
+			(uint16_t)(OFFSET_OF(struct ACTION_ADDTS_RSP_FRAME,
+					     aucInfoElem)))
+			break;
+
+
 		/*for each IE*/
 		u2IEsBufLen = prSwRfb->u2PacketLen -
 			(uint16_t)(OFFSET_OF(struct ACTION_ADDTS_RSP_FRAME,
