@@ -4212,6 +4212,7 @@ nanDataEngineAllocStaRec(struct ADAPTER *prAdapter,
 		 * (*pprStaRec)->fgIsQoS = TRUE
 		 */
 
+		cnmStaRecChangeState(prAdapter, *pprStaRec, STA_STATE_1);
 		prBssInfo = prAdapter->aprBssInfo[(*pprStaRec)->ucBssIndex];
 		DBGLOG(NAN, INFO,
 		       "[%s] Update STA_REC: ADDR=%02x:%02x:%02x:%02x:%02x:%02x\n",

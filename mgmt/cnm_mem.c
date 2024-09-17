@@ -717,7 +717,6 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 	if (i < CFG_STA_REC_NUM) {
 		COPY_MAC_ADDR(prStaRec->aucMacAddr, pucMacAddr);
 		if (secPrivacySeekForEntry(prAdapter, prStaRec)) {
-			cnmStaSendUpdateCmd(prAdapter, prStaRec, NULL, FALSE);
 #if CFG_SUPPORT_LIMITED_PKT_PID
 			nicTxInitPktPID(prAdapter, prStaRec->ucWlanIndex);
 #endif /* CFG_SUPPORT_LIMITED_PKT_PID */
