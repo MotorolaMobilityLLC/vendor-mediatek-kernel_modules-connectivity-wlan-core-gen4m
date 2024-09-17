@@ -1769,6 +1769,7 @@ int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason)
 
 	DBGLOG(INIT, INFO,
 			"Enter glRstwlanPreWholeChipReset.\n");
+	glResetUpdateL0Flag(TRUE);
 	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -1866,6 +1867,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 		drv, reason, reset_type);
 
 #if CFG_MTK_ANDROID_WMT
+	glResetUpdateL0Flag(TRUE);
 	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -1878,7 +1880,6 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	}
 
 	g_IsWholeChipRst = TRUE;
-	glResetUpdateL0Flag(TRUE);
 
 	wfsys_lock();
 	if (!get_wifi_powered_status()) {
@@ -2023,6 +2024,7 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 	prAdapter = prGlueInfo->prAdapter;
 
 #if CFG_MTK_ANDROID_WMT
+	glResetUpdateL0Flag(TRUE);
 	while (get_wifi_process_status()) {
 		DBGLOG(REQ, WARN,
 			"Wi-Fi on/off process is ongoing, wait here.\n");
@@ -2046,7 +2048,6 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 		}
 
 		g_IsWholeChipRst = TRUE;
-		glResetUpdateL0Flag(TRUE);
 
 		GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter,
 					 RST_WHOLE_CHIP_TRIGGER);
@@ -2057,7 +2058,6 @@ int wlan_pre_whole_chip_rst_v2(enum consys_drv_type drv,
 			kalMsleep(100);
 		}
 		g_IsWholeChipRst = TRUE;
-		glResetUpdateL0Flag(TRUE);
 
 		kalSetRstEvent(TRUE);
 	}
