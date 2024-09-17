@@ -4889,6 +4889,15 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 		}
 		/* 4 <2> JOIN was not successful */
 		else {
+			struct PMKID_ENTRY *prPmkidEntry;
+
+			/* update pmk status before retry */
+			prPmkidEntry = aisSearchPmkidEntry(prAdapter,
+				prStaRec, ucBssIndex);
+			if (prPmkidEntry)
+				prPmkidEntry->u2StatusCode =
+					prStaRec->u2StatusCode;
+
 			/* 4 <2.1> Redo JOIN process with other Auth Type
 			 * if possible
 			 */
