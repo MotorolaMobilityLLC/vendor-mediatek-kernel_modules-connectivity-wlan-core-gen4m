@@ -3117,6 +3117,12 @@ void aisFsmSteps(struct ADAPTER *prAdapter,
 		case AIS_STATE_SCAN:
 		case AIS_STATE_ONLINE_SCAN:
 		case AIS_STATE_LOOKING_FOR:
+			if (!wlanIsDriverReady(prAdapter->prGlueInfo,
+				WLAN_DRV_READY_CHECK_WLAN_ON |
+				WLAN_DRV_READY_CHECK_HIF_SUSPEND)) {
+				DBGLOG(AIS, WARN, "driver is not ready\n");
+				return;
+			}
 			if (!IS_NET_ACTIVE(prAdapter, prAisBssInfo->ucBssIndex))
 				/* sync with firmware */
 				nicActivateNetwork(prAdapter,
@@ -10705,6 +10711,12 @@ static void aisScanReqInit(struct ADAPTER *prAdapter,
 	prConnSettings = aisGetConnSettings(prAdapter, ucBssIndex);
 	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	if (!prConnSettings || !prAisBssInfo || !prAisFsmInfo) {
+		DBGLOG(AIS, ERROR,
+			"ERR! Null access! ConnSettings=%p, BssInfo=%p, FsmInfo=%p\n",
+			prConnSettings, prAisBssInfo, prAisFsmInfo);
+		return;
+	}
 
 	kalMemZero(prScanReqMsg, sizeof(*prScanReqMsg));
 	prScanReqMsg->rMsgHdr.eMsgId = MID_AIS_SCN_SCAN_REQ_V2;
