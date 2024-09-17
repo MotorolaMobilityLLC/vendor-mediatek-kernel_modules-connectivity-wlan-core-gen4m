@@ -7076,7 +7076,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	halWFDBssBalanceFsmSteps(prAdapter, prTokenInfo);
 #endif
 
-	halCheckWfdmaHang(prAdapter);
+	halDetectHifHang(prAdapter);
 }
 
 #if CFG_CHIP_RESET_SUPPORT
