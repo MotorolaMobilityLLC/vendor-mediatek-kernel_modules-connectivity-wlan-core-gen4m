@@ -901,6 +901,8 @@ struct MSDU_INFO {
 #if (CFG_SUPPORT_CONN_LOG == 1)
 	uint16_t u2HwSeqNum;
 #endif
+	/* roaming packet. move to new sta rec */
+	u_int8_t fgIsMovePkt;
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
@@ -2075,10 +2077,18 @@ void nicTxDirectClearBssAbsentQ(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIndex);
+void nicTxDirectMoveStaPendQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
 void nicTxDirectClearAllStaPsQ(struct ADAPTER *prAdapter);
 void nicTxDirectClearAllStaPendQ(struct ADAPTER *prAdapter);
 void nicTxDirectClearStaAcmQ(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIdx);
+void nicTxDirectMoveStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
+void nicTxDirectMoveStaPsQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
+void nicTxDirectMoveBssAbsentQ(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
 void nicTxDirectClearAllStaAcmQ(struct ADAPTER *prAdapter);
 void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter);
 
