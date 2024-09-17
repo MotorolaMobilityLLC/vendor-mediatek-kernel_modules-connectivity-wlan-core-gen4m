@@ -7657,17 +7657,8 @@ void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 	if (prAisBssInfo->prStaRecOfAP) {
 		if (prAisBssInfo->prStaRecOfAP != prTargetStaRec &&
 		    prAisBssInfo->prStaRecOfAP->fgIsInUse) {
-			qmMoveStaTxQueue(prAisBssInfo->prStaRecOfAP,
+			qmMoveStaTxQueue(prAdapter, prAisBssInfo->prStaRecOfAP,
 					 prTargetStaRec);
-			/* Currently, firmware just drop all previous AP's
-			 **  data packets, need to handle waiting tx done
-			 ** status packets so driver no
-			 */
-#if 0
-			nicTxHandleRoamingDone(prAdapter,
-					       prAisBssInfo->prStaRecOfAP,
-					       prTargetStaRec);
-#endif
 			cnmStaRecFree(prAdapter, prAisBssInfo->prStaRecOfAP);
 			prAisBssInfo->prStaRecOfAP = NULL;
 		} else {
@@ -7750,7 +7741,8 @@ void aisUpdateBssInfoForRoamingAP(struct ADAPTER *prAdapter,
 		/* before deactivate previous AP, should move its pending MSDUs
 		 ** to the new AP
 		 */
-		qmMoveStaTxQueue(prAisBssInfo->prStaRecOfAP, prStaRec);
+		qmMoveStaTxQueue(prAdapter,
+			prAisBssInfo->prStaRecOfAP, prStaRec);
 		/* cnmStaRecChangeState(prAdapter, prAisBssInfo->prStaRecOfAP,
 		 ** STA_STATE_1);
 		 */
