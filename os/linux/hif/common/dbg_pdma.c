@@ -785,9 +785,9 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 			eOPMode = prBssInfo->eCurrentOPMode;
 
 		DBGLOG(HAL, INFO,
-				"TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[sec:%ld] OpMode[%u]\n",
-				u4TokenId, prToken->ucWlanIndex,
-				prToken->ucBssIndex, rLongest.tv_sec, eOPMode);
+		       "TokenId[%u] Wlan_Idx[%u] Bss_Idx[%u] timeout[%ld.%09ld] OpMode[%u]\n",
+		       u4TokenId, prToken->ucWlanIndex, prToken->ucBssIndex,
+		       rLongest.tv_sec, rLongest.tv_nsec, eOPMode);
 
 		if (prToken->prPacket)
 			DBGLOG_MEM32(HAL, INFO, prToken->prPacket, 64);
@@ -1029,6 +1029,27 @@ void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 #endif
 }
 
+
+void halCheckTxHang(struct ADAPTER *prAdapter)
+{
+	struct HIF_STATS *prHifStats;
+
+	prHifStats = &prAdapter->rHifStats;
+
+	if (time_before(jiffies, prHifStats->ulTxHangDetectPeriod))
+		return;
+
+	prHifStats->ulTxHangDetectPeriod = jiffies +
+		prAdapter->rWifiVar.u4HifDetectTxHangPeriod * HZ / 1000;
+	prAdapter->u4HifChkFlag |= HIF_CHK_TX_HANG;
+	kalSetHifDbgEvent(prAdapter->prGlueInfo);
+}
+
+void halDetectHifHang(struct ADAPTER *prAdapter)
+{
+	halCheckWfdmaHang(prAdapter);
+	halCheckTxHang(prAdapter);
+}
 
 void halShowPdmaInfo(struct ADAPTER *prAdapter)
 {

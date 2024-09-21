@@ -9456,6 +9456,17 @@ uint8_t p2pFuncSapSwichCandidatGen(
 			prP2pBssInfo->ucBssIndex;
 		prSapSwitchCand[i].eHwBand =
 			ENUM_BAND_NUM;
+		for (j = 0; j < MAX_BSSID_NUM; j++) {
+			prBssInfo =
+				GET_BSS_INFO_BY_INDEX(prAdapter, j);
+			if (IS_BSS_ALIVE(prAdapter, prBssInfo) &&
+				prSapSwitchCand[i].eRfBand ==
+				prBssInfo->eBand &&
+				prBssInfo->ucPrimaryChannel <
+				prSapSwitchCand[i].ucChLowerBound)
+				prSapSwitchCand[i].ucChLowerBound =
+					prBssInfo->ucPrimaryChannel;
+		}
 		i++;
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #if (CONFIG_BAND_NUM == 3)

@@ -1254,8 +1254,8 @@ u_int8_t qmAmsduValidation(struct ADAPTER *prAdapter,
 u_int8_t
 qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb);
 
-void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
-		      struct STA_RECORD *prDstStaRec);
+void qmMoveStaTxQueue(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prSrcStaRec, struct STA_RECORD *prDstStaRec);
 void qmHandleDelTspec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		      enum ENUM_ACI eAci);
 void qmReleaseCHAtFinishedDhcp(struct ADAPTER *prAdapter,

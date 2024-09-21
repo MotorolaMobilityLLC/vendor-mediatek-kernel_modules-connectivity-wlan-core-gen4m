@@ -794,9 +794,9 @@ static uint8_t assocSkipRSNXIe(struct ADAPTER *prAdapter,
 			aisGetTargetBssDesc(prAdapter, ucBssIndex);
 
 		/* skip rsnxe if target ap doesn't support rsnxe */
-		if ((prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FT ||
-		    prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_OPEN_SYSTEM)
-		    && prTargetBss && !prTargetBss->fgIERSNX)
+		if (prTargetBss && !prTargetBss->fgIERSNX &&
+		   (prStaRec->ucAuthAlgNum == AUTH_ALGORITHM_NUM_FT ||
+		    prTargetBss->eRsnSelectedAuthMode == AUTH_MODE_WPA2_PSK))
 			return TRUE;
 	}
 

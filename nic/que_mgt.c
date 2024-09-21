@@ -7789,6 +7789,13 @@ void qmHandleEventBssAbsencePresence(struct ADAPTER *prAdapter,
 
 	prEventBssStatus = (struct EVENT_BSS_ABSENCE_PRESENCE *) (
 		prEvent->aucBuffer);
+
+	if (!IS_BSS_INDEX_VALID(prEventBssStatus->ucBssIndex)) {
+		DBGLOG(QM, WARN, "NAF:BSS IDX is invalid: %u\n",
+			prEventBssStatus->ucBssIndex);
+		return;
+	}
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
 		prEventBssStatus->ucBssIndex);
 	if (!prBssInfo) {
@@ -8618,8 +8625,8 @@ qmIsNoDropPacket(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	return FALSE;
 }
 
-void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
-		      struct STA_RECORD *prDstStaRec)
+void qmMoveStaTxQueue(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prSrcStaRec, struct STA_RECORD *prDstStaRec)
 {
 	uint8_t ucQueArrayIdx;
 	struct QUE *prSrcQue = NULL;
@@ -8648,6 +8655,18 @@ void qmMoveStaTxQueue(struct STA_RECORD *prSrcStaRec,
 		}
 		QUEUE_CONCATENATE_QUEUES((&prDstQue[ucQueArrayIdx]),
 					 (&prSrcQue[ucQueArrayIdx]));
+	}
+
+	if (HAL_IS_TX_DIRECT(prAdapter)) {
+		nicTxDirectMoveStaAcmQ(
+			prAdapter, ucDstStaIndex, prSrcStaRec->ucIndex);
+		nicTxDirectMoveStaPendQ(
+			prAdapter, ucDstStaIndex, prSrcStaRec->ucIndex);
+		nicTxDirectMoveStaPsQ(
+			prAdapter, ucDstStaIndex, prSrcStaRec->ucIndex);
+		nicTxDirectMoveBssAbsentQ(
+			prAdapter, prSrcStaRec->ucBssIndex,
+			ucDstStaIndex, prSrcStaRec->ucIndex);
 	}
 }
 

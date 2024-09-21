@@ -360,6 +360,7 @@ uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucCurEcoVer = wlanGetEcoVersion(
 				      prGlueInfo->prAdapter);
 	u_int8_t fgResult = FALSE;
+	u_int8_t fgNoMem = FALSE;
 	int ret;
 
 	/* Try to open FW binary */
@@ -376,8 +377,10 @@ uint32_t kalFirmwareOpen(struct GLUE_INFO *prGlueInfo,
 
 		if (ret) {
 			DBGLOG(INIT, TRACE,
-			       "Request FW image: %s failed, errno[%d]\n",
-			       apucNameTable[ucNameIdx], fgResult);
+			       "Request FW image: %s failed, errno[%d][%d]\n",
+			       apucNameTable[ucNameIdx], fgResult, ret);
+			if (ret == -ENOMEM)
+				fgNoMem = TRUE;
 			continue;
 		} else {
 			DBGLOG(INIT, INFO, "Request FW image: %s done\n",
@@ -397,6 +400,8 @@ error_open:
 	DBGLOG(INIT, ERROR,
 		"Request FW image failed! Cur ECO Ver[E%u]\n",
 		ucCurEcoVer);
+	if (fgNoMem)
+		kalSendAeeWarning("WLAN", "request firmware failed\n");
 
 	return WLAN_STATUS_FAILURE;
 }
@@ -2830,7 +2835,9 @@ uint32_t kalReportAllLinkInfo(struct ADAPTER *prAdapter,
 			if (prConnSettings->u2JoinStatus !=
 					STATUS_CODE_AUTH_TIMEOUT &&
 			    prConnSettings->u2JoinStatus !=
-					STATUS_CODE_ASSOC_TIMEOUT)
+					STATUS_CODE_ASSOC_TIMEOUT &&
+			    prConnSettings->u2JoinStatus !=
+					STATUS_CODE_SUCCESSFUL)
 				u2JoinStatus = prConnSettings->u2JoinStatus;
 			else
 #if CFG_SUPPORT_WPA3_LOG

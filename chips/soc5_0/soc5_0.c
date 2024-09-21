@@ -2328,6 +2328,14 @@ static void soc5_0_DumpAXIMasterDebugCr(struct ADAPTER *prAdapter)
 
 } /* soc5_0_DumpAXIMasterDebugCr */
 
+void soc5_0_DumpWFUMACCr(struct ADAPTER *prAdapter)
+{
+	connac2xDumpPPDebugCr(prAdapter);
+	connac2x_show_ple_info(prAdapter, FALSE);
+	connac2x_show_pse_info(prAdapter);
+	connac2x_show_dmashdl_info(prAdapter);
+}
+
 /* Dump Flow :
  *	1) dump WFDMA / AXI Master CR
  */
@@ -2346,6 +2354,7 @@ static void soc5_0_DumpHostCr(struct ADAPTER *prAdapter)
 	soc5_0_DumpN10CoreReg(prAdapter);
 	soc5_0_DumpOtherCr(prAdapter);
 	soc5_0_DumpWFDMACr(prAdapter);
+	soc5_0_DumpWFUMACCr(prAdapter);
 }
 
 static void soc5_0_DumpBusHangCr(struct ADAPTER *prAdapter)

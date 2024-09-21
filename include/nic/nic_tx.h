@@ -583,6 +583,15 @@ enum ENUM_MSDU_OPTION {
 	MSDU_OPT_MANUAL_LAST_BIT = MSDU_OPT_MANUAL_SN
 };
 
+
+/* MLO force link
+ * ACQ: FORCE_LINK + TGID
+ * ALTX: FORCE_TX + TGID
+ *
+ * Legacy force link
+ * ACQ: WTBL
+ * ALTX: FORCE_TX + TGID
+ */
 enum ENUM_MSDU_CONTROL_FLAG {
 	MSDU_CONTROL_FLAG_FORCE_TX = BIT(0),
 	MSDU_CONTROL_FLAG_NON_TX_LINK = BIT(1),
@@ -901,6 +910,8 @@ struct MSDU_INFO {
 #if (CFG_SUPPORT_CONN_LOG == 1)
 	uint16_t u2HwSeqNum;
 #endif
+	/* roaming packet. move to new sta rec */
+	u_int8_t fgIsMovePkt;
 };
 
 #define HIF_PKT_FLAGS_CT_INFO_APPLY_TXD            BIT(0)
@@ -2075,10 +2086,18 @@ void nicTxDirectClearBssAbsentQ(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 void nicTxDirectClearStaPendQ(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIndex);
+void nicTxDirectMoveStaPendQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
 void nicTxDirectClearAllStaPsQ(struct ADAPTER *prAdapter);
 void nicTxDirectClearAllStaPendQ(struct ADAPTER *prAdapter);
 void nicTxDirectClearStaAcmQ(struct ADAPTER *prAdapter,
 	uint8_t ucStaRecIdx);
+void nicTxDirectMoveStaAcmQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
+void nicTxDirectMoveStaPsQ(struct ADAPTER *prAdapter,
+	uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
+void nicTxDirectMoveBssAbsentQ(struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex, uint8_t ucDstStaRecIdx, uint8_t ucSrcStaRecIdx);
 void nicTxDirectClearAllStaAcmQ(struct ADAPTER *prAdapter);
 void nicTxDirectTimerCheckHifQ(struct ADAPTER *prAdapter);
 
