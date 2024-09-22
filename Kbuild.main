@@ -210,6 +210,12 @@ ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
 else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
     ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else ifneq ($(filter 6781, $(WLAN_CHIP_ID)),)
+    CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+    CONFIG_MTK_WIFI_APF_SUPPORT=y
+else ifneq ($(filter 6833, $(WLAN_CHIP_ID)),)
+    CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+    CONFIG_MTK_WIFI_APF_SUPPORT=y
 else
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
     ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
@@ -226,6 +232,9 @@ ifneq ($(filter 6835, $(WLAN_CHIP_ID)),)
 else ifneq ($(filter 6855, $(WLAN_CHIP_ID)),)
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=1
     ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
+else ifneq ($(filter 6853, $(WLAN_CHIP_ID)),)
+    CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+    CONFIG_MTK_WIFI_APF_SUPPORT=y
 else
     ccflags-y += -DCFG_SUPPORT_MDDP_AOR=0
     ccflags-y += -DCFG_SUPPORT_MDDP_SHM=0
@@ -270,6 +279,8 @@ ccflags-y += -DCFG_ROM_PATCH_NO_SEM_CTRL=1
 ccflags-y += -DCFG_MTK_WIFI_SW_WFDMA=1
 CONFIG_MTK_WIFI_WFDMA_BK_RS=y
 ccflags-y += -DCONFIG_MTK_WIFI_HE80
+CONFIG_MTK_WIFI_PKT_OFLD_SUPPORT=y
+CONFIG_MTK_WIFI_APF_SUPPORT=y
 ifeq ($(WLAN_CONNAC3_DEV), yes)
 CONFIG_MTK_WIFI_UNIFIED_COMMND_SUPPORT=y
 CONFIG_MTK_WIFI_11BE_SUPPORT=y
