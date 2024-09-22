@@ -2629,13 +2629,10 @@ enum ENUM_APS_REPLACE_REASON apsInterNeedReplace(struct ADAPTER *ad,
 		return APS_NOT_LAST_DEAUTH;
 
 #if (CFG_TC10_FEATURE == 0)
-	if (reason == ROAMING_REASON_POOR_RCPI ||
-	    reason == ROAMING_REASON_INACTIVE) {
-		if (apsNeedReplaceByRssi(ad, cand, curr, reason))
-			return APS_BETTER_RSSI;
-		if (apsNeedReplaceByRssi(ad, curr, cand, reason))
-			return APS_WORSE_RSSI;
-	}
+	if (apsNeedReplaceByRssi(ad, cand, curr, reason))
+		return APS_BETTER_RSSI;
+	if (apsNeedReplaceByRssi(ad, curr, cand, reason))
+		return APS_WORSE_RSSI;
 #endif
 
 	return curr_score > cand_score ? APS_HIGH_SCORE : APS_LOW_SCORE;
