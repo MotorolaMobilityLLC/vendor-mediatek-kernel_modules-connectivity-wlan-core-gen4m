@@ -2296,6 +2296,8 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 			preempt_disable();
 			spin_lock_bh(&prGlueInfo->napi_spinlock);
 			napi_gro_receive(&prGlueInfo->napi, prSkb);
+			RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+				RX_DATA_NAPI_GRO_RECEIVE_COUNT);
 			spin_unlock_bh(&prGlueInfo->napi_spinlock);
 			preempt_enable();
 		} else {
@@ -2312,6 +2314,8 @@ uint32_t kalRxIndicateOnePkt(struct GLUE_INFO
 		preempt_disable();
 		spin_lock_bh(&prGlueInfo->napi_spinlock);
 		napi_gro_receive(&prGlueInfo->napi, prSkb);
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_DATA_NAPI_GRO_RECEIVE_COUNT);
 		kal_gro_flush(prGlueInfo->prAdapter);
 		spin_unlock_bh(&prGlueInfo->napi_spinlock);
 		preempt_enable();
@@ -2332,7 +2336,8 @@ skip_gro:
 	else
 		netif_rx(prSkb);
 #endif
-
+	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+		RX_DATA_INDICATION_END_COUNT);
 	return WLAN_STATUS_SUCCESS;
 }
 
@@ -11692,14 +11697,14 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 	"RxReorder[%s] " \
 	RX_PENDING_TEMPLATE \
 	RRB_TRACK_TEMPLATE \
-	"drv[RM,IL,RI,PA,PF|DU,DA,RT,RM,RW#" \
-	"RA,RB,DT,NS,IB|HS,LS,DD,ME,BD_" \
-	"NI,DR,TE,PE,CE|DN,FE,DE,IE,TME^" \
-	"CM,FB,ID,FD,NL]:" \
+	"drv[RM,IL,RI,RIE,NGR|RF,PA,PF,DU,DA#" \
+	"RT,RM,RW,RA,RB|DT,NS,IB,HS,LS_" \
+	"DD,ME,BD,NI,DR|TE,PE,CE,DN,FE^" \
+	"DE,IE,TME,CM,FB|ID,FD,NL]:" \
 	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#" \
 	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_" \
 	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^" \
-	"%lu,%lu,%lu,%lu,%lu\n" \
+	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu\n" \
 
 	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
 		head3,
@@ -11771,6 +11776,9 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_END_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_NAPI_GRO_RECEIVE_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_FORWARD_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PACKET_ALLOC_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PACKET_FREE_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_RETURNED_COUNT),
@@ -15480,6 +15488,8 @@ next_try:
 		* Take this line instead to skip GRO in NAPI
 		* if (netif_receive_skb(prSkb) != NET_RX_SUCCESS)
 		*/
+		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
+			RX_DATA_NAPI_GRO_RECEIVE_COUNT);
 #if KERNEL_VERSION(5, 12, 0) <= CFG80211_VERSION_CODE
 		if (napi_gro_receive(napi, prSkb) == GRO_MERGED_FREE)
 #else
