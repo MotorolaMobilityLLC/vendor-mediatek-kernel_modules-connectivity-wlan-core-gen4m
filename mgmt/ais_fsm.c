@@ -7372,10 +7372,10 @@ void aisFsmRunEventRoamingDiscovery(struct ADAPTER *prAdapter,
 		}
 	}
 
+	prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
 	if (prAisFsmInfo->eCurrentState == AIS_STATE_NORMAL_TR
 	    && !timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer)) {
 		if (eAisRequest == AIS_REQUEST_ROAMING_SEARCH) {
-			prAisFsmInfo->fgTargetChnlScanIssued = TRUE;
 			aisFsmSteps(prAdapter, AIS_STATE_LOOKING_FOR,
 				ucBssIndex);
 		} else
