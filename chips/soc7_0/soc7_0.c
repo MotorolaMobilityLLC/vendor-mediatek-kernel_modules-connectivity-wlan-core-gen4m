@@ -2659,8 +2659,9 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 	if (prAdapter == NULL)
 		DBGLOG(HAL, INFO, "prAdapter NULL\n");
 
-	DBGLOG(HAL, TRACE, "Bus hang check: Start, fgIsFwOwn:%d\n",
-		prAdapter->fgIsFwOwn);
+	if (prAdapter)
+		DBGLOG(HAL, TRACE, "Bus hang check: Start, fgIsFwOwn:%d\n",
+			prAdapter->fgIsFwOwn);
 
 	do {
 /*
