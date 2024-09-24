@@ -2658,6 +2658,11 @@ static int soc7_0_CheckBusHang(void *adapter, uint8_t ucWfResetEnable)
 
 	if (prAdapter == NULL)
 		DBGLOG(HAL, INFO, "prAdapter NULL\n");
+
+	if (prAdapter)
+		DBGLOG(HAL, TRACE, "Bus hang check: Start, fgIsFwOwn:%d\n",
+			prAdapter->fgIsFwOwn);
+
 	do {
 /*
  * 1. Check "AP2CONN_INFRA ON step is ok"

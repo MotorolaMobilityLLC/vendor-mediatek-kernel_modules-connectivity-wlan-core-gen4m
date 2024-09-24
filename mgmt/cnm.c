@@ -441,6 +441,10 @@ cnmWmmQuotaSetMaxQuota(
 	uint32_t u4ReqQuota
 );
 
+static void
+cnmDbdcDisableGuardTimeImmediately(
+	struct ADAPTER *prAdapter
+);
 /*******************************************************************************
  *                           P R I V A T E   D A T A 2
  *******************************************************************************
@@ -3495,6 +3499,25 @@ void cnmCtrlDynamicMaxQuota(struct ADAPTER *prAdapter)
 }
 #endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 */
 
+static void cnmDbdcDisableGuardTimeImmediately(
+	struct ADAPTER *prAdapter)
+{
+	if (!prAdapter) {
+		log_dbg(CNM, INFO,
+			"[DBDC] prAdapter is NULL\n");
+		return;
+	}
+	if (timerPendingTimer(&g_rDbdcInfo.rDbdcGuardTimer)) {
+		log_dbg(CNM, INFO,
+			"[DBDC] Stop Guard Timer type %u\n",
+			g_rDbdcInfo.eDdbcGuardTimerType);
+		cnmTimerStopTimer(prAdapter,
+			&g_rDbdcInfo.rDbdcGuardTimer);
+		cnmDbdcGuardTimerCallback(prAdapter,
+			(uintptr_t)NULL);
+	}
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief    MT6632 HW capability will change between BW160+NSS2 and BW80+NSS1
@@ -3959,6 +3982,7 @@ cnmDbdcFsmEntryFunc_ENABLE_GUARD(struct ADAPTER *prAdapter)
 			ENUM_DBDC_GUARD_TIMER_NONE;
 	}
 	DBDC_SET_GUARD_TIME(prAdapter, DBDC_ENABLE_GUARD_TIME);
+	cnmDbdcDisableGuardTimeImmediately(prAdapter);
 }
 
 static void
@@ -4011,6 +4035,7 @@ cnmDbdcFsmEntryFunc_DISABLE_GUARD(struct ADAPTER *prAdapter)
 	DBDC_SET_GUARD_TIME(prAdapter, DBDC_DISABLE_GUARD_TIME);
 
 	cnmDbdcOpmodeChangeAndWait(prAdapter, FALSE);
+	cnmDbdcDisableGuardTimeImmediately(prAdapter);
 }
 
 static void
@@ -4205,14 +4230,8 @@ cnmDbdcFsmEventHandler_ENABLE_GUARD(
 		break;
 
 	case DBDC_FSM_EVENT_SWITCH_GUARD_TIME_TO:
-		/* Exit DBDC if non A+G */
-		if (!cnmDbdcIsConcurrent(prAdapter, NULL)) {
-			g_rDbdcInfo.eDbdcFsmNextState =
-				ENUM_DBDC_FSM_STATE_WAIT_HW_DISABLE;
-		} else {
-			g_rDbdcInfo.eDbdcFsmNextState =
-				ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
-		}
+		g_rDbdcInfo.eDbdcFsmNextState =
+			ENUM_DBDC_FSM_STATE_ENABLE_IDLE;
 		break;
 
 	case DBDC_FSM_EVENT_DISABLE_COUNT_DOWN_TO:

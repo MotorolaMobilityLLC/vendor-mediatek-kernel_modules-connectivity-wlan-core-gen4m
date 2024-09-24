@@ -1411,6 +1411,8 @@ void nicRxProcessForwardPkt(struct ADAPTER *prAdapter,
 		return;
 	}
 
+	RX_INC_CNT(&prAdapter->rRxCtrl, RX_DATA_FORWARD_COUNT);
+
 	DBGLOG_LIMITED(RX, TRACE, "to forward packet: %d,%d,%d,%d,%d\n",
 		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameWMMCount[0]),
 		GLUE_GET_REF_CNT(prTxCtrl->i4PendingFwdFrameWMMCount[1]),
