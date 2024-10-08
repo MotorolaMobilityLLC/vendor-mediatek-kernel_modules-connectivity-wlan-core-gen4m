@@ -4884,6 +4884,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 	struct HIF_MEM_OPS *prMemOps;
 	struct ERR_RECOVERY_CTRL_T *prErrRecoveryCtrl;
 	uint32_t u4MaxSerTimeoutCnt = HIF_SER_MAX_TIMEOUT_CNT;
+	struct BUS_INFO *prBusInfo = NULL;
 
 	ASSERT(prGlueInfo);
 	prAdapter = prGlueInfo->prAdapter;
@@ -4893,6 +4894,7 @@ void halHwRecoveryTimeout(unsigned long arg)
 	prMemOps = &prHifInfo->rMemOps;
 	prChipInfo = prAdapter->chip_info;
 	prErrRecoveryCtrl = &prHifInfo->rErrRecoveryCtl;
+	prBusInfo = prAdapter->chip_info->bus_info;
 
 	halSerRecovery(prAdapter);
 
@@ -4902,6 +4904,10 @@ void halHwRecoveryTimeout(unsigned long arg)
 	       prErrRecoveryCtrl->u4Status,
 	       prErrRecoveryCtrl->u4BackupStatus,
 	       prErrRecoveryCtrl->u4TimeoutCnt);
+#if defined(_HIF_PCIE)
+	if (prBusInfo->dumpPcieMsiStatus)
+		prBusInfo->dumpPcieMsiStatus(prAdapter);
+#endif
 
 	if (prMemOps->getWifiMiscRsvEmi) {
 		struct HIF_MEM *prMem = prMemOps->getWifiMiscRsvEmi(
@@ -5013,6 +5019,12 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 #endif
 			DBGLOG(HAL, INFO,
 				"SER(E) Host stop PDMA tx/rx ring operation & receive\n");
+
+#if defined(_HIF_PCIE)
+			if (prBusInfo->dumpPcieMsiStatus)
+				prBusInfo->dumpPcieMsiStatus(prAdapter);
+#endif
+
 			nicSerStopTxRx(prAdapter);
 #if (CFG_SUPPORT_CONNAC2X == 1)
 			/*get WFDMA HW data before Layer 1 SER*/
