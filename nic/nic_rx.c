@@ -2571,6 +2571,12 @@ void nicRxProcessPacketType(
 	struct RX_CTRL *prRxCtrl;
 	struct mt66xx_chip_info *prChipInfo;
 
+	if (!prAdapter || prAdapter->prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(RX, ERROR, "driver is not ready, skip rx packet.\n");
+		nicRxReturnRFB(prAdapter, prSwRfb);
+		return;
+	}
+
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 
