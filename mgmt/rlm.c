@@ -5408,8 +5408,8 @@ void rlmProcessAssocRsp(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb,
 	if (fgEfuseCtrlAxOn == 1) {
 		fgNewSRParam = heRlmRecHeSRParams(prAdapter, prBssInfo,
 						prSwRfb, pucIE, u2IELength);
-		/* ASSERT(fgNewSRParam); */
-		nicRlmUpdateSRParams(prAdapter, prBssInfo->ucBssIndex);
+		if (fgNewSRParam)
+			nicRlmUpdateSRParams(prAdapter, prBssInfo->ucBssIndex);
 	}
 #endif
 #if (CFG_SUPPORT_802_11BE == 1)
@@ -6327,7 +6327,9 @@ static void rlmBssReset(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo)
 	prBssInfo->fgIsOpChangeTxNss = FALSE;
 
 	/* STBC MRC */
-	rlmUpdateStbcSetting(prAdapter, prBssInfo->ucBssIndex, 0, FALSE);
+	if (prBssInfo->eForceStbc != STBC_MRC_STATE_DISABLED)
+		rlmUpdateStbcSetting(
+			prAdapter, prBssInfo->ucBssIndex, 0, FALSE);
 	prBssInfo->eForceStbc = STBC_MRC_STATE_DISABLED;
 	prBssInfo->eForceMrc = STBC_MRC_STATE_DISABLED;
 
