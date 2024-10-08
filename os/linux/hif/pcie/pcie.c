@@ -975,7 +975,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		mtk_pcie_disable_data_trans(0);
 		fgIsPcieDataTransDisabled = TRUE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 		fgTriggerDebugSop = TRUE;
 #endif
@@ -988,7 +988,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		/* bit[6]: Completion timeout status */
 		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 			if (pcie_check_status_is_linked() == TRUE) {
 #if CFG_MTK_WIFI_AER_L05_RESET
 				g_AERL05Rst = TRUE;
@@ -1003,7 +1003,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 			mtk_pcie_disable_data_trans(0);
 #endif
 			fgNeedReset = TRUE;
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 			fgTriggerDebugSop = TRUE;
 #endif
@@ -1011,7 +1011,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	} else {
 		pci_disable_device(pdev);
 		fgNeedReset = TRUE;
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
 #endif
@@ -1724,7 +1724,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 		goto out;
 	}
 
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -2972,7 +2972,7 @@ void halPcieHwControlVote(
 	if (err) {
 		DBGLOG(HAL, ERROR,
 			"hw control mode err[%d]\n", err);
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
 			RST_PCIE_NOT_READY);
 	}
@@ -3451,7 +3451,7 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 	DBGLOG(HAL, LOUD, "done\n");
 	return state;
 error_return:
-	fgIsBusAccessFailed = TRUE;
+	wlanUpdateBusAccessStatus(TRUE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	mtk_pcie_dump_link_info(0);
 #endif

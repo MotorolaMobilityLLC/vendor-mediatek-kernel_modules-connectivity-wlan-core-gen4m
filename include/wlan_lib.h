@@ -2619,4 +2619,5 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 	struct TEST_MODE_PL_CAL *data);
 #endif /* CFG_SUPPORT_PLCAL */
 
+void wlanUpdateBusAccessStatus(u_int8_t flag);
 #endif /* _WLAN_LIB_H */

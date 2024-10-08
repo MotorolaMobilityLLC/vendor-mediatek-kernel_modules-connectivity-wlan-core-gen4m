@@ -1187,7 +1187,7 @@ u_int8_t kalDevRegRead(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 
 	if (ret) {
 		HAL_SET_FLAG(prGlueInfo->prAdapter, ADAPTER_FLAG_HW_ERR);
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR,
 				  HIF_SDIO_ERR_DESC_STR "sdio_readl() reports error: %x retry: %u", ret, ucRetryCount);
 		DBGLOG(HAL, ERROR, "sdio_readl() reports error: %x retry: %u\n", ret, ucRetryCount);
@@ -1357,7 +1357,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo, uint32_t u4Register,
 
 	if (ret) {
 		HAL_SET_FLAG(prGlueInfo->prAdapter, ADAPTER_FLAG_HW_ERR);
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 		kalSendAeeWarning(HIF_SDIO_ERR_TITLE_STR,
 				  HIF_SDIO_ERR_DESC_STR "sdio_writel() reports error: %x retry: %u", ret, ucRetryCount);
 		DBGLOG(HAL, ERROR, "sdio_writel() reports error: %x retry: %u\n", ret, ucRetryCount);
@@ -1869,7 +1869,7 @@ u_int8_t kalDevWriteData(struct GLUE_INFO *prGlueInfo,
 			if (kalDevPortWrite(prGlueInfo, MCR_WTDR1, prTxCtrl->u4WrIdx,
 					pucOutputBuf, prAdapter->u4CoalescingBufCachedSize) == FALSE) {
 				HAL_SET_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR);
-				fgIsBusAccessFailed = TRUE;
+				wlanUpdateBusAccessStatus(TRUE);
 			}
 			prHifInfo->rStatCounter.u4DataPortWriteCnt++;
 		}
@@ -1944,7 +1944,7 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 		if (kalDevPortWrite(prGlueInfo, MCR_WTDR1, prTxCtrl->u4WrIdx,
 				pucOutputBuf, prAdapter->u4CoalescingBufCachedSize) == FALSE) {
 			HAL_SET_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR);
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 		}
 		prHifInfo->rStatCounter.u4DataPortWriteCnt++;
 	}
@@ -2021,7 +2021,7 @@ enum ENUM_CMD_TX_RESULT kalDevWriteCmd(struct GLUE_INFO *prGlueInfo,
 		if (kalDevPortWrite(prGlueInfo, MCR_WTDR1, TFCB_FRAME_PAD_TO_DW(u2OverallBufferLength),
 				pucOutputBuf, prAdapter->u4CoalescingBufCachedSize) == FALSE) {
 			HAL_SET_FLAG(prAdapter, ADAPTER_FLAG_HW_ERR);
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 		}
 		prGlueInfo->rHifInfo.rStatCounter.u4CmdPortWriteCnt++;
 	}

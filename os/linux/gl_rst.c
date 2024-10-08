@@ -1902,7 +1902,7 @@ int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	if (drv == CONNV3_DRV_TYPE_CONNV3) {
 		if (prGlueInfo->u4ReadyFlag &&
 		    kalStrnCmp(reason, "PMIC Fault", 10) == 0) {
-			fgIsBusAccessFailed = TRUE;
+			wlanUpdateBusAccessStatus(TRUE);
 			g_IsWfsysBusHang = TRUE;
 			DBGLOG(REQ, INFO,
 				"Get PMIC Fault\n");
@@ -1981,7 +1981,7 @@ int wlan_post_whole_chip_rst_v3(void)
 {
 	DBGLOG(INIT, INFO, "wlan_post_whole_chip_rst_v3\n");
 
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
