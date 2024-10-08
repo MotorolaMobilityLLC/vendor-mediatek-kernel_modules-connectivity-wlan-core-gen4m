@@ -2146,8 +2146,6 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 	uint8_t *pucOutputBuf = NULL;
 	int16_t i2HeadLength;
 
-	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (isEapolBeforeKeyReady(prAdapter, prMsduInfo)) {
 		struct MLD_STA_RECORD *prMldSta;
@@ -2170,6 +2168,8 @@ nicTxFillDataDesc(struct ADAPTER *prAdapter,
 		}
 	}
 #endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	qmDetermineTxPacketRate(prAdapter, prMsduInfo);
 
 	i2HeadLength = NIC_TX_DESC_AND_PADDING_LENGTH
 			+ prChipInfo->txd_append_size;
