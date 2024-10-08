@@ -267,6 +267,7 @@ static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter);
 
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
+static u_int8_t mt6653_is_support_band2(void);
 #endif
 #if CFG_MTK_WIFI_PCIE_SR
 u_int8_t fgIsL2Finished = FALSE;
@@ -1388,9 +1389,10 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	.au4DmaMaxQuotaRfBand = {0x100, 0x2d0, 0x590},
 #else
-	.au4DmaMaxQuotaRfBand = {0x100, 0x2d0},
+	.au4DmaMaxQuotaRfBand = {0x100, 0x590},
 #endif /* CFG_SUPPORT_WIFI_6G */
-#endif
+	.isSupportBand2 = TRUE,
+#endif /* CFG_DYNAMIC_DMASHDL_MAX_QUOTA */
 #if CFG_SUPPORT_CONNAC3X
 	/* Platform custom config for conninfra */
 	.rPlatcfgInfraSysram = {
@@ -4405,6 +4407,7 @@ dump:
 
 #if (CFG_SUPPORT_CONNFEM == 1)
 	prChipInfo->isAaDbdcEnable = mt6653_is_AA_DBDC_enable();
+	prChipInfo->isSupportBand2 = mt6653_is_support_band2();
 #endif
 
 exit:
@@ -5157,6 +5160,19 @@ u_int8_t mt6653_is_AA_DBDC_enable(void)
 		return FALSE;
 
 	return !!((fe_bt_wf_usage & BIT(3)) && (fe_bt_wf_usage & BIT(4)));
+}
+
+static u_int8_t mt6653_is_support_band2(void)
+{
+	uint8_t fe_bt_wf_usage = 0;
+	uint32_t rStarus;
+
+	rStarus = connfem_sku_flag_u8(CONNFEM_SUBSYS_NONE, "fe-bt-wf-usage",
+			    &fe_bt_wf_usage);
+	if (rStarus != 0)
+		return FALSE;
+
+	return (fe_bt_wf_usage & BIT(3)) ? TRUE : FALSE;
 }
 #endif /* CFG_SUPPORT_CONNFEM == 1 */
 

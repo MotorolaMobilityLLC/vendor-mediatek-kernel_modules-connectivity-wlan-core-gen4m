@@ -300,6 +300,16 @@ void mt6653DmashdlInit(struct ADAPTER *prAdapter)
 	uint32_t u4Val = 0, u4Addr = 0;
 #endif
 
+#if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1 && CFG_SUPPORT_WIFI_6G == 1)
+	/* assign 5G quota = 6G quota if band2 not support  */
+	if (!prAdapter->chip_info->isSupportBand2) {
+		prAdapter->chip_info->au4DmaMaxQuotaRfBand[BAND_5G - 1] =
+			prAdapter->chip_info->au4DmaMaxQuotaRfBand[BAND_6G - 1];
+		DBGLOG(INIT, INFO, "Update 5G Band Quota[0x%x]\n",
+		       prAdapter->chip_info->au4DmaMaxQuotaRfBand[BAND_5G - 1]);
+	}
+#endif
+
 	asicConnac3xDmashdlSetPlePsePktMaxPage(
 		prAdapter,
 		rMt6653DmashdlCfg.u2PktPleMaxPage,
