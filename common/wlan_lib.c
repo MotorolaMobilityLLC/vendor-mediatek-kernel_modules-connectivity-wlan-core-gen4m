@@ -9185,12 +9185,12 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 				prChipInfo->au4DmaMaxQuotaBand[u4Idx]);
 		}
 
-		for (u4Idx = 0; u4Idx < BAND_NUM; u4Idx++) {
+		for (u4Idx = BAND_2G4; u4Idx < BAND_NUM; u4Idx++) {
 			u4Pos += kalSnprintf(
 				aucBuf + u4Pos,
 				WLAN_CFG_VALUE_LEN_MAX - u4Pos,
 				" 0x%x",
-				prChipInfo->au4DmaMaxQuotaRfBand[u4Idx]);
+				prChipInfo->au4DmaMaxQuotaRfBand[u4Idx - 1]);
 		}
 		INIT_STR(prWifiVar->aucDmaMaxQuota, "DmaMaxQuota", aucBuf,
 			 FEATURE_DEBUG_ONLY);
