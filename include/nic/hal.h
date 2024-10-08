@@ -1537,9 +1537,16 @@ uint32_t halRxWaitResponse(struct ADAPTER *prAdapter,
 void halEnableInterrupt(struct ADAPTER *prAdapter);
 void halDisableInterrupt(struct ADAPTER *prAdapter);
 
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter);
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter,
+		enum ENUM_DRV_OWN_SRC eDrvOwnSrc);
 void halSetFWOwn(struct ADAPTER *prAdapter,
 	u_int8_t fgEnableGlobalInt);
+
+void halInitDrvOwnWork(struct GLUE_INFO *prGlueInfo);
+void halSetDrvOwnWork(struct work_struct *work);
+void halTriggerDrvOwnReset(struct ADAPTER *prAdapter);
+void halSetFWOwnImpl(struct ADAPTER *prAdapter,
+	u_int8_t fgEnableGlobalInt, u_int8_t fgIsInSuspend);
 
 void halDevInit(struct ADAPTER *prAdapter);
 void halEnableFWDownload(struct ADAPTER *prAdapter,

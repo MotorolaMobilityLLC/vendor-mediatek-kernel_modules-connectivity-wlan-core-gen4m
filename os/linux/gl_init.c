@@ -5433,6 +5433,7 @@ struct wireless_dev *wlanNetCreate(void *pvData,
 	init_completion(&prGlueInfo->rAisChGrntComp);
 #endif
 
+	halInitDrvOwnWork(prGlueInfo);
 	/* initialize timer for OID timeout checker */
 	kalOsTimerInitialize(prGlueInfo, kalTimeoutHandler);
 

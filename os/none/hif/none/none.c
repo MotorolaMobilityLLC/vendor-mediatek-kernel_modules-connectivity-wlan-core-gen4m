@@ -321,7 +321,8 @@ void halSetFWOwn(struct ADAPTER *prAdapter, u_int8_t fgEnableGlobalInt)
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }
 
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter,
+		enum ENUM_DRV_OWN_SRC eDrvOwnSrc)
 {
 	return KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, prAdapter);
 }

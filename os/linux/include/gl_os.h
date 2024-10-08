@@ -603,6 +603,13 @@ enum ENUM_WORK_FLAG {
 	ENUM_WORK_FLAG_MAX
 };
 
+enum ENUM_DRV_OWN_SRC {
+	DRV_OWN_SRC_UNKNOWN = 0,
+	DRV_OWN_SRC_WF_REG_START_WRAPPER,
+	DRV_OWN_SRC_POWER_DUMP,
+	DRV_OWN_SRC_NUM
+};
+
 struct GL_WORK {
 	int32_t i4WorkCpu; /* controlled by CPU Boost */
 	struct workqueue_struct *prWorkQueue;
@@ -1148,6 +1155,7 @@ struct GLUE_INFO {
 	struct work_struct rWfsysResetWork;    /* work for Wfsys L0.5 reset  */
 #endif
 
+	struct work_struct rDrvOwnWork;
 #if (CFG_CE_ASSERT_DUMP == 1)
 	wait_queue_head_t waitq_coredump;
 	struct sk_buff_head rCoreDumpSkbQueue;
