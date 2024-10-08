@@ -2806,7 +2806,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
 		fgTriggerDebugSop = TRUE;
 #endif

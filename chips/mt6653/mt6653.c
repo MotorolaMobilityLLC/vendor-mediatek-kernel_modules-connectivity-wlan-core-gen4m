@@ -3767,7 +3767,7 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
-		fgIsBusAccessFailed = TRUE;
+		wlanUpdateBusAccessStatus(TRUE);
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 		fgTriggerDebugSop = TRUE;
 #endif
@@ -3782,7 +3782,7 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 			if (pcie_restore_config_space_settings(
 				prGlueInfo->prAdapter) != 0)
 				return FALSE;
-			fgIsBusAccessFailed = FALSE;
+			wlanUpdateBusAccessStatus(FALSE);
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
 			fgTriggerDebugSop = FALSE;
 #endif

@@ -102,6 +102,8 @@ static uint8_t wifi_test_mode_fwdl;
 static uint8_t wifi_in_switch_mode;
 #endif
 
+static uint32_t u4ChipNoAckCnt;
+static u_int8_t fgIsWarningTriggered;
 /* data rate mapping table for CCK */
 struct cckDataRateMappingTable_t {
 	uint32_t rate[4];
@@ -909,7 +911,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 
 	/* 4 <0.1> reset fgIsBusAccessFailed */
 	fgIsMcuOff = FALSE;
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -1776,7 +1778,7 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 #endif
 
 	fgIsMcuOff = FALSE;
-	fgIsBusAccessFailed = FALSE;
+	wlanUpdateBusAccessStatus(FALSE);
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
@@ -11103,6 +11105,22 @@ u_int8_t wlanIsChipNoAck(struct ADAPTER *prAdapter)
 #endif
 		    || fgIsBusAccessFailed;
 
+	if (!fgIsNoAck) {
+		u4ChipNoAckCnt = 0;
+	} else if (!kalIsResetting() &&
+		fgIsWarningTriggered == FALSE) {
+		++u4ChipNoAckCnt;
+		DBGLOG(HAL, WARN,
+			"Chip no ack: [%u:%u:%u]",
+			prAdapter->fgIsChipNoAck,
+			fgIsBusAccessFailed, u4ChipNoAckCnt);
+
+		if (u4ChipNoAckCnt == 10) {
+			kalSendAeeWarning("WLAN",
+				"Chip No Ack more than 10 times\n");
+			fgIsWarningTriggered = TRUE;
+		}
+	}
 	return fgIsNoAck;
 }
 
@@ -15321,3 +15339,12 @@ uint32_t wlanTestModePlCal(struct ADAPTER *ad,
 	return status;
 }
 #endif /* CFG_SUPPORT_PLCAL */
+
+void wlanUpdateBusAccessStatus(u_int8_t flag)
+{
+	if (fgIsBusAccessFailed != flag)
+		DBGLOG(HAL, INFO, "%pS: %u\n", KAL_TRACE, flag);
+	else
+		DBGLOG(HAL, TRACE, "%pS: %u\n", KAL_TRACE, flag);
+	fgIsBusAccessFailed = flag;
+}

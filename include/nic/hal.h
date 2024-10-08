@@ -231,7 +231,7 @@ do { \
 		if (kalDevPortRead(_prAdapter->prGlueInfo, _u4Port, _u4Len, \
 			_pucBuf, _u4ValidBufSize, FALSE) == FALSE) { \
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-			fgIsBusAccessFailed = TRUE; \
+			wlanUpdateBusAccessStatus(TRUE); \
 			DBGLOG(HAL, ERROR, "HAL_PORT_RD access fail! 0x%x\n", \
 				(uint32_t) (_u4Port)); \
 		} \
@@ -253,7 +253,7 @@ do { \
 		if (kalDevPortWrite(_prAdapter->prGlueInfo, _u4Port, \
 			_u4Len, _pucBuf, _u4ValidBufSize) == FALSE) {\
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-			fgIsBusAccessFailed = TRUE; \
+			wlanUpdateBusAccessStatus(TRUE); \
 			DBGLOG(HAL, ERROR, "HAL_PORT_WR access fail! 0x%x\n", \
 				(uint32_t) (_u4Port)); \
 		} \
@@ -274,7 +274,7 @@ do { \
 		if (kalDevWriteWithSdioCmd52(_prAdapter->prGlueInfo, \
 				_u4Port, _ucBuf) == FALSE) {\
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-			fgIsBusAccessFailed = TRUE; \
+			wlanUpdateBusAccessStatus(TRUE); \
 			DBGLOG(HAL, ERROR, "HAL_BYTE_WR access fail! 0x%x\n", \
 				(uint32_t)(_u4Port)); \
 		} \
@@ -298,7 +298,7 @@ do { \
 		if (kalDevReadAfterWriteWithSdioCmd52(_prAdapter->prGlueInfo, \
 				MCR_WHLPCR_BYTE1, &ucBuf, 1) == FALSE) {\
 			HAL_SET_FLAG(_prAdapter, ADAPTER_FLAG_HW_ERR); \
-			fgIsBusAccessFailed = TRUE; \
+			wlanUpdateBusAccessStatus(TRUE); \
 			DBGLOG(HAL, ERROR, \
 			"kalDevReadAfterWriteWithSdioCmd52 access fail!\n"); \
 		} \
