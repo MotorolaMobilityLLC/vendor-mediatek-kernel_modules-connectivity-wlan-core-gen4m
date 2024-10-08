@@ -3718,8 +3718,14 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 #endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-	if (!(link_info & BIT(5)))
-		return FALSE;
+	DBGLOG(HAL, INFO, "link_info %u\n", link_info);
+	if (!(link_info & BIT(5))) {
+		if ((link_info & BIT(10))) {
+			/* SDES try recover link */
+			kalMdelay(48);
+		} else
+			return FALSE;
+	}
 #endif
 
 	/*read pcie cfg.space 0x488 // level1: pcie*/
@@ -3766,6 +3772,21 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		fgTriggerDebugSop = TRUE;
 #endif
 		return FALSE;
+	}
+#endif
+
+#if CFG_MTK_WIFI_PCIE_SUPPORT
+	if (link_info & BIT(10)) {
+		link_info = mtk_pcie_dump_link_info(0);
+		if (link_info & BIT(5)) {
+			if (pcie_restore_config_space_settings(
+				prGlueInfo->prAdapter) != 0)
+				return FALSE;
+			fgIsBusAccessFailed = FALSE;
+#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+			fgTriggerDebugSop = FALSE;
+#endif
+		}
 	}
 #endif
 
@@ -4601,6 +4622,8 @@ static uint32_t mt6653_wlanDownloadPatch(struct ADAPTER *prAdapter)
 
 	if (status == WLAN_STATUS_SUCCESS) {
 		wifi_coredump_set_enable(TRUE);
+
+		pcie_backup_config_space_settings(prAdapter);
 
 #if CFG_MTK_WIFI_PCIE_SR
 		/* enter -> keep 100ms -> exit L2 for enabling PCIE SR */
