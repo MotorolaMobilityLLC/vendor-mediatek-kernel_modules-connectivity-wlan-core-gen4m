@@ -6544,16 +6544,14 @@ void updateLinkStatsApRec(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc)
 		for (j = 0; j < MLD_LINK_MAX; j++) {
 			prBss = aisGetLinkBssDesc(prAisFsmInfo, j);
 			if (prBss == prBssDesc)
-				break;
+				goto found;
 		}
 	}
 
-	if (i == KAL_AIS_NUM || j == MLD_LINK_MAX) {
-		DBGLOG(REQ, WARN, "AP connected flag set (%u,%u) over limit",
-		       i, j);
-		return;
-	}
+	DBGLOG(REQ, WARN, "AP connected flag set (%u,%u) over limit", i, j);
+	return;
 
+found:
 	prPeerApRec = &prAdapter->rPeerApRec[i][j];
 	COPY_MAC_ADDR(prPeerApRec->mac_addr, prBssDesc->aucBSSID);
 	prPeerApRec->sta_count = prBssDesc->u2StaCnt;
