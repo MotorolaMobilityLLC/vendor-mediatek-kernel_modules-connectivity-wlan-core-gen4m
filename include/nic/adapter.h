@@ -3064,6 +3064,7 @@ struct ADAPTER {
 		aucDfsAisChnlReqEntries[KAL_AIS_NUM];
 	struct WLAN_DFS_CHANNEL_REQ_ENTRY
 		aucDfsChnlReqEntries[DFS_CHANNEL_CTRL_SOURCE_NUM];
+	enum ENUM_DRV_OWN_SRC eDrvOwnSrc;
 };				/* end of _ADAPTER_T */
 /*******************************************************************************
  *                            P U B L I C   D A T A

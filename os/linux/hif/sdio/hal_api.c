@@ -362,7 +362,8 @@ void halDisableInterrupt(struct ADAPTER *prAdapter)
 * \return (none)
 */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter,
+		enum ENUM_DRV_OWN_SRC eDrvOwnSrc)
 {
 	u_int8_t fgStatus = TRUE;
 	uint32_t i, j, u4CurrTick = 0, u4WriteTick, u4WriteTickTemp;

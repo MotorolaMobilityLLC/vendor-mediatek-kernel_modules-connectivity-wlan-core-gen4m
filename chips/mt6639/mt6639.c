@@ -3927,7 +3927,10 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 		DBGLOG(REQ, INFO, "wlan_power_dump_start force_dump\n");
 
 		ad->fgIsPowerDumpDrvOwn = TRUE;
-		ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+		/* ACQUIRE_POWER_CONTROL_FROM_PM(ad); */
+		halSetDriverOwn(ad, DRV_OWN_SRC_POWER_DUMP);
+		if (ad->fgWiFiInSleepyState == TRUE)
+			ad->fgWiFiInSleepyState = FALSE;
 		ad->fgIsPowerDumpDrvOwn = FALSE;
 
 		if (ad->fgIsFwOwn == TRUE) {
@@ -3945,7 +3948,10 @@ int mt6639PowerDumpStart(void *priv_data, unsigned int force_dump)
 
 		if (u4Val == 0x10) {
 			ad->fgIsPowerDumpDrvOwn = TRUE;
-			ACQUIRE_POWER_CONTROL_FROM_PM(ad);
+			/* ACQUIRE_POWER_CONTROL_FROM_PM(ad); */
+			halSetDriverOwn(ad, DRV_OWN_SRC_POWER_DUMP);
+			if (ad->fgWiFiInSleepyState == TRUE)
+				ad->fgWiFiInSleepyState = FALSE;
 			ad->fgIsPowerDumpDrvOwn = FALSE;
 
 			if (ad->fgIsFwOwn == TRUE) {

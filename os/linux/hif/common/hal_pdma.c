@@ -514,8 +514,7 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
 #else  /* !IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
 			{
 #endif /* IS_ENABLED(CFG_MTK_WIFI_DRV_OWN_INT_MODE) */
-				GL_DEFAULT_RESET_TRIGGER(prAdapter,
-					RST_DRV_OWN_FAIL);
+				halTriggerDrvOwnReset(prAdapter);
 			}
 		}
 		GET_CURRENT_SYSTIME(&prAdapter->rLastOwnFailedLogTime);
@@ -537,7 +536,8 @@ static void halDriverOwnTimeout(struct ADAPTER *prAdapter,
  * \return (none)
  */
 /*----------------------------------------------------------------------------*/
-u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
+u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter,
+		enum ENUM_DRV_OWN_SRC eDrvOwnSrc)
 {
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
@@ -565,6 +565,10 @@ u_int8_t halSetDriverOwn(struct ADAPTER *prAdapter)
 	KAL_HIF_OWN_LOCK(prAdapter);
 
 	GLUE_INC_REF_CNT(prAdapter->u4PwrCtrlBlockCnt);
+
+	prAdapter->eDrvOwnSrc = eDrvOwnSrc >= DRV_OWN_SRC_NUM ?
+				DRV_OWN_SRC_UNKNOWN :
+				eDrvOwnSrc;
 
 	if (prAdapter->fgIsFwOwn == FALSE)
 		goto end;
@@ -7194,4 +7198,34 @@ uint32_t halSetSuspendFlagToFw(struct ADAPTER *prAdapter,
 	}
 
 	return WLAN_STATUS_SUCCESS;
+}
+
+void halInitDrvOwnWork(struct GLUE_INFO *prGlueInfo)
+{
+	INIT_WORK(&prGlueInfo->rDrvOwnWork, halSetDrvOwnWork);
+}
+
+void halSetDrvOwnWork(struct work_struct *work)
+{
+	struct GLUE_INFO *prGlueInfo = NULL;
+
+	WIPHY_PRIV(wlanGetWiphy(), prGlueInfo);
+	if (prGlueInfo == NULL || prGlueInfo->prAdapter == NULL) {
+		DBGLOG(HAL, ERROR, "NULL adapter.\n");
+		return;
+	}
+	GL_DEFAULT_RESET_TRIGGER(prGlueInfo->prAdapter, RST_DRV_OWN_FAIL);
+}
+
+void halTriggerDrvOwnReset(struct ADAPTER *prAdapter)
+{
+	if (prAdapter == NULL)
+		return;
+	/* Trigger driver own reset if the caller is from conninfra
+	 * to avoid deadlock
+	 */
+	if (prAdapter->eDrvOwnSrc == DRV_OWN_SRC_WF_REG_START_WRAPPER)
+		schedule_work(&prAdapter->prGlueInfo->rDrvOwnWork);
+	else
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_DRV_OWN_FAIL);
 }

@@ -3271,7 +3271,8 @@ int32_t wf_reg_start_wrapper(enum connv3_drv_type from_drv, void *priv_data)
 		goto exit;
 	}
 
-	halSetDriverOwn(prGlueInfo->prAdapter);
+	halSetDriverOwn(prGlueInfo->prAdapter,
+		DRV_OWN_SRC_WF_REG_START_WRAPPER);
 	if (prGlueInfo->prAdapter->fgIsFwOwn == TRUE) {
 		DBGLOG_LIMITED(HAL, WARN, "Driver own fail.\n");
 		ret = -EFAULT;
