@@ -524,7 +524,7 @@ struct XO_CFG_PARAM_STRUCT {
 #endif
 
 #define MAX_CFG_FILE_WIFI_REC_SIZE    (1024*12)
-#define MAX_CFG_FILE_WIFI_RECAL_SIZE    512
+#define MAX_CFG_FILE_WIFI_RECAL_SIZE    1024
 
 /*******************************************************************************
  *                  F U N C T I O N   D E C L A R A T I O N S
