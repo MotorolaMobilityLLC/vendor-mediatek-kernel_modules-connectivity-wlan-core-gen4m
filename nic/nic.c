@@ -2796,8 +2796,9 @@ uint32_t nicUpdateBssEx(struct ADAPTER *prAdapter,
 				}
 			}
 			/*Send Event  to Enable/Disable SG*/
-			wlandioSetSGStatus(prAdapter,
-			ucSGEnable, 0xFF, ucDutNss);
+			if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucSGCfg))
+				wlandioSetSGStatus(prAdapter,	ucSGEnable,
+						   0xFF, ucDutNss);
 		}
 #endif
 	}
