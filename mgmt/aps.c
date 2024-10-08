@@ -345,6 +345,11 @@ uint8_t apsCanFormMultiLink(struct ADAPTER *ad,
 	if (!bss->rMlInfo.fgValid)
 		return FALSE;
 
+	/* Disable MLO for sub Wi-Fi. */
+	if (IS_BSS_INDEX_AIS(ad, bidx) &&
+	    AIS_INDEX(ad, bidx) != AIS_DEFAULT_INDEX)
+		return FALSE;
+
 	bss->rMlInfo.prBlock = aisQueryMldBlockList(ad, bss);
 
 	if (!bss->rMlInfo.prBlock ||
