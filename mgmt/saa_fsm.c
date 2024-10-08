@@ -1603,21 +1603,30 @@ saaSendDisconnectMsgHandler(struct ADAPTER *prAdapter,
 {
 	if (prStaRec->ucStaState == STA_STATE_3) {
 		struct MSG_AIS_ABORT *prAisAbortMsg;
-		u_int8_t fgIsTxAllowed;
+		u_int8_t fgDelayIndication = TRUE;
+		struct AIS_FSM_INFO *prAisFsmInfo;
 
-		/* Backup txallowed status here because
-		 * cnmStaRecChangeState will change it
-		 */
-		fgIsTxAllowed = prStaRec->fgIsTxAllowed;
+		prAisFsmInfo = aisGetAisFsmInfo(prAdapter,
+			prStaRec->ucBssIndex);
+
+		if (!prAisFsmInfo) {
+			DBGLOG(SAA, WARN, "prAisFsmInfo[%d] is NULL\n",
+					  prStaRec->ucBssIndex);
+			return;
+		}
 
 #if CFG_SUPPORT_NCHO
 		/* Disconnect directly under NCHO mode */
 		if (prAdapter && prAdapter->rNchoInfo.fgNCHOEnabled) {
 			DBGLOG(RSN, INFO,
 				"Disconnect directly due to NCHO enabled\n");
-			fgIsTxAllowed = FALSE;
+			fgDelayIndication = FALSE;
 		}
 #endif
+
+		if (timerPendingTimer(&prAisFsmInfo->rJoinTimeoutTimer))
+			cnmTimerStopTimer(prAdapter,
+				&prAisFsmInfo->rJoinTimeoutTimer);
 
 		/* NOTE(Kevin): Change state immediately to
 		 * avoid starvation of MSG buffer because of too
@@ -1639,7 +1648,7 @@ saaSendDisconnectMsgHandler(struct ADAPTER *prAdapter,
 		prAisAbortMsg->ucReasonOfDisconnect = eFrmType == FRM_DEAUTH ?
 				DISCONNECT_REASON_CODE_DEAUTHENTICATED :
 				DISCONNECT_REASON_CODE_DISASSOCIATED;
-		prAisAbortMsg->fgDelayIndication = fgIsTxAllowed;
+		prAisAbortMsg->fgDelayIndication = fgDelayIndication;
 		prAisAbortMsg->ucBssIndex = prStaRec->ucBssIndex;
 		prAisAbortMsg->u2DeauthReason = prStaRec->u2ReasonCode;
 		mboxSendMsg(prAdapter, MBOX_ID_0,

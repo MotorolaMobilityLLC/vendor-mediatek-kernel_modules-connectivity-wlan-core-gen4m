@@ -1900,6 +1900,11 @@ wlanoidSetAuthorized(struct ADAPTER *prAdapter,
 				&prAisFsmInfo->rJoinTimeoutTimer);
 			aisFsmRunEventJoinTimeout(prAdapter, ucBssIndex);
 		}
+
+		if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED)
+			/* remove all deauthing AP from blacklist */
+			aisRemoveDeauthBlocklist(prAdapter, FALSE);
+
 		return WLAN_STATUS_SUCCESS;
 	}
 	return WLAN_STATUS_NOT_SUPPORTED;

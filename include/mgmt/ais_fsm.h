@@ -1264,4 +1264,7 @@ u_int8_t aisUpdateInterfaceAddr(struct ADAPTER *prAdapter,
 	struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t aucMacAddr[]);
 
+void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
+	u_int8_t fgIsDisconnect);
+
 #endif /* _AIS_FSM_H */
