@@ -180,6 +180,7 @@ static void mt6653WfdmaRxRingExtCtrl(
 	u_int32_t index);
 
 static void mt6653CheckFwOwnMsiStatus(struct ADAPTER *prAdapter);
+static void mt6653PcieMsiDebugDump(struct ADAPTER *prAdapter);
 static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter,
 				    u_int8_t fgForce);
 static void mt6653RecoverSerStatus(struct ADAPTER *prAdapter);
@@ -269,6 +270,10 @@ u_int8_t mt6653_is_AA_DBDC_enable(void);
 #endif
 #if CFG_MTK_WIFI_PCIE_SR
 u_int8_t fgIsL2Finished = FALSE;
+#endif
+
+#if CFG_SUPPORT_PCIE_ASPM
+void *pcie_vir_addr;
 #endif
 
 /*******************************************************************************
@@ -717,6 +722,7 @@ struct BUS_INFO mt6653_bus_info = {
 #endif /* CFG_MTK_WIFI_DRV_OWN_INT_MODE */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.checkFwOwnMsiStatus = mt6653CheckFwOwnMsiStatus,
+	.dumpPcieMsiStatus = mt6653PcieMsiDebugDump,
 	.recoveryMsiStatus = mt6653RecoveryMsiStatus,
 	.recoverSerStatus = mt6653RecoverSerStatus,
 #endif
@@ -3294,6 +3300,31 @@ static void mt6653WfdmaRxRingExtCtrl(
 }
 
 #if defined(_HIF_PCIE)
+static void mt6653PcieMsiDebugDump(struct ADAPTER *prAdapter)
+{
+	uint32_t u4ReadVal = 0;
+
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x74030188, &u4ReadVal);
+	DBGLOG(HAL, INFO, "074030188: 0x%08X\n", u4ReadVal);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x70025018, &u4ReadVal);
+	DBGLOG(HAL, INFO, "0x70025018: 0x%08X\n", u4ReadVal);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x740310E0, &u4ReadVal);
+	DBGLOG(HAL, INFO, "0x740310E0: 0x%08X\n", u4ReadVal);
+	HAL_RMCR_RD(HIF_DBG, prAdapter, 0x740310F0, &u4ReadVal);
+	DBGLOG(HAL, INFO, "0x740310F0: 0x%08X\n", u4ReadVal);
+
+	if (pcie_vir_addr) {
+		u4ReadVal = readl(pcie_vir_addr + 0xc14);
+		DBGLOG(HAL, INFO, "0x16910c14: 0x%08X\n", u4ReadVal);
+		u4ReadVal = readl(pcie_vir_addr + 0xc18);
+		DBGLOG(HAL, INFO, "0x16910c18: 0x%08X\n", u4ReadVal);
+		u4ReadVal = readl(pcie_vir_addr + 0xc1c);
+		DBGLOG(HAL, INFO, "0x16910c1c: 0x%08X\n", u4ReadVal);
+	} else
+		DBGLOG(HAL, ERROR, "0x16910000: ioremap fail\n");
+
+}
+
 static void mt6653RecoveryMsiStatus(struct ADAPTER *prAdapter, u_int8_t fgForce)
 {
 	struct BUS_INFO *prBusInfo = prAdapter->chip_info->bus_info;
@@ -3441,10 +3472,6 @@ static void mt6653PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit)
 	}
 }
 #endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
-#endif
-
-#if CFG_SUPPORT_PCIE_ASPM
-void *pcie_vir_addr;
 #endif
 
 static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
