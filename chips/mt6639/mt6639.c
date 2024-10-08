@@ -229,6 +229,11 @@ static int32_t mt6639_ccif_trigger_fw_assert(struct ADAPTER *ad);
 static void mt6639SetPcieSpeed(struct GLUE_INFO *prGlueInfo, uint32_t speed);
 #endif
 
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+static void mt6639PcieMsiMaskIrq(uint32_t u4Irq, uint32_t u4Bit);
+static void mt6639PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit);
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
+
 #if IS_MOBILE_SEGMENT
 static int32_t mt6639_trigger_fw_assert(struct ADAPTER *prAdapter);
 static uint32_t mt6639_mcu_init(struct ADAPTER *ad);
@@ -676,6 +681,10 @@ struct BUS_INFO mt6639_bus_info = {
 	},
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.is_en_drv_ctrl_pci_msi_irq = FALSE,
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+	.pcieMsiMaskIrq = mt6639PcieMsiMaskIrq,
+	.pcieMsiUnmaskIrq = mt6639PcieMsiUnmaskIrq,
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 #endif
 #if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
 	.pcieMsiMaskIrq = mt6639PcieMsiMaskIrq,
