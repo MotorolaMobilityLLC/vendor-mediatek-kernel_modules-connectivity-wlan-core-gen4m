@@ -1925,22 +1925,15 @@ scnFsmSchedScanRequest(struct ADAPTER *prAdapter,
 u_int8_t scnFsmSchedScanStopRequest(struct ADAPTER *prAdapter)
 {
 	uint8_t ucBssIndex = 0;
-	struct BSS_INFO *prAisBssInfo;
+	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct SCAN_INFO *prScanInfo;
 
 	ASSERT(prAdapter);
 
 	ucBssIndex =
 		prAdapter->rWifiVar.rScanInfo.rSchedScanParam.ucBssIndex;
-	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	prScanInfo = &(prAdapter->rWifiVar.rScanInfo);
-
-	if (prAisBssInfo == NULL) {
-		log_dbg(SCN, WARN,
-			"prAisBssInfo%d is NULL\n",
-			ucBssIndex);
-		return FALSE;
-	}
 
 	if (!scnFsmSchedScanSetAction(prAdapter, SCHED_SCAN_ACT_DISABLE)) {
 		log_dbg(SCN, TRACE, "scnFsmSchedScanSetAction failed\n");
@@ -1950,7 +1943,7 @@ u_int8_t scnFsmSchedScanStopRequest(struct ADAPTER *prAdapter)
 	prAdapter->rWifiVar.rScanInfo.fgSchedScanning = FALSE;
 
 	/* Deactivate network when not connected and not in normal scan */
-	if (prAisBssInfo->eConnectionState == MEDIA_STATE_DISCONNECTED &&
+	if (prAisFsmInfo->eCurrentState == AIS_STATE_IDLE &&
 		prScanInfo->eCurrentState == SCAN_STATE_IDLE) {
 		UNSET_NET_ACTIVE(prAdapter, ucBssIndex);
 		nicDeactivateNetwork(prAdapter, ucBssIndex);
