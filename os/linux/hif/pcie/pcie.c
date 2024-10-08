@@ -926,12 +926,14 @@ irqreturn_t mtk_md_dummy_pci_interrupt(int irq, void *dev_instance)
 }
 #endif
 
-static u_int8_t pcie_check_status_is_linked(struct pci_dev *pdev)
+u_int8_t pcie_check_status_is_linked(void)
 {
-	uint16_t vnd_id = 0;
+	uint32_t vnd_id = 0;
 
-	pci_read_config_word(pdev, PCI_VENDOR_ID, &vnd_id);
-	if (vnd_id == 0 || vnd_id == 0xffff) {
+	if (glReadPcieCfgSpace(PCI_VENDOR_ID, &vnd_id) == WLAN_STATUS_FAILURE)
+		return FALSE;
+
+	if (vnd_id == 0 || vnd_id == 0xffffffff) {
 		DBGLOG(HAL, WARN, "PCIE link down\n");
 		return FALSE;
 	}
@@ -966,7 +968,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 	if (fgIsPcieDataTransDisabled == FALSE &&
 		state == pci_channel_io_normal &&
 		dump & BIT(6) &&
-		pcie_check_status_is_linked(pdev) == FALSE) {
+		pcie_check_status_is_linked() == FALSE) {
 		DBGLOG(HAL, WARN, "PCIE link down\n");
 		/* block PCIe access */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
@@ -987,7 +989,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		if (dump & BIT(6)) {
 			fgNeedReset = TRUE;
 			fgIsBusAccessFailed = TRUE;
-			if (pcie_check_status_is_linked(pdev) == TRUE) {
+			if (pcie_check_status_is_linked() == TRUE) {
 #if CFG_MTK_WIFI_AER_L05_RESET
 				g_AERL05Rst = TRUE;
 #endif
@@ -3403,14 +3405,10 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 }
 #endif
 
-
-#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 uint8_t halPcieIsPcieProbed(void)
 {
 	return g_fgDriverProbed;
 }
-#endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
-
 
 #if CFG_MTK_WIFI_PCIE_SR
 int mtk_pcie_enter_L2(struct pci_dev *pdev)
@@ -3442,7 +3440,7 @@ int mtk_pcie_exit_L2(struct pci_dev *pdev)
 	if (state)
 		goto error_return;
 
-	if (!pcie_check_status_is_linked(pdev))
+	if (!pcie_check_status_is_linked())
 		goto error_return;
 
 	pci_restore_state(pdev);
