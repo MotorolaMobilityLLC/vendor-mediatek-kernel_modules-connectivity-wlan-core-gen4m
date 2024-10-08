@@ -102,8 +102,6 @@ static const char * const apucDebugAisState[AIS_STATE_NUM] = {
  */
 static void aisFsmRunEventScanDoneTimeOut(struct ADAPTER *prAdapter,
 					  uintptr_t ulParam);
-static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
-					  u_int8_t fgIsDisconnect);
 
 static void aisFunClearAllTxReq(struct ADAPTER *prAdapter,
 		struct AIS_MGMT_TX_REQ_INFO *prAisMgmtTxInfo);
@@ -4888,8 +4886,6 @@ enum ENUM_AIS_STATE aisFsmJoinCompleteAction(struct ADAPTER *prAdapter,
 
 			prAisFsmInfo->rJoinReqTime = 0;
 
-			/* remove all deauthing AP from blocklist */
-			aisRemoveDeauthBlocklist(prAdapter, FALSE);
 			prAisFsmInfo->ucJoinFailCntAfterScan = 0;
 
 			rlmReqGenerateOMIIE(prAdapter, prAisBssInfo);
@@ -8900,7 +8896,7 @@ void aisRemoveTimeoutBlocklist(struct ADAPTER *prAdapter, uint16_t u2Sec)
 	}
 }
 
-static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
+void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
 				u_int8_t fgIsDisconnect)
 {
 	struct AIS_BLOCKLIST_ITEM *prEntry = NULL;
@@ -8912,7 +8908,7 @@ static void aisRemoveDeauthBlocklist(struct ADAPTER *prAdapter,
 	LINK_FOR_EACH_ENTRY_SAFE(prEntry, prNextEntry, prBlockList, rLinkEntry,
 				 struct AIS_BLOCKLIST_ITEM) {
 		if (prEntry->fgIsInFWKBlocklist ||
-		    !prEntry->fgDeauthLastTime)
+		    !prEntry->ucDeauthCount)
 			continue;
 
 		kalMemZero(&rSsid, sizeof(struct PARAM_SSID));
