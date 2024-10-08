@@ -540,26 +540,37 @@ static void soc3_0clearEvtRingTillCmdRingEmpty(
 	struct BUS_INFO *prBusInfo = NULL;
 	uint32_t u4Retry = 0;
 	struct RTMP_TX_RING *prTxRing;
-	uint32_t u4CpuIdx = 0, u4DmaIdx = 0;
+	struct RTMP_RX_RING *prRxRing;
+	uint32_t u4CpuIdx = 0, u4DmaIdx = 0, u4EvtCpuIdx = 0, u4EvtDmaIdx = 0;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
 
 	u4Retry = 0;
 	prTxRing = &prHifInfo->TxRing[TX_RING_CMD];
+	prRxRing = &prHifInfo->RxRing[RX_RING_EVT];
 	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_cidx_addr, &u4CpuIdx);
 	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
+	kalDevRegRead(prAdapter->prGlueInfo,
+		      prRxRing->hw_cidx_addr, &u4EvtCpuIdx);
+	kalDevRegRead(prAdapter->prGlueInfo,
+		      prRxRing->hw_didx_addr, &u4EvtDmaIdx);
 	while (u4CpuIdx != u4DmaIdx) {
 		if (u4Retry >= HIF_CMD_POWER_OFF_RETRY_COUNT)
 			break;
 		kalMsleep(HIF_CMD_POWER_OFF_RETRY_TIME);
 		u4Retry++;
 		nicProcessISTWithSpecifiedCount(prAdapter, 1);
-		DBGLOG_LIMITED(INIT, INFO,
-		       "cmd ring cidx[%lu] != didx[%lu] try to clear event ring, retry: %lu\n",
-		       u4CpuIdx, u4DmaIdx, u4Retry);
+		DBGLOG_LIMITED(
+			INIT, INFO,
+			"cmd ring cidx[%lu] != didx[%lu], evt cidx[%lu] didx[%lu]. try to clear event ring, retry: %lu\n",
+			u4CpuIdx, u4DmaIdx, u4EvtCpuIdx, u4EvtDmaIdx, u4Retry);
 		kalDevRegRead(prAdapter->prGlueInfo,
 			      prTxRing->hw_didx_addr, &u4DmaIdx);
+		kalDevRegRead(prAdapter->prGlueInfo,
+			      prRxRing->hw_cidx_addr, &u4EvtCpuIdx);
+		kalDevRegRead(prAdapter->prGlueInfo,
+			      prRxRing->hw_didx_addr, &u4EvtDmaIdx);
 	}
 }
 
