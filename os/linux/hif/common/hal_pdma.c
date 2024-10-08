@@ -1224,7 +1224,7 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 	struct GL_HIF_INFO *prHifInfo;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
 	struct MSDU_TOKEN_ENTRY *prToken;
-	uint32_t u4Idx, u4FailCnt = 0;
+	uint32_t u4Idx, u4FailCnt = 0, u4TokenId = 0;
 	uint32_t u4loopCnt = HIF_TX_MSDU_TOKEN_NUM;
 #if (CFG_MTK_WIFI_TX_CMA_MEM == 1)
 	unsigned long ulAllocTimeoutTime = 0;
@@ -1271,8 +1271,10 @@ void halInitMsduTokenInfo(struct ADAPTER *prAdapter)
 		}
 #endif /* !CFG_MTK_WIFI_TX_CMA_MEM */
 
-		prToken = &prTokenInfo->arToken[u4Idx];
-		if (!halInitOneMsduTokenInfo(prAdapter, prToken, u4Idx))
+		prToken = &prTokenInfo->arToken[u4TokenId];
+		if (halInitOneMsduTokenInfo(prAdapter, prToken, u4TokenId))
+			u4TokenId++;
+		else
 			u4FailCnt++;
 	}
 
