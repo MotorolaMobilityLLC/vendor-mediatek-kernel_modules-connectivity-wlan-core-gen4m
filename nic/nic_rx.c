@@ -2028,7 +2028,7 @@ void nicRxProcessDataPacket(struct ADAPTER *prAdapter,
 	prRxCtrl = &prAdapter->rRxCtrl;
 	prChipInfo = prAdapter->chip_info;
 	prRxDescOps = prChipInfo->prRxDescOps;
-	prRxStatus = prSwRfb->prRxStatus;
+	prRxStatus = (struct HW_MAC_RX_DESC *)prSwRfb->prRxStatus;
 
 	/* Check AMPDU_nERR_Bitmap */
 	prSwRfb->fgDataFrame = TRUE;
