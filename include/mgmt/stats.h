@@ -39,6 +39,7 @@ enum ENUM_STATS_TX_TLV_TAG_ID_T {
 	STATS_TX_TAG_RETRY          = 1,
 	STATS_TX_TAG_TIME          = 2,
 	STATS_TX_TAG_LAT           = 3,
+	STATS_TX_TAG_AVG_LAT        = 4,
 	STATS_TX_TAG_MAX_NUM
 };
 
@@ -95,6 +96,15 @@ struct STATS_TX_LAT_STAT_T {
 	uint32_t au4MacLat[TX_TIME_CAT_NUM];
 };
 
+/* avg tx latency statistics */
+struct STATS_TX_AVG_LAT_STAT_T {
+	uint32_t u4DriverLat;
+	uint32_t u4ConnLat;
+	uint32_t u4MacLat;
+	uint32_t u4AirLat;
+	uint32_t u4FailConnLat;
+};
+
 /* Avg RSSI from LWTBL */
 struct STATS_RX_AVG_RSSI_STAT_T {
 	int32_t i4Rssi0;
@@ -135,6 +145,7 @@ uint32_t statsTxGetQueueLen(struct GLUE_INFO *prGlueInfo);
 uint32_t statsTxGetRetryLen(struct GLUE_INFO *prGlueInfo);
 uint32_t statsTxGetTimeLen(struct GLUE_INFO *prGlueInfo);
 uint32_t statsTxGetLatLen(struct GLUE_INFO *prGlueInfo);
+uint32_t statsTxGetAvgLatLen(struct GLUE_INFO *prGlueInfo);
 
 uint32_t statsRxGetAvgRssiLen(struct GLUE_INFO *prGlueInfo);
 
@@ -151,6 +162,9 @@ void statsTxTimeHdlr(uint8_t ucBssIdx,
 	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen);
 void statsTxLatHdlr(uint8_t ucBssIdx,
+	struct GLUE_INFO *prGlueInfo,
+	void *prTlvBuf, uint32_t u4TlvLen);
+void statsTxAvgLatHdlr(uint8_t ucBssIdx,
 	struct GLUE_INFO *prGlueInfo,
 	void *prTlvBuf, uint32_t u4TlvLen);
 
