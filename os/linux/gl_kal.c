@@ -8740,6 +8740,9 @@ void kalSendUeventHandler(struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr)
 	char *envp[2];
 	char event_string[300];
 
+	if (!prAdapter->prGlueInfo->fgWlanUevent)
+		goto end;
+
 	prUevnetReq = (struct MSG_UEVENT_REQ *)prMsgHdr;
 	src = prUevnetReq->event_string;
 	envp[0] = event_string;
