@@ -345,8 +345,8 @@ static const uint16_t g_u2CountryGroup1[] = {
 	COUNTRY_CODE_AG, COUNTRY_CODE_AI, COUNTRY_CODE_AM, COUNTRY_CODE_AN,
 	COUNTRY_CODE_AQ, COUNTRY_CODE_AW, COUNTRY_CODE_AX, COUNTRY_CODE_BB,
 	COUNTRY_CODE_BM, COUNTRY_CODE_BN, COUNTRY_CODE_BO, COUNTRY_CODE_BS,
-	COUNTRY_CODE_BV, COUNTRY_CODE_BZ, COUNTRY_CODE_CO, COUNTRY_CODE_DO,
-	COUNTRY_CODE_EC, COUNTRY_CODE_FJ, COUNTRY_CODE_FK, COUNTRY_CODE_FM,
+	COUNTRY_CODE_BV, COUNTRY_CODE_BZ,
+	COUNTRY_CODE_FJ, COUNTRY_CODE_FK, COUNTRY_CODE_FM,
 	COUNTRY_CODE_GD, COUNTRY_CODE_GI, COUNTRY_CODE_GS, COUNTRY_CODE_GY,
 	COUNTRY_CODE_HN, COUNTRY_CODE_HT, COUNTRY_CODE_IN,
 	COUNTRY_CODE_IO, COUNTRY_CODE_IR, COUNTRY_CODE_KG, COUNTRY_CODE_KH,
@@ -369,14 +369,14 @@ static const uint16_t g_u2CountryGroup2[] = {
 	COUNTRY_CODE_SR, COUNTRY_CODE_ZW
 };
 static const uint16_t g_u2CountryGroup3[] = {
-	COUNTRY_CODE_CU, COUNTRY_CODE_DM, COUNTRY_CODE_GT
+	COUNTRY_CODE_CU, COUNTRY_CODE_DM
 };
 static const uint16_t g_u2CountryGroup4[] = {
 	COUNTRY_CODE_CC, COUNTRY_CODE_CX, COUNTRY_CODE_HM,
-	COUNTRY_CODE_MX, COUNTRY_CODE_NF
+	COUNTRY_CODE_NF
 };
 static const uint16_t g_u2CountryGroup5[] = {
-	COUNTRY_CODE_BH, COUNTRY_CODE_CN, COUNTRY_CODE_MV, COUNTRY_CODE_UY,
+	COUNTRY_CODE_BH, COUNTRY_CODE_CN, COUNTRY_CODE_MV,
 	COUNTRY_CODE_VE
 };
 static const uint16_t g_u2CountryGroup6[] = {
@@ -438,7 +438,7 @@ static const uint16_t g_u2CountryGroup21[] = {
 	COUNTRY_CODE_ID, COUNTRY_CODE_NP
 };
 static const uint16_t g_u2CountryGroup22[] = {
-	COUNTRY_CODE_BR, COUNTRY_CODE_CR, COUNTRY_CODE_KR, COUNTRY_CODE_PE,
+	COUNTRY_CODE_KR,
 	COUNTRY_CODE_TW
 };
 static const uint16_t g_u2CountryGroup23[] = {
@@ -454,12 +454,19 @@ static const uint16_t g_u2CountryGroup26[] = {
 	COUNTRY_CODE_AS, COUNTRY_CODE_US
 };
 static const uint16_t g_u2CountryGroup27[] = {
-	COUNTRY_CODE_CK, COUNTRY_CODE_CL, COUNTRY_CODE_GB, COUNTRY_CODE_KI,
+	COUNTRY_CODE_CK, COUNTRY_CODE_GB, COUNTRY_CODE_KI,
 	COUNTRY_CODE_NZ, COUNTRY_CODE_TL
 };
 static const uint16_t g_u2CountryGroup28[] = {
-	COUNTRY_CODE_AR,
+
 };
+//modify dong.zhang fcc 2.4g channel
+static const uint16_t g_u2CountryGroup29[] = {
+	COUNTRY_CODE_BR, COUNTRY_CODE_MX, COUNTRY_CODE_AR, COUNTRY_CODE_UY,
+	COUNTRY_CODE_CL, COUNTRY_CODE_PE, COUNTRY_CODE_CO, COUNTRY_CODE_EC,
+	COUNTRY_CODE_DO, COUNTRY_CODE_GT, COUNTRY_CODE_CR
+};
+//modify dong.zhang fcc 2.4g channel
 
 
 #if (CFG_SUPPORT_SINGLE_SKU == 1)
@@ -1260,6 +1267,31 @@ struct DOMAIN_INFO_ENTRY arSupportedRegDomains[] = {
 		}
 	}
 	,
+	//modify dong.zhang fcc 2.4g channel
+	{
+		(uint16_t *) g_u2CountryGroup29, sizeof(g_u2CountryGroup29) / 2,
+		{
+			{81, BAND_2G4, CHNL_SPAN_5, 1, 11, FALSE}
+			,	/* CH_SET_2G4_1_11 */
+			{115, BAND_5G, CHNL_SPAN_20, 36, 4, FALSE}
+			,	/* CH_SET_UNII_LOW_36_48 */
+			{118, BAND_5G, CHNL_SPAN_20, 52, 4, TRUE}
+			,	/* CH_SET_UNII_MID_52_64 */
+			{121, BAND_5G, CHNL_SPAN_20, 100, 12, TRUE}
+			,	/* CH_SET_UNII_WW_100_144 */
+			{125, BAND_5G, CHNL_SPAN_20, 149, 5, FALSE}
+				/* CH_SET_UNII_UPPER_149_165 */
+#if (CFG_SUPPORT_WIFI_6G == 1)
+			,
+			{131, BAND_6G, CHNL_SPAN_20, 1, 59, FALSE}
+			,	/* 6G_CH_1_233 */
+			{136, BAND_6G, CHNL_SPAN_20, 2, 1, FALSE}
+				/* 6G_CH_2*/
+#endif
+		}
+	}
+	,
+	//modify dong.zhang fcc 2.4g channel
 	{
 		/* Note: Default group if no matched country code */
 		NULL, 0,
