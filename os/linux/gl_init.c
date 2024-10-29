@@ -9262,6 +9262,7 @@ void wlanShutdown(void)
 	wfsys_unlock();
 
 exit:
+	DBGLOG(REQ, INFO, "wifi shutdown finished\n");
 	uShutdownState = SHUTDOWN_STATE_DONE;
 }
 #endif
