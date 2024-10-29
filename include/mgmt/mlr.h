@@ -140,7 +140,8 @@ enum ENUM_MLR_STATE {
 	(eBand == BAND_5G)
 
 #define MLR_GET_BAND(prAdapter, prStaRec) \
-	((prAdapter->aprBssInfo[prStaRec->ucBssIndex] != NULL) ? \
+	(((prStaRec->ucBssIndex < ARRAY_SIZE(prAdapter->aprBssInfo)) && \
+	(prAdapter->aprBssInfo[prStaRec->ucBssIndex] != NULL)) ? \
 	prAdapter->aprBssInfo[prStaRec->ucBssIndex]->eBand : BAND_NULL)
 
 #define MLR_CHECK_IF_RCPI_IS_LOW(prAdapter, ucRCPI) \
