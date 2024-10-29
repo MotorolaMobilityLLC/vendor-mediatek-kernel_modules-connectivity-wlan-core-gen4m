@@ -1203,7 +1203,7 @@ u_int8_t mlrCanUseMlrRate(struct ADAPTER *prAdapter,
 		if (fgIsMultiLink && (prMsduInfo->ucControlFlag
 			& MSDU_CONTROL_FLAG_FORCE_LINK))
 			fgIsForceLink = TRUE;
-#endif
+
 		/* if multi-links, HW may choose 2G or 5G for TX */
 		if (fgIsMultiLink && !fgIsForceLink
 			&& (uc2gTxEnValue ^ uc5gTxEnValue))
@@ -1211,6 +1211,11 @@ u_int8_t mlrCanUseMlrRate(struct ADAPTER *prAdapter,
 		else
 			fgCanUseMlrRate = mlrCheckMlrConditions(prAdapter,
 				prStaRec, eBand, uc2gTxEnValue, uc5gTxEnValue);
+
+#else
+		fgCanUseMlrRate = mlrCheckMlrConditions(prAdapter, prStaRec,
+			eBand, uc2gTxEnValue, uc5gTxEnValue);
+#endif
 	} else if (prMsduInfo->eSrc == TX_PACKET_MGMT)
 		fgCanUseMlrRate = mlrCheckMlrConditions(prAdapter, prStaRec,
 			eBand, uc2gTxEnValue, uc5gTxEnValue);
