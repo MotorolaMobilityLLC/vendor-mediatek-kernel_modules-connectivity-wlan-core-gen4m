@@ -451,7 +451,11 @@ exit:
 	return ret;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_axi_remove(struct platform_device *pdev)
+#else
+static void mtk_axi_remove(struct platform_device *pdev)
+#endif
 {
 	struct mt66xx_hif_driver_data *prDriverData =
 		platform_get_drvdata(pdev);
@@ -463,7 +467,10 @@ static int mtk_axi_remove(struct platform_device *pdev)
 #endif
 	emi_mem_uninit(prChipInfo, pdev);
 	platform_set_drvdata(pdev, NULL);
+
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 
 static int mtk_axi_suspend(struct platform_device *pdev,
