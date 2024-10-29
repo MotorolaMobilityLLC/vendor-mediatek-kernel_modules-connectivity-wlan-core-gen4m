@@ -1373,7 +1373,11 @@ exit:
 	return ret;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_wifi_remove(struct platform_device *pdev)
+#else
+static void mtk_wifi_remove(struct platform_device *pdev)
+#endif
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	struct mt66xx_hif_driver_data *prDriverData =
@@ -1397,7 +1401,10 @@ static int mtk_wifi_remove(struct platform_device *pdev)
 	kalReleaseHifSkbList();
 #endif
 	platform_set_drvdata(pdev, NULL);
+
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 
 static void mtk_wifi_shutdown(struct platform_device *pdev)
@@ -1475,13 +1482,19 @@ exit:
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_wifi_misc_remove(struct platform_device *pdev)
+#else
+static void mtk_wifi_misc_remove(struct platform_device *pdev)
+#endif
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_MISC);
 #endif
 	platform_set_drvdata(pdev, NULL);
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 #endif
 
@@ -1673,14 +1686,20 @@ exit:
 	return 0;
 }
 
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 static int mtk_wifi_tx_cma_non_cache_remove(
+#else
+static void mtk_wifi_tx_cma_non_cache_remove(
+#endif
 	struct platform_device *pdev)
 {
 #if (CFG_MTK_ANDROID_WMT == 1)
 	halFreeHifMem(pdev, WIFI_RSV_MEM_WIFI_CMA_NON_CACHE);
 #endif
 	platform_set_drvdata(pdev, NULL);
+#if (KERNEL_VERSION(6, 11, 0) > LINUX_VERSION_CODE)
 	return 0;
+#endif
 }
 #endif /* CFG_MTK_WIFI_TX_CMA_MEM_NON_CACHE */
 
