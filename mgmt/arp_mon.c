@@ -883,13 +883,18 @@ u_int8_t arpMonIpIsCritical(struct ADAPTER *ad, struct MSDU_INFO *prMsduInfo)
 	if (!prArp)
 		return FALSE;
 
-	if (NTOHS(prArp->u2OpCode) == ARP_OPERATION_REQUEST &&
-	    arpMonNotApIpAndGatewayIp(ad, prMsduInfo->ucBssIndex,
-				      prArp->aucTargetIPaddr)) {
-
-		DBGLOG(TX, TRACE, "ARP to " IPV4STR " is non-critical\n",
-		       IPV4TOSTR(prArp->aucTargetIPaddr));
-		return FALSE;
+	if (NTOHS(prArp->u2OpCode) == ARP_OPERATION_REQUEST) {
+		if (prMsduInfo->ucBssIndex >= MAX_BSSID_NUM) {
+			DBGLOG(TX, WARN, "Invalid ucBssIndex = %u\n",
+				prMsduInfo->ucBssIndex);
+			return FALSE;
+		} else if (arpMonNotApIpAndGatewayIp(ad,
+			prMsduInfo->ucBssIndex, prArp->aucTargetIPaddr)) {
+			DBGLOG(TX, TRACE,
+				"ARP to " IPV4STR " is non-critical\n",
+				IPV4TOSTR(prArp->aucTargetIPaddr));
+			return FALSE;
+		}
 	}
 
 	DBGLOG(TX, TRACE, "ARP to " IPV4STR " is critical\n",
