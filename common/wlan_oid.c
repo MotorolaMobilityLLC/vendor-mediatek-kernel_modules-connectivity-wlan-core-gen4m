@@ -8425,10 +8425,12 @@ uint32_t
 wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 			void *pvSetBuffer, uint32_t u4SetBufferLen,
 			uint32_t *pu4SetInfoLen) {
+#define DBG_BUFFER_SZ		1024
+
 	struct PARAM_MULTICAST_LIST *prMcAddrList;
 	struct CMD_MAC_MCAST_ADDR rCmdMacMcastAddr;
-	uint8_t aucDbgBuf[256];
 	int32_t i4Written = 0;
+	uint8_t *prDbgBuf;
 	uint8_t i;
 
 	ASSERT(prAdapter);
@@ -8458,26 +8460,34 @@ wlanoidSetMulticastList(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_ADAPTER_NOT_READY;
 	}
 
-	kalMemZero(aucDbgBuf, sizeof(aucDbgBuf));
-
 	kalMemZero(&rCmdMacMcastAddr, sizeof(rCmdMacMcastAddr));
 	rCmdMacMcastAddr.u4NumOfGroupAddr = prMcAddrList->ucAddrNum;
 	rCmdMacMcastAddr.ucBssIndex = prMcAddrList->ucBssIdx;
 	kalMemCopy(rCmdMacMcastAddr.arAddress, prMcAddrList->aucMcAddrList,
 		   prMcAddrList->ucAddrNum * MAC_ADDR_LEN);
 
-	i4Written += kalSnprintf(aucDbgBuf + i4Written,
-				 sizeof(aucDbgBuf) - i4Written,
-				 "BssIdx %d allow list: total=%d",
-				 rCmdMacMcastAddr.ucBssIndex,
-				 rCmdMacMcastAddr.u4NumOfGroupAddr);
-	for (i = 0; i < rCmdMacMcastAddr.u4NumOfGroupAddr; i++)
-		i4Written += kalSnprintf(aucDbgBuf + i4Written,
-					 sizeof(aucDbgBuf) - i4Written,
-					 "\nmac[%u]="MACSTR,
-					 i, MAC2STR(
-					 rCmdMacMcastAddr.arAddress[i]));
-	DBGLOG(OID, INFO, "%s\n", aucDbgBuf);
+	prDbgBuf = kalMemZAlloc(DBG_BUFFER_SZ, VIR_MEM_TYPE);
+	if (prDbgBuf) {
+		i4Written +=
+			kalScnprintf(prDbgBuf + i4Written,
+				     DBG_BUFFER_SZ - i4Written,
+				     "BssIdx %d allow list: total=%d",
+				     rCmdMacMcastAddr.ucBssIndex,
+				     rCmdMacMcastAddr.u4NumOfGroupAddr);
+		for (i = 0; i < rCmdMacMcastAddr.u4NumOfGroupAddr; i++) {
+			i4Written +=
+				kalScnprintf(prDbgBuf + i4Written,
+					     DBG_BUFFER_SZ - i4Written,
+					     "\nmac[%u]="MACSTR,
+					     i, MAC2STR(
+					     rCmdMacMcastAddr.arAddress[i]));
+		}
+		DBGLOG(OID, INFO, "%s\n", prDbgBuf);
+		kalMemFree(prDbgBuf, VIR_MEM_TYPE, DBG_BUFFER_SZ);
+	} else {
+		DBGLOG(OID, WARN, "Alloc debug buffer(%u) failed.\n",
+			DBG_BUFFER_SZ);
+	}
 
 	return wlanSendSetQueryCmd(prAdapter,
 				   CMD_ID_MAC_MCAST_ADDR,
