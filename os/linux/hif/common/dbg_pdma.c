@@ -77,7 +77,7 @@ struct wfdma_ring_info {
  *******************************************************************************
  */
 static void halCheckHifState(struct ADAPTER *prAdapter);
-static void halDumpHifDebugLog(struct ADAPTER *prAdapter);
+static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter);
 static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token);
 
 /*******************************************************************************
@@ -115,7 +115,8 @@ void halPrintHifDbgInfo(struct ADAPTER *prAdapter)
 	}
 
 	halCheckHifState(prAdapter);
-	halDumpHifDebugLog(prAdapter);
+	if (!halDumpHifDebugLog(prAdapter))
+		return;
 
 	if (debug_ops && debug_ops->dumpwfsyscpupcr)
 		debug_ops->dumpwfsyscpupcr(prAdapter);
@@ -352,7 +353,7 @@ end_dump:
 		(prAdapter->u4HifTxHangDumpIdx + 1) % LOG_DUMP_COUNT_PERIOD;
 }
 
-static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
+static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
@@ -379,7 +380,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 			bool fgIsClkEn = prDbgOps->showCsrInfo(prAdapter);
 
 			if (!fgIsClkEn)
-				return;
+				return FALSE;
 		}
 	}
 
@@ -393,7 +394,7 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR,
 				"return due to checkbushang fail %d\n", ret);
-			return;
+			return FALSE;
 		}
 	}
 #endif
@@ -410,13 +411,13 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 				&driver_owen_result);
 		else {
 			DBGLOG(HAL, ERROR, "retrun due to null API\n");
-			return;
+			return FALSE;
 		}
 
 		if (driver_owen_result == 0) {
 			DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
 				driver_owen_result);
-			return;
+			return FALSE;
 		}
 	}
 
@@ -428,13 +429,14 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 	if (prDbgOps && prDbgOps->checkDumpViaBt)
 		dumpViaBt = prDbgOps->checkDumpViaBt(prAdapter);
 	if (readable == FALSE || dumpViaBt) {
-		DBGLOG(HAL, ERROR, "PCIe not readable\n");
-		return;
+		DBGLOG(HAL, ERROR, "PCIe not readable[%u][%u]",
+		       readable, dumpViaBt);
+		return FALSE;
 	}
 #else /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
 	if (readable == FALSE) {
 		DBGLOG(HAL, ERROR, "PCIe not readable\n");
-		return;
+		return FALSE;
 	}
 #endif /* !CFG_MTK_WIFI_CONNV3_SUPPORT */
 #endif /* _HIF_PCIE */
@@ -475,6 +477,8 @@ static void halDumpHifDebugLog(struct ADAPTER *prAdapter)
 
 	prHifInfo->fgIsDumpLog = false;
 	prAdapter->u4HifDbgFlag = 0;
+
+	return TRUE;
 }
 
 static void halDumpTxRing(struct GLUE_INFO *prGlueInfo,
