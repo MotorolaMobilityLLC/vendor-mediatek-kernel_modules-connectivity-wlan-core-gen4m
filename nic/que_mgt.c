@@ -4318,7 +4318,6 @@ void qmProcessPktWithReordering(struct ADAPTER *prAdapter,
 	/* We should have STA_REC here */
 	prStaRec = prSwRfb->prStaRec;
 	ASSERT(prStaRec);
-	ASSERT(prSwRfb->ucTid < CFG_RX_MAX_BA_TID_NUM);
 
 	if (prSwRfb->ucTid >= CFG_RX_MAX_BA_TID_NUM) {
 		DBGLOG(QM, WARN, "TID from RXD = %d, out of range!!\n",
