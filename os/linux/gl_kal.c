@@ -1893,19 +1893,15 @@ fail:
 
 int kalPtrRingCnt(struct ptr_ring *ring)
 {
-	int count;
+	int count = 0;
 
-	/* Check if the ring is full */
-	if (__ptr_ring_full(ring)) {
-		count = ring->size;
-	} else if (__ptr_ring_empty(ring)) {
-		count = 0;
-	} else {
-		/* Calculate the number of items in the ring */
-		count = ring->producer - ring->consumer_head;
-		if (count < 0)
-			count += ring->size;
-	}
+	if (!ring)
+		return 0;
+
+	/* Calculate the number of items in the ring */
+	count = ring->producer - ring->consumer_head;
+	if (count < 0)
+		count += ring->size;
 
 	return count;
 }
