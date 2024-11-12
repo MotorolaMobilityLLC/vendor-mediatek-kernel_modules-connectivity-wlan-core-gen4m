@@ -986,8 +986,11 @@ void halCheckWfdmaHangForWB(struct ADAPTER *prAdapter)
 			prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 #endif
 
-		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt)
-			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+		if (prRxRing->u4CidxErrCnt >= prWifiVar->u4WfdmaRxHangCnt) {
+			prHifInfo->fgIsTriggerRxTimeout = TRUE;
+			DBGLOG(HAL, ERROR, "CidxErrCnt > WfdmaRxTimeoutCnt\n");
+			break;
+		}
 	}
 }
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
@@ -1026,11 +1029,17 @@ void halCheckWfdmaHangForceRecvRx(struct ADAPTER *prAdapter)
 
 void halCheckWfdmaHang(struct ADAPTER *prAdapter)
 {
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
 #if CFG_MTK_WIFI_WFDMA_WB
 	halCheckWfdmaHangForWB(prAdapter);
 #elif (CFG_MTK_WIFI_FORCE_RECV_RX == 1)
 	halCheckWfdmaHangForceRecvRx(prAdapter);
 #endif
+	if (prHifInfo->fgIsTriggerRxTimeout) {
+		prHifInfo->fgIsTriggerRxTimeout = FALSE;
+		GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+	}
 }
 
 
