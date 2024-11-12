@@ -3118,7 +3118,9 @@ void pcie_check_gen_switch_timeout(struct ADAPTER *prAdapter, uint32_t u4Reg)
 					prAdapter->ucStopMMIO = FALSE;
 					prRxIdleState->u4FWIdle = DEFAULT_IDLE;
 					prRxIdleState->u4WFIdle = DEFAULT_IDLE;
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 					mtk_pcie_disable_cfg_dump(0);
+#endif
 					DBGLOG(INIT, ERROR,
 						"[Gen Switch] timeout\n");
 					break;
@@ -3175,7 +3177,9 @@ void glNotifyPciePowerDown(void)
 {
 #if defined(CFG_MTK_WIFI_PCIE_SUPPORT) && CFG_MTK_ANDROID_WMT
 	DBGLOG(HAL, INFO, "notify PCIE PD\n");
+#if KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE
 	mtk_pcie_pinmux_select(0, PCIE_PINMUX_PD);
+#endif
 #endif
 }
 
@@ -3253,7 +3257,9 @@ int mtk_pcie_retrain(struct pci_dev *dev)
 #if (CFG_PCIE_GEN_SWITCH == 1)
 void pcie_gen_switch_recover(struct ADAPTER *prAdapter)
 {
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	mtk_pcie_disable_cfg_dump(0);
+#endif
 	if (prAdapter)
 		prAdapter->ucStopMMIO = FALSE;
 
@@ -3340,7 +3346,9 @@ irqreturn_t pcie_gen_switch_thread_handler(int irq, void *dev_instance)
 	prAdapter->fgIsGenSwitchProcessing = TRUE;
 
 	pcie_gen_switch_polling_rx_done(prAdapter);
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	mtk_pcie_enable_cfg_dump(0);
+#endif
 
 	DBGLOG(HAL, TRACE, "[Gen_Switch] start\n");
 	if (g_ucBypassException) {
@@ -3379,7 +3387,9 @@ irqreturn_t pcie_gen_switch_end_thread_handler(int irq, void *dev_instance)
 	struct RX_IDLE_STATE *prRxIdleState;
 
 	DBGLOG(HAL, TRACE, "[Gen_Switch] end\n");
+#if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	mtk_pcie_disable_cfg_dump(0);
+#endif
 
 	prGlueInfo = (struct GLUE_INFO *)dev_instance;
 
