@@ -816,10 +816,14 @@ static u_int8_t halIsWfdmaRxReady(struct RTMP_RX_RING *prRxRing,
 	struct RTMP_DMACB *pRxCell;
 	struct RXD_STRUCT *pRxD;
 
+	if (u4CpuIdx >= RX_RING_MAX_SIZE) {
+		DBGLOG(RX, ERROR, "Error cpu idx=%d\n", u4CpuIdx);
+		return FALSE;
+	}
 	pRxCell = &prRxRing->Cell[u4CpuIdx];
 	pRxD = (struct RXD_STRUCT *)pRxCell->AllocVa;
 
-	return pRxD->DMADONE ? TRUE : FALSE;
+	return (pRxD && pRxD->DMADONE) ? TRUE : FALSE;
 }
 
 void halManualUpdateWfdmaDmaDone(struct ADAPTER *prAdapter)
@@ -3905,11 +3909,11 @@ void halWpdmaProcessDataDmaDone(struct GLUE_INFO *prGlueInfo,
 
 u_int8_t halIsWfdmaRxRingReady(struct GLUE_INFO *prGlueInfo, uint8_t ucRingNum)
 {
-	struct GL_HIF_INFO *prHifInfo;
-	struct RTMP_RX_RING *prRxRing;
+	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct RTMP_RX_RING *prRxRing = NULL;
 	uint32_t u4CpuIdx = 0;
 
-	if (ucRingNum >= NUM_OF_RX_RING)
+	if (!prGlueInfo || (ucRingNum >= NUM_OF_RX_RING))
 		return FALSE;
 
 	prHifInfo = &prGlueInfo->rHifInfo;
