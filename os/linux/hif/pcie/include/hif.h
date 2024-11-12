@@ -379,6 +379,8 @@ struct GL_HIF_INFO {
 	u_int8_t fgEnablePcieCfgDump;
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
 	u_int8_t fgIsDebugSopOnGoing;
+
+	u_int8_t fgIsTriggerRxTimeout;
 };
 
 struct BUS_INFO {

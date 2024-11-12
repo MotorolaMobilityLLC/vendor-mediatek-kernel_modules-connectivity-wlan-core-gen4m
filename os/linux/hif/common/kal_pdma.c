@@ -1881,7 +1881,8 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		if (prRxRing->u4RxDmaDoneFailCnt >=
 		    HIF_RX_DMA_DONE_MAX_FAIL_CNT) {
 			kalWaitRxDmaDoneTimeoutDebug(prGlueInfo, prRxRing);
-			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+			prHifInfo->fgIsTriggerRxTimeout = TRUE;
+			DBGLOG(HAL, ERROR, "trigger rx timeout EE\n");
 			return FALSE;
 		}
 	} else {
