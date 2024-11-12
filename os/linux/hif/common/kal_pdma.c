@@ -1776,6 +1776,28 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 	return true;
 }
 
+static void kalWaitRxDmaDoneTimeoutDebug(
+	struct GLUE_INFO *prGlueInfo,
+	struct RTMP_RX_RING *prRxRing)
+{
+	uint32_t u4CpuIdx = 0;
+	struct RTMP_DMACB *prRxCell;
+	struct RXD_STRUCT *prRxD;
+	struct RTMP_DMABUF *prDmaBuf;
+
+	u4CpuIdx = prRxRing->RxCpuIdx;
+	INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+	while (prRxRing->RxDmaIdx != u4CpuIdx) {
+		prRxCell = &prRxRing->Cell[u4CpuIdx];
+		prRxD = (struct RXD_STRUCT *)prRxCell->AllocVa;
+		DBGLOG(HAL, INFO, "Rx DMAD[%u]\n", u4CpuIdx);
+		DBGLOG_MEM32(HAL, INFO, prRxD, sizeof(struct RXD_STRUCT));
+		prDmaBuf = &prRxCell->DmaBuf;
+		DBGLOG_MEM32(HAL, INFO, prDmaBuf->AllocVa, 32);
+		INC_RING_INDEX(u4CpuIdx, prRxRing->u4RingSize);
+	}
+}
+
 #if HIF_INT_TIME_DEBUG
 static void kalTrackRxReadyTime(struct GLUE_INFO *prGlueInfo, uint16_t u2Port)
 {
@@ -1852,9 +1874,20 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		}
 		prRxRing->fgIsDumpLog = true;
 		prRxRing->fgIsWaitRxDmaDoneTimeout = true;
-		return FALSE;
-	} else
+		if (isPollMode)
+			return FALSE;
+
+		prRxRing->u4RxDmaDoneFailCnt++;
+		if (prRxRing->u4RxDmaDoneFailCnt >=
+		    HIF_RX_DMA_DONE_MAX_FAIL_CNT) {
+			kalWaitRxDmaDoneTimeoutDebug(prGlueInfo, prRxRing);
+			GL_DEFAULT_RESET_TRIGGER(prAdapter, RST_WFDMA_RX_HANG);
+			return FALSE;
+		}
+	} else {
 		prRxRing->fgIsWaitRxDmaDoneTimeout = false;
+		prRxRing->u4RxDmaDoneFailCnt = 0;
+	}
 
 #if HIF_INT_TIME_DEBUG
 	kalTrackRxReadyTime(prGlueInfo, u2Port);
