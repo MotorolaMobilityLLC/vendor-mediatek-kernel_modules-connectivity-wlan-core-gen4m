@@ -1830,11 +1830,20 @@ endif
 
 ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -DCFG_MTK_WIFI_CONNV3_SUPPORT=1
-    ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra),)
-        CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra
-        KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+    ifeq ($(CONFIG_WIFI_6992_6653), y)
+        ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra_mt6653),)
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra_mt6653
+            KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+        else
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra_mt6653
+        endif
     else
-        CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra
+        ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra),)
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra
+            KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+        else
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra
+        endif
     endif
     $(info $$CONFIG_MTK_WIFI_CONNV3_PATH is [${CONFIG_MTK_WIFI_CONNV3_PATH}])
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/include
@@ -1842,8 +1851,7 @@ ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/include
     ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/conn_drv/connv3/debug_utility/connsyslog
-
-    ccflags-y += -I$(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra/include
+    ccflags-y += -I$(CONFIG_MTK_WIFI_CONNV3_PATH)/include
 else ifeq ($(CONFIG_MTK_WIFI_CONNINFRA_SUPPORT), y)
     CONFIG_WIFI_COREDUMP_SUPPORT=y
     ccflags-y += -DCFG_SUPPORT_CONNINFRA=1
