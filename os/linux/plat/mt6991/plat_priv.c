@@ -479,9 +479,12 @@ void kalSetDramBoost(struct ADAPTER *prAdapter, int32_t iLv)
 #ifdef CONFIG_OF
 	struct device_node *node;
 	static struct icc_path *bw_path;
+#if IS_ENABLED(CONFIG_MTK_DVFSRC)
+	unsigned int i = 0;
+#endif /* CONFIG_MTK_DVFSRC */
 #endif /* CONFIG_OF */
 	static unsigned int peak_bw[OPP_BW_MAX_NUM], current_bw;
-	unsigned int prev_bw = 0, i;
+	unsigned int prev_bw = 0;
 
 	kalGetPlatDev(&pdev);
 	if (!pdev) {
