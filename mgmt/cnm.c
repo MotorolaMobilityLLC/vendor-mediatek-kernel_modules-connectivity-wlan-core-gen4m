@@ -3272,7 +3272,7 @@ cnmUpdateDbdcQuota(
 )
 {
 	uint8_t ucWmmIndex;
-	uint32_t u4ReqQuota = 0;
+	uint32_t u4ReqQuota = DBDC_WMM_TX_QUOTA;
 	struct mt66xx_chip_info *prChipInfo;
 
 	ASSERT(prAdapter);
@@ -3340,7 +3340,7 @@ void cnmUpdateStaticDbdcQuota(
 		for (ucWmmIndex = 0; ucWmmIndex < prAdapter->ucWmmSetNum;
 			ucWmmIndex++) {
 
-			u4ReqQuota = 0;
+			u4ReqQuota = DBDC_WMM_TX_QUOTA;
 			fgEnable = FALSE;
 
 			/* Update Quota when dual band
@@ -3427,7 +3427,7 @@ static void cnmUpdateDynamicMaxQuotaByWmmIdx(
 	struct WMM_QUOTA_STATUS *prWmmStatus;
 	enum ENUM_MBMC_BN eHwBand = ENUM_BAND_AUTO;
 	enum ENUM_BAND eBand = BAND_NULL;
-	uint32_t u4ReqQuota = 0;
+	uint32_t u4ReqQuota = DBDC_WMM_TX_QUOTA;
 	u_int8_t fgEn = TRUE, fgIsNeedUpdate = FALSE, fgIsMldMulti = FALSE;
 
 	if (!prChipInfo->dmashdlQuotaDecision ||
