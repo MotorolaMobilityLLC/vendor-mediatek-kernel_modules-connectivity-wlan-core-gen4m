@@ -664,8 +664,12 @@ uint32_t asicUpdatTxRingMaxQuota(struct ADAPTER *prAdapter,
 
 #define DMASHDL_MAX_QUOTA (DMASHDL_MAX_QUOTA_MASK >> DMASHDL_MAX_QUOTA_OFFSET)
 	ASSERT(prAdapter);
-	if (u4MaxQuota > DMASHDL_MAX_QUOTA)
+	if (!u4MaxQuota || u4MaxQuota > DMASHDL_MAX_QUOTA) {
+		DBGLOG(HAL, WARN,
+			"invalid u4MaxQuota(0x%x),use DMASHDL_MAX_QUOTA\n",
+			u4MaxQuota);
 		u4MaxQuota = DMASHDL_MAX_QUOTA;
+	}
 #undef DMASHDL_MAX_QUOTA
 
 	prGlueInfo = prAdapter->prGlueInfo;
