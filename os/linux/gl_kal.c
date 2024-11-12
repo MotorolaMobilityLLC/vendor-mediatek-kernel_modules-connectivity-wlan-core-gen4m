@@ -18564,7 +18564,7 @@ static uint32_t __kalPerCpuTxXmit(struct sk_buff *prSkb, struct GLUE_INFO *pr)
 	uint16_t u2QueueIdx;
 	int32_t *prPendingNum;
 
-	if (!prPerCpuTxInfo->fgReady)
+	if (!prPerCpuTxInfo->fgReady || !prSkb)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	prInfo = get_cpu_ptr(prPerCpuTxInfo->prInfo);
