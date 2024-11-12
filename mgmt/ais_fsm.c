@@ -5307,6 +5307,10 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 	/* reset BTM Params when disconnect */
 	aisResetBssTranstionMgtParam(prAdapter, ucBssIndex);
 
+	/* Reset RSSI monitor when disconnection */
+	kalMemZero(&prAisFsmInfo->rRSSIMonitor,
+		sizeof(struct PARAM_RSSI_MONITOR_T));
+
 #if CFG_SUPPORT_802_11K
 	/* clear query done flag */
 	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
