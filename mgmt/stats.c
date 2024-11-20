@@ -333,7 +333,11 @@ void statsParseARPInfo(void *pvPacket,
 				IPV4TOSTR(&pucEthBody[ARP_SENDER_IP_OFFSET]));
 		break;
 	case EVENT_TX:
+#if BUILD_QA_DBG
 		DBGLOG(TX, INFO,
+#else
+		DBGLOG_LIMITED(TX, INFO,
+#endif
 			"ARP %s SRC MAC/IP["
 			MACSTR "]/[" IPV4STR "], TAR MAC/IP["
 			MACSTR "]/[" IPV4STR "], SeqNo: %d\n",
