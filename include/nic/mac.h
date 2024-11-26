@@ -2040,7 +2040,8 @@ enum BEACON_REPORT_DETAIL {
 #endif /* CFG_SUPPORT_PASSPOINT */
 
 /* MTK Vendor Specific OUI */
-#define ELEM_MIN_LEN_MTK_OUI			    7
+#define ELEM_MIN_LEN_MTK_OUI			    \
+	(sizeof(struct IE_MTK_OUI) - (sizeof(struct IE_HDR))) /* 7 */
 #define VENDOR_OUI_MTK                              { 0x00, 0x0C, 0xE7 }
 #define MTK_SYNERGY_CAP_SUPPORT_TLV                 BIT(0)
 #define MTK_SYNERGY_CAP_SUPPORT_24G_MCS89           BIT(3)
@@ -5179,10 +5180,10 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 /* Convert an unsigned char pointer to an information element pointer */
 #define IE_ID(fp)               (((struct IE_HDR *) fp)->ucId)
 #define IE_LEN(fp)              (((struct IE_HDR *) fp)->ucLength)
+#define IE_SIZE(fp)             (sizeof(struct IE_HDR) + IE_LEN(fp))
+#define IE_SIZE_MAX             (sizeof(struct IE_HDR) + ((uint8_t)~0U))
+#define IE_DATA(fp)             (((struct IE_HDR *) fp)->aucInfo)
 #define IE_ID_EXT(fp)           (((struct IE_HDR *) fp)->aucInfo[0])
-#define IE_DATA(fp)             (((struct IE_HDR *) fp)->aucInfo[0])
-#define IE_SIZE(fp)             (ELEM_HDR_LEN + IE_LEN(fp))
-#define IE_SIZE_MAX             257 /* 257 = ELEM_HDR_LEN + IE Body Len */
 #define IE_TAIL(fp)             ((uint8_t *)fp + IE_SIZE(fp))
 
 #define SSID_IE(fp)             ((struct IE_SSID *) fp)
@@ -5230,6 +5231,13 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 #define QUIET_IE(fp)            ((struct IE_QUIET *) fp)
 
 #define MTK_OUI_IE(fp)          ((struct IE_MTK_OUI *) fp)
+#define MTK_OUI_IE_INFO_SIZE(fp) \
+	(IE_SIZE(fp) - sizeof(struct IE_MTK_OUI))
+
+#define MTK_PRE_WIFI7_IE(fp)	((struct IE_MTK_PRE_WIFI7 *) fp)
+#define MTK_PRE_WIFI7_IE_INFO_SIZE(fp) \
+	(IE_SIZE(fp) - sizeof(struct IE_MTK_PRE_WIFI7))
+
 #define RNR_IE(fp)          ((struct IE_RNR *) fp)
 
 #define CSA_IE(fp)		((struct IE_CHANNEL_SWITCH *) fp)
@@ -5320,10 +5328,11 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 	} while (FALSE)
 
 #define IE_FOR_EACH(_pucIEsBuf, _u2IEsBufLen, _u2Offset) \
-for ((_u2Offset) = 0U;	\
-	((((_u2Offset) + 2U) <= (_u2IEsBufLen)) && \
-	(((_u2Offset) + IE_SIZE(_pucIEsBuf)) <= (_u2IEsBufLen))); \
-	(_u2Offset) += IE_SIZE(_pucIEsBuf), (_pucIEsBuf) += IE_SIZE(_pucIEsBuf))
+	for ((_u2Offset) = 0U;	\
+	     (((_u2Offset) + 2U) <= (_u2IEsBufLen) && \
+	      ((_u2Offset) + IE_SIZE(_pucIEsBuf)) <= (_u2IEsBufLen)); \
+	     (_u2Offset) += IE_SIZE(_pucIEsBuf), \
+	     (_pucIEsBuf) += IE_SIZE(_pucIEsBuf))
 
 #define SET_EXT_CAP(_aucField, _ucFieldLength, _ucBit) \
 do { \
