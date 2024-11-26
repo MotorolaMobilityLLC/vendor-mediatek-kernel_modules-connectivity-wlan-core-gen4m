@@ -1718,7 +1718,7 @@ void mldParseBasicMlIE(struct MULTI_LINK_INFO *prMlInfo,
 		while (tmp_end - tmp_pos >= 2 &&
 		       IE_ID(tmp_pos) == ELEM_ID_FRAGMENT &&
 		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
-			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			kalMemCopy(p, IE_DATA(tmp_pos), IE_LEN(tmp_pos));
 			p += IE_LEN(tmp_pos);
 			tmp_pos += IE_SIZE(tmp_pos);
 		}
@@ -1789,7 +1789,7 @@ link_info:
 		while (tmp_end - tmp_pos >= 2 &&
 		       IE_ID(tmp_pos) == SUB_IE_MLD_FRAGMENT &&
 		       IE_SIZE(tmp_pos) <= tmp_end - tmp_pos) {
-			kalMemCopy(p, &IE_DATA(tmp_pos), IE_LEN(tmp_pos));
+			kalMemCopy(p, IE_DATA(tmp_pos), IE_LEN(tmp_pos));
 			p += IE_LEN(tmp_pos);
 			tmp_pos += IE_SIZE(tmp_pos);
 		}
@@ -2417,10 +2417,21 @@ void mldParsePriorityAccessMlIE(struct ADAPTER *prAdapter,
 
 const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 {
-	uint16_t u2Offset = 0;
-	uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	const uint8_t aucMtkOui[] = VENDOR_OUI_MTK;
+	uint16_t u2Offset;
 	uint8_t *ie, *sub;
-	uint16_t ie_len, ie_offset, sub_len, sub_offset;
+	uint16_t ie_len, ie_offset;
+	uint16_t sub_len, sub_offset;
+
+	_Static_assert(sizeof(struct IE_HDR) ==
+		       OFFSET_OF(struct IE_HDR, aucInfo),
+		       "Need to define aucInfo[] in struct IE_HDR");
+	_Static_assert(sizeof(struct IE_MTK_OUI) ==
+		       OFFSET_OF(struct IE_MTK_OUI, aucInfoElem),
+		       "Need to define aucInfoElem[] in struct IE_MTK_OUI");
+	_Static_assert(sizeof(struct IE_MTK_PRE_WIFI7) ==
+		       OFFSET_OF(struct IE_MTK_PRE_WIFI7, aucInfoElem),
+		       "Need to define aucInfoElem[] in struct IE_MTK_PRE_WIFI7");
 
 	IE_FOR_EACH(ies, len, u2Offset) {
 		if (BE_IS_ML_CTRL_TYPE(ies, type))
@@ -2428,31 +2439,28 @@ const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 
 		/* only check tlv */
 		if (IE_ID(ies) != ELEM_ID_VENDOR ||
-		    IE_LEN(ies) < ELEM_MIN_LEN_MTK_OUI ||
-		    kalMemCmp(ies + 2, aucMtkOui, sizeof(aucMtkOui)) ||
+		    IE_SIZE(ies) < sizeof(struct IE_MTK_OUI) ||
+		    kalMemCmp(IE_DATA(ies), aucMtkOui, sizeof(aucMtkOui)) ||
 		    !(MTK_OUI_IE(ies)->aucCapability[0] &
 				MTK_SYNERGY_CAP_SUPPORT_TLV))
 			continue;
 
 		ie = MTK_OUI_IE(ies)->aucInfoElem;
-		ie_len = IE_LEN(ies) - 7;
+		ie_len = MTK_OUI_IE_INFO_SIZE(ies);
 
 		IE_FOR_EACH(ie, ie_len, ie_offset) {
-			if (IE_ID(ie) == MTK_OUI_ID_PRE_WIFI7) {
-				struct IE_MTK_PRE_WIFI7 *prPreWifi7 =
-					(struct IE_MTK_PRE_WIFI7 *)ie;
+			if (IE_ID(ie) != MTK_OUI_ID_PRE_WIFI7)
+				continue;
 
-				if (IE_SIZE(prPreWifi7) <
-				    sizeof(struct IE_MTK_PRE_WIFI7))
-					return NULL;
+			if (IE_SIZE(ie) < sizeof(struct IE_MTK_PRE_WIFI7))
+				return NULL;
 
-				sub = prPreWifi7->aucInfoElem;
-				sub_len = IE_LEN(prPreWifi7) - 2;
+			sub = MTK_PRE_WIFI7_IE(ie)->aucInfoElem;
+			sub_len = MTK_PRE_WIFI7_IE_INFO_SIZE(ie);
 
-				IE_FOR_EACH(sub, sub_len, sub_offset) {
-					if (BE_IS_ML_CTRL_TYPE(ies, type))
-						return sub;
-				}
+			IE_FOR_EACH(sub, sub_len, sub_offset) {
+				if (BE_IS_ML_CTRL_TYPE(sub, type))
+					return sub;
 			}
 		}
 	}
