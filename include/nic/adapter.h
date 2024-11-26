@@ -293,6 +293,9 @@ struct BSS_INFO {
 	u_int8_t fgIsQBSS;
 	u_int8_t fgIsNetAbsent;	/* TRUE: BSS is absent, FALSE: BSS is present */
 	OS_SYSTIME tmLastPresent;
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	OS_SYSTIME tmAbsence;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 	uint32_t u4PresentTime; /* in ms */
 
 	/* Stop/Start Subqueue threshold for BSS */
@@ -1087,6 +1090,10 @@ struct WIFI_VAR {
 	uint32_t u4HtTxMaxAmsduInAmpduLen;
 	uint32_t u4VhtTxMaxAmsduInAmpduLen;
 	uint32_t u4TxMaxAmsduInAmpduLen;
+
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	uint32_t u4AbsenceTimeout;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 	uint8_t ucTxBaSize;
 	uint8_t ucRxHtBaSize;
@@ -2534,6 +2541,10 @@ struct ADAPTER {
 #if (CFG_SUPPORT_STATS_ONE_CMD == 1)
 	OS_SYSTIME rAllStatsUpdateTime;
 #endif
+
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	OS_SYSTIME rAbsenceTimeoutDetectTime;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
 
 	/* WIFI_VAR_T */
 	struct WIFI_VAR rWifiVar;

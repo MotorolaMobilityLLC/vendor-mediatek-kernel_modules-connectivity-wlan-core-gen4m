@@ -2740,6 +2740,12 @@ else
     ccflags-y += -DCFG_DEBUG_RX_SEGMENT=0
 endif
 
+ifeq ($(CONFIG_ABSENCE_TIMEOUT_DETECTION), y)
+    ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=1
+else
+    ccflags-y += -DCFG_ABSENCE_TIMEOUT_DETECTION=0
+endif
+
 ifeq ($(CONFIG_RX_SW_PROCESS_DBG), y)
     ccflags-y += -DCFG_RX_SW_PROCESS_DBG=1
 else
