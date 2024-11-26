@@ -1724,6 +1724,7 @@ static void kalWaitRxDmaDoneDebug(
 	HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
 		       prRxRing->hw_didx_addr,
 		       &prRxRing->RxDmaIdx);
+	prRxRing->RxDmaIdx &= MT_RING_DIDX_MASK;
 	DBGLOG(HAL, INFO,
 	       "Rx DMA done P[%u] DMA[%u] CPU[%u]\n",
 	       u2Port, prRxRing->RxDmaIdx, prRxRing->RxCpuIdx);
@@ -1756,6 +1757,8 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 			     struct RXD_STRUCT *pRxD,
 			     uint16_t u2Port)
 {
+	struct CHIP_DBG_OPS *prDbgOps =
+		prGlueInfo->prAdapter->chip_info->prDebugOps;
 	uint32_t u4Count = 0;
 
 #if CFG_MTK_WIFI_WFDMA_WB
@@ -1768,6 +1771,8 @@ static bool kalWaitRxDmaDone(struct GLUE_INFO *prGlueInfo,
 		if (u4Count > DMA_DONE_WAITING_COUNT) {
 			kalWaitRxDmaDoneDebug(
 				prGlueInfo, prRxRing, pRxD, u2Port);
+			if (prDbgOps && prDbgOps->showPdmaInfo)
+				prDbgOps->showPdmaInfo(prGlueInfo->prAdapter);
 			return false;
 		}
 
@@ -1874,10 +1879,15 @@ u_int8_t kalDevPortRead(struct GLUE_INFO *prGlueInfo,
 		}
 		prRxRing->fgIsDumpLog = true;
 		prRxRing->fgIsWaitRxDmaDoneTimeout = true;
+		prRxRing->u4RxDmaDoneFailCnt++;
 		if (isPollMode)
 			return FALSE;
 
-		prRxRing->u4RxDmaDoneFailCnt++;
+		if (prRxRing->u4RxDmaDoneFailCnt == 1) {
+			DBGLOG(HAL, ERROR, "try to wait done again\n");
+			return FALSE;
+		}
+
 		if (prRxRing->u4RxDmaDoneFailCnt >=
 		    HIF_RX_DMA_DONE_MAX_FAIL_CNT) {
 			kalWaitRxDmaDoneTimeoutDebug(prGlueInfo, prRxRing);
