@@ -542,6 +542,7 @@ static void soc3_0clearEvtRingTillCmdRingEmpty(
 	struct RTMP_TX_RING *prTxRing;
 	struct RTMP_RX_RING *prRxRing;
 	uint32_t u4CpuIdx = 0, u4DmaIdx = 0, u4EvtCpuIdx = 0, u4EvtDmaIdx = 0;
+	uint32_t u4Addr = 0;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
 	prBusInfo = prAdapter->chip_info->bus_info;
@@ -549,6 +550,7 @@ static void soc3_0clearEvtRingTillCmdRingEmpty(
 	u4Retry = 0;
 	prTxRing = &prHifInfo->TxRing[TX_RING_CMD];
 	prRxRing = &prHifInfo->RxRing[RX_RING_EVT];
+	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_desc_base, &u4Addr);
 	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_cidx_addr, &u4CpuIdx);
 	kalDevRegRead(prAdapter->prGlueInfo, prTxRing->hw_didx_addr, &u4DmaIdx);
 	kalDevRegRead(prAdapter->prGlueInfo,
@@ -556,7 +558,7 @@ static void soc3_0clearEvtRingTillCmdRingEmpty(
 	kalDevRegRead(prAdapter->prGlueInfo,
 		      prRxRing->hw_didx_addr, &u4EvtDmaIdx);
 	while (u4CpuIdx != u4DmaIdx) {
-		if (u4Retry >= HIF_CMD_POWER_OFF_RETRY_COUNT)
+		if (u4Retry >= HIF_CMD_POWER_OFF_RETRY_COUNT || u4Addr == 0)
 			break;
 		kalMsleep(HIF_CMD_POWER_OFF_RETRY_TIME);
 		u4Retry++;
@@ -571,6 +573,8 @@ static void soc3_0clearEvtRingTillCmdRingEmpty(
 			      prRxRing->hw_cidx_addr, &u4EvtCpuIdx);
 		kalDevRegRead(prAdapter->prGlueInfo,
 			      prRxRing->hw_didx_addr, &u4EvtDmaIdx);
+		kalDevRegRead(prAdapter->prGlueInfo,
+			      prTxRing->hw_desc_base, &u4Addr);
 	}
 }
 
