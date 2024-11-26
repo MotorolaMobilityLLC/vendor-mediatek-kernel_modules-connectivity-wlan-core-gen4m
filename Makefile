@@ -16,6 +16,9 @@ ifneq ($(_CONNAC_VER), 1_0)
 	ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6992_6653)
 		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/conninfra_mt6653/Module.symvers)
 		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/Module.symvers)
+	else ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6989_6653)
+		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/conninfra_mt6653/Module.symvers)
+		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/Module.symvers)
 	else
 		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/conninfra/Module.symvers)
 		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/Module.symvers)
@@ -29,6 +32,9 @@ else
 	ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6992_6653)
 		EXTRA_SYMBOLS := $(MODULE_PWD)/../conninfra_mt6653/Module.symvers
 		EXTRA_SYMBOLS += $(MODULE_PWD)/../connfem/Module.symvers
+	else ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6989_6653)
+		EXTRA_SYMBOLS := $(MODULE_PWD)/../conninfra_mt6653/Module.symvers
+		EXTRA_SYMBOLS += $(MODULE_PWD)/../connfem/Module.symvers
 	else
 		EXTRA_SYMBOLS := $(MODULE_PWD)/../conninfra/Module.symvers
 		EXTRA_SYMBOLS += $(MODULE_PWD)/../adaptor/wlan_page_pool/Module.symvers
@@ -37,6 +43,8 @@ else
 endif
 
 ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6992_6653)
+	MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m_mt6653
+else ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6989_6653)
 	MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m_mt6653
 else
 	MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m

@@ -1103,6 +1103,16 @@ else
     ccflags-y += -DCFG_PCIE_MT6992=0
 endif
 
+ifeq ($(CONFIG_WIFI_6989_6653), y)
+    ifeq ($(CONFIG_MTK_COMBO_WIFI_HIF), pcie)
+        ccflags-y += -DCFG_PCIE_MT6989_6653=1
+    else
+        ccflags-y += -DCFG_PCIE_MT6989_6653=0
+    endif
+else
+    ccflags-y += -DCFG_PCIE_MT6989_6653=0
+endif
+
 ifeq ($(CONFIG_SUPPORT_STATS_ONE_CMD), y)
     ccflags-y += -DCFG_SUPPORT_STATS_ONE_CMD=1
 else
@@ -1841,6 +1851,13 @@ endif
 ifeq ($(CONFIG_MTK_WIFI_CONNV3_SUPPORT), y)
     ccflags-y += -DCFG_MTK_WIFI_CONNV3_SUPPORT=1
     ifeq ($(CONFIG_WIFI_6992_6653), y)
+        ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra_mt6653),)
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra_mt6653
+            KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
+        else
+            CONFIG_MTK_WIFI_CONNV3_PATH ?= $(TOP)/vendor/mediatek/kernel_modules/connectivity/conninfra_mt6653
+        endif
+    else ifeq ($(CONFIG_WIFI_6989_6653), y)
         ifneq ($(wildcard $(KO_CODE_PATH)/../conninfra_mt6653),)
             CONFIG_MTK_WIFI_CONNV3_PATH ?= $(KO_CODE_PATH)/../conninfra_mt6653
             KBUILD_EXTRA_SYMBOLS += $(CONFIG_MTK_WIFI_CONNV3_PATH)/Module.symvers
