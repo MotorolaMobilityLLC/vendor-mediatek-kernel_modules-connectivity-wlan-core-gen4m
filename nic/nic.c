@@ -2185,6 +2185,10 @@ uint32_t nicActivateNetworkEx(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	prBssInfo->tmAbsence = 0;
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	prBssInfo->u4PresentTime = 0;
 	prBssInfo->tmLastPresent = 0;
 	prBssInfo->fgFirstArp = TRUE;

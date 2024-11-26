@@ -7823,6 +7823,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 #endif /* CFG_ADJUST_NETIF_TH_BY_BAND */
 
+#if CFG_ABSENCE_TIMEOUT_DETECTION
+	INIT_UINT(prWifiVar->u4AbsenceTimeout, "AbsenceTimeout",
+		  QM_ABSENCE_DETECT_TIMEOUT, FEATURE_TO_CUSTOMER);
+#endif /* CFG_ABSENCE_TIMEOUT_DETECTION */
+
 	INIT_UINT(prWifiVar->ucTxBaSize, "TxBaSize", WLAN_LEGACY_MAX_BA_SIZE,
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucRxHtBaSize,
