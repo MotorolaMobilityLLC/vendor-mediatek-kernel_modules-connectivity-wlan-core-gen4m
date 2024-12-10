@@ -1970,7 +1970,7 @@ kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
 	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct sk_buff *skb = (struct sk_buff *)pvPacket;
 
-	if (!skb || !pucPacketStart) {
+	if (!skb || !pucPacketStart || u4PacketLen == 0) {
 		RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl,
 			RX_NULL_PACKET_COUNT);
 		return WLAN_STATUS_FAILURE;
@@ -1982,7 +1982,8 @@ kalProcessRxPacket(struct GLUE_INFO *prGlueInfo,
 	skb_reset_tail_pointer(skb);
 	skb_trim(skb, 0);
 
-	if (skb_tailroom(skb) < 0 || u4PacketLen > skb_tailroom(skb)) {
+	if (skb_tailroom(skb) < 0 || u4PacketLen > skb_tailroom(skb) ||
+		skb->tail > skb->end) {
 		DBGLOG(RX, ERROR,
 #ifdef NET_SKBUFF_DATA_USES_OFFSET
 			"[skb:0x%p][skb->len:%d][skb->protocol:0x%02X] tail:%u, end:%u, data:%p\n",
