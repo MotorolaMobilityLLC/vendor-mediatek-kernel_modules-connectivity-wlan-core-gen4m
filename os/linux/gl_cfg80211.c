@@ -2480,6 +2480,7 @@ void wlanParsePmksa(struct cfg80211_pmksa *pmksa,
 	}
 #endif /* CFG_SUPPORT_FILS_SK_OFFLOAD */
 
+	param->u4Expiration = pmksa->pmk_lifetime;
 	param->ucBssIdx = ucBssIndex;
 }
 
