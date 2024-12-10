@@ -156,6 +156,9 @@ struct ROAMING_SCAN_PARAMETER {
 	uint8_t ucScanType;
 	uint8_t ucScanCount;
 	uint8_t ucScanMode;
+
+	u_int8_t fgSpecifyBssid;
+	uint8_t aucBssid[MAC_ADDR_LEN];
 };
 
 struct ROAMING_INFO {

@@ -1446,6 +1446,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	struct PARAM_BSS_DISALLOWED_LIST *disallow;
 	uint32_t i = 0;
 #endif
+#if (CFG_SUPPORT_ROAMING == 1)
+	struct ROAMING_INFO *prRoamingFsmInfo =
+		aisGetRoamingInfo(prAdapter, ucBssIndex);
+#endif
 
 	if (ais == NULL) {
 		DBGLOG(APS, WARN, "ais is NULL\n");
@@ -1502,6 +1506,16 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 			MAC2STR(prBssDesc->aucBSSID));
 		return FALSE;
 	}
+
+#if (CFG_SUPPORT_ROAMING == 1)
+	if (prRoamingFsmInfo->rRoamScanParam.fgSpecifyBssid &&
+	    UNEQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+			&prRoamingFsmInfo->rRoamScanParam.aucBssid[0])) {
+		DBGLOG(APS, WARN, MACSTR " is not allowed BSSID\n",
+			MAC2STR(prBssDesc->aucBSSID));
+		return FALSE;
+	}
+#endif
 
 	if ((prBssDesc->eBand == BAND_2G4 &&
 		prAdapter->rWifiVar.ucDisallowBand2G) ||
