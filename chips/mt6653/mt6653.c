@@ -265,6 +265,10 @@ static void mt6653MbuDumpDebugCr(struct GLUE_INFO *prGlueInfo);
 static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter);
 #endif
 
+#if defined(_HIF_PCIE)
+static void mt6653_notify_fw_disable_SR(struct ADAPTER *prAdapter);
+#endif
+
 #if (CFG_SUPPORT_CONNFEM == 1)
 u_int8_t mt6653_is_AA_DBDC_enable(void);
 static u_int8_t mt6653_is_support_band2(void);
@@ -3483,6 +3487,9 @@ static void mt6653InitPcieInt(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_PCIE_ASPM_EP
 	HAL_MCR_WR(prGlueInfo->prAdapter, 0x74030074, u4WrVal);
 #endif
+#if defined(_HIF_PCIE)
+	mt6653_notify_fw_disable_SR(prGlueInfo->prAdapter);
+#endif
 	if (!pcie_vir_addr) {
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
 		return;
@@ -5337,4 +5344,17 @@ static void mt6653CheckMdRxHang(struct ADAPTER *prAdapter)
 #endif /* CFG_WMT_RESET_API_SUPPORT */
 }
 #endif
+
+#if defined(_HIF_PCIE)
+static void mt6653_notify_fw_disable_SR(struct ADAPTER *prAdapter)
+{
+	/* notify fw to disable SR if platform not support L2 */
+#if CFG_MTK_WIFI_PCIE_SR
+	if (!kalIsSupportPcieL2())
+#endif
+		HAL_MCR_WR(prAdapter,
+			   PCIE_MAC_IREG_PCIE_DEBUG_DUMMY_5_ADDR, 0x1);
+}
+#endif
+
 #endif  /* MT6653 */
