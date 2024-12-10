@@ -243,6 +243,7 @@ do { \
 uint8_t rsnApOverload(uint16_t status, uint16_t reason)
 {
 	switch (status) {
+	case STATUS_CODE_UNSPECIFIED_FAILURE:
 	case STATUS_CODE_ASSOC_DENIED_AP_OVERLOAD:
 	case STATUS_CODE_ASSOC_DENIED_BANDWIDTH:
 	case STATUS_CODE_ASSOC_DENIED_OUTSIDE_STANDARD:
