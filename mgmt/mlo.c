@@ -1311,7 +1311,8 @@ uint8_t *mldGenerateBasicCompleteProfile(
 		}
 	}
 
-	if (neid > 0 || nexid > 0) {
+	/* To avoid the rejection of the 5+5 connection, AIS always carring */
+	if (neid > 0 || nexid > 0 || IS_BSS_INDEX_AIS(prAdapter, ucBssIndex)) {
 		uint8_t *buf, *p;
 		uint16_t len = 3 + neid + nexid;
 
