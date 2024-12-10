@@ -3050,16 +3050,21 @@ struct SW_RFB *mldDupProbeRespSwRfb(struct ADAPTER *prAdapter,
 	return QUEUE_GET_HEAD(que);
 }
 
-void mldProcessBeaconAndProbeResp(
+uint8_t mldProcessBeaconAndProbeResp(
 		struct ADAPTER *prAdapter, struct SW_RFB *prSrc)
 {
 	struct QUE tmp, *que = &tmp;
-	struct SW_RFB *rfb;
+	struct SW_RFB *rfb = NULL;
+	uint8_t fgHasMLElement = FALSE;
 
 	QUEUE_INITIALIZE(que);
 
 	rfb = mldDupProbeRespSwRfb(prAdapter, prSrc);
 	QUEUE_INSERT_TAIL_ALL(que, rfb);
+
+	if (rfb) {
+		fgHasMLElement = TRUE;
+	}
 
 #if CFG_SUPPORT_802_11V_MBSSID && !CFG_SUPPORT_802_11V_MBSSID_OFFLOAD
 	/* duplicate after ml probe resp. if done, skip mbss */
@@ -3074,6 +3079,8 @@ void mldProcessBeaconAndProbeResp(
 		scanProcessBeaconAndProbeResp(prAdapter, rfb);
 		nicRxReturnRFB(prAdapter, rfb);
 	}
+
+	return fgHasMLElement;
 }
 
 struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
