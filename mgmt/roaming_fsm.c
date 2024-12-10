@@ -492,6 +492,7 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct ROAMING_INFO *prRoamingFsmInfo;
 	uint8_t i;
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
 
 	DBGLOG(ROAMING, LOUD,
 	       "[%d]->Init: Current Time = %u\n",
@@ -507,6 +508,9 @@ void roamingFsmInit(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 	prRoamingFsmInfo->rRoamScanParam.ucScanType = ROAMING_SCAN_TYPE_NORMAL;
 	prRoamingFsmInfo->rRoamScanParam.ucScanCount = 0;
 	prRoamingFsmInfo->rRoamScanParam.ucScanMode = ROAMING_SCAN_MODE_NORMAL;
+	prRoamingFsmInfo->rRoamScanParam.fgSpecifyBssid = FALSE;
+	COPY_MAC_ADDR(prRoamingFsmInfo->rRoamScanParam.aucBssid,
+		aucZeroMacAddr);
 
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		prRoamingFsmInfo->eCurrentEvent[i] = ROAMING_EVENT_NUM;
@@ -825,6 +829,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			prRoam->rRoamScanParam.ucScanCount = 0;
 			prRoam->rRoamScanParam.ucScanMode =
 					ROAMING_SCAN_MODE_NORMAL;
+			prRoam->rRoamScanParam.fgSpecifyBssid = FALSE;
 			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
 
 			break;
@@ -840,6 +845,7 @@ void roamingFsmSteps(struct ADAPTER *prAdapter,
 			prRoam->rRoamScanParam.ucScanCount = 0;
 			prRoam->rRoamScanParam.ucScanMode =
 					ROAMING_SCAN_MODE_NORMAL;
+			prRoam->rRoamScanParam.fgSpecifyBssid = FALSE;
 			prFtParam->eFtDsState = FT_DS_STATE_IDLE;
 
 			break;
