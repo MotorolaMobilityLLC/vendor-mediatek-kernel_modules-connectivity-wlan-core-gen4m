@@ -13,7 +13,7 @@ ifneq ($(CONNECTIVITY_OUT_PATH),)
 	MODULE_PWD=$(M)/../..
 	include $(KERNEL_SRC)/$(DEVICE_MODULES_REL_DIR)/Makefile.include
 ifneq ($(_CONNAC_VER), 1_0)
-	ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6989_6653)
+	ifneq ($(filter wlan_drv_gen4m_6989_6653%,$(_MODULE_NAME)),)
 		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/conninfra_mt6653/Module.symvers)
 		EXTRA_SYMBOLS += $(abspath $(CONNECTIVITY_OUT_PATH)/connfem/Module.symvers)
 	else
@@ -26,7 +26,7 @@ endif
 else
 	KERNEL_DIR=/lib/modules/$(shell uname -r)/build
 	MODULE_PWD=$(PWD)
-	ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6989_6653)
+	ifneq ($(filter wlan_drv_gen4m_6989_6653%,$(_MODULE_NAME)),)
 		EXTRA_SYMBOLS := $(MODULE_PWD)/../conninfra_mt6653/Module.symvers
 		EXTRA_SYMBOLS += $(MODULE_PWD)/../connfem/Module.symvers
 	else
@@ -36,7 +36,7 @@ else
 	endif
 endif
 
-ifeq ($(_MODULE_NAME), wlan_drv_gen4m_6989_6653)
+ifneq ($(filter wlan_drv_gen4m_6989_6653%,$(_MODULE_NAME)),)
 	MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m_mt6653
 else
 	MODULE_PWD=../vendor/mediatek/kernel_modules/connectivity/wlan/core/gen4m
