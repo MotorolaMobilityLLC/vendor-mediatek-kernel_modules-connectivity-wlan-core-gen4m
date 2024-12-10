@@ -710,13 +710,23 @@ static void ehtRlmFillOpIE(
 	/* MAC capabilities */
 	EHT_RESET_OP(prEhtOp->ucEhtOpParams);
 
-	EHT_SET_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams);
-
 	eht_bw = cnmOpModeGetMaxBw(prAdapter, prBssInfo);
+
+	if ((prBssInfo->eBand == BAND_5G
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	     || prBssInfo->eBand == BAND_6G
+#endif /* CFG_SUPPORT_WIFI_6G */
+	    ) &&
+	    ((eht_bw == MAX_BW_320_1MHZ || eht_bw == MAX_BW_320_2MHZ) ||
+	     prBssInfo->fgIsEhtDscbPresent))
+		EHT_SET_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams);
 
 	/* Basic EHT-MCS And Nss Set */
 	kalMemZero(prEhtMcsSet, sizeof(*prEhtMcsSet));
 	prEhtMcsSet->eht_bw20_mcs_0_7 = 1 + (1 << 4);
+
+	if (!EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))
+		goto exit;
 
 	/* filling operation info field */
 	prEhtOpInfo = (struct EHT_OP_INFO *) prEhtOp->aucVarInfo;
@@ -729,28 +739,26 @@ static void ehtRlmFillOpIE(
 		prBssInfo->ucPrimaryChannel, rlmGetVhtOpBwByBssOpBw(eht_bw));
 	u4OverallLen += 3;
 
-	DBGLOG(RLM, INFO, "EHT channel width: %d\n",
-		prEhtOpInfo->ucControl);
-
 #if CFG_SUPPORT_802_PP_DSCB
-	if (IS_BSS_APGO(prBssInfo) &&
-		(EHT_IS_OP_PARAM_OP_INFO_PRESENT(prEhtOp->ucEhtOpParams))) {
-
-		if (prBssInfo->fgIsEhtDscbPresent) {
-			EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
-				prEhtOp->ucEhtOpParams);
-			prEhtOpInfo->u2EhtDisSubChanBitmap =
-				prBssInfo->u2EhtDisSubChanBitmap;
-			u4OverallLen += 2;
-		} else {
-			EHT_RESET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
-				prEhtOp->ucEhtOpParams);
-			prEhtOpInfo->u2EhtDisSubChanBitmap = 0;
-		}
+	if (prBssInfo->fgIsEhtDscbPresent) {
+		EHT_SET_OP_PARAM_DIS_SUBCHANNEL_PRESENT(
+			prEhtOp->ucEhtOpParams);
+		prEhtOpInfo->u2EhtDisSubChanBitmap =
+			prBssInfo->u2EhtDisSubChanBitmap;
 		u4OverallLen += 2;
 	}
 #endif
 
+	DBGLOG(RLM, TRACE,
+		"params=0x%x control=%u ccfs0=%u ccfs1=%u bitmap=0x%02x\n",
+		prEhtOp->ucEhtOpParams,
+		prEhtOpInfo->ucControl,
+		prEhtOpInfo->ucCCFS0,
+		prEhtOpInfo->ucCCFS1,
+		prBssInfo->fgIsEhtDscbPresent ?
+			prEhtOpInfo->u2EhtDisSubChanBitmap : 0);
+
+exit:
 	prEhtOp->ucLength = u4OverallLen - ELEM_HDR_LEN;
 
 	prMsduInfo->u2FrameLength += IE_SIZE(prEhtOp);
