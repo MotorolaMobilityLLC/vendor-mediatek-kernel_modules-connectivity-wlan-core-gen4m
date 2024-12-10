@@ -355,9 +355,12 @@ end_dump:
 
 static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo = NULL;
+	struct GL_HIF_INFO *prHifInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
+	u_int8_t driver_owen_result = 0;
 #if defined(_HIF_PCIE)
 	u_int8_t readable = TRUE;
 #ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
@@ -365,15 +368,17 @@ static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
 #endif /* _HIF_PCIE */
 
-	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
-	ASSERT(prGlueInfo);
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prDbgOps = prChipInfo->prDebugOps;
+
+	if (!prAdapter->u4HifDbgFlag)
+		return TRUE;
 
 	/* Avoid register checking */
 	prHifInfo->fgIsDumpLog = true;
-
-	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_HOST_CSR)) {
 		if (prDbgOps->showCsrInfo) {
@@ -386,10 +391,10 @@ static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	/* need to check Bus readable */
-	if (prAdapter->chip_info->checkbushang) {
+	if (prChipInfo->checkbushang) {
 		uint32_t ret = 0;
 
-		ret = prAdapter->chip_info->checkbushang((void *) prAdapter,
+		ret = prChipInfo->checkbushang((void *) prAdapter,
 				TRUE);
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR,
@@ -400,25 +405,17 @@ static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 #endif
 
 	/* Check Driver own HW CR */
-	{
-		struct BUS_INFO *prBusInfo = NULL;
-		u_int8_t driver_owen_result = 0;
+	if (prBusInfo->lowPowerOwnRead)
+		prBusInfo->lowPowerOwnRead(prAdapter, &driver_owen_result);
+	else {
+		DBGLOG(HAL, ERROR, "retrun due to null API\n");
+		return FALSE;
+	}
 
-		prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
-		if (prBusInfo->lowPowerOwnRead)
-			prBusInfo->lowPowerOwnRead(prGlueInfo->prAdapter,
-				&driver_owen_result);
-		else {
-			DBGLOG(HAL, ERROR, "retrun due to null API\n");
-			return FALSE;
-		}
-
-		if (driver_owen_result == 0) {
-			DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
-				driver_owen_result);
-			return FALSE;
-		}
+	if (driver_owen_result == 0) {
+		DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
+		       driver_owen_result);
+		return FALSE;
 	}
 
 #if defined(_HIF_PCIE)
