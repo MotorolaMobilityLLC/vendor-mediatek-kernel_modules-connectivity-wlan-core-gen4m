@@ -1430,6 +1430,12 @@ uint32_t bssUpdateBeaconContentEx(struct ADAPTER *prAdapter,
 			if (prOtherBssInfo == prBssInfo)
 				continue;
 
+			/* Beacon cannot be sent corrently if update beacon
+			 * before ch grant.
+			 */
+			if (!prOtherBssInfo->fgIsApGoGranted)
+				continue;
+
 			/*
 			 * For rnr ie update, re-generate beacon content
 			 * for neighbor AP.
