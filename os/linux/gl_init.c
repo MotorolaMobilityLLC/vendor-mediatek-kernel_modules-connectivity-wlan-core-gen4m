@@ -2971,6 +2971,9 @@ static void glTxRxInit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_HIF_REG_WORK
 	kalHifRegWorkInit(prGlueInfo);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	kalHifTxWorkInit(prGlueInfo);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
@@ -3011,6 +3014,9 @@ static void glTxRxUninit(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_HIF_REG_WORK
 	kalHifRegWorkUninit(prGlueInfo);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	kalHifTxWorkUninit(prGlueInfo);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 static void wlanFreeNetDev(void)
@@ -4793,6 +4799,10 @@ void wlanWakeLockInit(struct GLUE_INFO *prGlueInfo)
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rRxWorkerLock,
 			   "Rx Worker");
 #endif
+#if CFG_SUPPORT_HIF_TX_NAPI
+	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->rHifTxWorkerLock,
+			   "Hif Tx Worker");
+#endif
 #if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	KAL_WAKE_LOCK_INIT(NULL, prGlueInfo->prDrvOwnWakeLock,
 			   "WLAN Drv Own");
@@ -4821,6 +4831,12 @@ void wlanWakeLockUninit(struct GLUE_INFO *prGlueInfo)
 				 prGlueInfo->rRxWorkerLock))
 		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rRxWorkerLock);
 	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rRxWorkerLock);
+#endif
+#if CFG_SUPPORT_HIF_TX_NAPI
+	if (KAL_WAKE_LOCK_ACTIVE(NULL,
+				 prGlueInfo->rHifTxWorkerLock))
+		KAL_WAKE_UNLOCK(NULL, prGlueInfo->rHifTxWorkerLock);
+	KAL_WAKE_LOCK_DESTROY(NULL, prGlueInfo->rHifTxWorkerLock);
 #endif
 #if (CFG_MTK_WIFI_DRV_OWN_INT_MODE == 1)
 	if (KAL_WAKE_LOCK_ACTIVE(NULL,

@@ -125,23 +125,27 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
 			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
-		.rHifNapiThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+		.rHifRxNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rHifTxNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_LITTLE_CORE,
@@ -150,6 +154,7 @@ struct BOOST_INFO rBoostInfo[] = {
 		.i4TxWorkCpu = -1,
 		.i4RxWorkCpu = -1,
 		.i4RxNapiWorkCpu = -1,
+		.i4HifTxWorkCpu = -1,
 		.fgKeepPcieWakeup = FALSE,
 		.u4WfdmaTh = 0,
 		.i4TxFreeMsduWorkCpu = -1,
@@ -165,32 +170,37 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
 			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
-		.rHifNapiThreadInfo = {
+		.rHifRxNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rHifTxNapiThreadInfo = {
 			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_LITTLE_CORE,
 		.u4ISRMask = CPU_LITTLE_CORE,
-		.i4TxFreeMsduWorkCpu = 2,
-		.i4RxRfbRetWorkCpu = 2,
-		.i4TxWorkCpu = 2,
-		.i4RxWorkCpu = 3,
+		.i4TxFreeMsduWorkCpu = -1,
+		.i4RxRfbRetWorkCpu = -1,
+		.i4TxWorkCpu = -1,
+		.i4RxWorkCpu = -1,
 		.i4RxNapiWorkCpu = 1,
+		.i4HifTxWorkCpu = -1,
 		.fgKeepPcieWakeup = FALSE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
@@ -205,32 +215,37 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_LITTLE_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
 			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
-		.rHifNapiThreadInfo = {
+		.rHifRxNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rHifTxNapiThreadInfo = {
 			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_LITTLE_CORE,
 		.u4ISRMask = CPU_LITTLE_CORE,
-		.i4TxFreeMsduWorkCpu = 2,
-		.i4RxRfbRetWorkCpu = 2,
-		.i4TxWorkCpu = 2,
-		.i4RxWorkCpu = 3,
+		.i4TxFreeMsduWorkCpu = -1,
+		.i4RxRfbRetWorkCpu = -1,
+		.i4TxWorkCpu = -1,
+		.i4RxWorkCpu = -1,
 		.i4RxNapiWorkCpu = 1,
+		.i4HifTxWorkCpu = -1,
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
@@ -245,7 +260,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = AUTO_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rMainThreadInfo = {
@@ -253,24 +268,29 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.rRxNapiThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
-		.rHifNapiThreadInfo = {
+		.rHifRxNapiThreadInfo = {
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
+		.rHifTxNapiThreadInfo = {
 			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = AUTO_PRIORITY
 		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_BIG_CORE,
-		.i4TxFreeMsduWorkCpu = 4,
-		.i4RxRfbRetWorkCpu = 2,
-		.i4TxWorkCpu = 2,
-		.i4RxWorkCpu = 3,
+		.i4TxFreeMsduWorkCpu = -1,
+		.i4RxRfbRetWorkCpu = -1,
+		.i4TxWorkCpu = -1,
+		.i4RxWorkCpu = -1,
 		.i4RxNapiWorkCpu = 1,
+		.i4HifTxWorkCpu = -1,
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 1,
 		.fgWifiNappingForceDis = TRUE,
@@ -285,7 +305,7 @@ struct BOOST_INFO rBoostInfo[] = {
 			.i4BigCpuFreq = MAX_CPU_FREQ
 		},
 		.rHifThreadInfo = {
-			.u4CpuMask = CPU_MID_CORE,
+			.u4CpuMask = CPU_MID_LITTLE_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
 		.rMainThreadInfo = {
@@ -300,17 +320,22 @@ struct BOOST_INFO rBoostInfo[] = {
 			.u4CpuMask = CPU_BIG_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
-		.rHifNapiThreadInfo = {
+		.rHifRxNapiThreadInfo = {
 			.u4CpuMask = CPU_BIG_CORE,
 			.u4Priority = HIGH_PRIORITY
 		},
+		.rHifTxNapiThreadInfo = {
+			.u4CpuMask = CPU_BIG_CORE,
+			.u4Priority = AUTO_PRIORITY
+		},
 		.u4RpsMap = RPS_BIG_CORE,
 		.u4ISRMask = CPU_X_CORE,
-		.i4TxFreeMsduWorkCpu = 4,
-		.i4RxRfbRetWorkCpu = 2,
+		.i4TxFreeMsduWorkCpu = -1,
+		.i4RxRfbRetWorkCpu = -1,
 		.i4TxWorkCpu = 6,
-		.i4RxWorkCpu = 3,
+		.i4RxWorkCpu = -1,
 		.i4RxNapiWorkCpu = 5,
+		.i4HifTxWorkCpu = -1,
 		.fgKeepPcieWakeup = TRUE,
 		.u4WfdmaTh = 2,
 		.fgWifiNappingForceDis = TRUE,
@@ -599,13 +624,24 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-	if (prGlueInfo->rHifInfo.rNapiDev.napi_thread) {
-		kalSetCpuMask(prGlueInfo->rHifInfo.rNapiDev.napi_thread,
-			prBoostInfo->rHifNapiThreadInfo.u4CpuMask);
-		kalSetTaskUtilMinPct(prGlueInfo->rHifInfo.rNapiDev.u4ThreadPid,
-			prBoostInfo->rHifNapiThreadInfo.u4Priority);
+	if (prGlueInfo->rHifInfo.rRxNapiDev.napi_thread) {
+		kalSetCpuMask(prGlueInfo->rHifInfo.rRxNapiDev.napi_thread,
+			prBoostInfo->rHifRxNapiThreadInfo.u4CpuMask);
+		kalSetTaskUtilMinPct(
+			prGlueInfo->rHifInfo.rRxNapiDev.u4ThreadPid,
+			prBoostInfo->rHifRxNapiThreadInfo.u4Priority);
 	}
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	if (prGlueInfo->rHifInfo.rTxNapiDev.napi_thread) {
+		kalSetCpuMask(prGlueInfo->rHifInfo.rTxNapiDev.napi_thread,
+			prBoostInfo->rHifTxNapiThreadInfo.u4CpuMask);
+		kalSetTaskUtilMinPct(
+			prGlueInfo->rHifInfo.rTxNapiDev.u4ThreadPid,
+			prBoostInfo->rHifTxNapiThreadInfo.u4Priority);
+	}
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	kalSetRpsMap(prGlueInfo, prBoostInfo->u4RpsMap);
 	kalSetISRMask(prAdapter, prBoostInfo->u4ISRMask);
@@ -641,6 +677,10 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_RX_NAPI_WORK
 	kalRxNapiWorkSetCpu(prGlueInfo, prBoostInfo->i4RxNapiWorkCpu);
 #endif /* CFG_SUPPORT_RX_NAPI_WORK */
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	kalHifTxWorkSetCpu(prGlueInfo, prBoostInfo->i4HifTxWorkCpu);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 #if defined(_HIF_PCIE)
 	kalSetPcieKeepWakeup(prGlueInfo, prBoostInfo->fgKeepPcieWakeup);
@@ -730,7 +770,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		prBoostInfo->rRxNapiThreadInfo.u4CpuMask,
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 #if CFG_SUPPORT_HIF_RX_NAPI
-		prBoostInfo->rHifNapiThreadInfo.u4CpuMask,
+		prBoostInfo->rHifRxNapiThreadInfo.u4CpuMask,
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 		prBoostInfo->rHifThreadInfo.u4Priority,
 		prBoostInfo->rMainThreadInfo.u4Priority,
@@ -739,7 +779,7 @@ void kalSetCpuBoost(struct ADAPTER *prAdapter,
 		prBoostInfo->rRxNapiThreadInfo.u4Priority,
 #endif /* CFG_SUPPORT_RX_NAPI_THREADED */
 #if CFG_SUPPORT_HIF_RX_NAPI
-		prBoostInfo->rHifNapiThreadInfo.u4Priority,
+		prBoostInfo->rHifRxNapiThreadInfo.u4Priority,
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 		prBoostInfo->u4RpsMap,
 		prBoostInfo->u4ISRMask,

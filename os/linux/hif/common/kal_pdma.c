@@ -2471,7 +2471,7 @@ static bool kalDevWriteDataByQueue(struct GLUE_INFO *prGlueInfo,
 	ASSERT(prGlueInfo);
 	prHifInfo = &prGlueInfo->rHifInfo;
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
 	/* force tx data */
 	if (prMsduInfo->pfTxDoneHandler)
 		KAL_SET_BIT(HIF_TX_DATA_DELAY_TIMEOUT_BIT,
@@ -2509,10 +2509,6 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	struct list_head rTempList;
 	static int32_t ai4RingLock[NUM_OF_TX_RING];
 	uint32_t u4Idx;
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	u_int8_t fgIsTxData = FALSE;
-	uint32_t u4DataCnt = 0;
-#endif
 
 	KAL_HIF_TXDATAQ_LOCK_DECLARATION();
 #if !CFG_TX_DIRECT_VIA_HIF_THREAD
@@ -2525,32 +2521,10 @@ u_int8_t kalDevKickData(struct GLUE_INFO *prGlueInfo)
 	prHifInfo = &prGlueInfo->rHifInfo;
 	prWifiVar = &prGlueInfo->prAdapter->rWifiVar;
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-	if (wlanWfdEnabled(prGlueInfo->prAdapter)
-#if (CFG_SUPPORT_LOWLATENCY_MODE == 1)
-	    || prGlueInfo->prAdapter->fgEnLowLatencyMode
-#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
-	   )
-		goto tx_data;
-
-	if (KAL_TEST_AND_CLEAR_BIT(
-		    HIF_TX_DATA_DELAY_TIMEOUT_BIT,
-		    prHifInfo->ulTxDataTimeout))
-		goto tx_data;
-
-	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
-		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
-	if (u4DataCnt >= prWifiVar->u4TxDataDelayCnt)
-		goto tx_data;
-
-	if (!fgIsTxData) {
-		halStartTxDelayTimer(prGlueInfo->prAdapter);
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
+	if (halCheckAndStartTxDelayTimer(prGlueInfo->prAdapter))
 		return 0;
-	}
-tx_data:
-	if (IS_FEATURE_ENABLED(prWifiVar->fgEnTxDataDelayDbg))
-		DBGLOG(HAL, TRACE, "Tx Data[%u]\n", u4DataCnt);
-#endif
+#endif /* CFG_SUPPORT_TX_DATA_DELAY */
 
 #if !CFG_SUPPORT_RX_WORK
 	/* disable softirq to improve processing efficiency */
@@ -2616,15 +2590,9 @@ end:
 	KAL_HIF_BH_ENABLE(prGlueInfo);
 #endif /* !CFG_SUPPORT_RX_WORK */
 
-#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
-#if CFG_SUPPORT_HRTIMER
-	hrtimer_cancel(&prHifInfo->rTxDelayTimer);
-#else
-	del_timer_sync(&prHifInfo->rTxDelayTimer);
-#endif /* CFG_SUPPORT_HRTIMER */
-	KAL_CLR_BIT(HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT,
-		    prHifInfo->ulTxDataTimeout);
-#endif
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1 && CFG_SUPPORT_HIF_TX_NAPI == 0)
+	halCancleTxDelayTimer(prGlueInfo->prAdapter);
+#endif /* CFG_SUPPORT_TX_DATA_DELAY */
 
 	return 0;
 }

@@ -214,6 +214,7 @@ struct HIF_NAPI_DEVICE {
 	u_int8_t fgIsRun;
 	unsigned long ulFlag;
 	uint32_t u4DrvOwnCnt;
+	uint32_t u4DataCnt;
 };
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
@@ -364,8 +365,11 @@ struct GL_HIF_INFO {
 	irq_handler_t irq_handler_thread;
 #endif
 #if CFG_SUPPORT_HIF_RX_NAPI
-	struct HIF_NAPI_DEVICE rNapiDev;
+	struct HIF_NAPI_DEVICE rRxNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	struct HIF_NAPI_DEVICE rTxNapiDev;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 	u_int8_t fgEnablePcieCfgDump;

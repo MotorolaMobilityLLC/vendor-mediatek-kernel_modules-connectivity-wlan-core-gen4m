@@ -2167,9 +2167,13 @@ struct HIF_STATS {
 	uint32_t u4CidxFetchByTimeout;
 #endif /* CFG_MTK_WIFI_WFDMA_WB */
 #if CFG_SUPPORT_HIF_RX_NAPI
-	uint32_t u4HifNapiCount;
-	uint32_t u4HifNapiRunCount;
+	uint32_t u4HifRxNapiCount;
+	uint32_t u4HifRxNapiRunCount;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	uint32_t u4HifTxNapiCount;
+	uint32_t u4HifTxNapiRunCount;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 };
 
 struct OID_HANDLER_RECORD {

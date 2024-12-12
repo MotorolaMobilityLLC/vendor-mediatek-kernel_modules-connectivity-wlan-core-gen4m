@@ -1602,6 +1602,7 @@ uint32_t halReleaseIOBuffer(struct ADAPTER *prAdapter);
 void halDeAggRxPktWorker(struct work_struct *work);
 void halRxTasklet(uintptr_t data);
 void halRxWork(struct GLUE_INFO *prGlueInfo);
+void halTxWork(struct GLUE_INFO *prGlueInfo);
 void halTxCompleteTasklet(uintptr_t data);
 void halPrintHifDbgInfo(struct ADAPTER *prAdapter);
 u_int8_t halIsTxResourceControlEn(struct ADAPTER *prAdapter);

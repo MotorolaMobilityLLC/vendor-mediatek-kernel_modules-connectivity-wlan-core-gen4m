@@ -5812,6 +5812,7 @@ int hif_thread(void *data)
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_CMD_BIT,
 					       &prGlueInfo->ulFlag))
 				TRACE(wlanTxCmdMthread(prAdapter), "TX_CMD");
+#if (CFG_SUPPORT_HIF_TX_NAPI == 0)
 #if (CFG_TX_MGMT_BY_DATA_Q == 1)
 			if (test_and_clear_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT,
 				&prGlueInfo->ulFlag)) {
@@ -5826,6 +5827,7 @@ int hif_thread(void *data)
 			if (test_and_clear_bit(GLUE_FLAG_HIF_TX_BIT,
 					       &prGlueInfo->ulFlag))
 				TRACE(nicTxMsduQueueMthread(prAdapter),	"TX");
+#endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
 		}
 
 		/* Read chip status when chip no response */
@@ -5866,11 +5868,13 @@ int hif_thread(void *data)
 				prBusInfo->recoveryMsiStatus(prAdapter, TRUE);
 		}
 #endif
+#if (CFG_SUPPORT_HIF_TX_NAPI == 0)
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 		if (test_and_clear_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT,
 				       &prGlueInfo->ulHifFlag))
 			halHandleAllTokensUnused(prAdapter, FALSE);
 #endif
+#endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
 
 		/* Set FW own */
 		if (test_and_clear_bit(GLUE_FLAG_HIF_FW_OWN_BIT,
@@ -5878,6 +5882,8 @@ int hif_thread(void *data)
 			RX_INC_HIF_CNT(prRxCtrl, HIF_FLAG_HIF_FW_OWN);
 			prAdapter->fgWiFiInSleepyState = TRUE;
 		}
+
+		clear_bit(HIF_FLAG_UPDATE_STATUS_BIT, &prGlueInfo->ulHifFlag);
 		halUpdateHifConfig(prAdapter);
 		halDumpHifStats(prAdapter);
 
@@ -7182,7 +7188,7 @@ void kalSetIntEvent(struct GLUE_INFO *pr)
 	RX_INC_CNT(&pr->prAdapter->rRxCtrl, RX_INTR_COUNT);
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-	set_bit(HIF_NAPI_SET_DRV_OWN_BIT, &pr->rHifInfo.rNapiDev.ulFlag);
+	set_bit(HIF_RX_NAPI_SET_DRV_OWN_BIT, &pr->rHifInfo.rRxNapiDev.ulFlag);
 #endif
 
 	/* when we got interrupt, we wake up service thread */
@@ -7206,7 +7212,7 @@ void kalSetDrvIntEvent(struct GLUE_INFO *pr)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	/* set int bit to enable interrupt */
 	set_bit(GLUE_FLAG_RX_DIRECT_INT_BIT, &pr->ulFlag);
-	set_bit(HIF_NAPI_SCHE_NAPI_BIT, &pr->rHifInfo.rNapiDev.ulFlag);
+	set_bit(HIF_RX_NAPI_SCHE_NAPI_BIT, &pr->rHifInfo.rRxNapiDev.ulFlag);
 #endif
 
 	/* when we got interrupt, we wake up servie thread */
@@ -7238,10 +7244,15 @@ void kalSetMddpEvent(struct GLUE_INFO *pr)
 
 void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr)
 {
-	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
+#if CFG_SUPPORT_HIF_TX_NAPI
+	set_bit(HIF_TX_NAPI_TOKENS_UNUSED_BIT, &pr->rHifInfo.rTxNapiDev.ulFlag);
+	kalHifTxWorkSchedule(pr);
+#else
 #if CFG_SUPPORT_MULTITHREAD
+	set_bit(HIF_FLAG_ALL_TOKENS_UNUSED_BIT, &pr->ulHifFlag);
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 void kalSetHifAerResetEvent(struct GLUE_INFO *pr)
@@ -7255,6 +7266,14 @@ void kalSetHifAerResetEvent(struct GLUE_INFO *pr)
 void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr)
 {
 	set_bit(HIF_FLAG_MSI_RECOVERY_BIT, &pr->ulHifFlag);
+#if CFG_SUPPORT_MULTITHREAD
+	wake_up_interruptible(&pr->waitq_hif);
+#endif
+}
+
+void kalSetHifUpdateStatus(struct GLUE_INFO *pr)
+{
+	set_bit(HIF_FLAG_UPDATE_STATUS_BIT, &(pr->ulHifFlag));
 #if CFG_SUPPORT_MULTITHREAD
 	wake_up_interruptible(&pr->waitq_hif);
 #endif
@@ -7290,10 +7309,13 @@ void kalSetMgmtDirectTxEvent2Hif(struct GLUE_INFO *pr)
 
 	KAL_WAKE_LOCK_TIMEOUT(pr->prAdapter, pr->rTimeoutWakeLock,
 			      MSEC_TO_JIFFIES(u4ThreadWakeUp));
-
 	set_bit(GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT, &pr->ulFlag);
-
+#if CFG_SUPPORT_HIF_TX_NAPI
+	set_bit(HIF_TX_NAPI_SCHE_NAPI_BIT, &pr->rHifInfo.rTxNapiDev.ulFlag);
+	kalHifTxWorkSchedule(pr);
+#else
 	wake_up_interruptible(&pr->waitq_hif);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 #endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
 
@@ -7306,9 +7328,13 @@ void kalSetTxEvent2Hif(struct GLUE_INFO *pr)
 			      MSEC_TO_JIFFIES(
 			      pr->prAdapter->rWifiVar.u4WakeLockThreadWakeup));
 
+#if CFG_SUPPORT_HIF_TX_NAPI
+	set_bit(HIF_TX_NAPI_SCHE_NAPI_BIT, &pr->rHifInfo.rTxNapiDev.ulFlag);
+	kalHifTxWorkSchedule(pr);
+#else
 	set_bit(GLUE_FLAG_HIF_TX_BIT, &pr->ulFlag);
-
 	wake_up_interruptible(&pr->waitq_hif);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 void kalSetFwOwnEvent2Hif(struct GLUE_INFO *pr)
@@ -19495,6 +19521,33 @@ inline void kalHifRegWorkSchedule(struct GLUE_INFO *pr)
 	kalWorkSchedule(pr, HIF_REG_WORK);
 }
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+void kalHifTxWork(struct work_struct *work)
+{
+	TRACE(halTxWork(kalWorkGetGlueInfo(work)), "halHifTxWork");
+}
+
+inline void kalHifTxWorkInit(struct GLUE_INFO *pr)
+{
+	kalWorkInit(pr, HIF_TX_WORK, "HifTxWork", kalHifTxWork);
+}
+
+inline void kalHifTxWorkUninit(struct GLUE_INFO *pr)
+{
+	kalWorkUninit(pr, HIF_TX_WORK);
+}
+
+inline void kalHifTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx)
+{
+	kalWorkSetCpu(pr, HIF_TX_WORK, i4CpuIdx);
+}
+
+inline void kalHifTxWorkSchedule(struct GLUE_INFO *pr)
+{
+	kalWorkSchedule(pr, HIF_TX_WORK);
+}
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 void __weak kalPmicCtrl(u_int8_t fgIsEnabled)
 {

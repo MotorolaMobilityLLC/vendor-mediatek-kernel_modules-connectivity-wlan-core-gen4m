@@ -131,7 +131,7 @@ extern u_int8_t wlan_perf_monitor_force_enable;
 
 #define HIF_FLAG \
 	(HIF_FLAG_MSI_RECOVERY | HIF_FLAG_ALL_TOKENS_UNUSED | \
-	HIF_FLAG_AER_RESET)
+	HIF_FLAG_AER_RESET | HIF_FLAG_UPDATE_STATUS)
 
 #define GLUE_FLAG_RX_PROCESS (GLUE_FLAG_HALT | GLUE_FLAG_RX_TO_OS)
 #else
@@ -307,7 +307,8 @@ struct BOOST_INFO {
 	struct THREAD_INFO rMainThreadInfo;
 	struct THREAD_INFO rRxThreadInfo;
 	struct THREAD_INFO rRxNapiThreadInfo;
-	struct THREAD_INFO rHifNapiThreadInfo;
+	struct THREAD_INFO rHifRxNapiThreadInfo;
+	struct THREAD_INFO rHifTxNapiThreadInfo;
 	uint32_t u4RpsMap;
 	uint32_t u4ISRMask;
 	int32_t i4RxRfbRetWorkCpu;
@@ -315,6 +316,7 @@ struct BOOST_INFO {
 	int32_t i4RxWorkCpu;
 	int32_t i4RxNapiWorkCpu;
 	int32_t i4TxFreeMsduWorkCpu;
+	int32_t i4HifTxWorkCpu;
 	int32_t i4DramBoostLv;
 	u_int8_t fgKeepPcieWakeup;
 	uint32_t u4WfdmaTh;
@@ -2179,6 +2181,8 @@ void kalSetHifHandleAllTokensUnusedEvent(struct GLUE_INFO *pr);
 
 void kalSetHifMsiRecoveryEvent(struct GLUE_INFO *pr);
 
+void kalSetHifUpdateStatus(struct GLUE_INFO *pr);
+
 void kalSetHifDbgEvent(struct GLUE_INFO *pr);
 
 #if CFG_SUPPORT_MULTITHREAD
@@ -2944,6 +2948,13 @@ void kalHifRegWorkInit(struct GLUE_INFO *pr);
 void kalHifRegWorkUninit(struct GLUE_INFO *pr);
 void kalHifRegWorkSchedule(struct GLUE_INFO *pr);
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
+#if CFG_SUPPORT_HIF_TX_NAPI
+void kalHifTxWork(struct work_struct *work);
+void kalHifTxWorkInit(struct GLUE_INFO *pr);
+void kalHifTxWorkUninit(struct GLUE_INFO *pr);
+void kalHifTxWorkSetCpu(struct GLUE_INFO *pr, int32_t i4CpuIdx);
+void kalHifTxWorkSchedule(struct GLUE_INFO *pr);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 #if (CFG_SUPPORT_ROAMING == 1)
 void kalRoamingReport(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, u_int8_t fgSuccess);

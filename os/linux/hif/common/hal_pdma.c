@@ -76,8 +76,11 @@ static const char delayTypeChar[] = {'D', 'H', 'C', 'M', 'A', 'F'};
  */
 static void halDumpMsduReportStats(struct ADAPTER *prAdapter);
 #if CFG_SUPPORT_HIF_RX_NAPI
-int halHifNapiPoll(struct napi_struct *napi, int budget);
+int halHifRxNapiPoll(struct napi_struct *napi, int budget);
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+int halHifTxNapiPoll(struct napi_struct *napi, int budget);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 /*******************************************************************************
  *                              F U N C T I O N S
@@ -1518,12 +1521,44 @@ struct MSDU_TOKEN_ENTRY *halGetMsduTokenEntry(struct ADAPTER *prAdapter,
 	return &prTokenInfo->arToken[u4TokenNum];
 }
 
+void halProcessBeforeTxData(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo;
+	struct mt66xx_chip_info *prChipInfo;
+	struct MSDU_TOKEN_INFO *prTokenInfo;
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
+	struct BUS_INFO *prBusInfo;
+#endif
+	uint32_t u4UsedCnt = 0;
+
+	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+	prChipInfo = prAdapter->chip_info;
+	prTokenInfo = &prHifInfo->rTokenInfo;
+#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
+	prBusInfo = prChipInfo->bus_info;
+#endif
+
+	u4UsedCnt = GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt);
+#if CFG_SUPPORT_PCIE_ASPM
+	if (prBusInfo->updatePcieAspm)
+		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, FALSE);
+#endif
+	if (u4UsedCnt == 0) {
+#if CFG_PCIE_LTR_UPDATE
+		/* set pcie LTR low latency */
+		if (prBusInfo->pcieLTRValue)
+			prBusInfo->pcieLTRValue(prAdapter,
+				PCIE_LTR_STATE_TX_START);
+#endif
+		if (prChipInfo->wifiNappingCtrl)
+			prChipInfo->wifiNappingCtrl(
+				prAdapter->prGlueInfo, FALSE);
+	}
+}
+
 struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex, struct MSDU_INFO *prMsduInfo)
 {
-#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
-	struct BUS_INFO *prBusInfo = NULL;
-#endif
 	struct GL_HIF_INFO *prHifInfo;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct MSDU_TOKEN_INFO *prTokenInfo;
@@ -1534,9 +1569,6 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 #endif
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
-#if (CFG_SUPPORT_PCIE_ASPM == 1) || (CFG_PCIE_LTR_UPDATE == 1)
-	prBusInfo = prAdapter->chip_info->bus_info;
-#endif
 	prChipInfo = prAdapter->chip_info;
 	prTokenInfo = &prHifInfo->rTokenInfo;
 	u4UsedCnt = GLUE_GET_REF_CNT(prTokenInfo->u4UsedCnt);
@@ -1566,22 +1598,9 @@ struct MSDU_TOKEN_ENTRY *halAcquireMsduToken(struct ADAPTER *prAdapter,
 	wlanTxLifetimeTagPacket(prAdapter, prMsduInfo,
 		TX_PROF_TAG_ACQR_MSDU_TOK);
 #endif
-
-#if CFG_SUPPORT_PCIE_ASPM
-	if (prBusInfo->updatePcieAspm)
-		prBusInfo->updatePcieAspm(prAdapter->prGlueInfo, FALSE);
-#endif
-	if (u4UsedCnt == 0) {
-#if CFG_PCIE_LTR_UPDATE
-		/* set pcie LTR low latency */
-		if (prBusInfo->pcieLTRValue)
-			prBusInfo->pcieLTRValue(prAdapter,
-				PCIE_LTR_STATE_TX_START);
-#endif
-		if (prChipInfo->wifiNappingCtrl)
-			prChipInfo->wifiNappingCtrl(
-				prAdapter->prGlueInfo, FALSE);
-	}
+#if (CFG_SUPPORT_HIF_TX_NAPI == 0)
+	halProcessBeforeTxData(prAdapter);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI == 0 */
 
 	GLUE_INC_REF_CNT(prTokenInfo->u4UsedCnt);
 
@@ -1901,6 +1920,62 @@ void halStartTxDelayTimer(struct ADAPTER *prAdapter)
 	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnTxDataDelayDbg))
 		DBGLOG(HAL, TRACE, "Start Delay Timer\n");
 }
+
+void halCancleTxDelayTimer(struct ADAPTER *prAdapter)
+{
+	struct GL_HIF_INFO *prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
+
+#if CFG_SUPPORT_HRTIMER
+	hrtimer_cancel(&prHifInfo->rTxDelayTimer);
+#else
+	del_timer_sync(&prHifInfo->rTxDelayTimer);
+#endif /* CFG_SUPPORT_HRTIMER */
+	KAL_CLR_BIT(HIF_TX_DATA_DELAY_TIMER_RUNNING_BIT,
+		    prHifInfo->ulTxDataTimeout);
+}
+
+u_int8_t halCheckAndStartTxDelayTimer(struct ADAPTER *prAdapter)
+{
+	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
+	uint32_t u4DataCnt = 0, u4Idx;
+
+	if (wlanWfdEnabled(prAdapter)
+#if (CFG_SUPPORT_LOWLATENCY_MODE == 1)
+	    || prAdapter->fgEnLowLatencyMode
+#endif /* CFG_SUPPORT_LOWLATENCY_MODE */
+	   )
+		goto tx_data;
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_TX_DATA_DELAY_TIMEOUT_BIT,
+		    prHifInfo->ulTxDataTimeout))
+		goto tx_data;
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	u4DataCnt += halGetTxMsduCnt(prAdapter);
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+	for (u4Idx = 0; u4Idx < NUM_OF_TX_RING; u4Idx++)
+		u4DataCnt += prHifInfo->u4TxDataQLen[u4Idx];
+	if (u4DataCnt >= prWifiVar->u4TxDataDelayCnt)
+		goto tx_data;
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	if (halIsTxMsduWithTxDoneCb(prAdapter))
+		goto tx_data;
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+	halStartTxDelayTimer(prAdapter);
+	return TRUE;
+
+tx_data:
+	if (IS_FEATURE_ENABLED(prWifiVar->fgEnTxDataDelayDbg))
+		DBGLOG(HAL, TRACE, "Tx Data[%u]\n", u4DataCnt);
+
+	return FALSE;
+}
 #endif /* (CFG_SUPPORT_TX_DATA_DELAY == 1) */
 
 bool halHifSwInfoInit(struct ADAPTER *prAdapter)
@@ -1913,8 +1988,11 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	struct SW_EMI_RING_INFO *prSwEmiRingInfo;
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 #if CFG_SUPPORT_HIF_RX_NAPI
-	struct HIF_NAPI_DEVICE *prNapiDev;
+	struct HIF_NAPI_DEVICE *prRxNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	struct HIF_NAPI_DEVICE *prTxNapiDev;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 	uint32_t u4Idx;
 
 	prHifInfo = &prAdapter->prGlueInfo->rHifInfo;
@@ -1925,8 +2003,11 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 	prSwEmiRingInfo = &prBusInfo->rSwEmiRingInfo;
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 #if CFG_SUPPORT_HIF_RX_NAPI
-	prNapiDev = &prHifInfo->rNapiDev;
+	prRxNapiDev = &prHifInfo->rRxNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	prTxNapiDev = &prHifInfo->rTxNapiDev;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	prHifInfo->prGlueInfo = prAdapter->prGlueInfo;
 
@@ -2072,29 +2153,54 @@ bool halHifSwInfoInit(struct ADAPTER *prAdapter)
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-	prNapiDev->prGlueInfo = prAdapter->prGlueInfo;
-	prNapiDev->ulFlag = 0;
-	prNapiDev->u4DrvOwnCnt = 0;
-	init_dummy_netdev(&prNapiDev->dev);
+	prRxNapiDev->prGlueInfo = prAdapter->prGlueInfo;
+	prRxNapiDev->ulFlag = 0;
+	prRxNapiDev->u4DrvOwnCnt = 0;
+	init_dummy_netdev(&prRxNapiDev->dev);
 #if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
-	netif_napi_add(&prNapiDev->dev, &prNapiDev->napi,
-		       halHifNapiPoll);
+	netif_napi_add(&prRxNapiDev->dev, &prRxNapiDev->napi,
+		       halHifRxNapiPoll);
 #else
-	netif_napi_add(&prNapiDev->dev, &prNapiDev->napi,
-		       halHifNapiPoll, NAPI_POLL_WEIGHT);
+	netif_napi_add(&prRxNapiDev->dev, &prRxNapiDev->napi,
+		       halHifRxNapiPoll, NAPI_POLL_WEIGHT);
 #endif
 
 #if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
-	if (dev_set_threaded(&prNapiDev->dev, TRUE)) {
-		prNapiDev->napi_thread = NULL;
+	if (dev_set_threaded(&prRxNapiDev->dev, TRUE)) {
+		prRxNapiDev->napi_thread = NULL;
 	} else {
-		prNapiDev->napi_thread = prNapiDev->napi.thread;
-		prNapiDev->u4ThreadPid =
-			task_pid_nr(prNapiDev->napi_thread);
+		prRxNapiDev->napi_thread = prRxNapiDev->napi.thread;
+		prRxNapiDev->u4ThreadPid =
+			task_pid_nr(prRxNapiDev->napi_thread);
 	}
 #endif
-	napi_enable(&prNapiDev->napi);
+	napi_enable(&prRxNapiDev->napi);
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	prTxNapiDev->prGlueInfo = prAdapter->prGlueInfo;
+	prTxNapiDev->ulFlag = 0;
+	prTxNapiDev->u4DrvOwnCnt = 0;
+	init_dummy_netdev(&prTxNapiDev->dev);
+#if (KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
+	netif_napi_add(&prTxNapiDev->dev, &prTxNapiDev->napi,
+		       halHifTxNapiPoll);
+#else
+	netif_napi_add(&prTxNapiDev->dev, &prTxNapiDev->napi,
+		       halHifTxNapiPoll, NAPI_POLL_WEIGHT);
+#endif
+
+#if KERNEL_VERSION(5, 15, 0) <= CFG80211_VERSION_CODE
+	if (dev_set_threaded(&prTxNapiDev->dev, TRUE)) {
+		prTxNapiDev->napi_thread = NULL;
+	} else {
+		prTxNapiDev->napi_thread = prTxNapiDev->napi.thread;
+		prTxNapiDev->u4ThreadPid =
+			task_pid_nr(prTxNapiDev->napi_thread);
+	}
+#endif
+	napi_enable(&prTxNapiDev->napi);
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	return true;
 }
@@ -2115,8 +2221,11 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 	uint32_t u4Idx;
 	unsigned long flags;
 #if CFG_SUPPORT_HIF_RX_NAPI
-	struct HIF_NAPI_DEVICE *prNapiDev = &prHifInfo->rNapiDev;
+	struct HIF_NAPI_DEVICE *prRxNapiDev = &prHifInfo->rRxNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	struct HIF_NAPI_DEVICE *prTxNapiDev = &prHifInfo->rTxNapiDev;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -2186,11 +2295,18 @@ void halHifSwInfoUnInit(struct GLUE_INFO *prGlueInfo)
 #endif /* CFG_MTK_WIFI_SW_EMI_RING */
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-	napi_synchronize(&prNapiDev->napi);
-	napi_disable(&prNapiDev->napi);
-	netif_napi_del(&prNapiDev->napi);
-	prNapiDev->napi_thread = NULL;
+	napi_synchronize(&prRxNapiDev->napi);
+	napi_disable(&prRxNapiDev->napi);
+	netif_napi_del(&prRxNapiDev->napi);
+	prRxNapiDev->napi_thread = NULL;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+#if CFG_SUPPORT_HIF_TX_NAPI
+	napi_synchronize(&prTxNapiDev->napi);
+	napi_disable(&prTxNapiDev->napi);
+	netif_napi_del(&prTxNapiDev->napi);
+	prTxNapiDev->napi_thread = NULL;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 }
 
 u_int8_t halProcessToken(struct ADAPTER *prAdapter,
@@ -4257,6 +4373,9 @@ static bool halWpdmaFillTxRing(struct GLUE_INFO *prGlueInfo,
 		u2Port, prTxRing->TxCpuIdx, prTxRing->u4UsedCnt);
 
 	GLUE_INC_REF_CNT(prGlueInfo->prAdapter->rHifStats.u4DataTxCount);
+#if CFG_SUPPORT_HIF_TX_NAPI
+	prHifInfo->rTxNapiDev.u4DataCnt++;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 
 	return TRUE;
 }
@@ -5213,8 +5332,53 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 	}
 }
 
+static u_int8_t halCheckTxRxTaskReady(struct GLUE_INFO *prGlueInfo)
+{
+#if CFG_SUPPORT_HIF_TX_NAPI
+	if (!HAL_IS_TX_DIRECT(prGlueInfo->prAdapter)) {
+		DBGLOG(INIT, ERROR,
+		       "Valid in TX-direct mode only\n");
+		return FALSE;
+	}
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+
 #if CFG_SUPPORT_HIF_RX_NAPI
-int halHifNapiPoll(struct napi_struct *napi, int budget)
+	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
+		DBGLOG(INIT, ERROR,
+		       "Valid in RX-direct mode only\n");
+		return FALSE;
+	}
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+
+	/* do nothing if wifi is not ready */
+	if (!prGlueInfo->fgRxTaskReady) {
+#if CFG_SUPPORT_HIF_RX_NAPI
+		if (GLUE_GET_REF_CNT(
+			prGlueInfo->u4RxTaskScheduleCnt) == 1)
+			GLUE_DEC_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt);
+		else
+			DBGLOG(INIT, ERROR, "unexpect RxTaskSchdule Cnt: %u\n",
+				GLUE_GET_REF_CNT(
+				prGlueInfo->u4RxTaskScheduleCnt));
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+		DBGLOG_LIMITED(INIT, INFO,
+		       "Not ready yet, ignore pending interrupt\n");
+		return FALSE;
+	}
+
+	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT	||
+	    kalIsResetting()) {
+		/* Should stop now... skip pending interrupt */
+		DBGLOG_LIMITED(INIT, INFO,
+		       "ignore pending interrupt\n");
+		return FALSE;
+	}
+
+	return TRUE;
+}
+
+#if CFG_SUPPORT_HIF_RX_NAPI
+int halHifRxNapiPoll(struct napi_struct *napi, int budget)
 {
 	struct HIF_NAPI_DEVICE *prNapiDev =
 		CONTAINER_OF(napi, struct HIF_NAPI_DEVICE, napi);
@@ -5224,32 +5388,21 @@ int halHifNapiPoll(struct napi_struct *napi, int budget)
 	u_int8_t fgIsDone = FALSE;
 	int processed = 1;
 
-	/* do nothing if wifi is not ready */
-	if (!prGlueInfo->fgRxTaskReady) {
-		DBGLOG_LIMITED(INIT, INFO,
-		       "Not ready yet, ignore pending interrupt\n");
+	if (!halCheckTxRxTaskReady(prGlueInfo))
 		goto enint;
-	}
-
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT || kalIsResetting()) {
-		/* Should stop now... skip pending interrupt */
-		DBGLOG_LIMITED(INIT, INFO,
-		       "ignore pending interrupt\n");
-		goto enint;
-	}
 
 	if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt) == 0) {
 		fgIsDone = TRUE;
-		set_bit(HIF_NAPI_SET_DRV_OWN_BIT, &prNapiDev->ulFlag);
+		set_bit(HIF_RX_NAPI_SET_DRV_OWN_BIT, &prNapiDev->ulFlag);
 		kalRxTaskSchedule(prGlueInfo);
 		goto exit;
 	}
 
-	GLUE_INC_REF_CNT(prHifStats->u4HifNapiCount);
+	GLUE_INC_REF_CNT(prHifStats->u4HifRxNapiCount);
 
 	if (!prNapiDev->fgIsRun) {
 		prNapiDev->fgIsRun = TRUE;
-		GLUE_INC_REF_CNT(prHifStats->u4HifNapiRunCount);
+		GLUE_INC_REF_CNT(prHifStats->u4HifRxNapiRunCount);
 	}
 
 	wlanIST(prAdapter, FALSE);
@@ -5263,14 +5416,14 @@ int halHifNapiPoll(struct napi_struct *napi, int budget)
 	}
 
 enint:
-	if (processed < budget || prAdapter->ulNoMoreRfb) {
+	if (processed < budget) {
 		if (KAL_TEST_AND_CLEAR_BIT(
 			    GLUE_FLAG_RX_DIRECT_INT_BIT, prGlueInfo->ulFlag))
 			nicEnableInterrupt(prAdapter);
 
 		if (prNapiDev->fgIsRun) {
 			prNapiDev->fgIsRun = FALSE;
-			set_bit(HIF_NAPI_SET_FW_OWN_BIT, &prNapiDev->ulFlag);
+			set_bit(HIF_RX_NAPI_SET_FW_OWN_BIT, &prNapiDev->ulFlag);
 			kalRxTaskSchedule(prGlueInfo);
 		}
 
@@ -5285,6 +5438,202 @@ exit:
 }
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
+#if CFG_SUPPORT_HIF_TX_NAPI
+uint32_t halGetTxMsduCnt(struct ADAPTER *prAdapter)
+{
+	struct BSS_INFO *prBssInfo;
+	uint32_t i, j, u4Cnt = 0;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		for (j = 0; j < TC_NUM; j++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (!prBssInfo || isNetAbsent(prAdapter, prBssInfo))
+				continue;
+
+			u4Cnt += QUEUE_LENGTH(&prAdapter->rTxHifPQueue[i][j]);
+			u4Cnt += QUEUE_LENGTH(&prAdapter->rTxPQueue[i][j]);
+		}
+	}
+
+	return u4Cnt;
+}
+
+uint32_t halIsTxMsduWithTxDoneCb(struct ADAPTER *prAdapter)
+{
+	struct MSDU_INFO *prMsduInfo, *prNextMsduInfo;
+	struct BSS_INFO *prBssInfo;
+	uint32_t i, j;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		for (j = 0; j < TC_NUM; j++) {
+			prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+			if (!prBssInfo || isNetAbsent(prAdapter, prBssInfo))
+				continue;
+
+			prMsduInfo = QUEUE_GET_HEAD(
+				&prAdapter->rTxHifPQueue[i][j]);
+			while (prMsduInfo) {
+				prNextMsduInfo =
+					QUEUE_GET_NEXT_ENTRY(
+						&prMsduInfo->rQueEntry);
+				if (prMsduInfo->pfTxDoneHandler)
+					return TRUE;
+
+				prMsduInfo = prNextMsduInfo;
+			}
+
+			prMsduInfo = QUEUE_GET_HEAD(
+				&prAdapter->rTxPQueue[i][j]);
+			while (prMsduInfo) {
+				prNextMsduInfo =
+					QUEUE_GET_NEXT_ENTRY(
+						&prMsduInfo->rQueEntry);
+				if (prMsduInfo->pfTxDoneHandler)
+					return TRUE;
+
+				prMsduInfo = prNextMsduInfo;
+			}
+		}
+	}
+
+	return FALSE;
+}
+
+int halHifTxNapiPoll(struct napi_struct *napi, int budget)
+{
+	struct HIF_NAPI_DEVICE *prNapiDev =
+		CONTAINER_OF(napi, struct HIF_NAPI_DEVICE, napi);
+	struct GLUE_INFO *prGlueInfo = prNapiDev->prGlueInfo;
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct HIF_STATS *prHifStats = &prAdapter->rHifStats;
+	u_int8_t fgIsDone = FALSE;
+	int processed = 1;
+
+	if (halIsHifStateSuspend(prAdapter)) {
+		DBGLOG(TX, WARN, "Hif is Suspend\n");
+		goto skip;
+	}
+
+	if (!halCheckTxRxTaskReady(prGlueInfo))
+		goto skip;
+
+	if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt) == 0) {
+		fgIsDone = TRUE;
+		KAL_SET_BIT(HIF_TX_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag);
+		KAL_SET_BIT(HIF_TX_NAPI_TOKENS_UNUSED_BIT, prNapiDev->ulFlag);
+		kalHifTxWorkSchedule(prGlueInfo);
+		goto exit;
+	}
+
+	GLUE_INC_REF_CNT(prHifStats->u4HifTxNapiCount);
+
+	if (!prNapiDev->fgIsRun) {
+		prNapiDev->fgIsRun = TRUE;
+		GLUE_INC_REF_CNT(prHifStats->u4HifTxNapiRunCount);
+	}
+
+#if (CFG_TX_MGMT_BY_DATA_Q == 1)
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    GLUE_FLAG_MGMT_DIRECT_HIF_TX_BIT,
+		    prGlueInfo->ulFlag)) {
+		TRACE(nicTxMgmtDirectTxMsduMthread(prAdapter),
+		      "Mgmt-DirectTx");
+	}
+#endif /* CFG_TX_MGMT_BY_DATA_Q == 1 */
+
+	while (processed < budget) {
+		if (halGetTxMsduCnt(prAdapter) == 0)
+			break;
+
+		prNapiDev->u4DataCnt = 0;
+		TRACE(nicTxMsduQueueMthread(prAdapter), "TX");
+		if (prNapiDev->u4DataCnt == 0)
+			break;
+
+		processed += prNapiDev->u4DataCnt;
+		if (processed > budget)
+			processed = budget;
+	}
+
+skip:
+	if (processed < budget) {
+		if (prNapiDev->fgIsRun) {
+			prNapiDev->fgIsRun = FALSE;
+			KAL_SET_BIT(HIF_TX_NAPI_SET_FW_OWN_BIT,
+				    prNapiDev->ulFlag);
+			KAL_SET_BIT(HIF_TX_NAPI_TOKENS_UNUSED_BIT,
+				    prNapiDev->ulFlag);
+			kalHifTxWorkSchedule(prGlueInfo);
+		}
+
+		fgIsDone = TRUE;
+	}
+
+exit:
+	if (fgIsDone)
+		kal_napi_complete_done(napi, processed);
+
+	return processed;
+}
+
+void halTxWork(struct GLUE_INFO *prGlueInfo)
+{
+	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
+	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
+	struct HIF_NAPI_DEVICE *prNapiDev = &prHifInfo->rTxNapiDev;
+
+	if (!halCheckTxRxTaskReady(prGlueInfo))
+		return;
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_TX_NAPI_TOKENS_UNUSED_BIT, prNapiDev->ulFlag)) {
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		halHandleAllTokensUnused(prAdapter, FALSE);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+	}
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_TX_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag)) {
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+		if (!KAL_WAKE_LOCK_ACTIVE(
+			    prAdapter, prGlueInfo->rHifTxWorkerLock))
+			KAL_WAKE_LOCK(prAdapter, prGlueInfo->rHifTxWorkerLock);
+#endif
+#if (CFG_SUPPORT_TX_DATA_DELAY == 1)
+		if (halCheckAndStartTxDelayTimer(prAdapter))
+			return;
+
+		halCancleTxDelayTimer(prGlueInfo->prAdapter);
+#endif /* CFG_SUPPORT_TX_DATA_DELAY */
+		ACQUIRE_POWER_CONTROL_FROM_PM(prAdapter);
+		GLUE_INC_REF_CNT(prNapiDev->u4DrvOwnCnt);
+		halProcessBeforeTxData(prAdapter);
+		kal_napi_schedule(&prNapiDev->napi);
+	}
+
+	if (KAL_TEST_AND_CLEAR_BIT(
+		    HIF_TX_NAPI_SET_FW_OWN_BIT, prNapiDev->ulFlag) &&
+	    GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
+		GLUE_DEC_REF_CNT(prNapiDev->u4DrvOwnCnt);
+		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
+
+		if (GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
+			kal_napi_schedule(&prNapiDev->napi);
+		} else {
+#if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
+			if (KAL_WAKE_LOCK_ACTIVE(
+				    prAdapter, prGlueInfo->rHifTxWorkerLock))
+				KAL_WAKE_UNLOCK(prAdapter,
+						prGlueInfo->rHifTxWorkerLock);
+#endif
+		}
+
+		if (time_after(jiffies, prAdapter->rHifStats.ulUpdatePeriod))
+			kalSetHifUpdateStatus(prGlueInfo);
+	}
+}
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
+
 void halDeAggRxPktWorker(struct work_struct *work)
 {
 
@@ -5293,41 +5642,8 @@ void halDeAggRxPktWorker(struct work_struct *work)
 void halRxTasklet(unsigned long data)
 {
 	struct GLUE_INFO *prGlueInfo = (struct GLUE_INFO *)data;
+
 	halRxWork(prGlueInfo);
-}
-
-static u_int8_t halCheckRxTaskReady(struct GLUE_INFO *prGlueInfo)
-{
-	if (!HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
-		DBGLOG(INIT, ERROR,
-		       "Valid in RX-direct mode only\n");
-		return FALSE;
-	}
-
-	/* do nothing if wifi is not ready */
-	if (prGlueInfo->fgRxTaskReady == FALSE) {
-		if (GLUE_GET_REF_CNT(
-			prGlueInfo->u4RxTaskScheduleCnt) == 1)
-			GLUE_DEC_REF_CNT(prGlueInfo->u4RxTaskScheduleCnt);
-		else
-			DBGLOG(INIT, ERROR, "unexpect RxTaskSchdule Cnt: %u\n",
-				GLUE_GET_REF_CNT(
-				prGlueInfo->u4RxTaskScheduleCnt));
-		DBGLOG_LIMITED(INIT, INFO,
-		       "Not ready yet, ignore pending interrupt\n");
-		return FALSE;
-	}
-
-	if (prGlueInfo->ulFlag & GLUE_FLAG_HALT
-		|| kalIsResetting()
-		) {
-		/* Should stop now... skip pending interrupt */
-		DBGLOG_LIMITED(INIT, INFO,
-		       "ignore pending interrupt\n");
-		return FALSE;
-	}
-
-	return TRUE;
 }
 
 #if CFG_SUPPORT_HIF_RX_NAPI
@@ -5335,13 +5651,13 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 {
 	struct ADAPTER *prAdapter = prGlueInfo->prAdapter;
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	struct HIF_NAPI_DEVICE *prNapiDev = &prHifInfo->rNapiDev;
+	struct HIF_NAPI_DEVICE *prNapiDev = &prHifInfo->rRxNapiDev;
 
-	if (!halCheckRxTaskReady(prGlueInfo))
+	if (!halCheckTxRxTaskReady(prGlueInfo))
 		return;
 
 	if (KAL_TEST_AND_CLEAR_BIT(
-		    HIF_NAPI_SET_DRV_OWN_BIT, prNapiDev->ulFlag)) {
+		    HIF_RX_NAPI_SET_DRV_OWN_BIT, prNapiDev->ulFlag)) {
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
 		if (!KAL_WAKE_LOCK_ACTIVE(prAdapter, prGlueInfo->rRxWorkerLock))
 			KAL_WAKE_LOCK(prAdapter, prGlueInfo->rRxWorkerLock);
@@ -5352,7 +5668,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (KAL_TEST_AND_CLEAR_BIT(
-		    HIF_NAPI_SET_FW_OWN_BIT, prNapiDev->ulFlag) &&
+		    HIF_RX_NAPI_SET_FW_OWN_BIT, prNapiDev->ulFlag) &&
 	    GLUE_GET_REF_CNT(prNapiDev->u4DrvOwnCnt)) {
 		GLUE_DEC_REF_CNT(prNapiDev->u4DrvOwnCnt);
 		RECLAIM_POWER_CONTROL_TO_PM(prAdapter, FALSE);
@@ -5370,7 +5686,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	}
 
 	if (KAL_TEST_AND_CLEAR_BIT(
-		    HIF_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag))
+		    HIF_RX_NAPI_SCHE_NAPI_BIT, prNapiDev->ulFlag))
 		kal_napi_schedule(&prNapiDev->napi);
 
 	kalRxTaskWorkDone(prGlueInfo, FALSE);
@@ -5382,7 +5698,7 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	bool fgEnInt = FALSE;
 
 	prAdapter = prGlueInfo->prAdapter;
-	if (!halCheckRxTaskReady(prGlueInfo))
+	if (!halCheckTxRxTaskReady(prGlueInfo))
 		return;
 
 #if CFG_ENABLE_WAKE_LOCK && CFG_SUPPORT_RX_WORK
@@ -7098,13 +7414,30 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_HIF_RX_NAPI
 	pos += kalSnprintf(
 		buf + pos, u4BufferSize - pos,
-		" Napi[%u/%u/%u/0x%lx/%u]",
-		GLUE_GET_REF_CNT(prHifStats->u4HifNapiCount),
-		GLUE_GET_REF_CNT(prHifStats->u4HifNapiRunCount),
-		prHifInfo->rNapiDev.fgIsRun,
-		prHifInfo->rNapiDev.ulFlag,
-		GLUE_GET_REF_CNT(prHifInfo->rNapiDev.u4DrvOwnCnt));
+		" RxNapi[%u/%u/%u/0x%lx/%u]",
+		GLUE_GET_REF_CNT(prHifStats->u4HifRxNapiCount),
+		GLUE_GET_REF_CNT(prHifStats->u4HifRxNapiRunCount),
+		prHifInfo->rRxNapiDev.fgIsRun,
+		prHifInfo->rRxNapiDev.ulFlag,
+		GLUE_GET_REF_CNT(prHifInfo->rRxNapiDev.u4DrvOwnCnt));
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	pos += kalSnprintf(
+		buf + pos, u4BufferSize - pos,
+		" TxNapi[%u/%u/%u/0x%lx/%u]",
+		GLUE_GET_REF_CNT(prHifStats->u4HifTxNapiCount),
+		GLUE_GET_REF_CNT(prHifStats->u4HifTxNapiRunCount),
+		prHifInfo->rTxNapiDev.fgIsRun,
+		prHifInfo->rTxNapiDev.ulFlag,
+		GLUE_GET_REF_CNT(prHifInfo->rTxNapiDev.u4DrvOwnCnt));
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_PCIE_ASPM
+	pos += kalSnprintf(
+		buf + pos, u4BufferSize - pos,
+		" ASPM[%d/%d]",
+		prHifInfo->eCurPcieState,
+		prHifInfo->eNextPcieState);
+#endif
 
 	DBGLOG(HAL, VOC, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);

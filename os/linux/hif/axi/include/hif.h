@@ -128,6 +128,7 @@ struct HIF_NAPI_DEVICE {
 	u_int8_t fgIsRun;
 	unsigned long ulFlag;
 	uint32_t u4DrvOwnCnt;
+	uint32_t u4DataCnt;
 };
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
@@ -229,8 +230,11 @@ struct GL_HIF_INFO {
 	uint32_t u4IntBitSetCnt;
 
 #if CFG_SUPPORT_HIF_RX_NAPI
-	struct HIF_NAPI_DEVICE rNapiDev;
+	struct HIF_NAPI_DEVICE rRxNapiDev;
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
+#if CFG_SUPPORT_HIF_TX_NAPI
+	struct HIF_NAPI_DEVICE rTxNapiDev;
+#endif /* CFG_SUPPORT_HIF_TX_NAPI */
 };
 
 struct BUS_INFO {

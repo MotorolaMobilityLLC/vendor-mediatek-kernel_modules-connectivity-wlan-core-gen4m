@@ -1377,7 +1377,13 @@ void halHwRecoveryTimeout(unsigned long arg);
 void halHwRecoveryFromError(struct ADAPTER *prAdapter);
 #if (CFG_SUPPORT_TX_DATA_DELAY == 1)
 void halStartTxDelayTimer(struct ADAPTER *prAdapter);
+void halCancleTxDelayTimer(struct ADAPTER *prAdapter);
+u_int8_t halCheckAndStartTxDelayTimer(struct ADAPTER *prAdapter);
 #endif
+#if CFG_SUPPORT_HIF_RX_NAPI
+uint32_t halGetTxMsduCnt(struct ADAPTER *prAdapter);
+uint32_t halIsTxMsduWithTxDoneCb(struct ADAPTER *prAdapter);
+#endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
 u_int8_t halIsWfdmaRxCidxChanged(struct ADAPTER *prAdapter, uint32_t u4Idx);
 void halDetectHifStall(struct ADAPTER *prAdapter);
