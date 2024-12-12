@@ -776,6 +776,14 @@ struct GL_CH_SWITCH_WORK {
 #endif
 };
 
+struct GL_CH_SWITCH_START_WORK {
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct work_struct rChSwitchStartNotifyWork;
+	u_int8_t fgWorkInit;
+	struct RF_CHANNEL_INFO rRfChnlInfo;
+#endif
+};
+
 #if CFG_SUPPORT_PER_CPU_TX
 struct _PER_CPU_TX_INFO {
 	struct tasklet_struct rTask;

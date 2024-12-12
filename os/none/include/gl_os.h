@@ -395,6 +395,10 @@ struct GL_CH_SWITCH_WORK {
 
 };
 
+struct GL_CH_SWITCH_START_WORK {
+
+};
+
 struct FT_IES {
 	uint16_t u2MDID;
 	struct IE_MOBILITY_DOMAIN *prMDIE;

@@ -2800,7 +2800,7 @@ void kalP2pNotifyDelStaComplete(struct ADAPTER *prAdapter,
 		complete(&prP2PInfo->rDelStaComp);
 }
 
-void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
+void __kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo,
 	struct RF_CHANNEL_INFO *prRfChnlInfo,
 	uint8_t ucCsaCount,
@@ -3120,6 +3120,14 @@ void kalP2pChnlSwitchNotifyWork(struct work_struct *work)
 void kalP2pCsaNotifyWorkInit(struct BSS_INFO *prBssInfo)
 {
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct work_struct *prNotifyWork;
+
+	prNotifyWork =
+		&(prBssInfo->rGlChSwitchStartWork.rChSwitchStartNotifyWork);
+
+	INIT_WORK(prNotifyWork,
+		kalP2pChnlSwitchStartNotifyWork);
+	prBssInfo->rGlChSwitchStartWork.fgWorkInit = TRUE;
 	INIT_WORK(&(prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork),
 		kalP2pChnlSwitchNotifyWork);
 	prBssInfo->rGlChSwitchWork.fgWorkInit = TRUE;
@@ -3135,6 +3143,68 @@ void kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	schedule_work(&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
 #else
 	__kalP2pIndicateChnlSwitch(prAdapter, prBssInfo);
+#endif
+
+}
+
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+void kalP2pChnlSwitchStartNotifyWork(struct work_struct *work)
+{
+	struct GL_CH_SWITCH_START_WORK *prWorkContainer =
+		CONTAINER_OF(work, struct GL_CH_SWITCH_START_WORK,
+			rChSwitchStartNotifyWork);
+	struct ADAPTER *prAdapter;
+	struct BSS_INFO *prBssInfo;
+
+	prBssInfo =
+		CONTAINER_OF(prWorkContainer,
+			struct BSS_INFO,
+			rGlChSwitchStartWork);
+	prAdapter = (struct ADAPTER *)
+		(((int8_t *) (prBssInfo - prBssInfo->ucBssIndex)) -
+		OFFSET_OF(struct WIFI_VAR, arBssInfoPool) -
+		OFFSET_OF(struct ADAPTER, rWifiVar));
+
+	if (!prAdapter ||
+		!prAdapter->prGlueInfo ||
+		prAdapter->prGlueInfo->u4ReadyFlag == 0) {
+		DBGLOG(REQ, WARN, "driver is not ready\n");
+		return;
+	}
+
+	__kalP2pIndicateChnlSwitchStarted(prAdapter,
+			prBssInfo,
+			&prBssInfo->rGlChSwitchStartWork.rRfChnlInfo,
+			prAdapter->rWifiVar.ucChannelSwitchCount,
+			(prAdapter->rWifiVar.ucChannelSwitchMode == 1),
+			FALSE);
+}
+#endif
+
+void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
+		struct BSS_INFO *prBssInfo,
+		struct RF_CHANNEL_INFO *prRfChnlInfo,
+		uint8_t ucCsaCount,
+		u_int8_t fgQuiet,
+		u_int8_t fgLockHeld)
+{
+#if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
+	struct work_struct *prNotifyWork;
+
+	kalMemCopy(&prBssInfo->rGlChSwitchStartWork.rRfChnlInfo,
+	   prRfChnlInfo,
+	   sizeof(struct RF_CHANNEL_INFO));
+	prNotifyWork =
+		&(prBssInfo->rGlChSwitchStartWork.rChSwitchStartNotifyWork);
+
+	schedule_work(prNotifyWork);
+#else
+	__kalP2pIndicateChnlSwitchStarted(prAdapter,
+			prBssInfo,
+			prRfChnlInfo,
+			prAdapter->rWifiVar.ucChannelSwitchCount,
+			(prAdapter->rWifiVar.ucChannelSwitchMode == 1),
+			fgLockHeld);
 #endif
 
 }

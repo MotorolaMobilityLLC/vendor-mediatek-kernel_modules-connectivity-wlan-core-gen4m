@@ -13538,18 +13538,26 @@ void kalCsaNotifyWorkDeinit(struct ADAPTER *prAdapter,
 {
 #if (KERNEL_VERSION(6, 6, 0) <= CFG80211_VERSION_CODE)
 	struct BSS_INFO *prBssInfo;
+	struct work_struct *prNotifyWork;
 
 	prBssInfo =
 		GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (!prBssInfo ||
-		prBssInfo->rGlChSwitchWork.fgWorkInit == FALSE)
+	if (!prBssInfo)
 		return;
-	cancel_work_sync(
-		&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
+
+	if (prBssInfo->rGlChSwitchWork.fgWorkInit == TRUE) {
+		cancel_work_sync(
+			&prBssInfo->rGlChSwitchWork.rChSwitchNotifyWork);
+		prBssInfo->rGlChSwitchWork.fgWorkInit = FALSE;
+	}
+	prNotifyWork =
+		&(prBssInfo->rGlChSwitchStartWork.rChSwitchStartNotifyWork);
+	if (prBssInfo->rGlChSwitchStartWork.fgWorkInit == TRUE) {
+		cancel_work_sync(prNotifyWork);
+		prBssInfo->rGlChSwitchStartWork.fgWorkInit = FALSE;
+	}
 #endif
 }
-
-
 
 void kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 			enum ENUM_CHNL_EXT eSco,
