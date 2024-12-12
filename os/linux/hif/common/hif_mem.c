@@ -1580,13 +1580,14 @@ void *halZeroCopyPathAllocRxBuf(struct GL_HIF_INFO *prHifInfo,
 
 	memset(prDmaBuf->AllocVa, 0, prDmaBuf->AllocSize);
 
-	rAddr = KAL_DMA_MAP_SINGLE(prHifInfo->prDmaDev, prDmaBuf->AllocVa,
-				   prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE);
-	if (KAL_DMA_MAPPING_ERROR(prHifInfo->prDmaDev, rAddr)) {
-		DBGLOG(HAL, ERROR, "sk_buff dma mapping error!\n");
+	if (!halDmaMapSingleRetry(prHifInfo, prDmaBuf->AllocVa,
+				  prDmaBuf->AllocSize, KAL_DMA_FROM_DEVICE,
+				  &rAddr)) {
+		DBGLOG(HAL, ERROR, "KAL_DMA_MAP_SINGLE() error!\n");
 		dev_kfree_skb(pkt);
 		return NULL;
 	}
+
 	prDmaBuf->AllocPa = (phys_addr_t)rAddr;
 	prDmaBuf->fgIsCopyPath = FALSE;
 	return (void *)pkt;
