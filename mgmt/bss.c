@@ -2885,6 +2885,7 @@ void bssProcessErTxModeEvent(struct ADAPTER *prAdapter,
 {
 	struct BSS_INFO *prBssInfo;
 	struct EVENT_ER_TX_MODE *prErTxMode;
+	struct STA_RECORD *prStaRec;
 
 	prErTxMode = (struct EVENT_ER_TX_MODE *) (prEvent->aucBuffer);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prErTxMode->ucBssInfoIdx);
@@ -2894,6 +2895,11 @@ void bssProcessErTxModeEvent(struct ADAPTER *prAdapter,
 	}
 
 	prBssInfo->ucErMode = prErTxMode->ucErMode;
+	nicTxUpdateBssDefaultRate(prBssInfo);
+
+	prStaRec = prBssInfo->prStaRecOfAP;
+	if (prStaRec)
+		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
 
 	DBGLOG_LIMITED(BSS, WARN,
 		"Receive ER Tx mode event,BSS[%d],Mode[0x%x]\n",

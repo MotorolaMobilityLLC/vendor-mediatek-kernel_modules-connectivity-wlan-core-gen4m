@@ -843,6 +843,11 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 			ucRateIdx = FIXED_RATE_INDEX_ALR_MCS2_SPE_IDX_FAVOR_TXD;
 			break;
 
+#if (CFG_SUPPORT_HE_ER == 1)
+		case RATE_HE_ER_DCM_MCS_0: /* 0x0250 */
+			ucRateIdx = FIXED_RATE_INDEX_HE_ER_DMC_MCS0;
+			break;
+#endif
 		default:
 			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M_SPE_IDX_FAVOR_TXD;
 			DBGLOG(TX, WARN,
@@ -885,7 +890,11 @@ void nic_txd_v3_set_pkt_fixed_rate_option(
 			ucRateIdx = setAlrFixedRate(prMsduInfo);
 			break;
 #endif
-
+#if (CFG_SUPPORT_HE_ER == 1)
+		case RATE_HE_ER_DCM_MCS_0: /* 0x0250 */
+			ucRateIdx = FIXED_RATE_INDEX_HE_ER_DMC_MCS0;
+			break;
+#endif
 		default:
 			ucRateIdx = FIXED_RATE_INDEX_OFDM_6M;
 			DBGLOG(TX, WARN,
