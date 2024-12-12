@@ -7114,7 +7114,7 @@ wlanoidSetSwCtrlWrite(struct ADAPTER *prAdapter,
 			rlmChangeOperationMode(
 				prAdapter, ucBssIndex, ucChannelWidth,
 				ucOpRxNss, ucOpTxNss,
-				TRUE,
+				OP_CHANGE_SEND_ACT_DEFAULT,
 				rlmDummyChangeOpHandler);
 		}
 		break;

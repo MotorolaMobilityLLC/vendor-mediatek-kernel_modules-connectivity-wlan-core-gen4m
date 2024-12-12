@@ -9667,7 +9667,7 @@ enum ENUM_OP_CHANGE_STATUS_T
 rlmChangeOperationMode(
 	struct ADAPTER *prAdapter, uint8_t ucBssIndex,
 	uint8_t ucChannelWidth, uint8_t ucOpRxNss, uint8_t ucOpTxNss,
-	uint8_t ucSendAct,
+	enum ENUM_OP_CHANGE_SEND_ACT_T ucSendAct,
 	PFN_OPMODE_NOTIFY_DONE_FUNC pfOpChangeHandler
 	)
 {
@@ -9708,15 +9708,18 @@ rlmChangeOperationMode(
 	/* <3>Check if the current operating BW/Nss is the same as the target
 	 * one
 	 */
-	if (ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)) {
+	if (ucSendAct == OP_CHANGE_SEND_ACT_DEFAULT &&
+		ucChannelWidth == rlmGetBssOpBwByVhtAndHtOpInfo(prBssInfo)) {
 		fgIsChangeBw = FALSE;
 		prBssInfo->fgIsOpChangeChannelWidth = FALSE;
 	}
-	if (ucOpRxNss == prBssInfo->ucOpRxNss) {
+	if (ucSendAct == OP_CHANGE_SEND_ACT_DEFAULT &&
+		ucOpRxNss == prBssInfo->ucOpRxNss) {
 		fgIsChangeRxNss = FALSE;
 		prBssInfo->fgIsOpChangeRxNss = FALSE;
 	}
-	if (ucOpTxNss == prBssInfo->ucOpTxNss) {
+	if (ucSendAct == OP_CHANGE_SEND_ACT_DEFAULT &&
+		ucOpTxNss == prBssInfo->ucOpTxNss) {
 		fgIsChangeTxNss = FALSE;
 		prBssInfo->fgIsOpChangeTxNss = FALSE;
 	}
@@ -9781,7 +9784,7 @@ rlmChangeOperationMode(
 			}
 		}
 
-		if (!ucSendAct) {
+		if (ucSendAct == OP_CHANGE_SEND_ACT_DISABLE) {
 			/* no need to send action frame, just done */
 			rlmCompleteOpModeChange(prAdapter, prBssInfo, TRUE);
 			return OP_CHANGE_STATUS_VALID_CHANGE_CALLBACK_DONE;
@@ -10058,7 +10061,7 @@ void rlmChangeOperationModeAfterCSA(
 					    ucVhtChannelWidthAfterCsa),
 		ucOpRxNssAfterCsa,
 		ucOpTxNssAfterCsa,
-		TRUE,
+		OP_CHANGE_SEND_ACT_DEFAULT,
 		rlmDummyChangeOpHandler);
 
 	/* Restore info after op mode change */
