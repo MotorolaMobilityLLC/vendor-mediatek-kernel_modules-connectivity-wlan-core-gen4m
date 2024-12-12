@@ -1634,7 +1634,7 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 		"\tBSS[%d][RF_BAND=%d][OMAC="MACSTR"][LINK_ID=%u]:\n",
 		prBssInfo->ucBssIndex, prBssInfo->eBand,
 		MAC2STR(prBssInfo->aucOwnMacAddr),
-		prBssInfo->ucLinkIndex);
+		prBssInfo->ucLinkId);
 #else
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
@@ -1780,7 +1780,7 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		"\tMLD_STA/LINK_ID/TID_BMAP/AP_RM/MLD_ADDR: %u/%u/0x%x/%u/"
 		MACSTR "\n",
 		prStaRec->ucMldStaIndex,
-		prStaRec->ucLinkIndex,
+		prStaRec->ucLinkId,
 		prStaRec->ucULTidBitmap,
 		prStaRec->fgApRemoval,
 		MAC2STR(prStaRec->aucMldAddr));
@@ -1981,7 +1981,7 @@ void cnmDumpStaRec(struct ADAPTER *prAdapter, uint8_t ucStaRecIdx)
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	log_dbg(SW4, INFO, "[MldStaIndex][%u], [LinkIndex][%u], [TidBitmap][%u], [MldAddr][" MACSTR "]\n",
 		prStaRec->ucMldStaIndex,
-		prStaRec->ucLinkIndex,
+		prStaRec->ucLinkId,
 		prStaRec->ucULTidBitmap,
 		MAC2STR(prStaRec->aucMldAddr));
 #endif

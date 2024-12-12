@@ -239,7 +239,7 @@ static u_int8_t scanP2pNeedTriggerMlScan(struct ADAPTER *prAdapter,
 	 * peer's multi links scanned including main link
 	 */
 	if (prBssDescSet->ucLinkNum > 1 &&
-	    prBssDesc->rMlInfo.ucLinkIndex == 0)
+	    prBssDesc->rMlInfo.ucLinkId == 0)
 		return FALSE;
 
 	return TRUE;

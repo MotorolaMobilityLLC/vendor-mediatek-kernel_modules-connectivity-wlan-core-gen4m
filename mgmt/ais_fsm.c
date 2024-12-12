@@ -452,7 +452,7 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 	/* For BSS_INFO back trace to AIS FSM. */
 	prAisBssInfo->u4PrivateData = prAisFsmInfo->ucAisIndex;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prAisBssInfo->ucLinkIndex = ucLinkIdx;
+	prAisBssInfo->ucLinkId = ucLinkIdx;
 #endif
 	kalAisCsaNotifyWorkInit(prAdapter,
 		prAisBssInfo->ucBssIndex);
@@ -1476,7 +1476,7 @@ void aisFsmStateInit_JOIN(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (mldSingleLink(prAdapter, prStaRec, ucBssIndex)) {
-		prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+		prBssInfo->ucLinkId = prBssDesc->rMlInfo.ucLinkId;
 		mldStarecJoin(prAdapter, prAisFsmInfo->prMldBssInfo,
 			*prMainStaRec, prStaRec, prBssDesc);
 	}
@@ -4501,7 +4501,7 @@ void aisRestoreBssInfo(struct ADAPTER *ad, struct BSS_INFO *prBssInfo,
 	ucRfCenterFreqSeg1 = nicGetS1(prBssDesc->eBand, ucPrimaryChannel,
 	      eRfSco, rlmGetBssOpBwByChannelWidth(eRfSco, eRfChannelWidth));
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prBssInfo->ucLinkIndex = prBssDesc->rMlInfo.ucLinkIndex;
+	prBssInfo->ucLinkId = prBssDesc->rMlInfo.ucLinkId;
 #endif
 
 	prBssInfo->ucGrantTxNss = prBssInfo->ucBackupGrantTxNss;
@@ -6430,7 +6430,7 @@ void aisFsmDisconnectAllBss(struct ADAPTER *prAdapter,
 		/* 4 <4.1> sync. with firmware */
 		nicUpdateBss(prAdapter, prAisBssInfo->ucBssIndex);
 		prAisBssInfo->prStaRecOfAP = (struct STA_RECORD *)NULL;
-		prAisBssInfo->ucLinkIndex = 0;
+		prAisBssInfo->ucLinkId = 0;
 	}
 }
 
@@ -9264,7 +9264,7 @@ void aisFsmRunEventBssTransition(struct ADAPTER *prAdapter,
 			struct BSS_INFO *prBssInfo;
 			uint8_t u2NonPrefLinks;
 
-			u2NonPrefLinks = BIT(prBssDesc->rMlInfo.ucLinkIndex);
+			u2NonPrefLinks = BIT(prBssDesc->rMlInfo.ucLinkId);
 			if (prNei && prNei->ucPreference == 0)
 				u2NonPrefLinks |= prNei->u2ValidLinks;
 
@@ -9499,7 +9499,7 @@ struct NEIGHBOR_AP *aisGetNeighborAPEntry(
 		if (bss->rMlInfo.fgValid && prNeighborAP->fgIsMld &&
 		   EQUAL_MAC_ADDR(prNeighborAP->aucMldAddr,
 				  bss->rMlInfo.aucMldAddr) &&
-		   (prNeighborAP->u2ValidLinks & BIT(bss->rMlInfo.ucLinkIndex)))
+		   (prNeighborAP->u2ValidLinks & BIT(bss->rMlInfo.ucLinkId)))
 			return prNeighborAP;
 	}
 #endif

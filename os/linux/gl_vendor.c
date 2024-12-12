@@ -2100,7 +2100,7 @@ static uint32_t fill_ml_link_stats(struct ADAPTER *prAdapter, uint8_t *dst,
 		link = (struct STATS_LLS_WIFI_LINK_STAT *)dst;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) || defined(CFG_SUPPORT_UNIFIED_COMMAND)
-		link->link_id = prBssInfo->ucLinkIndex;
+		link->link_id = prBssInfo->ucLinkId;
 #endif
 		link->state = WIFI_LINK_STATE_IN_USE;
 		link->radio = prBssInfo->eHwBandIdx;

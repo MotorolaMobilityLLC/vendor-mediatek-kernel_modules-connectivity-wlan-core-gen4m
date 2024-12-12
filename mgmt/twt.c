@@ -2711,7 +2711,7 @@ uint32_t mltwtParseTWTElement(
 		*/
     } else {
 		/*
-		* The frame contains TWT element combinatory with 
+		* The frame contains TWT element combinatory with
 		* multiple TWT parameters,
 		* ex.
 		* {tag|length|CTRL|TWT param[0]|TWT param[1]|TWT param[2]}
@@ -2808,7 +2808,7 @@ uint32_t mltwtFillTWTElementAllInOne(
 		if (!prStaRecOfAP)
 			break;
 
-		prMLTWTBuf->u2LinkIdBitmap |= BIT(prStaRecOfAP->ucLinkIndex);
+		prMLTWTBuf->u2LinkIdBitmap |= BIT(prStaRecOfAP->ucLinkId);
 	}
 
 	DBGLOG(TWT_REQUESTER, WARN,
@@ -3067,7 +3067,8 @@ uint32_t mltwtFillTWTElementPerLinkDistinct(
 				CPU_TO_LE16(prTWTParams->u2WakeIntvalMantiss);
 
 			/* Link ID bitmap manipulation */
-			prMLTWTBuf->u2LinkIdBitmap = BIT(prStaRecOfAP->ucLinkIndex);
+			prMLTWTBuf->u2LinkIdBitmap =
+				BIT(prStaRecOfAP->ucLinkId);
 
 			/* Accumutate offset in the unit of (struct IE_ML_TWT_T) */
 			u2Offset += sizeof(struct IE_ML_TWT_T);

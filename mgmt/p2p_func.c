@@ -480,8 +480,8 @@ void p2pFuncGCJoin(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (mldSingleLink(prAdapter, prStaRec,
 				  prP2pBssInfo->ucBssIndex)) {
-			prP2pBssInfo->ucLinkIndex =
-				prBssDesc->rMlInfo.ucLinkIndex;
+			prP2pBssInfo->ucLinkId =
+				prBssDesc->rMlInfo.ucLinkId;
 			mldStarecJoin(prAdapter,
 				prP2pRoleFsmInfo->prP2pMldBssInfo,
 				prMainStaRec, prStaRec, prBssDesc);
@@ -1783,7 +1783,7 @@ void p2pFuncStopComplete(struct ADAPTER *prAdapter,
 
 	nicDeactivateNetwork(prAdapter,
 		NETWORK_ID(prP2pBssInfo->ucBssIndex,
-			   prP2pBssInfo->ucLinkIndex));
+			   prP2pBssInfo->ucLinkId));
 	/* Release CNM channel */
 	nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
@@ -2202,7 +2202,7 @@ SKIP_START_RDD:
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		if (prMldBssInfo &&
-		    prBssInfo->ucLinkIndex == P2P_MAIN_LINK_INDEX) {
+		    prBssInfo->ucLinkId == P2P_MAIN_LINK_INDEX) {
 			struct LINK *prBssList = &prMldBssInfo->rBssList;
 			struct BSS_INFO *prLinkBssInfo;
 
@@ -2216,7 +2216,7 @@ SKIP_START_RDD:
 
 				DBGLOG(P2P, INFO,
 					"Continue setup link%u's ACS\n",
-					prLinkBssInfo->ucLinkIndex);
+					prLinkBssInfo->ucLinkId);
 				mboxSendMsg(prAdapter, MBOX_ID_0,
 					    prLinkBssInfo->prMsgPendingAcsReq,
 					    MSG_SEND_METHOD_BUF);

@@ -1020,7 +1020,7 @@ uint32_t nicUniCmdBssInfoMld(struct ADAPTER *ad,
 		tag->ucOwnMldId = bss->ucOwnMldId;
 		COPY_MAC_ADDR(tag->aucOwnMldAddr, prMldBssInfo->aucOwnMldAddr);
 		tag->ucOmRemapIdx = prMldBssInfo->ucOmRemapIdx;
-		tag->ucLinkId = bss->ucLinkIndex;
+		tag->ucLinkId = bss->ucLinkId;
 		tag->ucEmlEnabled = prMldBssInfo->ucEmlEnabled;
 		tag->ucMaxSimuLinks = prMldBssInfo->ucMaxSimuLinks;
 		tag->ucHmloEnabled = prMldBssInfo->ucHmloEnabled;
@@ -6883,12 +6883,12 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 		link = (struct UNI_CMD_MLC_LINK_INFO *)tag->aucLinkInfo;
 		LINK_FOR_EACH_ENTRY(cur, list, rLinkEntryMld,
 				struct STA_RECORD) {
-			if (!(valid_links & BIT(cur->ucLinkIndex)))
+			if (!(valid_links & BIT(cur->ucLinkId)))
 				continue;
 
 			link->ucBssIdx = cur->ucBssIndex;
 			link->u2WlanIdx = cur->ucWlanIndex;
-			if (!!(active_links & BIT(cur->ucLinkIndex)))
+			if (!!(active_links & BIT(cur->ucLinkId)))
 				link->ucLinkState = MLO_LINK_STATE_ACTIVE;
 			else
 				link->ucLinkState = MLO_LINK_STATE_INACTIVE;
@@ -11507,7 +11507,7 @@ void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
 		if (!prStaRec || !prBssInfo)
 			continue;
 
-		prInfo->ucLinkId = prStaRec->ucLinkIndex;
+		prInfo->ucLinkId = prStaRec->ucLinkId;
 		prInfo->ucLinkState = link->ucLinkState;
 		prInfo->u4FreqInMHz = nicChannelNum2Freq(
 			prBssInfo->ucPrimaryChannel, prBssInfo->eBand) / 1000;

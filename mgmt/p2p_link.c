@@ -274,7 +274,7 @@ uint32_t p2pLinkProcessRxAuthReqFrame(
 			goto exit;
 		}
 		mldStarecRegister(prAdapter, prMldStarec, prStaRec,
-			prBssInfo->ucLinkIndex);
+			prBssInfo->ucLinkId);
 		mldStarecSetSetupIdx(prAdapter, prStaRec);
 	}
 
@@ -430,7 +430,7 @@ uint32_t p2pLinkProcessRxAssocReqFrame(
 	/* make sure all links are assigned link id */
 	LINK_FOR_EACH_ENTRY(prCurr, prStarecList,
 			rLinkEntryMld, struct STA_RECORD) {
-		if (prCurr->ucLinkIndex == MLD_LINK_ID_NONE) {
+		if (prCurr->ucLinkId == MLD_LINK_ID_NONE) {
 			DBGLOG(AAA, WARN, "sta%d " MACSTR " no link id\n",
 				prCurr->ucWlanIndex,
 				MAC2STR(prCurr->aucMacAddr));
@@ -779,7 +779,7 @@ void p2pDeactivateAllLink(
 		if (bss && IS_NET_ACTIVE(prAdapter, bss->ucBssIndex))
 			nicDeactivateNetworkEx(prAdapter,
 				NETWORK_ID(bss->ucBssIndex,
-					   bss->ucLinkIndex),
+					   bss->ucLinkId),
 				fgClearStaRec);
 	}
 }
@@ -984,7 +984,7 @@ void p2pLinkAcquireChJoin(struct ADAPTER *prAdapter,
 			/* sync with firmware */
 			nicActivateNetwork(prAdapter,
 				NETWORK_ID(prBss->ucBssIndex,
-					   prBss->ucLinkIndex));
+					   prBss->ucLinkId));
 			SET_NET_PWR_STATE_ACTIVE(prAdapter,
 						 prBss->ucBssIndex);
 		}
@@ -1226,7 +1226,7 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 			"Add " MACSTR " mld_addr=" MACSTR " link=%d\n",
 			MAC2STR(prBssDesc->aucBSSID),
 			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
-			prBssDesc->rMlInfo.ucLinkIndex);
+			prBssDesc->rMlInfo.ucLinkId);
 
 		/* Record same Mld list */
 		prBssDescSet->aprBssDesc[prBssDescSet->ucLinkNum] = prBssDesc;
@@ -1236,9 +1236,9 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 	for (i = 0; i < prBssDescSet->ucLinkNum - 1; i++) {
 		for (j = i + 1; j < prBssDescSet->ucLinkNum; j++) {
 			if (prBssDescSet->aprBssDesc[j]
-				->rMlInfo.ucLinkIndex <
+				->rMlInfo.ucLinkId <
 				prBssDescSet->aprBssDesc[i]
-				->rMlInfo.ucLinkIndex) {
+				->rMlInfo.ucLinkId) {
 				prBssDesc = prBssDescSet->aprBssDesc[j];
 				prBssDescSet->aprBssDesc[j] =
 					prBssDescSet->aprBssDesc[i];
@@ -1257,7 +1257,7 @@ void p2pScanFillSecondaryLink(struct ADAPTER *prAdapter,
 		prBssDescSet->ucLinkNum,
 		MAC2STR(prMainBssDesc->aucBSSID),
 		MAC2STR(prMainBssDesc->rMlInfo.aucMldAddr),
-		prMainBssDesc->rMlInfo.ucLinkIndex);
+		prMainBssDesc->rMlInfo.ucLinkId);
 }
 #endif
 
@@ -1273,7 +1273,7 @@ p2pNeedAppendP2pIE(
 			mldBssGetByBss(ad, bss);
 
 		if (IS_MLD_BSSINFO_MULTI(mld) &&
-		    bss->ucLinkIndex != P2P_MAIN_LINK_INDEX) {
+		    bss->ucLinkId != P2P_MAIN_LINK_INDEX) {
 			DBGLOG(BSS, LOUD,
 				"Skip p2p ie for role%d\n",
 				bss->u4PrivateData);
@@ -1297,7 +1297,7 @@ p2pNeedSkipProbeResp(
 			mldBssGetByBss(ad, bss);
 
 		if (IS_MLD_BSSINFO_MULTI(mld) &&
-		    bss->ucLinkIndex != P2P_MAIN_LINK_INDEX) {
+		    bss->ucLinkId != P2P_MAIN_LINK_INDEX) {
 			DBGLOG(BSS, LOUD,
 				"Skip p2p ie for role%d\n",
 				bss->u4PrivateData);

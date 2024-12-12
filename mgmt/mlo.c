@@ -116,7 +116,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					}
 
 					if (profile->ucLinkId ==
-					    bss->ucLinkIndex) {
+					    bss->ucLinkId) {
 						found = TRUE;
 						break;
 					}
@@ -181,7 +181,7 @@ uint8_t mldSanityCheck(struct ADAPTER *prAdapter, uint8_t *pucPacket,
 					}
 
 					if (profile->ucLinkId ==
-						starec->ucLinkIndex &&
+						starec->ucLinkId &&
 					    EQUAL_MAC_ADDR(profile->aucLinkAddr,
 						starec->aucMacAddr)) {
 						found = TRUE;
@@ -602,8 +602,8 @@ uint8_t *mldGenerateBasicCommonInfo(
 
 	if (BE_IS_ML_CTRL_PRESENCE_LINK_ID(common->u2Ctrl)) {
 		DBGLOG(ML, TRACE, "\tML common Info LinkID = %d ("MACSTR")",
-			bss->ucLinkIndex, MAC2STR(bss->aucOwnMacAddr));
-		*cp++ = bss->ucLinkIndex;
+			bss->ucLinkId, MAC2STR(bss->aucOwnMacAddr));
+		*cp++ = bss->ucLinkId;
 	}
 	if (BE_IS_ML_CTRL_PRESENCE_BSS_PARA_CHANGE_COUNT(common->u2Ctrl)) {
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
@@ -1110,7 +1110,7 @@ uint8_t *mldGenerateBasicCompleteProfile(
 	pos = (uint8_t *) prMsduInfo->prPacket + prMsduInfo->u2FrameLength;
 	sta = pos;
 	sta_ctrl = (struct IE_ML_STA_CONTROL *) pos;
-	link = starec ? starec->ucLinkIndex : bss->ucLinkIndex;
+	link = starec ? starec->ucLinkId : bss->ucLinkId;
 	mgmt = (struct WLAN_MAC_MGMT_HEADER *)(prMsduInfo->prPacket);
 	fctrl = mgmt->u2FrameCtrl & MASK_FRAME_TYPE;
 
@@ -1453,7 +1453,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 		/* MLD Para (3) */
 		mld_params = ((0 << MLD_PARAM_MLD_ID_SHIFT) &
 			MLD_PARAM_MLD_ID_MASK);
-		mld_params |= ((bss->ucLinkIndex << MLD_PARAM_LINK_ID_SHIFT) &
+		mld_params |= ((bss->ucLinkId << MLD_PARAM_LINK_ID_SHIFT) &
 			MLD_PARAM_LINK_ID_MASK);
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
 		MLD_PARAM_SET_BPCC(mld_params, bss->ucBPCC);
@@ -1465,7 +1465,7 @@ void mldGenerateRnrIE(struct ADAPTER *prAdapter,
 			"bss_idx: %d, link: %d: ch: %d, bpcc: %d, mac: " MACSTR
 			"\n",
 			bss->ucBssIndex,
-			bss->ucLinkIndex,
+			bss->ucLinkId,
 			bss->ucPrimaryChannel,
 			MLD_PARAM_GET_BPCC(mld_params),
 			MAC2STR(bss->aucOwnMacAddr));
@@ -3245,7 +3245,7 @@ struct SW_RFB *mldDupAssocSwRfb(struct ADAPTER *prAdapter,
 
 	for (i = 0; i < info->ucProfNum; i++) {
 		sta = &info->rStaProfiles[i];
-		if (sta->ucLinkId == prStaRec->ucLinkIndex &&
+		if (sta->ucLinkId == prStaRec->ucLinkId &&
 		    EQUAL_MAC_ADDR(sta->aucLinkAddr, prStaRec->aucMacAddr)) {
 			break;
 		}
@@ -4208,7 +4208,7 @@ struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
 	}
 
 	mldStarecRegister(prAdapter, prMldStaRec, prStarec,
-		prBssDesc->rMlInfo.ucLinkIndex);
+		prBssDesc->rMlInfo.ucLinkId);
 
 #if (CFG_SUPPORT_MLC == 1)
 	/* default only setup link is active */
@@ -4252,7 +4252,7 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 	}
 
 	/* fill link info */
-	prStarec->ucLinkIndex = ucLinkId;
+	prStarec->ucLinkId = ucLinkId;
 	COPY_MAC_ADDR(prStarec->aucMldAddr, prMldStarec->aucPeerMldAddr);
 	prStarec->ucMldStaIndex = prMldStarec->ucIdx;
 
@@ -4269,7 +4269,7 @@ int8_t mldStarecRegister(struct ADAPTER *prAdapter,
 		MACSTR " mld_type: %d, str[0x%x,0x%x,0x%x]\n",
 		prMldStarec->ucIdx,
 		prStarec->ucIndex,
-		prStarec->ucLinkIndex,
+		prStarec->ucLinkId,
 		prStarec->ucWlanIndex,
 		prStarec->ucBssIndex,
 		prMldStarec->u2PrimaryMldId,
@@ -4318,7 +4318,7 @@ void mldStarecUnregister(struct ADAPTER *prAdapter,
 
 	prMldStarec->u8StaBitmap &= ~BIT(prStarec->ucIndex);
 	prMldStarec->u8ActiveStaBitmap &= ~BIT(prStarec->ucIndex);
-	prMldStarec->u2ValidLinks &= ~BIT(prStarec->ucLinkIndex);
+	prMldStarec->u2ValidLinks &= ~BIT(prStarec->ucLinkId);
 
 	if (LINK_IS_EMPTY(prStarecList))
 		mldStarecFree(prAdapter, prMldStarec, prStarec);
@@ -4756,12 +4756,12 @@ struct BSS_INFO *mldGetBssInfoByLinkID(struct ADAPTER *prAdapter,
 			prStaRecOfAP = prCurrBssInfo->prStaRecOfAP;
 
 			if ((prStaRecOfAP) &&
-				(prStaRecOfAP->ucLinkIndex == ucLinkIndex))
+				(prStaRecOfAP->ucLinkId == ucLinkIndex))
 				 return prCurrBssInfo;
 		} else {
 			/* Match with local STA(SAP)'s link ID */
-			if (prCurrBssInfo->ucLinkIndex == ucLinkIndex)
-				  return prCurrBssInfo;
+			if (prCurrBssInfo->ucLinkId == ucLinkIndex)
+				return prCurrBssInfo;
 		}
 	}
 
@@ -5012,7 +5012,7 @@ void mldCheckApRemoval(struct ADAPTER *prAdapter,
 			if (!link_sta || !link_bss)
 				continue;
 
-			if (link_sta->ucLinkIndex == profile->ucLinkId) {
+			if (link_sta->ucLinkId == profile->ucLinkId) {
 				link_bss->rMlInfo.u2ApRemovalTimer =
 					profile->u2ApRemovalTimer;
 

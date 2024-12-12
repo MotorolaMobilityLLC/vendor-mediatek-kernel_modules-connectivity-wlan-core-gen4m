@@ -245,7 +245,7 @@ enum ESP_TRAFFIC_AC {
 struct ML_INFO {
 	uint8_t fgValid;
 	uint8_t aucMldAddr[MAC_ADDR_LEN];
-	uint8_t ucLinkIndex;
+	uint8_t ucLinkId;
 	uint8_t ucMldId;
 	uint16_t u2ValidLinks;
 	uint8_t ucMaxSimuLinks;

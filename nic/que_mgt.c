@@ -7072,7 +7072,7 @@ void mqmProcessScanResult(struct ADAPTER *prAdapter,
 		MAC2STR(prScanResult->aucBSSID),
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prScanResult->rMlInfo.fgValid,
-		prScanResult->rMlInfo.ucLinkIndex,
+		prScanResult->rMlInfo.ucLinkId,
 		MAC2STR(prScanResult->rMlInfo.aucMldAddr),
 #endif
 		prStaRec->ucMlrSupportBitmap,

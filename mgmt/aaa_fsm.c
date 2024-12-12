@@ -420,7 +420,7 @@ bow_proc:
 			prSwRfb,
 			FALSE,
 			(uint8_t)prBssInfo->u4PrivateData,
-			(uint32_t)prBssInfo->ucLinkIndex);
+			(uint32_t)prBssInfo->ucLinkId);
 		DBGLOG(AAA, INFO, "Forward RxAuth Seq: %d\n",
 			prAuthFrame->u2AuthTransSeqNo);
 
@@ -855,7 +855,7 @@ uint32_t aaaFsmRunEventRxAssoc(struct ADAPTER *prAdapter,
 				prSwRfb,
 				FALSE,
 				(uint8_t)prBssInfo->u4PrivateData,
-				(uint32_t)prBssInfo->ucLinkIndex);
+				(uint32_t)prBssInfo->ucLinkId);
 			DBGLOG(AAA, INFO, "[OWE] Forward RxAssoc\n");
 		} else
 			assocSendReAssocRespFrame(prAdapter, prStaRec);

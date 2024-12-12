@@ -418,7 +418,7 @@ void nanMldBssRegister(struct ADAPTER *prAdapter,
 		}
 
 		if (nanLinkNeedMlo(prAdapter)) {
-			prNanBssInfo->ucLinkIndex =
+			prNanBssInfo->ucLinkId =
 				prMldBssInfo->rBssList.u4NumElem;
 		}
 

@@ -2053,7 +2053,7 @@ int mtk_cfg80211_tx_control_port(struct wiphy *wiphy, struct net_device *dev,
 		prBssList = &prMldBss->rBssList;
 		LINK_FOR_EACH_ENTRY(prTempBss, prBssList, rLinkEntryMld,
 				    struct BSS_INFO) {
-			if (prTempBss->ucLinkIndex != link_id)
+			if (prTempBss->ucLinkId != link_id)
 				continue;
 
 			ucBssIndex = prTempBss->ucBssIndex;

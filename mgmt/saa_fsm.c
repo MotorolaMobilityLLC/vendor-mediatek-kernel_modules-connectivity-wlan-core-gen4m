@@ -1196,7 +1196,7 @@ void saaFsmRunEventRxAuth(struct ADAPTER *prAdapter,
 		}
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-		u4LinkId = (uint32_t)prStaRec->ucLinkIndex;
+		u4LinkId = (uint32_t)prStaRec->ucLinkId;
 #endif
 		DBGLOG(SAA, INFO, "Forward RxAuth Seq: %d\n",
 			((struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader)->

@@ -4668,7 +4668,7 @@ void mltwtPlannerRxNegoResult(
 			DBGLOG(TWT_PLANNER, STATE,
 				"Rx nego id %d link ID %d\n",
 				ucTWTFlowId,
-				prStaRec->ucLinkIndex);
+				prStaRec->ucLinkId);
 
 			/* Disable SCAN during TWT activity */
 			prAdapter->fgEnOnlineScan = FALSE;

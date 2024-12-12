@@ -4998,7 +4998,7 @@ static void mt6653_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		DBGLOG(APS, INFO, MACSTR
 			" link_id=%d max_links=%d Setup for 6G BW320\n",
 			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.ucLinkId,
 			prBssDesc->rMlInfo.ucMaxSimuLinks);
 	}
 #endif /* CFG_SUPPORT_WIFI_6G */

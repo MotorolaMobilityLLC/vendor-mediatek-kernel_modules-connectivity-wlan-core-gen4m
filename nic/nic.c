@@ -3233,7 +3233,7 @@ nicConfigPowerSaveProfileEntry(struct ADAPTER *prAdapter,
 			} else if (prAdapter->rWifiVar.ucPresetLinkId ==
 							MLD_LINK_ID_NONE ||
 			    prAdapter->rWifiVar.ucPresetLinkId ==
-							bss->ucLinkIndex) {
+							bss->ucLinkId) {
 				nicConfigPowerSaveProfile(prAdapter,
 					bss->ucBssIndex,
 					ePwrMode,

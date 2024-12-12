@@ -875,7 +875,7 @@ scanSearchBssDescByLinkIdMldAddrSsid(struct ADAPTER *prAdapter,
 		if (!prBssDesc->rMlInfo.fgValid)
 			continue;
 
-		if (prBssDesc->rMlInfo.ucLinkIndex == ucLinkId &&
+		if (prBssDesc->rMlInfo.ucLinkId == ucLinkId &&
 		    EQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr, aucMldAddr)) {
 			if (fgCheckSsid == FALSE || prSsid == NULL)
 				return prBssDesc;
@@ -1708,7 +1708,7 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 
 		/* Check ML control that which common info exist */
 		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_LINK_ID_INFO_PRESENT)
-			prBssDesc->rMlInfo.ucLinkIndex = rMlInfo.ucLinkId;
+			prBssDesc->rMlInfo.ucLinkId = rMlInfo.ucLinkId;
 
 		if (rMlInfo.ucMlCtrlPreBmp & ML_CTRL_EML_CAPA_PRESENT)
 			prBssDesc->rMlInfo.u2EmlCap = rMlInfo.u2EmlCap;
@@ -1729,7 +1729,7 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 			",LinkID=%d,MaxSimu=%d,EmlCap=0x%x,MldCap=0x%x,MldType=%d\n",
 			MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
 			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.ucLinkId,
 			prBssDesc->rMlInfo.ucMaxSimuLinks,
 			prBssDesc->rMlInfo.u2EmlCap,
 			prBssDesc->rMlInfo.u2MldCap,
@@ -1746,7 +1746,7 @@ void scanParseMldIE(struct ADAPTER *prAdapter, struct BSS_DESC *prBssDesc,
 		for (i = 0; i < prMlInfo->ucProfNum; i++) {
 			struct STA_PROFILE *sta = &prMlInfo->rStaProfiles[i];
 
-			if (prBssDesc->rMlInfo.ucLinkIndex == sta->ucLinkId)
+			if (prBssDesc->rMlInfo.ucLinkId == sta->ucLinkId)
 				prBssDesc->rMlInfo.u2ApRemovalTimer =
 					sta->u2ApRemovalTimer;
 		}
@@ -5423,7 +5423,7 @@ void scanParseCheckMTKOuiIE(struct ADAPTER *prAdapter,
 				MAC2STR(prBssDesc->aucBSSID),
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 				prBssDesc->rMlInfo.fgValid,
-				prBssDesc->rMlInfo.ucLinkIndex,
+				prBssDesc->rMlInfo.ucLinkId,
 				MAC2STR(prBssDesc->rMlInfo.aucMldAddr),
 #endif
 				prBssDesc->ucMlrType,

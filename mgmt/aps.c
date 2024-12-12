@@ -1882,10 +1882,10 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 	}
 
 	if (prBssDesc->rMlInfo.fgValid &&
-		!(BIT(prBssDesc->rMlInfo.ucLinkIndex) & conn->u2LinkIdBitmap)) {
+		!(BIT(prBssDesc->rMlInfo.ucLinkId) & conn->u2LinkIdBitmap)) {
 		DBGLOG(APS, WARN, MACSTR" LinkID[%d] is not allowed [%d]\n",
 			MAC2STR(prBssDesc->aucBSSID),
-			prBssDesc->rMlInfo.ucLinkIndex,
+			prBssDesc->rMlInfo.ucLinkId,
 			conn->u2LinkIdBitmap);
 		return FALSE;
 	}
@@ -3335,7 +3335,7 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
 			found = "mld_addr";
-		} else if (bss->rMlInfo.ucLinkIndex ==
+		} else if (bss->rMlInfo.ucLinkId ==
 			   ad->rWifiVar.ucStaMldMainLinkIdx) {
 			set->aprBssDesc[i] = set->aprBssDesc[0];
 			set->aprBssDesc[0] = bss;
@@ -3346,7 +3346,7 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 			DBGLOG(APS, INFO, MACSTR
 				" link_id=%d max_links=%d Setup for %s\n",
 				MAC2STR(bss->aucBSSID),
-				bss->rMlInfo.ucLinkIndex,
+				bss->rMlInfo.ucLinkId,
 				bss->rMlInfo.ucMaxSimuLinks,
 				found);
 		}

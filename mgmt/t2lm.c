@@ -431,10 +431,10 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 		ucDLTidBitmap = prCurrStarec->ucDLTidBitmap;
 		ucULTidBitmap = prCurrStarec->ucULTidBitmap;
 
-		if (prCurrStarec->ucLinkIndex > 14) {
+		if (prCurrStarec->ucLinkId > 14) {
 			DBGLOG(ML, ERROR,
 				"Linkid = %d, sta idx %d is invalid\n",
-				prCurrStarec->ucLinkIndex,
+				prCurrStarec->ucLinkId,
 				prCurrStarec->ucIndex);
 			continue;
 		}
@@ -454,7 +454,7 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 
 					if (ucTidLinkMapping
 						& BIT(prCurrStarec
-							->ucLinkIndex)) {
+							->ucLinkId)) {
 						ucDLTidBitmap |= BIT(i);
 						ucULTidBitmap |= BIT(i);
 					} else {
@@ -479,7 +479,7 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 
 					if (u2TidLinkMapping
 						& BIT(prCurrStarec
-							->ucLinkIndex)) {
+							->ucLinkId)) {
 						ucDLTidBitmap |= BIT(i);
 						ucULTidBitmap |= BIT(i);
 					} else {
@@ -493,7 +493,7 @@ void t2lmParseT2LMIE(struct ADAPTER *prAdapter,
 
 		DBGLOG(ML, TRACE,
 			"Linkid = %d, ucTidBitmap(UL:DL) = 0x%02x:0x%02x\n",
-			prCurrStarec->ucLinkIndex,
+			prCurrStarec->ucLinkId,
 			ucDLTidBitmap,
 			ucULTidBitmap);
 
@@ -1002,10 +1002,10 @@ void t2lmMldStaRecBackup(struct ADAPTER *prAdapter,
 		    struct STA_RECORD) {
 		ucTidBitmap = 0xff;
 
-		if (prCurrStarec->ucLinkIndex > 14) {
+		if (prCurrStarec->ucLinkId > 14) {
 			DBGLOG(TX, ERROR,
 				"Linkid = %d, sta idx %d is invalid\n",
-				prCurrStarec->ucLinkIndex,
+				prCurrStarec->ucLinkId,
 				prCurrStarec->ucIndex);
 			continue;
 		}
@@ -1017,7 +1017,7 @@ void t2lmMldStaRecBackup(struct ADAPTER *prAdapter,
 				if (prT2LMParams->ucLMIndicator & BIT(i)) {
 					if (prT2LMParams->au2LMTid[i]
 						& BIT(prCurrStarec
-							->ucLinkIndex))
+							->ucLinkId))
 						ucTidBitmap |= BIT(i);
 					else
 						ucTidBitmap &= ~(BIT(i));
@@ -1030,7 +1030,7 @@ void t2lmMldStaRecBackup(struct ADAPTER *prAdapter,
 				if (prT2LMParams->ucLMIndicator & BIT(i)) {
 					if (prT2LMParams->au2LMTid[i]
 						& BIT(prCurrStarec
-							->ucLinkIndex))
+							->ucLinkId))
 						ucTidBitmap |= BIT(i);
 					else
 						ucTidBitmap &= ~(BIT(i));
@@ -1039,7 +1039,7 @@ void t2lmMldStaRecBackup(struct ADAPTER *prAdapter,
 		}
 
 		DBGLOG(TX, TRACE, "Linkid = %d, ucTidBitmap = 0x%02x\n",
-			prCurrStarec->ucLinkIndex,
+			prCurrStarec->ucLinkId,
 			ucTidBitmap);
 		switch (prMldStaRec->rT2LMParams.ucDirection) {
 		case T2LM_DIRECTION_DL:

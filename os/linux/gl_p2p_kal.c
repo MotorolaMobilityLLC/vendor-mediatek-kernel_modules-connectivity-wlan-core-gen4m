@@ -1659,7 +1659,7 @@ kalP2PGCIndicateConnectionStatus(struct GLUE_INFO *prGlueInfo,
 					if (!prP2pLinkBssInfo || !prStaRec)
 						continue;
 
-					id = prStaRec->ucLinkIndex;
+					id = prStaRec->ucLinkId;
 					params.valid_links |= BIT(id);
 					params.links[id].addr =
 						prP2pLinkBssInfo->aucOwnMacAddr;
@@ -1810,7 +1810,7 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 		if (IS_MLD_BSSINFO_MULTI(prMldBss) || prMldSta) {
 			rStationInfo.mlo_params_valid = true;
 			rStationInfo.assoc_link_id =
-				prBssInfo->ucLinkIndex;
+				prBssInfo->ucLinkId;
 			if (prMldSta)
 				COPY_MAC_ADDR(rStationInfo.mld_addr,
 					      prMldSta->aucPeerMldAddr);
@@ -1845,7 +1845,7 @@ kalP2PGOStationUpdate(struct GLUE_INFO *prGlueInfo,
 			if (IS_MLD_BSSINFO_MULTI(prMldBss) || prMldSta) {
 				rStationInfo.mlo_params_valid = true;
 				rStationInfo.assoc_link_id =
-					prBssInfo->ucLinkIndex;
+					prBssInfo->ucLinkId;
 				if (prMldSta)
 					COPY_MAC_ADDR(rStationInfo.mld_addr,
 						      prMldSta->aucPeerMldAddr);
@@ -2819,7 +2819,7 @@ void kalP2pIndicateChnlSwitchStarted(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	if (!IS_BSS_APGO(prBssInfo) ||
 	    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[ucRoleIdx]))
-		ucLinkIdx = prBssInfo->ucLinkIndex;
+		ucLinkIdx = prBssInfo->ucLinkId;
 #endif
 #endif
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[ucRoleIdx];
@@ -2941,7 +2941,7 @@ void __kalP2pIndicateChnlSwitch(struct ADAPTER *prAdapter,
 	role_idx = prBssInfo->u4PrivateData;
 	if (!IS_BSS_APGO(prBssInfo) ||
 	    p2pFuncIsAPMode(prAdapter->rWifiVar.prP2PConnSettings[role_idx]))
-		linkIdx = prBssInfo->ucLinkIndex;
+		linkIdx = prBssInfo->ucLinkId;
 	prP2PInfo = prAdapter->prGlueInfo->prP2PInfo[role_idx];
 
 	if (!prP2PInfo) {

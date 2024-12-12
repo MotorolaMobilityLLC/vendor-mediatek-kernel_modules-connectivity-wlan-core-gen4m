@@ -2604,7 +2604,7 @@ uint32_t kalCollectLinkInfo(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	link->link_id = prBssInfo->prStaRecOfAP ?
-		prBssInfo->prStaRecOfAP->ucLinkIndex : 0;
+		prBssInfo->prStaRecOfAP->ucLinkId : 0;
 #endif
 
 	return WLAN_STATUS_SUCCESS;
@@ -2975,7 +2975,7 @@ void kalInformFtEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex)
 
 		COPY_MAC_ADDR(pos, mld_bssinfo->aucOwnMldAddr);
 		pos += MAC_ADDR_LEN;
-		*pos++ = bssinfo->ucLinkIndex;
+		*pos++ = bssinfo->ucLinkId;
 
 		/* update common info length, ie length, frame length */
 		*common->aucCommonInfo = pos - common->aucCommonInfo;
@@ -2998,7 +2998,7 @@ void kalInformFtEvent(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIndex)
 
 			/* filling STA control field (fixed length) */
 			BE_SET_ML_STA_CTRL_LINK_ID(control,
-				bssinfo->ucLinkIndex);
+				bssinfo->ucLinkId);
 
 			/*
 			 * meaningful if NSTR Link Pair Present is 1
@@ -13120,7 +13120,7 @@ void __kalIndicateChannelSwitch(struct GLUE_INFO *prGlueInfo,
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter,
 		ucBssIndex);
 	if (prBssInfo)
-		linkIdx = prBssInfo->ucLinkIndex;
+		linkIdx = prBssInfo->ucLinkId;
 
 	if (eBand > BAND_NULL && eBand < BAND_NUM)
 		band = aucBandTranslate[eBand];

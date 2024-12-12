@@ -662,7 +662,7 @@ void cnmChMngrRequestPrivilege(struct ADAPTER
 		else
 			nicActivateNetworkEx(prAdapter,
 				     NETWORK_ID(prBssInfo->ucBssIndex,
-						prBssInfo->ucLinkIndex),
+						prBssInfo->ucLinkId),
 				     FALSE);
 	}
 #if CFG_ENABLE_WIFI_DIRECT
@@ -2300,7 +2300,7 @@ struct BSS_INFO *cnmGetBssInfoAndInit(struct ADAPTER *prAdapter,
 		prBssInfo->ucOwnMldId = prBssInfo->ucBssIndex +
 			MAT_OWN_MLD_ID_BASE;
 		prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
-		prBssInfo->ucLinkIndex = 0;
+		prBssInfo->ucLinkId = 0;
 #endif
 		/* initialize wlan id and status for keys */
 		prBssInfo->ucBMCWlanIndex = WTBL_RESERVED_ENTRY;
@@ -2365,7 +2365,7 @@ omac_choosed:
 			prBssInfo->ucOwnMldId = ucBssIndex +
 				MAT_OWN_MLD_ID_BASE;
 			prBssInfo->ucGroupMldId = MLD_GROUP_NONE;
-			prBssInfo->ucLinkIndex = 0;
+			prBssInfo->ucLinkId = 0;
 #endif
 			prBssInfo->ucWmmQueSet = DEFAULT_HW_WMM_INDEX;
 			prBssInfo->fgIsWmmInited = FALSE;

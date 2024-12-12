@@ -2345,7 +2345,7 @@ wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
 		list = &prMldStaRec->rStarecList;
 		LINK_FOR_EACH_ENTRY(cur, list, rLinkEntryMld,
 				struct STA_RECORD) {
-			if (valid_links & BIT(cur->ucLinkIndex))
+			if (valid_links & BIT(cur->ucLinkId))
 				num++;
 		}
 
@@ -3084,7 +3084,7 @@ wlanSetAddKey(struct ADAPTER *prAdapter, void *pvSetBuffer,
 
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
 					rLinkEntryMld, struct BSS_INFO) {
-			if (ucLinkId == bss->ucLinkIndex) {
+			if (ucLinkId == bss->ucLinkId) {
 				/* overwrite key info by link */
 				prNewKey->ucBssIdx = bss->ucBssIndex;
 
@@ -3386,7 +3386,7 @@ wlanSetRemoveKey(struct ADAPTER *prAdapter,
 
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
 					rLinkEntryMld, struct BSS_INFO) {
-			if (ucLinkId == bss->ucLinkIndex) {
+			if (ucLinkId == bss->ucLinkId) {
 				/* overwrite key info by link */
 				prRemovedKey->ucBssIdx = bss->ucBssIndex;
 
@@ -9647,7 +9647,7 @@ wlanoidSet802dot11PowerSaveProfile(struct ADAPTER *
 			if (prAdapter->rWifiVar.ucPresetLinkId ==
 							MLD_LINK_ID_NONE ||
 			    prAdapter->rWifiVar.ucPresetLinkId ==
-							bss->ucLinkIndex) {
+							bss->ucLinkId) {
 				status = nicConfigPowerSaveProfile(prAdapter,
 					bss->ucBssIndex,
 					prPowerMode->ePowerMode,

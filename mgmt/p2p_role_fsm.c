@@ -411,7 +411,7 @@ struct BSS_INFO *p2pRoleFsmInitLink(struct ADAPTER *prAdapter,
 	LINK_INITIALIZE(&prP2pBssInfo->rPmkidCache);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
-	prP2pBssInfo->ucLinkIndex = ucLinkIdx;
+	prP2pBssInfo->ucLinkId = ucLinkIdx;
 	mldBssRegister(prAdapter, prMldBssInfo, prP2pBssInfo);
 #endif
 	p2pSetLinkBssInfo(prP2pRoleFsmInfo,
@@ -473,7 +473,7 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 	/* Deactivate BSS. */
 	nicDeactivateNetwork(prAdapter,
 		NETWORK_ID(prP2pBssInfo->ucBssIndex,
-			   prP2pBssInfo->ucLinkIndex));
+			   prP2pBssInfo->ucLinkId));
 	nicUpdateBss(prAdapter, prP2pBssInfo->ucBssIndex);
 
 	if (prP2pBssInfo->prBeacon) {
@@ -490,7 +490,7 @@ void p2pRoleFsmUninitLink(struct ADAPTER *prAdapter,
 		&(prP2pBssInfo->rP2pCsaDoneTimer));
 
 	p2pSetLinkBssInfo(prP2pRoleFsmInfo,
-			  prP2pBssInfo->ucLinkIndex,
+			  prP2pBssInfo->ucLinkId,
 			  NULL);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
@@ -552,7 +552,7 @@ p2pRoleFsmStateTransition(struct ADAPTER *prAdapter,
 			} else {
 				nicActivateNetwork(prAdapter,
 					NETWORK_ID(prBssInfo->ucBssIndex,
-						   prBssInfo->ucLinkIndex));
+						   prBssInfo->ucLinkId));
 			}
 		}
 
@@ -789,7 +789,7 @@ void p2pRoleFsmRunEventTimeout(struct ADAPTER *prAdapter,
 					"Role BSS IDLE, deactive network.\n");
 				nicDeactivateNetwork(prAdapter,
 					NETWORK_ID(prP2pBssInfo->ucBssIndex,
-						   prP2pBssInfo->ucLinkIndex));
+						   prP2pBssInfo->ucLinkId));
 				nicUpdateBss(prAdapter, ucBssIndex);
 			}
 			break;
@@ -2102,7 +2102,7 @@ void p2pRoleFsmDelIface(
 		/* Deactivate BSS. */
 		nicDeactivateNetwork(prAdapter,
 			NETWORK_ID(prP2pBssInfo->ucBssIndex,
-				   prP2pBssInfo->ucLinkIndex));
+				   prP2pBssInfo->ucLinkId));
 		nicUpdateBss(prAdapter, prP2pRoleFsmInfo->ucBssIndex);
 		prP2pBssInfo->eCurrentOPMode = OP_MODE_INFRASTRUCTURE;
 		p2pFuncInitConnectionSettings(prAdapter,
@@ -2696,7 +2696,7 @@ void p2pCsaControlFlow(struct ADAPTER *prAdapter,
 
 	nicDeactivateNetworkEx(prAdapter,
 		NETWORK_ID(prP2pBssInfo->ucBssIndex,
-			prP2pBssInfo->ucLinkIndex),
+			prP2pBssInfo->ucLinkId),
 		FALSE);
 	p2pChangeMediaState(prAdapter, prP2pBssInfo,
 		MEDIA_STATE_DISCONNECTED);
@@ -6240,7 +6240,7 @@ void p2pRoleFsmRunEventAddMldLink(struct ADAPTER *prAdapter,
 	}
 
 	mldBssUpdateMldAddr(prAdapter, prMldBssInfo, prMsg->aucMldAddr);
-	prBssInfo->ucLinkIndex = prMsg->ucLinkIdx;
+	prBssInfo->ucLinkId = prMsg->ucLinkIdx;
 	COPY_MAC_ADDR(prBssInfo->aucOwnMacAddr, prMsg->aucLinkAddr);
 
 	wlanBindBssIdxToNetInterface(prAdapter->prGlueInfo,
@@ -6279,9 +6279,9 @@ void p2pRoleFsmRunEventDelMldLink(struct ADAPTER *prAdapter,
 		goto exit;
 	}
 
-	if (prBssInfo->ucLinkIndex != prMsg->ucLinkIdx) {
+	if (prBssInfo->ucLinkId != prMsg->ucLinkIdx) {
 		DBGLOG(P2P, ERROR, "link idx mismatch %u %u\n",
-			prBssInfo->ucLinkIndex,
+			prBssInfo->ucLinkId,
 			prMsg->ucLinkIdx);
 		goto exit;
 	}

@@ -593,7 +593,7 @@ struct BSS_INFO {
 #if (CFG_SUPPORT_SAP_BCN_CRI_UPD == 1)
 	uint8_t ucBPCC;
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
-	uint8_t ucLinkIndex;
+	uint8_t ucLinkId;
 
 #if (CFG_SUPPORT_COEX_DOWNGRADE_BW == 1)
 	uint8_t ucVhtChannelWidthBackup;
