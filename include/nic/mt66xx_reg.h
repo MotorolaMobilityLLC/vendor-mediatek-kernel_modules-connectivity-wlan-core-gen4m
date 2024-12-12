@@ -93,6 +93,9 @@ extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7925;
 #ifdef MT7935
 extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7935;
 #endif /* MT7935 */
+#ifdef MT7999
+extern struct mt66xx_hif_driver_data mt66xx_driver_data_mt7999;
+#endif /* MT7999 */
 
 /*******************************************************************************
  *                              C O N S T A N T S
