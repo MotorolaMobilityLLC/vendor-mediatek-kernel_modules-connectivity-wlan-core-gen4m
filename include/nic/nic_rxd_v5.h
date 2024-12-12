@@ -33,7 +33,8 @@ struct HW_MAC_RX_STS_GROUP_1 {
 struct HW_MAC_RX_STS_GROUP_2 {
 	uint32_t u4Timestamp;		/* DW16 */
 	uint32_t u4CRC;			/* DW17 */
-	uint32_t aucReserved[2];	/* DW18 - DW19 */
+	uint32_t u4PPFTimestamp;	/* DW18 */
+	uint32_t ucPhyInfo;		/* DW19 */
 };
 
 struct HW_MAC_RX_STS_GROUP_4 {
@@ -47,19 +48,20 @@ struct HW_MAC_RX_STS_GROUP_4 {
 
 struct HW_MAC_RX_STS_GROUP_3 {
 	/*!  RX Vector Info */
-	uint32_t u4RxVector[6];		/* DW 20 - DW 23 */
+	uint32_t u4RxVector[8];		/* DW 20 - DW 27 */
 };
 
 struct HW_MAC_RX_STS_GROUP_3_V2 {
 	/*  PRXVector Info */
-	uint32_t u4RxVector[2];		/* DW20 - DW21 */
-	uint16_t u2RxInfo;		/* DW22 */
-	uint16_t u2Reserved;		/* DW22 */
-	uint32_t u4Rcpi;		/* DW23 */
+	uint32_t u4RxVector[4];		/* DW20 - DW23 */
+	uint32_t u4Rcpi;		/* DW24 */
+	uint16_t u2Reserved;		/* DW25 */
+	uint16_t u2RxInfo;		/* DW25 */
+	uint32_t u4Reserved2[2];	/* DW26 - DW 27 */
 };
 
-struct HW_MAC_RX_STS_GROUP_5 {		/* DW24 - */
-	uint32_t u4RxVector[24];
+struct HW_MAC_RX_STS_GROUP_5 {		/* DW28 - */
+	uint32_t u4RxVector[44];
 };
 
 struct tx_free_done_rpt {

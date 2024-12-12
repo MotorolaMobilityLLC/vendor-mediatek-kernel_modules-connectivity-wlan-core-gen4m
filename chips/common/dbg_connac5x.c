@@ -201,7 +201,6 @@ void connac5x_dump_tmac_info(
 		"Non-80211-Frame",
 		"Command-Frame",
 		"Normal-80211-Frame",
-		"enhanced-80211-Frame",
 	};
 	struct HW_MAC_CONNAC5X_TX_DESC *txd =
 		(struct HW_MAC_CONNAC5X_TX_DESC *)tmac_info;
@@ -256,9 +255,7 @@ void connac5x_dump_tmac_info(
 	case TMI_HDR_FT_NON_80211:
 		/* MRD [16], EOSP [17], RMVL [18], VLAN [19], ETYPE [20] */
 		DBGLOG(HAL, INFO,
-		"\t\t\tMRD = %d, EOSP = %d, RMVL = %d, VLAN = %d, ETYP = %d\n",
-		(txd->u4DW1 & CONNAC5X_TX_DESC_NON_802_11_MORE_DATA) ? 1 : 0,
-		(txd->u4DW1 & CONNAC5X_TX_DESC_NON_802_11_EOSP) ? 1 : 0,
+		"\t\t\tRMVL = %d, VLAN = %d, ETYP = %d\n",
 		(txd->u4DW1 & CONNAC5X_TX_DESC_NON_802_11_REMOVE_VLAN) ? 1 : 0,
 		(txd->u4DW1 & CONNAC5X_TX_DESC_NON_802_11_VLAN_FIELD) ? 1 : 0,
 		(txd->u4DW1 & CONNAC5X_TX_DESC_NON_802_11_ETHERNET_II) ? 1 : 0);
@@ -269,13 +266,6 @@ void connac5x_dump_tmac_info(
 		DBGLOG(HAL, INFO, "\t\t\tHeader Len = %lu(WORD)\n",
 		((txd->u4DW1 & CONNAC5X_TX_DESC_NOR_802_11_HEADER_LENGTH_MASK)
 			>> CONNAC5X_TX_DESC_NOR_802_11_HEADER_LENGTH_OFFSET));
-		break;
-
-	case TMI_HDR_FT_ENH_80211:
-		/* EOSP [17], AMS [18]	*/
-		DBGLOG(HAL, INFO, "\t\t\tEOSP = %d, AMS = %d\n",
-		(txd->u4DW1 & CONNAC5X_TX_DESC_ENH_802_11_EOSP) ? 1 : 0,
-		(txd->u4DW1 & CONNAC5X_TX_DESC_ENH_802_11_AMSDU) ? 1 : 0);
 		break;
 	}
 
@@ -313,9 +303,6 @@ void connac5x_dump_tmac_info(
 	/* OM_MAP [8] */
 	DBGLOG(HAL, INFO, "\t\tSounding = %d\n",
 		((txd->u4DW2 & CONNAC5X_TX_DESC_OM_MAP) ? 1 : 0));
-
-	DBGLOG(HAL, INFO, "\t\tRTS = %d\n",
-		((txd->u4DW7 & CONNAC5X_TX_DESC_FORCE_RTS_CTS) ? 1 : 0));
 
 	/* Header Padding [11:10] */
 	DBGLOG(HAL, INFO, "\t\tHeader_padding = %lu\n",
@@ -367,9 +354,9 @@ void connac5x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\t\tBMC = %d\n",
 		(txd->u4DW3 & CONNAC5X_TX_DESC_BROADCAST_MULTICAST) ? 1 : 0);
 
-	/* HW Amsdu [5] */
-	DBGLOG(HAL, INFO, "\t\tHw_amsdu = %d\n",
-		(txd->u4DW3 & CONNAC5X_TX_DESC_HW_AMSDU) ? 1 : 0);
+	/* Force Assign Link [5] */
+	DBGLOG(HAL, INFO, "\t\tForce_assign_link = %d\n",
+		(txd->u4DW3 & CONNAC5X_TX_DESC_FORCE_ASSIGN_LINK) ? 1 : 0);
 
 	/* TX Count [10:6] */
 	DBGLOG(HAL, INFO, "\t\ttx_cnt = %lu\n",
@@ -418,52 +405,38 @@ void connac5x_dump_tmac_info(
 	DBGLOG(HAL, INFO, "\t\tpid = %lu\n",
 		(txd->u2DW5_0 & CONNAC5X_TX_DESC_PACKET_ID_MASK) >>
 			CONNAC5X_TX_DESC_PACKET_ID_OFFSET);
-
-	/* TXSFM [8] */
-	DBGLOG(HAL, INFO, "\t\ttx_status_fmt = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_TX_STATUS_FORMAT) ? 1 : 0);
-
-	/* TXS2M [9] */
-	DBGLOG(HAL, INFO, "\t\ttx_status_2_mcu = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_TX_STATUS_TO_MCU) ? 1 : 0);
-
-	/* TXS2H [10] */
-	DBGLOG(HAL, INFO, "\t\ttx_status_2_host = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_TX_STATUS_TO_HOST) ? 1 : 0);
-
-	/* Force BSS color to zero [12] */
-	DBGLOG(HAL, INFO, "\t\tForce_BSS_Color_2_Zero = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_FORCE_BSS_COLOR_TO_ZERO)
-		? 1 : 0);
-
-	/* Bypass RX-based TX blocking check [13] */
-	DBGLOG(HAL, INFO, "\t\tBypass_RX_based_TX_blcking_check = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_BYPASS_RX_BASED_TX_BLOCKING)
-		? 1 : 0);
-
-	/* Bypass TX-based TX blocking check [14] */
-	DBGLOG(HAL, INFO, "\t\tBypass_TX_based_TX_blcking_check = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_BYPASS_TX_BASED_TX_BLOCKING)
-		? 1 : 0);
-
-	/* Force Assign Link [15] */
-	DBGLOG(HAL, INFO, "\t\tForce_assign_link = %d\n",
-		(txd->u2DW5_0 & CONNAC5X_TX_DESC_FORCE_ASSIGN_LINK) ? 1 : 0);
-
 	/* DW6 */
-	/* AMSDU CAP UTXB [1] */
-	DBGLOG(HAL, INFO, "\t\tAMSDU_CAP_UTXB = %d\n",
-		(txd->u4DW6 & CONNAC5X_TX_DESC_AMSDU_CAP_UTXB) ? 1 : 0);
-
-	/* DA Source Selection [2] */
+	/* DA Source Selection [1] */
 	DBGLOG(HAL, INFO, "\t\tDA_source_selection = %d\n",
 		(txd->u4DW6 & CONNAC5X_TX_DESC_DA_SOURCE_SELECTION) ? 1 : 0);
 
-	/* Disable MLD to Link Address Translation [3] */
+	/* Disable MLD to Link Address Translation [2] */
 	DBGLOG(HAL, INFO, "\t\tDIS_MAT = %d\n",
 		(txd->u4DW6 & CONNAC5X_TX_DESC_DIS_MAT) ? 1 : 0);
 
-	/* MSDU Count [9:4] */
+	/* Protection Frame Option [4:3] */
+	DBGLOG(HAL, INFO, "\t\tMSDU_count = %lu\n",
+		(txd->u4DW6 & CONNAC5X_TX_DESC_PROTECT_FRAME_OPT_MASK) >>
+			CONNAC5X_TX_DESC_PROTECT_FRAME_OPT_OFFSET);
+
+	/* Force BSS color to zero [7] */
+	DBGLOG(HAL, INFO, "\t\tForce_BSS_Color_2_Zero = %d\n",
+		(txd->u4DW6 & CONNAC5X_TX_DESC_FORCE_BSS_COLOR_TO_ZERO)
+		? 1 : 0);
+
+	/* AMSDU CAP UTXB [8] */
+	DBGLOG(HAL, INFO, "\t\tAMSDU_CAP_UTXB = %d\n",
+		(txd->u4DW6 & CONNAC5X_TX_DESC_AMSDU_CAP_UTXB) ? 1 : 0);
+
+	/* HW Amsdu [9] */
+	DBGLOG(HAL, INFO, "\t\tHW_AMSDU = %d\n",
+		(txd->u4DW6 & CONNAC5X_TX_DESC_HW_AMSDU) ? 1 : 0);
+
+	/* IP/UDP/TCP Checksum Offload[10]  */
+	DBGLOG(HAL, INFO, "\t\tCheck_offload = %d\n",
+		(txd->u4DW6 & CONNAC5X_TX_DESC_CHECKSUM_OFFLOAD) ? 1 : 0);
+
+	/* MSDU Count [15:11] */
 	DBGLOG(HAL, INFO, "\t\tMSDU_count = %lu\n",
 		(txd->u4DW6 & CONNAC5X_TX_DESC_MSDU_COUNT_MASK) >>
 			CONNAC5X_TX_DESC_MSDU_COUNT_OFFSET);
@@ -488,10 +461,9 @@ void connac5x_dump_tmac_info(
 		(txd->u4DW6 & CONNAC5X_TX_DESC_BANDWIDTH_MASK) >>
 			CONNAC5X_TX_DESC_BANDWIDTH_OFFSET);
 
-	/* Valid TXD Arrival Time [28] */
-	DBGLOG(HAL, INFO, "\t\tValid_TXD_arrival_time = %d\n",
-		(txd->u4DW6 & CONNAC5X_TX_DESC_VALID_TXD_ARRIVAL_TIME)
-		? 1 : 0);
+	/* DP [29] */
+	DBGLOG(HAL, INFO, "\t\tDrop_By_SDO = %d\n",
+		(txd->u4DW6 & CONNAC5X_TX_DESC_DROP_BY_SDO) ? 1 : 0);
 
 	/* TX Packet Source [31:30] */
 	DBGLOG(HAL, INFO, "\t\tTX_packet_source = %lu\n",
@@ -501,36 +473,27 @@ void connac5x_dump_tmac_info(
 	/* DW7 */
 	DBGLOG(HAL, INFO, "\tTMAC_TXD_7:\n");
 
-	/* SW Predict TX Time [9:0] */
-	DBGLOG(HAL, INFO, "\t\tSW_predict_TX_time = %lu\n",
-		(txd->u4DW7 & CONNAC5X_TX_DESC_SW_PREDICT_TX_TIME_MASK) >>
-			CONNAC5X_TX_DESC_SW_PREDICT_TX_TIME_OFFSET);
-
-	/* UT [15] */
-	DBGLOG(HAL, INFO, "\t\tUT = %d\n",
-		(txd->u4DW7 & CONNAC5X_TX_DESC_UDP_TCP_CHECKSUM_OFFLOAD)
-		? 1 : 0);
-
-	/* Aggregate TXD count [25:22] */
-	DBGLOG(HAL, INFO, "\t\aggregated_txd_count = %lu\n",
-		((txd->u4DW7 & CONNAC5X_TX_DESC_AGGREGATED_TXD_COUNT_MASK) >>
-		CONNAC5X_TX_DESC_AGGREGATED_TXD_COUNT_OFFSET));
-
-	/* TXD Is Aggregate [26] */
-	DBGLOG(HAL, INFO, "\t\tTXD_is_aggregate = %d\n",
-		(txd->u4DW7 & CONNAC5X_TX_DESC_THIS_TXD_IS_AGGREGATED) ? 1 : 0);
-
-	/* HM [27] */
+	/* HM [0] */
 	DBGLOG(HAL, INFO, "\t\tHif_or_Mac_TXD_SDO = %d\n",
 		(txd->u4DW7 & CONNAC5X_TX_DESC_HIF_OR_MAC_TXD_SDO) ? 1 : 0);
 
-	/* DP [28] */
-	DBGLOG(HAL, INFO, "\t\tDrop_By_SDO = %d\n",
-		(txd->u4DW7 & CONNAC5X_TX_DESC_DROP_BY_SDO) ? 1 : 0);
+	/* Bypass RX-based TX blocking check [12] */
+	DBGLOG(HAL, INFO, "\t\tBypass_RX_based_TX_blcking_check = %d\n",
+		(txd->u4DW7 & CONNAC5X_TX_DESC_BYPASS_RX_BASED_TX_BLOCKING)
+		? 1 : 0);
 
-	/* I [29]  */
-	DBGLOG(HAL, INFO, "\t\ti = %d\n",
-		(txd->u4DW7 & CONNAC5X_TX_DESC_IP_CHKSUM_OFFLOAD) ? 1 : 0);
+	/* Bypass TX-based TX blocking check [13] */
+	DBGLOG(HAL, INFO, "\t\tBypass_TX_based_TX_blcking_check = %d\n",
+		(txd->u4DW7 & CONNAC5X_TX_DESC_BYPASS_TX_BASED_TX_BLOCKING)
+		? 1 : 0);
+
+	/* TXS2M [14] */
+	DBGLOG(HAL, INFO, "\t\ttx_status_2_mcu = %d\n",
+		(txd->u4DW7 & CONNAC5X_TX_DESC_TX_STATUS_TO_MCU) ? 1 : 0);
+
+	/* TXS2H [15] */
+	DBGLOG(HAL, INFO, "\t\ttx_status_2_host = %d\n",
+		(txd->u4DW7 & CONNAC5X_TX_DESC_TX_STATUS_TO_HOST) ? 1 : 0);
 
 	/* TXDLEN [31:30] */
 	DBGLOG(HAL, INFO, "\t\ttxd len= %lu\n",

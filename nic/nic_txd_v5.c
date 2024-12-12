@@ -106,11 +106,9 @@ uint8_t nic_txd_v5_queue_idx_op(
 void nic_txd_v5_chksum_op(void *prTxDesc, uint8_t ucChksumFlag,
 			struct MSDU_INFO *prMsduInfo)
 {
-	if ((ucChksumFlag & TX_CS_IP_GEN))
-		HAL_MAC_CONNAC5X_TXD_SET_IP_CHKSUM(
-			(struct HW_MAC_CONNAC5X_TX_DESC *)prTxDesc);
-	if ((ucChksumFlag & TX_CS_TCP_UDP_GEN))
-		HAL_MAC_CONNAC5X_TXD_SET_TCP_UDP_CHKSUM(
+	if ((ucChksumFlag & TX_CS_IP_GEN) ||
+	    (ucChksumFlag & TX_CS_TCP_UDP_GEN))
+		HAL_MAC_CONNAC5X_TXD_SET_CHKSUM_OFFLOAD(
 			(struct HW_MAC_CONNAC5X_TX_DESC *)prTxDesc);
 	/*
 	 * If kernel do not expect HW checksum for this frame, set ~AMSDU.
@@ -167,20 +165,11 @@ void nic_txd_v5_fill_by_pkt_option(
 
 	switch (HAL_MAC_CONNAC5X_TXD_GET_HEADER_FORMAT(prTxDesc)) {
 	case HEADER_FORMAT_802_11_ENHANCE_MODE:
-		if (u4PktOption & MSDU_OPT_EOSP)
-			HAL_MAC_CONNAC5X_TXD_SET_EOSP(prTxDesc);
-
 		if (u4PktOption & MSDU_OPT_AMSDU)
 			HAL_MAC_CONNAC5X_TXD_SET_AMSDU(prTxDesc);
 		break;
 
 	case HEADER_FORMAT_NON_802_11:
-		if (u4PktOption & MSDU_OPT_EOSP)
-			HAL_MAC_CONNAC5X_TXD_SET_EOSP(prTxDesc);
-
-		if (u4PktOption & MSDU_OPT_MORE_DATA)
-			HAL_MAC_CONNAC5X_TXD_SET_MORE_DATA(prTxDesc);
-
 		if (u4PktOption & MSDU_OPT_REMOVE_VLAN)
 			HAL_MAC_CONNAC5X_TXD_SET_REMOVE_VLAN(prTxDesc);
 		break;
@@ -246,7 +235,8 @@ void nic_txd_v5_fill_by_pkt_option(
 		HAL_MAC_CONNAC5X_TXD_SET_BA_DISABLE(prTxDesc);
 
 	if (u4PktOption & MSDU_OPT_FORCE_RTS)
-		HAL_MAC_CONNAC5X_TXD_SET_FORCE_RTS_CTS(prTxDesc);
+		HAL_MAC_CONNAC5X_TXD_SET_PROTECT_FRAME_OPT(prTxDesc,
+			PTF_OPT_RTS_CTS_PROCEDURE);
 
 	/* SW field */
 	if (u4PktOption & MSDU_OPT_SW_DURATION)
@@ -696,7 +686,8 @@ void nic_txd_v5_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	/* BMC packet disable retry RTS*/
 	if (prMsduInfo->ucStaRecIndex == STA_REC_INDEX_BMCAST
 		|| prMsduInfo->ucStaRecIndex == STA_REC_INDEX_NOT_FOUND)
-		HAL_MAC_CONNAC5X_TXD_SET_RTS_DIS(prTxDesc);
+		HAL_MAC_CONNAC5X_TXD_SET_PROTECT_FRAME_OPT(prTxDesc,
+			PTF_OPT_DISABLE_RTS);
 #endif /* CFG_TXD_DISABLE_RTS */
 
 	/* Msdu count */
@@ -704,8 +695,6 @@ void nic_txd_v5_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 
 	if (prMsduInfo->ucStaRecIndex != STA_REC_INDEX_BMCAST)
 		HAL_MAC_CONNAC5X_TXD_SET_DA_SRC_SELECTION(prTxDesc);
-
-	HAL_MAC_CONNAC5X_TXD_SET_VALID_TXD_ARRIVAL_TIME(prTxDesc);
 
 	/** DW7 **/
 	HAL_MAC_CONNAC5X_TXD_SET_TXD_LENGTH(prTxDesc, TXD_LEN_1_PAGE);
@@ -719,19 +708,14 @@ void nic_txd_v5_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 		HAL_MAC_CONNAC5X_TXD_SET_FR_BW(prTxDesc, 0x8);
 
 		if (prMsduInfo->ucPacketType != TX_PACKET_TYPE_MGMT)
-			HAL_MAC_CONNAC5X_TXD_SET_FORCE_RTS_CTS(prTxDesc);
+			HAL_MAC_CONNAC5X_TXD_SET_PROTECT_FRAME_OPT(prTxDesc,
+				PTF_OPT_RTS_CTS_PROCEDURE);
 		break;
 	case MSDU_RATE_MODE_MANUAL_CR:
 	case MSDU_RATE_MODE_AUTO:
 	default:
 		break;
 	}
-
-	/* Fix dependent fields */
-#if CFG_WIFI_TX_FIXED_RATE_NO_VTA
-	if (HAL_MAC_CONNAC5X_TXD_IS_FIXED_RATE_ENABLE(prTxDesc))
-		HAL_MAC_CONNAC5X_TXD_UNSET_VALID_TXD_ARRIVAL_TIME(prTxDesc);
-#endif
 
 	if (prMsduInfo->pfTxDoneHandler) {
 		DBGLOG(TX, INFO,
