@@ -6883,9 +6883,15 @@ s_int32 mt_agent_hqa_cmd_string_parser(
 	u_int8 parasize = 0;
 
 	for (i = 0; i < ARRAY_SIZE(priv_hqa_cmd_mapping); i++) {
-		if (strncasecmp(hqa_frame_string,
+		size_t cmd_len = strlen(priv_hqa_cmd_mapping[i].cmd_str);
+		/* Ensure hqa_frame_string is not */
+		/* longer than the command string */
+		if (strncmp(hqa_frame_string,
 			priv_hqa_cmd_mapping[i].cmd_str,
-			strlen(priv_hqa_cmd_mapping[i].cmd_str)) == 0) {
+			cmd_len) == 0 &&
+			(hqa_frame_string[cmd_len] == '\0' ||
+			hqa_frame_string[cmd_len] == '=' ||
+			hqa_frame_string[cmd_len] == ' ')) {
 
 			/*Command Found in table*/
 			pattern_found = 1;
