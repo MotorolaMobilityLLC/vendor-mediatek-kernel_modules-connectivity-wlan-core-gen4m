@@ -9527,6 +9527,7 @@ uint32_t kalAddMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
 	uint16_t u2MdnsUsedSize = 0;
 	uint16_t u2MaxAvailMdnsSize = 0;
 	uint16_t u2UplPasstSize = 0;
+	int j;
 
 	if (prGlueInfo == NULL || prMdnsUplayerPassthroughInfo == NULL) {
 		DBGLOG(REQ, ERROR,
@@ -9548,11 +9549,15 @@ uint32_t kalAddMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
 
 	LINK_FOR_EACH_ENTRY(prMdnsPassthroughEntry, rMdnsPassthroughList,
 				rLinkEntry, struct MDNS_PASSTHROUGH_ENTRY_T) {
+		for (j = 0; j < MDNS_QUESTION_NAME_MAX_LEN; j++) {
+			if (prMdnsPassthroughEntry->mdns_passthrough.name[j] ==
+			    0x00)
+				break;
+		}
+		j = (j >= MDNS_QUESTION_NAME_MAX_LEN) ?
+			MDNS_QUESTION_NAME_MAX_LEN : j+1;
 		if (kalMemCmp(&prMdnsPassthroughEntry->mdns_passthrough.name,
-				&prMdnsUplayerPassthroughInfo->name,
-				strlen((const char *)
-				prMdnsPassthroughEntry->mdns_passthrough.name)
-				+ 1) == 0) {
+				&prMdnsUplayerPassthroughInfo->name, j) == 0) {
 			DBGLOG(REQ, ERROR,
 				"mdns passthrough is in the buffer.\n");
 			return WLAN_STATUS_FAILURE;
@@ -9570,9 +9575,13 @@ uint32_t kalAddMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
 	DBGLOG(REQ, INFO,
 		"add mdns passthrough buffer number %u.\n",
 			rMdnsPassthroughList->u4NumElem);
-	length = strlen((const char *)
-			prMdnsUplayerPassthroughInfo->name) + 1;
-
+	for (j = 0; j < MDNS_QUESTION_NAME_MAX_LEN; j++) {
+		if (prMdnsUplayerPassthroughInfo->name[j] == 0x00)
+			break;
+	}
+	length = j >= MDNS_QUESTION_NAME_MAX_LEN ? MDNS_QUESTION_NAME_MAX_LEN
+			: j+1;
+	DBGLOG(REQ, INFO, "passthrough name len[%d] j[%d]\n", length, j+1);
 	kalMemCopy(&prMdnsPassthroughEntry->mdns_passthrough.name,
 			&prMdnsUplayerPassthroughInfo->name,
 			length);
@@ -9699,6 +9708,7 @@ uint16_t kalGetMdnsUplRecSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo)
 uint16_t kalGetMdnsUplPTSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo)
 {
 	uint16_t count = 0;
+	int j = 0;
 
 	if (prMdnsUplayerInfo == NULL) {
 		DBGLOG(REQ, ERROR,
@@ -9706,8 +9716,14 @@ uint16_t kalGetMdnsUplPTSz(struct MDNS_INFO_UPLAYER_T *prMdnsUplayerInfo)
 		return MAX_MDNS_USE_SIZE;
 	}
 
-	count = strlen((const char *)
-			prMdnsUplayerInfo->name) + 1 + 2;
+	for (j = 0; j < MDNS_QUESTION_NAME_MAX_LEN; j++) {
+		if (prMdnsUplayerInfo->name[j] == 0x00)
+			break;
+	}
+	count = j >= MDNS_QUESTION_NAME_MAX_LEN ? MDNS_QUESTION_NAME_MAX_LEN
+			: j+1;
+	/*add 2 bytes for passthrough length */
+	count += 2;
 	return count;
 }
 
@@ -9826,6 +9842,7 @@ void kalDelMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
 	struct MDNS_PASSTHROUGH_ENTRY_T *prMdnsPassthroughEntryNext;
 	struct LINK *prMdnsPassthroughList;
 	struct LINK *prMdnsPassthroughFreeList;
+	int j = 0;
 
 	prMdnsInfo = &prGlueInfo->prAdapter->rMdnsInfo;
 	prMdnsPassthroughList = &prMdnsInfo->rMdnsPassthroughList;
@@ -9835,11 +9852,15 @@ void kalDelMdnsPassthrough(struct GLUE_INFO *prGlueInfo,
 		prMdnsPassthroughEntryNext,
 		prMdnsPassthroughList, rLinkEntry,
 		struct MDNS_PASSTHROUGH_ENTRY_T) {
+		for (j = 0; j < MDNS_QUESTION_NAME_MAX_LEN; j++) {
+			if (prMdnsPassthroughEntry->mdns_passthrough.name[j]
+			   == 0x00)
+				break;
+		}
+		j = j >= MDNS_QUESTION_NAME_MAX_LEN ? MDNS_QUESTION_NAME_MAX_LEN
+			: j+1;
 		if (kalMemCmp(&prMdnsPassthroughEntry->mdns_passthrough.name,
-				&prMdnsUplayerPassthroughInfo->name,
-				strlen((const char *)
-				prMdnsPassthroughEntry->mdns_passthrough.name)
-				+ 1) == 0) {
+				&prMdnsUplayerPassthroughInfo->name, j) == 0) {
 			DBGLOG(REQ, ERROR,
 				"del mdns passthrough.\n");
 			LINK_REMOVE_KNOWN_ENTRY(prMdnsPassthroughList,

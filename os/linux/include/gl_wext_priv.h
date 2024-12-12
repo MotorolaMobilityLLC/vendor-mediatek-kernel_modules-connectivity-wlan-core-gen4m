@@ -704,6 +704,8 @@ int priv_driver_get_hitcounter(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_misscounter(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_enable_mdns_ipv6_wakeup(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
 #if TEST_CODE_FOR_MDNS
 int priv_driver_send_mdns_record(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
@@ -711,6 +713,23 @@ int priv_driver_add_mdns_record(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_test_add_mdns_record(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_set_passthtough_forward_all(
+	 struct net_device *prNetDev,
+	 char *pcCommand,  int i4TotalLen);
+int priv_driver_set_passthtough_drop_all(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
+
+int priv_driver_set_passthtough_list(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
+int priv_driver_add_passthtough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
+
+int priv_driver_del_passthtough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
+int priv_driver_resetall_passthrough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
+int priv_driver_show_mdns_passthrough(struct net_device *prNetDev,
+		 char *pcCommand,  int i4TotalLen);
 #endif /* TEST_CODE_FOR_MDNS */
 #endif /* CFG_SUPPORT_MDNS_OFFLOAD */
 #endif /* CFG_WOW_SUPPORT */

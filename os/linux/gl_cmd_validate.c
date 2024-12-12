@@ -574,9 +574,16 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_customer[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
-
-#endif
-#endif
+	{
+		.pcCmdStr  = CMD_ENABLE_MDNS_IPV6_WAKEUP,
+		.pfHandler = priv_driver_enable_mdns_ipv6_wakeup,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_SUPPORT_MDNS_OFFLOAD */
+#endif /* CFG_WOW_SUPPORT */
 	{
 		.pcCmdStr  = CMD_GET_CAPAB_RSDB,
 		.pfHandler = priv_driver_get_capab_rsdb,
@@ -1368,7 +1375,63 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
-#endif
+	{
+		.pcCmdStr  = CMD_SET_PASSTHTOUGH_FORWARD_ALL,
+		.pfHandler = priv_driver_set_passthtough_forward_all,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_SET_PASSTHTOUGH_DROP_ALL,
+		.pfHandler = priv_driver_set_passthtough_drop_all,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_SET_PASSTHTOUGH_LIST,
+		.pfHandler = priv_driver_set_passthtough_list,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_ADD_PASSTHTOUGH,
+		.pfHandler = priv_driver_add_passthtough,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_DEL_PASSTHTOUGH,
+		.pfHandler = priv_driver_del_passthtough,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_RESETALL_PASSTHTOUGH,
+		.pfHandler = priv_driver_resetall_passthrough,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+	{
+		.pcCmdStr  = CMD_SHOW_MDNS_PASSTHTOUGH,
+		.pfHandler = priv_driver_show_mdns_passthrough,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
+#endif /* CFG_WOW_SUPPORT && CFG_SUPPORT_MDNS_OFFLOAD && TEST_CODE_FOR_MDNS */
 	{
 		.pcCmdStr  = CMD_SET_ADV_PWS,
 		.pfHandler = priv_driver_set_adv_pws,
