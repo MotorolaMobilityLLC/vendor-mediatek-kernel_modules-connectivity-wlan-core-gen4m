@@ -1341,7 +1341,7 @@ uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter,
 	uint16_t u2SupportedRateSet;
 	uint8_t aucAllSupportedRates[RATE_NUM_SW] = { 0 };
 	uint8_t ucAllSupportedRatesLen;
-	uint8_t ucSupRatesLen;
+	uint8_t ucSupRatesLen = ELEM_MAX_LEN_SUP_RATES;
 	uint8_t ucExtSupRatesLen;
 	uint32_t u4PktLen, u4IeLen;
 
@@ -1361,12 +1361,13 @@ uint32_t TdlsFrameGeneralIeAppend(struct ADAPTER *prAdapter,
 	/* 3. Frame Formation - (5) Supported Rates element */
 	/* use all sup rate we can support */
 	u2SupportedRateSet = prStaRec->u2OperationalRateSet;
+
 	rateGetDataRatesFromRateSet(u2SupportedRateSet, 0,
 				    aucAllSupportedRates,
 				    &ucAllSupportedRatesLen);
 
-	ucSupRatesLen = kal_min_t(uint8_t,
-				ucAllSupportedRatesLen, ELEM_MAX_LEN_SUP_RATES);
+	if (ucAllSupportedRatesLen < ucSupRatesLen)
+		ucSupRatesLen = ucAllSupportedRatesLen;
 
 	ucExtSupRatesLen = ucAllSupportedRatesLen - ucSupRatesLen;
 
