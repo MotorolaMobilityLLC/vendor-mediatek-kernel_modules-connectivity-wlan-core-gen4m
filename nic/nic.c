@@ -1309,8 +1309,15 @@ nicMediaStateChange(struct ADAPTER *prAdapter,
 			    prConnectionStatus->ucSsidLen) &&
 			    EQUAL_MAC_ADDR(prCurrBssid->arMacAddress,
 			    prConnectionStatus->aucBssid)) {
-				ucAuthorized = TRUE;
-				DBGLOG(TX, INFO, "pre-authorized\n");
+				struct BSS_DESC *prBssDesc;
+
+				prBssDesc = scanSearchBssDescByBssidAndSsid(
+					prAdapter, prCurrBssid->arMacAddress,
+					TRUE, &prCurrBssid->rSsid);
+				if (prBssDesc && prBssDesc->fgIsConnected) {
+					DBGLOG(TX, INFO, "pre-authorized\n");
+					ucAuthorized = TRUE;
+				}
 			}
 
 			prWlanInfo->u4SysTime = kalGetTimeTick();
