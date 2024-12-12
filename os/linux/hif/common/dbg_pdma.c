@@ -688,8 +688,11 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	rLongest.tv_nsec = 0;
 	KAL_GET_TS64(&rNowTs);
 
-	for (u4Idx = 0; u4Idx < prTokenInfo->u4TokenNum; u4Idx++) {
+	for (u4Idx = 0; u4Idx < HIF_TX_MSDU_TOKEN_NUM; u4Idx++) {
 		prToken = &prTokenInfo->arToken[u4Idx];
+
+		if (!prToken->prPacket)
+			continue;
 
 		if (prToken->fgInUsed &&
 		    kalGetDeltaTime(&rNowTs, &prToken->rTs, &rTime)) {

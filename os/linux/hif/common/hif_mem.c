@@ -574,7 +574,15 @@ void halFreeHifMem(struct platform_device *pdev,
 		enum ENUM_WIFI_RSV_MEM_IDX u4RsvMemIdx)
 {
 	uint32_t i = 0;
-	uint32_t count = sizeof(wifi_rsrv_mems[u4RsvMemIdx]) /
+	uint32_t count = 0;
+
+	if (u4RsvMemIdx >= WIFI_RSV_MEM_MAX_NUM) {
+		DBGLOG(INIT, ERROR, "index out-of-range[%d]\n",
+			u4RsvMemIdx);
+		return;
+	}
+
+	count = sizeof(wifi_rsrv_mems[u4RsvMemIdx]) /
 		sizeof(struct wifi_rsrv_mem);
 
 	for (i = 0; i < count; i++) {
