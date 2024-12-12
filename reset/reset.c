@@ -219,7 +219,7 @@ static struct ResetEvent *allocResetEvent(void)
 
 static void freeResetEvent(struct ResetEvent *event)
 {
-	if (!event)
+	if (event)
 		kfree(event);
 }
 
