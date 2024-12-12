@@ -1056,7 +1056,8 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 		 * if (AP mode & not for PMF reply case) OR (STA PMF)
 		 */
 		if (((prBssInfo->eCurrentOPMode == OP_MODE_ACCESS_POINT)
-		     && (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE)) ||
+		     && (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) &&
+		     prStaRec->fgTransmitKeyExist == TRUE) ||
 		    (prBssInfo->eNetworkType == NETWORK_TYPE_AIS)) {
 			struct WLAN_DEAUTH_FRAME *prDeauthFrame;
 
@@ -1097,7 +1098,8 @@ authSendDeauthFrame(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_802_11W
 	/* AP PMF */
 	/* caution: access prStaRec only if true */
-	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec)) {
+	if (rsnCheckBipKeyInstalled(prAdapter, prStaRec) &&
+		prStaRec->fgTransmitKeyExist == TRUE) {
 		/* 4.3.3.1 send unprotected deauth reason 6/7 */
 		if (prStaRec->rPmfCfg.fgRxDeauthResp != TRUE) {
 			DBGLOG(RSN, TRACE,
