@@ -30,6 +30,9 @@
 #include "host_csr.h"
 #include "dma_sch.h"
 #include "mt_dmac.h"
+#if CFG_SUPPORT_MBRAIN
+#include "gl_mbrain.h"
+#endif
 
 /*******************************************************************************
  *                              C O N S T A N T S
@@ -786,6 +789,9 @@ static bool halIsTxTimeout(struct ADAPTER *prAdapter, uint32_t *u4Token)
 	}
 
 	halWarningTxTimeout(prAdapter, rLongest.tv_sec);
+#if CFG_SUPPORT_MBRAIN
+	mbrIsTxTimeout(prAdapter, u4TokenId, rLongest.tv_sec);
+#endif
 
 	/* Trigger SER */
 	if (u4TimeoutSerTime == NIC_MSDU_REPORT_DISABLE_SER_TIME) {
