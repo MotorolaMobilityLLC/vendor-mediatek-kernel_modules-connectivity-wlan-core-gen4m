@@ -50,7 +50,7 @@
 #include "coda/mt6639/top_misc.h"
 #include "hal_wfsys_reset_mt6639.h"
 #include "coda/mt6639/cb_infra_slp_ctrl.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO
@@ -870,7 +870,7 @@ struct CHIP_DBG_OPS mt6639_DebugOps = {
 #if CFG_SUPPORT_PCIE_ASPM
 	.dumpPcieStatus = mt6639DumpPcieDateFlowStatus,
 #endif
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	.dumpPcieCr = mt6639_dumpPcieReg,
 	.checkDumpViaBt = mt6639_CheckDumpViaBt,
 #endif
@@ -1135,7 +1135,7 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6639 = {
 	.group5_size = sizeof(struct HW_MAC_RX_STS_GROUP_5),
 	.u4LmacWtblDUAddr = CONNAC3X_WIFI_LWTBL_BASE,
 	.u4UmacWtblDUAddr = CONNAC3X_WIFI_UWTBL_BASE,
-#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT) || (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1) || (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 	.coexpccifon = mt6639ConnacPccifOn,
 	.coexpccifoff = mt6639ConnacPccifOff,
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT || CFG_MTK_SUPPORT_LIGHT_MDDP */
@@ -2812,7 +2812,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, INFO, "MCU off, 0x1F5014=0x%08x\n", u4RegVal[6]);
 		/* MCU OFF, set dump via BT */
 		fgIsMcuOff = TRUE;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		fgTriggerDebugSop = TRUE;
 #endif
 		return FALSE;
@@ -2822,7 +2822,7 @@ static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
 		fgIsBusAccessFailed = TRUE;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		fgTriggerDebugSop = TRUE;
 #endif
 		return FALSE;
@@ -3392,7 +3392,7 @@ static uint32_t mt6639_mcu_init(struct ADAPTER *ad)
 		kalUdelay(1000);
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (connv3_ext_32k_on()) {
 		DBGLOG(INIT, ERROR, "connv3_ext_32k_on failed.\n");
 		rStatus = WLAN_STATUS_FAILURE;
@@ -3668,7 +3668,7 @@ static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter)
 	int ret = 0;
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return -1;
 #endif

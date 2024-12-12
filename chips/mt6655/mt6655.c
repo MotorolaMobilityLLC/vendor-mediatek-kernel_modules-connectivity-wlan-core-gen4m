@@ -32,7 +32,7 @@
 #include "coda/mt6639/wf_top_cfg_on.h"
 #include "coda/mt6639/wf_wtblon_top.h"
 #include "coda/mt6639/wf_uwtbl_top.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 

@@ -95,7 +95,7 @@ extern u_int8_t fgIsBusAccessFailed;
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 extern u_int8_t fgIsPcieDataTransDisabled;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 extern u_int8_t fgTriggerDebugSop;
 #endif
 extern u_int32_t u4SdesDetectTime;

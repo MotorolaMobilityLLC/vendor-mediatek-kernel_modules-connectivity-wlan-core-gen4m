@@ -5,7 +5,7 @@
 
 #include "precomp.h"
 #include "gl_fw_log.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3_debug_utility.h"
 #include "connsyslog/connv3_mcu_log.h"
 #else
@@ -67,7 +67,7 @@ static ssize_t fw_log_wifi_read(struct file *filp, char __user *buf,
 {
 	ssize_t sz = 0;
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	sz = connv3_log_read_to_user(CONNLOG_TYPE_WF, buf, len);
 #else
 	sz = connsys_log_read_to_user(CONNLOG_TYPE_WF, buf, len);
@@ -83,7 +83,7 @@ static unsigned int fw_log_wifi_poll(struct file *filp, poll_table *wait)
 
 	poll_wait(filp, &prInf->wq, wait);
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (connv3_log_get_buf_size(CONNLOG_TYPE_WF) > 0)
 		ret = (POLLIN | POLLRDNORM);
 #else
@@ -178,11 +178,11 @@ uint32_t fw_log_notify_rcv(enum ENUM_FW_LOG_CTRL_TYPE type,
 	uint32_t size)
 {
 	uint32_t written = 0;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	enum connv3_log_type eType = CONNV3_LOG_TYPE_PRIMARY;
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	switch (type) {
 	case ENUM_FW_LOG_CTRL_TYPE_MCU:
 		eType = CONNV3_LOG_TYPE_MCU;
@@ -220,7 +220,7 @@ int fw_log_wifi_inf_init(void)
 	init_waitqueue_head(&prInf->wq);
 	sema_init(&prInf->ioctl_mtx, 1);
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	ret = connv3_log_init(CONNLOG_TYPE_WF,
 			      RING_BUFFER_SIZE_WF_FW,
 			      RING_BUFFER_SIZE_WF_MCU,
@@ -292,7 +292,7 @@ cdev_del:
 unregister_chrdev_region:
 	unregister_chrdev_region(prInf->devno, 1);
 connsys_deinit:
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_log_deinit(CONNLOG_TYPE_WF);
 #else
 	connsys_log_register_event_cb(CONNLOG_TYPE_WF, NULL);
@@ -315,7 +315,7 @@ void fw_log_wifi_inf_deinit(void)
 	cdev_del(&prInf->cdev);
 	unregister_chrdev_region(prInf->devno, 1);
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_log_deinit(CONNLOG_TYPE_WF);
 #else
 	connsys_log_register_event_cb(CONNLOG_TYPE_WF, NULL);

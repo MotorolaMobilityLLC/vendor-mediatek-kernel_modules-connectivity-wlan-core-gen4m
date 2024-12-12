@@ -58,7 +58,7 @@
 #if CFG_SUPPORT_MET_LOG
 #include "gl_met_log.h"
 #endif
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #include "conninfra.h"
 #endif

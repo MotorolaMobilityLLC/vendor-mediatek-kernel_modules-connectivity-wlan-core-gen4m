@@ -27,7 +27,7 @@
 #include "coda/mt6653/wf_wfdma_host_dma0.h"
 #include "coda/mt6653/wf_hif_dmashdl_top.h"
 #include "coda/mt6653/wf_wfdma_ext_wrap_csr.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 
@@ -1285,7 +1285,7 @@ static uint8_t check_mbu_timeout(uint32_t u4Val)
 #endif
 
 #if defined(_HIF_PCIE)
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 static void mt6653_dump_debug_sop_via_bt(
 	struct ADAPTER *prAdapter,
 	const struct wlan_dump_list *dump_list)
@@ -1379,7 +1379,7 @@ static void mt6653_dump_debug_sop(struct ADAPTER *prAdapter,
 			uTimeout);
 
 #if defined(_HIF_PCIE)
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (fgIsDumpViaBt)
 		return mt6653_dump_debug_sop_via_bt(prAdapter, dump_list);
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
@@ -1547,7 +1547,7 @@ void mt6653_show_wfdma_wrapper_info(struct ADAPTER *prAdapter,
 }
 
 #if defined(_HIF_PCIE)
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 
 void mt6653_dumpPcieReg(void)
 {
@@ -2252,7 +2252,7 @@ void mt6653_dumpWfBusReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt,
 
 static void mt6653_dumpConninfraBus(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 {
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	uint32_t WFDrvOwnStat = 0, MDDrvOwnStat = 0;
 #endif
 
@@ -2261,7 +2261,7 @@ static void mt6653_dumpConninfraBus(struct ADAPTER *ad, uint8_t fgIsDumpViaBt)
 		return;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_conninfra_bus_dump(fgIsDumpViaBt ?
 		CONNV3_DRV_TYPE_BT : CONNV3_DRV_TYPE_WIFI);
 
@@ -2303,7 +2303,7 @@ static void mt6653_DumpBusStatusByLayer(struct ADAPTER *ad,
 	mt6653_dumpWfBusReg(ad, fgIsDumpViaBt, readable);
 	mt6653_dumpPcGprLog(ad, fgIsDumpViaBt);
 	if (fgIsDumpViaBt) {
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		/*mt6653_dumpWfsyscpupcrViaBT(ad);*/
 #endif
 	} else
@@ -2316,7 +2316,7 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 	struct CHIP_DBG_OPS *debug_ops = NULL;
 	struct GL_HIF_INFO *prHifInfo = NULL;
 	u_int8_t readable = TRUE;
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	int ret = 0;
 	u_int8_t dumpViaBt = 0;
 #endif
@@ -2356,7 +2356,7 @@ void mt6653_DumpBusStatus(struct ADAPTER *ad)
 
 
 	DBGLOG(HAL, INFO, "Phase1: Trigger PCIe Scan Dump.\n");
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	/* Notify BT to start */
 	ret = connv3_hif_dbg_start(CONNV3_DRV_TYPE_WIFI,
 		CONNV3_DRV_TYPE_BT);
@@ -2384,7 +2384,7 @@ start_dump_via_pcie:
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (debug_ops && debug_ops->checkDumpViaBt)
 		dumpViaBt = debug_ops->checkDumpViaBt(ad);
 	if (readable == FALSE || dumpViaBt)
@@ -2394,7 +2394,7 @@ start_dump_via_pcie:
 		goto start_dump_via_bt;
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	mt6653_dumpConninfraBus(ad, FALSE);
 #endif
 	mt6653_DumpBusStatusByLayer(ad, FALSE);
@@ -2404,7 +2404,7 @@ start_dump_via_pcie:
 
 start_dump_via_bt:
 	DBGLOG(HAL, INFO, "Phase3: Trigger Wi-Fi dump via BT.\n");
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (debug_ops && debug_ops->dumpPcieStatus)
 		readable = debug_ops->dumpPcieStatus(ad->prGlueInfo);
 
@@ -2432,7 +2432,7 @@ start_dump_via_bt:
 
 
 dump_end:
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	fgTriggerDebugSop = FALSE;
 #endif
 

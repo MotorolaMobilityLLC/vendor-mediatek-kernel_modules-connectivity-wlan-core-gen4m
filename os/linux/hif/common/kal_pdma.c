@@ -38,7 +38,7 @@
 #endif
 
 #include "mt66xx_reg.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 
@@ -663,7 +663,7 @@ static u_int8_t kalIsHostReg(struct mt66xx_chip_info *prChipInfo,
 			  prChipInfo->u4HostCsrSize));
 }
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 	uint32_t u4Register, uint32_t *pu4Value)
 {
@@ -926,7 +926,7 @@ static u_int8_t kalDevRegReadStatic(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		if (is_wifi_coredump_processing())
 			return FALSE;
 		else if (fgTriggerDebugSop && kalIsResetting()) {
@@ -997,7 +997,7 @@ static u_int8_t _kalDevRegRead(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		if (is_wifi_coredump_processing())
 			return FALSE;
 		else if (fgTriggerDebugSop && kalIsResetting()) {
@@ -1083,7 +1083,7 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		if (is_wifi_coredump_processing())
 			return FALSE;
 		else if (fgTriggerDebugSop && kalIsResetting()) {
@@ -1095,7 +1095,7 @@ static u_int8_t kalDevRegWriteStatic(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
 	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
 	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||
@@ -1175,7 +1175,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		if (is_wifi_coredump_processing())
 			return FALSE;
 		else if (fgTriggerDebugSop && kalIsResetting()) {
@@ -1199,7 +1199,7 @@ u_int8_t kalDevRegWrite(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
 	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
 	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||
@@ -1332,7 +1332,7 @@ u_int8_t kalDevRegWriteRange(struct GLUE_INFO *glue,
 		return FALSE;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if ((reg >= 0x18050000 && reg <= 0x18051000) ||
 		(reg >= 0x7c050000 && reg <= 0x7c051000)) {
 		dump_stack();
@@ -1521,7 +1521,7 @@ u_int8_t kalDevRegReadDirectly(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		if (is_wifi_coredump_processing())
 			return FALSE;
 		else if (fgTriggerDebugSop && kalIsResetting()) {
@@ -1594,7 +1594,7 @@ u_int8_t kalDevRegWriteDirectly(struct GLUE_INFO *prGlueInfo,
 
 	if (fgIsBusAccessFailed) {
 		DBGLOG_LIMITED(HAL, ERROR, "Bus access failed.\n");
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		if (is_wifi_coredump_processing())
 			return FALSE;
 		else if (fgTriggerDebugSop && kalIsResetting()) {
@@ -1618,7 +1618,7 @@ u_int8_t kalDevRegWriteDirectly(struct GLUE_INFO *prGlueInfo,
 		return FALSE;
 	}
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if ((u4Register >= 0x18050000 && u4Register <= 0x18051000) ||
 	    (u4Register >= 0x7c050000 && u4Register <= 0x7c051000) ||
 	    (u4Register >= 0x7c000000 && u4Register < 0x7c001000) ||

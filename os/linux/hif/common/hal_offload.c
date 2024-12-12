@@ -32,7 +32,7 @@
 #include "mt66xx_reg.h"
 #include "gl_kal.h"
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "conninfra.h"
 #endif
 
@@ -3203,7 +3203,7 @@ int halMawdPwrOn(void)
 	if (!kalIsSupportMawd())
 		goto exit;
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	ret = conninfra_pwr_on(CONNDRV_TYPE_MAWD);
 	if (ret != 0) {
 		DBGLOG(HAL, ERROR,
@@ -3230,7 +3230,7 @@ void halMawdPwrOff(void)
 	__halMawdSleep();
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	conninfra_pwr_off(CONNDRV_TYPE_MAWD);
 #endif
 }

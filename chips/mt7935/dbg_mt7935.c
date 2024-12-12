@@ -14,7 +14,7 @@
 #include "coda/mt7935/wf_wfdma_host_dma0.h"
 #include "coda/mt7935/wf_hif_dmashdl_top.h"
 #include "coda/mt7935/wf_wfdma_ext_wrap_csr.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 
@@ -1677,7 +1677,7 @@ void mt7935_dumpWfBusReg(struct ADAPTER *ad)
 
 static void mt7935_dumpConninfraBus(struct ADAPTER *ad)
 {
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_conninfra_bus_dump(CONNV3_DRV_TYPE_WIFI);
 #endif
 }
@@ -1689,7 +1689,7 @@ void mt7935_DumpBusStatus(struct ADAPTER *ad)
 		return;
 	}
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	mt7935_dumpConninfraBus(ad);
 #endif
 	mt7935_dumpCbtopReg(ad);

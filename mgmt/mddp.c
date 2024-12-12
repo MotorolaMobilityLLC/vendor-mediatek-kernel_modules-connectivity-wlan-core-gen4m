@@ -1902,7 +1902,7 @@ int32_t mddpNotifyMDGenSwitchStart(struct ADAPTER *prAdapter)
 	}
 
 #if CFG_MTK_ANDROID_WMT
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing()) {
 		wlandioStopPcieStatus(prAdapter, PCIE_MD_REJECT_GEN_SWITCH);
 		goto end;
@@ -2045,7 +2045,7 @@ int32_t __mddpNotifyMDGenSwitchEnd(struct ADAPTER *prAdapter)
 	}
 
 #if CFG_MTK_ANDROID_WMT
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing()) {
 		DBGLOG(HAL, INFO,
 			"mddp gen switch state [%d]->[%d], pwr on processing\n",
@@ -2279,7 +2279,7 @@ void mddpNotifyWifiOnStart(u_int8_t fgIsForce)
 		return;
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return;
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
@@ -2346,7 +2346,7 @@ int32_t mddpNotifyWifiOnEnd(u_int8_t fgIsForce)
 		return ret;
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return ret;
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
@@ -2407,7 +2407,7 @@ void mddpNotifyWifiOffStart(void)
 		return;
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return;
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
@@ -2465,7 +2465,7 @@ void mddpNotifyWifiOffEnd(void)
 		return;
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return;
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
@@ -2487,7 +2487,7 @@ void mddpUnregisterMdStateCB(void)
 		return;
 
 #if CFG_MTK_ANDROID_WMT
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return;
 #endif /* CFG_MTK_WIFI_CONNV3_SUPPORT */
@@ -2543,7 +2543,7 @@ u_int8_t mddpMdNotifyInfoSanityCheck(struct GLUE_INFO *prGlueInfo)
 	}
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing()) {
 		DBGLOG(INIT, ERROR, "is_pwr_on_notify_processing.\n");
 		return FALSE;

@@ -97,7 +97,7 @@ extern struct PSE_TOP_CR rMt6639PseTopCr;
 extern struct PP_TOP_CR rMt6639PpTopCr;
 
 extern u_int8_t fgIsMcuOff;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 extern u_int8_t fgTriggerDebugSop;
 #endif
 
@@ -180,7 +180,7 @@ void mt6639_dumpHostVdnrTimeoutInfo(struct ADAPTER *ad);
 void mt6639_dumpWfBusReg(struct ADAPTER *ad, u_int8_t fgIsDumpViaBt);
 void mt6639_dumpCbtopReg(struct ADAPTER *ad);
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 void mt6639_dumpPcieReg(void);
 void mt6639_dumpPcieRegWithScanDump(void);
 bool mt6639_CheckDumpViaBt(struct ADAPTER *prAdapter);

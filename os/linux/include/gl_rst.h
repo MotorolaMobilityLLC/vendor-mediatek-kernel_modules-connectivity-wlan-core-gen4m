@@ -30,7 +30,7 @@
 #include "conninfra.h"
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #include "conninfra.h"
 #endif
@@ -304,7 +304,7 @@ int wlan_reset_thread_main(void *data);
 int glRstwlanPreWholeChipReset(enum consys_drv_type type, char *reason);
 int glRstwlanPostWholeChipReset(void);
 #endif /* CFG_SUPPORT_CONNINFRA */
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	char *reason, unsigned int reset_type);
 int wlan_post_whole_chip_rst_v3(void);

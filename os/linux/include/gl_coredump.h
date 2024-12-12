@@ -181,13 +181,18 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 int wifi_coredump_post_start(void);
 #endif
 void coredump_register_busNoAck_chk_cb(busNoAck_chk_func_cb cb);
-#if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if CFG_SUPPORT_CONNINFRA || (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src);
 enum COREDUMP_SOURCE_TYPE coredump_conn_type_to_src(enum consys_drv_type src);
 #endif
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 enum connv3_drv_type coredump_src_to_connv3_type(enum COREDUMP_SOURCE_TYPE src);
 enum COREDUMP_SOURCE_TYPE coredump_connv3_type_to_src(enum connv3_drv_type src);
+#if CFG_TC10_FEATURE
+extern void connv3_coredump_set_memdump_mode(unsigned int mode);
+void wifi_coredump_get_save_emi(phys_addr_t *base, size_t *size);
+extern uint32_t g_u4Memdump;
+#endif
 #endif
 void wifi_coredump_set_enable(u_int8_t enable);
 u_int8_t is_wifi_coredump_processing(void);

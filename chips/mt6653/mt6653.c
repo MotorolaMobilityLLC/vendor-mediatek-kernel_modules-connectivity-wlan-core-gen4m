@@ -46,7 +46,7 @@
 #include "coda/mt6653/wf_top_cfg_on.h"
 #include "coda/mt6653/wf_wtblon_top.h"
 #include "coda/mt6653/wf_uwtbl_top.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 #if CFG_MTK_WIFI_FW_LOG_MMIO
@@ -952,7 +952,7 @@ struct CHIP_DBG_OPS mt6653_DebugOps = {
 	.dumpwfsyscpupcr = mt6653_dumpWfsyscpupcr,
 	.dumpBusStatus = mt6653_DumpBusStatus,
 	.dumpPcieStatus = mt6653DumpPcieDateFlowStatus,
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	.dumpPcieCr = mt6653_dumpPcieReg,
 	.checkDumpViaBt = mt6653_CheckDumpViaBt,
 #endif
@@ -3813,7 +3813,7 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	/* MalfTLP */
 	if (link_info & BIT(8)) {
 		fgIsBusAccessFailed = TRUE;
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		fgTriggerDebugSop = TRUE;
 #endif
 		return FALSE;
@@ -3828,7 +3828,7 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 				prGlueInfo->prAdapter) != 0)
 				return FALSE;
 			fgIsBusAccessFailed = FALSE;
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 			fgTriggerDebugSop = FALSE;
 #endif
 		}
@@ -4357,7 +4357,7 @@ static uint32_t mt6653_mcu_init(struct ADAPTER *ad)
 	if (rStatus != WLAN_STATUS_SUCCESS)
 		goto dump;
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (connv3_ext_32k_on()) {
 		DBGLOG(INIT, ERROR, "connv3_ext_32k_on failed.\n");
 		rStatus = WLAN_STATUS_FAILURE;
@@ -4489,7 +4489,7 @@ static int mt6653ConnacPccifOn(struct ADAPTER *prAdapter)
 	int size = 0;
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (is_pwr_on_notify_processing())
 		return -1;
 #endif

@@ -1837,7 +1837,7 @@ int glRstwlanPostWholeChipReset(void)
 }
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 int wlan_pre_whole_chip_rst_v3(enum connv3_drv_type drv,
 	char *reason, unsigned int reset_type)
 {
@@ -2136,7 +2136,7 @@ bool IsOverRstTimeThreshold(
 void glResetWholeChipResetTrigger(char *pcReason)
 {
 	int ret = -ENOTSUPP;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	struct RESET_STRUCT *rst = &wifi_rst;
 	struct GLUE_INFO *prGlueInfo = rst->prGlueInfo;
 	struct ADAPTER *prAdapter = NULL;
@@ -2144,7 +2144,7 @@ void glResetWholeChipResetTrigger(char *pcReason)
 	bool dumpViaBt = FALSE;
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	prAdapter = prGlueInfo->prAdapter;
 	if (prAdapter != NULL && prAdapter->chip_info != NULL)
 		prDebugOps = prAdapter->chip_info->prDebugOps;
@@ -2160,14 +2160,14 @@ void glResetWholeChipResetTrigger(char *pcReason)
 
 #if (CFG_SUPPORT_CONNINFRA == 1)
 	ret = conninfra_trigger_whole_chip_rst(CONNDRV_TYPE_WIFI, pcReason);
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#elif (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	ret = connv3_trigger_whole_chip_rst(CONNV3_DRV_TYPE_WIFI, pcReason);
 #else
 	DBGLOG(INIT, WARN, "whole chip reset NOT support\n");
 #endif
 
 	DBGLOG(INIT, INFO, "ret:%d, reason:%s\n", ret, pcReason);
-#if (CFG_SUPPORT_CONNINFRA == 1) || defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_SUPPORT_CONNINFRA == 1) || (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (ret == 0) {
 		dump_stack();
 		fgIsDrvTriggerWholeChipReset = TRUE;

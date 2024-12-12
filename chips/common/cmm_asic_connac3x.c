@@ -1096,7 +1096,7 @@ void asicConnac3xLowPowerOwnClear(
 			prChipInfo->bus_info->hwControlVote(prAdapter,
 				FALSE, PCIE_VOTE_USER_DRVOWN);
 #endif
-#if CFG_MTK_WIFI_PCIE_SUPPORT
+#if CFG_MTK_WIFI_PCIE_SUPPORT && (CFG_TC10_FEATURE == 0)
 		mtk_pcie_dump_link_info(0);
 #endif
 
@@ -2656,7 +2656,7 @@ u_int8_t asicConnac3xSwIntHandler(struct ADAPTER *prAdapter)
 	if (u4Status & BIT(SW_INT_WHOLE_RESET))
 		handle_whole_chip_reset(prAdapter);
 
-#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	if (u4Status & BIT(SW_INT_PMIC_RESET))
 		connv3_trigger_pmic_irq(CONNV3_DRV_TYPE_WIFI,
 			"fw trigger PMIC reset");
@@ -2720,7 +2720,7 @@ uint32_t asicConnac3xQueryPmicInfo(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, TRACE, "PMIC ID: 0x%x.\n", prPmicEvent->u4PmicId);
 	DBGLOG_MEM32(INIT, TRACE, &prPmicEvent->aucPMICCoreDumpbuf[0],
 		prPmicEvent->u4Length);
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_update_pmic_state(CONNV3_DRV_TYPE_WIFI,
 		&prPmicEvent->aucPMICCoreDumpbuf[0],
 		prPmicEvent->u4Length);
@@ -2824,12 +2824,12 @@ uint32_t asicConnac3xGetFwVer(struct ADAPTER *prAdapter)
 
 int connsys_power_on(void)
 {
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	struct mt66xx_chip_info *chip = NULL;
 #endif
 	int ret = 0;
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	ret = connv3_pwr_on(CONNV3_DRV_TYPE_WIFI);
 	if (ret) {
 		DBGLOG(HAL, ERROR, "connv3_pwr_on failed, ret=%d\n",
@@ -2862,7 +2862,7 @@ int connsys_power_done(void)
 {
 	int ret = 0;
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	ret = connv3_pwr_on_done(CONNV3_DRV_TYPE_WIFI);
 	if (ret)
 		DBGLOG(HAL, ERROR,
@@ -2875,7 +2875,7 @@ int connsys_power_done(void)
 
 void connsys_power_off(void)
 {
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	struct mt66xx_chip_info *chip = NULL;
 
 	glGetChipInfo((void **)&chip);
@@ -2891,7 +2891,7 @@ void connsys_power_off(void)
 }
 
 #if CFG_MTK_ANDROID_WMT
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 static int wlan_pre_pwr_on(void)
 {
 	struct mt66xx_hif_driver_data *prDriverData =
@@ -3159,7 +3159,7 @@ static struct devapc_vio_callbacks wlan_devapc_vio_handle = {
 
 void unregister_plat_connsys_cbs(void)
 {
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	unregister_connv3_cbs();
 #endif
 
@@ -3170,7 +3170,7 @@ void register_plat_connsys_cbs(void)
 {
 	register_chrdev_cbs();
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	register_connv3_cbs();
 #endif
 

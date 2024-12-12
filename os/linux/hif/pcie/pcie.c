@@ -56,7 +56,7 @@
 #include "mt66xx_reg.h"
 #include "wlan_pinctrl.h"
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 
@@ -980,7 +980,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		fgIsPcieDataTransDisabled = TRUE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
 		fgIsBusAccessFailed = TRUE;
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		fgTriggerDebugSop = TRUE;
 #endif
 	}
@@ -1008,7 +1008,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 #endif
 			fgNeedReset = TRUE;
 			fgIsBusAccessFailed = TRUE;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 			fgTriggerDebugSop = TRUE;
 #endif
 		}
@@ -1016,7 +1016,7 @@ static pci_ers_result_t mtk_pci_error_detected(struct pci_dev *pdev,
 		pci_disable_device(pdev);
 		fgNeedReset = TRUE;
 		fgIsBusAccessFailed = TRUE;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		fgTriggerDebugSop = TRUE;
 #endif
 
@@ -1362,7 +1362,7 @@ static int mtk_wifi_probe(struct platform_device *pdev)
 	kalCreateHifSkbList(prChipInfo);
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	ret = wlan_pinctrl_init(prChipInfo);
 	if (ret)
 		goto exit;
@@ -1732,7 +1732,7 @@ static int mtk_pci_probe(struct pci_dev *pdev, const struct pci_device_id *id)
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	fgTriggerDebugSop = FALSE;
 #endif
 #if CFG_MTK_WIFI_AER_RESET
@@ -3021,7 +3021,7 @@ int32_t glBusFuncOn(void)
 	}
 
 	if (g_fgDriverProbed == FALSE) {
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 		struct mt66xx_chip_info *prChipInfo = NULL;
 		struct CHIP_DBG_OPS *prDbgOps = NULL;
 

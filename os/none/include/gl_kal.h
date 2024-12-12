@@ -1589,7 +1589,7 @@ void kalTimeoutHandler(unsigned long arg);
 #define kalSetHifMsiRecoveryEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #define kalSetBtDumpViaWFEvent(_pr) \
 	KAL_NEED_IMPLEMENT(__FILE__, __func__, __LINE__, _pr)
 #endif

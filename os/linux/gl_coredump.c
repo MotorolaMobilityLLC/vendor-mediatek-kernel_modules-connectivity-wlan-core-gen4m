@@ -16,7 +16,7 @@
 #include "gl_coredump.h"
 #if CFG_SUPPORT_CONNINFRA
 #include "connsys_debug_utility.h"
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#elif (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #include "connv3_debug_utility.h"
 #endif
@@ -29,6 +29,11 @@
 #include "mt6653.h"
 #endif
 
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1) && (CFG_TC10_FEATURE == 1)
+#include <linux/of_reserved_mem.h>
+#include <linux/platform_device.h>
+#include <linux/of.h>
+#endif
 /*******************************************************************************
  *                              C O N S T A N T S
  *******************************************************************************
@@ -510,7 +515,7 @@ int wifi_coredump_init(void *priv)
 {
 	struct coredump_ctx *ctx = &g_coredump_ctx;
 	struct mt66xx_chip_info *chip_info;
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	struct connv3_coredump_event_cb cb;
 #endif
 	int ret = 0;
@@ -537,13 +542,17 @@ int wifi_coredump_init(void *priv)
 		ret = -EINVAL;
 		goto free_cdev;
 	}
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#elif (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	kalMemZero(&cb, sizeof(cb));
 	kalSnprintf(cb.dev_node, CONNV3_EMI_MAP_DEV_NODE_SIZE,
 		"%s%s", "/dev/", COREDUMP_WIFI_INF_NAME);
 	cb.emi_size = chip_info->rEmiInfo.coredump_size;
 	cb.mcif_emi_size = 0;
 	cb.emi2_size = chip_info->rEmiInfo.coredump2_size;
+#if (CFG_TC10_FEATURE == 1)
+	cb.get_save_emi = wifi_coredump_get_save_emi;
+	connv3_coredump_set_memdump_mode(g_u4Memdump);
+#endif
 	ctx->handler = connv3_coredump_init(CONNV3_DEBUG_TYPE_WIFI,
 		&cb);
 	if (!ctx->handler) {
@@ -576,7 +585,7 @@ void wifi_coredump_deinit(void)
 
 #if CFG_SUPPORT_CONNINFRA
 	connsys_coredump_deinit(ctx->handler);
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#elif (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	connv3_coredump_deinit(ctx->handler);
 #endif
 
@@ -1141,7 +1150,7 @@ static int __coredump_handle_mem_region(struct coredump_ctx *ctx,
 	return ret;
 }
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 static int __coredump_to_userspace_cr_region(struct coredump_ctx *ctx)
 {
 /* "[%08x,%08x]" */
@@ -1838,7 +1847,7 @@ static int __coredump_start(struct coredump_ctx *ctx,
 	if (ret)
 		goto deinit;
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	__coredump_to_userspace(ctx,
 				chip_info,
 				source,
@@ -1935,13 +1944,13 @@ void wifi_coredump_start(enum COREDUMP_SOURCE_TYPE source,
 			drv_type, reason);
 		connsys_coredump_clean(ctx->handler);
 	}
-#elif IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#elif (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	__coredump_start(ctx, source, type, reason, force_dump);
 #endif
 	ctx->processing = FALSE;
 }
 
-#if CFG_SUPPORT_CONNINFRA || IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if CFG_SUPPORT_CONNINFRA || (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 enum consys_drv_type coredump_src_to_conn_type(enum COREDUMP_SOURCE_TYPE src)
 {
 	enum consys_drv_type drv_type;
@@ -1998,7 +2007,7 @@ enum COREDUMP_SOURCE_TYPE coredump_conn_type_to_src(enum consys_drv_type src)
 }
 #endif
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 enum connv3_drv_type coredump_src_to_connv3_type(enum COREDUMP_SOURCE_TYPE src)
 {
 	enum connv3_drv_type drv_type;
@@ -2062,4 +2071,34 @@ u_int8_t is_wifi_coredump_processing(void)
 
 	return ctx->processing;
 }
+
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1) && CFG_TC10_FEATURE
+void wifi_coredump_get_save_emi(phys_addr_t *base, size_t *size)
+{
+#ifdef CONFIG_OF
+	struct device_node *rmem_node = NULL;
+	struct reserved_mem *rmem = NULL;
+
+	rmem_node = of_find_compatible_node(NULL, NULL,
+				"mediatek,wifi-coredump-reserve-memory");
+	if (rmem_node == NULL) {
+		DBGLOG(INIT, ERROR, "of_find_compatible_node failed.\n");
+		return;
+	}
+
+	rmem = of_reserved_mem_lookup(rmem_node);
+	if (!rmem) {
+		DBGLOG(INIT, ERROR, "of_reserved_mem_lookup failed.\n");
+		return;
+	}
+	*base = rmem->base;
+	*size = rmem->size;
+	DBGLOG(INIT, INFO, "Coredump EMI base=0x%llx, size=0x%08x\n",
+		*base, *size);
+	of_node_put(rmem_node);
+#else
+	DBGLOG(INIT, WARN, "kernel option CONFIG_OF not enabled.\n");
+#endif
+}
+#endif
 

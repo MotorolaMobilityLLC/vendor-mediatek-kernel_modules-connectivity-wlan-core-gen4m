@@ -89,7 +89,7 @@ u_int8_t fgIsBusAccessFailed = FALSE;
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 u_int8_t fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 u_int8_t fgTriggerDebugSop = FALSE;
 #endif
 
@@ -913,7 +913,7 @@ void wlanOnPreAllocAdapterMem(struct ADAPTER *prAdapter,
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	fgTriggerDebugSop = FALSE;
 #endif
 }
@@ -1234,7 +1234,7 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 {
 	struct GLUE_INFO *prGlueInfo;
 	struct platcfg_infra_sysram *prPlatCfg;
-#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	uint32_t u4Addr, u4Size;
 	uint8_t *pu1Cfg;
 #endif
@@ -1260,7 +1260,7 @@ wlanCopyPlatCfgToSysram(struct ADAPTER *prAdapter, struct REG_INFO *prRegInfo)
 		return WLAN_STATUS_FAILURE;
 	}
 
-#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	pu1Cfg = connv3_get_plat_config(&u4Size);
 	if (u4Size == 0) {
 		DBGLOG(INIT, TRACE, "No need to copy plat config\n");
@@ -1780,7 +1780,7 @@ uint32_t wlanAdapterStop(struct ADAPTER *prAdapter,
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	fgIsPcieDataTransDisabled = FALSE;
 #endif /* CFG_MTK_WIFI_PCIE_SUPPORT */
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 	fgTriggerDebugSop = FALSE;
 #endif
 

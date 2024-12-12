@@ -70,7 +70,7 @@
 static uint32_t u4EmiMetOffset = 0x18000;
 static uint32_t u4ProjectId = 6991;
 
-#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #define RST_PIN_MIN_WAIT_TIME		200 /* ms */
 
 static struct pinctrl *pinctrl_ptr;
@@ -1099,7 +1099,7 @@ int32_t kalCheckVcoreBoost(struct ADAPTER *prAdapter,
 #endif
 }
 
-#if defined(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 int32_t kalPlatOpsInit(void)
 {
 #if defined(MT6653)

@@ -26,7 +26,7 @@
 #include "coda/mt7925/wf_pse_top.h"
 #include "coda/mt7925/wf_wfdma_host_dma0.h"
 #include "coda/mt7925/wf_hif_dmashdl_top.h"
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #include "connectivity_build_in_adapter.h"
 #endif

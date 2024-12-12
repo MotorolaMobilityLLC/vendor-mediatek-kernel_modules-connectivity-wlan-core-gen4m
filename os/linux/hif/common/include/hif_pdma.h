@@ -15,7 +15,7 @@
 #include <linux/hashtable.h>
 #include "mt66xx_reg.h"
 
-#if IS_ENABLED(CFG_MTK_WIFI_CONNV3_SUPPORT)
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 #include "connv3.h"
 #endif
 
@@ -1572,7 +1572,7 @@ void halZeroCopyPathDumpRx(struct GL_HIF_INFO *prHifInfo,
 struct HIF_MEM *halGetWiFiMiscRsvEmi(
 	struct mt66xx_chip_info *prChipInfo,
 	enum WIFI_MISC_MEM_BLOCK_NAME u4idx);
-#ifdef CFG_MTK_WIFI_CONNV3_SUPPORT
+#if (CFG_MTK_WIFI_CONNV3_SUPPORT == 1)
 u_int8_t kalDevRegReadViaBT(struct GLUE_INFO *prGlueInfo,
 				uint32_t u4Register, uint32_t *pu4Value);
 u_int8_t kalDevRegWriteViaBT(struct GLUE_INFO *prGlueInfo,
