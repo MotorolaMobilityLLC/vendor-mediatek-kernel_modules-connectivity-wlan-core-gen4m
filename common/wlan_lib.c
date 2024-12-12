@@ -572,6 +572,12 @@ struct PARAM_CUSTOM_KEY_CFG_STRUCT g_rDefaulteSetting[] = {
 #endif
 };
 
+static const char * const apucCfgType[WLAN_CFG_NUM] = {
+	[WLAN_CFG_DEFAULT] = "Default",
+	[WLAN_CFG_REC] = "Rec",
+	[WLAN_CFG_EM] = "EM",
+};
+
 /*******************************************************************************
  *                                 M A C R O S
  *******************************************************************************
@@ -7023,10 +7029,9 @@ void wlanCfgLoadIotApRule(struct ADAPTER *prAdapter)
 		pCurTok = &aucCfgVal[0];
 		pNexTok = &aucCfgVal[0];
 		kalSnprintf(aucCfgKey, WLAN_CFG_KEY_LEN_MAX, "IOTAP%d", ucCnt);
-		ucStatus = wlanCfgGet(prAdapter, aucCfgKey, aucCfgVal, NULL, 0,
-				      FEATURE_DEBUG_ONLY);
 		/*Skip empty rule*/
-		if (ucStatus != WLAN_STATUS_SUCCESS)
+		if (wlanCfgGet(prAdapter, aucCfgKey, aucCfgVal, NULL, 0,
+			       FEATURE_DEBUG_ONLY) != WLAN_STATUS_SUCCESS)
 			continue;
 
 		/*Rule String Check*/
@@ -9983,9 +9988,13 @@ uint32_t wlanCfgSet(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_SUCCESS;
 	}
 
-	DBGLOG(INIT, ERROR,
-			"WIFI CFG has no empty entry, key \'%s\', value \'%s\'\n",
-			pucKey ? pucKey : NULL, pucValue ? pucValue : NULL);
+	/* This may only cause get_cfg or proc_node get default value, driver
+	 * can still work normally with expected new value.
+	 */
+	DBGLOG(INIT, WARN,
+	       "%s array has no empty entry, key \'%s\', value \'%s\'\n",
+	       apucCfgType[u4Flags], pucKey ? pucKey : NULL,
+	       pucValue ? pucValue : NULL);
 
 	return WLAN_STATUS_FAILURE;
 }
