@@ -2783,6 +2783,8 @@ void halRxReceiveRFBs(struct ADAPTER *prAdapter, uint32_t u4Port,
 
 	u4RxLoopCnt = u4RxCnt;
 	while (u4RxLoopCnt--) {
+		if (nicSerIsRxStop(prAdapter))
+			break;
 #if CFG_SUPPORT_RX_NAPI
 		/* if fifo exhausted, stop deQ and schedule NAPI */
 		if (prGlueInfo->prRxDirectNapi &&
@@ -5373,6 +5375,10 @@ void halRxWork(struct GLUE_INFO *prGlueInfo)
 	 */
 	while (!halIsWfdmaRxRingsEmpty(prGlueInfo)) {
 		if (prAdapter->ulNoMoreRfb || !kalIsRxHighTput(prAdapter))
+			break;
+
+		/* SER break point */
+		if (nicSerIsRxStop(prAdapter))
 			break;
 
 		wlanIST(prAdapter, FALSE);
