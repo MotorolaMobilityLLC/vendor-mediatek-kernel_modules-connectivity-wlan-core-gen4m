@@ -70,9 +70,13 @@ struct QUE {
 	    KAL_MB_W(); \
 	}
 
-#define QUEUE_IS_EMPTY(prQueue) (((struct QUE *)(prQueue))->prHead == NULL)
+#define QUEUE_IS_EMPTY(prQueue) \
+	((((struct QUE *)(prQueue))->prHead == (struct QUE_ENTRY *)NULL) || \
+	((prQueue)->u4NumElem == 0))
 
-#define QUEUE_IS_NOT_EMPTY(prQueue)         ((prQueue)->u4NumElem > 0)
+#define QUEUE_IS_NOT_EMPTY(prQueue) \
+	((((struct QUE *)(prQueue))->prHead != (struct QUE_ENTRY *)NULL) && \
+	((prQueue)->u4NumElem > 0))
 
 #define QUEUE_LENGTH(prQueue)               ((prQueue)->u4NumElem)
 
