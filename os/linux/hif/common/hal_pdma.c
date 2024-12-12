@@ -6096,7 +6096,7 @@ void halWFDBssBalanceSetBssCntCfg(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM; i++)
 		prAdapter->rWifiVar.i4BssCount[i] = i4BssCntCfg;
 
-	DBGLOG(REQ, INFO, "BssCntCfg ===> %d", i4BssCntCfg);
+	DBGLOG(REQ, INFO, "BssCntCfg ===> %d\n", i4BssCntCfg);
 }
 
 void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
@@ -6114,7 +6114,7 @@ void halWFDBssBalanceGetPreTxBW(struct ADAPTER *prAdapter,
 				prTokenInfo->bitrate.au4PredictBitrate[i];
 	}
 
-	DBGLOG(REQ, INFO, "CurR[%u,%u,%u,%u], PreR[%u,%u,%u,%u]",
+	DBGLOG(REQ, INFO, "CurR[%u,%u,%u,%u], PreR[%u,%u,%u,%u]\n",
 		prTokenInfo->bitrate.au4CurrentBitrate[0],
 		prTokenInfo->bitrate.au4CurrentBitrate[1],
 		prTokenInfo->bitrate.au4CurrentBitrate[2],
@@ -6150,7 +6150,7 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 		&u4CurBitRate, &u4PredBitRate);
 
 	DBGLOG(REQ, INFO,
-		"C All: %u, CurRate: %u, PredRate: %u",
+		"C All: %u, CurRate: %u, PredRate: %u\n",
 		u4ConsysAll, u4CurBitRate, u4PredBitRate);
 
 	if (u4Ratio == 0)
@@ -6160,13 +6160,13 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 	if (u4ConsysSlot2 < (u4ConsysAll/u4Ratio) &&
 		(u4CurBitRate > u4PredBitRate*5/10)) {
 		DBGLOG(REQ, INFO,
-			"C[0]:[%u] < LowTH, FSM: [NO_LIMIT] -> [QUICK]",
+			"C[0]:[%u] < LowTH, FSM: [NO_LIMIT] -> [QUICK]\n",
 			u4ConsysSlot2);
 		return WFD_BSS_BALANCE_QUICK_STATE;
 	}
 
 	DBGLOG(REQ, INFO,
-		"C[0]:[%u] > LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]",
+		"C[0]:[%u] > LowTH, FSM: [NO_LIMIT] -> [NO_LIMIT]\n",
 		u4ConsysSlot2);
 	halWFDBssBalanceSetBssCntCfg(prAdapter,
 		prTokenInfo->u4MaxBssBalanceTxCredit, prTokenInfo);

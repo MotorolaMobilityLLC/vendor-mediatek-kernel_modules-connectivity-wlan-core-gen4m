@@ -3941,7 +3941,8 @@ uint32_t nicRxProcessActionFrame(struct ADAPTER *prAdapter,
 
 	if (!nicIsActionFrameValid(prSwRfb))
 		return WLAN_STATUS_INVALID_PACKET;
-	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+
+	prActFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
 
 	if (nicIsUnprotectedRobustActionFrame(prAdapter, prSwRfb)) {
 		DBGLOG(RSN, INFO,

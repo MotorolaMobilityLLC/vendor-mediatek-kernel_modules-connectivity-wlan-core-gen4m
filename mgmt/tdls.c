@@ -113,7 +113,7 @@ void TdlsProcessPublicAction(
 		return;
 	}
 
-	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+	prActFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
 
 	if (!prActFrame ||
 		prActFrame->ucAction != TDLS_FRM_ACTION_DISCOVERY_RSP) {

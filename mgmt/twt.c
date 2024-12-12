@@ -693,7 +693,7 @@ void twtProcessS1GAction(
 		return;
 	}
 
-	prRxFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
 	prStaRec = cnmGetStaRecByIndex(prAdapter, prSwRfb->ucStaRecIdx);
 	if (!prStaRec) {
 		DBGLOG(TWT_REQUESTER, WARN,

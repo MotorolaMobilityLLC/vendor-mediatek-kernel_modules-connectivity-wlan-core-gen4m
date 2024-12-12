@@ -169,7 +169,7 @@ void handleQosMapConf(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 	ASSERT(prAdapter);
 	ASSERT(prSwRfb);
 
-	prRxFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+	prRxFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
 
 	switch (prRxFrame->ucAction) {
 	case ACTION_ADDTS_REQ:

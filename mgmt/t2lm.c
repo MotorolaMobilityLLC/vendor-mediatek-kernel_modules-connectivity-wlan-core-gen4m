@@ -954,12 +954,9 @@ void t2lmProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 
 	DBGLOG(RX, INFO, "Received T2LM action:%u\n", prRxFrame->ucAction);
 
-	prT2LMParams = (struct T2LM_INFO *)
-		kalMemAlloc(sizeof(struct T2LM_INFO),
-		VIR_MEM_TYPE);
+	prT2LMParams = kalMemZAlloc(sizeof(*prT2LMParams), VIR_MEM_TYPE);
 	if (prT2LMParams == NULL)
 		return;
-	kalMemZero(prT2LMParams, sizeof(struct T2LM_INFO));
 
 	switch (prRxFrame->ucAction) {
 	case TID2LINK_REQUEST:
@@ -984,7 +981,7 @@ void t2lmProcessAction(struct ADAPTER *prAdapter, struct SW_RFB *prSwRfb)
 				prRxFrame->ucAction);
 		break;
 	}
-	kalMemFree(prT2LMParams, VIR_MEM_TYPE, sizeof(struct prT2LMParams));
+	kalMemFree(prT2LMParams, VIR_MEM_TYPE, sizeof(*prT2LMParams));
 }
 
 void t2lmMldStaRecBackup(struct ADAPTER *prAdapter,

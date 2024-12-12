@@ -4779,9 +4779,8 @@ void p2pFuncValidateRxActionFrame(struct ADAPTER *prAdapter,
 
 	switch (prActFrame->ucCategory) {
 	case CATEGORY_PUBLIC_ACTION:
-		if (prActFrame->ucAction != 0x9 ||
-			prSwRfb->u2PacketLen <
-				sizeof(struct WLAN_PUBLIC_VENDOR_ACTION_FRAME))
+		if (prSwRfb->u2PacketLen < sizeof(*prActPubVenFrame) ||
+		    prActFrame->ucAction != ACTION_PUBLIC_VENDOR_SPECIFIC)
 			break;
 
 		WLAN_GET_FIELD_BE24(prActFrame->ucActionDetails, &u4Oui);
@@ -10212,7 +10211,7 @@ p2pFuncGetP2pActionFrameType(struct MSDU_INFO *prMgmtMsdu)
 					MAC_TX_RESERVED_FIELD);
 	if ((prWlanHdr->u2FrameCtrl & MASK_FRAME_TYPE) != MAC_FRAME_ACTION)
 		return P2P_CNN_NORMAL;
-	prActFrame = (struct WLAN_ACTION_FRAME *) prWlanHdr;
+	prActFrame = (struct WLAN_ACTION_FRAME *)prWlanHdr;
 	if (prActFrame->ucCategory != WLAN_ACTION_PUBLIC)
 		return P2P_CNN_NORMAL;
 	if (prActFrame->ucAction != WLAN_PA_VENDOR_SPECIFIC)

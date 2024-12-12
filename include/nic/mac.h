@@ -3940,8 +3940,8 @@ struct WLAN_PUBLIC_VENDOR_ACTION_FRAME {
 	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
 	uint16_t u2SeqCtrl;	/* Sequence Control */
 	/* Action frame body */
-	uint8_t ucCategory;	/* Category: should be 0x4 */
-	uint8_t ucAction;	/* Action Value: should be 0x9 */
+	uint8_t ucCategory;   /* CATEGORY_PUBLIC_ACTION */
+	uint8_t ucAction;     /* ACTION_PUBLIC_VENDOR_SPECIFIC */
 	uint8_t ucOUI[3];
 	uint8_t ucSubType;
 	uint8_t ucPubSubType;

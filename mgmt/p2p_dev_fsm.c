@@ -609,7 +609,7 @@ p2pDevFsmRunEventScanDone(struct ADAPTER *prAdapter,
 		if (prScanDoneMsg->ucSeqNum
 			!= prP2pScanReqInfo->ucSeqNumOfScnMsg) {
 			DBGLOG(P2P, TRACE,
-				"P2P Scan Done SeqNum:%d  <->   P2P Dev FSM Scan SeqNum:%d",
+				"P2P Scan Done SeqNum:%d  <->   P2P Dev FSM Scan SeqNum:%d\n",
 				prScanDoneMsg->ucSeqNum,
 				prP2pScanReqInfo->ucSeqNumOfScnMsg);
 			break;

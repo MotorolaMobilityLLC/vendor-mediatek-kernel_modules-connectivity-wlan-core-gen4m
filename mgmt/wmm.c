@@ -1023,7 +1023,7 @@ u_int8_t wmmParseQosAction(struct ADAPTER *prAdapter,
 {
 	struct WLAN_ACTION_FRAME *prWlanActionFrame = NULL;
 	uint8_t *pucIE = NULL;
-	struct PARAM_QOS_TSPEC rTspec;
+	struct PARAM_QOS_TSPEC rTspec = {0};
 	uint16_t u2Offset = 0;
 	uint16_t u2IEsBufLen = 0;
 	uint8_t ucTid = WMM_TSPEC_ID_NUM;
@@ -1033,7 +1033,6 @@ u_int8_t wmmParseQosAction(struct ADAPTER *prAdapter,
 		prSwRfb);
 
 	prWlanActionFrame = (struct WLAN_ACTION_FRAME *)prSwRfb->pvHeader;
-	kalMemZero(&rTspec, sizeof(rTspec));
 
 	DBGLOG(WMM, INFO, "[%d] Action=%d\n",
 		ucBssIndex,

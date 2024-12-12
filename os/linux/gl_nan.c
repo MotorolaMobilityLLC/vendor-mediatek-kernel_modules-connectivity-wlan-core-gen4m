@@ -1161,8 +1161,8 @@ nanSetMulticastList(struct net_device *prDev)
 	}
 }
 
-static u_int8_t is_ipv6_neighbor_soliciation(struct sk_buff *prSkb,
-					     uint8_t aucUcastMacDestAddr[])
+static u_int8_t is_ipv6_neighbor_solicitation(struct sk_buff *prSkb,
+					      uint8_t aucUcastMacDestAddr[])
 {
 	struct ETH_FRAME *prEth = (struct ETH_FRAME *)prSkb->data;
 	struct IPV6_HEADER *prIpv6 = (struct IPV6_HEADER *)prEth->aucData;
@@ -1278,7 +1278,7 @@ nanHardStartXmit(struct sk_buff *prSkb, struct net_device *prDev)
 					   prMcastSkb);
 		}
 
-		if (is_ipv6_neighbor_soliciation(prSkb, aucUcastMacDestAddr)) {
+		if (is_ipv6_neighbor_solicitation(prSkb, aucUcastMacDestAddr)) {
 			/* ICMPv6 NS, modify DA to make it a unicast frame */
 			DBGLOG(NAN, TRACE,
 			       "Find NS DA " MACSTR "for NAN multicast\n",

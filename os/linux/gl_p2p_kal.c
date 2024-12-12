@@ -1441,6 +1441,8 @@ kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 	enum ENUM_BAND eBand;
 
 	do {
+		char acRxPktInfo[64];
+
 		if ((prGlueInfo == NULL) || (prSwRfb == NULL)) {
 			ASSERT(FALSE);
 			break;
@@ -1463,23 +1465,23 @@ kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 
 		switch (prWlanHeader->u2FrameCtrl) {
 		case MAC_FRAME_PROBE_REQ:
-			DBGLOG(P2P, TRACE,
-				"RX Probe Req at channel %d ",
+			kalSnprintf(acRxPktInfo, sizeof(acRxPktInfo),
+				"RX Probe Req at channel %d",
 				ucChnlNum);
 			break;
 		case MAC_FRAME_PROBE_RSP:
-			DBGLOG(P2P, TRACE,
-				"RX Probe Rsp at channel %d ",
+			kalSnprintf(acRxPktInfo, sizeof(acRxPktInfo),
+				"RX Probe Rsp at channel %d",
 				ucChnlNum);
 			break;
 		case MAC_FRAME_ACTION:
-			DBGLOG(P2P, TRACE,
-				"RX Action frame at channel %d ",
+			kalSnprintf(acRxPktInfo, sizeof(acRxPktInfo),
+				"RX Action frame at channel %d",
 				ucChnlNum);
 			break;
 		default:
-			DBGLOG(P2P, TRACE,
-				"RX Packet:%d at channel %d ",
+			kalSnprintf(acRxPktInfo, sizeof(acRxPktInfo),
+				"RX Packet:%d at channel %d",
 				prWlanHeader->u2FrameCtrl, ucChnlNum);
 			break;
 		}
@@ -1491,8 +1493,8 @@ kalP2PIndicateRxMgmtFrame(struct ADAPTER *prAdapter,
 		else
 			prNetdevice = prGlueP2pInfo->aprRoleHandler;
 
-		DBGLOG(P2P, TRACE, "from: " MACSTR ", netdev: %p\n",
-				MAC2STR(prWlanHeader->aucAddr2),
+		DBGLOG(P2P, TRACE, "%s from: " MACSTR ", netdev: %p\n",
+				acRxPktInfo, MAC2STR(prWlanHeader->aucAddr2),
 				prNetdevice);
 
 		if (!prGlueInfo->fgIsRegistered ||

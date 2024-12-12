@@ -2077,14 +2077,15 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 	g_u4CurPageNum = wifi_page_pool_get_page_num();
 
 	if (g_u4CurPageNum < u4SetNum) {
-		DBGLOG(HAL, ERROR, "page pool alloc fail[req:%u alloc:%u->%u]",
+		DBGLOG(HAL, ERROR,
+		       "page pool alloc fail[req:%u alloc:%u->%u]\n",
 		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
 		fgRet = FALSE;
 		/* enable delay alloc if page alloc fail */
 		if (u4CurPageNum == g_u4CurPageNum)
 			g_fgPagePoolDelayAlloc = TRUE;
 	} else {
-		DBGLOG(HAL, TRACE, "set page pool[req:%u alloc:%u->%u]",
+		DBGLOG(HAL, TRACE, "set page pool[req:%u alloc:%u->%u]\n",
 		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
 	}
 
