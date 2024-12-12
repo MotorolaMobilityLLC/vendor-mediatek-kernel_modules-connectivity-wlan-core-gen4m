@@ -204,6 +204,13 @@ enum pcie_aspm_state {
 };
 #endif
 
+#if CFG_PCIE_GEN_SWITCH
+struct RX_IDLE_STATE {
+	uint32_t u4WFIdle;
+	uint32_t u4FWIdle;
+};
+#endif /*CFG_SUPPORT_PCIE_GEN_SWITCH*/
+
 #if CFG_SUPPORT_HIF_RX_NAPI
 struct HIF_NAPI_DEVICE {
 	struct net_device dev;
