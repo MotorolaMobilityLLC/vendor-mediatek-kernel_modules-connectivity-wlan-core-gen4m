@@ -368,9 +368,9 @@ struct PCIE_CHIP_CR_MAPPING mt7999_bus2chip_cr_mapping[] = {
 	{0x7c080000, 0x190000, 0x10000}, /* CONN_INFRA (coex, pta) */
 	{0x7c050000, 0x1a0000, 0x10000}, /* CONN_INFRA SYSRAM */
 #if CFG_MTK_FPGA_PLATFORM == 1
-	{0x74030000, 0x010000, 0x10000}, /* PCIe MAC (conninfra remap) */
+	{0x74040000, 0x010000, 0x10000}, /* PCIe MAC (conninfra remap) */
 #else
-	{0x74030000, 0x1d0000, 0x10000}, /* CB PCIe (cbtop remap) */
+	{0x74040000, 0x1d0000, 0x10000}, /* CB PCIe (cbtop remap) */
 #endif
 #if CFG_MTK_FPGA_PLATFORM != 1
 	{0x70010000, 0x1c0000, 0x10000}, /* CB Infra1 */
