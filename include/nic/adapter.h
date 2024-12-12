@@ -1805,6 +1805,10 @@ struct WIFI_VAR {
 #if CFG_ENABLE_WIFI_DIRECT && CFG_SUPPORT_CCM
 	enum ENUM_P2P_CCM_MODE eP2pCcmMode;
 #endif
+
+#if (CFG_SUPPORT_WIFI_6G_PWR_MODE == 1)
+	uint8_t fgSpPwrLmtBackoff;
+#endif
 };
 
 /* cnm_timer module */
