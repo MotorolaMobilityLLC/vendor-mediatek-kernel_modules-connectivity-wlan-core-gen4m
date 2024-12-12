@@ -11163,50 +11163,220 @@ static uint32_t calcualteTput(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_SUCCESS;
 }
 
+/* bytes/pkts following Tput: */
+static size_t composeTput(struct ADAPTER *prAdapter, char *pos, char *end,
+			  signed long txDiffBytes[static MAX_BSSID_NUM],
+			  signed long rxDiffBytes[static MAX_BSSID_NUM],
+			  signed long rxDiffPkts[static MAX_BSSID_NUM],
+			  signed long txDiffPkts[static MAX_BSSID_NUM])
+{
+	char *orig = pos;
+	uint32_t i;
+
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		pos += kalSnprintf(pos, end - pos, "[%lld:%lld:%lld:%lld]",
+			(long long) txDiffBytes[i],
+			(long long) txDiffPkts[i],
+			(long long) rxDiffBytes[i],
+			(long long) rxDiffPkts[i]);
+	}
+	pos += kalSnprintf(pos, end - pos, " ");
+
+	return pos - orig;
+}
+
+/* Pending: */
+static size_t composePending(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
+	char *orig = pos;
+	uint32_t i;
+	uint32_t j;
+
+	pos += kalSnprintf(pos, end - pos, "Pending:%d/%d ",
+			GLUE_GET_REF_CNT(glue->i4TxPendingFrameNum),
+			prAdapter->rWifiVar.u4NetifStopTh);
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		pos += kalSnprintf(pos, end - pos, "[");
+		for (j = 0; j < CFG_MAX_TXQ_NUM - 1; ++j) {
+			pos += kalSnprintf(pos, end - pos, "%d:",
+				glue->ai4TxPendingFrameNumPerQueue[i][j]);
+		}
+		pos += kalSnprintf(pos, end - pos, "%d]",
+			glue->ai4TxPendingFrameNumPerQueue[i][j]);
+	}
+	pos += kalSnprintf(pos, end - pos, " ");
+
+	return pos - orig;
+}
+
+/* ndevdrp: */
+static size_t composeNdevDrp(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
+	char *orig = pos;
+	uint32_t i;
+	struct BSS_INFO *bss;
+	struct net_device *ndev = NULL;
+	uint8_t fgIsValidNetDevice = FALSE;
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+	struct rtnl_link_stats64 rtnls;
+#endif
+
+	GLUE_SPIN_LOCK_DECLARATION();
+
+	pos += kalSnprintf(pos, end - pos, "ndevdrp:");
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		ndev = wlanGetNetDev(glue, i);
+		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
+
+		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+		fgIsValidNetDevice = FALSE;
+
+		if (ndev) {
+			if (!IS_BSS_P2P(bss)) /* non-p2p */
+				fgIsValidNetDevice = TRUE;
+#if CFG_ENABLE_WIFI_DIRECT
+			else if (prAdapter->rP2PNetRegState ==
+					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
+				fgIsValidNetDevice = TRUE;
+#endif
+		}
+
+		if (fgIsValidNetDevice) {
+#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
+			dev_get_stats(ndev, &rtnls);
+			pos += kalSnprintf(pos, end - pos,
+				"[%llu:%llu:%llu:%llu]",
+				(unsigned long long) ndev->stats.tx_dropped,
+				(unsigned long long) rtnls.tx_dropped,
+				(unsigned long long) ndev->stats.rx_dropped,
+				(unsigned long long) rtnls.rx_dropped);
+#else
+			pos += kalSnprintf(pos, end - pos,
+				"[%llu:%llu:%llu:%llu]",
+				(unsigned long long) ndev->stats.tx_dropped,
+				(unsigned long long)
+					atomic_long_read(&ndev->tx_dropped),
+				(unsigned long long) ndev->stats.rx_dropped,
+				(unsigned long long)
+					atomic_long_read(&ndev->rx_dropped));
+#endif
+		}
+		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
+	}
+
+	pos += kalSnprintf(pos, end - pos, " ");
+
+	return pos - orig;
+}
+
+/* RxReorder */
+static size_t composeRxReorder(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	char *orig = pos;
+	uint32_t i;
+
+	pos += kalSnprintf(pos, end - pos, "RxReorder[");
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		if (i == MAX_BSSID_NUM - 1) {
+			pos += kalSnprintf(pos, end - pos, "%u",
+				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
+		} else {
+			pos += kalSnprintf(pos, end - pos, "%u:",
+				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
+		}
+	}
+	pos += kalSnprintf(pos, end - pos, "] ");
+
+	return pos - orig;
+}
+
+/* MgmtSub */
+static size_t composeMgmtSub(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	char *orig = pos;
+	uint32_t i;
+
+	pos += kalSnprintf(pos, end - pos, "MgmtSub[");
+	for (i = 0; i < ARRAY_SIZE(prAdapter->au4MgmtSubtypeTxCnt); i++)
+		pos += kalSnprintf(pos, end - pos,
+				i == MAX_NUM_OF_FC_SUBTYPES-1 ? "%u":"%u:",
+				prAdapter->au4MgmtSubtypeTxCnt[i]);
+	pos += kalSnprintf(pos, end - pos, "] ");
+
+	return pos - orig;
+}
+
+#if CFG_QUEUE_RX_IF_CONN_NOT_READY
+/* RxPending */
+static size_t composeRxPending(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	char *orig = pos;
+	uint32_t i;
+
+	pos += kalSnprintf(pos, end - pos, "RxPending[");
+	for (i = 0; i < MAX_BSSID_NUM; i++) {
+		pos += kalSnprintf(pos, end - pos,
+			(i == MAX_BSSID_NUM - 1) ? "%u" : "%u:",
+			RX_PENDING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
+	}
+	pos += kalSnprintf(pos, end - pos, "] ");
+
+	return pos - orig;
+}
+#endif
+
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+/* TxFreeSkbQ */
+static size_t composeTxFreeSkbQ(struct ADAPTER *prAdapter, char *pos, char *end)
+{
+	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
+	struct TX_FREE_INFO *prTxFreeInfo;
+	char *orig = pos;
+	uint32_t i;
+
+	prTxFreeInfo = &glue->rTxFreeInfo;
+
+	pos += kalSnprintf(pos, end - pos, "TxFreeSkbQ[");
+	for (i = 0; i < CON_WORK_MAX; i++) {
+		pos += kalSnprintf(pos, end - pos,
+			(i == CON_WORK_MAX - 1) ? "%u/%u" : "%u/%u ",
+			QUEUE_LENGTH(&prTxFreeInfo->rQueInfo[i].rQue),
+			prTxFreeInfo->rQueInfo[i].u4TotalCnt);
+	}
+	pos += kalSnprintf(pos, end - pos, "] ");
+
+	return pos - orig;
+}
+#endif
+
 static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 {
 	struct PERF_MONITOR *perf = &prAdapter->rPerMonitor;
 	struct GLUE_INFO *glue = prAdapter->prGlueInfo;
-	struct BSS_INFO *bss;
-	struct net_device *ndev = NULL;
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
 	struct WIFI_LINK_QUALITY_INFO *lq = &prAdapter->rLinkQualityInfo;
 #endif
 	OS_SYSTIME now, last;
 	int32_t period;
-	uint8_t i, j;
 	signed long txDiffBytes[MAX_BSSID_NUM] = {0};
 	signed long txDiffPkts[MAX_BSSID_NUM] = {0};
 	signed long rxDiffBytes[MAX_BSSID_NUM] = {0};
 	signed long rxDiffPkts[MAX_BSSID_NUM] = {0};
 	uint64_t throughput = 0;
 	char *buf = NULL;
-	char *head1;
-	char *head2;
-	char *head3;
-	char *head4;
-	char *head5;
-#if CFG_QUEUE_RX_IF_CONN_NOT_READY
-	char *head6;
-#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
 #if CFG_SUPPORT_TX_FREE_SKB_WORK
-	char *head7;
-	struct TX_FREE_INFO *prTxFreeInfo;
+	struct TX_FREE_INFO *prTxFreeInfo = &glue->rTxFreeInfo;
 #endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
 	char *pos;
 	char *end;
 	uint32_t slen;
-	uint8_t fgIsValidNetDevice = FALSE;
-#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
-	struct rtnl_link_stats64 rtnls;
-#endif
 
 	uint32_t ret = WLAN_STATUS_SUCCESS;
 #if CFG_SUPPORT_SKB_ALLOC_WORK
 	struct SKB_ALLOC_INFO *prSkbAllocInfo = &glue->rSkbAllocInfo;
 #endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
-
-	GLUE_SPIN_LOCK_DECLARATION();
 
 	GET_BOOT_SYSTIME(&now);
 	last = perf->rLastUpdateTime;
@@ -11250,28 +11420,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		p2pFuncRpsKalCheck(prAdapter, period, rxDiffPkts);
 #endif
 
-	/* The length should include
-	 * 1. "[%ld:%ld:%ld:%ld]" for each bss, %ld range is
-	 *    [-9223372036854775807, +9223372036854775807]
-	 * 2. "[%d:...:%d]" for pending frame num, %d range is [-32767, 32767]
-	 * 3. ["%lu:%lu:%lu:%lu] dropped packets by each ndev, "%lu" range is
-	 *    [0, 18446744073709551615]
-	 * 4. [%lu:%lu:%lu:%lu] rx reordering que cnt
-	 * 5. [%u:...:%u] tx mgmt packets categorized by 16 typesubtype
-	 * 6. [%lu:%lu:%lu:%lu] rx pending que cnt
-	 * 7. [%u/%u:...:%u/%u] TxFreeSkb current que cnt and total cnt
-	 */
-	slen = (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
-	       (6 * CFG_MAX_TXQ_NUM + 2 - 1) * MAX_BSSID_NUM + 1 +
-	       (20 * 4 + 5) * MAX_BSSID_NUM + 1 +
-	       (20 + 1) * MAX_BSSID_NUM + 1 +
-	       (20 * MAX_NUM_OF_FC_SUBTYPES + MAX_NUM_OF_FC_SUBTYPES - 1) + 1;
-#if CFG_QUEUE_RX_IF_CONN_NOT_READY
-	slen += (20 + 1) * MAX_BSSID_NUM + 1;
-#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-	slen += ((20*1) * 2 * CON_WORK_MAX) + 1;
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+	/* A very large buffer to hold concatenated logs */
+	slen = 1024;
 	pos = buf = kalMemZAlloc(slen, VIR_MEM_TYPE);
 	if (pos == NULL) {
 		DBGLOG(SW4, INFO, "Can't allocate memory\n");
@@ -11279,371 +11429,233 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		goto done;
 	}
 	end = buf + slen;
-	head1 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		pos += kalSnprintf(pos, end - pos, "[%lld:%lld:%lld:%lld]",
-			(long long) txDiffBytes[i],
-			(long long) txDiffPkts[i],
-			(long long) rxDiffBytes[i],
-			(long long) rxDiffPkts[i]);
-	}
-	pos++;
-	head2 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		pos += kalSnprintf(pos, end - pos, "[");
-		for (j = 0; j < CFG_MAX_TXQ_NUM - 1; ++j) {
-			pos += kalSnprintf(pos, end - pos, "%d:",
-				glue->ai4TxPendingFrameNumPerQueue[i][j]);
-		}
-		pos += kalSnprintf(pos, end - pos, "%d]",
-			glue->ai4TxPendingFrameNumPerQueue[i][j]);
-	}
-	pos++;
-	head3 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		ndev = wlanGetNetDev(glue, i);
-		bss = GET_BSS_INFO_BY_INDEX(prAdapter, i);
 
-		GLUE_ACQUIRE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
-		fgIsValidNetDevice = FALSE;
+	/**
+	 * Sentence 1.
+	 * <%dms> Tput: %llu(%llu.%03llumbps)
+	 * %s (composeTput)
+	 * Pending:%d/%d%s (composePending)
+	 * #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	 *   Mo:[%u:%lu:%lu:%lu]
+	 * #if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	 *   LQ[%llu:%llu:%llu]
+	 * idle:%u lv:%u th:%u fg:0x%lx
+	 * #if CFG_DYNAMIC_RFB_ADJUSTMENT
+	 *   RfbLv:%u
+	 *
+	 * #if CFG_SUPPORT_CPU_STAT
+	 *   TxCpu[%d,%d,%d,%d,%d,%d,%d,%d]
+	 *
+	 # #if CFG_SUPPORT_CPU_STAT
+	 *   #if CFG_SUPPORT_PER_CPU_TX
+	 *     PER_CPU_TX_CNT_TEMPLATE
+	 *       PerCpuTx[%d,%d,%d,%d,%d,%d,%d,%d]
+	 *   #if CFG_SUPPORT_TX_WORK
+	 *     TX_WORK_CNT_TEMPLATE
+	 *       TxWork[%d][%d,%d,%d,%d,%d,%d,%d,%d]
+	 *   #if CFG_SUPPORT_TX_FREE_SKB_WORK
+	 *     TX_FREE_SKB_WORK_CNT_TEMPLATE
+	 *       TxFreeSkbWork[%d][%d,%d,%d,%d,%d,%d,%d,%d]
+	 *   RxCpu[%d,%d,%d,%d,%d,%d,%d,%d]
+	 *   #if CFG_SUPPORT_RX_WORK
+	 *     RX_WORK_CNT_TEMPLATE
+	 *       RxWork[%d][%d,%d,%d,%d,%d,%d,%d,%d]
+	 *   #if CFG_SUPPORT_SKB_ALLOC_WORK
+	 *     SKB_ALLOC_WORK_CNT_TEMPLATE
+	 *        SkbAllocWork[%d][%d,%d,%d,%d,%d,%d,%d,%d][%u][0x%x][%u]
+	 * TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u
+	 * Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u
+	 * MgmtSub[%s] (composeMgmtSub)
+	 * #if CFG_SUPPORT_TX_FREE_SKB_WORK
+	 *   TX_FREE_SKBQ_TEMPLATE
+	 *     TxFreeSkbQ[%s] (composeTxFreeSkbQ)
+	 */
+	/* Sentence 1 */
+	pos = buf;
+	pos += kalSnprintf(pos, end - pos,
+			   "<%dms> Tput: %llu(%llu.%03llumbps) ",
+			   period, (unsigned long long) perf->ulThroughput,
+			   (unsigned long long) (perf->ulThroughput >> 20),
+			   (unsigned long long)
+				   ((perf->ulThroughput >> 10) & BITS(0, 9)));
 
-		if (ndev) {
-			if (!IS_BSS_P2P(bss)) /* non-p2p */
-				fgIsValidNetDevice = TRUE;
-#if CFG_ENABLE_WIFI_DIRECT
-			else if (prAdapter->rP2PNetRegState ==
-					ENUM_NET_REG_STATE_REGISTERED) /* p2p */
-				fgIsValidNetDevice = TRUE;
-#endif
-		}
+	pos += composeTput(prAdapter, pos, end,
+			    txDiffBytes, rxDiffBytes, rxDiffPkts, txDiffPkts);
 
-		if (fgIsValidNetDevice) {
-#if KERNEL_VERSION(5, 18, 0) <= LINUX_VERSION_CODE
-			dev_get_stats(ndev, &rtnls);
-			pos += kalSnprintf(pos, end - pos,
-				"[%llu:%llu:%llu:%llu]",
-				(unsigned long long) ndev->stats.tx_dropped,
-				(unsigned long long) rtnls.tx_dropped,
-				(unsigned long long) ndev->stats.rx_dropped,
-				(unsigned long long) rtnls.rx_dropped);
-#else
-			pos += kalSnprintf(pos, end - pos,
-				"[%llu:%llu:%llu:%llu]",
-				(unsigned long long) ndev->stats.tx_dropped,
-				(unsigned long long)
-					atomic_long_read(&ndev->tx_dropped),
-				(unsigned long long) ndev->stats.rx_dropped,
-				(unsigned long long)
-					atomic_long_read(&ndev->rx_dropped));
-#endif
-		}
-		GLUE_RELEASE_SPIN_LOCK(glue, SPIN_LOCK_NET_DEV);
-	}
-	pos++;
-	head4 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		if (i == MAX_BSSID_NUM - 1) {
-			pos += kalSnprintf(pos, end - pos, "%u",
-				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
-		} else {
-			pos += kalSnprintf(pos, end - pos, "%u:",
-				REORDERING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
-		}
-	}
-	pos++;
-	head5 = pos;
-	for (i = 0; i < ARRAY_SIZE(prAdapter->au4MgmtSubtypeTxCnt); i++)
-		pos += kalSnprintf(pos, end - pos,
-				i == MAX_NUM_OF_FC_SUBTYPES-1 ? "%u":"%u:",
-				prAdapter->au4MgmtSubtypeTxCnt[i]);
-#if CFG_QUEUE_RX_IF_CONN_NOT_READY
-	pos++;
-	head6 = pos;
-	for (i = 0; i < MAX_BSSID_NUM; i++) {
-		pos += kalSnprintf(pos, end - pos,
-			(i == MAX_BSSID_NUM - 1) ? "%u" : "%u:",
-			RX_PENDING_GET_BSS_CNT(&prAdapter->rRxCtrl, i));
-	}
-#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-	pos++;
-	head7 = pos;
-	prTxFreeInfo = &glue->rTxFreeInfo;
-	for (i = 0; i < CON_WORK_MAX; i++) {
-		pos += kalSnprintf(pos, end - pos,
-			(i == CON_WORK_MAX - 1) ? "%u/%u" : "%u/%u ",
-			QUEUE_LENGTH(&prTxFreeInfo->rQueInfo[i].rQue),
-			prTxFreeInfo->rQueInfo[i].u4TotalCnt);
-	}
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-
-#if CFG_SUPPORT_CPU_STAT
-#define FORMAT_INT_8 \
-	"%d,%d,%d,%d,%d,%d,%d,%d"
-
-#if CFG_SUPPORT_PER_CPU_TX
-#define PER_CPU_TX_CNT_TEMPLATE " PerCpuTx["FORMAT_INT_8"]"
-#else /* CFG_SUPPORT_PER_CPU_TX */
-#define PER_CPU_TX_CNT_TEMPLATE ""
-#endif /* CFG_SUPPORT_PER_CPU_TX */
-
-#if CFG_SUPPORT_TX_WORK
-#define TX_WORK_CNT_TEMPLATE \
-	" TxWork[%d]["FORMAT_INT_8"]"
-#else /* CFG_SUPPORT_TX_WORK */
-#define TX_WORK_CNT_TEMPLATE ""
-#endif /* CFG_SUPPORT_TX_WORK */
-
-#if CFG_SUPPORT_RX_WORK
-#define RX_WORK_CNT_TEMPLATE \
-	" RxWork[%d]["FORMAT_INT_8"]"
-#else /* CFG_SUPPORT_RX_WORK */
-#define RX_WORK_CNT_TEMPLATE ""
-#endif /* CFG_SUPPORT_RX_WORK */
-
-#if CFG_SUPPORT_SKB_ALLOC_WORK
-#define SKB_ALLOC_WORK_CNT_TEMPLATE \
-	" SkbAllocWork[%d]["FORMAT_INT_8"][%u][0x%x][%u]"
-#else /* CFG_SUPPORT_SKB_ALLOC_WORK */
-#define SKB_ALLOC_WORK_CNT_TEMPLATE ""
-#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
-
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-#define TX_FREE_SKB_WORK_CNT_TEMPLATE \
-	" TxFreeSkbWork[%d]["FORMAT_INT_8"]"
-#else /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-#define TX_FREE_SKB_WORK_CNT_TEMPLATE ""
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-
-#define CPU_STAT_CNT_TEMPLATE \
-	" TxCpu["FORMAT_INT_8"]" PER_CPU_TX_CNT_TEMPLATE \
-	TX_WORK_CNT_TEMPLATE \
-	TX_FREE_SKB_WORK_CNT_TEMPLATE \
-	" RxCpu["FORMAT_INT_8"]" RX_WORK_CNT_TEMPLATE \
-	SKB_ALLOC_WORK_CNT_TEMPLATE
-#else /* CFG_SUPPORT_CPU_STAT */
-#define CPU_STAT_CNT_TEMPLATE ""
-#endif /* CFG_SUPPORT_CPU_STAT */
-
-#if CFG_SUPPORT_LINK_QUALITY_MONITOR
-#define LINK_QUALITY_MONITOR_TEMPLATE \
-	"LQ[%llu:%llu:%llu]"
-#else /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
-#define LINK_QUALITY_MONITOR_TEMPLATE ""
-#endif /* CFG_SUPPORT_LINK_QUALITY_MONITOR */
+	pos += composePending(prAdapter, pos, end);
 
 #ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
-#define RADIOTAP_LOG_TEMPLATE " Mo:[%u:%lu:%lu:%lu]"
-#else /* CFG_SUPPORT_SNIFFER_RADIOTAP */
-#define RADIOTAP_LOG_TEMPLATE ""
-#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
-
-#if CFG_DYNAMIC_RFB_ADJUSTMENT
-#define DYNAMIC_RFB_TEMPLATE " RfbLv:%u"
-#else /* CFG_DYNAMIC_RFB_ADJUSTMENT */
-#define DYNAMIC_RFB_TEMPLATE ""
-#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
-
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-#define TX_FREE_SKBQ_TEMPLATE " TxFreeSkbQ[%s]"
-#else /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-#define TX_FREE_SKBQ_TEMPLATE ""
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-
-#define TEMP_LOG_TEMPLATE \
-	"<%dms> Tput: %llu(%llu.%03llumbps) %s Pending:%d/%d %s " \
-	RADIOTAP_LOG_TEMPLATE \
-	LINK_QUALITY_MONITOR_TEMPLATE \
-	" idle:%u lv:%u th:%u fg:0x%lx" \
-	DYNAMIC_RFB_TEMPLATE \
-	CPU_STAT_CNT_TEMPLATE \
-	" TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u" \
-	" Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u" \
-	" MgmtSub[%s]" \
-	TX_FREE_SKBQ_TEMPLATE \
-	"\n"
-
-	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
-		period,	(unsigned long long) perf->ulThroughput,
-		(unsigned long long) (perf->ulThroughput >> 20),
-		(unsigned long long) ((perf->ulThroughput >> 10) & BITS(0, 9)),
-		head1, GLUE_GET_REF_CNT(glue->i4TxPendingFrameNum),
-		prAdapter->rWifiVar.u4NetifStopTh, head2,
-#ifdef CFG_SUPPORT_SNIFFER_RADIOTAP
+	pos += kalSnprintf(pos, end - pos, "Mo:[%u:%lu:%lu:%lu] ",
 		glue->fgIsEnableMon,
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_SNIFFER_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_PDMA_SCATTER_DATA_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl,
-			RX_PDMA_SCATTER_INDICATION_COUNT),
-#endif /* CFG_SUPPORT_SNIFFER_RADIOTAP */
+			RX_PDMA_SCATTER_INDICATION_COUNT));
+#endif
+
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
+	pos += kalSnprintf(pos, end - pos, "LQ[%llu:%llu:%llu] ",
 		(unsigned long long) lq->u8TxTotalCount,
 		(unsigned long long) lq->u8RxTotalCount,
-		(unsigned long long) lq->u8DiffIdleSlotCount,
+		(unsigned long long) lq->u8DiffIdleSlotCount);
 #endif
-		perf->fgIdle,
-		perf->u4CurrPerfLevel,
-		prAdapter->rWifiVar.u4BoostCpuTh,
-		perf->ulPerfMonFlag,
+
+	pos += kalSnprintf(pos, end - pos, "idle:%u lv:%u th:%u fg:0x%lx ",
+			perf->fgIdle,
+			perf->u4CurrPerfLevel,
+			prAdapter->rWifiVar.u4BoostCpuTh,
+			perf->ulPerfMonFlag);
+
 #if CFG_DYNAMIC_RFB_ADJUSTMENT
-		prAdapter->u4RfbUnUseCntLv,
-#endif /* CFG_DYNAMIC_RFB_ADJUSTMENT */
-#if CFG_SUPPORT_CPU_STAT
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 0),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 1),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 2),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 3),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 4),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 5),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 6),
-		CPU_STAT_GET_CNT(glue, CPU_TX_IN, 7),
-#if CFG_SUPPORT_PER_CPU_TX
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 0),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 1),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 2),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 3),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 4),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 5),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 6),
-		CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 7),
-#endif /* CFG_SUPPORT_PER_CPU_TX */
-#if CFG_SUPPORT_TX_WORK
-		kalWorkGetCpu(glue, TX_WORK),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 0),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 1),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 2),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 3),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 4),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 5),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 6),
-		CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 7),
-#endif /* CFG_SUPPORT_TX_WORK */
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-		prTxFreeInfo->eCoreType,
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 0),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 1),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 2),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 3),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 4),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 5),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 6),
-		CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 7),
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 0),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 1),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 2),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 3),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 4),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 5),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 6),
-		CPU_STAT_GET_CNT(glue, CPU_RX_IN, 7),
-#if CFG_SUPPORT_RX_WORK
-		kalWorkGetCpu(glue, RX_WORK),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 0),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 1),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 2),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 3),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 4),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 5),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 6),
-		CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 7),
-#endif /* CFG_SUPPORT_RX_WORK */
-#if CFG_SUPPORT_SKB_ALLOC_WORK
-		prSkbAllocInfo->eCoreType,
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 0),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 1),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 2),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 3),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 4),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 5),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 6),
-		CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 7),
-		prSkbAllocInfo->u4ScheCnt,
-		prSkbAllocInfo->ulScheMask,
-		skb_queue_len(&prSkbAllocInfo->rFreeSkbQ),
-#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
-#endif /* CFG_SUPPORT_CPU_STAT */
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_FORWARD_OVERFLOW_DROP),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_INVALID_MSDUINFO_COUNT),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DROP_PID_COUNT),
-		skb_queue_len(&glue->rTxDirectSkbQueue),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_IN_COUNT),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_MSDUINFO_COUNT),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_DEQUEUE_COUNT),
-		TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT),
-		head5
-#if CFG_SUPPORT_TX_FREE_SKB_WORK
-		, head7
-#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
-		);
-#undef TEMP_LOG_TEMPLATE
-#undef LINK_QUALITY_MONITOR_TEMPLATE
-#if CFG_SUPPORT_CPU_STAT
-#undef PER_CPU_TX_CNT_TEMPLATE
-#undef TX_WORK_CNT_TEMPLATE
-#undef RX_WORK_CNT_TEMPLATE
-#undef SKB_ALLOC_WORK_CNT_TEMPLATE
-#undef TX_FREE_SKB_WORK_CNT_TEMPLATE
-#undef TX_FREE_SKBQ_TEMPLATE
-#endif /* CFG_SUPPORT_CPU_STAT */
-#undef CPU_STAT_CNT_TEMPLATE
-#undef DYNAMIC_RFB_TEMPLATE
-
-#if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-#define RRO_LOG_TEMPLATE \
-	"RRO[%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu," \
-	"%lu,%lu,%lu] "
-#else /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-#define RRO_LOG_TEMPLATE ""
-#endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-
-#if CFG_RFB_TRACK
-#define RRB_TRACK_TEMPLATE \
-	"RfbTrack[%u:%u:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] "
-#else /* CFG_RFB_TRACK */
-#define RRB_TRACK_TEMPLATE ""
-#endif /* CFG_RFB_TRACK */
-
-#if CFG_QUEUE_RX_IF_CONN_NOT_READY
-#define RX_PENDING_TEMPLATE "RxPending[%s] "
-#else /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-#define RX_PENDING_TEMPLATE ""
-#endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-
-#if CFG_SUPPORT_RX_GRO
-#define NAPI_TEMPLATE "NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u] "
-#else
-#define NAPI_TEMPLATE "NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] "
+	pos += kalSnprintf(pos, end - pos, "RfbLv:%u ",
+		prAdapter->u4RfbUnUseCntLv);
 #endif
 
-#if CFG_NAPI_DELAY
-#define NAPI_DELAY_TEMPLATE "NapiDelay[%u,%u,%u,0x%x,%u] "
-#else /* CFG_NAPI_DELAY */
-#define NAPI_DELAY_TEMPLATE ""
-#endif /* CFG_NAPI_DELAY */
+#if CFG_SUPPORT_CPU_STAT
+	pos += kalSnprintf(pos, end - pos, "TxCpu[%d,%d,%d,%d,%d,%d,%d,%d] ",
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 0),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 1),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 2),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 3),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 4),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 5),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 6),
+			CPU_STAT_GET_CNT(glue, CPU_TX_IN, 7));
 
-#define TEMP_LOG_TEMPLATE \
-	"ndevdrp:%s " \
-	NAPI_TEMPLATE \
-	NAPI_DELAY_TEMPLATE \
-	RRO_LOG_TEMPLATE \
-	"RxReorder[%s] " \
-	RX_PENDING_TEMPLATE \
-	RRB_TRACK_TEMPLATE \
-	"drv[RM,IL,RI,PA,PF|DU,DA,RT,RM,RW#" \
-	"RA,RB,DT,NS,IB|HS,LS,DD,ME,BD_" \
-	"NI,DR,TE,PE,CE|DN,FE,DE,IE,TME^" \
-	"CM,FB,ID,FD,NL]:" \
-	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#" \
-	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_" \
-	"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^" \
-	"%lu,%lu,%lu,%lu,%lu\n" \
+#if CFG_SUPPORT_PER_CPU_TX
+	pos += kalSnprintf(pos, end - pos, "PerCpuTx[%d,%d,%d,%d,%d,%d,%d,%d] ",
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 0),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 1),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 2),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 3),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 4),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 5),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 6),
+			CPU_STAT_GET_CNT(glue, CPU_TX_PER_CPU, 7));
+#endif /* CFG_SUPPORT_PER_CPU_TX */
 
-	DBGLOG(SW4, INFO, TEMP_LOG_TEMPLATE,
-		head3,
+#if CFG_SUPPORT_TX_WORK
+	pos += kalSnprintf(pos, end - pos,
+			"TxWork[%d][%d,%d,%d,%d,%d,%d,%d,%d] ",
+			kalWorkGetCpu(glue, TX_WORK),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 0),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 1),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 2),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 3),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 4),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 5),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 6),
+			CPU_STAT_GET_CNT(glue, CPU_TX_WORK_DONE, 7));
+#endif /* CFG_SUPPORT_TX_WORK */
+
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	pos += kalSnprintf(pos, end - pos,
+			"TxFreeSkbWork[%d][%d,%d,%d,%d,%d,%d,%d,%d] ",
+			prTxFreeInfo->eCoreType,
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 0),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 1),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 2),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 3),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 4),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 5),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 6),
+			CPU_STAT_GET_CNT(glue, CPU_TX_FREE_SKB_DONE, 7));
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+
+	pos += kalSnprintf(pos, end - pos, "RxCpu[%d,%d,%d,%d,%d,%d,%d,%d] ",
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 0),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 1),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 2),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 3),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 4),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 5),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 6),
+			CPU_STAT_GET_CNT(glue, CPU_RX_IN, 7));
+
+#if CFG_SUPPORT_RX_WORK
+	pos += kalSnprintf(pos, end - pos,
+			"RxWork[%d][%d,%d,%d,%d,%d,%d,%d,%d] ",
+			kalWorkGetCpu(glue, RX_WORK),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 0),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 1),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 2),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 3),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 4),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 5),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 6),
+			CPU_STAT_GET_CNT(glue, CPU_RX_WORK_DONE, 7));
+#endif /* CFG_SUPPORT_RX_WORK */
+
+#if CFG_SUPPORT_SKB_ALLOC_WORK
+	pos += kalSnprintf(pos, end - pos,
+			"SkbAllocWork[%d][%d,%d,%d,%d,%d,%d,%d,%d][%u][0x%x][%u] ",
+			prSkbAllocInfo->eCoreType,
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 0),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 1),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 2),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 3),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 4),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 5),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 6),
+			CPU_STAT_GET_CNT(glue, CPU_SKB_ALLOC_DONE, 7),
+			prSkbAllocInfo->u4ScheCnt,
+			prSkbAllocInfo->ulScheMask,
+			skb_queue_len(&prSkbAllocInfo->rFreeSkbQ));
+#endif /* CFG_SUPPORT_SKB_ALLOC_WORK */
+
+#endif /* CFG_SUPPORT_CPU_STAT */
+
+	pos += kalSnprintf(pos, end - pos,
+		     "TxDp[ST:BS:FO:QM:DP]:%u:%u:%u:%u:%u ",
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_STA_DROP),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_INACTIVE_BSS_DROP),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_FORWARD_OVERFLOW_DROP),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_INVALID_MSDUINFO_COUNT),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_DROP_PID_COUNT));
+
+	pos += kalSnprintf(pos, end - pos,
+		     "Tx[SQ:TI:TM:TDD:TDM]:%u:%u:%u:%u:%u ",
+		     skb_queue_len(&glue->rTxDirectSkbQueue),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_IN_COUNT),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_MSDUINFO_COUNT),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_DEQUEUE_COUNT),
+		     TX_GET_CNT(&prAdapter->rTxCtrl, TX_DIRECT_MSDUINFO_COUNT));
+
+	pos += composeMgmtSub(prAdapter, pos, end);
+
+#if CFG_SUPPORT_TX_FREE_SKB_WORK
+	pos += composeTxFreeSkbQ(prAdapter, pos, end);
+#endif /* CFG_SUPPORT_TX_FREE_SKB_WORK */
+	DBGLOG(SW4, INFO, "%s", buf);
+
+	/**
+	 * Sentence 2.
+	 * ndevdrp:%s (composeNdevDrp)
+	 * NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%u],
+	 * #if CFG_SUPPORT_RX_GRO
+	 *     add 1 additional field
+	 * #if CFG_NAPI_DELAY
+	 *    NAPI_DELAY_TEMPLATE
+	 *       NapiDelay[%u,%u,%u,0x%x,%u]
+	 * #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	 *    RRO_LOG_TEMPLATE
+	 *       RRO[%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu]
+	 * RxReorder[%s] (composeRxReorder)
+	 * #if CFG_QUEUE_RX_IF_CONN_NOT_READY
+	 *    RX_PENDING_TEMPLATE
+	 *       RxPending[%s] (composeRxPending)
+	 * #if CFG_RFB_TRACK
+	 *    RRB_TRACK_TEMPLATE
+	 *       RfbTrack[%u:%u:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:...]
+	 * drv[RM,IL,RI,PA,PF,DU,DA,RT,RM,RW,RA,RB,DT,...]:
+	 * %lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,...
+	 */
+	/* Sentence 2 */
+	pos = buf;
+	pos += composeNdevDrp(prAdapter, pos, end);
+
+	pos += kalSnprintf(pos, end - pos,
+		"NAPI[%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_INTR_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_TASKLET_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_WORK_COUNT),
@@ -11653,18 +11665,26 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_OUT_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_FULL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABNORMAL_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT),
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NAPI_FIFO_ABN_FULL_COUNT));
+
 #if CFG_SUPPORT_RX_GRO
-		skb_queue_len(&glue->rRxNapiSkbQ),
+	pos += kalSnprintf(pos, end - pos, ",%u",
+			skb_queue_len(&glue->rRxNapiSkbQ));
 #endif
+	pos += kalSnprintf(pos, end - pos, "] ");
+
 #if CFG_NAPI_DELAY
-		prAdapter->rWifiVar.u4NapiDelayTputTh,
-		prAdapter->rWifiVar.u4NapiDelayCntTh,
-		prAdapter->rWifiVar.u4NapiDelayTimeout,
-		glue->ulNapiDelayFlag,
-		kalGetRxFifoCount(glue),
+	pos += kalSnprintf(pos, end - pos, "NapiDelay[%u,%u,%u,0x%x,%u] ",
+			prAdapter->rWifiVar.u4NapiDelayTputTh,
+			prAdapter->rWifiVar.u4NapiDelayCntTh,
+			prAdapter->rWifiVar.u4NapiDelayTimeout,
+			glue->ulNapiDelayFlag,
+			kalGetRxFifoCount(glue));
 #endif /* CFG_NAPI_DELAY */
+
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
+	pos += kalSnprintf(pos, end - pos,
+		"RRO[%d,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu] ",
 		prAdapter->rWifiVar.fgEnableRro,
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_STEP_ONE),
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_REPEAT),
@@ -11679,13 +11699,18 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_TIMEOUT_FLUSH_ALL),
 		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_BUF_RUN_OUT),
 		/* used when recv abnormal reason */
-		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_COUNTER_NUM),
+		RX_RRO_GET_CNT(&prAdapter->rRxCtrl, RRO_COUNTER_NUM));
 #endif /* CFG_SUPPORT_HOST_OFFLOAD == 1 */
-		head4,
+
+	pos += composeRxReorder(prAdapter, pos, end);
+
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
-		head6,
+	pos += composeRxPending(prAdapter, pos, end);
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
+
 #if CFG_RFB_TRACK
+	pos += kalSnprintf(pos, end - pos,
+		"RfbTrack[%u:%u:%u:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d:%d] ",
 		prAdapter->rWifiVar.fgRfbTrackEn,
 		prAdapter->rWifiVar.u4RfbTrackInterval,
 		prAdapter->rWifiVar.u4RfbTrackTimeout,
@@ -11705,8 +11730,14 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_PACKET_SETUP),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_ADJUST_UNUSE),
 		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_MLO),
-		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FAIL),
+		RFB_TRACK_GET_CNT(&prAdapter->rRxCtrl, RFB_TRACK_FAIL));
 #endif /* CFG_RFB_TRACK */
+
+	pos += kalSnprintf(pos, end - pos,
+		"drv[RM,IL,RI,PA,PF|DU,DA,RT,RM,RW#RA,RB,DT,NS,IB|HS,LS,DD,ME,BD_NI,DR,TE,PE,CE|DN,FE,DE,IE,TME^CM,FB,ID,FD,NL]:");
+
+	pos += kalSnprintf(pos, end - pos,
+		"%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu#%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu_%lu,%lu,%lu,%lu,%lu|%lu,%lu,%lu,%lu,%lu^%lu,%lu,%lu,%lu,%lu",
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_MPDU_TOTAL_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_LOG_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_DATA_INDICATION_COUNT),
@@ -11741,13 +11772,8 @@ static uint32_t kalPerMonUpdate(struct ADAPTER *prAdapter)
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FRAGMENT_BMC_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_ICS_DROP_COUNT),
 		RX_GET_CNT(&prAdapter->rRxCtrl, RX_FW_DROP_SSN_COUNT),
-		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NULL_PACKET_COUNT)
-		);
-#undef TEMP_LOG_TEMPLATE
-#undef RRO_LOG_TEMPLATE
-#undef RADIOTAP_LOG_TEMPLATE
-#undef RX_PENDING_TEMPLATE
-#undef NAPI_DELAY_TEMPLATE
+		RX_GET_CNT(&prAdapter->rRxCtrl, RX_NULL_PACKET_COUNT));
+	DBGLOG(SW4, INFO, "%s", buf);
 
 	kalTraceEvent("Tput: %llu.%03llumbps",
 		(unsigned long long) (perf->ulThroughput >> 20),
