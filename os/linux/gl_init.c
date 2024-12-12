@@ -9655,7 +9655,8 @@ struct net_device *wlanGetNetDev(struct GLUE_INFO *prGlueInfo,
 struct net_device *wlanGetAisNetDev(struct GLUE_INFO *prGlueInfo,
 	uint8_t ucAisIndex)
 {
-	if (gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
+	if (ucAisIndex < KAL_AIS_NUM &&
+	    gprWdev[ucAisIndex] && gprWdev[ucAisIndex]->netdev)
 		return gprWdev[ucAisIndex]->netdev;
 
 	return NULL;
