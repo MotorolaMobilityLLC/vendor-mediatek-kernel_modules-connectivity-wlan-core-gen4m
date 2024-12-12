@@ -4211,8 +4211,10 @@ uint32_t scanProcessBeaconAndProbeResp(struct ADAPTER *prAdapter,
 	 * MC probe resp with wrong content will result in
 	 * MLO disconnect.
 	 */
-	if (prSwRfb->fgIsMC)
+	if (prSwRfb->fgIsMC) {
+		DBGLOG(SCN, WARN, "drop unexpected MC pkt\n");
 		return WLAN_STATUS_SUCCESS;
+	}
 
 	prWlanInfo = &prAdapter->rWlanInfo;
 
