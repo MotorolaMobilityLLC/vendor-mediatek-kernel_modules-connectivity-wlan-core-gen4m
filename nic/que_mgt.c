@@ -6646,6 +6646,20 @@ u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
 	pucMUEdcaUpdateCnt = &prBssInfo->ucMUEdcaUpdateCnt;
 #endif /* CFG_SUPPORT_802_11BE_EPCS */
 
+	/* Check Set Count, only update when count change */
+	if (*pucMUEdcaUpdateCnt != (prIeMUEdcaParam->ucMUQosInfo &
+		WMM_QOS_INFO_PARAM_SET_CNT)) {
+		DBGLOG(QM, INFO, "cnt changed, %u -> %lu\n",
+			   *pucMUEdcaUpdateCnt,
+			   prIeMUEdcaParam->ucMUQosInfo &
+				   WMM_QOS_INFO_PARAM_SET_CNT);
+		*pucMUEdcaUpdateCnt = (prIeMUEdcaParam->ucMUQosInfo &
+			WMM_QOS_INFO_PARAM_SET_CNT);
+	} else {
+		DBGLOG(QM, TRACE, "cnt not changed, %u\n",
+			   *pucMUEdcaUpdateCnt);
+		return TRUE;
+	}
 
 	for (eAci = 0; eAci < WMM_AC_INDEX_NUM; eAci++) {
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
@@ -6686,15 +6700,6 @@ u_int8_t mqmCompareMUEdcaParameters(struct ADAPTER *prAdapter,
 			       prMUAcParamInIE->ucMUEdcaTimer);
 			return FALSE;
 		}
-	}
-	/* Check Set Count */
-	if (*pucMUEdcaUpdateCnt != (prIeMUEdcaParam->ucMUQosInfo &
-		WMM_QOS_INFO_PARAM_SET_CNT)) {
-		DBGLOG(QM, INFO, "cnt changed, %d -> %d\n", *pucMUEdcaUpdateCnt,
-		       prIeMUEdcaParam->ucMUQosInfo &
-		       WMM_QOS_INFO_PARAM_SET_CNT);
-		*pucMUEdcaUpdateCnt = (prIeMUEdcaParam->ucMUQosInfo &
-			WMM_QOS_INFO_PARAM_SET_CNT);
 	}
 
 	return TRUE;
