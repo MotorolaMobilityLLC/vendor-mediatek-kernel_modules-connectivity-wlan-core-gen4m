@@ -1135,11 +1135,18 @@ enum HIF_DEV_REG_REASON mt6653ValidMmioReadReason[] = {
 	HIF_DEV_REG_PLAT_DBG,
 	HIF_DEV_REG_WTBL_DBG,
 	HIF_DEV_REG_OID_DBG,
+	HIF_DEV_REG_PCIEASPM_READ,
 #if (CFG_MTK_WIFI_WFDMA_WB == 0)
 	HIF_DEV_REG_HIF_READ,
 	HIF_DEV_REG_HIF_RING,
 #endif
 };
+
+#if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
+enum HIF_DEV_REG_REASON mt6653NoMmioReadReason[] = {
+	HIF_DEV_REG_HIF_DBG,
+};
+#endif
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
@@ -1341,6 +1348,11 @@ struct mt66xx_chip_info mt66xx_chip_info_mt6653 = {
 	.isValidMmioReadReason = connac3xIsValidMmioReadReason,
 	.prValidMmioReadReason = mt6653ValidMmioReadReason,
 	.u4ValidMmioReadReasonSize = ARRAY_SIZE(mt6653ValidMmioReadReason),
+#if (CFG_MTK_WIFI_SW_EMI_RING == 1) && (CFG_MTK_WIFI_MBU == 1)
+	.isNoMmioReadReason = connac3xIsNoMmioReadReason,
+	.prNoMmioReadReason = mt6653NoMmioReadReason,
+	.u4NoMmioReadReasonSize = ARRAY_SIZE(mt6653NoMmioReadReason),
+#endif
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
 	.rsvMemWiFiMisc = mt6653_wifi_misc_rsv_mem_info,
@@ -3547,7 +3559,7 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_PCIE_ASPM_EP
 			HAL_MCR_WR(prGlueInfo->prAdapter,
 				0x74030194, 0xf);
-			HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
+			HAL_RMCR_RD(PCIEASPM_READ, prGlueInfo->prAdapter,
 				0x74030194, &value);
 #endif
 			writel(0xf, (pcie_vir_addr + 0x194));
@@ -3596,7 +3608,7 @@ static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 #if CFG_SUPPORT_PCIE_ASPM_EP
 		HAL_MCR_WR(prGlueInfo->prAdapter,
 			0x74030194, 0xc0f);
-		HAL_RMCR_RD(HIF_DBG, prGlueInfo->prAdapter,
+		HAL_RMCR_RD(PCIEASPM_READ, prGlueInfo->prAdapter,
 			0x74030194, &value);
 #endif
 		writel(0xc0f, (pcie_vir_addr + 0x194));

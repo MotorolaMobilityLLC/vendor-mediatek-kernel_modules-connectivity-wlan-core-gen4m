@@ -1653,6 +1653,8 @@ uint16_t asicConnac3xUsbRxByteCount(
 #if CFG_NEW_HIF_DEV_REG_IF
 u_int8_t connac3xIsValidMmioReadReason(
 	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason);
+u_int8_t connac3xIsNoMmioReadReason(
+	struct mt66xx_chip_info *prChipInfo, enum HIF_DEV_REG_REASON eReason);
 #endif /* CFG_NEW_HIF_DEV_REG_IF */
 
 #if defined(_HIF_PCIE) || defined(_HIF_AXI)
