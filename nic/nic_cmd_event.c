@@ -3652,6 +3652,10 @@ uint32_t nicCfgChipCapMLO(struct ADAPTER *prAdapter,
 	if (cap->ucApMldEMLSupport)
 		prAdapter->rWifiVar.u2ApMldEMLCap = cap->u2ApMldEMLCap;
 
+#if (CFG_SUPPORT_MLC == 1)
+	prAdapter->rWifiVar.ucMlcSupportCap = cap->ucMlcSupportCap;
+#endif
+
 	DBGLOG(INIT, INFO,
 		"EML cap - Non-AP=(%d,0x%x,%d), AP=(%d, 0x%x), MaxSimuLinks=%d\n",
 		prAdapter->rWifiVar.ucNonApMldEMLSupport,

@@ -958,6 +958,8 @@ struct WIFI_VAR {
 	uint16_t u2NonApMldEMLCap;
 	uint16_t u2ApMldEMLCap;
 	uint8_t ucDisableFwkMlc;
+	uint8_t fgMlcSupport;
+	uint8_t ucMlcSupportCap;
 	uint8_t ucLink3BandLimitBitmap;
 	uint8_t ucNonApHyMloSupport;
 	uint8_t ucNonApHyMloSupportCap;

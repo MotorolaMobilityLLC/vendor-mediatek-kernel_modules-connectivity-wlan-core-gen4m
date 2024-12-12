@@ -2456,7 +2456,7 @@ const uint8_t *mldFindMlIE(const uint8_t *ies, uint16_t len, uint8_t type)
 				sub_len = IE_LEN(prPreWifi7) - 2;
 
 				IE_FOR_EACH(sub, sub_len, sub_offset) {
-					if (BE_IS_ML_CTRL_TYPE(ies, type))
+					if (BE_IS_ML_CTRL_TYPE(sub, type))
 						return sub;
 				}
 			}
@@ -3619,23 +3619,6 @@ void mldBssUpdateOmacIdx(
 
 		prMldBssInfo->ucOmacIdx = prMainBssInfo->ucOwnMacIndex;
 	}
-
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
-	if (prMldBssInfo->ucHmloEnabled) {
-		DBGLOG(ML, INFO, "Hybird MLO use BssInfo omac idx %d\n",
-			prBssInfo->ucOwnMacIndex);
-		return;
-	}
-#endif
-
-#if (CFG_SINGLE_BAND_MLSR_56 == 1)
-	if (prMldBssInfo->fgIsSbMlsr)
-		return;
-#endif /* CFG_SINGLE_BAND_MLSR_56 */
-
-	DBGLOG(ML, INFO, "Use mld omac idx %d instead\n",
-		prMldBssInfo->ucOmacIdx);
-	prBssInfo->ucOwnMacIndex = prMldBssInfo->ucOmacIdx;
 }
 
 /**
@@ -3736,6 +3719,11 @@ void mldBssUpdateCap(struct ADAPTER *prAdapter,
 		} else {
 			prMldBssInfo->ucHmloEnabled = FALSE;
 		}
+#endif
+
+#if (CFG_SUPPORT_MLC == 1)
+		if (IS_MLC_ENABLED(prAdapter))
+			prMldBssInfo->ucOmRemapIdx = prMldBssInfo->ucOmacIdx;
 #endif
 	}
 
@@ -4212,6 +4200,16 @@ struct MLD_STA_RECORD *mldStarecJoin(struct ADAPTER *prAdapter,
 
 	mldStarecRegister(prAdapter, prMldStaRec, prStarec,
 		prBssDesc->rMlInfo.ucLinkIndex);
+
+#if (CFG_SUPPORT_MLC == 1)
+	/* default only setup link is active */
+	if (IS_MLC_CAPABLE(prAdapter) &&
+	    IS_BSS_INDEX_AIS(prAdapter, prMainStarec->ucBssIndex)) {
+		if (prMainStarec != prStarec)
+			prMldStaRec->u4ActiveStaBitmap &=
+				~BIT(prStarec->ucIndex);
+	}
+#endif
 
 	return prMldStaRec;
 }
@@ -5043,6 +5041,12 @@ enum ENUM_CH_REQ_TYPE mldDecideCnmReqCHType(struct ADAPTER *prAdapter,
 	if (mld_bssinfo->ucEmlEnabled)
 		return CH_REQ_TYPE_MLO_EMLSR_JOIN;
 #endif /* CFG_SINGLE_BAND_MLSR_56 */
+
+#if (CFG_SUPPORT_MLC == 1)
+	/* backward compaitable if MLC is not supported */
+	if (mld_bssinfo->ucEmlEnabled && !IS_MLC_ENABLED(prAdapter))
+		return CH_REQ_TYPE_MLO_EMLSR_JOIN;
+#endif /* CFG_SUPPORT_MLC */
 
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 #if (CFG_SUPPORT_MLO_HYBRID == 1)

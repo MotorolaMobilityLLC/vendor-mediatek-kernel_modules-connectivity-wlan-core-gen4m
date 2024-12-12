@@ -1529,6 +1529,12 @@ ifeq ($(CONFIG_MTK_WIFI_11BE_MLO_SUPPORT), y)
     else
         ccflags-y += -DCFG_DEFAULT_ENABLE_EMLSR=0
     endif
+    ifeq ($(CONFIG_SUPPORT_MLC), y)
+        ccflags-y += -DCFG_SUPPORT_MLC=1
+    else
+        ccflags-y += -DCFG_SUPPORT_MLC=0
+    endif
+
     # Setup MLD info before auth/assoc only for STA
     ifeq ($(CONFIG_MLD_INFO_PRESETUP), y)
         ccflags-y += -DCFG_MLD_INFO_PRESETUP=1

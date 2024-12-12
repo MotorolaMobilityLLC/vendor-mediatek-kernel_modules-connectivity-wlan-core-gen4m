@@ -2630,13 +2630,10 @@ uint8_t apsIntraNeedReplace(struct ADAPTER *ad,
 #endif
 
 #if (CFG_SINGLE_BAND_MLSR_56 == 1)
-	if (mldNeedSingleBandMlsr56(ad, score_info->eLinkPlan) &&
-	    score_info->ucLinkNum == 2) {
-		score_info->eMloMode = MLO_MODE_SB_MLSR;
-		score_info->ucMaxSimuLinks = 0;
-		DBGLOG(APS, INFO, "Force to select MLSR 5+6\n");
+	if (score_info->eMloMode == MLO_MODE_SB_MLSR)
 		return TRUE;
-	}
+	else if (ap->eMloMode == MLO_MODE_SB_MLSR)
+		return FALSE;
 #endif
 
 	if ((!score_info->fgIsMatchBssid && ap->fgIsMatchBssid) ||
@@ -2859,6 +2856,17 @@ void apsIntraSelectLinkPlan(struct ADAPTER *ad, struct AP_COLLECTION *ap,
 		else
 			apsUpdateTotalScore(ad,
 				candi, link_num, &score_info, bidx);
+
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+		if (mldNeedSingleBandMlsr56(ad, i) && link_num == 2) {
+			kalMemCopy(score_info.aprTarget, candi,
+				sizeof(score_info.aprTarget));
+			score_info.ucLinkNum = 2;
+			score_info.eMloMode = MLO_MODE_SB_MLSR;
+			score_info.ucMaxSimuLinks = 0;
+			DBGLOG(APS, INFO, "Force to select MLSR 5+6\n");
+		}
+#endif
 
 		if (apsIntraNeedReplace(ad, ap, &score_info, reason,
 			min_rfband_bmap, bidx)) {
@@ -3276,19 +3284,32 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 	if (!ap)
 		goto done;
 
+	/* fill bssdesc set from ap collection */
+	set->fgIsMatchBssid = ap->fgIsMatchBssid;
+	set->fgIsMatchBssidHint = ap->fgIsMatchBssidHint;
+	set->fgIsAllLinkInBlockList = ap->fgIsAllLinkInBlockList;
+	set->fgIsAllLinkConnected = ap->fgIsAllLinkConnected;
+	set->eMloMode = ap->eMloMode;
+	set->ucMaxSimuLinks = ap->ucMaxSimuLinks;
+
 	for (i = 0; i < ap->ucLinkNum && set->ucLinkNum < MLD_LINK_MAX; i++) {
 		if (!ap->aprTarget[i])
 			continue;
 
-		set->aprBssDesc[set->ucLinkNum++] = ap->aprTarget[i];
+		set->aprBssDesc[set->ucLinkNum] = ap->aprTarget[i];
+
+#if (CFG_SINGLE_BAND_MLSR_56 == 1)
+		if (set->eMloMode == MLO_MODE_SB_MLSR)
+			set->afgSyncOm[set->ucLinkNum] = FALSE;
+		else
+#endif
+			set->afgSyncOm[set->ucLinkNum] = TRUE;
 		set->ucRfBandBmap |= BIT(ap->aprTarget[i]->eBand);
+		set->ucLinkNum++;
 	}
 
 	if (policy == CONNECT_BY_BSSID)
 		goto done;
-
-	if (prChipInfo->apsFillBssDescSet)
-		prChipInfo->apsFillBssDescSet(ad, set, bidx);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* pick by special requirement
@@ -3328,22 +3349,17 @@ struct BSS_DESC *apsFillBssDescSet(struct ADAPTER *ad,
 				bss->rMlInfo.ucLinkIndex,
 				bss->rMlInfo.ucMaxSimuLinks,
 				found);
-			goto done;
 		}
 	}
 #endif
 
+	if (prChipInfo->apsFillBssDescSet)
+		prChipInfo->apsFillBssDescSet(ad, set, bidx);
+
 done:
 	/* first bss desc is main bss */
 	set->prMainBssDesc = set->aprBssDesc[0];
-	if (ap) {
-		set->fgIsMatchBssid = ap->fgIsMatchBssid;
-		set->fgIsMatchBssidHint = ap->fgIsMatchBssidHint;
-		set->fgIsAllLinkInBlockList = ap->fgIsAllLinkInBlockList;
-		set->fgIsAllLinkConnected = ap->fgIsAllLinkConnected;
-		set->eMloMode = ap->eMloMode;
-		set->ucMaxSimuLinks = ap->ucMaxSimuLinks;
-	}
+
 	DBGLOG(APS, INFO, "Total %d link(s)\n", set->ucLinkNum);
 	return set->prMainBssDesc;
 }

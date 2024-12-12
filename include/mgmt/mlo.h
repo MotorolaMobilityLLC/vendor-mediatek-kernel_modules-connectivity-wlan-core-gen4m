@@ -20,6 +20,18 @@
 #define IS_MLD_STAREC_MULTI(__prMldStaRec) \
 	(__prMldStaRec && __prMldStaRec->rStarecList.u4NumElem > 1)
 
+#define IS_NON_AP_EML_ENABLED(__ad) \
+	(IS_FEATURE_ENABLED(__ad->rWifiVar.ucNonApMldEMLSupport) && \
+	 BE_IS_EML_CAP_SUPPORT_EMLSR(__ad->rWifiVar.u2NonApMldEMLCap))
+
+#define IS_MLC_ENABLED(__ad) \
+	(IS_FEATURE_ENABLED(__ad->rWifiVar.fgMlcSupport) && \
+	 (BIT(0) & (__ad->rWifiVar.ucMlcSupportCap)) || \
+	 IS_FEATURE_FORCE_ENABLED(__ad->rWifiVar.fgMlcSupport))
+
+#define IS_MLC_CAPABLE(__ad) \
+	(BIT(0) & (__ad->rWifiVar.ucMlcSupportCap))
+
 #define BE_IS_ML_CTRL_TYPE(__pucIE, __TYPE) \
 	(IE_ID(__pucIE) == ELEM_ID_RESERVED && IE_LEN(__pucIE) >= 3 && \
 	 IE_ID_EXT(__pucIE) == ELEM_EXT_ID_MLD && \

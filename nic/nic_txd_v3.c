@@ -348,8 +348,6 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 #endif /* CFG_TX_CUSTOMIZE_LTO */
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_STA_RECORD *prMldSta;
-#endif
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
 #endif
 	u_int32_t u4TxDescAndPaddingLength;
@@ -455,9 +453,11 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 	}
 
 	if (prBssInfo) {
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
 		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
-		if (prMldBssInfo && prMldBssInfo->ucHmloEnabled) {
+		if (prMldBssInfo &&
+		    prMldBssInfo->ucOmRemapIdx != OM_REMAP_IDX_NONE) {
+			HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
 			HAL_MAC_CONNAC3X_TXD_SET_OWN_MAC_INDEX(
 				prTxDesc, prMldBssInfo->ucOmRemapIdx);
 		} else
@@ -591,12 +591,6 @@ void nic_txd_v3_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 			prMsduInfo->u2FrameLength,
 			prMsduInfo->eFragPos);
 	}
-#endif
-
-	/* OM MAP */
-#if (CFG_SUPPORT_MLO_HYBRID == 1)
-	if (prMldBssInfo && prMldBssInfo->ucHmloEnabled)
-		HAL_MAC_CONNAC3X_TXD_SET_OM_MAP(prTxDesc);
 #endif
 
 	/** DW3 **/

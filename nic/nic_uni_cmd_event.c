@@ -4687,6 +4687,9 @@ static uint32_t nicUniCmdChReqPrivilege(struct ADAPTER *ad,
 			if (msg->ucExtraChReqNum >= 1)
 				extra |= BIT(
 				CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_MULTI_LINK);
+			if (mld_bss && mld_bss->ucEmlEnabled)
+				extra |= BIT(
+				CNM_CH_PRIVILEGE_REQ_EXTRA_INFO_EMLSR);
 		}
 #endif
 		tag->ucExtraInfo = extra;
@@ -6804,11 +6807,14 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 	struct MLD_BSS_INFO *prMldBssInfo, struct PARAM_MLC_REQ *prMlcReq)
 {
 	struct UNI_CMD_MLC *uni_cmd;
+	struct MLD_STA_RECORD *mld_starec;
 	uint32_t status;
 	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLC);
 	uint8_t *pos;
 
-	if (!prMldBssInfo || !prMlcReq)
+	mld_starec = mldBssGetPeekClient(prAdapter, prMldBssInfo);
+
+	if (!prMldBssInfo || !prMlcReq || !mld_starec)
 		return WLAN_STATUS_NOT_ACCEPTED;
 
 	switch (prMlcReq->eMlcMode) {
@@ -6817,7 +6823,8 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 		break;
 	case MLC_MODE_USER_CONFIG:
 		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_USER_CONFIG) +
-			MLD_LINK_MAX * sizeof(struct UNI_CMD_MLC_LINK_INFO);
+			mld_starec->rStarecList.u4NumElem *
+			sizeof(struct UNI_CMD_MLC_LINK_INFO);
 		break;
 	case MLC_MODE_ACTIVE_NUM:
 		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_ACTIVE_NUM);
@@ -6861,8 +6868,6 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 		uint32_t valid_links = prMlcReq->u4Data1;
 		uint32_t active_links = prMlcReq->u4Data2;
 		struct UNI_CMD_MLC_LINK_INFO *link;
-		struct MLD_STA_RECORD *mld_starec =
-			mldBssGetPeekClient(prAdapter, prMldBssInfo);
 		struct LINK *list;
 		struct STA_RECORD *cur;
 
@@ -6884,15 +6889,15 @@ uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
 				link->ucLinkState = MLO_LINK_STATE_ACTIVE;
 			else
 				link->ucLinkState = MLO_LINK_STATE_INACTIVE;
-			link++;
-
-			tag->u2Length += sizeof(struct UNI_CMD_MLC_LINK_INFO);
-			tag->ucLinkNum++;
 
 			DBGLOG(INIT, INFO, "\tbss=%d,wlan_idx=%d,state=%d\n",
 				link->ucBssIdx,
 				link->u2WlanIdx,
 				link->ucLinkState);
+
+			link++;
+			tag->u2Length += sizeof(struct UNI_CMD_MLC_LINK_INFO);
+			tag->ucLinkNum++;
 		}
 	} else if (prMlcReq->eMlcMode == MLC_MODE_ACTIVE_NUM) {
 		struct UNI_CMD_MLC_REQ_ACTIVE_NUM *tag;

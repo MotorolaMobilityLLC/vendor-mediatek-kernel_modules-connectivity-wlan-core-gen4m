@@ -1387,7 +1387,8 @@ struct CAP_MLO_CAP {
 	uint16_t u2NonApMldEMLCap; /* Non-AP Mld EML cap */
 	uint16_t u2ApMldEMLCap; /* AP Mld EML cap */
 	uint8_t ucNonApHyMloSupport; /* Hybrid MLo 1:support, 0 :not */
-	uint8_t ucReserved[3];
+	uint8_t ucMlcSupportCap; /* MLC BIT(0): 1:support, 0 :not */
+	uint8_t ucReserved[2];
 };
 #endif
 

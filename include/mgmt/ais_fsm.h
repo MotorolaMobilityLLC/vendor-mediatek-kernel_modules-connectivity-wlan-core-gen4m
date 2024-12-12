@@ -505,6 +505,7 @@ struct AIS_FSM_INFO {
 	u_int8_t fgIsDelIface;
 
 	uint8_t ucChReqNum;
+	enum ENUM_MBMC_BN eChReqDbdcBand;
 
 	uint8_t ucAvailableAuthTypes; /* Used for AUTH_MODE_AUTO_SWITCH */
 

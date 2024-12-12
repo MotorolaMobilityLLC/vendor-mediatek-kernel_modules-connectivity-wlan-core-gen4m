@@ -1023,7 +1023,8 @@ enum ENUM_MLO_MODE {
 	MLO_MODE_EMLSR,
 	MLO_MODE_HYMLO, /* Hybrid MLO */
 	MLO_MODE_HYEMLSR, /* Hybrid EMLSR */
-	MLO_MODE_SB_MLSR, /* Single band MLSR */
+	MLO_MODE_HYMLSR, /* Hybrid MLSR */
+	MLO_MODE_SB_MLSR, /* SW single band MLSR */
 	MLO_MODE_NUM
 };
 

@@ -875,6 +875,7 @@ struct BSS_DESC_SET {
 	enum ENUM_MLO_MODE eMloMode;
 	uint8_t ucMaxSimuLinks;
 	struct BSS_DESC *aprBssDesc[MLD_LINK_MAX];
+	uint8_t afgSyncOm[MLD_LINK_MAX];
 };
 
 /*******************************************************************************

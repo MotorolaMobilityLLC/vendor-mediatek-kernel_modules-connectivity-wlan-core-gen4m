@@ -1756,12 +1756,7 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		struct BSS_DESC_SET *set, uint8_t ucBssIndex)
 {
 #if (CFG_SUPPORT_MLO_HYBRID == 1)
-#if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
-	struct BSS_DESC *sorted[MLD_LINK_MAX] = {0};
-	enum ENUM_BAND order[3] = {0};
-	uint8_t i, j;
-#endif
-
+	uint8_t i;
 	uint8_t ucL3BnlimitBmap = prAdapter->rWifiVar.ucLink3BandLimitBitmap;
 
 	/* swap link 3 to link 2 depend on fw capbility
@@ -1789,8 +1784,18 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 		}
 	}
 
+	if (set->eMloMode == MLO_MODE_HYMLO ||
+	    set->eMloMode == MLO_MODE_HYEMLSR) {
+		for (i = 0; i < set->ucLinkNum; i++)
+			set->afgSyncOm[i] = FALSE;
+	}
+
 #if (CFG_SUPPORT_FORCE_LINK_SORT == 1)
 	if (prAdapter->ucForceLinkSort) {
+		struct BSS_DESC *sorted[MLD_LINK_MAX] = {0};
+		enum ENUM_BAND order[3] = {0};
+		uint8_t j;
+
 		switch (prAdapter->ucForceLinkSortType) {
 		case 0x00:
 			order[0] = BAND_2G4;
@@ -1836,7 +1841,6 @@ static void mt7925_apsFillBssDescSet(struct ADAPTER *prAdapter,
 
 		for (i = 0; i < MLD_LINK_MAX; i++)
 			set->aprBssDesc[i] = sorted[i];
-
 	}
 #endif
 #endif

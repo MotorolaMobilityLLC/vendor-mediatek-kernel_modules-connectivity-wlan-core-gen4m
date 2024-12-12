@@ -7476,7 +7476,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->ucStaPreferMldAddr,
 		"StaPreferMldAddr", FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucEmlsrLinkWeight,
-		"EmlsrLinkWeight", 50, FEATURE_TO_CUSTOMER);
+		"EmlsrLinkWeight", 20, FEATURE_TO_CUSTOMER);
 	INIT_STR(prWifiVar->aucMloP2pPreferFreq,
 		"MloP2pPreferFreq", "", FEATURE_TO_CUSTOMER);
 	wlanParseMloFreqList(prAdapter,
@@ -7527,7 +7527,10 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 #endif
 #if (CFG_SUPPORT_MLC == 1)
-	INIT_UINT(prWifiVar->ucDisableFwkMlc, "DisableFwkMlc", 0);
+	INIT_UINT(prWifiVar->ucDisableFwkMlc, "DisableFwkMlc", FEATURE_DISABLED,
+		FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgMlcSupport, "EnableMlc", FEATURE_ENABLED,
+		FEATURE_TO_CUSTOMER);
 #endif
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif /* CFG_SUPPORT_802_11BE */

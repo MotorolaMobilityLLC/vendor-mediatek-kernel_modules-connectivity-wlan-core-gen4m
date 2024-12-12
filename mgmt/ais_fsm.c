@@ -460,12 +460,19 @@ void aisInitBssInfo(struct ADAPTER *prAdapter,
 }
 
 struct BSS_INFO *aisAllocBssInfo(struct ADAPTER *prAdapter,
-	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIdx)
+	struct AIS_FSM_INFO *prAisFsmInfo, uint8_t ucLinkIdx,
+	uint8_t fgSyncOm)
 {
 	struct BSS_INFO *bss = NULL;
+	uint8_t ucOmacIdx = INVALID_OMAC_IDX;
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (prAisFsmInfo->prMldBssInfo && fgSyncOm)
+		ucOmacIdx = prAisFsmInfo->prMldBssInfo->ucOmacIdx;
+#endif
 
 	bss = cnmGetBssInfoAndInit(prAdapter, NETWORK_TYPE_AIS, FALSE,
-				   INVALID_OMAC_IDX);
+				   ucOmacIdx);
 	if (!bss) {
 		DBGLOG(AIS, ERROR,
 			"prAisBssInfo is NULL for link%d\n", ucLinkIdx);
@@ -895,7 +902,7 @@ void aisFsmInit(struct ADAPTER *prAdapter,
 	for (i = 0; i < MAX_BSSID_NUM + 1; i++)
 		prAisFsmInfo->arBssId2LinkMap[i] = MLD_LINK_ID_NONE;
 	prBssInfo = aisAllocBssInfo(prAdapter, prAisFsmInfo,
-		AIS_MAIN_LINK_INDEX);
+		AIS_MAIN_LINK_INDEX, FALSE);
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	COPY_MAC_ADDR(aucMldMac, prBssInfo->aucOwnMacAddr);
@@ -2341,7 +2348,7 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	/* update cap again in case bssinfo is already registered */
 	mldBssUpdateCap(prAdapter, prAisFsmInfo->prMldBssInfo, prBssDescSet);
-#endif
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prAisBssInfo = aisGetLinkBssInfo(prAisFsmInfo, i);
@@ -2355,8 +2362,8 @@ void aisFillBssInfoFromBssDesc(struct ADAPTER *prAdapter,
 			continue;
 
 		if (!prAisBssInfo) {
-			prAisBssInfo =
-				aisAllocBssInfo(prAdapter, prAisFsmInfo, i);
+			prAisBssInfo = aisAllocBssInfo(prAdapter, prAisFsmInfo,
+				i, prBssDescSet->afgSyncOm[i]);
 			if (!prAisBssInfo) {
 				aisSetLinkBssDesc(prAisFsmInfo, NULL, i);
 				continue;
@@ -3497,6 +3504,7 @@ send_msg:
 			prAisFsmInfo->fgIsChannelRequested = TRUE;
 			prAisFsmInfo->ucBssIndexOfChReq =
 				prAisBssInfo->ucBssIndex;
+			prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 
 			break;
 
@@ -6002,6 +6010,12 @@ void aisUpdateBssInfoForJOIN(struct ADAPTER *prAdapter,
 	prAisBssInfo->fgIsAisCsaPending = FALSE;
 	prAisBssInfo->fgIsAisSwitchingChnl = FALSE;
 
+#if (CFG_SUPPORT_MLC == 1)
+	if (IS_MLC_CAPABLE(prAdapter) &&
+	    !cnmStaRecIsActive(prAdapter, prStaRec))
+		prAisBssInfo->fgIsNetAbsent = TRUE;
+#endif
+
 	/* 4 <4.2> Update HT information and set channel */
 	/* Record HT related parameters in rStaRec and rBssInfo
 	 * Note: it shall be called before nicUpdateBss()
@@ -7215,13 +7229,10 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 {
 	struct AIS_FSM_INFO *prAisFsmInfo;
 	struct MSG_CH_ABORT *prMsgChAbort;
-#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-	struct MLD_BSS_INFO *prMldBssInfo = NULL;
-	struct BSS_INFO *prBss = NULL;
-#endif
-
+	uint8_t ucReqChNum = 0;
 
 	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	ucReqChNum = prAisFsmInfo->ucChReqNum;
 
 	if (prAisFsmInfo->fgIsChannelGranted == TRUE
 	    || prAisFsmInfo->fgIsChannelRequested == TRUE) {
@@ -7237,32 +7248,13 @@ void aisFsmReleaseCh(struct ADAPTER *prAdapter, uint8_t ucBssIndex)
 			return;
 		}
 
-#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-		prBss = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-		prMldBssInfo = mldBssGetByBss(prAdapter, prBss);
-#endif
-
 		kalMemZero(prMsgChAbort, sizeof(struct MSG_CH_ABORT));
 		prMsgChAbort->rMsgHdr.eMsgId = MID_MNY_CNM_CH_ABORT;
 		prMsgChAbort->ucBssIndex = prAisFsmInfo->ucBssIndexOfChReq;
 		prMsgChAbort->ucTokenID = prAisFsmInfo->ucSeqNumOfChReq;
-		prMsgChAbort->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
+		prMsgChAbort->ucExtraChReqNum = ucReqChNum - 1;
 #if CFG_SUPPORT_DBDC
-		/* STR/MLSR mode the DBDC band is ENUM_BAND_ALL;
-		 * EMLSR/Hybird mode the DBDC band is ENUM_BAND_AUTO
-		 */
-		if (prMsgChAbort->ucExtraChReqNum >= 1
-#if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
-			&& prMldBssInfo && (
-			prMldBssInfo->ucMaxSimuLinks >= 1 ||
-			(prMldBssInfo->ucMaxSimuLinks == 0 &&
-			prMldBssInfo->ucEmlEnabled  == FALSE &&
-			prMldBssInfo->ucHmloEnabled ==  FALSE))
-#endif
-		)
-			prMsgChAbort->eDBDCBand = ENUM_BAND_ALL;
-		else
-			prMsgChAbort->eDBDCBand = ENUM_BAND_AUTO;
+		prMsgChAbort->eDBDCBand = prAisFsmInfo->eChReqDbdcBand;
 #endif /*CFG_SUPPORT_DBDC */
 
 		DBGLOG(AIS, INFO, "ucBssIndex: %d, ucTokenID: 0x%x, ucExtraChReqNum: %d\n",
@@ -10784,7 +10776,6 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 	uint32_t u4MsgSz;
 	uint8_t i = 0;
 	enum ENUM_CH_REQ_TYPE tmpReqCHType = CH_REQ_TYPE_JOIN;
-	enum ENUM_MBMC_BN tmpDBDCBand = ENUM_BAND_ALL;
 	struct BSS_INFO *prBss = NULL;
 	struct BSS_DESC *prBssDesc = NULL;
 
@@ -10802,6 +10793,10 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 	*ucChTokenId = cnmIncreaseTokenId(prAdapter);
 	prAisFsmInfo->ucChReqNum = ucReqChNum;
+	if (ucReqChNum >= 2)
+		prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_ALL;
+	else
+		prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 	prAisFsmInfo->fgIsChannelRequested = TRUE;
 	prMsgChReq->ucExtraChReqNum = prAisFsmInfo->ucChReqNum - 1;
 
@@ -10818,8 +10813,13 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 		if (prMldBssInfo && prMldBssInfo->ucMaxSimuLinks == 0 &&
 			(prMldBssInfo->ucEmlEnabled == TRUE ||
 			prMldBssInfo->ucHmloEnabled == TRUE))
-			tmpDBDCBand = ENUM_BAND_AUTO;
+			prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 	}
+#endif
+
+#if (CFG_SUPPORT_MLC == 1)
+	if (IS_MLC_ENABLED(prAdapter))
+		prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 #endif
 
 	for (i = 0; i < ucReqChNum; i++) {
@@ -10855,10 +10855,7 @@ static void aisReqJoinChPrivilege(struct ADAPTER *prAdapter,
 
 		prSubReq->ucBssIndex = prBss->ucBssIndex;
 #if CFG_SUPPORT_DBDC
-		if (ucReqChNum >= 2)
-			prSubReq->eDBDCBand = tmpDBDCBand;
-		else
-			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
+		prSubReq->eDBDCBand = prAisFsmInfo->eChReqDbdcBand;
 #endif
 		prSubReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 		prSubReq->ucTokenID = *ucChTokenId;
@@ -11739,6 +11736,7 @@ void aisReqJoinChPrivilegeForCSA(struct ADAPTER *prAdapter,
 	prAisFsmInfo->ucChReqNum = 1;
 	prAisFsmInfo->fgIsChannelRequested = TRUE;
 	prAisFsmInfo->ucBssIndexOfChReq = prBss->ucBssIndex;
+	prAisFsmInfo->eChReqDbdcBand = ENUM_BAND_AUTO;
 
 	prMsgChReq->ucExtraChReqNum = 0;
 
