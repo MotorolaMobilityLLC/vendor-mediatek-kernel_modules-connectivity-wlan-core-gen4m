@@ -3245,8 +3245,7 @@ nicConfigPowerSaveProfileEntry(struct ADAPTER *prAdapter,
 
 		LINK_FOR_EACH_ENTRY(bss, &prMldBssInfo->rBssList,
 			rLinkEntryMld, struct BSS_INFO) {
-			if (bss->eNetworkType < 0 ||
-			    bss->eNetworkType >= NETWORK_TYPE_NUM ||
+			if (bss->eNetworkType >= NETWORK_TYPE_NUM ||
 			    bss->eNetworkType != prBssInfo->eNetworkType) {
 				DBGLOG(INIT, WARN,
 					   "Bss%d invalid eNetworkType: %d\n",
