@@ -188,6 +188,18 @@ ccflags-y += $(call cc-disable-warning, attribute-warning)
 # because some of common part code is surrounded with this flag
 ccflags-y += -DLINUX
 
+ifeq ($(CONFIG_SUPPORT_MDNS_OFFLOAD), y)
+ccflags-y += -DCFG_SUPPORT_MDNS_OFFLOAD=1
+else
+ccflags-y += -DCFG_SUPPORT_MDNS_OFFLOAD=0
+endif
+
+ifeq ($(CONFIG_TEST_CODE_FOR_MDNS), y)
+ccflags-y += -DTEST_CODE_FOR_MDNS=1
+else
+ccflags-y += -DTEST_CODE_FOR_MDNS=0
+endif
+
 ifneq ($(filter MT6632,$(MTK_COMBO_CHIP)),)
 ccflags-y:=$(filter-out -UMT6632,$(ccflags-y))
 ccflags-y += -DMT6632
