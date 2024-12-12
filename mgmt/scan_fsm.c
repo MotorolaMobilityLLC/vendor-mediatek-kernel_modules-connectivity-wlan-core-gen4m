@@ -2309,7 +2309,7 @@ scnDoZeroChRecoveryCheck(struct ADAPTER *prAdapter,
 		prScanInfo->ucScnZeroChSubsysResetCnt < 1) {
 		prScanInfo->ucScnZeroChSubsysResetCnt++;
 		GL_DEFAULT_RESET_TRIGGER(prAdapter,
-			RST_FLAG_CHIP_RESET);
+			RST_SCAN_RECOVERY);
 	}
 }
 #endif
