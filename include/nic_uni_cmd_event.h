@@ -257,6 +257,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_SET_SAP		= 0x70, /* SAP */
 	UNI_CMD_ID_LP_DBG_CTRL		= 0x71, /* LP */
 	UNI_CMD_ID_UWB_COEX		= 0x75, /* UWB COEX */
+	UNI_CMD_ID_FACT_CAL		= 0x7C, /* Factory Calibration*/
 	UNI_CMD_ID_HM			= 0x7D, /* Hybrid mlo */
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x7E, /* TX RESET SCRAMBLE */
 	UNI_CMD_ID_PHY_LIST_DUMP	= 0x7F, /* Get Phy CR */
@@ -5353,6 +5354,175 @@ struct UNI_CMD_LP_KEEP_PWR_CTRL {
 	uint8_t aucPadding[2];
 } __KAL_ATTRIB_PACKED__;
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+/* Factory cal command (0x7C) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL {
+	/* fixed field */
+	uint8_t aucRsvd[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+/**< the TLVs included in this field:
+ *
+ *   TAG                           | ID   | structure
+ *   -------------                 | ---- | -------------
+ *   UNI_CMD_FACT_CAL_GET          | 0x00 | UNI_CMD_FACT_CAL_GET_T
+ *   UNI_CMD_FACT_CAL_SET          | 0x01 | UNI_CMD_FACT_CAL_SET_T
+ *   UNI_CMD_FACT_CAL_TRIGGER      | 0x02 | UNI_CMD_FACT_CAL_TRIGGER_T
+ *   UNI_CMD_FACT_CAL_UPDATE_FLAG  | 0x03 | UNI_CMD_FACT_CAL_UPDATE_FLAG_T
+ */
+
+/* Fact cal command Tag */
+enum ENUM_UNI_CMD_ID_FACT_CAL_TAG {
+	UNI_CMD_FACT_CAL_TAG_GET            = 0,
+	UNI_CMD_FACT_CAL_TAG_SET            = 1,
+	UNI_CMD_FACT_CAL_TAG_TRIGGER        = 2,
+	UNI_CMD_FACT_CAL_TAG_UPDATE_FLAG    = 3,
+	UNI_CMD_FACT_CAL_TAG_GET_CE         = 4,
+	UNI_CMD_FACT_CAL_TAG_SET_CE         = 5,
+	UNI_CMD_ID_FACT_CAL_TAG_MAX_NUM
+};
+
+/** This structure is used for UNI_CMD_FACT_CAL_GET(0x00)
+ * of UNI_CMD_ID_FACT_CAL command (0x7C) to get calbration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag            should be 0x00
+ * @param[in] u2Length         the length of this TLV
+ * @param[in] u4Data           data value
+ * @param[in] u4SeqNum         sequence number
+ * @param[in] u4BufDataLength  data length
+ * @param[in] u1CalType        calbration type
+ * @param[in] u1Done           done
+ * @param[in] u1Rsvd           rsvd
+ * @param[in] u1BufData        cal data
+ */
+/* Fact cal get command (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_GET {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+#define FACT_CAL_DATA_BUF_MAXSIZE 1400
+	uint32_t u4Data;
+	uint32_t u4SeqNum;
+	uint32_t u4BufDataLength;
+	uint8_t u1CalType;
+	uint8_t u1Done;
+	uint8_t u1Band;
+	uint8_t u1Channel;
+	uint8_t u1BufData[FACT_CAL_DATA_BUF_MAXSIZE];
+} __KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_FACT_CAL_SET(0x01)
+ * of UNI_CMD_ID_FACT_CAL command (0x7C) to set calbration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag            should be 0x01
+ * @param[in] u2Length         the length of this TLV
+ * @param[in] u4Data           data value
+ * @param[in] u4SeqNum         sequence number
+ * @param[in] u4BufDataLength  data length
+ * @param[in] u1CalType        calbration type
+ * @param[in] u1Done           done
+ * @param[in] u1Rsvd           rsvd
+ * @param[in] u1BufData        cal data
+ */
+/* Fact cal set command (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_SET {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4Data;
+	uint32_t u4SeqNum;
+	uint32_t u4BufDataLength;
+	uint8_t u1CalType;
+	uint8_t u1Done;
+	uint8_t u1Rsvd[2];
+	uint8_t u1BufData[FACT_CAL_DATA_BUF_MAXSIZE];
+} __KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_FACT_CAL_TRIGGER(0x02)
+ * of UNI_CMD_ID_FACT_CAL command (0x7C) to trigger calbration.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag            should be 0x02
+ * @param[in] u2Length         the length of this TLV
+ *
+ */
+/* Fact cal trigger command (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_TRIGGER {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+} __KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_FACT_CAL_UPDATE_FLAG(0x03)
+ * of UNI_CMD_ID_FACT_CAL command (0x7C) to update calbration flag.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag            should be 0x03
+ * @param[in] u2Length         the length of this TLV
+ * @param[in] u4Data           the status of bypass flow control
+ *
+ */
+/* Fact cal update flag command (Tag3) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_UPDATE_FLAG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint32_t u4Data;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_GET_CE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+#define FACT_CAL_DATA_BUF_MAXSIZE 1400
+	uint32_t u4Data;
+	uint32_t u4SeqNum;
+	uint32_t u4BufDataLength;
+	uint8_t u1CalType;
+	uint8_t u1Done;
+	uint8_t u1Band;
+	uint8_t u1Channel;
+	uint8_t u1BufData[FACT_CAL_DATA_BUF_MAXSIZE];
+} __KAL_ATTRIB_PACKED__;
+
+/** This structure is used for UNI_CMD_FACT_CAL_SET_CE(0x05)
+ * of UNI_CMD_ID_FACT_CAL command (0x7C) to set calbration data.
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag            should be 0x01
+ * @param[in] u2Length         the length of this TLV
+ * @param[in] u4Data           data value
+ * @param[in] u4SeqNum         sequence number
+ * @param[in] u4BufDataLength  data length
+ * @param[in] u1CalType        calbration type
+ * @param[in] u1Done           done
+ * @param[in] u1Rsvd           rsvd
+ * @param[in] u1BufData        cal data
+ */
+/* Fact cal set command (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_FACT_CAL_SET_CE {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint32_t u4Data;
+	uint32_t u4SeqNum;
+	uint32_t u4BufDataLength;
+	uint8_t u1CalType;
+	uint8_t u1Done;
+	uint8_t u1Rsvd[2];
+	uint8_t u1BufData[FACT_CAL_DATA_BUF_MAXSIZE];
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_FACT_CAL */
+
 /* SAP command (UNI_CMD_ID_SET_SAP 0x70) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_SAP {
@@ -5559,6 +5729,9 @@ enum ENUM_UNI_EVENT_ID {
 	UNI_EVENT_ID_LP_DBG_CTRL     = 0x71,
 	UNI_EVENT_ID_HW_DETECT_REPORT = 0x76,
 	UNI_EVENT_ID_UPDATE_LP       = 0x77,
+#if (CFG_SUPPORT_FACT_CAL == 1)
+	UNI_EVENT_ID_FACT_CAL        = 0x7C,
+#endif
 	UNI_EVENT_ID_PHY_LIST_DUMP   = 0x7f,
 	UNI_EVENT_ID_OMI	    = 0x84,
 	UNI_EVENT_ID_NUM
@@ -8693,6 +8866,61 @@ struct UNI_EVENT_UPDATE_LP_TX_DELAY_T {
 } __KAL_ATTRIB_PACKED__;
 
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+/** This structure is used for UNI_EVENT_ID_FACT_CAL event
+ * (0x7C)(unsolicited) to report fact data to host
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] aucReserved      reserved fixed field
+ * @param[in] aucTlvBuffer     TLVs
+ */
+/* Factory Calibration event */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_FACT_CAL {
+	/* fixed field */
+	uint8_t aucReserved[4];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+/* Update Factory Calibration event tags */
+enum UNI_EVENT_FACT_CAL_TAG {
+	UNI_EVENT_FACT_CAL_GET_DATA_TAG      = 0x0,
+	UNI_EVENT_FACT_CAL_TAG_MAX_TAG_NUM
+};
+
+/**
+ * This structure is used for UNI_EVENT_ID_FACT_CAL tag(0x00)
+ of UNI_EVENT_ID_FACT_CAL_GET_DATA event (0x7C) to report fact data to host
+ * @version Supported from ver:1.0.0.0
+ *
+ * @param[in] u2Tag            should be 0x00
+ * @param[in] u2Length         the length of this TLV
+ * @param[in] u4Data           fact data
+ * @param[in] u4SeqNum         seq num
+ * @param[in] u4BufDataLength  buffer length
+ * @param[in] u1CalType        calbration type
+ * @param[in] u1Done           done
+ * @param[in] u1Rsvd           rsvd
+ * @param[in] u1BufData        cal data
+ */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_FACT_CAL_GET_DATA {
+	uint16_t u2Tag;    // Tag = 0x00
+	uint16_t u2Length;
+
+	uint32_t u4Data;
+	uint32_t u4SeqNum;
+	uint32_t u4BufDataLength;
+	uint8_t ucCalType;
+	uint8_t ucDone;
+	uint8_t ucBand;
+	uint8_t ucChannel;
+	uint8_t aucBufData[FACT_CAL_DATA_BUF_MAXSIZE];
+} __KAL_ATTRIB_PACKED__;
+#endif /* CFG_SUPPORT_FACT_CAL */
+
 /* Update MLO event tags */
 enum ENUM_UNI_EVENT_MLO {
 	UNI_EVENT_MLD_MLSR_CONCURRENT_DONE = 0x7,
@@ -9316,6 +9544,12 @@ uint32_t nicUniCmdPpEnCtrl(struct ADAPTER *ad, uint8_t ucMode,
 uint32_t nicUniCmdPpAlgoCtrl(struct ADAPTER *ad,
 			     struct UNI_CMD_PP_ALG_CTRL *para,
 			     u_int8_t fgIsOid);
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
+		uint32_t u4Action,
+		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData);
+#endif
 /*******************************************************************************
  *                   Event
  *******************************************************************************
@@ -9444,6 +9678,11 @@ void nicUniEventMLSRSwitchDone(struct ADAPTER *ad,
 #endif
 #if CFG_SUPPORT_RTT
 void nicUniEventRttCapabilities(struct ADAPTER	*prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#endif
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+void nicUniEventGetFactCalData(struct ADAPTER *prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
 #endif
 /*******************************************************************************

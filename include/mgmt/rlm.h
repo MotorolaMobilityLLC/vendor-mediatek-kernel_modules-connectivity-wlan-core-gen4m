@@ -171,6 +171,50 @@ extern const char * const apucOpBw[MAX_BW_UNKNOWN+1];
 
 #endif
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+#define FACT_CAL_CMD_EVENT_WAITTIME_MS (1000) /* uint: msec */
+#define FACT_CAL_GET_TIMEOUT_TH (10) /* uint: sec */
+
+#define FACT_CAL_CH_NUM_2G (14)	/* ARRAY_SIZE g_au1ChList2G */
+#define FACT_CAL_CH_NUM_5G (68) /* ARRAY_SIZE g_au1ChList5G */
+#define FACT_CAL_CH_NUM_6G (109) /* ARRAY_SIZE g_au1ChList6G */
+#define FACT_CAL_CH_NUM_ALL ((FACT_CAL_CH_NUM_2G) + (FACT_CAL_CH_NUM_5G)+ \
+							+ (FACT_CAL_CH_NUM_6G))
+
+#define FACT_CAL_DATA_BUF_NUM_MAX (3)
+#define FACT_CAL_DATA_BUF_CFG_U32_LEN (4)
+#define FACT_CAL_DATA_BUF_CFG_U8_LEN (16)
+/* buffer format [address, u4Length, others 1, others 2] = 4*4 = 16bytes */
+/* Total 3 buf = 48 */
+#define FACT_CAL_DATA_MAX_BUF_LEN (FACT_CAL_DATA_BUF_NUM_MAX * \
+FACT_CAL_DATA_BUF_CFG_U32_LEN)
+#define FACT_CAL_DATA_BUF_LEN (1400)
+#define FACT_CAL_BUF_LEN_COM (600)
+#define FACT_CAL_BUF_LEN_GRP (4500)
+#define FACT_CAL_BUF_LEN_CH (1400)
+
+#define FACT_CAL_2G_GROUP_NUM (1)
+#define FACT_CAL_5G_GROUP_NUM (8)
+#define FACT_CAL_6G_GROUP_NUM (15)
+#define FACT_CAL_6G_160M_GROUP_NUM (11)
+#define FACT_CAL_GROUP_NUM ((FACT_CAL_2G_GROUP_NUM) + (FACT_CAL_5G_GROUP_NUM) \
++ (FACT_CAL_6G_GROUP_NUM) + (FACT_CAL_6G_160M_GROUP_NUM))
+
+// Use common as input param
+#define FACT_CAL_PARAM_COMMON_MASK                        BITS(0, 7)
+
+// Use group as input param
+#define FACT_CAL_PARAM_GROUP_MASK                         BITS(0, 7)
+
+// Use central channel as input param
+#define FACT_CAL_CENT_CH_PARAM_CHAN_MASK                  BITS(0, 11)
+#define FACT_CAL_CENT_CH_PARAM_CHAN_OFFSET                (0)
+#define FACT_CAL_CENT_CH_PARAM_RF_BAND_MASK               BITS(12, 15)
+#define FACT_CAL_CENT_CH_PARAM_RF_BAND_OFFSET             (12)
+
+#define BAND_TO_FACT_BAND(_ucBand) ((_ucBand) - 1)
+#endif //#if CFG_SUPPORT_FACT_CAL
+
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 #define TX_PWR_ENV_LMT_MIN                0 /* LSB = 0.5dBm */
 #define TX_PWR_ENV_BW_SHIFT_BW20          0
@@ -196,6 +240,177 @@ extern const char * const apucOpBw[MAX_BW_UNKNOWN+1];
  *                             D A T A   T Y P E S
  *******************************************************************************
  */
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+
+enum FACT_CAL_ACTION {
+	FACT_CAL_ACTION_GET = 0,
+	FACT_CAL_ACTION_SET = 1,
+	FACT_CAL_ACTION_TRIGGER = 2,
+	FACT_CAL_ACTION_UPDATE_FLAG = 3,
+	FACT_CAL_ACTION_DUMP = 4,
+	FACT_CAL_ACTION_LOAD_FILE = 5,
+	FACT_CAL_ACTION_SAVE_FILE = 6,
+	FACT_CAL_ACTION_NUM
+};
+
+enum FACT_CAL_TYPE {
+	FACT_CAL_TYPE_COMMON = 0,
+	FACT_CAL_TYPE_GROUP = 1,
+	FACT_CAL_TYPE_CHANNEL = 2,
+	FACT_CAL_TYPE_ALL = 3,
+	FACT_CAL_TYPE_FORCE = 4,
+	FACT_CAL_TYPE_NUM
+};
+
+enum FACT_CAL_TYPE_CE {
+	FACT_CAL_TYPE_POWERON = 0,
+	FACT_CAL_TYPE_SETCHANNEL = 1,
+	FACT_CAL_TYPE_BAND = 2,
+	FACT_CAL_TYPE_CE_ALL = 3,
+	FACT_CAL_TYPE_NUM_CE
+};
+
+enum FACT_CAL_COMMON_BAND {
+	FACT_CAL_COMMON_BAND_G = 0,
+	FACT_CAL_COMMON_BAND_A = 1,
+	FACT_CAL_COMMON_BAND_NUM
+};
+
+/*
+ * Mapping to halPhyFactCal()
+ * ENUM_BAND: NULL=0, 2G=1, 5G=2, 6G=3
+ * FACT_CAL_BAND: 2G=0, 5G=1, 6G=2
+ */
+enum FACT_CAL_BAND {
+	FACT_CAL_BAND_2G = 0,
+	FACT_CAL_BAND_5G = 1,
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	FACT_CAL_BAND_6G = 2,
+#endif
+	FACT_CAL_BAND_NUM
+};
+
+struct FACT_CAL_GROUP_DEF_ENTRY {
+	uint8_t ucGroupIdx;
+	uint16_t ucFreqStart;
+	uint16_t ucFreqEnd;
+};
+
+struct FACT_CAL_BUF_INFO {
+	/* Caltype : enum FACT_CAL_TYPE */
+	uint32_t ucCalType;
+
+	/* Input data for halPhyFactCal()
+	 * If Cal type == Common
+	 *	 Bit[0:7]: (2G : 0 / 5G : 1 / 6G : 2)
+	 *	 Bit[8:31]: reserved for future use
+	 * If Cal type == Group
+	 *	 Bit[0:7]: group id (0~34)
+	 *	 Bit[8:31]: reserved for future use
+	 * If Cal type == Channel
+	 *   Bit[0:11]: central channel
+	 *     E.g. CH6 set to 6
+	 *   Bit[12:15]: Channel Band (2G : 0 / 5G : 1 / 6G : 2)
+	 *   BIT[16:31]: reserved
+	 */
+	uint32_t u4CalParam;
+
+	/*
+	 * u4BufSeqNum
+	 * bit[0:31]: Current buf seq in this type cal
+	 */
+	uint32_t u4BufSeqNum;
+
+	/*
+	 * u4TotalBufNum
+	 * bit[0:31]: Total buf number in this type cal
+	 */
+	uint32_t u4TotalBufNum;
+
+	/*
+	 * u4BufDataLength
+	 * bit[0:31] : len of cal data length
+	 */
+	uint32_t u4BufDataLength;
+
+	/*
+	 * fgValid
+	 * Valid or not : (1: valid, 0: invalid)
+	 */
+	uint8_t fgValid;
+
+	/* Done or not */
+	uint8_t ucDone;
+
+	/* each memory buf set is consisted of 4 uint32 of
+	 * [address, u4Length, others 1, others 2]
+	 */
+	uint32_t au4BufCfgInfo[FACT_CAL_DATA_MAX_BUF_LEN];
+};
+
+
+/* Unit of CMD/EVENT cal data */
+struct FACT_CAL_DATA_BUF {
+	uint8_t fgValid;
+	uint8_t ucCalType;
+	uint32_t u4CalParam;
+	uint32_t u4BufNum;
+	uint32_t u4BufSeqNum;
+	uint8_t *pBuf;
+	uint32_t u4BufLen;
+	uint32_t *pBufCfg;
+	uint32_t u4BufCfgLen;
+};
+
+/* Uint of cal data saved in host mem */
+struct FACT_CAL_COM {
+	struct FACT_CAL_BUF_INFO rFactCalBufInfo;
+	uint8_t aucCalData[FACT_CAL_BUF_LEN_COM];
+};
+
+/* Uint of cal data saved in host mem */
+struct FACT_CAL_GRP {
+	struct FACT_CAL_BUF_INFO rFactCalBufInfo;
+	uint8_t aucCalData[FACT_CAL_BUF_LEN_GRP];
+};
+
+/* Uint of cal data saved in host mem */
+struct FACT_CAL_CH {
+	struct FACT_CAL_BUF_INFO rFactCalBufInfo;
+	uint8_t aucCalData[FACT_CAL_BUF_LEN_CH];
+};
+
+enum FACT_CAL_STORE_ACTION {
+	FACT_CAL_STORE_DATA_HEAD = 0,
+	FACT_CAL_STORE_DATA = 1,
+	FACT_CAL_STORE_DATA_DONE = 2,
+	FACT_CAL_STORE_ACTION_NUM
+};
+
+struct FACT_CAL_COMMON_LOOKUP_TABLE {
+    /* Common Cal for each A band and G band */
+	struct FACT_CAL_COM rComCalData[FACT_CAL_COMMON_BAND_NUM];
+};
+struct FACT_CAL_GROUP_LOOKUP_TABLE {
+    /* 2G : Group0 with 2 SX paths */
+	/* 5G : Group1 ~ 8 with 2 SX paths */
+	/* 6G : Group9 ~ 23 with 2 SX paths */
+	/* 5G 160M: Group 24 ~ 27 with 2SX paths */
+	/* 6G 160M: Group 28 ~ 34 with 2SX paths */
+	struct FACT_CAL_GRP rGrpCalData[FACT_CAL_GROUP_NUM];
+};
+struct FACT_CAL_CHANNEL_LOOKUP_TABLE {
+    /* Channel Cal for 2G, 5G, 6G channels */
+	struct FACT_CAL_CH rChCalData[FACT_CAL_CH_NUM_ALL];
+};
+struct FACT_CAL_BASE_LOOKUP_TABLE {
+	struct FACT_CAL_COMMON_LOOKUP_TABLE *common_t;
+	struct FACT_CAL_GROUP_LOOKUP_TABLE *group_t;
+	struct FACT_CAL_CHANNEL_LOOKUP_TABLE *channel_t;
+};
+#endif
+
 typedef void (*PFN_OPMODE_NOTIFY_DONE_FUNC)(
 	struct ADAPTER *, uint8_t, bool);
 
@@ -607,6 +822,43 @@ rlmClientSupportsVhtBfeeStsCap(struct STA_RECORD *prStaRec);
 
 bool
 rlmClientSupportsHtETxBF(struct STA_RECORD *prStaRec);
+#endif
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+int rlmGetCenterCh(enum ENUM_BAND eBand, uint8_t ucCh,
+		enum ENUM_CHANNEL_WIDTH eBw, enum ENUM_CHNL_EXT eSco);
+
+uint32_t rlmFactCalStart(struct ADAPTER *prAdapter);
+
+void rlmFactCalStop(struct ADAPTER *prAdapter);
+
+void rlmFactCalDump(struct ADAPTER *prAdapter, enum FACT_CAL_TYPE eType);
+
+uint32_t rlmFactCalHandler(struct ADAPTER *prAdapter,
+		uint32_t u4Action, uint32_t u4CalType, uint32_t u4CalParam);
+
+uint32_t rlmFactCalUpdateStruct(struct ADAPTER *prAdapter,
+		enum FACT_CAL_STORE_ACTION eAction,
+		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData);
+
+uint32_t rlmFactCalGetBufInfo(struct ADAPTER *prAdapter,
+		struct FACT_CAL_DATA_BUF *prCalData);
+
+uint32_t rlmFactCalGet(struct ADAPTER *prAdapter,
+			uint32_t u4CalType, uint8_t u4Band, uint8_t channel);
+
+uint32_t rlmFactCalSet(struct ADAPTER *prAdapter, uint32_t u4Action,
+			uint32_t u4CalType, uint32_t u4CalParam);
+
+uint32_t rlmFactCalSetByPassCal(struct ADAPTER *prAdapter, uint32_t u4Enable);
+
+uint32_t rlmFactCalSetGrpAndCh(struct ADAPTER *prAdapter,
+			enum FACT_CAL_BAND eBand, uint8_t ucCenterCh);
+
+uint32_t rlmFactCalFileHandler(struct ADAPTER *prAdapter, uint32_t u4CalType,
+			uint8_t fgWrite);
+
+uint32_t rlmFactCalSetDefaultComAndGrp(struct ADAPTER *prAdapter);
 #endif
 
 void rlmModifyVhtBwPara(uint8_t *pucVhtChannelFrequencyS1,

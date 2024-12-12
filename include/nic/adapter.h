@@ -1824,6 +1824,10 @@ struct WIFI_VAR {
 	 */
 	uint32_t u4SaQueryRetryTimeout;
 #endif /* CFG_SUPPORT_802_11W && CFG_ENABLE_WIFI_DIRECT */
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+	uint8_t fgFactCalEn;
+#endif
 };
 
 /* cnm_timer module */
@@ -2647,6 +2651,16 @@ struct ADAPTER {
 	u_int8_t fgN9AssertDumpOngoing;
 	u_int8_t fgKeepPrintCoreDump;
 #endif
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+	u_int8_t fgFactCalOngoing;
+	struct FACT_CAL_BASE_LOOKUP_TABLE rFactCalFile;
+	struct TIMER rFactCalTimer;
+
+	/* Indicate Fact Cal Cmd Event complete */
+	struct completion rRlmCmdEventComp;
+#endif
+
 	/* Tx resource information */
 	u_int8_t fgIsNicTxReousrceValid;
 	struct tx_resource_info nicTxReousrce;

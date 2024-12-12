@@ -8905,6 +8905,65 @@ uint32_t nicUniCmdPpAlgoCtrl(struct ADAPTER *ad,
 	return status;
 }
 
+#if (CFG_SUPPORT_FACT_CAL == 1)
+uint32_t nicUniCmdFactCal(struct ADAPTER *prAdapter,
+		uint32_t u4Action,
+		struct UNI_EVENT_FACT_CAL_GET_DATA *prCalData)
+{
+	struct UNI_CMD_FACT_CAL *uni_cmd = NULL;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_FACT_CAL) +
+				sizeof(struct UNI_CMD_FACT_CAL_GET_CE);
+	uint32_t status = WLAN_STATUS_SUCCESS;
+
+	DBGLOG(NIC, TRACE, "u4Action=%u, ucCalType=%u, u4CalParam=0x%x\n",
+			u4Action, prCalData->ucCalType, prCalData->u4Data);
+
+	/* Alloc cmd mem */
+	uni_cmd = (struct UNI_CMD_FACT_CAL *)cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(NIC, ERROR, "Allocate UNI_CMD_FACT_CAL FAILED\n");
+		return WLAN_STATUS_FAILURE;
+	}
+
+	switch (u4Action) {
+	case FACT_CAL_ACTION_GET: {
+		struct UNI_CMD_FACT_CAL_GET_CE *tag =
+			(struct UNI_CMD_FACT_CAL_GET_CE *)uni_cmd->aucTlvBuffer;
+		tag->u2Tag = UNI_CMD_FACT_CAL_TAG_GET_CE;
+		tag->u2Length = sizeof(*tag);
+		tag->u4Data = prCalData->u4Data;
+		tag->u1CalType = prCalData->ucCalType;
+		tag->u1Band = prCalData->ucBand;
+		tag->u1Channel = prCalData->ucChannel;
+		break;
+	}
+
+	default:
+		DBGLOG(NIC, ERROR, "Error Action Type=%d\n", u4Action);
+		return WLAN_STATUS_FAILURE;
+	}
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+				UNI_CMD_ID_FACT_CAL,
+				u4Action == FACT_CAL_ACTION_GET ? FALSE : TRUE,
+				TRUE,
+				FALSE,
+				nicUniEventGetFactCalData,
+				nicUniCmdTimeoutCommon,
+				max_cmd_len,
+				(uint8_t *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	/* Convert WLAN_STATUS_PENDING to success */
+	if (status == WLAN_STATUS_PENDING)
+		status = WLAN_STATUS_SUCCESS;
+
+	return status;
+}
+#endif //CFG_SUPPORT_FACT_CAL
+
 /*******************************************************************************
  *                                 Event
  *******************************************************************************
@@ -14503,6 +14562,92 @@ void nicUniEventUpdateLp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 	if (tags_len != offset)
 		DBGLOG(NIC, ERROR, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
 }
+
+#if (CFG_SUPPORT_FACT_CAL == 1)
+void nicUniEventGetFactCalData(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	int32_t tags_len;
+	uint8_t *tag;
+	uint16_t offset = 0;
+	uint32_t fixed_len = sizeof(struct UNI_EVENT_FACT_CAL);
+	uint32_t data_len = GET_UNI_EVENT_DATA_LEN(uni_evt);
+	uint8_t *data = GET_UNI_EVENT_DATA(uni_evt);
+
+	KAL_SPIN_LOCK_DECLARATION();
+
+	DBGLOG(NIC, INFO, "EVENT_ID_ONE_TIME_CAL\n");
+
+	tags_len = data_len - fixed_len;
+	tag = data + fixed_len;
+
+	TAG_FOR_EACH(tag, tags_len, offset) {
+		DBGLOG(NIC, TRACE, "Tag(%d, %d)\n", TAG_ID(tag), TAG_LEN(tag));
+		switch (TAG_ID(tag)) {
+		case UNI_EVENT_FACT_CAL_GET_DATA_TAG: {
+			struct  UNI_EVENT_FACT_CAL_GET_DATA *prFactCalGetData =
+				(struct UNI_EVENT_FACT_CAL_GET_DATA *) tag;
+
+			if (prFactCalGetData->ucDone != TRUE) {
+				/* Re-Insert into prCmdQueue for next event*/
+				KAL_ACQUIRE_SPIN_LOCK(
+				prAdapter, SPIN_LOCK_CMD_PENDING);
+				QUEUE_INSERT_TAIL(
+				&prAdapter->rPendingCmdQueue,
+				(struct QUE_ENTRY *)prCmdInfo);
+				KAL_RELEASE_SPIN_LOCK(
+				prAdapter, SPIN_LOCK_CMD_PENDING);
+			} else {
+				DBGLOG(NIC, INFO,
+				"EVENT_ID_ONE_TIME_CAL Done\n");
+			}
+
+			if (prFactCalGetData->u4SeqNum == 0) {
+				DBGLOG(NIC, INFO,
+				"FACT_CAL_STORE_DATA_HEAD: done %d, calType %d, Control buf Addr=0x%p, bufNum=%d\n",
+				prFactCalGetData->ucDone,
+				prFactCalGetData->ucCalType,
+				prFactCalGetData->aucBufData,
+				prFactCalGetData->u4BufDataLength/16
+				);
+				DBGLOG_MEM8(RLM, LOUD,
+				prFactCalGetData->aucBufData,
+				prFactCalGetData->u4BufDataLength);
+				rlmFactCalUpdateStruct(
+				prAdapter, FACT_CAL_STORE_DATA_HEAD,
+				prFactCalGetData);
+			} else {
+				DBGLOG(NIC, INFO,
+				"FACT_CAL_STORE_DATA: done %d, calType %d, bufData=%p, bufDataLength %d, seqNum = %d\n",
+				prFactCalGetData->ucDone,
+				prFactCalGetData->ucCalType,
+				prFactCalGetData->aucBufData,
+				prFactCalGetData->u4BufDataLength,
+				prFactCalGetData->u4SeqNum);
+				DBGLOG_MEM8(RLM, LOUD,
+				prFactCalGetData->aucBufData,
+				prFactCalGetData->u4BufDataLength);
+				rlmFactCalUpdateStruct(prAdapter,
+				prFactCalGetData->ucDone ==
+				TRUE ? FACT_CAL_STORE_DATA_DONE :
+				FACT_CAL_STORE_DATA,
+				prFactCalGetData);
+			}
+			DBGLOG(NIC, INFO,
+			"done %d, calType %d, bufDataLength %d, seqNum = %d\n",
+			prFactCalGetData->ucDone,
+			prFactCalGetData->ucCalType,
+			prFactCalGetData->u4BufDataLength,
+			prFactCalGetData->u4SeqNum);
+			break;
+		}
+		default:
+			break;
+		}
+	}
+}
+#endif //CFG_SUPPORT_FACT_CAL
 
 #if CFG_MTK_MDDP_SUPPORT
 void nicUniEventMddp(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)

@@ -1961,6 +1961,12 @@ ccflags-y:=$(filter-out -UUT_TEST_MODE,$(ccflags-y))
 ccflags-y += -DUT_TEST_MODE
 endif
 
+ifeq ($(CONFIG_FACTORY_CALIBRATION_SUPPORT), y)
+    ccflags-y += -DCFG_SUPPORT_FACT_CAL=1
+else
+    ccflags-y += -DCFG_SUPPORT_FACT_CAL=0
+endif
+
 CONFIG_MTK_WIFI_MCC_SUPPORT=y
 ifeq ($(CONFIG_MTK_WIFI_MCC_SUPPORT), y)
     ccflags-y += -DCFG_SUPPORT_CHNL_CONFLICT_REVISE=0
