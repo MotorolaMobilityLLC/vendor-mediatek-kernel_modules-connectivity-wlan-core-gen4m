@@ -7706,10 +7706,22 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	/* GC,GO */
 	INIT_UINT(prWifiVar->ucP2p2gBandwidth, "P2p2gBw", DEFAULT_P2P_2G_BW,
 		  FEATURE_TO_CUSTOMER);
+	if (prWifiVar->ucP2p2gBandwidth >= MAX_BW_80MHZ) {
+		prWifiVar->ucP2p2gBandwidth = MAX_BW_40MHZ;
+		DBGLOG(INIT, WARN, "P2p2gBw fallback to bw40\n");
+	}
 	INIT_UINT(prWifiVar->ucP2p5gBandwidth, "P2p5gBw", MAX_BW_80MHZ,
 		  FEATURE_TO_CUSTOMER);
+	if (prWifiVar->ucP2p5gBandwidth >= MAX_BW_320_1MHZ) {
+		prWifiVar->ucP2p5gBandwidth = MAX_BW_160MHZ;
+		DBGLOG(INIT, WARN, "P2p5gBw fallback to bw160\n");
+	}
 	INIT_UINT(prWifiVar->ucP2p6gBandwidth, "P2p6gBw", MAX_BW_320_1MHZ,
 		  FEATURE_TO_CUSTOMER);
+	if (prWifiVar->ucP2p6gBandwidth > MAX_BW_320_2MHZ) {
+		prWifiVar->ucP2p6gBandwidth = MAX_BW_320_1MHZ;
+		DBGLOG(INIT, WARN, "P2p6gBw fallback to bw320_1\n");
+	}
 	INIT_UINT(prWifiVar->ucApBandwidth, "ApBw", MAX_BW_320_2MHZ,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucAp2gBandwidth, "Ap2gBw", DEFAULT_SAP_2G_BW,
