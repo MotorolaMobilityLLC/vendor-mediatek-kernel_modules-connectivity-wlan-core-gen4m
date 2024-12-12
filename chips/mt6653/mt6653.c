@@ -197,11 +197,11 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo);
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6653SetL1ssEnable(struct ADAPTER *prAdapter, u_int role,
 		u_int8_t fgEn);
-static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
-		u_int enable_role);
+static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
+	u_int8_t fgEn, u_int enable_role);
 static void mt6653UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 static void mt6653KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
-				u_int8_t fgWakeup);
+	u_int8_t fgWakeup);
 #endif
 
 static u_int8_t mt6653_get_sw_interrupt_status(struct ADAPTER *prAdapter,
@@ -378,6 +378,7 @@ static spinlock_t rPCIELock;
 #define MD_ROLE		(2)
 #define WIFI_RST_ROLE	(3)
 #define POLLING_TIMEOUT		(200)
+#define POLLING_TIMEOUT_IN_UDS	(8000)
 #endif //CFG_SUPPORT_PCIE_ASPM
 
 #endif
@@ -3452,7 +3453,7 @@ static u_int8_t mt6653SetL1ssEnable(struct ADAPTER *prAdapter,
 	else if (role == WIFI_RST_ROLE)
 		prChipInfo->bus_info->fgWifiRstEnL1_2 = fgEn;
 
-	DBGLOG(HAL, LOUD,
+	DBGLOG(HAL, TRACE,
 		"fgWifiEnL1_2 = %d, fgMDEnL1_2=%d, fgWifiRstEnL1_2=%d\n",
 		prChipInfo->bus_info->fgWifiEnL1_2,
 		prChipInfo->bus_info->fgMDEnL1_2,
@@ -3465,18 +3466,21 @@ static u_int8_t mt6653SetL1ssEnable(struct ADAPTER *prAdapter,
 	else
 		return FALSE;
 }
-static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
+static uint32_t mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				u_int8_t fgEn, u_int enable_role)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
-	uint32_t value = 0, delay = 0, value1 = 0;
+	uint32_t value = 0, delay = 0, value1 = 0, u4PollTimeout = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	u_int8_t enableL1ss = FALSE;
 	u_int8_t isL0Status = FALSE;
 
-	if (pcie_vir_addr == NULL)
-		return;
+	if (pcie_vir_addr == NULL) {
+		DBGLOG(HAL, ERROR, "get pcie_vir_addr null\n");
+		return WLAN_STATUS_FAILURE;
+	}
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -3484,6 +3488,9 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	spin_lock_bh(&rPCIELock);
 	enableL1ss =
 		mt6653SetL1ssEnable(prGlueInfo->prAdapter, enable_role, fgEn);
+
+	u4PollTimeout = (prGlueInfo->prAdapter->fgIsFwOwn) ?
+		POLLING_TIMEOUT_IN_UDS : POLLING_TIMEOUT;
 
 	if (fgEn) {
 		/* Restore original setting*/
@@ -3513,9 +3520,10 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 					>> 24) == 0x10)
 					break;
 
-				if (delay >= POLLING_TIMEOUT) {
+				if (delay >= u4PollTimeout) {
 					DBGLOG(HAL, INFO,
 						"Enable L1.2 POLLING_TIMEOUT\n");
+					rStatus = WLAN_STATUS_FAILURE;
 					goto exit;
 				}
 
@@ -3561,9 +3569,10 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				>> 24) == 0x10)
 				break;
 
-			if (delay >= POLLING_TIMEOUT) {
+			if (delay >= u4PollTimeout) {
 				DBGLOG(HAL, INFO,
 					"Disable L1.2 POLLING_TIMEOUT\n");
+				rStatus = WLAN_STATUS_FAILURE;
 				goto exit;
 			}
 
@@ -3586,6 +3595,7 @@ static void mt6653ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 
 exit:
 	spin_unlock_bh(&rPCIELock);
+	return rStatus;
 }
 
 static void mt6653UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
@@ -3907,7 +3917,7 @@ u_int8_t mt6653_is_ap2conn_off_readable(struct ADAPTER *ad)
 	HAL_RMCR_RD(PLAT_DBG, ad,
 		   CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR,
 		   &value);
-	if ((value & BITS(0, 9)) == 0x3FF)
+	if ((value & BITS(0, 9)) != 0)
 		DBGLOG(HAL, ERROR,
 			"Conninfra bus hang irq status: 0x%08x\n",
 			value);
@@ -4623,9 +4633,14 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 	uint32_t u4Val1, u4Val2;
 #if CFG_SUPPORT_PCIE_ASPM
 	struct GLUE_INFO *prGlueInfo = prAdapter->prGlueInfo;
+	uint32_t u4Status = 0;
 
-	/* Keep L1 */
-	mt6653ConfigPcieAspm(prGlueInfo, FALSE, WIFI_RST_ROLE);
+	/* Request keep L1/L0 */
+	u4Status = mt6653ConfigPcieAspm(prGlueInfo, FALSE, WIFI_RST_ROLE);
+	if (u4Status) {
+		DBGLOG(INIT, ERROR, "Leave L1.2 failed\n");
+		return TRUE;
+	}
 #endif
 
 	glReadPcieCfgSpace(0x488, &u4Val1);
@@ -4633,10 +4648,6 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 	DBGLOG(INIT, INFO,
 		"0x488=0x%08x, 0x48c=0x%08x\n",
 		u4Val1, u4Val2);
-
-#if CFG_SUPPORT_PCIE_ASPM
-	mt6653ConfigPcieAspm(prGlueInfo, TRUE, WIFI_RST_ROLE);
-#endif
 
 	/* 1. Cfg_Rd[0x488] == 0 or 0xFFFFFFFF: PCIE is not at link up status */
 	/* 2. Bit 0/4/11~13 of Cfg_Rd[0x488] is not set: cb_infra is abnormal */
@@ -4650,7 +4661,7 @@ static u_int8_t mt6653_isUpgradeWholeChipReset(struct ADAPTER *prAdapter)
 
 	HAL_RMCR_RD(PLAT_DBG, prAdapter,
 		CONN_DBG_CTL_CONN_INFRA_BUS_DBG_CR_00_ADDR, &u4Val1);
-	if ((u4Val1 & BITS(0, 9)) == 0x3FF) {
+	if ((u4Val1 & BITS(0, 9)) != 0x0) {
 		DBGLOG(HAL, WARN,
 			"Conninfra timeout status: 0x%08x\n",
 			u4Val1);

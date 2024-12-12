@@ -191,12 +191,12 @@ static void mt6639PcieHwControlVote(
 
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter, u_int role,
-					u_int8_t fgEn);
-static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn,
-				u_int enable_role);
+	u_int8_t fgEn);
+static uint32_t mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
+	u_int8_t fgEn, u_int enable_role);
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn);
 static void mt6639KeepPcieWakeup(struct GLUE_INFO *prGlueInfo,
-				u_int8_t fgWakeup);
+	u_int8_t fgWakeup);
 static u_int8_t mt6639DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo);
 #endif
 
@@ -2465,11 +2465,12 @@ static u_int8_t mt6639SetL1ssEnable(struct ADAPTER *prAdapter,
 	else
 		return FALSE;
 }
-static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
+static uint32_t mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				u_int8_t fgEn, u_int enable_role)
 {
 	struct GL_HIF_INFO *prHifInfo = &prGlueInfo->rHifInfo;
 	uint32_t value = 0, delay = 0, value1 = 0;
+	uint32_t rStatus = WLAN_STATUS_SUCCESS;
 	struct mt66xx_chip_info *prChipInfo;
 	struct BUS_INFO *prBusInfo;
 	u_int8_t enableL1ss = FALSE;
@@ -2477,7 +2478,7 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 	unsigned long flags = 0;
 
 	if (pcie_vir_addr == NULL)
-		return;
+		return WLAN_STATUS_FAILURE;
 
 	prChipInfo = prGlueInfo->prAdapter->chip_info;
 	prBusInfo = prChipInfo->bus_info;
@@ -2517,6 +2518,7 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 				if (delay >= POLLING_TIMEOUT) {
 					DBGLOG(HAL, INFO,
 						"Enable L1.2 POLLING_TIMEOUT\n");
+					rStatus = WLAN_STATUS_FAILURE;
 					goto exit;
 				}
 
@@ -2568,6 +2570,7 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 			if (delay >= POLLING_TIMEOUT) {
 				DBGLOG(HAL, INFO,
 					"Disable L1.2 POLLING_TIMEOUT\n");
+				rStatus = WLAN_STATUS_FAILURE;
 				goto exit;
 			}
 
@@ -2589,6 +2592,7 @@ static void mt6639ConfigPcieAspm(struct GLUE_INFO *prGlueInfo,
 
 exit:
 	spin_unlock_irqrestore(&rPCIELock, flags);
+	return rStatus;
 }
 
 static void mt6639UpdatePcieAspm(struct GLUE_INFO *prGlueInfo, u_int8_t fgEn)
@@ -3002,7 +3006,7 @@ u_int8_t mt6639_is_ap2conn_off_readable(struct ADAPTER *ad)
 	HAL_MCR_RD(ad,
 		   CONN_DBG_CTL_CONN_INFRA_BUS_TIMEOUT_IRQ_ADDR,
 		   &value);
-	if ((value & BITS(0, 9)) == 0x3FF)
+	if ((value & BITS(0, 9)) != 0)
 		DBGLOG(HAL, ERROR,
 			"Conninfra bus hang irq status: 0x%08x\n",
 			value);
