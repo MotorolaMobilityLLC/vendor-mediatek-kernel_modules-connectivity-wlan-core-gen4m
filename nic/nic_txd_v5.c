@@ -191,15 +191,13 @@ void nic_txd_v5_fill_by_pkt_option(
 				}
 			} else if (prMsduInfo->ucPacketType ==
 				TX_PACKET_TYPE_DATA) {
-				struct mt66xx_chip_info *prChipInfo =
-					prAdapter->chip_info;
 				uint8_t *pucData = NULL;
 
 				kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
 				prWlanHeader = (struct WLAN_MAC_HEADER *)
 					(pucData
-					+ NIC_TX_DESC_AND_PADDING_LENGTH
-					+ prChipInfo->txd_append_size);
+					+ MAC_TX_RESERVED_FIELD
+					+ wlanGetTxNeededHeadRoom(prAdapter));
 				if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
 					DBGLOG(RSN, INFO,
 						"MLR txdf - 802.11data FC=0x%04x dump...\n",
@@ -478,16 +476,13 @@ void nic_txd_v5_compose(struct ADAPTER *prAdapter, struct MSDU_INFO *prMsduInfo,
 					WLAN_MAC_HEADER_LEN);
 			}
 		} else if (prMsduInfo->ucPacketType == TX_PACKET_TYPE_DATA) {
-			struct mt66xx_chip_info *prChipInfo =
-				prAdapter->chip_info;
 			uint8_t *pucData = NULL;
 
 			kalGetPacketBuf(prMsduInfo->prPacket, &pucData);
 			prWlanHeader = (struct WLAN_MAC_HEADER *)
 				(pucData
 				+ MAC_TX_RESERVED_FIELD
-				+ u4TxDescLength
-				+ prChipInfo->txd_append_size);
+				+ wlanGetTxNeededHeadRoom(prAdapter));
 			if (MLR_CHECK_IF_ENABLE_DEBUG(prAdapter)) {
 				DBGLOG(RSN, INFO,
 					"MLR txdc - 802.11data FC=0x%04x SC=0x%04x dump...\n",
