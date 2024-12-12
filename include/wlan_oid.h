@@ -3817,7 +3817,40 @@ struct PARAM_EML_DEBUG_INFO {
 	uint8_t ucEmlNegotiated;
 };
 
-#endif
+#if (CFG_SUPPORT_MLC == 1)
+
+struct PARAM_MLC_REQ {
+	enum ENUM_MLC_MODE eMlcMode;
+	uint32_t u4Data1;
+	uint32_t u4Data2;
+};
+
+enum ENUM_MLC_STATUS {
+	MLC_STATUS_SUCCESS = 0,
+	MLC_STATUS_ERROR = 1,
+	MLC_STATUS_BUSY = 2,
+};
+
+struct PARAM_MLC_LINK_INFO {
+	uint8_t ucLinkId;
+	uint8_t ucLinkState;
+	uint32_t u4FreqInMHz;
+};
+
+struct PARAM_MLC_QUERY {
+	enum ENUM_MLC_MODE eMlcMode;
+	uint8_t ucLinkNum;
+	struct PARAM_MLC_LINK_INFO arLinkInfo[MLD_LINK_MAX];
+};
+
+union PARAM_MLC {
+	struct PARAM_MLC_REQ rReq;
+	struct PARAM_MLC_QUERY rQuery;
+};
+
+#endif /* CFG_SUPPORT_MLC */
+
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 /* This structure is a replication of struct EXT_EVENT_SER_T.
  * Thus, we are able to simply do memory copy from EXT_EVENT_SER_T to
@@ -5576,10 +5609,20 @@ wlanoidForceStbcMrc(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 uint32_t
-wlanoidPresetLinkId(struct ADAPTER *prAdapter,
-		     void *pvSetBuffer, uint32_t u4SetBufferLen,
-		     uint32_t *pu4SetInfoLen);
-#endif
+wlanoidPresetLinkId(struct ADAPTER *prAdapter, void *pvSetBuffer,
+	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+
+#if (CFG_SUPPORT_MLC == 1)
+uint32_t
+wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
+	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen);
+#endif /* CFG_SUPPORT_MLC */
+
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 uint32_t
 wlanoidThermalProtectAct(struct ADAPTER *prAdapter,

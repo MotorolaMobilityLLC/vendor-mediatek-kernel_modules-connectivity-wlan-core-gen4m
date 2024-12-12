@@ -1114,7 +1114,7 @@ void aisFsmUninit(struct ADAPTER *prAdapter, uint8_t ucAisIndex)
 
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rApRemovalTimer);
-#endif /* CFG_SUPPORT_802_11BE_MLO */
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 	/* 4 <2> flush pending request */
 	aisFsmFlushRequest(prAdapter, ucBssIndex);
@@ -3951,7 +3951,7 @@ void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 #endif
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
 		cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rApRemovalTimer);
-#endif /* CFG_SUPPORT_802_11BE_MLO */
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 		prAisFsmInfo->ucReasonOfDisconnect = ucReasonOfDisconnect;
 		rRoamingData.eReason = ROAMING_REASON_UPPER_LAYER_TRIGGER;
@@ -5324,7 +5324,7 @@ static void aisFsmDisconnectedAction(struct ADAPTER *prAdapter,
 
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
 	cnmTimerStopTimer(prAdapter, &prAisFsmInfo->rApRemovalTimer);
-#endif /* CFG_SUPPORT_802_11BE_MLO */
+#endif /* CFG_SUPPORT_ML_RECONFIG */
 
 	/* free allocated memory for assoc IE and FT IE */
 	aisFreeIesMem(prAdapter, ucBssIndex, FALSE);

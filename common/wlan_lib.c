@@ -7449,6 +7449,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4MaxChannelSwitchTime,
 		  "MaxChannelSwitchTime", DEFAULT_MAX_CHANNEL_SWITCH_TIME_TU,
 		  FEATURE_TO_CUSTOMER);
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	INIT_UINT(prWifiVar->ucT2LMNegotiationSupport, "T2LMNegotiationSupport",
 		  T2LM_ALL_TIDS_SAME_LINK, FEATURE_DEBUG_ONLY);
@@ -7457,6 +7458,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #if (CFG_SUPPORT_802_11BE_EPCS == 1)
 	INIT_UINT(prWifiVar->fgEnEpcs, "EnableEpcs", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
+#endif
+#if (CFG_SUPPORT_MLC == 1)
+	INIT_UINT(prWifiVar->ucDisableFwkMlc, "DisableFwkMlc", 0);
 #endif
 #endif /* CFG_SUPPORT_802_11BE_MLO */
 #endif /* CFG_SUPPORT_802_11BE */

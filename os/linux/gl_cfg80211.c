@@ -6175,6 +6175,188 @@ int testmode_set_latency_crt_data(struct wiphy *wiphy,
 }
 #endif
 
+#if (CFG_SUPPORT_MLC == 1)
+int testmode_set_ml_link_state(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = -1;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	union PARAM_MLC rMlcParam = {0};
+	uint8_t ucBssIdx = 0;
+	uint32_t u4BufLen, rStatus, u4Mode = 0, u4Param = 0;
+	uint8_t i;
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -EINVAL;
+
+	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	if (!IS_BSS_INDEX_VALID(ucBssIdx))
+		return -EINVAL;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	if (i4Argc < 2) {
+		DBGLOG(REQ, ERROR, "wrong input parameter %d\n", i4Argc);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	DBGLOG(REQ, TRACE, "argc is %i, %s\n", i4Argc, apcArgv[1]);
+	i4BytesWritten = kalkStrtou32(apcArgv[1], 0, &u4Mode);
+	if (i4BytesWritten) {
+		DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
+		       i4BytesWritten);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	if (u4Mode == MLC_MODE_DEFAULT) { /* default */
+		rMlcParam.rReq.eMlcMode = MLC_MODE_DEFAULT;
+	} else if (u4Mode == MLC_MODE_USER_CONFIG) { /* per-link contrl */
+		rMlcParam.rReq.eMlcMode = MLC_MODE_USER_CONFIG;
+		i = 2;
+		while (i + 1 < i4Argc) {
+			uint32_t u4LinkId, u4State;
+
+			i4BytesWritten = kalkStrtou32(apcArgv[i],
+				0, &u4LinkId);
+			if (i4BytesWritten) {
+				DBGLOG(REQ, ERROR,
+				       "parse u4Param error %d\n",
+				       i4BytesWritten);
+				return WLAN_STATUS_INVALID_DATA;
+			}
+
+			i4BytesWritten = kalkStrtou32(apcArgv[i + 1],
+				0, &u4State);
+			if (i4BytesWritten) {
+				DBGLOG(REQ, ERROR,
+				       "parse u4Param error %d\n",
+				       i4BytesWritten);
+				return WLAN_STATUS_INVALID_DATA;
+			}
+
+			if (u4LinkId < MAX_NUM_MLO_LINKS) {
+				rMlcParam.rReq.u4Data1 |= BIT(u4LinkId);
+
+				if (u4State)
+					rMlcParam.rReq.u4Data2 |=
+						BIT(u4LinkId);
+			}
+
+			i += 2;
+		}
+	} else if (u4Mode == MLC_MODE_ACTIVE_NUM) {
+		if (i4Argc < 3)
+			return WLAN_STATUS_INVALID_DATA;
+
+		i4BytesWritten = kalkStrtou32(apcArgv[2], 0, &u4Param);
+		if (i4BytesWritten) {
+			DBGLOG(REQ, ERROR, "parse u4Param error %d\n",
+			       i4BytesWritten);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
+		rMlcParam.rReq.eMlcMode = MLC_MODE_ACTIVE_NUM;
+		rMlcParam.rReq.u4Data1 = u4Param;
+	} else if (u4Mode == MLC_MODE_GAMING) {
+		rMlcParam.rReq.eMlcMode = MLC_MODE_GAMING;
+	} else if (u4Mode == MLC_MODE_LOW_POWER) {
+		rMlcParam.rReq.eMlcMode = MLC_MODE_LOW_POWER;
+	} else if (u4Mode == MLC_MODE_LOW_LATENCY) {
+		rMlcParam.rReq.eMlcMode = MLC_MODE_LOW_LATENCY;
+	} else if (u4Mode == MLC_MODE_HIGH_TPUT) {
+		rMlcParam.rReq.eMlcMode = MLC_MODE_HIGH_TPUT;
+	} else {
+		DBGLOG(REQ, ERROR, "mlc wrong mode=%d\n", u4Mode);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	DBGLOG(REQ, INFO, "mlcReq=%d, data1=0x%x data2=0x%x\n",
+		rMlcParam.rReq.eMlcMode, rMlcParam.rReq.u4Data1,
+		rMlcParam.rReq.u4Data2);
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo, wlanoidSetMlcMode,
+		(void *)&rMlcParam, sizeof(struct PARAM_MLC_REQ),
+		&u4BufLen, ucBssIdx);
+
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(INIT, ERROR, "fail 0x%x\n", rStatus);
+
+	return rStatus;
+}
+
+int testmode_get_ml_link_state(struct wiphy *wiphy,
+	struct wireless_dev *wdev, char *pcCommand, int i4TotalLen)
+{
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = { 0 };
+	int32_t i4Argc = 0;
+	int32_t i4BytesWritten = -1;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct ADAPTER *prAdapter = NULL;
+	union PARAM_MLC rMlcParam = {0};
+	uint8_t ucBssIdx = 0;
+	uint32_t u4BufLen, rStatus;
+	uint8_t i;
+	char buf[512];
+
+	WIPHY_PRIV(wiphy, prGlueInfo);
+	if (prGlueInfo)
+		prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter == NULL)
+		return -EINVAL;
+
+	ucBssIdx = wlanGetBssIdx(wdev->netdev);
+	if (!IS_BSS_INDEX_VALID(ucBssIdx))
+		return -EINVAL;
+
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, INFO, "command is %s\n", pcCommand);
+	if (i4Argc >= 2) {
+		DBGLOG(REQ, ERROR, "wrong input parameter %d\n", i4Argc);
+		return -EINVAL;
+	}
+
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+		wlanoidGetMlcMode,
+		&rMlcParam,
+		sizeof(union PARAM_MLC),
+		&u4BufLen,
+		ucBssIdx);
+
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, ERROR, "Get Mlc mode fail 0x%x\n", rStatus);
+		return rStatus;
+	}
+
+	i4BytesWritten = 0;
+	i4BytesWritten += snprintf(buf + i4BytesWritten,
+		512 - i4BytesWritten, "%d\n%d\n",
+		rMlcParam.rQuery.ucLinkNum, rMlcParam.rQuery.eMlcMode);
+	for (i = 0; i < rMlcParam.rQuery.ucLinkNum; i++) {
+		struct PARAM_MLC_LINK_INFO *prLinkInfo =
+			 &rMlcParam.rQuery.arLinkInfo[i];
+
+		i4BytesWritten += snprintf(buf + i4BytesWritten,
+			512 - i4BytesWritten, "%d %d %d\n",
+			prLinkInfo->ucLinkId,
+			prLinkInfo->ucLinkState == MLO_LINK_STATE_ACTIVE,
+			prLinkInfo->u4FreqInMHz);
+	}
+
+	DBGLOG(REQ, INFO, "Get Mlc mode [Num=%d][Mode=%d]\n",
+	       rMlcParam.rQuery.ucLinkNum, rMlcParam.rQuery.eMlcMode);
+
+	return mtk_cfg80211_process_str_cmd_reply(wiphy,
+		buf, i4BytesWritten + 1);
+}
+
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 int32_t mtk_cfg80211_process_str_cmd_reply(
 	struct wiphy *wiphy, char *data, int len)
 {

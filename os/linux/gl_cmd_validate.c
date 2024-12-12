@@ -2631,7 +2631,23 @@ struct STR_CMD_HANDLER str_cmd_handlers_customer[] = {
 		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(5),
 		.policy    = u32_policy,
 		.u4PolicySize = ARRAY_SIZE(u32_policy)
-	}
+	},
+#endif
+#if (CFG_SUPPORT_MLC == 1)
+	{
+		.pcCmdStr  = CMD_SET_ML_LINKSTATE,
+		.pfHandler = testmode_set_ml_link_state,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_SET_ARG_NUM(2),
+		.policy    = NULL
+	},
+	{
+		.pcCmdStr  = CMD_GET_ML_LINKSTATE,
+		.pfHandler = testmode_get_ml_link_state,
+		.argPolicy = VERIFY_EXACT_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL
+	},
 #endif
 };
 

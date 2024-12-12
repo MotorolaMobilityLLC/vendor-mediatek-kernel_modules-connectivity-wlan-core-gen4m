@@ -533,4 +533,9 @@ void mldTriggerCriticalUpdate(struct ADAPTER *prAdapter,
 			      uint8_t ucBssidx);
 #endif /* CFG_SUPPORT_SAP_BCN_CRI_UPD */
 
+#if (CFG_SUPPORT_MLC == 1)
+uint32_t mldSendMlcRequest(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo, struct PARAM_MLC_REQ *prMlcReq);
+#endif /* CFG_SUPPORT_MLC */
+
 #endif /* !_MLO_H */

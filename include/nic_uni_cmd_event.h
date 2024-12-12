@@ -91,6 +91,16 @@
 		_L = (uint8_t)(((uint16_t)(_u2Value)) & 0xff); \
 	} while (0)
 
+
+/*******************************************************************************
+ *			T Y P E   D E C L A R A T I O N S
+ *******************************************************************************
+ */
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+struct MLD_BSS_INFO;
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************
@@ -261,6 +271,7 @@ enum ENUM_UNI_CMD_ID {
 	UNI_CMD_ID_HM			= 0x7D, /* Hybrid mlo */
 	UNI_CMD_ID_RESET_TX_SCRAMBLE	= 0x7E, /* TX RESET SCRAMBLE */
 	UNI_CMD_ID_PHY_LIST_DUMP	= 0x7F, /* Get Phy CR */
+	UNI_CMD_ID_MLC			= 0x81, /* Multi-link Control */
 	UNI_CMD_ID_UPDATE_LP	= 0x84, /*Update LP Parameter*/
 	UNI_CMD_ID_COEX	= 0x87, /*notify FW coex cmd*/
 	UNI_CMD_ID_PHY_ICS = 0x8A, /*PHY ICS*/
@@ -5578,6 +5589,103 @@ struct UNI_CMD_SAP_BCN_CRI_UPD_T {
 	uint16_t u2BypassSeqBitmap;
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC {
+	/* fixed field */
+	uint8_t ucGroupMldId;
+	uint8_t ucTokenID;
+	uint8_t ucReserved[2];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_CMD_MLC_TAG {
+	UNI_CMD_MLC_TAG_REQ_DEFAULT = 0,
+	UNI_CMD_MLC_TAG_REQ_USER_CONFIG = 1,
+	UNI_CMD_MLC_TAG_REQ_ACTIVE_NUM = 2,
+	UNI_CMD_MLC_TAG_QUERY = 3,
+	UNI_CMD_MLC_TAG_REQ_GAMING = 4,
+	UNI_CMD_MLC_TAG_REQ_LOW_POWER = 5,
+	UNI_CMD_MLC_TAG_REQ_LOW_LATENCY = 6,
+	UNI_CMD_MLC_TAG_REQ_HIGH_TPUT = 7,
+	UNI_CMD_MLC_TAG_NUM
+};
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_DEFAULT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_USER_CONFIG {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucLinkNum;
+	uint8_t aucReserved[3];
+	uint8_t aucLinkInfo[];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_LINK_INFO {
+	uint16_t u2WlanIdx;
+	uint8_t ucBssIdx;
+	uint8_t ucLinkState;
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_ACTIVE_NUM {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucActiveLinkNum;
+	uint8_t aucReserved[3];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_GAMING {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_LOW_POWER {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_LOW_LATENCY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_REQ_HIGH_TPUT {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_MLC_QUERY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t aucReserved[4];
+} __KAL_ATTRIB_PACKED__;
+
 /* COEX command (0x87) */
 struct UNI_CMD_COEX_T {
 	uint8_t ucReserved[4];
@@ -5734,6 +5842,7 @@ enum ENUM_UNI_EVENT_ID {
 #endif
 	UNI_EVENT_ID_PHY_LIST_DUMP   = 0x7f,
 	UNI_EVENT_ID_OMI	    = 0x84,
+	UNI_EVENT_ID_MLC	     = 0x86,
 	UNI_EVENT_ID_NUM
 };
 
@@ -6285,6 +6394,11 @@ enum ENUM_MLO_LINK_STATE_CHANGE_REASON {
 	MLO_LINK_STATE_CHANGE_REASON_T2LM,
 	MLO_LINK_STATE_CHANGE_REASON_EMLSR,
 	MLO_LINK_STATE_CHANGE_REASON_LINK_RECOMMEND,
+	MLO_LINK_STATE_CHANGE_REASON_RCPI,
+	MLO_LINK_STATE_CHANGE_REASON_COEX,
+	MLO_LINK_STATE_CHANGE_REASON_CONCURRENT,
+	MLO_LINK_STATE_CHANGE_REASON_TPUT_HIGH,
+	MLO_LINK_STATE_CHANGE_REASON_TPUT_LOW,
 	MLO_LINK_STATE_CHANGE_REASON_MAX_NUM
 };
 
@@ -9062,6 +9176,55 @@ struct UNI_CMD_UPDATE_LP_GEN_SWITCH_PARAM {
 	uint8_t aucPadding[3];
 } __KAL_ATTRIB_PACKED__;
 
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MLC {
+	/* fixed field */
+	uint8_t ucGroupMldId;
+	uint8_t ucTokenID;
+	uint8_t aucReserved[2];
+
+	/* tlv */
+	uint8_t aucTlvBuffer[0];
+} __KAL_ATTRIB_PACKED__;
+
+enum ENUM_UNI_EVENT_MLC_TAG {
+	UNI_EVENT_MLC_TAG_RESP  = 0,
+	UNI_EVENT_MLC_TAG_QUERY  = 1,
+	UNI_EVENT_MLC_TAG_NUM
+};
+
+enum ENUM_MLC_RESP_STATUS {
+	MLC_RESP_STATUS_SUCCESS = 0,
+	MLC_RESP_STATUS_ERROR = 1,
+	MLC_RESP_STATUS_INVALID_DATA = 2,
+	MLC_RESP_STATUS_BUSY = 3,
+	MLC_RESP_STATUS_NOT_SUPPORTED = 4,
+	MLC_RESP_STATUS_NOT_ACCEPTED = 5,
+};
+
+/* MLC response (Tag0) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MLC_RESP {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucMlcMode;
+	uint8_t aucReserved[3];
+	uint32_t u4Status;
+} __KAL_ATTRIB_PACKED__;
+
+/* MLC query (Tag1) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_EVENT_MLC_QUERY {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+
+	uint8_t ucMlcMode;
+	uint8_t ucLinkNum;
+	uint8_t aucReserved[6];
+	uint8_t aucLinkInfo[];
+} __KAL_ATTRIB_PACKED__;
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************
@@ -9493,7 +9656,15 @@ uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
 	void *pvQueryBuffer,
 	uint32_t u4QueryBufferLen);
-#endif
+#if (CFG_SUPPORT_MLC == 1)
+uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	struct PARAM_MLC_REQ *prMlcReq);
+uint32_t nicUniCmdSendMlcQuery(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	void *pvQueryBuffer, uint32_t u4QueryBufferLen);
+#endif /* CFG_SUPPORT_MLC */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
@@ -9669,13 +9840,17 @@ void nicUniCmdEventLpDbgCtrl(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 void nicUniEventEmlInfo(struct ADAPTER *ad,
 	struct CMD_INFO *cmd, uint8_t *event);
-
 #if (CFG_MLO_CONCURRENT_SINGLE_PHY == 1)
 void nicUniEventMLSRSwitchDone(struct ADAPTER *ad,
 	struct WIFI_UNI_EVENT *evt);
 #endif
-
-#endif
+#if (CFG_SUPPORT_MLC == 1)
+void nicUniEventMlcReqDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);
+#endif /* CFG_SUPPORT_MLC */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 #if CFG_SUPPORT_RTT
 void nicUniEventRttCapabilities(struct ADAPTER	*prAdapter,
 	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf);

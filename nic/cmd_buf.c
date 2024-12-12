@@ -279,7 +279,7 @@ void cmdBufFreeCmdInfo(struct ADAPTER *prAdapter,
 	}
 
 	if (prCmdInfo)
-		DBGLOG(MEM, LOUD, "CMD[0x%d] SEQ[%d] freed! Rest[%u]\n",
+		DBGLOG(MEM, LOUD, "CMD[0x%x] SEQ[%d] freed! Rest[%u]\n",
 			prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum,
 			prAdapter->rFreeCmdList.u4NumElem);
 

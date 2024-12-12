@@ -6756,7 +6756,195 @@ uint32_t nicUniCmdQueryEmlInfo(struct ADAPTER *ad,
 	return status;
 }
 
-#endif
+#if (CFG_SUPPORT_MLC == 1)
+uint32_t nicUniCmdSendMlcRequest(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo, struct PARAM_MLC_REQ *prMlcReq)
+{
+	struct UNI_CMD_MLC *uni_cmd;
+	uint32_t status;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLC);
+	uint8_t *pos;
+
+	if (!prMldBssInfo || !prMlcReq)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	switch (prMlcReq->eMlcMode) {
+	case MLC_MODE_DEFAULT:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_DEFAULT);
+		break;
+	case MLC_MODE_USER_CONFIG:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_USER_CONFIG) +
+			MLD_LINK_MAX * sizeof(struct UNI_CMD_MLC_LINK_INFO);
+		break;
+	case MLC_MODE_ACTIVE_NUM:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_ACTIVE_NUM);
+		break;
+	case MLC_MODE_GAMING:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_GAMING);
+		break;
+	case MLC_MODE_LOW_POWER:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_LOW_POWER);
+		break;
+	case MLC_MODE_LOW_LATENCY:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_LOW_LATENCY);
+		break;
+	case MLC_MODE_HIGH_TPUT:
+		max_cmd_len += sizeof(struct UNI_CMD_MLC_REQ_HIGH_TPUT);
+		break;
+	default:
+		return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	uni_cmd = (struct UNI_CMD_MLC *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(ML, ERROR,
+		       "Allocate UNI_CMD_MLC ==> FAILED.\n");
+		return WLAN_STATUS_RESOURCES;
+	}
+
+	uni_cmd->ucGroupMldId = prMldBssInfo->ucGroupMldId;
+	uni_cmd->ucTokenID = ++prMldBssInfo->ucMlcToken;
+	pos = uni_cmd->aucTlvBuffer;
+
+	DBGLOG(ML, INFO,  "GrpMldId[%d] Token[%d] Mode[%d]\n",
+		uni_cmd->ucGroupMldId, uni_cmd->ucTokenID, prMlcReq->eMlcMode);
+
+	if (prMlcReq->eMlcMode == MLC_MODE_DEFAULT) {
+		struct UNI_CMD_MLC_REQ_DEFAULT *tag;
+
+		tag = (struct UNI_CMD_MLC_REQ_DEFAULT *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_DEFAULT;
+		tag->u2Length = sizeof(*tag);
+	} else if (prMlcReq->eMlcMode == MLC_MODE_USER_CONFIG) {
+		struct UNI_CMD_MLC_REQ_USER_CONFIG *tag;
+		uint32_t valid_links = prMlcReq->u4Data1;
+		uint32_t active_links = prMlcReq->u4Data2;
+		struct UNI_CMD_MLC_LINK_INFO *link;
+		struct MLD_STA_RECORD *mld_starec =
+			mldBssGetPeekClient(prAdapter, prMldBssInfo);
+		struct LINK *list;
+		struct STA_RECORD *cur;
+
+		tag = (struct UNI_CMD_MLC_REQ_USER_CONFIG *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_USER_CONFIG;
+		tag->u2Length = sizeof(*tag);
+		tag->ucLinkNum = 0;
+
+		list = &mld_starec->rStarecList;
+		link = (struct UNI_CMD_MLC_LINK_INFO *)tag->aucLinkInfo;
+		LINK_FOR_EACH_ENTRY(cur, list, rLinkEntryMld,
+				struct STA_RECORD) {
+			if (!(valid_links & BIT(cur->ucLinkIndex)))
+				continue;
+
+			link->ucBssIdx = cur->ucBssIndex;
+			link->u2WlanIdx = cur->ucWlanIndex;
+			if (!!(active_links & BIT(cur->ucLinkIndex)))
+				link->ucLinkState = MLO_LINK_STATE_ACTIVE;
+			else
+				link->ucLinkState = MLO_LINK_STATE_INACTIVE;
+			link++;
+
+			tag->u2Length += sizeof(struct UNI_CMD_MLC_LINK_INFO);
+			tag->ucLinkNum++;
+
+			DBGLOG(INIT, INFO, "\tbss=%d,wlan_idx=%d,state=%d\n",
+				link->ucBssIdx,
+				link->u2WlanIdx,
+				link->ucLinkState);
+		}
+	} else if (prMlcReq->eMlcMode == MLC_MODE_ACTIVE_NUM) {
+		struct UNI_CMD_MLC_REQ_ACTIVE_NUM *tag;
+
+		tag = (struct UNI_CMD_MLC_REQ_ACTIVE_NUM *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_ACTIVE_NUM;
+		tag->u2Length = sizeof(*tag);
+		tag->ucActiveLinkNum = (uint8_t) prMlcReq->u4Data1;
+	} else if (prMlcReq->eMlcMode == MLC_MODE_GAMING) {
+		struct UNI_CMD_MLC_REQ_GAMING *tag;
+
+		tag = (struct UNI_CMD_MLC_REQ_GAMING *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_GAMING;
+		tag->u2Length = sizeof(*tag);
+	} else if (prMlcReq->eMlcMode == MLC_MODE_LOW_POWER) {
+		struct UNI_CMD_MLC_REQ_LOW_POWER *tag;
+
+		tag = (struct UNI_CMD_MLC_REQ_LOW_POWER *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_LOW_POWER;
+		tag->u2Length = sizeof(*tag);
+	} else if (prMlcReq->eMlcMode == MLC_MODE_LOW_LATENCY) {
+		struct UNI_CMD_MLC_REQ_LOW_LATENCY *tag;
+
+		tag = (struct UNI_CMD_MLC_REQ_LOW_LATENCY *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_LOW_LATENCY;
+		tag->u2Length = sizeof(*tag);
+	} else if (prMlcReq->eMlcMode == MLC_MODE_HIGH_TPUT) {
+		struct UNI_CMD_MLC_REQ_HIGH_TPUT *tag;
+
+		tag = (struct UNI_CMD_MLC_REQ_HIGH_TPUT *) pos;
+		tag->u2Tag = UNI_CMD_MLC_TAG_REQ_HIGH_TPUT;
+		tag->u2Length = sizeof(*tag);
+	}
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_MLC,
+			     TRUE,
+			     TRUE,
+			     TRUE,
+			     nicUniEventMlcReqDone,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, NULL, 0);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	return status;
+}
+
+uint32_t nicUniCmdSendMlcQuery(struct ADAPTER *prAdapter,
+	struct MLD_BSS_INFO *prMldBssInfo,
+	void *pvQueryBuffer, uint32_t u4QueryBufferLen)
+{
+	struct UNI_CMD_MLC *uni_cmd;
+	struct UNI_CMD_MLC_QUERY *tag;
+	uint32_t status;
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_MLC) +
+			       sizeof(struct UNI_CMD_MLC_QUERY);
+
+	if (!prMldBssInfo)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	uni_cmd = (struct UNI_CMD_MLC *) cnmMemAlloc(prAdapter,
+				RAM_TYPE_MSG, max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(ML, ERROR,
+		       "Allocate UNI_CMD_MLC ==> FAILED.\n");
+		return 0;
+	}
+
+	uni_cmd->ucGroupMldId = prMldBssInfo->ucGroupMldId;
+	uni_cmd->ucTokenID = ++prMldBssInfo->ucMlcToken;
+	tag = (struct UNI_CMD_MLC_QUERY *) uni_cmd->aucTlvBuffer;
+	tag->u2Tag = UNI_CMD_MLC_TAG_QUERY;
+	tag->u2Length = sizeof(*tag);
+
+	status = wlanSendSetQueryUniCmd(prAdapter,
+			     UNI_CMD_ID_MLC,
+			     FALSE,
+			     FALSE,
+			     TRUE,
+			     nicUniEventMlcQueryDone,
+			     nicUniCmdTimeoutCommon,
+			     max_cmd_len,
+			     (void *)uni_cmd, pvQueryBuffer, u4QueryBufferLen);
+
+	cnmMemFree(prAdapter, uni_cmd);
+
+	return status;
+}
+#endif /* CFG_SUPPORT_MLC */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 uint32_t nicUniCmdTestmodeCtrl(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
@@ -10940,7 +11128,136 @@ void nicUniEventMLSRSwitchDone(struct ADAPTER *ad,
 	}
 }
 #endif
-#endif
+
+#if (CFG_SUPPORT_MLC == 1)
+void nicUniEventMlcReqDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_MLC *evt =
+		(struct UNI_EVENT_MLC *)uni_evt->aucBuffer;
+	struct UNI_EVENT_MLC_RESP *tag =
+		(struct UNI_EVENT_MLC_RESP *) evt->aucTlvBuffer;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	uint32_t u4Status = WLAN_STATUS_SUCCESS;
+
+	if (uni_evt->ucEID != UNI_EVENT_ID_MLC ||
+	    tag->u2Tag != UNI_EVENT_MLC_TAG_RESP) {
+		DBGLOG(ML, WARN,
+			"Ignore Event[%d] CID[0x%x] OID[%d] TagId[%d]\n",
+			uni_evt->ucEID, prCmdInfo->ucCID,
+			prCmdInfo->fgIsOid, tag->u2Tag);
+		u4Status = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+
+	DBGLOG(ML, INFO, "GrpMldId=%d TokenId=%d status=0x%x\n",
+		evt->ucGroupMldId, evt->ucTokenID, tag->u4Status);
+
+	mld_bssinfo = mldBssGetByIdx(prAdapter, evt->ucGroupMldId);
+	if (!mld_bssinfo) {
+		DBGLOG(ML, WARN, "mld bssinfo %d not exist\n",
+			evt->ucGroupMldId);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto done;
+	}
+	if (mld_bssinfo->ucMlcToken != evt->ucTokenID) {
+		DBGLOG(ML, WARN, "Token %d doesn't match expected %d\n",
+			evt->ucTokenID, mld_bssinfo->ucMlcToken);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto done;
+	}
+
+done:
+	if (prCmdInfo->fgIsOid)
+		/* Update Query Information Length */
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			0, u4Status == WLAN_STATUS_SUCCESS ?
+			tag->u4Status : u4Status);
+}
+
+void nicUniEventMlcQueryDone(struct ADAPTER *prAdapter,
+	struct CMD_INFO *prCmdInfo, uint8_t *pucEventBuf)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *) pucEventBuf;
+	struct UNI_EVENT_MLC *evt =
+		(struct UNI_EVENT_MLC *)uni_evt->aucBuffer;
+	struct UNI_EVENT_MLC_QUERY *tag =
+		(struct UNI_EVENT_MLC_QUERY *) evt->aucTlvBuffer;
+	struct UNI_CMD_MLC_LINK_INFO *link;
+	struct MLD_BSS_INFO *mld_bssinfo;
+	struct PARAM_MLC_QUERY *prQueryBuffer;
+	uint32_t u4QueryInfoLen = 0, u4Status = WLAN_STATUS_SUCCESS;
+	uint8_t i;
+
+	if (uni_evt->ucEID != UNI_EVENT_ID_MLC ||
+	    tag->u2Tag != UNI_EVENT_MLC_TAG_QUERY) {
+		DBGLOG(ML, WARN,
+			"Ignore Event[%d] CID[0x%x] OID[%d] TagId[%d]\n",
+			uni_evt->ucEID, prCmdInfo->ucCID,
+			prCmdInfo->fgIsOid, tag->u2Tag);
+		u4Status = WLAN_STATUS_FAILURE;
+		goto done;
+	}
+
+	DBGLOG(ML, INFO, "GrpMldId=%d TokenId=%d MlcMode=%d LinkNum=%d\n",
+		evt->ucGroupMldId, evt->ucTokenID,
+		tag->ucMlcMode, tag->ucLinkNum);
+
+	mld_bssinfo = mldBssGetByIdx(prAdapter, evt->ucGroupMldId);
+	if (!mld_bssinfo) {
+		DBGLOG(ML, WARN, "mld bssinfo %d not exist\n",
+			evt->ucGroupMldId);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto done;
+	}
+	if (mld_bssinfo->ucMlcToken != evt->ucTokenID) {
+		DBGLOG(ML, WARN, "Token %d doesn't match expected %d\n",
+			evt->ucTokenID, mld_bssinfo->ucMlcToken);
+		u4Status = WLAN_STATUS_NOT_ACCEPTED;
+		goto done;
+	}
+
+	prQueryBuffer = (struct PARAM_MLC_QUERY *)
+			prCmdInfo->pvInformationBuffer;
+	prQueryBuffer->eMlcMode = tag->ucMlcMode;
+	prQueryBuffer->ucLinkNum = tag->ucLinkNum;
+	link = (struct UNI_CMD_MLC_LINK_INFO *)tag->aucLinkInfo;
+	for (i = 0; i < tag->ucLinkNum && i < MLD_LINK_MAX; i++, link++) {
+		struct PARAM_MLC_LINK_INFO *prInfo =
+			&prQueryBuffer->arLinkInfo[i];
+		struct BSS_INFO *prBssInfo;
+		struct STA_RECORD *prStaRec;
+
+		prStaRec = cnmGetStaRecByWlanIndex(prAdapter, link->u2WlanIdx);
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, link->ucBssIdx);
+
+		if (!prStaRec || !prBssInfo)
+			continue;
+
+		prInfo->ucLinkId = prStaRec->ucLinkIndex;
+		prInfo->ucLinkState = link->ucLinkState;
+		prInfo->u4FreqInMHz = nicChannelNum2Freq(
+			prBssInfo->ucPrimaryChannel, prBssInfo->eBand) / 1000;
+
+		DBGLOG(ML, INFO, "\tbss=%d,wlan_idx=%d,state=%d,freq=%d\n",
+			link->ucBssIdx,
+			link->u2WlanIdx,
+			link->ucLinkState,
+			prInfo->u4FreqInMHz);
+	}
+
+	u4QueryInfoLen = sizeof(struct PARAM_MLC_QUERY);
+
+done:
+	if (prCmdInfo->fgIsOid)
+		/* Update Query Information Length */
+		kalOidComplete(prAdapter->prGlueInfo, prCmdInfo,
+			       u4QueryInfoLen, u4Status);
+}
+#endif /* CFG_SUPPORT_MLC */
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
 /*******************************************************************************
  *                   Unsolicited Event
  *******************************************************************************

@@ -2293,7 +2293,97 @@ wlanoidPresetLinkId(struct ADAPTER *prAdapter,
 
 	return WLAN_STATUS_SUCCESS;
 }
-#endif
+
+#if (CFG_SUPPORT_MLC == 1)
+uint32_t
+wlanoidSetMlcMode(struct ADAPTER *prAdapter, void *pvSetBuffer,
+	uint32_t u4SetBufferLen, uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_MLC_REQ *prMlcReq;
+	struct PARAM_MLC_RESP *prMlcResp;
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct MLD_STA_RECORD *prMldStaRec;
+
+	uint8_t ucBssIndex;
+
+	ASSERT(prAdapter);
+	ASSERT(pu4SetInfoLen);
+	ASSERT(pvSetBuffer);
+
+	if (u4SetBufferLen < sizeof(struct PARAM_MLC_REQ))
+		return WLAN_STATUS_INVALID_DATA;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	prMlcReq = (struct PARAM_MLC_REQ *) pvSetBuffer;
+	prMlcResp = (struct PARAM_MLC_RESP *) pvSetBuffer;
+
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return WLAN_STATUS_INVALID_DATA;
+
+	prMldBssInfo = aisGetMldBssInfo(prAdapter, ucBssIndex);
+	if (!prMldBssInfo)
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	if (!mldIsSingleLinkEnabled(prAdapter, NETWORK_TYPE_AIS, ucBssIndex))
+		return WLAN_STATUS_NOT_SUPPORTED;
+
+	prMldStaRec = aisGetMldStaRec(prAdapter, ucBssIndex);
+	if (!prMldStaRec)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	if (prMlcReq->eMlcMode == MLC_MODE_USER_CONFIG) {
+		struct LINK *list;
+		struct STA_RECORD *cur;
+		uint32_t valid_links = prMlcReq->u4Data1;
+		uint8_t num = 0;
+
+		/* valid link num != total link num */
+		if (wlanNumBitSet(valid_links) !=
+		    prMldStaRec->rStarecList.u4NumElem)
+			return WLAN_STATUS_INVALID_DATA;
+
+		list = &prMldStaRec->rStarecList;
+		LINK_FOR_EACH_ENTRY(cur, list, rLinkEntryMld,
+				struct STA_RECORD) {
+			if (valid_links & BIT(cur->ucLinkIndex))
+				num++;
+		}
+
+		if (num != prMldStaRec->rStarecList.u4NumElem)
+			return WLAN_STATUS_NOT_ACCEPTED;
+	}
+
+	return nicUniCmdSendMlcRequest(prAdapter, prMldBssInfo, prMlcReq);
+}
+
+uint32_t
+wlanoidGetMlcMode(struct ADAPTER *prAdapter, void *pvQueryBuffer,
+	uint32_t u4QueryBufferLen, uint32_t *pu4QueryInfoLen)
+{
+	struct MLD_BSS_INFO *prMldBssInfo;
+	uint8_t ucBssIndex;
+
+	ASSERT(prAdapter);
+	ASSERT(u4QueryBufferLen);
+	ASSERT(pvQueryBuffer);
+
+	if (u4QueryBufferLen < sizeof(struct PARAM_MLC_QUERY))
+		return WLAN_STATUS_INVALID_LENGTH;
+
+	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
+	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex))
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	prMldBssInfo = aisGetMldBssInfo(prAdapter, ucBssIndex);
+	if (!prMldBssInfo)
+		return WLAN_STATUS_NOT_ACCEPTED;
+
+	return nicUniCmdSendMlcQuery(prAdapter, prMldBssInfo,
+		pvQueryBuffer, u4QueryBufferLen);
+}
+#endif /* CFG_SUPPORT_MLC */
+
+#endif /* CFG_SUPPORT_802_11BE_MLO */
 
 #if CFG_SUPPORT_802_11W
 static void assignPmfFlag(struct STA_RECORD *prStaRec,

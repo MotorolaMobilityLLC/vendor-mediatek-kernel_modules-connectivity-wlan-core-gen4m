@@ -1046,6 +1046,17 @@ enum ENUM_MLO_LINK_PLAN {
 	MLO_LINK_PLAN_NUM,
 };
 
+/* Multi-link control mode */
+enum ENUM_MLC_MODE {
+	MLC_MODE_DEFAULT,
+	MLC_MODE_USER_CONFIG,
+	MLC_MODE_ACTIVE_NUM,
+	MLC_MODE_GAMING,
+	MLC_MODE_LOW_POWER,
+	MLC_MODE_LOW_LATENCY,
+	MLC_MODE_HIGH_TPUT,
+};
+
 /* Provide supported channel list to other components in array format */
 struct RF_CHANNEL_INFO {
 	enum ENUM_BAND eBand;
