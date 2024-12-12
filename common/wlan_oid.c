@@ -8228,6 +8228,9 @@ wlanoidQueryChipConfig(struct ADAPTER *prAdapter,
 		       uint32_t *pu4QueryInfoLen) {
 	struct PARAM_CUSTOM_CHIP_CONFIG_STRUCT *prChipConfigInfo;
 	struct CMD_CHIP_CONFIG rCmdChipConfig;
+	u_int8_t fgSetQuery = FALSE;
+	u_int8_t fgNeedResp = TRUE;
+	u_int8_t fgIsOid = TRUE;
 	uint32_t rWlanStatus = WLAN_STATUS_SUCCESS;
 
 	DBGLOG(INIT, LOUD, "\n");
@@ -8261,8 +8264,18 @@ wlanoidQueryChipConfig(struct ADAPTER *prAdapter,
 	kalMemCopy(rCmdChipConfig.aucCmd, prChipConfigInfo->aucCmd,
 		   rCmdChipConfig.u2MsgSize);
 
+	/* If the command type is "CHIP_CONFIG_TYPE_WO_RESPONSE",
+	 * we don't need any response or event from firmware.
+	 * Default: fgSetQuery=FALSE, fgNeedResp=TRUE, fgIsOid=TRUE
+	 */
+	if (rCmdChipConfig.ucType == CHIP_CONFIG_TYPE_WO_RESPONSE) {
+		fgSetQuery = TRUE;
+		fgNeedResp = FALSE;
+	}
+
 	rWlanStatus = wlanSendSetQueryCmd(prAdapter,
-					  CMD_ID_CHIP_CONFIG, FALSE, TRUE, TRUE,
+					  CMD_ID_CHIP_CONFIG,
+					  fgSetQuery, fgNeedResp, fgIsOid,
 					  /*nicCmdEventQuerySwCtrlRead, */
 					  nicCmdEventQueryChipConfig,
 					  nicOidCmdTimeoutCommon,
