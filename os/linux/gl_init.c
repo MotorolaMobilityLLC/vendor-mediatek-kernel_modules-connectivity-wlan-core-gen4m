@@ -8368,9 +8368,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct ADAPTER *prAdapter = NULL;
 	int32_t i4Status = 0;
 	u_int8_t bRet = FALSE;
-#if CFG_ENABLE_WIFI_DIRECT
-	u_int8_t i = 0;
-#endif
 	struct REG_INFO *prRegInfo;
 	struct mt66xx_chip_info *prChipInfo = NULL;
 	struct WIFI_VAR *prWifiVar;
@@ -8384,7 +8381,6 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 	struct device *prDev;
 	u_int32_t u4Idx;
 #endif
-	struct wireless_dev **pprP2pRoleWdev = NULL;
 	struct ieee80211_supported_band *prGHzBand = NULL;
 
 	if (GLUE_GET_REF_CNT(g_wlanProbing)) {
@@ -8626,50 +8622,20 @@ static int32_t wlanProbe(void *pvData, void *pvDriverData)
 		glRegCbsToMbraink(prAdapter);
 #endif
 
-		prGHzBand = &mtk_band_5ghz;
-		pprP2pRoleWdev = prGlueInfo->prP2pRoleWdev;
-
 		/* Configure 5G band for registered wiphy */
+		prGHzBand = &mtk_band_5ghz;
 		if (prAdapter->fgEnable5GBand)
 			prWdev->wiphy->bands[KAL_BAND_5GHZ] = prGHzBand;
 		else
 			prWdev->wiphy->bands[KAL_BAND_5GHZ] = NULL;
 
-#if CFG_ENABLE_WIFI_DIRECT
-		for (i = 0 ; i < KAL_P2P_NUM; i++) {
-			if (pprP2pRoleWdev[i] == NULL)
-				continue;
-
-			if (prAdapter->fgEnable5GBand)
-				pprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
-				prGHzBand;
-			else
-				pprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_5GHZ] =
-				NULL;
-		}
-#endif
 #if (CFG_SUPPORT_WIFI_6G == 1)
-		prGHzBand = &mtk_band_6ghz;
-
 		/* Configure 6G band for registered wiphy */
+		prGHzBand = &mtk_band_6ghz;
 		if (prAdapter->fgIsHwSupport6G)
 			prWdev->wiphy->bands[KAL_BAND_6GHZ] = prGHzBand;
 		else
 			prWdev->wiphy->bands[KAL_BAND_6GHZ] = NULL;
-
-#if CFG_ENABLE_WIFI_DIRECT
-		for (i = 0 ; i < KAL_P2P_NUM; i++) {
-			if (pprP2pRoleWdev[i] == NULL)
-				continue;
-
-			if (prAdapter->fgIsHwSupport6G)
-				pprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_6GHZ] =
-				prGHzBand;
-			else
-				pprP2pRoleWdev[i]->wiphy->bands[KAL_BAND_6GHZ] =
-				NULL;
-		}
-#endif
 #endif
 	} while (FALSE);
 

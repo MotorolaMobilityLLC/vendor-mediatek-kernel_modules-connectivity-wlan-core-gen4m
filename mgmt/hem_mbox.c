@@ -107,10 +107,8 @@ static const char * const apucDebugMsg[] = {
 	"MID_MNY_P2P_MGMT_TX_CANCEL_WAIT",
 	"MID_MNY_P2P_GROUP_DISSOLVE",
 	"MID_MNY_P2P_MGMT_FRAME_REGISTER",
-	"MID_MNY_P2P_NET_DEV_REGISTER",
 	"MID_MNY_P2P_START_AP",
 	"MID_MNY_P2P_DEL_IFACE",
-	"MID_MNY_P2P_MGMT_FRAME_UPDATE",
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	"MID_MNY_P2P_DFS_CAC",
 	"MID_MNY_P2P_START_CAC",
@@ -310,12 +308,10 @@ static struct MSG_HNDL_ENTRY arMsgMapTable[] = {
 	{MID_MNY_P2P_GROUP_DISSOLVE, p2pRoleFsmRunEventDissolve},
 	{MID_MNY_P2P_MGMT_FRAME_REGISTER,
 		p2pDevFsmRunEventMgmtFrameRegister},
-	{MID_MNY_P2P_NET_DEV_REGISTER, p2pFsmRunEventNetDeviceRegister},
 #if CFG_ENABLE_WIFI_DIRECT
 	{MID_MNY_P2P_START_AP, p2pRoleFsmRunEventPreStartAP},
 #endif
 	{MID_MNY_P2P_DEL_IFACE, p2pRoleFsmRunEventDelIface},
-	{MID_MNY_P2P_MGMT_FRAME_UPDATE, p2pFsmRunEventUpdateMgmtFrame},
 #if (CFG_SUPPORT_DFS_MASTER == 1)
 	{MID_MNY_P2P_DFS_CAC, p2pRoleFsmRunEventDfsCac},
 	{MID_MNY_P2P_START_CAC, p2pRoleFsmRunEventStartCac},

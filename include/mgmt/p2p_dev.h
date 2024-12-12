@@ -171,12 +171,6 @@ struct P2P_DEV_FSM_INFO {
 	uint8_t ucGoStartedBitmap;
 };
 
-struct MSG_P2P_NETDEV_REGISTER {
-	struct MSG_HDR rMsgHdr;	/* Must be the first member */
-	u_int8_t fgIsEnable;
-	uint8_t ucMode;
-};
-
 #if CFG_SUPPORT_WFD
 struct MSG_WFD_CONFIG_SETTINGS_CHANGED {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */

@@ -14037,27 +14037,6 @@ wlanoidSetP2pMode(struct ADAPTER *prAdapter,
 
 	}
 
-#if 0
-	prP2pNetdevRegMsg = (struct MSG_P2P_NETDEV_REGISTER *)
-				cnmMemAlloc(prAdapter, RAM_TYPE_MSG,
-				(sizeof(struct MSG_P2P_NETDEV_REGISTER)));
-
-	if (prP2pNetdevRegMsg == NULL) {
-		ASSERT(FALSE);
-		status = WLAN_STATUS_RESOURCES;
-		return status;
-	}
-
-	prP2pNetdevRegMsg->rMsgHdr.eMsgId =
-		MID_MNY_P2P_NET_DEV_REGISTER;
-	prP2pNetdevRegMsg->fgIsEnable = (prSetP2P->u4Enable == 1) ?
-					TRUE : FALSE;
-	prP2pNetdevRegMsg->ucMode = (uint8_t) prSetP2P->u4Mode;
-
-	mboxSendMsg(prAdapter, MBOX_ID_0,
-		    (struct MSG_HDR *) prP2pNetdevRegMsg, MSG_SEND_METHOD_BUF);
-#endif
-
 	return status;
 
 }

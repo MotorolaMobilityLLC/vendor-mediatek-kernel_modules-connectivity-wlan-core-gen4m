@@ -12,14 +12,6 @@
 #define AP_GO_DELAY_CARRIER_ON_TIMEOUT_MS	50
 #endif /* CFG_AP_GO_DELAY_CARRIER_ON */
 
-enum ENUM_BUFFER_TYPE {
-	ENUM_FRAME_TYPE_EXTRA_IE_BEACON,
-	ENUM_FRAME_TYPE_EXTRA_IE_ASSOC_RSP,
-	ENUM_FRAME_TYPE_EXTRA_IE_PROBE_RSP,
-	ENUM_FRAME_TYPE_PROBE_RSP_TEMPLATE,
-	ENUM_FRAME_TYPE_BEACON_TEMPLATE,
-	ENUM_FRAME_IE_NUM
-};
 
 enum ENUM_HIDDEN_SSID_TYPE {
 	ENUM_HIDDEN_SSID_NONE,
@@ -75,13 +67,6 @@ struct MSG_P2P_BEACON_UPDATE {
 #endif
 	u_int8_t fgIsWepCipher;
 	uint8_t aucBuffer[];	/* Header & Body & Extra IEs are put here. */
-};
-
-struct MSG_P2P_MGMT_FRAME_UPDATE {
-	struct MSG_HDR rMsgHdr;
-	enum ENUM_BUFFER_TYPE eBufferType;
-	uint32_t u4BufferLen;
-	uint8_t aucBuffer[];
 };
 
 struct MSG_P2P_SWITCH_OP_MODE {

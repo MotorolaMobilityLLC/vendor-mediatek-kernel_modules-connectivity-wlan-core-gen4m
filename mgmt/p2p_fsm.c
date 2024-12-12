@@ -195,55 +195,6 @@ void p2pFsmRunEventChGrant(struct ADAPTER *prAdapter,
 	} while (FALSE);
 }				/* p2pFsmRunEventChGrant */
 
-void p2pFsmRunEventNetDeviceRegister(struct ADAPTER *prAdapter,
-		struct MSG_HDR *prMsgHdr)
-{
-	struct MSG_P2P_NETDEV_REGISTER *prNetDevRegisterMsg =
-		(struct MSG_P2P_NETDEV_REGISTER *) NULL;
-
-	DBGLOG(P2P, TRACE, "p2pFsmRunEventNetDeviceRegister\n");
-
-	prNetDevRegisterMsg = (struct MSG_P2P_NETDEV_REGISTER *) prMsgHdr;
-
-	if (prNetDevRegisterMsg->fgIsEnable) {
-		p2pSetMode((prNetDevRegisterMsg->ucMode == 1) ? TRUE : FALSE);
-		if (p2pLaunch(prAdapter->prGlueInfo))
-			ASSERT(prAdapter->fgIsP2PRegistered);
-	} else {
-		if (prAdapter->fgIsP2PRegistered)
-			p2pRemove(prAdapter->prGlueInfo, FALSE);
-	}
-
-	cnmMemFree(prAdapter, prMsgHdr);
-}				/* p2pFsmRunEventNetDeviceRegister */
-
-void p2pFsmRunEventUpdateMgmtFrame(struct ADAPTER *prAdapter,
-		struct MSG_HDR *prMsgHdr)
-{
-	struct MSG_P2P_MGMT_FRAME_UPDATE *prP2pMgmtFrameUpdateMsg;
-
-	DBGLOG(P2P, TRACE, "p2pFsmRunEventUpdateMgmtFrame\n");
-
-	prP2pMgmtFrameUpdateMsg = (struct MSG_P2P_MGMT_FRAME_UPDATE *) prMsgHdr;
-
-	switch (prP2pMgmtFrameUpdateMsg->eBufferType) {
-	case ENUM_FRAME_TYPE_EXTRA_IE_BEACON:
-		break;
-	case ENUM_FRAME_TYPE_EXTRA_IE_ASSOC_RSP:
-		break;
-	case ENUM_FRAME_TYPE_EXTRA_IE_PROBE_RSP:
-		break;
-	case ENUM_FRAME_TYPE_PROBE_RSP_TEMPLATE:
-		break;
-	case ENUM_FRAME_TYPE_BEACON_TEMPLATE:
-		break;
-	default:
-		break;
-	}
-
-	cnmMemFree(prAdapter, prMsgHdr);
-}				/* p2pFsmRunEventUpdateMgmtFrame */
-
 #if CFG_SUPPORT_WFD
 void p2pFsmRunEventWfdSettingUpdate(struct ADAPTER *prAdapter,
 		struct MSG_HDR *prMsgHdr)
