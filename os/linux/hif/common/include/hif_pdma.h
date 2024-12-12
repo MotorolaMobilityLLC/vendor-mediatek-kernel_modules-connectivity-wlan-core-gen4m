@@ -23,26 +23,22 @@
  *                              C O N S T A N T S
  *******************************************************************************
  */
+#if (CFG_SUPPORT_CONNAC1X == 1)
 #define NUM_OF_WFDMA1_TX_RING			0
 #define NUM_OF_WFDMA1_RX_RING			0
-
-#if (CFG_SUPPORT_CONNAC2X == 1 || CFG_SUPPORT_CONNAC3X == 1)
-
-#undef NUM_OF_WFDMA1_TX_RING
+#else
 #ifdef CONFIG_NUM_OF_WFDMA_TX_RING
 #define NUM_OF_WFDMA1_TX_RING			(CONFIG_NUM_OF_WFDMA_TX_RING)
 #else
 #define NUM_OF_WFDMA1_TX_RING			1  /* WA CMD Ring */
 #endif
 
-#undef NUM_OF_WFDMA1_RX_RING
 #ifdef CONFIG_NUM_OF_WFDMA_RX_RING
 #define NUM_OF_WFDMA1_RX_RING			(CONFIG_NUM_OF_WFDMA_RX_RING)
 #else
 #define NUM_OF_WFDMA1_RX_RING			5
 #endif
-
-#endif /* CFG_SUPPORT_CONNAC2X == 1 */
+#endif /* CFG_SUPPORT_CONNAC1X == 1 */
 
 /*
  * 6 data ring:
