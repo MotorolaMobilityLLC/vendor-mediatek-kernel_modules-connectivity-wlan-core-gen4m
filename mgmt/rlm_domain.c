@@ -8822,8 +8822,9 @@ skipLabel:
 	}
 
 	/* allocate memory for control element */
-	u4MemSize += (ucSettingCount == 1) ? 0 : (ucSettingCount - 1) *
-			sizeof(struct TX_PWR_CTRL_CHANNEL_SETTING);
+	u4MemSize +=
+		(ucSettingCount * sizeof(struct TX_PWR_CTRL_CHANNEL_SETTING));
+
 	prCurElement = (struct TX_PWR_CTRL_ELEMENT *)kalMemAlloc(
 					u4MemSize, VIR_MEM_TYPE);
 	if (!prCurElement) {
@@ -9515,9 +9516,8 @@ void _txPwrCtrlDeleteElement(struct ADAPTER *prAdapter,
 				if (prCurElement != NULL) {
 					ucSettingCount =
 						prCurElement->settingCount;
-						u4MemSize2 = u4MemSize +
-						((ucSettingCount == 1) ? 0 :
-						(ucSettingCount - 1) *
+					u4MemSize2 = u4MemSize +
+						(ucSettingCount *
 						u4SettingSize);
 					kalMemFree(prCurElement, VIR_MEM_TYPE,
 						u4MemSize2);
@@ -9763,9 +9763,8 @@ void txPwrCtrlUninit(struct ADAPTER *prAdapter)
 			linkDel(prCur);
 			if (prCurElement) {
 				ucSettingCount = prCurElement->settingCount;
-					u4MemSize2 = u4MemSize +
-					((ucSettingCount <= 1) ? 0 :
-					(ucSettingCount - 1) * u4SettingSize);
+				u4MemSize2 = u4MemSize +
+					(ucSettingCount * u4SettingSize);
 				kalMemFree(prCurElement,
 					VIR_MEM_TYPE, u4MemSize2);
 			}
