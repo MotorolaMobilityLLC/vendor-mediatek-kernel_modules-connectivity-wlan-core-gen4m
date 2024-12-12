@@ -12332,11 +12332,20 @@ wlanAddDirtinessToAffectedChannels(struct ADAPTER *prAdapter,
 			ucRightestCoveredChannel < 149) {
 		ucRightestCoveredChannel = 144;
 		ucRightNeighborChannel = 0;
-	} else if (prBssDesc->eBand == BAND_5G &&
+	}
+#if (CFG_SUPPORT_UNII4 == 0)
+	else if (prBssDesc->eBand == BAND_5G &&
 			ucRightestCoveredChannel >= 165) {
 		ucRightestCoveredChannel = 165;
 		ucRightNeighborChannel = 0;
 	}
+#else
+	else if (prBssDesc->eBand == BAND_5G &&
+			ucRightestCoveredChannel >= 177) {
+		ucRightestCoveredChannel = 177;
+		ucRightNeighborChannel = 0;
+	}
+#endif /* CFG_SUPPORT_UNII4 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (prBssDesc->eBand == BAND_6G &&
 			ucRightestCoveredChannel < 5) {
@@ -12570,10 +12579,15 @@ wlanGetChannelIndex(enum ENUM_BAND eBand, uint8_t channel)
 		ucIdx = 14 + 8 + (channel - 100) / 4;
 	else if (eBand == BAND_5G && channel >= 149 && channel <= 165)
 		ucIdx = 14 + 8 + 12 + (channel - 149) / 4;
+#if (CFG_SUPPORT_UNII4 == 1)
+	else if (eBand == BAND_5G && channel > 165 && channel <= 177)
+		ucIdx = 14 + 8 + 12 + (channel - 149) / 4;
+#endif /* CFG_SUPPORT_UNII4 */
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	else if (eBand == BAND_6G && channel >= 1 && channel <= 233)
-		ucIdx = 14 + 8 + 12 + 5 + (channel - 1) / 4;
-#endif
+		ucIdx = (MAX_2G_BAND_CHN_NUM + MAX_5G_BAND_CHN_NUM) +
+			(channel - 1) / 4;
+#endif /* CFG_SUPPORT_WIFI_6G */
 
 	return ucIdx;
 }
@@ -12594,10 +12608,11 @@ wlanGetChannelNumFromIndex(uint8_t ucIdx)
 	uint8_t ucChannel = 0;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (ucIdx >= 39)
-		ucChannel = ((ucIdx - 39) << 2) + 1;
+	if (ucIdx >= (MAX_2G_BAND_CHN_NUM + MAX_5G_BAND_CHN_NUM))
+		ucChannel = ((ucIdx -
+			(MAX_2G_BAND_CHN_NUM + MAX_5G_BAND_CHN_NUM)) << 2) + 1;
 	else
-#endif
+#endif /* CFG_SUPPORT_WIFI_6G */
 	if (ucIdx >= 34)
 		ucChannel = ((ucIdx - 34) << 2) + 149;
 	else if (ucIdx >= 22)
@@ -12616,7 +12631,7 @@ wlanGetChannelBandFromIndex(uint8_t ucIdx)
 	enum ENUM_BAND eBand = BAND_NULL;
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
-	if (ucIdx >= 39)
+	if (ucIdx >= (MAX_2G_BAND_CHN_NUM + MAX_5G_BAND_CHN_NUM))
 		eBand = BAND_6G;
 	else
 #endif
