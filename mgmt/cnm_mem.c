@@ -1652,44 +1652,20 @@ int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tACTIVE/HW_BAND/OMAC_IDX: %u/%u/%u\n",
-		prBssInfo->fgIsNetActive,
+		 "\tHW_BAND/OMAC_IDX/WMM/BMC: %u/%u/%u/%u\n",
 		prBssInfo->eHwBandIdx,
-		prBssInfo->ucOwnMacIndex);
-
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tBMC/OP_MODE/WMM/CONN_STATE/BSSID: %u/%u/%u/%u/"MACSTR"\n",
-		prBssInfo->ucBMCWlanIndex,
-		prBssInfo->eCurrentOPMode,
+		prBssInfo->ucOwnMacIndex,
 		prBssInfo->ucWmmQueSet,
-		prBssInfo->eConnectionState,
-		MAC2STR(prBssInfo->aucBSSID));
+		prBssInfo->ucBMCWlanIndex);
 
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "\tSSID/QBSS/PHY/PWR_STATE: %d %s/%u/0x%x/%d\n",
-		prBssInfo->ucSSIDLen,
-		prBssInfo->aucSSID,
-		prBssInfo->fgIsQBSS,
-		prBssInfo->ucPhyTypeSet,
-		prAdapter->rWifiVar.aePwrState[prBssInfo->ucBssIndex]);
-#if 0
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		 "AID/BCN_INT/RATE/PROT:%d/%d/0x%x/%u\n",
-		prBssInfo->u2AssocId,
-		prBssInfo->u2BeaconInterval,
-		prBssInfo->u2BSSBasicRateSet,
-		secIsProtectedBss(prAdapter, prBssInfo));
-#endif
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tCHANNEL/WIDTH/S1/S2: %u/%u/%u/%u\n",
+		"\tCHANNEL/WIDTH/S1/S2/BSSID: %u/%u/%u/%u/"MACSTR"\n",
 		prBssInfo->ucPrimaryChannel,
 		prBssInfo->ucVhtChannelWidth,
 		prBssInfo->ucVhtChannelFrequencyS1,
-		prBssInfo->ucVhtChannelFrequencyS2);
+		prBssInfo->ucVhtChannelFrequencyS2,
+		MAC2STR(prBssInfo->aucBSSID));
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	i4BytesWritten += kalSnprintf(
@@ -1727,63 +1703,15 @@ int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,
 		prStaRec->ucStaState,
 		prStaRec->ucRCPI,
 		MAC2STR(prStaRec->aucMacAddr));
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tPHY/DESIRE_PHY/BASIC_PHY/WMM/UAPSD: 0x%x/0x%x/0x%x/%u/%u\n",
-		prStaRec->ucPhyTypeSet,
-		prStaRec->ucDesiredPhyTypeSet,
-		prStaRec->ucNonHTBasicPhyType,
-		prStaRec->fgIsWmmSupported,
-		prStaRec->fgIsUapsdSupported);
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tAID/OP_RATE/DESIRE_RATE/DEFAULT_RATE: %d/0x%x/0x%x/0x%x\n",
-		prStaRec->u2AssocId,
-		prStaRec->u2OperationalRateSet,
-		prStaRec->u2DesiredNonHTRateSet,
-		prStaRec->u2HwDefaultFixedRateCode);
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tPS/TX_ALLOWED/KEY_READY/TX_AMPDU/RX_AMPDU: %u/%u/%u/%u/%u\n",
-		prStaRec->fgIsInPS,
-		prStaRec->fgIsTxAllowed,
-		prStaRec->fgIsTxKeyReady,
-		prStaRec->fgTxAmpduEn,
-		prStaRec->fgRxAmpduEn);
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tHT_CAP/HT_EXT_CAP/TX_BF_CAP/VHT_CAP: 0x%x/0x%x/0x%x/0x%x\n",
-		prStaRec->u2HtCapInfo,
-		prStaRec->u2HtExtendedCap,
-		prStaRec->u4TxBeamformingCap,
-		prStaRec->u4VhtCapInfo);
-#if (CFG_SUPPORT_802_11AX == 1)
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tHE_MAC_CAP/HE_PHY_CAP: 0x%04x%08x/0x%02x%04x%016llx\n",
-		*(uint16_t *)(prStaRec->ucHeMacCapInfo + 4),
-		*(uint32_t *)(prStaRec->ucHeMacCapInfo),
-		*(uint8_t *)(prStaRec->ucHePhyCapInfo + 10),
-		*(uint16_t *)(prStaRec->ucHePhyCapInfo + 8),
-		*(uint64_t *)(prStaRec->ucHePhyCapInfo));
-#endif
-#if (CFG_SUPPORT_802_11BE == 1)
-	i4BytesWritten += kalSnprintf(
-		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tEHT_MAC_CAP/EHT_PHY_CAP: 0x%04x/0x%016llx\n",
-		(*(uint16_t *)(prStaRec->ucEhtMacCapInfo)),
-		(*(uint64_t *)(prStaRec->ucEhtPhyCapInfo)));
-#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	i4BytesWritten += kalSnprintf(
 		pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
-		"\tMLD_STA/LINK_ID/TID_BMAP/AP_RM/MLD_ADDR: %u/%u/0x%x/%u/"
-		MACSTR "\n",
+		"\tMLD_STA/LINK_ID/TID_BMAP/AP_RM: %u/%u/0x%x/%u\n",
 		prStaRec->ucMldStaIndex,
 		prStaRec->ucLinkId,
 		prStaRec->ucULTidBitmap,
-		prStaRec->fgApRemoval,
-		MAC2STR(prStaRec->aucMldAddr));
+		prStaRec->fgApRemoval);
 #endif
 
 	return i4BytesWritten;

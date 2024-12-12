@@ -10298,8 +10298,13 @@ int priv_driver_set_cfg(struct net_device *prNetDev, char *pcCommand,
 					return -1;
 				}
 				kalStrnCpy(pucCurrBuf + offset, apcArgv[i],
-					   u4BufLen + 1);
+					   u4BufLen);
 				offset += u4BufLen;
+				if (i != i4Argc - 1) {
+					kalStrnCpy(pucCurrBuf + offset, " ",
+						   u4BufLen);
+					offset += 1;
+				}
 			}
 		}
 

@@ -104,6 +104,9 @@
 	& (MLD_CAP_TID_TO_LINK_NEGO_MASK)); \
 }
 
+#define BE_SET_EXT_MLD_CAP_BTM_MLD_RECOMM(_u2Cap) \
+	((_u2Cap) |= EXT_MLD_CAP_BTM_MLD_RECOMM_MULTI_AP)
+
 #define MLCIE(fp)              ((struct IE_MULTI_LINK_CONTROL *) fp)
 
 #define MLD_PARSE_BASIC_MLIE(__a, __b, __c, __d, __e) \

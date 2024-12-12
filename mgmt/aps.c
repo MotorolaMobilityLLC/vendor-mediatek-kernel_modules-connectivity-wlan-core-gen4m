@@ -1570,6 +1570,31 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 		return FALSE;
 	}
 
+	if (IS_FEATURE_ENABLED(prAdapter->rWifiVar.fgEnBssidAllowList)) {
+		uint8_t aucMacAddr[MAC_ADDR_LEN];
+		uint8_t found = FALSE;
+		uint8_t i = 0;
+
+		for (i = 0; i * 18 + 17 < WLAN_CFG_VALUE_LEN_MAX; i++) {
+			if (wlanHwAddrToBin(prAdapter->rWifiVar
+				.aucBssidAllowList + i * 18, aucMacAddr)) {
+				if (EQUAL_MAC_ADDR(prBssDesc->aucBSSID,
+						aucMacAddr)) {
+					found = TRUE;
+					break;
+				}
+			} else {
+				break;
+			}
+		}
+
+		if (!found) {
+			DBGLOG(APS, WARN, MACSTR " is not in allowed list\n",
+				MAC2STR(prBssDesc->aucBSSID));
+			return FALSE;
+		}
+	}
+
 	if ((prBssDesc->eBand == BAND_2G4 &&
 		prAdapter->rWifiVar.ucDisallowBand2G) ||
 	    (prBssDesc->eBand == BAND_5G &&
@@ -1961,6 +1986,23 @@ uint8_t apsSanityCheckBssDesc(struct ADAPTER *prAdapter,
 				     MACSTR " not in candidate list, skip it\n",
 				     MAC2STR(prBssDesc->aucBSSID));
 				return FALSE;
+			}
+
+			/* force to accept btm request */
+			if (prAdapter->rWifiVar.fgRoamByBTM) {
+				if (!prBssDesc->prNeighbor) {
+					DBGLOG(APS, INFO, MACSTR
+					     " not in candidate list, skip it (RoamByBTM)\n",
+					     MAC2STR(prBssDesc->aucBSSID));
+					return FALSE;
+				}
+				if (prBssDesc->prNeighbor->fgPrefPresence &&
+				    prBssDesc->prNeighbor->ucPreference == 0) {
+					DBGLOG(APS, INFO, MACSTR
+					     " preference is 0, skip it (RoamByBTM)\n",
+					     MAC2STR(prBssDesc->aucBSSID));
+					return FALSE;
+				}
 			}
 		}
 	}

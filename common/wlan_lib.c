@@ -7608,6 +7608,8 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"NonApMldEML", CFG_DEFAULT_ENABLE_EMLSR, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucApMldEMLSupport,
 		"ApMldEML", FEATURE_DISABLED, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->fgEnBtmMldRecomm, "BtmMldRecomm",
+		FEATURE_DISABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgEnTuao, "EnableTuao", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgMldSyncLinkAddr,
@@ -7621,7 +7623,6 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4MaxChannelSwitchTime,
 		  "MaxChannelSwitchTime", DEFAULT_MAX_CHANNEL_SWITCH_TIME_TU,
 		  FEATURE_TO_CUSTOMER);
-
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	INIT_UINT(prWifiVar->ucT2LMNegotiationSupport, "T2LMNegotiationSupport",
 		  T2LM_ALL_TIDS_SAME_LINK, FEATURE_DEBUG_ONLY);
@@ -8353,6 +8354,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisRoaming, "DisRoaming", 0,
 		  FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->fgEnBssidAllowList,
+		"EnBssidAllowList", FEATURE_DISABLED,
+		FEATURE_DEBUG_ONLY);
+	INIT_STR(prWifiVar->aucBssidAllowList, "BssidAllowList", "",
+		FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->fgRoamingReport, "RoamingReport", FEATURE_DISABLED,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgDisCrossPmf, "DisCrossPmf", 0,
@@ -8371,6 +8377,7 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4RejectBtmReqReason, "RejectBtmReqReason", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgRoamByBTO, "RoamByBTO", 0, FEATURE_DEBUG_ONLY);
+	INIT_UINT(prWifiVar->fgRoamByBTM, "RoamByBTM", 0, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4AisRoamingNumber, "AisRoamingNumber",
 		KAL_AIS_NUM, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->ucAisConnTrialLimit, "AisConnTrialLimit",

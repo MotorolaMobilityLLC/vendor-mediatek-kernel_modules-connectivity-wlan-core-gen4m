@@ -2713,12 +2713,12 @@ uint8_t aisNeedMloScan(struct ADAPTER *prAdapter,
 		return FALSE;
 
 	/* no need mlo scan
-	 * 1. already found multi link
+	 * 1. already select multi link
 	 * 2. not mlo
 	 * 3. in mld block list
-	 * 4. already found multi links
+	 * 4. already found all links
 	 */
-	if (prBssDescSet->ucLinkNum != 1 ||
+	if (prBssDescSet->ucLinkNum == prAdapter->rWifiVar.ucStaMldLinkMax ||
 	    !prBssDesc->rMlInfo.fgValid ||
 	    prBssDesc->rMlInfo.prBlock ||
 	    scanSearchBssDescCountByMldAddrSsid(prAdapter,
@@ -9549,6 +9549,7 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 	     prIe = (struct IE_NEIGHBOR_REPORT *)((uint8_t *) prIe +
 						  IE_SIZE(prIe))) {
 		uint8_t fgIsMld = FALSE;
+		uint16_t u2ValidLinks = 0;
 
 		/* BIT0-1: AP reachable, BIT2: same security with current
 		 ** setting,
@@ -9597,15 +9598,17 @@ uint32_t aisCollectNeighborAP(struct ADAPTER *prAdapter, uint8_t *pucApBuf,
 			prIe->aucSubElem,
 			IE_SIZE(prIe) - OFFSET_OF(struct IE_NEIGHBOR_REPORT,
 					       aucSubElem));
+		if (fgIsMld)
+			u2ValidLinks = prNeighborAP->u2ValidLinks;
 #endif
 
 		DBGLOG(AIS, INFO,
 		       "[%d] Bssid " MACSTR
-		       ", PrefPresence %d, Pref %d, Chnl %d, BssidInfo 0x%08x, fgIsMld %d\n",
+		       ", PrefPresence %d, Pref %d, Chnl %d, BssidInfo 0x%08x, fgIsMld %d, validlinks 0x%0x\n",
 		       cnt++, MAC2STR(prNeighborAP->aucBssid),
 		       prNeighborAP->fgPrefPresence,
 		       prNeighborAP->ucPreference, prIe->ucChnlNumber,
-		       prIe->u4BSSIDInfo, fgIsMld);
+		       prIe->u4BSSIDInfo, fgIsMld, u2ValidLinks);
 
 #if CFG_SUPPORT_REPORT_LOG
 		wnmLogBTMReqCandiReport(

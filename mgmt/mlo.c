@@ -616,6 +616,9 @@ uint8_t *mldGenerateBasicCommonInfo(
 			if (mld_bssinfo)
 				present |= ML_CTRL_MLD_ID_PRESENT;
 			*/
+		} else if (IS_BSS_AIS(bss)) {
+			if (IS_FEATURE_ENABLED(prWifiVar->fgEnBtmMldRecomm))
+				present |= ML_CTRL_EXT_MLD_CAP_OP_PRESENT;
 		}
 	}
 
@@ -692,13 +695,25 @@ uint8_t *mldGenerateBasicCommonInfo(
 				T2LM_NO_SUPPORT);
 		}
 		WLAN_SET_FIELD_16(cp, mld_cap);
-		DBGLOG(ML, TRACE, "\tML common Info MLD capa = 0x%x",
+		DBGLOG(ML, TRACE, "\tML common Info MLD CAP = 0x%x",
 			*(uint16_t *)cp);
 		cp += 2;
 	}
 	if (BE_IS_ML_CTRL_PRESENCE_MLD_ID(common->u2Ctrl)) {
 		DBGLOG(ML, TRACE, "\tML common Info MLD ID = %d", 0);
 		*cp++ = 0;
+	}
+
+	if (BE_IS_ML_CTRL_PRESENCE_EXT_MLD(common->u2Ctrl)) {
+		uint16_t ext_mld_cap = 0;
+
+		if (IS_FEATURE_ENABLED(prWifiVar->fgEnBtmMldRecomm))
+			BE_SET_EXT_MLD_CAP_BTM_MLD_RECOMM(ext_mld_cap);
+
+		WLAN_SET_FIELD_16(cp, ext_mld_cap);
+		DBGLOG(ML, TRACE, "\tML common Info EXT MLD CAP = 0x%x",
+			*(uint16_t *)cp);
+		cp += 2;
 	}
 
 	/* update common info length, ie length, frame length */
@@ -1867,6 +1882,10 @@ sta:
 				prStaProfile->ucComplete ?
 				"COMPLETE" : "PARTIAL",
 				prMlInfo->ucProfNum);
+
+		/* only present linkid, no sta info or sta profile */
+		if ((u2StaControl & ~ML_STA_CTRL_LINK_ID_MASK) == 0)
+			goto next;
 
 		pos = prIeSta->aucStaInfo;
 		if (pos + 1 > tail) {

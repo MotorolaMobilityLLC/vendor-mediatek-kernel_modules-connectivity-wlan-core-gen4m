@@ -977,6 +977,7 @@ struct WIFI_VAR {
 	uint8_t ucNonApHyMloSupportCap;
 	uint32_t u4AisEHTNumber;
 	uint8_t fgForceRrmMloScan;
+	u_int8_t fgEnBtmMldRecomm;
 	u_int8_t fgEnTuao;
 #if (CFG_SUPPORT_SAP_PUNCTURE == 1)
 	uint16_t u2AcsPunctBitmap;
@@ -1297,8 +1298,11 @@ struct WIFI_VAR {
 	uint8_t fgDisSecurityCheck;
 	uint8_t fgDisClearECL;
 	uint32_t fgDisCrossPmf;		/* 0:enable cross pmf 1:disable */
+	u_int8_t fgEnBssidAllowList;
+	uint8_t aucBssidAllowList[WLAN_CFG_VALUE_LEN_MAX];
 	uint32_t u4RejectBtmReqReason;
 	uint32_t fgRoamByBTO;
+	uint32_t fgRoamByBTM;
 	uint32_t u4AisRoamingNumber;
 	uint8_t ucAisConnTrialLimit;
 	uint8_t ucAisBssTrialLimit;

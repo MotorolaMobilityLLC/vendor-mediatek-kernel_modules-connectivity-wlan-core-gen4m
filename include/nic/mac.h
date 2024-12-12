@@ -2560,6 +2560,15 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define MLD_CAP_AAR					BIT(12)
 #define MLD_CAP_LINK_RECONFIG_OP_SUPPORT		BIT(13)
 
+/* BE D6.0 9.4.2.312.2.3 Common info field of the Basic Multi-Link Element */
+/* Figure 9-1072I - Extended MLD Capabilities and Operations subfield format */
+#define EXT_MLD_CAP_OP_PARAM_UPDATE			BIT(0)
+#define EXT_MLD_CAP_RECOMM_MAX_SIMUL_LINK_MASK		BITS(1, 4)
+#define EXT_MLD_CAP_RECOMM_MAX_SIMUL_LINK_SHIFT		1
+#define EXT_MLD_CAP_NSTR_STATUS_UPDATE			BIT(5)
+#define EXT_MLD_CAP_EMLSR_ON_ONE_LINK			BIT(6)
+#define EXT_MLD_CAP_BTM_MLD_RECOMM_MULTI_AP		BIT(7)
+
 /* Figure 9-1002n - Presence Bitmap field of the Probe Request ML element */
 #define ML_PRBREQ_CTRL_MLD_ID_PRESENT			BIT(0)
 
