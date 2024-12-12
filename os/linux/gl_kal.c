@@ -3170,9 +3170,9 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 				sizeof(aucSsid) - 1);
 			aucSsid[sizeof(aucSsid) - 1] = '\0';
 
-			DBGLOG(INIT, DEBUG,
-				"[wifi] %s netif_carrier_on [ssid:%s " MACSTR
-				"], Mac:" MACSTR "\n",
+			DBGLOG(INIT, INFO,
+				"<CONN> [wifi] %s netif_carrier_on [ssid:%s "
+				MACSTR "], Mac:" MACSTR "\n",
 				prDevHandler->name, aucSsid,
 				MAC2STR(prCurrBssid->arMacAddress),
 				MAC2STR(prBssInfo->aucOwnMacAddr));
@@ -3263,7 +3263,7 @@ void kalIndicateStatusAndComplete(struct GLUE_INFO *prGlueInfo,
 		/* switch netif off */
 
 #if 1				/* CONSOLE_MESSAGE */
-		DBGLOG(INIT, DEBUG, "[wifi] %s netif_carrier_off\n",
+		DBGLOG(INIT, INFO, "<CONN> [wifi] %s netif_carrier_off\n",
 		       prDevHandler->name);
 #endif
 

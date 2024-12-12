@@ -33,7 +33,25 @@ extern uint8_t  g_fgSigmaCMDHt;
 extern uint8_t  g_ucHtSMPSCapValue;
 #endif
 
-extern const char * const apucOpBw[MAX_BW_UNKNOWN+1];
+static const char * const apucOpBw[MAX_BW_UNKNOWN+1] = {
+	[MAX_BW_20MHZ] = "MAX_BW_20MHZ",
+	[MAX_BW_40MHZ] = "MAX_BW_40MHZ",
+	[MAX_BW_80MHZ] = "MAX_BW_80MHZ",
+	[MAX_BW_160MHZ] = "MAX_BW_160MHZ",
+	[MAX_BW_80_80_MHZ] = "MAX_BW_80_80_MHZ",
+	[MAX_BW_320_1MHZ] = "MAX_BW_320_1MHZ",
+	[MAX_BW_320_2MHZ] = "MAX_BW_320_2MHZ",
+	[MAX_BW_UNKNOWN] = "MAX_BW_UNKNOWN",
+};
+
+static const char * const apucVhtOpBw[CW_NUM] = {
+	[CW_20_40MHZ] = "CW_20_40MHZ",
+	[CW_80MHZ] = "CW_80MHZ",
+	[CW_160MHZ] = "CW_160MHZ",
+	[CW_80P80MHZ] = "CW_80P80MHZ",
+	[CW_320_1MHZ] = "CW_320_1MHZ",
+	[CW_320_2MHZ] = "CW_320_2MHZ",
+};
 
 /*******************************************************************************
  *                              C O N S T A N T S

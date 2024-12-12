@@ -17487,7 +17487,7 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 		i4BytesWritten += kalSnprintf(pcCommand + i4BytesWritten,
 			i4TotalLen - i4BytesWritten,
-			"[MLD Group %d][MLO LinkId %d]",
+			"[MLD Group %d][MLO LinkIdx %d]",
 		prBssInfo->ucGroupMldId, prCnmInfo->ucBssLinkIdx[ucBssIdx]);
 #endif
 
@@ -17505,6 +17505,531 @@ int priv_driver_get_cnm(struct net_device *prNetDev,
 	kalMemFree(prCnmInfo, VIR_MEM_TYPE, sizeof(struct PARAM_GET_CNM_T));
 	return i4BytesWritten;
 }				/* priv_driver_get_sw_ctrl */
+
+int priv_driver_get_ais(struct net_device *prNetDev,
+			       char *pcCommand, int i4TotalLen)
+{
+#define MAX_BSS_DUMP_NUM 20
+	struct ADAPTER *prAdapter = NULL;
+	struct GLUE_INFO *prGlueInfo = NULL;
+	struct AIS_FSM_INFO *prAisFsmInfo;
+	struct BSS_INFO *prAisBssInfo;
+	struct BSS_DESC *aprBssDesc2G[MAX_BSS_DUMP_NUM] = {0};
+	struct BSS_DESC *aprBssDesc5G[MAX_BSS_DUMP_NUM] = {0};
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	struct BSS_DESC *aprBssDesc6G[MAX_BSS_DUMP_NUM] = {0};
+	uint16_t u2Bss6GNum = 0;
+#endif
+	struct BSS_DESC *prBssDesc = NULL;
+	struct LINK *prBSSDescList;
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_BSS_INFO *prMldBssInfo;
+	struct MLD_STA_RECORD *prMldStarec;
+	uint8_t j;
+#endif
+	uint16_t u2ApNum = 0, u2OldApNum = 0;
+	uint16_t u2Bss2GNum = 0, u2Bss5GNum = 0;
+	int32_t i4Argc = 0, i4BytesWritten = 0;
+	int8_t *apcArgv[WLAN_CFG_ARGV_MAX] = {0};
+	uint8_t ucBssIndex, i, fgFoundMldAp = FALSE;
+
+	if (!prNetDev) {
+		DBGLOG(NAN, ERROR, "prNetDev error!\n");
+		return -1;
+	}
+
+	if (GLUE_CHK_PR2(prNetDev, pcCommand) == FALSE)
+		return -1;
+	prGlueInfo = *((struct GLUE_INFO **)netdev_priv(prNetDev));
+	prAdapter = prGlueInfo->prAdapter;
+
+	if (!prAdapter) {
+		DBGLOG(REQ, ERROR, "prAdapter error\n");
+		return -1;
+	}
+
+	ucBssIndex = wlanGetBssIdx(prNetDev);
+	prAisFsmInfo = aisGetAisFsmInfo(prAdapter, ucBssIndex);
+	prAisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
+	prBSSDescList =	&prAdapter->rWifiVar.rScanInfo.rBSSDescList;
+
+	if (!prAisBssInfo || !prAisFsmInfo) {
+		DBGLOG(REQ, ERROR, "prAisBssInfo or prAisFsmInfo error\n");
+		return -1;
+	}
+
+	DBGLOG(REQ, LOUD, "command is %s\n", pcCommand);
+	wlanCfgParseArgument(pcCommand, &i4Argc, apcArgv);
+	DBGLOG(REQ, LOUD, "argc is %i\n", i4Argc);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n[CONFIG]\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"AisConnTrialLimit:%d\nAisBssTrialLimit%d\n",
+		prAdapter->rWifiVar.ucAisConnTrialLimit,
+		prAdapter->rWifiVar.ucAisBssTrialLimit);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"AisMldTrialLimit:%d\nMldLinkMax:%d\nStaMldLinkMax:%d\n",
+		prAdapter->rWifiVar.ucAisMldTrialLimit,
+		prAdapter->rWifiVar.ucMldLinkMax,
+		prAdapter->rWifiVar.ucStaMldLinkMax);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"EnableMlo:%d\nEnableMlc:%d (Cap=0x%x)\nNonApMldEML:%d (Cap=0x%x)\nEmlsrLinkWeight:%d\n",
+		prAdapter->rWifiVar.ucEnableMlo,
+		prAdapter->rWifiVar.fgMlcSupport,
+		prAdapter->rWifiVar.ucMlcSupportCap,
+		prAdapter->rWifiVar.ucNonApMldEMLSupport,
+		prAdapter->rWifiVar.u2NonApMldEMLCap,
+		prAdapter->rWifiVar.ucEmlsrLinkWeight);
+#endif
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n[CONNECTION]\n");
+
+	if (prAisBssInfo->eConnectionState == MEDIA_STATE_CONNECTED) {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"STATE=CONNECTED\nSSID=%s\nBSSID="MACSTR
+			"\nRSSI=LQ:%d/SCN:%d\n",
+			prAisBssInfo->aucSSID,
+			MAC2STR(prAisBssInfo->aucBSSID),
+			prAdapter->rLinkQuality.rLq[ucBssIndex].cRssi,
+			aisGetTargetRssi(prAdapter, ucBssIndex));
+	} else {
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"STATE=DISCONNECTED\n");
+	}
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"MAC_ADDR="MACSTR"\n\n",
+		MAC2STR(prAisBssInfo->aucOwnMacAddr));
+
+	/* ais bssinfo */
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct BSS_INFO *prBssInfo =
+			aisGetLinkBssInfo(prAisFsmInfo, i);
+
+		if (!prBssInfo)
+			break;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"#%d BSS=%d:\n",
+			i, prBssInfo->ucBssIndex);
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\tBAND=%s CHNL=%u BW=%s RSSI=LQ:%d/SCN:%d OMAC="
+			MACSTR"\n",
+			apucBandStr[prBssInfo->eBand],
+			prBssInfo->ucPrimaryChannel,
+			bssOpBw2Str(prBssInfo),
+			prAdapter->rLinkQuality.rLq[
+				prBssInfo->ucBssIndex].cRssi,
+			aisGetTargetRssi(prAdapter, prBssInfo->ucBssIndex),
+			MAC2STR(prBssInfo->aucOwnMacAddr));
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			 "\tOM_IDX=%u HW_BAND=%u BMC=%u WMM=%u VHT(W=%u %s/S1=%u/S2=%u) NAF=%s\n",
+			prBssInfo->ucOwnMacIndex,
+			prBssInfo->eHwBandIdx,
+			prBssInfo->ucBMCWlanIndex,
+			prBssInfo->ucWmmQueSet,
+			prBssInfo->ucVhtChannelWidth,
+			apucVhtOpBw[prBssInfo->ucVhtChannelWidth],
+			prBssInfo->ucVhtChannelFrequencyS1,
+			prBssInfo->ucVhtChannelFrequencyS2,
+			prBssInfo->fgIsNetAbsent ? "ABSENT" : "PRESENT");
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\tLINK_ID=%u OWN_MLD_ID=%u\n",
+			prBssInfo->ucLinkId,
+			prBssInfo->ucOwnMldId);
+#endif
+	}
+
+	for (i = 0; i < MLD_LINK_MAX; i++) {
+		struct STA_RECORD *prStaRec =
+			aisGetLinkStaRec(prAisFsmInfo, i);
+
+		if (!prStaRec)
+			break;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"#%d STA=%d:\n",
+			i, prStaRec->ucIndex);
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\tWIDX=%d BSS_IDX=%d MAC="MACSTR"\n",
+			prStaRec->ucWlanIndex,
+			prStaRec->ucBssIndex,
+			MAC2STR(prStaRec->aucMacAddr));
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		i4BytesWritten += kalSnprintf(
+			pcCommand + i4BytesWritten, i4TotalLen - i4BytesWritten,
+			"\tLINK_ID=%u TID_BMAP=UL:0x%x/DL:0x%x LINK_STATE=%s\n",
+			prStaRec->ucLinkId,
+			prStaRec->ucULTidBitmap,
+			prStaRec->ucDLTidBitmap,
+			cnmStaRecIsActive(prAdapter, prStaRec) ?
+			"ACTIVE" : "INACTIVE");
+#endif
+	}
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	prMldBssInfo = aisGetMldBssInfo(prAdapter, ucBssIndex);
+	prMldStarec = aisGetMldStaRec(prAdapter, ucBssIndex);
+	if (!prMldBssInfo || !prMldStarec)
+		goto skip_mld_info;
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\n[MLD INFO]\n");
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"MLD_ADDR="MACSTR"\n\n",
+		prMldBssInfo->aucOwnMldAddr);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"MldBssInfo=%d:\n",
+		prMldBssInfo->ucGroupMldId);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tOMAC_ID=%u OM_REMAP_ID=%u MAX_SIMU=%u OWN_EML_CAP=0x%x EML_EN=%u\n",
+		prMldBssInfo->ucOmacIdx,
+		prMldBssInfo->ucOmRemapIdx,
+		prMldBssInfo->ucMaxSimuLinks,
+		prMldBssInfo->u2EMLCap,
+		prMldBssInfo->ucEmlEnabled);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tBSS_BMAP=0x%02x HWBN_BMAP=0x%0x2 OWN_MLD_ADDR=" MACSTR "\n",
+		prMldBssInfo->ucBssBitmap,
+		prMldBssInfo->ucHwBandBitmap,
+		MAC2STR(prMldBssInfo->aucOwnMldAddr));
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"MldStaRec=%d:\n",
+		prMldStarec->ucIdx);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tPRI=%d SEC=%d SETUP=%d PEER_MLD="MACSTR" TYPE=%d\n",
+		prMldStarec->u2PrimaryMldId,
+		prMldStarec->u2SecondMldId,
+		prMldStarec->u2SetupWlanId,
+		MAC2STR(prMldStarec->aucPeerMldAddr),
+		prMldStarec->fgMldType);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"\tSTA_BMAP=0x%llx ACT_BMP=0x%llx VALID_LINKS=0x%x EML_CAP=0x%04x STR=0x%02x%04x EML_EN=%u MAX_SIMU=%u\n",
+		prMldStarec->u8StaBitmap,
+		prMldStarec->u8ActiveStaBitmap,
+		prMldStarec->u2ValidLinks,
+		prMldStarec->u2EmlCap,
+		*(uint8_t *)(prMldStarec->aucStrBitmap + 2),
+		*(uint16_t *)(prMldStarec->aucStrBitmap),
+		prMldStarec->ucEmlEnabled,
+		prMldStarec->ucMaxSimuLinks);
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"RX_PKT_COUNT:\n");
+
+	for (i = 0; i < ARRAY_SIZE(prMldStarec->aucRxPktCnt); i++)
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\tBAND%d:0x%llx\n",
+			i, prMldStarec->aucRxPktCnt[i]);
+
+skip_mld_info:
+#endif
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "\n[ESS]\n");
+
+	LINK_FOR_EACH_ENTRY(prBssDesc, prBSSDescList, rLinkEntry,
+		struct BSS_DESC) {
+		struct BSS_DESC **aprBssDesc = NULL;
+		uint16_t *pu2BssNum = NULL;
+		int8_t pos = -1;
+
+		if (prBssDesc->ucChannelNum > 233)
+			continue;
+
+		if (!EQUAL_SSID(prAisBssInfo->aucSSID,
+			prAisBssInfo->ucSSIDLen,
+			prBssDesc->aucSSID, prBssDesc->ucSSIDLen) ||
+			prBssDesc->eBSSType != BSS_TYPE_INFRASTRUCTURE)
+			continue;
+
+
+		if (CHECK_FOR_TIMEOUT(kalGetTimeTick(), prBssDesc->rUpdateTime,
+			SEC_TO_SYSTIME(SCN_BSS_DESC_STALE_SEC))) {
+			u2OldApNum++;
+			continue;
+		}
+
+		u2ApNum++;
+
+		if (prBssDesc->eBand == BAND_2G4 &&
+		    u2Bss2GNum < MAX_BSS_DUMP_NUM) {
+			pu2BssNum = &u2Bss2GNum;
+			aprBssDesc = aprBssDesc2G;
+		}
+		if (prBssDesc->eBand == BAND_5G &&
+		    u2Bss5GNum < MAX_BSS_DUMP_NUM) {
+			pu2BssNum = &u2Bss5GNum;
+			aprBssDesc = aprBssDesc5G;
+		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		if (prBssDesc->eBand == BAND_6G &&
+		    u2Bss6GNum < MAX_BSS_DUMP_NUM) {
+			pu2BssNum = &u2Bss6GNum;
+			aprBssDesc = aprBssDesc6G;
+		}
+#endif
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+		if (prBssDesc->rMlInfo.fgValid)
+			fgFoundMldAp = TRUE;
+#endif
+
+
+		if (!pu2BssNum || !aprBssDesc)
+			continue;
+
+		pos = (*pu2BssNum);
+		for (i = 0; i < (*pu2BssNum); i++) {
+			if (prBssDesc->ucRCPI > aprBssDesc[i]->ucRCPI &&
+			    pos == (*pu2BssNum))
+				pos = i;
+			if (i >= pos)
+				aprBssDesc[i + 1] = aprBssDesc[i];
+		}
+
+		aprBssDesc[pos] = prBssDesc;
+		(*pu2BssNum)++;
+	}
+
+	LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+		"BSS_NUM=%d\n", u2ApNum);
+
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	if (fgFoundMldAp)
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\nBSSID / Freq / RSSI / LinkId / MLD_ADDR\n");
+
+	/* 2+5, 2+6, 2+5+6, 2+5+5, 2+6+6 */
+	for (i = 0; i < u2Bss2GNum; i++) {
+		uint8_t *pucMldAddr;
+
+		prBssDesc = aprBssDesc2G[i];
+		if (!prBssDesc || !prBssDesc->rMlInfo.fgValid)
+			continue;
+		aprBssDesc2G[i] = NULL;
+		pucMldAddr = prBssDesc->rMlInfo.aucMldAddr;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			""MACSTR"\t%d\t%d\t%d\tMLD["MACSTR"]\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+			RCPI_TO_dBm(prBssDesc->ucRCPI),
+			prBssDesc->rMlInfo.ucLinkId,
+			MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
+
+		for (j = 0; j < u2Bss5GNum; j++) {
+			prBssDesc = aprBssDesc5G[j];
+			if (!prBssDesc || !prBssDesc->rMlInfo.fgValid ||
+			    UNEQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+					     pucMldAddr))
+				continue;
+			aprBssDesc5G[j] = NULL;
+
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				""MACSTR"\t%d\t%d\t%d\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				nicChannelNum2Freq(prBssDesc->ucChannelNum,
+					   prBssDesc->eBand) / 1000,
+				RCPI_TO_dBm(prBssDesc->ucRCPI),
+				prBssDesc->rMlInfo.ucLinkId);
+		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		for (j = 0; j < u2Bss6GNum; j++) {
+			prBssDesc = aprBssDesc6G[j];
+			if (!prBssDesc || !prBssDesc->rMlInfo.fgValid ||
+			    UNEQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+					     pucMldAddr))
+				continue;
+			aprBssDesc6G[j] = NULL;
+
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				""MACSTR"\t%d\t%d\t%d\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				nicChannelNum2Freq(prBssDesc->ucChannelNum,
+					   prBssDesc->eBand) / 1000,
+				RCPI_TO_dBm(prBssDesc->ucRCPI),
+				prBssDesc->rMlInfo.ucLinkId);
+		}
+#endif
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "--\n");
+	}
+
+	/* 5+5, 5+6 */
+	for (i = 0; i < u2Bss5GNum; i++) {
+		uint8_t *pucMldAddr;
+
+		prBssDesc = aprBssDesc5G[i];
+		if (!prBssDesc || !prBssDesc->rMlInfo.fgValid)
+			continue;
+		aprBssDesc5G[i] = NULL;
+		pucMldAddr = prBssDesc->rMlInfo.aucMldAddr;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			""MACSTR"\t%d\t%d\t%d\tMLD["MACSTR"]\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+			RCPI_TO_dBm(prBssDesc->ucRCPI),
+			prBssDesc->rMlInfo.ucLinkId,
+			MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
+
+		for (j = 0; j < u2Bss5GNum; j++) {
+			prBssDesc = aprBssDesc5G[j];
+			if (!prBssDesc || !prBssDesc->rMlInfo.fgValid ||
+			    UNEQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+					     pucMldAddr))
+				continue;
+			aprBssDesc5G[j] = NULL;
+
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				""MACSTR"\t%d\t%d\t%d\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				nicChannelNum2Freq(prBssDesc->ucChannelNum,
+					   prBssDesc->eBand) / 1000,
+				RCPI_TO_dBm(prBssDesc->ucRCPI),
+				prBssDesc->rMlInfo.ucLinkId);
+		}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+		for (j = 0; j < u2Bss6GNum; j++) {
+			prBssDesc = aprBssDesc6G[j];
+			if (!prBssDesc || !prBssDesc->rMlInfo.fgValid ||
+			    UNEQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+					     pucMldAddr))
+				continue;
+			aprBssDesc6G[j] = NULL;
+
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				""MACSTR"\t%d\t%d\t%d\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				nicChannelNum2Freq(prBssDesc->ucChannelNum,
+					   prBssDesc->eBand) / 1000,
+				RCPI_TO_dBm(prBssDesc->ucRCPI),
+				prBssDesc->rMlInfo.ucLinkId);
+		}
+#endif
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "--\n");
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6+6 */
+	for (i = 0; i < u2Bss6GNum; i++) {
+		uint8_t *pucMldAddr;
+
+		prBssDesc = aprBssDesc6G[i];
+		if (!prBssDesc || !prBssDesc->rMlInfo.fgValid)
+			continue;
+		aprBssDesc6G[i] = NULL;
+		pucMldAddr = prBssDesc->rMlInfo.aucMldAddr;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			""MACSTR"\t%d\t%d\t%d\tMLD["MACSTR"]\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+			RCPI_TO_dBm(prBssDesc->ucRCPI),
+			prBssDesc->rMlInfo.ucLinkId,
+			MAC2STR(prBssDesc->rMlInfo.aucMldAddr));
+
+		for (j = 0; j < u2Bss6GNum; j++) {
+			prBssDesc = aprBssDesc6G[j];
+			if (!prBssDesc || !prBssDesc->rMlInfo.fgValid ||
+			    UNEQUAL_MAC_ADDR(prBssDesc->rMlInfo.aucMldAddr,
+					     pucMldAddr))
+				continue;
+			aprBssDesc6G[j] = NULL;
+
+			LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+				""MACSTR"\t%d\t%d\t%d\n",
+				MAC2STR(prBssDesc->aucBSSID),
+				nicChannelNum2Freq(prBssDesc->ucChannelNum,
+					   prBssDesc->eBand) / 1000,
+				RCPI_TO_dBm(prBssDesc->ucRCPI),
+				prBssDesc->rMlInfo.ucLinkId);
+		}
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten, "--\n");
+	}
+#endif
+#endif /* CFG_SUPPORT_802_11BE_MLO */
+
+	if (!fgFoundMldAp)
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			"\nBSSID / Freq / RSSI\n");
+
+	/* 2 */
+	for (i = 0; i < u2Bss2GNum; i++) {
+		prBssDesc = aprBssDesc2G[i];
+		if (!prBssDesc)
+			continue;
+		aprBssDesc2G[i] = NULL;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			""MACSTR"\t%d\t%d\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+			RCPI_TO_dBm(prBssDesc->ucRCPI));
+	}
+
+	/* 5 */
+	for (i = 0; i < u2Bss5GNum; i++) {
+		prBssDesc = aprBssDesc5G[i];
+		if (!prBssDesc)
+			continue;
+		aprBssDesc5G[i] = NULL;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			""MACSTR"\t%d\t%d\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+			RCPI_TO_dBm(prBssDesc->ucRCPI));
+	}
+
+#if (CFG_SUPPORT_WIFI_6G == 1)
+	/* 6 */
+	for (i = 0; i < u2Bss6GNum; i++) {
+		prBssDesc = aprBssDesc6G[i];
+		if (!prBssDesc)
+			continue;
+		aprBssDesc6G[i] = NULL;
+
+		LOGBUF(pcCommand, i4TotalLen, i4BytesWritten,
+			""MACSTR"\t%d\t%d\n",
+			MAC2STR(prBssDesc->aucBSSID),
+			nicChannelNum2Freq(prBssDesc->ucChannelNum,
+				   prBssDesc->eBand) / 1000,
+			RCPI_TO_dBm(prBssDesc->ucRCPI));
+	}
+#endif
+
+	return i4BytesWritten;
+} /* priv_driver_get_ais */
 
 int priv_driver_get_ch_rank_list(struct net_device *prNetDev,
 					char *pcCommand, int i4TotalLen)

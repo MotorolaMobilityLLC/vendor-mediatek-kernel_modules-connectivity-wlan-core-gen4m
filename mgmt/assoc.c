@@ -783,8 +783,10 @@ uint32_t assocSendReAssocReqFrame(struct ADAPTER *prAdapter,
 
 	u2RxFrameCtrl = prAssocFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 	DBGLOG(SAA, INFO,
-		"Send %sAssoc Req, SA: " MACSTR ", DA: " MACSTR "\n",
-		u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "Re" : "",
+		"%sSEND_%sASSOC Req SA=" MACSTR " DA=" MACSTR "\n",
+		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
+		"<CONN> " : "",
+		u2RxFrameCtrl == MAC_FRAME_REASSOC_REQ ? "RE" : "",
 		MAC2STR(prAssocFrame->aucSrcAddr),
 		MAC2STR(prAssocFrame->aucDestAddr));
 
@@ -1084,8 +1086,12 @@ assocCheckRxReAssocRspFrameStatus(struct ADAPTER *prAdapter,
 	/* WLAN_GET_FIELD_16(&prAssocRspFrame->u2FrameCtrl, &u2RxFrameCtrl); */
 	u2RxFrameCtrl = prAssocRspFrame->u2FrameCtrl & MASK_FRAME_TYPE;
 	DBGLOG(SAA, INFO,
-		"Rx %sAssoc Resp, Status: %d, SA: " MACSTR ", DA: " MACSTR "\n",
-		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "Re" : "",
+		"%sRX_%sASSOC sn=%d status=%d SA="
+		MACSTR " DA=" MACSTR "\n",
+		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
+		"<CONN> " : "",
+		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "RE" : "",
+		prAssocRspFrame->u2SeqCtrl,
 		prAssocRspFrame->u2StatusCode,
 		MAC2STR(prAssocRspFrame->aucSrcAddr),
 		MAC2STR(prAssocRspFrame->aucDestAddr));
@@ -2372,7 +2378,6 @@ uint32_t assocSendReAssocRespFrame(struct ADAPTER *prAdapter,
 	DBGLOG(SAA, INFO,
 		"Send %sAssoc Resp, SA: " MACSTR ", DA: " MACSTR
 		", Seq: %d, status: %d\n",
-
 		u2RxFrameCtrl == MAC_FRAME_REASSOC_RSP ? "Re" : "",
 		MAC2STR(prAssocRspFrame->aucSrcAddr),
 		MAC2STR(prAssocRspFrame->aucDestAddr),

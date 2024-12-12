@@ -1117,8 +1117,10 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 	prRoamingFsmInfo->ucRspBssIndex = ucBssIndex;
 
 	DBGLOG(ROAMING, EVENT,
-	       "[%d] EVENT-ROAMING DISCOVERY: Current Time = %u\n",
-	       ucBssIndex,
+	       "[AIS%d][%d] <CONN> EVENT-ROAMING DISCOVERY reason=%d Current Time=%u\n",
+	       AIS_INDEX(prAdapter, ucBssIndex), ucBssIndex,
+	       prTransit->eReason < ROAMING_REASON_NUM ?
+	       apucRoamingReasonStr[prTransit->eReason] : "UNKNOWN",
 	       kalGetTimeTick());
 
 	/* DECISION -> DISCOVERY */
@@ -1397,7 +1399,7 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 		struct CMD_ROAMING_TRANSIT rTransit = {0};
 
 		DBGLOG(ROAMING, INFO,
-			"ROAMING_EVENT_DISCOVERY Data[%u] RCPI[%u(%d)] PER[%u] Thr[%u(%d)] Reason[%d] Time[%u]\n",
+			"<CONN> ROAMING_EVENT_DISCOVERY Data[%u] RCPI[%u(%d)] PER[%u] Thr[%u(%d)] Reason[%d] Time[%u]\n",
 			prTransit->u2Data,
 			(prTransit->u2Data) & 0xff,      /* L[8], RCPI */
 			RCPI_TO_dBm((prTransit->u2Data) & 0xff),
@@ -1430,7 +1432,7 @@ uint32_t roamingFsmProcessEvent(struct ADAPTER *prAdapter,
 		roamingFsmRunEventDiscovery(prAdapter, prTransit);
 	} else if (prTransit->u2Event == ROAMING_EVENT_THRESHOLD_UPDATE) {
 		DBGLOG(ROAMING, INFO,
-			"ROAMING_EVENT_THRESHOLD_UPDATE RCPI H[%d(%d)] L[%d(%d)] Time[%u]\n",
+			"<CONN> ROAMING_EVENT_THRESHOLD_UPDATE RCPI H[%d(%d)] L[%d(%d)] Time[%u]\n",
 			prTransit->u2RcpiHighThreshold,
 			RCPI_TO_dBm(prTransit->u2RcpiHighThreshold),
 			prTransit->u2RcpiLowThreshold,

@@ -282,6 +282,30 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 #endif /* CFG_SUPPORT_WPA3 */
 
 		case SAA_STATE_SEND_ASSOC1:
+#if (CFG_SUPPORT_AIS_TEST_MODE == 1)
+			if (prAdapter->rWifiVar.u4AisTestMode.fgAssocTimeout) {
+				DBGLOG(AIS, WARN, "[TEST] Assoc Timeout\n");
+				prStaRec->u2StatusCode =
+					STATUS_CODE_ASSOC_TIMEOUT;
+				saaFsmSendEventJoinComplete(prAdapter,
+					ePreviousState,
+					WLAN_STATUS_FAILURE,
+					prStaRec, NULL);
+				break;
+			}
+			if (prAdapter->rWifiVar
+				.u4AisTestMode.fgAssocTempReject) {
+				DBGLOG(AIS, WARN, "[TEST] Assoc Temp Reject\n");
+				prStaRec->u2StatusCode =
+					STATUS_CODE_ASSOC_REJECTED_TEMPORARILY;
+				saaFsmSendEventJoinComplete(prAdapter,
+					ePreviousState,
+					WLAN_STATUS_FAILURE,
+					prStaRec, NULL);
+				break;
+			}
+#endif
+
 			/* Do tasks in INIT STATE */
 			if (prStaRec->ucTxAuthAssocRetryCount >=
 			    prStaRec->ucTxAuthAssocRetryLimit) {
@@ -310,7 +334,6 @@ saaFsmSteps(struct ADAPTER *prAdapter,
 					    TX_ASSOCIATION_RETRY_TIMEOUT_TU));
 				}
 			}
-
 			break;
 
 		case SAA_STATE_WAIT_ASSOC2:
@@ -1802,21 +1825,29 @@ uint32_t saaFsmRunEventRxDisassoc(struct ADAPTER *prAdapter,
 	ucWlanIdx = prSwRfb->ucWlanIdx;
 	ucStaRecIdx = prSwRfb->ucStaRecIdx;
 
-	DBGLOG(SAA, INFO,
-	       "Rx Disassoc frame from SA[" MACSTR "] BSSID[" MACSTR
-	       "] DA[" MACSTR "] ReasonCode[0x%x]\n",
-	       MAC2STR(prDisassocFrame->aucSrcAddr),
-	       MAC2STR(prDisassocFrame->aucBSSID),
-	       MAC2STR(prDisassocFrame->aucDestAddr),
-	       prDisassocFrame->u2ReasonCode);
-
 	/* We should have the corresponding Sta Record. */
 	if (!prStaRec) {
 		DBGLOG(SAA, WARN,
-		       "Received a DisAssoc: wlanIdx[%d] staRecIdx[%d] w/o corresponding staRec\n",
-		       ucWlanIdx, ucStaRecIdx);
+		       "Received a DisAssoc: wlanIdx[%d] staRecIdx[%d] SA["
+			MACSTR "] BSSID[" MACSTR "] DA[" MACSTR
+			"]w/o corresponding staRec\n",
+			ucWlanIdx, ucStaRecIdx,
+			MAC2STR(prDisassocFrame->aucSrcAddr),
+			MAC2STR(prDisassocFrame->aucBSSID),
+			MAC2STR(prDisassocFrame->aucDestAddr));
 		goto exit;
 	}
+
+	DBGLOG(SAA, INFO,
+	       "%sRX_DISASSOC sn=%d reason=%d SA[" MACSTR "] BSSID[" MACSTR
+	       "] DA[" MACSTR "] ReasonCode[0x%x]\n",
+		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
+		"<CONN>" : "",
+	       prDisassocFrame->u2SeqCtrl,
+	       prDisassocFrame->u2ReasonCode,
+	       MAC2STR(prDisassocFrame->aucSrcAddr),
+	       MAC2STR(prDisassocFrame->aucBSSID),
+	       MAC2STR(prDisassocFrame->aucDestAddr));
 
 	if (IS_STA_IN_AIS(prAdapter, prStaRec)) {
 		struct BSS_INFO *prAisBssInfo;

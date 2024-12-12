@@ -773,6 +773,8 @@ int priv_driver_get_version(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 int priv_driver_get_cnm(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
+int priv_driver_get_ais(struct net_device *prNetDev,
+	char *pcCommand, int i4TotalLen);
 int priv_driver_get_capab_rsdb(struct net_device *prNetDev,
 	char *pcCommand, int i4TotalLen);
 #if CFG_SUPPORT_DBDC

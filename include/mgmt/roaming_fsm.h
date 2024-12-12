@@ -187,6 +187,22 @@ struct ROAMING_INFO {
 	struct ROAMING_SCAN_PARAMETER rRoamScanParam;
 };
 
+static const char * const apucRoamingReasonStr[ROAMING_REASON_NUM] = {
+	"POOR_RCPI",
+	"TX_ERR",
+	"RETRY",
+	"IDLE",
+	"HIGH_CU",
+	"BT_COEX",
+	"BTO",
+	"INACTIVE",
+	"SAA",
+	"USER_TRIGGER",
+	"BTM",
+	"SCAN_SINGLE_TIMER",
+	"INACTIVE_TIMER",
+};
+
 /*******************************************************************************
  *                            P U B L I C   D A T A
  *******************************************************************************

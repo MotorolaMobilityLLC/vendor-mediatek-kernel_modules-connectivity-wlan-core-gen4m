@@ -128,7 +128,8 @@ static const char * const apucBandStr[BAND_NUM] = {
 
 struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,
-	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
+	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet,
+	uint8_t silent_mode);
 
 enum ENUM_MLO_LINK_PLAN apsLinksToLinkPlan(
 	struct BSS_DESC *aprLink[], uint8_t ucLinkNum);

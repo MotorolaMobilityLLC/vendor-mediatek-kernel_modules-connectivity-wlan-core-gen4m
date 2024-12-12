@@ -1574,6 +1574,14 @@ struct PRIV_CMD_HANDLER priv_cmd_handlers_debug[] = {
 		.policy    = NULL,
 		.u4PolicySize = 0
 	},
+	{
+		.pcCmdStr  = CMD_GET_AIS,
+		.pfHandler = priv_driver_get_ais,
+		.argPolicy = VERIFY_MIN_ARG_NUM,
+		.ucArgNum  = COMMON_CMD_GET_ARG_NUM(1),
+		.policy    = NULL,
+		.u4PolicySize = 0
+	},
 #if CFG_SUPPORT_DBDC
 	{
 		.pcCmdStr  = CMD_SET_DBDC,

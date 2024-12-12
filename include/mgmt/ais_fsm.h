@@ -1080,6 +1080,10 @@ struct STA_RECORD *aisGetTargetStaRec(
 	struct ADAPTER *prAdapter,
 	uint8_t ucBssIndex);
 
+int8_t aisGetTargetRssi(
+	struct ADAPTER *prAdapter,
+	uint8_t ucBssIndex);
+
 struct AIS_FSM_INFO *aisFsmGetInstance(
 	struct ADAPTER *prAdapter, uint8_t ucAisIndex);
 struct AIS_FSM_INFO *aisGetDefaultAisInfo(struct ADAPTER *prAdapter);

@@ -1350,9 +1350,10 @@ wlanoidSetConnect(struct ADAPTER *prAdapter,
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 		    (struct MSG_HDR *) prAisAbortMsg, MSG_SEND_METHOD_BUF);
 
-	DBGLOG(INIT, DEBUG,
-		"ucBssIndex %d, ssid %s, bssid " MACSTR ", bssid_hint " MACSTR
-		", conn policy %d, disc reason %d, freqInMHZ %d, AllowLinkID %d\n",
+	DBGLOG(INIT, INFO,
+		"<CONN> CONN_START bidx=%d ssid=%s bssid=" MACSTR
+		" bssid_hint=" MACSTR
+		" conn_policy=%d disc_reason=%d freqInMHZ=%d AllowLinkID=%d\n",
 		ucBssIndex,
 		HIDE(prConnSettings->aucSSID),
 		MAC2STR(prConnSettings->aucBSSID),
@@ -9623,6 +9624,10 @@ wlanoidSetDisassociate(struct ADAPTER *prAdapter,
 		kalIndicateStatusAndComplete(prAdapter->prGlueInfo,
 			     WLAN_STATUS_MEDIA_DISCONNECT_LOCALLY, NULL,
 			     0, ucBssIndex);
+
+	DBGLOG(AIS, INFO,
+	       "<CONN> DISCONN_START bidx=%d reason=%d\n",
+	       ucBssIndex, prAisAbortMsg->ucReasonOfDisconnect);
 
 #if (CFG_SUPPORT_SUPPLICANT_SME == 1)
 	prAdapter->fgSuppSmeLinkDownPend = TRUE;

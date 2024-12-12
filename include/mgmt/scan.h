@@ -188,6 +188,23 @@ enum ENUM_SCAN_CHANNEL {
 	SCAN_CHANNEL_NUM
 };
 
+static const char * const apucScanTypeStr[SCAN_TYPE_NUM] = {
+	"PASSIVE",
+	"ACTIVE",
+};
+
+static const char * const apucScanChnlStr[SCAN_CHANNEL_NUM] = {
+	"FULL",
+	"2G4",
+	"5G",
+	"P2P_SOCIAL",
+	"SPECIFIED",
+	"5G_NO_DFS",
+	"5G_DFS_ONLY",
+	"FULL_NO_DFS",
+	"6G",
+};
+
 struct MSG_SCN_FSM {
 	struct MSG_HDR rMsgHdr;	/* Must be the first member */
 	uint32_t u4Dummy;
@@ -1173,6 +1190,7 @@ void scanLogCacheFlushBSS(struct LINK *prList,
 void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	struct SCAN_LOG_CACHE *prScanLogCache,
 	enum ENUM_SCAN_LOG_PREFIX prefix);
+uint8_t *scanLogSSIDType(uint8_t ucSSIDType);
 
 void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 	uint8_t ucChNum, uint16_t u2IdleTime);

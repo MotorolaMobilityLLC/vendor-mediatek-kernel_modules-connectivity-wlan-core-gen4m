@@ -1316,6 +1316,19 @@ struct WIFI_VAR {
 #endif
 	u_int8_t fgAisEarlyAbort;
 
+#if (CFG_SUPPORT_AIS_TEST_MODE == 1)
+	union {
+		uint32_t u4TestMode;
+		struct {
+			uint32_t fgAssocTimeout: 1;		/* 0x01 */
+			uint32_t fgAssocTempReject: 1;		/* 0x02 */
+			uint32_t fgSelectNone: 1;		/* 0x04 */
+			uint32_t fgQualifyAll: 1;		/* 0x08 */
+			uint32_t fgIgnoreBandCheck: 1;		/* 0x10 */
+		};
+	} u4AisTestMode;
+#endif
+
 	uint32_t fgEnArpFilter;
 
 	uint8_t	uDeQuePercentEnable;

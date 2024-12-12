@@ -1580,6 +1580,8 @@
 /* Refer to CONFIG_MTK_STAGE_SCAN */
 #define CFG_MTK_STAGE_SCAN			1
 
+#define CFG_SUPPORT_AIS_TEST_MODE		BUILD_QA_DBG
+
 /* Enable driver support multicore */
 #ifndef CFG_SUPPORT_MULTITHREAD
 #define CFG_SUPPORT_MULTITHREAD		1

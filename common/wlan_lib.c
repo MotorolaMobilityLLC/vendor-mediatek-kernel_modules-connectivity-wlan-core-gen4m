@@ -8399,6 +8399,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->fgAisEarlyAbort, "AisEarlyAbort", 0,
 		  FEATURE_DEBUG_ONLY);
 
+#if (CFG_SUPPORT_AIS_TEST_MODE == 1)
+	/**
+	 * Switching AIS test mode, set by bitmap format.
+	 * 0x01: Assoc timeout
+	 * 0x02: Assoc temp reject
+	 * 0x04: APS select none AP
+	 * 0x08: APS qualify all AP
+	 * 0x10: Inactive roaming ignore band check
+	 */
+	INIT_UINT(prWifiVar->u4AisTestMode,
+		"AisTestMode", 0, FEATURE_DEBUG_ONLY);
+#endif
+
 	INIT_UINT(prWifiVar->fgEnArpFilter, "EnArpFilter", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);
 

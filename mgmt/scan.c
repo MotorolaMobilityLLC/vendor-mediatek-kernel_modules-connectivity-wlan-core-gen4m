@@ -5044,6 +5044,20 @@ void scanLogCacheFlushAll(struct ADAPTER *prAdapter,
 	KAL_RELEASE_SPIN_LOCK(prAdapter, SPIN_LOCK_BSSLIST_CFG);
 }
 
+uint8_t *scanLogSSIDType(uint8_t ucSSIDType)
+{
+	if (ucSSIDType & SCAN_REQ_SSID_WILDCARD)
+		return "WILDCARD";
+	if (ucSSIDType & SCAN_REQ_SSID_P2P_WILDCARD)
+		return "P2P_WILDCARD";
+	if (ucSSIDType & SCAN_REQ_SSID_SPECIFIED)
+		return "SPECIFIED";
+	if (ucSSIDType & SCAN_REQ_SSID_SPECIFIED_ONLY)
+		return "SPECIFIED_ONLY";
+
+	return "INVALID";
+}
+
 void scanFillChnlIdleSlot(struct ADAPTER *ad, enum ENUM_BAND eBand,
 	uint8_t ucChNum, uint16_t u2IdleTime)
 {

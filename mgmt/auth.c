@@ -384,8 +384,11 @@ authSendAuthFrame(struct ADAPTER *prAdapter,
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)
 		((uintptr_t)(prMsduInfo->prPacket) + MAC_TX_RESERVED_FIELD);
 	DBGLOG(SAA, INFO,
-	       "Send Auth, TranSeq: %d, Status: %d, Seq: %d, SA: " MACSTR
-	       ", DA: " MACSTR "\n",
+	       "%sTX_AUTH algo=%d asn=%d status=%d seq=%d SA=" MACSTR
+	       " DA=" MACSTR "\n",
+		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
+		"<CONN> " : "",
+	       prAuthFrame->u2AuthAlgNum,
 	       u2TransactionSeqNum, u2StatusCode, prMsduInfo->ucTxSeqNum,
 	       MAC2STR(prAuthFrame->aucSrcAddr),
 	       MAC2STR(prAuthFrame->aucDestAddr));
@@ -590,10 +593,16 @@ authCheckRxAuthFrameStatus(struct ADAPTER *prAdapter,
 	prAuthFrame = (struct WLAN_AUTH_FRAME *)prSwRfb->pvHeader;
 
 	DBGLOG(SAA, INFO,
-	       "Rx Auth, Status: %d, SA: " MACSTR ", DA: " MACSTR "\n",
-	       prAuthFrame->u2StatusCode,
-	       MAC2STR(prAuthFrame->aucSrcAddr),
-	       MAC2STR(prAuthFrame->aucDestAddr));
+		"%sRX_AUTH algo=%d auth_seq=%d sn=%d status=%d SA="
+		MACSTR " DA=" MACSTR "\n",
+		IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ?
+		"<CONN> " : "",
+		prAuthFrame->u2AuthAlgNum,
+		prAuthFrame->u2AuthTransSeqNo,
+		prAuthFrame->u2SeqCtrl,
+		prAuthFrame->u2StatusCode,
+		MAC2STR(prAuthFrame->aucSrcAddr),
+		MAC2STR(prAuthFrame->aucDestAddr));
 
 	/* 4 <2> Parse the Fixed Fields of Authentication Frame Body. */
 	/* WLAN_GET_FIELD_16(&prAuthFrame->u2AuthAlgNum, &u2RxAuthAlgNum); */
