@@ -4759,10 +4759,11 @@ struct UNI_CMD_RTT {
 	/* tlv */
 	uint8_t aucTlvBuffer[];/**< the TLVs included in this field:
 	*
-	*   TAG                              |  ID  | structure
-	*   ---------------------------------|------|--------------------------
-	*   UNI_CMD_RTT_TAG_GET_CAPA         | 0x00 | UNI_CMD_RTT_GET_CAPA_T
-	*   UNI_CMD_RTT_TAG_RANGE_REQ_MC     | 0x01 | UNI_CMD_RTT_REQ_MC_T
+	*   TAG                            |  ID  | structure
+	*   -------------------------------|------|--------------
+	*   UNI_CMD_RTT_TAG_GET_CAPA       | 0x00 | UNI_CMD_RTT_GET_CAPA_T
+	*   UNI_CMD_RTT_TAG_RANGE_REQ_MC   | 0x01 | UNI_CMD_RTT_RANGE_REQ_MC_T
+	*   UNI_CMD_RTT_TAG_RANGE_RSP_MC   | 0x02 | UNI_CMD_RTT_RANGE_RSP_MC_T
 	*   UNI_CMD_RTT_TAG_RANGE_REQ_AZ_NTB | 0x03 | UNI_CMD_RTT_REQ_AZ_NTB_T
 	*/
 } __KAL_ATTRIB_PACKED__;
@@ -4770,7 +4771,8 @@ struct UNI_CMD_RTT {
 /* RTT command TLV List */
 enum ENUM_UNI_CMD_RTT_TAG {
 	UNI_CMD_RTT_TAG_GET_CAPA = 0,
-	UNI_CMD_RTT_TAG_RANGE_REQ_MC = 1,      /* 11MC */
+	UNI_CMD_RTT_TAG_RANGE_REQ_MC = 1,      /* 11mc initiator */
+	UNI_CMD_RTT_TAG_RANGE_RSP_MC = 2,      /* 11mc responder */
 	UNI_CMD_RTT_TAG_RANGE_REQ_AZ_NTB = 3,  /* 11AZ NTB */
 	UNI_CMD_RTT_TAG_NUM
 };
@@ -4821,6 +4823,18 @@ struct UNI_CMD_RTT_RANGE_REQ_MC_T {
 	uint8_t ucConfigNum;
 	uint8_t ucPaddings[5];
 	struct RTT_CONFIG_MC arRttConfigs[CFG_RTT_MAX_CANDIDATES];
+} __KAL_ATTRIB_PACKED__;
+
+/* 11mc ranging request (Tag2) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_RTT_RANGE_RSP_MC_T {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t ucSeqNum;
+	uint8_t fgEnable;              /* request or cancel */
+	uint8_t ucConfigNum;
+	uint8_t ucPaddings[5];
+	struct RTT_CONFIG arRttConfigs[CFG_RTT_MAX_CLIENTS];
 } __KAL_ATTRIB_PACKED__;
 
 /* 11az NTB ranging request (Tag3) */

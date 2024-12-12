@@ -1237,6 +1237,8 @@
 	201 /* Reduced Neighbor Report */
 #define ELEM_ID_TVHT_OP \
 	202 /* TVHT Operation */
+#define ELEM_ID_FINE_TIMING_MEASUREMENT \
+	206 /* Fine timing measurement */
 #define ELEM_ID_S1G_OLLM_INDEX \
 	207 /* S1G Open-Loop Link Margin Index */
 #define ELEM_ID_RPS \
@@ -1680,6 +1682,10 @@ enum BEACON_REPORT_DETAIL {
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_WNM_NOTIFICATION_BIT           46
 #define ELEM_EXT_CAP_OP_MODE_NOTIFICATION_BIT       62
+#if CFG_SUPPORT_RTT
+#define ELEM_EXT_CAP_FTM_RESPONDER_BIT              70
+#define ELEM_EXT_CAP_FTM_INITIATOR_BIT              71
+#endif
 #if (CFG_SUPPORT_TX_PWR_ENV == 1)
 #define ELEM_EXT_CAP_EXT_SPEC_MGMT_CAPABLE_BIT      73
 #endif
@@ -2185,6 +2191,9 @@ enum ENUM_MTK_OUI_CHIP_CAP {
 #define ACTION_PUBLIC_EX_CH_SW_ANNOUNCEMENT         4
 /* Vendor specific */
 #define ACTION_PUBLIC_VENDOR_SPECIFIC               9
+/* FTM */
+#define ACTION_PUBLIC_FINE_TIMING_MEASUREMENT_REQUEST 32
+#define ACTION_PUBLIC_FINE_TIMING_MEASUREMENT         33
 
 #if CFG_SUPPORT_802_11W
 /* SA Query Action frame (IEEE 802.11w/D8.0, 7.4.9) */
@@ -2641,6 +2650,16 @@ enum CUS_BLOCKLIST_LIMIT_TYPE {
 	LIMIT_FIRST_CONNECTION = 0,
 	LIMIT_ROAMING,
 };
+
+#if CFG_SUPPORT_RTT
+/* Table 9-258 Format and Bandwidth field */
+#define FTM_FORMAT_BW_HT_MIXED_BW20     9
+#define FTM_FORMAT_BW_VHT_BW20          10
+#define FTM_FORMAT_BW_HT_MIXED_BW40     11
+#define FTM_FORMAT_BW_VHT_BW40          12
+#define FTM_FORMAT_BW_VHT_BW80          13
+#define FTM_FORMAT_BW_VHT_BW160         16
+#endif /* CFG_SUPPORT_RTT */
 
 /*******************************************************************************
  *                             D A T A   T Y P E S
@@ -4339,6 +4358,48 @@ struct ACTION_20_40_COEXIST_FRAME {
 	struct IE_INTOLERANT_CHNL_REPORT rChnlReport;
 
 } __KAL_ATTRIB_PACKED__;
+
+#if CFG_SUPPORT_RTT
+/* 9.6.8.32 Fine Timing Measurement Request frame format */
+__KAL_ATTRIB_PACKED_FRONT__
+struct ACTION_FTM_REQUEST_FRAME {
+	/* MAC header */
+	uint16_t u2FrameCtrl;	/* Frame Control */
+	uint16_t u2Duration;	/* Duration */
+	uint8_t aucDestAddr[MAC_ADDR_LEN];	/* DA */
+	uint8_t aucSrcAddr[MAC_ADDR_LEN];	/* SA */
+	uint8_t aucBSSID[MAC_ADDR_LEN];	/* BSSID */
+	uint16_t u2SeqCtrl;	/* Sequence Control */
+
+	/* fine timing measurement request frame body */
+	uint8_t ucCategory;	/* Category */
+	uint8_t ucAction;	/* Action Value */
+	uint8_t ucTrigger;	/* 1: Start FTM, 0: Stop FTM */
+	uint8_t aucInfoElem[];
+} __KAL_ATTRIB_PACKED__;
+
+/* 9.4.2.168 Fine Timing Measurement Parameters element */
+__KAL_ATTRIB_PACKED_FRONT__
+struct FTM_INFO_ELEM {
+	uint8_t ucElemId;
+	uint8_t ucLength;
+	uint8_t ucStatusIndication		: 2;
+	uint8_t ucValue				: 5;
+	uint8_t ucReserved			: 1;
+	uint8_t ucNumberOfBurstsExponent	: 4;
+	uint8_t ucBurstDuration			: 4;
+	uint8_t ucMinDeltaFtm;
+	uint8_t aucPartialTsfTimer[2];
+	uint8_t ucPartialTsfTimerNoPref		: 1;
+	uint8_t ucAsapCapable			: 1;
+	uint8_t ucAsap				: 1;
+	uint8_t ucFtmPerBurst			: 5;
+	uint8_t ucResucReservedeved		: 2;
+	uint8_t ucFormatAndBandwidth		: 6;
+	uint8_t aucBurstPeriod[2];
+} __KAL_ATTRIB_PACKED__;
+
+#endif
 
 #if CFG_SUPPORT_802_11W
 /* 7.4.9 SA Query Management frame format */

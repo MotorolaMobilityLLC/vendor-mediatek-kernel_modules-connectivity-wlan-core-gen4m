@@ -3012,15 +3012,18 @@
 #ifndef CFG_SUPPORT_RTT
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_SUPPORT_RTT 1
-#define CFG_SUPPORT_PASN 1
+#define CFG_SUPPORT_RTT_RSTA 0
+#define CFG_SUPPORT_PASN 0
 #else
 #define CFG_SUPPORT_RTT 0
+#define CFG_SUPPORT_RTT_RSTA 0
 #define CFG_SUPPORT_PASN 0
 #endif
 #endif
 
 #define CFG_RTT_TEST_MODE 0
-#define CFG_RTT_MAX_CANDIDATES 10
+#define CFG_RTT_MAX_CANDIDATES 10	/* ISTA maximum peer APs */
+#define CFG_RTT_MAX_CLIENTS 1		/* RSTA maximum clients */
 
 #if (CFG_SUPPORT_CONNAC3X == 1)
 #define CFG_WIFI_IGTK_GTK_SEPARATE	0

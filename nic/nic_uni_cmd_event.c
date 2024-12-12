@@ -7746,10 +7746,18 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		return WLAN_STATUS_INVALID_DATA;
 
 	max_cmd_len = sizeof(struct UNI_CMD_RTT);
-	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11AZ_NTB)
+
+	if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC) {
+		if (cmd->arRttConfigs[0].ePeer == RTT_PEER_AP)
+			max_cmd_len +=
+				sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
+		else if (cmd->arRttConfigs[0].ePeer == RTT_PEER_STA)
+			max_cmd_len +=
+				sizeof(struct UNI_CMD_RTT_RANGE_RSP_MC_T);
+		else
+			return WLAN_STATUS_INVALID_DATA;
+	} else if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11AZ_NTB)
 		max_cmd_len += sizeof(struct UNI_CMD_RTT_RANGE_REQ_AZ_NTB_T);
-	else if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11MC)
-		max_cmd_len += sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
 	else
 		return WLAN_STATUS_INVALID_DATA;
 
@@ -7765,8 +7773,26 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 
 		tag = (struct UNI_CMD_RTT_RANGE_REQ_MC_T *)
 			uni_cmd->aucTlvBuffer;
-		tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ_MC;
-		tag->u2Length = sizeof(*tag);
+
+		switch (cmd->arRttConfigs[0].ePeer) {
+		case RTT_PEER_AP:
+			tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_REQ_MC;
+			tag->u2Length =
+				sizeof(struct UNI_CMD_RTT_RANGE_REQ_MC_T);
+			break;
+		case RTT_PEER_STA:
+			tag->u2Tag = UNI_CMD_RTT_TAG_RANGE_RSP_MC;
+			tag->u2Length =
+				sizeof(struct UNI_CMD_RTT_RANGE_RSP_MC_T);
+			break;
+		default:
+			DBGLOG(REQ, ERROR,
+				"11mc rtt request, invalid peer type: %d\n",
+				cmd->arRttConfigs[0].ePeer);
+			nicUniCmdFreeEntry(ad, entry);
+			return WLAN_STATUS_INVALID_DATA;
+		}
+
 		tag->ucSeqNum = cmd->ucSeqNum;
 		tag->fgEnable = cmd->fgEnable;
 		tag->ucConfigNum = cmd->ucConfigNum;
@@ -7778,11 +7804,11 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		}
 
 		dumpMemory32((uint32_t *)tag->arRttConfigs,
-			sizeof(struct RTT_CONFIG_MC) *
-			CFG_RTT_MAX_CANDIDATES);
+			sizeof(struct RTT_CONFIG) * cmd->ucConfigNum);
 
-		DBGLOG(REQ, INFO, "11mc rtt request, seq:%d, enable:%d\n",
-			tag->ucSeqNum, tag->fgEnable);
+		DBGLOG(REQ, INFO,
+			"11mc rtt request, tag: %d, seq: %d, enable: %d\n",
+			tag->u2Tag, tag->ucSeqNum, tag->fgEnable);
 	} else if (cmd->arRttConfigs[0].eType == RTT_TYPE_2_SIDED_11AZ_NTB) {
 		struct UNI_CMD_RTT_RANGE_REQ_AZ_NTB_T *tag;
 
@@ -7801,11 +7827,11 @@ uint32_t nicUniCmdRttRangeRequest(struct ADAPTER *ad,
 		}
 
 		dumpMemory32((uint32_t *)tag->arRttConfigs,
-			sizeof(struct RTT_CONFIG_AZ_NTB) *
-			CFG_RTT_MAX_CANDIDATES);
+			sizeof(struct RTT_CONFIG_AZ_NTB) * cmd->ucConfigNum);
 
-		DBGLOG(REQ, INFO, "11az rtt request, seq:%d, enable:%d\n",
-			tag->ucSeqNum, tag->fgEnable);
+		DBGLOG(REQ, INFO,
+			"11az rtt request, tag: %d, seq: %d, enable: %d\n",
+			tag->u2Tag, tag->ucSeqNum, tag->fgEnable);
 	}
 
 	LINK_INSERT_TAIL(&info->rUniCmdList, &entry->rLinkEntry);

@@ -144,6 +144,7 @@ struct RTT_INFO {
 	uint8_t fgIsContRunning;
 	uint8_t ucSeqNum;
 	uint8_t ucState; /* ENUM_RTT_STATE */
+	enum ENUM_RTT_PEER_TYPE eRttPeerType;
 	struct LINK rResultList;
 	struct TIMER rRttDoneTimer;
 	struct TIMER rRttContTimer; /* Continuous RTT requests */
@@ -206,6 +207,9 @@ uint8_t rttBssBwToRttBw(uint8_t ucBssBw);
 
 uint8_t rttBwToBssBw(uint8_t eRttBw);
 
+void rttProcessPublicAction(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb);
+
 #if CFG_SUPPORT_PASN
 uint32_t rttDoPasn(struct ADAPTER *prAdapter,
 			struct PARAM_RTT_REQUEST *prRequest,
@@ -218,6 +222,5 @@ uint32_t rttDeleteSecureCtx(struct ADAPTER *prAdapter,
 			struct STA_RECORD *prStaRec,
 			uint8_t ucBssIndex);
 #endif /* CFG_SUPPORT_PASN */
-
 #endif /* CFG_SUPPORT_RTT */
 #endif /* _RTT_H */

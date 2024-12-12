@@ -155,6 +155,7 @@ void rttUpdateStatus(struct ADAPTER *prAdapter,
 	rttInfo->ucBssIndex = ucBssIndex;
 
 	if (prCmd && prCmd->fgEnable) {
+		rttInfo->eRttPeerType = prCmd->arRttConfigs[0].ePeer;
 		rttInfo->ucSeqNum = prCmd->ucSeqNum;
 		rttInfo->fgIsRunning = true;
 		rttInfo->fgIsContRunning = true;
@@ -327,16 +328,16 @@ uint8_t rttReviseBw(struct ADAPTER *prAdapter,
 
 	ucRttBw = rttBwToBssBw(eRttBwIn);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
-	if (prBssInfo) {
+	if (prBssInfo && prBssDesc) {
 		ucMaxBssBw = rttGetBssMaxBwByBand(prAdapter,
 			prBssInfo, prBssDesc->eBand);
-	}
 
-	if (ucRttBw > ucMaxBssBw) {
-		eRttBwOut = rttBssBwToRttBw(ucMaxBssBw);
-		DBGLOG(RTT, INFO,
-			"Convert RTT BW from %d to %d\n",
-			eRttBwIn, eRttBwOut);
+		if (ucRttBw > ucMaxBssBw) {
+			eRttBwOut = rttBssBwToRttBw(ucMaxBssBw);
+			DBGLOG(RTT, INFO,
+				"Convert RTT BW from %d to %d\n",
+				eRttBwIn, eRttBwOut);
+		}
 	}
 
 	return eRttBwOut;
@@ -467,6 +468,84 @@ uint32_t rttRemovePeerStaRec(struct ADAPTER *prAdapter)
 
 				cnmStaRecFree(prAdapter, prStaRec);
 			}
+		}
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t rttAddClientStaRec(struct ADAPTER *prAdapter,
+			uint8_t ucBssIndex,
+			uint8_t *pucClientMacAddr)
+{
+	struct STA_RECORD *prStaRec;
+
+	prStaRec = cnmGetStaRecByAddress(prAdapter,
+			ucBssIndex,
+			pucClientMacAddr);
+
+	if (!prStaRec) { /* RTT with new client */
+		prStaRec = cnmStaRecAlloc(prAdapter,
+			STA_TYPE_LEGACY_CLIENT,
+			ucBssIndex,
+			pucClientMacAddr);
+
+		if (!prStaRec) {
+			DBGLOG(RTT, ERROR,
+				"Cannot allocate StaRec for " MACSTR "\n",
+				MAC2STR(pucClientMacAddr));
+			return WLAN_STATUS_RESOURCES;
+		}
+
+		prStaRec->u2BSSBasicRateSet = BASIC_RATE_SET_ERP;
+		prStaRec->u2DesiredNonHTRateSet = RATE_SET_ERP;
+		prStaRec->u2OperationalRateSet = RATE_SET_ERP;
+		prStaRec->ucPhyTypeSet = PHY_TYPE_SET_802_11AC;
+
+		/* Update default Tx rate */
+		nicTxUpdateStaRecDefaultRate(prAdapter, prStaRec);
+
+		/* NOTE(Kevin): Better to change state here, not at TX Done */
+		cnmStaRecChangeState(prAdapter, prStaRec, STA_STATE_1);
+	}
+
+	if (prStaRec) {
+		DBGLOG(RTT, INFO,
+			"RTT w/ %s client " MACSTR "\n",
+			prStaRec->ucStaState == STA_STATE_1 ?
+			"un-associated" : "associated",
+			MAC2STR(pucClientMacAddr));
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+uint32_t rttRemoveClientStaRec(struct ADAPTER *prAdapter)
+{
+	struct RTT_RESULT_ENTRY *entry;
+	struct STA_RECORD *prStaRec;
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+
+	if (!rttInfo)
+		return WLAN_STATUS_FAILURE;
+
+	LINK_FOR_EACH_ENTRY(entry, &rttInfo->rResultList, rLinkEntry,
+			    struct RTT_RESULT_ENTRY) {
+
+		if (!entry)
+			break;
+
+		prStaRec = cnmGetStaRecByAddress(prAdapter,
+				rttInfo->ucBssIndex,
+				entry->rResult.aucMacAddr);
+
+		if (prStaRec && prStaRec->ucStaState == STA_STATE_1) {
+			/* Free StaRec for un-assoicated Client */
+			DBGLOG(RTT, INFO,
+				"Free StaRec for un-assoc client " MACSTR "\n",
+				MAC2STR(entry->rResult.aucMacAddr));
+
+				cnmStaRecFree(prAdapter, prStaRec);
 		}
 	}
 
@@ -1088,7 +1167,7 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 			 uint8_t ucBssIndex)
 {
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
-	struct BSS_DESC *bss;
+	struct BSS_DESC *bss = NULL;
 	struct CMD_RTT_REQUEST *cmd;
 	uint8_t i, active;
 	uint32_t status = WLAN_STATUS_SUCCESS;
@@ -1098,7 +1177,8 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 	struct SCAN_PARAM *prScanParam;
 
 	cmd = (struct CMD_RTT_REQUEST *)
-			cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sz);
+		cnmMemAlloc(prAdapter, RAM_TYPE_BUF, sz);
+
 	if (!cmd)
 		return WLAN_STATUS_RESOURCES;
 
@@ -1122,67 +1202,65 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 		struct RTT_CONFIG *rc = &prRequest->arRttConfigs[i];
 		struct RTT_CONFIG *tc = NULL;
 
-		/* add to fw cmd if bss exist */
-		bss = scanSearchBssDescByBssid(prAdapter, rc->aucAddr);
+		if (rc->ePeer == RTT_PEER_AP) {
+			bss = scanSearchBssDescByBssid(prAdapter, rc->aucAddr);
 
-		if (bss) {
-			status = rttAddPeerStaRec(prAdapter, ucBssIndex, bss);
-			if (status != WLAN_STATUS_SUCCESS)
+			if (bss) {
+				status = rttAddPeerStaRec(prAdapter,
+					ucBssIndex, bss);
+				if (status != WLAN_STATUS_SUCCESS)
+					goto fail;
+			} else {
+				DBGLOG(RTT, ERROR,
+					"" MACSTR " is not in scan result\n",
+					MAC2STR(rc->aucAddr));
+				status =  WLAN_STATUS_FAILURE;
 				goto fail;
-
-			/* Update channel parameters per scan result */
-			rttUpdateChannelParams(prAdapter,
-				&rc->rChannel, bss);
-
-			tc = &cmd->arRttConfigs[cmd->ucConfigNum++];
-			COPY_MAC_ADDR(tc->aucAddr, rc->aucAddr);
-			tc->eType = rc->eType;
-			tc->rChannel = rc->rChannel;
-			tc->u2BurstPeriod = rc->u2BurstPeriod;
-			tc->u2NumBurstExponent = rc->u2NumBurstExponent;
-			tc->u2PreferencePartialTsfTimer =
-				rc->u2PreferencePartialTsfTimer;
-			tc->ucNumFramesPerBurst = rc->ucNumFramesPerBurst;
-			tc->ucNumRetriesPerFtmr = rc->ucNumRetriesPerFtmr;
-			tc->ucLciRequest = rc->ucLciRequest;
-			tc->ucLcrRequest = rc->ucLcrRequest;
-			tc->ucBurstDuration = rc->ucBurstDuration;
-			tc->ePreamble = rc->ePreamble;
-			tc->eBw = rttReviseBw(prAdapter, ucBssIndex,
-				bss, rc->eBw);
-			/* internal data for channel request */
-			cnmFreqToChnl(tc->rChannel.center_freq,
-				&tc->ucPrimaryChannel, &eBand);
-			tc->eBand = (uint8_t) eBand;
-			tc->eChannelWidth = rttChannelWidthToCnmChBw(
-				tc->rChannel.width);
-			tc->ucS1 = nicGetS1(tc->eBand, tc->ucPrimaryChannel,
-					    nicGetSco(prAdapter, tc->eBand,
-						      tc->ucPrimaryChannel),
-					    rttBwToBssBw(rc->eBw));
-			tc->ucS2 = nicGetS2(tc->eBand, tc->ucPrimaryChannel,
-				tc->eChannelWidth);
-			tc->ucBssIndex = ucBssIndex;
-			tc->eEventType = rc->eEventType;
-			tc->ucASAP = rc->ucASAP;
-			tc->ucFtmMinDeltaTime = rc->ucFtmMinDeltaTime;
-
-			/* 11az config */
-			tc->u8NtbMinMeasurementTime =
-				rc->u8NtbMinMeasurementTime;
-			tc->u8NtbMaxMeasurementTime =
-				rc->u8NtbMaxMeasurementTime;
-			tc->ucI2rLmrFeedback = rc->ucI2rLmrFeedback;
-			tc->ucImmeR2iFeedback = rc->ucImmeR2iFeedback;
-			tc->ucImmeI2rFeedback = rc->ucImmeI2rFeedback;
-			tc->ucForceReplyI2rLmr = rc->ucForceReplyI2rLmr;
-		} else {
-			DBGLOG(RTT, ERROR,
-				"Bssid " MACSTR " is not in scan result\n",
-				MAC2STR(rc->aucAddr));
-			cnmMemFree(prAdapter, (void *) cmd);
-			return WLAN_STATUS_NOT_ACCEPTED;
+			}
+		} else if (rc->ePeer == RTT_PEER_STA) {
+			rttAddClientStaRec(prAdapter, ucBssIndex, rc->aucAddr);
 		}
+
+		tc = &cmd->arRttConfigs[cmd->ucConfigNum++];
+		COPY_MAC_ADDR(tc->aucAddr, rc->aucAddr);
+		tc->eType = rc->eType;
+		tc->ePeer = rc->ePeer;
+		tc->rChannel = rc->rChannel;
+		tc->u2BurstPeriod = rc->u2BurstPeriod;
+		tc->u2NumBurstExponent = rc->u2NumBurstExponent;
+		tc->u2PreferencePartialTsfTimer =
+			rc->u2PreferencePartialTsfTimer;
+		tc->ucNumFramesPerBurst = rc->ucNumFramesPerBurst;
+		tc->ucNumRetriesPerFtmr = rc->ucNumRetriesPerFtmr;
+		tc->ucLciRequest = rc->ucLciRequest;
+		tc->ucLcrRequest = rc->ucLcrRequest;
+		tc->ucBurstDuration = rc->ucBurstDuration;
+		tc->ePreamble = rc->ePreamble;
+		tc->eBw = rttReviseBw(prAdapter, ucBssIndex,
+			bss, rc->eBw);
+		/* internal data for channel request */
+		cnmFreqToChnl(tc->rChannel.center_freq,
+			&tc->ucPrimaryChannel, &eBand);
+		tc->eBand = (uint8_t) eBand;
+		tc->eChannelWidth = rttChannelWidthToCnmChBw(
+			tc->rChannel.width);
+		tc->ucS1 = nicGetS1(tc->eBand, tc->ucPrimaryChannel,
+			nicGetSco(prAdapter, tc->eBand, tc->ucPrimaryChannel),
+			rttBwToBssBw(rc->eBw));
+		tc->ucS2 = nicGetS2(tc->eBand, tc->ucPrimaryChannel,
+			tc->eChannelWidth);
+		tc->ucBssIndex = ucBssIndex;
+		tc->eEventType = rc->eEventType;
+		tc->ucASAP = rc->ucASAP;
+		tc->ucFtmMinDeltaTime = rc->ucFtmMinDeltaTime;
+
+		/* 11az config */
+		tc->u8NtbMinMeasurementTime = rc->u8NtbMinMeasurementTime;
+		tc->u8NtbMaxMeasurementTime = rc->u8NtbMaxMeasurementTime;
+		tc->ucI2rLmrFeedback = rc->ucI2rLmrFeedback;
+		tc->ucImmeR2iFeedback = rc->ucImmeR2iFeedback;
+		tc->ucImmeI2rFeedback = rc->ucImmeI2rFeedback;
+		tc->ucForceReplyI2rLmr = rc->ucForceReplyI2rLmr;
 	}
 
 #if CFG_SUPPORT_PASN
@@ -1199,10 +1277,10 @@ uint32_t rttStartRttRequest(struct ADAPTER *prAdapter,
 	{
 		status = rttSendCmd(prAdapter, ucBssIndex, cmd);
 
-		cnmMemFree(prAdapter, (void *) cmd);
-		DBGLOG(RTT, INFO, "status=%d, seq=%d",
-			status, rttInfo->ucSeqNum);
-		rttInfo->ucState = RTT_STATE_RTT_START;
+		if (status == WLAN_STATUS_SUCCESS) {
+			rttInfo->ucState = RTT_STATE_RTT_START;
+			cnmMemFree(prAdapter, (void *) cmd);
+		}
 	}
 
 fail:
@@ -1213,6 +1291,10 @@ fail:
 
 		cnmMemFree(prAdapter, (void *) cmd);
 	}
+
+	DBGLOG(RTT, INFO,
+		"bssIndex=%d, status=%d, seq=%d",
+		ucBssIndex, status, rttInfo->ucSeqNum);
 
 	return status;
 }
@@ -1244,11 +1326,11 @@ uint32_t rttCancelRttRequest(struct ADAPTER *prAdapter,
 uint32_t rttHandleDeauth(struct ADAPTER *prAdapter,
 			 struct STA_RECORD *prStaRec)
 {
+#if CFG_SUPPORT_PASN
 	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
 
 	ASSERT(rttInfo);
 
-#if CFG_SUPPORT_PASN
 	rttDeleteSecureCtx(prAdapter,
 		prStaRec,
 		rttInfo->ucBssIndex);
@@ -1394,6 +1476,29 @@ void rttFakeEvent(struct ADAPTER *prAdapter)
 	rttEventResult(prAdapter, &fake);
 }
 
+uint32_t rttRemoveStaRec(struct ADAPTER *prAdapter)
+{
+	struct RTT_INFO *rttInfo = rttGetInfo(prAdapter);
+
+	if (!rttInfo)
+		return WLAN_STATUS_FAILURE;
+
+	switch (rttInfo->eRttPeerType) {
+	case RTT_PEER_AP:
+		rttRemovePeerStaRec(prAdapter);
+		break;
+	case RTT_PEER_STA:
+		rttRemoveClientStaRec(prAdapter);
+		break;
+	default:
+		DBGLOG(RTT, WARN, "invalid RttPeerType=%u\n",
+			rttInfo->eRttPeerType);
+		break;
+	}
+
+	return WLAN_STATUS_SUCCESS;
+}
+
 void rttEventDone(struct ADAPTER *prAdapter,
 		      struct EVENT_RTT_DONE *prEvent)
 {
@@ -1405,25 +1510,33 @@ void rttEventDone(struct ADAPTER *prAdapter,
 
 	if (prEvent == NULL) { /* timeout case */
 		DBGLOG(RTT, WARN, "rttRequestDoneTimeOut Seq=%u\n",
-		       rttInfo->ucSeqNum);
+			rttInfo->ucSeqNum);
 		rttFreeAllResults(rttInfo);
 		rttCancelRttRequest(prAdapter, NULL);
-		rttRemovePeerStaRec(prAdapter);
+		rttRemoveStaRec(prAdapter);
 		rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
 	} else { /* normal rtt done */
 		DBGLOG(RTT, INFO,
-		       "Event RTT done seq: FW %u, driver %u\n",
-		       prEvent->ucSeqNum, rttInfo->ucSeqNum);
+			"Event RTT done seq: FW %u, driver %u\n",
+			prEvent->ucSeqNum, rttInfo->ucSeqNum);
 		if (prEvent->ucSeqNum == rttInfo->ucSeqNum) {
-			rttRemovePeerStaRec(prAdapter);
+			rttRemoveStaRec(prAdapter);
 			rttUpdateStatus(prAdapter, rttInfo->ucBssIndex, NULL);
 		}
 		else
 			return;
 	}
-	rttReportDone(prAdapter);
 
-	rttInfo->ucState = RTT_STATE_RTT_DONE;
+	switch (rttInfo->eRttPeerType) {
+	case RTT_PEER_AP:
+		rttReportDone(prAdapter);
+		rttInfo->ucState = RTT_STATE_RTT_DONE;
+		break;
+	case RTT_PEER_STA:
+	default:
+		/* Do nothing */
+		break;
+	}
 }
 
 void rttEventResult(struct ADAPTER *prAdapter,
@@ -1460,6 +1573,212 @@ void rttEventResult(struct ADAPTER *prAdapter,
 	rttInfo->ucState = RTT_STATE_IDLE;
 }
 #endif /* CFG_SUPPORT_RTT */
+
+#if CFG_SUPPORT_RTT_RSTA
+u_int8_t rttGetAPBssIndex(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex = 0;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (!prAdapter)
+		return FALSE;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum;
+		ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (prBssInfo &&
+			IS_BSS_APGO(prBssInfo) &&
+			IS_BSS_ACTIVE(prBssInfo)) {
+			break;
+		}
+	}
+
+	return ucBssIndex;
+}
+
+u_int8_t rttIsAPActive(struct ADAPTER *prAdapter)
+{
+	uint8_t ucBssIndex = 0;
+	uint8_t fgIsAPActive = FALSE;
+	struct BSS_INFO *prBssInfo = NULL;
+
+	if (!prAdapter)
+		return FALSE;
+
+	for (ucBssIndex = 0;
+		ucBssIndex < prAdapter->ucSwBssIdNum;
+		ucBssIndex++) {
+		prBssInfo = prAdapter->aprBssInfo[ucBssIndex];
+		if (prBssInfo &&
+			IS_BSS_APGO(prBssInfo) &&
+			IS_BSS_ACTIVE(prBssInfo)) {
+			fgIsAPActive = TRUE;
+			break;
+		}
+	}
+
+	return fgIsAPActive;
+}
+
+enum WIFI_CHANNEL_WIDTH rttFtmChannelWidth(uint8_t ucFormatAndBandwidth)
+{
+	enum WIFI_CHANNEL_WIDTH eChannelWidth = WIFI_CHAN_WIDTH_80;
+
+	switch (ucFormatAndBandwidth) {
+	case FTM_FORMAT_BW_HT_MIXED_BW20:
+	case FTM_FORMAT_BW_VHT_BW20:
+		eChannelWidth = WIFI_CHAN_WIDTH_20;
+		break;
+	case FTM_FORMAT_BW_HT_MIXED_BW40:
+	case FTM_FORMAT_BW_VHT_BW40:
+		eChannelWidth = WIFI_CHAN_WIDTH_40;
+		break;
+	case FTM_FORMAT_BW_VHT_BW160:
+		eChannelWidth = WIFI_CHAN_WIDTH_160;
+		break;
+	case FTM_FORMAT_BW_VHT_BW80:
+	default:
+		eChannelWidth = WIFI_CHAN_WIDTH_80;
+		break;
+	}
+
+	return eChannelWidth;
+}
+
+enum ENUM_WIFI_RTT_PREAMBLE rttFtmPreamble(uint8_t ucFormatAndBandwidth)
+{
+	enum ENUM_WIFI_RTT_PREAMBLE ePreamble = WIFI_RTT_PREAMBLE_VHT;
+
+	switch (ucFormatAndBandwidth) {
+	case FTM_FORMAT_BW_HT_MIXED_BW20:
+	case FTM_FORMAT_BW_HT_MIXED_BW40:
+		ePreamble = WIFI_RTT_PREAMBLE_HT;
+		break;
+	case FTM_FORMAT_BW_VHT_BW20:
+	case FTM_FORMAT_BW_VHT_BW40:
+	case FTM_FORMAT_BW_VHT_BW80:
+	case FTM_FORMAT_BW_VHT_BW160:
+	default:
+		ePreamble = WIFI_RTT_PREAMBLE_VHT;
+		break;
+	}
+
+	return ePreamble;
+}
+
+uint32_t rttProcessFTM(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb,
+		struct WLAN_ACTION_FRAME *prActFrame,
+		struct FTM_INFO_ELEM *prFtmInfoElem)
+{
+	struct PARAM_RTT_REQUEST *rttReq = NULL;
+	enum WIFI_CHANNEL_WIDTH channelWidth;
+
+	rttReq = kalMemAlloc(sizeof(struct PARAM_RTT_REQUEST), VIR_MEM_TYPE);
+	if (!rttReq) {
+		DBGLOG(RTT, ERROR, "fail to alloc memory for rttReq.\n");
+		return -1;
+	}
+
+	kalMemZero(rttReq, sizeof(struct PARAM_RTT_REQUEST));
+	rttReq->fgEnable = true;
+	rttReq->ucConfigNum = 1;
+	channelWidth = rttFtmChannelWidth(prFtmInfoElem->ucFormatAndBandwidth);
+
+	COPY_MAC_ADDR(rttReq->arRttConfigs[0].aucAddr, prActFrame->aucSrcAddr);
+	rttReq->arRttConfigs[0].eType = RTT_TYPE_2_SIDED_11MC;
+	rttReq->arRttConfigs[0].ePeer = RTT_PEER_STA;
+	rttReq->arRttConfigs[0].rChannel.width = channelWidth;
+	rttReq->arRttConfigs[0].rChannel.center_freq =
+		nicChannelNum2Freq(prSwRfb->ucChnlNum, prSwRfb->eRfBand) / 1000;
+	rttReq->arRttConfigs[0].rChannel.center_freq0 = 0;
+	rttReq->arRttConfigs[0].rChannel.center_freq1 = 0;
+	rttReq->arRttConfigs[0].u2BurstPeriod = 0;
+	rttReq->arRttConfigs[0].u2NumBurstExponent =
+		prFtmInfoElem->ucNumberOfBurstsExponent;
+	rttReq->arRttConfigs[0].u2PreferencePartialTsfTimer = 0;
+	rttReq->arRttConfigs[0].ucNumFramesPerBurst =
+		prFtmInfoElem->ucFtmPerBurst;
+	rttReq->arRttConfigs[0].ucNumRetriesPerRttFrame = 3;
+	rttReq->arRttConfigs[0].ucNumRetriesPerFtmr = 0;
+	rttReq->arRttConfigs[0].ucLciRequest = 0;
+	rttReq->arRttConfigs[0].ucLcrRequest = 0;
+	rttReq->arRttConfigs[0].ucBurstDuration =
+		prFtmInfoElem->ucBurstDuration;
+	rttReq->arRttConfigs[0].ePreamble =
+		rttFtmPreamble(prFtmInfoElem->ucFormatAndBandwidth);
+	rttReq->arRttConfigs[0].eBw = rttBssBwToRttBw(channelWidth);
+	rttReq->arRttConfigs[0].ucASAP = 1;
+	rttReq->arRttConfigs[0].ucFtmMinDeltaTime =
+		prFtmInfoElem->ucMinDeltaFtm;
+
+	rttHandleRttRequest(prAdapter, rttReq, rttGetAPBssIndex(prAdapter));
+
+	kalMemFree(rttReq, VIR_MEM_TYPE, sizeof(struct PARAM_RTT_REQUEST));
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void rttProcessFTMR(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
+	uint8_t *pucIE;
+	uint16_t u2IELength;
+	uint16_t u2Offset = 0;
+	struct FTM_INFO_ELEM *prFtmInfoElem;
+	struct WLAN_ACTION_FRAME *prActFrame;
+
+	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+	struct ACTION_FTM_REQUEST_FRAME *prRxFrame;
+
+	u2IELength = prSwRfb->u2PacketLen - (uint16_t)OFFSET_OF(
+		struct ACTION_FTM_REQUEST_FRAME, aucInfoElem[0]);
+	prRxFrame = (struct ACTION_FTM_REQUEST_FRAME *) prSwRfb->pvHeader;
+	pucIE = prRxFrame->aucInfoElem;
+
+	IE_FOR_EACH(pucIE, u2IELength, u2Offset) {
+		switch (IE_ID(pucIE)) {
+		case ELEM_ID_FINE_TIMING_MEASUREMENT:
+			if (IE_LEN(pucIE) !=
+				(sizeof(struct FTM_INFO_ELEM) - 2)) {
+				DBGLOG(RTT, ERROR, "Invalid IE length\n");
+				break;
+			}
+
+			prFtmInfoElem = (struct FTM_INFO_ELEM *)pucIE;
+			rttProcessFTM(prAdapter, prSwRfb, prActFrame,
+				prFtmInfoElem);
+			break;
+
+		default:
+			break;
+		}
+	}
+}
+
+void rttProcessPublicAction(struct ADAPTER *prAdapter,
+		struct SW_RFB *prSwRfb)
+{
+	struct WLAN_ACTION_FRAME *prActFrame = NULL;
+
+	ASSERT(prAdapter);
+	ASSERT(prSwRfb);
+
+	prActFrame = (struct WLAN_ACTION_FRAME *) prSwRfb->pvHeader;
+
+	switch (prActFrame->ucAction) {
+	case ACTION_PUBLIC_FINE_TIMING_MEASUREMENT_REQUEST:
+		if (rttIsAPActive(prAdapter)) {
+			DBGLOG(RTT, INFO, "Receive IFTMR\n");
+			rttProcessFTMR(prAdapter, prSwRfb);
+		}
+		break;
+	default:
+		break;
+	}
+}
+#endif /* CFG_SUPPORT_RTT_RSTA  */
 
 #if 0
 void rttFreeResult(struct RTT_INFO *prRttInfo, uint8_t aucBSSID[])
