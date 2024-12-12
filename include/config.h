@@ -48,6 +48,15 @@
 #define CFG_BUILT_IN_DRIVER         0
 #endif
 
+/*
+ * 0 (ASIC)
+ * 1 (CTD bitfile)
+ * 2 (SPD bitfile)
+ */
+#ifndef CFG_MTK_FPGA_PLATFORM
+#define CFG_MTK_FPGA_PLATFORM			0
+#endif
+
 /* Mike 2016/09/01 ALPS update K3.18 80211_disconnect to K4.4 version*/
 /* work around for any alps K3.18 platform*/
 #ifndef CFG_WPS_DISCONNECT
@@ -840,7 +849,11 @@
 
 #define CFG_PRE_CAL_SLEEP_WAITING_INTERVAL      50000
 
+#if (CFG_MTK_FPGA_PLATFORM != 0)
+#define CFG_DEFAULT_RX_RESPONSE_TIMEOUT         10000
+#else
 #define CFG_DEFAULT_RX_RESPONSE_TIMEOUT         3000
+#endif
 
 #define CFG_PRE_CAL_RX_RESPONSE_TIMEOUT         10000
 
@@ -2464,15 +2477,6 @@
  * 0(default): Disable
  */
 #define CFG_SUPPORT_TPENHANCE_MODE          0
-
-/*
- * 0 (ASIC)
- * 1 (CTD bitfile)
- * 2 (SPD bitfile)
- */
-#ifndef CFG_MTK_FPGA_PLATFORM
-#define CFG_MTK_FPGA_PLATFORM			0
-#endif
 
 #define MLD_HYBRID_MLO_LINK_NUM 3
 
