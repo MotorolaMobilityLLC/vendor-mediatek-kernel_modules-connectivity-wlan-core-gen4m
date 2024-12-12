@@ -2492,12 +2492,12 @@ void wlanTxCmdDoneCb(struct ADAPTER *prAdapter,
 	if (!prCmdInfo->fgSetQuery || prCmdInfo->fgNeedResp) {
 		if (wlanIfCmdDbgEn(prAdapter)) {
 			DBGLOG(TX, INFO,
-				"Add command: %p, %ps, cmd=0x%02X, seq=%u",
+				"Add command: %p, %ps, cmd=0x%02X, seq=%u\n",
 				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		} else {
 			DBGLOG(TX, INFO,
-				"Add command: %p, %p, cmd=0x%02X, seq=%u",
+				"Add command: %p, %p, cmd=0x%02X, seq=%u\n",
 				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		}

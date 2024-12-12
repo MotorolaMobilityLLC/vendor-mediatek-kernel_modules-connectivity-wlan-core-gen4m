@@ -7321,8 +7321,8 @@ static int32_t wlanOnPreNetRegister(struct GLUE_INFO *prGlueInfo,
 				kalMemCopy(ndev->perm_addr,
 					ndev->dev_addr,	ETH_ALEN);
 #if CFG_SHOW_MACADDR_SOURCE
-				DBGLOG(INIT, INFO, "MAC%d address: " MACSTR, i,
-				MAC2STR(&MacAddr.sa_data));
+				DBGLOG(INIT, INFO, "MAC%d address: " MACSTR
+				"\n", i, MAC2STR(&MacAddr.sa_data));
 #endif
 			}
 		}

@@ -4956,7 +4956,7 @@ mtk_cfg80211_tdls_mgmt(struct wiphy *wiphy,
 		 sizeof(struct TDLS_CMD_LINK_MGT),
 		 &u4BufLen);
 
-	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+	DBGLOG(REQ, INFO, "rStatus: %x\n", rStatus);
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		return 0;
@@ -5089,7 +5089,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
 
-	DBGLOG(REQ, INFO, "ucBssIndex = %d, oper=%d",
+	DBGLOG(REQ, INFO, "ucBssIndex = %d, oper=%d\n",
 		ucBssIndex, oper);
 
 	ASSERT(prGlueInfo);
@@ -5104,7 +5104,7 @@ int mtk_cfg80211_tdls_oper(struct wiphy *wiphy,
 			sizeof(struct TDLS_CMD_LINK_OPER),
 			&u4BufLen);
 
-	DBGLOG(REQ, INFO, "rStatus: %x", rStatus);
+	DBGLOG(REQ, INFO, "rStatus: %x\n", rStatus);
 
 	if (rStatus == WLAN_STATUS_SUCCESS)
 		return 0;

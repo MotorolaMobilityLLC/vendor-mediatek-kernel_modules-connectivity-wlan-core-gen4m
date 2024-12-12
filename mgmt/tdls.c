@@ -1093,7 +1093,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		return -EINVAL;
 	}
 
-	DBGLOG(TDLS, INFO, "u4SetBufferLen=%d", u4SetBufferLen);
+	DBGLOG(TDLS, INFO, "u4SetBufferLen=%d\n", u4SetBufferLen);
 
 #if 1
 	/* AIS only */
@@ -1110,7 +1110,7 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 	}
 #endif
 
-	DBGLOG(TDLS, INFO, "prCmd->ucActionCode=%d, prCmd->ucDialogToken=%d",
+	DBGLOG(TDLS, INFO, "prCmd->ucActionCode=%d, prCmd->ucDialogToken=%d\n",
 		prCmd->ucActionCode, prCmd->ucDialogToken);
 
 	prStaRec = prBssInfo->prStaRecOfAP;
@@ -1205,11 +1205,11 @@ uint32_t TdlsexLinkMgt(struct ADAPTER *prAdapter,
 		break;
 
 	default:
-		DBGLOG(TDLS, INFO, "default=%d", prCmd->ucActionCode);
+		DBGLOG(TDLS, INFO, "default=%d\n", prCmd->ucActionCode);
 		return -EINVAL;
 	}
 
-	DBGLOG(TDLS, INFO, "rResult=%d", rResult);
+	DBGLOG(TDLS, INFO, "rResult=%d\n", rResult);
 
 	return rResult;
 }

@@ -321,7 +321,8 @@ static void statsParseARPInfo(void *pvPacket, uint8_t *pucArp,
 			DBGLOG(RX, INFO,
 			   "<RX> ARP Req DA=" MACSTR
 			   " SRC MAC/IP[" MACSTR "]/[" IPV4STR
-			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR "], SeqNo: %d",
+			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR
+			   "], SeqNo: %d\n",
 			   MAC2STR(prEth->aucDestAddr),
 			   MAC2STR(prArp->aucSenderMACaddr),
 			   IPV4TOSTR(prArp->aucSenderIPaddr),
@@ -332,7 +333,8 @@ static void statsParseARPInfo(void *pvPacket, uint8_t *pucArp,
 			DBGLOG(RX, INFO,
 			   "<RX> ARP Rsp DA=" MACSTR
 			   " SRC MAC/IP[" MACSTR "]/[" IPV4STR
-			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR "], SeqNo: %d",
+			   "], TAR MAC/IP[" MACSTR "]/[" IPV4STR
+			   "], SeqNo: %d\n",
 			   MAC2STR(prEth->aucDestAddr),
 			   MAC2STR(prArp->aucSenderMACaddr),
 			   IPV4TOSTR(prArp->aucSenderIPaddr),
@@ -787,66 +789,66 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 			GLUE_SET_PKT_FLAG(pvPacket, ENUM_PKT_ICMPV6);
 			if (unlikely(!icmp6msg)) {
 				DBGLOG_LIMITED(RX, INFO,
-					       "<RX><IPv6> ICMPV6 type=%u SSN:%u",
+					       "<RX><IPv6> ICMPV6 type=%u SSN:%u\n",
 					       ucICMPv6Type, u2SSN);
 			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
 				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
 				DBGLOG_LIMITED(RX, INFO,
 					       "<RX><IPv6> ICMPv6: %s, Id BE 0x%04x, Seq BE 0x%04x, MAC:"
-					       MACSTR " SSN:%u",
+					       MACSTR " SSN:%u\n",
 					       icmp6msg, u2IcmpId, u2IcmpSeq,
 					       MAC2STR(prEth->aucSrcAddr),
 					       u2SSN);
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
 				DBGLOG_LIMITED(RX, INFO,
-					       "<RX><IPv6> ICMPv6: %s, who has: %s link: %s, SSN:%u",
+					       "<RX><IPv6> ICMPv6: %s, who has: %s link: %s, SSN:%u\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr, u2SSN);
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
 				DBGLOG_LIMITED(RX, INFO,
-					       "<RX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SSN:%u",
+					       "<RX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SSN:%u\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr, u2SSN);
 
 			} else {
 				DBGLOG_LIMITED(RX, INFO,
-					       "<RX><IPv6> ICMPv6 %s SSN:%u",
+					       "<RX><IPv6> ICMPv6 %s SSN:%u\n",
 					       icmp6msg, u2SSN);
 			}
 		} else { /* EVENT_TX */
 
 			if (unlikely(!icmp6msg)) {
 				DBGLOG_LIMITED(TX, INFO,
-					       "<TX><IPv6> ICMPV6 type=%u, SeqNo: %d",
+					       "<TX><IPv6> ICMPV6 type=%u, SeqNo: %d\n",
 					       ucICMPv6Type,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type == ICMPV6_TYPE_ECHO_REQUEST ||
 				   ucICMPv6Type == ICMPV6_TYPE_ECHO_REPLY) {
 				DBGLOG_LIMITED(TX, INFO,
 						"<TX><IPv6> ICMPv6: %s, Id 0x%04x, Seq BE 0x%04x, MAC:"
-						MACSTR " SeqNo: %d",
+						MACSTR " SeqNo: %d\n",
 						icmp6msg, u2IcmpId, u2IcmpSeq,
 						MAC2STR(prEth->aucDestAddr),
 						GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_SOLICITATION) {
 				DBGLOG_LIMITED(TX, INFO,
-					       "<TX><IPv6> ICMPv6: %s, who has: %s link: %s, SeqNo: %d",
+					       "<TX><IPv6> ICMPv6: %s, who has: %s link: %s, SeqNo: %d\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else if (ucICMPv6Type ==
 				   ICMPV6_TYPE_NEIGHBOR_ADVERTISEMENT) {
 				DBGLOG_LIMITED(TX, INFO,
-					       "<TX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SeqNo: %d",
+					       "<TX><IPv6> ICMPv6: %s, tgt is: %s link: %s, SeqNo: %d\n",
 					       icmp6msg, aucTargetAddr,
 					       aucLinkAddr,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			} else {
 				DBGLOG_LIMITED(TX, INFO,
-					       "<TX><IPv6> ICMPv6 %s, SeqNo: %u",
+					       "<TX><IPv6> ICMPv6 %s, SeqNo: %u\n",
 					       icmp6msg,
 					       GLUE_GET_PKT_SEQ_NO(pvPacket));
 			}
