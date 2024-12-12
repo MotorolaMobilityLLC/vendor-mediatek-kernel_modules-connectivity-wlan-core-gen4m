@@ -267,10 +267,10 @@ ReleaseNanSlotsForSchedulePrep(
 
 #if (CFG_SUPPORT_NAN_11BE == 1)
 		u4ReschedSlot = fgIsEhtRescheduleNewNDL ?
-			(NAN_SLOT_MASK_TYPE_AIS | NAN_SLOT_MASK_TYPE_NDL) :
-			NAN_SLOT_MASK_TYPE_NDL;
+			NAN_SLOT_MASK_TYPE_AIS | nanGetNdlSlots(prAdapter) :
+			nanGetNdlSlots(prAdapter);
 #else
-		u4ReschedSlot = NAN_SLOT_MASK_TYPE_NDL;
+		u4ReschedSlot = nanGetNdlSlots(prAdapter);
 #endif
 
 		nanSchedReleaseReschedCommitSlot(prAdapter,
@@ -281,7 +281,7 @@ ReleaseNanSlotsForSchedulePrep(
 /* Only need release if REMOVE_NDL condition recover to customer requirement */
 #ifdef NAN_UNUSED
 		nanSchedReleaseReschedCommitSlot(prAdapter,
-			NAN_SLOT_MASK_TYPE_NDL,
+			nanGetNdlSlots(prAdapter)),
 			nanGetTimelineMgmtIndexByBand(prAdapter,
 			BAND_5G));
 #else

@@ -8872,7 +8872,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanSkipAnqp, "NanSkipAnqp", 0,
 		FEATURE_TO_CUSTOMER);
-	/* 0: disabled; 1: 5G only; 2: 5G+2G (not completed yet) */
+	/* Flash Communication
+	 * 0: disabled; 1: 5G only; 2: 5G+2G (not completed yet)
+	 */
 	INIT_UINT(prWifiVar->fgNanAutoFC, "NanAutoFC", 0,
 		FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgNanConcurrency, "NanConcurrency", 0,

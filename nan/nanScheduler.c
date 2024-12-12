@@ -7093,7 +7093,7 @@ uint32_t nanSchedCheckBandNDLSlotCommitNum(struct ADAPTER *prAdapter,
 			/* Only check input band commit slot num */
 			u4NDLSlotAvailMap |=
 				(prChnlTimeline->au4AvailMap[0] &
-				 NAN_SLOT_MASK_TYPE_NDL);
+				 nanGetNdlSlots(prAdapter));
 		}
 	}
 
@@ -8537,7 +8537,9 @@ nanSchedNegoIsRmtCrbConflict(
 					nanGetTimelineMgmtIndexByBand(
 								prAdapter,
 								BAND_5G) &&
-				    NAN_SLOT_IS_FC(u4SlotOffset))
+				    NAN_SLOT_TIMELINE_IS_FC(prAdapter,
+							    szTimeLineIdx,
+							    u4SlotOffset))
 					continue;
 
 				if (pfgEmptyMapSet && aau4EmptyMap) {
@@ -14910,9 +14912,9 @@ u_int8_t nanCheckIsNeedReschedule(struct ADAPTER *prAdapter,
 	else if (event == AIS_DISCONNECTED)
 		slot_mask = NAN_SLOT_MASK_TYPE_AIS;
 	else if (event == NEW_NDL)
-		slot_mask = NAN_SLOT_MASK_TYPE_NDL;
+		slot_mask = nanGetNdlSlots(prAdapter);
 	else if (event == REMOVE_NDL)
-		slot_mask = NAN_SLOT_MASK_TYPE_NDL;
+		slot_mask = nanGetNdlSlots(prAdapter);
 
 	nanGetMaxCapabilityAllPeers(prAdapter, &eAllPeerMaxCap, &eAnyPeerMaxCap,
 				    &eAllPeerAbandMaxCap, &ucAllPeerMaxPhy);
@@ -15023,7 +15025,8 @@ u_int8_t nanCheckIsNeedReschedule(struct ADAPTER *prAdapter,
 
 			if (nanGetPeerCommitted(prAdapter, TIMELINE_BAND_5G6G,
 							&committed)) {
-				ndl_slots = committed & NAN_SLOT_MASK_TYPE_NDL;
+				ndl_slots = committed &
+					nanGetNdlSlots(prAdapter);
 				ais_slots = committed & NAN_SLOT_MASK_TYPE_AIS;
 
 				DBGLOG(NAN, INFO,
@@ -15337,17 +15340,18 @@ uint8_t nanSchedNegoChk56GIntersectBySlot(struct ADAPTER *prAdapter,
 }
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE_CHANNEL_SELECTION == 1)
-uint32_t nanSchedSelectNegoSlot(enum RESCHEDULE_SOURCE eReschedSrc)
+uint32_t nanSchedSelectNegoSlot(struct ADAPTER *prAdapter,
+				enum RESCHEDULE_SOURCE eReschedSrc)
 {
 	if (eReschedSrc == AIS_CONNECTED || eReschedSrc == AIS_DISCONNECTED)
 		return NAN_SLOT_MASK_TYPE_AIS;
 
 	if (eReschedSrc == NEW_NDL)
-		return NAN_SLOT_MASK_TYPE_NDL;
+		return nanGetNdlSlots(prAdapter);
 
 	/* Use AIS + NDL slot to recover full slot for last peer */
 	if (eReschedSrc == REMOVE_NDL)
-		return NAN_SLOT_MASK_TYPE_AIS | NAN_SLOT_MASK_TYPE_NDL;
+		return NAN_SLOT_MASK_TYPE_AIS | nanGetNdlSlots(prAdapter);
 
 	return NAN_SLOT_MASK_TYPE_DEFAULT;
 }
@@ -16137,6 +16141,29 @@ static union _NAN_BAND_CHNL_CTRL nanSchedNegoFindFCSlotCrb(
 	return rSelChnlInfo;
 }
 
+/**
+ *                         1                   2                   3
+ *     0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+ * 2G: DW     NDL     |      AIS      |      NDL      |      AIS
+ * 5G:     AIS        |DW    NDL      |      AIS      |      NDL
+ *                    |  FCFCFC       |                                #case 1
+ *                    | NDC--         |                                #case 2
+ *                    |  --NDC        |                                #case 3
+ *                    | NDC(NDL==149) |                                #case 4
+ * case 1: (no P2P || P2P in social channel) && FC configured
+ *	   NDL=6G ch5 or 149. Last FC slot can be used for channel switch
+ * case 2: (P2P active in non-social channel || max common == 6G) && !FC
+ *	   NDL=P2P channel or 6G ch5. NDC=149, reserve a channel switch slot
+ *	   FC not configured, set NDC=social channel, reserve ChnlSwitchSlot
+ * case 3: Skip this case currently
+ * case 4: (no P2P && max common != 6G || P2P in social channel)
+ *	   NDL=149, no channel switch required.
+ *
+ * Summary:
+ * #9=149(44) always, TODO: peer commit on other slots, lead to bad performance
+ * #10=149 if FC else fill by NDL,
+ * Reset #10 if !FC && #11 != 149(44) for channel switch
+ */
 union _NAN_BAND_CHNL_CTRL
 nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			unsigned char fgPrintLog,
@@ -16145,40 +16172,46 @@ nanSchedNegoFindSlotCrb(struct ADAPTER *prAdapter,
 			unsigned char fgReschedForce5G,
 			unsigned char *pfgNotChoose6G)
 {
-	union _NAN_BAND_CHNL_CTRL rSelChnlInfo = {.u4RawData = 0};
+	union _NAN_BAND_CHNL_CTRL rSelChnlInfo = g_rNullChnl;
 
-#if (CFG_SUPPORT_NAN_11BE == 1)
-	if (prAdapter->rWifiVar.ucNanEhtCHSwitchMode == 2) {
-		if (NAN_SLOT_IS_M2_CH_SWITCH(szSlotIdx)) {
-			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) CH switch slot(%zu): Force empty for M2 CH switch\n",
-				      szTimeLineIdx, szSlotIdx);
-			return g_rNullChnl;
-		}
-	} else if (prAdapter->rWifiVar.ucNanEhtCHSwitchMode == 4) {
-		if (NAN_SLOT_IS_M4_CH_SWITCH(szSlotIdx)) {
-			NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
-				      "Tidx(%u) CH switch slot(%zu): Force empty for M4 CH switch\n",
-				      szTimeLineIdx, szSlotIdx);
-			return g_rNullChnl;
-		}
-	}
-#endif
+	if (nanIsChnlSwitchSlot(prAdapter, fgPrintLog,
+				szTimeLineIdx, szSlotIdx))
+		return g_rNullChnl;
 
-	if (NAN_SLOT_IS_AIS(szSlotIdx))
+	if (NAN_SLOT_IS_AIS(szSlotIdx)) {
 		rSelChnlInfo = nanSchedNegoFindAisSlotCrb(prAdapter, fgPrintLog,
 						szTimeLineIdx, szSlotIdx);
-	else if (NAN_SLOT_IS_NDL(szSlotIdx)) {
+		NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
+			      "Find AIS slot timeline:%u, slot=%u, ch=%u\n",
+			      szTimeLineIdx, szSlotIdx,
+			      rSelChnlInfo.u4PrimaryChnl);
+		return rSelChnlInfo;
+	}
+
+	if (NAN_SLOT_IS_NDL(prAdapter, szSlotIdx)) {
 		rSelChnlInfo = nanSchedNegoFindNdlSlotCrb(prAdapter, fgPrintLog,
 						szTimeLineIdx, szSlotIdx,
 						fgReschedForce5G,
 						pfgNotChoose6G);
-	} else {
-		rSelChnlInfo = nanSchedNegoFindFCSlotCrb(prAdapter, fgPrintLog,
-						szTimeLineIdx, szSlotIdx);
+		NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
+			      "Find NDL slot timeline:%u, slot=%u, ch=%u\n",
+			      szTimeLineIdx, szSlotIdx,
+			      rSelChnlInfo.u4PrimaryChnl);
+		return rSelChnlInfo;
 	}
 
-	return rSelChnlInfo;
+	if (NAN_SLOT_TIMELINE_IS_FC(prAdapter, szTimeLineIdx, szSlotIdx)) {
+		rSelChnlInfo = nanSchedNegoFindFCSlotCrb(prAdapter, fgPrintLog,
+						szTimeLineIdx, szSlotIdx);
+		NAN_DW_DBGLOG(NAN, INFO, fgPrintLog, szSlotIdx,
+			      "Find FC slot timeline:%u, slot=%u, ch=%u\n",
+			      szTimeLineIdx, szSlotIdx,
+			      rSelChnlInfo.u4PrimaryChnl);
+
+		return rSelChnlInfo;
+	}
+
+	return g_rNullChnl;
 }
 
 uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
@@ -16236,11 +16269,12 @@ uint32_t nanSchedNegoGenDefCrbV2(struct ADAPTER *prAdapter,
 	u4NegoTransIdx = nanSchedGetCurrentNegoTransIdx(prAdapter);
 	eReschedSrc = prNegoCtrl->rNegoTrans[u4NegoTransIdx].eReschedSrc;
 #endif
-	u4NegoSlot = nanSchedSelectNegoSlot(eReschedSrc);
+	u4NegoSlot = nanSchedSelectNegoSlot(prAdapter, eReschedSrc);
 
 #if (CFG_SUPPORT_NAN_RESCHEDULE == 1 && CFG_SUPPORT_NAN_11BE == 1)
 	if (prNegoCtrl->rNegoTrans[u4NegoTransIdx].fgIsEhtReschedule)
-		u4NegoSlot = NAN_SLOT_MASK_TYPE_AIS | NAN_SLOT_MASK_TYPE_NDL;
+		u4NegoSlot = NAN_SLOT_MASK_TYPE_AIS |
+			nanGetNdlSlots(prAdapter);
 #endif
 
 	/* For NEW_NDL, use half 6G and half 5G for reschedule performance.

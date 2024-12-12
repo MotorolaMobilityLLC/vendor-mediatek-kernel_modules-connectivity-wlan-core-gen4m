@@ -8,8 +8,20 @@
 
 #if !CFG_SUPPORT_NAN_EXT
 static inline
+void nanSetFlashCommunication(struct ADAPTER *prAdapter, u_int8_t fgEnable)
+{
+	DBGLOG(NAN, TRACE, "Set Flash Communication %u\n", fgEnable);
+	/* TODO:
+	 * 1. Set 2.4GHz/5GHz bitmap respectively
+	 * 2. Call reconfigure function to update customized timeline
+	 * 3. Send command to FW to set the bitmap, reuse Instant communication?
+	 */
+}
+
+static inline
 void nanExtEnableReq(struct ADAPTER *prAdapter)
 {
+	nanSetFlashCommunication(prAdapter, TRUE);
 }
 
 static inline
@@ -102,6 +114,56 @@ uint32_t nanSchedGetVendorAttr(struct ADAPTER *prAdapter,
 	return 0;
 }
 
+static inline
+uint32_t nanGetFcSlots(struct ADAPTER *prAdapter)
+{
+	uint32_t u4Bitmap = 0;
+
+	DBGLOG(NAN, TRACE, "FC slots: %02x-%02x-%02x-%02x\n",
+	       ((uint8_t *)&u4Bitmap)[0], ((uint8_t *)&u4Bitmap)[1],
+	       ((uint8_t *)&u4Bitmap)[2], ((uint8_t *)&u4Bitmap)[3]);
+
+	return u4Bitmap;
+}
+
+static inline
+uint32_t nanGetTimelineFcSlots(struct ADAPTER *prAdapter, size_t szTimelineIdx,
+			       size_t szSlotIdx)
+{
+	uint32_t u4Bitmap = 0;
+
+	NAN_DW_DBGLOG(NAN, INFO, TRUE, szSlotIdx,
+		      "Timeline %u FC slots: %02x-%02x-%02x-%02x\n",
+		      szTimelineIdx,
+		      ((uint8_t *)&u4Bitmap)[0], ((uint8_t *)&u4Bitmap)[1],
+		      ((uint8_t *)&u4Bitmap)[2], ((uint8_t *)&u4Bitmap)[3]);
+
+	return u4Bitmap;
+}
+
+static inline
+u_int8_t nanIsChnlSwitchSlot(struct ADAPTER *prAdapter,
+			     unsigned char fgPrintLog,
+			     size_t szTimeLineIdx,
+			     size_t szSlotIdx)
+{
+	const uint32_t u4Def5GNDCSlotIdx = NAN_5G_DW_INDEX + 1;
+	const size_t sz5gTimeLineIdx =
+		nanGetTimelineMgmtIndexByBand(prAdapter, BAND_5G);
+
+	/**
+	 * change 9452466
+	 * Reason:
+	 *   8: DW
+	 *   9: NDC
+	 *   10: channel switch
+	 */
+	if (szTimeLineIdx == sz5gTimeLineIdx &&
+	    szSlotIdx % NAN_SLOTS_PER_DW_INTERVAL == u4Def5GNDCSlotIdx + 1)
+		return TRUE;
+
+	return FALSE;
+}
 
 #endif
 

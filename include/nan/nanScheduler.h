@@ -121,13 +121,10 @@
 #define NAN_NON_DBDC_6G_AIS 0x00FF00FC
 
 #define NAN_SLOT_MASK_TYPE_AIS 0x00FF00FF /* 0~7, 16~23 */
-#define NAN_SLOT_MASK_TYPE_NDL 0xFF00F000 /* 12~15, 24~31 */
-#define NAN_SLOT_MASK_TYPE_FC  0x00000F00 /* 8~11 */
+#define NAN_SLOT_MASK_TYPE_DEFAULT_NDL 0xFF00FE00 /* 9~15, 24~31 */
+#define nanGetNdlSlots(_adapter) \
+	(NAN_SLOT_MASK_TYPE_DEFAULT_NDL & ~nanGetFcSlots(_adapter))
 #define NAN_SLOT_MASK_TYPE_DEFAULT 0xFFFFFFFF /* For NDP setup */
-/* Use 7,10,11,30,31 for channel switch */
-#define NAN_SLOT_MASK_TYPE_M2_CH_SWITCH 0xC0000C80
-/* Use 7,11 for channel switch */
-#define NAN_SLOT_MASK_TYPE_M4_CH_SWITCH 0x00000880
 
 #define NAN_DW_INDEX(__szSlotIdx) ((__szSlotIdx) / NAN_SLOTS_PER_DW_INTERVAL)
 #define NAN_SLOT_INDEX(__szSlotIdx) ((__szSlotIdx) % NAN_SLOTS_PER_DW_INTERVAL)
@@ -136,16 +133,18 @@
 
 #define NAN_SLOT_IS_AIS(_szSlotIdx)	\
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_AIS)
-#define NAN_SLOT_IS_NDL(_szSlotIdx)	\
-	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_NDL)
-#define NAN_SLOT_IS_FC(_szSlotIdx)	\
-	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_FC)
+#define NAN_SLOT_IS_NDL(_adapter, _szSlotIdx)	\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & nanGetNdlSlots(_adapter))
+#define NAN_SLOT_IS_FC(_adapter, _szSlotIdx)	\
+	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & nanGetFcSlots(_adapter))
 
 #define NAN_SLOT_IS_M2_CH_SWITCH(_szSlotIdx) \
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_M2_CH_SWITCH)
 #define NAN_SLOT_IS_M4_CH_SWITCH(_szSlotIdx)\
 	(BIT(NAN_SLOT_INDEX(_szSlotIdx)) & NAN_SLOT_MASK_TYPE_M4_CH_SWITCH)
-
+#define NAN_SLOT_TIMELINE_IS_FC(_adapter, _szTimelineIdx, _szSlotIdx) \
+	(BIT(_szSlotIdx) & \
+	 nanGetTimelineFcSlots(_adapter, _szTimelineIdx, _szSlotIdx))
 
 /* Limited log */
 #define NAN_DW_DBGLOG(Mod, Clz, Print, Index, Fmt, ...)			\

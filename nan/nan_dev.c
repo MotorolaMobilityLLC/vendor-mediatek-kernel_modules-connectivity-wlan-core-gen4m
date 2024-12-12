@@ -1234,6 +1234,8 @@ void nanConcurrencyHandler(struct ADAPTER *prAdapter)
 		aisBssBeaconTimeout(prAdapter,
 		aisGetDefaultLinkBssIndex(prAdapter));
 #endif
+
+	nanSetFlashCommunication(prAdapter, FALSE);
 }
 
 u_int8_t nanIsConcurrency(struct ADAPTER *prAdapter)
