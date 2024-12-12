@@ -4763,7 +4763,8 @@ void nicTxSetPktLowestFixedRate(struct ADAPTER *prAdapter,
 		u4CurrentPhyRate = nicRateCode2PhyRate(u2RateCode,
 			FIX_BW_NO_FIXED, MAC_GI_NORMAL, AR_SS_NULL);
 
-		if (prBssInfo->u4CoexPhyRateLimit > u4CurrentPhyRate) {
+		if (u4CurrentPhyRate &&
+		    prBssInfo->u4CoexPhyRateLimit > u4CurrentPhyRate) {
 			nicGetRateIndexFromRateSetWithLimit(
 				u2OperationalRateSet,
 				prBssInfo->u4CoexPhyRateLimit,
