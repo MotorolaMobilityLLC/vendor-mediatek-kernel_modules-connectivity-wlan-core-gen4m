@@ -3758,9 +3758,7 @@ static void mt6653ShowPcieDebugInfo(struct GLUE_INFO *prGlueInfo)
 #if CFG_SUPPORT_PCIE_ASPM
 static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 {
-	struct pci_dev *pci_dev = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
-	uint32_t u4RegVal[25] = {0};
+	uint32_t u4RegVal[3] = {0};
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	uint32_t link_info = mtk_pcie_dump_link_info(0);
 #endif
@@ -3776,41 +3774,34 @@ static u_int8_t mt6653DumpPcieDateFlowStatus(struct GLUE_INFO *prGlueInfo)
 	}
 #endif
 
-	/*read pcie cfg.space 0x488 // level1: pcie*/
-	prHifInfo = &prGlueInfo->rHifInfo;
-	if (prHifInfo)
-		pci_dev = prHifInfo->pdev;
-
-	if (pci_dev) {
-		pci_read_config_dword(pci_dev, 0x0, &u4RegVal[0]);
-		if (u4RegVal[0] == 0 || u4RegVal[0] == 0xffffffff) {
-			DBGLOG(HAL, INFO,
-				"PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
-			/* block pcie to prevent access */
+	glReadPcieCfgSpace(0x0, &u4RegVal[0]);
+	if (u4RegVal[0] == 0 || u4RegVal[0] == 0xffffffff) {
+		DBGLOG(HAL, INFO,
+		       "PCIE link down 0x0=0x%08x\n", u4RegVal[0]);
+		/* block pcie to prevent access */
 #if CFG_MTK_WIFI_PCIE_SUPPORT
-			mtk_pcie_disable_data_trans(0);
+		mtk_pcie_disable_data_trans(0);
 #endif
-			return FALSE;
-		}
+		return FALSE;
+	}
 
-		/*1. read pcie cfg.space 0x488 // Readable check*/
-		pci_read_config_dword(pci_dev, 0x488, &u4RegVal[1]);
-		if ((u4RegVal[1] & 0x3811) != 0x3811 ||
-			u4RegVal[1] == 0xffffffff) {
-			pci_read_config_dword(pci_dev, 0x48C, &u4RegVal[2]);
-			DBGLOG(HAL, INFO,
-				"Cb_infra bus fatal error and un-readble 0x488=0x%08x 0x48C=0x%08x\n",
-				u4RegVal[1], u4RegVal[2]);
-			return FALSE;
-		}
+	/*1. read pcie cfg.space 0x488 // Readable check*/
+	glReadPcieCfgSpace(0x488, &u4RegVal[1]);
+	if ((u4RegVal[1] & 0x3811) != 0x3811 ||
+	    u4RegVal[1] == 0xffffffff) {
+		glReadPcieCfgSpace(0x48C, &u4RegVal[2]);
+		DBGLOG(HAL, INFO,
+		       "Cb_infra bus fatal error and un-readble 0x488=0x%08x 0x48C=0x%08x\n",
+		       u4RegVal[1], u4RegVal[2]);
+		return FALSE;
+	}
 
 #if CFG_MTK_WIFI_PCIE_SR
-		if (!fgIsL2Finished) {
-			DBGLOG(HAL, INFO, "L2 not finished\n");
-			return FALSE;
-		}
-#endif
+	if (!fgIsL2Finished) {
+		DBGLOG(HAL, INFO, "L2 not finished\n");
+		return FALSE;
 	}
+#endif
 
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	/* MalfTLP */

@@ -355,19 +355,24 @@ end_dump:
 
 static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 {
-	struct GLUE_INFO *prGlueInfo = NULL;
-	struct GL_HIF_INFO *prHifInfo = NULL;
+	struct mt66xx_chip_info *prChipInfo;
+	struct GLUE_INFO *prGlueInfo;
+	struct BUS_INFO *prBusInfo;
+	struct GL_HIF_INFO *prHifInfo;
 	struct CHIP_DBG_OPS *prDbgOps;
+	u_int8_t fgIsDrvOwn = FALSE;
 
-	ASSERT(prAdapter);
 	prGlueInfo = prAdapter->prGlueInfo;
-	ASSERT(prGlueInfo);
+	prChipInfo = prAdapter->chip_info;
+	prBusInfo = prChipInfo->bus_info;
 	prHifInfo = &prGlueInfo->rHifInfo;
+	prDbgOps = prChipInfo->prDebugOps;
+
+	if (!prAdapter->u4HifDbgFlag)
+		return TRUE;
 
 	/* Avoid register checking */
 	prHifInfo->fgIsDumpLog = true;
-
-	prDbgOps = prAdapter->chip_info->prDebugOps;
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_HOST_CSR)) {
 		if (prDbgOps && prDbgOps->showCsrInfo) {
@@ -380,11 +385,10 @@ static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 
 #if (CFG_SUPPORT_CONNAC2X == 1)
 	/* need to check Bus readable */
-	if (prAdapter->chip_info->checkbusNoAck) {
+	if (prChipInfo->checkbusNoAck) {
 		uint32_t ret = 0;
 
-		ret = prAdapter->chip_info->checkbusNoAck((void *) prAdapter,
-				TRUE);
+		ret = prChipInfo->checkbusNoAck((void *)prAdapter, TRUE);
 		if (ret != 0) {
 			DBGLOG(HAL, ERROR,
 				"return due to checkbusNoAck fail %d\n", ret);
@@ -394,25 +398,17 @@ static u_int8_t halDumpHifDebugLog(struct ADAPTER *prAdapter)
 #endif
 
 	/* Check Driver own HW CR */
-	{
-		struct BUS_INFO *prBusInfo = NULL;
-		u_int8_t driver_owen_result = 0;
+	if (prBusInfo->lowPowerOwnRead)
+		prBusInfo->lowPowerOwnRead(prAdapter, &fgIsDrvOwn);
+	else {
+		DBGLOG(HAL, ERROR, "return due to null API\n");
+		return FALSE;
+	}
 
-		prBusInfo = prGlueInfo->prAdapter->chip_info->bus_info;
-
-		if (prBusInfo->lowPowerOwnRead)
-			prBusInfo->lowPowerOwnRead(prGlueInfo->prAdapter,
-				&driver_owen_result);
-		else {
-			DBGLOG(HAL, ERROR, "retrun due to null API\n");
-			return FALSE;
-		}
-
-		if (driver_owen_result == 0) {
-			DBGLOG(HAL, ERROR, "return, not driver-own[%d]\n",
-				driver_owen_result);
-			return FALSE;
-		}
+	if (fgIsDrvOwn == 0) {
+		DBGLOG(HAL, ERROR, "return, not driver-own[%u]\n",
+		       fgIsDrvOwn);
+		return FALSE;
 	}
 
 	if (prAdapter->u4HifDbgFlag & (DEG_HIF_ALL | DEG_HIF_PLE)) {
