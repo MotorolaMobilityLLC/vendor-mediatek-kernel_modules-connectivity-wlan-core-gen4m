@@ -2501,10 +2501,12 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc = prBssDescSet->prMainBssDesc;
 	struct ROAMING_INFO *roam;
 	struct BSS_INFO *aisBssInfo;
+	enum ENUM_ROAMING_REASON eReason;
 
 	ais = aisGetAisFsmInfo(prAdapter, ucBssIndex);
 	aisBssInfo = aisGetAisBssInfo(prAdapter, ucBssIndex);
 	roam = aisGetRoamingInfo(prAdapter, ucBssIndex);
+	eReason = roam->eReason;
 
 	if (prBssDesc) {
 		DBGLOG(ROAMING, INFO,
@@ -2573,7 +2575,7 @@ enum ENUM_AIS_STATE aisSearchHandleBadBssDesc(struct ADAPTER *prAdapter,
 			ucBssIndex);
 
 	/* quick disconnect when bto scan can't find better AP*/
-	if (roam->eReason == ROAMING_REASON_BEACON_TIMEOUT) {
+	if (eReason == ROAMING_REASON_BEACON_TIMEOUT) {
 		struct MSG_AIS_ABORT *prAisAbortMsg;
 		struct BSS_DESC *prBtoBssDesc;
 
