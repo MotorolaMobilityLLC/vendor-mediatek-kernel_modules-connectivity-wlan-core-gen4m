@@ -8987,7 +8987,10 @@ int wlanFuncOn(void)
 	ret = connsys_power_done();
 	if (ret)
 		goto func_off;
-
+#if CFG_HDM_WIFI_SUPPORT
+	else
+		HdmWifi_SysfsUninit();
+#endif
 	goto exit;
 
 func_off:

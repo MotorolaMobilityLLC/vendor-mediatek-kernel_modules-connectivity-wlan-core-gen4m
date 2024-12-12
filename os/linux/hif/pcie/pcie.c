@@ -3053,6 +3053,9 @@ int32_t glBusFuncOn(void)
 	if (ret) {
 		DBGLOG(HAL, ERROR, "mtk_pcie_probe_port failed, ret=%d\n",
 			ret);
+#if CFG_HDM_WIFI_SUPPORT
+		HdmWifi_SysfsInit();
+#endif
 		return ret;
 	}
 #endif
