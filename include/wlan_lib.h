@@ -551,6 +551,13 @@ enum ENUM_T2LM_NEGOTIATION_SUPPORT {
 	T2LM_EACH_TIDS_DIFFERENT_LINK,
 };
 
+enum ENUM_GET_RX_RATE_OPTION {
+	FEATURE_RATE_MODE_DISABLED,
+	FEATURE_RATE_MODE_MAX,
+	FEATURE_RATE_MODE_FREQUENT
+};
+
+
 enum ENUM_FEATURE_OPTION_IN_SER {
 	/* DISABLE means
 	 * 1. When driver init, driver will send fw CMD to disable the
@@ -1718,6 +1725,13 @@ struct RxRateInfo {
 	uint32_t u4Bw;
 	uint32_t u4Gi;
 	uint32_t u4Rate;
+};
+
+struct RxRateFreqInfo {
+	uint8_t ucRXVIdx;
+	uint32_t u4RxRate;
+	uint32_t u4FreqCnt;
+	u_int8_t fgVaild;
 };
 
 enum THERMAL_TEMP_TYPE {

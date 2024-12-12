@@ -1956,6 +1956,7 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec;
 	uint8_t ucStaRecIdx;
 	uint32_t *prRxV = NULL; /* pointer to destination buffer to store RxV */
+	static uint8_t ucIdx;
 
 	if (prRetSwRfb->ucStaRecIdx >= CFG_STA_REC_NUM) {
 		DBGLOG(RX, LOUD,
@@ -1997,6 +1998,14 @@ void asicConnac3xRxProcessRxvforMSP(struct ADAPTER *prAdapter,
 		prRxV[3] = prGroup3->u4Rcpi;
 
 		nicRxProcessRxvLinkStats(prAdapter, prRetSwRfb, prRxV);
+
+		if (ucIdx % RXV_RECORD_NUM == 0)
+			ucIdx = 0;
+
+		memcpy(prAdapter->arStaRec[ucStaRecIdx].au4RxVRecord[ucIdx],
+			prAdapter->arStaRec[ucStaRecIdx].au4RxV,
+			sizeof(uint32_t) * RXV_NUM);
+		ucIdx++;
 	}
 }
 #endif /* CFG_SUPPORT_MSP == 1 */

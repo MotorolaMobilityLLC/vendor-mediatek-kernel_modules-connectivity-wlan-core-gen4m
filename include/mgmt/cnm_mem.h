@@ -724,6 +724,7 @@ struct STA_RECORD {
 #endif
 #if CFG_SUPPORT_MSP
 	uint32_t au4RxV[RXV_NUM];
+	uint32_t au4RxVRecord[RXV_RECORD_NUM][RXV_NUM];
 #endif
 	uint8_t ucSmDialogToken;	/* Spectrum Mngt Dialog Token */
 	uint8_t ucSmMsmtRequestMode;	/* Measurement Request Mode */

@@ -702,7 +702,7 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 	enum ENUM_STA_TYPE eStaType, uint8_t ucBssIndex, uint8_t *pucMacAddr)
 {
 	struct STA_RECORD *prStaRec = NULL;
-	uint16_t i, k;
+	uint16_t i, k, j;
 	const uint8_t offset = pucMacAddr[5] % CFG_STA_REC_NUM;
 	uint8_t idx;
 
@@ -771,6 +771,10 @@ struct STA_RECORD *cnmStaRecAlloc(struct ADAPTER *prAdapter,
 			prStaRec->u4MinMpduLen = 0;
 
 			qosMapSetInit(prStaRec);
+
+			for (j = 0; j < RXV_RECORD_NUM; j++)
+				for (k = 0; k < RXV_NUM; k++)
+					prStaRec->au4RxVRecord[j][k] = 0xff;
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 			prStaRec->ucMldStaIndex = MLD_GROUP_NONE;

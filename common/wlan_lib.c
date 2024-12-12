@@ -9031,7 +9031,11 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 
 	INIT_UINT(prWifiVar->u4RxRateProtoFilterMask, "RxRateProtoFilterMask",
-			BIT(ENUM_PKT_ARP), FEATURE_TO_CUSTOMER);
+			BIT(ENUM_PKT_ARP) || BIT(ENUM_PKT_DHCP),
+			FEATURE_TO_CUSTOMER);
+
+	INIT_UINT(prWifiVar->ucGetRxRateMode, "GetRxRateMode",
+			FEATURE_RATE_MODE_MAX, FEATURE_TO_CUSTOMER);
 
 #if CFG_SUPPORT_BAR_DELAY_INDICATION
 	INIT_UINT(prWifiVar->fgBARDelayIndicationEn,
@@ -14406,6 +14410,103 @@ errhandle:
 	return -1;
 }
 
+static int wlanGetRxRatev2(struct GLUE_INFO *prGlueInfo,
+	uint8_t ucStaIdx, uint32_t *pu4CurRate,
+	uint32_t *pu4MaxRate, struct RxRateInfo *prRxRateInfo)
+{
+	struct ADAPTER *prAdapter;
+	struct RxRateInfo rRxRateInfo;
+	struct RxRateFreqInfo rFreqInfo[RXV_RECORD_NUM] = {0};
+	uint32_t u4CurRate = 0, u4MaxRate = 0, u4TempMaxRate = 0;
+	uint32_t *prRxV = NULL; /* pointer to stored RxV */
+	uint8_t ucIdx = 0;
+
+	prAdapter = prGlueInfo->prAdapter;
+	if (prAdapter->rWifiVar.ucGetRxRateMode == FEATURE_RATE_MODE_DISABLED)
+		return -1;
+
+	if (pu4CurRate)
+		*pu4CurRate = 0;
+	if (pu4MaxRate)
+		*pu4MaxRate = 0;
+	if (prRxRateInfo)
+		*prRxRateInfo = (const struct RxRateInfo){0};
+
+	for (; ucIdx < RXV_RECORD_NUM; ucIdx++) {
+		if (prAdapter->arStaRec[ucStaIdx].au4RxVRecord[ucIdx][0]
+			== 0xff)
+			continue;
+
+		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxVRecord[ucIdx];
+		if (wlanGetRxRate(prGlueInfo, prRxV,
+			&u4CurRate, &u4MaxRate, &rRxRateInfo) != 0)
+			continue;
+
+		if (prAdapter->rWifiVar.ucGetRxRateMode ==
+			FEATURE_RATE_MODE_MAX &&
+		    u4TempMaxRate < u4CurRate) {
+			u4TempMaxRate = u4CurRate;
+			if (pu4CurRate)
+				*pu4CurRate = u4CurRate;
+			if (pu4MaxRate)
+				*pu4MaxRate = u4MaxRate;
+			if (prRxRateInfo)
+				*prRxRateInfo = rRxRateInfo;
+		} else if (prAdapter->rWifiVar.ucGetRxRateMode
+				== FEATURE_RATE_MODE_FREQUENT) {
+			uint8_t i = 0;
+
+			for (; i < ucIdx + 1; i++) {
+				if (rFreqInfo[i].fgVaild &&
+				    rFreqInfo[i].u4RxRate != u4CurRate)
+					continue;
+
+				if (rFreqInfo[i].fgVaild) {
+					rFreqInfo[i].u4FreqCnt++;
+					rFreqInfo[i].ucRXVIdx = ucIdx;
+				} else {
+					rFreqInfo[i].u4RxRate = u4CurRate;
+					rFreqInfo[i].u4FreqCnt++;
+					rFreqInfo[i].fgVaild = TRUE;
+					rFreqInfo[i].ucRXVIdx = ucIdx;
+				}
+
+				break;
+			}
+		}
+	}
+
+	if (prAdapter->rWifiVar.ucGetRxRateMode
+		== FEATURE_RATE_MODE_FREQUENT) {
+		uint32_t u4MaxFreqCnt = 0;
+		uint8_t ucMaxFreqIdx = 0;
+		uint8_t i = 0;
+
+		for (; i < RXV_RECORD_NUM; i++) {
+			if (!rFreqInfo[i].fgVaild)
+				continue;
+
+			if (u4MaxFreqCnt < rFreqInfo[i].u4FreqCnt) {
+				u4CurRate = rFreqInfo[i].u4RxRate;
+				u4MaxFreqCnt = rFreqInfo[i].u4FreqCnt;
+				ucMaxFreqIdx = i;
+			} else if (u4MaxFreqCnt ==
+					rFreqInfo[i].u4FreqCnt &&
+				   rFreqInfo[i].u4RxRate < u4CurRate) {
+				u4CurRate = rFreqInfo[i].u4RxRate;
+				ucMaxFreqIdx = i;
+			}
+		}
+
+		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxVRecord[
+				ucMaxFreqIdx];
+		wlanGetRxRate(prGlueInfo, prRxV,
+			pu4CurRate, pu4MaxRate, prRxRateInfo);
+	}
+
+	return 0;
+}
+
 /**
  * wlanGetRxRateByBssid() - Get the RX rate in last cached RXV data
  *			    (unit: 0.1Mbps).
@@ -14465,14 +14566,19 @@ int wlanGetRxRateByBssid(struct GLUE_INFO *prGlueInfo, uint8_t ucBssIdx,
 
 	if (wlanGetStaIdxByWlanIdx(prAdapter, ucWlanIdx, &ucStaIdx) ==
 		WLAN_STATUS_SUCCESS) {
-		prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+		if (prAdapter->rWifiVar.ucGetRxRateMode) {
+			return wlanGetRxRatev2(prGlueInfo, ucStaIdx,
+					pu4CurRate, pu4MaxRate, prRxRateInfo);
+		} else {
+			prRxV = prAdapter->arStaRec[ucStaIdx].au4RxV;
+			return wlanGetRxRate(prGlueInfo, prRxV,
+					pu4CurRate, pu4MaxRate, prRxRateInfo);
+		}
 	} else {
 		DBGLOG_LIMITED(SW4, ERROR, "wlanGetStaIdxByWlanIdx fail\n");
 		return -1;
 	}
 
-	return wlanGetRxRate(prGlueInfo, prRxV,
-			pu4CurRate, pu4MaxRate, prRxRateInfo);
 }
 
 #if CFG_SUPPORT_LINK_QUALITY_MONITOR
