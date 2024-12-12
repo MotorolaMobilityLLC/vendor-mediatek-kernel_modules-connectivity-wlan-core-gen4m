@@ -7885,7 +7885,9 @@ void nicEventHwDetectReport(struct ADAPTER *prAdapter,
 
 	if (prAdapter->rWifiVar.fgHwDetectReportEn == 2) {
 		/* Trigger kernel warning */
-		kalSendAeeWarning("WLAN", "HW Detect Report: %s\n", str_buf);
+		kalSendAeeWarning(
+			"CRDISPATCH_KEY:HW DETECT WLAN",
+			"HW Detect Report: %s\n", str_buf);
 	}
 }
 #endif
