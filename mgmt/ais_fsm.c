@@ -7326,7 +7326,10 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 	}
 
 	/* 4 <1> Diagnose Connection for Beacon Timeout Event */
-	if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
+	if (prAdapter->rWifiVar.fgDisRoaming) {
+		fgDoAbortIndication = FALSE;
+		DBGLOG(AIS, TRACE, "Skip BTO roam since roam is disabled");
+	} else if (prAisBssInfo->eCurrentOPMode == OP_MODE_INFRASTRUCTURE) {
 		struct STA_RECORD *prStaRec = prAisBssInfo->prStaRecOfAP;
 
 		if (prStaRec)
@@ -7369,7 +7372,7 @@ void aisBssBeaconTimeout_impl(struct ADAPTER *prAdapter,
 		}
 	} else {
 		aisFsmStateAbort(prAdapter,
-			DISCONNECT_REASON_CODE_DEAUTHENTICATED,
+			ucDisconnectReason,
 			FALSE, ucBssIndex);
 	}
 }
