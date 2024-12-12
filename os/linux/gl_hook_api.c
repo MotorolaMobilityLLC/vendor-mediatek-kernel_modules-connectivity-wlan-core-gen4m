@@ -5086,6 +5086,7 @@ int glRFTestL0P5(void *data)
 			"timeout" : "interrupted by signal");
 		return WLAN_STATUS_FAILURE;
 	}
+	DBGLOG(RFTEST, INFO, "L0P5 reset done\n");
 
 	/* Set or Abort Mode for RF testing based on previous results */
 	u4Status = wlanSetRFTestModeCMD(prGlueInfo, prGlueInfo->fgTestFwDl);
@@ -5097,6 +5098,7 @@ int glRFTestL0P5(void *data)
 	}
 	/* Update the current state of RF Testing */
 	prGlueInfo->fgTestModeStatus = prGlueInfo->fgTestFwDl;
+	DBGLOG(RFTEST, INFO, "Switch RF Test Mode Success!\n");
 
 	/* Calculate the elapsed time from start to end */
 	elapsedTime = ktime_ms_delta(ktime_get(), startTime);
