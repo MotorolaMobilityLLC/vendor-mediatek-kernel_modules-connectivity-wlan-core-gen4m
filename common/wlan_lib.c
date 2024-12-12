@@ -14733,12 +14733,15 @@ int wlanChipConfigWithType(struct ADAPTER *prAdapter,
 		       __func__, rChipConfigInfo.u2MsgSize);
 		return -1;
 	}
-	i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%s",
-		     rChipConfigInfo.aucCmd);
-	if (i4BytesWritten < 0) {
-		DBGLOG(REQ, INFO, "%s: snprintf error ret=%d\n",
-		       __func__, i4BytesWritten);
-		return -1;
+
+	if (type != CHIP_CONFIG_TYPE_WO_RESPONSE) {
+		i4BytesWritten = snprintf(pcCommand, i4TotalLen, "%s",
+			     rChipConfigInfo.aucCmd);
+		if (i4BytesWritten < 0) {
+			DBGLOG(REQ, INFO, "%s: snprintf error ret=%d\n",
+			       __func__, i4BytesWritten);
+			return -1;
+		}
 	}
 
 	return i4BytesWritten;
