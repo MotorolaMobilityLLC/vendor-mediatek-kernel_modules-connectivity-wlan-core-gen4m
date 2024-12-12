@@ -1806,7 +1806,7 @@ struct CMD_ACCESS_RX_STAT {
 struct EVENT_ACCESS_RX_STAT {
 	uint32_t u4SeqNum;
 	uint32_t u4TotalNum;
-	uint32_t au4Buffer[1];
+	uint32_t au4Buffer[];
 };
 
 #else
@@ -1824,7 +1824,7 @@ struct EVENT_ACCESS_RX_STAT {
 	/* bit[0] in event structure will tell new / old firmware format */
 	uint8_t	ucData;
 	uint32_t u4TotalNum;
-	uint32_t au4Buffer[1];
+	uint32_t au4Buffer[];
 };
 #endif
 
