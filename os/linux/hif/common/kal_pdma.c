@@ -3034,7 +3034,7 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 		goto exit;
 	}
 
-	prReq->fgIsDone = 0;
+	prReq->eStatus = WF_REG_PENDING;
 	if (KAL_FIFO_IN_LOCKED(&glue->rHifRegFifo, prReq,
 			       &glue->rHifRegFifoLock)) {
 		kalHifRegWorkSchedule(glue);
@@ -3047,16 +3047,20 @@ int32_t wf_reg_handle_req(struct GLUE_INFO *glue, struct WF_REG_REQ *prReq)
 	}
 
 	for (i = 0; i < HIF_REG_WORK_WAIT_CNT; i++) {
-		if (prReq->fgIsDone)
+		if (prReq->eStatus != WF_REG_PENDING)
 			break;
 
 		kalUsleep(HIF_REG_WORK_WAIT_TIME);
 	}
 
-	if (!prReq->fgIsDone) {
+	if (i >= HIF_REG_WORK_WAIT_CNT)
+		prReq->eStatus = WF_REG_DROP;
+
+	if (prReq->eStatus != WF_REG_SUCCESS) {
 		DBGLOG_LIMITED(HAL, WARN,
-			"op: %d cr timeout addr: %X, value: %X\n",
-			prReq->eOp, prReq->u4Addr, prReq->u4Val);
+			"op: %d cr timeout addr: %X, value: %X, status: %d\n",
+			prReq->eOp, prReq->u4Addr, prReq->u4Val,
+			prReq->eStatus);
 		ret = -EFAULT;
 		goto exit;
 	}
@@ -3110,7 +3114,7 @@ exit:
 int32_t wf_reg_read_wrapper(void *priv, uint32_t addr, uint32_t *value)
 {
 	struct GLUE_INFO *glue = priv;
-	struct WF_REG_REQ rReq, *prReq = &rReq;
+	struct WF_REG_REQ rReq = {0}, *prReq = &rReq;
 	int32_t ret = 0;
 
 	ret = wf_reg_sanity_check(glue);
@@ -3130,7 +3134,7 @@ exit:
 int32_t wf_reg_write_wrapper(void *priv, uint32_t addr, uint32_t value)
 {
 	struct GLUE_INFO *glue = priv;
-	struct WF_REG_REQ rReq, *prReq = &rReq;
+	struct WF_REG_REQ rReq = {0}, *prReq = &rReq;
 	int32_t ret = 0;
 
 	ret = wf_reg_sanity_check(glue);
@@ -3150,7 +3154,7 @@ int32_t wf_reg_write_mask_wrapper(
 	void *priv, uint32_t addr, uint32_t mask, uint32_t value)
 {
 	struct GLUE_INFO *glue = priv;
-	struct WF_REG_REQ rReq, *prReq = &rReq;
+	struct WF_REG_REQ rReq = {0}, *prReq = &rReq;
 	int32_t ret = 0;
 
 	ret = wf_reg_sanity_check(glue);
@@ -3236,8 +3240,21 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 		}
 
 		if (!prGlueInfo) {
+			prReq->eStatus = WF_REG_FAILURE;
 			DBGLOG_LIMITED(HAL, WARN, "glue is null\n");
-			return;
+			continue;
+		}
+
+		if (fgIsBusAccessFailed) {
+			prReq->eStatus = WF_REG_FAILURE;
+			DBGLOG_LIMITED(HAL, WARN, "BusAccessFailed\n");
+			continue;
+		}
+
+		if (prReq->eStatus == WF_REG_DROP) {
+			prReq->eStatus = WF_REG_FAILURE;
+			DBGLOG_LIMITED(HAL, WARN, "req drop\n");
+			continue;
 		}
 
 		if (prReq->eOp == WF_REG_READ) {
@@ -3263,7 +3280,7 @@ void halHandleHifRegReq(struct GLUE_INFO *prGlueInfo)
 			HAL_MCR_WR(prGlueInfo->prAdapter,
 				   prReq->u4Addr, prReq->u4Val);
 		}
-		prReq->fgIsDone = TRUE;
+		prReq->eStatus = WF_REG_SUCCESS;
 	}
 }
 #endif /* CFG_SUPPORT_HIF_REG_WORK */
