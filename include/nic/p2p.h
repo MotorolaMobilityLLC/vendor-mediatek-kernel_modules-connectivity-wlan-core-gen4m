@@ -431,6 +431,11 @@ struct P2P_SPECIFIC_BSS_INFO {
 	u_int8_t fgMlIeExist;
 	/* For CSA trigger when ch abort */
 	u_int8_t fgIsGcEapolDone;
+
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+	u_int8_t fgBcnProtEn;
+	uint8_t ucBcnKeyIdx;
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
 };
 
 struct P2P_QUEUED_ACTION_FRAME {

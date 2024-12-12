@@ -980,16 +980,18 @@ link_chosed:
 		}
 	}
 
-	DBGLOG(RSN, TRACE,
+	DBGLOG(RSN, INFO,
 		"[%s] link_id=%d bss=%u keyIdx=%u pairwise=%d mac="MACSTR
-		" cipher=0x%x\n",
+		" cipher=0x%x key_len=%d seq_len=%d\n",
 		ndev->name,
 		link_id,
 		ucBssIdx,
 		key_index,
 		pairwise,
 		pairwise ? MAC2STR(mac_addr) : MAC2STR(aucZeroMacAddr),
-		params->cipher);
+		params->cipher,
+		params->key_len,
+		params->seq_len);
 #if BUILD_QA_DBG
 	DBGLOG_MEM8(RSN, TRACE, params->key, params->key_len);
 #endif
@@ -1080,15 +1082,75 @@ int mtk_p2p_cfg80211_get_key(struct wiphy *wiphy,
 			(void *cookie, struct key_params *))
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
+	struct BSS_INFO *prBssInfo;
+	uint8_t ucRoleIdx = 0, ucBssIdx = 0;
+	const uint8_t aucZeroMacAddr[] = NULL_MAC_ADDR;
+	int ret = -EINVAL;
 
 	ASSERT(wiphy);
 
 	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
 
-	/* not implemented yet */
-	DBGLOG(RSN, INFO, "not support this func\n");
+	if (__mtk_Netdev_To_RoleIdx(prGlueInfo, ndev, link_id,
+				    &ucRoleIdx) < 0) {
+		if (mtk_Netdev_To_RoleIdx(prGlueInfo, ndev,
+					  &ucRoleIdx) < 0) {
+			DBGLOG(P2P, ERROR, "can NOT find role by dev(%s)\n",
+				ndev->name);
+			goto exit;
+		}
+	}
 
-	return -EINVAL;
+	if (p2pFuncRoleToBssIdx(prGlueInfo->prAdapter, ucRoleIdx,
+				&ucBssIdx) != WLAN_STATUS_SUCCESS) {
+		DBGLOG(RSN, ERROR, "Get bss failed by role %u\n", ucRoleIdx);
+		goto exit;
+	}
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prGlueInfo->prAdapter, ucBssIdx);
+	if (!prBssInfo) {
+		DBGLOG(RSN, ERROR, "Get bss failed by idx %u\n", ucBssIdx);
+		goto exit;
+	}
+
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+	if (!pairwise && (key_index >= 6 && key_index <= 7)) {
+		struct  key_params key_params;
+		struct PARAM_TX_TSC_INFO info;
+		uint32_t u4BufLen = 0;
+
+		kalMemZero(&info, sizeof(info));
+		info.ucBssIdx = prBssInfo->ucBssIndex;
+		info.ucWlanIdx = prBssInfo->ucBMCWlanIndex;
+		info.u4TscCount = 1;
+		info.aucEntries[0].ucTscType = TSC_TYPE_BIGTK_PN;
+		kalIoctlByBssIdx(prGlueInfo,
+				 wlanoidGetTxTsc,
+				 &info, sizeof(info),
+				 &u4BufLen, ucBssIdx);
+		kalMemZero(&key_params, sizeof(key_params));
+		key_params.seq = info.aucEntries[0].aucKeyPn;
+		key_params.seq_len = sizeof(info.aucEntries[0].aucKeyPn);
+		if (callback)
+			callback(cookie, &key_params);
+		ret = 0;
+		goto exit;
+	}
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
+
+exit:
+	DBGLOG(RSN, INFO,
+		"%s link_id=%d role=%u bss=%u key_index=%u pairwise=%d mac_addr="
+		MACSTR"\n",
+		ndev->name,
+		link_id,
+		ucRoleIdx,
+		ucBssIdx,
+		key_index,
+		pairwise,
+		mac_addr != NULL ? MAC2STR(mac_addr) : MAC2STR(aucZeroMacAddr));
+
+	return ret;
 }
 
 int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
@@ -1159,7 +1221,7 @@ int mtk_p2p_cfg80211_del_key(struct wiphy *wiphy,
 		}
 	}
 
-	DBGLOG(RSN, TRACE,
+	DBGLOG(RSN, INFO,
 		"[%s] link_id=%d bss=%u keyIdx=%u pairwise=%d mac="MACSTR"\n",
 		ndev->name,
 		link_id,
@@ -1260,14 +1322,45 @@ mtk_p2p_cfg80211_set_default_key(struct wiphy *wiphy,
 int mtk_p2p_cfg80211_set_mgmt_key(struct wiphy *wiphy,
 		struct net_device *dev, int link_id, u8 key_index)
 {
-	DBGLOG(RSN, INFO, "lid: %d, kid:%d\n", link_id, key_index);
+	DBGLOG(RSN, INFO, "%s link_id=%d, key_index=%u\n",
+		dev->name, link_id, key_index);
 	return 0;
 }
 
 int mtk_p2p_cfg80211_set_beacon_key(struct wiphy *wiphy,
 		struct net_device *dev, int link_id, u8 key_index)
 {
-	DBGLOG(RSN, INFO, "lid: %d, kid:%d\n", link_id, key_index);
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+	struct GLUE_INFO *prGlueInfo;
+	struct PARAM_BEACON_KEY rBcnKeyInfo;
+	uint32_t rStatus, u4BufLen = 0;
+	uint8_t ucRoleIdx;
+
+	DBGLOG(RSN, INFO, "%s link_id=%d, key_index=%u\n",
+		dev->name, link_id, key_index);
+
+	P2P_WIPHY_PRIV(wiphy, prGlueInfo);
+
+	if (__mtk_Netdev_To_RoleIdx(prGlueInfo, dev, link_id,
+				    &ucRoleIdx)) {
+		DBGLOG(RSN, ERROR,
+			"can NOT find role by dev(%s) link_id(%d)\n",
+			dev->name, link_id);
+		return -EINVAL;
+	}
+
+	kalMemZero(&rBcnKeyInfo, sizeof(rBcnKeyInfo));
+	rBcnKeyInfo.ucRoleIdx = ucRoleIdx;
+	rBcnKeyInfo.ucKeyIdx = key_index;
+
+	rStatus = kalIoctl(prGlueInfo,
+			   wlanoidSetDefaultBcnKey,
+			   &rBcnKeyInfo, sizeof(rBcnKeyInfo),
+			   &u4BufLen);
+	if (rStatus != WLAN_STATUS_SUCCESS)
+		DBGLOG(P2P, WARN, "ioctl failed 0x%x\n", rStatus);
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
+
 	return 0;
 }
 

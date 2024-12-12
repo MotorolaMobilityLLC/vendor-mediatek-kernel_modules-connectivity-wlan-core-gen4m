@@ -7584,6 +7584,8 @@ int mtk_cfg_set_default_mgmt_key(struct wiphy *wiphy,
 	return -EFAULT;
 }
 
+#if (CFG_SUPPORT_BCN_PROT == 1) && \
+	(KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE)
 #if (CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)
 int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
@@ -7591,7 +7593,7 @@ int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 #else
 int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 		struct net_device *ndev, u8 key_index)
-#endif
+#endif /* CFG_ADVANCED_80211_MLO */
 {
 	struct GLUE_INFO *prGlueInfo = NULL;
 	int i4LinkId = MLD_LINK_ID_NONE;
@@ -7615,6 +7617,7 @@ int mtk_cfg_set_default_beacon_key(struct wiphy *wiphy,
 	DBGLOG(REQ, WARN, "STA don't support this function\n");
 	return -EFAULT;
 }
+#endif /* CFG_SUPPORT_BCN_PROT */
 
 #if (CFG_ADVANCED_80211_MLO == 1) || \
 	(KERNEL_VERSION(6, 1, 0) <= CFG80211_VERSION_CODE)

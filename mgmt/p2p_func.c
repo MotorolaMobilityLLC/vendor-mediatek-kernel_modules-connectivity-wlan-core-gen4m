@@ -5365,12 +5365,17 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 					= rRsnIe.au4AuthKeyMgtSuite[i];
 				}
 			}
+
+			prP2pBssInfo->u4RsnSelectedGroupMgmtCipher =
+				rRsnIe.u4GroupMgmtCipherSuite;
+
 			DBGLOG(RSN, ERROR,
-				"bcn mfpc:%d, mfpr:%d, sha256:%d, 0x%04x\n",
+				"bcn mfpc:%d, mfpr:%d, sha256:%d, akm=0x%04x group=0x%04x\n",
 				prP2pBssInfo->rApPmfCfg.fgMfpc,
 				prP2pBssInfo->rApPmfCfg.fgMfpr,
 				prP2pBssInfo->rApPmfCfg.fgSha256,
-				prP2pBssInfo->u4RsnSelectedAKMSuite);
+				prP2pBssInfo->u4RsnSelectedAKMSuite,
+				prP2pBssInfo->u4RsnSelectedGroupMgmtCipher);
 #endif
 
 			break;
@@ -5434,6 +5439,17 @@ p2pFuncParseBeaconContent(struct ADAPTER *prAdapter,
 			{
 				DBGLOG(P2P, TRACE,
 					"ELEM_ID_EXTENDED_CAP IE would be replaced by driver\n");
+
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+				if (EXT_CAP_IE(pucIE)->ucLength >= 11 &&
+				    EXT_CAP_IE(pucIE)->aucCapabilities[10] &
+				    BIT(ELEM_EXT_CAP_BCN_PROT_BIT % 8)) {
+					DBGLOG(P2P, TRACE,
+						"beacon protection enabled.\n");
+					prP2pSpecificBssInfo->fgBcnProtEn =
+						TRUE;
+				}
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
 			}
 			break;
 		case ELEM_ID_VENDOR:	/* 221 *//* V */

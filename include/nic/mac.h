@@ -1137,6 +1137,8 @@
 	73 /* 20/40 BSS Intolerant Channel Report */
 #define ELEM_ID_OBSS_SCAN_PARAMS \
 	74 /* Overlapping BSS Scan Parameters */
+#define ELEM_ID_MMIE \
+	76 /* MMIE */
 #define ELEM_ID_NON_TX_CAP \
 	83 /* Nontransmitted BSSID Capability element*/
 #define ELEM_ID_MBSSID_INDEX \
@@ -5139,6 +5141,15 @@ struct WLAN_DEAUTH_FRAME_WITH_MIC {
 	uint16_t u2KeyId;
 	uint8_t aucIPN[6];
 	uint8_t aucMIC[16];
+} __KAL_ATTRIB_PACKED__;
+
+__KAL_ATTRIB_PACKED_FRONT__
+struct MMIE_ELEM {
+	uint8_t ucElemId;
+	uint8_t ucLength;
+	uint16_t u2KeyId;
+	uint8_t aucIPN[6];
+	uint8_t aucMIC[];
 } __KAL_ATTRIB_PACKED__;
 
 #if defined(WINDOWS_DDK) || defined(WINDOWS_CE)

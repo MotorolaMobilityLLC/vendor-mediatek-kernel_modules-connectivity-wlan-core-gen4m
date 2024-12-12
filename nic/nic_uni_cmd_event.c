@@ -4208,6 +4208,118 @@ uint32_t nicUniCmdStaRecTagEhtMld(struct ADAPTER *ad,
 }
 #endif
 
+static void nicUniCmdSetRecSecPnInfoEvt(struct ADAPTER *ad,
+	struct CMD_INFO *cmd, uint8_t *event)
+{
+	struct WIFI_UNI_EVENT *uni_evt = (struct WIFI_UNI_EVENT *)event;
+	struct UNI_EVENT_STAREC *evt;
+	struct UNI_CMD_STAREC_GET_PN *tag;
+	struct PARAM_TX_TSC_INFO *tsc;
+	uint8_t i;
+
+	uni_evt = (struct WIFI_UNI_EVENT *) event;
+	if (uni_evt->ucEID != UNI_EVENT_ID_STAREC)
+		return;
+
+	evt = (struct UNI_EVENT_STAREC *)uni_evt->aucBuffer;
+	tsc = cmd->pvInformationBuffer;
+
+	DBGLOG(NIC, INFO, "wlan_idx=%d\n",
+		evt->u2WlanIdx);
+
+	if (!cmd->pvInformationBuffer ||
+	    tsc->ucWlanIdx != evt->u2WlanIdx)
+		goto exit;
+
+	tag = (struct UNI_CMD_STAREC_GET_PN *)evt->aucTlvBuffer;
+	DBGLOG(NIC, INFO, "tag=%d\n", tag->u2Tag);
+	if (tag->u2Tag != UNI_CMD_STAREC_TAG_GET_PN)
+		goto exit;
+
+	for (i = 0; i < tsc->u4TscCount; i++, tag++) {
+		DBGLOG(NIC, INFO, "\t[%d] type=%d\n",
+			i,
+			tag->ucTscType);
+		if (tag->ucTscType != tsc->aucEntries[i].ucTscType)
+			continue;
+
+		DBGLOG_MEM8(NIC, INFO, tag->aucPn, sizeof(tag->aucPn));
+		kalMemCopy(tsc->aucEntries[i].aucKeyPn,
+			   tag->aucPn,
+			   sizeof(tag->aucPn));
+	}
+
+exit:
+	if (cmd->fgIsOid)
+		kalOidComplete(ad->prGlueInfo, cmd,
+			       cmd->u4InformationBufferLength,
+			       WLAN_STATUS_SUCCESS);
+}
+
+uint32_t UniCmdSetRecSecPnInfo(struct ADAPTER *ad,
+	struct PARAM_TX_TSC_INFO *tsc)
+{
+	struct UNI_CMD_STAREC *uni_cmd;
+	struct UNI_CMD_STAREC_GET_PN *tag;
+	uint32_t max_cmd_len = 0, status = WLAN_STATUS_SUCCESS;
+	uint8_t i;
+
+	if (!tsc || tsc->u4TscCount == 0) {
+		DBGLOG(NIC, ERROR, "tsc=0x%p tsc_cnt=%d\n",
+			tsc,
+			tsc != NULL ? tsc->u4TscCount : 0);
+		status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	max_cmd_len = sizeof(struct UNI_CMD_STAREC) +
+		tsc->u4TscCount * sizeof(struct UNI_CMD_STAREC_GET_PN);
+	uni_cmd = (struct UNI_CMD_STAREC *) cnmMemAlloc(ad,
+							RAM_TYPE_MSG,
+							max_cmd_len);
+	if (!uni_cmd) {
+		DBGLOG(INIT, ERROR, "Allocate UNI_CMD ==> FAILED.\n");
+		status = WLAN_STATUS_FAILURE;
+		goto exit;
+	}
+
+	DBGLOG(NIC, INFO, "bss=%d wlan_idx=%d tsc_count=%d\n",
+		tsc->ucBssIdx,
+		tsc->ucWlanIdx,
+		tsc->u4TscCount);
+
+	uni_cmd->ucBssInfoIdx = tsc->ucBssIdx;
+	WCID_SET_H_L(uni_cmd->ucWlanIdxHnVer, uni_cmd->ucWlanIdxL,
+		     tsc->ucWlanIdx);
+	tag = (struct UNI_CMD_STAREC_GET_PN *)uni_cmd->aucTlvBuffer;
+	for (i = 0; i < tsc->u4TscCount; i++, tag++) {
+		tag->u2Tag = UNI_CMD_STAREC_TAG_GET_PN;
+		tag->u2Length = sizeof(*tag);
+		tag->ucTscType = tsc->aucEntries[i].ucTscType;
+		kalMemCopy(tag->aucPn,
+			   tsc->aucEntries[i].aucKeyPn,
+			   sizeof(tag->aucPn));
+		DBGLOG(NIC, INFO, "\t[%d] type=%d\n",
+			i,
+			tag->ucTscType);
+	}
+
+	status = wlanSendSetQueryUniCmd(ad,
+					UNI_CMD_ID_STAREC_INFO,
+					FALSE,
+					TRUE,
+					TRUE,
+					nicUniCmdSetRecSecPnInfoEvt,
+					nicUniCmdTimeoutCommon,
+					max_cmd_len,
+					(void *)uni_cmd,
+					tsc,
+					sizeof(*tsc));
+
+exit:
+	return status;
+}
+
 uint32_t nicUniCmdStaRecTagRA(struct ADAPTER *ad,
 	uint8_t *buf, struct CMD_UPDATE_STA_RECORD *cmd)
 {

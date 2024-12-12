@@ -1173,6 +1173,16 @@ struct UNI_CMD_STAREC_INSTALL_KEY3 {
 	uint8_t       aucKeyRsc[16];
 } __KAL_ATTRIB_PACKED__;
 
+/* STAREC get PN (Tag 0x26) */
+__KAL_ATTRIB_PACKED_FRONT__
+struct UNI_CMD_STAREC_GET_PN {
+	uint16_t u2Tag;
+	uint16_t u2Length;
+	uint8_t aucPn[6];
+	uint8_t ucTscType; /* 0:GTK_PN, 1:IPN, 2:BIPN */
+	uint8_t aucReserved;
+} __KAL_ATTRIB_PACKED__;
+
 /* MLR information (Tag 0x2d) */
 __KAL_ATTRIB_PACKED_FRONT__
 struct UNI_CMD_STAREC_MLR_INFO {
@@ -9058,6 +9068,8 @@ uint32_t nicUniCmdGetBugReport(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdMldStaTeardown(struct ADAPTER *ad,
 		struct STA_RECORD *prStaRec);
+uint32_t UniCmdSetRecSecPnInfo(struct ADAPTER *ad,
+	struct PARAM_TX_TSC_INFO *tsc);
 uint32_t nicUniCmdSetApConstraintPwrLimit(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info);
 uint32_t nicUniCmdSetRrmCapability(struct ADAPTER *ad,

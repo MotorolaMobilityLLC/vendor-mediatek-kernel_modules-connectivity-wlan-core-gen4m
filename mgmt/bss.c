@@ -1306,6 +1306,10 @@ struct MSDU_INFO *bssComposeBeaconContent(struct ADAPTER *prAdapter,
 
 	sortMgmtFrameIE(prAdapter, prMsduInfo);
 
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+	rsnGenerateMMIE(prAdapter, prMsduInfo);
+#endif
+
 	return prMsduInfo;
 }
 

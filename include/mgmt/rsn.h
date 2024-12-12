@@ -475,6 +475,13 @@ void rsnTriggerDumpWTBL(struct ADAPTER *prAdapter,
 void rsnDumpWTBL(struct ADAPTER *prAdapter);
 bool rsnFwDumpIsLimited(struct ADAPTER *prAdapter);
 
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+uint32_t rsnCalculateMMIELen(struct ADAPTER *prAdapter,
+			       uint8_t ucBssIndex, struct STA_RECORD *prStaRec);
+void rsnGenerateMMIE(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo);
+#endif
+
 /*******************************************************************************
  *                              F U N C T I O N S
  *******************************************************************************

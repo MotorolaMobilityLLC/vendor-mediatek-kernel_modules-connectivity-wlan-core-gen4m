@@ -636,6 +636,31 @@ struct PARAM_DEFAULT_KEY {
 	int32_t i4LinkId;
 };
 
+enum TSC_TYPE {
+	TSC_TYPE_GTK_PN,
+	TSC_TYPE_IGTK_PN,
+	TSC_TYPE_BIGTK_PN,
+	TSC_TYPE_NUM,
+};
+
+struct PARAM_TX_TSC_ENTRY {
+	uint8_t ucTscType;
+	uint8_t aucKeyPn[6];
+};
+
+struct PARAM_TX_TSC_INFO {
+	uint8_t ucBssIdx;
+	uint16_t ucWlanIdx;
+	uint32_t u4TscCount;
+	struct PARAM_TX_TSC_ENTRY aucEntries[TSC_TYPE_NUM];
+};
+
+struct PARAM_BEACON_KEY {
+	uint8_t ucRoleIdx;
+	uint8_t ucKeyIdx;
+};
+
+
 #if CFG_SUPPORT_WAPI
 enum ENUM_KEY_TYPE {
 	ENUM_WPI_PAIRWISE_KEY = 0,
@@ -5733,10 +5758,25 @@ wlanoidAddDelMldLink(struct ADAPTER *prAdapter,
 		void *pvSetBuffer, uint32_t u4SetBufferLen,
 		uint32_t *pu4SetInfoLen);
 #endif
+
+#if CFG_ENABLE_WIFI_DIRECT
 uint32_t
 wlanoidQueryLteSafeChannel(struct ADAPTER *prAdapter,
 			void *pvQueryBuffer, uint32_t u4QueryBufferLen,
 			uint32_t *pu4QueryInfoLen);
+
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+uint32_t
+wlanoidGetTxTsc(struct ADAPTER *prAdapter,
+		void *pvSetBuffer, uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen);
+
+uint32_t
+wlanoidSetDefaultBcnKey(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen);
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if (CFG_PCIE_GEN_SWITCH == 1)
 uint32_t

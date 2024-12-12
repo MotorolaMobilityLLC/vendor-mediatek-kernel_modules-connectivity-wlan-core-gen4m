@@ -1275,9 +1275,9 @@ static struct cfg80211_ops mtk_cfg_ops = {
 	.del_key = mtk_cfg_del_key,
 	.set_default_mgmt_key = mtk_cfg_set_default_mgmt_key,
 #if (CFG_SUPPORT_BCN_PROT == 1) && \
-	(KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+	(KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE)
 	.set_default_beacon_key = mtk_cfg_set_default_beacon_key,
-#endif
+#endif /* CFG_SUPPORT_BCN_PROT */
 	.set_default_key = mtk_cfg_set_default_key,
 	.get_station = mtk_cfg_get_station,
 #if (CFG_ADVANCED_80211_MLO == 1) || \
@@ -4484,9 +4484,15 @@ static void wlanCreateWirelessDevice(void)
 #endif
 
 #if (CFG_SUPPORT_BCN_PROT == 1) && \
-	(KERNEL_VERSION(5, 4, 0) <= CFG80211_VERSION_CODE)
+	(KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE)
 	wiphy_ext_feature_set(prWiphy,
 		NL80211_EXT_FEATURE_BEACON_PROTECTION_CLIENT);
+#endif
+
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1) && \
+	(KERNEL_VERSION(5, 7, 0) <= CFG80211_VERSION_CODE)
+	wiphy_ext_feature_set(prWiphy,
+		NL80211_EXT_FEATURE_BEACON_PROTECTION);
 #endif
 
 	prWiphy->features |= NL80211_FEATURE_INACTIVITY_TIMER;

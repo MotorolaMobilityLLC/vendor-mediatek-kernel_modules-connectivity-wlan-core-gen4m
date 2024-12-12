@@ -19233,4 +19233,54 @@ wlanoidQueryLteSafeChannel(struct ADAPTER *prAdapter,
 	return WLAN_STATUS_NOT_SUPPORTED;
 #endif /* CFG_SUPPORT_GET_LTE_SAFE_CHANNEL */
 }
+
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+uint32_t
+wlanoidGetTxTsc(struct ADAPTER *prAdapter,
+		void *pvSetBuffer, uint32_t u4SetBufferLen,
+		uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_TX_TSC_INFO *prTscInfo =
+		(struct PARAM_TX_TSC_INFO *)pvSetBuffer;
+
+	if (!prTscInfo) {
+		DBGLOG(OID, WARN, "prTscInfo is NULL.\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+#ifdef CFG_SUPPORT_UNIFIED_COMMAND
+	return UniCmdSetRecSecPnInfo(prAdapter, prTscInfo);
+#else
+	DBGLOG(OID, WARN, "NOT supported.\n");
+	return WLAN_STATUS_NOT_SUPPORTED;
+#endif
+}
+
+uint32_t
+wlanoidSetDefaultBcnKey(struct ADAPTER *prAdapter,
+			void *pvSetBuffer, uint32_t u4SetBufferLen,
+			uint32_t *pu4SetInfoLen)
+{
+	struct PARAM_BEACON_KEY *prBcnKeyInfo =
+		(struct PARAM_BEACON_KEY *)pvSetBuffer;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+
+	if (!prBcnKeyInfo) {
+		DBGLOG(OID, WARN, "prBcnKeyInfo is NULL.\n");
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prP2pSpecificBssInfo = prAdapter->rWifiVar.prP2pSpecificBssInfo[
+		prBcnKeyInfo->ucRoleIdx];
+	if (!prP2pSpecificBssInfo) {
+		DBGLOG(OID, WARN, "Invalid role idx(%u)\n",
+			prBcnKeyInfo->ucRoleIdx);
+		return WLAN_STATUS_INVALID_DATA;
+	}
+
+	prP2pSpecificBssInfo->ucBcnKeyIdx = prBcnKeyInfo->ucKeyIdx;
+
+	return WLAN_STATUS_SUCCESS;
+}
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
 #endif /* CFG_ENABLE_WIFI_DIRECT */

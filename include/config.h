@@ -3155,6 +3155,19 @@
 #define CFG_SURVEY_DUMP_FULL_CHANNEL 0
 #endif
 
+/*------------------------------------------------------------------------------
+ * SAP beacon protection
+ *------------------------------------------------------------------------------
+ */
+#if CFG_ENABLE_WIFI_DIRECT
+#ifndef CFG_SUPPORT_SAP_BCN_PROT
+#define CFG_SUPPORT_SAP_BCN_PROT 0
+#endif
+#else
+#undef CFG_SUPPORT_SAP_BCN_PROT
+#define CFG_SUPPORT_SAP_BCN_PROT 0
+#endif
+
 /*******************************************************************************
  *                             D A T A   T Y P E S
  *******************************************************************************

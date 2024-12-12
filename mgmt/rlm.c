@@ -1474,6 +1474,9 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 			    struct BSS_INFO *prBssInfo,
 			    struct MSDU_INFO *prMsduInfo)
 {
+#if CFG_ENABLE_WIFI_DIRECT
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecBssInfo = NULL;
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 	struct IE_EXT_CAP *prExtCap;
 	u_int8_t fg40mAllowed, fgAppendVhtCap;
 	struct STA_RECORD *prStaRec;
@@ -1489,11 +1492,18 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		return;
 	}
 
-	if (IS_BSS_APGO(prBssInfo))
+#if CFG_ENABLE_WIFI_DIRECT
+	if (IS_BSS_APGO(prBssInfo)) {
 		fg40mAllowed = prBssInfo->fgAssoc40mBwAllowed;
-	else
+		prP2pSpecBssInfo =
+			prAdapter->rWifiVar.prP2pSpecificBssInfo
+				[prBssInfo->u4PrivateData];
+	} else
+#endif /* CFG_ENABLE_WIFI_DIRECT */
+	{
 		fg40mAllowed = cnmGetBssMaxBw(prAdapter,
 			prBssInfo->ucBssIndex) >= MAX_BW_40MHZ;
+	}
 
 	if (IS_BSS_AIS(prBssInfo)) {
 		prConnSettings =
@@ -1591,6 +1601,15 @@ static void rlmFillExtCapIE(struct ADAPTER *prAdapter,
 		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
 				ELEM_EXT_CAP_BCN_PROT_BIT);
 #endif
+
+#if CFG_ENABLE_WIFI_DIRECT
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+	if (IS_BSS_APGO(prBssInfo) && prP2pSpecBssInfo &&
+	    prP2pSpecBssInfo->fgBcnProtEn)
+		SET_EXT_CAP(prExtCap->aucCapabilities, ELEM_MAX_LEN_EXT_CAP,
+				ELEM_EXT_CAP_BCN_PROT_BIT);
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
+#endif /* CFG_ENABLE_WIFI_DIRECT */
 
 #if CFG_FAST_PATH_SUPPORT
 	if (mscsIsFpSupport(prAdapter) && IS_BSS_AIS(prBssInfo))

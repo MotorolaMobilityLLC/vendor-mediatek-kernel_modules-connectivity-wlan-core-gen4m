@@ -4653,3 +4653,78 @@ bool rsnFwDumpIsLimited(struct ADAPTER *prAdapter)
 	return TRUE;
 }
 
+#if (CFG_SUPPORT_SAP_BCN_PROT == 1)
+uint32_t rsnCalculateMMIELen(struct ADAPTER *prAdapter,
+			       uint8_t ucBssIndex, struct STA_RECORD *prStaRec)
+{
+#define LEN_PMF_MMIE_TRUNCATE		16
+#define LEN_PMF_MMIE			24
+
+	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+	uint32_t u4Length = 0;
+
+	if (!prAdapter)
+		return 0;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return 0;
+
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+	if (!prP2pSpecificBssInfo || !prP2pSpecificBssInfo->fgBcnProtEn)
+		return 0;
+
+	switch (prBssInfo->u4RsnSelectedGroupMgmtCipher) {
+	case RSN_CIPHER_SUITE_BIP_CMAC_128:
+		u4Length = LEN_PMF_MMIE_TRUNCATE;
+		break;
+	default:
+		u4Length = LEN_PMF_MMIE;
+		break;
+	}
+
+	return u4Length;
+}
+
+void rsnGenerateMMIE(struct ADAPTER *prAdapter,
+		     struct MSDU_INFO *prMsduInfo)
+{
+	struct BSS_INFO *prBssInfo;
+	struct P2P_SPECIFIC_BSS_INFO *prP2pSpecificBssInfo;
+	struct MMIE_ELEM *prMmie;
+	uint32_t u4Length = 0;
+
+	if (!prAdapter)
+		return;
+
+	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, prMsduInfo->ucBssIndex);
+	if (!prBssInfo || !IS_BSS_APGO(prBssInfo))
+		return;
+
+	prP2pSpecificBssInfo =
+		prAdapter->rWifiVar
+			.prP2pSpecificBssInfo[prBssInfo->u4PrivateData];
+	if (!prP2pSpecificBssInfo || !prP2pSpecificBssInfo->fgBcnProtEn)
+		return;
+
+	u4Length = rsnCalculateMMIELen(prAdapter, prMsduInfo->ucBssIndex,
+				       NULL);
+	if (u4Length == 0)
+		return;
+
+	prMmie = (struct MMIE_ELEM *)((uintptr_t)prMsduInfo->prPacket +
+				      (uintptr_t)prMsduInfo->u2FrameLength);
+
+	kalMemZero(prMmie, (ELEM_HDR_LEN + u4Length));
+	prMmie->ucElemId = ELEM_ID_MMIE;
+	prMmie->ucLength = u4Length;
+	prMmie->u2KeyId = prP2pSpecificBssInfo->ucBcnKeyIdx;
+	/* Left IPN & MIC to be filled by FW/HW */
+
+	prMsduInfo->u2FrameLength += IE_SIZE(prMmie);
+}
+#endif /* CFG_SUPPORT_SAP_BCN_PROT */
+

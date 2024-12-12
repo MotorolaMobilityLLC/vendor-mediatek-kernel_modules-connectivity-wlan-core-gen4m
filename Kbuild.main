@@ -1436,6 +1436,9 @@ endif
 
 ifeq ($(CONFIG_BCN_PROT), y)
     ccflags-y += -DCFG_SUPPORT_BCN_PROT=1
+    ifeq ($(CONFIG_SAP_BCN_PROT), y)
+        ccflags-y += -DCFG_SUPPORT_SAP_BCN_PROT=1
+    endif
 else
     ccflags-y += -DCFG_SUPPORT_BCN_PROT=0
 endif
