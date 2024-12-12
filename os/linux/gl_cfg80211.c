@@ -542,7 +542,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 #endif
 #endif
 	struct PARAM_GET_STA_STATISTICS *prGetStaStats;
-	uint32_t u4TotalError;
+	uint32_t u4TotalError = 0;
 	uint32_t u4FcsError = 0;
 	struct net_device_stats *prDevStats;
 	uint8_t ucBssIndex = 0;
@@ -551,8 +551,13 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	uint8_t ucBandIdx = 0;
 	struct MIB_INFO_STAT *prMibInfo = NULL;
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_TC10_FEATURE == 1)
+	uint8_t tmpBssIdx;
+	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct BSS_INFO *prLinkBss;
 	struct STA_RECORD *prStaRec;
-	struct MLD_STA_RECORD *prMldStaRec;
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	uint32_t u4TotalTxCount = 0;
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
 #endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
 
 	WIPHY_PRIV(wiphy, prGlueInfo);
@@ -574,6 +579,7 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 		return -ENOENT;
 
 	ucBssIndex = rLinkBss.ucBssIndex;
+
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo)
 		return -EINVAL;
@@ -708,12 +714,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_TC10_FEATURE == 1)
 	prStaRec = prBssInfo->prStaRecOfAP;
-	prMldStaRec = mldStarecGetByStarec(prAdapter, prStaRec);
 	/* set not_in_use link RSSI to -127 */
-	if (prMldStaRec && !(prMldStaRec->u8ActiveStaBitmap &
-		BIT(prStaRec->ucIndex))) {
+	if (!cnmStaRecIsActive(prAdapter, prStaRec))
 		sinfo->signal = -127;
-	}
 #endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
 
 #if CFG_SUPPORT_LLS && CFG_REPORT_TX_RATE_FROM_LLS
@@ -721,13 +724,9 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 	sinfo->txrate.bw =
 		arBwCfg80211Table[prGlueInfo->u4TxBwCache[ucBssIndex]];
 #else
-	rStatus = wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate,
-			&u4TxBw, ucBssIndex);
-	if (rStatus == WLAN_STATUS_SUCCESS) {
-		if (u4TxBw < ARRAY_SIZE(arBwCfg80211Table))
-			prGlueInfo->u4TxBwCache[ucBssIndex] =
-				arBwCfg80211Table[u4TxBw];
-	}
+	if (wlanGetTxRateFromLinkStats(prGlueInfo, &u4TxRate,
+			&u4TxBw, ucBssIndex) == WLAN_STATUS_SUCCESS)
+		prGlueInfo->u4TxBwCache[ucBssIndex] = u4TxBw;
 	sinfo->txrate.bw =
 		prGlueInfo->u4TxBwCache[ucBssIndex];
 #endif
@@ -743,84 +742,134 @@ int mtk_cfg80211_get_station(struct wiphy *wiphy,
 
 	/* Get statistics from net_dev */
 	prDevStats = (struct net_device_stats *)kalGetStats(ndev);
+	if (!prDevStats)
+		return 0;
 
-	if (prDevStats) {
-		/* 4. fill RX_PACKETS */
+	/* 4. fill RX_PACKETS */
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-		sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
-		sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES64);
+	sinfo->filled |= BIT(NL80211_STA_INFO_RX_PACKETS);
+	sinfo->filled |= BIT(NL80211_STA_INFO_RX_BYTES64);
 #else
-		sinfo->filled |= STATION_INFO_RX_PACKETS;
-		sinfo->filled |= NL80211_STA_INFO_RX_BYTES64;
+	sinfo->filled |= STATION_INFO_RX_PACKETS;
+	sinfo->filled |= NL80211_STA_INFO_RX_BYTES64;
 #endif
-		sinfo->rx_packets = prDevStats->rx_packets;
-		sinfo->rx_bytes = prDevStats->rx_bytes;
+	sinfo->rx_packets = prDevStats->rx_packets;
+	sinfo->rx_bytes = prDevStats->rx_bytes;
 
-		/* 5. fill TX_PACKETS */
+	/* 5. fill TX_PACKETS */
 #if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-		sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
-		sinfo->filled |= BIT(NL80211_STA_INFO_TX_BYTES64);
+	sinfo->filled |= BIT(NL80211_STA_INFO_TX_PACKETS);
+	sinfo->filled |= BIT(NL80211_STA_INFO_TX_BYTES64);
 #else
-		sinfo->filled |= STATION_INFO_TX_PACKETS;
-		sinfo->filled |= NL80211_STA_INFO_TX_BYTES64;
+	sinfo->filled |= STATION_INFO_TX_PACKETS;
+	sinfo->filled |= NL80211_STA_INFO_TX_BYTES64;
 #endif
 
 #if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
-		sinfo->tx_packets = prGetStaStats->u4TxDataCount;
-#else
-		sinfo->tx_packets = prDevStats->tx_packets;
-#endif
-		sinfo->tx_bytes = prDevStats->tx_bytes;
+	sinfo->tx_packets = prGetStaStats->u4TxDataCount;
+#else /* CFG_SUPPORT_REG_STAT_FROM_EMI */
+	sinfo->tx_packets = prDevStats->tx_packets;
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
+	sinfo->tx_bytes = prDevStats->tx_bytes;
 
-		/* 6. fill TX_FAILED */
+	/* 6. fill TX_FAILED */
 #if (CFG_SUPPORT_STATS_ONE_CMD == 0)
-		rStatus = kalIoctlByBssIdx(prGlueInfo,
-				wlanoidQueryStaStatistics,
-				prGetStaStats,
-				sizeof(*prGetStaStats),
-				&u4BufLen, ucBssIndex);
+	rStatus = kalIoctlByBssIdx(prGlueInfo,
+			wlanoidQueryStaStatistics,
+			prGetStaStats,
+			sizeof(*prGetStaStats),
+			&u4BufLen, ucBssIndex);
 #endif
 
-		if (rStatus != WLAN_STATUS_SUCCESS) {
-			DBGLOG(REQ, WARN,
-			       "link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
-			       sinfo->txrate.legacy, sinfo->signal, rStatus);
-		} else {
-			if (prMibInfo)
-				u4FcsError = prMibInfo->u4FcsError;
+	if (rStatus != WLAN_STATUS_SUCCESS) {
+		DBGLOG(REQ, WARN,
+			"link speed=%u, rssi=%d, unable to retrieve link speed,status=%u\n",
+			sinfo->txrate.legacy, sinfo->signal, rStatus);
+		goto get_station_end;
+	}
 
-			u4TotalError = prGetStaStats->u4TxFailCount +
-				       prGetStaStats->u4TxLifeTimeoutCount;
+#if (CFG_SUPPORT_802_11BE_MLO == 1) && (CFG_TC10_FEATURE == 1)
+	if (mldBssGetByBss(prAdapter, prBssInfo) != NULL) {
+		prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
+
+		LINK_FOR_EACH_ENTRY(prLinkBss, &prMldBssInfo->rBssList,
+			rLinkEntryMld, struct BSS_INFO) {
+
+			prMibInfo = NULL;
+
+			tmpBssIdx = prLinkBss->ucBssIndex;
+			if (tmpBssIdx >= MAX_BSSID_NUM)
+				continue;
+
+			prGetStaStats = &(
+				prAdapter->rQueryStaStatistics[tmpBssIdx]);
+			u4TotalError += (prGetStaStats->u4TxFailCount +
+				prGetStaStats->u4TxLifeTimeoutCount);
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+			u4TotalTxCount += prGetStaStats->u4TxDataCount;
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
+
 			prDevStats->tx_errors = u4TotalError;
 
-#define TEMP_LOG_TEMPLATE \
-	"link speed=%u/%u, bw=%u/%u, rssi=%d, BSSID:[" MACSTR "], idx=%u," \
-	"TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n"
-			DBGLOG(REQ, VOC,
-				TEMP_LOG_TEMPLATE,
-				sinfo->txrate.legacy, sinfo->rxrate.legacy,
-				sinfo->txrate.bw, sinfo->rxrate.bw,
-				sinfo->signal,
+			if (prLinkBss->eHwBandIdx < ENUM_BAND_NUM) {
+				prMibInfo = &g_arMibInfo[prLinkBss->eHwBandIdx];
+				u4FcsError += prMibInfo->u4FcsError;
+			}
+
+			DBGLOG(REQ, INFO, "mac[" MACSTR
+				"] bss(%u) band(%u) bssid[" MACSTR
+				"] TxCount=%u TxFail=%u, TxTimeOut=%u FcsErr=%u\n",
 				MAC2STR(mac),
-				ucBssIndex,
+				prLinkBss->ucBssIndex,
+				prLinkBss->eHwBandIdx,
+				MAC2STR(prLinkBss->aucBSSID),
+				prGetStaStats->u4TxDataCount,
 				prGetStaStats->u4TxFailCount,
 				prGetStaStats->u4TxLifeTimeoutCount,
-				sinfo->tx_packets, sinfo->rx_packets,
-				u4FcsError
-			);
-#undef TEMP_LOG_TEMPLATE
+				prMibInfo ? prMibInfo->u4FcsError : 0);
 		}
-#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
-		sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
-#else
-		sinfo->filled |= STATION_INFO_TX_FAILED;
-#endif
-		sinfo->tx_failed = prDevStats->tx_errors;
-#if KERNEL_VERSION(4, 20, 0) <= CFG80211_VERSION_CODE
-		sinfo->filled |= BIT_ULL(NL80211_STA_INFO_FCS_ERROR_COUNT);
-		sinfo->fcs_err_count = u4FcsError;
-#endif
+#if (CFG_SUPPORT_REG_STAT_FROM_EMI == 1)
+	sinfo->tx_packets = u4TotalTxCount;
+#endif /* CFG_SUPPORT_REG_STAT_FROM_EMI */
+	} else {
+#else /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
+	{
+#endif /* CFG_SUPPORT_802_11BE_MLO && CFG_TC10_FEATURE */
+		u4TotalError = prGetStaStats->u4TxFailCount +
+					prGetStaStats->u4TxLifeTimeoutCount;
+		prDevStats->tx_errors = u4TotalError;
+		if (prMibInfo)
+			u4FcsError = prMibInfo->u4FcsError;
 	}
+
+#define TEMP_LOG_TEMPLATE \
+	"link speed=%u/%u, bw=%u/%u, rssi=%d, mac:[" MACSTR "], idx=%u," \
+	"TxFail=%u, TxTimeOut=%u, TxOK=%u, RxOK=%u, FcsErr=%u\n"
+	DBGLOG(REQ, VOC,
+		TEMP_LOG_TEMPLATE,
+		sinfo->txrate.legacy, sinfo->rxrate.legacy,
+		sinfo->txrate.bw, sinfo->rxrate.bw,
+		sinfo->signal,
+		MAC2STR(mac),
+		ucBssIndex,
+		prGetStaStats->u4TxFailCount,
+		prGetStaStats->u4TxLifeTimeoutCount,
+		sinfo->tx_packets, sinfo->rx_packets,
+		u4FcsError
+	);
+#undef TEMP_LOG_TEMPLATE
+
+get_station_end:
+#if KERNEL_VERSION(4, 0, 0) <= CFG80211_VERSION_CODE
+	sinfo->filled |= BIT(NL80211_STA_INFO_TX_FAILED);
+#else
+	sinfo->filled |= STATION_INFO_TX_FAILED;
+#endif
+	sinfo->tx_failed = prDevStats->tx_errors;
+#if KERNEL_VERSION(4, 20, 0) <= CFG80211_VERSION_CODE
+	sinfo->filled |= BIT_ULL(NL80211_STA_INFO_FCS_ERROR_COUNT);
+	sinfo->fcs_err_count = u4FcsError;
+#endif
 
 	return 0;
 }

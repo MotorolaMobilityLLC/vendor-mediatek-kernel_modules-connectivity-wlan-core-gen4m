@@ -435,6 +435,8 @@ wlanoidQueryBssid(struct ADAPTER *prAdapter,
 /*!
  * \brief This routine is called to query the bss idx
  *        with specific BSSID in the same MLD.
+ *        if param bssid is not link bssid but it's mld addr,
+ *        return the active link bss idx with higher band.
  *
  * \param[in] prAdapter Pointer to the Adapter structure.
  * \param[out] pvQueryBuffer A pointer to the buffer that holds the result of
@@ -460,8 +462,12 @@ wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	struct MLD_BSS_INFO *prMldBssInfo = NULL;
+	struct MLD_STA_RECORD *prMldStaRec = NULL;
 	struct BSS_INFO *prLinkBss;
+	struct STA_RECORD *prStaRec;
 	bool fgFindMldBssId = FALSE;
+	bool fgIsMldAddr = FALSE;
+	enum ENUM_BAND eBand = BAND_NULL;
 #endif
 	if (!prAdapter || !pu4QueryInfoLen || !pvQueryBuffer)
 		return WLAN_STATUS_INVALID_DATA;
@@ -476,7 +482,7 @@ wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
 	ucBssIndex = GET_IOCTL_BSSIDX(prAdapter);
 	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIndex);
 	if (!prBssInfo) {
-		DBGLOG(REQ, WARN, "invalid bss info:%u", ucBssIndex);
+		DBGLOG(REQ, WARN, "invalid bss info:%u\n", ucBssIndex);
 		return WLAN_STATUS_INVALID_DATA;
 	}
 
@@ -489,18 +495,49 @@ wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	prMldBssInfo = mldBssGetByBss(prAdapter, prBssInfo);
 	if (prMldBssInfo) {
+		prMldStaRec = mldBssGetPeekClient(prAdapter, prMldBssInfo);
+
 		LINK_FOR_EACH_ENTRY(prLinkBss, &prMldBssInfo->rBssList,
 			rLinkEntryMld, struct BSS_INFO) {
 			if (EQUAL_MAC_ADDR(prLinkBss->aucBSSID,
 				prParamLinkBss->aucMacAddr)) {
 				fgFindMldBssId = TRUE;
+				fgIsMldAddr = FALSE;
 				prParamLinkBss->ucBssIndex =
 					prLinkBss->ucBssIndex;
 				break;
+			} else if (prMldStaRec &&
+				EQUAL_MAC_ADDR(prMldStaRec->aucPeerMldAddr,
+					prParamLinkBss->aucMacAddr)) {
+				prStaRec = prLinkBss->prStaRecOfAP;
+				if (!prStaRec ||
+					eBand >= prLinkBss->eBand ||
+					!cnmStaRecIsActive(prAdapter,
+							prStaRec))
+					continue;
+
+				eBand = prLinkBss->eBand;
+				prParamLinkBss->ucBssIndex =
+					prLinkBss->ucBssIndex;
+				fgIsMldAddr = TRUE;
+				fgFindMldBssId = TRUE;
+				DBGLOG(REQ, INFO, "mld addr[" MACSTR
+				"] bss(%u) addr[" MACSTR
+				"] band:%u starec:%u\n",
+					MAC2STR(prParamLinkBss->aucMacAddr),
+					prLinkBss->ucBssIndex,
+					MAC2STR(prLinkBss->aucBSSID),
+					prLinkBss->eBand,
+					prStaRec->ucIndex);
 			}
 		}
-		if (!fgFindMldBssId)
-			rStatus = WLAN_STATUS_FAILURE;
+
+		if (!fgFindMldBssId) {
+			DBGLOG(REQ, WARN,
+				"incorrect BSSID: [" MACSTR "]\n",
+				MAC2STR(prParamLinkBss->aucMacAddr));
+			return WLAN_STATUS_FAILURE;
+		}
 	} else
 #endif
 	{
@@ -519,12 +556,19 @@ wlanoidQueryLinkBssInfo(struct ADAPTER *prAdapter,
 		}
 	}
 
-	DBGLOG(REQ, TRACE, "bssidx:%u mac["MACSTR"]",
-		prParamLinkBss->ucBssIndex,
-		MAC2STR(prParamLinkBss->aucMacAddr));
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	DBGLOG(REQ, TRACE, "mac[" MACSTR "] isMldAddr:%u bss:%u/%u\n",
+		MAC2STR(prParamLinkBss->aucMacAddr), fgIsMldAddr,
+		ucBssIndex, prParamLinkBss->ucBssIndex);
+#else
+	DBGLOG(REQ, TRACE, "mac["MACSTR"] bss:%u/%u\n",
+		MAC2STR(prParamLinkBss->aucMacAddr),
+		ucBssIndex, prParamLinkBss->ucBssIndex);
+#endif
+
 	*pu4QueryInfoLen = sizeof(struct PARAM_LINK_BSS_INFO);
 	return rStatus;
-} /* wlanoidQueryBssid */
+} /* wlanoidQueryLinkBssInfo */
 
 /*----------------------------------------------------------------------------*/
 /*!
