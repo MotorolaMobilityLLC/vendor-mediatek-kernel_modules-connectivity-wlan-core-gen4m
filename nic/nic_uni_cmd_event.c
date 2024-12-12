@@ -12497,6 +12497,7 @@ void nicUniEventBssER(struct ADAPTER *ad, struct WIFI_UNI_EVENT *evt)
 			legacy.ucMlrMode = fsm->ucMlrMode;
 			legacy.ucMlrState = fsm->ucMlrState;
 			legacy.ucMlrTxdFrIdx = fsm->ucMlrTxdFrIdx;
+			legacy.ucTxFragEn = fsm->ucTxFragEn;
 
 			RUN_RX_EVENT_HANDLER(EVENT_ID_MLR_FSM_UPDATE, &legacy);
 #endif

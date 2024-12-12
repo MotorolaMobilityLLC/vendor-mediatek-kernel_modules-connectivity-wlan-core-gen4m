@@ -7749,7 +7749,9 @@ struct UNI_EVENT_MLR_FSM_UPDATE {
 	uint8_t ucMlrState; /* ENUM_MLR_STATE */
 	/* MLR TXD fixed rate index (only used for REBB segment) */
 	uint8_t ucMlrTxdFrIdx;
-	uint8_t aucReserved[3];
+	/* MLR enable Tx fragment or not */
+	uint8_t ucTxFragEn;
+	uint8_t aucReserved[2];
 } __KAL_ATTRIB_PACKED__;
 
 /* EFUSE event Tag */
