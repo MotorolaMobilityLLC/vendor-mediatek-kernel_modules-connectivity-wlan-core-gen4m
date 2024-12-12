@@ -23674,10 +23674,10 @@ int priv_driver_set_mddp_test(struct net_device *prNetDev,
 			prAd->chip_info->coexpccifoff(prAd);
 		break;
 	case 4:
-		mddpNotifyWifiOnStart();
+		mddpNotifyWifiOnStart(FALSE);
 		break;
 	case 5:
-		mddpNotifyWifiOnEnd();
+		mddpNotifyWifiOnEnd(FALSE);
 		break;
 	case 6:
 		mddpNotifyWifiOffStart();
