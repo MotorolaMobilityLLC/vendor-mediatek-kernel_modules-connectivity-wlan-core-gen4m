@@ -433,11 +433,13 @@ void qmUpdateStaRec(struct ADAPTER *prAdapter,
 	if ((IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer) ||
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer) ||
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHeSuBfer)) &&
-		fgIsTxAllowed && (prStaRec->ucStaState == STA_STATE_3)) {
+		fgIsTxAllowed && (prStaRec->ucStaState == STA_STATE_3) &&
+		(prStaRec->eStaType == STA_TYPE_LEGACY_CLIENT)) {
 #else
 	if ((IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaVhtBfer) ||
 		IS_FEATURE_ENABLED(prAdapter->rWifiVar.ucStaHtBfer)) &&
-		fgIsTxAllowed && (prStaRec->ucStaState == STA_STATE_3)) {
+		fgIsTxAllowed && (prStaRec->ucStaState == STA_STATE_3) &&
+		(prStaRec->eStaType == STA_TYPE_LEGACY_CLIENT)) {
 #endif
 		rlmETxBfTriggerPeriodicSounding(prAdapter);
 		rlmBfStaRecPfmuUpdate(prAdapter, prStaRec);
