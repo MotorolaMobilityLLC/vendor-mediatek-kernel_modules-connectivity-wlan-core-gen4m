@@ -800,6 +800,10 @@ struct MSDU_TOKEN_ENTRY {
 	uint32_t key;
 	struct hlist_node node; /* htbl node */
 	struct list_head msdu_list;
+	/* Log info for key TX packets */
+	u_int8_t fgTxDoneHandler;
+	uint8_t ucTxSeqNum;
+	uint8_t ucPktType;
 };
 
 struct TOKEN_HISTORY {

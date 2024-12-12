@@ -2389,6 +2389,11 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 	if (ucBssIndex >= BSSID_NUM)
 		return;
 
+#if CFG_SUPPORT_CONN_LOG
+	if (prTokenEntry->fgTxDoneHandler)
+		connLogPkt(prAdapter, prTokenEntry, u4Stat);
+#endif
+
 	/*
 	 * Driver latency counted in wlanTxLifetimeTagPacket,
 	 * since MSDU info freed on passed to DMA.
@@ -4537,6 +4542,12 @@ bool halWpdmaWriteMsdu(struct GLUE_INFO *prGlueInfo,
 		/* Use MsduInfo to select TxRing */
 		prToken->prMsduInfo = prMsduInfo;
 		prToken->ucWlanIndex = prMsduInfo->ucWlanIndex;
+
+		prToken->fgTxDoneHandler = !!prMsduInfo->pfTxDoneHandler;
+		if (prToken->fgTxDoneHandler) {
+			prToken->ucPktType = prMsduInfo->ucPktType;
+			prToken->ucTxSeqNum = prMsduInfo->ucTxSeqNum;
+		}
 
 #if HIF_TX_PREALLOC_DATA_BUFFER
 		if (prMemOps->copyTxData)
