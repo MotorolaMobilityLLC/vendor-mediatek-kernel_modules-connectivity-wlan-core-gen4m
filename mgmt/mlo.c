@@ -1836,8 +1836,9 @@ sta:
 
 		pos = prIeSta->aucStaInfo;
 		if (pos + 1 > tail) {
-			DBGLOG(ML, WARN,
-				"invalid STA profile len=%td\n", tail - pos);
+			DBGLOG_LIMITED(ML, TRACE,
+				"invalid STA profile len=%td, pos + 1 > tail\n",
+				tail - pos);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
@@ -1845,16 +1846,17 @@ sta:
 		ucStaInfoLen = *pos++;
 
 		if (prIeSta->aucStaInfo + ucStaInfoLen > tail) {
-			DBGLOG(ML, WARN,
-				"invalid STA profile len=%d\n", ucStaInfoLen);
+			DBGLOG_LIMITED(ML, TRACE,
+				"invalid STA profile len=%d, prIeSta->aucStaInfo + ucStaInfoLen > tail\n",
+				ucStaInfoLen);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
 
 		if (u2StaControl & ML_STA_CTRL_MAC_ADDR_PRESENT) {
 			if (pos + MAC_ADDR_LEN > tail) {
-				DBGLOG(ML, WARN,
-					"invalid STA profile len=%td\n",
+				DBGLOG_LIMITED(ML, TRACE,
+					"invalid STA profile len=%td, pos + MAC_ADDR_LEN > tail\n",
 					tail - pos);
 				prMlInfo->ucProfNum--;
 				goto next;
@@ -1870,8 +1872,8 @@ sta:
 		}
 		if (u2StaControl & ML_STA_CTRL_BCN_INTV_PRESENT) {
 			if (pos + 2 > tail) {
-				DBGLOG(ML, WARN,
-					"invalid STA profile len=%td\n",
+				DBGLOG_LIMITED(ML, TRACE,
+					"invalid STA profile len=%td for BCN_INTV\n",
 					tail - pos);
 				prMlInfo->ucProfNum--;
 				goto next;
@@ -1886,8 +1888,8 @@ sta:
 		}
 		if (u2StaControl & ML_STA_CTRL_TSF_OFFSET_PRESENT) {
 			if (pos + 8 > tail) {
-				DBGLOG(ML, WARN,
-					"invalid STA profile len=%td\n",
+				DBGLOG_LIMITED(ML, TRACE,
+					"invalid STA profile len=%td for TSF_OFFSET\n",
 					tail - pos);
 				prMlInfo->ucProfNum--;
 				goto next;
@@ -1902,8 +1904,8 @@ sta:
 		}
 		if (u2StaControl & ML_STA_CTRL_DTIM_INFO_PRESENT) {
 			if (pos + 2 > tail) {
-				DBGLOG(ML, WARN,
-					"invalid STA profile len=%td\n",
+				DBGLOG_LIMITED(ML, TRACE,
+					"invalid STA profile len=%td for DTIM_INFO\n",
 					tail - pos);
 				prMlInfo->ucProfNum--;
 				goto next;
@@ -1928,8 +1930,8 @@ sta:
 			if (((u2StaControl & ML_STA_CTRL_NSTR_BMP_SIZE) >>
 				ML_STA_CTRL_NSTR_BMP_SIZE_SHIFT) == 0) {
 				if (pos + 1 > tail) {
-					DBGLOG(ML, WARN,
-						"invalid STA profile len=%td\n",
+					DBGLOG_LIMITED(ML, TRACE,
+						"invalid STA profile len=%td for NSTR_BMP0\n",
 						tail - pos);
 					prMlInfo->ucProfNum--;
 					goto next;
@@ -1943,8 +1945,8 @@ sta:
 				pos += 1;
 			} else {
 				if (pos + 2 > tail) {
-					DBGLOG(ML, WARN,
-						"invalid STA profile len=%td\n",
+					DBGLOG_LIMITED(ML, TRACE,
+						"invalid STA profile len=%td for NSTR_BMP1\n",
 						tail - pos);
 					prMlInfo->ucProfNum--;
 					goto next;
@@ -1961,8 +1963,8 @@ sta:
 
 		if (u2StaControl & ML_STA_CTRL_BSS_PARA_CHANGE_COUNT_PRESENT) {
 			if (pos + 1 > tail) {
-				DBGLOG(ML, WARN,
-					"invalid STA profile len=%td\n",
+				DBGLOG_LIMITED(ML, TRACE,
+					"invalid STA profile len=%td for BSS_PARA_CHANGE_COUNT\n",
 					tail - pos);
 				prMlInfo->ucProfNum--;
 				goto next;
@@ -2014,8 +2016,9 @@ sta:
 			goto next;
 
 		if (pos + 2 > tail) {
-			DBGLOG(ML, WARN,
-				"invalid STA profile len=%td\n", tail - pos);
+			DBGLOG_LIMITED(ML, TRACE,
+				"invalid STA profile len=%td, pos + 2 > tail\n",
+				tail - pos);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
@@ -2030,8 +2033,8 @@ sta:
 		if (u2FrameCtrl == MAC_FRAME_ASSOC_RSP ||
 		    u2FrameCtrl == MAC_FRAME_REASSOC_RSP) {
 			if (pos + 2 > tail) {
-				DBGLOG(ML, WARN,
-					"invalid STA profile len=%td\n",
+				DBGLOG_LIMITED(ML, TRACE,
+					"invalid STA profile len=%td for assoc/reassoc\n",
 					tail - pos);
 				prMlInfo->ucProfNum--;
 				goto next;
@@ -2047,8 +2050,9 @@ sta:
 		}
 
 		if (pos > tail) {
-			DBGLOG(ML, WARN,
-				"invalid STA profile len=%td\n", tail - pos);
+			DBGLOG_LIMITED(ML, TRACE,
+				"invalid STA profile len=%td for pos > tail\n",
+				tail - pos);
 			prMlInfo->ucProfNum--;
 			goto next;
 		}
