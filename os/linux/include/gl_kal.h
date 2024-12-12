@@ -2690,8 +2690,7 @@ uint32_t kalTxDirectStartXmit(struct sk_buff *prSkb,
 	struct GLUE_INFO *prGlueInfo);
 uint32_t kalGetTxDirectQueueLength(struct GLUE_INFO *prGlueInfo);
 void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData);
-void *kalBuildSkb(void *pvPacket, uint32_t u4MgmtLength,
-	uint32_t u4TotLen, u_int8_t fgIsSetLen);
+void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen);
 void *kalGetGlueNetDevHdl(struct GLUE_INFO *prGlueInfo);
 struct device *kalGetGlueDevHdl(struct GLUE_INFO *prGlueInfo);
 void kalGetPlatDev(struct platform_device **pdev);

@@ -16278,8 +16278,7 @@ void kalKfreeSkb(void *pvPacket, u_int8_t fgIsFreeData)
 	}
 }
 
-void *kalBuildSkb(void *pvPacket, uint32_t u4MgmtLength,
-	uint32_t u4TotLen, u_int8_t fgIsSetLen)
+void *kalBuildSkb(void *pvPacket, uint32_t u4TotLen)
 {
 	struct sk_buff *pkt;
 
@@ -16288,14 +16287,12 @@ void *kalBuildSkb(void *pvPacket, uint32_t u4MgmtLength,
 	 * but we don't do this, so if not add this will result kernel
 	 * overwrite the content which is not expected.
 	 */
-	pkt = build_skb(pvPacket, u4MgmtLength
-		+ kalGetSKBSharedInfoSize());
+	pkt = build_skb(pvPacket, u4TotLen + kalGetSKBSharedInfoSize());
 
 	/* Not need send skb shared info to peers, so not add
 	 * kalGetSKBSharedInfoSize() here.
 	 */
-	if (pkt && fgIsSetLen)
-		pkt->len = u4TotLen;
+	pkt->len = u4TotLen;
 
 	return (void *)pkt;
 }
