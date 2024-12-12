@@ -2038,7 +2038,7 @@ u_int8_t kalSetPagePoolPageNum(uint32_t u4Num)
 		if (u4CurPageNum == g_u4CurPageNum)
 			g_fgPagePoolDelayAlloc = TRUE;
 	} else {
-		DBGLOG(HAL, INFO, "set page pool[req:%u alloc:%u->%u]",
+		DBGLOG(HAL, TRACE, "set page pool[req:%u alloc:%u->%u]",
 		       u4SetNum, u4CurPageNum, g_u4CurPageNum);
 	}
 

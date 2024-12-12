@@ -8297,6 +8297,9 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		PERF_MON_UPDATE_INTERVAL, FEATURE_DEBUG_ONLY);
 #endif /* CFG_PERF_MON_FAST */
 
+	INIT_UINT(prWifiVar->u4HifDumpStatsPeriod, "HifDumpStatsPeriod",
+		prWifiVar->u4PerfMonUpdatePeriod, FEATURE_DEBUG_ONLY);
+
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[0], "PerfMonLv1", 20,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[1], "PerfMonLv2", 50,

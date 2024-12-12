@@ -5041,7 +5041,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				wlanoidWedRecoveryStatus, &u4WedSerStatus,
 				sizeof(u4WedSerStatus), &ret);
 #endif
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"SER(E) Host stop PDMA tx/rx ring operation & receive\n");
 
 #if defined(_HIF_PCIE)
@@ -5059,15 +5059,15 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 #endif
 #if CFG_SUPPORT_MULTITHREAD
 			kalSetRxProcessEvent(prAdapter->prGlueInfo);
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"SER(F) kalSetRxProcessEvent\n");
 #else
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"SER(F) nicRxProcessRFBs\n");
 			nicRxProcessRFBs(prAdapter);
 #endif
 
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"SER(F) Host ACK PDMA tx/rx ring stop operation\n");
 			halTriggerSwInterrupt(
 				prAdapter, MCU_INT_PDMA0_STOP_DONE);
@@ -5083,7 +5083,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_STOP_PDMA0:
 		if (u4Status & ERROR_DETECT_RESET_DONE) {
-			DBGLOG(HAL, INFO, "SER(L) Host re-initialize PDMA\n");
+			DBGLOG(HAL, VOC, "SER(L) Host re-initialize PDMA\n");
 
 			if (prSwWfdmaInfo->rOps.backup)
 				prSwWfdmaInfo->rOps.backup(prGlueInfo);
@@ -5095,7 +5095,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				prBusInfo->DmaShdlInit(prAdapter);
 
 #if (CFG_SUPPORT_HOST_OFFLOAD == 1)
-			DBGLOG(HAL, INFO, "SER(M) Reset Host Offload\n");
+			DBGLOG(HAL, VOC, "SER(M) Reset Host Offload\n");
 			if (IS_FEATURE_ENABLED(prWifiVar->fgEnableRro)) {
 				halRroResetRcbList(prGlueInfo);
 				halRroResetMem(prGlueInfo);
@@ -5120,7 +5120,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			halResetMsduToken(prAdapter);
 			prAdapter->ulNoMoreRfb = 0;
 
-			DBGLOG(HAL, INFO, "SER(M) Host enable PDMA\n");
+			DBGLOG(HAL, VOC, "SER(M) Host enable PDMA\n");
 			halWpdmaInitRing(prGlueInfo, false);
 
 			/* reset SW value after InitRing */
@@ -5135,7 +5135,8 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 				wlanoidWedRecoveryStatus, &u4WedSerStatus,
 				sizeof(u4WedSerStatus), &ret);
 #endif
-			DBGLOG(HAL, INFO,
+
+			DBGLOG(HAL, VOC,
 				"SER(N) Host interrupt MCU PDMA ring init done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_RESET_PDMA0;
@@ -5149,7 +5150,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 
 	case ERR_RECOV_RESET_PDMA0:
 		if (u4Status & ERROR_DETECT_RECOVERY_DONE) {
-			DBGLOG(HAL, INFO,
+			DBGLOG(HAL, VOC,
 				"SER(Q) Host interrupt MCU SER handle done\n");
 			prErrRecoveryCtrl->eErrRecovState =
 				ERR_RECOV_WAIT_MCU_NORMAL;
@@ -5166,7 +5167,7 @@ void halHwRecoveryFromError(struct ADAPTER *prAdapter)
 			del_timer_sync(&prHifInfo->rSerTimer);
 #if (CFG_SUPPORT_ADHOC) || (CFG_ENABLE_WIFI_DIRECT)
 			/* update Beacon frame if operating in AP mode. */
-			DBGLOG(HAL, INFO, "SER(T) Host re-initialize BCN\n");
+			DBGLOG(HAL, VOC, "SER(T) Host re-initialize BCN\n");
 			nicSerReInitBeaconFrame(prAdapter);
 #endif
 
@@ -6859,7 +6860,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 	kalMemZero(buf, u4BufferSize);
 
 	prHifStats->ulUpdatePeriod = jiffies +
-			prAdapter->rWifiVar.u4PerfMonUpdatePeriod * HZ / 1000;
+			prAdapter->rWifiVar.u4HifDumpStatsPeriod * HZ / 1000;
 
 #if defined(_HIF_PCIE)
 	prMsiInfo = &prAdapter->chip_info->bus_info->pcie_msi_info;
@@ -7097,7 +7098,7 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 		GLUE_GET_REF_CNT(prHifInfo->rNapiDev.u4DrvOwnCnt));
 #endif /* CFG_SUPPORT_HIF_RX_NAPI */
 
-	DBGLOG(HAL, INFO, "%s\n", buf);
+	DBGLOG(HAL, VOC, "%s\n", buf);
 	kalMemFree(buf, VIR_MEM_TYPE, u4BufferSize);
 
 #if (CFG_WFD_SCC_BALANCE_SUPPORT == 1)

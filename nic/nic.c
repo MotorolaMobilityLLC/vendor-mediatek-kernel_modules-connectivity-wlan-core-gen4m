@@ -907,12 +907,12 @@ struct CMD_INFO *nicGetPendingCmdInfo(struct ADAPTER *prAdapter,
 	if (prCmdInfo) {
 		if (wlanIfCmdDbgEn(prAdapter)) {
 			DBGLOG(TX, INFO,
-				"Get command: %p, %ps, cmd=0x%02X, seq=%u",
+				"Get command: %p, %ps, cmd=0x%02X, seq=%u\n",
 				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		} else {
-			DBGLOG(TX, INFO,
-				"Get command: %p, %p, cmd=0x%02X, seq=%u",
+			DBGLOG(TX, TRACE,
+				"Get command: %p, %ps, cmd=0x%02X, seq=%u\n",
 				prCmdInfo, prCmdInfo->pfCmdDoneHandler,
 				prCmdInfo->ucCID, prCmdInfo->ucCmdSeqNum);
 		}

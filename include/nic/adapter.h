@@ -1289,6 +1289,7 @@ struct WIFI_VAR {
 	uint32_t u4DeQuePercentHT20Nss1;
 
 	uint32_t u4HifDetectTxTimeoutPeriod;
+	uint32_t u4HifDumpStatsPeriod;
 	uint32_t u4PerfMonUpdatePeriod;
 	uint32_t u4PerfMonTpTh[PERF_MON_TP_MAX_THRESHOLD];
 #if CFG_NAPI_DELAY

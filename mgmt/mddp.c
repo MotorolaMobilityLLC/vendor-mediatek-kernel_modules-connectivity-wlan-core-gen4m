@@ -1385,7 +1385,7 @@ int32_t mddpNotifyWifiStatus(enum ENUM_MDDPW_DRV_INFO_STATUS status)
 #endif /* CFG_MTK_SUPPORT_LIGHT_MDDP */
 
 		ret = gMddpWFunc.notify_drv_info(prNotifyInfo);
-		DBGLOG(INIT, INFO, "power: %d, ret: %d, feature:%d.\n",
+		DBGLOG(INIT, VOC, "power: %d, ret: %d, feature:%d.\n",
 		       status, ret, feature);
 		kalMemFree(buff, VIR_MEM_TYPE, u4BufSize);
 		g_eMddpStatus = status;
