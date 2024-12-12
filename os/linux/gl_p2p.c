@@ -2046,6 +2046,24 @@ netdev_tx_t p2pHardStartXmit(struct sk_buff *prSkb,
 		netdev_priv(prDev);
 	prGlueInfo = prNetDevPrivate->prGlueInfo;
 	ucBssIndex = prNetDevPrivate->ucBssIdx;
+
+	if (prGlueInfo == NULL) {
+		DBGLOG(INIT, WARN, "prGlueInfo is NULL\n");
+		dev_kfree_skb(prSkb);
+		return NETDEV_TX_OK;
+	}
+
+#if CFG_CHIP_RESET_SUPPORT
+	if (!wlanIsDriverReady(prGlueInfo,
+		(WLAN_DRV_READY_CHECK_RESET | WLAN_DRV_READY_CHECK_WLAN_ON))) {
+		DBGLOG(INIT, WARN,
+		"u4ReadyFlag:%u, kalIsResetting():%d, dropping the packet\n",
+		prGlueInfo->u4ReadyFlag, kalIsResetting());
+		dev_kfree_skb(prSkb);
+		return NETDEV_TX_OK;
+	}
+#endif
+
 #if (CFG_SUPPORT_802_11BE_MLO == 1) && \
 	(KERNEL_VERSION(5, 19, 2) <= CFG80211_VERSION_CODE)
 	if (prDev->ieee80211_ptr->iftype == NL80211_IFTYPE_AP &&
