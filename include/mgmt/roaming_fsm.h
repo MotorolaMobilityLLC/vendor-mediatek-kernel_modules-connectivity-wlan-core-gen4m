@@ -162,6 +162,7 @@ struct ROAMING_INFO {
 	/* sync with FW: NUM(init) -> START -> FAIL -> ABORT */
 	enum ENUM_ROAMING_EVENT eCurrentEvent[MAX_BSSID_NUM];
 	uint32_t u4BssIdxBmap;
+	uint32_t u4RoamingFwTime;
 
 #if CFG_SUPPORT_DRIVER_ROAMING
 	OS_SYSTIME rRoamingLastDecisionTime;

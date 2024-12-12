@@ -1141,7 +1141,9 @@ void roamingFsmRunEventDiscovery(struct ADAPTER *prAdapter,
 		}
 
 		prRoamingFsmInfo->ucRcpi = (uint8_t)(prTransit->u2Data & 0xff);
-		prRoamingFsmInfo->ucThreshold =	prTransit->u2RcpiLowThreshold;
+		prRoamingFsmInfo->ucThreshold = prTransit->u2RcpiLowThreshold;
+		prRoamingFsmInfo->u4RoamingFwTime =
+					prTransit->u4RoamingTriggerTime;
 
 		prBssDesc = scanSearchBssDescByBssidAndSsid(prAdapter,
 				arBssid, TRUE, &rSsid);
