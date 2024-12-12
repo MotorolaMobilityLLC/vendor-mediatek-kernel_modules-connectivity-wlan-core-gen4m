@@ -8434,8 +8434,13 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		PERF_MON_UPDATE_INTERVAL, FEATURE_DEBUG_ONLY);
 #endif /* CFG_PERF_MON_FAST */
 
+#if (CFG_TC10_FEATURE == 1)
+	INIT_UINT(prWifiVar->u4HifDumpStatsPeriod, "HifDumpStatsPeriod",
+		2000, FEATURE_DEBUG_ONLY);
+#else
 	INIT_UINT(prWifiVar->u4HifDumpStatsPeriod, "HifDumpStatsPeriod",
 		prWifiVar->u4PerfMonUpdatePeriod, FEATURE_DEBUG_ONLY);
+#endif /* CFG_TC10_FEATURE == 1 */
 
 	INIT_UINT(prWifiVar->u4PerfMonTpTh[0], "PerfMonLv1", 20,
 		  FEATURE_TO_CUSTOMER);
