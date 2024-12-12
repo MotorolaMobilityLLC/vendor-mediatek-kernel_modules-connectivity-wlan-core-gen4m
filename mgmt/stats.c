@@ -1335,9 +1335,9 @@ statsTxTimeHdlr(uint8_t ucBssIdx,
 	stats = &prAdapter->rMsduReportStats.rCounting;
 	for (i = 0; i < TX_TIME_CAT_NUM; i++) {
 		prTimeStat->au4Success[i] = GLUE_GET_REF_CNT(
-			    stats->au4ConnsysLatency[ucBssIdx][i]);
+		     stats->aaau4TxLatency[CONNSYS_TX_DELAY][ucBssIdx][i]);
 		prTimeStat->au4Fail[i] = GLUE_GET_REF_CNT(
-			    stats->au4FailConnsysLatency[ucBssIdx][i]);
+		     stats->aaau4TxLatency[FAIL_CONNSYS_TX_DELAY][ucBssIdx][i]);
 	}
 
 #else
@@ -1376,9 +1376,9 @@ statsTxLatHdlr(uint8_t ucBssIdx,
 	stats = &prAdapter->rMsduReportStats.rCounting;
 	for (i = 0; i < TX_TIME_CAT_NUM; i++) {
 		prLatStat->au4DriverLat[i] = GLUE_GET_REF_CNT(
-			stats->au4DriverLatency[ucBssIdx][i]);
+			stats->aaau4TxLatency[DRIVER_TX_DELAY][ucBssIdx][i]);
 		prLatStat->au4MacLat[i] = GLUE_GET_REF_CNT(
-			stats->au4MacLatency[ucBssIdx][i]);
+			stats->aaau4TxLatency[MAC_TX_DELAY][ucBssIdx][i]);
 	}
 #else
 	DBGLOG(TX, INFO, "tx latency not support.\n");

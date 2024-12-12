@@ -2388,91 +2388,30 @@ u_int8_t halProcessToken(struct ADAPTER *prAdapter,
 }
 
 #if CFG_SUPPORT_TX_LATENCY_STATS
-static void halAddConnsysLatencyCount(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint32_t u4ConnsysLatency)
+static void halAddTxDelayCount(struct ADAPTER *prAdapter,
+	enum ENUM_AVERAGE_TX_DELAY_TYPE eDelayType,
+	uint8_t ucBssIndex, uint32_t u4TxLatency)
 {
 	struct TX_LATENCY_STATS *prCounting;
-	uint32_t *pConnsysDelay;
-	uint32_t *pMaxConnsysDelay = prAdapter->rWifiVar.au4ConnsysTxDelayMax;
+	uint32_t *pTxDelayCount;
+	uint32_t *pMaxDelayBound =
+		prAdapter->rWifiVar.aau4TxDelayMax[eDelayType];
 	uint8_t i;
 
 	prCounting = &prAdapter->rMsduReportStats.rCounting;
-	prCounting->au8AccumulatedDelay[CONNSYS_TX_DELAY][ucBssIndex] +=
-					u4ConnsysLatency;
-	pConnsysDelay = prCounting->au4ConnsysLatency[ucBssIndex];
+	prCounting->au8AccumulatedDelay[eDelayType][ucBssIndex] +=
+					u4TxLatency;
+	pTxDelayCount = prCounting->aaau4TxLatency[eDelayType][ucBssIndex];
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4ConnsysLatency <= *pMaxConnsysDelay++) {
-			GLUE_INC_REF_CNT(pConnsysDelay[i]);
-			break;
-		}
-	}
-}
-
-static void halAddTxFailConnsysLatencyCount(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint32_t u4ConnsysLatency)
-{
-	struct TX_LATENCY_STATS *prCounting;
-	uint32_t *pFailConnsysDelay;
-	uint32_t *pMaxFailConnsysDelay =
-		prAdapter->rWifiVar.au4ConnsysTxFailDelayMax;
-	uint8_t i;
-
-	prCounting = &prAdapter->rMsduReportStats.rCounting;
-	prCounting->au8AccumulatedDelay[FAIL_CONNSYS_TX_DELAY][ucBssIndex] +=
-					u4ConnsysLatency;
-	pFailConnsysDelay = prCounting->au4FailConnsysLatency[ucBssIndex];
-
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4ConnsysLatency <= *pMaxFailConnsysDelay++) {
-			GLUE_INC_REF_CNT(pFailConnsysDelay[i]);
-			break;
-		}
-	}
-}
-
-static void halAddMacLatencyCount(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint32_t u4MacLatency)
-{
-	struct TX_LATENCY_STATS *prCounting;
-	uint32_t *pMacDelay;
-	uint32_t *pMaxMacDelay = prAdapter->rWifiVar.au4MacTxDelayMax;
-	uint8_t i;
-
-	prCounting = &prAdapter->rMsduReportStats.rCounting;
-	prCounting->au8AccumulatedDelay[MAC_TX_DELAY][ucBssIndex] +=
-					u4MacLatency;
-	pMacDelay = prCounting->au4MacLatency[ucBssIndex];
-
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4MacLatency <= *pMaxMacDelay++) {
-			GLUE_INC_REF_CNT(pMacDelay[i]);
+		if (u4TxLatency <= *pMaxDelayBound++) {
+			GLUE_INC_REF_CNT(pTxDelayCount[i]);
 			break;
 		}
 	}
 
-	wlanCountTxDelayOverLimit(prAdapter, MAC_DELAY, u4MacLatency);
-}
-
-static void halAddAirLatencyCount(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint32_t u4AirLatency)
-{
-	struct TX_LATENCY_STATS *prCounting;
-	uint32_t *pAirDelay;
-	uint32_t *pMaxAirDelay = prAdapter->rWifiVar.au4AirTxDelayMax;
-	uint8_t i;
-
-	prCounting = &prAdapter->rMsduReportStats.rCounting;
-	prCounting->au8AccumulatedDelay[AIR_TX_DELAY][ucBssIndex] +=
-					u4AirLatency;
-	pAirDelay = prCounting->au4AirLatency[ucBssIndex];
-
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4AirLatency <= *pMaxAirDelay++) {
-			GLUE_INC_REF_CNT(pAirDelay[i]);
-			break;
-		}
-	}
+	if (eDelayType == MAC_DELAY)
+		wlanCountTxDelayOverLimit(prAdapter, MAC_DELAY, u4TxLatency);
 }
 #endif
 
@@ -2526,17 +2465,18 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 			TIME_ABS_DIFF64(u8Now,
 				prTokenEntry->u8Tm));
 
-	halAddMacLatencyCount(prAdapter, ucBssIndex, u4MacLatency);
+	halAddTxDelayCount(prAdapter, MAC_TX_DELAY, ucBssIndex, u4MacLatency);
 	if (u4AirLatency != INVALID_TX_DELAY)
-		halAddAirLatencyCount(prAdapter, ucBssIndex, u4AirLatency);
+		halAddTxDelayCount(prAdapter, AIR_TX_DELAY,
+				   ucBssIndex, u4AirLatency);
 
 	if (unlikely(u4Stat)) {
 		uint32_t lim = prWifiVar->u4ContinuousTxFailThreshold;
 
 		GLUE_INC_REF_CNT(stats->u4TxFail);
 		GLUE_INC_REF_CNT(report->u4ContinuousTxFail);
-		halAddTxFailConnsysLatencyCount(prAdapter, ucBssIndex,
-						u4ConnsysLatency);
+		halAddTxDelayCount(prAdapter, FAIL_CONNSYS_TX_DELAY,
+				   ucBssIndex, u4ConnsysLatency);
 		if (lim && report->u4ContinuousTxFail >= lim &&
 		    report->u4ContinuousTxFail % lim == 0) {
 			char uevent[64];
@@ -2547,8 +2487,8 @@ void halMsduReportStats(struct ADAPTER *prAdapter, uint32_t u4Token,
 			kalSendUevent(prAdapter, uevent);
 		}
 	} else {
-		halAddConnsysLatencyCount(prAdapter, ucBssIndex,
-					u4ConnsysLatency);
+		halAddTxDelayCount(prAdapter, CONNSYS_TX_DELAY,
+				   ucBssIndex, u4ConnsysLatency);
 		report->u4ContinuousTxFail = 0;
 	}
 
@@ -6188,12 +6128,14 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleNoLimitState(
 
 	for (i = 0; i < BSSID_NUM; i++) {
 		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
-			u4ConsysAll += report->au4ConnsysLatency[i][j];
-			u4Connsys[i] += report->au4ConnsysLatency[i][j];
+			u4ConsysAll +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
+			u4Connsys[i] +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
 		}
-		u4ConsysSlot2 += report->au4ConnsysLatency[i][0];
-		u4ConsysSlot2 += report->au4ConnsysLatency[i][1];
-		u4ConsysSlot2 += report->au4ConnsysLatency[i][2];
+		u4ConsysSlot2 += report->aaau4TxLatency[CONNSYS_TX_DELAY][i][0];
+		u4ConsysSlot2 += report->aaau4TxLatency[CONNSYS_TX_DELAY][i][1];
+		u4ConsysSlot2 += report->aaau4TxLatency[CONNSYS_TX_DELAY][i][2];
 	}
 
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
@@ -6230,9 +6172,12 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleQuickState(
 	uint32_t u4ConsysAll = 0;
 	uint32_t i = 0, j = 0;
 
-	for (i = 0; i < BSSID_NUM; i++)
-		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++)
-			u4ConsysAll += report->au4ConnsysLatency[i][j];
+	for (i = 0; i < BSSID_NUM; i++) {
+		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
+			u4ConsysAll +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
+		}
+	}
 
 	DBGLOG(REQ, INFO, "C All: %u", u4ConsysAll);
 
@@ -6259,12 +6204,16 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleMainState(
 
 	for (i = 0; i < BSSID_NUM; i++) {
 		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
-			u4ConsysAll += report->au4ConnsysLatency[i][j];
-			u4DriverAll += report->au4DriverLatency[i][j];
-			u4Connsys[i] += report->au4ConnsysLatency[i][j];
-			u4Driver[i] += report->au4DriverLatency[i][j];
+			u4ConsysAll +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
+			u4DriverAll +=
+				report->aaau4TxLatency[DRIVER_TX_DELAY][i][j];
+			u4Connsys[i] +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
+			u4Driver[i] +=
+				report->aaau4TxLatency[DRIVER_TX_DELAY][i][j];
 		}
-		u4ConsysSlot0 += report->au4ConnsysLatency[i][0];
+		u4ConsysSlot0 += report->aaau4TxLatency[CONNSYS_TX_DELAY][i][0];
 	}
 
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
@@ -6337,12 +6286,16 @@ enum ENUM_WFD_BSS_BALANCE_STATE halWFDBssBalanceFsmHandleStepState(
 
 	for (i = 0; i < BSSID_NUM; i++) {
 		for (j = 0; j < LATENCY_STATS_MAX_SLOTS; j++) {
-			u4ConsysAll += report->au4ConnsysLatency[i][j];
-			u4DriverAll += report->au4DriverLatency[i][j];
-			u4Connsys[i] += report->au4ConnsysLatency[i][j];
-			u4Driver[i] += report->au4DriverLatency[i][j];
+			u4ConsysAll +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
+			u4DriverAll +=
+				report->aaau4TxLatency[DRIVER_TX_DELAY][i][j];
+			u4Connsys[i] +=
+				report->aaau4TxLatency[CONNSYS_TX_DELAY][i][j];
+			u4Driver[i] +=
+				report->aaau4TxLatency[DRIVER_TX_DELAY][i][j];
 		}
-		u4ConsysSlot0 += report->au4ConnsysLatency[i][0];
+		u4ConsysSlot0 += report->aaau4TxLatency[CONNSYS_TX_DELAY][i][0];
 	}
 
 	halWFDBssBalanceGetPreTxBW(prAdapter, prTokenInfo,
@@ -6828,30 +6781,14 @@ static void diffTxDelayCounts(struct TX_LATENCY_STATS *prDiff,
 		struct TX_LATENCY_STATS *prCounting,
 		struct TX_LATENCY_STATS	*prReported)
 {
-	diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-		   prDiff->au4DriverLatency[0],
-		   prCounting->au4DriverLatency[0],
-		   prReported->au4DriverLatency[0]);
-	diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-		   prDiff->au4DriverHifLatency[0],
-		   prCounting->au4DriverHifLatency[0],
-		   prReported->au4DriverHifLatency[0]);
-	diffTxDelayCounter(BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-		   prDiff->au4ConnsysLatency[0],
-		   prCounting->au4ConnsysLatency[0],
-		   prReported->au4ConnsysLatency[0]);
-	diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-		   prDiff->au4MacLatency[0],
-		   prCounting->au4MacLatency[0],
-		   prReported->au4MacLatency[0]);
-	diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-		   prDiff->au4AirLatency[0],
-		   prCounting->au4AirLatency[0],
-		   prReported->au4AirLatency[0]);
-	diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-		   prDiff->au4FailConnsysLatency[0],
-		   prCounting->au4FailConnsysLatency[0],
-		   prReported->au4FailConnsysLatency[0]);
+	enum ENUM_AVERAGE_TX_DELAY_TYPE t;
+
+	for (t = DRIVER_TX_DELAY;  t < MAX_AVERAGE_TX_DELAY_TYPE; t++) {
+		diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
+			   prDiff->aaau4TxLatency[t][0],
+			   prCounting->aaau4TxLatency[t][0],
+			   prReported->aaau4TxLatency[t][0]);
+	}
 }
 
 static void diffTxAccDelayCounts(struct TX_LATENCY_STATS *prDiff,
@@ -6904,10 +6841,6 @@ static void updateAverageTx(struct ADAPTER *prAdapter,
 	uint32_t one_bss_tx_count;
 	uint32_t all_bss_tx_count;
 	uint32_t all_bss_acc_delay;
-	/* struct TX_LATENCY_STATS: 5 delay categories */
-	uint32_t (*tx_count)[LATENCY_STATS_MAX_SLOTS] =
-		&prDiff->au4DriverLatency[0];
-	uint64_t (*acc_delay)[MAX_BSSID_NUM] = &prDiff->au8AccumulatedDelay[0];
 
 	kalMemZero(au4TxAverage, sizeof(uint32_t) *
 			(MAX_BSSID_NUM + 1) * MAX_AVERAGE_TX_DELAY_TYPE);
@@ -6917,14 +6850,17 @@ static void updateAverageTx(struct ADAPTER *prAdapter,
 		all_bss_tx_count = 0;
 		for (b = 0; b < MAX_BSSID_NUM; b++) {
 			one_bss_tx_count = 0;
-			for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++)
-				one_bss_tx_count += tx_count[b][i];
-			all_bss_acc_delay += acc_delay[t][b];
+			for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
+				one_bss_tx_count +=
+					prDiff->aaau4TxLatency[t][b][i];
+			}
+			all_bss_acc_delay += prDiff->au8AccumulatedDelay[t][b];
 			all_bss_tx_count += one_bss_tx_count;
 			if (one_bss_tx_count) {
 				au4TxAverage[t][b] =
-					kal_div64_u64(acc_delay[t][b],
-						      one_bss_tx_count);
+					kal_div64_u64(
+					      prDiff->au8AccumulatedDelay[t][b],
+					      one_bss_tx_count);
 			}
 		}
 		/* LAST element (b=MAX_BSSID_NUM) stores the all BSS average */
@@ -6943,6 +6879,7 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 #if CFG_SUPPORT_TX_LATENCY_STATS
 	static unsigned long next_update; /* in ms */
 	unsigned long update_interval; /* in ms */
+	enum ENUM_AVERAGE_TX_DELAY_TYPE t;
 	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
 	char *buf;
 	uint32_t u4BufferSize = 512, pos = 0;
@@ -7007,31 +6944,12 @@ static void halDumpMsduReportStats(struct ADAPTER *prAdapter)
 	 * [threholds]=[BSS0 slot0:slot1:slot2:slot3:slot4:slot5/avg,BSS1 ...
 	 */
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "TX_Delay ");
-	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
-			DRIVER_TX_DELAY, prWifiVar->au4DriverTxDelayMax,
-			report->au4DriverLatency[0],
-			pAverage[DRIVER_TX_DELAY], report_num);
-	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
-			DRIVER_HIF_TX_DELAY, prWifiVar->au4DriverHifTxDelayMax,
-			report->au4DriverHifLatency[0],
-			pAverage[DRIVER_HIF_TX_DELAY], report_num);
-	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
-			CONNSYS_TX_DELAY, prWifiVar->au4ConnsysTxDelayMax,
-			report->au4ConnsysLatency[0],
-			pAverage[CONNSYS_TX_DELAY], report_num);
-	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
-			MAC_TX_DELAY, prWifiVar->au4MacTxDelayMax,
-			report->au4MacLatency[0],
-			pAverage[MAC_TX_DELAY], report_num);
-	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
-			AIR_TX_DELAY, prWifiVar->au4AirTxDelayMax,
-			report->au4AirLatency[0],
-			pAverage[AIR_TX_DELAY], report_num);
-	pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
-			FAIL_CONNSYS_TX_DELAY,
-			prWifiVar->au4ConnsysTxFailDelayMax,
-			report->au4FailConnsysLatency[0],
-			pAverage[FAIL_CONNSYS_TX_DELAY], report_num);
+	for (t = DRIVER_TX_DELAY;  t < MAX_AVERAGE_TX_DELAY_TYPE; t++) {
+		pos += composeTxDelayLog(prAdapter, buf, pos, u4BufferSize,
+				t, prWifiVar->aau4TxDelayMax[t],
+				report->aaau4TxLatency[t][0],
+				pAverage[t], report_num);
+	}
 	pos += kalSnprintf(buf + pos, u4BufferSize - pos, "Txfail:%u",
 			report->u4TxFail);
 
@@ -7169,6 +7087,7 @@ static void kalWFDBssBalanceGetLatencyStats(
 	struct ADAPTER *prAdapter)
 {
 #if CFG_SUPPORT_TX_LATENCY_STATS
+	enum ENUM_AVERAGE_TX_DELAY_TYPE t;
 	struct TX_LATENCY_REPORT_STATS *stats = &prAdapter->rMsduReportStats;
 	struct WIFI_VAR *prWifiVar = &prAdapter->rWifiVar;
 	struct TX_LATENCY_STATS rDiff = {0};
@@ -7183,21 +7102,18 @@ static void kalWFDBssBalanceGetLatencyStats(
 	 */
 	report = &stats->rCounting;
 	if (!prWifiVar->fgTxLatencyKeepCounting) {
-		diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-			   rDiff.au4DriverLatency[0],
-			   report->au4DriverLatency[0],
-			   stats->rReported4SccB.au4DriverLatency[0]);
-		diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-			   rDiff.au4ConnsysLatency[0],
-			   report->au4ConnsysLatency[0],
-			   stats->rReported4SccB.au4ConnsysLatency[0]);
-		diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-			   rDiff.au4MacLatency[0], report->au4MacLatency[0],
-			   stats->rReported4SccB.au4MacLatency[0]);
-		diffTxDelayCounter(MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
-			   rDiff.au4FailConnsysLatency[0],
-			   report->au4FailConnsysLatency[0],
-			   stats->rReported4SccB.au4FailConnsysLatency[0]);
+		for (t = DRIVER_TX_DELAY; t < MAX_AVERAGE_TX_DELAY_TYPE; t++) {
+			if (t != DRIVER_TX_DELAY &&
+			    t != CONNSYS_TX_DELAY &&
+			    t != MAC_TX_DELAY &&
+			    t != FAIL_CONNSYS_TX_DELAY)
+				continue;
+			diffTxDelayCounter(
+				MAX_BSSID_NUM * LATENCY_STATS_MAX_SLOTS,
+				rDiff.aaau4TxLatency[t][0],
+				report->aaau4TxLatency[t][0],
+				stats->rReported4SccB.aaau4TxLatency[t][0]);
+		}
 		rDiff.u4TxFail = stats->rCounting.u4TxFail -
 				 stats->rReported4SccB.u4TxFail;
 		report = &rDiff;

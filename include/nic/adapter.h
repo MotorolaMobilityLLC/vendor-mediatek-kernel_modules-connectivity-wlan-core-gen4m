@@ -1708,12 +1708,8 @@ struct WIFI_VAR {
 	uint32_t u4MsduStatsUpdateInterval; /* in ms */
 	uint32_t u4ContinuousTxFailThreshold;
 
-	uint32_t au4AirTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
-	uint32_t au4MacTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
-	uint32_t au4DriverTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
-	uint32_t au4DriverHifTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
-	uint32_t au4ConnsysTxDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
-	uint32_t au4ConnsysTxFailDelayMax[LATENCY_STATS_MAX_SLOTS]; /* in ms */
+	uint32_t aau4TxDelayMax[MAX_AVERAGE_TX_DELAY_TYPE]
+				[LATENCY_STATS_MAX_SLOTS]; /* in ms */
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
 #if (CFG_SUPPORT_DYNAMIC_EDCCA == 1)
@@ -2184,24 +2180,26 @@ struct OID_HANDLER_RECORD {
 
 /**
  * struct TX_LATENCY_STATS - TX latency statistics counters
- * @au4DriverLatency: Counter distribution of TX delay in Driver
- * @au4DriverHifLatency: Counter distribution of TX delay in DriverH
- * @au4ConnsysLatency: Counter distribution of TX delay in Connsys
- * @au4MacLatency: Counter distribution of TX delay logged in MSDU report
- * @au4AirLatency: Counter distribution of Air delay logged in MSDU report
- * @au4FailConnsysLatency: Counter distribution of TX Failed delay in Connsys
+ * @aaau4TxLatency[DRIVER_TX_DELAY]:
+ *	Counter distribution of TX delay in Driver
+ * @aaau4TxLatency[DRIVER_HIF_TX_DELAY]:
+ *	Counter distribution of TX delay in DriverH
+ * @aaau4TxLatency[CONNSYS_TX_DELAY]:
+ *	Counter distribution of TX delay in Connsys
+ * @aaau4TxLatency[MAC_TX_DELAY]:
+ *	Counter distribution of TX delay logged in MSDU report
+ * @aaau4TxLatency[AIR_TX_DELAY]:
+ *	Counter distribution of Air delay logged in MSDU report
+ * @aaau4TxLatency[FAIL_CONNSYS_TX_DELAY]:
+ *	Counter distribution of TX Failed delay in Connsys
  *
  * @au8AccumulatedDelay: accumulated delay for counting average
  *
  * @u4TxFail: Number of TX failed count
  */
 struct TX_LATENCY_STATS {
-	uint32_t au4DriverLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4DriverHifLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4ConnsysLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4MacLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4AirLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
-	uint32_t au4FailConnsysLatency[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
+	uint32_t aaau4TxLatency[MAX_AVERAGE_TX_DELAY_TYPE]
+				[MAX_BSSID_NUM][LATENCY_STATS_MAX_SLOTS];
 
 	uint64_t au8AccumulatedDelay[MAX_AVERAGE_TX_DELAY_TYPE][MAX_BSSID_NUM];
 

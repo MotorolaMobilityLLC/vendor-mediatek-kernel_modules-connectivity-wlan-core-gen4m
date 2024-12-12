@@ -8489,89 +8489,93 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		"TxLatencyContinuousFailThrehold",
 		TX_LATENCY_STATS_CONTINUOUS_FAIL_THREHOLD, FEATURE_TO_CUSTOMER);
 
-	INIT_UINT(prWifiVar->au4DriverTxDelayMax[0],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_TX_DELAY][0],
 		"TxLatencyDriverDelayMaxL1",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L1, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4DriverTxDelayMax[1],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_TX_DELAY][1],
 		"TxLatencyDriverDelayMaxL2",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L2, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4DriverTxDelayMax[2],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_TX_DELAY][2],
 		"TxLatencyDriverDelayMaxL3",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L3, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4DriverTxDelayMax[3],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_TX_DELAY][3],
 		"TxLatencyDriverDelayMaxL4",
 		TX_LATENCY_STATS_MAX_DRIVER_DELAY_L4, FEATURE_TO_CUSTOMER);
-	prWifiVar->au4DriverTxDelayMax[4] = UINT_MAX;
+	prWifiVar->aau4TxDelayMax[DRIVER_TX_DELAY][4] = UINT_MAX;
 
-	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[0],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_HIF_TX_DELAY][0],
 		"TxLatencyDriver1DelayMaxL1",
 		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L1, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[1],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_HIF_TX_DELAY][1],
 		"TxLatencyDriver1DelayMaxL2",
 		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L2, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[2],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_HIF_TX_DELAY][2],
 		"TxLatencyDriver1DelayMaxL3",
 		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L3, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4DriverHifTxDelayMax[3],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[DRIVER_HIF_TX_DELAY][3],
 		"TxLatencyDriver1DelayMaxL4",
 		TX_LATENCY_STATS_MAX_DRIVER1_DELAY_L4, FEATURE_TO_CUSTOMER);
-	prWifiVar->au4DriverHifTxDelayMax[4] = UINT_MAX;
+	prWifiVar->aau4TxDelayMax[DRIVER_HIF_TX_DELAY][4] = UINT_MAX;
 
-	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[0],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[CONNSYS_TX_DELAY][0],
 		"TxLatencyConnsysDelayMaxL1",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L1, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[1],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[CONNSYS_TX_DELAY][1],
 		"TxLatencyConnsysDelayMaxL2",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L2, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[2],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[CONNSYS_TX_DELAY][2],
 		"TxLatencyConnsysDelayMaxL3",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L3, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4ConnsysTxDelayMax[3],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[CONNSYS_TX_DELAY][3],
 		"TxLatencyConnsysDelayMaxL4",
 		TX_LATENCY_STATS_MAX_CONNSYS_DELAY_L4, FEATURE_TO_CUSTOMER);
-	prWifiVar->au4ConnsysTxDelayMax[4] = UINT_MAX;
+	prWifiVar->aau4TxDelayMax[CONNSYS_TX_DELAY][4] = UINT_MAX;
 
-	INIT_UINT(prWifiVar->au4MacTxDelayMax[0],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[MAC_TX_DELAY][0],
 		"TxLatencyMacDelayMaxL1",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L1, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4MacTxDelayMax[1],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[MAC_TX_DELAY][1],
 		"TxLatencyMacDelayMaxL2",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L2, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4MacTxDelayMax[2],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[MAC_TX_DELAY][2],
 		"TxLatencyMacDelayMaxL3",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L3, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4MacTxDelayMax[3],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[MAC_TX_DELAY][3],
 		"TxLatencyMacDelayMaxL4",
 		TX_LATENCY_STATS_MAX_MAC_DELAY_L4, FEATURE_TO_CUSTOMER);
-	prWifiVar->au4MacTxDelayMax[4] = UINT_MAX;
+	prWifiVar->aau4TxDelayMax[MAC_TX_DELAY][4] = UINT_MAX;
 
-	INIT_UINT(prWifiVar->au4AirTxDelayMax[0], "TxLatencyAirDelayMaxL1",
-		  TX_LATENCY_STATS_MAX_AIR_DELAY_L1, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4AirTxDelayMax[1], "TxLatencyAirDelayMaxL2",
-		  TX_LATENCY_STATS_MAX_AIR_DELAY_L2, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4AirTxDelayMax[2], "TxLatencyAirDelayMaxL3",
-		  TX_LATENCY_STATS_MAX_AIR_DELAY_L3, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4AirTxDelayMax[3], "TxLatencyAirDelayMaxL4",
-		  TX_LATENCY_STATS_MAX_AIR_DELAY_L4, FEATURE_TO_CUSTOMER);
-	prWifiVar->au4AirTxDelayMax[4] = UINT_MAX;
+	INIT_UINT(prWifiVar->aau4TxDelayMax[AIR_TX_DELAY][0],
+		"TxLatencyAirDelayMaxL1",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L1, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->aau4TxDelayMax[AIR_TX_DELAY][1],
+		"TxLatencyAirDelayMaxL2",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L2, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->aau4TxDelayMax[AIR_TX_DELAY][2],
+		"TxLatencyAirDelayMaxL3",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L3, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->aau4TxDelayMax[AIR_TX_DELAY][3],
+		"TxLatencyAirDelayMaxL4",
+		TX_LATENCY_STATS_MAX_AIR_DELAY_L4, FEATURE_TO_CUSTOMER);
+	prWifiVar->aau4TxDelayMax[AIR_TX_DELAY][4] = UINT_MAX;
 
-	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[0],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[FAIL_CONNSYS_TX_DELAY][0],
 		"TxLatencyFailConnsysDelayMaxL1",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L1,
 		FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[1],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[FAIL_CONNSYS_TX_DELAY][1],
 		"TxLatencyFailConnsysDelayMaxL2",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L2,
 		FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[2],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[FAIL_CONNSYS_TX_DELAY][2],
 		"TxLatencyFailConnsysDelayMaxL3",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L3,
 		FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->au4ConnsysTxFailDelayMax[3],
+	INIT_UINT(prWifiVar->aau4TxDelayMax[FAIL_CONNSYS_TX_DELAY][3],
 		"TxLatencyFailConnsysDelayMaxL4",
 		TX_LATENCY_STATS_MAX_FAIL_CONNSYS_DELAY_L4,
 		FEATURE_TO_CUSTOMER);
-	prWifiVar->au4ConnsysTxFailDelayMax[4] = UINT_MAX;
+	prWifiVar->aau4TxDelayMax[FAIL_CONNSYS_TX_DELAY][4] = UINT_MAX;
 #endif /* CFG_SUPPORT_TX_LATENCY_STATS */
 
 	INIT_UINT(prWifiVar->fgBoostCpuEn,  "BoostCpuEn", FEATURE_ENABLED,
@@ -11571,57 +11575,34 @@ void wlanCountTxDelayOverLimit(struct ADAPTER *prAdapter,
 	}
 }
 
-static void halAddDriverLatencyCount(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint32_t u4DriverLatency)
+static void halAddTxLatencyCount(struct ADAPTER *prAdapter,
+	enum ENUM_AVERAGE_TX_DELAY_TYPE eDelayType,
+	uint8_t ucBssIndex, uint32_t u4TxLatency)
 {
 	struct TX_LATENCY_STATS *prCounting;
 	uint32_t *pDriverDelay;
-	uint32_t *pMaxDriverDelay = prAdapter->rWifiVar.au4DriverTxDelayMax;
+	uint32_t *pMaxDriverDelay =
+		prAdapter->rWifiVar.aau4TxDelayMax[eDelayType];
 	uint8_t i;
 
 	if (ucBssIndex >= BSSID_NUM)
 		return;
 
 	prCounting = &prAdapter->rMsduReportStats.rCounting;
-	prCounting->au8AccumulatedDelay[DRIVER_TX_DELAY][ucBssIndex] +=
-					u4DriverLatency;
+	prCounting->au8AccumulatedDelay[eDelayType][ucBssIndex] +=
+					u4TxLatency;
 
-	pDriverDelay = prCounting->au4DriverLatency[ucBssIndex];
+	pDriverDelay = prCounting->aaau4TxLatency[eDelayType][ucBssIndex];
 
 	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4DriverLatency <= *pMaxDriverDelay++) {
+		if (u4TxLatency <= *pMaxDriverDelay++) {
 			GLUE_INC_REF_CNT(pDriverDelay[i]);
 			break;
 		}
 	}
 
-	wlanCountTxDelayOverLimit(prAdapter, DRIVER_DELAY, u4DriverLatency);
-}
-
-static void halAddDriverHifLatencyCount(struct ADAPTER *prAdapter,
-	uint8_t ucBssIndex, uint32_t u4DriverHifLatency)
-{
-	struct TX_LATENCY_STATS *prCounting;
-	uint32_t *pDriverHifDelay;
-	uint32_t *pMaxDriverHifDelay =
-		prAdapter->rWifiVar.au4DriverHifTxDelayMax;
-	uint8_t i;
-
-	if (ucBssIndex >= BSSID_NUM)
-		return;
-
-	prCounting = &prAdapter->rMsduReportStats.rCounting;
-	prCounting->au8AccumulatedDelay[DRIVER_HIF_TX_DELAY][ucBssIndex] +=
-					u4DriverHifLatency;
-
-	pDriverHifDelay = prCounting->au4DriverHifLatency[ucBssIndex];
-
-	for (i = 0; i < LATENCY_STATS_MAX_SLOTS; i++) {
-		if (u4DriverHifLatency <= *pMaxDriverHifDelay++) {
-			GLUE_INC_REF_CNT(pDriverHifDelay[i]);
-			break;
-		}
-	}
+	if (eDelayType == DRIVER_TX_DELAY)
+		wlanCountTxDelayOverLimit(prAdapter, DRIVER_DELAY, u4TxLatency);
 }
 #endif
 
@@ -11823,7 +11804,7 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 					GLUE_GET_PKT_SEQ_NO(
 					prMsduInfo->prPacket));
 
-			halAddDriverLatencyCount(prAdapter,
+			halAddTxLatencyCount(prAdapter, DRIVER_TX_DELAY,
 				prMsduInfo->ucBssIndex,
 				((uint32_t)(prPktProfile->u8HifTxTime -
 				prPktProfile->u8XmitArrival)) /
@@ -11861,7 +11842,7 @@ void wlanTxLifetimeTagPacket(struct ADAPTER *prAdapter,
 #if CFG_SUPPORT_TX_LATENCY_STATS
 			prPktProfile->u8HifAcqrMsduTime = StatsEnvTimeGet();
 
-			halAddDriverHifLatencyCount(prAdapter,
+			halAddTxLatencyCount(prAdapter, DRIVER_HIF_TX_DELAY,
 				prMsduInfo->ucBssIndex,
 				((uint32_t)(prPktProfile->u8HifAcqrMsduTime -
 				prPktProfile->u8HifTxTime)) /
