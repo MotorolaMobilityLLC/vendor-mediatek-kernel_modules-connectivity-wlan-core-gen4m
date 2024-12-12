@@ -7017,7 +7017,15 @@ void halDumpHifStats(struct ADAPTER *prAdapter)
 			GLUE_GET_REF_CNT(prHifStats->u4CidxFetchByNewTx),
 			GLUE_GET_REF_CNT(prHifStats->u4CidxFetchByTimeout));
 	}
-#endif /* CFG_MTK_WIFI_WFDMA_WB */
+#else /* !CFG_MTK_WIFI_WFDMA_WB */
+	for (i = 0; i < NUM_OF_RX_RING; ++i) {
+		prRxRing = &prHifInfo->RxRing[i];
+		pos += kalSnprintf(buf + pos, u4BufferSize - pos, "%s%u%s",
+				(i == 0) ? " RQCnt[" : "",
+				halWpdmaGetRxDmaDoneCnt(prGlueInfo, i),
+				(i == NUM_OF_RX_RING - 1) ? "]" : " ");
+	}
+#endif /* !CFG_MTK_WIFI_WFDMA_WB */
 #if (CFG_DYNAMIC_DMASHDL_MAX_QUOTA == 1)
 	for (i = 0; i < HW_WMM_NUM; i++) {
 		pos += kalSnprintf(
