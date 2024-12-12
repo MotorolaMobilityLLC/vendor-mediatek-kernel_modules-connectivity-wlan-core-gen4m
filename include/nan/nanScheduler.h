@@ -142,7 +142,6 @@
 			DBGLOG(Mod, Clz, Fmt, __VA_ARGS__);		\
 	} while (0)
 
-
 /* Define 0-index NAN band index for addressing array based on enum ENUM_BAND */
 enum NAN_BAND_IDX {
 	NAN_2G_IDX, /* 0 */
@@ -455,6 +454,13 @@ struct _NAN_TIMELINE_MGMT_T {
 		arCustChnlList[NAN_TIMELINE_MGMT_CHNL_LIST_NUM];
 };
 
+struct _NAN_CUST_FAW_ENTRY {
+	const char *pcTag;
+	uint8_t ucOpChannel;
+	enum ENUM_BAND eBand;
+	uint32_t u4Bitmap;
+};
+
 /* NAN Scheduler Control Block */
 struct _NAN_SCHEDULER_T {
 	unsigned char fgInit;
@@ -492,6 +498,8 @@ struct _NAN_SCHEDULER_T {
 	struct _NAN_NDL_CUSTOMIZED_T arGlobalCustomized[NAN_BAND_NUM];
 
 	uint8_t ucNdcBand; /* band bitmap of NDC, enum NAN_BSS_ROLE_INDEX */
+
+	struct _NAN_CUST_FAW_ENTRY arCustFawEntry[20];
 };
 
 uint8_t *nanGetNanIEBuffer(void);
@@ -711,6 +719,12 @@ void nanSchedPeerPrepareNegoState(struct ADAPTER *prAdapter,
 				  uint8_t *pucNmiAddr);
 void nanSchedPeerCompleteNegoState(struct ADAPTER *prAdapter,
 				   uint8_t *pucNmiAddr);
+
+uint32_t nanSchedNegoCustFawAddEntry(struct ADAPTER *prAdapter,
+				     struct _NAN_CUST_FAW_ENTRY *prEntry);
+uint32_t nanSchedNegoCustFawRemoveEntry(struct ADAPTER *prAdapter,
+					const char *pcTag);
+void nanSchedNegoCustFawReconfigure(struct ADAPTER *prAdapter);
 
 uint32_t nanSchedNegoCustFawResetCmd(struct ADAPTER *prAdapter);
 uint32_t nanSchedNegoCustFawApplyCmd(struct ADAPTER *prAdapter);

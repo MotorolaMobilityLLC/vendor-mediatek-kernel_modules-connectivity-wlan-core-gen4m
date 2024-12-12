@@ -6797,6 +6797,102 @@ static uint32_t nanSchedNegoRemoveCustChnlList(struct ADAPTER *prAdapter)
 	return rRetStatus;
 }
 
+/**
+ * Original call flow the later caller will reset the previously configured FAW.
+ * nanSchedNegoCustFawResetCmd()
+ * nanSchedNegoCustFawConfigCmd()
+ * nanSchedNegoCustFawApplyCmd()
+ *
+ * New call flow:
+ * nanSchedNegoCustFawRemoveEntry(): remove entries to the custom FAW DB
+ * nanSchedNegoCustFawAddEntry(): add entries to the custom FAW DB
+ * nanSchedNegoCustFawReconfigure(): invokes nanSchedNegoCustFawResetCmd(),
+ * nanSchedNegoCustFawConfigCmd(), and nanSchedNegoCustFawApplyCmd() internally
+ * by Config with entries in the custom FAW DB.
+ */
+
+uint32_t nanSchedNegoCustFawAddEntry(struct ADAPTER *prAdapter,
+				     struct _NAN_CUST_FAW_ENTRY *prNewEntry)
+{
+	struct _NAN_SCHEDULER_T *prScheduler = nanGetScheduler(prAdapter);
+	size_t n = ARRAY_SIZE(prScheduler->arCustFawEntry);
+	struct _NAN_CUST_FAW_ENTRY *prCustFawEntry;
+	size_t i;
+
+	prCustFawEntry = prScheduler->arCustFawEntry;
+	for (i = 0; i < n; i++) {
+		if (prCustFawEntry[i].pcTag)
+			continue;
+
+		prCustFawEntry[i] = *prNewEntry;
+		break;
+	}
+
+	DBGLOG(NAN, INFO,
+	       "add to %zu, %s, ch=%u, band=%u, bitmap=%02x-%02x-%02x-%02x\n",
+	       i, prNewEntry->pcTag, prNewEntry->ucOpChannel, prNewEntry->eBand,
+	       ((uint8_t *)&prNewEntry->u4Bitmap)[0],
+	       ((uint8_t *)&prNewEntry->u4Bitmap)[1],
+	       ((uint8_t *)&prNewEntry->u4Bitmap)[2],
+	       ((uint8_t *)&prNewEntry->u4Bitmap)[3]);
+
+	if (i == n)
+		return WLAN_STATUS_FAILURE;
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+/* Remove all entries in prScheduler->arCustFawEntry by matching pcTag */
+uint32_t nanSchedNegoCustFawRemoveEntry(struct ADAPTER *prAdapter,
+					const char *pcTag)
+{
+	struct _NAN_SCHEDULER_T *prScheduler = nanGetScheduler(prAdapter);
+	size_t n = ARRAY_SIZE(prScheduler->arCustFawEntry);
+	struct _NAN_CUST_FAW_ENTRY *prCustFawEntry;
+	size_t src;
+	size_t dst;
+
+	prCustFawEntry = prScheduler->arCustFawEntry;
+	for (src = 0, dst = 0; src < n; src++) {
+		if (!prCustFawEntry[src].pcTag)
+			break;
+
+		if (prCustFawEntry[src].pcTag != pcTag) {
+			prCustFawEntry[dst] = prCustFawEntry[src];
+			dst++;
+		}
+	}
+	memset(&prCustFawEntry[dst], 0,
+	       sizeof(struct _NAN_CUST_FAW_ENTRY) * (n - dst));
+
+	DBGLOG(NAN, INFO, "remove all entries of %s, remain=%zu\n",
+	       pcTag, dst);
+
+	return WLAN_STATUS_SUCCESS;
+}
+
+void nanSchedNegoCustFawReconfigure(struct ADAPTER *prAdapter)
+{
+	struct _NAN_SCHEDULER_T *prScheduler = nanGetScheduler(prAdapter);
+	struct _NAN_CUST_FAW_ENTRY *prCustFawEntry;
+	size_t i;
+
+	nanSchedNegoCustFawResetCmd(prAdapter);
+
+	prCustFawEntry = prScheduler->arCustFawEntry;
+	for (i = 0; i < ARRAY_SIZE(prScheduler->arCustFawEntry); i++) {
+		if (!prCustFawEntry[i].pcTag)
+			break;
+
+		nanSchedNegoCustFawConfigCmd(prAdapter,
+				     prCustFawEntry[i].ucOpChannel,
+				     prCustFawEntry[i].eBand,
+				     prCustFawEntry[i].u4Bitmap);
+	}
+
+	nanSchedNegoCustFawApplyCmd(prAdapter);
+}
+
 uint32_t nanSchedNegoCustFawResetCmd(struct ADAPTER *prAdapter)
 {
 	uint32_t rRetStatus = WLAN_STATUS_SUCCESS;
