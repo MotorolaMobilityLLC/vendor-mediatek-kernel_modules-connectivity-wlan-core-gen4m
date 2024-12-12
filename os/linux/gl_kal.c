@@ -16129,24 +16129,23 @@ int kalNapiPoll(struct napi_struct *napi, int budget)
 	GLUE_SET_REF_CNT(0, prGlueInfo->fgNapiScheduled);
 	RX_INC_CNT(&prGlueInfo->prAdapter->rRxCtrl, RX_NAPI_POLL_COUNT);
 
+	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 #if CFG_QUEUE_RX_IF_CONN_NOT_READY
-	if (HAL_IS_RX_DIRECT(prAdapter))
 		nicRxDequeuePendingQueue(prAdapter);
 #endif /* CFG_QUEUE_RX_IF_CONN_NOT_READY */
-
-	/* Added in qmHandleReorderBubbleTimeout */
-	while (prReorderQueParm =
+		/* Added in qmHandleReorderBubbleTimeout */
+		while (prReorderQueParm =
 			getReorderQueParm(&prAdapter->rTimeoutRxBaEntry,
 				prAdapter, SPIN_LOCK_RX_FLUSH_TIMEOUT))
-		qmFlushTimeoutReorderBubble(prAdapter, prReorderQueParm);
+			qmFlushTimeoutReorderBubble(prAdapter,
+				prReorderQueParm);
 
-	/* Added in qmDelRxBaEntry */
-	while (prReorderQueParm =
+		/* Added in qmDelRxBaEntry */
+		while (prReorderQueParm =
 			getReorderQueParm(&prAdapter->rFlushRxBaEntry,
 				prAdapter, SPIN_LOCK_RX_FLUSH_BA))
-		qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
+			qmFlushDeletedBaReorder(prAdapter, prReorderQueParm);
 
-	if (HAL_IS_RX_DIRECT(prGlueInfo->prAdapter)) {
 		/* Handle SwRFBs under RX-direct mode */
 		return TRACE(kalNapiPollSwRfb(napi, budget),
 			"kalNapiPollSwRfb");
