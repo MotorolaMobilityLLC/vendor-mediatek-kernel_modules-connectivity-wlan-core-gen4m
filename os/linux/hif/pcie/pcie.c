@@ -2645,7 +2645,7 @@ static void glBusFreeMsiIrq(struct pci_dev *pdev,
 	KAL_REC_TIME_END();
 
 	DBGLOG(INIT, INFO,
-		"Total: %llu us, %s\n",
+		"Total: %u us, %s\n",
 		KAL_GET_TIME_INTERVAL(),
 		dbg);
 #endif
