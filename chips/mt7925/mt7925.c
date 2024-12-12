@@ -1526,6 +1526,9 @@ static void mt7925InitPcieInt(struct GLUE_INFO *prGlueInfo)
 	HAL_MCR_WR(prGlueInfo->prAdapter,
 		PCIE_MAC_IREG_IMASK_HOST_ADDR,
 		value);
+	/* Enable PCIe MSI on init*/
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		CB_INFRA_SLP_CTRL_CB_INFRA_PCIE_SLP_CFG1_ADDR, 0xFFFFFFFF);
 }
 
 #if CFG_SUPPORT_PCIE_ASPM

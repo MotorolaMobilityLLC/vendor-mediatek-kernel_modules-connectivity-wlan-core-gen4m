@@ -2541,6 +2541,9 @@ static void mt6639InitPcieInt(struct GLUE_INFO *prGlueInfo)
 		DBGLOG(HAL, INFO, "pcie_vir_addr is null\n");
 	}
 #endif
+	/* Enable PCIe MSI on init*/
+	HAL_MCR_WR(prGlueInfo->prAdapter,
+		CB_INFRA_SLP_CTRL_CB_INFRA_PCIE_SLP_CFG1_ADDR, 0xFFFFFFFF);
 }
 
 static void mt6639PowerOffPcieMac(struct ADAPTER *prAdpater)
