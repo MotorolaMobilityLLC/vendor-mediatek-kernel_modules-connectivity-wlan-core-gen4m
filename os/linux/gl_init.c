@@ -685,6 +685,36 @@ int CFG80211_Resume(struct wiphy *wiphy)
  *******************************************************************************
  */
 
+#if KERNEL_VERSION(5, 1, 0) <= CFG80211_VERSION_CODE
+uint32_t mtk_akm_suites[] = {
+	SWAP32(RSN_AKM_SUITE_802_1X),
+	SWAP32(RSN_AKM_SUITE_PSK),
+#if CFG_SUPPORT_802_11R
+	SWAP32(RSN_AKM_SUITE_FT_802_1X),
+	SWAP32(RSN_AKM_SUITE_FT_PSK),
+#endif
+#if CFG_SUPPORT_WPA3
+	SWAP32(RSN_AKM_SUITE_SAE),
+	SWAP32(RSN_AKM_SUITE_OWE),
+	SWAP32(RSN_AKM_SUITE_SAE_EXT_KEY),
+#if CFG_SUPPORT_802_11R
+	SWAP32(RSN_AKM_SUITE_FT_OVER_SAE),
+	SWAP32(RSN_AKM_SUITE_FT_SAE_EXT_KEY),
+#endif
+#endif
+	SWAP32(RSN_AKM_SUITE_8021X_SUITE_B),
+	SWAP32(RSN_AKM_SUITE_8021X_SUITE_B_192),
+#if (CFG_SUPPORT_FILS_SK_OFFLOAD == 1)
+	SWAP32(RSN_AKM_SUITE_FILS_SHA256),
+	SWAP32(RSN_AKM_SUITE_FILS_SHA384),
+#endif
+	SWAP32(RSN_AKM_SUITE_OSEN),
+#if CFG_SUPPORT_DPP
+	SWAP32(RSN_AKM_SUITE_DPP),
+#endif
+};
+#endif
+
 #if KERNEL_VERSION(5, 8, 0) <= CFG80211_VERSION_CODE
 	#define CHAN2G(_channel, _freq, _flags)		\
 	{						\
@@ -4575,6 +4605,11 @@ static void wlanCreateWirelessDevice(void)
 	 */
 	prWiphy->features |= NL80211_FEATURE_DS_PARAM_SET_IE_IN_PROBES;
 	prWiphy->features |= NL80211_FEATURE_QUIET;
+#endif
+
+#if KERNEL_VERSION(5, 1, 0) <= CFG80211_VERSION_CODE
+	prWiphy->n_akm_suites = ARRAY_SIZE(mtk_akm_suites);
+	prWiphy->akm_suites = mtk_akm_suites;
 #endif
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
