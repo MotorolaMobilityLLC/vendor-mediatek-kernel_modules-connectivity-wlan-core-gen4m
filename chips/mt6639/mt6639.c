@@ -88,6 +88,10 @@
 #include <linux/regulator/consumer.h>
 #endif /*#ifndef CFG_SUPPORT_VCODE_VDFS*/
 
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+#include <linux/msi.h>
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
+
 /*******************************************************************************
 *                         C O M P I L E R   F L A G S
 ********************************************************************************
@@ -234,6 +238,10 @@ static int mt6639ConnacPccifOff(struct ADAPTER *prAdapter);
 static int mt6639_CheckBusHang(void *priv, uint8_t rst_enable);
 static void mt6639_CheckMcuOff(struct ADAPTER *ad);
 static uint32_t mt6639_wlanDownloadPatch(struct ADAPTER *prAdapter);
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+static void mt6639PcieMsiMaskIrq(uint32_t u4Irq, uint32_t u4Bit);
+static void mt6639PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit);
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 #endif
 #if (CFG_MTK_SUPPORT_LIGHT_MDDP == 1)
 static int mt6639ConnacPccifOn(struct ADAPTER *prAdapter);
@@ -669,6 +677,10 @@ struct BUS_INFO mt6639_bus_info = {
 #if CFG_MTK_WIFI_PCIE_SUPPORT
 	.is_en_drv_ctrl_pci_msi_irq = FALSE,
 #endif
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+	.pcieMsiMaskIrq = mt6639PcieMsiMaskIrq,
+	.pcieMsiUnmaskIrq = mt6639PcieMsiUnmaskIrq,
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 	.showDebugInfo = mt6639ShowPcieDebugInfo,
 	.disableDevice = mtk_pci_disable_device,
 #if CFG_SUPPORT_PCIE_GEN_SWITCH
@@ -2412,6 +2424,46 @@ static void mt6639CheckFwOwnMsiStatus(struct ADAPTER *prAdapter)
 {
 	mt6639RecoveryMsiStatus(prAdapter);
 }
+
+#if (CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE == 1)
+static void mt6639PcieMsiMaskIrq(uint32_t u4Irq, uint32_t u4Bit)
+{
+	struct irq_data *data;
+	struct msi_desc *entry;
+	raw_spinlock_t *lock = NULL;
+	unsigned long flags;
+
+	data = irq_get_irq_data(u4Irq);
+	if (data) {
+		entry = irq_data_get_msi_desc(data);
+		lock = &to_pci_dev(entry->dev)->msi_lock;
+
+		raw_spin_lock_irqsave(lock, flags);
+		entry->pci.msi_mask |= BIT(u4Bit);
+		HAL_MCR_WR(NULL, 0x740310F0, entry->pci.msi_mask);
+		raw_spin_unlock_irqrestore(lock, flags);
+	}
+}
+
+static void mt6639PcieMsiUnmaskIrq(uint32_t u4Irq, uint32_t u4Bit)
+{
+	struct irq_data *data;
+	struct msi_desc *entry;
+	raw_spinlock_t *lock = NULL;
+	unsigned long flags;
+
+	data = irq_get_irq_data(u4Irq);
+	if (data) {
+		entry = irq_data_get_msi_desc(data);
+		lock = &to_pci_dev(entry->dev)->msi_lock;
+
+		raw_spin_lock_irqsave(lock, flags);
+		entry->pci.msi_mask &= ~(BIT(u4Bit));
+		HAL_MCR_WR(NULL, 0x740310F0, entry->pci.msi_mask);
+		raw_spin_unlock_irqrestore(lock, flags);
+	}
+}
+#endif /* CFG_MTK_WIFI_PCIE_MSI_MASK_BY_MMIO_WRITE */
 #endif
 
 #if CFG_SUPPORT_PCIE_ASPM
