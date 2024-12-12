@@ -2520,15 +2520,17 @@ static int32_t glBusSetMsiIrq(struct pci_dev *pdev,
 	return 0;
 
 err:
-	while (i--) {
-		struct pcie_msi_layout *prMsiLayout =
-			&prMsiInfo->prMsiLayout[i];
-		int irqn = pci_irq_vector(pdev, i);
+	while (i) {
+		struct pcie_msi_layout *prMsiLayout;
+		int irqn;
 
+		i--;
+		prMsiLayout = &prMsiInfo->prMsiLayout[i];
 		if (prMsiLayout && !prMsiLayout->top_handler &&
 		    !prMsiLayout->thread_handler)
 			continue;
 
+		irqn = pci_irq_vector(pdev, i);
 		devm_free_irq(&pdev->dev, irqn, prGlueInfo);
 	}
 
