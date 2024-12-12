@@ -2316,7 +2316,7 @@ scnDoZeroChRecoveryCheck(struct ADAPTER *prAdapter,
 		struct SCAN_INFO *prScanInfo)
 {
 	log_dbg(SCN, WARN,
-		"ScanRecover: ScnZeroChCount(%d), ResetCount(%d)",
+		"ScanRecover: ScnZeroChCount(%d), ResetCount(%d)\n",
 		prScanInfo->ucScnZeroChannelCnt,
 		prScanInfo->ucScnZeroChSubsysResetCnt);
 

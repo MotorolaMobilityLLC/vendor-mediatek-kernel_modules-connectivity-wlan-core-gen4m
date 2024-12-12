@@ -1950,7 +1950,8 @@ uint8_t scanIsNeedParsingRnr(struct ADAPTER *prAdapter,
 void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	struct BSS_DESC *prBssDesc, uint8_t *pucIE)
 {
-	uint8_t i = 0, j = 0, ucNewLink = FALSE, ucRnrChNum;
+	uint8_t i = 0, ucNewLink = FALSE, ucRnrChNum;
+	uint8_t ucTbttIdx = 0, ucTbttSetIdx = 0;
 	uint8_t ucBssidOffset = 0, ucShortSsidOffset = 0, ucBssParamOffset = 0;
 	uint8_t ucMldParamOffset = 0;
 	uint8_t ucBssidNum = 0, ucOpClass = 0;
@@ -1965,10 +1966,12 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 	struct SCAN_PARAM *prScanParam = &(prScanInfo->rScanParam);
 	struct IE_RNR *prRnr = (struct IE_RNR *) pucIE;
 	enum ENUM_BAND eRfBand;
+	char *strbuf = (char *)kalMemAlloc(
+			SCN_SCAN_OOB_PRINT_BUFFER_LENGTH, VIR_MEM_TYPE);
 
 	if (!scanIsNeedParsingRnr(prAdapter, prScanInfo)) {
 		DBGLOG(SCN, LOUD, "Skip oob scan Rnr parsing\n");
-		return;
+		goto finish_RNR_parsing;
 	}
 
 	fgRnrChnlScan = prScanParam->ucSSIDType &
@@ -2001,7 +2004,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		if (!scanValidRnrTbttInfo(u2TbttInfoLen)) {
 			DBGLOG(SCN, ERROR, "Invalid TBTT info length = %d\n",
 				u2TbttInfoLen);
-			return;
+			goto finish_RNR_parsing;
 		}
 
 		/* only support RnR with BSSID */
@@ -2121,7 +2124,7 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 			if (prNeighborAPInfo == NULL) {
 				DBGLOG(SCN, ERROR,
 					"cnmMemAlloc for prNeighborAPInfo failed!\n");
-				return;
+				goto finish_RNR_parsing;
 			}
 			kalMemZero(prNeighborAPInfo,
 					sizeof(struct NEIGHBOR_AP_INFO));
@@ -2169,20 +2172,23 @@ void scanParsingRnrElement(struct ADAPTER *prAdapter,
 		prNbrScanParam = &prNeighborAPInfo->rNeighborParam;
 
 parse_tbttinfo:
-		for (i = j = 0; i < u2TbttInfoCnt; i++, j = i * u2TbttInfoLen) {
+		for (ucTbttIdx = ucTbttSetIdx  = 0; ucTbttIdx < u2TbttInfoCnt;
+			ucTbttIdx++, ucTbttSetIdx = ucTbttIdx * u2TbttInfoLen) {
 			uint8_t *pucBssid = NULL;
 			uint8_t *pucShortSsid = NULL;
 			uint8_t *pucBssParam = NULL;
 
 			if (ucBssidOffset)
 				pucBssid = &prNeighborAPInfoField
-					->aucTbttInfoSet[j + ucBssidOffset];
+				->aucTbttInfoSet[ucTbttSetIdx + ucBssidOffset];
 			if (ucShortSsidOffset != 0)
 				pucShortSsid = &prNeighborAPInfoField
-					->aucTbttInfoSet[j + ucShortSsidOffset];
+					->aucTbttInfoSet[ucTbttSetIdx
+							+ ucShortSsidOffset];
 			if (ucBssParamOffset != 0)
 				pucBssParam = &prNeighborAPInfoField
-					->aucTbttInfoSet[j + ucBssParamOffset];
+					->aucTbttInfoSet[ucTbttSetIdx
+							+ ucBssParamOffset];
 			if (ucMldParamOffset != 0) {
 				uint32_t u4MldParam = 0;
 				uint8_t ucMldId, ucMldLinkId;
@@ -2190,7 +2196,7 @@ parse_tbttinfo:
 
 				kalMemCopy(&u4MldParam,
 					&prNeighborAPInfoField->aucTbttInfoSet[
-					j + ucMldParamOffset],
+					ucTbttSetIdx + ucMldParamOffset],
 					sizeof(u4MldParam));
 				ucMldId = (u4MldParam & MLD_PARAM_MLD_ID_MASK);
 				ucMldLinkId = (u4MldParam &
@@ -2260,43 +2266,78 @@ parse_tbttinfo:
 					&prNeighborAPInfo->rLinkEntry);
 				ucNewLink = FALSE;
 			}
+#define print_chnl_info(_Mod, _Clz, _Fmt, var, NbrSize) \
+		do { \
+			uint16_t u2Written = 0; \
+			uint16_t u2TotalLen = \
+			SCN_SCAN_OOB_PRINT_BUFFER_LENGTH; \
+			for (i = 0; i < NbrSize; i++) { \
+				if (strbuf) { \
+					u2Written += \
+					kalSnprintf(strbuf + u2Written, \
+					u2TotalLen - u2Written, "%d ", \
+					prNbrScanParam-> \
+					var[i].ucChannelNum); \
+					} \
+			} \
+			if (strbuf) { \
+				kalSnprintf(strbuf, u2TotalLen-u2Written, \
+				"]ChlListNum(%d) NumElem(%d)", \
+				prNbrScanParam->ucChannelListNum, \
+				prScanInfo-> \
+				rNeighborAPInfoList.u4NumElem); \
+				log_dbg(_Mod, _Clz, _Fmt, strbuf); \
+				} \
+		} while (0)
+
+#define print_bss_info(_Mod, _Clz, _Fmt, var, NbrSize) \
+		do { \
+			uint16_t u2Written = 0; \
+			uint16_t u2TotalLen = \
+			SCN_SCAN_OOB_PRINT_BUFFER_LENGTH; \
+			u2Written += \
+			kalSnprintf(strbuf + u2Written, \
+			u2TotalLen - u2Written, \
+			"Rnr(Chl,Bss,Elem)=(%3d,%d,%d) ", \
+			prNbrScanParam-> \
+			arChnlInfoList[0].ucChannelNum, \
+			prNbrScanParam->ucBssidNum, \
+			prScanInfo-> \
+			rNeighborAPInfoList.u4NumElem); \
+			for (i = 0; i < NbrSize; i++) { \
+				if (strbuf) { \
+					u2Written += \
+					kalSnprintf(strbuf + u2Written, \
+					u2TotalLen-u2Written, MACSTR " ", \
+					MAC2STR(prNbrScanParam->var[i])); \
+				} \
+			} \
+			if (strbuf) { \
+				log_dbg(_Mod, _Clz, _Fmt, strbuf); \
+			} \
+		} while (0)
 
 			if (fgRnrChnlScan)
-				log_dbg(SCN, TRACE,
-					"RnR ch[%d,%d,%d,%d,%d,%d,%d,%d] ChlListNum(%d) NumElem(%d)\n",
-					parChnlInfoList[0].ucChannelNum,
-					parChnlInfoList[1].ucChannelNum,
-					parChnlInfoList[2].ucChannelNum,
-					parChnlInfoList[3].ucChannelNum,
-					parChnlInfoList[4].ucChannelNum,
-					parChnlInfoList[5].ucChannelNum,
-					parChnlInfoList[6].ucChannelNum,
-					parChnlInfoList[7].ucChannelNum,
-					fgRnrChnlScan, fgRnrBssScan,
-					prNbrScanParam->ucChannelListNum,
-					prScanInfo->rNeighborAPInfoList
-						.u4NumElem);
+				print_chnl_info(SCN, TRACE, "RnR ch[%s\n",
+						arChnlInfoList,
+						prNbrScanParam->ucBssidNum);
 			else
-				log_dbg(SCN, TRACE,
-					"Rnr(Chl,Bss,Elem)=(%d,%d,%d) " MACSTR
-					" " MACSTR " " MACSTR " " MACSTR "\n",
-					parChnlInfoList[0].ucChannelNum,
-					prNbrScanParam->ucBssidNum,
-					prScanInfo->rNeighborAPInfoList
-						.u4NumElem,
-					MAC2STR(prNbrScanParam->aucBSSID[0]),
-					MAC2STR(prNbrScanParam->aucBSSID[1]),
-					MAC2STR(prNbrScanParam->aucBSSID[2]),
-					MAC2STR(prNbrScanParam->aucBSSID[3]));
+				print_bss_info(SCN, TRACE, "%s\n", aucBSSID,
+						prNbrScanParam->ucBssidNum);
 		}
-
 		/* Calculate next NeighborAPInfo's index if all handled */
-		if (i == u2TbttInfoCnt)
+		if (ucTbttIdx == u2TbttInfoCnt)
 			u2CurrentLength += SCAN_TBTT_INFO_SET_OFFSET +
 				(u2TbttInfoCnt * u2TbttInfoLen);
 
 		if (ucNewLink)
 			cnmMemFree(prAdapter, prNeighborAPInfo);
+	}
+
+finish_RNR_parsing:
+	if (strbuf) {
+		kalMemFree(strbuf, VIR_MEM_TYPE,
+		SCN_SCAN_OOB_PRINT_BUFFER_LENGTH);
 	}
 }
 
