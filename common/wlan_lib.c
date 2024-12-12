@@ -8160,6 +8160,14 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 #endif
 
 	/* Stats log */
+	/**
+	 * b8'0001: b1IPv6TcpTxLog
+	 * b8'0010: b1IPv6TcpRxLog
+	 * b8'0100: b1IPv6UdpTxLog
+	 * b8'1000: b1IPv6UdpRxLog
+	 */
+	INIT_UINT(prWifiVar->ucIPv6DataLog,
+		"IPv6DataLog", 0x0, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4StatsLogTimeout,
 		"StatsLogTO", WLAN_TX_STATS_LOG_TIMEOUT, FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->u4StatsLogDuration,

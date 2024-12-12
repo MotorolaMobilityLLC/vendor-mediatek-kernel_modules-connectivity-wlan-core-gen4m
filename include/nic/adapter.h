@@ -1204,6 +1204,16 @@ struct WIFI_VAR {
 	uint8_t ucCmdRsvResource;
 	uint32_t u4MgmtQueueDelayTimeout;
 
+	union {
+		uint8_t ucIPv6DataLog;
+		struct {
+			uint8_t b1IPv6TcpTxLogEnabled :1,
+				b1IPv6TcpRxLogEnabled :1,
+				b1IPv6UdpTxLogEnabled :1,
+				b1IPv6UdpRxLogEnabled :1,
+				b4IPv6DataLogReserved :4;
+		};
+	};
 	uint32_t u4StatsLogTimeout;
 	uint32_t u4StatsLogDuration;
 	uint8_t ucDhcpTxDone;

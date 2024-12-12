@@ -664,7 +664,8 @@ static void get_target_link_addr(const uint8_t *pucTargetAddr,
 	}
 }
 
-static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
+static void statsParseIPV6Info(struct ADAPTER *prAdapter,
+			       void *pvPacket, uint8_t *pucIPv6,
 			       uint8_t eventType, uint16_t u2SSN)
 {
 	struct IPV6_HEADER *prIPv6 = (struct IPV6_HEADER *)pucIPv6;
@@ -698,10 +699,12 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 	switch (ucIpv6Proto) {
 	case IP_PRO_TCP:
 		if (eventType == EVENT_RX) {
-			DBGLOG(RX, TRACE, "<RX><IPv6> TCP packet SSN:%u\n",
-			       u2SSN);
+			if (prAdapter->rWifiVar.b1IPv6TcpRxLogEnabled)
+				DBGLOG(RX, TRACE,
+				       "<RX><IPv6> TCP packet SSN:%u\n", u2SSN);
 		} else { /* EVENT_TX */
-			DBGLOG(TX, TRACE, "<TX><IPv6> TCP packet\n");
+			if (prAdapter->rWifiVar.b1IPv6TcpTxLogEnabled)
+				DBGLOG(TX, TRACE, "<TX><IPv6> TCP packet\n");
 		}
 		break;
 
@@ -736,13 +739,15 @@ static void statsParseIPV6Info(void *pvPacket, uint8_t *pucIPv6,
 				break;
 
 			default:
-				DBGLOG(RX, TRACE,
-				       "<RX><IPv6> other packet srtport=%u SSN:%u\n",
-				       ucIpv6UDPSrcPort, u2SSN);
+				if (prAdapter->rWifiVar.b1IPv6UdpRxLogEnabled)
+					DBGLOG(RX, TRACE,
+					       "<RX><IPv6> other packet srtport=%u SSN:%u\n",
+					       ucIpv6UDPSrcPort, u2SSN);
 				break;
 			}
 		} else { /* EVENT_TX */
-			DBGLOG(TX, TRACE, "<TX><IPv6> UDP packet\n");
+			if (prAdapter->rWifiVar.b1IPv6UdpTxLogEnabled)
+				DBGLOG(TX, TRACE, "<TX><IPv6> UDP packet\n");
 		}
 		break;
 
@@ -900,7 +905,8 @@ static void statsParsePktInfo(struct ADAPTER *prAdapter, uint8_t *pucData,
 
 	case ETH_P_IPV6:
 		statsLogData(prAdapter, eventType, WLAN_WAKE_IPV6);
-		statsParseIPV6Info(pvPacket, pucEthBody, eventType, u2SSN);
+		statsParseIPV6Info(prAdapter, pvPacket, pucEthBody,
+				   eventType, u2SSN);
 		break;
 
 	case ETH_P_1X:
