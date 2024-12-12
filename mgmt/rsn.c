@@ -1419,7 +1419,7 @@ u_int8_t rsnPerformPolicySelection(
 #if CFG_SUPPORT_WAPI
 	if (aisGetWapiMode(prAdapter, ucBssIndex)) {
 		if (!wapiPerformPolicySelection(prAdapter, prBss, ucBssIndex)) {
-			DBGLOG(APS, WARN, MACSTR " wapi policy select fail.\n",
+			DBGLOG(RSN, WARN, MACSTR " wapi policy select fail.\n",
 				MAC2STR(prBss->aucBSSID));
 			return FALSE;
 		}
@@ -1617,11 +1617,9 @@ u_int8_t rsnPerformPolicySelection(
 	}
 
 	DBGLOG(RSN, TRACE,
-	       "Selected pairwise/group cipher: 0x%x/0x%x\n",
-	       SWAP32(u4PairwiseCipher), SWAP32(u4GroupCipher));
-
-	DBGLOG(RSN, TRACE,
-	       "Selected AKM suite: 0x%x\n", SWAP32(u4AkmSuite));
+		"Selected pairwise/group cipher: 0x%x/0x%x, AKM suite: 0x%x\n",
+		SWAP32(u4PairwiseCipher), SWAP32(u4GroupCipher),
+		SWAP32(u4AkmSuite));
 
 #if CFG_SUPPORT_802_11W
 	/* check pmf only when rsn ie is selected */
@@ -1629,12 +1627,12 @@ u_int8_t rsnPerformPolicySelection(
 		if (kalGetMfpSetting(prAdapter->prGlueInfo,
 			ucBssIndex) == RSN_AUTH_MFP_REQUIRED) {
 			if (!prBssRsnInfo->fgRsnCapPresent) {
-				DBGLOG(RSN, TRACE,
+				DBGLOG(RSN, INFO,
 				       "[MFP] Skip RSN IE, No MFP Required Capability.\n");
 				return FALSE;
 			} else if (!(prBssRsnInfo->u2RsnCap &
 					ELEM_WPA_CAP_MFPC)) {
-				DBGLOG(RSN, WARN,
+				DBGLOG(RSN, INFO,
 				       "[MFP] Skip RSN IE, No MFP Required\n");
 				return FALSE;
 			}

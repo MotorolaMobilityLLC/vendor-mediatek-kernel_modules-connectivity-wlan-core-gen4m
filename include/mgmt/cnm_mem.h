@@ -1201,6 +1201,9 @@ void cnmStaRecChangeState(struct ADAPTER *prAdapter,
 uint8_t *cnmStaRecAuthAddr(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec);
 
+uint8_t cnmStaRecIsActive(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec);
+
 int cnmShowBssInfo(struct ADAPTER *prAdapter, struct BSS_INFO *prBssInfo,
 	char *pcCommand, int i4TotalLen);
 int cnmShowStaRec(struct ADAPTER *prAdapter, struct STA_RECORD *prStaRec,

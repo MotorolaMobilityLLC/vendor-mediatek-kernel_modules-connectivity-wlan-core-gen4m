@@ -70,7 +70,10 @@
 
 #define AP_HASH_SIZE	256	/* Size of hash tab must be power of 2. */
 
-#define AIS_ROAMING_CONNECTION_TRIAL_LIMIT  2
+#define AIS_CONNECTION_TRIAL_LIMIT	    10
+#define AIS_BSS_TRIAL_LIMIT		    2
+#define AIS_MLD_TRIAL_LIMIT		    1
+#define AIS_TEMPORARY_REJECT_LIMIT	    1
 
 #define AIS_MAIN_BSS_INDEX(_adapter, _ais_idx) \
 	aisGetMainLinkBssIndex(_adapter, aisFsmGetInstance(_adapter, _ais_idx))
@@ -86,6 +89,9 @@
 
 #define AIS_INDEX(_adapter, _bss_idx) \
 	aisGetAisFsmInfo(_adapter, _bss_idx)->ucAisIndex
+
+#define IS_AIS_CONN_BSSDESC(_ais_info, _bssdesc) \
+	(!!(_bssdesc->fgIsConnected & aisGetBssIndexBmap(_ais_info)))
 
 #if CFG_SUPPORT_ROAMING
 #define IS_AIS_ROAMING(_adapter, _bss_idx) \
@@ -172,6 +178,7 @@ enum ENUM_AIS_REQUEST_TYPE {
 	AIS_REQUEST_REMAIN_ON_CHANNEL,
 	AIS_REQUEST_BTO,
 	AIS_REQUEST_CSA,
+	AIS_REQUEST_LOOKING_FOR,
 	AIS_REQUEST_NUM
 };
 
@@ -535,7 +542,6 @@ struct AIS_FSM_INFO {
 
 	uint8_t ucScanTrialCount;
 	uint8_t ucConnTrialCount;
-	uint8_t ucConnTrialCountLimit;
 
 	struct PARAM_SCAN_REQUEST_ADV rScanRequest;
 	struct BSS_DESC_SET rSearchResult;
@@ -556,10 +562,6 @@ struct AIS_FSM_INFO {
 
 	/* Packet filter for AIS module. */
 	uint32_t u4AisPacketFilter;
-
-	/* Support AP Selection */
-	uint8_t ucJoinFailCntAfterScan;
-	/* end Support AP Selection */
 
 	/* 11K */
 	struct RADIO_MEASUREMENT_REQ_PARAMS rRmReqParams;
@@ -735,6 +737,9 @@ void aisFsmGetCurrentEssChnlList(struct ADAPTER *prAdapter,
 void aisFsmRunEventScanDone(struct ADAPTER *prAdapter,
 			    struct MSG_HDR *prMsgHdr);
 
+enum ENUM_AIS_STATE aisFsmScanResultsUpdate(
+	struct ADAPTER *prAdapter, uint8_t ucBssIndex);
+
 void aisFsmRunEventAbort(struct ADAPTER *prAdapter,
 			 struct MSG_HDR *prMsgHdr);
 
@@ -743,6 +748,8 @@ void aisFsmRunEventJoinComplete(struct ADAPTER
 
 enum ENUM_AIS_STATE aisFsmJoinCompleteAction(
 	struct ADAPTER *prAdapter, struct MSG_HDR *prMsgHdr);
+
+void aisFsmAuthorizedAction(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
 
 void aisFsmRunEventRemainOnChannel(struct ADAPTER
 				   *prAdapter, struct MSG_HDR *prMsgHdr);
@@ -842,10 +849,6 @@ void aisFsmRunEventRoamingDiscovery(
 	uint8_t ucBssIndex);
 
 void aisFsmRunEventRoamingRoam(struct ADAPTER *prAdapter, uint8_t ucBssIndex);
-
-enum ENUM_AIS_STATE aisFsmRoamingScanResultsUpdate(
-				   struct ADAPTER *prAdapter,
-				   uint8_t ucBssIndex);
 
 void aisFsmRoamingDisconnectPrevAP(struct ADAPTER *prAdapter,
 				   struct BSS_INFO *prAisBssInfo,
@@ -1084,6 +1087,8 @@ struct BSS_DESC *aisGetLinkBssDesc(struct AIS_FSM_INFO *prAisFsmInfo,
 	uint8_t ucLinkIdx);
 uint8_t aisGetLinkNum(struct AIS_FSM_INFO *prAisFsmInfo);
 struct BSS_DESC *aisGetMainLinkBssDesc(struct AIS_FSM_INFO *prAisFsmInfo);
+struct BSS_DESC *aisGetHighBandLinkBssDesc(struct ADAPTER *prAdapter,
+	struct AIS_FSM_INFO *prAisFsmInfo);
 void aisSetLinkStaRec(struct AIS_FSM_INFO *prAisFsmInfo,
 	 struct STA_RECORD *prStaRec, uint8_t ucLinkIdx);
 struct STA_RECORD *aisGetLinkStaRec(struct AIS_FSM_INFO *prAisFsmInfo,
@@ -1204,6 +1209,8 @@ struct GL_DETECT_REPLAY_INFO *
 #endif
 
 const char *aisGetFsmState(enum ENUM_AIS_STATE);
+
+const char *aisGetFsmReqType(enum ENUM_AIS_REQUEST_TYPE);
 
 struct FT_IES *
 	aisGetFtIe(

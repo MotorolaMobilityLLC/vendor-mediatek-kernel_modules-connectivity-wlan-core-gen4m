@@ -132,9 +132,6 @@
 #define SCAN_BATCH_REQ_RESULT			BIT(2)
 #endif
 
-/* Support AP Setection */
-#define SCN_BSS_JOIN_FAIL_THRESOLD          4
-
 #define SCN_CTRL_SCAN_CHANNEL_LISTEN_TIME_ENABLE	BIT(1)
 #define SCN_CTRL_IGNORE_AIS_FIX_CHANNEL			BIT(1)
 #define SCN_CTRL_ENABLE					BIT(0)
@@ -490,6 +487,7 @@ struct BSS_DESC {
 	uint16_t u2StaCnt;
 	uint16_t u2AvaliableAC; /* Available Admission Capacity */
 	uint8_t ucJoinFailureCount;
+	uint8_t ucTempRejectCount;
 	uint8_t ucChnlUtilization;
 	uint8_t ucSNR;
 	u_int8_t fgSeenProbeResp;

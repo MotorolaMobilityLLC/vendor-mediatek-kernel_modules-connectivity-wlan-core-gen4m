@@ -1168,6 +1168,20 @@ uint8_t *cnmStaRecAuthAddr(struct ADAPTER *prAdapter,
 	return prStaRec->aucMacAddr;
 }
 
+uint8_t cnmStaRecIsActive(struct ADAPTER *prAdapter,
+	struct STA_RECORD *prStaRec)
+{
+#if (CFG_SUPPORT_802_11BE_MLO == 1)
+	struct MLD_STA_RECORD *mldSta;
+
+	mldSta = mldStarecGetByStarec(prAdapter, prStaRec);
+	if (mldSta)
+		return !!(mldSta->u4ActiveStaBitmap & BIT(prStaRec->ucIndex));
+#endif
+
+	return TRUE;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * @brief

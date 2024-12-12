@@ -667,7 +667,6 @@
 #define OM_REMAP_IDX_NONE		0xff
 #define MLD_LINK_ID_NONE		0xff
 #define ML_PROBE_RETRY_COUNT		2
-#define MLD_RETRY_COUNT			6
 /* Reserve 0~31 for group mld index */
 #define MAT_OWN_MLD_ID_BASE		32
 
@@ -1322,9 +1321,6 @@
 #define CFG_SUPPORT_802_11R                     0
 #define CFG_SUPPORT_802_11K                     0
 #endif
-#define CFG_SUPPORT_MBO                         1
-#define CFG_SUPPORT_OCE				1
-
 
 /*!< 1(default): Enable 802.11d */
 /* 0: Disable */
@@ -1388,6 +1384,14 @@
 #if (CFG_SUPPORT_ROAMING == 0) && (CFG_SUPPORT_802_11V_BTM_OFFLOAD == 1)
 #error \
 "CFG_SUPPORT_ROAMING should be 1 if CFG_SUPPORT_802_11V_BTM_OFFLOAD is 1"
+#endif
+
+#if CFG_SUPPORT_ROAMING && CFG_SUPPORT_802_11K && CFG_SUPPORT_802_11V
+#define CFG_SUPPORT_MBO                         1
+#define CFG_SUPPORT_OCE				1
+#else
+#define CFG_SUPPORT_MBO                         0
+#define CFG_SUPPORT_OCE				0
 #endif
 
 #ifndef CFG_SUPPORT_802_11BE

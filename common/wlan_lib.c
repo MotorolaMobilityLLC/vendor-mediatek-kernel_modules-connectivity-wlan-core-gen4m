@@ -7428,8 +7428,6 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 		  FEATURE_DEBUG_ONLY);
 	INIT_UINT(prWifiVar->ucMaxSimuLinks,
 		"MaxSimultaneousLinks", 0xff, FEATURE_TO_CUSTOMER);
-	INIT_UINT(prWifiVar->ucMldRetryCount, "MldRetryCount", MLD_RETRY_COUNT,
-		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgApRemovalByT2LM,
 		"ApRemovalByT2LM", FEATURE_ENABLED, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u4ApRemovalMarginMs,
@@ -8152,13 +8150,19 @@ void wlanInitFeatureOptionImpl(struct ADAPTER *prAdapter, uint8_t *pucKey)
 	INIT_UINT(prWifiVar->u4RejectBtmReqReason, "RejectBtmReqReason", 0,
 		  FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->fgRoamByBTO, "RoamByBTO", 0, FEATURE_DEBUG_ONLY);
-	INIT_UINT(prWifiVar->u4AisRoamingNumber,
-		"AisRoamingNumber", KAL_AIS_NUM, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->u4AisRoamingNumber, "AisRoamingNumber",
+		KAL_AIS_NUM, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucAisConnTrialLimit, "AisConnTrialLimit",
+		AIS_CONNECTION_TRIAL_LIMIT, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucAisBssTrialLimit, "AisBssTrialLimit",
+		AIS_BSS_TRIAL_LIMIT, FEATURE_TO_CUSTOMER);
 	INIT_UINT(prWifiVar->u2AisBlocklistTimeout, "AisBlocklistTimeout",
 		  AIS_BLOCKLIST_TIMEOUT, FEATURE_TO_CUSTOMER);
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	INIT_UINT(prWifiVar->u2AisMldBlocklistTimeout, "AisMldBlocklistTimeout",
 		  AIS_MLD_BLOCKLIST_TIMEOUT, FEATURE_TO_CUSTOMER);
+	INIT_UINT(prWifiVar->ucAisMldTrialLimit, "AisMldTrialLimit",
+		AIS_MLD_TRIAL_LIMIT, FEATURE_TO_CUSTOMER);
 #endif
 	INIT_UINT(prWifiVar->fgEnArpFilter, "EnArpFilter", FEATURE_ENABLED,
 		  FEATURE_DEBUG_ONLY);

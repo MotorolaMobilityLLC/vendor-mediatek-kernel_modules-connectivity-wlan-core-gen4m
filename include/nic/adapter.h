@@ -932,7 +932,6 @@ struct WIFI_VAR {
 	uint32_t au4MloSap2ndLinkFreqs[MAX_CHN_NUM];
 	uint8_t ucMlProbeRetryLimit;
 	struct LINK_MGMT rMldBlockList;
-	uint8_t ucMldRetryCount;
 	uint8_t fgApRemovalByT2LM;
 	uint32_t u4ApRemovalMarginMs;
 	uint8_t ucNonApMldEMLSupport;
@@ -1248,9 +1247,12 @@ struct WIFI_VAR {
 	uint32_t u4RejectBtmReqReason;
 	uint32_t fgRoamByBTO;
 	uint32_t u4AisRoamingNumber;
+	uint8_t ucAisConnTrialLimit;
+	uint8_t ucAisBssTrialLimit;
 	uint16_t u2AisBlocklistTimeout;
 #if (CFG_SUPPORT_802_11BE_MLO == 1)
 	uint16_t u2AisMldBlocklistTimeout;
+	uint8_t ucAisMldTrialLimit;
 #endif
 	uint32_t fgEnArpFilter;
 

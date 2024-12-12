@@ -4945,24 +4945,37 @@ void mldCheckApRemoval(struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec, const uint8_t *pucIE)
 {
 #if (CFG_SUPPORT_ML_RECONFIG == 1)
+	struct AIS_FSM_INFO *ais;
 	struct MULTI_LINK_INFO rMlInfo;
 	struct MULTI_LINK_INFO *prMlInfo = &rMlInfo;
-	uint8_t ucBssIndex, i;
+	uint8_t i, j;
 
-	ucBssIndex = prStaRec->ucBssIndex;
-
-	if (!IS_BSS_INDEX_AIS(prAdapter, ucBssIndex) ||
+	if (!IS_BSS_INDEX_AIS(prAdapter, prStaRec->ucBssIndex) ||
 	    !mldSingleLink(prAdapter, prStaRec, prStaRec->ucBssIndex))
 		return;
+
+	ais = aisGetAisFsmInfo(prAdapter, prStaRec->ucBssIndex);
 
 	MLD_PARSE_RECONFIG_MLIE(prMlInfo, pucIE, prStaRec->aucMacAddr);
 
 	for (i = 0; i < prMlInfo->ucProfNum; i++) {
-		struct STA_PROFILE *sta = &prMlInfo->rStaProfiles[i];
+		struct STA_PROFILE *profile = &prMlInfo->rStaProfiles[i];
 
-		if (prStaRec->ucLinkIndex == sta->ucLinkId)
-			aisCheckApRemoval(prAdapter, prStaRec,
-					  sta->u2ApRemovalTimer);
+		for (j = 0; j < MLD_LINK_MAX; j++) {
+			struct STA_RECORD *link_sta = aisGetLinkStaRec(ais, j);
+			struct BSS_DESC *link_bss = aisGetLinkBssDesc(ais, j);
+
+			if (!link_sta || !link_bss)
+				continue;
+
+			if (link_sta->ucLinkIndex == profile->ucLinkId) {
+				link_bss->rMlInfo.u2ApRemovalTimer =
+					profile->u2ApRemovalTimer;
+
+				aisCheckApRemoval(prAdapter, link_sta,
+					  profile->u2ApRemovalTimer);
+			}
+		}
 	}
 #endif /* CFG_SUPPORT_ML_RECONFIG */
 }

@@ -49,6 +49,7 @@ struct AP_COLLECTION {
 	struct BSS_DESC *aprTarget[APS_LINK_MAX];
 	struct LINK arLinks[BAND_NUM]; /* categorize AP by band */
 	uint8_t ucLinkNum;
+	enum ENUM_MLO_LINK_PLAN eLinkPlan;
 	uint8_t ucTotalCount; /* total BssDesc count */
 	uint8_t fgIsMld;
 	uint8_t fgIsMatchBssid;
@@ -115,8 +116,10 @@ struct BSS_DESC *apsSearchBssDescByScore(struct ADAPTER *prAdapter,
 	enum ENUM_ROAMING_REASON eRoamReason,
 	uint8_t ucBssIndex, struct BSS_DESC_SET *prBssDescSet);
 
-enum ENUM_MLO_LINK_PLAN apsSearchLinkPlan(struct ADAPTER *prAdapter,
-	uint8_t ucRfBandBmap, uint8_t ucLinkNum);
+enum ENUM_MLO_LINK_PLAN apsLinksToLinkPlan(
+	struct BSS_DESC *aprLink[], uint8_t ucLinkNum);
+
+const char *apsGetLinkPlanStr(enum ENUM_MLO_LINK_PLAN eLinkPlan);
 
 #endif
 
