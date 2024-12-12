@@ -4069,7 +4069,9 @@ struct MLD_STA_RECORD *mldStarecGetByMldAddr(struct ADAPTER *prAdapter,
 
 	/* Try hash index first, if miss, fallback to original traversal */
 	prMldSta = &prAdapter->aprMldStarec[offset];
-	if (EQUAL_MAC_ADDR(prMldSta->aucPeerMldAddr, aucMacAddr))
+	if (prMldSta->fgIsInUse &&
+	    prMldSta->ucGroupMldId == prMldBssInfo->ucGroupMldId &&
+	    EQUAL_MAC_ADDR(prMldSta->aucPeerMldAddr, aucMacAddr))
 		return prMldSta;
 
 	prClientList = &prMldBssInfo->rMldStaRecOfClientList;
