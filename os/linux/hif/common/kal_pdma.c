@@ -3126,6 +3126,19 @@ int32_t wf_reg_sanity_check(struct GLUE_INFO *glue)
 		goto exit;
 	}
 
+#if defined(_HIF_PCIE)
+	if (!halPcieIsPcieProbed()) {
+		DBGLOG_LIMITED(HAL, WARN, "PCIe not ready\n");
+		ret = -EFAULT;
+		goto exit;
+	}
+
+	if (pcie_check_status_is_linked() == FALSE) {
+		ret = -EFAULT;
+		goto exit;
+	}
+#endif
+
 	prDebugOps = ad->chip_info->prDebugOps;
 	if (prDebugOps && prDebugOps->checkDumpViaBt)
 		dumpViaBt = prDebugOps->checkDumpViaBt(ad);

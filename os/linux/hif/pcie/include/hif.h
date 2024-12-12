@@ -734,8 +734,9 @@ int mtk_pcie_exit_L2(struct pci_dev *dev);
 #if (CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG == 1)
 extern int mtk_pcie_enable_cfg_dump(int port);
 extern int mtk_pcie_disable_cfg_dump(int port);
-uint8_t halPcieIsPcieProbed(void);
 #endif /* CFG_MTK_WIFI_PCIE_CONFIG_SPACE_ACCESS_DBG */
+uint8_t halPcieIsPcieProbed(void);
+u_int8_t pcie_check_status_is_linked(void);
 u_int8_t mtk_get_aer_triggered(void);
 void glUpdateRxCopyMemOps(
 	struct HIF_MEM_OPS *prMemOps);
