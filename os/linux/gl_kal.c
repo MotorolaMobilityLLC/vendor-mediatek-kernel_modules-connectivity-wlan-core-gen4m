@@ -11842,6 +11842,9 @@ void kalTputFactorUpdate(struct ADAPTER *prAdapter)
 	static OS_SYSTIME lv1_last, lv2_last;
 	OS_SYSTIME now;
 
+	if (test_bit(GLUE_FLAG_HALT_BIT, &prAdapter->prGlueInfo->ulFlag))
+		return;
+
 	if (IS_FEATURE_DISABLED(prWifiVar->fgTputFactorDump))
 		return;
 
