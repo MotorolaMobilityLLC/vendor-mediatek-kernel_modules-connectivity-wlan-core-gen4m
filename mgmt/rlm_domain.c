@@ -2573,7 +2573,7 @@ u_int8_t rlmDomainIsLegalChannel_V2(struct ADAPTER *prAdapter,
 
 u_int8_t rlmDomainIsStaSapIndoorConn(struct ADAPTER *prAdapter)
 {
-#if CFG_CH_SELECT_ENHANCEMENT
+#if (CFG_CH_SELECT_ENHANCEMENT == 1)
 	return prAdapter->rWifiVar.ucStaSapIndoorConn;
 #else
 	return 0;

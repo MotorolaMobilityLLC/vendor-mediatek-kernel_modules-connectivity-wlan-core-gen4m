@@ -1840,6 +1840,7 @@ struct WIFI_VAR {
 	uint8_t  ucSapRpsStatus;
 	uint32_t u4RpsTriggerTime;
 	uint32_t u4RpsInpktThresh;
+	OS_SYSTIME u4RpsStopTime;
 	uint32_t u4RpsMeetTime;
 	u_int8_t fgSapRpsForceOn;
 	u_int8_t fgSapSuspendOn;

@@ -7759,7 +7759,7 @@ u_int8_t p2pFuncSapOnlyCsaCheck(
 			0, /* center frequency */
 			0 /* eBand */);
 #endif
-#if CFG_CH_SELECT_ENHANCEMENT
+#if (CFG_CH_SELECT_ENHANCEMENT == 1)
 		return TRUE;
 	} else if (*eSapBand == BAND_5G &&
 		rlmDomainIsIndoorChannel(prAdapter,
@@ -7863,7 +7863,7 @@ void p2pFuncCrossBandChannelSwitchCheck(
 		(*eStaBand == BAND_6G && *eSapBand == BAND_5G))
 		*fgDbDcModeEn = FALSE;
 #endif
-#if CFG_CH_SELECT_ENHANCEMENT
+#if (CFG_CH_SELECT_ENHANCEMENT == 1)
 	if ((prAdapter->rWifiVar.eDbdcMode !=
 		ENUM_DBDC_MODE_DISABLED) &&
 		(*eStaBand == BAND_6G) &&
@@ -7876,7 +7876,7 @@ void p2pFuncCrossBandChannelSwitchCheck(
 #endif
 #endif
 
-#if CFG_CH_SELECT_ENHANCEMENT
+#if (CFG_CH_SELECT_ENHANCEMENT == 1)
 	if ((prAdapter->rWifiVar.eDbdcMode !=
 		ENUM_DBDC_MODE_DISABLED) &&
 		rlmDomainIsLegalDfsChannel(prAdapter,
@@ -10153,7 +10153,7 @@ p2pFuncNeedForceSleep(struct ADAPTER *prAdapter)
 		return FALSE;
 	else if ((ucApForceSleep == 1) &&
 		(bss->eConnectionState == MEDIA_STATE_CONNECTED)) {
-#if CFG_SAP_RPS_SUPPORT
+#if (CFG_SAP_RPS_SUPPORT == 1)
 		if ((!prAdapter->rWifiVar.fgSapRpsSwitch &&
 			prAdapter->rWifiVar.fgSapRpsEnable) ||
 			!prAdapter->rWifiVar.fgSapRpsEnable)

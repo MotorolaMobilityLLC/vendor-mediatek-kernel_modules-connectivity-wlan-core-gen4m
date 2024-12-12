@@ -142,10 +142,10 @@ static PROCESS_LEGACY_TO_UNI_FUNCTION arUniCmdTable[CMD_ID_END] = {
 #endif
 #endif
 	[CMD_ID_SET_FORCE_RTS] = nicUniCmdGamingMode,
-#if CFG_SAP_SUS_SUPPORT
+#if (CFG_SAP_SUS_SUPPORT == 1)
 	[CMD_ID_SET_SAP_SUS]   = nicUniCmdSetSapSus,
 #endif
-#if CFG_SAP_RPS_SUPPORT
+#if (CFG_SAP_RPS_SUPPORT == 1)
 	[CMD_ID_SET_SAP_RPS]   = nicUniCmdSetSapRps,
 #endif
 	[CMD_ID_TX_AMPDU] = nicUniCmdSetTxAmpdu,
@@ -8995,24 +8995,24 @@ uint32_t nicUniCmdGamingMode(struct ADAPTER *ad,
 	return WLAN_STATUS_SUCCESS;
 }
 
-#if CFG_SAP_RPS_SUPPORT
+#if (CFG_SAP_RPS_SUPPORT == 1)
 uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	struct CMD_SET_FW_SAP_RPS *cmd;
-	struct UNI_CMD_SET_SAP_RPS *uni_cmd;
+	struct UNI_CMD_SAP *uni_cmd;
 	struct UNI_CMD_SET_SAP_RPS_SET_T *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SET_SAP_RPS) +
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SAP) +
 		sizeof(struct UNI_CMD_SET_SAP_RPS_SET_T);
 
 	cmd = (struct CMD_SET_FW_SAP_RPS *) info->pucInfoBuffer;
-	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_SAP_RPS,
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_SAP,
 		max_cmd_len, NULL, NULL);
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	uni_cmd = (struct UNI_CMD_SET_SAP_RPS *) entry->pucInfoBuffer;
+	uni_cmd = (struct UNI_CMD_SAP *) entry->pucInfoBuffer;
 	uni_cmd->ucBssIdx = cmd->ucBssIdx;
 	tag = (struct UNI_CMD_SET_SAP_RPS_SET_T *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_SET_SAP_RPS_TAG_SET;
@@ -9027,24 +9027,24 @@ uint32_t nicUniCmdSetSapRps(struct ADAPTER *ad,
 }
 #endif
 
-#if CFG_SAP_SUS_SUPPORT
+#if (CFG_SAP_SUS_SUPPORT == 1)
 uint32_t nicUniCmdSetSapSus(struct ADAPTER *ad,
 		struct WIFI_UNI_SETQUERY_INFO *info)
 {
 	struct CMD_SET_FW_SAP_SUS *cmd;
-	struct UNI_CMD_SET_SAP_SUS *uni_cmd;
+	struct UNI_CMD_SAP *uni_cmd;
 	struct UNI_CMD_SET_SAP_SUS_SET_T *tag;
 	struct WIFI_UNI_CMD_ENTRY *entry;
-	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SET_SAP_SUS) +
+	uint32_t max_cmd_len = sizeof(struct UNI_CMD_SAP) +
 		sizeof(struct UNI_CMD_SET_SAP_SUS_SET_T);
 
 	cmd = (struct CMD_SET_FW_SAP_SUS *) info->pucInfoBuffer;
-	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_SAP_RPS,
+	entry = nicUniCmdAllocEntry(ad, UNI_CMD_ID_SET_SAP,
 		max_cmd_len, NULL, NULL);
 	if (!entry)
 		return WLAN_STATUS_RESOURCES;
 
-	uni_cmd = (struct UNI_CMD_SET_SAP_SUS *) entry->pucInfoBuffer;
+	uni_cmd = (struct UNI_CMD_SAP *) entry->pucInfoBuffer;
 	uni_cmd->ucBssIdx = cmd->ucBssIdx;
 	tag = (struct UNI_CMD_SET_SAP_SUS_SET_T *) uni_cmd->aucTlvBuffer;
 	tag->u2Tag = UNI_CMD_SET_SAP_SUS_TAG_SET;

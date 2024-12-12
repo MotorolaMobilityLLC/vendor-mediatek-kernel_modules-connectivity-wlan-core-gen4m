@@ -370,7 +370,9 @@ struct P2P_ROLE_FSM_INFO {
 	struct TIMER rDfsShutDownTimer;
 	enum ENUM_MAX_BANDWIDTH_SETTING eDfsChnlBw;
 #endif
-
+#if (CFG_SAP_RPS_SUPPORT == 1)
+	struct TIMER rP2pRpsEnterTimer;
+#endif
 	struct TIMER rWaitNextReqChnlTimer;
 
 	/* Packet filter for P2P module. */

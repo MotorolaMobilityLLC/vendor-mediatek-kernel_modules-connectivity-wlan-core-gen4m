@@ -362,11 +362,11 @@
 
 #if CFG_EXT_FEATURE
 #include "log_ext.h"
-#include "p2p_ext.h"
 #include "roaming_ext.h"
 #include "twt_ext.h"
 #include "debug_ext.h"
 #include "gl_sys.h"
+#include "p2p_ext.h"
 #endif
 
 #if CFG_SUPPORT_TDLS_AUTO
