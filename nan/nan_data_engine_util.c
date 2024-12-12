@@ -1297,7 +1297,7 @@ uint32_t nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 	}
 
 	/* parsing optional fields through pucPivot */
-	if (prAttrNDL->ucNDLControl & NAN_ATTR_NDL_CTRL_PEER_ID_PRESENT) {
+	if (prAttrNDL->b1PeerIdPresent) {
 		if (eNanAction == NAN_ACTION_DATA_PATH_REQUEST ||
 		    eNanAction == NAN_ACTION_SCHEDULE_REQUEST)
 			prNDL->ucPeerID = NAN_GET_U8(pucPivot);
@@ -1306,8 +1306,7 @@ uint32_t nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 		u2CountLen += 1;
 	}
 
-	if (prAttrNDL->ucNDLControl &
-	    NAN_ATTR_NDL_CTRL_MAX_IDLE_PERIOD_PRESENT) {
+	if (prAttrNDL->b1MaxIdlePeriodPresent) {
 		if (eNanAction == NAN_ACTION_DATA_PATH_REQUEST ||
 		    eNanAction == NAN_ACTION_SCHEDULE_REQUEST)
 			prNDL->u2MaximumIdlePeriod = NAN_GET_U16(pucPivot);
@@ -1316,8 +1315,7 @@ uint32_t nanNdlAttrUpdateNdl(struct ADAPTER *prAdapter,
 		u2CountLen += 2;
 	}
 
-	if (prAttrNDL->ucNDLControl &
-	    NAN_ATTR_NDL_CTRL_IMMUTABLE_SCHEDULE_PRESENT) {
+	if (prAttrNDL->b1ImmutableSchedPresent) {
 		u2NDLImmutableScheduleLen = prAttrNDL->u2Length - u2CountLen;
 		pucNDLImmutableSchedule = pucPivot;
 
@@ -2706,57 +2704,47 @@ nanDataEngineNDLAttrAppendImpl(struct ADAPTER *prAdapter,
 			prAttrNDL->ucNDLControl = 0;
 
 			if (prNDL->fgPagingRequired)
-				prAttrNDL->ucNDLControl |=
-					NAN_ATTR_NDL_CTRL_PEER_ID_PRESENT;
+				prAttrNDL->b1PeerIdPresent = 1;
 
 			/* Immutable Schedule Entry List */
 			if (nanDataEngineNdcAttrLength(prAdapter, prNDL,
 						       prNDP) > 0)
-				prAttrNDL->ucNDLControl |=
-					NAN_ATTR_NDL_CTRL_NDC_ATTRIBUTE_PRESENT;
+				prAttrNDL->b1NdcAttrPresent = 1;
 
 			if (nanDataEngineNdlQosAttrLength(prAdapter, prNDL,
 							  prNDP) > 0)
-				prAttrNDL->ucNDLControl |=
-				    NAN_ATTR_NDL_CTRL_NDL_QOS_ATTRIBUTE_PRESENT;
+				prAttrNDL->b1NdlQosAttrPresent = 1;
 
 			if (prNDL->u2MaximumIdlePeriod > 0)
-				prAttrNDL->ucNDLControl |=
-				    NAN_ATTR_NDL_CTRL_MAX_IDLE_PERIOD_PRESENT;
+				prAttrNDL->b1MaxIdlePeriodPresent = 1;
 
 			if (prNDL->fgCarryImmutableSchedule == TRUE)
-				prAttrNDL->ucNDLControl |=
-				NAN_ATTR_NDL_CTRL_IMMUTABLE_SCHEDULE_PRESENT;
+				prAttrNDL->b1ImmutableSchedPresent = 1;
 
 			if (prNDP != NULL) {
-				prAttrNDL->ucNDLControl |=
-				(NAN_ATTR_NDL_CTRL_NDL_SETUP_NDP <<
-				NAN_ATTR_NDL_CTRL_NDL_SETUP_REASON_OFFSET);
+				prAttrNDL->b2NdlSetupReason =
+				      NAN_ATTR_NDL_CTRL_NDL_SETUP_NDP;
 			} else {
-				prAttrNDL->ucNDLControl |=
-				(NAN_ATTR_NDL_CTRL_NDL_SETUP_FSD_USING_GAS <<
-				NAN_ATTR_NDL_CTRL_NDL_SETUP_REASON_OFFSET);
+				prAttrNDL->b2NdlSetupReason =
+				      NAN_ATTR_NDL_CTRL_NDL_SETUP_FSD_USING_GAS;
 			}
 
 			/* start to fill option field */
 			pucOffset = &(prAttrNDL->ucNDLPeerID);
 
-			if (prAttrNDL->ucNDLControl &
-				NAN_ATTR_NDL_CTRL_PEER_ID_PRESENT) {
+			if (prAttrNDL->b1PeerIdPresent) {
 				*pucOffset = prNDL->ucPeerID;
 				pucOffset++;
 			}
 
-			if (prAttrNDL->ucNDLControl &
-				NAN_ATTR_NDL_CTRL_MAX_IDLE_PERIOD_PRESENT) {
+			if (prAttrNDL->b1MaxIdlePeriodPresent) {
 				*((uint16_t *)pucOffset) =
 					prNDL->u2MaximumIdlePeriod;
 				pucOffset += sizeof(uint16_t);
 			}
 
 			/* Immutable Schedule Entry List */
-			if (prAttrNDL->ucNDLControl &
-			    NAN_ATTR_NDL_CTRL_IMMUTABLE_SCHEDULE_PRESENT) {
+			if (prAttrNDL->b1ImmutableSchedPresent) {
 				nanSchedNegoGetImmuNdlScheduleList(
 					prAdapter, &pucScheduleList,
 					&u4ScheduleListLength);

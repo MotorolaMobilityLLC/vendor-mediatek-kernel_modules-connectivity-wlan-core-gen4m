@@ -207,15 +207,7 @@ enum NAN_ATTR_NDPE_TLV_TYPES {
 #define NAN_ATTR_NDL_STATUS_REJECTED 2
 
 /* NAN NDL Attribute - NDL Control Field */
-#define NAN_ATTR_NDL_CTRL_PEER_ID_PRESENT BIT(0)
-#define NAN_ATTR_NDL_CTRL_IMMUTABLE_SCHEDULE_PRESENT BIT(1)
-#define NAN_ATTR_NDL_CTRL_NDC_ATTRIBUTE_PRESENT BIT(2)
-#define NAN_ATTR_NDL_CTRL_NDL_QOS_ATTRIBUTE_PRESENT BIT(3)
-#define NAN_ATTR_NDL_CTRL_MAX_IDLE_PERIOD_PRESENT BIT(4)
-#define NAN_ATTR_NDL_CTRL_NDL_TYPE BIT(5)
-#define NAN_ATTR_NDL_CTRL_NDL_SETUP_REASON BITS(6, 7)
-
-#define NAN_ATTR_NDL_CTRL_NDL_SETUP_REASON_OFFSET (6)
+/* b2NdlSetupReason */
 #define NAN_ATTR_NDL_CTRL_NDL_SETUP_NDP 0
 #define NAN_ATTR_NDL_CTRL_NDL_SETUP_FSD_USING_GAS 1
 
@@ -898,7 +890,19 @@ struct _NAN_ATTR_NDL_T {
 		};
 	};
 	uint8_t ucReasonCode;
-	uint8_t ucNDLControl;
+	/* NAN 4.0 Table 107. NDL Control field format */
+	union {
+		uint8_t ucNDLControl;
+		struct {
+			uint8_t b1PeerIdPresent :1;
+			uint8_t b1ImmutableSchedPresent :1;
+			uint8_t b1NdcAttrPresent :1;
+			uint8_t b1NdlQosAttrPresent :1;
+			uint8_t b1MaxIdlePeriodPresent :1;
+			uint8_t b1NdlType :1;
+			uint8_t b2NdlSetupReason :2;
+		};
+	};
 	uint8_t ucNDLPeerID;		/* optional */
 	uint16_t u2MaxIdlePeriod;	/* optional */
 	uint8_t aucImmutableSchedule[]; /* optional: NAN_SCHEDULE_ENTRY_T */
@@ -916,12 +920,26 @@ __KAL_ATTRIB_PACKED_FRONT__
 struct _NAN_ATTR_UNALIGNED_SCHEDULE_T {
 	uint8_t ucAttrId; /* NAN_ATTR_ID_UNALIGNED_SCHEDULE */
 	uint16_t u2Length;
-	uint16_t u2AttributeControl;
+	union {
+		uint16_t u2AttributeControl;
+		struct {
+			uint16_t b4ScheduleId :4;
+			uint16_t b4AttrCtrlReserved :4;
+			uint16_t b8SequenceId :8;
+		};
+	};
 	uint32_t u4StartingTime;
 	uint32_t u4Duration;
 	uint32_t u4Period;
 	uint8_t ucCountDown;
-	uint8_t ucULWOverwrite;
+	union {
+		uint8_t ucULWOverwrite;
+		struct {
+			uint8_t b1OverwriteAll :1;
+			uint8_t b4OverwriteMapId :4;
+			uint8_t b3OverwriteReserved :3;
+		};
+	};
 	uint8_t aucULWControlBandIDChannelEntry[];
 	/* ULW Control (O) + BandID/ChannelEntry*/
 } __KAL_ATTRIB_PACKED__;

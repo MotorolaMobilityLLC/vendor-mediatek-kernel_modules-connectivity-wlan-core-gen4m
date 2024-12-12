@@ -6680,22 +6680,23 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		uint8_t ucSTAIdx;
 		uint16_t u2RemainingTime;
 		uint32_t u4OpClass = 0;
+		uint32_t u4PrimaryChnl = 0;
 
 		if (nanSchedPeerSchRecordIsValid(prAdapter, u2SchId) == FALSE)
 			continue;
 
-		u4OpClass = prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				.u4OperatingClass;
-		if (!nanLinkNeedMlo(prAdapter) &&
-			IS_2G_OP_CLASS(u4OpClass) &&
-			nanSchedGetHighestCommonBand(prAdapter, u2SchId) !=
-				ENUM_SUPPORTED_BN_2G) {
+		u4OpClass =
+			prFlowCtrlEvt->arBandChnlInfo[u2SchId].u4OperatingClass;
+		u4PrimaryChnl =
+			prFlowCtrlEvt->arBandChnlInfo[u2SchId].u4PrimaryChnl;
+		if (IS_2G_OP_CLASS(u4OpClass) && !nanLinkNeedMlo(prAdapter) &&
+		    nanSchedGetHighestCommonBand(prAdapter, u2SchId) !=
+						    ENUM_SUPPORTED_BN_2G) {
 			DBGLOG(NAN, INFO,
-				   "Seq:%u, Sch:%u, Rm:%u, Op:%u, 5/6G peer skip 2G flow ctrl\n",
+				   "Seq:%u, Sch:%u, Rm:%u, Op:%u, ch=%u, 5/6G peer skip 2G flow ctrl\n",
 				   u2SeqNum, u2SchId,
 				   prFlowCtrlEvt->au2RemainingTime[u2SchId],
-				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-					.u4OperatingClass);
+				   u4OpClass, u4PrimaryChnl);
 			continue;
 		}
 
@@ -6709,24 +6710,22 @@ void nicNanNdlFlowCtrlEvtV2(struct ADAPTER *prAdapter, uint8_t *pcuEvtBuf)
 		    rCurrentTime > prNanFlowCtrlRecord[u2SchId].u4Time +
 				   NAN_DW_INTERVAL) {
 			DBGLOG(NAN, WARN,
-			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u\n",
+			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u, ch=%u\n",
 			       u2SeqNum, u2SchId, u2RemainingTime,
 			       prNanFlowCtrlRecord[u2SchId].fgAllow,
 			       prNanFlowCtrlRecord[u2SchId].u4Time ?
 				       rCurrentTime -
 				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
-				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				   .u4OperatingClass);
+				       u4OpClass, u4PrimaryChnl);
 		} else {
 			DBGLOG(NAN, INFO,
-			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u\n",
+			       "Seq:%u, Sch:%u, Rm:%u, S=%u(%u), Op=%u, ch=%u\n",
 			       u2SeqNum, u2SchId, u2RemainingTime,
 			       prNanFlowCtrlRecord[u2SchId].fgAllow,
 			       prNanFlowCtrlRecord[u2SchId].u4Time ?
 				       rCurrentTime -
 				       prNanFlowCtrlRecord[u2SchId].u4Time : 0,
-				   prFlowCtrlEvt->arBandChnlInfo[u2SchId]
-				   .u4OperatingClass);
+			       u4OpClass, u4PrimaryChnl);
 		}
 		prNanFlowCtrlRecord[u2SchId].fgAllow = !!u2RemainingTime;
 		prNanFlowCtrlRecord[u2SchId].u4Time = rCurrentTime;

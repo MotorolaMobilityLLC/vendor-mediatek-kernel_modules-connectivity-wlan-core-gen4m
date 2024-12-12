@@ -5148,9 +5148,8 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 	do {
 		prPeerSchRecord =
 			nanSchedLookupPeerSchRecord(prAdapter, pucNmiAddr);
-		if (prPeerSchRecord == NULL) {
+		if (prPeerSchRecord == NULL)
 			break;
-		}
 
 		DBGLOG(NAN, INFO, "\n\n");
 		DBGLOG(NAN, INFO, "------>\n");
@@ -5161,6 +5160,18 @@ nanSchedPeerUpdateUawAttr(struct ADAPTER *prAdapter, uint8_t *pucNmiAddr,
 				prAttrUaw->u2Length;
 		nanUtilDump(prAdapter, "[Peer UAW]", (uint8_t *)prAttrUaw,
 			    u4UlwAttrSize);
+		DBGLOG(NAN, INFO, "ULW: " MACSTR
+		       " id=%u, len=%u, SchedId=%u SeqId=%u, start=%u, dur=%u(us), period=%u(us), count=%u, OWall=%u, OWmap=%u\n",
+		       MAC2STR(pucNmiAddr),
+		       prAttrUaw->ucAttrId, prAttrUaw->u2Length,
+		       prAttrUaw->b4ScheduleId,
+		       prAttrUaw->b8SequenceId,
+		       prAttrUaw->u4StartingTime,
+		       prAttrUaw->u4Duration,
+		       prAttrUaw->u4Period,
+		       prAttrUaw->ucCountDown,
+		       prAttrUaw->b1OverwriteAll,
+		       prAttrUaw->b4OverwriteMapId);
 
 		u4CmdBufferLen = sizeof(struct _CMD_EVENT_TLV_COMMOM_T) +
 				 sizeof(struct _CMD_EVENT_TLV_ELEMENT_T) +
@@ -5515,6 +5526,14 @@ void nanSchedPeerUpdateCommonFAW(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		       ((uint8_t *)prTimeline->au4AvailMap)[3]);
 	}
 
+	if (prPeerSchRecord->prCommNdcCtrl) {
+		DBGLOG(NAN, VOC, "sch idx=%u, NDC=%02x-%02x-%02x-%02x\n",
+		       u4SchIdx,
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[0],
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[1],
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[2],
+		       ((uint8_t *)prPeerSchRecord->prCommNdcCtrl)[3]);
+	}
 
 #if (CFG_SUPPORT_WIFI_6G == 1)
 	if (i4SlotNum[BAND_6G - 1])
@@ -12299,9 +12318,13 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		return WLAN_STATUS_FAILURE;
 	}
 
-	DBGLOG(NAN, TRACE, "element tag=%u, body_len=%u, copy %zu\n",
+	DBGLOG(NAN, TRACE, "element tag=%u, body_len=%u, copy %zu, sch=%u\n",
 	       prTlvElement->tag_type, prTlvElement->body_len,
-	       sizeof(struct _NAN_SCHED_CMD_UPDATE_CRB_T));
+	       sizeof(struct _NAN_SCHED_CMD_UPDATE_CRB_T), u4SchIdx);
+	DBGDUMP_HEX(NAN, TEMP, "prPeerSchRecord->arCommFawTimeline\n",
+		    prPeerSchRecord->arCommFawTimeline,
+		    sizeof(prPeerSchRecord->arCommFawTimeline));
+
 	prCmdUpdateCRB =
 		(struct _NAN_SCHED_CMD_UPDATE_CRB_T *)prTlvElement->aucbody;
 	kalMemZero(prCmdUpdateCRB, sizeof(struct _NAN_SCHED_CMD_UPDATE_CRB_T));
@@ -12317,6 +12340,10 @@ nanSchedCmdUpdateCRB(struct ADAPTER *prAdapter, uint32_t u4SchIdx)
 		if (prPeerSchRecord->prCommNdcCtrl) {
 			prCmdUpdateCRB->rCommNdcCtrl =
 				*prPeerSchRecord->prCommNdcCtrl;
+			DBGDUMP_HEX(NAN, TEMP,
+				    "prPeerSchRecord->prCommNdcCtrl\n",
+				    prPeerSchRecord->prCommNdcCtrl,
+				    sizeof(*prPeerSchRecord->prCommNdcCtrl));
 		} else {
 			prNdcCtrl = nanSchedGetNdcCtrl(
 				prAdapter,
@@ -12629,7 +12656,6 @@ nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 		return WLAN_STATUS_FAILURE;
 	}
 
-
 	prCmdUpdateAvailability =
 		(struct _NAN_SCHED_CMD_UPDATE_AVAILABILITY_T *)
 			prTlvElement->aucbody;
@@ -12642,14 +12668,22 @@ nanSchedCmdUpdateAvailabilityDb(struct ADAPTER *prAdapter,
 	else
 		prCmdUpdateAvailability->fgMultipleMap = FALSE;
 
-	DBGLOG(NAN, TRACE, "element tag=%u, body_len=%u, copy %zu\n",
+	DBGLOG(NAN, TRACE,
+	       "element tag=%u, body_len=%u, copy %zu, mapId=%u, timeline=%u\n",
 	       prTlvElement->tag_type, prTlvElement->body_len,
-	       sizeof(prCmdUpdateAvailability->arChnlList));
+	       sizeof(prCmdUpdateAvailability->arChnlList),
+	       prNanTimelineMgmt->ucMapId, szTimeLineIdx);
 	if (!fgChkCondAvailability) {
+		DBGDUMP_HEX(NAN, TEMP, "arChnlList\n",
+			   prNanTimelineMgmt->arChnlList,
+			   sizeof(prCmdUpdateAvailability->arChnlList));
 		kalMemCopy(prCmdUpdateAvailability->arChnlList,
 			   prNanTimelineMgmt->arChnlList,
 			   sizeof(prCmdUpdateAvailability->arChnlList));
 	} else {
+		DBGDUMP_HEX(NAN, TEMP, "arCondChnlList\n",
+			    prNanTimelineMgmt->arCondChnlList,
+			    sizeof(prCmdUpdateAvailability->arChnlList));
 		kalMemCopy(prCmdUpdateAvailability->arChnlList,
 			   prNanTimelineMgmt->arCondChnlList,
 			   sizeof(prCmdUpdateAvailability->arChnlList));
