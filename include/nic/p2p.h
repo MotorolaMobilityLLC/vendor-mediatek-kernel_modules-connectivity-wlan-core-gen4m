@@ -63,6 +63,8 @@
 #define SAP_CHNL_HOLD_TIME_MS			200
 #define P2P_CHNL_HOLD_TIME_MS			5000
 #define P2P_AP_CHNL_HOLD_TIME_CSA_MS		100
+#define P2P_GC_JOIN_CH_GRANT_THRESHOLD		10
+#define P2P_GC_JOIN_CH_REQUEST_INTERVAL		4000
 #define P2P_DEFAULT_LISTEN_CHANNEL                   1
 
 #if (CFG_SUPPORT_DFS_MASTER == 1)
@@ -309,6 +311,10 @@ struct P2P_CHNL_REQ_INFO {
 	uint32_t NFC_BEAM;	/*NFC Beam + Indication */
 #endif
 	uint8_t ucChReqNum;
+};
+
+struct P2P_CSA_REQ_INFO {
+	uint8_t ucBssIdx;
 };
 
 /* Glubal Connection Settings. */

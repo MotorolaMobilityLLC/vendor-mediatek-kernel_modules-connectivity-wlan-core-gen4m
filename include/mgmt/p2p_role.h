@@ -268,7 +268,6 @@ enum ENUM_P2P_ROLE_STATE {
 	P2P_ROLE_STATE_DFS_CAC,
 #endif
 	P2P_ROLE_STATE_SWITCH_CHANNEL,
-	P2P_ROLE_STATE_WAIT_FOR_NEXT_REQ_CHNL,
 	P2P_ROLE_STATE_NUM
 };
 
@@ -286,6 +285,8 @@ struct P2P_JOIN_INFO {
 	uint32_t u4ConnFlags;
 	struct STA_RECORD *prTargetStaRec;
 	struct BSS_DESC *prTargetBssDesc;
+	struct BSS_DESC_SET rBssDescSet;
+	u_int8_t fgNeedMlScan;
 	uint8_t fgIsJoinSuccess;
 	/* For ASSOC Rsp. */
 	uint32_t u4BufLength;
@@ -343,7 +344,7 @@ struct P2P_ROLE_FSM_INFO {
 	enum ENUM_P2P_ROLE_STATE eCurrentState;
 
 	/* Channel related. */
-	struct P2P_CHNL_REQ_INFO rChnlReqInfo[MLD_LINK_MAX];
+	struct P2P_CHNL_REQ_INFO rChnlReqInfo;
 
 	/* Scan related. */
 	struct P2P_SCAN_REQ_INFO rScanReqInfo;
@@ -353,6 +354,9 @@ struct P2P_ROLE_FSM_INFO {
 
 	/* Auto channel selection related. */
 	struct P2P_ACS_REQ_INFO rAcsReqInfo;
+
+	/* Channel switch related. */
+	struct P2P_CSA_REQ_INFO rCsaReqInfo;
 
 	/* FSM Timer */
 	struct TIMER rP2pRoleFsmTimeoutTimer;

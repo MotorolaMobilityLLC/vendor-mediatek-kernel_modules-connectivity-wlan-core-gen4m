@@ -57,11 +57,6 @@ void p2pDeactivateAllLink(
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t fgClearStaRec);
 
-void p2pFillLinkBssDesc(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	struct BSS_DESC_SET *prBssDescSet);
-
 void p2pSetLinkBssInfo(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkIdx,
 	struct BSS_INFO *prBssInfo);
@@ -73,17 +68,9 @@ void p2pGetLinkWmmQueSet(
 	struct ADAPTER *prAdapter,
 	struct BSS_INFO *prBssInfo);
 
-void p2pSetLinkBssDesc(
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	struct BSS_DESC *prBssDesc,
-	uint8_t ucLinkIdx);
-
 struct BSS_DESC *p2pGetLinkBssDesc(
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkIdx);
-
-uint8_t p2pGetLinkNum(
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo);
 
 void p2pSetLinkStaRec(
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
@@ -94,14 +81,10 @@ struct STA_RECORD *p2pGetLinkStaRec(
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkIdx);
 
-struct P2P_CHNL_REQ_INFO *p2pGetChnlReqInfo(
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	uint8_t ucLinkIdx);
-
-void p2pLinkAcquireChJoin(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	struct P2P_CHNL_REQ_INFO *prChnlReq);
+void p2pLinkAcquireChJoin(struct ADAPTER *prAdapter,
+			  struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+			  struct P2P_CHNL_REQ_INFO *prChnlReq,
+			  struct P2P_JOIN_INFO *prJoinInfo);
 
 struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
 	struct ADAPTER *prAdapter,

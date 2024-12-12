@@ -761,29 +761,8 @@ void p2pClearAllLink(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
 
 	for (i = 0; i < MLD_LINK_MAX; i++) {
 		prP2pRoleFsmInfo->aprP2pLinkInfo[i]
-			.prP2pTargetBssDesc = NULL;
-		prP2pRoleFsmInfo->aprP2pLinkInfo[i]
 			.prP2pTargetStaRec = NULL;
 	}
-}
-
-void p2pFillLinkBssDesc(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	struct BSS_DESC_SET *prBssDescSet)
-{
-	uint8_t i;
-
-	if (!prAdapter || !prBssDescSet)
-		return;
-
-	for (i = 0; i < prBssDescSet->ucLinkNum; i++) {
-		p2pSetLinkBssDesc(
-			prP2pRoleFsmInfo,
-			prBssDescSet->aprBssDesc[i],
-			i);
-	}
-
 }
 
 void p2pDeactivateAllLink(
@@ -808,7 +787,6 @@ void p2pDeactivateAllLink(
 struct P2P_ROLE_FSM_INFO *p2pGetDefaultRoleFsmInfo(
 	struct ADAPTER *prAdapter,
 	enum ENUM_IFTYPE eIftype)
-
 {
 	return P2P_ROLE_INDEX_2_ROLE_FSM_INFO(prAdapter,
 		P2P_MAIN_ROLE_INDEX);
@@ -875,28 +853,18 @@ void p2pGetLinkWmmQueSet(
 		prBssInfo->ucBssIndex, prBssInfo->ucWmmQueSet);
 }
 
-
-void p2pSetLinkBssDesc(
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	struct BSS_DESC *prBssDesc,
-	uint8_t ucLinkIdx)
-{
-	if (ucLinkIdx >= MLD_LINK_MAX)
-		return;
-
-	prP2pRoleFsmInfo->aprP2pLinkInfo[ucLinkIdx]
-		.prP2pTargetBssDesc = prBssDesc;
-}
-
 struct BSS_DESC *p2pGetLinkBssDesc(
 	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 	uint8_t ucLinkIdx)
 {
+	struct P2P_JOIN_INFO *prJoinInfo;
+
 	if (ucLinkIdx >= MLD_LINK_MAX)
 		return NULL;
 
-	return prP2pRoleFsmInfo->aprP2pLinkInfo[ucLinkIdx]
-		.prP2pTargetBssDesc;
+	prJoinInfo = &(prP2pRoleFsmInfo->rJoinInfo);
+
+	return prJoinInfo->rBssDescSet.aprBssDesc[ucLinkIdx];
 }
 
 uint8_t p2pGetLinkNum(struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo)
@@ -933,13 +901,6 @@ struct STA_RECORD *p2pGetLinkStaRec(
 		.prP2pTargetStaRec;
 }
 
-struct P2P_CHNL_REQ_INFO *p2pGetChnlReqInfo(
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	uint8_t ucLinkIdx)
-{
-	return &prP2pRoleFsmInfo->rChnlReqInfo[ucLinkIdx];
-}
-
 void p2pLinkStaRecFree(
 	struct ADAPTER *prAdapter,
 	struct STA_RECORD *prStaRec,
@@ -973,10 +934,10 @@ void p2pLinkStaRecFree(
 	}
 }
 
-void p2pLinkAcquireChJoin(
-	struct ADAPTER *prAdapter,
-	struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-	struct P2P_CHNL_REQ_INFO *prChnlReq)
+void p2pLinkAcquireChJoin(struct ADAPTER *prAdapter,
+			  struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+			  struct P2P_CHNL_REQ_INFO *prChnlReq,
+			  struct P2P_JOIN_INFO *prJoinInfo)
 {
 	struct MSG_CH_REQ *prMsgChReq = NULL;
 	struct MSG_CH_REQ *prSubReq = NULL;
@@ -985,10 +946,12 @@ void p2pLinkAcquireChJoin(
 	uint8_t i = 0;
 	uint8_t ucSeqNumOfChReq;
 
-	if (!prAdapter || !prChnlReq)
+	if (!prAdapter || !prChnlReq || !prJoinInfo)
 		return;
 
-	ucReqChNum = p2pGetLinkNum(prP2pRoleFsmInfo);
+	ucReqChNum = prJoinInfo->rBssDescSet.ucLinkNum;
+
+	p2pFuncReleaseCh(prAdapter, prP2pRoleFsmInfo->ucBssIndex, prChnlReq);
 
 	/* send message to CNM for acquiring channel */
 	u4MsgSz = sizeof(struct MSG_CH_REQ) * ucReqChNum;
@@ -1012,8 +975,6 @@ void p2pLinkAcquireChJoin(
 			p2pGetLinkBssInfo(prP2pRoleFsmInfo, i);
 		struct BSS_DESC *prBssDesc =
 			p2pGetLinkBssDesc(prP2pRoleFsmInfo, i);
-		struct P2P_CHNL_REQ_INFO *prChnlReqInfo =
-			p2pGetChnlReqInfo(prP2pRoleFsmInfo, i);
 
 		if (!prBss || !prBssDesc)
 			continue;
@@ -1030,35 +991,41 @@ void p2pLinkAcquireChJoin(
 
 		prSubReq = (struct MSG_CH_REQ *)&prMsgChReq[i];
 
-		p2pFuncReleaseCh(prAdapter,
-			prBss->ucBssIndex,
-			prChnlReq);
-
 		prSubReq->rMsgHdr.eMsgId = MID_MNY_CNM_CH_REQ;
 		prSubReq->ucBssIndex = prBss->ucBssIndex;
 		prSubReq->ucTokenID = ucSeqNumOfChReq;
 		prSubReq->eReqType = CH_REQ_TYPE_JOIN;
-		prSubReq->u4MaxInterval = prChnlReqInfo->u4MaxInterval;
-		prSubReq->ucPrimaryChannel = prChnlReqInfo->ucReqChnlNum;
-		prSubReq->eRfSco = prChnlReqInfo->eChnlSco;
-		prSubReq->eRfBand = prChnlReqInfo->eBand;
-		prSubReq->eRfChannelWidth = prChnlReqInfo->eChannelWidth;
-		prSubReq->ucRfCenterFreqSeg1 = prChnlReqInfo->ucCenterFreqS1;
-		prSubReq->ucRfCenterFreqSeg2 = prChnlReqInfo->ucCenterFreqS2;
+		prSubReq->u4MaxInterval = P2P_GC_JOIN_CH_REQUEST_INTERVAL;
+		prSubReq->ucPrimaryChannel = prBssDesc->ucChannelNum;
+		prSubReq->eRfSco = prBssDesc->eSco;
+		prSubReq->eRfBand = prBssDesc->eBand;
+		prSubReq->eRfChannelWidth = prBssDesc->eChannelWidth;
+		prSubReq->ucRfCenterFreqSeg1 =
+			nicGetS1(prBssDesc->eBand,
+				 prBssDesc->ucChannelNum,
+				 prBssDesc->eSco,
+				 rlmVhtBw2OpBw(prBssDesc->eChannelWidth,
+					       prBssDesc->eSco));
+		prSubReq->ucRfCenterFreqSeg2 = 0;
 #if CFG_SUPPORT_DBDC
 		if (ucReqChNum >= 2)
 			prSubReq->eDBDCBand = ENUM_BAND_ALL;
 		else
 			prSubReq->eDBDCBand = ENUM_BAND_AUTO;
 #endif /*CFG_SUPPORT_DBDC*/
+
+		rlmReviseMaxBw(prAdapter,
+			       prBss->ucBssIndex,
+			       &prSubReq->eRfSco,
+			       &prSubReq->eRfChannelWidth,
+			       &prSubReq->ucRfCenterFreqSeg1,
+			       &prSubReq->ucPrimaryChannel);
 	}
 
-	DBGLOG(P2P, INFO,
-	   "on band %u, tokenID: %d, cookie: 0x%llx, ucExtraChReqNum: %d.\n",
-	   prMsgChReq->eDBDCBand,
-	   prMsgChReq->ucTokenID,
-	   prChnlReq->u8Cookie,
-	   prMsgChReq->ucExtraChReqNum);
+	DBGLOG(P2P, INFO, "dbdc=%d token=%u num=%d\n",
+		prMsgChReq->eDBDCBand,
+		prMsgChReq->ucTokenID,
+		prMsgChReq->ucExtraChReqNum);
 
 	mboxSendMsg(prAdapter, MBOX_ID_0,
 			(struct MSG_HDR *)prMsgChReq,

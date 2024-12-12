@@ -104,16 +104,18 @@ p2pRoleStateInit_REQING_CHANNEL(struct ADAPTER *prAdapter,
 		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
 		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
-
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
 
-		if (prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_JOIN)
-			p2pLinkAcquireChJoin(prAdapter,
-				prP2pRoleFsmInfo,
-				prChnlReqInfo);
-		else
+		if (prChnlReqInfo->eChnlReqType == CH_REQ_TYPE_JOIN) {
+			struct P2P_JOIN_INFO *prJoinInfo;
+
+			prJoinInfo = &prP2pRoleFsmInfo->rJoinInfo;
+			p2pLinkAcquireChJoin(prAdapter, prP2pRoleFsmInfo,
+					     prChnlReqInfo, prJoinInfo);
+		} else {
 			p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
+		}
 
 	} while (FALSE);
 }				/* p2pRoleStateInit_REQING_CHANNEL */
@@ -140,14 +142,14 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 			if (prP2pRoleBssInfo->eIntendOPMode
 				== OP_MODE_ACCESS_POINT) {
 				struct P2P_CHNL_REQ_INFO *prP2pChnlReqInfo =
-					&(prP2pRoleFsmInfo->rChnlReqInfo[0]);
+					&(prP2pRoleFsmInfo->rChnlReqInfo);
 
 				if (IS_NET_PWR_STATE_ACTIVE(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex)) {
 					p2pFuncStartGO(prAdapter,
 						prP2pRoleBssInfo,
 					&(prP2pRoleFsmInfo->rConnReqInfo),
-					&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 					fgIsStartGO = TRUE;
 				} else if (prP2pChnlReqInfo->
 						fgIsChannelRequested)
@@ -157,13 +159,13 @@ p2pRoleStateAbort_REQING_CHANNEL(struct ADAPTER *prAdapter,
 			} else {
 				p2pFuncReleaseCh(prAdapter,
 					prP2pRoleFsmInfo->ucBssIndex,
-					&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
+					&(prP2pRoleFsmInfo->rChnlReqInfo));
 			}
 		} else if (eNextState == P2P_ROLE_STATE_SCAN) {
 			/* Abort channel anyway */
 			p2pFuncReleaseCh(prAdapter,
 				prP2pRoleFsmInfo->ucBssIndex,
-				&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
+				&(prP2pRoleFsmInfo->rChnlReqInfo));
 		}
 	} while (FALSE);
 
@@ -329,27 +331,22 @@ p2pRoleStateAbort_AP_CHNL_DETECTION(struct ADAPTER *prAdapter,
 
 void
 p2pRoleStateInit_GC_JOIN(struct ADAPTER *prAdapter,
-		struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
-		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+			 struct P2P_ROLE_FSM_INFO *prP2pRoleFsmInfo,
+			 struct P2P_JOIN_INFO *prJoinInfo)
 {
-	/* P_MSG_JOIN_REQ_T prJoinReqMsg = (P_MSG_JOIN_REQ_T)NULL; */
-
 	do {
 		ASSERT_BREAK((prAdapter != NULL)
 			&& (prP2pRoleFsmInfo != NULL)
-			&& (prChnlReqInfo != NULL));
+			&& (prJoinInfo != NULL));
 
 		/* Setup a join timer. */
 		DBGLOG(P2P, TRACE, "Start a join init timer\n");
 		cnmTimerStartTimer(prAdapter,
 			&(prP2pRoleFsmInfo->rP2pRoleFsmTimeoutTimer),
-			(prChnlReqInfo->u4MaxInterval
-				- AIS_JOIN_CH_GRANT_THRESHOLD));
+			(P2P_GC_JOIN_CH_REQUEST_INTERVAL
+				- P2P_GC_JOIN_CH_GRANT_THRESHOLD));
 
-		p2pFuncGCJoin(prAdapter,
-			prP2pRoleFsmInfo,
-			&(prP2pRoleFsmInfo->rJoinInfo));
-
+		p2pFuncGCJoin(prAdapter, prP2pRoleFsmInfo, prJoinInfo);
 	} while (FALSE);
 }				/* p2pRoleStateInit_GC_JOIN */
 
@@ -403,7 +400,7 @@ p2pRoleStateAbort_GC_JOIN(struct ADAPTER *prAdapter,
 	/* Release channel requested. */
 	p2pFuncReleaseCh(prAdapter,
 		prP2pRoleFsmInfo->ucBssIndex,
-		&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
+		&(prP2pRoleFsmInfo->rChnlReqInfo));
 
 	prP2pRoleFsmInfo->rJoinInfo.prTargetStaRec = NULL;
 
@@ -440,35 +437,38 @@ p2pRoleStateAbort_DFS_CAC(struct ADAPTER *prAdapter,
 
 		p2pFuncReleaseCh(prAdapter,
 			prP2pRoleFsmInfo->ucBssIndex,
-			&(prP2pRoleFsmInfo->rChnlReqInfo[0]));
+			&(prP2pRoleFsmInfo->rChnlReqInfo));
 
 	} while (FALSE);
 }				/* p2pRoleStateAbort_DFS_CAC */
 
 void
 p2pRoleStateInit_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
-		uint8_t ucBssIdx,
-		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+				struct P2P_CSA_REQ_INFO *prCsaReqInfo,
+				struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
 	struct BSS_INFO *prBssInfo = (struct BSS_INFO *) NULL;
 
-	prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter, ucBssIdx);
-	if (!prBssInfo)
-		return;
 	do {
 		ASSERT_BREAK((prAdapter != NULL) && (prChnlReqInfo != NULL));
 
+		prBssInfo = GET_BSS_INFO_BY_INDEX(prAdapter,
+						  prCsaReqInfo->ucBssIdx);
+		if (!prBssInfo)
+			break;
+
 		prBssInfo->fgIsSwitchingChnl = TRUE;
-		p2pFuncAcquireCh(prAdapter, ucBssIdx, prChnlReqInfo);
+		p2pFuncAcquireCh(prAdapter, prCsaReqInfo->ucBssIdx,
+				 prChnlReqInfo);
 	} while (FALSE);
 }				/* p2pRoleStateInit_SWITCH_CHANNEL */
 
 void
 p2pRoleStateAbort_SWITCH_CHANNEL(struct ADAPTER *prAdapter,
-		uint8_t ucBssIdx,
-		struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
+				 struct P2P_CSA_REQ_INFO *prCsaReqInfo,
+				 struct P2P_CHNL_REQ_INFO *prChnlReqInfo)
 {
-	p2pFuncReleaseCh(prAdapter, ucBssIdx, prChnlReqInfo);
+	p2pFuncReleaseCh(prAdapter, prCsaReqInfo->ucBssIdx, prChnlReqInfo);
 }				/* p2pRoleStateAbort_SWITCH_CHANNEL */
 #endif
 

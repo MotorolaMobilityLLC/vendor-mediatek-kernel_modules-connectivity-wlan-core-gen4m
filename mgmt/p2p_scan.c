@@ -248,8 +248,7 @@ static u_int8_t scanP2pNeedTriggerMlScan(struct ADAPTER *prAdapter,
 
 struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 		struct P2P_CONNECTION_REQ_INFO *prConnReqInfo,
-		struct BSS_DESC_SET *prBssDescSet,
-		u_int8_t *fgNeedMlScan)
+		struct P2P_JOIN_INFO *prJoinInfo)
 {
 	struct BSS_DESC *prCandidateBssDesc = (struct BSS_DESC *) NULL,
 		*prBssDesc = (struct BSS_DESC *) NULL;
@@ -330,7 +329,9 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 
 	} while (FALSE);
 
-	if (prBssDescSet) {
+	if (prJoinInfo) {
+		struct BSS_DESC_SET *prBssDescSet = &prJoinInfo->rBssDescSet;
+
 		if (prCandidateBssDesc) {
 			/* setup primary link */
 			prBssDescSet->ucLinkNum = 1;
@@ -349,7 +350,7 @@ struct BSS_DESC *scanP2pSearchDesc(struct ADAPTER *prAdapter,
 				DBGLOG(P2P, INFO, "Enable ML probe\n");
 				prCandidateBssDesc = NULL;
 				kalMemZero(prBssDescSet, sizeof(*prBssDescSet));
-				*fgNeedMlScan = TRUE;
+				prJoinInfo->fgNeedMlScan = TRUE;
 			}
 #endif
 		} else {
