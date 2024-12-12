@@ -4997,7 +4997,7 @@ rlmDomainBuildCmdByDefaultTable(struct ADAPTER *prAdapter,
 
 			prCmd->ucNum++;
 
-			if (prCmd->ucNum > MAX_CMD_SUPPORT_CHANNEL_NUM) {
+			if (prCmd->ucNum >= MAX_CMD_SUPPORT_CHANNEL_NUM) {
 				DBGLOG(RLM, WARN,
 					"etype = %d, out of MAX CH Num\n",
 					eType);
